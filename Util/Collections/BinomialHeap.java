@@ -1,57 +1,50 @@
 // BinomialMap.java, created Sat Jun 19 17:58:19 1999 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
 
-import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.*;
 
-import java.util.AbstractMap;
-import java.util.AbstractSet;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 /**
- * A <code>BinomialMap</code> is based on a binomial heap, which allows
+ * A <code>BinomialHeap</code> allows
  * O(lg n) time bounds for insert, minimum, extract-min, union,
  * decrease-key, and delete operations.  Implementation is based on
  * the description in <i>Introduction to Algorithms</i> by Cormen,
  * Leiserson, and Rivest, on page 400 and following.
- * <p>Note that this is not really a map, in that duplicate keys are
- * permitted.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialMap.java,v 1.1.2.6 2000-02-12 13:38:21 cananian Exp $
+ * @version $Id: BinomialHeap.java,v 1.1.2.1 2000-02-12 19:02:39 cananian Exp $
  */
-public class BinomialMap extends AbstractMap implements Cloneable {
+public class BinomialHeap extends AbstractHeap implements Cloneable {
     private static final boolean debug=false;
 
     Node head=null;
     /*final*/ Comparator c;
     
-    /** Constructs a new, empty <code>BinomialMap</code>, sorted according
+    /** Constructs a new, empty <code>BinomialHeap</code>, sorted according
      *  to the keys' natural order. All keys inserted into the new map
      *  must implement the <code>Comparable</code> interface. O(1) time. */
-    public BinomialMap() { this.c = Default.comparator; }
-    /** Constructs a new, empty <code>BinomialMap</code>, sorted according
+    public BinomialHeap() { super(Default.comparator); this.c = comparator(); }
+    /** Constructs a new, empty <code>BinomialHeap</code>, sorted according
      *  to the given comparator. O(1) time. */
-    public BinomialMap(Comparator c) { this.c = c; }
+    public BinomialHeap(Comparator c) { super(c); this.c = comparator(); }
     /** Constructs a new map containing the same mappings as the given map,
      *  sorted according to the keys' natural order.  All keys inserted
      *  into the new map must implement the <code>Comparable</code> 
      *  interface. This constructor runs in O(n lg n) time. */
-    public BinomialMap(Map m) {
-	this.c = Default.comparator;
+    public BinomialHeap(Map m) {
+	super(Default.comparator); this.c = comparator();
 	for (Iterator it=m.entrySet().iterator(); it.hasNext(); ) {
 	    Map.Entry me = (Map.Entry) it.next();
-	    put(me.getKey(), me.getValue());
+	    insert(me.getKey(), me.getValue());
 	}
 	Util.assert(isHeapOrdered(head, c));
     }
     /** Constructs a new map with the same mappings as the specified
-     *  <code>BinomialMap</code>. O(n) time. */
-    public BinomialMap(BinomialMap m) {
-	this.c = m.c;
+     *  <code>BinomialHeap</code>. O(n) time. */
+    public BinomialHeap(BinomialHeap m) {
+	super(m.comparator()); this.c = comparator();
 	this.head = _clone(null, m.head);
 	Util.assert(isHeapOrdered(head, c));
     }
@@ -89,15 +82,10 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	    return h2;
 	}
     }
-    /** Adds all of the mappings from the specified map into this map.
-     *  <b>Duplicates are not removed</b>.  If the specified map is
-     *  an instance of <code>BinomialMap</code>, this operation takes
-     *  O(n+lg n) time; otherwise it takes O(n lg n) time. Does not
-     *  modified the specified map <code>m</code>. */
-    public void putAll(Map m) {
-	if (m instanceof BinomialMap)
-	    putAll((BinomialMap) ((BinomialMap) m).clone());
-	else super.putAll(m);
+    public void union(Heap h) {
+	if (h instanceof BinomialHeap)
+	    union((BinomialHeap)h);
+	else super.union(h);
     }
     /** Merges all of the mappings from the specified map to this
      *  map. Note that duplicates <b>are</b> permitted. This operation
@@ -105,7 +93,7 @@ public class BinomialMap extends AbstractMap implements Cloneable {
      *  map. The comparator for m <b>must be identical</b> to the comparator
      *  for <code>this</code>. After calling <code>putAll()</code>, the
      *  specified map will be empty. */
-    public void putAllAndClear(BinomialMap m) {
+    public void union(BinomialHeap m) {
 	Util.assert(m.c.equals(this.c));
 	putAll(m.head);
 	m.head = null; // empty out source map.
@@ -138,14 +126,6 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	Util.assert(isHeapOrdered(this.head, c));
     }
 
-    /** Associates the specified value with the specified key in the map.
-     *  If the map previously contained a mapping for this key, the old
-     *  value is <b>not replaced</b>; both mappings will be present after
-     *  the <code>put()</code>.  O(lg n) time.
-     */
-    public Object put(Object key, Object value) {
-	insert(key, value); return null;
-    }
     /** Associates the specified value with the specified key in the map.
      *  If the map previously contained a mapping for this key, the old
      *  value is <b>not replaced</b>; both mappings will be present after
@@ -222,7 +202,7 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	return y;
     }
     /** Remove the specified map entry from the mapping. O(lg n) time. */
-    public void removeEntry(Map.Entry me) {
+    public void delete(Map.Entry me) {
 	Util.assert(isHeapOrdered(head, c));
 	Node x = (Node) me;
 	Node y = _bubbleUp(x, true);
@@ -241,12 +221,12 @@ public class BinomialMap extends AbstractMap implements Cloneable {
     }
     /** Return an unmodifiable set of entries in this mapping.
      *  Note that the returned object may actually be a <b>Collection,
-     *  not a Set</b> because the <code>BinomialMap</code> doesn't prohibit
+     *  not a Set</b> because the <code>BinomialHeap</code> doesn't prohibit
      *  duplicates. */
-    public Set entrySet() {
+    public Collection entries() {
 	Util.assert(isHeapOrdered(head, c));
-	return new AbstractSet() {
-	    public int size() { return BinomialMap.this.size(); }
+	return new AbstractCollection() {
+	    public int size() { return BinomialHeap.this.size(); }
 	    public Iterator iterator() {
 		return new UnmodifiableIterator() {
 		    Node next = head;
@@ -275,10 +255,10 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	return this.head==null;
     }
 
-    /** Creates a new BinomialMap with all the key-value pairs this one
+    /** Creates a new BinomialHeap with all the key-value pairs this one
      *  has.  O(n) time. */
     public Object clone() {
-	BinomialMap bm=new BinomialMap(this.c);
+	BinomialHeap bm=new BinomialHeap(this.c);
 	bm.head=_clone(null, this.head);
 	Util.assert(isHeapOrdered(head, c));
 	Util.assert(isHeapOrdered(bm.head, bm.c));
@@ -312,7 +292,7 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	Node n = find(head, key); // O(n)
 	if (n==null) return null;
 	Object oldvalue = n.value;
-	removeEntry(n); // O(lg n)
+	delete(n); // O(lg n)
 	return oldvalue;
     }
 
@@ -402,13 +382,13 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 		return ((Integer)o1).intValue()-((Integer)o2).intValue();
 	    }
 	};
-	BinomialMap bm1 = new BinomialMap(ic);
-	BinomialMap bm2 = new BinomialMap(ic);
+	BinomialHeap bm1 = new BinomialHeap(ic);
+	BinomialHeap bm2 = new BinomialHeap(ic);
 	// construct heap on page 404 of CLR
 	int ia[] = new int[] {29, 6, 14, 38, 17, 8, 11, 27, 1, 25, 12, 18, 10};
 	for (int i=0; i<ia.length; i++)
-	    bm1.put(new Integer(ia[i]), null);
-	System.out.println(bm1.keySet());
+	    bm1.insert(new Integer(ia[i]), null);
+	System.out.println(bm1.entries());
 	System.out.println(bm1.minimum());
 	System.out.println("----");
 	bm1.clear();
@@ -416,39 +396,39 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	// union example on pages 410-411 of CLR
 	ia=new int[] { 15, 33, 28, 41, 7, 25, 12 };
 	for (int i=0; i<ia.length; i++)
-	    bm1.put(new Integer(ia[i]), null);
+	    bm1.insert(new Integer(ia[i]), null);
 	ia=new int[] { 6, 44, 10, 17, 29, 31, 48, 50, 8, 22, 23, 24, 30, 32,
 		       45, 55, 3, 37, 18 };
 	for (int i=0; i<ia.length; i++)
-	    bm2.put(new Integer(ia[i]), null);
+	    bm2.insert(new Integer(ia[i]), null);
 
-	System.out.println(bm1.keySet());
-	System.out.println(bm2.keySet());
-	bm1.putAllAndClear(bm2);
-	System.out.println(bm1.keySet());
+	System.out.println(bm1.entries());
+	System.out.println(bm2.entries());
+	bm1.union(bm2);
+	System.out.println(bm1.entries());
 	System.out.println(bm1.minimum());
 	System.out.println("----");
-	bm2 = new BinomialMap(bm1);
+	bm2 = new BinomialHeap(bm1);
 
 	// print sorted using extractMinimum()
-	bm1.put(new Integer(3), null); // duplicate key.
+	bm1.insert(new Integer(3), null); // duplicate key.
 	Util.assert(bm1.size()==27);
 	while (bm1.size()>0)
 	    System.out.print(bm1.extractMinimum().getKey().toString()+" ");
 	System.out.println();
 	Util.assert(bm1.size()==0);
 	System.out.println("----");
-	bm1 = (BinomialMap) bm2.clone();
+	bm1 = (BinomialHeap) bm2.clone();
 
-	// print sorted using minimum() and removeEntry()
-	Iterator it=bm1.entrySet().iterator();
+	// print sorted using minimum() and delete()
+	Iterator it=bm1.entries().iterator();
 	it.next(); it.next(); it.next();
-	bm1.removeEntry((Map.Entry) it.next());
+	bm1.delete((Map.Entry) it.next());
 	Util.assert(bm1.size()==25);
 
 	while (!bm1.isEmpty()) {
 	    Map.Entry me = bm1.minimum();
-	    bm1.removeEntry(me);
+	    bm1.delete(me);
 	    System.out.print(me.getKey().toString()+" ");
 	}
 	System.out.println();
