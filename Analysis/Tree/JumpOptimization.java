@@ -3,19 +3,39 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Tree;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.CFGrapher;
-import harpoon.IR.Tree.*;
+import harpoon.IR.Tree.BINOP;
+import harpoon.IR.Tree.Bop;
+import harpoon.IR.Tree.CALL;
+import harpoon.IR.Tree.CJUMP;
+import harpoon.IR.Tree.CanonicalTreeCode;
+import harpoon.IR.Tree.Code;
+import harpoon.IR.Tree.DerivationGenerator;
+import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.JUMP;
+import harpoon.IR.Tree.LABEL;
+import harpoon.IR.Tree.NAME;
+import harpoon.IR.Tree.Stm;
+import harpoon.IR.Tree.Tree;
+import harpoon.IR.Tree.TreeFactory;
+import harpoon.IR.Tree.TreeKind;
 import harpoon.Temp.Label;
-import harpoon.Util.*;
+import harpoon.Util.DisjointSet;
+import harpoon.Util.Util;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 /**
  * <code>JumpOptimization</code> removes branches-to-branches
  * and redundant labels.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JumpOptimization.java,v 1.1.2.1 2000-02-23 19:22:37 cananian Exp $
+ * @version $Id: JumpOptimization.java,v 1.1.2.2 2000-02-23 22:39:39 cananian Exp $
  */
 public abstract class JumpOptimization extends Simplification {
     // hide constructor
@@ -117,6 +137,52 @@ public abstract class JumpOptimization extends Simplification {
 		    return new CALL(tf, s, call.getRetval(), call.getRetex(),
 				    call.getFunc(), call.getArgs(),
 				    newhandler, call.isTailCall);
+		}
+	    },
+	    // this rule will flip CJUMPs to achieve better lay-out.
+	    // CJUMP(BINOP(op, ..), iftrue, iffalse) ; LABEL(iffalse)  -->
+	    //   CJUMP(BINOP(inv(op),..), iffalse, iftrue)
+	    new Rule("flipCjump") {
+		public boolean match(Stm s) {
+		    if (s.kind() != TreeKind.CJUMP) return false;
+		    CJUMP cjump = (CJUMP) s;
+		    if (cjump.getTest().kind() != TreeKind.BINOP) return false;
+		    BINOP binop = (BINOP) cjump.getTest();
+		    if (!contains(_OP(binop.op),
+				  _CMPEQ|_CMPNE|_CMPGT|_CMPGE|_CMPLT|_CMPLE))
+			return false;
+		    // now check if the next label corresponds to the iffalse.
+		    Stm next = next(s);
+		    if (next.kind() != TreeKind.LABEL) return false;
+		    LABEL l = (LABEL) next;
+		    return l.label == cjump.iffalse;
+		}
+		public Stm apply(TreeFactory tf,Stm s,DerivationGenerator dg) {
+		    CJUMP cjump = (CJUMP) s;
+		    BINOP binop = (BINOP) cjump.getTest();
+		    return new CJUMP
+			(tf, cjump, new BINOP
+			 (tf, binop, binop.optype,
+			  Bop.invert(binop.op),
+			  binop.getLeft(), binop.getRight()),
+			 cjump.iffalse, cjump.iftrue);
+		}
+		// find the next Stm in layout order, skipping SEQs.
+		Stm next(Stm s) {
+		    // go up until we find a SEQ that we're not the
+		    // right-most child of.
+		    while (s.getSibling()==null)
+			s = (Stm) s.getParent();
+		    // assert that our parent is a SEQ here.
+		    Util.assert(s.getParent().kind()==TreeKind.SEQ);
+		    // step over to the right...
+		    s = (Stm) s.getSibling();
+		    // ...and zip down the left side of the subtree until
+		    // we find something other than a SEQ.
+		    while (s.kind()==TreeKind.SEQ)
+			s = (Stm) s.getFirstChild();
+		    // done.  this is it.
+		    return s;
 		}
 	    },
         });
