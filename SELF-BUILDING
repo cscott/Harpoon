@@ -22,3 +22,21 @@ Set the environment variable TMPDIR to point to somewhere where you've
 got plenty of space free, if /tmp is crowded:
 
 $ TMPDIR=/var/tmp bin/build-precisec -r Support/samain-root-set harpoon.Main.SAMain SAMAIN
+
+[one more time:]
+The command *I* actually use to build FLEX is:
+
+$ KEEP_ARCHIVE=1 TMPDIR=/var/tmp MAKEOPT=-j2 bin/build-precisec -Dharpoon.precisec.emit_line_directives=true -r Support/samain-root-set harpoon.Main.SAMain SAMAIN
+
+Executing this binary:
+ - to suppress "security properties not found.  using defaults." message
+   on System.err, define JAVA_HOME in the environment, such that
+   JAVA_HOME/lib/security/java.security contains a java securities file.
+   For example:
+    JAVA_HOME=/usr/java/j2sdk1.4.0/jre [...command here...]
+
+-----------------------
+You can also build the quad interpreter, for an executable which is
+basically a very-slow java VM:
+
+$ KEEP_ARCHIVE=1 TMPDIR=/var/tmp MAKEOPT=-j2 bin/build-precisec -Dharpoon.precisec.emit_line_directives=true -r Support/samain-root-set harpoon.Main.Run INTERPRET 2>&1 | tee blahH
