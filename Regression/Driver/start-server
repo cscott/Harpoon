@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# This script gets the run-tasks file from the repository and runs it. This script is run daily/weekly by crond.
+
+# Beginning of script
+
+cvs update run-tasks > /dev/null 2>&1   # updating the main script
+./run-tasks $@   # running the main script
+
+# End of script
