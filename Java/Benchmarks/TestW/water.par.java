@@ -1,4 +1,3 @@
-package harpoon.Test.PA.TestW;
 
 /******************************************************************************/
 /*                                                                            */
@@ -1024,7 +1023,7 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
   BufferedReader random_numbers = new BufferedReader(new InputStreamReader(new FileInputStream("random.in")));
 
      NS = Math.pow((double) numMol, 1.0/3.0) - 0.00001;
-     XS = main.parms.getBOXL()/NS;
+     XS = water.parms.getBOXL()/NS;
      ZERO = XS * 0.50;
      WCOS = C.ROH * Math.cos(C.ANGLE * 0.5);
      WSIN = C.ROH * Math.sin(C.ANGLE * 0.5);
@@ -1086,9 +1085,9 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
     SUM.add(t);
   } 
   /* .....FIND AVERAGE MOMENTA PER ATOM */
-  SUM.value[0] /= (C.NATOM*main.parms.getNMOL());
-  SUM.value[1] /= (C.NATOM*main.parms.getNMOL());
-  SUM.value[2] /= (C.NATOM*main.parms.getNMOL());
+  SUM.value[0] /= (C.NATOM*water.parms.getNMOL());
+  SUM.value[1] /= (C.NATOM*water.parms.getNMOL());
+  SUM.value[2] /= (C.NATOM*water.parms.getNMOL());
 
   /* FIND NORMALIZATION FACTOR SO THAT <K.E.>=KT/2 */
 
@@ -1104,7 +1103,7 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
     SU.value[2] += (Math.pow((t.value[0]-SUM.value[2]),2.0) + Math.pow((t.value[2]-SUM.value[2]),2.0))/C.HMAS 
 	+ Math.pow((t.value[1]-SUM.value[2]),2.0)/C.OMAS;
   }
-  FAC=main.parms.computeFAC();
+  FAC=water.parms.computeFAC();
   SU.value[0]=Math.sqrt(FAC/SU.value[0]);
   SU.value[1]=Math.sqrt(FAC/SU.value[1]);
   SU.value[2]=Math.sqrt(FAC/SU.value[2]);
@@ -1160,11 +1159,11 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
   }
 
   void potengInnerDispatch(int idx) { 
-    if (main.parms.getPAR() == 0) {
+    if (water.parms.getPAR() == 0) {
       potengInnerLoop(idx);
-    } else if (main.parms.getPAR() == 1) {
+    } else if (water.parms.getPAR() == 1) {
       potengInnerSplit(idx, idx+1, (numMol-idx)-1);
-    } else if (main.parms.getPAR() == 2) {
+    } else if (water.parms.getPAR() == 2) {
       potengInnerThread t = new potengInnerThread(this, idx, idx+1, (numMol-idx)-1);
       t.inlineStart();
     } else {
@@ -1195,11 +1194,11 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
   }
 
   void potengOuterDispatch() {
-    if (main.parms.getPAR() == 0) {
+    if (water.parms.getPAR() == 0) {
       potengOuterLoop();
-    } else if (main.parms.getPAR() == 1) {
+    } else if (water.parms.getPAR() == 1) {
       potengOuterSplit(0, numMol-1);
-    } else if (main.parms.getPAR() == 2) {
+    } else if (water.parms.getPAR() == 2) {
       potengOuterThread t = new potengOuterThread(this, 0, numMol-1);
       t.inlineStart();
     } else {
@@ -1237,12 +1236,12 @@ void interPoteng2Aux(skratch_pad p1, skratch_pad p2, vec res){
 
   PotF = 0.0;
   PotR = 0.0;
-  S[0] = main.parms.getBOXH();	// BoxH
-  S[1] = main.parms.getBOXL();	// BoxL
-  Cut2 = main.parms.getCUT2();
-  Cutoff = main.parms.getCUTOFF();
-  Ref1 = main.parms.getREF1();
-  Ref2 = main.parms.getREF2();
+  S[0] = water.parms.getBOXH();	// BoxH
+  S[1] = water.parms.getBOXL();	// BoxL
+  Cut2 = water.parms.getCUT2();
+  Cutoff = water.parms.getCUTOFF();
+  Ref1 = water.parms.getREF1();
+  Ref2 = water.parms.getREF2();
 
   CSHIFT2(p1,p2,CL,S);
   KC=0;
@@ -1293,7 +1292,7 @@ void POTENG(){
   POT.clear();
   INTRA_POTENG();
   INTER_POTENG();
-  POT.scale(main.parms.getFPOT());
+  POT.scale(water.parms.getFPOT());
 }
 
 void clearTKIN(){ 
@@ -1335,12 +1334,12 @@ void printENERGY(int iter){
 */
 
   POT.store(loc_pot);
-  XVIR = TVIR*main.parms.getFPOT()*0.50/((double)TTMV);
-  AVGT = TKIN*main.parms.getFKIN()*(main.parms.getTEMP())*2.00/(3.00*((double)TTMV));
-  TENN = KIN.norm() * main.parms.getFKIN();
+  XVIR = TVIR*water.parms.getFPOT()*0.50/((double)TTMV);
+  AVGT = TKIN*water.parms.getFKIN()*(water.parms.getTEMP())*2.00/(3.00*((double)TTMV));
+  TENN = KIN.norm() * water.parms.getFKIN();
   XTT = loc_pot.norm()+TENN;
 
-  if ((iter % main.parms.getNPRINT()) == 0){
+  if ((iter % water.parms.getNPRINT()) == 0){
     System.out.print("     ");
     System.out.print(iter);
     System.out.print(" ");
@@ -1367,8 +1366,8 @@ void PREDIC(){
   double coeffs[];
 
   for(i=0; i < numMol; i++){
-    ord = main.parms.getNORDER();
-    coeffs = main.parms.getTLC();
+    ord = water.parms.getNORDER();
+    coeffs = water.parms.getTLC();
     molecule[i].predic(ord,coeffs);
   }
 }
@@ -1379,8 +1378,8 @@ void CORREC(){
   double coeffs[];
 
   for(i=0; i < numMol; i++){
-    ord = main.parms.getNORDER();
-    coeffs = main.parms.getPCC();
+    ord = water.parms.getNORDER();
+    coeffs = water.parms.getPCC();
     molecule[i].correc(ord,coeffs);
   }
 }
@@ -1391,16 +1390,16 @@ void CORREC(){
 void MDMAIN(){
 
   System.out.print("RESTART ");
-  System.out.print(main.parms.getIRST());
+  System.out.print(water.parms.getIRST());
   System.out.print(" AFTER ");
-  System.out.print(main.parms.getELPST());
+  System.out.print(water.parms.getELPST());
   System.out.print(" SECONDS\n");
   clearTVIR();
   clearTKIN();
 
-  if(main.parms.getNSAVE() > 0){
+  if(water.parms.getNSAVE() > 0){
     System.out.print("COLLECTING X AND V DATA AT EVERY %4d TIME STEPS\n");
-    System.out.print(main.parms.getNSAVE());
+    System.out.print(water.parms.getNSAVE());
   }
   System.out.print("INTERMEDIATE RESULTS (ENERGY EXPRESSED IN UNITS OF KT ATOM) \n");
   System.out.print("  TIME       KINETIC   INTRA POT   INTER POT   REACT POT       ");
@@ -1420,7 +1419,7 @@ void stepsystem(){
   total_serial = 0;
   start = System.currentTimeMillis();
 
-  n = main.parms.getNSTEP();
+  n = water.parms.getNSTEP();
   for(i=1;i <= n; i++) {
 
     TTMV += 1.00;
@@ -1442,14 +1441,14 @@ void stepsystem(){
 
     start_serial = System.currentTimeMillis();
     CORREC();
-    BNDRY(main.parms.getBOXL());
+    BNDRY(water.parms.getBOXL());
     KINETI();
     updateTVIR();
 
     stop_serial = System.currentTimeMillis();
 
-    if(( (i % main.parms.getNPRINT()) == 0) || 
-	((main.parms.getNSAVE() > 0) && ((i % main.parms.getNSAVE()) == 0))) {
+    if(( (i % water.parms.getNPRINT()) == 0) || 
+	((water.parms.getNSAVE() > 0) && ((i % water.parms.getNSAVE()) == 0))) {
       POTENG();
       printENERGY(i);
     }
@@ -1579,12 +1578,12 @@ double interf2_aux(skratch_pad p1, skratch_pad p2,
   double loc_vir;
   double S[] = new double[2];
 
-  S[0] = main.parms.getBOXH();
-  S[1] = main.parms.getBOXL();
-  gCUT2 = main.parms.getCUT2();
-  gREF1 = main.parms.getREF1();
-  gREF2 = main.parms.getREF2();
-  gREF4 = main.parms.getREF4();
+  S[0] = water.parms.getBOXH();
+  S[1] = water.parms.getBOXL();
+  gCUT2 = water.parms.getCUT2();
+  gREF1 = water.parms.getREF1();
+  gREF2 = water.parms.getREF2();
+  gREF4 = water.parms.getREF4();
   loc_vir = 0.0;
 
   CSHIFT2(p1,p2,CL,S);
@@ -1765,11 +1764,11 @@ void storeData(int dest){
   }
 
   void interfInnerDispatch(int idx) { 
-    if (main.parms.getPAR() == 0) {
+    if (water.parms.getPAR() == 0) {
       interfInnerLoop(idx);
-    } else if (main.parms.getPAR() == 1) {
+    } else if (water.parms.getPAR() == 1) {
       interfInnerSplit(idx, idx+1, (numMol-idx)-1);
-    } else if (main.parms.getPAR() == 2) {
+    } else if (water.parms.getPAR() == 2) {
       interfInnerThread t = new interfInnerThread(this, idx, idx+1, (numMol-idx)-1);
       t.inlineStart();
     } else {
@@ -1800,11 +1799,11 @@ void storeData(int dest){
   }
 
   void interfOuterDispatch() {
-    if (main.parms.getPAR() == 0) {
+    if (water.parms.getPAR() == 0) {
       interfOuterLoop();
-    } else if (main.parms.getPAR() == 1) {
+    } else if (water.parms.getPAR() == 1) {
       interfOuterSplit(0, numMol-1);
-    } else if (main.parms.getPAR() == 2) {
+    } else if (water.parms.getPAR() == 2) {
       interfOuterThread t = new interfOuterThread(this, 0, numMol-1);
       t.inlineStart();
     } else {
@@ -1830,8 +1829,8 @@ void SCALEFORCES(int Dest){
   double HM, OM;
 
   for(i=0; i < numMol; i++){
-    HM = main.parms.getFHM();
-    OM = main.parms.getFOM();
+    HM = water.parms.getFHM();
+    OM = water.parms.getFOM();
     molecule[i].scaleMomenta(Dest,HM,OM);
   }
 }
@@ -1853,7 +1852,7 @@ void DUMP(int iter){
   System.out.print(VIR.readval());
   System.out.print("\n");
   System.out.print(" FKIN: ");
-  System.out.print(main.parms.getFKIN());
+  System.out.print(water.parms.getFKIN());
   System.out.print("\n");
   System.out.print(" TKIN: ");
   System.out.print(TKIN);
@@ -1862,7 +1861,7 @@ void DUMP(int iter){
   KIN.print();
   System.out.print("\n");
   System.out.print(" FPOT: ");
-  System.out.print(main.parms.FPOT);
+  System.out.print(water.parms.FPOT);
   System.out.print("\n");
   System.out.print("  POT: ");
   POT.print();
