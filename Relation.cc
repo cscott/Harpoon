@@ -24,8 +24,6 @@ bool Tuple::isnull() {
 }
 
 
-
-
 // class WorkRelation
 
 WorkRelation::WorkRelation() {
@@ -95,8 +93,6 @@ void WorkRelation::remove(void *key, void *object) {
       delete(w);
     }
   }
-
-
   { /*Set up backwards reference*/
     WorkSet *w=(WorkSet *)gengettable(inverse,object);
     w->removeobject(key);
@@ -139,7 +135,6 @@ WorkRelation::~WorkRelation() {
   destroyer(inverse);
 }
 
-
 void WorkRelation::destroyer(struct genhashtable *d) {
   struct geniterator *it=gengetiterator(d);
   while (true) {
@@ -153,7 +148,6 @@ void WorkRelation::destroyer(struct genhashtable *d) {
   genfreehashtable(d);
 }
 
-
 void WorkRelation::print()
 {
   printf("\n");
@@ -163,7 +157,6 @@ void WorkRelation::print()
       Element *l = (Element *) tuple.left;
       Element *r = (Element *) tuple.right;
       printf("("); l->print(); printf(", "); r->print(); printf(")\n");
-
       tuple = getnextelement(tuple.left, tuple.right);
     }
 }

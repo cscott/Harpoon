@@ -1,5 +1,5 @@
 /*
- * RCS $Id: redblack.h,v 1.3 2003-03-03 02:39:40 cristic Exp $
+ * RCS $Id: redblack.h,v 1.4 2003-06-18 06:08:18 bdemsky Exp $
  */
 
 /*
@@ -58,7 +58,7 @@ struct pair rbfind(const void *low,const void *high, struct rbtree *rbinfo);
 const void *rbdelete(const void *, struct rbtree *);
 void *rblookup(const void *, const void *,struct rbtree *);
 int rbsearch(const void *low, const void *high, struct rbtree *rbinfo);
-void rbdestroy(struct rbtree *);
+void rbdestroy(struct rbtree *,void (*free_function)(void *));
 void rbwalk(const struct rbtree *,
 		void (*)(const void *, const VISIT, const int, void *),
 		void *); 
@@ -76,8 +76,19 @@ void rbcloselist(RBLIST *);
 /*
  *
  * $Log: redblack.h,v $
- * Revision 1.3  2003-03-03 02:39:40  cristic
- * *** empty log message ***
+ * Revision 1.4  2003-06-18 06:08:18  bdemsky
+ *
+ *
+ * Adding support for:
+ * 1) freeing the memory we use (imagine that)...will make dan's life easier &
+ *    allow us to run cooler benchmarks.  (not completed yet)
+ * 2) generating dot graphs of dependencies...not completed yet - the graphs aren't
+ * appropriately labeled.
+ *
+ * Revision 1.2  2003/06/18 06:06:18  bdemsky
+ *
+ *
+ * Added option to pass in function to free items in the redblack interval tree.
  *
  * Revision 1.5  2002/01/30 07:54:53  damo
  * Fixed up the libtool versioning stuff (finally)

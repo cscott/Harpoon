@@ -144,6 +144,11 @@ NormalForm::NormalForm(Constraint *c) {
   delete(sa);
 }
 
+void NormalForm::fprint(FILE *f) {
+  if (c!=NULL)
+    c->fprint(f);
+}
+
 NormalForm::NormalForm(Rule *r) {
   int count=-1;
   char *label, *triggerset;

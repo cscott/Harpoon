@@ -14,7 +14,19 @@ typemap::typemap(model *m) {
   globalmodel=m;
 }
 
+void freefunction(void *ptr) {
+  if(ptr!=NULL) {
+    delete((structuremap *)ptr);
+  }
+}
+
+typemap::~typemap() {
+  rbdestroy(typetree,freefunction);
+  rbdestroy(alloctree,freefunction);
+}
+
 void typemap::reset() {
+  rbdestroy(typetree,freefunction);
   typetree=rbinit();
 }
 
@@ -23,13 +35,14 @@ structuremap::structuremap(structure *s) {
   typetree=rbinit();
 }
 
+structuremap::~structuremap() {
+  rbdestroy(typetree,freefunction);
+}
 
 bool typemap::asserttype(void *ptr, structure *s) {
   bool b=checktype(true,ptr,s);
   if (!b) {
-#ifdef DEBUGMANYMESSAGES
     printf("Assertion failure\n");
-#endif
     bool b=checktype(true,ptr,s);
   }
   return b;

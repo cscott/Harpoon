@@ -18,6 +18,10 @@ WorkSet::WorkSet(bool) {
   ght=genallocatehashtable(NULL,NULL);
 }
 
+WorkSet::~WorkSet() {
+  genfreehashtable(ght);
+}
+
 void WorkSet::addobject(void *obj) {
   if (!contains(obj))
     {
@@ -77,11 +81,6 @@ void WorkSet::print()
 	printf(" ");
     }  
   printf("}");
-}
-
-
-WorkSet::~WorkSet() {
-  genfreehashtable(ght);
 }
 
 

@@ -5,6 +5,7 @@
 class typemap {
  public:
   typemap(model *);
+  ~typemap();
   void allocate(void *, int);
   void deallocate(void *);
   bool asserttype(void *ptr, structure *structure);
@@ -22,7 +23,7 @@ class typemap {
 class structuremap {
   public:
   structuremap(structure *s);
-
+  ~structuremap();
   structure *str;
   struct rbtree *typetree;
 };

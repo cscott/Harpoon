@@ -11,6 +11,7 @@ class Repair {
 
 
  private:
+  void outputgraph(WorkSet *removededges, WorkRelation *wr, char *filename);
   void repaireleexpr(Constraint *c, processobject *po, Elementexpr *ee, Hashtable *env);
   void buildmap(WorkRelation *wr);
   void checkpredicate(Action *repair,WorkRelation *wr, Constraint *c,CoercePredicate *cp);

@@ -9,6 +9,7 @@ class WorkSet {
   WorkSet();
   WorkSet(unsigned int (*hashf)(void *),int (*equals)(void *,void *));
   WorkSet(bool);
+  ~WorkSet();
   void addobject(void *obj);
   void removeobject(void *obj);
   bool contains(void *obj);
@@ -19,7 +20,6 @@ class WorkSet {
   void * getelement(int i);  
   bool isEmpty();
   void print();
-  ~WorkSet();
 
  private:
   struct genhashtable *ght;

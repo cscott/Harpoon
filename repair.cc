@@ -153,16 +153,17 @@ bool Repair::analyzetermination() {
     for(int i=1;i<=cycleset->size();i++) {
       if (breakcycles(removeedges, i, cycleset,wr)) {
 	removedsentences=removeedges;
-#ifdef DEBUGMESSAGES	
 	printf("Modified constraints for repairability!\n");
-#endif
+	outputgraph(removeedges, wr, "cycle.dot");
 	return true;
       }
     }
     delete(removeedges);
     return false;
-  } else 
+  } else {
+    outputgraph(NULL,wr, "cycle.dot");
     return true;
+  }
 }
 
 
@@ -185,6 +186,36 @@ bool Repair::breakcycles(WorkSet *removeedge, int number, WorkSet *cyclelinks, W
   return false;
 }
 
+void Repair::outputgraph(WorkSet *removededges, WorkRelation *wr, char *filename) {
+  FILE * dotfile=fopen(filename,"w");
+  fprintf(dotfile,"digraph cyclegraph {\n");
+  fprintf(dotfile,"ratio=auto\n");
+  for(int i=0;i<globalmodel->getnumconstraints();i++) {
+    NormalForm *nf=globalmodel->getnormalform(i);
+    for(int j=0;j<nf->getnumsentences();j++) {
+      CoerceSentence *cs=nf->getsentence(j);
+      for(int i=0;i<cs->getnumpredicates();i++) {
+	CoercePredicate *cp=cs->getpredicate(i);
+	fprintf(dotfile,"%lu -> %lu [style=dashed]\n",nf,cp);
+	WorkSet *setofnf=wr->getset(cp);
+	if (setofnf!=NULL) {
+	  NormalForm *nf2=(NormalForm*)setofnf->firstelement();
+	  while(nf2!=NULL) {
+	    /* cp interferes with nf2 */
+	    bool removed=(removededges!=NULL)&&removededges->contains(cs); /*tells what color of edge to generate*/
+	    if (removed)
+	      fprintf(dotfile,"%lu -> %lu [style=dotted]\n",cp,nf2);
+	    else
+	      fprintf(dotfile,"%lu -> %lu\n",cp,nf2);
+	    nf2=(NormalForm *)setofnf->getnextelement(nf2);
+	  }
+	}
+      }
+    }
+  }
+  fprintf(dotfile,"}\n");
+  fclose(dotfile);
+}
 
 bool Repair::checkforcycles(WorkSet *removededges, WorkRelation *wr) {
   /* Check that there are no cycles and

@@ -4,7 +4,6 @@
 #include "omodel.h"
 #include <stdio.h>
 
-
 // class Field
 
 Field::Field(char *s) {
@@ -19,13 +18,7 @@ char * Field::field() {
   return str;
 }
 
-
-
-
-
-
 // class AElementexpr
-
 
 AElementexpr::AElementexpr(AElementexpr *l, AElementexpr *r, int op) {
   left=l;right=r;type=op;
@@ -144,10 +137,6 @@ void AElementexpr::print() {
   }
 }
 
-
-
-
-
 // class Type
 
 Type::Type(char *s, int n, Label** l) {
@@ -170,10 +159,6 @@ Label * Type::getlabel(int i) {
   return labels[i];
 }
 
-
-
-
-
 // class TypeEle
 
 TypeEle::TypeEle(char *s, int n, AElementexpr** e) {
@@ -195,11 +180,6 @@ int TypeEle::getnumexpr() {
 AElementexpr * TypeEle::getexpr(int i) {
   return exprs[i];
 }
-
-
-
-
-
 
 // class AQuantifier
 
@@ -288,11 +268,6 @@ void AQuantifier::print() {
     break;
   }
 }
-
-
-
-
-
 
 // class Statementa
 
@@ -394,10 +369,6 @@ void Statementa::print() {
   }
 }
 
-
-
-
-
 // class Statementb
 
 TypeEle * Statementb::gettleft() {
@@ -453,10 +424,6 @@ void Statementb::print() {
     break;
   }
 }
-
-
-
-
 
 // class Rule
 
@@ -530,7 +497,3 @@ void Rule::print() {
   statementb->print();
   printf("\n");
 }
-
-
-
-

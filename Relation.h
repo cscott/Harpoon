@@ -21,6 +21,7 @@ class WorkRelation {
  public:
   WorkRelation();
   WorkRelation(bool);
+  ~WorkRelation();
   bool contains(void *key, void *object);
   Tuple firstelement();
   Tuple getnextelement(void *left, void *right);
@@ -30,7 +31,6 @@ class WorkRelation {
   void* getobj(void *key);
   WorkSet* invgetset(void *key);
   void* invgetobj(void *key);
-  ~WorkRelation();
   void print();
 
  private:

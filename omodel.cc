@@ -52,6 +52,10 @@ void Literal::print() {
   printf("%s",str);
 }
 
+void Literal::fprint(FILE *f) {
+  fprintf(f,"%s",str);
+}
+
 
 
 
@@ -69,6 +73,10 @@ char * Setlabel::getname() {
   
 void Setlabel::print() {
   printf("%s",str);
+}
+
+void Setlabel::fprint(FILE *f) {
+  fprintf(f,"%s",str);
 }
 
 
@@ -133,6 +141,23 @@ void Set::print() {
   }
 }
 
+void Set::fprint(FILE *f) {
+  switch(type) {
+  case SET_label:
+    setlabel->fprint(f);
+    break;
+  case SET_literal:
+    fprintf(f,"{");
+    for(int i=0;i<numliterals;i++) {
+      if (i!=0)
+	fprintf(f,",");
+      literals[i]->fprint(f);
+    }
+    fprintf(f,"}");
+    break;
+  }
+}
+
 
 
 
@@ -146,6 +171,10 @@ Label::Label(char *s) {
 
 void Label::print() {
   printf("%s",str);
+}
+
+void Label::fprint(FILE *f) {
+  fprintf(f,"%s",str);
 }
 
 
@@ -164,6 +193,10 @@ char * Relation::getname() {
 
 void Relation::print() {
   printf("%s",str);
+}
+
+void Relation::fprint(FILE *f) {
+  fprintf(f,"%s",str);
 }
 
 
@@ -190,6 +223,13 @@ void Quantifier::print() {
   label->print();
   printf(" in ");
   set->print();
+}
+
+void Quantifier::fprint(FILE *f) {
+  fprintf(f,"forall ");
+  label->fprint(f);
+  fprintf(f," in ");
+  set->fprint(f);
 }
 
 
@@ -224,6 +264,24 @@ void Setexpr::print() {
     label->print();
     printf(".~");
     relation->print();
+    break;
+  }
+}
+
+void Setexpr::fprint(FILE *f) {
+  switch(type) {
+  case SETEXPR_LABEL:
+    setlabel->fprint(f);
+    break;
+  case SETEXPR_REL:
+    label->fprint(f);
+    fprintf(f,".");
+    relation->fprint(f);
+    break;
+  case SETEXPR_INVREL:
+    label->fprint(f);
+    fprintf(f,".~");
+    relation->fprint(f);
     break;
   }
 }
@@ -395,6 +453,12 @@ void Valueexpr::print() {
   relation->print();
 }
 
+void Valueexpr::fprint(FILE *f) {
+  label->fprint(f);
+  fprintf(f,".");
+  relation->fprint(f);
+}
+
 void Valueexpr::print_value(Hashtable *stateenv, model *m) {
   printf("  ");
   label->print();
@@ -512,6 +576,42 @@ void Elementexpr::print() {
   }  
 }
 
+void Elementexpr::fprint(FILE *f) {
+  switch(type) {
+  case ELEMENTEXPR_LABEL:
+    label->fprint(f);
+    break;
+  case ELEMENTEXPR_SUB:
+    left->fprint(f);
+    fprintf(f,"-");
+    right->fprint(f);
+    break;
+  case ELEMENTEXPR_ADD:
+    left->fprint(f);
+    fprintf(f,"+");
+    right->fprint(f);
+    break;
+  case ELEMENTEXPR_MULT:
+    left->fprint(f);
+    fprintf(f,"*");
+    right->fprint(f);
+    break;
+  case ELEMENTEXPR_LIT:
+    literal->fprint(f);
+    break;
+  case ELEMENTEXPR_SETSIZE:
+    fprintf(f,"sizeof(");
+    setexpr->fprint(f);
+    fprintf(f,")");
+    break;
+  case ELEMENTEXPR_RELATION:
+    left->fprint(f);
+    fprintf(f,".");
+    relation->fprint(f);
+    break;
+  }  
+}
+
 
 void Elementexpr::print_value(Hashtable *stateenv, model *m) {
   switch(type) {
@@ -622,6 +722,51 @@ void Predicate::print() {
   }
 }
 
+void Predicate::fprint(FILE *f) {
+  switch(type) {
+  case PREDICATE_LT:
+    valueexpr->fprint(f);
+    fprintf(f,"<");
+    elementexpr->fprint(f);
+    break;
+  case PREDICATE_LTE:
+    valueexpr->fprint(f);
+    fprintf(f,"<=");
+    elementexpr->fprint(f);
+    break;
+  case PREDICATE_EQUALS:
+    valueexpr->fprint(f);
+    fprintf(f,"=");
+    elementexpr->fprint(f);
+    break;
+  case PREDICATE_GTE:
+    valueexpr->fprint(f);
+    fprintf(f,">=");
+    elementexpr->fprint(f);
+    break;
+  case PREDICATE_GT:
+    valueexpr->fprint(f);
+    fprintf(f,">");
+    elementexpr->fprint(f);
+    break;
+  case PREDICATE_SET:
+    label->fprint(f);
+    fprintf(f," in ");
+    setexpr->fprint(f);
+    break;
+  case PREDICATE_EQ1:
+  case PREDICATE_GTE1:
+    fprintf(f,"sizeof(");
+    setexpr->fprint(f);
+    if (type==PREDICATE_EQ1)
+      fprintf(f,")=1");
+    if (type==PREDICATE_GTE1)
+      fprintf(f,")>=1");
+    break;
+  }
+}
+
+
 
 void Predicate::print_sets(Hashtable *stateenv, model *m) {
   switch(type) {
@@ -683,6 +828,28 @@ void Statement::print() {
     break;
   case STATEMENT_PRED:
     pred->print();
+    break;
+  }
+}
+
+void Statement::fprint(FILE *f) {
+  switch(type) {
+  case STATEMENT_OR:
+    left->fprint(f);
+    fprintf(f," OR ");
+    right->fprint(f);
+    break;
+  case STATEMENT_AND:
+    left->fprint(f);
+    fprintf(f," AND ");
+    right->fprint(f);
+    break;
+  case STATEMENT_NOT:
+    fprintf(f,"!");
+    left->fprint(f);
+    break;
+  case STATEMENT_PRED:
+    pred->fprint(f);
     break;
   }
 }
@@ -776,4 +943,18 @@ void Constraint::print() {
     statement->print();
   }
   printf("\n");
+}
+
+void Constraint::fprint(FILE *f) {
+  printf("[");
+  for(int i=0;i<numquantifiers;i++) {
+    if (i!=0)
+      fprintf(f,",");
+    quantifiers[i]->fprint(f);
+  }
+  printf("],");
+  if (statement!=NULL) {
+    statement->fprint(f);
+  }
+  fprintf(f,"\n");
 }

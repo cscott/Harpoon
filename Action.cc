@@ -72,7 +72,6 @@ bool Action::comparepredicates(Constraint *c1, CoercePredicate *cp1, Constraint 
   }
   return false; /* by default */
 }
-
  
 bool Action::comparesetexpr(Setexpr *s1,char *v1,Setexpr *s2,char *v2) {
   if (s1->gettype()!=s2->gettype())
@@ -260,7 +259,6 @@ bool Action::conflictwithremovefromset(WorkSet * checkother,char *set, Constrain
       }
     }
   }
-
   /* Check for range's of relation */
   for(int i=0;i<domrelation->getnumrelation();i++) {
     DRelation *drelation=domrelation->getrelation(i);
@@ -269,7 +267,6 @@ bool Action::conflictwithremovefromset(WorkSet * checkother,char *set, Constrain
       testforconflictremove(NULL,set,drelation->getname(),c,p);
     }
   }
-
   return false;
 }
 
@@ -347,7 +344,6 @@ bool Action::testforconflict(char *setv, char *seta, char *rel, Constraint *c, C
       possiblysameset(seta,p->getpredicate()->getsetexpr()->getlabel()->label(),c)&&
       equivalentstrings(rel,p->getpredicate()->getsetexpr()->getrelation()->getname()))
     return true;
-  
 
   /* try to catch case of !(a' in v'.r)*/
   if (p->isrule() &&
