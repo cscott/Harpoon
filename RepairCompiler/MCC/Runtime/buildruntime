@@ -1,8 +1,8 @@
 #!/bin/bash
-FLAG='-O0 -g'
-g++ $FLAG -c SimpleHash.cc
-g++ $FLAG -c tmap.cc
-g++ $FLAG -c instrument.cc
+FLAG='-O0 -g -pedantic'
+gcc $FLAG -c SimpleHash.c
+gcc $FLAG -c tmap.c
+gcc $FLAG -c instrument.c
 gcc $FLAG -c libredblack/redblack.c
 gcc $FLAG -c stack.c
-g++ $FLAG -c size.cc
+
