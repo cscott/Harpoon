@@ -36,8 +36,8 @@ public class Compress implements CommunicationsModel {
 		ca.process(codec.compress(id));
 	    }
 
-	    public void alert(float c1, float c2, float c3) {
-		ca.alert(c1, c2, c3);
+	    public void alert(float c1, float c2, float c3, long time) {
+		ca.alert(c1, c2, c3, time);
 	    }
 	};
     }
@@ -51,8 +51,8 @@ public class Compress implements CommunicationsModel {
 		ca.process(codec.decompress(id));
 	    }
 	    
-	    public void alert(float c1, float c2, float c3) {
-		ca.alert(c1, c2, c3);
+	    public void alert(float c1, float c2, float c3, long time) {
+		ca.alert(c1, c2, c3, time);
 	    }
 	};
     }

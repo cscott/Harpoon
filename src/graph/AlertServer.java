@@ -59,9 +59,9 @@ public class AlertServer extends Server {
 		public void run() {
 		    try {
 			cm.runAlertServer(name, new CommunicationsAdapter() {
-			    public void alert(float c1, float c2, float c3) {
+			    public void alert(float c1, float c2, float c3, long time) {
 				//System.out.println("Alert Server #"+getUniqueID()+" received image.");
-				ImageData newID = ImageDataManip.create(c1, c2, c3);
+				ImageData newID = ImageDataManip.create(c1, c2, c3, time);
 				if (out != null) {
 				    AlertServer.this.out.process(newID);
 				}

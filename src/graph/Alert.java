@@ -78,6 +78,7 @@ public class Alert extends Client {
 	final float c1 = id.c1;
 	final float c2 = id.c2;
 	final float c3 = id.c3;
+	final long time = id.time;
 	final int idNo = id.id;
 	final CommunicationsAdapter finalCS = cs;
 	(new Thread() {
@@ -86,7 +87,7 @@ public class Alert extends Client {
 		//System.out.println("Alert Client:     c2: "+c2);
 		//System.out.println("Alert Client:     c3: "+c3);
 		
-		finalCS.alert(c1, c2, c3);
+		finalCS.alert(c1, c2, c3, time);
 		//System.out.println("Alert client #"+getUniqueID()+" sent image #"+idNo);
 	    }
 	}).start();

@@ -41,7 +41,7 @@ public class CommunicationsAdapter {
      *  @param c2 The y coordinate relative to the current location in meters.
      *  @param c3 The z coordinate relative to the current location in meters.
      */
-    public void alert(float c1, float c2, float c3) {
+    public void alert(float c1, float c2, float c3, long time) {
 	throw new Error("This should be overridden if callable.");
     }
 }

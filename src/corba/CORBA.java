@@ -138,8 +138,8 @@ public class CORBA implements CommunicationsModel {
 	throws Exception {
 	final ATRSysCond atr = ATRSysCondHelper.narrow(setupClient(name));
 	return new CommunicationsAdapter() {
-	    public void alert(float c1, float c2, float c3) {
-		atr.send_coordinate(new Coordinate(c1, c2, c3));
+	    public void alert(float c1, float c2, float c3, long time) {
+		atr.send_coordinate(new Coordinate(c1, c2, c3, time));
 	    }
 	};
     }
@@ -154,7 +154,7 @@ public class CORBA implements CommunicationsModel {
 	throws Exception {
 	runServer(name, new ATRSysCondPOA() {
 	    public void send_coordinate(Coordinate c) {
-		out.alert(c.c1, c.c2, c.c3);
+		out.alert(c.c1, c.c2, c.c3, c.timestamp);
 	    }
 	    
 	    public boolean isReady() { return true; }
@@ -195,7 +195,7 @@ public class CORBA implements CommunicationsModel {
 	final Processor p = ProcessorHelper.narrow(setupClient(name));
 	return new CommunicationsAdapter() {
 	    public void process(ImageData id) {
-		p.process(new Frame(new Property[0], ImageDataManip.writePPM(id)));
+		p.process(new Frame(id.time, new Property[0], ImageDataManip.writePPM(id)));
 	    }
 	};
     }
@@ -218,6 +218,7 @@ public class CORBA implements CommunicationsModel {
 	    public void process(Frame f) {
 		ImageData id = ImageDataManip.readPPM(f.data);
 		id.id = idNum++;
+		id.time = f.timestamp;
 		out.process(id);
 	    }
 	});

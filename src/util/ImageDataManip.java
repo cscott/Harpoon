@@ -461,9 +461,9 @@ public class ImageDataManip {
      *  @param c3 The target z coordinate.
      *  @return The created {@link ImageData}.
      */
-    public static ImageData create(float c1, float c2, float c3) {
+    public static ImageData create(float c1, float c2, float c3, long time) {
 	return new ImageData(new byte[0], new byte[0], new byte[0],
-			     0, 0, 0, 0, 0, 0, 0, 0,
+			     0, 0, 0, 0, time, 0, 0, 0,
 			     c1, c2, c3, false, (byte)0, false, 0, 0, 0, 0,
 			     -1);
     }
