@@ -33,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.11 2000-07-11 19:19:19 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.12 2000-07-18 22:35:17 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -169,7 +169,7 @@ public abstract class Code extends HCode {
 	final MultiMap labelsNeeded = new GenericMultiMap();
 
 	for (Instr instr=instrs; instr != null; instr=instr.getNext()) {
-	    StringBuffer str = new StringBuffer("");
+	    StringBuffer str = new StringBuffer();
             if (instr instanceof InstrLABEL ||
 		instr instanceof InstrDIRECTIVE) {
                 str.append(instr.toString());
@@ -246,8 +246,8 @@ public abstract class Code extends HCode {
      *  Uses getRegisterName() to do register name string mapping.
      */
     public String toAssem(Instr instr) {
-        StringBuffer s = new StringBuffer();
 	String assem = instr.getAssem();
+        StringBuffer s = new StringBuffer(assem.length());
 	
 	int len = assem.length();
 	for(int i=0; i<len; i++) {
@@ -304,7 +304,7 @@ public abstract class Code extends HCode {
 		
 		if (getReg) {
 		    char lastChar = ' ';
-		    StringBuffer var = new StringBuffer();
+		    StringBuffer var = new StringBuffer(assem.length());
 		    boolean more = true;
 		    while(more && i<(assem.length()-1)) {
 			i++; c = assem.charAt(i);
@@ -359,11 +359,11 @@ public abstract class Code extends HCode {
 	     let s be a new empty string 
 	     in for each line:le in <code>exec</code>,
 	            let lo be the next line of <code>orig</code> ;
-	            s += (le + "\t\t @" + lo)
+	            s += (le + " @" + lo)
 		return s
     */
     public static String formatCommentedInstr(String exec, String orig) {
-	StringBuffer sb = new StringBuffer();	
+	StringBuffer sb = new StringBuffer(exec.length() + orig.length()); 
 	try {
 	    BufferedReader er = new BufferedReader(new StringReader(exec));
 	    BufferedReader or = new BufferedReader(new StringReader(orig));

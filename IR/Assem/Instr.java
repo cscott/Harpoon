@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.78 2000-07-05 21:07:50 pnkfelix Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.79 2000-07-18 22:35:17 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -624,8 +624,8 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	<code>IR.Assem.Code.toAssem(Instr i)</code>.
     */
     public String toString() {
-        StringBuffer s = new StringBuffer();
         int len = assem.length();
+        StringBuffer s = new StringBuffer(len);
         for (int i = 0; i < len; i++) {
 	    switch(assem.charAt(i)) {
             case '`':
