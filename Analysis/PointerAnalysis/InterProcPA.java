@@ -41,7 +41,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.41 2000-05-25 20:16:07 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.42 2000-05-26 22:29:18 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -56,7 +56,7 @@ abstract class InterProcPA {
      *  This is not necessarily an error! For example, if an application
      *  never instantiates a <code>SecurityManager</code>,
      *	each call to a method of that class has ZERO callees! */
-    public static final boolean WARNINGS = false;
+    public static final boolean WARNINGS = true;
 
     /** Analyzes the call site <code>q</code> inside 
      *	<code>current_method</code>. If analyzing the call is not possible
@@ -101,8 +101,8 @@ abstract class InterProcPA {
 	if(nb_callees == 0){
 	    if(WARNINGS){
 		System.out.println("Warning: CALL site with no callee! ");
-		System.out.println("Warning:  " + current_mmethod);
-		System.out.println("Warning:  " + q);
+		System.out.println("Warning:  " + q.getSourceFile() + ":" +
+				   q.getLineNumber() + " " + q);
 	    }
  	    return new ParIntGraphPair(pig_before, pig_before);
 	}

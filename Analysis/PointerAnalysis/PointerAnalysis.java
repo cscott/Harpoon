@@ -72,12 +72,12 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.59 2000-05-25 20:16:07 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.60 2000-05-26 22:29:18 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
     public static final boolean DEBUG2    = false;
-    public static final boolean DEBUG_SCC = false;
+    public static final boolean DEBUG_SCC = true;
 
     /** Makes the pointer analysis deterministic to make the debug easier.
 	The main source of undeterminism in our code is the intensive use of
@@ -86,7 +86,7 @@ public class PointerAnalysis {
     public static final boolean DETERMINISTIC = true;
 
     /** Turns on the priniting of some timing info. */
-    public static boolean TIMING = false;
+    public static boolean TIMING = true;
     public static final boolean STATS = true;
     public static boolean SHOW_NODES = true;
     public static final boolean DETAILS2 = false;
