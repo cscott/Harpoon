@@ -21,7 +21,7 @@ import java.util.List;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.3.2.8 1999-06-18 01:48:04 cananian Exp $
+ * @version $Id: Instr.java,v 1.3.2.9 1999-06-20 22:59:44 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -80,12 +80,12 @@ public abstract class Instr
   /** Return a list of all the <code>Instr</code>s that can precede
    *  this one. */
   public Instr[] prev() {
-    Instr[] p = new Instr[prev.size()]; return (Instr[]) prev.toArray(p);
+    return (Instr[]) prev.toArray(new Instr[prev.size()]);
   }
   /** Return a list of all the possible <code>Instr</code>s that may
    *  succeed this one. */
   public Instr[] next() {
-    Instr[] n = new Instr[next.size()]; return (Instr[]) next.toArray(n);
+    return (Instr[]) next.toArray(new Instr[next.size()]);
   }
   /** Return the specified successor of this <code>Instr</code>. */
   public Instr next(int i) { return (Instr) next.get(i); }
