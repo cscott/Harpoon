@@ -65,14 +65,6 @@ public class DotExpr extends Expr {
 	return true;
     }
 
-    public void findmatch(Descriptor d, Set s) {
-	if (d==fd)
-	    s.add(this);
-	left.findmatch(d,s);
-	if (intindex!=null)
-	    intindex.findmatch(d,s);
-    }
-
     public Set freeVars() {
 	Set lset=left.freeVars();
 	Set iset=null;
@@ -108,6 +100,14 @@ public class DotExpr extends Expr {
 	return name;
     }
     
+    public void findmatch(Descriptor d, Set s) {
+	if (d==fd)
+	    s.add(this);
+	left.findmatch(d,s);
+	if (intindex!=null)
+	    intindex.findmatch(d,s);
+    }
+
     public Set useDescriptor(Descriptor d) {
 	HashSet newset=new HashSet();
 	if (d==fd)

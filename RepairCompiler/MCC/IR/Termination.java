@@ -1160,6 +1160,9 @@ public class Termination {
 	return okay;
     }
 
+    /** This method sees if when the quantifiers listed in set are
+     *  fixed, whether there can be more than one unique binding for
+     *  the constraint or model definition rule qs.*/
     public boolean analyzeQuantifiers(Quantifiers qs,Set set) {
 	for(int i=0;i<qs.numQuantifiers();i++) {
 	    Quantifier q=qs.getQuantifier(i);

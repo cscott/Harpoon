@@ -31,10 +31,6 @@ public class CastExpr extends Expr {
 	return expr.findInvariants(vars);
     }
 
-    public void findmatch(Descriptor d, Set s) {
-	expr.findmatch(d,s);
-    }
-
     public CastExpr(TypeDescriptor type, Expr expr) {
         this.type = type;
         this.expr = expr;
@@ -52,6 +48,10 @@ public class CastExpr extends Expr {
 	else if (!(e instanceof CastExpr))
 	    return false;
 	else return ((this.type==((CastExpr)e).type)&&expr.equals(remap,((CastExpr)e).expr));
+    }
+
+    public void findmatch(Descriptor d, Set s) {
+	expr.findmatch(d,s);
     }
 
     public Set useDescriptor(Descriptor d) {

@@ -8,25 +8,122 @@ public class ConcreteInterferes {
 	this.termination=t;
     }
 
+    /** Returns true if the data structure updates performed by mun
+     * may increase (or decrease if satisfy=false) the scope of the
+     * model definition rule r. */
 
-    static public boolean interferesinclusion(UpdateNode un, Updates update, Rule r) {
+    public boolean interferes(MultUpdateNode mun, Rule r, boolean satisfy) {
+	
+	// A rule that adds something to a set can't be falsified by
+	// an update that is only performed if the set is empty
+	if (!initialinterferes(mun,r,satisfy)) 
+	    return false;
+
+	for(int i=0;i<mun.numUpdates();i++) {
+	    UpdateNode un=mun.getUpdate(i);
+	    for (int j=0;j<un.numUpdates();j++) {
+		Updates update=un.getUpdate(j);
+		//Abstract updates don't have concrete interference1
+		if (update.isAbstract()) 
+		    continue;
+		
+		DNFRule drule=satisfy?r.getDNFNegGuardExpr():r.getDNFGuardExpr();
+		Descriptor updated_des=update.getDescriptor();
+		assert updated_des!=null;
+
+		// See if the update interferes with the inclusion
+		// condition for the rule
+		if (r.getInclusion().usesDescriptor(updated_des)) {
+		    boolean ok=false;
+
+		    /* If the update is for this rule, and the effect
+                       is the intended effect, and the update only
+                       effects one binding, then the abstract repair
+                       node already models the action of this
+                       update. */
+
+		    if ((un.getRule()==r)&& 
+			(((mun.op==MultUpdateNode.ADD)&&satisfy)
+			 ||((mun.op==MultUpdateNode.REMOVE)&&!satisfy)
+			 ||(mun.op==MultUpdateNode.MODIFY))) {
+			Inclusion inclusion=r.getInclusion();
+			if (inclusion instanceof RelationInclusion) {
+			    RelationInclusion ri=(RelationInclusion)inclusion;
+			    if ((!testdisjoint(update,r,ri.getLeftExpr()))&&
+				(!testdisjoint(update,r,ri.getRightExpr())))
+				ok=true;
+			} else if (inclusion instanceof SetInclusion) {
+			    SetInclusion si=(SetInclusion)inclusion;
+			    if (!testdisjoint(update,r,si.getExpr()))
+				ok=true;
+			} else throw new Error();
+		    }
+
+
+		    if (!ok) {
+			if (satisfy) {
+			    /** Check to see if the update definitely falsifies r, thus
+			     * can't accidentally satisfy it r. */
+			    if (interferesinclusion(un, update, r)) 
+				return true;
+			} else
+			    return true; /* Interferes with inclusion condition */
+		    }
+		}
+		
+		for(int k=0;k<drule.size();k++) {
+		    RuleConjunction rconj=drule.get(k);
+		    for(int l=0;l<rconj.size();l++) {
+			DNFExpr dexpr=rconj.get(l);
+			/* See if update interferes w/ dexpr */
+			if ((un.getRule()==r)&&
+			    (((mun.op==MultUpdateNode.ADD)&&satisfy)
+			     ||((mun.op==MultUpdateNode.REMOVE)&&!satisfy)
+			     ||(mun.op==MultUpdateNode.MODIFY))) {
+			    if (!testdisjoint(update,r,dexpr.getExpr()))
+				continue; /* Update is specific to
+                                             given binding of the
+                                             rule, and effect is the
+                                             intended one, so we're
+                                             okay */
+			}
+			if (interferes(update,dexpr))
+			    return true;
+		    }
+		}	    
+	    }
+	}
+	return false;
+    }
+
+    /** This method tries to show that if the Update update from the
+     *  UpdateNode un changes the value of the inclusion constraint
+     * that it falsifies the guard of model definition rule. */
+    
+    static private boolean interferesinclusion(UpdateNode un, Updates update, Rule r) {
 	Descriptor updated_des=update.getDescriptor();
 	Inclusion inclusion=r.getInclusion();
 	if (inclusion instanceof RelationInclusion) {
 	    RelationInclusion ri=(RelationInclusion)inclusion;
-	    if (ri.getLeftExpr().usesDescriptor(updated_des)&&interferesinclusion(un,update,r,ri.getLeftExpr()))
+	    if (ri.getLeftExpr().usesDescriptor(updated_des)
+		&&searchinterfere(un,update,r,ri.getLeftExpr()))
 		return true;
-	    if (ri.getRightExpr().usesDescriptor(updated_des)&&interferesinclusion(un,update,r,ri.getRightExpr()))
+	    if (ri.getRightExpr().usesDescriptor(updated_des)
+		&&searchinterfere(un,update,r,ri.getRightExpr()))
 		return true;
 	} else if (inclusion instanceof SetInclusion) {
 	    SetInclusion si=(SetInclusion)inclusion;
-	    if (si.getExpr().usesDescriptor(updated_des)&&interferesinclusion(un,update,r,si.getExpr()))
+	    if (si.getExpr().usesDescriptor(updated_des)
+		&&searchinterfere(un,update,r,si.getExpr()))
 		return true;
 	} else throw new Error();
 	return false;
     }
 
-    static public boolean interferesinclusion(UpdateNode un, Updates update, Rule r, Expr inclusionexpr) {
+    /** This method finds all instances of a field or global that an
+     * update may modify, and builds a variable correspondance */
+
+    static private boolean searchinterfere(UpdateNode un, Updates update, Rule r, Expr inclusionexpr) {
 	Descriptor updated_des=update.getDescriptor();
 	if (updated_des instanceof FieldDescriptor) {
 	    /* Build variable correspondance */
@@ -64,7 +161,10 @@ public class ConcreteInterferes {
 	return false;
     }
 
-    static public boolean interferesinclusion(UpdateNode un, Rule r, VarDescriptor dvd, VarDescriptor uvd) {
+    /** This method tries to show that if dvd=uvd, then the update un
+     *  must falsify the rule r. */
+
+    static private boolean interferesinclusion(UpdateNode un, Rule r, VarDescriptor dvd, VarDescriptor uvd) {
 	DNFRule negrule=r.getDNFNegGuardExpr();
 	HashMap remap=new HashMap();
 	remap.put(dvd,uvd);
@@ -95,8 +195,6 @@ public class ConcreteInterferes {
 		    
 		    if (!varok)
 			continue;
-
-
 
 		    Opcode op=expr.getOpcode();
 		    op=Opcode.translateOpcode(dexpr.getNegation(),op);
@@ -151,90 +249,25 @@ public class ConcreteInterferes {
 	return true;
     }
 
-    /** Returns true if the data structure updates performed by mun may increase (or decrease if satisfy=false)
-     * the scope of the model definition rule r. */
+    /** This method checks whether the update effects only the
+     *  intended binding for the model definition rule. */
 
-    public boolean interferes(MultUpdateNode mun, Rule r, boolean satisfy) {
-	if (!initialinterferes(mun,r,satisfy)) /* Can't falsify a rule adding something to a set on an initial addition*/
-	    return false;
-	for(int i=0;i<mun.numUpdates();i++) {
-	    UpdateNode un=mun.getUpdate(i);
-	    for (int j=0;j<un.numUpdates();j++) {
-		Updates update=un.getUpdate(j);
-		
-		DNFRule drule=r.getDNFGuardExpr();
-		if (satisfy)
-		    drule=r.getDNFNegGuardExpr();
-
-
-		if (!update.isAbstract()) {
-		    Descriptor updated_des=update.getDescriptor();
-		    assert updated_des!=null;
-		    /* Update is local to this rule, and the effect is intentional */
-		    /* If we're adding something, a side effect could be to falsify some other binding
-		       If we're removing something, there is no similar side effect */
-
-		    /* ISSUE: Rules need to be updated if we allow concrete expression of the form x.f.g */
-		    if (r.getInclusion().usesDescriptor(updated_des)) {
-			boolean ok=false;
-			if ((un.getRule()==r)&&
-			    (((mun.op==MultUpdateNode.ADD)&&satisfy)
-			     ||((mun.op==MultUpdateNode.REMOVE)&&!satisfy)
-			     ||(mun.op==MultUpdateNode.MODIFY))) {
-			    Inclusion inclusion=r.getInclusion();
-			    if (inclusion instanceof RelationInclusion) {
-				RelationInclusion ri=(RelationInclusion)inclusion;
-				if ((!interferes(update,r,ri.getLeftExpr()))&&
-				    (!interferes(update,r,ri.getRightExpr())))
-				    ok=true;
-			    } else if (inclusion instanceof SetInclusion) {
-				SetInclusion si=(SetInclusion)inclusion;
-				if (!interferes(update,r,si.getExpr()))
-				    ok=true;
-			    } else throw new Error();
-			}
-			if (!ok) {
-			    if (satisfy) {
-				if (interferesinclusion(un, update, r))
-				    return true;
-			    } else
-				return true; /* Interferes with inclusion condition */
-			}
-		    }
-		    
-		    for(int k=0;k<drule.size();k++) {
-			RuleConjunction rconj=drule.get(k);
-			for(int l=0;l<rconj.size();l++) {
-			    DNFExpr dexpr=rconj.get(l);
-			    /* See if update interferes w/ dexpr */
-			    if ((un.getRule()==r)&&
-				(((mun.op==MultUpdateNode.ADD)&&satisfy)
-				 ||((mun.op==MultUpdateNode.REMOVE)&&!satisfy)
-				 ||(mun.op==MultUpdateNode.MODIFY))) {
-				if (!interferes(update,r,dexpr.getExpr()))
-				    continue; /* unique state - we're okay */
-			    }
-			    if (interferes(un,update, r,dexpr))
-				return true;
-			}
-		    }
-		}
-	    }
-	}
-	return false;
-    }
-
-    private boolean interferes(Updates u, Rule r, Expr e) {
+    private boolean testdisjoint(Updates u, Rule r, Expr e) {
+	// find all exprs that may be be effected by update
 	Set exprs=e.useDescriptor(u.getDescriptor());
 	for(Iterator eit=exprs.iterator();eit.hasNext();) {
 	    Expr e2=(Expr)eit.next();
-	    if (mayinterfere(u,r,e2))
+	    if (testdisjointness(u,r,e2))
 		return true;
 	}
 	return false;
     }
 
-    private boolean mayinterfere(Updates u, Rule r, Expr e) {
+    /** This method tries to show that the modification only effects
+     * one binding of the model definition rule, and thus has no
+     * unintended side effects. */
+
+    private boolean testdisjointness(Updates u, Rule r, Expr e) {
 	// Note: rule of u must be r
 
 	Expr update_e=u.getLeftExpr();
@@ -244,6 +277,8 @@ public class ConcreteInterferes {
 	    return false; /* Can't accidentally interfere with other bindings if there aren't any! */
 
 	boolean firstfield=true;
+	
+
 	while(true) {
 	    if (update_e instanceof CastExpr)
 		update_e=((CastExpr)update_e).getExpr();
@@ -285,9 +320,10 @@ public class ConcreteInterferes {
 		return true;
 	    } else return true;
 	}
-
     }
 
+    /** This method returns the quantifier that defines the quantifier
+     * variable vd. */
     static private Quantifier getQuantifier(Quantifiers qs, VarDescriptor vd) {
 	for (int i=0;i<qs.numQuantifiers();i++) {
 	    Quantifier q=qs.getQuantifier(i);
@@ -308,13 +344,14 @@ public class ConcreteInterferes {
 	return null;
     }
     
+    
+    /** This function checks to see if an update is only performed if
+     * a given set is empty, and the algorithm is computing whether
+     * the update may falsify a rule that adds something to the set */
+
     static private boolean initialinterferes(MultUpdateNode mun, Rule r, boolean satisfy) {
 	AbstractRepair ar=mun.getRepair();
-	if (satisfy)
-	    return true;
-	if (ar==null)
-	    return true;
-	if (ar.getType()==AbstractRepair.ADDTOSET) {
+	if ((!satisfy)&&(ar!=null)&&(ar.getType()==AbstractRepair.ADDTOSET)) {
 	    if (!r.getInclusion().getTargetDescriptors().contains(ar.getDescriptor()))
 		return true;
 	    boolean negated=ar.getPredicate().isNegated();
@@ -325,26 +362,25 @@ public class ConcreteInterferes {
 	    if (ep.getType()!=ExprPredicate.SIZE)
 		return true;
 	    Opcode op=Opcode.translateOpcode(negated,ep.getOp());
-	    
+   
 	    if (((op==Opcode.EQ)&&(ep.rightSize()==1))|| //(=1)
 		((op==Opcode.NE)&&(ep.rightSize()==0))|| //(!=0)
 		((op==Opcode.GT)&&(ep.rightSize()==0))|| //(>0)
 		((op==Opcode.GE)&&(ep.rightSize()==1))) //(>=1)
 		return false;
 	}
-	
 	return true;
-
-	
     }
 
-    static private boolean interferes(UpdateNode un,Updates update, Rule r,DNFExpr dexpr) {
+    static private boolean interferes(Updates update, DNFExpr dexpr) {
 	Descriptor descriptor=update.getDescriptor();
+	/* If the DNFExpr expr doesn't use the updated descriptor,
+	   there is no interference. */
 	if (!dexpr.getExpr().usesDescriptor(descriptor))
 	    return false;
 	    
-	/* We need to pair the variables */
 	if (update.isExpr()) {
+	    /* We need to pair the variables */
 	    Set vars=update.getRightExpr().freeVars();
 	    Opcode op1=update.getOpcode();
 	    Expr lexpr1=update.getLeftExpr();
@@ -353,8 +389,8 @@ public class ConcreteInterferes {
 	    if (vars!=null)
 		for(Iterator it=vars.iterator();it.hasNext();) {
 		    VarDescriptor vd=(VarDescriptor) it.next();
+		    /* VarDescriptor isn't a global */
 		    if (!vd.isGlobal()) {
-			/* VarDescriptor isn't a global */
 			if (update.getVar()!=vd) {
 			    good=false;
 			    break;
@@ -368,24 +404,21 @@ public class ConcreteInterferes {
 		Opcode op2=expr.getOpcode();
 		op2=Opcode.translateOpcode(dexpr.getNegation(),op2);
 
-		good=true;
-		vars=rexpr2.freeVars();
 		VarDescriptor leftdescriptor=null;
-		if (lexpr2 instanceof VarExpr)
-		    leftdescriptor=((VarExpr)lexpr2).getVar();
-		else if (lexpr2 instanceof DotExpr) {
+		{
 		    Expr e=lexpr2;
-		    do {
+		    while(!(e instanceof VarExpr)) {
 			for(;e instanceof DotExpr;e=((DotExpr)e).getExpr()) ;
 			if (e instanceof VarExpr)
 			    break;
 			if (e instanceof CastExpr)
 			    e=((CastExpr)e).getExpr();
 			else throw new Error("Bad Expr Type:"+e.name());
-		    } while (true);
+		    }
 		    leftdescriptor=((VarExpr)e).getVar();
-		} else throw new Error("Bad Expr");
-		
+		}
+
+		vars=rexpr2.freeVars();
 		if (vars!=null)
 		    for(Iterator it=vars.iterator();it.hasNext();) {
 			VarDescriptor vd=(VarDescriptor) it.next();
@@ -397,6 +430,8 @@ public class ConcreteInterferes {
 			    }
 			}
 		    }
+
+
 		if (good) {
 		    HashMap remap=new HashMap();
 		    remap.put(update.getVar(),leftdescriptor);

@@ -78,12 +78,6 @@ public class OpExpr extends Expr {
 	return rightfunctions;
     }
 
-    public void findmatch(Descriptor d, Set  s) {
-	left.findmatch(d,s);
-	if (right!=null)
-	    right.findmatch(d,s);
-    }
-
     public static boolean isInt(Expr e) {
 	if (e==null)
 	    return false;
@@ -237,6 +231,12 @@ public class OpExpr extends Expr {
 
     public boolean usesDescriptor(Descriptor d) {
 	return left.usesDescriptor(d)||(right!=null&&right.usesDescriptor(d));
+    }
+
+    public void findmatch(Descriptor d, Set  s) {
+	left.findmatch(d,s);
+	if (right!=null)
+	    right.findmatch(d,s);
     }
 
     public Set useDescriptor(Descriptor d) {
