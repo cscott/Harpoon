@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     java_lang_VMClassLoader
  * Method:    defineClass
- * Signature: (Ljava/lang/ClassLoader;Ljava/lang/String;[BII)Ljava/lang/Class;
+ * Signature: (Ljava/lang/ClassLoader;Ljava/lang/String;[BIILjava/security/ProtectionDomain;)Ljava/lang/Class;
  */
 JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_defineClass
-  (JNIEnv *, jclass, jobject, jstring, jbyteArray, jint, jint);
+  (JNIEnv *, jclass, jobject, jstring, jbyteArray, jint, jint, jobject);
 
 /*
  * Class:     java_lang_VMClassLoader
@@ -22,6 +22,14 @@ JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_defineClass
  */
 JNIEXPORT void JNICALL Java_java_lang_VMClassLoader_resolveClass
   (JNIEnv *, jclass, jclass);
+
+/*
+ * Class:     java_lang_VMClassLoader
+ * Method:    loadClass
+ * Signature: (Ljava/lang/String;Z)Ljava/lang/Class;
+ */
+JNIEXPORT jclass JNICALL Java_java_lang_VMClassLoader_loadClass
+  (JNIEnv *, jclass, jstring, jboolean);
 
 /*
  * Class:     java_lang_VMClassLoader

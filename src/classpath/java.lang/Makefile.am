@@ -11,9 +11,9 @@ libjavalang_la_SOURCES = \
 	java_lang_Runtime.h \
 	java_lang_Thread.h \
 	java_lang_Throwable.h \
-	java_lang_VMClassLoader.h \
+	java_lang_VMClassLoader.c java_lang_VMClassLoader.h \
 	java_lang_VMObject.c java_lang_VMObject.h \
-	java_lang_VMSecurityManager.h \
+	java_lang_VMSecurityManager.c java_lang_VMSecurityManager.h \
 	java_lang_VMSystem.c java_lang_VMSystem.h
 
 JAVASRC = \

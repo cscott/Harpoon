@@ -53,6 +53,7 @@ import java.util.HashMap;
  * @author Mark Wielaard <mark@klomp.org>
  * @author Eric Blake <ebb9@email.byu.edu>
  */
+// hacked a little by c-scott
 final class VMClassLoader
 {
   /**
@@ -71,9 +72,12 @@ final class VMClassLoader
    * {@link #defineClass(ClassLoader, String, byte[], int, int, ProtectionDomain)}
    *   instead.
    */
-  static final native Class defineClass(ClassLoader cl, String name,
+  static final Class defineClass(ClassLoader cl, String name,
                                         byte[] data, int offset, int len)
-    throws ClassFormatError;
+      throws ClassFormatError {
+      return defineClass(cl, name, data, offset, len,
+			 ClassLoader.defaultProtectionDomain);
+  }
 
   /**
    * Helper to define a class using a string of bytes. This assumes that
@@ -91,13 +95,15 @@ final class VMClassLoader
    * @return the class that was defined
    * @throws ClassFormatError if data is not in proper classfile format
    */
-  static final Class defineClass(ClassLoader cl, String name,
-                                 byte[] data, int offset, int len,
-                                 ProtectionDomain pd)
-    throws ClassFormatError
+  static final native Class defineClass(ClassLoader cl, String name,
+					byte[] data, int offset, int len,
+					ProtectionDomain pd)
+      throws ClassFormatError;
+    /*
   {
     return defineClass(cl, name, data, offset, len);
   }
+    */
 
   /**
    * Helper to resolve all references to other classes from this class.
@@ -115,11 +121,13 @@ final class VMClassLoader
    * @param resolve whether to resolve it
    * @return the class, loaded by the bootstrap classloader
    */
-  static final Class loadClass(String name, boolean resolve)
-    throws ClassNotFoundException
+  static final native Class loadClass(String name, boolean resolve)
+      throws ClassNotFoundException;
+    /*
   {
     return Class.forName(name, resolve, ClassLoader.getSystemClassLoader());
   }
+    */
 
   /**
    * Helper to load a resource from the bootstrap class loader.
