@@ -77,7 +77,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.84 2000-07-02 04:15:37 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.85 2000-07-06 03:26:12 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -430,23 +430,89 @@ static class TranslationVisitor extends LowQuadVisitor {
 
 	addStmt(s0);
     
-	for (int i=0; i<q.value().length; i++) {
-	    Exp c = mapconst(q, q.value()[i], q.type()).unEx(m_tf);
-	    MEM m = makeMEM(q, q.type(), _TEMP(q, dl, nextPtr));
-	    s0 = new MOVE(m_tf, q, m, c);
-	    s1 = new MOVE
-		(m_tf, q, 
-		 _TEMP(q, dl, nextPtr), 
-		 new BINOP
-		 (m_tf, q, Type.POINTER, Bop.ADD, 
-		  _TEMP(q, dl, nextPtr), 
-		  m_rtb.arrayOffset
-		  (m_tf, q, treeDeriv, arrayType,
-		   new Translation.Ex(new CONST(m_tf, q, 1))).unEx(m_tf)
-		  ));
+	Object[] qvalue = q.value();
+	if (qvalue.length <= 5 /* magic number */ || !q.type().isPrimitive()) {
+	    // explicit element-by-element initialization
+	    for (int i=0; i<qvalue.length; i++) {
+		Exp c = mapconst(q, qvalue[i], q.type()).unEx(m_tf);
+		MEM m = makeMEM(q, q.type(), _TEMP(q, dl, nextPtr));
+		s0 = new MOVE(m_tf, q, m, c);
+		s1 = new MOVE
+		    (m_tf, q, 
+		     _TEMP(q, dl, nextPtr), 
+		     new BINOP
+		     (m_tf, q, Type.POINTER, Bop.ADD, 
+		      _TEMP(q, dl, nextPtr), 
+		      m_rtb.arrayOffset
+		      (m_tf, q, treeDeriv, arrayType,
+		       new Translation.Ex(new CONST(m_tf, q, 1))).unEx(m_tf)
+		      ));
+		
+		addStmt(new SEQ(m_tf, q, s0, s1));
+	    }
+	} else {
+	    // initialize array from a constant table.
 
-	    addStmt(new SEQ(m_tf, q, s0, s1));
+	    // create labels for our constant table
+	    Label constTblStart = new Label(), constTblEnd = new Label();
+	    // and labels for loop
+	    Label looptop=new Label(),looptst=new Label(),loopend=new Label();
+	    // create a pointer into our constant table...
+	    Temp constPtr = new Temp(m_tf.tempFactory(), "cnst");
+	    // for (constPtr=constTblStart; constPtr < constTblEnd; constPtr++)
+	    // loop header:
+	    addStmt(new MOVE
+		    (m_tf, q,
+		     _TEMP(q, HClass.Void, constPtr),
+		     new NAME(m_tf, q, constTblStart)));
+	    addStmt(new JUMP(m_tf, q, looptst));
+	    addStmt(new LABEL(m_tf, q, looptop, false));
+	    // loop body: { *nextptr = *constPtr; }
+	    addStmt(new MOVE
+		    (m_tf, q,
+		     makeMEM(q, q.type(), _TEMP(q, dl, nextPtr)),
+		     makeMEM(q, q.type(), _TEMP(q, HClass.Void, constPtr))));
+	    // loop increment:
+	    addStmt(new MOVE
+		    (m_tf, q,
+		     _TEMP(q, dl, nextPtr),
+		     new BINOP
+		     (m_tf, q, Type.POINTER, Bop.ADD,
+		      _TEMP(q, dl, nextPtr),
+		      m_rtb.arrayOffset
+		      (m_tf, q, treeDeriv, arrayType,
+		       new Translation.Ex(new CONST(m_tf, q, 1))).unEx(m_tf)
+		      )));
+	    addStmt(new MOVE
+		    (m_tf, q,
+		     _TEMP(q, HClass.Void, constPtr),
+		     new BINOP
+		     (m_tf, q, Type.POINTER, Bop.ADD,
+		      _TEMP(q, HClass.Void, constPtr),
+		      new CONST(m_tf, q, sizeof(q.type())))));
+	    // loop test:
+	    addStmt(new LABEL(m_tf, q, looptst, false));
+	    addStmt(new CJUMP
+		    (m_tf, q,
+		     new BINOP
+		     (m_tf, q, Type.POINTER, Bop.CMPLE,
+		      _TEMP(q, HClass.Void, constPtr),
+		      new NAME(m_tf, q, constTblEnd)),
+		     looptop/*iftrue*/, loopend/*iffalse*/));
+	    // okay, now output constant data table.
+	    addStmt(new ALIGN(m_tf, q, sizeof(q.type())));
+	    addStmt(new LABEL(m_tf, q, constTblStart, false));
+	    Util.assert(qvalue.length>0);
+	    for (int i=0; i<qvalue.length; i++) {
+		if (i==qvalue.length-1)
+		    addStmt(new LABEL(m_tf, q, constTblEnd, false));
+		addStmt(new DATUM(m_tf, q, _CONST(q, q.type(), qvalue[i])));
+	    }
+	    // and jump back here when loop's done.
+	    addStmt(new ALIGN(m_tf, q, 8/* safe value for alignment */));
+	    addStmt(new LABEL(m_tf, q, loopend, false));
 	}
+	// done.
     }
 
     public void visit(harpoon.IR.Quads.CJMP q) { 
@@ -608,6 +674,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 				 new CONST(m_tf, q, pointersAreLong?3:2)))),
 		     targets));
 	    // and lastly, emit the jump table.
+	    addStmt(new ALIGN(m_tf, q, 8/* safe alignment*/));
 	    addStmt(new LABEL(m_tf, q, l3, false));
 	    int expected=min_key;
 	    for (Iterator it=cases.entrySet().iterator(); it.hasNext(); ) {
@@ -618,6 +685,8 @@ static class TranslationVisitor extends LowQuadVisitor {
 		    addStmt(new DATUM(m_tf, q, new NAME(m_tf, q, deflabel)));
 		addStmt(new DATUM(m_tf, q, new NAME(m_tf, q, thislabel)));
 	    }
+	    // align for code again.
+	    addStmt(new ALIGN(m_tf, q, 8/* safe alignment*/));
 	    // done
 	} else {
 	    // BINARY-SEARCH THROUGH JUMP TABLE
@@ -1134,6 +1203,40 @@ static class TranslationVisitor extends LowQuadVisitor {
 	}
     }
 
+    /** Return the sizeof a given type. */
+    private int sizeof(HClass type) {
+	if (type==HClass.Boolean || type==HClass.Byte) return 1;
+	if (type==HClass.Char || type==HClass.Short) return 2;
+	if (type==HClass.Int || type==HClass.Float) return 4;
+	if (type==HClass.Long|| type==HClass.Double) return 8;
+	return Type.isDoubleWord(m_tf, Type.POINTER) ? 8 : 4;
+    }
+    /** map constant value into precisely-typed CONST expression */
+    // (string initializers are not allowed)
+    private CONST _CONST(HCodeElement src, HClass type, Object value) {
+	if (type==HClass.Void) return new CONST(m_tf, src); // null constant
+	// sub-int types seen in ARRAYINIT
+	if (type==HClass.Boolean)
+	    return new CONST(m_tf, src, 8/*booleans are bytes*/, false,
+			     ((Boolean)value).booleanValue()?1:0);
+	if (type==HClass.Byte)
+	    return new CONST(m_tf, src, 8, true, ((Byte)value).intValue());
+	if (type==HClass.Char)
+	    return new CONST(m_tf, src, 16, false, (int)
+			     ((Character)value).charValue());
+	if (type==HClass.Short)
+	    return new CONST(m_tf, src, 16, true, ((Short)value).intValue());
+	if (type==HClass.Int)
+	    return new CONST(m_tf, src, ((Integer)value).intValue());
+	if (type==HClass.Long)
+	    return new CONST(m_tf, src, ((Long)value).longValue());
+	if (type==HClass.Float)
+	    return new CONST(m_tf, src, ((Float)value).floatValue());
+	if (type==HClass.Double)
+	    return new CONST(m_tf, src, ((Double)value).doubleValue());
+	throw new Error("Bad type for CONST: " + type);
+    }
+    /** map constant value into (non-precisely-typed) CONST expression */
     private Translation.Exp mapconst(HCodeElement src,
 				     Object value, HClass type) {
 	Exp constant;
