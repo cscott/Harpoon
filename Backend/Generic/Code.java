@@ -21,7 +21,7 @@ import java.util.*;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.2 1999-03-08 09:01:55 andyb Exp $
+ * @version $Id: Code.java,v 1.1.2.3 1999-04-05 05:21:00 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -77,13 +77,13 @@ public abstract class Code extends HCode {
     public HCodeElement[] getElements() { return instrs; }
   
     /** Returns an enumeration of the instructions in this codeview. <BR>
-     *  XXX - NOT YET IMPLEMENTED.
      *
      *  @return         An Enumeration containing the Instrs from this
      *                  codeview.
      */
     public Enumeration getElementsE() {
-        return null;
+        // return null;
+	return new harpoon.Util.ArrayEnumerator(instrs);
     }
 
     /** Returns an array factory to create the instruction elements
