@@ -31,6 +31,8 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
 
+import java.io.PrintStream;
+
 /**
  * <code>WriteBarrierQuadPass</code> takes code in Quad form and
  * inserts a fake call to a write barrier that is later replaced with
@@ -41,7 +43,7 @@ import harpoon.Util.Util;
  * about the number of times the write-barrier is called.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierQuadPass.java,v 1.1.2.1 2001-08-30 23:08:15 kkz Exp $
+ * @version $Id: WriteBarrierQuadPass.java,v 1.1.2.2 2001-10-01 20:34:56 kkz Exp $
  */
 public class WriteBarrierQuadPass extends 
     harpoon.Analysis.Transformation.MethodMutator {
@@ -80,7 +82,6 @@ public class WriteBarrierQuadPass extends
 	for (int i=0; i<allquads.length; i++)
 	    allquads[i].accept(qv);
 	// yay, done!
-	//hc.print(new java.io.PrintWriter(System.out), null);
 	return hc;
     }
 
@@ -110,8 +111,9 @@ public class WriteBarrierQuadPass extends
      *  any effect.
      */
     public HCodeFactory statsCodeFactory(Frame f, HCodeFactory hcf,
-					 ClassHierarchy ch) {
-	this.wbs = new WriteBarrierStats(f, hcf, ch, arraySC, fieldSC);
+					 ClassHierarchy ch,
+					 PrintStream out) {
+	this.wbs = new WriteBarrierStats(f, hcf, ch, arraySC, fieldSC, out);
 	return wbs.codeFactory();
     }
 
