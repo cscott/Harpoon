@@ -45,7 +45,7 @@ public class Client extends Node {
 		cs = cm.setupIDClient(name);
 		connectionMade = true;
 	    } catch (org.omg.CosNaming.NamingContextPackage.NotFound e){
-		System.out.println("ATRClient/CORBA Exception: No matching server by the name '"+name+"'"+
+		System.out.println("Client/CORBA Exception: No matching server by the name '"+name+"'"+
 				   " was found.\n  Waiting and trying again. (Try #"+count+"/"+triesTillFail+")");
 		try {
 		    Thread.currentThread().sleep(timeoutLength);
@@ -62,7 +62,7 @@ public class Client extends Node {
 
 	if (!connectionMade) {
 	    int minutes = (int)timeoutLength*triesTillFail/1000/60;
-	    throw new Error("ATR Client was unable to find a matching server after "+minutes+" minutes. Giving up.");
+	    throw new Error("Client was unable to find a matching server after "+minutes+" minutes. Giving up.");
 	}
     }
 
