@@ -13,6 +13,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.NoSuchClassException;
+import harpoon.ClassFile.Relinker;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Tree.Data;
 import harpoon.IR.Assem.Instr;
@@ -70,7 +71,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.100 2000-10-24 04:59:23 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.101 2000-11-02 23:05:44 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -85,6 +86,7 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean QUIET = false;
     static boolean OPTIMIZE = false;
     static boolean LOOPOPTIMIZE = false;
+    static boolean USE_OLD_CLINIT_STRATEGY = false;
 
     static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     static HClass  singleClass = null; // for testing single classes
@@ -94,13 +96,12 @@ public class SAMain extends harpoon.IR.Registration {
     static final int PRECISEC_BACKEND = 3;
     static int     BACKEND = STRONGARM_BACKEND;
     
-    static Linker linker = Loader.systemLinker;
+    static Linker linker = null; // can specify on the command-line.
 
     static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);
         
     static String className;
-    static String classHierarchyFilename;
 
     static String rootSetFilename;
 
@@ -125,7 +126,7 @@ public class SAMain extends harpoon.IR.Registration {
     public static void main(String[] args) {
 	hcf = // default code factory.
 	    new harpoon.ClassFile.CachingCodeFactory(
-	    harpoon.IR.Quads.QuadNoSSA.codeFactory()
+	    harpoon.IR.Quads.QuadWithTry.codeFactory()
 	    );
 
 	parseOpts(args);
@@ -140,12 +141,6 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf=harpoon.IR.Quads.ThreadInliner.codeFactory(hcf,SAMain.startset, SAMain.joinset);
 	
 
-	if (OPTIMIZE) {
-	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	}
-
 	HClass hcl = linker.forName(className);
 	HMethod hm[] = hcl.getDeclaredMethods();
 	HMethod mainM = null;
@@ -159,7 +154,7 @@ public class SAMain extends harpoon.IR.Registration {
 	Util.assert(mainM != null, "Class " + className + 
 		    " has no main method");
 
-	if (classHierarchy == null) {
+	{
 	    // XXX: this is non-ideal!  Really, we want to use a non-static
 	    // method in Frame.getRuntime() to initialize the class hierarchy
 	    // roots with.  *BUT* Frame requires a class hierarchy in its
@@ -177,15 +172,44 @@ public class SAMain extends harpoon.IR.Registration {
 		System.err.println("Error reading "+rootSetFilename+".");
 		System.exit(1);
 	    }
+	    // okay, we've got the roots, make a rough class hierarchy.
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
-	}
-	if (!OPTIMIZE) { // needs to be in SSx form for callgraphimpl2
+	    // use the rough class hierarchy to devirtualize as many call sites
+	    // as possible.
+	    hcf=new harpoon.Analysis.Quads.Nonvirtualize
+		(hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy))
+		.codeFactory();
+	    if (!USE_OLD_CLINIT_STRATEGY) {
+		// transform the class initializers using the class hierarchy.
+		java.util.Properties p = new java.util.Properties();
+		try {
+		    // XXX: same chicken-and-egg problem as before.  We really
+		    // want to get the safe-set from the Runtime (in the Frame)
+		    // but the Frame hasn't been constructed yet.[CSA 2-Nov-00]
+		    p.load(new java.io.FileInputStream
+			   ("Support/init-safe-set"));
+		} catch (java.io.IOException ex) { System.err.println(ex); }
+		hcf=new harpoon.Analysis.Quads.InitializerTransform
+		    (hcf, classHierarchy, linker, p).codeFactory();
+		// recompute the hierarchy after transformation.
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    }
+	} // don't need the root set anymore.
+
+	if (OPTIMIZE) {
 	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	}
-	//callGraph = new CallGraphImpl(classHierarchy, hcf);//less precise
-	callGraph = new CallGraphImpl2(classHierarchy, hcf);
+
+	if (true) {
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    callGraph = new CallGraphImpl2(classHierarchy, hcf);
+	} else {
+	    callGraph = new CallGraphImpl(classHierarchy, hcf);//less precise
+	}
 
 	switch(BACKEND) {
 	case STRONGARM_BACKEND:
@@ -228,20 +252,6 @@ public class SAMain extends harpoon.IR.Registration {
 	HCodeFactory sahcf = frame.getCodeFactory(hcf);
 	if (sahcf!=null)
 	    sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
-
-	if (classHierarchyFilename != null) {
-	    try {
-		ObjectOutputStream mOS = new
-		    ObjectOutputStream(new FileOutputStream
-				       (classHierarchyFilename));
-		mOS.writeObject(classHierarchy);
-		mOS.close();
-	    } catch (IOException e) {
-		System.err.println("Error outputting class "+
-				   "hierarchy to " + 
-				   classHierarchyFilename);
-	    }
-	}
 
 	if (LOCAL_REG_ALLOC) 
 	    regAllocFactory = RegAlloc.LOCAL;
@@ -543,32 +553,12 @@ public class SAMain extends harpoon.IR.Registration {
     
     protected static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "m:i:s:b:c:o:DOPFHR::LlABhq1::C:r:");
+	Getopt g = new Getopt("SAMain", args, "i:s:b:c:o:IDOPFHR::LlABhq1::C:r:");
 	
 	int c;
 	String arg;
 	while((c = g.getopt()) != -1) {
 	    switch(c) {
-	    case 'm': // serialized ClassHierarchy
-		arg = g.getOptarg();
-		classHierarchyFilename = arg;
-		try {
-		    ObjectInputStream mIS = 
-			new ObjectInputStream
-			(new BufferedInputStream
-			 (new FileInputStream(arg)));
-		    classHierarchy = (ClassHierarchy) mIS.readObject();
-		} catch (OptionalDataException e) {
-		} catch (ClassNotFoundException e) {
-		} catch (IOException e) {
- 		    // something went wrong; rebuild the class
-		    // hierarchy and write it later.
-		    classHierarchy = null;
-		    System.err.println("Error reading class "+
-				       "hierarchy from " + 
-				       classHierarchyFilename);
-		}
-		break;
 	    case 's':
 		arg=g.getOptarg();
 		try {
@@ -667,6 +657,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'r':
 		rootSetFilename = g.getOptarg();
 		break;
+	    case 'I':
+		USE_OLD_CLINIT_STRATEGY = true;
+		break;
 	    case '?':
 	    case 'h':
 		System.out.println(usage);
@@ -681,22 +674,21 @@ public class SAMain extends harpoon.IR.Registration {
 		System.exit(1);
 	    }
 	}
+	if (linker==null) {
+	    linker = Loader.systemLinker;
+	    if (!USE_OLD_CLINIT_STRATEGY)
+		linker = new Relinker(linker);
+	}
     }
 
     static final String usage = 
-	"usage is: [-m <mapfile>] -c <class>"+
-	" [-DOPRLABhq] [-o <assembly output directory>]";
+	"usage is: -c <class>"+
+	" [-DOPRLABIhq] [-o <assembly output directory>]";
 
     protected static void printHelp() {
 	out.println("-c <class> (required)");
 	out.println("\tCompile <class>");
 	out.println();
-
-	out.println("-m <file> (optional)");
-	out.println("\tLoads the ClassHierarchy object from <file>.");
-	out.println("\tIn the event of an error loading the object,");
-	out.println("\tconstructs a new ClassHierarchy and stores it");
-	out.println("\tin <file>");
 
 	out.println("-o <dir> (optional)");
 	out.println("\tOutputs the program text to files within <dir>.");
@@ -741,6 +733,9 @@ public class SAMain extends harpoon.IR.Registration {
 
 	out.println("-r <root set file>");
 	out.println("\tAdds additional classes/methods to the root set as specified by <root set file>.");
+
+	out.println("-I");
+	out.println("\tUse old simple-but-not-always-correct class init strategy.");
 
 	out.println("-h");
 	out.println("\tPrints out this help message");
