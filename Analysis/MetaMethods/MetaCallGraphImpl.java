@@ -58,7 +58,7 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.4 2000-03-23 02:48:52 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.5 2000-03-23 03:54:08 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
@@ -69,8 +69,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
     // against errors in other components (ex: ReachingDefs)
     private static final boolean CAUTION = false;
     
-    private final CachingBBConverter bbconv;
-    private final ClassHierarchy ch;
+    private CachingBBConverter bbconv;
+    private ClassHierarchy ch;
 
     /** Creates a <code>MetaCallGraphImpl</code>. It must receive, in its
 	last parameter, the <code>main</code> method of the program. */
@@ -83,6 +83,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	compact();
 	callees1 = null;
 	callees2 = null;
+	ch       = null;
+	bbconv   = null;
 	System.gc();
     }
 
