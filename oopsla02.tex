@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.20 2002-03-23 07:37:32 cananian Exp $
+% $Id: oopsla02.tex,v 1.21 2002-03-23 07:51:18 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -20,6 +20,8 @@
 \newcommand{\meet}{\ensuremath{\sqcap}}
 
 \renewcommand{\floatpagefraction}{0.8}
+\newcommand{\topfigrule}{\vspace*{9.6pt}%
+  \rule{0.88\columnwidth}{0.4pt}\vspace{-10pt} }
 
 \title{\bf Data Size Optimizations for Java Programs}
 
@@ -31,7 +33,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.20 $ $}{$ $Revision: 1.20 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.21 $ $}{$ $Revision: 1.21 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -503,7 +505,7 @@ positive integers are handled correctly.  Our implementation contains
 in addition rules for common special cases, such as multiplication by
 a one-bit quantity, division by constants, or bitfield operations on
 two positive numbers.
-\begin{figure}
+\begin{figure}[tp]
 \begin{eqnarray*}
 -\tuple{M,P} &=& \tuple{P,M}\\
 \tuple{M_l,P_l} + \tuple{M_r,P_r} &=& \tuple{1+\max(M_l,M_r),1+\max(P_l,P_r)}\\
