@@ -5,6 +5,7 @@ package harpoon.Interpret.Tree;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.NoSuchClassException;
 
 import java.lang.reflect.Modifier;
 import java.util.Hashtable;
@@ -13,7 +14,7 @@ import java.util.Hashtable;
  * <code>java.lang.Class</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INClass.java,v 1.1.2.2 1999-08-04 05:52:35 cananian Exp $
+ * @version $Id: INClass.java,v 1.1.2.2.6.1 2000-01-11 12:37:26 cananian Exp $
  */
 public class INClass extends HCLibrary {
     static final void register(StaticState ss) {
@@ -54,7 +55,7 @@ public class INClass extends HCLibrary {
 		String clsname = ss.ref2str((ObjectRef)params[0]);
 		try {
 		    return forClass(ss, HClass.forName(clsname));
-		} catch (NoClassDefFoundError e) {
+		} catch (NoSuchClassException e) {
 		    ObjectRef obj = ss.makeThrowable(HCclassnotfoundE);
 		    throw new InterpretedThrowable(obj, ss);
 		}

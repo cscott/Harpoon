@@ -6,12 +6,13 @@ package harpoon.Interpret.Quads;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.NoSuchClassException;
 
 /**
  * <code>Support</code> provides some native method implementations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Support.java,v 1.1.2.7 1999-11-13 06:25:08 cananian Exp $
+ * @version $Id: Support.java,v 1.1.2.7.2.1 2000-01-11 12:37:26 cananian Exp $
  */
 final class Support extends HCLibrary {
     static final void registerNative(StaticState ss) {
@@ -33,7 +34,7 @@ final class Support extends HCLibrary {
 	try { ss.register(initSystemFD()); } catch (NoSuchMethodError e) { }
 	// JDK 1.2 only
 	try { ss.register(initIDs()); } catch (NoSuchMethodError e) { }
-	try { ss.register(doPrivileged()); } catch (NoClassDefFoundError e) { }
+	try { ss.register(doPrivileged()); } catch (NoSuchClassException e) { }
 	try { ss.register(registerNatives()); } catch (NoSuchMethodError e) { }
     }
 
