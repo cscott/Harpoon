@@ -21,7 +21,7 @@ import java.util.Enumeration;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.5 1999-08-05 15:13:20 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.6 1999-08-05 20:06:46 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -65,14 +65,15 @@ public class Jasmin {
     }
 
     public void outputQuads(PrintStream out,HMethod hm, HCode hc) {
-	Object[] tuple=buildmap(hc);
+        TypeInfo tp=new TypeInfo();
+	Object[] tuple=buildmap(hc,tp);
 	Map map=(Map) tuple[0];
 	out.println("    .limit locals "+((Integer)tuple[1]).toString());
 	//Fix ME
 	//This is wrong....
 	out.println("    .limit stack "+((Integer)tuple[1]).toString());
 	WorkSet done=new WorkSet();
-	Visitor visitor=new Visitor(out, map,hc);
+	Visitor visitor=new Visitor(out, map,hc,tp);
 	Quad start=(Quad)hc.getRootElement();
 	METHOD m=(METHOD)start.next(1);
 	for (int i=1;i<m.nextLength();i++) {
@@ -108,19 +109,108 @@ public class Jasmin {
 	Map tempmap;
 	HashMap labelmap;
 	HCode hc;
-	TypeInfo tm;
+	TypeMap tm;
 
-	Visitor(PrintStream out, Map tempmap, HCode hc) {
+	Visitor(PrintStream out, Map tempmap, HCode hc, TypeMap tm) {
 	    this.out=out;
 	    this.label=0;
 	    this.tempmap=tempmap;
 	    this.hc=hc;
 	    labelmap=new HashMap();
-	    this.tm=new TypeInfo();
+	    this.tm=tm;
 	}
 
 	public void visit(Quad q) {
 	    System.out.println("**********Unhandled quad"+q.toString());
+	}
+
+	public void visit(AGET q) {
+	    String operand="***AGET error";
+
+	    HClass ty = tm.typeMap(hc, q.objectref());
+	    HClass tp=ty.getComponentType();
+	    if (tp==HClass.Boolean)
+		operand="baload";
+	    else if (tp==HClass.Byte)
+		operand="baload";
+	    else if(tp==HClass.Char)
+		operand="caload";
+	    else if (tp==HClass.Short)
+		operand="saload";
+	    else if (tp==HClass.Int)
+		operand="siload";
+	    else if (tp==HClass.Double)
+		operand="daload";
+	    else if (tp==HClass.Float)
+		operand="faload";
+	    else if (tp==HClass.Long)
+		operand="laload";
+	    else
+		operand="aaload";
+
+	    out.println(iflabel(q));
+	    load(q.objectref());
+	    load(q.index());
+	    out.println("    "+operand);
+	    store(q.dst());
+	}
+
+	public void visit(ALENGTH q) {
+	    out.println(iflabel(q));
+	    load(q.objectref());
+	    out.println("    arraylength");
+	    store(q.dst());
+	}
+
+	public void visit(ANEW q) {
+	    out.println(iflabel(q));
+	    for (int i=0;i<q.dimsLength();i++)
+		load(q.dims(i));
+	    out.println("    multianewarray "+q.hclass().getSuperclass().getName().replace('.','/') +" "+q.dimsLength());
+	}
+
+	public void visit(ASET q) {
+	    out.println(iflabel(q));
+	    String operand="***ASET error";
+	    HClass ty = tm.typeMap(hc, q.objectref());
+	    HClass tp=ty.getComponentType();
+	    if (tp==HClass.Boolean)
+		operand="bastore";
+	    else if (tp==HClass.Byte)
+		operand="bastore";
+	    else if(tp==HClass.Char)
+		operand="castore";
+	    else if (tp==HClass.Short)
+		operand="sastore";
+	    else if (tp==HClass.Int)
+		operand="sistore";
+	    else if (tp==HClass.Double)
+		operand="dastore";
+	    else if (tp==HClass.Float)
+		operand="fastore";
+	    else if (tp==HClass.Long)
+		operand="lastore";
+	    else
+		operand="aastore";
+
+	    load(q.objectref());
+	    load(q.index());
+	    load(q.src());
+	    out.println("    "+operand); 
+	}
+
+	public void visit(COMPONENTOF q) {
+	    //kludge
+	    //fix me
+	    out.println(iflabel(q));
+	    TempInfo dest=(TempInfo)tempmap.get(q.objectref());	    
+	    if (dest.stack)
+		out.println("    pop");
+	    dest=(TempInfo)tempmap.get(q.arrayref());
+	    if (dest.stack)
+		out.println("    pop");
+	    out.println("    bipush 1");
+	    store(q.dst());
 	}
 
 	public void visit(METHOD q) {
@@ -156,6 +246,13 @@ public class Jasmin {
 	    }
 	}
 
+	public void visit(INSTANCEOF q) {
+	    out.println(iflabel(q));
+	    load(q.src());
+	    out.println("    instanceof "+q.hclass().getName().replace('.','/'));
+	    store(q.dst());
+	}
+	
 	public void visit(CALL q) {
 	    if (q.isVirtual()&&!q.isInterfaceMethod()) {
 		//virtual method
@@ -224,8 +321,8 @@ public class Jasmin {
 			    +" "+q.field().getDescriptor().replace('.','/'));
 	    }
 	    else {
-		load(q.objectref());
 		out.println(iflabel(q));
+		load(q.objectref());
 		out.println("    getfield "+q.field());
 	    }
 	    store(q.dst());
@@ -246,6 +343,18 @@ public class Jasmin {
 	    out.println("    athrow");
 	}
 
+	public void visit(MONITORENTER q) {
+	    out.println(iflabel(q));
+	    load(q.lock());
+	    out.println("    monitorenter");
+	}
+
+	public void visit(MONITOREXIT q) {
+	    out.println(iflabel(q));
+	    load(q.lock());
+	    out.println("    monitorexit");
+	}
+
 	public void visit(MOVE q) {
 	    out.println(iflabel(q));
 	    load(q.src());
@@ -258,6 +367,16 @@ public class Jasmin {
 	    store(q.dst());
 	}
 
+	public void visit(LABEL q) {
+	    out.println(iflabel(q));
+	    out.println(";"+q.toString());
+	}
+
+	public void visit(NOP q) {
+	    out.println(iflabel(q));
+	    out.println("    nop");
+	}
+
 	public void visit(CONST q) {
 	    out.println(iflabel(q));
 	    if (q.value()!=null) {
@@ -265,7 +384,10 @@ public class Jasmin {
 		if (hclass==HClass.forName("java.lang.String"))
 		    out.println("    ldc "+'"'+q.value().toString()+'"');
 		else
-		    out.println("    ldc "+q.value().toString());
+		    if ((hclass==HClass.Double)||(hclass==HClass.Long))
+			out.println("    ldc2_w "+q.value().toString());
+		    else
+			out.println("    ldc "+q.value().toString());
 	    }
 	    else out.println("    aconst_null");
 	    store(q.dst());
@@ -300,6 +422,39 @@ public class Jasmin {
 	    }
 	    else
 		out.println("    return");
+	}
+
+	public void visit(SET q) {
+	    if (q.objectref()==null) {
+		//Static
+		out.println(iflabel(q));
+		load(q.src());
+		out.println("    putstatic "
+			    +q.field().getDeclaringClass().getName().replace('.','/')
+			    +"/"+q.field().getName().replace('.','/')
+			    +" "+q.field().getDescriptor().replace('.','/'));
+	    }
+	    else {
+		out.println(iflabel(q));
+		load(q.objectref());
+		load(q.src());
+		out.println("    putfield "+q.field());
+	    }
+	}
+
+	public void visit(SWITCH q) {
+	    load(q.index());
+	    out.println("    lookupswitch");
+	    for(int i=0;i<q.keysLength();i++)
+		out.println("    "+q.keys(i)+" : "+labeler(q.next(i)));
+	    out.println("    default : "+labeler(q.next(q.keysLength())));
+	}
+
+	public void visit(TYPECAST q) {
+	    out.println(iflabel(q));
+	    load(q.objectref());
+	    out.println("    checkcast "+q.hclass().getName().replace('.','/'));
+	    out.println("    pop");
 	}
 
 	public void visit(OPER q) {
@@ -374,6 +529,7 @@ public class Jasmin {
 		}
 		out.println("    "+cbase);
 		store(q.dst());
+		break;
 	    default:
 		out.println(q.toString()+" unimplemented");
 	    }
@@ -484,7 +640,7 @@ public class Jasmin {
 	}
     }
 
-    public final Object[] buildmap(final HCode code) {
+    public final Object[] buildmap(final HCode code, TypeMap tp) {
 	Quad q=(Quad)code.getRootElement();
 	METHOD m=(METHOD) q.next(1);
 	UseDef ud=new UseDef();
@@ -508,7 +664,10 @@ public class Jasmin {
 	}
 	for (int i=0;i<alltemp.length;i++) {
 	    if (!stacktemps.containsKey(alltemp[i])) {
+		HClass hclass=tp.typeMap(code,alltemp[i]);
 		stacktemps.put(alltemp[i],new TempInfo(j++));
+		if ((hclass==HClass.Double)||(hclass==HClass.Long))
+		    j++;
 	    }
 	}
 	return new Object[] {stacktemps, new Integer(j)};
