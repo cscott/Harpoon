@@ -1,7 +1,7 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: proposal.tex,v 1.1 1999-03-16 02:00:49 cananian Exp $
+% $Id: proposal.tex,v 1.2 1999-03-20 05:23:34 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[11pt,notitlepage,twocolumn,twoside]{article}
+\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
 
 % A breaking non-space for URLs
 \newcommand{\bsp}{\hspace{0pt}}
@@ -10,15 +10,54 @@
 \newcommand{\phifunction}{$\phi$-function}
 \newcommand{\sigfunction}{$\sigma$-function}
 
-\title{Proposal}
+% the name of the project
+\newcommand{\magic}{\textsc{Magic}}
 
+\title{{\large Master's Thesis proposal for}\\
+\magic: An Optimizing Java Compiler using SSI Form}
 \author{C. Scott Ananian}
+\date{\today \\ $ $Revision: 1.2 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.1 $ $}{$ $Revision: 1.1 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.2 $ $}{$ $Revision: 1.2 $ $}
 
 \maketitle
 
-blah blah blah
+The \magic\ project is an ongoing effort to create intelligent
+compiler technology to address embedded system and hardware design
+issues for safe high-level languages, in particular, Java.
+Current compilers cannot understand enough of the high-level structure
+of a program to do reasonable optimization of threading and memory
+management code, especially when pointers are present. Among the goals
+of the \magic\ project are automatic code partitioning for distributed
+systems, memory allocation strategy conversion for embedded systems,
+and the use of java as a high-level hardware description language.
+
+This thesis concentrates on the code representation used in the
+\magic\ compiler; specifically, on Static Single Information (SSI)
+form, which is introduced as a more general replacement for the
+prevalent SSA form.  SSI form is symmetrical for both forward and
+reverse dataflow analysis, and represents information generated both
+at variable definitions and at branches in control flow.  A rigorous
+definition of minimal SSI form is presented, and algorithms to
+generate this form in time linear to program size are
+presented based on cycle equivalence analysis on the underlying
+control flow graph.  The correctness of these algorithms is proved.
+
+SSI form enables simple and efficient code optimization, with obvious
+benefits over SSA form for constructs (such as null-pointer and
+array-bounds checks) common in Java code.  In addition, a novel
+bitwidth analysis is presented which is suitable for both hardware
+synthesis and code generation for vector units such as Intel's MMX.
+Loop analyses, reverse dataflow analysis, and constraint systems are
+reexamined using SSI form, and a connection to dataflow computing is
+shown.
+
+Numerical results will be given supporting the time complexity of the
+algorithms presented and showing the optimization improvements
+possible using SSI form.
+
+Finally, future work on the \magic\ project is briefly discussed, and
+SSI form is placed in the context of the project as a whole.
 
 \end{document}
