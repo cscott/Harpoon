@@ -2,6 +2,7 @@
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
 #include "gc_typed.h"
+#include <assert.h>
 #endif
 #include <jni.h>
 #include "jni-private.h"
@@ -15,21 +16,15 @@
 int print_gc_index = 0;
 int check_gc_index = 1;
 
-struct _Frame {
-  void *start_of_function; /* start_of_function + 16 */
-};
-typedef struct _Frame *Frame;
-
-/* returns negative if keyval is less than datum->retaddr,
-   zero if equal, and postive if greater */
-int gc_index_cmp(const void *keyval, const void *datum) {
-  void *entry = ((struct gc_index *)datum)->retaddr;
-  int result = (keyval < entry) ? -1 : (keyval > entry); 
-  return result;
-}
+#ifdef HAVE_STACK_TRACE_FUNCTIONS
+#include "asm/stack.h" /* snarf in the stack trace functions. */
 
 /* saved_registers[13] <- lr (use to walk stack) */
+#ifdef WITH_PRECISE_C_BACKEND
+void *precise_malloc (size_t size_in_bytes)
+#else
 void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[])
+#endif
 {
   void *result;
   Frame fp; 
@@ -57,12 +52,6 @@ void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[])
     }
     check_gc_index = 0;
   }
-  /* find corresponding gc data */
-  found = (struct gc_index *)bsearch(saved_registers[13], 
-				     gc_index_start, 
-				     (gc_index_end - gc_index_start),
-				     sizeof(struct gc_index),
-				     gc_index_cmp); 
   /*
   printf("lr: %p\t", saved_registers[13]);
   fp = (Frame)(saved_registers+14);
@@ -75,18 +64,13 @@ void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[])
   /*  printf("%d:------------------- %p\n", size_in_bytes, saved_registers);
       for(i = 0; i < 16; i++)
       printf("r%d: %p\n", i, saved_registers[i]); */
-  result = (void *)copying_malloc(size_in_bytes);
-  if (result != NULL) {
-    printf(":");
-    return result;
-  }
-  collect(saved_registers);
-  result = (void *)malloc(size_in_bytes);
-  printf(".");
-  /* printf("Allocate with malloc: %p\n", result); */
-  return result;
+  return copying_malloc(size_in_bytes);
 }
 
-#endif
+#endif /* HAVE_STACK_TRACE_FUNCTIONS */
+#endif /* WITH_PRECISE_GC */
+
+
+
 
 

@@ -11,10 +11,19 @@
 #ifdef WITH_PRECISE_GC
 
 /* --------- new garbage collection stuff ---------- */
+#ifdef WITH_PRECISE_C_BACKEND
+void *precise_malloc (size_t size_in_bytes);
+#else
+void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[]);
+#endif
+
+struct gc_table {
+  jint descriptor;
+};
 
 struct gc_index {
   void * retaddr;
-  void * gc_data;
+  struct gc_table * gc_data;
 };
 extern struct gc_index gc_index_start[], gc_index_end[];
 

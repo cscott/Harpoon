@@ -7,10 +7,11 @@
 #include "jni-private.h"
 #include "jni-gc.h"
 
-#define HEAPSZ                16384 /* 16 MB */
+#define kDEBUG                 0
+#define MAGIC_RATIO            14
 #define COMPACT_ENCODING_SIZE (SIZEOF_VOID_P*SIZEOF_VOID_P*8)
-#define HEADERSZ              3 /* size of array header */
-#define ALIGN                 7
+#define HEADERSZ               3 /* size of array header */
+#define ALIGN                  7
 #define BITMASK               (~ALIGN)
 
 #define align(_unaligned_size_) (((_unaligned_size_) + ALIGN) & BITMASK)
@@ -24,29 +25,7 @@ static void *free;
 static void *to_space;
 static void *from_space;
 static void *top_of_space;
-
-static int _continue = 1;
-
-void *copying_malloc(size_t size_in_bytes)
-{
-  static int initialized = 0; /* FALSE */
-  size_t aligned_size_in_bytes;
-  void *result;
-  if (!initialized) { /* allocate heap */
-    int fd = open("/dev/zero", O_RDONLY);
-    free = from_space = mmap
-       (0, HEAPSZ, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
-    top_of_space = to_space = from_space + HEAPSZ/2;
-    initialized = 1; /* TRUE */
-  }
-  aligned_size_in_bytes = align(size_in_bytes);
-  if (free + aligned_size_in_bytes > top_of_space)
-    return NULL; /* need to garbage collect */
-  result = free;
-  free += aligned_size_in_bytes;
-  report("Allocated: %p size: %d\n", result, aligned_size_in_bytes);
-  return result;
-}
+static void *top_of_to_space;
 
 void relocate(jobject_unwrapped *obj) {
   void *forwarding_address;
@@ -60,23 +39,24 @@ void relocate(jobject_unwrapped *obj) {
     struct aarray *arr = (struct aarray *)(*obj);
     ptroff_t containsPointers = arr->obj.claz->gc_info.bitmap;
     assert(containsPointers == 0 || containsPointers == 1);
-    if (!containsPointers)
+    if (!containsPointers) {
       /* array of non-pointers */
       obj_size = aligned_size_of_np_array(arr);
-    else
+    } else {
       obj_size = aligned_size_of_p_array(arr);
+    }
   }
   /* copy over to to_space */
-  /*
-    assert(free + obj_size <= to_space + HEAPSZ/2); */
-  if (free + obj_size > to_space + HEAPSZ/2) {
-    _continue = 0;
-    return;
-  }
+  assert(free + obj_size <= top_of_to_space);
+
   forwarding_address = memcpy(free, (*obj), obj_size);
-  report("Copied %p to %p. Size: %d\n", (*obj), forwarding_address, obj_size);
-  /* write forwarding address to previous location */
-  /* (*obj) = (**obj) = forwarding_address; /* order is important */
+  /*  printf("%p to %p. Size: %d ", (*obj), forwarding_address, obj_size);
+  printf("claz: %p\n", ((jobject_unwrapped)forwarding_address)->claz);
+  fflush(0); */
+  /* write forwarding address to previous location;
+     the order of the following two operations are critical */
+  (*obj)->claz = /* not really */(struct claz *)forwarding_address;
+  (*obj) = (jobject_unwrapped)forwarding_address;
   /* increment free */
   free += obj_size;
 }
@@ -105,14 +85,13 @@ size_t trace_object(jobject_unwrapped obj) {
 	    (*field) >= (jobject_unwrapped)from_space && 
 	    (*field) <  (jobject_unwrapped)top_of_space) {
 	  if (((void *)((*field)->claz) >= to_space) && 
-	      ((void *)((*field)->claz) < (to_space + HEAPSZ/2))) {
+	      ((void *)((*field)->claz) < top_of_to_space)) {
 	    /* already moved, needs forwarding */
-	    printf("FAIL: Can't happen.\n"); /* for testing only */
-	    /* (*field) = (jobject_unwrapped)(**field); */
+	    /* printf("FAIL: Can't happen.\n"); /* for testing only */
+	    (*field) = (jobject_unwrapped)((*field)->claz);
 	  } else {
 	    /* needs moving */
 	    relocate(field);
-	    if (!_continue) return align(obj_size);
 	  }
 	}
       } /* current bit is set */
@@ -141,10 +120,10 @@ size_t trace_array(struct aarray *arr) {
 	  (jobject_unwrapped)(*element) <  (jobject_unwrapped)top_of_space) {
 	/* needs moving/forwarding */
 	if (((void *)((*element)->claz) >= to_space) &&
-	    ((void *)((*element)->claz) < (to_space + HEAPSZ/2))) {
+	    ((void *)((*element)->claz) < top_of_to_space)) {
 	  /* already moved, needs forwarding */
-	  printf("FAIL: Can't happen.\n");
-	  /* (*element) = (jobject_unwrapped)(**element); */
+	  /* printf("FAIL: Can't happen.\n"); */
+	  (*element) = (jobject_unwrapped)((*element)->claz);
 	} else {
 	  /* needs moving */
 	  relocate(element);
@@ -159,33 +138,60 @@ size_t trace_array(struct aarray *arr) {
 
 void add_to_root_set(jobject_unwrapped *obj) {
   if ((*obj) >= (jobject_unwrapped)from_space && 
-      (*obj) <  (jobject_unwrapped)top_of_space)
-    relocate(obj);
-  else if ((*obj)->claz->component_claz == NULL)
+      (*obj) <  (jobject_unwrapped)top_of_space) {
+    void *forwarding_address = (*obj)->claz;
+    if(forwarding_address >= to_space && 
+       forwarding_address < top_of_to_space) {
+      /* relocated, needs forwarding */
+      if (kDEBUG) printf("    already moved from %p to ", (*obj));
+      (*obj) = (jobject_unwrapped)forwarding_address;
+    } else {
+      /* needs relocation */
+      if (kDEBUG) printf("    relocated from %p to ", (*obj));
+      relocate(obj);
+    }
+  } else if ((*obj)->claz->component_claz == NULL) {
+    if (kDEBUG) printf("    tracing object at %p = ", (*obj));
     trace_object(*obj);
-  else
+  } else {
+    if (kDEBUG) printf("    tracing object at %p = ", (*obj));
     trace_array((struct aarray *)(*obj));
+  }
 }
 
-void *collect(void *saved_registers[]) {
-  void *tmp = from_space;
-  void *scan;
-  void *old_free;
+#ifdef WITH_PRECISE_C_BACKEND
+void *collect(int heap_expanded)
+#else
+void *collect(void *saved_registers[], int heap_expanded)
+#endif
+{
+  void *tmp, *scan;
+  
+  if (kDEBUG) {
+    printf("\n");
+    printf("from_space: %p\n", from_space);
+    printf("free: %p\n", free);
+    printf("top_of_space: %p\n", top_of_space);
+    printf("to_space: %p\n", to_space);
+    printf("top_of_to_space: %p\n", top_of_to_space);
+    fflush(0);
+  }
 
-  report("\n");
-  report("from_space: %p\n", from_space);
-  report("free: %p\n", free);
-  report("top_of_space: %p\n", top_of_space);
-  report("to_space: %p\n", to_space);
-  report("to_space + HEAPSZ/2: %p\n", to_space + HEAPSZ/2);
+  free = to_space;
+  scan = free;
 
-  old_free = free;
-  scan = free = to_space;
+  if (kDEBUG) {
+    printf("scan: %p\n", scan);
+    printf("free: %p\n", free);
+    fflush(0);
+  }
 
-  report("scan: %p\n", scan);
-  report("free: %p\n", free);
-
+#ifdef WITH_PRECISE_C_BACKEND
+  find_root_set();
+#else
   find_root_set(saved_registers);
+#endif
+  if (kDEBUG) { printf("Found roots.\n"); fflush(0); }
   /* trace roots */
   while(scan < free) {
     assert(scan != NULL && ((jobject_unwrapped)scan)->claz != NULL);
@@ -196,21 +202,81 @@ void *collect(void *saved_registers[]) {
       report("array*: scan: %p free: %p\n", scan, free); fflush(NULL);
       scan += trace_array((struct aarray *)scan); /* array */
     }
-    if (!_continue) {
-      _continue = 1;
-      scan = free;
-      break;
+  }
+  assert(scan == free);
+  if (heap_expanded) {
+    from_space = to_space;
+    to_space = top_of_to_space;
+    top_of_space = top_of_to_space;
+    top_of_to_space = to_space + (top_of_space - from_space);
+  } else {
+    /* swap from_space and to_space */
+    tmp = from_space;
+    from_space = to_space;
+    to_space = tmp;
+    /* swap top_of_space and top_of_to_space */
+    tmp = top_of_space;
+    top_of_space = top_of_to_space;
+    top_of_to_space = tmp;
+  }
+}
+
+void *copying_malloc(size_t size_in_bytes)
+{
+  static int initialized = 0; /* FALSE */
+  static int fd;
+  static size_t heap_size;
+  size_t aligned_size_in_bytes;
+  void *result;
+  if (!initialized) { /* allocate heap */
+    heap_size = MAGIC_RATIO*size_in_bytes;
+    fd = open("/dev/zero", O_RDONLY);
+    from_space = mmap
+      (0, heap_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+    assert(from_space != MAP_FAILED);
+    if (kDEBUG) printf("heap size = %d\n", heap_size);
+    free = from_space;
+    to_space = from_space + heap_size/2;
+    top_of_space = to_space;
+    top_of_to_space = to_space + heap_size/2;
+    initialized = 1; /* TRUE */
+  }
+  aligned_size_in_bytes = align(size_in_bytes);
+  if (free + aligned_size_in_bytes > top_of_space) {
+#ifdef WITH_PRECISE_C_BACKEND
+    collect(/* heap not expanded */0);
+#else
+    collect(saved_registers, /* heap not expanded */0);
+#endif
+    if (free + aligned_size_in_bytes > top_of_space) {
+      /* expand heap */
+      int result;
+      void *to_free = (to_space < from_space) ? to_space : from_space;
+      size_t occupied = free - from_space;
+      size_t old_heap_size = heap_size;
+      heap_size = 
+	((MAGIC_RATIO*occupied) > (2*(occupied + aligned_size_in_bytes))) ?
+	(MAGIC_RATIO*occupied) : (4*(occupied + aligned_size_in_bytes));
+      to_space = mmap
+	(0, heap_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+      assert(to_space != MAP_FAILED);
+      if (kDEBUG) printf("heap size = %d\n", heap_size);
+      top_of_to_space = to_space + heap_size/2;
+#ifdef WITH_PRECISE_C_BACKEND
+      collect(/* heap expanded */1);
+#else
+      collect(saved_registers, /* heap expanded */1);
+#endif
+      result = munmap(to_free, old_heap_size);
+      assert(result == 0); /* success */
+      assert(free + aligned_size_in_bytes < top_of_space);
     }
   }
-  report("scan: %p free: %p\n", scan, free);
-  assert(scan == free);
-  /* swap from_space and to_space */
-  /* don't do swap while testing
-  free = from_space = to_space;
-  to_space = tmp;
-  top_of_space = from_space + HEAPSZ/2;
-  */
-  free = old_free; /* for testing only */
+  result = free;
+  free += aligned_size_in_bytes;
+  if (kDEBUG) 
+    printf("Allocated: %p size: %d\n", result, aligned_size_in_bytes);
+  return result;
 }
 
 
