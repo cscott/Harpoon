@@ -27,7 +27,7 @@ import java.util.AbstractCollection;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.31 1999-08-28 00:45:55 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.32 1999-08-28 00:48:28 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -313,6 +313,9 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     */
 
     public static void insertInstrAt(Instr instr, HCodeEdge edge) {
+	Util.assert(instr.getTargets().isEmpty(),
+		    "instr should be nonbranching");
+
 	if (edge.from() == null) {
 	    if (edge.to() == null) {
 		Util.assert(false, 
@@ -322,10 +325,12 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 		
 	    }
 	} else {
+	    Instr from = (Instr) edge.from();
+	    from.next = instr;
+	    instr.prev = from;
+	    
 	    if (edge.to() == null) {
-		Instr from = (Instr) edge.from();
-		from.next = instr;
-		instr.prev = from;
+		
 	    } else {
 
 	    }
