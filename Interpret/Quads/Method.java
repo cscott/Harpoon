@@ -45,6 +45,7 @@ import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPECAST;
+import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.HandlerSet;
 import harpoon.IR.Quads.Qop;
@@ -58,7 +59,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.19 2000-01-21 10:15:37 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.20 2000-10-07 02:00:03 cananian Exp $
  */
 public final class Method {
 
@@ -546,6 +547,14 @@ public final class Method {
 	public void visit(TYPECAST q) { // typecast is nop in explicit form.
 	    advance(0);
 	}
+	public void visit(TYPESWITCH q) {
+	    Ref ind = (Ref) sf.get(q.index());
+	    Util.assert(ind!=null); // null index not allowed.
+	    int match;
+	    for (match=0; match<q.keysLength(); match++)
+		if (ind.type.isInstanceOf(q.keys(match))) break;
+	    visit((SIGMA)q, match);
+	}
     }
     // Interpreter with *implicit* exception handling.
     static private class ImplicitI extends ExplicitI {
@@ -688,6 +697,13 @@ public final class Method {
 	public void visit(TYPECAST q) {
 	    typeCheck(q.objectref(), q.hclass());
 	    super.visit(q);
+	}
+	public void visit(TYPESWITCH q) {
+	    // object may be null in implicit case
+	    Ref obj = (Ref) sf.get(q.index());
+	    if (obj==null) {
+		advance(q.keysLength()); // take default branch
+	    } else super.visit(q);
 	}
     }
 }
