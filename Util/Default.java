@@ -20,12 +20,12 @@ import java.util.Set;
  * <code>Enumeration</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.1.2.9 2000-02-11 18:02:59 cananian Exp $
+ * @version $Id: Default.java,v 1.1.2.10 2000-03-29 06:50:27 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
      *   <code>Comparable</code>. */
-    public static final Comparator comparator = new Comparator() {
+    public static final Comparator comparator = new SerializableComparator() {
 	public int compare(Object o1, Object o2) {
 	    if (o1==null && o2==null) return 0;
 	    // hack: in JDK1.1 String is not Comparable
@@ -34,6 +34,8 @@ public abstract class Default  {
 	    return (o1==null) ? -((Comparable)o2).compareTo(o1):
 	                         ((Comparable)o1).compareTo(o2);
 	}
+	// this should always be a singleton.
+	private Object readResolve() { return Default.comparator; }
     };
     /** An <code>Enumerator</code> over the empty set.
      * @deprecated Use nullIterator. */
@@ -58,7 +60,7 @@ public abstract class Default  {
 	};
     }
     /** An empty map. Missing from <code>java.util.Collections</code>.*/
-    public static final Map EMPTY_MAP = new Map() {
+    public static final Map EMPTY_MAP = new SerializableMap() {
 	public void clear() { }
 	public boolean containsKey(Object key) { return false; }
 	public boolean containsValue(Object value) { return false; }
@@ -82,30 +84,45 @@ public abstract class Default  {
 	public int size() { return 0; }
 	public Collection values() { return Collections.EMPTY_SET; }
 	public String toString() { return "{}"; }
+	// this should always be a singleton.
+	private Object readResolve() { return Default.EMPTY_MAP; }
     };
     /** A pair constructor method.  Pairs implement <code>hashCode()</code>
      *  and <code>equals()</code> "properly" so they can be used as keys
      *  in hashtables and etc.  They are implemented as mutable lists of
      *  fixed size 2. */
     public static List pair(final Object left, final Object right) {
-	return new AbstractList() {
-	    private Object _left = left, _right = right;
-	    public int size() { return 2; }
-	    public Object get(int index) {
-		switch(index) {
-		case 0: return this._left;
-		case 1: return this._right;
-		default: throw new IndexOutOfBoundsException();
-		}
-	    }
-	    public Object set(int index, Object element) {
-		Object prev;
-		switch(index) {
-		case 0: prev=this._left; this._left=element; return prev;
-		case 1: prev=this._right; this._right=element; return prev;
-		default: throw new IndexOutOfBoundsException();
-		}
-	    }
-	};
+	// this can't be an anonymous class because we want to make it
+	// serializable.
+	return new PairList(left, right);
     }
+    private static class PairList extends AbstractList
+	implements java.io.Serializable {
+	private Object left, right;
+	PairList(Object left, Object right) {
+	    this.left = left; this.right = right;
+	}
+	public int size() { return 2; }
+	public Object get(int index) {
+	    switch(index) {
+	    case 0: return this.left;
+	    case 1: return this.right;
+	    default: throw new IndexOutOfBoundsException();
+	    }
+	}
+	public Object set(int index, Object element) {
+	    Object prev;
+	    switch(index) {
+	    case 0: prev=this.left; this.left=element; return prev;
+	    case 1: prev=this.right; this.right=element; return prev;
+	    default: throw new IndexOutOfBoundsException();
+	    }
+	}
+    }
+    /** A serializable comparator. */
+    private static interface SerializableComparator
+	extends Comparator, java.io.Serializable { /* only declare */ }
+    /** A serializable map. */
+    private static interface SerializableMap
+	extends Map, java.io.Serializable { /* only declare */ }
 }
