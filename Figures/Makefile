@@ -54,7 +54,12 @@ THcqex2.tex: THcqex.fig
 # extra dependencies for data files of gnuplots
 phisig.tex: phisig.data-sorted
 
+# graphing helpers
+%.stats: %
+	../scripts/make.stats $< > $@
+
 clean:
-	$(RM) THex1*.tex *.fig.bak evil.tex \
-		THcqex.tex THcqex2.tex THundir.tex THpst.tex THlattice.tex\
-		*~
+	$(RM) THex1*.tex *.fig.bak THcqex2.tex phisig.tex \
+		$(patsubst %.fig,%.tex,\
+		  $(patsubst Figures/%,%,$(filter %.fig,$(THESIS_FIGURES)))) \
+		*.stats *~

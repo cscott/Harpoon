@@ -22,20 +22,24 @@ pldi99.dvi: pldi99-intro.tex pldi99-abstract.tex pldi99-tech.tex
 pldi99.dvi: Figures/evil.tex
 
 # thesis figure dependencies
-thesis.dvi: Figures/THex1base.tex \
-	Figures/THex1ssa.tex Figures/THex1ssaPr.tex \
-	Figures/THex1ssi.tex Figures/THex1ssiPr.tex \
-	Figures/THundir.tex \
-	Figures/THcqdata.tex Figures/THcqalg.tex Figures/THcqex.tex \
-	Figures/THsesedata.tex Figures/THsesealg.tex Figures/THcqex2.tex \
-	Figures/THpst.tex Figures/evil.tex \
-	Figures/THdeaddata.tex Figures/THdeadalg.tex Figures/THlattice.tex \
-	Figures/phisig.tex Figures/THlat1.tex Figures/THlat2.tex \
-	Figures/THlat3.tex Figures/THlat4.tex Figures/THlat5.tex \
+export THESIS_FIGURES=\
+	Figures/THundir.fig \
+	Figures/THcqdata.tex Figures/THcqalg.tex Figures/THcqex.fig \
+	Figures/THsesedata.tex Figures/THsesealg.tex \
+	Figures/THpst.fig Figures/evil.fig \
+	Figures/THdeaddata.tex Figures/THdeadalg.tex Figures/THlattice.fig \
+	Figures/THlat1.fig Figures/THlat2.fig \
+	Figures/THlat3.fig Figures/THlat4.fig Figures/THlat5.fig \
 	Figures/THsccalg1.tex Figures/THsccalg2.tex Figures/THsccssi.tex \
 	Figures/THscctyped.tex Figures/THsptc.tex \
 	Figures/THssiren1.tex Figures/THssiren2.tex Figures/THssirend.tex \
-	Figures/THmorephi.tex
+	Figures/THmorephi.fig
+thesis.dvi: $(patsubst %.fig,%.tex,$(THESIS_FIGURES)) \
+	Figures/THex1base.tex \
+	Figures/THex1ssa.tex Figures/THex1ssaPr.tex \
+	Figures/THex1ssi.tex Figures/THex1ssiPr.tex \
+	Figures/THcqex2.tex Figures/phisig.tex
+
 # thesis figure rules
 Figures/%: always
 	@$(MAKE) --no-print-directory -C Figures $(notdir $@)
@@ -44,7 +48,7 @@ always:
 # Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
 %.dvi %.aux: %.tex
 	latex $*
-	if egrep -q '^[^%]*\\bibliography' $< ; then bibtex $(basename $<); fi
+	if egrep -q '^[^%]*\\bibliography' $< ; then bibtex $*; fi
 	if egrep -q 'Rerun to get cross-r' $*.log; then latex $*; fi
 	if egrep -q 'Rerun to get cross-r' $*.log; then latex $*; fi
 	if egrep -q 'undefined references' $*.log; then grep undefined $*.log; fi
@@ -66,17 +70,27 @@ always:
 	fi
 
 # progress graphs.
-%.gif %.stats: %.tex
-	scripts/make.stats $*
+%.stats: %.tex
+	scripts/make.stats $< > $@
+%.gif: %.stats
+	scripts/make.graph $*
+
+allthesis.stats: thesis.stats Figures/THex1.fig \
+		$(patsubst %,%.stats,$(THESIS_FIGURES))
+	(head -1 thesis.stats ; (cat $^ | sed -e '/^[^0-9]/d' \
+	  -e 's.\([0-9][0-9]/[0-9][0-9]\)/\([0-9][0-9][0-9][0-9]\).\2/\1.g' \
+	| sort -r | sed \
+	  -e 's.\([0-9][0-9][0-9][0-9]\)/\([0-9][0-9]/[0-9][0-9]\).\2/\1.g' \
+	) ) > $@
 
 # latex2html
 
 html/% : %.dvi %.aux %.ps %.pdf
 	if [ ! -d html ]; then mkdir html; fi
 	-$(RM) -r $@
-	latex2html -local_icons -dir $@ $(basename $<)
-	ln $(basename $<).ps $@
-	ln $(basename $<).pdf $@
+	latex2html -local_icons -dir $@ $*
+	ln $*.ps $@
+	ln $*.pdf $@
 	date '+%-d-%b-%Y at %r %Z.' > $@/TIMESTAMP
 
 html: $(foreach doc,$(ALLDOCS),html/$(doc))
