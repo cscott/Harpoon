@@ -22,6 +22,7 @@ import harpoon.Util.Util;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.Stack;
@@ -31,7 +32,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.90 1998-11-18 23:39:00 cananian Exp $
+ * @version $Id: Translate.java,v 1.90.4.1 1998-11-25 09:34:41 nkushman Exp $
  */
 
 class Translate  { // not public.
@@ -1347,12 +1348,29 @@ class Translate  { // not public.
 	State phiState = mm.getState(in);
 	Quad q = ts.header; int which_succ = ts.which_succ;
 	// move stack temps around.
+	Hashtable permutation = new Hashtable();
 	for (int i=0; i<s.stackSize; i++) {
-	    if (phiState.stack(i) == null) continue;
+	    if (s.stack(i) == null) continue;
 	    if (phiState.stack(i) == s.stack(i)) continue;
-	    Quad q2 = new MOVE(in, phiState.stack(i), s.stack(i));
-	    Quad.addEdge(q, which_succ, q2, 0);
-	    q = q2; which_succ = 0;
+	    permutation.put(phiState.stack(i), s.stack(i));
+	}
+	// BE CAREFUL: permutation may define an ordering on MOVEs.
+	Quad Qmid=new NOP(in); Quad Qend=Qmid; int j=0;
+	for (Enumeration e=permutation.keys(); e.hasMoreElements(); ) {
+	    Temp dst=(Temp)e.nextElement();
+	    Temp src=(Temp)permutation.get(dst);
+	    // create new Temp in order to accomplish the permutation safely.
+	    Temp t = phiState.extra(j++);
+	    Quad q1 = new MOVE(in, t, src);
+	    Quad q2 = new MOVE(in, dst, t);
+	    Quad.addEdge(q, which_succ, q1, 0);
+	    q = q1; which_succ = 0;
+	    Quad.addEdge(Qend, 0, q2, 0);
+	    Qend = q2;
+	}
+	if (Qend!=Qmid) { // add second chain of MOVEs, if there are any.
+	    Quad.addEdge(q, which_succ, Qmid.next(0), 0); // skip initial NOP
+	    q = Qend; which_succ = 0;
 	}
 	// link
 	Quad.addEdge(q, which_succ, phi, which_pred);

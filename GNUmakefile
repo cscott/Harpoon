@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.60.2.1 1998-11-22 03:32:31 nkushman Exp $
+# $Id: GNUmakefile,v 1.60.2.2 1998-11-25 09:34:41 nkushman Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -15,14 +15,23 @@ FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
-ALLPKGS = $(shell find . -name crap -prune -o -type d -print | grep -v CVS | grep -v AIRE | \
+CVS_TAG:=$(firstword $(shell cvs status GNUmakefile | \
+			awk '/Sticky Tag/{print $$3}'))
+CVS_BRANCH:=$(firstword $(shell cvs status GNUmakefile | \
+			awk '/Sticky Tag/{print $$5}' | sed -e 's/[^0-9.]//g'))
+CVS_REVISION:=$(patsubst %,-r %,$(CVS_TAG))
+
+BUILD_IGNORE := $(strip $(shell if [ -f .ignore ]; then cat .ignore; fi))
+
+ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
+		$(patsubst %,egrep -v % |,$(BUILD_IGNORE)) \
 		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
 		sed -e "s|^[.]/*||")
-ALLSOURCE = $(filter-out .%.java, \
+ALLSOURCE := $(filter-out .%.java, \
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java)))
-TARSOURCE = $(filter-out JavaChip%, \
+TARSOURCE := $(filter-out JavaChip%, \
 	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile
-JARPKGS = $(subst harpoon/Contrib,gnu, \
+JARPKGS := $(subst harpoon/Contrib,gnu, \
 		$(foreach pkg, $(filter-out JavaChip%, \
 			$(filter-out Test%,$(ALLPKGS))), harpoon/$(pkg)))
 
@@ -81,11 +90,11 @@ cvs-add: needs-cvs
 	done
 cvs-commit: needs-cvs cvs-add
 	cvs -q diff -u | tee cvs-tmp # view changes we are committing.
-	cvs -q commit
+	cvs -q commit $(patsubst %,-r %,$(CVS_BRANCH))
 	$(RM) cvs-tmp
 commit: cvs-commit # convenient abbreviation
 update: needs-cvs
-	cvs update -Pd
+	cvs update -Pd $(CVS_REVISION)
 	@echo ""
 	@-$(FORTUNE)
 
@@ -119,8 +128,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) ChangeLog mark-executable
 		grep -v "^@see warning:"
 	$(RM) doc/harpoon doc/silicon
 	$(MUNGE) doc | \
-	  sed -e 's/<cananian@/\&lt;cananian@/g' \
-	      -e 's/princeton.edu>/princeton.edu\&gt;/g' \
+	  sed -e 's/<\([a-z]\+\)@\([a-z.]\+\).edu>/\&lt;\1@\2.edu\&gt;/g' \
 	      -e 's/<dd> "The,/<dd> /g' | \
 		$(UNMUNGE)
 	cd doc; ln -s $(JDOCIMAGES) images
@@ -149,7 +157,7 @@ wc:
 	@wc -l $(ALLSOURCE) | sort -n | tail -6 | head -5
 
 clean:
-	-${RM} -r harpoon silicon Harpoon.jar* harpoon.tgz* VERSIONS
+	-${RM} -r harpoon silicon gnu Harpoon.jar* harpoon.tgz* VERSIONS
 	-${RM} java `find . -name "*.class"`
 
 polish: clean
