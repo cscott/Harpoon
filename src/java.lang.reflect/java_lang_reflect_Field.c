@@ -2,6 +2,7 @@
 #include <jni.h>
 #include "jni-private.h"
 #include "java_lang_reflect_Field.h"
+#include "java_lang_reflect_Modifier.h"
 #include "reflect-util.h"
 
 /*
@@ -14,15 +15,95 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getModifiers
     return FNI_GetFieldInfo(_this)->modifiers;
 }
 
-#if 0
 /*
  * Class:     java_lang_reflect_Field
  * Method:    get
  * Signature: (Ljava/lang/Object;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_java_lang_reflect_Field_get
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *env, jobject fieldobj, jobject receiverobj) {
+  struct FNI_field2info *field; /* field information */
+  jclass fieldclazz; /* declaring class of field */
+  char *classname, constructsig[] = { "(X)V" }; /* for wrapper creation */
+  jvalue arg[1]; /* this will hold the actual (primitive) value of the field */
+  jclass wrapclaz; /* class object of the wrapper */
+  jmethodID mid; /* methodID of the wrapper's constructor */
 
+  assert(fieldobj!=NULL);
+  field = FNI_GetFieldInfo(fieldobj);
+  assert(field!=NULL);
+  fieldclazz = FNI_WRAP(field->declaring_class_object);
+
+  if (field->modifiers & java_lang_reflect_Modifier_STATIC) {/* static field */
+    /* fetch field value */
+    switch(constructsig[1]=field->fieldID->desc[0]) {
+#define STATICCASE(desc, jvalfield, fullname, shortname)\
+    case desc:\
+      classname="java/lang/" fullname ;\
+      arg[0].jvalfield =\
+	(*env)->GetStatic##shortname##Field(env, fieldclazz, field->fieldID);\
+      break
+    STATICCASE('Z', z, "Boolean",   Boolean);
+    STATICCASE('B', b, "Byte",      Byte);
+    STATICCASE('C', c, "Character", Char);
+    STATICCASE('S', s, "Short",     Short);
+    STATICCASE('I', i, "Integer",   Int);
+    STATICCASE('J', j, "Long",      Long);
+    STATICCASE('F', f, "Float",     Float);
+    STATICCASE('D', d, "Double",    Double);
+#undef STATICCASE
+    default: /* object type */
+      assert(field->fieldID->desc[0]=='L' || field->fieldID->desc[0]=='[');
+      return (*env)->GetStaticObjectField(env, fieldclazz, field->fieldID);
+    }
+    goto makewrapper; /* create wrapper object and return it */
+  } else { /* non-static field */
+    /* do checks first */
+    if (receiverobj==NULL) {
+      jclass excls = (*env)->FindClass(env, "java/lang/NullPointerException");
+      (*env)->ThrowNew(env, excls, "null receiver for non-static field");
+      return NULL;
+    }
+    if (!(*env)->IsInstanceOf(env, receiverobj, fieldclazz)) {
+      jclass excls=(*env)->FindClass(env,"java/lang/IllegalArgumentException");
+      (*env)->ThrowNew(env, excls,
+		       "receiver not instance of field declaring class");
+      return NULL;
+    }
+    /* fetch field value */
+    /* (note similarities with the way we did things above */
+    switch(constructsig[1]=field->fieldID->desc[0]) {
+#define NONSTATICCASE(desc, jvalfield, fullname, shortname)\
+    case desc:\
+      classname="java/lang/" fullname ;\
+      arg[0].jvalfield =\
+	(*env)->Get##shortname##Field(env, receiverobj, field->fieldID);\
+      break
+    NONSTATICCASE('Z', z, "Boolean",   Boolean);
+    NONSTATICCASE('B', b, "Byte",      Byte);
+    NONSTATICCASE('C', c, "Character", Char);
+    NONSTATICCASE('S', s, "Short",     Short);
+    NONSTATICCASE('I', i, "Integer",   Int);
+    NONSTATICCASE('J', j, "Long",      Long);
+    NONSTATICCASE('F', f, "Float",     Float);
+    NONSTATICCASE('D', d, "Double",    Double);
+#undef NONSTATICCASE
+    default: /* object type */
+      assert(field->fieldID->desc[0]=='L' || field->fieldID->desc[0]=='[');
+      return (*env)->GetObjectField(env, receiverobj, field->fieldID);
+    }
+    goto makewrapper; /* create wrapper object and return it */
+  }
+  /* okay, now create wrapper object and return it */
+  makewrapper:
+  wrapclaz = (*env)->FindClass(env, classname);
+  assert(wrapclaz);
+  mid = (*env)->GetMethodID(env, wrapclaz, "<init>", constructsig);
+  assert(mid);
+  return (*env)->NewObjectA(env, wrapclaz, mid, arg);
+}
+
+#if 0
 /*
  * Class:     java_lang_reflect_Field
  * Method:    set
