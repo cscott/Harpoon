@@ -40,7 +40,7 @@ import java.util.Stack;
  * <p><b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.1.2.1 1999-12-05 06:26:37 duncan Exp $
+ * @version $Id: ConstantPropagation.java,v 1.1.2.2 1999-12-18 22:42:19 duncan Exp $
  */
 public final class ConstantPropagation { 
 
@@ -176,7 +176,7 @@ public final class ConstantPropagation {
 	    }
 	    // Our analysis says that it's OK to replace "t" with a constant
 	    // value.  Use the tree structure to accomplish this. 
-	    if (replaceT) { this.ts.replace(t, valueT); }
+	    if (replaceT) { this.ts.replace(t, valueT.build(valueT.kids())); }
 	}
 
 	public void visit(Tree t) { throw new Error("No defaults here."); }

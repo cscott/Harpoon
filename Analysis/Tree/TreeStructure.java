@@ -50,7 +50,7 @@ import java.util.Stack;
  * the codeview directly, so should be used with caution.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeStructure.java,v 1.1.2.7 1999-12-05 06:16:54 duncan Exp $
+ * @version $Id: TreeStructure.java,v 1.1.2.8 1999-12-18 22:42:19 duncan Exp $
  */
 public class TreeStructure { 
     private Map structure = new HashMap();
@@ -220,8 +220,10 @@ public class TreeStructure {
 		// Update the parent's references. 
 		parent.accept(this); 
 		// Update the structure map to reflect this change. 
-		TreeStructure.this.structure.put(tNew, parent); 
+		new StructureDeleter(tOld, TreeStructure.this.structure); 
 		TreeStructure.this.structure.remove(tOld); 
+		new StructureBuilder(tNew, TreeStructure.this.structure); 
+		TreeStructure.this.structure.put(tNew, parent); 
 	    }
 	}
 
@@ -351,7 +353,7 @@ public class TreeStructure {
 	 * @param root      the root of the tree to make a structure for.
 	 * @param structure a map to hold the generated structure. 
 	 */ 
-	public StructureBuilder (Stm root, Map structure) { 
+	public StructureBuilder (Tree root, Map structure) { 
 	    this.structure = structure; 
 	    this.worklist.add(root); 
 
@@ -375,6 +377,44 @@ public class TreeStructure {
 	    for (ExpList e = t.kids(); e != null; e = e.tail) { 
 		this.worklist.push(e.head); 
 		this.structure.put(e.head, t); 
+	    }
+	}
+    }
+
+    private class StructureDeleter extends TreeVisitor { 
+	private Map   structure; 
+	private Set   visited  = new HashSet();
+	private Stack worklist = new Stack(); 
+
+	/** 
+	 * Class constructor.  
+	 * @param root      the root of the tree to make a structure for.
+	 * @param structure a map to hold the generated structure. 
+	 */ 
+	public StructureDeleter(Tree root, Map structure) { 
+	    this.structure = structure; 
+
+	    this.worklist.add(root); 
+	    while (!worklist.isEmpty())
+		((Tree)worklist.pop()).accept(this); 
+	}
+
+
+	/** kids() not applicable to SEQ.  Need a special case. */ 
+	public void visit(SEQ s) { 
+	    Util.assert(this.visited.add(s)); 
+
+	    this.worklist.push(s.left); 
+	    this.worklist.push(s.right);
+	    this.structure.put(s.left, s);
+	    this.structure.put(s.right, s); 
+	}
+
+	public void visit(Tree t) { 
+	    Util.assert(this.visited.add(t)); 
+	    for (ExpList e = t.kids(); e != null; e = e.tail) { 
+		this.worklist.push(e.head); 
+		this.structure.remove(e.head); 
 	    }
 	}
     }
