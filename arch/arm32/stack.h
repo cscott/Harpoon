@@ -1,5 +1,5 @@
 /* stack traversal/fiddling code */
-
+#include <config.h>
 
 /* gcc stack layout:
  *    [fp, #-0]  = start_of_function + 16
@@ -36,8 +36,14 @@
 /* Do lookup & update of this function's return address, in order to
  * throw an exception. */
 
+#ifdef NO_UNDERSCORES
+#define LOOKUP_HANDLER "_lookup_handler"
+#else
+#define LOOKUP_HANDLER "__lookup_handler"
+#endif
+
 #define lookup() \
-asm("bl __lookup_handler" \
+asm("bl " LOOKUP_HANDLER \
     : /* no outputs */ \
     : /* no inputs */ \
     : "r1", "r2", "r3", "lr", "cc", "memory");
