@@ -1,5 +1,5 @@
-// Jasmin.java, created Mon Aug  2 13:55:50 1999 by root
-// Copyright (C) 1999 root <root@kikashi.lcs.mit.edu>
+// Jasmin.java, created Mon Aug  2 13:55:50 1999 by bdemsky
+// Copyright (C) 1999 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode.Jasmin;
 
@@ -20,8 +20,8 @@ import java.util.Enumeration;
 /**
  * <code>FinalRaw</code>
  * 
- * @author  root <root@kikashi.lcs.mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.3 1999-08-04 07:02:51 bdemsky Exp $
+ * @author  Brian Demsky <bdemsky@mit.edu>
+ * @version $Id: Jasmin.java,v 1.1.2.4 1999-08-04 19:40:42 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -150,7 +150,7 @@ public class Jasmin {
 		String stop=labeler(qd.next(0));
 		String handler=labeler(q);
 		if (q.caughtException()!=null)
-		    out.println(".catch "+q.caughtException()+" from "+start+" to "+stop+" using "+handler);
+		    out.println(".catch "+q.caughtException().getName().replace('.','/')+" from "+start+" to "+stop+" using "+handler);
 		else
 		    out.println(".catch all from "+start+" to "+stop+" using "+handler);
 	    }
@@ -251,7 +251,7 @@ public class Jasmin {
 	public void visit(CONST q) {
 	    out.println(iflabel(q));
 	    if (q.value()!=null) {
-		HClass hclass=tm.typeMap(hc,q.dst());
+		HClass hclass=q.type();
 		if (hclass==HClass.forName("java.lang.String"))
 		    out.println("    ldc "+'"'+q.value().toString()+'"');
 		else
@@ -467,7 +467,7 @@ public class Jasmin {
 		if (ptr.prev().length!=1) {
 		    flag=false;break;}
 		Temp[] uses=ptr.use();
-		for (int i=0;i<uses.length;i++) {
+		for (int i=uses.length-1;i>=0;i--) {
 		    if (uses[i]==t) break;
 		    if (stacktemps.containsKey(uses[i])) {
 			if (track.contains(uses[i]))
@@ -483,10 +483,3 @@ public class Jasmin {
 	}
     }
 }
-
-
-
-
-
-
-
