@@ -9,7 +9,7 @@
 
 # Prints the available options for the script
 function printOptions() {
-    echo "Usage: ./run-tasks [options]"
+    echo "Usage: ./start-server [options]"
     echo
     echo "Values: "
     echo -e "Either \"yes\" or \"no\"."
@@ -17,10 +17,10 @@ function printOptions() {
     echo "Options: "
     echo -e "  -all-tasks=[yes|no]            -- if set to yes, runs all tasks in \"tasks-all\" (default),"
     echo -e "                                    if set to no, runs all tasks in \"tasks-selected\"."
-    echo -e "  -tasks-file=<file>             -- explicitly specifies the name of the file containing the tasks set (no default value)."
+    echo -e "  -tasks-file=<file>             -- explicitly specifies the name of the file containing the tasks set (default value: tasks-all)."
     echo -e "  -all-machines=[yes|no]         -- if set to yes, runs the task set on all machines in \"machines-all\" (default),"
     echo -e "                                    if set to no, runs the task set only on machines included in \"machines-selected\"."
-    echo -e "  -machines-file=<file>          -- explicitly specifies the name of the file containing the machines set (no default value)."
+    echo -e "  -machines-file=<file>          -- explicitly specifies the name of the file containing the machines set (default value: machines-all)."
     echo -e "  -update=[yes|no]               -- if set to yes, all machines are updated before starting running tasks on them (default),"
     echo -e "                                    if set to no, no machine is updated before starting running the tasks."
     echo -e "  -update-clean=[yes|no]         -- if set to yes, all remote machines will do the hardest possible clean, before reconfiguring (default),"
@@ -49,7 +49,7 @@ function printOptions() {
     echo -e "                                    if set to no, does not mail anything to anyone."
     echo -e "  -mail-to-all=[yes|no]          -- if set to yes, mails results to all people in \"mail-all\" (default),"
     echo -e "                                    if set to no, mails results only to people included in \"mail-selected\"."
-    echo -e "  -mailto-file=<file>            -- explicitly specifies the name of the file containing the list of people to be mailed (no default value)."
+    echo -e "  -mailto-file=<file>            -- explicitly specifies the name of the file containing the list of people to be mailed (default value: mailto-all)."
 }
 
 # Beggining of script
@@ -211,12 +211,13 @@ else
 	echo >> $DIFFS_SOURCES_FILE
     fi
     
-  # Getting the list of machines in $MACHINES_LIST
+    # Getting the list of machines in $MACHINES_LIST
     
     NUMBER_LINES=`wc -l $MACHINES_FILE | sed s/\ $MACHINES_FILE//`   # getting the number of lines in $MACHINES_FILE
     n_line=1
     while [ $n_line -le $NUMBER_LINES ]; do   # getting the machines on which the tasks will be run
 	CURRENT_MACHINE=`head -n $n_line $MACHINES_FILE | tail -n 1`   # this is the next machine to be added
+
 	MACHINE_ACCEPT_CONNECTIONS=1
 	ssh $CURRENT_MACHINE "pwd > /dev/null" || MACHINE_ACCEPT_CONNECTIONS=0   # check if this machine accepts ssh connections
 	if [ $MACHINE_ACCEPT_CONNECTIONS -eq 0 ]; then   # this machine does not accept ssh connections
@@ -325,7 +326,7 @@ else
 	while [ $FINISHED_UPDATING -eq 0 ]; do
 	    FINISHED_UPDATING=1
 	    for machine in $MACHINES_LIST; do
-		if [ "`ssh $machine 'if [ -e $UPDATING_FLEX_FILE ]; then cat $UPDATING_FLEX_FILE; else echo 0; fi'`" != "0" ]; then   # is this machine still updating?
+		if [ "`ssh $machine 'if [ -f $UPDATING_FLEX_FILE ]; then cat $UPDATING_FLEX_FILE; else echo 0; fi'`" != "0" ]; then   # is this machine still updating?
 		    if [ "$DEBUG" == "yes" ]; then   # print some debugging information
 			echo -e "machine $machine is still updating"
 		    fi
@@ -453,6 +454,8 @@ else
 	# Now all tasks should be finished; time to collect the information from the machines on the server
 
 	# Collecting all error messages into one big file
+
+	rm -rf $TEMP_DIR/*   # removing everything in $TEMP_DIR
 
 	if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 	    echo >> $ERROR_FILE
@@ -618,7 +621,7 @@ else
 		echo "\$LAST_RECORD = $LAST_RECORD"
 	    fi
 
-	    CURRENT_RECORD="now:"$DATE":"`cat $file`   # making this session's record for this $BENCHMARK
+	    CURRENT_RECORD="now:$DATE:"`cat $file`   # making this session's record for this $BENCHMARK
 
 	    # checking if the run_$BENCHMARK file was generated
 
@@ -626,13 +629,13 @@ else
 		tar zxvf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		cp $DATE/run"_"$BENCHMARK run"_"$BENCHMARK"_"$DATE   # copy the only important file to $TEMP_DIR
-		rm -r `\ls -A | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+		rm -r `\ls -A | grep -v CVS | grep -v $DATE | grep -v run`   # removing nearly everything in $TEMP_DIR
 		cd -   # changing directory back
 	    else
 		tar zxf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR > /dev/null 2>&1   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		cp $DATE/run"_"$BENCHMARK ./run"_"$BENCHMARK"_"$DATE > /dev/null 2>&1   # copy the only important file to $TEMP_DIR
-		rm -rf `\ls -A 2>/dev/null | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+		rm -rf `\ls -A 2>/dev/null | grep -v CVS | grep -v $DATE | grep -v run`   # removing nearly everything in $TEMP_DIR
 		cd -   # changing the directory back
 	    fi
 	    
@@ -644,16 +647,16 @@ else
 			    tar zxvf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
 			    cd $TEMP_DIR   # changing directory to $TEMP_DIR
 			    cp $LAST_DATE/run"_"$BENCHMARK ./run"_"$BENCHMARK"_"$LAST_DATE   # copy one more important file to $TEMP_DIR
-			    rm -r `\ls -A | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+			    rm -r `\ls -A | grep -v CVS | grep -v $DATE | grep -v run`   # removing nearly everything in $TEMP_DIR
 			    cd -   # changing directory back
 			else
 			    tar zxf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
 			    cd $TEMP_DIR   # changing directory to $TEMP_DIR
 			    cp $LAST_DATE/run"_"$BENCHMARK ./run"_"$BENCHMARK"_"$LAST_DATE > /dev/null 2>&1   # copy one more important file to $TEMP_DIR
-			    rm -rf `\ls -A 2>/dev/null | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+			    rm -rf `\ls -A 2>/dev/null | grep -v CVS | grep -v $DATE | grep -v run`   # removing nearly everything in $TEMP_DIR
 			    cd -   # changing directory back
 			fi
-
+			
 			if [ -f $TEMP_DIR/run'_'$BENCHMARK'_'$LAST_DATE ]; then   # does the file $TEMP_DIR/run_$BENCHMARK_$LAST_DATE exist?
 			    if [ "`diff $TEMP_DIR/run'_'$BENCHMARK'_'$DATE $TEMP_DIR/run'_'$BENCHMARK'_'$LAST_DATE`" == "" ]; then   # nothing changed in the output since the last running of this benchmark
 				CURRENT_RECORD=$CURRENT_RECORD":correct (no changes)"
@@ -675,16 +678,16 @@ else
 			    tar zxvf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
 			    cd $TEMP_DIR   # changing directory to $TEMP_DIR
 			    cp $LAST_DATE/run"_"$BENCHMARK ./run"_"$BENCHMARK"_"$LAST_DATE   # copy one more important file to $TEMP_DIR
-			    rm -r `\ls -A | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+			    rm -r `\ls -A | grep -v CVS | grep -v $DATE | grep -v run`   # removing nearly everything in $TEMP_DIR
 			    cd -   # changing directory back
 			else
 			    tar zxf $ARCHIVE_RUN_RESULTS_FILE -C $TEMP_DIR   # extracting all files from $ARCHIVE_RUN_RESULTS_FILE archive
 			    cd $TEMP_DIR   # changing directory to $TEMP_DIR
 			    cp $LAST_DATE/run"_"$BENCHMARK ./run"_"$BENCHMARK"_"$LAST_DATE   # copy one more important file to $TEMP_DIR
-			    rm -rf `\ls -A 2>/dev/null | grep -v CVS | grep -v run`   # removing nearly everything in $TEMP_DIR
+			    rm -rf `\ls -A 2>/dev/null | grep -v CVS | grep -v $DATE | grep -v run`   # removing nearly everything in $TEMP_DIR
 			    cd -   # changing directory back
 			fi
-
+			
 			if [ -f $TEMP_DIR/run'_'$BENCHMARK'_'$LAST_DATE ]; then   # does the file $TEMP_DIR/run_$BENCHMARK_$LAST_DATE exist?
 			    if [ "`diff $TEMP_DIR/run'_'$BENCHMARK'_'$DATE $TEMP_DIR/run'_'$BENCHMARK'_'$LAST_DATE`" == "" ]; then   # nothing changed in the output since the last running of this benchmark
 				CURRENT_RECORD=$CURRENT_RECORD":incorrect (no changes)"
@@ -703,6 +706,7 @@ else
 	    else
 		CURRENT_RECORD=$CURRENT_RECORD":N/A"
 	    fi
+
 	    echo $BENCHMARK >> $ERROR_FILE_SHORT
 	    if [ "$LAST_RECORD" == "" ]; then
 		echo "   was:N/A" >> $ERROR_FILE_SHORT

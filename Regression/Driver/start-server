@@ -1,16 +1,31 @@
 #!/bin/bash
 
-# This script gets the run-tasks file from the repository and runs it. This script is run daily/weekly by crond.
+# This script starts ssh-agent, add the key for all remote machines, gets the run-tasks file from the repository and runs it. This script is run daily/weekly by crond.
 
 # Beginning of script
 
-MAILING_FILE=mailto-all
-MAILING_LIST=
+MAILING_FILE=mailto-all   # the file containing the list of people to be mailed in case of an error
+MAILING_LIST=   # the list of people to be mailed in case of an error
+SSH_KEY_FILE=$HOME/.ssh/id_dsa   # the ssh key
+COMMAND_LINE_PARAMS=   # the command-line parameters to pass to ./run-tasks
 GOT_ERRORS=0   # no errors for now
 
-cd $FLEX_DIR/../Tests/Regression/Driver
-cvs update run-tasks > /dev/null 2>&1 || GOT_ERRORS=1   # updating the main script
-if [ $GOT_ERRORS -eq 1 ]; then   # cvs update finished with an error
+if [ "$1" == "--help" ]; then
+    ./run-tasks --help   # printing the help from ./run-tasks
+    echo -e "  -ssh-key-file=<file>           -- Sets the file containing the ssh key that can automatically log in into all remote machines (default value: $HOME/.ssh/id_dsa)."   # printing the only option of ./start-server missing in ./run-tasks
+else
+    while [ "$1" != "" ]; do   # parsing the command-line parameters
+	case "$1" in
+	    -ssh-key-file=*)
+		SSH_KEY_FILE=`echo $1 | sed "s|^.*=||"`;;   # The file containing the ssh-key for all remote machines
+	    *)
+		COMMAND_LINE_PARAMS=$COMMAND_LINE_PARAMS" $1";;
+	esac
+	shift
+    done
+
+    # Getting the list of people to be mailed, in case something is wrong
+
     NUMBER_LINES=`wc -l $MAILING_FILE | sed s/\ $MAILING_FILE//`   # getting the number of lines in $MAILING_FILE
     n_line=1
     while [ $n_line -le $NUMBER_LINES ]; do   # getting the list of people who will receive the email
@@ -18,10 +33,34 @@ if [ $GOT_ERRORS -eq 1 ]; then   # cvs update finished with an error
 	n_line=$[$n_line+1]
     done
 
-    echo "Could not update ./run-tasks. Please make sure that you run ./start-server from the appropriate directory, and the ./run-tasks file was not removed from repository." | mail -s "Regression Testing Server Error" $MAILING_LIST
-else
-    ./run-tasks $@   # running the main script
+    # Trying to start the ssh-agent, add the key for the remote machines and distribute the jobs to remote machines
+
+    eval `ssh-agent` >/dev/null 2>&1 || GOT_ERRORS=1
+    if [ $GOT_ERRORS -eq 1 ]; then   # ssh-agent could not be started
+	echo "ssh-agent could not be started." | mail -s "Regression Testing Server Error" $MAILING_LIST
+    else
+	ssh-add $SSH_KEY_FILE >/dev/null 2>&1 &   # trying to add the key to the ssh-agent
+	sleep 5   # waiting 5 seconds for ssh-add to finish (the key must have a blank passphrase)
+	if [ ! -f "$SSH_KEY_FILE" -o "`ps -A | grep ssh-add`" != "" ]; then   # ssh-add did not finish; most probably the $SSH_KEY_FILE does not exist or key requires a passphrase
+	    if [ ! -f $SSH_KEY_FILE ]; then echo "file not found"
+	    else echo "passphrase is not blank."
+	    fi
+	    GOT_ERRORS=1
+	    killall ssh-add >/dev/null 2>&1   # killing all processes ssh-add, if any exists
+	    eval `ssh-agent -k` >/dev/null 2>&1   # killing the ssh-agent
+	    echo "ssh-add could not add the key. Most probably the file containing the key could not be found or the key requires a passphrase." | mail -s "Regression Testing Server Error" $MAILING_LIST
+	else   # ssh-agent should be running fine now
+	    cd $FLEX_DIR/../Tests/Regression/Driver
+	    cvs update run-tasks > /dev/null 2>&1 || GOT_ERRORS=1   # updating the main script
+	    if [ $GOT_ERRORS -eq 1 ]; then   # cvs update finished with an error
+		echo "Could not update ./run-tasks. Please make sure that you run ./start-server from the appropriate directory, and the ./run-tasks file was not removed from repository." | mail -s "Regression Testing Server Error" $MAILING_LIST
+	    else
+		./run-tasks $COMMAND_LINE_PARAMS   # running the main script
+	    fi
+	    cd -
+	    eval `ssh-agent -k` >/dev/null 2>&1   # killing the ssh-agent
+	fi
+    fi
 fi
-cd -
 
 # End of script

@@ -103,8 +103,8 @@ if [ "$BENCHMARK" == "" ]; then   # No bechmark given as a parameter
 else
     if [ "$COMPILE" == "yes" ]; then   # compiling the benchmark...
 	cd $FLEX_DIR
-	if [ ! -e $BENCHMARK.java ]; then   # does the benchmark file exist?
-	    ERRORS_SHORT_LINE="compil-error"
+	if [ ! -f $BENCHMARK.java ]; then   # does the benchmark file exist?
+	    ERRORS_SHORT_LINE="compile-error"
 	    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 		echo >> $ERROR_FILE
 		echo -e "The file $BENCHMARK.java not found. Looking for the executable run$BENCHMARK or for the script $BENCHMARK..." >> $ERROR_FILE
@@ -233,6 +233,8 @@ else
 			echo -e "          Benchmark $BENCHMARK ran without throwing any error." >> $ERROR_FILE
 		    fi
 		fi
+	    else   # Nothing was run, because the executable was not found
+		ERRORS_SHORT_LINE=$ERRORS_SHORT_LINE":run-nothing"
 	    fi
 	fi
     else   # "$RUN" == "no"

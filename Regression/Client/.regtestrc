@@ -12,3 +12,4 @@ export TASKS_RUN_ON_THIS_MACHINE_FILE=$TEMP_DIR/tasks-run
 export RUNNING_TASK_FILE=$TEMP_DIR/running
 export UPDATING_FLEX_FILE=$TEMP_DIR/updating
 export UPDATED_SUCCESSFULLY_FILE=$TEMP_DIR/updated-success
+export SSH_KEY_FILE=$HOME/.ssh/blackwolf_dsa_4096

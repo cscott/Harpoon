@@ -1,4 +1,4 @@
-Updated: 08/12/2002.
+Updated: 08/13/2002.
 
 ----------------------------------------------------------------
 1. HOW TO MAKE EVERYTHING WORK
@@ -193,6 +193,7 @@ List of options with their description:
 	-mail-results -- Tells the server whether to mail the results or no. If this option is set to "yes", then a short report will be sent to the list of users specified by -mail-to-all or -mailto-file parameters. If set to "no", then nobody is mailed anything. Default value is "yes".
 	-mail-to-all -- Tells the server where the mailing list is located. If this parameter is equal to "yes", the server reads the file "mailto-all"; if equal to "no", the server reads the file "mailto-selected". If you want to mail the results to a list located in a different file, use -mailto-file parameter. Default value is "yes".
 	-mailto-file -- Tells the server the name of the file that contains the list of the people to be mailed. If you want to use the file "mailto-all" or "mailto-selected", you can use -mail-to-all parameter instead of -mailto-file. However, if you want to use other file names, you have to use this parameter. Default value is "mailto-all".
+	-ssh-key-file -- Tells the server the name of the file that contains the private key which can be used in order to be able to login to all remote machines that will be used in this session, without introducing any passphrase. The passphrase of this private key has to be blank. Default value is $HOME/.ssh/id_dsa.
 
 	-debug -- This is a special option -- it does not require "=yes" or "=no". This option is something like -v/-V (verbose) option for most of UNIX commands/programs. Generally, you should not give ./start-server this option, unless you modified something in ./run-tasks and you want to make sure that everything is working. For more details about debugging information see Section 4 -- "INSIDE" THE SERVER -> VARIABLES -> $DEBUG.
 
@@ -289,9 +290,21 @@ VARIABLES
 
     	$MAILING_FILE -- the name of the file containing the list of people to whom the results of this session should be run (See Section 3 -- SERVER OPTIONS).
 
+	$SSH_KEY_FILE -- the name of the file containing the private key which can be used for logging in to all remote machines without typing anything. In order to be able to do this, the key has to have a blank passphrase (See Section 3 -- SERVER OPTIONS).
 
 HOW IT WORKS
 ----------------
+
+./start-server
+--------------
+
+1. Tries to start an ssh-agent and add to it a key, that will allow the server to login into all remote machine without asking the user to introduce any passphrase.
+2. cvs updates the file ./run-tasks
+3. Runs the file ./run-tasks
+4. Kills the ssh-agent started at the beginning.
+
+./run-tasks
+-----------
 
 1. The server gets the list of tasks to be run, the list of machines to be used for running the tasks and the list of people to be mailed.
 2. The server tries to ssh into all machines from the list. If a machine is not reachable that machine is removed.

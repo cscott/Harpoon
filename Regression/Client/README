@@ -1,4 +1,4 @@
-Updated: 08/12/2002.
+Updated: 08/13/2002.
 
 
 -------------------------------
@@ -14,22 +14,73 @@ Updated: 08/12/2002.
 
 1.1. cvs update this directory.
 1.2. Copy the .regtestrc file to your home directory.
-1.3. If you're using the bash shell, then simply add this line at the end of you .bashrc file:
+1.3. Open the file $HOME/.regtestrc in a text editor and change the value of the $SSH_KEY_FILE variable. The $SSH_KEY_FILE has to be set to the name of the file containing the private key, which allows you to log in to lesser-magoo.lcs.mit.edu without typing a password. The passphrase for this key has to be blank; otherwise, the scripts will not be able to run without user intervention.
+1.4. If you're using the bash shell, then simply add this line at the end of you .bashrc file:
 
 	. $HOME/.regtestrc
 
      If you're using a different shell, then edit the $HOME/.regtestrc file (it should be very easy, since the only thing it does is exporting some variables) and make sure it is executed everytime when you log in.
-1.4. Make sure you can cvs update FLEX without typing your password. In order to do this, you'll to make your ssh-agent work with lesser-magoo.lcs.mit.edu. Read ../Driver/SSH-INSTALL for more information about ssh-agent.
+1.5. Make sure you can cvs update FLEX without typing your password. In order to do this, you'll to make your ssh-agent work with lesser-magoo.lcs.mit.edu. Read ../Driver/SSH-INSTALL for more information about ssh-agent.
 
 ==============
 2. FILES USED
 ==============
 
+---------------
+REQUIRED FILES
+---------------
+
+tasks-configure:
+----------------
+
+
+----------------------------
+TEMPORARILY GENERATED FILES
+----------------------------
+
+results/run_*:
+--------------
+
+results/compile_*:
+------------------
+
+results/errors_short_*:
+-----------------------
+
+$TASKS_RUN_ON_THIS_MACHINE:
+---------------------------
+
+$RUNNING_TASK_FILE:
+-------------------
+
+$UPDATING_FLEX_FILE:
+--------------------
+
+$UPDATED_SUCCESSFULLY_FILE:
+---------------------------
+
+$SSH_KEY_FILE:
+--------------
 
 
 ========================
 3. "INSIDE" THE SCRIPTS
 ========================
+
+update-and-make:
+----------------
+
+remake-everything:
+------------------
+
+cvs-update-all:
+---------------
+
+generate-report:
+----------------
+
+run-benchmark:
+--------------
 
 
 ---------------------------------------------------------------------
