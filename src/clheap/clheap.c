@@ -9,6 +9,7 @@
 #include "flexthread.h"	/* flex_mutex_lock */
 #include "misc.h"	/* for ALIGN, RECYCLE_HEAPS */
 #include <stdlib.h>	/* for malloc, size_t */
+#include "stats.h"	/* for thread_heaps_created */
 
 #ifdef RECYCLE_HEAPS
 static clheap_t heap_free_list = NULL;
@@ -40,6 +41,11 @@ clheap_t clheap_create() {
   }
   FLEX_MUTEX_UNLOCK(&heap_free_list_mutex);
   if (clh!=NULL) goto finish_init;
+#endif
+#ifdef MAKE_STATS
+  LOCK_STATS(thrcnt);
+  thread_heaps_created++;
+  UNLOCK_STATS(thrcnt);
 #endif
   clh = (clheap_t) malloc(sizeof(*clh));
   clh->heap_start =

@@ -49,6 +49,9 @@ DECLARE_STATS_EXTERN(thr)
 extern size_t thr_bytes_overflow;
 extern int threads_created;
 
+extern int thread_heaps_created;
+DECLARE_LOCK_EXTERN(thrcnt); /* protects the above statistics counter */
+
 void print_statistics(void);
 
 #endif /* INCLUDED_NIFTY_STATS_H */

@@ -10,7 +10,9 @@ DECLARE_STATS_LOCAL(stk)
 DECLARE_STATS_LOCAL(gbl)
 DECLARE_STATS_LOCAL(thr)
 size_t thr_bytes_overflow = 0;
+int thread_heaps_created = 0;
 int threads_created = 0;
+DECLARE_LOCK_LOCAL(thrcnt);
 
 static void stat_signal_handler(int sig) { print_statistics(); }
 
@@ -21,7 +23,7 @@ void print_statistics(void) {
 	 "Stack allocation:        %8ld bytes %8ld objects\n"
 	 "Thread-local allocation: %8ld bytes %8ld objects\n"
 	 "Global allocation:       %8ld bytes %8ld objects\n"
-	 "Threads created:         %8d\n"
+	 "Threads created:         %8ld (in %ld heaps)\n"
 	 "Average heap size/thread:%8ld bytes\n"
 	 "Thread heap overflow:    %8ld bytes\n",
 	 (long) HEAPSIZE, (long) POOLSIZE,
@@ -38,7 +40,7 @@ void print_statistics(void) {
 	 (long) stk_bytes_alloc, (long) stk_objs_alloc,
 	 (long) thr_bytes_alloc, (long) thr_objs_alloc,
 	 (long) gbl_bytes_alloc, (long) gbl_objs_alloc,
-	 threads_created,
+	 (long) threads_created, (long) thread_heaps_created,
 	 threads_created ? (long) thr_bytes_alloc/threads_created: 0L,
 	 (long) thr_bytes_overflow);
   fflush(stdout);
