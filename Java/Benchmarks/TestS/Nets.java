@@ -8,6 +8,7 @@ public class Nets {
     public static void main(String argv[]) {
 
         kickOff kickoffObject = new kickOff(Integer.parseInt(argv[0]));
+	kickoffObject.run();
     }
 
 
@@ -23,11 +24,11 @@ class kickOff extends Thread {
 
     kickOff(int port) {
 	this.port=port;
-	run();
     }
 
     public void run() {
         server serverObject = new server(port);
+	serverObject.run();
     }
 
     void pause (int time) {
@@ -51,7 +52,6 @@ class server extends Thread {
 
     server(int port) {
 	this.port=port;
-        run();
     }
 
     private static void startthread(server t) throws IOException {
@@ -108,7 +108,7 @@ class server extends Thread {
     }
 
 
-     synchronized void broadcast_message(String message) {
+    void broadcast_message(String message) {
 
        read_from_connection readobj;
 
@@ -117,6 +117,7 @@ class server extends Thread {
            readobj = (read_from_connection)v.elementAt(i);
            readobj.pout.println(message);
        }
+
 
     }
 
