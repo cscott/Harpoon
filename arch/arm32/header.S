@@ -1,0 +1,26 @@
+/* mark segment beginnings */
+#include "segments.h"
+
+	GC_SEGMENT
+.global _gc_start
+_gc_start:
+	
+	STATIC_OBJECTS_SEGMENT
+.global _static_objects_start
+_static_objects_start:
+
+	STRING_CONSTANTS_SEGMENT
+.global _string_constants_start
+_string_constants_start:
+	
+	FIXUP_SEGMENT
+.global _fixup_start
+_fixup_start:
+
+	CODE_SEGMENT
+.global _code_start
+_code_start:
+
+	TEXT_SEGMENT
+.global _text_start
+_text_start:
