@@ -42,7 +42,7 @@ import harpoon.Tools.Graphs.SCComponent;
 import harpoon.Tools.Graphs.SCCTopSortedGraph;
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
 import harpoon.Analysis.PointerAnalysis.Relation;
-import harpoon.Tools.BasicBlocks.BBConverter;
+import harpoon.Tools.BasicBlocks.CachingBBConverter;
 
 import harpoon.Util.Util;
 
@@ -58,7 +58,7 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.3 2000-03-21 05:42:04 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.4 2000-03-23 02:48:52 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
@@ -69,12 +69,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
     // against errors in other components (ex: ReachingDefs)
     private static final boolean CAUTION = false;
     
-    private final BBConverter bbconv;
+    private final CachingBBConverter bbconv;
     private final ClassHierarchy ch;
 
     /** Creates a <code>MetaCallGraphImpl</code>. It must receive, in its
-     last parameter, the <code>main</code> method of the program. */
-    public MetaCallGraphImpl(BBConverter bbconv, ClassHierarchy ch,
+	last parameter, the <code>main</code> method of the program. */
+    public MetaCallGraphImpl(CachingBBConverter bbconv, ClassHierarchy ch,
 			     HMethod main) {
         this.bbconv = bbconv;
 	this.ch     = ch;

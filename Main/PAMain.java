@@ -13,6 +13,9 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import gnu.getopt.Getopt;
+import gnu.getopt.LongOpt;
+
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeFactory;
@@ -30,6 +33,7 @@ import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.PointerAnalysis.PointerAnalysis;
 import harpoon.Analysis.PointerAnalysis.PANode;
 import harpoon.Analysis.PointerAnalysis.ParIntGraph;
+import harpoon.Analysis.PointerAnalysis.Relation;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
@@ -50,18 +54,20 @@ import harpoon.Analysis.MetaMethods.SmartCallGraph;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.14 2000-03-22 05:23:11 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.15 2000-03-23 02:48:53 salcianu Exp $
  */
 public abstract class PAMain {
 
     // use the real meta call graph
     private static boolean METAMETHODS = false;
     // use FakeMetaCallGraph(SmartCallGraph)
-    private static boolean SMART_CALL_GRAPH = true;
+    private static boolean SMART_CALL_GRAPH = false;
     // debug the class hierarchy
-    private static boolean DEBUG_CH = false;
+    private static boolean SHOW_CH = false;
+    // stop after printing the class hierarchy debug info 
+    private static boolean SHOW_CH_ONLY = false;
 
-    private static String[] examples ={
+    private static String[] examples = {
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test1.complex multiplyAdd",
 	"java -Xmx200M harpoon.Main.PAMain harpoon.Test.PA.Test2.Server run",
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test3.multiset " +
@@ -70,6 +76,13 @@ public abstract class PAMain {
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test5.A foo"
     };
 
+    private static String[] options = {
+	"-m, --meta     use the real MetaMethod",
+	"-s, --smart    use the SmartCallGrapph",
+	"-d, --dumb     use the simplest CallGraph (default)",
+	"-c, --showch   show debug info about ClassHierrachy",
+	"-o, --onlych   show debug info about ClassHierarchy and stop"
+    };
 
     static PointerAnalysis pa = null;
     
@@ -81,15 +94,28 @@ public abstract class PAMain {
     private static Method root_method = new Method();
     private static Method analyzed_method = new Method();
 
+    private static MetaCallGraph  mcg = null;
+    private static MetaAllCallers mac = null;
+    private static Relation split_rel = null;
+
     public static final void main(String[] params){
-	if(params.length < 2){
+
+	int optind = get_options(params);
+	int nbargs = params.length - optind;
+
+	if(nbargs < 1){
 	    System.out.println("Usage:\n" +
-	     "\tjava harpoon.Main.PAMain <main_class>" +
+	     "\tjava harpoon.Main.PAMain [options] <main_class> " +
 	     "([<class>].<analyzed_method>)*\n" +
 	     " If no class if given for the analyzed method, " +
-	     "<main_class> is taken by default.\n" + 
-	     "Examples:");
+	     "<main_class> is taken by default.");
 
+	    System.out.println("Options");
+	    for(int i = 0; i < options.length; i++)
+		System.out.println("\t" + options[i]);
+
+
+	    System.out.println("Examples:");
 	    for(int i = 0; i < examples.length; i++)
 		System.out.println("\t" + examples[i]);
 
@@ -103,6 +129,8 @@ public abstract class PAMain {
 	    System.exit(1);
 	}
 
+	print_options();
+
 	// variables for the timing stuff.
 	long tstart = 0;
 	long tstop  = 0;
@@ -110,7 +138,8 @@ public abstract class PAMain {
 	long start_pre_time = System.currentTimeMillis();
 	Linker linker = Loader.systemLinker;
 	root_method.name = "main";
-	root_method.declClass = params[0];
+	root_method.declClass = params[optind];
+	optind++;
 	HClass hclass = linker.forName(root_method.declClass);
 	HMethod[] hm  = hclass.getDeclaredMethods();
 
@@ -132,8 +161,8 @@ public abstract class PAMain {
 	root_methods.addAll(
 	    harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 
-	if(DEBUG_CH){
-	    System.out.println("Set of roots");
+	if(SHOW_CH){
+	    System.out.println("Set of roots: {");
 	    for(Iterator it = root_methods.iterator(); it.hasNext(); ){
 		Object o = it.next();
 		if(o instanceof HMethod)
@@ -141,6 +170,7 @@ public abstract class PAMain {
 		else
 		    System.out.println(" c: " + o);
 	    }
+	    System.out.println("}");
 	}
 
 	System.out.print("ClassHierarchy ... ");
@@ -150,21 +180,18 @@ public abstract class PAMain {
 	tstop  = System.currentTimeMillis();
 	System.out.println((tstop - tstart) + "ms");
 
-	if(DEBUG_CH){
+	if(SHOW_CH){
 	    System.out.println("Root method = " + hroot);	    
-	    System.out.println("Instantiated classes:");
+	    System.out.println("Instantiated classes: {");
 	    Set inst_cls = ch.instantiatedClasses();
 	    for(Iterator it = inst_cls.iterator(); it.hasNext(); )
 		System.out.println(" " + it.next());
-	    
-	    System.exit(1);
+	    System.out.println("}");
+	    if(SHOW_CH_ONLY) System.exit(1);
 	}
 
-	BBConverter bbconv = new BBConverter(hcf);
+	CachingBBConverter bbconv = new CachingBBConverter(hcf);
 
-	MetaCallGraph  mcg = null;
-	MetaAllCallers mac = null;
-	
 	if(METAMETHODS){ // real meta-methods
 	    System.out.print("MetaCallGraph ... ");
 	    tstart = System.currentTimeMillis();
@@ -210,6 +237,12 @@ public abstract class PAMain {
 	}
 	
 
+	System.out.println("SplitRelation ... ");
+	tstart = System.currentTimeMillis();
+	split_rel = mcg.getSplitRelation();
+	tstop  = System.currentTimeMillis();
+	System.out.println((tstop - tstart) + "ms");
+	    
 	//System.out.println("MetaCallGraph:");
 	//mcg.print(new java.io.PrintWriter(System.out, true), true);
 
@@ -221,9 +254,9 @@ public abstract class PAMain {
 
 	pa = new PointerAnalysis(mcg, mac, bbconv);
 
-	if(params.length > 1){
-	    for(int i = 1; i < params.length; i++){
-		getMethodName(params[i],analyzed_method);
+	if(optind < params.length){
+	    for(; optind < params.length; optind++ ){
+		getMethodName(params[optind],analyzed_method);
 		if(analyzed_method.declClass == null)
 		    analyzed_method.declClass = root_method.declClass;
 		display_method(analyzed_method);
@@ -261,35 +294,44 @@ public abstract class PAMain {
 	for(int i = 0;i<hm.length;i++)
 	    if(hm[i].getName().equals(method.name))
 		hmethod = hm[i];
+
 	if(hmethod == null){
 	    System.out.println("Sorry, method not found\n");
 	    return;
 	}
 
-	MetaMethod mm;
+	int nbmm = 0;
 
-	if(METAMETHODS)
-	    mm = new MetaMethod(hmethod,false);
+	// look for all the meta-methods originating into this method
+	// and do all the analysis stuff on them.
+	for(Iterator it = split_rel.getValues(hmethod); it.hasNext(); ){
+	    nbmm++;
+	    MetaMethod mm = (MetaMethod) it.next();
+	    System.out.println("HMETHOD " +hmethod+ " ->\n META-METHOD " + mm);
+	    ParIntGraph int_pig = pa.getIntParIntGraph(mm);
+	    ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
+	    ParIntGraph pig_inter_thread = pa.threadInteraction(mm);
+	    PANode[] nodes = pa.getParamNodes(mm);
+	    System.out.println("META-METHOD " + mm);
+	    System.out.print("POINTER PARAMETERS: ");
+	    System.out.print("[ ");
+	    for(int i = 0; i < nodes.length; i++)
+		System.out.print(nodes[i] + " ");
+	    System.out.println("]");
+	    System.out.print("INTERNAL GRAPH AT THE END OF THE METHOD:");
+	    System.out.println(int_pig);
+	    System.out.print("EXTERNAL GRAPH AT THE END OF THE METHOD:");
+	    System.out.println(ext_pig);
+	    System.out.print("EXTERNAL GRAPH AT THE END OF THE METHOD" +
+			     " + INTER-THREAD ANALYSIS:");
+	    System.out.println(pig_inter_thread);
+	}
+
+	if(nbmm == 0)
+	    System.out.println("Oops! " + hmethod +
+			       " seems not to be called at all");
 	else
-	    mm = new MetaMethod(hmethod,true);
-
-	ParIntGraph int_pig = pa.getIntParIntGraph(mm);
-	ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
-	ParIntGraph pig_inter_thread = pa.threadInteraction(mm);
-	PANode[] nodes = pa.getParamNodes(mm);
-	System.out.println("META-METHOD " + mm);
-	System.out.print("POINTER PARAMETERS: ");
-	System.out.print("[ ");
-	for(int i = 0; i < nodes.length; i++)
-	    System.out.print(nodes[i] + " ");
-	System.out.println("]");
-	System.out.print("INTERNAL GRAPH AT THE END OF THE METHOD:");
-	System.out.println(int_pig);
-	System.out.print("EXTERNAL GRAPH AT THE END OF THE METHOD:");
-	System.out.println(ext_pig);
-	System.out.print("EXTERNAL GRAPH AT THE END OF THE METHOD" +
-			 " + INTER-THREAD ANALYSIS:");
-	System.out.println(pig_inter_thread);
+	    System.out.println(nbmm + " ANALYZED META-METHOD(S)");
     }
 
     // receives a "class.name" string and cut it into pieces, separating
@@ -301,16 +343,62 @@ public abstract class PAMain {
 	method.declClass      = str.substring(0,point_pos);
     }
 
+    // process the command line options; returns the starting index of
+    // the non-option arguments
+    private static int get_options(String[] argv){
+	int c, c2;
+	String arg;
+	LongOpt[] longopts = new LongOpt[4];
+	longopts[0] = new LongOpt("meta", LongOpt.NO_ARGUMENT, null, 'm');
+	longopts[1] = new LongOpt("smartcg", LongOpt.NO_ARGUMENT, null, 's');
+	longopts[2] = new LongOpt("showch", LongOpt.NO_ARGUMENT, null, 'c');
+	longopts[3] = new LongOpt("onlych", LongOpt.NO_ARGUMENT, null, 'o');
+
+	Getopt g = new Getopt("PAMain", argv, "msco", longopts);
+
+	while((c = g.getopt()) != -1)
+	    switch(c){
+	    case 'm':
+		SMART_CALL_GRAPH = false;
+		METAMETHODS = true;
+		break;
+	    case 's':
+		METAMETHODS = false;
+		SMART_CALL_GRAPH = true;
+		break;
+	    case 'c':
+		SHOW_CH = true;
+		break;
+	    case 'o':
+		SHOW_CH = true;
+		SHOW_CH_ONLY = true;
+		break;
+	    }
+
+	return g.getOptind();
+    }
+
+    private static void print_options(){
+	if(METAMETHODS && SMART_CALL_GRAPH){
+	    System.out.println("Call Graph Type Ambiguity");
+	    System.exit(1);
+	}
+	System.out.print("Execution options:");
+	if(SHOW_CH_ONLY) 
+	    System.out.print(" SHOW_CH_ONLY");
+	else 
+	    if(SHOW_CH)
+		System.out.print(" SHOW_CH");
+
+	if(METAMETHODS)
+	    System.out.print(" METAMETHODS");
+	if(SMART_CALL_GRAPH)
+	    System.out.print(" SMART_CALL_GRAPH");
+	if(!(METAMETHODS || SMART_CALL_GRAPH))
+	    System.out.print(" DumbCallGraph");
+
+	System.out.println();
+    }
+
 }
-
-
-
-
-
-
-
-
-
-
-
 
