@@ -37,7 +37,7 @@ import java.util.Set;
  * <code>ToTreeHelpers</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTreeHelpers.java,v 1.1.2.4 2000-02-13 18:25:41 cananian Exp $
+ * @version $Id: ToTreeHelpers.java,v 1.1.2.5 2000-02-14 00:56:32 cananian Exp $
  */
 abstract class ToTreeHelpers {
     //------------ EdgeOracle IMPLEMENTATIONS ------------------
@@ -226,8 +226,8 @@ abstract class ToTreeHelpers {
 	public static boolean isBarrier(Quad q) {
 	    // ASET,CALL,SET are Quad-only.  We only deal with LowQuads here
 	    if (q instanceof MONITORENTER || q instanceof MONITOREXIT ||
-		q instanceof PCALL || q instanceof PSET) return false;
-	    return true;
+		q instanceof PCALL || q instanceof PSET) return true;
+	    return false;
 	}
 	public Iterator uses(Quad q) {
 	    if (q instanceof SIGMA) return uses((SIGMA)q);
