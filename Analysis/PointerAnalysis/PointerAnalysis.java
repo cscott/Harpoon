@@ -53,7 +53,7 @@ import harpoon.IR.Quads.FOOTER;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.19 2000-03-01 01:11:03 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.20 2000-03-02 22:55:40 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -157,9 +157,8 @@ public class PointerAnalysis {
     // contains only basic blocks from the same method.
     private PAWorkList  W_intra_proc = new PAWorkList();
 
-    /** Repository for node management. */
-    // TODO: Must be [package], it is public just for debug purposes
-    public NodeRepository nodes = new NodeRepository(); 
+    // Repository for node management.
+    NodeRepository nodes = new NodeRepository(); 
     final NodeRepository getNodeRepository() { return nodes; }
 
     // Top-level procedure for the analysis. Receives the main method as
@@ -847,6 +846,19 @@ public class PointerAnalysis {
 	    (java.lang.reflect.Modifier.isNative(modifier)) ||
 	    (java.lang.reflect.Modifier.isAbstract(modifier))
 	    );
+    }
+
+    /** Prints some statistics. */
+    public final void  print_stats(){
+	if(!STATS){
+	    System.out.println("Statistics are deactivated.");
+	    System.out.println("Turn on the PointerAnalysis.STATS flag!");
+	    return;
+	}
+
+	Stats.print_stats();
+	nodes.print_stats();
+	System.out.println("==========================================");
     }
 
 }

@@ -25,12 +25,12 @@ import harpoon.IR.Quads.NEW;
  * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.12 2000-03-02 17:42:16 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.13 2000-03-02 22:55:40 salcianu Exp $
  */
 abstract class InterThreadPA {
     
-    private static final boolean DEBUG = true;
-    private static final boolean DEBUG2 = true;
+    private static final boolean DEBUG = false;
+    private static final boolean DEBUG2 = false;
     private static final boolean TIMING = true;
 
 

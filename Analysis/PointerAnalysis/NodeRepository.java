@@ -14,13 +14,14 @@ import harpoon.IR.Quads.Quad;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.8 2000-03-01 01:11:03 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.9 2000-03-02 22:55:40 salcianu Exp $
  */
 public class NodeRepository {
     
     private Hashtable static_nodes;
     private Hashtable param_nodes;
     private Hashtable code_nodes;
+    private Hashtable except_nodes;
     private Hashtable node2code;
 
     /** Creates a <code>NodeRepository</code>. */
@@ -28,6 +29,7 @@ public class NodeRepository {
 	static_nodes = new Hashtable();
 	param_nodes  = new Hashtable();
 	code_nodes   = new Hashtable();
+	except_nodes = new Hashtable();
 	node2code    = new Hashtable();
     }
 
@@ -78,6 +80,16 @@ public class NodeRepository {
 	return (PANode[])param_nodes.get(method);
     }
 
+    // Returns the EXCEPT node associated with a CALL instruction
+    private final PANode getExceptNode(HCodeElement hce){
+	PANode node = (PANode) except_nodes.get(hce);
+	if(node == null){
+	    except_nodes.put(hce,node = new PANode(PANode.EXCEPT));
+	    node2code.put(node,hce);
+	}
+	return node;	
+    }
+
     /** Returns a <i>code</i>: a node associated with the
      * instruction <code>hce</code>: a load node 
      * (associated with a <code>GET</code> quad), a return node (associated
@@ -86,6 +98,12 @@ public class NodeRepository {
      * doesn't exist yet. The type of the node should be passed in the
      * <code>type</code> argument. */
     public final PANode getCodeNode(HCodeElement hce,int type){
+	// we can have a RETURN node and an EXCEPT node associated to the
+	// same code instruction. This is the only case where we have
+	// two nodes associated with an instruction. We fix this by handling
+	// EXCEPT nodes separately.
+	if(type == PANode.EXCEPT) return getExceptNode(hce);
+
 	PANode node = (PANode) code_nodes.get(hce);
 	if(node == null){
 	    code_nodes.put(hce,node = new PANode(type));
@@ -144,9 +162,69 @@ public class NodeRepository {
 	    buffer.append("\n");
 	}
 
+	codes = Debug.sortedSet(except_nodes.keySet());
+	for(int i = 0 ; i < codes.length ; i++){
+	    HCodeElement hce = (HCodeElement) codes[i];
+	    Quad q = (Quad) hce;
+	    buffer.append((PANode)except_nodes.get(hce));
+	    buffer.append("\t");
+	    buffer.append(hce.getSourceFile());
+	    buffer.append(":");
+	    buffer.append(hce.getLineNumber());
+	    buffer.append(" ");
+	    buffer.append(hce);
+	    buffer.append("\n");
+	}
+
 	return buffer.toString();
     }
 
+    /** Prints some statistics. */
+    public void print_stats(){
+	int nb_excepts = except_nodes.size();
+	int nb_statics = static_nodes.size();
+
+	int nb_insides = 0;
+	int nb_loads   = 0;
+	int nb_returns = 0;
+	
+     	Iterator it = code_nodes.keySet().iterator();
+	while(it.hasNext()){
+	    PANode node = (PANode) code_nodes.get(it.next());
+	    switch(node.type){
+	    case PANode.INSIDE:
+		nb_insides++;
+		break;
+	    case PANode.LOAD:
+		nb_loads++;
+		break;
+	    case PANode.RETURN:
+		nb_returns++;
+		break;
+	    }
+	}
+
+	int nb_params = 0;
+	it = param_nodes.keySet().iterator();
+	while(it.hasNext())
+	    nb_params += ((PANode[])(param_nodes.get(it.next()))).length;
+
+	System.out.println("-NODE STATS-------------------------------");
+	System.out.println("INSIDE node(s) : " + nb_insides);
+	System.out.println("RETURN node(s) : " + nb_returns);
+	System.out.println("EXCEPT node(s) : " + nb_excepts);
+	System.out.println("STATIC node(s) : " + nb_statics);
+	System.out.println("LOAD   node(s) : " + nb_loads);
+	System.out.println("PARAM  node(s) : " + nb_params);
+	int nb_total =
+	    nb_insides + nb_returns + nb_excepts +
+	    nb_statics + nb_loads + nb_params;
+	System.out.println("-------------------------");
+	System.out.println("TOTAL          : " + nb_total);
+    }
+
 }
+
+
 
 

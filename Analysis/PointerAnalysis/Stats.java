@@ -13,12 +13,12 @@ import harpoon.ClassFile.HCode;
 
 
 /**
- * <code>Stats</code>
+ * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.1 2000-03-01 00:59:11 salcianu Exp $
+ * @version $Id: Stats.java,v 1.1.2.2 2000-03-02 22:55:40 salcianu Exp $
  */
-abstract public class Stats {
+abstract class Stats {
 
     private static HashMap info = new HashMap();
     
@@ -120,10 +120,17 @@ abstract public class Stats {
 	    if(mi.nb_passes >= (int) (0.5 * maxim_nb_passes))
 		System.out.println("  " + hm + " (" + mi.nb_passes + ")");
 	}
-	System.out.println("===================================");
     }
 
 }
+
+
+
+
+
+
+
+
 
 
 

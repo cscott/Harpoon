@@ -25,7 +25,6 @@ import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.PointerAnalysis.PointerAnalysis;
 import harpoon.Analysis.PointerAnalysis.PANode;
 import harpoon.Analysis.PointerAnalysis.ParIntGraph;
-import harpoon.Analysis.PointerAnalysis.Stats;
 
 
 /**
@@ -33,7 +32,7 @@ import harpoon.Analysis.PointerAnalysis.Stats;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.6 2000-03-01 01:11:18 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.7 2000-03-02 22:55:44 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -146,8 +145,7 @@ public abstract class PAMain {
 	    }
 	}
 
-	Stats.print_stats();
-
+	pa.print_stats();
     }
     
     private static void display_method(Method method){
