@@ -8,6 +8,8 @@ public final class Scheduler
 {
     public  static Thread currentThread;
 
+    public static boolean switchThreads;
+
     private static int nThreads;
 
     static {
@@ -15,7 +17,7 @@ public final class Scheduler
 	NativeIO.initScheduler(NativeIO.MOD_SELECT);
 
 	currentThread= Thread.currentThread();
-
+	switchThreads=false;
 	nThreads= 1;
     }
 
@@ -34,7 +36,7 @@ public final class Scheduler
     // must be called AFTER current Thread added to one of the blocked lists (I/O, thread join, etc.)
     public static void blocked(VoidResultContinuation c) {
 	currentThread.cc= c;
-	currentThread= null;
+	switchThreads=true;
     }
 
     // Invariant: very important: after addR/W, code MUST return to the Scheduler ASAP
@@ -102,7 +104,7 @@ public final class Scheduler
     public static void loop()
     {
 	while(nThreads > 0) 
-	    if (currentThread != null)
+	    if (switchThreads==false)
 		if (currentThread.cc != null) {
 		    // System.out.println("2");
 		    //System.out.println(currentThread);
@@ -118,7 +120,7 @@ public final class Scheduler
 		    //System.out.println("6");
 		    Thread tt= currentThread;
 		    //System.out.println("7");
-		    currentThread= null;
+		    switchThreads=true;
 		    //System.out.println("8");
 		    nThreads--;
 		    //System.out.println("9");
@@ -128,6 +130,7 @@ public final class Scheduler
 	    else if (readyThreads != null) {
 		//System.out.println("11");
 		currentThread= readyThreads;
+		switchThreads=false;
 		//System.out.println("12");
 		readyThreads= currentThread.link;
 		//System.out.println("13");
