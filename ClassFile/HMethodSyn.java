@@ -16,7 +16,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6.2.7 2000-01-25 23:23:31 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6.2.8 2000-01-26 07:11:50 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -29,11 +29,19 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     this.parent = parent;
     this.name = name;
     this.modifiers = template.getModifiers();
-    this.returnType = relink(template.getReturnType());
-    this.parameterTypes = relink(template.getParameterTypes());
+    this.returnType = template.getReturnType();
+    this.parameterTypes = template.getParameterTypes();
     this.parameterNames = template.getParameterNames();
-    this.exceptionTypes = relink(template.getExceptionTypes());
+    this.exceptionTypes = template.getExceptionTypes();
     this.isSynthetic = template.isSynthetic();
+    // ensure linker information is consistent.
+    Util.assert(parent.getLinker() == ((HClass)this.returnType).getLinker());
+    for(int i=0; i<this.parameterTypes.length; i++)
+      Util.assert(parent.getLinker() ==
+		  ((HClass)this.parameterTypes[i]).getLinker());
+    for(int i=0; i<this.exceptionTypes.length; i++)
+      Util.assert(parent.getLinker() ==
+		  ((HClass)this.exceptionTypes[i]).getLinker());
   }
 
   /** Create a new empty method in the specified class
@@ -83,12 +91,15 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   }
 
   public void setReturnType(HClass returnType) {
+    Util.assert(parent.getLinker()==returnType.getLinker());
     if (this.returnType != returnType) parent.hasBeenModified = true;
     this.returnType = returnType;
   }
 
   /** Warning: use can cause method name conflicts in class. */
   public void setParameterTypes(HClass[] parameterTypes) {
+    for (int i=0; i<parameterTypes.length; i++)
+      Util.assert(parent.getLinker()==parameterTypes[i].getLinker());
     if (this.parameterTypes.length != parameterTypes.length)
       parent.hasBeenModified = true;
     else for (int i=0;
@@ -99,6 +110,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   }
   /** Warning: use can cause method name conflicts in class. */
   public void setParameterType(int which, HClass type) {
+    Util.assert(parent.getLinker()==type.getLinker());
     if (this.parameterTypes[which] != type)
       parent.hasBeenModified = true;
     this.parameterTypes[which] = type;
@@ -112,6 +124,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   }
 
   public void addExceptionType(HClass exceptionType) {
+    Util.assert(parent.getLinker()==exceptionType.getLinker());
     for (int i=0; i<exceptionTypes.length; i++)
       if (exceptionTypes[i]==exceptionType)
 	return;
@@ -121,6 +134,8 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     parent.hasBeenModified = true;
   }
   public void setExceptionTypes(HClass[] exceptionTypes) {
+    for (int i=0; i<exceptionTypes.length; i++)
+      Util.assert(parent.getLinker()==exceptionTypes[i].getLinker());
     if (this.exceptionTypes.length != exceptionTypes.length)
       parent.hasBeenModified = true;
     else for (int i=0;
@@ -130,6 +145,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     this.exceptionTypes = exceptionTypes;
   }
   public void removeExceptionType(HClass exceptionType) {
+    Util.assert(parent.getLinker()==exceptionType.getLinker());
     for (int i=0; i<exceptionTypes.length; i++)
       if (exceptionTypes[i].actual().equals(exceptionType)) {
 	exceptionTypes = (HPointer[]) Util.shrink(HPointer.arrayFactory,
@@ -159,17 +175,6 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     return  sb.toString();
   }
 
-  // helper functions to get an appropriate class object consistent
-  // with our parent's linker.
-  private HClass relink(HClass hc) {
-    return parent.getLinker().forDescriptor(hc.getDescriptor());
-  }
-  private HClass[] relink(HClass[] hc) {
-    HClass[] r = new HClass[hc.length];
-    for (int i=0; i<r.length; i++)
-      r[i] = relink(hc[i]);
-    return r;
-  }
   //----------------------------------------------------------
 
   /** Serializable interface. */

@@ -5,6 +5,7 @@ package harpoon.ClassFile;
 
 import java.lang.reflect.Modifier;
 
+import harpoon.Util.Util;
 /**
  * A <code>HFieldSyn</code> provides information about a single field of a
  * class
@@ -12,7 +13,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldSyn.java,v 1.3.2.4 2000-01-25 23:23:31 cananian Exp $
+ * @version $Id: HFieldSyn.java,v 1.3.2.5 2000-01-26 07:11:50 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -22,12 +23,13 @@ class HFieldSyn extends HFieldImpl implements HFieldMutator {
    *  but in class <code>parent</code> and named <code>name</code>. */
   public HFieldSyn(HClassSyn parent, String name, HField template) {
     this.parent = parent;
-    this.type = parent.getLinker().forDescriptor
-      (template.getType().getDescriptor());
+    this.type = template.getType();
     this.name = name;
     this.modifiers = template.getModifiers();
     this.constValue = template.getConstant();
     this.isSynthetic = template.isSynthetic();
+    // ensure linker information is consistent.
+    Util.assert(parent.getLinker()==((HClass)type).getLinker());
   }
   /** Create a new field with the specified name, class and descriptor. */
   public HFieldSyn(HClassSyn parent, String name, String descriptor) {
@@ -41,6 +43,8 @@ class HFieldSyn extends HFieldImpl implements HFieldMutator {
     this.modifiers = 0;
     this.constValue = null;
     this.isSynthetic = false;
+    // ensure linker information is consistent.
+    Util.assert(parent.getLinker()==type.getLinker());
   }
 
   public HFieldMutator getMutator() { return this; }
@@ -55,6 +59,7 @@ class HFieldSyn extends HFieldImpl implements HFieldMutator {
   public void setType(HClass type) {
     if (this.type != type) parent.hasBeenModified = true;
     this.type = type;
+    Util.assert(parent.getLinker()==type.getLinker());
   }
   public void setConstant(Object co) {
     if ((co!=null) ? (!co.equals(this.constValue)) : (this.constValue!=null))
