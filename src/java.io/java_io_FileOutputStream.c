@@ -158,12 +158,28 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
 }
 
 #ifdef WITH_TRANSACTIONS
+#include "../transact/java_lang_Object.h" /* version fetch methods */
+#include "../java.lang/java_lang_Class.h" /* Class.getComponentType() */
 /* transactional version of writeBytes -- problematic!  how do we
  * undo bytes written to a file descriptor? punting on the problem
  * for now & just writing the bytes. */
 JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes_00024_00024withtrans
 (JNIEnv * env, jobject obj, jobject commitrec, jbyteArray ba, jint start, jint len) { 
-  Java_java_io_FileOutputStream_writeBytes(env, obj, ba, start, len);
+  jbyteArray _ba;
+  jsize length = (*env)->GetArrayLength(env, ba);
+  jclass byteclass;
+  int i;
+  /* get readable version. */
+  _ba = (jbyteArray)
+    Java_java_lang_Object_getReadableVersion(env, ba, commitrec);
+  /* now tag all elements as read. */
+  byteclass =
+    Java_java_lang_Class_getComponentType(env, (*env)->GetObjectClass(env,ba));
+  for (i=0; i<length; i++)
+    Java_java_lang_Object_writeArrayElementFlag(env, ba, i, byteclass);
+  /* okay, now we can do the writeBytes. */
+  /* XXX: if GetByteArrayRegion is fixed, this won't work so well. */
+  Java_java_io_FileOutputStream_writeBytes(env, obj, _ba, start, len);
 }
 #endif /* WITH_TRANSACTIONS */
 

@@ -209,7 +209,8 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy_00024_00024withtrans
     dstW = Java_java_lang_Object_getReadWritableVersion(env, dst, commitrec);
     if ((*env)->ExceptionOccurred(env)!=NULL) return;
     /* now for each field, do writeArrayElementFlag() */
-    type = Java_java_lang_Class_getComponentType(env, src);
+    type = Java_java_lang_Class_getComponentType(env,
+						 FNI_GetObjectClass(env, src));
     for (i=0; i<length; i++) {
 	Java_java_lang_Object_writeArrayElementFlag(env, src, i+srcpos, type);
 	Java_java_lang_Object_writeArrayElementFlag(env, dst, i+dstpos, type);
