@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.87 1999-10-23 15:30:09 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.88 1999-10-25 22:13:54 cananian Exp $
  */
 %%
 
@@ -1409,10 +1409,12 @@ METHOD(params) %{
     for (int i=1; i<params.length; i++) {
 	if (params[i] instanceof TwoWordTemp) {
 	    if (loc<=2) { // both halves in registers
-		emitMOVE( ROOT, "mov `d0l, `s0", params[i],regfile.reg[loc++]);
-		emitMOVE( ROOT, "mov `d0h, `s0", params[i],regfile.reg[loc++]);
+		// ack.  emitMOVE isn't working with long/double types.
+		emit( ROOT, "mov `d0l, `s0", params[i],regfile.reg[loc++]);
+		emit( ROOT, "mov `d0h, `s0", params[i],regfile.reg[loc++]);
 	    } else if (loc==3) { // one half in register, one on stack
-		emitMOVE( ROOT, "mov `d0l, `s0", params[i],regfile.reg[loc++]);
+		// ack.  emitMOVE isn't working with long/double types.
+		emit( ROOT, "mov `d0l, `s0", params[i],regfile.reg[loc++]);
 		emit(new InstrMEM( instrFactory, ROOT,
 				   "ldr `d0h, [`s0, #"+(4*(loc++)-12)+"]",
 				   new Temp[] {params[i]}, new Temp[] {FP}));
@@ -1552,7 +1554,13 @@ MOVE(MEM<l,d>(dst), src) %{
 }%
 
 RETURN(val) %{
-    emitMOVE( ROOT, "mov `d0, `s0", r0, val );
+    if (val instanceof TwoWordTemp) {
+	// these should really be InstrMOVEs!
+	emit( ROOT, "mov `d0, `s0l", r0, val);
+	emit( ROOT, "mov `d0, `s0h", r1, val);
+    } else {
+	emitMOVE( ROOT, "mov `d0, `s0", r0, val );
+    }
     // mark exit point.
     emit(new InstrEXIT( instrFactory, ROOT ));
 }%
@@ -1625,8 +1633,8 @@ NATIVECALL(retval, func, arglist) %{
     // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
     // realloc doesn't clobber these between the time they are set and
     // the time the call happens.
-    emit( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
-                new Temp[]{ func }, null);
+    emit2( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
+                new Temp[]{ func });
     // clean up.
     emitCallEpilogue(ROOT, retval, stackOffset);
 }%
