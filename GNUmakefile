@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.66 1999-09-13 08:26:32 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.67 1999-09-14 08:55:16 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -263,10 +263,12 @@ srcdoc: $(ALLSOURCE)
 	make srcdoc-clean
 	for f in $(filter-out Test%,$(ALLSOURCE)); do \
 		echo $$f ; \
-		mkdir -p srcdoc/`dirname $$f`; \
+		mkdir -p srcdoc/harpoon/`dirname $$f`; \
 		bin/source-markup.perl $$f \
-		> srcdoc/`dirname $$f`/`basename $$f .java`.html; \
+		> srcdoc/harpoon/`dirname $$f`/`basename $$f .java`.html; \
 	done
+	mv srcdoc/harpoon/Contrib srcdoc/gnu
+	mkdir srcdoc/silicon; mv srcdoc/harpoon/JavaChip srcdoc/silicon
 
 srcdoc-clean:
 	-${RM} -r srcdoc
