@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.100 2001-09-26 18:01:12 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.101 2001-11-02 22:20:27 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -569,6 +569,10 @@ static class TranslationVisitor extends LowQuadVisitor {
 	addMove(q, q.dst(), mapconst(q, q.value(), q.type()));
     }
   
+    public void visit(harpoon.IR.Quads.DEBUG q) {
+	emitDebug(m_tf, q, q.str());
+    }
+
     public void visit(harpoon.IR.Quads.INSTANCEOF q) {
 	addMove
 	    (q, q.dst(),
@@ -1100,6 +1104,19 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    addStmt(new LABEL(m_tf, src, Lfile, false));
 	    emitString(m_tf, src, src.getSourceFile());
 	    addStmt(new LABEL(m_tf, src, Lsafe, false));
+    }
+    private void emitDebug(TreeFactory m_tf, HCodeElement src, String message){
+	Label Lmessage = new Label(), Lcontinuation = new Label();
+	Label Lprinter = new Label(m_nm.c_function_name("puts"));
+	addStmt(new NATIVECALL(m_tf, src, null, new NAME(m_tf, src, Lprinter),
+			       new ExpList
+				   (new NAME(m_tf, src, Lmessage), null)));
+	addStmt(new JUMP(m_tf, src, Lcontinuation));
+	addStmt(new LABEL(m_tf, src, Lmessage, false));
+	// puts includes a trailing newline, so we don't have to add it
+	// to message.
+	emitString(m_tf, src, message);
+	addStmt(new LABEL(m_tf, src, Lcontinuation, false));
     }
     private void emitString(TreeFactory m_tf, HCodeElement src, String s) {
 	for (int i=0; i<s.length(); i++)

@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.31 2001-10-18 23:47:23 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.32 2001-11-02 22:20:06 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -265,6 +265,9 @@ public class TreeToC extends java.io.PrintWriter {
 			 "extern void *memset(void *,int,size_t);");
 	    sym2decl.put(new Label("alloca"),
 			 "extern void *alloca(size_t);");
+	  /* we use puts in translating the DEBUG quad */
+	    sym2decl.put(new Label("puts"),
+			 "int puts(const char *s);");
 	  /* also, we need to use FNI_GetJNIEnv() at points. */
 	    sym2decl.put(new Label("FNI_GetJNIEnv"),
 			 "extern JNIEnv *FNI_GetJNIEnv(void);");
