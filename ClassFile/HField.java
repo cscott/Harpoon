@@ -13,7 +13,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.18 2003-03-18 02:27:02 cananian Exp $
+ * @version $Id: HField.java,v 1.19 2003-03-18 03:52:53 salcianu Exp $
  * @see HMember
  * @see HClass
  */
@@ -46,8 +46,10 @@ public interface HField extends HMember {
   public HClass getType();
 
   /**
-   * Return the type descriptor for this <code>HField</code> object.
-   */
+   * Return the type descriptor for this <code>HField</code>
+   * object. The format of a field string descriptor is defined in <a
+   * href="http://java.sun.com/docs/books/vmspec/html/ClassFile.doc.html#1169">Section
+   * 4.3</a> of the JVM specification.  */
   public String getDescriptor();
 
   /**

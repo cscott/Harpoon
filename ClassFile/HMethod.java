@@ -12,7 +12,7 @@ import harpoon.Util.ArrayFactory;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.33 2003-03-18 02:27:02 cananian Exp $
+ * @version $Id: HMethod.java,v 1.34 2003-03-18 03:52:53 salcianu Exp $
  * @see HMember
  * @see HClass
  */
@@ -48,8 +48,10 @@ public interface HMethod extends HMember {
   public HClass getReturnType();
 
   /**
-   * Returns the descriptor for this method.
-   */
+   * Returns the descriptor for this method.  The format of a method
+   * string descriptor is defined in <a
+   * href="http://java.sun.com/docs/books/vmspec/html/ClassFile.doc.html#1169">Section
+   * 4.3</a> of the JVM specification.  */
   public String getDescriptor();
 
   /**
