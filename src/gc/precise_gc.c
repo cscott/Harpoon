@@ -160,7 +160,7 @@ void trace_array(struct aarray *arr)
 #ifdef WITH_REALTIME_JAVA
   int j;
   jobject_unwrapped *fields = (jobject_unwrapped *)(arr->_padding_);
-  for(j = 0; j < OBJECT_PADDING; j++)
+  for(j = 0; j < OBJECT_PADDING/sizeof(jobject_unwrapped); j++)
     {
       error_gc("    array field at %p ", fields[j]);
       handle_reference(&fields[j]);
