@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.5 2000-09-26 21:51:06 cananian Exp $
+% $Id: transact.tex,v 1.6 2000-09-26 23:11:06 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.5 $ $}
+\date{\today \\ $ $Revision: 1.6 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -176,35 +176,41 @@ $\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
 \begin{myalgorithmic}
 \STATE $x \gets o\ptr \code{field}[n]$
 \IF{$x \neq \code{FLAG\_VALUE}$}
-  \RETURN x
+  \RETURN $x$
 \ENDIF
 \STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
 \STATE $u \gets 0$ \COMMENT{count uncommitted transactions}
-\ASSERT $v \neq \code{null}$
 \LOOP
-  \IF{$v \ptr \code{transid} = \code{null}$}
-    \ASSERT $v \ptr \code{next} = \code{null}$
-    \BREAK \COMMENT{last record}
-  \ELSIF{$\text{CommitP}(v \ptr \code{transid})$}
+  \ASSERT $v \neq \code{null}$
+  \IF{$\text{CommitP}(v \ptr \code{transid})$}
     \ASSERT $\forall n,\: o \ptr \code{field}[n]=\code{FLAG\_VALUE}
              \Rightarrow  v \ptr \code{field}[n] \text{ is valid }$
-    \STATE \COMMENT{these two stores should be atomic}
+    \STATE \COMMENT{this store should be atomic (but no one will read it)}
     \STATE $v\ptr\code{next} \gets \code{null}$
-           \COMMENT{no other transactions are relevant}
-    \STATE $v\ptr\code{transid} \gets \code{null}$
-           \COMMENT{allow gc of transaction commit record}
+           \COMMENT{allow gc of other transactions}
     \BREAK
-%  \ELSIF{$text{AbortP}(v \ptr
+  \ELSIF{$\text{AbortP}(v \ptr \code{transid})$}
+    \STATE remove $v$ from version list
+    \STATE $v \gets v\text{'s replacement}$
+    \CONTINUE
   \ENDIF
-%\WHILE{$\neg \text{CommitP}(v \ptr \code{transid})$}
+  \STATE $u \gets u + 1$
   \STATE $v \gets v \ptr \code{next}$
-%\ENDWHILE
-\ENDLOOP
-\RETURN $v \ptr \code{field}[n]$
+\ENDLOOP*
+\STATE $x \gets v \ptr \code{field}[n]$
+\IF{$u=0 \wedge x \neq \code{FLAG\_VALUE}$}
+  \STATE $o \ptr \code{field}[n] \gets x$
+  \STATE $\code{dec\_use}(o)$
+         \COMMENT{will deflate when all fields are copied back}
+\ENDIF
+\RETURN $x$
 \end{myalgorithmic}
 \caption{Algorithm for non-transactional read of a field.}
 \label{fig:readnotrans}
 \end{figure}
+
+%% XXX: separate transactions?  parallel subtransactions?
+%% XXX: can I have two reads outstanding on an object? (yes?)
 
 %\begin{figure}
 %\begin{alltt}\small
