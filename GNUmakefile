@@ -66,11 +66,11 @@ wc:
 	@wc -l $(ALLSOURCE) | sort -n | tail -6 | head -5
 
 clean:
-	-${RM} java
-	-${RM} -r harpoon
+	-${RM} -r harpoon 
+	-${RM} java `find . -name "*.class"`
 
 polish: clean
-	-${RM} *~ [A-Z][a-z]*/*.java~
+	-${RM} *~ */*~ `find . -name "*.java~"`
 
 wipe:	clean doc-clean
 
