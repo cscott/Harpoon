@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.97 2003-09-16 22:27:58 cananian Exp $
+# $Id: GNUmakefile,v 1.98 2003-10-08 16:27:40 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -57,6 +57,7 @@ JDOCFLAGS += \
 	then echo '$(JDOCGROUPS)' ; fi)
 
 SUPPORT := Support/Lex.jar Support/CUP.jar Support/jasmin.jar \
+	   Support/minilib.jar Support/cpvm.jar Support/reflect-thunk.jar \
 	   $(wildcard SupportNP/ref.jar) $(wildcard SupportNP/collections.jar)
 SUPPORTP := $(filter-out SupportNP/%,$(SUPPORT))
 # filter out collections.jar if we don't need it.
