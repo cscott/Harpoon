@@ -52,7 +52,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.10 2000-06-30 01:31:08 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.11 2000-06-30 05:55:21 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -240,6 +240,8 @@ public class TreeToC extends java.io.PrintWriter {
 	}
 	public void visit(BINOP e) {
 	    pw.print("(");
+	    if (e.type()==Type.LONG && (e.op==Bop.SHR || e.op==Bop.USHR))
+		pw.print("L"); // macro prefix for long ops.
 	    if (e.op==Bop.SHR) pw.print("SHR("); // use macro
 	    if (e.op==Bop.USHR) pw.print("USHR("); // use macro
 	    //if (e.type()==e.POINTER) pw.print("(void*)");
