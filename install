@@ -373,7 +373,7 @@ if [ x$IMAGEREC == xImageRec ]; then
   make jars;
 fi;
 
-echo 1) Type "javac Hello.java" to compile the "Hello, world\!" application to Java bytecode.
-echo 2) Type "java -cp .:$CLASSPATH Hello" to test the "Hello, world\!" application using SunJVM.
-echo 3) Type "./build Hello HI" to compile the "Hello, world\!" application using FLEX.
-echo 4) Type "./runHI" to run the compiled "Hello, world\!" application.
+echo 1\) Type \"javac Hello.java\" to compile the \"Hello, world\!\" application to Java bytecode.
+echo 2\) Type \"java -cp .:\$CLASSPATH Hello\" to test the \"Hello, world\!\" application using SunJVM.
+echo 3\) Type \"./build Hello HI\" to compile the \"Hello, world\!\" application using FLEX.
+echo 4\) Type \"./runHI\" to run the compiled \"Hello, world\!\" application.
