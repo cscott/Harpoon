@@ -76,7 +76,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.16 2003-10-26 17:10:18 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.17 2003-10-28 16:05:54 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -149,11 +149,6 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    Default <code>false</code>. */
 	public boolean USE_INTER_THREAD     = false;
 
-	/** Use the old, 1-level inlining. Default is <code>false</code>
-	    (ie the new, multilevel strategy is used). Might be useful
-	    for people not willing to go into the bugs of the new strategy. */
-	public boolean USE_OLD_INLINING     = false;
-
 	/** The current implementation is able to inline call strings of
 	    length bigger than one.
 	    Default value is 2. */
@@ -192,12 +187,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    if(DO_INLINING_FOR_SA || DO_INLINING_FOR_TA) {
 		print_opt(prefix, "DO_INLINING_FOR_SA", DO_INLINING_FOR_SA);
 		print_opt(prefix, "DO_INLINING_FOR_TA", DO_INLINING_FOR_TA);
-		if(USE_OLD_INLINING)
-		    System.out.println
-			(prefix + "\tUSE_OLD_INLINING (1-level)");
-		else
-		    System.out.println(prefix + "\tMAX_INLINING_LEVEL = " +
-				       MAX_INLINING_LEVEL);
+		System.out.println(prefix + "\tMAX_INLINING_LEVEL = " +
+				   MAX_INLINING_LEVEL);
 		System.out.println(prefix + "\tMAX_METHOD_SIZE = " +
 				   MAX_METHOD_SIZE);
 	    }
@@ -352,12 +343,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    build_quad2scc();
 
 	if(opt.do_inlining()) {
-	    if(opt.USE_OLD_INLINING)
-		ih = new HashMap();
-	    else {
-		chains = new LinkedList();
-		hm2rang = get_hm2rang();
-	    }
+	    chains = new LinkedList();
+	    hm2rang = get_hm2rang();
 	}
 
 	for(Iterator it = mms.iterator(); it.hasNext(); ){
@@ -370,15 +357,9 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    pa.print_stats();
 	
 	if(opt.do_inlining()) {
-	    if(opt.USE_OLD_INLINING) {
-		do_the_inlining(hcf, ih);
-		ih = null;
-	    }
-	    else {
-		process_inlining_chains();
-		chains = null;
-		hm2rang = null;
-	    }
+	    process_inlining_chains();
+	    chains = null;
+	    hm2rang = null;
 	}
 	quad2scc = null;
     }
@@ -489,12 +470,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	// handle_tg_stuff(pig);
 
-	if(opt.do_inlining() && (opt.MAX_INLINING_LEVEL > 0)) {
-	    if(opt.USE_OLD_INLINING)
-		generate_inlining_hints(mm, pig);
-	    else
+	if(opt.do_inlining() && (opt.MAX_INLINING_LEVEL > 0))
 		generate_inlining_chains(mm);
-	}
     }
 
     // Auxiliary method for analyze_mm.
@@ -1336,165 +1313,6 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     /////////////////////////////////////////////////////////////////////
     //////////// INLINING STUFF START ///////////////////////////////////
-
-    //////////// A. SIMPLE (1 LEVEL) INLINING START /////////////////////
-    
-    /** Only methods that have less than <code>MAX_INLINING_SIZE</code>
-	instructions can be inlined. Just a simple way of preventing
-	the code bloat. */
-    private int MAX_INLINING_SIZE = 50; 
-
-    private void generate_inlining_hints(MetaMethod mm, ParIntGraph pig) {
-	HMethod hm  = mm.getHMethod();
-	HCode hcode = hcf.convert(hm);
-	if(hcode.getElementsL().size() > MAX_INLINING_SIZE) return;
-
-	// obtain in A the set of nodes that might be captured after inlining 
-	Set A = getInterestingLevel0InsideNodes(mm, pig);
-	if(A.isEmpty()) return;
-
-	// very dummy 1-level inlining
-	MetaMethod[] callers = mac.getCallers(mm);
-	for(int i = 0; i < callers.length; i++) {
-	    MetaMethod mcaller = callers[i];
-	    // avoid going into unoptimizable or unanalyzable methods
-	    if(!mms.contains(mcaller) || 
-	       (pa.getIntParIntGraph(mcaller) == null)) continue;
-	    for(Iterator it = mcg.getCallSites(mcaller).iterator();
-		it.hasNext(); ) {
-		CALL cs = (CALL) it.next();
-		MetaMethod[] callees = mcg.getCallees(mcaller, cs);
-		if((callees.length == 1) && (callees[0] == mm) && good_cs(cs))
-		    try_inlining(mcaller, cs, A);
-	    }
-	}
-    }
-
-    private void try_inlining(MetaMethod mcaller, CALL cs, Set A) {
-	// refuse to stack allocate stuff in a loop
-	// TODO: this stuff can still be allocated in the thread local heap
-	if(opt.stack_allocate_not_in_loops() && in_a_loop(cs)) {
-	    System.out.println("try_inlining: " + Util.code2str(cs) +
-			       " is in a loop -> don't sa");
-	    return;
-	}
-
-	ParIntGraph caller_pig = pa.getIntParIntGraph(mcaller);
-
-	Set B = new HashSet();
- 	for(Iterator it = A.iterator(); it.hasNext(); ){
-	    PANode node = (PANode) it.next();
-	    PANode spec = node.csSpecialize(cs);
-	    if(spec == null) continue;
-	    if(caller_pig.G.captured(spec))
-		B.add(spec);
-	}
-	
-	// no stack allocation benefits from this inlining
-	if(B.isEmpty()) return;
-
-	Set news = new HashSet();
-	for(Iterator it = B.iterator(); it.hasNext(); ) {
-	    PANode node = ((PANode) it.next()).getRoot();
-	    Quad q = (Quad) node_rep.node2Code(node);
-	    assert (q != null) && 
-			((q instanceof NEW) || (q instanceof ANEW)) : " Bad quad attached to " + node + " " + q;
-	    if(!(opt.stack_allocate_not_in_loops() && in_a_loop(q)))
-		news.add(q);
-	    else
-		System.out.println("try_inlining: " + Util.code2str(q) + 
-				   " is in a loop -> don't sa");
-	}
-
-	// no stack allocation benefits from this inlining
-	if(news.isEmpty()) return;
-
-	Quad[] news_array = (Quad[]) news.toArray(new Quad[news.size()]);
-	ih.put(cs, news_array);
-
-	if(DEBUG) {
-	    System.out.println("\nINLINING HINT: " + Util.code2str(cs));
-	    System.out.println("NEW STACK ALLOCATION SITES:");
-	    for(int i = 0; i < news_array.length; i++)
-		System.out.println(" " + Util.code2str(news_array[i]));
-	}
-    }
-
-
-    private void do_the_inlining(HCodeFactory hcf, Map ih) {
-	SCComponent scc = reverse_top_sort_of_cs(ih);
-	Set toPrune = new WorkSet();
-	while(scc != null) {
-	    if(DEBUG) {
-		System.out.println("Processed SCC:{");
-		Object[] calls = scc.nodes();
-		for(int i = 0; i < calls.length; i++)
-		    System.out.println(" " + Util.code2str((CALL) calls[i]));
-		System.out.println("}");
-	    }
-	    Object[] calls = scc.nodes();
-	    for(int i = 0; i < calls.length; i++) {
-		CALL cs = (CALL) calls[i];
-		HMethod hcaller = extract_caller(cs);
-		HMethod hcallee = extract_callee(cs);
-		Map old2new = inline_call_site(cs, hcaller, hcallee, hcf);
-		if(old2new != null) {
-		    Quad[] news = (Quad[]) ih.get(cs);
-		    extra_stack_allocation(news, old2new);
-		    toPrune.add(cs.getFactory().getParent());
-		}
-	    }
-	    scc = scc.prevTopSort();
-	}
-	for(Iterator pit = toPrune.iterator(); pit.hasNext(); )
-	    Unreachable.prune((Code) pit.next());
-    }
-
-
-    // Topologically sorts the to-be-inlined call sites such that if
-    // call cs1 calls method m and inside m, cs2 calls some method m2,
-    // c1 --> cs2. What's returned is a list of strongly connected
-    // components starting with the last one (in topological order).
-    // To process the call sites, thee caller of this method should
-    // follow the prevTopSort field / method.
-    private SCComponent reverse_top_sort_of_cs(Map ih) {
-	// The following two relations are useful in computing the
-	// successors and the predecesssors or a given call site.
-	// 1. keeps the assoc. method -> to-be-inlined calls inside method
-	final Relation m2csINm = new LightRelation();
-	// 2. keeps the assoc. method -> to-be-inlined calls to method
-	final Relation m2csTOm = new LightRelation();
-	// Initialize the aforementioned two relations
-	for(Iterator it = ih.keySet().iterator(); it.hasNext(); ) {
-	    CALL cs = (CALL) it.next();
-	    m2csINm.add(extract_caller(cs), cs);
-	    m2csTOm.add(extract_callee(cs), cs);
-	}
-
-	final Navigator nav = new Navigator() {
-		public Object[] next(final Object node) {
-		    CALL cs = (CALL) node;
-		    HMethod hm = extract_callee(cs);
-		    Set set = m2csINm.getValues(hm);
-		    return set.toArray(new Object[set.size()]);
-		}
-		public Object[] prev(final Object node) {
-		    CALL cs = (CALL) node;
-		    HMethod hm = extract_caller(cs);
-		    Set set = m2csTOm.getValues(hm);
-		    return set.toArray(new Object[set.size()]);
-		}
-	    };
-
-	Set cs_set = ih.keySet();
-	CALL[] cs_array = (CALL[]) cs_set.toArray(new CALL[cs_set.size()]);
-	
-	SCCTopSortedGraph sccts =
-	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(cs_array, nav));
-
-	return sccts.getLast();
-    }
-
 
     //////////// B. AUXILIARY METHODS FOR INLINING START //////////////////
 

@@ -83,7 +83,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.14 2003-10-26 19:21:44 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.15 2003-10-28 16:05:54 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -1900,8 +1900,10 @@ public class PointerAnalysis implements java.io.Serializable {
 	    }
 	}
 
+	/* // debug code
 	System.out.println
 	    ("YYY: no " + f + " in " + node + " type: " + pp_types(gts));
+	*/
 	
 	return false;
     }
@@ -1970,8 +1972,10 @@ public class PointerAnalysis implements java.io.Serializable {
 		return true;
 	}
 	
+	/* // debug code
 	System.out.println
 	    ("YYY: not an array of objs: " + node + " type: " + pp_types(gts));
+	*/
 	
 	return false;
     }

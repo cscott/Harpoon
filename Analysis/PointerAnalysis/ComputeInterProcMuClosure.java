@@ -22,7 +22,7 @@ import java.util.Iterator;
    comments around that method for more info.
  
    @author  Alexandru Salcianu <salcianu@MIT.EDU>
-   @version $Id: ComputeInterProcMuClosure.java,v 1.4 2003-10-26 17:16:15 salcianu Exp $ */
+   @version $Id: ComputeInterProcMuClosure.java,v 1.5 2003-10-28 16:05:54 salcianu Exp $ */
 public class ComputeInterProcMuClosure {
 
     static boolean DEBUG = false;
@@ -391,8 +391,10 @@ public class ComputeInterProcMuClosure {
 	    boolean banswer = _compatible(node1, node2);
 	    answer = new Boolean(banswer);
 	    compatibleCache.put(new CompatibleQuery(node1, node2), answer);
+	    /* // debug code
 	    if(!banswer)
 		System.out.println("INCOMPAT: " + node1 + " , " + node2);
+	    */
 	}
 	return answer.booleanValue();
     }
