@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.10 1998-10-11 03:01:19 cananian Exp $
+ * @version $Id: Util.java,v 1.11 1998-10-16 06:18:41 cananian Exp $
  */
 public abstract class Util {
   // Only static methods.
@@ -87,7 +87,7 @@ public abstract class Util {
     StringBuffer sb = new StringBuffer();
     for (int bit=fls(n)-1; bit>=0; bit--) {
       sb = sb.append(sb.toString());
-      if ( (n & (1<<bit)) == 1)
+      if ( (n & (1<<bit)) != 0)
 	sb = sb.append(s);
     }
     return sb.toString();
