@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.92 1999-11-01 03:54:54 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.93 1999-11-02 17:23:49 cananian Exp $
  */
 %%
 
@@ -1153,7 +1153,7 @@ MEM<s:8>(e) = i %{ /* hack. ARMv4 has a special instr for this. */
 }%
 MEM<s:16,u:16>(e) = i %{ /* hack. ARMv4 has a special instr for this. */
 
-    emit(new InstrMEM(instrFactory, ROOT, "ldr `d0, [`s0, #2] @ load halfword",
+    emit(new InstrMEM(instrFactory, ROOT, "ldr `d0, [`s0] @ load halfword",
 		      new Temp[]{ i }, new Temp[]{ e }));
     emit( ROOT, "mov `d0, `s0, asl #16", i, i);
     if (ROOT.signed())
