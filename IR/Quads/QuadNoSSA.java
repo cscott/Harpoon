@@ -6,12 +6,14 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 
+import java.util.Hashtable;
+
 /**
  * <code>QuadNoSSA</code> is a code view with explicit exception handling.
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.6 1999-02-04 23:10:06 cananian Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.7 1999-02-06 21:55:28 duncan Exp $
  * @see QuadWithTry
  * @see QuadSSA
  */
@@ -28,7 +30,8 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
     }
     QuadNoSSA(QuadSSA qsa) {
 	super(qsa.getMethod(), null);
-	this.quads = ToNoSSA.translate(this.qf, qsa);
+	// Throw away derivation information
+	this.quads = ToNoSSA.translate(this.qf, new Hashtable(), qsa);
     }
     private QuadNoSSA(HMethod parent, Quad quads) {
 	super(parent, quads);
