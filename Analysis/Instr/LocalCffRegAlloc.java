@@ -53,7 +53,7 @@ import java.util.Iterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.71 2000-02-07 19:46:44 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.72 2000-02-11 00:45:41 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -461,7 +461,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    <code>Temp</code>s to spill.  
 	*/
 	private Iterator getSuggestions(Temp t, RegFile regfile, 
-					Instr i, Map evictables) {
+					final Instr i, Map evictables) {
 	    if (false) System.out.println("getting suggestions for "+t+
 			       " in "+i+" with regfile "+regfile+
 			       " and evictables "+evictables);
@@ -617,10 +617,14 @@ public class LocalCffRegAlloc extends RegAlloc {
 		// then we need to see where control can flow...
 		// insert a new block solely devoted to spilling
 		InstrEdge loc;
+		Instr prev = instr.getPrev();
 		if (!instr.defC().contains(val) &&
-		    instr.getPrev().getTargets().isEmpty()) {
-		    
-		    loc = new InstrEdge(instr.getPrev(), instr);
+		    prev.getTargets().isEmpty()) {
+		    Util.assert(prev.canFallThrough,
+				"control flow doesn't flow from "+
+				prev + " to " + instr + " ; can't "+
+				" insert spill");
+		    loc = new InstrEdge(prev, instr);
 		    
 		    // System.out.println("end spill: " + val + " " + loc);
 		    

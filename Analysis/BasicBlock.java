@@ -50,7 +50,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.19 2000-02-02 04:16:48 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.20 2000-02-11 00:45:40 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -394,6 +394,9 @@ public class BasicBlock {
 			}
 		    }
 		}
+
+		Util.assert( gr.succC(last).size() != 1);
+
 		current.last = last;
 	    }
 
