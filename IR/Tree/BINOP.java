@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.11 1999-06-28 18:49:16 duncan Exp $
+ * @version $Id: BINOP.java,v 1.1.2.12 1999-06-29 06:21:10 cananian Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -19,7 +19,9 @@ public class BINOP extends OPER {
     public Exp left;
     /** The subexpression of the right-hand side of the operator. */
     public Exp right;
-    /** Constructor. */
+    /** Constructor.
+     * @param binop Enumerated operation type, from <code>Bop</code>.
+     */
     public BINOP(TreeFactory tf, HCodeElement source,
 		 int optype, int binop, Exp left, Exp right) {
 	super(tf, source, optype, binop);

@@ -11,13 +11,15 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.11 1999-06-28 18:49:16 duncan Exp $
+ * @version $Id: UNOP.java,v 1.1.2.12 1999-06-29 06:21:10 cananian Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
     /** The subexpression to be operated upon. */
     public Exp operand;
-    /** Constructor. */
+    /** Constructor.
+     * @param unop Enumerated operation type, from <code>Uop</code>.
+     */
     public UNOP(TreeFactory tf, HCodeElement source,
 		int optype, int unop, Exp operand) {
 	super(tf, source, optype, unop);
