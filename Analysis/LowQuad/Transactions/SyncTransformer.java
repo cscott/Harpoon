@@ -63,7 +63,7 @@ import java.util.Set;
  * atomic transactions.  Works on <code>QuadSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.15 2000-11-16 08:10:11 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.16 2000-11-17 07:37:45 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -73,6 +73,10 @@ public class SyncTransformer
     protected boolean isValidToken(Token which) {
 	return super.isValidToken(which) || which==WITH_TRANSACTION;
     }
+
+    // for statistics:
+    private final boolean noFieldModification=false;
+
     /** Cache the <code>java.lang.Class</code> <code>HClass</code>. */
     private final HClass HCclass;
     /** Cache the <code>java.lang.reflect.Field</code> <code>HClass</code>. */
@@ -427,6 +431,7 @@ public class SyncTransformer
 	}
 	public void visit(AGET q) {
 	    addChecks(q);
+	    if (noFieldModification) return;
 	    if (handlers==null) { // non-transactional read
 		Edge e = readNonTrans(q.nextEdge(0), q,
 				      q.dst(), q.objectref(), q.type());
@@ -444,6 +449,7 @@ public class SyncTransformer
 	}
 	public void visit(GET q) {
 	    addChecks(q);
+	    if (noFieldModification) return;
 	    if (handlers==null &&
 		!fo.isSyncRead(q.field()) && !fo.isSyncWrite(q.field()))
 		return; // we can simply read/write fields with no sync access
@@ -503,6 +509,7 @@ public class SyncTransformer
 	}
 	public void visit(ASET q) {
 	    addChecks(q);
+	    if (noFieldModification) return;
 	    if (handlers==null) { // non-transactional write
 		Temp t0 = new Temp(tf, "oldval");
 		Edge in = q.prevEdge(0);
@@ -518,6 +525,7 @@ public class SyncTransformer
 	}
 	public void visit(SET q) {
 	    addChecks(q);
+	    if (noFieldModification) return;
 	    if (handlers==null &&
 		!fo.isSyncRead(q.field()) && !fo.isSyncWrite(q.field()))
 		return; // we can simply read/write fields with no sync access
@@ -554,6 +562,8 @@ public class SyncTransformer
 	void addChecks(Quad q) {
 	    // don't add checks if we're not currently in transaction context.
 	    if (handlers==null) return;
+	    // don't add checks if we're compiling monitorenter/exit stats.
+	    if (noFieldModification) return;
 	    // only deal with quads where "just before" makes sense.
 	    if (q.prevLength()!=1) {
 		Util.assert(co.createReadVersions(q).size()==0);
@@ -666,16 +676,18 @@ public class SyncTransformer
 	    else throw new Error("ACK: "+type);
 	}	    
     }
-    // flag values.
-    private static final long FLAG_VALUE = 0xCACACACACACACACAL;
-    private static final Integer booleanFlag=new Integer((int)FLAG_VALUE&3);
+    // flag values: the int value is 1976.0927 as a float; the double is close.
+    private static final long FLAG_VALUE = 0x409EE05E44F702F7L;
+    private static final Integer booleanFlag=new Integer((byte)FLAG_VALUE);
     private static final Integer byteFlag = new Integer((byte)FLAG_VALUE);
     private static final Integer charFlag = new Integer((char)FLAG_VALUE);
     private static final Integer shortFlag= new Integer((short)FLAG_VALUE);
     private static final Integer intFlag = new Integer((int)FLAG_VALUE);
     private static final Long longFlag = new Long(FLAG_VALUE);
-    private static final Float floatFlag = new Float(1976.0927);
-    private static final Double doubleFlag = new Double(1976.0927);
+    private static final Float floatFlag =
+	new Float(Float.intBitsToFloat(intFlag.intValue()));
+    private static final Double doubleFlag =
+	new Double(Double.longBitsToDouble(longFlag.longValue()));
     
     private Quad makeFlagConst(QuadFactory qf, HCodeElement src,
 			       Temp dst, HClass type) {
