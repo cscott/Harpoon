@@ -51,7 +51,7 @@ public class Termination {
 	//superset.addAll(updatenodes);
 	//superset.addAll(scopenodes);
 	//superset.addAll(consequencenodes);
-	GraphNode.computeclosure(superset);
+	GraphNode.computeclosure(superset,null);
 	try {
 	    GraphNode.DOTVisitor.visit(new FileOutputStream("graph.dot"),superset);
 	} catch (Exception e) {
@@ -65,6 +65,7 @@ public class Termination {
 	    System.out.println(gn.getTextLabel());
 	    System.out.println(mun.toString());
 	}
+	GraphAnalysis ga=new GraphAnalysis(this);
     }
     
     void generateconjunctionnodes() {
@@ -78,7 +79,9 @@ public class Termination {
 					   "Conj ("+i+","+j+") "+dnf.get(j).name()
 					   ,tn);
 		conjunctions.add(gn);
-		conjunctionmap.put(c,gn);
+		if (!conjunctionmap.containsKey(c))
+		    conjunctionmap.put(c,new HashSet());
+		((Set)conjunctionmap.get(c)).add(gn);
 	    }
 	}
     }
@@ -125,6 +128,16 @@ public class Termination {
 			gn.addEdge(e);
 			break;
 		    }
+		}
+	    }
+
+	    for(Iterator scopeiterator=scopenodes.iterator();scopeiterator.hasNext();) {
+		GraphNode gn2=(GraphNode)scopeiterator.next();
+		TermNode tn2=(TermNode)gn2.getOwner();
+		ScopeNode sn2=tn2.getScope();
+		if (AbstractInterferes.interferes(ar,sn2.getRule(),sn2.getSatisfy())) {
+		    GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
+		    gn.addEdge(e);
 		}
 	    }
 	}
@@ -261,7 +274,7 @@ public class Termination {
 		MultUpdateNode mun=new MultUpdateNode(sn);
 		TermNode tn2=new TermNode(mun);
 		GraphNode gn2=new GraphNode("CompRem"+compensationcount,tn2);
-		UpdateNode un=new UpdateNode();
+		UpdateNode un=new UpdateNode(r);
 		un.addBindings(bindings);
 		if (j<r.numQuantifiers()) {
 		    /* Remove quantifier */
@@ -360,7 +373,7 @@ public class Termination {
 	    boolean goodflag=true;
 	    for(int i=0;i<possiblerules.size();i++) {
 		Rule r=(Rule)possiblerules.get(i);
-		UpdateNode un=new UpdateNode();
+		UpdateNode un=new UpdateNode(r);
 		/* Construct bindings */
 		Vector bindings=new Vector();
 		constructbindings(bindings, r,true);
@@ -559,7 +572,7 @@ public class Termination {
 		DNFRule dnfrule=r.getDNFGuardExpr();
 		for(int j=0;j<dnfrule.size();j++) {
 		    Inclusion inc=r.getInclusion();
-		    UpdateNode un=new UpdateNode();
+		    UpdateNode un=new UpdateNode(r);
 		    un.addBindings(bindings);
 		    /* Now build update for tuple/set inclusion condition */
 		    if(inc instanceof SetInclusion) {

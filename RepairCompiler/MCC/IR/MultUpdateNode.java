@@ -26,6 +26,7 @@ class MultUpdateNode {
     public MultUpdateNode(ScopeNode sn) {
 	updates=new Vector();
 	scopenode=sn;
+	op=MultUpdateNode.REMOVE;
     }
     void addUpdate(UpdateNode un) {
 	updates.add(un);

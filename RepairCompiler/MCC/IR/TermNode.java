@@ -15,6 +15,10 @@ class TermNode {
     ScopeNode scope;
     MultUpdateNode update;
 
+    public int getType() {
+	return type;
+    }
+
     public TermNode(Constraint constr, Conjunction conj) {
 	this.constr=constr;
 	this.conj=conj;

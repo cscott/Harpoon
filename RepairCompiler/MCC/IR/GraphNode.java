@@ -83,7 +83,7 @@ public class GraphNode {
         return owner;
     }
 
-    public static void computeclosure(Set nodes) {
+    public static void computeclosure(Set nodes, Set removed) {
 	Stack tovisit=new Stack();
 	tovisit.addAll(nodes);
 	while(!tovisit.isEmpty()) {
@@ -92,8 +92,11 @@ public class GraphNode {
 		Edge edge=(Edge)it.next();
 		GraphNode target=edge.getTarget();
 		if (!nodes.contains(target)) {
-		    nodes.add(target);
-		    tovisit.push(target);
+		    if ((removed!=null)&&
+			(!removed.contains(target))) {
+			nodes.add(target);
+			tovisit.push(target);
+		    }
 		}
 	    }
 	}
@@ -301,7 +304,7 @@ public class GraphNode {
             i = nodes.iterator();
             while (i.hasNext()) {
                 GraphNode gn = (GraphNode) i.next();
-                assert gn.getStatus() != PROCESSING;                    
+		assert gn.getStatus() != PROCESSING;                    
                 if (gn.getStatus() == UNVISITED) {
                     if (!dfs(gn))
 			acyclic=false;
@@ -318,6 +321,8 @@ public class GraphNode {
             while (edges.hasNext()) {
                 Edge edge = (Edge) edges.next();
                 GraphNode node = edge.getTarget();
+		if (!nodes.contains(node)) /* Skip nodes which aren't in the set */
+		    continue;
                 if (node.getStatus() == UNVISITED) {
                     if (!dfs(node))
 			acyclic=false;

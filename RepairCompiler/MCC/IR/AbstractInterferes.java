@@ -1,6 +1,55 @@
 package MCC.IR;
 
 class AbstractInterferes {
+    static public boolean interferes(AbstractRepair ar, Rule r, boolean satisfy) {
+	boolean mayadd=false;
+	boolean mayremove=false;
+	switch (ar.getType()) {
+	case AbstractRepair.ADDTOSET:
+	case AbstractRepair.ADDTORELATION:
+	    if (interferesquantifier(ar.getDescriptor(), true, r, satisfy))
+		return true;
+	    mayadd=true;
+	    break;
+	case AbstractRepair.REMOVEFROMSET:
+	case AbstractRepair.REMOVEFROMRELATION:
+	    if (interferesquantifier(ar.getDescriptor(), false, r, satisfy))
+		return true;
+	    mayremove=true;
+	    break;
+	case AbstractRepair.MODIFYRELATION:
+	    if (interferesquantifier(ar.getDescriptor(), true, r, satisfy))
+		return true;
+	    if (interferesquantifier(ar.getDescriptor(), false, r, satisfy))
+		return true;
+	    mayadd=true;
+	    mayremove=true;
+	break;
+	default:
+	    throw new Error("Unrecognized Abstract Repair");
+	}
+	DNFRule drule=null;
+	if (satisfy)
+	    drule=r.getDNFGuardExpr();
+	else
+	    drule=r.getDNFNegGuardExpr();
+	
+	for(int i=0;i<drule.size();i++) {
+	    RuleConjunction rconj=drule.get(i);
+	    for(int j=0;j<rconj.size();j++) {
+		DNFExpr dexpr=rconj.get(j);
+		Expr expr=dexpr.getExpr();
+		if (expr.usesDescriptor(ar.getDescriptor())) {
+		    /* Need to check */
+		    if ((mayadd&&!dexpr.getNegation())||(mayremove&&dexpr.getNegation()))
+			return true;
+		}
+	    }
+	}
+	return false;
+    }
+
+
     static public boolean interferes(AbstractRepair ar, DNFPredicate dp) {
 	if ((ar.getDescriptor()!=dp.getPredicate().getDescriptor()) &&
 	    ((ar.getDescriptor() instanceof SetDescriptor)||

@@ -3,6 +3,8 @@ import java.util.*;
 
 class ConcreteInterferes {
     static public boolean interferes(MultUpdateNode mun, Rule r, boolean satisfy) {
+	if (!initialinterferes(mun,r,satisfy)) /* Can't falsify a rule adding something to a set on an initial addition*/
+	    return false;
 	for(int i=0;i<mun.numUpdates();i++) {
 	    UpdateNode un=mun.getUpdate(i);
 	    for (int j=0;j<un.numUpdates();j++) {
@@ -12,15 +14,35 @@ class ConcreteInterferes {
 		if (satisfy)
 		    drule=r.getDNFNegGuardExpr();
 
+
 		if (!update.isAbstract()) {
 		    Descriptor updated_des=update.getDescriptor();
 		    assert updated_des!=null;
+		    /* Update is local to this rule, and the effect is intentional */
+		    /* If we're adding something, a side effect could be to falsify some other binding
+		       If we're removing something, there is no similar side effect */
+		    if ((un.getRule()==r)&&
+			(((mun.op==MultUpdateNode.ADD)&&satisfy)||(mun.op==MultUpdateNode.REMOVE))&&
+			(r.numQuantifiers()==1)&&
+			(r.getQuantifier(0) instanceof SetQuantifier)&&
+			update.isField()&&
+			(((DotExpr)update.getLeftExpr()).getExpr() instanceof VarExpr)&&
+			((SetQuantifier)r.getQuantifier(0)).getVar()==((VarExpr)((DotExpr)update.getLeftExpr()).getExpr()).getVar())
+			continue;
+    		    if ((un.getRule()==r)&&
+			(((mun.op==MultUpdateNode.ADD)&&satisfy)||(mun.op==MultUpdateNode.REMOVE))&&
+			(r.numQuantifiers()==0))
+			continue;
+
+
 		    if (r.getInclusion().usesDescriptor(updated_des))
 			return true; /* Interferes with inclusion condition */
 		    
 		    for(int k=0;k<drule.size();k++) {
 			RuleConjunction rconj=drule.get(k);
 			for(int l=0;l<rconj.size();l++) {
+
+
 			    DNFExpr dexpr=rconj.get(l);
 			    /* See if update interferes w/ dexpr */
 			    if (interferes(un,update, r,dexpr))
@@ -33,10 +55,57 @@ class ConcreteInterferes {
 	return false;
     }
 
+    static private boolean initialinterferes(MultUpdateNode mun, Rule r, boolean satisfy) {
+	AbstractRepair ar=mun.getRepair();
+	if (satisfy)
+	    return true;
+	if (ar==null)
+	    return true;
+	if (ar.getType()!=AbstractRepair.ADDTOSET)
+	    return true;
+	//	if (mun.op!=MultUpdateNode.ADD)  (Redundant)
+	//    return true;
+	if (!r.getInclusion().getTargetDescriptors().contains(ar.getDescriptor()))
+	    return true;
+	boolean negated=ar.getPredicate().isNegated();
+	Predicate p=ar.getPredicate().getPredicate();
+	if (!(p instanceof ExprPredicate))
+	    return true;
+	ExprPredicate ep=(ExprPredicate)p;
+	if (ep.getType()!=ExprPredicate.SIZE)
+	    return true;
+	if ((ep.getOp()==Opcode.EQ)&&(ep.leftsize()==1)&&!negated)
+	    return false;
+	if ((ep.getOp()==Opcode.NE)&&(ep.leftsize()==1)&&negated)
+	    return false;
+
+	if ((ep.getOp()==Opcode.NE)&&(ep.leftsize()==0)&&!negated)
+	    return false;
+	if ((ep.getOp()==Opcode.EQ)&&(ep.leftsize()==0)&&negated)
+	    return false;
+
+
+
+	if ((ep.getOp()==Opcode.GT)&&(ep.leftsize()==0)&&!negated)
+	    return false;
+	if ((ep.getOp()==Opcode.LE)&&(ep.leftsize()==0)&&negated)
+	    return false;
+
+	if ((ep.getOp()==Opcode.GE)&&(ep.leftsize()==1)&&!negated)
+	    return false;
+	if ((ep.getOp()==Opcode.LT)&&(ep.leftsize()==1)&&negated)
+	    return false;
+	
+	return true;
+
+	
+    }
+
     static private boolean interferes(UpdateNode un,Updates update, Rule r,DNFExpr dexpr) {
 	Descriptor descriptor=update.getDescriptor();
 	if (!dexpr.getExpr().usesDescriptor(descriptor))
 	    return false;
+	    
 	/* We need to pair the variables */
 	if (update.isExpr()) {
 	    Set vars=update.getRightExpr().freeVars();

@@ -5,11 +5,18 @@ class UpdateNode {
     Vector updates;
     Vector bindings;
     Hashtable binding;
+    Rule rule;
+    
 
-    public UpdateNode() {
+    public UpdateNode(Rule r) {
 	updates=new Vector();
 	bindings=new Vector();
 	binding=new Hashtable();
+	rule=r;
+    }
+
+    public Rule getRule() {
+	return rule;
     }
 
     public String toString() {

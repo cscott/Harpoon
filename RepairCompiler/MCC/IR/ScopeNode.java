@@ -16,6 +16,10 @@ class ScopeNode {
 	    return ((RelationInclusion)inc).getRelation();
 	else throw new Error("Unrecognized Inclusion");
     }
+
+    public Rule getRule() {
+	return rule;
+    }
     public boolean getSatisfy() {
 	return satisfy;
     }
