@@ -255,7 +255,6 @@ inline void RefCountAllocator_register_finalizer(void* obj,
 #undef traceFunc
 #undef handleFunc
 
-#undef error_gc
 #undef print_bitmap
 #undef COLLECT_NOPTR_STATS
 #undef COLLECT_LRGOBJ_STATS
