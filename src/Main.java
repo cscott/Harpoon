@@ -84,10 +84,10 @@ public class Main {
 	    */
 
 	    ///*
-	    //Node thinDisp = new Node();
-	    Node thinDisp = new Display("Thinned", false, false, true);
-	    Node endDisp = new Display("final");;
-	    //Node endDisp = new Node();
+	    Node thinDisp = new Node();
+	    //Node thinDisp = new Display("Thinned", false, false, true);
+	    //Node endDisp = new Display("final");;
+	    Node endDisp = new Node();
 	    Node origDisp = new Node();
 	    Node robDisp = new Node();
 	    Node labelBlueDisp = new Node();
@@ -97,7 +97,7 @@ public class Main {
 	    Node hystDisp = new Node();
 	    //*/
 
-	    Node pause = new Pause(-1.0, 1, null);
+	    Node pause = new Pause(-1.0, 0, null);
 	    Node pause2 = new Pause(-1.0, 0, null);
 	    //Node pause = new Node();
 	    //Node pause2 = new Node();
@@ -113,7 +113,7 @@ public class Main {
 	    Node getLabelSmCmd = new Command(Command.GET_IMAGE, null);
 	    Node n = new Node();
 	    Node n2 = new Node();
-	    Node n3 = new Node();
+
 	    /*
 	    //Finds a single blue object in the loaded frames. Circles it.
 	    load.link(origDisp,
