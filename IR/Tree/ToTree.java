@@ -64,7 +64,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.48 1999-09-19 16:17:39 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.49 1999-09-21 00:48:23 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -639,7 +639,7 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 
     public void visit(PCALL q) { 
 	ExpList params; Temp[] qParams; TEMP retval, retex, func; 
-	Stm s0;
+	Stm s0, s1;
 
 	Util.assert(q.retex()!=null && q.ptr()!=null);
 
@@ -667,6 +667,7 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	}
 	    
 	// both out edges should be LABELs, right?
+	harpoon.IR.Quads.LABEL Lrv = ((harpoon.IR.Quads.LABEL)q.next(0));
 	harpoon.IR.Quads.LABEL Lex = ((harpoon.IR.Quads.LABEL)q.next(1));
 
 	s0 = new CALL
@@ -674,10 +675,13 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	     retval, 
 	     new NAME(m_tf, q, _LABEL(Lex).label),
 	     func, params);
+	s1 = new JUMP
+	    (m_tf, q, _LABEL(Lrv).label);
 
 	updateDT(q.retex(), q, retex.temp, retex);
 	updateDT(q.ptr(), q, func.temp, func);
 	addStmt(s0); 
+	addStmt(s1); 
     }
 
     public void visit(PFCONST q) {
