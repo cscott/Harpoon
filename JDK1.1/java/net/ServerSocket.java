@@ -194,7 +194,7 @@ class ServerSocket {
 
 
     // optimistic version
-    public ObjectContinuation _acceptAsync() throws IOException {
+    public ObjectContinuation acceptAsyncO() throws IOException {
 	//System.out.println("Calling canAccept...");
 	//offset by 1 for jdk1.1
 	if (NativeIO.canAcceptJNI(impl.fd.fd-1)) {
@@ -233,9 +233,12 @@ class ServerSocket {
    
     }
     // pesimistic version
-    public ObjectContinuation acceptAsync() throws IOException
-    {
-	return ObjectDoneContinuation.pesimistic(_acceptAsync());
+    public ObjectContinuation acceptAsync() {
+	try {
+	    return ObjectDoneContinuation.pesimistic(acceptAsyncO());
+	} catch (IOException e) {
+	    return new ObjectDoneContinuation(e);
+	}
     }
 
     /**

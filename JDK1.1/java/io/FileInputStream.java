@@ -123,7 +123,7 @@ class FileInputStream extends InputStream
 
     
     // pesimistic version of this inherited from InputStream
-    public IntContinuation _readAsync() throws IOException
+    public IntContinuation readAsyncO() throws IOException
     {
 	//Offset by 1 for jdk1.1
 	int b= NativeIO.getCharJNI(fd.fd-1);
@@ -207,7 +207,7 @@ class FileInputStream extends InputStream
 
 
     // again, inherited pesimistic version
-    public IntContinuation _readAsync(byte b[], int ofs, int len) throws IOException
+    public IntContinuation readAsyncO(byte b[], int ofs, int len) throws IOException
     {
 	if (b == null) {
 	    throw new NullPointerException();

@@ -63,16 +63,20 @@ public abstract class InputStream {
     // Here's the deal: I've got optimistic versions that I feel we're going
     // to use again soon. Rather than writing new, pesimistic ones, I wrap them
     // up in pesimistic procedures.
-    public IntContinuation _readAsync() throws IOException
+    public IntContinuation readAsyncO() throws IOException
 	// default version: blocks
     {
 	return new IntContinuationOpt(read());
     }
     
     // pesimistic versions are guarranteed not to return null;
-    public IntContinuation readAsync() throws IOException
+    public IntContinuation readAsync()
     {
-	return IntDoneContinuation.pesimistic(_readAsync());
+	try {
+	    return IntDoneContinuation.pesimistic(readAsyncO());
+	} catch (IOException e) {
+	    return new IntDoneContinuation(e);
+	}
     }
     
     // make this input stream asynchronous
@@ -102,6 +106,11 @@ public abstract class InputStream {
     public IntContinuation readAsync(byte b[]) throws IOException {
 	return readAsync(b, 0, b.length);
     }
+
+    public IntContinuation readAsyncO(byte b[]) throws IOException {
+	return readAsyncO(b, 0, b.length);
+    }
+
 
     /**
      * Reads up to <code>len</code> bytes of data from this input stream 
@@ -156,7 +165,7 @@ public abstract class InputStream {
     // kinda dumb: always reads 1 byte
    
 
-    public IntContinuation _readAsync(byte b[], int off, int len) throws IOException {
+    public IntContinuation readAsyncO(byte b[], int off, int len) throws IOException {
 	if (b == null) {
 	    throw new NullPointerException();
 	} else if ((off < 0) || (off > b.length) || (len < 0) ||
@@ -167,7 +176,7 @@ public abstract class InputStream {
 	}
 	  	
 
-	IntContinuation c = readAsync();
+	IntContinuation c = readAsyncO();
 	if (c.done) {
 	    b[off]= (byte) c.result;
 	    return new IntContinuationOpt(1);
@@ -179,8 +188,12 @@ public abstract class InputStream {
 	return thisC;
     }
 
-    public IntContinuation readAsync(byte b[], int off, int len) throws IOException {
-	return IntDoneContinuation.pesimistic(_readAsync(b, off, len));
+    public IntContinuation readAsync(byte b[], int off, int len) {
+	try {
+	    return IntDoneContinuation.pesimistic(readAsyncO(b, off, len));
+	} catch (IOException e) {
+	    return new IntDoneContinuation(e);
+	}
     }
     
     
@@ -230,7 +243,7 @@ public abstract class InputStream {
     }
 
     // I use readAsync(byte[], int, int). Right now, I'd be better off using readAsync(), but the former is supposed to get more efficient
-    public LongContinuation _skipAsync(long n) throws IOException
+    public LongContinuation skipAsyncO(long n) throws IOException
     {
 	long remaining = n;
 	int nr;
@@ -245,7 +258,7 @@ public abstract class InputStream {
 	}
 	
 	while (remaining > 0) {
-	    IntContinuation c= readAsync(localSkipBuffer, 0, (int) Math.min(SKIP_BUFFER_SIZE, remaining));
+	    IntContinuation c= readAsyncO(localSkipBuffer, 0, (int) Math.min(SKIP_BUFFER_SIZE, remaining));
 	    if (!c.done)
 		{
 		    skipAsyncC thisC= new skipAsyncC(n, remaining);
@@ -297,7 +310,7 @@ public abstract class InputStream {
 		remaining-= nr;
      		
      		while (remaining>0) {
-		    IntContinuation c= readAsync(skipBuffer, 0, (int) Math.min(SKIP_BUFFER_SIZE, remaining));
+		    IntContinuation c= readAsyncO(skipBuffer, 0, (int) Math.min(SKIP_BUFFER_SIZE, remaining));
 		    if (!c.done)
 			{
 			    c.setNext(this);
@@ -316,9 +329,13 @@ public abstract class InputStream {
 	}
     }
     
-    public LongContinuation skipAsync(long n) throws IOException
+    public LongContinuation skipAsync(long n)
     {
-	return LongDoneContinuation.pesimistic(_skipAsync(n));
+	try {
+	    return LongDoneContinuation.pesimistic(skipAsyncO(n));
+	} catch (IOException e) {
+	    return new LongDoneContinuation(e);
+	}
     }
     
     /**

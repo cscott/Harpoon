@@ -46,7 +46,15 @@ public abstract class OutputStream {
      */
     public abstract void write(int b) throws IOException;
 
-    public VoidContinuation writeAsync(int b) throws IOException
+    public VoidContinuation writeAsync(int b) {
+	try {
+	    return VoidDoneContinuation.pesimistic(writeAsyncO(b));
+	} catch (IOException e) {
+	    return new VoidDoneContinuation(e);
+	}
+    }
+
+    public VoidContinuation writeAsyncO(int b) throws IOException
     {
     	write(b);
     	return null;
@@ -77,6 +85,12 @@ public abstract class OutputStream {
     	return writeAsync(b, 0, b.length);
     }
 
+
+    public VoidContinuation writeAsyncO(byte b[]) throws IOException
+    {
+	return writeAsyncO(b, 0, b.length);
+    }
+
     /**
      * Writes <code>len</code> bytes from the specified byte array 
      * starting at offset <code>off</code> to this output stream. 
@@ -98,8 +112,15 @@ public abstract class OutputStream {
 	}
     }
 
+    public VoidContinuation writeAsync(byte b[], int off, int len) {
+	try {
+	    return VoidDoneContinuation.pesimistic(writeAsyncO(b,off,len));
+	} catch (IOException e) {
+	    return new VoidDoneContinuation(e);
+	}
+    }
     
-    public VoidContinuation writeAsync(byte b[], int off, int len) throws IOException
+    public VoidContinuation writeAsyncO(byte b[], int off, int len) throws IOException
 	// default: uses write 1 byte
     {
 	if (b == null) {
@@ -112,7 +133,7 @@ public abstract class OutputStream {
 	}    	
 	
  	while (len>0) {
-	    VoidContinuation c= writeAsync(b[off]);
+	    VoidContinuation c= writeAsyncO(b[off]);
 	    if (c!= null)
 		{
 		    WriteAsyncC thisC= new WriteAsyncC(b, off, len);
@@ -145,7 +166,7 @@ public abstract class OutputStream {
     		off++;
     		// the same thing again
  		while (len>0) {
-		    VoidContinuation c= writeAsync(b[off]);
+		    VoidContinuation c= writeAsyncO(b[off]);
 		    if (c!= null)
 			{
 			    c.setNext(this);
