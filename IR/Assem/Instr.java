@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.82 2000-10-31 01:18:03 pnkfelix Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.83 2000-11-17 23:17:28 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -913,6 +913,32 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	for (int i=0; i<r.length; i++)
 	    r[i] = map(tm, taa[i]);
 	return r;
+    }
+
+    /** Clones this, mutating the assembly string.
+	<BR> <B>requires:</B> newAssem != null
+	<BR> <B>effects:</B> returns cloneMutateAssem(inf, newAssem)
+    */
+    public final Instr cloneMutateAssem(String newAssem) {
+	return cloneMutateAssem(this.inf, newAssem);
+    }
+
+    /** Clones this, mutating the assembly string.
+	<BR> <B>requires:</B> newAssem != null
+	<BR> <B>effects:</B> Returns a new Instr object with the same
+	     compiler-visible high level properties as
+	     <code>this</code> (use/def, isMove, etc), but instead of
+	     having the assembly-string of this, it has
+	     <code>newAssem</code> as its assembly string.  The
+	     generated instr will not have a a place in the
+	     instruction layout; it is the responsiblity of the caller
+	     to subsequently call Instr.replace to swap
+	     <code>this</code> and the returned <code>Instr</code>.
+    */
+    public Instr cloneMutateAssem(InstrFactory inf, String newAssem) {
+	return new Instr(inf, this, newAssem, 
+			 this.dst, this.src, this.canFallThrough,
+			 this.targets);
     }
 
     /** Returns true if this is a Move.

@@ -12,7 +12,7 @@ import harpoon.Temp.TempMap;
  * directives.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrDIRECTIVE.java,v 1.1.2.5 2000-01-05 23:22:05 pnkfelix Exp $
+ * @version $Id: InstrDIRECTIVE.java,v 1.1.2.6 2000-11-17 23:17:29 pnkfelix Exp $
  */
 public class InstrDIRECTIVE extends Instr {
 
@@ -32,6 +32,10 @@ public class InstrDIRECTIVE extends Instr {
 
     public Instr rename(InstrFactory inf, TempMap defMap, TempMap useMap) {
 	return new InstrDIRECTIVE(inf, this, getAssem());
+    }
+
+    public Instr cloneMutateAssem(InstrFactory inf, String newAssem) {
+	return new InstrDIRECTIVE(inf, this, newAssem);
     }
 
     public void accept(InstrVisitor v) { v.visit(this); }

@@ -20,7 +20,7 @@ import java.util.Set;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.14 2000-01-05 23:22:05 pnkfelix Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.15 2000-11-17 23:17:29 pnkfelix Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
@@ -53,6 +53,10 @@ public class InstrLABEL extends Instr {
 	// should clone label or something.
 	return new InstrLABEL(inf, this, getAssem(), label);
     }
+    public Instr cloneMutateAssem(InstrFactory inf, String newAssem) {
+	return new InstrLABEL(inf, this, newAssem, label);
+    }
+
     /** Accept a visitor. */
     public void accept(InstrVisitor v) { v.visit(this); }
 

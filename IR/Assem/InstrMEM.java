@@ -14,7 +14,7 @@ import java.util.List;
  * assembly-level instruction representations.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InstrMEM.java,v 1.1.2.5 1999-11-05 01:10:30 cananian Exp $ 
+ * @version $Id: InstrMEM.java,v 1.1.2.6 2000-11-17 23:17:29 pnkfelix Exp $ 
  */
 public class InstrMEM extends Instr {
     
@@ -39,5 +39,9 @@ public class InstrMEM extends Instr {
 	return new InstrMEM(inf, this, getAssem(),
 			    map(defMap,def()), map(useMap,use()),
 			    this.canFallThrough, getTargets());
+    }
+
+    public Instr cloneMutateAssem(InstrFactory inf, String newAssem) {
+	return new InstrMEM(inf, this, newAssem, def(), use());
     }
 }
