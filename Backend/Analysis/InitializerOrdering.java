@@ -28,7 +28,7 @@ import java.util.Set;
  * in that case.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerOrdering.java,v 1.1.2.3 2000-08-24 23:35:35 cananian Exp $
+ * @version $Id: InitializerOrdering.java,v 1.1.2.4 2000-10-22 08:14:43 cananian Exp $
  */
 public class InitializerOrdering {
     public final List sorted;
@@ -58,7 +58,8 @@ public class InitializerOrdering {
 		warnCircle(hcp);
 	// now, all methods called by this static initializer must be examined
 	HMethod m = c.getClassInitializer();
-	if (m!=null) examineMethod(ch, cg, c, m, touched, added, _sorted);
+	if (m!=null && !touched.contains(m))
+	    examineMethod(ch, cg, c, m, touched, added, _sorted);
 	// okay, all dependencies have been added, so now add this initializer
 	if (m!=null) _sorted.add(m);
 	added.add(c);
