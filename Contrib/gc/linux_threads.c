@@ -3,7 +3,6 @@
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
  * Copyright (c) 2000-2001 by Hewlett-Packard Company.  All rights reserved.
- * DG/UX ix86 support <takis@xfree86.org>
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -27,6 +26,7 @@
  * and thread support for some of the other Posix platforms; any changes
  * made here may need to be reflected there too.
  */
+ /* DG/UX ix86 support <takis@xfree86.org> */
 /*
  * Linux_threads.c now also includes some code to support HPUX and
  * OSF1 (Compaq Tru64 Unix, really).  The OSF1 support is not yet
@@ -54,7 +54,7 @@
 # include "gc.h"
 
 # if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS) \
-     && !defined(GC_IRIX_THREADS)
+     && !defined(GC_IRIX_THREADS) && !defined(GC_WIN32_THREADS)
 
 # include "private/gc_priv.h"
 
@@ -443,7 +443,9 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 	    *(void * volatile *)result = ptr_to_struct_containing_descr; 
 	    return result;
 	} else if ((word)my_entry - 1 < DIRECT_GRANULES) {
-	    *my_fl = my_entry + index + 1;
+	    if (!GC_incremental) *my_fl = my_entry + index + 1;
+	    	/* In the incremental case, we always have to take this */
+	    	/* path.  Thus we leave the counter alone.		*/
             return GC_gcj_malloc(bytes, ptr_to_struct_containing_descr);
 	} else {
 	    GC_generic_malloc_many(BYTES_FROM_INDEX(index), GC_gcj_kind, my_fl);
@@ -1082,6 +1084,7 @@ int GC_get_nprocs()
 	    if (cpu_no >= result) result = cpu_no + 1;
 	}
     }
+    close(f);
     return result;
 }
 #endif /* GC_LINUX_THREADS */

@@ -529,7 +529,7 @@ struct {
  */
 #ifdef THREADS
 
-# ifdef GC_WIN32_THREADS
+# if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)
     unsigned __stdcall tiny_reverse_test(void * arg)
 # else
     void * tiny_reverse_test(void * arg)
@@ -748,9 +748,10 @@ VOLATILE int dropped_something = 0;
 # if  defined(GC_PTHREADS)
     static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_lock(&incr_lock);
-# endif
-# ifdef GC_WIN32_THREADS
-    EnterCriticalSection(&incr_cs);
+# else
+#   ifdef GC_WIN32_THREADS
+      EnterCriticalSection(&incr_cs);
+#   endif
 # endif
   if ((int)(GC_word)client_data != t -> level) {
      (void)GC_printf0("Wrong finalization data - collector is broken\n");
@@ -765,9 +766,10 @@ VOLATILE int dropped_something = 0;
 # endif
 # if defined(GC_PTHREADS)
     pthread_mutex_unlock(&incr_lock);
-# endif
-# ifdef GC_WIN32_THREADS
-    LeaveCriticalSection(&incr_cs);
+# else
+#   ifdef GC_WIN32_THREADS
+      LeaveCriticalSection(&incr_cs);
+#   endif
 # endif
 }
 
@@ -839,9 +841,10 @@ int n;
 #         if defined(GC_PTHREADS)
             static pthread_mutex_t incr_lock = PTHREAD_MUTEX_INITIALIZER;
             pthread_mutex_lock(&incr_lock);
-#         endif
-#         ifdef GC_WIN32_THREADS
-            EnterCriticalSection(&incr_cs);
+#         else
+#           ifdef GC_WIN32_THREADS
+              EnterCriticalSection(&incr_cs);
+#           endif
 #         endif
 		/* Losing a count here causes erroneous report of failure. */
           finalizable_count++;
@@ -854,9 +857,10 @@ int n;
 #	  endif
 #	  if defined(GC_PTHREADS)
 	    pthread_mutex_unlock(&incr_lock);
-#	  endif
-#         ifdef GC_WIN32_THREADS
-            LeaveCriticalSection(&incr_cs);
+#	  else
+#           ifdef GC_WIN32_THREADS
+              LeaveCriticalSection(&incr_cs);
+#           endif
 #         endif
 	}
 
@@ -1480,7 +1484,7 @@ void SetMinimumStack(long minSize)
 }
 # endif
 
-#ifdef GC_WIN32_THREADS
+#if defined(GC_WIN32_THREADS) && !defined(CYGWIN32)
 
 unsigned __stdcall thr_run_one_test(void *arg)
 {

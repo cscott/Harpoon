@@ -180,7 +180,8 @@ word GC_adj_words_allocd()
     /* managed object should not alter result, assuming the client	*/
     /* is playing by the rules.						*/
     result = (signed_word)GC_words_allocd
-    	     - (signed_word)GC_mem_freed - expl_managed;
+    	     - (signed_word)GC_mem_freed 
+	     + (signed_word)GC_finalizer_mem_freed - expl_managed;
     if (result > (signed_word)GC_words_allocd) {
         result = GC_words_allocd;
     	/* probably client bug or unfortunate scheduling */
@@ -297,7 +298,7 @@ void GC_maybe_gc()
 }
 
 /* keep track of cumulative gc time */
-double ttl_gc_time;
+double ttl_gc_time=0;
 
 /*
  * Stop the world garbage collection.  Assumes lock held, signals disabled.
@@ -306,13 +307,16 @@ double ttl_gc_time;
 GC_bool GC_try_to_collect_inner(stop_func)
 GC_stop_func stop_func;
 {
-  CLOCK_TYPE start_time, end_time;
-  GET_TIME(start_time);
-#define return(rv) do {\
-  GET_TIME(end_time);\
-  ttl_gc_time+=MS_TIME_DIFF(end_time,start_time);\
-  return (rv);\
-  } while (0)
+#   ifdef CONDPRINT
+        CLOCK_TYPE start_time, current_time;
+	CLOCK_TYPE end_time;
+	GET_TIME(start_time);
+#       define return(rv) do {\
+  	  GET_TIME(end_time);\
+  	  ttl_gc_time+=MS_TIME_DIFF(end_time,start_time);\
+  	  return (rv);\
+  	} while (0)
+#   endif
     if (GC_incremental && GC_collection_in_progress()) {
 #   ifdef CONDPRINT
       if (GC_print_stats) {
@@ -328,6 +332,9 @@ GC_stop_func stop_func;
     }
 #   ifdef CONDPRINT
       if (GC_print_stats) {
+#if 0 /* CSA: already done. */
+        if (GC_print_stats) GET_TIME(start_time);
+#endif /* 0 */
 	GC_printf2(
 	   "Initiating full world-stop collection %lu after %ld allocd bytes\n",
 	   (unsigned long) GC_gc_no+1,
@@ -366,6 +373,13 @@ GC_stop_func stop_func;
       return(FALSE);
     }
     GC_finish_collection();
+#   if defined(CONDPRINT)
+      if (GC_print_stats) {
+        GET_TIME(current_time);
+        GC_printf1("Complete collection took %lu msecs\n",
+                   MS_TIME_DIFF(current_time,start_time));
+      }
+#   endif
     return(TRUE);
 }
 #undef return
@@ -435,6 +449,7 @@ int GC_collect_a_little GC_PROTO(())
     result = (int)GC_collection_in_progress();
     UNLOCK();
     ENABLE_SIGNALS();
+    if (!result && GC_debugging_started) GC_print_all_smashed();
     return(result);
 }
 
@@ -453,13 +468,13 @@ GC_stop_func stop_func;
 	CLOCK_TYPE start_time, current_time;
 #   endif
 	
-    STOP_WORLD();
 #   ifdef PRINTTIMES
 	GET_TIME(start_time);
 #   endif
 #   if defined(CONDPRINT) && !defined(PRINTTIMES)
 	if (GC_print_stats) GET_TIME(start_time);
 #   endif
+    STOP_WORLD();
 #   ifdef CONDPRINT
       if (GC_print_stats) {
 	GC_printf1("--> Marking for collection %lu ",
@@ -523,6 +538,7 @@ GC_stop_func stop_func;
             (*GC_check_heap)();
         }
     
+    START_WORLD();
 #   ifdef PRINTTIMES
 	GET_TIME(current_time);
 	GC_printf1("World-stopped marking took %lu msecs\n",
@@ -536,7 +552,6 @@ GC_stop_func stop_func;
 	}
 #     endif
 #   endif
-    START_WORLD();
     return(TRUE);
 }
 
@@ -709,6 +724,7 @@ void GC_finish_collection()
       GC_words_allocd = 0;
       GC_words_wasted = 0;
       GC_mem_freed = 0;
+      GC_finalizer_mem_freed = 0;
       
 #   ifdef USE_MUNMAP
       GC_unmap_old();
@@ -732,6 +748,7 @@ void GC_finish_collection()
     int result;
     DCL_LOCK_STATE;
     
+    if (GC_debugging_started) GC_print_all_smashed();
     GC_INVOKE_FINALIZERS();
     DISABLE_SIGNALS();
     LOCK();
@@ -743,7 +760,10 @@ void GC_finish_collection()
     EXIT_GC();
     UNLOCK();
     ENABLE_SIGNALS();
-    if(result) GC_INVOKE_FINALIZERS();
+    if(result) {
+        if (GC_debugging_started) GC_print_all_smashed();
+        GC_INVOKE_FINALIZERS();
+    }
     return(result);
 }
 

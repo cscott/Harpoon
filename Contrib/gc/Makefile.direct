@@ -291,7 +291,7 @@ TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 GNU_BUILD_FILES= configure.in Makefile.am configure acinclude.m4 \
 		 libtool.m4 install-sh configure.host Makefile.in \
 		 ltconfig aclocal.m4 config.sub config.guess \
-		 ltmain.sh mkinstalldirs
+		 ltmain.sh mkinstalldirs depcomp missing
 
 OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
 		 BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
@@ -462,9 +462,8 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.S \
 	./if_mach MIPS IRIX5 $(AS) -o mach_dep.o $(srcdir)/mips_sgi_mach_dep.S
 	./if_mach MIPS RISCOS $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
 	./if_mach MIPS ULTRIX $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
-	./if_mach RS6000 "" $(AS) -o mach_dep.o $(srcdir)/rs6000_mach_dep.s
 	./if_mach POWERPC MACOSX $(AS) -o mach_dep.o $(srcdir)/powerpc_macosx_mach_dep.s
-	./if_mach ALPHA "" $(AS) -o mach_dep.o $(srcdir)/alpha_mach_dep.S
+	./if_mach ALPHA "" $(CC) -c -o mach_dep.o $(srcdir)/alpha_mach_dep.S
 	./if_mach SPARC SUNOS5 $(CC) -c -o mach_dep.o $(srcdir)/sparc_mach_dep.S
 	./if_mach SPARC SUNOS4 $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC OPENBSD $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s

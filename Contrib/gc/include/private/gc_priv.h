@@ -455,7 +455,7 @@ void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
 # endif
 
 /* Print warning message, e.g. almost out of memory.	*/
-# define WARN(msg,arg) (*GC_current_warn_proc)(msg, (GC_word)(arg))
+# define WARN(msg,arg) (*GC_current_warn_proc)("GC Warning: " msg, (GC_word)(arg))
 extern GC_warn_proc GC_current_warn_proc;
 
 /* Get environment entry */
@@ -853,6 +853,10 @@ struct _GC_arrays {
   word _mem_freed;
   	/* Number of explicitly deallocated words of memory	*/
   	/* since last collection.				*/
+  word _finalizer_mem_freed;
+  	/* Words of memory explicitly deallocated while 	*/
+  	/* finalizers were running.  Used to approximate mem.	*/
+  	/* explicitly deallocated by finalizers.		*/
   ptr_t _scratch_end_ptr;
   ptr_t _scratch_last_end_ptr;
 	/* Used by headers.c, and can easily appear to point to	*/
@@ -1023,6 +1027,7 @@ GC_API GC_FAR struct _GC_arrays GC_arrays;
 # define GC_words_finalized GC_arrays._words_finalized
 # define GC_non_gc_bytes_at_gc GC_arrays._non_gc_bytes_at_gc
 # define GC_mem_freed GC_arrays._mem_freed
+# define GC_finalizer_mem_freed GC_arrays._finalizer_mem_freed
 # define GC_scratch_end_ptr GC_arrays._scratch_end_ptr
 # define GC_scratch_last_end_ptr GC_arrays._scratch_last_end_ptr
 # define GC_mark_procs GC_arrays._mark_procs
@@ -1181,7 +1186,12 @@ extern word GC_root_size;	/* Total size of registered root sections */
 
 extern GC_bool GC_debugging_started;	/* GC_debug_malloc has been called. */ 
 
-			
+extern long GC_large_alloc_warn_interval;
+	/* Interval between unsuppressed warnings.	*/
+
+extern long GC_large_alloc_warn_suppressed;
+	/* Number of warnings suppressed so far.	*/
+
 /* Operations */
 # ifndef abs
 #   define abs(x)  ((x) < 0? (-(x)) : (x))
@@ -1654,8 +1664,11 @@ void GC_print_obj GC_PROTO((ptr_t p));
   			/* description of the object to stderr.		*/
 extern void (*GC_check_heap) GC_PROTO((void));
   			/* Check that all objects in the heap with 	*/
-  			/* debugging info are intact.  Print 		*/
-  			/* descriptions of any that are not.		*/
+  			/* debugging info are intact.  			*/
+  			/* Add any that are not to GC_smashed list.	*/
+extern void (*GC_print_all_smashed) GC_PROTO((void));
+			/* Print GC_smashed if it's not empty.		*/
+			/* Clear GC_smashed list.			*/
 extern void (*GC_print_heap_obj) GC_PROTO((ptr_t p));
   			/* If possible print s followed by a more	*/
   			/* detailed description of the object 		*/
@@ -1871,7 +1884,11 @@ void GC_err_puts GC_PROTO((GC_CONST char *s));
 #      define SIG_SUSPEND SIGPWR
 #    endif
 #   else  /* !GC_LINUX_THREADS */
-#    define SIG_SUSPEND _SIGRTMIN + 6
+#     if defined(_SIGRTMIN)
+#       define SIG_SUSPEND _SIGRTMIN + 6
+#     else
+#       define SIG_SUSPEND SIGRTMIN + 6
+#     endif       
 #   endif
 #  endif /* !SIG_SUSPEND */
   

@@ -88,7 +88,8 @@
 # if defined(GC_SOLARIS_PTHREADS) || defined(GC_FREEBSD_THREADS) || \
 	defined(GC_IRIX_THREADS) || defined(GC_LINUX_THREADS) || \
 	defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS) || \
-	defined(GC_DGUX386_THREADS) || defined(USER_THREADS)
+	defined(GC_DGUX386_THREADS) || defined(USER_THREADS) || \
+        (defined(GC_WIN32_THREADS) && defined(__CYGWIN32__))
 #   define GC_PTHREADS
 # endif
 
@@ -490,6 +491,9 @@ GC_API size_t GC_get_total_bytes GC_PROTO((void));
 /* Only the generational piece of this is	*/
 /* functional if GC_parallel is TRUE		*/
 /* or if GC_time_limit is GC_TIME_UNLIMITED.	*/
+/* Causes GC_local_gcj_malloc() to revert to	*/
+/* locked allocation.  Must be called 		*/
+/* before any GC_local_gcj_malloc() calls.	*/
 GC_API void GC_enable_incremental GC_PROTO((void));
 
 /* Does incremental mode write-protect pages?  Returns zero or	*/
@@ -894,6 +898,7 @@ extern void GC_thr_init();	/* Needed for Solaris/X86	*/
 
 #if defined(GC_WIN32_THREADS)
 # include <windows.h>
+# include <winbase.h>
 
   /*
    * All threads must be created using GC_CreateThread, so that they will be
