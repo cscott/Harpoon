@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@@ai.mit.edu> 
 // Version: 
 // Created: <Tue Oct  6 12:41:25 1998> 
-// Time-stamp: <1998-12-08 13:30:37 mfoltz> 
+// Time-stamp: <1998-12-11 18:28:31 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.QuadSSA;
@@ -15,6 +15,7 @@ import harpoon.Temp.Temp;
 import harpoon.Util.Set;
 import harpoon.Util.Util;
 import harpoon.RunTime.Monitor;
+import harpoon.Analysis.*;
 
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
@@ -38,10 +39,7 @@ public class Profile {
    */
   public static void optimize(HCode hc) {
 
-    HMethod _method = hc.getMethod();
-    HClass _class = _method.getDeclaringClass();
-
-    Visitor v = new Visitor(_method, _class);
+    Visitor v = new Visitor(hc);
 
     Enumeration e;
 
@@ -74,6 +72,8 @@ public class Profile {
     /** calling method, class, and <code>this</code> for this quad graph */
     HMethod _method;
     HClass _class;
+    HCode _hc;
+    harpoon.Analysis.UseDef _usedef;
 
     /** Temps that hold the <code>this</code> reference, a <code>null</code> constant,
      * a <code>String</code> constant with the name of <code>_method</code>, and a 
@@ -92,16 +92,19 @@ public class Profile {
     StaticMonitor _static_monitor;
 
     /** A hashtable mapping Temps of NEW quads to the CALL <init> quads that initialize them. */
-    Hashtable _temp_init_map;
+    // Hashtable _temp_init_map;
+    Hashtable _temp_visited;
 
-    Visitor(HMethod M, HClass C) {
+    Visitor(HCode hc) {
 
-      this._method = M;
-      this._class = C;
+      _method = hc.getMethod();
+      _class = _method.getDeclaringClass();
+      _hc = hc;
+      _usedef = new harpoon.Analysis.UseDef();
 
       _static_monitor = new StaticMonitor();
 
-      _temp_init_map = new Hashtable();
+      // _temp_init_map = new Hashtable();
 
       _java_lang_string = HClass.forName("java.lang.String");
       //      _java_lang_integer = HClass.forName("java.lang.Integer");
@@ -180,12 +183,33 @@ public class Profile {
       // splice new quads into CFG
       splice(q, c1, profiling_call);
 
-      // if this is an <init> call then we put in _temp_init_map
-      if (q.isSpecial && q.method.getName().equals("<init>")) {
-	_temp_init_map.put(q.objectref, q);
-	System.err.println("_TEMP_INIT_MAP: "+q.objectref+" --> "+q.toString());
-      }
+      // NOW if q is a CALL <init> we logNEW
 
+      if (q.isSpecial && q.method.getName().equals("<init>")) {
+	// _temp_init_map.put(q.objectref, q);
+	// System.err.println("_TEMP_INIT_MAP: "+q.objectref+" --> "+q.toString());
+	Temp[] new_parameters = new Temp[5];
+	Temp new_t1 = new Temp();
+	CONST new_c1 = new CONST(q.getSourceElement(), new_t1,
+			     new Integer(q.getLineNumber()), 
+ 			   HClass.Int);
+	new_parameters[1] = _calling_class_name_temp;
+	new_parameters[2] = _calling_method_name_temp;
+	new_parameters[3] = q.objectref;
+	new_parameters[4] = new_t1;
+      
+	if (_this == null) new_parameters[0] = _null_temp;
+	else new_parameters[0] = _this;
+
+	CALL new_profiling_call = new CALL(q.getSourceElement(), _new_profiling_method,
+ 				     null, new_parameters, null, new Temp(), false);
+
+	Quad.addEdge(new_c1,0,new_profiling_call,0);
+
+	splice(q, new_c1, new_profiling_call);
+
+      }
+      
     }
 
     /** Visit the <code>NEW</code> quad <code>q</code>.<p>
@@ -194,43 +218,94 @@ public class Profile {
      * the object creation site, and then a <code>CALL</code> quad invoking 
      * <code>_new_profile_method</code>.
      */
-    public void visit(NEW q) {
+//     public void visit(NEW q) {
 
-      Temp[] parameters = new Temp[5];
-      Quad search_quad;
-      CALL call_quad;
+//       Temp[] parameters = new Temp[5];
+//       Quad search_quad;
+//       // CALL call_quad;
+//       int no_splices;
 
-      System.err.print("#");
+//       System.err.print("#");
 
-      Temp t1 = new Temp();
-      CONST c1 = new CONST(q.getSourceElement(), t1,
-			   new Integer(q.getLineNumber()), 
-			   HClass.Int);
+//       Temp t1 = new Temp();
+//       CONST c1 = new CONST(q.getSourceElement(), t1,
+// 			   new Integer(q.getLineNumber()), 
+// 			   HClass.Int);
 
-      parameters[1] = _calling_class_name_temp;
-      parameters[2] = _calling_method_name_temp;
-      parameters[3] = q.dst;
-      parameters[4] = t1;
+//       parameters[1] = _calling_class_name_temp;
+//       parameters[2] = _calling_method_name_temp;
+//       parameters[3] = q.dst;
+//       parameters[4] = t1;
       
-      if (_this == null) parameters[0] = _null_temp;
-      else parameters[0] = _this;
+//       if (_this == null) parameters[0] = _null_temp;
+//       else parameters[0] = _this;
 
-      CALL profiling_call = new CALL(q.getSourceElement(), _new_profiling_method,
-				     null, parameters, null, new Temp(), false);
+//       CALL profiling_call = new CALL(q.getSourceElement(), _new_profiling_method,
+// 				     null, parameters, null, new Temp(), false);
 
-      Quad.addEdge(c1,0,profiling_call,0);
+//       Quad.addEdge(c1,0,profiling_call,0);
 
-      // look for init in _temp_init_map
+//       // look for init in _temp_init_map
 
-      call_quad = (CALL) _temp_init_map.get(q.dst);
-      if (call_quad == null) {
-	System.err.println("No <init> for NEW "+q.dst+":");
-	System.err.println(q.toString());
-	splice(q, c1, profiling_call);
-      } else {
-	// splice new quad into CFG
-	splice(call_quad, c1, profiling_call);
+//       // call_quad = (CALL) _temp_init_map.get(q.dst);
+//       _temp_visited = new Hashtable();
+//       no_splices = spliceAfterInit(q.dst, c1, profiling_call);
+//       // System.err.println("Number of splices for "+q.toString()+": "+no_splices);
+
+//     }
+    
+    /** find the CALL <init> for the new object in t */
+    private int spliceAfterInit(Temp t, Quad q1, Quad q2) {
+
+      if (_temp_visited.get(t) == null) {
+
+	_temp_visited.put(t,t);
+
+      HCodeElement[] uses = _usedef.useMap(_hc, t);
+      Quad q;
+      Quad q1_clone, q2_clone;
+      PHI p;
+      SIGMA s;
+      int i, j, k, sum;
+      for (i = 0; i < uses.length; i++) {
+	q = (Quad) uses[i];
+	if (q instanceof CALL && ((CALL) q).isSpecial 
+	    && ((CALL) q).method.getName().equals("<init>")) {
+	  // System.err.println("Splicing after: "+q.toString());
+	  q1_clone = (Quad) q1.clone();
+	  q2_clone = (Quad) q2.clone();
+	  Quad.addEdge(q1_clone,0,q2_clone,0);
+	  splice(q, q1_clone, q2_clone);
+	  return 1;
+	}
       }
+      sum = 0;
+      for (i = 0; i < uses.length; i++) {
+	q = (Quad) uses[i];
+	if (q instanceof PHI) {
+	  p = (PHI) q;
+	  for (j = 0; j < p.src.length; j++) {
+	    for (k = 0; k < p.src[j].length; k++) {
+	      if (p.src[j][k] == t) {
+		// System.err.println("Recurse on PHI: "+q.toString());
+		sum = sum + spliceAfterInit(p.dst[j], q1, q2);
+	      }
+	    }
+	  }
+	} else if (q instanceof SIGMA) {
+	  s = (SIGMA) q;
+	  for (j = 0; j < s.src.length; j++)
+	    if (s.src[j] == t) {
+	      // System.err.println("Recurse on SIGMA: "+q.toString());
+	      for (k = 0; k < s.dst[j].length; k++) 
+		sum = sum + spliceAfterInit(s.dst[j][k], q1, q2);
+	    }
+	}
+       }
+      return sum;
+      } else return 0;
+    }
+      
 
 //       try {
 
@@ -266,7 +341,6 @@ public class Profile {
 // 	e.printStackTrace();
 //       }
 
-    }
 
     /** Visit the <code>METHODHEADER</code> quad <code>q</code>.<p>
      * After it, insert <code>String<code> <code>CONST</code> quads with the names
