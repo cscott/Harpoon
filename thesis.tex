@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.99 1999-08-31 18:07:02 cananian Exp $
+% $Id: thesis.tex,v 1.100 1999-08-31 22:13:04 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -38,14 +38,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.99 $ $}
+\date{\today \\ $ $Revision: 1.100 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.99 $ $}{$ $Revision: 1.99 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.100 $ $}{$ $Revision: 1.100 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -1696,7 +1696,8 @@ new integer levels and deal with upper bounds in an efficient manner.}
 \subsubsection{Experimental results}\label{sec:sptc_results}
 \begin{myfigure}
 \centering
-\includegraphics[scale=0.4,angle=-90,clip=true]{Figures/THscccomp.eps}
+\includegraphics[scale=0.4,angle=-90,clip=true,trim=1cm 0 0 0]%
+{Figures/THscccomp.eps}
 \caption{SPTC optimization performance.}
 \label{fig:sptc_numbers}
 \end{myfigure}
