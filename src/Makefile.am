@@ -1,13 +1,24 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
-SUBDIRS = jni java.io java.lang java.net java.util.zip $(GCDIR)
+SUBDIRS = jni java.io java.lang java.net java.util.zip \
+	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR)
 
 # for precise gc, add gc to SUBDIRS
 if PRECISE_GC
-GCDIR=gc
+PGCDIR=gc # rename to precisegc?
+PGCLIB=gc/libgc.la
 endif
-#	$(foreach lib,@GC_LIB@,../$(lib))
+# for clustered heap support, add clheap to SUBDIRS
+if CLUSTERED_HEAPS
+CLHEAPDIR=clheap
+CLHEAPLIB=clheap/libclheap.la
+endif
+# for event-driven support, build nativeio libraries.
+if EVENT_DRIVEN
+NATIVEIODIR=nativeio # rename to eventdriven?
+NATIVEIOLIB=nativeio/libnativeio.la
+endif
 
 # see run% rule in top-level makefile to see how to generate a binary
 # executable from the Java.a file and these two libraries.
@@ -24,7 +35,8 @@ libflexc1_la_LIBADD = \
 	../arch/@ARCHDIR@/libfooter.la \
 	java.io/libjavaio.la java.lang/libjavalang.la \
 	java.net/libjavanet.la \
-	java.util.zip/libjavautilzip.la
+	java.util.zip/libjavautilzip.la \
+	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB)
 libflexc1_la_LDFLAGS = -version-info 0:0:0
 
 # backwards compatibility: a.out targets ####################
