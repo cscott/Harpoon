@@ -136,6 +136,18 @@ struct FNI_class2info {
 };
 extern struct FNI_class2info class2info_start[], class2info_end[];
 
+struct FNI_field2info {
+  struct oobj *field_object;
+  struct _jfieldID *fieldID;
+};
+extern struct FNI_field2info field2info_start[], field2info_end[];
+
+struct FNI_method2info {
+  struct oobj *method_object;
+  struct _jmethodID *methodID;
+};
+extern struct FNI_method2info method2info_start[], method2info_end[];
+
 /* --------------- wrapping and unwrapping objects. ------------ */
 /* MOVED: to fni-wrap.h, for better precise-c backend integration */
 #include "fni-wrap.h"
@@ -158,6 +170,10 @@ JNIEnv *FNI_GetJNIEnv(void);
 jobject FNI_NewLocalRef(JNIEnv *env, jobject_unwrapped obj);
 /* Look up classinfo from class object. */
 struct FNI_classinfo *FNI_GetClassInfo(jclass clazz);
+/* Look up fieldID from field object. */
+jfieldID FNI_GetFieldInfo(jobject field);
+/* Look up methodID from method object. */
+jmethodID FNI_GetMethodInfo(jobject method);
 
 /* raw allocation routine */
 void *FNI_RawAlloc(JNIEnv *env, jsize length);

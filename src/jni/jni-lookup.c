@@ -26,20 +26,25 @@ jclass FNI_FindClass(JNIEnv *env, const char *name) {
   return FNI_WRAP(result->class_object);
 }
 
-int class2info_compare(const void *key, const void *element) {
-  const struct oobj *class_object = key;
-  const struct FNI_class2info *c2i = element;
-  return class_object - c2i->class_object;
+/* FNI_GetClassInfo, FNI_GetFieldInfo, and FNI_GetMethodInfo definitions */
+#define FNI_GETINFO(name, Name, type, rettype, fieldname) \
+static int name##2info_compare(const void *key, const void *element) {\
+  const struct oobj *name##_object = key;\
+  const struct FNI_##name##2info *x2i = element;\
+  return name##_object - x2i->name##_object;\
+}\
+struct rettype *FNI_Get##Name##Info(type key) {\
+  const struct FNI_##name##2info * result;\
+  assert(key!=NULL);\
+  result =\
+    bsearch(FNI_UNWRAP(key),\
+	    name##2info_start, name##2info_end - name##2info_start,\
+	    sizeof(*name##2info_start), name##2info_compare);\
+  return (result==NULL) ? NULL : result->fieldname;\
 }
-struct FNI_classinfo *FNI_GetClassInfo(jclass clazz) {
-  const struct FNI_class2info * result;
-  assert(clazz!=NULL);
-  result =
-    bsearch(FNI_UNWRAP(clazz),
-	    class2info_start, class2info_end - class2info_start,
-	    sizeof(*class2info_start), class2info_compare);
-  return (result==NULL) ? NULL : result->info;
-}
+FNI_GETINFO(class, Class, jclass, FNI_classinfo, info)
+FNI_GETINFO(field, Field, jobject, _jfieldID, fieldID)
+FNI_GETINFO(method,Method,jobject, _jmethodID,methodID)
 
 struct name_and_sig {
   const char *name; const char *sig;
