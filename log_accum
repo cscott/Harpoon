@@ -1,7 +1,7 @@
 #! /usr/bin/perl
 # -*-Perl-*-
 #
-#ident	"@(#)ccvs/contrib:$Name:  $:$Id: log_accum,v 1.5 1998-10-18 09:47:44 cananian Exp $"
+#ident	"@(#)ccvs/contrib:$Name:  $:$Id: log_accum,v 1.6 1998-10-18 09:50:32 cananian Exp $"
 #
 # Perl filter to handle the log messages from the checkin of files in
 # a directory.  This script will group the lists of files by log
@@ -47,12 +47,12 @@ $STATE_REMOVED = 3;
 $STATE_LOG     = 4;
 
 $LAST_FILE     = "/tmp/#cvs.lastdir";
+$DIFF_FILE     = "/tmp/#cvs.diff";
 
 $CHANGED_FILE  = "/tmp/#cvs.files.changed";
 $ADDED_FILE    = "/tmp/#cvs.files.added";
 $REMOVED_FILE  = "/tmp/#cvs.files.removed";
 $LOG_FILE      = "/tmp/#cvs.files.log";
-$DIFF_FILE     = "/tmp/#cvs.files.diff";
 
 $FILE_PREFIX   = "#cvs.files";
 
