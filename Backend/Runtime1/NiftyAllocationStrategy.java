@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * thread-clustered-allocation strategies.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NiftyAllocationStrategy.java,v 1.1.2.2 2000-04-04 01:52:22 cananian Exp $
+ * @version $Id: NiftyAllocationStrategy.java,v 1.1.2.3 2000-05-11 22:08:13 bdemsky Exp $
  */
 public class NiftyAllocationStrategy extends MallocAllocationStrategy {
 
@@ -37,7 +37,7 @@ public class NiftyAllocationStrategy extends MallocAllocationStrategy {
 			Exp length) {
 	String funcname = "NGBL_malloc";
 	ExpList addlArgs = null;
-	if (ap.hasInteriorPointers()) funcname = "NGBL_malloc_atomic";
+	if (!ap.hasInteriorPointers()) funcname = "NGBL_malloc_atomic";
 	if (ap.canBeStackAllocated()) funcname = "NSTK_malloc";
 	if (ap.canBeThreadAllocated())funcname = "NTHR_malloc";
 	if (ap.useOwnHeap())          funcname = "NTHR_malloc_first";

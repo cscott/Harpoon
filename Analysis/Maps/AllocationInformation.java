@@ -10,7 +10,7 @@ import harpoon.Temp.Temp;
  * to information about the allocation done at that site.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformation.java,v 1.1.2.2 2000-04-04 01:37:40 cananian Exp $
+ * @version $Id: AllocationInformation.java,v 1.1.2.3 2000-05-11 22:08:12 bdemsky Exp $
  */
 public interface AllocationInformation  {
     
@@ -22,8 +22,8 @@ public interface AllocationInformation  {
      *  the object must be allocated in a global heap. */
     public static interface AllocationProperties {
 	/** @return <code>true</code> if the object allocated at this
-	 *  site has no interior pointers; that is, it is a primitive
-	 *  array, or all fields in the allocated object are primitive.
+	 *  site has interior pointers; that is, it is not a primitive
+	 *  array, and some field in the allocated object is not primitive.
 	 */
 	public boolean hasInteriorPointers();
 	/** @return <code>true</code> if the object can be allocated on
