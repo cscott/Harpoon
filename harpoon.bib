@@ -72,7 +72,7 @@
   url = 	 {ftp://ftp-sop.inria.fr/meije/esterel/papers/primer.ps.gz},
   annote = 	 {Lots of dry technical detail on the language, but
                   also some enlightening discussion of the rationale
-                  behind it.  See especially sections on
+                  behind the design.  See especially sections on
                   `Transformational, Interactive, and Reactive
                   Systems,' `Write Things Once,' and preemption.}
 }
@@ -92,16 +92,16 @@
 @InProceedings{mitra97:async_esterel,
   author = 	 {Raj S. Mitra and Bishnupriya Bhattacharya and
                   Luciano Lavagno},
-  title = 	 {Asynchronous Implementation of Synchronous Esterel
+  title = 	 {Asynchronous Implementation of Synchronous {Esterel}
                   Specifications},
   booktitle = 	 {Proceedings. Tenth International Conference on VLSI Design},
   pages =	 {348-353},
   year =	 1997,
   address =	 {Hyderabad, India},
   month =	 jan,
-  annote =	 {In which we learn that esterel is inherently a
+  annote =	 {In which we learn that Esterel is inherently a
                   synchronous language (surprise!).  Semantics have to
-                  change to support asynchronous implementation, this
+                  change to support asynchronous implementation; this
                   paper shows how.  Not useful to us.}
 }
 
@@ -132,11 +132,11 @@
   number =	 11,
   pages =	 {41-49},
   month =	 nov,
-  note =	 {Presents a simple set of language-independent
+  annote =	 {Presents a simple set of language-independent
                   extensions to specify real-time constraints.  Also
-                  contains the interesting claim that the compilation
-                  problems are solved, and references an unpublished
-                  paper to prove it.}
+                  contains the interesting claim that the real-time 
+                  compilation problem has been solved, and references 
+                  an unpublished paper to prove it.}
 }
 
 %%%%%%% Other language issues.
@@ -277,7 +277,7 @@
   month =	 jun,
   pages =	 {246-257},
   url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/207110/p246-click/},
-  annote =	 {Simple & works, but relies on heuristic to place,
+  annote =	 {Simple and works, but relies on heuristic to place,
                   and seems overly wedded to basic blocks (which we
                   want to eliminate).  I like SSAPRE better, even
                   though it is *much* more complicated.  Reassessment:

@@ -1,13 +1,21 @@
 # makefile.
 
-#all: design.ps
-preview: design.dvi
+all: design.ps bibnote.ps
+preview: design-xdvi
 
 design.dvi: design.tex harpoon.bib
 	latex design
 	bibtex design
 	latex design
 	latex design
+bibnote.dvi: bibnote.tex harpoon.bib
+	sed -e "s/^  note =/  Xnote =/" -e "s/^  annote =/  note =/" \
+		harpoon.bib > bibnote.bib
+	latex bibnote
+	bibtex bibnote
+	latex bibnote
+	latex bibnote
+	$(RM) bibnote.bib
 %.ps : %.dvi
 	dvips -o $@ $<
 %.pdf : %.ps
@@ -19,7 +27,8 @@ design.dvi: design.tex harpoon.bib
 		(xdvi $*.dvi &) ; \
 	fi
 clean:
-	$(RM) *.dvi *.log *.aux *.bbl *.blg design.ps design.pdf
+	$(RM) *.dvi *.log *.aux *.bbl *.blg
+	$(RM) design.ps design.pdf bibnote.ps bibnote.pdf bibnote.bib
 wipe: clean
 	$(RM) *~ core
 

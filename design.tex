@@ -1,11 +1,10 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: design.tex,v 1.2 1998-04-08 03:14:00 cananian Exp $
+% $Id: design.tex,v 1.3 1998-07-15 02:43:50 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[10pt,notitlepage]{article}
-%twocolumn
+\documentclass[10pt,notitlepage,twocolumn]{article}
 \author{C.~Scott~Ananian}
 \title{Turning Java into Hardware: \\ Caffinated Compiler Construction}
-\date{\today \\ $ $Revision: 1.2 $ $}
+\date{\today \\ $ $Revision: 1.3 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -14,6 +13,12 @@
 
 % Outline:
 % ~~~~~~~
+% 0. Introduction. 
+%    A. Why Java?
+%       - simplicity, strong types, oo, threading
+%       - BUT no bitwide types, no real time, no i/o grammar
+%    B. Why hardware?
+%       - codesign, etc.
 % I. Java/Hardware semantics.
 %    A. The rules.
 %       1. Classes are objects.
@@ -26,9 +31,10 @@
 %        than absolutely necessary. We might implement floating-point, more
 %        powerful allocation analysis, etc, later).
 %       1. No 'new' except in constructors.
-%          (or some less draconian rule to guarantee A.2 above)
+%          (actually less draconian rule to guarantee A.2 above)
 %       2. Floating-point is verboten.
-%       3. Throw and catch are not permitted?
+%          (allowed, but not yet)
+%       3. Throw and catch are not permitted? [we'll do them, but not yet]
 %       4. Other features we don't care to implement?
 %    C. An interface description language.
 %       (more details on how methods map to chip pin-outs and timing)
@@ -37,7 +43,7 @@
 %          class methods and executable code.
 %       3. Syntax/Grammar/Examples.
 % II. Useful analyses (compiler stages)
-%    A. Static type analysis.
+%    A. Static/Extended type analysis: not just type but which objs of the type
 %    B. Static allocation.
 %    C. Analyzing methods for side-effects.
 %    D. Optimizations:
@@ -46,12 +52,14 @@
 %       3. Strength reduction (divide->multiply, multiple->add/rotate)
 %       4. Exposing parallelism (removing control dependencies, loop analysis)
 %       5. Bit-width analysis (combine with type analysis?)
+%          - also, floating-point equivalent.
 %    E. Representation Transformations
 %       1. Java source -> bytecode (use javac for the foreseeable future)
 %       2. Java bytecode -> quads (remove stack abstraction)
 %       3. Quads -> SSA form? (best for optimizations?)
 %       4. SSA -> dataflow?  (get rid of control dependencies, more opts?)
 %       5. dataflow->logic functions (low-level hardware-(in)dependent stage)
+%          (``logic function'' is some form of BDD?)
 %       6. Logic function->Netlist (let others technology map, place and route)
 % III. More details on hardware synthesis.
 %    A. Dataflow/SSA to hardware
@@ -75,12 +83,17 @@
 %    Lots of work to keep me very busy for quite a while.
 
 \begin{document}
-\bibliographystyle{alpha}
+\bibliographystyle{abbrv}
 \maketitle
 
 \section{Introduction}
+blah blah blah blah
+
 \section{Java/Hardware Semantics}
+blah blah blah
+
 \subsection{The rules}
+
 \subsection{A Grammar for \textsc{Java--}}
 \subsection{An interface description language}
 \section{Compiler analyses}
@@ -99,7 +112,6 @@
 \subsection{Loop Analysis Techniques}
 \subsection{Logic Synthesis}
 \section{Conclusion}
-Ack!
 
 \nocite{*}
 \bibliography{harpoon}
