@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: popl05.tex,v 1.4 2004-07-16 15:48:22 cananian Exp $
+% $Id: popl05.tex,v 1.5 2004-07-16 16:24:56 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{csaacmconfbig} % 15 page limit
 %\usepackage{times}
@@ -37,7 +37,7 @@ Cambridge, MA 02139 \\
 }
 %\special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.4 $ $}
+%\date{\today \\ $ $Revision: 1.5 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -779,6 +779,8 @@ and correctness of the design.  Portions of the model have been
 abbreviated for this presentation;  the full Promela model is
 available from a URL given at the end of the paper.
 
+\appref{promela} provides a brief primer on Promela syntax and semantics.
+
 %\subsecput{interface}{Interface}
 \subsecput{datastruct}{Object Structures}
 \figput{tr-multi-obj}{Implementing software transactions with version
@@ -908,9 +910,10 @@ inline writeNT(o, f, nval) {
         copyBackField(o, f, kill_all, _st)
      od
   :: else -> /* create false flag */
-     /* implement this as a short *transactional* write.  */
-     /* start a new transaction, write FLAG, commit the transaction,
-      * repeat until successful.  Implementation elided. */
+     /* implement this as a short *transactional* write. */
+     /* start a new transaction, write FLAG, commit the */
+     /* transaction; repeat until successful. */
+     /* Implementation elided. */
      ...
   fi;
 }
@@ -1034,7 +1037,8 @@ know that we have already written to this field inside this transaction.
 inline readT(tid, o, f, ver, result) {
   do
   ::
-     /* we should always either be on the readerlist or aborted here */
+     /* we should always either be on the readerlist or
+      * aborted here */
      result = object[o].field[f];
      if
      :: (result==FLAG) ->
@@ -1045,9 +1049,9 @@ inline readT(tid, o, f, ver, result) {
         :: else ->
            findVersion(tid, o, ver);
            if
-           :: (ver==NIL) -> /* use value from committed version */
+           :: (ver==NIL) ->/*use val from committed vers.*/
               assert (_r!=NIL);
-              result = version[_r].field[f]; /* false flag? */
+              result = version[_r].field[f];/*false flag?*/
               moveVersion(_r, NIL);
               break /* done */
            :: else /* try, try, again */
@@ -1640,8 +1644,73 @@ available for download at
 \bibliographystyle{plain}
 \bibliography{xaction}
 
-\punt{
 \appendix
+\secput{promela}{Promela Primer}
+A concise Promela reference is available at
+\url{http://spinroot.com/spin/Man/Quick.html}; we will here attempt to
+summarize just enough of the language to allow the model we've
+presented in this paper to be understood.
+
+Promela syntax is C-like, with the same lexical and commenting
+conventions.  Statements are separated by either a semi-colon, or,
+equivalently, an arrow.  The arrow is typically used to separate a
+guard expression from the statements it is guarding.
+
+Execution of a statement occurs only if it is enabled.  Most
+statements, including assignments, are always enabled.
+A statement consisting only of an expression is enabled iff the
+expression is true (non-zero).
+Our model uses three basic Promela statements: selection, repetition,
+and {\tt atomic}.
+
+The selection statement,
+%\par{\footnotesize\samepage
+\begin{verbatim}
+if
+:: guard -> statements
+...
+:: guard -> statements
+fi
+\end{verbatim}
+%}
+selects one among its options and executes it.  An option can be
+selected iff its first statement (the guard) is enabled.  The
+special guard {\tt else} is enabled iff all other guards are not.
+
+The repetition statement,
+%\par{\footnotesize\samepage
+\begin{verbatim}
+do
+:: statements
+...
+:: statements
+fi
+\end{verbatim}
+%}
+is similar: one among its enabled statements is selected and executed,
+and then the process is repeated (with a different statement possibly
+being selected each time) until control is explicitly transfered out
+of the loop with a {\tt break} or {\tt goto}.
+
+Finally,
+%\par{\footnotesize\samepage
+\begin{verbatim}
+atomic { statements }
+\end{verbatim}
+%}
+executes the given statements in one indivisible step.  For the
+purposes of this model, a {\tt d\_step} block is functionally identical.
+Outside {\tt atomic} or {\tt d\_step} blocks, Promela allows
+interleaving before and after every statement, but statements are
+indivisible.
+
+Functions as specified in this model are similar to C macros: every
+parameter is potentially both an input {\it and} an output.  Calls to
+functions beginning with {\tt move} are simple assignments; they've
+been turned into macros so that reference counting allocated objects
+can be performed.
+
+\punt{
 \secput{extra}{Text with nowhere else to go}
 
 \begin{figure*}
