@@ -57,6 +57,7 @@ The -t option turns on realTime java extensions.
 SIMPLE = simple conservative analysis
 CHEESY = a little less conservative pointer analysis
 REAL = real pointer analysis
+ALL = remove all checks
 
 This will create code files in Code/asTest, assembled source in 
 Runtime/Test-Java.a, and an executable in Runtime/runTest.
