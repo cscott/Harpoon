@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.17 1998-09-01 21:55:07 cananian Exp $
+ * @version $Id: Translate.java,v 1.18 1998-09-02 01:22:47 cananian Exp $
  */
 
 /* State holds state *after* execution of corresponding instr. */
@@ -830,7 +830,12 @@ class Translate  { // not public.
 		break;
 	    }
 	case Op.INSTANCEOF:
-	    throw new Error("I'm brain-dead today."); // FIXME
+	    {
+	    OpClass opd = (OpClass) in.getOperand(0);
+	    ns = s.pop().push(new Temp());
+	    q = new INSTANCEOF(in, ns.stack[0], s.stack[0], opd.value());
+	    break;
+	    }
 	case Op.INVOKEINTERFACE:
 	case Op.INVOKESPECIAL:
 	case Op.INVOKESTATIC:
