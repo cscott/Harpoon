@@ -3,12 +3,13 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 /**
  * <code>CONST</code> objects represent an assignment of a constant value
  * to a compiler temporary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.1 1998-08-24 21:00:39 cananian Exp $
+ * @version $Id: CONST.java,v 1.2 1998-08-24 21:07:59 cananian Exp $
  */
 
 public class CONST extends Quad {

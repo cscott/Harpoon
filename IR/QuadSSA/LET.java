@@ -10,7 +10,7 @@ import harpoon.Temp.Temp;
  * pseudo-instruction.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LET.java,v 1.7 1998-08-24 21:00:39 cananian Exp $
+ * @version $Id: LET.java,v 1.8 1998-08-24 21:07:59 cananian Exp $
  */
 
 public class LET extends OPER {
@@ -24,6 +24,6 @@ public class LET extends OPER {
     }
     /** Returns a human-readable representation. */
     public String toString() { 
-	return "LET " + dst + " <= " + src;
+	return "LET " + dst + " <= " + operands[0];
     }
 }

@@ -7,6 +7,7 @@ import harpoon.ClassFile.Bytecode.Op;
 import harpoon.ClassFile.Bytecode.Operand;
 import harpoon.ClassFile.Bytecode.OpClass;
 import harpoon.ClassFile.Bytecode.OpConstant;
+import harpoon.ClassFile.Bytecode.OpField;
 import harpoon.ClassFile.Bytecode.OpLocalVariable;
 import harpoon.ClassFile.Bytecode.Instr;
 import harpoon.ClassFile.Bytecode.InGen;
@@ -22,7 +23,7 @@ import java.util.Hashtable;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.6 1998-08-24 20:59:13 cananian Exp $
+ * @version $Id: Translate.java,v 1.7 1998-08-24 21:07:59 cananian Exp $
  */
 
 /*
@@ -147,12 +148,14 @@ class Translate  { // not public.
     static final HClass charArray= HClass.forClass(char[].class);
     static final HClass dblArray = HClass.forClass(double[].class);
     static final HClass fltArray = HClass.forClass(float[].class);
+    static final HClass intArray = HClass.forClass(int[].class);
 
     static HMethod objArrayGet,  objArrayPut;
     static HMethod byteArrayGet, byteArrayPut;
     static HMethod charArrayGet, charArrayPut;
     static HMethod dblArrayGet,  dblArrayPut;
     static HMethod fltArrayGet,  fltArrayPut;
+    static HMethod intArrayGet,  intArrayPut;
 
     static {
 	objArrayGet = objArray.getMethod("get", new HClass[] {HClass.Int});
@@ -170,6 +173,9 @@ class Translate  { // not public.
 	fltArrayGet = fltArray.getMethod("get", new HClass[] {HClass.Int});
 	fltArrayPut = fltArray.getMethod("put", 
 		      new HClass[] {HClass.Int,HClass.forClass(float.class)});
+	intArrayGet = intArray.getMethod("get", new HClass[] {HClass.Int});
+	intArrayPut = intArray.getMethod("put", 
+		      new HClass[] {HClass.Int,HClass.forClass(int.class)});
     }
 
     static final Quad transInstr(StateMap sm, InGen in) {
@@ -189,7 +195,7 @@ class Translate  { // not public.
 	    break;
 	case Op.ACONST_NULL:
 	    ns = s.push(new Temp("null"));
-	    q = new LET(in, ns.stack[0], new LeafConst(null, HClass.Void));
+	    q = new CONST(in, ns.stack[0], null, HClass.Void);
 	    break;
 	case Op.ALOAD:
 	case Op.ALOAD_0:
@@ -203,7 +209,7 @@ class Translate  { // not public.
 		// Alternate implementation:
 		//ns = s.push(new Temp());
 		//q = new LET(in, ns.stack[0], 
-		//	    new LeafTemp(s.lv[opd.getIndex()]));
+		//	    s.lv[opd.getIndex()]);
 		break;
 	    }
 	case Op.ANEWARRAY:
@@ -250,9 +256,8 @@ class Translate  { // not public.
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
 		int val = ((Byte)opd.getValue()).intValue();
-		ns = s.push(new Temp("iconst"));
-		q = new LET(in, ns.stack[0], 
-			    new LeafConst(new Integer(val), HClass.Int));
+		ns = s.push(new Temp("const"));
+		q = new CONST(in, ns.stack[0], new Integer(val), HClass.Int);
 		break;
 	    }
 	case Op.CALOAD:
@@ -311,9 +316,8 @@ class Translate  { // not public.
 	case Op.DCONST_1:
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
-		ns = s.push(null).push(new Temp("dconst"));
-		q = new LET(in, ns.stack[0],
-			    new LeafConst(opd.getValue(), opd.getType()));
+		ns = s.push(null).push(new Temp("const"));
+		q = new CONST(in, ns.stack[0], opd.getValue(), opd.getType());
 		break;
 	    }
 	case Op.DLOAD:
@@ -429,8 +433,7 @@ class Translate  { // not public.
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
 		ns = s.push(new Temp("const"));
-		q = new LET(in, ns.stack[0],
-			    new LeafConst(opd.getValue(), opd.getType()));
+		q = new CONST(in, ns.stack[0], opd.getValue(), opd.getType());
 		break;
 	    }
 	case Op.FLOAD:
@@ -504,7 +507,7 @@ class Translate  { // not public.
 	case Op.IFNONNULL:
 	case Op.IFNULL:
 	    throw new Error("Ack!"); // FIXME
-	    break;
+
 	case Op.IINC:
 	    {
 		OpLocalVariable opd0 = (OpLocalVariable) in.getOperand(0);
