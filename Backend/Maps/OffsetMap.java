@@ -8,7 +8,7 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HClass;
 import harpoon.Temp.Label;
 
-import java.util.Iterator;
+import java.util.Set;
 
 /**
  * An <code>OffsetMap</code> maps an <code>HField</code> or an 
@@ -16,7 +16,7 @@ import java.util.Iterator;
  * total size of an <code>HClass</code> object.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: OffsetMap.java,v 1.1.2.14 1999-08-11 10:41:14 duncan Exp $
+ * @version $Id: OffsetMap.java,v 1.1.2.15 1999-08-16 23:41:51 duncan Exp $
  */
 public abstract class OffsetMap { // use an abstract class, if we can.
 
@@ -89,7 +89,7 @@ public abstract class OffsetMap { // use an abstract class, if we can.
 
     /** Returns an <code>Iterator</code> of all string constants which this
      *  offset map knows about.  */
-    public abstract Iterator stringConstants();
+    public abstract Set stringConstants();
 }
 
 
