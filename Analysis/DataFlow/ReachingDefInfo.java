@@ -2,7 +2,8 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Util.*;
 import harpoon.Temp.Temp;
-import harpoon.IR.Quads.*;
+import harpoon.IR.Properties.UseDef;
+import harpoon.ClassFile.HCodeElement;
 import java.util.Enumeration;
 import java.util.Map;
 
@@ -16,7 +17,7 @@ class ReachingDefInfo {
 
   int maxQuadID;
 
-  ReachingDefInfo(QuadBasicBlock bb, int maxQuadID, Map tempsToPrsvs) {
+  ReachingDefInfo(BasicBlock bb, int maxQuadID, Map tempsToPrsvs) {
     inSet = new BitString(maxQuadID);
     outSet = new BitString(maxQuadID);
 
@@ -28,26 +29,30 @@ class ReachingDefInfo {
     calculateGenPrsvSets(tempsToPrsvs, bb);
   }
 
-  void calculateGenPrsvSets(Map tempsToPrsvs, QuadBasicBlock bb) {
-      
-      prsvSet.setUpTo(maxQuadID);
-      for (Enumeration e = bb.quads(); e.hasMoreElements(); ) {
-	  Quad q = (Quad) e.nextElement();
-	  Temp[] defs = q.def();
-	  for (int i=0, n=defs.length; i<n; ++i) {
-	Temp t = defs[i];
-	BitString prsv2 = (BitString)tempsToPrsvs.get(t);
-	prsvSet.and(prsv2);
-	/*
-	  for (int j=0, o=kills.length; j<o; ++j) {
-	  int id = kills[j].getID();
-	  prsvSet.clear(id);
-	  }
-	*/
-	genSet.set(q.getID());
-	  }
-      }
-  }
+    /** Calculates Gen and Preserve sets.
+	<BR> <B>requires:</B> elements of <code>bb</code> implement
+	<code>UseDef</code> and <code>HCodeElement</code>. 
+    */
+    void calculateGenPrsvSets(Map tempsToPrsvs, BasicBlock bb) {
+	
+	prsvSet.setUpTo(maxQuadID);
+	for (Enumeration e = bb.elements(); e.hasMoreElements(); ) {
+	    UseDef q = (UseDef) e.nextElement();
+	    Temp[] defs = q.def();
+	    for (int i=0, n=defs.length; i<n; ++i) {
+		Temp t = defs[i];
+		BitString prsv2 = (BitString)tempsToPrsvs.get(t);
+		prsvSet.and(prsv2);
+		/*
+		  for (int j=0, o=kills.length; j<o; ++j) {
+		  int id = kills[j].getID();
+		  prsvSet.clear(id);
+		  }
+		*/
+		genSet.set(((HCodeElement)q).getID());
+	    }
+	}
+    }
 
   public boolean mergePredecessor(ReachingDefInfo pred) {
     return inSet.or_upTo(pred.outSet, maxQuadID);

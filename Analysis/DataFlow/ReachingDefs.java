@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.HashMap;
 import harpoon.Analysis.EdgesIterator;
 import harpoon.Util.*;
-import harpoon.IR.Quads.*;
 import harpoon.IR.Properties.Edges;
 import harpoon.IR.Properties.UseDef;
 import harpoon.ClassFile.HCodeElement;
@@ -75,16 +74,12 @@ public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
   /**
    * Merge function.
    *
-   * <BR> <B>requires:</B> <code>f</code> and <code>t</code> are
-   *                       instances of QuadBasicBlocks.
    */
   public boolean merge(BasicBlock f, BasicBlock t) {
     ReachingDefInfo from_info = getInfo(f);
-    Util.assert(from_info != null &&
-		f instanceof QuadBasicBlock &&
-		t instanceof QuadBasicBlock);
-    QuadBasicBlock from = (QuadBasicBlock) f;
-    QuadBasicBlock to   = (QuadBasicBlock) t;
+    Util.assert(from_info != null);
+    BasicBlock from = f;
+    BasicBlock to   = t;
 
     boolean result = false;
     ReachingDefInfo to_info = getInfo(to);
@@ -103,15 +98,14 @@ public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
   /**
    * Visit function.  In our case, it simply updates the out set.
    *
-   * <BR> <B>requires:</B> <code>bb</code> is an instance of a 
-   *                       <code>QuadBasicBlock</code>.
    */
   public void visit(BasicBlock bb) {
     ReachingDefInfo info = getInfo(bb);
     if (info == null) {
-      Util.assert(bb.getFirst() instanceof HEADER);
-      putInfo(bb, info = 
-	      new ReachingDefInfo((QuadBasicBlock) bb, maxQuadID, tempsToPrsvs));
+	// FSK commented out the assertion since it wont work for a
+	// generic ReachingDefs implementation
+	// Util.assert(bb.getFirst() instanceof HEADER);
+	putInfo(bb, info = new ReachingDefInfo(bb, maxQuadID, tempsToPrsvs));
     }
     info.updateOutSet();
   }
