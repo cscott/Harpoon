@@ -20,9 +20,9 @@ public class RelationExpr extends Expr {
 
     public SetDescriptor getSet() {
 	if (inverse)
-	    return relation.domain;
+	    return relation.getDomain();
 	else
-	    return relation.range;
+	    return relation.getRange();
     }
 
     public RelationExpr(Expr expr, RelationDescriptor relation, boolean inverse) {

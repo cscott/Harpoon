@@ -16,13 +16,15 @@ class ExactSize {
     }
     
     public int getsize(SetDescriptor sd) {
-	if (sizemap.containsKey(sd))
-	    return ((Integer)sizemap.get(sd)).intValue();
+	SizeObject so=new SizeObject(sd);
+	if (sizemap.containsKey(so))
+	    return ((Integer)sizemap.get(so)).intValue();
 	else
 	    return -1;
     }
     public Constraint getConstraint(SetDescriptor sd) {
-	return (Constraint)constraintmap.get(sd);
+	SizeObject so=new SizeObject(sd);
+	return (Constraint)constraintmap.get(so);
     }
 
     private void computesizes() {
@@ -69,8 +71,9 @@ class ExactSize {
 		}
 		if (matches) {
 		    System.out.println("Set "+sd.toString()+" has size "+oldsize);
-		    sizemap.put(sd,new Integer(oldsize));
-		    constraintmap.put(sd,c);
+		    SizeObject so=new SizeObject(sd);
+		    sizemap.put(so,new Integer(oldsize));
+		    constraintmap.put(so,c);
 		}
 	    }
 	}

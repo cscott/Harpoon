@@ -78,7 +78,7 @@ class AbstractRepair {
 		case ExprPredicate.COMPARISON:
 		    {
 			RelationExpr re=((RelationExpr)((OpExpr)ep.expr).left);
-			return ep.expr.getSet();
+			return re.expr.getSet();
 		    }
 		default:
 		    throw new Error("");
@@ -128,7 +128,7 @@ class AbstractRepair {
 		case ExprPredicate.COMPARISON:
 		    {
 			RelationExpr re=((RelationExpr)((OpExpr)ep.expr).left);
-			return ep.expr.getSet();
+			return re.expr.getSet();
 		    }
 		default:
 		    throw new Error("");

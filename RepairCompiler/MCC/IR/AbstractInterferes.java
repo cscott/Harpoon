@@ -9,8 +9,9 @@ class AbstractInterferes {
     }
 
     /** Does performing the AbstractRepair ar satisfy (or falsify if satisfy=false)
-     * Rule r */
-    static public boolean interferes(AbstractRepair ar, Rule r, boolean satisfy) {
+     * Rule r. */
+
+    static public boolean interfereswithrule(AbstractRepair ar, Rule r, boolean satisfy) {
 	boolean mayadd=false;
 	boolean mayremove=false;
 	switch (ar.getType()) {
@@ -60,7 +61,7 @@ class AbstractInterferes {
 
     /** Does performing the AbstractRepair ar falsify the predicate dp */
 
-    public boolean interferes(AbstractRepair ar, DNFPredicate dp) {
+    public boolean interfereswithpredicate(AbstractRepair ar, DNFPredicate dp) {
 	if ((ar.getDescriptor()!=dp.getPredicate().getDescriptor()) &&
 	    ((ar.getDescriptor() instanceof SetDescriptor)||
 	     !dp.getPredicate().usesDescriptor((RelationDescriptor)ar.getDescriptor())))
@@ -148,8 +149,6 @@ class AbstractInterferes {
 		if (termination.mutuallyexclusive(sd1,sd2))
 		    return false;
 	    }
-
-
 
 	    /* Translate the opcodes */
 	    op1=Opcode.translateOpcode(neg1,op1);
@@ -288,10 +287,10 @@ class AbstractInterferes {
 	return true;
     }
 
-    /** Does the increase (or decrease) in scope of a model defintion rule represented by sn
-     * falsify the predicate dp */
+    /** Does the increase (or decrease) in scope of a model defintion
+     * rule represented by sn falsify the predicate dp. */
 
-    public boolean interferes(ScopeNode sn, DNFPredicate dp) {
+    public boolean scopeinterfereswithpredicate(ScopeNode sn, DNFPredicate dp) {
 	if (!sn.getSatisfy()&&(sn.getDescriptor() instanceof SetDescriptor)) {
 	    Rule r=sn.getRule();
 	    Set target=r.getInclusion().getTargetDescriptors();
@@ -326,10 +325,10 @@ class AbstractInterferes {
 	return interferes(sn.getDescriptor(), sn.getSatisfy(),dp);
     }
 
-    /** Does increasing (or decreasing if satisfy=false) the size of the set or relation des
-     * falsify the predicate dp */
+    /** Does increasing (or decreasing if satisfy=false) the size of
+     * the set or relation des falsify the predicate dp. */
 
-    public boolean interferes(Descriptor des, boolean satisfy, DNFPredicate dp) {
+    private boolean interferes(Descriptor des, boolean satisfy, DNFPredicate dp) {
 	if ((des!=dp.getPredicate().getDescriptor()) &&
 	    ((des instanceof SetDescriptor)||
 	     !dp.getPredicate().usesDescriptor((RelationDescriptor)des)))
@@ -391,7 +390,13 @@ class AbstractInterferes {
 	return true;
     }
 
-    static public boolean interferesquantifier(Descriptor des, boolean satisfy, Quantifiers r, boolean satisfyrule) {
+    /** This method test whether satisfying (or falsifying depending
+     * on the flag satisfy) a rule that adds an object(or tuple) to
+     * the set(or relation) descriptor may increase (or decrease
+     * depending on the flag satisfyrule) the scope of a constraint or
+     * model defintion rule r.  */
+
+    static private boolean interferesquantifier(Descriptor des, boolean satisfy, Quantifiers r, boolean satisfyrule) {
 	for(int i=0;i<r.numQuantifiers();i++) {
 	    Quantifier q=r.getQuantifier(i);
 	    if (q instanceof RelationQuantifier||q instanceof SetQuantifier) {
@@ -405,17 +410,17 @@ class AbstractInterferes {
 	return false;
     }
 
-    static public boolean interferes(AbstractRepair ar, Quantifiers q) {
+    static public boolean interferesquantifier(AbstractRepair ar, Quantifiers q) {
 	if (ar.getType()==AbstractRepair.ADDTOSET||ar.getType()==AbstractRepair.ADDTORELATION)
 	    return interferesquantifier(ar.getDescriptor(),true,q,true);
 	return false;
     }
 
-    static public boolean interferes(Descriptor des, boolean satisfy, Quantifiers q) {
+    static public boolean interfereswithquantifier(Descriptor des, boolean satisfy, Quantifiers q) {
 	return interferesquantifier(des, satisfy, q,true);
     }
 
-    static public boolean interferes(Descriptor des, boolean satisfy, Rule r, boolean satisfyrule) {
+    static public boolean interfereswithrule(Descriptor des, boolean satisfy, Rule r, boolean satisfyrule) {
 	if (interferesquantifier(des,satisfy,r,satisfyrule))
 	    return true;
 	/* Scan DNF form */

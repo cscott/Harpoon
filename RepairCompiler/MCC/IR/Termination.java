@@ -280,8 +280,8 @@ public class Termination {
 
 		for(int i=0;i<conj.size();i++) {
 		    DNFPredicate dp=conj.get(i);
-		    if (AbstractInterferes.interferes(ar,cons)||
-			abstractinterferes.interferes(ar,dp)) {
+		    if (AbstractInterferes.interferesquantifier(ar,cons)||
+			abstractinterferes.interfereswithpredicate(ar,dp)) {
 			GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
 			gn.addEdge(e);
 			break;
@@ -292,7 +292,7 @@ public class Termination {
 		GraphNode gn2=(GraphNode)scopeiterator.next();
 		TermNode tn2=(TermNode)gn2.getOwner();
 		ScopeNode sn2=tn2.getScope();
-		if (AbstractInterferes.interferes(ar,sn2.getRule(),sn2.getSatisfy())) {
+		if (AbstractInterferes.interfereswithrule(ar,sn2.getRule(),sn2.getSatisfy())) {
 		    GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
 		    gn.addEdge(e);
 		}
@@ -345,8 +345,8 @@ public class Termination {
 		Constraint constr=tn2.getConstraint();
 		for(int i=0;i<conj.size();i++) {
 		    DNFPredicate dp=conj.get(i);
-		    if (abstractinterferes.interferes(sn,dp)||
-			AbstractInterferes.interferes(sn.getDescriptor(),sn.getSatisfy(),constr)) {
+		    if (abstractinterferes.scopeinterfereswithpredicate(sn,dp)||
+			AbstractInterferes.interfereswithquantifier(sn.getDescriptor(),sn.getSatisfy(),constr)) {
 			GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
 			GraphNode gnconseq=(GraphNode)consequence.get(sn);
 			gnconseq.addEdge(e);
@@ -358,13 +358,13 @@ public class Termination {
 	    /* Now see if this could effect other model defintion rules */
 	    for(int i=0;i<state.vRules.size();i++) {
 		Rule r=(Rule) state.vRules.get(i);
-		if (AbstractInterferes.interferes(sn.getDescriptor(),sn.getSatisfy(),r,true)) {
+		if (AbstractInterferes.interfereswithrule(sn.getDescriptor(),sn.getSatisfy(),r,true)) {
 		    GraphNode scopenode=(GraphNode)scopesatisfy.get(r);
 		    GraphNode.Edge e=new GraphNode.Edge("interferes",scopenode);
 		    GraphNode gnconseq=(GraphNode)consequence.get(sn);
 		    gnconseq.addEdge(e);
 		}
-		if (AbstractInterferes.interferes(sn.getDescriptor(),sn.getSatisfy(),r,false)) {
+		if (AbstractInterferes.interfereswithrule(sn.getDescriptor(),sn.getSatisfy(),r,false)) {
 		    GraphNode scopenode=(GraphNode)scopefalsify.get(r);
 		    GraphNode.Edge e=new GraphNode.Edge("interferes",scopenode);
 		    GraphNode gnconseq=(GraphNode)consequence.get(sn);
@@ -938,7 +938,6 @@ public class Termination {
 		}
 	    }
 	}
-
     }
 
     boolean debugmsg(String st) {
@@ -1190,7 +1189,6 @@ public class Termination {
 		} else {
 		    return false;
 		}
-		
 	    } else if (q instanceof SetQuantifier) {
 		SetQuantifier sq=(SetQuantifier)q;
 		if (un.getBinding(sq.var).getType()==Binding.SEARCH) {
