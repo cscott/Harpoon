@@ -31,7 +31,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.87 1998-10-14 02:02:00 cananian Exp $
+ * @version $Id: Translate.java,v 1.88 1998-10-22 04:36:53 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -136,7 +136,7 @@ class Translate  { // not public.
 	/** Make new state, as when exiting a JSR/RET block. */
 	State exitJSR() {
 	    Vector c[] = (Vector[]) shrink(this.continuation);
-	    return new State(stack, stackSize, lv, c, stackNames).pop();
+	    return new State(stack, stackSize, lv, c, stackNames);
 	}
 	/** Scrub state prior to entering PHI (use canonical names). */
 	State scrub() {
@@ -414,7 +414,6 @@ class Translate  { // not public.
 		    Quad.addEdge(c.header, c.which_succ, phi, i);
 		}
 
-		ns = tsi.initialState.exitJSR();
 		todo.push(tsi);
 		continue;
 	    }
