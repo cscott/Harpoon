@@ -54,7 +54,7 @@
 @timestamp rot 0
 @timestamp font 6
 @timestamp char size 1.000000
-@timestamp def "Mon Mar  4 20:53:41 2002"
+@timestamp def "Tue Mar  5 22:50:54 2002"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -368,7 +368,7 @@
 @    s1 errorbar riser clip off
 @    s1 errorbar riser clip length 0.100000
 @    s1 comment "MZF external"
-@    s1 legend  "MZF external"
+@    s1 legend  "Externalization"
 @    s2 hidden false
 @    s2 type bar
 @    s2 symbol 0
@@ -417,7 +417,7 @@
 @    s2 errorbar riser clip off
 @    s2 errorbar riser clip length 0.100000
 @    s2 comment "MZF static specialization"
-@    s2 legend  "MZF specialize"
+@    s2 legend  "Static specialization"
 @    s3 hidden false
 @    s3 type bar
 @    s3 symbol 0
