@@ -21,7 +21,7 @@ import java.lang.reflect.Field;
  * the <code>report()</code> method at program's end.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Counters.java,v 1.1.2.3 2001-02-26 23:39:18 cananian Exp $
+ * @version $Id: Counters.java,v 1.1.2.4 2001-11-02 05:32:44 cananian Exp $
  */
 public class Counters {
     // hide constructor. all fields/methods are static.
@@ -37,7 +37,7 @@ public class Counters {
 		try {
 		    field[i].set(null, new Object());
 		} catch (IllegalAccessException e) {
-		    System.err.println("SKIPPING INIT OF "+field[i]);
+		    System.err.println("SKIPPING INIT OF "+field[i].toString());
 		}
     }
 
@@ -51,12 +51,14 @@ public class Counters {
 		    String name = field[i].getName().substring(8);
 		    Field Flck = Counters.class.getDeclaredField("LOCK_"+name);
 		    synchronized(Flck.get(null)) {
-			System.err.println(name+": "+field[i].get(null));
+			System.err.println(name+": "+
+					   ((Number)field[i].get(null))
+					   .longValue());
 		    }
 		} catch (NoSuchFieldException e) {
-		    System.err.println("CAN'T FIND FIELD: "+e);
+		    System.err.println("CAN'T FIND FIELD: "+e.toString());
 		} catch (IllegalAccessException e) {
-		    System.err.println("CAN'T READ FIELD: "+e);
+		    System.err.println("CAN'T READ FIELD: "+e.toString());
 		}
     }
 }
