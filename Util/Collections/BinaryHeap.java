@@ -3,8 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-import harpoon.Util.AbstractMapEntry;
 import harpoon.Util.Default;
+import harpoon.Util.PairMapEntry;
 import harpoon.Util.Util;
 
 import java.util.AbstractCollection;
@@ -24,7 +24,7 @@ import java.util.Map;
  * Sedgewick's book.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinaryHeap.java,v 1.1.2.1 2000-02-12 18:15:28 cananian Exp $
+ * @version $Id: BinaryHeap.java,v 1.1.2.2 2000-02-12 20:57:05 cananian Exp $
  * @see Heap
  */
 public final class BinaryHeap extends AbstractHeap {
@@ -93,7 +93,7 @@ public final class BinaryHeap extends AbstractHeap {
     }
     public void decreaseKey(Map.Entry me, Object newkey) {
 	Entry e = (Entry) me;
-	e.key = newkey;
+	e._setKey(newkey);
 	upheap(e.index);
 	if (debug) checkHeap();
     }
@@ -168,14 +168,13 @@ public final class BinaryHeap extends AbstractHeap {
     }
 
     /** Our <code>BinaryHeap</code> <code>Map.Entry</code>s look like this: */
-    private static class Entry extends AbstractMapEntry {
-	Object key, value;
+    private static class Entry extends PairMapEntry {
 	int index;
 	Entry(Object key, Object value, int index) {
-	    this.key = key; this.value = value; this.index = index;
+	    super(key, value);
+	    this.index = index;
 	}
-	public Object getKey() { return key; }
-	public Object getValue() { return value; }
+	Object _setKey(Object newKey) { return setKey(newKey); }
     }
 
     //--------------------------------------------------
