@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.69 1999-10-14 16:11:29 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.70 1999-10-14 17:44:49 cananian Exp $
  */
 %%
 
@@ -1253,11 +1253,11 @@ MOVE(MEM<s:16,u:16>(d), src) %{ /* hack. ARMv4 has a special instr for this. */
     emit(new InstrMEM(instrFactory, ROOT,
 		      "strb `s0, [`s1, #0] @ store halfword lo",
 		      null, new Temp[]{ src, d }));
-    emit( ROOT, "mov 'd0, 's0, ror #8", src, src );
+    emit( ROOT, "mov `d0, `s0, ror #8", src, src );
     emit(new InstrMEM(instrFactory, ROOT,
 		      "strb `s0, [`s1, #1] @ store halfword hi",
 		      null, new Temp[]{ src, d }));
-    emit( ROOT, "mov 'd0, 's0, ror #24", src, src );
+    emit( ROOT, "mov `d0, `s0, ror #24", src, src );
 }%
 MOVE(MEM<s:8,u:8,p,i,f>(d), src) %{ // addressing mode 2
     String suffix="";
