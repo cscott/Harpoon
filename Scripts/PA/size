@@ -1,0 +1,13 @@
+#!/bin/sh
+cd 
+cd Harpoon/Code
+
+cls=$1
+name=$2
+dir=$3
+
+
+stdPath=./Support/NewThread.jar:./Support/sunthunk.jar:./Support/collections.jar:./classes.zip
+java -mx128m -oss100m -Dharpoon.alloc.strategy=nifty -Dharpoon.target.elf=yes -Dharpoon.class.path=$stdPath:$dir \
+harpoon.Main.Sizer $cls
+exit $?

@@ -1,0 +1,26 @@
+#!/bin/sh
+
+cd 
+cd Harpoon/Code
+
+cls=$1
+name=$2
+dir=$3
+levels=$4
+
+rm -rf $name.None
+mkdir $name.None
+
+export stdPath=./Support/EventDriven1.jar:./Support/sunthunk.jar:./Support/collections.jar:./classes.zip:.
+
+echo "harpoon.class.path  = " $stdPath:$dir
+echo "current directory . = " `pwd`
+
+java -mx128m -oss100m \
+    -Dharpoon.alloc.strategy=bdw \
+    -Dharpoon.target.elf=yes \
+    -Dharpoon.class.path=$stdPath:$dir \
+harpoon.Main.SAMain \
+    -H -c $cls -b precisec -o $name.None/
+
+exit $?

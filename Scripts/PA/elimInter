@@ -1,0 +1,40 @@
+#!/bin/sh
+cd 
+cd Harpoon/Code
+
+cls=$1
+name=$2
+dir=$3
+levels=$4
+
+stdPath=./Support/NewThread.jar:./Support/sunthunk.jar:./Support/collections.jar:./classes.zip:.
+
+echo "Analyzing $cls to analyze-$name."
+
+rm -rf $name.Inter
+mkdir $name.Inter
+
+if test -e pre$name
+then
+    PREANALYSIS_OPT=--loadpre=pre$name
+else
+    PREANALYSIS_OPT=--savepre=pre$name
+fi
+
+echo "harpoon.class.path  = " $stdPath:$dir
+echo "current directory . = " `pwd`
+
+java -mx128m -oss100m \
+    -Dharpoon.alloc.strategy=nifty \
+    -Dharpoon.target.elf=yes \
+    -Dharpoon.class.path=$stdPath:$dir \
+harpoon.Main.PAMain $PREANALYSIS_OPT \
+    -s --ccs=$levels --wts \
+    --mamaps=analyze-$name --ns 1 \
+    --details \
+    --output $name.Inter/ --backend strongarm --inline \
+$cls
+
+#--syncelimroots --analyzeroots
+
+exit $?

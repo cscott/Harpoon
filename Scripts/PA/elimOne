@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# the directory where the scripts are located
+SCR_DIR=`dirname $0`
+
+cls=$1
+name=$2
+dir=$3
+levels=$4
+
+export stdPath=./Support/EventDriven1.jar:./Support/sunthunk.jar:./Support/collections.jar:./classes.zip
+
+echo "1. elimInter($2)"
+$SCR_DIR/elimInter $1 $2 $3 $4 | tee $2.Inter.out
+
+echo "2. elimIntra($2)"
+$SCR_DIR/elimIntra $1 $2 $3 $4 | tee $2.Intra.out
+
+echo "3. elimNone($2)"
+$SCR_DIR/elimNone  $1 $2 $3 $4 | tee $2.None.out

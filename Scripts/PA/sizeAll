@@ -1,0 +1,41 @@
+#!/bin/bash
+
+if test -n "$BENCHS_DIR" -a -d $BENCHS_DIR
+then
+    echo "BENCHS_DIR = \"$BENCHS_DIR\" ok!";
+else
+    echo "Please set BENCHS_DIR to the directory the benchmarks are in";
+    exit 1;
+fi
+
+# the directory where the scripts are located
+SCR_DIR=`dirname $0`
+
+echo "Sizing barnes"
+$SCR_DIR/size barnes barnes $BENCHS_DIR/Barnes/Barnes 2 > barnes.Size.out
+
+echo "Sizing Chat (ie Nets)"
+$SCR_DIR/size Nets Nets $BENCHS_DIR/Chat/Chat 2 > Chat.Size.out
+
+echo "Sizing Echo"
+$SCR_DIR/size Echo Echo $BENCHS_DIR/Echo/Echo 2 > Echo.Size.out
+
+echo "Sizing GameServer2"
+$SCR_DIR/size GameServer2 GameServer2 $BENCHS_DIR/Game/Game 2 > GameServer2.Size.out
+
+echo "Sizing JhttpServer"
+$SCR_DIR/size JhttpServer JhttpServer $BENCHS_DIR/HTTP/HTTP 2 > JhttpServer.Size.out
+
+echo "Sizing PhoneServer"
+$SCR_DIR/size PhoneServer PhoneServer $BENCHS_DIR/Phone/Phone 2 > PhoneServer.Size.out
+
+echo "Sizing QuoteServer"
+$SCR_DIR/size QuoteServer QuoteServer $BENCHS_DIR/Quote/Quote 2 > QuoteServer.Size.out
+
+echo "Sizing Time"
+$SCR_DIR/size Time Time $BENCHS_DIR/Time/Time 2 > Time.Size.out
+
+echo "Sizing water"
+$SCR_DIR/size water water $BENCHS_DIR/Water/Water 2 > water.Size.out
+
+
