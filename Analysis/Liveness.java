@@ -12,7 +12,7 @@ import java.util.Set;
  * <code>Liveness</code> defines an abstract class for live variable analysis.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: Liveness.java,v 1.1.2.1 1999-10-28 05:04:49 kkz Exp $
+ * @version $Id: Liveness.java,v 1.1.2.2 2000-02-01 03:06:35 pnkfelix Exp $
  */
 public abstract class Liveness {
     protected final HCode hc;
@@ -23,16 +23,14 @@ public abstract class Liveness {
     public Liveness(HCode hc) {
 	this.hc = hc;
     }
-
+    
     /** Returns the <code>Set</code> of <code>Temp</code>s 
      *  that are live-in at the <code>HCodeElement</code>. 
-     *  Returns <code>null</code> if there no live-in variables.
      */
     public abstract Set getLiveIn(HCodeElement hce);
 
     /** Returns the <code>Set</code> of <code>Temp</code>s 
      *  that are live-out at the <code>HCodeElement</code>. 
-     *  Returns <code>null</code> if there no live-in variables.
      */
     public abstract Set getLiveOut(HCodeElement hce);
 }
