@@ -9,6 +9,7 @@ public class LoadImage extends ClientServer {
 	if (args.length < 3) {
 	    System.out.print("Usage: jaco LoadImage <name> <file prefix> ");
 	    System.out.println("<num> -ORBInitRef NameService=file://dir/ns");
+	    System.exit(-1);
 	}
 
 	LoadImage li = new LoadImage(args);
