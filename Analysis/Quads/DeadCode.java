@@ -70,7 +70,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.6 2002-11-30 05:13:21 salcianu Exp $
+ * @version $Id: DeadCode.java,v 1.7 2002-11-30 18:10:18 salcianu Exp $
  */
 
 public abstract class DeadCode  {
@@ -131,7 +131,7 @@ public abstract class DeadCode  {
     static void replace(Quad oldquad, Quad newquad,
 			AllocationInformation oldaim,
 			AllocationInformationMap newaim, TempMap tm) {
-	oldquad.getFactory().getParent().notifyReplace(oldquad, newquad);
+	oldquad.getFactory().getParent().notifyReplace(oldquad, newquad, tm);
 	Quad.replace(oldquad, newquad);
 	// update allocation properties, too.
 	if (newaim!=null && (oldquad instanceof ANEW||oldquad instanceof NEW))

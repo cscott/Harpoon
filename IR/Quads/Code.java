@@ -34,7 +34,7 @@ import java.util.ArrayList;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.10 2002-11-30 05:13:43 salcianu Exp $
+ * @version $Id: Code.java,v 1.11 2002-11-30 18:10:11 salcianu Exp $
  */
 public abstract class Code extends HCode<Quad>
     implements java.io.Serializable {
@@ -261,7 +261,8 @@ public abstract class Code extends HCode<Quad>
         allocation policies, QuadNoSSA to QuadSSI mappings etc.).  See
         the code of DeadCode.replace for an example.
 
-	@param oldquad the quad that is being replaced 
-	@param newquad the new quad that replaces <code>oldquad</code> */
-    public void notifyReplace(Quad oldquad, Quad newquad) { }
+	@param oldquad quad that is being replaced 
+	@param newquad new quad that replaces <code>oldquad</code>
+	@param tm maps old temps to new temps */
+    public void notifyReplace(Quad oldquad, Quad newquad, TempMap tm) { }
 }

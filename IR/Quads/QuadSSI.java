@@ -27,7 +27,7 @@ import java.util.HashMap;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.6 2002-11-30 05:13:43 salcianu Exp $
+ * @version $Id: QuadSSI.java,v 1.7 2002-11-30 18:10:12 salcianu Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -71,7 +71,7 @@ public class QuadSSI extends Code /* which extends HCode */ {
     /** Update the QuadNoSSA to QuadSSI mappings when the SSI quad
 	<code>oldquad</code> is replaced of <code>this</code> is
 	replaced with the new SSI quad <code>newquad</code>. */
-    public void notifyReplace(Quad oldquad, Quad newquad) {
+    public void notifyReplace(Quad oldquad, Quad newquad, TempMap tm) {
 	if(mapSSI2NoSSA != null) { // mappings exist
 	    Quad quad_nossa = (Quad) mapSSI2NoSSA.get(oldquad);
 	    // replace quad_nossa <-> oldquad with 
