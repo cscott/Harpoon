@@ -19,7 +19,7 @@ import java.util.Set;
  * correctly extends <code>Map</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GenericInvertibleMultiMap.java,v 1.1.2.2 2001-06-17 22:36:32 cananian Exp $
+ * @version $Id: GenericInvertibleMultiMap.java,v 1.1.2.3 2001-11-04 00:23:29 cananian Exp $
  */
 public class GenericInvertibleMultiMap implements InvertibleMultiMap {
     private final MultiMap map, imap;
@@ -45,6 +45,16 @@ public class GenericInvertibleMultiMap implements InvertibleMultiMap {
     public GenericInvertibleMultiMap() {
 	this(Factories.hashSetFactory);
     }
+    /* Collections API */
+    public GenericInvertibleMultiMap(Map m) {
+	this();
+	putAll(m);
+    }
+    public GenericInvertibleMultiMap(MultiMap mm) {
+	this();
+	addAll(mm);
+    }
+
     /** Returns an unmodifiable inverted view of <code>this</code>.
      */
     public InvertibleMultiMap invert() { return inverse; }
@@ -60,6 +70,15 @@ public class GenericInvertibleMultiMap implements InvertibleMultiMap {
 		changed = true;
 	return changed;
     }
+    public boolean addAll(MultiMap mm) {
+	boolean changed = false;
+	for (Iterator it=mm.entrySet().iterator(); it.hasNext(); ) {
+	    Map.Entry me = (Map.Entry) it.next();
+	    if (add(me.getKey(), me.getValue()))
+		changed = true;
+	}
+	return changed;
+    }
     public void clear() { map.clear(); imap.clear(); }
     public boolean contains(Object a, Object b) {
 	return map.contains(a, b);
@@ -71,9 +90,43 @@ public class GenericInvertibleMultiMap implements InvertibleMultiMap {
 	return imap.containsKey(value);
     }
     public Set entrySet() {
-	// what should the 'value' field of an entry set contain?
-	// a single value or a collection?
-	throw new Error("unimplemented");
+	// value field of entry set contains a single value.
+	return new AbstractSet() {
+		public Iterator iterator() {
+		    final Iterator it = map.entrySet().iterator();
+		    return new Iterator() {
+			    Map.Entry last;
+			    public boolean hasNext() { return it.hasNext(); }
+			    public Object next() {
+				last = (Map.Entry) it.next();
+				return last;
+			    }
+			    public void remove() {
+				// do it here.
+				it.remove();
+				// mirror op in imap.
+				imap.remove(last.getValue(), last.getKey());
+			    }
+			};
+		}
+		public void clear() { GenericInvertibleMultiMap.this.clear(); }
+		public boolean contains(Object o) {
+		    if (!(o instanceof Map.Entry)) return false;
+		    Map.Entry me = (Map.Entry) o;
+		    return GenericInvertibleMultiMap.this.contains
+			(me.getKey(), me.getValue());
+		}
+		public int size() {
+		    return GenericInvertibleMultiMap.this.size();
+		}
+		public boolean remove(Object o) {
+		    if (!(o instanceof Map.Entry))
+			throw new UnsupportedOperationException();
+		    Map.Entry me = (Map.Entry) o;
+		    return GenericInvertibleMultiMap.this.remove
+			(me.getKey(), me.getValue());
+		}
+	    };
     }
     public boolean equals(Object o) {
 	return map.equals(o);
