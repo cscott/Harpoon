@@ -93,7 +93,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.95 2001-03-10 18:31:12 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.96 2001-03-13 16:26:37 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -1079,6 +1079,9 @@ public abstract class PAMain {
 	}
 	System.out.println("Execution options:");
 
+	if(rootSetFilename != null)
+	    System.out.println("\tLoad extra roots from \"" +
+			       rootSetFilename + "\"");
 
 	if(LOAD_ANALYSIS)
 	    System.out.println("\tLOAD_ANALYSIS from \"" + 
@@ -1808,18 +1811,22 @@ public abstract class PAMain {
 
     private static void addToRootSet(final Set roots, String filename) {
 	try {
-	    ParseUtil.readResource(filename, new ParseUtil.StringParser() {
-		    public void parseString(String s)
-			throws ParseUtil.BadLineException {
-			if (s.indexOf('(') < 0) // parse as class name.
-			    roots.add(ParseUtil.parseClass(linker, s));
-			else // parse as method name.
-			    roots.add(ParseUtil.parseMethod(linker, s));
-		    }
-		});
+	    System.out.print("Loading extra roots from " + filename + "... ");
+	    ParseUtil.readResource
+		(filename,
+		 new ParseUtil.StringParser() {
+			 public void parseString(String s)
+			     throws ParseUtil.BadLineException {
+			     if (s.indexOf('(') < 0) // parse as class name.
+				 roots.add(ParseUtil.parseClass(linker, s));
+			     else // parse as method name.
+				 roots.add(ParseUtil.parseMethod(linker, s));
+			 }
+		     });
+
+	    System.out.println("done");
 	} catch (IOException ex) {
-	    System.err.println("Error reading " + filename + ": " + ex);
-	    System.exit(1);
+	    Util.assert(false, "Error reading " + filename + ": " + ex);
 	}
     }
 

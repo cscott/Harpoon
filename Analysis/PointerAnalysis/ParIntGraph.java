@@ -29,7 +29,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.45 2001-03-08 21:39:11 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.46 2001-03-13 16:25:57 salcianu Exp $
  */
 public class ParIntGraph implements java.io.Serializable {
 
@@ -378,7 +378,7 @@ public class ParIntGraph implements java.io.Serializable {
     }
 
     /** Visits all the nodes that appear in <code>this</code> graph. */
-    public void forAllNodes(final PANodeVisitor visitor){
+    public void forAllNodes(final PANodeVisitor visitor) {
 	G.O.forAllNodes(visitor);
 	G.I.forAllNodes(visitor);
 	forSet(G.r,visitor);
