@@ -26,9 +26,9 @@ DSOURCES += $(wildcard src/util/*.html src/corba/*.html src/rtj/*.html)
 DSOURCES += $(wildcard src/rtj/stubs/*.html)
 MANIFEST=$(wildcard src/manifest/*.MF)
 SCRIPTS=$(wildcard script/*)
-CONTRIB=$(shell find contrib | grep -v 'CVS' | grep -v '.cvsignore')
-RELEASE=$(SOURCES) README BUILDING COPYING CREDITS Makefile $(IMAGES) $(DSOURCES) $(BISOURCES) $(MANIFEST)
-RELEASE += $(SCRIPTS) $(CONTRIB)
+CONTRIB=$(shell find contrib -type f | grep -v 'CVS' | grep -v '.cvsignore')
+RELEASE=$(SOURCES) README BUILDING COPYING CREDITS Makefile $(IMAGES) $(DSOURCES) 
+RELEASE += $(BISOURCES) $(MANIFEST) $(SCRIPTS)
 JDIRS=imagerec FrameManip omg ATRManip quo rss HTTPClient demo java_cup org
 
 # figure out what the current CVS branch is, by looking at the Makefile
@@ -256,9 +256,13 @@ jars: clean doc
 	@rm -rf tank.gz.*
 	@rm -rf $(JDIRS)
 
-imagerec.tgz: $(RELEASE)
+imagerec.tgz: $(RELEASE) $(CONTRIB)
 	@echo Generating $@ file.
-	@tar -c $(RELEASE) | gzip -9 > $@
+	@rm -rf $@.lst
+	@for x in $(RELEASE); do echo $$x >> $@.lst; done
+	@find contrib -type f | grep -v 'CVS' | grep -v '.cvsignore' >> $@.lst
+	@tar -cT $@.lst | gzip -9 > $@
+	@rm -rf $@.lst
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
 jar-install: jars
