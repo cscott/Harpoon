@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.136 2000-02-18 03:30:39 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.137 2000-02-18 07:33:49 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -407,8 +407,10 @@ import java.util.Iterator;
       for (int i=0; i<index && i<4; i++)
 	callUses.add(frame.getRegFileInfo().getRegister(i));
       index--; // so index points to 'register #' of last argument.
+
+      declare( SP, HClass.Void ); // don't screw with the stack
       for (TempList tl = reverse; tl != null; tl = tl.tail) { 
-	Temp temp = tl.head; 
+	Temp temp = tl.head; tind--;
 	if (temp instanceof TwoWordTemp) {
 	  // arg takes up two words
 	  switch(index) {
@@ -450,7 +452,7 @@ import java.util.Iterator;
 	  // arg is one word
 	  if (index < 4) {
 	    Temp reg = frame.getRegFileInfo().getRegister(index--); 
-	    declare( reg, (HClass) typeHCs.get(tind--));
+	    declare( reg, (HClass) typeHCs.get(tind));
 	    emitMOVE( ROOT, "mov `d0, `s0", reg, temp);
 	  } else {
 	    stackOffset += 4; index--;
@@ -1271,6 +1273,8 @@ MOVE(TEMP(dst), CONST<l,d>(c)) %{
     // why.  They just are.
     String lomod = (ROOT.type()==Type.LONG) ? "l" : "h";
     String himod = (ROOT.type()==Type.LONG) ? "h" : "l";
+    declare( i, code.getTreeDerivation().typeMap( ROOT.getSrc() ) );
+
     emit(new Instr( instrFactory, ROOT,
 		    loadConst32("`d0"+lomod, (int)val, "lo("+cROOT.value+")"),
 		    new Temp[]{ i }, null));
@@ -1285,6 +1289,7 @@ MOVE(TEMP(dst), CONST<f,i>(c)) %{
     CONST cROOT = (CONST) ROOT.getSrc();
     int val = (cROOT.type()==Type.INT) ? cROOT.value.intValue()
 	: Float.floatToIntBits(cROOT.value.floatValue());
+    declare( i, code.getTreeDerivation().typeMap( ROOT.getSrc()) );
     emit(new Instr( instrFactory, ROOT,
 		    loadConst32("`d0", val, cROOT.value.toString()),
 		    new Temp[]{ i }, null));
@@ -1293,6 +1298,7 @@ MOVE(TEMP(dst), CONST<f,i>(c)) %{
 MOVE(TEMP(dst), CONST<p>(c)) %{
     // the only CONST of type Pointer we should see is NULL
     Temp i = makeTemp(dst);
+    declare( i, code.getTreeDerivation().typeMap( ROOT.getSrc()) );
     emit(new Instr( instrFactory, ROOT, 
 		    "mov `d0, #0 @ null", new Temp[]{ i }, null));
 }%
@@ -1822,6 +1828,7 @@ METHOD(params) %{
     // skip param[0], which is the explicit 'exceptional return address'
     for (int i=1; i<params.length; i++) {
 	if (params[i] instanceof TwoWordTemp) {
+	    declare(params[i], HClass.Void);
 	    if (loc<=2) { // both halves in registers
 		// ack.  emitMOVE isn't working with long/double types.
 		emit( ROOT, "mov `d0l, `s0", params[i],regfile.reg[loc++]);
@@ -1841,6 +1848,8 @@ METHOD(params) %{
 				   new Temp[] {params[i]}, new Temp[] {FP}));
 	    }
 	} else { // single word.
+	    declare(params[i], 
+		    code.getTreeDerivation().typeMap(ROOT.getParams()[i]));
 	    if (loc<4) { // in register
 		emitMOVE( ROOT, "mov `d0, `s0", params[i], regfile.reg[loc++]);
 	    } else { // on stack
@@ -1925,6 +1934,7 @@ LABEL(id) %{
 
 MOVE<p,i,f>(TEMP(dst), src) %{
     dst = makeTemp(dst);
+    declare( dst, code.getTreeDerivation().typeMap(ROOT.getSrc()) );
     emitMOVE( ROOT, "mov `d0, `s0", dst, src );
 }%
 
@@ -1935,6 +1945,9 @@ MOVE<d,l>(TEMP(dst), src) %{
 
     Util.assert(src instanceof TwoWordTemp, "why is src: "+src + 
 		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
+
+    declare( dst, code.getTreeDerivation().typeMap( ROOT.getSrc() ) );
+
         // not certain an emitMOVE is legal with the l/h modifiers
     emit( ROOT, "mov `d0l, `s0l", dst, src );
     emit( ROOT, "mov `d0h, `s0h", dst, src );
@@ -2030,6 +2043,7 @@ MOVE(MEM<l,d>(dst), src) %{
 }%
 
 RETURN<i,f,p>(val) %{
+    declare( r0, code.getTreeDerivation().typeMap( ROOT.getRetval() ));
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
     // mark exit point.
     emit(new InstrEXIT( instrFactory, ROOT ));
@@ -2037,6 +2051,8 @@ RETURN<i,f,p>(val) %{
 
 RETURN<l,d>(val) %{
     // these should really be InstrMOVEs!
+    declare( r0, HClass.Void );
+    declare( r1, HClass.Void );
     emit( ROOT, "mov `d0, `s0l", r0, val);
     emit( ROOT, "mov `d0, `s0h", r1, val);
     // mark exit point.
@@ -2063,11 +2079,16 @@ CALL(retval, retex, func, arglist, handler)
     Label rlabel = new Label(), elabel = new Label();
     retex = makeTemp(retex);
     // next two instructions are *not* InstrMOVEs, as they have side-effects
+    declare( LR, HClass.Void );
     emit2( ROOT, "adr `d0, "+rlabel, new Temp[] { LR }, null );
     // call uses 'func' as `s0
     // we add a fake use of PC so that it remains live above the call.
     cs.callUses.add(PC); cs.callUses.add(0, func);
     // note that r0-r3, LR and IP are clobbered by the call.
+    declare( r0, HClass.Void ); declare( r1, HClass.Void );
+    declare( r2, HClass.Void ); declare( r3, HClass.Void );
+    declare( PC, HClass.Void ); declare( IP, HClass.Void );
+    
     emitCallNoFall( ROOT,cs.prependSPOffset("mov `d0, `s0 @ clobbers r0-r3,LR,IP"),
 		new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
                 (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
@@ -2093,7 +2114,13 @@ CALL(retval, retex, NAME(funcLabel), arglist, handler)
     retex = makeTemp(retex);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.
+    declare( LR, HClass.Void );
     emit2( ROOT, "adr `d0, "+rlabel, new Temp[] { LR }, null );
+
+    declare( r0, HClass.Void ); declare( r1, HClass.Void );
+    declare( r2, HClass.Void ); declare( r3, HClass.Void );
+    declare( PC, HClass.Void ); declare( IP, HClass.Void );
+
     emitCallNoFall( ROOT, cs.prependSPOffset("b "+funcLabel +
 					 " @ clobbers r0-r3, LR, IP"),
 		new Temp[] { r0,r1,r2,r3,IP,LR },
