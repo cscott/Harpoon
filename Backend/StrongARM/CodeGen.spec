@@ -51,7 +51,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.21 1999-08-06 21:00:58 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.22 1999-08-06 21:08:56 pnkfelix Exp $
  */
 %%
 
@@ -958,7 +958,9 @@ MOVE<p,i,f>(dst, src) %{
 }%
 
 MOVE<d,l>(dst, src) %{
-    Util.assert(dst instanceof TwoWordTemp, "why is dst: "+dst + " a normal Temp?");
+    Util.assert( dst instanceof TwoWordTemp, "why is dst: "+dst + 
+		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
+
     Util.assert(src instanceof TwoWordTemp, "why is src: "+src + " a normal Temp?");
         // not certain an emitMOVE is legal with the l/h modifiers
     emitMOVE( ROOT, "mov `d0l, `s0l\n"+

@@ -7,13 +7,14 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.LabelList;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
  * <code>Print</code> pretty-prints Trees.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.19 1999-08-06 21:00:58 pnkfelix Exp $
+ * @version $Id: Print.java,v 1.1.2.20 1999-08-06 21:08:57 pnkfelix Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -38,6 +39,22 @@ public class Print {
 
     public final static void print(PrintWriter pw, Code c) {
         print(pw, c, null);
+    }
+
+    public final static void print(PrintWriter pw, Tree t) {
+	PrintVisitor pv = new PrintVisitor(pw, null);
+	t.visit(pv);
+	pw.println();
+	pw.flush();
+    }
+
+    public final static String print(Tree t) {
+	StringWriter sw = new StringWriter();
+	PrintWriter pw = new PrintWriter(sw);
+	PrintVisitor pv = new PrintVisitor(pw, null);
+	t.visit(pv);
+	pw.flush();
+	return sw.toString();
     }
 
     static class PrintVisitor extends TreeVisitor {
