@@ -83,7 +83,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.5.2.7 2003-07-15 08:58:09 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5.2.8 2003-07-15 17:09:39 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -613,6 +613,9 @@ public class SyncTransformer
 		 "synctrans.read_nt_array" : "synctrans.read_t_array");
 
 	    HClass compType = etm.typeMap(q, q.dst());
+	    // this is great for object arrays, but sub-integer components
+	    // are all squashed into HClass.Int.  So ask the quad in this case
+	    if (compType.isPrimitive()) compType = q.type();
 	    HClass arrType = HClassUtil.arrayClass(linker, compType, 1);
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
 	    Temp t1 = new Temp(tf, "retex");
