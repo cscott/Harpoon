@@ -10,7 +10,7 @@ import harpoon.ClassFile.HClass;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.6.2.4 1999-07-17 08:34:48 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.6.2.5 1999-08-04 19:08:13 cananian Exp $
  */
 public abstract class HClassUtil  {
     // Only static methods.
@@ -58,7 +58,8 @@ public abstract class HClassUtil  {
     /** Find and return the first common superclass of a pair of classes. */
     public static final HClass commonSuper(HClass a, HClass b) {
 	if (a.isPrimitive() || b.isPrimitive()) {
-	    Util.assert(a==b); /* can't merge differing primitive types. */
+	    Util.assert(a==b, "Can't merge differing primitive types. "+
+			"("+a+" and "+b+")");
 	    return a;
 	}
 
