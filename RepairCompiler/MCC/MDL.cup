@@ -56,13 +56,16 @@ action code {:
 init with {: :}
 
 parser code {:
+
+	public String filename;
        
 	public void syntax_error (java_cup.runtime.Symbol current) {
 
 		CUP$MDLParser$actions.errors = true;
 		Symbol symbol = (Symbol) current;
-		report_error("MDL: Syntax error at line " + (symbol.line + 1)
-		+ ", column " + LineCount.getColumn(symbol.left) + ": " + current.value, current);
+		report_error(filename+": Syntax error at line " +
+(symbol.line + 1) + ", column " + LineCount.getColumn(symbol.left) +
+": " + current.value, current);
 	}
 
 	public void report_fatal_error (String message, Object info) {

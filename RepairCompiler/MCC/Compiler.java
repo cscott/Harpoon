@@ -18,7 +18,7 @@ import MCC.IR.*;
 
 public class Compiler {
     /* Set this flag to false to turn repairs off */
-    public static boolean REPAIR=true;
+    public static boolean REPAIR=false;
     
     public static void main(String[] args) {
         State state = null;
@@ -266,6 +266,7 @@ public class Compiler {
             LineCount.reset();
             FileInputStream infile = new FileInputStream(state.infile + ".model");
             MDLParser parser = new MDLParser(new Lexer(infile));
+	    parser.filename = state.infile + ".model";
             CUP$MDLParser$actions.debug = state.verbose > 1 ;
             state.ptModel = (ParseNode) parser.parse().value;
         } catch (FileNotFoundException fnfe) {
@@ -289,8 +290,8 @@ public class Compiler {
             System.err.println("Unable to open file: " + state.infile + ".space");
             System.exit(-1);
 	} catch (Exception e) {
-	    //	    System.out.println(e);
-	    //	    e.printStackTrace();
+	    System.out.println(e);
+	    e.printStackTrace();
 	    return false;
 	}
 

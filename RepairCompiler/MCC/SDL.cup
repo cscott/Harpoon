@@ -188,6 +188,7 @@ nonterminal	ParseNode		optstatic;
 nonterminal	ParseNode		optpartition;
 nonterminal	ParseNode		setlist;
 nonterminal	ParseNode		type;
+nonterminal	ParseNode		optrange;
 
 precedence left OR;
 precedence left AND;
@@ -237,19 +238,36 @@ space ::=
 	if (setlist != null) set.addChild(setlist);
 	RESULT = set;
 	:}
-      | ID:name optstatic:optstatic COLON type:domain ARROW type:range OPENPAREN mult:domainmult ARROW mult:rangemult CLOSEPAREN SEMICOLON 
+      | ID:name optstatic:optstatic COLON type:domain ARROW type:range optrange:optrange SEMICOLON 
 	{:
 	debugMessage(PRODSTRING);
-	ParseNode relation = new ParseNode("relationdefinition", parser.curLine(12));
+	ParseNode relation = new ParseNode("relationdefinition", parser.curLine(8));
 	if (optstatic != null) relation.addChild(optstatic);
-	relation.addChild("name", parser.curLine(11)).addChild(name);
+	relation.addChild("name", parser.curLine(7)).addChild(name);
 	relation.addChild("domain").addChild(domain);
 	relation.addChild("range").addChild(range);
-	relation.getChild("domain").addChild(domainmult);
-	relation.getChild("range").addChild(rangemult);
+	if (optrange != null) {	
+	    relation.getChild("domain").addChild(optrange.getChild("domainmult"));
+	    relation.getChild("range").addChild(optrange.getChild("rangemult"));
+	}
 	RESULT = relation;
 	:}
       ;
+
+optrange ::= 
+	OPENPAREN mult:domainmult ARROW mult:rangemult CLOSEPAREN 
+	   {:
+	     debugMessage(PRODSTRING);
+	     ParseNode optrange = new ParseNode("optrange", parser.curLine(5));
+	     optrange.addChild("domainmult").addChild(domainmult);
+             optrange.addChild("rangemult").addChild(rangemult);
+	     RESULT = optrange;
+	   :}
+        | /* nothing */
+           {:
+             RESULT = null;
+           :}
+	;
 
 mult ::=
      DECIMAL:one

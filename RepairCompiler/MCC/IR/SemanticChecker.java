@@ -785,13 +785,17 @@ public class SemanticChecker {
         String rangesetname = pn.getChild("range").getChild("type").getTerminal();
         assert rangesetname != null;
 
-        /* get domain multiplicity */
-        String domainmult = pn.getChild("domain").getChild("mult").getTerminal();
-        assert domainmult != null;
+        /* get domain multiplicity */	
+	String domainmult;
+	if (pn.getChild("domain").getChild("domainmult") != null)
+	    domainmult = pn.getChild("domain").getChild("domainmult").getChild("mult").getTerminal();
+        //assert domainmult != null;
 
         /* get range multiplicity */
-        String rangemult = pn.getChild("range").getChild("mult").getTerminal();
-        assert rangemult != null;
+	String rangemult;
+	if (pn.getChild("range").getChild("domainrange") != null)
+	    rangemult = pn.getChild("range").getChild("domainrange").getChild("mult").getTerminal();
+        //assert rangemult != null;
 
         /* NOTE: it is assumed that the sets have been parsed already so that the 
            set namespace is fully populated. any missing setdescriptors for the set
