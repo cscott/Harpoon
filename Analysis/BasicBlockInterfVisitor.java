@@ -4,12 +4,12 @@
 package harpoon.Analysis;
 
 /**
- * BasicBlockInterfVisitor
- *
- * Implemented similarly to QuadVisitor, with the idea that we may
+ * BasicBlockInterfVisitor is a visitor class
+ * implemented similarly to QuadVisitor, with the idea that we may
  * eventually have different kinds of basic blocks.
+ *
  * @author John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: BasicBlockInterfVisitor.java,v 1.2 2002-02-25 20:56:09 cananian Exp $
+ * @version $Id: BasicBlockInterfVisitor.java,v 1.3 2002-04-02 23:58:23 salcianu Exp $
  */
 
 public abstract class BasicBlockInterfVisitor {
