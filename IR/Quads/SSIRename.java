@@ -40,7 +40,7 @@ import java.util.Stack;
  * XXX: DERIVATION INFORMATION FOR PHI/SIGMAS IS CURRENTLY LOST. [CSA]
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.14 2000-10-11 01:53:23 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.15 2000-11-06 16:58:54 bdemsky Exp $
  */
 public class SSIRename {
     private static final boolean DEBUG = false;
@@ -267,7 +267,7 @@ public class SSIRename {
 			Temp[] args = new Temp[1+Q.paramsLength()];
 			for (int i=0; i<Q.paramsLength(); i++)
 			    args[i] = varmap.get(Q.params(i));
-			args[Q.paramsLength()] = Q.ptr();
+			args[Q.paramsLength()] = varmap.get(Q.ptr());
 			arg.put(q, args);
 		    } else throw new Error("Ack!");
 		    break;
