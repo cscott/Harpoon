@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.4 2002-04-10 03:05:45 cananian Exp $
+ * @version $Id: ESEQ.java,v 1.5 2003-02-07 21:42:06 salcianu Exp $
  */
 public class ESEQ extends Exp implements PreciselyTyped {
     /** Constructor. */
@@ -34,6 +34,19 @@ public class ESEQ extends Exp implements PreciselyTyped {
 	assert tf == stm.tf; 
 	setStm(stm); setExp(exp);
     }
+
+    /** Convenient constructor: the tree factory and the source
+        arguments are identical to those for the statement and the
+        expression (as they should be).
+
+	@param stm Statement executed first
+
+	@param exp Expression evaluated next; its result is the value
+	of the entire <code>ESEQ</code> expression. */
+    public ESEQ(Stm stm, Exp exp) {
+	this(stm.tf, stm, stm, exp);
+    }
+    
 
     /** Returns the statement to evaluate for side-effects. */
     public Stm getStm() { return (Stm) getChild(0); } 

@@ -16,7 +16,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.4 2002-04-10 03:05:45 cananian Exp $
+ * @version $Id: SEQ.java,v 1.5 2003-02-07 21:42:06 salcianu Exp $
  */
 public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     /** Constructor. */
@@ -33,6 +33,16 @@ public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
 
     }
     
+    /** Convenient constructor: the tree factory and the source
+        arguments are identical to those for the left and right
+        statements (as they should be).
+
+	@param left Statement executed first
+	@param right Statement executed second */
+    public SEQ(Stm left, Stm right) {
+	this(left.tf, left, left, right);
+    }
+
     /** Returns the statement to evaluate first. */
     public Stm getLeft() { return (Stm) getChild(0); }
     /** Returns the statement to evaluate last. */
