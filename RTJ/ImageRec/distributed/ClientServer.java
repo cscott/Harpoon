@@ -14,7 +14,7 @@ import org.omg.CosNaming.NameComponent;
  */
 
 public class ClientServer extends _ClientServerIntStub {
-    private String args[];
+    protected String args[];
     private ORB serverORB, clientORB;
     protected ClientServerInt cs = null;
 

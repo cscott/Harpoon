@@ -1,26 +1,26 @@
 package imagerec;
 
-public class Thresholding extends ClientServer {
+public class Thresholding extends Transform {
+    /* Is there a good heuristic for finding these???? */
+    public static int T1 = 0; /* Magic number */
+    public static int T2 = 0; /* Another magic number */  
+
     public Thresholding(String args[]) {
 	super(args);
     }
 
-    public synchronized void process(ImageData id) {
-	
-
-
-	remoteProcess(id);
+    public ImageData transform(ImageData id) {
+	int[] in = id.gvals;
+	for (int i = 0; i<id.width*id.height; i++) {
+	    in[i] = (in[i]>=T1)?255:((in[i]>=T2)?64:0);
+	}
+	return id;
     }
 
     public static void main(String args[]) {
-	if (args.length < 2) {
-	    System.out.print("Usage: jaco imagerec.Thresholding <input> ");
-	    System.out.print("<output> -ORBInitRef ");
-	    System.out.println("NameService=file://dir/ns");
-	    System.exit(-1);
-	}
-	Thresholding threshold = new Thresholding(args);
-	threshold.client(args[1]);
-	threshold.server(args[0]);	
+	processArgs(args, "Thresholding", "<definite edge> <possible edge>");
+	T1 = Integer.valueOf(args[numArgs]).intValue();
+	T2 = Integer.valueOf(args[numArgs+1]).intValue();
+	(new Thresholding(args)).setup();
     }
 }

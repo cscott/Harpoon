@@ -1,26 +1,32 @@
 package imagerec;
 
-public class RobertsCross extends ClientServer {
+public class RobertsCross extends Transform {
     public RobertsCross(String args[]) {
 	super(args);
     }
 
-    public synchronized void process(ImageData id) {
-	
-
-
-	remoteProcess(id);
+    public ImageData transform(ImageData id) {
+	int width = id.width;
+	int height = id.height;
+	int[] outs = new int[width*height];
+	int[][] vals = new int[][] {id.rvals, id.gvals, id.bvals}; 
+	for (int i=0; i<(width*(height-1)-1); i++) {
+	    int out = 0;
+	    for (int j = 0; j<3; j++) {
+		int[] val = vals[j];
+		out = Math.max(out, 
+			       Math.abs(val[i]-val[i+width+1])+
+			       Math.abs(val[i+1]-val[i+width]));
+	    }
+	    outs[i] = Math.min(out*2, 255);
+	}
+	id.gvals = outs;		     
+	id.bvals = id.rvals = new int[width*height];
+	return id;
     }
 
     public static void main(String args[]) {
-	if (args.length < 2) {
-	    System.out.print("Usage: jaco imagerec.RobertsCross <input> ");
-	    System.out.print("<output> -ORBInitRef ");
-	    System.out.println("NameService=file://dir/ns");
-	    System.exit(-1);
-	}
-	RobertsCross rc = new RobertsCross(args);
-	rc.client(args[1]);
-	rc.server(args[0]);
+	processArgs(args, "RobertsCross");
+	(new RobertsCross(args)).setup();
     }
 }

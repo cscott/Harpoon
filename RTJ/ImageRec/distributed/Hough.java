@@ -1,25 +1,16 @@
 package imagerec;
 
-public class Hough extends ClientServer {
+public class Hough extends Transform {
     public Hough(String args[]) {
 	super(args);
     }
 
-    public synchronized void process(ImageData id) {
-	
-
-	remoteProcess(id);
-    }    
+    public ImageData transform(ImageData input) {
+	return input;
+    }
 
     public static void main(String args[]) {
-	if (args.length < 2) {
-	    System.out.print("Usage: jaco imagerec.Hough <input> ");
-	    System.out.print("<output> -ORBInitRef ");
-	    System.out.println("NameService=file://dir/ns");
-	    System.exit(-1);
-	}
-	Hough hough = new Hough(args);
-	hough.client(args[1]);
-	hough.server(args[0]);
+	processArgs(args, "Hough");
+	(new Hough(args)).setup();
     }
 }
