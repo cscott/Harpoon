@@ -43,10 +43,10 @@ JNIEXPORT jboolean JNICALL Java_java_lang_Class_isInstance
  * Method:    isAssignableFrom
  * Signature: (Ljava/lang/Class;)Z
  */
-#if 0
 JNIEXPORT jboolean JNICALL Java_java_lang_Class_isAssignableFrom
-  (JNIEnv *, jobject, jclass);
-#endif
+  (JNIEnv *env, jobject obj, jclass cls) {
+    return (*env)->IsAssignableFrom(env, (*env)->GetObjectClass(env, obj),cls);
+}
 
 /*
  * Class:     java_lang_Class
