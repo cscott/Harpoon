@@ -7,7 +7,7 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Analysis.DataFlow.BasicBlock;
 import harpoon.Analysis.DataFlow.DataFlowBasicBlockVisitor;
-import harpoon.Analysis.DataFlow.InstrSolver;
+//import harpoon.Analysis.DataFlow.InstrSolver;
 import harpoon.Analysis.DataFlow.ReachingDefs;
 import harpoon.Temp.Temp;
 import harpoon.IR.Assem.Instr;
@@ -30,7 +30,7 @@ import java.util.Iterator;
     it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.5 1999-04-23 06:19:46 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.6 1999-05-17 19:54:48 andyb Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -56,7 +56,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	
 	// first calculate Reaching Definitions for code
 	DataFlowBasicBlockVisitor reachingDefs =  new ReachingDefs(root);
-	InstrSolver.worklistSolver(block, reachingDefs);
+	//InstrSolver.worklistSolver(block, reachingDefs);
 	
 	// Now perform local reg alloc on each basic block
 	WorkSet blocksToAnalyze = new WorkSet();
