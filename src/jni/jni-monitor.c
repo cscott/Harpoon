@@ -43,7 +43,7 @@ jint FNI_MonitorEnter(JNIEnv *env, jobject obj) {
     li->nesting_depth++;
   } else { /* someone else (or no one) has this lock */
 #ifdef WITH_STATISTICS
-    if ((st = pthread_mutex_trylock(&(li->mutex)))!=-EBUSY) goto gotlock;
+    if ((st = pthread_mutex_trylock(&(li->mutex)))!=EBUSY) goto gotlock;
     assert(st==0 /* no mutex errors */);
     INCREMENT_STATS(monitor_contention, 1);
 #endif /* WITH_STATISTICS */
@@ -83,7 +83,7 @@ void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime){
       st = pthread_cond_wait(&(li->cond), &(li->mutex));
     else
       st = pthread_cond_timedwait(&(li->cond), &(li->mutex), abstime);
-    assert(st==0 || st==-ETIMEDOUT || st==-EINTR /*no cond variable errors*/);
+    assert(st==0 || st==ETIMEDOUT || st==EINTR /*no cond variable errors*/);
     li->tid = tid;
     li->nesting_depth = nesting_depth;
     return;
