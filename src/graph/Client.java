@@ -36,20 +36,50 @@ public class Client extends Node {
      *  file://home/wbeebee/.jacorb, for example.
      */
     public Client(CommunicationsModel cm, String name) {
-	try {
-	    cs = cm.setupIDClient(name);
-	} catch (Exception e) {
-	    throw new Error(e);
+	long timeoutLength = 2000;
+	int triesTillFail = 500;
+	int count = 1;
+	boolean connectionMade = false;
+	while ((count <= triesTillFail) && !connectionMade) { 
+	    try {
+		cs = cm.setupIDClient(name);
+		connectionMade = true;
+	    } catch (org.omg.CosNaming.NamingContextPackage.NotFound e){
+		System.out.println("ATRClient/CORBA Exception: No matching server by the name '"+name+"'"+
+				   " was found.\n  Waiting and trying again. (Try #"+count+"/"+triesTillFail+")");
+		try {
+		    Thread.currentThread().sleep(timeoutLength);
+		}
+		catch (InterruptedException ie) {
+		}
+		count++;
+
+	    } catch (Exception e2) {
+		System.out.println("**** "+e2.getClass()+" ******");
+		throw new Error(e2);
+	    }
+	}
+
+	if (!connectionMade) {
+	    int minutes = (int)timeoutLength*triesTillFail/1000/60;
+	    throw new Error("ATR Client was unable to find a matching server after "+minutes+" minutes. Giving up.");
 	}
     }
 
     /** The <code>process</code> call that actually triggers a call to a server. */
     public void process(final ImageData id) {
+	//System.out.println("Client #"+getUniqueID()+" sending image #"+id.id);
 	final CommunicationsAdapter finalCS = cs;
 	(new Thread() {
 	    public void run() {
 		finalCS.process(id);
+		//System.out.println("Client #"+getUniqueID()+" sent image #"+id.id);
 	    }
 	}).start();
+
+	if (getLeft() != null)
+	    getLeft().process(id);
+	if (getRight() != null)
+	    getRight().process(id);
     }
 }

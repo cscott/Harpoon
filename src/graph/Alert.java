@@ -33,12 +33,36 @@ public class Alert extends Client {
      *  @param name the name of the server to connect to.
      */
     public Alert(CommunicationsModel cm, String name) {
-	try {
-	    cs = cm.setupAlertClient(name);
-	} catch (Exception e) {
-	    throw new Error(e);
+	long timeoutLength = 2000;
+	int triesTillFail = 500;
+	int count = 1;
+	boolean connectionMade = false;
+	while ((count <= triesTillFail) && !connectionMade) { 
+	    try {
+		cs = cm.setupAlertClient(name);
+		connectionMade = true;
+	    } catch (org.omg.CosNaming.NamingContextPackage.NotFound e){
+		System.out.println("Alert/CORBA Exception: No matching server by the name '"+name+"'"+
+				   " was found.\n  Waiting and trying again. (Try #"+count+"/"+triesTillFail+")");
+		try {
+		    Thread.currentThread().sleep(timeoutLength);
+		}
+		catch (InterruptedException ie) {
+		}
+		count++;
+		
+	    } catch (Exception e2) {
+		System.out.println("**** "+e2.getClass()+" ******");
+		throw new Error(e2);
+	    }
+	}
+	
+	if (!connectionMade) {
+	    int minutes = (int)timeoutLength*triesTillFail/1000/60;
+	    throw new Error("Alert was unable to find a matching server after "+minutes+" minutes. Giving up.");
 	}
     }
+    
 
     /** The <code>process</code> call that results in setting the Alert syscond
      *  with information from the input image: <code>(c1, c2, c3)</code>
@@ -46,12 +70,31 @@ public class Alert extends Client {
      *
      *  @param id The input image that contains data for the tracker.
      */
-    public void process(final ImageData id) {
+    public void process(ImageData id) {
+	//System.out.println("Alert Client #"+getUniqueID()+" sending image #"+id.id);
+	//System.out.println("Alert Client:     c1: "+id.c1);
+	//System.out.println("Alert Client:     c2: "+id.c2);
+	//System.out.println("Alert Client:     c3: "+id.c3);
+	final float c1 = id.c1;
+	final float c2 = id.c2;
+	final float c3 = id.c3;
+	final int idNo = id.id;
 	final CommunicationsAdapter finalCS = cs;
 	(new Thread() {
 	    public void run() {
-		finalCS.alert(id.c1, id.c2, id.c3);
+		//System.out.println("Alert Client:     c1: "+c1);
+		//System.out.println("Alert Client:     c2: "+c2);
+		//System.out.println("Alert Client:     c3: "+c3);
+		
+		finalCS.alert(c1, c2, c3);
+		//System.out.println("Alert client #"+getUniqueID()+" sent image #"+idNo);
 	    }
 	}).start();
+	if (getLeft() != null) {
+	    getLeft().process(id);
+	}
+	if (getRight() != null) {
+	    getRight().process(id);
+	}
     }
 }
