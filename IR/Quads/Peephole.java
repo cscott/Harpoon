@@ -18,7 +18,7 @@ import java.util.Set;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.19 2001-09-18 21:57:38 cananian Exp $
+ * @version $Id: Peephole.java,v 1.1.2.20 2001-09-18 22:01:05 cananian Exp $
  */
 
 final class Peephole  {
@@ -32,11 +32,11 @@ final class Peephole  {
 	sv.optimize(head); // usually things are screwy after trans.
     }
 
-    final static void optimize(Quad head, boolean allowFarMoves) {
-	optimize(head, allowFarMoves, null);
+    final static void optimize(Quad head) {
+	optimize(head, null);
     }
 
-    final static void optimize(Quad head, boolean allowFarMoves, Map typemap) {
+    final static void optimize(Quad head, Map typemap) {
 	PeepholeVisitor pv = new PeepholeVisitor(typemap, head);
 	while (pv.optimize(head))
 	    /*repeat*/;
