@@ -84,9 +84,16 @@ static __inline__ void start_mark_threads()
 {
 }
 
+int GC_in_progress = 0;
+/* A hint to user thread packages that care about GC. */
+
 /*Small world*/
-void GC_start_world() {}
-void GC_stop_world() {}
+void GC_start_world() {
+  GC_in_progress = 0;
+}
+void GC_stop_world() {
+  GC_in_progress = 1;
+}
 
 volatile unsigned int GC_allocate_lock = 0;
 
