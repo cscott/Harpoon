@@ -286,7 +286,6 @@ public abstract class Code extends HCode
 	}
 
 	public void visit(Stm s) { 
-	  System.out.println("Visiting: " + s);
 	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
 	    switch (state) 
 		{ 
@@ -351,7 +350,6 @@ public abstract class Code extends HCode
 	}
 	
 	private void addEdge(Stm from, Stm to) { 
-	    System.out.println("Adding edge from: " + from + " to " + to);
 	    Set pred, succ;
 	    if (predecessors.containsKey(to))
 		pred = (Set)predecessors.get(to);
