@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>HClassSyn</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.18 2000-11-10 02:32:53 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.19 2000-11-29 22:12:36 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -344,9 +344,9 @@ class HClassSyn extends HClassCls implements HClassMutator {
       this.constValue = hf.getConstant();
     }
     HFieldSyn reconstruct(HClassSyn parent) {
-      HFieldSyn hf = new HFieldSyn(parent, name, type);
+      HFieldSyn hf = new HFieldSyn(parent, FieldStub.this.name, type);
       HFieldMutator hfm = hf.getMutator();
-      hfm.setModifiers(modifiers);
+      hfm.setModifiers(FieldStub.this.modifiers);
       hfm.setConstant(constValue);
       hfm.setSynthetic(isSynthetic);
       return hf;
@@ -369,10 +369,10 @@ class HClassSyn extends HClassCls implements HClassMutator {
 	this.exceptionTypes[i] = new ClassPointer(et[i]);
     }
     HMethodSyn reconstruct(HClassSyn parent) {
-      return reconstruct(new HMethodSyn(parent, name, descriptor));
+      return reconstruct(new HMethodSyn(parent, MethodStub.this.name, descriptor));
     }
     HMethodSyn reconstruct(HClassArraySyn parent) {
-      return reconstruct(new HMethodSyn(parent, name, descriptor));
+      return reconstruct(new HMethodSyn(parent, MethodStub.this.name, descriptor));
     }
     private HMethodSyn reconstruct(HMethodSyn hm) {
       HMethodMutator hmm = hm.getMutator();
