@@ -10,21 +10,23 @@ import harpoon.Temp.Temp;
   associates an <code>Instr</code> with a <code>Temp</code>. 
   
   @author  Felix S Klock <pnkfelix@mit.edu>
-  @version $Id: TempInstrPair.java,v 1.1.2.2 1999-06-18 01:48:03 cananian Exp $
+  @version $Id: TempInstrPair.java,v 1.1.2.3 1999-08-04 21:46:11 pnkfelix Exp $
  */
-class TempInstrPair {
-    final Temp t;
-    final Instr i;
+public class TempInstrPair {
+    private final Temp t;
+    private final Instr i;
     
-    TempInstrPair(Instr i, Temp t) {
-	this.i = i;
-	this.t = t;
+    public TempInstrPair(Instr i, Temp t) {
+	this(t, i);
     }
 
     public TempInstrPair(Temp t, Instr i) {
 	this.i = i;
 	this.t = t;
     }
+
+    public Temp getTemp() { return t; }
+    public Instr getInstr() { return i; }
 
     public boolean equals(Object o) {
 	TempInstrPair tip;

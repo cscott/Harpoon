@@ -31,7 +31,7 @@ import java.io.StringReader;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.12 1999-08-04 06:30:52 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.13 1999-08-04 21:46:11 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -173,23 +173,23 @@ public abstract class Code extends HCode {
                 switch (assem.charAt(++i)) {
 		case 'd': { 
 		    int n = Character.digit(assem.charAt(++i), 10);
-		    Util.assert(n < instr.dst.length, 
+		    Util.assert(n < instr.def().length, 
 				"Code can't parse " + assem);
-		    s.append(instr.dst[n]);
+		    s.append(instr.def()[n]);
 		}
 		break;
 		case 's': {
 		    int n = Character.digit(assem.charAt(++i), 10);
-		    Util.assert(n < instr.src.length, 
+		    Util.assert(n < instr.use().length, 
 				"Code can't parse " + assem);
-		    s.append(instr.src[n]);
+		    s.append(instr.use()[n]);
 		}
 		break;
 		case 'j': {
 		    int n = Character.digit(assem.charAt(++i), 10);
-		    Util.assert(n < instr.src.length, 
+		    Util.assert(n < instr.use().length, 
 				"Code can't parse " + assem);
-		    s.append(instr.src[n]);
+		    s.append(instr.use()[n]);
 		}
 		break;
 		case '`': 

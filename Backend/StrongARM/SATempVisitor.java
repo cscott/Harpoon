@@ -12,9 +12,9 @@ import harpoon.Temp.TempVisitor;
  * <code>Temp</code> local to the StrongARM backend.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SATempVisitor.java,v 1.1.2.1 1999-08-04 19:58:59 pnkfelix Exp $
+ * @version $Id: SATempVisitor.java,v 1.1.2.2 1999-08-04 21:46:11 pnkfelix Exp $
  */
-public abstract class SATempVisitor extends TempVisitor {
+public abstract class SATempVisitor {
     
     public abstract void visit(Temp t);
 

@@ -12,7 +12,7 @@ import harpoon.Util.ArrayFactory;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14.2.11 1999-08-04 19:58:59 pnkfelix Exp $
+ * @version $Id: Temp.java,v 1.14.2.12 1999-08-04 21:46:12 pnkfelix Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
@@ -109,10 +109,6 @@ public class Temp implements Cloneable, Comparable {
       public Object[] newArray(int len) { return new Temp[len][]; }
     };
 
-  
-  public void accept(TempVisitor tv) {
-    tv.visit(this);
-  }
 }
 // set emacs indentation style.
 // Local Variables:

@@ -21,7 +21,9 @@ import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 import harpoon.Util.LinearMap;
 
+
 import java.util.Hashtable;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.Vector;
 import java.util.List;
@@ -41,7 +43,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.18 1999-08-04 19:58:58 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.19 1999-08-04 21:46:11 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -61,7 +63,7 @@ public abstract class RegAlloc  {
 		  (Temp[])dsts.toArray(new Temp[0]), new Temp[]{src});
 	}
 	
-	public void visit(RegInstrVisitor v) { v.visit(this); }
+	public void visit(InstrVisitor v) { v.visit(this); }
     }
 
     /** Class for <code>RegAlloc</code> usage in spilling registers. */
@@ -77,16 +79,7 @@ public abstract class RegAlloc  {
 		  new Temp[]{dst}, (Temp[])srcs.toArray(new Temp[0]));
 	}
 
-	public void visit(RegInstrVisitor v) { v.visit(this); }
-    }
-
-    /** extension of <code>InstrVisitor</code> with support for the
-	new <code>RegAlloc</code> specific <code>Instr</code>
-	extensions. 
-    */
-    protected abstract class RegInstrVisitor extends InstrVisitor {
-	public void visit(FskStore i) { visit((InstrMEM) i); }
-	public void visit(FskLoad i) { visit((InstrMEM) i); }
+	public void visit(InstrVisitor v) { v.visit(this); }
     }
 
     /** Creates a <code>RegAlloc</code>. 
@@ -196,7 +189,7 @@ public abstract class RegAlloc  {
 	// This implementation is REALLY braindead.  Fix to do a
 	// smarter Graph-Coloring stack offset allocator
 
-	class TempFinder extends RegInstrVisitor {
+	class TempFinder extends InstrVisitor {
 	    HashMap tempsToOffsets = new HashMap();
 	    int nextOffset = 1;
 
@@ -224,31 +217,25 @@ public abstract class RegAlloc  {
 		    }
 		}
 	    } 
-	    public void visit(Instr m) {
-		// do nothing
-		 
-		// adding a check to see if use/def are indeed all "in
-		// registers"
-		boolean check = true;
-		for(int i=0; i<m.def().length; i++){
-		    if(!isTempRegister(m.def()[i])) {
-		       check = false; break;
-		    }
-		}
-		for(int i=0; i<m.use().length; i++){
-		    if(!isTempRegister(m.use()[i])) {
-		       check = false; break;
-		    }
-		}
-		Util.assert(check, " Temp reference in " + m);
 
+
+	    public void visit(Instr m) {
+		try { visit((FskStore) m); return;
+		} catch(ClassCastException e) { }
+		try { visit((FskLoad) m); return;
+		} catch(ClassCastException e) { }
+		
+
+		// can no longer check Instr directly for registers,
+		// because register association is done indirectly in
+		// the Code now
 	    }
 	}
 	
 	// Not sure how to handle multiple Temp references in one
 	// InstrMEM...for now will assume that there is only one
 	// memory references per InstrMEM...
-	class InstrReplacer extends RegInstrVisitor {
+	class InstrReplacer extends InstrVisitor {
 	    HashMap tempsToOffsets;
 	    InstrReplacer(HashMap t2o) {
 		tempsToOffsets = t2o; 
@@ -257,31 +244,44 @@ public abstract class RegAlloc  {
 	    
 	    // Make these SMARTER: get rid of requirement that Loads
 	    // and Stores have only one references to memory (to
-	    // allow for StrongARMs ldm* instructions
-	    public void visit(FskStore m) {
+	    // allow for StrongARMs ldm* instructions : starting doing
+	    // this, but I think TempFinder above relies on some parts
+	    // of it, at least when assigning offsets.  Check over
+	    // this. 
+	    public void visitStore(FskStore m) {
+		System.out.println("FskStore: Here I am");
 		// replace all non-Register Temps with appropriate
 		// stack offset locations
 		List instrs = frame.makeStore
-		    (m.use()[0], 
-			 ((Integer)tempsToOffsets.get(m.def()[0])).intValue(),
-			 m);
-		    Instr.replaceInstrList(m, instrs);
+			   (Arrays.asList(m.use()), 
+			    ((Integer)tempsToOffsets.get(m.def()[0])).intValue(),
+			    m);
+		Instr.replaceInstrList(m, instrs);
 	    }
-	 
-	    public void visit(FskLoad m) {
+	    
+	    public void visitLoad(FskLoad m) {
+		System.out.println("FskLoad: Here I am");
 		// replace all non-Register Temps with appropriate
 		// stack offset locations
 		List instrs = frame.makeLoad
-		    (m.def()[0], 
+		    (Arrays.asList(m.def()), 
 		     ((Integer)tempsToOffsets.get(m.use()[0])).intValue(),
-			 m);
+		     m);
 		Instr.replaceInstrList(m, instrs);
 	    }
-	
-	 
+	    
 	    public void visit(Instr i) {
-		//Do nothing
+		// do nothing 
 	    }
+
+	    public void visit(InstrMEM i) {
+		try { visitStore((FskStore) i); return; 
+		} catch(ClassCastException e) { }
+		try { visitLoad((FskLoad) i); return;
+		} catch(ClassCastException e) { }
+		    //Do nothing
+	    }
+	
 	}
 
 	TempFinder tf = new TempFinder();

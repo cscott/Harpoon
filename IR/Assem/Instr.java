@@ -21,17 +21,21 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.21 1999-08-04 06:30:57 cananian Exp $
+ * @version $Id: Instr.java,v 1.1.2.22 1999-08-04 21:46:12 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
     private InstrFactory inf;
 
-    /* temporarily private for felix. should modify code to use
+    /* FSK: I made them private again.  The new design for
+       Generic.Code handles Temp substitution in the assembly String
+       in a much more generic manner, so I can move to a Mapping
+       system, making direct modification of the Instr unnecessary.
+     * temporarily public for felix. should modify code to use
      * TempMaps and accessor functions (use/def) to avoid modifying 
      * these. */
-    public Temp[] dst;
-    public Temp[] src;
+    private Temp[] dst;
+    private Temp[] src;
 
     private int hashCode;
 

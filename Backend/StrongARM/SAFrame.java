@@ -31,8 +31,10 @@ import harpoon.IR.Tree.TreeFactory;
 import harpoon.Temp.Label;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Util;
+import harpoon.Util.ListFactory;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
@@ -43,7 +45,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.24 1999-08-04 19:58:59 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.25 1999-08-04 21:46:11 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -227,17 +229,37 @@ public class SAFrame extends Frame implements AllocationInfo {
     }
 
     /** Stub added by FSK */
-    public Iterator suggestRegAssignment(Temp t, final Map regfile) {
+    public Iterator suggestRegAssignment(Temp t, final Map regFile) {
+	final ArrayList suggests = new ArrayList();
 	SATempVisitor visitor = new SATempVisitor(){
 	    public void visit(Temp temp) {
 		// single word, find one register
+		for (int i=0; i<regGeneral.length; i++) {
+		    if ((regFile.get(regGeneral[i]) == null)) {
+			suggests.add(ListFactory.singleton(regGeneral[i]));
+		    }
+		}
 	    }
 	    public void visit(TwoWordTemp temp) {
+		// double word, find two registers (the strongARM
+		// doesn't require them to be in a row, but its faster
+		// to search for adjacent registers for now.  Later we
+		// can change the system to make the iterator do a
+		// lazy-evaluation and dynamically create all pairs
+		for (int i=0; i<regGeneral.length; i++) {
+		    if ((regFile.get(regGeneral[i]) == null) &&
+			(regFile.get(regGeneral[i+1]) == null)) {
+			    suggests.add(Arrays.asList
+					 (new Temp[]{ regGeneral[i], 
+						      regGeneral[i+1]}));
+			}
+		}
 		
 	    }
 	    
 	};
-	return null;
+
+	return suggests.iterator();
     }
 
     /** Returns a <code>StrongArm.CodeGen</code>. 
