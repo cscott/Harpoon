@@ -20,10 +20,16 @@ public class GUIMain {
      *  @param args foo
      */
     public static void main(String args[]) {
-	if (args.length<5) {
-	    System.out.println("Usage: java -jar GUI.jar <'pause'|'nopause'> <'corba'|'nocorba'> <pipeline #>");
+	boolean useCorba = args[1].equalsIgnoreCase("corba");
+
+	if (useCorba && (args.length<5)) {
+	    System.out.println("Usage: java -jar GUI.jar <'pause'|'nopause'> 'corba' <pipeline #>");
 	    System.out.println("       [CORBA name for ATR] [CORBA name for Alert] [CORBA options]");
 	    System.exit(-1);
+	}
+	else if (!useCorba && (args.length<3)) {
+	    System.out.println("Usage: java -jar GUI.jar <'pause'|'nopause'> 'nocorba' <pipeline #>");
+	    System.exit(-1);	    
 	}
 
 	int pipelineNumber = 0;
@@ -41,7 +47,6 @@ public class GUIMain {
 	}
 	else {
 	    boolean usePause = args[0].equalsIgnoreCase("pause");
-	    boolean useCorba = args[1].equalsIgnoreCase("corba");
 	    Node pause;
 	    //if pause is requested, then 'pause' is made to be a Pause node,
 	    //otherwise, it becomes a dummy Node, and ImageDatas will just be passed through
