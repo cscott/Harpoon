@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * <code>PointsToGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.12 2000-03-01 01:11:03 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.13 2000-03-01 02:24:18 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -41,11 +41,18 @@ public class PointsToGraph {
     }
 
     /** Tests whether the node <code>n</code> is an escaped node; 
-     * i.e. it has escaped through some node ot method hole or will be 
+     * i.e. it has escaped through some node or method hole or will be 
      * returned from the procedure. */
     public boolean escaped(PANode n){
 	return e.hasEscaped(n) || r.contains(n);
     }
+
+    /** Tests whether the node <code>n</code> is captured. 
+     * This method is simply the negation of <code>escaped</code>. */
+    public boolean captured(PANode n){
+	return !escaped(n);
+    }
+
 
     /** <code>join</code> is called in the control-flow join points. */
     public void join(PointsToGraph G2){
