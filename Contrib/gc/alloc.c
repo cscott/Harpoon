@@ -291,11 +291,11 @@ GC_stop_func stop_func;
 {
   CLOCK_TYPE start_time, end_time;
   GET_TIME(start_time);
-#define return(rv) ({\
+#define return(rv) do {\
   GET_TIME(end_time);\
   ttl_gc_time+=MS_TIME_DIFF(end_time,start_time);\
   return (rv);\
-  })
+  } while (0)
     if (GC_incremental && GC_collection_in_progress()) {
 #   ifdef PRINTSTATS
 	GC_printf0(
