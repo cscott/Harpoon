@@ -21,7 +21,7 @@ public class JavaCar extends JFrame{
 	    });
 	con.addKeyListener(new KeyListener(){
 	public void keyPressed(KeyEvent e) {
-	    if (e.getKeyCode()==38) {foo.move(2,255); foo.moveRelative(2,-55);}else{
+	    if (e.getKeyCode()==38) {foo.move(2,150); }else{
 		if (e.getKeyCode()==40) {foo.move(2,1); foo.moveRelative(2,55);}else{
 		    if(e.getKeyCode()==39) {foo.move(1,200);}else{
 			if(e.getKeyCode()==37) {foo.move(1,56);}
