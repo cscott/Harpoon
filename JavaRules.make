@@ -16,6 +16,8 @@ JAVAHDR:=$(foreach f,$(JAVASRC),$(dir $f)$(call javahdr,$(f)))
 
 if BUILD_JAVA_SOURCE
 # rebuild .h files if they go out of date
+# note that we have to manually touch the files, as javah doesn't
+# alter the timestamp if its output is identical to the existing file.
 $(JAVAHDR): $(JAVASRC) $(JARFILE)
 	$(JAVAH) -bootclasspath $(JARFILE) \
 		$(foreach f,$(JAVASRC),$(call javacls,$(f)))
@@ -23,5 +25,6 @@ $(JAVAHDR): $(JAVASRC) $(JARFILE)
 	  if [ `dirname $$f` != "." ] ; then \
 	    mv `basename $$f` `dirname $$f` ; \
 	  fi ; \
+	  touch $$f ; \
 	done
 endif
