@@ -2,6 +2,9 @@
 #include <assert.h>
 #include "jni.h"
 #include "jni-private.h"
+#ifdef WITH_PRECISE_C
+#include "precisec.c" /* drag in implementations of FNI_Dispatch_<foo> */
+#endif
   
 extern void FNI_Dispatch_Void(ptroff_t method_pointer, int narg_words,
 			      void * argptr, jobject_unwrapped * exception);
