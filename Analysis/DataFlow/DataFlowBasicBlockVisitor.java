@@ -6,7 +6,6 @@ package harpoon.Analysis.DataFlow;
 import harpoon.Analysis.BasicBlock;
 import java.util.Enumeration;
 import harpoon.Util.Worklist;
-//import harpoon.IR.Quads.*;
 /**
  * <code>DataFlowBasicBlockVisitor</code> is a specialized
  * <code>BasicBlockVisitor</code> for performing data flow analysis on
