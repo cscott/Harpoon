@@ -1,0 +1,7 @@
+#!/bin/bash
+for i in *.cc *.c
+do
+g++ -g -O0 -c $i
+done
+
+g++ -O0 -g *.o -o main
