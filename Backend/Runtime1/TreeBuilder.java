@@ -58,7 +58,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.23 2000-03-27 01:10:06 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.24 2000-03-27 02:27:35 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -126,10 +126,12 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 
 	OBJECT_HEADER_SIZE = WORD_SIZE + 1 * POINTER_SIZE;
 	// layout of oobj
+	// (note that the hashcode is actually pointer size, because it is
+	//  used to point to an inflated_oobj structure after inflation)
 	OBJ_CLAZ_OFF    = 0 * POINTER_SIZE;
 	OBJ_HASH_OFF    = OBJ_CLAZ_OFF + 1 * POINTER_SIZE;
-	OBJ_FZERO_OFF   = OBJ_HASH_OFF + 1 * WORD_SIZE;
-	OBJ_ALENGTH_OFF = OBJ_HASH_OFF + 1 * WORD_SIZE;
+	OBJ_FZERO_OFF   = OBJ_HASH_OFF + 1 * POINTER_SIZE;
+	OBJ_ALENGTH_OFF = OBJ_FZERO_OFF;
 	OBJ_AZERO_OFF   = OBJ_ALENGTH_OFF + 1 * WORD_SIZE;
 	// layout of claz
 	CLAZ_INTERFACES_OFF = -1 * POINTER_SIZE;
@@ -190,18 +192,18 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	      (tf, source,
 	       new MOVE // assign the new object a hashcode.
 	       (tf, source,
+		DECLARE(dg, HClass.Void/*hashcode, not an object*/,
 		new MEM
-		(tf, source, Type.INT,
+		(tf, source, Type.POINTER, /* hashcode is pointer size */
 		 new BINOP
 		 (tf, source, Type.POINTER, Bop.ADD,
 		  DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
 		  new TEMP(tf, source, Type.POINTER, Tobj)),
-		  new CONST(tf, source, OBJ_HASH_OFF))),
+		  new CONST(tf, source, OBJ_HASH_OFF)))),
 		new BINOP // set the low bit to indicate an uninflated object.
-		(tf, source, Type.INT, Bop.OR,
-		 new UNOP(tf, source, Type.POINTER, Uop._2I,
-			  DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
-			  new TEMP(tf, source, Type.POINTER, Tobj))),
+		(tf, source, Type.POINTER, Bop.ADD,
+		 DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
+		 new TEMP(tf, source, Type.POINTER, Tobj)),
 		 new CONST(tf, source, 1))),
 	       new MOVE // assign the new object a class pointer.
 	       (tf, source,
