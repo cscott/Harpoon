@@ -4,6 +4,7 @@
 package harpoon.Util.Graphs;
 
 import java.util.Collections;
+import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
@@ -43,7 +44,7 @@ import harpoon.Util.DataStructs.RelationImpl;
  * Created: Sun May  4 20:56:57 2003
  *
  * @author Alexandru Salcianu <salcianu@mit.edu>
- * @version $Id: DiGraph.java,v 1.3 2003-05-09 15:54:56 salcianu Exp $ 
+ * @version $Id: DiGraph.java,v 1.4 2003-05-11 00:20:39 salcianu Exp $ 
  */
 public abstract class DiGraph/*<Vertex extends Object>*/ {
     
@@ -101,42 +102,42 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
     /** @return Set of all transitive and reflexive successors of
         <code>vertex</code>. */
     public Set/*<Vertex>*/ transitiveSucc(Object vertex) {
-	return transitiveSucc(Collections.singleton(vertex).iterator());
+    	return transitiveSucc(Collections.singleton(vertex).iterator());
     }
 
     /** @return Set of all transitive and reflexive successors of the
-        vertices returned by <code>itVertices</code>. */
-    public Set/*<Vertex>*/ transitiveSucc(Iterator/*<Vertex>*/ itVertices) {
-	return reachableVertices(itVertices, getDiGraphForwardNavigator());
+        vertices from <code>roots</code>. */
+    public Set/*<Vertex>*/ transitiveSucc(Collection/*<Vertex>*/ roots) {
+	return reachableVertices(roots, getDiGraphForwardNavigator());
     }
 
     /** @return Set of all transitive and reflexive
         predecessors of <code>vertex</code> */
     public Set/*<Vertex>*/ transitivePred(Object vertex) {
-	return transitivePred(Collections.singleton(vertex).iterator());
+    	return transitivePred(Collections.singleton(vertex).iterator());
     }
 
     /** @return Set of all transitive and reflexive predecessors of
-        the vertices returned by <code>itVertices</code>. */
-    public Set/*<Vertex>*/ transitivePred(Iterator/*<Vertex>*/ itVertices) {
-	return reachableVertices(itVertices, 
-			      new ReverseNavigator(getDiGraphNavigator()));
+        the vertices from <code>roots</code>. */
+    public Set/*<Vertex>*/ transitivePred(Collection/*<Vertex>*/ roots) {
+	return reachableVertices(roots, 
+				 new ReverseNavigator(getDiGraphNavigator()));
     }
 
 
     /** @return Set of all transitive and reflexive predecessors of
-        the vertices returned by <code>itVertices</code>, where the
+        the vertices from <code>roots</code>, where the
         predecessors of a vertex are given by method <code>next</code>
         of <code>navigator</code>. */
     public static Set/*<Vertex>*/ reachableVertices
-	(Iterator/*<Vertex>*/ itVertices,
+	(Collection/*<Vertex>*/ roots,
 	 ForwardNavigator/*<Vertex>*/ navigator) {
 
 	Set/*<Vertex>*/ reachables = new HashSet/*<Vertex>*/();
 
 	LinkedList/*<Vertex>*/ w = new LinkedList/*<Vertex>*/();
-	while(itVertices.hasNext()) {
-	    Object vertex = itVertices.next();
+	for(Iterator/*<Vertex>*/ it = roots.iterator(); it.hasNext(); ) {
+	    Object vertex = it.next();
 	    if(reachables.add(vertex))
 		w.addLast(vertex);
 	}
@@ -152,6 +153,60 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
 	}
 
 	return reachables;
+    }
+
+
+    /** Interface for passing a method as parameter to a
+     *  <code>forAllReachableVertices</code> object.
+     *  @see forAllReachableVertices */
+    public static interface VertexAction/*<Vertex>*/ {
+	public void visit(Object obj);
+    }
+
+
+    /** Executes an action exactly once for each vertex from
+        <code>this</code> directed graph. */
+    public void forAllVertices(VertexAction action) {
+	// We could have invoked the static forAllReachableVertices.
+	// However, I think it's better to rely on allVertices
+	// instead: for immutable digraphs, the implementor might
+	// override allVertices to cache its result, thus resulting in
+	// improved efficiency.
+	for(Iterator /*<Vertex>*/ it = allVertices().iterator();
+	    it.hasNext(); ) {
+	    Object vertex = it.next();
+	    action.visit(vertex);
+	}
+    }
+    
+
+    /** Performs an action exactly once on each vertex reachable from
+        the set of vertices <code>roots</code>, via the navigator
+        <code>navigator</code>.  This method is supposed to be called
+        if:
+
+	<ol>
+
+	<li>you are interested only in a subgraph or
+
+	<li>you have a set of roots and a navigator but didn't package
+	them in a digraph.
+
+	</ol>
+
+	If you want to execute an action for all vertices from a
+	digraph, use the non-static version of this method. */
+    public static void forAllReachableVertices
+	(Collection/*<Vertex>*/ roots,
+	 ForwardNavigator/*<Vertex>*/ navigator,
+	 VertexAction/*<Vertex>*/ action) {
+
+	for(Iterator/*<Vertex>*/ it = 
+		reachableVertices(roots, navigator).iterator();
+	    it.hasNext(); ) {
+	    Object vertex = it.next();
+	    action.visit(vertex);
+	}
     }
 
 
@@ -190,7 +245,7 @@ public abstract class DiGraph/*<Vertex extends Object>*/ {
     
     /** @return set of vertices from <code>this</code> directed graph. */
     public Set/*<Vertex>*/ allVertices() {
-	return transitiveSucc(getDiGraphRoots().iterator());
+	return transitiveSucc(getDiGraphRoots());
     }
 
     

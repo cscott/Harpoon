@@ -61,11 +61,11 @@ import harpoon.Util.Util;
 
  * 
  * @author  Alexandru SALCIANU <salcianu@mit.edu>
- * @version $Id: LightBasicBlock.java,v 1.4 2002-04-10 03:07:26 cananian Exp $ */
+ * @version $Id: LightBasicBlock.java,v 1.5 2003-05-11 00:20:49 salcianu Exp $ */
 public class LightBasicBlock implements java.io.Serializable {
 
     /** The user can place its annotations here.
-	@deprecated */
+	@deprecated */   
     public Object user_info = null;
 
     /** Personal numeric ID */
