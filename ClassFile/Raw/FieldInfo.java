@@ -4,7 +4,7 @@ package harpoon.ClassFile.Raw;
  * Each field is described by a variable-length
  * <code>field_info</code> structure.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldInfo.java,v 1.5 1998-07-31 05:51:10 cananian Exp $
+ * @version $Id: FieldInfo.java,v 1.6 1998-07-31 06:21:56 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.5"
  * @see ClassFile
  */
@@ -49,7 +49,7 @@ class FieldInfo {
     int attributes_count = in.read_u2();
     attributes = new Attribute[attributes_count];
     for (int i=0; i<attributes_count; i++)
-      attributes[i] = Attribute.read(in, cp);
+      attributes[i] = Attribute.read(p, in);
   }
 
   /** Constructor. */

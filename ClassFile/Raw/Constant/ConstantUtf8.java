@@ -7,20 +7,25 @@ package harpoon.ClassFile.Raw;
  * be represented using only one byte per character, but characters of
  * up to 16 bits can be represented.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantUtf8.java,v 1.5 1998-07-31 05:51:10 cananian Exp $
+ * @version $Id: ConstantUtf8.java,v 1.6 1998-07-31 06:21:55 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.7"
  * @see Constant
  */
-class ConstantUtf8 extends ConstantPoolInfo {
+class ConstantUtf8 extends Constant {
   /** The value of the string constant */
   String val;
 
   /** Constructor. */
-  ConstantUtf8(ClassDataInputStream in) throws java.io.IOException {
+  ConstantUtf8(ClassFile parent, ClassDataInputStream in) 
+    throws java.io.IOException {
+    super(parent);
     val = in.readUTF();
   }
   /** Constructor. */
-  public ConstantUtf8(String val) { this.val = val; }
+  public ConstantUtf8(ClassFile parent, String val) {
+    super(parent);
+    this.val = val;
+  }
 
   /** Write to a bytecode file. */
   void write(ClassDataOutputStream out) throws java.io.IOException {

@@ -5,7 +5,7 @@ package harpoon.ClassFile.Raw;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.5 1998-07-31 05:51:09 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.6 1998-07-31 06:21:55 cananian Exp $
  */
 
 public class ClassFile {
@@ -130,7 +130,7 @@ public class ClassFile {
 	i++; // Long and Double constants take up two entries.
     }
 
-    access_flags = new AccessFlags(this, in);
+    access_flags = new AccessFlags(in);
 
     this_class   = in.read_u2();
     super_class  = in.read_u2();
@@ -184,7 +184,7 @@ public class ClassFile {
 				   interfaces.length);
     out.write_u2(interfaces.length);
     for (int i=0; i< interfaces.length; i++)
-      interfaces[i].write(out);
+      out.write_u2(interfaces[i]);
 
     if (fields.length > 0xFFFF)
       throw new ClassDataException("Fields list too long: " + fields.length);
@@ -238,16 +238,6 @@ public class ClassFile {
   /** Return the <code>CONSTANT_Class_info</code> entry in the
       <code>constant_pool</code> corresponding to the value in
       <code>interfaces[i]</code>. */
-  public ConstantClass interface(int i)
+  public ConstantClass interfaces(int i)
   { return (ConstantClass) constant_pool[interfaces[i]]; }
-  /** Return an array of <code>ConstantClass</code> corresponding to
-      the values in the <code>interfaces</code> array dereferences
-      through the <code>constant_pool</code>. */
-  public ConstantClass[] interfaces()
-  { 
-    ConstantClass[] interface_class = new ConstantClass[interfaces_count];
-    for (int i=0; i<interfaces_count; i++)
-      interface_class[i] = (ConstantClass) constant_pool[interfaces[i]];
-    return interface_class;
-  }
 }

@@ -3,13 +3,13 @@ package harpoon.ClassFile.Raw;
 /**
  * The <code>CONSTANT_Fieldref</code> structure represents a field.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantFieldref.java,v 1.5 1998-07-31 05:51:09 cananian Exp $
+ * @version $Id: ConstantFieldref.java,v 1.6 1998-07-31 06:21:55 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.2"
  * @see Constant
  * @see ConstantMethodref
  * @see ConstantInterfaceMethodref
  */
-class ConstantFieldref extends ConstantPoolInfo {
+class ConstantFieldref extends Constant {
   /** The value of the <code>class_index</code> item must be a valid
       index into the <code>constant_pool</code> table of the
       <code>parent</code>.  The <code>constant_pool</code> entry at
@@ -30,12 +30,16 @@ class ConstantFieldref extends ConstantPoolInfo {
   int name_and_type_index;
 
   /** Constructor. */
-  ConstantFieldref(ClassDataInputStream in) throws java.io.IOException {
+  ConstantFieldref(ClassFile parent, ClassDataInputStream in) 
+    throws java.io.IOException {
+    super(parent);
     class_index = in.read_u2();
     name_and_type_index = in.read_u2();
   }
   /** Constructor. */
-  public ConstantFieldref(int class_index, int name_and_type_index) {
+  public ConstantFieldref(ClassFile parent,
+			  int class_index, int name_and_type_index) {
+    super(parent);
     this.class_index = class_index;
     this.name_and_type_index = name_and_type_index;
   }

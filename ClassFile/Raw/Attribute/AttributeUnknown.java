@@ -3,7 +3,7 @@ package harpoon.ClassFile.Raw;
 /** 
  * An attribute of unknown format.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeUnknown.java,v 1.1 1998-07-31 05:51:09 cananian Exp $
+ * @version $Id: AttributeUnknown.java,v 1.2 1998-07-31 06:21:55 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7"
  * @see Attribute
  */
@@ -16,9 +16,8 @@ class AttributeUnknown extends Attribute {
 		   int attribute_name_index) throws java.io.IOException {
     super(parent, attribute_name_index);
     long attribute_length = in.read_u4();
-    info = new byte[attribute_length];
-    for (int i=0; i<attribute_length; i++)
-      info[i] = in.read_u1();
+    info = new byte[(int)attribute_length]; // XXX breaks after 31 bits.
+    in.read(info);
   }
   /** Constructor. */
   public AttributeUnknown(ClassFile parent, 

@@ -4,21 +4,26 @@ package harpoon.ClassFile.Raw;
  * The <code>CONSTANT_Double_info</code> structure represents eight-byte
  * floating-point numeric constants.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantDouble.java,v 1.6 1998-07-31 05:51:09 cananian Exp $
+ * @version $Id: ConstantDouble.java,v 1.7 1998-07-31 06:21:55 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.5"
  * @see Constant
  * @see ConstantLong
  */
-public class ConstantDouble extends ConstantPoolInfo {
+public class ConstantDouble extends Constant {
   /** The value of the <code>double</code> constant. */
   double val;
 
   /** Constructor. */
-  ConstantDouble(ClassDataInputStream in) throws java.io.IOException {
-    val = in.readDouble();
+  ConstantDouble(ClassFile parent, ClassDataInputStream in) 
+    throws java.io.IOException {
+    super(parent);
+    this.val = in.readDouble();
   }
   /** Constructor. */
-  public ConstantDouble(double val) { this.val = val; }
+  public ConstantDouble(ClassFile parent, double val) { 
+    super(parent);
+    this.val = val; 
+  }
 
   /** Write to a bytecode file. */
   void write(ClassDataOutputStream out) throws java.io.IOException {

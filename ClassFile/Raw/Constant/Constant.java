@@ -7,7 +7,7 @@ package harpoon.ClassFile.Raw;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Constant.java,v 1.5 1998-07-31 05:51:09 cananian Exp $
+ * @version $Id: Constant.java,v 1.6 1998-07-31 06:21:55 cananian Exp $
  * @see ConstantUtf8
  * @see ConstantInteger
  * @see ConstantFloat
@@ -20,7 +20,7 @@ package harpoon.ClassFile.Raw;
  * @see ConstantInterfaceMethodref
  * @see ConstantNameAndType
  */
-public class Constant {
+public abstract class Constant {
   /** ClassFile in which this Constant is found. */
   public ClassFile parent;
 
@@ -37,38 +37,39 @@ public class Constant {
   static final int CONSTANT_InterfaceMethodref=11;
   static final int CONSTANT_NameAndType=12;
 
-  /** Read a single ConstantPoolInfo item from an input class bytecode file,
+  protected Constant(ClassFile parent) { this.parent = parent; }
+
+  /** Read a single Constant item from an input class bytecode file,
    *  and return an object instance corresponding to it.
    * @exception java.io.IOException on error reading from input stream.
    */
   static Constant read(ClassFile p, ClassDataInputStream in) 
        throws java.io.IOException {
-    this.p = parent;
 
     int tag = in.read_u1();
     switch(tag) {
     case CONSTANT_Utf8:
-      return new ConstantUtf8(in);
+      return new ConstantUtf8(p, in);
     case CONSTANT_Integer:
-      return new ConstantInteger(in);
+      return new ConstantInteger(p, in);
     case CONSTANT_Float:
-      return new ConstantFloat(in);
+      return new ConstantFloat(p, in);
     case CONSTANT_Long:
-      return new ConstantLong(in);
+      return new ConstantLong(p, in);
     case CONSTANT_Double:
-      return new ConstantDouble(in);
+      return new ConstantDouble(p, in);
     case CONSTANT_Class:
-      return new ConstantClass(in);
+      return new ConstantClass(p, in);
     case CONSTANT_String:
-      return new ConstantString(in);
+      return new ConstantString(p, in);
     case CONSTANT_Fieldref:
-      return new ConstantFieldref(in);
+      return new ConstantFieldref(p, in);
     case CONSTANT_Methodref:
-      return new ConstantMethodref(in);
+      return new ConstantMethodref(p, in);
     case CONSTANT_InterfaceMethodref:
-      return new ConstantInterfaceMethodref(in);
+      return new ConstantInterfaceMethodref(p, in);
     case CONSTANT_NameAndType:
-      return new ConstantNameAndType(in);
+      return new ConstantNameAndType(p, in);
     default:
       throw new Error("Unknown constant type.");
     }

@@ -15,7 +15,7 @@ package harpoon.ClassFile.Raw;
  * not included unless debugging flags are given to the compiler.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeLocalVariableTable.java,v 1.6 1998-07-31 05:51:09 cananian Exp $
+ * @version $Id: AttributeLocalVariableTable.java,v 1.7 1998-07-31 06:21:55 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.7"
  * @see AttributeCode
  * @see Attribute
@@ -76,7 +76,7 @@ public class AttributeLocalVariableTable extends Attribute {
   public String localName(int index) {
     for (int i=0; i<local_variable_table.length; i++)
       if (local_variable_table[i].index == index)
-	return local_variable_table[i].name;
+	return local_variable_table[i].name();
     return null;
   }
 
@@ -153,5 +153,13 @@ public class AttributeLocalVariableTable extends Attribute {
       
       out.write_u2(index);
     }
+    // convenience functions.
+    ConstantUtf8 name_index()
+    { return (ConstantUtf8) parent.constant_pool[name_index]; }
+    ConstantUtf8 descriptor_index()
+    { return (ConstantUtf8) parent.constant_pool[descriptor_index]; }
+
+    String name() { return name_index().val; }
+    String descriptor() { return descriptor_index().val; }
   }
 }

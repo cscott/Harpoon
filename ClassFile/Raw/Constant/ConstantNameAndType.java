@@ -5,11 +5,11 @@ package harpoon.ClassFile.Raw;
  * represent a field or method, without indicating which class or
  * interface type it belongs to.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantNameAndType.java,v 1.5 1998-07-31 05:51:10 cananian Exp $
+ * @version $Id: ConstantNameAndType.java,v 1.6 1998-07-31 06:21:55 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.6"
  * @see Constant
  */
-class ConstantNameAndType extends ConstantPoolInfo {
+class ConstantNameAndType extends Constant {
   /** The value of the <code>name_index</code> must be a valid index
       into the <code>constant_pool</code> table.  The
       <code>constant_pool</code> entry at that index must be a
@@ -25,12 +25,16 @@ class ConstantNameAndType extends ConstantPoolInfo {
   int descriptor_index;
 
   /** Constructor. */
-  ConstantNameAndType(ClassDataInputStream in) throws java.io.IOException {
+  ConstantNameAndType(ClassFile parent, ClassDataInputStream in) 
+    throws java.io.IOException {
+    super(parent);
     name_index = in.read_u2();
     descriptor_index = in.read_u2();
   }
   /** Constructor. */
-  public ConstantNameAndType(int name_index, int descriptor_index) {
+  public ConstantNameAndType(ClassFile parent, 
+			     int name_index, int descriptor_index) {
+    super(parent);
     this.name_index = name_index;
     this.descriptor_index = descriptor_index;
   }

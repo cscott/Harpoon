@@ -8,16 +8,16 @@ package harpoon.ClassFile.Raw;
  * types of attribute information classes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Attribute.java,v 1.4 1998-07-31 05:51:08 cananian Exp $
+ * @version $Id: Attribute.java,v 1.5 1998-07-31 06:21:55 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7"
  * @see ClassFile
  * @see FieldInfo
  * @see MethodInfo
  * @see AttributeCode
  */
-public class Attribute {
+public abstract class Attribute {
   /** ClassFile in which this attribute information is found. */
-  public Classfile parent;
+  public ClassFile parent;
 
   /** The <code>attribute_name_index</code> must be a valid unsigned
       16-bit index into the constant pool of the class.  The
@@ -41,7 +41,9 @@ public class Attribute {
   static Attribute read(ClassFile parent, ClassDataInputStream in)
        throws java.io.IOException {
     int attribute_name_index = in.read_u2();
- 
+    String attribute_name = 
+      ((ConstantUtf8) parent.constant_pool[attribute_name_index]).val;
+
     if (attribute_name.equals("SourceFile"))
       return new AttributeSourceFile(parent, in, attribute_name_index);
     if (attribute_name.equals("ConstantValue"))

@@ -9,7 +9,7 @@ package harpoon.ClassFile.Raw;
  * @see ConstantFieldref
  * @see ConstantMethodref
  */
-class ConstantInterfaceMethodref extends ConstantPoolInfo {
+class ConstantInterfaceMethodref extends Constant {
   /** The value of the <code>class_index</code> item must be a valid
       index into the <code>constant_pool</code> table of the
       <code>parent</code>.  The <code>constant_pool</code> entry at
@@ -36,13 +36,16 @@ class ConstantInterfaceMethodref extends ConstantPoolInfo {
   int name_and_type_index;
   
   /** Constructor. */
-  ConstantInterfaceMethodref(ClassDataInputStream in) 
+  ConstantInterfaceMethodref(ClassFile parent, ClassDataInputStream in) 
        throws java.io.IOException {
+    super(parent);
     class_index = in.read_u2();
     name_and_type_index = in.read_u2();
   }
   /** Constructor. */
-  public ConstantInterfaceMethodref(int class_index, int name_and_type_index) {
+  public ConstantInterfaceMethodref(ClassFile parent, 
+				    int class_index, int name_and_type_index) {
+    super(parent);
     this.class_index = class_index;
     this.name_and_type_index = name_and_type_index;
   }
