@@ -1,9 +1,11 @@
 package harpoon.Tools.Annotation;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HClassTypeVariable;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HType;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.NoSuchClassException;
@@ -104,8 +106,10 @@ action code {:
     public final String packageN; // null for default package
     public final String classN;   // non-null if this is a class name
     public final String innerN;   // non-null if this is an inner class.
-    QualName(String p, String c, String i) {
-      this.packageN=p; this.classN=c; this.innerN=i;
+    public final String typevarN; // non-null if this is a type variable.
+    QualName(String p, String c, String i) { this(p,c,i,null); }
+    QualName(String p, String c, String i, String t) {
+      this.packageN=p; this.classN=c; this.innerN=i; this.typevarN=t;
     }
     QualName(HClass hc) {
       assert hc!=null && !hc.isPrimitive() && !hc.isArray();
@@ -117,8 +121,25 @@ action code {:
 	  simple = simple.substring(0,simple.indexOf('$'));
       }
       this.packageN = pkg; this.classN = simple; this.innerN = inner;
+      this.typevarN = null;
+    }
+    // xxx doesn't handle HMethodTypeVariable, duplicates code in HClass.
+    QualName(HClassTypeVariable hctv) {
+      assert hctv!=null;
+      HClass hc = hctv.getDeclaringClass();
+      assert hc!=null && !hc.isPrimitive() && !hc.isArray();
+      String pkg=hc.getPackage(), simple=hc.getName(), inner=null;
+      if (pkg.length()==0) pkg=null;
+      else simple=simple.substring(1+pkg.length());
+      if (simple.indexOf('$')>=0) {
+	  inner  = simple.substring(1+simple.indexOf('$')).replace('$','.');
+	  simple = simple.substring(0,simple.indexOf('$'));
+      }
+      this.packageN = pkg; this.classN = simple; this.innerN = inner;
+      this.typevarN = hctv.getName();
     }
     public HClass toClass() {
+	if (typevarN!=null) return null; // xxx should return bounds?
 	if (classN==null) return null;
 	String name = combineWithDot(packageN, classN);
 	if (innerN!=null) name+="$"+innerN.replace('.','$');
@@ -131,6 +152,8 @@ action code {:
       sb.append(combineWithDot(packageN, classN));
       if (innerN==null) return sb.toString();
       sb.append('.'); sb.append(innerN);
+      if (typevarN==null) return sb.toString();
+      sb.append('.'); sb.append(typevarN); // non-standard notation.
       return sb.toString();
     }
     public String toBaseURL() {
@@ -159,6 +182,7 @@ action code {:
       if (classN==null) return sb.toString();
       sb.append("#class-");
       sb.append(combineWithDot(combineWithDot(packageN, classN), innerN));
+      // xxx in the future, should use anchor for type variable?
       return sb.toString();
     }
     private String pkg_offset(String pkg) {
@@ -206,6 +230,11 @@ action code {:
       String lhs = (ty.indexOf('.')<0)?ty:ty.substring(0,ty.indexOf('.'));
       String rhs = (ty.indexOf('.')<0)?null:ty.substring(ty.indexOf('.')+1);
       QualName qn;
+      // xxx try method type variable. how to represent? as qualname of bounds?
+      // try class type variable.
+      if (env.containsKey("#typevar-"+lhs) && rhs==null) {
+	  return new QualName((HClassTypeVariable)env.get("#typevar-"+lhs));
+      }
       // try single-type import statement.
       if (env.containsKey("#import-"+lhs)) {
 	  qn = className(combineWithDot((String)env.get("#import-"+lhs),rhs));
@@ -404,6 +433,56 @@ action code {:
       }
       return l;
   }
+
+
+  // used multiple times.
+  void doDeclareClassTypeVariables(String className, List typeVariables) {
+      // this wants to persist in the method context.
+      if (env.containsKey("#in_method")) { // ok, create anonymous context
+	  Integer num = newInner();
+	  newClassScope(num.toString());
+      }
+      pushenv(); // start the class environment scope.
+
+      // temporarily start new class scope, just to get name.
+      pushenv(); newClassScope(className);
+      final String qual = (String)env.get("#qualified");
+      popenv(); // remove #qualified def, because body has not yet started.
+
+      // declare and mark the type variables.
+      for (Iterator it=typeVariables.iterator(); it.hasNext(); ) {
+	  final String tvName = (String) it.next();
+	  // XXX mark.
+	  env.put("#typevar-"+tvName, new HClassTypeVariable() {
+		  public HType[] getBounds() {
+		      // XXX implement me.
+		      return new HType[]
+			  { parser.linker.forName("java.lang.Object") };
+		  }
+		  public String getName() { return tvName; }
+		  public HClass getDeclaringClass() {
+		      return className(qual).toClass();
+		  }
+	      });
+      }
+  }
+  void doClassDeclaration(List kw, int idleft, int idright, String id) {
+      newClassScope(id); env.remove("#in_method");
+      annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
+      // annotate doc comment.
+      if (kw!=null) {
+	  int comment_start = ((Integer) kw.get(1)).intValue();
+	  LinePos lp = parser.lexer.linepos(comment_start+1);
+	  LinePos rp = parser.lexer.linepos(comment_start+2);
+	  QualName qn = className((String)env.get("#qualified"));
+	  if (qn!=null) {
+	      System.out.println(lp.line+" "+lp.pos+"\t"+
+				 rp.line+" "+rp.pos);
+	      System.out.println("<A HREF=\""+qn.toDocURL()+"\">");
+	      System.out.println("</A>");
+	  }
+      }
+  }
 :};
 
 parser code  {: 
@@ -444,7 +523,7 @@ terminal IMPLEMENTS; // interfaces
 terminal VOID; // method_header
 terminal THROWS; // throws
 terminal THIS, SUPER; // explicit_constructor_invocation
-terminal INTERFACE; // interface_declaration
+terminal List INTERFACE; // interface_declaration
 terminal IF, ELSE; // if_then_statement, if_then_else_statement
 terminal SWITCH; // switch_statement
 terminal CASE, DEFAULT; // switch_label
@@ -597,16 +676,16 @@ non terminal assignment;
 non terminal assignment_operator;
 non terminal HClass expression;
 // JSR-14 2.1) Type Syntax 2.3) Handling Consecutive Type Brackets
-non terminal type_variable;
+non terminal String type_variable;
 non terminal type_arguments, type_arguments_opt;
 non terminal reference_type_list;
 non terminal reference_type_list_1, reference_type_1;
 non terminal reference_type_list_2, reference_type_2;
 non terminal reference_type_list_3, reference_type_3;
 // JSR-14 2.2) Parameterized Type Declarations 2.3) Handling Consecutive...
-non terminal type_parameters, type_parameters_opt;
-non terminal type_parameter, type_parameter_list;
-non terminal type_parameter_1, type_parameter_list_1;
+non terminal List type_parameters, type_parameters_opt;
+non terminal String type_parameter, type_parameter_1;
+non terminal List type_parameter_list, type_parameter_list_1;
 non terminal type_bound, type_bound_opt;
 non terminal type_bound_1;
 non terminal additional_bound_list, additional_bound_list_opt;
@@ -708,7 +787,8 @@ reference_type ::=
 	|	array_type:ty {: RESULT=ty; :}
 	;
 type_variable ::=
-		IDENTIFIER
+		IDENTIFIER:id
+		{: RESULT=id; :}
 	;
 class_or_interface_type ::=
 		name:n type_arguments_opt
@@ -864,28 +944,11 @@ modifier ::=	PUBLIC | PROTECTED | PRIVATE
 
 // 19.8.1) Class Declaration:
 class_declaration ::= 
-	modifiers_opt CLASS:kw IDENTIFIER:id type_parameters_opt
+	modifiers_opt CLASS:kw IDENTIFIER:id type_parameters_opt:tpl
+	{: doDeclareClassTypeVariables(id, tpl); :}
 	  super_opt interfaces_opt
-	{: if (env.containsKey("#in_method")) { // ok, create anonymous context
-	     Integer num = newInner();
-	     newClassScope(num.toString());
-	   }
-	   pushenv(); newClassScope(id); env.remove("#in_method");
-           annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
-	   // annotate doc comment.
-	   if (kw!=null) {
-	     int comment_start = ((Integer) kw.get(1)).intValue();
-	     LinePos lp = parser.lexer.linepos(comment_start+1);
-	     LinePos rp = parser.lexer.linepos(comment_start+2);
-	     QualName qn = className((String)env.get("#qualified"));
-	     if (qn!=null) {
-		 System.out.println(lp.line+" "+lp.pos+"\t"+
-				    rp.line+" "+rp.pos);
-		 System.out.println("<A HREF=\""+qn.toDocURL()+"\">");
-		 System.out.println("</A>");
-	     }
-	   }
-	:} class_body {: popenv(); :}
+        {: doClassDeclaration(kw, idleft, idright, id); :}
+        class_body {: popenv(); :}
 	;
 super ::=	EXTENDS class_type
 	;
@@ -919,10 +982,11 @@ class_member_declaration ::=
 		field_declaration
 	|	method_declaration
 	/* repeat the prod for 'class_declaration' here: */
-	|	modifiers_opt CLASS IDENTIFIER:id type_parameters_opt super_opt interfaces_opt
-	{: pushenv(); newClassScope(id);
-           annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
-	:} class_body {: popenv(); :}
+	|	modifiers_opt CLASS:kw IDENTIFIER:id type_parameters_opt:tpl
+		{: doDeclareClassTypeVariables(id, tpl); :}
+	  	super_opt interfaces_opt
+                {: doClassDeclaration(kw, idleft, idright, id); :}
+                class_body {: popenv(); :}
 	|	interface_declaration
 	|	SEMICOLON /* the extra semicolon has become official JLS */
 	;
@@ -1059,15 +1123,12 @@ explicit_constructor_invocation ::=
 
 // 19.9.1) Interface Declarations
 interface_declaration ::=
-		modifiers_opt INTERFACE IDENTIFIER:id type_parameters_opt
-		  extends_interfaces_opt {:
-	if (env.containsKey("#in_method")) { // ok, create anonymous context
-	  Integer num = newInner();
-	  newClassScope(num.toString());
-	}
-	pushenv(); newClassScope(id); env.remove("#in_method");
-        annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
-		:} interface_body {: popenv(); :}
+		modifiers_opt INTERFACE:kw IDENTIFIER:id
+                type_parameters_opt:tpl
+		{: doDeclareClassTypeVariables(id, tpl); :}
+		extends_interfaces_opt
+                {: doClassDeclaration(kw, idleft, idright, id); :}
+                interface_body {: popenv(); :}
 	;
 extends_interfaces_opt ::=
 	|	extends_interfaces
@@ -1603,26 +1664,39 @@ expression ::=	assignment_expression:e {: RESULT=e; :}
 	;
 
 // JLS-14 productions.
-type_parameters_opt ::= type_parameters | ;
+type_parameters_opt ::= type_parameters:tpl
+		{: RESULT=tpl; :}
+	|
+		{: RESULT=Collections.EMPTY_LIST; :}
+	;
 type_parameters ::=
-		PLT type_parameter_list_1
+		PLT type_parameter_list_1:tpl
+	        {: RESULT=tpl; :}
 	;
 type_parameter_list ::=
-		type_parameter_list COMMA type_parameter
-	|	type_parameter
+		type_parameter_list:tpl COMMA type_parameter:tp
+	        {: tpl.add(tp); RESULT=tpl; :}
+	|	type_parameter:tp
+		{: RESULT=new ArrayList(); RESULT.add(tp); :}
 	;
 type_parameter_list_1 ::=
-		type_parameter_1
-	|	type_parameter_list COMMA type_parameter_1
+		type_parameter_1:tp
+		{: RESULT=new ArrayList(); RESULT.add(tp); :}
+	|	type_parameter_list:tpl COMMA type_parameter_1:tp
+	        {: tpl.add(tp); RESULT=tpl; :}
 	;
 type_parameter ::=
-		type_variable type_bound_opt
+		type_variable:tv type_bound_opt
+		{: RESULT=tv; :}
 	;
 type_parameter_1 ::=
-		type_variable GT
-	|	type_variable type_bound_1
+		type_variable:tv GT
+		{: RESULT=tv; :}
+	|	type_variable:tv type_bound_1
+		{: RESULT=tv; :}
 // I don't think this production is really meant to be used.
-//	|	type_variable IMPLEMENTS reference_type_1
+//	|	type_variable:tv IMPLEMENTS reference_type_1
+//		{: RESULT=tv; :}
 	;
 type_bound_opt ::= type_bound | ;
 type_bound ::=
