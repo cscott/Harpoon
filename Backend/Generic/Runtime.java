@@ -3,8 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
 
-import harpoon.ClassFile.HClass;
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.Backend.Maps.NameMap;
+import harpoon.ClassFile.HClass;
 
 import java.util.List;
 /**
@@ -12,7 +13,7 @@ import java.util.List;
  * to a particular architecture/runtime combination.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.1 1999-09-09 00:36:21 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.2 1999-09-09 05:12:09 cananian Exp $
  */
 public abstract class Runtime {
     /** Returns a <code>NameMap</code> valid for this <code>Runtime</code>. */
@@ -20,5 +21,5 @@ public abstract class Runtime {
 
     /** returns a list of <code>HData</code>s which are needed for the
      *  given class. */
-    public abstract List classData(HClass hc);
+    public abstract List classData(Frame f, HClass hc, ClassHierarchy ch);
 }

@@ -62,7 +62,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.25 1999-09-09 03:28:49 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.26 1999-09-09 05:12:19 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -125,7 +125,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    ObjectOutputStream(new FileOutputStream
 				       (classHierarchyFilename));
 		mOS.writeObject(classHierarchy);
-		mOS.flush();
+		mOS.close();
 	    } catch (IOException e) {
 		System.err.println("Error outputting class "+
 				   "hierarchy to " + 
@@ -164,8 +164,7 @@ public class SAMain extends harpoon.IR.Registration {
 		messageln("Writing data for " + hclass.getName());
 		outputClassData(hclass, out);
 
-		out.flush();
-
+		out.close();
 	    } catch (IOException e) {
 		System.err.println("Error outputting class "+
 				   hclass.getName());
@@ -257,8 +256,9 @@ public class SAMain extends harpoon.IR.Registration {
     
     public static void outputClassData(HClass hclass, PrintWriter out) 
 	throws IOException {
-	if (true) return;
-	final Data data = null; //new Data(hclass, frame, classHierarchy); // FIXME!
+      for (Iterator it=frame.getRuntime().classData(frame, hclass, classHierarchy).iterator();
+	     it.hasNext(); ) {
+	final Data data = (Data) it.next();
 	
 	messageln("created a Data (yay!)");
 
@@ -268,13 +268,12 @@ public class SAMain extends harpoon.IR.Registration {
 	    info("\t--- end TREE FORM (for DATA)---");
 	}		
 	
-	final String scope = null;//data.getName(); // FIXME!
+	if (!PRE_REG_ALLOC && !LIVENESS_TEST && !REG_ALLOC) continue;
+
 	final Instr instr = 
-	    frame.codegen().gen((harpoon.IR.Tree.Data)null/*data*/, new InstrFactory() {//FIXME!
-		private final TempFactory tf = Temp.tempFactory(scope);
-		{ Util.assert(tf != null, "TempFactory cannot be null"); }
+	    frame.codegen().gen((harpoon.IR.Tree.Data)data, new InstrFactory() {
 		private int id = 0;
-		public TempFactory tempFactory() { return tf; }
+		public TempFactory tempFactory() { return null; }
 		public HCode getParent() { return null/*data*/; }// FIXME!
 		public Frame getFrame() { return frame; }
 		public synchronized int getUniqueID() { return id++; }
@@ -294,34 +293,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    di = di.getNext(); 
 	}
 	info("\t--- end INSTR FORM (for DATA)---");
-
-	/* old method below. */
-	/*
-	Iterator iter = new UnmodifiableIterator() {
-	    Set visited = new HashSet();
-	    Stack stk = new Stack();
-	    { stk.push(instr); visited.add(instr); }
-	    public boolean hasNext(){return !stk.empty(); }
-	    public Object next() {
-		if (stk.empty()) throw new NoSuchElementException();
-		Instr instr2 = (Instr) stk.pop();
-		Iterator succIter = 
-		   new ReverseIterator(instr2.succC().iterator());
-		while(succIter.hasNext()) {
-		    HCodeEdge edge = (HCodeEdge) succIter.next();
-		    if (!visited.contains(edge.to())) {
-			stk.push(edge.to());
-			visited.add(edge.to());
-		    }
-		}
-		return instr2;
-	    }
-	};
-	info("\t--- INSTR FORM (for DATA)---");
-	while(iter.hasNext()) { out.println( iter.next() ); }
-	info("\t--- end INSTR FORM (for DATA)---");
-	*/
-	
+      }
     }
 
     private static void message(String msg) {
