@@ -17,7 +17,7 @@ import java.util.Vector;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.3.2.1 1998-11-30 21:21:02 cananian Exp $
+ * @version $Id: Instr.java,v 1.3.2.2 1998-12-20 12:50:34 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -67,6 +67,10 @@ public abstract class Instr
   public Instr[] next() {
     Instr[] n = new Instr[next.size()]; next.copyInto(n); return n;
   }
+  /** Return the specified successor of this <code>Instr</code>. */
+  public Instr next(int i) { return (Instr) next.elementAt(i); }
+  /** Return the specified predecessor of this <code>Instr</code>. */
+  public Instr prev(int i) { return (Instr) prev.elementAt(i); }
 
   /** Add a predecessor to this <code>Instr</code>. */
   void addPrev(Instr prev) { this.prev.addElement(prev); }
