@@ -1,8 +1,11 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.1 1999-03-20 05:25:03 cananian Exp $
+% $Id: thesis.tex,v 1.2 1999-03-20 06:50:53 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[notitlepage,twoside]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
+
+% the name of the project
+\newcommand{\magic}{\textsc{Magic}}
 
 % A breaking non-space for URLs
 \newcommand{\bsp}{\hspace{0pt}}
@@ -11,15 +14,20 @@
 \newcommand{\phifunction}{$\phi$-function}
 \newcommand{\sigfunction}{$\sigma$-function}
 
-% the name of the project
-\newcommand{\magic}{\textsc{Magic}}
+% Cytron's path symbol
+\newcommand{\path}{\ensuremath{\rightarrow}}
+\newcommand{\pathplus}{\ensuremath{\stackrel{+}{\path}}}
+
+% double-space
+\renewcommand{\baselinestretch}{1.2}
 
 \title{\magic: An Optimizing Java Compiler using SSI Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.1 $ $}
+\date{\today \\ $ $Revision: 1.2 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.1 $ $}{$ $Revision: 1.1 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.2 $ $}{$ $Revision: 1.2 $ $}
+\bibliographystyle{plain}
 
 \maketitle
 
@@ -29,9 +37,64 @@ Advances in IRs translate to advances in compilers.
 This paper represents another advance in IRs.
 
 \section{Intermediate Representations}
+\section{Static Single Assignment Form}
+Static Single Assignment (SSA) form, introduced by Cytron in
+\cite{cytron89:ssa}%
+\footnote{There was some reference to an earlier use? Where's that reference?}
+\ldots
+
+\textbf{Define SSA form here.}
+
+\subsection{Minimal SSA form}
+Cytron defines a minimal SSA form in \cite{cytron91:ssa}.  His minimal
+form is defined to use the smallest number of \phifunction{s} such
+that the following three conditions hold:
+\begin{enumerate}
+\item If two nonnull paths $X \pathplus Z$ and $Y \pathplus Z$
+converge at a node $Z$, and nodes $X$ and $Y$ contain assignments to
+[a variable] $V$ (in the original program), then a trivial
+\phifunction{} $V \leftarrow \phi(V, \ldots, V)$ has been inserted at
+$Z$ (in the new program). \label{criteria1}
+\item Each mention of $V$ in the original program or in an inserted
+\phifunction{} has been replaced by a mention of a new variable $V_i$,
+leaving the new program in SSA form.
+\item Along any control flow path, consider any use of a variable $V$
+(in the original program) and the corresponding use of $V_i$ (in the
+new program).  Then $V$ and $V_i$ have the same value.
+\end{enumerate}
+Of these criteria, \ref{criteria1} is the most important.  A variation
+on minimal SSA form, called \textit{pruned} form \cite{ferrante91:pruned},
+avoids placing \phifunction{s} which define variables which are never used.
+
 \section{Static Single Information Form}
+
+\textbf{Define SSI form here.}
+
+\subsection{Minimal SSI form}
+\textit{Minimal} and \textit{pruned} SSI forms can be defined which
+parallel their SSA counterparts.  \textit{Minimal} SSI form would have the
+smallest number of $\phi$- and \sigfunction{s} such that:
+\begin{enumerate}
+\item If two nonnull paths $X \pathplus Z$ and $Y \pathplus Z$
+exist having only the node $Z$ where they converge in common,
+and nodes $X$ and $Y$ contain either assignments to a variable $V$ in the
+original program or a $\phi$- or \sigfunction{} for $V$ in the new program,
+then a \phifunction{} for $V$ has been inserted at $Z$ in the new program.
+\item If two nonnull paths $Z \pathplus X$ and $Z \pathplus Y$
+exist having only the node $Z$ where they diverge in common,
+and nodes $X$ and $Y$ contain either uses of a variable $V$ in the
+original program or a $\phi$- or \sigfunction{} for $V$ in the new program,
+then a \sigfunction{} for $V$ has been inserted at $Z$ in the new program.
+\end{enumerate}
+
+A \textit{pruned} SSI form would be the minimal form without any unused
+definitions, that is, $\phi$ or \sigfunction{s} after which there are no
+subsequent uses of any of the variables defined on the left-hand side,
+except in other $\phi$ or \sigfunction{s}.
 
 \section{Results}
 \section{Conclusions}
 
+\bibliography{harpoon}
+\appendix
 \end{document}
