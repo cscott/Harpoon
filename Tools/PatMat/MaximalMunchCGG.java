@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.22 1999-08-05 21:27:01 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.23 1999-08-06 21:00:59 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -40,6 +40,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
     private static final String TREE_JUMP = "harpoon.IR.Tree.JUMP";
     private static final String TREE_LABEL = "harpoon.IR.Tree.LABEL";
     private static final String TREE_MEM = "harpoon.IR.Tree.MEM";
+    private static final String TREE_METHOD = "harpoon.IR.Tree.METHOD";
     private static final String TREE_MOVE = "harpoon.IR.Tree.MOVE";
     private static final String TREE_NAME = "harpoon.IR.Tree.NAME";
     private static final String TREE_NATIVECALL = "harpoon.IR.Tree.NATIVECALL";
@@ -124,6 +125,16 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    Util.assert(false, "StmRecurse should never visit Stm: " + s + 
 			" Class:" + s.getClass());
 	}
+
+	public void visit(Spec.StmMethod s) {
+	    degree++;
+
+	    append(exp, "// check statement type");
+	    append(exp, "&& " + stmPrefix + " instanceof " + TREE_METHOD + " ");
+
+	    initStms.append(TREE_TEMP+"[] "+s.params +" = " +
+			    "(("+TREE_METHOD+")"+stmPrefix+").params;");
+	}
 	
 	public void visit(Spec.StmCall s) {
 	    degree++;
@@ -141,7 +152,6 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    initStms.append(r.initStms.toString());
 
 	    // look at retex
-	    // NOTE: THIS WILL BREAK WHEN WE UPDATE EXCEPTION HANDLING 
 	    r = new TypeExpRecurse("(("+TREE_CALL+")"+stmPrefix + ").retex", 
 				   indentPrefix + "\t");
 	    s.retex.accept(r);

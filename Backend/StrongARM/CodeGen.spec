@@ -10,10 +10,12 @@ import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrMOVE;
 import harpoon.IR.Assem.InstrLABEL;
+import harpoon.IR.Assem.InstrDIRECTIVE;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.Uop;
 import harpoon.IR.Tree.Type;
+import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Typed;
 import harpoon.IR.Tree.ExpList;
 import harpoon.Backend.Generic.DefaultFrame;
@@ -21,6 +23,7 @@ import harpoon.Backend.Generic.Code;
 import harpoon.Util.Util;
 import harpoon.Temp.Temp;
 import harpoon.Temp.LabelList;
+import harpoon.Temp.Label;
 
 import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.CALL;
@@ -48,7 +51,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.20 1999-08-06 19:11:13 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.21 1999-08-06 21:00:58 pnkfelix Exp $
  */
 %%
 
@@ -67,6 +70,8 @@ import java.util.HashMap;
     private SAFrame frame;
 
     private Temp r0, r1, r2, r3;
+
+    private TEMP param0;
 
     Map blMap;
     Map liMap;
@@ -123,6 +128,14 @@ import java.util.HashMap;
 			    new Temp[]{ src }));
     }			         
 
+
+    private void emitLABEL( HCodeElement root, String assem, Label l ) {
+	emit( new InstrLABEL( instrFactory, root, assem, l ));
+    }	
+
+    private void emitDIRECTIVE( HCodeElement root, String assem ) {
+	emit( new InstrDIRECTIVE( instrFactory, root, assem ));
+    }
 
     private Temp makeTemp() {
 	    return new Temp(frame.tempFactory());
@@ -694,7 +707,7 @@ MEM<f,i,p>(NAME(id)) = i %{
 		    new Temp[]{ i }, null ));
 }%
 MEM<d,l>(NAME(id)) = i %{
-    Temp i = makeTemp();		
+    Temp i = makeTwoWordTemp();		
     emit(new Instr( instrFactory, ROOT,
 		    "ldr `d0l, " + id, 
 		    new Temp[]{ i }, null ));
@@ -705,14 +718,21 @@ MEM<d,l>(NAME(id)) = i %{
 
 
 TEMP<p,i,f>(id) = i %{
-    Temp i = ((TEMP)ROOT).temp;
+    Temp i = makeTemp();
+    if (((TEMP)ROOT) != param0) {
+	emit( ROOT, "mov `d0, `s0", i, ((TEMP)ROOT).temp);
+    } else {
+	emit( ROOT, "bl _lookup\n"+
+		    "mov `d0, `s0", i, r2 );
+    }
 
 }%
 TEMP<l,d>(id) = i %{
     // Will need to modify these to do something like mapping from
     // TEMP's Temp to the necessary TwoWordTemp
-    Temp i = ((TEMP)ROOT).temp;
-    // TwoWordTemp i = makeTwoWordTemp();		
+    TwoWordTemp i = makeTwoWordTemp();		
+    // Temp i = ((TEMP)ROOT).temp;
+    
 
 }%
 
@@ -795,7 +815,7 @@ UNOP<p,i>(_2D, arg) = i %{
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 UNOP<f>(_2D, arg) = i %{
-    Temp i = makeTemp();		
+    Temp i = makeTwoWordTemp();		
     emit( ROOT, "mov `d0, `s0", r0, arg );
     emit( ROOT, "bl ___extendsfdf2" );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
@@ -803,7 +823,7 @@ UNOP<f>(_2D, arg) = i %{
 
 }%
 UNOP<d>(_2D, arg) = i %{
-    Temp i = makeTemp();		
+    Temp i = makeTwoWordTemp();		
     emit( ROOT, "mov `d0l, `s0l", i, arg );
     emit( ROOT, "mov `d0h, `s0h", i, arg );
 }%
@@ -893,6 +913,12 @@ UNOP<p,i>(NOT, arg) = i %{
 }% 
 
 /* STATEMENTS */
+METHOD(params) %{
+
+    param0 = params[0];
+
+}%
+
 CJUMP(test, iftrue, iffalse) %{
     Instr i = new Instr(instrFactory, ROOT, 
 			"cmp `s0, #0 \n" +
@@ -932,9 +958,11 @@ MOVE<p,i,f>(dst, src) %{
 }%
 
 MOVE<d,l>(dst, src) %{
+    Util.assert(dst instanceof TwoWordTemp, "why is dst: "+dst + " a normal Temp?");
+    Util.assert(src instanceof TwoWordTemp, "why is src: "+src + " a normal Temp?");
         // not certain an emitMOVE is legal with the l/h modifiers
-    emit( ROOT, "mov `d0l, `s0l\n"+
-		"mov `d0h, `s0h", dst, src );
+    emitMOVE( ROOT, "mov `d0l, `s0l\n"+
+		    "mov `d0h, `s0h", dst, src );
 }%
 
 MOVE<i>(dst, CONST(s)) %{
@@ -983,7 +1011,7 @@ RETURN(val) %{
 }%
 
 
-THROW(val) %{
+THROW(val, handler) %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
     emit( ROOT, "bl _lookup ; only r0, lr (& ip?) "+
 		"need to be preserved during lookup" ); 
@@ -1063,12 +1091,11 @@ CALL(retval, NAME(retex), func, arglist) %{
     // this '1f' and '1:' business is taking advantage of a GNU
     // Assembly feature to avoid polluting the global name space with
     // local labels
-    emit( ROOT, "bl " + func + "\n"+
-		".section fixup\n"+
-		"\t.word 1f, "+retex+"; 1f is return address, "+
-		retex+" is exception handler code\n"+
-		".section code\n"+
-		"1:"); 
+    emit( ROOT, "bl " + func );
+    emitDIRECTIVE( ROOT, ".section fixup");
+    emitDIRECTIVE( ROOT, "\t.word 1f, "+retex+"; (retaddr, handler)");
+    emitDIRECTIVE( ROOT, ".section code");
+    emitLABEL( ROOT, "1:", new Label("1")); 
     
 
     // this will break if stackOffset > 255 (ie >63 args)

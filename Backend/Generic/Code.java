@@ -32,7 +32,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.15 1999-08-06 19:11:12 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.16 1999-08-06 21:00:57 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -142,7 +142,8 @@ public abstract class Code extends HCode {
         pw.println();
 	Instr[] instrarr = (Instr[]) getElements();
         for (int i = 0; i < instrarr.length; i++) {
-            if (instrarr[i] instanceof InstrLABEL) {
+            if (instrarr[i] instanceof InstrLABEL ||
+		instrarr[i] instanceof InstrDIRECTIVE) {
                 pw.println(instrarr[i]);
             } else {
 		try {
@@ -179,8 +180,7 @@ public abstract class Code extends HCode {
 		i++; c = assem.charAt(i);
 		switch(c) {
 		case 'd': {
-		    i++;
-		    int n = Character.digit(assem.charAt(i), 10);
+		    i++; int n = Character.digit(assem.charAt(i), 10);
 		    if (n < instr.def().length) {
 			temp = instr.def()[n];
 			getReg = true;
@@ -192,8 +192,7 @@ public abstract class Code extends HCode {
 		}
 		case 's':
 		case 'j': {
-		    i++;
-		    int n = Character.digit(assem.charAt(i), 10);
+		    i++; int n = Character.digit(assem.charAt(i), 10);
 		    if (n < instr.use().length) {
 			temp = instr.use()[n];
 			getReg = true;
