@@ -25,7 +25,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.12 1999-07-30 20:51:24 duncan Exp $
+ * @version $Id: Tree.java,v 1.1.2.13 1999-08-05 19:29:00 duncan Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -64,10 +64,7 @@ public abstract class Tree
 	Util.assert(((Code)tf.getParent()).isCanonical());
 
 	Set defSet = defSet();
-	Temp[] def = (Temp[])defSet.toArray(new Temp[0]); 
-	//defSet.copyInto(def);
-
-	return def;
+	return (Temp[])defSet.toArray(new Temp[0]); 
     }
 
     /** Returns the Temps used by this tree.  Can only be used in
@@ -77,10 +74,7 @@ public abstract class Tree
 	Util.assert(((Code)tf.getParent()).isCanonical());
 
 	Set useSet = useSet();
-	Temp[] use = (Temp[])useSet.toArray(new Temp[0]); 
-	//useSet.copyInto(use);
-	
-	return use;
+	return (Temp[])useSet.toArray(new Temp[0]); 
     }
 
     abstract protected Set defSet();

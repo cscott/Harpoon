@@ -16,40 +16,34 @@ import java.util.Set;
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.1.2.1 1999-08-05 07:54:47 duncan Exp $
+ * @version $Id: METHOD.java,v 1.1.2.2 1999-08-05 19:29:00 duncan Exp $
  */
 public class METHOD extends Stm {
-    /** A pointer to the exception handler for this 
-     *  <code>METHOD</code> */
-    public NAME   handler;
     /** The temporary variables used for method formals. */
     public TEMP[] params;
     
     /** Creates a <code>METHOD</code> object. 
      * @param params   temporaries which map directly to the 
      *                 parameters of this <code>METHOD</code>.
-     *                 For non-static methods, the first parameter
-     *                 should be the <code>this</code> pointer of 
-     *                 the caller.
-     * @param handler  a pointer to the exception-handling code
-     *                 for this <code>METHOD</code>.
-     * */
-    public METHOD(TreeFactory tf, HCodeElement source,
-		  TEMP[] params, NAME handler) {
+     *                 The first element should be a pointer to the 
+     *                 exception-handling code for this method.  For 
+     *                 non-static methods, the second parameter should be the 
+     *                 <code>this</code> pointer of the caller.  Subsequent 
+     *                 elements of the array should be the formal parameters
+     *                 of the method, in the order which they are declared. 
+     */
+    public METHOD(TreeFactory tf, HCodeElement source, TEMP[] params) { 
         super(tf, source);
-	Util.assert(params!=null && handler!=null); 
-	Util.assert(handler.tf == tf);
-	for (int i=0; i<params.length; i++) 
-	    Util.assert(params[i].tf == tf);
-	this.params  = params;
-	this.handler = handler;
+	Util.assert(params!=null);
+	for (int i=0; i<params.length; i++) Util.assert(params[i].tf == tf);
+	this.params = params;
     }
 
     public ExpList kids() {
 	ExpList retval = new ExpList(null, null);
 	for (int i=params.length-1; i>=0; i--)
 	    retval = new ExpList(params[i], retval);
-	return new ExpList(handler, retval);
+	return retval;
     }
 
     public int kind() { return TreeKind.METHOD; }
@@ -57,22 +51,20 @@ public class METHOD extends Stm {
     public Stm build(ExpList kids) { return build(tf, kids); } 
 
     public Stm build(TreeFactory tf, ExpList kids) { 
-	NAME handler = (NAME)kids.head; Util.assert(handler.tf == tf);
 	List sParams = new ArrayList();
-	for (ExpList e=kids.tail; e.head!=null; e=e.tail) {
+	for (ExpList e=kids; e.head!=null; e=e.tail) {
 	    Util.assert(e.head.tf == tf);
 	    sParams.add(e.head);
 	}
 	TEMP[] tParams = (TEMP[])sParams.toArray(new TEMP[0]);
-	return new METHOD(tf, this, tParams, handler);
+	return new METHOD(tf, this, tParams);
     }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) { 
 	TEMP[] newTmps = new TEMP[params.length];
 	for (int i=0; i<params.length; i++) 
 	    newTmps[i] = (TEMP)params[i].rename(tf, ctm);
-	return new METHOD
-	    (tf,this,newTmps,(NAME)handler.rename(tf,ctm));
+	return new METHOD(tf,this,newTmps);
     }
 
     /** Accept a visitor. */

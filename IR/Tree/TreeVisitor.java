@@ -7,7 +7,7 @@ package harpoon.IR.Tree;
  * <code>TreeVisitor</code> is a Design Pattern, courtesy of Martin.
  * 
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>
- * @version  $Id: TreeVisitor.java,v 1.1.2.13 1999-08-04 06:31:00 cananian Exp $
+ * @version  $Id: TreeVisitor.java,v 1.1.2.14 1999-08-05 19:29:00 duncan Exp $
  */
 public abstract class TreeVisitor
 {
@@ -27,6 +27,7 @@ public abstract class TreeVisitor
     public void visit(JUMP e)           { visit((Stm)e); }
     public void visit(LABEL e)          { visit((Stm)e); }
     public void visit(MEM e)            { visit((Exp)e); }
+    public void visit(METHOD e)         { visit((Stm)e); }
     public void visit(MOVE e)           { visit((Stm)e); }
     public void visit(NAME e)           { visit((Exp)e); }
     public void visit(NATIVECALL e)     { visit((INVOCATION)e); }
