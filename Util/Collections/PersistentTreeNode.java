@@ -9,7 +9,7 @@ import java.util.Comparator;
  * search tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentTreeNode.java,v 1.5 2003-05-15 22:16:05 cananian Exp $
+ * @version $Id: PersistentTreeNode.java,v 1.6 2003-05-16 00:37:44 cananian Exp $
  */
 class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V> 
     implements java.io.Serializable {
@@ -33,6 +33,7 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
      *  isSame() checks that left and right branches are equivalent, too.
      */
     public boolean isSame(PersistentTreeNode n) {
+	if (this==n) return true; // quick common case
 	return
 	    isSame(key,  n.key)  && isSame(value, n.value) &&
 	    isSame(left, n.left) && isSame(right, n.right);
