@@ -7,6 +7,7 @@ import harpoon.Analysis.DomTree;
 import harpoon.Analysis.ReachingDefs;
 import harpoon.Analysis.ReachingDefsAltImpl;
 import harpoon.Analysis.Maps.Derivation.DList;
+import harpoon.Backend.Generic.Runtime.TreeBuilder;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode.PrintCallback;
 import harpoon.ClassFile.HCodeElement;
@@ -58,10 +59,11 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.4 2001-06-12 21:27:50 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.5 2001-06-12 22:38:02 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
+    private static final int CACHE_LINE_SIZE = 32; /* bytes */
 
     /** Creates a <code>CacheEquivalence</code>. */
     public CacheEquivalence(harpoon.IR.Tree.Code code) {
@@ -85,73 +87,95 @@ public class CacheEquivalence {
 		}
 	    });
 	}
-	/*------------------*/
-	DomTree dt = new DomTree(code, cfg, false);
-	/* zip down through dominator tree, collecting info */
-	Environment e = new HashEnvironment();
-	HCodeElement[] roots = dt.roots();
-	for (int i=0; i<roots.length; i++)
-	    traverseDT((Stm) roots[i], dt, e, td);
-	/* okay, done with analysis! */
+	/*- construct cache eq -*/
+	new TagDominate(code, cfg, td, df);
     }
-    /* analyze stms travelling down the dominator tree */
-    void traverseDT(Stm stm, DomTree dt, Environment e, TreeDerivation td) {
-	/* save environment */
-	Environment.Mark mark = e.getMark();
-	/* do analysis */
-	analyze(stm, e, td);
-	/* recurse */
-	HCodeElement[] child = dt.children(stm);
-	for (int i=0; i<child.length; i++)
-	    traverseDT((Stm)child[i], dt, e, td);
-	/* restore environment */
-	e.undoToMark(mark);
-	/* done! */
-	return;
-    }
-    /* analyze one statement in the environment defined by map m */
-    void analyze(Stm stm, Map pre, TreeDerivation td) {
-	Map post = new HashMap();
-	/* first look for all *reads* */
-	/* There is NO ORDER defined for any of these. */
-	for (ExpList el=stm.kids(); el!=null; el=el.tail) {
-	    add(el.head, pre, post, true, td);
-	}
-	/* now all post mappings get added to pre */
-	pre.putAll(post); post.clear();
-	/* now look for writes (which must happen after reads) */
-	if (stm.kind()==TreeKind.MOVE)
-	    add(((MOVE)stm).getDst(), pre, post, false, td);
-	pre.putAll(post); post.clear();
-    }
-    void add(Exp e, Map pre, Map post, boolean recurse, TreeDerivation td) {
-	if (e.kind()==TreeKind.MEM) {
-	    MEM mem = (MEM) e;  Exp memexp = mem.getExp();
-	    /* three cases: 1) a temp, 2) derivation from a temp,
-	     * 3) a random temporary value. */
-	    Temp t = null;
-	    if (memexp.kind()==TreeKind.TEMP) { /* case 1 */
-		t = ((TEMP)memexp).temp;
-	    } else if (td.typeMap(memexp)==null) { /* case 2 */
-		DList dl = td.derivation(memexp);
-		if (dl.next==null && dl.sign)
-		    t = dl.base;
-	    }
-	    if (t!=null) {
-		CacheEquivSet ces = (CacheEquivSet) pre.get(t);
-		if (ces==null) ces = new CacheEquivSet(mem);
-		else ces.others.add(mem);
-		cache_equiv.put(mem, ces);
-		post.put(t, ces);
-	    } else { /* case 3 */
-		cache_equiv.put(mem, new CacheEquivSet(mem));
-	    }
-	}
-	if (recurse)
-	    for (Tree tp=e.getFirstChild(); tp!=null; tp=tp.getSibling())
-		add((Exp)tp, pre, post, recurse, td);
-    }
+    /* -------- cache equivalence pass ------- */
+    private class TagDominate {
+	final TreeDerivation td;
+	final Dataflow df;
+	final DomTree dt;
+	final TreeBuilder tb;
+	TagDominate(Code c, CFGrapher cfg, TreeDerivation td, Dataflow df) {
+	    this.td = td;
+	    this.df = df;
+	    this.tb = c.getFrame().getRuntime().treeBuilder;
+	    this.dt = new DomTree(c, cfg, false);
 
+	    final Environment e = new HashEnvironment();
+	    HCodeElement[] roots = dt.roots();
+	    for (int i=0; i<roots.length; i++)
+		traverseDT((Stm) roots[i], e);
+	}
+	/* analyze stms travelling down the dominator tree */
+	void traverseDT(Stm stm, Environment e) {
+	    /* save environment */
+	    Environment.Mark mark = e.getMark();
+	    /* do analysis */
+	    analyze(stm, e);
+	    /* recurse */
+	    HCodeElement[] child = dt.children(stm);
+	    for (int i=0; i<child.length; i++)
+		traverseDT((Stm)child[i], e);
+	    /* restore environment */
+	    e.undoToMark(mark);
+	    /* done! */
+	    return;
+	}
+	/* analyze one statement in the environment defined by map m */
+	void analyze(Stm stm, Map pre) {
+	    Map post = new HashMap();
+	    /* first look for all *reads* */
+	    /* There is NO ORDER defined for any of these. */
+	    for (ExpList el=stm.kids(); el!=null; el=el.tail) {
+		add(stm, el.head, pre, post, true);
+	    }
+	    /* now all post mappings get added to pre */
+	    pre.putAll(post); post.clear();
+	    /* now look for writes (which must happen after reads) */
+	    if (stm.kind()==TreeKind.MOVE)
+		add(stm, ((MOVE)stm).getDst(), pre, post, false);
+	    pre.putAll(post); post.clear();
+	}
+	void add(Stm root, Exp e, Map pre, Map post, boolean recurse) {
+	    if (e.kind()==TreeKind.MEM) {
+		MEM mem = (MEM) e;  Exp memexp = mem.getExp();
+		Dataflow.Value v = df.valueOf(memexp, root);
+		// cases:
+		//  1) known base & known offset.
+		//  2) known base & unknown offset, but object is smaller
+		//     than cache line size.
+		//  3) all others.
+		Dataflow.DefPoint dp = null; int offset=0;
+		if (v.isBaseKnown()) {
+		    if (v.isOffsetKnown()) {
+			Dataflow.KnownOffset ko = (Dataflow.KnownOffset) v;
+			dp = ko.def; offset = offset; // case 1
+		    } else {
+			Dataflow.UnknownOffset uo = (Dataflow.UnknownOffset) v;
+			if (objSize(uo.def.type()) <= CACHE_LINE_SIZE) {
+			    dp = uo.def; offset = 0; // case 2;
+			}
+		    }
+		}
+		if (dp!=null) { // cases 1 and 2
+		    int line = offset / CACHE_LINE_SIZE;
+		    List pair = Default.pair(dp, new Integer(line));
+		    CacheEquivSet ces = (CacheEquivSet) pre.get(pair);
+		    if (ces==null) ces = new CacheEquivSet(mem);
+		    else ces.others.add(mem);
+		    cache_equiv.put(mem, ces);
+		    post.put(pair, ces);
+		} else { // case 3
+		    cache_equiv.put(mem, new CacheEquivSet(mem));
+		}
+	    }
+	    if (recurse)
+		for (Tree tp=e.getFirstChild(); tp!=null; tp=tp.getSibling())
+		    add(root, (Exp)tp, pre, post, recurse);
+	}
+	int objSize(HClass hc) { return tb.headerSize(hc)+tb.objectSize(hc); }
+    }
 
     /*---------------- dataflow pass -------------------*/
     private static class Dataflow {
@@ -378,15 +402,16 @@ public class CacheEquivalence {
 	/*------------------------------------------------------------- */
 	/* both pointers in temps and pointer constants can be def points */
 	abstract class DefPoint {
-	    abstract boolean isWellTyped();
+	    abstract HClass type();
+	    final boolean isWellTyped() {
+		HClass hc=type();
+		return hc!=null && !hc.isPrimitive();
+	    }
 	}
 	class TempDefPoint extends DefPoint {
 	    final TEMP base; final Stm def;
 	    TempDefPoint(TEMP base, Stm def) { this.base=base; this.def=def; }
-	    boolean isWellTyped() {
-		HClass hc = td.typeMap(base);
-		return (hc!=null) && (!hc.isPrimitive());
-	    }
+	    HClass type() { return td.typeMap(base); }
 	    public boolean equals(Object o) {
 		return o instanceof TempDefPoint &&
 		    base.temp.equals(((TempDefPoint)o).base.temp) &&
@@ -404,10 +429,7 @@ public class CacheEquivalence {
 		return o instanceof NameDefPoint &&
 		    name.label.equals(((NameDefPoint)o).name.label);
 	    }
-	    boolean isWellTyped() {
-		HClass hc = td.typeMap(name);
-		return (hc!=null) && (!hc.isPrimitive());
-	    }
+	    HClass type() { return td.typeMap(name); }
 	    public int hashCode() { return name.label.hashCode(); }
 	    public String toString() { return name.label.toString(); }
 	}
