@@ -18,6 +18,7 @@ import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,13 +31,13 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.6 1999-08-09 22:12:41 duncan Exp $
+ * @version $Id: Data.java,v 1.1.2.7 1999-08-10 18:56:22 duncan Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
 
-    private final EdgeInitializer  edgeInitializer;
-    private final HClass           cls;
+    private /*final*/ EdgeInitializer  edgeInitializer;
+    private /*final*/ HClass           cls;
     
     public Data(HClass cls, Frame frame) { 
 	super(cls.getMethods()[0], null, frame);
@@ -48,12 +49,13 @@ public class Data extends Code implements HData {
 	//                                                           //
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-	ArrayList  up     = new ArrayList();  // class data above the cls ptr
-	ArrayList  down   = new ArrayList();  // class data below the cls ptr
-	List       iList  = new ArrayList();  // list of class's interfaces
-	LinkedList sfList = new LinkedList(); // list of class's static fields
-	List       rList  = new ArrayList();  // tables for reflection
-	OffsetMap  offm   = frame.getOffsetMap();
+	ArrayList up     = new ArrayList(); // class data above the cls ptr
+	ArrayList down   = new ArrayList(); // class data below the cls ptr
+	List      iList  = new ArrayList(); // interface list
+	List      soList = new ArrayList(); // static objects
+	List      spList = new ArrayList(); // static primitives
+	List      rList  = new ArrayList(); // tables for reflection
+	OffsetMap offm   = frame.getOffsetMap();
 
 	// Add interface list pointer
 	Label iListPtr = new Label();
@@ -98,45 +100,41 @@ public class Data extends Code implements HData {
 		    _DATA(offm.label(methods[i])),up,down);
 	}
 
-	sfList.addLast(new SEGMENT(tf, null, SEGMENT.STATIC_PRIMITIVES));
+	// Reverse the upward list
+	Collections.reverse(up);
+
 	HField[]  fields  = cls.getDeclaredFields();
 	for (int i=0; i<fields.length; i++) { 
 	    HField field = fields[i];
 	    if (field.isStatic()) { 
 		if (field.getType().isPrimitive()) {
-		    sfList.addLast(_DATA(offm.label(field)));
-		    sfList.addLast(_DATA(new CONST(tf, null, 0)));
+		    spList.add(new LABEL(tf, null, offm.label(field)));
+		    spList.add(_DATA(new CONST(tf, null, 0)));
 		}
 		else { 
-		    sfList.addFirst(_DATA(new CONST(tf, null, 0)));
-		    sfList.addFirst(_DATA(offm.label(field)));
+		    soList.add(new LABEL(tf, null, offm.label(field)));
+		    soList.add(_DATA(new CONST(tf, null, 0)));
 		}
 	    }
 	}
-	
-	// Reverse the upward list
-	Collections.reverse(up);
+
+	// Assign segment types:
+	iList .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
+	up    .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
+	soList.add(0, new SEGMENT(tf, null, SEGMENT.STATIC_OBJECTS));
+	spList.add(0, new SEGMENT(tf, null, SEGMENT.STATIC_PRIMITIVES));
 
 	// At last, assign the root element
-	this.tree = new SEQ
-	    (tf, null,
-	     new SEGMENT(tf, null, SEGMENT.CLASS), 
-	     new SEQ
-	     (tf, null,
-	      Stm.toStm(up),
-	      new SEQ
-	      (tf, null, 
-	       Stm.toStm(down),
-	       new SEQ
-	       (tf, null, 
-		new SEGMENT(tf, null, SEGMENT.STATIC_OBJECTS),
-		new SEQ
-		(tf, null, 
-		 Stm.toStm(sfList),
-		 new SEQ
-		 (tf, null, 
-		  new SEGMENT(tf, null, SEGMENT.CLASS), 
-		  Stm.toStm(iList)))))));
+	this.tree = 
+	    Stm.toStm
+	    (Arrays.asList
+	     (new Stm[] { 
+		 Stm.toStm(up),
+		 Stm.toStm(down),
+		 Stm.toStm(spList),
+		 Stm.toStm(soList),
+		 Stm.toStm(iList)
+	     }));
 	     
 	// Compute the edges of this HData
 	(this.edgeInitializer = new EdgeInitializer()).computeEdges();
