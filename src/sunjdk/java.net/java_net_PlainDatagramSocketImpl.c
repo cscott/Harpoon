@@ -92,14 +92,6 @@ static int initializePDSI(JNIEnv *env) {
     return inited;
 }
 
-/* Not used.
-static void throwSE(JNIEnv *env, const char * msg) {
-    jclass exc = (*env)->FindClass(env, "java/net/SocketException");
-    if (!(*env)->ExceptionOccurred(env))
-	(*env)->ThrowNew(env, exc, msg);
-}
-*/
-
 /*
  * Class:     java_net_PlainDatagramSocketImpl
  * Method:    init
