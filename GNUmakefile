@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.12 1998-12-21 04:41:08 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.13 1999-02-07 10:51:21 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -68,8 +68,17 @@ properties:
 
 first:
 	@echo Please wait...
-	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
-	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
+	-${JCC} ${JFLAGS} Util/Util.java Util/ArrayFactory.java \
+		Util/UniqueVector.java Util/ArrayEnumerator.java \
+		Util/Set.java Util/Worklist.java \
+		Temp/Temp*.java
+	-${JCC} ${JFLAGS} IR/RawClass/*.java
+	-${JCC} ${JFLAGS} IR/Bytecode/*.java ClassFile/*.java \
+		IR/Properties/Edges.java
+	-${JCC} ${JFLAGS} IR/Quads/*.java IR/Properties/*.java \
+		2> /dev/null # not perfect, but it does the base quads well.
+	#-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
+
 Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
 	${JAR} c0f Harpoon.jar COPYING VERSIONS gnu/getopt/*.properties \
 		$(foreach pkg,$(JARPKGS),$(pkg)/*.class)
