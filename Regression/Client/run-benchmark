@@ -8,6 +8,8 @@ GOT_ERRORS=0   # No errors up to now
 COMMAND_LINE_PARAMETERS=   # Keeps the command-line parameters for this benchmark
 
 COMPILE_STATS=yes
+LONG_COMPILE_STATS=no
+LONG_RUN_STATS=no
 RUN_STATS=yes
 ERRORS=yes
 
@@ -21,10 +23,18 @@ while [ "$1" != "" ]; do   # parsing the command-line parameters
 	    COMPILE_STATS=yes;;   # Generate compiling statistics; Default option
 	-compile-stats=no)
 	    COMPILE_STATS=no;;   # Do not generate compiling statistics
+	-long-compile-stats=yes)
+	    LONG_COMPILE_STATS=yes;;   # Generate long compiling-time reports
+	-long-compile-stats=no)
+	    LONG_COMPILE_STATS=no;;   # Generate short compiling-time reports; Default option
 	-run-stats=yes)
 	    RUN_STATS=yes;;   # Generate runtime statistics; Default option
 	-run-stats=no)
 	    RUN_STATS=no;;   # Do not generate runtime statistics
+	-long-run-stats=yes)
+	    LONG_RUN_STATS=yes;;   # Generate long runtime reports
+	-long-run-stats=no)
+	    LONG_RUN_STATS=no;;   # Generate short runtime reports; Default option
 	-errors=yes)
 	    ERRORS=yes;;   # Report errors; Default option
 	-errors=no)
@@ -90,7 +100,11 @@ else
 		    echo -e "Compiling report for benchmark $BENCHMARK." >> $ERROR_FILE
 		    echo >> $ERROR_FILE
 		    if [ -x $MAIN_TESTING_DIR/generate-report ]; then   # does the script ./generate-report exist?
-			$MAIN_TESTING_DIR/generate-report $BENCHMARK -compile -short
+			if [ "$LONG_COMPILE_STATS" == "yes" ]; then   # we want a long report
+			    $MAIN_TESTING_DIR/generate-report $BENCHMARK -compile -long
+			else   # we want a short report
+			    $MAIN_TESTING_DIR/generate-report $BENCHMARK -compile -short
+			fi
 		    else
 			if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 			    echo -e "Could not generate compiling statistics, because the script ./generate-report in directory \$MAIN_TESTING_DIR is missing." >> $ERROR_FILE
@@ -112,7 +126,11 @@ else
 			echo -e "Runtime report for benchmark $BENCHMARK." >> $ERROR_FILE
 			echo >> $ERROR_FILE
 			if [ -x $MAIN_TESTING_DIR/generate-report ]; then   # does the script ./generate-report exist?
-			    $MAIN_TESTING_DIR/generate-report $BENCHMARK -run -short
+			    if [ "$LONG_RUN_STATS" == "yes" ]; then   # we want a long report
+				$MAIN_TESTING_DIR/generate-report $BENCHMARK -run -long
+			    else   # we want a short report
+				$MAIN_TESTING_DIR/generate-report $BENCHMARK -run -short
+			    fi
 			else
 			    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 				echo -e "Could not generate runtime statistics, because the script ./generate-report in directory \$MAIN_TESTING_DIR is missing." >> $ERROR_FILE

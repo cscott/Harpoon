@@ -8,28 +8,35 @@
 
 # Prints the available options for the script
 function printOptions() {
-    echo "Usage: ./run-tasks [option=value]"
+    echo "Usage: ./run-tasks [options]"
     echo
     echo "Values: "
     echo -e "Either \"yes\" or \"no\"."
     echo
     echo "Options: "
-    echo -e "  -all-tasks     -- if set to yes, runs all tasks in \"tasks-all\","
-    echo -e "                    if set to no, runs all tasks in \"tasks-selected\"."
-    echo -e "  -all-machines  -- if set to yes, runs the task set on all machines in \"machines-all\","
-    echo -e "                    if set to no, runs the task set only on machines included in \"machines-selected\"."
-    echo -e "  -compile-stats -- if set to yes, generates compiling statistics,"
-    echo -e "                    if set to no, does not generate compiling statistics."
-    echo -e "  -run-stats     -- if set to yes, generates runtime statistics,"
-    echo -e "                    if set to no, does not generate runtime statistics."
-    echo -e "  -errors        -- if set to yes, print all errors to a file,"
-    echo -e "                    if set to no, does not print any error."
-    echo -e "  -diffs         -- if set to yes, diffs the current versions of benchmarks with the previous ones,"
-    echo -e "                    if set to no, no diffs are generated."
-    echo -e "  -mail-results  -- if set to yes, mails results to people,"
-    echo -e "                    if set to no, does not mail anything to anyone."
-    echo -e "  -mail-to-all   -- if set to yes, mails results to all people in \"mail-all\","
-    echo -e "                    if set to no, mails results only to people included in \"mail-selected\"."
+    echo -e "  -all-tasks=[yes|no]          -- if set to yes, runs all tasks in \"tasks-all\","
+    echo -e "                                  if set to no, runs all tasks in \"tasks-selected\"."
+    echo -e "  -tasks-file=<file>           -- explicitly specifies the name of the file containing the tasks set."
+    echo -e "  -all-machines=[yes|no]       -- if set to yes, runs the task set on all machines in \"machines-all\","
+    echo -e "                                  if set to no, runs the task set only on machines included in \"machines-selected\"."
+    echo -e "  -machines-file=<file>        -- explicitly specifies the name of the file containing the machines set."
+    echo -e "  -compile-stats=[yes|no]      -- if set to yes, generates compiling statistics,"
+    echo -e "                                  if set to no, does not generate compiling statistics."
+    echo -e "  -long-compile-stats=[yes|no] -- if set to yes, generate a long compiling time report (in case of an error),"
+    echo -e "                                  if set to no, generate a short compiling time report (in case of an error)."
+    echo -e "  -run-stats=[yes|no]          -- if set to yes, generates runtime statistics,"
+    echo -e "                                  if set to no, does not generate runtime statistics."
+    echo -e "  -long-runtime-stats=[yes|no] -- if set to yes, generate a long runtime report (inca se of an error),"
+    echo -e "                                  if set to no, generate a short runtime report (in case of an error)."
+    echo -e "  -errors=[yes|no]             -- if set to yes, print all errors to a file,"
+    echo -e "                                  if set to no, does not print any error."
+    echo -e "  -diffs=[yes|no]              -- if set to yes, diffs the current versions of benchmarks with the previous ones,"
+    echo -e "                                  if set to no, no diffs are generated."
+    echo -e "  -mail-results=[yes|no]       -- if set to yes, mails results to people,"
+    echo -e "                                  if set to no, does not mail anything to anyone."
+    echo -e "  -mail-to-all=[yes|no]        -- if set to yes, mails results to all people in \"mail-all\","
+    echo -e "                                  if set to no, mails results only to people included in \"mail-selected\"."
+    echo -e "  -mailto-file=<file>          -- explicitly specifies the name of the file containing the list of people to be mailed."
 }
 
 # Beggining of script
@@ -68,7 +75,9 @@ else
     USE_ALL_MACHINES=yes
     MACHINES_FILE=machines-all
     COMPILE_STATS=yes
+    LONG_COMPILE_STATS=no
     RUN_STATS=yes
+    LONG_RUN_STATS=no
     ERRORS=yes
     DIFFS=yes
     MAIL_RESULTS=yes
@@ -85,20 +94,32 @@ else
 	    -all-tasks=no)
 		RUN_ALL_TASKS=no    # Run only tasks included in "tasks-selected"
 		TASKS_FILE=tasks-selected;;
+	    -tasks-file=*)
+		TASKS_FILE=`echo $1 | sed s/^.*=//`;;   # Explicitly sets the file containing the tasks to be run
 	    -all-machines=yes)
 		USE_ALL_MACHINES=yes   # Distribute tasks to all machines included in "machines-all"; Default option
 		MACHINES_FILE=machines-all;;
 	    -all-machines=no)
 		USE_ALL_MACHINES=no   # Distribute tasks only to machines included in "machines-selected"
 		MACHINES_FILE=machines-selected;;
+	    -machines-file=*)
+		MACHINES_FILE=`echo $1 | sed s/^.*=//`;;   # Explicitly sets the file containing the machines to be used
 	    -compile-stats=yes)
 		COMPILE_STATS=yes;;   # Generate compiling statistics; Default option
 	    -compile-stats=no)
 		COMPILE_STATS=no;;   # Do not generate compiling statistics
+	    -long-compile-stats=yes)
+		LONG_COMPILE_STATS=yes;;   # Generate long compiling reports
+	    -long-compile-stats=no)
+		LONG_COMPILE_STATS=no;;   # Generate short compiling reports; Default option
 	    -run-stats=yes)
 		RUN_STATS=yes;;   # Generate runtime statistics; Default option
 	    -run-stats=no)
 		RUN_STATS=no;;   # Do not generate runtime statistics
+	    -long-run-stats=yes)
+		LONG_RUN_STATS=yes;;   # Generate long runtime reports
+	    -long-run-stats=no)
+		LONG_RUN_STATS=no;;   # Generate short runtime reports; Default option
 	    -errors=yes)
 		ERRORS=yes;;   # Report errors; Default option
 	    -errors=no)
@@ -117,8 +138,10 @@ else
 	    -mail-to-all=no)
 		MAIL_TO_ALL=no   # Mail results only to people included in "mail-selected"
 		MAILING_FILE=mailto-selected;;
+	    -mailto-file=*)
+		MAILING_FILE=`echo $1 | sed s/^.*=//`;;   # Explicitly sets the file containing the list of people to be mailed.
 	    -debug)
-		DEBUG=yes;;   # Print some intermediate results on the screen
+		DEBUG=yes;;   # Print some intermediate results on the screen; not printed out by ./run-tasks --help
 	    *)
 		echo >> $ERROR_FILE
 		echo -e "Warning: Parameter $1 not supported. Maybe you just misspelled it." >> $ERROR_FILE
@@ -324,7 +347,7 @@ else
 		fi
 		for machine in $WORKING_MACHINES_LIST; do
 		    if [ "`ssh $machine 'if [ -e $RUNNING_TASK_FILE ]; then cat $RUNNING_TASK_FILE; else echo 0; fi'`" != "1" ]; then   # this machine is not running anything, so the current task can be run on it
-			ssh -f $machine "cd \$MAIN_TESTING_DIR; ./run-benchmark $task -compile-stats=$COMPILE_STATS -run-stats=$RUN_STATS -errors=$ERRORS"   # running the task in background
+			ssh -f $machine "cd \$MAIN_TESTING_DIR; ./run-benchmark $task -compile-stats=$COMPILE_STATS -long-compile-stats=$LONG_COMPILE_STATS -long-run-stats=$LONG_RUN_STATS -run-stats=$RUN_STATS -errors=$ERRORS"   # running the task in background
 			sleep 5   # waiting 5 seconds for the remote machine to set up it's parameters
 			
 			MACHINE_ALREADY_USED=0   # this machine was not used before
