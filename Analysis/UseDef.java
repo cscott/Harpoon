@@ -16,7 +16,7 @@ import java.util.Enumeration;
  * the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.2 1998-09-10 19:48:41 cananian Exp $
+ * @version $Id: UseDef.java,v 1.3 1998-09-10 22:45:18 cananian Exp $
  */
 
 public class UseDef  {
@@ -89,11 +89,13 @@ public class UseDef  {
     /** Return an array of Quads where a given Temp is used. */
     public Quad[] useSites(HMethod m, Temp t) {
 	analyze(m);
-	return (Quad[]) useMap.get(t);
+	Quad[] r = (Quad[]) useMap.get(t);
+	if (r==null) return new Quad[0];
+	else return (Quad[]) Util.copy(r);
     }
     /** Return an array of all Temps defined in a given method. */
     public Temp[] allDefs(HMethod m) {
 	analyze(m);
-	return (Temp[]) analyzed.get(m);
+	return (Temp[]) Util.copy((Temp[])analyzed.get(m));
     }
 }
