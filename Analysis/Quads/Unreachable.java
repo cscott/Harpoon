@@ -3,9 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
+import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.PHI;
@@ -25,7 +25,7 @@ import java.util.Stack;
  * <b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Unreachable.java,v 1.1.2.1 1999-11-04 07:37:03 cananian Exp $
+ * @version $Id: Unreachable.java,v 1.1.2.2 2000-10-11 14:28:19 cananian Exp $
  */
 public abstract class Unreachable  {
 
@@ -36,10 +36,11 @@ public abstract class Unreachable  {
     }
 
     /** Class to do reachability analysis. */
-    static private class ReachabilityVisitor extends QuadVisitor {
+    static private class ReachabilityVisitor extends LowQuadVisitor {
 	final Set reachable = new HashSet();
 	WorkSet todo = new WorkSet();
 	ReachabilityVisitor(HEADER h) {
+	    super(false); /* not strict low quad */
 	    todo.add(h);
 	    while (!todo.isEmpty())
 		((Quad)todo.pop()).accept(this);
@@ -58,9 +59,12 @@ public abstract class Unreachable  {
     }
 
     /** Class to do the pruning of unreachable edges. */
-    static private class PruningVisitor extends QuadVisitor {
+    static private class PruningVisitor extends LowQuadVisitor {
 	final Set reachable;
-	PruningVisitor(Set reachable) { this.reachable = reachable; }
+	PruningVisitor(Set reachable) {
+	    super(false); /* not strict low quad */
+	    this.reachable = reachable;
+	}
 	void prune() {
 	    // dump the original live elements into a list.
 	    List l = new ArrayList(reachable);
