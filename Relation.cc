@@ -37,7 +37,7 @@ WorkRelation::WorkRelation() {
 WorkRelation::WorkRelation(bool flag) {
   forward=genallocatehashtable(NULL,NULL);
   inverse=genallocatehashtable(NULL,NULL);
-  flag=true;
+  this->flag=true;
 }
 
 Tuple WorkRelation::firstelement() {

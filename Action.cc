@@ -323,7 +323,11 @@ bool Action::testforconflictremove(char *setv, char *seta, char *rel, Constraint
 bool Action::testforconflict(char *setv, char *seta, char *rel, Constraint *c, CoercePredicate *p) {
   /* check for conflict with valueexpr*/
   if (p->isrule()&&
-      p->getpredicate()->gettype()==PREDICATE_SET &&
+      (p->getpredicate()->gettype()==PREDICATE_LT ||
+       p->getpredicate()->gettype()==PREDICATE_LTE ||
+       p->getpredicate()->gettype()==PREDICATE_EQUALS ||
+       p->getpredicate()->gettype()==PREDICATE_GTE ||
+       p->getpredicate()->gettype()==PREDICATE_GT) &&
       possiblysameset(setv,p->getpredicate()->getvalueexpr()->getlabel()->label(),c) &&
       equivalentstrings(rel,p->getpredicate()->getvalueexpr()->getrelation()->getname()))
     return true;
