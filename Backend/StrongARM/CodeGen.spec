@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.132 2000-02-17 00:02:09 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.133 2000-02-17 22:41:54 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -162,7 +162,7 @@ import java.util.Iterator;
     /** Single dest Single source emit InstrMOVE helper */
     private Instr emitMOVE( HCodeElement root, String assem,
 			   Temp dst, Temp src) {
-	return emit(new InstrMOVE( instrFactory, root, assem,
+	return emit(new InstrMOVE( instrFactory, root, assem+" @move",
 			    new Temp[]{ dst },
 			    new Temp[]{ src }));
     }			         
