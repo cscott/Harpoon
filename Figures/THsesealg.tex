@@ -4,7 +4,7 @@ Procedure nested_sese (G: CFG)
 {
   /* initialize */
   for all nodes n of G, do
-    mark(n) := false
+    Mark(n) := false
   for all edges e of G, do {
     EntryRegion(e) := nil
     ExitRegion(e) := nil
@@ -18,8 +18,8 @@ Procedure nested_sese (G: CFG)
   for all equivalency classes q, do {
     l := CQList(q)
     while ( size (l) > 1), do {
-      EntryRegion(head(l))      := < head(l), head(tail(l)) >
-      ExitRegion(head(tail(l))) := < head(l), head(tail(l)) >
+      r := NewRegion( head(l), head(tail(l)) )
+      EntryRegion(Entry(r)) := ExitRegion(Exit(r)) := r
     }
   }
 
@@ -28,8 +28,8 @@ Procedure nested_sese (G: CFG)
 }
 
 Procedure visit_node(n:node, r:Region) {
-  if mark(n) = false, then {
-    mark(n) := true
+  if Mark(n) = false, then {
+    Mark(n) := true
 
     /* record mapping from n to r */
     SESE(n) := r

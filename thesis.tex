@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.24 1999-06-11 19:14:29 cananian Exp $
+% $Id: thesis.tex,v 1.25 1999-06-11 19:41:48 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.24 $ $}
+\date{\today \\ $ $Revision: 1.25 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.24 $ $}{$ $Revision: 1.24 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.25 $ $}{$ $Revision: 1.25 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -388,7 +388,7 @@ both node and edge equivalencies (in effect, merging the algorithm of
 \cite{johnson93:sese} are indicated in the figure with a vertical bar
 in the left margin.  The datatype \texttt{BracketList} and the node
 and edge properties used in the algorithm are described in figure
-\ref{fig:CQtypes}.  The interested reader is encouraged to consult
+\ref{fig:CQdata}.  The interested reader is encouraged to consult
 \cite{johnson93:sese} for additional detail on these data structures
 and representations.%
 \fixme{Um, change to compute \emph{edge}
@@ -399,8 +399,8 @@ control-flow graph.
 
 \begin{myfigure}\small
 \input{Figures/THcqdata}
-\caption{Datatypes and operation's used in the cycle-equivalency algorithm.}
-\label{fig:CQtypes}
+\caption{Datatypes and operations used in the cycle-equivalency algorithm.}
+\label{fig:CQdata}
 \end{myfigure}
 
 \begin{myfigure}\small\linespread{0.75}
@@ -411,6 +411,12 @@ control-flow graph.
 \end{myfigure}
 
 \subsubsection{Single-Entry Single-Exit Regions}
+
+\begin{myfigure}\small
+\input{Figures/THsesedata}
+\caption{Datatypes and operations used in the nested SESE algorithm.}
+\label{fig:SESEdata}
+\end{myfigure}
 
 \begin{myfigure}\small\linespread{0.75}
 \input{Figures/THsesealg}

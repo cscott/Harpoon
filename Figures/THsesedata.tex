@@ -1,0 +1,45 @@
+% data types for cycle-equivalency algorithm.
+Data type \texttt{EdgeList}:
+\begin{tightdesc}
+\item[size(el:EdgeList):~integer]
+:	Number of elements in EdgeList structure
+\item[head(el:EdgeList):~edge]
+:	First edge in \textbf{el}
+\item[tail(el:EdgeList):~EdgeList]
+:	EdgeList like \textbf{el} but missing first element
+\item[append(el:BracketList, e:edge):~EdgeList]
+:	Add \textbf{e} to the end of \textbf{el}
+\end{tightdesc}
+
+Data type \texttt{Region}:
+\begin{tightdesc}
+\item[NewRegion(e1:edge, e2:edge):~Region]
+:	Creates a new region with entry \textbf{e1} and exit \textbf{e2}
+        and no parent
+\item[Entry(r:Region):~Edge]
+:	The entry edge of \textbf{r}
+\item[Exit(r:Region):~Edge]
+:	The exit edge of \textbf{r}
+\item[Parent(r:Region):~Region]
+:	The parent of \textbf{r}, or \texttt{nil} if none
+\item[Nodes(r:Region):~NodeList]
+:	A list of nodes in \textbf{r}
+\item[LinkRegion(r1,r2:Region):~void]
+:	Sets the parent of \textbf{r2} to be \textbf{r1}
+\end{tightdesc}
+
+Operations on nodes:
+\begin{tightdesc}
+\item[Mark(n:node):~boolean]
+:	Visited status during DFS
+\item[SESE(n:node):~Region]
+:	The canonical SESE of \textbf{n}
+\end{tightdesc}
+
+Operations on edges:
+\begin{tightdesc}
+\item[EntryRegion(e:edge):~Region]
+:	the region with entry \textbf{e}, or \texttt{nil} if none exists
+\item[ExitRegion(e:edge):~Region]
+:	the region with exit \textbf{e}, or \texttt{nil} if none exists
+\end{tightdesc}
