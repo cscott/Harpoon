@@ -10,6 +10,8 @@ import harpoon.Analysis.Maps.Derivation;
 import harpoon.Backend.Maps.BackendDerivation;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.DataFlow.LiveTemps;
+import harpoon.Analysis.ReachingDefs;
+import harpoon.Analysis.ReachingDefsImpl;
 import harpoon.Analysis.Instr.TempInstrPair;
 import harpoon.Analysis.Instr.RegAlloc.SpillLoad;
 import harpoon.Analysis.Instr.RegAlloc.SpillStore;
@@ -64,7 +66,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.95 2000-07-11 22:50:02 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.96 2000-07-12 21:32:59 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -87,12 +89,29 @@ public class LocalCffRegAlloc extends RegAlloc {
     // to Derivation information.
     private Map backedInstrs;
 
+    // Used for supporting Derivation information
+    private ReachingDefs reachingDefs;
+
+    // maps Temp:t -> Instr:i where `i' is removed and defined `t'
+    private Map tempToRemovedInstrs = new HashMap();
+
     /** Creates a <code>LocalCffRegAlloc</code>. */
     public LocalCffRegAlloc(Code code) {
         super(code);
 	allRegisters = frame.getRegFileInfo().getAllRegistersC();
 	coalescedTemps = new HTempMap();
 	backedInstrs = new HashMap();
+	reachingDefs = new ReachingDefsImpl(code);
+    }
+
+    private Instr definition(Instr i, Temp t) {
+	if (i.defC().contains(t)) 
+	    return i;
+	else {
+	    Set defset = reachingDefs.reachingDefs(i, t);
+	    Iterator defs = defset.iterator();
+	    return (Instr) defs.next();
+	}
     }
     
     protected Derivation getDerivation() {
@@ -102,18 +121,21 @@ public class LocalCffRegAlloc extends RegAlloc {
 		return (backedInstrs.containsKey(h)) ?
 		    (HCodeElement) backedInstrs.get(h) : h;
 	    }
+	    private Temp orig(Temp t) {
+		return coalescedTemps.tempMap(t);
+	    }
 	    public HClass typeMap(HCodeElement hce, Temp t) {
-		hce = orig(hce); t = coalescedTemps.tempMap(t);
+		hce = orig(hce); t = orig(t);
 		return oldD.typeMap(hce, t);
 	    }
 	    public Derivation.DList derivation(HCodeElement hce, Temp t) {
-		hce = orig(hce); t = coalescedTemps.tempMap(t);
+		hce = orig(hce); t = orig(t);
 		return Derivation.DList.rename
 		    (oldD.derivation(hce, t), coalescedTemps);
 	    }
 	    public BackendDerivation.Register
 		calleeSaveRegister(HCodeElement hce, Temp t) { 
-		hce = orig(hce); t = coalescedTemps.tempMap(t);
+		hce = orig(hce); t = orig(t);
 		return ((BackendDerivation)oldD).calleeSaveRegister(hce, t);
 	    }
 	};
@@ -765,8 +787,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 		    code.assignRegister(i, t, regList);
 
-		    regfile.assign(t, regList, i);
-		    
+		    regfile.assign(t, regList, definition(i,t));
+			
 		    
 		    // remove preassignments
 		    Iterator preassignIter = preassigns.iterator();
@@ -852,6 +874,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	    
 	    public void visit(final InstrMOVE i) {
+		if (!COALESCE_MOVES) {
+		    super.visit(i);
+		    return;
+		}
+
 		final Temp u = i.use()[0];
 		final Temp d = i.def()[0];
 		Map putBackLater = takeUsesOutOfEvictables(i);
@@ -935,17 +962,19 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    } else {
 			remove(i, choice);
 			coalescedTemps.put(d, coalescedTemps.get(u));
+			tempToRemovedInstrs.put(d, i);
 		    }
 
 		    Util.assert(!(isRegister(u) && isRegister(d)));
 		    
 		    if (isRegister(u)) {
-			regfile.assign(d, list(u), i);
+			regfile.assign(d, list(u), definition(i,d));
 			regfile.writeTo(d);
 		    } else if (isRegister(d)) {
 			if (regfile.getTemp(d) == null) {
 			    // FSK: can this actually EVER work???
-			    regfile.assign(u, list(d), i);
+			    regfile.assign
+				(u, list(d), definition(i,u));
 			} else {
 			    Util.assert(regfile.getTemp(d) == u);
 			}
@@ -1118,9 +1147,15 @@ public class LocalCffRegAlloc extends RegAlloc {
 				Temp tt = (Temp) remapped.next();
 				if (liveTemps.getLiveAfter(iloc).contains(tt)) {
 				    // System.out.println("spilling "+tt+" before "+iloc+", live after:"+liveTemps.getLiveAfter(iloc));
+				    Instr src;
+				    if(tempToRemovedInstrs.keySet().contains(tt)) { 
+					src=(Instr)tempToRemovedInstrs.get(tt);
+				    } else {
+					src=regfile.getSource(value);
+				    }
+
 				    spillValue(tt, iloc.getPrev(),
-					       regfile,
-					       regfile.getSource(value), 2);
+					       regfile, src, 2);
 				}
 				remappedTemps.remove(tt);
 			    }
