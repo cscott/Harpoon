@@ -1,4 +1,4 @@
-# $Revision: 1.41 $
+# $Revision: 1.42 $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -12,6 +12,8 @@ SCP=scp -A
 MUNGE=bin/munge
 UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
+INSTALLMACHINE=magic@lesser-magoo.lcs.mit.edu
+INSTALLDIR=public_html/Harpoon/
 
 ALLPKGS = $(shell find . -type d | grep -v CVS | \
 		egrep -v "^[.]/(harpoon|silicon|doc|NOTES|bin|jdb)" | \
@@ -47,7 +49,7 @@ Harpoon.jar:	java
 jar:	Harpoon.jar
 jar-install: only-me jar
 	chmod a+r Harpoon.jar
-	$(SCP) Harpoon.jar miris.lcs.mit.edu:public_html/Projects/Harpoon
+	$(SCP) Harpoon.jar $(INSTALLMACHINE):$(INSTALLDIR)
 
 cvs-add: needs-cvs
 	-for dir in $(filter-out Test,$(ALLPKGS)); do \
@@ -75,7 +77,7 @@ harpoon.tgz: $(TARSOURCE)
 tar:	harpoon.tgz
 tar-install: only-me tar
 	chmod a+r harpoon.tgz
-	$(SCP) harpoon.tgz miris.lcs.mit.edu:public_html/Projects/Harpoon
+	$(SCP) harpoon.tgz $(INSTALLMACHINE):$(INSTALLDIR)
 
 doc:	doc/TIMESTAMP
 
@@ -101,9 +103,9 @@ doc/TIMESTAMP:	$(ALLSOURCE)
 	chmod a+rx doc ; chmod a+r doc/*
 
 doc-install: only-me doc/TIMESTAMP
-	$(SSH) miris.lcs.mit.edu \
-		/bin/rm -rf public_html/Projects/Harpoon/doc
-	$(SCP) -r doc miris.lcs.mit.edu:public_html/Projects/Harpoon
+	$(SSH) $(INSTALLMACHINE) \
+		/bin/rm -rf $(INSTALLDIR)/doc
+	$(SCP) -r doc $(INSTALLMACHINE):$(INSTALLDIR)
 
 doc-clean:
 	-${RM} -r doc
