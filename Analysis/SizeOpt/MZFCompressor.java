@@ -48,7 +48,7 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.1.2.6 2001-11-13 21:36:02 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.1.2.7 2001-11-13 22:04:05 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
@@ -198,7 +198,7 @@ public class MZFCompressor {
 	newC.getMutator().setSuperclass(oldC.getSuperclass());
 	oldC.getMutator().setSuperclass(newC);
 	// move interfaces from oldC to newC.
-	for (Iterator it=Arrays.asList(newC.getInterfaces()).iterator();
+	for (Iterator it=Arrays.asList(oldC.getInterfaces()).iterator();
 	     it.hasNext(); )
 	    newC.getMutator().addInterface((HClass)it.next());
 	oldC.getMutator().removeAllInterfaces();
