@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.8 1999-05-08 00:18:34 cananian Exp $
+% $Id: thesis.tex,v 1.9 1999-05-27 08:03:57 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage,twoside]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -11,23 +11,96 @@
 % double-space
 \renewcommand{\baselinestretch}{1.2}
 
-\title{\magic: An Optimizing Java Compiler using SSI Form}
+\title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.8 $ $}
+\date{\today \\ $ $Revision: 1.9 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.8 $ $}{$ $Revision: 1.8 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.9 $ $}{$ $Revision: 1.9 $ $}
 \bibliographystyle{plain}
 
 \maketitle
 
 \section{Introduction}
-The choice of compiler internal representation is fundamental.
-Advances in IRs translate to advances in compilers.
-This paper represents another advance in IRs.
-\textbf{blah, blah, blah}.
+The selection of a compiler internal respresentation from the many
+littering the academic literature may at times seem a black art.  Each
+IR is accompanied by papers trumpeting its superiority for one purpose
+or another, and each IR feels compelled to introduce new terms and
+structures into the jargon.  A pragmatic compiler writer will often
+pick randomly from the plethora available, basing the decision on ease
+of implementation or understandibility without realizing the extent to
+which the IR influences the structure of the compiler.  Similarly, the
+theorist will derive proofs based upon intermediate representations
+(and languages) that are amenable to mathematical methods, without
+regard to current implementation practices.
+
+This paper, unfortunately, introduces yet another intermediate
+representation to the literature.  This IR is the core of the FLEX
+compiler project, which is investigating intelligent compilation
+techniques for distributed systems, among other things.  This thesis,
+in presenting this IR, attempts to keep both the mathematician and the
+programmer in mind.  The Static Single Information form which is
+presented has both a rigorous mathematical semantics and a factored
+form which aids efficient implementation of advanced analyses.
+I believe that it best straddles the gap between dataflow-oriented,
+graph structured, and control-flow driven IRs, while maintaining the
+sparsity needed to achieve practical efficiency.  The construction
+algorithms are linear in the size of the program.
+
+Our discussion of the Static Single Information form will be at times
+tied to the source language of the FLEX compiler, Java.  Unlike many
+abstract IRs, the choices made in the design of SSI form have been
+informed by the necessities of compiling a real-world imperative
+language.  Java, however, has several theoretical properties that make
+mathematical analysis of SSI form more tractable.  In particular, we
+will mention here Java's stricter constraints on pointer variables.
+Pointers in C can be abused in many ways that Java disallows.
+
+Ultimately, the choice of compiler internal representation is fundamental.
+Advances in IRs translate into advances in compilers.  SSI form
+represents a clean and simple unification of many extant ideas, and
+our hope is that it will allow the FLEX compiler to achieve a similar
+meshing of practical implementation and mathematical elegance.
 
 \section{Intermediate Representations}
+The first paper directly addressing the intermediate representation of
+a compiler was Foo and Bar in \cite{foobar}.  Recent work in this area
+was touched off by the introduction of Static Single Assignment (SSA)
+form by Shapiro and Saint in \cite{shapiro70:ssa}. Alpern, Rosen,
+Wegman and Zadeck revived SSA form in a pair of POPL
+papers \cite{alpern88:ssa,rosen88:gvn}, and three years later Cytron
+and Ferrante joined Rosen, Wegman, and Zadeck in explaining how to
+compute SSA form efficiently in what has since become the 
+``canonical'' SSA paper \cite{cytron89:ssa}.
+
+Despite industry adoption of SSA form in production compilers
+\cite{chow96:hssa,chow97:ssapre}, academic research continues.
+Recent proposals have included Value Dependence Graphs
+\cite{weise94:vdg}, Program Dependence Webs \cite{ballance90:pdw},
+the Program Structure Tree \cite{johnson94:pst},
+DJ graphs \cite{sreedhar96:dj}, and Depedence Flow Graphs
+\cite{johnson93:dfg}.
+
+In comparison to these techniques, the domaniant characteristics of
+our Static Single Information form may be summarized as follows:
+\begin{itemize}
+\item It is complete.  There exists an executable semantics
+for the IR that does not require the use of information external to
+the IR.
+\item It is simple.  The number of added constructs is kept to a
+minimum.  Many SSA-form variants spawn multitudes of new
+constructs; for example, Gated SSA form \cite{ballance90:pdw,tu95:gssa}
+has four different \phifunction{} variants ($\phi, \mu, \gamma, \eta$).
+\item It is compact and efficient.  Construction should be fast, and
+space should be reasonable.
+\item Unnecessary control dependencies are eliminated.  Many IRs
+require explicit control flow edges that serialize computation more
+than is strictly necessary.
+\end{itemize}
+
+foo bar.
+
+
 \section{Static Single Assignment Form}
 Static Single Assignment (SSA) form, introduced by Cytron in
 \cite{cytron89:ssa}%

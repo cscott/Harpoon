@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.39 1999-05-07 18:36:26 cananian Exp $
+% $Id: harpoon.bib,v 1.40 1999-05-27 08:03:56 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -9,6 +9,8 @@
                   Computer Aided Design ({ICCAD})"}
 @string{ICS98  = "ICS '98.  Conference proceedings of the 1998
                   international conference on Supercomputing"}
+@string{PLDI90 = "Proceedings of the {ACM} {SIGPLAN} '90 Conference on
+                  Programming Language Design and Implementation ({PLDI})"}
 @string{PLDI93 = "Proceedings of the {ACM} {SIGPLAN} '93 Conference on
                   Programming Language Design and Implementation ({PLDI})"}
 @string{PLDI94 = "Proceedings of the {ACM} {SIGPLAN} '94 Conference on
@@ -1032,7 +1034,6 @@
   url =		 {http://www.acm.org/pubs/citations/proceedings/plan/99583/p55-ferrante/}
 }
 
-
 @InProceedings{alpern88:ssa,
   author = 	 {B. Alpern and M. N. Wegman and F. K. Zadeck},
   title = 	 {Detecting equality of variables in programs},
@@ -1045,6 +1046,17 @@
   url =		 {http://www.acm.org/pubs/contents/proceedings/plan/73560/index.html}
 }
 
+@InProceedings{rosen88:gvn,
+  author = 	 {B. K. Rosen and M. N. Wegman and F. K. Zadeck},
+  title = 	 {Global value numbers and redundant computations},
+  booktitle = 	 POPL88,
+  pages =	 {12-27},
+  year =	 1988,
+  address =	 {San Diego, CA},
+  month =	 jan,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/plan/73560/p12-rosen/}
+}
+
 @TechReport{plotkin81:opsem,
   author = 	 {Gordon D. Plotkin},
   title = 	 {A structural approach to operational semantics},
@@ -1052,5 +1064,55 @@
   year = 	 1981,
   number =	 {DAIMI FN-19},
   annote =	 {Referenced in \cite{pingali90:dfg}}
+}
+
+@TechReport{shapiro70:ssa,
+  author = 	 {R. M. Shapiro and H. Saint},
+  title = 	 {The representation of algorithms},
+  institution =  {Massachusetts Computer Associates},
+  year = 	 1970,
+  number =	 {CA-7002-1432},
+  month =	 feb,
+  annote =	 {Referenced in \cite{johnson93:dfg} as the original SSA form
+                  paper}
+}
+
+@InProceedings{chow96:hssa,
+  author = 	 {F. Chow and S. Chan and S. Liu and R. Lo and M. Streich},
+  title = 	 {Effective representation of aliases and indirect
+                  memory operations in {SSA} form},
+  booktitle = 	 {Proceedings of the Sixth International Conference on
+                  Compiler Construction},
+  pages =	 {253-267},
+  year =	 1996,
+  month =	 apr,
+  annote =	 {Referenced in \cite{chow97:ssapre} for HSSA form;
+                  also documentation of SGI's use of SSA-variant in
+                  their production MIPSpro compiler (release 7.2).}
+}
+
+@InProceedings{ballance90:pdw,
+  author = 	 {Robert A. Ballance and Arthur B. Maccabe and Karl
+                  J. Ottenstein},
+  title = 	 {The {P}rogram {D}ependence {W}eb: A representation
+                  supporting control-, data-, and demand-driven
+                  interpretation of imperative languages},
+  booktitle = 	 PLDI90,
+  pages =	 {257-271},
+  year =	 1990,
+  address =	 {White Plains, NY},
+  month =	 jun,
+  annote =	 {PDW canonical reference.}
+}
+
+@InProceedings{tu95:gssa,
+  author = 	 {Peng Tu and David Padua},
+  title = 	 {Efficient building and placing of gating functions},
+  booktitle = 	 PLDI95,
+  pages =	 {47-55},
+  year =	 1995,
+  address =	 {La Jolla, CA},
+  month =	 jun,
+  annote =	 {Efficiently constructing GSSA form.}
 }
 
