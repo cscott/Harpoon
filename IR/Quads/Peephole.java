@@ -20,7 +20,7 @@ import java.util.Map;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.11 1999-09-20 19:32:14 bdemsky Exp $
+ * @version $Id: Peephole.java,v 1.1.2.12 1999-09-21 01:55:21 cananian Exp $
  */
 
 final class Peephole  {
@@ -113,8 +113,8 @@ final class Peephole  {
 				typemap.get(new Tuple(new Object[] {Qm, Qm.dst()})));
 
 		}
-		Quad.replace(q, q1);
-		Quad.replace(Qm, q2);
+		replace(q,  q1);
+	        replace(Qm, q2);
 		visited.union(q1); visited.union(q2);
 		todo.push(q2.next(0));
 		changed=true;
@@ -174,7 +174,7 @@ final class Peephole  {
 		TempMap tm = new OneToOneMap(q.dst(), q.src());
 		Quad newquad=Qnext.rename(Qnext.qf, null, tm);
 		fixmap(Qnext, newquad, tm);
-		Quad.replace(Qnext, newquad);
+		replace(Qnext, newquad);
 		// unlink MOVE
 		todo.push(unlink(q));
 		changed=true;
@@ -236,7 +236,7 @@ final class Peephole  {
 			Quad qq = (Quad)lstE.to();
 			Quad newquad=qq.rename(qq.qf, null, tm);
 			fixmap(qq,newquad,tm);
-			Quad.replace(qq, newquad);
+			replace(qq, newquad);
 			lstE=((Quad)lstE.from()).next(0).nextEdge(0);
 		    }
 		    todo.push(unlink(q));
@@ -252,7 +252,7 @@ final class Peephole  {
 			SIGMA Qs = (SIGMA) Qp.rename(Qp.qf, null, tm);
 			fixmap(Qp, Qs, tm);
 			todo.removeElement(Qp); // remove old SIGMA from todo
-			Quad.replace(Qp, Qs);
+			replace(Qp, Qs);
 			// we can just delete the MOVE if the CALL
 			// overwrites the destination.
 			if (Qp instanceof CALL &&
@@ -299,6 +299,12 @@ final class Peephole  {
 	    return false;
 	}
     }
+    // replace oldQ with newQ, updating handlers, too.
+    private static void replace(Quad oldQ, Quad newQ) {
+	Quad.replace(oldQ, newQ);
+	Quad.transferHandlers(oldQ, newQ);
+    }
+    // simple temp mapping.
     private static class OneToOneMap implements TempMap {
 	final Temp from;
 	final Temp to;

@@ -24,7 +24,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.26 1999-09-14 00:10:45 pnkfelix Exp $
+ * @version $Id: Quad.java,v 1.1.2.27 1999-09-21 01:55:22 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -222,23 +222,22 @@ public abstract class Quad
 	for (int i=0; i<oldQ.next.length; i++) {
 	    Edge e = oldQ.next[i];
 	    Quad to = (Quad) e.to();
-	    if (to == oldQ) {
-		to = newQ;
-	    }
+	    if (to == oldQ) to = newQ;// detect & fixup self-loops
 	    addEdge(newQ, i, to, e.which_pred());
-
 	    oldQ.next[i] = null;
 	}
 	for (int i=0; i<oldQ.prev.length; i++) {
 	    Edge e = oldQ.prev[i];
-	    Util.assert(e != null, "edge e should not equal null for quad: "+oldQ);
 	    Quad from = (Quad) e.from();
-	    if (from == oldQ) {
-		from = newQ;
-	    }
+	    if (from == oldQ) from = newQ;// detect & fixup self-loops
 	    addEdge(from, e.which_succ(), newQ, i);
 	    oldQ.prev[i] = null;
 	}
+    }
+    /** Update the handlers for newQ to match the handlers for oldQ,
+     *  removing handlers from oldQ in the process.
+     */
+    public static void transferHandlers(Quad oldQ, Quad newQ) {
 	// replace in HANDLERs.
 	for (HandlerSet hs=oldQ.handlers(); hs!=null; hs=hs.next) {
 	    hs.h.protectedSet.remove(oldQ);

@@ -27,7 +27,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.20 1999-09-19 16:17:34 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.21 1999-09-21 01:55:22 cananian Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -105,11 +105,11 @@ public class ToNoSSA implements Derivation, TypeMap
      * returning the new root <code>Quad</code>.  The <code>Map</code>
      * parameter is used to maintain derivation information.
      * 
-     * @parameter qf    the <code>QuadFactory</code> which will manufacture the
+     * @param qf    the <code>QuadFactory</code> which will manufacture the
      *                  translated <code>Quad</code>s.
-     * @parameter dT    a <code>Map</code> in which to place the updated
+     * @param dT    a <code>Map</code> in which to place the updated
      *                  derivation information.  
-     * @parameter code  the codeview containing the <code>Quad</code>s to 
+     * @param code  the codeview containing the <code>Quad</code>s to 
      *                  translate.
      */
     private Quad translate(QuadFactory qf, Derivation derivation, 
@@ -311,21 +311,14 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
     public void visit(LABEL q)
     {
 	LABEL label = new LABEL(m_qf, q, q.label(), new Temp[0], q.arity());
-	int numPhis = q.numPhis(), arity = q.arity();
 
+	int numPhis = q.numPhis(), arity = q.arity();
 	for (int i=0; i<numPhis; i++)
 	    for (int j=0; j<arity; j++)
 		pushBack(q, i, j);
       
-	//removePHIs(q, new LABEL(m_qf, q, q.label(), new Temp[] {}, q.arity()));
 	removeTuples(q);  // Updates derivation table
-
-	Quad []prev=q.prev();
-	Quad []next=q.next(); Util.assert(next.length==1);
-	for(int i=0;i<prev.length;i++) {
-	    Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),label,i);
-	}
-	Quad.addEdge(label,0,next[0],q.nextEdge(0).which_pred());
+	Quad.replace(q, label);
     }
       
     public void visit(PHI q)
@@ -337,32 +330,8 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 	    for (int j=0; j<arity; j++)
 		pushBack(q, i, j);
 
-	//removePHIs(q, new PHI(m_qf, q, new Temp[] {}, q.arity()));
 	removeTuples(q);  // Updates derivation table
-
-	Quad []prev=q.prev();
-	Quad []next=q.next(); Util.assert(next.length==1);
-	for(int i=0;i<prev.length;i++) {
-	    Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),phi,i);
-	}
-	Quad.addEdge(phi,0,next[0],q.nextEdge(0).which_pred());
-    }
-
-    private void removePHIs(PHI q, PHI q0)
-    {
-	Edge[] el;
-      
-	el = q.prevEdge();
-	for (int i=0; i<el.length; i++)
-	    Quad.addEdge(q.prev(i), q.prevEdge(i).which_succ(),
-			 q0, q.prevEdge(i).which_pred());
-      
-	el = q.nextEdge();
-	for (int i=0; i<el.length; i++) {
-	    Quad.addEdge(q0, q.nextEdge(i).which_pred(),
-			 q.next(i), q.nextEdge(i).which_succ());
-	}
-      
+	Quad.replace(q, phi);
     }
 
     private void removeTuples(Quad q)
@@ -380,14 +349,14 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 	}
     }
   
-
+    // insert MOVE on edge into PHI.
     private void pushBack(PHI q, int dstIndex, int srcIndex)
     {
-	Edge from = q.prevEdge(srcIndex);
+	Edge e    = q.prevEdge(srcIndex);
 	MOVE m    = new MOVE(m_qf, q, q.dst(dstIndex), 
 			     q.src(dstIndex, srcIndex));
-	Quad.addEdge(q.prev(srcIndex), from.which_succ(), m, 0);
-	Quad.addEdge(m, 0, q, from.which_pred());
+	Quad.addEdge((Quad)e.from(), e.which_succ(), m, 0);
+	Quad.addEdge(m, 0, (Quad)e.to(), e.which_pred());
 
 	// Type information does not change, *but* we need to update
 	// the derivation table
