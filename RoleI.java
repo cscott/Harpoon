@@ -12,6 +12,8 @@ class RoleI {
     Set diagram;
     HashMap containedmapping;
     Fields fields;
+    Methods methods;
+    
 
     static final Integer P_NEVER=new Integer(0);
     static final Integer P_ONCEEVER=new Integer(1);
@@ -42,6 +44,8 @@ class RoleI {
 	fields=new Fields(this);
 	fields.readfieldfile();
 	fields.buildfieldspage();
+	methods=new Methods(this);
+	methods.readentries();
     }
 
     void rebuildindex() {
@@ -211,6 +215,21 @@ class RoleI {
 		atomic.remove(methodname);
 		return buildmethodpage(file);
 	    }
+	case 'S': {
+
+
+	    int comma=file.indexOf(',');
+	    int secondcomma=file.indexOf(',',comma+1);
+	    Integer methodnumber=Integer.valueOf(file.substring(0,comma));
+	    String methodname=(String)classinfo.revmethods.get(methodnumber);
+	    String policy=file.substring(comma+1,secondcomma);
+	    methods.changestate(methodname, Integer.valueOf(policy));
+	    
+	    buildallmethodpage();
+	    return "/"+file.substring(secondcomma+1);
+	    
+	}
+
 	case 'L': {
 	    try {
 		Integer rolenum=Integer.valueOf(file);
@@ -242,6 +261,7 @@ class RoleI {
 		writeatomic();
 		writepolicy();
 		fields.writefieldfile();
+		methods.writeentries();
 		rerunanalysis();
 		return "/index.html";
 	    }
@@ -340,6 +360,7 @@ class RoleI {
 		ps.println("<a href=\"rm-M"+
 			   classinfo.methods.get(methodname)+
 			   "\">"+Transition.htmlreadable(methodname)+"</a> "+info+"<p>");
+		ps.println(methods.statestring(methodname, "allmethods.html"));
 	    }
 	    ps.close();
 	} catch (Exception e) {
@@ -365,6 +386,9 @@ class RoleI {
 	    else {
 		ps.println("NOT ATOMIC<p>");
 		ps.println("<a href=\"rm-A"+file+"\">Make Atomic</a><p>");
+	    }
+	    if (classinfo.staticmethods.contains(methodname)) {
+		System.out.println("STATIC<p>");
 	    }
 
 	    if (classinfo.callgraph.containsKey(methodname)) {

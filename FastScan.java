@@ -6,6 +6,7 @@ class FastScan {
     HashMap fields,revfields;
     HashMap methods,revmethods;
     HashMap callgraph;
+    Set staticmethods;
     public FastScan() {
 	classes=new HashMap();
 	fields=new HashMap();
@@ -14,6 +15,7 @@ class FastScan {
 	revfields=new HashMap();
 	revmethods=new HashMap();
 	callgraph=new HashMap();
+	staticmethods=new HashSet();
 	initialize();
     }
 
@@ -70,6 +72,9 @@ class FastScan {
 	    while(true) {
 		String str=nexttoken(fmethods);
 		if (str==null) break;
+		String isstatic=nexttoken(fmethods);
+		if (isstatic.equals("1"))
+		    staticmethods.add(str);
 		methods.put(str,new Integer(count));
 		revmethods.put(new Integer(count++),str);
 	    }

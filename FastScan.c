@@ -39,7 +39,7 @@ void getfile() {
     perror("roleinfer.mem open failure\n");
 }
 
-void outputinfo(struct namer* namer, struct genhashtable *calltable) {
+void outputinfo(struct namer* namer, struct genhashtable *calltable, struct genhashtable *statictable) {
     FILE *classfile=fopen("fs-class","w");
     FILE *methodfile=fopen("fs-method","w");
     FILE *fieldfile=fopen("fs-field","w");
@@ -59,7 +59,7 @@ void outputinfo(struct namer* namer, struct genhashtable *calltable) {
 	struct methodname *mn=gennext(it);
 	if (mn==NULL)
 	    break;
-	fprintf(methodfile, "%s.%s%s ", mn->classname->classname, mn->methodname, mn->signature);
+	fprintf(methodfile, "%s.%s%s %d ", mn->classname->classname, mn->methodname, mn->signature, *((int *) gengettable(statictable, mn)));
     }
     genfreeiterator(it);
 
@@ -140,6 +140,7 @@ void fastscan() {
     struct methodchain *methodstack=NULL;
     struct namer *namer=allocatenamer();
     struct genhashtable *calltable=genallocatehashtable((int (*)(void *)) &hashmethod, (int (*)(void *,void *)) &comparemethod);
+    struct genhashtable *statictable=genallocatehashtable((int (*)(void *)) &hashmethod, (int (*)(void *,void *)) &comparemethod);
 
     while(1) {
     char *line=getline();
@@ -149,7 +150,7 @@ void fastscan() {
 #endif
 
     if (line==0) {
-	outputinfo(namer, calltable);
+	outputinfo(namer, calltable,statictable);
 	return;
     }
 #ifdef DEBUG
@@ -203,9 +204,16 @@ void fastscan() {
       {
 	struct methodchain* methodchain=(struct methodchain *) calloc(1,sizeof(struct methodchain));
 	char classname[600], methodname[600],signature[600];
-	sscanf(line,"IM: %s %s %s", classname, methodname, signature);
+	int isStatic;
+	sscanf(line,"IM: %s %s %s %d", classname, methodname, signature, &isStatic);
 	methodchain->method=getmethod(namer, classname, methodname, signature);
 	methodchain->caller=methodstack;
+	if (!gencontains(statictable, methodchain->method)) {
+	    int * staticflag=(int *)malloc(sizeof (int));
+	    *staticflag=isStatic;
+	    genputtable(statictable, methodchain->method, staticflag);
+	}
+
 	if (methodstack!=NULL) {
 	  if (!gencontains(calltable, methodchain->method)) {
 	    struct methodchain *mc=(struct methodchain *) calloc(1,sizeof(struct methodchain));

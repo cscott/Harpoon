@@ -151,7 +151,7 @@ void printwebrole(FILE *rolefile, struct heap_state *heap,struct role *r, char *
       for(i=0;i<heap->statechangesize;i++) {
 	if(r->methodscalled[i]) {
 	  char *methodname=(char *)gettable(heap->statechangereversetable, i);
-	  fprintf(heap->rolefile,"%s ",methodname);
+	  fprintf(rolefile,"%s ",methodname);
 	}
       }
     }
