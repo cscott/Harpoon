@@ -43,7 +43,7 @@ import java.util.Set;
  * <code>RoleInference</code>
  * 
  * @author  bdemsky <bdemsky@mit.edu>
- * @version $Id: RoleInference.java,v 1.1.2.4 2001-06-06 15:29:13 bdemsky Exp $
+ * @version $Id: RoleInference.java,v 1.1.2.5 2001-06-07 15:16:25 bdemsky Exp $
  */
 public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator {
     final Linker linker;
@@ -54,8 +54,12 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode hcode=input.hcode();
-	RoleVisitor rv=new RoleVisitor(linker, hcode);
+	//System.out.println(hcode.getMethod().getName());
 
+	if ((hcode.getMethod().getModifiers()&java.lang.reflect.Modifier.NATIVE)!=0) 
+	    return hcode;
+	RoleVisitor rv=new RoleVisitor(linker, hcode);
+	
 	if (transform(hcode.getMethod())) {
 	    List list=hcode.getElementsL();
 	    for (int i=0;i<list.size();i++)
@@ -96,12 +100,13 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	Set exacttemps;
 	TypeInference ti;
 	HCode hc;
+	LocalVariableNamer lvn;
 
 	public RoleVisitor(Linker linker, HCode hc) {
 	    liveness=new QuadLiveness(hc);
 	    reachingdef=new ReachingDefsImpl(hc);
 	    exacttemps=new WorkSet();
-	    
+	    lvn=new LocalVariableNamer(hc.getMethod());
 	    this.hc=hc;
 	    HClass objclass=linker.forName("java.lang.Object");
 	    clsclass=linker.forName("java.lang.Class");
@@ -131,36 +136,38 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	public void nonlive(Quad q) {
 	    int kind=q.kind();
 	    if ((kind!=QuadKind.HEADER)&&(kind!=QuadKind.FOOTER)&&(kind!=QuadKind.RETURN)&&(kind!=QuadKind.THROW)) {
-	    Set livein=liveness.getLiveIn(q);
-	    livein.addAll(q.defC());//wanna do kills of useless locals
-	    livein.removeAll(liveness.getLiveOut(q));
-	    for(Iterator it=livein.iterator();it.hasNext();) {
-		Temp t=(Temp)it.next();
-		Set possibletypes=ti.getType(new ExactTemp(q,t));
-		boolean couldbeobject=false;
-		for(Iterator typeit=possibletypes.iterator();typeit.hasNext();)
-		    if (!((HClass)typeit.next()).isPrimitive())
-			couldbeobject=true;
-		if (couldbeobject) {
-		    //Live In, not Live Out
-		    //Needs to be object also
-		    Temp tname=new Temp(q.getFactory().tempFactory());
-		    String name=buildname(q,t);
-		    CONST nameconst=new CONST(q.getFactory(), q, tname, name,
-					      strclass);
-		    Temp texc=new Temp(q.getFactory().tempFactory());
-		    CALL nc=new CALL(q.getFactory(),q,killlocalmethod,
-				     new Temp[] {tname}, null,texc,
-				     false,false, new Temp[0]);
-		    PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
-		    
-		    Quad.addEdge(phi,0, q.next(0),q.nextEdge(0).which_pred());
-		    Quad.addEdge(nc,0,phi,0);
-		    Quad.addEdge(nc,1,phi,1);
-		    Quad.addEdge(q,0,nameconst,0);
-		    Quad.addEdge(nameconst,0, nc,0);
+		Set livein=liveness.getLiveIn(q);
+		livein.addAll(q.defC());//wanna do kills of useless locals
+		livein.removeAll(liveness.getLiveOut(q));
+		for(Iterator it=livein.iterator();it.hasNext();) {
+		    Temp t=(Temp)it.next();
+		    Set possibletypes=ti.getType(new ExactTemp(q,t));
+		    boolean couldbeobject=false;
+		    for(Iterator typeit=possibletypes.iterator();typeit.hasNext();)
+			if (!((HClass)typeit.next()).isPrimitive())
+			    couldbeobject=true;
+		    if (couldbeobject) {
+			for(int i=0;i<q.nextLength();i++) {
+			    //Live In, not Live Out
+			    //Needs to be object also
+			    Temp tname=new Temp(q.getFactory().tempFactory());
+			    String name=buildname(q,t);
+			    CONST nameconst=new CONST(q.getFactory(), q, tname, name,
+						      strclass);
+			    Temp texc=new Temp(q.getFactory().tempFactory());
+			    CALL nc=new CALL(q.getFactory(),q,killlocalmethod,
+					     new Temp[] {tname}, null,texc,
+					     false,false, new Temp[0]);
+			    PHI phi=new PHI(q.getFactory(),q, new Temp[0], 2);
+			    
+			    Quad.addEdge(phi,0, q.next(i),q.nextEdge(i).which_pred());
+			    Quad.addEdge(nc,0,phi,0);
+			    Quad.addEdge(nc,1,phi,1);
+			    Quad.addEdge(q,i,nameconst,0);
+			    Quad.addEdge(nameconst,0, nc,0);
+			}
+		    }
 		}
-	    }
 	    }
 	}
 
@@ -182,8 +189,22 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 	    ti=new TypeInference(hc.getMethod(),hc,exacttemps);
 	}
 
-	public static String buildname(Quad q, Temp t) { 
-	    return t.name();
+	public String buildname(Quad q, Temp t) { 
+	    String othername="$$$unk";
+	    String name=t.name();
+	    int linenumber=q.getLineNumber();
+	    if ((name.length()>2)&&(name.charAt(0)=='l')&&(name.charAt(1)=='v')) {
+		int endindex=name.indexOf('_');
+		String number=name.substring(2, endindex);
+		int lvnumber=Integer.parseInt(number);
+		//System.out.println(lvnumber+":"+linenumber+" "+name);
+		String ts=lvn.lv_name(lvnumber,linenumber);
+		if (ts!=null) {
+		    othername=ts;
+		    //System.out.println("*********"+ts);
+		}
+	    }
+	    return t.name()+" "+linenumber+" "+othername;
 	}
 
 	public void visit(ANEW q) {
