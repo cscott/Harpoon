@@ -7,8 +7,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Inaccessible static: class_00024Ljava_00024lang_00024Class */
-/* Inaccessible static: class_00024Ljava_00024lang_00024reflect_00024AccessibleObject */
+/* Inaccessible static: class_00024java_00024lang_00024Class */
+/* Inaccessible static: class_00024java_00024lang_00024reflect_00024AccessibleObject */
 /*
  * Class:     java_lang_reflect_Field
  * Method:    getDeclaringClass

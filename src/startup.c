@@ -54,7 +54,6 @@ void process_command_line_options(int *pargc, char ***pargv) {
     case MAX_HEAP_SIZE_OPTION:
       sscanf(optarg, "%d", &max_heap_size);
       fprintf(stderr, "MAX HEAP SIZE = %dMbytes\n", max_heap_size);
-      fflush(stderr);
       break;
     case ':':
       printf("Missing argument for option %s\n", long_options[longopt].name);
@@ -147,6 +146,7 @@ int main(int argc, char *argv[]) {
   precise_gc_init();
 #endif
 
+
   if(max_heap_size != 0) {
 #ifdef BDW_CONSERVATIVE_GC
     GC_set_max_heap_size(max_heap_size*1024*1024);
@@ -161,6 +161,7 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_GC_STATS
   setup_GC_stats();
 #endif
+
 #ifdef WITH_PREALLOC_OPT
   preallocMemCls  = 
       (*env)->FindClass(env, "harpoon/Runtime/PreallocOpt/PreallocatedMemory");
@@ -172,6 +173,7 @@ int main(int argc, char *argv[]) {
       (env, preallocMemCls, preallocMemInitFields);
   CHECK_EXCEPTIONS(env);
 #endif
+
 #if defined(WITH_REALTIME_JAVA) || defined(WITH_FAKE_SCOPES) 
   RTJ_preinit();
 #endif

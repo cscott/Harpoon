@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.136 $)dnl
+AC_REVISION($Revision: 1.137 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -365,6 +365,7 @@ with_prealloc_opt="$withval", with_prealloc_opt="no")
 case "$with_prealloc_opt" in
 yes)	AC_MSG_RESULT([yes])
 	AC_DEFINE(WITH_PREALLOC_OPT, 1, [enable memory preallocation optimization])
+	BDWFLAGS="$BDWFLAGS -DWITH_PREALLOC_OPT"
 	;;
 *)	AC_MSG_RESULT([no])
 	;;
@@ -422,7 +423,7 @@ user)  AC_MSG_RESULT([user space threads])
 	AC_DEFINE(WITH_USER_THREADS, 1,
 		  [Define if you want to use user thread support])
 	CFLAGS="-DGC_USER_THREADS $CFLAGS"
-	BDWFLAGS="-DGC_USER_THREADS -D_REENTRANT -I../../src/user/"
+	BDWFLAGS="$BDWFLAGS -DGC_USER_THREADS -D_REENTRANT -I../../src/user/"
 	;;
 heavy)  AC_MSG_RESULT([heavy-weight threads])
 	AC_DEFINE(WITH_HEAVY_THREADS, 1,
@@ -453,14 +454,14 @@ heavy)  AC_MSG_RESULT([heavy-weight threads])
 	# implementation we're using.  I don't know how to test this at the
 	# moment ... we'll just assume LinuxThreads.
 	CFLAGS="-DGC_LINUX_THREADS $CFLAGS"
-	BDWFLAGS="-DGC_LINUX_THREADS -D_REENTRANT"
+	BDWFLAGS="$BDWFLAGS -DGC_LINUX_THREADS -D_REENTRANT"
 	;;
 pth)	AC_MSG_RESULT([GNU pth])
 	AC_DEFINE(WITH_PTH_THREADS, 1,
 		  [Define if you want to use GNU pth thread support])
 	AC_SEARCH_LIBS(pth_init, pth, ,
 			AC_MSG_ERROR([couldn't find pth library]))
-	BDWFLAGS="-DGNUPTH_THREADS"
+	BDWFLAGS="$BDWFLAGS -DGNUPTH_THREADS"
 	;;
 none)   AC_MSG_RESULT([no thread support])
 	AC_DEFINE(WITH_NO_THREADS, 1,
