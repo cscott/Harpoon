@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.35 1998-09-03 04:47:13 cananian Exp $
+ * @version $Id: Translate.java,v 1.36 1998-09-03 06:04:11 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -253,18 +253,18 @@ class Translate  { // not public.
 	String[] paramNames = bytecode.getMethod().getParameterNames();
 	Temp[] params = new Temp[paramNames.length];
 	for (int i=0; i<params.length; i++)
-	    params[i] = new Temp((paramNames[i]==null)?"param":paramNames[i]);
+	    params[i]= new Temp((paramNames[i]==null)?"param"+i:paramNames[i]);
 
 	Temp[] locals = new Temp[bytecode.getMaxLocals()];
 	if (!Modifier.isStatic(bytecode.getMethod().getModifiers())) {
 	    locals[0] = new Temp("this");
 	    System.arraycopy(params, 0, locals, 1, params.length);
 	    for (int i=params.length+1; i<locals.length; i++)
-		locals[i] = new Temp("lv");
+		locals[i] = new Temp("lv"+i);
 	} else {
 	    System.arraycopy(params, 0, locals, 0, params.length);
 	    for (int i=params.length; i<locals.length; i++)
-		locals[i] = new Temp("lv");
+		locals[i] = new Temp("lv"+i);
 	}
 
 	State s = new State(locals);
