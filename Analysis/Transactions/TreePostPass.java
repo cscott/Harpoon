@@ -48,7 +48,7 @@ import java.util.Set;
  * This pass is invoked by <code>SyncTransformer.treeCodeFactory()</code>.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreePostPass.java,v 1.4.2.3 2003-07-15 07:08:18 cananian Exp $
+ * @version $Id: TreePostPass.java,v 1.4.2.4 2003-07-15 07:40:50 cananian Exp $
  */
 class TreePostPass extends harpoon.Analysis.Tree.Simplification {
     private final List<Rule> RULES = new ArrayList<Rule>(); 
@@ -139,7 +139,8 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 		String methodName = "EXACT_"+baseName;
 		HClass suf = t.functionSuffix(hm, call.getArgs());
 		if (suf!=null)
-		    methodName += suf.isPrimitive() ? suf.getName() : "Object";
+		    methodName += "_" + 
+			titlecase(suf.isPrimitive()? suf.getName() : "Object");
 		Label Lmethod = new Label(nm.c_function_name(methodName));
 
 		return new NATIVECALL(tf, s, call.getRetval(),
@@ -148,6 +149,10 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 						      call.getArgs()));
 	    }
         });
+    }
+    private final String titlecase(String s) {
+	if (s.length()==0) return s;
+	return s.substring(0,1).toUpperCase()+s.substring(1);
     }
 
     abstract class Transformer {
