@@ -13,6 +13,12 @@ public class SetInclusion extends Inclusion {
     static boolean worklist = false;
     public boolean dostore = true;
 
+    public String toString() {
+	String str="";
+	str+=elementexpr.name()+" in "+set;
+	return str;
+    }
+
     public SetInclusion(Expr elementexpr, SetDescriptor set) {
         this.elementexpr = elementexpr;
         this.set = set;
@@ -23,6 +29,10 @@ public class SetInclusion extends Inclusion {
 	    return true;
 	else
 	    return elementexpr.usesDescriptor(d);
+    }
+
+    public Expr getExpr() {
+	return elementexpr;
     }
 
     public SetDescriptor getSet() {

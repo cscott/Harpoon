@@ -15,6 +15,8 @@ public class Termination {
     Hashtable scopesatisfy;
     Hashtable scopefalsify;
     Hashtable consequence;
+    Hashtable abstractadd;
+    Hashtable abstractremove;
 
     State state;
 
@@ -29,11 +31,15 @@ public class Termination {
 	consequence=new Hashtable();
 	updatenodes=new HashSet();
 	consequencenodes=new HashSet();
+	abstractadd=new Hashtable();
+	abstractremove=new Hashtable();
+
 
 	generateconjunctionnodes();
 	generatescopenodes();
 	generaterepairnodes();
 	generatedatastructureupdatenodes();
+	generatecompensationnodes();
 
 	generateabstractedges();
 	generatescopeedges();
@@ -42,9 +48,10 @@ public class Termination {
 	HashSet superset=new HashSet();
 	superset.addAll(conjunctions);
 	superset.addAll(abstractrepair);
-	superset.addAll(updatenodes);
-	superset.addAll(scopenodes);
-	superset.addAll(consequencenodes);
+	//superset.addAll(updatenodes);
+	//superset.addAll(scopenodes);
+	//superset.addAll(consequencenodes);
+	//GraphNode.computeclosure(superset);
 	try {
 	    GraphNode.DOTVisitor.visit(new FileOutputStream("graph.dot"),superset);
 	} catch (Exception e) {
@@ -101,9 +108,12 @@ public class Termination {
 		GraphNode gn2=(GraphNode)conjiterator.next();
 		TermNode tn2=(TermNode)gn2.getOwner();
 		Conjunction conj=tn2.getConjunction();
+		Constraint cons=tn2.getConstraint();
+
 		for(int i=0;i<conj.size();i++) {
 		    DNFPredicate dp=conj.get(i);
-		    if (AbstractInterferes.interferes(ar,dp)) {
+		    if (AbstractInterferes.interferes(ar,cons)||
+			AbstractInterferes.interferes(ar,dp)) {
 			GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
 			gn.addEdge(e);
 			break;
@@ -124,9 +134,11 @@ public class Termination {
 		GraphNode gn2=(GraphNode)conjiterator.next();
 		TermNode tn2=(TermNode)gn2.getOwner();
 		Conjunction conj=tn2.getConjunction();
+		Constraint constr=tn2.getConstraint();
 		for(int i=0;i<conj.size();i++) {
 		    DNFPredicate dp=conj.get(i);
-		    if (AbstractInterferes.interferes(sn.getDescriptor(),sn.getSatisfy(),dp)) {
+		    if (AbstractInterferes.interferes(sn.getDescriptor(),sn.getSatisfy(),dp)||
+			AbstractInterferes.interferes(sn.getDescriptor(),sn.getSatisfy(),constr)) {
 			GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
 			GraphNode gnconseq=(GraphNode)consequence.get(sn);
 			gnconseq.addEdge(e);
@@ -154,8 +166,9 @@ public class Termination {
 	}
     }
 
-
+    /* Generates the abstract repair nodes */
     void generaterepairnodes() {
+	/* Generate repairs of conjunctions */
 	for(Iterator conjiterator=conjunctions.iterator();conjiterator.hasNext();) {
 	    GraphNode gn=(GraphNode)conjiterator.next();
 	    TermNode tn=(TermNode)gn.getOwner();
@@ -174,6 +187,122 @@ public class Termination {
 		}
 	    }
 	}
+	/* Generate additional abstract repairs */
+	Vector setdescriptors=state.stSets.getAllDescriptors();
+	for(int i=0;i<setdescriptors.size();i++) {
+	    SetDescriptor sd=(SetDescriptor)setdescriptors.get(i);
+
+	    /* XXXXXXX: Not sure what to do here */
+	    VarExpr ve=new VarExpr("DUMMY");
+	    InclusionPredicate ip=new InclusionPredicate(ve,new SetExpr(sd));
+	    
+	    DNFPredicate tp=new DNFPredicate(false,ip);
+	    AbstractRepair ar=new AbstractRepair(tp, AbstractRepair.ADDTOSET, sd);
+	    TermNode tn=new TermNode(ar);
+	    GraphNode gn=new GraphNode("AbstractAddSetRule"+i,tn);
+	    abstractrepair.add(gn);
+	    abstractadd.put(sd,gn);
+	    
+	    DNFPredicate tp2=new DNFPredicate(true,ip);
+	    AbstractRepair ar2=new AbstractRepair(tp2, AbstractRepair.REMOVEFROMSET, sd);
+	    TermNode tn2=new TermNode(ar2);
+	    GraphNode gn2=new GraphNode("AbstractRemSetRule"+i,tn2);
+	    abstractrepair.add(gn2);
+	    abstractremove.put(sd,gn2);
+	}
+
+	Vector relationdescriptors=state.stRelations.getAllDescriptors();
+	for(int i=0;i<relationdescriptors.size();i++) {
+	    RelationDescriptor rd=(RelationDescriptor)relationdescriptors.get(i);
+
+	    /* XXXXXXX: Not sure what to do here */
+	    VarDescriptor vd1=new VarDescriptor("DUMMY1");
+	    VarExpr ve2=new VarExpr("DUMMY2");
+
+	    InclusionPredicate ip=new InclusionPredicate(ve2,new ImageSetExpr(vd1, rd));
+	    
+	    DNFPredicate tp=new DNFPredicate(false,ip);
+	    AbstractRepair ar=new AbstractRepair(tp, AbstractRepair.ADDTORELATION, rd);
+	    TermNode tn=new TermNode(ar);
+	    GraphNode gn=new GraphNode("AbstractAddRelRule"+i,tn);
+	    abstractrepair.add(gn);
+	    abstractadd.put(rd,gn);
+	    
+	    DNFPredicate tp2=new DNFPredicate(true,ip);
+	    AbstractRepair ar2=new AbstractRepair(tp2, AbstractRepair.REMOVEFROMRELATION, rd);
+	    TermNode tn2=new TermNode(ar2);
+	    GraphNode gn2=new GraphNode("AbstractRemRelRule"+i,tn2);
+	    abstractrepair.add(gn2);
+	    abstractremove.put(rd,gn2);
+	}
+	
+    }
+
+    int compensationcount=0;
+    void generatecompensationnodes() {
+	for(int i=0;i<state.vRules.size();i++) {
+	    Rule r=(Rule) state.vRules.get(i);
+	    Vector possiblerules=new Vector();
+	    /* Construct bindings */
+	    Vector bindings=new Vector();
+	    constructbindings(bindings, r,true);
+	    
+	    for(int j=0;j<(r.numQuantifiers()+r.getDNFNegGuardExpr().size());j++) {
+		GraphNode gn=(GraphNode)scopesatisfy.get(r);
+		TermNode tn=(TermNode) gn.getOwner();
+		ScopeNode sn=tn.getScope();
+		MultUpdateNode mun=new MultUpdateNode(sn);
+		TermNode tn2=new TermNode(mun);
+		GraphNode gn2=new GraphNode("CompRem"+compensationcount,tn2);
+		UpdateNode un=new UpdateNode();
+		un.addBindings(bindings);
+		if (j<r.numQuantifiers()) {
+		    /* Remove quantifier */
+		    Quantifier q=r.getQuantifier(j);
+		    if (q instanceof RelationQuantifier) {
+			RelationQuantifier rq=(RelationQuantifier)q;
+			TupleOfExpr toe=new TupleOfExpr(new VarExpr(rq.x),new VarExpr(rq.y),rq.relation);
+			toe.td=ReservedTypeDescriptor.INT;
+			Updates u=new Updates(toe,true);
+			un.addUpdate(u);
+			if (abstractremove.containsKey(rq.relation)) {
+			    GraphNode agn=(GraphNode)abstractremove.get(rq.relation);
+			    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
+			    gn2.addEdge(e);
+			} else {
+			    continue; /* Abstract repair doesn't exist */
+			}
+		    } else if (q instanceof SetQuantifier) {
+			SetQuantifier sq=(SetQuantifier)q;
+			ElementOfExpr eoe=new ElementOfExpr(new VarExpr(sq.var),sq.set);
+			eoe.td=ReservedTypeDescriptor.INT;
+			Updates u=new Updates(eoe,true);
+			un.addUpdate(u);
+			if (abstractremove.containsKey(sq.set)) {
+			    GraphNode agn=(GraphNode)abstractremove.get(sq.set);
+			    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
+			    gn2.addEdge(e);
+			} else {
+			    continue; /* Abstract repair doesn't exist */
+			}
+		    } else {
+			continue;
+		    }
+		} else {
+		    int c=j-r.numQuantifiers();
+		    if (!processconjunction(un,r.getDNFNegGuardExpr().get(c))) {
+			continue;
+		    }
+		}
+
+		mun.addUpdate(un);
+
+		GraphNode.Edge e=new GraphNode.Edge("abstract"+compensationcount,gn2);
+		compensationcount++;
+		gn.addEdge(e);
+		updatenodes.add(gn2);
+	    }
+	}
     }
 
     void generatedatastructureupdatenodes() {
@@ -190,6 +319,10 @@ public class Termination {
 	    } else if (ar.getType()==AbstractRepair.REMOVEFROMRELATION) {
 		generateremovefromsetrelation(gn,ar);
 	    } else if (ar.getType()==AbstractRepair.MODIFYRELATION) {
+		/* Generate remove/add pairs */
+		generateremovefromsetrelation(gn,ar);
+		generateaddtosetrelation(gn,ar);
+		/* Generate atomic modify */
 		generatemodifyrelation(gn,ar);
 	    }
 	}
@@ -207,9 +340,14 @@ public class Termination {
 		(ar.getDescriptor()==((RelationInclusion)r.getInclusion()).getRelation()))
 		possiblerules.add(r);
 	}
+	if (possiblerules.size()==0)
+	    return;
 	int[] count=new int[possiblerules.size()];
 	while(remains(count,possiblerules)) {
-	    MultUpdateNode mun=new MultUpdateNode(ar);
+	    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.REMOVE);
+	    TermNode tn=new TermNode(mun);
+	    GraphNode gn2=new GraphNode("UpdateRem"+removefromcount,tn);
+
 	    boolean goodflag=true;
 	    for(int i=0;i<possiblerules.size();i++) {
 		Rule r=(Rule)possiblerules.get(i);
@@ -217,6 +355,7 @@ public class Termination {
 		/* Construct bindings */
 		Vector bindings=new Vector();
 		constructbindings(bindings, r,true);
+		un.addBindings(bindings);
 		if (count[i]<r.numQuantifiers()) {
 		    /* Remove quantifier */
 		    Quantifier q=r.getQuantifier(count[i]);
@@ -226,12 +365,26 @@ public class Termination {
 			toe.td=ReservedTypeDescriptor.INT;
 			Updates u=new Updates(toe,true);
 			un.addUpdate(u);
+			if (abstractremove.containsKey(rq.relation)) {
+			    GraphNode agn=(GraphNode)abstractremove.get(rq.relation);
+			    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
+			    gn2.addEdge(e);
+			} else {
+			    goodflag=false;break; /* Abstract repair doesn't exist */
+			}
 		    } else if (q instanceof SetQuantifier) {
 			SetQuantifier sq=(SetQuantifier)q;
 			ElementOfExpr eoe=new ElementOfExpr(new VarExpr(sq.var),sq.set);
 			eoe.td=ReservedTypeDescriptor.INT;
 			Updates u=new Updates(eoe,true);
 			un.addUpdate(u);
+			if (abstractremove.containsKey(sq.set)) {
+			    GraphNode agn=(GraphNode)abstractremove.get(sq.set);
+			    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
+			    gn2.addEdge(e);
+			} else {
+			    goodflag=false;break; /* Abstract repair doesn't exist */
+			}
 		    } else {goodflag=false;break;}
 		} else {
 		    int c=count[i]-r.numQuantifiers();
@@ -242,8 +395,6 @@ public class Termination {
 		mun.addUpdate(un);
 	    }
 	    if (goodflag) {
-		TermNode tn=new TermNode(mun);
-		GraphNode gn2=new GraphNode("UpdateRem"+removefromcount,tn);
 		GraphNode.Edge e=new GraphNode.Edge("abstract"+removefromcount,gn2);
 		removefromcount++;
 		gn.addEdge(e);
@@ -437,13 +588,14 @@ public class Termination {
 		    RuleConjunction ruleconj=dnfrule.get(j);
 		    /* Add in updates for quantifiers */
 		    System.out.println("Attempting to generate add to set #4");
-		    if (processquantifers(un, r)&&debugdd()&&
+		    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.ADD);
+		    TermNode tn=new TermNode(mun);
+		    GraphNode gn2=new GraphNode("UpdateAdd"+addtocount,tn);
+
+		    if (processquantifers(gn2,un, r)&&debugdd()&&
 			processconjunction(un,ruleconj)) {
 			System.out.println("Attempting to generate add to set #5");
-			MultUpdateNode mun=new MultUpdateNode(ar);
 			mun.addUpdate(un);
-			TermNode tn=new TermNode(mun);
-			GraphNode gn2=new GraphNode("UpdateAdd"+addtocount,tn);
 			GraphNode.Edge e=new GraphNode.Edge("abstract"+addtocount,gn2);
 			addtocount++;
 			gn.addEdge(e);
@@ -458,8 +610,7 @@ public class Termination {
 	return true;
     }
 
-    boolean processquantifers(UpdateNode un, Rule r) {
-	boolean goodupdate=true;
+    boolean processquantifers(GraphNode gn,UpdateNode un, Rule r) {
 	Inclusion inc=r.getInclusion();
 	for(Iterator iterator=r.quantifiers();iterator.hasNext();) {
 	    Quantifier q=(Quantifier)iterator.next();
@@ -471,15 +622,30 @@ public class Termination {
 		toe.td=ReservedTypeDescriptor.INT;
 		Updates u=new Updates(toe,false);
 		un.addUpdate(u);
+		if (abstractremove.containsKey(rq.relation)) {
+		    GraphNode agn=(GraphNode)abstractadd.get(rq.relation);
+		    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
+		    gn.addEdge(e);
+		} else {
+		    return false;
+		}
+
 	    } else if (q instanceof SetQuantifier) {
 		SetQuantifier sq=(SetQuantifier)q;
 		ElementOfExpr eoe=new ElementOfExpr(new VarExpr(sq.var),sq.set);
 		eoe.td=ReservedTypeDescriptor.INT;
 		Updates u=new Updates(eoe,false);
 		un.addUpdate(u);
-	    } else {goodupdate=false; break;}
+		if (abstractremove.containsKey(sq.set)) {
+		    GraphNode agn=(GraphNode)abstractadd.get(sq.set);
+		    GraphNode.Edge e=new GraphNode.Edge("requires",agn);
+		    gn.addEdge(e);
+		} else {
+		    return false;
+		}
+	    } else return false;
    	}
-	return goodupdate;
+	return true;
     }
 
     boolean  processconjunction(UpdateNode un,RuleConjunction ruleconj){

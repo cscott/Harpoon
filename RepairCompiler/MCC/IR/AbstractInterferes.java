@@ -50,7 +50,24 @@ class AbstractInterferes {
 		    return false;
 	    } 
 	}
-	/* This if handles all the c comparisons in the paper */
+
+	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
+	    (ar.getType()==AbstractRepair.ADDTOSET||ar.getType()==AbstractRepair.ADDTORELATION)&&
+	    (dp.getPredicate() instanceof ExprPredicate)&&
+	    (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.SIZE)) {
+	    boolean neg2=dp.isNegated();
+	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
+	    int size2=((ExprPredicate)dp.getPredicate()).leftsize();
+	    if ((!neg2&&(op2==Opcode.EQ)&&(size2==0))||
+		(neg2&&(op2==Opcode.NE)&&(size2==0))||
+		(!neg2&&(op2==Opcode.GE))||
+		(!neg2&&(op2==Opcode.GT))||
+		(neg2&&(op2==Opcode.LE))||
+		(neg2&&(op2==Opcode.LT)))
+		return false;
+	}
+
+	/* This handles all the c comparisons in the paper */
 	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
 	    (ar.getType()==AbstractRepair.REMOVEFROMSET||ar.getType()==AbstractRepair.REMOVEFROMRELATION)&&
 	    (ar.getPredicate().getPredicate() instanceof ExprPredicate)&&
@@ -63,8 +80,8 @@ class AbstractInterferes {
 	    boolean neg2=dp.isNegated();
 	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
 	    int size2=((ExprPredicate)dp.getPredicate()).leftsize();
-	    if ((neg1&&((op1==Opcode.EQ)||(op1==Opcode.LT)||op1==Opcode.LE)||(op1==Opcode.NE))||
-		(!neg1&&((op1==Opcode.EQ)||(op1==Opcode.GT)||op1==Opcode.GE)||(op1==Opcode.NE))) {
+	    if ((!neg1&&((op1==Opcode.EQ)||(op1==Opcode.LT)||op1==Opcode.LE)||(op1==Opcode.NE))||
+		(neg1&&((op1==Opcode.EQ)||(op1==Opcode.GT)||op1==Opcode.GE)||(op1==Opcode.NE))) {
 		int size1a=0;
 		if (neg1) {
 		    if((op1==Opcode.EQ)||(op1==Opcode.GE))
@@ -91,8 +108,37 @@ class AbstractInterferes {
 		    (neg2&&(op2==Opcode.LE)&&(size1a>size2))||
 		    (neg2&&(op2==Opcode.LT)&&(size1a>=size2)))
 		    return false;
-	    } 
+	    }
 	}
+
+	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
+	    (ar.getType()==AbstractRepair.REMOVEFROMSET||ar.getType()==AbstractRepair.REMOVEFROMRELATION)&&
+	    (dp.getPredicate() instanceof ExprPredicate)&&
+	    (((ExprPredicate)dp.getPredicate()).getType()==ExprPredicate.SIZE)) {
+	    boolean neg2=dp.isNegated();
+	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
+	    int size2=((ExprPredicate)dp.getPredicate()).leftsize();
+	    if ((!neg2&&(op2==Opcode.EQ)&&(size2==0))||
+		(neg2&&(op2==Opcode.NE)&&(size2==0))||
+		(neg2&&(op2==Opcode.GE))||
+		(neg2&&(op2==Opcode.GT))||
+		(!neg2&&(op2==Opcode.LE))||
+		(!neg2&&(op2==Opcode.LT)))
+		return false;
+	    
+	}
+	if ((ar.getDescriptor()==dp.getPredicate().getDescriptor())&&
+	    (ar.getType()==AbstractRepair.ADDTOSET||ar.getType()==AbstractRepair.ADDTORELATION)&&
+	    (dp.getPredicate() instanceof InclusionPredicate)&&
+	    (dp.isNegated()==false))
+	    return false; /* Could only satisfy this predicate */
+
+	if ((ar.getDescriptor()==dp.getPredicate().getDescriptor())&&
+	    (ar.getType()==AbstractRepair.REMOVEFROMSET||ar.getType()==AbstractRepair.REMOVEFROMRELATION)&&
+	    (dp.getPredicate() instanceof InclusionPredicate)&&
+	    (dp.isNegated()==true))
+	    return false; /* Could only satisfy this predicate */
+	  
 	return true;
     }
 
@@ -113,6 +159,8 @@ class AbstractInterferes {
 	    {
 		if ((!neg2&&(op2==Opcode.GE))||
 		    (!neg2&&(op2==Opcode.GT))||
+		    (neg2&&(op2==Opcode.EQ)&&(size2==0))||
+		    (!neg2&&(op2==Opcode.NE)&&(size2==0))||
 		    (neg2&&(op2==Opcode.LE))||
 		    (neg2&&(op2==Opcode.LT)))
 		    return false;
@@ -129,15 +177,29 @@ class AbstractInterferes {
 	    {
 		if ((neg2&&(op2==Opcode.GE))||
 		    (neg2&&(op2==Opcode.GT))||
+		    (!neg2&&(op2==Opcode.EQ)&&(size2==0))||
+		    (neg2&&(op2==Opcode.NE)&&(size2==0))||
 		    (!neg2&&(op2==Opcode.LE))||
 		    (!neg2&&(op2==Opcode.LT)))
 		    return false;
 	    } 
 	}
+	if ((des==dp.getPredicate().getDescriptor())&&
+	    satisfy&&
+	    (dp.getPredicate() instanceof InclusionPredicate)&&
+	    (dp.isNegated()==false))
+	    return false; /* Could only satisfy this predicate */
+
+	if ((des==dp.getPredicate().getDescriptor())&&
+	    (!satisfy)&&
+	    (dp.getPredicate() instanceof InclusionPredicate)&&
+	    (dp.isNegated()==true))
+	    return false; /* Could only satisfy this predicate */
+
 	return true;
     }
 
-    static public boolean interferes(Descriptor des, boolean satisfy, Rule r, boolean satisfyrule) {
+    static public boolean interferesquantifier(Descriptor des, boolean satisfy, Quantifiers r, boolean satisfyrule) {
 	for(int i=0;i<r.numQuantifiers();i++) {
 	    Quantifier q=r.getQuantifier(i);
 	    if (q instanceof RelationQuantifier||q instanceof SetQuantifier) {
@@ -148,6 +210,22 @@ class AbstractInterferes {
 		    return true;
 	    } else throw new Error("Unrecognized Quantifier");
 	}
+	return false;
+    }
+
+    static public boolean interferes(AbstractRepair ar, Quantifiers q) {
+	if (ar.getType()==AbstractRepair.ADDTOSET||ar.getType()==AbstractRepair.ADDTORELATION)
+	    return interferesquantifier(ar.getDescriptor(),true,q,true);
+	return false;
+    }
+
+    static public boolean interferes(Descriptor des, boolean satisfy, Quantifiers q) {
+	return interferesquantifier(des, satisfy, q,true);
+    }
+
+    static public boolean interferes(Descriptor des, boolean satisfy, Rule r, boolean satisfyrule) {
+	if (interferesquantifier(des,satisfy,r,satisfyrule))
+	    return true;
 	/* Scan DNF form */
 	DNFRule drule=r.getDNFGuardExpr();
 	for(int i=0;i<drule.size();i++) {

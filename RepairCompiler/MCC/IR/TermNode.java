@@ -55,6 +55,13 @@ class TermNode {
 	    return conj;
     }
 
+    public Constraint getConstraint() {
+	if (type!=CONJUNCTION)
+	    throw new Error("Not Conjunction Node!");
+	else
+	    return constr;
+    }
+
     public MultUpdateNode getUpdate() {
 	if (type!=UPDATE)
 	    throw new Error("Not Update Node!");

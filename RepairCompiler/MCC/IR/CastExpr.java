@@ -12,6 +12,12 @@ public class CastExpr extends Expr {
         this.expr = expr;
     }
 
+    public String name() {
+	String str="";
+	str="(("+type.toString()+")"+expr.name()+")";
+	return str;
+    }
+
     public boolean equals(Map remap, Expr e) {
 	if (e==null)
 	    return false;

@@ -32,7 +32,7 @@ public class ForQuantifier extends Quantifier {
     }
 
     public String toString() {
-        return "for quantifier " + var.getSymbol() + " = " + lower + " to " + upper;
+        return "for quantifier " + var.getSymbol() + " = " + lower.name() + " to " + upper.name();
     }
 
     public void generate_open(CodeWriter writer) {

@@ -20,6 +20,7 @@ public abstract class Expr {
     }
 
     public String name() {
+	System.out.println(this.getClass().getName());
 	return "?";
     }
 

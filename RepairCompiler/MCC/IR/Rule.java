@@ -2,7 +2,7 @@ package MCC.IR;
 
 import java.util.*;
 
-public class Rule {
+public class Rule implements Quantifiers {
     
     static int count = 1;
 
@@ -23,6 +23,15 @@ public class Rule {
         label = new String("rule" + count++);
     }
     
+    public String toString() {
+	String name="";
+	for(int i=0;i<numQuantifiers();i++) {
+	    name+=getQuantifier(i).toString()+",";
+	}
+	name+=guard.name()+"=>"+inclusion.toString();
+	return name;
+    }
+
     public int numQuantifiers() {
 	return quantifiers.size();
     }

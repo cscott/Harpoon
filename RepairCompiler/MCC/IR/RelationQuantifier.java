@@ -13,6 +13,10 @@ public class RelationQuantifier extends Quantifier {
         relation = rd; 
     }
 
+    public RelationDescriptor getRelation() {
+	return relation;
+    }
+
     public void setTuple(VarDescriptor x, VarDescriptor y) {
         this.x = x;
         this.y = y;
@@ -31,9 +35,9 @@ public class RelationQuantifier extends Quantifier {
     public void generate_open(CodeWriter writer) {
         writer.outputline("for (SimpleIterator* " + x.getSafeSymbol() + "_iterator = " + relation.getSafeSymbol() + "_hash->iterator(); " + x.getSafeSymbol() + "_iterator->hasNext(); )");
         writer.startblock();
-        writer.outputline(y.getType().getSafeSymbol() + " " + y.getSafeSymbol() + " = (" + y.getType().getSafeSymbol() + ") " + x.getSafeSymbol() + "_iterator->next();");        
+        writer.outputline(y.getType().getGenerateType() + " " + y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") " + x.getSafeSymbol() + "_iterator->next();");        
         // #ATTN#: key is called second because next() forwards ptr and key does not! 
-        writer.outputline(x.getType().getSafeSymbol() + " " + x.getSafeSymbol() + " = (" + x.getType().getSafeSymbol() + ") " + x.getSafeSymbol() + "_iterator->key();");
+        writer.outputline(x.getType().getGenerateType() + " " + x.getSafeSymbol() + " = (" + x.getType().getGenerateType() + ") " + x.getSafeSymbol() + "_iterator->key();");
     }
 
     public int generate_worklistload(CodeWriter writer, int offset) {        

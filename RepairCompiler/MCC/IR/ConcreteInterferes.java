@@ -21,7 +21,7 @@ class ConcreteInterferes {
 			RuleConjunction rconj=drule.get(k);
 			for(int l=0;l<rconj.size();l++) {
 			    DNFExpr dexpr=rconj.get(l);
-			    /* See if update interfers w/ dexpr */
+			    /* See if update interferes w/ dexpr */
 			    
 			    if (!dexpr.getExpr().usesDescriptor(updated_des))
 				continue; /* No use of the descriptor */

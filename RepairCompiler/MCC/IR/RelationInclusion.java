@@ -17,6 +17,11 @@ public class RelationInclusion extends Inclusion {
         this.relation = relation;
     }
 
+    public String toString() {
+	String str="<"+leftelementexpr.name()+","+rightelementexpr.name()+"> in "+relation.toString();
+	return str;
+    }
+
     public boolean usesDescriptor(Descriptor d) {
 	if (d==relation)
 	    return true;

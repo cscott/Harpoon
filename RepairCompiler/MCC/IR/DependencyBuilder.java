@@ -14,8 +14,7 @@ public class DependencyBuilder {
     }
 
     public void calculate() {
-                     
-        /* reinitialize (clear) nodes */
+	/* reinitialize (clear) nodes */
         constraintnodes = new Hashtable();
         rulenodes = new Hashtable();
 
@@ -109,8 +108,8 @@ public class DependencyBuilder {
                         edge.setDotNodeParameters("style=dotted");
                         otherrulenode.addEdge(edge);
                     }
-                }               
-            }           
+                }
+            }
         }
 
         /* store results in state */

@@ -49,4 +49,15 @@ public class State {
         ptSpace = null;
     }
 
+    void printall() {
+	for(int i=0;i<vRules.size();i++) {
+	    Rule r=(Rule)vRules.get(i);
+	    System.out.println(r.toString());
+	}
+	for(int i=0;i<vConstraints.size();i++) {
+	    Constraint c=(Constraint)vConstraints.get(i);
+	    System.out.println(c.toString());
+	}
+    }
+    
 }

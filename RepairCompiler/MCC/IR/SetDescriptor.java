@@ -28,7 +28,8 @@ public class SetDescriptor extends Descriptor {
             
             if (descriptor instanceof SetDescriptor) {
                 expanded.addAll(((SetDescriptor) descriptor).allSubsets());
-            }
+            } else
+		expanded.add(descriptor); /* Still need the descriptor */
         }
 
         expanded.addAll(descriptors);

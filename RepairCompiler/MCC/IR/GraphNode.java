@@ -83,6 +83,22 @@ public class GraphNode {
         return owner;
     }
 
+    public static void computeclosure(Set nodes) {
+	Stack tovisit=new Stack();
+	tovisit.addAll(nodes);
+	while(!tovisit.isEmpty()) {
+	    GraphNode gn=(GraphNode)tovisit.pop();
+	    for(Iterator it=gn.edges();it.hasNext();) {
+		Edge edge=(Edge)it.next();
+		GraphNode target=edge.getTarget();
+		if (!nodes.contains(target)) {
+		    nodes.add(target);
+		    tovisit.push(target);
+		}
+	    }
+	}
+    }
+
     public void setDotNodeParameters(String param) {
         if (param == null) {
             throw new NullPointerException();
@@ -195,8 +211,10 @@ public class GraphNode {
                 while (edges.hasNext()) {
                     Edge edge = (Edge) edges.next();
                     GraphNode node = edge.getTarget();
-                    String edgelabel = useEdgeLabels ? "label=\"" + edge.getLabel() + "\"" : "label=\"\"";
-                    output.println("\t" + gn.getLabel() + " -> " + node.getLabel() + " [" + edgelabel + edge.dotnodeparams + "];");
+		    if (nodes.contains(node)) {
+			String edgelabel = useEdgeLabels ? "label=\"" + edge.getLabel() + "\"" : "label=\"\"";
+			output.println("\t" + gn.getLabel() + " -> " + node.getLabel() + " [" + edgelabel + edge.dotnodeparams + "];");
+		    }
                 }
             }
         }

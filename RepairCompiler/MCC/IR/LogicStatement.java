@@ -9,8 +9,10 @@ public class LogicStatement {
     public static final Operation NOT = new Operation("NOT");
 
     public String name() {
+	if (op==NOT)
+	    return "!"+left.name();
 	String name=left.name();
-	name+=op.toString();
+	name+=" "+op.toString()+" ";
 	if (right!=null)
 	    name+=right.name();
 	return name;

@@ -2,7 +2,7 @@ package MCC.IR;
 
 import java.util.*;
 
-public class Constraint {
+public class Constraint implements Quantifiers {
     
     private static int count = 1;
 
@@ -19,8 +19,25 @@ public class Constraint {
         label = new String("c" + count++);
     }
 
+    public String toString() {
+	String name="";
+	for(int i=0;i<numQuantifiers();i++) {
+	    name+=getQuantifier(i).toString()+",";
+	}
+	name+=logicstatement.name();
+	return name;
+    }
+
     public int getNum() {
         return num;
+    }
+
+    public int numQuantifiers() {
+	return quantifiers.size();
+    }
+
+    public Quantifier getQuantifier(int i) {
+	return (Quantifier) quantifiers.get(i);
     }
 
     public String getLabel() {
@@ -59,7 +76,7 @@ public class Constraint {
 
         for (int i = 0; i < quantifiers.size(); i++) {            
             Quantifier q = (Quantifier) quantifiers.elementAt(i);
-            topdescriptors.addAll(q.getRequiredDescriptors());                
+            topdescriptors.addAll(q.getRequiredDescriptors());
         }
 
         return SetDescriptor.expand(topdescriptors);

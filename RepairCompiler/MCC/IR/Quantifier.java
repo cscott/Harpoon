@@ -9,5 +9,4 @@ public abstract class Quantifier {
 
     public abstract int generate_worklistload(CodeWriter writer, int offset);
     public abstract int generate_workliststore(CodeWriter writer, int offset);
-
 }
