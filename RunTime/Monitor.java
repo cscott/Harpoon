@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Tue Oct  6 11:24:14 1998> 
-// Time-stamp: <1998-11-16 23:27:22 mfoltz> 
+// Time-stamp: <1998-11-22 16:41:20 mfoltz> 
 // Keywords: 
 
 package harpoon.RunTime;
@@ -52,19 +52,19 @@ public class Monitor {
     } catch (Exception e) { }
   }
 
-  public static void logNEW(Object creator, String creator_method, 
-			    Object created, int id) {
+  public static void logNEW(Object creator, String creator_class, 
+			    String creator_method, Object created, int id) {
     try {
 
       int creator_id, created_id;
-      String creator_class, created_class;
+      String created_class;
 
       if (creator == null) {
 	creator_id = -1;
-	creator_class = "Static";
+	// creator_class = "Static";
       } else {
 	creator_id = System.identityHashCode(creator);
-	creator_class = creator.getClass().getName();
+	// creator_class = creator.getClass().getName();
       }
 
       if (created == null) {
@@ -87,3 +87,4 @@ public class Monitor {
   }
 
 }
+
