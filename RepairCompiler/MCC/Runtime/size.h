@@ -1,4 +1,4 @@
-#include "ex_aux.h"
+#include "test3_aux.h"
 class typeobject {
 public:
 typeobject();

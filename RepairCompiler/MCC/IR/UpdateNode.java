@@ -504,7 +504,7 @@ class UpdateNode {
 
 	    if (b.getType()==Binding.SEARCH) {
 		VarDescriptor vd=b.getVar();
-		cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"="+b.getSet().getSafeSymbol()+"->firstkey();");
+		cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"="+b.getSet().getSafeSymbol()+"_hash->firstkey();");
 	    } else if (b.getType()==Binding.CREATE) {
 		throw new Error("Creation not supported");
 		//		source.generateSourceAlloc(cr,vd,b.getSet());

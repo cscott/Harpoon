@@ -12,6 +12,10 @@ public class Sources {
     public boolean setSource(SetDescriptor sd) {
 	if (sd.getSymbol().equals("InodeBitmapBlock"))
 	    return true;
+	if (sd.getSymbol().equals("InodeTableBlock"))
+	    return true;
+	if (sd.getSymbol().equals("RootDirectoryInode"))
+	    return true;
 
 	return false;
     }
@@ -21,8 +25,13 @@ public class Sources {
     public SetDescriptor getSourceSet(SetDescriptor sd) {
 	if (sd.getSymbol().equals("InodeBitmapBlock"))
 	    return (SetDescriptor)state.stSets.get("FreeBlock");
+	if (sd.getSymbol().equals("InodeTableBlock"))
+	    return (SetDescriptor)state.stSets.get("FreeBlock");
+	if (sd.getSymbol().equals("RootDirectoryInode"))
+	    return (SetDescriptor)state.stSets.get("FreeInode");
 	return null;
     }
+
     public void generateSourceAlloc(CodeWriter cr,VarDescriptor vd, SetDescriptor sd) {
 	TypeDescriptor td=sd.getType();
 	Expr e=td.getSizeExpr();

@@ -86,7 +86,9 @@ public class RepairGenerator {
 	generate_call();
 	generate_start();
         generate_rules();
-	generate_print();
+	if (!Compiler.REPAIR) {
+	    generate_print();
+	}
         generate_checks();
         generate_teardown();
 	CodeWriter crhead = new StandardCodeWriter(this.outputhead);
@@ -115,6 +117,8 @@ public class RepairGenerator {
 	int count=0;
         CodeWriter crhead = new StandardCodeWriter(outputhead);        
         CodeWriter craux = new StandardCodeWriter(outputaux);        
+	RelationDescriptor.prefix = "model->";
+	SetDescriptor.prefix = "model->";
 
 	/* Rewrite globals */
 
@@ -287,6 +291,7 @@ public class RepairGenerator {
 	    };
 
 	cr.outputline("void "+name+"_state::computesizes(int *sizearray,int **numele) {");
+	cr.outputline("int maybe=0;");
 	for(int i=0;i<max;i++) {
 	    TypeDescriptor td=tdarray[i];
 	    Expr size=td.getSizeExpr();
@@ -310,6 +315,7 @@ public class RepairGenerator {
 		}
 	    }
 	}
+	cr.outputline("if (maybe) printf(\"BAD ERROR\");");
 	cr.outputline("}");
     }
 
@@ -325,6 +331,7 @@ public class RepairGenerator {
 		public SymbolTable getSymbolTable() { return st; }
 	    };
 	cr.outputline("void "+name+"_state::recomputesizes() {");
+	cr.outputline("int maybe=0;");
 	for(int i=0;i<max;i++) {
 	    TypeDescriptor td=tdarray[i];
 	    Expr size=td.getSizeExpr();
@@ -346,6 +353,7 @@ public class RepairGenerator {
 		}
 	    }
 	}
+	cr.outputline("if (maybe) printf(\"BAD ERROR\");");
 	cr.outputline("}");
     }
 
@@ -1106,15 +1114,16 @@ public class RepairGenerator {
 		    SetDescriptor sd=termination.sources.relgetSourceSet(rd,!ep.inverted());
 		    VarDescriptor iterator=VarDescriptor.makeNew("iterator");
 		    cr.outputline(sd.getType().getGenerateType().getSafeSymbol() +" "+newobject.getSafeSymbol()+";");
-		    cr.outputline("for("+iterator.getSafeSymbol()+"="+sd.getSafeSymbol()+"_hash->iterator();"+iterator.getSafeSymbol()+".hasNext();)");
+		    cr.outputline("SimpleIterator "+iterator.getSafeSymbol()+";");
+		    cr.outputline("for("+sd.getSafeSymbol()+"_hash->iterator("+ iterator.getSafeSymbol() +");"+iterator.getSafeSymbol()+".hasNext();)");
 		    cr.startblock();
 		    if (ep.inverted()) {
-			cr.outputline("if !"+rd.getSafeSymbol()+"_hashinv->contains("+iterator.getSafeSymbol()+"->key(),"+otherside.getSafeSymbol()+")");
+			cr.outputline("if (!"+rd.getSafeSymbol()+"_hashinv->contains("+iterator.getSafeSymbol()+".key(),"+otherside.getSafeSymbol()+"))");
 		    } else {
-			cr.outputline("if !"+rd.getSafeSymbol()+"_hash->contains("+otherside.getSafeSymbol()+","+iterator.getSafeSymbol()+"->key())");
+			cr.outputline("if (!"+rd.getSafeSymbol()+"_hash->contains("+otherside.getSafeSymbol()+","+iterator.getSafeSymbol()+".key()))");
 		    }
 		    cr.outputline(newobject.getSafeSymbol()+"="+iterator.getSafeSymbol()+".key();");
-		    cr.outputline(iterator.getSafeSymbol()+"->next();");
+		    cr.outputline(iterator.getSafeSymbol()+".next();");
 		    cr.endblock();
 		} else if (termination.sources.relallocSource(rd,!ep.inverted())) {
 		    /* Allocation Source*/
@@ -1150,11 +1159,12 @@ public class RepairGenerator {
 		    SetDescriptor sourcesd=termination.sources.getSourceSet(sd);
 		    VarDescriptor iterator=VarDescriptor.makeNew("iterator");
 		    cr.outputline(sourcesd.getType().getGenerateType().getSafeSymbol() +" "+newobject.getSafeSymbol()+";");
-		    cr.outputline("for("+iterator.getSafeSymbol()+"="+sourcesd.getSafeSymbol()+"_hash->iterator();"+iterator.getSafeSymbol()+".hasNext();)");
+		    cr.outputline("SimpleIterator "+iterator.getSafeSymbol()+";");
+		    cr.outputline("for("+sourcesd.getSafeSymbol()+"_hash->iterator("+iterator.getSafeSymbol()+");"+iterator.getSafeSymbol()+".hasNext();)");
 		    cr.startblock();
-		    cr.outputline("if !"+sd.getSafeSymbol()+"_hash->contains("+iterator.getSafeSymbol()+"->key())");
+		    cr.outputline("if (!"+sd.getSafeSymbol()+"_hash->contains("+iterator.getSafeSymbol()+".key()))");
 		    cr.outputline(newobject.getSafeSymbol()+"="+iterator.getSafeSymbol()+".key();");
-		    cr.outputline(iterator.getSafeSymbol()+"->next();");
+		    cr.outputline(iterator.getSafeSymbol()+".next();");
 		    cr.endblock();
 		} else if (termination.sources.allocSource(sd)) {
 		    /* Allocation Source*/

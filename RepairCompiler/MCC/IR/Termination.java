@@ -192,7 +192,7 @@ public class Termination {
 	    MultUpdateNode mun=tn.getUpdate();
 	    for(int i=0;i<mun.numUpdates();i++) {
 		UpdateNode un=mun.getUpdate(i);
-		for(int j=0;j<mun.numUpdates();j++) {
+		for(int j=0;j<un.numUpdates();j++) {
 		    Updates u=un.getUpdate(j);
 		    if (u.getType()==Updates.ABSTRACT) {
 			Expr e=u.getLeftExpr();

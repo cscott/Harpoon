@@ -207,11 +207,13 @@ public class ArrayAnalysis {
 	}
 
 	public boolean equal(AccessPath ap) {
+	    if (ap==null)
+		return false;
 	    if (this==ap)
 		return true;
-	    if (setStart&&this.startset!=ap.startset)
+	    if (this.setStart&&this.startset!=ap.startset)
 		return false;
-	    if ((!setStart)&&this.startvar!=ap.startvar)
+	    if ((!this.setStart)&&this.startvar!=ap.startvar)
 		return false;
 	    if (this.path.size()!=ap.path.size())
 		return false;

@@ -1,1 +1,1 @@
-[], sizeof(Nodes) >= literal(1);
+[], sizeof(Nodes) >= 1;
