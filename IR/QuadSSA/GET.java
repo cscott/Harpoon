@@ -2,17 +2,22 @@
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
+import harpoon.Temp.Temp;
 /**
  * <code>GET</code> represent field access (get) operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.1 1998-08-05 11:11:48 cananian Exp $
+ * @version $Id: GET.java,v 1.2 1998-08-07 13:38:12 cananian Exp $
  */
 
 public class GET extends Quad {
-    
+    public HField src;
+    public Temp dst;
     /** Creates a <code>GET</code>. */
-    public GET() {
+    public GET(String sourcefile, int linenumber,
+	       Temp dst, HField src) {
+	super(sourcefile, linenumber);
+	this.dst = dst;
+	this.src = src;
     }
-    
 }

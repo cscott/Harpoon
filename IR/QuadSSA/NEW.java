@@ -6,14 +6,16 @@ import harpoon.ClassFile.*;
  * <code>NEW</code> represents an object creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.1 1998-08-05 11:11:48 cananian Exp $
+ * @version $Id: NEW.java,v 1.2 1998-08-07 13:38:13 cananian Exp $
  */
 
 public class NEW extends Quad {
-    
-    /** Creates a <code>NEW</code>. */
-    public NEW() {
-        
+    public HClass hclass;
+    /** Creates a <code>NEW</code> object.  <code>NEW</code> creates
+     *  a new instance of the class <code>hclass</code>. */
+    public NEW(String sourcefile, int linenumber,
+	       HClass hclass) {
+        super(sourcefile, linenumber);
+	this.hclass = hclass;
     }
-    
 }
