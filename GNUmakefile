@@ -33,7 +33,8 @@ export THESIS_FIGURES=\
 	Figures/THsccalg1.tex Figures/THsccalg2.tex Figures/THsccssi.tex \
 	Figures/THscctyped.tex Figures/THsptc.tex \
 	Figures/THssiren1.tex Figures/THssiren2.tex Figures/THssirend.tex \
-	Figures/THmorephi.fig Figures/THssi2ssa.tex
+	Figures/THmorephi.fig Figures/THssi2ssa.tex \
+	Figures/THlat6.fig
 thesis.dvi: $(patsubst %.fig,%.tex,$(THESIS_FIGURES)) \
 	Figures/THex1base.tex \
 	Figures/THex1ssa.tex Figures/THex1ssaPr.tex \

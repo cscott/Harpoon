@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.103 1999-09-01 18:29:10 cananian Exp $
+% $Id: thesis.tex,v 1.104 1999-09-01 21:24:50 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -41,14 +41,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.103 $ $}
+\date{\today \\ $ $Revision: 1.104 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.103 $ $}{$ $Revision: 1.103 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.104 $ $}{$ $Revision: 1.104 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -1854,12 +1854,22 @@ array.\footnote{Languages in which array indices start at 1 can be
 handled by slight modifications to the same techniques.} By
 identifying integer constants as either positive, negative, or zero
 the first half of the bounds check may be eliminated.  This requires a
-simple extension of the integer constant portion of the lattice, with
+simple extension of the integer constant portion of the lattice,
+outlined in figure~\vref{fig:scclat6}, with
 negligible performance cost.  However, handling upper bounds
 completely requires a symbolic analysis that is out of the current
 scope of this work.  Future work will use induction variable analysis
 and integrate an existing integer linear programming approach
 \cite{rugina99:divide} to fully address array-bounds checks.
+\begin{myfigure}[t]
+\centering\renewcommand*{\figscale}{0.6}\input{Figures/THlat6}
+\caption[An integer lattice for signed integers.]
+{An integer lattice for signed integers. A classification into
+negative (M), positive (P), or zero (Z) is grafted onto the standard
+flat integer constant domain.  The \code{(M-P)} entry is duplicated to
+aid clarity.}
+\label{fig:scclat6}
+\end{myfigure}
 
 \subsubsection{Experimental results}\label{sec:sptc_results}
 The full SPTC analysis and optimization has been implemented on the
@@ -1897,11 +1907,6 @@ at the time the benchmark was run), which shows that the speed-up is
 not limited to constant initialization code.
 
 \subsection{Bit-width analysis}\label{sec:bitwidth}
-\begin{myfigure}[t]
-\centering\renewcommand*{\figscale}{0.6}\input{Figures/THlattice}
-\caption{Lattice for constant/type/bitwidth analysis.}
-\label{fig:lattice}
-\end{myfigure}
 The algorithm of the previous section\fixme{refer to precise section}
 can also be extended to allow bitwidth analysis of the program data.%
 \fixme{Finish this.}
