@@ -33,7 +33,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.31 1999-09-09 00:36:33 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.32 1999-09-21 00:41:52 pnkfelix Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {
@@ -292,9 +292,17 @@ public abstract class Code extends HCode
 	    switch (state) { 
 	    case COMPUTE_EDGE_SETS:
 		nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
-		Util.assert(labels.containsKey(s.retex.label));
-		Util.assert(nextNode!=null);
-		Util.assert(RS(nextNode)!=(Stm)labels.get(s.retex.label));
+
+		Util.assert(labels.containsKey(s.retex.label),
+			    "labels should contain Label:" + 
+			    s.retex.label);
+		Util.assert(nextNode!=null, 
+			    "nextNode shouldn't be null");
+		Util.assert(RS(nextNode)!=(Stm)labels.get(s.retex.label),
+			    "both normal and exceptional return should"+
+			    " not target same location for "+
+			    Print.print(s));
+
 		addEdge(s, RS(nextNode)); 
 		addEdge(s, (Stm)labels.get(s.retex.label));
 		break;
@@ -305,7 +313,11 @@ public abstract class Code extends HCode
 		if (successors.containsKey(s)) { 
 		    Stm ex   = (Stm)labels.get(s.retex.label);
 		    Set succ = (Set)successors.get(s);
-		    Util.assert(succ.size()==2);
+		    Util.assert(succ.size()==2, 
+				"number of successors ("+succ.size()+
+				") should equal 2 for " + 
+				Print.print(s) + " " +
+				Print.print(nextNode));
 		    for (Iterator i = succ.iterator(); i.hasNext();) { 
 			Stm next     = (Stm)i.next();
 			Set nextPred = (Set)predecessors.get(next);
