@@ -16,5 +16,6 @@ echo >>email.txt
 echo "Source file:" >>email.txt
 cat $HOME/Experiment/Second/file2.cc >>email.txt
 
-
 send $HOME/email.txt
+
+rm -rf $HOME/Experiment
