@@ -30,7 +30,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.22 2000-11-15 19:44:49 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.23 2001-01-24 19:33:54 cananian Exp $
  */
 public abstract class Code extends HCode implements java.io.Serializable {
     /** The method that this code view represents. */
@@ -175,7 +175,7 @@ public abstract class Code extends HCode implements java.io.Serializable {
     public ArrayFactory elementArrayFactory() { return Quad.arrayFactory; }
 
     // print this Code.
-    public void print(java.io.PrintWriter pw) {
-	Print.print(pw, this);
+    public void print(java.io.PrintWriter pw, PrintCallback callback) {
+	Print.print(pw, this, callback);
     }
 }

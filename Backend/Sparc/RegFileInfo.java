@@ -6,6 +6,7 @@ package harpoon.Backend.Sparc;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.LocationFactory.Location;
 import harpoon.Backend.Generic.RegFileInfo.SpillException;
+import harpoon.ClassFile.HCode.PrintCallback;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HData;
@@ -35,7 +36,7 @@ import java.util.Set;
  * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.12 2000-07-25 03:08:13 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.13 2001-01-24 19:33:35 cananian Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 
@@ -257,7 +258,7 @@ public class RegFileInfo
 	return new Data("location-data", f) {
 	    public HClass getHClass() { return null; }
 	    public HDataElement getRootElement() { return null; }
-	    public void print(java.io.PrintWriter pw) {
+	    public void print(java.io.PrintWriter pw, PrintCallback cb) {
 		pw.println("--- no data ---");
 	    }
 	};

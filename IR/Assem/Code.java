@@ -33,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.14 2000-10-06 21:20:10 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.15 2001-01-24 19:33:49 cananian Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -147,8 +147,8 @@ public abstract class Code extends HCode {
 	each Instr into its architecture specific assembly format and
 	omits Instr ID number information.
     */
-    public void print(java.io.PrintWriter pw) {
-	myPrint(pw, true, false);
+    public void print(java.io.PrintWriter pw, PrintCallback callback) {
+	myPrint(pw, true, false, callback);
     }
     
     /** Displays the assembly instructions of this codeview. Attempts
@@ -164,8 +164,9 @@ public abstract class Code extends HCode {
      *  @see Code#toAssem
      */
     protected void myPrint(java.io.PrintWriter pw, 
-			 boolean assem,
-			 boolean annotateID) {
+			   boolean assem,
+			   boolean annotateID,
+			   PrintCallback callback) {
 	final HashSet outputLabels = new HashSet();
 	final MultiMap labelsNeeded = new GenericMultiMap();
 
@@ -201,7 +202,9 @@ public abstract class Code extends HCode {
 		}
             }
 
+	    callback.printBefore(pw, instr);
 	    pw.println(str.toString());
+	    callback.printAfter(pw, instr);
 
         }
 	

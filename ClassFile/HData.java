@@ -20,7 +20,7 @@ import java.util.List;
  * a certain set of class data.
  *
  * @author  Duncan Bryce     <duncan@lcs.mit.edu>
- * @version $Id: HData.java,v 1.1.2.6 1999-10-13 16:04:44 cananian Exp $
+ * @version $Id: HData.java,v 1.1.2.7 2001-01-24 19:33:45 cananian Exp $
  */
 public abstract class HData { 
     
@@ -69,6 +69,14 @@ public abstract class HData {
     }
 
     /**
-     * Print a human-readable representation of this dataview */
-    public abstract void print(java.io.PrintWriter pw); 
+     * Print a human-readable representation of this dataview using
+     * a null callback. */
+    public final void print(java.io.PrintWriter pw) {
+	print(pw, new HCode.PrintCallback());
+    }
+    /**
+     * Print a human-readable representation of this dataview using
+     * the specified callback. */
+    public abstract void print(java.io.PrintWriter pw,
+			       HCode.PrintCallback callback); 
 }

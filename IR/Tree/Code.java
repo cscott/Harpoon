@@ -39,7 +39,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.52 2000-10-06 23:02:50 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.53 2001-01-24 19:33:58 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The Tree Objects composing this code view. */
@@ -203,8 +203,8 @@ public abstract class Code extends HCode {
     // implement elementArrayFactory which returns Tree[]s.  
     public ArrayFactory elementArrayFactory() { return Tree.arrayFactory; }
 
-    public void print(java.io.PrintWriter pw) {
-	Print.print(pw,this);
+    public void print(java.io.PrintWriter pw, PrintCallback callback) {
+	Print.print(pw, this, callback);
     } 
 
     /** 

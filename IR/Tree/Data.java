@@ -5,6 +5,7 @@ package harpoon.IR.Tree;
 
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode.PrintCallback;
 import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HDataElement;
 import harpoon.Temp.TempFactory;
@@ -16,7 +17,7 @@ import java.util.List;
  * for <code>IR.Tree</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Data.java,v 1.1.2.21 1999-09-09 00:36:33 cananian Exp $
+ * @version $Id: Data.java,v 1.1.2.22 2001-01-24 19:33:58 cananian Exp $
  */
 public abstract class Data extends harpoon.ClassFile.HData {
     protected /*final*/ String desc;
@@ -49,7 +50,7 @@ public abstract class Data extends harpoon.ClassFile.HData {
     public String getDesc() { return desc; }
 
     /** Print a human-readable representation of this dataview */
-    public void print(java.io.PrintWriter pw) {
-	Print.print(pw, this);
+    public void print(java.io.PrintWriter pw, PrintCallback callback) {
+	Print.print(pw, this, callback);
     }
 }

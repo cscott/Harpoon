@@ -4,6 +4,7 @@
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCode.PrintCallback;
 import harpoon.IR.LowQuad.PCALL;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -18,12 +19,14 @@ import java.util.Map;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.1.2.12 2000-11-16 00:12:15 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.13 2001-01-24 19:33:54 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
-     *  <code>PrintWriter</code> <code>pw</code>. */
-    final static void print(PrintWriter pw, Code c) {
+     *  <code>PrintWriter</code> <code>pw</code> using the specified
+     *  <code>PrintCallback</code>. */
+    final static void print(PrintWriter pw, Code c, PrintCallback callback) {
+	if (callback==null) callback = new PrintCallback(); // nop callback
 	// get elements.
 	Quad[] ql = (Quad[]) c.getElements();
 	METHOD qM = ((HEADER) c.getRootElement()).method();
@@ -66,6 +69,8 @@ abstract class Print  {
 		sb.append("] --");
 		indent(pw, null, sb.toString());
 	    }
+	    // printBefore callback.
+	    callback.printBefore(pw, ql[i]);
 	    // Add footer tag to HEADER quads.
 	    if (ql[i] instanceof HEADER)
 		s += " [footer at "+labels.get(ql[i].next(0))+"]";
@@ -143,6 +148,8 @@ abstract class Print  {
 		else
 		    indent(pw, null, "goto "+labels.get(ql[i].next(0)));
 	    }
+	    // printAfter callback.
+	    callback.printAfter(pw, ql[i]);
 	}
 	pw.println();
 	pw.flush();

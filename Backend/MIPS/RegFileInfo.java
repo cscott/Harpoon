@@ -9,6 +9,7 @@ import harpoon.Backend.Generic.RegFileInfo.VRegAllocator;
 import harpoon.Backend.Generic.RegFileInfo.SpillException;
 import harpoon.Backend.StrongARM.TwoWordTemp;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode.PrintCallback;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HDataElement;
@@ -39,7 +40,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.7 2000-10-20 02:22:25 witchel Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.8 2001-01-24 19:33:30 cananian Exp $
  */
 public class RegFileInfo
 extends harpoon.Backend.Generic.RegFileInfo 
@@ -519,7 +520,7 @@ implements harpoon.Backend.Generic.LocationFactory
             /** Empty tree, so root element is <code>null</code>. */
             public HDataElement getRootElement() { return null; }
             /** Tell a human reader that there is no data here. */
-            public void print(java.io.PrintWriter pw) {
+            public void print(java.io.PrintWriter pw, PrintCallback cb) {
                pw.println("--- no data ---");
             }
          };

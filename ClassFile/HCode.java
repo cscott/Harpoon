@@ -15,7 +15,7 @@ import java.util.Iterator;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.12.2.8 2000-10-06 21:20:00 cananian Exp $
+ * @version $Id: HCode.java,v 1.12.2.9 2001-01-24 19:33:45 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -142,20 +142,40 @@ public abstract class HCode {
   }
 
   /**
-   * Pretty-print this code view.
+   * Pretty-print this code view using an empty callback.
    */
-  public void print(java.io.PrintWriter pw) {
+  public final void print(java.io.PrintWriter pw) {
+    print(pw, new PrintCallback());
+  }
+  /**
+   * Pretty-print this code view using the specified callback.
+   */
+  public void print(java.io.PrintWriter pw, PrintCallback callback) {
+    if (callback==null) callback = new PrintCallback(); // nop callback
     pw.println("Codeview \""+getName()+"\" for "+getMethod()+":");
-    HCodeElement[] hce = getElements();
-    for (int i=0; i<hce.length; i++)
-      pw.println("  #"+hce[i].getID()+"/"+
-		 hce[i].getSourceFile()+":"+hce[i].getLineNumber()+" - " +
-		 hce[i].toString());
+    for (Iterator it = getElementsI(); it.hasNext(); ) {
+      HCodeElement hce = (HCodeElement) it.next();
+      callback.printBefore(pw, hce);
+      pw.println("  #"+hce.getID()+"/"+
+		 hce.getSourceFile()+":"+hce.getLineNumber()+" - " +
+		 hce.toString());
+      callback.printAfter(pw, hce);
+    }
   }
 
   /** Returns a human-readable representation of this <code>HCode</code>. */
   public String toString() {
     return "codeview " + getName() + " for " + getMethod();
+  }
+
+  /** Callback interface for annotating pretty-prints of <code>HCode</code>s.*/
+  public static class PrintCallback {
+    /** This method is called right *before* each <code>HCodeElement</code>
+     *  is output. */
+    public void printBefore(java.io.PrintWriter pw, HCodeElement hce) { }
+    /** This method is called right *after* each <code>HCodeElement</code>
+     *  is output. */
+    public void printAfter(java.io.PrintWriter pw, HCodeElement hce) { }
   }
 }
 
