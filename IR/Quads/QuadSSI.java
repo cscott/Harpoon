@@ -26,11 +26,25 @@ import java.util.Map;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: QuadSSI.java,v 1.3 2002-04-23 22:34:04 ovy Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
     public static final String codename = "quad-ssi";
+
+    /* shameless hack
+       keep new-to-old quad mapping
+    */
+    public static boolean KEEP_QUAD_MAP_HACK = false;
+
+    private static Map quadMap;
+
+    public Map getQuadMap() {
+        assert KEEP_QUAD_MAP_HACK
+            : "You should set KEEP_QUAD_MAP_HACK if you need this";
+
+        return quadMap;
+    }
 
     /** Creates a <code>Code</code> object from a bytecode object. */
     public QuadSSI(QuadNoSSA qns) 
@@ -43,7 +57,16 @@ public class QuadSSI extends Code /* which extends HCode */ {
 	AllocationInformationMap aim =
 	    (getAllocationInformation()==null) ? null :
 	    new AllocationInformationMap();
-	DeadCode.optimize(this, aim);
+
+        if (KEEP_QUAD_MAP_HACK) {
+            quadMap = rt0.quadMap;
+        }
+
+        // dead code opt will kill our mappings so don't run it
+        if (!KEEP_QUAD_MAP_HACK) {
+            DeadCode.optimize(this, aim);
+        }
+        
 	setAllocationInformation(aim);
     }
 
