@@ -47,7 +47,7 @@ terminal _2B, _2C, _2D, _2F, _2I, _2L, _2S, NEG, NOT;
 non terminal program, ruleSeq, rule;
 non terminal exp, stm, detailSeq, detail, idList, types;
 non terminal opt_idList, opt_types;
-non terminal binops, unops;
+non terminal binops, unops, sym_binops, sym_unops, sym_number;
 
 start with program;
 
@@ -79,15 +79,15 @@ idList	::=	ID
 	|	idList COMMA ID
 	;
 
+
 exp	::=	ID
-	|	NUMBER | binops | unops
-	|	BINOP opt_types LPAREN exp COMMA exp COMMA exp RPAREN
-	|	CONST opt_types LPAREN exp RPAREN
+	|	BINOP opt_types LPAREN sym_binops COMMA exp COMMA exp RPAREN
+	|	CONST opt_types LPAREN sym_number RPAREN
 	|	ESEQ LPAREN stm COMMA exp RPAREN
 	|	MEM opt_types LPAREN exp RPAREN
 	|	NAME LPAREN ID RPAREN
 	|	TEMP opt_types LPAREN ID RPAREN
-	|	UNOP opt_types LPAREN exp COMMA exp RPAREN
+	|	UNOP opt_types LPAREN sym_unops COMMA exp RPAREN
 	;
 
 stm	::=	CALL LPAREN exp COMMA exp COMMA exp COMMA ID RPAREN
@@ -107,6 +107,16 @@ opt_types ::=	/* nothing */
 	;
 
 types	::=	LANGLE opt_idList RANGLE
+	;
+
+sym_number ::=	ID
+	|	NUMBER
+	;
+sym_binops ::=	ID
+	|	binops
+	;
+sym_unops ::=	ID
+	|	unops
 	;
 
 binops	::=	ADD
