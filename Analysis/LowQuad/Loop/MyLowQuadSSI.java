@@ -21,10 +21,11 @@ import java.util.Iterator;
  * <code>MyLowQuadSSI</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadSSI.java,v 1.1.2.1 1999-07-09 21:31:15 bdemsky Exp $
+ * @version $Id: MyLowQuadSSI.java,v 1.1.2.2 1999-07-13 20:53:06 bdemsky Exp $
  */
 
-public class MyLowQuadSSI extends harpoon.IR.LowQuad.Code  {
+public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSA {
+    //harpoon.IR.LowQuad.Code  {
     HashMap dT;
     HashMap tT;
     public static final String codename = "low-quad-ssa";
