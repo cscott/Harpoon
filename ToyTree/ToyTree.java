@@ -22,14 +22,15 @@ class ToyTree {
 		stats = args[3].equalsIgnoreCase("stats");
 	    }
 	} catch (Exception e) {
-	    System.out.println("Toy Tree <tree depth> <repeats> <noRTJ | CT | VT> [stats | nostats] [ctsize]\n");
+	    System.out.println("Toy Tree <tree depth> <repeats> <noRTJ | CT | VT> [stats | nostats] [ctsize]");
 	    System.exit(-1);
 	}
 	
-	long start=System.currentTimeMillis();
+	long start;
 	if (RTJ) {
 	    ToyTreeRTJ ta=new ToyTreeRTJ(ma,asize,repeats);
 	    ToyTreeRTJ tb=new ToyTreeRTJ(mb,asize,repeats);
+	    start=System.currentTimeMillis();
 	    ta.start();
 	    tb.start();
 	    try {
@@ -39,6 +40,7 @@ class ToyTree {
 	} else {
 	    ToyTreeNoRTJ ta=new ToyTreeNoRTJ(asize,repeats);
 	    ToyTreeNoRTJ tb=new ToyTreeNoRTJ(asize,repeats);
+	    start=System.currentTimeMillis();
 	    ta.start();
 	    tb.start();
 	    try {

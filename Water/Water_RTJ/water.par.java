@@ -1831,7 +1831,7 @@ class water {
       break;
     } 
     case CT_MEMORY: {
-      (new javax.realtime.CTMemory(water.ctsize)).enter(r);
+      (new javax.realtime.CTMemory(ctsize)).enter(r);
       break;
     }
     case VT_MEMORY: {
@@ -1856,7 +1856,7 @@ class water {
 
   parms = new simparm();
   if (args.length < 2) { 
-    System.out.print("usage: water <input filename> <noRTJ | CT | VT> [stats | nostats] [ctsize]\n");
+    System.out.print("usage: java water <input filename> <noRTJ | CT | VT> [stats | nostats] [ctsize]\n");
     return;
   }
   if (args[1].equalsIgnoreCase("noRTJ")) {
