@@ -11,7 +11,7 @@ import java.lang.reflect.Modifier;
  * representing array types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassArray.java,v 1.1.4.3 2000-10-20 22:48:20 cananian Exp $
+ * @version $Id: HClassArray.java,v 1.1.4.4 2000-11-09 01:06:26 cananian Exp $
  */
 class HClassArray extends HClassImpl {
   HClass baseType;
@@ -26,7 +26,8 @@ class HClassArray extends HClassImpl {
 				       Modifier.PUBLIC | Modifier.FINAL);
     this.cloneMethod = new HArrayMethod(this, "clone",
 					Modifier.PUBLIC | Modifier.NATIVE,
-					HCobject, new HClass[0], new String[0],
+					linker.forName("java.lang.Object"),
+					new HClass[0], new String[0],
 					new HClass[0], false);
   }
   public HClass getComponentType() {
@@ -49,17 +50,17 @@ class HClassArray extends HClassImpl {
     // this is what java.lang.Class returns.
     return Modifier.PUBLIC | Modifier.ABSTRACT | Modifier.FINAL;
   }
-  public HClass getSuperclass() { return HCobject; }
+  public HClass getSuperclass() {
+    return getLinker().forName("java.lang.Object");
+  }
   public HClass[] getInterfaces() {
     // see http://java.sun.com/docs/books/jls/clarify.html
-    return new HClass[] { HCcloneable, HCserializable };
+    return new HClass[] {
+      getLinker().forName("java.lang.Cloneable"),
+      getLinker().forName("java.io.Serializable"),
+    };
   }
   public boolean isArray() { return true; }
-
-  // cache class constants.
-  private final HClass HCobject   =getLinker().forName("java.lang.Object");
-  private final HClass HCcloneable=getLinker().forName("java.lang.Cloneable");
-  private final HClass HCserializable=getLinker().forName("java.io.Serializable");
 }
 
 // set emacs indentation style.
