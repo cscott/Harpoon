@@ -385,7 +385,10 @@ void free_unreachable_blocks() {
 	CLEAR_MARK(curr_block);
       else if (NOT_MARKED(curr_block))
 	{
-	  // not marked, can be freed
+	  // if inflated, need to free associated resources
+	  if ((curr_block->object.hashunion.hashcode & 1) == 0)
+	    curr_block->object.hashunion.inflated->precise_deflate_obj(&curr_block->object, (ptroff_t)0);
+
 	  free_memory += size_of_curr_block;
 	  debug_clear_memory(curr_block);
 	  faster_add_to_free_list(curr_block);
