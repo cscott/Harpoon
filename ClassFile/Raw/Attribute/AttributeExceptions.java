@@ -10,8 +10,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * must be exactly one <code>Exceptions</code> attribute in each
  * <code>method_info</code> structure.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeExceptions.java,v 1.6 1998-08-01 02:02:20 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: AttributeExceptions.java,v 1.7 1998-08-01 22:50:07 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.5"
  * @see Attribute
  * @see MethodInfo

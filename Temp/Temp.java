@@ -9,8 +9,8 @@ import java.util.Hashtable;
  * variable.  This class maintains static state to allow us to allocate
  * guaranteed-unique names for our temps.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.2 1998-07-29 00:56:44 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: Temp.java,v 1.3 1998-08-01 22:50:08 cananian Exp $
  * @see TempList
  */
 public class Temp implements TypedObject {

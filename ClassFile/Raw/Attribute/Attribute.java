@@ -9,8 +9,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * format.  <code>Attribute</code> is the superclass of the different
  * types of attribute information classes.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Attribute.java,v 1.6 1998-07-31 07:05:58 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: Attribute.java,v 1.7 1998-08-01 22:50:07 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7"
  * @see ClassFile
  * @see FieldInfo

@@ -6,8 +6,8 @@ import harpoon.ClassFile.Raw.*;
  * represent a field or method, without indicating which class or
  * interface type it belongs to.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantNameAndType.java,v 1.8 1998-07-31 13:36:14 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: ConstantNameAndType.java,v 1.9 1998-08-01 22:50:08 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.6"
  * @see Constant
  */

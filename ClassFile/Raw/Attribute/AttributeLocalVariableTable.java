@@ -16,8 +16,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * symbolic names.  This attribute is optional; typically it is
  * not included unless debugging flags are given to the compiler.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeLocalVariableTable.java,v 1.8 1998-07-31 07:05:59 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: AttributeLocalVariableTable.java,v 1.9 1998-08-01 22:50:07 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.7"
  * @see AttributeCode
  * @see Attribute

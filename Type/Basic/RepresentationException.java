@@ -4,8 +4,8 @@ package harpoon.Type.Basic;
  * A RepresentationException is thrown when we attempt to instantiate a
  * datatype with a value which it cannot represent.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RepresentationException.java,v 1.1 1998-07-29 00:56:49 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: RepresentationException.java,v 1.2 1998-08-01 22:50:09 cananian Exp $
  * @see     harpoon.Type.InvalidValueException
  * @see     Boolean#Boolean
  * @see     Int#Int

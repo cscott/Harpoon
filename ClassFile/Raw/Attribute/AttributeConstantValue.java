@@ -17,8 +17,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * assigned the value referenced by its <code>ConstantValue</code>
  * attribute as part of its initialization.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeConstantValue.java,v 1.5 1998-07-31 07:05:59 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: AttributeConstantValue.java,v 1.6 1998-08-01 22:50:07 cananian Exp $
  * @see Attribute
  * @see FieldInfo
  * @see ClassFile

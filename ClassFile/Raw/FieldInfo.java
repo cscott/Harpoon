@@ -6,8 +6,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * Each field is described by a variable-length
  * <code>field_info</code> structure.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldInfo.java,v 1.9 1998-07-31 13:38:51 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: FieldInfo.java,v 1.10 1998-08-01 22:50:06 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.5"
  * @see ClassFile
  * @see harpoon.ClassFile.HField

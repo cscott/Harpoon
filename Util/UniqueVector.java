@@ -6,8 +6,8 @@ import java.util.Enumeration;
 
 /**
  * A unique vector refuses to addElement duplicates.
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueVector.java,v 1.2 1998-08-01 09:06:30 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: UniqueVector.java,v 1.3 1998-08-01 22:50:09 cananian Exp $
  * @see java.util.Vector
  * @see java.util.Hashtable
  */

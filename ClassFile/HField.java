@@ -8,8 +8,8 @@ import harpoon.ClassFile.Raw.Attribute.AttributeConstantValue;
  * or an interface.  The reflected field may be a class (static) field or
  * an instance field.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.4 1998-08-01 05:08:32 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: HField.java,v 1.5 1998-08-01 22:50:01 cananian Exp $
  * @see HMember
  * @see HClass
  */

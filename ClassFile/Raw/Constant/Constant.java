@@ -7,8 +7,8 @@ import harpoon.ClassFile.Raw.*;
  * various specific constant pool item types.
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Constant.java,v 1.7 1998-07-31 07:05:59 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: Constant.java,v 1.8 1998-08-01 22:50:07 cananian Exp $
  * @see ConstantUtf8
  * @see ConstantInteger
  * @see ConstantFloat

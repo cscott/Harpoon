@@ -23,8 +23,8 @@ import harpoon.Util.UniqueVector;
  * <code>forDescriptor</code> and <code>forClass</code> methods of this
  * class.
  * 
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.8 1998-08-01 08:59:14 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: HClass.java,v 1.9 1998-08-01 22:50:01 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {

@@ -6,8 +6,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * Represents a java bytecode class file.
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.9 1998-07-31 13:38:51 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: ClassFile.java,v 1.10 1998-08-01 22:50:06 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 

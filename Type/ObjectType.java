@@ -8,8 +8,8 @@ import java.util.Hashtable;
  * <p>
  * Each instance of this class represents a unique datatype.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectType.java,v 1.2 1998-07-29 01:20:09 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: ObjectType.java,v 1.3 1998-08-01 22:50:08 cananian Exp $
  * @see     Type
  * @see     Value
  */

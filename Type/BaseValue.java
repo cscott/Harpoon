@@ -22,8 +22,8 @@ import java.lang.reflect.InvocationTargetException;
  * the supplied initializer cannot be represented.  This will be
  * translated into an <code>InvalidValueException</code>.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BaseValue.java,v 1.2 1998-07-29 01:20:09 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: BaseValue.java,v 1.3 1998-08-01 22:50:08 cananian Exp $
  * @see     Type
  * @see     Value
  * @see     ValueException

@@ -8,8 +8,8 @@ package harpoon.Type;
  * An example would be attempting to initialize a <code>byte</code> with
  * the value 256.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InvalidValueException.java,v 1.1 1998-07-29 00:56:46 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: InvalidValueException.java,v 1.2 1998-08-01 22:50:08 cananian Exp $
  * @see     BaseValue#BaseValue
  * @see     BaseType#newValue
  */

@@ -9,8 +9,8 @@ package harpoon.Type.Basic;
  * the Harpoon system uses to represent the JVM `primitive' 
  * datatypes.
  *
- * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Datatype.java,v 1.2 1998-07-31 13:44:47 cananian Exp $
+ * @author C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: Datatype.java,v 1.3 1998-08-01 22:50:08 cananian Exp $
  * @see harpoon.Type.Type
  * @see harpoon.Type.Basic.Int
  * @see harpoon.Type.Basic.Long

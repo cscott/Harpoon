@@ -5,8 +5,8 @@ import harpoon.ClassFile.Raw.*;
  * The <code>CONSTANT_Integer_info</code> structure represents
  * four-byte integer numeric constants.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantInteger.java,v 1.8 1998-07-31 07:05:59 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: ConstantInteger.java,v 1.9 1998-08-01 22:50:07 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.4"
  * @see Constant
  * @see ConstantFloat

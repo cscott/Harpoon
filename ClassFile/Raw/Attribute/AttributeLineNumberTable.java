@@ -16,8 +16,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>LineNumberTable</code> attributes need not be one-to-one with
  * source lines.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeLineNumberTable.java,v 1.5 1998-07-31 07:05:59 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: AttributeLineNumberTable.java,v 1.6 1998-08-01 22:50:07 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.6"
  * @see AttributeCode
  * @see Attribute

@@ -5,8 +5,8 @@ package harpoon.Type;
  * constant size and values.   Element indexing can be performed with
  * the eval method to allow constant propagation and similar optimizations.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayValue.java,v 1.1 1998-07-29 00:56:45 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: ArrayValue.java,v 1.2 1998-08-01 22:50:08 cananian Exp $
  * @see     Type
  * @see     ValueException
  */

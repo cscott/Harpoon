@@ -3,8 +3,8 @@ package harpoon.Type.Basic;
 /**
  * Implements the built-in <code>double</code> datatype as a user module.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Double.java,v 1.1 1998-07-29 00:56:48 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: Double.java,v 1.2 1998-08-01 22:50:08 cananian Exp $
  * @see     harpoon.Type.Type
  * @see	    harpoon.Type.Basic.Datatype;
  */

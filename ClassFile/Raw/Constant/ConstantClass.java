@@ -5,8 +5,8 @@ import harpoon.ClassFile.Raw.*;
  * The <code>CONSTANT_Class_info</code> structure is used to
  * represent a class or an interface.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantClass.java,v 1.7 1998-07-31 07:05:59 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: ConstantClass.java,v 1.8 1998-08-01 22:50:07 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.1"
  * @see Constant
  */

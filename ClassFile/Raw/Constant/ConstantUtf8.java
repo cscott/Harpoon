@@ -8,8 +8,8 @@ import harpoon.ClassFile.Raw.*;
  * be represented using only one byte per character, but characters of
  * up to 16 bits can be represented.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantUtf8.java,v 1.7 1998-07-31 07:06:00 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: ConstantUtf8.java,v 1.8 1998-08-01 22:50:08 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.7"
  * @see Constant
  */

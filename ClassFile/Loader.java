@@ -13,8 +13,8 @@ import java.io.FileNotFoundException;
  *  Looks through CLASSPATH to find the class.  Understands .jar and .zip
  *  files.
  *
- *  @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- *  @version $Id: Loader.java,v 1.2 1998-08-01 19:37:03 cananian Exp $
+ *  @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ *  @version $Id: Loader.java,v 1.3 1998-08-01 22:50:01 cananian Exp $
  */
 class Loader {
   public static String classToResource(String classname) {

@@ -3,8 +3,8 @@ package harpoon.ClassFile.Raw;
 /**
  * A specialized input stream reader for java bytecode files.
  *
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassDataInputStream.java,v 1.6 1998-07-31 07:05:54 cananian Exp $
+ * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
+ * @version $Id: ClassDataInputStream.java,v 1.7 1998-08-01 22:50:06 cananian Exp $
  * @see ClassDataOutputStream
  */
 public class ClassDataInputStream extends java.io.DataInputStream {
