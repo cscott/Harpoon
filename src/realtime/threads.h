@@ -31,10 +31,6 @@ void setQuanta(jlong microsecs);
 
 void context_switch();
 
-#ifndef WITH_REALTIME_THREADS_PREEMPT
-void CheckTimeSwitch();
-#endif
-
 #define IN_ACTIVE_QUEUE 0
 #define IN_MUTEX_QUEUE 1
 

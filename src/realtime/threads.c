@@ -2,6 +2,10 @@
 #include <assert.h>
 #include <jni.h>
 
+#ifndef WITH_REALTIME_THREADS_PREEMPT
+void CheckTimeSwitch();
+#endif
+
 #ifndef WITH_REALTIME_THREADS
 JNIEXPORT jint JNICALL Java_javax_realtime_Scheduler_beginAtomic
   (JNIEnv *env, jobject scheduler) {
@@ -125,7 +129,8 @@ struct timeval compareSwitch;
 
 void CheckTimeSwitch() {
   struct timeval time;
-  if ((!quanta.it_value.tv_sec)&&(!quanta.it_value.tv_usec)) return;
+  if (((!quanta.it_value.tv_sec)&&(!quanta.it_value.tv_usec))||
+      (!IsSwitching())) return;
   gettimeofday(&time, NULL);
 
   if ((time.tv_sec>compareSwitch.tv_sec)||
@@ -328,9 +333,12 @@ void CheckQuanta(int signal)
   transfer(threadq); //transfer to the new thread
 }
 
-#ifdef WITH_REALTIME_THREADS_PREEMPT
 void settimer() {
   struct sigaction timer;
+#ifndef WITH_REALTIME_THREADS_PREEMPT
+  struct timeval time;
+  long long int microsecs;
+#endif
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  settimer()");
 #endif
@@ -339,19 +347,16 @@ void settimer() {
   timer.sa_flags=SA_ONESHOT;
   sigaction(SIGALRM, &timer, NULL);
   siginterrupt(SIGALRM, 0); /* Allow system calls to be restarted after CheckQuanta */
+#ifdef WITH_REALTIME_THREADS_PREEMPT
   setitimer(ITIMER_REAL, &quanta, NULL);
-}
 #else
-void settimer() {
-  struct timeval time;
-  long long int microsecs;
   gettimeofday(&time, NULL);
   microsecs = time.tv_sec * 1000000 + time.tv_usec;
   microsecs += quanta.it_value.tv_sec * 1000000 + quanta.it_value.tv_usec;
   compareSwitch.tv_sec  = microsecs/1000000;
   compareSwitch.tv_usec = microsecs%1000000;
-}
 #endif
+}
 
 void print_queue(struct thread_queue_struct* q, char* message) {
 #ifdef RTJ_DEBUG_THREADS
@@ -614,7 +619,8 @@ void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args,
 	 FNI_UNWRAP_MASKED(mainthread), args, thrCls);
 #endif
 
-  setQuanta(1000); /* Default value is 1 millisecond */
+  setQuanta(0);
+  settimer();
 
   // Initialize the scheduler
   initScheduler(env, mainthread);
