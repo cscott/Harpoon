@@ -1,29 +1,81 @@
 // LiveVars.java, created Wed May 26 16:53:26 1999 by pnkfelix
- // Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
- // Licensed under the terms of the GNU GPL; see COPYING for details.
- package harpoon.Analysis.DataFlow;
+// Copyright (C) 1999 Felix S Klock <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+package harpoon.Analysis.DataFlow;
 
- import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.Liveness;
 
- import harpoon.Util.CloneableIterator;
- import harpoon.Util.Collections.BitSetFactory;
- import harpoon.Util.Collections.SetFactory;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
 
- import java.util.Set;
- import java.util.Map;
- import java.util.HashSet;
- import java.util.HashMap;
- import java.util.Iterator;
+import harpoon.IR.Properties.CFGrapher;
+import harpoon.IR.Properties.UseDefer;
 
- /**
-  * <code>LiveVars</code> performs Liveness Analysis for the variables
-  * in the <code>BasicBlock</code>s passed to it.
-  *
-  * @author  Felix S Klock <pnkfelix@mit.edu>
-  * @version $Id: LiveVars.java,v 1.1.2.17 1999-12-11 23:31:01 pnkfelix Exp $
-  */
-public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
+import harpoon.Util.CloneableIterator;
+import harpoon.Util.Collections.BitSetFactory;
+import harpoon.Util.Collections.SetFactory;
+
+import java.util.Set;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Iterator;
+
+/**
+ * <code>LiveVars</code> performs Liveness Analysis for the variables
+ * in the <code>HCode</code>s passed to it.  
+ *
+ * <P> It attempts to do this in efficient manner by <OL>
+ * <LI> grouping the statements into <code>BasicBlock</code>s.
+ * <LI> using bit strings as the underlying representation for the
+ *      <code>Set</code>s it works with.
+ * <LI> using the dataflow analysis framework which provides
+ *      termination guarantees (as long as the transfer function and
+ *      lattice of values provided meet certain conditions).
+ * </OL>
+ *
+ * <P> However, the implementation is also meant to be parameterized
+ * and flexible.  So it allows the user to pass in their own
+ * <code>CFGrapher</code> and <code>UseDefer</code> for the code to be
+ * analyzed.
+ *
+ * <P> <B>NOTE:</B> I need to document what constraints there are on
+ * the <code>UseDefer</code> and <code>CFGrapher</code> parameters to
+ * preserve the termination guarantees of the analysis.  For the time
+ * being, people who have no experience with Dataflow Analysis code
+ * should avoid passing in strange <code>CFGrapher</code>s and
+ * <code>UseDefer</code>s 
+ *
+ * @author  Felix S Klock <pnkfelix@mit.edu>
+ * @version $Id: LiveVars.java,v 1.1.2.18 2000-02-01 02:57:52 pnkfelix Exp $ */
+public abstract class LiveVars extends Liveness {
+    
     private static final boolean DEBUG = false; 
+
+    LiveTemps lv;
+
+    /** Constructs a new <code>LiveVars</code>.
+	Note that since the dataflow analysis is done during
+	construction, this can take a while.
+     */
+    public LiveVars(HCode hc, CFGrapher gr, UseDefer ud, Set liveOnExit) {
+	super(hc);
+	BasicBlock b1 = 
+	    BasicBlock.computeBasicBlocks(hc.getRootElement(), gr); 
+	lv = new LiveTemps(b1.blocksIterator(), liveOnExit);
+	Solver.worklistSolve(b1.blocksIterator(), lv);
+    }
+
+    public Set getLiveIn(HCodeElement hce) {
+	return lv.getLiveBefore(hce);
+    }
+    public Set getLiveOut(HCodeElement hce) {
+	return lv.getLiveAfter(hce);
+    }
+
+    
+    public static abstract class BBVisitor extends BackwardDataFlowBasicBlockVisitor {
     
      // maps a BasicBlock 'bb' to the LiveVarInfo associated with 'bb'
     private Map bbToLvi;
@@ -32,7 +84,7 @@ public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	 break when calling abstract methods that require data that
 	 subclasses haven't initialized yet.
      */
-    protected LiveVars() {
+    protected BBVisitor() {
     }
 
      /** Constructs a new <code>LiveVars</code> for <code>basicblocks</code>.
@@ -59,7 +111,7 @@ public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	  @param basicblocks <code>Iterator</code> of
 		 	        <code>BasicBlock</code>s to be analyzed. 
      */	     
-    public LiveVars(Iterator basicblocks) {
+    public BBVisitor(Iterator basicblocks) {
 	CloneableIterator blocks = new CloneableIterator(basicblocks);
 	Set universe = findUniverse((Iterator) blocks.clone());
 	SetFactory setFact = new BitSetFactory(universe);
@@ -78,7 +130,7 @@ public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 	<BR> Doc TODO: Add all of the above documentation from the
 	     standard ctor.
     */
-    public LiveVars(Iterator basicblocks, 
+    public BBVisitor(Iterator basicblocks, 
 		    SetFactory tempSetFact) {
 	CloneableIterator blocks = new CloneableIterator(basicblocks); 
 
@@ -249,3 +301,4 @@ public abstract class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     }
 }
 
+}

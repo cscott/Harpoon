@@ -14,9 +14,9 @@ package harpoon.Util;
  * Factory or Object type.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Indexer.java,v 1.1.2.2 1999-11-09 06:49:19 pnkfelix Exp $
+ * @version $Id: Indexer.java,v 1.1.2.3 2000-02-01 02:57:54 pnkfelix Exp $
  */
-interface Indexer {
+public interface Indexer {
     
     /** Returns the "small" integer uniquely associated with
 	<code>o</code> in <code>this</code>.

@@ -5,6 +5,7 @@ package harpoon.Util.Collections;
 
 import harpoon.Util.BitString;
 import harpoon.Util.Util;
+import harpoon.Util.Indexer;
 import harpoon.Util.FilterIterator;
 
 
@@ -28,7 +29,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.4 2000-02-01 00:56:27 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.5 2000-02-01 02:57:54 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -36,16 +37,52 @@ public class BitSetFactory extends SetFactory {
 	index in the <code>BitString</code> for the <code>Set</code>s
 	produced.
     */
-    private HashMap objToBitIndex;
+    private Indexer indexer;
+
+    /** Size that each bit string needs to be.  Does not necessarily 
+	equal the size of the universe itself, because the indices of
+	the universe can skip values.   
+    */
+    private int bitStringSize;
+
+    /** Universe of values for this. */
+    private Set universe; 
+    
+    /** Creates a <code>BitSetFactory</code>, given a
+	<code>universe</code> of values and an <code>Indexer</code>
+	for the elements of <code>universe</code>. 
+    */
+    public BitSetFactory(final Set universe, final Indexer indexer) {
+        final Iterator vals = universe.iterator();
+	this.indexer = indexer;
+	this.universe = universe;
+	int max = 0;
+	while(vals.hasNext()) {
+	    int i = indexer.getID(vals.next());
+	    if (i > max) max = i;
+	}
+	this.bitStringSize = max+1;
+    }
 
     /** Creates a <code>BitSetFactory</code>, given a
-	<code>universe</code> of values. */
-    public BitSetFactory(Set universe) {
-        Iterator vals = universe.iterator();
-	objToBitIndex = new HashMap();
-	for(int i=0; vals.hasNext(); i++) {
-	    objToBitIndex.put(vals.next(), new Integer(i));
+	<code>universe</code> of values.  Makes a new
+	<code>Indexer</code> for <code>universe</code>.
+    */
+    public BitSetFactory(final Set universe) {
+	final HashMap obj2int = new HashMap();
+	final Iterator iter = universe.iterator();
+	this.universe = universe;
+	int i;
+	for(i=0; iter.hasNext(); i++) {
+	    obj2int.put(iter.next(), new Integer(i));
 	}
+	this.bitStringSize = i+1;
+	this.indexer = new Indexer() {
+	    public int getID(Object o) {
+		return ((Integer)obj2int.get(o)).intValue();
+	    }
+	};
+
     }
     
     /** Generates a new mutable <code>Set</code>, using the elements
@@ -57,8 +94,7 @@ public class BitSetFactory extends SetFactory {
 	     <code>Set</code> with the elements from <code>c</code>.
     */ 
     public Set makeSet(Collection c) {
-	BitStringSet bss = 
-	    new BitStringSet(objToBitIndex.keySet().size(), this);
+	BitStringSet bss = new BitStringSet(bitStringSize, this);
 	bss.addAll(c);
 	return bss;
     }
@@ -70,7 +106,6 @@ public class BitSetFactory extends SetFactory {
 	// ensure that sets come from same factory
 	// when doing optimized operations. 
 	BitSetFactory fact; 
-	
 
 	BitStringSet(int size, BitSetFactory fact) {
 	    this.bs = new BitString(size);
@@ -78,20 +113,17 @@ public class BitSetFactory extends SetFactory {
 	}
 
 	public boolean add(Object o) {
-	    Integer i = (Integer) objToBitIndex.get(o);
-
-	    
-	    Util.assert(i != null, 
+	    int ind = indexer.getID(o);
+	    Util.assert(ind != -1, 
 			"Attempted to add an object "+
 			"that was not part of the "+
 			"original universe of values.");
-	    int ind = i.intValue();
 	    Util.assert(ind < bs.size());
 	    boolean alreadySet = this.bs.get(ind);
 	    if (alreadySet) {
 		return false;
 	    } else {
-		this.bs.set(i.intValue());
+		this.bs.set(ind);
 		return true;
 	    }
 	}
@@ -116,9 +148,9 @@ public class BitSetFactory extends SetFactory {
 	}
 	
 	public boolean contains(Object o) {
-	    Integer i = (Integer) objToBitIndex.get(o);
-	    if (i != null) {
-		return this.bs.get(i.intValue());
+	    int i = indexer.getID(o);
+	    if (i >= 0) {
+		return this.bs.get(i);
 	    } else {
 		// not part of original universe, therefore cannot be
 		// a member of the set.
@@ -167,24 +199,22 @@ public class BitSetFactory extends SetFactory {
 	
 	public Iterator iterator() {
 	    return new FilterIterator
-		(objToBitIndex.keySet().iterator(), 
+		(universe.iterator(), 
 		 new FilterIterator.Filter() {
 		    public boolean isElement(Object o) {
-			return BitStringSet.this.bs.get
-			    (((Integer)
-			      objToBitIndex.get(o)).intValue()); 
+			return BitStringSet.this.bs.get(indexer.getID(o));
 		    }});
 	}
 	
 	public boolean remove(Object o) {
-	    Integer i = (Integer) objToBitIndex.get(o);
-	    if (i == null) {
+	    int i = indexer.getID(o);
+	    if (i == -1) {
 		// o is not member of universe, therefore cannot be in set.
 		return false;
 	    } else {
-		boolean alreadySet = bs.get(i.intValue());
+		boolean alreadySet = bs.get(i);
 		if (alreadySet) {
-		    this.bs.clear(i.intValue());
+		    this.bs.clear(i);
 		    return true;
 		} else {
 		    return false;

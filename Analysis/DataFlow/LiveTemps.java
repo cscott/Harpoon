@@ -25,9 +25,9 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.11 2000-02-01 00:56:24 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.12 2000-02-01 02:57:52 pnkfelix Exp $
  */
-public class LiveTemps extends LiveVars {
+public class LiveTemps extends LiveVars.BBVisitor {
     private Map hceToBB; 
 
     // may be null; code using this should check
