@@ -37,7 +37,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.34 1999-10-13 16:04:29 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.35 1999-10-20 20:34:06 cananian Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -45,21 +45,6 @@ public abstract class Frame {
     /** Returns <code>false</code> if pointers can be represented in
      *  32 bits, or <code>true</code> otherwise. */
     public abstract boolean pointersAreLong();
-
-    /** Returns a <code>Tree.Stm</code> object which contains code
-     *  to move method parameters from their passing location into
-     *  the Temps that the method expects them to be in. */
-    public abstract Stm procPrologue(TreeFactory tf, HCodeElement src, 
-                                     Temp[] paramdsts, int[] paramtypes);
-
-    /** Returns a block of <code>Instr</code>s which adds a "sink" 
-     *  instruction to specify registers that are live on procedure exit. */
-    public abstract Instr procLiveOnExit(Instr body);
-
-    /** Returns a block of <code>Instr</code>s which wraps the 
-     *  method body in assembler directives and other instructions
-     *  needed to initialize stack space. */
-    public abstract Instr procAssemDirectives(Instr body);
 
     /** Returns the appropriate <code>OffsetMap</code> for
 	this <code>Frame</code>. 

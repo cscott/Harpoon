@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.7 1999-10-14 19:43:31 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.8 1999-10-20 20:34:13 cananian Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -39,9 +39,6 @@ public class Code extends harpoon.Backend.Generic.Code {
 	instrs = treeCode.getFrame().getCodeGen()
 	    .gen(treeCode, newINF(treeCode.getMethod()));
 	Util.assert(instrs != null);
-	instrs=treeCode.getFrame()
-	    .procAssemDirectives(treeCode.getFrame()
-				 .procLiveOnExit(instrs));
 	tempInstrPairToRegisterMap = new HashMap();
     }
 

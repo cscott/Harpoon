@@ -4,7 +4,7 @@ package harpoon.PACKAGE;
  * <code>NullCodeGen</code> does nothing.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NullCodeGen.template,v 1.1.2.6 1999-09-20 16:06:26 pnkfelix Exp $ */
+ * @version $Id: NullCodeGen.template,v 1.1.2.7 1999-10-20 20:34:15 cananian Exp $ */
 public class NullCodeGen extends harpoon.Backend.Generic.CodeGen {
     // a constructor here corresponding to every type of codegen
     //  constructor we have
@@ -19,4 +19,10 @@ public class NullCodeGen extends harpoon.Backend.Generic.CodeGen {
 	return null;
     }
     public NullCodeGen(harpoon.PACKAGE.Frame f) { }
+    public harpoon.IR.Assem.Instr procFixup(harpoon.ClassFile.HMethod hm,
+					    harpoon.IR.Assem.Instr instr,
+					    int stackspace,
+					    java.util.Set usedRegisters) {
+	return instr;
+    }
 }

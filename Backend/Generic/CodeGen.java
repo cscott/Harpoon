@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
 
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.Code;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Tree.Print;
@@ -13,7 +14,7 @@ import harpoon.IR.Tree.Print;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.1 1999-09-11 18:02:56 cananian Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.2 1999-10-20 20:34:06 cananian Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -23,6 +24,12 @@ public abstract class CodeGen {
         
     }
     
+    /** Fixes up the procedure entry and exit code for a list of instrs, once
+     *  it is known how many registers and how much stack space is used.
+     */ // FIXME: is there a more abstract way to specify these quantities?
+    public abstract Instr procFixup(HMethod hm, Instr instr, int stackspace,
+				    java.util.Set usedRegisters);
+
     /** Creates a <code>Instr</code> list from the
 	<code>IR.Tree.Code</code> <code>tree</code>. 
 	<BR> <B>effects:</B> Generates and returns a list of

@@ -47,7 +47,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.12 1999-10-15 18:25:38 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.13 1999-10-20 20:34:13 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -71,59 +71,6 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     }
 
     public boolean pointersAreLong() { return false; }
-
-
-    public Stm procPrologue(TreeFactory tf, HCodeElement src, 
-                            Temp[] paramdsts, int[] paramtypes) { 
-        Stm prologue = null, move = null;
-        int i = 0;
-        for (i = 0; i < paramdsts.length && i < 4; i++) {
-            move = new MOVE(tf, src,
-                            new TEMP(tf, src, paramtypes[i], paramdsts[i]),
-                            new TEMP(tf, src, paramtypes[i], regFileInfo.reg[i]));
-            if (prologue == null) {
-                prologue = move;
-            } else {
-                prologue = new SEQ(tf, src, move, prologue);
-            }
-        }
-        return prologue;
-    }
-
-    public Instr procLiveOnExit(Instr body) { 
-        return body; 
-    }
-
-    public Instr procAssemDirectives(Instr body) { 
-        Util.assert(body != null);
-
-        HCodeElement src = body;
-        InstrFactory inf = ((Instr)src).getFactory();
-	Instr dir1, dir2, dir3, dir4, dir5, dir6, dir7;
-	Label methodlabel = runtime.nameMap.label(inf.getMethod());
-	
-        dir1 = new InstrDIRECTIVE(inf, src, ".text");
-        dir2 = new InstrDIRECTIVE(inf, src, ".align 0");
-        dir3 = new InstrDIRECTIVE(inf, src, ".global " + methodlabel.name);
-        /* this should be a label */
-        dir4 = new InstrLABEL(inf, src, methodlabel.name+":", methodlabel);
-        dir5 = new Instr(inf, src, "mov ip, sp", null, null);
-        dir6 = new Instr(inf, src, "stmfd sp!, {fp, ip, lr, pc}",
-                              null, null);
-        dir7 = new Instr(inf, src, "sub fp, ip, #4", null, null);
-
-	// Instr.insertInstrBefore(body, dir1);
-	dir1.insertAt(new InstrEdge(body.getPrev(), body));
-	dir2.insertAt(new InstrEdge(dir1, body));
-	dir3.insertAt(new InstrEdge(dir2, body));
-	dir4.insertAt(new InstrEdge(dir3, body));
-	dir5.insertAt(new InstrEdge(dir4, body));
-	dir6.insertAt(new InstrEdge(dir5, body));
-	dir7.insertAt(new InstrEdge(dir6, body));
-
-	return dir1;
-    }
-
 
     /** Returns a <code>StrongARM.CodeGen</code>. 
 	Since no state is maintained in the returned
