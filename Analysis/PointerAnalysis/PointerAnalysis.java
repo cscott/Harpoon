@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.77 2001-02-15 19:51:17 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.78 2001-02-21 18:51:39 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -957,8 +957,7 @@ public class PointerAnalysis {
 	}
 
 	public void visit(CALL q){
-	    // DEBUG
-	    System.out.println("CALL " + Debug.code2str(q));
+	    // System.out.println("CALL " + Debug.code2str(q));
 
 	    // treat the thread start sites specially
 	    if(thread_start_site(q)){

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Usage: build-precisec <class_name> <directory>
+
 # find the root of the Harpoon tree file. If you plan to run this script from
 # a directory different from ~/Harpoon/Code please set HARPOON_DIR.
 if [ -z $HARPOON_DIR ]; then
