@@ -51,7 +51,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.17 2001-07-04 18:25:46 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.18 2001-07-06 21:47:00 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final TreeBuilder m_tb;
@@ -272,6 +272,7 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 				       Temp lockT, boolean isLock) {
 	// if this method is not synchronized, skip this.
 	if (!Modifier.isSynchronized(getMethod().getModifiers())) return;
+	if (true) return; // XXX: UNSAFE HACK SEE CVS LOG
 	// okay, emit native call to FNI_MonitorEnter/Exit().
 	Temp discardT = new Temp(tf.tempFactory(), "discard");
 	stmlist.add(new NATIVECALL
