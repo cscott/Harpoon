@@ -15,7 +15,7 @@ Check that harpoon.ClassFile package is not == comparing two HPointers.
 Bring back the equals() method of HClass.  Needed for caching.
 Write script to read javadoc and automagically insert links to
  classes mentioned inside <code></code> blocks.
-Make LABEL superclass of PHI.
+X Make LABEL superclass of PHI.
 Add kind() method to Quad; new class QuadKind enumerates.
 ---- Nov-30-98
 Add HInitializerSyn superclass of HInitializer.

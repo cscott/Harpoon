@@ -3,15 +3,13 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
 /**
  * <code>Qop</code> is an enumerated type for the various kinds of
  * <code>OPER</code> opcodes.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.2 1998-12-09 22:02:35 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.3 1998-12-11 12:18:20 cananian Exp $
  */
-
 public abstract class Qop  {
     public final static int ACMPEQ = 0;
     public final static int D2F = 1;
