@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.29 1998-09-03 00:47:25 cananian Exp $
+ * @version $Id: Translate.java,v 1.30 1998-09-03 01:10:58 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -438,51 +438,6 @@ class Translate  { // not public.
 	throw new Error("Unknown Instr type.");
     }
 
-    static final HClass objArray = HClass.forClass(Object[].class);
-    static final HClass byteArray= HClass.forClass(byte[].class);
-    static final HClass charArray= HClass.forClass(char[].class);
-    static final HClass dblArray = HClass.forClass(double[].class);
-    static final HClass fltArray = HClass.forClass(float[].class);
-    static final HClass intArray = HClass.forClass(int[].class);
-    static final HClass longArray= HClass.forClass(long[].class);
-    static final HClass shrtArray = HClass.forClass(short[].class);
-
-    static HMethod objArrayGet,  objArrayPut;
-    static HMethod byteArrayGet, byteArrayPut;
-    static HMethod charArrayGet, charArrayPut;
-    static HMethod dblArrayGet,  dblArrayPut;
-    static HMethod fltArrayGet,  fltArrayPut;
-    static HMethod intArrayGet,  intArrayPut;
-    static HMethod longArrayGet, longArrayPut;
-    static HMethod shrtArrayGet, shrtArrayPut;
-
-    static {
-	objArrayGet = objArray.getMethod("get", new HClass[] {HClass.Int});
-	objArrayPut = objArray.getMethod("put", 
-		      new HClass[] {HClass.Int,HClass.forClass(Object.class)});
-	byteArrayGet= byteArray.getMethod("get", new HClass[] {HClass.Int});
-	byteArrayPut= byteArray.getMethod("put", 
-		      new HClass[] {HClass.Int, HClass.forClass(byte.class)});
-	charArrayGet= charArray.getMethod("get", new HClass[] {HClass.Int});
-	charArrayPut= charArray.getMethod("put", 
-		      new HClass[] {HClass.Int, HClass.forClass(char.class)});
-	dblArrayGet = dblArray.getMethod("get", new HClass[] {HClass.Int});
-	dblArrayPut = dblArray.getMethod("put", 
-		      new HClass[] {HClass.Int,HClass.forClass(double.class)});
-	fltArrayGet = fltArray.getMethod("get", new HClass[] {HClass.Int});
-	fltArrayPut = fltArray.getMethod("put", 
-		      new HClass[] {HClass.Int,HClass.forClass(float.class)});
-	intArrayGet = intArray.getMethod("get", new HClass[] {HClass.Int});
-	intArrayPut = intArray.getMethod("put", 
-		      new HClass[] {HClass.Int,HClass.forClass(int.class)});
-	longArrayGet= longArray.getMethod("get", new HClass[] {HClass.Int});
-	longArrayPut= longArray.getMethod("put", 
-		      new HClass[] {HClass.Int, HClass.forClass(long.class)});
-	shrtArrayGet= shrtArray.getMethod("get", new HClass[] {HClass.Int});
-	shrtArrayPut= shrtArray.getMethod("put", 
-		      new HClass[] {HClass.Int, HClass.forClass(short.class)});
-    }
-
     /** Translate an <code>InGen</code>. 
      *  @return a <Code>TransState[]</code> of length zero or one. */
     static final TransState[] transInGen(TransState ts) {
@@ -494,14 +449,22 @@ class Translate  { // not public.
 
 	switch(in.getOpcode()) {
 	case Op.AALOAD:
+	case Op.BALOAD:
+	case Op.CALOAD:
+	case Op.FALOAD:
+	case Op.IALOAD:
+	case Op.SALOAD:
 	    ns = s.pop(2).push(new Temp());
-	    q = new CALL(in, objArrayGet, s.stack[1],
-			 new Temp[] {s.stack[0]}, ns.stack[0]);
+	    q = new AGET(in, ns.stack[0], s.stack[1], s.stack[0]);
 	    break;
 	case Op.AASTORE:
+	case Op.BASTORE:
+	case Op.CASTORE:
+	case Op.FASTORE:
+	case Op.IASTORE:
+	case Op.SASTORE:
 	    ns = s.pop(3);
-	    q = new CALL(in, objArrayPut, s.stack[2],
-			 new Temp[] {s.stack[1], s.stack[0]});
+	    q = new ASET(in, s.stack[2], s.stack[1], s.stack[0]);
 	    break;
 	case Op.ACONST_NULL:
 	    ns = s.push(new Temp("null"));
@@ -522,7 +485,7 @@ class Translate  { // not public.
 		//	    s.lv[opd.getIndex()]);
 		break;
 	    }
-	case Op.ANEWARRAY:
+	case Op.ANEWARRAY: // FIXME FIXME
 	    {
 		OpClass opd = (OpClass) in.getOperand(0);
 		HClass hc = HClass.forDescriptor("[" + 
@@ -538,9 +501,7 @@ class Translate  { // not public.
 	    }
 	case Op.ARRAYLENGTH:
 	    ns = s.pop().push(new Temp());
-	    q = new GET(in, ns.stack[0], objArray.getField("length"), 
-			s.stack[0]); // XXX BOGUS
-	    // What if it's not an Object Array?
+	    q = new ALENGTH(in, ns.stack[0], s.stack[0]);
 	    break;
 	case Op.ASTORE:
 	case Op.ASTORE_0:
@@ -554,16 +515,6 @@ class Translate  { // not public.
 	    q = new MOVE(in, ns.lv[opd.getIndex()], s.stack[0]);
 	    break;
 	    }
-	case Op.BALOAD:
-	    ns = s.pop(2).push(new Temp());
-	    q = new CALL(in, byteArrayGet, s.stack[1],
-			 new Temp[] {s.stack[0]}, ns.stack[0]);
-	    break;
-	case Op.BASTORE:
-	    ns = s.pop(3);
-	    q = new CALL(in, byteArrayPut, s.stack[2],
-			 new Temp[] {s.stack[1], s.stack[0]});
-	    break;
 	case Op.BIPUSH:
 	case Op.SIPUSH:
 	    {
@@ -573,16 +524,6 @@ class Translate  { // not public.
 		q = new CONST(in, ns.stack[0], new Integer(val), HClass.Int);
 		break;
 	    }
-	case Op.CALOAD:
-	    ns = s.pop(2).push(new Temp());
-	    q = new CALL(in, charArrayGet, s.stack[1],
-			 new Temp[] {s.stack[0]}, ns.stack[0]);
-	    break;
-	case Op.CASTORE:
-	    ns = s.pop(3);
-	    q = new CALL(in, charArrayPut, s.stack[2],
-			 new Temp[] {s.stack[1], s.stack[0]});
-	    break;
 	case Op.CHECKCAST:
 	    // translate as:
 	    //  if (obj!=null && !(obj instanceof class))
@@ -657,14 +598,14 @@ class Translate  { // not public.
 			 ns.stack[0], new Temp[] { s.stack[2], s.stack[0] });
 	    break;
 	case Op.DALOAD:
+	case Op.LALOAD:
 	    ns = s.pop(2).push(null).push(new Temp());
-	    q = new CALL(in, dblArrayGet, s.stack[1],
-			 new Temp[] {s.stack[0]}, ns.stack[0]);
+	    q = new AGET(in, ns.stack[0], s.stack[1], s.stack[0]);
 	    break;
 	case Op.DASTORE:
+	case Op.LASTORE:
 	    ns = s.pop(4);
-	    q = new CALL(in, dblArrayPut, s.stack[3],
-			 new Temp[] {s.stack[2], s.stack[0]});
+	    q = new ASET(in, s.stack[3], s.stack[2], s.stack[0]);
 	    break;
 	case Op.DCMPG:
 	case Op.DCMPL:
@@ -787,16 +728,6 @@ class Translate  { // not public.
 	    q = new OPER(in, Op.toString(in.getOpcode()), // fadd, fdiv, ...
 			 ns.stack[0], new Temp[] {s.stack[1], s.stack[0]});
 	    break;
-	case Op.FALOAD:
-	    ns = s.pop(2).push(new Temp());
-	    q = new CALL(in, fltArrayGet, s.stack[1],
-			 new Temp[] {s.stack[0]}, ns.stack[0]);
-	    break;
-	case Op.FASTORE:
-	    ns = s.pop(3);
-	    q = new CALL(in, fltArrayPut, s.stack[2],
-			 new Temp[] {s.stack[1], s.stack[0]});
-	    break;
 	case Op.FCMPG:
 	case Op.FCMPL:
 	    ns = s.pop(2).push(new Temp());
@@ -868,16 +799,6 @@ class Translate  { // not public.
 	    q = new GET(in, ns.stack[0], opd.value(), s.stack[0]);
 	    break;
 	    }
-	case Op.IALOAD:
-	    ns = s.pop(2).push(new Temp());
-	    q = new CALL(in, intArrayGet, s.stack[1],
-			 new Temp[] {s.stack[0]}, ns.stack[0]);
-	    break;
-	case Op.IASTORE:
-	    ns = s.pop(3);
-	    q = new CALL(in, intArrayPut, s.stack[2],
-			 new Temp[] {s.stack[1], s.stack[0]});
-	    break;
 	case Op.IF_ACMPEQ:
 	case Op.IF_ACMPNE:
 	case Op.IF_ICMPEQ:
@@ -944,16 +865,6 @@ class Translate  { // not public.
 		q = new CALL(in, opd.value(), s.stack[j], param, ns.stack[0]);
 	    }
 	    }
-	case Op.LALOAD:
-	    ns = s.pop(2).push(null).push(new Temp());
-	    q = new CALL(in, longArrayGet, s.stack[1],
-			 new Temp[] {s.stack[0]}, ns.stack[0]);
-	    break;
-	case Op.LASTORE:
-	    ns = s.pop(4);
-	    q = new CALL(in, longArrayPut, s.stack[3],
-			 new Temp[] {s.stack[2], s.stack[0]});
-	    break;
 	case Op.LDC:
 	case Op.LDC_W:
 	case Op.LDC2_W:
@@ -1009,16 +920,6 @@ class Translate  { // not public.
 	    }
 	    break;
 	    }
-	case Op.SALOAD:
-	    ns = s.pop(2).push(null).push(new Temp());
-	    q = new CALL(in, shrtArrayGet, s.stack[1],
-			 new Temp[] {s.stack[0]}, ns.stack[0]);
-	    break;
-	case Op.SASTORE:
-	    ns = s.pop(4);
-	    q = new CALL(in, shrtArrayPut, s.stack[3],
-			 new Temp[] {s.stack[2], s.stack[0]});
-	    break;
 	case Op.SWAP:
 	    ns = s.pop(2).push(s.stack[0]).push(s.stack[1]);
 	    q = null;
