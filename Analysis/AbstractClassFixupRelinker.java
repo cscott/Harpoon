@@ -11,6 +11,7 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Relinker;
 import harpoon.Util.ArrayIterator;
 import harpoon.Util.Collections.UniqueVector;
+import harpoon.Util.Collections.WorkSet;
 
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -24,7 +25,7 @@ import java.util.*;
  * The <code>AbstractClassFixupRelinker</code> remedies the situation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractClassFixupRelinker.java,v 1.6 2002-09-10 18:52:11 cananian Exp $
+ * @version $Id: AbstractClassFixupRelinker.java,v 1.7 2002-09-10 21:28:52 wbeebee Exp $
  */
 public class AbstractClassFixupRelinker extends Relinker {
     
@@ -32,14 +33,39 @@ public class AbstractClassFixupRelinker extends Relinker {
     public AbstractClassFixupRelinker(Linker linker) {
 	super(linker);
     }
+
     public HClass forDescriptor(String descriptor) {
+	// We want to make sure that Linker.forDescriptor completes
+	// entirely (entering the new class in the descriptor cache)
+	// before we invoke it again.  HOWEVER, Linker.forDescriptor
+	// will call *us* recursively e.g. to resolve arrays.  So it's
+	// not safe to do our resolve() stuff (which will indirectly
+	// cause further calls to Linker.forDescriptor) until we're
+	// sure the top-level call to Linker.forDescriptor has finished.
+	// The 'depth' variable here basically just keeps track of
+	// whether this is a recursive invocation via Linker.forDescriptor
+	// or a 'top-level' one; we only resolve after top-level calls.
+	depth++;
 	HClass hc = super.forDescriptor(descriptor);
+	depth--;
+	deferred.add(hc);
+	if (depth==0) // this is a top-level call, it's safe to resolve.
+	    while (!deferred.isEmpty())
+		resolve(deferred.removeFirst());
+	return hc;
+    }
+    /** Set of classes waiting to be fixed up. */
+    WorkSet<HClass> deferred = new WorkSet<HClass>();
+    /** Current level of recursion. */
+    int depth=0;
+
+    public HClass resolve(HClass hc) {
 	// okay, now scan the class and fix it up.
 	if (!hc.isInterface() && !done.contains(hc)) {
 	    done.add(hc);// properly handle incidental recursion inside fixup()
 	    // we should first fix up the superclass(es), if any.
 	    HClass sc = hc.getSuperclass();
-	    if (sc!=null) forDescriptor(sc.getDescriptor()); // recurse!
+	    if (sc!=null) resolve(sc); // recurse!
 	    // okay, now fix this class up.
 	    fixup(hc);
 
@@ -52,15 +78,15 @@ public class AbstractClassFixupRelinker extends Relinker {
 	    for (Iterator<HMethod> it=new ArrayIterator<HMethod>
 		     (hc.getDeclaredMethods()); it.hasNext(); ) {
 		HMethod hm = it.next();
-		forDescriptor(hm.getReturnType().getDescriptor());
+		resolve(hm.getReturnType());
 		for (Iterator<HClass> it2=new ArrayIterator<HClass>
 			 (hm.getParameterTypes()); it2.hasNext(); )
-		    forDescriptor(it2.next().getDescriptor());
+		    resolve(it2.next());
 	    }
 	    // and those in field signatures.
 	    for (Iterator<HField> it=new ArrayIterator<HField>
 		     (hc.getDeclaredFields()); it.hasNext(); )
-		forDescriptor(it.next().getType().getDescriptor());
+		resolve(it.next().getType());
 	}
 	// done!
 	return hc;
