@@ -8,9 +8,47 @@ $NL=$/;
 undef $/; # always read whole file at once.
 
 $gnugpl1 =
- "// Copyright (C) 1998 ";
+ "// Copyright (C) 2001 ";
 $gnugpl2 = "$NL".
  "// Licensed under the terms of the GNU GPL; see COPYING for details.$NL";
+
+sub saneauthors {
+    my $author = shift;
+    return 'C. Scott Ananian <cananian@alumni.princeton.edu>'
+	if $author =~ m/Scott.*Ananian/i or $author =~ m/cananian@/;
+    return 'Felix S. Klock II <pnkfelix@mit.edu>'
+	if $author =~ m/Felix.*Klock/i or $author =~ m/pnkfelix@/;
+    return 'Emmett Witchel <witchel@mit.edu>'
+	if $author =~ m/Emmett.*Witchel/i or $author =~ m/witchel@/;
+    return 'Duncan Bryce <duncan@lcs.mit.edu>'
+	if $author =~ m/Duncan.*Bryce/i or $author =~ m/duncan@/;
+    return 'Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>'
+	if $author =~ m/Alexandru.*SALCIANU/i or $author =~ m/salcianu@/;
+    return 'Andrew Berkheimer <andyb@mit.edu>'
+	if $author =~ m/And.*Berkheimer/i or $author =~ m/andyb@/;
+    return 'Brian Demsky <bdemsky@mit.edu>'
+	if $author =~ m/Brian.*Demsky/i or $author =~ m/bdemsky@/
+	    or $author =~ m/[@](bdemsky|kikashi.lcs|windsurf.lcs).mit.edu/i;
+    return 'Darko Marinov <marinov@lcs.mit.edu>'
+	if $author =~ m/Darko.*Marinov/i or $author =~ m/marinov@/;
+    return 'Frederic VIVIEN <vivien@lcs.mit.edu>'
+	if $author =~ m/Frederic.*VIVIEN/i or $author =~ m/vivien@/;
+    return 'John Whaley <jwhaley@alum.mit.edu>'
+	if $author =~ m/John.*Whaley/i or $author =~ m/jwhaley@/;
+    return 'Karen K. Zee <kkzee@alum.mit.edu>'
+	if $author =~ m/Karen.*Zee/i or $author =~ m/kkz(ee)?@/;
+    return 'Mark A. Foltz <mfoltz@ai.mit.edu>'
+	if $author =~ m/Mark.*Foltz/i or $author =~ m/mfoltz@/;
+    return 'Wes Beebee <wbeebee@mit.edu>'
+	if $author =~ m/Wes.*Beebee/i or $author =~ m/wbeebee@/;
+    return 'Robert Lee <rhlee@mit.edu>'
+	if $author =~ m/Robert.*Lee/i or $author =~ m/rhlee@/;
+    return 'Bryan Fink <wingman@mit.edu>'
+	if $author =~ m/Bryan.*Fink/i or $author =~ m/wingman@/;
+    print "UNKNOWN AUTHOR: $author in $f\n";
+    return $author;
+}
+
 
 FILE: foreach $f (split(/\s+/,`make list`)) {
     next if ($f =~ /^Test/); # skip test code.
@@ -22,6 +60,9 @@ FILE: foreach $f (split(/\s+/,`make list`)) {
     open(FH, "< $f") or die "Can't open $f for reading.\n";
     $_ = <FH>;
     close FH;
+
+    # normalize author string.
+    s/([@]author\s+)(.*)(?=(, based on)|[\r\n])/$1.&saneauthors($2)/eg;
 
     # check for header string (with timestamp) on first line.
     if (! m|^// .*, created\s+|
@@ -48,12 +89,19 @@ FILE: foreach $f (split(/\s+/,`make list`)) {
     # insert copyright string if necessary.
     if (! /GNU GPL/m) {
 	# extract author
-	die "No author found for $f.\n" unless /\@author\s+(.*)$/m;
+	unless (/[@]author\s+(.*)$/m) {
+	    print "No author found for $f.\n";
+	    next;
+	}
 	$author=$1;
 	$author =~ s/, based on.*$//m; # clean up attribution case.
 	# add (c) string.
 	s|^(\s*package\s+)|$gnugpl1.$author.$gnugpl2.$1|me;
     }
+
+    # normalize author in copyright string.
+    s|^(// Copyright \(C\) [0-9]+ )(.*)$|$1.&saneauthors($2)|me;
+
     # write back to file.
     open(FH, "> $f") or die "Can't open $f for writing.\n";
     print FH $_;
