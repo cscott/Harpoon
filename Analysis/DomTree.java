@@ -13,6 +13,7 @@ import harpoon.Util.Collections.AggregateSetFactory;
 import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Util;
+import harpoon.Util.Default;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,13 +21,16 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
+import java.util.List;
+import java.util.Stack;
+
 /**
  * <code>DomTree</code> computes the dominator tree of a flowgraph-structured
  * IR.  The <code>HCode</code> must have a valid
  * <code>CFGrapher</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.8.2.8 2000-11-10 23:38:43 cananian Exp $
+ * @version $Id: DomTree.java,v 1.8.2.9 2001-07-03 23:17:58 pnkfelix Exp $
  */
 
 public class DomTree /*implements Graph*/ {
@@ -103,18 +107,36 @@ public class DomTree /*implements Graph*/ {
 
 	/** Utility class wraps analysis subroutines. */
 	class Utility {
-	    /** Number nodes of depth-first spanning tree */
-	    void DFS(HCodeElement p, HCodeElement n) {
-		if (dfnum.getInt(n)==0) {
-		    int N = vertex.size()+1;
-		    dfnum.putInt(n, N);
-		    if (p!=null) parent.put(n, p);
-		    vertex.addElement(n);
-		    // for each successor of n...
-		    for (Iterator it=grapher.succC(n).iterator();it.hasNext();)
-			DFS(n, ((HCodeEdge)it.next()).to());
+	    /** Number nodes of depth-first spanning tree 
+		@requires: n_orig != null.  (note p_orig may be null)
+	    */
+	    void DFS(HCodeElement p_orig, HCodeElement n_orig) {
+		// Does an depth first iteration by keeping partially
+		// traversed iterators on the stack.
+		Stack stk = new Stack();
+		stk.push( Default.pair(p_orig, Default.singletonIterator(n_orig)) );
+		while( ! stk.isEmpty() ){
+		    List/*HCE,Iter<HCE>*/ pair = (List) stk.peek();
+		    HCodeElement p = (HCodeElement) pair.get(0);
+		    Iterator niter = (Iterator) pair.get(1);
+		    if (niter.hasNext()){
+			HCodeElement n = (HCodeElement) niter.next();
+			if (dfnum.getInt(n)==0) {
+			    int N = vertex.size()+1;
+			    dfnum.putInt(n, N);
+			    if (p!=null) 
+				parent.put(n, p);
+			    vertex.addElement(n);
+			    Iterator succIter = grapher.succElemC(n).iterator();
+			    stk.push( Default.pair(n, succIter) );
+			}
+			continue;
+		    } else {
+			stk.pop();
+		    }
 		}
 	    }
+	    
 	    /** Add edge p->n to spanning forest. */
 	    void Link(HCodeElement p, HCodeElement n) {
 		ancestor.put(n, p);
@@ -122,16 +144,30 @@ public class DomTree /*implements Graph*/ {
 	    }
 	    /** In the forest, find nonroot ancestor of n that has
 	     *  lowest-numbered semidominator. */
-	    HCodeElement Eval(HCodeElement v) {
-		HCodeElement a = (HCodeElement) ancestor.get(v);
-		if (ancestor.get(a) != null) {
-		    HCodeElement b = Eval(a);
-		    ancestor.put(v, ancestor.get(a));
-		    if (dfnum.getInt(semi.get(b)) <
-			dfnum.getInt(semi.get(best.get(v))))
-			best.put(v, b);
+	    HCodeElement Eval(HCodeElement vOrig) {
+		HCodeElement v, a, b;
+		Stack stk = new Stack();
+		v = vOrig; 
+		a = (HCodeElement) ancestor.get(v);
+		while( ancestor.get(a) != null ){
+		    stk.push( Default.pair(v, a) );
+		    v = a; a = (HCodeElement) ancestor.get(a);
 		}
-		return (HCodeElement) best.get(v);
+		b = (HCodeElement) best.get(v); // base case return
+		while( ! stk.isEmpty() ){
+		    java.util.List pair = (java.util.List) stk.pop();
+		    v = (HCodeElement) pair.get(0);
+		    a = (HCodeElement) pair.get(1);
+		    ancestor.put(v, ancestor.get(a));
+		    if (dfnum.getInt(semi.get(b)) < 
+			dfnum.getInt(semi.get(best.get(v)))){
+			best.put(v, b);
+		    }
+		    b = (HCodeElement) best.get(v); // recursive return
+		}
+		Util.assert(v == vOrig);
+		Util.assert(b == best.get(v));
+		return b;
 	    }
 	}
 	Utility u = new Utility();
