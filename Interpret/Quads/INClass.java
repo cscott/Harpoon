@@ -16,7 +16,7 @@ import java.util.Hashtable;
  * <code>java.lang.Class</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INClass.java,v 1.1.2.7 2000-01-28 05:27:25 cananian Exp $
+ * @version $Id: INClass.java,v 1.1.2.8 2000-10-18 20:58:16 cananian Exp $
  */
 public class INClass {
     static final void register(StaticState ss) {
@@ -207,8 +207,18 @@ public class INClass {
 			Modifier.isAbstract(hc.getModifiers()))
 			throw inst(ss);
 		    HMethod hm = hc.getConstructor(new HClass[0]);
-		    if (!Modifier.isPublic(hm.getModifiers()))
+		    int modf = hm.getModifiers();
+		    if (Modifier.isPrivate(modf))
 			throw illacc(ss);
+		    if (!Modifier.isPublic(modf)) {
+			// package or protected.
+			HClass context = ss.getCaller().getDeclaringClass();
+			if (context.getPackage().equals(hc.getPackage()) ||
+			    (Modifier.isProtected(modf) &&
+			     context.isInstanceOf(hc)))
+			    /* this case is okay. */;
+			else throw illacc(ss);
+		    }
 		    obj = new ObjectRef(ss, hc);
 		    Method.invoke(ss, hm, new Object[] { obj } );
 		    return obj;
