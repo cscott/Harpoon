@@ -2,6 +2,11 @@ package harpoon.Util.Collections;
 
 import java.util.Map;
 
+/** <code>MapWrapper</code> is a class that acts as a proxy for
+    another backing map, to allow for easy extension of
+    <code>Map</code> functionality while not restricting developers to
+    one particular <code>Map</code> implementation. 
+*/
 public class MapWrapper implements Map {
     private Map map;
     public MapWrapper(Map map) { this.map = map; }

@@ -39,21 +39,22 @@ import java.util.Map;
     </OL>
     <BR> Then <code>c</code> will either be a non-empty
          <code>Collection</code> (the case where <code>k</code> is a
-	 Key in <code>mm</code> or it will be an empty collection (the
-	 case where <code>k</code> is not a Key in <code>mm</code>.
-	 In this case, however, <code>k</code> is still considered to
-	 not be a Key in <code>mm</code> until <code>c</code> is made
-	 non-empty.  We chose to return an empty
-	 <code>Collection</code> instead of <code>null</code> to allow
-	 for straightforward addition to the collection of values
-	 mapped to by <code>k</code>.
+	 Key in <code>mm</code>) or it will be an empty collection (the
+	 case where <code>k</code> is not a Key in <code>mm</code>).
+	 In the latter case, however, <code>k</code> is still
+	 considered to not be a Key in <code>mm</code> until
+	 <code>c</code> is made non-empty.  We chose to return an
+	 empty <code>Collection</code> instead of <code>null</code> to
+	 allow for straightforward addition to the collection of
+	 values mapped to by <code>k</code>.
 
     <BR> To conform to the <code>Map</code> interface, the
          <code>put(key, value)</code> method has a non-intuitive
 	 behavior; it throws away all values previously associated
 	 with <code>key</code> and creates a new mapping from
-	 <code>key</code> to the singleton set containing
-	 <code>value</code>. 
+	 <code>key</code> to a singleton collection containing
+	 <code>value</code>.  Use <code>add(key, value)</code> to
+	 preserve the old collection of associative mappings.
 
     <P>  Note that the behavior of <code>MultiMap</code> is
          indistinquishable from that of a <code>Map</code> if none of
@@ -63,22 +64,14 @@ import java.util.Map;
 	 does not ever attempt to use a <code>MultiMap</code> when any
 	 of its Keys map to more than one value.
 
-    <P>  Also, right now the implementation tries to preserve the
-         property that if a key 'k' maps to an empty collection 'c' in
-	 some MultiMap 'mm', then users of 'mm' will not be able to
-	 see that 'k' is a member of the keySet for 'mm'.  However, it
-	 does not preserve this property when mm.getValues(k) is used
-	 as a means to operate on the state of 'mm', and it is not
-	 clear to me whether one can even ensure that the property
-	 can be maintained if arbitrary operations on mm.getValues(k)
-	 are passed on to 'mm'.
-
-    <P>  This data structure is a bit experimental; a few changes may
+    <P>  FSK: This data type is a bit experimental; a few changes may
          be coming:<OL>
 	 <LI> We may make it not extend the <code>Map</code>
 	      interface, because it inherently violates the
 	      constraints of the <code>Map</code> interface once
 	      multiple values are added for one key.
+	 </OL>
+
          <LI> The <code>Collection</code> views returned right now
 	      don't offer very much in terms of modifying the
 	      state of <code>this</code> internally.
@@ -90,7 +83,7 @@ import java.util.Map;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.15 2000-06-21 07:22:34 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.16 2000-06-28 23:36:06 pnkfelix Exp $
  */
 public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 
@@ -120,16 +113,16 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
     } 
 
 
-    /** Returns some arbitrary value from the set of values to which
-	this map maps the specified key.  Returns <code>null</code> if
-	the map contains no mapping for the key; it's also possible
-	that the map explicitly maps the key to <code>null</code>.
-	The <code>containsKey</code> operation may be used to
-	distinquish these two cases.
+    /** Returns some arbitrary value from the collection of values to
+	which this map maps the specified key.  Returns
+	<code>null</code> if the map contains no mapping for the key;
+	it's also possible that the map explicitly maps the key to
+	<code>null</code>.  The <code>containsKey</code> operation may
+	be used to distinquish these two cases.
 	
 	Note that if only the <code>put</code> method is used to
 	modify <code>this</code>, then <code>get</code> will operate
-	just as it would in any other <code>Map</code>.
+	just as it would in any other <code>Map</code>.  
     */
     public Object get(Object key);
 

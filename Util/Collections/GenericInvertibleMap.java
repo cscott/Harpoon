@@ -3,19 +3,31 @@ package harpoon.Util.Collections;
 import java.util.Map;
 import java.util.Iterator;
 
+/** <code>GenericInvertibleMap</code> is a default implementation of
+    <code>InvertibleMap</code>.  It returns unmodifiable inverted
+    views of the mappings it maintains.
+*/
 public class GenericInvertibleMap extends MapWrapper implements InvertibleMap {
     // inverted map
     private MultiMap imap;
 
+    /** Constructs an invertible map backed by a HashMap.
+     */
     public GenericInvertibleMap() {
 	this(Factories.hashMapFactory(), new MultiMap.Factory());
     }
 
+    /** Constructs an invertible map backed by a map constructed by
+	<code>mf</code> and an inverted map constructed by
+	<code>mmf</code>. 
+     */
     public GenericInvertibleMap(MapFactory mf, MultiMap.Factory mmf) {
 	super(mf.makeMap());
 	imap = mmf.makeMultiMap();
     }
 
+    /** Returns an unmodifiable inverted view of <code>this</code>.
+     */
     public MultiMap invert() {
 	return UnmodifiableMultiMap.proxy(imap);
     }

@@ -21,9 +21,30 @@ import java.util.HashSet;
 /**
  * <code>GenericMultiMap</code> is a default implementation of a
  * <code>MultiMap</code>.  
+ * <P> FSK: This data structure is a bit experimental; a few changes
+ *     may be coming:<OL>
+ *       <LI> The <code>Collection</code> views returned right now
+ *	      don't offer very much in terms of modifying the
+ *	      state of <code>this</code> internally.
+ *	 <LI> Some of the views returned do not properly reflect
+ *	      modification in <code>this</code>.  This is a gross
+ *	      oversight of <code>Collection</code>'s interface
+ *	      on my part and I need to fix it, which I will do when I
+ *	      have free time.
+ *	 </OL> 
+ *
+ * <P>   Also, right now the implementation tries to preserve the
+ *       property that if a key 'k' maps to an empty collection 'c' in
+ *	 some MultiMap 'mm', then users of 'mm' will not be able to
+ *	 see that 'k' is a member of the keySet for 'mm'.  However, it
+ *	 does not preserve this property when mm.getValues(k) is used
+ *	 as a means to operate on the state of 'mm', and it is not
+ *	 clear to me whether one can even ensure that the property
+ *	 can be maintained if arbitrary operations on mm.getValues(k)
+ *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.5 2000-06-21 07:22:34 pnkfelix Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.6 2000-06-28 23:36:06 pnkfelix Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
