@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.64.2.5 2002-04-07 21:18:53 cananian Exp $
+# $Id: GNUmakefile,v 1.64.2.6 2002-04-10 01:10:45 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -135,12 +135,30 @@ list-nonempty-packages:
 list-packages-with-java-src:
 	@echo $(filter-out Test,$(PKGSWITHJAVASRC))
 
+# hack to let people build stuff w/o gj compiler until it stabilizes.
+Support/gjlib.jar: $(shell grep -v ^\# gj-files ) gj-files
+	$(RM) -rf gjlib
+	mkdir gjlib
+	@${JCC5} -d gjlib -g $(shell grep -v "^#" gj-files)
+	${JAR} cf $@ -C gjlib .
+	$(RM) -rf gjlib
+
 java:	PASS = 1
 java:	$(ALLSOURCE) $(PROPERTIES) gj-files
 	if [ ! -d harpoon ]; then \
 	  $(MAKE) first; \
 	fi
-	@${JCC5} ${JFLAGS} $(shell grep -v "^#" gj-files)
+# some folk might not have the GJ compiler; use the pre-built gjlib for them.
+	@if [ -x $(firstword ${JCC5}) ]; then \
+	  echo Building with $(firstword ${JCC5}). ;\
+	  ${JCC5} ${JFLAGS} $(shell grep -v "^#" gj-files) ; \
+	else \
+	  echo "**** Using pre-built GJ classes (in Support/gjlib.jar) ****" ;\
+	  echo "See http://www.flex-compiler.lcs.mit.edu/Harpoon/jsr14.txt"  ;\
+	  echo " for information on how to install/use the GJ compiler." ; \
+	  ${JAR} xf Support/gjlib.jar harpoon ; \
+	fi
+	@echo Compiling...
 	@${JCC} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files), $(ALLSOURCE))
 	@if [ -f stubbed-out ]; then \
 	  $(RM) `sort -u stubbed-out`; \
