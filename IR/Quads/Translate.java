@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.4 2002-04-10 03:05:21 cananian Exp $
+ * @version $Id: Translate.java,v 1.5 2002-07-10 17:57:08 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -650,6 +650,12 @@ final class Translate { // not public.
 	}
 	// JSR/RETs leave null edges into PHIs
 	s.mergeMap().fixupPhis(s);
+	// XXX: Email me <cananian@mit.edu> if you see these assertions fail!
+	// XXX: I've lost the test case that exposed this bug, which is
+	//      that fixupPhis can add new handlers to todoHandler
+	//      via its call to s.recordHandler(), requiring *more* fixup.
+	assert todo.empty();
+	assert s.todoHandler().empty();
 	// done.
 	return;
     }
