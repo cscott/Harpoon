@@ -4,7 +4,7 @@
 
 # Beginning of script
 
-BENCHMARK=$1
+BENCHMARK=`echo $1 | sed "s|^.*/||g"`   # Getting the name of the benchmark/script
 COMPILE_RUNTIME_REPORT=compile   # By default, generate report for compilation
 LONG_REPORT=0   # By default, generate short reports (include only last $NUM_LINES_SHORT_REPORT lines of the input file)
 NUM_LINES_SHORT_REPORT=10

@@ -59,12 +59,6 @@ if [ "$CLEAN" == "yes" ]; then   # should we run ./setup, ./configure and do "ma
     make clean
 fi
 
-for exec in `\ls -d run*`; do
-    if [ -x $exec ]; then
-	rm -f $exec   # removing all run<benchmark> executables
-    fi
-done
-
 make   # remaking Runtime
 echo -e "Finished making Runtime.\n"
 

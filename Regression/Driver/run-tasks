@@ -287,14 +287,8 @@ else
     if [ $GOT_ERRORS -eq 0 ]; then   # no errors up to now, so we can continue
 	FINISHED_UPDATING=0   # still have some machines that did not finish updating
 	while [ $FINISHED_UPDATING -eq 0 ]; do
-	    if [ "$DEBUG" == "yes" ]; then   # print some debugging information
-		echo -e "in the \"finished updating\" while..."
-	    fi
 	    FINISHED_UPDATING=1
 	    for machine in $MACHINES_LIST; do
-		if [ "$DEBUG" == "yes" ]; then   # print some debugging information
-		    echo -e "in \"for\" in the \"finished updating\" while..."
-		fi
 		if [ "`ssh $machine 'if [ -e $UPDATING_FLEX_FILE ]; then cat $UPDATING_FLEX_FILE; else echo 0; fi'`" != "0" ]; then   # is this machine still updating?
 		    if [ "$DEBUG" == "yes" ]; then   # print some debugging information
 			echo -e "machine $machine is still updating"
@@ -477,19 +471,29 @@ else
 	mkdir -p $DATE
 	for machine in $USED_MACHINES_LIST; do   # iterating through all machines that were used in this session
 	    REMOTE_MACHINE_FLEX_DIR=`ssh $machine 'echo $FLEX_DIR'`   # getting remote machine's $FLEX_DIR
+	    REMOTE_MACHINE_TASKS_RUN_FILE=`ssh $machine 'echo $TASKS_RUN_ON_THIS_MACHINE_FILE'`   # getting the file containing all tasks that were run on that machine
+
 	    if [ "$DEBUG" == "yes" ]; then
-		scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/run* $DATE   # copying all executables from $machine
+		scp $machine:$REMOTE_MACHINE_TASKS_RUN_FILE $TEMP_DIR/tasks-run   # copying the $TASKS_RUN_ON_THIS_MACHINE_FILE from $machine
 	    else
-		scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/run* $DATE > /dev/null 2>&1  # copying all executables from $machine
+		scp $machine:$REMOTE_MACHINE_TASKS_RUN_FILE $TEMP_DIR/tasks-run > /dev/null 2>&1   # copying the $TASKS_RUN_ON_THIS_MACHINE_FILE from $machine
 	    fi
+
+	    NUMBER_LINES=`wc -l $TEMP_DIR/tasks-run | sed "s|$TEMP_DIR/tasks-run||g"`   # getting the number of lines in $MAILING_FILE
+	    n_line=1
+	    while [ $n_line -le $NUMBER_LINES ]; do   # getting the list of people who will receive the email
+		file=`head -n $n_line $TEMP_DIR/tasks-run | tail -n 1`
+
+		if [ "$DEBUG" == "yes" ]; then
+		    scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/$file $DATE   # copying all executed programs from $machine
+		else
+		    scp $machine:$REMOTE_MACHINE_FLEX_DIR/../Runtime/$file $DATE > /dev/null 2>&1  # copying all executed programs from $machine
+		fi
+		
+		n_line=$[$n_line+1]
+	    done
 	done
 	
-	for file in `\ls -Ad $DATE/run* 2>/dev/null`; do   # looping through all files that start with "run"
-	    if [ ! -x $file ]; then   # is $file executable? trying to avoid possible coincidences in names
-		rm -f $file   # remove the file, if it is not executable
-	    fi
-	done
-
 	if [ -f $ARCHIVE_EXECUTABLES_FILE ]; then   # does the $ARCHIVE_EXECUTABLES_FILE exist?
 	    if [ "$DEBUG" == "yes" ]; then
 		tar zxvf $ARCHIVE_EXECUTABLES_FILE -C $TEMP_DIR   # extracting executables in $ARCHIVE_EXECUTABLES_FILE to $TEMP_DIR
@@ -539,9 +543,9 @@ else
 		echo "\$REST_TASKS = $REST_TASKS"
 		echo "\$COPY_FROM_MACHINE = $COPY_FROM_MACHINE"
 		echo "\$REMOTE_MACHINE_FLEX_DIR = $REMOTE_MACHINE_FLEX_DIR"
-		scp $COPY_FROM_MACHINE:$REMOTE_MACHINE_FLEX_DIR/$task.java $DIFFS_TODAY_DIR   # copy the sources for all tasks from $COPY_FROM_MACHINE
+		scp $COPY_FROM_MACHINE:$REMOTE_MACHINE_FLEX_DIR/$task.java $DIFFS_TODAY_DIR || scp $COPY_FROM_MACHINE:$REMOTE_MACHINE_FLEX_DIR/$task $DIFFS_TODAY_DIR   # copy the sources for all tasks from $COPY_FROM_MACHINE
 	    else
-		scp $COPY_FROM_MACHINE:$REMOTE_MACHINE_FLEX_DIR/$task.java $DIFFS_TODAY_DIR > /dev/null 2>&1   # copy the sources for all tasks from $COPY_FROM_MACHINE
+		scp $COPY_FROM_MACHINE:$REMOTE_MACHINE_FLEX_DIR/$task.java $DIFFS_TODAY_DIR > /dev/null 2>&1 || scp $COPY_FROM_MACHINE:$REMOTE_MACHINE_FLEX_DIR/$task $DIFFS_TODAY_DIR > /dev/null 2>&1   # copy the sources for all tasks from $COPY_FROM_MACHINE
 	    fi
 	done
 	
@@ -584,7 +588,7 @@ else
 	# Adding bechmark sources to the $ARCHIVE_SOURCES_FILE archive
 
 	mkdir -p $DATE
-	for file in `\ls -Ad $DIFFS_TODAY_DIR/*.java`; do   # looping through all files with "java" extension
+	for file in `\ls -Ad $DIFFS_TODAY_DIR | grep -v CVS`; do   # looping through all files with "java" extension
 	    mv -f $file $DATE   # move today's sources to $DATE directory
 	done
 
@@ -601,7 +605,7 @@ else
 		mv -f $DATE $TEMP_DIR   # moving $DATE to $TEMP_DIR
 		cd $TEMP_DIR   # changing directory to $TEMP_DIR
 		tar cz `\ls -A | grep -v CVS` > `cd -; pwd`/$ARCHIVE_SOURCES_FILE 2>/dev/null   # adding today's sources to the $ARCHIVE_SOURCES_FILE archive
-		rm -fr `\ls -A | grep -v CVS`   # removing all files in $TEMP_DIR directory
+		rm -rf `\ls -A | grep -v CVS`   # removing all files in $TEMP_DIR directory
 		cd -   # changing directory back
 	    fi
 	else

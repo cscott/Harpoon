@@ -56,12 +56,12 @@ while [ "$1" != "" ]; do   # parsing the command-line parameters
     shift   # getting next parameter
 done
 
-BENCHMARK=`echo $COMMAND_LINE_PARAMETERS | sed s/\ .*$// | sed s/,.*$//`   # Saving the benchmarks, because the parameters will be lost due to the shift.
-COMMAND=`echo $COMMAND_LINE_PARAMETERS | sed s/$BENCHMARK// | sed s/,// | sed s/,.*$//`   # Command which will run this benchmark
-COMMAND_LINE_PARAMETERS=`echo $COMMAND_LINE_PARAMETERS | sed s/$BENCHMARK// | sed s/^.*,//`
+BENCHMARK=`echo $COMMAND_LINE_PARAMETERS | sed s/\ .*$// | sed s/,.*$//`   # Getting the benchmark
+COMMAND=`echo $COMMAND_LINE_PARAMETERS | sed "s|$BENCHMARK||" | sed s/,// | sed s/,.*$//`   # Command which will run this benchmark
+COMMAND_LINE_PARAMETERS=`echo $COMMAND_LINE_PARAMETERS | sed "s|$BENCHMARK||" | sed s/^.*,//`   # Command-line parameters that will pass to the executable
 
 if [ "$COMMAND" == "" ]; then
-    COMMAND="bin/build-precisec-gc-debug -m -t ALL_RTJ_PERF_THREADS"
+    COMMAND="bin/build-precisec -m -t ALL_RTJ_PERF_THREADS"
 fi
 
 if [ "$ERRORS" == "no" -a -e $ERROR_FILE ]; then
@@ -83,7 +83,7 @@ fi
 if [ "$BENCHMARK" == "" ]; then   # No bechmark given as a parameter
     GOT_ERRORS=1
     if [ "$ERRORS" == "yes" ]; then   # we want to log errors
-	echo -e "./run-benchmark must be given a benchmark name as its first parameter." >> $ERROR_FILE
+	echo -e "./run-benchmark must be given a benchmark/script name as its first parameter." >> $ERROR_FILE
     fi
 else
     if [ "$COMPILE" == "yes" ]; then   # compiling the benchmark...
@@ -91,7 +91,7 @@ else
 	if [ ! -e $BENCHMARK.java ]; then   # does the benchmark file exist?
 	    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 		echo >> $ERROR_FILE
-		echo -e "The file $BENCHMARK.java not found." >> $ERROR_FILE
+		echo -e "The file $BENCHMARK.java not found. Looking for the executable run$BENCHMARK or for the script $BENCHMARK..." >> $ERROR_FILE
 	    fi
 	else   # yes, the file $BENCHMARK.java exists
 	    javac $BENCHMARK.java >> $COMPILING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
@@ -140,22 +140,25 @@ else
 	cd $FLEX_DIR/../Runtime
 	if [ -x run$BENCHMARK -a -x $BENCHMARK ]; then   # found both ./run$BENCHMARK executable and the $BENCHMARK executable/script
 	    echo >> $ERROR_FILE
-	    echo "Found both ./run$BENCHMARK and $BENCHMARK executables. Priority given to ./run$BENCHMARK, but it is advisable to avoid this kind of name collisions." >> $ERROR_FILE
-	    ./run$BENCHMARK $COMMAND_LINE_PARAMETERS >> $RUNNING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1   # giving priority to ./run$BENCHMARK
+	    echo "          Found both ./run$BENCHMARK and $BENCHMARK executables. Priority given to ./run$BENCHMARK, but it is advisable to avoid this kind of name collisions." >> $ERROR_FILE
+	    echo "./run$BENCHMARK" >> "$TASKS_RUN_ON_THIS_MACHINE_FILE"   # we have to know what tasks were run on this machine
+	    ./run$BENCHMARK $COMMAND_LINE_PARAMETERS >> $RUNNING_RESULTS_FILE"_"`echo $BENCHMARK | sed "s|^.*/||g"` 2>&1 || GOT_ERRORS=1   # giving priority to ./run$BENCHMARK
 	elif [ -x run$BENCHMARK ]; then   # found only ./run$BENCHMARK executable
 	    echo >> $ERROR_FILE
-	    echo "Found ./run$BENCHMARK; running it..." >> $ERROR_FILE
-	    ./run$BENCHMARK $COMMAND_LINE_PARAMETERS >> $RUNNING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
-	elif [ -x $BENCHMARK]; then   # found only ./$BENCHMARK executable
+	    echo "          Found the executable ./run$BENCHMARK; running it..." >> $ERROR_FILE
+	    echo "./run$BENCHMARK" >> "$TASKS_RUN_ON_THIS_MACHINE_FILE"   # we have to know what tasks were run on this machine
+	    ./run$BENCHMARK $COMMAND_LINE_PARAMETERS >> $RUNNING_RESULTS_FILE"_"`echo $BENCHMARK | sed "s|^.*/||g"` 2>&1 || GOT_ERRORS=1
+	elif [ -x $BENCHMARK ]; then   # found only ./$BENCHMARK executable
 	    echo >> $ERROR_FILE
-	    echo "Found ./$BENCHMARK; running it..." >> $ERROR_FILE
-	    . $BENCHMARK $COMMAND_LINE_PARAMETERS >> $RUNNING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
+	    echo "          Found the executable $BENCHMARK; running it..." >> $ERROR_FILE
+	    echo "./$BENCHMARK" >> "$TASKS_RUN_ON_THIS_MACHINE_FILE"   # we have to know what tasks were run on this machine
+	    . $BENCHMARK $COMMAND_LINE_PARAMETERS >> $RUNNING_RESULTS_FILE"_"`echo $BENCHMARK | sed "s|^.*/||g"` 2>&1 || GOT_ERRORS=1
 	else   # did not find any of these files
 	    echo >> $ERROR_FILE
-	    echo "Neither of the files ./run$BENCHMARK or ./$BENCHMARK was found." >> $ERROR_FILE
-	    GOT_ERRORS=2
+	    echo "Neither ./run$BENCHMARK nor ./$BENCHMARK was found." >> $ERROR_FILE
+	    GOT_ERRORS=10   # the value 10 of GOT_ERRORS will be a mark that nothing was run
 	fi
-	if [ ! $GOT_ERRORS -eq 2 ]; then   # was anything executed?
+	if [ $GOT_ERRORS != 10 ]; then   # was anything executed?
 	    if [ $GOT_ERRORS -eq 1 ]; then   # Did the program end because of an error?
 		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 		    echo >> $ERROR_FILE
@@ -189,11 +192,6 @@ else
 	echo >> $ERROR_FILE
 	echo "User chose not to run the task." >> $ERROR_FILE
     fi
-fi
-
-if [ $GOT_ERRORS -eq 0 -a "$ERRORS" == "yes" ]; then   # Any errors in this benchmark?
-    echo >> $ERROR_FILE
-    echo -e "          Benchmark $BENCHMARK ran successfully." >> $ERROR_FILE   # Probably, you will not see this message very often :)
 fi
 
 echo "0" > $RUNNING_TASK_FILE   # This machine is free again and ready to accept another task
