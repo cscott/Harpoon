@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.21 2000-02-14 21:49:34 cananian Exp $
+ * @version $Id: MOVE.java,v 1.1.2.22 2000-02-15 02:55:35 cananian Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** Constructor. 
@@ -55,7 +55,10 @@ public class MOVE extends Stm implements Typed {
 
     /** Sets the expression giving the destination for the
      *  computed value. */
-    public void setDst(Exp dst) { setChild(0, dst); }
+    public void setDst(Exp dst) {
+	Util.assert(dst.kind()==TreeKind.MEM || dst.kind()==TreeKind.TEMP);
+	setChild(0, dst);
+    }
     /** Sets the expression for the computed value. */
     public void setSrc(Exp src) { setChild(1, src); }
 
@@ -82,8 +85,8 @@ public class MOVE extends Stm implements Typed {
 	else return commontail;
     }
     public Stm build(TreeFactory tf, ExpList kids) {
+	Util.assert(kids!=null);
 	Util.assert(tf == kids.head.tf);
-	Util.assert(tf == kids.tail.head.tf);
 	Util.assert(tf == this.tf, "cloning src not yet implemented");
 	if (getDst().kind()==TreeKind.MEM)
 	    return new MOVE(tf, this, 
