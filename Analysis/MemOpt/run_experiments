@@ -10,14 +10,14 @@ NORMAL_RUNTIME_OPTS="--with-precise-c --with-gc=conservative --with-thread-model
 PREALLOC_RUNTIME_OPTS="${NORMAL_RUNTIME_OPTS} --with-prealloc-opt"
 
 # all SPECjvm98 applications
-#SPEC_APPS="_200_check _201_compress _202_jess _205_raytrace _209_db _222_mpegaudio _228_jack _213_javac"
+SPEC_APPS="_200_check _201_compress _202_jess _205_raytrace _209_db _222_mpegaudio _228_jack _213_javac"
 
 #SPEC_APPS="_200_check _201_compress _205_raytrace _209_db _222_mpegaudio _228_jack"
 
 #SPEC_APPS="_200_check"
 #SPEC_APPS="_205_raytrace"
 #SPEC_APPS="_228_jack"
-SPEC_APPS="_202_jess"
+#SPEC_APPS="_202_jess"
 #SPEC_APPS="_213_javac"
 #SPEC_APPS="_222_mpegaudio"
 #SPEC_APPS="_202_jess"
@@ -28,7 +28,7 @@ SPEC_APPS="_202_jess"
 
 
 # all Java OLDEN applications
-#JOLDEN_APPS="BH BiSort Em3d Health MST Perimeter Power TreeAdd TSP Voronoi"
+JOLDEN_APPS="BH BiSort Em3d Health MST Perimeter Power TreeAdd TSP Voronoi"
 
 #JOLDEN_APPS="BH"
 
