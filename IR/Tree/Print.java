@@ -14,7 +14,7 @@ import java.io.StringWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.27 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.28 1999-10-19 19:57:46 cananian Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -80,6 +80,11 @@ public class Print {
 
 	public void visit(Tree e) {
 	    throw new Error("Can't print abstract class!");
+	}
+
+	public void visit(ALIGN s) { 
+	    indent(indlevel++);
+	    pw.print(s.toString());
 	}
 
         public void visit(BINOP e) {

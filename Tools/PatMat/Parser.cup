@@ -28,6 +28,7 @@ import harpoon.Tools.PatMat.Spec.RuleExp;
 import harpoon.Tools.PatMat.Spec.RuleList;
 import harpoon.Tools.PatMat.Spec.RuleStm;
 import harpoon.Tools.PatMat.Spec.Stm;
+import harpoon.Tools.PatMat.Spec.StmAlign;
 import harpoon.Tools.PatMat.Spec.StmCall;
 import harpoon.Tools.PatMat.Spec.StmCjump;
 import harpoon.Tools.PatMat.Spec.StmData;
@@ -48,7 +49,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.28 1999-10-16 19:21:28 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.29 1999-10-19 19:57:47 cananian Exp $
  */
 
 action code {:
@@ -92,7 +93,7 @@ terminal START_WITH, END_WITH;
 terminal BINOP, CALL, CJUMP, CONST, EXP, JUMP, LABEL;
 terminal MEM, MOVE, NAME, NATIVECALL, RETURN, SEQ, TEMP, THROW;
 terminal UNOP;
-terminal SEGMENT, DATA, METHOD;
+terminal ALIGN, DATA, METHOD, SEGMENT;
 // punctuation & brackets
 terminal LPAREN, RPAREN, LBRACK, RBRACK, LBRACE, RBRACE, LANGLE, RANGLE;
 terminal COLON, COMMA, EQUALS;
@@ -203,7 +204,9 @@ exp	::=	ID:id
 		{: RESULT = new ExpUnop(t, u, e); :}
 	;
 
-stm	::=	CALL LPAREN exp:e1 COMMA exp:e2 COMMA exp:e3 COMMA ID:id RPAREN
+stm	::=	ALIGN LPAREN sym_number:n RPAREN
+		{: RESULT = new StmAlign(n); :}
+	|	CALL LPAREN exp:e1 COMMA exp:e2 COMMA exp:e3 COMMA ID:id RPAREN
 		{: RESULT = new StmCall(e1, e2, e3, id); :}
 	|	CJUMP LPAREN exp:e COMMA ID:t COMMA ID:f RPAREN
 		{: RESULT = new StmCjump(e, t, f); :}

@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.78 1999-10-16 20:11:42 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.79 1999-10-19 19:57:45 cananian Exp $
  */
 %%
 
@@ -1486,7 +1486,11 @@ DATA(CONST<s:16,u:16>(exp)) %{
 DATA(NAME(l)) %{
     emitDIRECTIVE( ROOT, "\t.word "+l);
 }%
- 
+
+ALIGN(n) %{
+    emitDIRECTIVE( ROOT, "\t.align "+n);
+}%
+
 SEGMENT(CLASS) %{
     emitDIRECTIVE( ROOT, ".data 1\t@.section class");
 

@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.35 1999-10-19 19:53:11 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.36 1999-10-19 19:57:47 cananian Exp $
  */
 public class Spec  {
 
@@ -464,6 +464,7 @@ public class Spec  {
     */
     public static abstract class StmVisitor {
 	public abstract void visit(Stm s);
+	public void visit(StmAlign s) { visit((Stm)s); }
 	public void visit(StmCall s) { visit((Stm)s); }
 	public void visit(StmCjump s) { visit((Stm)s); }
 	public void visit(StmData s) { visit((Stm)s); }
@@ -493,6 +494,27 @@ public class Spec  {
 	    @see <U>Design Patterns</U> pgs. 331-344
 	*/
 	public abstract void accept(StmVisitor v);
+    }
+
+    /** Extension of <code>Spec.Stm</code> representing an alignment
+     *  request.
+     *  @see harpoon.IR.Tree.ALIGN
+     */
+    public static class StmAlign extends Stm {
+	/** Type of segment. */
+	public final Leaf alignment;
+	/** Constructs a new <code>Spec.StmSegment</code>.
+	 *  @param segtype Segment type.
+	 */
+	public StmAlign(Leaf alignment) {
+	    Util.assert(alignment instanceof LeafId ||
+			(alignment instanceof LeafNumber &&
+			 ((LeafNumber)alignment).number instanceof Integer),
+			"Only integer alignments make sense for ALIGN");
+	    this.alignment = alignment;
+	}
+	public void accept(StmVisitor v) { v.visit(this); }
+	public String toString() { return "ALIGN("+alignment+")"; }
     }
 
     /** Extension of <code>Spec.Stm</code> that represents a call to a

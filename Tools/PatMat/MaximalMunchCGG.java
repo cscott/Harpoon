@@ -28,10 +28,11 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.41 1999-10-19 19:53:11 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.42 1999-10-19 19:57:47 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
+    private static final String TREE_ALIGN = "harpoon.IR.Tree.ALIGN";
     private static final String TREE_BINOP = "harpoon.IR.Tree.BINOP";
     private static final String TREE_CALL = "harpoon.IR.Tree.CALL";
     private static final String TREE_CJUMP = "harpoon.IR.Tree.CJUMP";
@@ -242,6 +243,27 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    initStms.append(r.initStms.toString());
 	}
 
+	public void visit(Spec.StmAlign s) {
+	    degree++;
+
+	    append(exp, "// check statement type");
+	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_ALIGN+"");
+	    
+	    s.alignment.accept(new Spec.LeafVisitor() {
+		public void visit(Spec.Leaf l) {
+		    Util.assert(false, "Should never visit generic Leaf in StmAlign");
+		}
+		public void visit(Spec.LeafNumber l) {
+		    append(exp, "&& ((" + TREE_ALIGN + ")"+stmPrefix+
+			   ").alignment == " + l.number.intValue());
+		}
+		public void visit(Spec.LeafId l) {
+		    initStms.append("int " + l.id + " = ((" + TREE_ALIGN + ")"+
+				    stmPrefix+").alignment;");
+		}
+	    });
+	}
+
 	public void visit(Spec.StmSegment s) {
 	    if (rootType==null) rootType=TREE_SEGMENT;
 	    degree++;
@@ -259,7 +281,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 			   TREE_SEGMENT + "." + SEGMENT.decode(l.segtype));
 		}
 		public void visit(Spec.LeafId l) {
-		    initStms.append(l.id + " = ((" + TREE_SEGMENT + ")"+
+		    initStms.append("int "+l.id + " = ((" + TREE_SEGMENT + ")"+
 				    stmPrefix+").segtype;");
 		}
 	    });

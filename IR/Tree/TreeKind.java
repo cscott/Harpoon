@@ -9,32 +9,33 @@ package harpoon.IR.Tree;
  * class. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * $Id: TreeKind.java,v 1.1.2.7 1999-08-05 15:17:14 cananian Exp $
+ * $Id: TreeKind.java,v 1.1.2.8 1999-10-19 19:57:46 cananian Exp $
  */
 public abstract class TreeKind  {
-    public final static int BINOP      = 0;
-    public final static int CALL       = 1;
-    public final static int CJUMP      = 2;
-    public final static int CONST      = 3;
-    public final static int DATA       = 4;
-    public final static int ESEQ       = 5;
-    public final static int EXP        = 6;
-    public final static int JUMP       = 7;
-    public final static int LABEL      = 8;
-    public final static int MEM        = 9;
-    public final static int METHOD     = 10;
-    public final static int MOVE       = 11;
-    public final static int NAME       = 12;
-    public final static int NATIVECALL = 13;
-    public final static int RETURN     = 14;
-    public final static int SEGMENT    = 15;
-    public final static int SEQ        = 16;
-    public final static int TEMP       = 17;
-    public final static int THROW      = 18;
-    public final static int UNOP       = 19;
+    public final static int ALIGN      = 0;
+    public final static int BINOP      = 1;
+    public final static int CALL       = 2;
+    public final static int CJUMP      = 3;
+    public final static int CONST      = 4;
+    public final static int DATA       = 5;
+    public final static int ESEQ       = 6;
+    public final static int EXP        = 7;
+    public final static int JUMP       = 8;
+    public final static int LABEL      = 9;
+    public final static int MEM        = 10;
+    public final static int METHOD     = 11;
+    public final static int MOVE       = 12;
+    public final static int NAME       = 13;
+    public final static int NATIVECALL = 14;
+    public final static int RETURN     = 15;
+    public final static int SEGMENT    = 16;
+    public final static int SEQ        = 17;
+    public final static int TEMP       = 18;
+    public final static int THROW      = 19;
+    public final static int UNOP       = 20;
 
     public static int min() { return 0; }
-    public static int max() { return 20; }
+    public static int max() { return 21; }
 
     public static boolean isValid(int k) {
 	return (min()<=k) && (k<max());
