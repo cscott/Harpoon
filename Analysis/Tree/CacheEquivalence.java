@@ -46,6 +46,7 @@ import harpoon.Util.HashEnvironment;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,7 +60,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.13 2001-06-14 21:31:39 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.14 2001-06-15 00:36:56 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -142,37 +143,58 @@ public class CacheEquivalence {
 		MEM mem = (MEM) e;  Exp memexp = mem.getExp();
 		Dataflow.Value v = df.valueOf(memexp, root);
 		// cases:
-		//  1) known base & known offset.
+		//  1a) known base & known offset.
+		//  1b) known base & offset mod N, in a kgroup.
+		//      (N mod CACHE_LINE_SIZE must be zero)
+		//  1c) known base & offset mod N, in a kgroup.
+		//      (where CACHE_LINE_SIZE mod N must be zero)
 		//  2) known base & unknown offset, but object is smaller
 		//     than cache line size.
 		//  3) all others.
 		Dataflow.DefPoint dp = null, kgroup = null;
-		long offset=0; long modulus=0;
-		if (v.isBaseKnown()) {
+		long line=0; long modulus=0;
+		if (v.isBaseKnown() &&
+		    ((Dataflow.BaseAndOffset)v).def.isWellTyped()) {
 		    Dataflow.BaseAndOffset bao = (Dataflow.BaseAndOffset) v;
-		    if (bao.offset instanceof Dataflow.Constant) { // case 1
-			dp = bao.def;
-			offset = ((Dataflow.Constant)bao.offset).number;
-		    } else if (false &&
-			       bao.offset instanceof Dataflow.ConstantModuloN){
-			// this case isn't safe yet.
-		    } else {
-			if (objSize(bao.def.type()) <= CACHE_LINE_SIZE
-			    // arrays can't count as small because
-			    // length is not statically known.
-			    && !bao.def.type().isArray()) {
-			    dp = bao.def; offset = 0; // case 2;
+		    if (objSize(bao.def.type()) <= CACHE_LINE_SIZE
+			// arrays can't count as small because
+			// length is not statically known.
+			&& !bao.def.type().isArray()) {
+			/* case 2 */
+			dp = bao.def; line = 0; // case 2
+		    } else if (bao.offset instanceof Dataflow.Constant) {
+			/* case 1a */
+			Dataflow.Constant c = (Dataflow.Constant) bao.offset;
+			dp = bao.def; line = c.number/CACHE_LINE_SIZE;
+		    } else if (bao.offset instanceof Dataflow.ConstantModuloN){
+			Dataflow.ConstantModuloN cmn =
+			    (Dataflow.ConstantModuloN) bao.offset;
+			if (cmn.kgroup!=null) {
+			    if (0==(cmn.modulus % CACHE_LINE_SIZE)) {
+				/* case 1b */
+				dp = bao.def; kgroup=cmn.kgroup;
+				line = cmn.number / CACHE_LINE_SIZE;
+				modulus = cmn.modulus;
+			    } else if (0==(CACHE_LINE_SIZE % cmn.modulus)) {
+				/* case 1c */
+				dp = bao.def; kgroup=cmn.kgroup;
+				// note that we can't guarantee that
+				// k*modulus is on a cache line boundary.
+				line = cmn.number / cmn.modulus;
+				modulus = cmn.modulus;
+			    }
 			}
 		    }
 		}
-		if (dp!=null) { // cases 1 and 2
-		    int line = (int) (offset / CACHE_LINE_SIZE);
-		    List pair = Default.pair(dp, new Integer(line));
-		    CacheEquivSet ces = (CacheEquivSet) pre.get(pair);
+		if (dp!=null) { // cases 1abc and 2
+		    List key = Arrays.asList(new Object[] {
+			dp, new Long(line), new Long(modulus), kgroup
+		    });
+		    CacheEquivSet ces = (CacheEquivSet) pre.get(key);
 		    if (ces==null) ces = new CacheEquivSet(mem);
 		    else ces.others.add(mem);
 		    cache_equiv.put(mem, ces);
-		    post.put(pair, ces);
+		    post.put(key, ces);
 		} else { // case 3
 		    cache_equiv.put(mem, new CacheEquivSet(mem));
 		}
@@ -271,13 +293,15 @@ public class CacheEquivalence {
 		if (s.getDst().kind()==TreeKind.TEMP) {
 		    TEMP t = (TEMP) s.getDst();
 		    Value v = valueOf(s.getSrc(), s);
-		    if (s.getDst().type()!=Type.POINTER ||
-			(v.isBaseKnown() &&
-			 ((BaseAndOffset)v).def.isWellTyped()))
-			update(t.temp, s, v);
-		    else
+		    if (s.getDst().type()==Type.POINTER &&
+			v.isBaseKnown() &&
+			!((BaseAndOffset)v).def.isWellTyped())
 			update(t.temp, s,
 			       new BaseAndOffset(new TempDefPoint(t, s),0));
+		    else {
+			// if kgroup is unset, fill it now.
+			update(t.temp, s, v.fillKGroup(new TempDefPoint(t,s)));
+		    }
 		}
 	    }
 	}
@@ -338,6 +362,7 @@ public class CacheEquivalence {
 	    abstract protected int specificity();
 	    boolean isBaseKnown() { return false; }
 	    boolean isOffsetKnown() { return false; }
+	    Value fillKGroup(DefPoint dp) { return this; }
 	    Value unify(Value v) {
 		Util.assert(this!=NOINFO);
 		if (v==NOINFO) return this;
@@ -397,66 +422,78 @@ public class CacheEquivalence {
 	}
 	static class ConstantModuloN extends IntegerValue {
 	    protected int specificity() { return 2; }
-	    final long number; final long modulus;
-	    ConstantModuloN(long number, long modulus) {
-		this.number=number; this.modulus=modulus;
-		Util.assert(modulus>1 && number>=0);
-		Util.assert(number < modulus);
+	    final long number; final long modulus; final DefPoint kgroup;
+	    ConstantModuloN(long number, long modulus, DefPoint kgroup) {
+		this.number=number; this.modulus=modulus; this.kgroup=kgroup;
+		Util.assert(modulus>1);
+		Util.assert(kgroup!=null || (number>=0 && number<modulus));
 	    }
 	    protected ConstantModuloN(long number) {
 		Util.assert(this instanceof Constant);
-		this.number=number; this.modulus=0;
+		this.number=number; this.modulus=0; this.kgroup=null;
 	    }
 	    boolean isOffsetKnown() { return true; }
+	    Value fillKGroup(DefPoint dp) {
+		if (kgroup!=null || this instanceof Constant)
+		    return super.fillKGroup(dp);
+		return new ConstantModuloN(mymod(number, modulus),modulus,dp);
+	    }
 	    Value unify(Value v) {
 		if (!(v instanceof ConstantModuloN)) return super.unify(v);
+		// preserve k-group equality if this==v
+		if (this.equals(v)) return this;
 		// ConstantModuloN is common superclass of this and v.
-		ConstantModuloN cmn = (ConstantModuloN) v;
-		long smallM, smallN, largeM, largeN;
-		if (this.modulus > cmn.modulus) {
-		    largeM=this.modulus; largeN=this.number;
-		    smallM=cmn.modulus;  smallN=cmn.number;
+		ConstantModuloN large, small;
+		if (this.modulus > ((ConstantModuloN)v).modulus) {
+		    large=this; small=(ConstantModuloN)v;
 		} else {
-		    smallM=this.modulus; smallN=this.number;
-		    largeM=cmn.modulus;  largeN=cmn.number;
+		    small=this; large=(ConstantModuloN)v;
 		}
-		Util.assert(largeM>0);
+		Util.assert(large.modulus>0);
 		long off=0, mod=1;
-		if ((smallM==0 || smallM==largeM) &&
-		    mymod(smallN, largeM)==largeN) {
-		    off=largeN; mod=largeM;
-		} else if (smallM > 0 &&
-			   (largeM % smallM)==0 &&
-			   (largeN % smallM)==smallN) {
-		    off=smallN; mod=smallM;
+		if ((small.modulus==0 || small.modulus==large.modulus) &&
+		    mymod(small.number, large.modulus) ==
+		    mymod(large.number, large.modulus)) {//(a mod b) join c
+		    off=large.number; mod=large.modulus;
+		} else if (small.modulus > 0) { // (a mod b) join (c mod d)
+		    mod=Util.gcd(large.modulus, small.modulus);
+		    if (large.number!=small.number)
+			mod=Util.gcd(mod, Math.abs(large.number-small.number));
+		    off=small.number;
 		} // others?
-		if (mod>1) return new ConstantModuloN(off, mod);
+		if (mod>1)
+		    return new ConstantModuloN(mymod(off,mod), mod, null);
 		// can't unify the constants.
 		return Value.SOMEINT;
 	    }
 	    protected Value _add(Value v) {
 		// must handle v=BOTTOM, SOMEINT, CONSTANTMODULON, CONSTANT
+		//      and this=CONSTANTMODULON, CONSTANT
 		if (v==Value.BOTTOM) return v;
 		if (v==Value.SOMEINT) return Value.SOMEINT;
-		ConstantModuloN cmn = (ConstantModuloN) v;
-		long smallM, smallN, largeM, largeN;
-		if (this.modulus > cmn.modulus) {
-		    largeM=this.modulus; largeN=this.number;
-		    smallM=cmn.modulus;  smallN=cmn.number;
+		ConstantModuloN large, small;
+		if (this.modulus > ((ConstantModuloN)v).modulus) {
+		    large=this; small=(ConstantModuloN)v;
 		} else {
-		    smallM=this.modulus; smallN=this.number;
-		    largeM=cmn.modulus;  largeN=cmn.number;
+		    small=this; large=(ConstantModuloN)v;
 		}
-		if (smallM>0) {
-		    if ((largeM % smallM)==0)
-			return new ConstantModuloN((largeN+smallN) % smallM,
-						   smallM);
-		} else {
-		    if (largeM>0)
-			return new ConstantModuloN(mymod(largeN+smallN,largeM),
-						   largeM);
-		    else return new Constant(largeN+smallN);
-		}
+		if (small.modulus>0) {// (a mod b)+(c mod d)
+		    if (large.kgroup==small.kgroup && large.kgroup!=null)
+			// (a+k*b)+(c+k*d) = (a+c)+k*(b+d)
+			return new ConstantModuloN
+			    (large.number+small.number,
+			     large.modulus+small.modulus, large.kgroup);
+		    // (a mod b)+(c mod d)=(a+c) mod gcd(b, d)
+		    long mod = Util.gcd(small.modulus, large.modulus);
+		    if (mod>1)
+			return new ConstantModuloN
+			    (mymod(large.number+small.number,mod), mod, null);
+		} else if (large.modulus>0) { // (a mod b)+c
+		    long off=large.number+small.number;
+		    if (large.kgroup==null) off=mymod(off, large.modulus);
+		    return new ConstantModuloN(off, large.modulus,
+					       large.kgroup);
+		} else return new Constant(large.number+small.number);
 		return Value.SOMEINT;
 	    }
 	    protected Value _mul(Value v) {
@@ -466,10 +503,10 @@ public class CacheEquivalence {
 		    // SOMEINT*(0 mod b) = 0 mod b
 		    // SOMEINT*(a mod b) = 0 mod gcd(a,b)
 		    if (this.number==0)
-			return new ConstantModuloN(0, this.modulus);
+			return new ConstantModuloN(0, this.modulus, null);
 		    long mod = Util.gcd(this.number, this.modulus);
 		    if (mod>1)
-			return new ConstantModuloN(0, mod);
+			return new ConstantModuloN(0, mod, null);
 		    return Value.SOMEINT;
 		}
 		ConstantModuloN cmn = (ConstantModuloN) v;
@@ -478,22 +515,26 @@ public class CacheEquivalence {
 		long mod = Util.gcd(this.modulus, cmn.modulus);
 		if (mod>1)
 		    return new ConstantModuloN
-			((this.number*cmn.number) % mod, mod);
+			(mymod(this.number*cmn.number,mod), mod, null);
 		else return Value.SOMEINT;
 	    }
 	    Value negate() {
-		return new ConstantModuloN(number==0?0:modulus-number,modulus);
+		return new ConstantModuloN(mymod(modulus-number,modulus),
+					   modulus, null/*k'=-k*/);
 	    }
 	    public boolean equals(Object o) {
 		try {
 		    ConstantModuloN cmn = (ConstantModuloN) o;
-		    return this.number == cmn.number &&
+		    return (this.kgroup==null ? cmn.kgroup==null :
+			    (cmn.kgroup!=null &&
+			     this.kgroup.equals(cmn.kgroup))) &&
+			this.number == cmn.number &&
 			this.modulus == cmn.modulus;
 		} catch (ClassCastException cce) { return false; }
 	    }
 	    public int hashCode() { return (int)number + 7*(int)modulus; }
 	    public String toString() {
-		return number+((modulus==0)?"":(" mod "+modulus));
+		return number+((modulus==0)?"":(" mod "+modulus+" k:"+kgroup));
 	    }
 	}
 	static class Constant extends ConstantModuloN {
@@ -509,7 +550,8 @@ public class CacheEquivalence {
 		long large=Math.max(this.number, c.number);
 		long mod=(large-small);
 		Util.assert(mymod(small, mod)==mymod(large, mod));
-		if (mod>1) return new ConstantModuloN(mymod(small, mod), mod);
+		if (mod>1)
+		    return new ConstantModuloN(mymod(small, mod), mod, null);
 		return Value.SOMEINT;
 	    }
 	    protected Value _mul(Value v) {
@@ -518,16 +560,18 @@ public class CacheEquivalence {
 		if (v==Value.SOMEINT) {
 		    // SOMEINT * c = 0 mod c
 		    if (this.number>1)
-			return new ConstantModuloN(0, this.number);
+			return new ConstantModuloN(0, this.number, null);
 		    if (this.number<-1)
-			return new ConstantModuloN(0, -this.number).negate();
+			return new ConstantModuloN(0, -this.number, null)
+			    .negate();
 		    return Value.SOMEINT;
 		}
 		ConstantModuloN cmn = (ConstantModuloN) v;
 		if (cmn.modulus>1) {
 		    long mult = Math.abs(this.number);
 		    Value r = new ConstantModuloN(cmn.number*mult,
-						  cmn.modulus*mult);
+						  cmn.modulus*mult,
+						  cmn.kgroup);
 		    return (this.number>=0) ? r : r.negate();
 		}
 		Util.assert(cmn.modulus==0 && this.modulus==0);
@@ -588,7 +632,7 @@ public class CacheEquivalence {
 	static long mymod(long a, long b) {
 	    Util.assert(b>0);
 	    long r = a % b;
-	    return (a>=0 || r==0) ? r : (b+r);
+	    return (r<0) ? (b+r) : r;
 	}
 	/*------------------------------------------------------------- */
 	/* both pointers in temps and pointer constants can be def points */
