@@ -6,9 +6,9 @@ package harpoon.Analysis.GraphColoring;
  * with the Graph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Node.java,v 1.1.2.2 1999-01-19 16:08:00 pnkfelix Exp $ */
+ * @version $Id: Node.java,v 1.1.2.3 1999-01-22 18:19:04 pnkfelix Exp $ */
 
-public class Node  {
+public abstract class Node  {
 
     /** Creates a <code>Node</code>. */
     public Node() {
@@ -23,4 +23,9 @@ public class Node  {
 	return true;
     }
 
+    public abstract boolean equals(Object o);
+
+    public abstract int hashCode();
+
+    public abstract String toString();
 }
