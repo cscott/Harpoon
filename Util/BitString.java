@@ -7,6 +7,7 @@ package harpoon.Util;
  */
 
 public final class BitString implements Cloneable, java.io.Serializable {
+  /* There are 2^BITS_PER_UNIT bits in each unit (int) */
   private final static int BITS_PER_UNIT = 5;
   private final static int MASK = (1<<BITS_PER_UNIT)-1;
   private int bits[];
@@ -25,10 +26,10 @@ public final class BitString implements Cloneable, java.io.Serializable {
   }
   
   /**
-   * Creates an empty string.
+   * Creates an empty string of default length.
    */
   public BitString() {
-    this(1 << BITS_PER_UNIT);
+    this(1);
   }
   
   /**
@@ -36,7 +37,8 @@ public final class BitString implements Cloneable, java.io.Serializable {
    * @param nbits the size of the string
    */
   public BitString(int nbits) {
-    /* subscript(nbits + MASK) is the length of the array needed to hold nbits */
+    /* subscript(nbits + MASK) is the length of the array needed to hold
+     * nbits.  Can also be written 1+subscript(nbits-1). */
     bits = new int[subscript(nbits + MASK)];
   }
   
@@ -56,6 +58,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
    */
   public void setUpTo(int bit) {
     int where = subscript(bit);
+    /* preaddition of 1 to bit is a clever hack to avoid long arithmetic */
     bits[where] |= ((1 << ((bit+1) & MASK)) - 1);
     while (where-- > 0) {
       bits[where] = ~0;
@@ -86,6 +89,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
    */
   public void clearUpTo(int bit) {
     int where = subscript(bit);
+    /* preaddition of 1 to bit is a clever hack to avoid long arithmetic */
     bits[where] &= ~((1 << ((bit+1) & MASK)) - 1);
     while (where-- > 0) {
       bits[where] = 0;
@@ -106,7 +110,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
    */
   public boolean get(int bit) {
     int n = subscript(bit);
-    return ((bits[n] & (1L << (bit & MASK))) != 0);
+    return ((bits[n] & (1 << (bit & MASK))) != 0);
   }
   
   /**
@@ -196,7 +200,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
    * Gets the hashcode.
    */
   public int hashCode() {
-    int h = 1234;
+    int h = 1234 * bits.length;
     for (int i = bits.length; --i >= 0; ) {
       h ^= bits[i] * (i + 1);
     }
@@ -214,7 +218,7 @@ public final class BitString implements Cloneable, java.io.Serializable {
   /**
    * Compares this object against the specified object.
    * @param obj the object to compare with
-   * @return true if the objects are the same; false otherwise.
+   * @return true if the contents of the bitsets are the same; false otherwise.
    */
   public boolean equals(Object obj) {
     BitString set;
@@ -259,7 +263,8 @@ public final class BitString implements Cloneable, java.io.Serializable {
     return number;
   }
 
-  public static int howManyOneBits(int x) {
+  private static int howManyOneBits(int x) {
+    /*
     int number = 0;
     while (x != 0) {
       if ((x & 1) != 0) {
@@ -269,6 +274,8 @@ public final class BitString implements Cloneable, java.io.Serializable {
       x >>>= 1;
     }
     return number;
+    */
+    return Util.popcount(x);
   }
   
   /**
