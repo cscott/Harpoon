@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.16 2003-06-02 17:44:08 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.17 2003-06-02 20:10:25 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -64,6 +64,8 @@ LCTES'03, June 2003
 % lattice inequalities
 \newcommand{\latlt}{\ensuremath{\sqsubset}}
 \newcommand{\latleq}{\ensuremath{\sqsubseteq}}
+% absolute value, with proper brackets
+\providecommand{\abs}[1]{\lvert#1\rvert}
 
 %%%%% define new 'talknotes' environment that only shows up in PS mode.
 \ifDVItoPS
@@ -317,17 +319,28 @@ compression?
 
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Bitwidth analysis domains}
+Domains:
 \begin{itemize}
 \item $\mathcal{C}:\mathbb{Z}$, integer constants
 \begin{itemize}\yellow
 \item $c\in\mathcal{C}$
 \end{itemize}
 \item $\mathcal{T}:\mathbb{N}_0\times\mathbb{N}_0$, bitwidth specifications
+ %% FIXME: should be on same line as previous.
+ ($\mathbb{N}_0=\left\{0,1,2,\ldots\right\}$)
 \begin{itemize}\yellow
 \item $\tuple{m,p}\in\mathcal{T}$
 \end{itemize}
-\item $\mathcal{L}:\left(\mathcal{C+T}\right)_\bot$, lattice values
+\item $\mathcal{L}:\left(\mathcal{C+T}\right)_\bot$, abstract value lattice
 \end{itemize}
+Concretization: $\mathcal{L}\to 2^\mathcal{Z}$
+\begin{eqnarray*}
+\mathbb{C}\left[c\right] &=& \left\{ c \right\} \\
+\mathbb{C}\left[\tuple{m,p}\right] &=&
+   \left\{ -n | n\in\mathbb{N}_0 \,\wedge\, \ln n < m\right\} \cup
+   \left\{0\right\} \cup\\
+&& \left\{  n | n\in\mathbb{N}_0 \,\wedge\, \ln n < p\right\}\\
+\end{eqnarray*}
 \end{slide}
 
 \begin{talknotes}
@@ -361,8 +374,8 @@ c\latleq\tuple{m,p}&\text{ iff }&\func{bw}(c)\latleq\tuple{{\onlySlide*{5}{\yell
 \begin{displaymath}%
 \func{bw}(c):\mathcal{C}\to\mathcal{T}=\begin{cases}
 \tuple{0,0} & c=0 \\
-\tuple{0,{\onlySlide*{4}{\yellow}1+\left\lfloor\ln\left|c\right|\right\rfloor}} & c>0 \\
-\tuple{{\onlySlide*{5}{\yellow}1+\left\lfloor\ln\left|c\right|\right\rfloor},0} & c<0 \\
+\tuple{0,{\onlySlide*{4}{\yellow}1+\left\lfloor\ln\abs{c}\right\rfloor}} & c>0 \\
+\tuple{{\onlySlide*{5}{\yellow}1+\left\lfloor\ln\abs{c}\right\rfloor},0} & c<0 \\
 \end{cases}%
 \end{displaymath}%
 \FromSlide{3}%
@@ -499,7 +512,7 @@ while (0<i\onlySlide{2}{{\yellow$_1$}} \&\& i\onlySlide{2}{{\yellow$_1$}}<50) \{
 \FromSlide{2}
 \vspace{.75cm}
 \begin{center}\yellow
-$\func{val}(\text{\tt i}_2)\latleq\tuple{0,6}$
+$\func{val}(\text{\tt i}_2)\latleq\langle 0,\underbrace{6}_{1+\lfloor\ln 50\rfloor}\rangle$
 \end{center}
 \end{slide}
 }
