@@ -6,6 +6,7 @@ package harpoon.ClassFile;
 import java.io.File;
 import java.io.InputStream;
 import java.io.FileInputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -14,6 +15,7 @@ import java.util.Set;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
@@ -30,7 +32,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.12 1999-09-13 20:08:24 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.12.6.1 2000-01-10 22:04:16 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -200,6 +202,37 @@ public abstract class Loader {
     };
     return new FilterIterator(new CombineIterator(
            new FilterIterator(classpathList.iterator(), cpe2sl)), sl2cl);
+  }
+
+  /** System-linker: the class names resolved by this linker are always
+   *  immutable and identical to those on disk.
+   */
+  public static final Linker systemLinker = new SystemLinker();
+  private static class SystemLinker extends Linker implements Serializable {
+    protected final HClass forDescriptor0(String descriptor) {
+      Util.assert(descriptor.startsWith("L") && descriptor.endsWith(";"));
+      // classname in descriptor is '/' delimited.
+      String className = descriptor.substring(1, descriptor.indexOf(';'));
+      className = className.replace('/','.'); // make proper class name.
+      InputStream is = 
+	  Loader.getResourceAsStream(Loader.classToResource(className));
+      if (is == null) throw new NoClassDefFoundError(className);
+      // OK, go ahead and load this.
+      try {
+	return /*ImplGNU*/ImplMagic.forStream(this, new BufferedInputStream(is));
+      } catch (java.lang.ClassFormatError e) {
+	throw new NoClassDefFoundError(className+" ["+e.toString()+"]");
+      } catch (java.io.IOException e) {
+	throw new NoClassDefFoundError(className);
+      } finally {
+	try { is.close(); } catch(java.io.IOException e) { }
+      }
+    }
+    /* Serializable interface: system linker is unique. */
+    public Object writeReplace() { return new Stub(); }
+    private static final class Stub implements Serializable {
+      public Object readResolve() { return Loader.systemLinker; }
+    }
   }
 }
 // set emacs indentation style.
