@@ -32,7 +32,7 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.11 1999-08-18 19:25:32 duncan Exp $
+ * @version $Id: Data.java,v 1.1.2.12 1999-08-25 18:02:16 duncan Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
@@ -77,15 +77,14 @@ public class Data extends Code implements HData {
 	    down);
 
 	// FIX: need to lay out GC tables
-	// FIX: need tables for reflection 
 	// FIX: need tables for static methods
+
 
 	// Construct null-terminated list of interfaces and
 	// add all interface methods
 	HClass[] interfaces = cls.getInterfaces();
 	for (int i=0; i<interfaces.length; i++) { 
 	    HClass    iFace    = interfaces[i];
-	    System.out.println("Adding interface: " + iFace);
 	    HMethod[] iMethods = iFace.getMethods();
 	    iList.add(_DATA(offm.label(iFace)));  // Add to interface list
 	    for (int j=0; j<iMethods.length; j++) { 
@@ -109,7 +108,6 @@ public class Data extends Code implements HData {
 	HMethod[] methods = cls.getMethods();
 	for (int i=0; i<methods.length; i++) { 
 	    if (!methods[i].isStatic()) { 
-		System.out.println("Addign method: " + methods[i] + " at offset " + offm.offset(methods[i])/ws);
 		add(offm.offset(methods[i])/ws,
 		    _DATA(offm.label(methods[i])),up,down);
 	    }
@@ -117,9 +115,9 @@ public class Data extends Code implements HData {
 
 	// Reverse the upward list
 	Collections.reverse(up);
-	
+	down.add(0, new LABEL(tf,null,offm.label(cls)));
+
 	for (HClass sCls = cls; sCls!=null; sCls=sCls.getSuperclass()) { 
-	    System.out.println("sCls: " + sCls);
 	    HField[] hfields  = sCls.getDeclaredFields();
 	    for (int i=0; i<hfields.length; i++) { 
 		HField hfield = hfields[i];
@@ -141,7 +139,8 @@ public class Data extends Code implements HData {
 	up     .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
 	soList .add(0, new SEGMENT(tf, null, SEGMENT.STATIC_OBJECTS));
 	spList .add(0, new SEGMENT(tf, null, SEGMENT.STATIC_PRIMITIVES));
-
+	rList  .add(   new SEGMENT(tf, null, SEGMENT.REFLECTION_DATA));
+	//rList  .add(ObjectBuilder.makeClass(tf,frame,this.cls).stm);
 
 	// At last, assign the root element
 	this.tree = 
@@ -153,6 +152,7 @@ public class Data extends Code implements HData {
 		 Stm.toStm(spList),
 		 Stm.toStm(soList),
 		 Stm.toStm(iList)
+		 // Stm.toStm(rList)
 	     }));
 	     
 	// Compute the edges of this HData
@@ -231,7 +231,6 @@ public class Data extends Code implements HData {
      *                                                          *
      *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-    
     private void add(int index, Tree elem, ArrayList up, ArrayList down) { 
 	int size, requiredSize;
 	if (index<0) { 
