@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.1 2000-06-26 18:37:13 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.2 2000-06-26 19:54:32 pnkfelix Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  
@@ -477,6 +477,8 @@ import java.util.Iterator;
        declare( a1, HClass.Void );
        declare( a0, HClass.Void );
        // not certain an emitMOVE is legal with the l/h modifiers
+       Util.assert(j instanceof TwoWordTemp);
+       Util.assert(k instanceof TwoWordTemp);
        emit( root, "move `d0, `s0h", a0, j );
        emit( root, "move `d0, `s0l", a1, j );
        emit( root, "move `d0, `s0h", a2, k );
@@ -485,6 +487,7 @@ import java.util.Iterator;
        emit2(root, "jal "+nameMap.c_function_name(func_name),
              // uses & stomps on these registers:
              call_def_builtin, call_use);
+       Util.assert(i instanceof TwoWordTemp);
        emit( root, "move `d0h, `s0", i, v0 );
        emit( root, "move `d0l, `s0", i, v1 );
     }
@@ -498,6 +501,7 @@ import java.util.Iterator;
        declare( a1, HClass.Void );
        declare( a0, HClass.Void );
        // not certain an emitMOVE is legal with the l/h modifiers
+       Util.assert(j instanceof TwoWordTemp);
        emit( root, "move `d0, `s0h", a0, j );
        emit( root, "move `d0, `s0l", a1, j );
        emitMOVE( root, "move `d0, `s0", a2, k );
@@ -505,6 +509,7 @@ import java.util.Iterator;
        emit2(root, "jal "+nameMap.c_function_name(func_name),
              // uses & stomps on these registers:
              call_def_builtin, call_use);
+       Util.assert(i instanceof TwoWordTemp);
        emit( root, "move `d0h, `s0", i, v0 );
        emit( root, "move `d0l, `s0", i, v1 );
     }
@@ -542,6 +547,8 @@ import java.util.Iterator;
        declare( a1, HClass.Void );
        declare( a0, HClass.Void );
        // not certain an emitMOVE is legal with the l/h modifiers
+       Util.assert(j instanceof TwoWordTemp);
+       Util.assert(k instanceof TwoWordTemp);
        emit( root, "move `d0, `s0h", a2, k );
        emit( root, "move `d0, `s0l", a3, k );
        emit( root, "move `d0, `s0h", a0, j );
@@ -550,6 +557,7 @@ import java.util.Iterator;
        emit2(root, "jal "+nameMap.c_function_name(func_name),
              // uses & stomps on these registers:
              call_def_full, call_use);
+       Util.assert(i instanceof TwoWordTemp);
        emit( root, "move `d0h, `s0", i, v0 );
        emit( root, "move `d0l, `s0", i, v1 );
     }
@@ -559,12 +567,14 @@ import java.util.Iterator;
        declare( a1, HClass.Void );
        declare( a0, HClass.Void );
        // not certain an emitMOVE is legal with the l/h modifiers
+       Util.assert(j instanceof TwoWordTemp);
        emit( root, "move `d0, `s0h", a0, j );
        emit( root, "move `d0, `s0l", a1, j );
        declareCALLDefFull();
        emit2(root, "jal "+nameMap.c_function_name(func_name),
              // uses & stomps on these registers:
              call_def_full, call_use);
+       Util.assert(i instanceof TwoWordTemp);
        emit( root, "move `d0h, `s0", i, v0 );
        emit( root, "move `d0l, `s0", i, v1 );
     }
@@ -626,12 +636,14 @@ import java.util.Iterator;
                 declare(rfirst, HClass.Void);
                 Temp rsecnd = getArgReg(index--);
                 declare(rsecnd, HClass.Void);
+		Util.assert(temp instanceof TwoWordTemp);
                 emit( ROOT, "move `d0, `s0h", rfirst, temp );
                 emit( ROOT, "move `d0, `s0l", rsecnd, temp );
                 break;
              case 4: // spread between regs and stack
                 stackOffset -= 4; index--;
                 declare( SP, HClass.Void );
+		Util.assert(temp instanceof TwoWordTemp);
                 emit(new InstrMEM( instrFactory, ROOT,
                                    "sw `s0h, -" + stackOffset + "(`s1)",
                                    new Temp[] { SP },
@@ -644,6 +656,7 @@ import java.util.Iterator;
              default: // start putting args in memory
                 stackOffset -= 4; index--;
                 declare( SP, HClass.Void );
+		Util.assert(temp instanceof TwoWordTemp);
                 emit(new InstrMEM( instrFactory, ROOT,
                                    "sw `s0h, -" + stackOffset + "(`s1)",
                                    new Temp[]{ SP },
@@ -720,6 +733,7 @@ import java.util.Iterator;
           // double retval passed in float registers.
           // XXX eW why use 4 both times?
           declare(retval, type); declare ( SP, HClass.Void );
+	  Util.assert(retval instanceof TwoWordTemp);
           emit( ROOT, "move `d0h, `s0", retval, v0 );
           emit( ROOT, "move `d0l, `s0", retval, v1 );
           //emit( ROOT, "s.d $f0, -8($sp)", SP, SP);
@@ -728,6 +742,7 @@ import java.util.Iterator;
        } else if (ROOT.getRetval().isDoubleWord()) {
           // not certain an emitMOVE is legal with the l/h modifiers
           declare(retval, type);
+	  Util.assert(retval instanceof TwoWordTemp);
           emit( ROOT, "move `d0h, `s0", retval, v0 );
           emit( ROOT, "move `d0l, `s0", retval, v1 );
        } else {
@@ -931,6 +946,7 @@ BINOP<p,i>(ADD, j, CONST<p,i>(c)) = i
 
 BINOP<l>(ADD, j, k) = i %extra<i>{ extra }
 %{
+    Util.assert(i instanceof TwoWordTemp);
    emit( ROOT, "addu `d0l, `s0l, `s1l", i, j, k);
    emit( ROOT, "sltu `d0, `s0l, `s1l", extra, i, k);
    emit( ROOT, "addu `d0h, `s0, `s1h", i, extra, j);
