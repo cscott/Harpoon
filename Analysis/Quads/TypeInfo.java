@@ -43,7 +43,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.5 1999-11-05 07:18:25 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.6 1999-11-22 18:01:30 bdemsky Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
@@ -141,7 +141,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 
 	public void visit(AGET q) {
 	    HClass ty = typeMap(q, q.objectref());
-	    if (ty==null) {modified=false; return; }
+	    if ((ty==null)||(ty==HClass.Void)) {modified=false; return; }
 	    if (!verifierBehavior) {
 		Util.assert(ty.isArray());
 		modified = merge(q, q.dst(), toInternal(ty.getComponentType()));
@@ -292,7 +292,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     }
 
     boolean merge(HCodeElement hce, Temp t, HClass newType) {
-	HClass oldType = typeMap(hce, t);
+     	HClass oldType = typeMap(hce, t);
 	if (oldType==null) { map.put(t, newType); return true; }
 	if (oldType==newType) return false;
 	// special case 'Void' HClass, which is used for null constants.
