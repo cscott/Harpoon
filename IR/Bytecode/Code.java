@@ -21,7 +21,7 @@ import java.util.Enumeration;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.2 1998-11-30 21:58:26 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.3 1998-12-21 20:58:40 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -107,6 +107,8 @@ public class Code extends HCode {
 	if (Op.isBranch(code[pc])) {
 	  if (code[pc]==Op.TABLESWITCH || code[pc]==Op.LOOKUPSWITCH)
 	    sparse[pc] = new InSwitch(sf, line, code, pc);
+	  else if (code[pc]==Op.RET)
+	    sparse[pc] = new InRet(sf, line, code, pc);
 	  else
 	    sparse[pc] = new InCti(sf, line, code, pc);
 	} else
