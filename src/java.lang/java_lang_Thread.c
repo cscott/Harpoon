@@ -324,7 +324,9 @@ static void * thread_startup_routine(void *closure) {
   /* This thread is dead now. */
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_FALSE;
   /* Notify others that it's dead (before we deallocate the thread object!). */
+  FNI_MonitorEnter(env, thread);
   FNI_MonitorNotify(env, thread, JNI_TRUE);
+  FNI_MonitorExit(env, thread);
   assert(!((*env)->ExceptionOccurred(env)));
 #ifdef WITH_CLUSTERED_HEAPS
   /* give us a chance to deallocate the thread-clustered heap */
