@@ -21,7 +21,7 @@ import java.util.ArrayList;
  * @see harpoon.Backend.Generic.Code;
  * 
  * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: RegUseDefer.java,v 1.1.2.1 2000-09-22 21:53:06 pnkfelix Exp $
+ * @version $Id: RegUseDefer.java,v 1.1.2.2 2000-10-04 19:20:32 pnkfelix Exp $
  */
 public class RegUseDefer extends UseDefer {
     
@@ -37,18 +37,20 @@ public class RegUseDefer extends UseDefer {
     public Collection useC(HCodeElement hce) {
 	Instr i = (Instr) hce;
 	ArrayList list = new ArrayList();
-	for(Iterator uses=i.useC().iterator(); uses.hasNext();) {
-	    list.addAll(assemCode.getRegisters(i,(Temp)uses.next()));
-	}
+	if (! (i instanceof harpoon.Analysis.Instr.InstrMOVEproxy)) // FSK: HACK
+	    for(Iterator uses=i.useC().iterator(); uses.hasNext();) {
+		list.addAll(assemCode.getRegisters(i,(Temp)uses.next()));
+	    }
 	return Collections.unmodifiableCollection(list);
     }
 
     public Collection defC(HCodeElement hce) {
 	Instr i = (Instr) hce;
 	ArrayList list = new ArrayList();
-	for(Iterator defs=i.defC().iterator(); defs.hasNext();) {
-	    list.addAll(assemCode.getRegisters(i,(Temp)defs.next()));
-	}
+	if (! (i instanceof harpoon.Analysis.Instr.InstrMOVEproxy)) // FSK: HACK
+	    for(Iterator defs=i.defC().iterator(); defs.hasNext();) {
+		list.addAll(assemCode.getRegisters(i,(Temp)defs.next()));
+	    }
 	return Collections.unmodifiableCollection(list);
     }
    

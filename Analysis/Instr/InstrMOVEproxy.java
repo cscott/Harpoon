@@ -14,9 +14,9 @@ import java.util.List;
  * <code>InstrMOVEproxy</code>
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: InstrMOVEproxy.java,v 1.1.2.3 2000-08-30 20:12:02 pnkfelix Exp $
+ * @version $Id: InstrMOVEproxy.java,v 1.1.2.4 2000-10-04 19:20:58 pnkfelix Exp $
  */
-class InstrMOVEproxy extends Instr {
+public class InstrMOVEproxy extends Instr {
     
     /** Creates a <code>InstrMOVEproxy</code>. */
     public InstrMOVEproxy(Instr src) {
