@@ -11,7 +11,7 @@ import java.util.*;
  * <code>Spec.ExpBinop</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CommutativityExpander.java,v 1.1.2.1 2000-02-17 23:53:49 cananian Exp $
+ * @version $Id: CommutativityExpander.java,v 1.1.2.2 2000-02-18 22:25:07 cananian Exp $
  */
 public abstract class CommutativityExpander  {
     //hide constructor.
@@ -38,68 +38,74 @@ public abstract class CommutativityExpander  {
 	throw new Error("Unknown Spec.Rule type!");
     }
     private static Spec.RuleExp[] expand(Spec.RuleExp r) {
-	Spec.Exp[] choices = expand(r.exp);
+	ExpAndPred[] choices = expand(r.exp);
 	Spec.RuleExp[] result = new Spec.RuleExp[choices.length];
 	for (int i=0; i<result.length; i++)
-	    result[i] = new Spec.RuleExp(choices[i], r.result_id,
-					 r.details, r.action_str);
+	    result[i] = new Spec.RuleExp(choices[i].exp, r.result_id,
+					 addPred(r.details, choices[i].pred),
+					 r.action_str);
 	return result;
     }
     private static Spec.RuleStm[] expand(Spec.RuleStm r) {
-	Spec.Stm[] choices = expand(r.stm);
+	StmAndPred[] choices = expand(r.stm);
 	Spec.RuleStm[] result = new Spec.RuleStm[choices.length];
 	for (int i=0; i<result.length; i++)
-	    result[i] = new Spec.RuleStm(choices[i],
-					 r.details, r.action_str);
+	    result[i] = new Spec.RuleStm(choices[i].stm,
+					 addPred(r.details, choices[i].pred),
+					 r.action_str);
 	return result;
     }
-    private static Spec.Exp[] dispatch(Spec.Exp exp) {
+    private static ExpAndPred[] dispatch(Spec.Exp exp) {
 	if (exp instanceof Spec.ExpBinop)
 	    return expand((Spec.ExpBinop)exp);
 	else return expand(exp);
     }
     // this is the real deal:
-    private static Spec.Exp[] expand(Spec.ExpBinop exp) {
+    private static ExpAndPred[] expand(Spec.ExpBinop exp) {
 	// make normal combinations first.
-	Spec.ExpList[] combos = makeAllCombinations(exp.kids());
+	ExpListAndPred[] combos = makeAllCombinations(exp.kids());
 	// check whether this exp rules is commutative & worth expanding.
 	if (exp.opcode instanceof Spec.LeafOp &&
 	    harpoon.IR.Tree.Bop.isCommutative(((Spec.LeafOp)exp.opcode).op) &&
 	    !(exp.left instanceof Spec.ExpId &&
 	      exp.right instanceof Spec.ExpId)) {
 	    // okay, reverse kids and make some more combos.
-	    Spec.ExpList[] newcombos = new Spec.ExpList[combos.length * 2];
+	    ExpListAndPred[] newcombos = new ExpListAndPred[combos.length * 2];
 	    for (int i=0; i<combos.length; i++) {
-		Spec.ExpList source = combos[i];
+		ExpListAndPred source = combos[i];
 		newcombos[2*i] = source;
-		newcombos[2*i+1] =
-		    new Spec.ExpList(source.tail.head,
-				     new Spec.ExpList(source.head, null));
+		Spec.ExpList nel =
+		    new Spec.ExpList(source.explist.tail.head,
+				new Spec.ExpList(source.explist.head, null));
+		newcombos[2*i+1] = new ExpListAndPred(nel, source.pred);
 	    }
 	    combos = newcombos;
 	}
 	// make exps from all the explists.
-	Spec.Exp[] result = new Spec.Exp[combos.length];
+	ExpAndPred[] result = new ExpAndPred[combos.length];
 	for (int i=0; i<result.length; i++)
-	    result[i] = exp.build(combos[i]);
+	    result[i] = new ExpAndPred(exp.build(combos[i].explist),
+				       combos[i].pred);
 	return result;
     }
-    private static Spec.Exp[] expand(Spec.Exp exp) {
+    private static ExpAndPred[] expand(Spec.Exp exp) {
 	// make explists with all combinations of children.
-	Spec.ExpList[] combos = makeAllCombinations(exp.kids());
+	ExpListAndPred[] combos = makeAllCombinations(exp.kids());
 	// make exps from all the explists.
-	Spec.Exp[] result = new Spec.Exp[combos.length];
+	ExpAndPred[] result = new ExpAndPred[combos.length];
 	for (int i=0; i<result.length; i++)
-	    result[i] = exp.build(combos[i]);
+	    result[i] = new ExpAndPred(exp.build(combos[i].explist),
+				       combos[i].pred);
 	return result;
     }
-    private static Spec.Stm[] expand(Spec.Stm stm) {
+    private static StmAndPred[] expand(Spec.Stm stm) {
 	// make explists with all combinations of children.
-	Spec.ExpList[] combos = makeAllCombinations(stm.kids());
+	ExpListAndPred[] combos = makeAllCombinations(stm.kids());
 	// make exps from all the explists.
-	Spec.Stm[] result = new Spec.Stm[combos.length];
+	StmAndPred[] result = new StmAndPred[combos.length];
 	for (int i=0; i<result.length; i++)
-	    result[i] = stm.build(combos[i]);
+	    result[i] = new StmAndPred(stm.build(combos[i].explist),
+				       combos[i].pred);
 	return result;
     }
     private static int size(Spec.ExpList el) {
@@ -108,29 +114,33 @@ public abstract class CommutativityExpander  {
 	    i++;
 	return i;
     }
-    private static Spec.ExpList[] makeAllCombinations(Spec.ExpList kids) {
+    private static ExpListAndPred[] makeAllCombinations(Spec.ExpList kids) {
 	// construct set of expanded children.
-	Spec.Exp[][] choices = new Spec.Exp[size(kids)][];
+	ExpAndPred[][] choices = new ExpAndPred[size(kids)][];
 	for (int i=0; kids!=null; kids=kids.tail)
 	    choices[i++] = dispatch(kids.head);
 	// make explists with all combinations of children.
 	return makeAllCombinations(choices);
     }
-    private static Spec.ExpList[] makeAllCombinations(Spec.Exp[][] choices) {
+    private static ExpListAndPred[] makeAllCombinations(ExpAndPred[][] choices)
+    {
 	int[] state = new int[choices.length]; // all zero initially.
 	// count the # of possibilities
 	int numposs = 1;
 	for (int i=0; i<choices.length; i++)
 	    numposs *= choices[i].length;
 	// iterate:
-	Spec.ExpList[] result = new Spec.ExpList[numposs];
+	ExpListAndPred[] result = new ExpListAndPred[numposs];
 	for (int i=0; i < numposs; i++) {
 	    // make a Spec.ExpList
-	    Spec.ExpList el=null;
-	    for (int j=state.length-1; j>=0; j--)
-		el = new Spec.ExpList( choices[j][state[j]], el );
+	    Spec.ExpList el=null; String pred=null;
+	    for (int j=state.length-1; j>=0; j--) {
+		ExpAndPred eap = choices[j][state[j]];
+		pred = addPred(eap.pred, pred);
+		el = new Spec.ExpList( eap.exp, el );
+	    }
 	    // add to result.
-	    result[i] = el;
+	    result[i] = new ExpListAndPred(el, pred);
 	    // advance state by one
 	    for (int j=0; j < state.length; j++) {
 		if (++state[j] < choices[j].length)
@@ -139,5 +149,42 @@ public abstract class CommutativityExpander  {
 	    }
 	}
 	return result;
+    }
+    private static class ExpAndPred {
+	final Spec.Exp exp;
+	final String pred;
+	ExpAndPred(Spec.Exp exp, String pred) {
+	    this.exp = exp; this.pred = pred;
+	}
+    }
+    private static class ExpListAndPred {
+	final Spec.ExpList explist;
+	final String pred;
+	ExpListAndPred(Spec.ExpList explist, String pred) {
+	    this.explist = explist; this.pred = pred;
+	}
+    }
+    private static class StmAndPred {
+	final Spec.Stm stm;
+	final String pred;
+	StmAndPred(Spec.Stm stm, String pred) {
+	    this.stm = stm; this.pred = pred;
+	}
+    }
+    private static String addPred(String p1, String p2) {
+	if (p1==null) return p2;
+	if (p2==null) return p1;
+	return "("+p1+") && ("+p2+")";
+    }
+    private static Spec.DetailList addPred(Spec.DetailList dl, String pred) {
+	if (dl==null)
+	    return new Spec.DetailList(new Spec.DetailPredicate(pred), null);
+	if (dl.head instanceof Spec.DetailPredicate) {
+	    Spec.DetailPredicate sdp = (Spec.DetailPredicate) dl.head;
+	    return new Spec.DetailList(new Spec.DetailPredicate
+				       (addPred(sdp.predicate_string,
+						pred)), dl.tail);
+	}
+	else return new Spec.DetailList(dl.head, addPred(dl.tail, pred));
     }
 }
