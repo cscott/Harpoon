@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.7 1998-12-07 02:52:03 marinov Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.8 1998-12-07 12:02:31 marinov Exp $
  */
 
 public class IntraProc {
@@ -64,6 +64,7 @@ public class IntraProc {
 
     HMethod[] possibleMethods(HMethod m, SetHClass[] p) {
 	if (m.isStatic()) return new HMethod[]{ m };
+	if (p[0]==null) return new HMethod[0];
 	Set sm = new Set();
 	for (Enumeration e = p[0].elements(); e.hasMoreElements(); ) {
 	    HClass c = (HClass)e.nextElement();
@@ -78,6 +79,7 @@ public class IntraProc {
 		    c = c.getSuperclass();
 		}
 	    } while (notDone&&(c!=null));
+	    while ((c!=m.getDeclaringClass())&&(c!=null)) c=c.getSuperclass();
 	    if (c!=null) sm.union(nm);
 	}
 	HMethod[] am = new HMethod[sm.size()];
@@ -86,9 +88,6 @@ public class IntraProc {
     }
     
     void nativeMethods() {
-	//DEBUG
-	//System.out.println("non-code=" + method.getDeclaringClass() + " " + method.getName());
-	//DEBUG
 	if (method.getDeclaringClass().getName().equals("java.lang.System")) {
 	    if (method.getName().equals("setIn0"))
 		environment.mergeType(HClass.forName("java.lang.System").getDeclaredField("in"), parameterTypes[0]);
@@ -104,9 +103,16 @@ public class IntraProc {
 
     boolean outputChanged;
     void analyze() {
+	/* added to try to save some memory */
+	boolean noCache;
+	if (map==null) { map = new Hashtable(); noCache = true; }
+	else noCache = false;
+	//OUTPUT
+	long TTT=System.currentTimeMillis();
+	if (noCache) 
+	    System.out.print("[analyzed " + method.getDeclaringClass() + " " + method.getName() + " in ");
+	//OUTPUT
 	//DEBUG
-	System.out.println(System.currentTimeMillis());
-	System.out.println("   analyzing " + depth + " " + method.getDeclaringClass() + " " + method.getName());
 	//if (method.getName().equals("t")) {
 	//System.out.print("   analyzing " + method.getDeclaringClass() + " " + method.getName());
 	//HClass[] II = method.getParameterTypes();
@@ -119,10 +125,6 @@ public class IntraProc {
 	//    System.out.println("e = " + exceptionType);
 	//}
 	//DEBUG
-	/* added to try to save some memory */
-	boolean noCache;
-	if (map==null) { map = new Hashtable(); noCache = true; }
-	else noCache = false;
 	/* "regular" calculation */
 	outputChanged = false;
 	if (code==null) // native or unanalyzable method
@@ -180,6 +182,10 @@ public class IntraProc {
 	if (outputChanged)
 	    for (Enumeration e=callees.elements(); e.hasMoreElements(); )
 		environment.reanalyze((IntraProc)e.nextElement());
+	//OUTPUT
+	if (noCache) 
+	    System.out.println((System.currentTimeMillis()-TTT) + "ms]");
+	//OUTPUT
     }
 
     HMethod[] calls() {
@@ -192,7 +198,7 @@ public class IntraProc {
 	    SetHClass[] paramTypes = new SetHClass[q.params.length];
 	    for (int i=0; i<q.params.length; i++) {
 		SetHClass s = (SetHClass)map.get(q.params[i]);
-		Util.assert(s!=null);
+		//Util.assert(s!=null);
 		paramTypes[i] = s;
 	    }
 	    HMethod[] m;
@@ -207,13 +213,13 @@ public class IntraProc {
 	return ret;
     }
 
-    HMethod[] calls(CALL cs) {
+    HMethod[] calls(CALL cs, boolean last) {
 	if (map==null) { map = new Hashtable(); analyze(); }
 	Set r = new Set();
 	SetHClass[] paramTypes = new SetHClass[cs.params.length];
 	for (int i=0; i<cs.params.length; i++) {
 	    SetHClass s = (SetHClass)map.get(cs.params[i]);
-	    Util.assert(s!=null);
+	    //Util.assert(s!=null);
 	    paramTypes[i] = s;
 	}
 	HMethod[] m;
@@ -221,6 +227,7 @@ public class IntraProc {
 	else m = possibleMethods(cs.method, paramTypes);
 	for (int i=0; i<m.length; i++)
 	    r.union(m[i]);
+	if (last) map = null;
 	HMethod[] ret = new HMethod[r.size()];
 	r.copyInto(ret);
 	return ret;

@@ -13,7 +13,7 @@ import harpoon.Analysis.QuadSSA.ClassHierarchy;
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.1.2.5 1998-12-07 02:52:03 marinov Exp $
+ * @version $Id: InterProc.java,v 1.1.2.6 1998-12-07 12:02:31 marinov Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
@@ -48,9 +48,9 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 	analyze();
 	return ((IntraProc)proc.get(m)).calls();
     }
-    public HMethod[] calls(HMethod m, CALL cs) { 
+    public HMethod[] calls(HMethod m, CALL cs, boolean last) { 
 	analyze();
-	return ((IntraProc)proc.get(m)).calls(cs);
+	return ((IntraProc)proc.get(m)).calls(cs, last);
     }
 
     AuxUniqueFIFO wl;
@@ -63,7 +63,7 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 	if (ch==null) ch = new ClassHierarchy(m);
 	cc = new ClassCone(ch);
 	/* worklist of methods that are to be processed. */
-	wl = new AuxUniqueFIFO();
+	wl = new AuxUniqueFIFO(16);
 	/* put class initializers for reachable classes on the worklist. */
 	SetHClass[] ep = new SetHClass[0];
 	for (Enumeration e = classInitializers(ch); e.hasMoreElements(); ) {

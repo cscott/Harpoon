@@ -9,7 +9,7 @@ import harpoon.ClassFile.*;
  * <code>AuxUniqueFIFO</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: AuxUniqueFIFO.java,v 1.1.2.1 1998-12-07 02:52:03 marinov Exp $
+ * @version $Id: AuxUniqueFIFO.java,v 1.1.2.2 1998-12-07 12:02:31 marinov Exp $
  */
 
 public class AuxUniqueFIFO {
@@ -27,11 +27,13 @@ public class AuxUniqueFIFO {
     }
     //Object push(Object o) { }
     void push(Object o, int p) { 
-	if (p>max) p = max;
-	if (p<0) p = 0;
-	list[p].push(o);
-	if (p>cur) cur = p;
-	all.put(o, o);
+	if (!all.containsKey(o)) {
+	    if (p>max) p = max;
+	    if (p<0) p = 0;
+	    list[p].push(o);
+	    if (p>cur) cur = p;
+	    all.put(o, o);
+	}
     }
     Object pull() { 
 	while (cur>=0) {
