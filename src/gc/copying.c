@@ -36,6 +36,10 @@ static jobject_unwrapped special;
 size_t trace_array(struct aarray *arr);
 size_t trace_object(jobject_unwrapped obj);
 
+/* x: jobject_unwrapped */
+#define trace(x) ({ ((x)->claz->component_claz == NULL) ? \
+                    trace_object(x) : trace_array((struct aarray *)(x)); })
+
 void relocate(jobject_unwrapped *obj) {
   void *forwarding_address;
   size_t obj_size;
@@ -102,12 +106,9 @@ size_t trace_object(jobject_unwrapped obj) {
 	      relocate(field);
 	      error_gc("%p\n", (*field));
 	    }
-	  } else if ((*field)->claz->component_claz == NULL) {
-	    error_gc("    tracing field at %p\n", (*field));
-	    trace_object(*field);
 	  } else {
-	    error_gc("    tracing field (array) at %p\n", (*field));
-	    trace_array((struct aarray *)(*field));
+	    error_gc("    tracing field at %p\n", (*field));
+	    trace((*field));
 	  }
 	}
       } /* current bit is set */
@@ -147,12 +148,9 @@ size_t trace_array(struct aarray *arr) {
 	    relocate(element);
 	    error_gc("%p\n", (*element));
 	  }
-	} else if ((*element)->claz->component_claz == NULL) {
-	  error_gc("    tracing field at %p\n", (*element));
-	  trace_object(*element);
 	} else {
-	  error_gc("    tracing field (array) at %p\n", (*element));
-	  trace_array((struct aarray *)(*element));
+	  error_gc("    tracing field at %p\n", (*element));
+	  trace(*element);
 	}
       }
       arr_length--;
@@ -179,12 +177,9 @@ void add_to_root_set(jobject_unwrapped *obj) {
       relocate(obj);
       error_gc("%p\n", (*obj));
     }
-  } else if ((*obj)->claz->component_claz == NULL) {
-    error_gc("    tracing object at %p\n", (*obj));
-    trace_object(*obj);
   } else {
-    error_gc("    tracing array at %p\n", (*obj));
-    trace_array((struct aarray *)(*obj));
+    error_gc("    tracing object at %p\n", (*obj));
+    trace(*obj);
   }
 }
 
@@ -212,13 +207,8 @@ void collect(void *saved_registers[], int heap_expanded)
   /* trace roots */
   while(scan < free) {
     assert(scan != NULL && ((jobject_unwrapped)scan)->claz != NULL);
-    if (((jobject_unwrapped)scan)->claz->component_claz == NULL) {
-      error_gc("Object at %p being scanned\n", scan);
-      scan += trace_object((jobject_unwrapped)scan); /* object */
-    } else {
-      error_gc("Array at %p being scanned\n", scan);
-      scan += trace_array((struct aarray *)scan); /* array */
-    }
+    error_gc("Object at %p being scanned\n", scan);
+    scan += trace((jobject_unwrapped)scan);
   }
   assert(scan == free);
   if (heap_expanded) {
