@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.30 1999-06-07 05:14:53 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.31 1999-06-07 05:20:24 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -91,8 +91,9 @@ properties:
 	@echo done.
 
 first:
-	mkdir harpoon silicon
-	for pkg in $(sort $(filter-out JavaChip,$(ALLPKGS))); do \
+	mkdir harpoon silicon gnu
+	for pkg in $(sort \
+	  $(filter-out Contrib%,$(filter-out JavaChip%,$(ALLPKGS)))); do \
 		mkdir harpoon/$$pkg; \
 	done
 oldfirst:
