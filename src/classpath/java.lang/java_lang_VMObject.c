@@ -95,7 +95,7 @@ JNIEXPORT void JNICALL Java_java_lang_VMObject_wait
  * Signature: (Ljava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_java_lang_VMObject_notify_00024_00024withtrans
-  (JNIEnv *env, jclass vmcls, jobject obj, jobject commitrec) {
+  (JNIEnv *env, jclass vmcls, jobject _this, jobject commitrec) {
   /* called inside transaction context.  since 'too many notifies' is
    * valid semantics, we don't have to worry about undo-ing this notify
    * if the transaction doesn't commit.  Lock, notify, unlock.
@@ -113,7 +113,7 @@ JNIEXPORT void JNICALL Java_java_lang_VMObject_notify_00024_00024withtrans
  * Signature: (Ljava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_java_lang_VMObject_notifyAll_00024_00024withtrans
-  (JNIEnv *env, jclass vmcls, jobject obj, jobject commitrec) {
+  (JNIEnv *env, jclass vmcls, jobject _this, jobject commitrec) {
   /* same comments as above. */
   FNI_MonitorEnter(env, _this);
   Java_java_lang_VMObject_notifyAll(env, vmcls, _this);

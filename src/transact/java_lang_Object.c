@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <string.h> /* for memcpy */
 #include <jni.h>
 #include <jni-private.h>
 #include "java_lang_Object.h"
@@ -199,8 +200,9 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadableVersion
     do {
 	if (r->transid==c) goto has_version_and_listed; /* we're on! */
 	/* list maintenance: prune this link out if not WAITING */
-	if (StateP1(&r->transid)!=WAITING)
+	if (StateP1(&r->transid)!=WAITING) {
 	  if (rp) rp->next=r->next; else r->transid=NULL; /* XXX: race here */
+	}
 	rp = r; r = r->next;
     } while (r!=NULL);
     /* gasp! we're not on the readers list */
@@ -434,32 +436,6 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_makeCommittedVersion
     return Java_java_lang_Object_getWriteCommittedVersion(env, _this);
 }
 
-/*
- * Class:     java_lang_Object
- * Method:    writeFieldFlag
- * Signature: (Ljava/lang/reflect/Field;)V
- */
-    /** Ensure that a given field is flagged. */
-JNIEXPORT void JNICALL Java_java_lang_Object_writeFieldFlag
-    (JNIEnv *env, jobject _this, jobject field) {
-    jfieldID fieldID = FNI_GetFieldInfo(field)->fieldID;
-    Java_java_lang_Object_writeFlag(env, _this, fieldID->offset,
-				    fieldsize(fieldID));
-}
-
-/*
- * Class:     java_lang_Object
- * Method:    writeArrayElementFlag
- * Signature: (ILjava/lang/Class;)V
- */
-    /** Ensure that a given array element is flagged. */
-JNIEXPORT void JNICALL Java_java_lang_Object_writeArrayElementFlag
-    (JNIEnv *env, jobject _this, jint index, jclass type) {
-    jint elsize = typesize(env, type);
-    jint eloffset = sizeof(struct aarray) + (index * elsize) ;
-    Java_java_lang_Object_writeFlag(env, _this, eloffset, elsize);
-}
-
 #define WRITEFLAG(type, size, FLAG) \
 inline void Java_java_lang_Object_writeFlag##size \
     (JNIEnv *env, jobject _this, jint offset) { \
@@ -498,6 +474,34 @@ JNIEXPORT void JNICALL Java_java_lang_Object_writeFlag
   case 8: Java_java_lang_Object_writeFlag8(env, _this, offset); break;
   default: assert(0);
   }
+}
+
+/** Set the 'read' flag on field number 'which' of the object. */
+JNIEXPORT void JNICALL Java_java_lang_Object_setFieldReadFlag
+    (JNIEnv *env, jobject _this, jobject field, jint which) {
+  // which bitmap field to use:
+  jfieldID fieldID = FNI_GetFieldInfo(field)->fieldID;
+  // now bit 'which' of this field.
+#if RACES
+  jint *fld = (jint*) (((void*)FNI_UNWRAP_MASKED(_this))+(fieldID->offset));
+  *fld = *fld | (1<<which);
+#endif
+}
+
+/** Record that a field of this object has been written. */
+JNIEXPORT void JNICALL Java_java_lang_Object_setFieldWriteFlag
+    (JNIEnv *env, jobject _this, jobject field) {
+    jfieldID fieldID = FNI_GetFieldInfo(field)->fieldID;
+    Java_java_lang_Object_writeFlag(env, _this, fieldID->offset,
+				    fieldsize(fieldID));
+}
+
+/** Ensure that a given array element is flagged. */
+JNIEXPORT void JNICALL Java_java_lang_Object_setArrayElementWriteFlag
+    (JNIEnv *env, jobject _this, jint index, jclass type) {
+    jint elsize = typesize(env, type);
+    jint eloffset = sizeof(struct aarray) + (index * elsize) ;
+    Java_java_lang_Object_writeFlag(env, _this, eloffset, elsize);
 }
 
 /* -------------- utility adapter functions -------------- */

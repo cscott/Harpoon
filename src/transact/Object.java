@@ -17,11 +17,11 @@ public class Object {
     /** Create a new fully committed version (if one does not already exist)
      *  to write (values equal to the FLAG) to. */
     public native Object makeCommittedVersion();
-    /** Ensure that a given field is flagged. */
-    public native void writeFieldFlag( Field f, Class type );
+
+    /** Set the 'read' flag on field number 'which' of the object. */
+    public native void setFieldReadFlag( Field f, int which );
+    /** Record that a field of this object has been written. */
+    public native void setFieldWriteFlag( Field f);
     /** Ensure that a given array element is flagged. */
-    public native void writeArrayElementFlag( int index, Class type );
-    /** Ensure that a flag exists at the specified offset and size from
-     *  this object. */
-    public native void writeFlag( int offset, int size );
+    public native void setArrayElementWriteFlag( int index, Class type );
 }
