@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.4 1999-08-17 17:23:13 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.5 1999-08-19 17:38:03 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -593,6 +593,7 @@ public class Jasmin {
 	    case Qop.IUSHR:
 	    case Qop.IXOR:
 	    case Qop.L2D:
+	    case Qop.L2I:
 	    case Qop.L2F:
 	    case Qop.LADD:
 	    case Qop.LAND:
