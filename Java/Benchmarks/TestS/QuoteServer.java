@@ -21,7 +21,6 @@ public class QuoteServer {
 	new File("stockquotes.txt"); 
     private ServerSocket listenSocket = null; 
     private String[] stockInfo; 
-    private Date stockInfoTime; 
     private long stockFileMod; 
     // A boolean used to keep the server looping until 
     // interrupted. 
@@ -103,7 +102,6 @@ public class QuoteServer {
 	    // Increment the start of the substring. 
 		//stringStart = stringEnd + 1; 
 	} 
-	stockInfoTime = new Date(); // Store the time loaded. 
 	return true; 
     } 
     /** 
@@ -126,17 +124,22 @@ public class QuoteServer {
 
 	        //} 
 		// Create a new handler. 
-		StockQuoteHandler newHandler = new 
-		    StockQuoteHandler(clientSocket,stockInfo, 
-				      stockInfoTime); 
-		Thread newHandlerThread = new Thread(newHandler); 
-		newHandlerThread.start(); 
+		startserver(clientSocket,stockInfo);
 	    } 
 	    listenSocket.close(); 
 	} catch(IOException excpt) { 
 	    System.err.println("Failed I/O: "+ excpt); 
 	} 
     } 
+
+    public static void startserver(Socket clientSocket, String[] stockInfo) {
+	StockQuoteHandler newHandler = new 
+	    StockQuoteHandler(clientSocket,stockInfo);
+	
+	Thread newHandlerThread = new Thread(newHandler); 
+	newHandlerThread.start(); 
+    }
+
     /** 
      * This method allows the server to be stopped. 
      */ 
@@ -155,8 +158,7 @@ class StockQuoteHandler implements Runnable {
     private PrintStream clientSend = null; 
     private DataInputStream clientReceive = null; 
     private String[] stockInfo; 
-    private Date stockInfoTime; 
-    /** 
+     /** 
      * The constructor sets up the necessary instance 
      * variables. 
      * @param newSocket Socket to the incoming client. 
@@ -164,10 +166,9 @@ class StockQuoteHandler implements Runnable {
      * @param time The time when the data was loaded. 
      */ 
     public StockQuoteHandler(Socket newSocket, 
-			     String[] info, Date time) { 
+			     String[] info) { 
 	mySocket = newSocket; 
 	stockInfo = info; 
-	stockInfoTime = time; 
     } 
     /** 
      * This is the thread of execution which implements 
@@ -182,7 +183,7 @@ class StockQuoteHandler implements Runnable {
 		new PrintStream(mySocket.getOutputStream()); 
 	    clientReceive = 
 		new DataInputStream(mySocket.getInputStream()); 
-	    clientSend.println("+HELLO "+ stockInfoTime); 
+	    clientSend.println("+HELLO 1/1/00"); 
 	    clientSend.flush(); 
 	    // Read in a line from the client and respond. 
 	    while((nextLine = clientReceive.readLine()) 
