@@ -494,7 +494,7 @@ public class RepairGenerator {
                 craux.outputline(relation.getSafeSymbol() + "_hashinv = noargallocateSimpleHash();");
             }
         }
-
+        craux.outputline("return thisvar;");
         craux.endblock();
         crhead.outputline("};");
         craux.outputline("void free"+name+"(struct "+ name +"* thisvar)");
@@ -547,7 +547,9 @@ public class RepairGenerator {
 	crhead.outputline("void doanalysis(struct "+name+"_state *);");
 	craux.outputline("void doanalysis(struct "+name+"_state * thisvar)");
   	craux.startblock();
+	craux.outputline("int highmark;"); /* This declaration is special...need it to be first */
 	craux.startBuffer();
+
 	if (Compiler.TIME) {
 	    craux.outputline("struct timeval _begin_time,_end_time;");
 	    craux.outputline("gettimeofday(&_begin_time,NULL);");
@@ -557,7 +559,7 @@ public class RepairGenerator {
 	    craux.outputline("rebuildcount=0;");
 	    craux.outputline("abstractcount=0;");
 	}
-	craux.addDeclaration("int","highmark");
+
 
 	craux.addDeclaration("struct "+name+ " * ",oldmodel.getSafeSymbol());
 	craux.outputline(oldmodel.getSafeSymbol()+"=0;");

@@ -17,7 +17,7 @@ struct typemap * allocatetypemap() {
 
 void freefunction(void *ptr) {
   if(ptr!=NULL) {
-    free((struct structuremap *)ptr);
+    freestructuremap((struct structuremap *)ptr);
   }
 }
 

@@ -21,6 +21,11 @@ public class PrintWrapper {
     if (!buffer)
       output.flush();
   }
+  private void doindent() {
+    for (int i = 0; i < indent; i++) {
+      output.print("  ");
+    }
+  }
   void println(String s) {
     if (buffer)
       buffered.append(s+"\n");
@@ -34,6 +39,7 @@ public class PrintWrapper {
     //Print out declarations
     for(Iterator it=vartable.keySet().iterator();it.hasNext();) {
       String var=(String)it.next();
+      doindent();
       output.println(((String)vartable.get(var))+" "+var+";");
     }
     output.print(buffered.toString());
