@@ -25,16 +25,46 @@ package harpoon.IR.Tree;
  * <code>Uop.NOT</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Bop.java,v 1.1.2.3 1999-03-29 05:07:05 duncan Exp $
+ * @version $Id: Bop.java,v 1.1.2.4 1999-07-23 06:48:04 cananian Exp $
  */
 public abstract class Bop  {
-    public final static int
-	// Comparison operations
-	CMPLT=0, CMPLE=1, CMPEQ=2, CMPGE=3, CMPGT=4,
-	// General arithmetic
-	ADD=5, MUL=6, DIV=7, REM=8,
-	// integer arithmetic
-	SHL=9, SHR=10, USHR=11, AND=12, OR=13, XOR=14;
+    // Comparison operations
+    /** If less-than, then 1 else 0. */
+    public final static int CMPLT=0;
+    /** If less-than-or-equal-to, then 1 else 0. */
+    public final static int CMPLE=1;
+    /** If equal-to, then 1 else 0. */
+    public final static int CMPEQ=2;
+    /** If greater-than-or-equal-to, then 1 else 0. */
+    public final static int CMPGE=3;
+    /** If greater-than, then 1 else 0. */
+    public final static int CMPGT=4;
+    // General arithmetic
+    /** Addition. */
+    public final static int ADD=5;
+    /** Multiplication. */
+    public final static int MUL=6;
+    /** Division. */
+    public final static int DIV=7;
+    /** Remainder operation. Note that this is valid for floating-point
+     *  as well as integer arithmetic; see the JVM definition of
+     *  <code>frem</code>. Basically, this is remainder after a rounding
+     *  division for floating-point, and <code>a-b*(a/b)</code> (remainder
+     *  after truncating division) for integer arithmetic. */
+    public final static int REM=8;
+    // integer arithmetic
+    /** Left bit-wise shift; long/integer only. */
+    public final static int SHL =9;
+    /** Right signed bit-wise shift; long/integer only. */
+    public final static int SHR =10;
+    /** Right unsigned bit-wise shift; long/integer only. */
+    public final static int USHR=11;
+    /** Bit-wise AND; long/integer only. */
+    public final static int AND =12;
+    /** Bit-wise OR; long/integer only. */
+    public final static int OR  =13;
+    /** Bit-wise XOR; long/integer only. */
+    public final static int XOR =14;
 
     /** Determines if the given <code>Bop</code> value is valid. */
     public static boolean isValid(int op) {

@@ -15,13 +15,13 @@ package harpoon.IR.Tree;
  * proper generation.  This could also be done in a peephole optimization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Uop.java,v 1.1.2.4 1999-07-22 22:38:27 pnkfelix Exp $
+ * @version $Id: Uop.java,v 1.1.2.5 1999-07-23 06:48:05 cananian Exp $
  */
 public class Uop  {
 
-	// negation
+    /** Negation (<code>-</code>). */
     public final static int NEG=0;
-	// binary NOT
+    /** Bit-wise NOT (<code>~</code>). */
     public final static int NOT=1;
 
 	// int conversion
