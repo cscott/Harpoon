@@ -48,8 +48,8 @@ import java.util.Iterator;
  * <code>UseDefer</code>s 
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.22 2000-02-02 04:28:04 pnkfelix Exp $ */
-public abstract class LiveVars extends Liveness {
+ * @version $Id: LiveVars.java,v 1.1.2.23 2000-02-16 19:32:00 cananian Exp $ */
+public class LiveVars extends Liveness {
     
     private static final boolean DEBUG = false; 
 
