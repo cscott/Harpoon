@@ -78,7 +78,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.118 2000-08-30 11:19:58 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.119 2000-10-03 01:43:40 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -380,6 +380,40 @@ public abstract class RegAlloc  {
     public static final Factory GLOBAL = GraphColoringRegAlloc.FACTORY;
     public static final Factory LOCAL = LocalCffRegAlloc.FACTORY;
 
+    static  class MyCode extends Code 
+	implements IntermediateCode {
+	Code mycode;
+	int numLocals; TempLocator tl; Set usedRegs;
+	MyCode(Code code, Instr i, 
+	       Derivation d, String codeName,
+	       int numLocals, TempLocator tl, Set usedRegs) {
+	    super(code, i, d, codeName);
+	    mycode = code;
+	    this.numLocals = numLocals;
+	    this.tl = tl;
+	    this.usedRegs = usedRegs;
+	}
+	public String getName() { return mycode.getName(); }
+	public List getRegisters(Instr i, Temp t) {
+	    return mycode.getRegisters(i,t);
+	}
+	public String getRegisterName(Instr i, Temp t, String s) {
+	    return mycode.getRegisterName(i,t,s);
+	}
+	public void assignRegister(Instr i, Temp pReg, List regs) {
+	    mycode.assignRegister(i, pReg, regs);
+	}
+	public boolean registerAssigned(Instr i, Temp t) {
+	    return mycode.registerAssigned(i, t);
+	}
+	public void removeAssignment(Instr i, Temp t) {
+	    mycode.removeAssignment(i, t);
+	}
+	public int numberOfLocals() { return numLocals; }
+	public TempLocator getTempLocator() { return tl; }
+	public Set usedRegisterTemps() { return usedRegs; }
+    }
+
     public static IntermediateCodeFactory
 	abstractSpillFactory(final HCodeFactory parent,
 			     final Frame frame,
@@ -411,45 +445,10 @@ public abstract class RegAlloc  {
 		final Set usedRegs = globalCode.computeUsedRegs(instr);
 		Util.assert(mycode != null);
 		
-		abstract class MyCode extends Code 
-		    implements IntermediateCode {
-		    MyCode(Code code, Instr i, 
-			   Derivation d, String codeName) {
-			super(code, i, d, codeName);
-		    }
-		}
 
 	        return new MyCode(mycode, instr,
-				globalCode.getDerivation(),
-				mycode.getName()) {
-		    public String getName() { return mycode.getName(); }
-		    public List getRegisters(Instr i, Temp t) {
-			return mycode.getRegisters(i,t);
-		    }
-		    public String getRegisterName(Instr i, Temp t,
-						  String s) {
-			return mycode.getRegisterName(i, t, s);
-		    }
-		    public void assignRegister(Instr i, Temp t, 
-					       List l) {
-			mycode.assignRegister(i, t, l);
-		    }
-		    public boolean registerAssigned(Instr i, Temp t) {
-			return mycode.registerAssigned(i, t);
-		    }
-		    public void removeAssignment(Instr i, Temp t) {
-			mycode.removeAssignment(i, t);
-		    }
-		    public int numberOfLocals() {
-			return numLocals;
-		    }
-		    public TempLocator getTempLocator() {
-			return tl;
-		    }
-		    public Set usedRegisterTemps() {
-			return usedRegs;
-		    }
-		};
+				  globalCode.getDerivation(),
+				  mycode.getName(), numLocals, tl, usedRegs);
 	    }
 
 	    public String getCodeName() { return p.getCodeName(); }
