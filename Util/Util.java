@@ -11,10 +11,16 @@ import java.util.HashSet;
 import java.io.PrintWriter;
 
 import java.lang.reflect.Array;
+
+import harpoon.ClassFile.HCode;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.HEADER;
+
+
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.19 2001-06-13 20:12:09 cananian Exp $
+ * @version $Id: Util.java,v 1.12.2.20 2001-12-16 04:56:29 salcianu Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -452,6 +458,31 @@ public abstract class Util {
     diff.removeAll(b);
     return diff;
   }
+
+  public static final METHOD getMETHOD(HCode hcode) {
+    HEADER header = (HEADER) hcode.getRootElement();
+    return (METHOD) header.next(1); // 0 is the FOOTER node
+  }
+
+  /** Returns a string that is identical to <code>str</code>, except
+      that every <code>&quot;</code> character has been replaced with
+      the sequence <code>\&quot;</code>.
+      This is useful when we generate output for
+      tools like VCG which expects the value of some attributes to be put
+      between quotes (and of course any quote inside has to be given using
+      an escape sequence). */
+  public static final String adjust_quotes(String str) {
+    StringBuffer buff = new StringBuffer();
+    for(int i = 0; i < str.length(); i++) {
+      char c = str.charAt(i);
+      if(c == '\"')
+	buff.append("\\\"");
+      else
+	buff.append(c);
+    }
+    return buff.toString();
+  }
+
 }
 
 // set emacs indentation style.

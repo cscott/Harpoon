@@ -41,7 +41,7 @@ import java.io.PrintWriter;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.2.2.13 2001-12-16 04:38:51 salcianu Exp $
+ * @version $Id: Graph.java,v 1.2.2.14 2001-12-16 04:56:29 salcianu Exp $
  */
 
 public abstract class Graph  {
@@ -271,7 +271,7 @@ public abstract class Graph  {
 
     private static String quad2string(HCodeElement hce) {
 	if(!(hce instanceof CALL))
-	    return hce.toString();
+	    return Util.adjust_quotes(hce.toString());
 	CALL call = (CALL) hce;
 	StringBuffer buff = new StringBuffer();
 	if(call.retval() != null) {
@@ -294,7 +294,7 @@ public abstract class Graph  {
 	for(int i = 0; i < params.length; i++)
 	    buff.append(((i == 0) ? "" : ",") + params[i]);
 	buff.append(")");
-	return buff.toString();
+	return Util.adjust_quotes(buff.toString());
     }
 
     private static void print_VCG_edges
