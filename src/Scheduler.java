@@ -23,6 +23,8 @@ public abstract class Scheduler {
     private static final boolean DISTRIBUTED = false; 
     private Object connectionManager = null;
 
+    protected boolean connectionManagerStarted = false;
+
     /** Create an instance of <code>Scheduler</code>. */
     protected Scheduler() {
 	addToRootSet();
@@ -236,6 +238,14 @@ public abstract class Scheduler {
      */
     protected final native int clock();
 
+    /** Start the connection manager */
+    protected final void start() {
+	if (DISTRIBUTED) {
+	    ((ConnectionManager)connectionManager).start();
+	    connectionManagerStarted = true;
+	}
+    }
+
     /** Bind the current scheduler to <code>name</code> in 
      *  the CORBA name service.
      *
@@ -244,7 +254,12 @@ public abstract class Scheduler {
      */
     protected final long bind(final String name) {
 	if (DISTRIBUTED) {
-	    return ((ConnectionManager)connectionManager).bind(name, this);
+	    if (!connectionManagerStarted) {
+		NoHeapRealtimeThread.print("Connection manager not started yet!\n");
+		return 0;
+	    } else {
+		return ((ConnectionManager)connectionManager).bind(name, this);
+	    }
 	}
 	return 0;
     }
@@ -257,7 +272,12 @@ public abstract class Scheduler {
      */
     protected final Object resolve(String name) {
 	if (DISTRIBUTED) {
-	    return ((ConnectionManager)connectionManager).resolve(name);
+	    if (!connectionManagerStarted) {
+		NoHeapRealtimeThread.print("Connection manager not started yet!\n");
+		return null;
+	    } else {
+		return ((ConnectionManager)connectionManager).resolve(name);
+	    }
 	}
 	return null;
     }
@@ -282,7 +302,12 @@ public abstract class Scheduler {
     protected final long generateDistributedEvent(final Object destination, 
 						  final long messageID, final byte[] data) {
 	if (DISTRIBUTED) {
-	    return ((ConnectionManager)connectionManager).generateDistributedEvent(destination, messageID, data);
+	    if (!connectionManagerStarted) {
+		NoHeapRealtimeThread.print("Connection manager not started yet!\n");
+		return 0;
+	    } else {
+		return ((ConnectionManager)connectionManager).generateDistributedEvent(destination, messageID, data);
+	    }
 	}
 	return 0;
     }
