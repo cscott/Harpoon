@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.86 1999-08-27 11:16:24 cananian Exp $
+% $Id: thesis.tex,v 1.87 1999-08-27 19:27:08 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.86 $ $}
+\date{\today \\ $ $Revision: 1.87 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.86 $ $}{$ $Revision: 1.86 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.87 $ $}{$ $Revision: 1.87 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -759,34 +759,56 @@ of figure~\ref{fig:SSIalg}.
 \end{myalgorithm}
 
 \begin{lemma}
-If a \phifunction{} (\sigfunction{}) for a variable $v$ is needed in
-an SESE region, there is at least one definition (use) of $v$ within
-the SESE.
+No \phifunction{s} (\sigfunction{s}) for a variable $v$ are needed in
+an SESE region not containing a definition (use) of $v$.
 \end{lemma}
 \begin{proof}
-By definition X a \phifunction{} for $v$ is needed at some node $Z$
-iff there exist paths $X \pathplus Z$ and $Y \pathplus Z$ having no
-nodes but $Z$ in common where $X$ and $Y$ contain definitions for $v$
-(where a \phisigfunction[or] for $v$ is also considered a definition).
-Choose any such paths.  Let us assume that both $X$ and $Y$ are
-outside the SESE containing $Z$.  As there is only one entrance edge
-into the SESE, the paths $X \pathplus Z$ and $Y \pathplus Z$ must
-contain some node in common other than $Z$.  But this contradicts our
-choice of $X$ and $Y$.  Therefore at least one of $X$ and $Y$ must be
-inside the SESE.
+Let us assume a \phifunction for $v$ is needed at some node $Z$
+inside an SESE not containing a definition of $v$.  
+Then by condition \ref{crit_phiplace} of the SSI
+form definition, there exist paths $X \pathplus Z$ and $Y \pathplus Z$
+having no nodes but $Z$ in common where $X$ and $Y$ contain either
+definitions of $v$ or \phisigfunction[or]{s} for $v$.  Choose any such
+paths:
+\begin{description}
+\item[Case I:] Both $X$ and $Y$ are outside the SESE.  Then, as there
+is only one entrance edge into the SESE, the paths $X \pathplus Z$ and
+$Y \pathplus Z$ must contain some node in common other than Z.  But
+this contradicts our choice of $X$ and $Y$.
+\item[Case II:] At least one of $X$ and $Y$ must be inside the SESE.
+If both $X$ and $Y$ are not definitions of $v$ but rather
+\phisigfunction[or]{s} for $v$, then by recursive application of this proof
+there must exist some choice of $X$, $Y$, and $Z$ inside this SESE
+where at least one of $X$ and $Y$ is a definition.  So without loss of
+generality assume one of $X$ and $Y$ is a definition of $v$.  But this
+contradicts our choice of $Z$.
+\end{description}
 
-Likewise, by definition Y a \sigfunction{} for $v$ is needed at some
-node $Z$ iff there exist paths $Z \pathplus X$ and $Z \pathplus Y$
-having no nodes but $Z$ in commong where $X$ and $Y$ contain uses of
-$v$ (where a \phisigfunction[or] for $v$ is also considered a use).
-By argument paralleling the above, at least one of $X$ and $Y$ must be
-in the SESE containing $Z$ because there is only one exit edge.
+A symmetric argument holds for \sigfunction{s} for $v$, using
+condition \ref{crit_sigplace} of the SSI form definition, and the fact
+that there exists one exit edge from the SESE.
 \end{proof}
 
-More stuff here.
+The above lemma justifies our algorithm's skipping over any SESE
+region not containing a definition or use of $v$ when placing
+\phisigfunction{s} for $v$.
+
+\begin{lemma}
+A \phifunction for a variable $v$ is needed at a node $N$ in an SESE $s$
+iff there exists a definition, \phisigfunction[or]{} for $v$ at some
+node $D$ in $s$ where:
+\begin{enumerate}
+\item $N$ is not also contained in a smaller SESE than $s$, although
+$D$ may be,
+\item $N$ is reachable from $D$, and
+\item $D$ does not dominate $N$.
+\end{enumerate}
+\end{lemma}
+
+\textbf{More stuff here.}
 
 \begin{theorem}
-The algorithm in figure~\ref{fig:SSIalg} is correct.
+The algorithm in figure~\ref{fig:SSIalg} is conservatively correct.
 \end{theorem}
 \begin{proof}
 Direct from the preceding lemmas.
