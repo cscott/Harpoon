@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Code</code> is a code-view for SPARC assembly.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.5 1999-11-29 03:58:09 andyb Exp $
+ * @version $Id: Code.java,v 1.1.2.6 1999-11-29 09:31:52 andyb Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "sparc";
@@ -80,7 +80,7 @@ public class Code extends harpoon.Backend.Generic.Code {
 	    } else if (suffix.startsWith("h")) {
 		reg = get(i, tb.getHigh(val));
 	    } else if (suffix.trim().equals("")) {
-		Util.assert(false, "BREAK! empty suffix: " + suffix + "in: " + i);
+		Util.assert(false, "BREAK! empty suffix for " + val + " in: " + i);
 	    } else {
 		Util.assert(false, "BREAK! AAA - what to do here");
 	    }

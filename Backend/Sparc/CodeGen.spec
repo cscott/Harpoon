@@ -32,7 +32,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.13 1999-11-29 03:58:09 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.14 1999-11-29 09:31:52 andyb Exp $
  */
 %%
     private Instr root;
@@ -126,7 +126,7 @@ import java.util.Set;
     public class InstrDELAYSLOT extends Instr {
 	// a nop to fill the delay slot
 	public InstrDELAYSLOT(InstrFactory inf, HCodeElement source) {
-	    super(inf, source, "\t nop \t ! delay slot \n");
+	    super(inf, source, "nop  @ delay slot\n");
 	}
     }
 
@@ -145,13 +145,13 @@ import java.util.Set;
 
     private class InstrENTRY extends InstrDIRECTIVE {
         public InstrENTRY(InstrFactory inf, HCodeElement src) {
-            super(inf, src, "--method entry point - AAA to fix--");
+            super(inf, src, "@--method entry point - AAA to fix--");
         }
     }
 
     private class InstrEXIT extends InstrDIRECTIVE {
         public InstrEXIT(InstrFactory inf, HCodeElement src) {
-            super(inf, src, "--method exit point - AAA to fix--");
+            super(inf, src, "@--method exit point - AAA to fix--");
         }
     }
 
@@ -212,16 +212,28 @@ import java.util.Set;
        return root;
 }%
 
-// Start at the beginning...
-
 ALIGN(n) %{
     emitDIRECTIVE( ROOT, "\t.align " + n);
 }%
 
-// Now for the oh so essential binary operators
-
-// Easy things first - integer based ones
-// First cover the really easy ones: ADD, OR, AND, XOR, SHL, SHR, USHR
+// BINOP checklist
+//      	done		todo
+// and: 	i,p,l
+// xor: 	i,p,l
+// or:  	i,p,l
+// add: 	i,p,l,f,d
+// "sub":	i,p,f,d		l
+// shl:		i,p		l
+// shr:		i,p		l
+// ushr:	i,p		l
+// mul:		i,p,f,d		l
+// div:		i,p,f,d		l
+// rem:		i,p		l,f,d
+// cmplt:	i,p,l,f		d
+// cmple:	i,p,l,f		d
+// cmpeq:	i,p,l,f		d
+// cmpge:	i,p,l,f		d
+// cmpgt:	i,p,l,f		d
 
 BINOP<i,p>(op, CONST(c), e)=r %pred %( isCommutative(op) && is13bit(c) )% %{
     emit (ROOT, bop(op)+" `s0, "+c+", `d0\n", 
@@ -238,14 +250,55 @@ BINOP<i,p>(op, e1, e2)=r  %pred %( isShift(op) || isCommutative(op) )% %{
                 new Temp[] { r }, new Temp[] { e1, e2 });
 }%
 
-// Optimize for subtraction
+BINOP<l>(AND, e1, e2) = r %{
+    emit (ROOT, "and `s0l, `s1l, `d0l\n", 
+               new Temp[] { r }, new Temp[] { e1, e2 });
+    emit (ROOT, "and `s0h, `s1h, `d0h\n",
+               new Temp[] { r }, new Temp[] { e1, e2 });
+}%
+
+BINOP<l>(XOR, e1, e2) = r %{
+    emit (ROOT, "xor `s0l, `s1l, `d0l\n",
+               new Temp[] { r }, new Temp[] { e1, e2 });
+    emit (ROOT, "xor `s0h, `s1h, `d0h\n",
+               new Temp[] { r }, new Temp[] { e1, e2 });
+}%
+
+BINOP<l>(OR, e1, e2) = r %{
+    emit (ROOT, "or `s0l, `s1l, `d0l\n",
+               new Temp[] { r }, new Temp[] { e1, e2 });
+    emit (ROOT, "or `s0h, `s1h, `d0h\n",
+               new Temp[] { r }, new Temp[] { e1, e2 });
+}%
+
+BINOP<l>(ADD, e1, e2) = r %{
+    emit (ROOT, "addcc `s0l, `s1l, `d0l\n",
+               new Temp[] { r }, new Temp[] { e1, e2 });
+    emit (ROOT, "addx `s0h, `s1h, `d0h\n",
+               new Temp[] { r }, new Temp[] { e1, e2 });
+}%
+
+BINOP<f,d>(ADD, e1, e2)=r %{
+    String s = suffix(ROOT);
+    emit (ROOT, "fadd"+s+" `s0, `s1, `d0\n",
+                new Temp[] { r }, new Temp[] { e1, e2 });
+}%
 
 BINOP<i,p>(ADD, e1, UNOP(NEG, e2))=r /* subtraction */ %{
     emit (ROOT, "sub `s0, `s1, `d0\n",
                 new Temp[] { r }, new Temp[] { e1, e2 });
 }%
 
-// Now for MUL, DIV, REM, CMP{LT, LE, EQ, GE, GT}
+BINOP<f,d>(ADD, e1, UNOP(NEG, e2))=r %{
+    String s = suffix(ROOT);
+    emit (ROOT, "fsub"+s+" `s0, `s1, `d0\n",
+                new Temp[] { r }, new Temp[] { e1, e2 });
+}%
+
+BINOP<l>(MUL, e1, e2) = r %{
+    /* AAA - to be implemented. */
+}%
+
 BINOP<i,p>(MUL, e1, e2) = r %{
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r9 }, new Temp[] { e2 });
@@ -254,12 +307,32 @@ BINOP<i,p>(MUL, e1, e2) = r %{
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r }, new Temp[] { r8 });
 }%
 
+BINOP<f,d>(MUL, e1, e2)=r %{
+    String s = suffix(ROOT);
+    emit (ROOT, "fmul"+s+" `s0, `s1, `d0\n",
+                new Temp[] { r }, new Temp[] { e1, e2 });
+}%
+
+BINOP<l>(DIV, e1, e2) = r %{
+    /* AAA - to be implemented. */
+}%
+
 BINOP<i,p>(DIV, e1, e2) = r %{
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r9 }, new Temp[] { e2 });
     emit (ROOT, "call .div\n", new Temp[] { r1 }, new Temp[] { r8, r9 });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0\n", new Temp[] { r }, new Temp[] { r8 });
+}%
+
+BINOP<f,d>(DIV, e1, e2)=r %{
+    String s = suffix(ROOT);
+    emit (ROOT, "fdiv"+s+" `s0, `s1, `d0\n",
+                new Temp[] { r }, new Temp[] { e1, e2 });
+}%
+
+BINOP<l>(REM, e1, e2) = r %{
+    /* AAA - to be implemented. */
 }%
 
 BINOP<i,p>(REM, e1, e2) = r %{
@@ -274,11 +347,11 @@ BINOP(CMPLT, e1, e2) = r
 %pred  %( ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
 %{
     Label templabel = new Label();
-    emit (ROOT, "mov `d0, 0\n", new Temp[] { r }, new Temp[] {});
+    emit (ROOT, "mov 0, `d0\n", new Temp[] { r }, new Temp[] {});
     emit (ROOT, "cmp `s0, `s1\n" +
                 "bge "+templabel+"\n", new Temp[] {}, new Temp[] { e1, e2 });
     emitDELAYSLOT (ROOT);
-    emit (ROOT, "mov `d0, 1\n", new Temp[] { r } , new Temp[] {});
+    emit (ROOT, "mov 1, `d0\n", new Temp[] { r } , new Temp[] {});
     emitLABEL(ROOT, templabel + ":", templabel);
 }%
 
@@ -470,17 +543,52 @@ BINOP(CMPGT, e1, e2) = r
     emitLABEL (ROOT, templabel + ":", templabel);
 }%
 
-// Call some methods
-
 CALL(retval, retex, func, arglist, handler) %pred %( !ROOT.isTailCall )% %{
-    emitDIRECTIVE(ROOT, "@ coming soon: CALL support\n");
+    emitDIRECTIVE(ROOT, "\t@ coming soon: CALL support\n");
+}%
+
+CONST<l,d>(c)=r %{
+    long val = (ROOT.type() == Type.LONG)
+               ? c.longValue()
+               : Double.doubleToLongBits(c.floatValue());
+    int low = (int)val;
+    int high = (int)(val >> 32);
+    emit (ROOT, "set " + low + ", `d0l\n", new Temp[] { r }, null);
+    emit (ROOT, "set " + high + ", `d0h\n", new Temp[] { r }, null);
+}%
+
+CONST<i,f>(c)=r %{
+    int val = (ROOT.type() == Type.INT)
+              ? ROOT.value.intValue()
+              : Float.floatToIntBits(ROOT.value.floatValue());
+    emit (ROOT, "set "+val+", `d0\n", new Temp[] { r }, null);
+
+/* AAA - SPARC book says that assembler will automatically do the
+   right thing? need to check this out.
+
+    if (is13bit(c)) {
+        emit (ROOT, "set "+val+", `d0\n", new Temp[] {r}, new Temp[] {});
+    } else {
+        emit (ROOT, "sethi %hi("+val+"), `d0\n", new Temp[]{r}, null);
+        emit (ROOT, "or `s0, %lo("+val+"), `d0\n",
+              new Temp[] { r }, new Temp[] { r });
+    }
+*/
+
 }%
 
 CONST<p>(c) = r %{
-   emit (ROOT, "mov 0, `d0 @ null\n", new Temp[]{r}, null);
+   emit (ROOT, "mov `s0, `d0 @ null\n", new Temp[]{ r }, new Temp[] { r0 });
 }%
 
-// Show me the data
+CONST<i>(0)=r %{
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r }, new Temp[] { r0 });
+}%
+
+CONST<l>(0)=r %{
+    emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r0 });
+    emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r0 });
+}%
 
 DATA(CONST<i>(exp)) %{
     String lo = "0x" + Integer.toHexString(exp.intValue());
@@ -515,16 +623,80 @@ DATA(CONST<p>(exp)) %{
     emitDIRECTIVE(ROOT, "\t.word 0 @ should always be null pointer constant");
 }%
 
+DATA(CONST<l>(exp)) %{
+    long l = exp.longValue();
+    String lo = "0x" + Integer.toHexString((int)l);
+    String hi = "0x" + Integer.toHexString((int)(l >> 32));
+    emitDIRECTIVE(ROOT, "\t.word " + hi + " @ hi (" + exp + ")");
+    emitDIRECTIVE(ROOT, "\t.word " + lo + " @ lo (" + exp + ")");
+}%
+
 DATA(NAME(l)) %{
     emitDIRECTIVE(ROOT, "\t.word " + l);
 }%
 
+EXP(e1) %{
+    /* throw away temp e1 (not used) */
+}%
+
+LABEL(l) %{
+    emitLABEL (ROOT, l.toString()+":\n", ((LABEL) ROOT).label);
+}%
+
+/* AAA - look at these
+
+MEM(BINOP(PLUS, CONST<l,i>(c), e1))=r %pred %( is13bit(c) )% %{
+ emit (ROOT, "ld"+suffix(ROOT)+" [`s0+"+c+"], `d0\n",
+       new Temp[] { r }, new Temp[] { e1 });
+}%
+
+MEM(BINOP(PLUS, e1, CONST<l,i>(c)))=r %pred %( is13bit(c) )% %{
+ emit (ROOT, "ld"+suffix(ROOT)+" [`s0+"+c+"], `d0\n",
+       new Temp[] { r }, new Temp[] { e1 });
+}%
+
+MEM(BINOP(PLUS, e1, e2))=r %{
+ emit (ROOT, "ld"+suffix(ROOT)+" [`s0+`s1], `d0\n",
+       new Temp[] { r }, new Temp[] { e1, e2 });
+}%
+
+MEM(CONST<l,i>(c))=r %pred %( is13bit(c) )% %{
+ emit (ROOT, "ld ["+c+"], `d0\n",
+       new Temp[] { r }, new Temp[] {});
+}%
+
+*/
+
+MEM<i,p>(e)=r %{
+    emit (ROOT, "ld [`s0], `d0\n", new Temp[] { r }, new Temp[] { e });
+}%
+
+MEM<l>(e)=r %{
+    emit (ROOT, "ldd [`s0], `d0l\n", new Temp[] { r }, new Temp[] { e });
+}%
+
+MEM<f>(e)=r %{
+    emit (ROOT, "ldf [`s0], `d0\n", new Temp[] { r } , new Temp[] { e });
+}%
+
+MEM<d>(e)=r %{
+    emit (ROOT, "lddf [`s0], `d0l\n", new Temp[] { r }, new Temp[] { e });
+}%
+
+MEM<u:8>(e) = r %{
+    emitMEM (ROOT, "ldub [`s0], `d0\n", new Temp[] { r }, new Temp[] { e });
+}%
+
 MEM<s:8>(e) = r %{
-    emitMEM(ROOT, "ldsb [`s0] `d0", new Temp[] { r }, new Temp[] { e });
+    emitMEM (ROOT, "ldsb [`s0], `d0\n", new Temp[] { r }, new Temp[] { e });
 }%
 
 MEM<u:16>(e) = r %{
-    emitMEM(ROOT, "lduh [`s0] `d0", new Temp[] { r }, new Temp[] { e });
+    emitMEM (ROOT, "lduh [`s0], `d0\n", new Temp[] { r }, new Temp[] { e });
+}%
+
+MEM<s:16>(e) = r %{
+    emitMEM (ROOT, "ldsh [`s0], `d0\n", new Temp[] { r }, new Temp[] { e });
 }%
 
 METHOD(params) %{
@@ -532,8 +704,88 @@ METHOD(params) %{
     /* AAA - move params into right place */
 }%
 
+MOVE(MEM<s:8, u:8>(e), src) %{
+    emitMEM (ROOT, "stb `s1, [`s0]\n", null, new Temp[] { e, src });
+}%
+
+MOVE(MEM<s:16, u:16>(e), src) %{
+    emitMEM (ROOT, "sth `s1, [`s0]\n", null, new Temp[] { e, src });
+}%
+
+MOVE(MEM<i,p>(e), src) %{
+    emitMEM (ROOT, "st `s1, [`s0]\n", null, new Temp[] { e, src });
+}%
+
+MOVE(MEM<l>(e), src) %{
+    emitMEM (ROOT, "std `s1l, [`s0]\n", null, new Temp[] { e, src });
+}%
+
+/* AAA - look at these 
+
+MOVE(MEM(CONST<l,i>(c)), e) %pred %( is13bit(c) )% %{
+ emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s0l, ["+c+"]\n",
+          new Temp[] {}, new Temp[] { e });
+}%
+
+MOVE(MEM(BINOP(ADD, CONST<l,i>(c), e1)), e2) %pred %( is13bit(c) )% %{
+ emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s1l, [`s0+"+c+"]\n",
+          new Temp[] {}, new Temp[] { e1, e2 });
+}%
+
+MOVE(MEM(BINOP(ADD, e1, CONST<l,i>(c))), e2) %pred %( is13bit(c) )% %{
+ emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s1l, [`s0+"+c+"]\n",
+          new Temp[] {}, new Temp[] { e1, e2 });
+}%
+
+MOVE(MEM(BINOP(ADD, e1, e2)), e3) %{
+ emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s2l, [`s0+`s1]\n",
+          new Temp[] {}, new Temp[] { e1, e2, e3 });
+}%
+
+MOVE(MEM(e1), e2) %{
+ emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s1l, [`s0]\n",
+          new Temp[] {}, new Temp[] { e1, e2 });
+}%
+
+MOVE(e1, CONST<i>(c)) %pred %( is13bit(c) )% %{
+ emit (ROOT, "mov "+c+", `d0\n",
+       new Temp[] { e1 }, new Temp[] {});
+}%
+
+*/
+
+MOVE<i,p>(e1, e2) %{ /* catch-all */
+   emit (ROOT, "mov `s0, `d0\n", new Temp[] { e1 }, new Temp[] { e2 });
+}%
+
+MOVE<l>(e1, e2) %{ /* long (pair of int) register move */
+    emit (ROOT, "mov `s0l, `d0l\n", new Temp[] { e1 }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0h, `d0h\n", new Temp[] { e1 }, new Temp[] { e2 });
+}%
+
+MOVE<f>(e1, e2) %{ /* floating-point register move */
+    emit(ROOT, "fmovs `s0, `d0\n", new Temp[] { e1 }, new Temp[] { e2 });
+}%
+
+MOVE<d>(e1, e2) %{ /* double (pair of fp) register move */
+    emit (ROOT, "fmovs `s0l, `d0l\n", new Temp[] { e1 }, new Temp[] { e2 });
+    emit (ROOT, "fmovs `s0h, `d0h\n", new Temp[] { e1 }, new Temp[] { e2 });
+}%
+
+NAME(s)=r %{
+    emit (ROOT, "set " + s + ", `d0\n", new Temp[] { r }, null);
+
+/* AAA - again, I may be smoking something, but from reading
+   the SPARC book, this is a bit much.
+ emit (ROOT, "sethi %hi("+s+"), `d0\n",
+       new Temp[]{r}, null);
+ emit (ROOT, "or `s0, %lo("+s+"), `d0\n",
+       new Temp[] { r }, new Temp[] { r });
+*/
+}%
+
 NATIVECALL(retval, func, arglist) %{
-    emitDIRECTIVE(ROOT, "@ comming soon: NATIVECALL support\n");
+    emitDIRECTIVE(ROOT, "\t@ coming soon: NATIVECALL support\n");
 }%    
 
 RETURN(val) %{
@@ -544,47 +796,47 @@ RETURN(val) %{
 // Output those segments, ooo yea baby
 
 SEGMENT(CLASS) %{
-    emitDIRECTIVE(ROOT, ".data 1\t@.section class");
+    emitDIRECTIVE(ROOT, "\t.data 1\t@.section class");
 }%
 
 SEGMENT(CODE) %{
-    emitDIRECTIVE(ROOT, ".text 0\t@.section code");
+    emitDIRECTIVE(ROOT, "\t.text 0\t@.section code");
 }%
 
 SEGMENT(GC) %{
-    emitDIRECTIVE(ROOT, ".data 2\t@.section gc");
+    emitDIRECTIVE(ROOT, "\t.data 2\t@.section gc");
 }%
 
 SEGMENT(INIT_DATA) %{
-    emitDIRECTIVE(ROOT, ".data 3\t@.section init_data");
+    emitDIRECTIVE(ROOT, "\t.data 3\t@.section init_data");
 }%
 
 SEGMENT(STATIC_OBJECTS) %{
-    emitDIRECTIVE(ROOT, ".data 4\t@.section static_objects");
+    emitDIRECTIVE(ROOT, "\t.data 4\t@.section static_objects");
 }%
 
 SEGMENT(STATIC_PRIMITIVES) %{
-    emitDIRECTIVE(ROOT, ".data 5\t@.section static_primitives");
+    emitDIRECTIVE(ROOT, "\t.data 5\t@.section static_primitives");
 }%
 
 SEGMENT(STRING_CONSTANTS) %{
-    emitDIRECTIVE(ROOT, ".data 6\t@.section string_constants");
+    emitDIRECTIVE(ROOT, "\t.data 6\t@.section string_constants");
 }%
 
 SEGMENT(STRING_DATA) %{
-    emitDIRECTIVE(ROOT, ".data 7\t@.section string_data");
+    emitDIRECTIVE(ROOT, "\t.data 7\t@.section string_data");
 }%
 
 SEGMENT(REFLECTION_OBJECTS) %{
-    emitDIRECTIVE(ROOT, ".data 8\t@.section reflection_objects");
+    emitDIRECTIVE(ROOT, "\t.data 8\t@.section reflection_objects");
 }%
 
 SEGMENT(REFLECTION_DATA) %{
-    emitDIRECTIVE(ROOT, ".data 9\t@.section reflection_data");
+    emitDIRECTIVE(ROOT, "\t.data 9\t@.section reflection_data");
 }%
 
 SEGMENT(TEXT) %{
-    emitDIRECTIVE(ROOT, ".text  \t@.section text");
+    emitDIRECTIVE(ROOT, "\t.text  \t@.section text");
 }%
 
 TEMP<p,i,f,l,d>(id) = i %{
@@ -596,91 +848,90 @@ THROW(val, handler) %{
     emitEXIT(ROOT);
 }%
 
+// unary operator checklist
+
+UNOP<i,p>(NEG, e)=r %{
+    emit (ROOT, "sub `s0, `s1, `d0\n", new Temp[] { r }, new Temp[] { r0, e });
+}%
+
+UNOP<l>(NEG, e)=r %{
+    emit (ROOT, "subcc `s0, `s1l, `d0l\n", new Temp[] { r }, new Temp[] { r0, e });
+    emit (ROOT, "subx `s0, `s1h, `d0h\n", new Temp[] { r }, new Temp[] { r0, e });
+}%
+
+UNOP<f>(NEG, e)=r %{
+    emit (ROOT, "fnegs `s0, `d0\n", new Temp[] { r }, new Temp[] { e });
+}%
+
+UNOP(_2B, e) = r
+%pred %(ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+%{
+    emit (ROOT, "sll `s0, 24, `d0\n", new Temp[] { r }, new Temp[] { e });
+    emit (ROOT, "sra `s0, 24, `d0\n", new Temp[] { r }, new Temp[] { e });
+}%
+
+UNOP(_2C, e) = r
+%pred %(ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+%{
+    emit (ROOT, "sll `s0, 16, `d0\n", new Temp[] { r }, new Temp[] { e });
+    emit (ROOT, "sra `s0, 16, `d0\n", new Temp[] { r }, new Temp[] { e });
+}%
+
+UNOP(_2S, e) = r
+%pred %(ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+%{
+    emit (ROOT, "sll `s0, 16, `d0\n", new Temp[] { r }, new Temp[] { e });
+    emit (ROOT, "srl `s0, 16, `d0\n", new Temp[] { r }, new Temp[] { e });
+}%
+
+UNOP(_2I, e) = r
+%pred %(ROOT.operandType() == Type.FLOAT )%
+%{
+    emit (ROOT, "fstoi `s0, `d0\n", new Temp[] { r }, new Temp[] { e });
+}%
+
+UNOP(_2I, e) = r
+%pred %(ROOT.operandType() == Type.LONG )%
+%{
+    emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r } , new Temp[] { e });
+}%
+
+UNOP(_2I, e) = r
+%pred %(ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+%{
+    emit (ROOT, "mov `s0, `d0\n", new Temp[] { r } , new Temp[] { e });
+}%
+
+UNOP(_2L, e) = r
+%pred %(ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+%{
+    emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { e });
+    emit (ROOT, "sra `s0, 31, `d0h\n", new Temp[] { r } , new Temp[] { e });
+}%
+
+UNOP(_2F, e) = r
+%pred %(ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+%{
+    /* AAA - this is broken. need to do loads and stores, can't
+       move directly from fp to normal registers. */
+    emit (ROOT, "fitos `s0, `d0\n", new Temp[] { r }, new Temp[] { e });
+}%
+
 // OLD STUFF BELOW THIS LINE
 
-// patterns with MOVE at their root.
-
-//  32- and 64-bit integer and floating-point STOREs:
-
-MOVE(MEM(CONST<l,i>(c)), e) %pred %( is13bit(c) )% %{
- emitMEM (ROOT, "\t st"+suffix((Typed)ROOT.dst)+" `s0, ["+c+"]\n",
-          new Temp[] {}, new Temp[] { e });
-}%
-
-MOVE(MEM(BINOP(ADD, CONST<l,i>(c), e1)), e2) %pred %( is13bit(c) )% %{
- emitMEM (ROOT, "\t st"+suffix((Typed)ROOT.dst)+" `s1, [`s0+"+c+"]\n",
-	  new Temp[] {}, new Temp[] { e1, e2 });
-}%
-
-MOVE(MEM(BINOP(ADD, e1, CONST<l,i>(c))), e2) %pred %( is13bit(c) )% %{
- emitMEM (ROOT, "\t st"+suffix((Typed)ROOT.dst)+" `s1, [`s0+"+c+"]\n", 
-          new Temp[] {}, new Temp[] { e1, e2 });
-}%
-
-MOVE(MEM(BINOP(ADD, e1, e2)), e3) %{
- emitMEM (ROOT, "\t st"+suffix((Typed)ROOT.dst)+" `s2, [`s0+`s1]\n", 
-          new Temp[] {}, new Temp[] { e1, e2, e3 });
-}% 
-
-MOVE(MEM(e1), e2) %{
- emitMEM (ROOT, "\t st"+suffix((Typed)ROOT.dst)+" `s1, [`s0]\n", 
-          new Temp[] {}, new Temp[] { e1, e2 });
-}%
-
-// load small constants
-
-MOVE(e1, CONST<i>(c)) %pred %( is13bit(c) )% %{
- emit (ROOT, "\t mov "+c+", `d0\n",
-       new Temp[] { e1 }, new Temp[] {});
-}%
-
-// other MOVEs
-
-MOVE<i,p>(e1, e2) %{ /* catch-all */
- emit (ROOT, "\t mov `s0, `d0\n",
-       new Temp[] { e1 }, new Temp[] { e2 });
-}%
-
-MOVE<l>(e1, e2) %{ /* long (pair of int) register move */
- emit (ROOT, "\t mov `s0l, `d0l\n",
-       new Temp[] { e1 }, new Temp[] { e2 });
- emit (ROOT, "\t mov `s0h, `d0h\n",
-       new Temp[] { e1 }, new Temp[] { e2 });
-}%
-
-MOVE<f>(e1, e2) %{ /* floating-point register move */
- emit(ROOT, "\t fmovs `s0, `d0\n",
-      new Temp[] { e1 }, new Temp[] { e2 });
-}%
-
-MOVE<d>(e1, e2) %{ /* double (pair of fp) register move */
- emit (ROOT, "\t fmovs `s0l, `d0l\n",
-       new Temp[] { e1 }, new Temp[] { e2 });
- emit (ROOT, "\t fmovs `s0h, `d0h\n",
-       new Temp[] { e1 }, new Temp[] { e2 });
-}%
-
-// patterns with EXP at their root.
-
-EXP(e1) %{
-  /* throw away temp e1 (not used) */
-}%
-
-// patterns with JUMP at their root.
-
 JUMP(NAME(l)) %{
- emit (ROOT, "\t b "+l+"\n", null, null); /* AAA - target list?! */
+ emit (ROOT, "b "+l+"\n", null, null); /* AAA - target list?! */
  emitDELAYSLOT (ROOT);
 }%
 
 JUMP(BINOP(ADD, e1, e2)) %{
- emit (ROOT, "\t jmpl `s0+`s1, %g0\n", 
+ emit (ROOT, "jmpl `s0+`s1, %g0\n", 
       null,  new Temp[] { e1, e2 }); /* AAA - target list?! */
  emitDELAYSLOT (ROOT);
 }%
 
 JUMP(e1) %{
- emit (ROOT, "\t jmpl `s0, %g0\n", 
+ emit (ROOT, "jmpl `s0, %g0\n", 
        null, new Temp[] { e1 }); /* AAA - target list?! */
  emitDELAYSLOT (ROOT);
 }%
@@ -688,161 +939,12 @@ JUMP(e1) %{
 // patterns with a CJUMP at their root.
 
 CJUMP(e, true_label, false_label) %{
- emitCC (ROOT, "\t cmp `s0, 0\n", 
+ emitCC (ROOT, "cmp `s0, 0\n", 
          null,  new Temp[] { e });
- emitCC (ROOT, "\t bne "+true_label+"\n", null, null); /*target!?*/
+ emitCC (ROOT, "bne "+true_label+"\n", null, null); /*target!?*/
  emitDELAYSLOT (ROOT);
 
  /* the next two lines can hopefully be left out. */
- emitCC (ROOT, "\t ba "+false_label+"\n", null, null); /*target?!*/
+ emitCC (ROOT, "ba "+false_label+"\n", null, null); /*target?!*/
  emitDELAYSLOT (ROOT);
 }%
-
-// patterns with SEQ at their root should be handled by the generator magically
-// labels.
-
-LABEL(l) %{
- emitLABEL (ROOT, l.toString()+":\n", ((LABEL) ROOT).label);
-}%
-
-// expressions
-
-CONST<i,p>(0)=r %{
-    emit (ROOT, "\tmov `s0, `d0\n", new Temp[] { r }, new Temp[] { r0 });
-}%
-
-CONST<l>(0)=r %{
-    emit (ROOT, "\tmov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r0 });
-    emit (ROOT, "\tmov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r0 });
-}%
-
-CONST<f, i>(c)=r %{
-    int val = (ROOT.type() == Type.INT) 
-              ? ROOT.value.intValue()
-              : Float.floatToIntBits(ROOT.value.floatValue());
-    if (is13bit(c)) {
-        emit (ROOT, "\t set "+val+", `d0\n", new Temp[] {r}, new Temp[] {});
-    } else {
-        emit (ROOT, "\t sethi %hi("+val+"), `d0\n", new Temp[]{r}, null);
-        emit (ROOT, "\t or `s0, %lo("+val+"), `d0\n",
-              new Temp[] { r }, new Temp[] { r });
-    }
-}%
-
-CONST<f>(c) = r %{
-
-}%
-
-// FIXME: long and floating-point constants (change section?)
-
-NAME(s)=r %{
- emit (ROOT, "\t sethi %hi("+s+"), `d0\n",
-       new Temp[]{r}, null);
- emit (ROOT, "\t or `s0, %lo("+s+"), `d0\n",
-       new Temp[] { r }, new Temp[] { r });
-}%
-
-/*TEMP(t)=r should be handled by c-g-g. */
-
-/* FIXME: write integer MUL/DIV rules */
-/* FIXME: write long rules */
-/* floating-point binops: */
-
-BINOP<f,d>(ADD, e1, e2)=r %{
- String s = (Type.isDoubleWord(((Tree)ROOT).getFactory(),((BINOP)ROOT).type()))?"d":"s";
- emit (ROOT, "\t fadd"+s+" `s0, `s1, `d0\n",
-       new Temp[] { r }, new Temp[] { e1, e2 });
-}%
-
-BINOP<f,d>(ADD, e1, UNOP(NEG, e2))=r %{
- String s = (Type.isDoubleWord(((Tree)ROOT).getFactory(),((BINOP)ROOT).type()))?"d":"s";
- emit (ROOT, "\t fsub"+s+" `s0, `s1, `d0\n",
-       new Temp[] { r }, new Temp[] { e1, e2 });
-}%
-
-BINOP<f,d>(MUL, e1, e2)=r %{
- String s = (Type.isDoubleWord(((Tree)ROOT).getFactory(),((BINOP)ROOT).type()))?"d":"s";
- emit (ROOT, "\t fmul"+s+" `s0, `s1, `d0\n",
-       new Temp[] { r }, new Temp[] { e1, e2 });
-}%
-
-BINOP<f,d>(DIV, e1, e2)=r %{
- String s = (Type.isDoubleWord(((Tree)ROOT).getFactory(),((BINOP)ROOT).type()))?"d":"s";
- emit (ROOT, "\t fdiv"+s+" `s0, `s1, `d0\n",
-       new Temp[] { r }, new Temp[] { e1, e2 });
-}%
-
-/* FIXME: finish floating-point rules */
-
-UNOP<i,p>(NEG, e)=r %{
- emit (ROOT, "\t sub %g0, `s0, `d0\n",
-       new Temp[] { r }, new Temp[] { e });
-}%
-
-UNOP<i,p>(_2B, e)=r %{ /* byte is 8-bit signed */
- emit (ROOT, "\t sll `s0, 24, `d0\n",
-       new Temp[] { r }, new Temp[] { e });
- emit (ROOT, "\t sra `s0, 24, `d0\n",
-       new Temp[] { r } , new Temp[] { r });
-}%
-
-UNOP<i,p>(_2S, e)=r %{ /* short is 16-bit signed */
- emit (ROOT, "\t sll `s0, 16, `d0\n",
-       new Temp[] { r }, new Temp[] { e });
- emit (ROOT, "\t sra `s0, 16, `d0\n",
-       new Temp[] { r } , new Temp[] { r });
-}%
-
-UNOP<i,p>(_2C, e)=r %{ /* character is 16-bit unsigned */
- emit (ROOT, "\t sll `s0, 16, `d0\n",
-       new Temp[] { r }, new Temp[] { e });
- emit (ROOT, "\t srl `s0, 16, `d0\n",
-       new Temp[] { r } , new Temp[] { r });
-}%
-
-UNOP<i,p>(_2L, e)=r %{ /* make 64-bit word. */
- emit (ROOT, "\t mov `s0, `d0l\n",
-       new Temp[] { r }, new Temp[] { e });
- emit (ROOT, "\t sra `s0, 31, `d0h\n",
-       new Temp[] { r }, new Temp[] { e });
-}%
-
-UNOP<i,p>(_2I, e)=r %{ /* do nothing */
- emit(ROOT, "\t mov `s0, `d0\n",
-      new Temp[] { r } , new Temp[] { e });
-}%
-
-UNOP<i,p,f,l,d>(_2F, e) = r %{
-    // AAA - this is broken. 
-    emit (ROOT, "fitos `s0, `d0\n", new Temp[] { r }, new Temp[] { e });
-}%
-/* FIXME: finish UNOP rules */
-
-// patterns with MEM at root.
-
-MEM(BINOP(PLUS, CONST<l,i>(c), e1))=r %pred %( is13bit(c) )% %{
- emit (ROOT, "\t ld"+suffix((Typed)ROOT.exp)+" [`s0+"+c+"], `d0\n",
-       new Temp[] { r }, new Temp[] { e1 });
-}%
-
-MEM(BINOP(PLUS, e1, CONST<l,i>(c)))=r %pred %( is13bit(c) )% %{
- emit (ROOT, "\t ld"+suffix((Typed)ROOT.exp)+" [`s0+"+c+"], `d0\n",
-       new Temp[] { r }, new Temp[] { e1 });
-}%
-
-MEM(BINOP(PLUS, e1, e2))=r %{
- emit (ROOT, "\t ld"+suffix((Typed)ROOT.exp)+" [`s0+`s1], `d0\n",
-       new Temp[] { r }, new Temp[] { e1, e2 });
-}%
-
-MEM(CONST<l,i>(c))=r %pred %( is13bit(c) )% %{
- emit (ROOT, "\t ld ["+c+"], `d0\n",
-       new Temp[] { r }, new Temp[] {});
-}%
-
-MEM(e)=r %{
- emit (ROOT, "\t ld [`s0], `d0\n",
-       new Temp[] { r }, new Temp[] { e });
-}%
-
-/* FIXME: munch CALLs */
