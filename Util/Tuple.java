@@ -6,7 +6,6 @@ package harpoon.Util;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.List;
 /**
  * A <code>Tuple</code> is an ordered list of objects that works
@@ -15,7 +14,7 @@ import java.util.List;
  * the elements array are <code>Comparable</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tuple.java,v 1.2.2.6 1999-08-28 18:46:06 cananian Exp $
+ * @version $Id: Tuple.java,v 1.2.2.7 2000-02-08 21:49:53 cananian Exp $
  */
 public class Tuple implements Comparable {
     final Comparator objcmp;
@@ -33,9 +32,7 @@ public class Tuple implements Comparable {
     }
     /** Projects an element of the <code>Tuple</code>. */
     public Object proj(int i) { return elements[i]; }
-    /** Returns an enumeration of the elements of the <code>Tuple</code>. */
-    public Enumeration elements() { return new ArrayEnumerator(elements); }
-    /** Returns an unmodifiable list view of the <code>tuple</code>. */
+    /** Returns an unmodifiable list view of the <code>Tuple</code>. */
     public List asList() {
 	return Collections.unmodifiableList(Arrays.asList(elements));
     }
