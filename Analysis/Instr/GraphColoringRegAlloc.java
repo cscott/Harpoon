@@ -11,6 +11,7 @@ import harpoon.Analysis.GraphColoring.AbstractGraph;
 import harpoon.Analysis.GraphColoring.ColorableGraph;
 import harpoon.Analysis.GraphColoring.Color;
 import harpoon.Analysis.GraphColoring.GraphColorer;
+import harpoon.Analysis.GraphColoring.OptimisticGraphColorer;
 import harpoon.Analysis.GraphColoring.SimpleGraphColorer;
 import harpoon.Analysis.GraphColoring.UnableToColorGraph;
 import harpoon.Backend.Generic.Code;
@@ -48,14 +49,19 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.10 2000-07-28 21:49:14 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.11 2000-07-29 00:26:59 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
     public static RegAlloc.Factory FACTORY =
 	new RegAlloc.Factory() {
 	    public RegAlloc makeRegAlloc(Code c) {
-		return new GraphColoringRegAlloc(c);
+		GraphColorer gc;
+
+		// gc = new SimpleGraphColorer();
+		gc = new OptimisticGraphColorer();
+
+		return new GraphColoringRegAlloc(c, gc);
 	    }
 	};
 
@@ -90,14 +96,19 @@ public class GraphColoringRegAlloc extends RegAlloc {
     //                t's live region
     MultiMap preassignMap;
 
-    /** Creates a <code>GraphColoringRegAlloc</code>. */
-    public GraphColoringRegAlloc(Code code) {
+    GraphColorer colorer;
+
+    /** Creates a <code>GraphColoringRegAlloc</code>, assigning `gc'
+	as its graph coloring strategy. 
+    */
+    public GraphColoringRegAlloc(Code code, GraphColorer gc) {
         super(code);
 	rfi = frame.getRegFileInfo();
 	buildRegAssigns();
 	rdefs = new ReachingDefsAltImpl(code);
 	liveTemps = LiveTemps.make(code, rfi.liveOnExit());
 	preassignMap = buildPreassignMap(code, rfi.liveOnExit());
+        colorer = gc;
     }
 
     protected Derivation getDerivation() {
@@ -129,18 +140,37 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	};
     }
+    private Collection readableNodes(final Collection nodes,
+				     final Map nodeToNum) {
+	return new AbstractCollection() {
+	    public int size() { return nodes.size(); }
+	    public Iterator iterator() {
+		return new FilterIterator
+		    (nodes.iterator(),
+		     new FilterIterator.Filter() {
+			public Object map(Object o) {
+			    return nodeToNum.get(o);
+			}
+		    });
+	    }
+	};
+    }
+
 
     protected void generateRegAssignment() {
 	boolean success, coalesced;
 	AdjMtx adjMtx;
 
-	GraphColorer colorer = new SimpleGraphColorer();
-
+	System.out.println();
 	do {
 	    do {
+		System.out.println("Making Webs");
+
 		makeWebs(rdefs); 
 		
 		// System.out.println("webs: "+webRecords);
+
+		System.out.println("Building Matrix");
 
 		adjMtx = buildAdjMatrix();
 		// System.out.println("Adjacency Matrix");
@@ -148,12 +178,16 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		coalesced = coalesceRegs(adjMtx);
 	    } while (coalesced);
 
+	    System.out.println("Building Lists");
+
 	    WebRecord[] adjLsts = buildAdjLists(adjMtx); 
 	    adjMtx = null;
 
 	    // System.out.println(Arrays.asList(adjLsts));
 
 	    computeSpillCosts();
+
+	    System.out.println("Building Graph");
 
 	    final ColorableGraph graph = new Graph(adjLsts);
 	    
@@ -166,7 +200,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		nodeToNum.put(n, new Integer(i));
 		System.out.println(i+"\t"+n);
 	    }
-	    Collection readEdges = readableEdges(graph.edges(), nodeToNum);;
+	    Collection readEdges = readableEdges(graph.edges(), nodeToNum);
 	    System.out.println("edges of graph "+readEdges);
 
 	    try {
@@ -181,17 +215,24 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		}
 		for(Iterator cs=c2n.keySet().iterator();cs.hasNext();){
 		    Object col=cs.next();
-		    System.out.println(col + " nodes: "+c2n.getValues(col));
+		    System.out.println(col + " nodes: "+
+				       readableNodes(c2n.getValues(col),
+						     nodeToNum));
 		}
 
 		modifyCode();
 		
 		success = true;
-	    } catch (UnableToColorGraph e) {
+	    } catch (UnableToColorGraph u) {
 		success = false;
 
 		System.out.println("Unable to color graph");
 		System.out.println();
+		System.out.println("Suggested for spilling "+
+				   u.getRemovalSuggestions());
+		System.out.println();
+		System.out.println("nodes of graph "+
+				   readableNodes(graph.nodeSet(),nodeToNum));
 		System.out.println("edges of graph "+
 				   readableEdges(graph.edges(),nodeToNum));
 		System.exit(-1);
@@ -370,25 +411,13 @@ public class GraphColoringRegAlloc extends RegAlloc {
     private AdjMtx buildAdjMatrix() { 
 	AdjMtx adjMtx = new AdjMtx(webRecords);
 	int i, j;
-
+	
 	Iterator assgn1 = assignWebRecords.iterator();
-	while(assgn1.hasNext()) {
-	    AssignWebRecord awr1 = (AssignWebRecord) assgn1.next();
-	    Iterator assgn2 = assignWebRecords.iterator();
-	    while(assgn2.hasNext()) {
-		AssignWebRecord awr2 = (AssignWebRecord)assgn2.next();
-		if (awr1 == awr2) 
-		    break;
-		HashSet regs = new HashSet(awr1.regs);
-		regs.removeAll(awr2.regs);
-		adjMtx.set(awr1.sreg(),awr2.sreg(),!regs.isEmpty());
-	    }
-	}
 	for(i=1; i<webRecords.size(); i++) {
+	    WebRecord wr1 = (WebRecord) webRecords.get(i);
 	    for(j=0; j<i; j++) {
-		WebRecord wr1 = (WebRecord) webRecords.get(i);
 		WebRecord wr2 = (WebRecord) webRecords.get(j);
-		adjMtx.set(i,j, wr1.conflictsWith(wr2));
+		adjMtx.set(wr1.sreg(),wr2.sreg(), wr1.conflictsWith(wr2));
 	    }
 	}
 	return adjMtx;
@@ -646,14 +675,12 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	// one directional conflict check (helper function) 
 	// if this is live at a def in wr, returns true.
 	private boolean conflictsWith1D(WebRecord wr) {
-	    for(Iterator tmps=wr.temps().iterator();tmps.hasNext();){
-		Temp t = (Temp) tmps.next();
-		for(Iterator ins=this.defs().iterator();ins.hasNext();){
-		    Instr d = (Instr) ins.next();
-		    Set l = liveTemps.getLiveAfter(d);
-		    if (l.contains(t)) 
-			return true;
-		}
+	    for(Iterator ins=this.defs().iterator();ins.hasNext();){
+		Instr d = (Instr) ins.next();
+		Set l= liveTemps.getLiveAfter(d);
+		l = new HashSet(l);
+		l.retainAll(wr.temps());
+		if (!l.isEmpty()) return true;
 	    }
 	    return false;
 	}
@@ -794,12 +821,35 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	boolean isConst() { return false; }
 	Temp val;
     }
-
+    
     class AdjMtx {
+	final harpoon.Util.BitString bits;
+	final int side;
+	AdjMtx(List symReg) {
+	    side = symReg.size();
+	    bits = new harpoon.Util.BitString(side * side / 2);
+	}
+	boolean get(int x, int y) {
+	    Util.assert(x != y);
+	    return bits.get(convert(x,y));
+	}
+	void set(int x, int y, boolean b) {
+	    Util.assert(x != y);
+	    if (b) bits.set(convert(x,y)); 
+	    else   bits.clear(convert(x,y));
+	}
+	private int convert(int x, int y) {
+	    if (x < y) return offset(x) + y;
+	    else       return offset(y) + x;
+	}
+	private int offset(int x) { return (x * (x + 1)) / 2; }
+    }
+
+    class AdjMtx2 {
 	// implement here: a Lower Triangular Matrix backed by a
 	// BitString.  Note that for Lower Triangular Matrix, order of
 	// coordinate args is insignificant (from p.o.v. of user).
-
+	
 	private class IntPairSet {
 	    final int x, y; // Invariant: x < y
 	    IntPairSet(int x, int y) {
@@ -834,7 +884,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    <BR> <B>requires:</B> symReg is a List<WebRecord>
 	    All values map to false at construction time.
 	*/ 
-	AdjMtx(List symReg) { 
+	AdjMtx2(List symReg) { 
 	    back = new HashSet();
 	    this.symReg = symReg;
 	}

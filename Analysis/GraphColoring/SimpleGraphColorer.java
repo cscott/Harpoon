@@ -15,10 +15,18 @@ import java.util.Enumeration;
 import harpoon.Util.Util;
 
 /**
- * <code>SimpleGraphColorer</code>
+ * <code>SimpleGraphColorer</code> uses the simple but effective graph
+ * coloring strategy of progressively removing nodes with degree less
+ * than K, (where K is the number of colors provided).  This is a
+ * conservative heuristic, as it guarantees that if the graph
+ * post-removal is K-colorable, then the graph post-replacement will
+ * also K-colorable; several improvements on this heuristic are
+ * available. 
+ * Inspired by a 6.035 
+ * <A href="http://ceylon.lcs.mit.edu/6035/lecture18/sld064.htm">lecture</A>.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.15 2000-07-28 21:49:08 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.16 2000-07-29 00:26:55 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {
@@ -27,13 +35,8 @@ public class SimpleGraphColorer extends GraphColorer {
 
     public SimpleGraphColorer() { }
     
-    /** colors <code>graph</code> using the "progressively remove
-	nodes with degree less than X" heuristic, where X is the
-	number of colors provided.  This is a very conservative
-	heuristic; several improvements upon it are available for
-	development.  
-	( http://ceylon.lcs.mit.edu/6035/lecture18/sld064.htm ).
-    */
+    /** Colors <code>graph</code>.
+     */
     public final void color(ColorableGraph graph, List colors) 
 	throws UnableToColorGraph {
 	// System.out.println("entered color("+graph+", "+colors+")");

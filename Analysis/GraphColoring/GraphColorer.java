@@ -10,7 +10,7 @@ import java.util.List;
  * algorithm.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColorer.java,v 1.1.2.12 2000-07-27 21:34:13 pnkfelix Exp $
+ * @version $Id: GraphColorer.java,v 1.1.2.13 2000-07-29 00:26:55 pnkfelix Exp $
  */
 
 public abstract class GraphColorer  {
@@ -19,8 +19,11 @@ public abstract class GraphColorer  {
     public GraphColorer() { }
 			       
     /** Attempts to color <code>graph</code>.
-	<BR> <B>requires:</B> <code>colors</code> is a
-	     <code>List</code> of <code>Color</code>s  
+	<BR> <B>requires:</B> <OL>
+	     <LI> <code>colors</code> is a <code>List</code> of
+	          <code>Color</code>s.
+	     <LI> <code>graph</code> does not have any hidden nodes.
+	     </OL>
 	<BR> <B>modifies:</B> <code>graph</code>
 	<BR> <B>effects:</B> Attempts to color <code>graph</code>
 	     using the set of <code>Color</code>s given in
