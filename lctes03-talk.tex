@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.21 2003-06-07 04:51:12 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.22 2003-06-09 00:30:17 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -383,7 +383,8 @@ And here is how we formalize this: @
 \end{itemize}
 {\yellow Concretization: $\mathcal{L}\to 2^\mathcal{Z}$}
 \begin{eqnarray*}
-\mathbb{C}\left[c\right] &=& \left\{ c \right\} \\
+\mathbb{C}\left[\bot\right] &=& \emptyset \\
+\mathbb{C}\left[\thinspace c\thinspace\right] &=& \left\{ c \right\} \\
 \mathbb{C}\left[\tuple{m,p}\right] &=&
    \left\{ -n | n\in\mathbb{N} \;\wedge\; \ln n < m\right\} \cup
    \left\{0\right\} \cup\\
@@ -447,7 +448,9 @@ c\latleq\tuple{m,p}&\text{ iff }&\func{bw}(c)\latleq\tuple{{\onlySlide*{5}{\yell
 
 \begin{talknotes}
 The lattice ordering is implicitly given by the concretization
-function, but we'll define it explicitly.  The
+function, but we'll define it explicitly. 
+The ordering in turn defines the meet operation over the lattice.
+The
 $\bot$ value will represent ``no information'' and is less than all
 members of $\mathcal{C}$ and $\mathcal{T}$ in the lattice.  Members of
 $\mathcal{T}$ are compared component-wise; a bitwidth is lesser only
@@ -455,7 +458,7 @@ if both its components are lesser.  Finally, a constant $c$ is lesser
 only if the function $\func{bw}$ of $c$ is less-than-or-equal,
 @ where $\func{bw}(c)$ computes the number of bits needed to
 represent the signed constant $c$.  @ To give more intuition,
-for values in twos complement
+for values in twos complement binary
 notation @ the $p$ component of the result represents the location of
 the first one in the number, and the @ $m$ component constrains the
 location of the first zero.
@@ -615,7 +618,7 @@ improve the accuracy of the analysis commensurate with the large
 increase in analysis time.  @  Thus all results presented in this talk
 will use a zero-length context.
 
-And, formally: @
+And, formally\ldots @
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -639,6 +642,7 @@ We use a {\yellow field-based} interprocedural analysis.
 \end{itemize}
 \end{slide}
 \begin{talknotes}
+\ldots we have this description of the interprocedural analysis.
 %We extend our intraprocedural analysis interprocedurally using a
 %field-based scheme.  
 The domain $\mathcal{F}$ represents the declared fields of the
@@ -854,9 +858,9 @@ We're going to jump right in with an example.  This is {\tt
   java.lang.String} from the Java standard class library.  It has
 three fields: a character array and an integer length and offset.
 This representation was chosen to allow you to perform the substring
-operation in constant time; you don't have to copy the string, you
+operation in constant time; you don't have to copy the character array, you
 just create a new string with a different offset and length and
-share the same character array.
+share the same array.
 
 The interesting thing about {\tt java.lang.String} is that the {\tt
   offset} field is almost \emph{always} zero.  Only strings created
