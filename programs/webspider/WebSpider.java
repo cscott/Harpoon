@@ -14,16 +14,23 @@ import java.net.URLConnection;
  * some cases are not handled
  *
  * @author govereau@mit.edu
- * @version $Id: WebSpider.java,v 1.1 2000-03-22 09:10:54 govereau Exp $
+ * @version $Id: WebSpider.java,v 1.2 2000-04-03 00:15:14 govereau Exp $
  */
 class WebSpider extends Thread {
+
+	public final int MAX_LEVEL = 1;
 
 	private String baseURL;
 	private String startURL;
 	private int level;
+	private boolean save;
+	private String keyword;
+	private int nKeyword = 0;
 
-	public WebSpider(String url, int level) {
+	public WebSpider(String url, int level, boolean save, String keyword) {
 		try {
+			this.save = save;
+			this.keyword = keyword;
 			this.level = level;
 			startURL = url;
 			if (url.endsWith("/")) {
@@ -38,28 +45,35 @@ class WebSpider extends Thread {
 		}		
 	}
 
+	public WebSpider(String url, boolean save) {
+		this(url, 1, save, null);
+	}
+
 	public WebSpider(String url) {
-		this(url, 1);
+		this(url, 1, false, null);
 	}
 
 	public void run() {
+		FileWriter fw = null;
 		try {
 			URL url = new URL(startURL);
 			URLConnection urlc = url.openConnection();
 			String content = urlc.getContentType();
 			InputStream stream = urlc.getInputStream();
 
-			String filename = url.getFile().replace('/', '_');
-			if (filename.compareTo("_") == 0)
-				filename = new String("index.html");
-			else
-				filename = filename.substring(1);
+			System.out.println("pocesssing " + url.toString());
 
-			System.out.println("pocesssing " + filename);
-			FileWriter fw = new FileWriter(filename);
+			if (save) {
+				String filename = url.getFile().replace('/', '_');
+				if (filename.compareTo("_") == 0)
+					filename = new String("index.html");
+				else
+					filename = filename.substring(1);
+				fw = new FileWriter(filename);
+			}
 
 				// if not html or at last level just same file
-			if ((content.compareTo("text/html") != 0) || level == 2) {
+			if (save && ((content.compareTo("text/html") != 0) || level == MAX_LEVEL)) {
 				InputStreamReader isr = new InputStreamReader(stream);
 				char b[] = new char[100];
 				if (-1 == isr.read(b, 0, 100)) {
@@ -78,7 +92,11 @@ class WebSpider extends Thread {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 			String line = reader.readLine();
 			while(line != null) {
-				fw.write(line, 0, line.length());
+				if (keyword != null)
+					if (-1 != line.indexOf(keyword)) nKeyword++;
+					
+				if (save)
+					fw.write(line, 0, line.length());
 					// find links (href) in document
 				i = line.indexOf("href=");
 				if (i != -1) {
@@ -98,7 +116,7 @@ class WebSpider extends Thread {
 								href = baseURL + href;
 						}
 							//System.out.println("url>> " + href);
-						WebSpider spider = new WebSpider(href, this.level + 1);
+						WebSpider spider = new WebSpider(href, this.level + 1, save, keyword);
 						spider.start();
 					}
 				}
@@ -122,25 +140,69 @@ class WebSpider extends Thread {
 							href = baseURL + href;
 					}						
 						//System.out.println("img>> " + href);
-					WebSpider spider = new WebSpider(href, this.level + 1);
+					WebSpider spider = new WebSpider(href, this.level + 1, save, keyword);
 					spider.start();
 				}
 				line = reader.readLine();
 			}
-			fw.close();
+			if (keyword != null)
+				System.out.println("Found " + nKeyword + " occurances of " + keyword);
+			if (save)
+				fw.close();
 			stream = null;
 			urlc = null;
-			url = null;			
+			url = null;
+			
 		}
 		catch (Exception e) {
 			e.printStackTrace(System.err);
 		}
 	}
 
+	private static void usage() {
+		System.out.println("Usage:\n WebSpider <url> [mode [keyword]]\n" +
+						   "\tmode:\n" +
+						   "\t 1 = just walk through files.\n" +
+						   "\t 2 = save files to disk.\n" +
+						   "\t 3 = search for keyword in files.\n"
+						   );
+		System.exit(1);
+	}
 	
 	public static void main(String args[]) {
-		System.out.println("Spidering...");
-		WebSpider ws = new WebSpider("http://web.mit.edu");
+		String url = null;
+		int mode = 1;
+		boolean save = false;
+		String keyword = null;
+		switch(args.length) {
+			case 1:
+				url = args[0];
+				mode = 1;
+				break;
+
+			case 2:
+				url = args[0];
+				mode = Integer.parseInt(args[1]);
+				break;
+
+			case 3:
+				url = args[0];
+				mode = Integer.parseInt(args[1]);
+				keyword = args[2];
+				break;
+				
+			default:
+				usage();
+				break;
+		}
+		if (mode == 2) save = true;
+		if (mode == 3 && keyword == null) usage();
+		
+		System.out.print("Spidering " + url);
+		if (!save) System.out.print(" not"); System.out.print(" saving files");
+		if (keyword != null) System.out.print(" searching for " + keyword);
+		System.out.println(".");
+		WebSpider ws = new WebSpider(url, save);
 		ws.start();
 	}
 }
