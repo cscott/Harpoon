@@ -1,6 +1,9 @@
  #!/bin/bash
 g++ -Wno-deprecated -g -O0 -c *.cc
-g++ -Wno-deprecated -g -O0 -c *.c
+gcc -Wno-deprecated -g -O0 -c *.c
 
 g++ -Wno-deprecated -O0 -g *.o -o main
 
+rm file.o
+ar -r libchecker.a *.o
+ranlib libchecker.a
