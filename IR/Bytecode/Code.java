@@ -6,16 +6,18 @@ import harpoon.ClassFile.Raw.Attribute.AttributeCode;
 import harpoon.ClassFile.Raw.Attribute.AttributeLineNumberTable;
 import harpoon.ClassFile.Raw.Attribute.LineNumberTable;
 import harpoon.ClassFile.Raw.Constant.Constant;
+import harpoon.Util.ArrayEnumerator;
 import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
 
 import java.util.Vector;
+import java.util.Enumeration;
 /**
  * <code>Bytecode.Code</code> is a code view that exposes the
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.4 1998-09-15 02:17:44 cananian Exp $
+ * @version $Id: Code.java,v 1.5 1998-09-21 01:57:37 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -158,6 +160,10 @@ public class Code extends HCode {
   private HCodeElement[] elements = null;
   /** Cached value of <code>getTryBlocks</code> blocks. */
   private ExceptionEntry[] tryBlocks = null;
+
+  public Enumeration getElementsE() {
+    return new ArrayEnumerator(getElements());
+  }
 
   public HCodeElement[] getLeafElements() {
     if (leaves == null) {

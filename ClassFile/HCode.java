@@ -7,7 +7,7 @@ package harpoon.ClassFile;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.7 1998-09-15 02:17:38 cananian Exp $
+ * @version $Id: HCode.java,v 1.8 1998-09-21 01:57:30 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -35,6 +35,13 @@ public abstract class HCode {
    * @see harpoon.IR.Bytecode.Instr
    */
   public abstract HCodeElement[] getElements();
+  /**
+   * Return an Enumeration of the component objects making up this
+   * code view.  If there is a 'root' to the code view, it should
+   * be the first element enumerated.
+   * @see harpoon.IR.Bytecode.Instr
+   */
+  public abstract Enumeration getElementsE();
 
   /**
    * Return the 'root' element of this code view.

@@ -2,9 +2,11 @@
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
-import java.util.Enumeration;
 import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
+
+import java.util.Enumeration;
+import java.util.Stack;
 /**
  * <code>QuadSSA.Code</code> is a code view that exposes the details of
  * the java classfile bytecodes in a quadruple format.  Implementation
@@ -14,7 +16,7 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.21 1998-09-18 07:34:16 cananian Exp $
+ * @version $Id: Code.java,v 1.22 1998-09-21 01:57:44 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -64,6 +66,14 @@ public class Code extends HCode {
 	HMethod.register(f);
     }
 
+    /** Returns the root of the control flow graph. */
+    public HCodeElement getRootElement() { return quads; }
+    /** Returns the leaves of the control flow graph. */
+    public HCodeElement[] getLeafElements() {
+	HEADER h = (HEADER) getRootElement();
+	return new Quad[] { h.footer };
+    }
+
     /**
      * Returns an ordered list of the <code>Quad</code>s
      * making up this code view.  The root of the graph
@@ -76,15 +86,6 @@ public class Code extends HCode {
 	v.copyInto(elements);
 	return (HCodeElement[]) elements;
     }
-
-    /** Returns the root of the control flow graph. */
-    public HCodeElement getRootElement() { return quads; }
-    /** Returns the leaves of the control flow graph. */
-    public HCodeElement[] getLeafElements() {
-	HEADER h = (HEADER) getRootElement();
-	return new Quad[] { h.footer };
-    }
-
     /** scan through quad graph and keep a list of the quads found. */
     private void traverse(Quad q, UniqueVector v) {
 	// If this is a 'real' node, add it to the list.
@@ -94,7 +95,23 @@ public class Code extends HCode {
 	// move on to successors.
 	Quad[] next = q.next();
 	for (int i=0; i<next.length; i++)
-	    if (next[i]!=null) // found at end of try/monitor blocks
-		traverse(next[i], v);
+	    traverse(next[i], v);
+    }
+
+    public Enumeration getElementsE() {
+	return new Enumeration() {
+	    Stack s = new Stack();
+	    { s.push(quads); } // initialize stack.
+	    public boolean hasMoreElements() { return !s.isEmpty(); }
+	    public Object nextElement() {
+		Quad q = (Quad) s.pop();
+		// push successors on stack before returning.
+		Quad[] next = q.next();
+		for (int i=next.length-1; i>=0; i--)
+		    s.push(next[i]);
+		// okay.
+		return q;
+	    }
+	};
     }
 }
