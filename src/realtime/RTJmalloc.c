@@ -164,6 +164,7 @@ void RTJ_init() {
   checkException();
   methodID = (*env)->GetStaticMethodID(env, rtClazz, 
 				       "doneInit", "()V");
+  checkException();
   (*env)->CallStaticVoidMethod(env, rtClazz, methodID, NULL);
   checkException();
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
