@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSA.java,v 1.1.2.5 1999-01-22 23:06:01 cananian Exp $
+ * @version $Id: QuadSSA.java,v 1.1.2.6 1999-02-01 00:40:36 cananian Exp $
  */
 public class QuadSSA extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -54,16 +54,28 @@ public class QuadSSA extends Code /* which extends HCode */ {
      */
     public String getName() { return codename; }
     
+    /** Return a code factory for QuadSSA, given a code factory for QuadNoSSA.
+     */
+    public static HCodeFactory codeFactory(final HCodeFactory hcf) {
+	if (hcf.getCodeName().equals(QuadNoSSA.codename)) {
+	    return new HCodeFactory() {
+		public HCode convert(HMethod m) {
+		    HCode c = hcf.convert(m);
+		    return (c==null)?null:new QuadSSA((QuadNoSSA)c);
+		}
+		public void clear(HMethod m) { hcf.clear(m); }
+		public String getCodeName() { return codename; }
+	    };
+	} else throw new Error("don't know how to make " + codename + 
+			       " from " + hcf.getCodeName());
+    }
+    /** Return a code factory for QuadSSA, using the default code factory
+     *  for QuadNoSSA. */
+    public static HCodeFactory codeFactory() {
+	return codeFactory(QuadNoSSA.codeFactory());
+    }
+    // obsolete.
     public static void register() {
-	HCodeFactory f = new HCodeFactory() {
-	    public HCode convert(HMethod m) {
-		HCode c = m.getCode(QuadNoSSA.codename);
-		return (c==null)?null:new QuadSSA((QuadNoSSA)c);
-	    }
-	    public String getCodeName() {
-		return codename;
-	    }
-	};
-	HMethod.register(f);
+	HMethod.register(codeFactory());
     }
 }

@@ -14,19 +14,15 @@ package harpoon.ClassFile;
  * to cache the result.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeFactory.java,v 1.4.2.2 1999-01-22 23:05:26 cananian Exp $
+ * @version $Id: HCodeFactory.java,v 1.4.2.3 1999-02-01 00:40:31 cananian Exp $
  */
 
 public interface HCodeFactory  {
     /** Make an <code>HCode</code> from an <code>HMethod</code>.
-     *  This method should call the <code>getCode</code> method of
-     *  <code>m</code> to get the source representation for the
-     *  conversion.  <code>HMethod.getCode()</code> will take
-     *  care of properly caching the value <code>convert</code>
-     *  returns. <p>
+     *  <p>
      *  <code>convert</code> is allowed to return null if the requested
      *  conversion is impossible; typically this is because it's attempt
-     *  to <code>getCode</code> a source representation failed -- for
+     *  to convert a source representation failed -- for
      *  example, because <code>m</code> is a native method.
      */
     public HCode convert(HMethod m);
@@ -36,4 +32,9 @@ public interface HCodeFactory  {
      *  <code>this.convert(m).getName()</code> for every 
      *  <code>HMethod m</code>. */
     public String getCodeName();
+    /**
+     * Removes representation of method <code>m</code> from all caches
+     * in this factory and its parents.
+     */
+    public void clear(HMethod m);
 }

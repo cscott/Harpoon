@@ -19,9 +19,9 @@ import harpoon.Util.Util;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.5.2.5 1998-12-21 04:41:32 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.5.2.6 1999-02-01 00:40:30 cananian Exp $
  */
-public class SCCOptimize {
+public final class SCCOptimize {
     TypeMap  ti;
     ConstMap cm;
     ExecMap  em;
@@ -31,6 +31,23 @@ public class SCCOptimize {
 	this.ti = ti;
 	this.cm = cm;
 	this.em = em;
+    }
+    public SCCOptimize(SCCAnalysis scc) { this(scc, scc, scc); }
+
+    /** Returns a code factory that uses SCCOptimize. */
+    public static HCodeFactory codeFactory(final HCodeFactory parent) {
+	return new HCodeFactory() {
+	    public HCode convert(HMethod m) {
+		HCode hc = parent.convert(m);
+		if (hc!=null) {
+		    harpoon.Analysis.UseDef ud = new harpoon.Analysis.UseDef();
+		    (new SCCOptimize(new SCCAnalysis(ud))).optimize(hc);
+		}
+		return hc;
+	    }
+	    public String getCodeName() { return parent.getCodeName(); }
+	    public void clear(HMethod m) { parent.clear(m); }
+	};
     }
 
     Set Ee = new Set();

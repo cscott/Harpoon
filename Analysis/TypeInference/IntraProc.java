@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.10 1998-12-17 21:38:34 cananian Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.11 1999-02-01 00:40:31 cananian Exp $
  */
 
 public class IntraProc {
@@ -34,10 +34,10 @@ public class IntraProc {
     Set callees;
     int depth = 0;
 
-    public IntraProc(InterProc e, HMethod m) { 
+    public IntraProc(InterProc e, HMethod m, HCodeFactory hcf) { 
 	environment = e;
 	method = m;
-	code = (QuadSSA)m.getCode("quad-ssa");
+	code = (QuadSSA)hcf.convert(m);
 	usedef = new UseDef();
 	parameterTypes = new SetHClass[m.getParameterTypes().length+(m.isStatic()?0:1)];
 	for (int i=0; i<parameterTypes.length; i++)

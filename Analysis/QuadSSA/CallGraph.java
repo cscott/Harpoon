@@ -6,6 +6,7 @@ package harpoon.Analysis.QuadSSA;
 import harpoon.ClassFile.*;
 import harpoon.IR.Quads.*;
 import harpoon.Util.Set;
+import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -14,21 +15,31 @@ import java.util.Vector;
  * <code>CallGraph</code> constructs a simple directed call graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.4.2.4 1998-12-09 22:02:08 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.4.2.5 1999-02-01 00:40:24 cananian Exp $
  */
 
 public class CallGraph  {
+    final HCodeFactory hcf;
     final ClassHierarchy ch;
     /** Creates a <code>CallGraph</code> using the specified 
-     *  <code>ClassHierarchy</code>. */
-    public CallGraph(ClassHierarchy ch) { this.ch = ch; }
+     *  <code>ClassHierarchy</code>. <code>hcf</code> must be a code
+     *  factory that generates quad-ssa or quad-no-ssa form. */
+    public CallGraph(ClassHierarchy ch, HCodeFactory hcf) {
+	// this is maybe a little too draconian
+	Util.assert(hcf.getCodeName()
+		    .equals(harpoon.IR.Quads.QuadSSA.codename) ||
+		    hcf.getCodeName()
+		    .equals(harpoon.IR.Quads.QuadNoSSA.codename));
+	this.ch = ch;
+	this.hcf = hcf;
+    }
     
     /** Return a list of all possible methods called by this method. */
     public HMethod[] calls(final HMethod m) {
 	HMethod[] retval = (HMethod[]) cache.get(m);
 	if (retval==null) {
 	    final Set s = new Set();
-	    final HCode hc = m.getCode("quad-ssa");
+	    final HCode hc = hcf.convert(m);
 	    if (hc==null) { cache.put(m,new HMethod[0]); return calls(m); }
 	    for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
 		Quad q = (Quad) e.nextElement();
@@ -68,7 +79,7 @@ public class CallGraph  {
 
     /** Return a list of all possible methods called by this method at this call site. */
     public HMethod[] calls(final HMethod m, final CALL cs) {
-	final HCode hc = m.getCode("quad-ssa");
+	final HCode hc = hcf.convert(m);
 	if (hc==null) { return new HMethod[0]; }
 	HMethod cm = cs.method();
 	// for 'special' invocations, we know the method exactly.

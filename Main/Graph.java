@@ -5,6 +5,7 @@ package harpoon.Main;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -13,7 +14,7 @@ import harpoon.Util.Util;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.12.2.2 1999-01-22 23:33:48 cananian Exp $
+ * @version $Id: Graph.java,v 1.12.2.3 1999-02-01 00:40:39 cananian Exp $
  */
 
 public abstract class Graph extends harpoon.IR.Registration {
@@ -30,10 +31,17 @@ public abstract class Graph extends harpoon.IR.Registration {
 		break;
 	    }
 
-	String codetype = "quad-ssa";
-	if (args.length > 3)
-	    codetype = args[3];
-	HCode hc = m.getCode(codetype);
+	HCodeFactory hcf = null;
+	if (args.length <=3 || args[3].equals("quad-ssa"))
+	    hcf = harpoon.IR.Quads.QuadSSA.codeFactory();
+	if (args.length > 3 && args[3].equals("quad-no-ssa"))
+	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
+	if (args.length > 3 && args[3].equals("quad-with-try"))
+	    hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
+	if (args.length > 3 && args[3].equals("low-quad"))
+	    hcf = harpoon.IR.LowQuad.Code.codeFactory();
+
+	HCode hc = hcf.convert(m);
 
 	String title = m.getName();
 	if ((args.length<=2)||(args[2].equals("CFG"))) harpoon.Util.Graph.printCFG(hc,out,title);

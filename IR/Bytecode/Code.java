@@ -6,6 +6,7 @@ package harpoon.IR.Bytecode;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.RawClass.MethodInfo;
 import harpoon.IR.RawClass.AttributeCode;
@@ -24,7 +25,7 @@ import java.util.Enumeration;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.6 1999-01-22 23:05:47 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.7 1999-02-01 00:40:33 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -264,6 +265,11 @@ public class Code extends HCode {
     }
     // hopefully this has done it.
     return lineno;
+  }
+
+  /** Return an HCodeFactory for Bytecode form. */
+  public static HCodeFactory codeFactory() {
+    return harpoon.ClassFile.ImplMagic.codeFactory;
   }
 }
 

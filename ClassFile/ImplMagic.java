@@ -23,9 +23,9 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.6 1999-01-22 10:44:55 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.7 1999-02-01 00:40:33 cananian Exp $
  */
-abstract class ImplMagic  { // wrapper for the Real McCoy.
+public abstract class ImplMagic  { // wrapper for the Real McCoy.
 
     static HClass forStream(java.io.InputStream is) throws java.io.IOException{
 	harpoon.IR.RawClass.ClassFile raw =
@@ -160,20 +160,23 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
     }
 
     static final Hashtable repository = new Hashtable();
-    static { HMethod.register(new HCodeFactory() {
-	    public String getCodeName() 
-	    { return harpoon.IR.Bytecode.Code.codename; }
-	    public HCode convert(HMethod m)
-	    {
-		harpoon.IR.RawClass.MethodInfo methodinfo =
-		    (harpoon.IR.RawClass.MethodInfo) repository.get(m);
-		if (methodinfo==null) return null;
-		else repository.remove(m); // make methodinfo garbage.
-		return new harpoon.IR.Bytecode.Code(m, methodinfo);
-	    }
-	});
-    }
-
+    public static final HCodeFactory codeFactory = new HCodeFactory() {
+	public String getCodeName() 
+	{ return harpoon.IR.Bytecode.Code.codename; }
+	public HCode convert(HMethod m)
+	{
+	    harpoon.IR.RawClass.MethodInfo methodinfo =
+	    (harpoon.IR.RawClass.MethodInfo) repository.get(m);
+	    if (methodinfo==null) return null;
+	    else return new harpoon.IR.Bytecode.Code(m, methodinfo);
+	}
+	public void clear(HMethod m) {
+	    repository.remove(m); // make methodinfo garbage.
+	}
+    };
+    // register method is obsolete, but what the heck.
+    static { HMethod.register(codeFactory); }
+    
     static class MagicMethod extends HMethod {
 	/** Creates a <code>MagicMethod</code> from a 
 	 *  <code>harpoon.IR.RawClass.MethodInfo</code>. */

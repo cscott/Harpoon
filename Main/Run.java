@@ -1,11 +1,13 @@
 // Run.java, created Mon Dec 28 02:34:11 1998 by cananian
 package harpoon.Main;
 
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.Interpret.Quads.Method;
+import harpoon.IR.Quads.QuadWithTry;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -16,10 +18,9 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Run.java,v 1.1.2.4 1999-01-22 23:33:48 cananian Exp $
+ * @version $Id: Run.java,v 1.1.2.5 1999-02-01 00:40:40 cananian Exp $
  */
 public abstract class Run extends harpoon.IR.Registration {
-    public static final String codename="quad-with-try";
     public static void main(String args[]) {
 	int i=0; // count # of args/flags processed.
 	// check for "-prof" flag in arg[i]
@@ -40,10 +41,7 @@ public abstract class Run extends harpoon.IR.Registration {
 	// arg[i] is class name.  Load its main method.
 	if (args.length < i) throw new Error("No class name.");
 	HClass cls = HClass.forName(args[i]);
-	HCodeFactory hf = new HCodeFactory() {
-	    public HCode convert(HMethod m) { return m.getCode(codename); }
-	    public String getCodeName() { return codename; }
-	};
+	HCodeFactory hf = new CachingCodeFactory(QuadWithTry.codeFactory());
 	i++;
 	//////////// now call interpreter with truncated args list.
 	String[] params = new String[args.length-i];

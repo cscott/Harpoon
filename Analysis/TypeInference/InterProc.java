@@ -13,7 +13,7 @@ import harpoon.Analysis.QuadSSA.ClassHierarchy;
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.1.2.6 1998-12-07 12:02:31 marinov Exp $
+ * @version $Id: InterProc.java,v 1.1.2.7 1999-02-01 00:40:31 cananian Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
@@ -21,10 +21,15 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
     boolean analyzed = false;
     Hashtable proc = new Hashtable();
     ClassHierarchy ch = null;
+    HCodeFactory hcf;
 
     /** Creates an <code>InterProc</code> analyzer. */
-    public InterProc(HCode main) { this.main = main; }    
-    public InterProc(HCode main, ClassHierarchy ch) { this.main = main; this.ch = ch; }
+    public InterProc(HCode main, HCodeFactory hcf) {
+	this.main = main; this.hcf = hcf;
+    }    
+    public InterProc(HCode main, ClassHierarchy ch, HCodeFactory hcf) {
+	this.main = main; this.ch = ch; this.hcf = hcf;
+    }
 
     public SetHClass setTypeMap(HCode c, Temp t) { 
 	analyze();
@@ -60,7 +65,7 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 	HMethod m = main.getMethod();
 	/* build class hierarchy of classess reachable from main.
 	   used for coning, i.e. finding all children of a given class. */
-	if (ch==null) ch = new ClassHierarchy(m);
+	if (ch==null) ch = new ClassHierarchy(m, hcf);
 	cc = new ClassCone(ch);
 	/* worklist of methods that are to be processed. */
 	wl = new AuxUniqueFIFO(16);
@@ -94,7 +99,7 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
     IntraProc getIntra(IntraProc c, HMethod m, SetHClass[] p) {
 	IntraProc i = (IntraProc)proc.get(m);
 	if (i==null) {
-	    i = new IntraProc(this, m); 
+	    i = new IntraProc(this, m, hcf); 
 	    proc.put(m, i);
 	    i.addParameters(p);
 	    if (c!=null) i.addCallee(c);

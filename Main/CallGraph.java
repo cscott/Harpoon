@@ -3,7 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.UniqueVector;
@@ -15,7 +17,7 @@ import java.util.Vector;
  * <code>CallGraph</code> is a command-line call-graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.2.2.1 1999-01-22 23:33:48 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.2.2.2 1999-02-01 00:40:38 cananian Exp $
  */
 
 public abstract class CallGraph extends harpoon.IR.Registration {
@@ -39,10 +41,12 @@ public abstract class CallGraph extends harpoon.IR.Registration {
 		}
 	}
 
+	HCodeFactory hcf =
+	    new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
 	harpoon.Analysis.QuadSSA.ClassHierarchy ch = 
-	    new harpoon.Analysis.QuadSSA.ClassHierarchy(m);
+	    new harpoon.Analysis.QuadSSA.ClassHierarchy(m, hcf);
 	harpoon.Analysis.QuadSSA.CallGraph cg =
-	    new harpoon.Analysis.QuadSSA.CallGraph(ch);
+	    new harpoon.Analysis.QuadSSA.CallGraph(ch, hcf);
 
 	out.println("graph: {");
 	out.println("title: \"Call graph rooted at "+m.getName()+"\"");

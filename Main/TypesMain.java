@@ -1,8 +1,10 @@
 // Start.java, created Fri Sep 25 02:24:11 1998 by marinov
 package harpoon.Main;
 
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Quad;
@@ -16,12 +18,14 @@ import harpoon.Util.Worklist;
  * <code>PrintTypes</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: TypesMain.java,v 1.1.2.2 1999-01-22 23:33:49 cananian Exp $
+ * @version $Id: TypesMain.java,v 1.1.2.3 1999-02-01 00:40:40 cananian Exp $
  */
 public class TypesMain extends harpoon.IR.Registration {
     public static void main(String args[]) {
 	if (args.length >= 2) {
 	    java.io.PrintWriter pw = new java.io.PrintWriter(System.out, true);
+	    HCodeFactory hcf =
+		new CachingCodeFactory(harpoon.IR.Quads.QuadSSA.codeFactory());
 	    HClass hcl = HClass.forName(args[0]);
 	    HMethod hm[] = hcl.getDeclaredMethods();
 	    ClassHierarchy ch = null;
@@ -33,27 +37,27 @@ public class TypesMain extends harpoon.IR.Registration {
 		int j;
 		for (j=0; j<hm.length; j++) if (args[i].equals(hm[j].getName())) break;
 		if (j<hm.length) {		    
-		    HCode hco = hm[j].getCode("quad-ssa");		    
+		    HCode hco = hcf.convert(hm[j]);
 		    if (i==1) {
 			System.out.println("CHA-like started: " + System.currentTimeMillis());
-			ch = new ClassHierarchy(hm[j]);
-			cg = new harpoon.Analysis.QuadSSA.CallGraph(ch);
+			ch = new ClassHierarchy(hm[j], hcf);
+			cg = new harpoon.Analysis.QuadSSA.CallGraph(ch, hcf);
 			System.out.println("CHA-like finished: " + System.currentTimeMillis());
 			if (multiPass) {
 			    System.out.println("another CHA-like started: " + System.currentTimeMillis());
-			    ClassHierarchy ch1 = new ClassHierarchy(hm[j]);
+			    ClassHierarchy ch1 = new ClassHierarchy(hm[j], hcf);
 			    System.out.println("another CHA-like finished: " + System.currentTimeMillis());
 			    System.out.println("yet another CHA-like started: " + System.currentTimeMillis());
-			    ClassHierarchy ch2 = new ClassHierarchy(hm[j]);
+			    ClassHierarchy ch2 = new ClassHierarchy(hm[j], hcf);
 			    System.out.println("yet another CHA-like finished: " + System.currentTimeMillis());
 			}
 			System.out.println("0-CFA-like started: " + System.currentTimeMillis());
-			ty = new InterProc(hco, ch); 
+			ty = new InterProc(hco, ch, hcf); 
 			ty.analyze();
 			System.out.println("0-CFA-like finished: " + System.currentTimeMillis());
 			if (multiPass) { 
 			    System.out.println("another 0-CFA-like started: " + System.currentTimeMillis());
-			    InterProc ty1 = new InterProc(hco, ch); ty1.analyze();
+			    InterProc ty1 = new InterProc(hco, ch, hcf); ty1.analyze();
 			    System.out.println("another 0-CFA-like finished: " + System.currentTimeMillis());
 			}
 		    }
@@ -67,7 +71,7 @@ public class TypesMain extends harpoon.IR.Registration {
 			    HMethod m = (HMethod)wl.pull();
 			    System.out.print(m.getDeclaringClass() + " " + m.getName() +
 					     " (" + m.getParameterTypes().length + ") calls: ");
-			    HCode hc = m.getCode("quad-ssa");
+			    HCode hc = hcf.convert(m);
 			    if (hc!=null) {
 				Quad forLast = null;
 				Enumeration e = hc.getElementsE();

@@ -17,7 +17,7 @@ import java.util.Enumeration;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.4.2.4 1998-12-09 22:02:09 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.4.2.5 1999-02-01 00:40:24 cananian Exp $
  */
 
 public class ClassHierarchy  {
@@ -77,8 +77,9 @@ public class ClassHierarchy  {
     }
 
     /** Creates a <code>ClassHierarchy</code> of all classes
-     *  reachable/usable from method <code>root</code>. */
-    public ClassHierarchy(HMethod root) {
+     *  reachable/usable from method <code>root</code>.  <code>hcf</code>
+     *  must be a code factory that generates quad form. */
+    public ClassHierarchy(HMethod root, HCodeFactory hcf) {
 	// state.
 	Hashtable classMethodsUsed = new Hashtable(); // hash of sets.
 	Hashtable classKnownChildren = new Hashtable(); // hash of sets
@@ -99,7 +100,7 @@ public class ClassHierarchy  {
 		Util.assert(s.contains(m));
 	    }
 	    // look at the hcode for the method.
-	    HCode hc = m.getCode("quad-ssa");
+	    harpoon.IR.Quads.Code hc = (harpoon.IR.Quads.Code) hcf.convert(m);
 	    if (hc==null) { // native or unanalyzable method.
 		if(!m.getReturnType().isPrimitive())
 		    discoverClass(m.getReturnType(), W, done,
