@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.19 2000-09-29 21:50:46 cananian Exp $
+% $Id: transact.tex,v 1.20 2000-09-29 22:18:50 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.19 $ $}
+\date{\today \\ $ $Revision: 1.20 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -291,17 +291,40 @@ $\text{ReadTrans}(\code{struct commitrec *}c,
                   \code{struct oobj *} o, \code{int } n)$~=
 \begin{myalgorithmic}
 \STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
-\STATE $r \gets \code{\&}(v\ptr\code{readers})$
+\STATE $r \gets \code{\&}(v\ptr\code{readers})$\label{line:rtL2}
 \IF{$r\ptr\code{transid} \neq c$}\label{line:rtL1}
   \STATE $r \gets r\ptr\code{next}$
   \IF{$r \neq \code{null}$}
     \GOTO line \ref{line:rtL1}
   \ENDIF
-  \IF{$c$ is not a subtransaction of $v\ptr\code{transid}$
-      or $\text{StateP}(c) = \code{ABORTED}$}
-    \STATE commit suicide \COMMENT{can't guarantee consistency}
-  \ENDIF
-  \STATE add $c$ to head of readers list, atomically.
+  \MATCHING{$\text{StateP}'(\code{\&}(v\ptr\code{transid}))$}
+    \CASE{\tuple{\code{ABORTED}, l}}
+      \STATE \COMMENT{XXX: potential race here --- v could be already removed}
+      \STATE $v \gets v\ptr\code{anext}$
+      \STATE \COMMENT{the following store ought to be atomic}
+      \STATE $o \ptr \code{hashunion.inflated} \ptr \code{first\_version}
+              \gets v$
+      \GOTO line \ref{line:rtL2}
+    \ENDCASE
+    \CASE{\tuple{\code{COMMITTED}, l}}
+      \STATE $v\ptr\code{anext} \gets v\ptr\code{wnext} \gets \code{null}$
+      \GOTO line \ref{line:rtL3}
+    \ENDCASE
+    \CASE{\tuple{\code{WAITING}, l}}
+      \IF[transid was pruned; snip out parents]{$l$}
+        \WHILE{$v\ptr\code{transid} = v\ptr\code{anext}\ptr\code{transid}$}
+          \STATE $v\ptr\code{anext} \gets v\ptr\code{anext}\ptr\code{anext}$
+                 \COMMENT{XXX: race here.}
+        \ENDWHILE
+      \ENDIF
+      \IF{\small $c$ is not a subtransaction of $v\ptr\code{transid}$
+          or $\text{StateP}(c) = \code{ABORTED}$}
+        \STATE commit suicide \COMMENT{can't guarantee consistency}
+      \ENDIF
+      \GOTO line \ref{line:rtL3}
+    \ENDCASE
+  \ENDMATCHING
+  \STATE add $c$ to head of readers list, atomically.\label{line:rtL3}
 \ENDIF
 \STATE \COMMENT{$v$ has correct version}
 
@@ -325,12 +348,35 @@ $\text{WriteTrans}(\code{struct commitrec *}c,
                    \code{<ty> } x)$~=
 \begin{myalgorithmic}
 \STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
-\IF{$v\ptr\code{transid} \neq c$}
-  \IF{$c$ is not a subtransaction of $v\ptr\code{transid}$
-      or $\text{StateP}(c) = \code{ABORTED}$}
-    \STATE commit suicide \COMMENT{can't guarantee consistency}
-  \ENDIF
-  \STATE kill some of the readers
+\IF{$v\ptr\code{transid} \neq c$}\label{line:wtL1}
+  \MATCHING{$\text{StateP}'(\code{\&}(v\ptr\code{transid}))$}
+    \CASE{\tuple{\code{ABORTED}, l}}
+      \STATE \COMMENT{XXX: potential race here --- v could be already removed}
+      \STATE $v \gets v\ptr\code{anext}$
+      \STATE \COMMENT{the following store ought to be atomic}
+      \STATE $o \ptr \code{hashunion.inflated} \ptr \code{first\_version}
+              \gets v$
+      \GOTO line \ref{line:wtL1}
+    \ENDCASE
+    \CASE{\tuple{\code{COMMITTED}, l}}
+      \STATE $v\ptr\code{anext} \gets v\ptr\code{wnext} \gets \code{null}$
+      \GOTO line \ref{line:wtL2}
+    \ENDCASE
+    \CASE{\tuple{\code{WAITING}, l}}
+      \IF[transid was pruned; snip out parents]{$l$}
+        \WHILE{$v\ptr\code{transid} = v\ptr\code{anext}\ptr\code{transid}$}
+          \STATE $v\ptr\code{anext} \gets v\ptr\code{anext}\ptr\code{anext}$
+                 \COMMENT{XXX: race here.}
+        \ENDWHILE
+      \ENDIF
+      \IF{\small $c$ is not a subtransaction of $v\ptr\code{transid}$
+          or $\text{StateP}(c) = \code{ABORTED}$}
+        \STATE commit suicide \COMMENT{can't guarantee consistency}
+      \ENDIF
+      \GOTO line \ref{line:wtL2}
+    \ENDCASE
+  \ENDMATCHING
+  \STATE kill some of the readers\label{line:wtL2}
   \STATE $v \gets \text{CreateNewVersion}(o, c, v)$
 \ENDIF
 \STATE \COMMENT{$v$ has correct version}
