@@ -58,7 +58,7 @@ import java.util.Date;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.33 2000-10-11 04:36:05 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.34 2000-10-20 08:44:44 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -71,6 +71,26 @@ public class GraphColoringRegAlloc extends RegAlloc {
     private static final boolean STATS = false;
 
     private static final boolean COALESCE_STATS = false;
+
+    private static final boolean SCARY_OUTPUT = false;
+
+    static RegAlloc.Factory AGGRESSIVE_FACTORY = 
+	new RegAlloc.Factory() {
+	    public RegAlloc makeRegAlloc(Code c) {
+		GraphColorer gc;
+
+		// gc = new SimpleGraphColorer();
+
+		// TODO: Implement a Node Selector that will not
+		// select nodes that have already been spilled in the
+		// code, and pass it in here...
+		NodeSelector ns = new NodeSelector();
+		gc = new OptimisticGraphColorer(ns);
+		ns.gcra = new GraphColoringRegAlloc(c, gc, true);
+		
+		return ns.gcra;
+	    }
+	};
 
     public static RegAlloc.Factory FACTORY =
 	new RegAlloc.Factory() {
@@ -139,7 +159,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 			    spillChoice = n;
 			    maxDegree = g.getDegree(n);
 			} else {
-			    System.out.println
+			    if (SCARY_OUTPUT) System.out.println
 				("SKIP (2) "+n+" (already spilled)");
 			}
 		    }
@@ -155,7 +175,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 			    spillChoice = n;
 			    maxDegree = g.getDegree(n);
 			} else {
-			    System.out.println
+			    if (SCARY_OUTPUT) System.out.println
 				("SKIP (3) "+n+" (already spilled)");
 			}
 		    }
@@ -228,6 +248,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
     
     GraphColorer colorer;
 
+    private boolean aggressivelyCoalesce;
+
     private WebRecord getWR(Instr i, Temp t) {
 	if (isRegister(t)) {
 	    for(Iterator ri=regWebRecords.iterator();ri.hasNext();){ 
@@ -242,13 +264,26 @@ public class GraphColoringRegAlloc extends RegAlloc {
     }
 
     /** Creates a <code>GraphColoringRegAlloc</code>, assigning `gc'
-	as its graph coloring strategy. 
+	as its graph coloring strategy and using a overly conservative
+	move coalescing strategy. 
     */
     public GraphColoringRegAlloc(Code code, GraphColorer gc) {
+        this(code, gc, false);
+    }
+
+    /** Creates a <code>GraphColoringRegAlloc</code>, assigning `gc'
+	as its graph coloring strategy.  If
+	<code>aggressiveCoalesce</code> is true, will choose to
+	coalesce moves in the face of increased memory traffic. 
+    */
+    public GraphColoringRegAlloc(Code code, GraphColorer gc, 
+				 boolean aggressiveCoalesce) { 
         super(code);
 	rfi = frame.getRegFileInfo();
         colorer = gc;
+	aggressivelyCoalesce = aggressiveCoalesce;
     }
+
     private HashMap replToOrig = new HashMap();
     private void replace(Instr orig, Instr repl) {
 	Instr.replace(orig, repl);
@@ -256,6 +291,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	replToOrig.put(repl, orig);
     }
     private void undoCoalescing() {
+	if (SCARY_OUTPUT) System.out.print(" UNDO");
 	for(Iterator ks=replToOrig.keySet().iterator();ks.hasNext();){
 	    Instr repl = (Instr) ks.next();
 	    Instr orig = (Instr) replToOrig.get(repl);   
@@ -526,7 +562,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    } catch (UnableToColorGraph u) {
 		// OptimisticGraphColorer.MONITOR = true;
 		success = false;
-		if (doCoalescing) {
+		if (!aggressivelyCoalesce && doCoalescing) {
 		    doCoalescing = false;
 		    undoCoalescing();
 		} else {
@@ -993,7 +1029,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Instr i = new SpillProxy(instr,
 				     // instr.rename(inf, defMap, useMap),
 				     useMap.tempMap(tmp));
-	    System.out.println(this+".rename() => "+i);
+	    if (SCARY_OUTPUT) System.out.println(this+".rename() => "+i);
 	    return i;
 	}
 	
@@ -1014,7 +1050,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Instr i = new RestoreProxy(instr,
 				       //instr.rename(inf,defMap,useMap),
 				       defMap.tempMap(tmp));
-	    System.out.println(this+".rename() => "+i);
+	    if (SCARY_OUTPUT) System.out.println(this+".rename() => "+i);
 	    return i;
 	}
     }
@@ -1052,12 +1088,12 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Graph.Node node = (Graph.Node) ri.next();
 
 	    if (!isAvailableToSpill(node)) {
-		System.out.println("SKIP ONE (1)");
+		if (SCARY_OUTPUT) System.out.println("SKIP ONE (1)");
 	    }
 	    
 	    spillThese.add(node);
 	}
-	System.out.println("HIT1:"+spillThese.size());
+	if (SCARY_OUTPUT) System.out.println("HIT1:"+spillThese.size());
 	
 	if (spillThese.isEmpty()) {
 	    System.out.println(" remove:" +remove+ " contains nothing new");
@@ -1069,17 +1105,17 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		Graph.Node node = (Graph.Node) ri.next();
 
 		if (!isAvailableToSpill(node)) {
-		    System.out.println("SKIP ONE (2)");
+		    if (SCARY_OUTPUT) System.out.println("SKIP ONE (2)");
 		    continue nextNode;
 		}
 
 		spillThese.add(node);
 	    }
 
-	    System.out.println("HIT2:"+spillThese.size());
+	    if (SCARY_OUTPUT) System.out.println("HIT2:"+spillThese.size());
 
 	    if (spillThese.isEmpty())
-		System.out.println
+		if (SCARY_OUTPUT) System.out.println
 		    (" remove:" +removeLrg+ " contains nothing new");
 	}
 
@@ -1138,8 +1174,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	}
 
-	System.out.print("*** SPILLED ("+spilled.size()+")"+
-			 (true?"":(": " + spilled)));
+	if (SCARY_OUTPUT) System.out.print("*** SPILLED ("+spilled.size()+")"+
+					   (true?"":(": " + spilled)));
     }
 
     private void fixupSpillCode() {
@@ -1579,10 +1615,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    HashSet rfs2 = new HashSet(refs);
 	    if (refs.retainAll(wr.defs()) ||
 		rfs2.retainAll(wr.uses())) {
-	    System.out.println(this + " overlaps " + wr);
+		if (SCARY_OUTPUT) System.out.println(this + " overlaps " + wr);
 		return true;
 	    }
-	    System.out.println(this + " does NOT overlap " + wr);
+	    if (SCARY_OUTPUT) System.out.println(this + " does NOT overlap " + wr);
 	    return false;
 	}
 
