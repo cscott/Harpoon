@@ -18,7 +18,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.9 1998-10-17 05:22:31 marinov Exp $
+ * @version $Id: TypeInfo.java,v 1.10 1998-11-18 05:27:02 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
@@ -47,8 +47,16 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	Worklist worklist = new UniqueFIFO();
 	for (int i=0; i<ql.length; i++)
 	    worklist.push(ql[i]);
+
+	// hack to handle typecasting:
+	//  keep track of booleans defined by instanceof's and acmpeq's.
+	Hashtable checkcast = new Hashtable();
+	for (int i=0; i<ql.length; i++)
+	    if (ql[i] instanceof INSTANCEOF ||
+		ql[i] instanceof OPER)
+		checkcast.put(ql[i].def()[0], ql[i]);
 	
-	TypeInfoVisitor tiv = new TypeInfoVisitor(hc);
+	TypeInfoVisitor tiv = new TypeInfoVisitor(hc, checkcast);
 	while(!worklist.isEmpty()) {
 	    Quad q = (Quad) worklist.pull();
 	    tiv.modified = false;
@@ -68,7 +76,9 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     class TypeInfoVisitor extends QuadVisitor {
 	harpoon.IR.QuadSSA.Code hc;
 	boolean modified = false;
-	TypeInfoVisitor(harpoon.IR.QuadSSA.Code hc) { this.hc = hc; }
+	Hashtable checkcast;
+	TypeInfoVisitor(harpoon.IR.QuadSSA.Code hc, Hashtable checkcast) 
+	{ this.hc = hc; this.checkcast = checkcast; }
 
 	public void visit(Quad q) { modified = false; }
 
@@ -151,7 +161,51 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	    }
 	    modified = r;
 	}
+	public void visit(CJMP q) {
+	    // special case typecasting. (CHECKCAST in bytecode)
+	    // special case comparisons against NULL.
+	    INSTANCEOF idef = null; // CJMP test is from this INSTANCEOF
+	    OPER       odef = null; // CJMP test is from this OPER
+	    Quad def = (Quad) checkcast.get(q.test);
+	    if (def instanceof INSTANCEOF) idef = (INSTANCEOF)def;
+	    if (def instanceof OPER)       odef = (OPER)def;
+
+	    boolean r = false;
+	    for (int i=0; i<q.src.length; i++) {
+		if (q.src[i]==null) continue;
+		HClass ty = typeMap(hc, q.src[i]);
+		if (ty==null) continue;
+		for (int j=0; j<q.dst[i].length; j++) {
+		    if (j==1) { // sometimes we gain info on true side of cjmp
+			if (idef != null && idef.src == q.src[i]) {
+			    // test from INSTANCEOF.  we know class if true.
+			    r = merge(hc, q.dst[i][j], idef.hclass) || r;
+			    continue;
+			}
+			if (odef != null && odef.opcode==Qop.ACMPEQ) {
+			    // check to be sure we've got enough info:
+			    HClass left = typeMap(hc, odef.operands[0]);
+			    HClass right= typeMap(hc, odef.operands[1]);
+			    if (left==null||right==null) continue;
+			    // ACMPEQ.  Types are identical if true.
+			    if (odef.operands[0] == q.src[i]) {
+				r = merge(hc, q.dst[i][j], right) || r;
+				continue;
+			    }
+			    if (odef.operands[1] == q.src[i]) {
+				r = merge(hc, q.dst[i][j], left) || r;
+				continue;
+			    }
+			}
+		    }
+		    // fall back
+		    r = merge(hc, q.dst[i][j], ty) || r;
+		}
+	    }
+	    modified = r;
+	}
     }
+
     boolean merge(HCode hc, Temp t, HClass newType) {
 	HClass oldType = typeMap(hc, t);
 	if (oldType==null) { map.put(t, newType); return true; }

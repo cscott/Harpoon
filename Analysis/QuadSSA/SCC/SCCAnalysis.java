@@ -22,7 +22,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.14 1998-11-11 05:06:23 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15 1998-11-18 05:27:14 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -185,6 +185,36 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	// utility functions.
 	LatticeVal get(Temp t) { return (LatticeVal) V.get(t); }
 
+	void handleSigmas(CJMP q, INSTANCEOF def) {
+	    // for every sigma source:
+	    for (int i=0; i < q.src.length; i++) {
+		// check if this is the CJMP condition.
+		if (q.test == q.src[i]) { // known value after branch
+		    raiseV(V, Wv, q.dst[i][0], 
+			   new xIntConstant(HClass.Boolean, 0));
+		    raiseV(V, Wv, q.dst[i][1],
+			   new xIntConstant(HClass.Boolean, 1));
+		    continue; // go on.
+		}
+
+		LatticeVal v = get( q.src[i] );
+		if (v == null) continue; // skip: insufficient info.
+
+		// check to see if this is the temp tested by INSTANCEOF
+		if (q.src[i] == def.src) {
+		    // no new info on false branch.
+		    raiseV(V, Wv, q.dst[i][0], v);
+		    // we know q.dst[i][1] is INSTANCEOF def.hclass
+		    // secret inside info: INSTANCEOF src is always non-null.
+		    raiseV(V, Wv, q.dst[i][1], new xClassNonNull(def.hclass));
+		} else {
+		    // fall back.
+		    raiseV(V, Wv, q.dst[i][0], v);
+		    raiseV(V, Wv, q.dst[i][1], v);
+		}
+	    }
+	}
+	
 	void handleSigmas(CJMP q, OPER def) {
 	    int opc = def.opcode;
 	    LatticeVal left = def.operands.length<1?null: get(def.operands[0]);
@@ -355,6 +385,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		Quad def = (Quad) udm.defMap(hc, q.test)[0];// SSA form, right?
 		if (def instanceof OPER) // only case we care about
 		    handleSigmas((CJMP) q, (OPER) def);
+		else if (def instanceof INSTANCEOF) // ok, i lied.
+		    handleSigmas((CJMP) q, (INSTANCEOF) def);
 		else // fallback.
 		    for (int i=0; i < q.src.length; i++) {
 			// is this the CJMP condition?
