@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.29 1999-06-07 05:01:49 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.30 1999-06-07 05:14:53 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -91,6 +91,11 @@ properties:
 	@echo done.
 
 first:
+	mkdir harpoon silicon
+	for pkg in $(sort $(filter-out JavaChip,$(ALLPKGS))); do \
+		mkdir harpoon/$$pkg; \
+	done
+oldfirst:
 	@echo Please wait...
 	-${JCC} ${JFLAGS} Util/Util.java Util/ArrayFactory.java \
 		Util/UniqueVector.java Util/ArrayEnumerator.java \
@@ -107,7 +112,11 @@ first:
 	-${JCC} ${JFLAGS} \
 		Analysis/QuadSSA/*.java Analysis/QuadSSA/SCC/*.java \
 		2> /dev/null # not perfect, but gotta make those dirs somehow.
-#	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
+olderfirst:
+	@echo Please wait...
+	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
+	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
+	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 
 Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
 	${JAR} c0f Harpoon.jar COPYING VERSIONS gnu/getopt/*.properties \
