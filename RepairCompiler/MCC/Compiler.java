@@ -68,7 +68,7 @@ public class Compiler {
                 FileOutputStream dotfile;
                 dotfile = new FileOutputStream(cli.infile + ".dependencies.edgelabels.dot");
                 GraphNode.useEdgeLabels = true;
-                GraphNode.DOTVisitor.visit(dotfile, nodes);                
+                GraphNode.DOTVisitor.visit(dotfile, nodes);
                 dotfile.close();
 
                 dotfile = new FileOutputStream(cli.infile + ".dependencies.dot");

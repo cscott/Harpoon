@@ -10,6 +10,23 @@ class AbstractRepair {
     DNFPredicate torepair;
     int type;
     Descriptor descriptor;
+
+    public String type() {
+	switch(type) {
+	case ADDTOSET:
+	    return "AddToSet";
+	case REMOVEFROMSET:
+	    return "RemoveToSet";
+	case ADDTORELATION:
+	    return "AddToRelation";
+	case REMOVEFROMRELATION:
+	    return "RemoveFromRelation";
+	case MODIFYRELATION:
+	    return "ModifyRelation";
+	default:
+	    return "Unknown";
+	}
+    }
     
     public int getType() {
 	return type;

@@ -18,6 +18,10 @@ public class SizeofFunction extends Expr {
         return new HashSet();
     }
 
+    public boolean equals(Map remap,Expr e) {
+	throw new Error("UNIMPLEMENTED");
+    }
+
     public Set getRequiredDescriptors() {
         // because we don't actually use rd for any generation, we return the empty set
         return new HashSet();

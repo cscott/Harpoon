@@ -7,7 +7,7 @@ public abstract class Expr {
     TypeDescriptor td = null;
 
     public Expr() {}
-
+    /* Remap this's variables using the remap mapping */
     public abstract boolean equals(Map remap, Expr e);
 
     public abstract Set getRequiredDescriptors();
@@ -17,6 +17,10 @@ public abstract class Expr {
     public TypeDescriptor getType() {
         assert td != null : toString();
         return td;
+    }
+
+    public String name() {
+	return "?";
     }
 
     public abstract TypeDescriptor typecheck(SemanticAnalyzer sa);
@@ -36,15 +40,17 @@ public abstract class Expr {
     }
 
     public int[] getRepairs(boolean negated) {
-	return new int[0];
+	System.out.println(this.getClass().getName());
+	throw new Error("Unrecognized EXPR");
     }
 
     public boolean inverted() {
 	return false;
     }
 
-    public boolean usesDescriptor(RelationDescriptor rd) {
-	return false;
+    public boolean usesDescriptor(Descriptor rd) {
+	System.out.println(this.getClass().getName());
+	throw new Error("UNIMPLEMENTED");
     }
 
 }

@@ -12,12 +12,16 @@ public class CastExpr extends Expr {
         this.expr = expr;
     }
 
-    public abstract boolean equals(Map remap, Expr e) {
+    public boolean equals(Map remap, Expr e) {
 	if (e==null)
 	    return false;
-	else if (!e instanceof CastExpr)
+	else if (!(e instanceof CastExpr))
 	    return false;
-	else return ((this.type==((CastExpr)e).type)&&equals(remap,expr,((CastExpr)e).expr));
+	else return ((this.type==((CastExpr)e).type)&&expr.equals(remap,((CastExpr)e).expr));
+    }
+
+    public boolean usesDescriptor(Descriptor d) {
+	return expr.usesDescriptor(d);
     }
 
     public Set getRequiredDescriptors() {

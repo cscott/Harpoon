@@ -16,8 +16,31 @@ public class OpExpr extends Expr {
         assert (right == null && opcode == Opcode.NOT) || (right != null);
     }
 
+    public String name() {
+	if (opcode==Opcode.NOT)
+	    return "!("+left.name()+")";
+	String name=left.name()+opcode.toString();
+	if (right!=null)
+	    name+=right.name();
+	return name;
+    }
+
     public Opcode getOpcode() {
 	return opcode;
+    }
+
+    public boolean equals(Map remap, Expr e) {
+	if (e==null||!(e instanceof OpExpr))
+	    return false;
+	OpExpr oe=(OpExpr)e;
+	if (opcode!=oe.opcode)
+	    return false;
+	if (!left.equals(remap,oe.left))
+	    return false;
+	if (opcode!=Opcode.NOT)
+	    if (!right.equals(remap,oe.right))
+		return false;
+	return true;
     }
 
     public DNFRule constructDNF() {
@@ -35,12 +58,12 @@ public class OpExpr extends Expr {
         } else return new DNFRule(this);
     }
 
-    public boolean usesDescriptor(RelationDescriptor rd) {
+    public boolean usesDescriptor(Descriptor d) {
 	if (opcode==Opcode.GT||opcode==Opcode.GE||opcode==Opcode.LT||
 	    opcode==Opcode.LE||opcode==Opcode.EQ||opcode==Opcode.NE)
-	    return right.usesDescriptor(rd);
+	    return right.usesDescriptor(d);
 	else
-	    return left.usesDescriptor(rd)||(right!=null&&right.usesDescriptor(rd));
+	    return left.usesDescriptor(d)||(right!=null&&right.usesDescriptor(d));
     }
     
     public int[] getRepairs(boolean negated) {

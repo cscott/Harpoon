@@ -14,11 +14,32 @@ public class RelationExpr extends Expr {
         this.inverse = inverse;
     }
 
+    public String name() {
+	String name=expr.name()+".";
+	if (inverse)
+	    name+="~";
+	name+=relation.toString();
+	return name;
+    }
+
     public Expr getExpr() {
         return expr;
     }
 
-    public boolean usesDescriptor(RelationDescriptor rd) {
+    public boolean equals(Map remap, Expr e) {
+	if (e==null||!(e instanceof RelationExpr))
+	    return false;
+	RelationExpr re=(RelationExpr)e;
+	if (re.relation!=relation)
+	    return false;
+	if (!expr.equals(remap,re.expr))
+	    return false;
+	if (inverse!=re.inverse)
+	    return false;
+	return true;
+    }
+
+    public boolean usesDescriptor(Descriptor rd) {
 	if (rd==relation)
 	    return true;
 	else

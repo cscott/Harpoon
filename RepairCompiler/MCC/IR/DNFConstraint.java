@@ -6,7 +6,7 @@ public class DNFConstraint {
 
     public DNFConstraint(Predicate p) {
 	conjunctions=new Vector();
-	conjunctions.add(new Conjunction(new DNFPredicate(true,p)));
+	conjunctions.add(new Conjunction(new DNFPredicate(false,p)));
     }
 
     public DNFConstraint(Conjunction conj) {

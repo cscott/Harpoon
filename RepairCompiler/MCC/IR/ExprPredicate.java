@@ -10,6 +10,10 @@ public class ExprPredicate extends Predicate {
     public static final int SIZE=1;
     public static final int COMPARISON=2;
 
+    public String name() {
+	return expr.name();
+    }
+
     public int getType() {
 	if (((OpExpr)expr).left instanceof SizeofExpr)
 	    return SIZE;

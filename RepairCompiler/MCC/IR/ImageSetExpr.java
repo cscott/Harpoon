@@ -3,9 +3,7 @@ package MCC.IR;
 import java.util.*;
 
 public class ImageSetExpr extends SetExpr {
-    
-    public static final boolean INVERSE = true;
-
+    static final public boolean INVERSE=true;
     VarDescriptor vd;
     RelationDescriptor rd;
     boolean inverse;
@@ -16,10 +14,34 @@ public class ImageSetExpr extends SetExpr {
         this.inverse = false;
     }
 
+    public String name() {
+	String name=vd.toString()+".";
+	if (inverse)
+	    name+="~";
+	name+=rd.toString();
+	return name;
+    }
+
     public ImageSetExpr(boolean inverse, VarDescriptor vd, RelationDescriptor rd) {
         this.vd = vd;
         this.rd = rd;
         this.inverse = inverse;
+    }
+
+    public boolean equals(Map remap, Expr e) {
+	if (e==null||!(e instanceof ImageSetExpr))
+	    return false;
+	ImageSetExpr ise=(ImageSetExpr)e;
+	if (ise.inverse!=inverse)
+	    return false;
+	if (ise.rd!=rd)
+	    return false;
+	VarDescriptor nvde=vd;
+	if (remap.containsKey(nvde))
+	    nvde=(VarDescriptor)remap.get(nvde);
+	if (nvde!=ise.vd)
+	    return false;
+	return true;
     }
 
     public boolean inverted() {
@@ -38,8 +60,8 @@ public class ImageSetExpr extends SetExpr {
 	return rd;
     }
 
-    public boolean usesDescriptor(RelationDescriptor rd) {
-	return (rd==this.rd);
+    public boolean usesDescriptor(Descriptor d) {
+	return (d==rd)||(d==vd);
     }
 
     public Set getInversedRelations() {

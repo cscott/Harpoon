@@ -18,6 +18,30 @@ public class TupleOfExpr extends Expr {
         this.relation = relation;
     }
 
+    public String name() {
+	return "<"+left.name()+","+right.name()+"> in "+relation.toString();
+    }
+
+    public boolean usesDescriptor(Descriptor d) {
+	if (d==relation)
+	    return true;
+	else
+	    return left.usesDescriptor(d)||right.usesDescriptor(d);
+    }
+
+    public boolean equals(Map remap, Expr e) {
+	if (e==null||!(e instanceof TupleOfExpr))
+	    return false;
+	TupleOfExpr toe=(TupleOfExpr)e;
+	if (!left.equals(remap,toe.left))
+	    return false;
+	if (!right.equals(remap,toe.right))
+	    return false;
+	if (relation!=toe.relation)
+	    return false;
+	return true;
+    }
+
     public Set getRequiredDescriptors() {
         Set v = left.getRequiredDescriptors();
         v.addAll(right.getRequiredDescriptors());

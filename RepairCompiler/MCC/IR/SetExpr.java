@@ -9,7 +9,24 @@ public class SetExpr extends Expr {
     public SetExpr(SetDescriptor sd) {
         this.sd = sd;
     }
-    
+
+    public String name() {
+	return sd.toString();
+    }
+
+    public boolean equals(Map remap, Expr e) {
+	if (e==null||!(e instanceof SetExpr))
+	    return false;
+	SetExpr se=(SetExpr)e;
+	if (sd!=se.sd)
+	    return false;
+	return true;
+    }
+
+    public boolean usesDescriptor(Descriptor s) {
+	return (s==sd);
+    }
+
     public SetExpr() {
         this.sd = null;
     }

@@ -15,6 +15,14 @@ public class DNFPredicate {
 	this.negate=negate;
 	this.predicate=predicate;
     }
+    String name() {
+	String name="";
+	if (this.negate)
+	    name+="!";
+	name+=predicate.name();
+	return name;
+    }
+
     void negatePred() {
 	negate=!negate;
     }

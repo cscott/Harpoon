@@ -14,7 +14,18 @@ public class SizeofExpr extends Expr {
         this.setexpr = setexpr;
     }
 
-    public boolean usesDescriptor(RelationDescriptor rd) {
+    public String name() {
+	return "size("+setexpr.name()+")";
+    }
+
+    public boolean equals(Map remap, Expr e) {
+	if (e==null||!(e instanceof SizeofExpr))
+	    return false;
+	SizeofExpr soe=(SizeofExpr)e;
+	return setexpr.equals(remap,soe.setexpr);
+    }
+
+    public boolean usesDescriptor(Descriptor rd) {
 	return setexpr.usesDescriptor(rd);
     }
 

@@ -8,6 +8,14 @@ public class LogicStatement {
     public static final Operation OR = new Operation("OR");
     public static final Operation NOT = new Operation("NOT");
 
+    public String name() {
+	String name=left.name();
+	name+=op.toString();
+	if (right!=null)
+	    name+=right.name();
+	return name;
+    }
+
     public Set getInversedRelations() {
         if (left == null) {
             throw new IRException();

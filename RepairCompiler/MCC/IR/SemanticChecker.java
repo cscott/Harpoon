@@ -474,7 +474,7 @@ public class SemanticChecker {
             /* return to caller */
             return sq;
 
-        } else if (pn.getChild("relatiion") != null) { /* for < v1, v2 > in Relation */
+        } else if (pn.getChild("relation") != null) { /* for < v1, v2 > in Relation */
             RelationQuantifier rq = new RelationQuantifier();
 
             /* get vars */

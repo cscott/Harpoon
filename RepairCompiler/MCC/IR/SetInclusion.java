@@ -18,6 +18,13 @@ public class SetInclusion extends Inclusion {
         this.set = set;
     }
 
+    public boolean usesDescriptor(Descriptor d) {
+	if (d==set)
+	    return true;
+	else
+	    return elementexpr.usesDescriptor(d);
+    }
+
     public SetDescriptor getSet() {
         return set;
     }

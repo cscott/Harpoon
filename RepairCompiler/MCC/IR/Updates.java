@@ -11,9 +11,37 @@ class Updates {
     Opcode opcode;
     boolean negate;
 
-    public Updates(Expr lexpr, Expr rexpr, Opcode op) {
+    public String toString() {
+	String st="type="+type+"\n";
+	st+="rightposition="+rightposition+"\n";
+	if (rightexpr!=null)
+	    st+="rightexpr="+rightexpr.name()+"\n";
+	if (leftexpr!=null)
+	    st+="leftexpr="+leftexpr.name()+"\n";
+	st+="opcode="+opcode+"\n";
+	st+="negate="+negate+"\n";
+	return st;
+    }
+
+    public Updates(Expr lexpr, Expr rexpr, Opcode op, boolean negate) {
 	leftexpr=lexpr;
 	type=Updates.EXPR;
+	if (negate) {
+	/* remove negation through opcode translation */
+	    if (op==Opcode.GT)
+		op=Opcode.LE;
+	    else if (op==Opcode.GE)
+		op=Opcode.LT;
+	    else if (op==Opcode.EQ)
+		op=Opcode.NE;
+	    else if (op==Opcode.NE)
+		op=Opcode.EQ;
+	    else if (op==Opcode.LT)
+		op=Opcode.GE;
+	    else if (op==Opcode.LE)
+		op=Opcode.GT;
+	}
+
 	opcode=Opcode.EQ;
 	/* Get rid of everything but NE */
 	if (op==Opcode.GT) {
@@ -37,12 +65,17 @@ class Updates {
 	else return false;
     }
 
+
+
     Descriptor getDescriptor() {
 	if (isGlobal()) {
 	    return ((VarExpr)leftexpr).getVar();
 	} else if (isField()) {
 	    return ((DotExpr)leftexpr).getField();
-	} else throw new Error("Unrecognized Update");
+	} else {
+	    System.out.println(toString());
+	    throw new Error("Unrecognized Update");
+	}
     }
 
     boolean isField() {
@@ -71,6 +104,11 @@ class Updates {
 	type=Updates.POSITION;
 	opcode=null;
     }
+
+    boolean isAbstract() {
+	return type==Updates.ABSTRACT;
+    }
+
     public Updates(Expr lexpr,boolean negates) {
 	leftexpr=lexpr;
 	type=Updates.ABSTRACT;

@@ -12,6 +12,38 @@ public class VarExpr extends Expr {
         this.varname = varname; 
     }
 
+    public VarExpr(VarDescriptor vd) {
+	this.vd=vd;
+	varname=vd.getSymbol();
+        this.td = vd.getType();	
+    }
+
+    public String name() {
+	return varname;
+    }
+
+    public boolean usesDescriptor(Descriptor d) {
+	if (d==vd)
+	    return true;
+	return false;
+    }
+
+    public boolean equals(Map remap, Expr e) {
+	if (e==null||!(e instanceof VarExpr))
+	    return false;
+	VarExpr ve=(VarExpr)e;
+	if (vd==null)
+	    throw new Error("Uninitialized VarDescriptor");
+	if (ve.vd==null)
+	    throw new Error("e has uninitialized VarDescriptor");
+	VarDescriptor nvd=vd;
+	if (remap.containsKey(nvd))
+	    nvd=(VarDescriptor)remap.get(nvd);
+	if (nvd!=ve.vd)
+	    return false;
+	return true;
+    }
+
     public Set getInversedRelations() {
         return new HashSet();
     }

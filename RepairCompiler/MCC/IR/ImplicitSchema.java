@@ -24,8 +24,8 @@ public class ImplicitSchema {
 	    
 	    /* Construct quantifier */
 	    RelationQuantifier rq=new RelationQuantifier();
-	    String varname1=new String("partitionvar1");
-	    String varname2=new String("partitionvar2");
+	    String varname1=new String("relationvar1");
+	    String varname2=new String("relationvar2");
 	    VarDescriptor var1=new VarDescriptor(varname1);
 	    VarDescriptor var2=new VarDescriptor(varname2);
 	    c.getSymbolTable().add(var1);
@@ -35,11 +35,9 @@ public class ImplicitSchema {
 	    rq.setTuple(var1,var2);
 	    rq.setRelation(rd);
 	    c.addQuantifier(rq);
-
 	    VarExpr ve1=new VarExpr(varname1);
 	    SetExpr se1=new SetExpr(rd.getDomain());
 	    LogicStatement incpred1=new InclusionPredicate(ve1,se1);
-
 	    VarExpr ve2=new VarExpr(varname2);
 	    SetExpr se2=new SetExpr(rd.getRange());
 	    LogicStatement incpred2=new InclusionPredicate(ve2,se2);
@@ -54,7 +52,6 @@ public class ImplicitSchema {
 	    SetDescriptor sd=(SetDescriptor) setdescriptors.get(i);
 	    if(sd.isPartition()) {
 		Constraint c=new Constraint();
-
 		/* Construct quantifier */
 		SetQuantifier sq=new SetQuantifier();
 		String varname=new String("partitionvar");

@@ -11,7 +11,15 @@ public class Conjunction {
     Conjunction(Vector preds){
 	predicates=preds       ;
     }
-
+    String name() {
+	String name="";
+	for(int i=0;i<predicates.size();i++) {
+	    name+=((DNFPredicate)predicates.get(i)).name();
+	    if (i!=(predicates.size()-1))
+		name+="&&";
+	}
+	return name;
+    }
     int size() {
 	return predicates.size();
     }

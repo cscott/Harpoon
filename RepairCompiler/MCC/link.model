@@ -1,7 +1,7 @@
 [], literal(true) => head in Nodes;
-[forall node in Nodes], !node.next=literal(0) => node.next in Nodes;
-[forall node in Nodes], !node.next=literal(0) => <node, node.next> in nextnodes;
-[forall node in Nodes], !node.prev=literal(0) => node.prev in Nodes;
-[forall node in Nodes], !node.prev=literal(0) => <node, node.prev> in prevnodes;
+[forall node in Nodes], !(node.next=literal(0)) => node.next in Nodes;
+[forall node in Nodes], !(node.next=literal(0)) => <node, node.next> in nextnodes;
+[forall node in Nodes], !(node.prev=literal(0)) => node.prev in Nodes;
+[forall node in Nodes], !(node.prev=literal(0)) => <node, node.prev> in prevnodes;
 
 

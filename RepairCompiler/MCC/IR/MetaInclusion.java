@@ -14,6 +14,10 @@ public class MetaInclusion extends Inclusion {
         constraints = new Vector();
     }
 
+    public boolean usesDescriptor(Descriptor d) {
+	throw new Error("UNIMPLEMENTED");
+    }
+
     public Set getTargetDescriptors() {
         throw new IRException("unsupported");
     }

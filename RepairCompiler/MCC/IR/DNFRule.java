@@ -6,7 +6,7 @@ public class DNFRule {
 
     public DNFRule(Expr e) {
 	ruleconjunctions=new Vector();
-	ruleconjunctions.add(new RuleConjunction(new DNFExpr(true,e)));
+	ruleconjunctions.add(new RuleConjunction(new DNFExpr(false,e)));
     }
 
     public DNFRule(RuleConjunction conj) {

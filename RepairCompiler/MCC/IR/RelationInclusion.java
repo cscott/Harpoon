@@ -17,6 +17,14 @@ public class RelationInclusion extends Inclusion {
         this.relation = relation;
     }
 
+    public boolean usesDescriptor(Descriptor d) {
+	if (d==relation)
+	    return true;
+	else
+	    return(leftelementexpr.usesDescriptor(d)
+		   ||rightelementexpr.usesDescriptor(d));
+    }
+
     public Expr getLeftExpr() {
         return leftelementexpr;
     }

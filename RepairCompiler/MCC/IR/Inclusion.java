@@ -13,6 +13,7 @@ public abstract class Inclusion {
     public abstract void generate(CodeWriter writer);
     
     public abstract boolean typecheck(SemanticAnalyzer sa);
+    public abstract boolean usesDescriptor(Descriptor d);
          
 }
 

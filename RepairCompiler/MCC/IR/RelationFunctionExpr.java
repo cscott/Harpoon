@@ -17,6 +17,10 @@ public class RelationFunctionExpr extends Expr {
         this.rule = rule;
     }
 
+    public boolean equals(Map remap, Expr e) {
+	throw new Error("UNIMPLEMENTED!!!");
+    }
+
     public Descriptor getDescriptor() {
 	return relation;
     }
@@ -35,7 +39,7 @@ public class RelationFunctionExpr extends Expr {
         return v;
     }
 
-    public boolean usesDescriptor(RelationDescriptor rd) {
+    public boolean usesDescriptor(Descriptor rd) {
 	if (rd==relation)
 	    return true;
 	else

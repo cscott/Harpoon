@@ -23,26 +23,41 @@ public class DotExpr extends Expr {
     FieldDescriptor fd;
     TypeDescriptor fieldtype;
     Expr intindex;
+
+    public String name() {
+	String name=left.name()+"."+field;
+	if (index!=null)
+	    name+="["+index.name()+"]";
+	return name;
+    }
+    
+    public boolean usesDescriptor(Descriptor d) {
+	if (d==fd)
+	    return true;
+	return left.usesDescriptor(d)||((intindex!=null)&&intindex.usesDescriptor(d));
+    }
+
+    public boolean equals(Map remap, Expr e) {
+	if (e==null||!(e instanceof DotExpr))
+	    return false;
+	DotExpr de=(DotExpr)e;
+	if (!de.field.equals(field))
+	    return false;
+	if (index==null) {
+	    if (de.index!=null)
+		return false;
+	} else if (!index.equals(remap,de.index))
+	    return false;
+	if (!left.equals(remap,de.left))
+	    return false;
+	return true;
+    }
+
     
     public DotExpr(Expr left, String field, Expr index) {
         this.left = left;
         this.field = field;
         this.index = index;
-        StructureTypeDescriptor struct = (StructureTypeDescriptor) left.getType();        
-        FieldDescriptor fd = struct.getField(field);
-        LabelDescriptor ld = struct.getLabel(field);
-       if (ld != null) { /* label */
-            assert fd == null;
-            fieldtype = ld.getType(); // d.s ==> Superblock, while,  d.b ==> Block
-            fd = ld.getField();
-            assert fd != null;
-            assert intindex == null;
-            intindex = ld.getIndex();
-        } else {
-            fieldtype = fd.getType();
-	    intindex=index;
-        }
-	this.fd=fd;
     }
 
     public Set getRequiredDescriptors() {
@@ -240,6 +255,25 @@ public class DotExpr extends Expr {
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {
         TypeDescriptor lefttype = left.typecheck(sa);
         TypeDescriptor indextype = index == null ? null : index.typecheck(sa);
+	
+	{
+	    /* finished typechecking...so we can fill the fields in */
+	    StructureTypeDescriptor struct = (StructureTypeDescriptor) left.getType();        
+	    FieldDescriptor fd = struct.getField(field);
+	    LabelDescriptor ld = struct.getLabel(field);
+	    if (ld != null) { /* label */
+		assert fd == null;
+		fieldtype = ld.getType(); // d.s ==> Superblock, while,  d.b ==> Block
+		fd = ld.getField();
+		assert fd != null;
+		assert intindex == null;
+		intindex = ld.getIndex();
+	    } else {
+		fieldtype = fd.getType();
+		intindex=index;
+	    }
+	    this.fd=fd;
+	}
 
         if ((lefttype == null) || (index != null && indextype == null)) {
             return null;

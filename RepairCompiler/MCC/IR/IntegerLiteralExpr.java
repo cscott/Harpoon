@@ -1,18 +1,27 @@
 package MCC.IR;
+import java.util.Map;
 
 public class IntegerLiteralExpr extends LiteralExpr {
 
     int value;
+
+    public boolean usesDescriptor(Descriptor d) {
+	return false;
+    }
 
     public IntegerLiteralExpr(int value) {
         this.value = value; 
         td = ReservedTypeDescriptor.INT;
     }
 
-    public abstract boolean equals(Map remap, Expr e) {
+    public String name() {
+	return (new Integer(value)).toString();
+    }
+
+    public boolean equals(Map remap, Expr e) {
 	if (e==null)
 	    return false;
-	else if (!e instanceof IntegerLiteralExpr)
+	else if (!(e instanceof IntegerLiteralExpr))
 	    return false;
 	else return (((IntegerLiteralExpr)e).value==value);
     }

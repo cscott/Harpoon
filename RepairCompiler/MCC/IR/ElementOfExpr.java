@@ -11,9 +11,27 @@ public class ElementOfExpr extends Expr {
         if (element == null || set == null) {
             throw new NullPointerException();
         }
-
         this.element = element;
         this.set = set;
+    }
+    public boolean usesDescriptor(Descriptor d) {
+	if (d==set)
+	    return true;
+	return element.usesDescriptor(d);
+    }
+    public String name() {
+	return element.name()+" in "+set.toString();
+    }
+
+    public boolean equals(Map remap, Expr e) {
+	if (e==null||!(e instanceof ElementOfExpr))
+	    return false;
+	ElementOfExpr eoe=(ElementOfExpr)e;
+	if (eoe.set!=set)
+	    return false;
+	if (!element.equals(remap,eoe.element))
+	    return false;
+	return true;
     }
 
     public Set getRequiredDescriptors() {

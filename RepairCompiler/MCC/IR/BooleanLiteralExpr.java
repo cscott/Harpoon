@@ -1,6 +1,7 @@
 package MCC.IR;
 
 import MCC.State;
+import java.util.Map;
 
 public class BooleanLiteralExpr extends LiteralExpr {
     
@@ -11,10 +12,20 @@ public class BooleanLiteralExpr extends LiteralExpr {
         td = ReservedTypeDescriptor.INT;
     }
 
-    public abstract boolean equals(Map remap, Expr e) {
+    public boolean usesDescriptor(Descriptor d) {
+	return false;
+    }
+
+    public String name() {
+	if (value)
+	    return "true";
+	else return "false";
+    }
+
+    public boolean equals(Map remap, Expr e) {
 	if (e==null)
 	    return false;
-	else if (!e instanceof BooleanLiteralExpr)
+	else if (!(e instanceof BooleanLiteralExpr))
 	    return false;
 	else return (((BooleanLiteralExpr)e).value==value);
     }

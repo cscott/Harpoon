@@ -11,7 +11,10 @@ public class InclusionPredicate extends Predicate {
 	return setexpr.inverted();
     }
 
-
+    public String name() {
+	return expr.name() + " in "+setexpr.name();
+    }
+    
     public InclusionPredicate(Expr expr, SetExpr setexpr) {
         if (expr == null) {
             throw new NullPointerException();
