@@ -1,5 +1,5 @@
-// AsyncEvent.java, created by Dumitru Daniliuc
-// Copyright (C) 2003 Dumitru Daniliuc
+// AsyncEvent.java, created by Harvey Jones, documented by Dumitru Daniliuc
+// Copyright (C) 2003 Harvey Jones, Dumitru Daniliuc
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
@@ -21,14 +21,15 @@ import java.util.Iterator;
  *  because the handler has scheduling parameters and is executed
  *  asynchronously.
  */
-public class AsyncEvent {
 
-    protected LinkedList handlersList;
+public class AsyncEvent {
+    public static final int MAX_HANDLERS = 1000;
+    protected AsyncEventHandler []handlers = new AsyncEventHandler[MAX_HANDLERS];
+    protected boolean []handlerMap = new boolean[MAX_HANDLERS];
+    protected int free = 0;
 
     /** Create a new <code>AsyncEvent</code> object. */
-    public AsyncEvent() {
-	handlersList = new LinkedList();
-    }
+    public AsyncEvent() {}
 
     /** Add a handler to the set of handlers associated with this
      *  event. An <code>AsyncEvent</code> may have more than one
@@ -39,7 +40,19 @@ public class AsyncEvent {
      *                 <code>handler</code> is null then nothing happens.
      */
     public void addHandler(AsyncEventHandler handler) {
-	handlersList.add(handler);
+	if(free == MAX_HANDLERS){
+	    NoHeapRealtimeThread.print("You have tried to exceed the maximum amount of handlers. Shame on you.");
+	    System.exit(-1);
+	}
+	handlers[free] = handler;
+	handlerMap[free] = true;
+	/* Find the next free node. It will always be after free, because removeHandler 
+	   will set free to the first free node, always. */
+	for(int i = free; i<MAX_HANDLERS; i++){ 
+	    if(! handlerMap[i]){
+		free = i;
+	    }
+	}
     }
 
     /** Binds this to an external event, a <i>happening</i>. The meaningful
@@ -52,10 +65,9 @@ public class AsyncEvent {
      *  @throws UnknownHappeningException If the string value is not supported
      *                                    by the implementation.
      */
-    public void bindTo(String happening)
-	throws UnknownHappeningException {
-	// TODO
-    }
+
+    /* wbeebee- "If we need an external event, I'll make it a language primitive and wield it onto the VM"*/
+    public void bindTo(String happening) throws UnknownHappeningException {}
 
     /** Create a <code>ReleaseParameters</code> block appropriate
      *  to the timing characteristics of the event. The default is
@@ -75,8 +87,12 @@ public class AsyncEvent {
      *  this event will be made raedy to run.
      */
     public void fire() {
-	for (Iterator it = handlersList.iterator(); it.hasNext(); )
-	    ((AsyncEventHandler)it.next()).run();
+	for(int i = 0; i < MAX_HANDLERS; i++){
+	    if(handlerMap[i]){
+		//		handlers[i].fire();
+		// TODO: There's more to do here, or at least check if fire() is what we want to do.  
+	    }
+	}
     }
 
     /** Returns true if and only if the handler given as the parameter is
@@ -89,7 +105,13 @@ public class AsyncEvent {
      *          not associated with <code>this</code>.
      */
     public boolean handledBy(AsyncEventHandler handler) {
-	return (handlersList.contains(handler));
+	if(handler == null) return false;
+	for(int i = 0; i < MAX_HANDLERS; i++){
+	    if(handler.equals(handlers[i]) && handlerMap[i]){
+		return true;
+	    }
+	}
+	return false;
     }
 
     /** Remove a handler from the set associated with this event.
@@ -99,7 +121,13 @@ public class AsyncEvent {
      *                 this then nothing happens.
      */
     public void removeHandler(AsyncEventHandler handler) {
-	handlersList.remove(handler);
+	if(handler == null) return;
+	for(int i = 0; i < MAX_HANDLERS; i++){
+	    if(handler.equals(handlers[i]) && handlerMap[i]){
+		handlerMap[i] = false;
+		handlers[i] = null;
+	    }
+	}
     }
 
     /** Associate a new handler with this event, removing all existing handlers.
@@ -110,8 +138,11 @@ public class AsyncEvent {
      *                 handlers).
      */
     public void setHandler(AsyncEventHandler handler) {
-	handlersList.clear();
-	handlersList.add(handler);
+	for(int i = 0; i < MAX_HANDLERS; i++){
+	    handlerMap[i] = false;
+	    handlers[i] = null;
+	}
+	handlers[0] = handler;
     }
 
     /** Removes a binding to an external event, a <i>happening</i>. The meaningful
@@ -125,8 +156,8 @@ public class AsyncEvent {
      *                                    or the given <code>java.lang.String</code> value
      *                                    is not supported by the implementation.
      */
+
+    /* wbeebee- "If we need an external event, I'll make it a language primitive and wield it onto the VM"*/
     public void unbindTo(String happening)
-	throws UnknownHappeningException {
-	// TODO
-    }
+	throws UnknownHappeningException {}
 }
