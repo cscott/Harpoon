@@ -7,7 +7,7 @@ import harpoon.IR.QuadSSA.*;
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.2 1998-09-01 23:48:30 cananian Exp $
+ * @version $Id: Main.java,v 1.3 1998-09-03 01:37:07 cananian Exp $
  */
 
 public final class Main  {
@@ -18,7 +18,7 @@ public final class Main  {
      *  extending <code>java.lang.Thread</code>.  These classes
      *  define the external interface of the machine. */
     public static final void main(String args[]) {
-	java.io.PrintWriter out = new java.io.PrintWriter(System.out);
+	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
 
 	HClass interfaceClasses[] = new HClass[args.length];
 	for (int i=0; i<args.length; i++)
