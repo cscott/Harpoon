@@ -3,13 +3,15 @@
 
 package harpoon.Analysis.Tree;
 
+import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.DomTree;
+import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HClass;
-import harpoon.Analysis.DomTree;
 import harpoon.IR.Properties.CFGrapher;
 
 import harpoon.IR.Tree.Typed;
@@ -20,6 +22,9 @@ import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.CONST;
 // harpoon.IR.Tree.TEMP are tree temps, basically all unique
 // Closer to a virtual register 
+// CSA Note: actually, harpoon.Temp.Temp's are exactly virtual registers,
+//           Tree.TEMP is just a wrapper object to make an lvalue/rvalue
+//           out of the Temp.
 import harpoon.IR.Tree.TEMP;
 import harpoon.Temp.Temp;
 import harpoon.IR.Tree.Bop;
@@ -28,10 +33,8 @@ import harpoon.IR.Tree.MOVE;
 import harpoon.IR.Tree.MEM;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Exp;
-import harpoon.Analysis.Tree.CacheEquivalence;
 import harpoon.Util.Util;
 import harpoon.Util.Collections.BitSetFactory;
-import harpoon.Backend.Generic.Frame;
 
 import java.util.Iterator;
 import java.util.HashMap;
@@ -71,7 +74,7 @@ import java.util.Collection;
  used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.12 2001-06-14 19:45:57 witchel Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.13 2001-06-17 02:58:42 cananian Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -1155,7 +1158,7 @@ public class DominatingMemoryAccess {
                      new java.io.PrintWriter(System.out), code, eqClasses.getClasses());
                }
                // Scott's neato analysis
-               CacheEquivalence cacheEq = new CacheEquivalence(code);
+               CacheEquivalence cacheEq = new CacheEquivalence(code, ch);
                Map defUseMap = new HashMap();
                Map useDefMap = new HashMap();
                DomTree dt = new DomTree(hc, cfgr, false);
@@ -1198,14 +1201,16 @@ public class DominatingMemoryAccess {
    }
 
    public DominatingMemoryAccess(final HCodeFactory parent, 
-                                 final Frame frame) {
+                                 final Frame frame, final ClassHierarchy ch) {
       this.parent = parent;
       this.frame  = frame;
+      this.ch = ch;
    }
 
    private HCode hc;
    private HCodeFactory parent;
    private Frame frame;
+   private ClassHierarchy ch;
    private DARegAlloc alloc;
    private boolean trace = false;
    // This is more useful than trace.

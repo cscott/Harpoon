@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Tree;
 
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.DomTree;
 import harpoon.Analysis.ReachingDefs;
 import harpoon.Analysis.ReachingDefsAltImpl;
@@ -60,21 +61,21 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.16 2001-06-16 22:49:06 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.17 2001-06-17 02:58:43 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
     private static final int CACHE_LINE_SIZE = 32; /* bytes */
 
     /** Creates a <code>CacheEquivalence</code>. */
-    public CacheEquivalence(harpoon.IR.Tree.Code code) {
+    public CacheEquivalence(harpoon.IR.Tree.Code code, ClassHierarchy ch) {
 	CFGrapher cfg = code.getGrapher();
 	UseDefer udr = code.getUseDefer();
 	TreeDerivation td = code.getTreeDerivation();
 	/* new analysis */
 	final Dataflow df = new Dataflow(code, cfg, udr, td);
 	/*- construct cache eq -*/
-	new TagDominate(code, cfg, td, df);
+	new TagDominate(code, cfg, td, ch, df);
 	/* debugging information dump */
 	if (DEBUG) {
 	    harpoon.IR.Tree.Print.print(new java.io.PrintWriter(System.out),
@@ -97,11 +98,14 @@ public class CacheEquivalence {
     }
     /* -------- cache equivalence pass ------- */
     private class TagDominate {
+	final ClassHierarchy ch;
 	final TreeDerivation td;
 	final Dataflow df;
 	final DomTree dt;
 	final TreeBuilder tb;
-	TagDominate(Code c, CFGrapher cfg, TreeDerivation td, Dataflow df) {
+	TagDominate(Code c, CFGrapher cfg, TreeDerivation td,
+		    ClassHierarchy ch,  Dataflow df) {
+	    this.ch = ch;
 	    this.td = td;
 	    this.df = df;
 	    this.tb = c.getFrame().getRuntime().treeBuilder;
@@ -160,11 +164,14 @@ public class CacheEquivalence {
 		if (v.isBaseKnown() &&
 		    ((Dataflow.BaseAndOffset)v).def.isWellTyped()) {
 		    Dataflow.BaseAndOffset bao = (Dataflow.BaseAndOffset) v;
-		    if (objSize(bao.def.type()) <= CACHE_LINE_SIZE
+		    if (maxObjSize(bao.def.type()) <= CACHE_LINE_SIZE
 			// arrays can't count as small because
 			// length is not statically known.
 			&& !bao.def.type().isArray()) {
 			/* case 2 */
+			Util.assert(bao.offset instanceof Dataflow.Constant ?
+				    ((Dataflow.Constant)bao.offset)
+				    .number < CACHE_LINE_SIZE : true);
 			dp = bao.def; line = 0; // case 2
 		    } else if (bao.offset instanceof Dataflow.Constant) {
 			/* case 1a */
@@ -207,7 +214,23 @@ public class CacheEquivalence {
 		for (Tree tp=e.getFirstChild(); tp!=null; tp=tp.getSibling())
 		    add(root, (Exp)tp, pre, post, recurse);
 	}
+	// returns the size of an object of the specified class.
 	int objSize(HClass hc) { return tb.headerSize(hc)+tb.objectSize(hc); }
+	// returns the maximum size of an object of the specified type.
+	// this must account for any subclasses of the type, which likely
+	// are larger than it is.
+	int maxObjSize(HClass hc) {
+	    if (!sizeCache.containsKey(hc)) {
+		// compute maximum object size recursively.
+		int size = objSize(hc);
+		for (Iterator it=ch.children(hc).iterator(); it.hasNext(); )
+		    size = Math.max(size, maxObjSize((HClass)it.next()));
+		sizeCache.put(hc, new Integer(size));
+	    }
+	    return ((Integer) sizeCache.get(hc)).intValue();
+	}
+	// keep an object size cache for speed.
+	private final Map sizeCache = new HashMap();
     }
 
     /*---------------- dataflow pass -------------------*/
