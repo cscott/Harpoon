@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.10 1999-06-29 06:10:45 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.11 1999-06-29 07:39:27 cananian Exp $
  */
 public class Spec  {
 
@@ -562,6 +562,9 @@ public class Spec  {
 	@see IR.Tree.MOVE
     */
     public static class StmMove extends Stm {
+	/** The set of Types that <code>src</code> and <code>dst</code>
+	 *  may be (they will always be the same type). */
+	public final TypeSet types;
 	/** Expression yielding the destination of this move. */
 	public final Exp dst;
 	/** Expression yielding the source data of this move. */
@@ -570,9 +573,11 @@ public class Spec  {
 	    @param dst Destination expression.
 	    @param src Source expression.
 	*/
-	public StmMove(Exp dst, Exp src) { this.dst = dst; this.src = src; }
+	public StmMove(TypeSet types, Exp dst, Exp src) {
+	    this.types = types; this.dst = dst; this.src = src;
+	}
 	public void accept(StmVisitor v) { v.visit(this); }
-	public String toString() { return "MOVE("+dst+","+src+")"; }
+	public String toString() { return "MOVE"+types+"("+dst+","+src+")"; }
     }
     /** Extension of <code>Spec.Stm</code> representing an expression
 	which is evaluated for its side effects (i.e. we throw away
