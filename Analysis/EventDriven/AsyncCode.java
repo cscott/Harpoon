@@ -63,7 +63,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.34 2000-01-14 22:27:11 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.35 2000-01-14 22:33:34 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -680,7 +680,7 @@ public class AsyncCode {
 			while (childit.hasNext()) {
 			    try {
 				if (hm==null) {
-				    HClass child=(HClass)childit;
+				    HClass child=(HClass)childit.next();
 				    hm=child.getDeclaredMethod(parent.getName(),
 								  parent.getParameterTypes());
 				}
@@ -843,7 +843,7 @@ public class AsyncCode {
 			while (childit.hasNext()) {
 			    try {
 				if (hmrun==null) {
-				    HClass child=(HClass)childit;
+				    HClass child=(HClass)childit.next();
 				    hmrun=child.getDeclaredMethod(parent.getName(),
 								  parent.getParameterTypes());
 				}
