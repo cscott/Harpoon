@@ -88,7 +88,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.10 2003-11-02 16:52:13 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.11 2003-11-05 21:29:05 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -143,6 +143,8 @@ public class SyncTransformer
 	Boolean.getBoolean("harpoon.synctrans.hwtrans");
     private final boolean doMemoryTrace =// add hooks to generate memory traces
 	Boolean.getBoolean("harpoon.synctrans.memorytrace");
+    private final boolean keepOldLocks =// keep old MONITORENTER/EXIT code.
+	Boolean.getBoolean("harpoon.synctrans.oldlocks");
     // this might have to be tweaked if we're using counters which are
     // added *before* SyncTransformer gets the code.
     private final boolean excludeCounters = true;
@@ -608,7 +610,8 @@ public class SyncTransformer
 		Quad.addEdge(qC, 0, qP, 0);
 		Quad.addEdge(qC, 1, qP, 1);
 		Quad.addEdge(qP, 0, qT, 0);
-		Quad.addEdge(qT, 0, out.to(), out.which_pred());
+		Edge dest = keepOldLocks ? in : out;
+		Quad.addEdge(qT, 0, dest.to(), dest.which_pred());
 		// tell everyone we're in transaction context.
 		handlers=new ListList<THROW>(new ArrayList<THROW>(), handlers);
 		// done.
@@ -686,7 +689,8 @@ public class SyncTransformer
 		Quad.addEdge(in.from(), in.which_succ(), qC, 0);
 		Quad.addEdge(qC, 0, qP, 0);
 		Quad.addEdge(qC, 1, qP, 1);
-		Quad.addEdge(qP, 0, out.to(), out.which_pred());
+		Edge dest = keepOldLocks ? in : out;
+		Quad.addEdge(qP, 0, dest.to(), dest.which_pred());
 		// pop the transaction context.
 		handlers = handlers.tail;
 		// done.
