@@ -39,3 +39,4 @@ wipe: clean
 
 # Try to convince make to delete these sometimes.
 .INTERMEDIATE: %.aux %.log
+.INTERMEDIATE: %_.bib
