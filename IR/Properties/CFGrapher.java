@@ -13,18 +13,27 @@ import java.util.Collection;
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.1.2.1 1999-11-30 05:00:48 cananian Exp $
+ * @version $Id: CFGrapher.java,v 1.1.2.2 2000-01-31 16:02:36 pnkfelix Exp $
  */
 public abstract class CFGrapher {
     /** Returns an array of all the edges to and from the specified
      *  <code>HCodeElement</code>. */
-    public abstract HCodeEdge[] edges(HCodeElement hc);
+    public HCodeEdge[] edges(HCodeElement hc) {
+	Collection c = edgeC(hc);
+	return (HCodeEdge[]) c.toArray(new HCodeEdge[c.size()]);
+    }
     /** Returns an array of all the edges entering the specified
      *  <code>HCodeElement</code>. */
-    public abstract HCodeEdge[] pred(HCodeElement hc);
+    public HCodeEdge[] pred(HCodeElement hc) {
+	Collection c = predC(hc);
+	return (HCodeEdge[]) c.toArray(new HCodeEdge[c.size()]);
+    }
     /** Returns an array of all the edges leaving the specified
      *  <code>HCodeElement</code>. */
-    public abstract HCodeEdge[] succ(HCodeElement hc);
+    public HCodeEdge[] succ(HCodeElement hc) {
+	Collection c = succC(hc);
+	return (HCodeEdge[]) c.toArray(new HCodeEdge[c.size()]);
+    }
 
     // JDK 1.2 collections API: [CSA, 15-Jun-1999]
     /** Returns a <code>Collection</code> of all the edges to and from
