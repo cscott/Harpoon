@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.8 2001-11-16 00:14:34 cananian Exp $
+% $Id: pldi02.tex,v 1.9 2001-11-16 00:49:47 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -26,7 +26,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.8 $ $}{$ $Revision: 1.8 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.9 $ $}{$ $Revision: 1.9 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -101,9 +101,9 @@ for mutable fields we utilize an
 external hashtable to store values which are rarely unpredictable.
 
 These optimizations were implemented using the FLEX compiler
-infrastructure and Java runtime.  FLEX is a whole-program compiler
-that generates native code, but many of these techniques are also
-applicable to open-world JVM environments.
+infrastructure and Java runtime \cite{flexweb}.  FLEX is a
+whole-program compiler which generates native code, but many of these
+techniques are also applicable to open-world JVM environments.
 
 We present the results of applying our optimizations to the SPEC
 benchmark suite --- a set of general tasks, which, although they may bear
@@ -144,11 +144,12 @@ more restricted range of values --- one implementation of IBM's JDK
 \cite{bacon98}
 returned as little as 8 bits of hashcode.  The remaining bits of the
 second word are used to represent the lock and any other information
-kept by the runtime.  In the FLEX compiler system used for the
-research in this paper \cite{flexweb}, 30 bits of hashcode are kept, and the
-remaining 2 bits indicate whether the value is actually a hashcode or
+kept by the runtime.  In the FLEX compiler system used for this
+research 30 bits of hashcode are kept, and the
+remaining 2 bits in the word indicate whether the value is actually a
+hashcode or
 a pointer to an ``inflated'' object structure containing
-a copy of the displaced hashcode, pthreads locks,
+a displaced hashcode, pthreads locks,
 and other runtime information.
 
 \subsection{{\tt claz} compression}
@@ -172,8 +173,11 @@ build each of
 the spec benchmarks, as determined by a standard class hierarchy
 analysis at compile-time.  Also enumerated are the heap savings to be
 expected from reducing the size of the {\tt claz} information using
-table-lookup; the meanings of the various alignment alternatives will
-be discussed in section \ref{sec:field-packing}.
+table-lookup, for both bit and byte packings of the {\tt claz} index
+(these packing alternatives will be discussed further in
+section \ref{sec:field-packing}).  The {\tt claz} field accounts for an
+average of 12\% of the total bytes allocated by our benchmarks, and we
+can reclaim roughly three-quarters of that.
 \begin{table}
 \begin{tabular}{lcr@{.}lr@{.}l}
 && \multicolumn{4}{c}{\% alloc'ed space saved} \\
@@ -204,20 +208,20 @@ and that any other runtime features signalled in the second header
 word are unused, we can eliminate it from the object.
 
 Determining that the lock features are unnecessary is straight-forward.
-We use our previously published escape analysis \cite{whaley99,vivien01}
-% alex reference here
+We use our previously published escape analysis
+\cite{salcianu01,vivien01,whaley99}
 to determine on which objects synchronization must be performed; we
-can discard the lock features of all the rest.  Hashcode utilization
+can discard the lock bits of all the rest.  Hashcode utilization
 is a little more involved: it is not sufficient to identify the
 objects in which the system {\tt Object.hashCode()} method is
 overridden and not invoked, because there is also a {\tt
   System.identityHashCode()} method in the library which provides the
 same value on any object.  Standard type analysis around the
-callsites in question will not help, because generic collection
+call sites in question will not help, because generic collection
 classes such as {\tt java.util.Hashtable} typically invoke
 the {\tt hashCode} method on the generic {\tt Object} type contained
 in the collection.  Either context-sensitivity or a type-cone analysis
-will suffice to obtain the needed information.
+is necessary to obtain the needed precision.
 
 {\bf XXX.  In the SPEC benchmark suite, it is possible to statically
   determine that {\tt System.identityHashCode()} is never invoked.
@@ -247,17 +251,21 @@ along with the space savings for so doing.
 %   no pointer analysis to discriminate object classes (yea, type-safety)
 %  implementation: bit/byte/java-type packing.
 After the header has been reduced in size as much as possible, we turn
-our attention to the fields of the object.  The key idea here is to
-do a {\it bitwidth analysis} \cite{stephenson00,ananian99:tech}
-to determine a
-smaller number of bits sufficient to represent the values stored in
-the field.  We can then shrink the size of the field, subject to
-limitations on field and object alignment.  The largest savings can be
-realized by discarding alignment restrictions, a choice which requires
-substantial changes to the runtime environment to realize.  More
-modest reductions may be obtained with much less effort by
-more-strongly aligning objects and restricting field widths to
-those of standard java types.
+our attention to the values contained in the object fields.
+The key idea here is to
+do a {\it bitwidth analysis} \cite{ananian99:tech,stephenson00}
+to determine an upper bound on
+the number of bits required to represent all values stored in
+the field.  We can then shrink the size of the field consistent with
+this bound, subject to
+limitations on field and object alignment.  
+A straight-forward implementation with strongly-aligned objects and
+field widths restricted to those of standard Java types will achieve
+modest space reductions with very little implementation effort; these
+gains are achievable even when running in a JVM environment.
+The largest savings require discarding as many alignment restrictions
+as possible, which will typically require substantial changes to the
+runtime system.
 
 \subsection{Bitwidth analysis}
 Our bitwidth analysis is an inter-procedural extension of that
@@ -273,24 +281,29 @@ Sparse Conditional Constant (SCC) propagation algorithm
 If the program is going to run on a standard java virtual machine, or
 for some other reason modifications to the runtime environment are not
 possible, then optimization based on the bitwidth analysis can only
-shrink each field to the size of a standard java type: 1,%
-\footnote{If the runtime implements booleans as bit vectors, which the
-  Java language specification allows but does not mandate.}
-8, 16, 32, or 64 bits.  The entire object will be padded so that
+shrink each field to the size of a standard java type: 1,
+8, 16, 32, or 64 bits.%
+\footnote{The Java language specification allows, but does not mandate,
+  a true 1-bit representation for booleans.  Many JVMs pad boolean
+  elements out to an 8-bit type.}
+The entire object will be padded so that
 consecutive objects are properly aligned, most often to a word or
-double-word boundary.  This scenario is labelled ``std'' in our tables.
-% XXX: describe our field packing algorithm?
+double-word boundary.  This scenario is labelled ``std'' in our results.
+
+{\bf XXX: describe our field packing algorithm?}
 
 If we can modify the runtime, however, much better use may be made of
-the information from the bitwidth analysis.  For example, we can
+the information gleaned from bitwidth analysis.  For example, we can
 allow field widths of any integral number of bytes, and pad/align
 objects to byte boundaries, instead of words.  This entails some
 cycle overhead on machines which disallow unaligned accesses, but is
-fairly straight-forward to implement.  We can take much better
-advantage of the bitwidth analysis results: a 33-bit wide field will
+fairly straight-forward to implement.  When this is implemented,
+a 33-bit-wide field will
 end up occupying a byte-aligned 40 bits (5 bytes), instead of the 64
 bits (8 bytes) that the ``std'' scenario would require.  We will refer
-to this scenario as ``byte''.
+to this implementation as ``byte''.
+
+{\bf EDITING STOPPED HERE}
 
 However, we can even improve this result.  If maximum space reduction
 is desired, we can {\it bit}-align fields within a word.  Further, we
