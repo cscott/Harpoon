@@ -5,6 +5,7 @@ package harpoon.IR.Tree;
 
 import harpoon.Analysis.DefMap;
 import harpoon.Analysis.ReachingDefs;
+import harpoon.Analysis.ReachingDefsImpl;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.Derivation.DList;
 import harpoon.Analysis.Maps.TypeMap;
@@ -67,7 +68,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.64 2000-02-09 21:57:27 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.65 2000-02-11 06:32:28 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -78,12 +79,12 @@ class ToTree {
     public ToTree(final TreeFactory tf, LowQuadNoSSA code) {
 	this(tf, code, new EdgeOracle() {
 	    public int defaultEdge(HCodeElement hce) { return 0; }
-	}, null/*um, fixme.  i need a reachingdefs for no-ssa form*/);
+	}, null, new ReachingDefsImpl(code));
     }
     public ToTree(final TreeFactory tf, final LowQuadSSA code) {
 	this(tf, code, new EdgeOracle() {
 	    public int defaultEdge(HCodeElement hce) { return 0; }
-	}, new ReachingDefs(code) {
+	}, null, new ReachingDefs(code) {
 	    private final DefMap dm = new DefMap(code);
 	    public Set reachingDefs(HCodeElement hce, Temp t) {
 		return Collections.singleton(dm.defMap(t)[0]);
@@ -92,10 +93,10 @@ class ToTree {
     }
     /** Class constructor. */
     public ToTree(final TreeFactory tf, harpoon.IR.LowQuad.Code code,
-		  EdgeOracle eo, ReachingDefs rd) {
+		  EdgeOracle eo, FoldNanny fn, ReachingDefs rd) {
 	Util.assert(((Code.TreeFactory)tf).getParent()
 		    .getName().equals("tree"));
-	translate(tf, code, eo, rd);
+	translate(tf, code, eo, fn, rd);
     }
     
     /** Returns a <code>TreeDerivation</code> object for the
@@ -108,7 +109,7 @@ class ToTree {
     }
 
     private void translate(TreeFactory tf, harpoon.IR.LowQuad.Code code,
-			   EdgeOracle eo, ReachingDefs rd) {
+			   EdgeOracle eo, FoldNanny fn, ReachingDefs rd) {
 
 	Quad root = (Quad)code.getRootElement();
 	TempMap ctm = new CloningTempMap
@@ -116,7 +117,7 @@ class ToTree {
 
 	// Construct a list of harpoon.IR.Tree.Stm objects
 	TranslationVisitor tv = new TranslationVisitor
-	    (tf, rd, (Derivation) code, eo, m_dg, ctm);
+	    (tf, rd, (Derivation) code, eo, fn, m_dg, ctm);
 						       
 	// traverse, starting with the METHOD quad.
 	dfsTraverse((harpoon.IR.Quads.METHOD)root.next(1), 0,
@@ -179,12 +180,14 @@ static class TranslationVisitor extends LowQuadVisitor {
     private final Derivation quadDeriv;
     private final DerivationGenerator treeDeriv;
     public final EdgeOracle edgeOracle;
+    public final FoldNanny  foldNanny;
     public final ReachingDefs reachingDefs;
 
     public TranslationVisitor(TreeFactory tf,
 			      ReachingDefs reachingDefs,
 			      Derivation quadDeriv,
 			      EdgeOracle edgeOracle,
+			      FoldNanny foldNanny,
 			      DerivationGenerator treeDeriv,
 			      TempMap ctm) {
 	m_ctm          = ctm;
@@ -195,6 +198,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	this.quadDeriv      = quadDeriv;
 	this.treeDeriv	    = treeDeriv;
 	this.edgeOracle     = edgeOracle;
+	this.foldNanny      = foldNanny;
 	this.reachingDefs   = reachingDefs;
     }
 
@@ -951,10 +955,21 @@ static class TranslationVisitor extends LowQuadVisitor {
 //                                                            //
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-    public static interface EdgeOracle {
+    /** An edge oracle tells you which edge out of an
+     *  <code>HCodeElement</code> wants to be the default
+     *  (ie, non-branching) edge. */
+    static interface EdgeOracle {
 	public int defaultEdge(HCodeElement hce);
     }
+    /** A fold nanny tells you whether or not you can fold a
+     *  particular definition of a <code>Temp</code>. */
+    static interface FoldNanny {
+	public boolean canFold(HCodeElement defSite, Temp t);
+    }
 	
+    /** A <code>TypeBundle</code> rolls together the <code>HClass</code>
+     *  type or <code>DList</code> derivation of a value, along with
+     *  the integer <code>Tree.Type</code>. */
     private static class TypeBundle {
 	final int simpleType;
 	final HClass classType;
