@@ -1,0 +1,21 @@
+#!/bin/bash2
+
+# This is script is provided only to shorten the commands for compiling something with FLEX.
+
+# Beginning of script
+
+if [ ! $# -eq 2 ]; then
+    echo
+    echo -e "Usage: ./build -debug-ref|-no-debug-ref <benchmark's name>"
+    echo
+else
+    if [ "$1" == "-no-debug-ref" ]; then   # -no-debug-ref option has been chosen
+	bin/build-precisec-gc-debug -m -t ALL_RTJ_PERF_THREADS $2 $2
+    elif [ "$1" == "-debug-ref" ]; then   # -debug-ref option has been chosen
+	bin/build-precisec-gc-debug -m -t ALL_DEBUG_REF_RTJ_PERF_THREADS $2 $2
+    else   # unknown parameter
+	echo -e "Parameter $1 not supported.\n"
+    fi
+fi
+
+# End of script
