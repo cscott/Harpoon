@@ -3,25 +3,25 @@ package harpoon.IR.Tree;
 
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import java.io.PrintStream;
+import java.io.PrintWriter;
 
 /**
  * <code>Print</code> pretty-prints Trees.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.7 1999-02-21 22:03:21 duncan Exp $
+ * @version $Id: Print.java,v 1.1.2.8 1999-02-24 21:11:05 andyb Exp $
  */
 public class Print 
 {
   private PrintVisitor pv;
 
-  public Print(PrintStream o)
+  public Print(PrintWriter o)
     {
       this(o, null);
     }
 
-  public Print(PrintStream o, TempMap t)
+  public Print(PrintWriter o, TempMap t)
     {
       pv = new PrintVisitor(o, t);
     }
@@ -38,13 +38,13 @@ public class Print
 
   static class PrintVisitor extends TreeVisitor
   {
-    private PrintStream m_out; 
+    private PrintWriter m_out; 
     private TempMap     m_tMap;
     private int         m_indent;
 
-    public PrintVisitor(PrintStream out) { this(out, null); }
+    public PrintVisitor(PrintWriter out) { this(out, null); }
 
-    public PrintVisitor(PrintStream out, TempMap tMap)
+    public PrintVisitor(PrintWriter out, TempMap tMap)
       {
 	m_out  = out;
 	m_tMap = tMap;

@@ -175,13 +175,12 @@ public abstract class Code extends HCode
   
   // implement elementArrayFactory which returns Tree[]s.  
   public ArrayFactory elementArrayFactory() { return Tree.arrayFactory; }
-
-  public void print(java.io.PrintStream ps) 
+  
+  public void print(java.io.PrintWriter pw)
     {
-      Print printer = new Print(ps);
+      Print printer = new Print(pw);
       printer.prStm((Stm)getRootElement());
     }
-
   public abstract DList derivation(HCodeElement hce, Temp t);
   public abstract HClass typeMap(HCode hc, Temp t);
 }

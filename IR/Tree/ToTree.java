@@ -421,10 +421,10 @@ class TranslationVisitor extends LowQuadVisitor
   }
 
   public void visit(harpoon.IR.Quads.RETURN q) {
-    TEMP retval;
+    Exp retval;
     
     if (q.retval()==null) {
-      retval = extra(q, Type.POINTER);
+      retval = new CONST(m_tf, q, 0);
       m_dT.put
 	(retval, 
 	 new Error("*** Return value of a void function has no type"));
