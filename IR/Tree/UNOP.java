@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.12 1999-06-29 06:21:10 cananian Exp $
+ * @version $Id: UNOP.java,v 1.1.2.13 1999-07-12 22:12:22 bdemsky Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -57,7 +57,8 @@ public class UNOP extends OPER {
 	    case Type.FLOAT:    return _f(-(_f(left)));
 	    case Type.DOUBLE:   return _d(-(_d(left)));
 	    case Type.POINTER: 
-		throw new Error("Operation not supported");
+		return Type.isDoubleWord(tf, optype) ?
+		    (Object)_i(-(_i(left))) : (Object)_l(-(_l(left)));
 	    }
 	case Uop.NOT:
 	    switch (optype) {
