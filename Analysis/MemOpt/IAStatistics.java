@@ -55,20 +55,21 @@ import harpoon.IR.Quads.ANEW;
  * <code>IAStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: IAStatistics.java,v 1.6 2003-02-03 16:19:47 salcianu Exp $
+ * @version $Id: IAStatistics.java,v 1.7 2003-02-09 21:26:56 salcianu Exp $
  */
 public abstract class IAStatistics {
     
     private static class TypeStat implements Comparable, Cloneable {
 	public HClass hclass;
-	public long[][] count = new long[2][2];
+	public long[][] count = new long[3][2];
 
 	public TypeStat(HClass hclass) { this.hclass = hclass; }
 
 	public String toString() {
 	    return
 		count[SITE][PREALLOC] + "\t" + count[SITE][HEAP] + "\t| " +
-		count[OBJECT][PREALLOC] + "\t" + count[OBJECT][HEAP] + 
+		count[OBJECT][PREALLOC] + "\t" + count[OBJECT][HEAP] + "\t| " +
+		count[SPACE][PREALLOC] + "\t" + count[SPACE][HEAP] + 
 		"\t|| " + (hclass != null ? hclass.toString() : "");
 	}
 
@@ -85,14 +86,14 @@ public abstract class IAStatistics {
 	}
 
 	public TypeStat add(TypeStat ts) {
-	    for(int i = 0; i < 2; i++)
+	    for(int i = 0; i < 3; i++)
 		for(int j = 0; j < 2; j++)
 		    this.count[i][j] += ts.count[i][j];
 	    return this;
 	}
 
 	public TypeStat diff(TypeStat ts) {
-	    for(int i = 0; i < 2; i++)
+	    for(int i = 0; i < 3; i++)
 		for(int j = 0; j < 2; j++)
 		    this.count[i][j] -= ts.count[i][j];
 	    return this;
@@ -101,8 +102,8 @@ public abstract class IAStatistics {
 	public Object clone() {
 	    try {
 		TypeStat copy = (TypeStat) super.clone();
-		copy.count = new long[2][2];
-		for(int i = 0; i < 2; i++)
+		copy.count = new long[3][2];
+		for(int i = 0; i < 3; i++)
 		    for(int j = 0; j < 2; j++)
 			copy.count[i][j] = this.count[i][j];
 		return copy;
@@ -121,6 +122,7 @@ public abstract class IAStatistics {
 
     private static final int SITE     = 0;
     private static final int OBJECT   = 1;
+    private static final int SPACE    = 2;
     private static final int HEAP     = 0;
     private static final int PREALLOC = 1;
 
@@ -224,6 +226,10 @@ public abstract class IAStatistics {
 	    (label + " PREALLOCATED OBJECTS:\t" +
 	     proportion(total.count[OBJECT][PREALLOC],
 			total.count[OBJECT][HEAP], 5, 2));
+	System.out.println
+	    (label + " PREALLOCATED SPACE:\t" +
+	     proportion(total.count[SPACE][PREALLOC],
+			total.count[SPACE][HEAP], 5, 2));
     }
 
 

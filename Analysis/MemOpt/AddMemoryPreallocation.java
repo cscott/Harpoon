@@ -48,7 +48,7 @@ import harpoon.Temp.Label;
  * chunks of memory that are used by the unitary sites.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AddMemoryPreallocation.java,v 1.5 2003-02-08 21:27:36 salcianu Exp $ */
+ * @version $Id: AddMemoryPreallocation.java,v 1.6 2003-02-09 21:26:56 salcianu Exp $ */
 class AddMemoryPreallocation implements HCodeFactory {
 
     /** Creates a <code>AddMemoryPreallocation</code> code factory: it
@@ -57,31 +57,30 @@ class AddMemoryPreallocation implements HCodeFactory {
         <code>init_method</code>.  For this method, it generates code
         to (pre)allocate some memory chunks and store references to
         them in the static fields that are the keys of
-        <code>field2classes</code>.
+        <code>field2size</code>.
 
 	@param parent_hcf parent code factory; this factory provides
 	the code for all methods, except <code>init_method</code>
 
 	@param init_method handle of the method that does all pre-allocation
 
-	@param field2classes maps a field to the set of unitary
-	allocation sites that reuse the preallocated memory chunk
-	pointed to by that field.
+	@param field2size maps a field to the size of the preallocated
+	chunk of memory that it shold point to at runtime
 
 	@param frame frame containing all the backend details */
     public AddMemoryPreallocation
 	(HCodeFactory parent_hcf, HMethod init_method, 
-	 Map field2classes, Frame frame) {
+	 Map/*<HField,Integer>*/ field2size, Frame frame) {
 	assert parent_hcf.getCodeName().equals(CanonicalTreeCode.codename) : 
 	    "AddMemoryPreallocation only works on CanonicalTree form";
 	this.parent_hcf    = parent_hcf;
-	this.field2classes = field2classes;
+	this.field2size    = field2size;
 	this.runtime       = frame.getRuntime();
 	this.init_method   = init_method;
     }
 
     private final HCodeFactory parent_hcf;
-    private final Map field2classes;
+    private final Map/*<HField,Integer>*/ field2size;
     private final Runtime runtime;
     private final HMethod init_method;
 
@@ -95,16 +94,11 @@ class AddMemoryPreallocation implements HCodeFactory {
 	DerivationGenerator dg = 
 	    (DerivationGenerator) code.getTreeDerivation();
 
-	/*
-	System.out.println("Before modifications:");
-	code.print(new PrintWriter(System.out));
-	*/
-
 	SEQ start = (SEQ) ((SEQ) code.getRootElement()).getRight();
-	for(Iterator it = field2classes.keySet().iterator(); it.hasNext(); ) {
+	for(Iterator it = field2size.keySet().iterator(); it.hasNext(); ) {
 	    HField hfield = (HField) it.next();
-	    Collection classes = (Collection) field2classes.get(hfield);
-	    generate_code(start, hfield, sizeForClasses(runtime, classes), dg);
+	    int size = ((Integer) field2size.get(hfield)).intValue();
+	    generate_code(start, hfield, size, dg);
 	}
 
 	System.out.println("After  modifications:");
@@ -165,29 +159,5 @@ class AddMemoryPreallocation implements HCodeFactory {
     protected static Exp DECLARE(DerivationGenerator dg, HClass hc, Exp exp) {
 	dg.putType(exp, hc);
 	return exp;
-    }
-
-
-    // compute the size of the memory chunk that can hold an object of
-    // any of the classes from the collection passed as an argument
-    static int sizeForClasses(Runtime runtime, Collection classes) {
-	int max = -1;
-	for(Iterator it = classes.iterator(); it.hasNext(); ) {
-	    int size = sizeForClass(runtime, (HClass) it.next());
-	    if(size > max) max = size;
-	}
-	return max;
-    }
-
-    // compute the total size occupied by an object of class hclass
-    static int sizeForClass(Runtime runtime, HClass hclass) {
-	Runtime.TreeBuilder tree_builder = runtime.getTreeBuilder();
-	int size =
-	    tree_builder.objectSize(hclass) +
-	    tree_builder.headerSize(hclass);
-	// we allocate only multiples of 4 bytes
-	while((size % 4) != 0)
-	    size++;
-	return size;
     }
 }

@@ -1386,8 +1386,8 @@ public class IncompatibilityAnalysis {
 	    for(Iterator itc = thisClass.iterator(); itc.hasNext(); ) {
 		HClass allocatedClass = ((NEW) itc.next()).hclass();
 		int size = SIZE_IN_BYTES ?
-		    AddMemoryPreallocation.sizeForClass
-		    (frame.getRuntime(), allocatedClass) :
+		    PreallocOpt.sizeForClass(frame.getRuntime(),
+					     allocatedClass) :
 		    fieldsForClass(allocatedClass);
 		usize += size;
 		max = Math.max(max, size);
