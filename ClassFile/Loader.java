@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.11 1999-09-12 15:56:47 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.12 1999-09-13 20:08:24 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -179,10 +179,11 @@ public abstract class Loader {
    *  the given package which are on the classpath. */
   public static Iterator listClasses(String packagename) {
     final String filesep = System.getProperty("file.separator");
-    final String pathname = packagename.replace('.',filesep.charAt(0));
+    final String pathname = (packagename.length()==0)?"":
+      (packagename.replace('.',filesep.charAt(0))+filesep);
     FilterIterator.Filter cpe2sl = new FilterIterator.Filter() {
       public Object map(Object o) {
-	return ((ClasspathElement) o).listPackage(pathname+filesep);
+	return ((ClasspathElement) o).listPackage(pathname);
       }
     };
     FilterIterator.Filter sl2cl = new FilterIterator.Filter() {
