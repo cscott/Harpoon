@@ -7,12 +7,8 @@ import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Loops.LoopFinder;
 import harpoon.Util.WorkSet;
 import harpoon.ClassFile.*;
-import harpoon.IR.Quads.PHI;
-import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.OPER;
-import harpoon.IR.Quads.Qop;
-import harpoon.IR.LowQuad.LowQuadVisitor;
-import harpoon.IR.LowQuad.POPER;
+import harpoon.IR.Quads.*;
+import harpoon.IR.LowQuad.*;
 import harpoon.Analysis.Loops.*;
 import harpoon.Temp.Temp;
 import harpoon.Analysis.SSITOSSAMap;
@@ -37,7 +33,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.13 1999-09-22 19:23:15 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.14 1999-09-23 19:01:51 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -354,6 +350,174 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    return (good&&(flag!=-1));
 	}
     }
+
+    void forloop(HCode hc, Loops lp) {
+	analyze(hc);
+	Util.assert(lp.loopEntrances().size()==1,"Loop must have one entrance");	
+	Quad header=(Quad)(lp.loopEntrances()).toArray()[0];;
+	Set testsopers=doLooptest(hc,lp);
+    }
+
+    /*  NOTE:  Assumption is made that no quad can go wrong, otherwise
+	 there would have been an explicity test before it...*/
+    class ForLoopVisitor extends LowQuadVisitor {
+	private WorkSet track;
+	private boolean sideeffects;
+	private Set testsopers;
+	private UseDef ud;
+	private HCode hc;
+	private Loops lp;
+	private TempMap ssitossamap;
+
+	ForLoopVisitor(Set testsopers, HCode hc, UseDef ud, Loops lp, TempMap ssitossamap) {
+	    this.track=new WorkSet();
+	    this.sideeffects=false;
+	    this.testsopers=testsopers;
+	    this.ud=ud;
+	    this.hc=hc;
+	    this.lp=lp;
+	    this.ssitossamap=ssitossamap;
+	}
+
+	boolean sideEffects() {
+	    return sideeffects;
+	}
+
+	public void visit(Quad q) {
+	    System.out.println("Error in ForLoopVisitor");
+	    System.out.println(q.toString()+" unhandled");
+	}
+
+	public void visit(AGET q)		{ trackuses(q); }
+	public void visit(ALENGTH q)     	{ trackuses(q); }
+	public void visit(ANEW q)		{ trackuses(q); }
+	//These two may have side effects....
+	//Need to complete more complicated analysis on them...
+	public void visit(ARRAYINIT q)          { sideeffects(q); }
+	public void visit(ASET q)		{ sideeffects(q); }
+
+	//Calls have side efects
+	public void visit(CALL q)		{ sideeffects(q); }
+
+	//CJMP stops search
+	public void visit(CJMP q)		{
+	    //is this a test condition?
+	    Temp test=q.test();
+	    Quad[] defs=(Quad[])ud.defMap(hc, test);
+	    Util.assert(defs.length==1, "We work only with SSA/SSI");
+	    if (testsopers.contains(defs[0])) {
+		//Need to see if it:
+		//1) Is on a basic induction variable!
+		//2) That the jump leaves the loop
+		//3) None of the trackuses set gets used outside of the loop
+		//4) None of the sigma defines gets used outside of the loop
+		//5) That the increment of the basic induction variable doesn't
+		//get used at any point other than the phi function...
+		if (analyzecjmp(q)) {
+		    //finished #2, setup track for #3, 4...
+		    //See if we have a basic induction varible...
+		    OPER testoper=(OPER)defs[0];
+		    Map bamap=(Map)bimap.get(lp.loopEntrances().toArray()[0]);
+		    int binvarnum=0;
+		    for (int i=0;i<testoper.operandsLength();i++) {
+			if (bamap.containsKey(ssitossamap.tempMap(testoper.operands(i))))
+			    binvarnum++;
+			    //have a basic induction variable [#1 finished]
+		    }
+		    if (binvarnum==1) {
+			//Still need to verify track set [#3, #4]
+			//Still need to check uses of increment [#5]
+
+		    }
+		}
+	    }
+	}
+	boolean analyzecjmp(CJMP q) {
+	    boolean exit=false;
+	    for (int i=0;i<q.nextLength();i++)
+		if (!lp.loopIncelements().contains(q.next(i))) {
+		    //we've found the way out...
+		    //we only add things in if
+		    //they were not generated in front of us...
+		    //might create confusing semantic,
+		    //but gotta do it to find any for loops at all that
+		    //allow lv to escape
+		    for(int j=0;j<q.numSigmas();j++)
+			if (track.contains(q.src(j)))
+			    track.add(q.dst(j,i));
+		    exit=true;
+		}
+	    return exit;
+	}
+
+	public void visit(COMPONENTOF q)	{ trackuses(q); }
+	public void visit(CONST q)		{ trackuses(q); }
+
+	public void visit(GET q)		{ trackuses(q); }
+
+	//Our friend...
+	public void visit(INSTANCEOF q)	        { trackuses(q); }
+
+	public void visit(MONITORENTER q)	{ sideeffects(q); }
+	public void visit(MONITOREXIT q)	{ sideeffects(q); }
+	public void visit(MOVE q)		{ trackuses(q); }
+	public void visit(NEW q)		{ trackuses(q); }
+
+	public void visit(POPER q)              { checkopers(q); }
+	public void visit(OPER q)		{ checkopers(q); }
+
+	private void checkopers(OPER q) {
+	    switch (q.opcode()) {
+	    case Qop.IDIV:
+	    case Qop.IREM:
+	    case Qop.LDIV:
+	    case Qop.LREM:
+		sideeffects(q);
+		break;
+	    default:
+		trackuses(q);
+		break;
+	    }
+	}
+
+	//Might want to do something different here....
+	//IE..Only add if track.cotnains(src of the phi function)...
+	//Not done yet, would complicate things...
+	public void visit(PHI q)		{ trackuses(q); }
+	public void visit(RETURN q)		{ sideeffects(q); }
+	//Have to do more complicated analysis...
+	public void visit(SET q)		{ sideeffects(q); }
+
+	public void visit(THROW q)		{ sideeffects(q); }
+	public void visit(TYPECAST q)           { trackuses(q); }
+	
+	public void visit(PCALL q)      { sideeffects(q); }
+	public void visit(PGET q)       { trackuses(q); }
+	//Need more complicated analysis...
+	public void visit(PSET q)       { sideeffects(q); }
+	
+	// PPTR:
+	public void visit(PARRAY q)     { trackuses(q); }
+	public void visit(PFIELD q)     { trackuses(q); }
+	public void visit(PMETHOD q)    { trackuses(q); }
+	// PCONST:
+	public void visit(PCONST q)     { trackuses(q); }
+	public void visit(PAOFFSET q)   { trackuses(q); }
+	public void visit(PFOFFSET q)   { trackuses(q); }
+	public void visit(PMOFFSET q)   { trackuses(q); }
+	public void visit(PFCONST q)    { trackuses(q); }
+	public void visit(PMCONST q)    { trackuses(q); }
+	void trackuses(Quad q) {
+	    Temp[] defs=q.def();
+	    for (int i=0;i<defs.length;i++) {
+		track.add(defs[i]);
+	    }
+	}
+	void sideeffects(Quad q) {
+	    sideeffects=true;
+	}
+    }
 }
+
 
 
