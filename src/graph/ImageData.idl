@@ -39,6 +39,8 @@ module imagerec
       octet labelID;
       boolean conditional;
       float angle;
+      long blueThreshold1;
+      long blueThreshold2;
     };
   };
 };
