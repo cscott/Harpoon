@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.8 1999-11-11 22:33:22 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.9 1999-11-12 19:03:53 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
@@ -26,7 +26,7 @@ public class HClassSyn extends HClassCls {
   }
   /** Create an <code>HClassSyn</code> from an <code>HClass</code>.
    * If the <code>replaceOriginal</code> parameter is true, the newly
-   * created class with have the exact same name as the original
+   * created class will have the exact same name as the template
    * <code>HClass</code>, and will effectively replace it.  This is
    * dangerous functionality to use, as many references to the original
    * <code>HClass</code> and <code>HMember</code>s associated with it
