@@ -13,19 +13,22 @@ import harpoon.IR.RawClass.AttributeCode;
 import harpoon.IR.RawClass.AttributeLineNumberTable;
 import harpoon.IR.RawClass.LineNumberTable;
 import harpoon.IR.RawClass.Constant;
-import harpoon.Util.ArrayEnumerator;
-import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
 import harpoon.Util.ArrayFactory;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Iterator;
+import java.util.Set;
 /**
  * <code>Bytecode.Code</code> is a code view that exposes the
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.8 1999-02-17 03:24:34 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.9 1999-02-23 05:55:21 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -71,9 +74,9 @@ public class Code extends HCode {
    * making up this code view.  The first instruction to be
    * executed is in element 0 of the array.
    */
-  public HCodeElement[] getElements() {
+  public List getElementsL() {
     if (elements==null) {
-      if (getCode()==null) return new HCodeElement[0]; // no elements.
+      if (getCode()==null) return Collections.EMPTY_LIST; // no elements.
       String sf = parent.getDeclaringClass().getSourceFile(); // source file.
       byte[] code = getCode().code; // bytecode array.
       // First locate merge nodes.
@@ -104,13 +107,13 @@ public class Code extends HCode {
       // now all pc's for which merge>1 are merge nodes.
       Instr[] sparse = new Instr[code.length]; // index by pc still. 
       // crank through and add instrs without making links.
-      Vector v = new Vector();
+      List v = new ArrayList(code.length);
       for (int pc=0; pc<code.length; pc+=Op.instrSize(code, pc)) {
 	int line = getLine(pc);
 	// make merge node if appropriate.
 	InMerge m = null;
 	if (merge[pc] > 1)
-	  v.addElement(m = new InMerge(sf, line, merge[pc] /*arity*/));
+	  v.add(m = new InMerge(sf, line, merge[pc] /*arity*/));
 	// make Instr object for this pc.
 	if (Op.isBranch(code[pc])) {
 	  if (code[pc]==Op.TABLESWITCH || code[pc]==Op.LOOKUPSWITCH)
@@ -121,7 +124,7 @@ public class Code extends HCode {
 	    sparse[pc] = new InCti(sf, line, code, pc);
 	} else
 	  sparse[pc] = new InGen(sf, line, code, pc, this);
-	v.addElement(sparse[pc]);
+	v.add(sparse[pc]);
 	// Daisy-chain merge node if appropriate.
 	if (m != null) {
 	  m.addNext(sparse[pc]);
@@ -162,13 +165,13 @@ public class Code extends HCode {
       tryBlocks = new ExceptionEntry[et.length];
       for (int i=0; i<tryBlocks.length; i++) { // for each table entry...
 	// Add all the PC's in the try block to a list.
-	UniqueVector uv = new UniqueVector(et[i].end_pc-et[i].start_pc);
+	Set uv = new HashSet(et[i].end_pc-et[i].start_pc);
 	for (int pc=et[i].start_pc;
 	     pc < et[i].end_pc;
 	     pc+=Op.instrSize(code,pc)) {
-	  uv.addElement(sparse[pc]);
+	  uv.add(sparse[pc]);
 	  if (sparse[pc] instanceof InMerge) // merges come in pairs.
-	    uv.addElement(sparse[pc].next(0));
+	    uv.add(sparse[pc].next(0));
 	}
 	// Make an HClass for the exception caught...
 	HClass ex = null;
@@ -179,34 +182,49 @@ public class Code extends HCode {
 	// and make the official exception entry.
 	tryBlocks[i] = new ExceptionEntry(uv, ex, sparse[et[i].handler_pc]);
       }
-      // Okay.  Just convert our vector to an array and we're ready to rumble.
-      elements = new Instr[v.size()];
-      v.copyInto(elements);
+      // Okay.  Just trim our list and we're ready to rumble.
+      ((ArrayList)v).trimToSize();
+      elements = Collections.unmodifiableList(v);
     }
-    return (HCodeElement[]) Util.safeCopy(elementArrayFactory(), elements);
+    return elements;
   }
   /** Cached value of <code>getElements</code>. */
-  private HCodeElement[] elements = null;
+  private List elements = null;
   /** Cached value of <code>getTryBlocks</code> blocks. */
   private ExceptionEntry[] tryBlocks = null;
 
+  /** @deprecated use getElementsL() */
+  public HCodeElement[] getElements() {
+    List l = getElementsL();
+    return (HCodeElement[]) l.toArray(new Instr[l.size()]);
+  }
+  /** @deprecated use getElementsI() */
   public Enumeration getElementsE() {
-    return new ArrayEnumerator(getElements());
+    return Collections.enumeration(getElementsL());
+  }
+  public Iterator getElementsI() {
+    return getElementsL().listIterator();
   }
 
-  public HCodeElement[] getLeafElements() {
+  public List getLeafElementsL() {
     if (leaves == null) {
-      Instr[] il = (Instr[]) getElements();
-      Vector v = new Vector();
-      for (int i=0; i < il.length; i++)
-	if (il[i].next.size()==0)
-	  v.addElement(il[i]);
-      leaves = new Instr[v.size()];
-      v.copyInto(leaves);
+      leaves = new ArrayList();
+      for (Iterator i = getElementsI(); i.hasNext(); ) {
+	Instr in = (Instr) i.next();
+	if (in.next.size()==0)
+	  leaves.add(in);
+      }
+      ((ArrayList)leaves).trimToSize();
+      leaves = Collections.unmodifiableList(leaves);
     }
-    return (HCodeElement[]) Util.safeCopy(elementArrayFactory(), leaves);
+    return leaves;
   }
-  private HCodeElement[] leaves = null;
+  private List leaves = null;
+
+  public HCodeElement[] getLeafElements() {
+    List l = getLeafElementsL();
+    return (HCodeElement[]) l.toArray(new Instr[l.size()]);
+  }
 
   // implement elementArrayFactory which returns Instr[]s.
   public ArrayFactory elementArrayFactory() { return Instr.arrayFactory; }
@@ -223,10 +241,10 @@ public class Code extends HCode {
 
   /** Represents exception handlers in this code view. */
   public static class ExceptionEntry {
-    UniqueVector tryBlock;
+    Set tryBlock;
     HClass caughtException;
     Instr handler;
-    ExceptionEntry(UniqueVector tryBlock, HClass caughtException,
+    ExceptionEntry(Set tryBlock, HClass caughtException,
 		   Instr handler) {
       this.tryBlock = tryBlock;
       this.caughtException = caughtException;

@@ -6,6 +6,7 @@ package harpoon.ClassFile;
 import harpoon.Util.ArrayFactory;
 
 import java.util.Enumeration;
+import java.util.Iterator;
 /**
  * <code>HCode</code> is an abstract class that all views of a particular
  * method's executable code should extend.
@@ -13,7 +14,7 @@ import java.util.Enumeration;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.12.2.2 1998-12-21 04:41:33 cananian Exp $
+ * @version $Id: HCode.java,v 1.12.2.3 1999-02-23 05:55:21 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -37,24 +38,74 @@ public abstract class HCode {
   /**
    * Return an ordered list of the component objects making up this
    * code view.  If there is a 'root' to the code view, it should
-   * occupy index 0 of the <code>HCodeElement</code> array.
+   * occupy index 0 of the <code>HCodeElement</code> array.<p>
+   * Either <code>getElementsI()</code> or <code>getElementsE()</code>
+   * must have been implemented for the default implementation to work
+   * properly.
+   * @deprecated use getElementsL() instead.
    * @see harpoon.IR.Bytecode.Instr
    */
-  public abstract HCodeElement[] getElements();
+  public HCodeElement[] getElements() {
+    java.util.List l = getElementsL();
+    HCodeElement[] r =
+      (HCodeElement[]) elementArrayFactory().newArray(l.size());
+    return (HCodeElement[]) l.toArray(r);
+  }
+  /**
+   * Return an ordered <code>Collection</code> (a <code>List</code>) of
+   * the component objects making up this code view.  If there is a
+   * 'root' to the code view, it should be the first element in the
+   * List.  <p>
+   * Either <code>getElementsI()</code> or <code>getElementsE()</code>
+   * must have been implemented for the default implementation to work
+   * properly.
+   */
+  public java.util.List getElementsL() {
+    java.util.List l = new java.util.ArrayList();
+    for (Iterator i = getElementsI(); i.hasNext(); )
+      l.add(i.next());
+    return java.util.Collections.unmodifiableList(l);
+  }
   /**
    * Return an Enumeration of the component objects making up this
    * code view.  If there is a 'root' to the code view, it should
-   * be the first element enumerated.
+   * be the first element enumerated.<p>
+   * Implementations must implement at least one of
+   * <code>getElementsE()</code>, or <code>getElementsI()</code>.
+   * @deprecated use getElementsI() instead.
    * @see harpoon.IR.Bytecode.Instr
    */
-  public abstract Enumeration getElementsE();
+  public Enumeration getElementsE() {
+    return new Enumeration() {
+      private final Iterator i = getElementsI();
+      public boolean hasMoreElements() { return i.hasNext(); }
+      public Object nextElement() { return i.next(); }
+    };
+  }
+  /**
+   * Return an Iterator over the component objects making up this
+   * code view.  If there is a 'root' to the code view, it should
+   * be the first element enumerated.<p>
+   * Implementations must implement at least one of
+   * <code>getElementsE()</code>, or <code>getElementsI()</code>.
+   */
+  public Iterator getElementsI() {
+    return new Iterator() {
+      private final Enumeration e = getElementsE();
+      public boolean hasNext() { return e.hasMoreElements(); }
+      public Object next() { return e.nextElement(); }
+      public void remove() { throw new UnsupportedOperationException(); }
+    };
+  }
 
   /**
    * Return the 'root' element of this code view.
    * @return root of the code view, or <code>null</code> if this notion
    *         is not applicable.
    */
-  public HCodeElement getRootElement() { return getElements()[0]; }
+  public HCodeElement getRootElement() {
+    return (HCodeElement) (getElementsI().next());
+  }
   /**
    * Return the 'leaves' of this code view; that is,
    * the elements with no successors.
