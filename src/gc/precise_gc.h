@@ -19,7 +19,6 @@
 
 #define ALIGN                  7
 #define BITMASK               (~ALIGN)
-#define COMPACT_ENCODING_SIZE (SIZEOF_VOID_P*SIZEOF_VOID_P*8)
 #define HEADERSZ               3 /* size of array header */
 
 #define align(_unaligned_size_) (((_unaligned_size_) + ALIGN) & BITMASK)
@@ -29,9 +28,9 @@
 #define aligned_size_of_p_array(_p_arr_) \
 (align((HEADERSZ + (_p_arr_)->length) * WORDSZ_IN_BYTES))
 
-size_t trace_array(struct aarray *arr);
+void trace_array(struct aarray *arr);
 
-size_t trace_object(jobject_unwrapped obj);
+void trace_object(jobject_unwrapped obj);
 
 /* halt thread so garbage collection can begin */
 void halt_for_GC();

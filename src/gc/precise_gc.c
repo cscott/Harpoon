@@ -46,6 +46,9 @@ void precise_gc_init() {
 /* saved_registers[13] <- lr (use to walk stack) */
 #ifdef WITH_PRECISE_C_BACKEND
 
+/* prints given bitmap */
+void print_bitmap(ptroff_t bitmap);
+
 /* simply declarations to avoid lots of tedious #ifdef'ing. */
 /* declare nop-variants of ops if WITH_THREADED_GC not defined */
 #ifdef WITH_THREADED_GC
@@ -159,61 +162,111 @@ void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[])
 #endif
 }
 
-size_t trace_array(struct aarray *arr) {
+void trace_array(struct aarray *arr)
+{
   ptroff_t containsPointers = arr->obj.claz->gc_info.bitmap;
   assert(containsPointers == 0 || containsPointers == 1);
-  if (!containsPointers)
-    /* array of non-pointers */
-    return aligned_size_of_np_array(arr);
-  { /* contains pointers */
-    size_t arr_length = arr->length;
-    size_t element_size = align(arr->obj.claz->size);
-    jobject_unwrapped *element = ((jobject_unwrapped *)arr)+HEADERSZ;
-    while(arr_length > 0) { /* continue until done w/ entire array */
-      if ((*element) != NULL) {
-	error_gc("    array element", "");
-	handle_nonroot(element);
-      }
-      arr_length--;
-      element++;
+  if (containsPointers)
+    {
+      int i;
+      jobject_unwrapped *elements = (jobject_unwrapped *)(arr->element_start);
+      // iterate through all the elements of the array, ignoring null ptrs
+      for (i = 0; i < arr->length; i++)
+	{
+	  if (elements[i] != NULL)
+	    {
+	      error_gc("    array element at %p ", elements[i]);
+	      handle_nonroot(&elements[i]);
+	    }
+	}
     }
-    return aligned_size_of_p_array(arr); /* done */
-  }
 }
 
-size_t trace_object(jobject_unwrapped obj) {
-  size_t obj_size = obj->claz->size;
-  ptroff_t bitmap;
-  ptroff_t mask = 0;
-  int bitmap_position = 0;
-  int num_bitmaps =
-    (obj_size + COMPACT_ENCODING_SIZE - 1)/COMPACT_ENCODING_SIZE;
-  assert(num_bitmaps > 0);
+/* GC bitmaps for objects whose size (minus the object header) is 
+   less than COMPACT_ENCODING_SIZE fits inside the claz object. */
+#define COMPACT_ENCODING_SIZE (SIZEOF_VOID_P*SIZEOF_VOID_P*8)
+
+/* trace_object takes a jobject_unwrapped that points to a non-array object. */
+void trace_object(jobject_unwrapped obj)
+{
+  size_t obj_size;
+  int num_bitmaps, i;
+  ptroff_t *bitmap_ptr;
+  jobject_unwrapped *field_ptrs;
+
+  // obj must point to a non-array object
+  assert(obj->claz->component_claz == NULL);
+
+  // if the object size minus the object header is bigger than 
+  // COMPACT_ENCODING_SIZE, then the GC bitmap is not inlined.
+  // here we use some clever integer divide roundup thing.
+  // we may want to be dumber but more efficient in the future
+  // by borrowing the low bit to indicate whether the bitmap
+  // is inline or not.
+  obj_size = obj->claz->size;
+  num_bitmaps = (obj_size + COMPACT_ENCODING_SIZE - 1)/COMPACT_ENCODING_SIZE;
+  error_gc("object size = %d bytes\n", obj->claz->size);
+  error_gc("header size = %d bytes\n", sizeof(struct oobj));
+  error_gc("COMPACT_ENCODING_SIZE = %d bytes\n", COMPACT_ENCODING_SIZE);
+  error_gc("num_bitmaps = %d\n", num_bitmaps);
+  assert(num_bitmaps >= 0);
+
   if (num_bitmaps > 1)
-    bitmap = *(obj->claz->gc_info.ptr);
+    bitmap_ptr = obj->claz->gc_info.ptr;
   else
-    bitmap = obj->claz->gc_info.bitmap;  
-  while(num_bitmaps > 0) { /* continue until done w/ all masks */
-    while(bitmap & (~mask)) { /* continue until done w/ this mask */
-      /* update mask */
-      mask |= 1 << bitmap_position;
-      /* check if the current bit is set */
-      if (bitmap & (1 << bitmap_position)) {
-	/* field is pointer */
-	jobject_unwrapped *field = (jobject_unwrapped *)obj + bitmap_position;
-	if ((*field) != NULL) {
-	  error_gc("    field", "");
-	  handle_nonroot(field);
+    bitmap_ptr = &(obj->claz->gc_info.bitmap);
+
+  field_ptrs = (jobject_unwrapped *)(obj->field_start);
+
+  // the outer loop iterates through the bitmaps
+  // the inner loop iterates through the bits
+  for (i = 0; i < num_bitmaps; i++)
+    {
+      int j;
+      ptroff_t bitmap = bitmap_ptr[i];
+      print_bitmap(bitmap);
+
+      // as we examine each bit in the bitmap, starting
+      // from bit zero, we clear it. since we are only
+      // interested in bits that are set, we can stop
+      // examining a bitmap when all the remaining bits
+      // are clear. that's why the loop termination
+      // condition in this for loop is a bit strange.
+      for (j = i*SIZEOF_VOID_P*8; bitmap != 0; j++)
+	{
+	  // if current bit is set, then handle
+	  // corresponding reference in object, if any.
+	  // the current bit is always the low bit 
+	  // since we shift the bitmap right at each 
+	  // iteration.
+	  if ((bitmap & 1) && field_ptrs[j-2] != NULL)
+	    {
+	      error_gc("    field at %p ", field_ptrs[j-2]);
+	      handle_nonroot(&field_ptrs[j-2]);
+	    }
+
+	  // shift bitmap one right; this will always shift
+	  // in a zero since ptroff_t is always unsigned
+	  bitmap = bitmap >> 1;
 	}
-      } /* current bit is set */
-      bitmap_position++;
     }
-    bitmap = *((&bitmap)+1); /* go to next bitmap */
-    num_bitmaps--;
-    mask = 0;  
-  }
-  return align(obj_size); /* done */
 }
+
+/* prints given bitmap */
+void print_bitmap(ptroff_t bitmap)
+#ifndef DEBUG_GC
+{ /* do absolutely nothing */ }
+#else
+{
+  int i, j;
+  error_gc("BITMAP ", "");
+  for (i = SIZEOF_VOID_P*8; i > 0; i--)
+    {
+      error_gc("%d", ((bitmap & (1 << i)) != 0));
+    }
+  error_gc("\n", "");
+}
+#endif
 #endif /* WITH_PRECISE_GC */
 
 

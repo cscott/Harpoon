@@ -82,18 +82,18 @@ void copying_handle_nonroot(jobject_unwrapped *nonroot)
 	  ((void *)((*nonroot)->claz) < top_of_to_space))
 	{
 	  // forward pointer appropriately
-	  error_gc(" already moved from %p to", (*nonroot));
 	  (*nonroot) = (jobject_unwrapped)((*nonroot)->claz);
-	  error_gc(" %p\n", (*nonroot));
+	  error_gc("already moved to %p.\n", (*nonroot));
 	}
       else
 	{
 	  // move to new semispace
-	  error_gc(" relocated from %p to", (*nonroot));
 	  relocate(nonroot);
-	  error_gc(" %p\n", (*nonroot));
+	  error_gc("relocated to %p.\n", (*nonroot));
 	}
     }
+  else
+    error_gc("not in heap, not traced.\n", "");
 }
 
 /* overwrite_to_space writes over to_space so that, when debugging, it is
@@ -312,12 +312,15 @@ void collect(void *saved_registers[], int expand_amt)
 #else
   find_root_set(saved_registers);
 #endif
-  /* trace roots */
-  while(scan < free) {
-    assert(scan != NULL && ((jobject_unwrapped)scan)->claz != NULL);
-    error_gc("Object at %p being scanned\n", scan);
-    scan += trace((jobject_unwrapped)scan);
-  }
+  while(scan < free)
+    {
+      // trace object at scan for references,
+      // then increment scan by size of object
+      assert(scan != NULL && ((jobject_unwrapped)scan)->claz != NULL);
+      error_gc("Object at %p being scanned\n", scan);
+      trace((jobject_unwrapped)scan);
+      scan += align(FNI_ObjectSize(scan));
+    }
   assert(scan == free);
 
   // the new from_space is what used to be to_space
@@ -342,8 +345,7 @@ void collect(void *saved_registers[], int expand_amt)
 }
 
 /* copying_get_size_of_obj returns the size (in bytes) of
-   the object to which the argument points. requires that
-   the given object be in the currently occupied heap. */
+   the object to which the argument points. */
 size_t copying_get_size_of_obj(jobject_unwrapped ptr_to_obj)
 {
   /* assert that the object is in the currently occupied heap */
