@@ -21,7 +21,7 @@ import harpoon.Util.Util;
  * is the first parameter in the <code>params</code> array.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.9 1999-01-22 23:05:59 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.10 1999-02-12 00:29:50 cananian Exp $ 
  */
 public class CALL extends Quad {
     /** The method to invoke. */
@@ -71,8 +71,9 @@ public class CALL extends Quad {
      *        thrown, not caught.
      * @param isVirtual
      *        <code>true</code> if invocation semantics are that of a
-     *        virtual method; <code>false</code> for constructors and
-     *        static initializers with non-virtual invocation semantics.
+     *        virtual method; <code>false</code> for constructors,
+     *        private methods, and static initializers, which have
+     *        non-virtual invocation semantics.
      *        Value is unspecified for static methods, although the
      *        <code>isVirtual()</code> method will always return 
      *        <code>false</code> in this case.
