@@ -42,7 +42,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.13 1999-07-02 21:15:34 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.14 1999-07-28 18:27:10 duncan Exp $
  */
 public class SAFrame extends Frame implements DefaultAllocationInfo {
      static Temp[] reg = new Temp[16];
@@ -168,13 +168,13 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
     public TempFactory regTempFactory() { return regtf; }
 
     public Stm procPrologue(TreeFactory tf, HCodeElement src, 
-                            Temp[] paramdsts) { 
+                            Temp[] paramdsts, int[] paramtypes) { 
         Stm prologue = null, move = null;
         int i = 0;
         for (i = 0; i < paramdsts.length && i < 4; i++) {
             move = new MOVE(tf, src,
-                            new TEMP(tf, src, Type.INT, paramdsts[i]),
-                            new TEMP(tf, src, Type.INT, reg[i]));
+                            new TEMP(tf, src, paramtypes[i], paramdsts[i]),
+                            new TEMP(tf, src, paramtypes[i], reg[i]));
             if (prologue == null) {
                 prologue = move;
             } else {
