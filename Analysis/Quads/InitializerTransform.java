@@ -34,11 +34,13 @@ import harpoon.IR.Quads.QuadWithTry;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SET;
 import harpoon.Temp.Temp;
+import harpoon.Util.Default;
 import harpoon.Util.Environment;
 import harpoon.Util.HashEnvironment;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -52,17 +54,16 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.9 2000-10-21 20:36:20 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.10 2000-10-22 01:01:47 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
     /** Token for the initializer-ordering-check version of a method. */
     public static final Token CHECKED = new Token("initcheck");
-    /** Set of safe methods. */
-    private final Set safeMethods;
     /** Set of dependent native methods.  We know the dependencies of
      *  these methods statically; this is a Map from HMethods to
-     *  Sets of HInitializers. */
+     *  Sets of HInitializers. HMethods with no dependencies are
+     *  "safe". */
     private final Map dependentMethods;
     /** Our version of the codefactory. */
     private final HCodeFactory hcf;
@@ -70,32 +71,31 @@ public class InitializerTransform
     /** Creates a <code>InitializerTransform</code> with no information
      *  about which native methods are 'safe'. */
     public InitializerTransform(HCodeFactory parent, ClassHierarchy ch) {
-	this(parent, ch, new HashSet(), new HashMap());
+	this(parent, ch, Default.EMPTY_MAP);
     }
     /** Creates a <code>InitializerTransform</code> using the specified
      *  <code>Properties</code> object to specify the safe and dependent
      *  native methods of this runtime. */
     public InitializerTransform(HCodeFactory parent, ClassHierarchy ch,
 				Linker linker, Properties methodProps) {
-	this(parent, ch, new HashSet(), new HashMap());
-	parseProperties(linker, methodProps);
+	this(parent, ch, parseProperties(linker, methodProps));
     }
     /** Creates a <code>InitializerTransform</code> using the given
      *  information about safe and dependent methods.
      *  @param parent The input code factory. Will be converted to QuadWithTry.
      *  @param ch A class hierarchy for the application.
-     *  @param safeMethods a set of all native methods which are 'safe'
-     *         to call within initializers (that is, they do not reference
-     *         any static data).
      *  @param dependentMethods a map from <code>HMethod</code>s specifying
      *         native methods to a <code>java.util.Set</code> of the 
      *         <code>HInitializer</code>s of the classes whose static
-     *         data this method may reference. */
+     *         data this method may reference.  <code>HMethod</code>s
+     *         which map to zero-size <code>Set</code>s are 'safe'
+     *         to call within initializers (that is, they do not reference
+     *         any static data).
+     */
     public InitializerTransform(HCodeFactory parent, ClassHierarchy ch,
-				 Set safeMethods, final Map dependentMethods) {
+				final Map dependentMethods) {
 	// we only allow quad with try as input.
 	super(QuadWithTry.codeFactory(parent), ch);
-	this.safeMethods = safeMethods;
 	this.dependentMethods = dependentMethods;
 	final HCodeFactory superfactory = super.codeFactory();
 	Util.assert(superfactory.getCodeName().equals(QuadWithTry.codename));
@@ -171,7 +171,11 @@ public class InitializerTransform
     private boolean _isSafe_(HMethod hm) {
 	final HClass hc = hm.getDeclaringClass();
 	if (hc.isArray()) return true; // all array methods (clone()) are safe.
-	if (safeMethods.contains(hm)) return true;
+	// native methods are safe if they don't depend on anything.
+	if (dependentMethods.containsKey(hm) &&
+	    ((Set) dependentMethods.get(hm)).size()==0)
+	    return true;
+	// okay, scan the code for this method.
 	class BooleanVisitor extends QuadVisitor {
 	    boolean unsafe = false;
 	    public void visit(Quad q) { /* ignore */ }
@@ -338,7 +342,8 @@ public class InitializerTransform
 	    // done!
 	} };
     }
-    private void parseProperties(Linker linker, Properties methodProps) {
+    private static Map parseProperties(Linker linker, Properties methodProps) {
+	Map result = new HashMap();
 	for (Enumeration e=methodProps.propertyNames(); e.hasMoreElements(); ){
 	    String propkey = ((String) e.nextElement()).trim();
 	    String propval = methodProps.getProperty(propkey).trim();
@@ -366,11 +371,13 @@ public class InitializerTransform
 		if (hi!=null) dep.add(hi);
 	    }
 	    // if no dependencies, then it's a safe method.
-	    if (dep.size()==0) safeMethods.add(hm);
-	    // otherwise, add to dependent methods list.
-	    else dependentMethods.put(hm, dep);
+	    // (optimize for space by substituting a canonical EMPTY_SET)
+	    if (dep.size()==0) result.put(hm, Collections.EMPTY_SET);
+	    // otherwise, add set to dependent methods map.
+	    else result.put(hm, dep);
 	    // yay!
 	}
+	return result;
     }
     /** Flag an error, non-fatally. */
     private static void bogus(String str) {
