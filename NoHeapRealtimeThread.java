@@ -44,7 +44,19 @@ package javax.realtime;
  */
 public class NoHeapRealtimeThread extends RealtimeThread {
 
-    /** Create a <code>NoHeapRealtimeThread</code>. */
+    /** Create a <code>NoHeapRealtimeThread</code>.
+     *
+     *  @param sp A <code>SchedulingParameters</code> object that will be
+     *            associated with <code>this</code>. A null value means
+     *            this will not have an associated
+     *            <code>SchedulingParameters</code> object.
+     *  @param ma A <code>MemoryArea</code> object. Must be a
+     *            <code>ScopedMemory</code> or <code>ImmortalMemory</code>
+     *            type. A null value causes an <code>IllegalArgumentException<code>
+     *            to be thrown.
+     *  @throws java.lang.IllegalArgumentException If the memory area
+     *                                             parameter is null.
+     */
     public NoHeapRealtimeThread(SchedulingParameters sp, MemoryArea ma)
 	throws IllegalArgumentException {
 	schedulingParameters = sp;
@@ -52,14 +64,55 @@ public class NoHeapRealtimeThread extends RealtimeThread {
 	noHeap = true;
     }
 
-    /** Create a <code>NoHeapRealtimeThread</code>. */
+    /** Create a <code>NoHeapRealtimeThread</code>.
+     *
+     *  @param sp A <code>SchedulingParameters</code> object that will be
+     *            associated with <code>this</code>. A null value means
+     *            this will not have an associated
+     *            <code>SchedulingParameters</code> object.
+     *  @param rp A <code>ReleaseParameters</code> object that will be
+     *            associated with <code>this</code>. A null value means
+     *            this will not have an associated <code>ReleaseParameters</code>
+     *            object.
+     *  @param ma A <code>MemoryArea</code> object. Must be a
+     *            <code>ScopedMemory</code> or <code>ImmortalMemory</code>
+     *            type. A null value causes an <code>IllegalArgumentException<code>
+     *            to be thrown.
+     *  @throws java.lang.IllegalArgumentException If the memory area
+     *                                             parameter is null.
+     */
     public NoHeapRealtimeThread(SchedulingParameters sp, ReleaseParameters rp,
 			       MemoryArea ma) throws IllegalArgumentException {
 	this(sp, ma);
 	releaseParameters = rp;
     }
 
-    /** Create a <code>NoHeapRealtimeThread</code>. */
+    /** Create a <code>NoHeapRealtimeThread</code>.
+     *
+     *  @param sp A <code>SchedulingParameters</code> object that will be
+     *            associated with <code>this</code>. A null value means
+     *            this will not have an associated
+     *            <code>SchedulingParameters</code> object.
+     *  @param rp A <code>ReleaseParameters</code> object that will be
+     *            associated with <code>this</code>. A null value means
+     *            this will not have an associated <code>ReleaseParameters</code>
+     *            object.
+     *  @param mp A <code>MemoryParameters</code> object that will be
+     *            associated with <code>this</code>. A null value means
+     *            this will not have a <code>MemoryParameters</code> object.
+     *  @param ma A <code>MemoryArea</code> object. Must be a
+     *            <code>ScopedMemory</code> or <code>ImmortalMemory</code>
+     *            type. A null value causes an <code>IllegalArgumentException<code>
+     *            to be thrown.
+     *  @param group A <code>ProcessingGroupParameters</code> object that will
+     *               be associated with <code>this</code> A null value means this
+     *               will not have an associated <code>ProcessingGroupParameters</code>
+     *               object.
+     *  @param logic A <code>Runnable</code> whose <code>run()</code> method will
+     *               be executed for <code>this</code>.
+     *  @throws java.lang.IllegalArgumentException If the memory area
+     *                                             parameter is null.
+     */
     public NoHeapRealtimeThread(SchedulingParameters sp, ReleaseParameters rp,
 				MemoryParameters mp, MemoryArea ma,
 				ProcessingGroupParameters group, Runnable logic)
@@ -121,6 +174,9 @@ public class NoHeapRealtimeThread extends RealtimeThread {
      *  <code>NoHeapRealtimeThread</code> object are not allocated in heap. Also,
      *  checks if <code>this</code> object is allocated in heap. If any of them
      *  are allocated, <code>start()</code> throws a <code>MemoryAccessError</code>.
+     *
+     *  @throws MemoryAccessError If any of the parameters of <code>this</code>
+     *                            is allocated on heap.
      */
     public void start() {
 	HeapMemory heap = HeapMemory.instance();

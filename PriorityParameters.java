@@ -14,22 +14,47 @@ public class PriorityParameters extends SchedulingParameters {
     
     private int priority;
 
+    /** Create an instance of <code>SchedulingParameters</code> with
+     *  the given priority.
+     *
+     *  @param priority The priority assigned to a thread. This value
+     *                   is used in place of the value returned by
+     *                   <code>java.langThread.setPriority(int)</code>.
+     */
     public PriorityParameters(int priority) {
 	this.priority = priority;
     }
 
-    /** Get the priority */
+    /** Gets the priority value.
+     *
+     *  @return The priority.
+     */
     public int getPriority() {
 	return priority;
     }
 
-    /** Set the priority */
+    /** Sets the priority value.
+     *
+     *  @param priority The value to which priority is set.
+     *  @throws java.lang.IllegalArgumentException Thrown if the given
+     *                                             priority value is less
+     *                                             than the minimum priority
+     *                                             of the scheduler of any of
+     *                                             the associated threads of
+     *                                             greater then the maximum
+     *                                             priority of the scheduler
+     *                                             of any of the associated threads.
+     */
     public void setPriority(int priority)
 	throws IllegalArgumentException {
 	this.priority = priority;
     }
     
+    /** Converts the priority value to a string.
+     *
+     *  @return The string representing the value of priority.
+     */
     public String toString() {
-	return "PriorityParameters: " + priority;
+	return String.valueOf(priority);
     }
 }

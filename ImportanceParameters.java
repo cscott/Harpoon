@@ -25,22 +25,37 @@ package javax.realtime;
 public class ImportanceParameters extends PriorityParameters {
     
     private int importance;
-    
+
+    /** Create an instance of <code>ImportanceParameters</code>.
+     *
+     *  @param priority The priority assigned to an instance of
+     *                  <code>Schedulable</code>. This value is used in
+     *                  place of <code>java.lang.Thread.priority</code>.
+     *  @param importance The importance value assigned to an instance
+     *                    of <code>Schedulable</code>.
+     */
     public ImportanceParameters(int priority, int importance) {
 	super(priority);
 	this.importance = importance;
     }
 
-    /** Get the importance value. */
+    /** Gets the importance value.
+     *
+     *  @return The value of importance for the associated instance of
+     *          <code>Schedulable</code>.
+     */
     public int getImportance() {
 	return importance;
     }
 
-    /** Set the importance. */
+    /** Sets the importance. */
     public void setImportance(int importance) {
 	this.importance = importance;
     }
     
+    /** Print the value of the importance value of the associated instance
+     *  of <code>Schedulable</code>.
+     */
     public String toString() {
 	return "ImportanceParameters: Priority = " + getPriority()
 	    + ", Importance = " + getImportance();

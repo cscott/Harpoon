@@ -7,11 +7,11 @@ package javax.realtime;
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
-/** <code>RealtimeThread</code> extends <code>java.lang.Thread</code>
+/** Class <code>RealtimeThread</code> extends <code>java.lang.Thread</code>
  *  and includes classes and methods to get and set parameterer objects,
  *  manage the execution of those threads with a
  *  <code>ReleaseParameters</code> type of <code>PeriodicParameters</code>,
- *  and waiting.
+ *  and manage waiting.
  *  <p>
  *  A <code>RealtimeThread</code> object must be placed in a memory area
  *  such that thread logic may unexceptionally access instance variables
@@ -21,7 +21,7 @@ package javax.realtime;
  *  <p>
  *  Parameters for constructors may be <code>null</code>. In such cases
  *  the default value will be the default value set for the particular
- *  type by the associated instance of <code>Schedulable</code>.
+ *  type by the associated instance of <code>Scheduler</code>.
  */
 public class RealtimeThread extends Thread implements Schedulable {
 
@@ -70,7 +70,12 @@ public class RealtimeThread extends Thread implements Schedulable {
 	setup();
     }
 
-    /** Create a real-time thread with the given <code>SchedulingParameters</code>. */
+    /** Create a real-time thread with the given <code>SchedulingParameters</code>.
+     *
+     *  @param scheduling The <code>SchedulingParameters</code> associated with
+     *                    <code>this</code> (and possibly other instances of
+     *                    <code>Schedulable</code>).
+     */
     public RealtimeThread(SchedulingParameters scheduling) {
 	this();
 	schedulingParameters = scheduling;
@@ -78,6 +83,13 @@ public class RealtimeThread extends Thread implements Schedulable {
 
     /** Create a real-time thread with the given <code>SchedulingParameters</code>
      *  and <code>ReleaseParameters</code>.
+     *
+     *  @param scheduling The <code>SchedulingParameters</code> associated with
+     *                    <code>this</code> (and possibly other instances of
+     *                    <code>Schedulable</code>).
+     *  @param release The <code>ReleaseParameters</code> associated with
+     *                 <code>this</code> (and possibly other instances of
+     *                 <code>Schedulable</code>).
      */
     public RealtimeThread(SchedulingParameters scheduling,
 			  ReleaseParameters release) {
@@ -88,6 +100,22 @@ public class RealtimeThread extends Thread implements Schedulable {
 
     /** Create a real-time thread with the given characteristics and a 
      *  <code>java.lang.Runnable</code>.
+     *
+     *  @param scheduling The <code>SchedulingParameters</code> associated with
+     *                    <code>this</code> (and possibly other instances of
+     *                    <code>Schedulable</code>).
+     *  @param release The <code>ReleaseParameters</code> associated with
+     *                 <code>this</code> (and possibly other instances of
+     *                 <code>Schedulable</code>).
+     *  @param memory The <code>MemoryParameters</code> associated with
+     *                <code>this</code> (and possibly other instances of
+     *                <code>Schedulable</code>).
+     *  @param area The <code>MemoryArea</code> associated with <code>this</code>.
+     *  @param group The <code>ProcessingGroupParameters</code> associated with
+     *               <code>this</code> (and possibly other instances of
+     *               <code>Schedulable</code>).
+     *  @param logic A <code>Runnable</code> whose <code>run()</code> method will
+     *               be executed for <code>this</code>.
      */
     public RealtimeThread(SchedulingParameters scheduling,
 			  ReleaseParameters release, MemoryParameters memory,
@@ -166,22 +194,26 @@ public class RealtimeThread extends Thread implements Schedulable {
 	}
     }
 
-    /** Add to the feasibility of the already set scheduler if the resulting
-     *  feasibility set is schedulable. If successful return true, if not
-     *  return false. If there is not an assigned scheduler it will return false. */
+    /** Add the scheduling and release characteristics of <code>this</code>
+     *  to the sed of such characteristics already being considered, if the
+     *  addition would result in the new, larger set being feasible.
+     *
+     *  @return True, if the addition would result in the set of considered
+     *          characteristics being feasible. False, if the addition would
+     *          result in the set of considered characteristics being
+     *          infeasible or there is no assigned instance of <code>Scheduler</code>.
+     */
     public boolean addIfFeasible() {
 	if ((currentScheduler == null) ||
 	    (!currentScheduler.isFeasible(this, getReleaseParameters()))) return false;
 	else return addToFeasibility();
     }
 
-    /** Inform the scheduler and cooperating facilities that the resource
-     *  demands (as expressed in the associated instances of
-     *  <code>SchedulingParameters, ReleaseParameters, MemoryParameters</code>
-     *  and <code>ProcessingGroupParameters</code>) of this instance of
-     *  <code>Schedulable</code> will be considered in the feasibility analysis
-     *  of the associated <code>Scheduler</code> until further notice. Whether
-     *  the resulting system is feasible or not, the addition is completed.
+    /** Inform the scheduler and cooperating facilities that scheduling and
+     *  release characteristics of this instance of <code>Schedulable</code>
+     *  should be considered in feasibility analysis until further notified.
+     *
+     *  @return True, if the addition was successful. False, if not.
      */
     public boolean addToFeasibility() {
 	if(currentScheduler != null) {
@@ -190,23 +222,29 @@ public class RealtimeThread extends Thread implements Schedulable {
 	} else return false;
     }
     
-    /** This will throw a <code>ClassCastException</code> if the current thread
-     *  is not a <code>RealtimeThread</code>.
+    /** Gets a reference to the current instance of <code>RealtimeThread</code>.
+     *  
+     *  @return A reference to the current instance of <code>RealtimeThread</code>.
+     *  @throws java.lang.ClassCastException If the current thread is not a
+     *                                       <code>RealtimeThread</code>.
      */
     public static RealtimeThread currentRealtimeThread()
 	throws ClassCastException {
 	return (RealtimeThread)currentThread();
     }
 
-    /** Stop unblocking <code>waitForNextPeriod()</code> for a periodic schedulable
-     *  object. If this does not have a type of <code>PeriodicParameters</code> as
-     *  its <code>ReleaseParameters</code>, nothing happens.
+    /** Stop unblocking <code>waitForNextPeriod()</code> for <code>this</code> if
+     *  the type of the associated instance of <code>ReleaseParameters</code> is
+     *  <code>PeriodicParameters</code>. If <code>this</code> does not have a type
+     *  of <code>PeriodicParameters</code>, nothing happens.
      */
     public void deschedulePeriodic() {
-	blocked = true;
+	if (releaseParameters instanceof PeriodicParameters) blocked = true;
     }
-    /** Return the instance of <code>MemoryArea</code> which is the current memory
-     *  area for this.
+    
+    /** Gets the current memory area of <code>this</code>.
+     *
+     *  @return A reference to the current <code>MemoryArea</code> object.
      */
     public MemoryArea getCurrentMemoryArea() {
 	return mem;
@@ -216,8 +254,11 @@ public class RealtimeThread extends Thread implements Schedulable {
      *  memory area for the current <code>RealtimeThread</code> is the memory area
      *  given as a parameter to the constructor. This method returns the position in
      *  the memory area stack of that initial memory area.
+     *
+     *  @return The index into the memory area stack of the initial memory area of
+     *          the current <code>RealtimeThread</code>.
      */
-    public /*static*/ int getInitialMemoryAreaIndex() {
+    public /* spec says it should be static */ int getInitialMemoryAreaIndex() {
 	MemAreaStack temp = memAreaStack;
 	int index = 0;
 	while (temp != null) {
@@ -231,7 +272,10 @@ public class RealtimeThread extends Thread implements Schedulable {
 	return -1;
     }
     
-    /** Gets a reference to the current <code>MemoryArea</code>. */
+    /** Gets a reference to the current <code>MemoryArea</code>.
+     *
+     *  @return A reference to the current memory area in which allocations occur.
+     */
     public MemoryArea getMemoryArea() {
 	if (mem == null) {
 	    mem = (original = HeapMemory.instance()).shadow;
@@ -241,8 +285,10 @@ public class RealtimeThread extends Thread implements Schedulable {
 
     /** Get the size of the stack of <code>MemoryArea</code> instances to which
      *  this <code>RealtimeThread</code> has access.
+     *
+     *  @return The size of the stack of <code>MemoryArea</code> instances.
      */
-    public /*static*/ int getMemoryAreaStackDepth() {
+    public /* spec says it should be static */ int getMemoryAreaStackDepth() {
 	MemAreaStack temp = memAreaStack;
 	int count = 0;
 	while (temp != null) {
@@ -252,16 +298,23 @@ public class RealtimeThread extends Thread implements Schedulable {
 	return count;
     }
 
-    /** Return a reference to the <code>MemoryParameters</code> object. */
+    /** Gets a reference to the <code>MemoryParameters</code> object.
+     *
+     *  @return A reference to the current <code>MemoryParameters</code> object.
+     */
     public MemoryParameters getMemoryParameters() {
 	return memoryParameters;
     }
     
-    /** Get the instance of <code>MemoryArea</code> in the memory area stack
+    /** Gets the instance of <code>MemoryArea</code> in the memory area stack
      *  at the index given. If the given index does not exist in the memory
      *  area scope stack then null is returned.
+     *
+     *  @param index The offset into the memory area stack.
+     *  @return The instance of <code>MemoryArea</code> at index or <code>null</code>
+     *          if the given value does not correspond to a position in the stack.
      */
-    public /*static*/ MemoryArea getOuterMemoryArea(int index) {
+    public /* specs says it should be static */ MemoryArea getOuterMemoryArea(int index) {
 	MemAreaStack temp = memAreaStack;
 	for (int i = 0; i < index; i++)
 	    if (temp != null) temp = temp.next;
@@ -270,39 +323,54 @@ public class RealtimeThread extends Thread implements Schedulable {
 	else return null;
     }
 
-    /** Return a reference to the <code>ProcessingGroupParameters</code> object. */
+    /** Gets a reference to the <code>ProcessingGroupParameters</code> object.
+     *
+     *  @return A reference to the current <code>ProcessingGroupParameters</code> object.
+     */
     public ProcessingGroupParameters getProcessingGroupParameters() {
 	return processingGroupParameters;
     }
 
-    /** Returns a reference to the <code>ReleaseParameters</code> object. */
+    /** Gets a reference to the <code>ReleaseParameters</code> object.
+     *
+     *  @return A reference to the current <code>ReleaseParameters</code> object.
+     */
     public ReleaseParameters getReleaseParameters() {
 	return releaseParameters;
     }
 
-    /** Get the scheduler for this thread. */
+    /** Get a reference to the <code>Scheduler</code> object.
+     *
+     *  @return A reference to the current <code>Scheduler</code> object.
+     */
     public Scheduler getScheduler() {
 	return currentScheduler;
     }
 
-    /** Return a reference to the <code>SchedulingParameters</code> object. */
+    /** Gets a reference to the <code>SchedulingParameters</code> object.
+     *
+     *  @return A reference to the current <code>SchedulingParameters</code> object.
+     */
     public SchedulingParameters getSchedulingParameters() {
 	return schedulingParameters;
     }
 
-    /** Throw the generic <code>AsynchronouslyInterruptedException</code> at this. */
+    /** Sets the state of the generic <code>AsynchronouslyInterruptedException<code>
+     *  to pending.
+     */
     public void interrupt() {
 	// TODO
 
 	super.interrupt();
     }
 
-    /** Inform the scheduler and cooperating facilities that the resource demands, as
-     *  expressed in the associated instances of <code>SchedulingParameters,
-     *  ReleaseParameters, MemoryParameters</code> and <code>ProcessingGroupParameters</code>,
-     *  of this instance of <code>Schedulable</code> should no longer be considered
-     *  in the feasibility analysis of the associated <code>Scheduler</code>.
-     *  Whether the resulting system is feasible or not, the subtraction is completed.
+    /** Inform the scheduler and cooperating facilities that the scheduling and
+     *  release characteristics of this instance of <code>Schedulable</code>
+     *  should <i>not</i> be considered in feasibility analyses until further
+     *  notified.
+     *
+     *  @return True, if the removal was successful. False, if the removal was
+     *          unsuccessful.
      */
     public void removeFromFeasibility() {
 	if (currentScheduler != null)
@@ -312,26 +380,47 @@ public class RealtimeThread extends Thread implements Schedulable {
     /** Begin unblocking <code>waitForNextPeriod()</code> for a periodic thread.
      *  Typically used when a periodic schedulable object is in an overrun condition.
      *  The scheduler should recompute the schedule and perform admission control.
-     *  if this does not have a type of <code>PeriodicParameters</code> as its
+     *  If this does not have a type of <code>PeriodicParameters</code> as its
      *  <code>ReleaseParameters</code>, nothing happens.
      */
     public void schedulePeriodic() {
 	blocked = false;
     }
 
-    /** Returns true if, after considering the values of the parameters, the task set
-     *  would still be feasible. In this case the values of the parameters are changed.
-     *  Returns false if, after considering the values of the parameters, the task set
-     *  would not be feasible. In this case the values of the parameters are not changed.
+    /** This method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The
+     *  method first performs a feasibility analysis using the new scheduling
+     *  characteristics as replacements for the matching scheduling characteristics
+     *  of either <code>this</code> or the given instance of <code>Schedulable</code>.
+     *  If the resulting system is feasible the method replaces the current scheduling
+     *  characteristics, of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code> as appropriate, with the new scheduling characteristics.
+     *
+     *  @param release The proposed release parameters.
+     *  @param memory The proposed memory parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(ReleaseParameters release, MemoryParameters memory) {
 	return setIfFeasible(release, memory, processingGroupParameters);
     }
 
-    /** Returns true if, after considering the values of the parameters, the task set
-     *  would still be feasible. In this case the values of the parameters are changed.
-     *  Returns false if, after considering the values of the parameters, the task set
-     *  would not be feasible. In this case the values of the parameters are not changed.
+    /** This method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The
+     *  method first performs a feasibility analysis using the new scheduling
+     *  characteristics as replacements for the matching scheduling characteristics
+     *  of either <code>this</code> or the given instance of <code>Schedulable</code>.
+     *  If the resulting system is feasible the method replaces the current scheduling
+     *  characteristics, of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code> as appropriate, with the new scheduling characteristics.
+     *
+     *  @param release The proposed release parameters.
+     *  @param memory The proposed memory parameters.
+     *  @param group The proposed processing group parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(ReleaseParameters release, MemoryParameters memory,
 				 ProcessingGroupParameters group) {
@@ -339,61 +428,107 @@ public class RealtimeThread extends Thread implements Schedulable {
 	else return currentScheduler.setIfFeasible(this, release, memory, group);
     }
 
-    /** Returns true if, after considering the values of the parameters, the task set
-     *  would still be feasible. In this case the values of the parameters are changed.
-     *  Returns false if, after considering the values of the parameters, the task set
-     *  would not be feasible. In this case the values of the parameters are not changed.
+    /** This method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The
+     *  method first performs a feasibility analysis using the new scheduling
+     *  characteristics as replacements for the matching scheduling characteristics
+     *  of either <code>this</code> or the given instance of <code>Schedulable</code>.
+     *  If the resulting system is feasible the method replaces the current scheduling
+     *  characteristics, of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code> as appropriate, with the new scheduling characteristics.
+     *
+     *  @param release The proposed release parameters.
+     *  @param group The proposed processing group parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(ReleaseParameters release, ProcessingGroupParameters group) {
 	return setIfFeasible(release, memoryParameters, group);
     }
 
-    /** Set the reference to the <code>MemoryParameters</code> object. */
-    public void setMemoryParameters(MemoryParameters parameters)
+    /** Sets the memory parameters associated with this instance of <code>Schedulable</code>.
+     *
+     *  @param memory A <code>MemoryParameters</code> object which will become the memory
+     *                parameters associated with <code>this</code> after the method call.
+     *  @throws java.lang.IllegalThreadStateException
+     */
+    public void setMemoryParameters(MemoryParameters memory)
 	throws IllegalThreadStateException {
-	this.memoryParameters = memoryParameters;
+	this.memoryParameters = memory;
     }
     
-    /** Returns true if, after considering the values of the parameters, the task set
-     *  would still be feasible. In this case the values of the parameters are changed.
-     *  Returns false if, after considering the values of the parameters, the task set
-     *  would not be feasible. In this case the values of the parameters are not changed.
+    /** The method first performs a feasibility analysis using the ginve memory parameters
+     *  as replacements for the memory parameters of <code>this</code>. If the resulting
+     *  system is feasible the method replaces the current memory parameters of
+     *  <code>this</code> with the new memory parameters.
+     *
+     *  @param memory The proposed memory parameters. If <code>null</code>, nothing happens.
+     *  @return True, if the resulting system is fesible and the changes are made. False,
+     *          if the resulting system is not feasible and no changes are made.
      */
     public boolean setMemoryParametersIfFeasible(MemoryParameters memParam) {
 	return setIfFeasible(releaseParameters, memParam, processingGroupParameters);
     }
 
-    /** Set the reference to the <code>ProcessingGroupParameters</code> object. */
+    /** Sets the reference to the <code>ProcessingGroupParameters</code> object.
+     *
+     *  @param parameters A reference to the <code>ProcessingGroupParameters</code> object.
+     */
     public void setProcessingGroupParameters(ProcessingGroupParameters parameters) {
 	this.processingGroupParameters = parameters;
     }
 
-    /** Returns true if, after considering the values of the parameters, the task set
-     *  would still be feasible. In this case the values of the parameters are changed.
-     *  Returns false if, after considering the values of the parameters, the task set
-     *  would not be feasible. In this case the values of the parameters are not changed.
+    /** Sets the <code>ProcessingGroupParameters</code> of <code>this</code> only if the
+     *  resulting set of scheduling and release characteristics is feasible.
+     *
+     *  @param groupParameters The <code>ProcessingGroupParameters</code> object. If
+     *                         <code>null</code>, nothing happens.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setProcessingGroupParametersIfFeasible(ProcessingGroupParameters groupParameters) {
 	return setIfFeasible(releaseParameters, memoryParameters, groupParameters);
     }
 
-    /** Set the reference to the <code>ReleaseParameteres</code> object. */
-    public void setReleaseParameters(ReleaseParameters parameters)
+    /** Since this affects the constraints expressed in the release parameters of the
+     *  existing schedulable objects, this may change the feasibility of the current
+     *  schedule.
+     *
+     *  @param release A <code>ReleaseParameters</code> object which will become the
+     *                 release parameters associated with <code>this</code> afther the
+     *                 method call.
+     *  @throws java.lang.IllegalThreadStateException Thrown if the state of this instance
+     *                                                of <code>Schedulable</code> is not
+     *                                                appropriate to changing the release
+     *                                                parameters.
+     */
+    public void setReleaseParameters(ReleaseParameters release)
 	throws IllegalThreadStateException {
 	this.releaseParameters = releaseParameters;
     }
     
-    /** Returns true if, after considering the values of the parameters, the task set
-     *  would still be feasible. In this case the values of the parameters are changed.
-     *  Returns false if, after considering the values of the parameters, the task set
-     *  would not be feasible. In this case the values of the parameters are not changed.
+    /** Set the <code>ReleaseParameters</code> for this schedulable object only if
+     *  the resulting set of scheduling and release characteristics is feasible.
+     *
+     *  @param release The <code>ReleaseParameters</code> object. If <code>null</code>
+     *                 nothing happens.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setReleaseParametersIfFeasible(ReleaseParameters release) {
 	return setIfFeasible(release, memoryParameters, processingGroupParameters);
     }
 
-    /** Set the scheduler. This is a reference to the scheduler that will manage the
-     *  execution of this thread.
+    /** Sets the reference to the <code>Scheduler</code> object.
+     *
+     *  @param scheduler A reference to the <code>Scheduler</code> object.
+     *  @throws java.lang.IllegalThreadStateException Thrown when:
+     *                                                <code>((Thread.isAlive() &&
+     *                                                Not Blocked) == true)</code>.
+     *                                                (Where blocked means waiting in
+     *                                                <code>Thread.wait(), Thread.join()</code>
+     *                                                or <code>Thread.sleep()</code>).
      */
     public void setScheduler(Scheduler scheduler)
 	throws IllegalThreadStateException {
@@ -401,8 +536,30 @@ public class RealtimeThread extends Thread implements Schedulable {
 	currentScheduler = scheduler;
     }
     
-    /** Set the scheduler. This is a reference to the scheduler that will manage the
-     *  execution of this thread.
+    /** Sets the scheduler and associated parameter objects.
+     *
+     *  @param scheduler A reference to the scheduler that will manage the execution
+     *                   of this thread. If <code>null</code>, no change to current
+     *                   value of this parameter is made.
+     *  @param scheduling A reference to the <code>SchedulingParameters</code> which
+     *                    will be associated with <code>this</code>. If null, no
+     *                    change to current value of this parameter is made.
+     *  @param release A reference to the <code>ReleasePrameters</code> which will
+     *                 be associated with <code>this</code>. If null, no change to
+     *                 current value of this parameter is made.
+     *  @param memory A reference to the <code>MemoryParameters</code> which will be
+     *                associated with <code>this</code>. If null, no change to
+     *                current value of this parameter is made.
+     *  @param group A reference to the <code>ProcessingGroupParameters</code> which
+     *               will be associated with <code>this</code>. If null, no change
+     *               to current value of this parameter is made.
+     *  @throws java.lang.IllegalThreadStateException Thrown when:
+     *                                                <code>((Thread.isAlive() &&
+     *                                                Not Blocked) == true).</code>
+     *                                                (Where blocked means waiting
+     *                                                in <code>Thread.wait(),
+     *                                                Thread.join()</code> or
+     *                                                <code>Thread.sleep()</code>).
      */
     public void setScheduler(Scheduler scheduler,
 			     SchedulingParameters scheduling,
@@ -418,16 +575,31 @@ public class RealtimeThread extends Thread implements Schedulable {
 	processingGroupParameters = processingGroup;
     }
 
-    /** Set the reference to the <code>SchedulingParameters</code> object. */
+    /** Sets the reference to the <code>SchedulingParameters</code> object.
+     *
+     *  @param scheduling A reference to the <code>SchedulingParameters</code> in
+     *                    interface <code>Schedulable</code>.
+     *  @throws java.lang.IllegalThreadStateException Thrown when:
+     *                                                <code>((Thread.isAlive() &&
+     *                                                Not Blocked) == true).</code>
+     *                                                (Where blocked means waiting
+     *                                                in <code>Thread.wait(),
+     *                                                Thread.join()</code> or
+     *                                                <code>Thread.sleep()</code>).
+     */
     public void setSchedulingParameters(SchedulingParameters scheduling)
 	throws IllegalThreadStateException {
 	this.schedulingParameters = scheduling;
     }
     
-    /** Returns true if, after considering the values of the parameters, the task set
-     *  would still be feasible. In this case the values of the parameters are changed.
-     *  Returns false if, after considering the values of the parameters, the task set
-     *  would not be feasible. In this case the values of the parameters are not changed.
+    /** The method first performs a feasiblity analysis using the given scheduling
+     *  parameters as replacements for the scheduling parameters of <code>this</code>.
+     *  If the resulting system is feasible the method replaces the current scheduling
+     *  parameters of <code>this</code> with the new scheduling parameters.
+     *
+     *  @param scheduling The proposed scheduling parameters. If null, nothing happens.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setSchedulingParametersIfFeasible(SchedulingParameters scheduling) {
 	//How do scheduling parameters affect the feasibility of the task set?
@@ -451,6 +623,11 @@ public class RealtimeThread extends Thread implements Schedulable {
      *  thread is blocked until the indicated point in time. If the given
      *  absolute time is before the current time, the call to sleep returns
      *  immediately.
+     *
+     *  @param clock The instance of <code>Clock</code> used as the base.
+     *  @param time The amount of time to sleep or the point in time at
+     *              which to awaken.
+     *  @throws java.lang.InterruptedException If interrupted.
      */
     public static void sleep(Clock clock, HighResolutionTime time)
 	throws InterruptedException {
@@ -470,15 +647,17 @@ public class RealtimeThread extends Thread implements Schedulable {
      *  thread is blocked until the indicated point in time. If the given
      *  absolute time is before the current time, the call to sleep returns
      *  immediately.
+     *
+     *  @param time The amount of time to sleep or the point in time at
+     *              which to awaken.
+     *  @throws java.lang.InterruptedException If interrupted.
      */
     public static void sleep(HighResolutionTime time)
 	throws InterruptedException {
 	sleep(Clock.getRealtimeClock(), time);
     }
 
-    /** Checks if the instance of <code>RealtimeThread</code> is startable and
-     *  starts it if it is.
-     */
+    /** Starts the thread. */
     public void start() {
 	if ((mem != null)&&(!mem.heap)) {
 	    checkInit();
@@ -512,6 +691,13 @@ public class RealtimeThread extends Thread implements Schedulable {
      *  <code>waitForNextPeriod()</code> throws <code>IllegalThreadStateException</code>
      *  if this does not have a reference to a <code>ReleaseParameters</code>
      *  type of <code>PeriodicParameters</code>.
+     *
+     *  @return True when the thread is not in an overrun or deadline miss
+     *          condition and unblocks at the start of the next period.
+     *  @throws java.lang.IllegalThreadStateException If <code>this</code> does not
+     *                                                have a reference to a
+     *                                                <code>ReleaseParameters</code>
+     *                                                type of <code>PeriodicParameters</code>.
      */
     public boolean waitForNextPeriod() throws IllegalThreadStateException {
 	if ((releaseParameters instanceof PeriodicParameters) && (!blocked))

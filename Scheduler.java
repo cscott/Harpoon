@@ -15,12 +15,12 @@ import java.util.HashSet;
  *  instance of the subclass. The name of the subclass should be
  *  descriptive of the policy, allowing applications to deduce the
  *  policy available for the scheduler obtained via
- *  <code>getDefaultScheduler()</code>.
+ *  <code>getDefaultScheduler()</code> (e.g., <code>EDFScheduler</code>).
  */
 public abstract class Scheduler {
     protected static Scheduler defaultScheduler = null;
     
-    
+    /** Create an instance of <code>Scheduler</code>. */
     protected Scheduler() {}
 
     /** Inform the scheduler and cooperating facilities that the resource
@@ -30,15 +30,23 @@ public abstract class Scheduler {
      *  <code>Schedulable</code> will be considered in the feasibility analysis
      *  of the associated <code>Scheduler</code> until further notice. Whether
      *  the resulting system is feasible or not, the addition is completed.
+     *
+     *  @param schedulable A reference to the given instance of <code>Schedulable</code>.
+     *  @return True, if the addition was successful. False, if not.
      */
     protected abstract boolean addToFeasibility(Schedulable schedulable);
 
     /** Trigger the execution of a schedulable object (like an
      *  <code>AsyncEventHandler</code>.
+     *
+     *  @param schedulable The Schedulable object to make active.
      */
     public abstract void fireSchedulable(Schedulable schedulable);
 
-    /** Return a reference to the default scheduler. */
+    /** Gets a reference to the default scheduler.
+     *
+     *  @return A reference to the default scheduler.
+     */
     public static Scheduler getDefaultScheduler() {
 	if (defaultScheduler == null) {
 	    setDefaultScheduler(PriorityScheduler.getScheduler());
@@ -47,12 +55,15 @@ public abstract class Scheduler {
 	return defaultScheduler;
     }
 
-    /** Used to determine the policy of the <code>Scheduler</code>. */
+    /** Gets a string representing the policy of <code>this</code>.
+     *
+     *  @return A <code>java.lang.String</code> object which is the name
+     *          of the scheduling polixy used by <code>this</code>.
+     */
     public abstract String getPolicyName();
 
-    /** Returns true if and only if the system is able to satisfy the
-     *  constraints expressed in the release parameters of the existing
-     *  schedulable objects.
+    /** Queries the system about the feasibility of the set of scheduling
+     *  and release characteristics currently being considered.
      */
     public abstract boolean isFeasible();
     protected abstract boolean isFeasible(Schedulable s, ReleaseParameters rp);
@@ -65,6 +76,9 @@ public abstract class Scheduler {
      *  feasibility analysis of the associated <code>Scheduler</code>
      *  until further notice. Whether the resulting system is feasible
      *  or not, the subtraction is completed.
+     *
+     *  @return True, if the removal was successful. False, if the removal
+     *          was unsuccessful.
      */
     protected abstract boolean removeFromFeasibility(Schedulable schedulable);
 
@@ -72,15 +86,30 @@ public abstract class Scheduler {
      *  of <code>RealtimeThread</code> when they are constructed. The default
      *  scheduler is set to the required <code>PriorityScheduler</code> at
      *  startup.
+     *
+     *  @param scheduler The <code>Scheduler</code> that becomes the default
+     *                   scheduler assigned to new threads. If null nothing happens.
      */
     public static void setDefaultScheduler(Scheduler scheduler) {
 	defaultScheduler = scheduler;
     }
 
-    /** Returns true if, after considering the values of the parameters, the task set
-     *  would still be feasible. In this case the values of the parameters are changed.
-     *  Returns false if, after considering the values of the parameters, the task set
-     *  would not be feasible. In this case the values of the parameters are not changed.
+    /** This method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance of
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The
+     *  method first performs a feasibility analysis using the new scheduling
+     *  characteristics of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code>. If the resulting system is feasible the method
+     *  replaces the current sheduling characteristics, of either <code>this</code>
+     *  or the given instance of <code>Schedulable</code> as appropriate, with the
+     *  new scheduling characteristics.
+     *
+     *  @param schedulable The instance of <code>Schedulable</code> to which the
+     *                     parameters will be assigned.
+     *  @param release The proposed release parameters.
+     *  @param memory The proposed memory parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(Schedulable schedulable,
 				 ReleaseParameters release,
@@ -88,10 +117,23 @@ public abstract class Scheduler {
 	return false;
     }
 
-    /** Returns true if, after considering the values of the parameters, the task set
-     *  would still be feasible. In this case the values of the parameters are changed.
-     *  Returns false if, after considering the values of the parameters, the task set
-     *  would not be feasible. In this case the values of the parameters are not changed.
+    /** This method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance of
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The
+     *  method first performs a feasibility analysis using the new scheduling
+     *  characteristics of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code>. If the resulting system is feasible the method
+     *  replaces the current sheduling characteristics, of either <code>this</code>
+     *  or the given instance of <code>Schedulable</code> as appropriate, with the
+     *  new scheduling characteristics.
+     *
+     *  @param schedulable The instance of <code>Schedulable</code> to which the
+     *                     parameters will be assigned.
+     *  @param release The proposed release parameters.
+     *  @param memory The proposed memory parameters.
+     *  @param group The proposed processing group parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(Schedulable schedulable,
 				 ReleaseParameters release,
@@ -99,5 +141,4 @@ public abstract class Scheduler {
 				 ProcessingGroupParameters group) {
 	return false;
     }
-
 }

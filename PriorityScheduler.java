@@ -7,9 +7,15 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Iterator;
 
+/** Class which represents the required (by RTSJ) priority-based scheduler.
+ *  The default instance is the required priority scheduler which does
+ *  fixed priority, preemptive scheduling.
+ */
 public class PriorityScheduler extends Scheduler {
     // Real-time thread priorities
+    /** The maximum priority value used by the implementation. */
     static final int MAX_PRIORITY = 38;
+    /** The minimum priority value used by the implementation. */
     static final int MIN_PRIORITY = 11;
     static final int NORM_PRIORITY =
 	(MAX_PRIORITY - MIN_PRIORITY) / 3 + MIN_PRIORITY;
@@ -40,7 +46,9 @@ public class PriorityScheduler extends Scheduler {
     
     // Do not call this constructor; instead, call
     // PriorityScheduler.getScheduler().
-    /** Constructor for the required scheduler. */
+    /** Construct an instance of <code>PriorityScheduler</code>. Applications
+     *  will likely not need any other instance other than the default instance.
+     */
     protected PriorityScheduler() {
 	super();
 	if (thread == null) {
@@ -76,6 +84,9 @@ public class PriorityScheduler extends Scheduler {
      *  feasibility analysis of the associated <code>Scheduler</code> until
      *  further notice. Whether the resulting system is feasible or not, the addition
      *  is completed.
+     *
+     *  @param schedulable The instance of <code>Schedulable</code> for which the
+     *                     changes are proposed.
      */
     protected boolean addToFeasibility(final Schedulable schedulable) {
 	allThreads.add(schedulable);
@@ -98,59 +109,91 @@ public class PriorityScheduler extends Scheduler {
 
     /** Trigger the execution of a schedulable object (like
      *  an instance of <code>AsyncEventHandler</code>).
+     *
+     *  @param schedulable The <code>Schedulable</code> object to make active.
      */
     public void fireSchedulable(Schedulable schedulable) {
 	schedulable.run();
     }
 
-    /** Returns the maximum priority available for a thread managed by this scheduler. */
+    /** Gets the maximum priority available for a thread managed by this scheduler.
+     *
+     *  @return The value of the maximum priority.
+     */
     public int getMaxPriority() {
 	return MAX_PRIORITY;
     }
 
-    /** If the given thread is scheduled by the required <code>PriorityScheduler</code>
-     *  the maximum priority of the <code>PriorityScheduler</code> is returned;
-     *  otherwise <code>Thread.MAX_PRIORITY</code> is returned.
+    /** Gets the maximum priority of the given instance of
+     *  <code>java.lang.Thread</code>. If the given thread is scheduled by the
+     *  required <code>PriorityScheduler</code> the maximum priority of the
+     *  <code>PriorityScheduler</code> is returned; otherwise
+     *  <code>Thread.MAX_PRIORITY</code> is returned.
+     *
+     *  @param thread An instance of <code>java.lang.Thread</code>. If null,
+     *                the maximum priority of the required
+     *                <code>PriorityScheduler</code> is returned.
+     *  @return The maximum priority of the given instance of
+     *          <code>java.lang.Thread</code>.
      */
     public static int getMaxPriority(Thread thread) {
 	return (allThreads.contains(thread)) ?
 	    MAX_PRIORITY : Thread.MAX_PRIORITY;
     }
 
-    /** Returns the minimum priority available for a thread managed by this scheduler. */
+    /** Gets the minimum priority available for a thread managed by this scheduler.
+     *
+     *  @return The value of the minimum priority.
+     */
     public int getMinPriority() {
 	return MIN_PRIORITY;
     }
     
-    /** If the given thread is scheduled by the required <code>PriorityScheduler</code>
-     *  the minimum priority of the <code>PriorityScheduler</code> is returned;
-     *  otherwise <code>Thread.MIN_PRIORITY</code> is returned.
+    /** Gets the minimum priority of the given instance of
+     *  <code>java.lang.Thread</code>. If the given thread is scheduled by the
+     *  required <code>PriorityScheduler</code> the minimum priority of the
+     *  <code>PriorityScheduler</code> is returned; otherwise
+     *  <code>Thread.MIN_PRIORITY</code> is returned.
+     *
+     *  @return The value of the minimum priority of the given instance of
+     *          <code>java.lang.Thread</code>.
      */
     public static int getMinPriority(Thread thread) {
 	return (allThreads.contains(thread)) ?
 	    MIN_PRIORITY : Thread.MIN_PRIORITY;
     }
     
-    /** Returns the nomral priority available for a thread managed by this scheduler. */
+    /** Gets the normal priority available for a thread managed by this scheduler.
+     *
+     *  @return The value of the normal priority.
+     */
     public int getNormPriority() {
 	return NORM_PRIORITY;
     }
 
-    /** If the given thread is scheduled by the required <code>PriorityScheduler</code>
-     *  the normal priority of the <code>PriorityScheduler</code> is returned;
-     *  otherwise <code>Thread.NORM_PRIORITY</code> is returned.
+    /** Gets the normal priority of the given instance of
+     *  <code>java.lang.Thread</code>. If the given thread is scheduled by the
+     *  required <code>PriorityScheduler</code> the normal priority of the
+     *  <code>PriorityScheduler</code> is returned; otherwise
+     *  <code>Thread.NORM_PRIORITY</code> is returned.
      */
     public static int getNormPriority(Thread thread) {
 	return (allThreads.contains(thread)) ?
 	    NORM_PRIORITY : Thread.NORM_PRIORITY;
     }
     
-    /** Used to determine the policy of the <code>Scheduler</code>. */
+    /** Gets the policy name of <code>this</code>.
+     *
+     *  @return The policy name (Fixed Priority) as a string.
+     */
     public String getPolicyName() {
 	return "EDF";
     }
     
-    /** Return a pointer to an instance of <code>PriorityScheduler</code>. */
+    /** Return a reference to an instance of <code>PriorityScheduler</code>.
+     *
+     *  @return A reference to an instance of <code>PriorityScheduler</code>.
+     */
     public static PriorityScheduler instance() {
 	if (defaultScheduler == null) defaultScheduler = new PriorityScheduler();
 	return (PriorityScheduler)defaultScheduler;
@@ -159,6 +202,10 @@ public class PriorityScheduler extends Scheduler {
     /** Determines the load on the system. If the load is less then 1, the
      *  system is feasible. If the load is greater than or equal to 1, the
      *  system is not feasible.
+     *
+     *  @param releaseParams The list of the <code>ReleaseParameters</code>
+     *                       to be considered when determining the load.
+     *  @return The load of the system.
      */
     private float load(LinkedList releaseParams) {
 	float l = 0.0f;
@@ -174,9 +221,15 @@ public class PriorityScheduler extends Scheduler {
 	return l;
     }
 
-    /** Returns true if and only if the system is able to satisfy the
-     *  constraints expressed in the release parameters of the existing
-     *  schedulable objects.
+    /** Queries the system about the feasibility of the set of
+     *  <code>Schedulable</code> objects with respect to their include in the
+     *  feasibility set and the constraints expressed by their associated
+     *  parameter objects.
+     *
+     *  @return True if the system is able to satisfy the constraints expressed
+     *          by the parameter object of all instances of <code>Schedulable</code>
+     *          currently in the feasibility set. False if the system cannot
+     *          satisfy those constraints.
      */
     public boolean isFeasible() {
 	return isFeasible(null, null);
@@ -260,12 +313,15 @@ public class PriorityScheduler extends Scheduler {
 // 	return (load <= 1.0);
 //     }
 
-    /** Inform the scheduler and cooperating facilities that the resource demands,
-     *  as expressed in the associated instances of <code>SchedulableParameters,
-     *  ReleaseParameters, MemoryParameters</code>, and <code>ProcessingGroupParameters</code>,
-     *  of this instance of <code>Schedulable</code> should no longer be considered
-     *  in the feasibility analysis of the associated <code>Scheduler</code>.
-     *  Whether the resulting system is feasible or not, the subtraction is completed.
+    /** Inform <code>this</code> and cooperating facilities that the
+     *  <code>ReleaseParameters</code> of the ginve instance of <code>Schedulable</code>
+     *  should <i>not</i> be considered in feasibility analysis until further notified.
+     *
+     *  @param schedulable The instance of <code>Schedulable</code> whose
+     *                     <code>ReleaseParameters</code> are to be removed from the
+     *                     feasibility set.
+     *  @return True, if the removal was ssuccessful. False, if the removal was
+     *          unsuccessful.
      */
     protected boolean removeFromFeasibility(Schedulable schedulable) {
 	long threadID = removeThreadInC(schedulable);
@@ -285,10 +341,21 @@ public class PriorityScheduler extends Scheduler {
     
     protected native long removeThreadInC(Schedulable t);
     
-    /** Returns true if, after considering the values of the parameters, the task set
-     *  would still ve feasible. In this case the values of the parameters are changed.
-     *  Returns false if, after considering the values of the parameters, the task set
-     *  would not be feasible. In this case the values of the parameters are not changed.
+    /** The method appears in many classe in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The
+     *  method first performs a feasibility analysis using the new scheduling
+     *  characteristics of the given instance of <code>Schedulable</code>. If the
+     *  resultingsystem is feasible the method replaces the current scheduling
+     *  characteristics, of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code> as appropriate, with the new scheduling characteristics.
+     *
+     *  @param schedulable The instance of <code>Schedulable</code> for which the
+     *                     changes are proposed
+     *  @param release The proposed release parameters.
+     *  @param memory The proposed memory parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(Schedulable schedulable,
 				 ReleaseParameters release,
@@ -296,10 +363,22 @@ public class PriorityScheduler extends Scheduler {
 	return setIfFeasible(schedulable, release, memory, schedulable.getProcessingGroupParameters());
     }
 
-    /** Returns true if, after considering the values of the parameters, the task set
-     *  would still be feasible. In this case the values of the parameters are changed.
-     *  Returns false if, after considering the values of the parameters, the task set
-     *  would not be feasible. In this case the values of the parameters are not changed.
+    /** The method appears in many classe in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The
+     *  method first performs a feasibility analysis using the new scheduling
+     *  characteristics of the given instance of <code>Schedulable</code>. If the
+     *  resultingsystem is feasible the method replaces the current scheduling
+     *  characteristics, of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code> as appropriate, with the new scheduling characteristics.
+     *
+     *  @param schedulable The instance of <code>Schedulable</code> for which the
+     *                     changes are proposed
+     *  @param release The proposed release parameters.
+     *  @param memory The proposed memory parameters.
+     *  @param group The proposed processing group parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(Schedulable schedulable,
 				 ReleaseParameters release,

@@ -15,42 +15,57 @@ public interface Schedulable extends java.lang.Runnable {
     /** Add the scheduling and release characteristics of <code>this</code>
      *  to the set of such chracteristics already being considered, if the
      *  addition would result in the new, larger set being feasible.
+     *
+     *  @return True, if the addition would result in the set of considered
+     *          characteristics being feasible. False, if the addition would
+     *          result in the sed of considered characteristics being infeasible
+     *          or there is no assigned instance of <code>Scheduler</code>.
      */
     public boolean addIfFeasible();
 
-    /** Inform the scheduler and cooperating facilities that the resource
-     *  demands (as expressed in the associated instances of
-     *  <code>SchedulingParameters, ReleaseParameters, MemoryParameters</code>
-     *  and <code>ProcessingGroupParameters</code>) of this instance of
-     *  <code>Schedulable</code> will be considered in the feasibility analysis
-     *  of the associated <code>Scheduler</code> until further notice. Whether
-     *  the resulting system is feasible or not, the addition is completed.
+    /** Inform the scheduler and cooperating facilities that scheduling and
+     *  release characteristics of this instance of <code>Schedulable</code>
+     *  should be considered in feasibility analysis until further notified.
+     *
+     *  @return True, if the addition was successful. False, if not.
      */
     public boolean addToFeasibility();
 
-    /** Return the <code>MemoryParameters</code> of this schedulable object. */
+    /** Gets a reference to the <code>MemoryParameters</code> object.
+     *
+     *  @return A reference to the current <code>MemoryParameters</code> object.
+     */
     public MemoryParameters getMemoryParameters();
 
-    /** Return the <code>ProcessingGroupParameters</code> of this schedulable object. */
+    /** Gets a reference to the <code>ProcessingGroupParameters</code> object.
+     *
+     *  @return A reference to the current <code>ProcessingGroupParameters</code> object.
+     */
     public ProcessingGroupParameters getProcessingGroupParameters();
 
-    /** Return the <code>ReleaseParameters</code> of this schedulable object. */
+    /** Gets a reference to the <code>ReleaseParameters</code> object.
+     *
+     *  @return A reference to the current <code>ReleaseParameters</code> object.
+     */
     public ReleaseParameters getReleaseParameters();
 
-    /** Return the <code>SchedulingParameters</code> of this schedulable object. */
+    /** Gets a reference to the <code>SchedulingParameters</code> object.
+     *
+     *  @return A reference to the current <code>SchedulingParameters</code> object.
+     */
     public SchedulingParameters getSchedulingParameters();
 
-    /** Return the <code>Scheduler</code> of this schedulable object. */
+    /** Gets a reference to the <code>Scheduler</code> object.
+     *
+     *  @return A reference to the current <code>Scheduler</code> object.
+     */
     public Scheduler getScheduler();
 
-    /** Inform the scheduler and cooperating facilities that the resource
-     *  demands (as expressed in the associated instances of
-     *  <code>SchedulingParameters, ReleaseParameters, MemoryParameters</code>
-     *  and <code>ProcessingGroupParameters</code>) of this instance of
-     *  <code>Schedulable</code> should no longer be considered in the
-     *  feasibility analysis of the associated <code>Scheduler</code>
-     *  until further notice. Whether the resulting system is feasible
-     *  or not, the subtraction is completed.
+    /** Inform the scheduler and cooperating facilities that scheduling and
+     *  release characteristics of this instance of <code>Schedulable</code> should
+     *  <i>not</i> be considered in feasibility analysis until further notified.
+     *
+     *  @return True, if the removal was successful. False, if not.
      */
     public void removeFromFeasibility();
 
@@ -63,6 +78,11 @@ public interface Schedulable extends java.lang.Runnable {
      *  replaces the current sheduling characteristics, of either <code>this</code>
      *  or the given instance of <code>Schedulable</code> as appropriate, with the
      *  new scheduling characteristics.
+     *
+     *  @param release The proposed release parameters.
+     *  @param memory The proposed memory parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(ReleaseParameters release, MemoryParameters memory);
 
@@ -75,6 +95,12 @@ public interface Schedulable extends java.lang.Runnable {
      *  replaces the current sheduling characteristics, of either <code>this</code>
      *  or the given instance of <code>Schedulable</code> as appropriate, with the
      *  new scheduling characteristics.
+     *  
+     *  @param release The proposed release parameters.
+     *  @param memory The proposed memory parameters.
+     *  @param group The proposed processing group parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(ReleaseParameters release, MemoryParameters memory,
 				 ProcessingGroupParameters group);
@@ -88,46 +114,132 @@ public interface Schedulable extends java.lang.Runnable {
      *  replaces the current sheduling characteristics, of either <code>this</code>
      *  or the given instance of <code>Schedulable</code> as appropriate, with the
      *  new scheduling characteristics.
+     *
+     *  @param release The proposed release parameters.
+     *  @param group The proposed processing group parameters.
+     *  @return True, if the resulting system is fesible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(ReleaseParameters release, ProcessingGroupParameters group);
 
-    /** Set the <code>MemoryParameters</code> of this schedulable object. */
+    /** Sets the memory parameters associated with this instance of <code>Schedulable</code>.
+     *
+     *  @param memory A <code>MemoryParameters</code> object which will become the
+     *                memory parameters associated with <code>this</code> after
+     *                the method call.
+     */
     public void setMemoryParameters(MemoryParameters memory);
 
-    /** Set the <code>MemoryParameters</code> of this schedulable object
-     *  only if the resulting task set is feasible.
+    /** The method first performs a feasibility analysis using the given memory
+     *  parameters as replacements for the memory parameters of <code>this</code>.
+     *  If the resulting system is feasible the method replaces the current
+     *  memory parameterers of <code>this</code> with the new memory parameters.
+     *
+     *  @param memParam The proposed memory Parameters
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setMemoryParametersIfFeasible(MemoryParameters memParam);
 
-    /** Set the <code>ProcessingGroupParameters</code> of this schedulable object. */
+    /** Sets the <code>ProcessingGroupParameters</code> of <code>this</code> only
+     *  if the resulting set of scheduling and release characteristics is feasible.
+     *
+     *  @param pgp The <code>ProcessingGroupParameters</code> object. If null,
+     *             nothing happens.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
+     */
     public void setProcessingGroupParameters(ProcessingGroupParameters pgp);
 
-    /** Set the <code>ProcessingGroupParameters</code> of this schedulable
-     *  object only if the resulting task set is feasible.
+    /** Sets the <code>ProcessingGroupParameters</code> of <code>this</code> only
+     *  if the resulting set of scheduling and release characteristics is feasible.
+     *
+     *  @param groupParameters The <code>ProcessingGroupParameters</code> object.
+     *                         If null, nothing happens.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setProcessingGroupParametersIfFeasible(ProcessingGroupParameters groupParameters);
 
-    /** Set the <code>ReleaseParameters</code> of this schedulable object. */
+    /** Sets the release parameters associated with this instance of <code>Schedulable</code>.
+     *  Since this affects the constraints expressed in the release parameters of the
+     *  existing schedulable objects, this may change the feasibility of the current schedule.
+     *
+     *  @param release A <code>ReleaseParameters</code> object which will become the
+     *                 release parameters associated with this after the method call.
+     */
     public void setReleaseParameters(ReleaseParameters release);
 
-    /** Set the <code>ReleaseParameters</code> of this schedulable object
-     *  only if the resulting task set is feasible.
+    /** Set the <code>ReleaseParameters</code> for this schedulable object only if
+     *  the resulting set of scheduling and release characteristics is feasible.
+     *
+     *  @param release The <code>ReleaseParameters</code> object. If null, nothing happens.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setReleaseParametersIfFeasible(ReleaseParameters release);
 
-    /** Set the <code>SchedulingParameters</code> of this schedulable object */
+    /** Sets the reference to the <code>SchedulingParameters</code> object.
+     *
+     *  @param scheduling A reference to the <code>SchedulingParameters</code> object.
+     *  @throws java.lang.IllegalThreadStateException Thrown when:
+     *                                                <code>((Thread.isAlive() &&
+     *                                                Not Blocked) == true)</code>.
+     *                                                (Where blocked means waiting in
+     *                                                <code>Thread.wait(), Thread.join()
+     *                                                </code> or <code>Thread.sleep()</code>).
+     */
     public void setSchedulingParameters(SchedulingParameters scheduling);
 
-    /** Set the <code>SchedulingParameters</code> of this schedulable object
-     *  only if the resulting task set is feasible.
+    /** The method first performs a feasibility analysis using the given scheduling
+     *  parameters as replacements for the scheduling parameters of <code>this</code>.
+     *  If the resulting system is feasible the method replaces the current scheduling
+     *  parameters of <code>this</code> with the new scheduling parameters.
+     *
+     *  @param scheduling The proposed scheduling parameters.
+     *  @return True, if the resulting system is feasible and the chagens are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setSchedulingParametersIfFeasible(SchedulingParameters scheduling);
 
-    /** Set the <code>Scheduler</code> for this schedulable object. */
+    /** Sets the reference to the <code>Scheduler</code> object. 
+     *
+     *  @param scheduler A reference to the <code>Scheduler</code> object.
+     *  @throws java.lang.IllegalThreadStateException Thrown when:
+     *                                                <code>((Thread.isAlive() &&
+     *                                                Not Blocked) == true)</code>.
+     *                                                (Where blocked means waiting
+     *                                                in <code>Thread.wait(),
+     *                                                Thread.join()</code> or
+     *                                                <code>Thread.sleep()</code>).
+     */
     public void setScheduler(Scheduler scheduler)
 	throws IllegalThreadStateException;
 
-    /** Set the <code>Scheduler</code> for this schedulable object. */
+    /** Sets the reference to the <code>Scheduler</code> object. 
+     *
+     *  @param scheduler A reference to the <code>Scheduler</code> object.
+     *  @param scheduling A reference to the <code>SchedulingParameters</code> which
+     *                    will be associated with <code>this</code>. If null, no
+     *                    changes to current value of this parameter is made.
+     *  @param release A reference to the <code>ReleaseParameters</code> which will
+     *                 be associated with <code>this</code>. If null, no change to
+     *                 current value of this parameter is made.
+     *  @param memoryParameters A reference to the <code>MemoryParaemters</code>
+     *                          which will be associated with <code>this</code>. If
+     *                          null, no change to current value of this parameter
+     *                          is made.
+     *  @param processingGroup A reference to the <code>ProcessingGroupParameters</code>
+     *                         which will be associated with <code>this</code>. If null,
+     *                         no change to current value of this parameter is made.
+     *  @throws java.lang.IllegalThreadStateException Thrown when:
+     *                                                <code>((Thread.isAlive() &&
+     *                                                Not Blocked) == true)</code>.
+     *                                                (Where blocked means waiting
+     *                                                in <code>Thread.wait(),
+     *                                                Thread.join()</code> or
+     *                                                <code>Thread.sleep()</code>).
+     */
     public void setScheduler(Scheduler scheduler,
 			     SchedulingParameters scheduling,
 			     ReleaseParameters release,
