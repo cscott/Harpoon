@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.28 1999-09-15 21:21:27 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.28.2.1 1999-09-16 19:48:24 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -493,7 +493,7 @@ final class ReHandler {
 	Iterator iterate=callset.iterator();
 	while (iterate.hasNext()) {
 	    WorkSet qm=new WorkSet();
-	    Quad ptr=(Quad) iterate.next();
+	    CALL ptr=(CALL) iterate.next();
 	    v.reset();
 	    ptr.accept(v);
 	    while (v.more()&&(!qm.contains(ptr))) {
@@ -635,12 +635,13 @@ final class ReHandler {
 
 	public void visit(CALL q) {
 	    Quad nq, head;
-	    // if retex==null, add the proper checks.
+	    // if retex!=null, add the proper checks.
 	    if (q.retex()==null) nq=head=(Quad)q.clone(qf, ss.ctm);
 	    else {
+		//same old type of call intended...
 		head = new CALL(qf, q, q.method, Quad.map(ss.ctm, q.params()),
 				Quad.map(ss.ctm, q.retval()), 
-				null, q.isVirtual());
+				null, q.isVirtual(), new Temp[0]);
        		Quad q0 = new CONST(qf, q, Quad.map(ss.ctm, q.retex()),
 				    null, HClass.Void);
 		updatemap(q,head);
