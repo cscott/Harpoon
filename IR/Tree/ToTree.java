@@ -68,7 +68,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.66 2000-02-11 18:10:37 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.67 2000-02-12 17:47:58 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -77,28 +77,22 @@ class ToTree {
     /** Class constructor.  Uses the default <code>EdgeOracle</code>
      *  and <code>ReachingDefs</code> for <code>LowQuadNoSSA</code>. */
     public ToTree(final TreeFactory tf, LowQuadNoSSA code) {
-	this(tf, code, new EdgeOracle() {
-	    public int defaultEdge(HCodeElement hce) { return 0; }
-	}, null, new ReachingDefsImpl(code));
+	this(tf, code,
+	     new ToTreeHelpers.DefaultEdgeOracle(),
+	     new ToTreeHelpers.DefaultFoldNanny(),
+	     new ReachingDefsImpl(code));
     }
     public ToTree(final TreeFactory tf, final LowQuadSSA code) {
-	this(tf, code, new EdgeOracle() {
-	    public int defaultEdge(HCodeElement hce) { return 0; }
-	}, null, new ReachingDefs(code) {
-	    private final DefMap dm = new DefMap(code);
-	    public Set reachingDefs(HCodeElement hce, Temp t) {
-		return Collections.singleton(dm.defMap(t)[0]);
-	    }
-	});
+	this(tf, code,
+	     new ToTreeHelpers.MinMaxEdgeOracle(code),
+	     new ToTreeHelpers.DefaultFoldNanny(),
+	     new ToTreeHelpers.SSIReachingDefs(code));
     }
     /** Class constructor. */
     public ToTree(final TreeFactory tf, harpoon.IR.LowQuad.Code code,
 		  EdgeOracle eo, FoldNanny fn, ReachingDefs rd) {
 	Util.assert(((Code.TreeFactory)tf).getParent()
 		    .getName().equals("tree"));
-	if (fn==null) fn = new FoldNanny() {
-	    public boolean canFold(HCodeElement hce, Temp t) { return false; }
-	};
 	translate(tf, code, eo, fn, rd);
     }
     
