@@ -6,7 +6,6 @@ package harpoon.Backend.Allocation;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.Bop;
-import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.CJUMP;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.ESEQ;
@@ -15,6 +14,7 @@ import harpoon.IR.Tree.JUMP;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.MOVE;
 import harpoon.IR.Tree.NAME;
+import harpoon.IR.Tree.NATIVECALL;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.TreeFactory;
@@ -29,7 +29,7 @@ import java.util.List;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.7 1999-08-04 06:30:52 cananian Exp $
+ * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.8 1999-08-09 22:04:01 duncan Exp $
  */
 public class DefaultAllocationStrategy implements AllocationStrategy {
 
@@ -109,7 +109,7 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
 	    l3,
 	
 	    // Throw OutOfMemoryError
-	    new CALL(tf, src, tmp, tmp, exit_oom, null),
+	    new NATIVECALL(tf, src, tmp, exit_oom, null),
 	
 	    // LABEL 4
 	    l4,
@@ -118,7 +118,7 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
 	    new MOVE(tf, src, triedGC, new CONST(tf, src, 1)),
 	    
 	    // call the garbage collector
-	    new CALL(tf, src, tmp, tmp, gc, null),
+	    new NATIVECALL(tf, src, tmp, gc, null),
 	
 	    // try to allocate memory again
 	    new JUMP(tf, src, l0.label),
