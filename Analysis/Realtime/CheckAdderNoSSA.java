@@ -4,6 +4,8 @@
 package harpoon.Analysis.Realtime;
 
 import java.io.PrintWriter;
+import java.util.Iterator;
+import java.util.Vector;
 
 import harpoon.Analysis.Transformation.MethodMutator;
 
@@ -19,10 +21,12 @@ import harpoon.IR.Quads.ARRAYINIT;
 import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.MOVE;
 import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.THROW;
 
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.Quad;
@@ -46,16 +50,17 @@ import harpoon.Util.Util;
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
-// Fix to be non-static...
 
 class CheckAdderNoSSA extends CheckAdder {
-    private static METHOD currentMethod;  // For smartMemAreaLoads
-    private static Temp currentMemArea;
+    private METHOD currentMethod;  // For smartMemAreaLoads
+    private Temp currentMemArea;
+    private Vector newExceptions; // THROWs to add to exception throwing list.
+    private Temp retex;
 
     /** Creates a new <code>CheckAdderNoSSA</code>, adding only the checks that
      *  can't be removed as specified by <code>CheckRemoval</code> and 
      *  <code>NoHeapCheckRemoval</code>.
-     *  Use <code>hcf = (new CheckAdderWithTry(cr, nhcr, hcf)).codeFactory(); to link
+     *  Use <code>hcf = (new CheckAdderNoSSA(cr, nhcr, hcf)).codeFactory(); to link
      *  this <code>CheckAdder</code> into the <code>HCodeFactory</code> chain.
      */
 
@@ -75,6 +80,7 @@ class CheckAdderNoSSA extends CheckAdder {
 	currentMemArea = null;
 	final Linker linker = input.ancestorHCode().getMethod().
 	    getDeclaringClass().getLinker();
+	newExceptions = new Vector();
 	return mutateHCode(input, new QuadVisitor() {
 		public void visit(ARRAYINIT q) {
 		    Util.assert(false, "ArrayInitRemover has not been run.");
@@ -107,6 +113,7 @@ class CheckAdderNoSSA extends CheckAdder {
 		
 		public void visit(METHOD q) {
 		    currentMethod = q;
+		    retex = new Temp(q.getFactory().tempFactory(), "retex");
 		}
 		
 		public void visit(NEW q) {
@@ -116,6 +123,14 @@ class CheckAdderNoSSA extends CheckAdder {
 		    } else {
 			CheckAdderNoSSA.this.newObject(linker, q, q.dst(), 
 						       q.hclass());
+		    }
+		}
+		
+		public void visit(FOOTER q) {
+		    QuadFactory qf = q.getFactory();
+		    Iterator it = newExceptions.iterator();
+		    while (it.hasNext()) {
+			q = q.attach((THROW)it.next(), 0);
 		    }
 		}
 		
@@ -132,10 +147,11 @@ class CheckAdderNoSSA extends CheckAdder {
      * <p>
      */
 
-    private static void newObjectFast(Linker linker, Quad inst,
-				      Temp dst, HClass hclass) {
+    private void newObjectFast(Linker linker, Quad inst,
+			       Temp dst, HClass hclass) {
 	Stats.addNewObject();
 	QuadFactory qf = inst.getFactory();
+	TempFactory tf = qf.tempFactory();
 	HMethod hm = qf.getMethod();
 	Temp memArea = addGetCurrentMemArea(linker, qf, hm, inst);
 	Quad next = inst.next(0);
@@ -155,14 +171,13 @@ class CheckAdderNoSSA extends CheckAdder {
 					.forName("javax.realtime.MemoryArea")
 				    }),
 			 new Temp[] { memArea },
-			 null, null, true, false, new Temp[0]);
+			 null, retex, true, false, new Temp[0]);
 	    Quad.addEdge(q0, 0, q1, 0);
 	    Quad.addEdge(q1, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
-	    q1.addHandlers(inst.handlers());
+	    addException(q1);
 	} else {
 	    Quad.addEdge(q0, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
 	}
-	q0.addHandlers(inst.handlers());
 	
     }
 
@@ -176,8 +191,8 @@ class CheckAdderNoSSA extends CheckAdder {
      * <p>
      */
 
-    private static void newObject(Linker linker, Quad inst, 
-				  Temp dst, HClass hclass) {
+    private void newObject(Linker linker, Quad inst, 
+			   Temp dst, HClass hclass) {
 	Stats.addNewObject();
 	QuadFactory qf = inst.getFactory();
 	HMethod hm = qf.getMethod();
@@ -190,11 +205,11 @@ class CheckAdderNoSSA extends CheckAdder {
 					  linker.forName("java.lang.Object") 
 				      }),
 			   new Temp[] { memArea, dst },
-			   null, null, true, false, new Temp[0]);
+			   null, retex, true, false, new Temp[0]);
 	Edge splitEdge = next.prevEdge(0);
 	Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
 	Quad.addEdge(q0, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
-	q0.addHandlers(inst.handlers());
+	addException(q0);
     }
     
 
@@ -207,9 +222,9 @@ class CheckAdderNoSSA extends CheckAdder {
      * <p>
      */
 
-    private static void newArrayObjectFast(Linker linker, Quad inst,
-					   Temp dst, HClass hclass, 
-					   Temp[] dims) {
+    private void newArrayObjectFast(Linker linker, Quad inst,
+				    Temp dst, HClass hclass, 
+				    Temp[] dims) {
 	Stats.addNewArrayObject();
 	QuadFactory qf = inst.getFactory();
 	HMethod hm = qf.getMethod();
@@ -231,14 +246,13 @@ class CheckAdderNoSSA extends CheckAdder {
 					.forName("javax.realtime.MemoryArea")
 				    }),
 			 new Temp[] { memArea },
-			 null, null, true, false, new Temp[0]);
+			 null, retex, true, false, new Temp[0]);
 	    Quad.addEdge(q0, 0, q1, 0);
 	    Quad.addEdge(q1, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
-	    q1.addHandlers(inst.handlers());
+	    addException(q1);
 	} else {
 	    Quad.addEdge(q0, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
 	}
-	q0.addHandlers(inst.handlers());
     }
 
     /** Attaches the current memory area to a new instance of an object.
@@ -250,8 +264,8 @@ class CheckAdderNoSSA extends CheckAdder {
      * <p>
      */
 
-    private static void newArrayObject(final Linker linker, Quad inst, 
-				       Temp dst, HClass hclass, Temp[] dims) {
+    private void newArrayObject(final Linker linker, Quad inst, 
+				Temp dst, HClass hclass, Temp[] dims) {
 	Stats.addNewArrayObject();
 	QuadFactory qf = inst.getFactory();
 	TempFactory tf = qf.tempFactory();
@@ -273,8 +287,6 @@ class CheckAdderNoSSA extends CheckAdder {
 	    Temp t1 = new Temp(tf, "uniq");
 	    q2[2*i] = new CONST(qf, inst, t1, new Integer(i), HClass.Int);
 	    q2[2*i+1] = new ASET(qf, inst, dimsArray, t1, dims[i], HClass.Int);
-	    q2[2*i].addHandlers(inst.handlers());
-	    q2[2*i+1].addHandlers(inst.handlers());
 	}
 	Quad q3 = new CALL(qf, inst,
 			   linker.forName("javax.realtime.MemoryArea")
@@ -283,7 +295,7 @@ class CheckAdderNoSSA extends CheckAdder {
 					  linker.forName("java.lang.Object"), 
 					  intArray}),
 			   new Temp[] { memArea, newDst, dimsArray }, 
-			   null, null, true, false, new Temp[0]);
+			   null, retex, true, false, new Temp[0]);
 	Quad q4 = new MOVE(qf, inst, dst, newDst);
 	Edge splitEdge = next.prevEdge(0);
 	Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
@@ -292,10 +304,7 @@ class CheckAdderNoSSA extends CheckAdder {
 	Quad.addEdges(new Quad[] {q2[q2.length-1], q3, q4});
 	Quad.addEdge(q4, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
 	Quad.replace(inst, newQuad);
-	q0.addHandlers(inst.handlers());
-	q1.addHandlers(inst.handlers());
-	q3.addHandlers(inst.handlers());
-	q4.addHandlers(inst.handlers());
+	addException(q3);
     }
     
     /** Adds a check around: a.foo = b; or a[foo]=b;
@@ -303,7 +312,7 @@ class CheckAdderNoSSA extends CheckAdder {
      */
        
     private void checkAccess(Linker linker, Quad inst, 
-				    Temp object, Temp src) {
+			     Temp object, Temp src) {
 	if (needsCheck(inst)) {
 	    QuadFactory qf = inst.getFactory();
 	    TempFactory tf = qf.tempFactory();
@@ -315,30 +324,32 @@ class CheckAdderNoSSA extends CheckAdder {
 		q0 = new CALL(qf, inst, memoryArea
 			      .getMethod("getMemoryArea", new HClass[] {
 				  linker.forName("java.lang.Object")}), 
-			      new Temp[] { object }, objArea, null, 
+			      new Temp[] { object }, objArea, retex, 
 			      false, false, new Temp[0]);
 	    } else {
 		q0 = new CALL(qf, inst,
 			      linker.forName("javax.realtime.HeapMemory")
 			      .getMethod("instance", new HClass[0]),
-			      new Temp[0], objArea, null, 
+			      new Temp[0], objArea, retex, 
 			      false, false, new Temp[0]);
 	    }
+	    addException(q0);
 	    Quad q1 = new CALL(qf, inst, memoryArea
 			       .getMethod("checkAccess", new HClass[] { 
 				   linker.forName("java.lang.Object")}),
 			       new Temp[] { objArea, src },
-			       null, null, true, false, new Temp[0]);
+			       null, retex, true, false, new Temp[0]);
+	    addException(q1);
 	    Edge splitEdge = inst.prevEdge(0);
-	    Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), 
-			 q0, 0);
+	    Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
 	    if (Realtime.COLLECT_RUNTIME_STATS) {
 		Temp srcArea = new Temp(tf, "srcMemArea");
 		Quad q2 = new CALL(qf, inst, memoryArea
 				   .getMethod("getMemoryArea", new HClass[] {
 				       linker.forName("java.lang.Object")}),
-				   new Temp[] { src }, srcArea, null,
+				   new Temp[] { src }, srcArea, retex,
 				   false, false, new Temp[0]);
+		addException(q2);
 		Quad q3 = 
 		    new CALL(qf, inst, 
 			     linker.forName("javax.realtime.Stats")
@@ -348,19 +359,16 @@ class CheckAdderNoSSA extends CheckAdder {
 					    memoryArea
 					}),
 			     new Temp[] { objArea, srcArea },
-			     null, null, true, false, new Temp[0]);
+			     null, retex, true, false, new Temp[0]);
+		addException(q3);
 		Quad.addEdges(new Quad[] {q0, q1, q2, q3});
 		Quad.addEdge(q3, 0, (Quad)splitEdge.to(),
 			     splitEdge.which_pred());
-		q2.addHandlers(inst.handlers());
-		q3.addHandlers(inst.handlers());
 	    } else {
 		Quad.addEdges(new Quad[] {q0, q1});
 		Quad.addEdge(q1, 0, (Quad)splitEdge.to(), 
 			     splitEdge.which_pred());
 	    }	    
-	    q0.addHandlers(inst.handlers());
-	    q1.addHandlers(inst.handlers());
 	}
     }
     
@@ -376,14 +384,21 @@ class CheckAdderNoSSA extends CheckAdder {
 
     /** */
 
-    private static void checkNoHeapRead(Linker linker) {
+    private void addException(Quad q) {
+	QuadFactory qf = q.getFactory();
+	THROW ex = new THROW(qf, q, retex);
+	Quad.addEdge(q, 1, ex, 0);
+	newExceptions.add(ex);
+    }
+
+    private void checkNoHeapRead(Linker linker) {
 
 
     }
 
-    private static Temp addGetCurrentMemArea(Linker linker,
-					     QuadFactory qf, HMethod hm,
-					     Quad inst) {
+    private Temp addGetCurrentMemArea(Linker linker,
+				      QuadFactory qf, HMethod hm,
+				      Quad inst) {
 	if (!smartMemAreaLoads) {
 	    return realAddGetCurrentMemArea(linker, qf, hm, inst);
 	} else if (currentMemArea == null) {
@@ -395,9 +410,9 @@ class CheckAdderNoSSA extends CheckAdder {
 
     /** Adds t = RealtimeThread.currentRealtimeThread().getMemoryArea() */
 
-    private static Temp realAddGetCurrentMemArea(Linker linker, 
-						 QuadFactory qf, HMethod hm, 
-						 Quad inst) {
+    private Temp realAddGetCurrentMemArea(Linker linker, 
+					  QuadFactory qf, HMethod hm, 
+					  Quad inst) {
 	TempFactory tf = qf.tempFactory();
 	Stats.addMemAreaLoad();
 	Temp t1 = new Temp(tf, "realtimeThread");
@@ -406,17 +421,17 @@ class CheckAdderNoSSA extends CheckAdder {
 	    linker.forName("javax.realtime.RealtimeThread");
 	Quad q0 = new CALL(qf, inst, realtimeThread
 			   .getMethod("currentRealtimeThread", new HClass[0]), 
-			   new Temp[0], t1, null, false, false, new Temp[0]);
+			   new Temp[0], t1, retex, false, false, new Temp[0]);
+	addException(q0);
 	Quad q1 = new CALL(qf, inst, realtimeThread
 			   .getMethod("getMemoryArea", new HClass[0]), 
-			   new Temp[] { t1 }, currentMemArea, null, false, 
+			   new Temp[] { t1 }, currentMemArea, retex, false, 
 			   false, new Temp[0]);
+	addException(q1);
 	Edge splitEdge = inst.prevEdge(0);
 	Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
 	Quad.addEdges(new Quad[] {q0, q1});
 	Quad.addEdge(q1, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
-	q0.addHandlers(inst.handlers());
-	q1.addHandlers(inst.handlers());
 	return currentMemArea;
     }
 }

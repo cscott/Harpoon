@@ -28,6 +28,7 @@ import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadWithTry;
 
 import harpoon.Temp.Temp;
@@ -51,9 +52,9 @@ abstract class CheckAdder extends MethodMutator {
     protected CheckRemoval checkRemoval;
     protected NoHeapCheckRemoval noHeapCheckRemoval;
 
-    public static boolean fastNew = true;
-    public static boolean smartMemAreaLoads = false;
-    public static boolean debugOutput = false;
+    public boolean fastNew = true;
+    public boolean smartMemAreaLoads = false;
+    public boolean debugOutput = false;
 
     /** Creates a new <code>CheckAdder</code>, adding only the checks that
      *  can't be removed as specified by <code>CheckRemoval</code> and 
@@ -106,7 +107,8 @@ abstract class CheckAdder extends MethodMutator {
     }
 
     /** Indicates if the given instruction needs an access check wrapped 
-     *  around it. */
+     *  around it. 
+     */
     
     protected boolean needsCheck(Quad inst) {
 	Stats.analysisBegin();
@@ -118,6 +120,27 @@ abstract class CheckAdder extends MethodMutator {
 	    Stats.addActualMemCheck();
 	}
 	return !removeCheck;
-    }    
+    }
+
+    /** Looks up the type of the parent <code>HCodeFactory</code> and constructs
+     *  the appropriate <code>HCodeFactory</code> from the correct 
+     *  <code>CheckAdder</code>.  A <code>QuadWithTry</code> is created for an input 
+     *  <code>QuadWithTry</code>, a <code>QuadNoSSA</code> is created for an input
+     *  <code>QuadNoSSA</code>.  Currently, no other quadforms are supported.
+     */
+
+    public static HCodeFactory codeFactory(CheckRemoval cr, 
+					   NoHeapCheckRemoval nhcr,
+					   HCodeFactory parent) {
+	String codeName = parent.getCodeName();
+	if (codeName.equals(QuadNoSSA.codename)) {
+	    return (new CheckAdderNoSSA(cr, nhcr, parent)).codeFactory();
+	} else if (codeName.equals(QuadWithTry.codename)) {
+	    return (new CheckAdderWithTry(cr, nhcr, parent)).codeFactory();
+	} else {
+	    Util.assert(false, "Quads type: " + codeName + " not a supported CheckAdder");
+	    return null;
+	}
+    }
 }
 

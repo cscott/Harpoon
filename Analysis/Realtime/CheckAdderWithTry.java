@@ -49,8 +49,8 @@ import harpoon.Util.Util;
 // Fix to be non-static...
 
 class CheckAdderWithTry extends CheckAdder {
-    private static METHOD currentMethod;  // For smartMemAreaLoads
-    private static Temp currentMemArea;
+    private METHOD currentMethod;  // For smartMemAreaLoads
+    private Temp currentMemArea;
 
     /** Creates a new <code>CheckAdderWithTry</code>, adding only the checks that
      *  can't be removed as specified by <code>CheckRemoval</code> and 
@@ -138,8 +138,8 @@ class CheckAdderWithTry extends CheckAdder {
      * <p>
      */
 
-    private static void newObjectFast(Linker linker, Quad inst,
-				      Temp dst, HClass hclass) {
+    private void newObjectFast(Linker linker, Quad inst,
+			       Temp dst, HClass hclass) {
 	Stats.addNewObject();
 	QuadFactory qf = inst.getFactory();
 	HMethod hm = qf.getMethod();
@@ -182,8 +182,8 @@ class CheckAdderWithTry extends CheckAdder {
      * <p>
      */
 
-    private static void newObject(Linker linker, Quad inst, 
-				  Temp dst, HClass hclass) {
+    private void newObject(Linker linker, Quad inst, 
+			   Temp dst, HClass hclass) {
 	Stats.addNewObject();
 	QuadFactory qf = inst.getFactory();
 	HMethod hm = qf.getMethod();
@@ -213,9 +213,9 @@ class CheckAdderWithTry extends CheckAdder {
      * <p>
      */
 
-    private static void newArrayObjectFast(Linker linker, Quad inst,
-					   Temp dst, HClass hclass, 
-					   Temp[] dims) {
+    private void newArrayObjectFast(Linker linker, Quad inst,
+				    Temp dst, HClass hclass, 
+				    Temp[] dims) {
 	Stats.addNewArrayObject();
 	QuadFactory qf = inst.getFactory();
 	HMethod hm = qf.getMethod();
@@ -256,8 +256,8 @@ class CheckAdderWithTry extends CheckAdder {
      * <p>
      */
 
-    private static void newArrayObject(final Linker linker, Quad inst, 
-				       Temp dst, HClass hclass, Temp[] dims) {
+    private void newArrayObject(final Linker linker, Quad inst, 
+				Temp dst, HClass hclass, Temp[] dims) {
 	Stats.addNewArrayObject();
 	QuadFactory qf = inst.getFactory();
 	TempFactory tf = qf.tempFactory();
@@ -309,7 +309,7 @@ class CheckAdderWithTry extends CheckAdder {
      */
        
     private void checkAccess(Linker linker, Quad inst, 
-				    Temp object, Temp src) {
+			     Temp object, Temp src) {
 	if (needsCheck(inst)) {
 	    QuadFactory qf = inst.getFactory();
 	    TempFactory tf = qf.tempFactory();
@@ -372,8 +372,8 @@ class CheckAdderWithTry extends CheckAdder {
     
     /** */
 
-//      private static void checkNoHeapWrite(Linker linker, Quad inst,
-//  					 Temp object, Temp src) {
+//      private void checkNoHeapWrite(Linker linker, Quad inst,
+    //  					 Temp object, Temp src) {
 //  	if (needsNoHeapWriteCheck(inst)) {
 	    
 
@@ -382,14 +382,14 @@ class CheckAdderWithTry extends CheckAdder {
 
     /** */
 
-    private static void checkNoHeapRead(Linker linker) {
+    private void checkNoHeapRead(Linker linker) {
 
 
     }
 
-    private static Temp addGetCurrentMemArea(Linker linker,
-					     QuadFactory qf, HMethod hm,
-					     Quad inst) {
+    private Temp addGetCurrentMemArea(Linker linker,
+				      QuadFactory qf, HMethod hm,
+				      Quad inst) {
 	if (!smartMemAreaLoads) {
 	    return realAddGetCurrentMemArea(linker, qf, hm, inst);
 	} else if (currentMemArea == null) {
@@ -401,12 +401,13 @@ class CheckAdderWithTry extends CheckAdder {
 
     /** Adds t = RealtimeThread.currentRealtimeThread().getMemoryArea() */
 
-    private static Temp realAddGetCurrentMemArea(Linker linker, 
-						 QuadFactory qf, HMethod hm, 
-						 Quad inst) {
+    private Temp realAddGetCurrentMemArea(Linker linker, 
+					  QuadFactory qf, HMethod hm, 
+					  Quad inst) {
 	TempFactory tf = qf.tempFactory();
 	Stats.addMemAreaLoad();
 	Temp t1 = new Temp(tf, "realtimeThread");
+	Temp e = new Temp(tf, "exception");
 	Temp currentMemArea = new Temp(tf, "memoryArea");
 	HClass realtimeThread = 
 	    linker.forName("javax.realtime.RealtimeThread");

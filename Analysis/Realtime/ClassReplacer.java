@@ -26,6 +26,7 @@ import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.QuadWithTry;
+import harpoon.IR.Quads.QuadNoSSA;
 
 import harpoon.Util.Util;
 
@@ -37,6 +38,9 @@ import harpoon.Util.Util;
  * classes or packages.  This class allows you to write a wrapper for a 
  * class for which you don't have the code, and have other code selectively
  * point to the wrapper.
+ *
+ * Currently, only QuadNoSSA and QuadWithTry are supported.  This may change
+ * in the future.
  */
 
 public class ClassReplacer extends MethodMutator {
@@ -61,6 +65,10 @@ public class ClassReplacer extends MethodMutator {
 	ignorePackages = new HashSet();
 	ignoreClasses = new HashSet();
 	codeName = parent.getCodeName();
+	Util.assert(codeName.equals(QuadWithTry.codename)||
+		    codeName.equals(QuadNoSSA.codename), 
+		    "currently only QuadWithTry and QuadNoSSA are supported: " +
+		    codeName + " cannot be used as a parent for a ClassReplacer");
     }
 
     /**
@@ -138,8 +146,10 @@ public class ClassReplacer extends MethodMutator {
     }
 
     /**
-     * Get the QuadVisitor that will make the replacements to the code,
-     * parameterized by <code>codeName</code>.
+     * Get the <code>QuadVisitor</code> that will make the replacements to the code,
+     * parameterized by <code>codeName</code>.  Currently only <code>QuadNoSSA</code> and
+     * <code>QuadWithTry</code> are supported.  Change this method if you want to
+     * support more.
      */
 
     private QuadVisitor getQuadVisitor(final String codeName) {

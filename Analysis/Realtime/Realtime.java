@@ -38,6 +38,9 @@ public class Realtime {
     /** Are we going to actually allocate objects in the appropriate scopes? */
     public static boolean REAL_SCOPES = true;
 
+    /** Remove tagging when you remove all checks? */
+    public static boolean REMOVE_TAGS = true;
+
     /** Determine which analysis method to use. */
     public static int ANALYSIS_METHOD = 0;
     /** Very conservative analysis method - keep all checks */
@@ -201,7 +204,9 @@ public class Realtime {
 	HCodeFactory hcf = Stats.trackQuadsIn(parent);
 	ThreadToRealtimeThread.updateClassHierarchy(linker, ch);
 	hcf = (new ThreadToRealtimeThread(hcf, linker)).codeFactory();
-	hcf = new ArrayInitRemover(hcf).codeFactory();
+	if ((!REMOVE_TAGS)||(ANALYSIS_METHOD!=ALL)) {
+	    hcf = new ArrayInitRemover(hcf).codeFactory();
+	}
 	hcf = new CachingCodeFactory(hcf);
 	Stats.realtimeEnd();
 	return hcf;
@@ -250,8 +255,12 @@ public class Realtime {
 	}
 	}
 	Stats.analysisEnd();
-	HCodeFactory hcf = (new CheckAdderWithTry(cr, new AllCheckRemoval(), 
-						  parent)).codeFactory();
+	HCodeFactory hcf;
+	if (REMOVE_TAGS&&(ANALYSIS_METHOD==ALL)) {
+	    hcf = parent;
+	} else {
+	    hcf = CheckAdder.codeFactory(cr, new AllCheckRemoval(), parent);
+	}
 	hcf = Stats.trackQuadsOut(hcf);
 	Stats.realtimeEnd();
 	return hcf;
