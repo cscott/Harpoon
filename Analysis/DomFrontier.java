@@ -5,6 +5,7 @@ package harpoon.Analysis;
 
 import harpoon.ClassFile.*;
 import harpoon.IR.Properties.Edges;
+import harpoon.Util.Util;
 import harpoon.Util.Set;
 import harpoon.Util.NullEnumerator;
 import harpoon.Util.ArrayEnumerator;
@@ -17,7 +18,7 @@ import java.util.Enumeration;
  * the <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.6 1998-10-11 02:36:59 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.6.2.1 1998-12-01 10:22:46 cananian Exp $
  */
 
 public class DomFrontier  {
@@ -52,8 +53,10 @@ public class DomFrontier  {
     public HCodeElement[] df(HCode hc, HCodeElement n) {
 	analyze(hc); 
 	HCodeElement[] r =  (HCodeElement[]) DF.get(n);
-	if (r==null) return new HCodeElement[0];
-	else return (HCodeElement[]) r.clone();
+	if (r==null)
+	    return (HCodeElement[]) hc.elementArrayFactory().newArray(0);
+	else
+	    return (HCodeElement[]) Util.safeCopy(hc.elementArrayFactory(), r);
     }
     /** Return an Enumeration of <code>HCodeElement</code>s in the 
      *  (post)dominance frontier of <code>n</code>.
@@ -80,9 +83,10 @@ public class DomFrontier  {
 	if (tempDT) dt = new DomTree(isPost);
 
 	HCodeElement[] roots;
-	if (!isPost)
-	    roots = new HCodeElement[] { hc.getRootElement() };
-	else
+	if (!isPost) {
+	    roots = (HCodeElement[]) hc.elementArrayFactory().newArray(1);
+	    roots[0] = hc.getRootElement();
+	} else
 	    roots = hc.getLeafElements();
 	
 	for (int i=0; i < roots.length; i++)
@@ -111,7 +115,8 @@ public class DomFrontier  {
 		    S.union(w[j]);
 	}
 	// DF[n] <- S
-	HCodeElement dfn[] = new HCodeElement[S.size()];
+	HCodeElement dfn[] = 
+	    (HCodeElement[]) hc.elementArrayFactory().newArray(S.size());
 	S.copyInto(dfn);
 	DF.put(n, dfn);
     }

@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.2 1998-11-30 22:18:06 cananian Exp $
+ * @version $Id: Util.java,v 1.12.2.3 1998-12-01 10:22:46 cananian Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -39,15 +39,18 @@ public abstract class Util {
    */
   public static final Object[] safeCopy(ArrayFactory factory, Object[] src) {
     if (!debug) return src;
-    else return copy(factory, src);
+    if (src.length==0) return src;
+    Object[] dst = factory.newArray(src.length);
+    System.arraycopy(src,0,dst,0,src.length);
+    return dst;
   }
     
   /**
-   * Copy an array type to prevent modification.  Does not bother
-   * to copy array types of length 0, because they're already immutable.
+   * Copy an array type to prevent modification.
+   * @deprecated The <code>clone()</code> method on arrays works 
+   * much better, and should be used instead of this method.
    */
   public static final Object[] copy(ArrayFactory factory, Object[] src) {
-    if (src.length==0) return src;
     Object[] dst = factory.newArray(src.length);
     System.arraycopy(src,0,dst,0,src.length);
     return dst;

@@ -5,6 +5,7 @@ package harpoon.Analysis;
 
 import harpoon.ClassFile.*;
 import harpoon.IR.Properties.Edges;
+import harpoon.Util.ArrayFactory;
 
 import java.util.Hashtable;
 import java.util.Vector;
@@ -14,7 +15,7 @@ import java.util.Vector;
  * <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.8 1998-10-11 02:36:59 cananian Exp $
+ * @version $Id: DomTree.java,v 1.8.2.1 1998-12-01 10:22:46 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {
@@ -24,7 +25,11 @@ public class DomTree /*implements Graph*/ {
     Hashtable idom  = new Hashtable();
     /** Reverse mapping: mapping of an HCodeElement to the elements which
      *  have this element as their immediate dominator. */
-    SetHTable children = new SetHTable();
+    SetHTable children = new SetHTable(new ArrayFactory() {
+	// XXX: HCodeElement is a generic type. We'd rather use
+	// HCode.elementArrayFactory() but we don't know the HCode to use.
+	public Object[] newArray(int len) { return new HCodeElement[len]; }
+    });
     /** Is this a dominator or post-dominator tree? */
     boolean isPost = false;
 
@@ -73,7 +78,7 @@ public class DomTree /*implements Graph*/ {
 	final Hashtable parent = new Hashtable();
 	final Hashtable best  = new Hashtable();
 	
-	SetHTable bucket = new SetHTable();
+	SetHTable bucket = new SetHTable(hc.elementArrayFactory());
 	Hashtable samedom = new Hashtable();
 
 	final Vector vertex = new Vector();
@@ -202,20 +207,24 @@ public class DomTree /*implements Graph*/ {
 	}
     }
     static class SetHTable extends Hashtable {
+	ArrayFactory af;
+	SetHTable(ArrayFactory af) { super(); this.af = af; }
 	void clearSet(HCodeElement hce) {
 	    remove(hce);
 	}
 	HCodeElement[] getSet(HCodeElement hce) {
 	    HCodeElement[] r = (HCodeElement[]) get(hce);
-	    if (r == null) return new HCodeElement[0];
+	    if (r == null) return (HCodeElement[]) af.newArray(0);
 	    return r;
 	}
 	void unionSet(HCodeElement hce, HCodeElement newEl) {
 	    if (!containsKey(hce)) {
-		put(hce, new HCodeElement[] { newEl });
+		HCodeElement[] r = (HCodeElement[]) af.newArray(1);
+		r[0] = newEl;
+		put(hce, r);
 	    } else {
 		HCodeElement[] oldset = (HCodeElement[]) get(hce);
-		HCodeElement[] newset = new HCodeElement[oldset.length+1];
+		HCodeElement[] newset = (HCodeElement[]) af.newArray(oldset.length+1);
 		for (int i=0; i < oldset.length; i++)
 		    if (oldset[i] == newEl)
 			return; // don't add; already present.

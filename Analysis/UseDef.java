@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.10.2.1 1998-11-30 21:21:00 cananian Exp $
+ * @version $Id: UseDef.java,v 1.10.2.2 1998-12-01 10:22:46 cananian Exp $
  */
 
 public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
@@ -56,8 +56,9 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	s.copyInto(tl);
 	return tl;
     }
-    HCodeElement[] set2hces(Set s) {
-	HCodeElement[] hcel = new HCodeElement[s.size()];
+    HCodeElement[] set2hces(HCode hc, Set s) {
+	HCodeElement[] hcel = 
+	    (HCodeElement[]) hc.elementArrayFactory().newArray(s.size());
 	s.copyInto(hcel);
 	return hcel;
     }
@@ -89,11 +90,11 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	// replace UniqueVectors with HCodeElement arrays to save space.
 	for (Enumeration e = workUse.keys(); e.hasMoreElements(); ) {
 	    Temp u = (Temp) e.nextElement();
-	    useMap.put(u, set2hces((Set)workUse.get(u)));
+	    useMap.put(u, set2hces(code,  (Set)workUse.get(u)));
 	}
 	for (Enumeration e = workDef.keys(); e.hasMoreElements(); ) {
 	    Temp d = (Temp) e.nextElement();
-	    defMap.put(d, set2hces((Set)workDef.get(d)));
+	    defMap.put(d, set2hces(code, (Set)workDef.get(d)));
 	}
 	// store set of all temps & mark as analyzed.
 	analyzed.put(code, new allTempList(set2temps(used),
@@ -106,7 +107,7 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	analyze(hc);
 	HCodeElement[] r = (HCodeElement[]) defMap.get(t);
 	return (r == null) ? 
-	    new HCodeElement[0] : 
+	    (HCodeElement[]) hc.elementArrayFactory().newArray(0) :
 	    (HCodeElement[]) Util.safeCopy(hc.elementArrayFactory(), r);
     }
     /** Enumerate the HCodeElements which define a given Temp. */
@@ -119,7 +120,7 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	analyze(hc);
 	HCodeElement[] r = (HCodeElement[]) useMap.get(t);
 	return (r == null) ? 
-	    new HCodeElement[0] : 
+	    (HCodeElement[]) hc.elementArrayFactory().newArray(0) :
 	    (HCodeElement[]) Util.safeCopy(hc.elementArrayFactory(), r);
     }
     /** Enumerate the HCodeElements which use a given Temp. */
