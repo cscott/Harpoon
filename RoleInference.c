@@ -1138,6 +1138,8 @@ unsigned long bufstart=0;
 
 char * copystr(const char *buf) {
   int i;
+  if (buf==NULL)
+    return NULL;
   for(i=0;;i++)
     if (buf[i]==0) {
       char *ptr=(char *)malloc(i+1);

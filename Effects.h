@@ -39,6 +39,8 @@ struct regfieldlist {
   struct regfieldlist * nextfld;
 };
 
+void freeeffectregexpr(struct effectregexpr *ere);
 void freeeffects(struct path *);
 void initializepaths(struct heap_state *hs);
+void addeffect(struct heap_state *heap, long long suid, char * fieldname, long long duid);
 #endif
