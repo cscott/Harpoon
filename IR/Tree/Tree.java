@@ -3,6 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
+import harpoon.Temp.CloningTempMap;
+import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.Util;
 
@@ -10,7 +13,7 @@ import harpoon.Util.Util;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.1 1999-02-05 11:48:54 cananian Exp $
+ * @version $Id: Tree.java,v 1.1.2.2 1999-02-09 21:54:23 duncan Exp $
  */
 public abstract class Tree 
     implements harpoon.ClassFile.HCodeElement
@@ -55,4 +58,25 @@ public abstract class Tree
 	new ArrayFactory() {
 	    public Object[] newArray(int len) { return new Tree[len]; }
 	};
+  
+    
+    public Object clone() { 
+        return rename(this.tf, new CloningTempMap(tf.tempFactory(), 
+						  tf.tempFactory()));
+    }
+
+    public Object clone(TreeFactory tf, CloningTempMap ctm) { 
+        return rename(tf, ctm);
+    }
+
+    public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);
+    public Tree rename(CloningTempMap ctm) {
+      return rename(this.tf, ctm);
+    }
+
+    protected final static Temp map(TempMap tm, Temp t) {
+	return (t==null)?null:(tm==null)?t:tm.tempMap(t);
+    }
+
+      
 }

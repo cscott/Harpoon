@@ -2,6 +2,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Label;
 import harpoon.Util.Util;
 
@@ -13,7 +14,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: LABEL.java,v 1.1.2.3 1999-02-05 11:48:48 cananian Exp $
+ * @version $Id: LABEL.java,v 1.1.2.4 1999-02-09 21:54:23 duncan Exp $
  */
 public class LABEL extends Stm { 
     /** The symbolic name to define. */
@@ -31,5 +32,9 @@ public class LABEL extends Stm {
     }
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
+
+    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
+        return new LABEL(tf, this, this.label);
+    }
 }
 

@@ -2,6 +2,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
@@ -11,7 +12,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.7 1999-02-05 12:02:47 cananian Exp $
+ * @version $Id: TEMP.java,v 1.1.2.8 1999-02-09 21:54:23 duncan Exp $
  */
 public class TEMP extends Exp implements Typed {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -41,5 +42,10 @@ public class TEMP extends Exp implements Typed {
 
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
+
+    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
+        return new TEMP(tf, this, this.type, map(ctm, this.temp));
+    }
 }
+
 

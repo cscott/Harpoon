@@ -2,6 +2,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
 /**
@@ -10,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: OPER.java,v 1.1.2.5 1999-02-05 12:02:46 cananian Exp $
+ * @version $Id: OPER.java,v 1.1.2.6 1999-02-09 21:54:23 duncan Exp $
  */
 public abstract class OPER extends Exp implements Typed {
     /** An enumerated type encoding the operator.
@@ -43,4 +44,6 @@ public abstract class OPER extends Exp implements Typed {
     public boolean isFloatingPoint() { return Type.isFloatingPoint(type()); }
     /** Return type of operands (not necessarily the result type). */
     public int operandType() { return optype; }
+
+    public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);
 }

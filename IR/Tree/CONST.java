@@ -2,6 +2,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
 /**
@@ -10,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.6 1999-02-05 12:02:45 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.7 1999-02-09 21:54:23 duncan Exp $
  */
 public class CONST extends Exp implements Typed {
     /** The constant value of this <code>CONST</code> expression. */
@@ -52,4 +53,23 @@ public class CONST extends Exp implements Typed {
 
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
+
+    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
+        CONST result;
+	switch (this.type)
+	  {
+	  case INT:     
+	    result = new CONST(tf, this, ((Integer)value).intValue());   break;
+	  case LONG:
+	    result = new CONST(tf, this, ((Long)value).longValue());     break;
+	  case FLOAT:
+	    result = new CONST(tf, this, ((Float)value).floatValue());   break;
+	  case DOUBLE:  
+	    result = new CONST(tf, this, ((Double)value).doubleValue()); break;
+	  default: 
+	    throw new Error("Unexpected type for constant: " + this.type);
+	  }
+	return result;
+    }
+  
 }

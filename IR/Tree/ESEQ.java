@@ -2,6 +2,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
 /**
@@ -12,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.3 1999-02-05 11:48:46 cananian Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.4 1999-02-09 21:54:23 duncan Exp $
  */
 public class ESEQ extends Exp {
     /** The statement to evaluate for side-effects. */
@@ -30,5 +31,11 @@ public class ESEQ extends Exp {
     public Exp build(ExpList kids) {throw new Error("build() not applicable to ESEQ");}
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
+
+    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
+        return new ESEQ(tf, this, 
+			(Stm)stm.rename(tf, ctm), 
+			(Exp)exp.rename(tf, ctm));
+    }
 }
 

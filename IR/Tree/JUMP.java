@@ -2,6 +2,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Label;
 import harpoon.Temp.LabelList;
 import harpoon.Util.Util;
@@ -12,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: JUMP.java,v 1.1.2.3 1999-02-05 11:48:47 cananian Exp $
+ * @version $Id: JUMP.java,v 1.1.2.4 1999-02-09 21:54:23 duncan Exp $
  */
 public class JUMP extends Stm {
     /** An expression giving the address to jump to. */
@@ -38,5 +39,9 @@ public class JUMP extends Stm {
     }
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
+
+    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
+        return new JUMP(tf, this, (Exp)exp.rename(tf, ctm), this.targets);
+    }  
 }
 

@@ -1,13 +1,15 @@
 // Stm.java, created Wed Jan 13 21:14:57 1999 by cananian
 package harpoon.IR.Tree;
 
+import harpoon.Temp.CloningTempMap;
+
 /**
  * <code>Stm</code> objects are statements which perform side effects and
  * control flow.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Stm.java,v 1.1.2.3 1999-02-05 11:48:52 cananian Exp $
+ * @version $Id: Stm.java,v 1.1.2.4 1999-02-09 21:54:23 duncan Exp $
  */
 abstract public class Stm extends Tree {
     protected Stm(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
@@ -17,5 +19,7 @@ abstract public class Stm extends Tree {
     /** Build an <code>Stm</code> of this type from the given list of
      *  subexpressions. */
     abstract public Stm build(ExpList kids);
+ 
+    public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);
 }
 

@@ -2,6 +2,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
 /**
@@ -10,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.5 1999-02-05 12:02:48 cananian Exp $
+ * @version $Id: UNOP.java,v 1.1.2.6 1999-02-09 21:54:23 duncan Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -45,5 +46,9 @@ public class UNOP extends OPER {
     }
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }
+
+    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
+        return new UNOP(tf, this, optype, op, (Exp)operand.rename(tf, ctm));
+    }
 }
 
