@@ -93,7 +93,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.16 2002-09-26 12:58:39 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.17 2002-09-26 13:16:55 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -364,13 +364,6 @@ public class SAMain extends harpoon.IR.Registration {
 	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
 
-	    if (Boolean.getBoolean("harpoon.inline.arraycopy")) {
-		hcf = new harpoon.Analysis.Transactions.ArrayCopyImplementer
-		    (hcf, linker);
-		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    }
-
 	    if (DO_TRANSACTIONS && !alexhack) {
 		String resource = frame.getRuntime().resourcePath
 		    ("transact-safe.properties");
@@ -509,9 +502,15 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
 	    hcf = harpoon.IR.Quads.QuadSSA.codeFactory(hcf);
 	    if (Boolean.getBoolean("harpoon.inline.arraycopy")) {
+		// inline System.arraycopy in particular.
+		hcf = new harpoon.Analysis.Transactions.ArrayCopyImplementer
+		    (hcf, linker);
+		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 		hcf = new harpoon.Analysis.Quads.ArrayCopyInliner
 		    (hcf, classHierarchy);
 	    } else {
+		// just inline small methods.
 		hcf = new harpoon.Analysis.Quads.SmallMethodInliner
 		    (hcf, classHierarchy);
 	    }
