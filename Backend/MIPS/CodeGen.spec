@@ -69,11 +69,12 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.16 2000-09-12 17:50:44 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.17 2000-09-18 17:01:39 witchel Exp $
  */
-// All calling conventions and endian layout comes from observing cc
-// on MIPS IRIX64 lion 6.2 03131016 IP19.  
-// MIPS on IRIX is big endian.  This also applies to long longs and
+// All calling conventions and endian layout comes from observing gcc
+// for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
+// as well.
+// MIPS is big endian by default.  This also applies to long longs and
 // doubles (for which we are using software fp.  The most sinifigant
 // 32 bit quantity is at the lower address (and in v0, as opposed to
 // v1) 
@@ -127,6 +128,7 @@ import java.util.Iterator;
     // whether to generate stabs debugging information in output (-g flag)
     // Currently broken on MIPS
     private static final boolean stabsDebugging = true;
+    private static final boolean stabsLineDebugging = false;
 
     // NameMap for calling C functions.
     NameMap nameMap;
@@ -165,7 +167,7 @@ import java.util.Iterator;
 	FP = regfile.FP; // s8, but C on IRIX/MIPS doesn't use an fp
 	SP = regfile.SP; // reg 29
 	LR = regfile.LR; // reg 31
-    call_use = new Temp[] {a0, a1, a2, a3, SP};
+    call_use = new Temp[] {a0, a1, a2, a3, SP, FP};
     call_def_full = new Temp[] {v0, v1, a0, a1, a2, a3, t0, t1, 
                                 t2, t3, t4, t5, t6, t7, t8, t9, 
                                 LR};
@@ -263,21 +265,21 @@ import java.util.Iterator;
                         Temp[] dst, Temp[] src) {
 	return emit(root, assem, dst, src, true, null);
     }
-
     /** Single dest Single source Emit Helper. */
     private Instr emit( HCodeElement root, String assem, 
 		       Temp dst, Temp src) {
 	return emit2(root, assem, new Temp[]{ dst }, new Temp[]{ src });
     }
-    
-
     /** Single dest Two source Emit Helper. */
     private Instr emit( HCodeElement root, String assem, 
 		       Temp dst, Temp src1, Temp src2) {
 	return emit2(root, assem, new Temp[]{ dst },
 			new Temp[]{ src1, src2 });
     }
-
+    /** Single dest Null source Emit Helper. */
+    private Instr emit( HCodeElement root, String assem, Temp dst) {
+       return emit2(root, assem, new Temp[]{ dst }, null);
+    }
     /** Null dest Null source Emit Helper. */
     private Instr emit( HCodeElement root, String assem ) {
 	return emit2(root, assem, null, null);
@@ -330,8 +332,22 @@ import java.util.Iterator;
     /* InstrJUMP emit helper; automatically adds entry to
        label->branches map. */ 
     private Instr emitJUMP( HCodeElement root, String assem, Label l ) {
-	Instr j = emit( new InstrJUMP( instrFactory, root, assem, l ));
-	return j;
+       return emit( new InstrJUMP( instrFactory, root, assem, l ));
+    }
+    private Instr emitCondBr( HCodeElement root, String assem, Temp srca,
+                            Temp srcb, Label l ) {
+       if(srca == null && srcb == null) {
+          return emitJUMP(root, assem, l);
+       } else if (srca == null) {
+          return emit( root, assem, null, new Temp[] {srcb}, true,
+                       Arrays.asList(new Label[] { l }) );
+       } else if (srcb == null) {
+          return emit( root, assem, null, new Temp[] {srca}, true,
+                       Arrays.asList(new Label[] { l }) );
+       } else {
+          return emit( root, assem, null, new Temp[] {srca, srcb}, true,
+                       Arrays.asList(new Label[] { l }) );
+       }
     }
 
     /* InstrLABEL emit helper. */
@@ -354,6 +370,16 @@ import java.util.Iterator;
     private Instr emitDELAYSLOT(HCodeElement root) {
         return emit(new InstrDELAYSLOT(instrFactory, root));
     }
+    private void emitLineDebugInfo(HCodeElement root) {
+       if(stabsLineDebugging && stabsDebugging) {
+          Label l = new Label();
+          emit( new InstrLABEL(instrFactory, root, l.toString() + ":", l) );
+          emit( new InstrDIRECTIVE(instrFactory, root, 
+                                   ".stabn 68,0," + root.getLineNumber()
+                                   + "," + l));
+       }
+    }		      
+
 
     private boolean is16BitOffset(long val) {
 	// addressing mode two takes a 12 bit unsigned offset, with
@@ -539,7 +565,7 @@ import java.util.Iterator;
        emitMOVE( root, "move `d0, `s0", a0, j );
        declareCALLDefFull();
        emit2( root, "jal "+nameMap.c_function_name(func_name),
-              call_def_full, new Temp[] {a0,a1} );
+              call_def_full, new Temp[] {a0, a1, SP, FP} );
        emitMOVE( root, "move `d0, `s0", i, v0 );
     }
     private void DoFCall(HCodeElement root,
@@ -549,7 +575,7 @@ import java.util.Iterator;
        emitMOVE( root, "move `d0, `s0", a0, j );
        declareCALLDefFull();
        emit2( root, "jal "+nameMap.c_function_name(func_name),
-              call_def_full, new Temp[] {a0,a1} );
+              call_def_full, new Temp[] {a0, a1, SP, FP} );
        emitMOVE( root, "move `d0, `s0", i, v0 );
     }
     private void DoDCall(HCodeElement root,
@@ -574,7 +600,7 @@ import java.util.Iterator;
           emit( root, "move `d0h, `s0", i, v0 );
           emit( root, "move `d0l, `s0", i, v1 );
        } else {
-          emit( root, "move `d0, `s0", i, v0 );
+          emitMOVE( root, "move `d0, `s0", i, v0 );
        }
     }
     private void DoDCall(HCodeElement root,
@@ -587,7 +613,7 @@ import java.util.Iterator;
           emit( root, "move `d0, `s0h", a0, j );
           emit( root, "move `d0, `s0l", a1, j );
        } else {
-          emit( root, "move `d0, `s0", a0, j );
+          emitMOVE( root, "move `d0, `s0", a0, j );
        }
        declareCALLDefFull();
        emit2(root, "jal "+nameMap.c_function_name(func_name),
@@ -597,7 +623,7 @@ import java.util.Iterator;
           emit( root, "move `d0h, `s0", i, v0 );
           emit( root, "move `d0l, `s0", i, v1 );
        } else {
-          emit( root, "move `d0, `s0", i, v0 );
+          emitMOVE( root, "move `d0, `s0", i, v0 );
        }
     }
 
@@ -720,7 +746,6 @@ import java.util.Iterator;
        } else if (isNative && (!soft_float) &&
                   ROOT.getRetval().type()==Type.DOUBLE) {
           // double retval passed in float registers.
-          // XXX eW why use 4 both times?
           declare(retval, type); declare ( SP, HClass.Void );
 	  Util.assert(retval instanceof TwoWordTemp);
           emit( ROOT, "move `d0h, `s0", retval, v0 );
@@ -756,7 +781,6 @@ import java.util.Iterator;
 
        // Really we should be passed a SortedSet, but since we aren't,
        // we will make our own
-//       Collections.sort(Arrays.asList(usedRegArray), regComp);
        Temp[] usedRegArray =
           (Temp[]) usedRegisters.toArray(new Temp[usedRegisters.size()]);
        ArrayList usedRegArrList = new ArrayList(usedRegisters.size());
@@ -778,10 +802,12 @@ import java.util.Iterator;
              Instr[] entry_instr = {
                 new InstrDIRECTIVE(inf, il, ".align 2"),
                 new InstrDIRECTIVE(inf, il, ".globl " + methodlabel.name),
+                new InstrDIRECTIVE(inf, il, ".type " + methodlabel.name
+                   + ",@function"),
                 new InstrDIRECTIVE(inf, il, ".ent " +
                                    methodlabel.name+",#function"),
                 new InstrLABEL(inf, il, methodlabel.name+":", methodlabel),
-                new InstrDIRECTIVE(inf, il, ".frame $fp," +
+                new InstrDIRECTIVE(inf, il, ".frame $sp," +
                                    stack.frameSize() + ", $31"),
                 new Instr(inf, il, "subu $sp, "+ stack.frameSize(), null, null),
                 new Instr(inf, il, "sw $31, " + stack.getRAOffset() +"($sp)", 
@@ -891,9 +917,10 @@ import java.util.Iterator;
           Instr in3 = new InstrDIRECTIVE(inf, instr, // define void type
                                          "\t.stabs \"void:t19=19\",128,0,0,0"
              );
+          // F1 instead of F19 looks like the vpekoe-gcc output
           Instr in4 = new InstrDIRECTIVE(inf, instr, // mark as function
                                          "\t.stabs \""+
-                                         methodlabel.name.substring(1)+":F19"
+                                         methodlabel.name.substring(1)+":F1"
                                          +"\",36,0,"+(nregs*4)+","+
                                          methodlabel.name);
           in1.layout(instr.getPrev(), instr);
@@ -950,16 +977,19 @@ import java.util.Iterator;
 
 BINOP<p,i>(ADD, j, k) = i
 %{
-    emit( ROOT, "addu `d0, `s0, `s1", i, j, k);
+   emitLineDebugInfo(ROOT);
+   emit( ROOT, "addu `d0, `s0, `s1", i, j, k);
 }%
 BINOP<p,i>(ADD, j, CONST<p,i>(c)) = i
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "addu `d0, `s0, "+c, i, j);
 }%
 
 BINOP<l>(ADD, j, k) = i %extra<i>{ extra }
 %{
    Util.assert(i instanceof TwoWordTemp);
+   emitLineDebugInfo(ROOT);
    emit( ROOT, "addu `d0l, `s0l, `s1l", i, j, k);
    emit( ROOT, "sltu `d0, `s0l, `s1l", extra, i, k);
    emit( ROOT, "addu `d0h, `s0, `s1h", i, extra, j);
@@ -967,107 +997,137 @@ BINOP<l>(ADD, j, k) = i %extra<i>{ extra }
 }%
 
 BINOP<f>(ADD, j, k) = i %{
+   emitLineDebugInfo(ROOT);
    DoFCall(ROOT, i,j,k,"__addsf3");
 }%
 
 BINOP<d>(ADD, j, k) = i %{
+   emitLineDebugInfo(ROOT);
    DoDCall(ROOT, i, j, k, "__adddf3");
 }%
 
     /*-------- SUBTRACT (which, in tree form, is (x + (-y) ) -------- */
 BINOP<p,i>(ADD, j, UNOP<p,i>(NEG, k)) = i
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "subu `d0, `s0, `s1", i, j, k);
 }%
 /* I am pretty sure I don't need a constant subtraction pattern, as
    addu a negative constant is just fine */ 
 BINOP<p,i>(ADD, j, UNOP<p,i>(NEG, CONST<i>(c))) = i
 %{
-    emit( ROOT, "subu `d0, `s0, "+negate(c), i, j);
+   emitLineDebugInfo(ROOT);
+    emit( ROOT, "subu `d0, `s0, "+c, i, j);
 }%
 
     // okay, back to regular subtractions.
 BINOP<l>(ADD, j, UNOP<l>(NEG, k)) = i %extra<i>{ extra }
 %{
+   emitLineDebugInfo(ROOT);
    emit( ROOT, "sltu `d0, `s0l, `s1l", extra, j, k);
    emit( ROOT, "subu `d0l, `s0l, `s1l", i, j, k);
    emit( ROOT, "subu `d0h, `s0h, `s1h", i, j, k);
    emit( ROOT, "subu `d0h, `s0h, `s1", i, i, extra);
 }%
 
-BINOP<f>(ADD, j, UNOP<d>(NEG, k)) = i %{
+BINOP<f>(ADD, j, UNOP<f>(NEG, k)) = i %{
+   emitLineDebugInfo(ROOT);
    DoFCall(ROOT, i, j, k, "__subsf3");
 }%
 BINOP<d>(ADD, j, UNOP<d>(NEG, k)) = i %{
+   emitLineDebugInfo(ROOT);
    DoDCall(ROOT, i, j, k, "__subdf3");
 }%
 
 BINOP<p,i>(MUL, j, k) = i %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "mul `d0, `s0, `s1", i, j, k );
 }%
 
 BINOP<p,i>(MUL, j, CONST<p,i>(c)) = i %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "mult `d0, `s0, "+c, i, j );
 }%
 
 BINOP<l>(MUL, j, k) = i %{
+   emitLineDebugInfo(ROOT);
    DoLLCall(ROOT, i, j, k, "__ll_mul");
 }%
 
 BINOP<f>(MUL, j, k) = i %{
+   emitLineDebugInfo(ROOT);
    DoFCall(ROOT, i, j, k, "__mulsf3");
 }%
 
 BINOP<d>(MUL, j, k) = i %{
+   emitLineDebugInfo(ROOT);
    DoDCall(ROOT, i, j, k, "__muldf3");
 }%
 
 BINOP<p,i>(DIV, j, k) = i %{
+   emitLineDebugInfo(ROOT);
    emit( ROOT, "div `d0, `s0, `s1", i, j, k );
 }%
 
 BINOP<p,i>(DIV, j, CONST<p,i>(c)) = i %{
+   emitLineDebugInfo(ROOT);
    emit( ROOT, "div `d0, `s0, "+c, i, j );
 }%
 
 BINOP<l>(DIV, j, k) = i %{
-   DoLLCall(ROOT, i, j, k, "__ll_div");
+   emitLineDebugInfo(ROOT);
+   // Call gcc internal function directly
+   DoLLCall(ROOT, i, j, k, "__divdi3");
+   // This is the c-wrapper version
+   // DoLLCall(ROOT, i, j, k, "__ll_div");
 }%
 
 BINOP<f>(DIV, j, k) = i %{
+   emitLineDebugInfo(ROOT);
    DoFCall(ROOT, i, j, k, "__divsf3");
 }%
 
 BINOP<d>(DIV, j, k) = i %{
+   emitLineDebugInfo(ROOT);
    DoDCall(ROOT, i, j, k, "__divdf3");
 }%
 
 BINOP<i>(REM, j, k) = i %{
+   emitLineDebugInfo(ROOT);
    emit( ROOT, "rem `d0, `s0, `s1", i, j, k );
 }%
 
 BINOP<i>(REM, j, CONST<p,i>(c)) = i %{
+   emitLineDebugInfo(ROOT);
    emit( ROOT, "rem `d0, `s0, "+c, i, j );
 }%
 
 BINOP<l>(REM, j, k) = i %{
-   DoLLCall(ROOT, i, j, k, "__ll_rem");
+   emitLineDebugInfo(ROOT);
+   // Optimize by calling gcc builtin
+   DoLLCall(ROOT, i, j, k, "__moddi3");
+   // This the the call to a C function
+   // DoLLCall(ROOT, i, j, k, "__ll_rem");
 }%
 
 UNOP<i,p>(NEG, arg) = i
 %{
+   emitLineDebugInfo(ROOT);
    emit( ROOT, "negu `d0, `s0", i, arg );
 }% 
 UNOP<f>(NEG, arg) = i
 %{
+   emitLineDebugInfo(ROOT);
    DoFCall(ROOT, i, arg, "__f_neg");
 }% 
 UNOP<d>(NEG, arg) = i
 %{
+   emitLineDebugInfo(ROOT);
    DoDCall(ROOT, i, arg, "__d_neg");
 }% 
 UNOP<l>(NEG, arg) = i %extra<i>{ extra }
 %{
+   emitLineDebugInfo(ROOT);
    emit( ROOT, "seq `d0, `s0l, 0", extra, arg );
    emit( ROOT, "negu `d0l, `s0l", i, arg );
    emit( ROOT, "not `d0h, `s0h", i, arg );
@@ -1079,52 +1139,62 @@ UNOP<l>(NEG, arg) = i %extra<i>{ extra }
 
 BINOP<p,i>(AND, j, k) = i
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "and `d0, `s0, `s1", i, j, k );
 }%
 BINOP<p,i>(AND, j, CONST<p,i>(c)) = i
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "and `d0, `s0, "+c, i, j );
 }%
 BINOP<l>(AND, j, k) = i %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "and `d0l, `s0l, `s1l", i, j, k );
     emit( ROOT, "and `d0h, `s0h, `s1h", i, j, k );
 }%
 
 BINOP<p,i>(OR, j, k) = i
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "or `d0, `s0, `s1", i, j, k );
 }%
 BINOP<p,i>(OR, j, CONST<p,i>(c)) = i
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "or `d0, `s0, "+c, i, j );
 }%
 
 BINOP<l>(OR, j, k) = i %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "or `d0l, `s0l, `s1l", i, j, k );
     emit( ROOT, "or `d0h, `s0h, `s1h", i, j, k );
 }%
 
 BINOP<p,i>(XOR, j, k) = i
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "xor `d0, `s0, `s1", i, j, k );
 }%
 BINOP<p,i>(XOR, j, CONST<p,i>(c)) = i
-%pred %( is16BitOffset(c) )%
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "xor `d0, `s0, "+c, i, j );
 }%
 BINOP<l>(XOR, j, k) = i %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "xor `d0l, `s0l, `s1l", i, j, k );
     emit( ROOT, "xor `d0h, `s0h, `s1h", i, j, k );
 }%
 
 UNOP<i,p>(NOT, arg) = i
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "not `d0, `s0", i, arg );
 }% 
 
 UNOP<l>(NOT, arg) = i 
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "not `d0l, `s0l", i, arg );
     emit( ROOT, "not `d0h, `s0h", i, arg );
 }% 
@@ -1136,6 +1206,7 @@ BINOP(cmpop, j, k) = i
 %pred %( (ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT)
 	 && isCmpOp(cmpop) )%
 %{
+   emitLineDebugInfo(ROOT);
    // Lets hear it for the MIPS assembler
    emit( ROOT, cmpOp2AsStr(cmpop) + " `d0, `s0, `s1 # cmpop", i, j, k );
 }%
@@ -1143,6 +1214,7 @@ BINOP(cmpop, j, k) = i
 BINOP(CMPEQ, j, k) = i %extra<i>{ extra }
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "xor `d0, `s0h, `s1h", extra, j, k );
     emit( ROOT, "xor `d0, `s0l, `s1l", i, j, k );
     emit( ROOT, "or  `d0, `s0,  `s1", i, i, extra );
@@ -1151,6 +1223,7 @@ BINOP(CMPEQ, j, k) = i %extra<i>{ extra }
 BINOP(CMPNE, j, k) = i %extra<i>{ extra } /* void*/
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "xor `d0, `s0h, `s1h", extra, j, k );
     emit( ROOT, "xor `d0, `s0l, `s1l", i, j, k );
     emit( ROOT, "or  `d0, `s0,  `s1", i, i, extra );
@@ -1159,45 +1232,67 @@ BINOP(CMPNE, j, k) = i %extra<i>{ extra } /* void*/
 BINOP(CMPLT, j, k) = i
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
-    emit( ROOT, "slt `d0, `s0h, `s1h \n"
-                +"bne `s0h, `s1h, 1f \n"
-                +"sltu `d0, `s0l, `s1l \n"
-                +"1:", i, j, k );
+   emitLineDebugInfo(ROOT);
+   Label done = new Label();
+   Label reg = new Label(); // Reg Alloc sanity pass sucks
+
+   emit( ROOT, "slt `d0, `s0h, `s1h", i, j, k);
+   emitCondBr( ROOT, "bne `s0h, `s1h, `L0", j, k, done);
+   emitLABEL( ROOT, reg + ": ", reg );
+   emit( ROOT, "sltu `d0, `s0l, `s1l", i, j, k);
+   emitLABEL( ROOT, done + ": ", done );
 }%
 BINOP(CMPLE, j, k) = i
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
-    emit( ROOT, "slt `d0, `s0h, `s1h \n"
-                + "bne `s0h, `s1h, 1f \n"
-                + "sltu `d0, `s0l, `s1l \n"
-                + "1:", i, j, k );
+   emitLineDebugInfo(ROOT);
+   Label done = new Label();
+   Label reg = new Label(); // Reg Alloc sanity pass sucks
+
+   emit( ROOT, "slt `d0, `s0h, `s1h", i, j, k);
+   emitCondBr( ROOT, "bne `s0h, `s1h, `L0", j, k, done);
+   emitLABEL( ROOT, reg + ": ", reg );
+   emit( ROOT, "sleu `d0, `s0l, `s1l", i, j, k);
+   emitLABEL( ROOT, done + ": ", done );
 }%
 BINOP(CMPGT, j, k) = i
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
-    emit( ROOT, "sgt `d0, `s0h, `s1h \n"
-                + "bne `s0h, `s1h, 1f \n"
-                + "sgtu `d0, `s0l, `s1l \n"
-                + "1:", i, j, k );
+   emitLineDebugInfo(ROOT);
+   Label done = new Label();
+   Label reg = new Label(); // Reg Alloc sanity pass sucks
+
+   emit( ROOT, "sgt `d0, `s0h, `s1h", i, j, k);
+   emitCondBr( ROOT, "bne `s0h, `s1h, `L0", j, k, done);
+   emitLABEL( ROOT, reg + ": ", reg );
+   emit( ROOT, "sgtu `d0, `s0l, `s1l", i, j, k);
+   emitLABEL( ROOT, done + ": ", done );
 }%
 BINOP(CMPGE, j, k) = i
 %pred %( ROOT.operandType()==Type.LONG )%
 %{
-   emit( ROOT, "sgt `d0, `s0h, `s1h \n"
-                + "bne `s0h, `s1h, 1f \n"
-                + "sgeu `d0, `s0l, `s1l \n"
-                + "1:", i, j, k );
+   emitLineDebugInfo(ROOT);
+   Label done = new Label();
+   Label reg = new Label(); // Reg Alloc sanity pass sucks
+
+   emit( ROOT, "sgt `d0, `s0h, `s1h", i, j, k);
+   emitCondBr( ROOT, "bne `s0h, `s1h, `L0", j, k, done);
+   emitLABEL( ROOT, reg + ": ", reg );
+   emit( ROOT, "sgeu `d0, `s0l, `s1l", i, j, k);
+   emitLABEL( ROOT, done + ": ", done );
 }%
   
 BINOP(cmpop, j, k) = i
 %pred %( ROOT.operandType()==Type.FLOAT && isCmpOp(cmpop) )%
 %{
+   emitLineDebugInfo(ROOT);
    DoFCall(ROOT, i, j, k, "__f_" + cmpOp2AsStr(cmpop));
 }%
 
 BINOP(cmpop, j, k) = i
 %pred %( ROOT.operandType()==Type.DOUBLE && isCmpOp(cmpop) )%
 %{
+   emitLineDebugInfo(ROOT);
    DoDCall(ROOT, i, j, k, "__d_" + cmpOp2AsStr(cmpop));
 }%
 
@@ -1207,6 +1302,7 @@ BINOP(cmpop, j, k) = i
 BINOP<p,i>(shiftop, j, k) = i 
 %pred %( isShiftOp(shiftop) )%
 %{
+   emitLineDebugInfo(ROOT);
     // java lang spec says shift should occur according to
     // 'least significant five bits' of k; MIPS does this correctly
    emit( ROOT, shiftOp2Str(shiftop)+" `d0, `s0, `s1", i, j, k);
@@ -1215,84 +1311,66 @@ BINOP<p,i>(shiftop, j, k) = i
 BINOP<p,i>(shiftop, j, CONST(c)) = i 
 %pred %( isShiftOp(shiftop) && is5BitShift(c) )%
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, shiftOp2Str(shiftop) + " `d0, `s0, "+c, i, j);
 }%
 
 BINOP<l>(SHL, j, k) = i %{
+   emitLineDebugInfo(ROOT);
    DoLLShiftCall(ROOT, i, j, k, "__ll_lshift");
 }%
 
 BINOP<l>(SHR, j, k) = i %{
-   DoLLShiftCall(ROOT, i, j, k, "__ull_rshift");
+   emitLineDebugInfo(ROOT);
+   DoLLShiftCall(ROOT, i, j, k, "__ll_rshift");
 }%
 
 BINOP<l>(USHR, j, k) = i %{
-   DoLLShiftCall(ROOT, i, j, k, "__ll_rshift");
+   emitLineDebugInfo(ROOT);
+   DoLLShiftCall(ROOT, i, j, k, "__ull_rshift");
 }%
 
 /***********************************************************/
 /* Constants */
 
-CONST<l>(c) = i 
+CONST<l,d>(c) = i 
 %{
-   long val = ROOT.value.longValue();
+   long val = (ROOT.type()==Type.LONG) ? ROOT.value.longValue()
+   : Double.doubleToLongBits(ROOT.value.doubleValue());
 
-    int loval = (int)(val & 0xFFFFFFFF);
-    emit(new Instr( instrFactory, ROOT,
-                    "li `d0l, " + loval + " # lo long const",
-                    new Temp[]{ i }, null ));
-    val>>>=32;
-    emit(new Instr( instrFactory, ROOT,
-                    "li `d0h, " + val + " # hi long const", 
-                    new Temp[]{ i }, null ));
+   emitLineDebugInfo(ROOT);
+   emit( ROOT, "li `d0l, " + (int)val + " # lo long const", i);
+   val>>>=32;
+   emit( ROOT, "li `d0h, " + (int)val + " # hi long const", i);
 }% 
 
-CONST<i>(c) = i 
+CONST<i,f>(c) = i 
 %{
-   emit(new Instr( instrFactory, ROOT,
-                   "li `d0, " + ROOT.value.intValue(),
-                   new Temp[]{ i }, null ));
+    int val = (ROOT.type()==Type.INT) ? ROOT.value.intValue()
+	: Float.floatToIntBits(ROOT.value.floatValue());
+
+   emitLineDebugInfo(ROOT);
+    String comment = "";
+    if(ROOT.type() == Type.FLOAT) {
+       comment = "  # float " + ROOT.value.floatValue();
+    }
+    emit(ROOT, "li `d0, " + val + comment, i);
 }%
 
 CONST<p>(c) = i %{
     // the only CONST of type Pointer we should see is NULL
     Util.assert(c==null);
-    emit(new Instr( instrFactory, ROOT,
-                    "li `d0, 0",
-                    new Temp[]{ i }, null ));
+   emitLineDebugInfo(ROOT);
+    emit( ROOT, "li `d0, 0   # null pointer", i);
 }%
 
-CONST<d>(c) = i 
-%{
-   emitDIRECTIVE( ROOT, !is_elf?".rdata ": (mipspro_assem ? ".data\n.section .flex.init_data,1, 3, 4, 16" : ".data\n.section .flex.init_data"));
-   emit( ROOT, "1:\n"
-         + ".double " + ROOT.value.doubleValue());
-   emitDIRECTIVE( ROOT, !is_elf?".text": (mipspro_assem ? ".text\n.section .flex.code,1, 7, 4, 16" : ".text\n.section .flex.code"));
-   emit(new Instr( instrFactory, ROOT,
-                   "lw `d0h, 1b",
-                   new Temp[]{ i }, null ));
-   emit(new Instr( instrFactory, ROOT,
-                   "lw `d0l, 1b + 4",
-                   new Temp[]{ i }, null ));
-
-}% 
-
-CONST<f>(c) = i 
-%{
-   emitDIRECTIVE( ROOT, !is_elf?".rdata ": (mipspro_assem ? ".data\n.section .flex.init_data,1, 3, 4, 16" : ".data\n.section .flex.init_data"));
-   emit( ROOT, "1:\n"
-         + ".float " + ROOT.value.floatValue());
-   emitDIRECTIVE( ROOT, !is_elf?".text": (mipspro_assem ? ".text\n.section .flex.code,1, 7, 4, 16" : ".text\n.section .flex.code"));
-   emit(new Instr( instrFactory, ROOT,
-                   "lw `d0, 1b",
-                   new Temp[]{ i }, null ));
-}%
 
 /***********************************************************/
 /* Memory Access */
 
 MEM<s:8,u:8,s:16,u:16,i,p,f>(e) = i %{ 
    String suffix = GetLdSuffix(ROOT);
+   emitLineDebugInfo(ROOT);
    emit(new InstrMEM(instrFactory, ROOT,
                      "l"+suffix+" `d0, 0(`s0)",
                      new Temp[]{ i }, new Temp[]{ e }));   
@@ -1301,11 +1379,13 @@ MEM<s:8,u:8,s:16,u:16,i,p,f>(e) = i %{
 MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))) = i
 %{
    String suffix = GetLdSuffix(ROOT);
+   emitLineDebugInfo(ROOT);
    emit(new InstrMEM(instrFactory, ROOT,
                      "l"+suffix+" `d0, " + c + "(`s0)",
                      new Temp[]{ i }, new Temp[]{ j }));
 }%
 MEM<l,d>(e) = i %{
+   emitLineDebugInfo(ROOT);
     emit(new InstrMEM(instrFactory, ROOT,
                       "lw `d0l, 4(`s0)",
                       new Temp[]{ i }, new Temp[]{ e }));
@@ -1317,6 +1397,7 @@ MEM<l,d>(e) = i %{
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), src)
 %{
    String suffix = GetStSuffix(ROOT);
+   emitLineDebugInfo(ROOT);
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, 0(`s1)",
                      null, new Temp[] {src, dst}));
 }%
@@ -1324,15 +1405,18 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), src)
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), src)
 %{ 
    String suffix = GetStSuffix(ROOT);
+   emitLineDebugInfo(ROOT);
    emit(new InstrMEM(instrFactory, ROOT,
 		      "s"+suffix+" `s0, "+c+"(`s1)",
 		      null, new Temp[]{ src, j }));   
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), NAME(src))
-   %extra<i>{ extra } /*void*/
+   %extra<p>{ extra } /*void*/
 %{ 
    String suffix = GetStSuffix(ROOT);
+   declare( extra, HClass.Void );
+   emitLineDebugInfo(ROOT);
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + src,
                    new Temp[]{ extra }, null ));
@@ -1341,9 +1425,11 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), NAME(src))
                      null, new Temp[]{ extra, j }));
 }%
 
-MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), NAME(src)) %extra<i>{ extra }/*void*/
+MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), NAME(src)) %extra<p>{ extra }/*void*/
 %{ 
    String suffix = GetStSuffix(ROOT);
+   declare( extra, HClass.Void );
+   emitLineDebugInfo(ROOT);
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + src,
                    new Temp[]{ extra }, null ));
@@ -1351,9 +1437,11 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), NAME(src)) %extra<i>{ extra }/*void*/
                      +" `s0, (`s1)        # dst <= NAME(src)",
                      null, new Temp[] {extra, dst}));
 }%
-MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), src) %extra<i>{ extra }/*void*/
+MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), src) %extra<p>{ extra }/*void*/
 %{ 
    String suffix = GetStSuffix(ROOT);
+   declare( extra, HClass.Void );
+   emitLineDebugInfo(ROOT);
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + dst,
                    new Temp[]{ extra }, null ));
@@ -1363,15 +1451,14 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), src) %extra<i>{ extra }/*void*/
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), NAME(src))
-%extra<i>{ extra0, extra1 }/*void*/
+%extra<p>{ extra0, extra1 }/*void*/
 %{ 
    String suffix = GetStSuffix(ROOT);
-   emit(new Instr( instrFactory, ROOT,
-                   "la `d0, " + src,
-                   new Temp[]{ extra0 }, null ));
-   emit(new Instr( instrFactory, ROOT,
-                   "la `d0, " + dst,
-                   new Temp[]{ extra1 }, null ));
+   emitLineDebugInfo(ROOT);
+   declare( extra0, HClass.Void );
+   declare( extra1, HClass.Void );
+   emit(ROOT, "la `d0, " + src, extra0);
+   emit(ROOT, "la `d0, " + src, extra1);
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, (`s1)",
                      null, new Temp[] {extra0, extra1}));
 }%
@@ -1379,27 +1466,22 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), NAME(src))
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), CONST<i,p>(c)) 
    %extra<i>{ extra0, extra1 }/*void*/
 %{ 
+   emitLineDebugInfo(ROOT);
    String suffix = GetStSuffix(ROOT);
    if(c==null) {
-      emit(new Instr( instrFactory, ROOT,
-                      "li `d0, 0",
-                      new Temp[]{ extra0 }, null ));
-
+      emit(ROOT, "li `d0, 0", extra0);
    } else {
-      emit(new Instr( instrFactory, ROOT,
-                      "li `d0, " + c,
-                      new Temp[]{ extra0 }, null ));
+      emit(ROOT, "li `d0, " + c, extra0);
    }
-   emit(new Instr( instrFactory, ROOT,
-                   "la `d0, " + dst,
-                   new Temp[]{ extra1 }, null ));
+   emit(ROOT, "la `d0, " + dst, extra1);
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, (`s1)",
                      null, new Temp[] { extra0, extra1 }));
 }%
 
 
-// C compiler IRIX on mips places long longs big endian
+// longs as always are big endian
 MOVE(MEM<l,d>(dst), src) %{
+   emitLineDebugInfo(ROOT);
    emit(new InstrMEM(instrFactory, ROOT, "sw `s0l, 4(`s1)",
                      null, new Temp[]{ src, dst }));   
    emit(new InstrMEM(instrFactory, ROOT, "sw `s0h, 0(`s1)",
@@ -1407,11 +1489,13 @@ MOVE(MEM<l,d>(dst), src) %{
 }%
 
 MOVE<p,i,f>(dst, src) %{
+   emitLineDebugInfo(ROOT);
     declare( dst, code.getTreeDerivation(), ROOT.getSrc());
     emitMOVE( ROOT, "move `d0, `s0", dst, src );
 }%
 
 MOVE<d,l>(TEMP(dst), src) %{
+   emitLineDebugInfo(ROOT);
     Util.assert( dst instanceof TwoWordTemp, "why is dst: "+dst + 
 		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
 
@@ -1428,18 +1512,20 @@ MOVE<d,l>(TEMP(dst), src) %{
 
 // Put a label in a register
 NAME(id) = i %{
+   emitLineDebugInfo(ROOT);
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + id, 
                    new Temp[]{ i }, null ));
 }%
 
 MEM<f,i,p>(NAME(id)) = i %{
+   emitLineDebugInfo(ROOT);
    emit(new Instr( instrFactory, ROOT,
                    "lw `d0, " + id, 
                    new Temp[]{ i }, null ));
 }%
 MEM<d,l>(NAME(id)) = i %{
-
+   emitLineDebugInfo(ROOT);
     emit(new Instr( instrFactory, ROOT,
 		    "lw `d0h, " + id, 
 		    new Temp[]{ i }, null ));
@@ -1454,57 +1540,68 @@ TEMP(t) = i %{ i=t; /* this case is basically handled entirely by the CGG */ }%
 
 UNOP(I2B, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "sll `d0, `s0, 24", i, arg);
     emit( ROOT, "sra `d0, `s0, 24", i, i);
 }%
 UNOP(I2S, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "sll `d0, `s0, 16", i, arg);
     emit( ROOT, "sra `d0, `s0, 16", i, i);
 }%
 UNOP(I2C, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "sll `d0, `s0, 16", i, arg);
     emit( ROOT, "srl `d0, `s0, 16", i, i);
 }%
 UNOP(_2F, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
+   emitLineDebugInfo(ROOT);
    DoFCall(ROOT, i, arg, "__i2f");
 }%
 UNOP(_2D, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
+   emitLineDebugInfo(ROOT);
    DoDCall(ROOT, i, arg, "__i2d");
 }%
 UNOP(_2L, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
+   emitLineDebugInfo(ROOT);
     emit( ROOT, "move `d0l, `s0", i, arg );
     emit( ROOT, "sra `d0h, `s0, 31", i, arg );
 }%
 /* Trivial pointer to integer */
 UNOP<p>(_2I, arg) = i %pred %( ROOT.operandType() == Type.POINTER )%
 %{
+   emitLineDebugInfo(ROOT);
     emitMOVE( ROOT, "move `d0, `s0", i, arg );
 }%
 
 
 UNOP(_2I, arg) = i %pred %( ROOT.operandType() == Type.LONG )%
 %{
-    emit( ROOT, "move `d0, `s0l", i, arg );
+   emitLineDebugInfo(ROOT);
+   emit( ROOT, "move `d0, `s0l", i, arg );
 }%
 
 
 UNOP(_2I, arg) = i %pred %( ROOT.operandType() == Type.FLOAT )%
 %{
+   emitLineDebugInfo(ROOT);
    DoFCall(ROOT, i, arg, "__f2i");
 }%
 UNOP(_2D, arg) = i %pred %( ROOT.operandType() == Type.FLOAT )%
 %{
+   emitLineDebugInfo(ROOT);
    DoDCall(ROOT, i, arg, "__f2d");
 }%
 
 
 UNOP(_2I, arg) = i %pred %( ROOT.operandType() == Type.DOUBLE )%
 %{
+   emitLineDebugInfo(ROOT);
    DoDCall(ROOT, i, arg, "__d2i");
 }%
 
@@ -1522,6 +1619,7 @@ EXPR(e) %{
 /* Conditional jumps and jumps */
 
 CJUMP(test, iftrue, iffalse) %{
+   emitLineDebugInfo(ROOT);
    emit( ROOT, "beq `s0, 0, `L0",
          null, new Temp[]{ test },
          new Label[]{ iffalse });
@@ -1533,6 +1631,7 @@ CJUMP(BINOP(cmpop, j, k), iftrue, iffalse)
 	 ( ((BINOP) ROOT.getTest()).operandType()==Type.POINTER ||
 	   ((BINOP) ROOT.getTest()).operandType()==Type.INT ) )%
 %{
+   emitLineDebugInfo(ROOT);
    emit( ROOT, cmpOp2BrStr(cmpop) + " `s0, `s1, `L0",
          null, new Temp[] { j , k }, new Label[] { iftrue });
    emitJUMP( ROOT, "b `L0", iffalse );
@@ -1541,6 +1640,7 @@ CJUMP(BINOP(cmpop, j, k), iftrue, iffalse)
 CJUMP(BINOP(cmpop, j, CONST<i,p>(c)), iftrue, iffalse)
    %pred %( isCmpOp(cmpop) )%
 %{
+   emitLineDebugInfo(ROOT);
    Util.assert(((BINOP) ROOT.getTest()).operandType()!=Type.POINTER ||
                c == null, "Can not compare a pointer to anything but null\n");
    if(((BINOP) ROOT.getTest()).operandType() == Type.POINTER &&
@@ -1555,11 +1655,13 @@ CJUMP(BINOP(cmpop, j, CONST<i,p>(c)), iftrue, iffalse)
 }%
 
 JUMP(NAME(l)) %{ // direct jump
+   emitLineDebugInfo(ROOT);
     //FSK   emitNoFall (ROOT, "j " + l + "", null, null, new Label[] { l });
    emitJUMP(ROOT, "j " + l + "", l );
 }%
 
 JUMP(e) %{
+   emitLineDebugInfo(ROOT);
     List labelList = LabelList.toList( ROOT.targets );
     emit(new Instr( instrFactory, ROOT, 
                     "j `s0",
@@ -1586,6 +1688,7 @@ LABEL(id) %{
 /* Calls */
 
 METHOD(params) %{
+   emitLineDebugInfo(ROOT);
     // mark entry point.
     declare(SP, HClass.Void);
     declare(FP, HClass.Void);
@@ -1643,6 +1746,7 @@ METHOD(params) %{
 }%
 
 THROW(val, handler) %{
+   emitLineDebugInfo(ROOT);
    // ignore handler, as our runtime does clever things instead.
    declare( v0, code.getTreeDerivation(), ROOT.getRetex() );
    // What about functions that return long long?
@@ -1669,6 +1773,8 @@ CALL(retval, retex, func, arglist, handler)
 %{
    CallState cs = emitCallPrologue(ROOT, arglist, code.getTreeDerivation());
    Label rlabel = new Label(), elabel = new Label();
+   emitLineDebugInfo(ROOT);
+
    declareCALLDefFull();
    emit2(ROOT, "la `d0, " + rlabel + " # funky call",
          new Temp[]{ LR }, null );
@@ -1695,6 +1801,8 @@ CALL(retval, retex, NAME(funcLabel), arglist, handler)
 %{
    CallState cs = emitCallPrologue(ROOT, arglist, code.getTreeDerivation());
    Label rlabel = new Label(), elabel = new Label();
+
+   emitLineDebugInfo(ROOT);
    declareCALLDefFull();
    emit2(ROOT, "la `d0, " + rlabel + " # funky call",
          new Temp[]{ LR }, null );
@@ -1717,6 +1825,7 @@ CALL(retval, retex, NAME(funcLabel), arglist, handler)
 NATIVECALL(retval, func, arglist) %{
    CallState cs = emitCallPrologue(ROOT, arglist,
                                    code.getTreeDerivation());
+   emitLineDebugInfo(ROOT);
     // call uses 'func' as `s0
    cs.callUses.add(0, func);
    declareCALLDefFull();
@@ -1736,6 +1845,7 @@ NATIVECALL(retval, NAME(funcLabel), arglist)
 %{
    CallState cs = emitCallPrologue(ROOT, arglist,
                                    code.getTreeDerivation());
+   emitLineDebugInfo(ROOT);
    declareCALLDefFull();
    emitNativeCall( ROOT, "jal " + funcLabel,
                    call_def_full,
@@ -1748,6 +1858,7 @@ NATIVECALL(retval, NAME(funcLabel), arglist)
 }%
 
 RETURN<i,f,p>(val) %{
+   emitLineDebugInfo(ROOT);
    declare( v0, code.getTreeDerivation(),  ROOT.getRetval() );
    emitMOVE( ROOT, "move `d0, `s0", v0, val );
    // mark exit point.
@@ -1755,7 +1866,8 @@ RETURN<i,f,p>(val) %{
 }%
 
 RETURN<l,d>(val) %{
-   // these should really be InstrMOVEs!
+   emitLineDebugInfo(ROOT);
+   // InstrMOVEs do not handle longs
    declare( v0, HClass.Void );
    declare( v1, HClass.Void );
    emit( ROOT, "move `d0, `s0h", v0, val);
