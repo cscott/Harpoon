@@ -98,6 +98,7 @@ pldi04.dvi ecoop04.dvi: \
 	Figures/tr-w-all.eps Figures/tr-w-ten.eps Figures/tr-sz-all.eps \
 	$(foreach f, tr-multi-obj tr-quad,\
 	  Figures/$(f).pstex Figures/$(f).pstex_t)
+ecoop04.dvi: csallncs.cls
 
 # thesis figure dependencies
 export THESIS_FIGURES=\

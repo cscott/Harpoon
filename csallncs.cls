@@ -1,5 +1,5 @@
 % -*-latex-*-
-% $Id: csallncs.cls,v 1.1 2003-12-02 08:02:42 cananian Exp $
+% $Id: csallncs.cls,v 1.2 2003-12-02 08:35:09 cananian Exp $
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -140,7 +140,7 @@
 \newcommand{\subsecput}[2]{\subsection{#2}\label{sec:#1}}
 
 \newcommand{\figput}[2]{%
-\begin{figure}%
+\begin{figure}[t]%
  \begin{center}%
   \input{Figures/#1.pstex_t}%
  \end{center}%
@@ -162,9 +162,9 @@
 }
 
 \newcommand{\epsfigput}[2]{%
-\begin{figure}%
+\begin{figure}[t]%
 \begin{center}%
-\includegraphics[width=3.25in,clip=true]{Figures/#1.eps}%
+\includegraphics[height=2.75in,clip=true]{Figures/#1.eps}%
 \end{center}%
 \caption{#2}%
 \label{fig:#1}%

@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: ecoop04.tex,v 1.1 2003-12-02 08:02:42 cananian Exp $
+% $Id: ecoop04.tex,v 1.2 2003-12-02 08:35:09 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[runningheads]{csallncs}
 %\usepackage{times}
@@ -25,17 +25,18 @@
 \renewcommand{\topfraction}{0.25}
 
 \title{Efficient Software Transactions for Object-Oriented Languages}
+%\titlerunning{Efficient Software Transactions}
 
-\gdef\and{\hspace*{4em}}%Tight title with one line for authors
-\author{C.~Scott~Ananian \and Martin~Rinard \\
+\author{C.~Scott~Ananian \and Martin~Rinard}
+\institute{
 Computer Science and Artificial Intelligence Laboratory\\
 Massachusetts Institute of Technology\\ 
 Cambridge, MA 02139 \\
-\texttt{\{cananian,rinard\}@csail.mit.edu}
+\email{\{cananian,rinard\}@csail.mit.edu}
 }
 \special{papersize=8.5in,11in}
 
-\date{\today \\ $ $Revision: 1.1 $ $}
+%\date{\today \\ $ $Revision: 1.2 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -84,15 +85,20 @@ to provide race-safety for certain types of improperly synchronized
 code, to provide fault-tolerance and backtracking, and to express
 synchronization and optimistic concurrency.  We use ideas from
 distributed shared memory implementations to efficiently implement
-transactions with little overhead for non-transactional code.  We also
-show how functional arrays can be used to overcome object size
-limitations for non-blocking synchronization based on Herlihy's
-``small object'' scheme.\note{Also, transactions are exception-handling?}
+transactions with little overhead for non-transactional code.
+%  We also
+%show how functional arrays can be used to overcome object size
+%limitations for non-blocking synchronization based on Herlihy's
+%``small object'' scheme.
+\note{Also, transactions are exception-handling?}
 
 We present a detailed design of our proposal, justifying the choices
 we make with empirical performance results.  We describe compiler
 optimizations which greatly improve the common-case efficiency for
-typical Java benchmarks.  We argue that our transaction mechanism
+typical Java benchmarks.  A model for the software transaction
+implementation is given in Promela, which has been mechanically
+verified for correctness using the SPIN model checker.
+We argue that our transaction mechanism
 makes some racy existing code safe, is easier to use for new code,
 and promises better scalability than the existing
 mutual-exclusion--based synchronization methods.
@@ -100,10 +106,6 @@ mutual-exclusion--based synchronization methods.
 
 %
 \secput{intro}{Introduction}
-
-\subsecput{intro-sync}{Non-blocking synchronization}
-
-\subsecput{intro-trans}{Transactions}
 A transaction can be thought of as a sequence of loads and stores
 performed as part of a program.  The intuition for transactions is
 that they either \defn{commit} or they \defn{abort}.  If a transaction
@@ -112,7 +114,52 @@ atomically with respect to other transactions.  That is, the
 transaction's operations are not interleaved with those of other
 transactions.  If a transaction aborts, then none of its stores take
 effect and the transaction must be restarted, typically using a
-backoff algorithm to preclude livelock.
+backoff algorithm to preclude live-lock.
+
+Although transactions can be implemented using mutual exclusion
+(locks), our algorithms will use non-blocking synchronization to
+exploit optimistic concurrency.
+Non-blocking synchronization offers a number of advantages over mutual
+exclusion within critical regions.  Foremost for the concerns of this paper is
+fault-tolerance:  a process which fails while holding a lock within a
+critical region can prevent all other non-failing processes from
+ever making progress.  In an operating system context, this means that
+thread termination must be done very carefully to avoid inadvertently
+killing a process within a critical region.  If a thread dies while
+holding a user-mode lock, all other threads in its address space may
+deadlock; if it dies while holding a kernel lock, the whole system may
+crash.  Although one can use external means to recognize orphaned
+locks and release them, it is in general not possible to restore the
+locked data structures to a consistent state after such a failure.
+\note{This is an important sentence.}
+Non-blocking synchronization offers a graceful means out of
+these troubles, as non-progress or failure of any one thread will not
+affect the progress or consistency of other threads or the system.
+These fault-tolerant properties are even more relevant in
+distributed systems where entire nodes may fail without warning.
+
+Non-blocking synchronization offers performance benefits as well.
+Even in a failure-free system, page faults, cache misses, context
+switches, I/O, and other unpredictable events may result in delays to the
+entire system when mutual exclusion is used; non-blocking
+synchronization allows undelayed processes or processors to continue
+to make progress.  In loosely coupled asynchronous systems such
+unexpected delays are the norm, rather than the exception.
+%On parallel systems critical regions may cause unexpected serialization.
+
+\note{Trim this down.}
+Real-time systems have other problems with mutual exclusion.
+A low-priority task which 
+acquires a lock and is then delayed may hold up higher-priority tasks
+which contain critical regions protected with the same lock.
+This situation is called
+\emph{priority inversion}, and is responsible for a number of
+high-profile system failures, including whole-system resets during the Mars
+Pathfinder mission \cite{Jones97}.  Non-blocking
+synchronization can guarantee that the high-priority task makes
+progress.
+
+\note{State the purpose of this paper.}
 
 \subsecput{contrib}{Contributions}
 The contributions of this paper include:
@@ -127,13 +174,14 @@ The contributions of this paper include:
 \note{Omitting ``optimistic concurrency'' from this list for now.}
 \item An efficient implementation of this design which extends
   race-protection to unsynchronized code.
-\item Empirical data to justify the implementation choices.
+\item A mechanically-verified PROMELA model of the implementation.
+\item Empirical data to justify the design choices.
 \item Compiler optimizations to improve the speed of software
   transactions.
 \item An application of fast functional arrays to solve the ``large
   object'' problem with Herlihy's universal non-blocking protocol.
   \note{Short section; cite my Area Exam as a Technical Report here
-  for more details.}
+  for more details. Omit this?}
 \item A variation of the implementation which leverages hardware
   support for small transactions.  This allows hardware small
   transactions to be bootstrapped to provide efficient large
@@ -154,6 +202,95 @@ simplifies the locking discipline required.
 The last example reformulates the transaction mechanism as
 exception-handling, illustrating this view with a destructive traversal
 algorithm. 
+
+\subsecput{destruct}{Destructive list traversal}
+\note{Put this example first?}
+Many recursive data structures can be traversed without the use of an
+stack using pointer reversal.  This technique is widely used in
+garbage collectors, and was first demonstrated in this context by
+Schorr and Waite \cite{SchorrWa67}.  The following code implements a
+pointer-reversal traversal of a simple singly-linked list:
+ \par {\footnotesize\samepage
+\begin{verbatim}
+// destructive list traversal.
+void traverse(List l) {
+  List last = null, t;
+  
+  /* zip through the list, reversing links */
+  for (int i=0; i<2; i++) {
+    do {
+      if (i==0) visit(l); // visit node
+      t = l.next;
+      l.next = last;
+      last = l;
+      l = t;
+    } while (l!=null);
+    l = last;
+    // now do again, backwards. (restoring links)
+  }
+}
+\end{verbatim}
+}
+This function traverses the list visiting nodes in order and then
+reversing the {\tt next} pointer.  When the end of the list is
+reached, the reversed links are traversed to restore the original
+state of the list.
+
+Imagine that an exception or fault occurs inside the {\tt visit()} method
+at some point during the traversal: an assertion fires, an exception
+occurs, the hardware hiccups, or a thread is killed.  Control may
+leave the {\tt traverse()} method, but the data structure is left in
+shambles.  What is needed is some exception-handling procedure to
+restore the proper state of the list.  This can be manually coded with
+Java's existing {\tt try}/{\tt catch} construct, but the
+exception-handling code must be tightly-coupled to the traversal.
+
+Instead, we can provide a non-deterministic choice operator,
+{\tt try}/{\tt else}, and write the recovery code at a higher-level as:
+\par {\footnotesize\samepage
+\begin{verbatim}
+try {
+  try {
+    traverse(list);
+  } catch (Throwable t) {
+    fail; // explicit xaction abort
+  }
+} else { // try-else construct
+  throw new Error();
+}
+\end{verbatim}
+}\note{We'd prefer 'fail t' here, but that raises the question of how
+  to export objects from transactional contexts.}
+
+The {\tt try}/{\tt else} block appears to make a non-deterministic
+choice between executing the {\tt try} or the {\tt else} clause,
+depending on whether the {\tt try} would succeed or not.
+We implement this with transactions, making the {\tt fail} statement
+an explicit transaction abort.  When the transaction aborts, all the
+heap side-effects of the {\tt try} block disappear.
+
+The {\tt try}/{\tt else} construct exposes transactions to the
+programmer as an exception-handling mechanism.  And in fact,
+the {\tt atomic} block above can be implemented using
+{\tt try}/{\tt else}:
+ \par {\footnotesize\samepage
+\begin{verbatim}
+while(true) {
+  try {
+    // atomic actions
+  } else {
+    backOff();
+    continue;
+  }
+  break; // success!
+}
+\end{verbatim}
+}
+\note{How hard do we try to execute the {\tt try} block?}
+Transactions expressed an exception-handling mechanism can be used in this
+manner to provide fault-tolerance and backtracking to the language, as
+well as atomic regions for synchronization.\note{Weak conclusion}
+\note{nqueens example?}
 
 \subsecput{flow}{Network flow}
 
@@ -303,95 +440,6 @@ strict alternative semantics which may in fact correct existing
 synchronization errors.   For ``correctly-synchronized'' code, the
 semantics of {\tt atomic} and {\tt synchronized} are identical.
 \note{Is this true?}
-
-\subsecput{destruct}{Destructive list traversal}
-\note{Put this example first?}
-Many recursive data structures can be traversed without the use of an
-stack using pointer reversal.  This technique is widely used in
-garbage collectors, and was first demonstrated in this context by
-Schorr and Waite \cite{SchorrWa67}.  The following code implements a
-pointer-reversal traversal of a simple singly-linked list:
- \par {\footnotesize\samepage
-\begin{verbatim}
-// destructive list traversal.
-void traverse(List l) {
-  List last = null, t;
-  
-  /* zip through the list, reversing links */
-  for (int i=0; i<2; i++) {
-    do {
-      if (i==0) visit(l); // visit node
-      t = l.next;
-      l.next = last;
-      last = l;
-      l = t;
-    } while (l!=null);
-    l = last;
-    // now do again, backwards. (restoring links)
-  }
-}
-\end{verbatim}
-}
-This function traverses the list visiting nodes in order and then
-reversing the {\tt next} pointer.  When the end of the list is
-reached, the reversed links are traversed to restore the original
-state of the list.
-
-Imagine that an exception or fault occurs inside the {\tt visit()} method
-at some point during the traversal: an assertion fires, an exception
-occurs, the hardware hiccups, or a thread is killed.  Control may
-leave the {\tt traverse()} method, but the data structure is left in
-shambles.  What is needed is some exception-handling procedure to
-restore the proper state of the list.  This can be manually coded with
-Java's existing {\tt try}/{\tt catch} construct, but the
-exception-handling code must be tightly-coupled to the traversal.
-
-Instead, we can provide a non-deterministic choice operator,
-{\tt try}/{\tt else}, and write the recovery code at a higher-level as:
-\par {\footnotesize\samepage
-\begin{verbatim}
-try {
-  try {
-    traverse(list);
-  } catch (Throwable t) {
-    fail; // explicit xaction abort
-  }
-} else { // try-else construct
-  throw new Error();
-}
-\end{verbatim}
-}\note{We'd prefer 'fail t' here, but that raises the question of how
-  to export objects from transactional contexts.}
-
-The {\tt try}/{\tt else} block appears to make a non-deterministic
-choice between executing the {\tt try} or the {\tt else} clause,
-depending on whether the {\tt try} would succeed or not.
-We implement this with transactions, making the {\tt fail} statement
-an explicit transaction abort.  When the transaction aborts, all the
-heap side-effects of the {\tt try} block disappear.
-
-The {\tt try}/{\tt else} construct exposes transactions to the
-programmer as an exception-handling mechanism.  And in fact,
-the {\tt atomic} block above can be implemented using
-{\tt try}/{\tt else}:
- \par {\footnotesize\samepage
-\begin{verbatim}
-while(true) {
-  try {
-    // atomic actions
-  } else {
-    backOff();
-    continue;
-  }
-  break; // success!
-}
-\end{verbatim}
-}
-\note{How hard do we try to execute the {\tt try} block?}
-Transactions expressed an exception-handling mechanism can be used in this
-manner to provide fault-tolerance and backtracking to the language, as
-well as atomic regions for synchronization.\note{Weak conclusion}
-\note{nqueens example?}
 
 \vspace*{5mm}
 We have implemented a transaction mechanism for Java using both
@@ -1180,6 +1228,7 @@ provided the timings in \figref{hw-timings}.
 \bibliographystyle{plain}
 \bibliography{xaction}
 
+\punt{
 \appendix
 \secput{extra}{Text with nowhere else to go}
 
@@ -1932,6 +1981,8 @@ only commit suicide, than the system may block.  When transactions are
 exposed to user code, Herlihy's system is vulnerable to this simple
 denial-of-service attack.  BTM does not suffer from this
 problem. [although starvation may still occur.]
+
+}% end \punt
 
 \end{document}
 

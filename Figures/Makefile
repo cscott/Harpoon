@@ -1,4 +1,4 @@
-FIG_MAG_tr-multi-obj=-m 0.5
+FIG_MAG_tr-multi-obj=-m 0.4
 
 # definitions for example 1
 EX1FIG=THex1.fig
