@@ -57,7 +57,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.14 2000-11-08 20:15:48 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.15 2000-11-10 02:46:02 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -100,7 +100,7 @@ public class InitializerTransform
     public InitializerTransform(HCodeFactory parent, ClassHierarchy ch,
 				final Map dependentMethods) {
 	// we only allow quad with try as input.
-	super(QuadWithTry.codeFactory(parent), ch);
+	super(QuadWithTry.codeFactory(parent), ch, true/*doesn't matter*/);
 	this.dependentMethods = dependentMethods;
 	final HCodeFactory superfactory = super.codeFactory();
 	Util.assert(superfactory.getCodeName().equals(QuadWithTry.codename));
