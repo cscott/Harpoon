@@ -16,9 +16,12 @@ import java.lang.reflect.Field;
  * <p>
  * The dynamic generation of counter fields in this class is
  * handled by <code>harpoon.Analysis.Counters.CounterFactory</code>.
+ * There is a <code>HCodeFactory</code> in this class which must be
+ * included as a compilation pass to generate the proper calls to
+ * the <code>report()</code> method at program's end.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Counters.java,v 1.1.2.2 2001-02-23 07:23:21 cananian Exp $
+ * @version $Id: Counters.java,v 1.1.2.3 2001-02-26 23:39:18 cananian Exp $
  */
 public class Counters {
     // hide constructor. all fields/methods are static.

@@ -5,8 +5,10 @@ package harpoon.Analysis.Counters;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HFieldMutator;
+import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.Edge;
@@ -22,14 +24,16 @@ import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
+import java.util.Iterator;
 /**
  * <code>CounterFactory</code> is a state-less instrumentation package,
  * with the goal of making it as easy as possible to add counters
  * and timers to executable code.  It comes in several parts: we have
  * a set of routines to splice in counter/time calls into Quad forms,
- * and we have a post-processing <code>CodeFactory</code> that will
- * create the appropriate prologue and epilog code to initialize and
- * later report the counter values.
+ * and we have a post-processing <code>HCodeFactory</code> available
+ * from the <code>codeFactory()</code> method that will create the
+ * appropriate epilog code to report the counter values at
+ * program's end.
  * <p>
  * Counters are disabled by default.  All counters can be enabled by
  * setting the property <code>harpoon.counters.enabled.all</code> to
@@ -48,7 +52,7 @@ import java.lang.reflect.Modifier;
  * the counters' actual name on output will be "foo_bar" and "foo_baz".
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CounterFactory.java,v 1.1.2.2 2001-02-23 07:23:54 cananian Exp $
+ * @version $Id: CounterFactory.java,v 1.1.2.3 2001-02-26 23:39:26 cananian Exp $
  */
 public final class CounterFactory {
     /** default status for all counters. */
@@ -72,6 +76,27 @@ public final class CounterFactory {
 	return ENABLED;
     }
     
+    /** <code>HCodeFactory</code> that will add calls to the counter-printing
+     *  epilog at the end of the given main method and before calls to
+     *  <code>Runtime.exit()</code>. */
+    public static HCodeFactory codeFactory(HCodeFactory parent,
+				    Linker linker, HMethod main) {
+	// check whether *any* counters are enabled.
+	boolean enabled = ENABLED;
+	Iterator it=System.getProperties().keySet().iterator();
+	while (it.hasNext())
+	    if (((String)it.next()).startsWith("harpoon.counters.enabled."))
+		enabled = true;
+	if (Boolean.getBoolean("harpoon.counters.disabled.all"))
+	    enabled = false;
+	if (Boolean.getBoolean("harpoon.counters.enabled.all"))
+	    enabled = true;
+	// if nothing is enabled, don't bother splicing in our code factory.
+	if (!enabled) return parent;
+	// else do it!
+	return new EpilogMutator(parent, linker, main).codeFactory();
+    }
+
     /** Increment the named counter by 1 on the given edge. */
     public static Edge spliceIncrement(QuadFactory qf,
 				       Edge e, String counter_name) {
@@ -95,7 +120,7 @@ public final class CounterFactory {
 				       Temp Tvalue) {
 	if (!isEnabled(counter_name)) return e;
 	HField HFcounter = getCounterField(qf.getLinker(), counter_name);
-	HField HFlockobj = getCounterField(qf.getLinker(), counter_name);
+	HField HFlockobj = getLockField(qf.getLinker(), counter_name);
 	// first fetch the lock
 	Temp Tlck = new Temp(qf.tempFactory());
 	e = addAt(e, new GET(qf, null, Tlck, HFlockobj, null));
