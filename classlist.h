@@ -1,10 +1,10 @@
 #ifndef classlist_h
 #define classlist_h
 //#include "dmalloc.h"
-//#define REPAIR
-//#define DEBUGMESSAGES
-//#define DEBUGMANYMESSAGES
-#define TOOL
+#define REPAIR
+#define DEBUGMESSAGES
+#define DEBUGMANYMESSAGES
+//#define TOOL
 
 class TypeEle;
 class Rule;
