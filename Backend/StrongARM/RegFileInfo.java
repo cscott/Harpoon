@@ -35,7 +35,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.8 1999-11-15 07:49:04 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.9 1999-11-16 21:13:37 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -163,10 +163,11 @@ public class RegFileInfo
 		    (regFile.get(assign[1]) == null)) {
 		    suggests.add(Arrays.asList(assign));
 		} else {
-		    Util.assert(assign[0] != null, "don't add null registers");
-		    Util.assert(assign[1] != null, "don't add null registers");
-		    if (regFile.get(assign[0]) != PRECOLORED &&
-			regFile.get(assign[1]) != PRECOLORED) {
+		    // don't add precolored registers to potential
+		    // spills. 
+		    if ( regFile.get(assign[0]) != PRECOLORED &&
+			 regFile.get(assign[1]) != PRECOLORED) {
+
 			Set s = new LinearSet(2);
 			s.add(assign[0]);
 			s.add(assign[1]);
@@ -183,12 +184,12 @@ public class RegFileInfo
 		} else {
 		    Set s = new LinearSet(1);
 		    
-		    // this assertion SHOULD be unnecessary, but this
-		    // is happening somewhere and I'm debugging so its cool
-		    Util.assert(regGeneral[i] != null, "don't add null registers");
-
-		    s.add(regGeneral[i]);
-		    spills.add(s);
+		    // don't add precolored registers to potential
+		    // spills. 
+		    if ( regFile.get(regGeneral[i]) != PRECOLORED ) {
+			s.add(regGeneral[i]);
+			spills.add(s);
+		    }
 		}
 	    }
 	}

@@ -15,7 +15,7 @@ import java.util.Iterator;
     about the target machine's register file. 
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.8 1999-11-15 09:39:00 pnkfelix Exp $
+    @version $Id: RegFileInfo.java,v 1.1.2.9 1999-11-16 21:13:36 pnkfelix Exp $
  */
 public abstract class RegFileInfo {
     
@@ -167,6 +167,12 @@ public abstract class RegFileInfo {
 	to save the values within said registers to their appropriate
 	memory locations, and to generate the code to put those values
 	back in the register file when they are needed next.
+
+	Note to implementors: make <b>sure</b> that you do not return
+	Registers that map to <code>RegFileInfo.PREASSIGN</code> in
+	your 'potential spill' set; it could lead to preassigned
+	registers being assigned for other variables, which defeats
+	the whole purpose of pre-assignment.
     */
     public static abstract class SpillException extends Exception {
 	public SpillException() { super(); }
