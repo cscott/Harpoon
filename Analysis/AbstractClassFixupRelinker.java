@@ -22,7 +22,7 @@ import java.util.*;
  * The <code>AbstractClassFixupRelinker</code> remedies the situation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractClassFixupRelinker.java,v 1.1 2002-07-08 20:43:21 cananian Exp $
+ * @version $Id: AbstractClassFixupRelinker.java,v 1.2 2002-07-10 18:02:35 cananian Exp $
  */
 public class AbstractClassFixupRelinker extends Relinker {
     
@@ -34,10 +34,10 @@ public class AbstractClassFixupRelinker extends Relinker {
 	HClass hc = super.forDescriptor(descriptor);
 	// okay, now scan the class and fix it up.
 	if (!hc.isInterface() && !done.contains(hc)) {
-	    done.add(hc); // properly handle recursion in fixup routines.
-	    // we should first fix up the superclass, if any.
+	    done.add(hc);// properly handle incidental recursion inside fixup()
+	    // we should first fix up the superclass(es), if any.
 	    HClass sc = hc.getSuperclass();
-	    if (sc!=null) fixup(sc);
+	    if (sc!=null) forDescriptor(sc.getDescriptor()); // recurse!
 	    // okay, now fix this class up.
 	    fixup(hc);
 	}
@@ -75,7 +75,7 @@ public class AbstractClassFixupRelinker extends Relinker {
 		    (Modifier.PUBLIC | Modifier.ABSTRACT);
 		nm.getMutator().setExceptionTypes(hm.getExceptionTypes());
 		// okay, done with this one.
-		System.err.println("NEEDED TO ADD "+nm);
+		System.err.println("INFO: needed to add "+nm);
 	    }
 	}
     }
