@@ -9,10 +9,10 @@ import harpoon.Temp.TempMap;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.8 1998-09-13 23:57:30 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.9 1998-09-14 21:48:33 cananian Exp $
  */
 
-public class SWITCH extends Quad {
+public class SWITCH extends LAMBDA {
     /** The discriminant, compared against each value in <code>keys</code>.*/
     public Temp index;
     /** Integer keys for switch cases. <p>
@@ -26,18 +26,30 @@ public class SWITCH extends Quad {
      *  <code>next[keys.length]</code> is the default target.
      */
     public SWITCH(HCodeElement source,
-		  Temp index, int keys[]) {
-	super(source, 1, keys.length+1 /*multiple targets*/);
+		  Temp index, int keys[],
+		  Temp dst[][], Temp src[]) {
+	super(source, dst, src, keys.length+1 /*multiple targets*/);
 	this.index = index;
 	this.keys = keys;
+    }
+    public SWITCH(HCodeElement source, Temp index, int keys[], Temp src[]) {
+	this(source, index, keys, new Temp[src.length][keys.length+1], src);
     }
 
     /** Returns the Temp used by this quad.
      * @return the <code>index</code> field. */
-    public Temp[] use() { return new Temp[] { index }; }
+    public Temp[] use() { 
+	Temp[] u = super.use();
+	Temp[] r = new Temp[u.length+1];
+	System.arraycopy(u, 0, r, 0, u.length);
+	// add 'index' to end of use array.
+	r[u.length] = index;
+	return r;
+    }
 
     /** Rename all variables in a Quad according to a mapping. */
     public void rename(TempMap tm) {
+	super.rename(tm);
 	index = tm.tempMap(index);
     }
 
@@ -49,6 +61,7 @@ public class SWITCH extends Quad {
 	for (int i=0; i<keys.length; i++)
 	    sb.append("case "+keys[i]+" => "+next(i).getID()+"; ");
 	sb.append("default => "+next(keys.length).getID());
+	sb.append(" / "); sb.append(super.toString());
 	return sb.toString();
     }
 }

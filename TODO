@@ -1,4 +1,11 @@
 ---- Sep-14-98
+Make sure Test/zeroopt.java is properly optimized.
+SWITCH processing is still broken.
+Check try/catch processing.  I don't think we're putting in the right
+  PHI functions.
+Maybe split phi/switch stuff into separate entities:
+ QUESTION: what do we do about optimizing ( x+1 < y )
+---- Sep-14-98
 Peephole optimizations on QuadSSA to normalize:
  1) instanceof -> icmp -> cjmp (or in general, boolean->icmp->cjmp)
     all boolean functions should feed a cjmp directly.
