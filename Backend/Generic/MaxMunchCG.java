@@ -24,7 +24,7 @@ import java.util.HashMap;
  * their own extensions of <code>CodeGen</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.1.2.6 2000-02-19 05:54:33 cananian Exp $ */
+ * @version $Id: MaxMunchCG.java,v 1.1.2.7 2000-02-19 08:23:17 cananian Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */
@@ -99,8 +99,7 @@ public abstract class MaxMunchCG extends CodeGen {
 
     protected void clearDecl() { tempToType.clear(); }
 
-    protected void _methodPrologue_(harpoon.IR.Tree.Code code,
-				    harpoon.IR.Assem.InstrFactory inf) {
+    protected void _methodPrologue_(harpoon.IR.Assem.InstrFactory inf) {
 	// initialize state variables each time gen() is called
 	first = null; last = null;
 	ti2td = new HashMap(); // reset derivation information.

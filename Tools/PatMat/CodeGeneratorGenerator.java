@@ -17,7 +17,7 @@ import java.io.PrintWriter;
  * 
  * @see harpoon.Backend.Generic.CodeGen
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.23 2000-02-19 05:54:46 cananian Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.24 2000-02-19 08:22:41 cananian Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -118,7 +118,7 @@ public abstract class CodeGeneratorGenerator {
 		    TREE_Code +" code, final " + ASSEM_InstrFactory +
 		    " inf) {"); // method start
 
-	out.println("\t_methodPrologue_(code, inf);");
+	out.println("\t_methodPrologue_(inf);");
 	out.println(spec.method_prologue_stms);
 
 	outputSelectionMethod(out, false);
@@ -142,6 +142,7 @@ public abstract class CodeGeneratorGenerator {
  		    TREE_Data +" code, final " + ASSEM_InstrFactory + 
 		    " inf) {"); // method start
 
+	out.println("\t_methodPrologue_(inf);");
 	out.println(spec.method_prologue_stms);
 
 	outputSelectionMethod(out, true);
