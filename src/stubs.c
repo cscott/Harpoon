@@ -1,12 +1,8 @@
 /* stubs to get our files to link */
 
-/* missing classes */
-void *Primitive_byte;
-void *Primitive_char;
-void *Primitive_int;
-void *Primitive_long;
-
 /* native methods */
+/* in java.io.FileDescriptor */
+void *Java_java_io_FileDescriptor_initSystemFD__Ljava_io_FileDescriptor_2I;
 /* in java.lang.Class */
 void *Java_java_lang_Class_getPrimitiveClass__Ljava_lang_String_2;
 void *Java_java_lang_Class_getName__;
@@ -28,21 +24,17 @@ void *Java_java_lang_System_currentTimeMillis__;
 void *Java_java_lang_Throwable_fillInStackTrace__;
 
 /* errors in class hierarchy */
-void *Class__3Ljava_lang_Object_2;
-void *Java_java_io_FileDescriptor_in;
-void *Java_java_io_FileDescriptor_out;
-void *Java_java_io_FileDescriptor_err;
 void *Java_java_io_PrintStream_newLine__;
 
 /* errors in backend */
-asm(".global L927\nL927:");
-asm(".global L930\nL930:");
-asm(".global L1157\nL1157:");
-asm(".global L1160\nL1160:");
-asm(".global L3354\nL3354:");
-asm(".global L4352\nL4352:");
-asm(".global L4364\nL4364:");
-asm(".global L6391\nL6391:");
+asm(".global L955\nL955:");
+asm(".global L958\nL958:");
+asm(".global L1185\nL1185:");
+asm(".global L1188\nL1188:");
+asm(".global L3382\nL3382:");
+asm(".global L4380\nL4380:");
+asm(".global L4392\nL4392:");
+asm(".global L6419\nL6419:");
 
 /* errors in register allocator */
 void *Class_java_lang_FloatingDecimal;
