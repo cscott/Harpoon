@@ -8,24 +8,24 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
- * <code>CALL</code> objects represent method invocations.
+ * <code>CALL</code> objects represent method invocations.<p>
  * The <code>objectref</code> field will be <code>null</code> for
  * static methods; the <code>retval</code> field will be <code>null</code>
  * for <code>void</code> methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.21 1998-10-08 20:58:28 cananian Exp $
+ * @version $Id: CALL.java,v 1.22 1998-10-08 21:05:28 cananian Exp $
  */
 
 public class CALL extends Quad {
-    /** The object in which to invoke the method. <p>
+    /** The object in which to invoke the method;
      *  <code>null</code> for static methods.  */
     public Temp objectref;
     /** The method to invoke. */
     public HMethod method;
     /** Parameters to pass to the method. */
     public Temp[] params;
-    /** Destination for the method's return value. 
+    /** Destination for the method's return value; 
      *  <code>null</code> for <code>void</code> methods. */
     public Temp retval;
     /** Destination for any exception thrown by the method. 
