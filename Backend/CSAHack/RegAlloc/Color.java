@@ -242,7 +242,6 @@ class Color implements TempMap {
     FreezeMoves(bestspill);
   }
   void AssignColors() {
-    int i=0, k;
     color = new Hashtable();
 
     /* Color precolored nodes. */
@@ -252,6 +251,7 @@ class Color implements TempMap {
     
     while(!sets.selectStack.empty()) {
       Node n = (Node) sets.selectStack.pop();
+      int k;
       // node should be previously uncolored.
       Util.assert(!color.containsKey(ig.gtemp(n)));
       boolean okColors[] = new boolean[K];
