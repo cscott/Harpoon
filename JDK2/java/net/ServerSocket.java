@@ -236,7 +236,7 @@ class ServerSocket {
     }
     
     // optimistic version
-    public ObjectContinuation _acceptAsync() throws IOException {
+    public ObjectContinuation acceptAsyncO() throws IOException {
 	//System.out.println("Calling canAccept...");
 	if (NativeIO.canAcceptJNI(impl.fd.fd)) {
 	    //System.out.println("Calling accept 1... ");
@@ -277,7 +277,7 @@ class ServerSocket {
     // pesimistic version
     public ObjectContinuation acceptAsync() throws IOException
     {
-	return ObjectDoneContinuation.pesimistic(_acceptAsync());
+	return ObjectDoneContinuation.pesimistic(acceptAsyncO());
     }
     /**
      * Subclasses of ServerSocket use this method to override accept()

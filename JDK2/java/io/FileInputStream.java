@@ -153,7 +153,7 @@ class FileInputStream extends InputStream
     public native int read() throws IOException;
     
     // pesimistic version of this inherited from InputStream
-    public IntContinuation _readAsync() throws IOException
+    public IntContinuation readAsyncO() throws IOException
     {
 	int b= NativeIO.getCharJNI(fd.fd);
 	switch(b)
@@ -235,7 +235,7 @@ class FileInputStream extends InputStream
     }
 
     // again, inherited pesimistic version
-    public IntContinuation _readAsync(byte b[], int ofs, int len) throws IOException
+    public IntContinuation readAsyncO(byte b[], int ofs, int len) throws IOException
     {
 		if (b == null) {
 	    		throw new NullPointerException();

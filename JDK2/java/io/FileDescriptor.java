@@ -119,9 +119,14 @@ public final class FileDescriptor {
      */
     public native void sync() throws java.io.SyncFailedException;
     
-    public VoidContinuation syncAsync() throws java.io.SyncFailedException
+    public VoidContinuation syncAsyncO() throws java.io.SyncFailedException
     {
     		return null;
+    }
+
+    public VoidContinuation syncAsync() throws java.io.SyncFailedException
+    {
+    		return VoidDoneContinuation.pesimistic(syncAsyncO());
     }
 
     /* This routine initializes JNI field offsets for the class */

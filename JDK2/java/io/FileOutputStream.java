@@ -185,7 +185,7 @@ class FileOutputStream extends OutputStream
      */
     public native void write(int b) throws IOException;
     
-    public VoidContinuation writeAsync(int b) throws IOException
+    public VoidContinuation writeAsyncO(int b) throws IOException
     {
     		int r= NativeIO.putCharJNI(fd.fd, b);
     		switch(r)
@@ -241,8 +241,9 @@ class FileOutputStream extends OutputStream
 	writeBytes(b, 0, b.length);
     }
     
-    public VoidContinuation writeAsync(byte b[]) throws IOException {
-    	return writeAsync(b, 0, b.length);
+
+    public VoidContinuation writeAsyncO(byte b[]) throws IOException {
+    	return writeAsyncO(b, 0, b.length);
     }
 
     /**
@@ -258,7 +259,7 @@ class FileOutputStream extends OutputStream
 	writeBytes(b, off, len);
     }
     
-    public VoidContinuation writeAsync(byte b[], int off, int len) throws IOException
+    public VoidContinuation writeAsyncO(byte b[], int off, int len) throws IOException
     {
 		if (b == null) {
 	    		throw new NullPointerException();
