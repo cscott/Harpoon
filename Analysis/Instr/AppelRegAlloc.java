@@ -54,7 +54,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.6 2001-06-18 17:55:22 pnkfelix Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.7 2001-06-20 00:55:53 pnkfelix Exp $
  */
 public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // FSK: super class really SHOULD be RegAlloc, but am doing this
@@ -62,14 +62,35 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 
     public static final boolean CHECK_INV = false;
 
-
-    private static final int NUM_CLEANINGS_TO_TRY = 2;
+    private static final int NUM_CLEANINGS_TO_TRY = 3;
+    private boolean try_to_clean = true;
 
     static RegAlloc.Factory FACTORY = new RegAlloc.Factory() {
 	    public RegAlloc makeRegAlloc(Code c) {
 		return new AppelRegAlloc(c);
 	    }
 	};
+
+    /** Removes all spill code, resets statistical info, and turns off cleaning. 
+     */
+    private void stopTryingToClean() {
+	// Once rewrite crosses threshold, need to remove old spill
+	// code so that the worst nodes will be respilled with
+	// non-cleaned code.  This is a bit of a hack to get around
+	// problems with keeping information alive across the
+	// recreation of the interference graph with new nodes and
+	// such.
+	for(Iterator instrs=code.getElementsI(); instrs.hasNext();){
+	    Instr i = (Instr) instrs.next();
+	    if (i instanceof RestoreProxy ||
+		i instanceof SpillProxy) {
+		i.remove();
+	    }
+	}
+	depthToNumSpills = new int[SPILL_STAT_DEPTH];
+	try_to_clean = false;
+	bbFact = computeBasicBlocks();
+    }
 
     // Set of <Node, Node> pairs
     NodePairSet adjSet;
@@ -82,12 +103,28 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     CFGrapher grapher;
     UseDefer  usedefer;
 
+    static final int SPILL_STAT_DEPTH = 20;
+    int[] depthToNumSpills;
+    static int[] globalDepthToNumSpills = new int[SPILL_STAT_DEPTH];
+    private String spillStats(int[] stats){
+	StringBuffer sb = new StringBuffer();
+	for(int i=0; i<stats.length; i++) {
+	    if (stats[i] != 0)
+		sb.append
+		    (",\tdepth:"+ i +
+		     " => spills:"+ stats[i] );
+	}
+	return sb.toString();
+    }
+    
+
     public AppelRegAlloc(Code code) { 
 	super(code); 
 	K = rfi().getGeneralRegistersC().size();
 	grapher= code.getInstrFactory().getGrapherFor ( InstrGroup.AGGREGATE );
 	usedefer=code.getInstrFactory().getUseDeferFor( InstrGroup.AGGREGATE );
 	// System.out.println("done constructing AppelRegAlloc");
+	depthToNumSpills = new int[SPILL_STAT_DEPTH];
     }
 
     boolean intersects(Collection a, Collection b) {
@@ -100,7 +137,8 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	// translated from code in GraphColoringRegAlloc
 	tempToWebs = new GenericMultiMap(Factories.arrayListFactory);
 
-	for(Iterator instrs=code.getElementsI(); instrs.hasNext();){
+	//for(Iterator instrs=code.getElementsI(); instrs.hasNext();){
+	for(Iterator instrs=reachableInstrs(); instrs.hasNext();){
 	    Instr inst = (Instr) instrs.next();
 	    for(Iterator uses = useCT(inst).iterator(); uses.hasNext();){
 		Temp t = (Temp) uses.next();
@@ -398,7 +436,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	}
     }
     
-    public void appelLoopBody( SpillHeuristic sh ) {
+    public void appelLoopBody( SpillHeuristic sh ) throws CouldntFindSpillExn {
 	
 	// System.out.println("making worklist");
 	makeWorklist();
@@ -448,35 +486,41 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    // saveNodeSets();
 	    // resetMoveSets();
 
-	    SpillHeuristic[] h = spillHeuristics();
-	    if (false) { // if (h.length > 1) {
-		for(int i = 0; i < h.length; i++) {
-		    appelLoopBody( h[i] );
-		    checkMoveSets();
-		    restoreNodeSets();
-		    resetMoveSets();
-		}
-		SpillHeuristic h_min = h[0];
-		int minIndex = 0;
-		
-		for(int i=1; i < h.length; i++) {
-		    if (h[i].accumCost < h_min.accumCost) {
-			h_min = h[i];
-			minIndex = i;
+	    try {
+		SpillHeuristic[] h = spillHeuristics();
+		if (false) { // if (h.length > 1) {
+		    for(int i = 0; i < h.length; i++) {
+			appelLoopBody( h[i] );
+			checkMoveSets();
+			restoreNodeSets();
+			resetMoveSets();
 		    }
+		    SpillHeuristic h_min = h[0];
+		    int minIndex = 0;
+		    
+		    for(int i=1; i < h.length; i++) {
+			if (h[i].accumCost < h_min.accumCost) {
+			    h_min = h[i];
+			    minIndex = i;
+			}
+		    }
+		    appelLoopBody( h_min );
+		} else {
+		    appelLoopBody( h[0] );
 		}
-		appelLoopBody( h_min );
-	    } else {
-		appelLoopBody( h[0] );
-	    }
-	    assignColors(); checkInv();
+		assignColors(); checkInv();
 
-	    if( ! spilled_nodes.isEmpty()) {
-		System.out.print(" S!"+spilled_nodes.asSet().size());
-		rewriteProgram();  checkInv();
-		continue;
-	    } else {
-		break;
+		if( ! spilled_nodes.isEmpty()) {
+		    System.out.print(" R"+rewriteCalledNumTimes+", S!"+spilled_nodes.asSet().size());
+		    rewriteProgram();  checkInv();
+		    continue;
+		} else {
+		    break;
+		}
+	    } catch (CouldntFindSpillExn e) {
+		System.out.println("COULDN'T FIND A SPILL!  TURNING OFF CLEANING!");
+		stopTryingToClean();
+		bbFact = computeBasicBlocks();
 	    }
 	}
 	
@@ -508,9 +552,19 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    while( refs.hasNext() ){
 		Temp t = (Temp) refs.next();
 		if (isRegister(t)) continue;
-		Web w = webFor(t, inst);
-		List nodes = nodesFor( w );
-		code.assignRegister( inst, t, toRegList( nodes, regs ));
+		if (null == bbFact.getBlock
+		    (inst.getEntry( InstrGroup.AGGREGATE ))){
+		    System.err.println
+			("WARNING: code believed to be unreachable emitted");
+		    code.assignRegister
+			(inst,t,(List)rfi().getRegAssignments(t).iterator().next());
+		} else {
+		    Web w = webFor(t, inst);
+		    List nodes = nodesFor( w );
+		    List regList = toRegList( nodes, regs );
+		    Util.assert( ! regList.isEmpty() );
+		    code.assignRegister( inst, t, regList );
+		}
 	    }
 	}
 
@@ -523,7 +577,20 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	}
 
 	fixupSpillCode();
+
+	// copy spill stats
+	String local_stats = spillStats( depthToNumSpills );
+	if (local_stats.length() > 0) {
+	    for(int i=0; i < depthToNumSpills.length; i++) {
+		globalDepthToNumSpills[i] += depthToNumSpills[i];
+	    }
+	    String global_stats = spillStats(globalDepthToNumSpills);
+	    System.out.println();
+	    System.out.print("globally "+global_stats);
+	    System.out.println();
+	}
     }
+
     List toRegList(List nodes, Temp[] colorToReg) {
 	Temp[] regs = new Temp[nodes.size()];
 	for(int i=0; i<regs.length; i++) {
@@ -1227,8 +1294,8 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    */
 	};
     }
-
-    private void selectSpill(SpillHeuristic sh) {
+    static class CouldntFindSpillExn extends Exception {}
+    private void selectSpill(SpillHeuristic sh) throws CouldntFindSpillExn {
 	// Note: avoid choosing nodes that are tiny live ranges 
 	//       from fetching spilled registers
 	Node minNode = null; 
@@ -1258,7 +1325,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		minCost = cost;
 	    }
 	}
-	Util.assert( minNode != null , "couldn't find non-spilled node!" );
+	if (minNode == null) throw new CouldntFindSpillExn();
 
 	// System.out.println("spilling node with cost : "+minCost);
 
@@ -1298,6 +1365,8 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     int rewriteCalledNumTimes = 0;
     public void rewriteProgram() {
 	rewriteCalledNumTimes++;
+
+
 	// Allocate memory locations for each v : spilledNodes
 	// Create a new temporary v_i for each definition and each use
 	// In the program (instructions), insert a store after each
@@ -1328,46 +1397,38 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	}
 
 	System.out.println();
-	for(int i=0; i<depthToNumSpills.length; i++) {
-	    if (depthToNumSpills[i] != 0)
-		System.out.println
-		    (" depth:"+ i +
-		     " spill instrs:"+ depthToNumSpills[i] );
-	}
-	
+	System.out.print("locally "+spillStats(depthToNumSpills));
+	System.out.println();
+
+	// FSK: this is dumb; it removes all of the work we just did
+	// in this method.  Move to earlier point in the control flow
+	if (try_to_clean && 
+	    rewriteCalledNumTimes == NUM_CLEANINGS_TO_TRY)
+	    stopTryingToClean();
+
 	initializeSets();
 
 	bbFact = computeBasicBlocks();
     }
-    static int[] depthToNumSpills = new int[20];
+
     private Collection addDefs(Web w) {
 	HashSet groupDefs = new HashSet(w.defs.size());
 	for(Iterator ds=w.defs.iterator(); ds.hasNext();) {
 	    Instr d = (Instr) ds.next();
-	    groupDefs.add(d.getExit(InstrGroup.NO_SPILL));
+	    Instr exit = d.getExit(InstrGroup.NO_SPILL);
+	    groupDefs.add(exit);
+	    Util.assert(bbFact.getBlock(exit) != null, 
+			"no BB found for exit");
 	}
 
-	// FSK: cleaning made things worse?
-
-	// NOTE (5/15/01) Cleaning is non-trivial.  Notably, you need
-	// to ensure that if you remove a spill-store, that you don't
-	// insert a spill-load while the spill-memory-location is
-	// undefined.  
-	// I think the way to do it is to change the insert-restore
-	// predicate to not only track if a restore would have already
-	// been there, but also if a *DEF* would have already been
-	// there.
-	// For now, am turning off Def-cleaning but leaving on
-	// Use-cleaning as originally implemented, which can be shown
-	// to be safe.  Then I'll incrementally add the changes (first
-	// fixing use-cleaning, then turning def-cleaning back on)
-	
-	if ( false && rewriteCalledNumTimes < NUM_CLEANINGS_TO_TRY ){
+	if ( try_to_clean ){
 	    // clean out redundant targets
 	    int cleanedNum = 0;
 	    LinearSet blocks = new LinearSet();
 	    for(Iterator ds = groupDefs.iterator(); ds.hasNext(); ){
-		blocks.add( bbFact.getBlock( (Instr)ds.next() ));
+		Instr instr = (Instr)ds.next(); 
+		BasicBlock bb = bbFact.getBlock( instr ); 
+		blocks.add( bb );
 	    }
 	    for(Iterator bs = blocks.iterator(); bs.hasNext(); ){
 		BasicBlock bb = (BasicBlock) bs.next();
@@ -1417,8 +1478,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    groupUses.add( instrToAdd );
 	}
 
-	// FSK: cleaning made things worse?
-	if ( rewriteCalledNumTimes < NUM_CLEANINGS_TO_TRY ){
+	if ( try_to_clean ){ 
 	    // clean out redundant targets
 	    int cleanedNum = 0;
 	    LinearSet blocks = new LinearSet();
@@ -1439,6 +1499,10 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 			    groupUses.remove(i);
 			    cleanedNum++;
 			}
+		    }
+		    if ( !seenOne && w.defs.contains(i) ){
+			System.out.println("FSK saw a def before a use: "+i);
+			seenOne = true;
 		    }
 		}
 	    }
