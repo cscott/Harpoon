@@ -42,7 +42,7 @@ import java.util.Iterator;
  * which are mostly zero (or mostly 1, 2, etc).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MostlyZeroFinder.java,v 1.9 2004-02-08 03:20:22 cananian Exp $
+ * @version $Id: MostlyZeroFinder.java,v 1.9.2.1 2004-06-28 04:16:48 cananian Exp $
  */
 public class MostlyZeroFinder extends MethodMutator<Quad> {
     /** the mostly-zero analysis can actually find mostly-N fields.  this
@@ -66,8 +66,9 @@ public class MostlyZeroFinder extends MethodMutator<Quad> {
     private MostlyZeroFinder(CachingCodeFactory parent, ClassHierarchy ch,
 			     Frame frame) {
         super(parent);
-	this.bfn = new BitFieldNumbering(frame.getLinker(), suffix);
 	this.pointersAreLong = frame.pointersAreLong();
+	this.bfn = new BitFieldNumbering(frame.getLinker(),
+					 this.pointersAreLong, suffix);
 	this.dio = (MOSTLY_WHAT==0) ? null :
 	    new DefiniteInitOracle(parent, ch);
     }

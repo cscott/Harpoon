@@ -1,0 +1,70 @@
+next:
+- hoist writes like we did reads
+- implement TreePostPass which looks up offsets and sizes for generated
+   methods and condenses them down to four*four methods:
+     readNT<N>(struct oobj *, int offset)
+     readT<N>(struct oobj *, int offset, struct version *)
+     writeNT<N>
+     writeT<N>
+   where N is in { 1, 2, 4, 8 } and indicates the size of the read/write.
+   (actually, we might have to deal with floats separately)
+   (oh, and signed vs unsigned)
+   (heck, just use the nine primary types)
+   (so all we're really doing to condensing array-vs-non-array and
+    doing the field offset/array index arithmetic)
+- write the C code to go along with all of this!
+-----
+Transactions to-do (from notebook):
+ a) rip out quad-form handling and do as much as possible in an
+    inlined C function (for ease of testing new things)
+ b) Make 'transaction context' in ENV (new runtime here? =( )
+ c) Make all JNI calls Do The Right Thing using C functions
+    from (A) and context information from (B)
+ d) Implement wait()/notify() using transaction wrapper.
+ e) Static fields: wrap in an object-per-class.
+
+NT reader just needs to kill pending T writes.
+T reader needs to record itself
+NT writer kills T reads
+T writer records itself
+
+NT read:
+  do atomic read from object.
+  Is FLAG?
+     kill writers (not readers?)
+     [what if the value really *is* FLAG?]
+     try again.
+  else
+     return val
+
+NT write:
+  Load-Linked flag bit
+  if clear
+     Store-conditional write
+     (if SC fails, repeat from top)
+  else
+     Kill readers (not writers?)
+     do write
+     (optionally: for write-after-write just
+     write to backup copy)
+
+T read (writable)
+  read from v
+
+T write (writable)
+  write to v
+
+T read (readable)
+  read from 'o'
+  is FLAG?
+    if v==null, alloc
+    handle false trans
+    read from v
+
+Get readable:
+  set flag bits
+^^^^^^^hoist this
+
+Get writable:
+  scribble over field with FLAG
+  set flag bits

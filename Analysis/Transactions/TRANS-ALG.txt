@@ -1,0 +1,146 @@
+Methods in transaction context get 'CommitRecord' as first arg.
+This is also transformation of METHOD quad.
+
+We don't rewrite anything in harpoon.Runtime.Transactions package, or
+in harpoon.Runtime.Counters package.
+
+checkForAbort adds a 'catch TransactionAbortException' to an exception
+handler.
+
+CALL -> checks; call safe method else call transactional version of
+the method, passing the commit record.  checkForAbort on exceptional
+edge returning from CALL.
+
+MONITORENTER/MONITOREXIT becomes:
+	    // c=newTransaction(c);
+	    // L1: try {
+	    //  ...
+	    //  c.commitTransaction();
+	    //  c = c.parent; // XXX in MONITOREXIT code
+	    // } catch (TransactionAbortException ex) {
+	    //   if (ex.which==c) { // allows us to abort up to a parent trans
+            //      c = c.retryTransaction();
+	    //      goto L1;
+	    //   } else throw ex;
+	    // }
+
+readCheck: we just did
+  dst = objectref.<field>
+add:
+  if (dst==FLAG) { // check that read has been recorded on this object.
+       ... // in transaction, add a read here
+       // non-transactional:
+       objectref_versioned = objectref.getReadCommittedVerion();
+       // exceptions from the call are thrown directly; no abort in non-trans!
+       ... // in non-transaction, add read of objectref_versioned here here
+  }
+
+AGET -> addChecks.  do readCheck; at the '...' add an array type check
+  and 'dst = AGET objectref_versioned, index, type'.
+
+GET -> addChecks.  if no synchronized accesses to this field, no-op.
+  if static: print warning and return.
+  do readCheck; at the '...' add 'dst = GET objectref_versioned.field'
+
+writeNonTrans: 'does the necessary checks to see if any transactions
+need to be aborted as a result of a non-transactional write.  at entry
+oldval contains the previous value of the field; if it is FLAG it
+means that someone has wrriten (or read?) this field inside a
+transaction.  If newval==FLAG, we need to create a (committed) version
+object to put this value in.  readbit==1 implies that oldval==FLAG.
+We only have to abort things if the field has been *read* by a
+transaction.  If it's been written, we can write to our special
+'committed' version without aborting anything (write-after-write).
+  if (oldval==FLAG) {
+    objectref_versioned = objectref.getWriteCommittedVersion();
+    // throw any exception directly.
+  } else if (newval==FLAG) {
+    // no check for abort because we are non-transactional
+    objectref_versioned = objectref.makeCommittedVersion();
+    // throw any exception directly.
+  } else {
+    objectref_versioned = objectref;
+  }
+  ... original quad was here ...
+
+ASET -> addChecks.
+  if (non-transactional) {
+    oldval = AGET objectref, index, type
+    writeNonTrans
+  }
+  replace ASET with:
+    ASET objectref_versioned, index, src, type
+
+SET -> addChecks
+  skip modification if no access w/in synchronized context.
+  if static: print warning and return.
+  // always write to the 'versioned' copy of the object (which may
+  // well be the object itself)  in the non-transactional case, we
+  // need to read the field first and do special checks to determine
+  // whether aborting some transaction in progress is necessary.
+  if (non-transactional) {
+     oldval = objectref.field
+     writeNonTrans
+  }
+  both: replace SET with
+    SET objectref_versioned, field, src
+
+addChecks: the heart of the matter.
+  // do read checks:
+  for each (t in createReadVersions) {
+     t_versioned = t.getReadableVersion(current_transaction);
+     // checkForAbort on exception edge from call
+  }
+  for each (t in createWriteVersions) {
+     t_versioned = t.getReadWritableVersion(current_transaction);
+     // checkForAbort on exception edge from call
+  }
+  // now field-read checks
+  for each (<objectref,field> in checkFieldReads) {
+    if field not accessed outside sync context, continue.
+    // create read check code (set read-bit to one)
+    // (check that read-bit is set, else call fixup code, which will
+    //  do atomic-set of this bit.) 
+    if (objectref.BITFLD(field) & BITMASK(field) != BITMASK(field)) {
+       objectref.setFieldReadFlag(BITFLD(field), BITMASK(field));
+       // checkForAbort on exception edge from call.
+    }
+  }
+  // do field-write checks.
+  for each (<objectref, field> in checkFieldWrites) {
+    if field not accessed outside sync context, continue.
+    // create write check code (set field to FLAG)
+    // (check that field==FLAG is set, else call fixup code)
+    if (objectref.field!=FLAG) {
+       objectref.setFieldWriteFlag(field);
+       // checkForAbort on exception edge from call.
+    }
+  }
+  // do array index read checks
+  for each (<objectref, index, type> in checkArrayElementReads) {
+    t0 = objectref.arrayCheckField
+    if ((t0 & (1<<(index & 31))) != (1<<(index & 31))) {
+       objectref.setFieldReadFlag(arrayCheckField, (1<<(index&31)));
+       // checkForAbort on exception edge from call
+    }
+  }
+  // do array index write checks
+  for each (<objectref, index, type> in checkArrayElementWrites) {
+    // check that element==FLAG, else call fixup code.
+    t0 = objectref[index];
+    if (t0 != FLAG) {
+       objectref.setArrayElementWriteFlag(index, type);
+       // checkForAbort on exception edge from call.
+    }
+  }
+
+
+FURTHER IDEAS:
+  make a non-static equivalent field for static fields:
+  new object type for static fields of each class. then only one
+  static field per class, which points to the (singleton)
+  object-of-fields.  One dereference, but from this point the fields
+  behave 'normally'.  Since the single static field is not final, no
+  transactions need be done on it [maybe this is a separate pre-pass]
+
+We create a redirection method for natives we "know" are safe.
