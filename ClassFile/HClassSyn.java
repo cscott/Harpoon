@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.13 2000-01-26 07:13:10 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.14 2000-01-26 07:14:48 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -256,7 +256,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
   public void writeObject(java.io.ObjectOutputStream out)
     throws java.io.IOException {
     // resolve class name pointers.
-    this.superclass = this.superclass.actual();
+    this.superclass = (this.superclass==null)? null : this.superclass.actual();
     for (int i=0; i<this.interfaces.length; i++)
       this.interfaces[i] = this.interfaces[i].actual();
     // intern strings.
