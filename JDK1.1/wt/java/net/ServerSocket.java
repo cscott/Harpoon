@@ -17,6 +17,7 @@ package java.net;
 import java.io.IOException;
 import java.io.FileDescriptor;
 
+import java.io.NativeIO;
 import harpoon.Analysis.ContBuilder.*;
 
 /**
@@ -151,8 +152,8 @@ class ServerSocket {
 
     public void makeAsync()
     {
-			//offset by 1 for jdk1.1
-			//NativeIO.makeNonBlockJNI(impl.fd.fd-1);
+	//offset by 1 for jdk1.1
+	NativeIO.makeNonBlockJNI(impl.fd.fd-1);
     }
 
     /**
@@ -190,11 +191,54 @@ class ServerSocket {
 	return s;
     }
 
-		/**
-		 * Asynchronous accept
-		 */
+
+
+    // optimistic version
+    public ObjectContinuation acceptAsyncO() throws IOException {
+	//System.out.println("Calling canAccept...");
+	//offset by 1 for jdk1.1
+	if (NativeIO.canAcceptJNI(impl.fd.fd-1)) {
+	    //System.out.println("Calling accept 1... ");
+	    //System.out.println("Accept done.");
+	    return new ObjectContinuationOpt(accept());
+	}
+	//System.out.println("doing continuations");
+	return new acceptAsyncC();
+    }
+
+    class acceptAsyncC extends ObjectContinuation implements IOContinuation {
+    	Socket s;
+	public void exception(Throwable t) {};
+	
+    	public acceptAsyncC() {
+	    done=false;
+	    s= new Socket();
+	    Scheduler.addReadA(this);
+    	}
+    	
+    	public void resume()
+    	{
+	    try{
+		//System.out.println("Calling accept 2... ");
+		implAccept(s);
+		//System.out.println("Accept done.");
+		next.resume(s);
+	    } catch (IOException e) { next.exception(e); }
+    	}
+    	
+    	public java.io.FileDescriptor getFD()
+   	{
+	    return impl.fd;
+    	}
+   
+    }
+    // pesimistic version
     public ObjectContinuation acceptAsync() {
-		return Scheduler.addAccept(new AsyncRequest(this));
+	try {
+	    return ObjectDoneContinuation.pesimistic(acceptAsyncO());
+	} catch (IOException e) {
+	    return new ObjectDoneContinuation(e);
+	}
     }
 
     /**

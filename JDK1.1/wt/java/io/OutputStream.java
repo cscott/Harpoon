@@ -47,9 +47,19 @@ public abstract class OutputStream {
     public abstract void write(int b) throws IOException;
 
     public VoidContinuation writeAsync(int b) {
-		return writeAsync(null, b, 0);
+	try {
+	    return VoidDoneContinuation.pesimistic(writeAsyncO(b));
+	} catch (IOException e) {
+	    return new VoidDoneContinuation(e);
+	}
     }
 
+    public VoidContinuation writeAsyncO(int b) throws IOException
+    {
+    	write(b);
+    	return new VoidContinuationOpt();
+    }
+    
     public void makeAsync() { }
 
     /**
@@ -75,6 +85,12 @@ public abstract class OutputStream {
     	return writeAsync(b, 0, b.length);
     }
 
+
+    public VoidContinuation writeAsyncO(byte b[]) throws IOException
+    {
+	return writeAsyncO(b, 0, b.length);
+    }
+
     /**
      * Writes <code>len</code> bytes from the specified byte array 
      * starting at offset <code>off</code> to this output stream. 
@@ -97,8 +113,74 @@ public abstract class OutputStream {
     }
 
     public VoidContinuation writeAsync(byte b[], int off, int len) {
-		return Scheduler.addWrite(new AsyncRequest(this, b, off, len));
+	try {
+	    return VoidDoneContinuation.pesimistic(writeAsyncO(b,off,len));
+	} catch (IOException e) {
+	    return new VoidDoneContinuation(e);
+	}
     }
+    
+    public VoidContinuation writeAsyncO(byte b[], int off, int len) throws IOException
+	// default: uses write 1 byte
+    {
+	if (b == null) {
+	    throw new NullPointerException();
+	} else if ((off < 0) || (off > b.length) || (len < 0) ||
+		   ((off + len) > b.length) || ((off + len) < 0)) {
+	    throw new IndexOutOfBoundsException();
+	} else if (len == 0) {
+	    return new VoidContinuationOpt();
+	}    	
+	
+ 	while (len>0) {
+	    VoidContinuation c= writeAsyncO(b[off]);
+	    if (!c.done)
+		{
+		    WriteAsyncC thisC= new WriteAsyncC(b, off, len);
+		    c.setNext(thisC);
+		    return thisC;
+		}
+	    
+	    len--;
+	    off++;
+	} 
+	return new VoidContinuationOpt();
+    }
+    
+    public class WriteAsyncC extends VoidContinuation implements VoidResultContinuation
+    {
+	public void exception(Throwable t) {}
+	
+    	byte b[];
+   	int off, len;
+    	
+    	public WriteAsyncC(byte b[], int off, int len)
+    	{
+	    this.b= b; this.off= off; this.len= len;
+    	}
+    	
+    	public void resume()
+    	{
+	    try {
+    		len--;
+    		off++;
+    		// the same thing again
+ 		while (len>0) {
+		    VoidContinuation c= writeAsyncO(b[off]);
+		    if (!c.done)
+			{
+			    c.setNext(this);
+			    return;
+			}
+		    
+		    len--;
+		    off++;
+		} 
+		next.resume();    	
+	    } catch (IOException e) { next.exception(e); }
+    	}
+    }
+
 
     /**
      * Flushes this output stream and forces any buffered output bytes 
