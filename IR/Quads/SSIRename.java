@@ -11,6 +11,7 @@ import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HClass;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.LowQuad.DerivationMap;
 import harpoon.IR.LowQuad.PCALL;
@@ -20,7 +21,10 @@ import harpoon.Temp.TempMap;
 import harpoon.Temp.WritableTempMap;
 import harpoon.Util.Environment;
 import harpoon.Util.HashEnvironment;
+import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
+import harpoon.Util.WorkSet;
+import harpoon.Util.DataStructs.RelationImpl;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +35,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+
 /**
  * <code>SSIRename</code> is a new, improved, fast SSI-renaming
  * algorithm.  Detailed in the author's thesis.  This Java version
@@ -40,7 +45,7 @@ import java.util.Stack;
  * XXX: DERIVATION INFORMATION FOR PHI/SIGMAS IS CURRENTLY LOST. [CSA]
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.15 2000-11-06 16:58:54 bdemsky Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.16 2000-11-07 16:19:34 bdemsky Exp $
  */
 public class SSIRename {
     private static final boolean DEBUG = false;
@@ -109,7 +114,8 @@ public class SSIRename {
 	final Derivation oderiv;
 	/** Derivation map for new Quads */
 	final DerivationMap nderiv;
-	
+	/** Derivation map for Sigma/Phis */
+	final Map derivmap;
 	// algorithm state
 	/** maps old variables to new variables */
 	final VarMap varmap;
@@ -127,7 +133,7 @@ public class SSIRename {
 	    this.naim  = (oaim==null) ? null : new AllocationInformationMap();
 	    this.oderiv= oderiv;
 	    this.nderiv= (oderiv==null) ? null : new DerivationMap();
-	    
+	    this.derivmap= (oderiv==null) ? null : new HashMap();
 	    setup(c);
 
 	    HCodeElement ROOT = c.getRootElement();
@@ -143,6 +149,8 @@ public class SSIRename {
 	    }
 
 	    makePhiSig(c);
+	    if (nderiv!=null)
+		fixPhiSigDeriv(c);
 
 	    // now link edges
 	    for (Iterator it=c.getElementsI(); it.hasNext(); ) {
@@ -281,7 +289,7 @@ public class SSIRename {
 		Quad nq = q.rename(nqf, varmap, wtm);
 		old2new.put(q, nq);
 		if (nderiv!=null)
-		    nderiv.transfer(nq, q, q.def(), varmap, oderiv);
+		    transferderivation(nq, q, q.def(), varmap, oderiv);
 		if (nq instanceof ANEW || nq instanceof NEW)
 		    if (naim!=null) naim.transfer(nq, q, varmap, oaim);
 		if (q instanceof FOOTER) break;
@@ -292,6 +300,144 @@ public class SSIRename {
 		    We.push(e);
 	    }
 	}
+
+	void transferderivation(Quad nq, Quad q, Temp[] defs, TempMap varmap, Derivation oderiv) {
+	    nderiv.transfer(nq,q,defs,varmap,oderiv);
+	    for(int i=0;i<defs.length;i++)
+		derivmap.put(varmap.tempMap(defs[i]),new DerivType(nderiv.derivation(nq,varmap.tempMap(defs[i])),nderiv.typeMap(nq,varmap.tempMap(defs[i]))));
+	}
+
+	void addType(Quad nq, Temp t,HClass type) {
+	    nderiv.putType(nq,t,type);
+	    derivmap.put(t, new DerivType(null,type));
+	}
+
+	static class DerivType {
+	    Derivation.DList deriv;
+	    HClass type;
+	    DerivType(Derivation.DList deriv,HClass type) {
+		this.deriv=deriv;
+		this.type=type;
+	    }
+
+	    DerivType() {
+		this.deriv=null;
+		this.type=null;
+	    }
+
+	    void merge(DerivType dt) {
+		if (dt!=null) {
+		    //Merge types
+		    if ((type!=null)&&(dt.type!=null))
+			type=HClassUtil.commonParent(type,dt.type);
+		    else if (type==null)
+			type=dt.type;
+		    
+		    //Merge derivations
+		    if (deriv==null)
+			this.deriv=dt.deriv;
+		}
+	    }
+
+	    HClass type() {
+		return type;
+	    }
+
+	    Derivation.DList deriv() {
+		return deriv;
+	    }
+	}
+
+	static class PhiSigFunction {
+	    Temp[] left,right;
+	    PhiSigFunction(Temp[] left, Temp[] right) {
+		this.left=left;
+		this.right=right;
+	    }
+	    Temp[] left() {
+		return left;
+	    }
+	    Temp[] right() {
+		return right;
+	    }
+	}
+
+	void fixPhiSigDeriv(HCode c) {
+	    WorkSet functionSet=new WorkSet();
+	    RelationImpl rel=new RelationImpl();
+	    HashSet phisig=new HashSet();
+	    //Add Phi's and Sigmas to function set
+
+	    for (Iterator it=c.getElementsI();it.hasNext(); ) {
+		Quad q = (Quad) old2new.get(it.next());
+		if (q instanceof PHI) {
+		    for(int i=0;i<((PHI)q).numPhis();i++) {
+			PhiSigFunction psf=new PhiSigFunction(new Temp[]{((PHI)q).dst(i)},((PHI)q).src(i));
+			functionSet.add(psf);
+			for(int j=0;j<((PHI)q).arity();j++) {
+			    rel.add(((PHI)q).src(i,j),psf);
+			}
+		    }
+		} else if (q instanceof SIGMA) {
+		    for(int i=0;i<((SIGMA)q).numSigmas();i++) {
+			PhiSigFunction psf=new PhiSigFunction(((SIGMA)q).dst(i),new Temp[]{((SIGMA)q).src(i)});
+			functionSet.add(psf);
+			rel.add(((SIGMA)q).src(i),psf);
+		    }
+		}
+	    }
+	    while(!functionSet.isEmpty()) {
+		PhiSigFunction psf=(PhiSigFunction)functionSet.pop();
+		Temp[] right=psf.right();
+		Temp[] left=psf.left();
+		DerivType best=new DerivType();
+		for(int i=0;i<right.length;i++) {
+		    best.merge((DerivType)derivmap.get(right[i]));
+		}
+		for(int i=0;i<left.length;i++) {
+		    DerivType old=(DerivType)derivmap.get(left[i]);
+		    if (old==null) {
+			derivmap.put(left[i],best);
+			Set values=rel.getValues(left[i]);
+			Iterator it=values.iterator();
+			while(it.hasNext())
+			    functionSet.add(it.next());
+		    } else if ((old.type!=best.type)||((best.deriv!=null)&&(old.deriv==null))) {
+			derivmap.put(left[i],best);
+			Set values=rel.getValues(left[i]);
+			Iterator it=values.iterator();
+			while(it.hasNext())
+			    functionSet.add(it.next());
+		    }
+		}
+	    }
+	    
+	    for (Iterator it=c.getElementsI();it.hasNext(); ) {
+		Quad q = (Quad) old2new.get(it.next());
+		if (q instanceof PHI) {
+		    for(int i=0;i<((PHI)q).numPhis();i++) {
+			Temp t=((PHI)q).dst(i);
+			DerivType dt=(DerivType)derivmap.get(t);
+			if (dt.type()!=null)
+			    nderiv.putType(q,t,dt.type());
+			if (dt.deriv()!=null)
+			    nderiv.putDerivation(q,t,dt.deriv());
+		    }
+		} else if (q instanceof SIGMA) {
+		    for(int i=0;i<((SIGMA)q).numSigmas();i++) {
+			for(int j=0;j<((SIGMA)q).arity();j++) {
+			    Temp t=((SIGMA)q).dst(i,j);
+			    DerivType dt=(DerivType)derivmap.get(t);
+			    if (dt.type()!=null)
+				nderiv.putType(q,t,dt.type());
+			    if (dt.deriv()!=null)
+				nderiv.putDerivation(q,t,dt.deriv());
+			}
+		    }
+		}
+	    }
+	}
+
 	void makePhiSig(HCode c) {
 	    for (Iterator it=c.getElementsI(); it.hasNext(); ) {
 		Quad q = (Quad) it.next();
@@ -319,6 +465,10 @@ public class SSIRename {
 				      defs[0], defs[1],
 				      Q.isVirtual(), Q.isTailCall(),
 				      l, r);
+			if (nderiv!=null) {
+			    addType(nq,defs[0],oderiv.typeMap(q,((CALL)q).retval()));
+			    addType(nq,defs[1],oderiv.typeMap(q,((CALL)q).retex()));
+			}
 		    } else if (q instanceof PCALL) {
 			harpoon.IR.LowQuad.LowQuadFactory lqf =
 			    (harpoon.IR.LowQuad.LowQuadFactory) nqf;
@@ -330,6 +480,12 @@ public class SSIRename {
 			nq = new PCALL(lqf, Q, argsandptr[args.length],
 				       args, defs[0], defs[1], l, r,
 				       Q.isVirtual(), Q.isTailCall());
+			if (nderiv!=null) {
+			    if (defs[0]!=null)
+				addType(nq,defs[0],oderiv.typeMap(q,((PCALL)q).retval()));
+			    if (defs[1]!=null)
+				addType(nq,defs[1],oderiv.typeMap(q,((PCALL)q).retex()));
+			}
 		    } else throw new Error("Ack!");
 		    old2new.put(q, nq);
 		}
