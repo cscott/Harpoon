@@ -2,54 +2,490 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <string.h>
 #include "Role.h"
 
-void printrole(struct genhashtable * dommapping,struct heap_object *ho) {
-  struct referencelist *dominators=calculatedominators(dommapping, ho);
+void printrole(struct role *r) {
+  struct rolereferencelist *dominators=r->dominatingroots;
   printf("Role {\n");
-  printf(" Class: %s\n", ho->class);
+  printf(" Class: %s\n", r->class);
   printf(" Dominated by:\n");
   while(dominators!=NULL) {
-    struct referencelist *tmp=dominators->next;
-    if (dominators->lv!=NULL) {
-      printf("  By local variable: (%s) %s in %s %s %s %d\n",dominators->lv->name, dominators->lv->sourcename, dominators->lv->m->classname, dominators->lv->m->methodname, dominators->lv->m->signature, dominators->lv->lvnumber);
+    if (dominators->methodname!=NULL) {
+      printf("  By local variable: (%s) %s in %s %s %s\n",dominators->lvname, dominators->sourcename, dominators->classname, dominators->methodname, dominators->signature);
     } else {
-      printf("  By global variable: %s.%s\n",dominators->gl->classname, dominators->gl->fieldname);
+      printf("  By global variable: %s.%s\n",dominators->classname, dominators->globalname);
     }
-    free(dominators);
-    dominators=tmp;
+    dominators=dominators->next;
   }
 
   printf(" Pointed to by:\n");
   {
-    struct fieldlist *fl=ho->reversefield;
-    struct arraylist *al=ho->reversearray;
+    struct rolefieldlist *fl=r->pointedtofl;
+    struct rolearraylist *al=r->pointedtoal;
     while(fl!=NULL) {
-      printf("  Field %s from class %s.\n",fl->fieldname, fl->src->class);
-      fl=fl->dstnext;
+      printf("  Field %s from class %s.\n",fl->field, fl->class);
+      fl=fl->next;
     }
     while(al!=NULL) {
-      printf("  Array of type class %s.\n", al->src->class);
-      al=al->dstnext;
+      printf("  Array of type class %s.\n", al->class);
+      al=al->next;
     }
   }
+
   printf(" Has the following identity relations:\n");
   {
-    struct identity_relation *ir=find_identities(ho);
+    struct identity_relation *ir=r->identities;
     print_identities(ir);
-    free_identities(ir);
   }
 
 
   printf(" Non-null fields:\n");
   {
-    struct fieldlist *fl=ho->fl;
+    struct rolefieldlist *fl=r->nonnullfields;
     while(fl!=NULL) {
-      printf("  Field \"%s\" is non-null\n",fl->fieldname);
+      printf("  Field %s is non-null.\n",fl->field);
       fl=fl->next;
     }
   }
   printf("}\n");
+}
+
+int equivalentstrings(char *str1, char *str2) {
+  if ((str1!=NULL)&&(str2!=NULL)) {
+    if (strcmp(str1,str2)!=0)
+      return 0;
+    else
+      return 1;
+  } else if ((str1==NULL)||(str2==NULL))
+    return 0;
+  else return 1;
+}
+
+int equivalentroles(struct role *role1, struct role *role2) {
+  if (role1->hashcode!=role2->hashcode)
+    return 0;
+  if (strcmp(role1->class,role2->class)!=0)
+    return 0;
+
+  {
+    struct rolereferencelist * dr1=role1->dominatingroots;
+    struct rolereferencelist * dr2=role2->dominatingroots;
+
+    while(dr1!=NULL) {
+      if (dr2==NULL)
+	return 0;
+      if (!equivalentstrings(dr1->classname, dr2->classname))
+	return 0;
+      if (!equivalentstrings(dr1->globalname, dr2->globalname))
+	return 0;
+      if (!equivalentstrings(dr1->methodname, dr2->methodname))
+	return 0;
+      if (!equivalentstrings(dr1->signature, dr2->signature))
+	return 0;
+      if (!equivalentstrings(dr1->lvname, dr2->lvname))
+	return 0;
+      if (!equivalentstrings(dr1->sourcename, dr2->sourcename))
+	return 0;
+      dr1=dr1->next;
+      dr2=dr2->next;
+    }
+    if (dr2!=NULL)
+      return 0;
+  }
+
+  {
+    struct rolefieldlist * rfl1=role1->pointedtofl;
+    struct rolefieldlist * rfl2=role2->pointedtofl;
+    while(rfl1!=NULL) {
+      if (rfl2==NULL)
+	return 0;
+      if (!equivalentstrings(rfl1->class, rfl2->class))
+	return 0;
+      if (!equivalentstrings(rfl1->field, rfl2->field))
+	return 0;
+      rfl1=rfl1->next;
+      rfl2=rfl2->next;
+    }
+    if (rfl2!=NULL)
+      return 0;
+  }
+
+  {
+    struct rolearraylist * ral1=role1->pointedtoal;
+    struct rolearraylist * ral2=role2->pointedtoal;
+
+    while(ral1!=NULL) {
+      if (ral2==NULL)
+	return 0;
+      if (!equivalentstrings(ral1->class, ral2->class))
+	return 0;
+
+      ral1=ral1->next;
+      ral2=ral2->next;
+    }
+    if (ral2!=NULL)
+      return 0;
+  }
+
+
+  {
+    struct identity_relation *ri1=role1->identities;
+    struct identity_relation *ri2=role2->identities;
+    while(ri1!=NULL) {
+      if (ri2==NULL)
+	return 0;
+      if (!equivalentstrings(ri1->fieldname1,ri2->fieldname1))
+	return 0;
+      if (!equivalentstrings(ri1->fieldname2,ri2->fieldname2))
+	return 0;
+    }
+    if (ri2!=NULL)
+      return 0;
+  }
+
+
+  {
+    struct rolefieldlist * rfl1=role1->nonnullfields;
+    struct rolefieldlist * rfl2=role2->nonnullfields;
+    while(rfl1!=NULL) {
+      if (rfl2==NULL)
+	return 0;
+      if (!equivalentstrings(rfl1->class, rfl2->class))
+	return 0;
+      if (!equivalentstrings(rfl1->field, rfl2->field))
+	return 0;
+      rfl1=rfl1->next;
+      rfl2=rfl2->next;
+    }
+    if (rfl2!=NULL)
+      return 0;
+  }
+
+  return 1; /*Matched*/
+}
+
+void assignhashcode(struct role * role) {
+  long int hashcode=hashstring(role->class);
+
+  struct rolereferencelist * dr=role->dominatingroots;
+  struct rolefieldlist * rfl=role->pointedtofl;
+  struct rolearraylist * ral=role->pointedtoal;
+  struct identity_relation *ri=role->identities;
+  struct rolefieldlist * rfl2=role->nonnullfields;
+
+  while(dr!=NULL) {
+    hashcode^=hashstring(dr->classname);
+    hashcode^=hashstring(dr->globalname);
+    hashcode^=hashstring(dr->methodname);
+    hashcode^=hashstring(dr->signature);
+    hashcode^=hashstring(dr->lvname);
+    hashcode^=hashstring(dr->sourcename);
+    dr=dr->next;
+  }
+
+  while(rfl!=NULL) {
+    hashcode^=hashstring(rfl->class);
+    hashcode^=hashstring(rfl->field);
+    rfl=rfl->next;
+  }
+
+  while(rfl2!=NULL) {
+    hashcode^=hashstring(rfl2->class);
+    hashcode^=hashstring(rfl2->field);
+    rfl2=rfl2->next;
+  }
+
+  while(ral!=NULL) {
+    hashcode^=hashstring(ral->class);
+    ral=ral->next;
+  }
+  
+  while(ri!=NULL) {
+    hashcode^=hashstring(ri->fieldname1);
+    hashcode^=hashstring(ri->fieldname2);
+    ri=ri->next;
+  }
+  role->hashcode=hashcode;
+}
+
+long int hashstring(char *strptr) {
+  long int hashcode=0;
+  int bitstoshift=0;
+  if(strptr==NULL)
+    return 0;
+  while(*strptr!=0) {
+    hashcode^=((*strptr)<<bitstoshift);
+    bitstoshift+=8;
+    if (bitstoshift==32)
+      bitstoshift=0;
+    strptr++;
+  }
+  return hashcode;
+}
+
+void freerole(struct role * role) {
+  struct rolereferencelist * dr=role->dominatingroots;
+  struct rolefieldlist * rfl=role->pointedtofl;
+  struct rolearraylist * ral=role->pointedtoal;
+  struct identity_relation *ri=role->identities;
+  struct rolefieldlist * rfl2=role->nonnullfields;
+  free(role->class);
+  free(role);
+
+  while(dr!=NULL) {
+    struct rolereferencelist *tmp=dr->next;
+    free(dr->classname);
+    free(dr->globalname);
+    free(dr->methodname);
+    free(dr->signature);
+    free(dr->lvname);
+    free(dr->sourcename);
+    free(dr);
+    dr=tmp;
+  }
+
+  while(rfl!=NULL) {
+    struct rolefieldlist *tmp=rfl->next;
+    free(rfl->class);
+    free(rfl->field);
+    free(rfl);
+    rfl=tmp;
+  }
+
+  while(rfl2!=NULL) {
+    struct rolefieldlist *tmp=rfl2->next;
+    free(rfl2->class);
+    free(rfl2->field);
+    free(rfl2);
+    rfl2=tmp;
+  }
+
+  while(ral!=NULL) {
+    struct rolearraylist *tmp=ral->next;
+    free(ral->class);
+    free(ral);
+    ral=tmp;
+  }
+  
+  free_identities(ri);
+
+}
+
+struct role * calculaterole(struct genhashtable * dommapping,struct heap_object *ho) {
+  struct role * objrole=(struct role *)calloc(1, sizeof(struct role));
+  struct referencelist *dominators=calculatedominators(dommapping, ho);
+
+  objrole->class=copystr(ho->class);
+  
+
+  while(dominators!=NULL) {
+    struct referencelist *tmp=dominators->next;
+    struct rolereferencelist *domroots=(struct rolereferencelist *) calloc(1,sizeof(struct rolereferencelist));
+    
+    if (dominators->lv!=NULL) {
+      domroots->classname=copystr(dominators->lv->m->classname);
+      domroots->methodname=copystr(dominators->lv->m->methodname);
+      domroots->signature=copystr(dominators->lv->m->signature);
+      domroots->lvname=copystr(dominators->lv->name);
+      domroots->sourcename=copystr(dominators->lv->sourcename);
+    } else {
+      domroots->classname=copystr(dominators->gl->classname);
+      domroots->globalname=copystr(dominators->gl->fieldname);
+    }
+    free(dominators);
+    dominators=tmp;
+    insertdomroot(objrole, domroots);
+  }
+
+  {
+    struct fieldlist *fl=ho->reversefield;
+    struct arraylist *al=ho->reversearray;
+    while(fl!=NULL) {
+      struct rolefieldlist *rfl=(struct rolefieldlist *) calloc(1,sizeof(struct rolefieldlist));
+      rfl->class=copystr(fl->src->class);
+      rfl->field=copystr(fl->fieldname);
+      insertrfl(objrole,rfl);
+      fl=fl->dstnext;
+    }
+    while(al!=NULL) {
+      struct rolearraylist *ral=(struct rolearraylist *) calloc(1,sizeof(struct rolearraylist));
+      ral->class=copystr(al->src->class);
+      insertral(objrole,ral);
+      al=al->dstnext;
+    }
+  }
+
+  {
+    struct identity_relation *ir=find_identities(ho);
+    objrole->identities=ir;
+    sortidentities(objrole);
+  }
+
+  {
+    struct fieldlist *fl=ho->fl;
+    while(fl!=NULL) {
+      struct rolefieldlist *rfl=(struct rolefieldlist *) calloc(1,sizeof(struct rolefieldlist));
+      rfl->class=copystr(fl->src->class);
+      rfl->field=copystr(fl->fieldname);
+      insertnonfl(objrole,rfl);
+      fl=fl->next;
+    }
+  }
+  assignhashcode(objrole);
+  return objrole;
+}
+
+int comparedomroots(struct rolereferencelist *r1, struct rolereferencelist *r2) {
+  int t;
+  if ((t=strcmp(r1->classname,r2->classname))!=0)
+    return t;
+  else if (r1->globalname!=NULL) {
+    if (r2->globalname!=NULL) {
+      return strcmp(r1->classname, r2->classname);
+    } else return -1;
+  } else if (r2->globalname!=NULL) return 1;
+  else if ((t=strcmp(r1->methodname,r2->methodname))!=0)
+    return t;
+  else if ((t=strcmp(r1->signature,r2->signature))!=0)
+    return t;
+  else if ((t=strcmp(r1->lvname,r2->lvname))!=0)
+    return t;
+  else if ((t=strcmp(r1->sourcename,r2->sourcename))!=0)
+    return t;
+  else return 0;
+}
+
+void insertdomroot(struct role * role, struct rolereferencelist * domroots) {
+  struct rolereferencelist * rrl=role->dominatingroots;
+  if (role->dominatingroots==NULL) {
+    role->dominatingroots=domroots;
+    return;
+  }
+  if (comparedomroots(domroots,role->dominatingroots)<0) {
+    domroots->next=role->dominatingroots;
+    role->dominatingroots=domroots;
+    return;
+  }
+  
+  while(rrl->next!=NULL) {
+    if (comparedomroots(domroots,rrl->next)>=0)
+      break;
+    rrl=rrl->next;
+  }
+  domroots->next=rrl->next;
+  rrl->next=domroots;
+  return;
+}
+
+void sortidentities(struct role *role) {
+  struct identity_relation *irptr=role->identities;
+  role->identities=NULL;
+  while(irptr!=NULL) {
+    struct identity_relation *irnxt=irptr->next;
+    struct identity_relation *tmpptr=role->identities;
+    irptr->next=NULL;
+
+    if(role->identities==NULL) {
+      role->identities=irptr;
+      irptr=irnxt;
+    } else if (compareidentity(irptr, role->identities)<0) {
+      irptr->next=role->identities;
+      role->identities=irptr;
+      irptr=irnxt;
+    } else {
+      while(tmpptr->next!=NULL) {
+	if (compareidentity(irptr, tmpptr->next)<0)
+	  break;
+      }
+      irptr->next=tmpptr->next;
+      tmpptr->next=irptr;
+      irptr=irnxt;
+    }
+  }
+}
+
+int compareidentity(struct identity_relation *ir1, struct identity_relation *ir2) {
+  int tmp;
+  if ((tmp=strcmp(ir1->fieldname1, ir2->fieldname1))!=0)
+    return tmp;
+  else
+    printf("ERROR: MATCHING FIRST FIELD for compareidentity\n");
+  return strcmp(ir1->fieldname2, ir2->fieldname2);
+}
+
+void insertnonfl(struct role * role, struct rolefieldlist * rfl) {
+  struct rolefieldlist *tmpptr=role->nonnullfields;
+
+  if (role->nonnullfields==NULL) {
+    role->nonnullfields=rfl;
+    return;
+  }
+  if (fieldcompare(rfl, role->nonnullfields)<0) {
+    rfl->next=role->nonnullfields;
+    role->nonnullfields=rfl;
+    return;
+  }
+  while(tmpptr->next!=NULL) {
+    if (fieldcompare(rfl,tmpptr->next)>=0)
+      break;
+    tmpptr=tmpptr->next;
+  }
+  rfl->next=tmpptr->next;
+  tmpptr->next=rfl;
+  return;
+}
+
+void insertrfl(struct role * role, struct rolefieldlist * rfl) {
+  struct rolefieldlist *tmpptr=role->pointedtofl;
+
+  if (role->pointedtofl==NULL) {
+    role->pointedtofl=rfl;
+    return;
+  }
+  if (fieldcompare(rfl, role->pointedtofl)<0) {
+    rfl->next=role->pointedtofl;
+    role->pointedtofl=rfl;
+    return;
+  }
+  while(tmpptr->next!=NULL) {
+    if (fieldcompare(rfl,tmpptr->next)>=0)
+      break;
+    tmpptr=tmpptr->next;
+  }
+  rfl->next=tmpptr->next;
+  tmpptr->next=rfl;
+  return;
+}
+
+int fieldcompare(struct rolefieldlist *field1, struct rolefieldlist *field2) {
+  int tmp;
+  if ((tmp=strcmp(field1->class,field2->class))!=0)
+    return tmp;
+  else
+    return strcmp(field1->field, field2->field);
+}
+
+void insertral(struct role * role, struct rolearraylist * ral) {
+  struct rolearraylist *tmpptr=role->pointedtoal;
+
+  if (role->pointedtoal==NULL) {
+    role->pointedtoal=ral;
+    return;
+  }
+  if (strcmp(ral->class, role->pointedtoal->class)<0) {
+    ral->next=role->pointedtoal;
+    role->pointedtoal=ral;
+    return;
+  }
+  while(tmpptr->next!=NULL) {
+    if (strcmp(ral->class,tmpptr->next->class)>=0)
+      break;
+    tmpptr=tmpptr->next;
+  }
+  ral->next=tmpptr->next;
+  tmpptr->next=ral;
+  return;
 }
 
 struct identity_relation * find_identities(struct heap_object *ho) {

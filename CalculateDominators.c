@@ -20,14 +20,25 @@ struct referencelist * calculatedominators(struct genhashtable * dommapping,stru
   return dominators;
 }
 
-struct genhashtable * builddominatormappings(struct heap_state *heap) {
-  struct genhashtable * mindominator=genallocatehashtable();
+struct genhashtable * builddominatormappings(struct heap_state *heap, int includecurrent) {
+  struct genhashtable * mindominator=genallocatehashtable(NULL,NULL);
   struct method *m=heap->methodlist;
+
+  if ((includecurrent==0)&&(m!=NULL)) {
+    struct localvars *lv=m->lv;
+    while(lv!=NULL) {
+      int * i=(int *)malloc(sizeof(int));
+      *i=0;
+      genputtable(mindominator, lv, i);
+      lv=lv->next;
+    }
+    m=m->caller;
+  }
 
   while(m!=NULL) {
     struct localvars *lv=m->lv;
     while(lv!=NULL) {
-      genputtable(mindominator, lv,minimaldominatorset(lv,NULL));
+      genputtable(mindominator, lv,minimaldominatorset(lv,NULL, heap, includecurrent));
       lv=lv->next;
     }
     m=m->caller;
@@ -36,20 +47,22 @@ struct genhashtable * builddominatormappings(struct heap_state *heap) {
   {
     struct globallist *globals=heap->gl;
     while(globals!=NULL) {
-      genputtable(mindominator, globals,minimaldominatorset(NULL,globals));
+      genputtable(mindominator, globals,minimaldominatorset(NULL,globals,heap,includecurrent));
       globals=globals->next;
     }
   }
   return mindominator;
 }
 
-int * minimaldominatorset(struct localvars * lv, struct globallist *gl) {
+int * minimaldominatorset(struct localvars * lv, struct globallist *gl, struct heap_state *heap, int includecurrent) {
   struct heap_object * ho=(lv!=NULL)?lv->object:gl->object;
   struct referencelist *rl2=ho->rl;
   int * in=(int *) malloc(sizeof(int));
 
   while (rl2!=NULL) {
-    if(dominates(rl2->lv,rl2->gl,lv,gl))
+    if((rl2->lv!=NULL)&&(includecurrent==0)&&(rl2->lv->m==heap->methodlist))
+      ;
+    else if(dominates(rl2->lv,rl2->gl,lv,gl))
       break;
     rl2=rl2->next;
   }
@@ -103,7 +116,7 @@ int dominates(struct localvars *lv1, struct globallist *gl1, struct localvars *l
     }
     if (rl==NULL)
       return 1;
-    else if (age1>age2)
+    else if (age1<age2)
       return 1;
     else return 0;
   }

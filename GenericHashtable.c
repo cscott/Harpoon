@@ -7,7 +7,7 @@
 //#include <dmalloc.h>
 
 int genputtable(struct genhashtable *ht, void * key, void * object) {
-  int bin=genhashfunction(key);
+  int bin=genhashfunction(ht,key);
   struct genpointerlist * newptrlist=(struct genpointerlist *) calloc(1,sizeof(struct genpointerlist));
   newptrlist->src=key;
   newptrlist->object=object;
@@ -17,9 +17,9 @@ int genputtable(struct genhashtable *ht, void * key, void * object) {
 }
 
 void * gengettable(struct genhashtable *ht, void * key) {
-  struct genpointerlist * ptr=ht->bins[genhashfunction(key)];
+  struct genpointerlist * ptr=ht->bins[genhashfunction(ht,key)];
   while(ptr!=NULL) {
-    if (ptr->src==key)
+    if (((ht->comp_function==NULL)&&(ptr->src==key))||((ht->comp_function!=NULL)&&(*ht->comp_function)(ptr->src,key)))
       return ptr->object;
     ptr=ptr->next;
   }
@@ -28,15 +28,15 @@ void * gengettable(struct genhashtable *ht, void * key) {
 }
 
 void genfreekey(struct genhashtable *ht, void * key) {
-  struct genpointerlist * ptr=ht->bins[genhashfunction(key)];
+  struct genpointerlist * ptr=ht->bins[genhashfunction(ht,key)];
 
-  if (ptr->src==key) {
-    ht->bins[genhashfunction(key)]=ptr->next;
+  if (((ht->comp_function==NULL)&&(ptr->src==key))||((ht->comp_function!=NULL)&&(*ht->comp_function)(ptr->src,key))) {
+    ht->bins[genhashfunction(ht,key)]=ptr->next;
     free(ptr);
     return;
   }
   while(ptr->next!=NULL) {
-    if (ptr->next->src==key) {
+    if (((ht->comp_function==NULL)&&(ptr->next->src==key))||((ht->comp_function!=NULL)&&(*ht->comp_function)(ptr->next->src,key))) {
       struct genpointerlist *tmpptr=ptr->next;
       ptr->next=tmpptr->next;
       free(tmpptr);
@@ -47,12 +47,18 @@ void genfreekey(struct genhashtable *ht, void * key) {
   printf("XXXXXXXXX: COULDN'T FIND ENTRY FOR KEY %p\n",key);
 }
 
-int genhashfunction(void * key) {
-  return ((long int)key) % gennumbins;
+int genhashfunction(struct genhashtable *ht, void * key) {
+  if (ht->hash_function==NULL)
+    return ((long int)key) % gennumbins;
+  else
+    return (*ht->hash_function)(key);
 }
 
-struct genhashtable * genallocatehashtable() {
-  return (struct genhashtable *) calloc(1,sizeof(struct genhashtable));
+struct genhashtable * genallocatehashtable(int (*hash_function)(void *),int (*comp_function)(void *, void *)) {
+  struct genhashtable *ght=(struct genhashtable *) calloc(1,sizeof(struct genhashtable));
+  ght->hash_function=hash_function;
+  ght->comp_function=comp_function;
+  return ght;
 }
 
 void genfreehashtable(struct genhashtable * ht) {

@@ -107,12 +107,15 @@ void doanalysis() {
 	  if(currentparam==heap.methodlist->numobjectargs) {
 	    //Lets show the roles!!!!
 	    int i=0;
-	    struct genhashtable * dommap=builddominatormappings(&heap);
+	    struct genhashtable * dommap=builddominatormappings(&heap,0);
 	    printf("Calling Context for method %s.%s%s:\n", heap.methodlist->classname, heap.methodlist->methodname, heap.methodlist->signature);
 	    for(;i<heap.methodlist->numobjectargs;i++) {
-	      if (heap.methodlist->params[i]!=NULL)
-		printrole(dommap,heap.methodlist->params[i]);
-	      else printf("Role: Null Object Parameter");
+	      if (heap.methodlist->params[i]!=NULL) {
+		struct role * r=calculaterole(dommap,heap.methodlist->params[i]);
+		printrole(r);
+		freerole(r);
+	      }
+	      else printf("Role: Null Object Parameter\n");
 	    }
 	    genfreekeyhashtable(dommap);
 	  }
@@ -130,6 +133,8 @@ void doanalysis() {
 	heap.methodlist=newmethod;
 	currentparam=0;
       }
+      if (currentparam==heap.methodlist->numobjectargs)
+	printf("Calling Context for method %s.%s%s:\n", heap.methodlist->classname, heap.methodlist->methodname, heap.methodlist->signature);
       showmethodstack(&heap);
       break;
     case 'R':
@@ -141,6 +146,9 @@ void doanalysis() {
 	doreturnmethodinference(&heap, uid, ht);
 	heap.methodlist=ptr->caller;
 	freemethod(&heap, ptr);
+	currentparam=10000;
+	/* Don't want to mess up callers parameter count.  They've all been processed by now.  No method could possibly have 10,000 parameters, so we're using this as a flag value.*/
+	
       }
       showmethodstack(&heap);
       break;
@@ -219,16 +227,20 @@ void doreturnmethodinference(struct heap_state *heap, long long uid, struct hash
     //Lets show the roles!!!!
   {
     int i=0;
-    struct genhashtable * dommap=builddominatormappings(heap);
+    struct genhashtable * dommap=builddominatormappings(heap,1);
     printf("Returning Context for method %s.%s%s:\n", heap->methodlist->classname, heap->methodlist->methodname, heap->methodlist->signature);
     for(;i<heap->methodlist->numobjectargs;i++) {
-      if (heap->methodlist->params[i]!=NULL)
-	printrole(dommap,heap->methodlist->params[i]);
-      else printf("Role: Null Object Parameter");
+      if (heap->methodlist->params[i]!=NULL) {
+	struct role * r=calculaterole(dommap,heap->methodlist->params[i]);
+	printrole(r);
+	freerole(r);
+      } else printf("Role: Null Object Parameter\n");
     }
     if (uid!=-1) {
+      struct role * r=calculaterole(dommap,gettable(ht,uid));
       printf("Return object:\n");
-      printrole(dommap, gettable(ht,uid));
+      printrole(r);
+      freerole(r);
     }
 
     genfreekeyhashtable(dommap);
