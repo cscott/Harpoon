@@ -131,13 +131,13 @@ class Stats {
 			   (analysisTimer.timeElapsed() / 1000.0) + " s");
 	System.out.println();
 	if ((quadsIn != null) || (quadsOut != null)) {
-	    System.out.print("Number of quads ");
+	    System.out.print("Number of quads");
 	}
 	if (quadsIn != null) {
 	    System.out.print(" in: " + quadsIn.count());
 	}
 	if (quadsOut != null) {
-	    System.out.print("out: " + quadsOut.count());
+	    System.out.print(" out: " + quadsOut.count());
 	}
 	if ((quadsIn != null) && (quadsOut != null)) {
 	    System.out.print(" out-in: " + (quadsOut.count() - 

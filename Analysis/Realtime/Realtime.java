@@ -35,7 +35,7 @@ public class Realtime {
     public static boolean REALTIME_JAVA = false;
     
     /** Determine which analysis method to use. */
-    public static int ANALYSIS_METHOD = 1;
+    public static int ANALYSIS_METHOD = 0;
     /** Very conservative analysis method - keep all checks */
     public static final int SIMPLE = 0;
     /** Pointer analysis to determine whether checks can be removed */

@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.134 2001-01-23 22:16:27 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.135 2001-01-24 16:11:21 wbeebee Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -280,17 +280,6 @@ public class SAMain extends harpoon.IR.Registration {
 		String resource =
 		    "harpoon/Backend/Runtime1/transact-safe.properties";
 		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-		hcf = new harpoon.Analysis.Transactions.ArrayCopyImplementer
-		    (hcf, linker);
-		hcf = new harpoon.Analysis.Transactions.CloneImplementer
-		    (hcf, linker, classHierarchy.classes());
-		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    
-		hcf = new harpoon.Analysis.Quads.ArrayInitRemover(hcf)
-		    .codeFactory();
-		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-
 		syncTransformer = new SyncTransformer
 		    (hcf, classHierarchy, linker, mainM, roots, resource);
 		hcf = syncTransformer.codeFactory();
@@ -671,7 +660,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     protected static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:EfpIDOPFHR::LlABthq1::C:r:T");
+	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:EfpIDOPFHR::LlABt:hq1::C:r:T");
 	
 	int c;
 	String arg;
@@ -693,6 +682,22 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 't': // Realtime Java extensions (WSB)
 		linker = new Relinker(Loader.systemLinker);
 		Realtime.REALTIME_JAVA = true;
+		if (g.getOptarg() != null) {
+		    String analysis = g.getOptarg().toLowerCase().intern();
+		    if (analysis == "simple") {
+			Realtime.ANALYSIS_METHOD = 
+			    Realtime.SIMPLE;
+		    } else if (analysis == "cheesy") {
+			Realtime.ANALYSIS_METHOD = 
+			    Realtime.CHEESY_POINTER_ANALYSIS;
+		    } else if (analysis == "real") {
+			Realtime.ANALYSIS_METHOD = 
+			    Realtime.REAL_POINTER_ANALYSIS;
+		    } else {
+			Util.assert(false, "Unknown option after -t: " +
+				    g.getOptarg());
+		    }
+		}
 		break;
 	    case 's':
 		arg=g.getOptarg();
@@ -839,8 +844,9 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("-D");
 	out.println("\tOutputs DATA information for <class>");
 
-	out.println("-t");
-	out.println("\tTurns on Realtime Java extensions.");
+	out.println("-t (analysis)");
+	out.println("\tTurns on Realtime Java extensions with the optional");
+	out.println("\tanalysis method: NONE, CHEESY, REAL");
 
 	out.println("-O");
 	out.println("\tOutputs Original Tree IR for <class>");
