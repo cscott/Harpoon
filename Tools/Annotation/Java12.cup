@@ -129,6 +129,20 @@ action code {:
       sb.append(classN); sb.append(".html");
       return sb.toString();
     }
+    public String toDocURL() {
+      StringBuffer sb = new StringBuffer();
+      if (packageN!=null && packageN.length()>0)
+	for(String s=packageN+"."; s.indexOf('.')>=0;
+	    s=s.substring(s.indexOf('.')+1))
+	  sb.append("../");
+      sb.append("../doc/");
+      if (packageN!=null && packageN.length()>0) {
+	sb.append(packageN.replace('.','/')); sb.append('/');
+      }
+      sb.append(combineWithDot(classN, innerN));
+      sb.append(".html");
+      return sb.toString();
+    }
     public String toURL() {
       StringBuffer sb = new StringBuffer(toBaseURL());
       if (classN==null) return sb.toString();
@@ -408,7 +422,7 @@ terminal IMPORT; // import_declaration
 terminal PUBLIC, PROTECTED, PRIVATE; // modifier
 terminal STATIC; // modifier
 terminal ABSTRACT, FINAL, NATIVE, SYNCHRONIZED, TRANSIENT, VOLATILE;
-terminal CLASS; // class_declaration
+terminal List CLASS; // class_declaration
 terminal EXTENDS; // super
 terminal IMPLEMENTS; // interfaces
 terminal VOID; // method_header
@@ -723,13 +737,23 @@ modifier ::=	PUBLIC | PROTECTED | PRIVATE
 
 // 19.8.1) Class Declaration:
 class_declaration ::= 
-	modifiers_opt CLASS IDENTIFIER:id super_opt interfaces_opt
+	modifiers_opt CLASS:kw IDENTIFIER:id super_opt interfaces_opt
 	{: if (env.containsKey("#in_method")) { // ok, create anonymous context
 	     Integer num = newInner();
 	     newClassScope(num.toString());
 	   }
 	   pushenv(); newClassScope(id); env.remove("#in_method");
            annotateANCHOR(idleft,idright,"class-"+env.get("#qualified"));
+	   // annotate doc comment.
+	   if (kw!=null) {
+	     int comment_start = ((Integer) kw.get(1)).intValue();
+	     LinePos lp = parser.lexer.linepos(comment_start+1);
+	     LinePos rp = parser.lexer.linepos(comment_start+2);
+	     QualName qn = className((String)env.get("#qualified"));
+	     System.out.println(lp.line+" "+lp.pos+"\t"+rp.line+" "+rp.pos);
+	     System.out.println("<A HREF=\""+qn.toDocURL()+"\">");
+	     System.out.println("</A>");
+	   }
 	:} class_body {: popenv(); :}
 	;
 super ::=	EXTENDS class_type

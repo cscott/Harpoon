@@ -3,6 +3,7 @@ package harpoon.Tools.Annotation.Lex;
 import java.io.Reader;
 import java.io.LineNumberReader;
 
+import java.util.Arrays;
 /* Java lexer.
  * Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
  * This program is released under the terms of the GPL; see the file
@@ -44,8 +45,10 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
       // annotate this input element
       ie.annotate(linepos(startpos), linepos(lineL.head+line_pos-1));
       // set 'last comment' field, if appropriate.
-      if (ie instanceof DocumentationComment)
+      if (ie instanceof DocumentationComment) {
 	comment = ((Comment)ie).getComment();
+	comment_start = startpos;
+      }
     } while (!(ie instanceof Token));
     endpos = lineL.head + line_pos - 1;
 
@@ -53,6 +56,11 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
     java_cup.runtime.Symbol sym = ((Token)ie).token();
     // fix up left/right positions.
     sym.left = startpos; sym.right = endpos;
+    // attach comment information to keywords.
+    if (ie instanceof Keyword && comment!=null)
+	sym.value = Arrays.asList(new Object[] {
+	    comment, new Integer(comment_start)
+	});
     // return token.
     return sym;
   }
@@ -62,7 +70,7 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
     return !(ie instanceof EOF);
   }
 
-  String comment;
+  String comment; int comment_start;
   public String lastComment() { return comment; }
   public void clearComment() { comment=""; }
   
