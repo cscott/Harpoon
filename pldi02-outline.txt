@@ -1,0 +1,32 @@
+% outline for paper.
+% introduction
+% header optimizations
+%  discussion of typical object layout.
+%  claz compression.
+%  hashcode/lock compression.
+%   analyses for doing so; static/dynamic hash counts.
+% field compression.
+%  description of bitwidth analysis.
+%   treatment of loops.
+%   constant/unread fields.
+%   scc.  crib from thesis.
+%   interprocedural.  no appreciable gain from context sensitivity.
+%   no pointer analysis to discriminate object classes (yea, type-safety)
+%  implementation: bit/byte/java-type packing.
+% sub-topic: pointer compression.
+%  present numbers: how your memory stacks up.
+% mostly-zero field analysis.
+%  as extension: mostly-'N'
+%  techniques:
+%   dynamic specialization
+%    analyses required.
+%   ``external fields''
+%    profiling/analyses required.
+%    implementation of external hashtable.
+% results/discussion.
+%  present sum totals.
+%  compress doesn't do so hot: show why.
+% conclusion/future work.
+%  better pointer analysis/separate out classes of objects.
+%   (strings as motivating example: compress to byte[])
+%  other stuff?
