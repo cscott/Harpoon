@@ -28,7 +28,7 @@ import java.util.Set;
  * <code>EnvBuilder</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.1.2.3 1999-11-12 07:47:47 cananian Exp $
+ * @version $Id: EnvBuilder.java,v 1.1.2.4 2000-01-02 22:17:27 bdemsky Exp $
  */
 public class EnvBuilder {
     protected final UpdateCodeFactory ucf;
@@ -43,10 +43,11 @@ public class EnvBuilder {
      *  works with quad-no-ssa. <code>HCodeFactory</code> must
      *  be an <code>UpdateCodeFactory</code>.
      */
-    public EnvBuilder(UpdateCodeFactory ucf, HCode hc, HCodeElement hce) {
+    public EnvBuilder(UpdateCodeFactory ucf, HCode hc, HCodeElement hce, Temp[] lives) {
 	this.ucf = ucf;
         this.hc = hc;
 	this.hce = hce;
+	this.liveout = lives;
     }
 
     public HClass makeEnv() {
@@ -79,21 +80,21 @@ public class EnvBuilder {
 			       "harpoon.Analysis.EnvBuilder.EnvTemplate");
 	}
 
-	final QuadLiveness ql = new QuadLiveness(this.hc);
-	Set s = ql.getLiveOut(this.hce);
-	Object[] vars = s.toArray();
-	this.liveout = new Temp[vars.length];
-	String[] parameterNames = new String[vars.length];
-	HClass[] parameterTypes = new HClass[vars.length];
-	HField[] fields = new HField[vars.length];
+	//	final QuadLiveness ql = new QuadLiveness(this.hc);
+	//	Set s = ql.getLiveOut(this.hce);
+	//	Object[] vars = s.toArray();
+	//	this.liveout = new Temp[vars.length];
+	String[] parameterNames = new String[liveout.length];
+	HClass[] parameterTypes = new HClass[liveout.length];
+	HField[] fields = new HField[liveout.length];
 
 	System.out.println("Starting SCCAnalysis");
 	TypeMap map = ((QuadNoSSA) this.hc).typeMap;
 	System.out.println("Finished SCCAnalysis");
-	for (int i=0; i<vars.length; i++) {
-	    this.liveout[i] = (Temp)vars[i];
-	    String tempName = ((Temp)vars[i]).name();
-	    HClass type = map.typeMap(this.hce, (Temp)vars[i]);  
+	for (int i=0; i<liveout.length; i++) {
+	    //	    this.liveout[i] = (Temp)vars[i];
+	    String tempName = liveout[i].name();
+	    HClass type = map.typeMap(this.hce, liveout[i]);  
 	    new HFieldSyn(env, tempName, type);
 
 	    parameterNames[i] = tempName;
