@@ -12,7 +12,7 @@ import harpoon.Util.ArrayFactory;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.13 2000-01-29 11:05:54 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.14 2000-06-23 23:07:31 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -42,7 +42,8 @@ public interface HMethod extends HMember {
   /**
    * Returns a <code>HClass</code> object that represents the formal
    * return type of the method represented by this <code>HMethod</code>
-   * object.
+   * object.  Returns <code>HClass.Void</code> if the method returns
+   * no value.
    */
   public HClass getReturnType();
 
