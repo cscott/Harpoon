@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.20 2000-04-02 03:27:56 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.21 2000-04-02 07:15:04 salcianu Exp $
  */
 public class PointsToGraph {
 
@@ -275,13 +275,17 @@ public class PointsToGraph {
 	if(o==null) return false;
 	PointsToGraph G2 = (PointsToGraph)o;
 	if(!O.equals(G2.O)){
-	    if(ParIntGraph.DEBUG2)
+	    if(ParIntGraph.DEBUG2){
 		System.out.println("different O's");
+		PAEdgeSet.show_evolution(G2.O, O);
+	    }
 	    return false;
 	}
 	if(!I.equals(G2.I)){
-	    if(ParIntGraph.DEBUG2)
+	    if(ParIntGraph.DEBUG2){
 		System.out.println("different I's");
+		PAEdgeSet.show_evolution(G2.I, I);
+	    }
 	    return false;
 	}
 	if(!e.equals(G2.e)){

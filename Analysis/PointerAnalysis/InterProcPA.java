@@ -27,7 +27,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.24 2000-04-02 03:27:55 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.25 2000-04-02 07:15:03 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -77,6 +77,13 @@ abstract class InterProcPA {
 	MetaMethod[] mms = mcg.getCallees(current_mmethod,q);
 	int nb_callees = mms.length;
 
+
+	for(int i = 0; i < mms.length; i++){
+	    HMethod hm = mms[i].getHMethod();
+	    if(Modifier.isNative(hm.getModifiers()))
+		System.out.println("NATIVE: " + hm);
+	}
+
 	if(nb_callees == 0){
 	    if(WARNINGS){
 		System.out.println("Warning: CALL site with no callee! ");
@@ -85,8 +92,8 @@ abstract class InterProcPA {
 	    }
 
 	    // I count on the fact that if a call site has 0 callees, it 
-	    // means that it doesn't occur in practice (some classes are not
-	    // instantiated, not because the call graph is buggy!
+	    // means that it doesn't occur in practice (because some classes
+	    // are not instantiated), not because the call graph is buggy!
 	    // So, the CALL is simply ignored.
 	    return new ParIntGraphPair(pig_before, pig_before);
 	    //return skip_call(q,pig_before,node_rep);
@@ -115,6 +122,10 @@ abstract class InterProcPA {
 	    return new ParIntGraphPair(pig_before, pig_before);
 
 	if(counter != nb_callees){
+
+	    if(true)
+		return new ParIntGraphPair(pig_before, pig_before);
+	    
 	    // some of the graphs are yet unknown (this situation appears
 	    // in strongly connected components); do not consider them.
 	    ParIntGraph pigs2[] = new ParIntGraph[counter];

@@ -25,7 +25,7 @@ import harpoon.Temp.Temp;
  than the straightforward solution of a <code>HashSet</code> of edges.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdgeSet.java,v 1.1.2.12 2000-03-18 23:39:27 salcianu Exp $
+ * @version $Id: PAEdgeSet.java,v 1.1.2.13 2000-04-02 07:15:04 salcianu Exp $
  */
 public class PAEdgeSet {
 
@@ -417,12 +417,74 @@ public class PAEdgeSet {
 	
 	return buffer.toString();
     }
+
+
+    static class PASimpleEdge{
+	Temp   t;
+	PANode node;
+
+	PASimpleEdge(Temp t, PANode node){
+	    this.t    = t;
+	    this.node = node;
+	}
+
+	public String toString(){
+	    return "<" + t + "," + node + ">";
+	}
+    }
+
+    static class PAComplexEdge{
+	PANode node1;
+	String f;
+	PANode node2;
+
+	PAComplexEdge(PANode node1, String f, PANode node2){
+	    this.node1 = node1;
+	    this.f     = f;
+	    this.node2 = node2;
+	}
+
+	public String toString(){
+	    return "<" + node1 + "," + f + "," + node2 + ">";
+	}
+    }
+
+    /** Computes the difference bvetween two sets of edges. Returns the 
+	set of edges which are present in es1 but not in es2. The returned
+	set contains elements of type <code>PASimpleEdge</code> or
+	<code>PAComplexEdge</code>. For debug purposes. */
+    public static Set difference(final PAEdgeSet es1,final PAEdgeSet es2){
+	final Set retval = new HashSet();
+	es1.forAllEdges(new PAEdgeVisitor(){
+		public void visit(Temp l, PANode node){
+		    if(!es2.pointedNodes(l).contains(node))
+			retval.add(new PASimpleEdge(l, node));
+		}
+		public void visit(PANode node1, String f, PANode node2){
+		    if(!es2.pointedNodes(node1, f).contains(node2))
+			retval.add(new PAComplexEdge(node1, f, node2));
+		}
+	    });
+	return retval;
+    }
+
+    /** Display the edges which were removed and the edges which were
+	added while passing from <code>es_old</code> to 
+	<code>es_new</code>. */
+    public static void show_evolution(final PAEdgeSet es_old,
+				      final PAEdgeSet es_new){
+	Set old_edges = difference(es_old, es_new);
+	if(!old_edges.isEmpty()){
+	    System.out.println("Some edges were removed:");
+	    for(Iterator it = old_edges.iterator(); it.hasNext();)
+		System.out.println("  " + it.next());
+	}
+	Set new_edges = difference(es_new, es_old);
+	if(!new_edges.isEmpty()){
+	    System.out.println("New edges were added:");
+	    for(Iterator it = new_edges.iterator(); it.hasNext();)
+		System.out.println("  " + it.next());
+	}
+    }
+
 }
-
-
-
-
-
-
-
-

@@ -62,7 +62,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.32 2000-04-02 03:28:11 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.33 2000-04-02 07:15:21 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -219,8 +219,8 @@ public abstract class PAMain {
 	System.out.print("ClassHierarchy ... ");
 	tstart = System.currentTimeMillis();
 	ClassHierarchy ch = 
-	    //	    new QuadClassHierarchy(linker,roots,hcf);
-	    new QuadClassHierarchy(linker,Collections.singleton(hroot),hcf);
+	    new QuadClassHierarchy(linker,roots,hcf);
+	    // new QuadClassHierarchy(linker,Collections.singleton(hroot),hcf);
 	tstop  = System.currentTimeMillis();
 	System.out.println((tstop - tstart) + "ms");
 

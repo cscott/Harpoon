@@ -66,7 +66,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.44 2000-04-02 03:27:55 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.45 2000-04-02 07:15:04 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -1174,6 +1174,56 @@ public class PointerAnalysis {
 	// have only inside edges, it is enough to look in the I set.
 	return pig.G.I.pointedNodes(l);
     }
+
+
+    /* 
+    private ParIntGraph get_mmethod_initial_pig(MetaMethod mm, METHOD m){
+	Temp[]  params = m.params();
+	HMethod     hm = mm.getHMethod();
+	HClass[] types = hm.getParameterTypes();
+
+	ParIntGraph pig = new ParIntGraph();
+
+	// the following code is quite messy ... The problem is that I 
+	// create param nodes only for the parameter with object types;
+	// unfortunately, the types could be found only in HMethod (and
+	// do not include the evetual this parameter for non-static nodes)
+	// while the actual Temps associated with all the formal parameters
+	// could be found only in METHOD. So, we have to coordinate
+	// information from two different places and, even more, we have
+	// to handle the missing this parameter (which is present in METHOD
+	// but not in HMethod). 
+	boolean isStatic = 
+	    java.lang.reflect.Modifier.isStatic(hm.getModifiers());
+	// if the method is non-static, the first parameter is not metioned
+	// in HMethod - it's the implicit this parameter.
+	int skew = isStatic?0:1;
+	// number of object formal parameters = the number of param nodes
+	int count = skew;
+	for(int i = 0; i < types.length; i++)
+	if(!types[i].isPrimitive()) count++;
+	
+	nodes.addParamNodes(mm,count);
+	Stats.record_mmethod_params(mm,count);
+
+	// add all the edges of type <p,np> (i.e. parameter to 
+	// parameter node) - just for the non-primitive types (e.g. int params
+	// do not clutter our analysis)
+	// the edges for the static fields will
+	// be added later.
+	count = 0;
+	for(int i = 0; i < params.length; i++)
+	    if((i<skew) || ((i>=skew) && !types[i-skew].isPrimitive())){
+		PANode param_node = nodes.getParamNode(mm,count);
+		pig.G.I.addEdge(params[i],param_node);
+		// The param nodes are escaping through themselves
+		pig.G.e.addNodeHole(param_node,param_node);
+		count++;
+	    }
+
+	return pig;
+    }
+    */
 
 }
 
