@@ -54,4 +54,6 @@ int equivalentroles(struct role *role1, struct role *role2);
 void assignhashcode(struct role * role);
 int rolehashcode(struct role *role);
 int hashstring(char *strptr);
+char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping,struct heap_object *ho);
+int equivalentstrings(char *str1, char *str2);
 #endif

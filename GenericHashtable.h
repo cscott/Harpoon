@@ -24,6 +24,7 @@ struct geniterator {
 
 int genputtable(struct genhashtable *, void *, void *);
 void * gengettable(struct genhashtable *, void *);
+int gencontains(struct genhashtable *, void *);
 int genhashfunction(struct genhashtable *,void *);
 struct genhashtable * genallocatehashtable(int (*hash_function)(void *),int (*comp_function)(void *,void *));
 void genfreehashtable(struct genhashtable * ht);

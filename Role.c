@@ -5,6 +5,8 @@
 #include <string.h>
 #include "Role.h"
 
+static long int rolenumber=0;
+
 void printrole(struct role *r) {
   struct rolereferencelist *dominators=r->dominatingroots;
   printf("Role {\n");
@@ -274,6 +276,36 @@ void freerole(struct role * role) {
   
   free_identities(ri);
 
+}
+
+
+
+char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping,struct heap_object *ho) {
+  struct role * r=calculaterole(dommapping, ho);
+  if (gencontains(heap->roletable,r)) {
+    /* Already seen role */
+    char *str=copystr((char *)gengettable(heap->roletable,r));
+    freerole(r);
+    return str;
+  } else {
+    /* Synthesize string */
+    char buf[30];
+    int rn=rolenumber;
+    int index=28;
+    rolenumber++;
+    buf[29]=0;
+
+    while(rn!=0) {
+      buf[index--]='0'+rn%10;
+      rn=rn/10;
+    }
+
+    buf[index]='R';
+    genputtable(heap->roletable, r, copystr(&buf[index]));
+
+    freerole(r);
+    return copystr(&buf[index]);
+  }
 }
 
 struct role * calculaterole(struct genhashtable * dommapping,struct heap_object *ho) {

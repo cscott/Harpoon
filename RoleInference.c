@@ -41,6 +41,8 @@ void doanalysis() {
   heap.freelist=NULL;
   heap.freemethodlist=NULL;
   heap.roletable=genallocatehashtable((int (*)(void *)) &rolehashcode, (int (*)(void *,void *)) &equivalentroles);
+  heap.methodtable=genallocatehashtable((int (*)(void *)) &methodhashcode, (int (*)(void *,void *)) &comparerolemethods);
+
 
   while(1) {
     char *line=getline();
@@ -110,15 +112,23 @@ void doanalysis() {
 	    //Lets show the roles!!!!
 	    int i=0;
 	    struct genhashtable * dommap=builddominatormappings(&heap,0);
+	    struct rolemethod * rolem=(struct rolemethod *) calloc(1, sizeof(struct rolemethod));
+	    
+	    rolem->classname=copystr(heap.methodlist->classname);
+	    rolem->methodname=copystr(heap.methodlist->methodname);
+	    rolem->signature=copystr(heap.methodlist->signature);
+	    rolem->paramroles=(char **)calloc(heap.methodlist->numobjectargs, sizeof(char *));
+	    rolem->numobjectargs=heap.methodlist->numobjectargs;
+	    rolem->isStatic=heap.methodlist->isStatic;
+	    
 	    printf("Calling Context for method %s.%s%s:\n", heap.methodlist->classname, heap.methodlist->methodname, heap.methodlist->signature);
 	    for(;i<heap.methodlist->numobjectargs;i++) {
 	      if (heap.methodlist->params[i]!=NULL) {
-		struct role * r=calculaterole(dommap,heap.methodlist->params[i]);
-		printrole(r);
-		freerole(r);
+		rolem->paramroles[i]=findrolestring(&heap, dommap, heap.methodlist->params[i]);
 	      }
 	      else printf("Role: Null Object Parameter\n");
 	    }
+	    methodassignhashcode(rolem);
 	    genfreekeyhashtable(dommap);
 	  }
 	}
