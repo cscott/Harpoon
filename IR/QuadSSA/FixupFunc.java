@@ -11,12 +11,16 @@ import harpoon.Util.Util;
  * in the Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FixupFunc.java,v 1.3 1998-09-16 03:53:03 cananian Exp $
+ * @version $Id: FixupFunc.java,v 1.4 1998-09-16 05:56:10 cananian Exp $
  * @see Translate
  */
 
 public class FixupFunc  {
-    static void place(Code c) {
+    static void fixup(Code c) {
+	place(c);
+	rename(c);
+    }
+    private static void place(Code c) {
 	UseDef ud  = new UseDef();
 	Place Pphi = new Place(ud, false);
         Place Plam = new Place(ud, true);
@@ -45,5 +49,7 @@ public class FixupFunc  {
 			q.dst[j][k] = q.src[j];
 	    }
 	}
+    }
+    private static void rename(Code c) {
     }
 }
