@@ -1,0 +1,12 @@
+#!/bin/bash
+
+echo -n Compiling everything in $1 ...
+
+export  CLASSPATH=$CLASSPATH:`pwd`
+
+cd $1
+
+rm -f *.class
+    jikes *.java 
+
+echo done
