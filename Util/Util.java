@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.13 1999-11-04 03:58:49 bdemsky Exp $
+ * @version $Id: Util.java,v 1.12.2.14 1999-11-07 20:34:26 bdemsky Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -107,12 +107,33 @@ public abstract class Util {
     return false;
   }
 
+  static boolean isJasminKeyWord(String str) {
+    if (str.equals("method")) 
+      return true;
+    if (str.equals("from")) 
+      return true;
+    if (str.equals("to")) 
+      return true;
+    if (str.equals("is")) 
+      return true;
+    if (str.equals("using")) 
+      return true;
+    if (str.equals("tableswitch")) 
+      return true;
+    if (str.equals("lookupswitch")) 
+      return true;
+    return false;
+  }
+
   /** Escape the contents of a String so they are safe to print. */
   public static final String jasminEscape(String str) {
+    boolean flag;
     StringBuffer sb = new StringBuffer();
+    flag=isJasminKeyWord(str);
     for (int i=0; i<str.length(); i++) {
       char c = str.charAt(i);
-      if (!jasminIsSafelyPrintable(c)) {
+      if (!jasminIsSafelyPrintable(c)||flag) {
+	flag=false;
 	if (c < 256) {
 	  String octval=Integer.toOctalString((int)c);
 	  while(octval.length()<3) octval="0"+octval;
