@@ -64,9 +64,16 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.11 2003-03-13 21:07:08 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.12 2003-07-03 22:34:54 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
+    // Support losing platforms (like, say, AIX) where multiple segments
+    // in the object file are not permitted.  In that case, wrap all
+    // data structures/code in #ifdef SECTION_xxx so that we can do the
+    // proper grouping ourselves, the hard way.
+    private static boolean NO_SECTION_SUPPORT=
+	    Boolean.getBoolean("harpoon.precisec.no_sections");
+
     private TranslationVisitor tv;
     
     /** Creates a <code>TreeToC</code>. */
@@ -228,6 +235,7 @@ public class TreeToC extends java.io.PrintWriter {
 		if (mode==CODETABLE) break; // postpone flush.
 		flushAndAppend(MD);
 		pwa[MB].println("}");
+		if (NO_SECTION_SUPPORT) pwa[MB].println("#endif");
 		flushAndAppend(MB);
 		temps_seen.clear();
 		break;
@@ -239,6 +247,7 @@ public class TreeToC extends java.io.PrintWriter {
 		break;
 	    case DATA:
 		pwa[DI].println("};");
+		if (NO_SECTION_SUPPORT) pwa[DI].println("#endif");
 		flushAndAppend(DD);
 		flushAndAppend(DI);
 		break;
@@ -404,6 +413,12 @@ public class TreeToC extends java.io.PrintWriter {
 		return ".flex."+s.decode(s.segtype).toLowerCase();
 	    }
 	}	    
+	private String sectionnameDEF(SEGMENT seg) {
+	    if (seg==null) return "NONE";
+	    String s = sectionname(seg);
+	    while (s.charAt(0)=='.') s=s.substring(1);
+	    return s.replace('.','_').toUpperCase();
+	}
 
 	// okay, shoot:
 	public void visit(ALIGN e) {
@@ -588,9 +603,17 @@ public class TreeToC extends java.io.PrintWriter {
 	private int struct_size;
 	public void startData(int mode, Label l, boolean exported) {
 	    switchto(mode);
+	    // without section support, sections are going to be compiled
+	    // separately, so force exported to be true.
+	    if (NO_SECTION_SUPPORT) exported=true;
 	    if (!lv.local_table_labels.contains(l))
 		sym2decl.put(l, (exported?"extern ":"static ") +
 			     "struct "+label(l)+" "+label(l)+";");
+	    // wrap this data structure in an #ifdef if no decent
+	    // section support
+	    if (NO_SECTION_SUPPORT && mode!=CODETABLE)
+		pwa[DD].println("#ifdef SECTION_" +
+				sectionnameDEF(this.segment));
 	    struct_size = 0;
 	    if (!exported) pwa[DD].print("static ");
 	    pwa[DD].println("struct "+label(l)+" {");
@@ -601,7 +624,7 @@ public class TreeToC extends java.io.PrintWriter {
 			      this.align.alignment + ")))");
 	    this.align=null; // clear alignment.
 	    // older versions of gcc won't allow segment attrs on local vars:
-	    if (segment!=null && mode!=CODETABLE)
+	    if (segment!=null && mode!=CODETABLE && !NO_SECTION_SUPPORT)
 		pwa[DI].print(" __attribute__ ((section (\"" +
 			      sectionname(this.segment) +"\")))");
 	    pwa[DI].println(" = {");
@@ -657,6 +680,8 @@ public class TreeToC extends java.io.PrintWriter {
 	    // emit definition.
 	    pw = pwa[MD];
 	    last_file=null; last_line=0; updateLine(e);
+	    if (NO_SECTION_SUPPORT)
+		pw.println("#ifdef SECTION_" +sectionnameDEF(this.segment));
 	    pw.print("DEFINE"+declstr+")"); nl();
 	    pw.println("{");
 	    pw = pwa[MB];

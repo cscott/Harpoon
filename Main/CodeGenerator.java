@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * <code>CodeGenerator</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CodeGenerator.java,v 1.8 2003-04-22 00:09:57 salcianu Exp $
+ * @version $Id: CodeGenerator.java,v 1.9 2003-07-03 22:34:56 cananian Exp $
  */
 public class CodeGenerator extends CompilerStage {
     
@@ -306,7 +306,10 @@ public class CodeGenerator extends CompilerStage {
 	String resourceName = "harpoon/Support/nativecode-makefile.template";
 
 	if (SAMain.BACKEND == Backend.PRECISEC)
-	    resourceName="harpoon/Support/precisec-makefile.template";
+	    // see TreeToC for more details on the NO_SECTION_SUPPORT option
+	    resourceName="harpoon/Support/precisec-"+
+		(Boolean.getBoolean("harpoon.precisec.no_sections") ?
+		 "no-sect-" : "")+"makefile.template";
 	if (SAMain.BACKEND == Backend.MIPSDA)
 	    resourceName="harpoon/Support/mipsda-makefile.template";
 	if (makefile.exists())

@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.91 2003-06-10 15:17:31 cananian Exp $
+# $Id: GNUmakefile,v 1.92 2003-07-03 22:34:50 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -126,6 +126,7 @@ JARPKGS := $(subst harpoon/Contrib,gnu, \
 PROPERTIES:=Contrib/getopt/MessagesBundle.properties \
 	    Support/nativecode-makefile.template \
 	    Support/precisec-makefile.template \
+	    Support/precisec-no-sect-makefile.template \
 	    Support/mipsda-makefile.template \
 	    $(wildcard Backend/Runtime1/*.properties) \
             $(wildcard Analysis/Realtime/*.properties)
@@ -328,6 +329,7 @@ properties:
 	@cp Contrib/getopt/MessagesBundle.properties gnu/getopt
 	@cp Support/nativecode-makefile.template harpoon/Support
 	@cp Support/precisec-makefile.template harpoon/Support
+	@cp Support/precisec-no-sect-makefile.template harpoon/Support
 	@cp Backend/Runtime1/*.properties harpoon/Backend/Runtime1
 	@cp Analysis/Realtime/*.properties harpoon/Analysis/Realtime
 	@echo done.

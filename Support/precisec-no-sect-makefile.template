@@ -1,0 +1,74 @@
+# fill in the host-prefix with the appropriate prefix for your architecture.
+# for example, the StrongARM tools hosted on lesser-magoo have:
+#    HOST_PREFIX=arm-unknown-linuxelf-
+# so that, for example, the cross-compiling gcc is arm-unknown-linuxelf-gcc.
+# this is probably best set on the command-line, as:
+#   make HOST_PREFIX=arm-unknown-linuxelf-
+# instead of editing this (pretty generic and general-purpose, yay) file.
+HOST_PREFIX=
+CC:=$(HOST_PREFIX)$(CC)
+LD:=$(HOST_PREFIX)$(LD)
+
+SECTIONS=\
+	SECTION_FLEX_CODE SECTION_FLEX_CODE_RW \
+	SECTION_FLEX_FIXUP \
+	SECTION_FLEX_CLASS SECTION_FLEX_INIT_DATA \
+	SECTION_FLEX_STATIC_PRIMITIVES SECTION_FLEX_STRING_DATA \
+	SECTION_FLEX_REFLECTION_OBJECTS SECTION_FLEX_REFLECTION_DATA \
+	SECTION_FLEX_GC_INDEX SECTION_FLEX_GC SECTION_FLEX_STATIC_OBJECTS \
+	SECTION_FLEX_STRING_CONSTANTS \
+	SECTION_FLEX_ZERO \
+	SECTION_TEXT
+# only one pass needed.
+PASSES = SECTION_FLEX_STRING_CONSTANTS
+
+SRCS=header.c $(wildcard _Primitive_*.c _Class_*.c) footer.c
+OBJS=$(patsubst %.c,%.o,$(SRCS))
+# this is the name of the archive which will hold the native code for your
+# java proggie.  needs to be linked with a runtime implementation to make
+# a full executable.
+TARGET=Java.o
+
+all: $(TARGET)
+$(TARGET): $(OBJS)
+	for f in $(PASSES) ; do \
+		$(MAKE) PASS=$$f $$f-$@ ; \
+	done
+	$(LD) -r -o $@ $^ $(patsubst %,%-$@,$(PASSES))
+$(PASS)-$(TARGET): $(patsubst %.o,$(PASS)-%.o,$(OBJS))
+	$(LD) -r -o $@ $^
+$(PASS)-%.o: %.c
+	$(CC) -c -o $@ -DNO_SECTION_SUPPORT -D$(PASS) $<
+%.o: %.c
+	$(CC) -c -o $@ -DNO_SECTION_SUPPORT \
+		$(patsubst %,-D%,$(filter-out $(PASSES),$(SECTIONS))) $<
+
+clean:
+	$(RM) $(OBJS)
+wipe: clean
+	$(RM) $(TARGET)
+
+header.c: Makefile
+	echo "#ifdef SECTION_FLEX_CODE" > $@
+	echo "char code_start[0];" >> $@
+	echo "#endif" >> $@
+	echo "#ifdef SECTION_FLEX_FIXUP" >> $@
+	echo "char fixup_start[0] __attribute__ ((aligned (8)));" >> $@
+	echo "#endif" >> $@
+	echo "#ifdef SECTION_FLEX_CLASS" >> $@
+	echo "char claz_start[0] __attribute__ ((aligned (4)));" >> $@
+	echo "#endif" >> $@
+	echo "#ifdef SECTION_FLEX_GC_INDEX" >> $@
+	echo "char gc_index_start[0] __attribute__ ((aligned (4)));" >> $@
+	echo "#endif" >> $@
+	echo "#ifdef SECTION_FLEX_GC" >> $@
+	echo "char gc_start[0] __attribute__ ((aligned (4)));" >> $@
+	echo "#endif" >> $@
+	echo "#ifdef SECTION_FLEX_STATIC_OBJECTS" >> $@
+	echo "char static_objects_start[0] __attribute__ ((aligned (4)));" >>$@
+	echo "#endif" >> $@
+	echo "#ifdef SECTION_FLEX_STRING_CONSTANTS" >> $@
+	echo "char string_constants_start[0] __attribute__ ((aligned(4)));">>$@
+	echo "#endif" >> $@
+footer.c: header.c
+	sed -e 's/_start/_end/g' < $< > $@
