@@ -47,7 +47,7 @@ import java.util.*;
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.11 1999-05-27 01:54:54 pnkfelix Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.12 1999-05-27 23:02:36 pnkfelix Exp $
  */
 final class CodeGen {
 
@@ -215,7 +215,8 @@ final class CodeGen {
 
         public void visit(JUMP s) {
             /* XXX */
-            visitRet = null;
+	    Util.assert(false, "visit(JUMP) not implemented");
+	    visitRet = null;
         }
 
         public void visit(LABEL s) {
@@ -227,35 +228,44 @@ final class CodeGen {
         }
 
         public void visit(MOVE s) {
-            s.dst.visit(this);
-	    Util.assert(visitRet != null, 
-			"visitRet should not be null after visiting " + 
-			s.dst);
+	    String movStr;
+            if (s.dst instanceof MEM) {
+		// prepare a store; note that strong arm makes the
+		// store-target the second argument
+		((MEM)s.dst).exp.visit(this);
+		movStr = "str `s0, `d0";
+	    } else {
+		s.dst.visit(this);
+		Util.assert(visitRet != null, 
+			    "visitRet should not be null after visiting " + 
+			    s.dst);
+		movStr = "mov `d0, s0";
+	    }
             ExpValue dest = visitRet;
             if (s.src instanceof CONST) {
                 emitMoveConst(s, dest.temp(), ((CONST)s.src).value);
             } else {
-            s.src.visit(this);
-	    Util.assert(visitRet != null, 
-			"visitRet should not be null after visiting " + 
-			s.src);
-            ExpValue source = visitRet;
-            if (dest.isDouble()) {
-                emit(new Instr(inf, s, "mov `d0, `s0",
-                               new Temp[] { source.low() },
-                               new Temp[] { dest.low() }));
-                emit(new Instr(inf, s, "mov `d0, `s0",
-                               new Temp[] { source.high() },
-                               new Temp[] { dest.high() }));
-            } else {
-                emit(new Instr(inf, s, "mov `d0, `s0",
-                               new Temp[] { source.temp() },
-                               new Temp[] { dest.temp() }));
-            }
+		s.src.visit(this);
+		Util.assert(visitRet != null, 
+			    "visitRet should not be null after visiting " + 
+			    s.src);
+		ExpValue source = visitRet;
+		if (dest.isDouble()) {
+		    emit(new Instr(inf, s, movStr,
+				   new Temp[] { dest.low() },
+				   new Temp[] { source.low() }));
+		    emit(new Instr(inf, s, movStr,
+				   new Temp[] { dest.high() },
+				   new Temp[] { source.high() }));
+		} else {
+		    emit(new Instr(inf, s, movStr,
+				   new Temp[] { dest.temp() },
+				   new Temp[] { source.temp() }));
+		}
             }
             visitRet = null;
         }
-       
+	
         public void visit(RETURN s) {
                 s.retval.visit(this);
                 ExpValue retval = visitRet;
@@ -493,27 +503,29 @@ final class CodeGen {
             /* this returns whatever the last visitor set
              * visitRet to. */
         }
-
-        public void visit(MEM e) {
-	    /* MEM is handled differently depending on which child of
+	
+        public void visit(MEM e) { 
+	    /* 
+	       MEM is handled differently depending on which child of 
 	       the Exp it is:
 	       LeftHand Side --> Store
 	       RightHand Side --> Load
 	       The problem is that from the scope of this function, we
 	       don't know whether we are on the LHS or RHS...
-	       one way to handle this is to calcuate the memory
-	       address and then make the calling visit decide whether
-	       this was a load or a store.  That makes this visit
-	       function pretty much useless though, and may require
-	       using instanceof.   
 
-	       TODO: still need to add code to handle memory accesses,
-	       either here or in the other visit methods
+	       Solution:
+	       INVARIANT --  MEM is only directly visited on the RHS
+	                     of an instr.
+	       This way visit(MEM) knows to output a Load
 	    */
 	    e.exp.visit(this);
 	    ExpValue addr = visitRet;
+	    visitRet = new ExpValue(new Temp(tf));
+	    emit(new Instr(inf, e, "ldr `d0, `s0", 
+			   new Temp[] { visitRet.temp() },
+			   new Temp[] { addr.temp() }));
 	}
-
+	
         public void visit(NAME e) {
             ExpValue retval = new ExpValue(new Temp(tf));
             emitLabelRef(((NAME)e).label, e);
@@ -538,6 +550,7 @@ final class CodeGen {
 
         public void visit(UNOP e) {
             /* XXX */
+	    Util.assert(false, "visit(UNOP) not implemented");
         }
 
         private void emitMoveConst(HCodeElement s, Temp t, Number n) {
