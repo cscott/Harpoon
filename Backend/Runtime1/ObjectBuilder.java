@@ -31,7 +31,7 @@ import java.util.List;
  * <code>Runtime1</code> runtime.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.2 1999-10-20 07:05:57 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.3 1999-11-06 21:30:19 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -78,12 +78,12 @@ public class ObjectBuilder
 	List stmlist = new ArrayList(4);
 	// align to word boundary.
 	stmlist.add(new ALIGN(tf, null, 4));
-	// hash code.
-	stmlist.add(_DATA(tf, info.label()));
 	// label:
 	stmlist.add(new LABEL(tf, null, info.label(), exported));
 	// claz pointer
 	stmlist.add(_DATA(tf, nm.label(info.type())));
+	// hash code.
+	stmlist.add(_DATA(tf, info.label()));
 	// okay, done with header.
 	return Stm.toStm(stmlist);
     }

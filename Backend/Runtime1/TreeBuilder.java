@@ -56,7 +56,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.11 1999-11-02 17:26:35 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.12 1999-11-06 21:30:19 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -69,9 +69,8 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     final int OBJECT_HEADER_SIZE;
     // integer constant offsets:
     // layout of oobj
-    final int OBJ_GLOBAL_OFF;
-    final int OBJ_HASH_OFF;
     final int OBJ_CLAZ_OFF;
+    final int OBJ_HASH_OFF;
     final int OBJ_ALENGTH_OFF;
     final int OBJ_AZERO_OFF;
     final int OBJ_FZERO_OFF;
@@ -122,12 +121,11 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 
 	OBJECT_HEADER_SIZE = WORD_SIZE + 1 * POINTER_SIZE;
 	// layout of oobj
-	OBJ_GLOBAL_OFF  =  1 * WORD_SIZE;
-	OBJ_HASH_OFF    = -1 * WORD_SIZE;
 	OBJ_CLAZ_OFF    = 0 * POINTER_SIZE;
-	OBJ_ALENGTH_OFF = 1 * POINTER_SIZE;
-	OBJ_AZERO_OFF   = 1 * POINTER_SIZE + 1 * WORD_SIZE;
-	OBJ_FZERO_OFF   = 1 * POINTER_SIZE;
+	OBJ_HASH_OFF    = OBJ_CLAZ_OFF + 1 * POINTER_SIZE;
+	OBJ_FZERO_OFF   = OBJ_HASH_OFF + 1 * WORD_SIZE;
+	OBJ_ALENGTH_OFF = OBJ_HASH_OFF + 1 * WORD_SIZE;
+	OBJ_AZERO_OFF   = OBJ_ALENGTH_OFF + 1 * WORD_SIZE;
 	// layout of claz
 	CLAZ_INTERFACES_OFF = -1 * POINTER_SIZE;
 	CLAZ_CLAZINFO    = 0 * POINTER_SIZE;
@@ -158,15 +156,12 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	      new MOVE // allocate memory; put pointer in Tobj.
 	      (tf, source,
 	       new TEMP(tf, source, Type.POINTER, Tobj),
-	       new BINOP
-	       (tf, source, Type.POINTER, Bop.ADD,
-		as.memAlloc
-		(tf, source,
-		 new BINOP
-		 (tf, source, Type.POINTER, Bop.ADD,
-		  length,
-		  new CONST(tf, source, OBJECT_HEADER_SIZE))),
-		new CONST(tf, source, OBJ_GLOBAL_OFF))),
+	       as.memAlloc
+	       (tf, source,
+		new BINOP
+		(tf, source, Type.POINTER, Bop.ADD,
+		 length,
+		 new CONST(tf, source, OBJECT_HEADER_SIZE)))),
 	      new SEQ
 	      (tf, source,
 	       new MOVE // assign the new object a hashcode.
