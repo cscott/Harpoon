@@ -166,7 +166,7 @@ int equivalentroles(struct role *role1, struct role *role2) {
 }
 
 void assignhashcode(struct role * role) {
-  long int hashcode=hashstring(role->class);
+  int hashcode=hashstring(role->class);
 
   struct rolereferencelist * dr=role->dominatingroots;
   struct rolefieldlist * rfl=role->pointedtofl;
@@ -209,8 +209,12 @@ void assignhashcode(struct role * role) {
   role->hashcode=hashcode;
 }
 
-long int hashstring(char *strptr) {
-  long int hashcode=0;
+int rolehashcode(struct role * r) {
+  return r->hashcode;
+}
+
+int hashstring(char *strptr) {
+  int hashcode=0;
   int bitstoshift=0;
   if(strptr==NULL)
     return 0;

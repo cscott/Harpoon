@@ -9,6 +9,7 @@
 //#include <dmalloc.h>
 #include "CalculateDominators.h"
 #include "Role.h"
+#include "Method.h"
 
 static int programfd;
 #define bufsize 1000
@@ -39,6 +40,7 @@ void doanalysis() {
   heap.newreferences=NULL;
   heap.freelist=NULL;
   heap.freemethodlist=NULL;
+  heap.roletable=genallocatehashtable((int (*)(void *)) &rolehashcode, (int (*)(void *,void *)) &equivalentroles);
 
   while(1) {
     char *line=getline();

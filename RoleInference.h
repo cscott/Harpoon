@@ -4,6 +4,7 @@
 #include "ObjectSet.h"
 #include "ObjectPair.h"
 #include "Hashtable.h"
+#include "GenericHashtable.h"
 
 
 struct heap_object {
@@ -96,6 +97,9 @@ struct heap_state {
   struct referencelist *freelist;
   struct objectpair * K;
   struct objectset * N;
+
+  struct genhashtable *roletable;
+  struct genhashtable *methodtable;
 };
 
 struct identity_relation {

@@ -51,7 +51,7 @@ int genhashfunction(struct genhashtable *ht, void * key) {
   if (ht->hash_function==NULL)
     return ((long int)key) % gennumbins;
   else
-    return (*ht->hash_function)(key);
+    return ((*ht->hash_function)(key)) % gennumbins;
 }
 
 struct genhashtable * genallocatehashtable(int (*hash_function)(void *),int (*comp_function)(void *, void *)) {
@@ -90,4 +90,33 @@ void genfreekeyhashtable(struct genhashtable * ht) {
     }
   }
   free(ht);
+}
+
+struct geniterator * gengetiterator(struct genhashtable *ht) {
+  struct geniterator *gi=(struct geniterator *) calloc(1,sizeof(struct geniterator));
+  gi->ptr=ht->bins[0];
+  gi->binnumber=1;
+  gi->ht=ht;
+  return gi;
+}
+
+void * gennext(struct geniterator *it) {
+  int i=it->binnumber;
+  if (it->ptr!=NULL) {
+    struct genpointerlist * tmp=it->ptr;
+    it->ptr=tmp->next;
+    return tmp->src;
+  }
+  for(;i<gennumbins;i++) {
+    if (it->ht->bins[i]!=NULL) {
+      it->ptr=it->ht->bins[i]->next;
+      it->binnumber=i+1;
+      return it->ht->bins[i]->src;
+    }
+  }
+  return NULL;
+}
+
+void genfreeiterator(struct geniterator *it) {
+  free(it);
 }

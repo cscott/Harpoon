@@ -4,7 +4,7 @@
 #include "CalculateDominators.h"
 
 struct role {
-  long int hashcode;
+  int hashcode;
   char * class;
   struct rolereferencelist * dominatingroots;
   struct rolefieldlist * pointedtofl;
@@ -50,6 +50,8 @@ void insertrfl(struct role * role, struct rolefieldlist * domroots);
 void insertral(struct role * role, struct rolearraylist * domroots);
 int fieldcompare(struct rolefieldlist *field1, struct rolefieldlist *field2);
 int compareidentity(struct identity_relation *ir1, struct identity_relation *ir2);
-
-long int hashstring(char *strptr);
+int equivalentroles(struct role *role1, struct role *role2);
+void assignhashcode(struct role * role);
+int rolehashcode(struct role *role);
+int hashstring(char *strptr);
 #endif
