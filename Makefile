@@ -547,7 +547,7 @@ jars: clean doc movie/tank.jar
 	@$(IDLCC) -d . $(ICHANNEL_SOURCES)
 	@$(JCC) -d . -g $(JCHANNEL_SOURCES)
 	@$(JAR) cfm ATR-ZEN.jar src/manifest/ATR-ZEN.jar.MF $(JDIRS) $(ZDIRS)
-	@rm -rf $(EVENTDIRS) *.idl
+	@rm -rf $(EVENTDIRS) *.idl $(JDIRS) $(ZDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > ATR-ZEN.jar.TIMESTAMP
 
 
