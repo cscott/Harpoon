@@ -38,6 +38,8 @@ pldi02.dvi: Figures/standardAlignment.eps Figures/byteAlignment.eps
 pldi02.dvi: Figures/bitAlignment.eps
 pldi02.dvi: Figures/spec-space.eps Figures/spaceopt.eps
 
+oopsla02.dvi:	Figures/THlat1b.tex Figures/THlat6b.tex \
+	Figures/spaceopt.eps Figures/spaceopt-bit.eps Figures/spec-space.eps
 
 # thesis figure dependencies
 export THESIS_FIGURES=\
