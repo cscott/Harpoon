@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
+import harpoon.Analysis.QuadSSA.ClassHierarchy;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
@@ -14,7 +16,7 @@ import harpoon.Util.Util;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.12.2.6 1999-02-25 21:13:35 cananian Exp $
+ * @version $Id: Graph.java,v 1.12.2.7 1999-08-02 19:01:34 cananian Exp $
  */
 
 public abstract class Graph extends harpoon.IR.Registration {
@@ -53,7 +55,10 @@ public abstract class Graph extends harpoon.IR.Registration {
 	    harpoon.Util.Graph.printCFG(hc,out,title);
 	else if (args[n].equals("dom"))
 	    harpoon.Util.Graph.printDomTree(hc,out,title);
-	else harpoon.Util.Graph.printDomTree(true,hc,out,title);
+	else if (args[n].equals("post"))
+	    harpoon.Util.Graph.printDomTree(true,hc,out,title);
+	else if (args[n].startsWith("hier"))
+	    harpoon.Util.Graph.printClassHierarchy(out, m, new ClassHierarchy(m, new CachingCodeFactory(hcf)));
     }
 
 }

@@ -1,9 +1,12 @@
 // Graph.java, created Thu Oct 15 20:22:46 1998 by marinov
 package harpoon.Util;
 
+import harpoon.Analysis.QuadSSA.ClassHierarchy;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HMethod;
 import harpoon.Analysis.DomTree;
 import harpoon.Analysis.DomFrontier;
 import harpoon.IR.Properties.HasEdges;
@@ -12,7 +15,7 @@ import java.util.Enumeration;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.2.2.4 1999-05-19 06:45:20 andyb Exp $
+ * @version $Id: Graph.java,v 1.2.2.5 1999-08-02 19:01:43 cananian Exp $
  */
 
 public abstract class Graph  {
@@ -87,6 +90,48 @@ public abstract class Graph  {
 				      sb.toString()));
 	}
 	commonFooter(pw);
+    }
+
+    public static final void printClassHierarchy(java.io.PrintWriter pw, HMethod root, ClassHierarchy ch) {
+	pw.println("graph: {");
+	pw.println(" title: \"Class Hierarchy: "+root+"\"");
+	pw.println(" x: 30");
+	pw.println(" y: 30");
+	pw.println(" height: 800");
+	pw.println(" width: 500");
+	pw.println(" stretch: 60");
+	pw.println(" shrink: 100");
+	pw.println(" display_edge_labels: no");
+	pw.println(" dirty_edge_labels: no");
+	pw.println(" near_edges: no");
+	pw.println(" orientation: left_to_right");
+	pw.println(" layoutalgorithm: minbackward");
+	pw.println(" port_sharing: no");
+	pw.println(" arrowmode: free");
+	for (Enumeration e = ch.classes(); e.hasMoreElements(); ) {
+	    HClass c = (HClass) e.nextElement();
+	    pw.print(" node: { ");
+	    pw.print("title:\""+c.getName()+"\" ");
+	    pw.print("label:\""+c.getName()+ "\" ");
+	    pw.print("shape: box ");
+	    pw.println("}");
+	}	
+	for (Enumeration e = ch.classes(); e.hasMoreElements(); ) {
+	    HClass c = (HClass) e.nextElement();
+	    HClass sc= c.getSuperclass();
+	    if (sc!=null)
+		pw.println(" edge: { " +
+			   "sourcename: \""+sc.getName()+"\" " +
+			   "targetname: \""+ c.getName()+"\" " +
+			   "}");
+	    HClass[] in=c.getInterfaces();
+	    for (int i=0; i<in.length; i++)
+		pw.println(" edge: { " +
+			   "sourcename: \""+in[i].getName()+"\" " +
+			   "targetname: \""+ c.getName()+"\" " +
+			   "}");
+	}
+	pw.println("}");
     }
 
     /** Print common header of (vcg format) graphs for CFG and (Post)DomTree. */
