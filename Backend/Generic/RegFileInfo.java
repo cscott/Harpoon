@@ -58,7 +58,7 @@ import java.util.Iterator;
     maintained by the hardcoded references.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.16 2000-01-26 04:47:11 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.17 2000-01-26 04:51:33 pnkfelix Exp $ */
 public abstract class RegFileInfo {
     
     /** Common super class for <code>StackOffsetLoc</code> and 
@@ -100,9 +100,9 @@ public abstract class RegFileInfo {
 		 returned may not map directly to this register's
 		 position in the register file (for example, r8 may
 		 have an index of "0").  Each register for a given
-		 architecture will have a different index.  The index
-		 returned is guaranteed to fall between 
-		 0 and RegFileInfo.this.regIndexRange() 
+		 architecture will have a different index. 
+		 The index is bounded as follows:
+		 0 &lt;= index &lt; <code>RegFileInfo.this.regIndexRange()</code>. 
 	*/
 	int regIndex();
     }
