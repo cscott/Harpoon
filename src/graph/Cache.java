@@ -23,7 +23,7 @@ public class Cache extends Node {
 
     private ImageData[] ids;
     private int lastID=0;
-    private int nextIDToSenc = 0;
+    private int nextIDToSend = 0;
 
     private boolean saveCopies = false;
 
@@ -116,17 +116,17 @@ public class Cache extends Node {
 	    }
 	    break;
 	}
-// 	case Command.GET_NEXT_IMAGE: {
-//	    ImageData retID = ids[nextIDToSend];
-//	    nextIDToSend++;
-//	    if (nextIDToSend >= ids.length)
-//		nextIDToSend = 0;
-//	    if (retID != null) {
-//		right.process(retID);
-//	    }
-//	    break;
-//	}
-	case Command.NONE: {
+ 	case Command.GET_NEXT_IMAGE: {
+	    ImageData retID = ids[nextIDToSend];
+	    nextIDToSend++;
+	    if (nextIDToSend >= ids.length)
+		nextIDToSend = 0;
+	    if (retID != null) {
+		getRight().process(retID);
+	    }
+	    break;
+	}
+	case Command.NONE: { }
 	default: {
 	    if (id!=null) {
 		if (saveCopies) {
