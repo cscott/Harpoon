@@ -17,12 +17,12 @@ import java.util.Set;
  * the <code>ESEQ</code>.<p>
  * <code>ESEQ</code>s are <code>PreciselyTyped</code> because the enclosed
  * <code>Exp</code> may be <code>PreciselyTyped</code>.  In contexts such
- * as <code>MOVE(ESEQ(stm, MEM<small>(e1)), e2)</code>, the <code>ESEQ</code>
- * clearly has the same small type as the <code>MEM</code>.
+ * as <code>MOVE(ESEQ(stm, MEM&lt;small&gt;(e1)), e2)</code>, the
+ * <code>ESEQ</code> clearly has the same small type as the <code>MEM</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.16 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.17 1999-11-01 01:56:27 cananian Exp $
  */
 public class ESEQ extends Exp implements PreciselyTyped {
     /** The statement to evaluate for side-effects. */
