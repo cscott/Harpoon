@@ -156,7 +156,7 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray_00024_00024ini
 (JNIEnv *env, jobject memoryArea, jobject realtimeThread,
  jclass componentClass, jint length) {
   printf("WARNING: Initializer transform is broken - please fix!\n");
-  Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2I(env, memoryArea, realtimeThread, componentClass, length);
+  return Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2I(env, memoryArea, realtimeThread, componentClass, length);
 }
 
 /*
