@@ -2,6 +2,7 @@
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.*;
+import harpoon.Util.Util;
 
 import java.io.PrintWriter;
 import java.util.Hashtable;
@@ -11,7 +12,7 @@ import java.util.Hashtable;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.1.2.1 1998-12-18 04:49:59 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.2 1998-12-19 20:13:30 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
@@ -129,18 +130,26 @@ abstract class Print  {
     /** Pretty-print a string and an optional label at the proper 
      *  indentation.*/
     static void indent(PrintWriter pw, HCodeElement src, String l, String s) {
-	StringBuffer rc;
+	StringBuffer sb = new StringBuffer();
 	if (src!=null) {
-	    rc = new StringBuffer(":" + src.getLineNumber());
-	    rc.insert(0, src.getSourceFile().substring(0, 8-rc.length()));
-	} else rc = new StringBuffer("       ");
+	    sb.append(":" + src.getLineNumber());
+	    String sf = src.getSourceFile();
+	    int n = fieldW1 - sb.length();
+	    n = (n<0)?0:(n>sf.length())?sf.length():n;
+	    sb.insert(0, sf.substring(0,n));
+	}
+	while (sb.length() <= fieldW1) sb.append(' ');
 
-	StringBuffer sb = new StringBuffer(l);
-	while (sb.length() < 5) sb.append(' ');
-	sb.append(s);
-	rc.append(' '); rc.append(sb);
-	pw.println(rc.toString());
+	if (l!=null) sb.append(l);
+	while (sb.length() < (1+fieldW1+fieldW2)) sb.append(' ');
+	if (s!=null) sb.append(s);
+
+	pw.println(sb.toString());
     }
+    /** Width of the first (source file/line number) output field. */
+    private static final int fieldW1 = 8;
+    /** Width of the second (label) output field. */
+    private static final int fieldW2 = 5;
 
     // Label class.
     static class Label {
