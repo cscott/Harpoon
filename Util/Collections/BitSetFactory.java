@@ -29,7 +29,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.6 2000-02-02 00:30:50 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.7 2000-02-02 01:32:15 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -116,11 +116,11 @@ public class BitSetFactory extends SetFactory {
 	}
 
 	public boolean add(Object o) {
-	    int ind = indexer.getID(o);
-	    Util.assert(ind != -1, 
+	    Util.assert(indexer.hasIndex(o), 
 			"Attempted to add an object "+
 			"that was not part of the "+
 			"original universe of values.");
+	    int ind = indexer.getID(o);
 	    Util.assert(ind < bs.size());
 	    boolean alreadySet = this.bs.get(ind);
 	    if (alreadySet) {
@@ -151,8 +151,8 @@ public class BitSetFactory extends SetFactory {
 	}
 	
 	public boolean contains(Object o) {
-	    int i = indexer.getID(o);
-	    if (i >= 0) {
+	    if (indexer.hasIndex(o)) {
+		int i = indexer.getID(o);
 		return this.bs.get(i);
 	    } else {
 		// not part of original universe, therefore cannot be
@@ -210,11 +210,11 @@ public class BitSetFactory extends SetFactory {
 	}
 	
 	public boolean remove(Object o) {
-	    int i = indexer.getID(o);
-	    if (i == -1) {
+	    if (indexer.hasIndex(o)) {
 		// o is not member of universe, therefore cannot be in set.
 		return false;
 	    } else {
+		int i = indexer.getID(o);
 		boolean alreadySet = bs.get(i);
 		if (alreadySet) {
 		    this.bs.clear(i);
