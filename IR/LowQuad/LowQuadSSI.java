@@ -31,7 +31,7 @@ import java.util.Map;
  * representation in SSI form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSI.java,v 1.4 2002-04-10 03:04:57 cananian Exp $
+ * @version $Id: LowQuadSSI.java,v 1.5 2003-03-10 22:19:16 cananian Exp $
  */
 public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     /** The name of this code view. */
@@ -93,7 +93,7 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
      * quad graph.
      * <p><b>WARNING: does not preserve derivation or allocation info.</b>
      */
-    public HCodeAndMaps clone(HMethod newMethod) {
+    public HCodeAndMaps<Quad> clone(HMethod newMethod) {
 	return cloneHelper(new LowQuadSSI(newMethod, null));
     }
 

@@ -14,7 +14,7 @@ import harpoon.ClassFile.HMethod;
  * in SSA form.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: ResilientNoSSA.java,v 1.1 2003-02-19 20:08:07 kkz Exp $ */
+ * @version $Id: ResilientNoSSA.java,v 1.2 2003-03-10 22:19:25 cananian Exp $ */
 public class ResilientNoSSA extends Code {
         /** The name of this code view. */
     public static final String codename = "resilient-no-ssa";
@@ -34,7 +34,7 @@ public class ResilientNoSSA extends Code {
     }
     /** Clone this code representation.  The clone has its own copy of
      *  the quad graph. */
-    public HCodeAndMaps clone(HMethod newMethod) {
+    public HCodeAndMaps<Quad> clone(HMethod newMethod) {
 	return cloneHelper(new ResilientNoSSA(newMethod, null));
     }
     /**

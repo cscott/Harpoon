@@ -17,7 +17,7 @@ import harpoon.IR.Quads.QuadSSI;
  * representation in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LowQuadSSA.java,v 1.2 2002-02-25 21:04:40 cananian Exp $
+ * @version $Id: LowQuadSSA.java,v 1.3 2003-03-10 22:19:15 cananian Exp $
  */
 public class LowQuadSSA extends Code /*which extends harpoon.IR.Quads.Code*/ {
     /** The name of this code view. */
@@ -48,7 +48,7 @@ public class LowQuadSSA extends Code /*which extends harpoon.IR.Quads.Code*/ {
      * quad graph.
      * <p><b>WARNING: does not preserve derivation or allocation info.</b>
      */
-    public HCodeAndMaps clone(HMethod newMethod) {
+    public HCodeAndMaps<Quad> clone(HMethod newMethod) {
 	return cloneHelper(new LowQuadSSA(newMethod, null));
     }
 

@@ -22,7 +22,7 @@ import java.util.Iterator;
  * shared methods for the various codeviews using <code>LowQuad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.2 2002-02-25 21:04:35 cananian Exp $
+ * @version $Id: Code.java,v 1.3 2003-03-10 22:19:13 cananian Exp $
  */
 public abstract class Code extends harpoon.IR.Quads.Code 
 {
@@ -46,30 +46,30 @@ public abstract class Code extends harpoon.IR.Quads.Code
     }
 
     // Provide access to derivation information.
-    private Derivation m_derivation = null;
+    private Derivation<Quad> m_derivation = null;
     /** Return a <code>Derivation</code> object for this
      *  <code>LowQuad.Code</code>. */
-    public Derivation getDerivation() { return m_derivation; }
+    public Derivation<Quad> getDerivation() { return m_derivation; }
     /** Allow subclasses to initialize the <code>Derivation</code> for
      *  this <code>LowQuad.Code</code>. */
-    protected void setDerivation(Derivation deriv) { m_derivation = deriv; }
+    protected void setDerivation(Derivation<Quad> deriv){ m_derivation=deriv; }
 
     // clone derivation information, too.
-    protected HCodeAndMaps cloneHelper(harpoon.IR.Quads.Code _this,
-				       harpoon.IR.Quads.Code qc) {
+    protected HCodeAndMaps<Quad> cloneHelper(harpoon.IR.Quads.Code _this,
+					     harpoon.IR.Quads.Code qc) {
 	final HCodeAndMaps hcam = super.cloneHelper(_this, qc);
 	if (_this.getDerivation()!=null)
 	    ((Code)qc).setDerivation(cloneDerivation(hcam));
 	return hcam;
     }
-    private static Derivation cloneDerivation(HCodeAndMaps hcam) {
+    private static Derivation<Quad> cloneDerivation(HCodeAndMaps<Quad> hcam) {
 	Code ocode = (Code) hcam.ancestorHCode();
-	Derivation oderiv = ocode.getDerivation();
-	DerivationMap nderiv = new DerivationMap();
-	for (Iterator it=ocode.getElementsI(); it.hasNext(); ) {
-	    HCodeElement ohce = (HCodeElement) it.next();
-	    HCodeElement nhce = (HCodeElement) hcam.elementMap().get(ohce);
-	    nderiv.transfer(nhce, ohce, ((Quad) ohce).def(),
+	Derivation<Quad> oderiv = ocode.getDerivation();
+	DerivationMap<Quad> nderiv = new DerivationMap<Quad>();
+	for (Iterator<Quad> it=ocode.getElementsI(); it.hasNext(); ) {
+	    Quad ohce = it.next();
+	    Quad nhce = hcam.elementMap().get(ohce);
+	    nderiv.transfer(nhce, ohce, ohce.def(),
 			    hcam.tempMap(), oderiv);
 	}
 	return nderiv;

@@ -11,6 +11,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Default;
+import harpoon.Util.Default.PairList;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
@@ -21,12 +22,14 @@ import java.util.Map;
  * common <code>Derivation</code> functionality.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationMap.java,v 1.4 2002-04-10 03:04:57 cananian Exp $
+ * @version $Id: DerivationMap.java,v 1.5 2003-03-10 22:19:14 cananian Exp $
  * @see harpoon.IR.Tree.DerivationGenerator
  */
-public class DerivationMap implements Derivation {
+public class DerivationMap<HCE extends HCodeElement>
+    implements Derivation<HCE> {
     /** private type and derivation map */
-    private Map dtM = new HashMap();
+    private Map<PairList<HCE,Temp>,TypeAndDerivation> dtM =
+	new HashMap<PairList<HCE,Temp>,TypeAndDerivation>();
     
     /** Creates a <code>DerivationMap</code>. */
     public DerivationMap() { }
@@ -54,11 +57,11 @@ public class DerivationMap implements Derivation {
 	}
     }
     // public interface
-    public HClass typeMap(HCodeElement hce, Temp t)
+    public HClass typeMap(HCE hce, Temp t)
 	throws TypeNotKnownException {
 	return getDT(hce, t).type;
     }
-    public DList  derivation(HCodeElement hce, Temp t)
+    public DList  derivation(HCE hce, Temp t)
 	throws TypeNotKnownException {
 	return getDT(hce, t).derivation;
     }
@@ -68,7 +71,7 @@ public class DerivationMap implements Derivation {
      *  defined at the given <code>HCodeElement</code> <code>hce</code>
      *  to the given <code>HClass</code> <code>type</code> to this
      *  <code>DerivationMap</code>. */
-    public void putType(HCodeElement hce, Temp t, HClass type) {
+    public void putType(HCE hce, Temp t, HClass type) {
 	assert hce!=null && t!=null && type!=null;
 	putDT(hce, t, new TypeAndDerivation(type));
     }
@@ -76,22 +79,23 @@ public class DerivationMap implements Derivation {
      *  defined at the given <code>HCodeElement</code> <code>hce</code>
      *  to the given <code>Derivation.DList</code> <code>derivation</code>
      *  to this <code>DerivationMap</code>. */
-    public void putDerivation(HCodeElement hce, Temp t, DList derivation) {
+    public void putDerivation(HCE hce, Temp t, DList derivation) {
 	assert hce!=null && t!=null && derivation!=null;
 	putDT(hce, t, new TypeAndDerivation(derivation));
     }
     /** Transfer typing from one place to another. */
-    public void update(HCodeElement old_hce, Temp old_t,
-		       HCodeElement new_hce, Temp new_t) {
+    public void update(HCE old_hce, Temp old_t,
+		       HCE new_hce, Temp new_t) {
 	TypeAndDerivation tad = getDT(old_hce, old_t);
 	removeDT(old_hce, old_t);
 	putDT(new_hce, new_t, tad);
     }
     /** Transfer typings from one <code>Derivation</code> to another, using
      *  an appropriate <code>TempMap</code>. */
-    public void transfer(HCodeElement new_hce,
-			 HCodeElement old_hce, Temp[] old_defs,
-			 TempMap old2new, Derivation old_deriv) {
+    public <HCE2 extends HCodeElement> void transfer
+			 (HCE new_hce,
+			  HCE2 old_hce, Temp[] old_defs,
+			  TempMap old2new, Derivation<HCE2> old_deriv) {
 	for (int i=0; i<old_defs.length; i++) {
 	    Temp old_def = old_defs[i];
 	    Temp new_def = old2new==null ? old_def : old2new.tempMap(old_def);
@@ -107,27 +111,27 @@ public class DerivationMap implements Derivation {
     /** Remove all type and derivation mappings for the given
      *  <code>Temp</code> defined at the given <code>HCodeElement</code>.
      *  Used for memory management purposes. */
-    public void remove(HCodeElement hce, Temp t) {
+    public void remove(HCE hce, Temp t) {
 	assert hce!=null && t!=null;
 	removeDT(hce, t);
     }
 
     // private interface
-    private TypeAndDerivation getDT(HCodeElement hce, Temp t)
+    private TypeAndDerivation getDT(HCE hce, Temp t)
 	throws TypeNotKnownException {
-	List pair = Default.pair(hce, t);
+	PairList<HCE,Temp> pair = Default.pair(hce, t);
 	if (!dtM.containsKey(pair))
 	    throw new TypeNotKnownException(hce, t);
-	return (TypeAndDerivation) dtM.get(pair);
+	return dtM.get(pair);
     }
-    private void putDT(HCodeElement hce, Temp t, TypeAndDerivation tad) {
-	List pair = Default.pair(hce, t);
+    private void putDT(HCE hce, Temp t, TypeAndDerivation tad) {
+	PairList<HCE,Temp> pair = Default.pair(hce, t);
 	assert !dtM.containsKey(pair);
 	assert tad!=null;
 	dtM.put(pair, tad);
     }
-    private void removeDT(HCodeElement hce, Temp t) {
-	List pair = Default.pair(hce, t);
+    private void removeDT(HCE hce, Temp t) {
+	PairList<HCE,Temp> pair = Default.pair(hce, t);
 	dtM.remove(pair);
     }
 }
