@@ -61,9 +61,32 @@ union _jmemberID *FNI_GetMemberID(jclass clazz,
   struct FNI_classinfo *info = FNI_GetClassInfo(clazz);
   struct name_and_sig ns = { name, sig };
   union _jmemberID * result;
-  return (info==NULL) ? NULL :
+  result = (info==NULL) ? NULL :
     bsearch(&ns, info->memberinfo, info->memberend - info->memberinfo,
 	    sizeof(union _jmemberID), name2member_compare);
+#ifdef WITH_MZF_SUPPORT
+  /* yuck, MZF support 'widens' field types and method parameter and return
+   * value types, to support the widest 'split' class.  If we didn't get
+   * a match doing things the 'right' way, hack in an attempt to match
+   * the pre-splitting prefix sig. */
+  if (result==NULL && info!=NULL) {
+    union _jmemberID *midp; char *cp1, *cp2;
+    for (midp=info->memberinfo; midp<info->memberend; midp++) {
+      if (strcmp(midp->m.name, name)!=0) continue;
+      // weird string-compare that skips any substring from
+      // $ (inclusive) to ; (exclusive)
+      for (cp1=midp->m.desc, cp2=sig; *cp1 && *cp2 ; cp1++, cp2++) {
+	if (cp1[0]=='$' && cp1[1]=='$') while (*cp1!=';') cp1++;
+	if (cp2[0]=='$' && cp2[1]=='$') while (*cp2!=';') cp2++;
+	if (*cp1!=*cp2) break;
+      }
+      if (*cp1!=*cp2) continue;
+      result = midp;
+      break;
+    }
+  }
+#endif
+  return result;
 }
 
 #define GETID(_name, rtype, extype) \

@@ -64,6 +64,7 @@ jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, struct claz *claz,
   memset(masked, 0, length);
 #ifdef WITH_CLAZ_SHRINK
   masked->claz_index = claz->claz_index;
+  assert(claz->claz_index < (1<<(8*WITH_CLAZ_SHRINK)));
 #else
   masked->claz = claz;
 #endif
