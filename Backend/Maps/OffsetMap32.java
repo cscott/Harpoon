@@ -20,7 +20,7 @@ import java.util.StringTokenizer;
  * specializing them for 32-bit architectures.
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.14 1999-08-10 18:57:24 duncan Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.15 1999-08-10 20:29:09 duncan Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -82,7 +82,7 @@ public class OffsetMap32 extends OffsetMap
     /** Returns the label corresponding to the specified HClass */
     public Label label(HClass hc) { 
 	if (!m_labels.containsKey(hc)) {
-	    m_labels.put(hc, new Label("_CLASS_" + hc.toString()));
+	    m_labels.put(hc, new Label("_CLASS_" + hc.getName()));
 	}
 	return (Label)m_labels.get(hc);
     }
