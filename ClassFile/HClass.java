@@ -24,7 +24,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.7 1998-08-01 08:54:58 cananian Exp $
+ * @version $Id: HClass.java,v 1.8 1998-08-01 08:59:14 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -568,6 +568,18 @@ public class HClass {
   }
   private HConstructor[] constructors = null;
 
+  /**
+   * Returns the class initializer method, if there is one; otherwise
+   * <code>null</code>.
+   * @see "The Java Virtual Machine Specification, section 3.8"
+   */
+  public HMethod getClassInitializer() {
+    try {
+      return getDeclaredMethod("<clinit>", new HClass[0]);
+    } catch (NoSuchMethodException e) {
+      return null;
+    }
+  }
   /**
    * Returns the Java language modifiers for this class or interface,
    * encoded in an integer.  The modifiers consist of the Java Virtual
