@@ -5,10 +5,12 @@ cp /mit/cristic/Public/Repair/Debug2/Tool/* Experiment/Second
 
 #send email
 echo "To: cristic@mit.edu" >email.txt
+echo "From: Experiment <"$USER"@MIT.EDU>"
 echo "Subject: " $NAME "(tool) copied program 2" >>email.txt
 
 echo >>email.txt
 echo "Participant: " $NAME >>email.txt
+echo "User name: " $USER >>email.txt
 echo "Population: 2 (tool)" >>email.txt
 echo "Action: copied program 2" >>email.txt
 echo "Time: \c"  >>email.txt

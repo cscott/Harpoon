@@ -1,10 +1,12 @@
 cd $HOME
 #send email
 echo "To: cristic@mit.edu" >email.txt
+echo "From: Experiment <"$USER"@MIT.EDU>"
 echo "Subject: " $NAME "(tool) submitted program 2" >>email.txt
 
 echo >>email.txt
 echo "Participant: " $NAME >>email.txt
+echo "User name: " $USER >>email.txt
 echo "Population: 2 (tool)" >>email.txt
 echo "Action: submitted program 2" >>email.txt
 echo "Time: \c"  >>email.txt
