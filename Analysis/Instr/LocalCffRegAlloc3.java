@@ -52,7 +52,7 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc3.java,v 1.1.2.4 2000-01-13 17:54:17 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc3.java,v 1.1.2.5 2000-01-13 19:01:14 pnkfelix Exp $
  */
 public class LocalCffRegAlloc3 extends RegAlloc {
     
@@ -143,7 +143,7 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 
 		    // FSK: the benefits of this code block are
 		    // dubious at best, so i'm keeping it out for now 
-		    if (true) {
+		    if (false) {
 			// regfile has mappings to dead temps; such
 			// registers won't be suggested unless we spill
 			// them here...

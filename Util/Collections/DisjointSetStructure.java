@@ -32,7 +32,7 @@ import java.util.*;
  * a view of <code>s</code> of type 'Set[ T ]'.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: DisjointSetStructure.java,v 1.1.2.1 2000-01-13 17:54:34 pnkfelix Exp $
+ * @version $Id: DisjointSetStructure.java,v 1.1.2.2 2000-01-13 19:01:19 pnkfelix Exp $
  */
 public abstract class DisjointSetStructure { 
     // note: having this extend SetFactory doesn't make sense any
@@ -43,9 +43,12 @@ public abstract class DisjointSetStructure {
     /** <code>Elem</code> is a wrapper around an object that is an
 	element of this.
      */
-    protected abstract class Elem { 
+    public abstract class Elem { 
 	protected final Object member;
 	protected Elem(Object m) { this.member = m; }
+	public String toString() {
+	    return "Elem[ member:"+member+" ]";
+	}
     } 
     
     /** Returns a <code>java.util.Set</code> view of the
