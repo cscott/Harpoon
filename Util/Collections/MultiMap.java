@@ -102,7 +102,7 @@ import java.util.HashSet;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.13 2000-05-23 17:25:55 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.14 2000-05-31 18:04:59 pnkfelix Exp $
  */
 public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 
@@ -204,7 +204,7 @@ public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 	<code>key</code>.  Modifications to the returned
 	<code>Collection</code> affect <code>this</code> as well.  If 
 	there are no Values currently associated with
-	<code>key</code>, constructs a new, mutable, empty
+	<code>key</code>, constructs a new, potentially mutable, empty
 	<code>Collection</code> and returns it.
 	(<code>MultiMap</code> specific operation). 
     */

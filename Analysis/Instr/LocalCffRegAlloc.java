@@ -21,6 +21,7 @@ import harpoon.Temp.Label;
 
 import harpoon.Util.CombineIterator;
 import harpoon.Util.CloneableIterator;
+import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.LinearMap;
 import harpoon.Util.Util;
 import harpoon.Util.FilterIterator;
@@ -63,7 +64,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.78 2000-05-26 00:26:25 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.79 2000-05-31 18:04:47 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -74,89 +75,8 @@ public class LocalCffRegAlloc extends RegAlloc {
     public LocalCffRegAlloc(Code code) {
         super(code);
     }
-
-    private static String toAssem(Instr i, Code code) {
-	// SpillLoads and SpillStores do not put the appropriate
-	// suffixes on Temps (because they are just
-	// placeholders for actual load and store
-	// instructions) so we don't attempt to convert them
-	// to assembly form
-	if (i instanceof SpillLoad ||
-	    i instanceof SpillStore) {
-	    return i.toString();
-	} else {
-	    return code.toAssem(i);
-	}
-    }
-
-
-    private String printInfo(BasicBlock block, Instr i, 
-			     Temp t, Code code) {
-	return printInfo(block, i, t, code, true);
-    }
-
-    private String printInfo(BasicBlock block, Instr i, 
-			     Temp t, Code code, boolean auxSpillCode) {
-	java.io.StringWriter swout = new java.io.StringWriter();
-	java.io.PrintWriter pwout = new java.io.PrintWriter(swout);
-	// code.print(pwout);
-
-	// StringBuffer sb = new StringBuffer(swout.toString());
-	StringBuffer sb = new StringBuffer();
-
-	// inserting the loads and stores may make this routine
-	// O(n^2), which could be bad...
-
-	List blockL = block.statements();
-	Iterator itr = blockL.iterator(); 
-	while(itr.hasNext()) {
-	    Instr i2=(Instr)itr.next();
-
-	    if (auxSpillCode) {
-		// insert loads...
-		Iterator loads = spillLoads.iterator();
-		while(loads.hasNext()) {
-		    Instr s = (Instr) loads.next();
-		    Instr loc = (Instr) loads.next();
-		    if (loc == i2) {
-			sb.append(s+"\n");
-		    }
-		}
-	    }
-
-	    // put actual instr in
-	    sb.append(toAssem(i2, code)+
-		      " \t { " + i2 + 
-		      " }");
-	    
-	    // if instr is scheduled for removal, make a note of that
-	    // as well
-	    if (instrsToRemove.contains(i2)) sb.append("\t* R *");
-	    
-	    sb.append("\n");
-
-	    if (auxSpillCode) {
-		// insert stores... 
-		Iterator stores = spillStores.iterator();
-		while(stores.hasNext()) {
-		    Instr s = (Instr) stores.next();
-		    Instr loc = (Instr) stores.next();
-		    if (loc == i2) {
-			sb.append(s+"\n");
-		    }
-		}
-	    }
-	}
-	
-	return "\n"+
-	    sb.toString() + 
-	    "temp: "+t + "\n"+
-	    "instr: "+ i + "\n\n";
-
-    }
     
     final List instrsToRemove = new java.util.LinkedList();
-
     
     // When writing spillCode insertion routines, be sure to check
     // that the method of insertion is correct given the control flow
@@ -174,31 +94,29 @@ public class LocalCffRegAlloc extends RegAlloc {
     // FSK: FOR TEMPORARY DEBUGGING USE *ONLY*; REMOVE ASAP!
     // Maps first NON-InstrMEM elem of a BasicBlock <bb> to the
     // preassignMap for <bb>  
-	final Map bbToPreassignMap = new HashMap();
-	Map getPreassignFor(BasicBlock bb) {
+    final Map bbToPreassignMap = new HashMap();
+    Map getPreassignFor(BasicBlock bb) {
 	    return (Map) bbToPreassignMap.get(getFirstNonInstrMEM(bb));
 	}
-	void putPreassign(BasicBlock bb, Map preassign) {
+    void putPreassign(BasicBlock bb, Map preassign) {
 	    bbToPreassignMap.put(getFirstNonInstrMEM(bb), preassign);
+    }
+    Instr getFirstNonInstrMEM(BasicBlock bb) {
+	Iterator instrs = bb.statements().iterator();
+	while(instrs.hasNext()) {
+	    Instr i = (Instr) instrs.next();
+	    if ( ! ( i instanceof InstrMEM )  ){
+		return i;
+	    } 
 	}
-        Instr getFirstNonInstrMEM(BasicBlock bb) {
-	    Iterator instrs = bb.statements().iterator();
-	    while(instrs.hasNext()) {
-		Instr i = (Instr) instrs.next();
-		if ( ! ( i instanceof InstrMEM )  ){
-		    return i;
-		} 
-	    }
-
-	    Util.assert(false, 
-			"should never get here"+
-			" (except perhaps if we"+
-			" encounter empty bb's (!!) )");
-	    return null;
-	}
+	
+	Util.assert(false, 
+		    "should never get here"+
+		    " (except perhaps if we"+
+		    " encounter empty bb's (!!) )");
+	return null;
+    }
    
-
-
     protected void generateRegAssignment() {
 	LiveTemps liveTemps = doLVA(bbFact);
 	Iterator blocks = bbFact.blockSet().iterator();
@@ -251,10 +169,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    while(blocks.hasNext()) {
 		BasicBlock b = (BasicBlock) blocks.next();
 		Set liveOnExit = liveTemps.getLiveOnExit(b);
+		// System.out.println("preassign for "+b+" : "+getPreassignFor(b));
+		// System.out.println();
 		verify(b, liveOnExit, buildTempSets(b));
 	    }	
 	}
 
+	// InstrMOVEs not removed until AFTER verification...
 	Iterator remove = instrsToRemove.iterator();
 	while(remove.hasNext()) {
 	    Instr ir = (Instr) remove.next();
@@ -303,25 +224,47 @@ public class LocalCffRegAlloc extends RegAlloc {
 	RegFile regfile = new RegFile();
 	final BasicBlock block;
 	EqTempSets tempSets;
+	private Instr curr;
+
 	Verify(BasicBlock b, EqTempSets eqts) { 
 	    this.block = b; 
 	    tempSets = eqts;
 	}
 
+	/** Gets the assignment for `use' out of `regfile'.  Note that
+	    in some cases, `use' is not directly mapped in the
+	    `regfile', but rather another temp that is in the same
+	    EqTempSet as `use' is mapped in the `regfile'.
+	*/
+	List getAssignment(Temp use) {
+	    List regs = regfile.getAssignment(use);
+	  
+	    if (regs == null) { // search for alternate
+		Iterator temps = regfile.tempSet().iterator();
+		while(temps.hasNext()) {
+		    Temp t = (Temp) temps.next();
+		    if (tempSets.getRep(t) == tempSets.getRep(use)) {
+			regs = regfile.getAssignment(t);
+			break;
+		    }
+		}
+	    }
+	    
+	    Util.assert
+		(regs != null, 
+		 lazyInfo("no reg assignment",block,curr,use,code,false));
+	    return regs;
+	}
+
 	public void visit(final Instr i) {
+	    curr = i;
 	    visit(i, false);
 	}
 
 	public void visit(final InstrMOVE i) {
+	    curr = i;
 	    if (instrsToRemove.contains(i)) {
-		List regs = regfile.getAssignment(i.use()[0]);
-		Util.assert
-		    (regs != null, 
-		     new Object() {
-			 public String toString() {
-			     return "no reg assignment :\n"+
-			     printInfo(block, i, i.use()[0], code, false);}});
-
+		List regs = getAssignment(i.use()[0]);
 		assign(i.def()[0], regs); // mult assign?
 	    } else {
 		visit((Instr)i);
@@ -331,48 +274,23 @@ public class LocalCffRegAlloc extends RegAlloc {
 	public void visit(final Instr i, boolean multAssignAllowed) {
 	    Iterator uses = i.useC().iterator();
 	    while(uses.hasNext()) {
-		Temp use_ = (Temp) uses.next();
-		if (isTempRegister(use_)) continue;
+		Temp use = (Temp) uses.next();
+		if (isTempRegister(use)) continue;
 
-		Collection cRegs = getRegs(i, use_);
-		List fRegs = regfile.getAssignment(use_);
+		Collection codeRegs = getRegs(i, use);
 
-		/*		
-		if (fRegs == null) {
-		    use_ = tempSets.getRep(use_);
-		    fRegs = regfile.getAssignment(use_);
-		}
-		*/
-
-		final Collection codeRegs = cRegs;
-		final List fileRegs = fRegs;
-		
-		final Temp use = use_;
+		List fileRegs = getAssignment(use);
 
 		{ // ASSERTION CODE
 		    Util.assert(codeRegs != null, "codeRegs!=null ");
-		    Util.assert(fileRegs != null, 
-				new Object() {
-				    public String toString() {
-					return "fileRegs!=null " + 
-					printInfo(block,i,use,code,false)+
-					"RF: "+regfile+"\n"+
-					"TS: "+tempSets+"\n"+
-					"PRE for " +use+ ": " +
-					getPreassignFor(block).get(use); }});
 		    Util.assert(!fileRegs.contains(null), "no null allowed in fileRegs");
 		    Util.assert(!codeRegs.contains(null), "no null allowed in codeRegs");
 		    Util.assert(codeRegs.containsAll(fileRegs),
-				new Object() {
-			public String toString() {
-			    return printInfo(block, i, use, code)+
-				"codeRegs incomplete; "+
-				"c: "+codeRegs+" f: "+fileRegs; }});
+				lazyInfo("codeRegs incorrect; "+
+					 "c:"+codeRegs+" f:"+fileRegs+" regfile:"+regfile,
+					 block,i,use,code,false));
 		    Util.assert(fileRegs.containsAll(codeRegs),
-				new Object() {
-			public String toString() { 
-			    return "fileRegs incomplete: "+
-				"c: "+codeRegs+" f: "+fileRegs; }});
+				"fileRegs incomplete: "+"c: "+codeRegs+" f: "+fileRegs);
 		} // END ASSERTION CODE
 	    }
 	    
@@ -384,31 +302,29 @@ public class LocalCffRegAlloc extends RegAlloc {
 		Util.assert(codeRegs != null);
 		
 
-		// check (though really just debugging my thought process...)
-		Iterator redefs = codeRegs.iterator();
-		while(redefs.hasNext()) {
-		    final Temp r = (Temp) redefs.next();
-		    Util.assert(regfile.isEmpty(r), 
-				new Object() {
-			public String toString() {
-			    return "reg:"+r+" is not empty prior to assignment\n"+
-				printInfo(block, i, def, code);}});
+		if (false) {
+		    // check (though really just debugging my thought process...)
+		    Iterator redefs = codeRegs.iterator();
+		    while(redefs.hasNext()) {
+			final Temp r = (Temp) redefs.next();
+			Util.assert(regfile.isEmpty(r), 
+				    lazyInfo("reg:"+r+" is not empty prior to assignment",block,i,def,code));
+		    }
 		}
+
+
 		assign(def, codeRegs); // , multAssignAllowed);
 	    }
 	    
 	}
 	
 	public void visit(final InstrMEM i) {
+	    curr = i;
 	    if (i instanceof SpillLoad) {
 		// regs <- temp
 		Util.assert(!regfile.hasAssignment(i.use()[0]), 
-			    new Object() {
-		    public String toString() { 
-			return "if we're loading, why in regfile?\n"+
-			    "RegFile:"+regfile+"\n"+
-			    printInfo(block,i,i.use()[0],code,false);}}); 
-
+			    lazyInfo("if we're loading, why in regfile?",
+				     block, i,i.use()[0],code,regfile,false));
 		assign(i.use()[0], i.defC());
 	    } else if (i instanceof SpillStore) {
 		// temp <- regs
@@ -422,11 +338,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    List fileRegs = regfile.getAssignment(def);
 		    Collection storeRegs = i.useC();
 		    Util.assert(fileRegs != null, 
-				new Object(){
-				    public String toString() {
-					return "fileRegs!=null " + 
-					printInfo(block, i, def, code);
-				    }});
+				lazyInfo("fileRegs!=null",block,i,def,code));
 		    Util.assert(!fileRegs.contains(null),
 				"no null allowed in fileRegs");
 		    Util.assert(storeRegs.containsAll(fileRegs),
@@ -453,7 +365,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	       2. assigns `def' to the collection of registers `c' in `regfile'
 	*/
 	private void assignP(final Temp def, Collection c, boolean multAssignAllowed) {
-	    if (false && !multAssignAllowed) {
+	    if (!multAssignAllowed) {
 		// getting around multiple-assignment checker...
 		Iterator redefs = c.iterator();
 		while(redefs.hasNext()) {
@@ -524,10 +436,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	final BasicBlock block;
 	final Set liveOnExit;
-	final RegFile regfile;
+	final RegFile regfile = new RegFile();
 	
 	// Temp:t currently in regfile -> Index of next ref to t
-	final Map evictables;
+	final Map evictables = new HashMap();
 	
 	// maps (Instr:i x Temp:t) -> 2 * index of next Instr
 	//                            referencing t
@@ -539,8 +451,30 @@ public class LocalCffRegAlloc extends RegAlloc {
 	// are used in InstrMOVEs)
 	final EqTempSets tempSets;
 
-	private Temp getRep(Temp t) {
-	    return tempSets.getRep(t);
+	// maps reference Temps to location Temps (ie the Temp
+	// referred to in the code to the Temp that is represented in
+	// the regfile)
+	final Map referToLoc = new HashMap();
+	
+	// inverse of `referToLoc'
+	final MultiMap locToRefers = new GenericMultiMap();
+
+	Instr curr;
+
+	private Temp getLoc(Temp refer) {
+	    Temp t = (Temp) referToLoc.get(refer);
+	    if (t == null) 
+		return tempSets.getRep(refer);
+	    else 
+		return t;
+	}
+
+	private void addRefer(final Temp refer, final Temp loc) {
+	    Util.assert(!referToLoc.keySet().contains(refer),
+			lazyInfo("referToLoc shouldn't already have key:"+refer,loc));
+	    
+	    referToLoc.put(refer, loc);
+	    locToRefers.add(loc, refer);
 	}
 
 	// maps Temp:t -> Set of Regs 
@@ -554,23 +488,72 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    liveOnExit = lvOnExit;
 	    
 	    nextRef = buildNextRef(b);
-	    regfile = new RegFile();
-	    evictables = new HashMap();
 
 	    // Scan through Block, building up a EqTempSets based on
 	    // moves 
 	    tempSets = buildTempSets(block);
 
-	    // System.out.println("TempSets: " + tempSets);
-	    // System.out.println();
-	    
+	    // System.out.println(block + " has liveOnExit:"+ lvOnExit);
+
 	    preassignMap = 
 		buildPreassignMap(block, 
 				  frame.getRegFileInfo().getAllRegistersC(),
 				  lvOnExit);
-	    Util.assert(preassignMap != null);
+
+	    // System.out.println(block + " has preassignMap:"+preassignMap);
+	    // System.out.println();
+
 	    putPreassign(block, preassignMap);
+	}
+
+	private Map buildNextRef(BasicBlock b) {
+	    // forall(j elem instrs(b))
+	    //    forall(l elem pseudo-regs(j))
+	    //       nextRef(j, l) <- indexOf(dist to next reference to l)
 	    
+	    // Temp:t -> the last Instr referencing t
+	    Map tempToLastRef = new HashMap();
+	    
+	    // Instr:i -> the index of i in 'b'
+	    Map instrToIndex = new HashMap();
+	    
+	    // (Temp:t x Instr:j) -> index of Instr following j referencing t
+	    Map nextRef = new HashMap();
+	    
+	    Iterator instrs = b.statements().iterator();
+	    int c=0;
+	    while(instrs.hasNext()) {
+		Instr instr = (Instr) instrs.next();
+		instrToIndex.put(instr, new Integer(c));
+		Iterator refs = getRefs(instr);
+		while(refs.hasNext()) {
+		    Temp ref = (Temp) refs.next();
+		    Instr last = (Instr) tempToLastRef.get(ref);
+		    if (last != null) {
+			Util.assert((2*c) <= (Integer.MAX_VALUE - 1),
+				    "IntOverflow;use another numeric rep in LRA");
+			nextRef.put(new TempInstrPair(last, ref), 
+				    new Integer(2*c));
+		    }
+		    tempToLastRef.put(ref, instr);
+		}
+		c++;
+	    }
+	    
+	    Iterator entries = tempToLastRef.entrySet().iterator();
+	    
+	    while(entries.hasNext()) {
+		Map.Entry entry = (Map.Entry) entries.next();
+		
+		// enforcing the storage of NULL in nextRef for dead
+		// Temps, so that they can be distinquished.
+		if (liveOnExit.contains(entry.getKey()))
+		    nextRef.put(new TempInstrPair((Temp)entry.getKey(),
+						  (Instr)entry.getValue()),
+				INFINITY);
+		
+	    }
+	    return nextRef;
 	}
 
 	/* purely a debugging hack. this methods and all references to
@@ -695,6 +678,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    while(instrs.hasNext()) {
 		Instr i = (Instr) instrs.next();
 		if (TIME) System.out.print(".");
+		curr = i;
 		i.accept(allocV);
 	    }
 	    
@@ -732,22 +716,20 @@ public class LocalCffRegAlloc extends RegAlloc {
 		Iterator defs = i.defC().iterator();
 		while(defs.hasNext()) {
 		    Temp def = (Temp) defs.next();
-		    if (!isTempRegister(def)) regfile.writeTo(def);
+		    if (!isTempRegister(def)) {
+			regfile.writeTo(getLoc(def));
+		    } else {
+			Temp t = regfile.getTemp(def);
+			if (t != null) regfile.remove(t);
+		    }
 		}
 		
 		evictables.putAll(putBackLater);
 
 		Util.assert(hasRegs(i, i.useC()),
-			    new Object() {
-		    public String toString() {
-			return "uses missing reg assignment\n"+
-			    "tempSets:"+tempSets+"\n"+
-			    printInfo(block, i, null, code);}});
+			    lazyInfo("uses missing reg assignment",i,null));
 		Util.assert(hasRegs(i, i.defC()),
-			    new Object() {
-		    public String toString() {
-			return "defs missing reg assignment\n"+
-			    printInfo(block, i, null, code);}});			    
+			    lazyInfo("defs missing reg assignment", i, null));
 		
 		last = i;
 	    }
@@ -766,7 +748,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		Iterator uses = new FilterIterator(i.useC().iterator(),
 						   new MRegFilter());
 		while(uses.hasNext()) {
-		    Temp use = (Temp) uses.next();
+		    Temp use = getLoc((Temp) uses.next());
 		    if (evictables.containsKey(use)) {
 			putBackLater.put(use, evictables.get(use));
 			evictables.remove(use);
@@ -782,17 +764,15 @@ public class LocalCffRegAlloc extends RegAlloc {
 		      for `t' (potentially spilling values in
 		      `evictables' to make room for `t')
 		   2. Updates structures to reflect assignment for `t'
-		   3. if (`t' used but not in regfile) then adds LOAD `t'
-		   4. if (`t' is used by i) then puts `t' into
+		   3. if (`t' used by `i' but not in regfile) then adds LOAD `t'
+		   4. if (`t' used by `i') then puts `t' into
 		      `putBackLater' else puts `t' into `evictables'
 	    */
 	    private void assign(Temp t, Instr i, Map putBackLater) {
-		Temp rep = getRep(t); // sketchy; auto-rep may be bad
-
-		if (regfile.hasAssignment(t)) {
+		if (regfile.hasAssignment(getLoc(t))) {
 		    
-		    code.assignRegister(i, t, regfile.getAssignment(t));
-		    evictables.remove(t); // (`t' reinserted later)
+		    code.assignRegister(i, t, regfile.getAssignment(getLoc(t)));
+		    evictables.remove(getLoc(t)); // (`t' reinserted later)
 
 		} else { /* not already assigned */ 
 		    
@@ -801,10 +781,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    List regList = chooseSuggestion(suggs, t); 
 
 		    code.assignRegister(i, t, regList);
-		    regfile.assign(t, regList);
-			
+		    regfile.assign(getLoc(t), regList);
+		    
 		    if (i.useC().contains(t)) {
-			InstrMEM load = new SpillLoad(i, "FSK-LD", regList, t);
+			InstrMEM load = new SpillLoad(i, "FSK-LD", regList, getLoc(t));
 			spillLoads.add(load);
 			spillLoads.add(i);
 		    }
@@ -823,14 +803,48 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    
 		// don't accidentally make `t' an eviction candidate
 		if (i.useC().contains(t)) {
-		    putBackLater.put(t, X);
+		    putBackLater.put(getLoc(t), X);
 		} else { 
-		    evictables.put(t, X); 
+		    evictables.put(getLoc(t), X); 
 		}
+	    }
+
+	    /** Adds conflicting preassigned registers to `regfile'.
+		modifies: `regfile'
+		effects: 
+		  let regs = values mapped to by `t' in `preassignMap'
+		      tmps = new empty set of Temps 
+		  in for each r in regs 
+		         if r is empty in `regfile' 
+			 then let p = a new PreassignTemp for r
+			      in assigns p to r
+			         adds p to tmps
+                     returns tmps
+	    */
+	    private Set addPreassignments(final Temp t) {
+		Collection preassigns = preassignMap.getValues(t);
+		Set preassignTempSet = new HashSet();
+		
+		Util.assert(preassigns != null,
+			    "preassignMap is missing mappings");
+		Iterator preassignIter = preassigns.iterator();
+		while(preassignIter.hasNext()) {
+		    final Temp reg = (Temp) preassignIter.next();
+		    
+		    if (regfile.isEmpty(reg)) { 
+			Temp preassign = new RegFileInfo.PreassignTemp(reg);
+			regfile.assign( preassign, 
+					Arrays.asList( new Temp[]{ reg }));
+			preassignTempSet.add(preassign);
+		    }
+		}
+
+		return preassignTempSet;
 	    }
 
 	    /** Finds the weight of `t' when used at `i'.  
 		requires: `t' is used by `i'
+		          `getLoc(t)' has an assignment in `regfile'
 		effects: let w = 2*(distance until the next use) 
 		         in if `t' is dirty 
 			    then returns (w+1) 
@@ -845,60 +859,16 @@ public class LocalCffRegAlloc extends RegAlloc {
 		Util.assert(X.intValue() <= (Integer.MAX_VALUE - 1),
 			    "Excessive Weight was stored.");
 		
-		if (regfile.isDirty(t)) {
+		Util.assert(regfile.hasAssignment(getLoc(t)),
+			    lazyInfo("no assignment for "+
+				     "getLoc("+t+"):"+getLoc(t)
+				     , i, t));
+
+		if (regfile.isDirty(getLoc(t))) {
 		    X = new Integer(X.intValue() + 1);
 		}
 		
 		return X;
-	    }
-
-	    /** Adds conflicting preassigned registers to `regfile'.
-		modifies: `regfile'
-		effects: 
-		  let regs = values mapped to by `t' in `preassignMap'
-		      tmps = new empty set of Temps 
-		  in for each r in regs 
-		         constructs a new PreassignTemp:p for r
-			 if r is empty in `regfile' 
-			 then
-			      assigns p to r
-			      adds p to tmps
-                     returns tmps
-	    */
-	    private Set addPreassignments(final Temp t) {
-		Collection preassigns = preassignMap.getValues(t);
-		Set preassignTempSet = new HashSet();
-		
-		Util.assert(preassigns != null,
-			    "preassignMap is missing mappings");
-		Iterator preassignIter = preassigns.iterator();
-		while(preassignIter.hasNext()) {
-		    final Temp reg = (Temp) preassignIter.next();
-		    Temp preassign = new RegFileInfo.PreassignTemp(reg);
-		    
-		    // FSK: can't preassign to regs that are holding
-		    // values... but will things still work right?
-		    // Look over later; for now just surround
-		    // offending code with an if-block
-		    if (regfile.isEmpty(reg)) {
-			Util.assert(regfile.isEmpty(reg), 
-				    new Object() { 
-			    public String toString() {
-				return "preassignment to non-empty reg:"+reg+"\n"+
-				    "regfile:"+regfile+"\n"+
-				    "preassignMap:"+preassignMap+"\n"+
-				    printInfo(block,null,t,code);}});
-				
-			regfile.assign( preassign, 
-					Arrays.asList( new Temp[]{ reg }));
-			preassignTempSet.add(preassign);
-
-		    }
-		    
-
-		}
-
-		return preassignTempSet;
 	    }
 
 	    
@@ -908,7 +878,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		Map putBackLater = takeUsesOutOfEvictables(i);
 
 		if (!isTempRegister(u) &&
-		    !regfile.hasAssignment(u)) {
+		    !regfile.hasAssignment(getLoc(u))) {
 		    // load that value into a register...
 		    assign(u, i, putBackLater);
 		} 
@@ -918,38 +888,44 @@ public class LocalCffRegAlloc extends RegAlloc {
 		int choice = 0;
 
 		if ( ul.equals(dl) &&
-		     !regfile.hasAssignment(d) &&
+		     !regfile.hasAssignment(getLoc(d)) &&
 		     !preassignMap.contains(d, ul.get(0))) {
 		    choice = 1;
 		} else if (!(isTempRegister(d) ||
-			     regfile.hasAssignment(d)) &&
+			     regfile.hasAssignment(getLoc(d))) &&
 			   !isTempRegister(u) &&
 			   !preassignMap.contains(d, ul.get(0))) { 
 		    choice = 2;
-		} 
+		} else if (u == d) {
+		    // weird, but it actually happens
+		    choice = 3;
+		}
 
 		
 		if (choice != 0) {
 		    Util.assert(tempSets.getRep(u) ==
 				tempSets.getRep(d),
 				"Temps "+u+" & "+d+" should have same rep to be coalesced"); 
-		    Util.assert(regfile.hasAssignment(u), 
-				new Object() {
-			public String toString() {
-			    return 
-				"use:"+u+" should have an assignment at this point"+
-				printInfo(block, i, u, code);}});
+		    Util.assert(regfile.hasAssignment(getLoc(u)), 
+				lazyInfo("use:"+u+" or getLoc(use):"+
+					 getLoc(u)+" should have an assignment at this point",i,u));
 
-		    List regList = regfile.getAssignment(u);
+		    List regList = regfile.getAssignment(getLoc(u));
 		    code.assignRegister(i, u, regList);
 		    code.assignRegister(i, d, regList);
 		    remove(i, choice);
 
 
-		    regfile.remove(u);
-		    regfile.assign(d, regList);
-		    regfile.writeTo(d);
-		    putBackLater.put(d, findWeight(d, i));
+		    if (true) {
+			if (u != d) addRefer(d, getLoc(u));
+		    } else {
+			// FSK: this block of code is being replace
+			// with above method of handling moves...
+			regfile.remove(u);
+			regfile.assign(d, regList);
+			regfile.writeTo(d);
+			putBackLater.put(d, findWeight(d, i));
+		    }
 
 		    // System.out.println("assigning "+i.def()[0] +
 		    //				       " to "+regList);
@@ -959,16 +935,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 		
 		Util.assert(hasRegs(i, u),
-			    new Object() {
-				public String toString() {
-				    return "missing reg assignment\n"+
-				    printInfo(block, i, u, code);}});
+			    lazyInfo("missing reg assignment",i,u));
 
 		evictables.putAll(putBackLater);
 	    }
 
 	    private void remove(Instr i, int n) {
-		remove(i, n, false);
+		remove(i, n, true);
 	    }
 
 	    private void remove(Instr i, int n, boolean pr) {
@@ -977,8 +950,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 
 	    public List resolve(Temp t) {
-		if (regfile.hasAssignment(t)) {
-		    return regfile.getAssignment(t);
+		if (regfile.hasAssignment(getLoc(t))) {
+		    return regfile.getAssignment(getLoc(t));
 		} else {
 		    return java.util.Arrays.asList(new Temp[]{ t });
 		} 
@@ -1012,6 +985,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    Iterator spills = s.getPotentialSpills();
 		    SortedSet weightedSpills = new TreeSet();
 
+		    Collection preasnRegs = preassignMap.getValues(t);
+
 		    final Map trackSpills = new HashMap();
 
 		    while(spills.hasNext()) {
@@ -1035,13 +1010,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 				if (!evictables.containsKey(preg)) {
 				    // --> disallowed evicting preg
 				    valid = false;
-				    trackSpills.put(cand, "Preg:"+preg+" for "+cand+" not in Evictables");
-
-				    if (false) 
-					System.out.println("aha "+preg+
-							   " was disallowed");
+				    trackSpills.put(cand, "psuedo:"+preg+" for "+cand+" not in Evictables");
 				    break;
-				}			    
+				} else if (preasnRegs.contains(reg)) {
+				    valid = false;
+				    trackSpills.put(cand, "reg:"+reg+" for "+cand+" has conflicting preassignment"); 
+				    break;
+				}
 				Integer dist = (Integer) evictables.get(preg); 
 				int c = dist.intValue();
 				if (c < cost) { 
@@ -1060,13 +1035,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    }
 
 		    Util.assert(!weightedSpills.isEmpty(), 
-				new Object() {
-			public String toString() { 
-			    return "\nneed at least one spill of \n"+
-				trackSpills+"\n Evictables:"+evictables+
-				"\nRegFile:"+regfile+
-				"\nTempSets:"+tempSets + "\n"+
-				printInfo(block, i, t, code);}});
+				lazyInfo("\nneed at least one spill"
+					 +" of \n"+trackSpills+"\nEvictables:"+evictables
+					 ,i,t,regfile));
 
 		    WeightedSet spill = (WeightedSet) weightedSpills.first();
 		    if (false) 
@@ -1093,9 +1064,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    // storing stuff in it
 			    
 			} else {
-			    spillValue(value, 
-				       i.getPrev(),
-				       regfile);
+			    spillValue(value,i.getPrev(),regfile);
+			    regfile.remove(value);
 			    evictables.remove(value);
 			}
 		    }
@@ -1104,179 +1074,106 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	}
 	
-	private void precolorRegfile(BasicBlock b, RegFile regfile) {
-	    Iterator instrs = b.statements().iterator();
-	    Instr i=null;
-	    while(instrs.hasNext()) {
-		i = (Instr) instrs.next();
-		Iterator regs = 
-		    new FilterIterator
-		    (getRefs(i), new FilterIterator.Filter() {
-			public boolean isElement(Object o) {
-			    return isTempRegister((Temp) o);
-			}
-		    });
-		while(regs.hasNext()) {
-		    Temp reg = (Temp) regs.next();
-		    if (regfile.getTemp(reg) == null) 
-			regfile.assign(new RegFileInfo.PreassignTemp(reg),
-				       ListFactory.singleton(reg));
-		}
-	    }
-	}
-	
 	private void emptyRegFile(RegFile regfile, final Instr instr, 
 				  Set liveOnExit) {
 	    // System.out.println("live on exit from " + b + " :\n" + liveOnExit);
 	    
-	    // use a new HashSet here because we don't want to repeat values
-	    Iterator vals = (new HashSet(regfile.tempSet())).iterator();
-
+	    // use a new HashSet here because we cannot modify regfile
+	    // and traverse its tempSet simultaneously.
+	    final Iterator locvals = (new HashSet(regfile.tempSet())).iterator();
 	    
-	    while(vals.hasNext()) {
-		final Temp val = (Temp) vals.next();
+	    while(locvals.hasNext()) {
+		final Temp locval = (Temp) locvals.next();
 		
-		// don't spill dead values.
-		if (!liveOnExit.contains(val)) {
-		    regfile.remove(val);
-		    continue;
-		}
-		
-		// don't spill clean values. 
-		if (regfile.isClean(val)) {
-		    regfile.remove(val);
-		    continue;
-		}
-		
-		// don't spill register only values
-		if (isTempRegister(val)) {
-		    regfile.remove(val);
-		    continue;
-		}
-
-		// need to insert the spill in a place where we can be
-		// sure it will be executed; the easy case is where
-		// 'instr' does not redefine the 'val' (so we can just put 
-		// our spills BEFORE 'instr').  If 'instr' does define
-		// 'val', however, then we MUST wait to spill, and
-		// then we need to see where control can flow...
-		// insert a new block solely devoted to spilling
-
-		Instr loc; // was InstrEdge
-		final Instr prev = instr.getPrev();
-		if (!instr.defC().contains(val) &&
-		    prev.getTargets().isEmpty()) {
-		    Util.assert(prev.canFallThrough,
-				new Object () {
-			public String toString() {
-			    return "control flow doesn't flow from "+
-				prev + " to " + instr + " ; can't "+
-				" insert spill\n"+
-				printInfo(block, instr, val, code);
-			}
-		    });
-		    // System.out.println("end spill: " + val + " " + loc);
+		// handle spilling move equivalent temps
+		Iterator vals = locToRefers.getValues(locval).iterator();
+		while(vals.hasNext()) {
+		    final Temp val = (Temp) vals.next();
 		    
-		    spillValue(val, prev, regfile);
+		    Util.assert(!isTempRegister(val), "move sets should not contain registers");
+		    
+		    // don't spill dead values.
+		    if (!liveOnExit.contains(val)) {
+			continue;
+		    }
+		    
+		    chooseSpillSpot(val, instr, regfile);
+		}
+		
 
+		if (!liveOnExit.contains(locval)) { 
+		    // don't spill dead values.
+		} else if (isTempRegister(locval)) {
+		    // don't spill register only values
+		} else if (regfile.isClean(locval)) {
+		    // don't spill clean values. 
 		} else {
+		    chooseSpillSpot(locval, instr, regfile);		
+		}
 
-		    spillValue(val, instr, regfile);
-		    
+		regfile.remove(locval);
+	    }
+	}
 
-
-		    // Something like this code will have to be used
-		    // where the spill code is acutally inserted, but
-		    // its no longer necessary here. 
-		    if (false) {
-			if (instr.canFallThrough) {
-			    Util.assert(instr.getNext() != null, 
-					instr.getPrev() + 
-					" before Instr: ("+instr+
-					") .getNext() != null"); 
-			    
-			    // System.out.println("weird spill: " + val + " " + loc);
-			    // This sequence of code is a little tricky; since
-			    // we need to add spills for the same variable at
-			    // multiple locations, we need to delay updating
-			    // the regfile until after all of the spills have
-			    // been added.  So we need to use
-			    // addSpillInstr/removeMapping instead of just
-			    // spillValue 
-			    
-			    addSpillInstr(val, instr, regfile);
-			}
+	private void chooseSpillSpot(Temp val, Instr instr, RegFile regfile) {
+	    // need to insert the spill in a place where we can be
+	    // sure it will be executed; the easy case is where
+	    // 'instr' does not redefine the 'val' (so we can just put 
+	    // our spills BEFORE 'instr').  If 'instr' does define
+	    // 'val', however, then we MUST wait to spill, and
+	    // then we need to see where control can flow...
+	    // insert a new block solely devoted to spilling
+	    
+	    Instr loc;
+	    final Instr prev = instr.getPrev();
+	    if (!instr.defC().contains(val) &&
+		prev.getTargets().isEmpty() &&
+		prev.canFallThrough) {
+		
+		spillValue(val, prev, regfile);
+		
+	    } else {
+		
+		spillValue(val, instr, regfile);
+		
+		// Something like this code will have to be used
+		// where the spill code is acutally inserted, but
+		// its no longer necessary here. 
+		if (false) {
+		    if (instr.canFallThrough) {
+			Util.assert(instr.getNext() != null, 
+				    instr.getPrev() + 
+				    " before Instr: ("+instr+
+				    ") .getNext() != null"); 
 			
-			Util.assert(instr.getTargets().isEmpty() ||
-				    instr.hasModifiableTargets(),
-				    "We MUST be able to modify the targets "+
-				    " if we're going to insert a spill here");
-			Iterator targets = instr.getTargets().iterator();
-			while(targets.hasNext()) {
-			    Label l = (Label) targets.next();
-			    loc = null; // new InstrEdge(instr, instr.getInstrFor(l));
-			    System.out.println("labelled spill: " + val + " " + loc);
-			    addSpillInstr(val, loc, regfile);
-			}
+				// System.out.println("weird spill: " + val + " " + loc);
+				// This sequence of code is a little tricky; since
+				// we need to add spills for the same variable at
+				// multiple locations, we need to delay updating
+				// the regfile until after all of the spills have
+				// been added.  So we need to use
+				// addSpillInstr/removeMapping instead of just
+				// spillValue 
+			
+			spillValue(val, instr, regfile);
+		    }
+		    
+		    Util.assert(instr.getTargets().isEmpty() ||
+				instr.hasModifiableTargets(),
+				"We MUST be able to modify the targets "+
+				" if we're going to insert a spill here");
+		    Iterator targets = instr.getTargets().iterator();
+		    while(targets.hasNext()) {
+			Label l = (Label) targets.next();
+			loc = null; // new InstrEdge(instr, instr.getInstrFor(l));
+			System.out.println("labelled spill: " + val + " " + loc);
+			spillValue(val, loc, regfile);
+		    }
+		}
+	    }
+	}
 
-			regfile.remove(val);
-		    }
-		    // end of unneeded code block
-		    
-		    
-		}
-	    }
-	}
 	
-	private Map buildNextRef(BasicBlock b) {
-	    // forall(j elem instrs(b))
-	    //    forall(l elem pseudo-regs(j))
-	    //       nextRef(j, l) <- indexOf(dist to next reference to l)
-	    
-	    // Temp:t -> the last Instr referencing t
-	    Map tempToLastRef = new HashMap();
-	    
-	    // Instr:i -> the index of i in 'b'
-	    Map instrToIndex = new HashMap();
-	    
-	    // (Temp:t x Instr:j) -> index of Instr following j referencing t
-	    Map nextRef = new HashMap();
-	    
-	    Iterator instrs = b.statements().iterator();
-	    int c=0;
-	    while(instrs.hasNext()) {
-		Instr instr = (Instr) instrs.next();
-		instrToIndex.put(instr, new Integer(c));
-		Iterator refs = getRefs(instr);
-		while(refs.hasNext()) {
-		    Temp ref = (Temp) refs.next();
-		    Instr last = (Instr) tempToLastRef.get(ref);
-		    if (last != null) {
-			Util.assert((2*c) <= (Integer.MAX_VALUE - 1),
-				    "IntOverflow;use another numeric rep in LRA");
-			nextRef.put(new TempInstrPair(last, ref), 
-				    new Integer(2*c));
-		    }
-		    tempToLastRef.put(ref, instr);
-		}
-		c++;
-	    }
-	    
-	    Iterator entries = tempToLastRef.entrySet().iterator();
-	    
-	    while(entries.hasNext()) {
-		Map.Entry entry = (Map.Entry) entries.next();
-		
-		// enforcing the storage of NULL in nextRef for dead
-		// Temps, so that they can be distinquished.
-		if (liveOnExit.contains(entry.getKey()))
-		    nextRef.put(new TempInstrPair((Temp)entry.getKey(),
-						  (Instr)entry.getValue()),
-				INFINITY);
-		
-	    }
-	    return nextRef;
-	}
 	
 	private List chooseSuggestion(Iterator suggs, Temp t) {
 	    return chooseSuggestion(suggs, t, false);
@@ -1347,36 +1244,42 @@ public class LocalCffRegAlloc extends RegAlloc {
 				       i.defC().iterator());
 	}
 	
+
 	
-	/** spills 'val', adding a store if necessary after 'loc' and updates
-	    the 'regfile' so that it no longer has a mapping for 'val' or
-	    its associated registers.
+	/** spills `val', adding a store after `loc', but does *NOT*
+	    update the regfile. 
 	*/
 	private void spillValue(Temp val, Instr loc, RegFile regfile) {
-	    if (regfile.isDirty(val)) {
-		Util.assert(! (val instanceof RegFileInfo.PreassignTemp),
-			    "cannot spill Preassigned Temps");
-		addSpillInstr(val, loc, regfile);
-	    }
-	    regfile.remove(val);
-	}
-	
-	/** adds a store for 'val' after 'loc', but does *NOT* update the
-	    regfile. 
-	*/
-	private void addSpillInstr(Temp val, Instr loc, RegFile regfile) {
-	    Collection regs = regfile.getAssignment(val);
-	    Util.assert(regs != null, val+ " must have an assignment in "+
-			"regfile to be spilled");
-	    Util.assert(!regs.isEmpty(), 
-			val + " must map to SOME registers" +
-			"\n regfile:" + regfile);
-	    
+	    Util.assert(! (val instanceof RegFileInfo.PreassignTemp),
+			"cannot spill Preassigned Temps");
 	    Util.assert(!isTempRegister(val), val+" should not be reg");
+
+	    Collection regs = regfile.getAssignment(getLoc(val));
+	    Util.assert(regs != null, val + " must map to a set of registers in "+regfile); 
+	    Util.assert(!regs.isEmpty(), val + " must map to non-empty set of registers in "+regfile);
+
 	    InstrMEM spillInstr = new SpillStore(loc, "FSK-ST", val, regs);
 
 	    spillStores.add(spillInstr);
 	    spillStores.add(loc);
+	}
+
+	// *** helper methods for debugging within LocalAllocator ***
+	private Object lazyInfo(String prefix, Temp t) {
+	    return lazyInfo(prefix, curr, t);
+	}
+
+	private Object lazyInfo(String prefix, Temp t, RegFile regfile) {
+	    return lazyInfo(prefix, curr, t, regfile);
+	}
+
+	private Object lazyInfo(String prefix, Instr i, Temp t) {
+	    return LocalCffRegAlloc.this.lazyInfo(prefix, block, i, t, code);
+	}
+
+	private Object lazyInfo(String prefix, Instr i, Temp t,
+				RegFile regfile) {
+	    return LocalCffRegAlloc.this.lazyInfo(prefix, block, i, t, code, regfile);
 	}
     }
 
@@ -1419,5 +1322,127 @@ public class LocalCffRegAlloc extends RegAlloc {
 		(temps==null?"":(",Temps:"+temps))+">"; 
 	}
     }
+
+
+    // *** DEBUGGING ROUTINES ***
+
+    private static String toAssem(Instr i, Code code) {
+	// SpillLoads and SpillStores do not put the appropriate
+	// suffixes on Temps (because they are just
+	// placeholders for actual load and store
+	// instructions) so we don't attempt to convert them
+	// to assembly form
+	if (i instanceof SpillLoad ||
+	    i instanceof SpillStore) {
+	    return i.toString();
+	} else {
+	    return code.toAssem(i);
+	}
+    }
+
+
+    // lazyInfo(..) family of methods return an object that prints out
+    // the basic block in a demand driven fashion, so that we do not
+    // incur the cost of constructing the string representation of the
+    // basic block until we actually will need it
+
+    private Object lazyInfo(String prefix, BasicBlock b, 
+			    Instr i, Temp t, Code code) {
+	return lazyInfo(prefix, b, i, t, code, true);
+    }
+
+    private Object lazyInfo(String prefix, BasicBlock b, 
+			    Instr i, Temp t, Code code, 
+			    RegFile regfile) {
+	return lazyInfo(prefix, b, i, t, code, regfile, true);
+    }
+
+    private Object lazyInfo(final String prefix, final BasicBlock b, 
+			    final Instr i, final Temp t, final Code code, 
+			    final boolean auxSpillCode) {
+	return new Object() {
+	    public String toString() {
+		return prefix+"\n"+printInfo(b, i, t, code, auxSpillCode);
+	    }
+	};
+    }
+
+    private Object lazyInfo(final String prefix, final BasicBlock b, 
+			    final Instr i, final Temp t, final Code code, 
+			    final RegFile regfile,
+			    final boolean auxSpillCode) {
+	return new Object() {
+	    public String toString() {
+		return prefix+"\n"+"RegFile:"+regfile+"\n"+printInfo(b, i, t, code, auxSpillCode);
+	    }
+	};
+    }
+
+
+    private String printInfo(BasicBlock block, Instr i, 
+			     Temp t, Code code) {
+	return printInfo(block, i, t, code, true);
+    }
+
+    private String printInfo(BasicBlock block, Instr i, 
+			     Temp t, Code code, boolean auxSpillCode) {
+	java.io.StringWriter swout = new java.io.StringWriter();
+	java.io.PrintWriter pwout = new java.io.PrintWriter(swout);
+	// code.print(pwout);
+
+	// StringBuffer sb = new StringBuffer(swout.toString());
+	StringBuffer sb = new StringBuffer();
+
+	// inserting the loads and stores may make this routine
+	// O(n^2), which could be bad...
+
+	List blockL = block.statements();
+	Iterator itr = blockL.iterator(); 
+	while(itr.hasNext()) {
+	    Instr i2=(Instr)itr.next();
+
+	    if (auxSpillCode) {
+		// insert loads...
+		Iterator loads = spillLoads.iterator();
+		while(loads.hasNext()) {
+		    Instr s = (Instr) loads.next();
+		    Instr loc = (Instr) loads.next();
+		    if (loc == i2) {
+			sb.append(s+"\n");
+		    }
+		}
+	    }
+
+	    // put actual instr in
+	    sb.append(toAssem(i2, code)+
+		      " \t { " + i2 + 
+		      " }");
+	    
+	    // if instr is scheduled for removal, make a note of that
+	    // as well
+	    if (instrsToRemove.contains(i2)) sb.append("\t* R *");
+	    
+	    sb.append("\n");
+
+	    if (auxSpillCode) {
+		// insert stores... 
+		Iterator stores = spillStores.iterator();
+		while(stores.hasNext()) {
+		    Instr s = (Instr) stores.next();
+		    Instr loc = (Instr) stores.next();
+		    if (loc == i2) {
+			sb.append(s+"\n");
+		    }
+		}
+	    }
+	}
+	
+	return "\n"+
+	    sb.toString() + 
+	    "temp: "+t + "\n"+
+	    "instr: "+ i + "\n\n";
+
+    }
+
 
 }

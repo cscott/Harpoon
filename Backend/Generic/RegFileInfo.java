@@ -46,6 +46,12 @@ import java.util.Iterator;
     Allocator can merge Virtual Registers in different Basic Blocks
     together before mapping them to Physical Register Temps.
 
+    <p> FSK: Preassign Temps are unnecessary and don't even do the
+    job in certain pathological cases.  They will be removed after I
+    finish my own work and have a chance to revise my system to make
+    preassignment information totally local to the register
+    allocator. 
+
     <p> Lastly, a <i>Preassign Temp</i> is an Temp representing some
     value that has no representation as a Flex Temp.  It is used for
     portions of the code where the Code Generator has inserted
@@ -60,7 +66,7 @@ import java.util.Iterator;
     maintained by the hardcoded references.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.25 2000-05-23 17:25:45 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.26 2000-05-31 18:04:57 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
