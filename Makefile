@@ -107,10 +107,6 @@ doc:	$(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	@chmod -R a+rX doc
 
-movie/tank.jar:
-	@wget http://flex-cvs.lcs.mit.edu/ImageRec/tank.jar
-	@mv tank.jar movie/
-
 imagerec.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
