@@ -332,8 +332,16 @@ cd -
 echo Building Runtime...
 cd Runtime
 ./setup
+cd ..
+cp -r Runtime Runtime-debug
+mv Runtime Runtime-normal
+cd Runtime-normal
 # This line should get its own script - that synchronizes configuration between Code and Runtime
 ./configure --disable-shared --with-gc=conservative --with-precise-c --with-thread-model=heavy --with-classpath=`pwd`/../install-noGUI/lib/classpath CC="gcc -O9 -DNDEBUG"
+make clean; make
+cd ..
+cd Runtime-debug
+./configure --disable-shared --with-gc=conservative --with-precise-c --with-thread-model=heavy --with-classpath=`pwd`/../install-noGUI-debug/lib/classpath CC="gcc -g"
 make clean; make
 
 cd ../Code
