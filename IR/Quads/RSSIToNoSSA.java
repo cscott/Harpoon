@@ -24,7 +24,7 @@ import java.util.Map;
  * <code>RSSIToNoSSA</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: RSSIToNoSSA.java,v 1.1.2.2 2000-04-04 02:16:14 bdemsky Exp $
+ * @version $Id: RSSIToNoSSA.java,v 1.1.2.3 2000-04-04 04:17:16 cananian Exp $
  */
 public class RSSIToNoSSA {
     QuadFactory newQF;
@@ -39,12 +39,12 @@ public class RSSIToNoSSA {
         this.newQF=newQF;
 	this.code=code;
 	ctm=new CloningTempMap(code.qf.tempFactory(),newQF.tempFactory());
-	this.header=translate();
 	this.oldai=code.getAllocationInformation();
 	if (oldai!=null)
 	    this.newai=new AllocationInformationMap();
 	else
 	    this.newai=null;
+	this.header=translate();
     }
     public Quad getQuads() { return header; }
 
