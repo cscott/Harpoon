@@ -14,7 +14,6 @@ import harpoon.Tools.PatMat.Spec.ExpBinop;
 import harpoon.Tools.PatMat.Spec.ExpConst;
 import harpoon.Tools.PatMat.Spec.ExpMem;
 import harpoon.Tools.PatMat.Spec.ExpName;
-import harpoon.Tools.PatMat.Spec.ExpNativeCall;
 import harpoon.Tools.PatMat.Spec.ExpTemp;
 import harpoon.Tools.PatMat.Spec.ExpUnop;
 import harpoon.Tools.PatMat.Spec.Leaf;
@@ -49,7 +48,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.22 1999-08-05 21:27:08 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.23 1999-08-11 00:04:01 pnkfelix Exp $
  */
 
 action code {:
@@ -198,9 +197,6 @@ exp	::=	ID:id
 		{: RESULT = new ExpMem(t, e); :}
 	|	NAME LPAREN ID:id RPAREN
 		{: RESULT = new ExpName(id); :}
-	/* Transitional: Remove either NATIVECALL stm or this exp. */
-	|	NATIVECALL LPAREN exp:e1 COMMA ID:id RPAREN
-		{: RESULT = new ExpNativeCall(e1, id); :}
 	|	TEMP opt_types:t LPAREN ID:id RPAREN
 		{: RESULT = new ExpTemp(t, id); :}
 	|	UNOP opt_types:t LPAREN sym_unops:u COMMA exp:e RPAREN

@@ -5,6 +5,7 @@ package harpoon.Tools.PatMat;
 
 import harpoon.Util.Util;
 import harpoon.IR.Tree.Type;
+import harpoon.IR.Tree.SEGMENT;
 
 import java.io.PrintWriter;
 import java.util.Comparator;
@@ -24,7 +25,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.29 1999-08-10 18:22:22 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.30 1999-08-11 00:04:01 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -560,7 +561,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    allowLong = e.types.contains(Type.LONG);
 	    allowPointer = e.types.contains(Type.POINTER);
 
-	    String checkPrefix = "\t" + expPrefix + ".type() ==";
+	    final String checkPrefix = "\t" + expPrefix + ".type() ==";
 	    append(exp, "&& ( ");
 	    if(allowDouble) append(exp, checkPrefix + " Type.DOUBLE ||");
 	    if(allowFloat) append(exp, checkPrefix + " Type.FLOAT ||");
@@ -583,6 +584,9 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		    append(exp, "&& ( " + expPrefix + ".isFloatingPoint()?");
 		    append(exp, expPrefix + ".doubleValue() == " + l.number.doubleValue() + ":");
 		    append(exp, expPrefix + ".longValue() == " + l.number.longValue() + ")");
+		}
+		public void visit(Spec.LeafNull l) {
+		    append(exp, "&& " + checkPrefix + " Type.POINTER ");
 		}
 	    });
 	}
@@ -780,9 +784,12 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 		//String matchStm = indent + "_matched_ = (" + typeCheck + indent + ");";
 		stmMatchActionPairs.add( new RuleTuple
-					 ( matchStm, 
-					   r.action_str + 
-					   indent + "}", recurse.degree ) );
+					 ( r.stm.toString(),
+					   matchStm, 
+					   indent + r.action_str + 
+					   indent + "return;" +
+					   indent + "}", null,
+					   recurse.degree ) );
 	    }
 	    public void visit(Spec.RuleExp r) { 
 		TypeExpRecurse recurse = 
@@ -802,9 +809,11 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 				   indent + TREE_Tree + " ROOT = " + expArg + ";\n");
 		//String matchStm = indent + "_matched_ =  (" + typeCheck + indent + ");";
 		expMatchActionPairs.add( new RuleTuple
-					 ( matchStm, r.action_str + 
+					 ( r.exp.toString(),
+					   matchStm, r.action_str + 
 					   indent + "return " + r.result_id + ";\n" +
-					   indent + "}", recurse.degree ) );
+					   indent + "}", r.result_id,
+					   recurse.degree ) );
 		
 	    }
 
@@ -831,12 +840,17 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	out.println("\t\t\tboolean _matched_ = false;");
 
 	Iterator expPairsIter = expMatchActionPairs.iterator();
+	
+	int i = 1;
+
 	while(expPairsIter.hasNext()) {
 	    RuleTuple triplet = (RuleTuple) expPairsIter.next();
+	    // out.println("System.out.println(\"Checkpoint Exp: "+(i++)+" \");");
+	    out.println("\t\t\t\t /* " + triplet.rule + " */");
 	    out.println(triplet.matchStms);
 	    out.println("\t\t\t\tif (_matched_) { // action code! degree: "+triplet.degree);
 	    out.println(triplet.actionStms);
-	    
+	    //out.println("\t\t\t\treturn " + triplet.resultId + ";");
 	    out.println("\t\t\t}");
 	}
 	
@@ -856,12 +870,14 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	out.println("\t\t\tboolean _matched_ = false;");
 	
 	Iterator stmPairsIter = stmMatchActionPairs.iterator();
+	i=1;
 	while(stmPairsIter.hasNext()) {
 	    RuleTuple triplet = (RuleTuple) stmPairsIter.next();
+	    // out.println("System.out.println(\"Checkpoint Stm: "+(i++)+" \");");
+	    out.println("\t\t\t\t /* " + triplet.rule + " */");
 	    out.println(triplet.matchStms);
 	    out.println("\t\t\t\tif (_matched_) { // action code! : degree "+triplet.degree);
 	    out.println(triplet.actionStms);
-	    
 	    out.println("\t\t\t}");
 	}
 
@@ -894,11 +910,13 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	
 	
     }
-    
+
     static class RuleTuple {
-	final String matchStms, actionStms; final int degree;
+	final String matchStms, actionStms, rule, resultId; 
+	final int degree;
 	    
 	/** Constructs a new <code>RuleTuple</code>.
+	    @param rule A <code>String</code> describing the rule
 	    @param matchStms A series of Java statements which will set 
 	                    _matched_ to TRUE if expression matches
 			    and initialize variables that could be
@@ -911,12 +929,18 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 			    selfcontained. 
 	    @param actionStms A series of Java statements to execute if 
 	                      _matched_ == TRUE after 'matchExp' executes 
+	    @param resultId The identifier to return after
+	                      performing <code>actionStms</code>.
+			      Will be <code>null</code> for
+			      <code>RuleStm</code>s. 
 	    @param degree Number of nodes that this rule "eats"
-	*/
-	RuleTuple(String matchStms, String actionStms, int degree) {
+	*/ 
+	RuleTuple(String rule, String matchStms, String actionStms, String resultId, int degree) {
+	    this.rule = rule;
 	    this.matchStms = matchStms;
 	    this.actionStms = actionStms;
 	    this.degree = degree;
+	    this.resultId = resultId;
 	}
     }
     

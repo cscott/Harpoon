@@ -16,7 +16,7 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.5 1999-08-04 06:31:00 cananian Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.6 1999-08-11 00:04:01 pnkfelix Exp $
  */
 public class SEGMENT extends Stm {
     /** Storage for static class data (display, vmtable, etc) */
@@ -35,6 +35,22 @@ public class SEGMENT extends Stm {
     public static final int TEXT              = 6; 
     /** r/w memory initialized at load time to be 0 */
     public static final int ZERO_DATA         = 7; 
+
+    /** Converts a segtype into its string representation.
+     */
+    public static final String decode(int segtype) {
+	switch(segtype) {
+	case CLASS: return "CLASS";
+	case CODE: return "CODE";
+	case GC: return "GC";
+	case INIT_DATA: return "INIT_DATA";
+	case STATIC_OBJECTS: return "STATIC_OBJECTS";
+	case STATIC_PRIMITIVES: return "STATIC_PRIMITIVES";
+	case TEXT: return "TEXT";
+	case ZERO_DATA: return "ZERO_DATA";
+	default: Util.assert(false, "Unknown segment type "+segtype); return null;
+	}
+    }
 
     /** The type of segment this <code>SEGMENT</code> precedes. */
     public final int segtype; 

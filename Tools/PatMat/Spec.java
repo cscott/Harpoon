@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.24 1999-08-05 21:27:09 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.25 1999-08-11 00:04:01 pnkfelix Exp $
  */
 public class Spec  {
 
@@ -244,7 +244,6 @@ public class Spec  {
 	public void visit(ExpId e) { visit((Exp)e); }
 	public void visit(ExpMem e) { visit((Exp)e); }
 	public void visit(ExpName e) { visit((Exp)e); }
-	public void visit(ExpNativeCall e) { visit((Exp)e); }
 	public void visit(ExpTemp e) { visit((Exp)e); }
 	public void visit(ExpUnop e) { visit((Exp)e); }
     }
@@ -393,31 +392,6 @@ public class Spec  {
 	public ExpName(String name) { this.name = name; }
 	public void accept(ExpVisitor v) { v.visit(this); }
 	public String toString() { return "NAME("+name+")"; }
-    }
-
-    /** Extension of <code>Spec.Exp</code> that represents a 
-     *  c-calling convention function call.
-	@see IR.Tree.NATIVECALL
-    */
-    public static class ExpNativeCall extends Exp {
-	/** Function location expression. 
-	    @see IR.Tree.Exp
-	 */
-	public final Exp func;
-	/** Arguments being passed to procedure. 
-	    @see IR.Tree.ExpList
-	*/
-	public final String arglist;
-	/** Constructs a new <code>Spec.ExpNativeCall</code>.
-	    @param func Function location expression.
-	    @param arglist Arguments.
-	*/
-	public ExpNativeCall(Exp func, String arglist) {
-	    this.func = func;
-	    this.arglist = arglist;
-	}
-	public void accept(ExpVisitor v) { v.visit(this); }
-	public String toString() { return "NATIVECALL("+func+","+arglist+")"; }
     }
 
     /** Extension of <code>Spec.Exp</code> that represents a Temporary
@@ -886,25 +860,7 @@ public class Spec  {
 	    this.segtype = segtype;
 	}
 	public String toString() {
-	    switch (segtype) {
-	    case harpoon.IR.Tree.SEGMENT.CLASS:
-		return "CLASS";
-	    case harpoon.IR.Tree.SEGMENT.CODE:
-		return "CODE";
-	    case harpoon.IR.Tree.SEGMENT.GC:
-		return "GC";
-	    case harpoon.IR.Tree.SEGMENT.INIT_DATA:
-		return "INIT_DATA";
-	    case harpoon.IR.Tree.SEGMENT.STATIC_OBJECTS:
-		return "STATIC_OBJECTS";
-	    case harpoon.IR.Tree.SEGMENT.STATIC_PRIMITIVES:
-		return "STATIC_PRIMITIVES";
-	    case harpoon.IR.Tree.SEGMENT.TEXT:
-		return "TEXT";
-	    case harpoon.IR.Tree.SEGMENT.ZERO_DATA:
-		return "ZERO_DATA";
-	    default: throw new Error("Unknown segment type.");
-	    }
+	    return harpoon.IR.Tree.SEGMENT.decode(segtype);
 	}
 	/** Applies <code>v</code>'s <code>visit</code> method to
 	    <code>this</code>.
@@ -1088,7 +1044,7 @@ public class Spec  {
 	    if (contains(harpoon.IR.Tree.Type.LONG))    sb.append(",l");
 	    if (contains(harpoon.IR.Tree.Type.FLOAT))   sb.append(",f");
 	    if (contains(harpoon.IR.Tree.Type.DOUBLE))  sb.append(",d");
-	    if (contains(harpoon.IR.Tree.Type.POINTER)) sb.append(",a");
+	    if (contains(harpoon.IR.Tree.Type.POINTER)) sb.append(",p");
 	    if (sb.length()>0) sb.setCharAt(0, '<'); else sb.append('<');
 	    sb.append('>');
 	    return sb.toString();
