@@ -67,7 +67,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.56 2003-07-03 23:04:50 cananian Exp $
+ * @version $Id: SAMain.java,v 1.57 2003-07-08 16:27:44 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -475,13 +475,21 @@ public class SAMain extends harpoon.IR.Registration {
 
 		System.out.println(alloc_strategy);
 
-		if(alloc_strategy.equalsIgnoreCase("nifty"))
-		    return new harpoon.Backend.PreciseC.
-			PGCNiftyAllocationStrategy(frame);
-
-		if(alloc_strategy.equalsIgnoreCase("niftystats"))
-		    return new harpoon.Backend.PreciseC.	    
-			PGCNiftyAllocationStrategyWithStats(frame);
+		if (frame instanceof harpoon.Backend.PreciseC.Frame) {
+		    // these strategies only work with the PreciseC backend
+		    if(alloc_strategy.equalsIgnoreCase("nifty"))
+			return new harpoon.Backend.PreciseC.
+			    PGCNiftyAllocationStrategy(frame);
+		    
+		    if(alloc_strategy.equalsIgnoreCase("niftystats"))
+			return new harpoon.Backend.PreciseC.	    
+			    PGCNiftyAllocationStrategyWithStats(frame);
+		} else {
+		    // non-precisec version of the 'nifty' alloc strategy
+		    if(alloc_strategy.equalsIgnoreCase("nifty"))
+			return new harpoon.Backend.Runtime1.
+			    NiftyAllocationStrategy(frame);
+		}
 		
 		if(alloc_strategy.equalsIgnoreCase("bdw"))
 		    return new harpoon.Backend.Runtime1.
