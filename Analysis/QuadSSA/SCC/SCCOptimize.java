@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.3 1998-10-08 00:21:19 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.4 1998-10-08 00:26:25 cananian Exp $
  */
 public class SCCOptimize {
     TypeMap  ti;
@@ -47,19 +47,7 @@ public class SCCOptimize {
     // Utility class
     private CONST newCONST(HCodeElement source, 
 			   Temp dst, Object val, HClass type) {
-	if (type==HClass.Boolean) {
-	    val = new Integer(((Boolean)val).booleanValue()?1:0);
-	    type= HClass.Int;
-	} else if (type==HClass.Short) {
-	    val = new Integer(((Short)val).intValue());
-	    type= HClass.Int;
-	} else if (type==HClass.Char) {
-	    val = new Integer((int)((Character)val).charValue());
-	    type= HClass.Int;
-	} else if (type==HClass.Byte) {
-	    val = new Integer(((Byte)val).intValue());
-	    type= HClass.Int;
-	}
+	if (type==HClass.Boolean) type=HClass.Int;
 	return new CONST(source, dst, val, type);
     }
 
