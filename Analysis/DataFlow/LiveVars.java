@@ -21,7 +21,7 @@ import java.util.Iterator;
  * rep instead of <code>Set</code>s of <code>Temp</code>s.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.2 1999-05-28 01:47:49 pnkfelix Exp $
+ * @version $Id: LiveVars.java,v 1.1.2.3 1999-06-03 01:45:25 pnkfelix Exp $
  */
 public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     
@@ -117,6 +117,18 @@ public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
     public Set getLiveOnEntry(BasicBlock b) {
 	LiveVarInfo lvi = (LiveVarInfo) bbToLvi.get(b);
 	return lvi.lvIN;
+    }
+
+    /** Returns the <code>Set</code> of <code>Temp</code>s that are
+	live on exit from <code>b</code>
+	<BR> <B>requires:</B> A DataFlow Solver has been run to
+	     completion on the graph of <code>BasicBlock</code>s
+	     containing <code>b</code> with <code>this</code> as the
+	     <code>DataFlowBasicBlockVisitor</code>.
+    */
+    public Set getLiveOnExit(BasicBlock b) {
+	LiveVarInfo lvi = (LiveVarInfo) bbToLvi.get(b);
+	return lvi.lvOUT;
     }
 
     public String dump() {
