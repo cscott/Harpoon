@@ -28,7 +28,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.2.10 1999-08-04 05:52:15 cananian Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.2.11 1999-09-08 01:45:00 pnkfelix Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -81,6 +81,9 @@ public class InterfaceMethodMap extends MethodMap {
      */
     public int methodOrder( HMethod hm ) {
 	HmNode node = (HmNode) mtable.get( hm );
+	Util.assert(node != null, 
+		    "InterfaceMethodMap must contain "+
+		    "a mapping for " + hm);
 	SlotColor c = (SlotColor) node.getColor();
 	return c.index;
     }

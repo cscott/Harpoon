@@ -20,7 +20,7 @@ import java.util.Map;
  * ease the task of statically creating Java objects in the tree form. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.2.2 1999-09-08 00:36:58 pnkfelix Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.2.3 1999-09-08 01:45:02 pnkfelix Exp $
  *
  */
 public abstract class ObjectBuilder { 
@@ -31,10 +31,10 @@ public abstract class ObjectBuilder {
 
     private static final boolean DEBUG = true;
     private static final void DEBUGln(String s) {
-	if (DEBUG) System.out.println("Data ctor: " + s);
+	if (DEBUG) System.out.println("ObjectBuilder: " + s);
     }
     private static final void DEBUG(String s) {
-	if (DEBUG) System.out.print("Data ctor: " + s);
+	if (DEBUG) System.out.print("ObjectBuilder: " + s);
     }
 
 
@@ -184,6 +184,7 @@ public abstract class ObjectBuilder {
      *                 to be created.
      */
     public static ESEQ buildClass(TreeFactory tf, Frame frame, HClass hclass) {
+	DEBUGln("buildClass() called for " + hclass);
 	OffsetMap offm   = frame.getOffsetMap();
 	int       ws     = offm.wordsize();
 	Label     clsRef = new Label();
@@ -220,9 +221,7 @@ public abstract class ObjectBuilder {
 	    if (!Stm.isNop(methodData.stm)) stms.add(methodData.stm);
 	    if (methods[i].isStatic()) {} //s.add(methodData.exp); }
 	    else { 
-		try { 
-		    addE(offm.offset(methods[i])/ws,methodData.exp,u,d);
-		} catch (NullPointerException e) { }
+		addE(offm.offset(methods[i])/ws,methodData.exp,u,d);
 	    }
 	}
 	Collections.reverse(u);
@@ -455,6 +454,8 @@ public abstract class ObjectBuilder {
      * @param method   a representation of the method to create
      */
     public static ESEQ buildMethod(TreeFactory tf,Frame frame,HMethod method) {
+	DEBUGln("buildMethod() called for " + method);
+
  	Exp[]    tParameterTypes, tExceptionTypes;
 	HClass[] parameterTypes, exceptionTypes;
 
@@ -463,7 +464,8 @@ public abstract class ObjectBuilder {
 	Label     clsRef = new Label();
 
 	// Check the methods cache
-	if (methods.containsKey(method)) return (ESEQ)methods.get(method);
+	if (methods.containsKey(method)) 
+	    return (ESEQ)methods.get(method);
 	else 
 	    methods.put(method, 
 			new ESEQ(tf,null,new EXP(tf,null,new CONST(tf,null)),

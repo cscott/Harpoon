@@ -72,7 +72,7 @@ import java.util.StringTokenizer;
  * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.23 1999-09-06 18:45:11 duncan Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.24 1999-09-08 01:45:01 pnkfelix Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -312,7 +312,7 @@ public class OffsetMap32 extends OffsetMap
     /** Returns the offset from the class pointer of the specified
      *  non-static method */
     public int offset(HMethod hm) { 
-	Util.assert(!hm.isStatic());
+	Util.assert(hm != null && !hm.isStatic());
 	HClass hc = hm.getDeclaringClass(); 
 	if (hc.isInterface()) 
 	    return -WORDSIZE * (imm.methodOrder(hm)*WORDSIZE) - (2*WORDSIZE);
