@@ -31,7 +31,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_newMemBlock
   if (IsNoHeapRealtimeThread(env, realtimeThread)) {
     bi->alloc     = VTScope_NoHeapRThread_MemBlock_alloc;
     bi->free      = VTScope_NoHeapRThread_MemBlock_free;
-    bi->allocator = VTScope_NoHeapRThread_MemBlock_allocator(memoryArea);
+    bi->allocator = NULL;
 #ifdef WITH_PRECISE_GC
     bi->gc        = NULL;
 #endif
@@ -39,7 +39,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_newMemBlock
 #endif
     bi->alloc     = VTScope_RThread_MemBlock_alloc;
     bi->free      = VTScope_RThread_MemBlock_free;
-    bi->allocator = VTScope_RThread_MemBlock_allocator(memoryArea);
+    bi->allocator = NULL;
 #ifdef WITH_PRECISE_GC
     bi->gc        = VTScope_RThread_MemBlock_gc;
     add_MemBlock_to_roots(mb);
@@ -56,8 +56,8 @@ void* VTScope_RThread_MemBlock_alloc(struct MemBlock* mem,
   checkException();
   printf("VTScope_RThread_MemBlock_alloc(0x%08x, %d)\n", mem, (int)size);
 #endif
-  return ListAllocator_alloc((struct ListAllocator*)(mem->block_info->allocator), 
-			     size);
+  return LListAllocator_alloc((LListAllocator)(&(mem->block_info->allocator)), 
+			      size);
 }
 
 void  VTScope_RThread_MemBlock_free(struct MemBlock* mem) {
@@ -69,7 +69,7 @@ void  VTScope_RThread_MemBlock_free(struct MemBlock* mem) {
 #ifdef WITH_PRECISE_GC
   remove_MemBlock_from_roots(mem);
 #endif
-  ListAllocator_free((struct ListAllocator*)(mem->block_info->allocator));
+  LListAllocator_free((LListAllocator)(&(mem->block_info->allocator)));
 #ifdef RTJ_DEBUG
   printf("  free(0x%08x)\n", mem);
 #endif
@@ -79,21 +79,13 @@ void  VTScope_RThread_MemBlock_free(struct MemBlock* mem) {
   RTJ_FREE(mem); 
 }
 
-inline Allocator VTScope_RThread_MemBlock_allocator(jobject memoryArea) {
-#ifdef RTJ_DEBUG
-  checkException();
-  printf("VTScope_RThread_MemBlock_allocator()\n");
-#endif
-  return ListAllocator_new(0);
-}
-
 #ifdef WITH_PRECISE_GC
 void  VTScope_RThread_MemBlock_gc(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
   printf("VTScope_RThread_MemBlock_gc(0x%08x)\n", mem);
 #endif
-  ListAllocator_gc(mem->block_info->allocator);
+  LListAllocator_gc((LListAllocator)(&(mem->block_info->allocator)));
 }
 #endif
 
@@ -104,8 +96,8 @@ void* VTScope_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem,
   checkException();
   printf("VTScope_NoHeapRThread_MemBlock_alloc(0x%08x, %d)\n", mem, size);
 #endif
-  return ListAllocator_alloc((struct ListAllocator*)(mem->block_info->allocator),
-			     size);
+  return LListAllocator_alloc((LListAllocator)(&(mem->block_info->allocator)),
+			      size);
 }
 
 void  VTScope_NoHeapRThread_MemBlock_free(struct MemBlock* mem) {
@@ -113,18 +105,10 @@ void  VTScope_NoHeapRThread_MemBlock_free(struct MemBlock* mem) {
   checkException();
   printf("VTScope_NoHeapRThread_MemBlock_free(0x%08x)\n", mem);
 #endif
-  ListAllocator_free((struct ListAllocator*)(mem->block_info->allocator));
+  LListAllocator_free((LListAllocator)(&(mem->block_info->allocator)));
 #ifdef RTJ_DEBUG
   printf("  free(0x%08x)\n", mem);
 #endif
   RTJ_FREE(mem);
-}
-
-inline Allocator VTScope_NoHeapRThread_MemBlock_allocator(jobject memoryArea) {
-#ifdef RTJ_DEBUG
-  checkException();
-  printf("VTScope_NoHeapRThread_MemBlock_allocator()\n");
-#endif
-  return ListAllocator_new(1);
 }
 #endif

@@ -10,7 +10,7 @@
 #include "jni-private.h"
 #include "heapMemory.h"
 #include "blockAllocator.h"
-#include "listAllocator.h"
+#include "linkedListAllocator.h"
 #include "RTJconfig.h"
 #include "flexthread.h"
 #include "RTJgc.h"

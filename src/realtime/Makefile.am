@@ -19,7 +19,8 @@ ImmortalMemory.c ImmortalPhysicalMemory.h ImmortalPhysicalMemory.c \
 LTMemory.h LTMemory.c NullMemoryArea.h NullMemoryArea.c ScopedPhysicalMemory.h \
 ScopedPhysicalMemory.c VTMemory.h VTMemory.c block.c block.h GCstats.c \
 GCstats.h RawMemory.h RawMemory.c RTJfinalize.h RTJfinalize.c RealtimeSystem.h \
-RealtimeSystem.c NoHeapRealtimeThread.h NoHeapRealtimeThread.c threads.c
+RealtimeSystem.c NoHeapRealtimeThread.h NoHeapRealtimeThread.c \
+linkedListAllocator.h linkedListAllocator.c threads.c
 else
 librealtime_la_SOURCES =  MemBlock.h MemBlock.c MemoryArea.c MemoryArea.h \
 RTJmalloc.h RTJmalloc.c blockAllocator.h blockAllocator.c heapMemory.h \
@@ -29,7 +30,8 @@ ImmortalMemory.c ImmortalPhysicalMemory.h ImmortalPhysicalMemory.c \
 LTMemory.h LTMemory.c NullMemoryArea.h NullMemoryArea.c ScopedPhysicalMemory.h \
 ScopedPhysicalMemory.c VTMemory.h VTMemory.c block.c block.h GCstats.c \
 GCstats.h RawMemory.h RawMemory.c RTJfinalize.h RTJfinalize.c RealtimeSystem.h \
-RealtimeSystem.c NoHeapRealtimeThread.h NoHeapRealtimeThread.c
+RealtimeSystem.c NoHeapRealtimeThread.h NoHeapRealtimeThread.c \
+linkedListAllocator.h linkedListAllocator.c
 endif
 endif
 

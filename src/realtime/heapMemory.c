@@ -8,8 +8,7 @@ inline void HeapMemory_init() {
 }
 
 inline void* HeapMemory_alloc(size_t size) {
-  void* result = (void*)RTJ_MALLOC(size);
-  return result;
+  return (void*)RTJ_MALLOC(size);
 }
 
 inline void HeapMemory_free(void* ptr) {
