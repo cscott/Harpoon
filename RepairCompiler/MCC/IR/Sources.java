@@ -13,9 +13,9 @@ public class Sources {
 	SetDescriptor usedblock=(SetDescriptor)state.stSets.get("UsedBlock");
 	SetDescriptor usedinode=(SetDescriptor)state.stSets.get("UsedInode");
 
-	if (usedblock.isSubset(sd))
+	if (usedblock!=null&&usedblock.isSubset(sd))
 	    return true;
-	if (usedinode.isSubset(sd))
+	if (usedinode!=null&&usedinode.isSubset(sd))
 	    return true;
 
 	return false;
@@ -27,9 +27,9 @@ public class Sources {
 	SetDescriptor usedblock=(SetDescriptor)state.stSets.get("UsedBlock");
 	SetDescriptor usedinode=(SetDescriptor)state.stSets.get("UsedInode");
 
-	if (usedblock.isSubset(sd))
+	if (usedblock!=null&&usedblock.isSubset(sd))
 	    return (SetDescriptor)state.stSets.get("FreeBlock");
-	if (usedinode.isSubset(sd))
+	if (usedinode!=null&&usedinode.isSubset(sd))
 	    return (SetDescriptor)state.stSets.get("FreeInode");
 
 	return null;

@@ -250,12 +250,16 @@ public class DotExpr extends Expr {
 		} else if (DOTYPECHECKS) {
 		    writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
 		}
-		writer.outputline("if (!"+typevar.getSafeSymbol()+")");
-		writer.startblock();
-		writer.outputline(dest.getSafeSymbol()+"=0;");
-		if (DONULL)
-		    writer.outputline(ptr + "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ")=0;");
-		writer.endblock();
+
+		if (DOTYPECHECKS||DOMEMCHECKS) {
+		    writer.outputline("if (!"+typevar.getSafeSymbol()+")");
+		    writer.startblock();
+		    writer.outputline(dest.getSafeSymbol()+"=0;");
+		    if (DONULL)
+			writer.outputline(ptr + "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ")=0;");
+		    writer.endblock();
+		}
+
 		writer.endblock();
 	    }
 	    writer.endblock();

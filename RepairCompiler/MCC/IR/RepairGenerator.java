@@ -767,14 +767,14 @@ public class RepairGenerator {
 			    boolean negate=dpred.isNegated();
 			    VarDescriptor predvalue=VarDescriptor.makeNew("Predicatevalue");
 			    p.generate(cr,predvalue);
+			    if (k==0)
+				cr.outputline("int "+costvar.getSafeSymbol()+"=0;");
+
 			    if (negate)
 				cr.outputline("if (maybe||"+predvalue.getSafeSymbol()+")");
 			    else
 				cr.outputline("if (maybe||!"+predvalue.getSafeSymbol()+")");
-			    if (k==0)
-				cr.outputline("int "+costvar.getSafeSymbol()+"="+cost.getCost(dpred)+";");
-			    else
-				cr.outputline(costvar.getSafeSymbol()+"+="+cost.getCost(dpred)+";");
+			    cr.outputline(costvar.getSafeSymbol()+"+="+cost.getCost(dpred)+";");
 			}
 
 			if(!first) {
