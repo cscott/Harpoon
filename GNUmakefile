@@ -18,6 +18,13 @@ java:	$(ALLSOURCE)
 		egrep -v '^\[[lc]'
 	touch java
 
+cvs-add:
+	for dir in $(filter-out Test,$(ALLPKGS)); do \
+		(cd $$dir; cvs add *.java); \
+	done
+cvs-commit:
+	cvs commit
+
 doc:	doc/TIMESTAMP
 
 doc/TIMESTAMP:	$(ALLSOURCE)
