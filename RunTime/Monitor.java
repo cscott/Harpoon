@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Tue Oct  6 11:24:14 1998> 
-// Time-stamp: <1998-11-27 17:06:41 mfoltz> 
+// Time-stamp: <1998-11-28 13:07:55 mfoltz> 
 // Keywords: 
 
 package harpoon.RunTime;
@@ -28,9 +28,11 @@ public class Monitor {
   static {
     try {
       System.runFinalizersOnExit(true);
-      _properties.load(new FileInputStream("/home/mfoltz/Harpoon/Code/RunTime/Monitor.properties"));
+      _properties.load(new FileInputStream("Monitor.properties"));
       _logstream = new DataOutputStream(new FileOutputStream(_properties.getProperty("dynamicfile")));
-    } catch (Exception e) { }
+    } catch (Exception e) { 
+      e.printStackTrace();
+    }
   }
 
   private Monitor() { }
@@ -46,10 +48,15 @@ public class Monitor {
 
       if (receiver == null) receiver_id = -1;
       else receiver_id = System.identityHashCode(receiver);
+      
+      if (sending_method == null) sending_method = "UnknownMethod";
+      if (receiving_method == null) receiving_method = "UnknownMethod";
 
       _logstream.writeBytes("CALL "+sender_id+" "+sending_method+" "+
 			    receiver_id+" "+receiving_method+"\n");
-    } catch (Throwable e) { }
+    } catch (Throwable e) { 
+      e.printStackTrace();
+    }
   }
 
   public static synchronized void logNEW(Object creator, String creator_class, 
@@ -75,10 +82,16 @@ public class Monitor {
 	created_class = created.getClass().getName();
       }
 
+      if (creator_class == null) creator_class = "UnknownClass";
+      if (creator_method == null) creator_method = "UnknownMethod";
+      if (created_class == null) created_class = "UnknownClass";
+
       _logstream.writeBytes("NEW "+creator_id+" "+creator_method+" "+creator_class+" "+
 			    created_id+" "+created_class+" "+id+"\n");
 
-    } catch (Throwable e) { }
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
   }
 
   static void classFinalizer() throws Throwable {
