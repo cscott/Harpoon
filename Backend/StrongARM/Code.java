@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.10 1999-11-16 22:08:50 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.11 1999-12-03 01:45:54 pnkfelix Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -180,6 +180,18 @@ public class Code extends harpoon.Backend.Generic.Code {
 	    tempInstrPairToRegisterMap.put
 		(new TempInstrPair(instr, pseudoReg), regs.get(0));
 	}
+ 
+	// Register Constraint check
+	if ((instr.assem.indexOf("mul ") != -1) ||
+	    (instr.assem.indexOf("mla ") != -1)) {
+	    Object rm = tempInstrPairToRegisterMap.get
+		(new TempInstrPair(instr, instr.use()[0]));
+	    Object rd = tempInstrPairToRegisterMap.get
+		(new TempInstrPair(instr, instr.def()[0]));
+	    Util.assert(rm == null ||
+			!rm.equals(rd),
+			"rd and rm must be different in mul");
+	}			
     }
 
     public boolean registerAssigned(Instr instr, Temp pr) {
