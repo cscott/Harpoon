@@ -4,10 +4,10 @@ test -f include/stamp-h.in || touch include/stamp-h.in
 test -f ChangeLog || touch ChangeLog
 rm INSTALL COPYING scripts/{install-sh,mkinstalldirs,missing}
 
-libtoolize --automake
+libtoolize --automake --copy -f
 aclocal
 autoheader
-automake --add-missing
+automake --add-missing --copy
 autoconf
 test -f config.cache && rm -f config.cache
 set +x
