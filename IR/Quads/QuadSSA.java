@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSA.java,v 1.1.2.8 1999-08-07 04:35:20 cananian Exp $
+ * @version $Id: QuadSSA.java,v 1.1.2.9 1999-08-28 00:51:25 cananian Exp $
  */
 public class QuadSSA extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -28,10 +28,16 @@ public class QuadSSA extends Code /* which extends HCode */ {
     QuadSSA(QuadNoSSA qns) 
     {
 	super(qns.getMethod(), null);
-	quads = Quad.clone(qf, qns.quads);
-	FixupFunc.fixup(this); // add phi/sigma functions.
+	if (use_new_rename_algorithm)
+	    quads = SSIRename.rename(qns, qf);
+	else {
+	    quads = Quad.clone(qf, qns.quads);
+	    FixupFunc.fixup(this); // add phi/sigma functions.
+	}
 	DeadCode.optimize(this); // get rid of unused phi/sigmas.
     }
+    private final static boolean use_new_rename_algorithm=true;
+
     /** 
      * Create a new code object given a quadruple representation
      * of the method instructions.
