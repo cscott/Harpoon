@@ -3,14 +3,33 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
-import harpoon.Analysis.Transformation.*;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
-import harpoon.Temp.*;
-import harpoon.Util.Collections.*;
-import harpoon.Util.*;
+import harpoon.Analysis.Transformation.MethodMutator;
+import harpoon.ClassFile.CachingCodeFactory;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.SIGMA;
+import harpoon.Temp.Temp;
+import harpoon.Util.Collections.GenericInvertibleMultiMap;
+import harpoon.Util.Collections.InvertibleMultiMap;
+import harpoon.Util.Util;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 /**
  * The <code>NewMover</code> class moves <code>NEW</code> operations
  * as close as possible to the <code>CALL</code> to their initializers.
@@ -26,9 +45,13 @@ import java.util.*;
  * <code>NewMover</code> works best on <code>QuadWithTry</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NewMover.java,v 1.1.2.3 2001-11-08 19:16:12 cananian Exp $
+ * @version $Id: NewMover.java,v 1.1.2.4 2001-11-08 20:52:11 cananian Exp $
  */
 public class NewMover extends MethodMutator {
+    /** If true, then the NewMover will attempt to move NEWs across SIGMAs.
+     *  This yields better results when applied to QuadNoSSA form, but
+     *  increases code size w/ no appreciable benefit on QuadWithTry form. */
+    private static final boolean movePastSigmas=true;
     /** Creates a <code>NewMover</code> that uses the given
      *  <code>HCodeFactory</code> <code>hcf</code>. */
     public NewMover(HCodeFactory hcf) {
@@ -51,17 +74,19 @@ public class NewMover extends MethodMutator {
     void traverseBlock(MoveVisitor mv, Edge in) {
 	mv.from = in;
 	mv.done = false;
-	Util.assert(mv.state.moving.isEmpty());
-	Util.assert(mv.state.aliases.isEmpty());
 	while (!mv.done)
 	    ((Quad)mv.from.to()).accept(mv);
 	// okay, recursively invoke on the one that stopped us.
 	Quad stopper = (Quad) mv.from.to();
 	if (stopper instanceof FOOTER) return; // end-of-the-line!
-	if (mv.seen.add(stopper))
-	    // haven't started with this one before, so do i!
-	    for (int i=0; i<stopper.nextLength(); i++)
+	if (mv.seen.add(stopper)) {
+	    // haven't started with this one before, so do it!
+	    State s = mv.state;
+	    for (int i=0; i<stopper.nextLength(); i++) {
+		mv.state = (i<stopper.nextLength()-1) ? new State(s) : s;
 		traverseBlock(mv, stopper.nextEdge(i));
+	    }
+	} else Util.assert(stopper instanceof PHI);
     }
     static class State {
 	/** Set of NEWs we are moving, maintained as a map from dst->NEW. */
@@ -73,10 +98,18 @@ public class NewMover extends MethodMutator {
 	    this.aliases=new GenericInvertibleMultiMap();
 	}
 	State(State s) {
-	    this.moving=new HashMap(s.moving);
+	    this.moving=new HashMap();
 	    this.aliases=new GenericInvertibleMultiMap(s.aliases);
+	    // copy/clone mappings from s.moving.
+	    for (Iterator it=s.moving.values().iterator(); it.hasNext(); ) {
+		NEW oldQ = (NEW) it.next();
+		NEW newQ = (NEW) oldQ.clone();
+		newQ.addHandlers(oldQ.handlers());
+		this.moving.put(newQ.dst(), newQ);
+	    }
 	}
 	public Object clone() { return new State(this); }
+	public String toString() { return moving+" / "+aliases; }
     }
     class MoveVisitor extends QuadVisitor {
 	Edge from; boolean done;
@@ -159,7 +192,24 @@ public class NewMover extends MethodMutator {
 		done = true;
 	}
 	public void visit(SIGMA q) {
-	    visitPhiSigma(q);
+	    // keep state, but bail out of the iteration to recurse.
+	    if (!movePastSigmas)
+		visitPhiSigma(q); // don't push past sigmas.
+	    else { // check for vars used by sigma.
+		Edge e = from;
+		for (Iterator it=q.useC().iterator(); it.hasNext(); ) {
+		    Temp t = (Temp) it.next();
+		    if (!state.aliases.values().contains(t)) continue;//boring.
+		    // unmap alias to canonical temp (defined by NEW)
+		    Temp src = (Temp) state.aliases.invert().get(t);
+		    Util.assert(state.aliases.invert().getValues(t).size()==1);
+		    // dump it!
+		    e = dumpOne(e, src);
+		    state.moving.remove(src);
+		    state.aliases.remove(src);
+		}
+	    }
+	    from = q.prevEdge(0);
 	    done = true;
 	}
 	public void visit(CALL q) {
@@ -171,6 +221,11 @@ public class NewMover extends MethodMutator {
 	}
 	public void visit(FOOTER q) {
 	    // if we haven't used the MOVE/NEW by now, discard it.
+	    for (Iterator it=state.moving.values().iterator(); it.hasNext(); ){
+		NEW qN = (NEW) it.next();
+		// remove the NEW from any handler sets, too.
+		qN.removeHandlers(qN.handlers());
+	    }
 	    state.moving.clear();
 	    state.aliases.clear();
 	    done=true;
