@@ -1,7 +1,7 @@
 # Grace project file
 #
-@version 50104
-@page size 792, 612
+@version 50107
+@page size 791, 611
 @page scroll 5%
 @page inout 5%
 @link page off
@@ -54,7 +54,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri Nov 16 20:33:10 2001"
+@timestamp def "Sat Mar 23 04:48:51 2002"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -101,7 +101,7 @@
 @g0 fixedpoint format general general
 @g0 fixedpoint prec 6, 6
 @with g0
-@    world xmin 0.5
+@    world xmin 1.5
 @    world xmax 9.5
 @    world ymin 300000
 @    world ymax 300000000
