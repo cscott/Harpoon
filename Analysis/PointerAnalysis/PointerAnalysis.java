@@ -5,6 +5,7 @@ package harpoon.Analysis.PointerAnalysis;
 
 
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Set;
@@ -53,7 +54,7 @@ import harpoon.IR.Quads.FOOTER;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.22 2000-03-05 03:12:38 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.23 2000-03-05 05:30:44 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -132,6 +133,35 @@ public class PointerAnalysis {
      * Returns <code>null</code> if no such graph is available. */
     public ParIntGraph getExtParIntGraph(HMethod hm){
 	return getExtParIntGraph(hm,true);
+    }
+
+
+    // Map<HMethod, Map<CALL,ParIntGraph>>
+    private Map specs = new Hashtable();
+
+    // Returns a version of the external graph for method hm that is
+    // specialized for the call site q
+    ParIntGraph getSpecializedExtParIntGraph(HMethod hm, CALL q){
+	// first, search in the cache
+	Map map_hm = (Map) specs.get(hm);
+	if(map_hm == null){
+	    map_hm = new Hashtable();
+	    specs.put(hm,map_hm);
+	}
+	if(map_hm.containsKey(q))
+	    return (ParIntGraph) map_hm.get(q);
+
+	// if the specialization was not already in the cache,
+	// try to recover the original ParIntGraph (if it exists) and
+	// specialize it
+
+	ParIntGraph original_pig = getExtParIntGraph(hm);
+	if(original_pig == null) return null;
+
+	ParIntGraph new_pig = original_pig.specialize(q);
+	map_hm.put(q,new_pig);
+
+	return new_pig;	
     }
 
     ParIntGraph getExtParIntGraph(HMethod hm, boolean compute_it){
@@ -356,7 +386,7 @@ public class PointerAnalysis {
 
     // Performs the intra-procedural pointer analysis.
     private void analyze_intra_proc(HMethod hm){
-	//if(DEBUG2)
+	if(DEBUG2)
 	    System.out.println("METHOD: " + hm);
 
 	if(STATS) Stats.record_method_pass(hm);

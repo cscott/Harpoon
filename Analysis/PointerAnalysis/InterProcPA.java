@@ -24,7 +24,7 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.14 2000-03-05 03:49:56 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.15 2000-03-05 05:30:43 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -76,11 +76,25 @@ abstract class InterProcPA {
 	ParIntGraph pigs[] = new ParIntGraph[nb_callees];
 	for(int i=0;i<nb_callees;i++){
 	    pigs[i] = pa.getExtParIntGraph(hms[i],false);
+	    // TODO: the second part of the test is for debug only
 	    if((pigs[i] == null) || hms[i].getName().equals("unanalyzed")){
 		// one of the callee doesn't have a // interaction graph
 		return skip_call(q,pig_before,node_rep);
 	    }
 	}
+
+	// specialize the graphs of the callees for the context sensitive PA
+	if(PointerAnalysis.CONTEXT_SENSITIVE)
+	    for(int i=0;i<pigs.length;i++){
+		if(DEBUG)
+		    System.out.println("Pig_callee before specialization:" +
+				       pigs[i]);
+		pigs[i] = pa.getSpecializedExtParIntGraph(hms[i],q);
+		// pigs[i] = pigs[i].specialize(q);
+		if(DEBUG)
+		    System.out.println("Pig_callee after  specialization:" +
+				       pigs[i]);
+	    }
 
 	// special case: only one callee; no ParIntGraph is cloned
 	if(nb_callees == 1){
@@ -171,16 +185,6 @@ abstract class InterProcPA {
 				     ParIntGraph pig_caller,
 				     ParIntGraph pig_callee,
 				     PANode[] callee_params){
-
-	if(PointerAnalysis.CONTEXT_SENSITIVE){
-	    if(DEBUG)
-		System.out.println("Pig_callee before specialization:" +
-				   pig_callee);
-	    pig_callee = pig_callee.specialize(q);
-	    if(DEBUG)
-		System.out.println("Pig_callee after  specialization:" +
-					 pig_callee);
-	}
 
 	if(DEBUG){
 	    System.out.println("Pig_caller:" + pig_caller);

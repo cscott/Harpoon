@@ -17,7 +17,7 @@ import harpoon.IR.Quads.CALL;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.15 2000-03-05 03:12:38 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.16 2000-03-05 05:30:44 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -205,6 +205,7 @@ public class ParIntGraph {
 		});
 	    all_nodes = nodes;
 	}
+	all_nodes.remove(ActionRepository.THIS_THREAD);
 	return all_nodes;
     }
 
@@ -215,14 +216,12 @@ public class ParIntGraph {
 	while(it_nodes.hasNext()){
 	    PANode node = (PANode) it_nodes.next();
 
-	    switch(node.type){
-	    case PANode.INSIDE:
+	    if(node.type == PANode.INSIDE)
 		mu.add(node,node.specialize(q));
-		break;
-	    default:
-		mu.add(node,node);
-	    }
+	    else mu.add(node,node);
 	}
+
+	mu.add(ActionRepository.THIS_THREAD, ActionRepository.THIS_THREAD);
 
 	//if(InterProcPA.DEBUG)
 	//    System.out.println("Specialization: " + mu);
