@@ -66,7 +66,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.24 2001-11-01 20:15:02 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.25 2001-11-05 02:16:04 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -228,7 +228,10 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     void raiseE(Set Ee, Set Eq, Worklist Wq, Edge e) {
 	Quad q = (Quad) e.to();
 	Ee.add(e);
-	if (Eq.contains(q)) return;
+	// if the quad was already executable, we're done.  EXCEPT for
+	// phi functions, where we need to re-evaluate after making more
+	// edges executable (we skip values coming from non-exec edges)
+	if (Eq.contains(q) && !(q instanceof PHI)) return;
 	Eq.add(q);
 	Wq.push(q);
     }

@@ -83,7 +83,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.14 2001-11-04 20:33:27 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.15 2001-11-05 02:16:24 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -423,7 +423,10 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     void raiseE(Set Ee, Set Eq, Worklist Wq, Context c, Edge e) {
 	Quad q = (Quad) e.to();
 	Ee.add(Default.entry(e, c));
-	if (Eq.contains(Default.entry(q,c))) return;
+	// if the quad was already executable, we're done.  EXCEPT for
+	// phi functions, where we need to re-evaluate after making more
+	// edges executable (we skip values coming from non-exec edges)
+	if (Eq.contains(Default.entry(q,c)) && !(q instanceof PHI)) return;
 	Eq.add(Default.entry(q,c));
 	Wq.push(Default.pair(c, q));
     }
@@ -2182,6 +2185,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		if (!list[i].equals(c.list[i])) return false;
 	    return true;
 	}
+	public String toString() { return Arrays.asList(list).toString(); }
 	// context cache
 	private final Map map;
 	private Context lookup(Context c) {
