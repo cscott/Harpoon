@@ -16,6 +16,7 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.MONITORENTER;
 import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.ALENGTH;
 import harpoon.IR.Quads.ANEW;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CONST;
@@ -31,7 +32,7 @@ import java.util.Map;
  * <code>InstrumentAllocs</code> adds counters to each allocation site.
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentAllocs.java,v 1.1.2.5 2000-11-09 20:38:30 bdemsky Exp $
+ * @version $Id: InstrumentAllocs.java,v 1.1.2.6 2000-11-10 06:46:26 bdemsky Exp $
  */
 public class InstrumentAllocs extends MethodMutator implements java.io.Serializable {
     int count;
@@ -104,7 +105,14 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 			    qphi=new PHI(qf,q,new Temp[0],new Temp[0][2],2);
 			    Quad.addEdge(qcall,0,qphi,0);
 			    Quad.addEdge(qcall,1,qphi,1);
-			    Quad qq=(q instanceof NEW)?q.next(0):q;
+			    Quad qq=q;
+			    if (q instanceof NEW)
+				while (!(qq instanceof CALL)) {
+				    if (qq instanceof ALENGTH)
+					qq=qq.next(0).next(0).next(1);
+				    else
+					qq=qq.next(0);
+				}
 			    Quad.addEdge(qphi, 0,qq.next(0),qq.nextEdge(0).which_pred());
 			    Quad.addEdge(qq,0,qcall,0);
 			}
@@ -139,6 +147,7 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 		Quad.addEdge(qphi,0,q,0);
 	    }
 	}
+	//	hc.print(new java.io.PrintWriter(System.out,true));
 	return hc;
     }
 }
