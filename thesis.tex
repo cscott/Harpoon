@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.37 1999-06-13 05:23:50 cananian Exp $
+% $Id: thesis.tex,v 1.38 1999-06-13 05:30:24 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.37 $ $}
+\date{\today \\ $ $Revision: 1.38 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.37 $ $}{$ $Revision: 1.37 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.38 $ $}{$ $Revision: 1.38 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -501,15 +501,16 @@ PST.  I want an $O(EV)$ algorithm, which means solving the
 one-variable case in $O(E)$.  Argh.
 
 \subsubsection{Pruning SSI form}
-The SSI algorithm can be run using inexact liveness information
-(including the function $\mbox{\bf Live}(v)=\mbox{\tt false}$) if
+The SSI algorithm can be run using any conservative approximation to
+the liveness information
+(including the function $\mbox{\bf Live}(v)=\mbox{\tt true}$) if
 unused code elimination%
 \footnote{We follow \cite{wegman91:scc} in distinguishing
 \emph{unreachable code elimination}, which removes code that can never
 be executed, from \emph{unused code elimination}, which deletes
 sections of code whose results are never used.  Both are often called
 ``dead code elimination'' in the literature.}  is performed to remove
-the extra \phisigfunction{s}.  Figures \ref{fig:deaddata} and
+the extra \phisigfunction{s} added.  Figures \ref{fig:deaddata} and
 \ref{fig:deadalg} present an algorithm to identify unused code in
 $O(NV)$ time, after which a simple $O(N)$ pass suffices to remove it.
 The complexity analysis is simple: nodes and variables are visited at
