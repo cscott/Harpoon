@@ -71,7 +71,7 @@ inline struct inflated_oobj* getInflatedObject(JNIEnv* env, jobject obj) {
     checkException();
 #endif
   }
-  return FNI_UNWRAP_MASKED(obj)->hashunion.inflated;
+  return FNI_INFLATED(obj);
 }
 
 void checkException() {

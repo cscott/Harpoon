@@ -234,9 +234,10 @@ jobject FNI_Alloc(JNIEnv *env,
 		  void *(*allocfunc)(jsize length), jsize length);
 
 /* inflation routine/macro */
+void FNI_InflateObject(JNIEnv *env, jobject obj);
 #define FNI_IS_INFLATED(obj) \
 		((FNI_UNWRAP_MASKED(obj)->hashunion.hashcode & 1) == 0)
-void FNI_InflateObject(JNIEnv *env, jobject obj);
+#define FNI_INFLATED(obj) (FNI_UNWRAP_MASKED(obj)->hashunion.inflated)
 
 /* JNI-local object data storage. */
 void * FNI_GetJNIData(JNIEnv *env, jobject obj);
