@@ -18,7 +18,7 @@ import java.util.Map;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.1.2.10 2000-10-10 21:32:22 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.11 2000-10-19 23:34:37 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
@@ -50,6 +50,7 @@ abstract class Print  {
 	pw.println("Codeview \""+c.getName()+"\" for "+c.getMethod()+":");
 	HandlerSet hs = null; // no handlers at top.
 	for (int i=0; i<ql.length; i++) {
+	    // make label and description string.
 	    String l = (labels.containsKey(ql[i])) ?
 		labels.get(ql[i]).toString()+":" : "";
 	    String s = ql[i].toString();
@@ -143,6 +144,7 @@ abstract class Print  {
 	    }
 	}
 	pw.println();
+	pw.flush();
     }
     /** Pretty-print a PHI. */
     static void indent(PrintWriter pw, PHI p) {
