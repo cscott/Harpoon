@@ -14,7 +14,7 @@ import java.util.List;
  * an array type.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassArraySyn.java,v 1.1.2.1 2000-10-20 22:50:45 cananian Exp $
+ * @version $Id: HClassArraySyn.java,v 1.1.2.2 2000-10-20 22:52:49 cananian Exp $
  */
 class HClassArraySyn extends HClassArray implements HClassMutator {
     List declaredMethods = new ArrayList(4);
@@ -22,8 +22,7 @@ class HClassArraySyn extends HClassArray implements HClassMutator {
     /** Creates a <code>HClassArraySyn</code>. */
     HClassArraySyn(Linker linker, HClass baseType, int dims) {
         super(linker, baseType, dims);
-	addDeclaredMethod(cloneMethod.getName(), cloneMethod);
-	hasBeenModified=false; // reset modification status.
+	declaredMethods.add(cloneMethod); // this method is not mutable.
     }
     /** Allow mutation. */
     public HClassMutator getMutator() { return this; }
@@ -56,6 +55,8 @@ class HClassArraySyn extends HClassArray implements HClassMutator {
 	return hm;
     }
     public void removeDeclaredMethod(HMethod m) throws NoSuchMethodError {
+	if (m.equals(cloneMethod))
+	    throw new Error("Not allowed to remove the array clone method.");
 	if (declaredMethods.remove(m)) {
 	    hasBeenModified=true; // flag the modification
 	    return;
