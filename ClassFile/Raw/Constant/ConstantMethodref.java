@@ -4,8 +4,8 @@ import harpoon.ClassFile.Raw.*;
 /** 
  * The <code>CONSTANT_Methodref</code> structure represents a method.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: ConstantMethodref.java,v 1.8 1998-08-01 22:50:07 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ConstantMethodref.java,v 1.9 1998-08-01 22:55:17 cananian Exp $
  * @see "The Java Virtual Machine Specifications, section 4.4.2"
  * @see Constant
  * @see ConstantFieldref

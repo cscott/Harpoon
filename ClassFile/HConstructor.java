@@ -6,8 +6,8 @@ import java.lang.reflect.Modifier;
  * A <code>HConstructor</code> provides information about a single
  * constructor for a class.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: HConstructor.java,v 1.3 1998-08-01 22:50:01 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: HConstructor.java,v 1.4 1998-08-01 22:55:13 cananian Exp $
  * @see HMethod
  * @see HMember
  * @see HClass

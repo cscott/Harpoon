@@ -16,8 +16,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * file name <code>foo.java</code> but not the UNIX pathname
  * <code>/home/lindholm/foo.java</code>.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: AttributeSourceFile.java,v 1.6 1998-08-01 22:50:07 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: AttributeSourceFile.java,v 1.7 1998-08-01 22:55:16 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.2"
  * @see Attribute
  * @see ClassFile

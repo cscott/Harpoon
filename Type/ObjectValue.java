@@ -4,8 +4,8 @@ package harpoon.Type;
  * This class represents a particular instantiation of a constant object.
  * I'm not sure exactly what methods can be invoked.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: ObjectValue.java,v 1.2 1998-08-01 22:50:08 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ObjectValue.java,v 1.3 1998-08-01 22:55:17 cananian Exp $
  * @see     Type
  * @see     ValueException
  */

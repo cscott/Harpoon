@@ -4,8 +4,8 @@ package harpoon.Type.Basic;
  * An unimplementedException is thrown when we try to use a feature
  * that a particular datatype does not support.
  *
- * @author C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: UnimplementedException.java,v 1.2 1998-08-01 22:50:09 cananian Exp $
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: UnimplementedException.java,v 1.3 1998-08-01 22:55:18 cananian Exp $
  * @see Datatype
  */
 public class UnimplementedException extends Exception {

@@ -7,8 +7,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * is described by a variable-length <code>method_info</code>
  * structure.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: MethodInfo.java,v 1.9 1998-08-01 22:50:06 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: MethodInfo.java,v 1.10 1998-08-01 22:55:16 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.6"
  * @see ClassFile
  * @see harpoon.ClassFile.HMethod

@@ -8,8 +8,8 @@ import java.util.Vector;
  * <p>
  * Each instance of this class represents a unique datatype.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: Type.java,v 1.3 1998-08-01 22:50:08 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: Type.java,v 1.4 1998-08-01 22:55:17 cananian Exp $
  * @see     BaseType
  * @see     ArrayType
  * @see     ObjectType

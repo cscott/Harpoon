@@ -7,8 +7,8 @@ package harpoon.Type;
  * An example would be attempting to initialize perform <code>add()</code>
  * on a <code>harpoon.Type.Basic.Boolean</code>.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: ValueMethodException.java,v 1.2 1998-08-01 22:50:08 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ValueMethodException.java,v 1.3 1998-08-01 22:55:18 cananian Exp $
  */
 
 public class ValueMethodException extends ValueException {

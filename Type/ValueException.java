@@ -4,8 +4,8 @@ package harpoon.Type;
  * A ValueException is thrown if we attempt to perform an illegal
  * action on a Value object.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: ValueException.java,v 1.2 1998-08-01 22:50:08 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ValueException.java,v 1.3 1998-08-01 22:55:18 cananian Exp $
  * @see     Value
  * @see     InvalidValueException
  * @see     ValueMethodException

@@ -6,8 +6,8 @@ import harpoon.ClassFile.Raw.*;
  * represent constant objects of the type
  * <code>java.lang.String</code>.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: ConstantString.java,v 1.8 1998-08-01 22:50:08 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ConstantString.java,v 1.9 1998-08-01 22:55:17 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.3"
  * @see Constant
  */

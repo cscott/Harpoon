@@ -13,8 +13,8 @@ import java.util.Vector;
  * may be a class method or an instance method (including an abstract
  * method).
  * 
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: HMethod.java,v 1.3 1998-08-01 22:50:01 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: HMethod.java,v 1.4 1998-08-01 22:55:13 cananian Exp $
  * @see HMember
  * @see HClass
  */

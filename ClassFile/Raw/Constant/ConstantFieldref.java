@@ -4,8 +4,8 @@ import harpoon.ClassFile.Raw.*;
 /**
  * The <code>CONSTANT_Fieldref</code> structure represents a field.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: ConstantFieldref.java,v 1.8 1998-08-01 22:50:07 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ConstantFieldref.java,v 1.9 1998-08-01 22:55:17 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.2"
  * @see Constant
  * @see ConstantMethodref

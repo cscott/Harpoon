@@ -11,8 +11,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * initialization method.  There must be exactly one <code>Code</code>
  * attribute in each <code>method_info</code> structure.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: AttributeCode.java,v 1.8 1998-08-01 22:50:07 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: AttributeCode.java,v 1.9 1998-08-01 22:55:16 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeLineNumberTable
  * @see AttributeLocalVariableTable

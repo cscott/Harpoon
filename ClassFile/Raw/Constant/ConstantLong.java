@@ -4,8 +4,8 @@ import harpoon.ClassFile.Raw.*;
 /** 
  * The <code>CONSTANT_Long_info</code> structure represents eight-byte
  * integer numeric constants.
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: ConstantLong.java,v 1.9 1998-08-01 22:50:07 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ConstantLong.java,v 1.10 1998-08-01 22:55:17 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.5"
  * @see Constant
  * @see ConstantDouble

@@ -3,8 +3,8 @@ package harpoon.ClassFile.Raw;
 /**
  * A specialized output stream writer for java bytecode files.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: ClassDataOutputStream.java,v 1.5 1998-08-01 22:50:06 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ClassDataOutputStream.java,v 1.6 1998-08-01 22:55:16 cananian Exp $
  * @see ClassDataInputStream
  */
 public class ClassDataOutputStream extends java.io.DataOutputStream {

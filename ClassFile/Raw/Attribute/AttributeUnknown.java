@@ -5,8 +5,8 @@ import harpoon.ClassFile.Raw.Constant.*;
 /** 
  * An attribute of unknown format.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: AttributeUnknown.java,v 1.4 1998-08-01 22:50:07 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: AttributeUnknown.java,v 1.5 1998-08-01 22:55:16 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7"
  * @see Attribute
  */

@@ -7,8 +7,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * handler in the <code>code</code> array of an
  * <code>AttributeCode</code>. 
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: ExceptionTable.java,v 1.7 1998-08-01 22:50:07 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ExceptionTable.java,v 1.8 1998-08-01 22:55:16 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeCode
  */

@@ -4,8 +4,8 @@ package harpoon.ClassFile;
  * <Code>HMember</code> is an interface that reflects identifying information
  * about a single member (a field or a method) or a constructor.
  * 
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: HMember.java,v 1.2 1998-08-01 22:50:01 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: HMember.java,v 1.3 1998-08-01 22:55:13 cananian Exp $
  * @see HClass
  * @see HField
  * @see HMethod

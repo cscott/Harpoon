@@ -10,8 +10,8 @@ package harpoon.Type;
  * <code>Value</code>: <code>BaseValue</code>, <code>ArrayValue</code>, 
  * and <code>ObjectValue</code>.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: Value.java,v 1.2 1998-08-01 22:50:08 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: Value.java,v 1.3 1998-08-01 22:55:18 cananian Exp $
  * @see     Type
  * @see     BaseValue
  * @see     ArrayValue

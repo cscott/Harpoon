@@ -3,8 +3,8 @@ package harpoon.Type.Basic;
 /**
  * Implements the built-in <code>float</code> datatype as a user module.
  *
- * @author  C. Scott Ananian (cananian@alumni.princeton.edu)
- * @version $Id: Float.java,v 1.2 1998-08-01 22:50:08 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: Float.java,v 1.3 1998-08-01 22:55:18 cananian Exp $
  * @see     harpoon.Type.Type
  * @see     harpoon.Type.Basic.Datatype;
  */
