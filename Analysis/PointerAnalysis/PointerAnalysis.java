@@ -65,7 +65,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.28 2000-03-21 05:42:05 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.29 2000-03-23 06:37:56 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -89,15 +89,21 @@ public class PointerAnalysis {
 	touched after being started. */
     public static final boolean TOUCHED_THREAD_SUPPORT = true;
 
+    // TODO: Most of the following flags should be final (which will
+    // help somehow the compiler to perform some dead code elimination
+    // etc. and maybe gain some speed). For the moment, they are non-final
+    // so that the main modeule can modify them (according to the command
+    // line options).
+
     /** Activates the calling context sensitivity. When this flag is
 	on, the nodes from the graph of the callee are specialized for each
 	call site (up to <code>MAX_SPEC_DEPTH</code> times). This increases
 	the precision of the analysis but requires more time and memory. */
-    public static final boolean CALL_CONTEXT_SENSITIVE = false;
+    public static boolean CALL_CONTEXT_SENSITIVE = false;
 
     /** The specialization limit. This puts a limit to the otherwise
 	exponential growth of the number of nodes in the analysis. */
-    public static final int MAX_SPEC_DEPTH = 1;
+    public static int MAX_SPEC_DEPTH = 1;
 
     /** Activates the full thread sensitivity. When this flag is on, 
 	the analysis makes the distinction not only between the nodes
@@ -105,7 +111,7 @@ public class PointerAnalysis {
 	others but also between the nodes allocated by threads with
 	different run methods (for the time being, we cannot make the
 	distinction between two threads with the same thread node). */
-    public static final boolean THREAD_SENSITIVE = false;
+    public static boolean THREAD_SENSITIVE = false;
 
     /** Activates the weak thread sensitivity. When this flag is
 	on, the precision of the interthread analysis is increased:
@@ -114,8 +120,7 @@ public class PointerAnalysis {
 	to differenciate between the nodes created by that thread and
 	the nodes created by the current one. This increases
 	the precision of the analysis but requires more time and memory. */
-    public static final boolean WEAKLY_THREAD_SENSITIVE = false;
-
+    public static boolean WEAKLY_THREAD_SENSITIVE = false;
 
     /** Activates the loop sensitivity. When this flag is on, the precision
 	of the intra-method analysis is increased by making the difference
@@ -123,7 +128,7 @@ public class PointerAnalysis {
 	site inside a loop and the objects allocated at the same object
 	creation site but in the previous iterations. This enambles
 	some strong optimizations but requires more time and memory. */
-    public static final boolean LOOP_SENSITIVE = false;
+    public static boolean LOOP_SENSITIVE = false;
 
     public static final String ARRAY_CONTENT = "array_elements";
 

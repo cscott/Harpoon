@@ -54,7 +54,7 @@ import harpoon.Analysis.MetaMethods.SmartCallGraph;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.15 2000-03-23 02:48:53 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.16 2000-03-23 06:38:12 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -69,7 +69,7 @@ public abstract class PAMain {
 
     private static String[] examples = {
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test1.complex multiplyAdd",
-	"java -Xmx200M harpoon.Main.PAMain harpoon.Test.PA.Test2.Server run",
+	"java -mx200M harpoon.Main.PAMain harpoon.Test.PA.Test2.Server run",
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test3.multiset " +
 	"harpoon.Test.PA.Test3.multisetElement.insert",
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test4.Sum sum",
@@ -77,11 +77,16 @@ public abstract class PAMain {
     };
 
     private static String[] options = {
-	"-m, --meta     use the real MetaMethod",
-	"-s, --smart    use the SmartCallGrapph",
-	"-d, --dumb     use the simplest CallGraph (default)",
-	"-c, --showch   show debug info about ClassHierrachy",
-	"-o, --onlych   show debug info about ClassHierarchy and stop"
+	"-m, --meta     uses the real MetaMethod",
+	"-s, --smart    uses the SmartCallGrapph",
+	"-d, --dumb     uses the simplest CallGraph (default)",
+	"-c, --showch   shows debug info about ClassHierrachy",
+	"-o, --onlych   shows debug info about ClassHierarchy and stop",
+	"--ccs=depth    activate call context sensitivity with a maximum",
+	"              call chain depth of depth",
+	"--ts           activates full thread sensitivity",
+	"--wts          activates weak thread sensitivity",
+	"--ls           activates loop sensitivity",
     };
 
     static PointerAnalysis pa = null;
@@ -110,7 +115,7 @@ public abstract class PAMain {
 	     " If no class if given for the analyzed method, " +
 	     "<main_class> is taken by default.");
 
-	    System.out.println("Options");
+	    System.out.println("Options:");
 	    for(int i = 0; i < options.length; i++)
 		System.out.println("\t" + options[i]);
 
@@ -120,7 +125,7 @@ public abstract class PAMain {
 		System.out.println("\t" + examples[i]);
 
 	    System.out.println("Suggestion:\n" +
-	     "\tYou might consider the \"-Xmx\" flag of the JVM to satisfy\n" +
+	     "\tYou might consider the \"-mx\" flag of the JVM to satisfy\n" +
 	     "\tthe huge memory requirements of the pointer analysis.\n" +
 	     "Warning:\n\t\"Quite fast for small programs!\"" + 
 	     " [Moolly Sagiv]\n" +
@@ -322,7 +327,7 @@ public abstract class PAMain {
 	    System.out.println(int_pig);
 	    System.out.print("EXTERNAL GRAPH AT THE END OF THE METHOD:");
 	    System.out.println(ext_pig);
-	    System.out.print("EXTERNAL GRAPH AT THE END OF THE METHOD" +
+	    System.out.print("INTERNAL GRAPH AT THE END OF THE METHOD" +
 			     " + INTER-THREAD ANALYSIS:");
 	    System.out.println(pig_inter_thread);
 	}
@@ -348,11 +353,16 @@ public abstract class PAMain {
     private static int get_options(String[] argv){
 	int c, c2;
 	String arg;
-	LongOpt[] longopts = new LongOpt[4];
+	LongOpt[] longopts = new LongOpt[8];
 	longopts[0] = new LongOpt("meta", LongOpt.NO_ARGUMENT, null, 'm');
 	longopts[1] = new LongOpt("smartcg", LongOpt.NO_ARGUMENT, null, 's');
 	longopts[2] = new LongOpt("showch", LongOpt.NO_ARGUMENT, null, 'c');
 	longopts[3] = new LongOpt("onlych", LongOpt.NO_ARGUMENT, null, 'o');
+	longopts[4] = new LongOpt("ccs", LongOpt.REQUIRED_ARGUMENT, null, 5);
+	longopts[5] = new LongOpt("ts", LongOpt.NO_ARGUMENT, null, 6);
+	longopts[6] = new LongOpt("wts", LongOpt.NO_ARGUMENT, null, 7);
+	longopts[7] = new LongOpt("ls", LongOpt.NO_ARGUMENT, null, 8);
+
 
 	Getopt g = new Getopt("PAMain", argv, "msco", longopts);
 
@@ -372,6 +382,22 @@ public abstract class PAMain {
 	    case 'o':
 		SHOW_CH = true;
 		SHOW_CH_ONLY = true;
+		break;
+	    case 5:
+		arg = g.getOptarg();
+		PointerAnalysis.CALL_CONTEXT_SENSITIVE = true;
+		PointerAnalysis.MAX_SPEC_DEPTH = new Integer(arg).intValue();
+		break;
+	    case 6:
+		PointerAnalysis.THREAD_SENSITIVE = true;
+		PointerAnalysis.WEAKLY_THREAD_SENSITIVE = false;
+		break;
+	    case 7:
+		PointerAnalysis.WEAKLY_THREAD_SENSITIVE = true;
+		PointerAnalysis.THREAD_SENSITIVE = false;
+		break;
+	    case 8:
+		PointerAnalysis.LOOP_SENSITIVE = true;
 		break;
 	    }
 
@@ -396,6 +422,18 @@ public abstract class PAMain {
 	    System.out.print(" SMART_CALL_GRAPH");
 	if(!(METAMETHODS || SMART_CALL_GRAPH))
 	    System.out.print(" DumbCallGraph");
+
+	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
+	    System.out.print(" CALL_CONTEXT_SENSITIVE=" +
+			     PointerAnalysis.MAX_SPEC_DEPTH);
+	
+	if(PointerAnalysis.THREAD_SENSITIVE)
+	    System.out.print(" THREAD SENSITIVE");
+	if(PointerAnalysis.WEAKLY_THREAD_SENSITIVE)
+	    System.out.print(" WEAKLY_THREAD SENSITIVE");
+
+	if(PointerAnalysis.LOOP_SENSITIVE)
+	    System.out.println(" LOOP_SENSITIVE");
 
 	System.out.println();
     }
