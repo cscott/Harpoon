@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.23 2002-07-24 21:06:37 cananian Exp $
+% $Id: ptran.tex,v 1.24 2002-07-24 22:15:23 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.23 $ $}
+\date{\today \\ $ $Revision: 1.24 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -218,11 +218,12 @@ We expand that type to
 $\mathcal{S\to V\times (S\cup P)}$ where $\mathcal{P}$ is a domain
 representing formal parameters.  The set $P_m$ of formal parameters for
 a method $m$ consists of unique tokens (possibly ordinal integers) for
-each formal parameter of the method.
-
-\textbf{DEFINE FORMAL(p)}
-
-Instead of initializing $\forall n :
+each formal parameter of the method.  Let
+$\text{formal}(p):\mathcal{P\to V}$ map parameter tokens to the
+corresponding formal variables in a callee, and
+$\text{actual}(p):\mathcal{P\to V}$ map parameter tokens to the
+corresponding actual variables at a callsite.
+Now, instead of initializing $\forall n :
 \text{In}_\text{Gs}(n)=\emptyset$, we let
 \begin{displaymath}
 \text{In}_\text{Gs}(\text{\tt HEADER}) =
@@ -265,34 +266,55 @@ v_1 \text{ singular at } s_1 \text{ conditional on } P_1
 }\\\shoveright{{}\wedge
 v_2 \text{ singular at } s_2 \text{ conditional on } P_2
 }\\\shoveright{{}\wedge
-v_1,s_1,P_1
+v_1 \text{ at } s_1 \text{ on } P_1
 \text{ is pairwise-singular with }
-v_2,s_2,P_2
+v_2 \text{ at } s_2 \text{ on } P_2
 }\\{}\wedge
 P_1 \cup P_2 \subseteq P
 \end{multline*}
 
 Now we can resolve conditional singularity compositionally by
-examining actual parameters at a call-site.
+examining actual parameters at a call-site $s_\text{call}$.
 A set $S=S_1 \cup S_2$ of statements,
 where $s_1\in S_1$ belong to the caller and $s_2\in S_2$ belong to the
-callee, are mutually conditionally singular on $P$ if:
+callee, are mutually-singular conditionally on $P$ if:
 \begin{itemize}
 \item $S_2$ are mutually singular conditional on $P'$,
 \item there is no path from $s_1 \in S_1$ to callsite or
              from callsite to $s_1\in S_1$,%
 \footnote{Assuming METHODENTER in callee reaches all $s_2\in S_2$ and
           all $s_2\in S_2$ reach METHODEXIT in callee.}
-\item all actual parameters corresponding to $P'$ unioned with $S_1$
-  are mutually singular conditional on $P$.
+\item all actual parameters corresponding to $P'$ at callsite $s_\text{call}$
+  unioned with $S_1$ are mutually singular conditional on $P$; that is, let
+\begin{displaymath}
+U = 
+\left\{\tuple{\text{actual}(p), s_\text{call}} | p \in P' \right\}
+    \cup
+\left\{\tuple{v,s}|s\in S_1 \wedge v\in \text{use}(s)\right\}
+\end{displaymath}
+then
+\begin{multline*}
+\forall \left\{\tuple{v_1,s_1},\tuple{v_2,s_2}\right\} \subseteq U :
+\\\shoveright{
+v_1 \text{ singular at } s_1 \text{ conditional on } P_1
+}\\\shoveright{{}\wedge
+v_2 \text{ singular at } s_2 \text{ conditional on } P_2
+}\\\shoveright{{}\wedge
+v_1 \text{ at } s_1 \text{ on } P_1
+\text{ is pairwise-singular with }
+v_2 \text{ at } s_2 \text{ on } P_2
+}\\{}\wedge
+P_1 \cup P_2 \subseteq P
+\end{multline*}
 \end{itemize}
 
 %gensites of $P$ are singular and unique and
 %$\left( \bigcup_{s\in S_1} genSites(s) \right) \cap
 % \left( \bigcup_{p\in P} genSites(p) \right) = \emptyset$.
 
-So we can throw away all information internal to method $M_2$ except
-the set of dependent parameters $P$ and whether $S_2$ is mutually singular.
+So we can throw away all information internal to the callee except
+mutually singular sets of statements and their sets of dependent
+formal parameters.
 
 %A compositional
 %analysis is presented to compute interprocedural singularity.
