@@ -49,7 +49,13 @@ static void FNI_DestroyThreadState(void *cl) {
   struct FNI_Thread_State * env = (struct FNI_Thread_State *) cl;
   if (cl==NULL) return; // death of uninitialized thread.
   // ignore wrapped exception; free localrefs.
-  FNI_DeleteLocalRefsUpTo((JNIEnv *)env, NULL);
+#ifdef BDW_CONSERVATIVE_GC
+  GC_free(env->localrefs_stack);
+#else
+  free(env->localrefs_stack);
+#endif
+  env->exception = /* this may point into localrefs_stack, so null it, too */
+  env->localrefs_stack = env->localrefs_next = env->localrefs_end = NULL;
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   // destroy condition variable & mutex
   pthread_mutex_unlock(&(env->sleep_mutex));
