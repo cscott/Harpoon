@@ -5,12 +5,47 @@ package harpoon.Analysis.TypeInference;
 
 import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.Analysis.UseDef;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadSSI;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.ALENGTH;
+import harpoon.IR.Quads.ARRAYINIT;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.COMPONENTOF;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.DEBUG;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.HANDLER;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.LABEL;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MONITORENTER;
+import harpoon.IR.Quads.MONITOREXIT;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.NOP;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SIGMA;
+import harpoon.IR.Quads.SWITCH;
+import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.TYPECAST;
 import harpoon.Util.Set;
 import harpoon.Util.HashSet;
 import harpoon.Util.Util;
-import harpoon.Temp.*;
+import harpoon.Temp.Temp;
 import harpoon.Util.UniqueFIFO;
 import harpoon.Util.Worklist;
 import java.util.Hashtable;
@@ -19,7 +54,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.13 1999-09-08 16:35:27 cananian Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.14 1999-09-08 16:51:46 cananian Exp $
  */
 
 public class IntraProc {
