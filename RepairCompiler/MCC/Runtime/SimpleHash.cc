@@ -119,10 +119,12 @@ void WorkList::pop() {
   int newoffset=tailoffset+4;
   struct ListNode *ptr=tail;
   if (newoffset>=WLISTSIZE) {
-    newoffset-=WLISTSIZE;
-    struct ListNode *oldptr=ptr;
-    ptr=ptr->next;
-    free(oldptr);
+    if (newoffset!=WLISTSIZE||head!=tail) {
+      newoffset-=WLISTSIZE;
+      struct ListNode *oldptr=ptr;
+      ptr=ptr->next;
+      free(oldptr);
+    }
   }
   tail=ptr;
   tailoffset=newoffset;
@@ -136,6 +138,10 @@ void WorkList::add(int id,int type, int lvalue, int rvalue) {
     }
     headoffset=0;
     head=head->next;
+    if (tailoffset==WLISTSIZE) { /* roll the tail over also */
+      tailoffset=0;
+      tail=tail->next;
+    }
   }
   head->data[headoffset++]=id;
   head->data[headoffset++]=type;
