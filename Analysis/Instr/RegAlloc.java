@@ -24,14 +24,14 @@ import java.util.HashMap;
  * for a set of <code>Instr</code>s in a <code>Code</code>.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.1 1999-04-05 16:23:43 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.2 1999-04-05 21:08:37 pnkfelix Exp $ */
 public class RegAlloc  {
     
     Frame frame;
     Code code;
 
     UseMap uses;
-
+    
     /** Creates a <code>RegAlloc</code>. 
 	
 	<BR> <B>Design Issue:</B> should there be a RegAlloc object for every
@@ -97,10 +97,10 @@ public class RegAlloc  {
 	<BR> <B>requires:</B> <code>BasicBlock</code> is a set of
 	      <code>Instr</code>s. 
 	<BR> <B>effects:</B> returns a 
-	Hashtable[TempInstrPair, Double] mapping 
+	Map[TempInstrPair, Double] mapping 
 	(instr x temp) -> deltaValue
     */
-    private Hashtable computeDeltas(BasicBlock block) {
+    private Map computeDeltas(BasicBlock block) {
 	// initialize configuration
 	
 	// Set of { variables allocated registers entering block };
@@ -123,7 +123,7 @@ public class RegAlloc  {
 	
 
 	// *** Implementation Specific local variables *** 
-	Map registerToValueMap = new HashMap();
+	Map regXinstrToValueMap = new HashMap();
 	
 
 	// Iterate over instructions in order 
@@ -131,58 +131,65 @@ public class RegAlloc  {
         ListIterator instrs = block.listIterator();
 	while(instrs.hasNext()) { 
 	    Instr instr = (Instr) instrs.next();
-	    
 	    double delta;
 
 
-	    // BELOW: Last use of a register frees it
-	    Vector vec = new Vector(); 
-	    for (int i=0; i<instr.use().length; i++) {
-		if (isTempRegister(instr.use()[i]) &&  
-		    lastUse( instr.use()[i], instr, instrs)){ 
-		    vec.addElement(instr.use()[i]);
+	    { // BELOW: Last use of a register frees it
+		Vector vec = new Vector(); 
+		for (int i=0; i<instr.use().length; i++) {
+		    if (isTempRegister(instr.use()[i]) &&  
+			lastUse( instr.use()[i], instr, instrs)){ 
+			vec.addElement(instr.use()[i]);
+		    }
 		}
-	    }
-	    Temp[] tmpUses = new Temp[vec.size()];
-	    vec.copyInto(tmpUses);
-	    // for all f of { registers freed by instr }
-	    for (int i=0;i<tmpUses.length;i++) { 
-		
-		Temp t=null; // Let v be value held in f
-		allocated.remove(t);
-		if(true) { // if v is a live variable
-		    candidates.add(t);
-		    possibly++;
-		} else {
-		    unallocated++;
+		Temp[] tmpUses = new Temp[vec.size()];
+		vec.copyInto(tmpUses);
+		// for all f of { registers freed by instr }
+		for (int i=0;i<tmpUses.length;i++) { 
+		    Temp f = tmpUses[i];
+		    Temp t= (Temp) 
+			regXinstrToValueMap.get
+			(new TempInstrPair(instr, f)) ; // Let v be value held in f
+		    if (t != null) {
+			allocated.remove(t);
+			if(true) { // if t is a live variable
+			    candidates.add(t);
+			    possibly++;
+			} else {
+			    unallocated++;
+			}
+		    } else {
+			unallocated++;
+		    }
 		}
 	    }
 
 
-	    // BELOW: First use of a register allocates it
-	    if (true) { // if instr allocated r, a register 
-		Temp v=null; // Let v be value held in r
-		allocated.add(v);
-		if (true) { // if v holds the value of variable (ie not a Temporary) 
-		    candidates.remove(v);
-		}
-		if (possibly > candidates.size() ) {
-		    // Only occurs when possibly == |candidates| prior
-		    // to satisfying preceding conditional
-		    delta = 1.0;
-		    possibly--;
-		} else if (unallocated > 0) {
-		    // Allocating an empty register cannot kill
-		    // anything
-		    delta = 1.0;
-		    unallocated--;
+	    { // BELOW: First use of a register allocates it
+		if (true) { // if instr allocated r, a register 
+		    Temp v=null; // Let v be value held in r
+		    allocated.add(v);
+		    if (true) { // if v holds the value of variable (ie not a Temporary) 
+			candidates.remove(v);
+		    }
+		    if (possibly > candidates.size() ) {
+			// Only occurs when possibly == |candidates| prior
+			// to satisfying preceding conditional
+			delta = 1.0;
+			possibly--;
+		    } else if (unallocated > 0) {
+			// Allocating an empty register cannot kill
+			// anything
+			delta = 1.0;
+			unallocated--;
+		    } else {
+			delta = ((double)(possibly-1)) /
+			    ((double)possibly);
+			possibly--;
+		    }
 		} else {
-		    delta = ((double)(possibly-1)) /
-			((double)possibly);
-		    possibly--;
+		    delta = 1.0;
 		}
-	    } else {
-		delta = 1.0;
 	    }
 	    
 	    for (;;) { // for all v elem candidates
@@ -242,10 +249,10 @@ public class RegAlloc  {
     }
 
     /** Checks if <code>i</code> is last use of <code>reg</code> in
-	<code>block</code>.  
+	the block of instructions lists in <code>iter</code>.  
 	
 	<BR> <B>requires:</B> 
-	1. <code>iter</code> is an element in <code>iter</code>
+	1. <code>i</code> is an element in <code>iter</code>
 	2. <code>iter</code> is currently indexed at <code>i</code>
 	3. <code>reg</code> is used by <code>i</code>
 	<BR> <B>effects:</B>
