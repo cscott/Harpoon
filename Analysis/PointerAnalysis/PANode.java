@@ -21,7 +21,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PANode.java,v 1.1.2.28 2001-06-17 22:30:43 cananian Exp $
+ * @version $Id: PANode.java,v 1.1.2.29 2001-10-18 22:36:10 salcianu Exp $
  */
 final public class PANode implements java.io.Serializable {
     // activates some safety tests
@@ -434,7 +434,7 @@ final public class PANode implements java.io.Serializable {
     }
 
     /** Specializes a set of PANodes according to the node mapping map. */
-    static Set specialize_set(final Set set, final Map map){
+    static Set specialize_set(final Set set, final Map map) {
 	final Set set2 = new HashSet();
 	for(Iterator it = set.iterator(); it.hasNext(); )
 	    set2.add(PANode.translate((PANode) it.next(), map));

@@ -94,7 +94,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.103 2001-06-17 22:34:56 cananian Exp $
+ * @version $Id: PAMain.java,v 1.1.2.104 2001-10-18 22:36:33 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -1863,6 +1863,9 @@ public abstract class PAMain {
 	"--check_nc      Check for CALLs with no detected callees",
 	"--showsplit     Shows the split relation.",
 	"--details       Shows details/statistics.",
+	"--backend b     Generate code for the specified backend; b might be",
+	"                 precisec, strongarm, sparc or mips",
+	"--output dir    Dump the code into the specified directory",
 	"--ccs=depth     Activates call context sensitivity with a given",
 	"                 maximum call chain depth.",
 	"--ts            Activates full thread sensitivity.",

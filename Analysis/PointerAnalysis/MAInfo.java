@@ -74,7 +74,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.1.2.56 2001-06-17 22:30:41 cananian Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.57 2001-10-18 22:36:10 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -486,7 +486,10 @@ public class MAInfo implements AllocationInformation, Serializable {
 	if(opt.DO_PREALLOCATION)
 	    try_prealloc(mm, hcode, pig);
 
-	handle_tg_stuff(pig);
+	if(opt.DO_THREAD_ALLOCATION)
+	    set_make_heap(pig.tau.activeThreadSet());
+
+	// handle_tg_stuff(pig);
 
 	if(opt.do_inlining()) {
 	    if(opt.USE_OLD_INLINING)
@@ -571,9 +574,10 @@ public class MAInfo implements AllocationInformation, Serializable {
 		ap.ns = true; // trivial setting of ns
 	    else { // the hard work ...
 		ap.ns = noConflictingSyncs(node, mm);
-		if(ap.ns)
+		if(ap.ns) {
 		    System.out.println("BRAVO: " + node + " " +
 				       Debug.code2str(q));
+		}
 	    }
 	}
     }
@@ -864,7 +868,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	// Catch some strange case when a node is reported as escaping in
 	// the graph of the callee but it's absent from the caller's graph
 	// (which means it's not really escaping)
-	if(node == null) return true;
+	// if(node == null) return true;
+	Util.assert(node != null);
 
 	if(level > MAInfo.MAX_LEVEL_NO_CONCURRENT_SYNCS)
 	    return false;
@@ -891,10 +896,13 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    if(callers.length == 0)
 		return false;
 
-	    // Case 3.1: we are still far from the bottom ie we have precise
-	    // information about the specializations of node and their
-	    // corresponding CALL sites.
-	    if(node.getCallChainDepth() < PointerAnalysis.MAX_SPEC_DEPTH - 1) {
+	    // Case 3.1: we are still far from the bottom ie we
+	    // have precise information about the specializations
+	    // of node and their corresponding CALL sites.
+	    if(PointerAnalysis.CALL_CONTEXT_SENSITIVE &&
+	       (node.getCallChainDepth() < 
+		PointerAnalysis.MAX_SPEC_DEPTH - 1)) {
+
 		for(Iterator it = node.getAllCSSpecs().iterator();
 		    it.hasNext(); ) {
 		    Map.Entry entry = (Map.Entry) it.next();
@@ -914,7 +922,11 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    // Case 3.2: the bottom was/is about to be reached; we have to
 	    // go and inspect all the callers of mm.
 	    for(int i = 0; i < callers.length; i++) {
-		if(!noConflictingSyncs(node.getBottom(), callers[i], level+1,
+		PANode node2 = 
+		    PointerAnalysis.CALL_CONTEXT_SENSITIVE ?
+		    node.getBottom() : node;
+		    
+		if(!noConflictingSyncs(node2, callers[i], level + 1,
 				       ident + " "))
 		    return false;
 	    }
