@@ -972,6 +972,8 @@ class Thread implements Runnable {
     private native void suspend0();
     private native void resume0();
     private native void interrupt0();
+    private native void EDexit();
+
 
     // *** Added by ovy
 
@@ -1019,6 +1021,7 @@ class Thread implements Runnable {
 
 	    dead= true;
 	}
+	this.EDexit();
     }
 
 
