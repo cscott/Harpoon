@@ -358,6 +358,21 @@ buffer.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
+Watermark.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES) movie/tank.jar
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) xf movie/tank.jar
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) tank.gz.*
+	@rm -rf $(JDIRS) 
+	@rm -rf tank.gz.*
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
 movie/tank.jar:
 	@echo Downloading the tank movie...
 	@wget -nv http://www.flex-compiler.lcs.mit.edu/Harpoon/ImageRec/tank.jar -O movie/tank.jar
@@ -428,6 +443,9 @@ jars: clean doc movie/tank.jar
 	@$(JAR) xf contrib/lm_eventChannel.jar
 	@$(JAR) cfm ATR.jar src/manifest/ATR.jar.MF $(JDIRS) $(EVENTDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > ATR.jar.TIMESTAMP
+	@echo Generating Watermark.jar file...
+	@$(JAR) cfm Watermark.jar src/manifest/Watermark.jar.MF $(JDIRS) $(EVENTDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > Watermark.jar.TIMESTAMP
 	@rm -rf $(EVENTDIRS)
 	@echo Generating GUI.jar file...
 	@$(JAR) xf movie/tank.jar
