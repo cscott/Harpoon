@@ -27,7 +27,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.26 2000-07-30 01:44:40 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.27 2000-08-09 04:15:12 pnkfelix Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -87,7 +87,7 @@ class Code extends harpoon.Backend.Generic.Code {
 	}
     }
     
-    public Collection getRegisters(Instr i, Temp val) {
+    public List getRegisters(Instr i, Temp val) {
 	Util.assert(i != null, "Code.getRegisters(null, Temp) undefined");
 	if (val instanceof TwoWordTemp) {
 	    TwoWordTemp t = (TwoWordTemp) val;
@@ -109,7 +109,7 @@ class Code extends harpoon.Backend.Generic.Code {
 			(false)?"reg is null"
 			: "register for "+val+" in "+i+
 			  " should not be null");
-	    return Collections.singleton(t);
+	    return Collections.nCopies(1, t);
 	}
     }
 

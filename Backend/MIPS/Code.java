@@ -27,7 +27,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for MIPS assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.5 2000-07-12 14:31:55 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.6 2000-08-09 04:15:02 pnkfelix Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "mips";
@@ -87,7 +87,7 @@ class Code extends harpoon.Backend.Generic.Code {
 	}
     }
     
-    public Collection getRegisters(Instr i, Temp val) {
+    public List getRegisters(Instr i, Temp val) {
 	Util.assert(i != null, "Code.getRegisters(null, Temp) undefined");
 	if (val instanceof TwoWordTemp) {
 	    TwoWordTemp t = (TwoWordTemp) val;
@@ -106,7 +106,7 @@ class Code extends harpoon.Backend.Generic.Code {
 	    Util.assert(t != null, 
 			"register for "+val+" in "+i+
 			" should not be null");
-	    return Collections.singleton(t);
+	    return Collections.nCopies(1, t);
 	}
     }
 

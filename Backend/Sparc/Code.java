@@ -27,7 +27,7 @@ import java.util.Set;
  * <code>Code</code> is a code-view for SPARC assembly.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.11 2000-06-29 02:19:32 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.12 2000-08-09 04:15:07 pnkfelix Exp $
  */
 class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "sparc";
@@ -109,7 +109,7 @@ class Code extends harpoon.Backend.Generic.Code {
 	return s;
     }
 
-    public Collection getRegisters(Instr i, Temp val) {
+    public List getRegisters(Instr i, Temp val) {
 	Util.assert (i != null, "Instr was null in Code.getRegisters");
 	TempBuilder tb = (TempBuilder) frame.getTempBuilder();
 	if (tb.isTwoWord(val)) {
@@ -121,7 +121,7 @@ class Code extends harpoon.Backend.Generic.Code {
 	} else {
 	    Temp t = get(i, val);
 	    Util.assert(t != null, "register for "+val+" in "+i+" was null");
-	    return Collections.singleton(t);
+	    return Collections.nCopies(1, t);
 	}
     }
 
