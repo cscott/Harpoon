@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
+import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.IR.Assem.Instr;
@@ -82,7 +83,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.6 2002-08-30 22:38:10 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.7 2003-06-10 15:20:28 cananian Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -274,7 +275,7 @@ public abstract class RegAlloc  {
  	SpillProxy(Instr def, Temp t) {
 	    super(def.getFactory(), def, "SPILL "+t, 
 		  new Temp[]{ }, new Temp[]{ t }, 
-		  true, Collections.EMPTY_LIST);
+		  true, (List<Label>) Collections.EMPTY_LIST);
 	    instr = def; 
 	    tmp = t;
 	}
@@ -294,7 +295,7 @@ public abstract class RegAlloc  {
  	RestoreProxy(Instr use, Temp t) {
 	    super(use.getFactory(), use, "RESTORE "+t,
 		  new Temp[]{ t }, new Temp[]{},
-		  true, Collections.EMPTY_LIST);
+		  true, (List<Label>) Collections.EMPTY_LIST);
 	    instr = use; 
 	    tmp = t;
 	}
