@@ -288,7 +288,7 @@ JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
     fp = next_fp;
   }
   /* linked list is built in reverse order, so reverse it to make it right */
-  reverse_trace(tr, &tr);
+  if (tr) reverse_trace(tr, &tr);
 
   FNI_SetJNIData(env, thisobj, tr, free_stacktrace);
   return thisobj;
