@@ -30,11 +30,14 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.14 1999-06-23 23:19:46 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.15 1999-08-02 18:50:34 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  */
 public abstract class HClass extends HPointer {
   static Hashtable dsc2cls = new Hashtable();
+
+  /** Protected constructor. */
+  protected HClass() { };
 
   /** Make a unique class name from a given suggestion. */
   static String uniqueName(String suggestion) {
