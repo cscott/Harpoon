@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.36 1999-09-10 05:21:45 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.37 1999-10-13 19:49:24 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -179,10 +179,18 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "&& (" + r.exp.toString() + ")");
 	    initStms.append(r.initStms.toString());
 
-	    // initialize arglist
-	    append(initStms, TREE_ExpList + " " + s.arglist + 
-			   " = ((" + TREE_CALL + ")"+stmPrefix + ").args;");
-	    
+	    // initialize arg list
+	    append(initStms, "/* munch argument ExpList into a TempList */");
+	    append(initStms, "harpoon.Temp.TempList "+ s.arglist +
+		   " = new harpoon.Temp.TempList(null, null);");
+	    append(initStms, "{ harpoon.Temp.TempList tl="+s.arglist+";");
+	    append(initStms, "  for ("+TREE_ExpList+" el"+
+		   " = (("+TREE_CALL+")"+stmPrefix+").args;" +
+		   " el!=null; el=el.tail, tl=tl.tail) ");
+	    append(initStms, "    tl.tail = new harpoon.Temp.TempList("+
+		   "munchExp(el.head), null);");
+	    append(initStms, "}");
+	    append(initStms, s.arglist+" = "+s.arglist+".tail;");
 	}
 
 	public void visit(Spec.StmCjump s) {
@@ -355,8 +363,17 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    initStms.append(r.initStms.toString());
 	    
 	    // initialize arg list
-	    append(initStms, TREE_ExpList +" "+ s.arglist + 
-		   " = (("+TREE_NATIVECALL+")"+stmPrefix+").args;");
+	    append(initStms, "/* munch argument ExpList into a TempList */");
+	    append(initStms, "harpoon.Temp.TempList "+ s.arglist +
+		   " = new harpoon.Temp.TempList(null, null);");
+	    append(initStms, "{ harpoon.Temp.TempList tl="+s.arglist+";");
+	    append(initStms, "  for ("+TREE_ExpList+" el"+
+		   " = (("+TREE_NATIVECALL+")"+stmPrefix+").args;" +
+		   " el!=null; el=el.tail, tl=tl.tail) ");
+	    append(initStms, "    tl.tail = new harpoon.Temp.TempList("+
+		   "munchExp(el.head), null);");
+	    append(initStms, "}");
+	    append(initStms, s.arglist+" = "+s.arglist+".tail;");
 	}
 
 	public void visit(Spec.StmReturn s) {

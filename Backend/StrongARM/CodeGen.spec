@@ -23,6 +23,7 @@ import harpoon.IR.Tree.PreciselyTyped;
 import harpoon.IR.Tree.ExpList;
 import harpoon.Backend.Generic.Code;
 import harpoon.Util.Util;
+import harpoon.Temp.TempList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.LabelList;
 import harpoon.Temp.Label;
@@ -57,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.54 1999-10-12 20:42:31 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.55 1999-10-13 19:49:17 cananian Exp $
  */
 %%
 
@@ -1145,52 +1146,49 @@ THROW(val, handler) %{
 
 
 CALL(retval, NAME(retex), func, arglist) %{
-    ExpList list = arglist;
+    TempList list = arglist;
     
-    // I assume that the elements of 'arglist' are all Temps after
-    // canonicalization.
-
     int stackOffset = 0;
 
     for (int index=0; list != null; index++) { 
-	TEMP tempExp = (TEMP) list.head;
-	if (tempExp.isDoubleWord()) {
+	Temp temp = list.head;
+	if (temp instanceof TwoWordTemp) {
 	   // arg takes up two words
 	   switch(index) {
 	   case 0: case 1: case 2: // put in registers 
         // not certain an emitMOVE is legal with the l/h modifiers
 	      emit( ROOT, "mov `d0, `s0l",
 		    frame.getRegFileInfo().getRegister(index) ,
-		    tempExp.temp );
+		    temp );
 	      index++;			     
         // not certain an emitMOVE is legal with the l/h modifiers
 	      emit( ROOT, "mov `d0, `s0h",
 		    frame.getRegFileInfo().getRegister(index),
-		    tempExp.temp );
+		    temp );
 	      break;			     
 	   case 3: // spread between regs and stack
         // not certain an emitMOVE is legal with the l/h modifiers
 	     emit( ROOT, "mov `d0, `s0l",
 			      frame.getRegFileInfo().getRegister(index),
-			      tempExp.temp );
+			      temp );
 	     index++;
 	     stackOffset += 4;
 	     emit(new InstrMEM( instrFactory, ROOT,
 		      "str `s0h, [`s1, #-4]!",
 		      new Temp[]{ RegFileInfo.SP }, // SP *implicitly* modified
-		      new Temp[]{ tempExp.temp, RegFileInfo.SP })); 
+		      new Temp[]{ temp, RegFileInfo.SP })); 
 	     break;
 	   default: // start putting args in memory
 	     emit(new InstrMEM( instrFactory, ROOT,
 				"str `s0l, [`s1, #-4]!", 
 				null, 
-			     new Temp[]{ RegFileInfo.SP, tempExp.temp }));
+			     new Temp[]{ RegFileInfo.SP, temp }));
 	     index++;
 	     stackOffset += 4;
 	     emit(new InstrMEM( instrFactory, ROOT,
 		      "str `s0h, [`s1, #-4]!",
 		      new Temp[]{ RegFileInfo.SP }, // SP *implicitly* modified
-		      new Temp[]{ tempExp.temp, RegFileInfo.SP })); 
+		      new Temp[]{ temp, RegFileInfo.SP })); 
 	     stackOffset += 4;
 	     break;
 	   }
@@ -1198,13 +1196,13 @@ CALL(retval, NAME(retex), func, arglist) %{
 	  // arg is one word
 	  if (index < 4) {
 	     emitMOVE( ROOT, "mov `d0, `s0", 
-		   frame.getRegFileInfo().getRegister(index), tempExp.temp);
+		   frame.getRegFileInfo().getRegister(index), temp);
 	  } else {
 	     emit(new InstrMEM(
 		      instrFactory, ROOT,
 		      "str `s0, [`s1, #-4]!",
 		      new Temp[]{ RegFileInfo.SP }, // SP *implicitly* modified
-		      new Temp[]{ tempExp.temp, RegFileInfo.SP }));
+		      new Temp[]{ temp, RegFileInfo.SP }));
 	     stackOffset += 4;
 	  }
 	}	     
@@ -1242,51 +1240,48 @@ CALL(retval, NAME(retex), func, arglist) %{
 }%
 
 NATIVECALL(retval, func, arglist) %{
-    ExpList list = arglist;
+    TempList list = arglist;
     
-    // I assume that the elements of 'arglist' are all Temps after
-    // canonicalization.
-
     int stackOffset = 0;
 
     for (int index=0; list != null; index++) { 
-	TEMP tempExp = (TEMP) list.head;
-	if (tempExp.isDoubleWord()) {
+	Temp temp = list.head;
+	if (temp instanceof TwoWordTemp) {
 	   // arg takes up two words
 	   switch(index) {
 	   case 0: case 1: case 2: // put in registers 
         // not certain an emitMOVE is legal with the l/h modifiers
 	      emit( ROOT, "mov `d0, `s0l",
 		    frame.getRegFileInfo().getRegister(index) ,
-		    tempExp.temp );
+		    temp );
 	      index++;			     
 	      emit( ROOT, "mov `d0, `s0h",
 		    frame.getRegFileInfo().getRegister(index),
-		    tempExp.temp );
+		    temp );
 	      break;			     
 	   case 3: // spread between regs and stack
         // not certain an emitMOVE is legal with the l/h modifiers
 	     emit( ROOT, "mov `d0, `s0l",
 		       frame.getRegFileInfo().getRegister(index),
-		       tempExp.temp );
+		       temp );
 	     index++;
 	     stackOffset += 4;
 	     emit(new InstrMEM( instrFactory, ROOT,
 		      "str `s0h, [`s1, #-4]!",
 		      new Temp[]{ RegFileInfo.SP }, // SP *implicitly* modified
-		      new Temp[]{ tempExp.temp, RegFileInfo.SP })); 
+		      new Temp[]{ temp, RegFileInfo.SP })); 
 	     break;
 	   default: // start putting args in memory
 	     emit(new InstrMEM( instrFactory, ROOT,
 				"str `s0l, [`s1, #-4]!", 
 				null, 
-			     new Temp[]{ RegFileInfo.SP, tempExp.temp }));
+			     new Temp[]{ RegFileInfo.SP, temp }));
 	     index++;
 	     stackOffset += 4;
 	     emit(new InstrMEM( instrFactory, ROOT,
 		      "str `s0h, [`s1, #-4]!",
 		      new Temp[]{ RegFileInfo.SP }, // SP *implicitly* modified
-		      new Temp[]{ tempExp.temp, RegFileInfo.SP })); 
+		      new Temp[]{ temp, RegFileInfo.SP })); 
 	     stackOffset += 4;
 	     break;
 	   }
@@ -1294,13 +1289,13 @@ NATIVECALL(retval, func, arglist) %{
 	  // arg is one word
 	  if (index < 4) {
 	     emitMOVE( ROOT, "mov `d0, `s0", 
-		   frame.getRegFileInfo().getRegister(index), tempExp.temp);
+		   frame.getRegFileInfo().getRegister(index), temp);
 	  } else {
 	     emit(new InstrMEM(
 		      instrFactory, ROOT,
 		      "str `s0, [`s1, #-4]!",
 		      new Temp[]{ RegFileInfo.SP }, // SP *implicitly* modified
-		      new Temp[]{ tempExp.temp, RegFileInfo.SP }));
+		      new Temp[]{ temp, RegFileInfo.SP }));
 	     stackOffset += 4;
 	  }
 	}
