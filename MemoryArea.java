@@ -66,15 +66,17 @@ public abstract class MemoryArea {
   
     // CONSTUCTORS IN SPECS
 
+    abstract protected void initNative(long sizeInBytes);
+
     protected MemoryArea(long sizeInBytes) {
 	size = sizeInBytes;
 	preSetup();
-	// initNative(sizeInBytes);
+	initNative(sizeInBytes);
 	postSetup();
     }
 
     protected void preSetup() {
-	scoped = false; // To avoid the dreaded instanceof
+	scoped = false; 
 	heap = false;
 	id = num++;
 	constant = false;

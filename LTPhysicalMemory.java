@@ -12,6 +12,9 @@ public class LTPhysicalMemory extends ScopedMemory {
     private long base, size;
     private Runnable logic;
 
+    protected void initNative(long sizeInBytes) {
+    }
+    
     public LTPhysicalMemory(Object type, long size)
 	throws SecurityException, SizeOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,

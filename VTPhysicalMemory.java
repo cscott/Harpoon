@@ -13,6 +13,9 @@ public class VTPhysicalMemory extends ScopedMemory {
     private long base, size;
     private Runnable logic;
 
+    protected void initNative(long sizeInBytes) {
+    }
+
     public VTPhysicalMemory(Object type, long size)
 	throws SecurityException, SizeOutOfBoundsException,
 	       UnsupportedPhysicalMemoryException,
