@@ -7,7 +7,7 @@ import java.util.Enumeration;
  * <code>Set</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Set.java,v 1.1 1998-09-16 00:45:06 cananian Exp $
+ * @version $Id: Set.java,v 1.2 1998-09-16 21:53:43 cananian Exp $
  */
 
 public class Set implements Worklist {
@@ -45,4 +45,16 @@ public class Set implements Worklist {
 	    oa[i++] = e.nextElement();
     }
     public Enumeration elements() { return h.keys(); }
+    /** Returns a rather long string representation of this hashtable.
+     *  @return a string representation of this hashtable. */
+    public String toString() {
+	StringBuffer sb = new StringBuffer("{");
+	for (Enumeration e = elements(); e.hasMoreElements(); ) {
+	    sb.append(e.nextElement().toString());
+	    if (e.hasMoreElements())
+		sb.append(", ");
+	}
+	sb.append("}");
+	return sb.toString();
+    }
 }
