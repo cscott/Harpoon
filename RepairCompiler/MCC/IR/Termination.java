@@ -385,7 +385,7 @@ public class Termination {
 		int[] array=dp.getPredicate().getRepairs(dp.isNegated(),this);
 		Descriptor d=dp.getPredicate().getDescriptor();
 		for(int j=0;j<array.length;j++) {
-		    AbstractRepair ar=new AbstractRepair(dp,array[j],d);
+		    AbstractRepair ar=new AbstractRepair(dp,array[j],d,sources);
 		    TermNode tn2=new TermNode(ar);
 		    GraphNode gn2=new GraphNode(gn.getLabel()+"A"+i+"B"+ar.type(),gn.getTextLabel()+" #"+i+" "+ar.type(),tn2);
 		    GraphNode.Edge e=new GraphNode.Edge("abstract",gn2);
@@ -405,7 +405,7 @@ public class Termination {
 	    VarExpr ve=new VarExpr("DUMMY");
 	    InclusionPredicate ip=new InclusionPredicate(ve,new SetExpr(sd));
 	    DNFPredicate tp=new DNFPredicate(false,ip);
-	    AbstractRepair ar=new AbstractRepair(tp, AbstractRepair.ADDTOSET, sd);
+	    AbstractRepair ar=new AbstractRepair(tp, AbstractRepair.ADDTOSET, sd,sources);
 	    TermNode tn=new TermNode(ar);
 	    GraphNode gn=new GraphNode("AbstractAddSetRule"+i,tn);
 	    if (!predtoabstractmap.containsKey(tp))
@@ -416,7 +416,7 @@ public class Termination {
 	    abstractadd.put(sd,gn);
 	    
 	    DNFPredicate tp2=new DNFPredicate(true,ip);
-	    AbstractRepair ar2=new AbstractRepair(tp2, AbstractRepair.REMOVEFROMSET, sd);
+	    AbstractRepair ar2=new AbstractRepair(tp2, AbstractRepair.REMOVEFROMSET, sd,sources);
 	    TermNode tn2=new TermNode(ar2);
 	    GraphNode gn2=new GraphNode("AbstractRemSetRule"+i,tn2);
 	    if (!predtoabstractmap.containsKey(tp2))
@@ -436,7 +436,7 @@ public class Termination {
 	    InclusionPredicate ip=new InclusionPredicate(ve2,new ImageSetExpr(vd1, rd));
 	    
 	    DNFPredicate tp=new DNFPredicate(false,ip);
-	    AbstractRepair ar=new AbstractRepair(tp, AbstractRepair.ADDTORELATION, rd);
+	    AbstractRepair ar=new AbstractRepair(tp, AbstractRepair.ADDTORELATION, rd,sources);
 	    TermNode tn=new TermNode(ar);
 	    GraphNode gn=new GraphNode("AbstractAddRelRule"+i,tn);
 	    if (!predtoabstractmap.containsKey(tp))
@@ -447,7 +447,7 @@ public class Termination {
 	    abstractadd.put(rd,gn);
 	    
 	    DNFPredicate tp2=new DNFPredicate(true,ip);
-	    AbstractRepair ar2=new AbstractRepair(tp2, AbstractRepair.REMOVEFROMRELATION, rd);
+	    AbstractRepair ar2=new AbstractRepair(tp2, AbstractRepair.REMOVEFROMRELATION, rd,sources);
 	    TermNode tn2=new TermNode(ar2);
 	    GraphNode gn2=new GraphNode("AbstractRemRelRule"+i,tn2);
 	    if (!predtoabstractmap.containsKey(tp2))
@@ -509,7 +509,7 @@ public class Termination {
 		} else {
 		    /* Negate conjunction */
 		    int c=j-r.numQuantifiers();
-		    if (!processconjunction(un,r.getDNFNegGuardExpr().get(c))) {
+		    if (!processconjunction(un,r.getDNFNegGuardExpr().get(c),null)) {
 			continue;
 		    }
 		}
@@ -613,7 +613,7 @@ public class Termination {
 		    } else {goodflag=false;break;}
 		} else {
 		    int c=count[i]-r.numQuantifiers();
-		    if (!processconjunction(un,r.getDNFNegGuardExpr().get(c))) {
+		    if (!processconjunction(un,r.getDNFNegGuardExpr().get(c),null)) {
 			goodflag=false;break;
 		    }
 		}
@@ -698,7 +698,7 @@ public class Termination {
 		UpdateNode un=new UpdateNode(r);
 		
 		int c=count[i];
-		if (!processconjunction(un,r.getDNFGuardExpr().get(c))) {
+		if (!processconjunction(un,r.getDNFGuardExpr().get(c),null)) {
 		    goodflag=false;break;
 		}
 		RelationInclusion ri=(RelationInclusion)r.getInclusion();
@@ -761,6 +761,8 @@ public class Termination {
     void generateaddtosetrelation(GraphNode gn, AbstractRepair ar) {
 	for(int i=0;i<state.vRules.size();i++) {
 	    Rule r=(Rule) state.vRules.get(i);
+
+
 	    /* See if this is a good rule*/
 	    if ((r.getInclusion() instanceof SetInclusion&&
 		 ar.getDescriptor()==((SetInclusion)r.getInclusion()).getSet())||
@@ -770,7 +772,10 @@ public class Termination {
 		/* First solve for quantifiers */
 		Vector bindings=new Vector();
 		/* Construct bindings */
-		if (!constructbindings(bindings,r,false))
+
+		Hashtable setmapping=new Hashtable();
+
+		if (!constructbindings(bindings,r,ar,setmapping,false))
 		    continue;
 		//Generate add instruction
 		DNFRule dnfrule=r.getDNFGuardExpr();
@@ -818,6 +823,8 @@ public class Termination {
 			if (!(ri.getLeftExpr() instanceof VarExpr)) {
 			    if (ri.getLeftExpr().isValue(ri.getRelation().getDomain().getType())) {
 				Updates up=new Updates(ri.getLeftExpr(),0,ri.getRelation().getDomain().getType());
+				if (ar.getDomainSet()!=null)
+				    setmapping.put(ri.getLeftExpr(),ar.getDomainSet());
 				un.addUpdate(up);
 			    } else {
 				/* We don't handly relation modifies */
@@ -830,16 +837,20 @@ public class Termination {
 				if (set==null)
 				    continue;
 				ArrayAnalysis.AccessPath ap=arrayanalysis.getSet(set);
-				
 				if (rap==ArrayAnalysis.AccessPath.NONE||
 				    !rap.equal(ap)||
 				    !constructarrayupdate(un, ri.getLeftExpr(), rap, 0))
 				    continue;
+				if (ar.getDomainSet()!=null)
+				    setmapping.put(ri.getLeftExpr(),ar.getDomainSet());
+
 			    }
 			} else {
 			    VarDescriptor vd=((VarExpr)ri.getLeftExpr()).getVar();
 			    if (vd.isGlobal()) {
 				Updates up=new Updates(ri.getLeftExpr(),0,null);
+				if (ar.getDomainSet()!=null)
+				    setmapping.put(ri.getLeftExpr(),ar.getDomainSet());
 				un.addUpdate(up);
 			    }
      			}
@@ -863,11 +874,15 @@ public class Termination {
 				    !rap.equal(ap)||
 				    !constructarrayupdate(un, ri.getRightExpr(), rap, 1))
 				    continue;
+				if (ar.getRangeSet()!=null)
+				    setmapping.put(ri.getRightExpr(),ar.getRangeSet());
 			    }
 			} else {
 			    VarDescriptor vd=((VarExpr)ri.getRightExpr()).getVar();
 			    if (vd.isGlobal()) {
 				Updates up=new Updates(ri.getRightExpr(),1,null);
+				if (ar.getRangeSet()!=null)
+				    setmapping.put(ri.getRightExpr(),ar.getRangeSet());
 				un.addUpdate(up);
 			    }
 			}
@@ -880,8 +895,8 @@ public class Termination {
 		    TermNode tn=new TermNode(mun);
 		    GraphNode gn2=new GraphNode("UpdateAdd"+addtocount,tn);
 
-		    if (processquantifiers(gn2,un, r)&&
-			processconjunction(un,ruleconj)&&
+		    if (processquantifiers(gn2,un, r,setmapping)&&
+			processconjunction(un,ruleconj,setmapping)&&
 			un.checkupdates()) {
 			mun.addUpdate(un);
 			GraphNode.Edge e=new GraphNode.Edge("abstract"+addtocount,gn2);
@@ -927,9 +942,10 @@ public class Termination {
      * performs a removal.  The function returns true if it is able to
      * generate a valid set of bindings and false otherwise. */
 
-    boolean constructbindings(Vector bindings, Rule r, boolean isremoval) {
+    boolean constructbindings(Vector bindings, Rule r, AbstractRepair ar, Hashtable setmapping, boolean isremoval) {
 	boolean goodupdate=true;
 	Inclusion inc=r.getInclusion();
+
 	for(Iterator iterator=r.quantifiers();iterator.hasNext();) {
 	    Quantifier q=(Quantifier)iterator.next();
 	    if ((q instanceof SetQuantifier)||(q instanceof ForQuantifier)) {
@@ -959,12 +975,16 @@ public class Termination {
 			(((VarExpr)ri.getLeftExpr()).getVar()==vd)) {
 				/* Can solve for v */
 			Binding binding=new Binding(vd,0);
+			if (ar.getDomainSet()!=null)
+			    setmapping.put(ri.getLeftExpr(),ar.getDomainSet());
 			bindings.add(binding);
 		    } else f1=false;
 		    if ((ri.getRightExpr() instanceof VarExpr)&&
 			(((VarExpr)ri.getRightExpr()).getVar()==vd)) {
 				/* Can solve for v */
 			Binding binding=new Binding(vd,0);
+			if (ar.getRangeSet()!=null)
+			    setmapping.put(ri.getRightExpr(),ar.getRangeSet());
 			bindings.add(binding);
 		    } else f2=false;
 		    if (!(f1||f2))
@@ -1006,12 +1026,16 @@ public class Termination {
 			    (((VarExpr)ri.getLeftExpr()).getVar()==vd)) {
 			    /* Can solve for v */
 			    Binding binding=new Binding(vd,0);
+			    if (ar.getDomainSet()!=null)
+				setmapping.put(ri.getLeftExpr(),ar.getDomainSet());
 			    bindings.add(binding);
 			} else f1=false;
 			if ((ri.getRightExpr() instanceof VarExpr)&&
 			    (((VarExpr)ri.getRightExpr()).getVar()==vd)) {
 			    /* Can solve for v */
 			    Binding binding=new Binding(vd,0);
+			    if (ar.getRangeSet()!=null)
+				setmapping.put(ri.getRightExpr(),ar.getRangeSet());
 			    bindings.add(binding);
 			} else f2=false;
 			if (!(f1||f2))
@@ -1036,7 +1060,7 @@ public class Termination {
     /** Adds updates that add an item to the appropriate set or
      * relation quantified over by the model definition rule.. */
     
-    boolean processquantifiers(GraphNode gn,UpdateNode un, Rule r) {
+    boolean processquantifiers(GraphNode gn,UpdateNode un, Rule r,Hashtable setmapping) {
 	Inclusion inc=r.getInclusion();
 	for(Iterator iterator=r.quantifiers();iterator.hasNext();) {
 	    Quantifier q=(Quantifier)iterator.next();
@@ -1064,8 +1088,12 @@ public class Termination {
 		    constraintdependence.requiresConstraint(gn,reqc);
 		    continue; /* Don't need to ensure addition for search */
 		}
+		VarExpr ve=new VarExpr(sq.var);
+		SetDescriptor sd=findExpr(setmapping, ve);
+		if (sd!=null&&sd.isSubset(sq.set))
+		    continue; /* this update is trivially true */
 
-		ElementOfExpr eoe=new ElementOfExpr(new VarExpr(sq.var),sq.set);
+		ElementOfExpr eoe=new ElementOfExpr(ve,sq.set);
 		eoe.td=ReservedTypeDescriptor.INT;
 		Updates u=new Updates(eoe,false);
 		un.addUpdate(u);
@@ -1081,10 +1109,23 @@ public class Termination {
 	return true;
     }
 
+    static SetDescriptor findExpr(Hashtable setmapping, Expr e) {
+	if (setmapping==null)
+	    return null;
+	Set kset=setmapping.keySet();
+	for(Iterator it=kset.iterator();it.hasNext();) {
+	    Expr expr=(Expr)it.next();
+	    if (expr.equals(null,e)) {
+		return (SetDescriptor)setmapping.get(expr);
+	    }
+	}
+	return null;
+    }
+
     /** This method generates the necessary updates to satisfy the
      * conjunction ruleconj. */
 
-    boolean  processconjunction(UpdateNode un,RuleConjunction ruleconj){
+    boolean  processconjunction(UpdateNode un,RuleConjunction ruleconj,Hashtable setmapping) {
 	boolean okay=true;
 	for(int k=0;k<ruleconj.size();k++) {
 	    DNFExpr de=ruleconj.get(k);
@@ -1095,6 +1136,9 @@ public class Termination {
 		Updates up=new Updates(ex.left,ex.right,op, de.getNegation());
 		un.addUpdate(up);
 	    } else if (e instanceof ElementOfExpr) {
+		SetDescriptor sd=findExpr(setmapping, ((ElementOfExpr)e).element);
+		if (sd!=null&&sd.isSubset(((ElementOfExpr)e).set))
+		    continue; /* this update is trivially true */
 		Updates up=new Updates(e,de.getNegation());
 		un.addUpdate(up);
 	    } else if (e instanceof TupleOfExpr) {

@@ -3,9 +3,7 @@ package MCC.IR;
 import java.util.*;
 
 public class ExprPredicate extends Predicate {
-    
     Expr expr;
-
 
     public static final int SIZE=1;
     public static final int COMPARISON=2;

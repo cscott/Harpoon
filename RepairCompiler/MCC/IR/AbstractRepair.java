@@ -10,6 +10,7 @@ class AbstractRepair {
     DNFPredicate torepair;
     int type;
     Descriptor descriptor;
+    Sources sources;
 
     public String type() {
 	switch(type) {
@@ -28,6 +29,109 @@ class AbstractRepair {
 	}
     }
     
+    public SetDescriptor getDomainSet() {
+	if (torepair==null)
+	    return null;
+	Predicate predicate=torepair.getPredicate();
+	if (!(predicate.getDescriptor() instanceof RelationDescriptor))
+	    return null;
+
+	/* Have relation descriptor now */
+	if (predicate instanceof InclusionPredicate) {
+	    InclusionPredicate ip=(InclusionPredicate)predicate;
+	    if (ip.inverted())
+		return ip.expr.getSet();
+	    else if (ip.setexpr instanceof ImageSetExpr) {
+		ImageSetExpr ise=(ImageSetExpr)ip.setexpr;
+		if (ise.isimageset)
+		    return ise.getImageSetExpr().getSet();
+		else
+		    return ise.getVar().getSet();
+	    }
+	} else if (predicate instanceof ExprPredicate) {
+	    ExprPredicate ep=(ExprPredicate)predicate;
+
+	    if (ep.inverted()&&ep.getType()==ExprPredicate.SIZE)
+		return sources.relgetSourceSet((RelationDescriptor)predicate.getDescriptor(),true);
+	    else if (ep.inverted()&&ep.getType()==ExprPredicate.COMPARISON)
+		return ((OpExpr)ep.expr).right.getSet();
+	    else if (!ep.inverted()) {
+		switch(ep.getType()) {
+		case ExprPredicate.SIZE: 
+		    {
+			SizeofExpr soe=((SizeofExpr)((OpExpr)ep.expr).left);
+			ImageSetExpr ise=(ImageSetExpr)soe.setexpr;
+			if (ise.isimageset)
+			    return ise.getImageSetExpr().getSet();
+			else
+			    return ise.getVar().getSet();
+		    }
+		case ExprPredicate.COMPARISON:
+		    {
+			RelationExpr re=((RelationExpr)((OpExpr)ep.expr).left);
+			return ep.expr.getSet();
+		    }
+		default:
+		    throw new Error("");
+		}
+	    }
+	} else throw new Error("Unrecognized predicate");
+	return null;
+    }
+
+    public SetDescriptor getRangeSet() {
+	if (torepair==null)
+	    return null;
+	Predicate predicate=torepair.getPredicate();
+	if (!(predicate.getDescriptor() instanceof RelationDescriptor))
+	    return null;
+
+	/* Have relation descriptor now */
+	if (predicate instanceof InclusionPredicate) {
+	    InclusionPredicate ip=(InclusionPredicate)predicate;
+	    if (!ip.inverted())
+		return ip.expr.getSet();
+	    else if (ip.setexpr instanceof ImageSetExpr) {
+		ImageSetExpr ise=(ImageSetExpr)ip.setexpr;
+		if (ise.isimageset)
+		    return ise.getImageSetExpr().getSet();
+		else
+		    return ise.getVar().getSet();
+	    }
+	} else if (predicate instanceof ExprPredicate) {
+	    ExprPredicate ep=(ExprPredicate)predicate;
+
+	    if (!ep.inverted()&&ep.getType()==ExprPredicate.SIZE)
+		return sources.relgetSourceSet((RelationDescriptor)predicate.getDescriptor(),false);
+	    else if (!ep.inverted()&&ep.getType()==ExprPredicate.COMPARISON)
+		return ((OpExpr)ep.expr).right.getSet();
+	    else if (ep.inverted()) {
+		switch(ep.getType()) {
+		case ExprPredicate.SIZE: 
+		    {
+			SizeofExpr soe=((SizeofExpr)((OpExpr)ep.expr).left);
+			ImageSetExpr ise=(ImageSetExpr)soe.setexpr;
+			if (ise.isimageset)
+			    return ise.getImageSetExpr().getSet();
+			else
+			    return ise.getVar().getSet();
+		    }
+		case ExprPredicate.COMPARISON:
+		    {
+			RelationExpr re=((RelationExpr)((OpExpr)ep.expr).left);
+			return ep.expr.getSet();
+		    }
+		default:
+		    throw new Error("");
+		}
+	    }
+	} else throw new Error("Unrecognized predicate");
+	return null;
+    }
+
+
+    
+
     public int getType() {
 	return type;
     }
@@ -40,9 +144,10 @@ class AbstractRepair {
 	return descriptor;
     }
 
-    public AbstractRepair(DNFPredicate dp,int typ, Descriptor d) {
+    public AbstractRepair(DNFPredicate dp,int typ, Descriptor d, Sources s) {
 	torepair=dp;
 	type=typ;
 	descriptor=d;
+	sources=s;
     }
 }
