@@ -1,4 +1,4 @@
-cpp teststruct.work -P -o teststruct
-cpp testspace.work -P -o testspace
-cpp testabstract.work -P -o testabstract
-cpp testmodel.work -P -o testmodel
+cpp struct.work -P -o dl-list.struct
+cpp space.work -P -o dl-list.space
+cpp model.work -P -o dl-list.model
+cpp constraints.work -P -o dl-list.constraints
