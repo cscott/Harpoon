@@ -16,13 +16,12 @@ public class Nets {
 class kickOff extends Thread {
 
     DataInputStream dis;
-    client[] clientArray = new client[100];
     int i = 0;
     int x = 0;
     String name;
-
+    
     kickOff() {
-
+	
         start();
 }
 
@@ -225,7 +224,8 @@ class read_from_connection extends Thread {
 
             while(true) {
                  request = din.readLine();
-                 serverobj.broadcast_message(format_message());
+		 if (request!=null)
+		     serverobj.broadcast_message(format_message());
 
             }
         }
@@ -305,49 +305,4 @@ class read_from_connection extends Thread {
 
 
 } // end of read_from_connection
-
-
-class client extends Thread {
-
-    DataInputStream dis;
-    Socket sock;
-    PrintStream pout;
-    InputStream in;
-    OutputStream out;
-    DataInputStream din;
-
-    client() {
-
-      start();
-
-    }
-
-    public void run() {
-
-        System.out.println("client thread started");
-
-        try {
-
-         //   sock = new Socket("161.178.105.233", 4321); // work
-         //   sock = new Socket("161.178.105.220", 8888); // mike
-            sock = new Socket("161.178.121.1", 4321); // unix server
-            System.out.println("connection made");
-            in = sock.getInputStream();
-            out = sock.getOutputStream();
-            pout = new PrintStream(out);
-            din = new DataInputStream(in);
-
-            while(true) {
-               String request = din.readLine();
-               System.out.println(request);
-            }
-
-        }
-
-        catch (UnknownHostException e ) {System.out.println("can't find host"); }
-        catch ( IOException e ) {System.out.println("Error connecting to host");}
-
-    }
-
-} // end of client class
 
