@@ -19,6 +19,7 @@ EXTRA_DIST = $(CAMSRC)
 
 JAVASRC=AltVideo.java
 JARFILE=video.jar
+EXTRA_DIST += $(JAVASRC)
 
 # include rules to make $(JARFILE) from $(JAVASRC)
 include $(top_srcdir)/JavaRules.make

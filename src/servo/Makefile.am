@@ -17,6 +17,7 @@ EXTRA_DIST = $(SERVOSRC)
 
 JAVASRC=IPaqServoController.java
 JARFILE=servo.jar
+EXTRA_DIST += $(JAVASRC)
 
 # include rules to make $(JARFILE) from $(JAVASRC)
 include $(top_srcdir)/JavaRules.make

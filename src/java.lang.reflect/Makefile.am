@@ -19,8 +19,8 @@ AccessibleObject.java \
 Constructor.java \
 Field.java \
 Method.java
-
 JARFILE=reflect-thunk.jar
+EXTRA_DIST=$(JAVASRC)
 
 # include rules to make $(JARFILE) from $(JAVASRC)
 include $(top_srcdir)/JavaRules.make
