@@ -10,6 +10,9 @@ if [ -z $HARPOON_DIR ]; then
 else
     FLEX_DIR="${HARPOON_DIR}/Code"
 fi
+if [ -z $RUNTIME_DIR ]; then
+    RUNTIME_DIR="${HARPOON_DIR}/Runtime"
+fi
 
 # grab flex options from the command line.
 while [ -n "$3" ]; do
@@ -58,14 +61,15 @@ if type -t cygpath > /dev/null ; then
 fi
 
 ${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} -Dharpoon.class.path=$harpoonpath ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir && \
-if [ -d ${HARPOON_DIR}/Runtime/include -a -f ${HARPOON_DIR}/Runtime/config.status ] && grep -q "[-]-with-precise-c" ${HARPOON_DIR}/Runtime/config.status ; then
-    make -C $dir CC="gcc -I${HARPOON_DIR}/Runtime/include -g -O9" && \
-    mv -f $dir/Java.a ${HARPOON_DIR}/Runtime/${name}-Java.a && \
-    make -C ${HARPOON_DIR}/Runtime run${name} && \
+if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
+    grep -q "[-]-with-precise-c" ${RUNTIME_DIR}/config.status ; then
+    make -C $dir CC="gcc -I${RUNTIME_DIR}/include -g -O9" && \
+    mv -f $dir/Java.a ${RUNTIME_DIR}/${name}-Java.a && \
+    make -C ${RUNTIME_DIR} run${name} && \
     if [ -z $KEEP_ARCHIVE ]; then \
-	rm -f ${HARPOON_DIR}/Runtime/${name}-Java.a ; \
+	rm -f ${RUNTIME_DIR}/${name}-Java.a ; \
     fi && \
-    echo "EXECUTABLE left in ${HARPOON_DIR}/Runtime/run${name}." 1>&2
+    echo "EXECUTABLE left in ${RUNTIME_DIR}/run${name}." 1>&2
 else
     echo "ASSEMBLY FILES left in $dir; see $dir/Makefile to build." 1>&2
 fi
