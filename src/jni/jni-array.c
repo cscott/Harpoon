@@ -63,12 +63,38 @@ jarray FNI_NewObjectArray(JNIEnv *env, jsize length,
       (*env)->SetObjectArrayElement(env, (jobjectArray) result, i,
 				    initialElement);
   }
+  printf("Building Array\n");
+#ifdef WITH_ROLE_INFER
+  printf("Doing assignUID\n");
+  Java_java_lang_Object_assignUID(env,result);
+#endif
+
   return (jobjectArray) result;
 }
 
 /* A family of operations used to construct a new primitive array object.
  * Returns a Java array, or NULL if the array cannot be constructed. 
  */
+#ifdef WITH_ROLE_INFER
+#define NEWPRIMITIVEARRAY(name,type, sig)\
+type##Array FNI_New##name##Array(JNIEnv *env, jsize length) {\
+  jclass arrayclazz;\
+  struct FNI_classinfo *info;\
+  jobject result;\
+\
+  assert(FNI_NO_EXCEPTIONS(env) && length>=0);\
+  arrayclazz = FNI_FindClass(env, sig);\
+  if (arrayclazz==NULL) return NULL; /* bail on error */\
+  info = FNI_GetClassInfo(arrayclazz);\
+  FNI_DeleteLocalRef(env, arrayclazz);\
+  result = FNI_Alloc(env, info, info->claz, NULL/*default alloc func*/,\
+		     sizeof(struct aarray) + sizeof(type)*length);\
+  if (result==NULL) return NULL; /* bail on error */\
+  ((struct aarray *)FNI_UNWRAP(result))->length = length;\
+ Java_java_lang_Object_assignUID(env,result);\
+  return (type##Array) result;\
+}
+#else
 #define NEWPRIMITIVEARRAY(name,type, sig)\
 type##Array FNI_New##name##Array(JNIEnv *env, jsize length) {\
   jclass arrayclazz;\
@@ -86,6 +112,8 @@ type##Array FNI_New##name##Array(JNIEnv *env, jsize length) {\
   ((struct aarray *)FNI_UNWRAP(result))->length = length;\
   return (type##Array) result;\
 }
+#endif
+
 NEWPRIMITIVEARRAY(Boolean, jboolean, "[Z");
 NEWPRIMITIVEARRAY(Byte, jbyte, "[B");
 NEWPRIMITIVEARRAY(Char, jchar, "[C");
