@@ -65,7 +65,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.42 2000-03-30 03:05:14 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.43 2000-03-30 05:14:07 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -294,6 +294,8 @@ public class PointerAnalysis {
     // Top-level procedure for the analysis. Receives the main method as
     // parameter. For the moment, it is not doing the inter-thread analysis
     private void analyze(MetaMethod mm){
+
+	System.out.println("ANALYZE: " + mm);
 
 	// Navigator for the SCC building phase. The code is complicated
 	// by the fact that we are interested only in yet unexplored methods

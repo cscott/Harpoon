@@ -22,7 +22,7 @@ import harpoon.ClassFile.HMethod;
  and unanalyzed call sites <code>n</code> escapes through.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.12 2000-03-27 18:33:44 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.13 2000-03-30 05:14:07 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -63,14 +63,30 @@ public class PAEscapeFunc {
 	method invocation site <code>m_hole</code>. Returns <code>true</code>
 	if new information has been gained */
     public final boolean addMethodHole(PANode n, HCodeElement m_hole){
-	return rel_m.add(n,m_hole);
+	// HACK to reduce the memory consumption: it turns out that in
+	// our analysis is not important to know all the method holes
+	// but just to know that the node escapes in at least one method
+	// hole (anyway, nothing can take it out of there).
+	if(rel_m.getValuesSet(n).isEmpty()){
+	    rel_m.add(n, m_hole);
+	    return true;
+	}
+	else return false;
+
+	// return rel_m.add(n,m_hole);
     }
 
     /** Records the fact that <code>n</code> can escape through the
      *  method invocation sites <code>m_holes</code>. Returns <code>true</code>
      *  if new information has been gained */
     public final boolean addMethodHoles(PANode n, Set m_holes){
-	return rel_m.addAll(n,m_holes);
+	// the same HACK to reduce the memory consumption
+	if(m_holes.isEmpty())
+	    return false;
+	else
+	    return addMethodHole(n, (HCodeElement) m_holes.iterator().next());
+
+	// return rel_m.addAll(n,m_holes);
     }
 
     /** The dual of <code>addMethodHole</code> */

@@ -25,7 +25,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.20 2000-03-30 04:18:30 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.21 2000-03-30 05:14:07 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -73,6 +73,7 @@ abstract class InterProcPA {
 	    // I count on the fact that if a call site has 0 callees, it 
 	    // means that it doesn't occur in practice (some classes are not
 	    // instantiated, not because the call graph is buggy!
+	    // So, the CALL is simply ignored.
 	    return new ParIntGraphPair(pig_before, pig_before);
 	    //return skip_call(q,pig_before,node_rep);
 	}
@@ -93,18 +94,7 @@ abstract class InterProcPA {
 		pigs[i] = pa.getExtParIntGraph(mms[i], false);
 	}
 
-	// specialize the graphs of the callees for the context sensitive PA
-	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
-	    for(int i = 0; i < pigs.length; i++){
-		if(DEBUG)
-		    System.out.println("Pig_callee before specialization:" +
-				       pigs[i]);
-		pigs[i] = pa.getSpecializedExtParIntGraph(mms[i],q);
-		if(DEBUG)
-		    System.out.println("Pig_callee after  specialization:" +
-				       pigs[i]);
-	    }
-
+	// count the already analyzed callees (those with pigs[i] != null)
 	int counter = 0;
 	for(int i = 0; i < nb_callees; i++)
 	    if(pigs[i] != null) counter++;
@@ -132,6 +122,18 @@ abstract class InterProcPA {
 	    mms  = mms2;
 	    nb_callees = counter;
 	}
+
+	// specialize the graphs of the callees for the context sensitive PA
+	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
+	    for(int i = 0; i < nb_callees; i++){
+		if(DEBUG)
+		    System.out.println("Pig_callee before specialization:" +
+				       pigs[i]);
+		pigs[i] = pa.getSpecializedExtParIntGraph(mms[i],q);
+		if(DEBUG)
+		    System.out.println("Pig_callee after  specialization:" +
+				       pigs[i]);
+	    }
 
 	// special case: only one callee; no ParIntGraph is cloned
 	if(nb_callees == 1){

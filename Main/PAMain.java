@@ -62,7 +62,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.29 2000-03-30 04:18:46 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.30 2000-03-30 05:14:11 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -606,12 +606,20 @@ public abstract class PAMain {
 
     // displays the set of method holes from the analyzed program
     private static void hole_stats(PointerAnalysis pa){
+
+	System.out.println("HOLE STARTISTICS STARTED:");
+
 	MetaCallGraph mcg = pa.getMetaCallGraph();
 	harpoon.Analysis.PointerAnalysis.InterThreadPA.TIMING = false;
 	MetaMethod mroot = new MetaMethod(hroot, true);
 
 	Set set = mcg.getTransCallees(mroot);
 	set.add(mroot);
+
+	System.out.println("Set of interesting methods:("+set.size()+") {");
+	for(Iterator it = set.iterator(); it.hasNext(); )
+	    System.out.println(" " + (MetaMethod) it.next());
+	System.out.println("}");
 
 	pa.getIntParIntGraph(mroot);
 	pa.getExtParIntGraph(mroot);

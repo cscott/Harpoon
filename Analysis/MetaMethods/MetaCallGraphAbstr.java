@@ -22,9 +22,10 @@ import harpoon.ClassFile.HCodeElement;
  <code>MetaCallGraph</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphAbstr.java,v 1.1.2.5 2000-03-29 23:43:56 cananian Exp $
+ * @version $Id: MetaCallGraphAbstr.java,v 1.1.2.6 2000-03-30 05:13:53 salcianu Exp $
  */
-public abstract class MetaCallGraphAbstr implements MetaCallGraph, java.io.Serializable {
+public abstract class MetaCallGraphAbstr implements MetaCallGraph, 
+						    java.io.Serializable {
 
     // Map<MetaMethod,MetaMethod[]>
     protected final Map callees1_cmpct = new HashMap();
