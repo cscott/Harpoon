@@ -15,10 +15,6 @@ import java.util.Hashtable;
  * extension classes:
  */
 public final class IR_Kind {
-    private final int _kind;
-    private IR_Kind(int kind) { _kind = kind; }
-    private static IR_Kind _(int k) { return new IR_Kind(k); }
-
     public final static IR_Kind IR_DESIGN_FILE = _(1);
     public final static IR_Kind IR_COMMENT = _(2);
     public final static IR_Kind IR_IDENTIFIER = _(3);
@@ -277,6 +273,11 @@ public final class IR_Kind {
     public final static IR_Kind FIR_PROXY_INDICATOR = _(225); // fir only
 
     public final static IR_Kind IR_NO_KIND = _(0);
+
+    // private class implementation
+    private /*final*/ int _kind; // javac bug doesn't let this be final.
+    private IR_Kind(int kind) { _kind = kind; }
+    private static IR_Kind _(int k) { return new IR_Kind(k); }
 
     // int->string mapping table --------------------------------------
     public String toString()
