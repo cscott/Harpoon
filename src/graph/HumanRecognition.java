@@ -7,11 +7,23 @@ package imagerec.graph;
 import imagerec.util.CommonMemory;
 
 import java.awt.Frame;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseAdapter;
+
+import java.awt.event.WindowListener;
+import java.awt.event.MouseListener;
+import java.awt.event.KeyListener;
 
 public class HumanRecognition extends Node {
 
     private Pair head;
     private int size;
+
+    MyDisplay currentSelected = null;
 
     public HumanRecognition() {
 	this.head = null;
@@ -61,8 +73,12 @@ public class HumanRecognition extends Node {
 
     public void process(ImageData id) {
 	int targetID = id.trackedObjectUniqueID;
-	System.out.println("ImageData #"+id.id);
-	System.out.println("   target #"+targetID);
+	//System.out.println("ImageData #"+id.id);
+	//System.out.println("   target #"+targetID);
+	//if (currentSelected == null)
+	//    System.out.println("   No current selected");
+	//else
+	//    System.out.println(currentSelected.getFrame().getTitle()+" is selected");
 	Pair currentPair = head;
 	boolean foundIt = false;
 	while (currentPair != null) {
@@ -74,9 +90,11 @@ public class HumanRecognition extends Node {
 	}
        
 	if (foundIt) {
-	    Display d = currentPair.d;
+	    MyDisplay d = currentPair.d;
 	    Frame f = d.getFrame();
-	    if (f.isVisible()) {
+
+	    if (d == currentSelected) {
+		//System.out.println(f.getTitle()+" is selected.");
 		currentPair.d.process(id);
 		super.process(id);
 		if (this.memName != null) {
@@ -84,18 +102,17 @@ public class HumanRecognition extends Node {
 		}
 	    }
 	    else {
+		currentPair.d.process(id);
 		if (this.memName != null) {
 		    CommonMemory.setValue(this.memName, new Boolean(false));
 		}
 	    }
-
 	}
-	else {
+	else { //if (!foundIt)
 	    Pair newPair = addTarget(id);
 	    newPair.d.process(id);
-	    super.process(id);
 	    if (this.memName != null) {
-		CommonMemory.setValue(this.memName, new Boolean(true));
+		CommonMemory.setValue(this.memName, new Boolean(false));
 	    }
 	}
     }
@@ -109,8 +126,26 @@ public class HumanRecognition extends Node {
 	return newPair;
     }
 
+    void removeMe(MyDisplay d) {
+	Pair currentPair = head;
+	Pair last = null;
+	while (currentPair != null) {
+	    if (currentPair.d == d) {
+		if (last == null) {
+		    head = currentPair.next;
+		}
+		else {
+		    last.next = currentPair.next;
+		}
+		break;
+	    }
+	    last = currentPair;
+	    currentPair = currentPair.next;
+	}
+    }
+
     private class Pair {
-	Display d;
+	MyDisplay d;
 	int targetID;
 	Pair next;
 	Pair(int targetID){
@@ -121,8 +156,45 @@ public class HumanRecognition extends Node {
 	}
 	private void init(int targetID, Pair next) {
 	    this.targetID = targetID;
-	    d = new Display("Target #"+targetID);
+	    d = new MyDisplay("Target #"+targetID);
 	    this.next = next;
 	}
     }
+
+    public class MyDisplay extends Display {
+	MyDisplay(String name) {
+	    super(name);
+	    super.getCanvas().addKeyListener(new KeyAdapter() {
+		    public void keyPressed(KeyEvent e) {
+			int code = e.getKeyCode();
+			if (code == KeyEvent.VK_ENTER) {
+			    HumanRecognition.this.currentSelected = MyDisplay.this;
+			}
+		    }
+		});
+	    super.getCanvas().addMouseListener(new MouseAdapter() {
+		    public void mouseClicked(MouseEvent e){
+			HumanRecognition.this.currentSelected = MyDisplay.this;
+		    }
+		});
+	    frame.addWindowListener(new WindowAdapter() {
+		    public void windowClosing(WindowEvent e) {
+			System.out.println(MyDisplay.this.getFrame().getTitle()+" closing");
+			frame.setVisible(false);
+			frame.dispose();
+			HumanRecognition.this.removeMe(MyDisplay.this);
+		    }
+		});
+	}
+	
+	/**
+	 * Returns the AWT Frame contained by this
+	 * {@link Display} node.
+	 */
+	Frame getFrame() {
+	    return super.frame;
+	}
+	
+    }
+
 }
