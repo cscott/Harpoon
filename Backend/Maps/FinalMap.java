@@ -8,16 +8,17 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 /**
  * A <code>FinalMap</code> determines whether a class or method is
- * <code>final</code>.  A simple implementation of
- * <code>FinalMap</code> would simply look at the <code>final</code>
+ * <code>final</code>.  A simple implementation (for example,
+ * <code>DefaultFinalMap</code>) simply looks at the <code>final</code>
  * tag on the class or method.  A more sophisticated implementation
- * would take a particular <code>ClassHierarchy</code> as an argument
- * and return <code>true</code> if the given class or method is never
+ * (for example, <code>CHFinalMap</code>)
+ * takes a particular <code>ClassHierarchy</code> as an argument
+ * and returns <code>true</code> if the given class or method is never
  * subclassed/overridden <i>in context</i>, even if it does not have a
  * <code>final</code> access modifier tag.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FinalMap.java,v 1.1.2.2 1999-08-04 05:52:27 cananian Exp $ */
+ * @version $Id: FinalMap.java,v 1.1.2.3 2000-10-21 20:05:58 cananian Exp $ */
 
 public abstract class FinalMap  {
     /** Returns <code>true</code> if the class is never subclassed. */
