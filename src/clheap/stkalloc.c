@@ -31,4 +31,10 @@ void *NSTK_malloc(size_t size) {
 #endif
 }
 
-#endif /* !WITH_PRECISE_C_BACKEND */
+#ifdef WITH_PRECISE_C_BACKEND
+/* Update statistics for stack allocation.  The actual allocation
+ * in precise-c is done via a call to alloca() one level up. */
+void NSTK_update_stats(size_t size) {
+  UPDATE_NIFTY_STATS(stk, size);
+}
+#endif /* WITH_PRECISE_C_BACKEND */
