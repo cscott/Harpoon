@@ -49,7 +49,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.28 1999-08-03 03:38:37 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.29 1999-08-03 03:41:21 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -146,9 +146,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 	// them at the end.
 	class InstrAdditionMap {
 	    
-	    // stacks[0]: Maps Instr 'i' -> Stack[List[Instr]] to be added
+	    // stacks[0]: Maps Instr 'i' -> Stack[Instr] to be added
 	    //            before 'i'
-	    // stacks[1]: Maps Instr 'i' -> Stack[List[Instr]] to be added
+	    // stacks[1]: Maps Instr 'i' -> Stack[Instr] to be added
 	    //            after 'i'
 	    private HashMap[] stacks = new HashMap[2];
 	    InstrAdditionMap() {
