@@ -28,6 +28,9 @@
 #ifdef WITH_CLUSTERED_HEAPS
 struct clustered_heap; /* defined in src/clheap/clheap.h */
 #endif
+#ifdef WITH_REALTIME_JAVA
+struct MemBlock; /* defined in src/realtime/MemBlock.h */
+#endif
 
 /* --------------------- data structure internals --------------------- */
 
@@ -97,6 +100,10 @@ struct inflated_oobj {
 #ifdef WITH_CLUSTERED_HEAPS
   struct clustered_heap * heap;
   void (*heap_release)(struct clustered_heap *);
+#endif
+#ifdef WITH_REALTIME_JAVA
+  struct MemBlock* memBlock;
+  struct MemBlock* temp;
 #endif
 #ifdef BDW_CONSERVATIVE_GC
   /* for cleanup via finalization */

@@ -4,12 +4,12 @@ INCLUDES = @IFLAGS@
 SUBDIRS = jni java.io java.lang java.lang.reflect java.net \
 	java.util java.util.zip \
 	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) $(STATSDIR) $(CAMDIR) $(USERDIR) \
-	$(TRANSACTDIR)
+	$(TRANSACTDIR) $(REALTIMEDIR)
 # make sure even the conditionally-compiled subdirectories are included
 # in the distribution.
 DIST_SUBDIRS = jni java.io java.lang java.lang.reflect java.net \
 	java.util java.util.zip \
-        gc clheap nativeio stats cam user transact
+        gc clheap nativeio stats cam user transact realtime
 EXTRA_DIST = README
 
 # cruft to define the conditional directories. --------------------------
@@ -50,6 +50,11 @@ if TRANSACTIONS
 TRANSACTDIR=transact
 TRANSACTLIB=transact/libtransact.la
 endif
+# for realtime java support, add realtime to SUBDIRS
+if REALTIME_JAVA
+REALTIMEDIR=realtime
+REALTIMELIB=realtime/librealtime.la
+endif
 
 # see run% rule in top-level makefile to see how to generate a binary
 # executable from the Java.a file and these two libraries.
@@ -70,7 +75,7 @@ libflexc1_la_LIBADD = \
 	java.util/libjavautil.la \
 	java.util.zip/libjavautilzip.la \
 	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) $(STATSLIB) $(CAMLIB) $(USERLIB) \
-	$(TRANSACTLIB)
+	$(TRANSACTLIB) $(REALTIMELIB)
 libflexc1_la_LDFLAGS = -version-info 0:0:0 # -lbfd -liberty
 # this library depends on -lbfd and -liberty, but these ought to be in $LIBS
 
@@ -79,7 +84,7 @@ if AOUT_BUILD
 LDADD = jni/libjni.la ../Java.a libflexc.la \
 	jni/jni-inflate.lo jni/jni-jnidata.lo \
 	$(foreach lib,@GC_LIB@,../$(lib)) $(PGCLIB) $(STATSLIB) $(USERLIB) \
-	$(CLHEAPLIB) $(NATIVEIOLIB) $(CAMLIB) $(TRANSACTLIB)
+	$(CLHEAPLIB) $(NATIVEIOLIB) $(CAMLIB) $(TRANSACTLIB) $(REALTIMELIB)
 bin_PROGRAMS = startup # dump-fixup test-lookup test-gc static
 AOUTLIBRARY = libflexc.la
 endif

@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.83 $)dnl
+AC_REVISION($Revision: 1.84 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -450,6 +450,6 @@ AC_OUTPUT(Makefile arch/Makefile
 	  src/java.lang.reflect/Makefile src/java.net/Makefile
 	  src/java.util/Makefile src/java.util.zip/Makefile
 	  src/clheap/Makefile src/nativeio/Makefile src/gc/Makefile
-	  src/stats/Makefile src/user/Makefile
+	  src/stats/Makefile src/user/Makefile src/realtime/Makefile
 	  src/transact/Makefile
 	  scripts/flexrun-config)

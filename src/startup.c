@@ -56,8 +56,15 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_PRECISE_GC
   precise_gc_init();
 #endif
+  /* initialize Realtime Java extensions */
   /* setup main thread info. */
+#ifdef WITH_REALTIME_JAVA
+  RTJ_preinit();
+#endif
   FNI_java_lang_Thread_setupMain(env);
+#ifdef WITH_REALTIME_JAVA
+  RTJ_init();
+#endif
   thrCls  = (*env)->FindClass(env, "java/lang/Thread");
   CHECK_EXCEPTIONS(env);
   mainthread = Java_java_lang_Thread_currentThread(env, thrCls);
