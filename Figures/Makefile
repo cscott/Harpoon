@@ -12,21 +12,27 @@ SEDCMD=	-e 's/STMT1/$$P_0 \\leftarrow (X_0 \\neq 2)$$/' \
 	-e 's/STMTA/$$Y_4 \\leftarrow Y_3+1$$/' \
 	-e 's,STMTB,/* no further uses of $$X$$ or $$Z$$ */,'
 
-THex1ssi.tex: $(EX1FIG) Makefile
+THex1ssi.tex: $(EX1FIG)
 	fig2dev -L latex $(EX1SCALE) $(EX1FIG) \
 	| sed $(SEDCMD) > $@
-THex1ssiPr.tex: $(EX1FIG) Makefile
+THex1ssiPr.tex: $(EX1FIG)
 	fig2dev -L latex $(EX1SCALE) $(EX1FIG) \
 	| sed -e 's/STMT[79]//' $(SEDCMD) > $@
-THex1ssa.tex: $(EX1FIG) Makefile
+THex1ssa.tex: $(EX1FIG)
 	fig2dev -L latex $(EX1SCALE) $(EX1FIG) \
 	| sed -e 's/STMT[37]//' $(SEDCMD) -e 's/X_[12]/X_0/g' > $@
-THex1ssaPr.tex: $(EX1FIG) Makefile
+THex1ssaPr.tex: $(EX1FIG)
 	fig2dev -L latex $(EX1SCALE) $(EX1FIG) \
 	| sed -e 's/STMT[379]//' $(SEDCMD) -e 's/X_[12]/X_0/g' > $@
-THex1base.tex: $(EX1FIG) Makefile
+THex1base.tex: $(EX1FIG)
 	fig2dev -L latex $(EX1SCALE) $(EX1FIG) \
 	| sed -e 's/STMT[3789]//' $(SEDCMD) -e 's/\([PXYZ]\)_[01234]/\1/g'> $@
+
+THundir.tex: THundir.fig
+	fig2dev -L latex -m 0.6 $< \
+	| sed -e 's/\\\$$ni\\\$$/$$n_i$$/' -e 's/\\\$$no\\\$$/$$n_o$$/' \
+	      -e 's/\\\$$n\\\$$/$$n$$/' -e 's/\\\$$n'"'"'\\\$$/$$n'"'"'$$/' \
+	      -e 's/=>/$$\\Longrightarrow$$/' > $@
 
 evil.tex: evil.fig
 	fig2dev -L latex -m 0.25 $< $@
