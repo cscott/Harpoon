@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.30 1999-06-12 19:01:26 cananian Exp $
+% $Id: thesis.tex,v 1.31 1999-06-12 19:08:24 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.30 $ $}
+\date{\today \\ $ $Revision: 1.31 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.30 $ $}{$ $Revision: 1.30 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.31 $ $}{$ $Revision: 1.31 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -175,7 +175,7 @@ than is strictly necessary.\fixme{Explain better.}
 \textbf{Transition goes here: we are going to describe SSA form for
 background on SSI form.}\fixme{Write this.}
 
-\subsection{Static Single Assignment Form}\label{sec:ssa}
+\subsection{Static Single Assignment form}\label{sec:ssa}
 Static Single Assignment (SSA) form, introduced by Cytron in
 \cite{cytron89:ssa}\ldots
 
@@ -231,7 +231,7 @@ contains definition and algorithm for pruned SSA.}
 \label{fig:prunedssa}
 \end{myfigure}
 
-\section{Static Single Information Form}
+\section{Static Single Information form}
 
 SSI form extends SSA form to achieve symmetry for both forward and
 reverse dataflow.   SSI form recognizes that information about
@@ -280,7 +280,7 @@ then a \sigfunction{} for $V$ has been inserted at $Z$ in the new program.
 \item There is exactly one reaching definition of $V$ at every
 non-$\phi$ use of $V$ in the new program.
 \item \textbf{FIXME: what's the equivalent condition for \sigfunction{s}?}
-% has something to do with cycle equivalence.
+% has something to do with cycle-equivalence.
 \end{enumerate}
 
 A \emph{pruned} SSI form would be the minimal form without any unused
@@ -335,11 +335,11 @@ A SESE region $\tuple{a,b}$ is \term{canonical} provided
 \end{tightenum}
 \end{definition}
 
-\subsubsection{Cycle Equivalency}
+\subsubsection{Cycle-equivalency}
 \newcommand{\cyceq}{\equiv_{cq}}%{\equiv_{CYC}}
-The identification of SESE regions begins by computing the cycle
-equivalency of the edges in the program control flow graph.  The cycle
-equivalency algorithm works on undirected graphs, so we prepare the
+The identification of SESE regions begins by computing the
+cycle-equivalency of the edges in the program control flow graph.  The
+cycle-equivalency algorithm works on undirected graphs, so we prepare the
 directed control flow graph $G$ as follows:
 \begin{enumerate}
 \item \textbf{Add an edge from END to START in $\mathbf{G}$.} It is common
@@ -350,7 +350,7 @@ connected component, and for this reason the direction of the edge is
 from END to START.
 \item \textbf{Create an equivalent undirected graph.}  Johnson et al.\
 prove that the node expansion illustrated in figure~\ref{fig:CQundir}
-results in an undirected graph with the same cycle equivalency
+results in an undirected graph with the same cycle-equivalency
 properties as the original directed graph.  More precisely, nodes $a$
 and $b$ in directed graph $G$ are cycle-equivalent if and only if
 nodes $a'$ and $b'$ are cycle-equivalent in transformed undirected
@@ -430,7 +430,7 @@ $\begin{array}[c]{cc}
 \label{fig:CQex}
 \end{myfigure}
 
-\subsubsection{Single-Entry Single-Exit Regions and the Program Structure Tree}
+\subsubsection{SESE regions and the program structure tree}
 Johnson, Pearson, and Pingali show how to construct a tree structure
 of nested SESE regions from the cycle-equivalency information in
 \cite{johnson94:pst}.  The cycle-equivalent regions are sorted by
@@ -804,7 +804,7 @@ working on generating the figures to illustrate this section.}
 \section{Results}
 \textbf{Numbers, numbers, and more numbers.}
 
-\section{Future Work}
+\section{Future work}
 \textbf{Get a PhD.}\footnote{This involves finishing section
 \ref{sec:hardware} by describing how memory is handled in hardware
 compilation.  Answer: using lots and lots of sophisticated analysis,
