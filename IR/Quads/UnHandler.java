@@ -21,7 +21,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.28 2000-11-16 00:12:17 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.29 2000-11-17 00:25:03 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -356,6 +356,8 @@ final class UnHandler {
 	    for (int i=0; i<d.length; i++)
 		ti.put(d[i], Type.top);
 	}
+	// watch order of type updates below: always update src before dst
+	// to allow dst type to overwrite src if src==dst.
 	public void visit(AGET q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm), head = nq;
 	    Type Tobj = ti.get(q.objectref());
@@ -371,8 +373,8 @@ final class UnHandler {
 	    if (!Tobj.isNonNull())
 		head = nullCheck(q, head, q.objectref());
 	    ss.qm.put(q, head, nq);
-	    ti.put(q.dst(), Type.top);
 	    ti.put(q.objectref(), alsoNonNull(Tobj));
+	    ti.put(q.dst(), Type.top);
 	}
 	public void visit(ALENGTH q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm), head = nq;
@@ -380,11 +382,11 @@ final class UnHandler {
 	    if (!Tobj.isNonNull())
 		head = nullCheck(q, head, q.objectref());
 	    ss.qm.put(q, head, nq);
+	    ti.put(q.objectref(), alsoNonNull(Tobj));
 	    if (Tobj.isFixedArray())
 		ti.put(q.dst(), new IntConst(Tobj.getArrayLength()));
 	    else
 		ti.put(q.dst(), Type.top);
-	    ti.put(q.objectref(), alsoNonNull(Tobj));
 	}
 	public void visit(ANEW q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm), head = nq;
@@ -507,6 +509,7 @@ final class UnHandler {
 		head = q0; nq = q4;
 	    }
 	    ss.qm.put(q, head, nq);
+	    ti.put(q.dst(), Type.top);
 	}
 	/*public void visit(LABEL q);*/
 	/*public void visit(HANDLER q);*/
