@@ -27,7 +27,7 @@ import java.lang.reflect.Modifier;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.29.2.3 2000-01-11 10:39:35 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.29.2.4 2000-01-11 11:34:49 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -36,6 +36,7 @@ public abstract class HClass extends HPointer
   /** The linker responsible for the resolution of this <code>HClass</code>
    *  object. */
   private final Linker _linker;
+  boolean hasBeenModified = false;
 
   /** Protected constructor, not for external use. */
   HClass(Linker l) { _linker = l; }
@@ -62,6 +63,12 @@ public abstract class HClass extends HPointer
    * if this object is immutable.
    */
   public HClassMutator getMutator() { return null; }
+
+  /**
+   * Determines whether any part of this <code>HClass</code> has been
+   * modified from its originally loaded state.
+   */
+  public boolean hasBeenModified() { return hasBeenModified; }
 
   /**
    * If this class represents an array type, returns the <code>HClass</code>

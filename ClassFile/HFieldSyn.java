@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldSyn.java,v 1.3.2.2.6.1 2000-01-11 08:23:26 cananian Exp $
+ * @version $Id: HFieldSyn.java,v 1.3.2.2.6.2 2000-01-11 11:34:49 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -45,12 +45,25 @@ class HFieldSyn extends HFieldImpl implements HFieldMutator {
   public HFieldMutator getMutator() { return this; }
 
   public void addModifiers(int m) { setModifiers(getModifiers()|m); }
-  public void setModifiers(int m) { this.modifiers = m; }
   public void removeModifiers(int m) { setModifiers(getModifiers()&(~m)); }
+  public void setModifiers(int m) {
+    if (this.modifiers != m) parent.hasBeenModified = true;
+    this.modifiers = m;
+  }
 
-  public void setType(HClass type) { this.type = type; }
-  public void setConstant(Object co) { this.constValue=co; }
-  public void setSynthetic(boolean isSynthetic) {this.isSynthetic=isSynthetic;}
+  public void setType(HClass type) {
+    if (this.type != type) parent.hasBeenModified = true;
+    this.type = type;
+  }
+  public void setConstant(Object co) {
+    if ((co!=null) ? (!co.equals(this.constValue)) : (this.constValue!=null))
+      parent.hasBeenModified = true;
+    this.constValue=co;
+  }
+  public void setSynthetic(boolean isSynthetic) {
+    if (this.isSynthetic != isSynthetic) parent.hasBeenModified = true;
+    this.isSynthetic=isSynthetic;
+  }
 
   /** Serializable interface. */
   public Object writeReplace() { return this; }

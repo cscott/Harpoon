@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.9.2.2 2000-01-11 08:23:26 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.9.2.3 2000-01-11 11:34:49 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -52,6 +52,8 @@ class HClassSyn extends HClassCls implements HClassMutator {
       else
 	addDeclaredMethod(methods[i].getName(), methods[i]);
     Util.assert(methods.length == declaredMethods.length);
+
+    hasBeenModified = true; // by default, mark this as 'modified'
   }
   public HClassMutator getMutator() { return this; }
 
@@ -75,6 +77,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
       (HField[]) Util.grow(HField.DEFAULT.arrayFactory,
 			   declaredFields, f, declaredFields.length);
     fields=null; // invalidate cache.
+    hasBeenModified=true; // flag the modification
     return f;
   }
   public void removeDeclaredField(HField f) throws NoSuchFieldError {
@@ -83,6 +86,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
 	declaredFields = (HField[]) Util.shrink(HField.DEFAULT.arrayFactory,
 						declaredFields, i);
 	fields=null; // invalidate cache.
+	hasBeenModified=true; // flag the modification
 	return;
       }
     }
@@ -135,6 +139,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
 			    declaredMethods, m, declaredMethods.length);
     methods=null; // invalidate cache.
     constructors=null;
+    hasBeenModified=true; // flag the modification
     return m;
   }
   public void removeDeclaredMethod(HMethod m) throws NoSuchMethodError {
@@ -144,6 +149,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
 						  declaredMethods, i);
 	methods=null; // invalidate cache.
 	constructors=null;
+	hasBeenModified=true; // flag the modification
 	return;
       }
     }
@@ -186,6 +192,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
 	hm.setModifiers(hm.getModifiers() | Modifier.ABSTRACT);
       }
     }
+    if (modifiers!=m) hasBeenModified=true; // flag the modification
     modifiers = m;
   }
 
@@ -197,6 +204,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
 		      "  Please mail me at cananian@alumni.princeton.edu and "+
 		      "tell me why you think it's a good idea.");
     // XXX more sanity checks?
+    if (superclass != sc) hasBeenModified=true; // flag the modification
     superclass = sc;
   }
 
@@ -204,18 +212,21 @@ class HClassSyn extends HClassCls implements HClassMutator {
     if (!in.isInterface()) throw new Error("Not an interface.");
     interfaces = (HClass[]) Util.grow(HClass.arrayFactory,
 				      interfaces, in, interfaces.length);
+    hasBeenModified = true;
   }
   public void removeInterface(HClass in) throws NoClassDefFoundError {
     for (int i=0; i<interfaces.length; i++) {
       if (interfaces[i].equals(in)) {
 	interfaces = (HClass[]) Util.shrink(HClass.arrayFactory,
 					    interfaces, i);
+	hasBeenModified = true;
 	return;
       }
     }
     throw new NoClassDefFoundError(in.toString());
   }
   public void removeAllInterfaces() {
+    if (interfaces.length!=0) hasBeenModified = true;
     // wheee.
     interfaces = new HClass[0];
   }
@@ -223,10 +234,11 @@ class HClassSyn extends HClassCls implements HClassMutator {
   /**
    * Set the source file name for this class.
    */
-  public void setSourceFile(String sf) { this.sourcefile = sf; }
+  public void setSourceFile(String sf) {
+    if (!this.sourcefile.equals(sf)) hasBeenModified = true;
+    this.sourcefile = sf;
+  }
 
-  /** Serializable interface. */
-  public Object writeReplace() { return this; }
   /** Serializable interface. */
   public void writeObject(java.io.ObjectOutputStream out)
     throws java.io.IOException {
@@ -239,12 +251,6 @@ class HClassSyn extends HClassCls implements HClassMutator {
     this.sourcefile = this.sourcefile.intern();
     // write class data.
     out.defaultWriteObject();
-  }
-  /** Serializable interface. */
-  public void readObject(java.io.ObjectInputStream in)
-    throws java.io.IOException, ClassNotFoundException {
-    // read class data.
-    in.defaultReadObject();
   }
 }
 // set emacs indentation style.

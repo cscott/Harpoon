@@ -23,7 +23,7 @@ import java.util.Vector;
  * <code>Linker</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassImpl.java,v 1.1.2.1 2000-01-10 21:54:23 cananian Exp $
+ * @version $Id: HClassImpl.java,v 1.1.2.2 2000-01-11 11:34:49 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -675,7 +675,10 @@ abstract class HClassImpl extends HClass
 
   /** Serializable interface. Override if implementation has information
    *  which the linker cannot reconstruct. */
-  public Object writeReplace() { return new HClassStub(this); }
+  public Object writeReplace() {
+    if (!hasBeenModified()) return new HClassStub(this);
+    else return this; // cannot reconstruct; write this out instead
+  }
   private static final class HClassStub implements java.io.Serializable {
     private final String desc; private final Linker l;
     HClassStub(HClass c) // store only descriptor and linker for resolution.

@@ -16,7 +16,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6.2.5.2.1 2000-01-11 08:23:26 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6.2.5.2.2 2000-01-11 11:34:49 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -76,17 +76,31 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   public HMethodMutator getMutator() { return this; }
 
   public void addModifiers(int m) { setModifiers(getModifiers()|m); }
-  public void setModifiers(int m) { this.modifiers = m; }
   public void removeModifiers(int m) { setModifiers(getModifiers()&(~m)); }
+  public void setModifiers(int m) {
+    if (this.modifiers != m) parent.hasBeenModified = true;
+    this.modifiers = m;
+  }
 
-  public void setReturnType(HClass returnType) { this.returnType = returnType;}
+  public void setReturnType(HClass returnType) {
+    if (this.returnType != returnType) parent.hasBeenModified = true;
+    this.returnType = returnType;
+  }
 
   /** Warning: use can cause method name conflicts in class. */
   public void setParameterTypes(HClass[] parameterTypes) {
+    if (this.parameterTypes.length != parameterTypes.length)
+      parent.hasBeenModified = true;
+    else for (int i=0;
+	      i<this.parameterTypes.length && i<parameterTypes.length; i++)
+      if (this.parameterTypes[i] != parameterTypes[i])
+	parent.hasBeenModified = true;
     this.parameterTypes = parameterTypes;
   }
   /** Warning: use can cause method name conflicts in class. */
   public void setParameterType(int which, HClass type) {
+    if (this.parameterTypes[which] != type)
+      parent.hasBeenModified = true;
     this.parameterTypes[which] = type;
   }
 
@@ -104,8 +118,15 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     this.exceptionTypes = (HPointer[]) Util.grow(HPointer.arrayFactory,
 						 exceptionTypes, exceptionType,
 						 exceptionTypes.length);
+    parent.hasBeenModified = true;
   }
   public void setExceptionTypes(HClass[] exceptionTypes) {
+    if (this.exceptionTypes.length != exceptionTypes.length)
+      parent.hasBeenModified = true;
+    else for (int i=0;
+	      i<this.exceptionTypes.length && i<exceptionTypes.length; i++)
+      if (this.exceptionTypes[i] != exceptionTypes[i])
+	parent.hasBeenModified = true;
     this.exceptionTypes = exceptionTypes;
   }
   public void removeExceptionType(HClass exceptionType) {
@@ -113,11 +134,13 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
       if (exceptionTypes[i].actual().equals(exceptionType)) {
 	exceptionTypes = (HPointer[]) Util.shrink(HPointer.arrayFactory,
 						  exceptionTypes, i);
+	parent.hasBeenModified = true;
 	return;
       }
   }
 
   public void setSynthetic(boolean isSynthetic) {
+    if (this.isSynthetic != isSynthetic) parent.hasBeenModified = true;
     this.isSynthetic = isSynthetic;
   }
 
