@@ -196,37 +196,29 @@ class FileOutputStream extends OutputStream
     		}
     }
 
-	class WriteAsyncC extends VoidContinuation implements IOContinuation
+    class WriteAsyncC extends VoidContinuation implements IOContinuation
+    {
+	public void exception(Throwable t) {}
+
+
+	int b;
+	
+	public WriteAsyncC(int b) { this.b= b; Scheduler.addWrite(this); }
+	public void resume()
 	{
-    public void exception(Throwable t) {}
-
-    private Continuation link;
-
-    public void setLink(Continuation newLink) { 
-	link= newLink;
-    }
-
-    public Continuation getLink() { 
-	return link;
-    }
-		int b;
-		
-		public WriteAsyncC(int b) { this.b= b; Scheduler.addWrite(this); }
-		public void resume()
+	    int r= NativeIO.putCharJNI(fd.fd, b);
+	    switch(r)
 		{
-   			int r= NativeIO.putCharJNI(fd.fd, b);
-    			switch(r)
-    			{
-    				case NativeIO.ERROR: next.exception( new IOException() ); return;
-    				case NativeIO.TRYAGAIN:  Scheduler.addWrite(this); return;
-    				default: next.resume();
-    			} 
-			
-		}
-		
-		public FileDescriptor getFD() { return fd; }
-		
+		case NativeIO.ERROR: next.exception( new IOException() ); return;
+		case NativeIO.TRYAGAIN:  Scheduler.addWrite(this); return;
+		default: next.resume();
+		} 
+	    
 	}
+		
+	public FileDescriptor getFD() { return fd; }
+	
+    }
     	
 
     /**
@@ -286,44 +278,34 @@ class FileOutputStream extends OutputStream
     }
     
     class WriteAsync2C extends VoidContinuation implements IOContinuation {
-    public void exception(Throwable t) {}
+	public void exception(Throwable t) {}
 
-    private Continuation link;
-
-    public void setLink(Continuation newLink) { 
-	link= newLink;
-    }
-
-    public Continuation getLink() { 
-	return link;
-    }
-
-    		byte b[];
-    		int off, len;
-    		
-    		public WriteAsync2C(byte b[], int off, int len)
-    		{
-    			this.b= b;
-    			this.off= off;
-    			this.len= len;
-    			Scheduler.addWrite(this);
-    		}
-    		
-    		public void resume()
-    		{
-    			int r= NativeIO.writeJNI(fd.fd, b, off, len);
-    			
-    			if (r<0) next.exception(new IOException());
-    			if (r<len)
-    			{
-    				off+= r;
-    				len-= r;
-    				Scheduler.addWrite(this);
-    			} else next.resume();
-    		}
-    			
-		public FileDescriptor getFD() { return fd; }
-		
+	byte b[];
+	int off, len;
+	
+	public WriteAsync2C(byte b[], int off, int len)
+	{
+	    this.b= b;
+	    this.off= off;
+	    this.len= len;
+	    Scheduler.addWrite(this);
+	}
+	
+	public void resume()
+	{
+	    int r= NativeIO.writeJNI(fd.fd, b, off, len);
+	    
+	    if (r<0) next.exception(new IOException());
+	    if (r<len)
+		{
+		    off+= r;
+		    len-= r;
+		    Scheduler.addWrite(this);
+		} else next.resume();
+	}
+	
+	public FileDescriptor getFD() { return fd; }
+	
     }
 
     /**
