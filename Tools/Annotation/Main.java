@@ -10,6 +10,9 @@ import java.io.FileReader;
  * See the file COPYING for more details.
  */
 
+/** Main routine for the Java source-code annotation tool.
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ */
 public class Main {
   public static void main(String args[]) throws Exception {
     Reader fr = new BufferedReader(new FileReader(args[0]));
