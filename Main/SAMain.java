@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.174 2001-11-07 23:40:34 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.175 2001-11-10 20:43:27 kkz Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -518,11 +518,13 @@ public class SAMain extends harpoon.IR.Registration {
 	    String rName = frame.getRuntime().resourcePath
 		("writebarrier-safe.properties");
 	    if (WB_REMOVAL) {
+		hcf = new CachingCodeFactory(hcf);
 		hcf = new harpoon.Analysis.PreciseGC.AllocationHoisting
 		    (hcf, classHierarchy, linker, rName).codeFactory();
 		// re-generate class hierarchy to handle modified methods
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
+	    hcf = new CachingCodeFactory(hcf);
 	    writeBarrier = new WriteBarrierQuadPass
 		(classHierarchy, hcf, linker, rName, WB_REMOVAL);
 	    hcf = writeBarrier.codeFactory();

@@ -5,6 +5,8 @@ package harpoon.Analysis.PreciseGC;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
@@ -45,6 +47,7 @@ import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Util.ParseUtil;
+import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import harpoon.Util.Collections.WorkSet;
@@ -61,38 +64,43 @@ import java.util.Set;
  * <code>MRAFactory</code> generates <code>MRA</code>s.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: MRAFactory.java,v 1.1.2.3 2001-11-08 00:22:44 cananian Exp $
+ * @version $Id: MRAFactory.java,v 1.1.2.4 2001-11-10 20:43:21 kkz Exp $
  */
 public class MRAFactory {
     
     private final ClassHierarchy ch;
-    private final HCodeFactory ccf;
+    private final CallGraph cg;
+    private final HCodeFactory hcf;
+    //private final Map method2class;
     private final Map safeMethods;
-    private Set safeInitializers;
+    public Set safeInitializers;
     private final CFGrapher cfger;
     private final UseDefer ud;
     private final Map cache;
 
-    /** Creates a <code>MRAFactory</code>.  Requires that 
+    /** Creates an <code>MRAFactory</code>.  Requires that 
      *  the <code>HCodeFactory</code> produce code in 
      *  <code>Quad</code> form.  Note that some analysis
      *  is done in the constructor.  If the code is
      *  modified, a new <code>MRAFactory</code> is needed.
+     *  For efficiency reasons, <code>hcf</code> should be
+     *  a <code>CachingCodeFactory</code>.
      */
     public MRAFactory(ClassHierarchy ch, HCodeFactory hcf, Linker l, 
 		      String rName) {
 	this.ch = ch;
-	this.ccf = new CachingCodeFactory(hcf);
+	this.hcf = hcf;
+	this.cg = new CallGraphImpl(ch, hcf);
 	this.cfger = CFGrapher.DEFAULT;
 	this.ud = UseDefer.DEFAULT;
 	this.cache = new HashMap();
+	//this.safeMethods = new HashMap();
 	this.safeMethods = safeMethods(l, rName);
 	// initialize to empty so findSafeInitializers
-	// can run using the MRA analysis; update later
+	// can run a first-approximation MRA
 	this.safeInitializers = Collections.EMPTY_SET;
+	// calculate the real set of safe initializers
 	findSafeInitializers();
-	//System.out.println("ClassHierarchy size = "+
-	//	   ch.callableMethods().size());
     }
 
     /** Returns an <code>MRA</code>. */
@@ -107,95 +115,44 @@ public class MRAFactory {
 	return mra;
     }
 
+    /**
+     * Removes representation of <code>Code</code> 
+     * <code>c</code> from this factory.
+     */
+    public void clear(Code c) {
+	Object o = cache.remove(c);
+	Util.assert((o != null), "Failed to remove "+c.getMethod());
+    }
+
     /** Checks whether an initializer is "safe" (i.e. whether
      *  all calls to the initializer occurs when the object
-     *  being initialized is the most recently allocated object.
+     *  being initialized is the most recently allocated object.)
      */
-    public boolean isSafe(HMethod hm) {
+    public boolean isSafeInitializer(HMethod hm) {
 	return safeInitializers.contains(hm);
     }
 
-    private void findSafeInitializers() {
-	Set allInitializers = new HashSet();
-	// iterate through all callable methods,
-	// identifying those that are initializers
-	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
-	    if (hm.getName().equals("<init>")) {
-		allInitializers.add(hm);
-	    }
-		/*
-		((Code)ccf.convert(hm)).print
-		    (new java.io.PrintWriter(System.out), null);
-	    } else if (hm.getName().equals("getDefault")) {
-		((Code)ccf.convert(hm)).print
-		    (new java.io.PrintWriter(System.out), null);
-	    }
-		*/
-	    /*
-	    else if (hm.getName().equals("makeEdge") ||
-		     hm.getName().equals("symmetric") ||
-		     hm.getName().equals("buildDelaunay"))
-		((Code)ccf.convert(hm)).print
-		    (new java.io.PrintWriter(System.out), null);
-	    */
-	}
-	// freeze results
-	allInitializers = Collections.unmodifiableSet(allInitializers);
-	//System.out.println("TOTAL INITIALIZERS = "+allInitializers.size());
-	while (true) {
-	    Set initializers = new HashSet(allInitializers);
-	    // go through all Quads and throw out any initializers 
-	    // that get called when the object being initialized is 
-	    // not the mra object. iterate until fixed-point.
-	    for (Iterator it = ch.callableMethods().iterator(); 
-		 it.hasNext(); ) {
-		HMethod hm = (HMethod) it.next();
-		Code c = (Code) ccf.convert(hm);
-		if (c != null) {
-		    MRA mra = mra(c);
-		    for (Iterator stms = c.getElementsI(); stms.hasNext(); ) {
-			Quad q = (Quad) stms.next();
-			if (q.kind() == QuadKind.CALL) {
-			    CALL call = (CALL) q;
-			    // if this initializer is still being considered...
-			    if (initializers.contains(call.method())) {
-				Set[] mra_before = mra.mra_before(call);
-				if (!mra_before[0].contains(call.params(0)) ||
-				    !mra_before[1].isEmpty())
-				    // remove if receiver is not mra
-				    // or if we have exceptions
-				    initializers.remove(call.method());
-				/*
-				System.out.println("REMOVING "+call.method());
-				System.out.println("REASON "+call);
-				System.out.println(mra.mra_before(call));
-				c.print(new java.io.PrintWriter(System.out), null);
-				*/
-			    }
-			}
-		    }
-		}
-	    }
-	    // newly-minted safe iterators need to be re-analyzed
-	    for (Iterator it = initializers.iterator(); it.hasNext(); ) {
-		HMethod hm = (HMethod) it.next();
-		if (!safeInitializers.contains(hm))
-		    cache.remove((Code)ccf.convert(hm));
-	    }
-	    // save size of set
-	    int old_size = safeInitializers.size();
-	    safeInitializers = Collections.unmodifiableSet(initializers);
-	    //System.out.println("SAFE INITIALIZERS = "+safeInitializers.size());
-	    // reached fix point
-	    if (old_size == safeInitializers.size())
-		break;
-	}
-	//System.out.println("TOTAL INITIALIZERS = "+allInitializers.size());
-	//System.out.println("SAFE INITIALIZERS = "+safeInitializers.size());
+    /** Checks whether an <code>HMethod</code> is "safe" (i.e. 
+     *  whether it may allocate, either directly or indirectly
+     *  through calls, any Java-visible objects other than
+     *  those whose <code>HClass</code> is included in the
+     *  <code>Set</code> returned by <code>safetyExceptions</code>
+     *  for the given <code>HMethod</code>.
+     */
+    public boolean isSafeMethod(HMethod hm) {
+	return safeMethods.containsKey(hm);
     }
 
-    
+    /** Returns an unmodifiable <code>Set</code> of 
+     *  <code>HClass</code>es. The presence of an
+     *  <code>HClass</code> in the <code>Set</code> indicates 
+     *  that the given <code>HMethod</code> may allocate,
+     *  either directly or through calls, objects of that type.
+     */ 
+    public Set safetyExceptions(HMethod hm) {
+	return (Set) safeMethods.get(hm);
+    }
+
     /** Creates a <code>Map</code> of <code>HMethod</code>s
      *  to the <code>Set</code> of <code>Classes</code>
      *  whose objects may be allocated by the method either
@@ -207,113 +164,162 @@ public class MRAFactory {
      *  be absent from the map (i.e. map to null).
      */
     private Map safeMethods(Linker linker, String resourceName) {
-	// create a preliminary map
-	Map prelim = new HashMap();
-	// go through all callable methods, first pass
+	// start with an empty map
+	Map safe = new HashMap();
+	// add methods unless we know they are unsafe because of 
+	// dynamic dispatch or if we have no information because 
+	// it is native or abstract
 	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
-	    Code c = (Code) ccf.convert(hm);
-	    // ignore abstract or native methods
+	    Code c = (Code) hcf.convert(hm);
 	    if (c != null) {
-		Set classes_allocated = new HashSet();
-		prelim.put(hm, classes_allocated);
+		Set cls = new HashSet();
+		safe.put(hm, cls);
 		for (Iterator stms = c.getElementsI(); stms.hasNext(); ) {
 		    Quad q = (Quad) stms.next();
-		    // toss out any methods that we can't 
-		    // be sure of b/c of dynamic dispatch
-		    if (q.kind() == QuadKind.CALL && ((CALL)q).isVirtual()) {
-			prelim.remove(hm);
+		    int kind = q.kind();
+		    if (kind == QuadKind.CALL && ((CALL)q).isVirtual()) {
+			// remove if unsafe due to dynamic dispatch
+			safe.remove(hm);
 			break;
-		    } else if (q.kind() == QuadKind.ANEW) {
-			classes_allocated.add(((ANEW)q).hclass());
-		    } else if (q.kind() == QuadKind.NEW) {
-			classes_allocated.add(((NEW)q).hclass());
+		    } else if (kind == QuadKind.ANEW) {
+			cls.add(((ANEW)q).hclass());
+		    } else if (kind == QuadKind.NEW) {
+			cls.add(((NEW)q).hclass());
 		    }
 		}
 	    }
 	}
-	// freeze results
-	prelim = Collections.unmodifiableMap(prelim);
-	// the remaining methods may allocate indirectly
-	Map cleared = new HashMap();
-	// get any native methods
-	for (Iterator it = parseResource(linker, resourceName).iterator(); 
-	     it.hasNext(); )
-	    cleared.put((HMethod)it.next(), Collections.EMPTY_SET);
-	// start with the preliminary results
-	Map clearable = new HashMap(prelim);
-	while (true) {
-	    boolean changes = false;
-	    // use the prelim key set since the map is frozen
-	    for (Iterator it = prelim.keySet().iterator(); it.hasNext(); ) {
+	// add known native methods
+	for (Iterator it = parseResource(linker, resourceName).iterator();
+	     it.hasNext(); ) {
+	    safe.put((HMethod)it.next(), Collections.EMPTY_SET);
+	}
+	// save results
+	safe = Collections.unmodifiableMap(safe);
+	// start with the map so far
+	Map safer = new HashMap(safe);
+	// iterate until fixed point to remove any that
+	// are unsafe by calling unsafe methods
+	while(true) {
+	    boolean changed = false;
+	    for (Iterator it = safe.keySet().iterator(); it.hasNext(); ) {
 		HMethod hm = (HMethod) it.next();
-		Code c = (Code) ccf.convert(hm);
-		boolean approved = true;
-		// toss out any methods that allocates indirectly
-		// only non-virtual calls remain at this point
-		for (Iterator stms = c.getElementsI(); stms.hasNext(); ) {
-		    Quad q = (Quad) stms.next();
-		    if (q.kind() == QuadKind.CALL) {
-			CALL call = (CALL) q;
-			HMethod callee = call.method();
-			// cleared methods are okay
-			if (!cleared.containsKey(callee)) {
-			    if (!clearable.containsKey(callee)) {
-				// bad method... next!
-				clearable.remove(hm);
-				approved = false;
-				/*
-				if (hm.getName().equals("symmetric") ||
-				    hm.getName().equals("<init>")) {
-				    System.out.println("REMOVING "+hm);
-				    System.out.println("REASON "+callee);
-				    if (ccf.convert(callee) != null)
-					((Code)ccf.convert(callee)).print
-					    (new java.io.PrintWriter
-					     (System.out), null);
-				    else
-					System.out.println("NO CODE");
-				}
-				*/
-				break;
+		CALL[] calls = cg.getCallSites(hm);
+		for (int i = 0; i < calls.length; i++) {
+		    HMethod callee = calls[i].method();
+		    if (!safe.containsKey(callee)) {
+			// if the method being called isn't in the safe set, 
+			// then the caller is also unsafe
+			safer.remove(hm);
+			changed = true;
+			break;
+		    } else {
+			// if the method being called is safe, then add its
+			// classes to the set of known classes being allocated
+			if (((Set)safer.get(hm)).addAll((Set)safe.get(callee)))
+			    changed = true;
+		    }
+		}
+	    }
+	    if (changed) {
+		// should be monotonic
+		Util.assert(safer.size() < safe.size());
+		safe = Collections.unmodifiableMap(safer);
+		safer = new HashMap(safe);
+	    } else {
+		// reached fix point
+		Util.assert(safer.size() == safe.size());
+		break;
+	    }
+	}
+	// get a safe view of the keys
+	Set keys = Collections.unmodifiableSet(new HashSet(safer.keySet()));
+	// save results
+	for (Iterator it = keys.iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    safer.put(hm, Collections.unmodifiableSet((Set)safer.get(hm)));
+	}
+	return Collections.unmodifiableMap(safer);
+    }
+    
+    /** Calculates the <code>Set</code> of safe initializers;
+     *  a safe initializer is one where the object being
+     *  initialized is the most recently allocated object for
+     *  all calls in the program.
+     */
+    private void findSafeInitializers() {
+	// start with the set of initializers
+	Set initializers = new HashSet();
+	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    if (!hm.isStatic() && !hm.isInterfaceMethod()) {
+		Code c = (Code) hcf.convert(hm);
+		if (c != null)
+		    initializers.add(hm);
+	    }
+	    //if (hm.getName().indexOf("<init>") != -1)
+		//initializers.add(hm);
+	    //((Code)ccf.convert(hm)).print(new java.io.PrintWriter(System.out), null);
+	}
+	// save results
+	initializers = Collections.unmodifiableSet(initializers);
+	// Start with the set of initializers and remove 
+	// any that get called when the receiver is not 
+	// mra. Iterate until a fixed-point is reached.
+	while (true) {
+	    Set safe = new HashSet(initializers);
+	    for (Iterator it = ch.callableMethods().iterator(); 
+		 it.hasNext(); ) {
+		HMethod hm = (HMethod) it.next();
+		Code c = (Code) hcf.convert(hm);
+		if (c != null) {
+		    MRA mra = mra(c);
+		    CALL[] calls = cg.getCallSites(hm);
+		    for(int i = 0; i < calls.length; i++) {
+			CALL call = calls[i];
+			// consider only initializers that
+			// have not been eliminated
+			if (safe.contains(call.method())) {
+			    Tuple mra_before = mra.mra_before(call);
+			    Map m = (Map) mra_before.proj(0);
+			    Set s = (Set) mra_before.proj(1);
+			    if (!m.containsKey(call.params(0)) || 
+				!s.isEmpty() ||	
+				(call.isVirtual() && 
+				 cg.calls(hm, call).length != 1)) {
+				// remove if the receiver is not mra
+				// or there are exceptions, or if
+				// dynamic dispatch is possible
+				safe.remove(call.method());
 			    }
-			    // even if the method not definitely
-			    // bad, don't know yet, so not approved
-			    approved = false;
-			} else {
-			    // cleared method, add to allocated classes
-			    Set classes = (Set)cleared.get(((CALL)q).method());
-			    // if the set is changing, then can't stop
-			    if (((Set)clearable.get(hm)).addAll(classes))
-				changes = true;
 			}
 		    }
 		}
-		// if we got this far, then we are
-		// calling only cleared methods or
-		// not calling at all
-		if (approved) {
-		    // transfer from clearable to cleared
-		    cleared.put(hm, (Set)clearable.remove(hm));
+	    }
+	    // save results
+	    safe = Collections.unmodifiableSet(safe);
+	    // newly-recognized safe initializers should be 
+	    // re-analyzed for more precise mra results
+	    for (Iterator it = safe.iterator(); it.hasNext(); ) {
+		HMethod hm = (HMethod) it.next();
+		if (!safeInitializers.contains(hm)) {
+		    Code c = (Code) hcf.convert(hm);
+		    Util.assert(c != null);
+		    clear(c);
 		}
 	    }
-	    if (clearable.size() == prelim.size() && !changes) {
-		break; // reached fix point
+	    if (safeInitializers.size() == safe.size()) {
+		// reached fix-point
+		safeInitializers = safe;
+		break;
 	    } else {
-		// freeze results
-		prelim = Collections.unmodifiableMap(clearable);
-		clearable = new HashMap(clearable);
+		// continue
+		Util.assert(safeInitializers == Collections.EMPTY_SET ||
+			    safeInitializers.size() < safe.size());
+		safeInitializers = safe;
 	    }
 	}
-	cleared.putAll(clearable);
-	/*
-	for (Iterator it = cleared.keySet().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
-	    System.out.println(hm);
-	    System.out.println((Set)cleared.get(hm));
-	}
-	*/
-	return Collections.unmodifiableMap(cleared);
     }
     
     /** Implementation of <code>MRA</code> analysis. */
@@ -321,6 +327,7 @@ public class MRAFactory {
 
 	private boolean DEBUG = false;
 	private final Code code;
+	private final boolean isSafeInitializer;
 	private final BasicBlock.Factory bbf;
 	private final Map bb2pre;
 	private Map bb2post;
@@ -331,7 +338,7 @@ public class MRAFactory {
 	 */
 	private MRAImpl(Code c) {
 	    this.code = c;
-	    //this.DEBUG = c.getMethod().getName().equals("buildDelaunay");
+	    this.isSafeInitializer = isSafeInitializer(code.getMethod());
 	    this.bbf = new BasicBlock.Factory(code, cfger);
 	    this.bb2pre = new HashMap();
 	    this.bb2post = new HashMap();
@@ -340,20 +347,25 @@ public class MRAFactory {
 	    this.bb2post = null;
 	}
 
-	/** Returns the Set of <code>Temp</code>s that
-	 *  contain the address of the most recently
-	 *  allocated object at the given program point,
-	 *  before the given <code>Quad</code> is
-	 *  executed.  This function is undefined for
-	 *  <code>PHI<code>s.
+	private Map results = new HashMap();
+
+	/** Returns a <code>Tuple</code> that characterizes
+	 *  the state before the given <code>Quad</code>.
 	 */
-	public Set[] mra_before(Quad q) {
+	public Tuple mra_before(Quad q) {
+	    // first, check our cache
+	    Tuple t = (Tuple) results.get(q);
+	    if (t != null) return t;
+	    // if not in cache, then calculate
 	    BasicBlock bb = bbf.getBlock(q);
 	    Util.assert(bb != null);
-	    Set[] pre = (Set[]) bb2pre.get(bb);
+	    Tuple pre = (Tuple) bb2pre.get(bb);
 	    Util.assert(pre != null);
-	    Set[] post = new HashSet[] { new HashSet(pre[0]), 
-					 new HashSet(pre[1]) };
+	    Tuple post = new Tuple(new Object[] 
+				   { new HashMap((Map)pre.proj(0)),
+				     new HashSet((Set)pre.proj(1)),
+				     (Quad)pre.proj(2),
+				     new HashSet((Set)pre.proj(3)) });
 	    for(Iterator it = bb.statements().iterator(); it.hasNext(); ) {
 		Quad curr = (Quad) it.next();
 		if (q.equals(curr))
@@ -368,28 +380,53 @@ public class MRAFactory {
 		    curr.kind() != QuadKind.CJMP &&	
 		    curr.kind() != QuadKind.SWITCH &&	
 		    curr.kind() != QuadKind.TYPESWITCH)
-		    transfer(curr, post);
+		    post = transfer(curr, post);
 		else if (DEBUG)
 		    System.out.println(q);
 	    }
-	    return new Set[] { Collections.unmodifiableSet(post[0]),
-			       Collections.unmodifiableSet(post[1]) };
+	    t = new Tuple
+		(new Object[] 
+		 { Collections.unmodifiableMap((Map)post.proj(0)),
+		   Collections.unmodifiableSet((Set)post.proj(1)),
+		   (Quad)post.proj(2),
+		   Collections.unmodifiableSet((Set)post.proj(3)) });
+	    results.put(q, t);
+	    return t;
 	}
 
 
+	/** Performs analysis. This may take a while.
+	 */
 	private void analyze() {
 	    // create universe
-	    Set universe = new HashSet();
+	    Set temps = new HashSet();
 	    for(Iterator it = code.getElementsI(); it.hasNext(); ) {
 		Quad q = (Quad) it.next();
-		universe.addAll(ud.useC(q));
-		universe.addAll(ud.defC(q));
+		temps.addAll(ud.useC(q));
+		temps.addAll(ud.defC(q));
 	    }
-	    universe = Collections.unmodifiableSet(universe);
+	    // save resultss
+	    temps = Collections.unmodifiableSet(temps);
+	    // maps Temps to an array of 2 booleans
+	    // the first boolean is true iff
+	    // the method is an initializer and
+	    // the given Temp points to the
+	    // receiver object
+	    // the second boolean is true iff
+	    // the given Temp succeeded the receiver
+	    // as the most-recently-allocated object
+	    Map universe = new HashMap();
+	    for(Iterator it = temps.iterator(); it.hasNext(); ) {
+		universe.put((Temp)it.next(), MRA.MRAToken.TOP);
+	    }
+	    universe = Collections.unmodifiableMap(universe);
 	    // initialize the maps
 	    for(Iterator it = bbf.blocksIterator(); it.hasNext(); )
 		bb2post.put((BasicBlock)it.next(), 
-			    new Set[] { universe, Collections.EMPTY_SET });
+			    new Tuple(new Object[] { universe, 
+						     Collections.EMPTY_SET,
+						     null,
+			                             temps }));
 	    // initialize worklist
 	    Worklist toprocess = new WorkSet();
 	    toprocess.push((BasicBlock)bbf.getRoot());
@@ -397,49 +434,78 @@ public class MRAFactory {
 	    while(!toprocess.isEmpty()) {
 		BasicBlock bb = (BasicBlock)toprocess.pull();
 		// construct the pre-Set
-		Set[] pre = preSets(bb);
+		Tuple pre = getPre(bb);
 		// add the unmodifiable original to the map
 		bb2pre.put(bb, pre);
-		// make a copy
-		Set mra = new HashSet(pre[0]);
-		Set except = new HashSet(pre[1]);
-		for(Iterator it = bb.statements().iterator() ; 
-		    it.hasNext(); ) {
+		// make a copy to modify
+		Tuple tup = new Tuple
+		    (new Object[] { new HashMap((Map)pre.proj(0)),
+				    new HashSet((Set)pre.proj(1)),
+				    (Quad)pre.proj(2),
+		                    new HashSet((Set)pre.proj(3)) });
+		for(Iterator it = bb.statements().iterator(); it.hasNext(); ) {
 		    Quad q = (Quad) it.next();
-		    // PHIs and LABELs (which are also PHIs) are handled 
-		    // specially. so are CJMPs, SWITCHs and TYPESWITCHs, 
-		    // which are actually SIGMAs
-		    // CALLs are SIGMAs, but the "call" part is handled
-		    // separately from the "sigma" part
-		    if (q.kind() != QuadKind.PHI && 
-			q.kind() != QuadKind.LABEL &&
-			q.kind() != QuadKind.CJMP &&	
-			q.kind() != QuadKind.SWITCH &&	
-			q.kind() != QuadKind.TYPESWITCH)
-			transfer(q, new Set[] { mra, except} );
+		    // PHIs (which include LABELs) are handled implicitly 
+		    // in the call to getPre(). SIGMAs (which include  
+		    // CALLs, CJMPs, SWITCHes and TYPESWITCHes) are also 
+		    // handled implicitly in the call to getPre(), which 
+		    // calls getPost(). CALLs are handled twice because
+		    // they have non-SIGMA defs.
+		    int kind = q.kind();
+		    if (kind != QuadKind.PHI && kind != QuadKind.LABEL &&
+			kind != QuadKind.CJMP && kind != QuadKind.SWITCH &&
+			kind != QuadKind.TYPESWITCH)
+			tup = transfer(q, tup);
 		    else if (DEBUG)
 			System.out.println(q);
 		}
-		// if the post-Sets have changed, then update
-		// the map and add successors to worklist
-		if (mra.size() != ((Set[])bb2post.get(bb))[0].size() ||
-		    except.size() != ((Set[])bb2post.get(bb))[1].size()) {
-		    bb2post.put(bb, new Set[] 
-				{ Collections.unmodifiableSet(mra),
-				  Collections.unmodifiableSet(except) });
-		    for(Iterator it = bb.nextSet().iterator(); it.hasNext(); )
-			toprocess.push((BasicBlock)it.next());
+		Tuple post = (Tuple) bb2post.get(bb);
+		// check for convergence:
+		Set except = (Set) tup.proj(1);
+		if (((Set)tup.proj(1)).size() == ((Set)post.proj(1)).size()) {
+		    // exception sets converged, check next:
+		    if (((Map)tup.proj(0)).equals((Map)post.proj(0))) {
+			// mra maps converged, check next: 
+			Quad q1 = (Quad)tup.proj(2);
+			Quad q2 = (Quad)post.proj(2);
+			if ((q1 == null && q2 == null) ||
+			    (q1 != null && q1.equals(q2))) {
+			    // all converged, go to next in worklist
+			    continue;
+			}
+		    }
+		} else {
+		    Util.assert(((Set)tup.proj(1)).size() > 
+				 ((Set)post.proj(1)).size());
 		}
+		// not converged, update map with new values,
+		// and add successors to worklist
+		bb2post.put(bb, new Tuple
+			    (new Object[]
+			     { Collections.unmodifiableMap((Map)tup.proj(0)),
+			       Collections.unmodifiableSet((Set)tup.proj(1)),
+			       (Quad)tup.proj(2),
+			       Collections.unmodifiableSet((Set)tup.proj(3)) }));
+		for(Iterator it = bb.nextSet().iterator(); it.hasNext(); )
+		    toprocess.push((BasicBlock)it.next());
 	    }
 	}
 
-	// handles the complicated pre-Sets that
-	// occur when we have SIGMAs and PHIs
-	// returns an array of unmodifiable sets
-	private Set[] preSets(BasicBlock bb) {
-	    // start with the empty set
-	    Set mra = new HashSet();
+	/** Returns a <code>Tuple</code> containing an unmodifiable 
+	 *  <code>Map</code>, an unmodifiable <code>Set</code>, and a
+	 *  <code>Quad</code> characterizing the state of the 
+	 *  analysis prior to the given <code>Quad</code>.
+	 *  
+	 *  Handles complications that arise due to
+	 *  <code>SIGMA</code>s and <code>PHI</code>s.
+	 */
+	private Tuple getPre(BasicBlock bb) {
+	    // start from empty maps and sets
+	    Map mra = new HashMap();
 	    Set except = new HashSet();
+	    Set allocs = new HashSet();
+	    Set receiver = new HashSet();
+	    // look at the first Quad of the BasicBlock
 	    Quad q = (Quad) bb.statements().get(0);
 	    // PHIs are special
 	    if (q.kind() == QuadKind.LABEL ||
@@ -448,41 +514,67 @@ public class MRAFactory {
 		Quad[] prev = phi.prev();
 		// need to cycle through predecessors
 		for (int i = 0; i < phi.arity(); i++) {
-		    Set[] post = postSets(bbf.getBlock(prev[i]), bb);
-		    Set pmra = new HashSet(post[0]);
+		    Tuple post = getPost(bbf.getBlock(prev[i]), bb);
+		    // create a new map since we need to modify it
+		    Map pmra = new HashMap((Map) post.proj(0));
+		    // create a new set since we need to modify it
+		    Set preceiver = new HashSet((Set) post.proj(3));
 		    for (int j = 0; j < phi.numPhis(); j++) {
 			Temp src = phi.src(j, i);
 			// substitute srcs for dsts
-			if (pmra.remove(src))
-			    pmra.add(phi.dst(j));
+			if (pmra.containsKey(src)) {
+			    MRA.MRAToken tok = (MRA.MRAToken) pmra.remove(src);
+			    Util.assert(tok != null);
+			    pmra.put(phi.dst(j), tok);
+			}
+			if (preceiver.remove(src)) {
+			    preceiver.add(phi.dst(j));
+			}
 		    }
 		    // perform intersection
-		    if (i == 0)
-			mra.addAll(pmra);
-		    else
-			mra.retainAll(pmra);
+		    if (i == 0) {
+			mra.putAll(pmra);
+			receiver.addAll(preceiver);
+		    } else {
+			intersect(mra, pmra);
+			receiver.retainAll(preceiver);
+		    }
 		    // exceptions are just unioned
-		    except.addAll(post[1]);
+		    except.addAll((Set) post.proj(1));
+		    // collect all allocations sites
+		    allocs.add((Quad) post.proj(2));
 		}
 	    } else {
-		// special case for joins that
-		// are not PHIs or LABELs (FOOTERs)
-		// perform straight intersection
-		// for mra, union for exceptions
+		// we may have joins that are not
+		// PHIs or LABELs (FOOTERs), so
+		// perform intersection for mra,
+		// union for exceptions
 		Iterator it = bb.prevSet().iterator();
 		if (it.hasNext()) {
-		    Set[] post = postSets((BasicBlock)it.next(), bb);
-		    mra.addAll(post[0]);
-		    except.addAll(post[1]);
+		    Tuple post = getPost((BasicBlock)it.next(), bb);
+		    mra.putAll((Map) post.proj(0));
+		    except.addAll((Set) post.proj(1));
+		    allocs.add((Quad) post.proj(2));
+		    receiver.addAll((Set) post.proj(3));
 		}
 		while (it.hasNext()) {
-		    Set[] post = postSets((BasicBlock)it.next(), bb);
-		    mra.retainAll(post[0]);
-		    except.addAll(post[1]);
+		    Tuple post = getPost((BasicBlock)it.next(), bb);
+		    Map pmra = (Map) post.proj(0);
+		    intersect(mra, pmra);
+		    except.addAll((Set) post.proj(1));
+		    allocs.add((Quad) post.proj(2));
+		    receiver.retainAll((Set) post.proj(3));
 		}
 	    }
-	    return new Set[] { Collections.unmodifiableSet(mra),
-			       Collections.unmodifiableSet(except) };
+	    Quad alloc = null;
+	    if (allocs.size() == 1) {
+		alloc = (Quad) allocs.iterator().next();
+	    }
+	    return new Tuple(new Object[]
+			     { Collections.unmodifiableMap(mra),
+			       Collections.unmodifiableSet(except), 
+			       alloc,
+			       Collections.unmodifiableSet(receiver) });
 	}
 
 	// Handles the complicated post-Sets that
@@ -491,7 +583,7 @@ public class MRAFactory {
 	// multiple sucessors, because its post-Sets
 	// are different for each successor
 	// returns an array of unmodifiable sets
-	private Set[] postSets(BasicBlock bb, BasicBlock succ) {
+	private Tuple getPost(BasicBlock bb, BasicBlock succ) {
 	    List stms = bb.statements();
 	    Quad q = (Quad) stms.get(stms.size()-1);
 	    // SIGMAs are special, but abstract
@@ -507,47 +599,76 @@ public class MRAFactory {
 		for ( ; arity < sigma.arity(); arity++) {
 		    if (match.equals(next[arity])) {
 			// found arity
-			Set[] post = (Set[]) bb2post.get(bb);
-			Set mra = new HashSet(post[0]);
+			Tuple t = (Tuple) bb2post.get(bb);
+			Map mra = new HashMap((Map)t.proj(0));
+			Set receiver = new HashSet((Set)t.proj(3));
 			for (int i = 0; i < sigma.numSigmas(); i++) {
-			    // add only dst corresponding to
-			    // arity and only if src is present
-			    if (mra.remove(sigma.src(i)))
-				mra.add(sigma.dst(i, arity));
+			    Temp src = sigma.src(i);
+			    // exchange dst for src in mra
+			    if (mra.containsKey(src)) {
+				MRA.MRAToken tok = (MRA.MRAToken) mra.remove(src);
+				Util.assert(tok != null);
+				mra.put(sigma.dst(i, arity), tok);
+			    }
+			    if (receiver.remove(src)) {
+				receiver.add(sigma.dst(i, arity));
+			    }
 			}
 			// make unmodifiable
-			return new Set[] { Collections.unmodifiableSet(mra),
-					   post[1] };
+			return new Tuple(new Object[]
+					 { Collections.unmodifiableMap(mra),
+					   (Set)t.proj(1), 
+					   (Quad)t.proj(2),
+					   Collections.unmodifiableSet(receiver) });
 		    }
 		}
 		// should never get here
 		throw new Error("Cannot find arity of "+succ+" w.r.t. "+bb);
 	    }
 	    // otherwise...
-	    return (Set[]) bb2post.get(bb);
+	    return (Tuple) bb2post.get(bb);
 	}
 
-	// transfer function takes a Quad, the Set of
-	// Temps containing the most-recently allocated
-	// objects prior to the Quad, and modifies the
-	// Set accordingly
-	private void transfer(Quad q, Set[] pre) {
+	/** Transfer function for the analysis. Returns
+	 *  a <code>Tuple</code> characterizing the
+	 *  state after the <code>Quad</code> <code>q</code>.
+	 */
+    	private Tuple transfer(Quad q, Tuple pre) {
 	    if (DEBUG) {
 		System.out.println(q);
-		System.out.print("  "+pre[0]);
-		System.out.print(" except for "+pre[1]);
+		System.out.print("  "+pre.proj(0));
+		System.out.print(" except for "+pre.proj(1));
+		System.out.print(" allocated at "+pre.proj(2));
 	    }
-	    Set mra = pre[0];
-	    Set except = pre[1];
 	    int kind = q.kind();
-	    if (kind == QuadKind.ANEW || kind == QuadKind.NEW) {
-		// an ANEW or NEW creates a newly-allocated
-		// object that supercedes all others
+	    Map mra = (Map) pre.proj(0);
+	    Set except = (Set) pre.proj(1);
+	    Set receiver = (Set) pre.proj(3);
+	    if (kind == QuadKind.ANEW || 
+		kind == QuadKind.NEW) {
+		boolean succeeding = false;
+		if (isSafeInitializer) {
+		    // check if the Temp we def is succeeding the
+		    // receiver as the most recently allocated object
+		    succeeding = true;
+		    for(Iterator it = mra.values().iterator(); 
+			it.hasNext(); ) {
+			if (((MRA.MRAToken)it.next()) != MRA.MRAToken.RCVR)
+			    succeeding = false;
+		    }
+		}
+		// the Temp we def is now the mra
 		mra.clear();
-		mra.addAll(ud.defC(q));
-		// no exceptions; we know we
-		// just allocated an object
+		mra.put(q.def()[0], (succeeding ? 
+				     MRA.MRAToken.SUCC : MRA.MRAToken.BOTTOM));
+		// there should only be one
+		Util.assert(ud.defC(q).size() == 1);
+		// clear exceptions after an allocation
 		except.clear();
+		// remove dst from receiver
+		receiver.remove(q.def()[0]);
+		// make new Tuple, because we are changing the allocation site
+		pre = new Tuple(new Object[] { mra, except, q, receiver });
 	    } else if (kind == QuadKind.CALL) {
 		// after a call, we can no longer be
 		// certain of the most recently allocated
@@ -557,35 +678,50 @@ public class MRAFactory {
 		// the "sigma" part of the call is
 		// handled as part of the control flow
 		CALL call = (CALL) q;
-		if (safeMethods.containsKey(call.method())) {
-		    Set classes = (Set) safeMethods.get(call.method());
-		    Util.assert(classes != null);
+		if (isSafeMethod(call.method())) {
+		    Set exceptions = (Set) safetyExceptions(call.method());
+		    Util.assert(exceptions != null);
 		    // need to add exceptions
-		    except.addAll(classes);
+		    except.addAll(exceptions);
 		    // note our defs
 		    Temp retval = call.retval();
-		    if (retval != null)
+		    if (retval != null) {
 			mra.remove(retval);
+			receiver.remove(retval);
+		    }
 		    Temp retex = call.retex();
-		    if (retex != null)
+		    if (retex != null) {
 			mra.remove(retex);
+			receiver.remove(retval);
+		    }
 		} else {
 		    // not safe, just clear
 		    mra.clear();
 		}
 	    } else if (kind == QuadKind.MOVE) {
-		// if the src is an mra, then the dst becomes
-		// one, else the dst cannot be one
+		// if the src is an mra, then the dst should
+		// be added to the map as a clone of the src
 		MOVE move = (MOVE)q;
-		if (mra.contains(move.src()))
-		    mra.add(move.dst());
-		else
+		if (mra.containsKey(move.src())) {
+		    MRA.MRAToken token = (MRA.MRAToken) mra.get(move.src());
+		    Util.assert(token != null);
+		    mra.put(move.dst(), token);
+		} else {
 		    mra.remove(move.dst());
+		}
+		// keep receiver set updated
+		if (receiver.contains(move.src())) {
+		    receiver.add(move.dst());
+		} else {
+		    receiver.remove(move.dst());
+		}
 	    } else if (kind == QuadKind.METHOD) {
-		// parameters should not have any effect
-		Util.assert(!mra.removeAll(ud.defC(q)));
-		if (safeInitializers.contains(code.getMethod()))
-		    mra.add(((METHOD)q).params(0));
+		Util.assert(mra.isEmpty());
+		if (isSafeInitializer) {
+		    Temp rcvr = ((METHOD) q).params(0);
+		    mra.put(rcvr, MRA.MRAToken.RCVR);
+		    receiver.add(rcvr);
+		}
 	    } else if (kind == QuadKind.AGET || 
 		       kind == QuadKind.ALENGTH ||
 		       kind == QuadKind.COMPONENTOF ||
@@ -594,11 +730,11 @@ public class MRAFactory {
 		       kind == QuadKind.HANDLER ||
 		       kind == QuadKind.INSTANCEOF ||
 		       kind == QuadKind.OPER) {
-		// when a Temp is re-defined, we can no 
-		// longer be certain it points to the most 
-		// recently-allocated object
+		// defs of a Temp revoke its mra status
+		mra.remove(q.def()[0]);
+		receiver.remove(q.def()[0]);
+		// should only be one for these Quads
 		Util.assert(ud.defC(q).size() == 1);
-		mra.removeAll(ud.defC(q));
 	    } else if (kind == QuadKind.ARRAYINIT ||
 		       kind == QuadKind.ASET ||
 		       kind == QuadKind.DEBUG ||
@@ -620,7 +756,40 @@ public class MRAFactory {
 	    }
 	    if (DEBUG) {
 		System.out.print(" -> ");
-		System.out.println(pre[0]+" except for "+pre[1]);
+		System.out.println(pre.proj(0)+" except for "+pre.proj(1));
+	    }
+	    return pre;
+	}
+    }
+
+    /** Requires that m1 and m2 map <code>Temp</code>s to
+     *  <code>MRA.MRAToken</code>s.
+     *  Modifies m1 such that it is an intersection of m1
+     *  and m2 according to the following rules:
+     * 
+     *  1. m1 will contain a mapping for a key k iff m1
+     *     originally contained a mapping for k and if m2 
+     *     contains a mapping for k.
+     *  2. The value to which k maps in m1 will be the
+     *     join of the value to which k originally mapped
+     *     in m1 and the value to which k maps in m2.
+     */
+    private static void intersect(Map m1, Map m2) {
+	// make a copy of the keys before modifying the map
+	Set keySet = new HashSet(m1.keySet());
+	for(Iterator it = keySet.iterator(); it.hasNext(); ) {
+	    Temp t = (Temp) it.next();
+	    if (m2.containsKey(t)) {
+		// both m1 and m2 contain a mapping for t
+		// compute join and put new mapping in m1
+		MRA.MRAToken t1 = (MRA.MRAToken) m1.get(t);
+		MRA.MRAToken t2 = (MRA.MRAToken) m2.get(t);
+		Util.assert(t1 != null && t2 != null);
+		m1.put(t, t1.join(t2));
+	    } else {
+		// m2 does not contain a mapping for t
+		// therefore, remove mapping from m1
+		m1.remove(m2);
 	    }
 	}
     }

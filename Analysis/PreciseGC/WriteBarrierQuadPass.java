@@ -30,12 +30,14 @@ import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.Code;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
 import java.io.PrintStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -48,7 +50,7 @@ import java.util.Set;
  * about the number of times the write-barrier is called.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierQuadPass.java,v 1.1.2.5 2001-10-19 20:45:13 kkz Exp $
+ * @version $Id: WriteBarrierQuadPass.java,v 1.1.2.6 2001-11-10 20:43:21 kkz Exp $
  */
 public class WriteBarrierQuadPass extends 
     harpoon.Analysis.Transformation.MethodMutator {
@@ -81,8 +83,11 @@ public class WriteBarrierQuadPass extends
 	this.fieldSC = WB.getMethod("fsc", new HClass[] 
 				    { JLO, JLRF, JLO, HClass.Int });
 	this.optimize = optimize;
+	long start_time = System.currentTimeMillis();
 	this.mraf = optimize ? 
 	    new MRAFactory(ch, parent, linker, resourceName): null;
+	System.out.println("MRA analysis time = "+
+			   (System.currentTimeMillis()-start_time));
     }
     
     protected HCode mutateHCode(HCodeAndMaps input) {
@@ -98,24 +103,26 @@ public class WriteBarrierQuadPass extends
 	    // MRA mra = new MRA(hc, safeSet);
 	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
 		Quad q = (Quad)it.next();
-		Set[] mra_before = mra.mra_before(q);
+		Tuple mra_before = mra.mra_before(q);
 		if (q.kind() == QuadKind.ASET) {
 		    // ASETs only know whether the component type is
 		    // an object, and not the specific type of the
 		    // array, so we can only do an ignore if the
 		    // exception set is empty, unless we want to do
 		    // more analysis to determine the type of the array.
-		    if (mra_before[0].contains(((ASET)q).objectref()) &&
-			mra_before[1].isEmpty()) {
+		    Map m = (Map) mra_before.proj(0);
+		    Set s = (Set) mra_before.proj(1);
+		    if (m.containsKey(((ASET)q).objectref()) && s.isEmpty()) {
 			ignore.add(q);
 		    }
 		} else if (q.kind() == QuadKind.SET) {
-		    if (mra_before[0].contains(((SET)q).objectref())) {
+		    Map m = (Map) mra_before.proj(0);
+		    Set s = (Set) mra_before.proj(1);
+		    if (m.containsKey(((SET)q).objectref())) {
 			// add first, remove later if problems
 			ignore.add(q);
 			HClass type = ((SET)q).field().getType();
-			for (Iterator cls = mra_before[1].iterator();
-			     cls.hasNext(); ) {
+			for (Iterator cls = s.iterator(); cls.hasNext(); ) {
 			    if (ch.parents((HClass)cls.next()).
 				contains(type)) {
 				break;
