@@ -13,7 +13,7 @@ import java.util.ArrayList;
  * <code>Induction</code>
  * 
  * @author  root <root@kikashi.lcs.mit.edu>
- * @version $Id: Induction.java,v 1.1.2.1 1999-06-28 22:55:08 bdemsky Exp $
+ * @version $Id: Induction.java,v 1.1.2.2 1999-06-29 15:45:19 bdemsky Exp $
  */
 public class Induction {
     
@@ -63,6 +63,19 @@ public class Induction {
 	this.intmultiplier=x.intmultiplier;
 	this.objectsize=x.objectsize;
 	this.pointeroffset=new ArrayList(x.pointeroffset);
+    }
+
+    public String toString() {
+	String temp;
+	temp="pi: "+(new Boolean(pointerindex)).toString();
+	temp+=" iv: "+variable.toString()+" offset: ";
+	temp+=(new Integer(offset)).toString() +" intmultiplier: "+
+	    (new Integer(intmultiplier)).toString();
+	if (objectsize!=null)
+	    temp+=" os: "+objectsize.toString();
+	if (pointeroffset!=null)
+	    temp+=" poff: "+pointeroffset.toString();
+	return temp;
     }
     
     public boolean pointerindex;
