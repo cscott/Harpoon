@@ -76,8 +76,8 @@ inline void cleanup(RefCountAllocator rc) {
 #ifdef RTJ_DEBUG
   checkException();
   printf("    RefCountAllocator_cleanup(0x%08x)\n", rc);
-#endif
   printf("     ");
+#endif
   if (!(rc->refCount)) {
     compare_and_swap((long int*)(&(rc->cleaning)), 0, 1);
     if (rc->cleaning == 1) {
@@ -137,7 +137,9 @@ inline void cleanup(RefCountAllocator rc) {
 #endif
     }
   }
+#ifdef RTJ_DEBUG
   printf("\n");  
+#endif
 }
 
 inline void RefCountAllocator_INC(RefCountAllocator rc) {
