@@ -16,7 +16,7 @@ import java.io.PrintWriter;
  * <code>TreeCode</code>.  In short, a CGG generates a Code Generator.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.8 1999-06-30 20:47:56 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.9 1999-06-30 20:58:28 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -104,12 +104,13 @@ public abstract class CodeGeneratorGenerator {
 	     <BR> Generates Java source for the instruction selection
 	     method, not including method signature or surrounding
 	     braces.
-	     
-	     <BR>Generated method has one parameter available to be
+	     <BR>Outputs generated source to <code>out</code>.
+
+	<BR> <B>Subclass Implementation Notes:</B>
+	     <BR> Generated method has one parameter available to be
 	     referenced: <code>tree</code>, a <code>TreeCode</code>
 	     that represents the input set of <code>Tree</code>
 	     <code>HCodeElement</code>s.
-
 	     <BR>Generated method must, for each pattern in
 	     <code>this.spec</code>, define variables for the action
 	     statements in the pattern to refer to.  These variables
@@ -125,15 +126,11 @@ public abstract class CodeGeneratorGenerator {
 	         ( This should be defined as the <code>IR.Tree.Tree</code> 
 		   element being analyzed.) 
 	     </OL>
-
 	     <BR>Generated method finds a tiling for
 	     <code>tree</code>, using the information in
 	     <code>this.spec</code> as a <code>Spec.Rule</code> tile
 	     source, and then runs <code>Spec.Rule.action_str</code>
 	     for each matching tile.
-
-	     <BR>Outputs generated source to <code>out</code>.
-
 	     <BR>Awards bonus points to subclasses that implement this
 	     method to output documentation for the generated method
 	     body. 
