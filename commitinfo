@@ -22,6 +22,7 @@
 Benchmarks $CVSROOT/CVSROOT/commit_prep -u -r
 # we're going to forbid any more commits on the magic-2-0 branch of Code.
 #Code	$CVSROOT/CVSROOT/commit_prep -u -r
+Classpath $CVSROOT/CVSROOT/commit_prep -u -r
 Code	$CVSROOT/CVSROOT/stop_magic
 EventDriven $CVSROOT/CVSROOT/commit_prep -u -r
 ImageRec $CVSROOT/CVSROOT/commit_prep -u -r

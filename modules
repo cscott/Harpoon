@@ -37,6 +37,7 @@ taginfo 	CVSROOT taginfo
 
 # Version controlled sources:
 Benchmarks Benchmarks
+Classpath Classpath
 Code	Code
 Design	Design
 Docs	Docs
