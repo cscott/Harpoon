@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.61 2000-05-31 21:33:04 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.62 2000-06-07 03:29:16 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -314,6 +314,7 @@ public class PointerAnalysis {
 	See Section 10 <i>Inter-thread Analysis</i> in the original paper of
 	Martin and John Whaley for more details. */
     public ParIntGraph threadInteraction(MetaMethod mm){
+	System.out.println("threadInteraction for " + mm);
 	ParIntGraph pig = (ParIntGraph) getIntParIntGraph(mm);
 	return InterThreadPA.resolve_threads(this, pig);
     }
@@ -1013,7 +1014,7 @@ public class PointerAnalysis {
 	for(int i = 0; i < len; i++){
 	    Quad q = (Quad) instrs[i];
 
-	    //if(DEBUG2)
+	    if(DEBUG2)
 		System.out.println("INSTR: " + q.getSourceFile() + ":" +
 				   q.getLineNumber() + " " + q);
 	    

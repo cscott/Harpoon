@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.33 2000-05-18 03:31:07 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.34 2000-06-07 03:29:16 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -321,6 +321,15 @@ public class ParIntGraph {
 		public void visit_sync(PASync sync){
 		    visitor.visit(sync.n);
 		    visitor.visit(sync.nt);
+		}
+	    });
+
+	ar.forAllParActions(new ParActionVisitor() {
+		public void visit_par_ld(PALoad load, PANode nt2) {
+		    visitor.visit(nt2);
+		}
+		public void visit_par_sync(PASync sync, PANode nt2) {
+		    visitor.visit(nt2);
 		}
 	    });
 

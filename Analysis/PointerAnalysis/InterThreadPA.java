@@ -36,12 +36,12 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.27 2000-05-25 20:16:07 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.28 2000-06-07 03:29:16 salcianu Exp $
  */
 public abstract class InterThreadPA {
-    
+
     /** Activates a lot of debug messages. */
-    public static final boolean DEBUG  = false;
+    public static final boolean DEBUG  = true;
     /** Activates even more debug messages! */
     public static final boolean DEBUG2 = false;
     /** Displays some time statistics. */
@@ -84,6 +84,9 @@ public abstract class InterThreadPA {
 
 	ParIntGraph pig = (ParIntGraph) noit_pig.clone();
 
+	if(DEBUG)
+	    System.out.println("Initial thread map:" + pig.tau);
+
 	while(true){
 	    PANode nt = pick_an_unanalyzed_thread(pig,analyzed_threads);
 	    if(nt == null) break;
@@ -99,11 +102,13 @@ public abstract class InterThreadPA {
 	    ParIntGraph old_pig = pig;
 	    pig = interaction_nt(pa, pig, nt, ops);
 
+	    ParIntGraph.DEBUG2 = true;
 	    if(!pig.equals(old_pig)){
 		if(DEBUG)
 		    System.out.println("The graph has changed");
 		analyzed_threads.clear();
 	    }
+	    ParIntGraph.DEBUG2 = false;
 
 	    analyzed_threads.add(nt);
 	    processed_threads.add(nt);
@@ -116,7 +121,7 @@ public abstract class InterThreadPA {
 		System.out.println("Removed thread hole: " + nt);
 	    pig.G.e.removeNodeHoleFromAll(nt);
 	}
-	// clean up some of the inutile LOAD nodes
+	// clean up some of the useless LOAD nodes
 	pig.removeEmptyLoads();
 
 	if(TIMING){
@@ -465,7 +470,7 @@ public abstract class InterThreadPA {
        and the mu mappings. */
     private static ParIntGraph build_new_pig(ParIntGraph[] pig, Relation[] mu,
 					     PANode nparam, PANode nt,
-					     Set active_threads_in_starter){
+					     Set active_threads_in_starter) {
 
 	ParIntGraph new_pig = new ParIntGraph();
 
@@ -565,14 +570,16 @@ public abstract class InterThreadPA {
 
 	pig_starter.ar.forAllActions(act_visitor_starter);
 
-	ParActionVisitor par_act_visitor_starter = new ParActionVisitor(){
+	ParActionVisitor par_act_visitor_starter = new ParActionVisitor() {
 
 		public void visit_par_ld(PALoad load, PANode nt2){
 		    Util.assert(mu_starter.contains(load.n2,load.n2),
 				load.n2 + "->" + load.n2 +
 				"  should be in mu_starter");
 
-		    Set parallel_threads = mu_starter.getValuesSet(nt2);
+		    Set parallel_threads =
+			new HashSet(mu_starter.getValuesSet(nt2));
+
 		    if(nt2 == nt)
 			parallel_threads.addAll(startee_active_threads);
 
@@ -584,8 +591,9 @@ public abstract class InterThreadPA {
 		}
 
 		public void visit_par_sync(PASync sync, PANode nt2){
+		    Set parallel_threads = 
+			new HashSet(mu_starter.getValuesSet(nt2));
 
-		    Set parallel_threads = mu_starter.getValuesSet(nt2);
 		    if(nt2 == nt)
 			parallel_threads.addAll(startee_active_threads);
 
