@@ -8,7 +8,7 @@ package harpoon.IR.RawClass;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.2 2002-02-25 21:05:26 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.3 2002-02-26 08:02:29 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class ClassFile {
@@ -272,7 +272,8 @@ public class ClassFile {
       constant_pool[i].print(pw, in+3);
       // some constants take more than one entry.
       for (int j=1; j<constant_pool[i].entrySize(); j++)
-	indent(pw, in+2, "Constant {"+ (++i) +"} is invalid.");
+	indent(pw, in+2, "Constant {"+ (i+j) +"} is invalid.");
+      i+=constant_pool[i].entrySize()-1;
     }
     // this class information
     indent(pw, in+1, "Access Flags: " + access_flags);
