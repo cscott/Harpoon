@@ -34,6 +34,7 @@ import harpoon.Util.Util;
 
 import gnu.getopt.Getopt;
 
+import java.lang.reflect.Modifier;
 import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Set;
@@ -61,7 +62,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.24 1999-09-09 00:36:35 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.25 1999-09-09 03:28:49 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -88,7 +89,7 @@ public class SAMain extends harpoon.IR.Registration {
     public static void main(String[] args) {
 	HCodeFactory hcf = // default code factory.
 	    new harpoon.ClassFile.CachingCodeFactory(
-	    harpoon.IR.Quads.QuadWithTry.codeFactory()
+	    harpoon.IR.Quads.QuadNoSSA.codeFactory()
 	    );
 
 	parseOpts(args);
@@ -150,11 +151,12 @@ public class SAMain extends harpoon.IR.Registration {
 		hmset.retainAll(methods);
 		Iterator hms = hmset.iterator();
 		message("\t");
-		while(hms.hasNext()) {
+		while(!hclass.isInterface() && hms.hasNext()) {
 		    HMethod m = (HMethod) hms.next();
 		    message(m.getName());
 		    if (hms.hasNext()) message(", ");
-		    outputMethod(m, hcf, sahcf, out);
+		    if (!Modifier.isAbstract(m.getModifiers()))
+			outputMethod(m, hcf, sahcf, out);
 		}
 		messageln("");
 
