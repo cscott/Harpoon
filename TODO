@@ -63,10 +63,10 @@ X [make dummy execmap and constmap classes that return 'not a const' and
 X  'is executable' for everything.]
 ---- Sep-11-98, cont
 X Add SWITCH nodes to CJMP, SWITCH:
-X  call them lamba-functions.  <t1, t2, ...> = lambda(t0)
+X  call them sigma-functions.  <t1, t2, ...> = sigma(t0)
 X  return a tuple, given a temp (and a predicate?)
 X  reverse of phi functions.  translated the same way.
-X  There should be a lamba-function for variable a at node z of the flowgraph
+X  There should be a sigma-function for variable a at node z of the flowgraph
 X  example when:
 X   1) block x contains a *use* of a
 X   2) block y contains a *use* of a
@@ -76,7 +76,7 @@ X   5) paths Pxz and Pyz do not have any node in common except z (that is,
 X      z is the first point of convergence of these paths).
 X QUESTION: are criteria 1 and 2 correct.  Maybe where 1 *or* 2 is true?
 X QUESTION: how do you make a predicated analysis based on this?
-QUESTION: how does phi-function placement interact with lamba-function 
+QUESTION: how does phi-function placement interact with sigma-function 
           placement?
 write analysis to remove unnecessary control dependencies.  PARALLEL quad?
 

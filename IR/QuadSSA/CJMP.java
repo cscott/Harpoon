@@ -12,10 +12,10 @@ import harpoon.Temp.TempMap;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.16 1998-09-16 06:32:46 cananian Exp $
+ * @version $Id: CJMP.java,v 1.17 1998-09-18 00:50:28 cananian Exp $
  */
 
-public class CJMP extends LAMBDA {
+public class CJMP extends SIGMA {
     public Temp test;
 
     /** Creates a <code>CJMP</code>. */

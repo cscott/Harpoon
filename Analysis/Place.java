@@ -15,7 +15,7 @@ import java.util.Enumeration;
  * <code>Place</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.8 1998-09-16 19:46:59 cananian Exp $
+ * @version $Id: Place.java,v 1.9 1998-09-18 00:50:28 cananian Exp $
  */
 
 public class Place  {
@@ -33,7 +33,7 @@ public class Place  {
 	this(null, null, null);
     }
     SetHTable Aphi = new SetHTable();
-    SetHTable Alam = new SetHTable();
+    SetHTable Asig = new SetHTable();
 
     public Temp[] phiNeeded(HCode hc, HCodeElement n) {
 	analyze(hc); return Aphi.getSet(n);
@@ -41,11 +41,11 @@ public class Place  {
     public Enumeration phiNeededE(HCode hc, HCodeElement n) {
 	analyze(hc); return Aphi.getSetE(n);
     }
-    public Temp[] lamNeeded(HCode hc, HCodeElement n) {
-	analyze(hc); return Alam.getSet(n);
+    public Temp[] sigNeeded(HCode hc, HCodeElement n) {
+	analyze(hc); return Asig.getSet(n);
     }
-    public Enumeration lamNeededE(HCode hc, HCodeElement n) {
-	analyze(hc); return Alam.getSetE(n);
+    public Enumeration sigNeededE(HCode hc, HCodeElement n) {
+	analyze(hc); return Asig.getSetE(n);
     }
 
     Hashtable analyzed = new Hashtable();
@@ -73,23 +73,23 @@ public class Place  {
 
     void place(HCode hc) {
 	Worklist Wphi = new Set();
-	Worklist Wlam = new Set();
+	Worklist Wsig = new Set();
 
 	// for each used/defined variable a
 	for (Enumeration aE = ud.allTempsE(hc); aE.hasMoreElements(); ) {
 	    Temp a = (Temp) aE.nextElement();
 
 	    // worklists are empty here.
-	    Util.assert(Wphi.isEmpty() && Wlam.isEmpty());
+	    Util.assert(Wphi.isEmpty() && Wsig.isEmpty());
 
 	    // Wphi <- defsites[a]
 	    for (Enumeration e = ud.defMapE(hc, a); e.hasMoreElements(); )
 		Wphi.push(e.nextElement());
-	    // Wlam <- usesites[a]
+	    // Wsig <- usesites[a]
 	    for (Enumeration e = ud.useMapE(hc, a); e.hasMoreElements(); )
-		Wlam.push(e.nextElement());
+		Wsig.push(e.nextElement());
 
-	    while ( ! ( Wphi.isEmpty() && Wlam.isEmpty() ) )  {
+	    while ( ! ( Wphi.isEmpty() && Wsig.isEmpty() ) )  {
 		if (!Wphi.isEmpty()) {
 		    // remove some node n from Wphi
 		    HCodeElement n = (HCodeElement) Wphi.pull();
@@ -99,35 +99,35 @@ public class Place  {
 			HCodeElement Y = (HCodeElement) yE.nextElement();
 			if (!Aphi.memberSet(Y, a)) {
 			    Aphi.unionSet(Y, a);
-			    update(a, Y, Wphi, Wlam);
+			    update(a, Y, Wphi, Wsig);
 			}
 		    }
 		} // end Wphi processing.
-		if (!Wlam.isEmpty()) {
-		    // remove some node n from Wlam
-		    HCodeElement n = (HCodeElement) Wlam.pull();
+		if (!Wsig.isEmpty()) {
+		    // remove some node n from Wsig
+		    HCodeElement n = (HCodeElement) Wsig.pull();
 		    // for each Y in PDF[n]
 		    for (Enumeration yE = pdf.dfE(hc, n); 
 			 yE.hasMoreElements(); ) {
 			HCodeElement Y = (HCodeElement) yE.nextElement();
-			if (!Alam.memberSet(Y, a)) {
-			    Alam.unionSet(Y, a);
-			    update(a, Y, Wphi, Wlam);
+			if (!Asig.memberSet(Y, a)) {
+			    Asig.unionSet(Y, a);
+			    update(a, Y, Wphi, Wsig);
 			}
 		    }
-		} // end Wlam processing.
+		} // end Wsig processing.
 	    } // end while.
 	} // end "for all variables a"
     } // end place.
 
-    // determine whether we need to add n to Wphi or Wlam.
+    // determine whether we need to add n to Wphi or Wsig.
     private static void update(Temp a, HCodeElement Y, 
-			       Worklist Wphi, Worklist Wlam)
+			       Worklist Wphi, Worklist Wsig)
     {
 	harpoon.IR.Properties.UseDef Yud =
 	    (harpoon.IR.Properties.UseDef) Y; // access this property.
 	int i;
-	// Get Aorig_def and Aorig_use (pre-phi/lam uses and defs of Y)
+	// Get Aorig_def and Aorig_use (pre-phi/sig uses and defs of Y)
 	Temp[] Aorig_def = Yud.def();
 	Temp[] Aorig_use = Yud.use();
 	// if a not in Aorig_def[Y] then Wphi = Wphi union { Y }
@@ -136,12 +136,12 @@ public class Place  {
 		break;
 	if (i == Aorig_def.length) // a not in Aorig_def[Y]
 	    Wphi.push(Y);
-	// if a not in Aorig_use[Y] then Wlam = Wlam union { Y }
+	// if a not in Aorig_use[Y] then Wsig = Wsig union { Y }
 	for (i = 0; i < Aorig_use.length; i++)
 	    if (Aorig_use[i] == a)
 		break;
 	if (i == Aorig_use.length) // a not in Aorig_use[Y]
-	    Wlam.push(Y);
+	    Wsig.push(Y);
     }
 
     static class SetHTable extends Hashtable {

@@ -1,4 +1,4 @@
-// LAMBDA.java, created Mon Sep 14 03:03:50 1998 by cananian
+// SIGMA.java, created Mon Sep 14 03:03:50 1998 by cananian
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -6,24 +6,24 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
- * <code>LAMBDA</code> functions are added where control flow splits. <p>
- * They have the form: <code>&lt;t1, t2, ..., tn&gt; = lambda(t0)</code>.
+ * <code>SIGMA</code> functions are added where control flow splits. <p>
+ * They have the form: <code>&lt;t1, t2, ..., tn&gt; = sigma(t0)</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LAMBDA.java,v 1.2 1998-09-16 06:32:48 cananian Exp $
+ * @version $Id: SIGMA.java,v 1.1 1998-09-18 00:50:29 cananian Exp $
  */
 
-public abstract class LAMBDA extends Quad {
+public abstract class SIGMA extends Quad {
     public Temp dst[][];
     public Temp src[];
     
-    /** Creates a <code>LAMBDA</code>. */
-    public LAMBDA(HCodeElement source, Temp dst[][], Temp src[], int arity) {
+    /** Creates a <code>SIGMA</code>. */
+    public SIGMA(HCodeElement source, Temp dst[][], Temp src[], int arity) {
         super(source, 1, arity);
 	this.dst = dst;
 	this.src = src;
     }
-    public LAMBDA(HCodeElement source, Temp src[], int arity) {
+    public SIGMA(HCodeElement source, Temp src[], int arity) {
 	this(source, new Temp[src.length][arity], src, arity);
     }
 
@@ -59,7 +59,7 @@ public abstract class LAMBDA extends Quad {
     }
     public void visit(QuadVisitor v) { v.visit(this); }
     public String toString() {
-	StringBuffer sb = new StringBuffer("LAMBDA("+next().length+"): ");
+	StringBuffer sb = new StringBuffer("SIGMA("+next().length+"): ");
 	for (int i=0; i<src.length; i++) {
 	    sb.append("<");
 	    for (int j=0; j<dst[i].length; j++) {

@@ -9,10 +9,10 @@ import harpoon.Temp.TempMap;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.10 1998-09-16 06:32:50 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.11 1998-09-18 00:50:29 cananian Exp $
  */
 
-public class SWITCH extends LAMBDA {
+public class SWITCH extends SIGMA {
     /** The discriminant, compared against each value in <code>keys</code>.*/
     public Temp index;
     /** Integer keys for switch cases. <p>

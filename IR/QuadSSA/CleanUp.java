@@ -16,14 +16,14 @@ import harpoon.Util.Worklist;
  * <code>CleanUp</code> cleans up the phi functions of the IR generated
  * by the <code>Translate</code> class.<p>
  * It: <UL>
- * <LI> Removes phi/lambda functions that define temps that are never used
+ * <LI> Removes phi/sigma functions that define temps that are never used
  *      (which magically removes undefined temps as well).
  * <LI> Shrinks phi functions that have phantom limbs 
  *      (from impossible catches).
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CleanUp.java,v 1.6 1998-09-16 22:58:10 cananian Exp $
+ * @version $Id: CleanUp.java,v 1.7 1998-09-18 00:50:28 cananian Exp $
  * @see Translate
  */
 
@@ -87,13 +87,13 @@ class CleanUp  {
 	    for (int j=0; j<d.length; j++)
 		used.addDef(d[j], ql[i]);
 	}
-	// put all phis and lambdas on a worklist.
+	// put all phis and sigmas on a worklist.
 	Worklist W = new Set();
 	for (int i=0; i<ql.length; i++)
-	    if (ql[i] instanceof PHI || ql[i] instanceof LAMBDA)
+	    if (ql[i] instanceof PHI || ql[i] instanceof SIGMA)
 		W.push(ql[i]);
 	
-	// now iterate until we've removed all the phis/lambdas we can.
+	// now iterate until we've removed all the phis/sigmas we can.
 	while (!W.isEmpty()) {
 	    Quad q = (Quad) W.pull();
 	    if (q instanceof PHI) {
@@ -111,25 +111,25 @@ class CleanUp  {
 			phi.dst = (Temp[]) Util.shrink(phi.dst, j);
 			phi.src = (Temp[][]) Util.shrink(phi.src, j);
 		    } else j++;
-	    } else if (q instanceof LAMBDA) {
-		LAMBDA lambda = (LAMBDA) q;
+	    } else if (q instanceof SIGMA) {
+		SIGMA sigma = (SIGMA) q;
 		// an unused phi function has no used destinations.
-		for (int j=0; j<lambda.dst.length; ) {
-		    int k; for (k=0; k < lambda.dst[j].length; k++)
-			if (used.uses(lambda.dst[j][k]) != 0)
+		for (int j=0; j<sigma.dst.length; ) {
+		    int k; for (k=0; k < sigma.dst[j].length; k++)
+			if (used.uses(sigma.dst[j][k]) != 0)
 			    break;
-		    if (k==lambda.dst[j].length) { // no used variables found.
-			// decrement the uses of the lambda source
-			for (Enumeration e = used.dec(lambda.src[j]);
+		    if (k==sigma.dst[j].length) { // no used variables found.
+			// decrement the uses of the sigma source
+			for (Enumeration e = used.dec(sigma.src[j]);
 			     e.hasMoreElements(); )
 			    // and push nodes on the worklist to be examined
 			    W.push(e.nextElement());
-			// shrink the actual lambda function.
-			lambda.dst = (Temp[][]) Util.shrink(lambda.dst, j);
-			lambda.src = (Temp[]) Util.shrink(lambda.src, j);
+			// shrink the actual sigma function.
+			sigma.dst = (Temp[][]) Util.shrink(sigma.dst, j);
+			sigma.src = (Temp[]) Util.shrink(sigma.src, j);
 		    } else j++;
 		}
-	    } // end IF INSTANCEOF PHI || LAMBDA
+	    } // end IF INSTANCEOF PHI || SIGMA
 	} // end WHILE (W IS NOT EMPTY)
 	// done.
     }
