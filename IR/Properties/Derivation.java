@@ -15,7 +15,7 @@ import harpoon.Temp.TempMap;
  * garbage collection of the derived pointer.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.5 1999-02-08 20:14:58 duncan Exp $
+ * @version $Id: Derivation.java,v 1.1.2.6 1999-02-21 22:02:32 duncan Exp $
  */
 public interface Derivation  {
 
@@ -42,6 +42,13 @@ public interface Derivation  {
 	    this.base = base; this.sign = sign; this.next = next;
 	}
       
+      /* Like Quad.clone(), does not clone Temps when not supplied with
+       * a TempMap */
+      public static DList clone(DList dlist) {
+	if (dlist==null) return null;
+	else return new DList(dlist.base, dlist.sign, clone(dlist.next));
+      }
+
       /** Returns a clone of this <code>DList</code> */
       public static DList clone(DList dlist, CloningTempMap ctm) {
 	if (dlist==null) return null;
