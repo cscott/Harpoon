@@ -17,6 +17,6 @@ typeobject * gettypeobject();
 void resettypemap();
 bool assertvalidtype(int ptr, int structure);
 bool assertvalidmemory(int ptr, int structure);
-
+void initializestack(void *);
 extern typemap * memmap;
 #endif

@@ -3,6 +3,7 @@
 #include "size.h"
 extern "C" {
 #include "redblack.h"
+#include "stack.h"
 }
 
 #define CHECKTYPE
@@ -12,6 +13,7 @@ typemap::typemap(typeobject * size) {
   alloctree=rbinit();
   typetree=rbinit();
   this->size=size;
+  this->low=GC_linux_stack_base();
 }
 
 void freefunction(void *ptr) {
@@ -28,6 +30,18 @@ typemap::~typemap() {
 void typemap::reset() {
   rbdestroy(typetree,freefunction);
   typetree=rbinit();
+  if (low<high) 
+    rbdelete(low,alloctree);
+  else
+    rbdelete(high,alloctree);
+}
+
+void typemap::initializestack(void *high) {
+  this->high=high;
+  if (low<high) 
+    rbinsert(low,high,NULL,alloctree);
+  else
+    rbinsert(high,low,NULL,alloctree);
 }
 
 structuremap::structuremap(int s) {
@@ -40,11 +54,8 @@ structuremap::~structuremap() {
 }
 
 bool typemap::asserttype(void *ptr, int s) {
-  int toadd=size->size(s);
-  int inbytes=toadd>>3;
-  if (toadd%8)
-    inbytes++;
-  return asserttype(ptr,((char *) ptr)+inbytes,s);
+  int toadd=size->sizeBytes(s);
+  return asserttype(ptr,((char *) ptr)+toadd,s);
 }
 
 bool typemap::asserttype(void *ptr, void *high, int s) {
@@ -60,11 +71,8 @@ bool typemap::asserttype(void *ptr, void *high, int s) {
 }
 
 bool typemap::assertvalidmemory(void* low, int s) {
-  int toadd=size->size(s);
-  int inbytes=toadd>>3;
-  if (toadd%8)
-    inbytes++;
-  return assertvalidmemory(low,((char *)low)+inbytes);
+  int toadd=size->sizeBytes(s);
+  return assertvalidmemory(low,((char *)low)+toadd);
 }
 
 bool typemap::assertvalidmemory(void* low, void* high) {
@@ -94,6 +102,13 @@ void typemap::allocate(void *ptr, int size) {
     printf("Error\n");
 }
 
+inline int sizeinbytes(unsigned int bits) {
+  int bytes=bits>>3;
+  if (bits %8)
+    bytes++;
+  return bytes;
+}
+
 int typemap::findoffsetstructure(int s, int offset) {
   int count=0;
   for(int i=0;i<size->getnumfields(s);i++) {
@@ -103,14 +118,20 @@ int typemap::findoffsetstructure(int s, int offset) {
       mult=size->numElements(s,i);
     }
     int increment=size->size(ttype);
-    int delt=offset-count;
-    if (delt<mult*increment) {
-      if (delt%increment==0) {
-	return ttype;
-      } else
+    if (increment%8) {
+      int delt=offset-count;
+      int byteincrement=increment/8;
+      if (delt<mult*byteincrement) {
+	if (delt%byteincrement==0) {
+	  return ttype;
+	} else
+	  return -1;
+      }
+    } else {
+      if ((count+sizeinbytes(mult*increment))>offset)
 	return -1;
     }
-    count+=mult*increment;
+    count+=sizeinbytes(mult*increment);
   }
   return -1;
 }
@@ -133,7 +154,7 @@ bool typemap::checkmemory(void* low, void* high) {
 
 
 bool typemap::checktype(bool doaction,void *ptr, int structure) {
-  int ssize=size->size(structure);
+  int ssize=size->sizeBytes(structure);
   void *low=ptr;
   void *high=((char *)low)+ssize;
   struct pair allocp=rbfind(low,high,alloctree);

@@ -15,7 +15,10 @@ class typemap {
   bool istype(void *ptr, void *high, int structure);
   void reset();
   typeobject *size;
+  void initializestack(void *high);
  private:
+  void *low;
+  void *high;
   bool checkmemory(void* low, void* high);
   bool checktype(bool doaction,void *ptr, int structure);
   bool checktype(bool doaction, void *low, void *high,int structure, struct rbtree *ttree);

@@ -69,3 +69,7 @@ bool assertvalidtype(int ptr, int structure) {
 bool assertvalidmemory(int ptr, int structure) {
   return memmap->assertvalidmemory((void *)ptr, structure);
 }
+
+void initializestack(void *high) {
+  memmap->initializestack(high);
+}
