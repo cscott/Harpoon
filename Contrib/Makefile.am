@@ -3,6 +3,7 @@ MAINTAINERCLEANFILES = Makefile.in
 SUBDIRS=
 
 all:
+if CONSERVATIVE_GC
 # do make in gc subdir.
 if CROSS_COMPILING
 	@echo
@@ -10,4 +11,6 @@ if CROSS_COMPILING
 	@echo
 else
 	make -C gc CC=$(CC) AS=$(AS)
+endif
+#
 endif
