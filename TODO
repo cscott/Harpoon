@@ -18,7 +18,7 @@ Massive SCC-based analysis can keep: array size, canbeNull, class sets, etc.
 Move harpoon.ClassFile.Bytecode to harpoon.IR.Bytecode
 Rename all *.Code classes to QuadCode, BytecodeCode, etc.
 Make UseDef into map/general class
-Remove SymTable package.
+X Remove SymTable package.
 ---- Sep-12-98
 X Add 'assert' statements to HClass.forName and HClass.forDescriptor to protect
 X  against '/' and '.' mistakes.
