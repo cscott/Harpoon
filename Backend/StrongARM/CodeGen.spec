@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.39 1999-09-02 20:11:26 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.40 1999-09-02 21:28:10 pnkfelix Exp $
  */
 %%
 
@@ -1056,7 +1056,8 @@ MOVE<d,l>(dst, src) %{
     Util.assert( dst instanceof TwoWordTemp, "why is dst: "+dst + 
 		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
 
-    Util.assert(src instanceof TwoWordTemp, "why is src: "+src + " a normal Temp?");
+    Util.assert(src instanceof TwoWordTemp, "why is src: "+src + 
+		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
         // not certain an emitMOVE is legal with the l/h modifiers
     emit( ROOT, "mov `d0l, `s0l\n"+
 		    "mov `d0h, `s0h", dst, src );
@@ -1097,13 +1098,13 @@ MOVE<i>(MEM(d), src) %{
 
 RETURN(val) %{
     // FSK: leaving OUT exception handling by passing excep-val in r1
-    emit(new InstrMEM(instrFactory, ROOT, 
-			   "mov `d0, `s0\n"+
-			   "ldmea `s1, { `d1, `d2, `d3 }",
-			   new Temp[]{ r0,
-				       SAFrame.FP, SAFrame.SP, 
-				       SAFrame.PC },
-			   new Temp[]{ val,  SAFrame.FP }));
+    emitMOVE( ROOT, "mov `d0, `s0", r0, val );
+    emit(new InstrMEM( instrFactory, ROOT, 
+		       "ldmea `s0, { `d0, `d1, `d2 } @ RETURN",
+		       new Temp[]{ SAFrame.FP, SAFrame.SP, 
+				   SAFrame.PC },
+		       new Temp[]{ SAFrame.FP },
+		       false, null));
 			
 }%
 
@@ -1113,9 +1114,7 @@ THROW(val, handler) %{
     emit( ROOT, "\t.global _lookup\n"+
 		"bl _lookup @ only r0, lr (& ip?) "+
 		"need to be preserved during lookup" ); 
-    emit( ROOT, "b stdexit");
-    
-   
+    emit( ROOT, "b stdexit", null, null, false, null);
 }%
 
 

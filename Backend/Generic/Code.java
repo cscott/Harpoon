@@ -33,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.19 1999-08-27 23:27:01 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.20 1999-09-02 21:28:09 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -89,26 +89,27 @@ public abstract class Code extends HCode {
      *                  the first element in the iteration. */
     public Iterator getElementsI() { 
 	return new UnmodifiableIterator() {
-	    Set visited = new HashSet();
-	    Stack s = new Stack();
-	    {
-		s.push(getRootElement());
-		visited.add(s.peek());
-	    }
-	    public boolean hasNext() { return !s.isEmpty(); }
+	    Instr instr = (Instr) getRootElement();
+	    public boolean hasNext() { return (instr != null); }
 	    public Object next() {
-		if (s.empty()) throw new NoSuchElementException();
-		Instr instr = (Instr) s.pop();
-		HCodeEdge[] next = instr.succ();
-		for (int i = next.length - 1; i >= 0; i--)
-		    if (!visited.contains(next[i].to())) {
-			s.push(next[i].to());
-			visited.add(next[i].to());
-		    }
-		return instr;
+		if (instr == null) throw new NoSuchElementException();
+		Instr r = instr;
+		instr = r.getNext();
+		return r;
 	    }
 	};
     }
+    
+    /** Returns an <code>Iterator</code> over the instructions in this
+	codeview.  
+     *
+     *  @return         An iterator over the <code>Instr</code>s
+     *                  making up this code view.  The root Instr is
+     *                  the first element in the iteration. */
+    public Iterator iterator() {
+	return getElementsI();
+    }
+
   
     /** Returns an array factory to create the instruction elements
      *  of this codeview.
@@ -139,18 +140,20 @@ public abstract class Code extends HCode {
      */
     public void print(java.io.PrintWriter pw) {
 
-	Instr[] instrarr = (Instr[]) getElements();
-        for (int i = 0; i < instrarr.length; i++) {
-            if (instrarr[i] instanceof InstrLABEL ||
-		instrarr[i] instanceof InstrDIRECTIVE) {
-                pw.println(instrarr[i]);
+	Iterator iter = getElementsI();
+        while(iter.hasNext()) {
+	    String str = "";
+	    Instr instr = (Instr) iter.next();
+            if (instr instanceof InstrLABEL ||
+		instr instanceof InstrDIRECTIVE) {
+                str = instr.toString();
             } else {
 		try {
 		    BufferedReader reader = 
-			new BufferedReader(new StringReader(toAssem(instrarr[i])));
+			new BufferedReader(new StringReader(toAssem(instr)));
 		    String s = reader.readLine();
 		    while (s != null) {
-			pw.println("\t"+s);
+			str += "\t"+ s +"\n";
 			s = reader.readLine();
 		    }
 		} catch (IOException e ) {
@@ -159,6 +162,8 @@ public abstract class Code extends HCode {
 				" code processing.");
 		}
             }
+	    pw.println(str);
+	    System.out.println("InstrStr:"+str+" Next:"+instr.getNext());
         }
     }
 

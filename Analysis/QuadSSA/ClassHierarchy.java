@@ -22,14 +22,16 @@ import java.util.TreeSet;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.4.2.9 1999-08-18 18:36:20 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.4.2.10 1999-09-02 21:28:08 pnkfelix Exp $
  */
 
 public class ClassHierarchy implements java.io.Serializable {
     private Map children = new HashMap();
     private Set methods = new TreeSet(); // sorted for niceness
 
-    /** Returns set of all callable methods. */
+    /** Returns set of all callable methods. 
+	@return <code>Set</code> of <code>HMethod</code>s.
+     */
     public Set callableMethods() {
 	return Collections.unmodifiableSet(methods);
     }

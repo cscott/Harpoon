@@ -33,7 +33,7 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.14 1999-09-02 20:11:30 pnkfelix Exp $
+ * @version $Id: Data.java,v 1.1.2.15 1999-09-02 21:28:11 pnkfelix Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
@@ -92,12 +92,20 @@ public class Data extends Code implements HData {
 	    HMethod[] iMethods = iFace.getMethods();
 	    iList.add(_DATA(offm.label(iFace)));  // Add to interface list
 	    for (int j=0; j<iMethods.length; j++) { 
-		add(offm.offset(iMethods[i])/ws, 
-		    _DATA(offm.label(cls.getMethod  // Point to class method
-				     (iMethods[i].getName(),
-				      iMethods[i].getParameterTypes()))),
-		    up,
-		    down);
+		HMethod hm = iMethods[j];
+		DATA data = null;
+		if (classHierarchy.callableMethods().contains(hm)) {
+		    // Point to class method
+		    data = _DATA(offm.label(cls.getMethod  
+					    (hm.getName(),
+					     hm.getParameterTypes())));
+		    //System.out.println("output "+data+" for " + hm);
+		} else {
+		    // null (never used, so don't create reference)
+		    data = _DATA(new CONST(tf, null, 0));
+		    //System.out.println("output "+data+" for " + hm);
+		}
+		add(offm.offset(hm)/ws, data, up, down);
 	    }
 	}
 	iList.add(_DATA(new CONST(tf, null, 0)));
@@ -111,9 +119,19 @@ public class Data extends Code implements HData {
 	// Add non-static class methods to list 
 	HMethod[] methods = cls.getMethods();
 	for (int i=0; i<methods.length; i++) { 
-	    if (!methods[i].isStatic()) { 
-		add(offm.offset(methods[i])/ws,
-		    _DATA(offm.label(methods[i])),up,down);
+	    HMethod hm = methods[i];
+	    if (!hm.isStatic()) { 
+		DATA data = null;
+		if (classHierarchy.callableMethods().contains(hm)) {
+		    // Point to class method
+		    data = _DATA(offm.label(hm));
+		    //System.out.println("output "+data+" for " + hm);
+		} else {
+		    // null (never used, so don't create reference)
+		    data = _DATA(new CONST(tf, null, 0));
+		    //System.out.println("output "+data+" for " + hm);
+		}
+		add(offm.offset(hm)/ws, data, up, down);
 	    }
 	}
 

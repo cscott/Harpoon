@@ -13,10 +13,10 @@ import harpoon.IR.Tree.Print;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericCodeGen.java,v 1.1.2.7 1999-08-11 00:03:44 pnkfelix Exp $ */
+ * @version $Id: GenericCodeGen.java,v 1.1.2.8 1999-09-02 21:28:09 pnkfelix Exp $ */
 public abstract class GenericCodeGen {
 
-    private static boolean DEBUG = false;
+    private static boolean DEBUG = true;
     
     /** Creates a <code>CodeGen</code>. */
     public GenericCodeGen() {
