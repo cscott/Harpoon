@@ -25,6 +25,7 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.SIGMA;
+import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -42,7 +43,7 @@ import java.util.Set;
  *  <code>CALL</code> non-executable.)
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.1.2.12 2001-09-20 01:45:48 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.1.2.13 2001-11-01 20:09:03 cananian Exp $
  */
 public final class SCCOptimize implements ExecMap {
     TypeMap  ti;
@@ -187,6 +188,51 @@ public final class SCCOptimize implements ExecMap {
 		if (hasDefault) visit((SIGMA)nts);
 		// ta-da!
 	    }
+	    public void visit(SWITCH q) {
+		/* multiple edges of this SIGMA may be executable */
+		List keylist = new ArrayList(q.arity());
+		List edgelist = new ArrayList(q.arity());
+		// collect executable edges.
+		for (int i=0; i < q.arity(); i++)
+		    if (execMap(q.nextEdge(i))) {
+			if (i<q.keysLength())
+			    keylist.add(new Integer(q.keys(i)));
+			edgelist.add(q.nextEdge(i));
+		    }
+		// default edge may not be executable.
+		boolean hasDefault = !(keylist.size() == edgelist.size());
+		// if default edge isn't executable, remove last key to make
+		// new default edge.
+		if (!hasDefault) keylist.remove(keylist.size()-1);
+		Util.assert(keylist.size()+1 == edgelist.size());
+		// make new keys and edge array.
+		int[] nkeys = new int[keylist.size()];
+		for (int i=0; i<nkeys.length; i++)
+		    nkeys[i] = ((Integer)keylist.get(i)).intValue();
+		Edge[] edges =
+		    (Edge[]) edgelist.toArray(new Edge[edgelist.size()]);
+		// make new dst[][] array for sigmas
+		Temp[][] ndst = new Temp[q.numSigmas()][edgelist.size()];
+		for (int i=0; i < q.numSigmas(); i++)
+		    for (int j=0; j < edges.length; j++)
+			ndst[i][j] = q.dst(i, edges[j].which_succ());
+		// make new SWITCH
+		SWITCH nsw = new SWITCH(q.getFactory(), q, q.index(),
+					nkeys, ndst, q.src());
+		// and link the new SWITCH.
+		Edge pedge = q.prevEdge(0);
+		Quad.addEdge((Quad)pedge.from(), pedge.which_succ(), nsw, 0);
+		Ee.add(nsw.prevEdge(0));
+		for (int i=0; i < edges.length; i++) {
+		    Quad.addEdge(nsw, i,
+				 (Quad) edges[i].to(), edges[i].which_pred());
+		    Ee.add(nsw.nextEdge(i));
+		}
+		// visit(SIGMA) to trim out SWITCH iff only one edge is
+		// executable
+		if (edgelist.size()==1) visit((SIGMA)nsw);
+		// ta-da!
+	    }
 	    public void visit(CALL q) {
 		// calls are like sigmas, but we can't actually
 		// remove either of the edges.
@@ -212,6 +258,8 @@ public final class SCCOptimize implements ExecMap {
 			break;
 		Util.assert(i!=next.length, q/*NO EDGES EXECUTABLE!*/);
 		if (i==next.length-1 || !execMap(next[i+1])) {
+		    for (int j=i+1; j<next.length; j++)
+			Util.assert(!execMap(next[j]));
 		    // only one edge is executable.
 		    int liveEdge = i;
 		    Util.assert(!(q instanceof CALL));
