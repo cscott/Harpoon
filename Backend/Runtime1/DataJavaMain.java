@@ -10,6 +10,7 @@ import harpoon.ClassFile.HDataElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TreeFactory;
+import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.SEGMENT;
 import harpoon.Temp.Label;
@@ -22,7 +23,7 @@ import java.util.List;
  * this java program.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataJavaMain.java,v 1.1.2.1 1999-10-15 18:25:32 cananian Exp $
+ * @version $Id: DataJavaMain.java,v 1.1.2.2 1999-10-20 07:05:57 cananian Exp $
  */
 public class DataJavaMain extends Data {
     final NameMap m_nm;
@@ -36,8 +37,9 @@ public class DataJavaMain extends Data {
 	    build(main) : null;
     }
     private HDataElement build(HMethod main) {
-	List stmlist = new ArrayList(3);
+	List stmlist = new ArrayList(4);
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.TEXT));
+	stmlist.add(new ALIGN(tf, null, 4)); // word align.
 	stmlist.add(new LABEL(tf, null, new Label("_javamain"), true));
 	stmlist.add(_DATA(m_nm.label(main)));
 	return (HDataElement) Stm.toStm(stmlist);

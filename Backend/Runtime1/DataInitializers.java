@@ -10,6 +10,7 @@ import harpoon.ClassFile.HDataElement;
 import harpoon.ClassFile.HInitializer;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TreeFactory;
+import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.SEGMENT;
@@ -24,7 +25,7 @@ import java.util.List;
  * dependency order.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataInitializers.java,v 1.1.2.2 1999-10-15 00:47:14 cananian Exp $
+ * @version $Id: DataInitializers.java,v 1.1.2.3 1999-10-20 07:05:57 cananian Exp $
  */
 public class DataInitializers extends Data {
     final NameMap m_nm;
@@ -40,6 +41,7 @@ public class DataInitializers extends Data {
     private HDataElement build(List initMethods) {
 	List stmlist = new ArrayList(initMethods.size()+3);
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.TEXT));
+	stmlist.add(new ALIGN(tf, null, 4)); // word-align.
 	stmlist.add(new LABEL(tf, null, new Label("_static_inits"), true));
 	for (Iterator it=initMethods.iterator(); it.hasNext(); )
 	    stmlist.add(_DATA(m_nm.label((HInitializer)it.next())));

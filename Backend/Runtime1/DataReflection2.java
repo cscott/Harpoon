@@ -14,6 +14,7 @@ import harpoon.ClassFile.HMember;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TreeFactory;
+import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.SEGMENT;
@@ -38,7 +39,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.1.2.2 1999-10-17 01:17:40 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.1.2.3 1999-10-20 07:05:57 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -59,6 +60,7 @@ public class DataReflection2 extends Data {
 
 	List stmlist = new ArrayList(6+7*members.size()/* at least*/);
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.REFLECTION_DATA));
+	stmlist.add(new ALIGN(tf, null, 4)); // align table to word boundary
 	stmlist.add(new LABEL(tf, null, m_nm.label(hc, "classinfo"), true));
 	// first field: a claz structure pointer.
 	stmlist.add(_DATA(m_nm.label(hc)));
@@ -98,6 +100,8 @@ public class DataReflection2 extends Data {
 	    stmlist.add(new LABEL(tf, null, memberLabel(hm,"descstr"), false));
 	    emitString(stmlist, hm.getDescriptor());
 	}
+	// pad out to full word after last string bit.
+	stmlist.add(new ALIGN(tf, null, 4));
 	// done, yay, whee.
 	return (HDataElement) Stm.toStm(stmlist);
     }

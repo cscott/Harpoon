@@ -4,12 +4,14 @@
 package harpoon.Backend.Runtime1;
 
 import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Maps.FieldMap;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HDataElement;
 import harpoon.ClassFile.HField;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.Stm;
+import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.DATA;
 import harpoon.IR.Tree.LABEL;
@@ -19,6 +21,8 @@ import harpoon.Util.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,22 +30,36 @@ import java.util.Set;
  * <code>DataStaticFields</code> lays out the static fields of a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStaticFields.java,v 1.1.4.2 1999-10-14 20:30:56 cananian Exp $
+ * @version $Id: DataStaticFields.java,v 1.1.4.3 1999-10-20 07:05:57 cananian Exp $
  */
 public class DataStaticFields extends Data {
     final NameMap m_nm;
+    final FieldMap m_fm;
     
     /** Creates a <code>DataStaticFields</code>. */
     public DataStaticFields(Frame f, HClass hc) {
         super("static-fields", hc, f);
 	this.m_nm = f.getRuntime().nameMap;
+	// note that technically this is a *class* field map, and so
+	// we can't be sure that it will work on static fields.  but
+	// in fact, we wrote the code, so we know it will.  Slight
+	// violation of abstraction, but it makes everything more
+	// maintainable *not* to duplicate the code here.
+	this.m_fm = ((TreeBuilder)f.getRuntime().treeBuilder).cfm;
 	this.root = build(hc);
     }
     private HDataElement build(HClass hc) {
-	HField[] fields = hc.getDeclaredFields();
-	List stmlist = new ArrayList();
+	HField[] fields = (HField[]) hc.getDeclaredFields().clone();
+	// first, sort fields by size to pack 'em in as tight as we can.
+	Collections.sort(Arrays.asList(fields), new Comparator() {
+	    public int compare(Object o1, Object o2) {
+		return m_fm.fieldSize((HField)o1) - m_fm.fieldSize((HField)o2);
+	    }
+	});
+	List stmlist = new ArrayList(2+3*fields.length/*at most*/);
 	// first do static fields with non-primitive type
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.STATIC_OBJECTS));
+	stmlist.add(new ALIGN(tf, null, 4)); // align fields to word boundary
 	for (int i=0; i<fields.length; i++) {
 	    if (!fields[i].isStatic() || fields[i].getType().isPrimitive())
 		continue;
@@ -53,6 +71,8 @@ public class DataStaticFields extends Data {
 	for (int i=0; i<fields.length; i++) {
 	    if (!fields[i].isStatic() || !fields[i].getType().isPrimitive())
 		continue;
+	    // align to field size.
+	    stmlist.add(new ALIGN(tf, null, m_fm.fieldSize(fields[i])));
 	    stmlist.add(new LABEL(tf, null, m_nm.label(fields[i]), true));
 	    stmlist.add(_DATA(fieldInitializer(fields[i])));
 	}

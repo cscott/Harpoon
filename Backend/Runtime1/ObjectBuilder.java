@@ -13,6 +13,7 @@ import harpoon.ClassFile.HField;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TreeFactory;
+import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.DATA;
 import harpoon.IR.Tree.LABEL;
@@ -30,7 +31,7 @@ import java.util.List;
  * <code>Runtime1</code> runtime.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.1 1999-10-12 20:04:50 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.2 1999-10-20 07:05:57 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -74,7 +75,9 @@ public class ObjectBuilder
     }
     Stm makeHeader(TreeFactory tf, Info info, boolean exported)
     {
-	List stmlist = new ArrayList(3);
+	List stmlist = new ArrayList(4);
+	// align to word boundary.
+	stmlist.add(new ALIGN(tf, null, 4));
 	// hash code.
 	stmlist.add(_DATA(tf, info.label()));
 	// label:

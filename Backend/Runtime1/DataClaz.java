@@ -12,6 +12,7 @@ import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HDataElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.Stm;
+import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.DATA;
 import harpoon.IR.Tree.LABEL;
@@ -35,7 +36,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.3 1999-10-16 20:12:41 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.4 1999-10-20 07:05:57 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -53,6 +54,8 @@ public class DataClaz extends Data {
 	List stmlist = new ArrayList();
 	// write the appropriate segment header
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
+	// align things on word boundary.
+	stmlist.add(new ALIGN(tf, null, 4));
 	// first comes the interface method table.
 	if (!hc.isInterface()) {
 	    Stm s = interfaceMethods(hc, ch);

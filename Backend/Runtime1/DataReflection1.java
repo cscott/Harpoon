@@ -14,6 +14,7 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.TreeFactory;
+import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.SEGMENT;
@@ -45,7 +46,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection1.java,v 1.1.2.1 1999-10-16 20:12:41 cananian Exp $
+ * @version $Id: DataReflection1.java,v 1.1.2.2 1999-10-20 07:05:57 cananian Exp $
  */
 public class DataReflection1 extends Data {
     final NameMap m_nm;
@@ -99,8 +100,9 @@ public class DataReflection1 extends Data {
 	return (HDataElement) Stm.toStm(stmlist);
     }
     private Stm buildStr2Class(List sorted) {
-	List stmlist = new ArrayList(2+2*sorted.size());
+	List stmlist = new ArrayList(3+2*sorted.size());
 	// make a sorted table mapping name strings to class objects.
+	stmlist.add(new ALIGN(tf, null, 4)); // align table to word boundary
 	stmlist.add(new LABEL(tf, null,
 			      new Label("_name2class_start"), true));
 	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
@@ -113,8 +115,9 @@ public class DataReflection1 extends Data {
 	return Stm.toStm(stmlist);
     }
     private Stm buildClass2Info(List sorted) {
-	List stmlist = new ArrayList(2+2*sorted.size());
+	List stmlist = new ArrayList(3+2*sorted.size());
 	// make a sorted table mapping class objects to class info structures.
+	stmlist.add(new ALIGN(tf, null, 4)); // align table to word boundary
 	stmlist.add(new LABEL(tf, null,
 			      new Label("_class2info_start"), true));
 	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
@@ -127,7 +130,7 @@ public class DataReflection1 extends Data {
 	return Stm.toStm(stmlist);
     }
     private Stm buildStrings(List sorted) {
-	List stmlist = new ArrayList(2*sorted.size()/*at least*/);
+	List stmlist = new ArrayList(1+2*sorted.size()/*at least*/);
 	// build actual c-style string data from UTF-8 encoded class name
 	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
@@ -139,6 +142,8 @@ public class DataReflection1 extends Data {
 	    // null-terminate the string.
 	    stmlist.add(_DATA(new CONST(tf, null, 8, false, 0)));
 	}
+	// pad out to a full word after the last byte.
+	stmlist.add(new ALIGN(tf, null, 4));
 	return Stm.toStm(stmlist);
     }
     private Stm buildClassObjects(List sorted) {

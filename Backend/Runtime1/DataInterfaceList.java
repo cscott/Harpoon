@@ -9,6 +9,7 @@ import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HDataElement;
 import harpoon.IR.Tree.Stm;
+import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.DATA;
 import harpoon.IR.Tree.LABEL;
@@ -25,7 +26,7 @@ import java.util.List;
  * <code>DataInterfaceList</code> lays out the expanded list of interfaces.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataInterfaceList.java,v 1.1.4.1 1999-10-12 20:04:50 cananian Exp $
+ * @version $Id: DataInterfaceList.java,v 1.1.4.2 1999-10-20 07:05:57 cananian Exp $
  */
 public class DataInterfaceList extends Data {
     final TreeBuilder m_tb;
@@ -43,6 +44,8 @@ public class DataInterfaceList extends Data {
 	List stmlist = new ArrayList();
 	// write the appropriate segment header
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
+	// word-align.
+	stmlist.add(new ALIGN(tf, null, 4));
 	// write the list label.
 	stmlist.add(new LABEL(tf, null, m_nm.label(hc, "interfaces"), false));
 	// okay, now collect all the interfaces that this class implements.
