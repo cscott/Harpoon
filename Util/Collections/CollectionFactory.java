@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
+import harpoon.Util.Default;
+
 import java.util.Collection;
 
 /** <code>CollectionFactory</code> is a <code>Collection</code>
@@ -24,7 +26,7 @@ import java.util.Collection;
     even though <code>Set</code> is a subtype of <code>Collection</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CollectionFactory.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $
+ * @version $Id: CollectionFactory.java,v 1.2.2.2 2002-03-04 20:22:18 cananian Exp $
  */
 public abstract class CollectionFactory<V> {
     
@@ -35,7 +37,8 @@ public abstract class CollectionFactory<V> {
     
     /** Generates a new, mutable, empty <code>Collection</code>. */
     public Collection<V> makeCollection() {
-	return makeCollection(java.util.Collections.EMPTY_SET);
+	// XXX BUG IN JAVAC: should be Collections.EMPTY_SET
+	return makeCollection(Default.EMPTY_SET());
     }
 
     /** Generates a new, mutable, empty <code>Collection</code>, using

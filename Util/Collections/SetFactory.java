@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
+import harpoon.Util.Default;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -19,7 +21,7 @@ import java.util.Set;
     even though <code>HashSet</code> is a subtype of <code>Set</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SetFactory.java,v 1.2.2.1 2002-02-27 22:24:15 cananian Exp $
+ * @version $Id: SetFactory.java,v 1.2.2.2 2002-03-04 20:22:18 cananian Exp $
  */
 public abstract class SetFactory<V> extends CollectionFactory<V> {
     
@@ -42,7 +44,8 @@ public abstract class SetFactory<V> extends CollectionFactory<V> {
 
     /** Generates a new, mutable, empty <code>Set</code>. */
     public Set<V> makeSet() {
-	return makeSet(Collections.EMPTY_SET);
+	// XXX BUG IN JAVAC: should be Collections.EMPTY_SET
+	return makeSet(Default.EMPTY_SET());
     }
 
     /** Generates a new, mutable, empty <code>Set</code>, using

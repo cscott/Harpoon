@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
+import harpoon.Util.Default;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -22,7 +24,7 @@ import java.util.Arrays;
     even though <code>LinkedList</code> is a subtype of <code>List</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ListFactory.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $
+ * @version $Id: ListFactory.java,v 1.2.2.2 2002-03-04 20:22:18 cananian Exp $
  */
 public abstract class ListFactory<V> extends CollectionFactory<V> {
     
@@ -45,7 +47,8 @@ public abstract class ListFactory<V> extends CollectionFactory<V> {
 
     /** Generates a new, mutable, empty <code>List</code>. */
     public List<V> makeList() {
-	return makeList(Collections.EMPTY_LIST);
+	// XXX BUG IN JAVAC: should be Collections.EMPTY_LIST
+	return makeList(Default.EMPTY_LIST());
     }
 
     /** Generates a new, mutable, empty <code>List</code>, using 

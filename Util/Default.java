@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.SortedSet;
 
 /**
  * <code>Default</code> contains one-off or 'standard, no-frills'
@@ -24,7 +25,7 @@ import java.util.SortedMap;
  * <code>Enumeration</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.2.2.1 2002-02-27 22:24:06 cananian Exp $
+ * @version $Id: Default.java,v 1.2.2.2 2002-03-04 20:22:13 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -48,10 +49,13 @@ public abstract class Default  {
 	public Object nextElement() { throw new NoSuchElementException(); }
     };
     /** An <code>Iterator</code> over the empty set. */
-    public static final Iterator nullIterator = new UnmodifiableIterator() {
-	public boolean hasNext() { return false; }
-	public Object next() { throw new NoSuchElementException(); }
-    };
+    public static final Iterator nullIterator = nullIterator();
+    public static final <E> Iterator<E> nullIterator() {
+	return new UnmodifiableIterator<E>() {
+	    public boolean hasNext() { return false; }
+	    public E next() { throw new NoSuchElementException(); }
+	};
+    }
     /** An <code>Iterator</code> over a singleton set. */
     public static final <E> Iterator<E> singletonIterator(E o) {
 	return Collections.singletonList(o).iterator();
@@ -61,6 +65,58 @@ public abstract class Default  {
 	return new UnmodifiableIterator<E>() {
 	    public boolean hasNext() { return i.hasNext(); }
 	    public E next() { return i.next(); }
+	};
+    }
+    /** An empty set; the parameterized version.
+     *  Made necessary by limitations in GJ's type system. */
+    public static final <E> SortedSet<E> EMPTY_SET() {
+	return new SerializableSortedSet<E>() {
+	    public int size() { return 0; }
+	    public boolean isEmpty() { return true; }
+	    public boolean contains(Object e) { return false; }
+	    public Iterator<E> iterator() { return nullIterator(); }
+	    public Object[] toArray() { return new Object[0]; }
+	    public <T> T[] toArray(T[] a) {
+		if (a.length>0) a[0]=null;
+		return a;
+	    }
+	    public boolean add(E e) {
+		throw new UnsupportedOperationException();
+	    }
+	    public boolean remove(Object e) { return false; }
+	    public <T> boolean containsAll(Collection<T> c) {
+		return c.isEmpty();
+	    }
+	    public boolean addAll(Collection<E> c) {
+		if (c.isEmpty()) return false;
+		throw new UnsupportedOperationException();
+	    }
+	    public <T> boolean removeAll(Collection<T> c) { return false; }
+	    public <T> boolean retainAll(Collection<T> c) { return false; }
+	    public void clear() { }
+	    public boolean equals(Object o) {
+		// note we implement Set, not Collection, interface
+		if (!(o instanceof Set)) return false;
+		return ((Set)o).size()==0;
+	    }
+	    public int hashCode() { return 0; }
+	    // sorted set interface:
+	    public Comparator<E> comparator() { return null; }
+	    public SortedSet<E> subSet(E fromEl, E toEl) { return this; }
+	    public SortedSet<E> headSet(E toEl) { return this; }
+	    public SortedSet<E> tailSet(E fromEl) { return this; }
+	    public E first() { throw new NoSuchElementException(); }
+	    public E last() { throw new NoSuchElementException(); }
+	};
+    }
+    /** An empty list.  The parameterized version.
+     *  Made necessary by limitations in GJ's type system. */
+    public static final <E> List<E> EMPTY_LIST() {
+	return new SerializableAbstractList<E>() {
+	    public int size() { return 0; }
+	    public E get(int index) {
+		throw new IndexOutOfBoundsException();
+	    }
 	};
     }
     /** An empty map. Missing from <code>java.util.Collections</code>.*/
@@ -209,6 +265,13 @@ public abstract class Default  {
     /** A serializable comparator. */
     private static interface SerializableComparator<A>
 	extends Comparator<A>, java.io.Serializable { /* only declare */ }
+    /** A serializable abstract list. */
+    private static abstract class SerializableAbstractList<E>
+	extends AbstractList<E>
+	implements java.io.Serializable { /* only declare */ }
+    /** A serializable set. */
+    private static interface SerializableSortedSet<E>
+	extends SortedSet<E>, java.io.Serializable { /* only declare */ }
     /** A serializable map. */
     private static interface SerializableSortedMap<K,V>
 	extends SortedMap<K,V>, java.io.Serializable { /* only declare */ }
