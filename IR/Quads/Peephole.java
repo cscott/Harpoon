@@ -5,22 +5,22 @@ package harpoon.IR.Quads;
 
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 
 import java.util.Stack;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 /**
  * <code>Peephole</code> performs peephole optimizations (mostly
  * <code>MOVE</code> collation) on <code>QuadWithTry</code> and
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.13 1999-11-11 21:20:44 bdemsky Exp $
+ * @version $Id: Peephole.java,v 1.1.2.14 2000-01-17 11:10:19 cananian Exp $
  */
 
 final class Peephole  {
@@ -115,14 +115,14 @@ final class Peephole  {
 		}
 		replace(q,  q1);
 	        replace(Qm, q2);
-		visited.union(q1); visited.union(q2);
+		visited.add(q1); visited.add(q2);
 		todo.push(q2.next(0));
 		changed=true;
 	    } else {
 		// garden variety instruction.
 		for (int i=0; i<ql.length; i++)
 		    todo.push(ql[i]);
-		visited.union(q);
+		visited.add(q);
 	    }
 	}
     }
@@ -141,7 +141,7 @@ final class Peephole  {
 	    Quad[] ql=q.next();
 	    for (int i=0; i<ql.length; i++)
 		todo.push(ql[i]);
-	    visited.union(q);
+	    visited.add(q);
 	}
 
 	void fixmap(Quad old, Quad newq, TempMap tm) {
@@ -284,7 +284,7 @@ final class Peephole  {
 		    changed=true;
 		} else {
 		    // do nothing.
-		    visited.union(q);
+		    visited.add(q);
 		    todo.push(Qnext);
 		}
 	    }

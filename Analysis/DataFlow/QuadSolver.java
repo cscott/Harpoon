@@ -11,14 +11,11 @@ package harpoon.Analysis.DataFlow;
  */
 
 import java.util.Enumeration;
-import java.util.List;
-import java.util.ListIterator;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Worklist;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
+import harpoon.Util.WorkSet;
 import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
 import harpoon.Analysis.EdgesIterator;
@@ -56,7 +53,7 @@ public abstract class QuadSolver {
 
   public static void worklist_solver(Quad root, DataFlowQuadVisitor v) {
 
-    Worklist W = new HashSet();
+    Worklist W = new WorkSet();
     W.push(root);
     while (!W.isEmpty()) {
       v.changed = false;
@@ -95,7 +92,7 @@ public abstract class QuadSolver {
 
   public static void worklist_solver(BasicBlock root, DataFlowBasicBlockVisitor v) {
 
-    Worklist W = new HashSet();
+    Worklist W = new WorkSet();
     W.push(root);
     while (!W.isEmpty()) {
 	//v.changed = false;

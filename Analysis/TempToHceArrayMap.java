@@ -7,24 +7,25 @@ import harpoon.Temp.Temp;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCode;
 import harpoon.Util.ArrayFactory;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
 
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <code>TempToHceSetMap</code> is a general class that maps <code>Temp</code>s to 
  * arrays of <code>HCodeElement</code>s
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: TempToHceArrayMap.java,v 1.1.2.4 1999-02-12 21:41:07 pnkfelix Exp $
+ * @version $Id: TempToHceArrayMap.java,v 1.1.2.5 2000-01-17 11:10:00 cananian Exp $
  */
 abstract class TempToHceArrayMap {
 
     // need to have an array factory to convert sets
     protected ArrayFactory arrayFact; 
 
-    private Hashtable map;
+    private Map map;
 
     /** Constructs a TempToHceArrayMap with
 	<code>hc.elementArrayFactory()</code> as its associated
@@ -32,7 +33,7 @@ abstract class TempToHceArrayMap {
      */
     TempToHceArrayMap(HCode hc) {
 	this.arrayFact = hc.elementArrayFactory();
-	map = new Hashtable();
+	map = new HashMap();
     }
 
     /** Constructs a TempToHceArrayMap with <code>fact</code> as its
@@ -40,7 +41,7 @@ abstract class TempToHceArrayMap {
      */
     TempToHceArrayMap(ArrayFactory fact) {
 	this.arrayFact = fact;
-	map = new Hashtable();
+	map = new HashMap();
     }
 
     /** Stores a mapping from <code>t</code> to <code>hces</code>.
@@ -71,8 +72,7 @@ abstract class TempToHceArrayMap {
 	HCodeElement[] hcel = 
 	    (HCodeElement[]) arrayFact.newArray(s.size()); 
 	  
-	s.copyInto(hcel);
-	return hcel;
+	return (HCodeElement[]) s.toArray(hcel);
 
     } 
 
@@ -109,7 +109,7 @@ abstract class TempToHceArrayMap {
     /** Creates a mapping from the elements of <code>temps</code> to
 	<code>hce</code> in <code>tmpToHceSet</code>.
 	<BR> <B>requires:</B> <code>tmpToHceSet</code> is a
-	                      <code>Hashtable</code> accepting
+	                      <code>Map</code> accepting
 			      <code>Temp</code>s as keys and
 			      <code>Set</code>s of
 			      <code>HCodeElement</code>s as values.
@@ -123,14 +123,14 @@ abstract class TempToHceArrayMap {
 		        associated with the <code>Temp</code>.
     */			
     protected static void associate(HCodeElement hce, Temp[] temps,
-				    Hashtable tmpToHceSet) {
+				    Map tmpToHceSet) {
 	for (int i=0; i<temps.length; i++) {
 	    Set s = (Set) tmpToHceSet.get(temps[i]);
 	    if (s == null) { 
 		s = new HashSet(); 
 		tmpToHceSet.put(temps[i], s);
 	    }
-	    s.union(hce);
+	    s.add(hce);
 	}
     }
 

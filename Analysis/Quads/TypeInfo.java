@@ -34,24 +34,25 @@ import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
-import harpoon.Util.UniqueFIFO;
 import harpoon.Util.Worklist;
+import harpoon.Util.WorkSet;
 import harpoon.Util.HClassUtil;
 
 import java.util.Vector;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 /**
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.7 2000-01-13 23:47:30 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.8 2000-01-17 11:10:13 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     UseDefMap usedef;
     boolean verifierBehavior;
 
-    Hashtable map = new Hashtable();
+    Map map = new HashMap();
 
     /** Creates a <code>TypeInfo</code> analyzer for the specified
      *  <code>HCode</code>.
@@ -90,13 +91,13 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     private void analyze(harpoon.IR.Quads.QuadSSI hc) {
 	Quad ql[] = (Quad[]) hc.getElements();
 	
-	Worklist worklist = new UniqueFIFO();
+	WorkSet worklist = new WorkSet(); // use as FIFO
 	for (int i=0; i<ql.length; i++)
-	    worklist.push(ql[i]);
+	    worklist.add(ql[i]);
 
 	// hack to handle typecasting:
 	//  keep track of booleans defined by instanceof's and acmpeq's.
-	Hashtable checkcast = new Hashtable();
+	Map checkcast = new HashMap();
 	if (!verifierBehavior)
 	    for (int i=0; i<ql.length; i++)
 		if (ql[i] instanceof INSTANCEOF ||
@@ -105,7 +106,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	
 	TypeInfoVisitor tiv = new TypeInfoVisitor(hc, checkcast, verifierBehavior);
 	while(!worklist.isEmpty()) {
-	    Quad q = (Quad) worklist.pull();
+	    Quad q = (Quad) worklist.removeFirst(); // use as FIFO
 	    tiv.modified = false;
 	    q.accept(tiv);
 	    if (tiv.modified) {
@@ -113,7 +114,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 		for (int i=0; i<d.length; i++) {
 		    HCodeElement[] u = usedef.useMap(hc, d[i]);
 		    for (int j=0; j<u.length; j++) {
-			worklist.push((Quad)u[j]); // only pushes unique quads.
+			worklist.add((Quad)u[j]); // only pushes unique quads.
 		    }
 		}
 	    }
@@ -123,12 +124,12 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     class TypeInfoVisitor extends QuadVisitor {
 	harpoon.IR.Quads.QuadSSI hc;
 	boolean modified = false;
-	Hashtable checkcast;
+	Map checkcast;
 	HClass hclassObj;
 	boolean verifierBehavior;
 	Linker linker;
 
-	TypeInfoVisitor(harpoon.IR.Quads.QuadSSI hc, Hashtable checkcast, boolean verifierBehavior) { 
+	TypeInfoVisitor(harpoon.IR.Quads.QuadSSI hc, Map checkcast, boolean verifierBehavior) { 
 	    this.hc = hc; this.checkcast = checkcast;
 	    this.verifierBehavior=verifierBehavior;
 	    this.linker = hc.getMethod().getDeclaringClass().getLinker();

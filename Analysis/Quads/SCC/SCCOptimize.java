@@ -24,16 +24,17 @@ import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.SIGMA;
 import harpoon.Temp.Temp;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
 import harpoon.Util.Util;
+
+import java.util.HashSet;
+import java.util.Set;
 /**
  * <code>SCCOptimize</code> optimizes the code after <code>SCCAnalysis</code>.
  * The optimization invalidates the <code>ExecMap</code> used.
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.1.2.4 2000-01-14 12:32:52 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.1.2.5 2000-01-17 11:10:14 cananian Exp $
  */
 public final class SCCOptimize {
     TypeMap  ti;
@@ -110,12 +111,12 @@ public final class SCCOptimize {
 				       cm.constMap(q, d[i]),
 				       ti.typeMap(q, d[i]) );
 		    Quad.addEdge(header, which_succ, qq, 0);
-		    Ee.union(header.nextEdge(which_succ));
+		    Ee.add(header.nextEdge(which_succ));
 		    header = qq; which_succ = 0;
 		}
 		// link to successor.
 		Quad.addEdge(header, which_succ, successor, which_pred);
-		Ee.union(header.nextEdge(which_succ));
+		Ee.add(header.nextEdge(which_succ));
 		// done.
 	    } // END VISIT quad.
 	    public void visit(CONST q) { /* do nothing. */ }
@@ -128,7 +129,7 @@ public final class SCCOptimize {
 			newF = newF.remove(i);
 		// add new executable edges to set.
 		for (int i=0; i<newF.prevLength(); i++)
-		    Ee.union(newF.prevEdge(i));
+		    Ee.add(newF.prevEdge(i));
 	    }
 	    public void visit(SIGMA q) {
 		// if the condition is constant, link this sigma (cjmp/switch)
@@ -153,12 +154,12 @@ public final class SCCOptimize {
 			Quad qq = new MOVE(q.getFactory(), q,
 					   q.dst(i,liveEdge), q.src(i));
 			Quad.addEdge(header, which_succ, qq, 0);
-			Ee.union(header.nextEdge(which_succ));
+			Ee.add(header.nextEdge(which_succ));
 			header = qq; which_succ = 0;
 		    }
 		    // link to successor.
 		    Quad.addEdge(header, which_succ, successor, which_pred);
-		    Ee.union(header.nextEdge(which_succ));
+		    Ee.add(header.nextEdge(which_succ));
 		}
 	    } // end VISIT SIGMA
 	    public void visit(PHI q) {
@@ -178,8 +179,8 @@ public final class SCCOptimize {
 			Edge edge = q.nextEdge(0);
 			Quad.addEdge(qq, 0,(Quad)edge.to(), edge.which_pred());
 			Quad.addEdge(q, 0, qq, 0);
-			Ee.union(q.nextEdge(0));
-			Ee.union(qq.nextEdge(0));
+			Ee.add(q.nextEdge(0));
+			Ee.add(qq.nextEdge(0));
 			q.removePhi(i); // remove i'th phi function.
 		    } else i++;
 		}

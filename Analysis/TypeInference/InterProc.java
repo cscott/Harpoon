@@ -7,7 +7,6 @@ import harpoon.IR.Quads.CALL;
 import harpoon.Temp.Temp;
 import java.util.Hashtable;
 import java.util.Enumeration;
-import harpoon.Util.UniqueFIFO;
 import harpoon.Util.Worklist;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -23,7 +22,7 @@ import java.util.Collections;
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.1.2.13 2000-01-14 12:32:54 cananian Exp $
+ * @version $Id: InterProc.java,v 1.1.2.14 2000-01-17 11:10:16 cananian Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {

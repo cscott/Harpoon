@@ -6,17 +6,18 @@ package harpoon.Analysis.TypeInference;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HClass;
 import harpoon.Util.Worklist;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
+import harpoon.Util.WorkSet;
 import harpoon.Util.HClassUtil;
 
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.Iterator;
 /**
  * <code>ClassCone</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: ClassCone.java,v 1.1.2.5 2000-01-14 12:32:54 cananian Exp $
+ * @version $Id: ClassCone.java,v 1.1.2.6 2000-01-17 11:10:16 cananian Exp $
  */
 
 public class ClassCone  {
@@ -25,7 +26,7 @@ public class ClassCone  {
     public ClassCone(ClassHierarchy ch) { this.ch = ch; }
 
     static ClassHierarchy ch;
-    static Hashtable map = new Hashtable();
+    static Map map = new HashMap();
     static SetHClass cone(HClass c) { 
 	/* ??? it might be better not to expand the cone immediately
 	 */
@@ -33,11 +34,11 @@ public class ClassCone  {
 	if (s==null) {
 	    s = new SetHClass();
 	    int dims = HClassUtil.dims(c);
-	    Worklist wl = new HashSet();
+	    Worklist wl = new WorkSet();
 	    wl.push(HClassUtil.baseClass(c));
 	    while (!wl.isEmpty()) {
 		HClass cl = (HClass)wl.pull();
-		s.union(HClassUtil.arrayClass(cl, dims));
+		s.add(HClassUtil.arrayClass(cl, dims));
 		for (Iterator it=ch.children(cl).iterator(); it.hasNext(); )
 		    wl.push(it.next());
 	    }

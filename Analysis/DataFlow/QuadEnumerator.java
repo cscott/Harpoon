@@ -9,29 +9,30 @@ package harpoon.Analysis.DataFlow;
  * @author  John Whaley
  */
 
-import harpoon.Util.HashSet;
-import harpoon.Util.Set;
-import harpoon.Util.Worklist;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import harpoon.IR.Quads.Quad;
 
 class QuadEnumerator implements Enumeration {
 
-  Worklist W; Set done;
+  List W; Set done;
 
   QuadEnumerator(Quad q) {
-    W = new HashSet();
+    W = new ArrayList();
     done = new HashSet();
-    W.push(q); done.push(q);
+    W.add(q); done.add(q);
   }
 
   public boolean hasMoreElements() { return !W.isEmpty(); }
 
   public Object nextElement() {
-    Quad q = (Quad) W.pull();
+    Quad q = (Quad) W.remove(W.size()-1);
     for (int i=0, n=q.nextLength(); i<n; ++i) {
       Quad nq = q.next(i);
-      if (!done.contains(nq)) { done.union(nq); W.push(nq); }
+      if (!done.contains(nq)) { done.add(nq); W.add(nq); }
     }
     return q;
   }

@@ -3,14 +3,15 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.TypeInference;
 
+import java.util.Collections;
 import java.util.Enumeration;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
+import java.util.HashSet;
+import java.util.Set;
 /**
  * <code>FieldType</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: FieldType.java,v 1.1.2.4 2000-01-14 12:32:54 cananian Exp $
+ * @version $Id: FieldType.java,v 1.1.2.5 2000-01-17 11:10:16 cananian Exp $
  */
 
 public class FieldType  {
@@ -22,6 +23,6 @@ public class FieldType  {
    
     SetHClass getType () { return type.copy(); }
     boolean union(SetHClass s) { return type.union(s); }
-    void addCallee(Object i) { callees.union(i); }
-    Enumeration getCallees() { return callees.elements(); }
+    void addCallee(Object i) { callees.add(i); }
+    Enumeration getCallees() { return Collections.enumeration(callees); }
 }

@@ -46,20 +46,22 @@ import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
 import harpoon.Util.HClassUtil;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
+import harpoon.Util.WorkSet;
 
-import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 /**
  * <code>SCCAnalysis</code> implements Sparse Conditional Constant Propagation,
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.8 2000-01-14 12:32:52 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.9 2000-01-17 11:10:14 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -86,7 +88,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     /** Set of all executable quads. */
     Set Eq = new HashSet();
     /** Mapping from <code>Temp</code>s to lattice values. */
-    Hashtable V = new Hashtable();
+    Map V = new HashMap();
 
     /*---------------------------*/
     // public information accessor methods.
@@ -152,8 +154,8 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     /** Main analysis method. */
     private void analyze(HCode hc) {
 	// Initialize worklists.
-	Worklist Wv = new HashSet(); // variable worklist.
-	Worklist Wq = new HashSet(); // block worklist.
+	Worklist Wv = new WorkSet(); // variable worklist.
+	Worklist Wq = new WorkSet(); // block worklist.
 
 	// Make instance of visitor class.
 	SCCVisitor visitor = new SCCVisitor(hc, Wv, Wq);
@@ -163,7 +165,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	Util.assert(root instanceof Quad,
 		    "SCC analysis works only on QuadSSI form.");
 	Wq.push(root);
-	Eq.union(root);
+	Eq.add(root);
 
 	// Iterate.
 	while (! (Wq.isEmpty() && Wv.isEmpty()) ) { // until both are empty.
@@ -195,13 +197,13 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     /** Raise edge e in Ee/Eq, adding target q to Wq if necessary. */
     void raiseE(Set Ee, Set Eq, Worklist Wq, Edge e) {
 	Quad q = (Quad) e.to();
-	Ee.union(e);
+	Ee.add(e);
 	if (Eq.contains(q)) return;
-	Eq.union(q);
+	Eq.add(q);
 	Wq.push(q);
     }
     /** Raise element t to a in V, adding t to Wv if necessary. */
-    void raiseV(Hashtable V, Worklist Wv, Temp t, LatticeVal a) {
+    void raiseV(Map V, Worklist Wv, Temp t, LatticeVal a) {
 	LatticeVal old = (LatticeVal) V.get(t);
 	if (corruptor!=null) a=corruptor.corrupt(a); // support incrementalism
 	// only allow raising value in lattice.

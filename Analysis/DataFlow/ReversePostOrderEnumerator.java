@@ -10,11 +10,11 @@ package harpoon.Analysis.DataFlow;
  */
 
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Stack;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Util.ArrayEnumerator;
-import harpoon.Util.HashSet;
-import harpoon.Util.Set;
 import harpoon.Util.Util;
 import harpoon.IR.Quads.Quad;
 
@@ -30,7 +30,7 @@ public class ReversePostOrderEnumerator implements Enumeration {
     Stack bb_stack = new Stack();
     order = new Stack();
     Set done = new HashSet();
-    done.union(start); bb_stack.push(start); enum_stack.push(start.next());
+    done.add(start); bb_stack.push(start); enum_stack.push(start.next());
     while (!bb_stack.isEmpty()) {
       Util.assert(bb_stack.size() == enum_stack.size());
       for (Enumeration e = (Enumeration)enum_stack.pop();
@@ -38,7 +38,7 @@ public class ReversePostOrderEnumerator implements Enumeration {
 	BasicBlock bb2 = (BasicBlock) e.nextElement();
 	if (!done.contains(bb2)) {
 	  if (DEBUG) db("visiting "+bb2+" for the first time");
-	  done.union(bb2);
+	  done.add(bb2);
 	  bb_stack.push(bb2);
 	  enum_stack.push(e);
 	  e = bb2.next();
@@ -55,7 +55,7 @@ public class ReversePostOrderEnumerator implements Enumeration {
     Stack bb_stack = new Stack();
     order = new Stack();
     Set done = new HashSet();
-    done.union(start); bb_stack.push(start);
+    done.add(start); bb_stack.push(start);
     enum_stack.push(new ArrayEnumerator(start.next()));
     while (!bb_stack.isEmpty()) {
       Util.assert(bb_stack.size() == enum_stack.size());
@@ -64,7 +64,7 @@ public class ReversePostOrderEnumerator implements Enumeration {
 	Quad bb2 = (Quad) e.nextElement();
 	if (!done.contains(bb2)) {
 	  if (DEBUG) db("visiting "+bb2+" for the first time");
-	  done.union(bb2);
+	  done.add(bb2);
 	  bb_stack.push(bb2);
 	  enum_stack.push(e);
 	  e = new ArrayEnumerator(bb2.next());

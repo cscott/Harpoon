@@ -43,19 +43,21 @@ import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPECAST;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Temp.Temp;
-import harpoon.Util.UniqueFIFO;
 import harpoon.Util.Worklist;
-import java.util.Hashtable;
+import harpoon.Util.WorkSet;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 /**
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.16 2000-01-13 23:47:34 cananian Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.17 2000-01-17 11:10:16 cananian Exp $
  */
 
 public class IntraProc {
@@ -90,7 +92,7 @@ public class IntraProc {
     SetHClass getExceptionType() { return exceptionType.copy(); }
 
     void addCallee(IntraProc i) { 
-	callees.union(i); 
+	callees.add(i); 
 	int d = i.depth+1; 
 	if (d>depth) depth = d;
     }
@@ -119,11 +121,9 @@ public class IntraProc {
 		}
 	    } while (notDone&&(c!=null));
 	    while ((c!=m.getDeclaringClass())&&(c!=null)) c=c.getSuperclass();
-	    if (c!=null) sm.union(nm);
+	    if (c!=null) sm.add(nm);
 	}
-	HMethod[] am = new HMethod[sm.size()];
-	sm.copyInto(am);
-	return am;
+	return (HMethod[]) sm.toArray(new HMethod[sm.size()]);
     }
     
     void nativeMethods() {
@@ -144,7 +144,7 @@ public class IntraProc {
     void analyze() {
 	/* added to try to save some memory */
 	boolean noCache;
-	if (map==null) { map = new Hashtable(); noCache = true; }
+	if (map==null) { map = new HashMap(); noCache = true; }
 	else noCache = false;
 	//OUTPUT
 	long TTT=System.currentTimeMillis();
@@ -170,13 +170,13 @@ public class IntraProc {
 	    nativeMethods();
 	else {
 	    Quad ql[] = (Quad[]) code.getElements();
-	    Worklist worklist = new UniqueFIFO();
+	    WorkSet worklist = new WorkSet(); // use as FIFO
 	    for (int i=0; i<ql.length; i++)
-		worklist.push(ql[i]);
+		worklist.add(ql[i]);
 	    
 	    // hack to handle typecasting:
 	    //  keep track of booleans defined by instanceof's and acmpeq's.
-	    Hashtable checkcast = new Hashtable();
+	    Map checkcast = new HashMap();
 	    for (int i=0; i<ql.length; i++)
 		if (ql[i] instanceof INSTANCEOF ||
 		    ql[i] instanceof OPER)
@@ -184,7 +184,7 @@ public class IntraProc {
 	    
 	    TypeInfoVisitor tiv = new TypeInfoVisitor(checkcast);
 	    while(!worklist.isEmpty()) {
-		Quad q = (Quad) worklist.pull();
+		Quad q = (Quad) worklist.removeFirst(); // use as fifo
 		tiv.modified = false;
 		q.accept(tiv);
 		if (tiv.modified) {
@@ -192,7 +192,7 @@ public class IntraProc {
 		    for (int i=0; i<d.length; i++) {
 			HCodeElement[] u = usedef.useMap(code, d[i]);
 			for (int j=0; j<u.length; j++) {
-			    worklist.push((Quad)u[j]); // only pushes unique quads.
+			    worklist.add((Quad)u[j]); // only pushes unique quads.
 			}
 		    }
 		}
@@ -219,8 +219,8 @@ public class IntraProc {
 	if (noCache) { map = null; if (method.getName().equals("igen")) System.gc(); }
 	/* "regular" calculation */
 	if (outputChanged)
-	    for (Enumeration e=callees.elements(); e.hasMoreElements(); )
-		environment.reanalyze((IntraProc)e.nextElement());
+	    for (Iterator it=callees.iterator(); it.hasNext(); )
+		environment.reanalyze((IntraProc)it.next());
 	//OUTPUT
 	if (noCache) 
 	    System.out.println((System.currentTimeMillis()-TTT) + "ms]");
@@ -228,7 +228,7 @@ public class IntraProc {
     }
 
     HMethod[] calls() {
-	if (map==null) { map = new Hashtable(); analyze(); }
+	if (map==null) { map = new HashMap(); analyze(); }
 	Set r = new HashSet();
 	for (Enumeration e = code.getElementsE(); e.hasMoreElements(); ) {
 	    Quad qq = (Quad) e.nextElement();
@@ -244,16 +244,14 @@ public class IntraProc {
 	    if (!q.isVirtual()) m = new HMethod[]{ q.method() };
 	    else m = possibleMethods(q.method(), paramTypes);
 	    for (int i=0; i<m.length; i++)
-		r.union(m[i]);
+		r.add(m[i]);
 	}
 	map = null;
-	HMethod[] ret = new HMethod[r.size()];
-	r.copyInto(ret);
-	return ret;
+	return (HMethod[]) r.toArray(new HMethod[r.size()]);
     }
 
     HMethod[] calls(CALL cs, boolean last) {
-	if (map==null) { map = new Hashtable(); analyze(); }
+	if (map==null) { map = new HashMap(); analyze(); }
 	Set r = new HashSet();
 	SetHClass[] paramTypes = new SetHClass[cs.paramsLength()];
 	for (int i=0; i<cs.paramsLength(); i++) {
@@ -265,25 +263,23 @@ public class IntraProc {
 	if (!cs.isVirtual()) m = new HMethod[]{ cs.method() };
 	else m = possibleMethods(cs.method(), paramTypes);
 	for (int i=0; i<m.length; i++)
-	    r.union(m[i]);
+	    r.add(m[i]);
 	if (last) map = null;
-	HMethod[] ret = new HMethod[r.size()];
-	r.copyInto(ret);
-	return ret;
+	return (HMethod[]) r.toArray(new HMethod[r.size()]);
     }
 
     SetHClass getTempType(Temp t) { 
-	if (map==null) { map = new Hashtable(); analyze(); }
+	if (map==null) { map = new HashMap(); analyze(); }
 	SetHClass s = (SetHClass)map.get(t);
 	map = null;
 	return s;
     }
 
-    Hashtable map = null;
+    Map map = null;
     class TypeInfoVisitor extends QuadVisitor {
 	boolean modified = false;
-	Hashtable checkcast;
-	TypeInfoVisitor(Hashtable checkcast) { this.checkcast = checkcast; }
+	Map checkcast;
+	TypeInfoVisitor(Map checkcast) { this.checkcast = checkcast; }
 
 	public void visit(Quad q) { modified = false; }
 

@@ -16,16 +16,17 @@ import java.util.Enumeration;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.TypeInference.InterProc;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
 import harpoon.Util.Worklist;
+import harpoon.Util.WorkSet;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 /**
  * <code>PrintTypes</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: TypesMain.java,v 1.1.2.9 2000-01-13 23:48:18 cananian Exp $
+ * @version $Id: TypesMain.java,v 1.1.2.10 2000-01-17 11:10:23 cananian Exp $
  */
 public class TypesMain extends harpoon.IR.Registration {
     public static void main(String args[]) {
@@ -73,7 +74,7 @@ public class TypesMain extends harpoon.IR.Registration {
 			if (ana==0) System.out.println("******** CHA-like");
 			else System.out.println("******** 0-CFA-like");
 			Set fi = new HashSet();
-			Worklist wl = new HashSet();
+			Worklist wl = new WorkSet();
 			wl.push(hm[j]);
 			while (!wl.isEmpty()) {
 			    HMethod m = (HMethod)wl.pull();
@@ -96,7 +97,7 @@ public class TypesMain extends harpoon.IR.Registration {
 				    else mm = ty.calls(m, cs, !e.hasMoreElements());
 				    System.out.print(mm.length + " ");
 				    for (int k=0; k<mm.length; k++)
-					if (!fi.contains(mm[k])) { fi.union(mm[k]); wl.push(mm[k]); }
+					if (!fi.contains(mm[k])) { fi.add(mm[k]); wl.push(mm[k]); }
 				}
 				System.out.println();
 			    } else System.out.println("0 !");

@@ -10,14 +10,15 @@ package harpoon.Analysis.Quads;
  * @author  Felix Klock (pnkfelix@mit.edu)
  */
 
-import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
+import harpoon.Util.WorkSet;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Properties.CFGrapher;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Hashtable;
+import java.util.Set;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 
@@ -46,7 +47,7 @@ public class BasicBlock extends harpoon.Analysis.BasicBlock{
      */ 
     public static Map computeBasicBlocks(HEADER head) {
 	
-	Hashtable h = new Hashtable();
+	Map h = new HashMap();
 	
 	// set stuff up.
 	BasicBlock first = new BasicBlock(head, head);
@@ -58,7 +59,7 @@ public class BasicBlock extends harpoon.Analysis.BasicBlock{
 	addEdge(first, second);
 	Util.assert(qf.nextLength() == 1);
 	
-	Worklist W = new HashSet();
+	Worklist W = new WorkSet();
 	W.push(second);
 	
 	// loop

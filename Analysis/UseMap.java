@@ -8,10 +8,12 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.ArrayFactory;
-import harpoon.Util.Set;
 
-import java.util.Hashtable;
-import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 /**
@@ -23,7 +25,7 @@ import java.util.Vector;
  * it. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: UseMap.java,v 1.1.2.3 1999-02-12 21:41:07 pnkfelix Exp $
+ * @version $Id: UseMap.java,v 1.1.2.4 2000-01-17 11:10:00 cananian Exp $
  */
 public class UseMap extends TempToHceArrayMap {
     
@@ -77,7 +79,7 @@ public class UseMap extends TempToHceArrayMap {
 	harpoon.IR.Properties.UseDef[] udl = 
 	    (harpoon.IR.Properties.UseDef[]) hces;
 
-	Hashtable tmpUse = new Hashtable();
+	Map tmpUse = new HashMap();
 
 	// scan HCodeElements, associating uses with their
 	// HCodeElement. 
@@ -86,10 +88,10 @@ public class UseMap extends TempToHceArrayMap {
 	}
 
 	// Store the final set in the main map.
-	Enumeration e=tmpUse.keys();
+	Iterator it=tmpUse.keySet().iterator();
 	Vector uses = new Vector();
-	while ( e.hasMoreElements() ) {
-	    Temp use = (Temp) e.nextElement();
+	while ( it.hasNext() ) {
+	    Temp use = (Temp) it.next();
  	    storeTempMapping(use, (Set) tmpUse.get(use));
 	    uses.addElement(use);
 	}

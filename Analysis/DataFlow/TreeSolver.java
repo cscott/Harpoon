@@ -5,13 +5,10 @@ package harpoon.Analysis.DataFlow;
 
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Worklist;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
+import harpoon.Util.WorkSet;
 import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
 import harpoon.Analysis.EdgesIterator;
@@ -25,7 +22,7 @@ import harpoon.Analysis.BasicBlock;
  * <code>BasicBlockSolver</code> class. 
  * 
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeSolver.java,v 1.1.2.8 1999-11-30 05:24:43 cananian Exp $
+ * @version $Id: TreeSolver.java,v 1.1.2.9 2000-01-17 11:10:11 cananian Exp $
  */
 public abstract class TreeSolver {
 
@@ -60,7 +57,7 @@ public abstract class TreeSolver {
     public static void worklist_solver(BasicBlock root, 
 				       DataFlowBasicBlockVisitor v) {
 
-	Worklist W = new HashSet();
+	Worklist W = new WorkSet();
 	W.push(root);
 	while (!W.isEmpty()) {
 	    //v.changed = false;
@@ -75,7 +72,7 @@ public abstract class TreeSolver {
     public static void worklist_solver(Iterator iter, 
 				       DataFlowBasicBlockVisitor v) {
 
-	Worklist W = new HashSet();
+	Worklist W = new WorkSet();
 	while (iter.hasNext()) W.push(iter.next());
 	while (!W.isEmpty()) {
 	    //v.changed = false;
