@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.1.2.10 2000-01-23 05:53:29 cananian Exp $
+ * @version $Id: ObjectRef.java,v 1.1.2.11 2000-01-23 06:13:21 cananian Exp $
  */
 class ObjectRef extends Ref implements java.io.Serializable {
     /** Fields in this instance of the object. */
@@ -58,12 +58,13 @@ class ObjectRef extends Ref implements java.io.Serializable {
     }
    
     /** for profiling. */
-    protected int size() { // approx. object size, in bytes.
+    protected int size() { // approx. object size, in bytes. (not exact!)
 	HField[] hf = type.getFields();
 	int size = 8; // two header words
 	for (int i=0; i<hf.length; i++)
-	    size += (hf[i].getType()==HClass.Long ||
-		     hf[i].getType()==HClass.Double) ? 8 : 4;
+	    if (!hf[i].isStatic()) // skip static fields
+		size += (hf[i].getType()==HClass.Long ||
+			 hf[i].getType()==HClass.Double) ? 8 : 4;
 	return size;
     }
 
