@@ -24,6 +24,7 @@ public class Main {
 	boolean timer = false;     /* Time the processing rate */
 
 
+	
 
 
 	//CreateHistogram2D test
@@ -38,9 +39,27 @@ public class Main {
 		//}
 	}
 
-
-	//test pipeline using LabelBlue
+	//Normalize.java test
 	if (true) {
+	    Node load = new Load("/share/woodgrain.jar", "tank.gz", 533, null);
+	    Node normMax = new Normalize(null, true);
+	    Node normHist = new Normalize(null, false);
+	    Node copy = new Copy(null);
+	    Node orig = new Display("Orig");
+	    Node maxDisp = new Display("Max");
+	    Node histDisp = new Display("Hist");
+	    Node robDisp = new Display("Rob");
+	    Node pause = new Pause(-1, 1, null);
+	    Node rob = new RobertsCross(null);
+	    
+	    load.linkL(pause.linkL(orig.linkL(copy.link(normMax.linkL(maxDisp),
+							normHist.linkL(histDisp.linkL(rob.linkL(robDisp)))))));
+	    load.run();
+	}
+
+
+	//lots of different pipelines
+	if (false) {
 	    //added by benji, hack for improved memory usage and speed
 	    //Unclear whether this helps.  It depends on whether it is running
 	    //headless or not.
@@ -56,6 +75,10 @@ public class Main {
 	    //Node load = new Load("/share/tank.jar", "tank.gz", 554, null);
 	    Node load = new Load("/share/woodgrain.jar", "tank.gz", 533, null);
 	    //Node load = new Load("/share/woodgrain.jar", "tank.gz", 416, null);
+	    //Node load = new Load("/share/multitank-1.jar", "multitank-1.gz", 230, null);
+	    //Node load = new Load("/share/multitank-2.jar", "multitank-2.gz", 219, null);
+	    //Node load = new Load("/share/multitank-3.jar", "multitank-3.gz", 245, null);
+	    //Node load = new Load("/share/multitank-4.jar", "multitank-4.gz", 130, null);
 	    
 	    Node circle = new Circle(null, null);
 	    Node arrow = new DrawArrow(null, null);
@@ -69,10 +92,18 @@ public class Main {
 
 	    Node cleanCache = new Cache(1, null, null);
 	    Node labelSmCache = new Cache(1, null, null);
+
 	    Node timer1 = new Timer(true, false, null);
 	    Node timer2 = new Timer(false, true, null);
+	    //Node timer1 = new Node();
+	    //Node timer2 = new Node();
+	    
+	    //Node timer3 = new Timer(true, false, null);
+	    //Node timer4 = new Timer(false, true, null);
+
 	    Node robCross = new RobertsCross(null);
 	    Node thresh = new Thresholding(null);
+	    //Node thresh = new Node();
 	    Node hyst = new Hysteresis(null);
 	    //Node hyst = new Node();
 	    Label label = new Label(null, null);
@@ -86,6 +117,7 @@ public class Main {
 	    Node hystDisp = new Display("Hyst");
 	    Node labelSmDisp = new Display("Label Small", false, false, true);
 	    Node labelDisp = new Display("Labeled", false, false, true);
+	    Node cropDisp = new Display("Cropped");
 	    Node labelBlueDisp = new Display("Label Blue");
 	    Node thinDisp = new Display("Thinned", false, false, true);
 	    Node endDisp = new Display("Final");
@@ -94,6 +126,7 @@ public class Main {
 	    ///*
 	    Node thinDisp = new Node();
 	    //Node thinDisp = new Display("Thinned", false, false, true);
+	    //Node origDisp = new Display("Original");
 	    //Node endDisp = new Display("final");;
 	    Node endDisp = new Node();
 	    Node origDisp = new Node();
@@ -103,10 +136,24 @@ public class Main {
 	    Node labelSmDisp = new Node();
 	    Node threshDisp = new Node();
 	    Node hystDisp = new Node();
+	    Node cropDisp = new Node();
 	    //*/
+
+	    Node thinDispSave = new SaveImage("/home/benster/ImageRec/images/thin.ppm", 2, true);
+	    Node endDispSave = new SaveImage("/home/benster/ImageRec/images/final.ppm", 2, true);
+	    Node origDispSave = new SaveImage("/home/benster/ImageRec/images/original.ppm", 2, true);
+	    Node robDispSave = new SaveImage("/home/benster/ImageRec/images/roberts_cross.ppm", 2, true);
+	    Node blueDispSave = new SaveImage("/home/benster/ImageRec/images/label_blue.ppm", 2, true);
+	    Node labelDispSave = new SaveImage("/home/benster/ImageRec/images/label_full.ppm", 2, true);
+	    Node labelSmDispSave = new SaveImage("/home/benster/ImageRec/images/label_small.ppm", 2, true);
+	    Node threshDispSave = new SaveImage("/home/benster/ImageRec/images/thresholding.ppm", 2, true);
+	    Node hystDispSave = new SaveImage("/home/benster/ImageRec/images/hysteresis.ppm", 2, true);
+	    Node cropDispSave = new SaveImage("/home/benster/ImageRec/images/cropped.ppm", 2, true);
+	    
 
 	    Node pause = new Pause(-1.0, 0, null);
 	    Node pause2 = new Pause(-1.0, 0, null);
+
 	    LabelBlue labelBlue = new LabelBlue(null, null);
 	    labelBlue.calibrateAndProcessSeparately(true);
 	    Node calibCmd = new Command(Command.CALIBRATION_IMAGE, null);
@@ -122,40 +169,99 @@ public class Main {
 	    Node n = new Node();
 	    Node n2 = new Node();
 
+
+	    
+	    
+
 	    /*
 	    //Finds a single blue object in the loaded frames. Circles it.
+	    //calibration nodes need to come first before anything else
+	    //otherwise, won't work
+	    int[] goodOnes = {0, 155, 294};
+	    Node profile = new Profile(20, 30, goodOnes);
+	    //pause = new Pause(-1, 0, null);
 	    load.link(origDisp,
 		      pause.linkL(circleCache.link(copy.linkL(timer1.linkL(n.link(calibCmd.linkL(labelBlue),
 									    noneCmd.linkL((labelBlue.link(labelBlueDisp,
-													  timer2.linkL(circle.link(endDisp,
-																   getCmd.linkL(circleCache))))))))),
+													  timer2.linkL(profile.linkL(circle.link(endDisp,
+																   getCmd.linkL(circleCache)))))))))),
 					     retrCmd.linkL(circle))));
 	    */
+
+
+
+
+
+
+
+
+
 	    ///*
-	    load.link(pause,
-		      origDisp.linkL(circleCache.link(arrowCache.link(timer1.linkL(cleanCache.link(n.link(calibCmd.linkL(labelBlue),
-													  noneCmd.linkL(copy.linkL(robCross.link(robDisp,
-																		 thresh.link(threshDisp,
-																			     hyst.link(hystDisp,
-																				       label.link(labelDisp,
-																						  labelSmDisp.linkL(labelSmCache.link(getCropCmd.linkL(cleanCache),
-																										      thin.link(thinDisp,
-																												range.linkL(timer2.linkL(arrow.linkR(getCmd2.linkL(arrowCache)))))))))))))),
-												   n2.link(null,
-													   labelBlue.link(labelBlueDisp,
-															  getLabelSmCmd.link(labelSmCache,
-																	     noneCmd2.linkL(circle.linkR(getCmd.linkL(circleCache)))))))),
-								      retr2Cmd.linkL(arrow.linkL(endDisp))),
-						      retrCmd.linkL(circle.linkL(endDisp)))));
-				     //*/
+	    int[] goodOnes = {0, 459};
+	    Node profile = new Profile(20, 30, goodOnes);
+	    pause = new Pause(-1, 470, null);
+
+	    load.link(pause.linkL(origDispSave),
+		      origDisp.linkL(n.link(calibCmd.linkL(labelBlue),
+					    noneCmd.linkL(circleCache.link(arrowCache.link(timer1.linkL(cleanCache.link(copy.linkL(robCross.link(robDisp.linkL(robDispSave),
+																		 thresh.link(threshDisp.linkL(threshDispSave),
+																			     hyst.link(hystDisp.linkL(hystDispSave),
+																				       label.link(labelDisp.linkL(labelDispSave),
+																						  labelSmDisp.linkL(labelSmDispSave.linkL(labelSmCache.link(getCropCmd.linkL(cleanCache),
+																													    thin.link(thinDisp.linkL(thinDispSave),
+																														      range.linkL(timer2.linkL(profile.linkL(arrow.linkR(getCmd2.linkL(arrowCache)))))))))))))),
+															n2.link(cropDisp.linkL(cropDispSave),
+																labelBlue.link(labelBlueDisp.linkL(blueDispSave),
+																	       getLabelSmCmd.link(labelSmCache,
+																				  noneCmd2.linkL(circle.linkR(getCmd.linkL(circleCache)))))))),
+											   retr2Cmd.linkL(arrow.linkL(endDisp.linkL(endDispSave)))),
+									   retrCmd.linkL(circle.linkL(endDisp)))))));
+	    
+
+	    //insert timers before and after robert's cross
+	    //average of 9 ms
+	    //copy.linkL(timer3.linkL(robCross.linkL(timer4.linkL(robDisp))));
+	    
+	    //insert timers before and after thresh
+	    //average of 1 ms
+	    //robCross.linkR(timer3.linkL(thresh.linkL(timer4.linkL(threshDisp))));
+
+	    //insert timers before and after hystersis
+	    //average of 11 ms
+	    //thresh.linkR(timer3.linkL(hyst.linkL(timer4.linkL(hystDisp))));
+		
+	    //insert timers before and after label
+	    //actually, this placement of the timers captures everything from label through
+	    //labelBlue, thinning, and rangefind, circling, drawing arrow,etc...
+	    //average of 4ms for a single object image with a tank maybe 30-40 pixels wide
+	    //hyst.linkR(timer3.linkL(label.linkL(timer4.linkL(labelDisp))));
+
+	    //insert timers before and after label
+	    //this placement of the timers captures the labeling of a single object
+	    //hyst.linkR(timer3.linkL(label.linkR(timer4.linkL(labelSmDisp))));
+	    //*/
+
+
+
+
+
+
+
+
 	    /*
 	      //implements Wes's simple single-object tank finder
-	    label.findOneObject(true);
-	    load.link(origDisp,
-		      timer1.linkL(circleCache.link(copy.linkL(robCross.linkL(thresh.linkL(label.linkR(timer2.linkL(circle.link(endDisp,
-																getCmd.linkL(circleCache))))))),
+	    //label.findOneObject(true);
+	    int[] goodOnes = {1, 459};
+	    Node profile = new Profile(20, 30, goodOnes);
+	    //pause = new Pause(-1, 459, null);
+	    load.link(origDisp.linkL(pause),
+		      timer1.linkL(circleCache.link(copy.linkL(robCross.linkL(thresh.linkL(label.linkR(timer2.linkL(profile.linkL(circle.link(endDisp,
+																getCmd.linkL(circleCache)))))))),
 					     retrCmd.linkL(circle))));
 	    */
+
+	    
+
 	    load.run();
 	    System.out.println("Done running pipeline.");
 	}
