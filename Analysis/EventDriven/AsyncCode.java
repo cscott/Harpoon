@@ -60,7 +60,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.42 2000-01-24 07:21:49 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.43 2000-01-24 07:58:10 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -713,25 +713,28 @@ public class AsyncCode {
 	    if (!done_other.contains(q.method())) {
 		HMethod hm=q.method();
 		HClass hcl=hm.getDeclaringClass();
-		Set classes=ch.children(hcl);
-		Iterator childit=classes.iterator();
-		HMethod parent=q.method();
-		while (childit.hasNext()|(hm!=null)) {
-		    try {
-			if (hm==null) {
-			    HClass child=(HClass)childit.next();
-			    hm=child.getDeclaredMethod(parent.getName(),
-						       parent.getParameterTypes());
-			    if (done_other.contains(hm)) {
-				hm=null;
-				continue;
+		if ((!linker.forName("java.lang.Thread").equals(hcl))||
+		    (!hm.getName().equals("run_Async"))) {
+		    Set classes=ch.children(hcl);
+		    Iterator childit=classes.iterator();
+		    HMethod parent=q.method();
+		    while (childit.hasNext()|(hm!=null)) {
+			try {
+			    if (hm==null) {
+				HClass child=(HClass)childit.next();
+				hm=child.getDeclaredMethod(parent.getName(),
+							   parent.getParameterTypes());
+				if (done_other.contains(hm)) {
+				    hm=null;
+				    continue;
+				}
 			    }
+			} catch (NoSuchMethodError e) {
 			}
-		    } catch (NoSuchMethodError e) {
-		    }
-		    if (hm!=null) {
-			other.add(hm);
-			hm=null;
+			if (hm!=null) {
+			    other.add(hm);
+			    hm=null;
+			}
 		    }
 		}
 	    }
