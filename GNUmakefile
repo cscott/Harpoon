@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.73 2002-06-09 01:18:40 cananian Exp $
+# $Id: GNUmakefile,v 1.74 2002-06-10 22:57:41 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -335,7 +335,7 @@ Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
 	xvcg -psoutput $@ -paper 8x11 -color $(VCG_OPT) $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORTP) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template $(wildcard Support/*-root-set) $(SCRIPTS) mark-executable
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORTP) $(PROPERTIES) $(PKGDESC) Support/gjlib.jar Support/NullCodeGen.template $(wildcard Support/*-root-set) $(SCRIPTS) mark-executable
 	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORTP) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template $(wildcard Support/*-root-set) $(SCRIPTS)
 	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
