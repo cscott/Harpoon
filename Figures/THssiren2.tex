@@ -20,23 +20,26 @@ Search($\tuple{s,d}$:~edge) =
 \LOOP[now rename inside basic block] \label{line:searchloop_start}
  \IF{$d$ is a node containing \phifunction{s}}
   \FOREACH{\phifunction $P$ in $d$}
-   \STATE $j\gets \text{WhichPred}(\tuple{s,d})$
+   \STATE $j\gets \text{WhichPred}(\tuple{s,d})$ \label{line:phisrc1}
    \STATE replace the $j$-th operand $V$ of $P$ by $\text{get}(\mathcal{E}, V)$
+          \label{line:phisrc2}
   \ENDFOR
   \BREAK \COMMENT{end of basic block}
  \ELSIF{$s$ is a node containing \sigfunction{s}}
   \FOREACH{\sigfunction $S$ in $d$}
    \STATE replace the operand $V$ of $S$ by $\text{get}(\mathcal{E}, V)$
+          \label{line:sigsrc}
   \ENDFOR
   \BREAK \COMMENT{end of basic block}
  \ENDIF
  \STATE\COMMENT{ordinary assignment, at most one successor}
+        \label{line:rename_ordinary1}
  \FOREACH{variable $V$ in $RHS(d)$}
   \STATE replace $V$ by $\text{get}(\mathcal{E}, V)$ in $RHS(d)$
  \ENDFOR
  \FOREACH{variable $V$ in $LHS(d)$}
   \STATE replace $V$ by $\text{Inc}(\mathcal{E}, V)$ in $LHS(d)$
-         \label{line:rendef3}
+         \label{line:rendef3} \label{line:rename_ordinary2}
  \ENDFOR
  \IF{$d$ has no successor}
   \BREAK \COMMENT{end of basic block}
