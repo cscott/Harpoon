@@ -58,7 +58,7 @@ import java.util.Date;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.42 2001-05-22 17:45:08 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.43 2001-06-05 04:02:28 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
 
@@ -306,9 +306,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
     }
 
     private LinkedList replOrigPairs = new LinkedList(); 
-    private void replace(Instr orig, Instr repl) {
-	Instr.replace(orig, repl);
-	back(repl, orig);
+    protected void replace(Instr orig, Instr repl) {
+	super.replace(orig, repl);
 	replOrigPairs.addFirst(Default.pair(repl, orig));
     }
     private void undoCoalescing() {
@@ -1095,46 +1094,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	}
     } 
 
-    class SpillProxy extends Instr {
-	Instr instr;
-	Temp tmp;
- 	SpillProxy(Instr def, Temp t) {
-	    super(def.getFactory(), def, "SPILL "+t, 
-		  new Temp[]{ }, new Temp[]{ t }, 
-		  true, Collections.EMPTY_LIST);
-	    instr = def; 
-	    tmp = t;
-	}
-	public Instr rename(InstrFactory inf,
-			    TempMap defMap, TempMap useMap) {
-	    Instr i = new SpillProxy(instr,
-				     // instr.rename(inf, defMap, useMap),
-				     useMap.tempMap(tmp));
-	    if (SCARY_OUTPUT) System.out.println(this+".rename() => "+i);
-	    return i;
-	}
-	
-    }
-
-    class RestoreProxy extends Instr {
-	Instr instr;
-	Temp tmp;
- 	RestoreProxy(Instr use, Temp t) {
-	    super(use.getFactory(), use, "RESTORE "+t,
-		  new Temp[]{ t }, new Temp[]{},
-		  true, Collections.EMPTY_LIST);
-	    instr = use; 
-	    tmp = t;
-	}
-	public Instr rename(InstrFactory inf,
-			    TempMap defMap, TempMap useMap){
-	    Instr i = new RestoreProxy(instr,
-				       //instr.rename(inf,defMap,useMap),
-				       defMap.tempMap(tmp));
-	    if (SCARY_OUTPUT) System.out.println(this+".rename() => "+i);
-	    return i;
-	}
-    }
 
     HashSet spilled = new HashSet();
     
@@ -1273,27 +1232,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	if (SCARY_OUTPUT) System.out.print("*** SPILLED ("+spilled.size()+")"+
 					   (true?"":(": " + spilled)));
-    }
-
-    private void fixupSpillCode() {
-	for(Iterator is=code.getElementsI(); is.hasNext(); ) {
-	    Instr i = (Instr) is.next();
-	    if (i instanceof SpillProxy) {
-		SpillProxy sp = (SpillProxy) i;
-		Instr spillInstr = 
-		    SpillStore.makeST(sp.instr, "FSK-ST", sp.tmp,
-				      code.getRegisters(sp,sp.tmp));
-		replace(sp, spillInstr);
-		back(spillInstr, sp.instr);
-	    } else if (i instanceof RestoreProxy) {
-		RestoreProxy rp = (RestoreProxy) i;
-		Instr loadInstr = 
-		    SpillLoad.makeLD(rp.instr, "FSK-LD",
-				     code.getRegisters(rp,rp.tmp),
-				     rp.tmp); 
-		replace(rp, loadInstr);
-	    } 
-	}
     }
     
     /** returns nodeToNum. */

@@ -26,7 +26,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.26 2001-05-15 19:53:26 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.27 2001-06-05 04:01:02 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -54,6 +54,16 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	    (new harpoon.Util.ReverseIterator(bbf.postorderBlocksIter()),
 	     lt);
 	return lt;
+    }
+    
+    /** Finds the fixed-point solution for this LiveTemps.
+	(Don't know why its taken me so long to realize 
+	that this belonged in here... procedural abstraction, awwwww yeah).
+    */
+    public void solve() {
+	Solver.worklistSolve
+	    (new harpoon.Util.ReverseIterator
+		(bbFact.postorderBlocksIter()),this);
     }
 
     /** Produces a default live variable analysis object and solves

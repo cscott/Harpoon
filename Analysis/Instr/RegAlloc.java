@@ -8,8 +8,10 @@ import harpoon.Temp.TempMap;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrFactory;
+import harpoon.IR.Assem.InstrGroup;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrVisitor;
+import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Properties.UseDefable;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.Backend.Generic.Frame;
@@ -77,7 +79,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.124 2001-01-13 21:45:23 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.125 2001-06-05 04:02:28 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -107,6 +109,25 @@ public abstract class RegAlloc  {
 	debugging purposes. */
     protected HashSet checked = new HashSet();
 
+    /** (Helper method) Returns a <code>CFGrapher</code> that treats
+	<code>InstrGroup</code>s of <code>Type</code> <code>t</code>
+	as single atomic elements.  */
+    protected CFGrapher getGrapherFor(InstrGroup.Type t) {
+	return code.getInstrFactory().getGrapherFor(t);
+    }
+
+    /** (Helper method) Returns a <code>UseDefer</code> that treats
+	<code>InstrGroup</code>s of <code>Type</code> <code>t</code>
+	as single atomic elements.  */
+    protected UseDefer getUseDeferFor(InstrGroup.Type t) {
+	return code.getInstrFactory().getUseDeferFor(t);
+    }
+
+    /** (Helper method) Returns the RegFileInfo for the frame of the code being analyzed. 
+     */
+    protected final RegFileInfo rfi() {
+	return frame.getRegFileInfo();
+    }
 
     /** Map[ Instr:i -> Instr:b ], where `i' was added to `code'
 	because of `b'.  The `b' is used when queries are performed on
@@ -125,6 +146,14 @@ public abstract class RegAlloc  {
 	} else {
 	    backedInstrs.put(instr, back);
 	}
+    }
+    
+    /** replaces 'orig' with 'repl', and modifies internal data
+	structures to reflect that replacement as necessary.  
+    */
+    protected void replace(Instr orig, Instr repl) {
+	Instr.replace(orig, repl);
+	back(repl, orig);
     }
     
     /** returns the root backing <code>i</code>.  Instrs not
@@ -235,16 +264,88 @@ public abstract class RegAlloc  {
 	}
 
     }
+    
+    protected class SpillProxy extends Instr {
+	Instr instr;
+	Temp tmp;
+ 	SpillProxy(Instr def, Temp t) {
+	    super(def.getFactory(), def, "SPILL "+t, 
+		  new Temp[]{ }, new Temp[]{ t }, 
+		  true, Collections.EMPTY_LIST);
+	    instr = def; 
+	    tmp = t;
+	}
+	public Instr rename(InstrFactory inf,
+			    TempMap defMap, TempMap useMap) {
+	    Instr i = new SpillProxy(instr,
+				     // instr.rename(inf, defMap, useMap),
+				     useMap.tempMap(tmp));
+	    return i;
+	}
+	
+    }
+
+    protected class RestoreProxy extends Instr {
+	Instr instr;
+	Temp tmp;
+ 	RestoreProxy(Instr use, Temp t) {
+	    super(use.getFactory(), use, "RESTORE "+t,
+		  new Temp[]{ t }, new Temp[]{},
+		  true, Collections.EMPTY_LIST);
+	    instr = use; 
+	    tmp = t;
+	}
+	public Instr rename(InstrFactory inf,
+			    TempMap defMap, TempMap useMap){
+	    Instr i = new RestoreProxy(instr,
+				       //instr.rename(inf,defMap,useMap),
+				       defMap.tempMap(tmp));
+	    return i;
+	}
+    }
+
+    
+    /** Replaces the proxy instructions with symbolic loads and
+	stores.  (The proxys don't have register assignment info
+	internally, the new instructions do.)
+    */
+    protected void fixupSpillCode() {
+	for(Iterator is=code.getElementsI(); is.hasNext(); ) {
+	    Instr i = (Instr) is.next();
+	    if (i instanceof SpillProxy) {
+		SpillProxy sp = (SpillProxy) i;
+		Instr spillInstr = 
+		    SpillStore.makeST(sp.instr, "FSK-ST", sp.tmp,
+				      code.getRegisters(sp,sp.tmp));
+		replace(sp, spillInstr);
+		back(spillInstr, sp.instr);
+	    } else if (i instanceof RestoreProxy) {
+		RestoreProxy rp = (RestoreProxy) i;
+		Instr loadInstr = 
+		    SpillLoad.makeLD(rp.instr, "FSK-LD",
+				     code.getRegisters(rp,rp.tmp),
+				     rp.tmp); 
+		replace(rp, loadInstr);
+	    } 
+	}
+    }
+
+
+
 
     /** Creates a <code>RegAlloc</code>.  <code>RegAlloc</code>s are
 	each associated with a unique <code>Code</code> which they are
 	responsible for performing register allocation and assignment
 	for. 
+	<BR> <B>modifies:</B> `this.{frame, code, bbFact}'
+	<BR> <B>effects:</B> 
+	     sets the frame, code in accordance with the code argument, 
+	     and computesBasicBlocks.
     */
     protected RegAlloc(Code code) {
         this.frame = code.getFrame();
 	this.code = code;
-	computeBasicBlocks();
+	this.bbFact = computeBasicBlocks();
     }
 
     /** returns a <code>Derivation</code> for analyses to use on the
@@ -259,13 +360,13 @@ public abstract class RegAlloc  {
     
     /** Computes <code>BasicBlock</code>s for the <code>Code</code>
 	associated with <code>this</code>.
-	requires: `this.code' has been set
-	modifies: `this.bbFact'
-	effects:  computes `this.bbFact' and a associated set of
-                  basic blocks for the current state of `this.code'
+	<BR> <B>requires:</B> `this.code' has been set
+	@return a basic-block factory for `this.code', 
+	        using the default control-flow view of the code.
     */
-    protected void computeBasicBlocks() {
-	bbFact = new BasicBlock.Factory(code, CFGrapher.DEFAULT);
+    protected BasicBlock.Factory computeBasicBlocks() {
+	return new BasicBlock.Factory
+	    (code, code.getInstrFactory().getGrapherFor(InstrGroup.AGGREGATE));
     }
     
     /** Assigns registers in the code for <code>this</code>.

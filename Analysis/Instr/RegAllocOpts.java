@@ -50,22 +50,28 @@ import java.util.StringTokenizer;
  * even when it might result in additional memory traffic.
  * <br> "DISABLE_COALESCE <em>method name</em> ..." turns off 
  * move coalescing on global allocation.  
+ * <br> "FORCE_APPEL <em>method name</em> ..." forces the register
+ * allocator to use Appel-style register allocation on <em>method
+ * name</em>, rather than whatever default strategy is in place.
  * <br> "# <em>comment</em>" is a comment line (not strictly an
  * option, since this line is ignored by this, but too useful to omit) 
  * <p>
  * The method names given in the file should be disjoint.
+ * A set of methods with a common prefix can be passed as an argument
+ * to an option by appending the wildcard character '*' to the prefix.
  * <p>
  * After these options have been loaded, this class can be used to
  * produce wrapper <code>RegAlloc.Factory</code>s around other
  * <code>RegAlloc.Factory</code>s
  * 
  * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAllocOpts.java,v 1.1.2.4 2000-11-14 22:46:54 pnkfelix Exp $ */
+ * @version $Id: RegAllocOpts.java,v 1.1.2.5 2001-06-05 04:02:28 pnkfelix Exp $ */
 public class RegAllocOpts {
     public static final boolean INFO = false;
     Filter disableReachingDefs;
     Filter forceLocal;
     Filter forceGlobal;
+    Filter forceAppel;
     Filter forceCoalesce;
     Filter disableCoalesce;
 
@@ -75,10 +81,12 @@ public class RegAllocOpts {
 	forceLocal = new Filter();
 	forceGlobal = new Filter();
 	forceCoalesce = new Filter();
+	forceAppel = new Filter();
 	disableCoalesce = new Filter();
 
         if (filename != null) {
 	    try {
+		if (INFO) System.out.println("reading options from "+filename);
 		readOptions(filename);
 	    } catch (IOException e) {
 		System.out.println(e.getMessage());
@@ -107,9 +115,12 @@ public class RegAllocOpts {
 		} else if (forceCoalesce.contains(name)) {
 		    if (INFO) System.out.println(" * USING FC FOR "+name);
 		    return GraphColoringRegAlloc.AGGRESSIVE_FACTORY.makeRegAlloc(c);
+		} else if (forceAppel.contains(name)) {
+		    if (INFO) System.out.println(" * USING Appel FOR "+name);
+		    return AppelRegAlloc.FACTORY.makeRegAlloc(c);
 		} else if (disableCoalesce.contains(name)) {
 		    if (INFO) System.out.println(" * USING DC FOR "+name);
-		    return GraphColoringRegAlloc.BRAINDEAD_FACTORY.makeRegAlloc(c);		    
+		    return GraphColoringRegAlloc.BRAINDEAD_FACTORY.makeRegAlloc(c);
 		} else {
 		    if (INFO) System.out.println(" * USING NM FOR "+name);
 		    return hc.makeRegAlloc(c);
@@ -143,6 +154,8 @@ public class RegAllocOpts {
 		addToSet = forceGlobal;
 	    } else if (s.toUpperCase().equals("FORCE_COALESCE")) {
 		addToSet = forceCoalesce;
+	    } else if (s.toUpperCase().equals("FORCE_APPEL")) {
+		addToSet = forceAppel;
 	    } else if (s.toUpperCase().equals("DISABLE_COALESCE")) {
 		addToSet = disableCoalesce;
 	    } else {
@@ -164,7 +177,7 @@ public class RegAllocOpts {
 
     /** Filter is a set of strings. */
     class Filter {
-	// AF(c) = { s | s in c.names OR exists p in prefixMatches
+	// AF(c) = { s | s in c.names OR exists p in c.prefixMatches
 	//               such that s begins-with p }
 	HashSet names = new HashSet(5); 
 	ArrayList prefixMatches = new ArrayList(5);
@@ -175,7 +188,7 @@ public class RegAllocOpts {
 	    
 	    for(Iterator pfs=prefixMatches.iterator();pfs.hasNext();){
 		String s = (String) pfs.next();
-		if (s.startsWith(name))
+		if (name.startsWith(s)) 
 		    return true;
 	    }
 

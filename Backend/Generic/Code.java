@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
 
+import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
 import harpoon.Temp.Temp;
 import harpoon.Temp.Label;
@@ -17,12 +18,15 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.52 2001-05-15 05:42:08 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.53 2001-06-05 04:03:24 pnkfelix Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
 
     public void printPreallocatedCode() {
 	myPrint(new java.io.PrintWriter(System.out),false,true,new PrintCallback());
+    }
+    public void printPreallocatedCode(PrintCallback callback) {
+	myPrint(new java.io.PrintWriter(System.out),false,true,callback);
     }
 
     public static boolean PEEPHOLE_OPTIMIZATIONS = true;

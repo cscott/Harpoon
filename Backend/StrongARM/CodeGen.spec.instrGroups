@@ -65,7 +65,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec.instrGroups,v 1.1.2.1 2001-06-01 03:32:21 pnkfelix Exp $
+ * @version $Id: CodeGen.spec.instrGroups,v 1.1.2.2 2001-06-05 04:04:22 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -454,6 +454,7 @@ import java.util.Iterator;
 	    emit2(ROOT,"ldr `d0l, [sp], #4",new Temp[]{dst,SP},new Temp[]{SP});
 	    emit2(ROOT,"ldr `d0h, [sp], #4",new Temp[]{dst,SP},new Temp[]{SP});
 	    endGroup(agg); }
+	    emitUse( ROOT, "@ dummy use of `s0", SP );
 	    endGroup(nsg); }
 	}
     }
@@ -661,6 +662,7 @@ import java.util.Iterator;
 	emit( ROOT, "mov `d0l, `s0", retval, r0 );
 	emit( ROOT, "mov `d0h, `s0", retval, r1 );
 	endGroup(agg); }
+	emitUse( ROOT, "@ dummy use of `s0", r1 );
 	endGroup(nsg); }
       } else {
 	declare(retval, type);
@@ -2023,7 +2025,7 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     { InstrGroup nsg = startGroup(InstrGroup.NO_SPILL);
     { InstrGroup agg = startGroup(InstrGroup.AGGREGATE);
     emit( ROOT, "mov `d0l, `s0", i, arg );
-    emit( ROOT, "mov `d0h, `s0l, asr #31", i, i );
+    emit( ROOT, "mov `d0h, `s0l, asr #31", i, i ); // FIXME !!!
     endGroup(agg); }
     endGroup(nsg); }
 
@@ -2168,6 +2170,7 @@ METHOD(params) %{
 		emit( ROOT, "mov `d0l, `s0", params[i],regfile.reg[loc++]);
 		emit( ROOT, "mov `d0h, `s0", params[i],regfile.reg[loc++]);
     endGroup(agg); }
+    emitUse( ROOT, "@ dummy use of `s0", regfile.reg[loc-1] );
     endGroup(nsg); }
 
 	    } else if (loc==3) { // one half in register, one on stack
@@ -2424,10 +2427,13 @@ RETURN<l,d>(val) %{
     declare( r0, HClass.Void );
     declare( r1, HClass.Void );
 
+    { InstrGroup nsg = startGroup(InstrGroup.NO_SPILL);
     { InstrGroup agg = startGroup(InstrGroup.AGGREGATE);
     emit( ROOT, "mov `d0, `s0l", r0, val);
     emit( ROOT, "mov `d0, `s0h", r1, val);
     endGroup(agg); }
+    emitUse( ROOT, "@ dummy use of `s0l `s0h", val );
+    endGroup(nsg); }
 
     // mark exit point.
     emit(new InstrEXIT( instrFactory, ROOT ));

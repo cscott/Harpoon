@@ -28,7 +28,7 @@ import java.util.HashMap;
  * their own extensions of <code>CodeGen</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.1.2.13 2000-07-25 03:07:53 pnkfelix Exp $ */
+ * @version $Id: MaxMunchCG.java,v 1.1.2.14 2001-06-05 04:03:24 pnkfelix Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */
@@ -45,7 +45,7 @@ public abstract class MaxMunchCG extends CodeGen {
     /** Emits <code>i</code> as the next instruction in the
         instruction stream.
     */	
-    protected Instr emit(Instr i) {
+    protected final Instr cgg_backendEmit(Instr i) {
 	debug( "Emitting "+i.toString() );
 	if (first == null) {
 	    first = i;
