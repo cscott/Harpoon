@@ -1,7 +1,7 @@
 // DerivationChecker.java, created Mon Oct 16 18:01:29 2000 by cananian
 // Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.IR.LowQuad;
+package harpoon.Analysis.LowQuad;
 
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.ClassFile.HClass;
@@ -9,6 +9,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.LowQuad.*;
 import harpoon.Temp.Temp;
 
 import java.util.Iterator;
@@ -18,7 +19,7 @@ import java.util.Iterator;
  * derivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationChecker.java,v 1.1.2.2 2000-10-16 22:36:54 cananian Exp $
+ * @version $Id: DerivationChecker.java,v 1.1.2.1 2001-06-29 18:08:37 cananian Exp $
  */
 public class DerivationChecker {
     
