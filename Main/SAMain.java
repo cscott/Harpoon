@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.129 2001-01-15 21:11:59 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.130 2001-01-18 22:59:34 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -212,7 +212,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	    
-       // use the rough class hierarchy to devirtualize as many call sites
+	    // use the rough class hierarchy to devirtualize as many call sites
 	    // as possible.
 
 	    hcf=new harpoon.Analysis.Quads.Nonvirtualize
@@ -228,6 +228,7 @@ public class SAMain extends harpoon.IR.Registration {
 		hcf=new harpoon.Analysis.Quads.InitializerTransform
 		    (hcf, classHierarchy, linker, resource).codeFactory();
 		// recompute the hierarchy after transformation.
+		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
 
@@ -266,6 +267,7 @@ public class SAMain extends harpoon.IR.Registration {
 		hcf=an.codeFactory();
 		insta=new InstrumentAllocs(hcf, mainM, linker, an, true,true);
  		hcf=insta.codeFactory();
+		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
 	    if (DO_TRANSACTIONS) {
@@ -275,6 +277,7 @@ public class SAMain extends harpoon.IR.Registration {
 		syncTransformer = new SyncTransformer
 		    (hcf, classHierarchy, linker, mainM, roots, resource);
 		hcf = syncTransformer.codeFactory();
+		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
 	} // don't need the root set anymore.
@@ -303,6 +306,7 @@ public class SAMain extends harpoon.IR.Registration {
 		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 	    // and our main method is a root, too...
 	    roots.add(mainM);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    callGraph=new CallGraphImpl2(classHierarchy, hcf);
 	} else if (true) {
