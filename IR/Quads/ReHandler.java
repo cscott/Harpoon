@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.28.2.4 1999-09-17 04:38:10 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.28.2.5 1999-09-17 05:24:10 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -119,9 +119,6 @@ final class ReHandler {
 		    protlist.insert(qm.getHead(call));
 		    List handlers=handlermap.get(call);
 		    HandInfo nexth=(HandInfo)iterate.next();
-		    //cover default exit case
-		    if (nexth.defaultexit())
-			makedefaultexit(qf, ss, qm, call, nexth, phiset,typemap, ti);
 		    //cover any handler if it is needed
 		    if (nexth.anyhandler()&&!any)
 			makeanyhandler(qf, ss, qm, call, nexth, protlist, phiset,typemap, ti);
@@ -275,36 +272,6 @@ final class ReHandler {
 	return any;
     }
 
-    //make an exceptionless exit for the call statement
-    private static void makedefaultexit(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, Set phiset, Map ntypemap, TypeMap otypemap) {
-	Map phimap=nexth.map();
-	Temp[] dst=new Temp[phimap.size()];
-	Temp[][] src=new Temp[phimap.size()][2];
-	Iterator ksit=phimap.keySet().iterator();
-	int count=0;
-	while (ksit.hasNext()) {
-	    Temp t=(Temp)ksit.next();
-	    dst[count]=Quad.map(ss.ctm, t);
-	    src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
-	    src[count][1]=Quad.map(ss.ctm, t);
-	    count++;
-	}
-	Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
-	ksit=phimap.keySet().iterator();
-	while (ksit.hasNext()) {
-	    Temp t=(Temp)ksit.next();
-	    Temp t2=(Temp)phimap.get(t);
-	    HClass type=otypemap.typeMap(null, t),
-		type2=otypemap.typeMap(null, t2);
-	    ntypemap.put(new Tuple(new Object[] {phi, Quad.map(ss.ctm,t)}), type);
-	    ntypemap.put(new Tuple(new Object[] {phi, Quad.map(ss.ctm,t2)}), type2);
-	}
-	phiset.add(phi);
-	Quad.addEdge(qm.getFoot(call),0, phi, 0);
-	Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
-		     qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
-	Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
-    }
 
     //makes an exit for the anyhandler
     private static void makeanyhandler(final QuadFactory qf, final StaticState ss, final QuadMap qm, CALL call, HandInfo nexth, ReProtection protlist, Set phiset, Map ntypemap, TypeMap otypemap) {
@@ -732,11 +699,10 @@ final class ReHandler {
 	    if (reset) {
 		reset=false;
 		if (q.retex()!=null) {
-		    handlermap.add(callquad,new HandInfo(false, q.next(0), q.nextEdge(0).which_pred(), new HashMap(phimap)));
-		    oldphimap=new HashMap(phimap);	
 		    anyhandler=q.next(1);
 		    anyedge=q.nextEdge(1).which_pred();
 		    callquad=q;
+		    oldphimap=new HashMap(phimap);
 		    callmap=new HashMap();
 		    flag=true;
 		} else {

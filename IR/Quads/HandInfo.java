@@ -7,7 +7,7 @@ package harpoon.IR.Quads;
  * <code>HandInfo</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: HandInfo.java,v 1.1.2.2 1999-08-11 20:31:50 bdemsky Exp $
+ * @version $Id: HandInfo.java,v 1.1.2.2.2.1 1999-09-17 05:24:10 bdemsky Exp $
  */
 
 import harpoon.ClassFile.HClass;
@@ -54,9 +54,6 @@ class HandInfo {
     }
     boolean anyhandler() {
 	return ((hclass==null)&&(anyhandler==true));
-    }
-    boolean defaultexit() {
-	return ((hclass==null)&&(anyhandler==false));
     }
     HClass hclass() {
 	return hclass;
