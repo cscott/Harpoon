@@ -22,6 +22,7 @@ import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.MEM;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.TEMP;
+import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.UNOP;
 import harpoon.IR.Tree.TreeCode;
 import harpoon.IR.Tree.TreeVisitor;
@@ -32,7 +33,7 @@ import harpoon.Temp.Temp;
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.5 1999-02-17 21:32:40 andyb Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.6 1999-03-06 04:22:09 duncan Exp $
  */
 final class CodeGen {
 
@@ -62,6 +63,10 @@ final class CodeGen {
         void emit(Instr instr) {
             /* XXX */
         }
+
+        public void visit(Tree e) {
+            // Error! Error!
+	}
 
         public void visit(Exp e) {
             // Error! Error!
