@@ -33,7 +33,7 @@ always:
 # Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
 %.dvi %.aux: %.tex
 	latex $(basename $<)
-	if grep -q bibliography $< ; then bibtex $(basename $<); fi
+	if egrep -q '^[^%]*\\bibliography' $< ; then bibtex $(basename $<); fi
 	latex $(basename $<)
 	latex $(basename $<)
 # Make annotation-visible versions of bibtex files.
