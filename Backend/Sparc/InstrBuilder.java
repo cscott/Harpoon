@@ -17,7 +17,7 @@ import java.util.List;
  * <code>Generic.InstrBuilder</code> - for the Sparc architecture.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrBuilder.java,v 1.1.2.5 1999-11-04 09:15:08 andyb Exp $
+ * @version $Id: InstrBuilder.java,v 1.1.2.6 1999-12-01 05:38:27 andyb Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
     private final RegFileInfo regFileInfo;
@@ -31,19 +31,12 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
     public List makeLoad(Temp r, int offset, Instr template) {
 	if (tempBuilder.isTwoWord(r)) {
-	    // Should do some stuff later to convert this to ldd?
-	    InstrMEM load1 =
-		new InstrMEM(template.getFactory(), template,
-			     "ld [`s0 + " + (-4*offset) + "], `d0l",
-			     new Temp[] { r },
-			     new Temp[] { regFileInfo.SP() });
-	    InstrMEM load2 = 
-		new InstrMEM(template.getFactory(), template,
-			     "ld [`s0 + " + (-4*(offset+1)) + "], `d0h",
-			     new Temp[] { r },
-			     new Temp[] { regFileInfo.SP() });
-	    load2.layout(load1, null);
-	    return Arrays.asList(new InstrMEM[] { load1, load2 });
+            InstrMEM load = 
+                new InstrMEM(template.getFactory(), template,
+                             "ldd [`s0 + " +(-4*(offset+1)) + "], `d0h",
+                             new Temp[] { r },
+                             new Temp[] { regFileInfo.SP() });
+	    return Arrays.asList(new InstrMEM[] { load, load });
 	} else {
 	    InstrMEM load = 
 		new InstrMEM(template.getFactory(), template,
@@ -56,25 +49,16 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
     public List makeStore(Temp r, int offset, Instr template) {
 	if (tempBuilder.isTwoWord(r)) {
-	    // again, should consolidate this to std if possible
-	    InstrMEM store1 = 
+	    InstrMEM store = 
 		new InstrMEM(template.getFactory(), template,
-			     "st `s0l, [`s1 + " + (-4*offset) + "]",
-			     new Temp[] { },
-			     new Temp[] { r, regFileInfo.SP() });
-	    InstrMEM store2 = 
-		new InstrMEM(template.getFactory(), template,
-			     "st `s0h, [`s1 + " + (-4*(offset+1)) + "]",
-			     new Temp[] { },
-			     new Temp[] { r, regFileInfo.SP() });  
-	    store2.layout(store1, null);
-	    return Arrays.asList(new InstrMEM[] { store1, store2 });
+			     "std `s0h, [`s1 + " + (-4*(offset+1)) + "]",
+			     null, new Temp[] { r, regFileInfo.SP() });
+	    return Arrays.asList(new InstrMEM[] { store });
 	} else {
 	    InstrMEM store =
 		new InstrMEM(template.getFactory(), template,
 			     "st `s0, [`s1 + " + (-4*offset) + "]",
-			     new Temp[] { },
-			     new Temp[] { r, regFileInfo.SP() });
+			     null, new Temp[] { r, regFileInfo.SP() });
 	    return Arrays.asList(new InstrMEM[] { store });
 	}
     }	 
