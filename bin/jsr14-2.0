@@ -1,5 +1,5 @@
 #!/bin/sh
-export JSR14DISTR=/home/cananian/jsr14_adding_generics-2_0-ea
+export JSR14DISTR=$HOME/jsr14_adding_generics-2_0-ea
 export JSR14CC=$JSR14DISTR/scripts/javac-novariance-fixed
 export JSR14LIB=$JSR14DISTR/oldcollect-fixed.jar
 # also a test for whether this stuff exists
