@@ -16,26 +16,28 @@ import harpoon.IR.Quads.CALL;
  * <code>FakeMetaCallGraph</code> converts a classic <code>CallGraph</code> to
  a <code>MetaCallGraph</code>. Basically, it offers a <i>MetaMethods</i>-view
  of the call graph, without doing any specialization. This is possible because
- there is an obvious mapping from each method of the program to an unspecialized
- meta-method consisting of that method plus its declared parameter types (marked
- as polymorphic to cope with all the possible cases where that method could be
- called).
+ there is an obvious mapping from each method of the program to an
+ unspecialized meta-method consisting of that method plus its declared
+ parameter types (marked as polymorphic to cope with all the possible cases
+ where that method could be called).
 
- Although it doesn't offer any additional interface, <code>FakeMetaCallGraph</code>
- allows the use of the components that require &quot;meta methods&quot; even
- without specializing methods to meta-methods. For example, if you need to use the
- <code>PointerAnalysis</code> stuff, but don't feel very comfortable with
- meta-methods, just pass it a <code>FakeMetaCallGraph</code>.
+ Although it doesn't offer any additional interface,
+ <code>FakeMetaCallGraph</code> allows the use of the components that require
+ &quot;meta methods&quot; even without specializing methods to meta-methods.
+ For example, if you need to use the <code>PointerAnalysis</code> stuff, but
+ don't feel very comfortable with meta-methods, just pass it a 
+ <code>FakeMetaCallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: FakeMetaCallGraph.java,v 1.1.2.1 2000-03-18 01:55:14 salcianu Exp $
+ * @version $Id: FakeMetaCallGraph.java,v 1.1.2.2 2000-03-21 18:27:27 salcianu Exp $
  */
 public class FakeMetaCallGraph extends MetaCallGraphAbstr {
 
     /** Creates a <code>FakeMetaCallGraph</code>. Receives as parameters
       a <code>CallGraph</code> object and the set of all the executable
-      methods of the program. The <code>methods</code> parameter can be obtained by
-      using the <code>callableMethods</code> method of <code>ClassHierarchy</code>.
+      methods of the program. The <code>methods</code> parameter can be
+      obtained by using the <code>callableMethods</code> method of 
+      <code>ClassHierarchy</code>.
       The resulting <code>FakeMetaCallGraph</code> object is just a
       <code>MetaMethod</code> view of the data contained into <code>cg</code>.
     */
