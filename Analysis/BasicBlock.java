@@ -59,11 +59,13 @@ import java.util.Collection;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.30 2000-05-26 00:26:12 pnkfelix Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.31 2000-06-26 22:35:55 pnkfelix Exp $ */
 public class BasicBlock {
     
     static final boolean DEBUG = false;
     static final boolean TIME = false;
+    
+    static final boolean CHECK_INSTRS = false;
 
     private HCodeElement first;
     private HCodeElement last;
@@ -374,77 +376,6 @@ public class BasicBlock {
 	// generated basic block
 	private int BBnum = 0;
 
-
-	// FSK: the following method is of dubious usefulness, now
-	// that i have identified a "better" way to handle updates to
-	// a mutable IR.  Thus, I have made it private.  After I
-	// confirm my approach with Scott, I will eliminate it.
-	/** Modifies the set of basic blocks for <code>this</code> to
-	    account for modifications that have been made to the
-	    underlying IR.  Most <code>HCode</code>s will not require
-	    any calls to this method (which can be quite costly) since
-	    their IRs are immutable.  However, for <code>HCode</code>s
-	    which do allow modifications (such as
-	    <code>Generic.Code</code>), this method should be used.  
-	    
-	    <BR> Note that BasicBlocks still will not handle all
-	    modifications to an underlying IR gracefully.  In general,
-	    changes which do not affect overall control-flow (such as
-	    insertion or removal of linear code) are legal, but
-	    insertion of code that introduces the need to actually
-	    split <code>BasicBlock</code>s or otherwise generate new
-	    <code>BasicBlock</code>s will in general fail.
-
-	    <BR> The updating takes the following form:
-	    <PRE>
-	    foreach block b in the set of blocks maintained by this:
-	        1. Adjust b's first element backward until it is the
-		   appropriate starting point for a block
-		2. Count through the elements of b, adjusting the size
-		   and last element accordingly
-	    </PRE> 
-	*/
-	private void updateBasicBlocks() { 
-	    Iterator biter = blocks.iterator();
-	    while(biter.hasNext()) {
-		BasicBlock b = (BasicBlock) biter.next();
-		HCodeElement curr = b.first;
-		
-		while(grapher.predC(b.first).size() == 1) { 
-		    curr = grapher.pred(curr)[0].from();
-		    if (grapher.succC(curr).size() == 1) { 
-			b.first = curr;
-		    } else {   
-			break; // split
-		    }
-		}
-		
-		int size = 1;
-		
-		curr = b.first;
-		boolean sawLast = false;
-		while(grapher.succC(curr).size() == 1) {
-		    HCodeElement h = grapher.succ(curr)[0].to();
-		    if (grapher.predC(h).size() == 1) {
-			size++;
-			curr = h;
-			if (h == b.last) sawLast = true;
-		    } else {
-			break;
-		    }
-		}
-		Util.assert(sawLast, "branches should not be inserted");
-
-		// size can increase or decrease, since elems may be
-		// added to or removed from the sequence
-
-		b.last = curr;
-		b.size = size;
-		
-	    }
-	    return;
-	}
-
 	/** Returns the root <code>BasicBlock</code>.
 	    <BR> <B>effects:</B> returns the <code>BasicBlock</code>
 	         that is at the start of the set of
@@ -625,6 +556,19 @@ public class BasicBlock {
 
 		// FSK: debug checkBlock(bb);
 	    }
+
+	    if (CHECK_INSTRS) {
+		// check that all instrs map to SOME block
+		Iterator hceIter = hcode.getElementsI();
+		while(hceIter.hasNext()) {
+		    HCodeElement hce = (HCodeElement) hceIter.next();
+		    if (!(hce instanceof harpoon.IR.Assem.InstrLABEL) &&
+			!(hce instanceof harpoon.IR.Assem.InstrDIRECTIVE)&&
+			!(hce instanceof harpoon.IR.Assem.InstrJUMP))
+			Util.assert(getBlock(hce) != null, "no BB for "+hce);
+		}
+	    }
+		
 
 	    if (TIME) System.out.print("#");	    
 	}

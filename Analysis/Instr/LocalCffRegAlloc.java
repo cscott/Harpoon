@@ -58,12 +58,12 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.87 2000-06-23 08:44:59 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.88 2000-06-26 22:36:13 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
     private static boolean TIME = false;
-    private static boolean VERIFY = false;
+    private static boolean VERIFY = true;
 
     private static boolean SPILL_INFO = false;
     private static boolean COALESCE_MOVES = true;
@@ -511,6 +511,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		}
 
 		curr.accept(allocV);
+		// System.out.println(curr + " ("+allocV.iloc+")");
 		if (TIME) System.out.print(".");
 	    }
 	    emptyRegFile(regfile, curr, liveOnExit, allocV.iloc);
@@ -591,6 +592,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		Util.assert(hasRegs(i, i.defC()),
 			    lazyInfo("defs missing reg assignment",i, null));
 		
+		checked.add(i);
 	    }
 	    
 	    /** Removes uses of i from `evictables'.
@@ -809,6 +811,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			instrsToReplace.add(i);
 			Instr proxy = new InstrMOVEproxy(i, d, u);
 			instrsToReplace.add(proxy);
+			checked.add(proxy);
 			if (isRegister(u)) {
 			    code.assignRegister(proxy, d, list(u));
 			} else {

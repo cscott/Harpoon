@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.Vector;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.ListIterator;
 import java.util.Iterator;
 import java.util.HashSet;
@@ -74,7 +75,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.89 2000-06-24 04:44:51 kkz Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.90 2000-06-26 22:36:13 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -85,6 +86,7 @@ public abstract class RegAlloc  {
     protected Code code;
     protected BasicBlock.Factory bbFact;
 
+    protected HashSet checked = new HashSet();
 
     private static String getSrcStr(int num) {
 	String s = "`s0";
@@ -517,6 +519,7 @@ public abstract class RegAlloc  {
 		    if (isRegister(def)) {
 			tempXinstrToCommonLoc.add(dxi, def);
 		    } else {
+			Util.assert(checked.contains(i), i+" not checked");
 			Collection regs = code.getRegisters(i, def);
 			tempXinstrToCommonLoc.addAll(dxi, regs);
 		    }
@@ -579,6 +582,51 @@ public abstract class RegAlloc  {
 	return Collections.unmodifiableSet(s);
     }
 
+    /** Returns a List of the Component Temps that compose
+	<code>t</code (Helper method).
+    */
+    public List expand(Temp t) {
+	return frame.getRegFileInfo().expand(t);
+    }
+
+    /** Constructs a new List containing the expanded temps for
+	all of the elements of <code>c</code> (Helper method).
+	<BR> <B>requires:</B> <code>c</code> is a
+	     <code>Collection</code> of <code>Temp</code>s.
+	<BR> <B>effects:</B> 
+	<pre>let e be a new empty List
+	     in foreach t in c
+	           e.addAll( RegFileInfo.expand(t) )
+	        return e
+	</pre>
+    */
+    protected List expand(Collection c) {
+	List l = new ArrayList();
+	Iterator i = c.iterator();
+	while(i.hasNext()) {
+	    Temp t = (Temp) i.next();
+	    l.addAll( expand(t) );
+	}
+	return l;
+    }
+
+    /** Checks if any element of <code>c</code> is a register (Helper
+	method). 
+	<BR> <B>requires:</B> <code>c</code> is a
+	     <code>Collection</code> of <code>Temp</code>s.
+	<BR> <B>effects:</B> If <code>c</code> contains any Register
+	     <code>Temp</code>s, returns true.  Else returns false.
+    */
+    protected boolean hasRegister(Collection c) { 
+	Iterator temps = c.iterator();
+	while(temps.hasNext()) {
+	    Temp t = (Temp) temps.next();
+	    if (isRegister(t)) {
+		return true;
+	    }
+	}
+	return false;
+    }
 
     /** Checks if <code>t</code> is a register (Helper method).
 	<BR> <B>effects:</B> If <code>t</code> is a register for the
