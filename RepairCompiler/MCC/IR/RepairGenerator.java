@@ -79,20 +79,22 @@ public class RepairGenerator {
 	generate_updates();
     }
 
+    String ststate="state";
+    String stmodel="model";
+    String strepairtable="repairtable";
+    String stleft="left";
+    String stright="right";
+
     private void generate_updates() {
 	int count=0;
         CodeWriter crhead = new StandardCodeWriter(outputhead);        
         CodeWriter craux = new StandardCodeWriter(outputaux);        
-	String state="state";
-	String model="model";
-	String repairtable="repairtable";
-	String left="left";
-	String right="right";
+
 	/* Rewrite globals */
 
 	for (Iterator it=this.state.stGlobals.descriptors();it.hasNext();) {
 	    VarDescriptor vd=(VarDescriptor)it.next();
-	    craux.outputline("#define "+vd.getSafeSymbol()+" "+state+"->"+vd.getSafeSymbol());
+	    craux.outputline("#define "+vd.getSafeSymbol()+" "+ststate+"->"+vd.getSafeSymbol());
 	}
 
 	for(Iterator it=termination.updatenodes.iterator();it.hasNext();) {
@@ -108,23 +110,23 @@ public class RepairGenerator {
 		switch(mun.op) {
 		case MultUpdateNode.ADD:
 		    if (isrelation) {
-			crhead.outputline("void "+methodname+"("+name+"_state * " +state+","+name+" * "+model+", RepairHash * "+repairtable+", int "+left+", int "+right+");");
-			craux.outputline("void "+methodname+"("+name+"_state * "+ state+","+name+" * "+model+", RepairHash * "+repairtable+", int "+left+", int "+right+")");
+			crhead.outputline("void "+methodname+"("+name+"_state * " +ststate+","+name+" * "+stmodel+", RepairHash * "+strepairtable+", int "+stleft+", int "+stright+");");
+			craux.outputline("void "+methodname+"("+name+"_state * "+ ststate+","+name+" * "+stmodel+", RepairHash * "+strepairtable+", int "+stleft+", int "+stright+")");
 		    } else {
-			crhead.outputline("void "+methodname+"("+name+"_state * "+ state+","+name+" * "+model+", RepairHash * "+repairtable+", int "+left+");");
-			craux.outputline("void "+methodname+"("+name+"_state * "+state+","+name+" * "+model+", RepairHash * "+repairtable+", int "+left+")");
+			crhead.outputline("void "+methodname+"("+name+"_state * "+ ststate+","+name+" * "+stmodel+", RepairHash * "+strepairtable+", int "+stleft+");");
+			craux.outputline("void "+methodname+"("+name+"_state * "+ststate+","+name+" * "+stmodel+", RepairHash * "+strepairtable+", int "+stleft+")");
 		    }
 		    craux.startblock();
 		    final SymbolTable st = un.getRule().getSymbolTable();                
 		    CodeWriter cr = new StandardCodeWriter(outputaux) {
                         public SymbolTable getSymbolTable() { return st; }
                     };
-		    un.generate(cr, false, left,right);
+		    un.generate(cr, false, stleft,stright,this);
 		    craux.endblock();
 		    break;
 		case MultUpdateNode.REMOVE:
 		    Rule r=un.getRule();
-		    String methodcall="void "+methodname+"("+name+"_state * "+state+","+name+" * "+model+", RepairHash * "+repairtable;
+		    String methodcall="void "+methodname+"("+name+"_state * "+ststate+","+name+" * "+stmodel+", RepairHash * "+strepairtable;
 		    for(int j=0;j<r.numQuantifiers();j++) {
 			Quantifier q=r.getQuantifier(j);
 			if (q instanceof SetQuantifier) {
@@ -148,7 +150,7 @@ public class RepairGenerator {
 		    CodeWriter cr2 = new StandardCodeWriter(outputaux) {
                         public SymbolTable getSymbolTable() { return st2; }
                     };
-		    un.generate(cr2, true, null,null);
+		    un.generate(cr2, true, null,null,this);
 		    craux.endblock();
 		    break;
 		case MultUpdateNode.MODIFY:

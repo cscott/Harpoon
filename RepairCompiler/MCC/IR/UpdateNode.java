@@ -1,5 +1,6 @@
 package MCC.IR;
 import java.util.*;
+import MCC.State;
 
 class UpdateNode {
     Vector updates;
@@ -193,14 +194,137 @@ class UpdateNode {
     public Updates getUpdate(int i) {
 	return (Updates)updates.get(i);
     }
-    public void generate(CodeWriter cr, boolean removal, String slot0, String slot1) {
+
+    private MultUpdateNode getMultUpdateNode(boolean negate, Descriptor d, RepairGenerator rg) {
+	Termination termination=rg.termination;
+	MultUpdateNode mun=null;
+	GraphNode gn;
+	if (negate)
+	    gn=(GraphNode)termination.abstractremove.get(d);
+	else
+	    gn=(GraphNode)termination.abstractadd.get(d);
+	TermNode tn=(TermNode)gn.getOwner();
+	for(Iterator edgeit=gn.edges();edgeit.hasNext();) {
+	    GraphNode gn2=((GraphNode.Edge) edgeit.next()).getTarget();
+	    if (!rg.removed.contains(gn2)) {
+		TermNode tn2=(TermNode)gn2.getOwner();
+		if (tn2.getType()==TermNode.UPDATE) {
+		    mun=tn2.getUpdate();
+		    break;
+		}
+	    }
+	}
+	if (mun==null)
+	    throw new Error("Can't find update node!");
+	return mun;
+    }
+
+    public void generate_abstract(CodeWriter cr, boolean removal, String slot0, String slot1, Updates u, RepairGenerator rg) {
+	State state=rg.state;
+	Expr abstractexpr=u.getLeftExpr();
+	boolean negated=u.negate;
+	Descriptor d=null;
+	Expr left=null;
+	Expr right=null;
+	boolean istuple=false;
+	if (abstractexpr instanceof TupleOfExpr) {
+	    TupleOfExpr toe=(TupleOfExpr) abstractexpr;
+	    d=toe.relation;
+	    left=toe.left;
+	    right=toe.right;
+	    istuple=true;
+	} else if (abstractexpr instanceof TupleOfExpr) {
+	    ElementOfExpr eoe=(ElementOfExpr) abstractexpr;
+	    d=eoe.set;
+	    left=eoe.element;
+	    istuple=false;
+	} else {
+	    throw new Error("Unsupported Expr");
+	}
+	MultUpdateNode mun=getMultUpdateNode(negated,d,rg);
+	VarDescriptor leftvar=VarDescriptor.makeNew("leftvar");
+	VarDescriptor rightvar=VarDescriptor.makeNew("rightvar");
+	left.generate(cr, leftvar);
+	if (istuple)
+	    right.generate(cr,rightvar);
+
+	if (negated) {
+	    if (istuple) {
+		RelationDescriptor rd=(RelationDescriptor)d;
+		boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
+		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
+		if (usageimage)
+		    cr.outputline(rg.stmodel+"->"+rd.getJustSafeSymbol() + "_hash->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
+		if (usageinvimage)
+		    cr.outputline(rg.stmodel+"->"+rd.getJustSafeSymbol() + "_hashinv->remove((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+		
+		for(int i=0;i<state.vRules.size();i++) {
+		    Rule r=(Rule)state.vRules.get(i);
+		    if (r.getInclusion().getTargetDescriptors().contains(rd)) {
+			for(int j=0;j<mun.numUpdates();j++) {
+			    UpdateNode un=mun.getUpdate(i);
+			    if (un.getRule()==r) {
+				/* Update for rule rule r */
+				String name=(String)rg.updatenames.get(un);
+				cr.outputline(rg.strepairtable+"->addrelation("+rd.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+",(int) &"+name+");");
+			    }
+			}
+		    }
+		}
+	    } else {
+		SetDescriptor sd=(SetDescriptor) d;
+		cr.outputline(rg.stmodel+"->"+sd.getJustSafeSymbol() + "_hash->remove((int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+
+		for(int i=0;i<state.vRules.size();i++) {
+		    Rule r=(Rule)state.vRules.get(i);
+		    if (r.getInclusion().getTargetDescriptors().contains(sd)) {
+			for(int j=0;j<mun.numUpdates();j++) {
+			    UpdateNode un=mun.getUpdate(i);
+			    if (un.getRule()==r) {
+				/* Update for rule rule r */
+				String name=(String)rg.updatenames.get(un);
+				cr.outputline(rg.strepairtable+"->addset("+sd.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+",(int) &"+name+");");
+			    }
+			}
+		    }
+		}
+	    }
+	} else {
+	    /* Generate update */
+	    if (istuple) {
+		RelationDescriptor rd=(RelationDescriptor) d;
+		boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
+		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
+		if (usageimage)
+		    cr.outputline(rg.stmodel+"->"+rd.getJustSafeSymbol() + "_hash->add((int)" + leftvar.getSafeSymbol() + ", (int)" + rightvar.getSafeSymbol() + ");");
+		if (usageinvimage)
+		    cr.outputline(rg.stmodel+"->"+rd.getJustSafeSymbol() + "_hashinv->add((int)" + rightvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+
+		UpdateNode un=mun.getUpdate(0);
+		String name=(String)rg.updatenames.get(un);
+		cr.outputline(name+"(this,"+rg.stmodel+","+rg.strepairtable+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+");");
+	    } else {
+		SetDescriptor sd=(SetDescriptor)d;
+		cr.outputline(rg.stmodel+"->"+sd.getJustSafeSymbol() + "_hash->add((int)" + leftvar.getSafeSymbol() + ", (int)" + leftvar.getSafeSymbol() + ");");
+
+		UpdateNode un=mun.getUpdate(0);
+		/* Update for rule rule r */
+		String name=(String)rg.updatenames.get(un);
+		cr.outputline(name+"(this,"+rg.stmodel+","+rg.strepairtable+","+leftvar.getSafeSymbol()+");");
+	    }
+	}
+	
+    }
+
+    public void generate(CodeWriter cr, boolean removal, String slot0, String slot1, RepairGenerator rg) {
 	if (!removal)
 	    generate_bindings(cr, slot0,slot1);
 	for(int i=0;i<updates.size();i++) {
 	    Updates u=(Updates)updates.get(i);
 	    VarDescriptor right=VarDescriptor.makeNew("right");
-	    if (u.getType()==Updates.ABSTRACT)
-		throw new Error("Abstract update not implemented");
+	    if (u.getType()==Updates.ABSTRACT) {
+		generate_abstract(cr, removal, slot0, slot1, u, rg);
+	    }
 
 	    switch(u.getType()) {
 	    case Updates.EXPR:
@@ -288,17 +412,6 @@ class UpdateNode {
 	    }
  	    cr.endblock();
 	}
-    }
-
-    private int bitmask(int bits) {
-        int mask = 0;
-        
-        for (int i = 0; i < bits; i++) {
-            mask <<= 1;
-            mask += 1;
-        }
-
-        return mask;            
     }
 
     private void generate_bindings(CodeWriter cr, String slot0, String slot1) {
