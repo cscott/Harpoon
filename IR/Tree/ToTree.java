@@ -69,7 +69,7 @@ import java.util.Stack;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.71 2000-02-15 17:41:12 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.72 2000-02-16 06:19:21 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -242,7 +242,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	addMove
 	    (q, q.dst(),
 	     m_rtb.arrayLength
-	     (m_tf, q, _TEMPte(q.objectref(), q))
+	     (m_tf, q, treeDeriv, _TEMPte(q.objectref(), q))
 	     );
     }
 
@@ -299,7 +299,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 		initializer = constZero(q, arrayClasses[i]);
 	    else
 		initializer = m_rtb.arrayNew
-		    (m_tf, q, arrayClasses[i],
+		    (m_tf, q, treeDeriv, arrayClasses[i],
 		     new Translation.Ex
 		     (_TEMP(q, HClass.Int, dimTemps[i]))).unEx(m_tf);
 	    // output: d1[i] = d2 = initializer.
@@ -315,12 +315,12 @@ static class TranslationVisitor extends LowQuadVisitor {
 		      new BINOP
 		      (m_tf, q, Type.POINTER, Bop.ADD,
 		       m_rtb.arrayBase
-		       (m_tf, q,
+		       (m_tf, q, treeDeriv,
 			new Translation.Ex
 			(_TEMP(q, arrayClasses[i-1], arrayTemps[i-1])))
 		       .unEx(m_tf),
 		       m_rtb.arrayOffset
-		       (m_tf, q, arrayClasses[i-1],
+		       (m_tf, q, treeDeriv, arrayClasses[i-1],
 			new Translation.Ex
 			(_TEMP(q, HClass.Int, indexTemps[i-1])))
 			.unEx(m_tf)
@@ -386,10 +386,11 @@ static class TranslationVisitor extends LowQuadVisitor {
 	     new BINOP
 	     (m_tf, q, Type.POINTER, Bop.ADD,
 	      m_rtb.arrayBase
-	      (m_tf, q, new Translation.Ex(_TEMP(q, arrayType, objTemp)))
+	      (m_tf, q, treeDeriv,
+	       new Translation.Ex(_TEMP(q, arrayType, objTemp)))
 	      .unEx(m_tf),
 	      m_rtb.arrayOffset
-	      (m_tf, q, arrayType,
+	      (m_tf, q, treeDeriv, arrayType,
 	       new Translation.Ex(new CONST(m_tf, q, q.offset()))).unEx(m_tf)
 	      ));
 
@@ -406,7 +407,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 		 (m_tf, q, Type.POINTER, Bop.ADD, 
 		  _TEMP(q, dl, nextPtr), 
 		  m_rtb.arrayOffset
-		  (m_tf, q, arrayType,
+		  (m_tf, q, treeDeriv, arrayType,
 		   new Translation.Ex(new CONST(m_tf, q, 1))).unEx(m_tf)
 		  ));
 
@@ -421,7 +422,7 @@ static class TranslationVisitor extends LowQuadVisitor {
   
     public void visit(harpoon.IR.Quads.COMPONENTOF q) {
 	addMove(q, q.dst(),
-		m_rtb.componentOf(m_tf, q,
+		m_rtb.componentOf(m_tf, q, treeDeriv,
 				  _TEMPte(q.arrayref(), q),
 				  _TEMPte(q.objectref(), q)));
     }
@@ -433,7 +434,7 @@ static class TranslationVisitor extends LowQuadVisitor {
     public void visit(harpoon.IR.Quads.INSTANCEOF q) {
 	addMove
 	    (q, q.dst(),
-	     m_rtb.instanceOf(m_tf, q, 
+	     m_rtb.instanceOf(m_tf, q, treeDeriv,
 			      _TEMPte(q.src(), q), q.hclass()));
     }
 
@@ -468,12 +469,12 @@ static class TranslationVisitor extends LowQuadVisitor {
     }
 
     public void visit(harpoon.IR.Quads.MONITORENTER q) {
-	addStmt(m_rtb.monitorEnter(m_tf, q, _TEMPte(q.lock(), q))
+	addStmt(m_rtb.monitorEnter(m_tf, q, treeDeriv, _TEMPte(q.lock(), q))
 		     .unNx(m_tf));
     }
 
     public void visit(harpoon.IR.Quads.MONITOREXIT q) {
-	addStmt(m_rtb.monitorExit(m_tf, q, _TEMPte(q.lock(), q))
+	addStmt(m_rtb.monitorExit(m_tf, q, treeDeriv, _TEMPte(q.lock(), q))
 		     .unNx(m_tf));
     }
 
@@ -483,7 +484,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 
     public void visit(harpoon.IR.Quads.NEW q) { 
 	addMove(q, q.dst(),
-		m_rtb.objectNew(m_tf, q, q.hclass(), true));
+		m_rtb.objectNew(m_tf, q, treeDeriv, q.hclass(), true));
     }
 	
     public void visit(harpoon.IR.Quads.PHI q) {
@@ -549,14 +550,14 @@ static class TranslationVisitor extends LowQuadVisitor {
     public void visit(PAOFFSET q) {
 	addMove
 	    (q, q.dst(),
-	     m_rtb.arrayOffset(m_tf, q, q.arrayType(),
+	     m_rtb.arrayOffset(m_tf, q, treeDeriv, q.arrayType(),
 			       _TEMPte(q.index(), q)));
     }
 
     public void visit(PARRAY q) {
 	addMove
 	    (q, q.dst(),
-	     m_rtb.arrayBase(m_tf, q,
+	     m_rtb.arrayBase(m_tf, q, treeDeriv,
 			     _TEMPte(q.objectref(), q)));
     }
 
@@ -620,14 +621,14 @@ static class TranslationVisitor extends LowQuadVisitor {
     public void visit(PFIELD q) { 
 	addMove
 	    (q, q.dst(),
-	     m_rtb.fieldBase(m_tf, q,
+	     m_rtb.fieldBase(m_tf, q, treeDeriv,
 			     _TEMPte(q.objectref(), q)));
     }
   
     public void visit(PFOFFSET q) {
 	addMove
 	    (q, q.dst(),
-	     m_rtb.fieldOffset(m_tf, q, q.field()));
+	     m_rtb.fieldOffset(m_tf, q, treeDeriv, q.field()));
     }
 
     // runtime-independent
@@ -645,13 +646,13 @@ static class TranslationVisitor extends LowQuadVisitor {
     public void visit(PMETHOD q) {
 	addMove
 	    (q, q.dst(),
-	     m_rtb.methodBase(m_tf, q,
+	     m_rtb.methodBase(m_tf, q, treeDeriv,
 			      _TEMPte(q.objectref(), q)));
     }
 
     public void visit(PMOFFSET q) {
 	addMove(q, q.dst(),
-		m_rtb.methodOffset(m_tf, q, q.method()));
+		m_rtb.methodOffset(m_tf, q, treeDeriv, q.method()));
     }
 
     public void visit(POPER q) {
@@ -947,7 +948,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	else if (type==HClass.Double)
 	    constant = new CONST(m_tf, src, ((Double)value).doubleValue());
 	else if (type==type.getLinker().forName("java.lang.String"))
-	    return m_rtb.stringConst(m_tf, src, (String)value);
+	    return m_rtb.stringConst(m_tf, src, treeDeriv, (String)value);
 	else 
 	    throw new Error("Bad type for CONST: " + type); 
 	return new Translation.Ex(constant);
