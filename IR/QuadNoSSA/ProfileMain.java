@@ -18,7 +18,7 @@ import harpoon.IR.QuadNoSSA.*;
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ProfileMain.java,v 1.2.4.2 1998-11-27 23:21:44 mfoltz Exp $
+ * @version $Id: ProfileMain.java,v 1.2.4.3 1998-11-27 23:22:31 mfoltz Exp $
  */
 
 //<<<<<<< Main.java
@@ -35,7 +35,7 @@ public class ProfileMain extends harpoon.IR.Registration {
     public static void main(String args[]) {
 	java.io.PrintWriter out;
 	String title;
-	boolean profile;
+	boolean profile = false;
 
 	if (args[0].equals("1")) profile = true;
 
