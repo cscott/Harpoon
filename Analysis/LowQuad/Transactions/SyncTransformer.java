@@ -18,7 +18,7 @@ import java.util.*;
  * atomic transactions.  Works on <code>LowQuadNoSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.8 2000-11-14 19:37:33 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.9 2000-11-15 00:09:00 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -28,6 +28,10 @@ public class SyncTransformer
     protected boolean isValidToken(Token which) {
 	return super.isValidToken(which) || which==WITH_TRANSACTION;
     }
+    /** Cache the <code>java.lang.Class</code> <code>HClass</code>. */
+    private final HClass HCclass;
+    /** Cache the <code>java.lang.reflect.Field</code> <code>HClass</code>. */
+    private final HClass HCfield;
     /** Cache the <code>CommitRecord</code> <code>HClass</code>. */
     private final HClass  HCcommitrec;
     private final HMethod HMcommitrec_new;
@@ -39,10 +43,11 @@ public class SyncTransformer
     /** Our new methods of java.lang.Object */
     private final HMethod HMrVersion;
     private final HMethod HMrwVersion;
-    /*
     private final HMethod HMrCommitted;
     private final HMethod HMwCommitted;
-    */
+    private final HMethod HMmkVersion;
+    private final HMethod HMwriteFlag;
+    private final HMethod HMwriteFlagA;
     /* flag value */
     private final HField HFflagvalue;
 
@@ -51,7 +56,9 @@ public class SyncTransformer
         super(harpoon.IR.Quads.QuadSSA.codeFactory(hcf), ch, false);
 	// and output is NoSSA
 	Util.assert(codeFactory().getCodeName()
-		    .equals(harpoon.IR.Quads.QuadNoSSA.codename));
+		    .equals(harpoon.IR.Quads.QuadRSSx.codename));
+	this.HCclass = l.forName("java.lang.Class");
+	this.HCfield = l.forName("java.lang.reflect.Field");
 	String pkg = "harpoon.Runtime.Transactions.";
 	this.HCcommitrec = l.forName(pkg+"CommitRecord");
 	this.HMcommitrec_new =
@@ -68,10 +75,28 @@ public class SyncTransformer
 	HClassMutator objM = HCobj.getMutator();
 	this.HMrVersion = objM.addDeclaredMethod
 	    ("getReadableVersion", new HClass[] { HCcommitrec }, HCobj);
-	HMrVersion.getMutator().addModifiers(Modifier.FINAL);
+	HMrVersion.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
 	this.HMrwVersion = objM.addDeclaredMethod
 	    ("getReadWritableVersion", new HClass[] { HCcommitrec }, HCobj);
-	HMrwVersion.getMutator().addModifiers(Modifier.FINAL);
+	HMrwVersion.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
+	this.HMrCommitted = objM.addDeclaredMethod
+	    ("getReadCommittedVersion", new HClass[0], HCobj);
+	HMrCommitted.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
+	this.HMwCommitted = objM.addDeclaredMethod
+	    ("getWriteCommittedVersion", new HClass[0], HCobj);
+	HMwCommitted.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
+	this.HMmkVersion = objM.addDeclaredMethod
+	    ("makeCommittedVersion", new HClass[0], HCobj);
+	HMmkVersion.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
+	this.HMwriteFlag = objM.addDeclaredMethod
+	    ("writeFieldFlag", new HClass[] { HCfield, HCclass },
+	    HClass.Void);
+	HMwriteFlag.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
+	this.HMwriteFlagA = objM.addDeclaredMethod
+	    ("writeArrayElementFlag", new HClass[] { HClass.Int, HCclass },
+	    HClass.Void);
+	HMwriteFlagA.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
+	
 	// create a static final field in java.lang.Object that will hold
 	// our 'unique' value.
 	this.HFflagvalue = objM.addDeclaredField("flagValue", HCobj);
@@ -96,6 +121,10 @@ public class SyncTransformer
 	    MyRSSx r = new MyRSSx(m);
 	    return r.cloneHelper(c, r);
 	}
+    }
+    protected String mutateCodeName(String codeName) {
+	Util.assert(codeName.equals(QuadSSA.codename));
+	return MyRSSx.codename;
     }
     protected HCode mutateHCode(HCodeAndMaps input, Token which) {
 	HCode hc = input.hcode();
@@ -137,8 +166,8 @@ public class SyncTransformer
 	final Temp retex;
 	final Temp currtrans; // current transaction.
 	private final Map fixupmap = new HashMap();
-	final CheckOracle co=null;//XXX
-	final TempSplitter ts=null;//XXX
+	final CheckOracle co=new SimpleCheckOracle(); //XXX
+	final TempSplitter ts=new TempSplitter();
 	// mutable.
 	FOOTER footer; // we attach new stuff to the footer.
 	ListList handlers = null; // points to current abort handler
@@ -299,56 +328,123 @@ public class SyncTransformer
 	    handlers = handlers.tail;
 	    if (handlers==null) q1.remove(); // unneccessary.
 	}
+	Edge readNonTrans(Edge out, HCodeElement src,
+			  Temp dst, Temp objectref, HClass type) {
+	    Temp t0 = new Temp(tf, "readnt");
+	    out = addAt(out, makeFlagConst(qf, src, t0, type));
+	    out = addAt(out, new OPER(qf, src, cmpop(type), t0,
+				      new Temp[]{ t0, dst }));
+	    Quad q0 = new CJMP(qf, src, t0, new Temp[0]);
+	    out = addAt(out, q0);
+	    Quad q1 = new PHI(qf, src, new Temp[0], 2);
+	    out = addAt(out, q1);
+	    Quad q2 = new CALL(qf, src, HMrCommitted,
+			       new Temp[] { objectref },
+			       ts.versioned(objectref), retex,
+			       false, false, new Temp[0]);
+	    Quad q3 = new THROW(qf, src, retex);
+	    Quad.addEdge(q0, 1, q2, 0);
+	    Quad.addEdge(q2, 0, q1, 1);
+	    Quad.addEdge(q2, 1, q3, 0);
+	    footer = footer.attach(q3, 0); // add q4 to FOOTER
+	    // no check for abort because we are non-trans!
+	    return q2.nextEdge(0);// new READ goes on this edge.
+	}
 	public void visit(AGET q) {
 	    addChecks(q);
 	    if (currtrans==null) { // non-transactional read
-		// XXX: write me
+		Edge e = readNonTrans(q.nextEdge(0), q,
+				      q.dst(), q.objectref(), q.type());
+		addAt(e, new AGET(qf, q, q.dst(),
+				  ts.versioned(q.objectref()),
+				  q.index(), q.type()));
 	    } else { // transactional read
 		Quad.replace(q, new AGET(qf, q, q.dst(),
 					ts.versioned(q.objectref()),
 					 q.index(), q.type()));
 	    }
 	}
-	public void visit(ASET q) {
-	    addChecks(q);
-	    if (currtrans==null) { // non-transactional read
-		// XXX: write me
-	    } else { // transactional read
-		Quad.replace(q, new ASET(qf, q, ts.versioned(q.objectref()),
-					 q.index(), q.src(),
-					 q.type()));
-	    }
-	}
 	public void visit(GET q) {
 	    addChecks(q);
+	    if (q.isStatic()) { Util.assert(currtrans==null); return; }
 	    if (currtrans==null) { // non-transactional read
-		// XXX: write me
+		Edge e = readNonTrans(q.nextEdge(0), q,
+				      q.dst(), q.objectref(),
+				      q.field().getType());
+		addAt(e, new GET(qf, q, q.dst(), q.field(),
+				 ts.versioned(q.objectref())));
 	    } else { // transactional read
 		Quad.replace(q, new GET(qf, q, q.dst(), q.field(),
 					ts.versioned(q.objectref())));
 	    }
 	}
+	void writeNonTrans(Edge out, HCodeElement src, Temp objectref,
+			   Temp oldval, Temp newval, HClass type) {
+	    Temp t0 = new Temp(tf, "writent");
+	    out = addAt(out, makeFlagConst(qf, src, t0, type));
+	    out = addAt(out, new OPER(qf, src, cmpop(type), oldval,
+				      new Temp[]{ oldval, t0 }));
+	    Quad q0 = new CJMP(qf, src, oldval, new Temp[0]);
+	    out = addAt(out, q0);
+	    out = addAt(out, new OPER(qf, src, cmpop(type), oldval,
+				      new Temp[]{ newval, t0 }));
+	    Quad q1 = new CJMP(qf, src, oldval, new Temp[0]);
+	    out = addAt(out, q1);
+	    out = addAt(out, new MOVE(qf, src, ts.versioned(objectref),
+				      objectref));
+	    Quad q2 = new PHI(qf, src, new Temp[0], 3);
+	    out = addAt(out, q2);
+	    // now handle exceptional cases:
+	    Quad q3 = new CALL(qf, src, HMwCommitted,
+			       new Temp[] { objectref },
+			       ts.versioned(objectref), retex,
+			       false, false, new Temp[0]);
+	    Quad q4 = new THROW(qf, src, retex);
+	    Quad.addEdge(q0, 1, q3, 0);
+	    Quad.addEdge(q3, 0, q2, 1);
+	    Quad.addEdge(q3, 1, q4, 0);
+	    footer = footer.attach(q4, 0); // add q4 to FOOTER
+	    // no check for abort because we are non-trans!
+	    Quad q5 = new CALL(qf, src, HMmkVersion,
+			       new Temp[] { objectref },
+			       ts.versioned(objectref), retex,
+			       false, false, new Temp[0]);
+	    Quad q6 = new THROW(qf, src, retex);
+	    Quad.addEdge(q1, 1, q5, 0);
+	    Quad.addEdge(q5, 0, q2, 2);
+	    Quad.addEdge(q5, 1, q6, 0);
+	    footer = footer.attach(q6, 0); // add q6 to FOOTER.
+	}
+	public void visit(ASET q) {
+	    addChecks(q);
+	    if (currtrans==null) { // non-transactional write
+		Temp t0 = new Temp(tf, "oldval");
+		Edge in = q.prevEdge(0);
+		in = addAt(in, new AGET(qf, q, t0, q.objectref(),
+					q.index(), q.type()));
+		writeNonTrans(in, q, q.objectref(), t0, q.src(), q.type());
+	    }
+	    // both transactional and non-transactional write.
+	    Quad.replace(q, new ASET(qf, q, ts.versioned(q.objectref()),
+				     q.index(), q.src(),
+				     q.type()));
+	}
 	public void visit(SET q) {
 	    addChecks(q);
-	    if (currtrans==null) { // non-transactional read
-		// XXX: write me
-	    } else { // transactional read
-		Quad.replace(q, new SET(qf, q, q.field(),
-					ts.versioned(q.objectref()),
-					q.src()));
+	    if (q.isStatic()) { Util.assert(currtrans==null); return; }
+	    if (currtrans==null) { // non-transactional write
+		Temp t0 = new Temp(tf, "oldval");
+		Edge in = q.prevEdge(0);
+		in = addAt(in, new GET(qf, q, t0, q.field(), q.objectref()));
+		writeNonTrans(in, q, q.objectref(), t0, q.src(),
+			      q.field().getType());
 	    }
+	    // both transactional and non-transactional write.
+	    Quad.replace(q, new SET(qf, q, q.field(),
+				    ts.versioned(q.objectref()),
+				    q.src()));
 	}
-	/*
-	public void visit(GET q) {
-	    if (currtrans==null) { // non-transactional read
-		Temp x = q.dst(); HClass type = q.type();
-		Temp flag = new Temp(tf);
-		Quad q0 = makeFlagConst(qf, q, flag, type);
-		// XXX: all different types of comparisons! =(
-		//Quad q1 = new POPER(qf, q, LQop.XXX);
-	    }
-	}
-	*/
+
 	void addChecks(Quad q) {
 	    // don't add checks if we're not currently in transaction context.
 	    if (handlers==null) return;
@@ -386,11 +482,24 @@ public class SyncTransformer
 		Quad q1 = makeFlagConst(qf, q, t1, ty);
 		Quad q2 = new OPER(qf, q, cmpop(ty), t1, new Temp[]{t0,t1});
 		Quad q3 = new CJMP(qf, q, t1, new Temp[0]);
+		Quad q4 = new PHI(qf, q, new Temp[0], 2);
 		in = addAt(in, q0);
 		in = addAt(in, q1);
 		in = addAt(in, q2);
 		in = addAt(in, 0, q3, 1);
-		// XXX handle case that field is not already correct.
+		in = addAt(in, q4);
+		// handle case that field is not already correct.
+		Quad q5 = new CONST(qf, q, t0, raf.field, HCfield);
+		Quad q6 = new CONST(qf, q, t1, raf.field.getType(), HCclass);
+		Quad q7 = new CALL(qf, q, HMwriteFlag,
+				   new Temp[] { raf.objref, t0, t1 },
+				   null, retex, false, false, new Temp[0]);
+		Quad q8 = new THROW(qf, q, retex);
+		Quad.addEdges(new Quad[] { q3, q5, q6, q7 });
+		Quad.addEdge(q7, 0, q4, 1);
+		Quad.addEdge(q7, 1, q8, 0);
+		footer.attach(q8, 0);
+		checkForAbort(q7.nextEdge(1), q, retex);
 	    }
 	    // do array index checks where necessary.
 	    for (Iterator it=co.checkArrayElement(q).iterator();it.hasNext();){
@@ -403,12 +512,31 @@ public class SyncTransformer
 		Quad q2 = new OPER(qf, q, cmpop(rit.type), t1,
 				   new Temp[] { t0, t1 } );
 		Quad q3 = new CJMP(qf, q, t1, new Temp[0]);
+		Quad q4 = new PHI(qf, q, new Temp[0], 2);
 		in = addAt(in, q0);
 		in = addAt(in, q1);
 		in = addAt(in, q2);
 		in = addAt(in, 0, q3, 1);
-		// XXX handle case that array element is not already correct.
+		in = addAt(in, q4);
+		// handle case that array element is not already correct.
+		Quad q6 = new CONST(qf, q, t1, rit.type, HCclass);
+		Quad q7 = new CALL(qf, q, HMwriteFlagA,
+				   new Temp[] { rit.objref, rit.index, t1 },
+				   null, retex, false, false, new Temp[0]);
+		Quad q8 = new THROW(qf, q, retex);
+		Quad.addEdges(new Quad[] { q3, q6, q7 });
+		Quad.addEdge(q7, 0, q4, 1);
+		Quad.addEdge(q7, 1, q8, 0);
+		footer.attach(q8, 0);
+		checkForAbort(q7.nextEdge(1), q, retex);
 	    }
+	}
+	// make a non-static equivalent field for static fields.
+	private HField nonstatic(HField hf) {
+	    if (!hf.isStatic()) return hf;
+	    HClass hc = hf.getDeclaringClass();
+	    // XXX: how exactly does this work?
+	    return null;
 	}
 
 	private int cmpop(HClass type) {
