@@ -9,7 +9,7 @@ import harpoon.Temp.Temp;
  * <code>GET</code> represent field access (get) operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.7 1998-08-26 22:01:39 cananian Exp $
+ * @version $Id: GET.java,v 1.8 1998-09-03 06:46:39 cananian Exp $
  */
 
 public class GET extends Quad {
@@ -39,9 +39,9 @@ public class GET extends Quad {
     public Temp[] def() { return new Temp[] { dst }; }
     /** Returns human-readable representation. */
     public String toString() {
-	return "GET " + 
+	return dst.toString() + " = GET " + 
 	    field.getDeclaringClass().getName() + "." +
-	    field.getName() + " of " + objectref + " into " + dst;
+	    field.getName() + " of " + objectref;
     }
     /** Determines whether the GET is of a static field. */
     public boolean isStatic() { 
