@@ -1,6 +1,12 @@
 #!/bin/sh
-name=$2
+# grab flex options from from of command line.
+while [ -n "$3" ]; do
+    opts="$opts $1"
+    shift
+done
+# at this point, there are only two items left on the command line.
 cls=$1
+name=$2
 dir=as$name
 # check java version
 if java -version 2>&1 | grep -q 'version "1.1'; then
@@ -16,7 +22,7 @@ if [ ! -d $dir ]; then
 fi
 # you can set FLEXPATH to assign additional components to the harpoon classpath
 #flexc $cls -o $dir
-java -mx64m -oss2m -Dharpoon.class.path=${FLEXPATH}${FLEXPATH:+:}.:../Benchmarks:Support/Lex.jar:SupportNP/sunthunk.jar:SupportNP/collections.jar:SupportNP/classes.zip $flexc_options harpoon.Main.SAMain -bprecisec -c $cls -o $dir && \
+java -mx64m -oss2m -Dharpoon.class.path=${FLEXPATH}${FLEXPATH:+:}.:../Benchmarks:Support/Lex.jar:SupportNP/sunthunk.jar:SupportNP/collections.jar:SupportNP/classes.zip ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir && \
 if [ -d ../Runtime/include ]; then
     make -C $dir CC="gcc -I../../Runtime/include -g -O9" && \
     mv -f $dir/Java.a ../Runtime/${name}-Java.a && \
