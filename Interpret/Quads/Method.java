@@ -53,7 +53,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code given a static state.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.7 1999-03-02 21:39:09 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.8 1999-06-21 05:06:57 cananian Exp $
  */
 public final class Method extends HCLibrary {
 
@@ -442,7 +442,10 @@ public final class Method extends HCLibrary {
 	    Ref of = (Ref) sf.get(src);
 	    if (of==null || of.type.isInstanceOf(cls))
 		return; // no problems.
-	    ObjectRef obj = ss.makeThrowable(HCclasscastE, of.type.toString());
+	    String msg = // of.type.toString(); // for orthodoxy.
+		"[is: "+of.type.toString()+"] "+ // for debugging
+		"[supposed to be: "+cls.toString()+"]"; // for debugging
+	    ObjectRef obj = ss.makeThrowable(HCclasscastE, msg);
 	    throw new InterpretedThrowable(obj, ss);
 	}
 	void componentCheck(Temp array, Temp src) throws InterpretedThrowable {
