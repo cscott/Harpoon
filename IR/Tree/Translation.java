@@ -15,28 +15,44 @@ import harpoon.Temp.Temp;
  * this sort of conditional context-sensitive expression resolution.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translation.java,v 1.1.4.1 1999-10-12 20:04:58 cananian Exp $
+ * @version $Id: Translation.java,v 1.1.4.2 2000-01-11 00:44:23 pnkfelix Exp $
  */
 public abstract class Translation {
     /** The <code>Translation.Exp</code> class represents an expression
      *  that might be used in several different ways: as a value,
      *  as a branch condition, or as code to be executed for side-effects
      *  only.
+     *
+     *  For each instance of this class, only one of these methods
+     *  should be called, and it should only be called once.
      */
     public static abstract class Exp {
-	public abstract harpoon.IR.Tree.Exp unEx(TreeFactory tf);
-	public abstract harpoon.IR.Tree.Stm unNx(TreeFactory tf);
-	public abstract harpoon.IR.Tree.Stm unCx(TreeFactory tf,
-						 Label iftrue, Label iffalse);
+	public final harpoon.IR.Tree.Exp unEx(TreeFactory tf) {
+	    return unExImpl(tf);
+	}
+	protected abstract harpoon.IR.Tree.Exp unExImpl(TreeFactory tf);
+	
+	public final harpoon.IR.Tree.Stm unNx(TreeFactory tf) {
+	    return unNxImpl(tf);
+	}
+	protected abstract harpoon.IR.Tree.Stm unNxImpl(TreeFactory tf);
+	public final harpoon.IR.Tree.Stm unCx(TreeFactory tf,
+					      Label iftrue, 
+					      Label iffalse) {
+	    return unCxImpl(tf, iftrue, iffalse);
+	}
+	protected abstract harpoon.IR.Tree.Stm unCxImpl(TreeFactory tf,
+							Label iftrue, 
+							Label iffalse);
     }
     public static class Ex extends Exp {
 	final harpoon.IR.Tree.Exp exp;
 	public Ex(harpoon.IR.Tree.Exp exp) { this.exp = exp; }
-	public harpoon.IR.Tree.Exp unEx(TreeFactory tf) { return exp; }
-	public harpoon.IR.Tree.Stm unNx(TreeFactory tf) {
+	protected harpoon.IR.Tree.Exp unExImpl(TreeFactory tf) { return exp; }
+	protected harpoon.IR.Tree.Stm unNxImpl(TreeFactory tf) {
 	    return new EXP(tf, exp, exp);
 	}
-	public harpoon.IR.Tree.Stm unCx(TreeFactory tf,
+	protected harpoon.IR.Tree.Stm unCxImpl(TreeFactory tf,
 					Label iftrue, Label iffalse) {
 	    // XXX: special case CONST 0 and CONST 1 ?
 	    return new CJUMP(tf, exp, exp, iftrue, iffalse);
@@ -45,17 +61,17 @@ public abstract class Translation {
     public static class Nx extends Exp {
 	final harpoon.IR.Tree.Stm stm;
 	public Nx(harpoon.IR.Tree.Stm stm) { this.stm = stm; }
-	public harpoon.IR.Tree.Exp unEx(TreeFactory tf) {
+	protected harpoon.IR.Tree.Exp unExImpl(TreeFactory tf) {
 	    throw new Error("Nx cannot be converted to Ex");
 	}
-	public harpoon.IR.Tree.Stm unNx(TreeFactory tf) { return stm; }
-	public harpoon.IR.Tree.Stm unCx(TreeFactory tf,
+	protected harpoon.IR.Tree.Stm unNxImpl(TreeFactory tf) { return stm; }
+	protected harpoon.IR.Tree.Stm unCxImpl(TreeFactory tf,
 					Label iftrue, Label iffalse) {
 	    throw new Error("Nx cannot be converted to Cx");
 	}
     }
     public static abstract class Cx extends Exp {
-	public harpoon.IR.Tree.Exp unEx(TreeFactory tf) {
+	protected harpoon.IR.Tree.Exp unExImpl(TreeFactory tf) {
 	    Temp  Tr = new Temp(tf.tempFactory(), "cx");
 	    Label Lt = new Label();
 	    Label Lf = new Label();
@@ -81,7 +97,7 @@ public abstract class Translation {
 		     new LABEL(tf, s, Lt, false))))),
 		 new TEMP(tf, s, Type.INT, Tr));
 	}
-	public harpoon.IR.Tree.Stm unNx(TreeFactory tf) {
+	protected harpoon.IR.Tree.Stm unNxImpl(TreeFactory tf) {
 	    Label l = new Label();
 	    Stm s = unCx(tf, l, l);
 	    return new SEQ(tf, s, s, new LABEL(tf, s, l, false));

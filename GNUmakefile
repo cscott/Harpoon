@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.75 1999-11-30 05:24:25 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.76 2000-01-11 00:44:20 pnkfelix Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -307,18 +307,19 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	  exit 1;\
 	fi
 # okay, safe to make doc.
-	make doc-clean
-	mkdir doc
+	mkdir doctemp
 	$(RM) -rf doc-link
 	mkdir doc-link
 	cd doc-link; ln -s .. harpoon ; ln -s .. silicon ; ln -s ../Contrib gnu
-	-cd doc-link; ${JDOC} ${JDOCFLAGS} -d ../doc \
+	-cd doc-link; ${JDOC} ${JDOCFLAGS} -d ../doctemp \
 		$(subst harpoon.Contrib,gnu, \
 		$(foreach dir, $(filter-out Test, \
 			  $(filter-out JavaChip,$(PKGSWITHJAVASRC))), \
 			  harpoon.$(subst /,.,$(dir))) silicon.JavaChip) | \
 		grep -v "^@see warning:"
 	$(RM) -r doc-link
+	make doc-clean
+	mv doctemp doc
 	$(MUNGE) doc | \
 	  sed -e 's/<\([a-z]\+\)@\([a-z.]\+\).edu>/\&lt;\1@\2.edu\&gt;/g' \
 	      -e 's/<dd> "The,/<dd> /g' -e 's/<body>/<body bgcolor=white>/' | \

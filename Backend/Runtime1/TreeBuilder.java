@@ -56,7 +56,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.13 2000-01-10 05:08:36 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.14 2000-01-11 00:44:23 pnkfelix Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -324,7 +324,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	    final Label Ltst = new Label();
 
 	    return new Translation.Cx() {
-		public Stm unCx(TreeFactory xxx, Label iftrue, Label iffalse) {
+		public Stm unCxImpl(TreeFactory xxx, Label iftrue, Label iffalse) {
 		    // initialize Til.
 		    Stm s0 = new MOVE
 			(tf, source,
