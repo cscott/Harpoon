@@ -42,7 +42,7 @@ import java.util.Set;
  * <code>AllocationHoisting</code>
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: AllocationHoisting.java,v 1.1.2.3 2001-11-10 20:43:21 kkz Exp $
+ * @version $Id: AllocationHoisting.java,v 1.1.2.4 2001-11-12 02:55:31 kkz Exp $
  */
 public class AllocationHoisting extends 
     harpoon.Analysis.Transformation.MethodSplitter {
@@ -64,12 +64,12 @@ public class AllocationHoisting extends
      *  @param ch A class hierarchy for the application.
      */
     public AllocationHoisting(HCodeFactory parent, ClassHierarchy ch, 
-			      Linker l, String rName) {
+			      Linker l, String rName, int optLevel) {
         super(parent, ch, true/*doesn't matter*/);
 	this.parent = parent;
 	this.ch = ch;
 	this.linker = l;
-	this.mraf = new MRAFactory(ch, parent, linker, rName);
+	this.mraf = new MRAFactory(ch, parent, linker, rName, optLevel);
 	this.iMap = new HashMap();
 	this.iMap2 = new HashMap();
 	System.out.print("Setting up iMap...");
@@ -276,10 +276,12 @@ public class AllocationHoisting extends
      *               not allocate Java-visible objects
      */
     private void setupiMap(String rName) {
-	//MRAFactory mraf = new MRAFactory(ch, parent, linker, rName);
-	// consider only safe initializers
-	for (Iterator it = mraf.safeInitializers.iterator(); it.hasNext(); ) {
+	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
+	    // only consifer methods where the receiver
+	    // object is always the most recently allocated 
+	    // object entering the method
+	    if (!mraf.isSafeMethod(hm)) continue;
 	    Code c = (Code) parent.convert(hm);
 	    // start with the beginning of the executable code
 	    Quad q = ((HEADER)c.getRootElement()).method().next(0);
@@ -310,8 +312,6 @@ public class AllocationHoisting extends
 		    Util.assert((Quad)t.proj(2) != null);  
 		    Quad alloc = (Quad) t.proj(2);
 		    if (alloc.kind() == QuadKind.NEW) {
-			//System.out.println("Optimizing "+hm);
-			//System.out.println("  @ "+q);
 			iMap.put(hm, new Tuple(new Object[] { alloc }));
 			// done with this initializer
 			break;
@@ -333,11 +333,9 @@ public class AllocationHoisting extends
 			    }
 			}
 			if (valid) {
-			    //System.out.println("Optimizing "+hm);
-			    //System.out.println("  @ "+q);
 			    iMap.put(hm, new Tuple(new Object[] 
 						   { alloc, consts }));
-			    // done with this initializer
+			    // done w/ this method
 			    break;
 			}
 		    }
@@ -351,7 +349,7 @@ public class AllocationHoisting extends
      */
     private boolean optimizable(Code c) {
 	// only worry about safe initializers
-	if (!mraf.isSafeInitializer(c.getMethod())) return false;
+	if (!mraf.isSafeMethod(c.getMethod())) return false;
 	// check for SETs/ASETs that will benefit
 	MRA mra = mraf.mra(c);
 	for (Iterator it = c.getElementsI(); it.hasNext(); ) {

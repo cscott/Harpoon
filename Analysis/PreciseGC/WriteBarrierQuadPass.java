@@ -50,7 +50,7 @@ import java.util.Set;
  * about the number of times the write-barrier is called.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierQuadPass.java,v 1.1.2.6 2001-11-10 20:43:21 kkz Exp $
+ * @version $Id: WriteBarrierQuadPass.java,v 1.1.2.7 2001-11-12 02:55:31 kkz Exp $
  */
 public class WriteBarrierQuadPass extends 
     harpoon.Analysis.Transformation.MethodMutator {
@@ -71,7 +71,7 @@ public class WriteBarrierQuadPass extends
 				HCodeFactory parent, 
 				Linker linker,
 				String resourceName,
-				boolean optimize) {
+				int optLevel) {
 	super(parent);
 	this.ch = ch;
 	this.JLT = linker.forName("java.lang.Throwable");
@@ -82,12 +82,12 @@ public class WriteBarrierQuadPass extends
 				    { JLO, HClass.Int, JLO, HClass.Int });
 	this.fieldSC = WB.getMethod("fsc", new HClass[] 
 				    { JLO, JLRF, JLO, HClass.Int });
-	this.optimize = optimize;
+	this.optimize = (optLevel != 0);
+	System.out.print("MRA analysis time = ");
 	long start_time = System.currentTimeMillis();
-	this.mraf = optimize ? 
-	    new MRAFactory(ch, parent, linker, resourceName): null;
-	System.out.println("MRA analysis time = "+
-			   (System.currentTimeMillis()-start_time));
+	this.mraf = optimize ?
+	    new MRAFactory(ch, parent, linker, resourceName, optLevel): null;
+	System.out.println(System.currentTimeMillis()-start_time);
     }
     
     protected HCode mutateHCode(HCodeAndMaps input) {

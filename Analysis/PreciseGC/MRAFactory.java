@@ -64,16 +64,15 @@ import java.util.Set;
  * <code>MRAFactory</code> generates <code>MRA</code>s.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: MRAFactory.java,v 1.1.2.4 2001-11-10 20:43:21 kkz Exp $
+ * @version $Id: MRAFactory.java,v 1.1.2.5 2001-11-12 02:55:31 kkz Exp $
  */
 public class MRAFactory {
     
     private final ClassHierarchy ch;
     private final CallGraph cg;
     private final HCodeFactory hcf;
-    //private final Map method2class;
-    private final Map safeMethods;
-    public Set safeInitializers;
+    private final Map method2types;
+    private Set safeMethods;
     private final CFGrapher cfger;
     private final UseDefer ud;
     private final Map cache;
@@ -87,20 +86,21 @@ public class MRAFactory {
      *  a <code>CachingCodeFactory</code>.
      */
     public MRAFactory(ClassHierarchy ch, HCodeFactory hcf, Linker l, 
-		      String rName) {
+		      String rName, int optLevel) {
 	this.ch = ch;
 	this.hcf = hcf;
 	this.cg = new CallGraphImpl(ch, hcf);
 	this.cfger = CFGrapher.DEFAULT;
 	this.ud = UseDefer.DEFAULT;
 	this.cache = new HashMap();
-	//this.safeMethods = new HashMap();
-	this.safeMethods = safeMethods(l, rName);
-	// initialize to empty so findSafeInitializers
-	// can run a first-approximation MRA
-	this.safeInitializers = Collections.EMPTY_SET;
-	// calculate the real set of safe initializers
-	findSafeInitializers();
+	this.method2types = 
+	    (optLevel == 2 || optLevel == 3)? dynamicDispatchM2TMap(l, rName): 
+	    (optLevel == 4 || optLevel == 5)? createMethod2TypesMap(l, rName):
+	    new HashMap();
+	if (optLevel == 2 || optLevel == 4 || optLevel == 6)
+	    findSafeMethods();
+	else
+	    safeMethods = Collections.EMPTY_SET;
     }
 
     /** Returns an <code>MRA</code>. */
@@ -124,23 +124,19 @@ public class MRAFactory {
 	Util.assert((o != null), "Failed to remove "+c.getMethod());
     }
 
-    /** Checks whether an initializer is "safe" (i.e. whether
-     *  all calls to the initializer occurs when the object
-     *  being initialized is the most recently allocated object.)
-     */
-    public boolean isSafeInitializer(HMethod hm) {
-	return safeInitializers.contains(hm);
-    }
-
-    /** Checks whether an <code>HMethod</code> is "safe" (i.e. 
-     *  whether it may allocate, either directly or indirectly
-     *  through calls, any Java-visible objects other than
-     *  those whose <code>HClass</code> is included in the
-     *  <code>Set</code> returned by <code>safetyExceptions</code>
-     *  for the given <code>HMethod</code>.
+    /** Checks whether a method is "safe" (i.e. whether all
+     *  calls to a method occurs when the receiver object is
+     *  the most recently allocated object.)
      */
     public boolean isSafeMethod(HMethod hm) {
-	return safeMethods.containsKey(hm);
+	return safeMethods.contains(hm);
+    }
+
+    /** Checks whether the types that the <code>HMethod</code> 
+     *  may allocate are known.
+     */
+    public boolean allocatedTypesKnown(HMethod hm) {
+	return method2types.containsKey(hm);
     }
 
     /** Returns an unmodifiable <code>Set</code> of 
@@ -149,10 +145,100 @@ public class MRAFactory {
      *  that the given <code>HMethod</code> may allocate,
      *  either directly or through calls, objects of that type.
      */ 
-    public Set safetyExceptions(HMethod hm) {
-	return (Set) safeMethods.get(hm);
+    public Set getAllocatedTypes(HMethod hm) {
+	return (Set) method2types.get(hm);
     }
 
+    /** Creates a <code>Map</code> of <code>HMethod</code>s
+     *  to the <code>Set</code> of <code>Classes</code>
+     *  whose objects may be allocated by the method either
+     *  directly or indirectly through calling other methods.
+     *  Handles dynamically-dispatched calls by conservative
+     *  approximation.
+     */
+    private Map dynamicDispatchM2TMap(Linker linker, String resourceName) {
+	// start with an empty map
+	Map safe = new HashMap();
+	// add methods unless we have no information about them
+	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    Code c = (Code) hcf.convert(hm);
+	    if (c != null) {
+		Set cls = new HashSet();
+		safe.put(hm, cls);
+		for (Iterator stms = c.getElementsI(); stms.hasNext(); ) {
+		    Quad q = (Quad) stms.next();
+		    int kind = q.kind();
+		    if (kind == QuadKind.ANEW) {
+			cls.add(((ANEW)q).hclass());
+		    } else if (kind == QuadKind.NEW) {
+			cls.add(((NEW)q).hclass());
+		    }
+		}
+	    }
+	}
+	// add known native methods
+	for (Iterator it = parseResource(linker, resourceName).iterator();
+	     it.hasNext(); ) {
+	    safe.put((HMethod)it.next(), Collections.EMPTY_SET);
+	}
+	// save results
+	safe = Collections.unmodifiableMap(safe);
+	// start with the map so far
+	Map safer = new HashMap(safe);
+	// iterate until fixed point to remove any that
+	// are unsafe by calling unsafe methods
+	while(true) {
+	    boolean changed = false;
+	    boolean done = false;
+	    for (Iterator it = safe.keySet().iterator(); it.hasNext(); ) {
+		HMethod hm = (HMethod) it.next();
+		// get all the call sites in hm
+		CALL[] calls = cg.getCallSites(hm);
+		for (int i = 0; i < calls.length; i++) {
+		    // there are multiple possible callees here
+		    HMethod[] callees = cg.calls(hm, calls[i]);
+		    for(int j = 0; j < callees.length && !done; j++) {
+			HMethod callee = callees[j];
+			if (!safe.containsKey(callee)) {
+			    // if the method being called isn't in the 
+			    // safe set, then the caller is also unsafe
+			    safer.remove(hm);
+			    changed = true;
+			    done = true; // done with this method
+			    break;
+			} else {
+			    // if the method being called is safe, then 
+			    // add its classes to the set of known classes 
+			    // being allocated
+			    if (((Set)safer.get(hm)).addAll
+				((Set)safe.get(callee)))
+				changed = true;
+			}
+		    }
+		}
+	    }
+	    if (changed) {
+		// should be monotonic
+		Util.assert(safer.size() < safe.size());
+		safe = Collections.unmodifiableMap(safer);
+		safer = new HashMap(safe);
+	    } else {
+		// reached fix point
+		Util.assert(safer.size() == safe.size());
+		break;
+	    }
+	}
+	// get a safe view of the keys
+	Set keys = Collections.unmodifiableSet(new HashSet(safer.keySet()));
+	// save results
+	for (Iterator it = keys.iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    safer.put(hm, Collections.unmodifiableSet((Set)safer.get(hm)));
+	}
+	return Collections.unmodifiableMap(safer);
+    }
+    
     /** Creates a <code>Map</code> of <code>HMethod</code>s
      *  to the <code>Set</code> of <code>Classes</code>
      *  whose objects may be allocated by the method either
@@ -163,7 +249,7 @@ public class MRAFactory {
      *  to the presence of virtually-dispatched calls will
      *  be absent from the map (i.e. map to null).
      */
-    private Map safeMethods(Linker linker, String resourceName) {
+    private Map createMethod2TypesMap(Linker linker, String resourceName) {
 	// start with an empty map
 	Map safe = new HashMap();
 	// add methods unless we know they are unsafe because of 
@@ -243,32 +329,29 @@ public class MRAFactory {
 	return Collections.unmodifiableMap(safer);
     }
     
-    /** Calculates the <code>Set</code> of safe initializers;
-     *  a safe initializer is one where the object being
-     *  initialized is the most recently allocated object for
-     *  all calls in the program.
+    /** Calculates the <code>Set</code> of safe methods;
+     *  a safe method is one where the receiver object 
+     *  is the most recently allocated object for all 
+     *  calls of that method in the program.
      */
-    private void findSafeInitializers() {
-	// start with the set of initializers
-	Set initializers = new HashSet();
+    private void findSafeMethods() {
+	// start with the set of all analyzable methods
+	Set methods = new HashSet();
 	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    if (!hm.isStatic() && !hm.isInterfaceMethod()) {
 		Code c = (Code) hcf.convert(hm);
 		if (c != null)
-		    initializers.add(hm);
+		    methods.add(hm);
 	    }
-	    //if (hm.getName().indexOf("<init>") != -1)
-		//initializers.add(hm);
-	    //((Code)ccf.convert(hm)).print(new java.io.PrintWriter(System.out), null);
 	}
-	// save results
-	initializers = Collections.unmodifiableSet(initializers);
+	// assume that they are all safe
+	safeMethods = Collections.unmodifiableSet(methods);
 	// Start with the set of initializers and remove 
 	// any that get called when the receiver is not 
 	// mra. Iterate until a fixed-point is reached.
 	while (true) {
-	    Set safe = new HashSet(initializers);
+	    Set safe = new HashSet(safeMethods);
 	    for (Iterator it = ch.callableMethods().iterator(); 
 		 it.hasNext(); ) {
 		HMethod hm = (HMethod) it.next();
@@ -285,13 +368,22 @@ public class MRAFactory {
 			    Map m = (Map) mra_before.proj(0);
 			    Set s = (Set) mra_before.proj(1);
 			    if (!m.containsKey(call.params(0)) || 
-				!s.isEmpty() ||	
-				(call.isVirtual() && 
-				 cg.calls(hm, call).length != 1)) {
-				// remove if the receiver is not mra
-				// or there are exceptions, or if
-				// dynamic dispatch is possible
-				safe.remove(call.method());
+				!s.isEmpty()) {
+				// if the receiver is not the MRA
+				// object, or if there are exceptions,
+				// then the called method is not safe
+				if (call.isVirtual()) {
+				    // if the call is virtual, none
+				    // of the other methods callable
+				    // at this site are safe, either
+				    HMethod[] cms = cg.calls(hm, call);
+				    for(int j = 0; j < cms.length; j++)
+					safe.remove(cms[j]);
+				} else {
+				    // if the call is not virtual, the
+				    // exact called method is removed
+				    safe.remove(call.method());
+				}
 			    }
 			}
 		    }
@@ -299,25 +391,23 @@ public class MRAFactory {
 	    }
 	    // save results
 	    safe = Collections.unmodifiableSet(safe);
-	    // newly-recognized safe initializers should be 
-	    // re-analyzed for more precise mra results
-	    for (Iterator it = safe.iterator(); it.hasNext(); ) {
+	    // newly-removed safe initializers must be re-analyzed
+	    for (Iterator it = safeMethods.iterator(); it.hasNext(); ) {
 		HMethod hm = (HMethod) it.next();
-		if (!safeInitializers.contains(hm)) {
+		if (!safe.contains(hm)) {
 		    Code c = (Code) hcf.convert(hm);
 		    Util.assert(c != null);
 		    clear(c);
 		}
 	    }
-	    if (safeInitializers.size() == safe.size()) {
+	    if (safeMethods.size() == safe.size()) {
 		// reached fix-point
-		safeInitializers = safe;
+		safeMethods = safe;
 		break;
 	    } else {
-		// continue
-		Util.assert(safeInitializers == Collections.EMPTY_SET ||
-			    safeInitializers.size() < safe.size());
-		safeInitializers = safe;
+		// continue, size of set must be decreasing
+		Util.assert(safeMethods.size() > safe.size());
+		safeMethods = safe;
 	    }
 	}
     }
@@ -327,7 +417,7 @@ public class MRAFactory {
 
 	private boolean DEBUG = false;
 	private final Code code;
-	private final boolean isSafeInitializer;
+	private final boolean isSafeMethod;
 	private final BasicBlock.Factory bbf;
 	private final Map bb2pre;
 	private Map bb2post;
@@ -338,7 +428,7 @@ public class MRAFactory {
 	 */
 	private MRAImpl(Code c) {
 	    this.code = c;
-	    this.isSafeInitializer = isSafeInitializer(code.getMethod());
+	    this.isSafeMethod = isSafeMethod(code.getMethod());
 	    this.bbf = new BasicBlock.Factory(code, cfger);
 	    this.bb2pre = new HashMap();
 	    this.bb2post = new HashMap();
@@ -647,7 +737,7 @@ public class MRAFactory {
 	    if (kind == QuadKind.ANEW || 
 		kind == QuadKind.NEW) {
 		boolean succeeding = false;
-		if (isSafeInitializer) {
+		if (isSafeMethod) {
 		    // check if the Temp we def is succeeding the
 		    // receiver as the most recently allocated object
 		    succeeding = true;
@@ -678,8 +768,8 @@ public class MRAFactory {
 		// the "sigma" part of the call is
 		// handled as part of the control flow
 		CALL call = (CALL) q;
-		if (isSafeMethod(call.method())) {
-		    Set exceptions = (Set) safetyExceptions(call.method());
+		if (allocatedTypesKnown(call.method())) {
+		    Set exceptions = (Set) getAllocatedTypes(call.method());
 		    Util.assert(exceptions != null);
 		    // need to add exceptions
 		    except.addAll(exceptions);
@@ -717,7 +807,7 @@ public class MRAFactory {
 		}
 	    } else if (kind == QuadKind.METHOD) {
 		Util.assert(mra.isEmpty());
-		if (isSafeInitializer) {
+		if (isSafeMethod) {
 		    Temp rcvr = ((METHOD) q).params(0);
 		    mra.put(rcvr, MRA.MRAToken.RCVR);
 		    receiver.add(rcvr);
