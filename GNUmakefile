@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.82 2000-07-21 20:37:56 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.83 2000-07-21 22:56:27 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -33,12 +33,13 @@ JDOCFLAGS += \
 	then echo -link $(JDKDOCLINK) ; fi)
 
 SUPPORT := Support/Lex.jar Support/CUP.jar Support/jasmin.jar \
-	   Support/ref.jar Support/collections.jar
+	   $(wildcard SupportNP/ref.jar) $(wildcard SupportNP/collections.jar)
+SUPPORTP := $(filter-out SupportNP/%,$(SUPPORT))
 # filter out collections.jar if we don't need it.
 ifeq (0, ${MAKELEVEL})
 SUPPORTC:= $(filter-out \
    $(shell chmod u+x bin/test-collections;\
-           if bin/test-collections; then echo Support/collections.jar; fi),\
+           if bin/test-collections; then echo SupportNP/collections.jar; fi),\
    $(SUPPORT))
 CLASSPATH:=$(subst $(space),:,$(addprefix $(CURDIR)/,$(SUPPORTC))):$(CLASSPATH)
 CLASSPATH:=.:$(CLASSPATH)
@@ -199,10 +200,10 @@ Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
 	@echo done.
 	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
-jar:	Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORT)
+jar:	Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORTP)
 jar-install: jar
-	chmod a+r Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORT)
-	$(SCP) Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORT) \
+	chmod a+r Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORTP)
+	$(SCP) Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORTP) \
 		$(INSTALLMACHINE):$(INSTALLDIR)
 
 VERSIONS: $(TARSOURCE) # collect all the RCS version ID tags.
@@ -259,8 +260,8 @@ Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
 	xvcg -psoutput $@ -paper 8x11 -color $(VCG_OPT) $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template $(SCRIPTS) mark-executable
-	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template $(SCRIPTS)
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORTP) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template $(SCRIPTS) mark-executable
+	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORTP) $(PROPERTIES) $(PKGDESC) Support/NullCodeGen.template $(SCRIPTS)
 	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
 tar:	harpoon.tgz harpoon.tgz.TIMESTAMP
