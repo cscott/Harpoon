@@ -1155,36 +1155,35 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
   }
 
   void potengOuterLoop(final int first, final int num){
-    final ensemble en = this;
-    (new Runnable() { 
-	    public void run() { 
-		int i;
-		for(i = 0; i < num; i++) {
-		    en.potengInnerLoop(i);
-		}
+      final ensemble en = this;
+      water.run(new Runnable() { 
+	  public void run() { 
+	    int i;
+	    for(i = 0; i < num; i++) {
+	      en.potengInnerLoop(i);
 	    }
-	}).run();
+	  }
+	});
   }
 
   void potengOuterSplit(final int first, final int num) {
     final ensemble en = this;
-    (new Runnable() { 
-	    public void run() { 
-		potengThread t[] = new potengThread[num];
-		for (int i = 0; i < num; i++) { 
-		    // Wes Beebee: this thread goes in its own region
-		    t[i] = new potengThread(en, first+i);
-		    t[i].start();
-		}
-		for (int i = 0; i < num; i++) { 
-		    try { 
-			t[i].join(); 
-		    } catch (java.lang.InterruptedException e) {
-			System.err.print("InterruptedException in potengOuterSplit\n");
-		    }
-		}
+    water.run(new Runnable() { 
+	public void run() { 
+	  potengThread t[] = new potengThread[num];
+	  for (int i = 0; i < num; i++) { 
+	    t[i] = new potengThread(en, first+i);
+          t[i].start();
+	  }
+	  for (int i = 0; i < num; i++) { 
+	    try { 
+	      t[i].join(); 
+	    } catch (java.lang.InterruptedException e) {
+	      System.err.print("InterruptedException in potengOuterSplit\n");
 	    }
-	}).run();
+	  }
+	}
+      });
   }
 
   void potengOuterDispatch() {
@@ -1690,35 +1689,34 @@ void storeData(int dest){
 
   void interfOuterLoop(final int first, final int num){
     final ensemble en=this;
-    (new Runnable() { 
-	    public void run() { 
-		int i;
-		for(i = 0; i < num; i++) {
-		    en.interfInnerLoop(i);
-		}
-	    }
-	}).run();
+    water.run(new Runnable() { 
+	public void run() { 
+	  int i;
+	  for(i = 0; i < num; i++) {
+	    en.interfInnerLoop(i);
+	  }
+	}
+      });
   }
 
   void interfOuterSplit(final int first, final int num) {
     final ensemble en=this;
-    (new Runnable() { 
-	    public void run() { 
-		interfThread t[] = new interfThread[num];
-		for (int i = 0; i < num; i++) {
-		    // Wes Beebee: this thread goes in its own region
-		    t[i] = new interfThread(en, first+i);
-		    t[i].start();
-		}
-		for (int i = 0; i < num; i++) {
-		    try {
-			t[i].join();
-		    } catch (java.lang.InterruptedException e) {
-			System.err.print("InterruptedException in interfOuterSplit\n");
-		    }
-		}
+    water.run(new Runnable() { 
+	public void run() { 
+	  interfThread t[] = new interfThread[num];
+	  for (int i = 0; i < num; i++) {
+	    t[i] = new interfThread(en, first+i);
+	    t[i].start();
+	  }
+	  for (int i = 0; i < num; i++) {
+	    try {
+	      t[i].join();
+	    } catch (java.lang.InterruptedException e) {
+	      System.err.print("InterruptedException in interfOuterSplit\n");
 	    }
-	}).run();
+	  }
+	}
+      });
   }
 
   void interfOuterDispatch() {
@@ -1820,7 +1818,33 @@ class interfThread extends Thread {
 class water { 
   public static simparm parms;
   public static ensemble liquid;
+  public static final int NO_RTJ = 0;
+  public static final int CT_MEMORY = 1;
+  public static final int VT_MEMORY = 2;
+  public static long ctsize;
+  public static int RTJ_alloc_method;
   
+  public static void run(Runnable r) {
+    switch (RTJ_alloc_method) {
+    case NO_RTJ: {
+      r.run();
+      break;
+    } 
+    case CT_MEMORY: {
+      (new javax.realtime.CTMemory(water.ctsize)).enter(r);
+      break;
+    }
+    case VT_MEMORY: {
+      (new javax.realtime.VTMemory(1000, 1000)).enter(r);
+      break;
+    } 
+    default: {
+      System.out.println("Invalid memory area type!");
+      System.exit(1);
+    }
+    }
+  }
+
   public static void main(String args[]) throws java.io.IOException, java.io.FileNotFoundException { 
 
   int n; 
@@ -1831,11 +1855,24 @@ class water {
   start_time = System.currentTimeMillis();
 
   parms = new simparm();
-  if (args.length == 0) { 
-    System.out.print("usage: java main <input filename>\n");
+  if (args.length < 2) { 
+    System.out.print("usage: water <input filename> <noRTJ | CT | VT> [stats | nostats] [ctsize]\n");
     return;
   }
+  if (args[1].equalsIgnoreCase("noRTJ")) {
+    RTJ_alloc_method = NO_RTJ;
+  } else if (args[1].equalsIgnoreCase("CT")) {
+    RTJ_alloc_method = CT_MEMORY;
+    ctsize = Long.parseLong(args[3]);
+  } else if (args[1].equalsIgnoreCase("VT")) {
+    RTJ_alloc_method = VT_MEMORY;
+  } else {
+    System.out.println("Invalid memory area type argument");
+    return;
+  }
+
   parms.loadParms(args[0]);
+ 
   n = parms.getNMOL();
   liquid = new ensemble(parms);
 
@@ -1867,5 +1904,10 @@ class water {
   System.out.print("\nTotal Time = ");
   System.out.print(((stop_time-start_time)/dticks));
   System.out.print("\n");
+
+  if ((RTJ_alloc_method != NO_RTJ) &&
+      (args[2].equalsIgnoreCase("stats"))) {
+    javax.realtime.Stats.print();
+  }
 } 
 }
