@@ -18,7 +18,7 @@ import java.util.Set;
  * <code>Enumeration</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.1.2.7 1999-10-10 06:05:24 cananian Exp $
+ * @version $Id: Default.java,v 1.1.2.8 1999-11-13 18:49:39 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -79,5 +79,6 @@ public abstract class Default  {
 	public Object remove(Object key) { return null; }
 	public int size() { return 0; }
 	public Collection values() { return Collections.EMPTY_SET; }
+	public String toString() { return "{}"; }
     };
 }
