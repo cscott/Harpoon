@@ -15,7 +15,7 @@ import java.io.PrintWriter;
  * 9.1 for a description of Maximal Munch.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.2 1999-06-25 11:17:30 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.3 1999-06-25 12:13:57 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
     
     /** Creates a <code>MaximalMunchCGG</code>. 
@@ -25,7 +25,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	     <LI> <code>className</code> is a legal Java identifier
 	          string for a class.
 	     <LI> For each node-type in the <code>Tree</code> IR,
-	          there exists a single-node tile pattern. 
+	          there exists a single-node tile pattern (TODO: I
+		  took this 'requirement' straight from Appel, but it
+		  can't REALLY be that strict.  Find a tighter
+		  requirement that we can actually satisfy)
 	     <LI> if <code>s</code> contains Java statements that rely
 	          on knowledge about the class to be produced (such as
 		  a Constructor implementation) then the class named
@@ -52,9 +55,20 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	@param out Target output device for the Java source code.
     */
     public void outputSelectionMethod(PrintWriter out) { 
-	// insert cool stuff here 
-	
+	// Implement a recursive function by making a helper class to
+	// visit the nodes
+	out.println("\tstatic final class CggVisitor extends TreeVisitor {");
 
+	// for each rule for a statement we need to implement a
+	// clause in munchStm()
+	// for each rule for an exp we need to implement a
+	// clause in munchExp()
+	// for each rule for a move we need to implement a
+	// clause in munchMove()
+	
+	out.println("\t}"); // end CggVisitor
+
+	
     }
     
 }

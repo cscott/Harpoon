@@ -10,14 +10,13 @@ import java.io.PrintWriter;
  * convert <code>Tree</code>s into <code>Instr</code> sequences.  
  *
  * A Code Generator Generator (CGG) takes a set of instruction pattern
- * tiles and constructs a java source file for a new
- * <code>HCodeFactory</code> which will convert a <code>TreeCode</code>
- * into an <code>HCode</code> in
- * <code>Instr</code> form.  In short, a CGG generates a Code
- * Generator.
+ * tiles and constructs a java source file for a utility class
+ * containing a method <code>codegen(TreeCode)</code> which will
+ * generate an <code>HCode</code> in <code>Instr</code> form from a
+ * <code>TreeCode</code>.  In short, a CGG generates a Code Generator.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.3 1999-06-25 11:17:30 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.4 1999-06-25 12:13:57 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     /** The machine specification that the CodeGenerators outputted by
@@ -89,9 +88,9 @@ public abstract class CodeGeneratorGenerator {
     /** Writes the Instruction Selection Method to <code>out</code>.
 	<BR> <B>modifies:</B> <code>out</code>
 	<BR> <B>effects:</B>
-	     Generates Java source for the instruction selection
+	     <BR> Generates Java source for the instruction selection
 	     method, not including method signature or surrounding
-	     braces.  
+	     braces.
 	     
 	     <BR>Generated method has one parameter available to be
 	     referenced: <code>tree</code>, a <code>TreeCode</code>

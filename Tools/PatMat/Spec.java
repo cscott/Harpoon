@@ -17,7 +17,7 @@ import java.util.List;
  * compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Spec.java,v 1.1.2.5 1999-06-25 11:17:30 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.6 1999-06-25 12:13:57 pnkfelix Exp $
  */
 public class Spec  {
 
@@ -177,7 +177,7 @@ public class Spec  {
 
     /** Abstract immutable representation of an Expression in an
 	Instruction Pattern. 
-	@see harpoon.IR.Tree.Exp
+	@see IR.Tree.Exp
     */
     public static abstract class Exp { }
     
@@ -202,8 +202,8 @@ public class Spec  {
 	Operation in the code.  An implicit restriction on our binary
 	operations is that both operands must have equivalent domains
 	(there is only one <code>Spec.TypeSet</code> for a given
-	<code>Spec.ExpBinop</code>.
-	@see harpoon.IR.Tree.BINOP
+	<code>Spec.ExpBinop</code>).
+	@see IR.Tree.BINOP
     */
     public static class ExpBinop extends Exp {
 	
@@ -242,7 +242,7 @@ public class Spec  {
 
     /** Extension of <code>Spec.Exp</code> that represents a Constant
 	value in the code.
-	@see harpoon.IR.Tree.CONST
+	@see IR.Tree.CONST
     */
     public static class ExpConst extends Exp {
 
@@ -265,7 +265,7 @@ public class Spec  {
     /** Extension of <code>Spec.Exp</code> that represents a Memory
 	Access in the code (could be either Load or Store;
 	Context-Sensitive).
-	@see harpoon.IR.Tree.MEM
+	@see IR.Tree.MEM
     */
     public static class ExpMem extends Exp {
 
@@ -290,7 +290,7 @@ public class Spec  {
     /** Extension of <code>Spec.Exp</code> that represents a symbolic
 	constant.  Usually used to represent an Assembly Language
 	Label in the data segment. 
-	@see harpoon.IR.Tree.NAME
+	@see IR.Tree.NAME
     */
     public static class ExpName extends Exp {
 
@@ -351,13 +351,13 @@ public class Spec  {
 
     /** Abstract immutable representation of a Statement in an
 	Instruction Pattern.
-	@see harpoon.IR.Tree.Stm
+	@see IR.Tree.Stm
     */
     public static abstract class Stm { }
 
     /** Extension of <code>Spec.Stm</code> that represents a call to a
 	procedure. 
-	@see harpoon.IR.Tree.CALL
+	@see IR.Tree.CALL
     */
     public static class StmCall extends Stm {
 	/** Return value destination expression. */
@@ -385,7 +385,7 @@ public class Spec  {
 
     /** Extension of <code>Spec.Stm</code> representing a condition
 	branch. 
-	@see harpoon.IR.Tree.CJUMP
+	@see IR.Tree.CJUMP
     */
     public static class StmCjump extends Stm {
 	/** Boolean expression that decides which direction we're
@@ -411,7 +411,7 @@ public class Spec  {
     /** Extension of <code>Spec.Stm</code> representing an expression
 	which is evaluated for its side effects (i.e. we throw away
 	the return value).
-	@see harpoon.IR.Tree.EXP
+	@see IR.Tree.EXP
     */
     public static class StmExp extends Stm {
 	/** Expression for <code>this</code>. */
@@ -425,7 +425,7 @@ public class Spec  {
     
     /** Extension of <code>Spec.Stm</code> representing an
 	unconditional branch.
-	@see harpoon.IR.Tree.JUMP
+	@see IR.Tree.JUMP
     */
     public static class StmJump extends Stm {
 	/** Expression which yields the target of this jump. */
@@ -438,7 +438,7 @@ public class Spec  {
     }
     /** Extension of <code>Spec.Stm</code> representing a label which
 	is the target of a branch or call.
-	@see harpoon.IR.Tree.LABEL
+	@see IR.Tree.LABEL
     */
     public static class StmLabel extends Stm {
 	/** Label. */
@@ -451,7 +451,7 @@ public class Spec  {
     }
     /** Extension of <code>Spec.Stm</code> representing an expression
 	which moves a value from one place to another.
-	@see harpoon.IR.Tree.MOVE
+	@see IR.Tree.MOVE
     */
     public static class StmMove extends Stm {
 	/** Expression yielding the destination of this move. */
@@ -468,7 +468,7 @@ public class Spec  {
     /** Extension of <code>Spec.Stm</code> representing an expression
 	which is evaluated for its side effects (i.e. we throw away
 	the return value).
-	@see harpoon.IR.Tree.NATIVECALL
+	@see IR.Tree.NATIVECALL
     */
     public static class StmNativeCall extends Stm {
 	/** Return value destination expression. */
@@ -496,7 +496,7 @@ public class Spec  {
     /** Extension of <code>Spec.Stm</code> representing an expression
 	which is evaluated for its side effects (i.e. we throw away
 	the return value).
-	@see harpoon.IR.Tree.RETURN
+	@see IR.Tree.RETURN
     */
     public static class StmReturn extends Stm {
 	/** The set of Types that <code>retval</code> may be. */
@@ -514,7 +514,7 @@ public class Spec  {
     }
     /** Extension of <code>Spec.Stm</code> representing a sequence of
 	statements to be executed in order.
-	@see harpoon.IR.Tree.SEQ
+	@see IR.Tree.SEQ
     */
     public static class StmSeq extends Stm {
 	/** First statement to execute. */
@@ -531,7 +531,7 @@ public class Spec  {
 
     /** Extension of <code>Spec.Stm</code> representing a operation to
 	throw an exception.
-	@see harpoon.IR.Tree.THROW
+	@see IR.Tree.THROW
     */
     public static class StmThrow extends Stm {
 	/** The exceptional value. */
@@ -638,7 +638,7 @@ public class Spec  {
     }
 
     /** A representation for storing Types that values can be. 
-	@see harpoon.IR.Tree.Type
+	@see IR.Tree.Type
      */
     public static class TypeSet {
 	final BitSet bs = new BitSet();
