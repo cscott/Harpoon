@@ -37,7 +37,7 @@ import harpoon.Util.Util;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.35 2000-05-17 20:24:17 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.36 2000-05-18 00:37:00 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -135,7 +135,7 @@ abstract class InterProcPA {
 
 	    if(Modifier.isNative(hm.getModifiers()) && 
 	       !pa.harmful_native(hm)){
-		if(DEBUG)
+		//if(DEBUG)
 		    System.out.println("NATIVE: " + hm);
 		pigs[nb_callees_with_pig] = null;
 		mms[nb_callees_with_pig]  = mms[i];
