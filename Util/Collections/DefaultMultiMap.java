@@ -22,7 +22,7 @@ import java.util.HashSet;
  * <code>DefaultMultiMap</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: DefaultMultiMap.java,v 1.1.2.1 1999-11-09 06:28:28 pnkfelix Exp $
+ * @version $Id: DefaultMultiMap.java,v 1.1.2.2 2000-01-30 19:16:20 pnkfelix Exp $
  */
 public class DefaultMultiMap implements MultiMap {
     
@@ -39,7 +39,7 @@ public class DefaultMultiMap implements MultiMap {
 	<code>SetFactory</code> for its value collections.  
 	To gain more control over the specific factories used in
 	internal representation of <code>this</code>, use the more
-	specific {@link DefaultMultiMap#DefaulMultiMap(CollectionFactory,MapFactory) constructor }
+	specific {@link DefaultMultiMap#DefaultMultiMap(CollectionFactory,MapFactory) constructor }
 	that takes <code>CollectionFactory</code>s.
     */
     public DefaultMultiMap() {
