@@ -1,14 +1,15 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: phd-proposal.tex,v 1.4 2004-09-03 17:38:00 cananian Exp $
+% $Id: phd-proposal.tex,v 1.5 2004-09-03 18:44:16 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[12pt,oneside]{article}
+\documentclass[12pt]{article}
 %\usepackage{pdffonts}
-\usepackage{beton}\usepackage{euler}
+%\usepackage{beton}\usepackage{euler}
 \usepackage{epsfig}
 \usepackage{url}
 \usepackage{comdef}
 
 \linespread{1.2}
+\renewcommand{\floatpagefraction}{0.8}
 
 \title{{\large PhD Thesis proposal for}\\
 Efficient Software Transactions in Java}
@@ -27,8 +28,10 @@ Efficient Software Transactions in Java}
 \newcommand{\defn}[1]           {{\textit{\textbf{\boldmath #1}}}}
 \newcommand{\note}[1]{}% ignore notes for now.
 \newcommand{\punt}[1]{}% ignore punted stuff
+\newcommand{\sis}{\linespread{1.0}\setlength{\baselineskip}{0.8\baselineskip}}
+
 \newcommand{\epsfigput}[2]{%
-\begin{figure}[t]%
+\begin{figure}[t]\sis%
 \begin{center}%
 \includegraphics[height=2.75in,clip=true]{Figures/#1.eps}%
 \end{center}%
@@ -37,7 +40,7 @@ Efficient Software Transactions in Java}
 \end{figure}%
 }
 \newcommand{\figput}[2]{%
-\begin{figure}[t]%
+\begin{figure}[t]\sis%
  \begin{center}%
   \input{Figures/#1.pstex_t}%
  \end{center}%
@@ -56,7 +59,7 @@ Efficient Software Transactions in Java}
 \begin{document}
 \bibliographystyle{abbrv}
 \begin{titlepage}
-\setlength{\baselineskip}{0.8\baselineskip}
+\sis
 \newcommand{\nl}{\\[0.4\baselineskip]}
 \newcommand{\tight}{\\[-0.1\baselineskip]}
 \newcommand{\tighter}{\\[-0.2\baselineskip]}
@@ -155,6 +158,8 @@ always grab a lock to gain exclusive access to a shared object,
 regardless of whether another thread is actually attempting to access
 the same object.
 
+An alternative means of providing concurrency control is by the use of
+\defn{transactions}.
 A transaction can be thought of as a sequence of loads and stores
 performed as part of a program which either
 \defn{commits} or \defn{aborts}.  If a transaction
@@ -170,7 +175,7 @@ Although transactions can be implemented using mutual exclusion
 \cite{Lamport77,Herlihy88,HerlihyLuMo03,MassalinPu91,GreenwaldCh96} to
 exploit optimistic concurrency among transactions.  Non-blocking
 synchronization offers a number of advantages; foremost for the
-concerns of this paper is fault-tolerance.  A process which fails
+concerns of this thesis is fault-tolerance.  A process which fails
 while holding a lock within a critical region can prevent all other
 non-failing processes from ever making progress.  It is in general not
 possible to restore the locked data structures to a consistent state
@@ -192,17 +197,18 @@ synchronization can prevent \emph{priority inversion} in the system
 \cite{Jones97}.
 
 The transaction model is a natural means to express both desired
-atomicity and fault-tolerance properties.  In my thesis research, I will also
-show how transactions can be used as a general exception-handling
-mechanism and to implement back-tracking.  The transactional model can be
-integrated into Java,  ``transactifying'' existing code to fix
-existing concurrency bugs and using transactions for fault-tolerance,
+atomicity and fault-tolerance properties.  In my thesis research, I
+will also show how transactions can be used as a general
+exception-handling mechanism and to implement back-tracking.
+Transactions can be integrated into Java and used for fault-tolerance,
 backtracking, exception-handling, and concurrency control in new
-programs.
+programs.  Further, existing code can often be ``transactified'' to
+fix existing concurrency bugs.
 
-I will explore both software and hardware implementations of this
-model.  Previous implementation work has concentrated on the
-\defn{Transactional memory} abstraction
+I will explore both software and hardware implementations of the
+transaction model.
+Previous implementation work has concentrated on the
+\defn{transactional memory} abstraction
 \cite{Knight86,HerlihyMo93,StoneStHe93,RajwarGo02,ShavitTo95,HerlihyLuMoSc03},
 which has
 been proposed as a general and flexible way to allow programs to read
@@ -224,23 +230,22 @@ software overhead would be dwarfed by the other processing done by an
 application.
 
 In contrast, this thesis work will assume that transactions may be of
-arbitrary size and duration, and that details of the implement should
-not be exposed to the programmer of the system.  Our goal is to make
-concurrent and fault-tolerant programming easier, hopefully without
-incurring much 
-overhead in its implementation.  I am interested in unbounded
-transactions because neither programmers nor compilers can easily cope
-when an architecture imposes a hard limit on transaction size.  An
-implementation might be optimized for transactions below a certain
-size, but must still operate correctly for larger transactions.  The
-size of transactional hardware should be an implementation parameter,
-like cache size or memory size, which can vary without affecting the
-portability of binaries.
+arbitrary size and duration, and that details of the implementation
+should not be exposed to the programmer of the system.  My goal is to
+make concurrent and fault-tolerant programming easier, hopefully
+without incurring much overhead in the process.  The target is
+unbounded transactions because neither programmers nor compilers can
+easily cope when an architecture imposes a hard limit on transaction
+size.  An implementation might be optimized for transactions below a
+certain size, but must still operate correctly for larger
+transactions.  The size of transactional hardware should be an
+implementation parameter, like cache size or memory size, which can
+vary without affecting the portability of binaries.
 
-\subsection{Language-level Approaches to Synchronization}
-\begin{figure}[t]
-{\it
-\begin{tabular}{l}
+\section{Language-level Approaches to \\Synchronization}
+\begin{figure}
+{\it\sis%
+\begin{tabular}{l}\sis%
 {\bf const} myDirectory == {\bf object} oneEntryDirectory\\
 ~~{\bf export} Store, Lookup\\
 ~~{\bf monitor}\\
@@ -273,8 +278,9 @@ portability of binaries.
 \label{fig:emerald-dir}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}
 {\ttfamily\small\vspace{.25in}
+\sis%
 \begin{tabular}{l}
 class Account \{\\
 \\
@@ -377,7 +383,7 @@ guarantees method atomicity.
 I will base my integration of transactions into Java on the use of
 non-blocking synchronization to implement atomic methods.
 
-\section{Example and Motivation}
+\section{Examples and Motivation}
 I present three examples in this section, illustrating how
 transactions can support fault-tolerance and back-tracking,
 simplify locking, and provide a more intuitive
@@ -398,7 +404,7 @@ stack using pointer reversal.  This technique is widely used in
 garbage collectors, and was first demonstrated in this context by
 Schorr and Waite \cite{SchorrWa67}.  The following code implements a
 pointer-reversal traversal of a simple singly-linked list:
- \par {\footnotesize\samepage
+ \par {\footnotesize\samepage\sis
 \begin{verbatim}
 // destructive list traversal.
 void traverse(List l) {
@@ -444,7 +450,7 @@ is going to undo the list mutations.
 \note{Used to have a try/catch with explicit fail in here.}
 Instead, I can provide a non-deterministic choice operator,
 {\tt try}/{\tt else}, and write the recovery code at a higher-level as:
-\par {\footnotesize\samepage
+\par {\footnotesize\samepage\sis
 \begin{verbatim}
 try {
   traverse(list);
@@ -474,7 +480,8 @@ Consider a serial program for computing network flow (see, for
 example, \cite[Chapter 26]{CormenLeRi01}).  The inner loop of the code
 pushes flow across an edge by increasing the ``excess flow'' on one
 vertex and decreasing it by the same amount on another vertex.  One
-might see the following Java code: \par {\footnotesize\samepage
+might see the following Java code:
+\par {\footnotesize\samepage\sis
 \begin{verbatim}
 void pushFlow(Vertex v1, Vertex v2, double flow) {
   v1.excess += flow; /* Move excess flow from v1 */
@@ -486,7 +493,7 @@ void pushFlow(Vertex v1, Vertex v2, double flow) {
 To parallelize this code, one must preclude multiple threads from
 modifying the excess flow on those two vertices at the same time.
 Locks provide one way to enforce this mutual exclusion: 
-\par {\footnotesize\samepage
+\par {\footnotesize\samepage\sis
 \begin{verbatim}
 void pushFlow(Vertex v1, Vertex v2, double f) {
   Object lock1, lock2;
@@ -530,7 +537,7 @@ Software transactions (and some language support) allow the
 programmer to parallelize the original code using an \texttt{atomic}
 keyword to indicate that the code block should appear to execute
 atomically: 
-\par {\footnotesize\samepage
+\par {\footnotesize\samepage\sis
 \begin{verbatim}
 void pushFlow(Vertex v1, Vertex v2, double flow) {
   atomic { /* Transaction begin. */
@@ -552,7 +559,7 @@ deadlock and races are to be avoided.
 
 Further, I can implement {\tt atomic} using the {\tt try}/{\tt else}
 exception-handling mechanism I've already introduced:
- \par {\footnotesize\samepage
+ \par {\footnotesize\samepage\sis
 \begin{verbatim}
 for (int b=0; ; b++) {
   try {
@@ -588,8 +595,7 @@ insufficiency with an
 actual bug they discovered in the Sun JDK 1.4.2 Java standard
 libraries.  The {\tt java.lang.StringBuffer} class,
 which implements a mutable string abstraction, is implemented as follows:
-\par {\footnotesize
-\samepage
+\par {\footnotesize\samepage\sis
 \begin{verbatim}
 public final class StringBuffer ... {
   private char value[];
@@ -661,39 +667,27 @@ context remains poorly understood.  However, large programs---the
 Linux kernel, for example---have been written such that locks are
 never held across context switches or I/O operations.  Transactions
 provide a complete solution for this limited synchronization.
-
-\vspace*{5mm}
-I have designed an implementation of software transactions which allows
-us to efficiently implement the {\tt try}/{\tt else} and {\tt atomic}
-constructs.  I have evaluated it by automatically
-``transactifying'' Java applications by replacing synchronization with
-{\tt atomic} blocks, and in \secref{properties} I present
-experimental results describing the
-transaction properties of programs so transformed.
-I then present our software transaction design, based on the
-properties I observed in our benchmarks.
-\punt{
-I present modelling results affirming the correctness of the design, and compiler
-optimizations to enhance its performance.  I also describe a variant
-on the scheme which uses some hardware support.  Finally, I present
-performance data for our pure-software and partially-hardware
-transaction implementations.
-}
+One of the goals of this thesis is to investigate better integration
+of transactional with inherently non-transactional operations.
+One promising approach is the addition of explicit 'recovery' blocks
+to 'undo' the effects of non-transactional regions embedded within
+an aborting transaction.
 
 \secput{auto}{Creating transactions}
 One of the difficulties of proposing a novel language feature is the
 lack of benchmarks for its evaluation.  Although there is no body of
 code yet using {\tt atomic} regions, there is a substantial body of
-code which uses Java (locking) synchronization.  I have implemented a
-compiler which substitutes {\tt atomic} blocks (methods) for {\tt
-  synchronized} blocks (method) in order to evaluate the properties
+code which uses Java (locking) synchronization.  This thesis will
+utilize the Flex compiler to
+substitute {\tt atomic} blocks (methods) for {\tt
+  synchronized} blocks (methods) in order to evaluate the properties
 Java transactions are likely to have.  Note that the semantics are not
 precisely compatible: the existing Java memory model allows
 unsynchronized updates to shared fields to be observed within a
 synchronized block, while such updates will never be visible to an
 {\tt atomic} block.  The proposed revision of the Java memory model
-\cite{MansonPu02} narrows the semantic gap, however I do not treat
-{\tt volatile} fields in this work.
+\cite{MansonPu02} narrows the semantic gap, however I do not
+plan to treat {\tt volatile} fields in this work.
 
 Despite the differences in semantics, the automatic substitution of
 {\tt atomic} for {\tt synchronized} does, in fact, preserve the
@@ -701,15 +695,16 @@ correctness of the benchmarks I've examined.  Moreover, as
 mentioned in \secref{stringbuffer}, it
 fixes the synchronization issue with {\tt java.lang.StringBuffer}.
 
-One goal of this work was to make such improperly synchronized
+One goal of this thesis is to make such improperly synchronized
 applications correct and race-free, in effect fixing certain common
-synchronization errors.  To this effect, I needed to preserve the
+synchronization errors.  To this effect, I need to preserve the
 correct operation of {\tt atomic} even in the face of unsynchronized
 accesses from outside the {\tt atomic} block to the fields used within
 it.  Imagine unsynchronized code directly altering the length field of
 {\tt StringBuffer}.  This should not cause the {\tt atomic}
 {\tt StringBuffer.append()} method to appear non-atomic.
-\note{Compare w/ Harris and Fraser?}
+Some existing work on software transaction systems \cite{HarrisFr03}
+does not support this style of operation.
 
 \subsecput{properties}{Properties of Transactions}
 This section examines the implications of exposing the transaction
@@ -739,7 +734,7 @@ multithreaded \texttt{227\_mtrt} benchmark is identical to its
 serialization, \texttt{205\_raytrace}.  For consistency, I present
 only the latter.
 
-\begin{figure*}
+\begin{figure}\sis%
 \begin{center}
 \begin{tabular}{lrrrr}
         & total      &              & transactional & biggest\\
@@ -757,7 +752,7 @@ program & memory ops & transactions & memory ops    & transaction \\\hline
   transaction counts and sizes, compared to total number of memory
   operations (loads and stores).  These are full input size runs.
 }\label{fig:perfnums}
-\end{figure*}
+\end{figure}
 \figput{tr-quad}{Classification of SPECjvm98 benchmarks into quadrants
 based on transaction properties.}
 
@@ -845,7 +840,7 @@ applications on a semi-log scale.
 
 \punt{
 \vspace*{2mm}
-\begin{figure}
+\begin{figure}\sis%
 \begin{center}
 \includegraphics[width=2.25in,clip=true]{Figures/tr-w-all.eps}%
 ~~~~~%
@@ -916,7 +911,7 @@ results for the SPECjvm98 applications; I determined that two words
 performance unreasonably.  This amount of bloat causes a geometric
 mean of 2\% slowdown on these benchmarks.
 
-\begin{figure}
+\begin{figure}\sis%
 \begin{center}
 \begin{tabular}{lrrrr}
         & transactional & transactional\\
@@ -976,7 +971,7 @@ to this problem would allow larger model instances to be checked.
 \punt{
 \secput{eval}{Evaluation}
 
-\begin{figure*}
+\begin{figure}\sis%
 \footnotesize
 \begin{center}
 \begin{tabular}{lr|rr|rr}
@@ -1000,7 +995,7 @@ Benchmark                 &  Base       & Locks         & Trans              & T
  Overflow overhead} column is fraction of the {\em Trans time}
  spent handling overflows.}
 \label{fig:specperf}
-\end{figure*}
+\end{figure}
 }
 \punt{
 We found that using BTM transactions in the SPECjvm98 benchmarks
@@ -1044,7 +1039,7 @@ block.
 }
 \secput{related}{Related work}
 A number of researchers have been investigating transactional memory
-systems.  This is the first paper to present a model-checked non-blocking
+systems.  This thesis is the first to present a model-checked non-blocking
 object-oriented system which allows co-existence of non-transactional and
 transactional accesses to a dynamic set of object fields.
 
@@ -1404,12 +1399,13 @@ Charles E. Leiserson suggested the ``network flow'' example in
 provided the timings in \figref{hw-timings}.}
 
 %\renewcommand{\baselinestretch}{1}
+\sis
 \bibliography{xaction}
 
 \punt{
 \secput{extra}{Text with nowhere else to go}
 
-\begin{figure*}
+\begin{figure}\sis%
 \footnotesize
 \begin{center}
 \begin{tabular}{l@{}rrrrrrrrr}
@@ -1444,12 +1440,12 @@ Java.  For Java the \textit{input size} can be run in three ``sizes'':
 we write ``0'' for numbers that are exactly zero, and a ``zero''
 percentage, such as ``0.0\%,'' for small nonzero values.}
 \label{fig:perfnums}
-\end{figure*}
+\end{figure}
 
 \section{Analyses and Implementation}
 
 \secput{proposal}{A proposal for a non-blocking Java OS}
-\begin{figure}[t]
+\begin{figure}\sis%
 {\it
 \begin{tabular}{l}
 {\bf const} myDirectory == {\bf object} oneEntryDirectory\\
@@ -1484,7 +1480,7 @@ percentage, such as ``0.0\%,'' for small nonzero values.}
 \label{fig:emerald-dir}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}\sis%
 {\ttfamily\small\vspace{.25in}
 \begin{tabular}{l}
 class Account \{\\
@@ -1562,7 +1558,7 @@ and no synchronization is necessary, since the imperative arrays are
 never mutated after they are created.
 
 \subsection{A single-object protocol}
-\begin{figure}\centering
+\begin{figure}\centering\sis%
 \includegraphics[width=3.25in,clip=true]{Figures/nb-single-obj.eps}
 \caption{Implementing non-blocking single-object concurrent operations
   with functional arrays.}
@@ -1627,7 +1623,7 @@ However, the restriction that only one object
 may be referenced within an atomic method is overly limiting.
 
 \subsection{Extension to multiple objects}
-\begin{figure}[t]\centering
+\begin{figure}\centering\sis%
 \includegraphics[width=3.25in,clip=true]{Figures/nb-multi-obj.eps}
 \caption{Data structures to support non-blocking multi-object
   concurrent operations.  Objects point to a linked list of versions,
@@ -1639,7 +1635,7 @@ may be referenced within an atomic method is overly limiting.
   in the list may share the same functional array.}
 \label{fig:multi-o}
 \end{figure}
-\begin{figure}[p]
+\begin{figure}\sis%
 \renewcommand{\>}{~~}
 \newcommand{\com}[1]{\hfill [{\sl #1}]}
 \begin{tabular}{l}
@@ -1689,7 +1685,7 @@ end\\
   multi-object protocol.}\label{fig:reads}
 \end{figure}
 
-\begin{figure}[p]
+\begin{figure}\sis%
 \renewcommand{\>}{~~}
 \newcommand{\com}[1]{\hfill [{\sl #1}]}
 \begin{tabular}{l}
@@ -1821,12 +1817,12 @@ constant time plus an invocation of \funcname{FA-Read} or
 \funcname{FA-Update}.
 
 \subsection{Lock-free functional arrays}\label{sec:large-obj}
-\begin{figure*}\centering
+\begin{figure}\centering\sis%
 \includegraphics[width=7in,clip=true]{Figures/chuang.eps}
 \caption{Shallow binding scheme for functional arrays, from
   \cite[Figure~1]{Chuang94}.}
 \label{fig:chuang}
-\end{figure*}
+\end{figure}
 In this section we will present a lock-free implementation of functional
 arrays with $O(1)$ performance in the absence of contention.  This
 will complete our implementation of non-blocking \atomic methods for Java.
@@ -1904,7 +1900,7 @@ new root instead of performing a rotation.  This operation takes
 $O(n)$ time, so we amortize it over $n$ operations by randomly
 choosing to perform a cut with probability $1/n$.
 
-\begin{figure*}\centering
+\begin{figure}\centering\sis%
 \includegraphics[width=7in,clip=true]{Figures/funarr.eps}
 \caption{Atomic steps in $\funcname{FA-Rotate}(B)$.  Time proceeds top-to-bottom
   on the left hand side, and then top-to-bottom on the right.
@@ -1912,9 +1908,9 @@ choosing to perform a cut with probability $1/n$.
   Array $B$ has the almost the same contents as $A$, but
   $\funcname{FA-Read}(B, x)=y$.}
 \label{fig:funarr}
-\end{figure*}
+\end{figure}
 
-\begin{figure*}\centering
+\begin{figure}\centering\sis%
 \renewcommand{\>}{~~}
 \newcommand{\com}[1]{\hfill [{\sl #1}]}
 \begin{tabular}{l}
@@ -1981,7 +1977,7 @@ end\\
 \caption{Implementation of lock-free functional array using shallow
   binding and randomized cuts.}
 \label{fig:fun-impl}
-\end{figure*}
+\end{figure}
 
 Figure~\ref{fig:funarr} shows the data structures used for the
 functional array implementation, and the series of atomic steps used
