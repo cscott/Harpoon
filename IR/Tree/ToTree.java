@@ -63,7 +63,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.42 1999-09-10 00:27:44 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.43 1999-09-10 04:34:56 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -1507,6 +1507,8 @@ class CallConversionVisitor extends LowQuadWithDerivationVisitor {
 
     public void visit(harpoon.IR.Quads.CJMP cjump) { 
 	if ((acmpeq != null) && (this.acmpeq.dst() == cjump.test())) {
+	    if (this.nconst==null)
+		System.err.println("WARNING: possibly unsafe CALL pattern");
 	    this.cjump = cjump;
 	    replaceExceptionCheck();
 	}
@@ -1541,10 +1543,13 @@ class CallConversionVisitor extends LowQuadWithDerivationVisitor {
     }
 
     public void visit(POPER poper) { 
-	if ((this.nconst != null)                       && 
+	// CSA: significantly weakened the pattern to combat
+	// constant propagation.  there must be a better way.
+	if ((this.pcall!=null)                          &&
+	    /*(this.nconst != null)                       && */
 	    (poper.opcode() == Qop.ACMPEQ)              &&
 	    (this.pcall.retex() == poper.operands()[0]) &&
-	    (this.nconst.dst() == poper.operands()[1])) {
+	    /*(this.nconst.dst() == poper.operands()[1])*/true) {
 	    this.acmpeq = poper;
 	    this.cjump  = null;
 	}
