@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.32 2002-07-25 18:06:33 cananian Exp $
+% $Id: ptran.tex,v 1.33 2002-07-25 18:47:31 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.32 $ $}
+\date{\today \\ $ $Revision: 1.33 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -410,6 +410,9 @@ an edge $\tuple{\tuple{n_1,f},n_2} \in I$ is a:
 \end{displaymath}
 % XXX some redundancy here?
 % note no outside edges to inside nodes.
+% if n_1 escapes, then n_2 escapes.
+% if only n_2 escapes, we can't create any new n_1.f=n_2 references
+%   because we can't get to n_1
 \item \newterm{Non-companion} if:
 \begin{displaymath}
  \text{condsing}(c(\tuple{\tuple{n_1,f},n_2})) = \bot
