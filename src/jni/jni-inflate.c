@@ -31,9 +31,11 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     struct inflated_oobj *infl = malloc(sizeof(*infl));
     /* initialize infl */
     infl->hashcode = obj->hashunion.hashcode;
+    infl->jni_data = NULL;
     infl->jni_cleanup_func = NULL;
 #ifdef WITH_HEAVY_THREADS
     infl->tid = 0;
+    infl->nesting_depth = 0;
     pthread_mutex_init(&(infl->mutex), NULL);
     pthread_cond_init(&(infl->cond), NULL);
 #endif
@@ -41,8 +43,10 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     assert(FNI_IS_INFLATED(wrapped_obj));
 #ifdef BDW_CONSERVATIVE_GC
     /* register finalizer to deallocate inflated_oobj on gc */
-    GC_register_finalizer(obj, deflate_object, NULL,
-			  &(infl->old_finalizer), &(infl->old_client_data));
+    if (GC_base(obj)!=NULL) // skip if this is not a heap-allocated object
+	GC_register_finalizer(obj, deflate_object, NULL,
+			      &(infl->old_finalizer),
+			      &(infl->old_client_data));
 #endif
   }
 #ifdef WITH_HEAVY_THREADS
