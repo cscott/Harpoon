@@ -11,7 +11,11 @@ noinst_LTLIBRARIES = libheader.la libfooter.la
 libheader_la_SOURCES = header.S segments.h
 
 if PRECISE_GC
+if PRECISE_C_BACKEND 
+libfooter_la_SOURCES = lookup.S dispatch.S footer.S
+else
 libfooter_la_SOURCES = precise_malloc.S lookup.S dispatch.S footer.S
+endif
 else
 libfooter_la_SOURCES = lookup.S dispatch.S footer.S
 endif
