@@ -6,7 +6,7 @@
 \usepackage{bbold}
 
 \title{}
-\author{Debugging experiment - Bug 4}
+\author{Bug 1 - Tool}
 \date{July 30, 2003}
 
 \setlength{\topmargin}{0in}
@@ -25,33 +25,43 @@
 
 \thispagestyle{empty}
 
-This buggy program is composed of the files {\it file4.cc} and 
-{\it file.h}. If you are using the tool, you shouldn't worry about the 
-other files.
+First of all, type the following commands on the command line:
+\begin{verbatim}
+add cristic
+cd ~
+/mit/cristic/Public/get-first-tool
+cd Experiment/First
+\end{verbatim}
+
+
+\vspace{0.1in}
+This buggy program is composed of the files {\it file1.cc} and 
+{\it file.h}. 
 
 \vspace{0.1in}
 To compile the program, simply type ``./build'' on the command line.\\
-To run the program, simply type ``./file4'' on the command line.
+To run the program, simply type ``./file1'' on the command line.
 
 
 \vspace{0.1in}
 Initially, the program prints:
 
 \begin{verbatim}
-=== BEGIN of link2 ===
-
-=== END of link2 ===
+=== BEGIN of link1 ===
+TWO
+=== END of link1 ===
 \end{verbatim}
 
 although it should have printed:
 \begin{verbatim}
-=== BEGIN of link2 ===
-TWO
-=== END of link2 ===
+=== BEGIN of link1 ===
+ONE
+=== END of link1 ===
 \end{verbatim}
 
 You are asked to localize and fix the bug that causes this abnormal behavior.
- 
+Please note that the bug is not in function 'main'.
+
 
 \vspace{0.3in}
 Don't forget to fill out the following times:
@@ -67,6 +77,15 @@ Don't forget to fill out the following times:
 about it:}
 
 \end{enumerate}
+
+\vspace{0.45in}
+When you are done with this program, please type the following on the 
+command line:
+\begin{verbatim}
+cd ~
+/mit/cristic/Public/submit-first-tool
+\end{verbatim}
+
 
 \end{flushleft}
 \end{document}

@@ -1,0 +1,85 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{dsfont}
+\usepackage{epsfig}
+\usepackage{bbold}
+
+\title{}
+\author{Instructions for the organizers}
+\date{July 30, 2003}
+
+\setlength{\topmargin}{0in}
+\setlength{\oddsidemargin}{0in}
+\setlength{\evensidemargin}{0in}
+\setlength{\textwidth}{6.6in}
+\setlength{\textheight}{9in}
+\setlength{\parindent}{0.5in}
+
+
+
+\begin{document}
+\maketitle
+\begin{flushleft}
+
+\thispagestyle{empty}
+
+\section{Create libchecker.a}
+The first thing you need to do is to create the library 'libchecker.a'.
+We don't create this library in advance in order to avoid portability problems.
+
+\vspace{0.1in}
+
+\begin{enumerate}
+\item{First, you need to obtain an account on lessermagoo (email Scott at 
+cananian@lm.lcs.mit.edu if you don't have one already).}
+\item{Login into your athena account}
+\item{setenv CVSROOT :ext:{\it your\_account}@lm.lcs.mit.edu:/home/cananian/Harpoon/CVSROOT}
+\item{setenv CVS\_RSH ssh}
+\item{In your home directory, type 'mkdir library'.}
+\item{cd library}
+\item{cvs checkout -l Repair}
+\item{cd Repair}
+\item{./makelib}
+\end{enumerate}
+
+
+\section{Copy the buggy programs in a public directory}
+\begin{enumerate}
+\item{cd $\sim$/Public}
+\item{cvs checkout Repair/Debug1 Repair/Debug2 Repair/Debug3 Repair/Debug4}
+\item{This is very important:\\
+         rm Repair/Debug1/file1\_correct.cc \\
+         rm Repair/Debug2/file2\_correct.cc \\
+         rm Repair/Debug3/file3\_correct.cc \\
+         rm Repair/Debug4/file4\_correct.cc}
+
+\item{Remove CVS directories:\\ 
+      rm -rf Repair/CVS/\\
+      rm -rf Repair/Debug1/CVS/ Repair/Debug1/Tool/CVS/ Repair/Debug1/NoTool/CVS/\\
+      rm -rf Repair/Debug2/CVS/ Repair/Debug2/Tool/CVS/ Repair/Debug2/NoTool/CVS/\\
+      rm -rf Repair/Debug3/CVS/ Repair/Debug3/Tool/CVS/ Repair/Debug3/NoTool/CVS/\\
+      rm -rf Repair/Debug4/CVS/ Repair/Debug4/Tool/CVS/ Repair/Debug4/NoTool/CVS/}
+\end{enumerate}
+
+
+\section*{Copy libchecker.a to the right location}
+\begin{enumerate}
+\item{cd $\sim$/Public}
+\item{cp ../library/Repair/libchecker.a Repair/Debug1/Tool/}
+\item{cp ../library/Repair/libchecker.a Repair/Debug2/Tool/}
+\item{cp ../library/Repair/libchecker.a Repair/Debug3/Tool/}
+\item{cp ../library/Repair/libchecker.a Repair/Debug4/Tool/}
+\end{enumerate}
+
+
+\section*{Copy the scripts}
+\begin{enumerate}
+\item{cd $\sim$}
+\item{cvs checkout -d Public Repair/Experiment/Scripts}
+\end{enumerate}
+
+
+\end{flushleft}
+\end{document}
