@@ -57,6 +57,7 @@ Backend/Runtime2/Runtime.java
 Backend/RuntimeTiny/ClazNumbering.java
 Backend/RuntimeTiny/CompleteClazNumbering.java
 Backend/RuntimeTiny/DataClazTable.java
+Backend/RuntimeTiny/ObjectBuilder.java
 Backend/RuntimeTiny/PreOrderClazNumbering.java
 Backend/RuntimeTiny/Runtime.java
 Backend/RuntimeTiny/TreeBuilder.java

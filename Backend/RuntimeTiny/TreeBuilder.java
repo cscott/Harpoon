@@ -62,7 +62,7 @@ import java.util.Set;
  * (but slower) object layout.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.1 2002-03-11 04:40:51 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.2 2002-03-11 21:18:02 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder { 
     Runtime runtime;
@@ -82,6 +82,8 @@ public class TreeBuilder extends harpoon.Backend.Runtime1.TreeBuilder {
 			DerivationGenerator dg,
 			AllocationProperties ap,
 			HClass objectType, Exp length) {
+	if (!runtime.clazShrink)
+	    return super.objAlloc(tf, source, dg, ap, objectType, length);
 	Temp Tobj = new Temp(tf.tempFactory(), "rt");
 	// masked version of object pointer.
 	Temp Tmasked = new Temp(tf.tempFactory(), "rt");

@@ -39,22 +39,24 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.3.2.2 2002-03-11 14:57:06 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.3.2.3 2002-03-11 21:17:48 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
     final NameMap m_nm;
     
     /** Creates a <code>ClassData</code>. */
-    public DataClaz(Frame f, HClass hc, ClassHierarchy ch) {
+    public DataClaz(Frame f, HClass hc, ClassHierarchy ch,
+		    Runtime.ExtraClazInfo eci) {
         super("class-data", hc, f);
 	this.m_nm = f.getRuntime().getNameMap();
 	this.m_tb = (TreeBuilder) f.getRuntime().getTreeBuilder();
 	this.BITS_IN_GC_BITMAP = 8 * m_tb.POINTER_SIZE;
-	this.root = build(f, hc, ch);
+	this.root = build(f, hc, ch, eci);
     }
 
-    private HDataElement build(Frame f, HClass hc, ClassHierarchy ch) {
+    private HDataElement build(Frame f, HClass hc, ClassHierarchy ch,
+			       Runtime.ExtraClazInfo eci) {
 	List<Stm> stmlist = new ArrayList<Stm>();
 	// write the appropriate segment header
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
@@ -87,6 +89,11 @@ public class DataClaz extends Data {
 	stmlist.add(_DATUM(new CONST(tf, null, size)));
 	// bitmap for gc or pointer to bitmap
       	stmlist.add(gc(f, hc));
+	// extra claz info (defined by runtime's subclass, if any)
+	if (eci!=null) {
+	    Stm s = eci.emit(tf, f, hc, ch);
+	    if (s!=null) stmlist.add(s);
+	}
 	// class depth.
 	int depth = m_tb.cdm.classDepth(hc);
 	if (HClassUtil.baseClass(hc).isInterface()) depth=0;// mark interface[]

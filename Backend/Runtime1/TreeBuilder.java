@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.3.2.3 2002-03-11 04:40:35 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.3.2.4 2002-03-11 21:17:48 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -99,6 +99,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     protected final int CLAZ_INTERFZ_OFF;
     protected final int CLAZ_SIZE_OFF;
     protected final int CLAZ_GCENTRY_OFF;
+    protected final int CLAZ_EXTRAINFO_OFF;
     protected final int CLAZ_DEPTH_OFF;
     protected final int CLAZ_DISPLAY_OFF;
     protected       int CLAZ_METHODS_OFF;
@@ -168,8 +169,10 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	CLAZ_INTERFZ_OFF = 2 * POINTER_SIZE;
 	CLAZ_SIZE_OFF	 = 3 * POINTER_SIZE;
 	CLAZ_GCENTRY_OFF = 3 * POINTER_SIZE + 1 * WORD_SIZE;
-	CLAZ_DEPTH_OFF   = 4 * POINTER_SIZE + 1 * WORD_SIZE;
-	CLAZ_DISPLAY_OFF = 4 * POINTER_SIZE + 2 * WORD_SIZE;
+	CLAZ_EXTRAINFO_OFF=4 * POINTER_SIZE + 1 * WORD_SIZE; 
+	CLAZ_DEPTH_OFF   = CLAZ_EXTRAINFO_OFF +
+	    runtime.getExtraClazInfo().fields_size();
+	CLAZ_DISPLAY_OFF = CLAZ_DEPTH_OFF + 1 * WORD_SIZE;
     }
     // this method must be called to complete initialization before
     // the tree builder is used.

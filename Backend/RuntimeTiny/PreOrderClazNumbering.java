@@ -25,7 +25,7 @@ import java.util.Set;
  * <code>[classNumber(A),maxChildNumber(A)]</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PreOrderClazNumbering.java,v 1.1.2.1 2002-03-11 04:40:51 cananian Exp $
+ * @version $Id: PreOrderClazNumbering.java,v 1.1.2.2 2002-03-11 21:18:02 cananian Exp $
  */
 public class PreOrderClazNumbering extends ClazNumbering {
     private final Map<HClass,Integer> minmap = new HashMap<HClass,Integer>();
@@ -55,7 +55,6 @@ public class PreOrderClazNumbering extends ClazNumbering {
 	    return n; // only single-inheritance tree.
 	if (ch.instantiatedClasses().contains(hc)) n++;
 	minmap.put(hc, new Integer(n));
-	System.err.println("NUMBERING: "+n+"="+hc);
 	for (Iterator<HClass> it=ch.children(hc).iterator(); it.hasNext(); )
 	    n=number(n, it.next(), ch);
 	maxmap.put(hc, new Integer(n));

@@ -15,7 +15,9 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
+import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Tree;
+import harpoon.IR.Tree.TreeFactory;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 
@@ -33,7 +35,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.3.2.4 2002-03-11 04:40:35 cananian Exp $
+ * @version $Id: Runtime.java,v 1.3.2.5 2002-03-11 21:17:48 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -62,10 +64,13 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	this.as = as;
 	this.nameMap =
 	    new harpoon.Backend.Maps.DefaultNameMap(prependUnderscore);
-	this.ob = (rootOracle == null) ?
-	    new harpoon.Backend.Runtime1.ObjectBuilder(this) :
-	    new harpoon.Backend.Runtime1.ObjectBuilder(this, rootOracle);
+	this.ob = initObjectBuilder(rootOracle);
 	this.treeBuilder = initTreeBuilder();
+    }
+    protected ObjectBuilder initObjectBuilder(RootOracle ro) {
+	if (ro==null)
+	    return new harpoon.Backend.Runtime1.ObjectBuilder(this);
+	return new harpoon.Backend.Runtime1.ObjectBuilder(this, ro);
     }
     public harpoon.Backend.Runtime1.TreeBuilder
 	getTreeBuilder() { return treeBuilder; }
@@ -195,7 +200,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 
 	List<HData> r = new java.util.ArrayList<HData>(20);
 	r.addAll(Arrays.asList(new HData[] {
-	    new DataClaz(frame, hc, ch),
+	    new DataClaz(frame, hc, ch, getExtraClazInfo()),
 	    new DataConfigChecker(frame, hc),
 	    new DataInterfaceList(frame, hc, ch),
 	    new DataStaticFields(frame, hc),
@@ -211,4 +216,19 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	return r;
     }
     final Set<String> stringsSeen = new HashSet<String>();
+
+    /** provides a means for a subclass to add extra fields to
+     * DataClaz.  A little bit cleaner than trying to subclass
+     * DataClaz and hack TreeBuilder to make this work. */
+    protected static class ExtraClazInfo {
+	/** Return the number of bytes of fields you're planning on sticking
+	 *  into the claz structure. */
+	public int fields_size() { return 0; }
+	/** Here's your chance to insert your stuff. */
+	public Stm emit(TreeFactory tf, Frame f, HClass hc, ClassHierarchy ch){
+	    return null;
+	}
+    }
+    /** A means for a subclass to set this. */
+    protected ExtraClazInfo getExtraClazInfo() { return new ExtraClazInfo(); }
 }

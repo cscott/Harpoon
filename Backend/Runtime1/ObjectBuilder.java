@@ -45,15 +45,15 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.3.2.1 2002-02-27 08:35:05 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.3.2.2 2002-03-11 21:17:48 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
-    final Runtime runtime;
-    final boolean pointersAreLong;
-    final RootOracle ro;
-    private final Random rnd;
-    private final HClass HCobject; // cache HClass for java.lang.Object
+    protected final Runtime runtime;
+    protected final boolean pointersAreLong;
+    protected final RootOracle ro;
+    protected final Random rnd;
+    protected final HClass HCobject; // cache HClass for java.lang.Object
 
     /** Creates a <code>ObjectBuilder</code> with a <code>RootOracle</code>
      *  which supplies <code>null</code> values to any field of
@@ -127,7 +127,7 @@ public class ObjectBuilder
 	assert o != ro.NOT_A_VALUE : "field of array not given a value";
 	return o;
     }
-    Stm makeHeader(TreeFactory tf, Info info, boolean exported)
+    protected Stm makeHeader(TreeFactory tf, Info info, boolean exported)
     {
 	List stmlist = new ArrayList(4);
 	// align to word boundary.
