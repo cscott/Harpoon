@@ -49,11 +49,12 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.1.2.12 2001-11-14 23:11:09 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.1.2.13 2001-11-19 19:22:34 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
     final Set callable = new HashSet();
+    final Set allClasses = new HashSet();
     
     /** Creates a <code>MZFCompressor</code>, using the field profiling
      *  information found in the resource at <code>resourcePath</code>.
@@ -105,6 +106,7 @@ public class MZFCompressor {
 	}
 	// okay.  foreach relevant class, split it.
 	Map field2class = new HashMap();
+	this.allClasses.addAll(ch.classes());
 	for (Iterator it=listmap.keySet().iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
 	    splitOne(linker, (CachingCodeFactory) hcf,
@@ -113,7 +115,8 @@ public class MZFCompressor {
 	field2class = Collections.unmodifiableMap(field2class);
 	// chain through MZFWidenType to change INSTANCEOF, ANEW, and
 	// TYPESWITCH quads to use the new supertype of a split class.
-	hcf = new MZFWidenType(hcf,linker, listmap, field2class).codeFactory();
+	hcf = new MZFWidenType(hcf,linker, listmap, field2class,
+			       callable, allClasses).codeFactory();
 	// chain through MZFChooser to pick the appropriate superclass
 	// at each instantiation site.
 	hcf = new MZFChooser(hcf, cc, listmap, field2class).codeFactory();
@@ -195,6 +198,7 @@ public class MZFCompressor {
 			 (HField)pair.get(0),
 			 ((Number)pair.get(1)).longValue(),
 			 f2m, field2class);
+	    allClasses.add(hc);
 	}
 	// done!
     }
@@ -254,10 +258,12 @@ public class MZFCompressor {
 		      ((HConstructor)allM[i]) :
 		    newC.getMutator().addDeclaredMethod
 		      (allM[i].getName(), allM[i]);
-		harpoon.IR.Quads.Code hcode =
-		    (harpoon.IR.Quads.Code) hcf.convert(allM[i]);
-		hcf.put(newcon, hcode.clone(newcon).hcode());
-		callable.add(newcon);
+		if (callable.contains(allM[i])) {
+		    harpoon.IR.Quads.Code hcode =
+			(harpoon.IR.Quads.Code) hcf.convert(allM[i]);
+		    hcf.put(newcon, hcode.clone(newcon).hcode());
+		    callable.add(newcon);
+		}
 	    } else relinker.move(allM[i], newC);
 	}	    
 	// getter and setter are now in newC.  copy implementation to oldC.
