@@ -1,0 +1,22 @@
+<HTML>
+<!-- $Id: package.html,v 1.1 2003-02-12 00:05:43 salcianu Exp $ -->
+<BODY>
+
+This package contains an (in)compatibility analysis and a related
+memory preallocation optimization.  The full algorithmic details are
+presented in our <a
+href="http://www.mit.edu/~salcianu/publications/popl03_paper.ps">POPL03
+paper</a>.
+
+<p>
+The incompatibility analysis detects sets of allocation sites with the
+property that for each set S, at any given moment during the execution
+of the program, at most one object allocated at allocation sites from
+S is live.  The preallocation optimization modifies the code for the
+allocation sites from a set S of compatible sites such that they reuse
+the same statically preallocated piece of memory.
+
+@author Ovidiu Gheorghioiu <ovy@alum.mit.edu>
+@author Alexandru Salcianu <salcianu@mit.edu>
+</BODY>
+</HTML>
