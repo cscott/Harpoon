@@ -15,7 +15,7 @@ import java.util.Set;
  * <code>PHI</code> objects represent blocks of phi functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.5 2002-04-11 04:00:34 cananian Exp $
+ * @version $Id: PHI.java,v 1.6 2002-09-01 07:34:46 cananian Exp $
  */
 public class PHI extends Quad {
     /** dst[i] is the left-hand side of the i'th phi function in this block. */
@@ -179,7 +179,7 @@ public class PHI extends Quad {
      *  match a destination of a phi function.  This case is legal,
      *  but makes translating PHI functions to MOVEs 'tricky'. */
     public boolean hasConflicts() {
-	Set ds = new HashSet(Arrays.asList(dst));
+	Set<Temp> ds = new HashSet<Temp>(Arrays.asList(dst));
 	for (int i=0; i<dst.length; i++)
 	    for (int j=0; j<src[i].length; j++)
 		if (ds.contains(src[i][j]))

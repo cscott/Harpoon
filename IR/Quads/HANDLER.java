@@ -21,7 +21,7 @@ import java.util.Set;
  * A <code>HANDLER</code> quad marks an entry to an exception handler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HANDLER.java,v 1.6 2002-08-30 22:39:34 cananian Exp $
+ * @version $Id: HANDLER.java,v 1.7 2002-09-01 07:34:46 cananian Exp $
  * @see METHOD
  */
 public class HANDLER extends Quad {
@@ -75,18 +75,19 @@ public class HANDLER extends Quad {
 	return protectedSet.isProtected(q);
     }
     /** Returns an <code>Enumeration</code> of the <code>Quad</code>s
-     *  protected by this <code>HANDLER</code>. */
-    public Enumeration protectedQuads() {
-	return new IteratorEnumerator(protectedSet.iterator());
+     *  protected by this <code>HANDLER</code>.
+     * @deprecated */
+    public Enumeration<Quad> protectedQuads() {
+	return new IteratorEnumerator<Quad>(protectedSet.iterator());
     }
     /** Returns an immutable <code>Set</code> of the <code>Quads</code>s
      *  protected by this <code>HANDLER</code>. */
-    public Set protectedSet() {
-	return new AbstractSet() {
-	    public Iterator iterator() {
-		final Iterator it = protectedSet.iterator();
-		return new UnmodifiableIterator() {
-		    public Object next() { return (Quad) it.next(); }
+    public Set<Quad> protectedSet() {
+	return new AbstractSet<Quad>() {
+	    public Iterator<Quad> iterator() {
+		final Iterator<Quad> it = protectedSet.iterator();
+		return new UnmodifiableIterator<Quad>() {
+		    public Quad next() { return it.next(); }
 		    public boolean hasNext() { return it.hasNext(); }
 		};
 	    }
@@ -127,7 +128,7 @@ public class HANDLER extends Quad {
 	 *  member of the protected set. */
 	public boolean isProtected(Quad q);
 	/** Iterate through all the elements of the protected set. */
-	public Iterator iterator();
+	public Iterator<Quad> iterator();
 	/** Return the number of protected quads in the set. */
 	public int size();
 	/** Remove a quad from the protected set. */
@@ -137,13 +138,13 @@ public class HANDLER extends Quad {
     }
     /** Within the IR.Quads package, we can use this implementation
      *  of <code>ProtectedSet</code>. */
-    static final class HashProtectSet extends java.util.HashSet
+    static final class HashProtectSet extends java.util.HashSet<Quad>
 	implements ProtectedSet, Cloneable {
 	HashProtectSet() { super(); }
-	HashProtectSet(Set s) { super(s); }
+	HashProtectSet(Set<Quad> s) { super(s); }
 	HashProtectSet(ProtectedSet ps) {
-	    for (Iterator it=ps.iterator(); it.hasNext(); )
-		this.insert((Quad)it.next());
+	    for (Iterator<Quad> it=ps.iterator(); it.hasNext(); )
+		this.insert(it.next());
 	}
 	public boolean isProtected(Quad q) { return contains(q); }
 	public void remove(Quad q) { super.remove(q); }

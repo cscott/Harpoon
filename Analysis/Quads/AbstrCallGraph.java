@@ -19,7 +19,7 @@ import harpoon.IR.Quads.CALL;
  * implementations of <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AbstrCallGraph.java,v 1.2 2002-04-12 06:00:56 salcianu Exp $
+ * @version $Id: AbstrCallGraph.java,v 1.3 2002-09-01 07:34:39 cananian Exp $
  */
 abstract class AbstrCallGraph implements CallGraph {
 
@@ -29,7 +29,7 @@ abstract class AbstrCallGraph implements CallGraph {
     /** Returns a list of all <code>CALL</code>s quads in the code 
 	of <code>hm</code>. */
     public CALL[] getCallSites(final HMethod hm) {
-	CALL[] retval = (CALL[]) cache_cs.get(hm);
+	CALL[] retval = cache_cs.get(hm);
 	if(retval == null) {
 	    Code code = (Code) hcf.convert(hm);
 	    if(code == null) {
@@ -43,6 +43,6 @@ abstract class AbstrCallGraph implements CallGraph {
 	}
 	return retval;
     }
-    final private Map cache_cs = new HashMap();
+    final private Map<HMethod,CALL[]> cache_cs = new HashMap<HMethod,CALL[]>();
     final private static CALL[] empty_array = new CALL[0];
 }

@@ -27,7 +27,7 @@ import java.util.Set;
  This is the most conservative implementation of <code>CallGraph</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl.java,v 1.8 2002-04-12 06:00:57 salcianu Exp $
+ * @version $Id: CallGraphImpl.java,v 1.9 2002-09-01 07:34:39 cananian Exp $
  */
 public class CallGraphImpl extends AbstrCallGraph  {
     final ClassHierarchy ch;
@@ -45,13 +45,13 @@ public class CallGraphImpl extends AbstrCallGraph  {
     
     /** Return a list of all possible methods called by this method. */
     public HMethod[] calls(final HMethod m) {
-	HMethod[] retval = (HMethod[]) cache.get(m);
+	HMethod[] retval = cache.get(m);
 	if (retval==null) {
-	    final Set s = new HashSet();
-	    final HCode hc = hcf.convert(m);
+	    final Set<HMethod> s = new HashSet<HMethod>();
+	    final HCode<Quad> hc = hcf.convert(m);
 	    if (hc==null) { cache.put(m,new HMethod[0]); return calls(m); }
-	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
-		Quad q = (Quad) it.next();
+	    for (Iterator<Quad> it = hc.getElementsI(); it.hasNext(); ) {
+		Quad q = it.next();
 		if (!(q instanceof CALL)) continue;
 		HMethod cm = ((CALL)q).method();
 		if (s.contains(cm)) continue; // duplicate.
@@ -64,7 +64,8 @@ public class CallGraphImpl extends AbstrCallGraph  {
 	}
 	return retval;
     }
-    final private Map cache = new HashMap();
+    final private Map<HMethod,HMethod[]> cache =
+	new HashMap<HMethod,HMethod[]>();
 
     /** Return an array containing all possible methods called by this
      *  method at a particular call site. */
@@ -72,12 +73,12 @@ public class CallGraphImpl extends AbstrCallGraph  {
 	HMethod cm = cs.method();
 	// for 'special' invocations, we know the method exactly.
 	if ((!cs.isVirtual()) || cs.isStatic()) return new HMethod[]{ cm };
-	final Set s = new HashSet();
+	final Set<HMethod> s = new HashSet<HMethod>();
 	// all methods of children of this class are reachable.
-	WorkSet W = new WorkSet();
+	WorkSet<HClass> W = new WorkSet<HClass>();
 	W.add(cm.getDeclaringClass());
 	while (!W.isEmpty()) {
-	    HClass c = (HClass) W.pop();
+	    HClass c = W.pop();
 	    // if this class can be instatiated, then its
 	    // implementation of the method should be added to the set.
 	    if (ch.instantiatedClasses().contains(c))
@@ -86,7 +87,7 @@ public class CallGraphImpl extends AbstrCallGraph  {
 				      cm.getDescriptor()));
 		} catch (NoSuchMethodError nsme) { }
 	    // recurse through all children of this method's class.
-	    for (Iterator it=ch.children(c).iterator(); it.hasNext(); )
+	    for (Iterator<HClass> it=ch.children(c).iterator(); it.hasNext(); )
 		W.add(it.next());
 	}
 	// finally, copy result vector to retval array.
@@ -95,7 +96,7 @@ public class CallGraphImpl extends AbstrCallGraph  {
 
     /** Returns the set of all the methods that can be called in the 
 	execution of the program. */
-    public Set callableMethods(){
+    public Set<HMethod> callableMethods(){
 	return ch.callableMethods();
     }
 
