@@ -1,5 +1,6 @@
 #include "RealtimeClock.h"
 #include "threads.h"
+#include <sys/time.h>
 
 JNIEXPORT jlong JNICALL Java_javax_realtime_RealtimeClock_getTimeInC
 (JNIEnv* env, jobject _this) {
