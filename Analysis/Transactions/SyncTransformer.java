@@ -83,7 +83,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.5.2.3 2003-07-15 03:31:14 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5.2.4 2003-07-15 07:08:18 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -151,13 +151,7 @@ public class SyncTransformer
     private final HField  HFcommitrec_parent;
     private final HClass  HCabortex;
     private final HField  HFabortex_upto;
-    /** Our new methods of java.lang.Object */
-    private final HMethod HMrCommitted;
-    private final HMethod HMwCommitted;
-    private final HMethod HMmkVersion;
-    private final HMethod HMsetReadFlag;
-    private final HMethod HMsetWriteFlag;
-    private final HMethod HMsetWriteFlagA;
+    private final HMethod HMabortex_cons;
     /** flag value */
     private final HField HFflagvalue;
     /** last *reading* transaction */
@@ -212,31 +206,12 @@ public class SyncTransformer
 	this.HFcommitrec_parent = HCcommitrec.getField("parent");
 	this.HCabortex = l.forName(pkg+"TransactionAbortException");
 	this.HFabortex_upto = HCabortex.getField("abortUpTo");
+	this.HMabortex_cons =
+	    HCabortex.getConstructor(new HClass[] { HCcommitrec });
 	// now create methods of java.lang.Object.
 	HCobj = l.forName("java.lang.Object");
 	HClassMutator objM = HCobj.getMutator();
 	int mod = Modifier.FINAL | Modifier.NATIVE;
-	this.HMrCommitted = objM.addDeclaredMethod
-	    ("getReadCommittedVersion", new HClass[0], HCobj);
-	HMrCommitted.getMutator().addModifiers(mod);
-	this.HMwCommitted = objM.addDeclaredMethod
-	    ("getWriteCommittedVersion", new HClass[0], HCobj);
-	HMwCommitted.getMutator().addModifiers(mod);
-	this.HMmkVersion = objM.addDeclaredMethod
-	    ("makeCommittedVersion", new HClass[0], HCobj);
-	HMmkVersion.getMutator().addModifiers(mod);
-	this.HMsetReadFlag = objM.addDeclaredMethod
-	    ("setFieldReadFlag", new HClass[] { HCfield, HClass.Int },
-	    HClass.Void);
-	HMsetReadFlag.getMutator().addModifiers(mod);
-	this.HMsetWriteFlag = objM.addDeclaredMethod
-	    ("setFieldWriteFlag", new HClass[] { HCfield },
-	    HClass.Void);
-	HMsetWriteFlag.getMutator().addModifiers(mod);
-	this.HMsetWriteFlagA = objM.addDeclaredMethod
-	    ("setArrayElementWriteFlag", new HClass[] { HClass.Int, HCclass },
-	    HClass.Void);
-	HMsetWriteFlagA.getMutator().addModifiers(mod);
 	// create a pair of instance fields in java.lang.Object for
 	// statistics gathering.
 	if (useUniqueRWCounters) {
@@ -356,6 +331,7 @@ public class SyncTransformer
 	    CheckOracle co = new SimpleCheckOracle(noArrayModification);
 	    if (useSmartCheckOracle) {
 		DomTree dt = new DomTree(hc, false);
+		// XXX don't allow hoisting past CALL or MONITOREXIT
 		co = new DominatingCheckOracle(dt, co);
 		co = new HoistingCheckOracle
 		    (hc, CFGrapher.DEFAULT, UseDefer.DEFAULT, dt, co);
@@ -437,6 +413,27 @@ public class SyncTransformer
 	    CounterFactory.spliceIncrement(qf, q0.prevEdge(0),
 					   "synctrans.aborts");
 	    return e;
+	}
+	private void throwAbort(Quad from, int which_succ, HCodeElement src) {
+	    assert handlers!=null;
+	    Quad q0 = new NEW(qf, src, retex, HCabortex);
+	    Quad q1 = new CALL(qf, src, HMabortex_cons,
+			       new Temp[] { retex, currtrans }, null,
+			       retex, false, false, new Temp[0]);
+	    THROW q2 = new THROW(qf, src, retex);
+	    THROW q3 = new THROW(qf, src, retex);
+	    Quad.addEdge(from, which_succ, q0, 0);
+	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(q1, 0, q2, 0);
+	    Quad.addEdge(q1, 1, q3, 0);
+	    footer = footer.attach(q3, 0); // attach exc. throw to FOOTER.
+	    if (handlers.head!=null)
+		handlers.head.add(q2); // "normal" throw is added to list.
+	    else
+		footer = footer.attach(q2, 0); // really throw abort exception
+	    CounterFactory.spliceIncrement(qf, q2.prevEdge(0),
+					   "synctrans.aborts");
+	    // done!
 	}
 	/** Fix up PHIs leading to abort handler after we're all done. */
 	void fixup() {
@@ -651,8 +648,10 @@ public class SyncTransformer
 	    Quad.addEdge(q1, 0, out.to(), out.which_pred());
 	    Quad.addEdge(q1, 1, q2, 0);
 	    footer = footer.attach(q2, 0); // add q2 to FOOTER
+	    /* // native call is not going to abort.
 	    if (handlers!=null) // only trans can abort
 		checkForAbort(q1.nextEdge(1), q, t1);
+	    */
 	    // done.
 	}
 	public void visit(GET q) {
@@ -717,8 +716,10 @@ public class SyncTransformer
 	    Quad.addEdge(q1, 0, out.to(), out.which_pred());
 	    Quad.addEdge(q1, 1, q2, 0);
 	    footer = footer.attach(q2, 0); // add q2 to FOOTER
+	    /* // native call is not going to abort.
 	    if (handlers!=null) // only trans can abort
 		checkForAbort(q1.nextEdge(1), q, t1);
+	    */
 	    // done.
 	}
 
@@ -778,8 +779,10 @@ public class SyncTransformer
 	    Quad.addEdge(q1, 0, out.to(), out.which_pred());
 	    Quad.addEdge(q1, 1, q2, 0);
 	    footer = footer.attach(q2, 0); // add q2 to FOOTER
+	    /* // native call is not going to abort.
 	    if (handlers!=null) // only trans can abort
 		checkForAbort(q1.nextEdge(1), q, t1);
+	    */
 	    // done.
 	}
 	public void visit(SET q) {
@@ -846,8 +849,10 @@ public class SyncTransformer
 	    Quad.addEdge(q1, 0, out.to(), out.which_pred());
 	    Quad.addEdge(q1, 1, q2, 0);
 	    footer = footer.attach(q2, 0); // add q2 to FOOTER
+	    /* // native call is not going to abort.
 	    if (handlers!=null) // only trans can abort
 		checkForAbort(q1.nextEdge(1), q, t1);
+	    */
 	    // done.
 	}
 	public void visit(ARRAYINIT q) {
@@ -897,13 +902,27 @@ public class SyncTransformer
 		                      (i==0) ? null : ts.versioned(t), retex,
 				      false/*final, not virtual*/, false,
 				      new Temp[0]);
-		    // XXX null return from ensureWriter indicates suicide
-		    //     request.
 		    THROW q1= new THROW(qf, q, retex);
 		    in = addAt(in, q0);
 		    Quad.addEdge(q0, 1, q1, 0);
 		    footer = footer.attach(q1, 0);
 		    checkForAbort(q0.nextEdge(1), q, retex);
+		    if (i==0) { // start reader version at NULL.
+			in = addAt(in, new CONST(qf, q, ts.versioned(t),
+					       null, HClass.Void));
+		    } else { // check return value from writer
+			// NULL version indicates suicide request.
+			Quad q2;
+			Temp tnull = new Temp(tf, "null");
+			Temp tcmp = new Temp(tf, "nullchk");
+			in = addAt(in, new CONST(qf, q, tnull,
+						 null, HClass.Void));
+			in = addAt(in, new OPER(qf, q, Qop.ACMPEQ, tcmp,
+						new Temp[] { ts.versioned(t),
+							     tnull }));
+			in = addAt(in, q2=new CJMP(qf, q, tcmp, new Temp[0]));
+			throwAbort(q2, 1, q);
+		    }
 		    in = CounterFactory.spliceIncrement
 			(qf, in,
 			 "synctrans."+((i==0)?"read":"write")+"_versions");
@@ -926,34 +945,40 @@ public class SyncTransformer
 		// (check that read-bit is set, else call fixup code,
 		//  which will do atomic-set of this bit.)
 		BitFieldTuple bft = bfn.bfLoc(raf.field);
-		Temp t0 = new Temp(tf, "readcheck");
-		Temp t1 = new Temp(tf, "readcheck");
-		Quad q0 = new GET(qf, q, t0, bft.field, raf.objref);
-		Quad q1 = new CONST(qf, q, t1,
-				    new Integer(1<<bft.bit), HClass.Int);
-		Quad q2 = new OPER(qf, q, Qop.IAND, t0, new Temp[]{t0,t1});
-		Quad q3 = new OPER(qf, q, Qop.ICMPEQ, t0, new Temp[]{t0,t1});
-		Quad q4 = new CJMP(qf, q, t0, new Temp[0]);
-		Quad q5 = new PHI(qf, q, new Temp[0], 2);
+
+		// struct vinfo *TA(EXACT_setReadFlags)
+		//      (struct oobj *obj, int offset,
+		//       int flag_offset, int flag_bit,
+		//       struct vinfo *version,
+		//       struct commitrec*cr/*this trans*/);
+		HMethod hm = gen.lookupMethod
+		    ("setReadFlags", new HClass[]
+			{ raf.field.getDeclaringClass(), HCfield,
+			  HCfield, HClass.Int, HCvinfo, HCcommitrec },
+		     HCvinfo);
+
+		Temp t0 = new Temp(tf, "readcheck_field");
+		Temp t1 = new Temp(tf, "readcheck_flag_field");
+		Temp t2 = new Temp(tf, "readcheck_flag_bit");
+		in = addAt(in, new CONST(qf, q, t0, raf.field, HCfield));
+		in = addAt(in, new CONST(qf, q, t1, bft.field, HCfield));
+		in = addAt(in, new CONST(qf, q, t2, new Integer(1<<bft.bit),
+				    HClass.Int));
+		CALL q0= new CALL(qf, q, hm,
+				  new Temp[] { raf.objref, t0, t1, t2,
+					       ts.versioned(raf.objref),
+					       currtrans },
+				  ts.versioned(raf.objref), retex,
+				  false, false, new Temp[0]);
+		// never throws exception.
+		Quad q1 = new THROW(qf, q, retex);
 		in = addAt(in, q0);
-		in = addAt(in, q1);
-		in = addAt(in, q2);
-		in = addAt(in, q3);
-		in = addAt(in, 0, q4, 1);
-		in = addAt(in, q5);
-		// handle case that field is not already correct.
-		Quad q6 = new CONST(qf, q, t0, bft.field, HCfield);
-		Quad q7 = new CALL(qf, q, HMsetReadFlag,
-				   new Temp[] { raf.objref, t0, t1 },
-				   null, retex, false, false, new Temp[0]);
-		Quad q8 = new THROW(qf, q, retex);
-		Quad.addEdges(new Quad[] { q4, q6, q7 });
-		Quad.addEdge(q7, 0, q5, 1);
-		Quad.addEdge(q7, 1, q8, 0);
-		footer = footer.attach(q8, 0);
-		checkForAbort(q7.nextEdge(1), q, retex);
+		Quad.addEdge(q0, 1, q1, 0);
+		footer = footer.attach(q1, 0);
+		/* can't see the 'bad read check' case from here anymore.
 		CounterFactory.spliceIncrement
 		    (qf, q6.prevEdge(0), "synctrans.field_read_checks_bad");
+		*/
 	    }
 	    // do field-write checks...
 	    for (Iterator<CheckOracle.RefAndField> it =
@@ -970,32 +995,37 @@ public class SyncTransformer
 		    (qf, in, "synctrans.field_write_checks");
 		// create write check code (set field to FLAG).
 		// (check that field==FLAG is set, else call fixup code)
-		HClass ty = raf.field.getType();
-		Temp t0 = new Temp(tf, "writecheck");
-		Temp t1 = new Temp(tf, "writecheck");
-		Quad q0 = new GET(qf, q, t0, raf.field, raf.objref);
-		Quad q1 = makeFlagConst(qf, q, t1, ty);
-		Quad q2 = new OPER(qf, q, cmpop(ty), t1, new Temp[]{t0,t1});
-		Quad q3 = new CJMP(qf, q, t1, new Temp[0]);
-		Quad q4 = new PHI(qf, q, new Temp[0], 2);
+		BitFieldTuple bft = bfn.bfLoc(raf.field);
+
+		// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset,
+		//                              int flag_offset, int flag_bit,
+		//                              struct vinfo *version);
+		HMethod hm = gen.lookupMethod
+		    ("setWriteFlags", new HClass[]
+			{ raf.field.getDeclaringClass(), HCfield,
+			  HCfield, HClass.Int, HCvinfo }, HClass.Void);
+
+		Temp t0 = new Temp(tf, "writecheck_field");
+		Temp t1 = new Temp(tf, "writecheck_flag_field");
+		Temp t2 = new Temp(tf, "writecheck_flag_bit");
+		in = addAt(in, new CONST(qf, q, t0, raf.field, HCfield));
+		in = addAt(in, new CONST(qf, q, t1, bft.field, HCfield));
+		in = addAt(in, new CONST(qf, q, t2, new Integer(1<<bft.bit),
+					 HClass.Int));
+		CALL q0= new CALL(qf, q, hm,
+				  new Temp[] { raf.objref, t0, t1, t2,
+					       ts.versioned(raf.objref) },
+				  null, retex, false, false, new Temp[0]);
+		// never throws exception.
+		Quad q1 = new THROW(qf, q, retex);
 		in = addAt(in, q0);
-		in = addAt(in, q1);
-		in = addAt(in, q2);
-		in = addAt(in, 0, q3, 1);
-		in = addAt(in, q4);
-		// handle case that field is not already correct.
-		Quad q5 = new CONST(qf, q, t0, raf.field, HCfield);
-		Quad q7 = new CALL(qf, q, HMsetWriteFlag,
-				   new Temp[] { raf.objref, t0 },
-				   null, retex, false, false, new Temp[0]);
-		Quad q8 = new THROW(qf, q, retex);
-		Quad.addEdges(new Quad[] { q3, q5, q7 });
-		Quad.addEdge(q7, 0, q4, 1);
-		Quad.addEdge(q7, 1, q8, 0);
-		footer = footer.attach(q8, 0);
-		checkForAbort(q7.nextEdge(1), q, retex);
+		Quad.addEdge(q0, 1, q1, 0);
+		footer = footer.attach(q1, 0);
+		// XXX maybe this method should check whether aborted?
+		/* can't see the 'bad write check' case from here anymore.
 		CounterFactory.spliceIncrement
 		    (qf, q5.prevEdge(0), "synctrans.field_write_checks_bad");
+		*/
 	    }
 	    // do array index read checks....
 	    for (Iterator<CheckOracle.RefAndIndexAndType> it =
@@ -1008,43 +1038,46 @@ public class SyncTransformer
 		in = CounterFactory.spliceIncrement
 		    (qf, in, "synctrans.element_read_checks");
 		CheckOracle.RefAndIndexAndType rit = it.next();
-		HField arrayCheckField = bfn.arrayBitField
-		    (HClassUtil.arrayClass(qf.getLinker(), rit.type, 1));
+		HClass arrayClass =
+		    HClassUtil.arrayClass(qf.getLinker(), rit.type, 1);
+		HField arrayCheckField = bfn.arrayBitField(arrayClass);
+		// struct vinfo *TA(EXACT_setReadFlags)
+		//      (struct oobj *obj, int offset,
+		//       int flag_offset, int flag_bit,
+		//       struct vinfo *version,
+		//       struct commitrec*cr/*this trans*/);
+		HMethod hm = gen.lookupMethod
+		    ("setReadFlags_Array", new HClass[]
+			{ arrayClass, HClass.Int, HCfield, HClass.Int,
+			  HCvinfo, HCcommitrec }, HCvinfo);
+
 		Temp t0 = new Temp(tf, "arrayreadcheck");
-		Temp t1 = new Temp(tf, "arrayreadcheck");
-		Temp t2 = new Temp(tf, "arrayreadcheck");
-		Quad q0 = new GET(qf, q, t0, arrayCheckField, rit.objref);
-		Quad q1a= new CONST(qf, q, t1, new Integer(31), HClass.Int);
-		Quad q1b= new OPER(qf, q, Qop.IAND, t1,
-				   new Temp[]{ rit.index, t1 });
-		Quad q1c= new CONST(qf, q, t2, new Integer(1), HClass.Int);
-		Quad q1d= new OPER(qf, q, Qop.ISHL, t1, new Temp[]{t2, t1});
-		Quad q2 = new OPER(qf, q, Qop.IAND, t0, new Temp[]{t0,t1});
-		Quad q3 = new OPER(qf, q, Qop.ICMPEQ, t0, new Temp[]{t0,t1});
-		Quad q4 = new CJMP(qf, q, t0, new Temp[0]);
-		Quad q5 = new PHI(qf, q, new Temp[0], 2);
+		Temp t1 = new Temp(tf, "arrayreadcheck_flag_field");
+		Temp t2 = new Temp(tf, "arrayreadcheck_flag_bit");
+		in = addAt(in, new CONST(qf, q, t0, new Integer(31),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.IAND, t0,
+				   new Temp[]{ rit.index, t0 }));
+		in = addAt(in, new CONST(qf, q, t2, new Integer(1),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.ISHL, t2,
+					new Temp[]{t2, t0}));
+		in = addAt(in, new CONST(qf, q, t1, arrayCheckField, HCfield));
+		CALL q0= new CALL(qf, q, hm,
+				  new Temp[] { rit.objref, rit.index, t1, t2,
+					       ts.versioned(rit.objref),
+					       currtrans },
+				  ts.versioned(rit.objref), retex,
+				  false, false, new Temp[0]);
+		// never throws exception.
+		Quad q1 = new THROW(qf, q, retex);
 		in = addAt(in, q0);
-		in = addAt(in, q1a);
-		in = addAt(in, q1b);
-		in = addAt(in, q1c);
-		in = addAt(in, q1d);
-		in = addAt(in, q2);
-		in = addAt(in, q3);
-		in = addAt(in, 0, q4, 1);
-		in = addAt(in, q5);
-		// handle case that field is not already correct.
-		Quad q6 = new CONST(qf, q, t0, arrayCheckField, HCfield);
-		Quad q7 = new CALL(qf, q, HMsetReadFlag,
-				   new Temp[] { rit.objref, t0, t1 },
-				   null, retex, false, false, new Temp[0]);
-		Quad q8 = new THROW(qf, q, retex);
-		Quad.addEdges(new Quad[] { q4, q6, q7 });
-		Quad.addEdge(q7, 0, q5, 1);
-		Quad.addEdge(q7, 1, q8, 0);
-		footer = footer.attach(q8, 0);
-		checkForAbort(q7.nextEdge(1), q, retex);
+		Quad.addEdge(q0, 1, q1, 0);
+		footer = footer.attach(q1, 0);
+		/* can't see the 'bad read check' case from here anymore.
 		CounterFactory.spliceIncrement
 		    (qf, q6.prevEdge(0), "synctrans.element_read_checks_bad");
+		*/
 	    }
 	    // do array index write checks.
 	    for (Iterator<CheckOracle.RefAndIndexAndType> it =
@@ -1053,32 +1086,42 @@ public class SyncTransformer
 		in = CounterFactory.spliceIncrement
 		    (qf, in, "synctrans.element_write_checks");
 		CheckOracle.RefAndIndexAndType rit = it.next();
+		HClass arrayClass =
+		    HClassUtil.arrayClass(qf.getLinker(), rit.type, 1);
+		HField arrayCheckField = bfn.arrayBitField(arrayClass);
+		// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset,
+		//                              int flag_offset, int flag_bit,
+		//                              struct vinfo *version);
+		HMethod hm = gen.lookupMethod
+		    ("setWriteFlags_Array", new HClass[]
+			{ arrayClass, HClass.Int, HCfield, HClass.Int,
+			  HCvinfo }, HClass.Void);
+
 		Temp t0 = new Temp(tf, "arraywritecheck");
-		Temp t1 = new Temp(tf, "arraywritecheck");
-		Quad q0 = new AGET(qf, q, t0, rit.objref, rit.index, rit.type);
-		Quad q1 = makeFlagConst(qf, q, t1, rit.type);
-		Quad q2 = new OPER(qf, q, cmpop(rit.type), t1,
-				   new Temp[] { t0, t1 } );
-		Quad q3 = new CJMP(qf, q, t1, new Temp[0]);
-		Quad q4 = new PHI(qf, q, new Temp[0], 2);
+		Temp t1 = new Temp(tf, "arraywritecheck_flag_field");
+		Temp t2 = new Temp(tf, "arraywritecheck_flag_bit");
+		in = addAt(in, new CONST(qf, q, t0, new Integer(31),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.IAND, t0,
+				   new Temp[]{ rit.index, t0 }));
+		in = addAt(in, new CONST(qf, q, t2, new Integer(1),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.ISHL, t2,
+					new Temp[]{t2, t0}));
+		in = addAt(in, new CONST(qf, q, t1, arrayCheckField, HCfield));
+		CALL q0= new CALL(qf, q, hm,
+				  new Temp[] { rit.objref, rit.index, t1, t2,
+					       ts.versioned(rit.objref) },
+				  null, retex, false, false, new Temp[0]);
+		// never throws exception.
+		Quad q1 = new THROW(qf, q, retex);
 		in = addAt(in, q0);
-		in = addAt(in, q1);
-		in = addAt(in, q2);
-		in = addAt(in, 0, q3, 1);
-		in = addAt(in, q4);
-		// handle case that array element is not already correct.
-		Quad q6 = new CONST(qf, q, t1, rit.type, HCclass);
-		Quad q7 = new CALL(qf, q, HMsetWriteFlagA,
-				   new Temp[] { rit.objref, rit.index, t1 },
-				   null, retex, false, false, new Temp[0]);
-		Quad q8 = new THROW(qf, q, retex);
-		Quad.addEdges(new Quad[] { q3, q6, q7 });
-		Quad.addEdge(q7, 0, q4, 1);
-		Quad.addEdge(q7, 1, q8, 0);
-		footer = footer.attach(q8, 0);
-		checkForAbort(q7.nextEdge(1), q, retex);
+		Quad.addEdge(q0, 1, q1, 0);
+		footer = footer.attach(q1, 0);
+		/* can't see the 'bad write check' case from here anymore.
 		CounterFactory.spliceIncrement
 		    (qf, q6.prevEdge(0), "synctrans.element_write_checks_bad");
+		*/
 	    }
 	}
 	private Edge addUniqueRWCounters(Edge in, HCodeElement src, Temp Tobj,
