@@ -23,6 +23,7 @@ import harpoon.Backend.Generic.RegFileInfo.MachineRegLoc;
 import harpoon.Backend.Generic.RegFileInfo.StackOffsetLoc;
 import harpoon.Backend.Generic.InstrBuilder;
 import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.BasicBlockInterf;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Backend.Maps.BackendDerivation;
 import harpoon.ClassFile.HCodeFactory;
@@ -81,7 +82,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.3 2002-02-26 22:40:22 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.4 2002-04-02 23:41:11 salcianu Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -1062,7 +1063,7 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	}
     }
     
-    public boolean merge(BasicBlock from, BasicBlock to) {
+    public boolean merge(BasicBlockInterf from, BasicBlockInterf to) {
 
 	WebInfo fromInfo = (WebInfo) bbInfoMap.get(from);
 	WebInfo toInfo = (WebInfo) bbInfoMap.get(to);
