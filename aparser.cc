@@ -47,7 +47,7 @@ Rule * AParser::parserule() {
       switch(aq->gettype()) {
       case AQUANTIFIER_SING:
 	if (count>=1)
-	  error;
+	  error();
 	count++;
 	break;
       case AQUANTIFIER_RANGE:
