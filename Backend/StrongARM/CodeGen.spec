@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.96 1999-11-02 19:47:25 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.97 1999-11-02 20:27:08 cananian Exp $
  */
 %%
 
@@ -585,6 +585,14 @@ BINOP<l>(AND, j, k) = i %{
     emit( ROOT, "and `d0h, `s0h, `s1h", i, j, k );
 }%
 
+    /* Auxilliary comparison functions on StrongARM are... interesting.
+     * ___ne, ___gt, and ___lt return the result you would expect:
+     * non-zero if the test is true, zero if it is false.
+     * HOWEVER, ___eq, ___ge, and ___le return an *inverted* result:
+     * non-zero if the test is *false*, zero if it is true.
+     * Fun, fun, fun. [CSA]
+     */
+
 BINOP(CMPEQ, j, k) = i
 %pred %( ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT )%
 %{
@@ -724,7 +732,7 @@ BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 }%
 
 BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
-
+    /* result from ___ge is inverted. */
     emitMOVE( ROOT, "mov `d0, `s0", r0, j);
     emitMOVE( ROOT, "mov `d0, `s0", r1, k);
     emit2( ROOT, "bl ___gesf2",
@@ -733,12 +741,12 @@ BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #0\n"+
-		"movne `d0, #1", i, r0 );
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
-
+    /* result from ___ge is inverted. */
     emit ( ROOT, "mov `d0, `s0l", r0, j);
     emit ( ROOT, "mov `d1, `s0h", r1, j);
     emit ( ROOT, "mov `d2, `s0l", r2, k);
@@ -749,8 +757,8 @@ BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #0\n"+
-		"movne `d0, #1", i, r0 );
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 
@@ -778,7 +786,7 @@ BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 }%
 
 BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
-
+    /* result from ___le is inverted. */
     emitMOVE( ROOT, "mov `d0, `s0", r0, j);
     emitMOVE( ROOT, "mov `d0, `s0", r1, k);
     emit2( ROOT, "bl ___lesf2",
@@ -787,12 +795,12 @@ BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #0\n"+
-		"movne `d0, #1", i, r0 );
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
-
+    /* result from ___le is inverted. */
     emit ( ROOT, "mov `d0, `s0l", r0, j);
     emit ( ROOT, "mov `d1, `s0h", r1, j);
     emit ( ROOT, "mov `d2, `s0l", r2, k);
@@ -803,8 +811,8 @@ BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #0\n"+
-		"movne `d0, #1", i, r0 );
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 BINOP(CMPLT, j, k) = i
