@@ -77,33 +77,42 @@ public class RelativeTime extends HighResolutionTime {
     }
     
     public RelativeTime getInterarrivalTime() {
-	// TODO
-
-	return null;
+	return this;
     }
 
     public RelativeTime getInterarrivalTime(RelativeTime destination) {
-	// TODO
-
-	return null;
+	destination = this;
+	return destination;
     }
     
     public RelativeTime relative(Clock clock) {
-	set(getMilliseconds() - clock.getTime().getMilliseconds(),
-	    getNanoseconds() - clock.getTime().getNanoseconds());
+	set(getMilliseconds() +
+	    defaultClock.getTime().getMilliseconds() -
+	    clock.getTime().getMilliseconds(),
+	    getNanoseconds() +
+	    defaultClock.getTime().getNanoseconds() -
+	    clock.getTime().getNanoseconds());
 	return this;
     }
 
     public RelativeTime relative(Clock clock, RelativeTime time) {
-	set(time.getMilliseconds() - clock.getTime().getMilliseconds(),
-	    time.getNanoseconds() - clock.getTime().getNanoseconds());
+	set(time.getMilliseconds() +
+	    defaultClock.getTime().getMilliseconds() -
+	    clock.getTime().getMilliseconds(),
+	    time.getNanoseconds() +
+	    defaultClock.getTime().getNanoseconds() -
+	    clock.getTime().getNanoseconds());
 	return this;
     }
 
     // Not in specs, but must be defined, since it was declared in HighResolutionTime
     public RelativeTime relative(Clock clock, HighResolutionTime time) {
-	set(time.getMilliseconds() - clock.getTime().getMilliseconds(),
-	    time.getNanoseconds() - clock.getTime().getNanoseconds());
+	set(time.getMilliseconds() +
+	    defaultClock.getTime().getMilliseconds() -
+	    clock.getTime().getMilliseconds(),
+	    time.getNanoseconds() +
+	    defaultClock.getTime().getNanoseconds() -
+	    clock.getTime().getNanoseconds());
 	return this;
     }
     

@@ -31,13 +31,17 @@ public class RationalTime extends RelativeTime {
     }
 
     public AbsoluteTime absolute(Clock clock, AbsoluteTime destination) {
-	destination.set(getMilliseconds() + clock.getTime().getMilliseconds(),
-			getNanoseconds() + clock.getTime().getNanoseconds());
+	if (destination == null)
+	    destination = new AbsoluteTime();
+	if (clock == null)
+	    clock = Clock.getRealtimeClock();
+	
+	destination.set(clock.getTime().add(this));
 	return destination;
     }
 
     public void addInterarrivalTo(AbsoluteTime destination) {
-	// TODO
+	destination.add(this, destination);
     }
 
     public int getFrequency() {
@@ -45,21 +49,25 @@ public class RationalTime extends RelativeTime {
     }
 
     public RelativeTime getInterarrivalTime() {
-	// TODO
-
-	return null;
+	RelativeTime temp = new RelativeTime();
+	long t =  Math.round((1000000 * getMilliseconds() + getNanoseconds()) /
+			     getFrequency());
+	temp.set(t / 1000000, (int) (t % 1000000));
+	return temp;
     }
 
     public RelativeTime getInterarrivalTime(RelativeTime dest) {
-	// TODO
-
+	if (dest == null) dest = new RelativeTime();
+	long t =  Math.round((1000000 * getMilliseconds() + getNanoseconds()) /
+			     getFrequency());
+	dest.set(t / 1000000, (int) (t % 1000000));
 	return dest;
     }
 
-    public void set(long millis, int nanos)
-	throws IllegalArgumentException {
-	// TODO
-    }
+    // Is in spec, but should be the same as in RelativeTime
+//     public void set(long millis, int nanos)
+// 	throws IllegalArgumentException {
+//     }
 
     public void setFrequency(int frequency) throws ArithmeticException {
 	this.frequency = frequency;
