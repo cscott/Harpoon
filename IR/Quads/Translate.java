@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.6 2002-08-30 22:39:35 cananian Exp $
+ * @version $Id: Translate.java,v 1.7 2002-09-21 04:46:46 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -144,18 +144,22 @@ final class Translate { // not public.
 	int arity(InMerge m, Map calls) {
 	    return ((Integer) getList(m, calls).get(1)).intValue();
 	}
-	void put(InMerge m, Map calls, PHI p, int arity) {
+	State state(InMerge m, Map calls) {
+	    return (State) getList(m, calls).get(2);
+	}
+	void put(InMerge m, Map calls, PHI p, int arity, State s) {
 	    h.put(Arrays.asList(new Object[] { m, calls }),
-		  Arrays.asList(new Object[] { p, new Integer(arity) }));
+		  Arrays.asList(new Object[] { p, new Integer(arity), s}));
 	}
 	public String toString() { return h.toString(); }
 
-	void fixupPhis(State s) { // eliminate null limbs
+	void fixupPhis() { // eliminate null limbs
 	    for (Iterator i=h.entrySet().iterator(); i.hasNext(); ) {
 		Map.Entry me = (Map.Entry) i.next();
 		InMerge in= (InMerge) ((List)me.getKey()).get(0);
 		PHI phi   = (PHI)     ((List)me.getValue()).get(0);
 		int arity =((Integer) ((List)me.getValue()).get(1)).intValue();
+		State s   = (State)   ((List)me.getValue()).get(2);
 
 		while (arity < phi.arity())
 		    phi = phi.shrink(phi.arity()-1); // null branch.
@@ -295,6 +299,10 @@ final class Translate { // not public.
 	    this.js = null;
 	    this.jlv= null;
 	    this.calls = Default.EMPTY_MAP;
+	}
+	public String toString() {
+	    return "<"+ss+", "+stackSize+", "+ls+", "+
+		js+", "+jlv+", "+calls+">";
 	}
 
 	State pop()       { return pop(1); }
@@ -510,6 +518,11 @@ final class Translate { // not public.
 	    this.header = header;
 	    this.which_succ = which_succ;
 	}
+	public String toString() {
+	    return "<"+initialState+", "+
+		"#"+in.getID()+":"+in+", "+
+		"#"+header.getID()+":"+header+", "+which_succ+">";
+	}
     }
 
     /** Return a <code>Quad</code> representation of the method code
@@ -649,11 +662,17 @@ final class Translate { // not public.
 		todo.push(nts[i]);
 	}
 	// JSR/RETs leave null edges into PHIs
-	s.mergeMap().fixupPhis(s);
+	s.mergeMap().fixupPhis();
 	// XXX: Email me <cananian@mit.edu> if you see these assertions fail!
-	// XXX: I've lost the test case that exposed this bug, which is
-	//      that fixupPhis can add new handlers to todoHandler
-	//      via its call to s.recordHandler(), requiring *more* fixup.
+	//   The com.sun.media.jai.util.Service class from Sun JAI
+	//   used to expose this bug:  fixupPhis() ended up adding new
+	//   handlers to todoHandler via its call to s.recordHandler(),
+	//   requiring *more* fixup.  BUT this was (in this case, at
+	//   least) because the state fixupPhis() was using was bogus.
+	// I don't *think* there is any valid case where fixupPhis()
+	// with the correct State will create a new handler, but if
+	// there is, these assertions will fail and someone will let
+	// me know.  Right?
 	assert todo.empty();
 	assert s.todoHandler().empty();
 	// done.
@@ -1600,7 +1619,7 @@ final class Translate { // not public.
 	    phi = phi.grow(new Temp[0], arity); // increase capacity by 1.
 
 	Quad.addEdge(ts.header, ts.which_succ, phi, arity);
-	s.mergeMap().put(in, calls, phi, arity+1);
+	s.mergeMap().put(in, calls, phi, arity+1, s);
 	return r;
     }
 
