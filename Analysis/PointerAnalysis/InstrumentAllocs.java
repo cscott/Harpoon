@@ -32,7 +32,7 @@ import java.util.Map;
  * <code>InstrumentAllocs</code> adds counters to each allocation site.
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentAllocs.java,v 1.1.2.10 2000-12-06 19:45:33 bdemsky Exp $
+ * @version $Id: InstrumentAllocs.java,v 1.1.2.11 2000-12-12 20:45:55 vivien Exp $
  */
 public class InstrumentAllocs extends MethodMutator implements java.io.Serializable {
     int count;
@@ -93,7 +93,7 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 		    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),qcall,0);
 		    Quad.addEdge(qphi,0,q,0);
 		} else if (q instanceof CALL) {
-		    if (((CALL)q).method().equals(linker.forName("java.lang.System").getMethod("exit",new HClass[0]))) {
+		    if (((CALL)q).method().equals(linker.forName("java.lang.System").getMethod("exit","(I)V"))) {
 			HMethod methode=linker.forName("harpoon.Runtime.CounterSupport").getMethod("exit",new HClass[0]);
 			Temp texc=new Temp(tf);
 			CALL qcall=new CALL(qf, q, methode,new Temp[0], null, texc,false,false,new Temp[0][2],new Temp[0]);
