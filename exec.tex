@@ -1,27 +1,185 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: exec.tex,v 1.1 1999-04-28 15:17:40 cananian Exp $
+% $Id: exec.tex,v 1.2 1999-04-28 21:54:30 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage,twoside]{article}
 
 % A breaking non-space for URLs
 \newcommand{\bnsp}{\hspace{0pt}}
+% environment for code examples
+\newcommand{\ells}[1]{\ifcase#1\or l\or l|l\or l|l|l\or l|l|l|l\or l|l|l|l|l\fi}
+\newenvironment{samplecode}[1][1]
+  {\setlength{\tabcolsep}{2\tabcolsep}%
+\renewcommand{\>}{~~~~}%
+\newcommand{\comment}[1]{\rm\it // ##1}%
+\newcommand{\com}[1]{\comment{##1}}%
+\begin{center}\tt\begin{tabular}{\ells{#1}}}
+  {\end{tabular}\end{center}}
 
 % phi and sigma functions
 \newcommand{\phifunction}{$\phi$-function}
 \newcommand{\sigfunction}{$\sigma$-function}
+\newcommand{\xifunction}{$\xi$-function}
+\newcommand{\tuple}[1]{\ensuremath{\left\langle #1 \right\rangle}}
+\newcommand{\xivec}[2]{\ensuremath{\left[\tuple{#1}\atop\tuple{#2}\right]}}
 
 % Cytron's path symbol
 \newcommand{\path}{\ensuremath{\rightarrow}}
 \newcommand{\pathplus}{\ensuremath{\stackrel{+}{\path}}}
 
+% SSI0/+
+\newcommand{\ssizero}{SSI$_0$}
+\newcommand{\ssiplus}{SSI$^+$}
+
 \title{Executability in the Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.1 $ $}
+\date{\today \\ $ $Revision: 1.2 $ $}
 
 \begin{document}
 \bibliographystyle{plain}
 
 \maketitle
+
+The Static Single Information (SSI) form, as originally presented,
+requires control-flow graph information in order to be executable.
+Executability is desirable because it enables the use of abstract
+interpretation when designing algorithms \cite{pingali90:dfg}.  We
+would like to have a demand-driven operational semantics for SSI form
+that does not require control-flow information; thus freeing us to
+more flexibly reorder execution.
+
+In particular, we would like a representation that eliminates
+unnecessary control dependencies such as exist in the program of
+figure \ref{fig:ctrldep}.  A control-flow graph for this program, as
+it is written, will explicitly specify that no assignments to
+\texttt{B[]} will take place until all elements of \texttt{A[]} have
+been assigned; that is, the second loop will be
+\textit{control-dependent} on the first.  We would like to remove this
+control dependence in order to provide greater parallelism---in this
+case, to allow the assignments to \texttt{A[]} and \texttt{B[]} to
+take place in parallel, if possible.
+
+\begin{figure}[t]
+\begin{samplecode}
+for (int i=0; i<10; i++)\\
+\>A[i] = x;\\
+for (int j=0; j<10; j++)\\
+\>B[j] = y;\\
+\end{samplecode}
+\caption{An example of unnecessary control dependence: the second loop
+is \textit{control-dependent} on the first and so assignments to
+\texttt{A[]} and \texttt{B[]} cannot take place in parallel.}
+\label{fig:ctrldep}
+\end{figure}
+
+The modifications outlined here will extend SSI form in order to
+provide a useful and descriptive operational semantics.  We will call
+the extended form \ssiplus.  For clarity, SSI form as originally
+presented we will call \ssizero.
+
+\section{SSI extensions}
+Although a demand-driven execution model can be constructed for
+\ssizero,  it fails to handle loops and imperative
+constructs well. \ssiplus\ form addresses these deficiencies.
+
+\subsection{Imperative constructs and pointer variables}
+The presentation of \ssizero\ ignored pointers,
+concentrating on so-called register variables.  Extending \ssizero\ to
+handle these imperative constructs is quite easy: we simply define a
+``variable'' $S$ to represent an updatable store.  This variable is
+renamed and numbered as before, so that $S_0$ represents the initial
+contents of the store and $S_i, i>0$ represents the contents of the
+store after some sequence of writes.  Figure \ref{fig:store} shows a
+simple imperative program in \ssiplus\ form.  Note that modifications
+to the store typically take the previous contents of the store as
+input, and that subroutines with side-effects modifying the store must
+be written in \ssiplus\ form such that they both take a store and
+return a store.
+
+\begin{figure}[t]
+\begin{samplecode}[2]
+\com{swap A[i] and B[j]} & \com{\ssiplus\ form:}\\
+x = A[i];	& $x_0$ = FETCH($S_0$, $A_0 + i_0$) \\
+y = B[j];	& $y_0$ = FETCH($S_0$, $B_0 + j_0$) \\
+A[i] = y;	& $S_1$ = STORE($S_0$, $A_0 + i_0$, $y_0$); \\
+B[j] = x;	& $S_2$ = STORE($S_1$, $B_0 + j_0$, $x_0$); \\
+\end{samplecode}
+\caption{Use of the ``store variable'' $S_x$ in \ssiplus\ form.}
+\label{fig:store}
+\end{figure}
+
+For simplicity, most of the remaining examples will not address the store.
+
+\subsection{Loop constructs}
+\begin{figure}[t]
+\begin{samplecode}[3]
+\com{a simple loop} & \com{\ssizero\ form:} & \com{\ssiplus\ form:}\\
+j=1;	& \>$j_0 = 1$			& $j_0=1$\\
+i=0;	& \>$i_0 = 0$			& $i_0=0$\\
+do	& L1:			& $\xivec{j_1}{i_5}=\xi(\xivec{j_0}{i_3})$\\
+$\{$	& \>$i_1 = \phi(i_0, i_3)$	& $i_1 = \phi(i_0, i_5)$ \\
+\>i+=j; & \>$i_2 = i_1 + j_0$		& $i_2 = i_1 + j_1$ \\
+$\}$ while (i<5);	& \>$P_0=(i_2<5)$	& $P_0=(i_2<5)$\\
+	& \>if $P_0$ goto L1		& $\tuple{i_3,i_4}=\sigma(P_0, i_2)$ \\
+	& \>~~$\tuple{i_3,i_4}=\sigma(i_2)$ &\\
+\end{samplecode}
+\caption{A simple loop, in \ssizero\ and \ssiplus\ forms.}
+\label{fig:loop}
+\end{figure}
+
+The center column of figure \ref{fig:loop} shows a typical loop in
+\ssizero\ form.  Note first that an explicit ``control flow''
+expression (\texttt{goto L1}) is required in order to make sense of
+the program.  Note also that $i_1$, $i_2$ and $i_3$ are potentially
+\textit{dynamically} assigned many times, although \textit{statically}
+they have only one definition each.  This complicates any sort of
+demand-driven semantics: should the \phifunction{} demand the value of
+$i_0$, or $i_3$, when it is evaluated the first time?  Which of the
+values of $i_3$ does it receive when the \phifunction{} is
+subsequently evaluated?  A token-based dataflow interpretation fails
+as well: it is easy to see that tokens for $i_x$ flow around the loop
+before flowing out at the end, but the token for $j_0$ seems to be
+``used up'' in the first iteration.
+
+\ssiplus\ introduces a \xifunction\ in the block of \phifunction{s} to
+clarify the loop semantics. The left-hand column of figure
+\ref{fig:loop} illustrates the nature of this function.  The
+\xifunction{} arbitrates loop iteration, and will be defined precisely
+in the operational semantics of \ssiplus\ form.  For now note that it
+relates iteration variables (the top tuple of the parameter and result
+vectors) to loop invariants (the bottom tuple of the vectors).  We
+followed the statement ordering of \ssizero\ in the figure, but unlike
+\ssizero, the statements of \ssiplus\ could appear in any order
+without affecting their meaning---and so the statement label
+\texttt{L1} of the \ssizero\ representation is unnecessary in \ssiplus.
+
+There is at most one \xifunction{} per \phifunction{} block, and it
+always precedes the \phifunction{s}.  Construction of \xifunction{s}
+takes place before the renaming step associated with SSI form, and the
+\xifunction{s} are then renamed in the same manner as any other
+definition.  The top tuple of the constructed \xifunction{} contains
+the names of all variables reaching the guarded \phifunction{} via a
+backedge, and the bottom tuple contains all variables used inside the
+guarded loop that are {\em not} mentioned in the header's
+\phifunction{}.\footnote{I can give you a rigorous algorithm: the top
+tuple is found with a depth-first search of the source
+control-flow graph, and the bottom tuple can be determined by a
+traversal of the same SESE-region tree which generates \ssizero\
+form.}
+
+\section{Operational Semantics}
+We will base the operational semantics of \ssiplus\ on a demand-driven
+dataflow model.  We will define both a cycle-oriented semantics and an
+event-driven semantics, which (incidentally) correspond to synchronous
+and asynchronous hardware models.
+
+{\Large\bf AT THIS POINT I WENT HOME TO GET MY 6.821 NOTES IN ORDER TO
+PROPERLY WRITE UP THE SEMANTICS.}
+
+\subsection{Cycle-oriented semantics}
+
+\subsection{Event-driven semantics}
+
+\section{Hardware correspondence}
 
 \bibliography{harpoon}
 \appendix
