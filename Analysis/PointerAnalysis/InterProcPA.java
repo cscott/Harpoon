@@ -24,11 +24,11 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.10 2000-02-21 04:47:59 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.11 2000-03-01 01:11:03 salcianu Exp $
  */
 abstract class InterProcPA {
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     /** Analyzes the call site <code>q</code> inside 
 	<code>current_method</code>. If analyzing the call is not possible
@@ -209,7 +209,8 @@ abstract class InterProcPA {
 		      pig_caller.tau.activeThreadSet(), mu);
 
 	// bring the edge ordering relation into the caller's graph
-	bring_eo(pig_caller.eo, old_caller_I, pig_callee.eo, pig_callee.G.O, mu);
+	bring_eo(pig_caller.eo, old_caller_I, pig_callee.eo,
+		 pig_callee.G.O, mu);
 
 	// recompute the escape info
 	pig_caller.G.propagate();
@@ -436,17 +437,26 @@ abstract class InterProcPA {
 
 	eo_callee.forAllEntries(new RelationEntryVisitor(){
 		public void visit(Object key, Object value){
-		    PAEdge ei = (PAEdge) key;
-		    PAEdge eo = (PAEdge) value;
+		    PAEdge eo = (PAEdge) key;
+		    PAEdge ei = (PAEdge) value;
+		    // make sure eo will appear into the new graph
 		    if(!mu.contains(eo.n2,eo.n2)) return;
-		    Iterator it_ei_n1 = mu.getValues(ei.n1);
+
+		    Set ei_n1_set = mu.getValuesSet(ei.n1);
+		    if(ei_n1_set.isEmpty()) return;
+		    Set ei_n2_set = mu.getValuesSet(ei.n2);
+		    if(ei_n2_set.isEmpty()) return;
+		    Set eo_n1_set = mu.getValuesSet(eo.n1);
+		    if(eo_n1_set.isEmpty()) return;
+
+		    Iterator it_ei_n1 = ei_n1_set.iterator();
 		    while(it_ei_n1.hasNext()){
 			PANode ei_n1 = (PANode) it_ei_n1.next();
-			Iterator it_ei_n2 = mu.getValues(ei.n2);
+			Iterator it_ei_n2 = ei_n2_set.iterator();
 			while(it_ei_n2.hasNext()){
 			    PANode ei_n2 = (PANode) it_ei_n2.next();
 			    PAEdge new_ei = new PAEdge(ei_n1,ei.f,ei_n2);
-			    Iterator it_eo_n1 = mu.getValues(eo.n1);
+			    Iterator it_eo_n1 = eo_n1_set.iterator();
 			    while(it_eo_n1.hasNext()){
 				PANode eo_n1 = (PANode) it_eo_n1.next();
 				eo_caller.add(new PAEdge(eo_n1,ei.f,eo.n2),

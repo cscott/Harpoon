@@ -14,7 +14,7 @@ import harpoon.IR.Quads.Quad;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.7 2000-02-12 01:41:32 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.8 2000-03-01 01:11:03 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -47,7 +47,7 @@ public class NodeRepository {
      *  parameters of the method. */
     public final void addParamNodes(HMethod method, int param_number){
 	// do not create the parameter nodes twice for the same procedure
-	if(param_nodes.get(method)!=null) return;
+	if(param_nodes.containsKey(method)) return;
 	PANode nodes[] = new PANode[param_number];
 	for(int i=0;i<param_number;i++){
 	    nodes[i] = new PANode(PANode.PARAM);

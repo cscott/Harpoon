@@ -21,7 +21,7 @@ import java.util.Arrays;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.14 2000-02-24 22:30:29 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.15 2000-03-01 01:11:03 salcianu Exp $
  */
 public class Relation{
     
@@ -82,22 +82,24 @@ public class Relation{
 	Iterator it_keys = keys.iterator();
 	while(it_keys.hasNext()){
 	    Object obj = it_keys.next();
-	    if(predicate.check(obj)) keys.remove(obj);
+	    if(predicate.check(obj))
+		it_keys.remove();
 	}
     }
 
-    /** Removes all the relations between <code>key</code> and values that
-	satisfy the <code>predicate.check()</code> predicate. */ 
-    public void removeValues(Object key, PredicateWrapper predicate){
+    // Removes all the relations between key and values that
+    // satisfy the predicate.check() predicate.
+    // Returns true if there is no value attached to key at the end of this
+    // method so that the caller can erase key from the hash. 
+    private boolean removeValues(Object key, PredicateWrapper predicate){
 	Set values = (Set) hash.get(key);
-	if((values == null) || (values.isEmpty())) return;
 	Iterator it_values = values.iterator();
 	while(it_values.hasNext()){
 	    Object value = it_values.next();
 	    if(predicate.check(value))
-		values.remove(value);
+		it_values.remove();
 	}
-	if(values.isEmpty()) hash.remove(key);
+	return values.isEmpty();
     }
 
     /** Removes all the values that fails to satisfy
@@ -105,7 +107,8 @@ public class Relation{
     public void removeValues(PredicateWrapper predicate){
 	Iterator it_keys = keySet().iterator();
 	while(it_keys.hasNext())
-	    removeValues(it_keys.next(), predicate);
+	    if(removeValues(it_keys.next(), predicate))
+		it_keys.remove();
     }
 
     /** Removes all the relations involving at least one object that doesn't

@@ -7,23 +7,37 @@ package harpoon.Analysis.PointerAnalysis;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Enumeration;
 
 import harpoon.Temp.Temp;
 
 
 /**
- * <code>EdgeOrdering</code> models the oredring relation between the 
+ * <code>EdgeOrdering</code> models the ordering relation between the 
  inside and the outside edges belonging to the same analysis scope.<br>
+
+ This relation records facts like this: <i>the outside edge <code>eo</code>
+ could have been read after the inside edge <code>ei</code> was created.</i>
+ This information is used in the inter-thread analysis, when outside edges
+ are matched not only against inside edges from the opposite scope but even
+ against inside edges from their own scope. Of course, only edges with the
+ same field can match, so we are interested in the ordering relation only
+ between such edges.<br>
+
  Although the actual implementation is fully functional, it is not 
  a very performant one. My main concern was to make the algorithm work
- correctly; speed is only a second issue.
+ correctly; speed was only a second issue.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: EdgeOrdering.java,v 1.1.2.4 2000-02-25 01:06:12 salcianu Exp $
+ * @version $Id: EdgeOrdering.java,v 1.1.2.5 2000-03-01 01:11:03 salcianu Exp $
  */
 public class EdgeOrdering{
 
-    // the relation behind the implementation
+    // the relation behind the implementation: if <eo,ei> appears in this
+    // relation, the outside edge eo could have been read after the inside
+    // edge ei was created.
+    // So, outside edges are the keys and inside edges are the values
+    // of this relation.
     private Relation after;
 
     /** Creates a <code>EdgeOrdering</code> object. */
@@ -31,8 +45,10 @@ public class EdgeOrdering{
 	after = new Relation();
     }
 
-    /** Records the ordering relation <i>the inside edge <code>ei</code> was
-	created before the outside edges <code>eo</code> was read. */
+    /** Adds a piece of ordering information. More specifically, it records
+	the following information: <i>the outside edge <code>eo</code>
+	could have been read after the inside edge <code>ei</code> was
+	created</i>. */
     public boolean add(PAEdge eo, PAEdge ei){
 	if(!eo.f.equals(ei.f)) return false;
 	return after.add(eo,ei);
@@ -44,41 +60,42 @@ public class EdgeOrdering{
 	return after.contains(eo,ei);
     }
 
-    // TODO: modify the EdgeOrdering such that only edges with the same
-    // field are involved in a relation DONE
-    // TODO: put the appropriate comments
-
     /** Records the fact that all the outside edges from the set 
 	<code>outside_edges</code> are created after all the inside
-	edges from I.<br>
-	<b>Parameters:</b> <code>outside_edge</code> must be a set of
-	<code>PAEdge</code>s.<br>
-	<b>Result:</b> returns <code>true</code> if the edge ordering
+	edges from I. We are interested only in the relation between
+	edges with the same field <code>f</code>.<br>
+	<b>Parameters:</b> <code>outside_edge</code> must be a set
+	of <code>PAEdge</code>s, all with the same field <code>f</code>.
+	<b>Result:</b> it returns <code>true</code> if the edge ordering
 	relation was changed by this addition. */
-    public boolean add(final Set outside_edges, PAEdgeSet I){
-	class Dummy{
-	    boolean modified = false;
-	};
-	final Dummy mod = new Dummy();
+    private boolean add(final Set outside_edges, PAEdgeSet I, String f){
+	boolean modified = false;
 
-	I.forAllEdges(new PAEdgeVisitor(){
-		public void visit(Temp var, PANode node){}
-		public void visit(PANode node1, String f,PANode node2){
-		    Iterator it = outside_edges.iterator();
-		    while(it.hasNext()){
-			PAEdge eo = (PAEdge) it.next();
-			if(!f.equals(eo.f)) continue;
-			PAEdge ei = new PAEdge(node1,f,node2);
-			if(add(eo,ei)) mod.modified = true;
-		    }
+	Enumeration enum_node1 = I.allSourceNodes();
+	while(enum_node1.hasMoreElements()){
+	    PANode node1 = (PANode) enum_node1.nextElement();
+	    Iterator it_node2 = I.pointedNodes(node1,f).iterator();
+	    while(it_node2.hasNext()){
+		PANode node2 = (PANode) it_node2.next();
+		PAEdge ei = new PAEdge(node1,f,node2);
+		Iterator it_eo = outside_edges.iterator();
+		while(it_eo.hasNext()){
+		    PAEdge eo = (PAEdge) it_eo.next();
+		    if(add(eo,ei)) modified = true;
 		}
-	    });
-	return mod.modified;
+	    }
+	}
+
+	return modified;
     }
 
 
-    /** Records the fact that the new outside edges node1,f,node2 (forall
-	node1 in nodes1) are created after all the inside edges from I. */
+    /** Records the fact that the new outside edges
+	<code>&lt;node1,f,node2&gt;</code>
+	(forall <code>node1</code> in <code>nodes1</code>) are created after
+	all the inside edges from <code>I</code>.
+	Returns <code>true</code> if he edge ordering relation was changed by
+	this addition. */
     public boolean add(Set nodes1, String f, PANode node2, PAEdgeSet I){
 	Set outside_edges = new HashSet();
 	Iterator it_nodes1 = nodes1.iterator();
@@ -86,7 +103,7 @@ public class EdgeOrdering{
 	    PANode node1 = (PANode) it_nodes1.next();
 	    outside_edges.add(new PAEdge(node1,f,node2));
 	}
-	return add(outside_edges,I);
+	return add(outside_edges,I,f);
     }
 
 
@@ -99,7 +116,11 @@ public class EdgeOrdering{
     /** Visits all the entry of <code>this</code> edge ordering relation.
 	In order not to add one more interface, a simple 
 	<code>RelationEntryVisitor</code> interface is used for the type
-	of of the argument <code>visitor</code>. */
+	of the argument <code>visitor</code>.
+	For each outside edge <code>eo</code> and for each inside edge
+	<code>ei</code> such that the information <i>eo can be read
+	after ei was created</i> is recorded into <code>this</code> object,
+	<code>visitor.visit(eo,ei)</code> is called. */
     public void forAllEntries(RelationEntryVisitor visitor){
 	after.forAllEntries(visitor);
     }
@@ -109,7 +130,7 @@ public class EdgeOrdering{
     public void removeNodes(final Set nodes){
 	after.removeObjects(new PredicateWrapper(){
 		public boolean check(Object obj){
-		    return ((PAEdge) obj).badEdge(nodes);
+		    return ((PAEdge) obj).isBad(nodes);
 		}
 	    });
     }
@@ -144,8 +165,8 @@ public class EdgeOrdering{
 		public void visit(Object o1, Object o2){
 		    PAEdge eo = (PAEdge) o1;
 		    PAEdge ei = (PAEdge) o2;
-		    if(ei.goodEdge(remaining_nodes) && 
-		       eo.goodEdge(remaining_nodes))
+		    if(ei.isGood(remaining_nodes) && 
+		       eo.isGood(remaining_nodes))
 			essence.add(eo,ei);
 		}
 	    });

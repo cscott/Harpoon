@@ -9,7 +9,7 @@ import java.util.Set;
  * <code>PAEdge</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdge.java,v 1.1.2.4 2000-02-25 01:06:12 salcianu Exp $
+ * @version $Id: PAEdge.java,v 1.1.2.5 2000-03-01 01:11:03 salcianu Exp $
  */
 public class PAEdge {
 
@@ -42,16 +42,16 @@ public class PAEdge {
 
     /** Checks whether <code>this</code> edge refers only to remaining nodes.
 	This is supposed to be used by <code>keepTheEssential</code> methods.
-	Warning: <code>goodEdge</code> is NOT the negation of
-	<code>badEdge</code>. */
-    boolean goodEdge(Set remaining_nodes){
+	Warning: <code>isGood</code> is NOT the negation of
+	<code>isBad</code>. */
+    boolean isGood(Set remaining_nodes){
 	return remaining_nodes.contains(n1) && remaining_nodes.contains(n2);
     }
 
     /** Checks whether <code>this</code> edge refers to at least one
 	node from the set <code>bad_nodes</code>. This is supposed to
 	help us to determine which edges must go when we remove some nodes. */
-    boolean badEdge(Set bad_nodes){
+    boolean isBad(Set bad_nodes){
 	return bad_nodes.contains(n1) || bad_nodes.contains(n2);
     }
 }

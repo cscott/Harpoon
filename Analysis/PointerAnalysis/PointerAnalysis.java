@@ -50,12 +50,10 @@ import harpoon.IR.Quads.FOOTER;
  * <code>PointerAnalysis</code> is the main class of the Pointer Analysis
  package. It is designed to act as a <i>query-object</i>: after being
  initialized, it can be asked to provide the Parallel InteractionGraph
- valid at the end of a specific method. All the computation is done at
- the construction time; the queries are only retrieving the already
- computed results from the caches.
+ valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.18 2000-02-21 04:47:59 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.19 2000-03-01 01:11:03 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -63,12 +61,13 @@ public class PointerAnalysis {
     public static final boolean DEBUG2 = false;
     public static final boolean DETERMINISTIC = true;
     public static final boolean TIMING = true;
+    public static final boolean STATS = true;
 
     public static final String ARRAY_CONTENT = "array_elements";
 
     // The HCodeFactory providing the actual code of the analyzed methods
     private CallGraph cg;
-    final CallGraph getCallGraph() { return cg; }
+    public final CallGraph getCallGraph() { return cg; }
     private AllCallers ac;
     private CachingSCCBBFactory scc_bb_factory;
 
@@ -84,23 +83,18 @@ public class PointerAnalysis {
     // Mapping HMethod -> ParIntGraph.
     private Hashtable hash_proc_ext = new Hashtable();
 
-    /** Creates a <code>PointerAnalysis</code>. It is also triggering
-     * the analysis of <code>hm</code> and of all methods that are called
-     * directly or indirectly by <codehm</code>.<br>
+    /** Creates a <code>PointerAnalysis</code>.
      *<b>Parameters</b>
      *<ul>
      *<li>The <code>CallGraph</code> and the <code>AllCallers</code> that
      * models the relations between the different methods;
      *<li>A <code>HCodefactory</code> that is used to generate the actual
      * code of the methods and
-     *<li>The <i>root</i>method <code>hm</code>.
      *</ul> */
-    public PointerAnalysis(CallGraph _cg, AllCallers _ac,
-			   HCodeFactory _hcf, HMethod hm){
+    public PointerAnalysis(CallGraph _cg, AllCallers _ac, HCodeFactory _hcf){
 	cg  = _cg;
 	ac  = _ac;
 	scc_bb_factory = new CachingSCCBBFactory(_hcf);
-	analyze(hm);
     }
 
     /** Returns the full (internal) <code>ParIntGraph</code> attached to
@@ -211,7 +205,7 @@ public class PointerAnalysis {
 		};
 
 	long begin_time;
-	if(TIMING) begin_time = new Date().getTime();
+	if(TIMING) begin_time = System.currentTimeMillis();
 
 	if(DEBUG)
 	  System.out.println("Creating the strongly connected components " +
@@ -226,8 +220,8 @@ public class PointerAnalysis {
 	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(hm,navigator));
 
 
-	if(DEBUG){
-	    long total_time = new Date().getTime() - begin_time;
+	if(DEBUG2 || TIMING){
+	    long total_time = System.currentTimeMillis() - begin_time;
 	    int counter = 0;
 	    int methods = 0;
 	    SCComponent scc = method_sccs.getFirst();
@@ -261,7 +255,7 @@ public class PointerAnalysis {
 
 	if(TIMING)
 	    System.out.println("analyze(" + hm + ") finished in " +
-			       (new Date().getTime() - begin_time) + "ms");
+			       (System.currentTimeMillis() - begin_time) + "ms");
     }
 
     // inter-procedural analysis of a group of mutually recursive methods
@@ -293,15 +287,15 @@ public class PointerAnalysis {
 	    System.out.print(scc.toString(cg));
 
 	long begin_time;
-	if(TIMING) begin_time = new Date().getTime();
+	if(TIMING) begin_time = System.currentTimeMillis();
 
 	while(!W_inter_proc.isEmpty()){
 	    // grab a method from the worklist
 	    HMethod hm_work = (HMethod)W_inter_proc.remove();
 
-	    ParIntGraph old_info = (ParIntGraph) hash_proc_int.get(hm_work);
+	    ParIntGraph old_info = (ParIntGraph) hash_proc_ext.get(hm_work);
 	    analyze_intra_proc(hm_work);
-	    ParIntGraph new_info = (ParIntGraph) hash_proc_int.get(hm_work);
+	    ParIntGraph new_info = (ParIntGraph) hash_proc_ext.get(hm_work);
 
 	    // new info?
 	    // TODO: this test is overkill! think about it!
@@ -335,9 +329,9 @@ public class PointerAnalysis {
 
 	scc_bb_factory.clear();
 
-	long total_time = new Date().getTime() - begin_time;
+	long total_time = System.currentTimeMillis() - begin_time;
 
-	if(DEBUG && TIMING)
+	if(TIMING)
 	    System.out.println("SCC" + scc.getId() + " analyzed in " + 
 			       total_time + " ms");
     }
@@ -350,8 +344,10 @@ public class PointerAnalysis {
 
     // Performs the intra-procedural pointer analysis.
     private void analyze_intra_proc(HMethod hm){
-	//	if(DEBUG2)
+	if(DEBUG2)
 	    System.out.println("METHOD: " + hm);
+
+	if(STATS) Stats.record_method_pass(hm);
 
 	current_intra_method = hm;
 
@@ -475,7 +471,9 @@ public class PointerAnalysis {
 	
 	/** Load statement; special case - arrays. */
 	public void visit(AGET q){
-	    process_load(q,q.dst(),q.objectref(),ARRAY_CONTENT);
+	    // All the elements of an array are collapsed in a single
+	    // node, so AGET is NOT a load (it is not PA-relevant)
+	    // process_load(q,q.dst(),q.objectref(),ARRAY_CONTENT);
 	}
 	
 	/** Does the real processing of a load statement. */
@@ -586,7 +584,9 @@ public class PointerAnalysis {
 	
 	/** Store statement; special case - array */
 	public void visit(ASET q){
-	    process_store(q.objectref(),ARRAY_CONTENT,q.src());		
+	    // All the elements of an array are collapsed in a single
+	    // node, so ASET is NOT a store (it is not PA-relevant)
+	    // process_store(q.objectref(),ARRAY_CONTENT,q.src());
 	}
 	
 	/** Does the real processing of a store statement */
@@ -676,7 +676,7 @@ public class PointerAnalysis {
 	    // The full graph is stored in the hash_proc_int hashtable;
 	    hash_proc_int.put(current_intra_method,bbpig);
 
-	    System.out.println("PIG at the end of the method:" + bbpig);
+	    // System.out.println("PIG at the end of the method:" + bbpig);
 
 	    // To obtain the external view of the method, the graph must be
 	    // shrinked to the really necessary parts: only the stuff

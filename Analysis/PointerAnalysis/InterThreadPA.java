@@ -22,7 +22,7 @@ import harpoon.IR.Quads.NEW;
  * <code>InterThreadPA</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.9 2000-02-24 22:36:17 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.10 2000-03-01 01:11:03 salcianu Exp $
  */
 abstract class InterThreadPA {
     
@@ -33,7 +33,7 @@ abstract class InterThreadPA {
     public static ParIntGraph resolve_threads(ParIntGraph pig,
 					      PointerAnalysis pa){
 
-	long begin_time = new Date().getTime();
+	long begin_time = System.currentTimeMillis();
 
 	pig = (ParIntGraph) pig.clone();
 
@@ -59,7 +59,7 @@ abstract class InterThreadPA {
 	}
 	
 	if(TIMING){
-	    long total_time = new Date().getTime() - begin_time;
+	    long total_time = System.currentTimeMillis() - begin_time;
 	    System.out.println("Inter-thread analysis done in " + 
 			       total_time + "ms");
 	}

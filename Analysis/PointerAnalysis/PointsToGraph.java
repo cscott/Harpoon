@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * <code>PointsToGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.11 2000-02-21 04:47:59 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.12 2000-03-01 01:11:03 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -298,7 +298,7 @@ public class PointsToGraph {
 	    I.forAllPointedNodes(node,visitor);
 	}
 
-	System.out.println("REMAINING NODES: " + remaining_nodes);
+	// System.out.println("REMAINING NODES: " + remaining_nodes);
 
 	// retain only the escape information for the remaining nodes
 	PAEscapeFunc _e = e.select(remaining_nodes);

@@ -31,7 +31,7 @@ import java.util.Collections;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.11 2000-02-29 00:50:11 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.12 2000-03-01 01:11:02 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -307,7 +307,7 @@ public class ActionRepository {
 	Iterator it_paload = alpha_ld.iterator();
 	while(it_paload.hasNext()){
 	    PALoad load = (PALoad) it_paload.next();
-	    if(load.isBad(nodes)) alpha_ld.remove(load);
+	    if(load.isBad(nodes)) it_paload.remove();
 	}
 
 	PredicateWrapper node_predicate = new PredicateWrapper(){
@@ -347,19 +347,30 @@ public class ActionRepository {
 	<code>edges</code> is supposed to be a set of <code>PAEdge</code>s. */
     public final void removeEdges(final Set edges){
 
+	// hack - we need a temporary edge just for testing the apartenence of
+	// a load edge to the set edges; instead of stressing the GC with
+	// repeated allocations, we allocate it once and for all
+	final PAEdge edge = new PAEdge(null,"",null);
+
 	// clean alpha_ld
 	Iterator it_paload = alpha_ld.iterator();
 	while(it_paload.hasNext()){
 	    PALoad load = (PALoad) it_paload.next();
-	    if(edges.contains(new PAEdge(load.n1,load.f,load.n2)))
-		alpha_ld.remove(load);
+	    edge.n1 = load.n1;
+	    edge.f  = load.f;
+	    edge.n2 = load.n2;
+	    if(edges.contains(edge))
+		it_paload.remove();
 	}
 
 	// clean pi_ld
 	pi_ld.removeValues(new PredicateWrapper(){
 		public boolean check(Object obj){
 		    PALoad load = (PALoad) obj;
-		    return edges.contains(new PAEdge(load.n1,load.f,load.n2));
+		    edge.n1 = load.n1;
+		    edge.f  = load.f;
+		    edge.n2 = load.n2;
+		    return edges.contains(edge);
 		}
 	    });
     }

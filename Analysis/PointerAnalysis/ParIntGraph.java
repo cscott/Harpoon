@@ -16,11 +16,12 @@ import harpoon.Temp.Temp;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.12 2000-02-21 04:47:59 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.13 2000-03-01 01:11:03 salcianu Exp $
  */
 public class ParIntGraph {
 
-    private final static boolean DEBUG = true;
+    private final static boolean DEBUG = false;
+    private final static boolean DEBUG2 = false;
 
     /** Default (empty) graph. It doesn't contain any information.  */
     public static final ParIntGraph EMPTY_GRAPH = new ParIntGraph();
@@ -92,22 +93,22 @@ public class ParIntGraph {
 	ParIntGraph pig2 = (ParIntGraph)o;
 	// return G.equals(pig2.G) && tau.equals(pig2.tau);
 	if(!G.equals(pig2.G)){
-	    if(PointerAnalysis.DEBUG2)
+	    if(DEBUG2)
 		System.out.println("The graphs are different");
 	    return false;
 	}
 	if(!tau.equals(pig2.tau)){
-	    if(PointerAnalysis.DEBUG2)
+	    if(DEBUG2)
 		System.out.println("The tau's are different");
 	    return false;
 	}
 	if(!ar.equals(pig2.ar)){
-	    if(PointerAnalysis.DEBUG2)
+	    if(DEBUG2)
 		System.out.println("The ar's are different");
 	    return false;
 	}
 	if(!eo.equals(pig2.eo)){
-	    if(PointerAnalysis.DEBUG2)
+	    if(DEBUG2)
 		System.out.println("The eo's are different");
 	    return false;
 	}

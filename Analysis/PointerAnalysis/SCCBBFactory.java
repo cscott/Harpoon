@@ -21,7 +21,7 @@ import harpoon.IR.Properties.CFGrapher;
  * to <code>BasicBlock</code>s.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCBBFactory.java,v 1.1.2.4 2000-02-16 22:38:02 cananian Exp $
+ * @version $Id: SCCBBFactory.java,v 1.1.2.5 2000-03-01 01:11:04 salcianu Exp $
  */
 public class SCCBBFactory {
     
@@ -44,6 +44,10 @@ public class SCCBBFactory {
      * <code>BasicBlock</code>s). */
     public SCCTopSortedGraph computeSCCBB(HMethod hm){
 	HCode hcode = hcf.convert(hm);
+
+	if(PointerAnalysis.STATS)
+	    Stats.record_method_hcode(hm,hcode);
+
 	BasicBlock bb = (new BasicBlock.Factory(
 			     hcode,
 			     CFGrapher.DEFAULT)).getRoot();
@@ -64,6 +68,20 @@ public class SCCBBFactory {
 
 	SCComponent scc = SCComponent.buildSCC(bb,navigator);
 	SCCTopSortedGraph bb_scc = SCCTopSortedGraph.topSort(scc);
+
+	// grab statistics about the number of SCC and BB
+	if(PointerAnalysis.STATS){
+	    int nb_sccs = 0;
+	    int nb_bbs  = 0;
+	    SCComponent p = bb_scc.getFirst();
+	    while(p != null){
+		nb_sccs++;
+		nb_bbs += p.nodeSet().size(); 
+		p = p.nextTopSort();
+	    }
+	    Stats.record_method_bbs(hm,nb_bbs);
+	    Stats.record_method_sccs(hm,nb_sccs);
+	}
 
 	return bb_scc;
     }
