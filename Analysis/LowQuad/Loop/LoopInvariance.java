@@ -16,7 +16,7 @@ import java.util.Iterator;
  * <code>LoopInvariance</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopInvariance.java,v 1.1.2.2 1999-06-29 17:24:24 bdemsky Exp $
+ * @version $Id: LoopInvariance.java,v 1.1.2.3 1999-06-30 19:21:38 bdemsky Exp $
  */
 public class LoopInvariance {
     
@@ -84,6 +84,10 @@ public class LoopInvariance {
 	}
 
 	public void visit(Quad q) {
+	    visitdefault(q);
+	}
+
+	void visitdefault(Quad q) {
 	    Temp [] uses=q.use();
 	    boolean ours=false;
 	    for (int i=0;i<uses.length;i++) {
@@ -109,6 +113,19 @@ public class LoopInvariance {
 
 	public void visit(ARRAYINIT q) {
 	    removeflag=false;
+	}
+
+	public void visit(POPER q) {
+	    switch (q.opcode()) {
+	    case Qop.DDIV:
+	    case Qop.FDIV:
+	    case Qop.IDIV:
+	    case Qop.LDIV:
+		removeflag=false;
+		break;
+	    default:
+		visitdefault(q);
+	    }
 	}
 
 	public void visit(PCALL q) {
