@@ -147,6 +147,8 @@ public class HClassInfo
   /**
    * @return the offset (in bytes) of the specified field.
    *         The field can be a static or a non-static field.
+   *         NOTE that static fields are currently placed directly 
+   *         after methods.  This will be changed in the final version.
    */
   public int getFieldOffset(HField hf)
     {
@@ -255,31 +257,31 @@ public class HClassInfo
 
   private void addField(HField hf)
     {
-      int offset = offset_map.offset(hf, inline_map);
+      int size = offset_map.size(hf, inline_map);
 
       m_fields.put(hf.getName(), hf);
       if (hf.isStatic())
 	{
 	  m_orderedStaticFields.addElement(hf);
 	  m_fields.put(hf, new Integer(m_currentStaticFieldOffset));
-	  m_currentStaticFieldOffset += offset;
+	  m_currentStaticFieldOffset += size;
 	}
       else
 	{
 	  m_orderedFields.addElement(hf);
 	  m_fields.put(hf, new Integer(m_currentFieldOffset));
-	  m_currentFieldOffset += offset;
+	  m_currentFieldOffset += size;
 	}
     }
 
   private void addMethod(HMethod hm, Vector methodVector)
     {
-      int offset = offset_map.offset(hm);
+      int size = 4; // use OffsetMap here
 
       m_orderedMethods.addElement(hm);
       methodVector.addElement(hm);
       m_methods.put(hm, new Integer(m_currentMethodOffset));
-      m_currentMethodOffset += offset;  
+      m_currentMethodOffset += size;
     }
 
   private void initialize(HClass hc)
