@@ -4,7 +4,6 @@
 package harpoon.Analysis.Tree;
 
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.DomTree;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
@@ -46,6 +45,7 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Comparator;
 import java.util.Collection;
+import java.util.ArrayList;
 
 /**
  * <code>DominatingMemoryAccess</code> is an analysis that uses
@@ -74,7 +74,7 @@ import java.util.Collection;
  used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.15 2001-06-18 21:05:42 witchel Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.16 2002-02-06 17:48:05 witchel Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -369,8 +369,6 @@ public class DominatingMemoryAccess {
                      lowest_score = score;
                      spillme = hce;
                   }
-               } else {
-                  Util.assert(interset.size() == 0);
                }
             }
             if(spillme != null) {
@@ -381,6 +379,22 @@ public class DominatingMemoryAccess {
          } while( !done );
       }
       private void select(Map interGrph, Stack interNodes) {
+         ArrayList regs = new ArrayList(maxRegs);
+         // Don't shuffle in register 0, stick it on the end
+         for(int i = 1; i < maxRegs; ++i) {
+            regs.add(new Integer(i));
+         }
+         java.util.Random rand = new java.util.Random(seed++);
+         // Shuffle the register numbers
+         for(int i = 0; i < 70; ++i) {
+            int idx = rand.nextInt()% (maxRegs - 1);
+            // signed only in java
+            idx = idx < 0 ? -idx : idx;
+            regs.add(regs.remove(idx));
+         }
+         // Allocate reg 0 last since it is used in function entry/exit
+         regs.add(new Integer(0));
+            
          while(!interNodes.empty()) {
             HCodeElement hce = (HCodeElement)interNodes.pop();
             Set interset = (Set)interGrph.get(hce);
@@ -391,16 +405,17 @@ public class DominatingMemoryAccess {
                   takenDA.add(new Integer(((daNum)ref2dareg.get(inter)).num()));
                }
             }
-            for(int i = 0; i < maxRegs; ++i) {
-               // There can't be a single use and def of a DA regstier
-               daNum defda = new daNum(i, true);
-               daNum useda = new daNum(i, false);
-               Integer danum = new Integer(i);
-               usedDANum.add(danum);
+            for(Iterator rit = regs.iterator(); rit.hasNext(); ) {
+               Integer danum = (Integer)rit.next();
                // If all the danums are taken, just don't assign this
                // one a da reg.  No spilling.
                if(takenDA.contains(danum) == false) {
                   Util.assert(ref2dareg.containsKey(hce) == false);
+                  int i = danum.intValue();
+                  // There can't be a single use and def of a DA regstier
+                  daNum defda = new daNum(i, true);
+                  daNum useda = new daNum(i, false);
+                  usedDANum.add(danum);
                   ref2dareg.put(hce, defda);
                   for(Iterator it = ((Set)defUseMap.get(hce)).iterator(); 
                       it.hasNext();) {
@@ -627,12 +642,7 @@ public class DominatingMemoryAccess {
                CacheEquivalence cacheEq = new CacheEquivalence(code, ch);
                Map defUseMap = new HashMap();
                Map useDefMap = new HashMap();
-               DomTree dt = new DomTree(hc, cfgr, false);
-               HCodeElement[] roots = dt.roots();
-               for(int i = 0; i < roots.length; ++i) {
-                  findDADefUse(code.getElements(), cacheEq,
-                               defUseMap, useDefMap);
-               }
+               findDADefUse(code.getElements(), cacheEq,defUseMap, useDefMap);
                Live live = new Live(cfgr, code, defUseMap, useDefMap);
                alloc = new DARegAlloc(cfgr, code, live, defUseMap, useDefMap);
                Map ref2dareg = alloc.getRef2Dareg();
@@ -662,6 +672,7 @@ public class DominatingMemoryAccess {
       this.ch = ch;
    }
 
+   private static int seed = 8675309;
    private HCode hc;
    private HCodeFactory parent;
    private Frame frame;
