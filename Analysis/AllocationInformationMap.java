@@ -18,7 +18,7 @@ import java.util.Map;
  * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.1.2.2 2000-04-03 23:45:25 cananian Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.1.2.3 2000-04-04 00:43:19 cananian Exp $
  */
 public class AllocationInformationMap implements AllocationInformation {
     private final Map map = new HashMap();
@@ -48,16 +48,27 @@ public class AllocationInformationMap implements AllocationInformation {
     }
     // copy the info from the given allocationproperties to avoid leaving
     // a long chain of live objects...
-    private class AllocationPropertiesProxy implements AllocationProperties {
+    public static class AllocationPropertiesImpl
+	implements AllocationProperties {
 	final boolean hasInteriorPointers;
 	final boolean canBeStackAllocated;
 	final boolean canBeThreadAllocated;
 	final Temp allocationHeap;
-	AllocationPropertiesProxy(AllocationProperties ap, TempMap tm) {
-	    this.hasInteriorPointers = ap.hasInteriorPointers();
-	    this.canBeStackAllocated = ap.canBeStackAllocated();
-	    this.canBeThreadAllocated= ap.canBeThreadAllocated();
-	    this.allocationHeap = tm.tempMap(ap.allocationHeap());
+	AllocationPropertiesImpl(boolean hasInteriorPointers,
+				 boolean canBeStackAllocated,
+				 boolean canBeThreadAllocated,
+				 Temp allocationHeap) {
+	    this.hasInteriorPointers = hasInteriorPointers;
+	    this.canBeStackAllocated = canBeStackAllocated;
+	    this.canBeThreadAllocated= canBeThreadAllocated;
+	    this.allocationHeap = allocationHeap;
+	}
+	AllocationPropertiesImpl(AllocationProperties ap, TempMap tm) {
+	    this(ap.hasInteriorPointers(),
+		 ap.canBeStackAllocated(),
+		 ap.canBeThreadAllocated(),
+		 ap.allocationHeap() != null ?
+		 tm.tempMap(ap.allocationHeap()) : null);
 	}
 	public boolean hasInteriorPointers() { return hasInteriorPointers; }
 	public boolean canBeStackAllocated() { return canBeStackAllocated; }
