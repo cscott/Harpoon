@@ -31,7 +31,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.27 1999-10-12 20:04:54 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.28 1999-11-01 20:29:29 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -151,6 +151,8 @@ public abstract class HClass extends HPointer
 	// OK, go ahead and load this.
 	try {
 	  return /*ImplGNU*/ImplMagic.forStream(new BufferedInputStream(is));
+	} catch (java.lang.ClassFormatError e) {
+	  throw new NoClassDefFoundError(className+" ["+e.toString()+"]");
 	} catch (java.io.IOException e) {
 	  throw new NoClassDefFoundError(className);
 	} finally {
