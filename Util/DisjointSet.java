@@ -6,10 +6,13 @@ package harpoon.Util;
 import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
 
+import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 /**
  * <code>DisjointSet</code> is an implementation of disjoint-set forests
  * using the path compression and union-by-rank heuristics to achieve
@@ -19,7 +22,7 @@ import java.util.Map;
  * function.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DisjointSet.java,v 1.1.2.5 2000-11-25 15:29:32 cananian Exp $
+ * @version $Id: DisjointSet.java,v 1.1.2.6 2000-11-25 16:27:42 cananian Exp $
  */
 public class DisjointSet  {
     private final Map elmap = new HashMap();
@@ -78,6 +81,41 @@ public class DisjointSet  {
 		y.rank++;
 	}
     }
+    /** Returns an unmodifiable <code>Map</code> view of the disjoint
+     *  set, where every element is mapped to its canonical representative.
+     */
+    public Map asMap() {
+	return new AbstractMap() {
+	    public boolean containsKey(Object key) {
+		return elmap.containsKey(key);
+	    }
+	    // XXX: returns identity mapping for objects not in set.
+	    public Object get(Object key) { return find(key); }
+	    public Set entrySet() {
+		final Set objects = elmap.keySet();
+		return new AbstractSet() {
+		    public int size() { return objects.size(); }
+		    public Iterator iterator() {
+			final Iterator objit = objects.iterator();
+			return new UnmodifiableIterator() {
+			    public boolean hasNext(){ return objit.hasNext(); }
+			    public Object next() {
+				final Object key = objit.next();
+				return new AbstractMapEntry() {
+				    public Object getKey() { return key; }
+				    public Object getValue() {
+					// note deferred for efficiency.
+					return find(key);
+				    }
+				};
+			    }
+			};
+		    }
+		};
+	    }
+	};
+    }
+    /** Returns a human-readable representation of the DisjointSet. */
     public String toString() {
 	MultiMap mm = new GenericMultiMap();
 	for (Iterator it=elmap.values().iterator(); it.hasNext(); ) {
