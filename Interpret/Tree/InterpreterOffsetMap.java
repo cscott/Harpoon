@@ -26,7 +26,7 @@ import java.util.StringTokenizer;
  * A simple OffsetMap, used by the Tree Interpreter
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterOffsetMap.java,v 1.1.2.15 2000-01-17 12:53:39 cananian Exp $
+ * @version $Id: InterpreterOffsetMap.java,v 1.1.2.16 2000-03-09 03:45:43 cananian Exp $
  */
 public class InterpreterOffsetMap extends OffsetMap {
 
@@ -41,7 +41,7 @@ public class InterpreterOffsetMap extends OffsetMap {
     private NameMap             m_nm;
 
     public InterpreterOffsetMap(ClassHierarchy ch) {
-	this(ch, new DefaultNameMap());
+	this(ch, new DefaultNameMap(false));
     }
 
     /** Class constructor */

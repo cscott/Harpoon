@@ -27,7 +27,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.19 2000-02-16 06:18:09 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.20 2000-03-09 03:45:37 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -38,8 +38,9 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
     
     /** Creates a new <code>Runtime1.Runtime</code>. */
     public Runtime(Frame frame, AllocationStrategy as,
-		   HMethod main, ClassHierarchy ch, CallGraph cg) {
-	super(new Object[] { frame, as, ch });
+		   HMethod main, ClassHierarchy ch, CallGraph cg,
+		   boolean prependUnderscore) {
+	super(new Object[] { frame, as, ch, new Boolean(prependUnderscore) });
 	this.frame = frame;
 	this.main = main;
 	this.ch = ch;
@@ -49,7 +50,9 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
     }
     // protected initialization methods.
     protected NameMap initNameMap(Object closure) {
-	return new harpoon.Backend.Maps.DefaultNameMap();
+	boolean prependUnderscore = ((Boolean) ((Object[])closure)[3])
+	    .booleanValue();
+	return new harpoon.Backend.Maps.DefaultNameMap(prependUnderscore);
     }
     protected TreeBuilder initTreeBuilder(Object closure) {
 	Frame f = (Frame) ((Object[])closure)[0];

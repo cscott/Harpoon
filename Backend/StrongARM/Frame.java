@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.18 2000-01-28 03:07:42 kkz Exp $
+ * @version $Id: Frame.java,v 1.1.2.19 2000-03-09 03:45:42 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -33,13 +33,16 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	linker = main.getDeclaringClass().getLinker();
 	regFileInfo = new RegFileInfo();
 	
-	// FSK: CodeGen ctor needs regFileInfo set in 'this' Frame, so
+	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
+	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
+								  "malloc");
+	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg,
+						       false);
+	// FSK: CodeGen ctor needs regFileInfo set in 'this' Frame
+	// [and it also needs nameMap out of Runtime --CSA], so
 	// be careful about ordering of constructions.
 	codegen = new CodeGen(this);
 
-	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
-	    new harpoon.Backend.Runtime1.MallocAllocationStrategy("_malloc");
-	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg);
 	instrBuilder = new InstrBuilder(regFileInfo);
 	tempBuilder = new TempBuilder();
     }

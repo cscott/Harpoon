@@ -14,7 +14,7 @@ import harpoon.ClassFile.Linker;
  * for the Sparc Backend.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.7 2000-01-28 03:07:21 kkz Exp $
+ * @version $Id: Frame.java,v 1.1.2.8 2000-03-09 03:45:41 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame
 {
@@ -33,11 +33,12 @@ public class Frame extends harpoon.Backend.Generic.Frame
 	regFileInfo = new RegFileInfo(tempBuilder);
 	instrBuilder = new InstrBuilder(regFileInfo, tempBuilder);
 
-	codegen = new CodeGen(this);
-
 	harpoon.Backend.Runtime1.AllocationStrategy as =
-	    new harpoon.Backend.Runtime1.MallocAllocationStrategy("_malloc");
-	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg);
+	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
+								  "malloc");
+	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg,
+						       false);
+	codegen = new CodeGen(this);
     }
 
     public Frame(HMethod main, ClassHierarchy ch, CallGraph cg, GCInfo gcInfo)
