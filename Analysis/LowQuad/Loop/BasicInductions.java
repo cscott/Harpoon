@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>BasicInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductions.java,v 1.1.2.5 1999-09-22 06:10:20 bdemsky Exp $
+ * @version $Id: BasicInductions.java,v 1.1.2.6 1999-09-24 16:39:25 bdemsky Exp $
  */
 public class BasicInductions {
     HCode hc;
@@ -73,7 +73,7 @@ public class BasicInductions {
 	while (iterate.hasNext()) {
 
 	    //Get the add statement
-	    POPER q=(POPER) iterate.next();
+	    OPER q=(OPER) iterate.next();
 	    //debug
 	    //Find the number of operands it has
 	    int numofoperands=q.operandsLength();
