@@ -1,4 +1,4 @@
-% CVSId: $Id: oqe.tex,v 1.4 2002-05-02 21:23:14 cananian Exp $
+% CVSId: $Id: oqe.tex,v 1.5 2002-05-02 21:46:20 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -173,7 +173,7 @@ Motivation:
 
 \begin{tabular}{lll}%
 %\hspace*{0in}&% spacing
-\parbox[t]{1.3in}{\small\begin{samplecode}%
+\parbox[t]{1.3in}{\small\bfseries\begin{samplecode}%
 \onlySlide*{3}{\pnode{tlx}}%
 struct foo \{\\
 \>int x:24;\\
@@ -184,7 +184,7 @@ struct foo \{\\
 \end{samplecode}
 }&%
 \parbox[t]{1.3in}{\fromSlide{2}{
-\small\begin{samplecode}%
+\small\bfseries\begin{samplecode}%
 void foo() \{\\
 \>int x:24;\\
 \>int y:5;\\
@@ -193,7 +193,7 @@ void foo() \{\\
 \}%
 \end{samplecode}
 }}&%
-\parbox[t]{1.3in}{\fromSlide{3}{\small\yellow\begin{samplecode}%
+\parbox[t]{1.3in}{\fromSlide{3}{\small\bfseries\yellow\begin{samplecode}%
 \pnode{trx}%
 void foo() \{\\
 \>int x, y, z;\\
@@ -327,7 +327,7 @@ Three broad techniques:
  \fromSlide{3}{
  \begin{itemize}
   \item \bp{\yellow Identify} fields which have a certain value ``most of
-        the time''.
+        the time.''
   \fromSlide{4}{
   \begin{itemize}
    \item Static analysis/Profiling
@@ -354,7 +354,7 @@ Three broad techniques:
 \item Use virtual accessor functions to hide this split from users of
   the class.
 \item Done at compile time, on fields which can be shown to be
-  compile-time constants, thus ``static''.
+  compile-time constants, thus ``static.''
 \item Profiling guides splitting order if there are multiple candidate fields.
 \end{itemize}
 \end{slide}
@@ -364,7 +364,7 @@ Three broad techniques:
 \begin{slide}{Specialization example:\\\small java.lang.String}
 \fontsize{9}{9}%
 \newcommand{\myOffset}{\onlySlide*{1}{\makebox[0pt][l]{offset}}\onlySlide{2}{{\yellow getOffset()}}}%
-\begin{samplecode}%
+\bfseries\begin{samplecode}%
 public final class String \{\\
 \>private final char value[];\\
 \onlySlide*{2}{\pnode{offl}}%
@@ -389,7 +389,7 @@ public final class String \{\\
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Specialization example:\\\small java.lang.String}
 \fontsize{9}{9}%
-\begin{samplecode}%
+\bfseries\begin{samplecode}%
 public final class {\yellow SmallString} \{\\
 \>private final char value[];\\
 \>\\  
@@ -415,7 +415,7 @@ public final class {\yellow String extends SmallString} \{\\
 Case 1: field is constant in constructor.
 
 \fontsize{10}{10}%
-\begin{samplecode}
+\bfseries\begin{samplecode}
 String s = new \myString(new char[] \{'a', 'b', 'c'\});\\
 \\
 \myString(char[] val) \{\\
@@ -436,7 +436,7 @@ String s = new \myString(new char[] \{'a', 'b', 'c'\});\\
 Case 2: field is simple function of constructor parameter.
 
 \fontsize{10}{10}%
-\begin{samplecode}%
+\bfseries\begin{samplecode}%
 \onlySlide*{1}{%
 String s = new String(new char[] \{'a', 'b', 'c'\},\\
 ~~~~~~~~~~~~~~~~~~~~~~x, 1);\\
