@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # Source-markup.perl --- (c) 1999 C. Scott Ananian
 # Licensed under the terms of the GNU GPL; see COPYING for details.
-# $Id: source-markup.perl,v 1.1.2.12 1999-09-27 05:25:59 cananian Exp $
+# $Id: source-markup.perl,v 1.1.2.13 2001-01-23 19:54:58 cananian Exp $
 
 use English;
 use Getopt::Std;
@@ -143,7 +143,7 @@ if ($isjava && !$opt_j) {
 # some URL and email address hackery
 for ($i=0; $i<=$#lines; $i++) {
     while ($lines[$i] =~
-	   m"(http://[/~A-Za-z0-9_#,.?&=%:;+-]+)|(\w+@[A-Za-z0-9._]+)"g){
+	   m"(http://[/~A-Za-z0-9_#,.?&=%:+-]+)|(\w+@[A-Za-z0-9._]+)"g){
 	my $endloc = pos $lines[$i];
 	my $startloc=$endloc - (defined($1)?length($1):length($2));
         # don't include trailing period (if any) in HREF or email address
