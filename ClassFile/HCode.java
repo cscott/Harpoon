@@ -4,6 +4,7 @@
 package harpoon.ClassFile;
 
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.Indexer;
 
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -14,7 +15,7 @@ import java.util.Iterator;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.12.2.5 1999-08-04 06:30:56 cananian Exp $
+ * @version $Id: HCode.java,v 1.12.2.6 2000-02-10 22:17:09 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
@@ -110,6 +111,16 @@ public abstract class HCode {
    * composing this <code>HCode</code>.
    */
   public abstract ArrayFactory elementArrayFactory();
+
+  /**
+   * Return an <code>Indexer</code> for the <code>HCodeElement</code>s
+   * composing this <code>HCode</code>.  The default <code>Indexer</code>
+   * returned does not implement <code>Indexer.getByID()</code>.
+   */
+  public Indexer elementIndexer() { return _indexer; }
+  private static final Indexer _indexer = new Indexer() {
+    public int getID(Object o) { return ((HCodeElement)o).getID(); }
+  };
 
   /**
    * Clone this <code>HCode</code>, possibly moving it to a different method.
