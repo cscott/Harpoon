@@ -349,7 +349,7 @@ public class IncompatibilityAnalysis {
         HMethod method  = q.getFactory().getMethod();
         QuadSSI quadssi = (QuadSSI) codeFactory.convert(method);
 
-        Quad retval = (Quad) quadssi.getQuadMap().get(q);
+        Quad retval = (Quad) quadssi.getQuadMapNoSSA2SSI().get(q);
 
         return retval;
     }
@@ -416,20 +416,9 @@ public class IncompatibilityAnalysis {
             return md;
         }
 
-        // construct ssi2nossa quadmap if needed
-        Map quadSSI2NoSSA = null;
-        if (callGraphNeedsSSA) {
-            quadSSI2NoSSA = new HashMap(hcode.getElementsL().size());
-            
-            
-            Map quadMap = ((QuadSSI) hcode).getQuadMap();
-            // invert quadmap from ssiRename
-            for (Iterator it = quadMap.entrySet().iterator();
-                 it.hasNext(); ) {
-                Map.Entry entry = (Map.Entry) it.next();
-                quadSSI2NoSSA.put(entry.getValue(), entry.getKey());
-            }
-        }
+        // get ssi2nossa quadmap if needed
+        Map quadSSI2NoSSA = 
+	    callGraphNeedsSSA ? ((QuadSSI) hcode).getQuadMapSSI2NoSSA() : null;
         
         // ExactTypeMap typeMap = new SCCAnalysis(hcode);
         // ReachingDefs rd= new SSxReachingDefsImpl(hcode);

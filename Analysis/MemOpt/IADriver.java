@@ -113,8 +113,8 @@ public class IADriver {
         // MetaCallGraphImpl.COLL_HACK = true;
 
         // build call graph
-        CallGraph cg = new SmartCallGraph((CachingCodeFactory) hcf, linker, ch,
-                                          mroots);
+        CallGraph cg = 
+	    new SmartCallGraph((CachingCodeFactory) hcf, linker, ch, mroots);
 
         // IA needs SSI
         HCodeFactory hcf_ssi =
@@ -125,19 +125,20 @@ public class IADriver {
 
         Timer timer;
 
-         if (PREBUILD_SSI) {
+	if (PREBUILD_SSI) {
             System.out.println("Prebuilding SSI...");
             timer = new Timer();
             timer.start();
-
-            IncompatibilityAnalysis.sizeStatistics(cg.callableMethods(), hcf_ssi);
+	    
+            IncompatibilityAnalysis.sizeStatistics
+		(cg.callableMethods(), hcf_ssi);
             
             timer.stop();
             System.out.println("SSI prebuild: " + timer);
         }
 
-         IncompatibilityAnalysis analysis =
-             new IncompatibilityAnalysis(entry, hcf_ssi, cg);
+	IncompatibilityAnalysis analysis =
+	    new IncompatibilityAnalysis(entry, hcf_ssi, cg);
         
     }
     
@@ -159,7 +160,7 @@ public class IADriver {
         }
         
         // should perhaps add tests/includes for other infrastructure hacks
-        
+
         return roots;
     }
     

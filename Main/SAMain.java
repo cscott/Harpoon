@@ -97,7 +97,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.21 2002-11-29 20:43:54 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.22 2002-11-30 06:29:51 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -793,10 +793,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    (frame.getRuntime().runtimeCallableMethods());
 	
 	if(PreallocOpt.PREALLOC_OPT)
-	    roots.add
-		(linker.forName(PreallocOpt.PREALLOC_MEM_CLASS_NAME).
-		 getMethod(PreallocOpt.INIT_FIELDS_METHOD_NAME,
-			   new HClass[0]));
+	    PreallocOpt.updateRoots(roots, linker);
 	
 	// and our main method is a root, too...
 	roots.add(mainM);

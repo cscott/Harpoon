@@ -43,24 +43,38 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.Label;
 
 /**
- * <code>AddMemoryPreallocation</code>
+ * <code>AddMemoryPreallocation</code> is a code factory that provides
+ * the code for the static method that allocates the pre-allocated
+ * chunks of memory that are used by the unitary sites.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AddMemoryPreallocation.java,v 1.1 2002-11-29 20:43:43 salcianu Exp $
- */
-public class AddMemoryPreallocation implements HCodeFactory {
-    
-    /** Creates a <code>AddMemoryPreallocation</code>. */
+ * @version $Id: AddMemoryPreallocation.java,v 1.2 2002-11-30 06:29:58 salcianu Exp $ */
+class AddMemoryPreallocation implements HCodeFactory {
+
+    /** Creates a <code>AddMemoryPreallocation</code> code factory: it
+        behaves like <code>parent_hcf</code> for all methods, except
+        for the special memory preallocation methdo
+        <code>init_method</code>.  For this method, it generates code
+        to (pre)allocate some memory chunks and store references to
+        them in the static fields that are the keys of
+        <code>field2classes</code>.
+
+	@param parent_hcf parent code factory; this factory provides
+	the code for all methods, except <code>init_method</code>
+	@param init_method handle of the method that does all pre-allocation
+	@param field2classes maps a field to the set of unitary
+	allocation sites that reuse the preallocated memory chunk
+	pointed to by that field.
+	@param frame frame containing all the backend details*/
     public AddMemoryPreallocation
-	(Linker linker, HCodeFactory hcf, Map field2classes, Frame frame) {
-	assert hcf.getCodeName().equals(CanonicalTreeCode.codename) : 
+	(HCodeFactory parent_hcf, HMethod init_method, 
+	 Map field2classes, Frame frame) {
+	assert parent_hcf.getCodeName().equals(CanonicalTreeCode.codename) : 
 	    "AddMemoryPreallocation only works on CanonicalTree form";
-	this.parent_hcf = hcf;
+	this.parent_hcf    = parent_hcf;
 	this.field2classes = field2classes;
-	this.runtime = frame.getRuntime();
-	this.init_method = 
-	    linker.forName(PreallocOpt.PREALLOC_MEM_CLASS_NAME).
-	    getMethod(PreallocOpt.INIT_FIELDS_METHOD_NAME, new HClass[0]);
+	this.runtime       = frame.getRuntime();
+	this.init_method   = init_method;
     }
 
     private final HCodeFactory parent_hcf;
@@ -74,7 +88,6 @@ public class AddMemoryPreallocation implements HCodeFactory {
 	    return parent_hcf.convert(m);
 
 	// ... the method that preallocates memory
-
 	Code code = (Code) parent_hcf.convert(m);
 	DerivationGenerator dg = 
 	    (DerivationGenerator) code.getTreeDerivation();
@@ -91,14 +104,11 @@ public class AddMemoryPreallocation implements HCodeFactory {
 
 	System.out.println("After  modifications:");
 	code.print(new PrintWriter(System.out));
-	//print(hcode);
-	//System.exit(1);
 
 	return code;
     }
 
     public String getCodeName() { return parent_hcf.getCodeName(); }
-
     public void clear(HMethod m) { parent_hcf.clear(m); }
 
 
@@ -111,20 +121,21 @@ public class AddMemoryPreallocation implements HCodeFactory {
 	// (a method-wide thing) from "start".
 
 	TreeFactory tf = start.getFactory();
-
-	// tmem = GC_malloc_atomic(size);
 	Temp tmem = new Temp(tf.tempFactory(), "tmem");
+
+	// 1. generate "tmem = GC_malloc_atomic(size);"
 	NATIVECALL call_malloc =
 	    new NATIVECALL
 	    (tf, start, 
 	     (TEMP)
-	     DECLARE(dg, HClass.Void, new TEMP(tf, start, Type.POINTER, tmem)),
+	     DECLARE(dg, HClass.Void,
+		     new TEMP(tf, start, Type.POINTER, tmem)),
 	     new NAME(tf, start, new Label("GC_malloc")),
 	     new ExpList
 	     (new CONST(tf, start, size),
 	      null));
-	
-	// field = tmem;
+
+	// 2. generate "field = tmem;"
 	MOVE set_field = 
 	    new MOVE
 	    (tf, start,
@@ -133,9 +144,10 @@ public class AddMemoryPreallocation implements HCodeFactory {
 	      (tf, start, Type.POINTER,
 	       new NAME(tf, start, runtime.getNameMap().label(hfield)))),
 	     (TEMP)
-	     DECLARE(dg, HClass.Void, new TEMP(tf, start, Type.POINTER, tmem)));
+	     DECLARE(dg, HClass.Void,
+		     new TEMP(tf, start, Type.POINTER, tmem)));
 
-	// insert code right after start
+	// 3. insert the generated code code right after start
 	Stm former_right = start.getRight();
 	former_right.unlink();
 	start.setRight
@@ -144,18 +156,12 @@ public class AddMemoryPreallocation implements HCodeFactory {
     }
 
 
-    public static String t2s(Tree tree) {
-	return "#" + tree.getID() + " " + tree + " parent = " +
-	    ((tree.getParent() == null) ? 
-	     "null" : 
-	     ("#" + tree.getParent().getID()));
-    }
-
     // type declaration helper methods
     protected static Exp DECLARE(DerivationGenerator dg, HClass hc, Exp exp) {
 	dg.putType(exp, hc);
 	return exp;
     }
+
 
     // compute the size of the memory chunk that can hold an object of
     // any of the classes from the collection passed as an argument
@@ -176,7 +182,7 @@ public class AddMemoryPreallocation implements HCodeFactory {
 	    tree_builder.headerSize(hclass);
     }
 
-    // debug only
+    // debug only  // TODO: remove
     private void print(HCode hcode) {
 	System.out.println("Instructions in " + hcode.getMethod());
 

@@ -45,54 +45,97 @@ import harpoon.Temp.Temp;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.4 2002-11-29 20:51:59 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.5 2002-11-30 06:29:58 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
+    /** If <code>true</code>, the compiler uses the static memory
+	pre-allocation optimization (via
+	<code>IncompatibilityAnalysis</code>.  Default is
+	<code>false</code>. */
     public static boolean PREALLOC_OPT = false;
-    public static Map prealloc_field2classes;
 
-    // name of the wrapper for the static fields pointing to
-    // pre-allocated memory chunks.
-    public static final String PREALLOC_MEM_CLASS_NAME =
+    /** Map used by the optimization: assigns to each field the
+        allocation sites that can reuse the pre-allocated memory chunk
+        that will be pointed to (at runtime) by the static field. */
+    private static Map prealloc_field2classes;
+
+    /** Name of the wrapper class for the static fields pointing to
+	pre-allocated memory chunks. */
+    private static final String PREALLOC_MEM_CLASS_NAME =
 	"harpoon.Runtime.PreallocOpt.PreallocatedMemory";
-    public static final String FIELD_ROOT_NAME = "preallocmem_";
-    public static final String INIT_FIELDS_METHOD_NAME = "initFields";
 
+    /** Root for the names of the static fields that point (at
+	runtime) to the pre-allocated memory chunks. */
+    private static final String FIELD_ROOT_NAME = "preallocmem_";
+
+    /** Name of the method that preallocates the memory chunks and
+        initializes the static fields to point to them. */
+    private static final String INIT_FIELDS_METHOD_NAME = "initFields";
+
+
+    /** Adds to the set of roots the classes/methods that are called
+	by the runtime when the preallocation optimization is used.
+
+	@param roots set of roots
+	@param linker linker used to get classes */
+    public static void updateRoots(Set roots, Linker linker) {
+	roots.add(getInitMethod(linker));
+    }
+
+    // returns the handle of the method that preallocates memory
+    private static HMethod getInitMethod(Linker linker) {
+	return
+	    linker.forName(PreallocOpt.PREALLOC_MEM_CLASS_NAME).
+	    getMethod(PreallocOpt.INIT_FIELDS_METHOD_NAME,
+		      new HClass[0]);
+    }
+
+    /** Executes the <code>IncompatibilityAnalysis</code> and creates
+	a (QuadSSI) code factory that produces code with the
+	allocation properties set to reflect the fact that some
+	allocation sites can use pre-allocated memory space.  In
+	addition, it adds static fields to the class named by
+	<code>PreallocOpt.PREALLOC_MEM_CLASS_NAME</code>; at runtime,
+	these fields will point to pre-allocated chunks of memory, one
+	for each compatibility class found by the analysis.
+
+	@param linker linker used to get classes
+	@param hcf initial code factory; it has to be convertible to a
+	QuadSSI code factory.
+	@param ch class hierarchy for the program
+	@param mainM main method of the program
+	@param roots set of roots
+
+	@return QuadSSI code factory; it produces <code>Code</code>s
+	where allocation sites that can be pre-allocated have the
+	attached <code>PreallocAllocationStrategy</code>. */
     public static HCodeFactory preallocAnalysis
 	(Linker linker, HCodeFactory hcf,
 	 ClassHierarchy ch, HMethod mainM, Set roots) {
+
+	System.out.println("preallocAnalysis: " + hcf.getCodeName());
 
 	CachingCodeFactory hcf_nossa = getCachingQuadNoSSA(hcf);
 
 	boolean OLD_FLAG = QuadSSI.KEEP_QUAD_MAP_HACK;
         QuadSSI.KEEP_QUAD_MAP_HACK = true;
-	CachingCodeFactory hcf_ssi = new CachingCodeFactory
-	    (QuadSSI.codeFactory(new SafeCachingCodeFactory(hcf_nossa)), true);
+	CachingCodeFactory hcf_ssi = 
+	    new CachingCodeFactory(QuadSSI.codeFactory(hcf_nossa), true);
 
-	// 1. execute Ovy's analysis
-	IncompatibilityAnalysis ia = new IncompatibilityAnalysis
-	    (mainM, hcf_ssi, buildCallGraph(linker, hcf_nossa, ch, roots));
+	// execute Ovy's analysis
+	IncompatibilityAnalysis ia = 
+	    new IncompatibilityAnalysis
+	    (mainM, hcf_ssi,
+	     buildCallGraph(linker, hcf_nossa, ch, roots));
 
-	// restore this flag (the backend crashes without this ...)
+	// restore flag (the backend crashes without this ...)
 	QuadSSI.KEEP_QUAD_MAP_HACK = OLD_FLAG;
 
 	prealloc_field2classes = new HashMap();
 	addFields(linker, ia, hcf_nossa, PreallocOpt.prealloc_field2classes);
 
 	return hcf_ssi;
-    }
-
-    // CachingCodeFactory that ignores all calls to clear()
-    private static class SafeCachingCodeFactory
-	implements SerializableCodeFactory {
-	public SafeCachingCodeFactory(CachingCodeFactory ccf) {
-	    this.ccf = ccf;
-	}
-	private final CachingCodeFactory ccf;	
-	public HCode  convert(HMethod m) { return ccf.convert(m); }
-	public String getCodeName() { return ccf.getCodeName(); }
-	public void   clear(HMethod m) {} // ignore!
     }
 
 
@@ -126,7 +169,7 @@ public abstract class PreallocOpt {
                 mroots.add(hm);
         }
 
-	MetaCallGraphImpl.COLL_HACK = true;
+	MetaCallGraphImpl.COLL_HACK = false;
         return new SmartCallGraph(hcf_nossa, linker, ch, mroots);
     }
 
@@ -236,6 +279,7 @@ public abstract class PreallocOpt {
 	return
 	    Canonicalize.codeFactory
 	    (new AddMemoryPreallocation
-	     (linker, hcf, PreallocOpt.prealloc_field2classes, frame));
+	     (hcf, getInitMethod(linker),
+	      PreallocOpt.prealloc_field2classes, frame));
     }
 }
