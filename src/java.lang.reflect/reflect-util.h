@@ -2,6 +2,7 @@
 #ifndef INCLUDED_REFLECT_UTIL_H
 #define INCLUDED_REFLECT_UTIL_H
 #include "config.h" /* for WITH_INIT_CHECK */
+#include <jni.h>
 
 /* convenience macro (FORPRIMITIVETYPES, extended) */
 #define FORPRIMITIVETYPESX(what) \
