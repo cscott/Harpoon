@@ -3,6 +3,14 @@ MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
 LIBS =
 
+# this library will be empty unless we've elected to build servo support.
 noinst_LTLIBRARIES = libservo.la
 
-libservo_la_SOURCES = IPaqServoController.c IPaqServoController.h
+SERVOSRC =\
+		IPaqServoController.c IPaqServoController.h
+if SERVO
+libservo_la_SOURCES = $(SERVOSRC)
+endif
+# automake won't allow EXTRA_DIST to be conditionally defined, so we
+# define it even when it's not necessary (when SERVO is set)
+EXTRA_DIST = $(SERVOSRC)
