@@ -64,7 +64,7 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.18 2003-10-08 17:46:17 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.19 2003-10-27 17:39:59 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     // Support losing platforms (like, say, AIX) where multiple segments
@@ -390,7 +390,7 @@ public class TreeToC extends java.io.PrintWriter {
 	    if (t instanceof PreciselyTyped) {
 		PreciselyTyped pt = (PreciselyTyped) t;
 		if (pt.isSmall())
-		    return (pt.signed()?"int":"u_int")+pt.bitwidth()+"_t";
+		    return (pt.signed()?"int":"uint")+pt.bitwidth()+"_t";
 	    }
 	    return ctype(t.type());
 	}
