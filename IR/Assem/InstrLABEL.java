@@ -11,7 +11,7 @@ import harpoon.Temp.Label;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.7 1999-08-26 00:15:02 pnkfelix Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.8 1999-08-28 01:36:01 pnkfelix Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
@@ -32,4 +32,11 @@ public class InstrLABEL extends Instr {
 
     /** Accept a visitor. */
     public void visit(InstrVisitor v) { v.visit(this); }
+
+    /** Returns true.
+	Labels are designed to have multiple predecessors.
+    */
+    protected boolean hasMultiplePredecessors() {
+	return true;
+    }
 }

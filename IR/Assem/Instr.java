@@ -27,8 +27,13 @@ import java.util.AbstractCollection;
  * <code>Instr</code> is the primary class for representing
  * assembly-level instructions used in the Backend.* packages.
  *
+ * Important invariant: Most <code>Instr</code>s have only one
+ * predecessor.  The only type of <code>Instr</code> with more than
+ * one predecessor is an <code>InstrLABEL</code>.
+ * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.34 1999-08-28 01:08:23 pnkfelix Exp $
+ * @author  Felix S Klock <pnkfelix@mit.edu>
+ * @version $Id: Instr.java,v 1.1.2.35 1999-08-28 01:36:01 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -43,12 +48,6 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     private String source_file;
     private int source_line;
     private int id;
-
-    // for implementing HasEdges
-    // contains Instrs which have Edges to this
-    private Vector pred;
-    // contains Instrs which this has Edges to
-    private Vector succ;
 
     /** The <code>Instr</code> that is output prior to
 	<code>this</code>.  Should be <code>null</code> iff
@@ -68,6 +67,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	iff <code>this</code> is the last instruction in the method.
     */
     Instr next;
+
     /** The next <code>Instr</code> to output after
 	<code>this</code>.  <code>next</code> can be significant
 	for control flow, depending on if
@@ -150,9 +150,6 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
         this.inf = inf;
         this.assem = assem; this.dst = dst; this.src = src;
 
-	this.pred = new Vector();
-	this.succ = new Vector();
-	
 	this.hashCode = (id<<5) + inf.getParent().getName().hashCode();
 	if (inf.getMethod() != null) {
 	    this.hashCode ^= inf.getMethod().hashCode(); 
@@ -187,48 +184,6 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     }
 
     // ********* INSTR METHODS ********
-
-//      /** Creates an <code>Edge</code> which connects <code>src</code>
-//       *  to <code>dest</code> */
-//      public static Edge addEdge(Instr src, Instr dest) {
-//  	Util.assert(src != null);
-//  	Util.assert(dest != null);
-
-//  	Edge e = new Edge(src, dest);
-
-//  	src.succ.addElement(e);
-//  	dest.pred.addElement(e);
-
-//  	return e;
-//      }
-
-//      /** Removes an <code>Edge</code> which previously connected
-//  	<code>src</code> to <code>dest</code> 
-//      */
-//      public static void removeEdge(Instr src, Instr dest) {
-//  	Util.assert(src != null);
-//  	Util.assert(dest != null);
-
-//  	/* ADB: dangerous way of doing this, should be done better in
-//           * future. XXX */
-//  	Enumeration enum = src.succ.elements();
-//  	while (enum.hasMoreElements()) {
-//  	    HCodeEdge hce = (HCodeEdge)enum.nextElement();	
-//              if (hce.to() == dest) {
-//  		src.succ.removeElement(hce);
-//              }
-//          }
-//  	enum = dest.pred.elements();
-//          while (enum.hasMoreElements()) {
-//  	    HCodeEdge hce = (HCodeEdge)enum.nextElement();
-//              if (hce.from() == src) {
-//  		dest.pred.removeElement(hce);
-//              }
-//          }
-//      }
-
-
-    // ******* THE BELOW METHODS NEED REPLACEMENT AND REVISION *********
 
     /** Replaces <code>oldi</code> in the Instruction Stream with
 	<code>newis</code>.  
@@ -339,64 +294,6 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	}
     }
 
-
-//      /** Inserts <code>newi</code> as an Instr after <code>pre</code>,
-//  	such that <code>pre</code>'s successors become
-//  	<code>newi</code>'s successors, and <code>pre</code>'s only
-//  	successor is <code>newi</code>. 
-     
-//          NOTE: Must review this method SEVERELY...it is easy to
-//  	maintain it if it is merely inserting into the linear list of
-//  	instrs, but if it is meant to modify the internal
-//  	representation of control flow, we need to fix it and any code
-//  	that uses it to do something else. 
-//       */
-//      public static void insertInstrAfter(Instr pre, Instr newi) {
-//  	Util.assert(pre != null);
-//          Util.assert(newi != null);
-
-//  	newi.next = pre.next;
-//  	pre.next = newi;
-	
-//          HCodeEdge[] oldsucc = pre.succ();
-//  	for (int i = 0; i < oldsucc.length; i++) {
-//  	    //removeEdge(pre, (Instr)oldsucc[i].to());
-//  	    //addEdge(newi, (Instr)oldsucc[i].to());
-//          }
-//  	pre.succ = new Vector();
-//  	//addEdge(pre, newi);
-//      }
-
-//      /** Inserts <code>newi</code> as an Instr before
-//  	<code>post</code>, such that <code>post</code>'s predecessors
-//  	become <code>newi</code>'s predecessors, and
-//  	<code>post</code>'s only predecessor is <code>newi</code>.  
-
-//          NOTE: Must review this method SEVERELY...it is easy to
-//  	maintain it if it is merely inserting into the linear list of
-//  	instrs, but if it is meant to modify the internal
-//  	representation of control flow, we need to fix it and any code
-//  	that uses it to do something else. 
-//      */
-//      public static void insertInstrBefore(Instr post, Instr newi) {
-//          Util.assert(post != null);
-//          Util.assert(newi != null);
-
-//  	// InstrLABELs are the only Instrs with multiple entry
-//  	// points; therefore we simply won't allow them to be used
-//  	// here. 
-//  	Util.assert(!(post instanceof InstrLABEL), 
-//  		    "InstrLABELs are bad insertion points.");
-
-//  	HCodeEdge[] oldpred = post.pred();
-//  	for (int i = 0; i < oldpred.length; i++) {
-//              //removeEdge((Instr)oldpred[i].from(), post);
-//  	    //addEdge((Instr)oldpred[i].from(), newi);
-//  	}
-//  	post.pred = new Vector();
-//  	//addEdge(newi, post);
-//      }
-
     /** Accept a visitor. */
     public void visit(InstrVisitor v) { v.visit(this); }
 
@@ -482,39 +379,35 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     // ******************** HasEdges interface
 
     public HCodeEdge[] edges() { 
-	HCodeEdge[] p = (HCodeEdge[]) pred.toArray();
-	HCodeEdge[] s = (HCodeEdge[]) succ.toArray();
-	HCodeEdge[] e = new HCodeEdge[p.length + s.length];
-	System.arraycopy(p, 0, e, 0, p.length);
-	System.arraycopy(s, 0, e, p.length, s.length);
-	return e;
+	Collection c = edgeC();
+	return (HCodeEdge[]) c.toArray(new InstrEdge[c.size()]);
     }
     public Collection edgeC() {
 	return new AbstractCollection() {
-	    public int size() { return pred.size()+succ.size(); }
+	    public int size() { return predC().size()+succC().size(); }
 	    public Iterator iterator() {
-		return new CombineIterator(new Iterator[] { pred.iterator(),
-							    succ.iterator() });
+		return new CombineIterator(new Iterator[] { predC().iterator(),
+							    succC().iterator() });
 	    }
 	};
     }
 
     public HCodeEdge[] pred() {
-	HCodeEdge[] edges = new HCodeEdge[pred.size()];
-	pred.copyInto(edges);
-	return edges;
+	Collection c = predC();
+	HCodeEdge[] edges = new HCodeEdge[c.size()];
+	return (HCodeEdge[]) c.toArray(edges);
     }
     public Collection predC() {
-	return Collections.unmodifiableCollection(pred);
+	return null;
     }
 
     public HCodeEdge[] succ() { 
-	HCodeEdge[] edges = new HCodeEdge[succ.size()];
-	succ.copyInto(edges);
-        return edges;
+	Collection c = succC();
+	HCodeEdge[] edges = new HCodeEdge[c.size()];
+	return (HCodeEdge[]) c.toArray(edges);
     }
     public Collection succC() {
-	return Collections.unmodifiableCollection(succ);
+	return null;
     }
 
     /** Checks whether <code>this.targets</code> is modifiable. 
@@ -561,6 +454,15 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	other than <code>n0</code>.
      */
     public boolean hasModifiableTargets() {
+	return true;
+    }
+    
+    /** Checks if <code>this</code> has multiple predecessors.
+	Most <code>Instr</code>s have either zero or one
+	predecessors.  Any <code>Instr</code>s that can have more than
+	one predecessor should override this method to return true. 
+    */
+    protected boolean hasMultiplePredecessors() {
 	return false;
     }
 }
