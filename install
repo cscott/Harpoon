@@ -250,15 +250,6 @@ while [ x$IMAGEREC = xnone ]; do
   esac;
 done
 
-while [ x$BENCHMARKS = xnone ]; do
-  read -p "Do you want a copy of the Benchmarks and Tests (Y/N)? " BENCHMARKS leftover;
-  case $BENCHMARKS in
-     y* | Y*) export BENCHMARKS='Tests Benchmarks';;
-     n* | N*) export BENCHMARKS=;;
-     *) export BENCHMARKS=none;;
-  esac;
-done
-
 source ~/.bashrc
 
 export LINE1=`fgrep -c 'CVS_RSH' ~/.bashrc`
@@ -292,6 +283,14 @@ while [ x$prmpt = x ]; do
    read -p "Do you have read/write access to the FLEX repository (Y/N)? " prmpt leftover;
    case $prmpt in
         y* | Y*)
+           while [ x$BENCHMARKS = xnone ]; do
+             read -p "Do you want a copy of the Benchmarks and Tests (Y/N)? " BENCHMARKS leftover;
+             case $BENCHMARKS in
+               y* | Y*) export BENCHMARKS='Tests Benchmarks';;
+               n* | N*) export BENCHMARKS=;;
+               *) export BENCHMARKS=none;;
+             esac;
+           done;
 	   read -p "What's your username on the FLEX CVS server? " pass leftover;
 	   echo Please type your password to the FLEX repository:;
            cvs -d :ext:$pass@flex-cvs.csail.mit.edu:/data/cvs co $version Classpath Code $REALTIME $IMAGEREC Runtime $BENCHMARKS;
@@ -302,10 +301,11 @@ while [ x$prmpt = x ]; do
 	   cvs update -A;
 	   cd -;;
 	n* | N*)
+           export BENCHMARKS=;
 	   echo Please type 'cvsguest' as the password.;
 	   export CVSROOT=:pserver:cvsguest@flex-cvs.csail.mit.edu:/data/cvs;
 	   cvs login;
-	   cvs co $version Classpath Code $REALTIME $IMAGEREC Runtime Tests $BENCHMARKS;
+	   cvs co $version Classpath Code $REALTIME $IMAGEREC Runtime $BENCHMARKS;
 	   cd Runtime/Contrib/gc;
 	   cvs update -r BOEHM_DIST;
 	   cvs update -A;
