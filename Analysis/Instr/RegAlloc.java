@@ -75,7 +75,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.90 2000-06-26 22:36:13 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.91 2000-06-29 01:31:47 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -88,21 +88,6 @@ public abstract class RegAlloc  {
 
     protected HashSet checked = new HashSet();
 
-    private static String getSrcStr(int num) {
-	String s = "`s0";
-	for(int i=1; i<num; i++) {
-	    s += ", `s"+i; 
-	}
-	return s;
-    }
-    private static String getDstStr(int num) {
-	String s = "`d0";
-	for(int i=1; i<num; i++) {
-	    s += ", `d"+i; 
-	}
-	return s;
-    }
-
     /** Class for <code>RegAlloc</code> usage in loading registers. 
 	
 	Note that the constructors automagically put in the
@@ -114,14 +99,12 @@ public abstract class RegAlloc  {
     public static class SpillLoad extends InstrMEM {
 	static SpillLoad makeLD(Instr i, String prefix, 
 			 Temp dst, Temp src) {
-	    return new SpillLoad(i,prefix+" `d0, `s0",dst,src); 
+	    return new SpillLoad(i,prefix+" "+dst+" "+src,dst,src); 
 	}
 
 	static SpillLoad makeLD(Instr i, String prefix,
 			 Collection dsts, Temp src) {
-	    return new SpillLoad(i,prefix+" " + 
-				 getDstStr(dsts.size())+
-				 ", `s0", dsts, src);
+	    return new SpillLoad(i,prefix+" "+dsts+" "+src, dsts, src); 
 	}
 
 	SpillLoad(InstrFactory inf, Instr i, String assem, 
@@ -157,14 +140,12 @@ public abstract class RegAlloc  {
     public static class SpillStore extends InstrMEM {
 	static SpillStore makeST(Instr i, String prefix, 
 				 Temp dst, Temp src) {
-	    return new SpillStore(i,prefix+" `d0, `s0",dst,src);
+	    return new SpillStore(i,prefix+" "+dst+" "+src,dst,src);
 	}
 	
 	static SpillStore makeST(Instr i, String prefix, 
 				 Temp dst, Collection srcs) {
-	    return new SpillStore(i, prefix+" `d0, "+
-				  getSrcStr(srcs.size()),
-				  dst, srcs);
+	    return new SpillStore(i, prefix+" "+dst+" "+srcs,dst,srcs); 
 	}
 
 	SpillStore(Instr i, String assem, Temp dst, Temp src) {

@@ -58,17 +58,22 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.88 2000-06-26 22:36:13 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.89 2000-06-29 01:31:46 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
     private static boolean TIME = false;
     private static boolean VERIFY = true;
 
+    private static boolean PREASSIGN_INFO = true;
     private static boolean SPILL_INFO = false;
     private static boolean COALESCE_MOVES = true;
 
-    private Collection allRegisters;
+    private static void PREASSIGN_INFO(String s) {
+	if (PREASSIGN_INFO) System.out.println(s);
+    }
+
+    Collection allRegisters;
 
     private LiveTemps liveTemps;
 
@@ -174,8 +179,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    // t4 is undefined.  (This is instead handled by a
 	    // replacement of the Instr with an InstrMOVEproxy)
 	    
-	    Util.assert(!isRegister(ir.use()[0]));
-	    Util.assert(!isRegister(ir.def()[0]));
+	    Util.assert(!hasRegister(expand(ir.use()[0])));
+	    Util.assert(!hasRegister(expand(ir.def()[0])));
 	    
 	    ir.remove();
 	    
@@ -214,13 +219,18 @@ public class LocalCffRegAlloc extends RegAlloc {
 	
 	// code.print(new java.io.PrintWriter(System.out));
 	
-	Set vUses = new HashSet(spillUses);
+	final Set vUses = new HashSet(spillUses);
 	Set vDefs = new HashSet(spillDefs);
 	vUses.removeAll(spillDefs);
 	vDefs.removeAll(spillUses);
 	
 	Util.assert(vUses.isEmpty(),
-		    ("Spill Load of undefined Temps: "+vUses));
+		    new Object() {
+	    public String toString() {
+		code.print();
+		return "Spill Load of undefined Temps: "+vUses+
+		    "\ncode:\n";}});
+	
 
 	Util.assert(vDefs.isEmpty(),
 		    ("overconservative assertion: "+
@@ -285,11 +295,21 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    public void visit(Instr i) { /* do nothing */ }
 
 	    public void visit(InstrMOVE i) {
-		Temp d = i.def()[0], u = i.use()[0];
+		List dl = expand(i.def()[0]);
+		List ul = expand(i.use()[0]);
+
+		Util.assert(dl.size() == ul.size());
+		Iterator ds = dl.iterator();
+		Iterator us = ul.iterator();
+
+		while(ds.hasNext()) {
+		    Temp d = (Temp) ds.next();
+		    Temp u = (Temp) us.next();
 		
-		if ((! (isRegister(d) && isRegister(u))) &&
-		    ! d.equals(u)) {
-		    tempSets.add(d, u);
+		    if ((! (isRegister(d) && isRegister(u))) &&
+			! d.equals(u)) {
+			tempSets.add(d, u);
+		    }
 		}
 	    }
 	}
@@ -312,7 +332,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	final BasicBlock block;
 	final Set liveOnExit;
-	final RegFile regfile = new RegFile();
+	final RegFile regfile = new RegFile(allRegisters);
 
 	// EqTempSets for this.block
 	final EqTempSets tempSets;
@@ -400,11 +420,17 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    SetFactory regSetFact = 
 		new BitSetFactory(new LinearSet(new HashSet(regs)));
 	    
-	    MultiMap tempToRegs = 
-		new GenericMultiMap(regSetFact, Factories.hashMapFactory());
-
-	    HashSet liveTempSet = new HashSet(liveOnExit);
+	    MultiMap tempToRegs = new 
+		GenericMultiMap(regSetFact,Factories.hashMapFactory()) 
+	    {
+		public boolean addAll(Object k, Collection v) {
+		    if (PREASSIGN_INFO) 
+		    System.out.println("Adding "+k+"->"+v);
+		    return super.addAll(k, v);
+		}
+	    };
 	    
+	    HashSet liveTempSet = new HashSet(liveOnExit);
 	    final Set allRegs = regSetFact.makeSet(regs);
 
 	    Set liveRegsOnExit = new HashSet(liveOnExit);
@@ -412,24 +438,40 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	    Set liveRegs = regSetFact.makeSet(liveRegsOnExit);
 
-	    updateMapping(tempToRegs, liveTempSet, liveRegs,null,null);
+	    updateMapping(tempToRegs, liveTempSet, liveRegs, 
+			  harpoon.Util.Default.EMPTY_MAP);
 
 	    // doing a reverse iteration
 	    ListIterator liter = bl.listIterator(bl.size());
 	    while(liter.hasPrevious()) {
 		Instr i = (Instr) liter.previous();
 
-		Temp exT = null, exR = null;
-		if (i instanceof InstrMOVE) {
-		    if (isRegister(i.def()[0])) {
-			exR = i.def()[0];
-			exT = i.use()[0];
-		    } else if (isRegister(i.use()[0])) {
-			exT = i.def()[0];
-			exR = i.use()[0];
-		    }
-		} 
+		if (PREASSIGN_INFO) 
+		    System.out.println("Instr:"+i+" ");
+
+		boolean regchanged = false;
+		boolean tmpchanged = false;
 		
+		// consider making `exceptions' a MultiMap...
+		HashMap exceptions = new HashMap();
+		if (i instanceof InstrMOVE) {
+		    List dl = expand(i.def()[0]);
+		    List ul = expand(i.use()[0]);
+		    
+		    Util.assert(dl.size() == ul.size());
+		    Iterator ds = dl.iterator();
+		    Iterator us = ul.iterator();
+		    
+		    while (ds.hasNext()) {
+			Temp d = (Temp) ds.next();
+			Temp u = (Temp) us.next();
+			if (isRegister(d)) {
+			    exceptions.put(u, d);
+			} else if (isRegister(u)) {
+			    exceptions.put(d, u);
+			}
+		    }
+		}
 		
 		// make new copy of live
 		liveRegs = regSetFact.makeSet(liveRegs); 
@@ -437,56 +479,73 @@ public class LocalCffRegAlloc extends RegAlloc {
 		{   // liveRegs: kill (regs /\ defs)
 		    Set defRegs = regSetFact.makeSet(allRegs);
 		    defRegs.retainAll(i.defC()); 
-		    liveRegs.removeAll(defRegs);
+		    regchanged |= liveRegs.removeAll(defRegs);
 		    
 		    // some regs are clobbered by routines, and thus
-		    // appear in a defset but are never used.  We
+		    // appear in a defset but are never used. We
 		    // consider these to be impulse signals, and must
 		    // be added to the set of conflicts accordingly
 		    if (!defRegs.isEmpty()) {
-			updateMapping(tempToRegs,liveTempSet,defRegs,exT,exR);
+			updateMapping(tempToRegs,liveTempSet,
+				      defRegs,exceptions);
 		    }
 		}
 
-		liveTempSet.removeAll(i.defC());	// kill defs
-		liveTempSet.addAll(i.useC());  // add uses
+		liveTempSet.removeAll(i.defC()); // kill defs
+		tmpchanged |= liveTempSet.addAll(i.useC()); // add uses
 
 		{   // liveRegs: add (regs /\ uses)
 		    Set useRegs = regSetFact.makeSet(allRegs);
 		    useRegs.retainAll(i.useC());
-		    liveRegs.addAll(useRegs);
+		    regchanged |= liveRegs.addAll(useRegs);
 		}
-		
-		updateMapping(tempToRegs,liveTempSet,liveRegs,exT,exR);
+
+		// FSK: optimization to filter debug output (but
+		// should result in faster execution times...).  Need
+		// to VERIFY CORRECTNESS though
+		if ( regchanged ) {
+		    updateMapping(tempToRegs,liveTempSet,
+				  liveRegs,exceptions);
+		} else if ( tmpchanged ) {
+		    // hack: if only temps changed, can make iteration
+		    // loop significantly smaller by only traversing
+		    // differential
+		    updateMapping(tempToRegs,i.useC(),
+				  liveRegs,exceptions);
+		}
 	    }
 
 	    return tempToRegs;
 	}
 
-	/** For each t in `liveTempSet', 
-	    adds `liveRegs' to all the conflicting regs for t, 
-	    excluding the mapping (`exceptT' -> `exceptR'). 
-	    requires: (exceptR == null) ==> (exceptT == null)
+	/** adds `liveRegs' to all the conflicting regs 
+	    for `liveTempC', excluding the mappings in `excepts'.
+	    requires: excepts is a Temp -> Temp map
 	    effects:
-	    for each t in `liveTempSet'
-	        let regs = if (t == `exceptT')
-		           then `liveRegs' - `exceptR'
+	    for each t in `liveTempC'
+	        let regs = if (t in `excepts.keySet')
+		           then `liveRegs' - `excepts.get(t)'
 			   else `liveRegs'
 		in adds regs to `tempToRegs'.get(t)
 	*/
-	private void updateMapping(MultiMap tempToRegs, Set liveTempSet, 
-				   Set liveRegs, Temp exceptT, Temp exceptR) {
+	private void updateMapping(MultiMap tempToRegs, 
+				   Collection liveTempC, 
+				   Set liveRegs, Map excepts) {
+				   
 	    // System.out.println("adding "+liveRegs+" to conflicts for "+
-	    //                    liveTempSet+" excluding ("+exceptT+" -> "+exceptR);
+	    //                    liveTempC+" excluding ("+exceptT+" -> "+exceptR);
 
 	    if (liveRegs.isEmpty()) return;
-	    Iterator titer = liveTempSet.iterator();
+	    Iterator titer = liveTempC.iterator();
 	    while(titer.hasNext()) {
 		Temp t = (Temp) titer.next();
-		if (t == exceptT) {
-		    liveRegs.remove(exceptR);
+		if (isRegister(t)) continue;
+
+		if (excepts.containsKey(t)) {
+		    Temp r = (Temp) excepts.get(t);
+		    liveRegs.remove(r);
 		    tempToRegs.addAll(t, liveRegs);
-		    liveRegs.add(exceptR);
+		    liveRegs.add(r);
 		} else {
 		    tempToRegs.addAll(t, liveRegs);
 		}
@@ -568,7 +627,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    if (liveOnExit.contains(t)) {
 				System.out.println("\tWTF?!? removing " + 
 						   t + " from " + regfile
-						   + " for " + i);
+						   + " for " + i + ", "+
+						   "preassigned to "+
+						   preassignMap.get(t)+
+						   " i defs "+new HashSet(i.defC()));
 				Instr prev = iloc.getPrev();
 
 				// FSK: update code to do something
@@ -579,6 +641,15 @@ public class LocalCffRegAlloc extends RegAlloc {
 					    "i.getPrev is bad choice;");
 
 				spillValue(t, prev, regfile, 5);
+
+				// extract extra information 
+				while(!prev.defC().contains(t) &&
+				      prev.predC().size() == 1)
+				    prev = prev.getPrev();
+				if (prev.defC().contains(t))
+				    System.out.println(t+" defined by "+prev);
+				else
+				    System.out.println(t+" not def'd in BB");
 			    }
 			    regfile.remove(t);
 			}

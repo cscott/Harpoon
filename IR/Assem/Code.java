@@ -33,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.9 2000-06-27 18:17:46 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.10 2000-06-29 01:31:49 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -139,6 +139,14 @@ public abstract class Code extends HCode {
 
     public Frame getFrame() {
         return frame;
+    }
+    
+    /** Prints the assembly instructions of <code>this</code> to
+	STDOUT. 
+	@see Code#print(java.io.PrintWriter)
+    */
+    public void print() {
+	print(new java.io.PrintWriter(System.out));
     }
 
     /** Displays the assembly instructions of this codeview. Attempts

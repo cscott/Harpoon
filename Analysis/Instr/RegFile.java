@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Collections;
+import java.util.Collection;
 import java.util.Iterator;
 
 /**
@@ -22,11 +23,13 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.1.2.8 2000-05-26 00:26:26 pnkfelix Exp $
+ * @version $Id: RegFile.java,v 1.1.2.9 2000-06-29 01:31:47 pnkfelix Exp $
  */
 class RegFile {
 
     public static final boolean PRINT_USAGE = false;
+
+    private Collection allRegs;
 
     private Map regToTmp; // Map[ Reg -> Temp ]
     private Map tmpToRegLst; // Map[ Temp -> List<Reg> ]
@@ -34,10 +37,11 @@ class RegFile {
     private Set dirtyTemps; // Set of all Temps that have been written
 
     /** Creates a <code>RegFile</code>. */
-    public RegFile() {
+    public RegFile(Collection allRegisters) {
         regToTmp = new HashMap();
 	tmpToRegLst = new HashMap();
 	dirtyTemps = new HashSet();
+	allRegs = allRegisters;
     } 
 
     /** Marks the pseudo register <code>preg</code> as dirty. 

@@ -21,9 +21,8 @@ import java.util.Set;
 */
 class Verify extends harpoon.IR.Assem.InstrVisitor {
     LocalCffRegAlloc lra;
-    RegFile regfile = new RegFile();
     Set spillUsesV, spillDefsV;
-    
+    RegFile regfile;
     final BasicBlock block;
     private Instr curr;
     
@@ -31,6 +30,7 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	   Set spillUses, Set spillDefs) {
 	this.lra = lra;
 	this.block = b; 
+	regfile = new RegFile(lra.allRegisters);
 	this.spillUsesV = spillUses;
 	this.spillDefsV = spillDefs;
     }
