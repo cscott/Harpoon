@@ -193,7 +193,10 @@ bool processobject::processconstraint(Constraint *c) {
       if (c->getstatement()!=NULL) {
 	if (processstatement(c->getstatement(),st->env)!=PTRUE) {
 #ifdef DEBUGMESSAGES
-	  printf("Predicate violation.  Repairing...\n");
+	  printf("Predicate violation\n");
+	  printf("   Statement: "); c->getstatement()->print(); printf("\n");
+	  printf("   Curr. state: "); st->print(globalmodel);
+	  printf("Repairing...\n");
 #endif
 	  if (c->getcrash()) {
 	    printf("Fatal program error violating special constraint.\n");

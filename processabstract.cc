@@ -14,6 +14,7 @@
 #include "Relation.h"
 #include <assert.h>
 #include "tmap.h"
+#include <stdio.h>
 
 
 // class processabstract
@@ -295,6 +296,8 @@ State::State(Rule *r, Hashtable *oldenv) {
   }
 }
 
+
+
 State::State(Constraint *c,Hashtable *oldenv) {
   env=new Hashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);;
   env->setparent(oldenv);
@@ -305,6 +308,8 @@ State::State(Constraint *c,Hashtable *oldenv) {
     relset[i]=new RelationSet(q->getset(),q->getlabel()->label(),NULL);
   }
 }
+
+
 
 State::~State() {
   delete(env);
@@ -551,7 +556,16 @@ Element * evaluateexpr(model *m,AElementexpr *ee, Hashtable *env, bool enforcety
 }
 
 
-
+// prints the current state
+void State::print(model *m) 
+{
+  for(int i=0; i<numrelset; i++) 
+    {
+      relset[i]->print(env, m); 
+      printf(" ");
+    }
+  printf("\n");
+}
 
 
 
@@ -940,3 +954,18 @@ bool RelationSet::incrementassignment(Hashtable *env, model *m) {
 }
 
 
+// prints the quantifier and its current state
+void RelationSet::print(Hashtable *env, model *m)
+{
+  switch(type) {
+  case TYPE_SET: {
+    if (set->gettype()==SET_label) 
+      {
+	printf("(%s,", left);
+	DomainSet *ds=m->getdomainrelation()->getset(set->getname());
+	Element *ele = (Element *) env->get(left);
+	ele->print();
+	printf(")\n");
+      }
+  }}
+}

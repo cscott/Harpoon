@@ -39,14 +39,16 @@ class processabstract {
 
 class RelationSet {
  public:
-  RelationSet(Set *s, char *l,Type *tl);
-  RelationSet(Set *s,char *l, Type *tl,char *r,Type *tr);
+  RelationSet(Set *s, char *l, Type *tl);
+  RelationSet(Set *s, char *l, Type *tl, char *r, Type *tr);
   RelationSet(char *l,AElementexpr *lower,AElementexpr*upper);
   int gettype();
   bool incrementassignment(bitreader *br,Hashtable *env, model *m);
   bool incrementassignment(Hashtable *env, model *m);
   bool incrementassignment(processconcrete *pc,Hashtable *env, model *m);
   void resetassignment(Hashtable *env);
+
+  void print(Hashtable *env, model *m);  // prints the quantifier and its current state
 
   AElementexpr *lower,*upper;
   char *left,*right;
@@ -72,6 +74,8 @@ class State {
 
   bool initializestate(processconcrete*, model *m);
   bool increment(processconcrete*, model *m);
+
+  void print(model *m);
   
   Hashtable *env;
   RelationSet **relset;

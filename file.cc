@@ -514,6 +514,8 @@ void createfile(struct block *ptr,char *filename, char *buf,int buflen) {
   closefile(ptr,fd);
 }
 
+
+
 void addtode(struct block *ptr, int inode, char * filename) {
   struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
   for(int i=0;i<12;i++) {
