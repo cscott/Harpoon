@@ -69,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.48 1999-11-09 06:28:27 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.49 1999-11-13 08:37:34 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -81,6 +81,7 @@ public class SAMain extends harpoon.IR.Registration {
     private static boolean LIVENESS_TEST = false;
     private static boolean OUTPUT_INFO = false;
     private static boolean QUIET = false;
+    private static boolean OPTIMIZE = false;
 
     private static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     private static HClass  singleClass = null; // for testing single classes
@@ -107,6 +108,11 @@ public class SAMain extends harpoon.IR.Registration {
 	parseOpts(args);
 	Util.assert(className!= null, "must pass a class to be compiled");
 
+	if (OPTIMIZE) {
+	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	}
 
 	HClass hcl = HClass.forName(className);
 	HMethod hm[] = hcl.getDeclaredMethods();
@@ -384,7 +390,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     private static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPHRLAhq1::");
+	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPFHRLAhq1::");
 	
 	int c;
 	String arg;
@@ -427,6 +433,9 @@ public class SAMain extends harpoon.IR.Registration {
 		break;
 	    case 'L':
 		OUTPUT_INFO = LIVENESS_TEST = true;
+		break;
+	    case 'F':
+		OPTIMIZE = true;
 		break;
 	    case 'A':
 		OUTPUT_INFO = PRE_REG_ALLOC = PRINT_ORIG = 
