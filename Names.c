@@ -71,6 +71,7 @@ struct fieldname * getfieldc(struct namer *n,struct classname *cn, char *fieldna
     struct fieldname *nfn=(struct fieldname *)calloc(1,sizeof(struct fieldname));
     nfn->classname=cn;
     nfn->fieldname=copystr(fieldname);
+    nfn->fielddesc=fd;
     genputtable(n->fieldtable, nfn, nfn);
     return nfn;
   }

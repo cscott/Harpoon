@@ -1,6 +1,7 @@
 #ifndef ROLE_INFER
 #define ROLE_INFER
 
+
 #include "ObjectSet.h"
 #include "ObjectPair.h"
 #include "Hashtable.h"

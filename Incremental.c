@@ -88,7 +88,7 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht, int 
       /* Possible role change due to reachability*/
       addobject(hs->changedset,possiblegarbage);
     }
-  } 
+  }
 
   freeobjectset(changedset);
 }

@@ -10,6 +10,8 @@
 #include <dmalloc.h>
 #endif
 
+#define KARENHACK /* Gross hack for Karen's free stuff...*/
+
 void exitmethod(struct heap_state *heap, struct hashtable *ht, long long uid) {
   //Lets show the roles!!!!
   int i=0;
@@ -85,6 +87,10 @@ void entermethod(struct heap_state * heap, struct hashtable * ht) {
     struct heap_object *ho=removeobject(heap->changedset,NULL);
     free(findrolestring(heap, dommap, ho,0));
   }
+
+  /* increment call counter */
+
+  rolem->numberofcalls++;
 
   genfreekeyhashtable(dommap);
   freemethodlist(heap);
@@ -209,54 +215,124 @@ void printrolemethod(struct rolemethod *method) {
    printf("   Return value=%s\n",rrs->returnrole);
     rrs=rrs->next;
   }
-  printrolechanges(method->rolechanges);
+  printrolechanges(method);
   printf("}\n\n");
 }
 
-void printrolechanges(struct genhashtable *rolechanges) {
+void printrolechanges(struct rolemethod *rm) {
+  struct genhashtable *rolechanges=rm->rolechanges;
   struct geniterator *it=gengetiterator(rolechanges);
   while(1) {
     struct rolechangesum *rcs=(struct rolechangesum *)gennext(it);
+    struct rolechangeheader *rch;
+    struct rolechangepath *rcp;
     if (rcs==NULL) break;
-    printf("%s -> %s\n",rcs->origrole, rcs->newrole);
+    printf("%s -> %s ",rcs->origrole, rcs->newrole);
+    rch=(struct rolechangeheader *)gengettable(rolechanges, rcs);
+    rcp=rch->rcp;
+    while(rcp!=NULL) {
+      printf(" Path: ");
+      if (rcp->exact==rm->numberofcalls)
+	printf("Exact ");
+      if (rcp->inner==2)
+	printf("Inner ");
+      else if(rcp->inner==1)
+	printf("Maybe Inner ");
+
+      printeffectregexpr(rcp->expr);
+      printf("\n");
+      rcp=rcp->next;
+    }
   }
   genfreeiterator(it);
 }
 
 void mergerolechanges(struct heap_state *heap) {
-  struct genhashtable * rolechangetable=heap->methodlist->rolechangetable;
-  struct genhashtable * rolechanges=heap->methodlist->rm->rolechanges;
-  struct geniterator *it=gengetiterator(rolechangetable);
+  struct geniterator *it=gengetiterator(heap->methodlist->rolechangetable);
   while(1) {
     struct rolechange *rc=(struct rolechange *)gennext(it);
-    struct rolechangesum *rcs;
+    struct method *method=heap->methodlist;
+    int inner=2;
     if (rc==NULL)
       break;
-    rcs=(struct rolechangesum *)calloc(1,sizeof(struct rolechangesum));
-    rcs->origrole=rc->origrole;
-    rcs->newrole=rc->newrole;
-    if (!gencontains(rolechanges, rcs)) {
-      genputtable(rolechanges,rcs,NULL);
-    } else {
-      free(rcs->origrole);
-      free(rcs->newrole);
-      free(rcs);
+
+    while(method!=NULL) {
+      struct rolemethod *rm=method->rm;
+      struct genhashtable * rolechanges=rm->rolechanges;
+      struct rolechangesum *rcs=(struct rolechangesum *)calloc(1,sizeof(struct rolechangesum));
+      struct rolechangeheader *rch;
+      struct effectregexpr *ere=buildregexpr(method->pathtable, rc->uid);
+      struct rolechangepath *rcp;
+
+      rcs->origrole=copystr(rc->origrole);
+      rcs->newrole=copystr(rc->newrole);
+      if (!gencontains(rolechanges, rcs)) {
+	rch=(struct rolechangeheader *)calloc(1,sizeof(struct rolechangeheader));
+	genputtable(rolechanges,rcs,rch);
+      } else {
+	rch=(struct rolechangeheader *) gengettable(rolechanges,rcs);
+	free(rcs->origrole);
+	free(rcs->newrole);
+	free(rcs);
+      }
+      /* rch points to appropriate rolechangeheader */
+      /* ere points to our regular expression */
+      rcp=rch->rcp;
+
+      while(rcp!=NULL) {
+	struct effectregexpr *ere2=rcp->expr;
+	struct effectregexpr *erem=mergeeffectregexpr(ere,ere2);
+	if (erem!=NULL) {
+	  rcp->expr=erem;
+	  if ((rcp->inner||inner)&&((inner==0)||(rcp->inner==0))) {
+	    rcp->inner=1;
+	  }
+	  /*Update count */
+	  if ((rcp->exact+1)==rm->numberofcalls)
+	    rcp->exact=rm->numberofcalls;
+	  if (rcp->exact<rm->numberofcalls)
+	    rcp->exact=0;
+	  freeeffectregexpr(ere2);
+	  freeeffectregexpr(ere);
+	  break;
+	}
+	rcp=rcp->next;
+      }
+      if(rcp==NULL) {
+	/* Couldn't merge in */
+	struct rolechangepath *rcp2=(struct rolechangepath *)calloc(1, sizeof(struct rolechangepath));
+	rcp2->expr=ere;
+	if(rm->numberofcalls==1)
+	  rcp2->exact=1;
+	rcp2->next=rch->rcp;
+	rcp2->inner=inner;
+	rch->rcp=rcp2;
+      }
+      method=method->caller;
+      inner=0;
     }
+    free(rc->origrole);
+    free(rc->newrole);
     free(rc);
   }
   genfreeiterator(it);
-  genfreehashtable(rolechangetable);
+  genfreehashtable(heap->methodlist->rolechangetable);
   heap->methodlist->rolechangetable=NULL;
 }
 
 int rcshashcode(struct rolechangesum *rcs) {
-  int hashcode=hashstring(rcs->origrole);
-  hashcode^=hashstring(rcs->newrole);
+  int hashcode=hashstring(rcs->newrole);
+#ifndef KARENHACK
+  hashcode^=hashstring(rcs->origrole);
+#endif
   return hashcode;
 }
 
 int equivalentrcs(struct rolechangesum *rcs1, struct rolechangesum *rcs2) {
-  if (equivalentstrings(rcs1->origrole, rcs2->origrole) &&
+  if (
+#ifndef KARENHACK
+equivalentstrings(rcs1->origrole, rcs2->origrole) &&
+#endif
       equivalentstrings(rcs1->newrole, rcs2->newrole))
     return 1;
   else

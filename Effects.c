@@ -45,6 +45,26 @@ void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, l
     addeffect(hs, -1, NULL, obj);
 }
 
+void checkpath(struct heap_state *hs, long long obj) {
+  struct method *method=hs->methodlist;
+  int newpatho=0;
+  while(method!=NULL) {
+    struct hashtable * pathtable=method->pathtable;
+    if (!contains(pathtable, obj)) {
+      /*Magically got this object...mark it as soo...*/
+      struct path *path=(struct path *) calloc(1,sizeof(struct path));
+      path->prev_obj=-1;
+      path->paramnum=-2;
+      puttable(pathtable, obj, path);
+      newpatho=1;
+    }
+   
+    method=method->caller;
+  }
+  if (newpatho)
+    addeffect(hs, -1, NULL, obj);
+}
+
 void addpath(struct heap_state *hs, long long obj, struct fieldname * field, long long dstobj) {
   struct method *method=hs->methodlist;
   int newpath=0,newpatho=0;
@@ -642,7 +662,7 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
 	  rel->fields=newfield;
 	}
       }
-    } else if(path->paramnum==-1&&path->fieldname==NULL&&path->fieldname->fielddesc==NULL) {
+    } else if(path->paramnum==-1&&path->fieldname==NULL) {
       struct effectregexpr * ere=(struct effectregexpr *)calloc(1, sizeof(struct effectregexpr));
       ere->flag=1;
       ere->paramnum=-1;

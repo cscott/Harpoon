@@ -376,8 +376,10 @@ void doanalysis() {
 	sscanf(line,"FA: %lld %s %s %s %lld", &suid, classname, fieldname, descname, &duid);
 	if (suid!=-1)
 	  src=gettable(ht,suid);
-	if (duid!=-1)
+	if (duid!=-1) {
 	  dst=gettable(ht,duid);
+	  checkpath(&heap, duid);
+	}
 	if (src!=NULL) {
 	  dofieldassignment(&heap, src, getfield(heap.namer, classname, fieldname, descname), dst);
 	  addeffect(&heap, suid, getfield(heap.namer, classname, fieldname, descname), duid);

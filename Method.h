@@ -10,17 +10,26 @@ struct rolemethod {
   short isStatic;
   struct rolereturnstate * returnstates;
   struct genhashtable * rolechanges;
-
+  int numberofcalls;
 #ifdef EFFECTS
   struct effectlist *effects;
 #endif
 };
 
+struct rolechangeheader{
+  struct rolechangepath *rcp;
+};
+
 struct rolechangesum {
   char *origrole;
   char *newrole;
-  /*  int exact;
-      struct effectregexpr * expr;*/
+};
+
+struct rolechangepath {
+  struct effectregexpr *expr;
+  int exact;
+  struct rolechangepath * next;
+  char inner;
 };
 
 struct rolereturnstate {
@@ -43,6 +52,6 @@ void exitmethod(struct heap_state * heap, struct hashtable * ht, long long uid);
 void printrolemethod(struct rolemethod *method);
 int rcshashcode(struct rolechangesum *rcs);
 int equivalentrcs(struct rolechangesum *rcs1, struct rolechangesum *rcs2);
-void printrolechanges(struct genhashtable *rolechanges);
+void printrolechanges(struct rolemethod *rm);
 #endif
 
