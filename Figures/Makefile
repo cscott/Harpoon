@@ -32,7 +32,7 @@ THundir.tex: THundir.fig
 	fig2dev -L latex -m 0.6 $< $@
 
 THcqex.tex: THcqex.fig Makefile
-	fig2dev -L latex -m 0.4 $< $@
+	fig2dev -L latex -m 0.5 $< $@
 
 evil.tex: evil.fig
 	fig2dev -L latex -m 0.25 $< $@
