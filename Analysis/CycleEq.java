@@ -21,7 +21,7 @@ import java.util.Vector;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.4 1999-01-12 08:47:18 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.5 1999-01-13 00:55:12 cananian Exp $
  */
 
 public class CycleEq  {
@@ -154,14 +154,19 @@ public class CycleEq  {
 		public Object nextElement() {return byNum(--i);}
 	    };
 	}
-	/** Enumerated the primed nodes in reverse depth-first search order. */
+	/** Enumerated the primed nodes in depth-first search order. */
 	public Enumeration primes() {
+	    Enumeration e = new Enumeration() {
+		int i=0;
+		public boolean hasMoreElements() { return i<size(); }
+		public Object nextElement() { return byNum(i++); }
+	    };
 	    FilterEnumerator.Filter f = new FilterEnumerator.Filter() {
 		public boolean isElement(Object o) {
 		    return ((Node)o).isPrime();
 		}
 	    };
-	    return new FilterEnumerator(elements(), f);
+	    return new FilterEnumerator(e, f);
 	}
 
 	// DFS ORDERING.
