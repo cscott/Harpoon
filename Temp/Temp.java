@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.11 1998-09-13 23:57:33 cananian Exp $
+ * @version $Id: Temp.java,v 1.12 1998-09-16 17:25:47 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
@@ -66,6 +66,9 @@ public class Temp {
 
   /** Returns a string representation of this temporary. */
   public String toString() { return name(); }
+
+  /** For debugging purposes: reset all temp variable counters to zero. */
+  //public static void clear() { table.clear(); }
 }
 // set emacs indentation style.
 // Local Variables:
