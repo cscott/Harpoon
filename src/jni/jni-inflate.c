@@ -7,6 +7,7 @@
 #include <jni-private.h>
 
 #include <assert.h>
+#include <string.h> /* for memset */
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
 #endif
