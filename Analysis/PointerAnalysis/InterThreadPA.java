@@ -6,6 +6,7 @@ package harpoon.Analysis.PointerAnalysis;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Enumeration;
+import java.util.Collections;
 import java.util.Date;
 
 import harpoon.Util.Util;
@@ -20,20 +21,20 @@ import harpoon.IR.Quads.NEW;
  * <code>InterThreadPA</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.5 2000-02-12 01:41:32 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.6 2000-02-12 23:11:27 salcianu Exp $
  */
 abstract class InterThreadPA {
     
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
+    private static final boolean DEBUG2 = false;
     private static final boolean TIMING = true;
 
     public static ParIntGraph resolve_threads(ParIntGraph pig,
 					      PointerAnalysis pa){
 
-	if(DEBUG)
-	    System.out.println("Inter-thread analysis ... ");
-
 	long begin_time = new Date().getTime();
+
+	pig = (ParIntGraph) pig.clone();
 
 	HashSet analyzed_threads = new HashSet();
 
@@ -49,8 +50,6 @@ abstract class InterThreadPA {
 	    if((ops == null) || (ops.length==0) ||
 	       !analyzable_run_methods(ops,pa)) continue;	    
 
-	    System.out.println("YUHU");
-
 	    ParIntGraph old_pig = pig;
 	    pig = interaction_nt(pig,nt,ops,pa);
 
@@ -58,9 +57,10 @@ abstract class InterThreadPA {
 		analyzed_threads.clear();
 	}
 	
-	if(DEBUG){
+	if(TIMING){
 	    long total_time = new Date().getTime() - begin_time;
-	    System.out.println(total_time + "ms");
+	    System.out.println("Inter-thread analysis done in " + 
+			       total_time + "ms");
 	}
 
 	return pig;
@@ -190,7 +190,7 @@ abstract class InterThreadPA {
 	pig[0] = pig_starter;
 	pig[1] = pa.getExtParIntGraph(op);
 
-	if(DEBUG){
+	if(DEBUG2){
 	    System.out.println("interact_once_op:");
 	    System.out.println("  nt node: " + nt);
 	    System.out.println("  run method: " + op);
@@ -202,7 +202,7 @@ abstract class InterThreadPA {
 	
 	Relation mu[] = compute_initial_mappings(pig,nt,params);
 
-	if(DEBUG){
+	if(DEBUG2){
 	    System.out.println("INITIAL MAPPINGS:");
 	    System.out.println("starter -> startee:" + mu[0]);
 	    System.out.println("startee -> starter:" + mu[1]);
@@ -210,7 +210,7 @@ abstract class InterThreadPA {
 
 	concretize_loads(pig,mu);
 	
-	if(DEBUG){
+	if(DEBUG2){
 	    System.out.println("AFTER CONCRETIZE LOADS:");
 	    System.out.println("starter -> startee:" + mu[0]);
 	    System.out.println("startee -> starter:" + mu[1]);
@@ -218,15 +218,15 @@ abstract class InterThreadPA {
 
 	compute_final_mappings(pig,mu,nt);
 
-	if(DEBUG){
+	if(DEBUG2){
 	    System.out.println("FINAL MAPPINGS:");
 	    System.out.println("starter -> startee:" + mu[0]);
 	    System.out.println("startee -> starter:" + mu[1]);
 	}
 
-	ParIntGraph new_pig = build_new_pig(pig,mu);
+	ParIntGraph new_pig = build_new_pig(pig,mu,params[0],nt);
 
-	if(DEBUG){
+	if(DEBUG2){
 	    System.out.println("NEW GRAPH:");
 	    System.out.println(new_pig);
 	}
@@ -237,7 +237,7 @@ abstract class InterThreadPA {
 	return new_pig;
     }
 
-    // In Starter: e(n) = e(n) - {nt}, for all n and tau(nt) = 0
+    // In Starter: e(n) = e(n) - {nt}, for all n and tau(nt)--
     private static void adjust_escape_and_tau(ParIntGraph pig, PANode nt){
 	pig.G.e.removeNodeHoleFromAll(nt);
 	//pig.tau.setToZero(nt);
@@ -354,17 +354,132 @@ abstract class InterThreadPA {
 
     // Build the new graph using the graphs from the starter and the startee
     // and the mu mappings.
-    private static ParIntGraph build_new_pig(ParIntGraph[] pig, Relation[] mu){
+    private static ParIntGraph build_new_pig(ParIntGraph[] pig, Relation[] mu,
+					     PANode nparam, PANode nt){
 
 	ParIntGraph new_pig = new ParIntGraph();
 
-	translate_edges(new_pig,pig[0],mu[0]);
-	translate_edges(new_pig,pig[1],mu[1]);
+	new_pig.insertAllButAr(pig[0],mu[0]);
+	new_pig.insertAllButAr(pig[1],mu[1], Collections.singleton(nparam));
+
+	bring_starter_actions(pig[0], new_pig, mu[0],
+			      pig[1].tau.activeThreadSet(), nt);
+
+	bring_startee_actions(pig[1], new_pig, mu[1],
+			      pig[0].tau.activeThreadSet(), nt);
 
 	return new_pig;
     }
 
 
+    // Add the actions from the starter into the new graph.
+    private static void bring_starter_actions(final ParIntGraph pig_starter,
+					      final ParIntGraph new_pig,
+					      final Relation mu_starter,
+					      final Set startee_active_threads,
+					      final PANode nt){
+
+	mu_starter.add(ActionRepository.THIS_THREAD,
+		       ActionRepository.THIS_THREAD);
+
+	ActionVisitor act_visitor_starter = new ActionVisitor(){
+		public void visit_ld(PALoad load){
+		    if(!mu_starter.contains(load.n2,load.n2)) return;
+		    new_pig.ar.add_ld(mu_starter.getValuesSet(load.n1),
+				      load.f,
+				      load.n2,
+				      mu_starter.getValuesSet(load.nt),
+				      Collections.EMPTY_SET);
+		}
+		public void visit_sync(PANode n, PANode nt1){
+		    new_pig.ar.add_sync(mu_starter.getValuesSet(n),
+					mu_starter.getValuesSet(nt1),
+					Collections.EMPTY_SET);
+		}
+	    };
+
+	pig_starter.ar.forAllActions(act_visitor_starter);
+
+	ParActionVisitor par_act_visitor_starter = new ParActionVisitor(){
+
+		public void visit_par_ld(PALoad load, PANode nt2){
+
+		    Set parallel_threads = mu_starter.getValuesSet(nt2);
+		    if(nt2 == nt)
+			parallel_threads.addAll(startee_active_threads);
+
+		    if(!mu_starter.contains(load.n2,load.n2)) return;
+		    new_pig.ar.add_ld(mu_starter.getValuesSet(load.n1),
+				      load.f,
+				      load.n2,
+				      mu_starter.getValuesSet(load.nt),
+				      parallel_threads);
+		}
+
+		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
+
+		    Set parallel_threads = mu_starter.getValuesSet(nt2);
+		    if(nt2 == nt)
+			parallel_threads.addAll(startee_active_threads);
+
+		    new_pig.ar.add_sync(mu_starter.getValuesSet(n),
+					mu_starter.getValuesSet(nt1),
+					parallel_threads);
+		}
+	    };
+
+	pig_starter.ar.forAllParActions(par_act_visitor_starter);
+    }
+
+
+    // Add the actions from the startee into the new graph.
+    private static void bring_startee_actions(final ParIntGraph pig_startee,
+					      final ParIntGraph new_pig,
+					      final Relation mu_startee,
+					      final Set starter_active_threads,
+					      final PANode nt){
+
+	mu_startee.add(ActionRepository.THIS_THREAD,nt);
+
+	ActionVisitor act_visitor_startee = new ActionVisitor(){
+		public void visit_ld(PALoad load){
+		    if(!mu_startee.contains(load.n2,load.n2)) return;
+		    new_pig.ar.add_ld(mu_startee.getValuesSet(load.n1),
+				      load.f,
+				      load.n2,
+				      mu_startee.getValuesSet(load.nt),
+				      starter_active_threads);
+		}
+		public void visit_sync(PANode n, PANode nt1){
+		    new_pig.ar.add_sync(mu_startee.getValuesSet(n),
+					mu_startee.getValuesSet(nt1),
+					starter_active_threads);
+		}
+	    };
+
+	pig_startee.ar.forAllActions(act_visitor_startee);
+
+	ParActionVisitor par_act_visitor_startee = new ParActionVisitor(){
+		public void visit_par_ld(PALoad load, PANode nt2){
+		    if(!mu_startee.contains(load.n2,load.n2)) return;
+		    new_pig.ar.add_ld(mu_startee.getValuesSet(load.n1),
+				      load.f,
+				      load.n2,
+				      mu_startee.getValuesSet(load.nt),
+				      mu_startee.getValuesSet(nt2));
+		}
+		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
+		    new_pig.ar.add_sync(mu_startee.getValuesSet(n),
+					mu_startee.getValuesSet(nt1),
+					mu_startee.getValuesSet(nt2));
+		}
+	    };
+
+	pig_startee.ar.forAllParActions(par_act_visitor_startee);
+
+    }
+
+    // TODO: when the system will be stable enough, this must be removed!
     private static void translate_edges(final ParIntGraph new_pig,
 					ParIntGraph pig, final Relation mu){
 	// visitor for the outside edges
