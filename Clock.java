@@ -33,34 +33,50 @@ public abstract class Clock {
     private RelativeTime resolution;
     private static RealtimeClock rtc = null;
     
+    /** Constructor for the abstract class. */
     public Clock() {}
     
-    /** There is always one clock object available: a realtime clock that
-     *  advances in sync with the external world. This is the default Clock.
+    /** There is always one clock object available: a realtime clock that advances
+     *  in sync with the external world. This is the default <code>Clock</code>.
+     *
+     *  @return An instance of the default <code>Clock</code>.
      */
     public static Clock getRealtimeClock() {
 	if (rtc == null) rtc = new RealtimeClock();
 	return rtc;
     }
 
-    /** Return the resolution of the clock -- the interval between ticks. */
+    /** Gets the resolution of the clock -- the interval between ticks.
+     *
+     *  @return An instance of <code>RelativeTime</code> representing the
+     *          resolution of <code>this</code>.
+     */
     public abstract RelativeTime getResolution();
 
-    /** Return the current time in a freshly allocated object. */
+    /** Gets the current time in a freshly allocated object.
+     *
+     *  @return An instance of <code>AbsoluteTime</code> representing the
+     *          current time.
+     */
     public AbsoluteTime getTime() {
 	AbsoluteTime time = new AbsoluteTime();
 	getTime(time);
 	return time;
     }
 
-    /** Return the current time in an existing object. The time represented
+    /** Gets the current time in an existing object. The time represented
      *  by the given <code>AbsoluteTime</code> is changed some time between
      *  the invocation of the method and the return of the method.
+     *
+     *  @param time The instance of <code>AbsoluteTime</code> object which
+     *              will have its time changed. If null, then nothing happens.
      */
     public abstract void getTime(AbsoluteTime time);
 
     /** Set the resolution of <code>this</code>. For some hardware clocks
      *  setting resolution impossible and if called on those nothing happens.
+     *
+     *  @param resolutino The new resolution of <code>this</code>.
      */
     public abstract void setResolution(RelativeTime resolution);
 }

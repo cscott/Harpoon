@@ -22,6 +22,11 @@ public class PeriodicTimer extends Timer {
 
     /** Create an instance of <code>AsyncEvent</code> that executes its
      *  fire method periodically.
+     *
+     *  @param start The time when the first interval begins.
+     *  @param interval The time between successive executions of the fire method.
+     *  @param handler The instance of <code>AsyncEventHandler</code> that will be
+     *                 scheduled each time the fire method is executed.
      */
     public PeriodicTimer(HighResolutionTime start,
 			 RelativeTime interval,
@@ -32,6 +37,12 @@ public class PeriodicTimer extends Timer {
 
     /** Create an instance of <code>AsyncEvent</code> that executes its
      *  fire method periodically.
+     *
+     *  @param start The time when the first interval begins.
+     *  @param interval The time between successive executions of the fire method.
+     *  @param clock The clock whose increments are used to calculate the interval.
+     *  @param handler The instance of <code>AsyncEventhandler</code> that will be
+     *                 scheduled each time the fire method is executed.
      */
     public PeriodicTimer(HighResolutionTime start,
 			 RelativeTime interval, Clock clock,
@@ -43,6 +54,8 @@ public class PeriodicTimer extends Timer {
     /** Create a <code>ReleaseParameters</code> object with the next
      *  fire time as the start time and the interval of <code>this</code>
      *  as the period.
+     *
+     *  @return An instance of <code>ReleaseParameters</code> object.
      */
     public ReleaseParameters createReleaseParameters() {
 	return new PeriodicParameters(getFireTime(), interval, null, null,
@@ -56,17 +69,26 @@ public class PeriodicTimer extends Timer {
 	handler.run();
     }
 
-    /** Return the next time at which this will fire. */
+    /** Gets the absolute time <code>this</code> will next fire
+     *
+     *  @return The next fire time as an absolute time.
+     */
     public AbsoluteTime getFireTime() {
 	return super.getFireTime();
     }
 
-    /** Return the interval of this Timer. */
+    /** Gets the interval of <code>this</code>.
+     *
+     *  @return The value in <code>interval</code>.
+     */
     public RelativeTime getInterval() {
 	return interval;
     }
 
-    /** Reset the interval of this Timer. */
+    /** Sets the <code>interval</code> value of <code>this</code>.
+     *
+     *  @param interval The value to which <code>interval</code> will be set.
+     */
     public void setInterval(RelativeTime interval) {
 	this.interval = interval;
     }

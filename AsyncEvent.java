@@ -22,6 +22,7 @@ public class AsyncEvent {
 
     protected LinkedList handlersList;
 
+    /** Create a new <code>AsyncEvent</code> object. */
     public AsyncEvent() {
 	handlersList = new LinkedList();
     }
@@ -29,15 +30,24 @@ public class AsyncEvent {
     /** Add a handler to the set of handlers associated with this
      *  event. An <code>AsyncEvent</code> may have more than one
      *  associated handler.
+     *
+     *  @param handler The new handler to add to the list of handlers
+     *                 already associated with <code>this</code>. If
+     *                 <code>handler</code> is null then nothing happens.
      */
     public void addHandler(AsyncEventHandler handler) {
 	handlersList.add(handler);
     }
 
-    /** Binds this to an external event (a happening). The meaningful
-     *  values of <code>happening</code> are implemetation dependent.
-     *  This <code>AsyncEvent</code> is considered to have occured
-     *  whenever the external event occurs.
+    /** Binds this to an external event, a <i>happening</i>. The meaningful
+     *  values of <code>happening</code> are implementation dependent. This
+     *  instance of <code>AsyncEvent</code> is considered to have occured
+     *  whenever the happening occurs.
+     *
+     *  @param hapening An implementation dependent value that binds this
+     *                  instance of <code>AsyncEvent</code> to a happening.
+     *  @throws UnknownHappeningException If the string value is not supported
+     *                                    by the implementation.
      */
     public void bindTo(String happening)
 	throws UnknownHappeningException {
@@ -49,39 +59,68 @@ public class AsyncEvent {
      *  the most pessimistic: <code>AperiodicParameters</code>.
      *  This is typically called by code that is setting up a
      *  handler for this event that will fill in the parts of the
-     *  release parameters that it knows the values for, like cost.
+     *  release parameters for which it has values, e.g., cost.
+     *
+     *  @return A new <code>ReleaseParameters</code> object.
      */
     public ReleaseParameters createReleaseParameters() {
 	return new AperiodicParameters(null, null, null, null);
     }
 
-    /** Fire (schedule the <code>run()</code> methods of) the handlers
-     *  associated with this event.
+    /** Fire this instance of <code>AsyncEvent</code>. The <code>run()</code>
+     *  methods of intances of <code>AsyncEventHandler</code> associated with
+     *  this event will be made raedy to run.
      */
     public void fire() {
 	for (Iterator it = handlersList.iterator(); it.hasNext(); )
 	    ((AsyncEventHandler)it.next()).run();
     }
 
-    /** Returns true if and only if this event is handled by this handler. */
+    /** Returns true if and only if the handler given as the parameter is
+     *  associated with <code>this</code>.
+     *
+     *  @param handler The handler to be tested to determine if it is
+     *                 associated with <code>this</code>.
+     *  @return True if the parameter is associated with <code>this</code>.
+     *          False, if <code>target</code> is null or the parameter is
+     *          not associated with <code>this</code>.
+     */
     public boolean handledBy(AsyncEventHandler handler) {
 	return (handlersList.contains(handler));
     }
 
-    /** Remove a handler from the set associated with this event. */
+    /** Remove a handler from the set associated with this event.
+     *
+     *  @param handler The handler to be disassociated from <code>this</code>.
+     *                 If null nothing happens. If not already associated with
+     *                 this then nothing happens.
+     */
     public void removeHandler(AsyncEventHandler handler) {
 	handlersList.remove(handler);
     }
 
-    /** Associate a new handler with this event, removing all existing handlers. */
+    /** Associate a new handler with this event, removing all existing handlers.
+     *
+     *  @param handler The new instance of <code>AsyncEventHandler</code> to be
+     *                 associated with this. If <code>handler</code> is null then
+     *                 no handler will be associated with this (i.e., remove all
+     *                 handlers).
+     */
     public void setHandler(AsyncEventHandler handler) {
 	handlersList.clear();
 	handlersList.add(handler);
     }
 
-    /** Removes a binding to an external event (a happening). The
-     *  meaningful values of <code>happening</code> are implementation
-     *  dependent.
+    /** Removes a binding to an external event, a <i>happening</i>. The meaningful
+     *  values of <code>happening</code> are implementation dependent.
+     *
+     *  @param happening An implementation dependent value representing some external
+     *                   event to which this instance of <code>AsyncEvent</code>
+     *                   is bound.
+     *  @throws UnknownHappeningException If this intance of <code>AsyncEvent</code>
+     *                                    is not bound to the given <code>happening</code>
+     *                                    or the given <code>java.lang.String</code> value
+     *                                    is not supported by the implementation.
      */
     public void unbindTo(String happening)
 	throws UnknownHappeningException {

@@ -14,6 +14,10 @@ public interface Interruptible {
      *  is excepted. Using this the program logic can determine if the
      *  <code>run()</code> method completed normally or had its control
      *  asynchronously transferred to its caller.
+     *
+     *  @param exception Used to invoke methods on
+     *                   <code>AsynchronouslyInterruptedException</code> from
+     *                   within the <code>interruptAction()</code> method.
      */
     public void interruptAction(AsynchronouslyInterruptedException exception);
 
@@ -23,6 +27,10 @@ public interface Interruptible {
      *  class) you must remember to include the <code>throws</code> clause
      *  to make the method interruptible. If the throws clause is omitted
      *  the <code>run()</code> method will not be interruptible.
+     *
+     *  @param exception Used to invoke methods on
+     *                   <code>AsynchronouslyInterruptedException</code> from
+     *                   within the <code>interruptAction()</code> method.
      */
     public void run(AsynchronouslyInterruptedException exception)
 	throws AsynchronouslyInterruptedException;

@@ -21,8 +21,17 @@ public abstract class Timer extends AsyncEvent {
     protected RelativeTime timePassed = new RelativeTime(0, 0);
     protected AbsoluteTime lastUpdated = new AbsoluteTime();
 
-    /** Create a timer that fires at time <code>t</code>, according
-     *  to <code>Clock c</code> and is handled by the specified handler.
+    /** Create a timer that fires at the given time based on the given
+     *  instance of <code>Clock</code> and is handled by the specified
+     *  handler.
+     *
+     *  @param t The time to fire the event. Will be converted to
+     *           absolute time.
+     *  @param clock The clock on which to base this time. If null, the
+     *               system realtime clock is used.
+     *  @param handler The default handler to use for this event. If null, no
+     *                 handler is associated with it and nothing will happen
+     *                 when this event fires until a handler is provided.
      */
     protected Timer(HighResolutionTime t, Clock c,
 		    AsyncEventHandler handler) {
@@ -42,16 +51,16 @@ public abstract class Timer extends AsyncEvent {
      *  timing characteristics of this event. The default is the most
      *  pessimistic: <code>AperiodicParameters</code>. This is typically
      *  called by code that is setting up a handler for this event that
-     *  will fill in the parts of the release parameters that it knows
-     *  the values for, like cost.
+     *  will fill in the parts of the release parameters for which it has
+     *  values, e.g, cost.
+     *
+     *  @return A new <code>ReleaseParameters</code> object.
      */
     public ReleaseParameters createReleaseParameters() {
 	return new AperiodicParameters(null, fireAfter, handler, null);
     }
 
-    /** Stop this from counting and return as many of its resources as
-     *  possible back to the system.
-     */
+    /** Destroy the timer and return all possible resources to the system. */
     public void destroy() {
 	defaultClock = null;
 	fireAfter = null;
@@ -64,14 +73,7 @@ public abstract class Timer extends AsyncEvent {
      *  then it will not fire. However, a disabled timer continues to
      *  count while it is disabled and if it is subsequently reabled
      *  before its fire time occures and is enabled when its fire time
-     *  occurs, it will fire. However, it is important to note that this
-     *  method does not delay the time before a possible firing. For
-     *  example, if the timer is set to fire at time 42 and the
-     *  <code>disable()</code> is called at time 30 and <code>enabled()</code>
-     *  is called at time 40, the firing will occur at time 42 (not time 52).
-     *  These semantics imply also, that firings are not queued. Using
-     *  the above example, if <code>enabled()</code> was called at time
-     *  43 no firing will occur, since at time 43 the timer is disabled.
+     *  occurs, it will fire.
      */
     public void disable() {
 	enabled = false;
@@ -82,12 +84,19 @@ public abstract class Timer extends AsyncEvent {
 	enabled = true;
     }
 
-    /** Return the Clock that this timer is based on. */
+    /** Gets the instance of <code>Clock</code> that this timer is based on.
+     *
+     *  @return The instance of <code>Clock</code>.
+     */
     public Clock getClock() {
 	return defaultClock;
     }
 
-    /** Get the time at which this event will fire. */
+    /** Get the time at which this event will fire.
+     *
+     *  @return An instance of <code>AbsoluteTime</code> object representing
+     *          the absolute time at which this will fire.
+     */
     public AbsoluteTime getFireTime() {
 	return new AbsoluteTime(fireAfter.getMilliseconds() -
 				defaultClock.getTime().getMilliseconds() +
@@ -111,6 +120,9 @@ public abstract class Timer extends AsyncEvent {
 
     /** Change the schedule time for this event; can take either absolute
      *  or relative times.
+     *
+     *  @param time The time to reschedule for this event firing. If null, the
+     *              previous fire time is still the time at which this will fire.
      */
     public void reschedule(HighResolutionTime time) {
 	if (time instanceof AbsoluteTime)
@@ -119,7 +131,9 @@ public abstract class Timer extends AsyncEvent {
 	else fireAfter = (RelativeTime)time;
     }
 
-    /** A Timer starts measuring time from when it is started. */
+    /** Starts this time. A <code>Timer</code> starts measuring time from
+     *  when it is started.
+     */
     public void start() {
 	started = true;
 	Clock.getRealtimeClock().getTime(lastUpdated);
@@ -134,6 +148,7 @@ public abstract class Timer extends AsyncEvent {
 
     /** Stops a timer that is running and changes its state to
      *  <i>not started</i>.
+     *
      *  @return True, if this was <b>started and enabled</b> and stops this.
      *          False, if this was not <b>started or disabled</b>.
      */

@@ -59,9 +59,10 @@ public class AsyncEventHandler implements Schedulable {
     private static long UID = 0;
     private long myUID = ++UID;
 
-    /** Create a handler whose <code>SchedulingParameters</code> are
-     *  inherited from the current thread and does not have either
-     *  <code>ReleaseParameters</code> or <code>MemoryParameters</code>.
+    /** Create an instance of <code>AsyncEventHandler</code> whose
+     *  <code>SchedulingParameters</code> are inherited from the current
+     *  thread and does not have either <code>ReleaseParameters</code> or
+     *  <code>MemoryParameters</code>.
      */
     public AsyncEventHandler() {
 	if (Thread.currentThread() instanceof RealtimeThread)
@@ -71,32 +72,103 @@ public class AsyncEventHandler implements Schedulable {
 	memParams = null;
     }
 
-    /** Create a handler whose parameters are inherited from the current
-     *  thread, if it is a <code>RealtimeThread</code>, or null otherwise.
+    /** Create an instance of <code>AsyncEventHandler</code> whose
+     *  parameters are inherited from the current thread, if the current
+     *  thread is a <code>RealtimeThread</code>, or null, otherwise.
+     *
+     *  @param nonheap A flag meaning, when true, that this will have
+     *                 characteristics identical to a
+     *                 <code>NoHeapRealtimeThread</code>. A false value
+     *                 means this will have characteristics identical to a
+     *                 <code>RealtimeThread</code>. If true and the current
+     *                 thread is <i>not</i> a <code>NoHeapRealtimeThread</code>
+     *                 of a <code>RealtimeThread</code> executing within a
+     *                 <code>ScopedMemory</code> or <code>ImmortalMemory</code>
+     *                 scope then an <code>IllegalArgumentException<code> is thrown.
+     *  @throws java.lang.IllegalArgumentException If the initial memory area is
+     *                                             in heap memory, and the
+     *                                             <code>nonheap</code> parameter
+     *                                             is true.
      */
     public AsyncEventHandler(boolean nonheap) {
 	this();
 	this.nonheap = nonheap;
     }
 
-    /** Create a handler whose <code>SchedulingParameters</code> are inherited
-     *  from the current thread and does not have either
-     *  <code>ReleaseParameters</code> or <code>MemoryParameters</code>.
+    /** Create an instance of <code>AsyncEventHandler</code> whose
+     *  <code>SchedulingParameters</code> are inherited from the current
+     *  thread and does not have either <code>ReleaseParameters</code> or
+     *  <code>MemoryParameters</code>.
+     *
+     *  @param logic The <code>java.lang.Runnable</code> object whose
+     *               <code>run()</code> method is executed by
+     *               <code>handleAsyncEvent()</code>.
      */
     public AsyncEventHandler(Runnable logic) {
 	this();
 	this.logic = logic;
     }
 
-    /** Create a handler whose parameters are inherited from the current thread,
-     *  if it is a <code>RealtimeThread</code>, or null otherwise.
+    /** Create an instance of <code>AsyncEventHandler</code> whose
+     *  parameters are inherited from the current thread, if the current
+     *  thread is a <code>RealtimeThread</code>, or null, otherwise.
+     *
+     *  @param lobic The <code>java.lang.Runnable</code> object whose
+     *               <code>run()</code> method is executed by
+     *               <code>handleAsyncEvent()</code>.
+     *  @param nonheap A flag meaning, when true, that this will have
+     *                 characteristics identical to a
+     *                 <code>NoHeapRealtimeThread</code>. A false value
+     *                 means this will have characteristics identical to a
+     *                 <code>RealtimeThread</code>. If true and the current
+     *                 thread is <i>not</i> a <code>NoHeapRealtimeThread</code>
+     *                 of a <code>RealtimeThread</code> executing within a
+     *                 <code>ScopedMemory</code> or <code>ImmortalMemory</code>
+     *                 scope then an <code>IllegalArgumentException<code> is thrown.
+     *  @throws java.lang.IllegalArgumentException If the initial memory area is
+     *                                             in heap memory, and the
+     *                                             <code>nonheap</code> parameter
+     *                                             is true.
      */
     public AsyncEventHandler(Runnable logic, boolean nonheap) {
 	this(nonheap);
 	this.logic = logic;
     }
 
-    /** Create a handler with the specified parameters. */
+    /** Create an instance of <code>AsyncEventHandler</code> whose
+     *  parameters are inherited from the current thread, if the current
+     *  thread is a <code>RealtimeThread</code>, or null, otherwise.
+     *
+     *  @param scheduling A <code>SchedulingParameters</code> object which
+     *                    will be associated with the constructed instance.
+     *                    If null, <code>this</code> will be assigned the
+     *                    reference to the <code>SchedulingParameters</code>
+     *                    of the current thread.
+     *  @param release A <code>ReleaseParameters</code> obejct which will be
+     *                 associated with the constructed isntance. If null,
+     *                 <code>this</code> will have no <code>ReleaseParameters</code>.
+     *  @param memory A <code>MemoryParameters</code> object which will be
+     *                associated with the constructed intance. If null,
+     *                <code>this</code> will have no <code>MemoryParameters</code>.
+     *  @param area The <code>MemoryArea</code> for <code>this</code>. If null,
+     *              the memory area will be that of the current thread.
+     *  @param group A <code>ProcessingGroupParamters</code> object which
+     *               will be associated with the constructed instance. If null,
+     *               will not be associated with any processing group.
+     *  @param nonheap A flag meaning, when true, that this will have
+     *                 characteristics identical to a
+     *                 <code>NoHeapRealtimeThread</code>. A false value
+     *                 means this will have characteristics identical to a
+     *                 <code>RealtimeThread</code>. If true and the current
+     *                 thread is <i>not</i> a <code>NoHeapRealtimeThread</code>
+     *                 of a <code>RealtimeThread</code> executing within a
+     *                 <code>ScopedMemory</code> or <code>ImmortalMemory</code>
+     *                 scope then an <code>IllegalArgumentException<code> is thrown.
+     *  @throws java.lang.IllegalArgumentException If the initial memory area is
+     *                                             in heap memory, and the
+     *                                             <code>nonheap</code> parameter
+     *                                             is true.
+     */
     public AsyncEventHandler(SchedulingParameters scheduling,
 			     ReleaseParameters release,
 			     MemoryParameters memory,
@@ -111,7 +183,33 @@ public class AsyncEventHandler implements Schedulable {
 	this.group = group;
     }
 
-    /** Create a handler with the specified parameters. */
+    /** Create an instance of <code>AsyncEventHandler</code> whose
+     *  parameters are inherited from the current thread, if the current
+     *  thread is a <code>RealtimeThread</code>, or null, otherwise.
+     *
+     *  @param scheduling A <code>SchedulingParameters</code> object which
+     *                    will be associated with the constructed instance.
+     *                    If null, <code>this</code> will be assigned the
+     *                    reference to the <code>SchedulingParameters</code>
+     *                    of the current thread.
+     *  @param release A <code>ReleaseParameters</code> obejct which will be
+     *                 associated with the constructed isntance. If null,
+     *                 <code>this</code> will have no <code>ReleaseParameters</code>.
+     *  @param memory A <code>MemoryParameters</code> object which will be
+     *                associated with the constructed intance. If null,
+     *                <code>this</code> will have no <code>MemoryParameters</code>.
+     *  @param area The <code>MemoryArea</code> for <code>this</code>. If null,
+     *              the memory area will be that of the current thread.
+     *  @param group A <code>ProcessingGroupParamters</code> object which
+     *               will be associated with the constructed instance. If null,
+     *               will not be associated with any processing group.
+     *  @param logic The <code>java.lang.Runnable</code> object whose <code>run()</code>
+     *               method is executed by <code>handleAsyncEvent()</code>.
+     *  @throws java.lang.IllegalArgumentException If the initial memory area is
+     *                                             in heap memory, and the
+     *                                             <code>nonheap</code> parameter
+     *                                             is true.
+     */
     public AsyncEventHandler(SchedulingParameters scheduling,
 			     ReleaseParameters release,
 			     MemoryParameters memory,
@@ -126,7 +224,42 @@ public class AsyncEventHandler implements Schedulable {
 	this.group = group;
     }
 
-    /** Create a handler with the specified parameters. */
+    /** Create an instance of <code>AsyncEventHandler</code> whose
+     *  parameters are inherited from the current thread, if the current
+     *  thread is a <code>RealtimeThread</code>, or null, otherwise.
+     *
+     *  @param scheduling A <code>SchedulingParameters</code> object which
+     *                    will be associated with the constructed instance.
+     *                    If null, <code>this</code> will be assigned the
+     *                    reference to the <code>SchedulingParameters</code>
+     *                    of the current thread.
+     *  @param release A <code>ReleaseParameters</code> obejct which will be
+     *                 associated with the constructed isntance. If null,
+     *                 <code>this</code> will have no <code>ReleaseParameters</code>.
+     *  @param memory A <code>MemoryParameters</code> object which will be
+     *                associated with the constructed intance. If null,
+     *                <code>this</code> will have no <code>MemoryParameters</code>.
+     *  @param area The <code>MemoryArea</code> for <code>this</code>. If null,
+     *              the memory area will be that of the current thread.
+     *  @param group A <code>ProcessingGroupParamters</code> object which
+     *               will be associated with the constructed instance. If null,
+     *               will not be associated with any processing group.
+     *  @param logic The <code>java.lang.Runnable</code> object whose <code>run()</code>
+     *               method is executed by <code>handleAsyncEvent()</code>.
+     *  @param nonheap A flag meaning, when true, that this will have
+     *                 characteristics identical to a
+     *                 <code>NoHeapRealtimeThread</code>. A false value
+     *                 means this will have characteristics identical to a
+     *                 <code>RealtimeThread</code>. If true and the current
+     *                 thread is <i>not</i> a <code>NoHeapRealtimeThread</code>
+     *                 of a <code>RealtimeThread</code> executing within a
+     *                 <code>ScopedMemory</code> or <code>ImmortalMemory</code>
+     *                 scope then an <code>IllegalArgumentException<code> is thrown.
+     *  @throws java.lang.IllegalArgumentException If the initial memory area is
+     *                                             in heap memory, and the
+     *                                             <code>nonheap</code> parameter
+     *                                             is true.
+     */
     public AsyncEventHandler(SchedulingParameters scheduling,
 			     ReleaseParameters release,
 			     MemoryParameters memory,
@@ -138,10 +271,13 @@ public class AsyncEventHandler implements Schedulable {
 	
     }
 
-    /** Add to the feasibility of the associated scheduler if the
-     *  resulting feasibility is schedulable. If successful return
-     *  true, if not return false. If there is no assigned
-     *  scheduler, false is returned.
+    /** Inform the scheduler and cooperating facilities that the feasibility
+     *  parameters associated with <code>this</code> should be considered in
+     *  feasibility analyses until further notified, only if the new set of
+     *  parameters is feasible.
+     *
+     *  @return True if the additions is successful. False if the addition is
+     *          not successful or there is no assigned scheduler.
      */
     public boolean addIfFeasible() {
 	if ((currentScheduler == null) ||
@@ -149,14 +285,9 @@ public class AsyncEventHandler implements Schedulable {
 	else return addToFeasibility();
     }
 
-    /** Inform the scheduler and cooperating facilities that the
-     *  resource demands (as expressed in the associated instances of
-     *  <code>SchedulingParameters, ReleaseParameters, MemoryParameters</code>
-     *  and <code>ProcessingGroupParameteres</code>) of this instance of
-     *  <code>Schedulable</code> will be considered in the feasibility
-     *  analysis of the associated <code>Scheduler</code> until
-     *  further notice. Whether the resulting system is feasible or
-     *  not, the addition is completed.
+    /** Inform the scheduler and cooperating facilities that the feasibility
+     *  parameters associated with <code>this</code> should be considered in
+     *  feasibility analyses until further notified.
      */
     public boolean addToFeasibility() {
 	if (currentScheduler != null) {
@@ -166,29 +297,33 @@ public class AsyncEventHandler implements Schedulable {
 	else return false;
     }
 
-    /** Atomically set to zero the number of pending executions of
-     *  this handler and returns the value from before it was cleared.
-     *  This is used in handlers that can handle multiple firings and
-     *  that want to collapse them together. The general form for
-     *  using this is:
+    /** This is an accessor method for <code>fireCount</code>. This method
+     *  atomically sets the value of <code>fireCount</code> to zero and
+     *  returns the value from before it was set to zero. This may be used
+     *  by handlers for which the logic can accommodate multiple firings in
+     *  a single execution. The general form for using this is:
+     *  <p>
      *  <code>
      *  public void handleAsyncEvent() {
-     *      int fireCount = getAndClearPendingFireCount();
+     *      int numberOfFirings = getAndClearPendingFireCount();
      *      <handle the events>
      *  }
      *  </code>
-     */
+     *
+     *  @return The value held by <code>fireCount</code> prior to setting
+     *          the value to zero.
+     */  
     protected final int getAndClearPendingFireCount() {
 	int x = fireCount;
 	fireCount = 0;
 	return x;
     }
 
-    /** Atomically decrements the number of pending executions of
-     *  this handler (if it was non-zero) and returns the value
-     *  from before the decrement. This can be used in the
-     *  <code>handleAsyncEvent()</code> method in this form to
-     *  handle multiple firings:
+    /** This is an accessor method for <code>fireCount</code>. This method
+     *  atomically decrements, by one, the value of <code>fireCount</code>
+     *  (if it was greater than zero) and returns the value from before
+     *  the decrement. This method can be used in the <code>handleAsyncEvent</code>
+     *  method to handle multiple firings:
      *  <p>
      *  <code>
      *  public void handleAsyncEvent() {
@@ -197,77 +332,106 @@ public class AsyncEventHandler implements Schedulable {
      *          <handle the events>
      *      } while (getAndDecrementPendingFireCounts() > 0);
      *  }
-     *</code>
+     *  </code>
+     *  <p>
+     *  This construction is necessary only in the case where one wishes to
+     *  avoid the setup costs since the framework guarantees that
+     *  <code>handleAsyncEvent()</code> will be invoked the appropriate number of times.
+     *
+     *  @return The value held by <code>fireCount</code> prior to decrementing it by one.
      */
     protected int getAndDecrementPendingFireCount() {
 	if (fireCount > 0) return fireCount--;
 	else return 0;
     }
 
-    /** Atomically increments the number of pending executions of
-     *  this handler and returns the value form before the increment.
-     *  The <code>handleAsyncEvent()</code> method does not need to
-     *  do this, since the surrounding framework guarantees that the
-     *  handler will be re-executed the appropriate number of times.
-     *  It is only of value when there is common setup code that is
-     *  expensive.
+    /** This is an accessor method for <code>fireCount</code>. This method
+     *  atomically increments, by one, the value of <code>fireCount</code>
+     *  and return the value from before the increment.
+     *
+     *  @return The value held by <code>fireCount</code> prior to incrementing it by one.
      */
     protected int getAndIncrementPendingFireCount() {
 	return fireCount++;
     }
 
-    /** Get the current memory area. */
+    /** This is an accessor method for the intance of <code>MemoryArea</code>
+     *  associated with <code>this</code>.
+     *
+     *  @return The instance of <code>MemoryArea</code> which is the current
+     *          area for <code>this</code>.
+     */
     public MemoryArea getMemoryArea() {
 	return memArea;
     }
 
-    /** Get the memory parameters associated with this handler. */
+    /** Gets the memory parameters associated with this instance of <code>Schedulable</code>.
+     *
+     *  @return The <code>MemoryParameters</code> object associated with <code>this</code>.
+     */
     public MemoryParameters getMemoryParameters() {
 	return memParams;
     }
 
-    /** Return the number of pending executions of this handler. */
+    /** This is an accessor method for <code>fireCount</code>. The <code>fireCount</code>
+     *  field nominally holds the number of times associated instance of <code>AsyncEvent</code>
+     *  have occured that have not had the method <code>handleAsyncEvent()</code> invoked.
+     *  Due to accessor methods the pplication logic may manipulate the value in this field
+     *  for application specific reasons.
+     *
+     *  @return The value held by <code>fireCount</code>.
+     */
     protected final int getPendingFireCount() {
 	return fireCount;
     }
 
-    /** Returns a reference to the <code>ProcessingGroupParameters</code> object. */
+    /** Gets the processing group parameters associated with this intance of <code>Schedulable</code>.
+     *
+     *  @return The <code>ProcessingGroupParameters</code> object associated with <code>this</code>.
+     */
     public ProcessingGroupParameters getProcessingGroupParameters() {
 	return group;
     }
 
-    /** Get the release parameters associated with this handler. */
+    /** Gets the release parameters associated with this instance of <code>Schedulable</code>.
+     *
+     *  @return The <code>ReleaseParameters</code> object associated with <code>this</code>.
+     */
     public ReleaseParameters getReleaseParameters() {
 	return release;
     }
 
-    /** Return the <code>Scheduler</code> for this handler. */
+    /** Gets the instance of <code>Scheduler</code> associated with this instance of <code>Schedulable</code>.
+     *
+     *  @return The instance of <code>Scheduler</code> associated with <code>this</code>.
+     */
     public Scheduler getScheduler() {
 	return currentScheduler;
     }
 
-    /** Returns a reference to the scheduling parameters object. */
+    /** Gets the scheduling parameters associated with this instance of <code>Schedulable</code>.
+     *
+     *  @return The <code>SchedulingParameters</code> object associated with <code>this</code>.
+     */
     public SchedulingParameters getSchedulingParameters() {
 	return scheduling;
     }
 
-    /** If this handler was constructed using a separate <code>Runnable</code>
-     *  logic object, then that <code>Runnable</code> object's <code>run()</code>
-     *  method is called. This method will be invoked repeatedly while
-     *  <code>fireCount</code> is greater than zero.
+    /** This method holds the logic which is to be executed when assiciated instances of
+     *  <code>AsyncEvent</code> occur. If this handler was constructed using an instance of
+     *  <code>java.lang.Runnable</code> as an argument to the constructor, then that instance's
+     *  <code>run()</code> method will be invoked from this method. This method will be invoked
+     *  repreadedly while <code>fireCount</code> is greater than zero.
      */
     public void handleAsyncEvent() {
 	if (logic != null) logic.run();
     }
 
-    /** Inform the scheduler and cooperating facilities that the resource
-     *  demands, as expressed in the associated instances of
-     *  <code>SchedulingParameters, ReleaseParameters, MemoryParameters,</code>
-     *  and <code>ProcessingGroupParameters</code>, of this instance of
-     *  <code>Schedulable</code> should no longer be considered in the
-     *  feasibility analysis of the associated <code>Scheduler</code>.
-     *  Whether the resulting system is feasible or not, the subtraction
-     *  is completed.
+    /** Inform the scheduler and cooperating facilities that the scheduling characteristics
+     *  of this instance of <code>Schedulable</code> should not  be considered in feasibility
+     *  analyses until further notified.
+     *
+     *  @return True, if the removal was successful. False, if the removal was unsuccessful.
      */
     public void removeFromFeasibility() {
 	if (currentScheduler != null)
@@ -275,7 +439,7 @@ public class AsyncEventHandler implements Schedulable {
     }
 
     /** Used by the asynchronous event mechanism, see <code>AsyncEvent</code>.
-     *  This method invokes <code>handleSdyncEvent()</code> repeatedly while
+     *  This method invokes <code>handleAsyncEvent()</code> repeatedly while
      *  fire count is greater than zero. Applications cannot override this
      *  method and should thus override <code>handleAsyncEvent()</code> in
      *  subclasses with the logic of the handler.
@@ -285,22 +449,41 @@ public class AsyncEventHandler implements Schedulable {
 	    handleAsyncEvent();
     }   
 
-    /** Returns true if, after considering the values of the parameters, the
-     *  task set would still be feasible. In this case the values of the
-     *  parameters are changed. Returns false, if after considering the
-     *  values of the parameters, the task set would not be feasible. In
-     *  this case the values of the parameters are not changed.
+    /** This method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The method
+     *  first performs a feasibility analysis using the new scheduling characteristics
+     *  as replacements for the matching scheduling characteristics of either
+     *  <code>this</code> or the given instance of <code>Schedulable</code>. If the
+     *  resulting system is feasible the method replaces the current scheduling
+     *  characteristics, of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code> as appropriate, with the new scheduling characteristics.
+     *
+     *  @param release The proposed release parameters.
+     *  @param memory The proposed memory parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(ReleaseParameters release,
 				 MemoryParameters memory) {
 	return setIfFeasible(release, memory, getProcessingGroupParameters());
     }
 
-    /** Returns true if, after considering the values of the parameters, the
-     *  task set would still be feasible. In this case the values of the
-     *  parameters are changed. Returns false, if after considering the
-     *  values of the parameters, the task set would not be feasible. In
-     *  this case the values of the parameters are not changed.
+    /** This method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The method
+     *  first performs a feasibility analysis using the new scheduling characteristics
+     *  as replacements for the matching scheduling characteristics of either
+     *  <code>this</code> or the given instance of <code>Schedulable</code>. If the
+     *  resulting system is feasible the method replaces the current scheduling
+     *  characteristics, of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code> as appropriate, with the new scheduling characteristics.
+     *
+     *  @param release The proposed release parameters.
+     *  @param memory The proposed memory parameters.
+     *  @param group The proposed processing group parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(ReleaseParameters release,
 				 MemoryParameters memory,
@@ -309,71 +492,109 @@ public class AsyncEventHandler implements Schedulable {
 	else return currentScheduler.setIfFeasible(this, release, memory, group);
     }
 
-    /** Returns true if, after considering the values of the parameters, the
-     *  task set would still be feasible. In this case the values of the
-     *  parameters are changed. Returns false, if after considering the
-     *  values of the parameters, the task set would not be feasible. In
-     *  this case the values of the parameters are not changed.
+    /** This method appears in many classes in the RTSJ and with various parameters.
+     *  The parameters are either new scheduling characteristics for an instance
+     *  <code>Schedulable</code> or an instance of <code>Schedulable</code>. The method
+     *  first performs a feasibility analysis using the new scheduling characteristics
+     *  as replacements for the matching scheduling characteristics of either
+     *  <code>this</code> or the given instance of <code>Schedulable</code>. If the
+     *  resulting system is feasible the method replaces the current scheduling
+     *  characteristics, of either <code>this</code> or the given instance of
+     *  <code>Schedulable</code> as appropriate, with the new scheduling characteristics.
+     *
+     *  @param release The proposed release parameters.
+     *  @param group The proposed processing group parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setIfFeasible(ReleaseParameters release,
 				 ProcessingGroupParameters group) {
 	return setIfFeasible(release, getMemoryParameters(), group);
     }
 
-    /** Set the memory parameters associated with this handler. When it is
-     *  next fired, the executing thread will use these parameters to control
-     *  memory allocation. Does not affect the current invocation of the
-     *  <code>run()</code> of this handler.
+    /** Sets the memory parameters associated with this instance of <code>Schedulable</code>.
+     *  When is is next executed, that execution will use the new parameters to control memory
+     *  allocation. Does not affect the current invocation of the <code>run()</code> of this handler.
+     *
+     *  @param memory A <code>MemoryParameters</code> object which will become the memory
+     *                parameters associated with <code>this</code> after the method call.
      */
     public void setMemoryParameters(MemoryParameters memory) {
 	memParams = memory;
     }
 
-    /** Changes the <code>MemoryParameters</code> only if the task set is still
-     *  feasible after that.
+    /** The method first performs a feasibility analysis using the given memory parameters
+     *  as replacements for the memory parameters of <code>this</code>. If the resulting
+     *  system is feasible the method replaces the current memory parameters of
+     *  <code>this</code> with the new memory parameters.
+     *
+     *  @param memory The proposed memory parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setMemoryParametersIfFeasible(MemoryParameters memory) {
 	return setIfFeasible(getReleaseParameters(), memory,
 			     getProcessingGroupParameters());
     }
 
-    /** Sets the reference to the <code>ProcessingGroupParameters</code> object. */
+    /** Sets the processing group parameters associated with this instance of <code>Schedulable</code>.
+     *
+     *  @param parameters A <code>ProcessingGroupParameters</code> object which will become
+     *                    the processing group parameters associated with <code>this</code>
+     *                    after the method call.
+     */
     public void setProcessingGroupParameters(ProcessingGroupParameters group) {
 	this.group = group;
     }
 
-    /** Changes the <code>ProcessingGroupParameters</code> only if the task set is
-     *  still feasible after that.
+    /** The method first performs a feasibility analysis using the given processing group
+     *  parameters as replacements for the processing group parameters of <code>this</code>.
+     *  If the resulting system is feasible the method replaces the current processing group
+     *  parameters of <code>this</code> with the new processing group parameters.
+     *
+     *  @param group The proposed processing group parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setProcessingGroupParametersIfFeasible(ProcessingGroupParameters group) {
 	return setIfFeasible(getReleaseParameters(),
 			     getMemoryParameters(), group);
     }
-    /** Set the release parameters associated with this handler. When it is
-     *  next fired, the executing thread will use these parameters to control
-     *  scheduling. If the scheduling parameters of a handler is set to null,
-     *  the handler will be executed immediately when it is fired, in the
-     *  thread of the firer. Does not affect the current invocation of the
-     *  <code>run()</code> of this handler.
-     *  <p>
-     *  Since this affects the constraints expressed in the realease parameters
-     *  of the existing schedulable objects, this may change the feasibility
-     *  of the current schedule.
+
+    /** Set the realease parameters associated with this instance of <code>Schedulable</code>.
+     *  When it is next executed, that execution will use the new parameters to control
+     *  scheduling. If the scheduling parameters of a handler is set to null, the handler will
+     *  be executed immediately when any associated <code>AsyncEvent</code> is fired, in the
+     *  context of the thread invoking the <code>fire()</code> method. Does not affect the
+     *  current invocation of the <code>run()</code> of this handler.
+     *  
+     *  @param release A <code>ReleaseParameters</code> object which will become the release
+     *                 parameters associated with this after the method call.
      */
     public void setReleaseParameters(ReleaseParameters release) {
 	this.release = release;
     }
 
-    /** Changes the <code>ReleaseParameters</code> only if the task set is still
-     *  feasible after that.
+    /** The method first performs a feasibility analysis using the given release parameters
+     *  as replacements for the release parameters of <code>this</code>. If the resulting
+     *  system is feasible the method replaces the current release parameters of
+     *  <code>this</code> with the new release parameters.
+     *
+     *  @param release The proposed release parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setReleaseParametersIfFeasible(ReleaseParameters release) {
 	return setIfFeasible(release, getMemoryParameters(),
 			     getProcessingGroupParameters());
     }
 
-    /** Set the scheduler for this handler. A reference to the scheduler which
-     *  will manage the execution of this thread.
+    /** Sets the scheduler associated with this instance of <code>Schedulable</code>.
+     *
+     *  @param scheduler An instance of <code>Scheduler</code> which will manage the
+     *                   execution of this thread. If <code>scheduler</code> is null
+     *                   nothing happens.
+     *  @throws java.langIllegalThreadStateException
      */
     public void setScheduler(Scheduler scheduler)
 	throws IllegalThreadStateException {
@@ -381,8 +602,22 @@ public class AsyncEventHandler implements Schedulable {
 		     getMemoryParameters(), getProcessingGroupParameters());
     }
 
-    /** Set the scheduler for this handler. A reference to the scheduler which
-     *  will manage the execution of this thread.
+    /** Sets the scheduler associated with this instance of <code>Schedulable</code>.
+     *
+     *  @param scheduler An instance of <code>Scheduler</code> which will manage the
+     *                   execution of this thread. If <code>scheduler</code> is null
+     *                   nothing happens.
+     *  @param scheduling A <code>SchedulingParameters</code> object which will be
+     *                    associated with <code>this</code>. If null, <code>this</code>
+     *                    will be assigned the reference to the instance of
+     *                    <code>SchedulingParameters</code> of the current thread.
+     *  @param release A <code>ReleaseParameters</code> object which will be associated
+     *                 with <code>this</code>. If null, <code>this</code> will have no
+     *                 associated instance of <code>ReleaseParameters</code>.
+     *  @param memoryParameters A <code>MemoryParameters</code> object which will be
+     *                          associated with <code>this</code>. If null, <code>this</code>
+     *                          will have no associated instance of <code>MemoryParameters</code>.
+     *  @throws java.lang.IllegalThreadStateException
      */
     public void setScheduler(Scheduler scheduler,
 			     SchedulingParameters scheduling,
@@ -397,17 +632,28 @@ public class AsyncEventHandler implements Schedulable {
 	this.group = processingGroup;
     }
 
-    /** Set the scheduling parameters associated with this handler. When it is
-     *  next fired, the executing thread will use these parameters to control
-     *  scheduling. Does not affect the current invocation of the
-     *  <code>run()</code> of this handler.
+    /** Sets the scheduling parameters associated with this instance of <code>Schedulable</code>.
+     *  When it is next executed, that execution will use the new parameters to control releases.
+     *  If the scheduling parameters of a handler is set to null, the handler will be executed
+     *  immediately when any associated <code>AsycnEvent</code> is fired, in the context of the
+     *  thread invoking the <code>fire()</code> method. Does not affect the current invocation of
+     *  the <code>run()</code> of this handler.
+     *
+     *  @param scheduling A <code>SchedulingParameters</code> object which will become the
+     *                    scheduling parameters associated with <code>this</code> after the method call.
      */
     public void setSchedulingParameters(SchedulingParameters scheduling) {
 	this.scheduling = scheduling;
     }
 
-    /** Set the <code>SchedulingParameters</code> of this schedulable object
-     *  only if the resulting task set is feasible.
+    /** The method first performs a feasibility analysis using the given scheduling parameters as
+     *  replacements for the scheduling parameters of <code>this</code>. If the resulting system
+     *  is feasible the method replaces the current scheduling parameters of <code>this</code>
+     *  with new scheduling parameters.
+     *
+     *  @param scheduling The proposed scheduling parameters.
+     *  @return True, if the resulting system is feasible and the changes are made.
+     *          False, if the resulting system is not feasible and no changes are made.
      */
     public boolean setSchedulingParametersIfFeasible(SchedulingParameters scheduling) {
 	// How do scheduling parameters affect the feasibility of the task set?

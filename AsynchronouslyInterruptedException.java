@@ -61,6 +61,11 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
      *  subsequently enabled. This is valid only within a call to
      *  <code>doInterruptible()</code>. Otherwise it returns false and
      *  does nothing.
+     *
+     *  @return True if <code>this</code> is disabled and invoked within a call to
+     *          <code>doInterruptable()</code>. False if <code>this</code> is enabled
+     *          and invoked within a call to <code>doInterruptable()</code> or
+     *          invoked outside of a call to <code>doInterruptable()</code>.
      */
     public boolean disable() {
 	enabled = false;
@@ -73,6 +78,11 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
      *  This method may be on the stack in exacly one <code>RealtimeThread</code>.
      *  An attempt to invoke this method in a thread while it is on the stack of
      *  another of the same thread will cause an immediate return with a value of false.
+     *
+     *  @param logic An instance of an <code>Interruptable</code> whose <code>run()</code>
+     *               method will be called.
+     *  @return True if the method call completed normally. False if another call to
+     *          <code>doInterruptible()</code> has not completed.
      */
     public boolean doInterruptible(Interruptible logic) {
 	// TODO
@@ -80,8 +90,14 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
 	return false;
     }
 
-    /** Enable the throwing of this exception. This is valid only within a call to
-     *  <code>doInterruptible()</code>. Otherwise it returns false and does nothing.
+    /** Enable the throwing of this exception. This method is valid only within a call
+     *  to <code>doInterruptible()</code>. If invoked outside of a call to
+     *  <code>doInterruptible()</code> this method returns false and does nothing.
+     *
+     *  @return True if <code>this</code> is enabled and invoked within a call to
+     *          <code>doInterruptible()</code>. False if <code>this</code> is disabled
+     *          and invoked within a call to <code>doInterruptible()</code> or invoked
+     *          outside of a call to <code>doInterruptible()</code>.
      */
     public boolean enable() {
 	enabled = true;
@@ -92,6 +108,11 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
 
     /** Make this exception the current exception if <code>doInterruptible()</code>
      *  has been invoked and not completed.
+     *
+     *  @return True if <code>this</code> was fired. False if there is no current
+     *          invocation of <code>doInterruptible()</code> (with no other effect),
+     *          if there is already a current <code>doInterruptible()</code>, or if
+     *          <code>disable()</code> has been called.
      */
     public boolean fire() {
 	// TODO
@@ -99,8 +120,10 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
 	return false;
     }
 
-    /** Return the system generic <code>AsynchronouslyInterruptedException</code>,
+    /** Gets the system generic <code>AsynchronouslyInterruptedException</code>,
      *  which is generated when <code>RealtimeThread.interrupt()</code> is invoked.
+     *
+     *  @return The generic <code>AsynchronouslyInterruptedException</code>.
      */
     public static AsynchronouslyInterruptedException getGeneric() {
 	// TODO
@@ -110,6 +133,12 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
 
     /** Used with an instance of this exception to see if the current
      *  exception is this exception.
+     *
+     *  @param propagate If true and this exception is not the current one propagate
+     *                   the exception. If false, then the state of this is set to
+     *                   nonpending (i.e., it will stop propagating).
+     *  @return True if this is the current exception. False if this is not the
+     *          current exception.
      */
     public boolean happened(boolean propagate) {
 	// TODO
@@ -117,7 +146,10 @@ public class AsynchronouslyInterruptedException extends InterruptedException {
 	return false;
     }
 
-    /** Query the enabled status of this exception. */
+    /** Query the enabled status of this exception.
+     *
+     *  @return True if this is enabled. False otherwise.
+     */
     public boolean isEnabled() {
 	return enabled;
     }

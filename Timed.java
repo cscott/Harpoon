@@ -13,6 +13,8 @@ package javax.realtime;
  *  or the first invocation of <code>doInterruptible()</code>.
  *  Subsequent invokes of <code>doInterruptible()</code> do not
  *  allocate memory.
+ *  <p>
+ *  Usage: <code>new Timed(T).doInterruptible(interruptible);</code>
  */
 public class Timed extends AsynchronouslyInterruptedException {
 
@@ -22,6 +24,13 @@ public class Timed extends AsynchronouslyInterruptedException {
      *  to timeout. If the time is in the past the
      *  <code>AsynchronouslyInterruptedException</code> mechanism
      *  is immediately activated.
+     *
+     *  @param time The interval of time between the invocation of
+     *              <code>doInterruptible()</code> and when
+     *              <code>interrupt()</code> is called on
+     *              <code>currentRealtimeThread()</code>. If null the
+     *              <code>java.lang.IllegalArgumentException</code> is thrown.
+     *  @throws java.lang.IllegalArgumentException
      */
     public Timed(HighResolutionTime time)
 	throws IllegalArgumentException {
@@ -43,9 +52,11 @@ public class Timed extends AsynchronouslyInterruptedException {
 	}
     }
 
-    /** Execute a timeout method. Starts the timer and executes
-     *  the <code>run()</code> method of the given
-     *  <code>Interruptible</code> object.
+    /** Execute a timeout method. Starts the timer and executes the
+     *  <code>run()</code> method of the given <code>Interruptible</code> object.
+     *
+     *  @param logic Implements an <code>Interruptible run()</code> method. If
+     *               null nothing happens.
      */
     public boolean doInterruptible(Interruptible logic) {
 	// TODO
@@ -55,6 +66,9 @@ public class Timed extends AsynchronouslyInterruptedException {
 
     /** To reschedule the timeout for the next invocation of
      *  <code>doInterruptible()</code>.
+     *
+     *  @param time This can be an absolute time or a relative time. If null
+     *              the timeout is not changed.
      */
     public void resetTime(HighResolutionTime time) {
 	timeout = time;
