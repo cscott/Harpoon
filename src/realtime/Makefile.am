@@ -22,6 +22,7 @@ linkedListAllocator.h linkedListAllocator.c refCountAllocator.h \
 refCountAllocator.c threads.c threads.h Scheduler.c Scheduler.h SchedulerData.h \
 RealtimeThread.h RealtimeThreadData.h RealtimeThread.c \
 RealtimeClock.h RealtimeClock.c POSIXSignalHandler.h POSIXSignalHandler.c \
-SizeEstimator.h SizeEstimator.c ScopedMemory.h ScopedMemory.c
+SizeEstimator.h SizeEstimator.c ScopedMemory.h ScopedMemory.c timesys.c \
+timesys.h
 endif
 

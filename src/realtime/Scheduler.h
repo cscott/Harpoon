@@ -63,6 +63,22 @@ JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_setTimer
 
 /*
  * Class:     javax_realtime_Scheduler
+ * Method:    reserveCPU
+ * Signature: (JJJ)Z
+ */
+JNIEXPORT jboolean JNICALL Java_javax_realtime_Scheduler_reserveCPU
+  (JNIEnv *, jobject, jlong, jlong, jlong);
+
+/*
+ * Class:     javax_realtime_Scheduler
+ * Method:    reserveNET
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_javax_realtime_Scheduler_reserveNET
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     javax_realtime_Scheduler
  * Method:    addThreadInC
  * Signature: (Ljavax/realtime/Schedulable;J)V
  */
