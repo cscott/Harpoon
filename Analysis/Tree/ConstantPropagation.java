@@ -43,7 +43,7 @@ import java.util.Stack;
  * <p><b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.1.2.11 2000-02-14 13:04:10 cananian Exp $
+ * @version $Id: ConstantPropagation.java,v 1.1.2.12 2000-02-15 05:37:48 cananian Exp $
  */
 public final class ConstantPropagation { 
 
@@ -178,8 +178,7 @@ public final class ConstantPropagation {
 	    // Our analysis says that it's OK to replace "t" with a constant
 	    // value.  Use the tree structure to accomplish this. 
 	    if (replaceT) { 
-		this.code.replace
-		    (t, Tree.clone(valueT.getFactory(), null, valueT)); 
+		t.replace(Tree.clone(valueT.getFactory(), null, valueT));
 	    }
 	    
 	}

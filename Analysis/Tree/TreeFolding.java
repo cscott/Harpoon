@@ -72,7 +72,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.16 2000-02-14 04:23:44 cananian Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.17 2000-02-15 05:37:48 cananian Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -348,8 +348,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 					(replace(((MOVE)DStm).getSrc(), 
 						 GET_TREE(tm, stm).kids(), 
 						 uses[j]));
-				    code.replace((Stm)GET_TREE(tm, stm), 
-						      foldedStm);
+				    GET_TREE(tm, stm).replace(foldedStm);
 				    MAP_TREE(tm, GET_TREE(tm, stm), foldedStm);
 				}
 			    }
