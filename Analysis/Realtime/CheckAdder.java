@@ -276,14 +276,14 @@ class CheckAdder extends MethodMutator {
     
     private static boolean needsCheck(Quad inst) {
 	Stats.analysisBegin();
-	boolean needsCheck = checkRemoval.shouldRemoveCheck(inst);
+	boolean removeCheck = checkRemoval.shouldRemoveCheck(inst);
 	Stats.analysisEnd();
-	if (needsCheck) {
-	    Stats.addActualMemCheck();
-	} else {
+	if (removeCheck) {
 	    Stats.addRemovedMemCheck();
+	} else {
+	    Stats.addActualMemCheck();
 	}
-	return needsCheck;
+	return !removeCheck;
     }    
 }
 

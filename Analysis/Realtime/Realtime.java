@@ -17,6 +17,7 @@ import harpoon.ClassFile.HCodeFactory;
 
 import harpoon.IR.Quads.QuadNoSSA;
 
+import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
 /**
@@ -44,6 +45,8 @@ public class Realtime {
      *  remove. 
      */
     public static final int REAL_POINTER_ANALYSIS = 2;
+    /** Overly aggressive (and wrong!) check removal that removes all checks. */
+    public static final int ALL = 3;
 
 
     /** Creates a field memoryArea on <code>java.lang.Object</code>.
@@ -98,8 +101,30 @@ public class Realtime {
 	roots.add(memoryArea
 		  .getMethod("bless", new HClass[] { object }));
 	roots.add(memoryArea
-		  .getMethod("bless", new HClass[] { object, 
-						     linker.forName("[I") }));
+		  .getMethod("bless", 
+			     new HClass[] { 
+				 object, 
+				 HClassUtil.arrayClass(linker, HClass.Int, 1)
+			     }));
+	roots.add(memoryArea
+		  .getMethod("getMemoryArea", new HClass[] { object }));
+	roots.add(HClassUtil.arrayClass(linker, HClass.Int, 1));
+//  	roots.add(linker.forName("java.lang.Class")
+//  		  .getMethod("getConstructor", 
+//  			     new HClass[] { 
+//  				 HClassUtil
+//  				 .arrayClass(linker, 
+//  					     linker
+//  					     .forName("java.lang.Class"),
+//  					     1) }));
+//  	roots.add(linker.forName("java.lang.reflect.Constructor")
+//  		  .getMethod("newInstance", 
+//  			     new HClass[] { 
+//  				 HClassUtil
+//  				 .arrayClass(linker,
+//  					     linker
+//  					     .forName("java.lang.Object"),
+//  					     1) }));
 	return roots;
     }
     
@@ -159,6 +184,10 @@ public class Realtime {
 	}
 	case REAL_POINTER_ANALYSIS: {
 	    cr = new PACheckRemoval(linker, ch, parent, roots);
+	    break;
+	}
+	case ALL: {
+	    cr = new AllCheckRemoval();
 	    break;
 	}
 	default: {

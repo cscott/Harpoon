@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.136 2001-01-24 16:56:53 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.137 2001-01-26 20:07:48 wbeebee Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -704,6 +704,9 @@ public class SAMain extends harpoon.IR.Registration {
 		    } else if (analysis == "real") {
 			Realtime.ANALYSIS_METHOD = 
 			    Realtime.REAL_POINTER_ANALYSIS;
+		    } else if (analysis == "all") {
+			Realtime.ANALYSIS_METHOD =
+			    Realtime.ALL;
 		    } else {
 			Util.assert(false, "Unknown option after -t: " +
 				    g.getOptarg());

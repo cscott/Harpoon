@@ -24,6 +24,7 @@ class Stats {
     private static long memAreaLoads = 0;
     private static long newObjects = 0;
     private static long newArrayObjects = 0;
+    private static long newInstanceChecks = 0;
 
     private static Timer realtimeTimer = new Timer();
     private static Timer analysisTimer = new Timer();
@@ -77,6 +78,12 @@ class Stats {
 	newArrayObjects++;
     }
     
+    /** Adds a Memory.newInstance() call */
+
+    static void addNewInstance() {
+	newInstanceChecks++;
+    }
+
     /** Starts the timer for analysis. */
 
     static void analysisBegin() {
@@ -115,12 +122,13 @@ class Stats {
 			   "Before    After   % Savings");
 	System.out.print("  Memory access checks: " +
 			 (actualChecks + removedChecks) + "   "
-			 + removedChecks + "   ");
+			 + actualChecks + "   ");
 	if (actualChecks+removedChecks > 0) {
 	    System.out.print((removedChecks/
 			      (actualChecks+removedChecks)) * 100.0);
 	}
 	System.out.println();
+	System.out.println("  new instance checks: " + newInstanceChecks);
 	System.out.println("  memArea loads: " + memAreaLoads);
 	System.out.println("  new objects: " + newObjects);
 	System.out.println("  new array objects: " + newArrayObjects);
