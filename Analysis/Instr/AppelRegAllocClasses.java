@@ -15,6 +15,7 @@ import harpoon.Util.Collections.LinearSet;
 import java.util.Iterator;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.HashSet;
@@ -22,7 +23,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.6 2001-06-20 18:20:12 pnkfelix Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.7 2001-06-21 04:53:46 pnkfelix Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
@@ -30,6 +31,111 @@ abstract class AppelRegAllocClasses extends RegAlloc {
     public AppelRegAllocClasses(harpoon.Backend.Generic.Code code) { 
 	super(code); 
     }
+    
+    private String lastStateString;
+    /** Saves the current state of <code>this</code> for later
+	retrieval using <code>resetState()</code>.  
+
+	Note that <code>this</code> only carries <code>Node</code> and
+	<class>Move</code> state; additional state added by subclasses
+	will not be checkpointed unless this method and reset state
+	are overridden.
+
+    */
+    protected void checkpointState() { 
+	if (CHECK_INV) 
+	    lastStateString = stateString();
+	saveNodePairSet();
+	saveNodeSets();
+	if (CHECK_INV)
+	    Util.assert( lastStateString.equals(stateString()), "\n\n"
+			 +"last : "+lastStateString+"\n"
+			 +"curr : "+stateString()+"\n"
+			 );
+    }
+    /** Restores the state of <code>this</code> to the state it was in
+	on the last call to <code>checkpointState()</code>.  
+    */
+    protected void resetState() {
+	restoreNodePairSet();
+	restoreNodeSets();
+	resetMoveSets();
+	if (CHECK_INV)
+	    Util.assert( lastStateString.equals(stateString()), "\n\n"
+			 +"last : "+lastStateString+"\n"
+			 +"curr : "+stateString()+"\n"
+			 );
+    }
+
+    private String stateString() {
+	// FSK: should probably sort lists on index number to ensure
+	// determinism on sets.
+	String igraphString = interferenceGraphString();
+
+	return "\n"+
+	    precolored+"\n"+
+	    initial+"\n"+
+	    simplify_worklist+"\n"+
+	    freeze_worklist+"\n"+
+	    spill_worklist+"\n"+
+	    spilled_nodes+"\n"+
+	    coalesced_nodes+"\n"+
+	    colored_nodes+"\n"+
+	    select_stack+"\n"+
+	    "\n\n"+
+	    coalesced_moves+"\n"+
+	    constrained_moves+"\n"+
+	    frozen_moves+"\n"+
+	    worklist_moves+"\n"+
+	    active_moves+"\n"+
+	    "\n\n"+
+	    igraphString
+	    ;
+    }
+
+    String interferenceGraphString() {
+	StringBuffer sb = new StringBuffer();
+	sb.append("** BEGIN GRAPH **\n");
+	for(Iterator nodes = allNodes.iterator(); nodes.hasNext(); ){
+	    Node n = (Node) nodes.next();
+	    sb.append(n);
+	    sb.append(n.id);
+	    sb.append(", neighbors:[");
+	    for(NodeIter nbors = n.neighbors.iter(); nbors.hasNext();){
+		sb.append( nbors.next().id );
+	    }
+	    sb.append("]");
+	    sb.append("\n");
+	}
+	sb.append("** END GRAPH **\n");
+	
+	sb.append("AdjSet: ");
+	java.util.TreeSet sortedPairs = 
+	    new java.util.TreeSet( new java.util.Comparator() {
+		    public int compare(Object o1, Object o2) {
+			List nl_0 = (List) o1;
+			List nl_1 = (List) o2;
+			Node n00 = (Node) nl_0.get(0);
+			Node n01 = (Node) nl_0.get(1);
+			Node n10 = (Node) nl_1.get(0);
+			Node n11 = (Node) nl_1.get(1);
+			
+			if (n00.id == n10.id) {
+			    return n01.id - n11.id;
+			} else {
+			    return n00.id - n10.id;
+			}
+		    }
+		});
+	sortedPairs.addAll( adjSet.pairs );
+	sb.append( sortedPairs );
+	
+	return sb.toString();
+    }
+
+    // Set of <Node, Node> pairs
+    NodePairSet adjSet;
+
     NodeSet precolored;
     NodeSet initial;
     NodeSet simplify_worklist;
@@ -75,32 +181,27 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    // keeps id/web saved
 	    final Node origNode;
 	    // don't need to save s_prev/s_next/s_rep
+	    final int origDegree;
 	    final NodeList origNeighbors; 
 	    final Node origAlias;
-	    final ArrayList origMoves; // List<Move>
+	    final MoveList origMoves; // List<Move>
 	    final int origColor;
 
 	    BackupNodeInfo( Node save ){
 		origNode = save;
+		origDegree = save.degree;
 		origAlias = save.alias;
 		origColor = save.color;
-		origMoves = new ArrayList(save.moves.size);
-		origNeighbors = new NodeList();
-		for(Iterator moves=save.moves.iterator(); moves.hasNext();)
-		    origMoves.add( moves.next() );
-		for(NodeIter nodes = save.neighbors.iter(); nodes.hasNext();)
-		    origNeighbors.add( nodes.next() );
+		origMoves = new MoveList(save.moves.toList());
+		origNeighbors = new NodeList( save.neighbors.toList() );
 	    }
 
 	    void restore() {
+		origNode.degree = origDegree;
 		origNode.alias = origAlias;
 		origNode.color = origColor;
-		origNode.moves = new MoveList();
-		for(Iterator moves=origMoves.iterator(); moves.hasNext(); )
-		    origNode.moves.add( (Move) moves.next() );
-		origNode.neighbors = new NodeList();
-		for(NodeIter nodes = origNeighbors.iter();nodes.hasNext(); )
-		    origNode.neighbors.add( nodes.next() );
+		origNode.moves = new MoveList( origMoves.toList() );
+		origNode.neighbors = new NodeList( origNeighbors.toList() );
 	    }
 	}
 	
@@ -114,15 +215,27 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 		savedState.add( new BackupNodeInfo( nI.next() ));
 	    }
 	}
+	
+	private void clearOrig() { origSet.clear(); }
+	private void restore() {
+	    for(int i=savedState.size()-1; i>=0; i--){
+		BackupNodeInfo bn = (BackupNodeInfo) savedState.get(i);
+		bn.restore();
+		origSet.add( bn.origNode );
+	    }
+	}
     }
 
     BackupNodeSetInfo
+	initialI, // wasn't originally in code... was there a reason?
+
 	simplify_worklistI, freeze_worklistI,
 	spill_worklistI, spilled_nodesI,
 	coalesced_nodesI, colored_nodesI,
 	select_stackI;
 
-    void saveNodeSets() {
+    private void saveNodeSets() {
+	initialI = new BackupNodeSetInfo(  initial );
 	simplify_worklistI = new BackupNodeSetInfo(  simplify_worklist );
 	freeze_worklistI   = new BackupNodeSetInfo(  freeze_worklist   );
 	spill_worklistI	   = new BackupNodeSetInfo(  spill_worklist    );
@@ -131,9 +244,10 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	colored_nodesI	   = new BackupNodeSetInfo(  colored_nodes  );
 	select_stackI	   = new BackupNodeSetInfo(  select_stack  );
     }
-    void restoreNodeSets() {
+    private void restoreNodeSets() {
 	// helper array to make traversal code easy
 	BackupNodeSetInfo[] infos = new BackupNodeSetInfo[]{
+	    initialI,
 	    simplify_worklistI, freeze_worklistI,
 	    spill_worklistI, spilled_nodesI,
 	    coalesced_nodesI, colored_nodesI,
@@ -142,12 +256,14 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 
 	// must clear all origSets before restoring them
 	for(int i=0; i<infos.length; i++)
-	    infos[i].origSet.clear();
+	    infos[i].clearOrig();
 	for(int i=0; i<infos.length; i++)
-	    for(Iterator nI=infos[i].savedState.iterator();nI.hasNext();)
-		infos[i].origSet.add( (Node) nI.next() );
+	    infos[i].restore();
     }
 
+    NodePairSet lastAdjSet;
+    private void saveNodePairSet() { lastAdjSet = adjSet.copy(); }
+    private void restoreNodePairSet() { adjSet = lastAdjSet.copy(); }
 
     abstract static class NodeIter {
 	public abstract boolean hasNext();
@@ -178,7 +294,6 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	int size;
 	Node head; // dummy element
 
-	public String toString() { return "NS<"+name+">"; }
 	void checkRep() { if (true) return;
 	    Util.assert(size >= 0);
 	    Util.assert(head != null);
@@ -279,6 +394,9 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 		}
 	    };
 	}
+	
+	public String toString() { 
+	    return "NodeSet< "+name+", "+asSet()+" >"; }
 
     }
 
@@ -319,12 +437,22 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	public void add(Node a, Node b) { 
 	    pairs.add(Default.pair(a, b)); 
 	}
+	public NodePairSet copy() {
+	    NodePairSet set = new NodePairSet();
+	    set.pairs = (HashSet) pairs.clone();
+	    return set;
+	}
     }
 
     final static class NodeList { 
 	final static class Cons { Node elem; Cons next;  }
 	int size = 0;
 	Cons first, last;
+	NodeList() {}
+	NodeList(List/*Node*/ ns) { 
+	    for(Iterator i=ns.iterator(); i.hasNext();)
+		add( (Node) i.next() );
+	}
 	void add(Node n) {
 	    Cons c = new Cons();
 	    c.elem = n;
@@ -357,9 +485,17 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 		    }
 		};
 	}
+	List toList() {
+	    ArrayList l = new ArrayList(size);
+	    for(NodeIter i=iter(); i.hasNext();)
+		l.add(i.next());
+	    return l;
+	}
+	public String toString() { return "NodeList< "+toList()+" >"; }
     }
 
     int nextId = 1;
+    ArrayList allNodes = new ArrayList();
     final class Node {
 	final int id;
 
@@ -394,7 +530,9 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 
 	// special case for dummy nodes (for which 'w == null')
 	public Node(Web w) { 
-	    id = nextId; nextId++; s_prev = s_next = this; web = w;} 
+	    id = nextId; nextId++; s_prev = s_next = this; web = w;
+	    allNodes.add(this);
+	} 
 
 	public Node(NodeSet which, Web w) { 
 	    this(w); 
@@ -446,7 +584,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 		", deg:"+degree+
 		", alias:"+alias+
 		", temp:"+((web==null)?"none":web.temp+"")+
-		", history:"+nodeSet_history+
+		// ", history:"+nodeSet_history+
 		">";
 	}
     }
@@ -545,7 +683,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	active_moves      = new MoveSet("active_moves");
     }
 
-    void resetMoveSets() {
+    private void resetMoveSets() {
 	// all sets except worklist_moves
 	MoveSet[] sets = new MoveSet[]{ 	
 	    coalesced_moves,constrained_moves,
@@ -562,9 +700,6 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	private int size;
 	private Move head; // dummy element
 	final String name;
-	public String toString() {
-	    return "MoveSet:"+name;
-	}
 	MoveSet(String name) { 
 	    this.name = name;
 	    head = new Move(); 
@@ -644,6 +779,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 		rtn.add(iter.next());
 	    return rtn;
 	}
+	public String toString() { return "MoveSet< "+name+", "+asSet()+" >"; }
     }
     static final class MoveList {
 	final static class Cons { Move elem; Cons next; }
@@ -651,6 +787,11 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	int size = 0;
 	boolean isEmpty() {
 	    return size == 0;
+	}
+	MoveList() {}
+	MoveList(List/*Move*/ ms) {
+	    for(Iterator i=ms.iterator(); i.hasNext();)
+		add( (Move) i.next() );
 	}
 	void add(Move m) {
 	    Cons c = new Cons();
@@ -682,13 +823,14 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 		    public Object next() { Move m=c.elem; c=c.next; return m;}
 		};
 	}
-	public String toString() {
+	public List toList() {
 	    java.util.ArrayList l = new java.util.ArrayList();
 	    for(Iterator m=iterator(); m.hasNext(); ){
 		l.add(m.next());
 	    }
-	    return l.toString();
+	    return l;
 	}
+	public String toString() { return "MoveList< "+toList()+" >"; }
     }
 
 
