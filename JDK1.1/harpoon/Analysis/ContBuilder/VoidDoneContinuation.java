@@ -50,9 +50,7 @@ public final class VoidDoneContinuation extends VoidContinuation implements Void
     public void exception(Throwable t) {
     }
 	    
-    private Continuation link;
-    public final void setLink(Continuation c) { link= c; }
-    public final Continuation getLink() { return link; }
+
     //BCD end
 }
 
