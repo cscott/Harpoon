@@ -1,0 +1,19 @@
+#!/bin/sh
+make -C ~/Harpoon/Runtime/arch/arm32 header.s footer.s lookup.s native.s
+mv  ~/Harpoon/Runtime/arch/arm32/header.s \
+    ~/Harpoon/Runtime/arch/arm32/footer.s \
+    ~/Harpoon/Runtime/arch/arm32/lookup.s \
+    ~/Harpoon/Runtime/arch/arm32/native.s \
+    .
+echo REMOVING TROUBLESOME BUGGERS
+mv _Class_java_lang_FloatingDecimal.s _Class_java_lang_FloatingDecimal.sX
+mv _Class_java_lang_Integer.s _Class_java_lang_Integer.sX
+
+echo Concatenating files.
+rm -f all.s
+cat header.s _Primitive_*.s _Class_*.s lookup.s native.s footer.s > all.s
+
+echo Building archive.
+rm -f Java.a
+make "Java.a(all.o)"
+ranlib Java.a
