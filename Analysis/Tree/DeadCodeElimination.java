@@ -11,7 +11,6 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Tree.CanonicalTreeCode;
-import harpoon.IR.Tree.Code;
 import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.EXP;
 import harpoon.IR.Tree.Exp;
@@ -38,7 +37,7 @@ import java.util.Set;
  * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCodeElimination.java,v 1.1.2.2 2000-02-16 23:22:13 cananian Exp $
+ * @version $Id: DeadCodeElimination.java,v 1.1.2.3 2000-02-17 01:29:29 cananian Exp $
  */
 public abstract class DeadCodeElimination extends Simplification {
     // hide constructor
@@ -62,6 +61,7 @@ public abstract class DeadCodeElimination extends Simplification {
 		    } catch (ClassCastException ex) { /* i guess not */ }
 		    // ...do liveness analysis and modify cloned code in-place.
 		    simplify((Stm)code.getRootElement(), dg, HCE_RULES(code));
+		    hc = code;
 		}
 		return hc;
 	    }
