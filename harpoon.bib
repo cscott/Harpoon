@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.75 2002-09-23 02:45:04 cananian Exp $
+% $Id: harpoon.bib,v 1.76 2002-11-15 21:12:17 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -59,6 +59,10 @@
                   of Programming Languages ({POPL})"}
 @string{PPOPP99 = "Proceedings of the 7th {ACM} {SIGPLAN} symposium on
                    Principles and practice of parallel programming ({PPoPP})"}
+@string{PPOPP01 = "Proceedings of the 8th {ACM} {SIGPLAN} symposium on
+                   Principles and Practice of Parallel Programming ({PPoPP})"}
+@string{SAS99 =   "Proceedings of the 6th International Static Analysis
+                   Symposium"}
 @string{TOPLAS = "{ACM} Transactions on Programming Languages and Systems"}
 @string{CC96 = "Proceedings of the Sixth International Conference on
                   Compiler Construction"}
@@ -75,6 +79,10 @@
                    international symposium on Microarchitecture"}
 @string{IR95 = "Papers of the First {ACM} {SIGPLAN} workshop on
                 Intermediate Representations"}
+@string {Denver = "Denver, Colorado"}
+@string {Munich = "Munich, Germany"}
+@string {Snowbird = "Snowbird, Utah"}
+@string {Vancouver = "Vancouver, Canada"}
 
 % papers read.
 
@@ -146,7 +154,7 @@
  year = {2001},
  isbn = {1-58113-413-4},
  pages = {73--79},
- location = {Snowbird, Utah, United States},
+ location = Snowbird,
  doi = {http://doi.acm.org/10.1145/379605.379676},
  publisher = {ACM Press},
  annote = { Uses ``user models'' to analyze maps and collections.  Disingenuously claims that maps and collections ``may be implemented in native code.'' }
@@ -1586,7 +1594,7 @@
   booktitle =    PLDI00,
   pages =        {182-195},
   year =         2000,
-  address =	 {Vancouver, Canada},
+  address =	 Vancouver,
   month =	 jun
 }
 
@@ -1603,12 +1611,10 @@
 @InProceedings{whaley99,
   author = 	 {John Whaley and Martin Rinard},
   title = 	 {Compositional pointer and escape analysis for {J}ava programs},
-  booktitle =	 {Proceedings of the 1999 {ACM} {SIGPLAN} conference
-                  on Object-oriented programming, systems, languages,
-                  and applications},
-  pages =	 {187-206},
+  booktitle =	 OOPSLA99,
+  pages =	 {187--206},
   year =	 1999,
-  address =	 {Denver, Colorado},
+  address =	 Denver,
   month =	 nov
 }
 
@@ -1627,7 +1633,7 @@
   booktitle =	 PLDI01,
   pages =	 {35-46},
   year =	 2001,
-  address =	 {Snowbird, Utah},
+  address =	 Snowbird,
   month =	 jun
 }
 
@@ -1635,9 +1641,11 @@
   author = 	 {Mark Stephenson and Jonathan Babb and Saman Amarasinghe},
   title = 	 {Bitwidth analysis with application to silicon compilation},
   booktitle =	 PLDI00,
-  pages =	 {108-120},
+  isbn =         {1-58113-199-2},
+  pages =        {108--120},
+  doi =          {http://doi.acm.org/10.1145/349299.349317},
   year =	 2000,
-  address =	 {Vancouver, Canada},
+  address =	 Vancouver,
   month =	 jun
 }
 
@@ -1646,17 +1654,20 @@
   title = 	 {The Static Single Information Form},
   institution =  {Massachusetts Institute of Technology},
   year = 	 1999,
-  number =	 {MIT-LCS-TR-801}
+  number =	 {MIT-LCS-TR-801},
+  note = 	 {Available from \texttt{http://\hspace{0pt}www.lcs.mit.edu/\hspace{0pt}publications/\hspace{0pt}pubs/\hspace{0pt}pdf/\hspace{0pt}MIT-LCS-TR-801.pdf}}
 }
+% also http://www.lcs.mit.edu/publications/specpub.php?id=1340
 
 @InProceedings{salcianu01,
   author = 	 {Alexandru S\u{a}lcianu and Martin Rinard},
   title = 	 {Pointer and escape analysis for multithreaded programs},
-  booktitle =	 {Proceedings of the eighth {ACM} {SIGPLAN} symposium
-                  on Principles and practices of parallel programming},
-  pages =	 {12-23},
+  booktitle =	 PPOPP01,
+  isbn =         {1-58113-346-4},
+  pages =	 {12--23},
+  doi =          {http://doi.acm.org/10.1145/379539.379553},
   year =	 2001,
-  address =	 {Snowbird, Utah},
+  address =	 Snowbird,
   month =	 jun
 }
 
@@ -1667,7 +1678,7 @@
   booktitle =	 PLDI01,
   pages =	 {254-263},
   year =	 2001,
-  address =	 {Snowbird, Utah},
+  address =	 Snowbird,
   month =	 jun
 }
 
@@ -1675,6 +1686,9 @@
   author =       {Peter F. Sweeney and Frank Tip},
   title =        {A Study of Dead Data Members in {C}++ Applications},
   booktitle =    PLDI98,
+  isbn =         {0-89791-987-4},
+  pages =        {324--332},
+  doi =          {http://doi.acm.org/10.1145/277650.277750},
   address =      {Montreal, Canada},
   year =         1998
 }
@@ -1685,7 +1699,7 @@
   booktitle = 	 PLDI01,
   pages =	 {214-220},
   year =	 2001,
-  address =	 {Snowbird, Utah},
+  address =	 Snowbird,
   month =	 jun
 }
 
@@ -1696,7 +1710,7 @@
  year = 2000,
  isbn = {1-58113-199-2},
  pages = {196--207},
- location = {Vancouver, British Columbia, Canada},
+ location = Vancouver,
  doi = {http://doi.acm.org/10.1145/349299.349326},
  publisher = {ACM Press},
  }
@@ -1705,22 +1719,15 @@
 
 @string {ECOOP99 = "Proceedings of the 13th European Conference on Object-Oriented Programming"} 
 @string {EUROPAR2000 = "Proceedings of the EuroPar 2000 European Conference on Parallel Computing"} 
-@string {PPOPP01 = "Proceedings of the 8th {ACM} {SIGPLAN} 
-		Symposium on Principles and Practice of Parallel Programming"}
-@string {SAS99 = "Proceedings of the 6th International Static Analysis Symposium"}
-@string {SIGPLAN00 = "Proceedings of the 
-			{SIGPLAN} '00 Conference on Program Language 
-			Design and Implementation"}
 
-@string {Denver = "Denver, CO"}
-@string {Munich = "Munich, Germany"}
-@string {Snowbird = "Snowbird, UT"}
-@string {Vancouver = "Vancouver, Canada"}
 
 @InProceedings{OK99, 
-        Author = {T. Onodera and K. Kawachiya}, 
+        author = {Tamiya Onodera and Kiyokuni Kawachiya},
         Title = {A Study of Locking Objects With Bimodal Fields}, 
         Booktitle = OOPSLA99,
+        isbn = {1-58113-238-7},
+        pages = {223--237},
+        doi = {http://doi.acm.org/10.1145/320384.320405},
         Address= Denver,
         Month = Nov,
         Year = 1999}
@@ -1730,6 +1737,7 @@
                   and Y. Ramakrishna and D. White}, 
         Title = {An Efficient Meta-Lock for Implementing Ubiquitous Synchronization},
         Booktitle = OOPSLA99,
+        pages = {207--222},
         Address= Denver,
         Month = Nov,
         Year = 1999}
@@ -1739,72 +1747,61 @@
         Title = {Static Analyses for Eliminating Unnecessary Synchronization
                  from {J}ava Programs}, 
         Booktitle = SAS99,
+        pages = {19--38},
         Location = Venice,
         Month = Sep,
         Year = 1999}
 
 @InProceedings{BH99,
-        Author = {J. Bogda and U. Hoelzle},
+        author = {Jeff Bogda and Urs H\"olzle},
         Title = {Removing Unnecessary Synchronization in {J}ava}, 
         Booktitle = OOPSLA99,
+        isbn = {1-58113-238-7},
+        pages = {35--46},
+        doi = {http://doi.acm.org/10.1145/320384.320388},
         Address= Denver,
         Month = Nov,
         Year = 1999}
 
-@InProceedings{WR99:OOPSLA99,
-        Author    = {J. Whaley and M. Rinard},
-        Title     = {Compositional Pointer and Escape Analysis for
-                     {J}ava Programs},
-        Booktitle = OOPSLA99,
+% acm: 320386
+@inproceedings{CGSSM99,
+        author = {Jong-Deok Choi and Manish Gupta and Mauricio Serrano and Vugranam C. Sreedhar and Sam Midkiff},
+        title = {Escape analysis for {J}ava},
+        booktitle = OOPSLA99,
         Address   = Denver,
         Month     = Nov,
-        Year      = 1999,
+        year = {1999},
+        isbn = {1-58113-238-7},
+        pages = {1--19},
+        doi = {http://doi.acm.org/10.1145/320384.320386},
 }
-
-@InProceedings{CGSSM99,
-        Author = {J. Choi and M. Gupta and M. Serrano and V. Sreedhar and
-                  S. Midkiff}, 
-        Title = {Escape Analysis for {J}ava},
-        Booktitle = OOPSLA99,
-        Address= Denver,
-        Month = Nov,
-        Year = 1999}
 
 @InProceedings{Ruf00:PLDI00, 
-        Author    = {E. Ruf}, 
+        author = {Erik Ruf},
         Title     = {Effective Synchronization Removal for {J}ava},
-        Booktitle = SIGPLAN00,
+        Booktitle = PLDI00,
+        isbn = {1-58113-199-2},
+        pages = {208--218},
+        doi = {http://doi.acm.org/10.1145/349299.349327},
         Address   = Vancouver,
         Month     = Jun,
         Year      = 2000,
 }
 
-@InProceedings{SR01:PPOPP01, 
-        Author    = {A. S\u{a}lcianu and M. Rinard}, 
-        Title     = {Pointer and Escape Analysis for Multithreaded Programs}, 
-        Booktitle = PPOPP01,
-        Address   = Snowbird,
-        Month     = Jun,
-        Year      = 2001,
+@InProceedings{BGSW00,
+  author =	 {Mihai Budiu and Majd Sakr and Kip Walker and Seth
+                  Copen Goldstein},
+  title =	 {{BitValue} Inference: Detecting and Exploiting Narrow
+                  Bitwidth Computations},
+  booktitle =	 {Proceedings of the 2000 Europar Conference},
+  Address = Munich,
+  Month = Aug,
+  year =	 2000,
+  volume =	 1900,
+  series =	 {Lecture Notes in Computer Science},
+  publisher =	 {Springer Verlag},
+  url =          {http://www.cs.cmu.edu/~mihaib/research/bitvalue.ps.gz},
 }
-
-@InProceedings{SBA00:PLDI00, 
-        Author    = {M. Stephenson and J. Babb and S. Amarasinghe}, 
-        Title     = {Bitwidth Analysis with Application to Silicon Compilation}, 
-        Booktitle = SIGPLAN00,
-        Address   = Vancouver,
-        Month     = Jun,
-        Year      = 2000,
-}
-
-@InCollection{BGSW00, 
-	Author = {M. Budiu and S. Goldstein and M. Sakr and K. Walker}, 
-	Title = {{BitValue} Inference: Detecting and Exploiting Narrow 
-                 Bitwidth Computations}, 
-	Booktitle = EUROPAR2000, 
-	Address = Munich,
-	Month = Aug,
-	Year = 2000}
 
 @InProceedings{DH99, 
   Title = {A study of the allocation behavior of the {SPECjvm98} {J}ava Benchmarks},

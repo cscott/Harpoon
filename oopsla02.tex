@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.31 2002-05-11 11:20:53 cananian Exp $
+% $Id: oopsla02.tex,v 1.32 2002-11-15 21:12:17 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -33,7 +33,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.31 $ $}{$ $Revision: 1.31 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.32 $ $}{$ $Revision: 1.32 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -1057,7 +1057,7 @@ techniques typically reduce the lock space overhead to 24 header bits
 
 Research in escape analysis and related analyses can enable the
 compiler to find objects whose locks are never 
-acquired~\cite{ACSE99,BH99,WR99:OOPSLA99,CGSSM99,Ruf00:PLDI00,SR01:PPOPP01}.
+acquired~\cite{ACSE99,BH99,whaley99,CGSSM99,Ruf00:PLDI00,salcianu01}.
 This information can enable the compiler to remove the space
 reserved for synchronization support in these objects. 
 Our hash/lock removal algorithm uses a totally dynamic approach
@@ -1066,7 +1066,7 @@ based on our field externalization mechanism.
 Several researchers have used bitwidth analysis to reduce the size
 of the generated circuits for compilers that generate hardware
 implementations of programs written in C or similar programming 
-languages~\cite{ananian:siliconc,RR00:PLDI00,SBA00:PLDI00,BGSW00}.
+languages~\cite{ananian:siliconc,RR00:PLDI00,stephenson00,BGSW00}.
 
 Dieckmann and Hoelzle have performed an in-depth analysis of the
 memory allocation behavior of Java programs~\cite{DH99}. Although 
