@@ -1,0 +1,172 @@
+// Lexer.jlex, created Wed Feb 17 03:58:23 1999 by cananian
+// Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+package harpoon.Tools.PatMat;
+
+%%
+
+%line
+%char
+%class Lexer
+%function nextToken
+%type java_cup.runtime.Symbol
+%state CLASS_SCOPE RULES BRACED STRING COMMENT1 COMMENT2 TYPES
+
+%{
+private void newline() { errorMsg.newline(yychar); }
+private void err(int pos, String s) { errorMsg.error(pos, s); }
+private void err(String s) { err(yychar, s); }
+
+private java_cup.runtime.Symbol tok(int kind) {
+	return new java_cup.runtime.Symbol(kind, yychar, yychar+yylength());
+}
+private java_cup.runtime.Symbol tok(int kind, Object obj) {
+    return new java_cup.runtime.Symbol(kind, yychar, yychar+yylength(), obj);
+}
+private java_cup.runtime.Symbol tok(int kind, int start, int end, Object obj) {
+    return new java_cup.runtime.Symbol(kind, start, end, obj);
+}
+
+private ErrorMsg errorMsg = null;
+
+Lexer(java.io.Reader r, ErrorMsg e) {
+    this(r);
+    errorMsg = e;
+}
+
+// Internal lexer variables
+
+private StringBuffer strText=new StringBuffer(); // Space to build up a string.
+private int strStart=0;	      // Starting location of the string.
+
+private int braceCount;
+%}
+
+%eofval{
+    {
+	if (yy_lexical_state==STRING) {
+	    err("Unterminated string at end of file.");
+	}
+	return tok(Sym.EOF);
+    }
+%eofval}
+
+ALPHA=[A-Za-z]
+DIGIT=[0-9]
+ID={ALPHA}[A-Za-z0-9_\$]*
+HEXDIGIT=[0-9A-Fa-f]
+WS=[\ \t\012\b]
+NL=([\r]|[\r]?[\n])
+
+%%
+
+<YYINITIAL>	^%%		{ yybegin(CLASS_SCOPE);
+				  String global = strText.toString();
+				  strText = new StringBuffer();
+				  strStart = yychar;
+				  return tok(Sym.GLOBAL_STATEMENTS,
+					     0, yychar, global);
+				}
+<CLASS_SCOPE>	^%%		{ yybegin(RULES);
+				  return tok(Sym.CLASS_STATEMENTS,
+					     strStart, yychar,
+					     strText.toString());
+				}
+<YYINITIAL,CLASS_SCOPE>	{NL}	{ newline(); strText.append('\n'); }
+<YYINITIAL,CLASS_SCOPE>	.	{ strText.append(yytext()); }
+
+<RULES>		"{"		{ yybegin(BRACED);
+				  strText = new StringBuffer(yytext());
+				  strStart = yychar;
+				  braceCount = 0;
+				}
+<BRACED>	"{"		{ strText.append(yytext());
+				  braceCount++;
+				}
+<BRACED>	"}"		{ strText.append(yytext());
+				  if (braceCount-- == 0) {
+				    yybegin(RULES);
+				    return tok(Sym.BRACED,
+					       strStart, yychar,
+					       strText.toString());
+				  }
+				}
+<BRACED>	[\"]		{ /* enter string context. */
+				  strText.append(yytext());
+				  yybegin(STRING);
+				}
+<STRING>	\\[0-3][0-7][0-7] { /* octal escape in string */
+				  strText.append(yytext());
+				}
+<STRING>	\\[0-7][0-7]    { /* octal escape in string */
+				  strText.append(yytext());
+				}
+<STRING>	\\.             { /* any other escape */
+				  strText.append(yytext());
+				}
+<STRING>	{NL}		{ /* error, unterminated string constant. */
+				  err("Embedded newline in string.");
+				  newline();
+				  strText.append(yytext());
+				}
+<STRING>	[\"]		{ /* saw closing quote. */
+				  strText.append(yytext());
+				  yybegin(BRACED);
+				}
+<BRACED>	{NL}		{ strText.append(yytext()); newline(); }
+<BRACED,STRING>	.		{ strText.append(yytext()); }
+
+<RULES>		"//"		{ yybegin(COMMENT1); }
+<COMMENT1>	[^\n\r]+	{ /* eat up comments. */ }
+<COMMENT1>	{NL}		{ yybegin(RULES); newline(); }
+<RULES>		"/*"		{ yybegin(COMMENT2); }
+<COMMENT2>	"*"+"/"		{ yybegin(RULES); }
+<COMMENT2>	{NL}		{ newline(); }
+<COMMENT2>	.		{ /* eat up comments. */ }
+
+<RULES>		"%extra"	{ return tok(Sym.KEY_EXTRA); }
+<RULES>		"%weight"	{ return tok(Sym.KEY_WEIGHT); }
+<RULES>		"%pred" 	{ return tok(Sym.KEY_PRED); }
+
+<RULES>		BINOP		{ return tok(Sym.BINOP); }
+<RULES>		CALL		{ return tok(Sym.CALL); }
+<RULES>		CJUMP		{ return tok(Sym.CJUMP); }
+<RULES>		CONST		{ return tok(Sym.CONST); }
+<RULES>		ESEQ		{ return tok(Sym.ESEQ); }
+<RULES>		EXP		{ return tok(Sym.EXP); }
+<RULES>		JUMP		{ return tok(Sym.JUMP); }
+<RULES>		LABEL		{ return tok(Sym.LABEL); }
+<RULES>		MEM		{ return tok(Sym.MEM); }
+<RULES>		MOVE		{ return tok(Sym.MOVE); }
+<RULES>		NAME		{ return tok(Sym.NAME); }
+<RULES>		NATIVECALL	{ return tok(Sym.NATIVECALL); }
+<RULES>		RETURN		{ return tok(Sym.RETURN); }
+<RULES>		SEQ		{ return tok(Sym.SEQ); }
+<RULES>		TEMP		{ return tok(Sym.TEMP); }
+<RULES>		THROW		{ return tok(Sym.THROW); }
+<RULES>		UNOP		{ return tok(Sym.UNOP); }
+
+<RULES>		{ID}		{ return tok(Sym.ID, yytext()); }
+
+<RULES>		"("		{ return tok(Sym.LPAREN); }
+<RULES>		")"		{ return tok(Sym.RPAREN); }
+<RULES>		"["		{ return tok(Sym.LBRACK); }
+<RULES>		"]"		{ return tok(Sym.RBRACK); }
+<RULES>		","		{ return tok(Sym.COMMA); }
+<RULES>		"="		{ return tok(Sym.EQUALS); }
+
+<RULES>		"<"		{ yybegin(TYPES);
+				  return tok(Sym.LANGLE); }
+<TYPES>		[aA]		{ return tok(Sym.TYPE_A); }
+<TYPES>		[iI]		{ return tok(Sym.TYPE_I); }
+<TYPES>		[lL]		{ return tok(Sym.TYPE_L); }
+<TYPES>		[fF]		{ return tok(Sym.TYPE_F); }
+<TYPES>		[dD]		{ return tok(Sym.TYPE_D); }
+<TYPES>		[,]		{ /* eat commas */ }
+<TYPES>		">"		{ yybegin(RULES);
+				  return tok(Sym.RANGLE); }
+
+<RULES,TYPES>	{NL}            { newline(); }
+<RULES,TYPES>	{WS}		{/*eat whitespace*/}
+
+<RULES,TYPES>	.		{ err("Illegal input character."); }

@@ -1,0 +1,76 @@
+// Parser.cup, created Wed Feb 17 05:21:16 1999 by cananian
+// Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+package harpoon.Tools.PatMat;
+
+import java_cup.runtime.*;
+
+parser code {:
+	Lexer lexer = null;
+	ErrorMsg errorMsg;
+
+	public void syntax_error(java_cup.runtime.Symbol current) {
+	  report_error("Syntax error (" + current.sym + ")", current);
+	}
+
+	public void report_error(String message, 
+			         java_cup.runtime.Symbol info) {
+		errorMsg.error(info.left, message);
+	}
+
+	public Parser(Lexer l, ErrorMsg err) {
+	  this();
+	  lexer = l;
+	  errorMsg=err;
+	}
+:};
+
+scan with {: return lexer.nextToken(); :};
+
+terminal String ID, GLOBAL_STATEMENTS, CLASS_STATEMENTS, BRACED;
+// %keys
+terminal KEY_EXTRA, KEY_WEIGHT, KEY_PRED;
+// tree nodes
+terminal BINOP, CALL, CJUMP, CONST, ESEQ, EXP, JUMP, LABEL;
+terminal MEM, MOVE, NAME, NATIVECALL, RETURN, SEQ, TEMP, THROW;
+terminal UNOP;
+// punctuation & brackets
+terminal LPAREN, RPAREN, LBRACK, RBRACK, LANGLE, RANGLE;
+terminal COMMA, EQUALS;
+// types
+terminal TYPE_A, TYPE_I, TYPE_L, TYPE_F, TYPE_D;
+
+non terminal program, ruleSeq, rule;
+non terminal exp, detailSeq, detail, idList, types;
+non terminal opt_idList, opt_types;
+
+start with program;
+
+program ::= GLOBAL_STATEMENTS CLASS_STATEMENTS ruleSeq
+	;
+
+ruleSeq ::= /* empty */ | rule ruleSeq ;
+
+rule ::= exp detailSeq BRACED ;
+
+detailSeq ::= /* empty */ | detail detailSeq ;
+
+detail ::= KEY_EXTRA LPAREN opt_idList RPAREN
+	| KEY_PRED BRACED
+	| KEY_WEIGHT LPAREN ID COMMA /*NUMBER*/ RPAREN
+	;
+
+opt_idList ::= /* empty */ | idList ;
+
+idList ::= ID
+	|  idList COMMA ID
+	;
+exp	::= ID /* | NUMBER */
+	| MOVE LPAREN exp COMMA exp RPAREN
+	| MEM opt_types LPAREN exp RPAREN
+	| CONST opt_types LPAREN exp RPAREN
+	;
+
+opt_types ::= /* nothing */ | types ;
+
+types ::= RANGLE opt_idList LANGLE ;
