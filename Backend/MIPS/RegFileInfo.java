@@ -39,7 +39,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.4 2000-08-31 05:06:04 witchel Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.5 2000-10-04 21:42:12 witchel Exp $
  */
 public class RegFileInfo
 extends harpoon.Backend.Generic.RegFileInfo 
@@ -55,6 +55,7 @@ implements harpoon.Backend.Generic.LocationFactory
    final Set liveOnExitRegs;
    final Temp[] regGeneral; 
    final TempFactory regtf;
+   Set oneWordAssigns, twoWordAssigns;
 
    // Use symbolic names
    
@@ -210,6 +211,23 @@ implements harpoon.Backend.Generic.LocationFactory
       calleeSaveRegs.add(S7);
       calleeSaveRegs.add(SP);  // SP
       calleeSaveRegs.add(FP);  // s8
+
+      oneWordAssigns = new HashSet();
+      // Start at 2 because R0 == 0 and R1 is the assembler register.
+      for (int i=2; i<regGeneral.length; i++) {
+         Temp[] assign = new Temp[] { regGeneral[i] };
+         oneWordAssigns.add(Arrays.asList(assign));
+      }
+      oneWordAssigns = Collections.unmodifiableSet(oneWordAssigns);
+      twoWordAssigns = new HashSet();
+      // Start at 2 because R0 == 0 and R1 is the assembler register.
+      for (int i=2; i<regGeneral.length-1; i++) {
+         Temp[] assign = new Temp[] { regGeneral[i] ,
+                                      regGeneral[i+1] };
+         twoWordAssigns.add(Arrays.asList(assign));
+      }
+      twoWordAssigns = Collections.unmodifiableSet(twoWordAssigns);
+
    }
     
    public Temp[] getAllRegisters() { 
@@ -331,6 +349,15 @@ implements harpoon.Backend.Generic.LocationFactory
    public VRegAllocator allocator() {
       return new MyVRegAllocator();
    }
+
+    public Set getRegAssignments(Temp t) {
+	if (t instanceof TwoWordTemp) {
+	    return twoWordAssigns;
+	} else {
+	    return oneWordAssigns;
+	}
+    }
+
 
    public Iterator suggestRegAssignment(Temp t, final Map regFile) 
       throws SpillException {
