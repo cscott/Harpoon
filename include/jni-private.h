@@ -6,6 +6,9 @@
 #include <sys/types.h>
 #include <stdarg.h>
 #include "config.h"
+#ifdef WITH_HEAVY_THREADS
+#include <pthread.h>
+#endif
 
 #if SIZEOF_VOID_P==4
   typedef u_int32_t ptroff_t;
@@ -107,6 +110,12 @@ struct FNI_Thread_State {
   JNIEnv vtable;
   jthrowable exception; /* outstanding exception, or NULL if no exception. */
   struct _jobject localrefs; /* header node in a local refs list. */
+  jobject thread; /* thread object corresponding to this thread state. */
+#ifdef WITH_HEAVY_THREADS
+  pthread_t pthread; /* the pthread corresponding to this thread state. */
+  pthread_cond_t sleep_cond; /* condition variable for sleep/suspend. */
+  pthread_mutex_t sleep_mutex; /* mutex for sleep/suspend. */
+#endif
 };
 extern struct _jobject FNI_globalrefs; /* header node in global refs list. */
 
@@ -115,8 +124,14 @@ extern struct _jobject FNI_globalrefs; /* header node in global refs list. */
 
 /* -------------- internal function prototypes. ------------- */
 
-/* make a new JNIEnv *... */
-JNIEnv * FNI_ThreadInit(void);
+/* Initialize JNIEnv management code at startup. */
+void FNI_InitJNIEnv(void);
+/* Create a JNIEnv for the current thread. Must happen only once per thread!
+ * Returns a pointer to the new JNIEnv. */
+JNIEnv *FNI_CreateJNIEnv(void);
+/* Return the JNIEnv for the current thread. Called by java native stub code.*/
+JNIEnv *FNI_GetJNIEnv(void);
+
 /* this function will make a wrapper. */
 jobject FNI_NewLocalRef(JNIEnv *env, jobject_unwrapped obj);
 /* Look up classinfo from class object. */

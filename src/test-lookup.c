@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include "asm/stack.h"
 
-extern JNIEnv *FNI_JNIEnv; /* temporary hack. */
-
 /* value to be thrown is in r0, so be careful with that.
  * return address is in [fp, #-4] */
 
@@ -23,7 +21,7 @@ int main(int argc, char *argv[]) {
   void *p; pair_t *ptr; int i;
 
   /*have to reference something in FNI so that the linker doesn't discard it*/
-  FNI_JNIEnv = FNI_ThreadInit();
+  FNI_InitJNIEnv();
 
   printf("FIXUP START: %p\tEND: %p\n", fixup_start, fixup_end);
   for (i=0, ptr=fixup_start; ptr < fixup_end; i++, ptr++) {
