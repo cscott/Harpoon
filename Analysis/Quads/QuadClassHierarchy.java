@@ -44,7 +44,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.25 2001-01-19 00:40:54 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.26 2001-02-21 19:35:34 salcianu Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -334,6 +334,13 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 					   Map ckc, Map cmu, Map cmp) {
 	if (instedClasses.contains(c)) return; else instedClasses.add(c);
 	discoverClass(c, W, done, ckc, cmu, cmp);
+
+	///// bdemsky hack for Scott's bug ...
+	if (c.isArray())
+	    discoverMethod(c.getMethod("clone","()Ljava/lang/Object;"),
+			   W, done, ckc, cmu, cmp);
+	//// EOH (End Of Hack)
+
 	// collect superclasses and interfaces.
 	// new worklist.
 	WorkSet sW = new WorkSet();
