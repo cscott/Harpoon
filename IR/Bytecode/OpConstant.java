@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
 import harpoon.IR.RawClass.Constant;
 import harpoon.IR.RawClass.ConstantValue;
 import harpoon.IR.RawClass.ConstantDouble;
@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.2.2.2 1999-01-19 03:44:33 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.2.2.3 1999-01-22 23:05:47 cananian Exp $
  * @see Operand
  * @see Instr
  * @see harpoon.IR.RawClass.ConstantDouble

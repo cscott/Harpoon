@@ -3,7 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.RawClass.Constant;
 import harpoon.IR.RawClass.ConstantClass;
 import harpoon.IR.RawClass.ConstantNameAndType;
@@ -17,7 +18,7 @@ import harpoon.IR.RawClass.ConstantInterfaceMethodref;
  * <code>CONSTANT_InterfaceMethodref</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpMethod.java,v 1.2.2.2 1999-01-19 03:44:33 cananian Exp $
+ * @version $Id: OpMethod.java,v 1.2.2.3 1999-01-22 23:05:48 cananian Exp $
  * @see harpoon.IR.RawClass.ConstantMethodref
  * @see harpoon.IR.RawClass.ConstantInterfaceMethodref
  */

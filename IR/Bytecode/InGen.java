@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
 import harpoon.Util.Util;
 
 /**
@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * opcode in the raw bytecode array.
  *
  * @author  C. Scott Ananian
- * @version $Id: InGen.java,v 1.3.2.2 1998-12-21 21:21:28 cananian Exp $
+ * @version $Id: InGen.java,v 1.3.2.3 1999-01-22 23:05:47 cananian Exp $
  */
 public class InGen extends Instr {
   final byte opcode;

@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
 import harpoon.IR.RawClass.Constant;
 import harpoon.IR.RawClass.ConstantClass;
 
@@ -13,7 +13,7 @@ import harpoon.IR.RawClass.ConstantClass;
  * <code>CONSTANT_Class</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpClass.java,v 1.2.2.2 1999-01-19 03:44:33 cananian Exp $
+ * @version $Id: OpClass.java,v 1.2.2.3 1999-01-22 23:05:47 cananian Exp $
  * @see harpoon.IR.RawClass.ConstantClass
  */
 public final class OpClass extends Operand {

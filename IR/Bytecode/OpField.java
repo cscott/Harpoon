@@ -3,7 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HField;
 import harpoon.IR.RawClass.Constant;
 import harpoon.IR.RawClass.ConstantFieldref;
 
@@ -13,7 +14,7 @@ import harpoon.IR.RawClass.ConstantFieldref;
  * <code>CONSTANT_Fieldref</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpField.java,v 1.2.2.2 1999-01-19 03:44:33 cananian Exp $
+ * @version $Id: OpField.java,v 1.2.2.3 1999-01-22 23:05:48 cananian Exp $
  * @see harpoon.IR.RawClass.ConstantFieldref
  */
 public final class OpField extends Operand {

@@ -3,7 +3,10 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.RawClass.MethodInfo;
 import harpoon.IR.RawClass.AttributeCode;
 import harpoon.IR.RawClass.AttributeLineNumberTable;
@@ -21,7 +24,7 @@ import java.util.Enumeration;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.5 1999-01-19 03:44:33 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.6 1999-01-22 23:05:47 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {

@@ -3,7 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.ArrayFactory;
 
 import java.util.Vector;
@@ -17,7 +18,7 @@ import java.util.Vector;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.3.2.3 1998-12-21 21:21:28 cananian Exp $
+ * @version $Id: Instr.java,v 1.3.2.4 1999-01-22 23:05:47 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge

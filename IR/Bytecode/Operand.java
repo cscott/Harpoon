@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
 import harpoon.Util.ArrayFactory;
 
 /**
@@ -11,7 +10,7 @@ import harpoon.Util.ArrayFactory;
  * instruction.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Operand.java,v 1.2.2.1 1998-11-30 21:21:02 cananian Exp $
+ * @version $Id: Operand.java,v 1.2.2.2 1999-01-22 23:05:48 cananian Exp $
  * @see Instr
  * @see InGen
  * @see OpConstant

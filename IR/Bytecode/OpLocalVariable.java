@@ -3,14 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
-import harpoon.ClassFile.*;
-
 /**
  * <code>OpLocalVariable</code> represents an operand of a java bytecode
  * instruction which indicates a local variable index.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpLocalVariable.java,v 1.2.2.1 1998-12-21 21:21:29 cananian Exp $
+ * @version $Id: OpLocalVariable.java,v 1.2.2.2 1999-01-22 23:05:48 cananian Exp $
  */
 public final class OpLocalVariable extends Operand {
   final int index;
