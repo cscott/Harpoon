@@ -1,7 +1,4 @@
-import javax.realtime.CTMemory;
-import javax.realtime.RealtimeThread;
-
-class ToyTree extends RealtimeThread {
+class ToyTree extends Thread {
     public static void main(String [] arg) {
 	int asize=0;
 	int repeats=0;
@@ -32,7 +29,7 @@ class ToyTree extends RealtimeThread {
     int size;
     int repeat;
     public ToyTree(int size, int repeat) {
-	super(new CTMemory(1000000));
+	super();
 	this.size=size;
 	this.repeat=repeat;
     }

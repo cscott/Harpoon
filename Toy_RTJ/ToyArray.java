@@ -1,7 +1,4 @@
-import javax.realtime.CTMemory;
-import javax.realtime.RealtimeThread;
-
-class ToyArray extends RealtimeThread {
+class ToyArray extends Thread {
     public static void main(String[] arg) {
 	int asize=0;
 	int repeats=0;
@@ -27,7 +24,7 @@ class ToyArray extends RealtimeThread {
     }
 
     public ToyArray(int size, int repeat) {
-	super(new CTMemory(10000000));
+	super();
 	this.size=size;
 	this.repeat=repeat;
     }
