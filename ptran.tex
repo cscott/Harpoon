@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.48 2002-08-01 18:44:06 cananian Exp $
+% $Id: ptran.tex,v 1.49 2002-08-01 19:21:48 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.48 $ $}
+\date{\today \\ $ $Revision: 1.49 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -641,6 +641,8 @@ polymorphically yet.  Just keep the companion edges accurate,
 keep updating mutual-singularity of field gets,
 and rename internal nodes by call-site.
 
+Given $s_\text{call}=\text{\tt [l=l$_0$.op(l$_1$,\ldots,l$_k$)]}$:
+
 Initial rules:
 \[\dfrac
 {0\leq i \leq k, \tuple{l_i, n}\in I}
@@ -657,7 +659,7 @@ Initial rules:
 \]
 
 Rules for $\mu$ and 
-\tuple{O_M, I_M, e_m, \func{c}_{\text{from}_m}, \func{c}_{\text{to}_m}, r_m}:
+\tuple{O_M, I_M, e_M, \func{c}_{\text{from}_M}, \func{c}_{\text{to}_M}, r_M}:
 \[ O\subseteq O_M \quad
    \left(I-I(l)\right)\subseteq I_M \quad
    \func{e}(n)\subseteq\func{e}_M(n) \quad
@@ -665,10 +667,24 @@ Rules for $\mu$ and
 \]
 \[\dfrac
 {\tuple{\tuple{n_1,f},n2}\in I_R, n_3\in\mu(n_1),n_4\in\mu(n_2)}
-{\tuple{\tuple{n_3,f},n_4}\in I_M}
+{\begin{array}{c}
+\tuple{\tuple{n_3,f},n_4}\in I_M,
+\\
+\func{resolve}\left(\func{condsing}\left(\func{c}_{\text{from}_R}\left(\tuple{\tuple{n_1,f},n_2}\right)\right)\right)
+\subseteq\func{c}_{\text{from}_M}\left(\tuple{\tuple{n_3,f},n_4}\right),
+\\
+\func{resolve}\left(\func{condsing}\left(\func{c}_{\text{to}_R}\left(\tuple{\tuple{n_1,f},n_2}\right)\right)\right)
+\subseteq\func{c}_{\text{to}_M}\left(\tuple{\tuple{n_3,f},n_4}\right)
+\end{array} }
 \]
-\textbf{XXX: NEED TO UPDATE $c_\text{from}$ and $c_\text{to}$ in the
-  rule above.}
+where
+\[
+\func{resolve}(P):2^P_\bot\to 2^{(V\times S)_\bot} = \begin{cases}
+\{\bot\} & \text{if }P=\bot \\
+\left\{\tuple{\func{actual}(p),s_\text{call}} | p\in P\right\}&\text{otherwise}
+\end{cases}
+\]
+
 \[\dfrac
 {\tuple{\tuple{n_1,f},n_2}\in I_R,
   n\in\mu(n_1),
@@ -679,7 +695,7 @@ Rules for $\mu$ and
 {\tuple{\tuple{n_1,f},n_2}\in O_R,
  n\in\mu(n_1),
  \func{escaped}(
-\tuple{O_M, I_M, e_m, \func{c}_{\text{from}_m}, \func{c}_{\text{to}_m}, r_m}
+\tuple{O_M, I_M, e_M, \func{c}_{\text{from}_M}, \func{c}_{\text{to}_M}, r_M}
  ,n) }
 {\tuple{\tuple{n,f},n_2}\in O_M,
  n_2\in\mu(n_2) }
