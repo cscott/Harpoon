@@ -22,7 +22,7 @@ import java.util.Map;
  * <code>Tree.Exp</code>s can be inferred from these.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationGenerator.java,v 1.1.2.3 2000-02-09 05:12:12 cananian Exp $
+ * @version $Id: DerivationGenerator.java,v 1.1.2.4 2000-02-15 05:46:52 cananian Exp $
  */
 public class DerivationGenerator implements TreeDerivation {
     /** private partial type map */
@@ -91,6 +91,12 @@ public class DerivationGenerator implements TreeDerivation {
 	Util.assert(exp!=null && derivation!=null);
 	Util.assert(!dtM.containsKey(exp));
 	dtM.put(exp, new TypeAndDerivation(derivation));
+    }
+    // allow implementations to flush old data from the derivation generator
+    /** Remove all type and derivation mappings for the given
+     *  <code>Tree.Exp</code>. Used for memory management purposes. */
+    public void remove(Exp exp) {
+	dtM.remove(exp);
     }
 
     // private interface
