@@ -29,11 +29,11 @@ import java.util.Map;
  * representation in SSI form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSI.java,v 1.1.2.7 2000-05-17 03:19:30 cananian Exp $
+ * @version $Id: LowQuadSSI.java,v 1.1.2.8 2000-05-31 23:04:26 cananian Exp $
  */
 public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     /** The name of this code view. */
-    public static final String codename  = "low-quad-ssa";
+    public static final String codename  = "low-quad-ssi";
 
     /** Creates a <code>LowQuadSSI</code> object from a <code>QuadSSI</code>
      *  object. */
@@ -88,6 +88,7 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     /**
      * Clone this code representation.  The clone has its own copy of the
      * quad graph.
+     * <p><b>WARNING: does not preserve derivation or allocation info.</b>
      */
     public HCode clone(HMethod newMethod) {
 	LowQuadSSI lqs = new LowQuadSSI(newMethod, null);
@@ -97,7 +98,7 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
 
     /**
      * Return the name of this code view.
-     * @return the string <code>"low-quad-ssa"</code>
+     * @return the string <code>"low-quad-ssi"</code>
      */
     public String getName() { return codename; }
 
@@ -105,9 +106,9 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
      * Return a code factory for <code>LowQuadSSI</code>, given a 
      * code factory for <code>QuadSSI</code>.
      * <BR> <B>effects:</B> if <code>hcf</code> is a code factory for
-     *      <code>QuadSSI</code>, then creates and returns a code
-     *      factory for <code>LowQuadSSI</code>.  Else passes
-     *      <code>hcf</code> to
+     *      <code>QuadSSI</code> or <code>LowQuadNoSSA</code>, then
+     *      creates and returns a code factory for <code>LowQuadSSI</code>.
+     *      Else passes <code>hcf</code> to
      *      <code>QuadSSI.codeFactory()</code>, and reattempts to
      *      create a code factory for <code>LowQuadSSI</code> from the
      *      code factory returned by <code>QuadSSI</code>.
@@ -141,8 +142,8 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     }
   
     /**
-     * Return a code factory for <code>LowQuadNoSSA</code>, using the default
-     * code factory for <code>harpoon.IR.LowQuad.Code</code>
+     * Return a code factory for <code>LowQuadSSI</code>, using the default
+     * code factory for <code>harpoon.IR.Quads.QuadSSI</code>
      */
     public static HCodeFactory codeFactory() {  
 	return codeFactory(QuadSSI.codeFactory());
