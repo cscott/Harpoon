@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
 /**
  * An <code>OperVisitor</code> is a visitor pattern for opcodes of the OPER 
  * quad.  By default, all <code>visit_*</code> methods invoke
@@ -16,7 +15,7 @@ import harpoon.ClassFile.*;
  * methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OperVisitor.java,v 1.1.2.2 1998-12-27 21:26:55 cananian Exp $
+ * @version $Id: OperVisitor.java,v 1.1.2.3 1999-01-22 23:06:00 cananian Exp $
  */
 
 public abstract class OperVisitor  {

@@ -3,14 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
 /**
  * <code>Eval</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Eval.java,v 1.1.2.2 1999-01-03 03:01:42 cananian Exp $
+ * @version $Id: Eval.java,v 1.1.2.3 1999-01-22 23:05:59 cananian Exp $
  */
-
 class Eval  {
 
     /** Reference comparison. */

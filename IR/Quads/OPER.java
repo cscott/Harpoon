@@ -8,7 +8,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Hashtable;
 
 import harpoon.Analysis.Maps.ConstMap;
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -24,7 +25,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.1.2.9 1999-01-21 05:20:26 cananian Exp $
+ * @version $Id: OPER.java,v 1.1.2.10 1999-01-22 23:06:00 cananian Exp $
  */
 public class OPER extends Quad {
     /** The <code>Temp</code> in which to store the result of the operation. */

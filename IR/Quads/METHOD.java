@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * (ie, the 1-edge) is the innermost nested try-block.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHOD.java,v 1.1.2.5 1999-01-12 08:50:21 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.6 1999-01-22 23:06:00 cananian Exp $
  * @see HEADER
  * @see HANDLER
  */

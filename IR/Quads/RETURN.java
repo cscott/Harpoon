@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * optional return value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RETURN.java,v 1.1.2.5 1998-12-24 03:23:10 cananian Exp $
+ * @version $Id: RETURN.java,v 1.1.2.6 1999-01-22 23:06:01 cananian Exp $
  */
 public class RETURN extends Quad {
     /** Return value. <code>null</code> if there is no return value. */

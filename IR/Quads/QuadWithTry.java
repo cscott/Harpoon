@@ -1,7 +1,9 @@
 // QuadWithTry.java, created Sat Dec 19 23:55:52 1998 by cananian
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 
 /**
@@ -9,7 +11,7 @@ import harpoon.Util.Util;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.3 1998-12-30 04:33:40 cananian Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.4 1999-01-22 23:06:01 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSA
  */

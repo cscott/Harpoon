@@ -3,7 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.ArrayFactory;
 /**
  * <code>Edge</code> objects connect <code>Quad</code> nodes in the
@@ -13,7 +14,7 @@ import harpoon.Util.ArrayFactory;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.1.2.1 1998-12-01 12:36:42 cananian Exp $
+ * @version $Id: Edge.java,v 1.1.2.2 1999-01-22 23:05:59 cananian Exp $
  */
 
 public class Edge implements HCodeEdge {

@@ -5,7 +5,10 @@ package harpoon.IR.Quads;
 
 import java.lang.reflect.Modifier;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HConstructor;
+import harpoon.ClassFile.HMethod;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -18,7 +21,7 @@ import harpoon.Util.Util;
  * is the first parameter in the <code>params</code> array.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.8 1998-12-28 23:38:54 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.9 1999-01-22 23:05:59 cananian Exp $ 
  */
 public class CALL extends Quad {
     /** The method to invoke. */

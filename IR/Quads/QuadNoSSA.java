@@ -1,7 +1,9 @@
 // QuadNoSSA.java, created Sat Dec 26 01:42:53 1998 by cananian
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 
 /**
@@ -9,7 +11,7 @@ import harpoon.Util.Util;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.2 1998-12-28 23:38:54 cananian Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.3 1999-01-22 23:06:00 cananian Exp $
  * @see QuadWithTry
  * @see QuadSSA
  */

@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * type of a certain array, or boolean <code>false</code> otherwise.<p>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.1.2.6 1999-01-03 03:01:42 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.1.2.7 1999-01-22 23:05:59 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */

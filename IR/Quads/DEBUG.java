@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * <code>DEBUG</code> prints a debugging string to standard error.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DEBUG.java,v 1.1.2.5 1998-12-24 03:23:09 cananian Exp $
+ * @version $Id: DEBUG.java,v 1.1.2.6 1999-01-22 23:05:59 cananian Exp $
  */
 public class DEBUG extends Quad {
     /** The debugging string. */

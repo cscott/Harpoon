@@ -1,7 +1,7 @@
 // QuadFactory.java, created Sun Dec 13 02:13:47 1998 by cananian
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HMethod;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
@@ -12,7 +12,7 @@ import harpoon.Temp.TempFactory;
  * <code>HCode</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadFactory.java,v 1.1.2.6 1999-01-22 22:39:41 cananian Exp $
+ * @version $Id: QuadFactory.java,v 1.1.2.7 1999-01-22 23:06:00 cananian Exp $
  */
 public abstract class QuadFactory  {
     /** Returns the <code>TempFactory</code> to use for <code>Temp</code>

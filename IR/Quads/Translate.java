@@ -3,7 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.Bytecode.Op;
 import harpoon.IR.Bytecode.Operand;
 import harpoon.IR.Bytecode.OpClass;
@@ -38,7 +39,7 @@ import java.util.Vector;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.6 1999-01-03 03:01:42 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.7 1999-01-22 23:06:01 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {

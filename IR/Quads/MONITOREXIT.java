@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * See the JVM spec for details.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MONITOREXIT.java,v 1.1.2.5 1998-12-24 03:23:09 cananian Exp $
+ * @version $Id: MONITOREXIT.java,v 1.1.2.6 1999-01-22 23:06:00 cananian Exp $
  */
 public class MONITOREXIT extends Quad {
     /** The object containing the monitor to be released. */

@@ -3,14 +3,14 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.TempMap;
 
 /**
  * <code>NOP</code> nodes do nothing.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NOP.java,v 1.1.2.4 1998-12-24 03:23:10 cananian Exp $
+ * @version $Id: NOP.java,v 1.1.2.5 1999-01-22 23:06:00 cananian Exp $
  */
 public class NOP extends Quad {
     

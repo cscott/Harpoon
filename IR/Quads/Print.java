@@ -1,7 +1,7 @@
 // Print.java, created Thu Dec 17 17:31:26 1998 by cananian
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Util;
 
 import java.io.PrintWriter;
@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.1.2.5 1998-12-28 23:38:54 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.6 1999-01-22 23:06:00 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to

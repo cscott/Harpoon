@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * They have the form: <code>&lt;t1, t2, ..., tn&gt; = sigma(t0)</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SIGMA.java,v 1.1.2.7 1998-12-27 21:26:55 cananian Exp $
+ * @version $Id: SIGMA.java,v 1.1.2.8 1999-01-22 23:06:01 cananian Exp $
  */
 public abstract class SIGMA extends Quad {
     /** dst[i][j] is the j'th element of the tuple on the left-hand side

@@ -5,7 +5,8 @@ package harpoon.IR.Quads;
 
 import java.lang.reflect.Modifier;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HField;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -15,7 +16,7 @@ import harpoon.Util.Util;
  * The <code>objectref</code> is null if the field is static.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.1.2.5 1998-12-24 03:23:09 cananian Exp $
+ * @version $Id: GET.java,v 1.1.2.6 1999-01-22 23:05:59 cananian Exp $
  */
 public class GET extends Quad {
     /** <code>Temp</code> in which to store the fetched field contents. */

@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Analysis.UseDef;
 import harpoon.Analysis.DomTree;
 import harpoon.Analysis.DomFrontier;
@@ -22,7 +22,7 @@ import java.util.Vector;
  * in the Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FixupFunc.java,v 1.1.2.2 1998-12-17 21:38:36 cananian Exp $
+ * @version $Id: FixupFunc.java,v 1.1.2.3 1999-01-22 23:05:59 cananian Exp $
  * @see Translate
  */
 

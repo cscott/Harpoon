@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>AGET</code> represents an element fetch from an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AGET.java,v 1.1.2.6 1998-12-24 03:23:08 cananian Exp $
+ * @version $Id: AGET.java,v 1.1.2.7 1999-01-22 23:05:58 cananian Exp $
  * @see ANEW
  * @see ASET
  * @see ALENGTH

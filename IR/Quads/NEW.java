@@ -5,7 +5,8 @@ package harpoon.IR.Quads;
 
 import java.lang.reflect.Modifier;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -14,7 +15,7 @@ import harpoon.Util.Util;
  * <code>NEW</code> represents an object creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.1.2.5 1998-12-24 03:23:10 cananian Exp $
+ * @version $Id: NEW.java,v 1.1.2.6 1999-01-22 23:06:00 cananian Exp $
  */
 public class NEW extends Quad {
     /** The <code>Temp</code> in which to store the new object. */

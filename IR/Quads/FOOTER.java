@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.1.2.8 1998-12-27 21:26:55 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.1.2.9 1999-01-22 23:05:59 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW

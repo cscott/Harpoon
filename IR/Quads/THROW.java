@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>THROW</code> represents a <Code>throw</code> statement.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: THROW.java,v 1.1.2.6 1998-12-24 03:23:10 cananian Exp $
+ * @version $Id: THROW.java,v 1.1.2.7 1999-01-22 23:06:01 cananian Exp $
  */
 public class THROW extends Quad {
     /* The exception object to throw. */

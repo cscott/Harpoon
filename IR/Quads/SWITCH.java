@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.1.2.7 1998-12-27 21:26:55 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.1.2.8 1999-01-22 23:06:01 cananian Exp $
  */
 public class SWITCH extends SIGMA {
     /** The discriminant, compared against each value in <code>keys</code>.*/

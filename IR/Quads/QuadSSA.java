@@ -4,7 +4,9 @@
 package harpoon.IR.Quads;
 
 import harpoon.Analysis.QuadSSA.DeadCode;
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 
 /**
@@ -16,7 +18,7 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSA.java,v 1.1.2.4 1998-12-27 21:26:55 cananian Exp $
+ * @version $Id: QuadSSA.java,v 1.1.2.5 1999-01-22 23:06:01 cananian Exp $
  */
 public class QuadSSA extends Code /* which extends HCode */ {
     /** The name of this code view. */

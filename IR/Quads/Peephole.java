@@ -1,7 +1,6 @@
 // Peephole.java, created Sun Dec 27 19:37:24 1998 by cananian
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Set;
@@ -14,7 +13,7 @@ import java.util.Stack;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.4 1998-12-28 23:38:54 cananian Exp $
+ * @version $Id: Peephole.java,v 1.1.2.5 1999-01-22 23:06:00 cananian Exp $
  */
 
 final class Peephole  {

@@ -3,14 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.ClassFile.*;
 /**
  * <code>QuadVisitor</code> is a Design Pattern, courtesy of Martin.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadVisitor.java,v 1.1.2.6 1999-01-03 03:01:42 cananian Exp $
+ * @version $Id: QuadVisitor.java,v 1.1.2.7 1999-01-22 23:06:01 cananian Exp $
  */
-
 public abstract class QuadVisitor  {
     protected QuadVisitor() { }
 
