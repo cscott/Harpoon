@@ -25,6 +25,11 @@ public class Hysteresis extends Node {
 		recurse(i, in, w, h);
 	    }
 	}
+	for (int i=0; i<in.length; i++) {
+	    if (in[i]==64) { /* Get rid of "maybe edges which are left". */
+		in[i]=0;
+	    }
+	} 
 	super.process(id);
     }
     

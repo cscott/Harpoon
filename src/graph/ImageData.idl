@@ -32,6 +32,9 @@ module imagerec
       long id;
       long command;
       long receiverID;
+      float c1;
+      float c2;
+      float c3;
     };
   };
 };

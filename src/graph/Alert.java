@@ -18,7 +18,7 @@ public class Alert extends Node {
     private final CommunicationsAdapter cs;
 
     /** Construct an {@link Alert} node with the default {@link CommunicationsModel}
-     *  and name of server for integration with existing BBN UAV OEP software. 
+     *  and name of server for integration with existing BBN UAV software. 
      *
      *  @param args The argument list given at the command line.
      *              Should include -ORBInitRef NameService=corbaloc::[host]:[port]/NameService
@@ -37,24 +37,23 @@ public class Alert extends Node {
     public Alert(CommunicationsModel cm, String name) {
 	super();
 	try {
-//   	    cs = cm.setupAlertClient(name);
-	    cs = null;
+   	    cs = cm.setupAlertClient(name);
 	} catch (Exception e) {
 	    throw new Error(e);
 	}
     }
 
     /** The <code>process</code> call that results in setting the Alert syscond
-     *  with information from the input image.
+     *  with information from the input image: <code>(c1, c2, c3)</code>
+     *  set with the relative target location.
      *
      *  @param id The input image that contains data for the tracker.
      */
     public synchronized void process(final ImageData id) {
 	(new Thread() {
 	    public void run() {
-		cs.process(id);
+		cs.alert(id.c1, id.c2, id.c3);
 	    }
 	}).start();
     }
-
 }

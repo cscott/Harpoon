@@ -18,7 +18,7 @@ public class Server extends Node {
     private CommunicationsModel cm;
 
     /** Construct a {@link Server} node with <code>name</code> as
-     *  the name registered with the name server.
+     *  the name of the server.
      * 
      *  @param cm a {@link CommunicationsModel} which provides the transport mechanism.
      *  @param name the name of the server.  A {@link Client} will use this name to connect.

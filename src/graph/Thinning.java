@@ -3,19 +3,28 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec.graph;
 
-/** {@link Thinning}
+/** {@link Thinning} is a {@link Node} which reduces lines which are
+ *  more than one pixel thick to lines that are one pixel thick.
  *
- *
- *
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>> 
  */
 public class Thinning extends Node {
-    public static final int iterations = 6;
 
+    /** The number of iterations of thinning to go through. */
+    private static final int iterations = 6;
+
+    /** Construct a {@link Thinning} node.
+     *
+     *  @param out The node that receives thinned images.
+     */
     public Thinning(Node out) {
 	super(out);
     }
 
+    /** Thin the lines in an image. 
+     *
+     *  @param id The image to thin.
+     */
     public synchronized void process(ImageData id) {
 	int changed=1;
 	byte[] in = id.gvals;

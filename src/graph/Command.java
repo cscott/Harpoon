@@ -17,6 +17,9 @@ public class Command extends Node {
     /** This is a request to retrieve an image from the {@link Cache}. */
     public static final int GET_IMAGE = 1;
 
+    /** This is the image returned from a request to a {@link Cache}. */
+    public static final int RETRIEVED_IMAGE = 2;
+
     private int tag;
 
     /** Construct a new {@link Command} node which will tag every image with a command. 

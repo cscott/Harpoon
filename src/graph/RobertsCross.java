@@ -10,13 +10,15 @@ package imagerec.graph;
  */
 
 public class RobertsCross extends Node {
-    /** Construct a new {@link RobertsCross} node that will send images to <code>out</code>.
+    /** Construct a new {@link RobertsCross} node that will send
+     *  images to <code>out</code>.  
      */
     public RobertsCross(Node out) {
 	super(out);
     }
 
-    /** Apply line recognition to an {@link ImageData} and pass the result onto <code>out</code>.
+    /** Apply line recognition to an {@link ImageData} and pass the
+     *  result onto <code>out</code>.  
      */
     public synchronized void process(ImageData id) {
 	int width = id.width;

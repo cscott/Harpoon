@@ -11,6 +11,8 @@ import imagerec.util.ImageDataManip;
  * {@link Command} to the {@link Cache}, and it will send the appropriate 
  * image along the <code>retrieve</code> node.
  *
+ * Use with {@link Command} to tag the retrieved image as retrieved.
+ *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class Cache extends Node {

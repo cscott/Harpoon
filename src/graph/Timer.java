@@ -4,6 +4,10 @@
 package imagerec.graph;
 
 /**
+ * Time the latency of an image passing through the image recognition pipeline
+ * by stamping it with a time and then later reading that time.
+ * Can also keep track of average latency between two points in the pipeline.
+ *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
@@ -13,12 +17,24 @@ public class Timer extends Node {
     private long total = 0;
     private long frames = 0;
 
+    /** Create a new {@link Timer} node which can either stamp or read out 
+     *  the difference between the current time and the time stamp.
+     *
+     *  @param start Whether to start or stop the timer at this {@link Node}.
+     *  @param announce Whether to print to the screen the latency.
+     *  @param out The node to send images to.
+     */
     public Timer(boolean start, boolean announce, Node out) {
 	super(out);
 	this.start = start;
 	this.announce = announce;
     }
 
+    /** Either stamp, or read out the latency of the processing of 
+     *  an image by the pipeline.
+     *
+     *  @param id The image to stamp or read the latency.
+     */
     public synchronized void process(ImageData id) {
 	long time = System.currentTimeMillis();
 	frames++;
@@ -33,11 +49,23 @@ public class Timer extends Node {
 	super.process(id);
     }
 
+    /** Get the total amount of latency in milliseconds of all frames that
+     *  passed through this point. 
+     */
     public long getTotal() {
 	return total;
     }
 
+    /** Get the total number of frames that have passed through this point.
+     */
     public long getFrames() {
 	return frames;
+    }
+
+    /** Get the average latency of frames that have passed through this point
+     *  in seconds.
+     */
+    public synchronized float getLatency() {
+	return ((float)total)/(1000*((float)frames));
     }
 }

@@ -28,4 +28,19 @@ public class CommunicationsAdapter {
     public synchronized void process(ImageData id) {
 	throw new Error("This should be overridden if callable.");
     }
+
+    /** This provides a default implementation of the <code>alert</code> method.
+     *  This is overriden by the {@link CommunicationsAdapter} returned by 
+     *  {@link CommunicationsModel}<code>.setupAlertClient</code>.
+     *
+     *  An alert contains information of the relative location of the target in
+     *  (x,y,z) coordinates.  The system is first calibrated with the object
+     *  placed one meter away.
+     *  
+     *  @param c1 The x coordinate relative to the current location in meters.
+     *  @param c2 The y coordinate relative to the current location in meters.
+     *  @param c3 The z coordinate relative to the current location in meters.
+     */
+    public synchronized void alert(float c1, float c2, float c3) {
+    }
 }
