@@ -12,7 +12,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * attribute in each <code>method_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeCode.java,v 1.6 1998-07-31 07:05:58 cananian Exp $
+ * @version $Id: AttributeCode.java,v 1.7 1998-07-31 11:44:15 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeLineNumberTable
  * @see AttributeLocalVariableTable
@@ -71,7 +71,8 @@ public class AttributeCode extends Attribute {
       attributes[i] = Attribute.read(parent, in);
 
     if (attribute_length != attribute_length())
-      throw new ClassDataException("Code attribute of incorrect length.");
+      throw new ClassDataException("Code attribute of incorrect length" +
+			    "("+attribute_length+"/"+attribute_length()+").");
   }
 
   /** Constructor. */
@@ -95,7 +96,7 @@ public class AttributeCode extends Attribute {
   public long attribute_length() {
     long len = 12 + code_length() + 8*exception_table_length();
     for (int i=0; i < attributes.length; i++)
-      len += attributes[i].attribute_length();
+      len += (6 + attributes[i].attribute_length() );
     return len;
   }
 
