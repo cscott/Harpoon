@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.9 1999-08-23 16:13:28 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.10 1999-08-23 22:45:36 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -801,6 +801,9 @@ public class Jasmin {
 	int j=0;
 	for(int i=0;i<m.params().length;i++) {
 	    stacktemps.put(m.params(i),new TempInfo(j++));
+	    HClass hclass=tp.typeMap(null,m.params(i));
+	    if ((hclass==HClass.Double)||(hclass==HClass.Long))
+		j++;
 	}
 	for (int i=1;i<m.nextLength();i++) {
 	    HANDLER h=(HANDLER)m.next(i);
