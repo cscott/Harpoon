@@ -4,6 +4,8 @@
 
 #include <assert.h>
 
+static void wrapNthrow(JNIEnv *env, char *exclsname);
+
 /*
  * Class:     java_lang_Class
  * Method:    forName
