@@ -15,6 +15,7 @@
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
 #endif
+#include "flexthread.h" /* for stand-alone locks */
 #include "fni-stats.h" /* for stats-related macros */
 
 DECLARE_STATS_EXTERN(heap_current_live_bytes)
@@ -54,15 +55,20 @@ static void heapstats_finalizer(GC_PTR obj, GC_PTR _size_) {
 void *heapstats_alloc(jsize length) {
   void *result;
   stat_t ttl;
+  static int skipped=0;
+  FLEX_MUTEX_DECLARE_STATIC(skipped_lock);
   /* do the allocation & register finalizer */
   result = GC_malloc(length);
   GC_register_finalizer_no_order(result, heapstats_finalizer,
 				 (GC_PTR) ((ptroff_t) length), NULL, NULL);
   /* (sometimes) collect all dead objects */
-  if (0 == (FETCH_STATS(heap_total_alloc_count) % GC_FREQUENCY) &&
-      (FETCH_STATS(heap_current_live_bytes)+length)
-      > FETCH_STATS(heap_max_live_bytes))
-    GC_gcollect();
+  FLEX_MUTEX_LOCK(&skipped_lock);
+  if (skipped || 0 == (FETCH_STATS(heap_total_alloc_count) % GC_FREQUENCY))
+    if ((FETCH_STATS(heap_current_live_bytes)+length)
+	> FETCH_STATS(heap_max_live_bytes)) {
+      GC_gcollect(); skipped = 0;
+    } else skipped = 1;
+  FLEX_MUTEX_UNLOCK(&skipped_lock);
   /* update total and current live */
   INCREMENT_STATS(heap_total_alloc_count, 1);
   INCREMENT_STATS(heap_total_alloc_bytes, length);
