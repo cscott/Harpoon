@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.27 $)dnl
+AC_REVISION($Revision: 1.28 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -147,6 +147,17 @@ none)	AC_MSG_RESULT([no garbage collection])
 	;;
 esac
 AM_CONDITIONAL(PRECISE_GC, test $gc_type = precise)
+
+dnl experimental support for clustered heaps.
+AC_MSG_CHECKING([for experimental clustered heap support])
+AC_ARG_WITH(clustered-heaps,
+[  --with-clustered-heaps build experimental clustered heap support],
+with_clustered_heaps=yes
+AC_DEFINE(WITH_CLUSTERED_HEAPS, 1,
+    [Define if you want to build the experimental clustered heap support]),
+with_clustered_heaps=no)
+AC_MSG_RESULT($with_clustered_heaps)
+AM_CONDITIONAL(CLUSTERED_HEAPS, test $with_clustered_heaps = yes)
 
 dnl set up dmalloc.  Last because gcc-based tests won't work after we add
 dnl -ldmalloc to LIBS (because $(prefix) isn't set during autoconf).

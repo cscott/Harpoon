@@ -30,12 +30,9 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     /* all data in inflated_oobj is managed manually, so we can use malloc */
     struct inflated_oobj *infl = malloc(sizeof(*infl));
     /* initialize infl */
+    memset(infl, 0, sizeof(*infl));
     infl->hashcode = obj->hashunion.hashcode;
-    infl->jni_data = NULL;
-    infl->jni_cleanup_func = NULL;
 #ifdef WITH_HEAVY_THREADS
-    infl->tid = 0;
-    infl->nesting_depth = 0;
     pthread_mutex_init(&(infl->mutex), NULL);
     pthread_cond_init(&(infl->cond), NULL);
     pthread_rwlock_init(&(infl->jni_data_lock), NULL);
@@ -65,7 +62,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 static void deflate_object(GC_PTR obj, GC_PTR client_data) {
     struct oobj *oobj = (struct oobj *) obj;
     struct inflated_oobj *infl = oobj->hashunion.inflated;
-    printf("Deflating object %p\n", oobj);
+    printf("Deflating object %p (clazz %p)\n", oobj, oobj->claz);
     /* okay, first invoke java finalizer.  afterwards this object
      * *should* be dead, but the java finalizer might resurrect it.
      * we don't behave well in this case. */
@@ -75,6 +72,12 @@ static void deflate_object(GC_PTR obj, GC_PTR client_data) {
      * JNI data */
     if (infl->jni_cleanup_func)
 	(infl->jni_cleanup_func)(infl->jni_data);
+    /* deallocate clustered heap */
+#ifdef WITH_CLUSTERED_HEAPS
+    /* just zero-out -- let the GC take care of freeing it */
+    infl->heap_start = infl->heap_top = NULL;
+    infl->heap_size = 0;
+#endif
     /* okay deallocate mutexes, etc. */
 #ifdef WITH_HEAVY_THREADS
     pthread_mutex_destroy(&(infl->mutex));
