@@ -13,6 +13,10 @@ import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.LightRelation;
 import harpoon.Util.DataStructs.RelationEntryVisitor;
 
+import harpoon.Util.Graphs.SCComponent;
+import harpoon.Util.Graphs.Navigator;
+import harpoon.Util.Graphs.ReverseNavigator;
+import harpoon.Util.Graphs.SCCTopSortedGraph;
 
 /**
  * <code>MetaCallGraph</code> is for meta methods what <code>callGraph</code>
@@ -20,40 +24,84 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  methods are called by a given meta method [at a specific call site].
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraph.java,v 1.3 2003-04-19 01:16:12 salcianu Exp $
+ * @version $Id: MetaCallGraph.java,v 1.4 2003-04-30 21:24:44 salcianu Exp $
  */
 
-public interface MetaCallGraph extends java.io.Serializable {
+public abstract class MetaCallGraph implements java.io.Serializable {
     
     /** Returns the meta methods that can be called by <code>mm</code>. */
-    public MetaMethod[] getCallees(MetaMethod mm);
+    public abstract MetaMethod[] getCallees(MetaMethod mm);
     
     /** Returns the meta methods that can be called by <code>mm</code>
 	at the call site <code>q</code>. */
-    public MetaMethod[] getCallees(MetaMethod mm, CALL cs);
+    public abstract MetaMethod[] getCallees(MetaMethod mm, CALL cs);
 
     /** Returns the set of all the call sites in the code of the meta-method
 	<code>mm</code>. */
-    public Set getCallSites(MetaMethod mm);
+    public abstract Set getCallSites(MetaMethod mm);
     
     /** Returns the set of all the meta methods that might be called during the
 	execution of the program. */
-    public Set getAllMetaMethods();
+    public abstract Set getAllMetaMethods();
 
     /** Returns the set of all the meta methods that might be called, directly
 	or indirectly, by the meta method <code>mm</code>. It's just the
 	transitive closure of the <code>getCallees</code> method. */
-    public Set getTransCallees(MetaMethod mm);
+    public abstract Set getTransCallees(MetaMethod mm);
 
     /** Computes the <i>split</i> relation. This is a <code>Relation</code>
 	that associates to each <code>HMethod</code> the set of
 	<code>MetaMethod</code>s specialized from it. */
-    public Relation getSplitRelation();
+    public abstract Relation getSplitRelation();
 
     /** Returns the set of the meta-methods that could be called as the 
 	body of some thread. */
-    public Set getRunMetaMethods();
+    public abstract Set getRunMetaMethods();
 
     /** Nice pretty-printer for debug purposes. */
-    public void print(PrintStream ps, boolean detailed_view, MetaMethod root);
+    public abstract void print(PrintStream ps, boolean detailed_view,
+			       MetaMethod root);
+
+
+    /** Returns a bi-directional top-down graph navigator through
+        <code>this</code> meta-callgraph. */
+    private Navigator getTopDownNavigator() {
+	final MetaAllCallers mac = new MetaAllCallers(this);
+	
+	return new Navigator() {
+	    public Object[] next(Object node) {
+		return getCallees((MetaMethod) node);
+	    }  
+	    public Object[] prev(Object node) {
+		return mac.getCallers((MetaMethod) node);
+	    }
+	};
+    }
+
+
+    /** Constructs a top-down topologically sorted view of
+	<code>this</code> meta-callgraph.  It starts with the strongly
+	connected component for the main method and ends with the
+	strongly connected components for the leaf methods. */
+    public SCCTopSortedGraph getTopDownSortedView() {
+	Set/*<MetaMethod>*/ allmms = getAllMetaMethods();
+	return
+	    SCCTopSortedGraph.topSort
+	    (SCComponent.buildSCC
+	     (allmms.toArray(new Object[allmms.size()]),
+	      getTopDownNavigator()));
+    }
+
+    /** Constructs a bottom-up topologically sorted view of
+	<code>this</code> meta-callgraph.  It starts with the strongly
+	connected components for the leaf methods and ends with the
+	strongly connected components for the main methods. */
+    public SCCTopSortedGraph getBottomUpSortedView() {
+	Set/*<MetaMethod>*/ allmms = getAllMetaMethods();
+	return
+	    SCCTopSortedGraph.topSort
+	    (SCComponent.buildSCC
+	     (allmms.toArray(new Object[allmms.size()]),
+	      new ReverseNavigator(getTopDownNavigator())));
+    }
 }

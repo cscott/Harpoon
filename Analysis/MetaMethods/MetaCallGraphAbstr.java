@@ -21,13 +21,12 @@ import harpoon.Util.DataStructs.RelationImpl;
 import harpoon.Util.DataStructs.RelationEntryVisitor;
 
 /**
- * <code>MetaCallGraphAbstr</code> Abstract implementation of the
- <code>MetaCallGraph</code> interface.
+ * <code>MetaCallGraphAbstr</code> Map based abstract
+ * <code>MetaCallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphAbstr.java,v 1.4 2003-04-19 01:16:12 salcianu Exp $
- */
-public abstract class MetaCallGraphAbstr implements MetaCallGraph {
+ * @version $Id: MetaCallGraphAbstr.java,v 1.5 2003-04-30 21:24:44 salcianu Exp $ */
+public abstract class MetaCallGraphAbstr extends MetaCallGraph {
     // Map<MetaMethod,MetaMethod[]>
     protected final Map callees1_cmpct = new HashMap();
     // Map<MetaMethod,Map<CALL,MetaMethod[]>>
@@ -36,7 +35,7 @@ public abstract class MetaCallGraphAbstr implements MetaCallGraph {
     private final MetaMethod[] empty_array = new MetaMethod[0];
 
     /** Returns the meta methods that can be called by <code>mm</code>. */
-    public MetaMethod[] getCallees(MetaMethod mm){
+    public MetaMethod[] getCallees(MetaMethod mm) {
 	MetaMethod[] retval = (MetaMethod[]) callees1_cmpct.get(mm);
 	if(retval == null)
 	    retval = empty_array;
@@ -45,7 +44,7 @@ public abstract class MetaCallGraphAbstr implements MetaCallGraph {
 
     /** Returns the meta methods that can be called by <code>mm</code>
 	at the call site <code>q</code>. */
-    public MetaMethod[] getCallees(MetaMethod mm, CALL cs){
+    public MetaMethod[] getCallees(MetaMethod mm, CALL cs) {
 	Map map = (Map) callees2_cmpct.get(mm);
 	if(map == null)
 	    return new MetaMethod[0];
