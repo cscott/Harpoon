@@ -7,11 +7,14 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.Temp.Temp;
+import harpoon.Util.Collections.SetFactory;
 import harpoon.Util.Collections.BitSetFactory;
+import harpoon.Util.Collections.Factories;
 import harpoon.Util.Util;
 import harpoon.Util.Default;
 import harpoon.Util.Worklist;
 import harpoon.Util.WorkSet;
+import harpoon.Util.Indexer;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.TYPECAST;
 
@@ -22,6 +25,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.ListIterator;
 import java.util.Set;
 
@@ -29,7 +33,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.11 2000-11-10 19:54:12 cananian Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.12 2000-11-14 22:51:33 pnkfelix Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -37,7 +41,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 
     // produces Set<Pair<Temp:t, HCodeElement:h>> where `h' is 
     // a definition point for `t' 
-    final protected BitSetFactory bsf;
+    final protected SetFactory bsf;
     
     // maps Temp:t -> Set:d where `bsf'-produced `d' contains all (t,x) 
     final protected Map tempToAllDefs;
@@ -69,7 +73,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	<code>CFGrapher</code> and <code>UseDefer</code>. This may
 	take a while since the analysis is done at this time.
     */
-    public ReachingDefsAltImpl(HCode hc, CFGrapher cfger, UseDefer ud) {
+    public ReachingDefsAltImpl(final HCode hc, CFGrapher cfger, final UseDefer ud) {
 	super(hc);
 	this.cfger = cfger;
 	this.bbf = new BasicBlock.Factory(hc, cfger);
@@ -77,24 +81,145 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	// sometimes, TYPECAST need to be treated specially
 	check_typecast = 
 	    hc.getName().equals(harpoon.IR.Quads.QuadNoSSA.codename);
-	report("Entering analyze()");
-	tempToAllDefs = getDefPts();
+	report("Entering analyze() ");
+
+	final DefPtRecord dpr = getDefPts();
+	tempToAllDefs = dpr.tempToPairs;
 	
+	// System.out.print("constucting universe");
 	Iterator pairsets = tempToAllDefs.values().iterator();
-	Set universe = new HashSet();
+	Set universe = new HashSet(tempToAllDefs.values().size());
+	int totalsz = 0, numsets = 0, totsqsz = 0;
 	while(pairsets.hasNext()) {
-	    universe.addAll((Set)pairsets.next());
+	    Set pairset = (Set) pairsets.next();
+	    universe.addAll(pairset);
+
+	    totalsz += pairset.size(); 
+	    totsqsz += (pairset.size()*pairset.size());
+	    numsets++;
+	}
+	
+
+	report(" totalsz:"+totalsz +" totsqsz:"+totsqsz +
+	       " numsets:"+numsets +" mean sz:"+(totalsz/numsets));
+	report(" numblks:"+bbf.blockSet().size()+
+	       " numtmps:"+tempToAllDefs.keySet().size());
+	final int meanSize = totalsz / numsets;
+
+	universe = new harpoon.Util.Collections.LinearSet(universe);
+	final int unisize = universe.size();
+	report("constucting AugmentedSetFactory");
+
+	final BitSetFactory bitSetFact = new BitSetFactory(universe);
+	class AugSet extends java.util.AbstractSet { 
+	    boolean bitSetRep;
+	    Set bSet;
+	    
+	    // FSK:  maybe change to add HashSets for medium size
+	    // (O(size-of-set) vs O(size-of-universe)
+
+	    public AugSet(Collection c){ this(c, (c.size() > unisize/10000));}
+	    public AugSet(Collection c, boolean useBitSetRep) {
+		if (useBitSetRep) {
+		    bitSetRep = true;
+		    if (c instanceof AugSet) {
+			// System.out.print("AB_");
+			bSet = bitSetFact.makeSet( ((AugSet)c).bSet ); 
+			// System.out.print(size());
+		    } else {
+			// System.out.print("SB_");
+			bSet = bitSetFact.makeSet(c);
+			// System.out.print(size());
+		    }
+		} else {
+		    bitSetRep = false;
+		    // System.out.print("SL_");
+		    bSet = Factories.linearSetFactory.makeSet(c); 
+		    // System.out.print(size());
+		}
+	    }
+	    public boolean equals(Object o) {
+		if (o instanceof AugSet) {
+		    return bSet.equals( ((AugSet)o).bSet );
+		} else {
+		    return super.equals(o);
+		}
+	    }
+	    public int size() { return bSet.size(); }
+	    public Iterator iterator() { return bSet.iterator(); }
+	    public void clear() { bSet.clear(); }
+	    public boolean add(Object o) { return mayConvert(bSet.add(o)); }
+	    public boolean remove(Object o){return mayConvert(bSet.remove(o));}
+	    public boolean addAll(Collection c) { 
+		boolean b;
+		mayConvert(c.size() + bSet.size());
+		if (c instanceof AugSet) {
+		    // System.out.print("AU_");
+		    b = bSet.addAll( ((AugSet)c).bSet );
+		    // System.out.print(size());
+		} else {
+		    // System.out.print("SU_");
+		    b = bSet.addAll(c); 
+		    // System.out.print(size());
+		} 
+		mayConvert();
+		return b; 
+	    }
+	    public boolean removeAll(Collection c) {
+		return ((c instanceof AugSet) ?
+			bSet.removeAll(((AugSet)c).bSet):
+			bSet.removeAll(c));
+	    }
+	    public boolean retainAll(Collection c) {
+		return ((c instanceof AugSet) ?
+			bSet.retainAll(((AugSet)c).bSet):
+			bSet.retainAll(c));
+	    }
+	    
+	    // macro to prettify other code
+	    private boolean mayConvert(boolean b) {mayConvert(); return b;}
+	    private void mayConvert() { mayConvert(this.size()); }
+	    private void mayConvert(int sz) {
+		if (bitSetRep) {
+		    if (sz < unisize / 10000) {
+			// switch to tight rep
+			bitSetRep = false;
+			// System.out.print("bl_");
+			bSet = Factories.linearSetFactory.makeSet(this);
+			// System.out.print(size());
+		    } 
+
+		} else {
+		    if (sz > unisize / 1000 ) {
+			// switch to bitset rep
+			bitSetRep = true;
+			// System.out.print("lb_");
+			bSet = bitSetFact.makeSet(this);
+			// System.out.print(size());
+		    }
+		}
+	    }
+	    
 	}
 
-	bsf = new BitSetFactory(universe);
+	bsf = new SetFactory() {
+		public Set makeSet(Collection c) {
+		    return new AugSet(c);
+		}
+	    };
 
-	// replace HashSets with BitSets in tempToAllDefs.values()
-	Iterator ts = tempToAllDefs.keySet().iterator();
-	while(ts.hasNext()) {
-	    Object t = ts.next();
-	    tempToAllDefs.put(t, bsf.makeSet((Set)tempToAllDefs.get(t)));
+	if (true) {
+	    report("s/HashSet/AugSet/");
+	    // replace HashSets with AugSets in tempToAllDefs.values()
+	    Iterator ts = tempToAllDefs.keySet().iterator();
+	    while(ts.hasNext()) {
+		Object t = ts.next();
+		Set pairs = (Set) tempToAllDefs.get(t);
+		tempToAllDefs.put(t, bsf.makeSet(pairs));
+	    }
 	}
 
+	report("performing analysis");
 	analyze(tempToAllDefs);
 	report("Leaving analyze()");
 
@@ -180,12 +305,12 @@ public class ReachingDefsAltImpl extends ReachingDefs {
     // do analysis
     private void analyze(Map Temp_To_Pairs) {
 	// build Gen and Kill sets
-	// report("Entering buildGenKillSets()");
+	report("Entering buildGenKillSets()");
 	buildGenKillSets(Temp_To_Pairs);
 	// report("Leaving buildGenKillSets()");
 
 	// solve for fixed point
-	// report("Entering solve()");
+	report("Entering solve()");
 	solve();
 	// report("Leaving solve()");
 	// store only essential information
@@ -196,10 +321,26 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	}
     }
 
-    // create a mapping of Temps to a Set of (t, defPt) Pairs 
-    private Map getDefPts() {
-	Map m = new HashMap();
-	for(Iterator it=hc.getElementsI(); it.hasNext(); ) {
+    class DefPtRecord {
+	// Temp -> Set of Pair< Temp, Defpt > >
+	private HashMap tempToPairs;
+	// List of Pair< Temp, Defpt > 
+	private ArrayList defpts;
+	DefPtRecord(int mapsz) {
+	    tempToPairs = new HashMap(mapsz);
+	    defpts = new ArrayList();
+	}
+    }
+
+    // create a mapping of Temps to a Set of (t, defPt) Pairs, 
+    // as well as a list of defPts defining more than one Temp. 
+    // (the latter is to allow a more efficient indexer definition. 
+    private DefPtRecord getDefPts() {
+	List hceL = hc.getElementsL();
+	DefPtRecord dpr = new DefPtRecord(hceL.size());
+	Map m = dpr.tempToPairs;
+	List multDefns = dpr.defpts;
+	for(Iterator it=hceL.iterator(); it.hasNext(); ) {
 	    HCodeElement hce = (HCodeElement)it.next();
 	    StringBuffer strbuf = new StringBuffer();
 	    Temp[] tArray = null;
@@ -224,10 +365,13 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 		    m.put(t, defPts);
 		}
 		// add this definition point
-		defPts.add(Default.pair(t,hce));
-		
+		List pair = Default.pair(t,hce);
+		defPts.add(pair);
+		if (tArray.length > 1) {
+		    multDefns.add(pair);
+		}
 	    }
-	    if (DEBUG) {
+	    if (false && DEBUG) {
 		Collection col = ud.useC(hce);
 		if (!col.isEmpty()) strbuf.append("\nUSES: ");
 		for(Iterator it2 = col.iterator(); it2.hasNext(); )
@@ -236,25 +380,19 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 		    report(strbuf.toString());
 	    }
 	}
-	if (DEBUG) {
+	if (false && DEBUG) {
 	    StringBuffer strbuf2 = 
 		new StringBuffer("Have entry for Temp(s): ");
 	    for(Iterator keys = m.keySet().iterator(); keys.hasNext(); )
 		strbuf2.append(keys.next()+" ");
 	    report(strbuf2.toString());
 	}
-	return m;
+	return dpr;
     }
 
-    // makes the singleton set { (t,h) }
-    private Set makeSet(Temp t, HCodeElement h) {
-	Set s = bsf.makeSet();
-	List p = Default.pair(t, h);
-	s.add(p);
-	return s;
-    }
     final class Record {
 	Set IN, OUT, GEN, KILL;
+	boolean haveSeen = false;
 	Record() {
 	    IN = bsf.makeSet();
 	    OUT = bsf.makeSet();
@@ -281,10 +419,11 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 		    tArray = ud.def(hce);
 		for(int i=0; i < tArray.length; i++) {
 		    Temp t = tArray[i];
-		    bitSets.GEN.addAll(makeSet(t, hce));
+		    Object def = Default.pair(t, hce);
+		    bitSets.GEN.add(def);
 		    Set kill = bsf.makeSet((Set)Temp_To_Pairs.get(t));
-		    kill.remove(hce);
-		    bitSets.KILL.addAll(bsf.makeSet(kill));
+		    kill.remove(def);
+		    bitSets.KILL.addAll(kill);
 		}
 	    }
 	}
@@ -293,20 +432,21 @@ public class ReachingDefsAltImpl extends ReachingDefs {
     // given a BasicBlock -> Record map
     private void solve() {
 	int revisits = 0;
-	Set blockSet = bbf.blockSet();
 	WorkSet worklist;
-	if (true) {
-	    worklist = new WorkSet(blockSet.size());
-	    Iterator iter = bbf.postorderBlocksIter();
-	    while(iter.hasNext()) {
-		worklist.push(iter.next());
-	    }
-	} else {
-	    worklist = new WorkSet(blockSet);
+
+	worklist = new WorkSet(bbf.blockSet().size());
+	Iterator iter = bbf.postorderBlocksIter();
+	while(iter.hasNext()) {
+	    worklist.addFirst(iter.next());
 	}
 
 	while(!worklist.isEmpty()) {
-	    BasicBlock b = (BasicBlock)worklist.pull();
+	    // System.out.print(worklist.size() + " ");
+	    
+	    // FSK is unsure of these changes (11/13/2000)
+	    // BasicBlock b = (BasicBlock)worklist.pull();
+	    BasicBlock b = (BasicBlock)worklist.removeFirst();
+	    
 	    revisits++;
 	    // get all the bitSets for this BasicBlock
 	    Record bitSet = (Record)cache.get(b);
@@ -318,24 +458,39 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 		Record pBitSet = (Record) cache.get(pred);
 		bitSet.IN.addAll(pBitSet.OUT); // union
 	    }
+
+	    // FSK is unsure of these changes (11/13/2000)
+	    if (bitSet.haveSeen && oldIN.equals(bitSet.IN)) {
+		// OUT is a function of IN, so if, by some miracle, IN
+		// has not changed, we continue
+		// System.out.print(" MIRACLE! ");
+		continue;
+	    }
+
 	    oldOUT = bitSet.OUT; // keep old out Set
 	    bitSet.OUT = bsf.makeSet(bitSet.IN);
 	    bitSet.OUT.removeAll(bitSet.KILL);
 	    bitSet.OUT.addAll(bitSet.GEN);
-	    if (oldIN.equals(bitSet.IN) && oldOUT.equals(bitSet.OUT))
+	    bitSet.haveSeen = true;
+
+	    // FSK is unsure of these changes (11/13/2000)
+	    // if (oldIN.equals(bitSet.IN) && oldOUT.equals(bitSet.OUT))
+	    if (oldOUT.equals(bitSet.OUT)) {
+		// System.out.print(" GIFT! ");
 		continue;
+	    }
 	    for(Iterator succs=b.nextSet().iterator();succs.hasNext();){
 		Object block = (BasicBlock)succs.next();
-		worklist.push(block);
+		worklist.addLast(block);
 	    }
 	}
-	if (TIME) System.out.print("(r:"+revisits+"/"+blockSet.size()+")");
+	if (TIME) System.out.print("(r:"+revisits+"/"+bbf.blockSet().size()+")");
 
     }
     // debugging utility
     private static final boolean DEBUG = false;
     private void report(String str) {
-	if (DEBUG) System.out.println(str);
+	if (DEBUG) System.out.println(str+" "+new java.util.Date());
     }
 
 }
