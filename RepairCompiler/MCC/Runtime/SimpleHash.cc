@@ -334,7 +334,7 @@ int SimpleHash::count(int key) {
 }
 
 SimpleHash * SimpleHash::imageSet(int key) {
-  SimpleHash * newset=new SimpleHash(count(key));
+  SimpleHash * newset=new SimpleHash(2*count(key)+4);
   unsigned int hashkey = (unsigned int)key % size;
   
   struct SimpleNode *ptr = bucket[hashkey];
