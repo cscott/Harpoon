@@ -46,7 +46,7 @@ import harpoon.Temp.Temp;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.6 2002-12-01 06:28:02 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.7 2002-12-02 17:12:23 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -102,11 +102,20 @@ public abstract class PreallocOpt {
 	for each compatibility class found by the analysis.
 
 	@param linker linker used to get classes
+
 	@param hcf initial code factory; it has to be convertible to a
 	QuadSSI code factory.
+
 	@param ch class hierarchy for the program
+
 	@param mainM main method of the program
+
 	@param roots set of roots
+
+	@param as allocation (dynamic) statistics; if
+	non-<code>null</code>, the method executes the
+	<code>Incompatibility Analysis</code>, prints some static and
+	dynamic statistics.
 
 	@return QuadSSI code factory; it produces <code>Code</code>s
 	where allocation sites that can be pre-allocated have the
@@ -125,22 +134,22 @@ public abstract class PreallocOpt {
 	CachingCodeFactory hcf_ssi = 
 	    new CachingCodeFactory(QuadSSI.codeFactory(hcf_nossa), true);
 
+	MetaCallGraphImpl.COLL_HACK = true;
+	CallGraph cg = buildCallGraph(linker, hcf_nossa, ch, roots);
+
 	// execute Ovy's analysis
 	IncompatibilityAnalysis ia = 
-	    new IncompatibilityAnalysis
-	    (mainM, hcf_ssi,
-	     buildCallGraph(linker, hcf_nossa, ch, roots));
-
-	// restore flag (the backend crashes without this ...)
-	QuadSSI.KEEP_QUAD_MAP_HACK = OLD_FLAG;
+	    new IncompatibilityAnalysis(mainM, hcf_ssi, cg);
 
 	if(as != null) {
 	    IAStatistics.printStatistics
 		(ia, as,
-		 AllocationStatistics.getAllocs(ch.callableMethods(),
+		 AllocationStatistics.getAllocs(cg.callableMethods(),
 						hcf_nossa));
-	    System.exit(1);
 	}
+
+	// restore flag (the backend crashes without this ...)
+	QuadSSI.KEEP_QUAD_MAP_HACK = OLD_FLAG;
 
 	prealloc_field2classes = new HashMap();
 	addFields(linker, ia, hcf_nossa, PreallocOpt.prealloc_field2classes);
@@ -154,9 +163,19 @@ public abstract class PreallocOpt {
 	    hcf.getCodeName().equals(QuadNoSSA.codename) ?
 	    hcf : QuadNoSSA.codeFactory(hcf);
 
-	return (hcf_nossa instanceof CachingCodeFactory) ?
-	    (CachingCodeFactory) hcf_nossa :
-	    new CachingCodeFactory(hcf_nossa, true);
+	return 
+	    ((hcf_nossa instanceof SafeCachingCodeFactory) ?
+	     (SafeCachingCodeFactory) hcf_nossa :
+	     new SafeCachingCodeFactory(hcf_nossa, true));
+    }
+
+
+    // essentially a CachingCodeFactory that ignores all calls to clear()
+    public static class SafeCachingCodeFactory extends CachingCodeFactory {
+	public SafeCachingCodeFactory(HCodeFactory hcf, boolean saveCode) {
+	    super(hcf, saveCode);
+	}
+	public void clear(HMethod m)    { /* ignore */ }
     }
 
 
