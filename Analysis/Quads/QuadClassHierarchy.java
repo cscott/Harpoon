@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 /**
  * <code>QuadClassHierarchy</code> computes a <code>ClassHierarchy</code>
  * of classes possibly usable starting from some root method using
@@ -26,13 +25,13 @@ import java.util.TreeSet;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.4 1999-10-14 22:08:14 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.5 1999-10-14 22:19:13 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     implements java.io.Serializable {
     private Map children = new HashMap();
-    private Set methods = new TreeSet(); // sorted for niceness
+    private Set methods = new HashSet();
 
     /** Returns set of all callable methods. 
 	@return <code>Set</code> of <code>HMethod</code>s.
