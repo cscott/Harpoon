@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.1 1998-09-08 14:31:21 cananian Exp $
+% $Id: quads.tex,v 1.2 1998-09-08 14:32:01 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn]{article}
 
@@ -9,12 +9,12 @@
 
 \author{C.~Scott~Ananian}
 \title{\Harpoon\ Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.1 $ $}
+\date{\today \\ $ $Revision: 1.2 $ $}
 
 % PDF-friendly fonts:
-%\renewcommand{\rmdefault}{ptm}
-%\renewcommand{\sfdefault}{phv}
-%\renewcommand{\ttdefault}{pcr}
+\renewcommand{\rmdefault}{ptm}
+\renewcommand{\sfdefault}{phv}
+\renewcommand{\ttdefault}{pcr}
 
 \newcommand{\phifunction}{$\phi$-function}
 
@@ -30,11 +30,11 @@ be easier to analyze and manipulate than bytecode assembly language.
 The intermediate representation is control-flow-graph structured, with
 all control flow explicit.  It is also maximally factored and in
 static single assignment (SSA) form.  Internally the intermediate
-representation (henceforth, ``IR'') is known as ``QuadSSA,'' referring
+representation is known as ``QuadSSA,'' referring
 to its derivation from quadruple-style IRs and its SSA form.
 
 \subsection{Quadruples}
-Unlike expression-tree structures intermediate representations, where
+Unlike expression-tree structured intermediate representations, where
 every operand can optionally be the root of an expression, quadruple
 representations are flat.  The ``typical'' statement is of the form
 $a \leftarrow b \oplus c$; the name \textit{quadruple} comes from the fact
@@ -42,12 +42,12 @@ that there are four components ($a$, $b$, $c$, $\oplus$)
 \cite{appel:modern}.\footnote{We use $\oplus$ to stand for an arbitrary
 binary operator.}  Obviously an IR expressive enough to represent the
 entire Java language needs more than a four component operation
-statement, however, we have attempted to retain the atomic simplicity
+statement, but we have attempted to retain the atomic simplicity
 of the quadruple form.
 
 \subsection{Static Single-Assignment Form}
 
-Quoting from \cite{appel:modern}:
+Quoting from Appel in \cite{appel:modern}:
 \begin{quote}
 Many dataflow analyses need to find the use-sites of each defined
 variable, or the definition-sites of each variable used in an
@@ -69,7 +69,7 @@ An example of the use of SSA form is shown in figure \ref{fig:ssa1}.
 Simple variable renaming suffices to transform straight-line code into
 SSA form.  Subscripts are used to emphasize the relationship of the
 renamed variables to the original variables.  A benefit of SSA form
-obvious from the example is that unrelated uses of the same variable
+which is obvious from the example is that unrelated uses of the same variable
 in the source program ($\tt i_1$, $\tt i_2$) become different
 variables in the SSA form, eliminating false dependencies.
 
@@ -88,7 +88,7 @@ $\tt \ldots$    && $\tt \ldots$ \\
 \label{fig:ssa1}
 \end{figure}
 
-SSA form becomes more complex when we move from straight-line code to
+SSA form becomes more complex when we
 introduce branches and loops.  Figure \ref{fig:ssa2} shows the
 necessary transformation.  You will notice the introduction of
 \textit{phi functions} at locations where control flow merges.  The
@@ -98,7 +98,7 @@ based on the control flow path used to reach it.  Note that, although
 (due to their magical properties), they can be replaced by \texttt{move}
 instructions along each control flow edge leading to the
 \phifunction{}.  Doing so violates the static single assignment
-constraints, but leads to executable code.
+constraints, but leads to code executable by real processors.
 
 Unless you are implementing code generator backends, it is unlikely
 you will need to so replace \phifunction{s} or view them as anything
@@ -121,7 +121,7 @@ $\tt \ldots$    && $\tt \ldots$ \\
 \label{fig:ssa2}
 \end{figure}
 
-You will find that analysis, transformation, and optimization of the
+Analysis, transformation, and optimization of the
 IR is simplified by its SSA form.
 In addition, the QuadSSA form is \textit{maximally factored}.
 Constants are not allowed as quadruple operands (except for a special
@@ -157,7 +157,7 @@ pointer and array bounds checks are inserted before object and array
 references, and division by zero is explicitly checked before every
 division operation.  These explicit and comprehensive checks are
 intended to be targeted by agressive optimizations designed to
-removed those checks with are redundant, impossible, or otherwise
+removed those cases with are redundant, impossible, or otherwise
 unnecessary.  The design goal of the IR is that \textit{no} IR
 statement should throw an implicit exception under any 
 circumstance.\footnote{This goal is actual impossible for the java
@@ -177,11 +177,13 @@ exception return value can then be added after the \texttt{call}
 statement, and control-flow made explicit as with the other IR
 operations.  The \texttt{throw} statement in the IR is thus stripped
 of its special meaning and becomes simply an alternate \texttt{return}
-statement for the exception return value.
+statement for the exception return value.\footnote{Try, catch, and
+finally blocks are, of course, taken into consideration when a
+bytecode \texttt{athrow} is translated to an IR \texttt{THROW}.}
 
 \section{Implementation Details}
 
-The IR described in these notes is defined in the java package
+The IR described in these notes is defined in the Java package
 \texttt{harpoon.IR.QuadSSA}.  The \texttt{harpoon.IR.QuadSSA.Code}
 class provides a means to access the QuadSSA form of a given method;
 see the definition of superclass \texttt{harpoon.ClassFile.HCode} and
@@ -192,7 +194,7 @@ doubly-linked to enable both forward and reverse traversal of the
 control-flow graph.  The parent class \texttt{Quad} contains the
 graph-oriented methods of the objects.  Its superinterface
 \texttt{harpoon.ClassFile.HCodeElement} defines standard methods to
-get object ID numbers and source file information for debugging which
+get object ID numbers and source file information which
 ought to be implemented for elements of any intermediate representation.
 An enumeration of
 \texttt{Quad} types and their uses is provided in figure
@@ -205,12 +207,12 @@ information on the assignment of method arguments to compiler
 temporary variables at the start of method code.
 
 \begin{figure}[!p]
-\begin{tabular}{p{1in}p{5in}} 
+\begin{tabular}{p{1.25in}p{4.5in}} 
 \small\bf Class Name & \small\bf Description \\ \hline
-\tt HEADER & Dummy start node for control-flow graph.\\
-\tt METHODHEADER & Same as \texttt{HEADER}, but with additional 
+\tt HEADER & Start node for control-flow graph.  Performs no operation.\\
+\tt METHODHEADER & Subclass of \texttt{HEADER} with additional 
                    method-argument information.\\
-\tt FOOTER & Dummy end node for control-flow graph.\\ \hline
+\tt FOOTER & End node for control-flow graph.  Performs no operation.\\ \hline
 \tt AGET & Fetch from an indexed array element.\\
 \tt ALENGTH & Access the length of an array. \\
 \tt ANEW & Create a new array object (uninitialized). \\
