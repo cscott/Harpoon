@@ -4,6 +4,7 @@
 package harpoon.IR.Quads;
 
 import harpoon.Analysis.Place;
+import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
@@ -31,7 +32,7 @@ import java.util.Stack;
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.6 1999-11-30 05:25:04 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.7 2000-01-31 15:03:26 cananian Exp $
  */
 class SSIRename {
     private static final boolean sort_phisig = false;
@@ -80,7 +81,7 @@ class SSIRename {
 	final Set marked = new HashSet();
 
 	SearchState(HCode c, QuadFactory nqf) { 
-	    this.place = new Place(c);
+	    this.place = new Place(c, new QuadLiveness(c));
 	    this.varmap= new VarMap(nqf.tempFactory());
 	    this.nqf   = nqf;
 
