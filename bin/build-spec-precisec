@@ -1,2 +1,2 @@
 #!/bin/sh
-`dirname $0`/build-spec precisec $*
+`dirname $0`/build-spec precisec "$@"

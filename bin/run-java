@@ -73,4 +73,4 @@ if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
 
-${JAVA:=java -ea} -${optprefix}mx${FLEXMEM:=768m} $javaopts -Dharpoon.class.path=$harpoonpath $*
+${JAVA:=java -ea} -${optprefix}mx${FLEXMEM:=768m} $javaopts -Dharpoon.class.path=$harpoonpath "$@"
