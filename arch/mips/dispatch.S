@@ -1,33 +1,132 @@
 /* do a flex-native method invocation.  This helps patch together
  * flex-native and JNI exception handling. */
 #include <regdef.h>
+#include <config.h>
+#include <sym.h>
 #include "segments.h"
 
-CODE_SEGMENT
-.align 2
+	CODE_SEGMENT
+.align 4
+
+	/* jvalue FNI_dispatch(void (*method_pointer)(), int narg_words,
+	 *		       void *argptr, jobject_unwrapped *exception)
+	 * calls the java method pointed to by method_pointer, with nargs
+	 * words of arguments pointed to by argptr. [Note that the words
+	 * are already packed as per native calling convention; int, for
+	 * example, takes one word, not two (as it would in a jvalue array).
+	 * Also, the argument words should be *un*wrapped.
+	 * FNI_dispatch leaves *exception untouched if the method returns
+	 * successfully, or sets it to the (unwrapped) exception object
+	 * caught if an exception is thrown.
+	 * [this is a thunk from C code to Java code]
+	 */
+#define methptr	a0
+#define nargs	a1
+#define argend	a1
+#define argptr	a2
+#define excptr  a3
+
 /* declarations of FNI_Dispatch_<type> for different return types. */
 #define DECLARE_FNI_Dispatch(type) \
-.globl	FNI_Dispatch_##type \
-    FNI_Dispatch_##type:	
+csymbol(FNI_Dispatch_##type):	.globl	csymbol(FNI_Dispatch_##type) 
 
-    .globl FNI_Dispatch_Void
-FNI_Dispatch_Void:
-    .globl FNI_Dispatch_Object
-FNI_Dispatch_Object:    
-    .globl FNI_Dispatch_Boolean
-FNI_Dispatch_Boolean:
-    .globl FNI_Dispatch_Byte
-FNI_Dispatch_Byte:  
-    .globl FNI_Dispatch_Char
-FNI_Dispatch_Char:  
-    .globl FNI_Dispatch_Short
-FNI_Dispatch_Short: 
-    .globl FNI_Dispatch_Int
-FNI_Dispatch_Int:   
-    .globl FNI_Dispatch_Long
-FNI_Dispatch_Long:  
-    .globl FNI_Dispatch_Float
-FNI_Dispatch_Float:
-    .globl FNI_Dispatch_Double
-FNI_Dispatch_Double:    
-     lw $0, 1($0)    
+DECLARE_FNI_Dispatch(Void)
+DECLARE_FNI_Dispatch(Object)
+DECLARE_FNI_Dispatch(Boolean)
+DECLARE_FNI_Dispatch(Byte)
+DECLARE_FNI_Dispatch(Char)
+DECLARE_FNI_Dispatch(Short)
+DECLARE_FNI_Dispatch(Int)
+DECLARE_FNI_Dispatch(Long)
+
+/* need to use a different calling convention for float unless -msoft-float */
+DECLARE_FNI_Dispatch(Float)
+DECLARE_FNI_Dispatch(Double)
+    addiu sp, sp, -16   # set up a frame
+    sw    ra, 12(sp)
+    sw    fp, 8(sp)
+    sw    excptr, 4(sp) # Put the exception pointer on the stack for
+                        # possible later use 
+    move  fp, sp
+    move  t9, a0        # jump via t9 as that is shared object convention
+                        # (we are not an so, but we need to free up a0)
+    # Now copy arguments onto the stack
+    sll   t0, a1, 2     /* t0 = endptr  */
+    add   t0, a2
+    sub   t0, 4        /* make endptr valid and start pushing with it*/
+    /* Copy args onto stack.  Unroll the first four iterations */
+    /* and add code to copy args into argument registers */
+    /* Start pushing with the highest numbered argument */
+    /* for( int* t1 = argptr ; t1 < endptr ; ++t1,++sp ) { */
+    /*    *stack = *t1;                                    */
+
+1:  
+    ble   a1, 4, 2f   #  iterations that also need to load arg regs
+    lw    t1, 0(t0)
+    sw    t1, 0(sp)
+    sub   sp, 4
+    sub   t0, 4
+    sub   a1, 1
+    b     1b
+2:
+    sll   a1, a1, 2   # Jump table to go to one of 3f-7f based on
+    la    t1, 8f      # how many more args we have to push
+    add   a1, t1      
+    lw    t1, 0(a1)
+    jr    t1
+
+3:      
+    lw    a3, 0(t0)
+    sw    a3, 0(sp)
+    sub   sp, 4
+    sub   t0, 4
+4:  
+    lw    a2, 0(t0)
+    sw    a2, 0(sp)
+    sub   sp, 4
+    sub   t0, 4    
+5:  
+    lw    a1, 0(t0)
+    sw    a1, 0(sp)
+    sub   sp, 4
+    sub   t0, 4
+6:  
+    lw    a0, 0(t0)
+    sw    a0, 0(sp)
+    sub   sp, 4
+    sub   t0, 4
+7:      
+    jalr  t9       # invoke the method
+return_point:
+    move  sp, fp   # restore the stack pointer to the allocated frame
+    lw    fp, 8(sp)
+    lw    ra, 12(sp)
+    addiu sp, sp, 16   # takedown frame
+    j     ra    
+
+	FIXUP_SEGMENT
+	.word return_point, exception_handler # (retaddr, handler)
+    
+	CODE_SEGMENT
+.align 4    
+exception_handler:	# exception handler code.
+	# let the caller wrap the exceptional value
+	# we just stash it away.
+	lw  excptr, 4(fp)  # load address to store exception into.
+    sw  v0, 0(excptr)  # put the exception object away
+    li  v0, 0          # zero out the 'return value'
+    li  v1, 0
+	b return_point     # and return.
+
+    # Jump table
+.data
+8:
+    .word 7b
+    .word 6b
+    .word 5b
+    .word 4b
+    .word 3b
+    
+	# done!
+
+    
