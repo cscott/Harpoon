@@ -82,7 +82,7 @@ import harpoon.Util.DataStructs.LightMap;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ODPointerAnalysis.java,v 1.1.2.1 2000-12-11 22:58:49 vivien Exp $
+ * @version $Id: ODPointerAnalysis.java,v 1.1.2.2 2001-02-15 19:51:17 salcianu Exp $
  */
 public class ODPointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -610,9 +610,11 @@ public class ODPointerAnalysis {
 	while(scc != null){
 	    analyze_inter_proc_scc(scc);
 
-	    if(SAVE_MEMORY)
-		for(Iterator it = scc.nodes(); it.hasNext(); )
-		    aamm.add((MetaMethod) it.next());
+	    if(SAVE_MEMORY) {
+		Object[] mms = scc.nodes();
+		for(int i = 0; i < mms.length; i++)
+		    aamm.add((MetaMethod) mms[i]);
+	    }
 
 	    scc = scc.prevTopSort();
 	}
@@ -659,18 +661,14 @@ public class ODPointerAnalysis {
 	if(TIMING || DEBUG){
 	    System.out.print("SCC" + scc.getId() + 
 			     "\t (" + scc.size() + " meta-method(s)){");
-	    for(Iterator it = scc.nodes(); it.hasNext(); )
+	    for(Iterator it = scc.nodeSet().iterator(); it.hasNext(); )
 		System.out.print("\n " + it.next());
 	    System.out.print("} ... ");
 	}
 
 	long b_time = TIMING ? System.currentTimeMillis() : 0;
 
-	MetaMethod mmethod = null;
-	if(DETERMINISTIC)
-	    mmethod = (MetaMethod) scc.min();
-	else
-	    mmethod = (MetaMethod) scc.nodes().next();
+	MetaMethod mmethod = (MetaMethod) scc.nodes()[0];
 
 	// if SCC composed of a native or abstract method, return immediately!
 	if(!analyzable(mmethod.getHMethod())){
@@ -784,7 +782,7 @@ public class ODPointerAnalysis {
 	if(STATS) Stats.record_mmethod(mm,scc);
 
 	// construct the ODParIntGraph at the beginning of the method 
-	LightBasicBlock first_bb = (LightBasicBlock)scc.nodes().next();
+	LightBasicBlock first_bb = (LightBasicBlock) scc.nodes()[0];
 	HEADER first_hce = (HEADER) first_bb.getElements()[0];
 	METHOD m  = (METHOD) first_hce.next(1);
 	initial_pig = get_mmethod_initial_pig(mm,m);
@@ -1816,18 +1814,17 @@ public class ODPointerAnalysis {
 	    lbbs[i].user_info = null;
     }
 
-    // clears all the info attached to LBBs belonging to the code of
+    /* OLD CODE
+    // Clears all the info attached to LBBs belonging to the code of
     // methods from the strongly connected component scc.
     private final void clear_lbb_info(SCComponent scc){
 	LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
 
-	for(Iterator it = scc.nodes(); it.hasNext(); ){
-	    MetaMethod mm_work = (MetaMethod) it.next();
-	    LightBasicBlock.Factory lbbf = 
-		lbbconv.convert2lbb(mm_work.getHMethod());
-	    clear_lbb2pig(lbbf);
-	}
+	MetaMethod[] mms = (MetaMethod[]) scc.nodes();
+	for(int i = 0; i < mms.length; i++)
+	    clear_lbb2pig(lbbconv.convert2lbb(mms[i].getHMethod()));
     }
+    */
 
     /** Returns the set of the nodes pointed by the temporary <code>t</code>
 	at the point right before executing instruction <code>q</code>

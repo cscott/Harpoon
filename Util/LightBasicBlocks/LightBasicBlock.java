@@ -34,7 +34,7 @@ import harpoon.Util.UComp;
  (one method call per iteration!).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightBasicBlock.java,v 1.1.2.5 2000-06-27 19:28:20 salcianu Exp $
+ * @version $Id: LightBasicBlock.java,v 1.1.2.6 2001-02-15 19:51:35 salcianu Exp $
  */
 public class LightBasicBlock implements java.io.Serializable {
 
@@ -64,23 +64,17 @@ public class LightBasicBlock implements java.io.Serializable {
     /** The instructions in <code>this</code> basic block. */
     HCodeElement[] elements = null;
 
-    /** Returns the successor basic blocks. */
-    public final LightBasicBlock[] getNextLBBs(){
-	return next;
-    }
+    /** Returns the successor light basic blocks. */
+    public final LightBasicBlock[] getNextLBBs() { return next; }
 
     /** Returns the predecessor basic blocks. */
-    public final LightBasicBlock[] getPrevLBBs(){
-	return prev;
-    }
+    public final LightBasicBlock[] getPrevLBBs() { return prev; }
 
     /** Returns the inctructions in <code>this</code> basic block. */
-    public final HCodeElement[] getElements(){
-	return elements;
-    }
+    public final HCodeElement[] getElements() { return elements; }
 
     /** Returns the first instruction from <code>this</code> basic block. */
-    public final HCodeElement getFirstElement(){
+    public final HCodeElement getFirstElement() {
 	if(elements.length > 0)
 	    return elements[0];
 	return null;
@@ -126,27 +120,21 @@ public class LightBasicBlock implements java.io.Serializable {
 	/** Returns the underlying <code>HCode</code>. This factory returns
 	    <code>LightBasicBlock</code>s of the code returned by this
 	    method. */
-	public HCode getHCode(){
-	    return hcode;
-	}
+	public HCode getHCode() { return hcode; }
 
 	/** Returns all the <code>LightBasicBlock</code>s of the underlying
 	    <code>HCode</code>. */
-	public LightBasicBlock[] getAllBBs(){
-	    return lbbs;
-	}
+	public LightBasicBlock[] getAllBBs() { return lbbs; }
 
 	/** Returns the root <code>LightBasicBlock</code>. */
-	public LightBasicBlock getRoot(){
-	    return root_lbb;
-	}
+	public LightBasicBlock getRoot() { return root_lbb; }
 
 	// map HCodeElement -> LightBasicBlock; computed "on demand"
 	private Map hce2lbb = null;
 
 	/** Returns the <code>LightBasicBlock</code> the instruction
 	    <code>hce</code> belongs to. */
-	public LightBasicBlock getBlock(HCodeElement hce){
+	public LightBasicBlock getBlock(HCodeElement hce) {
 	    if(hce2lbb == null){
 		// we need to compute hce2lbb (first time)
 		hce2lbb = new HashMap();
@@ -163,7 +151,7 @@ public class LightBasicBlock implements java.io.Serializable {
 
 	// convert from the set based BasicBlocks produced by bbfact
 	// to the array based LightBasicBlocks.
-	final void convert(BasicBlock.Factory bbfact){
+	final void convert(BasicBlock.Factory bbfact) {
 	    hcode = bbfact.getHCode();
 	    Set bbs = bbfact.blockSet();
 	    int nb_bbs = bbs.size();

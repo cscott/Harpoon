@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.76 2001-02-14 21:11:05 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.77 2001-02-15 19:51:17 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -390,19 +390,12 @@ public class PointerAnalysis {
 		public Object[] next(Object node){
 		    MetaMethod[] mms  = mcg.getCallees((MetaMethod)node);
 		    MetaMethod[] mms2 = get_new_mmethods(mms);
-		    
-		    if(DETERMINISTIC)
-			Arrays.sort(mms2, UComp.uc);
-		    
 		    return mms2;
 		}
 		
 		public Object[] prev(Object node){
 		    MetaMethod[] mms  = mac.getCallers((MetaMethod)node);
 		    MetaMethod[] mms2 = get_new_mmethods(mms);
-		    
-		    if(DETERMINISTIC)
-			Arrays.sort(mms2, UComp.uc);
 		    return mms2;
 		}
 		
@@ -456,9 +449,11 @@ public class PointerAnalysis {
 	while(scc != null){
 	    analyze_inter_proc_scc(scc);
 
-	    if(SAVE_MEMORY)
-		for(Iterator it = scc.nodes(); it.hasNext(); )
-		    aamm.add((MetaMethod) it.next());
+	    if(SAVE_MEMORY) {
+		Object[] mms = scc.nodes();
+		for(int i = 0; i < mms.length; i++)
+		    aamm.add((MetaMethod) mms[i]);
+	    }
 
 	    scc = scc.prevTopSort();
 	}
@@ -505,15 +500,18 @@ public class PointerAnalysis {
 	if(TIMING || DEBUG){
 	    System.out.print("SCC" + scc.getId() + 
 			     "\t (" + scc.size() + " meta-method(s)){");
-	    for(Iterator it = scc.nodes(); it.hasNext(); )
-		System.out.print("\n " + it.next());
+	    Object[] nodes = scc.nodes();
+	    for(int i = 0; i < nodes.length; i++)
+		System.out.print("\n " + nodes[i]);
 	    System.out.print("} ... ");
 	}
 
 	long b_time = TIMING ? System.currentTimeMillis() : 0;
 
-	MetaMethod mmethod = DETERMINISTIC ? 
-	    (MetaMethod) scc.min() : (MetaMethod) scc.nodes().next();
+	// start by analyzing one of the methods from the group of mutually
+	// recursive methods (the other will be transitively introduced into
+	// the worklist)
+	MetaMethod mmethod = (MetaMethod) scc.nodes()[0];
 
 	// if SCC composed of a native or abstract method, return immediately!
 	if(!analyzable(mmethod.getHMethod())){
@@ -620,7 +618,7 @@ public class PointerAnalysis {
 	if(STATS) Stats.record_mmethod(mm,scc);
 
 	// construct the ParIntGraph at the beginning of the method 
-	LightBasicBlock first_bb = (LightBasicBlock) scc.nodes().next();
+	LightBasicBlock first_bb = (LightBasicBlock) scc.nodes()[0];
 	HEADER first_hce = (HEADER) first_bb.getElements()[0];
 	METHOD m  = (METHOD) first_hce.next(1);
 	initial_pig = get_mmethod_initial_pig(mm,m);
@@ -649,14 +647,9 @@ public class PointerAnalysis {
 	if(DEBUG2)
 	    System.out.println("\nSCC" + scc.getId());
 
-	// add ALL the BBs from this SCC to the worklist.
-	if(DETERMINISTIC) {
-	    Object[] objs = Debug.sortedSet(scc.nodeSet());
-	    for(int i = 0; i < objs.length; i++)
+	Object[] objs = scc.nodes();
+	for(int i = 0; i < objs.length; i++)
 		W_intra_proc.add(objs[i]);
-	}
-	else
-	    W_intra_proc.addAll(scc.nodeSet());
 
 	boolean must_check = scc.isLoop();
 
@@ -674,7 +667,6 @@ public class PointerAnalysis {
 	    if(new_info != null)
 		new_info.join(old_info);
 
-	    ParIntGraph.DEBUG2 = MEGA_DEBUG;
 	    if(must_check && !ParIntGraphPair.identical(old_info, new_info)) {
 		// yes! The succesors of the analyzed basic block
 		// are potentially "interesting", so they should be added
@@ -688,16 +680,15 @@ public class PointerAnalysis {
 			W_intra_proc.add(lbb_next);
 		}
 	    }
-	    ParIntGraph.DEBUG2 = MEGA_DEBUG;
 	}
 
     }
 
 
-    /** The Parallel Interaction Graph which is updated by the
-     *  <code>analyze_basic_block</code>. This should normally be a
-     *  local variable of that function but it must be also accessible
-     *  to the <code>PAVisitor</code> class */
+    // The Parallel Interaction Graph which is updated by the
+    // <code>analyze_basic_block</code>. This should normally be a
+    // local variable of that function but it must be also accessible
+    // to the <code>PAVisitor</code> class.
     private ParIntGraph lbbpig = null;
 
     // The pair of ParIntGraphs computed by the inter-procedural analysis
@@ -787,60 +778,93 @@ public class PointerAnalysis {
 	/** Does the real processing of a load statement. */
 	public void process_load(Quad q, Temp l1, Temp l2, String f){
 	    Set set_aux = lbbpig.G.I.pointedNodes(l2);
-	    Set set_S = lbbpig.G.I.pointedNodes(set_aux,f);
-	    HashSet set_E = new HashSet();
+	    // set_S will contain the nodes that l1 will point to after q
+	    Set set_S = lbbpig.G.I.pointedNodes(set_aux, f);
+	    // set_E will contain all the nodes that escape and don't already
+	    // a  load point on the f link; we need to create a new load node
+	    // if this set is non_empty
+	    Set set_E = new HashSet();
 	    
-	    Iterator it = set_aux.iterator();
-	    while(it.hasNext()){
-		PANode node = (PANode)it.next();
+	    for(Iterator it = set_aux.iterator(); it.hasNext(); ) {
+		PANode node = (PANode) it.next();
 		// hasEscaped instead of escaped (there is no problem
 		// with the nodes that *will* escape - the future cannot
 		// affect us).
-		if(lbbpig.G.e.hasEscaped(node))
-		    set_E.add(node);
+		if(lbbpig.G.e.hasEscaped(node)) {
+		    Set pointed = lbbpig.G.O.pointedNodes(node, f);
+		    if(pointed.isEmpty())
+			set_E.add(node);
+		    else {
+			//Util.assert(pointed.size() == 1, "too many nodes");
+			//PANode node2 = (PANode) pointed.iterator().next();
+			PANode node2 = get_min_node(pointed);
+			set_S.add(node2);
+		    }
+		}
 	    }
 	    
 	    lbbpig.G.I.removeEdges(l1);
 	    
-	    if(set_E.isEmpty()){
+	    if(set_E.isEmpty()){ // easy case; don't need to create a load node
 		lbbpig.G.I.addEdges(l1,set_S);
+		if(!IGNORE_EO || RECORD_ACTIONS)
+		    Util.assert(false, "Unimplemented yet!");
+		return;
 	    }
-	    else{
-		PANode load_node = nodes.getCodeNode(q,PANode.LOAD); 
-		set_S.add(load_node);
-		lbbpig.G.O.addEdges(set_E,f,load_node);
 
-		if(!IGNORE_EO)
-		    lbbpig.eo.add(set_E, f, load_node, lbbpig.G.I);
+	    PANode load_node = nodes.getCodeNode(q, PANode.LOAD); 
+	    set_S.add(load_node);
+	    lbbpig.G.O.addEdges(set_E, f, load_node);
 
-		lbbpig.G.I.addEdges(l1,set_S);
-		lbbpig.G.propagate(set_E);
+	    if(!IGNORE_EO) {
+		Util.assert(false, "Unimplemented yet!"); // TODO
+		lbbpig.eo.add(set_E, f, load_node, lbbpig.G.I);
+	    }
 
-		if(RECORD_ACTIONS) {
-		    // update the action repository
-		    Set active_threads = lbbpig.tau.activeThreadSet();
-		    Iterator it_esc_nodes = set_E.iterator();
-		    
-		    while(it_esc_nodes.hasNext()){
-			PANode ne = (PANode) it_esc_nodes.next();
-			lbbpig.ar.add_ld(ne, f, load_node,
-					 ActionRepository.THIS_THREAD,
-					 active_threads);
-		    }
+	    lbbpig.G.I.addEdges(l1, set_S);
+	    lbbpig.G.propagate(set_E);
+	    
+	    if(RECORD_ACTIONS) {
+		Util.assert(false, "Unimplemented yet!");
+		// update the action repository
+		Set active_threads = lbbpig.tau.activeThreadSet();
+		Iterator it_esc_nodes = set_E.iterator();
+		
+		while(it_esc_nodes.hasNext()){
+		    PANode ne = (PANode) it_esc_nodes.next();
+		    lbbpig.ar.add_ld(ne, f, load_node,
+				     ActionRepository.THIS_THREAD,
+				     active_threads);
 		}
 	    }
+	}
+
+	// Given a set of PANodes, returns the node having the minimal
+	// number ID; the set of nodes is guaranteed not to be empty.
+	private PANode get_min_node(Set nodes) {
+	    Iterator it = nodes.iterator();
+	    PANode retval = (PANode) it.next();
+	    int min_id = retval.number; 
+	    while(it.hasNext()) {
+		PANode node = (PANode) it.next();
+		if(node.number < min_id) {
+		    min_id = node.number;
+		    retval = node;
+		}
+	    }
+	    return retval;
 	}
 
 
 	// OBJECT CREATION SITES
 	/** Object creation sites; normal case */
 	public void visit(NEW q){
-	    process_new(q,q.dst());
+	    process_new(q, q.dst());
 	}
 	
 	/** Object creation sites; special case - arrays */
 	public void visit(ANEW q){
-	    process_new(q,q.dst());
+	    process_new(q, q.dst());
 	}
 	
 	private void process_new(Quad q,Temp tmp){
@@ -1304,20 +1328,6 @@ public class PointerAnalysis {
 	for(int i = 0; i < lbbs.length; i++)
 	    lbbs[i].user_info = null;
     }
-
-    // clears all the info attached to LBBs belonging to the code of
-    // methods from the strongly connected component scc.
-    private final void clear_lbb_info(SCComponent scc){
-	LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
-
-	for(Iterator it = scc.nodes(); it.hasNext(); ){
-	    MetaMethod mm_work = (MetaMethod) it.next();
-	    LightBasicBlock.Factory lbbf = 
-		lbbconv.convert2lbb(mm_work.getHMethod());
-	    clear_lbb2pig(lbbf);
-	}
-    }
-
 
     /** Returns the set of the nodes pointed by the temporary <code>t</code>
 	at the point right before executing instruction <code>q</code>

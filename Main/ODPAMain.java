@@ -96,7 +96,7 @@ import harpoon.Util.DataStructs.LightMap;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPAMain.java,v 1.1.2.1 2000-12-11 22:56:41 vivien Exp $
+ * @version $Id: ODPAMain.java,v 1.1.2.2 2001-02-15 19:51:23 salcianu Exp $
  */
 public abstract class ODPAMain {
 
@@ -2303,7 +2303,7 @@ public abstract class ODPAMain {
 	    found = false;
 	    SCComponent scc = 
 		pa.scc_lbb_factory.computeSCCLBB(hm).getFirst();
-	    LightBasicBlock first_bb = (LightBasicBlock)scc.nodes().next();
+	    LightBasicBlock first_bb = (LightBasicBlock) scc.nodes()[0];
 	    HEADER first_hce = (HEADER) first_bb.getElements()[0];
 	    METHOD m  = (METHOD) first_hce.next(1);
 	    while(scc != null){

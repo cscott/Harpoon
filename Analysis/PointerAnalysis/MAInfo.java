@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.44 2001-02-09 23:44:46 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.45 2001-02-15 19:51:16 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -1052,25 +1052,27 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     }
 
 
-    private void do_the_inlining(HCodeFactory hcf, Map ih){
+    private void do_the_inlining(HCodeFactory hcf, Map ih) {
 	SCComponent scc = reverse_top_sort_of_cs(ih);
-	Set toPrune=new WorkSet();
+	Set toPrune = new WorkSet();
 	while(scc != null) {
 	    if(DEBUG) {
 		System.out.println("Processed SCC:{");
-		for(Iterator it= scc.nodes(); it.hasNext(); )
-		    System.out.println(" " + Debug.code2str((CALL) it.next()));
+		Object[] calls = scc.nodes();
+		for(int i = 0; i < calls.length; i++)
+		    System.out.println(" " + Debug.code2str((CALL) calls[i]));
 		System.out.println("}");
 	    }
-	    for(Iterator it = scc.nodes(); it.hasNext(); ) {
-		CALL cs=(CALL) it.next();
+	    Object[] calls = scc.nodes();
+	    for(int i = 0; i < calls.length; i++) {
+		CALL cs = (CALL) calls[i];
 		inline_call_site(cs, hcf, ih);
 		toPrune.add(cs.getFactory().getParent());
 	    }
 	    scc = scc.prevTopSort();
 	}
-	for(Iterator pit=toPrune.iterator();pit.hasNext();)
-	    Unreachable.prune((HCode)pit.next());
+	for(Iterator pit = toPrune.iterator(); pit.hasNext(); )
+	    Unreachable.prune((HCode) pit.next());
     }
 
 
@@ -1094,10 +1096,11 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		}
 	    };
 
-	Set cs_set = new HashSet(ih.keySet());
+	Set cs_set = ih.keySet();
+	CALL[] cs_array = (CALL[]) cs_set.toArray(new CALL[cs_set.size()]);
 	
 	SCCTopSortedGraph sccts =
-	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(cs_set, nav));
+	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(cs_array, nav));
 
 	return sccts.getLast();
     }

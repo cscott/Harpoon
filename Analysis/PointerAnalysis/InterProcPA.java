@@ -49,7 +49,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.48 2001-02-09 23:44:46 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.49 2001-02-15 19:51:16 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -390,13 +390,14 @@ abstract class InterProcPA {
 
 	// update the node mapping by matching outside edges from the caller
 	// with inside edges from the callee
-	match_edges(mu, pig_caller, pig_callee);
+	Set redundant_ln = new HashSet();
+	match_edges(mu, pig_caller, pig_callee, redundant_ln);
 
 	if(DEBUG) System.out.println("After matching edges:" + mu);
 
 	// all the nodes from the caller (except for PARAM) are
 	// initially inserted into the caller's graph
-	compute_the_final_mapping(mu,pig_caller,pig_callee);
+	compute_the_final_mapping(mu, pig_caller, pig_callee, redundant_ln);
 
 	if(DEBUG) System.out.println("Final mapping:" + mu);
 
@@ -427,6 +428,7 @@ abstract class InterProcPA {
 
 	// simplify the graph by removing the empty loads
 	pig_caller.removeEmptyLoads();
+	pig_caller = mergeRedundantLoads(pig_caller);
 
 	if(DEBUG)
 	    System.out.println("Simplified graph:\n" + pig_caller);
@@ -460,7 +462,7 @@ abstract class InterProcPA {
     private static Relation get_initial_mapping(CALL q,
 						ParIntGraph pig_caller,
 						ParIntGraph pig_callee,
-						PANode[] callee_params){
+						PANode[] callee_params) {
 	Relation mu = new RelationImpl();
 	Temp[] args = q.params();
 	int object_params_count = 0;
@@ -507,7 +509,8 @@ abstract class InterProcPA {
 	nodes from the caller that each load node might represent. */
     private static void match_edges(Relation mu,
 				    ParIntGraph pig_caller,
-				    ParIntGraph pig_callee){
+				    ParIntGraph pig_callee,
+				    final Set redundant_ln) {
 
 	PAWorkList W = new PAWorkList();
 	// here is the new stuff; only nodes with new stuff are
@@ -515,7 +518,7 @@ abstract class InterProcPA {
 	Relation new_info = (Relation) mu.clone();
 
 	W.addAll(mu.keys());
-	while(!W.isEmpty()){
+	while(!W.isEmpty()) {
 	    PANode node1 = (PANode) W.remove();
 
 	    // nodes3 stands for all the new instances of n3
@@ -526,31 +529,55 @@ abstract class InterProcPA {
 	    Iterator itf = pig_callee.G.O.allFlagsForNode(node1).iterator();
 	    while(itf.hasNext()) {
 		String f = (String) itf.next();
-
+		// 1. matching outside edges/callee against inside edges/caller
 		// nodes2 stands for all the nodes that could play
 		// the role of n2 from the inference rule
-		Set nodes2 = pig_callee.G.O.pointedNodes(node1,f);
+		Set nodes2 = pig_callee.G.O.pointedNodes(node1, f);
 		if(nodes2.isEmpty()) continue;
 
 		// nodes4 stands for all the nodes that could play
 		// the role of n4 from the inference rule
-		Set nodes4 = pig_caller.G.I.pointedNodes(nodes3,f);
-		if(nodes4.isEmpty()) continue;
-
-		// set up the relation from any node from nodes2
-		// to any node from nodes4
-		for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
-		    PANode node2 = (PANode)it2.next();
-		    boolean changed = false;
-		    for(Iterator it4 = nodes4.iterator(); it4.hasNext(); ) {
-			PANode node4 = (PANode)it4.next();
-			if(mu.add(node2,node4)){
-			    changed = true;
-			    new_info.add(node2, node4);
-			}
+		Set nodes4 = pig_caller.G.I.pointedNodes(nodes3, f);
+		if(!nodes4.isEmpty()) {
+		    // set up the relation from any node from nodes2
+		    // to any node from nodes4
+		    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
+			PANode node2 = (PANode)it2.next();
+			boolean changed = false;
+			for(Iterator it4 = nodes4.iterator(); it4.hasNext();) {
+			    PANode node4 = (PANode)it4.next();
+			    if(mu.add(node2,node4)){
+				changed = true;
+				new_info.add(node2, node4);
+			    }
 		    }
-		    // nodes with new info are put in the worklist
-		    if(changed) W.add(node2);
+			// nodes with new info are put in the worklist
+			if(changed) W.add(node2);
+		    }
+		}
+		    
+		// 2.matching outside edges/callee against outside edges/caller
+		nodes4 = pig_caller.G.O.pointedNodes(nodes3, f);
+		if(!nodes4.isEmpty()) {
+		    // set up the relation from any node from nodes2
+		    // to any node from nodes4
+		    for(Iterator it2 = nodes2.iterator(); it2.hasNext(); ) {
+			PANode node2 = (PANode) it2.next();
+			int type2 = node2.type();
+			boolean changed = false;
+			for(Iterator it4 = nodes4.iterator(); it4.hasNext();) {
+			    PANode node4 = (PANode) it4.next();
+			    if(mu.add(node2, node4)) {
+				changed = true;
+				new_info.add(node2, node4);
+				if((type2 == PANode.LOAD) &&
+				   (node4.type() == PANode.LOAD))
+				    redundant_ln.add(node2);
+			    }
+			}
+			// nodes with new info are put in the worklist
+			if(changed) W.add(node2);
+		    }
 		}
 	    }
 	}
@@ -560,15 +587,29 @@ abstract class InterProcPA {
     // graph except for the PARAM nodes. Later, after recomputing the
     // escape info, the empy load nodes will be removed (together with
     // the related information)
-    private static void compute_the_final_mapping(final Relation mu,
-						final ParIntGraph pig_caller,
-						final ParIntGraph pig_callee){
+    private static void compute_the_final_mapping
+	(final Relation mu,
+	 final ParIntGraph pig_caller,
+	 final ParIntGraph pig_callee,
+	 final Set redundant_ln) {
 	pig_callee.forAllNodes(new PANodeVisitor(){
 		public void visit(PANode node){
-		    if(node.type() != PANode.PARAM)
-			mu.add(node,node);
+		    int type = node.type();
+		    if(type == PANode.LOAD) {
+			if(!redundant_ln.contains(node))
+			    mu.add(node, node);
+			return;
+		    }
+		    if(type != PANode.PARAM)
+			mu.add(node, node);
 		}
 	    });
+    }
+
+
+    private static ParIntGraph mergeRedundantLoads(final ParIntGraph pig) {
+	// TODO: better implementation of this
+	return pig;
     }
 
 

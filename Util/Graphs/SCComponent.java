@@ -6,6 +6,7 @@ package harpoon.Util.Graphs;
 import java.util.Vector;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.Iterator;
 import java.util.Hashtable;
 import java.util.Arrays;
@@ -39,31 +40,22 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCComponent.java,v 1.1.2.3 2001-02-09 23:45:01 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.1.2.4 2001-02-15 19:51:26 salcianu Exp $
  */
-public final class SCComponent implements Comparable{
+public final class SCComponent implements Comparable {
 
     // THE FIRST PART CONTAINS JUST SOME STATIC METHODS & FIELDS
 
-    /** Makes sure the results will be exactly the same each time
-	<code>buildSCC</code> is used. Of course, the SCC of a graph are
-	uniquely defined; thsi flag will determine that even the order in 
-	which they are generated is the same so that the debug messages
-	remain the same between two executions.<br>
-	Be aware that if this flag is switched on, the performanced will be
-	much worse! */
-    static boolean DETERMINISTIC = false;
-
-    /** The <code>Navigator</code> interface allows the algorithm to detect
-     * (and use) the arcs from and to a certain node. This allows the
-     * construction of Strongly Connected Components even for very general
-     * graphs where the arcs model only a subtle semantic relation
-     * (e.g. caller-callee) which is not directly stored in the structure
-     * of the nodes. */
-    public static interface Navigator{
-	/** Returns an iterator over the predecessors of <code>node</code>. */
+    /** The <code>Navigator</code> interface allows the algorithm to
+      detect (and use) the arcs from and to a certain node. This
+      allows the construction of Strongly Connected Components even
+      for very general graphs where the arcs model only a subtle
+      semantic relation (e.g. caller-callee) which is not directly
+      stored in the structure of the nodes. */
+    public static interface Navigator {
+	/** Returns the predecessors of <code>node</code>. */
 	public Object[] next(Object node);
-	/** Returns an iterator over the successors of <code>node</code>. */
+	/** Returns the successors of <code>node</code>. */
 	public Object[] prev(Object node);
     }
 
@@ -73,11 +65,14 @@ public final class SCComponent implements Comparable{
     // to the small one to save some memory ...
     private static class SCComponentInt{
 	// the nodes of this SCC
-	public Set nodes = new HashSet();
-	// the successors 
+	public Vector nodes = new Vector();
+	// the successors; kept as both a set (for quick membership testing)
+	// and a vector for uniquely ordered and fast iterations. 
 	public Set next = new HashSet();
-	// the predecessors 
+	public Vector next_vec = new Vector();
+	// the predecessors; similar to next, next_vec
 	public Set prev = new HashSet();
+	public Vector prev_vec = new Vector();
 	// the "economic format" component
 	public SCComponent comp = new SCComponent();
 	// is there any edge to itself?
@@ -99,14 +94,14 @@ public final class SCComponent implements Comparable{
     private static Vector scc_vector;
 
 
-    /** Constructs the strongly connected components of the graph containing
-	all the nodes reachable from <code>root</code> through the edges
-	indicated by <code>navigator</code>. */
-    public static final SCComponent buildSCC(Object root,
+    /** Convenient version for the single root case (see the other 
+	<code>buildSCC</code> for details). Returns the single element of
+	the set of top level SCCs. */
+    public static final SCComponent buildSCC(final Object root,
 					     final Navigator navigator){
-	Set set = buildSCC(Collections.singleton(root), navigator);
+	Set set = buildSCC(new Object[]{root}, navigator);
 	if((set == null) || set.isEmpty()) return null;
-	Util.assert(set.size() <= 1, "More than one root SCComponent "+
+	Util.assert(set.size() <= 1, "More than one root SCComponent " +
 		    "in a call with a a single root");
 	// return the single element of the set of root SCComponents.
 	return (SCComponent)(set.iterator().next());
@@ -114,23 +109,23 @@ public final class SCComponent implements Comparable{
 
 
     /** Constructs the strongly connected components of the graph containing
-	all the nodes reachable on paths which start in nodes from
+	all the nodes reachable on paths which originate in nodes from
 	<code>roots</code>. The edges are indicated by <code>navigator</code>.
 	Returns the set of the root <code>SCComponent</code>s, the components
 	that are not pointed by any other component. This constraint is
 	actively used in the topological sorting agorithm (see
 	<code>SCCTopSortedGraph</code>). */
-    public static final Set buildSCC(Set roots, final Navigator navigator){
+    public static final Set buildSCC(final Object[] roots,
+				     final Navigator navigator) {
 	scc_vector = new Vector();
 	// STEP 1: compute the finished time of each node in a DFS exploration.
 	// At the end of this step, nodes_vector will contain all the reached
 	// nodes, in the order of their "finished" time. 
 	nav = navigator;
 	analyzed_nodes = new HashSet();
-	nodes_vector  = new Vector();
-	Iterator it_roots = roots.iterator();
-	while(it_roots.hasNext()){
-	    Object root = it_roots.next();
+	nodes_vector   = new Vector();
+	for(int i = 0; i < roots.length; i++) {
+	    Object root = roots[i];
 	    // avoid reanalyzing nodes
 	    if(!analyzed_nodes.contains(root))
 		DFS_first(root);
@@ -139,18 +134,12 @@ public final class SCComponent implements Comparable{
 	// STEP 2. build the SCCs by doing a DFS in the reverse graph.
 	node2scc = new Hashtable();
 	// "in reverse" navigator
-	nav = new Navigator(){
-		public Object[] next(Object node){
-		    Object[] obj = navigator.prev(node);
-		    if(DETERMINISTIC)
-			Arrays.sort(obj,UComp.uc);
-		    return obj;
+	nav = new Navigator() {
+		public Object[] next(Object node) {
+		    return navigator.prev(node);
 		}
-		public Object[] prev(Object node){
-		    Object[] obj = navigator.next(node);
-		    if(DETERMINISTIC)
-			Arrays.sort(obj,UComp.uc);
-		    return obj;
+		public Object[] prev(Object node) {
+		    return navigator.next(node);
 		}
 	    };
 
@@ -163,11 +152,10 @@ public final class SCComponent implements Comparable{
 	// we make sure that navigator.prev cannot take us to strange places!
 	reachable_nodes = analyzed_nodes; 
 	analyzed_nodes = new HashSet();
-	int nb_nodes = nodes_vector.size();
-	for(int i = nb_nodes - 1; i >= 0; i--){
+	for(int i = nodes_vector.size() - 1; i >= 0; i--){
 	    Object node = nodes_vector.elementAt(i);
 	    // explore nodes that are still unanalyzed
-	    if(node2scc.get(node) == null){
+	    if(node2scc.get(node) == null) {
 		current_scc_int = new SCComponentInt();
 		scc_vector.add(current_scc_int);
 		DFS_second(node);
@@ -180,14 +168,16 @@ public final class SCComponent implements Comparable{
 	// Convert the big format SCCs into the compressed format SCCs.
 	build_compressed_format();
 
-	// Save the root SSComponents somewhere before activating the GCC.
+	// Save the root SCComponents somewhere before activating the GC.
 	Set root_sccs = new HashSet();
-	it_roots = roots.iterator();
-	while(it_roots.hasNext()){
-	    Object root = it_roots.next();
-	    SCComponent root_scc = ((SCComponentInt)node2scc.get(root)).comp;
-	    if(root_scc.prevLength() == 0)
-		root_sccs.add(root_scc);
+	Vector root_sccs_vec = new Vector();
+	for(int i = 0; i < roots.length; i++) {
+	    Object root = roots[i];
+	    SCComponent root_scc = ((SCComponentInt) node2scc.get(root)).comp;
+	    if(root_scc.prevLength() == 0) {
+		if(root_sccs.add(root_scc)) 
+		    root_sccs_vec.add(root_scc);
+	    }
 	}
 
 	nav             = null; // enable the GC
@@ -201,7 +191,7 @@ public final class SCComponent implements Comparable{
     }
 
     // DFS for the first step: the "forward" navigation
-    private static final void DFS_first(Object node){
+    private static final void DFS_first(Object node) {
 	// do not analyze nodes already reached
 	if(analyzed_nodes.contains(node)) return;
 
@@ -216,12 +206,12 @@ public final class SCComponent implements Comparable{
     }
 
     // DFS for the second step: the "backward" navigation.
-    private static final void DFS_second(Object node){
+    private static final void DFS_second(Object node) {
 	if(analyzed_nodes.contains(node) ||
 	   !reachable_nodes.contains(node)) return;
 
 	analyzed_nodes.add(node);
-	node2scc.put(node,current_scc_int);
+	node2scc.put(node, current_scc_int);
 	current_scc_int.nodes.add(node);
 
 	Object[] next = nav.next(node);
@@ -235,24 +225,24 @@ public final class SCComponent implements Comparable{
     // there exists an edge from n1 to n2.
     private static final void put_the_edges(final Navigator navigator){
 	int nb_scc = scc_vector.size();
-	for(int i = 0; i < nb_scc; i++){
-	    SCComponentInt comp = (SCComponentInt) scc_vector.elementAt(i);
-	    Iterator it = comp.nodes.iterator();
-	    while(it.hasNext()){
+	for(int i = 0; i < scc_vector.size(); i++){
+	    SCComponentInt compi = (SCComponentInt) scc_vector.elementAt(i);
+	    for(Iterator it = compi.nodes.iterator(); it.hasNext(); ) {
 		Object node = it.next();
 		Object[] edges = navigator.next(node);
 
 		for(int j = 0; j < edges.length; j++){
 		    Object node2 = edges[j];
-		    SCComponentInt comp2 = 
-			((SCComponentInt)node2scc.get(node2));
+		    SCComponentInt compi2 = 
+			(SCComponentInt) node2scc.get(node2);
 		    
-		    if(comp2 == comp) comp.loop = true; 
-		    else{
-			comp.next.add(comp2.comp);
-			comp2.prev.add(comp.comp);
+		    if(compi2 == compi) compi.loop = true; 
+		    else {
+			if(compi.next.add(compi2.comp))
+			    compi.next_vec.add(compi2.comp);
+			if(compi2.prev.add(compi.comp))
+			    compi2.prev_vec.add(compi.comp);
 		    }
-		    
 		}
 	    }
 	}
@@ -261,19 +251,18 @@ public final class SCComponent implements Comparable{
     // Build the compressed format attached to each "fat" SCComponentInt.
     // This requires converting some sets to arrays (and sorting them in
     // the deterministic case). 
-    private static final void build_compressed_format(){
-	int nb_scc = scc_vector.size();
-	for(int i = 0; i < nb_scc ; i++){
+    private static final void build_compressed_format() {
+	for(int i = 0; i < scc_vector.size(); i++){
 	    SCComponentInt compInt = (SCComponentInt) scc_vector.elementAt(i);
 	    SCComponent comp = compInt.comp;
 	    comp.loop  = compInt.loop;
-	    comp.nodes = compInt.nodes;
-	    comp.next  = (SCComponent[]) compInt.next.toArray(
-			      new SCComponent[compInt.next.size()]);
-	    if(DETERMINISTIC) Arrays.sort(comp.next);
-	    comp.prev  = (SCComponent[]) compInt.prev.toArray(
-			      new SCComponent[compInt.prev.size()]);
-	    if(DETERMINISTIC) Arrays.sort(comp.prev);
+	    comp.nodes = new HashSet(compInt.nodes);
+	    comp.nodes_array = 
+		compInt.nodes.toArray(new Object[compInt.nodes.size()]);
+	    comp.next  = (SCComponent[]) compInt.next_vec.toArray(
+			      new SCComponent[compInt.next_vec.size()]);
+	    comp.prev  = (SCComponent[]) compInt.prev_vec.toArray(
+			      new SCComponent[compInt.prev_vec.size()]);
 	}
     }
 
@@ -289,6 +278,7 @@ public final class SCComponent implements Comparable{
 
     // The nodes of this SCC (Strongly Connected Component).
     Set nodes;
+    Object[] nodes_array;
     // The successors.
     private SCComponent[] next;
     // The predecessors.
@@ -296,12 +286,12 @@ public final class SCComponent implements Comparable{
 
     // is there any edge to itself?
     private boolean loop;
-    public final boolean isLoop(){ return loop; }
+    public final boolean isLoop() { return loop; }
 
     //The only way to produce SCCs is through SCComponent.buildSSC !
-    SCComponent(){ id = count++;}
+    SCComponent() { id = count++; }
 
-    public int compareTo(Object o){
+    public int compareTo(Object o) {
 	SCComponent scc2 = (SCComponent) o;
 	int id2 = scc2.id;
 	if(id  < id2) return -1;
@@ -310,57 +300,28 @@ public final class SCComponent implements Comparable{
     }
     
     /** Returns the number of successors. */
-    public final int nextLength(){
-	return next.length;
-    }
+    public final int nextLength() { return next.length; }
 
     /** Returns the <code>i</code>th successor. */
-    public final SCComponent next(int i){
-	return next[i];
-    }
+    public final SCComponent next(int i) { return next[i]; }
 
     /** Returns the number of predecessors. */
-    public final int prevLength(){
-	return prev.length;
-    }
+    public final int prevLength() { return prev.length; }
 
     /** Returns the <code>i</code>th predecessor. */
-    public final SCComponent prev(int i){
-	return prev[i];
-    }
+    public final SCComponent prev(int i) { return prev[i]; }
 
-    /** Returns an iterator over the nodes of <code>this</code> strongly \
-	connected component. */
-    public final Iterator nodes(){
-	return nodes.iterator();
-    }
+    /** Returns the nodes of <code>this</code> strongly connected component
+	(set version). */
+    public final Set nodeSet() { return nodes; }
 
-    /** Returns the nodes of <code>this</code> strongly connected component. */
-    public final Set nodeSet(){
-	return nodes;
-    }
+    /** Returns the nodes of <code>this</code> strongly connected component;
+	array version - good for iterating over the elements of the SCC. */
+    public final Object[] nodes() { return nodes_array; }
 
     /** Returns the number of nodes in <code>this</code> strongly connected
 	component. */
-    public final int size(){
-	return nodes.size();
-    }
-
-    /** Return the minimum element of this SCC 
-	(according to the default UComp.uc comparator). */
-    public final Object min(){
-	Iterator it = nodes.iterator();
-	if(!it.hasNext()) return null;
-	Object minim = it.next();
-	while(it.hasNext()){
-	    Object o = it.next();
-	    if(UComp.uc.compare(o,minim)<0)
-		minim = o;
-	}
-
-	return minim;
-    }
-
+    public final int size() { return nodes_array.length; }
 
     /** Checks whether <code>node</code> belongs to <code>this</code> \
 	strongly connected component. */
@@ -375,24 +336,18 @@ public final class SCComponent implements Comparable{
 
     /** Returns the next <code>SCComponent</code> according to the decreasing
      * topological order */
-    public final SCComponent nextTopSort(){
-	return nextTopSort;
-    }
+    public final SCComponent nextTopSort() { return nextTopSort; }
 
     /** Returns the previous <code>SCComponent</code> according to the
      * decreasing topological order */
-    public final SCComponent prevTopSort(){
-	return prevTopSort;
-    }
+    public final SCComponent prevTopSort() { return prevTopSort; }
 
     /** Pretty print debug function. */
-    public final String toString(){
+    public final String toString() {
 	StringBuffer buffer = new StringBuffer();
-
-	buffer.append("SCC" + id + " (size " + nodes.size() + ") {\n");
-	for(Iterator it = nodes.iterator(); it.hasNext(); ){
-	    Object o = it.next();
-	    buffer.append(o);
+	buffer.append("SCC" + id + " (size " + size() + ") {\n");
+	for(int i = 0; i < nodes_array.length; i++) {
+	    buffer.append(nodes_array[i]);
 	    buffer.append("\n");
 	}
 	buffer.append("}\n");
@@ -402,7 +357,7 @@ public final class SCComponent implements Comparable{
     }
 
     // Returns a string representation of the "prev" links.
-    private String prevStringRepr(){
+    private String prevStringRepr() {
 	StringBuffer buffer = new StringBuffer();
 	int nb_prev = prevLength();
 	if(nb_prev > 0){
@@ -416,7 +371,7 @@ public final class SCComponent implements Comparable{
     }
 
     // Returns a string representation of the "next" links.
-    private String nextStringRepr(){
+    private String nextStringRepr() {
 	StringBuffer buffer = new StringBuffer();
 	int nb_next = nextLength();
 	if(nb_next > 0){
@@ -430,22 +385,22 @@ public final class SCComponent implements Comparable{
     }
 
     /** Pretty print debug function for SCC's of <code>MetaMethod</code>s. */
-    public final String toString(MetaCallGraph mcg){
+    public final String toString(MetaCallGraph mcg) {
 	StringBuffer buffer = new StringBuffer();
 
-	boolean extended = nodes.size() > 1;
+	boolean extended = size() > 1;
 
-	buffer.append("SCC" + id + " (size " + nodes.size() + ") {\n");
-	Iterator it = nodes.iterator();
-	while(it.hasNext()){
-	    Object o = it.next();
+	buffer.append("SCC" + id + " (size " + size() + ") {\n");
+
+	for(int i = 0; i < nodes_array.length; i++) {
+	    Object o = nodes_array[i];
 	    buffer.append(o);
 	    buffer.append("\n");
 	    if(extended){
-		Object[] next = mcg.getCallees((MetaMethod)o);
-		for(int i = 0; i<next.length; i++)
-		    if(nodes.contains(next[i]))
-		       buffer.append("  " + next[i] + "\n");
+		Object[] next = mcg.getCallees((MetaMethod) o);
+		for(int j = 0; j < next.length; j++)
+		    if(nodes.contains(next[j]))
+		       buffer.append("  " + next[j] + "\n");
 		buffer.append("\n");
 	    }
 	}

@@ -14,7 +14,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  graph of the light basic blocks containing the code of a method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCLBBFactory.java,v 1.1.2.5 2000-04-03 10:07:53 salcianu Exp $
+ * @version $Id: SCCLBBFactory.java,v 1.1.2.6 2001-02-15 19:51:36 salcianu Exp $
  */
 public class SCCLBBFactory {
 
@@ -35,12 +35,12 @@ public class SCCLBBFactory {
     }
 
     private static final SCComponent.Navigator navigator = 
-	new SCComponent.Navigator(){
-		public Object[] next(Object node){
-		    return ((LightBasicBlock)node).getNextLBBs();
+	new SCComponent.Navigator() {
+		public Object[] next(Object node) {
+		    return ((LightBasicBlock) node).getNextLBBs();
 		}
-		public Object[] prev(Object node){
-		    return ((LightBasicBlock)node).getPrevLBBs();
+		public Object[] prev(Object node) {
+		    return ((LightBasicBlock) node).getPrevLBBs();
 		}
 	    };
 
@@ -55,7 +55,7 @@ public class SCCLBBFactory {
         LightBasicBlock.Factory lbbf = lbbconv.convert2lbb(hm);
         LightBasicBlock lbb = lbbf.getRoot();
 
-        SCComponent scc = SCComponent.buildSCC(lbb,navigator);
+        SCComponent scc = SCComponent.buildSCC(lbb, navigator);
         SCCTopSortedGraph lbb_scc = SCCTopSortedGraph.topSort(scc);
 
         return lbb_scc;

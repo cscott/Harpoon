@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.MetaMethods;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
@@ -47,6 +48,7 @@ import harpoon.Analysis.PointerAnalysis.PAWorkList;
 import harpoon.Analysis.PointerAnalysis.Debug;
 
 import harpoon.Util.Util;
+import harpoon.Util.UComp;
 
 import harpoon.Util.DataStructs.Relation;
 import harpoon.Util.DataStructs.RelationImpl;
@@ -65,13 +67,17 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.24 2001-02-09 23:44:21 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.25 2001-02-15 19:50:08 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     private static boolean DEBUG = false;
     private static boolean DEBUG_CH = false;
     private static boolean COUNTER = true;
+
+    /** Make sure the results of the query methods (getCalles like) don't
+	depend on the run; facilitate the debugging. */
+    public static final boolean DETERMINISTIC = true;
 
     private static int SPEC_BOUND = 3;
 
@@ -169,7 +175,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    Set callees = callees1.getValues(mm);
 	    MetaMethod[] mms = 
 		(MetaMethod[]) callees.toArray(new MetaMethod[callees.size()]);
-	    callees1_cmpct.put(mm,mms);
+	    if(DETERMINISTIC)
+		Arrays.sort(mms, UComp.uc);
+	    callees1_cmpct.put(mm, mms);
 	}
 
 	for(Iterator it = callees2.keySet().iterator(); it.hasNext();){
@@ -184,7 +192,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		Set cees = rel.getValues(cs);
 		MetaMethod[] mms =
 		    (MetaMethod[]) cees.toArray(new MetaMethod[cees.size()]);
-		map_cmpct.put(cs,mms);
+		if(DETERMINISTIC)
+		    Arrays.sort(mms, UComp.uc); 
+		map_cmpct.put(cs, mms);
 	    }
 	}
     }
@@ -283,9 +293,11 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// they can be shared by many meta-methods derived from the same
 	// HMethod. Of course, I don't want the next analyzed meta-method
 	// to use the types computed for this one.
-	for(SCComponent scc2 = scc; scc2 != null; scc2 = scc2.nextTopSort())
-	    for(Iterator it = scc2.nodes(); it.hasNext(); )
-		((ExactTemp)it.next()).clearTypeSet();
+	for(SCComponent scc2 = scc; scc2 != null; scc2 = scc2.nextTopSort()) {
+	    Object[] ets = scc2.nodes();
+	    for(int i = 0; i < ets.length; i++)
+		((ExactTemp) ets[i]).clearTypeSet();
+	}
     }
 
 
@@ -1123,7 +1135,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		    }
 		};
 
-	Set scc_set = SCComponent.buildSCC(already_visited, et_navigator);
+	Object[] roots_for_scc =
+	    already_visited.toArray(new Object[already_visited.size()]);
+	Set scc_set = SCComponent.buildSCC(roots_for_scc, et_navigator);
 	SCCTopSortedGraph ts_scc = SCCTopSortedGraph.topSort(scc_set);
 
 	return ts_scc.getFirst();
@@ -1311,7 +1325,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	}
 
 	if(DEBUG)
-	    for(Iterator it = scc.nodes(); it.hasNext();){
+	    for(Iterator it = scc.nodeSet().iterator(); it.hasNext();){
 		ExactTemp et = (ExactTemp) it.next();
 		System.out.println("##:< " + et.shortDescription() + 
 				   " -> " + et.getTypeSet() + " >");

@@ -69,7 +69,7 @@ import harpoon.Util.DataStructs.LightMap;
  * <code>ODMAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ODMAInfo.java,v 1.1.2.1 2000-12-11 22:58:49 vivien Exp $
+ * @version $Id: ODMAInfo.java,v 1.1.2.2 2001-02-15 19:51:17 salcianu Exp $
  */
 public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -1625,12 +1625,14 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	while(scc != null) {
 	    if(DEBUG) {
 		System.out.println("Processed SCC:{");
-		for(Iterator it= scc.nodes(); it.hasNext(); )
-		    System.out.println(" " + Debug.code2str((CALL) it.next()));
+		Object[] nodes = scc.nodes();
+		for(int i = 0; i < nodes.length; i++)
+		    System.out.println(" " + Debug.code2str((CALL) nodes[i]));
 		System.out.println("}");
 	    }
-	    for(Iterator it = scc.nodes(); it.hasNext(); ) {
-		CALL cs=(CALL) it.next();
+	    Object[] nodes = scc.nodes();
+	    for(int i = 0; i < nodes.length; i++) {
+		CALL cs = (CALL) nodes[i];
 		inline_call_site(cs, hcf, ih);
 		toPrune.add(cs.getFactory().getParent());
 	    }
@@ -1661,10 +1663,11 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		}
 	    };
 
-	Set cs_set = new HashSet(ih.keySet());
-	
+	Set cs_set = ih.keySet();
+	CALL[] cs_array = (CALL[]) cs_set.toArray(new CALL[cs_set.size()]);
+
 	SCCTopSortedGraph sccts =
-	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(cs_set, nav));
+	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(cs_array, nav));
 
 	return sccts.getLast();
     }

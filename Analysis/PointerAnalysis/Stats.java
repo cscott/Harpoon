@@ -26,7 +26,7 @@ import harpoon.Util.Graphs.SCComponent;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.12 2000-05-21 03:00:46 cananian Exp $
+ * @version $Id: Stats.java,v 1.1.2.13 2001-02-15 19:51:18 salcianu Exp $
  */
 abstract class Stats {
 
@@ -58,8 +58,8 @@ abstract class Stats {
 	int nb_instrs = 0;
 	while(scc != null){
 	    nb_sccs++;
-	    nb_bbs += scc.nodeSet().size(); 
-	    for(Iterator it_bbs = scc.nodes(); it_bbs.hasNext();){
+	    nb_bbs += scc.nodeSet().size();
+	    for(Iterator it_bbs = scc.nodeSet().iterator(); it_bbs.hasNext();){
 		LightBasicBlock bbk = (LightBasicBlock) it_bbs.next();
 		nb_instrs += bbk.getElements().length;
 	    }

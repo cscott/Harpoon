@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.14 2001-02-09 23:44:46 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.15 2001-02-15 19:51:15 salcianu Exp $
  */
 public abstract class Debug {
 
@@ -122,7 +122,7 @@ public abstract class Debug {
     public static void show_lbb_scc(SCComponent scc){
 	for(; scc != null; scc = scc.nextTopSort()){
 	    System.out.println("SCC" + scc.getId() + "{");
-	    for(Iterator it = scc.nodes(); it.hasNext(); )
+	    for(Iterator it = scc.nodeSet().iterator(); it.hasNext(); )
 		show_lbb((LightBasicBlock) it.next());
 	    System.out.println("}");
 	}
