@@ -22,6 +22,7 @@ import harpoon.IR.Quads.SIGMA;
 import harpoon.Temp.Temp;
 import harpoon.Util.Collections.GenericInvertibleMultiMap;
 import harpoon.Util.Collections.InvertibleMultiMap;
+import harpoon.Util.CombineIterator;
 import harpoon.Util.Util;
 
 import java.util.Collection;
@@ -45,7 +46,7 @@ import java.util.Set;
  * <code>NewMover</code> works best on <code>QuadWithTry</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NewMover.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: NewMover.java,v 1.5 2003-06-20 05:39:28 cananian Exp $
  */
 public class NewMover extends MethodMutator {
     /** If true, then the NewMover will attempt to move NEWs across SIGMAs.
@@ -116,12 +117,14 @@ public class NewMover extends MethodMutator {
 	State state = new State();
 	Set seen = new HashSet();
 	public void visit(Quad q) {
-	    // if this quad uses any NEWs which are in 'moving',
+	    // if this quad uses or redefines any NEWs which are in 'moving',
 	    // (or any temps which are in aliases.values())
 	    // drop them before here. (MOVEs to aliases follow NEWs)
 	    assert q.prevLength()==1;
 	    Edge e = q.prevEdge(0);
-	    for (Iterator it=q.useC().iterator(); it.hasNext(); ) {
+	    for (Iterator it=new CombineIterator
+		     (q.useC().iterator(), q.defC().iterator());
+		 it.hasNext(); ) {
 		Temp t = (Temp) it.next();
 		if (!state.aliases.values().contains(t)) continue; //boring.
 		// unmap alias to canonical temp (defined by NEW)
