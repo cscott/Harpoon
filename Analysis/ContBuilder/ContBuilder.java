@@ -6,12 +6,12 @@ package harpoon.Analysis.ContBuilder;
 import harpoon.Analysis.EnvBuilder.EnvBuilder;
 import harpoon.Analysis.Quads.DeadCode;
 import harpoon.ClassFile.HClass;
-import harpoon.ClassFile.HClassSyn;
+//import harpoon.ClassFile.HClassSyn;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HConstructor;
-import harpoon.ClassFile.HConstructorSyn;
+//import harpoon.ClassFile.HConstructorSyn;
 import harpoon.ClassFile.HMethod;
-import harpoon.ClassFile.HMethodSyn;
+//import harpoon.ClassFile.HMethodSyn;
 import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.CALL;
@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * <code>quad-no-ssa</code> form.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContBuilder.java,v 1.1.2.5 2000-01-02 22:30:27 bdemsky Exp $
+ * @version $Id: ContBuilder.java,v 1.1.2.6 2000-01-13 23:52:27 bdemsky Exp $
  */
 public class ContBuilder {
     protected final UpdateCodeFactory ucf;
