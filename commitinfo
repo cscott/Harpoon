@@ -27,5 +27,6 @@ EventDriven $CVSROOT/CVSROOT/commit_prep -u -r
 Realtime	$CVSROOT/CVSROOT/commit_prep -u -r
 RoleInference	$CVSROOT/CVSROOT/commit_prep -u -r
 Runtime	$CVSROOT/CVSROOT/commit_prep -u -r
-SupportNP	$CVSROOT/CVSROOT/commit_prep -u -r
+#SupportNP	$CVSROOT/CVSROOT/commit_prep -u -r
+SupportNP	$CVSROOT/CVSROOT/stop_magic
 Tests	$CVSROOT/CVSROOT/commit_prep -u -r
