@@ -1,4 +1,4 @@
-// LowQuadSSA.java, created Wed Feb  3 16:19:45 1999 by duncan
+// LowQuadSSI.java, created Wed Feb  3 16:19:45 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.LowQuad;
@@ -22,20 +22,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * The <code>LowQuadSSA</code> codeview exposes a lowquad based 
+ * The <code>LowQuadSSI</code> codeview exposes a lowquad based 
  * representation in SSA form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.26 2000-02-08 21:13:09 cananian Exp $
+ * @version $Id: LowQuadSSI.java,v 1.1.2.1 2000-02-25 00:49:29 cananian Exp $
  */
-public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
+public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     private Derivation  m_derivation;
 
     /** The name of this code view. */
     public static final String codename  = "low-quad-ssa";
 
-    /** Creates a <code>LowQuadSSA</code> object from a QuadSSA object */
-    LowQuadSSA(final QuadSSI code) {
+    /** Creates a <code>LowQuadSSI</code> object from a QuadSSA object */
+    LowQuadSSI(final QuadSSI code) {
 	super(code.getMethod(), null);
 	final Map dT = new HashMap();
 	final Map tT = new HashMap();
@@ -65,7 +65,7 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
      * Create a new code object given a quadruple representation of the
      * method instructions.
      */
-    protected LowQuadSSA(HMethod method, Quad quads) {
+    protected LowQuadSSI(HMethod method, Quad quads) {
 	super(method, quads);
     }
 
@@ -74,7 +74,7 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
      * quad graph.
      */
     public HCode clone(HMethod newMethod) {
-	LowQuadSSA lqs = new LowQuadSSA(newMethod, null);
+	LowQuadSSI lqs = new LowQuadSSI(newMethod, null);
 	lqs.quads      = Quad.clone(lqs.qf, quads);
 	return lqs;
     }
@@ -86,14 +86,14 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
     public String getName() { return codename; }
 
     /**
-     * Return a code factory for <code>LowQuadSSA</code>, given a 
+     * Return a code factory for <code>LowQuadSSI</code>, given a 
      * code factory for <code>QuadSSI</code>.
      * <BR> <B>effects:</B> if <code>hcf</code> is a code factory for
      *      <code>QuadSSI</code>, then creates and returns a code
-     *      factory for <code>LowQuadSSA</code>.  Else passes
+     *      factory for <code>LowQuadSSI</code>.  Else passes
      *      <code>hcf</code> to
      *      <code>QuadSSI.codeFactory()</code>, and reattempts to
-     *      create a code factory for <code>LowQuadSSA</code> from the
+     *      create a code factory for <code>LowQuadSSI</code> from the
      *      code factory returned by <code>QuadSSI</code>.
      * @see QuadSSI#codeFactory(HCodeFactory)
      */
@@ -102,7 +102,7 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
-		    return (c==null) ? null : new LowQuadSSA((QuadSSI)c);
+		    return (c==null) ? null : new LowQuadSSI((QuadSSI)c);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
