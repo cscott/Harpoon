@@ -7,9 +7,12 @@ package harpoon.Analysis.PointerAnalysis;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.1.2.1 2000-01-14 20:50:59 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.2 2000-01-15 03:38:16 salcianu Exp $
  */
 public class ParIntGraph {
+
+    /** Default (empty) graph. It doesn't contain any information.  */
+    public static final ParIntGraph EMPTY_GRAPH = new ParIntGraph();
 
     // Points-to escape graph that summarizes the points-to and escape
     // information for the current thread
@@ -44,6 +47,13 @@ public class ParIntGraph {
 	// pi.join(pig2.alpha);
     }
 
+    /** Check the equality of two <code>ParIntGraph</code>s */
+    public boolean equals(Object o){
+	if(o==null) return false;
+	ParIntGraph pig2 = (ParIntGraph)o;
+	return G.equals(pig2.G) && tau.equals(pig2.tau);
+    }
+
     /** private constructor for the <code>clone</code> method. */
     private ParIntGraph(PointsToGraph _G,PAThreadMap _tau 
 			/*,PAActionSet _alpha, PAParallelAction _pi*/){
@@ -63,7 +73,7 @@ public class ParIntGraph {
 
     /** pretty-print function for debug purposes */
     public String toString(){
-	return "{ " + G + tau + /* alpha + pi + */ " }"; 
+	return "\nParIntGraph{\n" + G + " " + tau + /* alpha + pi + */ "}"; 
     }
 
 }

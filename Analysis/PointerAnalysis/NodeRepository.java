@@ -12,7 +12,7 @@ import harpoon.ClassFile.HCodeElement;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.1 2000-01-14 20:50:59 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.2 2000-01-15 03:38:16 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -82,7 +82,7 @@ public class NodeRepository {
 
     public final PANode getParamNode(HMethod method, int count){
 	// The runtime system will take care of all the debug messages ...
-	return ((PANode[]) param_nodes.get(method))[count];
+	return getAllParams(method)[count];
     }
 
     public final PANode[] getAllParams(HMethod method){

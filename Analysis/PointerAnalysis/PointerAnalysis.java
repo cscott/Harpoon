@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.HashSet;
 
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
 
@@ -42,7 +43,7 @@ import harpoon.IR.Quads.FOOTER;
  * <code>PointerAnalysis</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.1.2.1 2000-01-14 20:50:59 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.2 2000-01-15 03:38:16 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -76,6 +77,10 @@ public class PointerAnalysis {
 	return (ParIntGraph)hash.get(hm);
     }
 
+    public PANode[] getParamNodes(HMethod hm){
+	return nodes.getAllParams(hm);
+    }
+
     // Worklist for the inter-procedural analysis: only <code>HMethod</code>s
     // will be put here.
     private PAWorkStack W_inter_proc = new PAWorkStack();
@@ -102,27 +107,18 @@ public class PointerAnalysis {
 
 	    // new info?
 	    // TODO: this test is overkill! think about it!
-
-	    System.out.println("PASS 1");
-
 	    if(new_info == null){
 		System.out.println("NULL new_info");
 		System.exit(1);
 	    }
 
 	    if(!new_info.equals(old_info)){
-
-		System.out.println("PASS 2");
-
 		// yes! The callers of hm_work should be added to
 		// the inter-procedural worklist
 		Iterator it = ac.getDirectCallers(hm_work);
 		while(it.hasNext())
 		    W_inter_proc.add(it.next());
 	    }
-
-	    System.out.println("PASS 3");
-	
 	}
     }
 
@@ -153,7 +149,7 @@ public class PointerAnalysis {
 		// to the intra-procedural worklist
 		Enumeration enum = bb_work.next();
 		while(enum.hasMoreElements()){
-		    System.out.println("Put a successor");
+		    // System.out.println("Put a successor");
 		    W_intra_proc.add(enum.nextElement());
 		}
 	    }
@@ -289,14 +285,11 @@ public class PointerAnalysis {
 	}
 	
 
-	public void visit(PHI q){
-		//TODO
-	}
-	
 	/** End of the currently analyzed method; [trim the graph
 	 *  of unnecessary edges], store it in the hash etc. */
 	// TODO: trimming
 	public void visit(FOOTER q){
+	    // bbpig=bbpig.simplify();
 	    hash.put(current_intra_method,bbpig);
 	}
 	
@@ -315,7 +308,7 @@ public class PointerAnalysis {
 	Iterator instrs = bb.iterator();
 	// bbpig is the graph at the *bb point; it will be 
 	// updated till it become the graph at the bb* point
-	bbpig = get_pig_for_bb(bb);
+	bbpig = get_initial_bb_pig(bb);
 
 	if(bbpig == null)
 	    System.out.println("bbpig is already null");
@@ -336,19 +329,34 @@ public class PointerAnalysis {
 	return bbpig;
     }
     
+    /** Returns the Parallel Interaction Graph at the point bb*
+     *  The returned <code>ParIntGraph</code> must not be modified 
+     *  by the caller. This function is used by 
+     * <code>get_initial_bb_pig</code>. */
+    private ParIntGraph get_after_bb_pig(BasicBlock bb){
+	ParIntGraph pig = (ParIntGraph) hash_bb.get(bb);
+	return (pig==null)?ParIntGraph.EMPTY_GRAPH:pig;
+    }
+
     // Recomputes the Parallel Interaction Thread associated with
     // the beginning of the <code>BasicBlock</code> <code>bb</code>.
     // This method is recomputing the stuff (instead of just grabbing it
     // from the cache) because the information attached with some of
     // the predecessors has changed (that's why bb is reanalyzed)
-    private ParIntGraph get_pig_for_bb(BasicBlock bb){
+    private ParIntGraph get_initial_bb_pig(BasicBlock bb){
 	if(bb.prevLength() == 0){
 
 	    System.out.println("Gone this way!");
 
 	    // This case is treated specially, it's about the
 	    // graph at the beginning of the current method.
-	    return method_initial_pig(current_intra_method);
+	    ParIntGraph pig = method_initial_pig(current_intra_method);
+
+	    System.out.println("The mapping at the beginning of " + //DEBUG
+			       current_intra_method + ":");         //DEBUG
+	    System.out.println(pig);                                //DEBUG
+
+	    return pig;
 	}
 	else{
 	    Enumeration enum = bb.prev();
@@ -356,10 +364,11 @@ public class PointerAnalysis {
 	    // do the union of the <code>ParIntGraph</code>s attached to
 	    // all the predecessors of this basic block
 	    ParIntGraph pig = (ParIntGraph)
-		((ParIntGraph)hash_bb.get(enum.nextElement())).clone();
+		(get_after_bb_pig((BasicBlock)enum.nextElement())).clone();
 	    
 	    while(enum.hasMoreElements())
-		pig.join((ParIntGraph)hash_bb.get(enum.nextElement()));
+		pig.join(get_after_bb_pig((BasicBlock)enum.nextElement()));
+
 	    return pig;
 	}
     }
@@ -370,27 +379,43 @@ public class PointerAnalysis {
 	HEADER hce = (HEADER) bb.getFirst();
 	METHOD m  = (METHOD) hce.next(1); 
 	Temp[] params = m.params();
+	HClass[] types = hm.getParameterTypes();
 
 	ParIntGraph pig = new ParIntGraph();
+
+	boolean isStatic = 
+	    java.lang.reflect.Modifier.isStatic(hm.getModifiers());
 	
-	nodes.addParamNodes(hm,params.length);
+	int skew = isStatic?0:1;
+	int count = skew;
+	for(int i=0;i<types.length;i++)
+	    if(!types[i].isPrimitive()) count++;
+	
+	nodes.addParamNodes(hm,count);
 
 	// add all the edges of type <p,np> (i.e. parameter to 
-	// parameter node). the edges for the static fields will
+	// parameter node) - just for the non-primitive types (e.g. int params
+	// do not clutter our analysis)
+	// the edges for the static fields will
 	// be added later.
+	count = 0;
 	for(int i=0;i<params.length;i++)
-	    pig.G.I.addEdge(params[i],nodes.getParamNode(hm,i));
-
-	System.out.println("put pig for bb = " + bb);
-
-	if(pig==null){
-	    System.out.println("pig == null!!");
-	    System.exit(1);
-	}
+	    if((i<skew) || ((i>=skew) && !types[i-skew].isPrimitive())){
+		PANode param_node = nodes.getParamNode(hm,count);
+		pig.G.I.addEdge(params[i],param_node);
+		// The param nodes are escaping through themselves */
+		pig.G.e.addNodeHole(param_node,param_node);
+		count++;
+	    }
 
 	return pig;
     }
 
+
+    /** Check if <code>hm</code> can be analyzed by the pointer analysis. */
+    static public final boolean analyzable(HMethod hm){
+	return !(java.lang.reflect.Modifier.isNative(hm.getModifiers()));
+    }
 
     // put into the initial inter-procedural worklist all the
     // methods that could be called (directly and indirectly)
@@ -406,6 +431,8 @@ public class PointerAnalysis {
 	// temporary worklist for the dfs exploration
 	PAWorkStack W_temp = new PAWorkStack();
 
+	if(!analyzable(hm)) return;
+
 	W_temp.add(hm);
 	W_inter_proc.add(hm);
 
@@ -416,7 +443,7 @@ public class PointerAnalysis {
 
 	    for(int i=0;i<callees.length;i++){
 		HMethod hm_callee = callees[i];
-		if(!W_inter_proc.contains(hm_callee)){
+		if(analyzable(hm_callee) && !W_inter_proc.contains(hm_callee)){
 		    // ... and put them in the worklists if they haven't been
 		    // analyzed yet.
 		    W_temp.add(hm_callee);

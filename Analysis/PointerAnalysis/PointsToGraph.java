@@ -10,7 +10,7 @@ import java.util.Set;
  * <code>PointsToGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.1 2000-01-14 20:51:00 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.2 2000-01-15 03:38:16 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -55,8 +55,8 @@ public class PointsToGraph {
 	public final void visit(PANode node){
 	    // take care "|" and NOT "||"
 	    boolean changed = 
-		e.addNodeHoles(current_node,e.nodeHolesSet(node)) |
-		e.addMethodHoles(current_node,e.methodHolesSet(node));
+		e.addNodeHoles(node,e.nodeHolesSet(current_node)) |
+		e.addMethodHoles(node,e.methodHolesSet(current_node));
 	    if(changed) W_prop.add(node);
 	}
     }
@@ -74,6 +74,14 @@ public class PointsToGraph {
 	}
     }
 
+    /** Checks the equality of two <code>PointsToGraph</code>s */
+    public boolean equals(Object o){
+	if(o==null) return false;
+	PointsToGraph G2 = (PointsToGraph)o;
+	return 
+	    O.equals(G2.O) && I.equals(G2.I) &&
+	    e.equals(G2.e) && r.equals(G2.r);
+    }
 
     /** private constructor for the <code>clone</code> method. */
     private PointsToGraph(PAEdgeSet _O, PAEdgeSet _I,
@@ -94,10 +102,10 @@ public class PointsToGraph {
 
     public String toString(){
 	return 
-	    "Ouside edges:\n" + O +
-	    "Inside edges:\n" + I +
-	    e + 
-	    "Return set:\n" + r;
+	    " Outside edges:" + O + "\n" +
+	    " Inside edges:" + I + "\n" +
+	    " " + e + "\n" + 
+	    " Return set:" + r + "\n";
     }
     
 }

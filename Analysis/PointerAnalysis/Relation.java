@@ -19,7 +19,7 @@ import java.util.Map;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Relation.java,v 1.1.2.1 2000-01-14 20:51:00 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.2 2000-01-15 03:38:16 salcianu Exp $
  */
 public class Relation{
     
@@ -108,7 +108,25 @@ public class Relation{
 	}
     }
 
-    /** Private constrcutor for the <code>clone</code> method only */
+
+    /** Checks the equality of two relations */
+    public boolean equals(Object o){
+	if(o==null) return false;
+	Relation r2 = (Relation)o;
+	Set set1 = keySet();
+	Set set2 = r2.keySet();
+	if(!set1.equals(set2)) return false;
+	Iterator it = set1.iterator();
+	while(it.hasNext()){
+	    Object obj = it.next();
+	    Set set_a = getValuesSet(obj);
+	    Set set_b = r2.getValuesSet(obj);
+	    if(!set_a.equals(set_b)) return false;
+	}
+	return true;
+    }
+
+    /** Private constrcutor for the <code>clone</code> method only. */
     private Relation(Hashtable _hash){
 	hash = _hash;
     }
@@ -128,16 +146,16 @@ public class Relation{
     /** Pretty-print function for debug */
     public String toString(){
 	StringBuffer buffer = new StringBuffer();
-	buffer.append("\n{");
+	buffer.append("  {");
 	Enumeration enum = keys();
 	while(enum.hasMoreElements()){
 	    Object o = enum.nextElement();
 	    buffer.append("\n  ");
 	    buffer.append(o);
-	    buffer.append("->");
+	    buffer.append(" -> ");
 	    buffer.append(getValuesSet(o));
 	}
-	buffer.append("\n}");
+	buffer.append("\n  }");
 	return buffer.toString();
     }
 

@@ -18,7 +18,7 @@ import harpoon.Temp.Temp;
  * <code>PTEdgesSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEdgeSet.java,v 1.1.2.1 2000-01-14 20:50:59 salcianu Exp $
+ * @version $Id: PAEdgeSet.java,v 1.1.2.2 2000-01-15 03:38:16 salcianu Exp $
  */
 public class PAEdgeSet {
 
@@ -29,7 +29,7 @@ public class PAEdgeSet {
     // mapping variable -> set of pointed nodes
     private Relation vars;
 
-    // mapping node -> flag -> set of pointed nodes
+    // mapping node -> a <code>Relation</code> flag -> set of pointed nodes
     private Hashtable nodes;
 
 
@@ -74,11 +74,9 @@ public class PAEdgeSet {
      *  the field <code>f</code>; i.e. all the nodes <code>n1</code> such
      *  that &lt;&lt;n,f&gt;,n1&gt; exists */
     public Set pointedNodes(PANode n, String f){
-	Hashtable map = (Hashtable) nodes.get(n);
-	if(map==null) return Collections.EMPTY_SET;
-	Set set = (Set)map.get(f);
-	if(set==null) return Collections.EMPTY_SET;
-	return set;
+	Relation rel = (Relation) nodes.get(n);
+	if(rel==null) return Collections.EMPTY_SET;
+	return rel.getValuesSet(f);
     }
 
     /** Returns all the nodes which are pointed to by nodes from the set
@@ -95,13 +93,10 @@ public class PAEdgeSet {
     /** Adds all the edges &lt;&lt;n,f&lt;,n1&lt; where <code>n1</code>
      *  ranges over the set <code>dests</code>. */
     public void addEdges(PANode n, String f, Set dests){
-	Hashtable map = (Hashtable)nodes.get(n);
-	if(map==null) 
-	    nodes.put(n,map=new Hashtable());
-	HashSet set = (HashSet)map.get(f);
-	if(set==null)
-	    map.put(f,set=new HashSet());
-	set.addAll(dests);
+	Relation rel = (Relation)nodes.get(n);
+	if(rel==null) 
+	    nodes.put(n,rel=new Relation());
+	rel.addAll(f,dests);
     }
 
     /** Adds all the edges <code>&lt;&lt;n1,f&lt;,n2&lt;</code> for every node
@@ -125,16 +120,17 @@ public class PAEdgeSet {
     // using addEdges (repeatedly calling addEdge over all the edges of
     // a set is VERY expensive.
     public void addEdge(PANode n, String f, PANode n1){
-	addEdges(n,f,Collections.singleton(n1));
+	Relation rel = (Relation)nodes.get(n);
+	if(rel==null) 
+	    nodes.put(n,rel=new Relation());
+	rel.add(f,n1);
     }
 
     // Deletes all the edges of the type <<n,f>,n1>
     public void removeEdges(PANode n, String f){
-	Hashtable map = (Hashtable)nodes.get(n);
-	if(map==null) return;
-	HashSet set = (HashSet)map.get(f);
-	if(set==null) return;
-	else set.clear();
+	Relation rel = (Relation)nodes.get(n);
+	if(rel==null) return;
+	rel.removeAll(f);
     }
 
     /** Returns an <code>Enumeration</code> of the set of all the
@@ -159,10 +155,10 @@ public class PAEdgeSet {
      * specific node n, i.e. f such that we have at least one 
      * &lt;&lt;n,f&gt;,n1&gt; edge */
     public Enumeration allFlagsForNode(PANode n){
-	Hashtable map = (Hashtable)nodes.get(n);
-	if(map==null)
+	Relation rel = (Relation)nodes.get(n);
+	if(rel==null)
 	    return EMPTY_ENUM;
-	return map.keys();
+	return rel.keys();
     }
 
     /** Visits all the nodes pointed by <coden</code> and executes
@@ -192,12 +188,30 @@ public class PAEdgeSet {
 	Enumeration en = edges2.allNodes();
 	while(en.hasMoreElements()){
 	    PANode n = (PANode)en.nextElement();
-	    Enumeration ef = edges2.allFlagsForNode(n);
-	    while(ef.hasMoreElements()){
-		String f = (String)ef.nextElement();
-		addEdges(n,f,edges2.pointedNodes(n,f));
+	    Relation rel = (Relation)nodes.get(n);
+	    if(rel==null){
+		rel = new Relation();
+		nodes.put(n,rel);
 	    }
+	    rel.union((Relation)edges2.nodes.get(n));
 	}
+    }
+
+
+    /** Checks the equality of two <code>PAEdgeSet</code>s */
+    public boolean equals(Object o){
+	if(o==null) return false;
+	PAEdgeSet es2 = (PAEdgeSet) o;
+	if(!vars.equals(es2.vars)) return false;
+	if(!nodes.keySet().equals(es2.nodes.keySet())) return false;
+	Enumeration enum = nodes.keys();
+	while(enum.hasMoreElements()){
+	    PANode node = (PANode)enum.nextElement();
+	    Relation rel1 = (Relation)nodes.get(node);
+	    Relation rel2 = (Relation)es2.nodes.get(node);
+	    if(!rel1.equals(rel2)) return false;
+	}
+	return true;
     }
 
     /** Private constructor, used only by <code>clone()</code> */
@@ -216,15 +230,8 @@ public class PAEdgeSet {
 
 	while(it_nodes.hasNext()){
 	    Map.Entry entry = (Map.Entry) it_nodes.next();
-	    Hashtable fmap = new Hashtable();
-	    Iterator fit = ((Hashtable)entry.getValue()).entrySet().iterator();
-
-	    while(fit.hasNext()){
-		Map.Entry entry2 = (Map.Entry) fit.next();
-		fmap.put(entry2.getKey(),((HashSet)entry2.getValue()).clone());
-	    }
-
-	    map_nodes.put(entry.getKey(),fmap);
+	    Relation rel = (Relation)((Relation)entry.getValue()).clone();
+	    map_nodes.put(entry.getKey(),rel);
 	}
 
 	return new PAEdgeSet(new_vars, map_nodes);
@@ -234,6 +241,7 @@ public class PAEdgeSet {
     public String toString(){
 	StringBuffer buffer = new StringBuffer();
 
+	buffer.append("{\n");
 	buffer.append(vars);
 	buffer.append("\n");
 
@@ -241,12 +249,13 @@ public class PAEdgeSet {
 
 	while(it.hasNext()){
 	    Map.Entry entry = (Map.Entry) it.next();
-	    buffer.append("<");
+	    buffer.append("  ");
 	    buffer.append((PANode)entry.getKey());
 	    buffer.append(" -> ");
-	    buffer.append((HashSet)entry.getValue());
-	    buffer.append(">\n");
+	    buffer.append((Relation)entry.getValue());
 	}
+
+	buffer.append("\n }");
 	
 	return buffer.toString();
     }

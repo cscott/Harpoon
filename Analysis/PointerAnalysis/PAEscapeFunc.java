@@ -17,7 +17,7 @@ import harpoon.ClassFile.HCodeElement;
  * <code>EscapeFunc</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.1 2000-01-14 20:50:59 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.2 2000-01-15 03:38:16 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -113,7 +113,14 @@ public class PAEscapeFunc {
 	rel_m.union(e2.rel_m);
     }
 
-    // private constructor used only by clone
+    /** Checks the equality of two <code>PAEscapeFunc</code> */
+    public boolean equals(Object o){
+	if(o==null) return false;
+	PAEscapeFunc e2 = (PAEscapeFunc)o;
+	return rel_n.equals(e2.rel_n) && rel_m.equals(e2.rel_m);
+    }
+
+    /** Private constructor used only by <code>clone</code> */
     private PAEscapeFunc(Relation _rel_n,Relation _rel_m){
 	rel_n = _rel_n;
 	rel_m = _rel_m;
@@ -128,7 +135,7 @@ public class PAEscapeFunc {
 
     // Pretty-print debug function
     public String toString(){
-	StringBuffer buffer = new StringBuffer("Escape function: \n");
+	StringBuffer buffer = new StringBuffer("Escape function: ");
 
         HashSet set = new HashSet(rel_n.keySet());
         set.addAll(rel_m.keySet());
@@ -136,7 +143,7 @@ public class PAEscapeFunc {
 
         while(it.hasNext()){
             PANode n = (PANode)it.next();
-            buffer.append(n + ": { ");
+            buffer.append("\n  " + n + ":  ");
 	    
 	    Iterator it_n = nodeHoles(n);
 	    if(it_n != null){
@@ -154,7 +161,6 @@ public class PAEscapeFunc {
 	    }
 	}
 	
-	buffer.append("}\n");
 	return buffer.toString();
     }
 
