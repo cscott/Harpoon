@@ -1,0 +1,14 @@
+#!/bin/awk -f
+# unmunge.  Expects to find munged files on standard input.
+/^---- CUT HERE ----/{ 
+    close(outf);
+    getline outf; 
+    print outf; 
+    # make sure that the right directory exists.
+    "dirname " outf | getline outd;
+    system("mkdir -p " outd);
+    # this line doesn't go into the output file.
+    next 
+}
+# dump rest of the lines to the right file.
+{ gsub(/^- /,"-"); print > outf }
