@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.22 2000-10-05 18:35:53 cananian Exp $
+% $Id: transact.tex,v 1.23 2000-10-05 18:53:20 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 \usepackage[section,plain]{algorithm} % algorithm environment
 \usepackage{alltt} % alltt environment
@@ -8,7 +8,7 @@
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.22 $ $}
+\date{\today \\ $ $Revision: 1.23 $ $}
 
 % this is handy when talking about structure member references.
 \newcommand{\ptr}{\code{->}}
@@ -242,7 +242,10 @@ $\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
 $\text{Write}(\code{struct oobj *} o, \code{int } n,
               \code{<ty> } x)$ =
 \begin{myalgorithmic}
-\IF{$o\ptr\code{field}[n] = \code{FLAG\_VALUE}$}
+\IF{$o\ptr\code{field}[n] = \code{FLAG\_VALUE}$}\label{line:wL1}
+  \IF[try to avoid aborting anything]{$\text{PossiblyDownGrade}(o, n)$}
+    \GOTO line \ref{line:wL1}
+  \ENDIF
   \STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
   \WHILE{$\text{AbortTransaction}(v\ptr\code{transid}) \neq \code{COMMITTED}$}
     \STATE \COMMENT{prune list for the sake of writes w/o intervening reads}
@@ -303,7 +306,11 @@ $\text{ReadTrans}(\code{struct commitrec *}c,
     \STATE\COMMENT{abort unless $c$ is a non-aborted subtransaction
                    of $v\ptr\code{transid}$}
     \IFNOT{$\text{IsNAST}(c, v)$}
-      \STATE commit suicide \COMMENT{can't guarantee consistency}
+      \IF{$\text{PossiblyDownGrade}(o, n)$}
+        \GOTO line \ref{line:rtL2} \COMMENT{last chance for life}
+      \ELSE
+        \STATE commit suicide \COMMENT{can't guarantee consistency}
+      \ENDIF
     \ENDIF
     \GOTO line \ref{line:rtL3}
   \ENDCASE
@@ -348,7 +355,11 @@ $\text{WriteTrans}(\code{struct commitrec *}c,
       \STATE\COMMENT{abort unless $c$ is a non-aborted subtransaction
                      of $v\ptr\code{transid}$}
       \IFNOT{$\text{IsNAST}(c, v)$}
-        \STATE commit suicide \COMMENT{can't guarantee consistency}
+        \IF{$\text{PossiblyDownGrade}(o, n)$}
+          \GOTO line \ref{line:rtL2} \COMMENT{last chance for life}
+        \ELSE
+          \STATE commit suicide \COMMENT{can't guarantee consistency}
+        \ENDIF
       \ENDIF
       \GOTO line \ref{line:wtL2}
     \ENDCASE
