@@ -63,7 +63,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.12 2000-11-16 00:12:08 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.13 2000-11-21 21:04:33 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -510,6 +510,10 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		raiseV(V,Wv, q.dst(), 
 		       new xIntConstant(q.type(),
 					((Number)q.value()).longValue()));
+	    else if (q.type()==linker.forName("java.lang.Class") ||
+		     q.type()==linker.forName("java.lang.reflect.Field") ||
+		     q.type()==linker.forName("java.lang.reflect.Method"))
+		raiseV(V,Wv, q.dst(), new xClassNonNull( q.type() ) );
 	    else throw new Error("Unknown CONST type: "+q.type());
 	}
 	public void visit(FOOTER q) { /* do nothing. */ }
