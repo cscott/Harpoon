@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.6 1998-09-03 06:14:00 cananian Exp $
+ * @version $Id: PHI.java,v 1.7 1998-09-04 01:39:21 cananian Exp $
  */
 
 public class PHI extends Quad {
@@ -33,6 +33,21 @@ public class PHI extends Quad {
     }
     PHI(HCodeElement hce, Temp dst[], int arity) {
 	this(hce.getSourceFile(), hce.getLineNumber(), dst, arity);
+    }
+    /** Grow the arity of a PHI by one. */
+    public void grow(Temp args[]) {
+	// increase number of prev links by one.
+	Quad[] nprev = new Quad[prev.length+1];
+	System.arraycopy(prev, 0, nprev, 0, prev.length);
+	nprev[prev.length] = null;
+	prev = nprev;
+	// add contents of src to each phi function.
+	for (int i=0; i<dst.length; i++) {
+	    Temp[] nsrc = new Temp[src[i].length+1];
+	    System.arraycopy(src[i], 0, nsrc, 0, src[i].length);
+	    nsrc[src[i].length] = args[i];
+	    src[i] = nsrc;
+	}
     }
     /** Returns all the Temps used by this Quad. */
     public Temp[] use() {

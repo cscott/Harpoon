@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.39 1998-09-03 19:38:24 cananian Exp $
+ * @version $Id: Translate.java,v 1.40 1998-09-04 01:39:22 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -42,24 +42,22 @@ class Translate  { // not public.
 	Temp stack[];
 	/** Current temps used for local variables */
 	Temp lv[];
-	/** Current try/catch contexts */
-	ExceptionEntry tryBlock[];
 	/** Current monitor nesting level */
 	int monitorDepth;
+	/** All try blocks for this method. */
+	ExceptionEntry allTries[];
 
 	static class BlockContext {
-	/** Exit block for nested tries/monitors */
+	/** Exit block for nested monitors */
 	    Quad exitBlock;
 	/** Temp to store exit destination instr index in. */
 	    Temp exitTemp;
-	/** Continuation TransStates at exit of try/monitor block. */
+	/** Continuation TransStates at exit of monitor block. */
 	    Vector continuation;
 	/** Indicates the type of context this is. */
 	    int type;
-	    static final int TRY = 0;
-	    static final int CATCH = 1;
-	    static final int MONITOR = 2;
-	    static final int JSR = 3;
+	    static final int MONITOR = 0;
+	    static final int JSR = 1;
 	/** Constructor */
 	    BlockContext(Quad eb, Temp et, Vector c, int ty) {
 		exitBlock = eb; exitTemp = et; continuation = c; type = ty;
@@ -72,31 +70,31 @@ class Translate  { // not public.
 	BlockContext nest[];
 
 	/** Constructor. */
-	private State(Temp stack[], Temp lv[], ExceptionEntry tryBlock[],
-		      int monitorDepth, BlockContext nest[]) {
-	    this.stack = stack; this.lv = lv; this.tryBlock = tryBlock;
+	private State(Temp stack[], Temp lv[], int monitorDepth, 
+		      BlockContext nest[], ExceptionEntry allTries[]) {
+	    this.stack = stack; this.lv = lv;
 	    this.monitorDepth = monitorDepth;
 	    this.nest = nest;
-	    Util.assert(nest.length == monitorDepth + tryBlock.length);
+	    this.allTries = allTries;
 	}
 	/** Make new state by popping top of stack */
 	State pop() { return pop(1); }
 	/** Make new state by popping multiple entries off top of stack */
 	State pop(int n) {
 	    Temp stk[] = (Temp[]) shrink(this.stack, n);
-	    return new State(stk, lv, tryBlock, monitorDepth, nest);
+	    return new State(stk, lv, monitorDepth, nest, allTries);
 	}
 	/** Make new state by pushing temp onto top of stack */
 	State push(Temp t) {
 	    Temp stk[] = (Temp[]) grow(this.stack);
 	    stk[0] = t;
-	    return new State(stk, lv, tryBlock, monitorDepth, nest);
+	    return new State(stk, lv, monitorDepth, nest, allTries);
 	}
 	/** Make new state by changing the temp corresponding to an lv. */
 	State assignLV(int lv_index, Temp t) {
 	    Temp nlv[] = (Temp[]) lv.clone();
 	    nlv[lv_index] = t;
-	    return new State(stack, nlv, tryBlock, monitorDepth, nest);
+	    return new State(stack, nlv, monitorDepth, nest, allTries);
 	}
 	/** Make new state by renaming all the Stack and Local Variable slots.
 	 */
@@ -113,74 +111,47 @@ class Translate  { // not public.
 		    nlv[i] = null;
 		else
 		    nlv[i] = new Temp(this.lv[i]);
-	    return new State(stk, nlv, tryBlock, monitorDepth, nest);
+	    return new State(stk, nlv, monitorDepth, nest, allTries);
 	}
-	/** Make new state by exiting innermost try/catch context. */
-	State exitTry() {
-	    ExceptionEntry tb[] = (ExceptionEntry[]) shrink(this.tryBlock);
-	    BlockContext ns[] = (BlockContext[]) shrink(this.nest);
-	    return new State(stack, lv, tb, monitorDepth, ns);
-	}
-	/** Make new state by entering a new try/catch context. */
-	State enterTry(ExceptionEntry ee) {
-	    ExceptionEntry tb[] = (ExceptionEntry[]) grow(this.tryBlock);
-	    BlockContext ns[] = (BlockContext[]) grow(this.nest);
-	    tb[0] = ee;
-	    ns[0] = new BlockContext(BlockContext.TRY);
-	    return new State(stack, lv, tb, monitorDepth, ns);
-	}
-	/** Make new state by clearing the stack and pushing a 
-	    <code>Temp</code>. */
-	State enterCatch(Temp top) {
-	    Temp stk[] = new Temp[] { top };
-	    BlockContext ns[] = (BlockContext[]) this.nest.clone();
-	    ns[0] = new BlockContext(nest[0].exitBlock,
-				     nest[0].exitTemp,
-				     (Vector) nest[0].continuation.clone(),
-				     BlockContext.CATCH);
-	    return new State(stk, lv, tryBlock, monitorDepth, ns);
+	/** Make new state by clearing all by the top entry of the stack. */
+	State enterCatch() {
+	    Temp stk[] = new Temp[] { this.stack[0] };
+	    return new State(stk, lv, monitorDepth, nest, allTries);
 	}
 	/** Make new state by entering a monitor block. */
 	State enterMonitor() {
 	    BlockContext ns[] = (BlockContext[]) grow(this.nest);
 	    ns[0] = new BlockContext(BlockContext.MONITOR);
-	    return new State(stack, lv, tryBlock, monitorDepth+1, ns);
+	    return new State(stack, lv, monitorDepth+1, ns, allTries);
 	}
 	/** Make new state by exiting a monitor block. */
 	State exitMonitor() {
 	    Util.assert(monitorDepth>0);
 	    BlockContext ns[] = (BlockContext[]) shrink(this.nest);
-	    return new State(stack, lv, tryBlock, monitorDepth-1, ns);
+	    return new State(stack, lv, monitorDepth-1, ns, allTries);
 	}
-	/** Make new state, as when entering a JSR/RET block. */
+	/** Make new state by entering a JSR/RET block. */
 	State enterJSR() {
 	    BlockContext ns[] = (BlockContext[]) grow(this.nest);
 	    ns[0] = new BlockContext(BlockContext.JSR);
-	    return new State(stack, lv, tryBlock, monitorDepth+1, ns);
+	    return new State(stack, lv, monitorDepth, ns, allTries);
 	}
 	/** Make new state, as when exiting a JSR/RET block. */
-	State exitJSR() { return exitMonitor(); }
+	State exitJSR() {
+	    BlockContext ns[] = (BlockContext[]) shrink(this.nest);
+	    return new State(stack, lv, monitorDepth, ns, allTries);
+	}
 
 	/** Initialize state with temps corresponding to parameters. */
-	State(Temp[] locals) {
-	    this(new Temp[0], locals, new ExceptionEntry[0], 0, 
-		 new BlockContext[0]);
+	State(Temp[] locals, ExceptionEntry[] allTries) {
+	    this(new Temp[0], locals, 0, new BlockContext[0], allTries);
 	}
 	/** Creates a new State object identical to this one. */
 	public Object clone() {
 	    return new State((Temp[]) stack.clone(), 
 			     (Temp[]) lv.clone(), 
-			     (ExceptionEntry[]) tryBlock.clone(),
 			     monitorDepth,
-			     (BlockContext[]) nest.clone());
-	}
-	/** Check to see if a given Instr is in all of the current try blocks.
-	 */
-	public boolean inAllTry(Instr in) {
-	    for (int i=0; i<tryBlock.length; i++)
-		if (!tryBlock[i].inTry(in))
-		    return false;
-	    return true;
+			     (BlockContext[]) nest.clone(), allTries);
 	}
 
 	// Utility functions... ///////////////////////////////
@@ -238,11 +209,11 @@ class Translate  { // not public.
 	    phimap = new Hashtable(); 
 	    predmap= new Hashtable();
 	}
-	void put(InMerge in, PHI phi, int which_pred) 
+	void put(Instr in, PHI phi, int which_pred) 
 	{ phimap.put(in, phi); predmap.put(in, new Integer(which_pred)); }
-	PHI getPhi(InMerge in) 
+	PHI getPhi(Instr in) 
 	{ return (PHI) phimap.get(in); }
-	int getPred(InMerge in) 
+	int getPred(Instr in) 
 	{ return ((Integer) predmap.get(in)).intValue(); }
     }
 
@@ -267,79 +238,56 @@ class Translate  { // not public.
 		locals[i] = new Temp("lv"+i);
 	}
 
-	State s = new State(locals);
+	State s = new State(locals, bytecode.getTryBlocks());
 
 	Quad quads = new METHODHEADER(params);
 
 	// translate using state.
-	trans(s, bytecode.getTryBlocks(), (Instr) bytecode.getElements()[0], 
-	      quads, 0);
+	trans(new TransState(s, (Instr) bytecode.getElements()[0], quads, 0));
 
 	// return result.
 	return quads;
     }
 
-    /** Translate a block starting at <code>blockTop</code> using
-     *  <code>initialState</code>. */
-    static final void trans(State initialState, ExceptionEntry allTries[],
-			    Instr blockTop, Quad header, int which_succ) {
-	trans(new TransState(initialState, blockTop, 
-				    header, which_succ), allTries);
-    }
-    /** Translate a block starting with a given <code>TransState</code>. */
-    static final void trans(TransState ts0, ExceptionEntry allTries[]){
+    /** Translate a block starting with a given <code>TransState</code>.<p> 
+     *  Start at <code>ts.in</code> using <code>ts.initialState</code>. */
+    static final void trans(TransState ts0) {
 	Stack todo = new Stack(); todo.push(ts0);
 	MergeMap mm = new MergeMap();
+	MergeMap handlers = new MergeMap();
 
 	while (!todo.empty()) {
 	    TransState ts = (TransState) todo.pop();
 	    // convenience abbreviations of TransState fields.
 	    State s = ts.initialState;
 
-	    // Are we entering a new TRY, MONITOR or JSR/RET block?
-	    if ((countTry(ts.in, allTries) > s.tryBlock.length) ||
-		(ts.in.getOpcode() == Op.MONITORENTER) ||
+	    // Are we entering a new MONITOR or JSR/RET block?
+	    if ((ts.in.getOpcode() == Op.MONITORENTER) ||
 		(ts.in.getOpcode() == Op.JSR) ||
 		(ts.in.getOpcode() == Op.JSR_W)) {
 		boolean isMonitor = (ts.in.getOpcode() == Op.MONITORENTER);
-		boolean isJSR = (ts.in.getOpcode() == Op.JSR ||
-				 ts.in.getOpcode() == Op.JSR_W);
+
 		Quad q; State ns;
-		if (isJSR) { // JSR/RET
-		    q = null;
-		    ns = s.enterJSR();
-		    trans(ns, allTries, ts.in.next()[0], 
-			  ts.header, ts.which_succ);
-		} else if (isMonitor) { // MONITOR
+		if (isMonitor) { // MONITOR
 		    // Make header nodes for block.
 		    Quad monitorBlock = new HEADER();
 		    // Recursively generate monitor quads.
 		    ns = s.enterMonitor().pop();
-		    trans(ns, allTries, ts.in, monitorBlock, 0);
+		    trans(new TransState(ns, ts.in, monitorBlock, 0));
 		    // Make and link MONITOR
 		    q = new MONITOR(ts.in, s.stack[0], monitorBlock);
-		} else { // TRY
-		    // determine which try block we're entering
-		    ExceptionEntry newTry = whichTry(ts.in, s, allTries);
-		    Util.assert(newTry != null);
-		    // Make header nodes for new TRY.
-		    Quad tryBlock = new HEADER();
-		    Quad catchBlock = new HEADER();
-		    // Recursively generate tryBlock quads.
-		    ns = s.enterTry(newTry);
-		    trans(ns, allTries, ts.in, tryBlock, 0);
-		    // Generate catchBlock
-		    ns = ns.enterCatch(new Temp("catch"));
-		    trans(ns, allTries, newTry.handler(), catchBlock, 0);
-		    // make quad.
-		    q = new TRY(ts.in, tryBlock, catchBlock, 
-				newTry.caughtException(), ns.stack[0]);
+		} else { // JSR/RET
+		    q = null;
+		    ns = s.enterJSR();
+		    trans(new TransState(ns, ts.in.next()[0], 
+					 ts.header, ts.which_succ));
 		}
-		// make PHI at exit of TRY/MONITOR/JSR
+
+		// make PHI at exit of MONITOR/JSR
 		ns.nest[0].exitBlock = 
 		    new PHI(ts.in, new Temp[] { ns.nest[0].exitTemp },
 		            ns.nest[0].continuation.size());
-		// Link new TRY/MONITOR/JSR quad, if necessary.
+		// Link new MONITOR/JSR quad, if necessary.
 		if (q==null)
 		    q = ns.nest[0].exitBlock;
 		else
@@ -372,51 +320,38 @@ class Translate  { // not public.
 		    Quad.addEdge(q, 0, q0, 0);
 		    Quad.addEdge(q0,0, q1, 0);
 		    Quad.addEdge(q1,0, q2, 0);
-		    if (isJSR)
-			ns = tsi.initialState.exitJSR();
-		    else if (isMonitor)
+		    if (isMonitor)
 			ns = tsi.initialState.exitMonitor();
-		    else
-			ns = tsi.initialState.exitTry();
+		    else // if (isJSR)
+			ns = tsi.initialState.exitJSR();
+		    
 		    todo.push(new TransState(ns, tsi.in, q2, 1));
 		    q = q2;
 		}
 		// default branch.
 		TransState tsi = 
 		    (TransState) ns.nest[0].continuation.elementAt(i);
-		if (isJSR)
-		    ns = tsi.initialState.exitJSR();
-		else if (isMonitor)
+		if (isMonitor)
 		    ns = tsi.initialState.exitMonitor();
-		else
-		    ns = tsi.initialState.exitTry();
+		else // if (isJSR)
+		    ns = tsi.initialState.exitJSR();
+		
 		todo.push(new TransState(ns, tsi.in, q, 0));
 		continue;
 	    }
-	    // Are we exiting a TRY, MONITOR or JSR block?
-	    else if ((s.nest.length > 0) && 
-		     (((s.nest[0].type == State.BlockContext.TRY) &&
-		       (!s.tryBlock[0].inTry(ts.in))) ||
-		      ((s.nest[0].type == State.BlockContext.MONITOR) &&
-		       (ts.in.getOpcode() == Op.MONITOREXIT)) ||
-		      ((s.nest[0].type == State.BlockContext.JSR) &&
-		       (ts.in.getOpcode() == Op.RET)))) {
-		s.nest[0].continuation.addElement(ts);
-		// we'll fix up the dangling end later.
-		continue;
-	    }
-	    // Are we exiting a CATCH block...
-	    else if ((s.nest.length > 0) &&
-		     (s.nest[0].type == State.BlockContext.CATCH) &&
-		     (ts.in instanceof InMerge) &&
-		     phiFromTry(s.tryBlock[0], ts.in)) {
+	    // Are we exiting a MONITOR or JSR block?
+	    else if (s.nest.length>0 &&
+		     ((s.nest[0].type == State.BlockContext.MONITOR &&
+		       ts.in.getOpcode() == Op.MONITOREXIT) ||
+		      (s.nest[0].type == State.BlockContext.JSR &&
+		       ts.in.getOpcode() == Op.RET))) {
 		s.nest[0].continuation.addElement(ts);
 		// we'll fix up the dangling end later.
 		continue;
 	    }
 	    // None of the above.
 	    else {
-		TransState nts[] = transInstr(mm, ts);
+		TransState nts[] = transInstr(ts, mm, handlers);
 		for (int i=0; i<nts.length; i++)
 		    todo.push(nts[i]);
 		continue;
@@ -429,23 +364,25 @@ class Translate  { // not public.
     /** Translate a single instruction, using a <code>MergeMap</code>.
      * @return the <code>TransState</code>s of the following instructions.
      */
-    static final TransState[] transInstr(MergeMap mm, TransState ts) {
+    static final TransState[] transInstr(TransState ts, 
+					 MergeMap mm, MergeMap handlers) {
 	// Dispatch to correct specific function.
-	if (ts.in instanceof InGen)    return transInGen(ts);
+	if (ts.in instanceof InGen)    return transInGen(ts, handlers);
 	if (ts.in instanceof InSwitch) return transInSwitch(ts);
-	if (ts.in instanceof InCti)    return transInCti(ts);
-	if (ts.in instanceof InMerge)  return transInMerge(mm, ts);
+	if (ts.in instanceof InCti)    return transInCti(ts, handlers);
+	if (ts.in instanceof InMerge)  return transInMerge(ts, mm);
 	throw new Error("Unknown Instr type.");
     }
 
     /** Translate an <code>InGen</code>. 
      *  @return a <Code>TransState[]</code> of length zero or one. */
-    static final TransState[] transInGen(TransState ts) {
+    static final TransState[] transInGen(TransState ts, MergeMap handlers) {
 	InGen in = (InGen) ts.in;
-	State s = ts.initialState;;
+	State s = ts.initialState;
 	State ns;
 	Quad q;
-	Quad last = null;
+	Quad last = null; int which_succ = 0;
+	TransState[] r = new TransState[0]; // only CHECKCAST/INVOKE* use this.
 
 	switch(in.getOpcode()) {
 	case Op.AALOAD:
@@ -542,23 +479,35 @@ class Translate  { // not public.
 		Quad q4 = new CJMP(in, Tr1);
 		Quad q5 = new NEW(in, Tex, HCex);
 		Quad q6 = new CALL(in, HCex.getConstructor(new HClass[0]),
-				   Tex, new Temp[0]);
-		Quad q7 = new THROW(in, Tex);
-		Quad q8 = new PHI(in, new Temp[0], 2);
+				   Tex, new Temp[0], new Temp());
+		// check whether the constructor threw an exception.
+		Quad q7 = new OPER(in, "acmpeq", new Temp(),
+				   new Temp[] { q6.def()[0], Tnull });
+		Quad q8 = new CJMP(in, q7.def()[0]);
+		Quad q9 = new PHI(in, 
+				  new Temp[] { new Temp() },
+				  new Temp[][]{new Temp[] {q6.def()[0], Tex}},
+				  2);
+		r = transThrow(new TransState(s.push(q9.def()[0]), in, q9, 0),
+			       handlers, false);
+		Quad q10 = new PHI(in, new Temp[0], 2);
 		// link quads.
 		Quad.addEdge(q0, 0, q1, 0);
 		Quad.addEdge(q1, 0, q2, 0);
 		Quad.addEdge(q2, 0, q3, 0);
-		Quad.addEdge(q2, 1, q8, 0);
+		Quad.addEdge(q2, 1, q10,0);
 		Quad.addEdge(q3, 0, q4, 0);
 		Quad.addEdge(q4, 0, q5, 0);
-		Quad.addEdge(q4, 1, q8, 1);
+		Quad.addEdge(q4, 1, q10,1);
 		Quad.addEdge(q5, 0, q6, 0);
 		Quad.addEdge(q6, 0, q7, 0);
+		Quad.addEdge(q7, 0, q8, 0);
+		Quad.addEdge(q8, 0, q9, 0);
+		Quad.addEdge(q8, 1, q9, 1);
 		// and setup the next state.
 		ns = s;
 		q = q0;
-		last = q8;
+		last = q10;
 		break;
 	    }
 	case Op.D2F:
@@ -842,17 +791,31 @@ class Translate  { // not public.
 		if (isLongDouble(paramtypes[i])) j++;
 	    }
 	    Temp objectref = isStatic?null:s.stack[j];
+	    Temp Tex = new Temp();
 	    if (opd.value().getReturnType()==HClass.Void) { // no return value.
 		ns = s.pop(j+(isStatic?0:1));
-		q = new CALL(in, opd.value(), objectref, param);
+		q = new CALL(in, opd.value(), objectref, param, Tex);
 	    } else if (!isLongDouble(opd.value().getReturnType())) {
 		// 32-bit return value.
 		ns = s.pop(j+(isStatic?0:1)).push(new Temp());
-		q = new CALL(in, opd.value(), objectref, param, ns.stack[0]);
+		q = new CALL(in, opd.value(), objectref, param, 
+			     ns.stack[0], Tex);
 	    } else { // 64-bit return value.
 		ns = s.pop(j+(isStatic?0:1)).push(null).push(new Temp());
-		q = new CALL(in, opd.value(), objectref, param, ns.stack[0]);
+		q = new CALL(in, opd.value(), objectref, param, 
+			     ns.stack[0], Tex);
 	    }
+	    // check for thrown exception.
+	    Quad q0 = new CONST(in, new Temp(), null, HClass.Void);
+	    Quad q1 = new OPER(in, "acmpeq", new Temp(),
+			       new Temp[] { Tex, q0.def()[0] });
+	    Quad q2 = new CJMP(in, q1.def()[0]);
+	    r = transThrow(new TransState(s.push(Tex), in, q2, 0),
+			   handlers, false);
+	    Quad.addEdge(q,  0, q0, 0);
+	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(q1, 0, q2, 0);
+	    last = q2; which_succ = 1;
 	    }
 	    break;
 	case Op.LDC:
@@ -977,21 +940,23 @@ class Translate  { // not public.
 	    throw new Error("Unknown InGen opcode.");
 	}
 	if (last == null) last = q;
-	// make & return next translation state to hit.
+	// make & return next translation states to hit.
+	TransState result[] = new TransState[r.length+1];
+	System.arraycopy(r, 0, result, 1, r.length);
 	if (q!=null) {
 	    // Link new quad if necessary.
 	    Quad.addEdge(ts.header, ts.which_succ, q, 0);
-	    return new TransState[] { 
-		new TransState(ns, in.next()[0], last, 0) };
+	    result[0] = new TransState(ns, in.next()[0], last, which_succ);
 	} else {
-	    return new TransState[] { 
-		new TransState(ns, in.next()[0], ts.header, ts.which_succ) };
+	    result[0] = new TransState(ns, in.next()[0], 
+				       ts.header, ts.which_succ);
 	}
+	return result;
     }
     /** 
      * Translate a single <Code>InMerge</code> using a <code>MergeMap</code>.
      */
-    static final TransState[] transInMerge(MergeMap mm, TransState ts) {
+    static final TransState[] transInMerge(TransState ts, MergeMap mm) {
 	InMerge in = (InMerge) ts.in;
 	State s = ts.initialState; // abbreviation.
 	TransState[] result = new TransState[0]; // eventual result.
@@ -1045,7 +1010,7 @@ class Translate  { // not public.
 	return r;
     }
     /** Translate a single <code>InCti</code>. */
-    static final TransState[] transInCti(TransState ts) {
+    static final TransState[] transInCti(TransState ts, MergeMap handlers) {
 	InCti in = (InCti) ts.in;
 	State s = ts.initialState;
 	Quad q;
@@ -1064,8 +1029,8 @@ class Translate  { // not public.
 	    r = new TransState[0];
 	    break;
 	case Op.ATHROW:
-	    q = new THROW(in, s.stack[0]);
-	    r = new TransState[0];
+	    r = transThrow(ts, handlers, true);
+	    q = null;
 	    break;
 	case Op.GOTO:
 	case Op.GOTO_W:
@@ -1185,6 +1150,86 @@ class Translate  { // not public.
 	return r;
     }
 
+    /** Translate a throw instruction, taking the try context into account.*/
+    static final TransState[] transThrow(TransState ts, 
+					 MergeMap handlers,
+					 boolean possiblyNull)
+    {
+	Vector rTS = new Vector();
+	ExceptionEntry[] allTries = ts.initialState.allTries;
+	State ns = ts.initialState.enterCatch();
+	Quad header = ts.header; int which_succ = ts.which_succ;
+	Temp Tex = ns.stack[0]; // where the Exception is.
+	if (possiblyNull) {
+	    HClass hc = HClass.forClass(NullPointerException.class);
+	    // Handle 'throw null;':
+	    //   Exception Tex = stack.top();
+	    //   if (Tex == null) {
+	    //     try { Tex = new NullPointerException(); }
+	    //     catch (Throwable t) { Tex = t; }
+	    //   }
+	    Quad q1 = new CONST(ts.in, new Temp("null"), null, HClass.Void);
+	    Quad q2 = new OPER(ts.in, "acmpeq", new Temp(),
+			       new Temp[] { Tex, q1.def()[0] } );
+	    Quad q3 = new CJMP(ts.in, q2.def()[0]);
+	    Quad q4 = new NEW(ts.in, new Temp(), hc);
+	    Quad q5 = new CALL(ts.in, hc.getConstructor(new HClass[0]),
+			       q4.def()[0], new Temp[0], 
+			       new Temp()/*exception*/);
+	    Quad q6 = new OPER(ts.in, "acmpeq", new Temp(),
+			       new Temp[] { q5.def()[0], q1.def()[0] } );
+	    Quad q7 = new CJMP(ts.in, q6.def()[0]);
+	    Quad q8 = new PHI(ts.in, 
+			      new Temp[] { new Temp() },
+			      new Temp[][] { new Temp[] {Tex, 
+							 q5.def()[0], 
+							 q4.def()[0] } }, 3);
+	    // Link these:
+	    Quad.addEdge(header, which_succ, q1, 0);
+	    Quad.addEdge(q1, 0, q2, 0);
+	    Quad.addEdge(q2, 0, q3, 0);
+	    Quad.addEdge(q3, 0, q8, 0);
+	    Quad.addEdge(q3, 1, q4, 0);
+	    Quad.addEdge(q4, 0, q5, 0);
+	    Quad.addEdge(q5, 0, q6, 0);
+	    Quad.addEdge(q6, 0, q7, 0);
+	    Quad.addEdge(q7, 0, q8, 1);
+	    Quad.addEdge(q7, 1, q8, 2);
+	    // Update state.
+	    header = q8; which_succ = 0; Tex = q8.def()[0];
+	}
+	// Now look up through the try blocks for potential handlers.
+	for (int i=0; i<allTries.length; i++)
+	    if (allTries[i].inTry(ts.in)) {
+		Instr hI = allTries[i].handler();
+		Quad q1 = new INSTANCEOF(ts.in, new Temp(), Tex,
+					 allTries[i].caughtException());
+		Quad q2 = new CJMP(ts.in, q1.def()[0]);
+		// expand phi.
+		PHI phi = handlers.getPhi(hI);
+		if (phi==null) {
+		    phi=new PHI(hI, new Temp[] {new Temp()}, 0);
+		    // make a new TransState
+		    rTS.addElement(new TransState(ns.pop().push(phi.dst[0]), 
+						  hI, phi, 0));
+		}
+		phi.grow(new Temp[] { Tex });
+		handlers.put(hI, phi, phi.prev.length);
+		// link quads.
+		Quad.addEdge(header, which_succ, q1, 0);
+		Quad.addEdge(q1, 0, q2, 0);
+		Quad.addEdge(q2, 1, phi, phi.prev.length-1);
+		header = q2; which_succ = 0;
+	    }
+	// exception not caught in try.  Throw it.
+	Quad q = new THROW(ts.in, Tex);
+	Quad.addEdge(header, which_succ, q, 0);
+	// grok rTS into TransState[]
+	TransState[] r = new TransState[rTS.size()];
+	rTS.copyInto(r);
+	return r;
+    }
+
     // Miscellaneous utility functions. ///////////////////////////
 
     /** Determine if an HClass needs to be represented by one or two bytecode
@@ -1193,45 +1238,6 @@ class Translate  { // not public.
 	if (hc == HClass.Long || hc == HClass.Double)
 	    return true;
 	return false;
-    }
-    /** Determine if some entry to a MERGE node is from an Instr inside
-     *  a given try. */
-    private static final boolean phiFromTry(ExceptionEntry theTry,
-					    Instr theMerge) {
-	Instr pr[] = theMerge.prev();
-	for (int i=0; i<pr.length; i++)
-	    if (theTry.inTry(pr[i]))
-		return true;
-	return false;
-    }
-    /** Count the number of try blocks containing the given Instr. */
-    private static final int countTry(Instr in, ExceptionEntry[] tb) {
-	int n=0;
-	for (int i=0; i<tb.length; i++)
-	    if (tb[i].inTry(in))
-		n++;
-	return n;
-    }
-    /** Find a try block containing the given Instr which is not already
-     *  present in the State's tryBlock list. */
-    private static final ExceptionEntry whichTry(Instr in, State s,
-						 ExceptionEntry[] allTries)
-    {
-	// determine which try block we're entering
-	ExceptionEntry newTry = null;
-	for (int i=0; i<allTries.length; i++) {
-	    if (allTries[i].inTry(in)) {
-		int j;
-		for (j=0; j<s.tryBlock.length; j++)
-		    if (s.tryBlock[j]==allTries[i])
-			break;
-		if (j==s.tryBlock.length) { // try not in current state.
-		    newTry = allTries[i];
-		    break;
-		}
-	    }
-	}
-	return newTry; // null if can't find.
     }
     /** Count non-null entries in an array. */
     private static final int countNonNull(Object[] oa) {

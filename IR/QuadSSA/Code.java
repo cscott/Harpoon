@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.7 1998-09-03 18:47:47 cananian Exp $
+ * @version $Id: Code.java,v 1.8 1998-09-04 01:39:21 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -89,14 +89,10 @@ public class Code extends HCode {
 	if (v.contains(q)) return;
 	v.addElement(q);
 
-	// include 'inner blocks' of try/monitor.
+	// include 'inner blocks' of monitor.
 	if (q instanceof MONITOR)
 	    traverse(((MONITOR)q).block, v);
-	if (q instanceof TRY) {
-	    TRY t = (TRY) q;
-	    traverse(t.tryBlock, v);
-	    traverse(t.catchBlock, v);
-	}
+
 	// move on to successors.
 	Quad[] next = q.next();
 	for (int i=0; i<next.length; i++)

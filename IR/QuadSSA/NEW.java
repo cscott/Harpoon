@@ -1,13 +1,16 @@
 // NEW.java, created Wed Aug  5 07:08:20 1998 by cananian
 package harpoon.IR.QuadSSA;
 
+import java.lang.reflect.Modifier;
+
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 /**
  * <code>NEW</code> represents an object creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.6 1998-08-26 22:01:40 cananian Exp $
+ * @version $Id: NEW.java,v 1.7 1998-09-04 01:39:21 cananian Exp $
  */
 
 public class NEW extends Quad {
@@ -22,6 +25,10 @@ public class NEW extends Quad {
         super(sourcefile, linenumber);
 	this.dst = dst;
 	this.hclass = hclass;
+	// from JVM spec:
+	Util.assert(!hclass.isArray() && !hclass.isInterface());
+	Util.assert(!hclass.isPrimitive());
+	Util.assert(!Modifier.isAbstract(hclass.getModifiers()));
     }
     NEW(HCodeElement hce, Temp dst, HClass hclass) {
 	this(hce.getSourceFile(), hce.getLineNumber(), dst, hclass);
