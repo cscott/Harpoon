@@ -1,14 +1,21 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.50 1999-07-07 00:02:58 cananian Exp $
+% $Id: thesis.tex,v 1.51 1999-07-08 00:58:03 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
+% fonts
+%\usepackage{beton}
+%\usepackage{euler}
+% useful stuff
 \usepackage{amsthm}
 \usepackage{amstext}
+\usepackage{varioref}\vrefwarning
+% common definitions
 \usepackage{comdef}
 
-% the name of the project
-\newcommand{\magic}{\textsc{Magic}}
+% number figures according to section
+\newcommand{\mysection}[1]{\section{#1}\setcounter{figure}{0}}
+\renewcommand{\thefigure}{\thesection.\arabic{figure}}
 
 % double-space
 \linespread{1.2} %one-and-a-half spacing is 1.3
@@ -16,15 +23,15 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.50 $ $}
+\date{\today \\ $ $Revision: 1.51 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.50 $ $}{$ $Revision: 1.50 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.51 $ $}{$ $Revision: 1.51 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
 
-\section{Introduction}
+\mysection{Introduction}
 The selection of a compiler internal respresentation from the many
 littering the academic literature may at times seem a black art.  Each
 IR is accompanied by papers trumpeting its superiority for one purpose
@@ -66,7 +73,7 @@ represents a clean and simple unification of many extant ideas, and
 our hope is that it will allow the FLEX compiler to achieve a similar
 integration of practical implementation and mathematical elegance.
 
-\section{Intermediate Representations}
+\mysection{Intermediate Representations}
 %The first paper directly addressing an IR as a separate feature of a
 %compiler was Foo and Bar in \cite{foobar}.\fixme{Find real references.}
 The Static Single Assignment (SSA) form was introduced by 
@@ -198,11 +205,11 @@ control-dependence edges to express proper program semantics---see
 example.
 
 Unfortunately, explicit control-flow edges tend to serialize
-computation more than strictly necessary.  Figure \ref{fig:ctrldep},
+computation more than strictly necessary.  Figure~\vref{fig:ctrldep},
 for example, contains two parallel loops which would be serialized by
 the explicit control dependency between them.  Prior work often
 focused on fine-grain intra-loop parallelism and ignored this coarser
-inter-loop parallelism.\footnote{See for example \cite{traub86:ttdfa}
+inter-loop parallelism.\footnote{See for example \cite{traub86:ttda}
 on tagged-token dataflow machines, and\ldots}% FORTRAN compilers?
 \fixme{cite arvind's
 compiler, and others.  Free your mind: delete control-dependence!}
@@ -219,7 +226,7 @@ Static Single Assignment (SSA) form, introduced by Cytron in
 
 \textbf{Define SSA form here.}\fixme{Write this.}
 
-Figure~\ref{fig:tossa} illustrates the conversion to SSA form.
+Figure~\vref{fig:tossa} illustrates the conversion to SSA form.
 \begin{myfigure}
 \begin{center}
 \input{Figures/THex1base} \vline\ \input{Figures/THex1ssa}
@@ -251,14 +258,14 @@ is the most important.
 %The other two can be summarized by noting that in proper SSA form,
 %there is exactly one reaching definition for a variable $V$ at every
 %non-$\phi$ use of $V$.
-The SSA form in figure~\ref{fig:tossa} is minimal.
+The SSA form in figure~\vref{fig:tossa} is minimal.
 
 A variation
 on minimal SSA form, called \emph{pruned} form \cite{ferrante91:pruned},
 avoids placing \phifunction{s} which define variables which are never used.
 In most cases, the more regular properties of minimal SSA form
 outweigh the pruned form's slight increase in space efficiency.
-Figure~\ref{fig:prunedssa} compares minimal and pruned SSA form for
+Figure~\vref{fig:prunedssa} compares minimal and pruned SSA form for
 our example program.\fixme{Mention \cite{ferrante91:pruned}, which
 contains definition and algorithm for pruned SSA.}
 \begin{myfigure}
@@ -269,7 +276,7 @@ contains definition and algorithm for pruned SSA.}
 \label{fig:prunedssa}
 \end{myfigure}
 
-\section{Static Single Information form}
+\mysection{Static Single Information form}
 
 SSI form extends SSA form to achieve symmetry for both forward and
 reverse dataflow.   SSI form recognizes that information about
@@ -290,7 +297,7 @@ contains a definition of $V$; and
 one of the disjoint paths from the split uses the value of $V$.
 \end{enumerate}
 
-Figure~\ref{fig:tossi} compares the SSA and SSI forms for our example program.
+Figure~\vref{fig:tossi} compares the SSA and SSI forms for our example program.
 % add text here about how SSI is better.
 \begin{myfigure}
 \begin{center}
@@ -322,15 +329,15 @@ non-$\phi$ use of $V$ in the new program.
 \end{enumerate}
 
 A \emph{pruned} SSI form would be the minimal form without any unused
-definitions, that is, \phisigfunction[or]s after which there are no
+definitions, that is, \phisigfunction[or]{s} after which there are no
 subsequent uses of any of the variables defined on the left-hand side,
-except in other \phisigfunction[or]s.\footnote{An even more
+except in other \phisigfunction[or]{s}.\footnote{An even more
 compact SSI form may be produced by removing \sigfunction{s} for which
 there are uses for \emph{exactly one} of the variables on the
 left-hand side, but it does not seem profitable to split this
 particular hair.}
 
-Figure~\ref{fig:prunedssi} compares minimal and pruned SSI form for
+Figure~\vref{fig:prunedssi} compares minimal and pruned SSI form for
 our example program.
 \begin{myfigure}
 \begin{center}
@@ -401,7 +408,7 @@ the edge serves to make the control flow graph into a single strongly
 connected component, and for this reason the direction of the edge is
 from END to START.
 \item \textbf{Create an equivalent undirected graph.}  Johnson et al.\
-prove that the node expansion illustrated in figure~\ref{fig:CQundir}
+prove that the node expansion illustrated in figure~\vref{fig:CQundir}
 results in an undirected graph with the same cycle-equivalency
 properties as the original directed graph.  More precisely, nodes $a$
 and $b$ in directed graph $G$ are cycle-equivalent if and only if
@@ -441,7 +448,7 @@ DFS spanning tree.
 
 The above steps form an undirected graph $G'$ from the control-flow
 graph $G$.  The remainder of the cycle-equivalency algorithm is
-presented in figure~\ref{fig:CQalg}, with the above procedure
+presented in figure~\vref{fig:CQalg}, with the above procedure
 corresponding to the statement \texttt{G':=Preprocess(G)}.  The
 algorithm has been corrected from the published version in
 \cite{johnson93:sese}; in addition it has been extended to compute
@@ -450,13 +457,13 @@ both node and edge equivalencies (in effect, merging the algorithm of
 \cite{johnson93:sese} are indicated in the figure with a vertical bar
 in the left margin.  The datatype \texttt{BracketList} and the node
 and edge properties used in the algorithm are described in
-figure~\ref{fig:CQdata}.  The interested reader is encouraged to consult
+figure~\vref{fig:CQdata}.  The interested reader is encouraged to consult
 \cite{johnson93:sese} for additional detail on these data structures
 and representations.%
 \fixme{Um, change to compute \emph{edge}
 equivalency as well as \emph{node} equivalency.  Merge algorithms from
 \cite{johnson93:sese} and \cite{johnson94:pst}.}
-Figure~\ref{fig:CQex} shows cycle-equivalent regions in a simple
+Figure~\vref{fig:CQex} shows cycle-equivalent regions in a simple
 control-flow graph.  We use the notation
 $\tuple{a,b}\cyceq\tuple{c,d}$ to indicate that the CFG edge from node
 $a$ to node $b$ is edge cycle-equivalent to the edge from node $c$ to
@@ -492,9 +499,9 @@ of the CFG suffices to obtain to nesting of these regions,
 which is represented in a data structure called the 
 \emph{program structure tree}.
 The algorithm and data structures required are presented in figures
-\ref{fig:SESEdata} and \ref{fig:SESEalg}.  Figure~\ref{fig:SESEex}
+\ref{fig:SESEdata} and \ref{fig:SESEalg}.  Figure~\vref{fig:SESEex}
 shows the SESE regions on the left and program structure tree on
-the right for the example of figure~\ref{fig:CQex}.%
+the right for the example of figure~\vref{fig:CQex}.%
 \footnote{In addition, the regions ${c,d,e}$ and ${f,g}$ are
 \emph{sequentially composed} \cite{johnson94:pst}.  Does this matter?}
 
@@ -514,7 +521,7 @@ the right for the example of figure~\ref{fig:CQex}.%
 \label{fig:SESEex}\end{myfigure}
 
 The time complexity for constructing the PST is easily seen to be
-$O(E)$. The algorithm presented in figure \ref{fig:SESEalg} begins
+$O(E)$. The algorithm presented in figure~\vref{fig:SESEalg} begins
 with a depth first traversal of $G$ to construct an ordered edge list
 for each cycle-equivalent region; the traversal is $O(E)$ and the
 list-append operation can be done in constant time.  We then iterate
@@ -529,7 +536,7 @@ composition is also $O(E)$.
 As with the presentation of SSA form in \cite{cytron91:ssa}, we split
 construction of SSI form into two parts: placing \phisigfunction{s}
 and renaming variables.  The placement algorithm runs in $O(N V_0)$
-time, and is presented in figure~\ref{fig:SSIalg}.  No new node
+time, and is presented in figure~\vref{fig:SSIalg}.  No new node
 properties or datatypes are required; however, it is parameterized on
 a function called \texttt{MaybeLive}.  The purpose of this function is
 to generate pruned or minimal SSI form by suppressing unnecessary
@@ -676,18 +683,18 @@ control-flow graph with input arity larger than one requires a
 \phifunction{} for every variable and every node with out-arity larger
 than one requires a \sigfunction{} for every variable, and then use
 the PST and liveness information to determine safe places to
-\emph{omit} \phisigfunction[or]s.  Most SSA construction
+\emph{omit} \phisigfunction[or]{s}.  Most SSA construction
 algorithms, by contrast, are \emph{pessimistic}; they assume no
-\phisigfunction[or]s are needed and attempt to determine where
+\phisigfunction[or]{s} are needed and attempt to determine where
 they are necessary.  In my experience, pessimistic algorithms tend to
 have poor time bounds because of the possibility of input graphs like
-figure~\ref{fig:evil}.  Proving that all but two nodes require
-\phisigfunction[and/or]s for the variable $a$ in this example seems to
+figure~\vref{fig:evil}.  Proving that all but two nodes require
+\phisigfunction[and/or]{s} for the variable $a$ in this example seems to
 inherently
 require $O(N)$ passes over the graph; the \phifunction{s} ``spread''
 one node left from the circled node on each pass.  On the other hand,
 an optimistic algorithm assumes the correct answer at the start, fails
-to show that any \phisigfunction[or]s can be removed, and
+to show that any \phisigfunction[or]{s} can be removed, and
 terminates in one pass.\fixme{Are we \emph{sure} similar worst cases
 don't exist for the optimistic algorithm?}
 
@@ -702,7 +709,7 @@ don't exist for the optimistic algorithm?}
 	Also bitwidth analysis.}%
 \fixme{Write this.}
 
-\section{An executable representation}\label{sec:ssiplus}
+\mysection{An executable representation}\label{sec:ssiplus}
 The Static Single Information (SSI) form, as presented in the first
 half of this thesis,
 requires control-flow graph information in order to be executable. We
@@ -712,7 +719,7 @@ more flexibly reorder execution.
 
 In particular, we would like a representation that eliminates
 unnecessary control dependencies such as exist in the program of
-figure~\ref{fig:ctrldep}.  A control-flow graph for this program, as
+figure~\vref{fig:ctrldep}.  A control-flow graph for this program, as
 it is written, will explicitly specify that no assignments to
 \texttt{B[]} will take place until all elements of \texttt{A[]} have
 been assigned; that is, the second loop will be
@@ -891,7 +898,7 @@ are mapped to $\bot_\domainsm{V}$.\fixme{START CONDITION.}
 \end{enumerate}
 \end{definition}
 
-Figure~\ref{fig:cyclesemantics} shows the cycle-oriented transition
+Figure~\vref{fig:cyclesemantics} shows the cycle-oriented transition
 rules for \ssiplus\ form.  The left column consists of definitions and
 the right column shows a precondition on top of the line, and a
 transition below the line.  If the definition in the left column is
@@ -981,7 +988,7 @@ and an empty mapping for the invariant store.%
 \end{enumerate}
 \end{definition}
 
-Figure~\ref{fig:eventsemantics} shows the event-driven transition
+Figure~\vref{fig:eventsemantics} shows the event-driven transition
 rules for \ssiplus\ form.  As before, the left column consists of
 definitions and the right column shows an optional precondition above
 a line, and a transition.  If the definition in the left column is
@@ -1023,30 +1030,30 @@ using \ssiplus.
 \textbf{Er, at this point I will do what I just said I would do.  I'm
 working on generating the figures to illustrate this section.}
 
-\section{Results}
+\mysection{Results}
 \textbf{Numbers, numbers, and more numbers.}
 
-\section{Future work}
+\mysection{Future work}
 \textbf{Get a PhD.}\footnote{This involves finishing section
 \ref{sec:hardware} by describing how memory is handled in hardware
 compilation.  Answer: using lots and lots of sophisticated analysis,
 that's how.}
 
-\section{Conclusions}
+\mysection{Conclusions}
 \textbf{Scott is done.}
 
 \newpage
 \bibliography{harpoon}
 \newpage
 \appendix
-\section{Common errors of IR research papers}
+\mysection{Common errors of IR research papers}
 For some reason, the field of compiler IRs seems to attract more than
 its share of village idiots.
 \begin{enumerate}
 \item Quote: ``The number of $\phi$-nodes needed remains linear''
 \cite{sreedhar95:lintime}.  Often \cite{cytron91:ssa} is cited in
 support of this.  What Cytron \emph{actually} said was ``For the
-programs we tested, the plot in Figure 21 shows that the number of
+programs we tested, the plot in Figure~21 shows that the number of
 \phifunction{s} is also linear in the size of the original program.''
 In other words, this is not a theoretical or hard bound, this is an
 \emph{experimental} result.  By the same experimental technique that
@@ -1096,7 +1103,7 @@ $O(N)$---again, because that's the way it looks ``in practice.''  So,
 everything is ``linear.''}
 \end{enumerate}
 
-\section{Canonical and derived definitions of the empty set}
+\mysection{Canonical and derived definitions of the empty set}
 \begin{enumerate}
 \item \textbf{``Who cares about Maria?''} (Canonical) \cite{marinov99}
 \item \textbf{``Who cares about Martin and Maria?''} (Radu Revised)
