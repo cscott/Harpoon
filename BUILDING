@@ -13,10 +13,10 @@ RTJ support has 3 components:
 % emacs ~/.bashrc   (or ~/.cshrc)
 
 Add the following line after your "export CLASSPATH" (in ~/.bashrc):
-export CLASSPATH=$CLASSPATH:$HOME/Harpoon/Code/Support/realtime.jar 
+export CLASSPATH=$CLASSPATH:$HOME/Harpoon/Realtime/realtime.jar 
 
 For csh users, it's:
-setenv CLASSPATH $CLASSPATH:$HOME/Harpoon/Code/Support/realtime.jar
+setenv CLASSPATH $CLASSPATH:$HOME/Harpoon/Realtime/realtime.jar
 
 % source ~/.bashrc  (or ~/.cshrc)
 
