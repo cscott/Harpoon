@@ -278,12 +278,17 @@ while [ x$IMAGEREC = xnone ]; do
   esac;
 done
 
-source ~/.bashrc
-
-export LINE1=`fgrep -c 'CVS_RSH' ~/.bashrc`
-export LINE2=`fgrep -c 'CVSEDITOR' ~/.bashrc`
-export LINE3=`which java`
-export LINE3=`fgrep -c -v 'no java' $LINE3`
+if [ -f ~/.bashrc ]; then
+  source ~/.bashrc;
+  export LINE1=`fgrep -c 'CVS_RSH' ~/.bashrc`;
+  export LINE2=`fgrep -c 'CVSEDITOR' ~/.bashrc`;
+  export LINE3=`which java`;
+  export LINE3=`fgrep -c -v 'no java' $LINE3`;
+else
+  export LINE1=0;
+  export LINE2=0;
+  export LINE3=0;
+fi
 
 if test $LINE1 == 0 -o $LINE2 == 0 -o $LINE3 == 0; then
   echo;
