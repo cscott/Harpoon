@@ -19,6 +19,7 @@ JNIEXPORT jboolean JNICALL Java_java_lang_Class_isPrimitive(JNIEnv *, jobject);
  */
 jsize FNI_GetArrayLength(JNIEnv *env, jarray array) {
   struct aarray *a = (struct aarray *) FNI_UNWRAP(array);
+  assert(a->obj.claz->component_claz); /* else not an array */
   return a->length;
 }
 
