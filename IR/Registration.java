@@ -14,7 +14,7 @@ package harpoon.IR;
  * typically when the <code>Registration</code> class is loaded.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Registration.java,v 1.2.2.5 1999-02-16 22:11:27 duncan Exp $
+ * @version $Id: Registration.java,v 1.2.2.6 1999-05-17 20:07:59 andyb Exp $
  */
 
 public class Registration  {
@@ -25,5 +25,6 @@ public class Registration  {
 	harpoon.IR.LowQuad.LowQuadSSA.register();
 	harpoon.IR.LowQuad.LowQuadNoSSA.register();
 	harpoon.IR.Tree.TreeCode.register();
+    harpoon.Backend.StrongARM.SACode.register();
     }
 }

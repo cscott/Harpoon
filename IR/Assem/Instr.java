@@ -18,7 +18,7 @@ import harpoon.ClassFile.HCodeEdge;
  * the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.9 1999-04-20 19:06:41 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.10 1999-05-17 20:08:00 andyb Exp $
  */
 public class Instr implements HCodeElement, UseDef, Edges {
     public String assem;
@@ -31,7 +31,8 @@ public class Instr implements HCodeElement, UseDef, Edges {
     public int source_line;
     public int id;
 
-    // FSK: below variables are needed for proper implementation of the Edges interface
+    // FSK: below variables are needed for proper implementation of the 
+    // Edges interface
     public HCodeEdge[] edges;
     public HCodeEdge[] pred;
     public HCodeEdge[] succ;
