@@ -12,6 +12,8 @@ sub dumpstored {
     close FH;
 }
 
+$longest=0;
+
 undef $outfile;
 $contents="";
 LINE: while (<>) {
@@ -19,7 +21,8 @@ LINE: while (<>) {
 	dumpstored $outfile, $contents if defined($outfile);
 	$outfile = <>; # read next line.
 	chomp $outfile;
-	print "$outfile\n";
+	printf "% *s\r", -$longest, $outfile; # some pretty status printing
+	$longest=length $outfile if $longest < length $outfile;
 	$contents="";
 	next LINE;
     }
@@ -27,3 +30,5 @@ LINE: while (<>) {
     $contents .= $_;
 }
 dumpstored $outfile, $contents if defined($outfile);
+# erase pretty status line.
+printf "% *s\r", $longest, " ";
