@@ -4,12 +4,14 @@ package harpoon.IR.QuadSSA;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 /**
- * <code>CJMP</code> represents conditional branches.
- * succ[0] is if-false, which is taken if the operand is equal to zero.
- * succ[1] is if-true branch, taken when the operand is not equal to zero.
+ * <code>CJMP</code> represents conditional branches.<p>
+ * <code>next[0]</code> is if-false, which is taken if 
+ *                         the operand is equal to zero.
+ * <code>next[1]</code> is if-true branch, taken when 
+ *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.6 1998-08-26 22:01:39 cananian Exp $
+ * @version $Id: CJMP.java,v 1.7 1998-08-27 00:59:05 cananian Exp $
  */
 
 public abstract class CJMP extends Quad {
