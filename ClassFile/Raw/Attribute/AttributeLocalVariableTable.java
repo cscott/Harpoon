@@ -17,7 +17,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * not included unless debugging flags are given to the compiler.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeLocalVariableTable.java,v 1.10 1998-08-01 22:55:16 cananian Exp $
+ * @version $Id: AttributeLocalVariableTable.java,v 1.11 1998-08-02 08:20:31 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.7"
  * @see AttributeCode
  * @see Attribute
@@ -41,7 +41,7 @@ public class AttributeLocalVariableTable extends Attribute {
     int local_variable_table_length = in.read_u2();
     local_variable_table = new LocalVariableTable[local_variable_table_length];
     for (int i=0; i<local_variable_table_length; i++)
-      local_variable_table[i] = new LocalVariableTable(in);
+      local_variable_table[i] = new LocalVariableTable(parent, in);
 
     if (attribute_length != attribute_length())
       throw new ClassDataException("LocalVariableTable with length "
@@ -55,7 +55,9 @@ public class AttributeLocalVariableTable extends Attribute {
     this.local_variable_table = local_variable_table;
   }
 
-  public long attribute_length() { return 2 + 10*local_variable_table_length(); }
+  public long attribute_length() { 
+    return 2 + 10*local_variable_table_length();
+  }
 
   // Convenience.
   public int local_variable_table_length() 
@@ -83,86 +85,16 @@ public class AttributeLocalVariableTable extends Attribute {
     return null;
   }
 
-  /*****************************************************************/
-  // INNER CLASS: LineNumberTable
-  /*****************************************************************/
-
-  /** Each object indicates a range of <code>code</code> array offsets
-      within which a local variable has a value. */
-  public class LocalVariableTable {
-    /** The given local variable must have a value at indices into the
-	<code>code</code> array in the closed interval
-	<code>[start_pc, start_pc + length]</code>.
-	<p> The value of <code>start_pc</code> must be a valid index
-	into the <code>code</code> array of this <code>Code</code>
-	attribute of the opcode of an instruction. */
-    public int start_pc;
-    /** The given local variable must have a value at indices into the
-	<code>code</code> array in the closed interval
-	<code>[start_pc, start_pc + length]</code>.
-	<p> The value of <code>start_pc+length</code> must be either a 
-	valid index into the <code>code</code> array of this
-	<code>Code</code> attribute of the opcode of an instruction,
-	or the first index beyond the end of that <code>code</code>
-	array.  */
-    public int length;
-    /** The value of the <code>name_index</code> item must be a valid
-	index into the <code>constant_pool</code> table.  The
-	<code>constant_pool</code> entry at that index must contain a
-	<code>CONSTANT_Utf8_info</codE> structure representing a valid
-	Java local variable name stored as a simple name. */
-    public int name_index;
-    /** The value of the <code>descriptor_index</code> item must be a
-	valid index into the <code>constant_pool</code> table.  The
-	<code>constant_pool</code> entry at that index must contain a
-	<code>CONSTANT_Utf8_info</code> structure representing a valid
-	descriptor for a Java local variable.  Java local variable
-	descriptors have the same form as field descriptors. */
-    public int descriptor_index;
-    /** The given local variable must be at <code>index</code> in its
-	method's local variables.  If the local variable at
-	<code>index</code> is a two-word type (<code>double</code> or
-	<code>long</code>), it occupies both <code>index</code> and
-	<code>index+1</code>. */
-    public int index;
-
-    /** Constructor. */
-    LocalVariableTable(ClassDataInputStream in) throws java.io.IOException {
-      start_pc = in.read_u2();
-      length   = in.read_u2();
-      
-      name_index       = in.read_u2();
-      descriptor_index = in.read_u2();
-      
-      index = in.read_u2();
+  /** Pretty-print the contents of this attribute.
+   *  @param indent the indentation level to use.
+   */
+  public void print(java.io.PrintWriter pw, int indent) {
+    int in=indent;
+    indent(pw, in, 
+	   "LocalVariableTable attribute ["+local_variable_table.length+"]:");
+    for (int i=0; i<local_variable_table.length; i++) {
+      indent(pw, in+1, "#"+i+":");
+      local_variable_table[i].print(pw, in+2);
     }
-    /** Constructor. */
-    public LocalVariableTable(int start_pc, int length,
-			      int name_index, int descriptor_index,
-			      int index) {
-      this.start_pc = start_pc;
-      this.length = length;
-      this.name_index = name_index;
-      this.descriptor_index = descriptor_index;
-      this.index = index;
-    }
-    /** Writes to bytecode stream. */
-    public void write(ClassDataOutputStream out) throws java.io.IOException {
-      out.write_u2(start_pc);
-      out.write_u2(length);
-
-      out.write_u2(name_index);
-      out.write_u2(descriptor_index);
-      
-      out.write_u2(index);
-    }
-    // convenience functions.
-    public ConstantUtf8 name_index()
-    { return (ConstantUtf8) parent.constant_pool[name_index]; }
-    public ConstantUtf8 descriptor_index()
-    { return (ConstantUtf8) parent.constant_pool[descriptor_index]; }
-
-    public String name() { return name_index().val; }
-    public String descriptor() { return descriptor_index().val; }
   }
 }
