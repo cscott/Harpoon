@@ -101,7 +101,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.26 2002-12-02 19:14:54 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.27 2002-12-02 23:12:51 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -122,6 +122,9 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean LOOPOPTIMIZE = false;
     static boolean USE_OLD_CLINIT_STRATEGY = false;
     static boolean INSTRUMENT_ALLOCS = false;
+    // TODO: add command line options about instrumenting syncs/calls
+    static boolean INSTRUMENT_SYNCS = false;
+    static boolean INSTRUMENT_CALLS = false;
     static boolean INSTRUMENT_ALLOCS_STUB = false;
     static String IFILE=null;
     static InstrumentAllocs insta = null;
@@ -325,7 +328,7 @@ public class SAMain extends harpoon.IR.Registration {
 	if (INSTRUMENT_ALLOCS || INSTRUMENT_ALLOCS_STUB) {
 	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 	    AllocationNumbering an =
-		new AllocationNumbering(hcf, classHierarchy, true);
+		new AllocationNumbering(hcf, classHierarchy, INSTRUMENT_CALLS);
 	    try {
 		if(INSTRUMENT_ALLOCS_STUB) { // "textualize" only a stub
 		    System.out.println("Writing AllocationNumbering into " +
@@ -358,7 +361,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    }
 	    hcf = an.codeFactory();
 	    insta = 
-		new InstrumentAllocs(hcf, mainM, linker, an, true, true);
+		new InstrumentAllocs(hcf, mainM, linker, an,
+				     INSTRUMENT_SYNCS, INSTRUMENT_CALLS);
 	    hcf = insta.codeFactory();
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);

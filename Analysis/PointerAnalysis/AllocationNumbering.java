@@ -33,7 +33,7 @@ import java.io.IOException;
  * (e.g. <code>InstrumentAllocs</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.6 2002-12-02 23:09:41 salcianu Exp $ */
+ * @version $Id: AllocationNumbering.java,v 1.7 2002-12-02 23:12:42 salcianu Exp $ */
 public class AllocationNumbering implements java.io.Serializable {
     private final CachingCodeFactory ccf;
     public  final Map alloc2int;
@@ -51,6 +51,9 @@ public class AllocationNumbering implements java.io.Serializable {
         this.ccf       = new CachingCodeFactory(hcf, true);
 	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); )
 	    number(this.ccf.convert((HMethod) it.next()), callSites);
+
+	System.out.println("alloc_count = " + alloc_count +
+			   "\tcall_count = " + call_count);
     }
 
     /** Return the (caching) code factory this numbering was created on. */
@@ -95,7 +98,6 @@ public class AllocationNumbering implements java.io.Serializable {
 
     private int alloc_count = 0;
     private int call_count  = 0;
-
 
 
     ////////////////// MINI SERIALIZATON //////////////////////////////////
