@@ -43,7 +43,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.34 1999-12-20 08:33:16 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.35 1999-12-20 12:42:37 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
 
@@ -151,8 +151,8 @@ public abstract class Code extends HCode {
         return frame;
     }
 
-    HashSet outputLabels = new HashSet();
-    MultiMap labelsNeeded = new DefaultMultiMap();
+    private HashSet outputLabels = new HashSet();
+    private MultiMap labelsNeeded = new DefaultMultiMap();
     
     /** Displays the assembly instructions of this codeview. Attempts
      *  to do so in a well-formatted, easy to read way. <BR>
@@ -162,10 +162,10 @@ public abstract class Code extends HCode {
      */
     public void print(java.io.PrintWriter pw) {
 
-	Iterator iter = getElementsI();
-        while(iter.hasNext()) {
+	Instr instr = instrs;
+        while(instr.getNext() != null) {
 	    String str = "";
-	    Instr instr = (Instr) iter.next();
+	    instr = instr.getNext();
             if (instr instanceof InstrLABEL ||
 		instr instanceof InstrDIRECTIVE) {
                 str = instr.toString();
@@ -214,10 +214,24 @@ public abstract class Code extends HCode {
 	if (DEBUG) { // check that all needed labels have been output
  	    Iterator needed = labelsNeeded.keySet().iterator();
 	    while(needed.hasNext()) {
-		Label l = (Label) needed.next();
-		Util.assert(outputLabels.contains(l), "label "+l+" , "+
-			    "needed by "+labelsNeeded.getValues(l)+" , "+
-			    "was not output");
+		final Label l = (Label) needed.next();
+		Util.assert(outputLabels.contains(l), 
+			    new Util.LazyString() {
+		    public String eval() {
+			Iterator instrs = getElementsI();
+			boolean labelFound = false;
+			while(instrs.hasNext()) {
+			    Instr i = (Instr) instrs.next();
+			    if (i instanceof InstrLABEL &&
+				l.equals(((InstrLABEL)i).getLabel())) {
+				labelFound = true;
+			    }
+			}
+			return ("label "+l+" , "+
+				"needed by "+labelsNeeded.getValues(l)+" , "+
+				"was not output.  labelFound: "+labelFound);
+		    }
+		});
 	    }
 	}
     }

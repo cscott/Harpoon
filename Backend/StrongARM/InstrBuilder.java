@@ -19,7 +19,7 @@ import java.util.Arrays;
     StrongARM architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.4 1999-12-20 02:41:48 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.5 1999-12-20 12:42:39 pnkfelix Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
@@ -158,6 +158,8 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 				 new Temp[]{ },
 				 new Temp[]{ r , SP() });
 		store2.layout(store1, null);
+		Util.assert(store1.getNext() == store2, "store1.next == store2");
+		Util.assert(store2.getPrev() == store1, "store2.prev == store1");
 		return Arrays.asList(new InstrMEM[]{ store1, store2 });
 	    } else {
 		InstrMEM store = 

@@ -43,7 +43,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.63 1999-12-20 02:41:52 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.64 1999-12-20 12:42:40 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private final String assem; 
@@ -266,7 +266,7 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	     as to substitute <code>newis</code> in the place of
 	     <code>oldi</code>.   
     */
-    public static void replaceInstrList(Instr oldi, List newis) {
+    public static void replaceInstrList(final Instr oldi, final List newis) {
 	Util.assert(oldi != null && newis != null, "Null Arguments are bad");
 	Util.assert(oldi.canFallThrough &&
 		    oldi.getTargets().isEmpty(), 
@@ -274,37 +274,54 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	Util.assert(isLinear(newis), "newis must be a basic block: " +
 		    pprint(newis));
 	
-	Instr next = oldi.next;
-	Instr prev = oldi.prev;
-	Instr newiF = (Instr) newis.get(0);
-	Instr newiL = (Instr) newis.get(newis.size() - 1);
+	final Instr next = oldi.next;
+	final Instr prev = oldi.prev;
+	final Instr newiF = (Instr) newis.get(0);
+	final Instr newiL = (Instr) newis.get(newis.size() - 1);
 
 	if(prev!=null)prev.next = newiF;
 	newiF.prev = prev;
 	newiL.next = next;
 	if(next!=null)next.prev = newiL;
-	
-	String s = "";
-	Instr i;
-	if (prev != null) { 
-	    i = prev;
-	} else {
-	    s += "null | ";
-	    i = newiF;
-	}
-	while(i != null && 
-	      i != next) {
-	    s += i.toString() + " | ";
-	    // if (i.next == null) System.out.println("next is null for " + i);
+
+	// DEBUG check that the stream still flows from prev to next
+	// FSK: note to self; check if the prev==null case screws
+	//      things up in subtle ways
+	Instr i = (prev == null)?newiF:prev;
+	while (i != next && i.next != null) {
 	    i = i.next;
 	}
-	if (i != null) {
-	    s += i.toString();
-	} else {
-	    s += "null";
-	}
-
+	final Instr ifinal = i;
+	
+	Util.assert(ifinal == next, 
+		    new Util.LazyString() {
+			public String eval() {
+			    Instr i2 = null;
+			    String s = ("replacing "+oldi+" -> "+newis+" ; "+
+					"started at prev:"+prev+
+					" but ended up at "+ifinal+
+					" instead of "+newiL+" , "+next+"\n");
+			    if (prev != null) { 
+				i2 = prev; 
+			    } else {
+				s += "null | ";
+				i2 = newiF;
+			    }
+			    while(i2 != null && i2 != next) {
+				s += i2.toString() + " | ";
+				i2 = i2.next;
+			    }
+			    if (i2 != null) { 
+				s += i2.toString(); 
+			    } else { 
+				s += "null"; 
+			    }
+			    return s;
+			}   
+		    });
+	
 	//System.out.println("Changed \n" + prev +" "+ oldi +" "+ next +"\n to " + s);
+
     }
 
     private static String pprint(List l) {
@@ -322,21 +339,35 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	Checks: each Instr 'i' in 'instrs' has only one successor
 	(with regards to Control Flow) except for the last, which
 	should be non-branching and have no next.
+	
+	This method actually requires instrs be linear right now;
+	its more of a assertion macro than an actual information
+	extraction method. 
     */
     private static boolean isLinear(List instrs) {
 	boolean linear = true;
-	int index = 0;
-	Instr i = (Instr) instrs.get(index);
+	Instr i = (Instr) instrs.get(0);
 	Instr next = null;
 
-	while(true) {
+	final Iterator iter = instrs.iterator();
+	while(iter.hasNext()) {
+	    Instr iterInstr = (Instr) iter.next();
+	    
+	    Util.assert(iterInstr == i, "list "+instrs+" is nonlinear");
+
 	    int size = i.succC().size();
 	    Util.assert(size >= 0, "size should always be >= 0");
 	    if (size == 0) {
 		// reached the end (I hope)
-		Util.assert(i.next == null &&
-			    i.targets == null,
-			    "last instr should have next==targets==null");
+		Util.assert(i.next == null, "last should have next == null");
+		Util.assert(i.targets == null, "last should have targets == null");
+		Util.assert(!iter.hasNext(), 
+			    new Util.LazyString() {
+		    public String eval() {
+			return ("last should have nothing left in iter "+
+				iter.next());
+		    }
+		});
 		break;
 	    }
 	    Instr n = (Instr) i.succC().iterator().next();

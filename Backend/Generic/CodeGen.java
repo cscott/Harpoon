@@ -4,9 +4,9 @@
 package harpoon.Backend.Generic;
 
 import harpoon.ClassFile.HMethod;
-import harpoon.IR.Tree.Code;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Tree.Print;
+
 
 /**
  * <code>Generic.CodeGen</code> is a general class for specific Backends to
@@ -14,7 +14,7 @@ import harpoon.IR.Tree.Print;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.5 1999-12-20 02:41:43 pnkfelix Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.6 1999-12-20 12:42:37 pnkfelix Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -31,10 +31,33 @@ public abstract class CodeGen {
     /** Fixes up the procedure entry and exit code for a list of instrs, once
      *  it is known how many registers and how much stack space is used.
      */ // FIXME: is there a more abstract way to specify these 
-        // quantities?  Also, we may want to make it modify the instr
-        // passed in, instead of allowing it to be functional in nature
+        // quantities?   FSK: I think we should deprecate this
     public abstract Instr procFixup(HMethod hm, Instr instr, int stackspace,
 				    java.util.Set usedRegisters);
+
+    /** Fixes up the procedure entry and exit code for a list of instrs, once
+     *  it is known how many registers and how much stack space is used.
+     */ // FIXME: is there a more abstract way to specify these 
+        // quantities?   FSK: This is what I think we should use instead
+    public void procFixup(HMethod hm,
+			  harpoon.Backend.Generic.Code code, 
+			  int stackspace, 
+			  java.util.Set usedRegisters) {
+	harpoon.Util.Util.assert(false, "abstract me and implement in subclasses");
+    }
+
+
+
+    // Helper methods to avoid package visibility problems in
+    // Generic.Code
+
+    protected Instr getInstrs(harpoon.Backend.Generic.Code code) {
+	return code.instrs;
+    }
+    protected void setInstrs(harpoon.Backend.Generic.Code code,
+			     Instr instrs) {
+	code.instrs = instrs;
+    }
 
     /** Creates a <code>Instr</code> list from the
 	<code>IR.Tree.Code</code> <code>tree</code>. 

@@ -56,7 +56,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.56 1999-12-20 02:41:35 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.57 1999-12-20 12:42:36 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
@@ -444,16 +444,19 @@ public abstract class RegAlloc  {
 		List instrs = 
 		    frame.getInstrBuilder().
 		    makeStore(Arrays.asList(m.use()), i.intValue(), m);
+		
+		if (instrs.size() > 1) { // linearity check
+		    Iterator iter = instrs.iterator();
+		    Instr i1 = (Instr) iter.next();
+		    while(iter.hasNext()) {
+			Instr i2 = (Instr) iter.next();
+			Util.assert(i1.getNext() == i2, "i1.next != i2:( "+i1+" , "+i2+")");
+			Util.assert(i2.getPrev() == i1, "i2.prev != i1:( "+i1+" , "+i2+")");
+			i1 = i2;
+		    }
+		}
 
-		// add a comment saying which temp is being stored
-		Instr first = (Instr) instrs.get(0);
 		Instr.replaceInstrList(m, instrs);		
-		//Instr newi = 
-		//  new Instr(first.getFactory(), first,
-		//	      "\t@storing " + m.def()[0], null, null);
-		//newi.insertAt(new InstrEdge(first.getPrev(), first));
-
-
 	    }
 	    
 	    public void visitLoad(FskLoad m) {
@@ -464,15 +467,7 @@ public abstract class RegAlloc  {
 			    "a value for "+m.use()[0]);
 		List instrs = frame.getInstrBuilder().
 		    makeLoad(Arrays.asList(m.def()), i.intValue(), m);
-
-		// add a comment saying which temp is being loaded
-		Instr first = (Instr) instrs.get(0);
 		Instr.replaceInstrList(m, instrs);
-
-
-		// Instr newi = new Instr(first.getFactory(), first,
-		//		       "\t@loading " + m.use()[0], null, null);
-		// newi.insertAt(new InstrEdge(first.getPrev(), first));
 	    }
 	    
 	    public void visit(Instr i) {
@@ -514,9 +509,9 @@ public abstract class RegAlloc  {
 	final int locals = tf.nextOffset; 
 
 	// TODO: need to get this value into 'in' somehow...
-	instr = frame.getCodeGen().procFixup(in.getMethod(), instr,
-					      locals,
-					      computeUsedRegs(instr)); 
+	frame.getCodeGen().procFixup(in.getMethod(), (Code) in,
+				     locals,
+				     computeUsedRegs(instr)); 
 
 	return in;
     }

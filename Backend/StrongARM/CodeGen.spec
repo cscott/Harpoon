@@ -46,11 +46,15 @@ import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.UNOP;
 import harpoon.IR.Tree.SEQ;
 
+import harpoon.Util.Collections.MultiMap;
+import harpoon.Util.Collections.DefaultMultiMap;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -60,7 +64,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.112 1999-12-20 02:41:47 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.113 1999-12-20 12:42:38 pnkfelix Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -88,6 +92,10 @@ import java.util.Iterator;
 
     // whether to generate stabs debugging information in output (-g flag)
     private static final boolean stabsDebugging=true;
+
+    // debugging stuff
+    private HashSet outputLabels = new HashSet();
+    private MultiMap labelsNeeded = new DefaultMultiMap();
 
     public CodeGen(Frame frame) {
 	super(frame);
@@ -132,6 +140,20 @@ import java.util.Iterator;
 	// its correct that last==null the first time this is called
 	i.layout(last, null);
 	last = i;
+
+	if (true) { // DEBUG CODE
+	    if (i instanceof InstrLABEL) { 
+		InstrLABEL il = (InstrLABEL) i;
+		Label l = il.getLabel();
+		outputLabels.add(l);
+	    } else {
+		Iterator targets = i.getTargets().iterator();
+		while(targets.hasNext()) {
+		    labelsNeeded.add(targets.next(), i);
+		}
+	    }
+	}
+
 	return i;
     }
 
@@ -532,6 +554,139 @@ import java.util.Iterator;
 	}
 	return instr;
     }
+
+    public void procFixup(HMethod hm, 
+			  harpoon.Backend.Generic.Code code,
+			  int stackspace, Set usedRegisters) {
+	
+	// FSK: blatantly stole all of this implementation from
+	// the above method, with the change that it now sets
+	// code.instrs directly instead of returning the new head
+	// Instr. 
+	Instr instr = getInstrs(code);
+
+	InstrFactory inf = instrFactory; // convenient abbreviation.
+	Label methodlabel = frame.getRuntime().nameMap.label(hm);
+	// make list of callee-save registers we gotta save.
+	StringBuffer reglist = new StringBuffer();
+
+	Temp[] usedRegArray =
+	    (Temp[]) usedRegisters.toArray(new Temp[usedRegisters.size()]);
+	Collections.sort(Arrays.asList(usedRegArray), regComp);
+	int nregs=0;
+	for (int i=0; i<usedRegArray.length; i++) {
+	    Temp rX = usedRegArray[i];
+	    Util.assert(regfile.isRegister(rX));
+	    if (rX.equals(r0)||rX.equals(r1)||rX.equals(r2)||rX.equals(r3))
+		continue; // caller save registers.
+	    if (rX.equals(LR)||rX.equals(PC)||rX.equals(FP)||rX.equals(SP)||
+		rX.equals(IP)) continue; // always saved.
+	    reglist.append(rX.toString());
+	    reglist.append(", "); 
+	    nregs++;
+	}
+	// find method entry/exit stubs
+	Instr last=instr;
+	for (Instr il = instr; il!=null; il=il.getNext()) {
+	    if (il instanceof InstrENTRY) { // entry stub.
+		Instr in1 = new InstrDIRECTIVE(inf, il, ".balign 4");
+		Instr in2 = new InstrDIRECTIVE(inf, il, ".global " +
+					       methodlabel.name);
+		Instr in2a= new InstrDIRECTIVE(inf, il, ".type " +
+					       methodlabel.name+",#function");
+		Instr in3 = new InstrLABEL(inf, il, methodlabel.name+":",
+					   methodlabel);
+		Instr in4 = new Instr(inf, il, "mov ip, sp", null, null);
+		Instr in5 = new Instr(inf, il,
+				      "stmfd sp!, {"+reglist+"fp,ip,lr,pc}",
+				      null, null);
+		Instr in6 = new Instr(inf, il, "sub fp, ip, #4", null, null);
+		
+		String assem;
+		if (harpoon.Backend.StrongARM.
+		    Code.isValidConst(stackspace*4)) {
+		    assem = "sub sp, sp, #"+(stackspace*4);
+		} else {
+		    assem="";
+		    int op2 = stackspace *4;
+		    while(op2 != 0) {
+			// FSK: trusting CSA's code from CodeGen here...
+			int eight = op2 & (0xFF << ((Util.ffs(op2)-1) & ~1));
+			assem += "sub sp, sp, #"+eight;
+			op2 ^= eight;
+			if (op2!=0) assem += "\n";		
+		    }
+		}
+		Instr in7 = new Instr(inf, il, assem, null, null);
+		in7.layout(il, il.getNext());
+		in6.layout(il, in7);
+		in5.layout(il, in6);
+		in4.layout(il, in5);
+		in3.layout(il, in4);
+		in2a.layout(il,in3);
+		in2.layout(il, in2a);
+		in1.layout(il, in2);
+		if (il==instr) instr=in1; // fixup root if necessary.
+		if (stackspace==0) in7.remove(); // optimize
+		il.remove(); il=in1;
+	    }
+	    if (il instanceof InstrEXIT) { // exit stub
+		Instr in1 = new Instr(inf, il,
+				"ldmea fp, {"+reglist+"fp, sp, pc}",
+				 null, null);
+		in1.layout(il.getPrev(), il);
+		il.remove(); il=in1;
+	    }
+	    last=il;
+	}
+	// add a size directive to the end of the function to let gdb
+	// know how long it is.
+	if (last!=null) { // best be safe.
+	    Instr in1 = new InstrDIRECTIVE(inf, last, "\t.size " +
+					   methodlabel.name + ", . - " +
+					   methodlabel.name);
+	    in1.layout(last, last.getNext());
+	    last=in1;
+	}
+	// stabs debugging information:
+	if (stabsDebugging && !hm.getDeclaringClass().isArray()) {
+	    int lineno=-1;
+	    for (Instr il = instr; il!=null; il=il.getNext())
+		if (il.getLineNumber()!=lineno) {
+		    lineno = il.getLineNumber();
+		    Instr in1 = new InstrDIRECTIVE(inf, il, // line number
+						   "\t.stabd 68,0,"+lineno);
+		    in1.layout(il.getPrev(), il);
+		    if (il==instr) instr=in1;
+		}
+	    Instr in1 = new InstrDIRECTIVE(inf, instr, // source path
+					   "\t.stabs \""+
+					   hm.getDeclaringClass().getPackage()
+					   .replace('.','/')+"/"+
+					   "\",100,0,0,"+methodlabel.name);
+	    Instr in2 = new InstrDIRECTIVE(inf, instr, // source file name
+					   "\t.stabs \""+instr.getSourceFile()+
+					   "\",100,0,0,"+methodlabel.name);
+	    Instr in3 = new InstrDIRECTIVE(inf, instr, // define void type
+					   "\t.stabs \"void:t19=19\",128,0,0,0"
+					   );
+	    Instr in4 = new InstrDIRECTIVE(inf, instr, // mark as function
+					   "\t.stabs \""+
+					   methodlabel.name.substring(1)+":F19"
+					   +"\",36,0,"+(nregs*4)+","+
+					   methodlabel.name);
+	    in1.layout(instr.getPrev(), instr);
+	    in2.layout(in1, instr);
+	    in3.layout(in2, instr);
+	    instr = in1;
+	    in4.layout(last, last.getNext());
+	    last = in4;
+	}
+
+	// return instr;
+	setInstrs(code, instr);
+    }
+
     // now define our little InstrENTRY and InstrEXIT sub-types.
     private static class InstrENTRY extends InstrDIRECTIVE {
 	public InstrENTRY(InstrFactory inf, HCodeElement src) {
@@ -558,6 +713,31 @@ import java.util.Iterator;
 %end with %{
        // *** METHOD EPILOGUE *** 
        Util.assert(first != null, "Should always generate some instrs");
+
+       // check that all needed targets have been generated and are
+       // in the produced list.
+       Iterator needed = labelsNeeded.keySet().iterator();
+       while(needed.hasNext()) {
+	   final Label l = (Label) needed.next();
+	   Util.assert(outputLabels.contains(l), 
+		       new Util.LazyString() {
+	       public String eval() {
+		   Instr i = first;
+		   boolean labelFound = false;
+		   while(i.getNext() != null) {
+		       i = i.getNext();
+		       if (i instanceof InstrLABEL &&
+			   l.equals(((InstrLABEL)i).getLabel())) {
+			   labelFound = true;
+		       }
+		   }
+		   return ("label "+l+" , "+
+			   "needed by "+labelsNeeded.getValues(l)+" , "+
+			   "was not output.  labelFound: "+labelFound);
+	       }
+	   });
+       }
+       
        return first;
 }%
     /* this comment will be eaten by the .spec processor (unlike comments above) */
