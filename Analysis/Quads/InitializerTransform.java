@@ -4,6 +4,7 @@
 package harpoon.Analysis.Quads;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HCode;
@@ -13,6 +14,8 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HFieldMutator;
 import harpoon.ClassFile.HInitializer;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.NoSuchClassException;
 import harpoon.IR.Quads.ANEW;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CJMP;
@@ -36,10 +39,12 @@ import harpoon.Util.HashEnvironment;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 /**
  * <code>InitializerTransform</code> transforms class initializers so
@@ -47,18 +52,69 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.8 2000-10-20 22:55:40 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.9 2000-10-21 20:36:20 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
     /** Token for the initializer-ordering-check version of a method. */
     public static final Token CHECKED = new Token("initcheck");
+    /** Set of safe methods. */
+    private final Set safeMethods;
+    /** Set of dependent native methods.  We know the dependencies of
+     *  these methods statically; this is a Map from HMethods to
+     *  Sets of HInitializers. */
+    private final Map dependentMethods;
+    /** Our version of the codefactory. */
+    private final HCodeFactory hcf;
 
-    /** Creates a <code>InitializerTransform</code>. */
+    /** Creates a <code>InitializerTransform</code> with no information
+     *  about which native methods are 'safe'. */
     public InitializerTransform(HCodeFactory parent, ClassHierarchy ch) {
+	this(parent, ch, new HashSet(), new HashMap());
+    }
+    /** Creates a <code>InitializerTransform</code> using the specified
+     *  <code>Properties</code> object to specify the safe and dependent
+     *  native methods of this runtime. */
+    public InitializerTransform(HCodeFactory parent, ClassHierarchy ch,
+				Linker linker, Properties methodProps) {
+	this(parent, ch, new HashSet(), new HashMap());
+	parseProperties(linker, methodProps);
+    }
+    /** Creates a <code>InitializerTransform</code> using the given
+     *  information about safe and dependent methods.
+     *  @param parent The input code factory. Will be converted to QuadWithTry.
+     *  @param ch A class hierarchy for the application.
+     *  @param safeMethods a set of all native methods which are 'safe'
+     *         to call within initializers (that is, they do not reference
+     *         any static data).
+     *  @param dependentMethods a map from <code>HMethod</code>s specifying
+     *         native methods to a <code>java.util.Set</code> of the 
+     *         <code>HInitializer</code>s of the classes whose static
+     *         data this method may reference. */
+    public InitializerTransform(HCodeFactory parent, ClassHierarchy ch,
+				 Set safeMethods, final Map dependentMethods) {
 	// we only allow quad with try as input.
 	super(QuadWithTry.codeFactory(parent), ch);
+	this.safeMethods = safeMethods;
+	this.dependentMethods = dependentMethods;
+	final HCodeFactory superfactory = super.codeFactory();
+	Util.assert(superfactory.getCodeName().equals(QuadWithTry.codename));
+	this.hcf = new CachingCodeFactory(new HCodeFactory() {
+	    public String getCodeName() { return superfactory.getCodeName(); }
+	    public void clear(HMethod m) { superfactory.clear(m); }
+	    public HCode convert(HMethod m) {
+		if (Modifier.isNative(m.getModifiers()) &&
+		    dependentMethods.containsKey(select(m, ORIGINAL)) &&
+		    select(select(m, ORIGINAL), CHECKED).equals(m))
+		    // call the initializers for the dependent classes,
+		    // then call the original method.
+		    return redirectCode(m);
+		else return superfactory.convert(m);
+	    }
+	});
     }
+    // override parent's codefactory with ours! (which uses theirs)
+    public HCodeFactory codeFactory() { return hcf; }
     /** Checks the token types handled by this 
      *  <code>MethodSplitter</code> subclass. */
     protected boolean isValidToken(Token which) {
@@ -115,6 +171,7 @@ public class InitializerTransform
     private boolean _isSafe_(HMethod hm) {
 	final HClass hc = hm.getDeclaringClass();
 	if (hc.isArray()) return true; // all array methods (clone()) are safe.
+	if (safeMethods.contains(hm)) return true;
 	class BooleanVisitor extends QuadVisitor {
 	    boolean unsafe = false;
 	    public void visit(Quad q) { /* ignore */ }
@@ -238,5 +295,85 @@ public class InitializerTransform
     }
     private boolean isVirtual(CALL q) {
 	return q.isVirtual() && isVirtual(q.method());
+    }
+    /** Create a redirection method for native methods we "know" the
+     *  dependencies of. */
+    private QuadWithTry redirectCode(final HMethod hm) {
+	final HMethod orig = select(hm, ORIGINAL);
+	final Set inits = (Set) dependentMethods.get(orig);
+	// make the Code for this method (note how we work around the
+	// protected fields).
+	return new QuadWithTry(hm, null) { /* constructor */ {
+	    // figure out how many temps we need, then make them.
+	    int nargs = hm.getParameterTypes().length + (hm.isStatic()? 0: 1);
+	    Temp[] params = new Temp[nargs];
+	    for (int i=0; i<params.length; i++)
+		params[i] = new Temp(qf.tempFactory());
+	    Temp retval = (hm.getReturnType()==HClass.Void) ? null :
+		new Temp(qf.tempFactory());
+	    // okay, make the dispatch core.
+	    Quad q0 = new HEADER(qf, null);
+	    Quad q1 = new METHOD(qf, null, params, 1);
+	    Quad q2 = new CALL(qf, null, orig, params,
+	    		       retval, null, false, true, new Temp[0]);
+	    Quad q3 = new RETURN(qf, null, retval);
+	    Quad q4 = new FOOTER(qf, null, 2);
+	    Quad.addEdge(q0, 0, q4, 0);
+	    Quad.addEdge(q0, 1, q1, 0);
+	    // leaving out the edge from q1 to q2 for the moment.
+	    Quad.addEdge(q2, 0, q3, 0);
+	    Quad.addEdge(q3, 0, q4, 1);
+	    this.quads = q0;
+	    // now make the calls to the static initializers
+	    Quad last = q1;
+	    for (Iterator it=inits.iterator(); it.hasNext(); ) {
+		HInitializer hi = (HInitializer) it.next();
+		Quad qq = new CALL(qf, null, hi, new Temp[0], null, null,
+				   false, false, new Temp[0]);
+		Quad.addEdge(last, 0, qq, 0);
+		last = qq;
+	    }
+	    // and the final link:
+	    Quad.addEdge(last, 0, q2, 0);
+	    // done!
+	} };
+    }
+    private void parseProperties(Linker linker, Properties methodProps) {
+	for (Enumeration e=methodProps.propertyNames(); e.hasMoreElements(); ){
+	    String propkey = ((String) e.nextElement()).trim();
+	    String propval = methodProps.getProperty(propkey).trim();
+	    int lparen = propkey.lastIndexOf('(');
+	    if (lparen<0) { bogus(propkey); continue; }
+	    int ldot = propkey.lastIndexOf('.', lparen);
+	    if (ldot<0) { bogus(propkey); continue; }
+	    String desc = propkey.substring(lparen);
+	    String mname= propkey.substring(ldot+1, lparen);
+	    String cname= propkey.substring(0, ldot);
+	    HMethod hm;
+	    try { hm=linker.forName(cname).getDeclaredMethod(mname, desc); }
+	    catch (NoSuchClassException ex) { bogus(propkey); continue; }
+	    catch (NoSuchMethodError ex) { bogus(propkey); continue; }
+	    Set dep = new HashSet();
+	    while (propval.length()>0) {
+		int space = propval.indexOf(' ');
+		if (space<0) space=propval.length();
+		String firstdep = propval.substring(0, space);
+		propval = propval.substring(space).trim();
+		HClass hc;
+		try { hc=linker.forName(firstdep); }
+		catch (NoSuchClassException ex) { bogus(propval); continue; }
+		HInitializer hi = hc.getClassInitializer();
+		if (hi!=null) dep.add(hi);
+	    }
+	    // if no dependencies, then it's a safe method.
+	    if (dep.size()==0) safeMethods.add(hm);
+	    // otherwise, add to dependent methods list.
+	    else dependentMethods.put(hm, dep);
+	    // yay!
+	}
+    }
+    /** Flag an error, non-fatally. */
+    private static void bogus(String str) {
+	System.err.println("BAD RUNTIME METHOD PROPERTY, SKIPPING: "+str);
     }
 }
