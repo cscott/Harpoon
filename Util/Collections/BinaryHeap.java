@@ -24,7 +24,7 @@ import java.util.Map;
  * Sedgewick's book.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinaryHeap.java,v 1.1.2.4 2001-07-03 00:09:32 cananian Exp $
+ * @version $Id: BinaryHeap.java,v 1.1.2.5 2001-07-03 00:24:41 cananian Exp $
  * @see Heap
  */
 public final class BinaryHeap extends AbstractHeap {
@@ -57,17 +57,12 @@ public final class BinaryHeap extends AbstractHeap {
 	if (debug) checkHeap();
     }
     public Map.Entry insert(Object key, Object value) {
-	Entry e=new Entry(key, value, A.size());
-	insert(e);
-	return e;
-    }
-    protected void insert(Map.Entry me) {
 	int index=A.size();
-	Entry e = (Entry) me;
-	e.index = index;
+	Entry e=new Entry(key, value, index);
 	A.add(e);
 	upheap(index);
 	if (debug) checkHeap();
+	return e;
     }
     public Map.Entry minimum() {
 	if (size() < 1) throw new java.util.NoSuchElementException();
@@ -97,9 +92,14 @@ public final class BinaryHeap extends AbstractHeap {
 	if (debug) checkHeap();
     }
     public void decreaseKey(Map.Entry me, Object newkey) {
+	updateKey(me, newkey);
+    }
+    public void updateKey(Map.Entry me, Object newkey) {
 	Entry e = (Entry) me;
-	setKey(e, newkey);
-	upheap(e.index);
+	if (keyComparator().compare(newkey, setKey(e, newkey)) < 0)
+	    upheap(e.index);
+	else
+	    downheap(e.index);
 	if (debug) checkHeap();
     }
     public void delete(Map.Entry me) {
