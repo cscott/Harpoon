@@ -20,7 +20,7 @@ import java.util.Hashtable;
 /**
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.8 1999-02-08 17:25:09 duncan Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.9 1999-02-16 21:20:06 duncan Exp $
  */
 public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 {
@@ -37,7 +37,7 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
       
       ToNoSSA translator;
       
-      translator   = new ToNoSSA(qf, code, code);
+      translator   = new ToNoSSA(qf, code, code, code);
       quads        = translator.getQuads();
       m_derivation = translator;
       m_typeMap    = translator;
@@ -95,7 +95,7 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
   
   /**
    * Return a code factory for <code>LowQuadNoSSA</code>, using the default
-   * code factory for <code>harpoon.IR.LowQuad.Code</code>
+   * code factory for <code>LowQuadSSA</code>
    */
   public static HCodeFactory codeFactory()
     {  
@@ -113,8 +113,9 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
       return m_derivation.derivation(hce, t);
     }
 
-  public HClass typeMap(Temp t)
+  public HClass typeMap(HCode hc, Temp t)
     {
+      // Ignores hc parameter
       return m_typeMap.typeMap(this, t);
     }
 }

@@ -22,10 +22,10 @@ import java.util.Hashtable;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.8 1999-02-08 17:25:09 duncan Exp $
+ * @version $Id: Code.java,v 1.1.2.9 1999-02-16 21:20:06 duncan Exp $
  */
 public abstract class Code extends harpoon.IR.Quads.Code 
-    implements harpoon.IR.Properties.Derivation
+    implements Derivation, TypeMap
 {
     /** Make the quad factory. */
     protected harpoon.IR.Quads.QuadFactory newQF(final HMethod parent) {
@@ -47,5 +47,5 @@ public abstract class Code extends harpoon.IR.Quads.Code
     /** Implement derivation interface. */
     public abstract DList derivation(HCodeElement hce, Temp t);
 
-    public abstract HClass typeMap(Temp t);
+    public abstract HClass typeMap(HCode hc, Temp t);
 }

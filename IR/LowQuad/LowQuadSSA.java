@@ -20,24 +20,37 @@ import java.util.Hashtable;
  *
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.7 1999-02-08 17:25:09 duncan Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.8 1999-02-16 21:20:06 duncan Exp $
  */
 public class LowQuadSSA extends Code
 {
-  private Hashtable m_hD        = new Hashtable();
-  private TypeMap   m_typeMap;
+  private Derivation  m_derivation;
+  private TypeMap     m_typeMap;
 
   /** The name of this code view. */
   public static final String codename  = "low-quad-ssa";
 
   /** Creates a <code>LowQuadNoSSA</code> object from a LowQuad object */
-  LowQuadSSA(QuadSSA code)
+  LowQuadSSA(final QuadSSA code)
     {
       super(code.getMethod(), null);
-      TypeMap tym = new harpoon.Analysis.QuadSSA.TypeInfo();
+      final Hashtable dT = new Hashtable();
+      final Hashtable tT = new Hashtable();
+      final TypeMap tym = new harpoon.Analysis.QuadSSA.TypeInfo();
       FinalMap fm = new harpoon.Backend.Maps.DefaultFinalMap();
-      quads = Translate.translate((LowQuadFactory)qf, code, tym, fm, m_hD);
-      m_typeMap = tym;
+      quads = Translate.translate((LowQuadFactory)qf, code, tym, fm, dT, tT);
+
+      m_derivation = new Derivation() {
+	public DList derivation(HCodeElement hce, Temp t) {
+	  return (DList)dT.get(t);
+	}
+      };
+      m_typeMap = new TypeMap() { 
+	public HClass typeMap(HCode hc, Temp t) { 
+	  // Ignores hc parameter
+	  return (HClass)tT.get(t);
+	}
+      };
     }
 
   /**
@@ -107,10 +120,11 @@ public class LowQuadSSA extends Code
   // implement derivation.
   public DList derivation(HCodeElement hce, Temp t) {
     // ignore HCodeElement: this is SSA form.
-    return (DList) m_hD.get(t);
+    return m_derivation.derivation(hce, t);
   }
 
-  public HClass typeMap(Temp t) {
+  public HClass typeMap(HCode hc, Temp t) {
+    // Ignores hc parameter
     return m_typeMap.typeMap(this, t);
   }
 }
