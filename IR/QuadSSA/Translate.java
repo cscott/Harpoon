@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.42 1998-09-04 06:23:40 cananian Exp $
+ * @version $Id: Translate.java,v 1.43 1998-09-04 07:09:27 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -242,8 +242,16 @@ class Translate  { // not public.
 
 	Quad quads = new METHODHEADER(params);
 
+	Temp Tnull = new Temp("$null");
+	Temp Tzero = new Temp("$zero");
+	Quad q1 = new CONST(quads, Tnull, null, HClass.Void);
+	Quad q2 = new CONST(quads, Tzero, new Integer(0), HClass.Int);
+	Quad.addEdge(quads, 0, q1, 0);
+	Quad.addEdge(q1, 0, q2, 0);
+
 	// translate using state.
-	trans(new TransState(s, (Instr) bytecode.getElements()[0], quads, 0));
+	trans(new TransState(s, (Instr) bytecode.getElements()[0], q2, 0),
+	      Tzero, Tnull);
 
 	// return result.
 	return quads;
@@ -251,7 +259,7 @@ class Translate  { // not public.
 
     /** Translate a block starting with a given <code>TransState</code>.<p> 
      *  Start at <code>ts.in</code> using <code>ts.initialState</code>. */
-    static final void trans(TransState ts0) {
+    static final void trans(TransState ts0, Temp Tzero, Temp Tnull) {
 	Stack todo = new Stack(); todo.push(ts0);
 	MergeMap mm = new MergeMap();
 	MergeMap handlers = new MergeMap();
@@ -273,14 +281,16 @@ class Translate  { // not public.
 		    Quad monitorBlock = new HEADER();
 		    // Recursively generate monitor quads.
 		    ns = s.enterMonitor().pop();
-		    trans(new TransState(ns, ts.in, monitorBlock, 0));
+		    trans(new TransState(ns, ts.in, monitorBlock, 0),
+			  Tzero, Tnull);
 		    // Make and link MONITOR
 		    q = new MONITOR(ts.in, s.stack[0], monitorBlock);
 		} else { // JSR/RET
 		    q = null;
 		    ns = s.enterJSR();
 		    trans(new TransState(ns, ts.in.next()[0], 
-					 ts.header, ts.which_succ));
+					 ts.header, ts.which_succ),
+			  Tzero, Tnull);
 		}
 
 		// make PHI at exit of MONITOR/JSR
@@ -351,7 +361,7 @@ class Translate  { // not public.
 	    }
 	    // None of the above.
 	    else {
-		TransState nts[] = transInstr(ts, mm, handlers);
+		TransState nts[] = transInstr(ts, mm, handlers, Tzero, Tnull);
 		for (int i=0; i<nts.length; i++)
 		    todo.push(nts[i]);
 		continue;
@@ -365,18 +375,22 @@ class Translate  { // not public.
      * @return the <code>TransState</code>s of the following instructions.
      */
     static final TransState[] transInstr(TransState ts, 
-					 MergeMap mm, MergeMap handlers) {
+					 MergeMap mm, MergeMap handlers,
+					 Temp Tzero, Temp Tnull) {
 	// Dispatch to correct specific function.
-	if (ts.in instanceof InGen)    return transInGen(ts, handlers);
+	if (ts.in instanceof InGen)    return transInGen(ts, handlers, 
+							 Tzero, Tnull);
 	if (ts.in instanceof InSwitch) return transInSwitch(ts);
-	if (ts.in instanceof InCti)    return transInCti(ts, handlers);
+	if (ts.in instanceof InCti)    return transInCti(ts, handlers, 
+							 Tzero, Tnull);
 	if (ts.in instanceof InMerge)  return transInMerge(ts, mm);
 	throw new Error("Unknown Instr type.");
     }
 
     /** Translate an <code>InGen</code>. 
      *  @return a <Code>TransState[]</code> of length zero or one. */
-    static final TransState[] transInGen(TransState ts, MergeMap handlers) {
+    static final TransState[] transInGen(TransState ts, MergeMap handlers,
+					 Temp Tzero, Temp Tnull) {
 	InGen in = (InGen) ts.in;
 	State s = ts.initialState;
 	State ns;
@@ -394,21 +408,16 @@ class Translate  { // not public.
 	    {
 	    ns = s.pop(2).push(new Temp());
 
-	    Temp Tnull = new Temp("$null");
-	    Temp Tzero = new Temp("$zero");
 	    Temp Tobj  = s.stack[1];
 	    Temp Tindex= s.stack[0];
-	    // Check for null pointer.
-	    q = new CONST(in, Tnull, null, HClass.Void);
-	    Quad q1= new CONST(in, Tzero, new Integer(0), HClass.Int);
 	    // the actual operation.
-	    Quad q2= new AGET(in, ns.stack[0], Tobj, Tindex);
+	    Quad q0= new AGET(in, ns.stack[0], Tobj, Tindex);
 	    // bounds check
 	    r = transBoundsCheck(Tobj, Tindex, Tnull, Tzero,
-				 q2, in, s, handlers, q1, 0);
-	    last = q2;
-	    // link
-	    Quad.addEdge(q,  0, q1, 0);
+				 q0, in, s, handlers, 
+				 ts.header, ts.which_succ);
+	    q = ts.header.next()[ts.which_succ];
+	    last = q0;
 	    // done.
 	    break;
 	    }
@@ -421,28 +430,24 @@ class Translate  { // not public.
 	    {
 	    ns = s.pop(3);
 
-	    Temp Tnull = new Temp("$null");
-	    Temp Tzero = new Temp("$zero");
 	    Temp Tobj  = s.stack[2];
 	    Temp Tindex= s.stack[1];
 	    Temp Tsrc  = s.stack[0];
-	    // Check for null pointer.
-	    q = new CONST(in, Tnull, null, HClass.Void);
-	    Quad q1= new CONST(in, Tzero, new Integer(0), HClass.Int);
+
 	    // the actual operation.
-	    Quad q2= new ASET(in, Tobj, Tindex, Tsrc);
+	    Quad q0= new ASET(in, Tobj, Tindex, Tsrc);
 	    // bounds check
 	    r = transBoundsCheck(Tobj, Tindex, Tnull, Tzero,
-				 q2, in, s, handlers, q1, 0);
-	    last = q2;
-	    // link
-	    Quad.addEdge(q,  0, q1, 0);
+				 q0, in, s, handlers, 
+				 ts.header, ts.which_succ);
+	    q = ts.header.next()[ts.which_succ];
+	    last = q0;
 	    // done.
 	    break;
 	    }
 	case Op.ACONST_NULL:
-	    ns = s.push(new Temp("$null"));
-	    q = new CONST(in, ns.stack[0], null, HClass.Void);
+	    ns = s.push(Tnull);
+	    q = null;
 	    break;
 	case Op.ALOAD:
 	case Op.ALOAD_0:
@@ -464,36 +469,48 @@ class Translate  { // not public.
 		ns = s.pop().push(new Temp());
 
 		HClass HCex=HClass.forClass(NegativeArraySizeException.class);
-		Temp Tnull = new Temp("$null");
-		Temp Tzero = new Temp("$zero");
 		Temp Tex   = new Temp();
 
-		// set up constants
-		Quad q0 = new CONST(in, Tnull, null, HClass.Void);
-		Quad q1 = new CONST(in, Tzero, new Integer(0), HClass.Int);
 		// check whether count>=0.
 		Quad q2 = new OPER(in, "icmpge", new Temp(),
 				   new Temp[] { s.stack[0], Tzero });
 		Quad q3 = new CJMP(in, q2.def()[0]);
 		Quad q4 = transNewException(HCex, Tex, Tnull, in, q3, 0);
 		r = transThrow(new TransState(s.push(Tex), in, q4, 0),
-			       handlers, false);
+			       handlers, Tnull, false);
 		Quad q5 = new ANEW(in, ns.stack[0], hc, 
 				   new Temp[] { s.stack[0] });
 		// link
-		Quad.addEdge(q0, 0, q1, 0);
-		Quad.addEdge(q1, 0, q2, 0);
 		Quad.addEdge(q2, 0, q3, 0);
 		Quad.addEdge(q3, 1, q5, 0);
 
-		q = q0;
+		q = q2;
 		last = q5;
 		break;
 	    }
 	case Op.ARRAYLENGTH:
+	    {
+	    // if (objref==null) throw new NullPointerException()
 	    ns = s.pop().push(new Temp());
-	    q = new ALENGTH(in, ns.stack[0], s.stack[0]);
+
+	    HClass HCex = HClass.forClass(NullPointerException.class);
+	    Temp Tobj  = s.stack[0];
+	    Temp Tex   = new Temp();
+
+	    Quad q0 = new OPER(in, "acmpeq", new Temp(),
+			       new Temp[] { Tobj, Tnull } );
+	    Quad q1 = new CJMP(in, q0.def()[0]);
+	    Quad q2 = transNewException(HCex, Tex, Tnull, in, q1, 1);
+	    r = transThrow(new TransState(s.push(Tex), in, q2, 0),
+			   handlers, Tnull, false);
+	    Quad q3 = new ALENGTH(in, ns.stack[0], Tobj);
+	    // link quads.
+	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(q1, 0, q3, 0);
+	    // setup next state
+	    q = q0;  last = q3;
 	    break;
+	    }
 	case Op.ASTORE:
 	case Op.ASTORE_0:
 	case Op.ASTORE_1:
@@ -522,7 +539,6 @@ class Translate  { // not public.
 	    {
 		OpClass opd = (OpClass) in.getOperand(0);
 		Temp Tobj = s.stack[0];
-		Temp Tnull = new Temp("$null");
 		Temp Tr0 = new Temp();
 		Temp Tr1 = new Temp();
 		Temp Tex = new Temp("$checkcast");
@@ -530,7 +546,6 @@ class Translate  { // not public.
 		HClass HCex = HClass.forClass(ClassCastException.class);
 
 		// make quads
-		Quad q0 = new CONST(in, Tnull, null, HClass.Void);
 		Quad q1 = new OPER(in, "acmpeq", Tr0, // equal is true
 				   new Temp[] { Tobj, Tnull } ); 
 		Quad q2 = new CJMP(in, Tr0);
@@ -538,10 +553,9 @@ class Translate  { // not public.
 		Quad q4 = new CJMP(in, Tr1);
 		Quad q5 = transNewException(HCex, Tex, Tnull, in, q4, 0);
 		r = transThrow(new TransState(s.push(Tex), in, q5, 0),
-			       handlers, false);
+			       handlers, Tnull, false);
 		Quad q6 = new PHI(in, new Temp[0], 2);
 		// link quads.
-		Quad.addEdge(q0, 0, q1, 0);
 		Quad.addEdge(q1, 0, q2, 0);
 		Quad.addEdge(q2, 0, q3, 0);
 		Quad.addEdge(q2, 1, q6, 0);
@@ -549,7 +563,7 @@ class Translate  { // not public.
 		Quad.addEdge(q4, 1, q6, 1);
 		// and setup the next state.
 		ns = s;
-		q = q0;
+		q = q1;
 		last = q6;
 		break;
 	    }
@@ -849,14 +863,12 @@ class Translate  { // not public.
 			     ns.stack[0], Tex);
 	    }
 	    // check for thrown exception.
-	    Quad q0 = new CONST(in, new Temp(), null, HClass.Void);
 	    Quad q1 = new OPER(in, "acmpeq", new Temp(),
-			       new Temp[] { Tex, q0.def()[0] });
+			       new Temp[] { Tex, Tnull });
 	    Quad q2 = new CJMP(in, q1.def()[0]);
 	    r = transThrow(new TransState(s.push(Tex), in, q2, 0),
-			   handlers, false);
-	    Quad.addEdge(q,  0, q0, 0);
-	    Quad.addEdge(q0, 0, q1, 0);
+			   handlers, Tnull, false);
+	    Quad.addEdge(q,  0, q1, 0);
 	    Quad.addEdge(q1, 0, q2, 0);
 	    last = q2; which_succ = 1;
 	    }
@@ -1053,7 +1065,8 @@ class Translate  { // not public.
 	return r;
     }
     /** Translate a single <code>InCti</code>. */
-    static final TransState[] transInCti(TransState ts, MergeMap handlers) {
+    static final TransState[] transInCti(TransState ts, MergeMap handlers,
+					 Temp Tzero, Temp Tnull) {
 	InCti in = (InCti) ts.in;
 	State s = ts.initialState;
 	Quad q;
@@ -1072,7 +1085,7 @@ class Translate  { // not public.
 	    r = new TransState[0];
 	    break;
 	case Op.ATHROW:
-	    r = transThrow(ts, handlers, true);
+	    r = transThrow(ts, handlers, Tnull, true);
 	    q = null;
 	    break;
 	case Op.GOTO:
@@ -1103,16 +1116,15 @@ class Translate  { // not public.
 	case Op.IFNONNULL:
 	    {
 		State ns = s.pop();
-		q = new CONST(in, new Temp("$null"), null, HClass.Void);
 		Quad q0 = new OPER(in, "acmpeq", new Temp(), 
-				   new Temp[] { s.stack[0], q.def()[0] });
+				   new Temp[] { s.stack[0], Tnull });
 		Quad q1 = new CJMP(in, q0.def()[0]);
-		Quad.addEdge(q,  0, q0, 0);
 		Quad.addEdge(q0, 0, q1, 0);
 		int iffalse=0, iftrue=1;
 		if (in.getOpcode()==Op.IFNONNULL) { // invert things
 		    iffalse=1; iftrue=0;
 		}
+		q = q0;
 		r = new TransState[] {
 		    new TransState(ns, in.next()[0], q1, iffalse),
 		    new TransState(ns, in.next()[1], q1, iftrue)
@@ -1161,21 +1173,17 @@ class Translate  { // not public.
 		    break;
 		default: Util.assert(false);
 		}
-		Quad Qo;
 		if (opcode>=Op.IFEQ && opcode<=Op.IFLE) {
 		    ns = s.pop();
-		    q  = new CONST(in, new Temp("$zero"), 
-				   new Integer(0), HClass.Int);
-		    Qo = new OPER(in, op, new Temp(),
-				  new Temp[] { s.stack[0], q.def()[0] });
-		    Quad.addEdge(q, 0, Qo, 0);
+		    q = new OPER(in, op, new Temp(),
+				 new Temp[] { s.stack[0], Tzero });
 		} else {
 		    ns = s.pop(2);
-		    q = Qo = new OPER(in, op, new Temp(),
-				      new Temp[] { s.stack[1], s.stack[0] } );
+		    q = new OPER(in, op, new Temp(),
+				 new Temp[] { s.stack[1], s.stack[0] } );
 		}
-		Quad Qc = new CJMP(in, Qo.def()[0]);
-		Quad.addEdge(Qo, 0, Qc, 0);
+		Quad Qc = new CJMP(in, q.def()[0]);
+		Quad.addEdge(q, 0, Qc, 0);
 		r = new TransState[] {
 		    new TransState(ns, in.next()[0], Qc, invert?1:0),
 		    new TransState(ns, in.next()[1], Qc, invert?0:1)
@@ -1196,7 +1204,7 @@ class Translate  { // not public.
 
     /** Translate a throw instruction, taking the try context into account.*/
     static final TransState[] transThrow(TransState ts, 
-					 MergeMap handlers,
+					 MergeMap handlers, Temp Tnull,
 					 boolean possiblyNull)
     {
 	Vector rTS = new Vector();
@@ -1212,16 +1220,15 @@ class Translate  { // not public.
 	    //     try { Tex = new NullPointerException(); }
 	    //     catch (Throwable t) { Tex = t; }
 	    //   }
-	    Quad q1 = new CONST(ts.in, new Temp("$null"), null, HClass.Void);
 	    Quad q2 = new OPER(ts.in, "acmpeq", new Temp(),
-			       new Temp[] { Tex, q1.def()[0] } );
+			       new Temp[] { Tex, Tnull } );
 	    Quad q3 = new CJMP(ts.in, q2.def()[0]);
 	    Quad q4 = new NEW(ts.in, new Temp(), hc);
 	    Quad q5 = new CALL(ts.in, hc.getConstructor(new HClass[0]),
 			       q4.def()[0], new Temp[0], 
 			       new Temp()/*exception*/);
 	    Quad q6 = new OPER(ts.in, "acmpeq", new Temp(),
-			       new Temp[] { q5.def()[0], q1.def()[0] } );
+			       new Temp[] { q5.def()[0], Tnull } );
 	    Quad q7 = new CJMP(ts.in, q6.def()[0]);
 	    Quad q8 = new PHI(ts.in, 
 			      new Temp[] { new Temp() },
@@ -1229,8 +1236,7 @@ class Translate  { // not public.
 							 q5.def()[0], 
 							 q4.def()[0] } }, 3);
 	    // Link these:
-	    Quad.addEdge(header, which_succ, q1, 0);
-	    Quad.addEdge(q1, 0, q2, 0);
+	    Quad.addEdge(header, which_succ, q2, 0);
 	    Quad.addEdge(q2, 0, q3, 0);
 	    Quad.addEdge(q3, 0, q8, 0);
 	    Quad.addEdge(q3, 1, q4, 0);
@@ -1330,7 +1336,7 @@ class Translate  { // not public.
 			  new Temp[][]{new Temp[]{ q2.def()[0],
 						   q9.def()[0] }}, 2);
 	TransState[] r = transThrow(new TransState(s.push(Tex), in, q10, 0),
-				    handlers, false);
+				    handlers, Tnull, false);
 	// link.
 	Quad.addEdge(header, which_succ, q0, 0);
 	Quad.addEdge(q0, 0, q1, 0);
