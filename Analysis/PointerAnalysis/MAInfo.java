@@ -50,7 +50,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.22 2000-05-25 15:41:52 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.23 2000-06-07 04:28:38 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -213,12 +213,15 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		    // not in a callee) are allocated on the stack.
 		    Quad q  = (Quad) node_rep.node2Code(node);
 		    Util.assert(q != null, "No quad for " + node);
-		    MyAP ap = getAPObj(q);
-		    ap.sa = true;
-		    /* //B/ */System.out.println("STACK: " + node + 
-		    /* //B/ */		       " was stack allocated " +
-		    /* //B/ */		       q.getSourceFile() + ":" +
-		    /* //B/ */		       q.getLineNumber());
+
+		    if(stack_alloc_extra_cond(node, q)) {
+			MyAP ap = getAPObj(q);
+			ap.sa = true;
+			/* //B/ */System.out.println("STACK: " + node + 
+			/* //B/ */	             " was stack allocated " +
+			/* //B/ */	             q.getSourceFile() + ":" +
+			/* //B/ */	             q.getLineNumber());
+		    }
 		}
 	    }
 	    else{
@@ -586,6 +589,40 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	return true;
     }
 
+    
+    /** Checks some additional conditions for the stack allocation of the
+	objects created at Quad q (something else than just captured(node)
+
+	For the time being, we do just a minor hack to save our experimental
+	results: the Thread objects that are captured (e.g. a Thread object
+	that is created but never started and remains captured into its
+	creating method) should NOT be stack allocated. The constructor
+	of Thread does a very nasty thing: it puts a reference to the
+	newly created Thread object into the ThreadGroup of the current
+	Thread. Normally, this means that any thread escapes into the
+	currentThread native method but we did some special tricks for this
+	case to ignore it (so that we can allocate a Thread object in its
+	own thread specific heap).
+
+	Normally, some other conditions should be tested too: e.g. do not
+	stack allocate objects that are too big etc. */
+    private boolean stack_alloc_extra_cond(PANode node, Quad q) {
+	// a hack for the Thread objects ...
+	HClass hclass = getAllocatedType(q);
+	if(java_lang_Thread.isSuperclassOf(hclass)){
+	    //if(DEBUG)
+		System.out.println(node + " allocated in " + q + 
+				   " could be a thread -> NOT stack alloc");
+	    return false;
+	}
+	// ... and nothing else
+	return true;
+    }
+    private static HClass java_lang_Thread = null;
+    static {
+	Linker linker = Loader.systemLinker;
+	java_lang_Thread = linker.forName("java.lang.Thread");
+    }
 
     /** Pretty printer for debug. */
     public void print(){

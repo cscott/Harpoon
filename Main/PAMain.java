@@ -66,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.52 2000-05-25 15:41:59 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.53 2000-06-07 04:28:40 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -775,10 +775,19 @@ public abstract class PAMain {
 	}
 
 	// this should analyze everything
-	pa.getIntParIntGraph(mroot);
-	pa.getExtParIntGraph(mroot);
-	pa.threadInteraction(mroot);  
-
+	if(USE_INTER_THREAD) {
+	    pa.getIntParIntGraph(mroot);
+	    pa.getExtParIntGraph(mroot);
+	    pa.threadInteraction(mroot);
+	}
+	else {
+	    Set tops = new HashSet(mcg.getRunMetaMethods());
+	    tops.add(mroot);
+	    if(DEBUG)
+		System.out.println("TOP METHODS:\n" + tops); 
+	    for(Iterator it = tops.iterator(); it.hasNext(); )
+		pa.getIntParIntGraph( (MetaMethod) it.next());
+	}
 	
 	//B/
 	System.out.println("PRE-ANALYSIS + ANALYSIS TIME : " +
