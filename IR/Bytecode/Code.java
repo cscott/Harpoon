@@ -15,7 +15,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.3 1998-09-15 01:51:47 cananian Exp $
+ * @version $Id: Code.java,v 1.4 1998-09-15 02:17:44 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -158,6 +158,20 @@ public class Code extends HCode {
   private HCodeElement[] elements = null;
   /** Cached value of <code>getTryBlocks</code> blocks. */
   private ExceptionEntry[] tryBlocks = null;
+
+  public HCodeElement[] getLeafElements() {
+    if (leaves == null) {
+      Instr[] il = (Instr[]) getElements();
+      Vector v = new Vector();
+      for (int i=0; i < il.length; i++)
+	if (il[i].next.size()==0)
+	  v.addElement(il[i]);
+      leaves = new Instr[v.size()];
+      v.copyInto(leaves);
+    }
+    return (HCodeElement[]) Util.copy(leaves);
+  }
+  private HCodeElement[] leaves = null;
 
   // special non-HCode-mandated access functions.
   /** Get the number of local variables used in this method, including

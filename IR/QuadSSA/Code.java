@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.11 1998-09-14 02:49:24 cananian Exp $
+ * @version $Id: Code.java,v 1.12 1998-09-15 02:17:49 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -77,6 +77,11 @@ public class Code extends HCode {
 
     /** Returns the root of the control flow graph. */
     public HCodeElement getRootElement() { return quads; }
+    /** Returns the leaves of the control flow graph. */
+    public HCodeElement[] getLeafElements() {
+	HEADER h = (HEADER) getRootElement();
+	return new Quad[] { h.footer };
+    }
 
     /** scan through quad graph and keep a list of the quads found. */
     private void traverse(Quad q, UniqueVector v) {
