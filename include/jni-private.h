@@ -311,6 +311,7 @@ void FNI_FatalError (JNIEnv *env, const char *msg) __attribute__ ((noreturn));
 jobject FNI_NewGlobalRef (JNIEnv *env, jobject obj);
 void FNI_DeleteGlobalRef (JNIEnv *env, jobject globalRef);
 void FNI_DeleteLocalRef (JNIEnv *env, jobject localRef);
+void FNI_DeleteLocalRefsUpTo (JNIEnv *env, jobject markerRef);
 jboolean FNI_IsSameObject (JNIEnv *env, jobject ref1, jobject ref2);
 
 /* Object Operations */
