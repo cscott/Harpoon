@@ -30,7 +30,7 @@ import java.util.Stack;
  * <code>CFGrapher</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.10.2.2 2002-03-14 01:31:19 cananian Exp $
+ * @version $Id: DomTree.java,v 1.10.2.3 2002-03-16 20:03:52 cananian Exp $
  */
 
 public class DomTree<HCE extends HCodeElement> /*implements Graph*/ {
@@ -92,7 +92,7 @@ public class DomTree<HCE extends HCodeElement> /*implements Graph*/ {
     }
     
     /** Analyze an <code>HCode</code>. */
-    private void analyze(final HCode hc, final CFGrapher grapher) {
+    private void analyze(final HCode<HCE> hc, final CFGrapher<HCE> grapher) {
 	// Setup lists and tables.
 	final IntHTable<HCE> dfnum = new IntHTable<HCE>();
 	final Map<HCE,HCE> semi  = new HashMap<HCE,HCE>();
@@ -174,8 +174,8 @@ public class DomTree<HCE extends HCodeElement> /*implements Graph*/ {
 	Utility u = new Utility();
 
 	// Dominators algorithm:
-	for (Iterator<HCE> it=new ArrayIterator(grapher.getFirstElements(hc));
-	     it.hasNext(); )
+	for (Iterator<HCE> it = new ArrayIterator<HCE>
+		 (grapher.getFirstElements(hc)); it.hasNext(); )
 	    u.DFS(null, it.next());
 	    
 	for (int i=vertex.size()-1; i>=0; i--) {
