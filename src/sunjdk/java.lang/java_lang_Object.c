@@ -5,8 +5,8 @@
 
 #include <assert.h>
 #include "config.h" /* for WITH_TRANSACTIONS */
-#include <sys/time.h> /* for struct timeval */
-#include <time.h> /* for struct timespec */
+
+#include "../../java.lang/object.h" /* useful library-indep implementations */
 
 /*
  * Class:     java_lang_Object
@@ -28,28 +28,9 @@ JNIEXPORT jint JNICALL Java_java_lang_Object_hashCode
     return Java_java_lang_System_identityHashCode(env, NULL, obj);
 }
 
-/* helper for clone functions. */
-static inline jobject cloneHelper(JNIEnv *env, jobject obj, jsize len) {
-  jobject clone = FNI_Alloc(env, NULL, FNI_CLAZ(FNI_UNWRAP_MASKED(obj)),
-			    NULL/*default alloc func*/, len);
-#ifdef WITH_GENERATIONAL_GC
-  add_to_curr_obj_list(FNI_UNWRAP_MASKED(clone));
-#endif
-  memcpy(FNI_UNWRAP_MASKED(clone)->field_start,
-	 FNI_UNWRAP_MASKED(obj  )->field_start,
-	 len - sizeof(struct oobj));
-#ifdef WITH_CLAZ_SHRINK
-  /* need to copy the non-hashcode header space, too */
-  memcpy(FNI_UNWRAP_MASKED(clone), FNI_UNWRAP_MASKED(obj), 4);
-#endif
-#ifdef WITH_ROLE_INFER
-  NativeassignUID(env, clone, FNI_WRAP(FNI_CLAZ(FNI_UNWRAP(obj))->class_object));
-  RoleInference_clone(env, obj, clone);
-#endif
-  return clone;
-}
-
-#ifndef WITH_TRANSACTIONS /* transactions defines own versions of clone() */
+#ifdef WITH_TRANSACTIONS
+  /* transactions defines own versions of clone() */
+#else /* !WITH_TRANSACTIONS */
 /*
  * Class:     java_lang_Object
  * Method:    clone
@@ -88,7 +69,7 @@ PRIMITIVEARRAYCLONE(Object, struct oobj *, Ljava_lang_Object_2);
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_notify
   (JNIEnv *env, jobject _this) {
-  FNI_MonitorNotify(env, _this, JNI_FALSE);
+  fni_object_notify(env, obj);
 }
 
 /*
@@ -98,7 +79,7 @@ JNIEXPORT void JNICALL Java_java_lang_Object_notify
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_notifyAll
   (JNIEnv *env, jobject _this) {
-  FNI_MonitorNotify(env, _this, JNI_TRUE);
+  fni_object_notifyAll(env, obj);
 }
 /*
  * Class:     java_lang_Object
@@ -107,20 +88,7 @@ JNIEXPORT void JNICALL Java_java_lang_Object_notifyAll
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_wait
   (JNIEnv *env, jobject _this, jlong millis) {
-  struct timeval tp; struct timespec ts;
-  int rc;
-
-  /* make val into an absolute timespec */
-  rc =  gettimeofday(&tp, NULL); assert(rc==0);
-  /* Convert from timeval to timespec */
-  ts.tv_sec  = tp.tv_sec;
-  ts.tv_nsec = tp.tv_usec * 1000;
-  ts.tv_sec += millis/1000;
-  ts.tv_nsec+= 1000*(millis%1000);
-  if (ts.tv_nsec > 1000000000) { ts.tv_nsec-=1000000000; ts.tv_sec++; }
-
-  /* okay, do the wait */
-  FNI_MonitorWait(env, _this, (millis==0)?NULL:&ts);
+  fni_object_wait(env, obj, millis, 0);
 }
 
 #ifdef WITH_TRANSACTIONS
