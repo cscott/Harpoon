@@ -22,10 +22,11 @@ import java.util.Set;
 import java.util.Map;
 
 /**
- * <code>RSSxToNoSSA</code>
+ * <code>RSSxToNoSSA</code> converts "relaxed-ssx" form into quads without
+ * phi or sigma functions.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: RSSxToNoSSA.java,v 1.1.2.4 2001-09-26 15:35:31 cananian Exp $
+ * @version $Id: RSSxToNoSSA.java,v 1.1.2.5 2001-09-26 16:00:46 cananian Exp $
  */
 public class RSSxToNoSSA {
     QuadFactory newQF;
@@ -107,23 +108,36 @@ public class RSSxToNoSSA {
 	public Remover(Set done) {
 	    super(false/*non-strict*/);
 	    this.done=done;}
+
+
+	private static Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
+	private static Edge addAt(Edge e,
+				  int which_pred, Quad q, int which_succ) {
+	    Quad frm = (Quad) e.from(); int frm_succ = e.which_succ();
+	    Quad to  = (Quad) e.to();   int to_pred = e.which_pred();
+	    Quad.addEdge(frm, frm_succ, q, which_pred);
+	    Quad.addEdge(q, which_succ, to, to_pred);
+	    return to.prevEdge(to_pred);
+	}
+	private Edge addMoveAt(Edge e, Quad source, Temp dst, Temp src)
+	{
+	    MOVE m = new MOVE(source.getFactory(), source, dst, src);
+	    done.add(m);
+	    return addAt(e, m);
+	}
 	public void fixsigma(SIGMA q) {
 	    for (int i=0;i<q.numSigmas();i++)
-		for (int j=0;j<q.arity();j++) {
-		    MOVE nm=new MOVE(q.getFactory(),q,q.dst(i,j),q.src(i));
-		    Quad.addEdge(nm,0,q.next(j),q.nextEdge(j).which_pred());
-		    Quad.addEdge(q,j,nm,0);
-		    done.add(nm);
-		}
+		for (int j=0;j<q.arity();j++)
+		    // XXX: can there be conflicts in sigma functions?
+		    addMoveAt(q.nextEdge(j), q, q.dst(i,j), q.src(i));
 	}
 	public void fixphi(PHI q) {
-	    for (int i=0;i<q.numPhis();i++)
-		for (int j=0;j<q.arity();j++) {
-		    MOVE nm=new MOVE(q.getFactory(),q,q.dst(i),q.src(i,j));
-		    Quad.addEdge(q.prev(j),q.prevEdge(j).which_succ(),nm,0);
-		    Quad.addEdge(nm,0,q,j);
-		    done.add(nm);
-		}
+	    for (int i=0;i<q.numPhis();i++) {
+		Temp Tt = new Temp(q.dst(i));
+		addMoveAt(q.nextEdge(0), q, q.dst(i), Tt);
+		for (int j=0;j<q.arity();j++)
+		    addMoveAt(q.prevEdge(j), q, Tt, q.src(i, j));
+	    }
 	}
 	public void visit(Quad q) {}
 	
