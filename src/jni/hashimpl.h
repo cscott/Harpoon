@@ -1,4 +1,5 @@
 /* BORROWED FROM src/mzf/hashimpl.h; BUGS SHOULD BE FIXED IN BOTH PLACES */
+/* in this version, gc of hashtable is disabled; inflation done manually */
 #ifndef TABLE_SIZE
 #define TABLE_SIZE 10240709 /* a prime */
 #endif
@@ -51,7 +52,9 @@ static void REMOVE(void *key, void *obj) {
   for (t=&TABLE[hash]; t->key!=NULL; t=&TABLE[hash]) {
     if (t->key==key && t->obj==obj) { /* found it */
       t->TOMB = NULL; /* leave a tombstone */
+#if 0
       GC_unregister_disappearing_link(&(t->TOMB));
+#endif
       return;
     }
     hash = (hash+u) % TABLE_SIZE;
@@ -73,12 +76,20 @@ static void SET(void *key, void *obj, TYPE newval, TYPE default_value) {
   hash = ohash = HASH(key, obj);
   u = HASH2(key, obj);
   for (t=&TABLE[hash]; t->TOMB!=NULL; t=&TABLE[hash]) {
+    if (t->key==key && t->obj==hideobj(obj)) {
+      /* found old value */
+      t->value = newval;
+      return;
+    }
+    /* continue probing */
     hash = (hash+u) % TABLE_SIZE;
     assert(hash!=ohash); /* table should not fill up */
   }
   /* found either an empty spot or a tombstone */
   t->key = key; t->obj = hideobj(obj); t->value = newval;
+#if 0
   GC_general_register_disappearing_link(&(t->TOMB), obj);
+#endif
   return;
 }
 

@@ -72,6 +72,12 @@ static void SET(void *key, void *obj, TYPE newval, TYPE default_value) {
   hash = ohash = HASH(key, obj);
   u = HASH2(key, obj);
   for (t=&TABLE[hash]; t->TOMB!=NULL; t=&TABLE[hash]) {
+    if (t->key==key && t->obj==hideobj(obj)) {
+      /* found old value */
+      t->value = newval;
+      return;
+    }
+    /* continue probing */
     hash = (hash+u) % TABLE_SIZE;
     assert(hash!=ohash); /* table should not fill up */
   }
