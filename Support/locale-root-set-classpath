@@ -1,4 +1,22 @@
+gnu.java.locale.Calendar.<init>()V
 gnu.java.locale.Calendar.getContents()[[Ljava/lang/Object;
 gnu.java.locale.Calendar_en.getContents()[[Ljava/lang/Object;
 gnu.java.locale.LocaleInformation_en.getContents()[[Ljava/lang/Object;
 gnu.java.locale.LocaleInformation.<init>()V
+gnu.java.security.provider.Gnu.<init>()V
+gnu.java.locale.Calendar_en.<init>()V
+
+# Added to make sure that I can load the gnu.java.locale.Calendar class
+[Lgnu/java/locale/Calendar;.clone()Ljava/lang/Object;
+[Ljava/util/Calendar;.clone()Ljava/lang/Object;
+[Ljava/util/TimeZone;.clone()Ljava/lang/Object;
+[Lgnu/java/security/provider/Gnu;.clone()Ljava/lang/Object;
+[Lgnu/java/security/provider/DSASignature;.clone()Ljava/lang/Object;
+[Lgnu/java/security/provider/DSAKeyPairGenerator;.clone()Ljava/lang/Object;
+[Lgnu/java/security/provider/DSAKeyFactory;.clone()Ljava/lang/Object;
+[Lgnu/java/security/provider/SHA;.clone()Ljava/lang/Object;
+[Lgnu/java/security/provider/MD5;.clone()Ljava/lang/Object;
+[Lgnu/java/security/provider/DSAParameters;.clone()Ljava/lang/Object;
+[Lgnu/java/security/provider/DSAParameterGenerator;.clone()Ljava/lang/Object;
+[Lgnu/java/security/provider/SHA1PRNG;.clone()Ljava/lang/Object;
+[Lgnu/java/security/provider/X509CertificateFactory;.clone()Ljava/lang/Object;
