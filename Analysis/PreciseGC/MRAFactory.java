@@ -64,7 +64,7 @@ import java.util.Set;
  * <code>MRAFactory</code> generates <code>MRA</code>s.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: MRAFactory.java,v 1.1.2.5 2001-11-12 02:55:31 kkz Exp $
+ * @version $Id: MRAFactory.java,v 1.1.2.6 2001-12-04 21:03:45 kkz Exp $
  */
 public class MRAFactory {
     
@@ -220,7 +220,7 @@ public class MRAFactory {
 	    }
 	    if (changed) {
 		// should be monotonic
-		Util.assert(safer.size() < safe.size());
+		Util.assert(safer.size() <= safe.size());
 		safe = Collections.unmodifiableMap(safer);
 		safer = new HashMap(safe);
 	    } else {
