@@ -21,7 +21,7 @@ import java.util.Hashtable;
  * <blink><b>FILL ME IN</b></blink>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.10 1999-06-24 01:04:35 cananian Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.11 1999-08-03 23:53:19 pnkfelix Exp $
  */
 public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 {
@@ -88,10 +88,11 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 	    public void clear(HMethod m) { hcf.clear(m); }
 	    public String getCodeName() { return codename; }
 	  };
+	} else {
+	    //throw new Error("don't know how to make " + codename +
+	    //	" from " + hcf.getCodeName());
+	    return codeFactory(LowQuadSSA.codeFactory(hcf));
 	}
-      else 
-	throw new Error("don't know how to make " + codename +
-			" from " + hcf.getCodeName());
     }
   
   /**

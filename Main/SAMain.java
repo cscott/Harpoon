@@ -10,6 +10,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.HasEdges;
+import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.Analysis.DataFlow.LiveVars;
 import harpoon.Analysis.DataFlow.InstrSolver;
 import harpoon.Analysis.DataFlow.BasicBlock;
@@ -25,11 +26,12 @@ import java.util.Iterator;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.1 1999-08-03 00:46:57 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.2 1999-08-03 23:53:20 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
     private static boolean PRINT_ORIG = true;
+    private static boolean PRE_REG_ALLOC = true;
     private static boolean REG_ALLOC = true;
     private static boolean LIVENESS_TEST = true;
         
@@ -39,7 +41,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
 	    (harpoon.IR.Quads.QuadSSA.codeFactory()
 	     );
-	hcf = SACode.codeFactory();
+	hcf = CanonicalTreeCode.codeFactory( hcf, new SAFrame() );
 
 	int n=0;  // count # of args/flags processed.
 	// rest of command-line options are class names.
@@ -53,11 +55,22 @@ public class SAMain extends harpoon.IR.Registration {
 		HCode hc = hcf.convert(hm[j]);
 		
 		if (PRINT_ORIG) {
+		    out.println("\t--- TREE FORM ---");
 		    if (hc!=null) hc.print(out);
 		    out.println();
 		}
 		
+		hcf = SACode.codeFactory(hcf);
+		hc = hcf.convert(hm[j]);
+		
+		if (PRE_REG_ALLOC) {
+		    out.println("\t--- INSTR FORM (no register allocation)  ---");
+		    if (hc!= null) hc.print(out);
+		    out.println();
+		}
+
 		if (LIVENESS_TEST) {
+		    out.println("\t--- INSTR FORM (basic block check)  ---");
 		    HCodeElement root = hc.getRootElement();
 		    BasicBlock block = 
 			BasicBlock.computeBasicBlocks((HasEdges)root);
@@ -70,6 +83,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 		if (REG_ALLOC &&
 		    hcf.getCodeName().equals("strongarm")) {
+		    out.println("\t--- INSTR FORM (register allocation)  ---");
 		    HCodeFactory regAllocCF = RegAlloc.codeFactory(hcf, new SAFrame());
 		    HCode rhc = regAllocCF.convert(hm[j]);
 		    if (rhc != null) rhc.print(out);

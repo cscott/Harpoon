@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.7 1999-07-30 20:41:35 duncan Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.8 1999-08-03 23:53:20 pnkfelix Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
@@ -116,10 +116,10 @@ public class CanonicalTreeCode extends Code {
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
 	    };
+	} else {
+	    HCodeFactory treeCodeHCF=TreeCode.codeFactory(hcf, frame);
+	    return codeFactory( treeCodeHCF, frame );
 	}
-	else 
-	    throw new Error("don't know how to make " + codename +
-			    " from " + hcf.getCodeName());
     }
   
     /**

@@ -12,8 +12,10 @@ import harpoon.IR.Assem.Instr;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericCodeGen.java,v 1.1.2.4 1999-08-03 22:24:04 pnkfelix Exp $ */
+ * @version $Id: GenericCodeGen.java,v 1.1.2.5 1999-08-03 23:53:18 pnkfelix Exp $ */
 public abstract class GenericCodeGen {
+
+    private static boolean DEBUG = false;
     
     /** Creates a <code>CodeGen</code>. */
     public GenericCodeGen() {
@@ -28,7 +30,10 @@ public abstract class GenericCodeGen {
     */
     public abstract Instr gen(harpoon.IR.Tree.Code tree,
 			      harpoon.IR.Assem.InstrFactory inf); 
-
+    
+    protected void debug(String s) {
+	if (DEBUG) System.out.println(s);
+    }
 
     protected String prettyPrint(harpoon.IR.Tree.Tree exp) {
 	final StringBuffer accum = new StringBuffer();

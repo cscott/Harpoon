@@ -48,7 +48,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.18 1999-08-03 22:24:05 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.19 1999-08-03 23:53:19 pnkfelix Exp $
  */
 %%
 
@@ -83,7 +83,7 @@ import java.util.HashMap;
     }
 
     private void emit(Instr i) {
-	System.out.println( i );
+	debug( "Emitting "+i.toString() );
 	if (first == null) first = i;
 	if (last == null) {
 	    last = i;

@@ -21,13 +21,17 @@ import harpoon.Util.ArrayEnumerator;
 import harpoon.Util.UnmodifiableIterator;
 
 import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
+
 
 /**
  * <code>Generic.Code</code> is an abstract superclass of codeviews
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.8 1999-07-30 18:45:12 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.9 1999-08-03 23:53:18 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -137,7 +141,19 @@ public abstract class Code extends HCode {
             if (instrarr[i] instanceof InstrLABEL) {
                 pw.println(instrarr[i]);
             } else {
-                pw.println("\t"+instrarr[i]);
+		try {
+		    BufferedReader reader = 
+			new BufferedReader(new StringReader(toAssem(instrarr[i])));
+		    String s = reader.readLine();
+		    while (s != null) {
+			pw.println("\t"+s);
+			s = reader.readLine();
+		    }
+		} catch (IOException e ) {
+		    Util.assert(false, "IOException " + e.toString() + 
+				" should not be thrown during assembly"+
+				" code processing.");
+		}
             }
         }
     }

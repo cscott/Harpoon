@@ -51,7 +51,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.30 1999-08-03 05:10:54 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.31 1999-08-03 23:53:17 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -100,8 +100,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	            <code>Instr</code>s.
 	<BR> <B>modifies:</B> <code>Instr</code>s in <code>bb</code>
 	<BR> <B>effects:</B> Analyzes the <code>Instr</code>s in
-	     <code>bb</code> and inserts FSK-LOAD and FSK-STORE 
-	     <code>InstrMEM</code> objects at appropriate locations in
+	     <code>bb</code> and inserts <code>FskLoad</code> and
+	     <code>FskStore</code> objects at appropriate locations in
 	     <code>bb</code> to ensure that 
 	     <BR> 1. All <code>Temp</code>s in
 	             non-<code>InstrMEM</code> objects are
@@ -342,10 +342,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    (liveOnExit.contains(preg) ||
 			     !lastUse(preg, j, (Iterator)jnstrs.clone()))) {
 			    InstrMEM store = 
-				new InstrMEM(inf, null, 
+				new FskStore(inf, null, 
 					     "FSK-STORE `d0, `s0",
-					     new Temp[] { preg },
-					     new Temp[] { reg });
+					     preg, reg );
 			    memInstrs.getPrior(j).push(store);
 			}
 			
@@ -357,9 +356,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    regFile.put(reg, i);
 
 		    InstrMEM load =
-			new InstrMEM(inf, null, "FSK-LOAD `d0, `s0", 
-				     new Temp[] { reg },
-				     new Temp[] { i });
+			new FskLoad(inf, null, "FSK-LOAD `d0, `s0",
+				    reg , i );  
 		    
 		    memInstrs.getPrior(j).push(load);
 		    
@@ -472,10 +470,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    
 		    if (dirty) {
 			InstrMEM store = 
-			    new InstrMEM(inf, null, 
-					 "FSK-STORE `d0, `s0",
-					 new Temp[] { preg },
-					 new Temp[] { reg });
+			    new FskStore(inf, null, "FSK-STORE `d0, `s0", 
+					 preg, reg );
 			memInstrs.getPrior(j).push(store);
 		    }
 		    
@@ -545,9 +541,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		regFile.isDirty(val) && 
 		liveOnExit.contains(val)) { 
 		InstrMEM store = 
-		    new InstrMEM(inf, null, "FSK-STORE `d0, `s0",
-				 new Temp[] { val },
-				 new Temp[] { regFile.genRegs[i] });
+		    new FskStore(inf, null, "FSK-STORE `d0, `s0", 
+				 val , regFile.genRegs[i] );
 		
 		memInstrs.getPrior(instr).push(store);
 	    }

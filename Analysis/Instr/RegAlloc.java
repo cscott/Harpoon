@@ -5,6 +5,7 @@ package harpoon.Analysis.Instr;
 
 import harpoon.Temp.Temp;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrVisitor;
 import harpoon.IR.Properties.UseDef;
@@ -39,12 +40,35 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.13 1999-08-03 03:38:37 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.14 1999-08-03 23:53:17 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
     protected Code code;
     protected BasicBlock rootBlock;
+
+    protected class FskLoad extends InstrMEM {
+	FskLoad(InstrFactory inf, HCodeElement hce, 
+		String assem, Temp dst, Temp src) {
+	    super(inf, hce, assem, new Temp[]{dst}, new Temp[]{src});
+	}
+	
+	public void visit(RegInstrVisitor v) { v.visit(this); }
+    }
+
+    protected class FskStore extends InstrMEM {
+	FskStore(InstrFactory inf, HCodeElement hce, 
+		String assem, Temp dst, Temp src) {
+	    super(inf, hce, assem, new Temp[]{dst}, new Temp[]{src});
+	}
+
+	public void visit(RegInstrVisitor v) { v.visit(this); }
+    }
+    
+    protected abstract class RegInstrVisitor extends InstrVisitor {
+	public void visit(FskStore i) { visit((InstrMEM) i); }
+	public void visit(FskLoad i) { visit((InstrMEM) i); }
+    }
 
     /** Creates a <code>RegAlloc</code>. 
 	
@@ -127,42 +151,39 @@ public abstract class RegAlloc  {
 
     /** Transforms Temp references in 'in' into appropriate offsets
 	from the Stack Pointer in the Memory. 
-	<BR> <B>requires:</B> All InstrMEMs in 'in' have only ONE Temp
-	     reference.  
         <BR> <B>modifies:</B> in
-	<BR> <B>effects:</B> Replaces the FSK-LOAD and FSK-STORE 
-	     <code>InstrMEM</code>s with memory instructions for the
+	<BR> <B>effects:</B> Replaces the <code>FskLoad</code> and
+	     <code>FskStore</code>s with memory instructions for the
 	     appropriate <code>Frame</code>.
-	<BR> TODO: make FSK-LOAD and FSK-STORE into actual classes
-	     (FskLoad, FskStore), and change the corresponding
-	     InstrMEM constructions in children of RegAlloc to use
-	     them to simplify this method and remove the stupid (and
-	     possibly insufficient) requires-clause above.
     */
     protected HCode resolveOutstandingTemps(HCode in) {
 	// This implementation is REALLY braindead.  Fix to do a
 	// smarter Graph-Coloring stack offset allocator
 
-	class TempFinder extends InstrVisitor {
+	class TempFinder extends RegInstrVisitor {
 	    HashMap tempsToOffsets = new HashMap();
 	    int nextOffset = 1;
 
-	    public void visit(InstrMEM m) {
-		// look for non-Register Temps in use and def, adding
+	    public void visit(FskLoad m) {
+		// look for non-Register Temps in use, adding
+		// them to internal map
+		for(int i=0; i<m.use().length; i++){
+		    if(!isTempRegister(m.use()[i]) &&
+		       tempsToOffsets.get(m.use()[i])==null){
+			tempsToOffsets.put
+			    (m.use()[i], new Integer(nextOffset));
+			nextOffset++;
+		    }
+		}
+	    } 
+	    public void visit(FskStore m) {
+		// look for non-Register Temps in def, adding
 		// them to internal map
 		for(int i=0; i<m.def().length; i++){
 		    if(!isTempRegister(m.def()[i]) &&
 		       tempsToOffsets.get(m.def()[i])==null){
 			tempsToOffsets.put
 			    (m.def()[i], new Integer(nextOffset));
-			nextOffset++;
-		    }
-		}
-		for(int i=0; i<m.use().length; i++){
-		    if(!isTempRegister(m.use()[i]) &&
-		       tempsToOffsets.get(m.use()[i])==null){
-			tempsToOffsets.put
-			    (m.use()[i], new Integer(nextOffset));
 			nextOffset++;
 		    }
 		}
@@ -191,37 +212,36 @@ public abstract class RegAlloc  {
 	// Not sure how to handle multiple Temp references in one
 	// InstrMEM...for now will assume that there is only one
 	// memory references per InstrMEM...
-	class InstrReplacer extends InstrVisitor {
+	class InstrReplacer extends RegInstrVisitor {
 	    HashMap tempsToOffsets;
 	    InstrReplacer(HashMap t2o) {
 		tempsToOffsets = t2o; 
 	    }
  	    
 	    
-	    // Make this SMARTER: get rid of requirement that Loads
+	    // Make these SMARTER: get rid of requirement that Loads
 	    // and Stores have only one references to memory (to
 	    // allow for StrongARMs ldm* instructions
-	    public void visit(InstrMEM m) {
+	    public void visit(FskStore m) {
 		// replace all non-Register Temps with appropriate
 		// stack offset locations
-		if(!isTempRegister(m.def()[0])) {
-		    List instrs = frame.makeStore
-			(m.use()[0], 
+		List instrs = frame.makeStore
+		    (m.use()[0], 
 			 ((Integer)tempsToOffsets.get(m.def()[0])).intValue(),
 			 m);
 		    Instr.replaceInstrList(m, instrs);
-		    return;
-		}
-
-		if(!isTempRegister(m.use()[0])) {
-		    List instrs = frame.makeLoad
-			(m.def()[0], 
-			 ((Integer)tempsToOffsets.get(m.use()[0])).intValue(),
-			 m);
-		    Instr.replaceInstrList(m, instrs);
-		    return;
-		}
 	    }
+	 
+	    public void visit(FskLoad m) {
+		// replace all non-Register Temps with appropriate
+		// stack offset locations
+		List instrs = frame.makeLoad
+		    (m.def()[0], 
+		     ((Integer)tempsToOffsets.get(m.use()[0])).intValue(),
+			 m);
+		Instr.replaceInstrList(m, instrs);
+	    }
+	
 	 
 	    public void visit(Instr i) {
 		//Do nothing

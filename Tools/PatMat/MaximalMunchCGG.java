@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.20 1999-08-03 22:24:05 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.21 1999-08-03 23:53:20 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -801,7 +801,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	out.println("\t\t} // end visit("+TREE_Tree+")");
 
 	out.println("\t\tpublic void visit("+TREE_Stm+" treee){");
-	out.println("\t\t\tSystem.out.print(\"munching \"+treee+\"\t\");");
+	out.println("\t\t\tdebug(\"munching \"+treee+\"\t\");");
 	out.println("\t\t\tmunchStm(treee);");
 	out.println("\t\t} // end visit("+TREE_Stm+")");
 	
