@@ -252,27 +252,29 @@ class read_from_connection extends Thread {
         int b;
         int c;
 
-        text = "";
+	text = "";
         name = "";
+	/*
+	  Date date = new Date();
 
-        Date date = new Date();
+	  hours = date.getHours();
+	  hoursS = Integer.toString(hours);
+	  if (hours <= 9)
+	  hoursS = "0"+hoursS;
 
-        hours = date.getHours();
-        hoursS = Integer.toString(hours);
-        if (hours <= 9)
-        hoursS = "0"+hoursS;
+	  minutes = date.getMinutes();
+	  minutesS = Integer.toString(minutes);
+	  if (minutes <= 9)
+	  minutesS = "0"+minutesS;
+	  
+	  seconds =  date.getSeconds();
+	  secondsS = Integer.toString(seconds);
+	  if (seconds <= 9)
+	  secondsS = "0"+secondsS;
 
-        minutes = date.getMinutes();
-        minutesS = Integer.toString(minutes);
-        if (minutes <= 9)
-        minutesS = "0"+minutesS;
+	  hoursout = "[" + hoursS + ":" + minutesS + ":" + secondsS +"]";*/
 
-        seconds =  date.getSeconds();
-        secondsS = Integer.toString(seconds);
-        if (seconds <= 9)
-        secondsS = "0"+secondsS;
-
-        hoursout = "[" + hoursS + ":" + minutesS + ":" + secondsS +"]";
+	hoursout = "[0:00:00]";
 
         a = request.indexOf('|');
         if (a == -1) return hoursout + " " + name + " - " +  text;
