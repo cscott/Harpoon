@@ -30,8 +30,8 @@ public class QuoteServer {
      * @param args Ignored command line arguments. 
      */ 
     public static void main(String[] args) { 
-	QuoteServer server = new QuoteServer(); 
 	QuoteServer.SERVER_PORT=Integer.parseInt(args[0]);
+	QuoteServer server = new QuoteServer(); 
 	server.serveQuotes(); 
     } 
     /** 

@@ -26,15 +26,17 @@ public class NetsClient extends Thread {
 	} catch (Exception e) {
 	}
 
-	long starttime=System.currentTimeMillis();
+
 	NetsClient[] tarray=new NetsClient[numberofclients];
 	for (int i=0;i<numberofclients;i++) {
 	    tarray[i]=new NetsClient(i,host,port,numberofmessages,numberofclients);
 	    if (debug)
 		System.out.println("Attempting to start "+i);
 	    tarray[i].connectt();
-	    tarray[i].start();
 	}
+	long starttime=System.currentTimeMillis();
+	for (int i=0;i<numberofclients;i++)
+	    tarray[i].start();
 	try {
 	    for (int i=0;i<numberofclients;i++) {
 		tarray[i].join();
@@ -80,6 +82,9 @@ public class NetsClient extends Thread {
 	    pout = new PrintStream(out);
 	    din = new DataInputStream(in);
 	    pout.println("0|"+clientnumber+"|howdy");
+	    String tt="";
+	    while (tt.indexOf('-')==-1)
+		tt=din.readLine();
 	} catch (UnknownHostException e ) {System.out.println("can't find host"); }
         catch ( IOException e ) {System.out.println("Error connecting to host");}
     }
