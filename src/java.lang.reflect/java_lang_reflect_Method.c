@@ -1,3 +1,4 @@
+#include "config.h" /* for WITH_INIT_CHECK, etc */
 #include <assert.h>
 #include <string.h>
 #include <jni.h>
@@ -21,8 +22,9 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Method_getModifiers
  * Method:    invoke
  * Signature: (Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invoke
-  (JNIEnv *env, jobject methodobj, jobject receiverobj, jobjectArray args) {
+static jobject Flex_java_lang_reflect_Method_invoke
+  (JNIEnv *env, jobject methodobj, jobject receiverobj, jobjectArray args,
+   jboolean with_init_check) {
   struct FNI_method2info *method; /* method information */
   jclass methodclazz; /* declaring class of method */
   char *desc; /* method descriptor */
@@ -102,6 +104,12 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invoke
     /* invoke! */
     assert(!(*env)->ExceptionOccurred(env));
     if (method->modifiers & java_lang_reflect_Modifier_STATIC) {
+      /* according to spec, must initialize declaring class here */
+#ifdef WITH_INIT_CHECK
+      if (with_init_check)
+	if (!REFLECT_staticinit(env, methodclazz))
+	  return NULL; /* ExceptionInInitializerError thrown */
+#endif /* WITH_INIT_CHECK */
       /* ----------------- static methods --------------------- */
       switch (retdesc) {
       case 'V':
@@ -190,6 +198,21 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invoke
   }
   /* done */
 }
+/* actual 'no init check' implementation. */
+JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invoke
+  (JNIEnv *env, jobject methodobj, jobject receiverobj, jobjectArray args) {
+  return
+    Flex_java_lang_reflect_Method_invoke(env, methodobj, receiverobj, args,
+					 JNI_FALSE/* NO INIT CHECK */);
+}
+#ifdef WITH_INIT_CHECK /* 'with init check' implementation. */
+JNIEXPORT jobject JNICALL Java_java_lang_reflect_Method_invoke_00024_00024initcheck
+  (JNIEnv *env, jobject methodobj, jobject receiverobj, jobjectArray args) {
+  return
+    Flex_java_lang_reflect_Method_invoke(env, methodobj, receiverobj, args,
+					 JNI_TRUE /* WITH INIT CHECK */);
+}
+#endif /* WITH_INIT_CHECK */
 
 #if !defined(WITHOUT_HACKED_REFLECTION) /* this is our hacked implementation */
 /*

@@ -1,4 +1,5 @@
 /* utility methods for reflection */
+#include "config.h" /* for WITH_INIT_CHECK */
 #include <assert.h>
 #include <string.h>
 #include <jni.h>
@@ -198,3 +199,56 @@ jvalue REFLECT_unwrapPrimitive(JNIEnv *env, jobject wrapped, char desiredsig) {
 }
 
 
+#ifdef WITH_INIT_CHECK
+// try to wrap currently active exception as the exception specified by
+// the exclsname parameter.  if this fails, just throw the original exception.
+// copied from java_lang_Class.c
+static void wrapNthrow(JNIEnv *env, char *exclsname) {
+    jthrowable ex = (*env)->ExceptionOccurred(env), nex;
+    jobject descstr;
+    jclass exCls, nexCls;
+    jmethodID consID, toStrID;
+    assert(ex); // exception set on entrance.
+    (*env)->ExceptionClear(env);
+    exCls = (*env)->GetObjectClass(env, ex);
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    toStrID = (*env)->GetMethodID(env, exCls,
+				  "toString", "()Ljava/lang/String;");
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    descstr = (*env)->CallObjectMethod(env, ex, toStrID);
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    nexCls = (*env)->FindClass(env, exclsname);
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    consID = (*env)->GetMethodID(env, nexCls,
+				 "<init>", "(Ljava/lang/String;)V");
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    nex = (*env)->NewObject(env, nexCls, consID, descstr);
+    if ((*env)->ExceptionOccurred(env)) goto error;
+    (*env)->Throw(env, nex);
+    return;
+ error: // throw original error.
+    (*env)->ExceptionClear(env);
+    (*env)->Throw(env, ex);
+    return;
+}
+/* run the static initializer for the given class. */
+/* this method also copied to java_lang_reflect_Field.c */
+int REFLECT_staticinit(JNIEnv *env, jclass c) {
+  jmethodID methodID; jclass sc;
+  /* XXX: Doesn't initialize interfaces */
+  sc = (*env)->GetSuperclass(env, c);
+  if (sc && !REFLECT_staticinit(env, sc))
+    return 0; /* fail if superclass init fails */
+  methodID=(*env)->GetStaticMethodID(env, c, "<clinit>", "()V");
+  if (methodID==NULL) {
+    (*env)->ExceptionClear(env); /* no static initializer, ignore */
+  } else {
+    (*env)->CallStaticVoidMethod(env, c, methodID);
+    if ((*env)->ExceptionOccurred(env)) {
+      wrapNthrow(env, "java/lang/ExceptionInInitializerError");
+      return 0; /* exception in initializer */
+    }
+  }
+  return 1; /* success */
+}
+#endif /* WITH_INIT_CHECK */

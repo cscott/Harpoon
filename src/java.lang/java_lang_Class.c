@@ -15,9 +15,6 @@
 #define XOR(a, b) ({int _r_=(a); if (b) _r_=!_r_; _r_; })
 
 static void wrapNthrow(JNIEnv *env, char *exclsname);
-#ifdef WITH_INIT_CHECK
-static int  staticinit(JNIEnv *env, jclass cls);
-#endif /* WITH_INIT_CHECK */
 
 /*
  * Class:     java_lang_Class
@@ -54,11 +51,11 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_forName_00024_00024initcheck
   jmethodID methodID;
   /* initialize java.lang.Class */
   clscls = (*env)->FindClass(env, "java/lang/Class");
-  if (clscls && !staticinit(env, clscls)) return NULL; /* failed init */
+  if (clscls && !REFLECT_staticinit(env, clscls)) return NULL;/* failed init */
   /* invoke Class.forName() */
   result = Java_java_lang_Class_forName(env, cls, str);
   /* now initialize the loaded class */
-  if (result && !staticinit(env, result)) return NULL; /* failed init */
+  if (result && !REFLECT_staticinit(env, result)) return NULL;/* failed init */
   return result;
 }
 #endif /* WITH_INIT_CHECK */
@@ -72,6 +69,7 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_forName_00024_00024withtrans
 
 // try to wrap currently active exception as the exception specified by
 // the exclsname parameter.  if this fails, just throw the original exception.
+// copied to java.lang.reflect/reflect-util.c
 static void wrapNthrow(JNIEnv *env, char *exclsname) {
     jthrowable ex = (*env)->ExceptionOccurred(env), nex;
     jobject descstr;
@@ -100,28 +98,6 @@ static void wrapNthrow(JNIEnv *env, char *exclsname) {
     (*env)->Throw(env, ex);
     return;
 }
-#ifdef WITH_INIT_CHECK
-/* run the static initializer for the given class. */
-/* this method also copied to java_lang_reflect_Field.c */
-static int staticinit(JNIEnv *env, jclass c) {
-  jmethodID methodID; jclass sc;
-  /* XXX: Doesn't initialize interfaces */
-  sc = (*env)->GetSuperclass(env, c);
-  if (sc && !staticinit(env, sc)) return 0; /* fail if superclass init fails */
-  methodID=(*env)->GetStaticMethodID(env, c, "<clinit>", "()V");
-  if (methodID==NULL) {
-    (*env)->ExceptionClear(env); /* no static initializer, ignore */
-  } else {
-    (*env)->CallStaticVoidMethod(env, c, methodID);
-    if ((*env)->ExceptionOccurred(env)) {
-      wrapNthrow(env, "java/lang/ExceptionInInitializerError");
-      return 0; /* exception in initializer */
-    }
-  }
-  return 1; /* success */
-}
-#endif /* WITH_INIT_CHECK */
-
 
 /*
  * Class:     java_lang_Class
@@ -150,7 +126,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance_00024_00024initcheck
   (JNIEnv *env, jobject cls) {
   /* this next static init may be redundant; class should be initialized
    * when Class object fetched via forName() or suchlike. */
-  if (!staticinit(env, cls)) return NULL; /* init failed */
+  if (!REFLECT_staticinit(env, cls)) return NULL; /* init failed */
   return Java_java_lang_Class_newInstance(env, cls);
 }
 #endif /* WITH_INIT_CHECK */
@@ -324,7 +300,7 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_getComponentType
 JNIEXPORT jclass JNICALL Java_java_lang_Class_getComponentType_00024_00024initcheck
   (JNIEnv *env, jobject _this) {
   jclass r = Java_java_lang_Class_getComponentType(env, _this);
-  if (!staticinit(env, r)) return NULL; /* init failed */
+  if (!REFLECT_staticinit(env, r)) return NULL; /* init failed */
   return r;
 }
 #endif /* WITH_INIT_CHECK */

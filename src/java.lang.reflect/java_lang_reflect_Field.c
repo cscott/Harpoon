@@ -16,28 +16,6 @@ JNIEXPORT jint JNICALL Java_java_lang_reflect_Field_getModifiers
     return FNI_GetFieldInfo(_this)->modifiers;
 }
 
-#ifdef WITH_INIT_CHECK
-/* run the static initializer for the given class. */
-/* helper method copied from java_lang_Class.c */
-static int staticinit(JNIEnv *env, jclass c) {
-  jmethodID methodID; jclass sc;
-  /* XXX: Doesn't initialize interfaces */
-  sc = (*env)->GetSuperclass(env, c);
-  if (sc && !staticinit(env, sc)) return 0; /* fail if superclass init fails */
-  methodID=(*env)->GetStaticMethodID(env, c, "<clinit>", "()V");
-  if (methodID==NULL) {
-    (*env)->ExceptionClear(env); /* no static initializer, ignore */
-  } else {
-    (*env)->CallStaticVoidMethod(env, c, methodID);
-    if ((*env)->ExceptionOccurred(env)) {
-      /* XXX: wrapNthrow(env, "java/lang/ExceptionInInitializerError"); */
-      return 0; /* exception in initializer */
-    }
-  }
-  return 1; /* success */
-}
-#endif /* WITH_INIT_CHECK */
-
 /*
  * Class:     java_lang_reflect_Field
  * Method:    get
@@ -114,7 +92,8 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Field_get_00024_00024initcheck
   assert(field!=NULL);
 
   if (field->modifiers & java_lang_reflect_Modifier_STATIC) /* static field */
-    staticinit(env, FNI_WRAP(field->declaring_class_object));
+    if (!REFLECT_staticinit(env, FNI_WRAP(field->declaring_class_object)))
+      return NULL; /* ExceptionInInitializerError thrown. */
   
   /* okay, tail-call regular implementation */
   return Java_java_lang_reflect_Field_get(env, fieldobj, receiverobj);
@@ -212,10 +191,11 @@ JNIEXPORT void JNICALL Java_java_lang_reflect_Field_set_00024_00024initcheck
   assert(field!=NULL);
 
   if (field->modifiers & java_lang_reflect_Modifier_STATIC) /* static field */
-    staticinit(env, FNI_WRAP(field->declaring_class_object));
+    if (!REFLECT_staticinit(env, FNI_WRAP(field->declaring_class_object)))
+      return; /* ExceptionInInitializerError thrown */
   
   /* okay, tail-call regular implementation */
-  return Java_java_lang_reflect_Field_set(env, fieldobj, receiverobj, value);
+  Java_java_lang_reflect_Field_set(env, fieldobj, receiverobj, value);
 }
 #endif /* WITH_INIT_CHECK */
 

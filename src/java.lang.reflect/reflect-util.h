@@ -1,6 +1,7 @@
 /* utility methods for reflection */
 #ifndef INCLUDED_REFLECT_UTIL_H
 #define INCLUDED_REFLECT_UTIL_H
+#include "config.h" /* for WITH_INIT_CHECK */
 
 /* convenience macro (FORPRIMITIVETYPES, extended) */
 #define FORPRIMITIVETYPESX(what) \
@@ -32,5 +33,9 @@ jobject REFLECT_wrapPrimitive(JNIEnv *env, jvalue unwrapped, char type);
  * May throw an 'IllegalArgumentException' if this cannot be done via
  * a valid widening conversion. */
 jvalue REFLECT_unwrapPrimitive(JNIEnv *env, jobject wrapped, char desiredsig);
+
+#ifdef WITH_INIT_CHECK
+int  REFLECT_staticinit(JNIEnv *env, jclass cls);
+#endif /* WITH_INIT_CHECK */
 
 #endif /* INCLUDED_REFLECT_UTIL_H */
