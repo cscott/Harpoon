@@ -34,7 +34,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.4 1999-05-19 06:45:11 andyb Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.5 1999-06-03 01:46:45 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -43,10 +43,10 @@ public abstract class RegAlloc  {
 
     /** Creates a <code>RegAlloc</code>. 
 	
-	<BR> <B>Design Issue:</B> should there be a RegAlloc object for every
-	method, or just for every machine target?  For now it seems
-	associating a new one with every method will save a lot of
-	headaches.
+	<BR> <B>Design Issue:</B> should there be a RegAlloc object
+	for every method, or just for every machine target?  For now
+	it seems associating a new one with every method will save a
+	lot of headaches.
 
     */
     protected RegAlloc(Frame frame, Code code) {
@@ -92,7 +92,9 @@ public abstract class RegAlloc  {
 	     out of the <code>RegAlloc</code> class into a seperate
 	     class to get rid of the cycle.  In the meantime, any new
 	     <code>RegAlloc</code> subclasses can be incorporated into
-	     this method to be used in the compiler.
+	     this method to be used in the compiler.  Perhaps should
+	     also design a way to parameterize which
+	     <code>RegAlloc</code> subclasses will be used.
      */
     public static HCodeFactory codeFactory(final HCodeFactory parentFactory, 
 					   final Frame frame) {
