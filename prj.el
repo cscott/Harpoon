@@ -68,7 +68,7 @@
  '(jde-quote-classpath nil t)
  '(jde-gen-to-string-method-template (quote ("'&" "\"public String toString() {\" 'n>" "\"return super.toString();\" 'n>" "\"}\" 'n>")))
  '(jde-run-read-app-args nil)
- '(jde-db-source-directories (list (user-specific-project-dir)))
+ '(jde-db-source-directories (list (concat (user-specific-project-dir) "jdb/")))
  '(jde-db-option-properties nil)
  '(jde-db-option-stack-size (quote ((128 . "kilobytes") (400 . "kilobytes"))))
  '(jde-db-set-initial-breakpoint t)
