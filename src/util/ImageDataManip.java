@@ -87,55 +87,52 @@ public class ImageDataManip {
      *  @return an {@link ImageData} that contains an image read from the 
      *          {@link InputStream}.
      */ 
-    public static ImageData readPPM(InputStream st) {
+    public static ImageData readPPM(final InputStream st) {
 	try {
 	    ImageData id = new ImageData();
-	    InputStreamReader r = new InputStreamReader(st);
-	    StreamTokenizer s = new StreamTokenizer(r);
-	    s.eolIsSignificant(false);
-	    s.parseNumbers();
-	    s.commentChar('#');
-	    s.nextToken();
-	    if (s.ttype!=s.TT_WORD) throw new IOException("Not a PPM!");
-	    int type = 0;
-	    if (s.sval.startsWith("P6")) {
-		type = 1;
-	    } else if (s.sval.startsWith("P3")) {
-		type = 2;
-	    } else {
-		throw new IOException("Not a PPM!");
-	    }
-	    s.nextToken();
-	    if (s.ttype!=s.TT_NUMBER) throw new IOException("Not a PPM!");
-	    int width=(int)s.nval;
-	    s.nextToken();
-	    if (s.ttype!=s.TT_NUMBER) throw new IOException("Not a PPM!");
-	    int height=(int)s.nval;
-	    s.nextToken(); /* This is to eat the number of colors.  Optional?? */
-	    if (s.ttype!=s.TT_NUMBER) throw new IOException("Not a PPM!");
+	    if (st.read()!=(int)'P') throw new IOException("Not a PPM!");
+	    class DataReader {
+		public int read() throws IOException {
+		    String buf = "";
+		    for (int c = st.read(); c!=-1; c = st.read()) 
+			switch ((char)c) {
+			case '#': while (((c=st.read())!=-1)&&(((char)c)!='\n'));
+			case '\n':
+			case ' ': { 
+			    if (buf.length()==0) continue;
+			    try {
+				return Integer.parseInt(buf);
+			    } catch (NumberFormatException e) {
+				break;
+			    }
+			}
+			default: buf += (char)c;
+			}
+		    throw new IOException("Not a PPM!");
+		}
+	    };
+	    DataReader dr = new DataReader();
+	    int read=dr.read();
+	    int width=dr.read();
+	    int height=dr.read();
+	    dr.read(); /* This is to eat the number of colors. */
 	    byte[] rvals = new byte[width*height];
 	    byte[] gvals = new byte[width*height];
 	    byte[] bvals = new byte[width*height];
-	    if (type == 1) {
-		char[] cbuf=new char[3*width*height];
-		r.read(cbuf);
+	    if (read==3) {
+		for (int i=0; i<width*height; i++) {
+		    rvals[i] = (byte)dr.read();
+		    gvals[i] = (byte)dr.read();
+		    bvals[i] = (byte)dr.read();
+		}
+	    } else {
+		byte[] cbuf=new byte[3*width*height];
+		st.read(cbuf);
 		int j = 0;
 		for (int i=0; i<width*height; i++) {
 		    rvals[i] = (byte)cbuf[j++];
 		    gvals[i] = (byte)cbuf[j++];
 		    bvals[i] = (byte)cbuf[j++];
-		}
-	    } else {
-		for (int i=0; i<width*height; i++) {
-		    s.nextToken();
-		    if (s.ttype!=s.TT_NUMBER) throw new IOException("Not a PPM!");
-		    rvals[i] = (byte)s.nval;
-		    s.nextToken();
-		    if (s.ttype!=s.TT_NUMBER) throw new IOException("Not a PPM!");
-		    gvals[i] = (byte)s.nval;
-		    s.nextToken();
-		    if (s.ttype!=s.TT_NUMBER) throw new IOException("Not a PPM!");
-		    bvals[i] = (byte)s.nval;
 		}
 	    }
 	    return create(null, rvals, gvals, bvals, width, height);
@@ -209,13 +206,15 @@ public class ImageDataManip {
 	    } else {
 		out.println("P6 "+id.width+" "+id.height+" 255");
 		int j = 0;
-		char[] cbuf = new char[3*id.width*id.height];
+		byte[] cbuf = new byte[3*id.width*id.height];
 		for (int i=0; i<id.width*id.height; i++) {
-		    cbuf[j++] = (char)((id.rvals[i]|256)&255);
-		    cbuf[j++] = (char)((id.gvals[i]|256)&255);
-		    cbuf[j++] = (char)((id.bvals[i]|256)&255);
+		    cbuf[j++] = (byte)((id.rvals[i]|256)&255);
+		    cbuf[j++] = (byte)((id.gvals[i]|256)&255);
+		    cbuf[j++] = (byte)((id.bvals[i]|256)&255);
 		}
-		out.write(cbuf);
+		out.flush();
+		s.write(cbuf);
+		s.flush();
 	    }
 	    out.close();
 	} catch (Exception e) {
