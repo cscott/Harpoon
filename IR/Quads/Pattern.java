@@ -21,7 +21,7 @@ import java.util.Set;
  * <code>Pattern</code> <blink>please document me if I'm public!</blink>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.16 2000-01-22 02:36:43 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.17 2000-02-14 16:22:17 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -130,7 +130,13 @@ public class Pattern {
 		//no pattern matching allowed on cutout regions
 		for (Quad ptr=q; ptr!=hi.to().prev(0); ptr=ptr.prev(0))
 		    done.add(ptr);
-		Quad.addEdge(hi.to().prev(0), hi.to().prevEdge(0).which_succ(), q, 0);
+		Quad ql=q;
+		//Don't cutout any TYPECAST quads
+		while (ql.prev(0).kind()==QuadKind.TYPECAST)
+		    ql=ql.prev(0);
+		Quad.addEdge(hi.to().prev(0), hi.to().prevEdge(0).which_succ(), ql, 0);
+
+		   
 		while (hi.needHandler()) {
 		    Object[] handler=hi.pophandler();
 		    Temp Tex=new Temp(q.getFactory().tempFactory());
@@ -630,6 +636,10 @@ static class ExcVisitor extends QuadVisitor { // this is an inner class
 	    status=-1;
     }
 
+    public void visit(TYPECAST q) {
+	//safe to ignore
+    }
+
     public void visit(PHI q) {
 	//safe to ignore
     }
@@ -721,6 +731,10 @@ static class HighBoundVisitor extends QuadVisitor { // this is an inner class
 	    status=-1;
     }
 
+    public void visit(TYPECAST q) {
+	//safe to ignore
+    }
+
     public void visit(CJMP q) {
 	if (status==0) {
 	    test=q.test();
@@ -790,6 +804,10 @@ static class MinusVisitor extends QuadVisitor { // this is an inner class
 	    status=-1;
 	if (ud.useMap(code,q.dst()).length!=1)
 	    status=-1;
+    }
+
+    public void visit(TYPECAST q) {
+	//safe to ignore
     }
 
     public void visit(OPER q) {
@@ -882,6 +900,10 @@ static class NullVisitor extends QuadVisitor { // this is an inner class
 	    status=-1;
     }
 
+    public void visit(TYPECAST q) {
+	//safe to ignore
+    }
+
     public void visit(CJMP q) {
 	if (status==0) {
 	    test=q.test();
@@ -950,6 +972,10 @@ static class CompVisitor extends QuadVisitor { // this is an inner class
 	}
 	else 
 	    status=-1;
+    }
+
+    public void visit(TYPECAST q) {
+	//safe to ignore
     }
 
     public void visit(CJMP q) {
@@ -1040,6 +1066,10 @@ static class ZeroVisitor extends QuadVisitor { // this is an inner class
 	    status=-1;
     }
 
+    public void visit(TYPECAST q) {
+	//safe to ignore
+    }
+
     public void visit(CJMP q) {
 	if (status==0) {
 	    test=q.test();
@@ -1054,3 +1084,4 @@ static class ZeroVisitor extends QuadVisitor { // this is an inner class
 
 } // close the Pattern class (yes, the indentation's screwed up,
   // but I don't feel like re-indenting all this code) [CSA]
+
