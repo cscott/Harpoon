@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Runtime1;
 
+import harpoon.Backend.Generic.LocationFactory;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.Bop;
@@ -29,14 +30,15 @@ import java.util.List;
  * A simple-minded version of Appel's fast-allocation strategy
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.1 1999-10-13 16:16:54 cananian Exp $
+ * @version  $Id: DefaultAllocationStrategy.java,v 1.1.2.2 1999-10-13 16:31:43 cananian Exp $
  */
 public class DefaultAllocationStrategy implements AllocationStrategy {
+    final LocationFactory.Location memLimit;
+    final LocationFactory.Location nextPtr;
 
-    private AllocationInfo info;
-
-    public DefaultAllocationStrategy(AllocationInfo info) {
-	this.info = info;
+    public DefaultAllocationStrategy(LocationFactory lf) {
+	memLimit = lf.allocateLocation(Type.POINTER);
+	nextPtr = lf.allocateLocation(Type.POINTER);
     }
 
     /** 
@@ -48,14 +50,12 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
 	LABEL        l0, l1, l2, l3, l4;
 	NAME         gc, exit_oom;
 	TEMP         triedGC; // INT type
-	TEMP         memLimit, newMemPtr, nextPtr, resultPtr, tmp;
+	TEMP         newMemPtr, resultPtr, tmp;
 	HCodeElement src = size;
 	TreeFactory  tf  = size.getFactory();
 	Stm[]        stms;
 
 	triedGC   = new TEMP(tf,src,Type.INT,     new Temp(tf.tempFactory()));
-	nextPtr   = new TEMP(tf,src,Type.POINTER, info.getNextPtr());
-	memLimit  = new TEMP(tf,src,Type.POINTER, info.getMemLimit());
 	newMemPtr = new TEMP(tf,src,Type.POINTER, new Temp(tf.tempFactory()));
 	resultPtr = new TEMP(tf,src,Type.POINTER, new Temp(tf.tempFactory()));
 	tmp       = new TEMP(tf,src,Type.POINTER, new Temp(tf.tempFactory()));
@@ -65,8 +65,8 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
 	l2        = new LABEL(tf, src, new Label(), false);
 	l3        = new LABEL(tf, src, new Label(), false);
 	l4        = new LABEL(tf, src, new Label(), false);
-	gc        = new NAME(tf, src, info.GC());
-	exit_oom  = new NAME(tf, src, info.exitOutOfMemory());
+	gc        = new NAME(tf, src, new Label("_gc"));
+	exit_oom  = new NAME(tf, src, new Label("_exit_oom"));
       
 	stms = new Stm[] { 
 	    // triedGC <-- 0; 
@@ -77,7 +77,7 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
 	    (tf, src, newMemPtr, 
 	     new BINOP
 	     (tf, src, Type.POINTER, Bop.ADD,
-	      nextPtr, 
+	      nextPtr.makeAccessor(tf, src), 
 	      size)),
 	
 	    // LABEL 0 
@@ -88,7 +88,7 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
 	    (tf, src, 
 	     new BINOP
 	     (tf, src, Type.POINTER, Bop.CMPGT,
-	      memLimit, 
+	      memLimit.makeAccessor(tf, src), 
 	      newMemPtr),
 	     l1.label,  // There's enough space
 	     l2.label), // Not enough space!
@@ -130,8 +130,8 @@ public class DefaultAllocationStrategy implements AllocationStrategy {
 	    // Increment the "next" ptr, and MOVE the result to a useful
 	    // place
 	    //
-	    new MOVE(tf, src, resultPtr, nextPtr),
-	    new MOVE(tf, src, nextPtr, newMemPtr)
+	    new MOVE(tf, src, resultPtr, nextPtr.makeAccessor(tf, src)),
+	    new MOVE(tf, src, nextPtr.makeAccessor(tf, src), newMemPtr)
 	};
 	
 	// Combine the Stm objects into one ESEQ object, and return it.
