@@ -10,6 +10,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Translation.Exp;
 import harpoon.IR.Tree.TreeFactory;
@@ -28,7 +29,7 @@ import java.util.List;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.7 1999-11-01 06:20:17 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.8 2000-02-16 06:17:25 cananian Exp $
  */
 public abstract class Runtime {
     /** A <code>NameMap</code> valid for this
@@ -87,6 +88,7 @@ public abstract class Runtime {
 	/** Return a <code>Translation.Exp</code> giving the length of the
 	 *  array pointed to by the given expression. */
 	public abstract Exp arrayLength(TreeFactory tf, HCodeElement source,
+					DerivationGenerator dg,
 					Exp arrayRef);
 	/** Return a <code>Translation.Exp</code> which will create a
 	 *  array of the given type, with length specified by the
@@ -95,30 +97,35 @@ public abstract class Runtime {
 	 *  array will be created.  However, internal fields of the array
 	 *  (class pointer, length field) *are* initialized properly. */
 	public abstract Exp arrayNew(TreeFactory tf, HCodeElement source,
+				     DerivationGenerator dg,
 				     HClass arraytype, Exp length);
 
 	/** Return a <code>Translation.Exp</code> which tests the
 	 *  given object expression for membership in the component
 	 *  type of the given array expression. */
 	public abstract Exp componentOf(TreeFactory tf, HCodeElement source,
+					DerivationGenerator dg,
 					Exp arrayref, Exp objectref);
 
 	/** Return a <code>Translation.Exp</code> which tests the
 	 *  given expression for membership in the given class or
 	 *  interface. */
 	public abstract Exp instanceOf(TreeFactory tf, HCodeElement source,
+				       DerivationGenerator dg,
 				       Exp objectref, HClass classType);
 
 	/** Return a <code>Translation.Exp</code> which acquires
 	 *  the monitor lock of the object specified by the given
 	 *  expression. */
 	public abstract Exp monitorEnter(TreeFactory tf, HCodeElement source,
+					 DerivationGenerator dg,
 					 Exp objectref);
 
 	/** Return a <code>Translation.Exp</code> which releases
 	 *  the monitor lock of the object specified by the given
 	 *  expression. */
 	public abstract Exp monitorExit(TreeFactory tf, HCodeElement source,
+					DerivationGenerator dg,
 					Exp objectref);
 
 	/** Return a <code>Translation.Exp</code> which will create a
@@ -128,6 +135,7 @@ public abstract class Runtime {
 	 *  however the internal object header is always created
 	 *  and initialized. */
 	public abstract Exp objectNew(TreeFactory tf, HCodeElement source,
+				      DerivationGenerator dg,
 				      HClass classType, boolean initialize);
 
 	/** Return a <code>Translation.Exp</code> which represents
@@ -142,6 +150,7 @@ public abstract class Runtime {
 	 *  (although other implementations are certainly possible).
 	 */
 	public abstract Exp stringConst(TreeFactory tf, HCodeElement source,
+					DerivationGenerator dg,
 					String stringData);
 
 	// handle low-quad pointer manipulations.
@@ -152,6 +161,7 @@ public abstract class Runtime {
 	 *  This expression should point to the zero'th element of
 	 *  the array object specified by <code>objectref</code>. */
 	public abstract Exp arrayBase(TreeFactory tf, HCodeElement source,
+				      DerivationGenerator dg,
 				      Exp objectref);
 	/** Return a <code>Translation.Exp</code> representing the
 	 *  offset from the array base needed to access the array 
@@ -160,12 +170,14 @@ public abstract class Runtime {
 	 *  <code>Translation.Exp</code> returned should also have
 	 *  value zero. */
 	public abstract Exp arrayOffset(TreeFactory tf, HCodeElement source,
+					DerivationGenerator dg,
 					HClass arrayType, Exp index);
 	/** Return a <code>Translation.Exp</code> representing the
 	 *  field base of the object referenced by the given
 	 *  <code>objectref</code> expression.  This expression should
 	 *  point to the first field in the object. */
 	public abstract Exp fieldBase(TreeFactory tf, HCodeElement source,
+				      DerivationGenerator dg,
 				      Exp objectref);
 	/** Return a <code>Translation.Exp</code> representing an
 	 *  offset from the field base required to access the given
@@ -173,6 +185,7 @@ public abstract class Runtime {
 	 *  the object, then the <code>Translation.Exp</code> returned
 	 *  should have value zero. */
 	public abstract Exp fieldOffset(TreeFactory tf, HCodeElement source,
+					DerivationGenerator dg,
 					HField field);
 	/** Return a <code>Translation.Exp</code> representing the
 	 *  method base of the object referenced by the given
@@ -180,6 +193,7 @@ public abstract class Runtime {
 	 *  should point a location containing a pointer to the
 	 *  first method of the object. */
 	public abstract Exp methodBase(TreeFactory tf, HCodeElement source,
+				       DerivationGenerator dg,
 				       Exp objectref);
 	/** Return a <code>Translation.Exp</code> representing an
 	 *  offset from the method base required to access the
@@ -187,6 +201,7 @@ public abstract class Runtime {
 	 *  first of the object, then the <code>Translation.Exp</code>
 	 *  returned should have value zero. */
 	public abstract Exp methodOffset(TreeFactory tf, HCodeElement source,
+					 DerivationGenerator dg,
 					 HMethod method);
     }
     /** The <code>ObjectBuilder</code> constructs data tables in the
