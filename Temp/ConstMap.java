@@ -6,12 +6,12 @@ package harpoon.Temp;
  * values.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstMap.java,v 1.1 1998-08-19 05:09:06 cananian Exp $
+ * @version $Id: ConstMap.java,v 1.2 1998-09-10 04:43:39 cananian Exp $
  */
 
 public interface ConstMap  {
     /** Determine whether a given temporary has a constant value. */
-    public boolean isConst();
+    public boolean isConst(Temp t);
     /** Determine the constant value of a given temporary. */
-    public Object constMap(harpoon.Temp.Temp t);
+    public Object constMap(Temp t);
 }
