@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * multiple predecessors.
  *
  * @author  C. Scott Ananian
- * @version $Id: InMerge.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: InMerge.java,v 1.2.2.1 1998-12-09 00:30:48 cananian Exp $
  * @see Instr
  */
 public class InMerge extends Instr {
@@ -42,7 +42,12 @@ public class InMerge extends Instr {
    *  Exactly equivalent to <code>prev().length</code> but slightly
    *  more efficient.
    */
-  public int arity() { return this.prev.size(); }
+  public int arity() {
+      /* arity may be larger than this.prev.size() because of inputs
+       * from try handlers. */
+      //Util.assert(arity==this.prev.size());
+      return arity;
+  }
 
   /** Return the java bytecode of this instruction.
    *  This function is required by the superclass, but not relevant
