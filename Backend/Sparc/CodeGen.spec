@@ -6,15 +6,29 @@ package harpoon.Backend.Sparc;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrFactory;
+import harpoon.IR.Tree.Bop;
+import harpoon.IR.Tree.Uop;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.Typed;
+import harpoon.Util.Util;
 /**
  * <code>CodeGen</code> is a code-generator for the Sparc architecture.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.2 1999-06-29 05:24:53 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.3 1999-06-29 06:39:41 cananian Exp $
  */
 %%
+    // FIELDS
+    private Instr root = null, last = null;
+    /** append an instruction to the end of our instruction list. */
+    private void emit(Instr i) {
+	if (root == null)
+	    root = i;
+	if (last != null)
+	    last.insertInstrAfter(last,  i);
+	last = i;
+    }
+
     // INNER CLASSES
     /** Sub-class to represent delay-slots.
      * <code>optimize()</code> uses this class information to determine that
@@ -53,6 +67,25 @@ import harpoon.IR.Tree.Typed;
       if (Type.isDoubleWord(t.type())) r+="d";
       if (Type.isFloatingPoint(t.type())) r+="f";
       return r;
+    }
+    /** Crunch <code>Bop</code> down to sparc instruction. */
+    static String bop(int op) {
+	switch(op) {
+	case Bop.ADD: return "add";
+	case Bop.AND: return "and";
+	case Bop.OR:  return "or";
+	case Bop.XOR: return "xor";
+	case Bop.SHL: return "sll";
+	case Bop.SHR: return "sra";
+	case Bop.USHR:return "srl";
+	}
+	Util.assert(false);
+    }
+    static boolean isCommutative(int op) { 
+	return op==Bop.ADD || op==Bop.OR || op==Bop.AND || op==Bop.XOR;
+    }
+    static boolean isShift(int op) {
+	return op==Bop.SHL || op==Bop.SHR || op==Bop.USR;
     }
 %%
 /* this comment will be eaten by the spec lexer (unlike the ones above) */
@@ -160,3 +193,45 @@ NAME(s)=r %{
 }%
 /*TEMP(t)=r should be handled by c-g-g. */
 
+BINOP<i,p>(op, CONST(c), e)=r %pred %( isCommutative(op) && is13bit(c) )% %{
+ emit(new Instr(if, ROOT, "\t "+bop(op)+" `s0, "+c+", `d0\n",
+		new Temp[] { r }, new Temp[] { e }));
+}%
+BINOP<i,p>(op, e, CONST(c))=r %pred %( (isShift(op) || isCommutative(op)) && is13bit(c) )% %{
+ emit(new Instr(if, ROOT, "\t "+bop(op)+" `s0, "+c+", `d0\n",
+		new Temp[] { r }, new Temp[] { e }));
+}%
+BINOP<i,p>(op, e1, e2)=r  %pred %( isShift(op) || isCommutative(op) )% %{
+ emit(new Instr(if, ROOT, "\t "+bop(op)+" `s0, `s1, `d0\n",
+		new Temp[] { r }, new Temp[] { e1, e2 }));
+}%
+BINOP<i,p>(ADD, e1, UNOP(NEG, e2))=r /* subtraction */ %{
+ emit(new Instr(if, ROOT, "\t sub `s0, `s1, `d0\n",
+		new Temp[] { r }, new Temp[] { e1, e2 }));
+}%
+/* FIXME: write MUL/DIV rules */
+/* FIXME: write long/float/double rules */
+
+// patterns with MEM at root.
+MEM(BINOP(PLUS, CONST(c), e1))=r %pred %( is13bit(c) )% %{
+ emit(new Instr(if, ROOT, "\t ld"+suffix((Typed)ROOT.exp)+" [`s0+"+c+"], `d0\n",
+		new Temp[] { r }, new Temp[] { e1 }));
+}%
+MEM(BINOP(PLUS, e1, CONST(c)))=r %pred %( is13bit(c) )% %{
+ emit(new Instr(if, ROOT, "\t ld"+suffix((Typed)ROOT.exp)+" [`s0+"+c+"], `d0\n",
+		new Temp[] { r }, new Temp[] { e1 }));
+}%
+MEM(BINOP(PLUS, e1, e2))=r %{
+ emit(new Instr(if, ROOT, "\t ld"+suffix((Typed)ROOT.exp)+" [`s0+`s1], `d0\n",
+		new Temp[] { r }, new Temp[] { e1, e2 }));
+}%
+MEM(CONST(c))=r %pred %( is13bit(c) )% %{
+ emit(new Instr(if, ROOT, "\t ld ["+c+"], `d0\n",
+		new Temp[] { r }, null));
+}%
+MEM(e)=r %{
+ emit(new Instr(if, ROOT, "\t ld [`s0], `d0\n",
+		new Temp[] { r }, new Temp { e }));
+}%
+
+/* FIXME: munch CALLs */
