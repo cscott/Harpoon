@@ -282,6 +282,13 @@ public class DotExpr extends Expr {
         }
     }
 
+    public boolean isValue() {
+	FieldDescriptor tmpfd=fd;
+	if (tmpfd instanceof ArrayDescriptor)
+	    tmpfd=((ArrayDescriptor)tmpfd).getField();
+	return (tmpfd.getPtr()||(tmpfd.getType() instanceof ReservedTypeDescriptor));
+    }
+
     boolean typechecked=false;
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {
 	if (typechecked)

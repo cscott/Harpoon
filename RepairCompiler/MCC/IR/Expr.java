@@ -40,6 +40,10 @@ public abstract class Expr {
 	return null;
     }
 
+    public boolean isValue() {
+	return false;
+    }
+
     public int[] getRepairs(boolean negated) {
 	System.out.println(this.getClass().getName());
 	throw new Error("Unrecognized EXPR");

@@ -69,6 +69,10 @@ public class VarExpr extends Expr {
         return vd;
     }
 
+    public boolean isValue() {
+	return vd.isGlobal();
+    }
+
     public void generate(CodeWriter writer, VarDescriptor dest) {        
 
         // #TBD#: bit of a hack, really should have been type checked properly 

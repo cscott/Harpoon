@@ -23,6 +23,8 @@ class Updates {
     }
 
     public Updates(Expr lexpr, Expr rexpr, Opcode op, boolean negate) {
+	if (!lexpr.isValue())
+	    System.out.println("Building invalid update");
 	leftexpr=lexpr;
 	type=Updates.EXPR;
 	if (negate) {
@@ -92,6 +94,8 @@ class Updates {
     }
 
     public Updates(Expr lexpr, Expr rexpr) {
+	if (!lexpr.isValue())
+	    System.out.println("Building invalid update");
 	leftexpr=lexpr;
 	rightexpr=rexpr;
 	type=Updates.EXPR;
@@ -99,6 +103,8 @@ class Updates {
     }
 
     public Updates(Expr lexpr, int rpos) {
+	if (!lexpr.isValue())
+	    System.out.println("Building invalid update");
 	leftexpr=lexpr;
 	rightposition=rpos;
 	type=Updates.POSITION;

@@ -15,6 +15,8 @@ public class OpExpr extends Expr {
     }
 
     public static boolean isInt(Expr e) {
+	if (e==null)
+	    return false;
 	if ((e instanceof IntegerLiteralExpr)||
 	    ((e instanceof OpExpr)&&(((OpExpr)e).opcode==Opcode.NOP)&&(((OpExpr)e).getLeftExpr() instanceof IntegerLiteralExpr)))
 	    return true;
@@ -35,8 +37,8 @@ public class OpExpr extends Expr {
 	    (isInt(left)&&(opcode==Opcode.RND))) {
 	    this.opcode=Opcode.NOP;
 	    this.right=null;
-	    int lint=getInt(left);
-	    int rint=getInt(right);
+	    int lint=isInt(left)?getInt(left):0;
+	    int rint=isInt(right)?getInt(right):0;
 	    int value=0;
 	    if (opcode==Opcode.ADD) {
 		value=lint+rint;
