@@ -14,7 +14,7 @@ import java.util.Iterator;
  * small.  It is backed by an <code>ArrayList</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearSet.java,v 1.1.2.4 2000-04-06 21:37:24 pnkfelix Exp $
+ * @version $Id: LinearSet.java,v 1.1.2.5 2000-04-06 21:44:49 pnkfelix Exp $
  */
 public class LinearSet extends AbstractSet {
     private ArrayList list;
@@ -37,7 +37,7 @@ public class LinearSet extends AbstractSet {
 	list = new ArrayList(sz);
 	Iterator iter = set.iterator();
 	for(int i=0; i<sz; i++) {
-	    list.set(i, iter.next());
+	    list.add(iter.next());
 	}
     }
     
