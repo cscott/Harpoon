@@ -28,7 +28,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.33 2000-11-17 07:26:33 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.34 2000-11-22 06:04:35 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -128,6 +128,8 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    HCstring.getConstructor(new HClass[] { HCcharA }),
 	    HCstring.getMethod("length", "()I"),
 	    HCstring.getMethod("toCharArray","()[C"),
+	    linker.forName("java.lang.OutOfMemoryError")
+		.getConstructor(new HClass[] { HCstring }),
 	    // runtime's reflection implementation mentions these
 	    linker.forName("java.lang.Class"),
 	    linker.forName("java.lang.reflect.Field"),
