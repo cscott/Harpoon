@@ -1,4 +1,4 @@
-# $Revision: 1.43 $
+# $Revision: 1.44 $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -43,13 +43,15 @@ first:
 	@echo Please wait...
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
-Harpoon.jar:	java
+Harpoon.jar Harpoon.jar.TIMESTAMP: java
 	${JAR} c0f Harpoon.jar harpoon silicon
+	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
-jar:	Harpoon.jar
+jar:	Harpoon.jar Harpoon.jar.TIMESTAMP
 jar-install: jar
-	chmod a+r Harpoon.jar
-	$(SCP) Harpoon.jar $(INSTALLMACHINE):$(INSTALLDIR)
+	chmod a+r Harpoon.jar Harpoon.jar.TIMESTAMP
+	$(SCP) Harpoon.jar Harpoon.jar.TIMESTAMP \
+		$(INSTALLMACHINE):$(INSTALLDIR)
 
 cvs-add: needs-cvs
 	-for dir in $(filter-out Test,$(ALLPKGS)); do \
@@ -71,13 +73,15 @@ update: needs-cvs
 	xvcg -psoutput $@ -paper 8x11 -color $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz: $(TARSOURCE)
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE)
 	tar czf harpoon.tgz $(TARSOURCE)
+	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
-tar:	harpoon.tgz
+tar:	harpoon.tgz harpoon.tgz.TIMESTAMP
 tar-install: tar
-	chmod a+r harpoon.tgz
-	$(SCP) harpoon.tgz $(INSTALLMACHINE):$(INSTALLDIR)
+	chmod a+r harpoon.tgz harpoon.tgz.TIMESTAMP
+	$(SCP) harpoon.tgz harpoon.tgz.TIMESTAMP \
+		$(INSTALLMACHINE):$(INSTALLDIR)
 
 doc:	doc/TIMESTAMP
 
