@@ -2,7 +2,7 @@
 /**
  *  @file    ATRManip.idl
  *
- *  $Id: ATRManip.idl,v 1.4 2003-05-29 23:15:11 wbeebee Exp $
+ *  $Id: ATRManip.idl,v 1.5 2003-08-05 20:54:58 wbeebee Exp $
  *
  *  @author  Craig Rodrigues <crodrigu@bbn.com>
  */
@@ -12,6 +12,7 @@
 #define ATRMANIP_IDL
 
 #include <quo.idl>
+#include "Image.idl"
 
 /**
   * @namespace ATRManip
@@ -39,7 +40,7 @@ module ATRManip
          * Send coordinate data
          * @param c  coordinate data
          */
-       void send_coordinate(in Coordinate c); 
+       void send_coordinate(in Coordinate c, in Img::ImageHeader hdr); 
    };
 
 };

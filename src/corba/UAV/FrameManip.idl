@@ -2,7 +2,7 @@
 /**
  *  @file    FrameManip.idl
  *
- *  $Id: FrameManip.idl,v 1.5 2003-05-29 23:15:11 wbeebee Exp $
+ *  $Id: FrameManip.idl,v 1.6 2003-08-05 20:54:58 wbeebee Exp $
  *
  *  @author  Gary Duzan <gduzan@bbn.com>
  */
@@ -15,18 +15,20 @@
 
 #pragma prefix ""
 
+#include "Image.idl"
+
 /**
   * @namespace FrameManip
   * @brief  Interfaces for sending frame data to processing nodes.
   */
-
 module FrameManip {
   typedef ::omg::org::CosPropertyService::Properties	FrameInfo;
-  typedef sequence<octet>			        FrameData;
+  typedef sequence<octet>			FrameData;
 
   struct Frame {
     unsigned long long timestamp;
     FrameInfo info;
+    Img::ImageHeader header;
     FrameData data;
   };
 
