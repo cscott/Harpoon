@@ -25,13 +25,11 @@ public class JhttpWorker extends Thread{
     private boolean logging;
 
     public JhttpWorker(Socket client, boolean logging) {
-	System.out.println("newWorker");
 	this.client = client;
 	this.logging=logging;
     }
     
     public void run() { 
-	System.out.println("worker.run");
 	HTTPResponse resp = new HTTPResponse();
 
 	BufferedReader  in = null;
