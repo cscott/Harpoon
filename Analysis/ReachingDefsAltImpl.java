@@ -33,23 +33,25 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.3.2.1 2002-02-27 08:30:23 cananian Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.3.2.2 2002-03-14 19:47:33 cananian Exp $
  */
-public class ReachingDefsAltImpl extends ReachingDefs {
+public class ReachingDefsAltImpl<HCE extends HCodeElement>
+    extends ReachingDefs<HCE> {
 
-    final private CFGrapher cfger;
-    final protected BasicBlock.Factory bbf;
+    final private CFGrapher<HCE> cfger;
+    final protected BasicBlock.Factory<HCE> bbf;
 
     // produces Set<Pair<Temp:t, HCodeElement:h>> where `h' is 
     // a definition point for `t' 
     final protected AugSetFactory bsf;
     
     // maps Temp:t -> Set:d where `bsf'-produced `d' contains all (t,x) 
-    final protected Map tempToAllDefs;
+    final protected Map<Temp,Set<HCE>> tempToAllDefs;
 
-    final protected Map cache = new HashMap(); // maps BasicBlocks to in Sets 
+    final protected Map<BasicBlock<HCE>,Record> cache =
+	new HashMap<BasicBlock<HCE>,Record>(); // maps BasicBlocks to in Sets 
     final protected boolean check_typecast; // demand the special treatment of TYPECAST
-    final protected UseDefer ud;
+    final protected UseDefer<HCE> ud;
 
 
     /** Creates a <code>ReachingDefsImpl</code> object for the
@@ -57,8 +59,9 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	<code>UseDefer.DEFAULT</code>.  
 	This may take a while since the analysis is done at this time.
     */
-    public ReachingDefsAltImpl(HCode hc) {
-	this(hc, CFGrapher.DEFAULT);
+    public ReachingDefsAltImpl(HCode<HCE> hc) {
+	// XXX BUG IN JAVAC cast to CFGrapher shouldn't be needed.
+	this(hc, (CFGrapher)CFGrapher.DEFAULT);
     }
 
     /** Creates a <code>ReachingDefsImpl</code> object for the
@@ -66,18 +69,19 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	<code>UseDefable</code> using the provided <code>CFGrapher</code>.
 	This may take a while since the analysis is done at this time. 
     */
-    public ReachingDefsAltImpl(HCode hc, CFGrapher cfger) {
-	this(hc, cfger, UseDefer.DEFAULT);
+    public ReachingDefsAltImpl(HCode<HCE> hc, CFGrapher<HCE> cfger) {
+	// XXX BUG IN JAVAC cast to UseDefer shouldn't be needed.
+	this(hc, cfger, (UseDefer)UseDefer.DEFAULT);
     }
     /** Creates a <code>ReachingDefsImpl</code> object for the
 	provided <code>HCode</code> using the provided 
 	<code>CFGrapher</code> and <code>UseDefer</code>. This may
 	take a while since the analysis is done at this time.
     */
-    public ReachingDefsAltImpl(final HCode hc, CFGrapher cfger, final UseDefer ud) {
+    public ReachingDefsAltImpl(final HCode<HCE> hc, CFGrapher<HCE> cfger, final UseDefer<HCE> ud) {
 	super(hc);
 	this.cfger = cfger;
-	this.bbf = new BasicBlock.Factory(hc, cfger);
+	this.bbf = new BasicBlock.Factory<HCE>(hc, cfger);
 	this.ud = ud;
 	// sometimes, TYPECAST need to be treated specially
 	check_typecast = 
@@ -142,13 +146,13 @@ public class ReachingDefsAltImpl extends ReachingDefs {
      * implicitly defined by the root element of the
      * <code>HCode</code> for <code>this</code>. 
      */
-    public Set reachingDefs(HCodeElement hce, Temp t) {
+    public Set<HCE> reachingDefs(HCE hce, Temp t) {
 	// report("Processing HCodeElement: "+hce+" Temp: "+t);
 	// find out which BasicBlock this HCodeElement is from
-	BasicBlock b = bbf.getBlock(hce);
+	BasicBlock<HCE> b = bbf.getBlock(hce);
 	//assert b != null : "no block" /* +" for "+hce */;
 	if(b == null) {
-       if (true) return java.util.Collections.EMPTY_SET;
+	    if (true) return /*java.util.Collections.EMPTY_SET; XXX BUG IN JAVAC */harpoon.Util.Default.EMPTY_SET();
        System.out.println("\nSuccC " + cfger.succC(hce));
        System.out.println("PredC " + cfger.predC(hce));
        assert false : "no block"+" for "+hce;
@@ -156,10 +160,10 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	// report("In BasicBlock: "+b.toString());
 
 	boolean sawIt = false;
-	List stms = b.statements();
-	ListIterator iter = stms.listIterator(stms.size());
+	List<HCE> stms = b.statements();
+	ListIterator<HCE> iter = stms.listIterator(stms.size());
 	while(iter.hasPrevious()) {
-	    HCodeElement curr = (HCodeElement)iter.previous();
+	    HCE curr = iter.previous();
 	    if (curr == hce) {
 		sawIt = true;
 		break;
@@ -170,19 +174,19 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	// broke out of loop, so now we need to see if exists a
 	// definition in remaining hces
 	while(iter.hasPrevious()) {
-	    HCodeElement curr = (HCodeElement)iter.previous();
+	    HCE curr = iter.previous();
 	    
-	    Collection defC = null;
+	    Collection<Temp> defC = null;
 	    
 	    // special treatment of TYPECAST
 	    if(check_typecast && (curr instanceof TYPECAST))
-		defC = Collections.singleton(((TYPECAST)curr).objectref());
+		defC = Collections_singleton(((TYPECAST)curr).objectref());
 	    else
 		defC = ud.defC(curr);
 	    
 	    if (defC.contains(t)) {
 		// System.out.print(" I");
-		return Collections.singleton(curr);
+		return Collections_singleton(curr);
 	    }
 	}
 	
@@ -194,10 +198,12 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 
 	// find HCodeElements associated with `t' in the IN Set
 	Set results = bsf.makeSet(r.IN);
-	Set defs = (Set) tempToAllDefs.get(t);
+	Set<HCE> defs = tempToAllDefs.get(t);
 	if (defs == null) {
 	    // no def for t
-	    defs = Collections.EMPTY_SET;
+	    // XXX BUG IN JAVAC
+	    //defs = Collections.EMPTY_SET;
+	    defs = harpoon.Util.Default.EMPTY_SET();
 	}
 	results.retainAll(defs);
 
@@ -249,12 +255,12 @@ public class ReachingDefsAltImpl extends ReachingDefs {
     // as well as a list of defPts defining more than one Temp. 
     // (the latter is to allow a more efficient indexer definition. 
     private DefPtRecord getDefPts() {
-	Collection hceL = cfger.getElements(hc);
+	Collection<HCE> hceL = cfger.getElements(hc);
 	DefPtRecord dpr = new DefPtRecord(hceL.size());
 	Map m = dpr.tempToPairs;
 	List multDefns = dpr.defpts;
-	for(Iterator it=hceL.iterator(); it.hasNext(); ) {
-	    HCodeElement hce = (HCodeElement)it.next();
+	for(Iterator<HCE> it=hceL.iterator(); it.hasNext(); ) {
+	    HCE hce = it.next();
 	    StringBuffer strbuf = new StringBuffer();
 	    Temp[] tArray = null;
 	    //report("Getting defs in: "+hce+" (defC:"+new java.util.ArrayList(ud.defC(hce))+")");
@@ -278,7 +284,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 		    m.put(t, defPts);
 		}
 		// add this definition point
-		List pair = Default.pair(t,hce);
+		List pair = Default.pair(t,(Object)hce);
 		defPts.add(pair);
 		if (tArray.length > 1) {
 		    multDefns.add(pair);
@@ -316,14 +322,14 @@ public class ReachingDefsAltImpl extends ReachingDefs {
     // builds a BasicBlock -> Record mapping in `cache'
     private void buildGenKillSets(Map Temp_To_Pairs) {
 	// calculate Gen and Kill sets for each basic block 
-	for(Iterator blocks=bbf.blockSet().iterator(); blocks.hasNext(); ) {
-	    BasicBlock b = (BasicBlock)blocks.next();
+	for(Iterator<BasicBlock<HCE>> blocks=bbf.blockSet().iterator(); blocks.hasNext(); ) {
+	    BasicBlock<HCE> b = blocks.next();
 	    Record bitSets = new Record();
 	    cache.put(b, bitSets);
 
 	    // iterate through the instructions in the basic block
-	    for(Iterator it=b.statements().iterator(); it.hasNext(); ) {
-		HCodeElement hce = (HCodeElement)it.next();
+	    for(Iterator<HCE> it=b.statements().iterator(); it.hasNext(); ) {
+		HCE hce = it.next();
 		Temp[] tArray = null;
 		// special treatment of TYPECAST
 		if(check_typecast && (hce instanceof TYPECAST))
@@ -332,7 +338,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 		    tArray = ud.def(hce);
 		for(int i=0; i < tArray.length; i++) {
 		    Temp t = tArray[i];
-		    Object def = Default.pair(t, hce);
+		    Object def = Default.pair(t, (Object)hce);
 		    bitSets.GEN.add(def);
 		    Set kill = bsf.makeSet((Set)Temp_To_Pairs.get(t));
 		    kill.remove(def);
@@ -526,6 +532,11 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	    return new AugSet(c);
 	}
 	
+    }
+
+    // XXX BUG IN JAVAC this is a workaround.
+    private <T> Set<T> Collections_singleton(T hce) {
+	return new harpoon.Util.ArraySet<T>(new T[] { hce } );
     }
 
 }
