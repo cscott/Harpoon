@@ -17,7 +17,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.20 1998-09-24 21:11:45 cananian Exp $
+ * @version $Id: HMethod.java,v 1.21 1998-09-29 17:00:33 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -83,7 +83,8 @@ public class HMethod implements HMember {
     if (f == null) return null; // oops! Can't find factory!
     // convert, cache, and return.
     hc = f.convert(this);
-    putCode(hc);
+    if (hc != null)
+      putCode(hc); // cache if conversion was successful.
     return hc;
   }
   /**
