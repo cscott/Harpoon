@@ -59,7 +59,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.9 2001-06-14 20:13:16 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.10 2001-06-14 20:31:12 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -236,6 +236,7 @@ public class CacheEquivalence {
 		}
 	    }
 	    public void update(Temp t, Stm def, Value v) {
+		Util.assert(t!=null && def!=null && v!=null);
 		List pair = Default.pair(t, def);
 		Value old = (Value) valueMap.put(pair, v);
 		if (old==null || !old.equals(v))
@@ -332,9 +333,9 @@ public class CacheEquivalence {
 	    boolean isBaseKnown() { return false; }
 	    boolean isOffsetKnown() { return false; }
 	    Value unify(Value v) {
-		if (this==BOTTOM || v==BOTTOM) return BOTTOM;
-		return (this==NOINFO)?v:(v==NOINFO)?this:null;
-		// null case should never happen.
+		Util.assert(this!=NOINFO);
+		if (v==NOINFO) return this;
+		return BOTTOM;
 	    }
 	    final Value add(Value v) {
 		return (this.specificity()>v.specificity()) ?
@@ -357,6 +358,7 @@ public class CacheEquivalence {
 	    static final Value UNKNOWN = new UnknownConstant();
 	    static final Value NOINFO = new Value() {
 		protected int specificity() { return 6; }
+		Value unify(Value v) { return v; }
 		protected Value _add(Value v) { return NOINFO; }
 		protected Value _mul(Value v) { return NOINFO; }
 		Value negate() { return NOINFO; }
