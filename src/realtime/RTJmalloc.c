@@ -4,28 +4,52 @@
 
 #include "RTJmalloc.h"
 
-inline void* RTJ_jmalloc(jsize size) {
-  RTJ_malloc((size_t)size);
+void* RTJ_jmalloc(jsize size) {
+  return RTJ_malloc((size_t)size);
 }
 
+#ifdef RTJ_DEBUG_REF
+inline void* RTJ_malloc_leap(const char *file, const int line, size_t size) {
+#else
 inline void* RTJ_malloc(size_t size) { 
+#endif
   void* newPtr;
+#ifdef RTJ_DEBUG_REF
+  struct MemBlock* memBlock; 
+  struct PTRinfo* newInfo;
+#endif
 #ifdef RTJ_DEBUG
+  checkException();
+#ifndef RTJ_DEBUG_REF
   printf("RTJ_malloc(%d)\n", size);
 #endif
-  newPtr = MemBlock_alloc(MemBlock_currentMemBlock(), size); 
+#endif
+#ifdef RTJ_DEBUG_REF
+  printf("RTJ_malloc(%d) at %s:%d\n", size, file, line);
+#endif
+  newPtr = MemBlock_alloc(
+#ifdef RTJ_DEBUG_REF
+    memBlock = 
+#endif
+    MemBlock_currentMemBlock(), size); 
 #ifdef RTJ_DEBUG
-  printf("= %08x\n", (int)newPtr);
+  printf("= 0x%08x\n", (int)newPtr);
+#endif
+#ifdef RTJ_DEBUG_REF
+  newInfo = (struct PTRinfo*)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct PTRinfo));
+  newInfo->file = (char*)file;
+  newInfo->line = (int)line;
+  newInfo->size = size;
+  newInfo->ptr = newPtr;
+
+  flex_mutex_lock(&memBlock->ptr_info_lock);
+  checkException();
+  newInfo->next = memBlock->ptr_info;
+  memBlock->ptr_info = newInfo;
+  flex_mutex_unlock(&memBlock->ptr_info_lock);
+  checkException();
 #endif
   return newPtr;
-}
-
-inline void* RTJ_malloc_block(size_t size, 
-			      struct MemBlock* memBlock) {
-#ifdef RTJ_DEBUG
-  printf("RTJ_malloc_block(%d)\n", size);
-#endif
-  return MemBlock_alloc(memBlock, size);
 }
 
 inline struct MemBlock* MemBlock_currentMemBlock() {
@@ -33,6 +57,7 @@ inline struct MemBlock* MemBlock_currentMemBlock() {
   JNIEnv* env;
 #ifdef RTJ_DEBUG
   printf("MemBlock_currentMemBlock()\n");
+  checkException();
 #endif
   thread = ((struct FNI_Thread_State *)(env = FNI_GetJNIEnv()))->thread;
   return getInflatedObject(env, thread)->memBlock;
@@ -43,6 +68,7 @@ inline void MemBlock_setCurrentMemBlock(JNIEnv* env,
 					struct MemBlock* memBlock) {
 #ifdef RTJ_DEBUG
   printf("MemBlock_setCurrentMemBlock()\n");
+  checkException();
 #endif
   getInflatedObject(env, realtimeThread)->memBlock = memBlock;
 }
@@ -50,18 +76,32 @@ inline void MemBlock_setCurrentMemBlock(JNIEnv* env,
 inline void RTJ_preinit() {
 #ifdef RTJ_DEBUG
   printf("RTJ_preinit()\n");
+  checkException();
+#endif
+#ifdef BDW_CONSERVATIVE_GC
+  GC_finalize_on_demand = 1;
+#endif
+#ifdef RTJ_DEBUG_REF
+  flex_mutex_init(&ptr_info_lock);
 #endif
   HeapMemory_init();
 }
 
 inline void RTJ_init() {
+  JNIEnv* env = FNI_GetJNIEnv();
 #ifdef RTJ_DEBUG
   printf("RTJ_init()\n");
+  checkException();
 #endif
   BlockAllocator_init();
-  MemBlock_setCurrentMemBlock(FNI_GetJNIEnv(),
-			      ((struct FNI_Thread_State *)
-			       FNI_GetJNIEnv())->thread,
+#ifdef RTJ_DEBUG
+  checkException();
+#endif
+  MemBlock_setCurrentMemBlock(env,
+			      ((struct FNI_Thread_State *)env)->thread,
 			      HeapMemory_RThread_MemBlock_new());
+#ifdef RTJ_DEBUG
+  checkException();
+#endif
 }
 

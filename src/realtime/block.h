@@ -14,6 +14,15 @@
 #include "flexthread.h"
 #include "asm/atomicity.h"
 
+#ifdef WITH_PRECISE_GC
+#include "fni-wrap.h"
+#include "precisec.h"
+#include "jni-private.h"
+#include "../gc/precise_gc.h"
+#endif
+
+#define RTJ_ALIGN(ptr) ((((int)ptr)+7)&(~7))
+
 struct Block {
   void* superBlockTag;
   void* begin;
@@ -21,12 +30,14 @@ struct Block {
   void* free;
   struct Block* next;
   struct Block* prev;
-  flex_mutex_t lock;  
 };
 
 inline struct Block* Block_new(void* superBlockTag, size_t size);
+#ifdef WITH_NOHEAP_SUPPORT
+inline void* Block_alloc(struct Block* block, size_t size, int noheap);
+#else
 inline void* Block_alloc(struct Block* block, size_t size);
-inline void* BlockVec_alloc(struct Block* block, size_t size);
+#endif
 inline void Block_free(struct Block* block);
 inline void Block_reset(struct Block* block);
 

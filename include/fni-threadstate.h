@@ -37,6 +37,9 @@ struct FNI_Thread_State {
 #if WITH_PRECISE_C_BACKEND
   jmp_buf *handler;
 #endif
+#if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
+  int noheap;
+#endif
 };
 /* header node in doubly-linked global refs list. */
 extern struct _jobject_globalref FNI_globalrefs;

@@ -13,7 +13,8 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_enterMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread, jobject memAreaStack) {
   struct MemBlock* memBlock;
 #ifdef RTJ_DEBUG
-  printf("MemoryArea.enterMemBlock(%08x, %08x, %08x, %08x)\n", 
+  checkException();
+  printf("MemoryArea.enterMemBlock(0x%08x, 0x%08x, 0x%08x, 0x%08x)\n", 
 	 env, memoryArea, realtimeThread, memAreaStack);
 #endif
   getInflatedObject(env, memAreaStack)->temp = 
@@ -32,12 +33,12 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_exitMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
   struct MemBlock* memBlock;
 #ifdef RTJ_DEBUG
-  printf("MemoryArea.exitMemBlock(%08x, %08x, %08x)\n",
+  printf("MemoryArea.exitMemBlock(0x%08x, 0x%08x, 0x%08x)\n",
 	 env, memoryArea, realtimeThread);
 #endif
   memBlock = MemBlock_currentMemBlock();
   MemBlock_setCurrentMemBlock(env, realtimeThread, 
-			      MemBlock_prevMemBlock(memBlock));  
+			      MemBlock_prevMemBlock(memBlock));
   MemBlock_free(memBlock);
 }
 
@@ -50,7 +51,8 @@ jarray RTJ_NewObjectArray(JNIEnv *env, jsize length,
   jclass arrayclazz;
   jobject result;
 #ifdef RTJ_DEBUG
-  printf("RTJ_NewObjectArray(%08x, %d, %08x, %08x)\n",
+  checkException();
+  printf("RTJ_NewObjectArray(0x%08x, %d, 0x%08x, 0x%08x)\n",
 	 env, length, elementClass, initialElement);
 #endif
   assert(FNI_NO_EXCEPTIONS(env) && length>=0 && elementClass!=NULL);
@@ -97,7 +99,8 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realti
   jarray (*oldNewObjectArray) (JNIEnv *env, jsize length,
 			       jclass elementClass, jobject initialElement);
 #ifdef RTJ_DEBUG
-  printf("MemoryArea.newArray(%08x, %08x, %08x, %08x, %d, %08x)\n",
+  checkException();
+  printf("MemoryArea.newArray(0x%08x, 0x%08x, 0x%08x, 0x%08x, %d, 0x%08x)\n",
 	 env, memoryArea, realtimeThread, componentClass, length, memBlockObj);
 #endif  
   oldMemBlock = MemBlock_currentMemBlock();
@@ -124,7 +127,8 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realti
   jarray (*oldNewObjectArray) (JNIEnv *env, jsize length,
 			       jclass elementClass, jobject initialElement);
 #ifdef RTJ_DEBUG
-  printf("MemoryArea.newArray(%08x, %08x, %08x, %08x, %08x, %08x)\n",
+  checkException();
+  printf("MemoryArea.newArray(0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x)\n",
 	 env, memoryArea, realtimeThread, componentClass, dims, memBlockObj);
 #endif
   oldNewObjectArray = (*env)->NewObjectArray;
@@ -151,16 +155,22 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newInstance
   jclass methodclazz; /* declaring class of method */
   jobject result;
 #ifdef RTJ_DEBUG
-  printf("MemoryArea.newInstance(%08x, %08x, %08x, %08x, %08x, %08x)\n",
+  checkException();
+  printf("MemoryArea.newInstance(0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x)\n",
 	 env, memoryArea, realtimeThread, constructor, parameters, memBlockObj);
 #endif
   oldMemBlock = MemBlock_currentMemBlock();
   
+#ifdef RTJ_DEBUG  
   assert(constructor != NULL);
+  checkException();
+#endif
   method = FNI_GetMethodInfo(constructor);
+#ifdef RTJ_DEBUG
   assert(method != NULL);
+  checkException();
+#endif
   methodclazz = FNI_WRAP(method->declaring_class_object);
-  assert(!(*env)->ExceptionOccurred(env));
   
   /* check that declaring class is not abstract. */
   if (FNI_GetClassInfo(methodclazz)->modifiers &
@@ -176,10 +186,40 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newInstance
   result = FNI_AllocObject_using(env, methodclazz, RTJ_jmalloc);
   MemBlock_setCurrentMemBlock(env, realtimeThread, oldMemBlock);
   if ((*env)->ExceptionOccurred(env)) return NULL; /* bail */
+
   /* okay, now invoke constructor */
   Java_java_lang_reflect_Method_invoke(env, constructor, result, parameters);
   if ((*env)->ExceptionOccurred(env)) return NULL; /* bail */
   return result;
+}
+
+/*
+ * Class:     javax_realtime_MemoryArea
+ * Method:    throwIllegalAssignmentError
+ * Signature: (Ljava/lang/Object;Ljavax/realtime/MemoryArea;)V
+ */
+JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_throwIllegalAssignmentError
+(JNIEnv* env, jobject fromMA, jobject toObj, jobject toMA) {
+  jclass excls;
+#ifdef RTJ_DEBUG
+  printf("An Illegal assignment was detected.  Throwing an IllegalAssignmentError.\n");
+  printf("From a %s to a %s\n", 
+	 FNI_GetClassInfo((jclass)(FNI_UNWRAP(fromMA)->claz))->name,
+	 FNI_GetClassInfo((jclass)(FNI_UNWRAP(toMA)->claz))->name);
+  printf("illegal access to ");
+#ifdef RTJ_DEBUG_REF
+  printPointerInfo(toObj, 1);
+#else
+  printf("location 0x%08x of type %s\n", toObj, 
+	 FNI_GetClassInfo((jclass)(FNI_UNWRAP(toObj)->claz))->name);
+#endif
+#endif
+  excls = (*env)->FindClass(env, "javax/realtime/IllegalAssignmentError");
+  (*env)->ThrowNew(env, excls, 
+		   "illegal assignment detected: use RTJ_DEBUG and RTJ_DEBUG_REF to debug");
+#ifdef RTJ_DEBUG
+  checkException();
+#endif
 }
 
 

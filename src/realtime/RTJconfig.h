@@ -1,3 +1,7 @@
+/* RTJconfig.h, created by wbeebee
+   Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
+   Licensed under the terms of the GNU GPL; see COPYING for details. */
+
 #include "config.h"
 
 /* Output debugging information for RTJ */
@@ -6,34 +10,87 @@
 /* Look at the timing of calls to GC_malloc and GC_free */
 /*  #define WITH_GC_STATS 1 */
 
-/* Same info, except for RTJ internal calls */
+/* Look at the timing for RTJ internal calls */
 /*  #define RTJ_TIMER 1 */
+
+/* Output debugging information about memory references 
+ * allocated through RTJ_malloc (like dmalloc, except at RTJ_malloc point)
+ */
+/* Need to implement further compiler support for this... */
+/*  #define RTJ_DEBUG_REF 1  */
+
+#ifdef RTJ_DEBUG_GC
+#ifndef WITH_PRECISE_GC
+#error RTJ_DEBUG_GC requires WITH_PRECISE_GC
+#endif
+#endif
+
+#if defined(RTJ_DEBUG) || defined(RTJ_DEBUG_GC)
+#ifdef RTJ_TIMER
+#error RTJ_DEBUG or RTJ_DEBUG_GC will upset the timings of RTJ_TIMER
+#endif
+#ifdef WITH_GC_STATS
+#error RTJ_DEBUG or RTJ_DEBUG_GC will upset the timings of WITH_GC_STATS
+#endif
+#endif
+
+#ifdef WITH_NOHEAP_SUPPORT
+#ifdef BDW_CONSERVATIVE_GC
+#error NoHeapRealtimeThreads are not supported with the BDW conservative GC.
+#endif
+#endif
+
+#ifndef WITH_THREADS
+#error Realtime Java is turned on, but threads are not turned on
+#endif
 
 #ifdef WITH_GC_STATS
 #include "GCstats.h"
 #endif
 
-/* To prevent MACRO conflicts */
 #ifdef WITH_DMALLOC
+#ifdef WITH_GC_STATS
+#error DMALLOC with GC_stats not implemented
+#else
 #include "dmalloc.h"
+/* To prevent MACRO conflicts */
 #define RTJ_MALLOC(size) _malloc_leap(__FILE__, __LINE__, size)
 #define RTJ_MALLOC_UNCOLLECTABLE(size) _malloc_leap(__FILE__, __LINE__, size)
 #define RTJ_FREE(ptr) _free_leap(__FILE__, __LINE__, ptr)
+#endif
 #else
 #ifdef BDW_CONSERVATIVE_GC 
 #ifdef WITH_GC_STATS 
-#define RTJ_MALLOC GC_malloc_stats
-#define RTJ_MALLOC_UNCOLLECTABLE GC_malloc_uncollectable_stats
-#define RTJ_FREE GC_free_stats
+#define RTJ_MALLOC(size) GC_malloc_stats(size)
+#define RTJ_MALLOC_UNCOLLECTABLE(size) GC_malloc_uncollectable_stats(size)
+#define RTJ_FREE(ptr) GC_free_stats(ptr)
 #else 
-#define RTJ_MALLOC GC_malloc
-#define RTJ_MALLOC_UNCOLLECTABLE GC_malloc_uncollectable
-#define RTJ_FREE GC_free
+#define RTJ_MALLOC(size) GC_malloc(size)
+#define RTJ_MALLOC_UNCOLLECTABLE(size) GC_malloc_uncollectable(size)
+#define RTJ_FREE(ptr) GC_free(ptr)
 #endif 
 #else 
-#define RTJ_MALLOC malloc
-#define RTJ_MALLOC_UNCOLLECTABLE malloc
-#define RTJ_FREE free 
+#ifdef WITH_PRECISE_GC
+#ifdef WITH_GC_STATS
+#define RTJ_MALLOC(size) precise_malloc_stats(size)
+#define RTJ_MALLOC_UNCOLLECTABLE(size) malloc_stats(size)
+#define RTJ_FREE(ptr) free_stats(ptr)
+#else
+#define RTJ_MALLOC(size) precise_malloc(size)
+#define RTJ_MALLOC_UNCOLLECTABLE(size) malloc(size)
+#define RTJ_FREE(ptr) free(ptr)
+#endif
+#else
+#ifdef WITH_GC_STATS
+#define RTJ_MALLOC(size) malloc_stats(size)
+#define RTJ_MALLOC_UNCOLLECTABLE(size) malloc_stats(size)
+#define RTJ_FREE(ptr) free_stats(ptr)
+#else
+#define RTJ_MALLOC(size) malloc(size)
+#define RTJ_MALLOC_UNCOLLECTABLE(size) malloc(size)
+#define RTJ_FREE(ptr) free(ptr) 
+#endif
+#endif
 #endif
 #endif
 

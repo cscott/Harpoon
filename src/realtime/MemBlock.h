@@ -12,6 +12,11 @@
 #include "blockAllocator.h"
 #include "listAllocator.h"
 #include "RTJconfig.h"
+#include "flexthread.h"
+#include "RTJgc.h"
+#ifdef WITH_PRECISE_GC
+#include "../gc/precise_gc.h"
+#endif
 
 /* To avoid unwanted macro expansions in strange places */
 #ifdef WITH_DMALLOC  
@@ -28,6 +33,9 @@ struct BlockInfo {
   jobject realtimeThread;
   void* (*alloc) (struct MemBlock* mem, size_t size);
   void  (*free)  (struct MemBlock* mem);
+#ifdef WITH_PRECISE_GC
+  void  (*gc) (struct MemBlock* mem);
+#endif
   Allocator allocator;
   struct MemBlock* superBlock;
 };
@@ -37,11 +45,41 @@ struct RefInfo {
   int reuse;
 };
 
+#ifdef RTJ_DEBUG_REF
+struct PTRinfo {
+  char* file;
+  int line;
+  size_t size;
+  void* ptr;
+  struct MemBlock* memBlock;
+  struct PTRinfo* next;
+};
+
+struct PTRinfo* ptr_info;
+flex_mutex_t ptr_info_lock;
+#endif
+
 struct MemBlock {
   struct BlockInfo* block_info;
   struct RefInfo* ref_info;
-  struct Block* block;  
+  struct Block* block;
+  struct MemBlock* next;
+  flex_mutex_t list_lock;
+#ifdef RTJ_DEBUG_REF
+  struct PTRinfo* ptr_info;
+  flex_mutex_t ptr_info_lock;
+#endif
 };
+
+#ifdef WITH_PRECISE_GC
+struct GCinfo {
+  struct MemBlock* memBlock;
+  struct GCinfo* next;
+};
+
+struct GCinfo* gc_info;
+flex_mutex_t gc_info_lock;
+#endif
 
 struct RefInfo* RefInfo_new(int reuse);
 
@@ -58,72 +96,61 @@ inline long MemBlock_INCREF(struct MemBlock* memBlock);
 inline long MemBlock_DECREF(struct MemBlock* memBlock);
 inline struct inflated_oobj* getInflatedObject(JNIEnv* env, 
 					        jobject obj);
+#ifdef WITH_NOHEAP_SUPPORT
 inline int IsNoHeapRealtimeThread(JNIEnv *env, 
-				   jobject realtimeThread);
-inline void checkException(JNIEnv *env);
-void* ScopedPhysical_RThread_MemBlock_alloc( struct MemBlock* mem,
-					     size_t size);
-void  ScopedPhysical_RThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator ScopedPhysical_RThread_MemBlock_allocator( jobject memoryArea);
-void* ScopedPhysical_NoHeapRThread_MemBlock_alloc( struct MemBlock* mem,
-						   size_t size);
-void  ScopedPhysical_NoHeapRThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator ScopedPhysical_NoHeapRThread_MemBlock_allocator( jobject memoryArea);
+				  jobject realtimeThread);
+inline void _heapCheck_leap(const char* file, const int line, struct oobj* ptr);
+#define heapCheck(ptr) _heapCheck_leap(__FILE__, __LINE__, ptr)
+#endif
+void checkException();
 
-void* ImmortalPhysical_RThread_MemBlock_alloc( struct MemBlock* mem,
-					       size_t size);
-void  ImmortalPhysical_RThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator ImmortalPhysical_RThread_MemBlock_allocator( jobject memoryArea);
-void* ImmortalPhysical_NoHeapRThread_MemBlock_alloc( struct MemBlock* mem,
-						     size_t size);
-void  ImmortalPhysical_NoHeapRThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator ImmortalPhysical_NoHeapRThread_MemBlock_allocator( jobject memoryArea);
+/* Identify pointers locations, def points, MemBlocks, MemoryArea, etc. */
+#ifdef RTJ_DEBUG_REF
+void printPointerInfo(void* obj, int printClassInfo);
+#endif
 
-inline void* Scope_RThread_MemBlock_alloc( struct MemBlock* mem, 
-					   size_t size);
-inline void  Scope_RThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator Scope_RThread_MemBlock_allocator( jobject memoryArea);
-void* CTScope_RThread_MemBlock_alloc( struct MemBlock* mem,  size_t size);
-void  CTScope_RThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator CTScope_RThread_MemBlock_allocator( jobject memoryArea);
-void* VTScope_RThread_MemBlock_alloc( struct MemBlock* mem, 
-				      size_t size);
-void  VTScope_RThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator VTScope_RThread_MemBlock_allocator( jobject memoryArea);
-void* LTScope_RThread_MemBlock_alloc( struct MemBlock* mem, 
-				      size_t size);
-void  LTScope_RThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator LTScope_RThread_MemBlock_allocator( jobject memoryArea);
+#ifdef WITH_PRECISE_GC
+inline void add_MemBlock_to_roots(struct MemBlock* mem);
+inline void remove_MemBlock_from_roots(struct MemBlock* mem);
+#endif
 
-inline void* Scope_NoHeapRThread_MemBlock_alloc( struct MemBlock* mem, 
-						 size_t size);
-inline void  Scope_NoHeapRThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator Scope_NoHeapRThread_MemBlock_allocator( jobject memoryArea);
-void* CTScope_NoHeapRThread_MemBlock_alloc( struct MemBlock* mem, 
-					    size_t size);
-void  CTScope_NoHeapRThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator CTScope_NoHeapRThread_MemBlock_allocator( jobject memoryArea);
-void* VTScope_NoHeapRThread_MemBlock_alloc( struct MemBlock* mem, 
-					    size_t size);
-void  VTScope_NoHeapRThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator VTScope_NoHeapRThread_MemBlock_allocator( jobject memoryArea);
-void* LTScope_NoHeapRThread_MemBlock_alloc( struct MemBlock* mem, 
-					    size_t size);
-void  LTScope_NoHeapRThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator LTScope_NoHeapRThread_MemBlock_allocator( jobject memoryArea);
+#define MemBlockDECLThread(type, thread) \
+void* type##_##thread##_MemBlock_alloc(struct MemBlock* mem, size_t size); \
+void  type##_##thread##_MemBlock_free( struct MemBlock* mem); \
+inline Allocator type##_##thread##_MemBlock_allocator(jobject memoryArea); 
 
-void* Heap_RThread_MemBlock_alloc( struct MemBlock* mem, 
-				   size_t size);
-void  Heap_RThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator Heap_RThread_MemBlock_allocator( jobject memoryArea);
+#ifdef WITH_PRECISE_GC
+#ifdef WITH_NOHEAP_SUPPORT
+#define MemBlockDECL(type) \
+MemBlockDECLThread(type, RThread); \
+MemBlockDECLThread(type, NoHeapRThread); \
+void type##_RThread_MemBlock_gc(struct MemBlock* mem);
+#else
+#define MemBlockDECL(type) \
+MemBlockDECLThread(type, RThread); \
+void  type##_RThread_MemBlock_gc(struct MemBlock* mem);
+#endif
+#else
+#ifdef WITH_NOHEAP_SUPPORT
+#define MemBlockDECL(type) \
+MemBlockDECLThread(type, RThread); \
+MemBlockDECLThread(type, NoHeapRThread);
+#else
+#define MemBlockDECL(type) \
+MemBlockDECLThread(type, RThread);
+#endif
+#endif
 
-void* Immortal_RThread_MemBlock_alloc( struct MemBlock* mem, 
-					     size_t size);
-void  Immortal_RThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator Immortal_RThread_MemBlock_allocator( jobject memoryArea);
-void* Immortal_NoHeapRThread_MemBlock_alloc( struct MemBlock* mem, 
-						   size_t size);
-void  Immortal_NoHeapRThread_MemBlock_free(struct MemBlock* mem);
-inline  Allocator Immortal_NoHeapRThread_MemBlock_allocator( jobject memoryArea);
+MemBlockDECL(ScopedPhysical);
+MemBlockDECL(Scope);
+MemBlockDECL(CTScope);
+MemBlockDECL(VTScope);
+MemBlockDECL(LTScope);
+MemBlockDECL(ImmortalPhysical);
+MemBlockDECL(Immortal);
+MemBlockDECL(Heap);
+
+#undef MemBlockDECL
+#undef MemBlockDECLThread
 
 #endif /* __MEMBLOCK_H__ */

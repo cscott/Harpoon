@@ -103,6 +103,9 @@ int done_count;
 jint halt_for_GC_flag = 0;
 
 void halt_for_GC() {
+#if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
+  if (((struct FNI_Thread_State*)FNI_GetJNIEnv())->noheap) return;
+#endif
   error_gc("Thread %p ready for GC\n", FNI_GetJNIEnv());
   // ready for GC
   pthread_barrier_wait(&before);
@@ -260,8 +263,3 @@ void trace_object(jobject_unwrapped obj)
 }
 
 #endif /* WITH_PRECISE_GC */
-
-
-
-
-

@@ -10,5 +10,8 @@ void* GC_malloc_stats(size_t size_in_bytes);
 void* GC_malloc_atomic_stats(size_t size_in_bytes);
 void* GC_malloc_uncollectable_stats(size_t size_in_bytes);
 void GC_free_stats(void* object_addr);
+void* precise_malloc_stats(size_t size_in_bytes);
+void* malloc_stats(size_t size_in_bytes);
+void free_stats(void* object_addr);
 
 #endif

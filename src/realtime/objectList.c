@@ -109,14 +109,27 @@ inline Object* ObjectList_packedContents(struct ObjectList* ol) {
 }
 
 inline void ObjectList_visit(struct ObjectList* ol, 
-			     void visitor (Object)) {
+			     void visitor (Object*)) {
   int i;
-  flex_mutex_lock(&(ol->lock));
-  for (i = 0; i < ol->size; i++) {
-    if (ol->objects[i] != Object_null) {
-      visitor(ol->objects[i]);
-    }
-  }
+  flex_mutex_lock(&(ol->lock)); 
+  for (i = 0; i < ol->size; i++) { 
+    if (ol->objects[i] != Object_null) { 
+      visitor(&(ol->objects[i])); 
+    } 
+  } 
+  flex_mutex_unlock(&(ol->lock));
+}
+
+inline void ObjectList_scan(struct ObjectList* ol) {
+  int i;
+  flex_mutex_lock(&(ol->lock)); 
+  for (i = 0; i < ol->size; i++) { 
+    if (ol->objects[i] != Object_null) { 
+#ifdef WITH_PRECISE_GC
+      trace((struct oobj*)(ol->objects[i])); 
+#endif
+    } 
+  } 
   flex_mutex_unlock(&(ol->lock));
 }
 
@@ -139,7 +152,7 @@ inline void ObjectList_freeRefs(struct ObjectList* ol) {
   for (i = 0; i < ol->size; i++) {
     if (ol->objects[i] != Object_null) {
 #ifdef RTJ_DEBUG
-      printf("%08x ", ol->objects[i]);
+      printf("0x%08x ", ol->objects[i]);
 #endif
       RTJ_FREE(ol->objects[i]);
       ol->objects[i] = Object_null;
@@ -155,11 +168,11 @@ inline void ObjectList_freeRefs(struct ObjectList* ol) {
 inline void ObjectList_free(struct ObjectList* ol) {
   flex_mutex_destroy(&(ol->lock));
 #ifdef RTJ_DEBUG
-  printf("  ol->objects = %08x\n", ol->objects);
+  printf("  ol->objects = 0x%08x\n", ol->objects);
 #endif
   RTJ_FREE(ol->objects);
 #ifdef RTJ_DEBUG
-  printf("  ol = %08x\n", ol);
+  printf("  ol = 0x%08x\n", ol);
 #endif
   RTJ_FREE(ol);
 }

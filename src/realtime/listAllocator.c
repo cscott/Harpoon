@@ -12,34 +12,18 @@ inline struct ListAllocator* ListAllocator_new(int noHeap) {
 }
 
 inline void ListAllocator_init(struct ListAllocator* ls, int noHeap) {
-  ls->heapRefs = ObjectList_new(INIT_LIST_HEAP_REF_SIZE);
   ls->noHeap = noHeap;
   ls->objects = ObjectList_new(INIT_LIST_ALLOCATOR_SIZE);
 }
 
-inline int ListAllocator_heapCheck(struct ListAllocator* ls, 
-				   void** heapRef) {
-  if (HeapMemory_contains(*heapRef)) {
-    if (!ls->noHeap) {
-      ObjectList_insert(ls->heapRefs, heapRef);
-    }
-    return 1;
-  }
-  return 0;
-}
-
 inline void* ListAllocator_alloc(struct ListAllocator* ls, 
 				 size_t size) {
-  void* obj = RTJ_MALLOC_UNCOLLECTABLE(size);
+  void* obj = (void*)RTJ_MALLOC_UNCOLLECTABLE(size);
   ObjectList_insert(ls->objects, obj);
   return obj;
 }
 
 inline void ListAllocator_free(struct ListAllocator* ls) {
-#ifdef RTJ_DEBUG
-  printf("ObjectList_free(ls->heapRefs)\n");
-#endif
-  ObjectList_free(ls->heapRefs);
 #ifdef RTJ_DEBUG
   printf("ObjectList_freeRefs(ls->objects)\n");
 #endif
@@ -53,3 +37,9 @@ inline void ListAllocator_free(struct ListAllocator* ls) {
 #endif
   RTJ_FREE(ls);
 }
+
+#ifdef WITH_PRECISE_GC
+inline void ListAllocator_gc(struct ListAllocator* ls) {
+  ObjectList_scan(ls->objects);
+}
+#endif

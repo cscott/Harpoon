@@ -1,47 +1,35 @@
 #include "GCstats.h"
 
-void* GC_malloc_stats(size_t size_in_bytes) {
-  struct timeval begin; 
-  struct timeval end; 
-  void* result; 
-  gettimeofday(&begin, NULL); 
-  result = GC_malloc(size_in_bytes); 
-  gettimeofday(&end, NULL); 
-  printf("GC_malloc_stats: %ds %dus\n", 
-	 end.tv_sec-begin.tv_sec, end.tv_usec-begin.tv_usec); 
-  return result;
+#define MALLOC_STATS(name, name_str) \
+void* name##_stats(size_t size_in_bytes) { \
+  struct timeval begin, end; \
+  void* result; \
+  gettimeofday(&begin, NULL); \
+  result = (void*)name(size_in_bytes); \
+  gettimeofday(&end, NULL); \
+  printf("%s_stats: %ds %dus\n", name_str, \
+	 end.tv_sec-begin.tv_sec, end.tv_usec-begin.tv_usec); \
+  return result; \
+} 
+
+#define FREE_STATS(name, name_str) \
+void name##_stats(void* object_addr) { \
+  struct timeval begin, end; \
+  gettimeofday(&begin, NULL); \
+  name(object_addr); \
+  gettimeofday(&end, NULL); \
+  printf("%s_stats: %ds %dus\n", name_str, \
+	 end.tv_sec-begin.tv_sec, end.tv_usec-begin.tv_usec); \
 }
 
-void* GC_malloc_atomic_stats(size_t size_in_bytes) {
-  struct timeval begin;
-  struct timeval end;
-  void* result;
-  gettimeofday(&begin, NULL);
-  result = GC_malloc_atomic(size_in_bytes);
-  gettimeofday(&end, NULL);
-  printf("GC_malloc_atomic_stats: %ds %dus\n", 
-	 end.tv_sec-begin.tv_sec, end.tv_usec-begin.tv_usec);
-  return result;
-}
+MALLOC_STATS(GC_malloc, "GC_malloc");
+MALLOC_STATS(GC_malloc_atomic, "GC_malloc_atomic");
+MALLOC_STATS(GC_malloc_uncollectable, "GC_malloc_uncollectable");
+MALLOC_STATS(precise_malloc, "precise_malloc");
+MALLOC_STATS(malloc, "malloc");
 
-void* GC_malloc_uncollectable_stats(size_t size_in_bytes) {
-  struct timeval begin;
-  struct timeval end;
-  void* result;
-  gettimeofday(&begin, NULL);
-  result = GC_malloc_uncollectable(size_in_bytes);
-  gettimeofday(&end, NULL);
-  printf("GC_malloc_uncollectable_stats: %ds %dus\n", 
-	 end.tv_sec-begin.tv_sec, end.tv_usec-begin.tv_usec);
-  return result;
-}
+FREE_STATS(GC_free, "GC_free");
+FREE_STATS(free, "free");
 
-void GC_free_stats(void* object_addr) {
-  struct timeval begin;
-  struct timeval end;
-  gettimeofday(&begin, NULL);
-  GC_free(object_addr);
-  gettimeofday(&end, NULL);
-  printf("GC_free_stats: %ds %dus\n",
-	 end.tv_sec-begin.tv_sec, end.tv_usec-begin.tv_usec);
-}
+#undef MALLOC_STATS
+#undef FREE_STATS

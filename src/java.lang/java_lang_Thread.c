@@ -74,7 +74,10 @@ static void add_running_thread(struct FNI_Thread_State *ts) {
   if (nlist->next) nlist->next->prev = nlist;
   running_threads.next = nlist;
 #ifdef WITH_PRECISE_GC
-  num_running_threads++;
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (!(ts->noheap))
+#endif
+    num_running_threads++;
 #endif /* WITH_PRECISE_GC */
   pthread_mutex_unlock(&running_threads_mutex);
   pthread_setspecific(running_threads_key, nlist);
@@ -90,8 +93,14 @@ static void remove_running_thread(void *cl) {
   if (nlist->prev) nlist->prev->next = nlist->next;
   if (nlist->next) nlist->next->prev = nlist->prev;
 #ifdef WITH_PRECISE_GC
-  num_running_threads--;
-  pthread_mutex_unlock(&gc_thread_mutex);
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (!FNI_GetJNIEnv()->noheap) {
+#endif
+    num_running_threads--;
+    pthread_mutex_unlock(&gc_thread_mutex);
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  }
+#endif
 #endif
   pthread_cond_signal(&running_threads_cond);
   pthread_mutex_unlock(&running_threads_mutex);
@@ -106,9 +115,15 @@ static void wait_on_running_thread() {
 #endif
   pthread_mutex_lock(&running_threads_mutex);
 #ifdef WITH_PRECISE_GC
-  // one less thread to wait for
-  num_running_threads--;
-  pthread_mutex_unlock(&gc_thread_mutex);
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (!FNI_GetJNIEnv()->noheap) {
+#endif
+    // one less thread to wait for
+    num_running_threads--;
+    pthread_mutex_unlock(&gc_thread_mutex);
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  }
+#endif
 #endif
   while (running_threads.next != NULL) {
     pthread_cond_wait(&running_threads_cond, &running_threads_mutex);
@@ -143,7 +158,11 @@ static pthread_cond_t running_threads_cond = PTHREAD_COND_INITIALIZER;
 
 static void add_running_thread(struct FNI_Thread_State *thrstate) {
 #ifdef WITH_PRECISE_GC
-  struct gc_thread_list *gctl = malloc(sizeof(struct gc_thread_list));
+  struct gc_thread_list *gctl;
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (thrstate->noheap) return;
+#endif
+  gctl = malloc(sizeof(struct gc_thread_list));
   gctl->thrstate = thrstate;
   gctl->next = gc_running_threads.next;
   pthread_mutex_lock(&running_threads_mutex);
@@ -162,20 +181,26 @@ static void remove_running_thread() {
 #endif
   pthread_mutex_lock(&running_threads_mutex);
 #ifdef WITH_PRECISE_GC
-  while (gctl) {
-    if (gctl->thrstate == (struct FNI_Thread_State *)FNI_GetJNIEnv()) {
-      if (prev) 
-	prev->next = gctl->next;
-      else 
-	gc_running_threads.next = gctl->next;
-      free(gctl);
-      break;
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (!((struct FNI_Thread_State*)FNI_GetJNIEnv())->noheap) {
+#endif
+    while (gctl) {
+      if (gctl->thrstate == (struct FNI_Thread_State *)FNI_GetJNIEnv()) {
+	if (prev) 
+	  prev->next = gctl->next;
+	else 
+	  gc_running_threads.next = gctl->next;
+	free(gctl);
+	break;
+      }
+      prev = gctl;
+      gctl = gctl->next;
     }
-    prev = gctl;
-    gctl = gctl->next;
+    num_running_threads--;
+    pthread_mutex_unlock(&gc_thread_mutex);
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
   }
-  num_running_threads--;
-  pthread_mutex_unlock(&gc_thread_mutex);
+#endif
 #endif
   pthread_cond_signal(&running_threads_cond);
   pthread_mutex_unlock(&running_threads_mutex);
@@ -190,8 +215,14 @@ static void wait_on_running_thread() {
   pthread_mutex_lock(&running_threads_mutex);
 #ifdef WITH_PRECISE_GC
   // one less thread to wait for
-  num_running_threads--;
-  pthread_mutex_unlock(&gc_thread_mutex);
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (!((struct FNI_Thread_State*)FNI_GetJNIEnv())->noheap) {
+#endif
+    num_running_threads--;
+    pthread_mutex_unlock(&gc_thread_mutex);
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  }
+#endif
 #endif
   while((gtl!=gtl->next)||(ioptr!=NULL)) {
     pthread_cond_wait(&running_threads_cond, &running_threads_mutex);
@@ -207,6 +238,9 @@ static void wait_on_running_thread() {
 void decrement_running_thread_count() {
   // we don't want to block in case GC is occurring
   // since we are still counted as a running thread
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (((struct FNI_Thread_State*)FNI_GetJNIEnv())->noheap) return;
+#endif
   while (pthread_mutex_trylock(&gc_thread_mutex))
     if (halt_for_GC_flag) halt_for_GC();
   num_running_threads--;
@@ -219,6 +253,9 @@ void increment_running_thread_count() {
   // even if GC is occurring, it won't be waiting
   // for us since we are off the thread count
   // we definitely don't want to call halt_for_GC().
+#if defined(WITH_NOHEAP_SUPPORT) && defined(WITH_REALTIME_JAVA)
+  if (((struct FNI_Thread_State*)FNI_GetJNIEnv())->noheap) return;
+#endif
   pthread_mutex_lock(&gc_thread_mutex);
   num_running_threads++;
   pthread_mutex_unlock(&gc_thread_mutex);
@@ -538,6 +575,13 @@ static void * thread_startup_routine(void *closure) {
   ((struct FNI_Thread_State *)env)->thread = thread;
   ((struct FNI_Thread_State *)env)->pthread = pthread_self();
   FNI_SetJNIData(env, thread, env, NULL);
+#if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
+  ((struct FNI_Thread_State *)env)->noheap =
+    (*env)->IsInstanceOf(env, ((struct FNI_Thread_State *)env)->thread,
+			 (*env)->
+			 FindClass(env,
+				   "javax/realtime/NoHeapRealtimeThread"));
+#endif  
   /* add this to the running_threads list, unless its a daemon thread */
   if ((*env)->GetBooleanField(env, thread, daemonID) == JNI_FALSE)
     add_running_thread((struct FNI_Thread_State *)env);

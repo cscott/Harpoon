@@ -10,7 +10,6 @@ extern struct JNINativeInterface FLEX_JNI_vtable;
 #include "dmalloc.h"
 #endif
 #include "flexthread.h"
-#include "../realtime/RTJconfig.h"
 
 #ifndef LOCALREF_STACK_SIZE
 #define LOCALREF_STACK_SIZE (64*1024) /* 64k word stack */
@@ -45,6 +44,9 @@ static JNIEnv * FNI_CreateThreadState(void) {
   env->thread = NULL;
   env->stack_top = NULL;
   env->is_alive = JNI_FALSE;
+#if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
+  env->noheap = 0;
+#endif
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   pthread_mutex_init(&(env->sleep_mutex), NULL);
   pthread_mutex_lock(&(env->sleep_mutex));
