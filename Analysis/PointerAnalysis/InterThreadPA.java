@@ -29,13 +29,13 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.18 2000-03-25 05:17:24 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.19 2000-03-27 16:32:21 salcianu Exp $
  */
-abstract class InterThreadPA {
+public abstract class InterThreadPA {
     
-    private static final boolean DEBUG = false;
-    private static final boolean DEBUG2 = false;
-    private static final boolean TIMING = true;
+    public static final boolean DEBUG = false;
+    public static final boolean DEBUG2 = false;
+    public static boolean TIMING = true;
 
     // Set of all the processed threads (thread nodes). PANodes keep
     // accumulating here since the beginning of the inter-thread analysis,
@@ -119,12 +119,12 @@ abstract class InterThreadPA {
     private static MetaMethod[] get_run_mmethods(PANode nt,
 						 PointerAnalysis pa){
 	// TODO: think about the LOAD && PARAM thread nodes (not only INSIDE) 
-	NEW q = (NEW) pa.getNodeRepository().node2Code(nt);
-	HClass hclass = q.hclass();
+	NEW q = (NEW) pa.getNodeRepository().node2Code(nt.getRoot());
+	Util.assert( q!= null, "Creation of " + nt + " not found!");
 
+	HClass hclass = q.hclass();
 	HMethod[] hms = hclass.getMethods();
 	HMethod hm = null;
-
 	for(int i = 0 ; i < hms.length ; i++)
 	    if(hms[i].getName().equals("run") &&
 	       (hms[i].getParameterTypes().length == 0)){

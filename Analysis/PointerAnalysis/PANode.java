@@ -20,7 +20,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.14 2000-03-25 06:51:06 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.15 2000-03-27 16:32:21 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -200,7 +200,7 @@ final public class PANode {
     public final PANode wtSpecialize(){
 	if(CAUTION){
 	    Util.assert(!isTSpec(), "Repeated thread specialization!");
-	    Util.assert(PointerAnalysis.THREAD_SENSITIVE,
+	    Util.assert(PointerAnalysis.WEAKLY_THREAD_SENSITIVE,
 			"Turn on WEAKLY_THREAD_SENSITIVE!");
 	}
 	if(wtspec == null){
@@ -252,6 +252,18 @@ final public class PANode {
 	return !isSpecialized();
     }
 
+    /** Returns the root of <code>this</code> node. This is the root of the
+	specialization chain which produced <code>this</code> node. */
+    public final PANode getRoot(){
+	PANode node = this;
+	while(!node.isPrimitive()){
+	    if(node.isCSSpec()) node = node.getCSParent();
+	    else if(node.isTSpec()) node = node.getTSParent();
+	    else Util.assert(false,"Specialized node but not CS or TS");
+	}
+	return node;
+    }
+
     /** Pretty-print function for debug purposes */
     public final String toString(){
 	String str = null;
@@ -264,6 +276,22 @@ final public class PANode {
 	case STATIC: str="S";break;
 	}
 	return str + number;
+    }
+
+    /** Returns a detailed description of <code>this</code> node for debug
+	purposes. */
+    public final String details(){
+	StringBuffer buffer = new StringBuffer();
+	buffer.append(this);
+	if(isTSpec()){
+	    buffer.append(" <-TS- "); 
+	    buffer.append(getTSParent().details());
+	}
+	if(isCSSpec()){
+	    buffer.append(" <-CS- ");
+	    buffer.append(getCSParent().details());
+	}
+	return buffer.toString();
     }
 
     /** Translates node <code>n</code> according to the map <code>map</code>.
