@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.51 1999-07-07 00:01:26 cananian Exp $
+% $Id: harpoon.bib,v 1.52 1999-07-08 00:55:00 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -919,18 +919,6 @@
   annote =	 {Interprocedural SSA form.}
 }
 
-@TechReport{traub86:ttda,
-  author = 	 {Kenneth R. Traub},
-  title = 	 {A Compiler for the {MIT} Tagged-token Dataflow Architecture},
-  institution =  {Massachusetts Institute of Technology},
-  year = 	 1986,
-  number =	 {MIT/LCS/TR-370},
-  address =	 {Cambridge, MA 02139},
-  month =	 aug,
-  annote =	 {Very interesting, historically.  Intraloop, not interloop,
-                  parallelism.}
-}
-
 @PhdThesis{havlak94:isa,
   author = 	 {Paul Havlak},
   title = 	 {Interprocedural Symbolic Analysis},
@@ -985,18 +973,20 @@
                   dependence sets in time proportional to their size.}
 }
 
-@TechReport{traub86:ttdfa,
+@TechReport{traub86:ttda,
   author = 	 {Kenneth R. Traub},
   title = 	 {A Compiler for the {MIT} Tagged-Token Dataflow Architecture},
   institution =  {Massachusetts Institute of Technology},
   year = 	 1986,
   number =	 {MIT/LCS/TR-370},
+  address =	 {Cambridge, MA 02139},
   month =	 aug,
   url =		 {http://ncstrl.mit.edu/Dienst/UI/2.0/Query/?boolean=and&author=Traub&title=dataflow&abstract=&authority=ncstrl.mit_lcs&name=TR-370},
   annote =	 {Describes a data-flow-oriented compiler; the
                   description of how loops and the store are handled
                   is very interesting.  The I-Store concept is a
-                  quasi-functional store; also a really nice idea.}
+                  quasi-functional store; also a really nice idea.
+		  Intraloop, not interloop, parallelism.}
 }
 
 %%%%%%%%%%%%%%%%% DERIVED WORKS %%%%%%%%%%%%%%%%%%%%%%%
