@@ -182,7 +182,7 @@ if (!$opt_c) {
 	    $annstr = !$alt_cvsblame ?
 		"<A HREF=\"$diffurl\">$annstr</A>" :
 		"$annstr <A HREF=\"$diffurl\">D</A> <A HREF=\"$logurl\">L</A>"
-		    if defined $opt_u && !($r[$i]=~m/1.1|LOCAL/);
+		    if defined $opt_u && !($r[$i]=~m/LOCAL/);
 	    # don't hyperlink spaces (looks ugly)
             $annstr =~ s|(\s+)(</([^>]*></)*[^>]*>)|$2$1|i;
 	    # okay, make the annotation at the beginning of the line.
