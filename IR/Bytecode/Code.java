@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.8 1998-11-10 01:24:57 cananian Exp $
+ * @version $Id: Code.java,v 1.9 1998-11-10 03:32:19 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -35,7 +35,7 @@ public class Code extends HCode {
   }
   /** Clone this code representation.  The clone has its own copy of the
    *  bytecode graph. */
-  public HCode clone(HMethod newMethod) throws CloneNotSupportedException {
+  public HCode clone(HMethod newMethod) {
     return new Code(newMethod, methodinfo);
   }
 
