@@ -1,263 +1,551 @@
 // AsyncCode.java, created Thu Nov 11 15:17:54 1999 by kkz
 // Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
+// 		      and Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EventDriven;
 
+import harpoon.Analysis.ContBuilder.ContBuilder;
+import harpoon.Analysis.EnvBuilder.EnvBuilder;
+import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.Quads.Unreachable;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HClassSyn;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HConstructor;
+import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HMethodSyn;
+import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.TYPECAST;
+import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
 
 /**
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.7 1999-11-22 21:38:53 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.8 2000-01-02 22:15:19 bdemsky Exp $
  */
-public class AsyncCode extends harpoon.IR.Quads.QuadNoSSA {
+public class AsyncCode {
 
-    /** Creates a <code>AsyncCode</code>. */
-    public AsyncCode(HMethod parent, HCode hc, CALL c, HMethod toCall,
-		     HClass env, HClass cont, Temp[] liveout, Set toSwop) {
-	super(parent, null);
-	this.quads = buildCode(hc, c, toCall, env, cont, liveout, toSwop);
-    }
-
-    private AsyncCode(HMethod parent) {
-	super(parent, null);
-    }
-
-    /** Clone this code representation.  The clone has its own copy of
-     *  the quad graph. 
+    /** Creates a <code>AsyncCode</code>. 
+     *
+     *  @param hc
+     *         the <code>HCode</code> from which to build this
+     *         <code>AsyncCode</code>.
+     *  @param liveness
+     *         results of liveness analysis
+     *  @param ucf
+     *         <code>UpdateCodeFactory</code> with which to register new
+     *         <code>HCode</code>
      */
-    public HCode clone(HMethod newMethod) {
-	AsyncCode ac = new AsyncCode(newMethod);
-	ac.quads = Quad.clone(ac.qf, this.quads);
-	return ac;
-    }
 
-    /**
-     * Return the name of this code view.
-     * @return the name of the <code>parent</code>'s code view.
-     */
-    public String getName() {
-	return harpoon.IR.Quads.QuadNoSSA.codename;
-    }
-
-    private Quad buildCode(HCode hc, CALL c, HMethod toCall, HClass env,
-			   HClass cont, Temp[] liveout, Set toSwop) {
-	Quad root = (Quad)hc.getRootElement();
+    public static void buildCode(HCode hc, Map old2new, Set async_todo, 
+			   QuadLiveness liveness,
+			   Set blockingcalls, 
+			   UpdateCodeFactory ucf, Map classMap) 
+	throws NoClassDefFoundError
+    {
 	System.out.println("Entering AsyncCode.buildCode()");
-	Object[] maps = Quad.cloneMaps(this.qf, root);
-	Map quadmap = (Map)maps[0];
-	WorkSet needHandler=new WorkSet();
 
-	System.out.println("AsyncCode.buildCode() 1");
+	Quad root = (Quad)hc.getRootElement();
 
-	TempFactory tf = this.qf.tempFactory();
+	WorkSet cont_todo=new WorkSet();
+	cont_todo.add(root);
 
-	// swop out all the calls to Socket.getInputStream and replace
-	// with calls to Socket.getAsyncInputStream:
-	final HMethod gais = 
-	    HClass.forName("java.net.Socket").getDeclaredMethod
-	    ("getAsyncInputStream", new HClass[0]);
-	for (Iterator i=toSwop.iterator(); i.hasNext(); ) {
-	    CALL cts = (CALL)quadmap.get(i.next()); // call to swop
-	    CALL replacement = new CALL(this.qf, cts, gais, cts.params(),
-					cts.retval(), cts.retex(), 
-					cts.isVirtual(), cts.isTailCall(),
-					new Temp[0]);
-	    // hook up all incoming edges
-	    Edge[] pe = cts.prevEdge();
-	    for (int j=0; j<pe.length; j++) {
-		Quad.addEdge((Quad)pe[j].from(), pe[j].which_succ(), 
-			     replacement, pe[j].which_pred());
+	//contmap maps blocking calls->continuations
+	HashMap cont_map=new HashMap();
+	HashMap env_map=new HashMap();
+	
+	while(!cont_todo.isEmpty()) {
+	    Quad quadc=(Quad) cont_todo.pop();
+	    ContVisitor cv=new ContVisitor(cont_todo, async_todo, 
+					   old2new, cont_map, 
+					   env_map, liveness,
+					   blockingcalls, hc.getMethod(), 
+					   classMap,hc, ucf);
+	    quadc.accept(cv);
+	}
+    }
+
+    static class ContVisitor extends QuadVisitor {
+	WorkSet cont_todo;
+	Map old2new, cont_map, env_map;
+	Set blockingcalls, async_todo;
+	HMethod hmethod;
+	boolean header;
+	Map classMap;
+	CloningVisitor clonevisit;
+	QuadLiveness liveness;
+	UpdateCodeFactory ucf;
+
+	public ContVisitor(WorkSet cont_todo, Set async_todo, 
+			   Map old2new, Map cont_map, 
+			   Map env_map, QuadLiveness liveness,
+			   Set blockingcalls, HMethod hmethod, 
+			   Map classMap, HCode hc, UpdateCodeFactory ucf) {
+	    this.liveness=liveness;
+	    this.env_map=env_map;
+	    this.cont_todo=cont_todo;
+	    this.async_todo=async_todo;
+	    this.old2new=old2new;
+	    this.cont_map=cont_map;
+	    this.blockingcalls=blockingcalls;
+	    this.hmethod=hmethod;
+	    this.classMap=classMap;
+	    this.header=false;
+	    this.ucf=ucf;
+	    this.clonevisit=new CloningVisitor(blockingcalls, cont_todo,
+					       cont_map, env_map, liveness,
+					       async_todo, old2new,
+					       classMap,hc,ucf);
+	}
+
+	public void visit(Quad q) {
+	    System.out.println("ERROR: "+q+" in ContVisitory!!!");
+	}
+
+	public void visit(HEADER q) {
+	    //need to build continuation for this Header...
+	    //nmh is the HMethod we wish to attach this HCode to
+	    HMethod nhm=(HMethod)old2new.get(hmethod);
+	    //mark header flag
+	    header=true;
+	    clonevisit.reset(nhm,q.getFactory().tempFactory(),false);
+	    copy(q,-1);
+	    ucf.update(nhm, clonevisit.getCode());
+	}
+
+	public void visit(CALL q) {
+	    //need to build continuation for this CALL
+	    //nmh is the HMethod we wish to attach this HCode to
+	    HClass hclass=(HClass) cont_map.get(q);
+	    HClass throwable=HClass.forName("java.lang.Throwable");
+	    HMethod resume=
+		hclass.getDeclaredMethod("resume",
+					 new HClass[] {q.method().getReturnType()});
+	    HMethod exception=
+		hclass.getDeclaredMethod("exception",
+					 new HClass[] {throwable});
+
+	    //Resume method
+	    clonevisit.reset(resume,q.getFactory().tempFactory(), true);
+	    copy(q,0);
+	    //addEdges should add appropriate headers
+	    ucf.update(resume, clonevisit.getCode());
+
+	    //Exception method
+	    clonevisit.reset(exception, q.getFactory().tempFactory(), true);
+	    copy(q,1);
+	    //addEdges should add appropriate headers
+	    ucf.update(exception, clonevisit.getCode());
+	}
+
+	public void copy(Quad q, int resumeexception) {
+	    //-1 normal
+	    //0 resume
+	    //1 exception
+	    WorkSet todo=new WorkSet();
+	    WorkSet done=new WorkSet();
+	    if (resumeexception==-1)
+		todo.push(q);
+	    else
+		todo.push(q.next(resumeexception));
+	    while (!todo.isEmpty()) {
+		Quad nq=(Quad) todo.pop();
+		done.add(nq);
+		nq.accept(clonevisit);
+		if (clonevisit.follow()) {
+		    Quad[] next=nq.next();
+		    for (int i=0; i<next.length;i++)
+			if (!done.contains(next[i]))
+			    todo.push(q);
+		}
 	    }
-
-	    Edge[] ne = cts.nextEdge();
-	    for (int j=0; j<ne.length; j++) {
-		Quad.addEdge(replacement, ne[j].which_succ(),
-			     (Quad)ne[j].to(), ne[j].which_pred());
-	    }
-	}
-       
-	System.out.println("AsyncCode.buildCode() 2");
-
-	CALL cc = (CALL)quadmap.get(c); // cloned CALL
-
-	System.out.println("AsyncCode.buildCode() 3");
-
-	// we want to remove this cloned CALL and replace it
-	// with a call to the asynchronous version of the method
-	Temp async = new Temp(tf);
-	Temp exc = new Temp(tf);
-	CALL nc = new CALL(this.qf, cc, toCall, cc.params(), async,
-			   exc, true, false, new Temp[0]);
-
-	needHandler.add(nc);
-
-	System.out.println("AsyncCode.buildCode() 4");
-
-	// hook up all incoming edges
-	Edge[] e = cc.prevEdge();
-	for (int j=0; j<e.length; j++) {
-	    Quad.addEdge((Quad)e[j].from(), e[j].which_succ(), 
-			 nc, e[j].which_pred());
+	    clonevisit.addEdges(q,resumeexception);
 	}
 
-	System.out.println("AsyncCode.buildCode() 5");
+	public boolean isHeader() {
+	    return header;
+	}
+    }
 
-	Quad prev = nc;
-	Quad curr = null;
+    static class CloningVisitor extends QuadVisitor {
+	boolean followchildren;
+	Set blockingcalls;
+	Set cont_todo;
+	Map cont_map;
+	Set async_todo;
+	Map old2new;
+	Map classMap;
+	ContCode hcode;
+	CloningTempMap ctmap;
+	HashMap quadmap;
+	boolean isCont;
+	Map env_map;
+	QuadLiveness liveness;
+	UpdateCodeFactory ucf;
+	HCode hc;
 
-	System.out.println("AsyncCode.buildCode() 6");
-
-	// create new environment
-	Temp newenv = new Temp(tf);
-	curr = new NEW(this.qf, cc, newenv, env);
-	Quad.addEdge(prev, 0, curr, 0);
-	prev = curr;
-
-	// create params (need to add receiver object)
-
-	Temp[] params = new Temp[liveout.length+1];
-	params[0] = newenv;
-	for (int i=0;i<liveout.length;i++) {
-	    params[i+1]=liveout[i];
+	public CloningVisitor(Set blockingcalls, Set cont_todo,
+			      Map cont_map, Map env_map, 
+			      QuadLiveness liveness, Set async_todo,
+			      Map old2new, Map classMap, HCode hc, UpdateCodeFactory ucf) {
+	    this.liveness=liveness;
+	    this.blockingcalls=blockingcalls;
+	    this.cont_todo=cont_todo;
+	    this.cont_map=cont_map;
+	    this.async_todo=async_todo;
+	    this.old2new=old2new;
+	    this.classMap=classMap;
+	    this.env_map=env_map;
+	    this.ucf=ucf;
+	    this.hc=hc;
 	}
 
-	// call constructor
-	Util.assert(env.getConstructors().length == 1,
-		    "AsyncCode.buildCode(): " + env.getConstructors().length +
-		    " constructor(s) found for environment.");
+	public void reset(HMethod nhm, TempFactory otf, boolean isCont) {
+	    followchildren=true;
+	    hcode=new ContCode(nhm);
+	    ctmap=new CloningTempMap(otf,hcode.getFactory().tempFactory());
+	    quadmap=new HashMap();
+	    this.isCont=isCont;
+	}
 
-	// since this is a call to the constructor, we mark it as not virtual
-	curr = new CALL(this.qf, cc, env.getConstructors()[0], 
-				   params, null, exc, false, 
-				   false, new Temp[0]);
-	needHandler.add(curr);
+	public HCode getCode() {
+	    return hcode;
+	}
 
-	Quad.addEdge(prev, 0, curr, 0);
-	prev = curr;
+	public boolean follow() {
+	    return followchildren;
+	}
 
-	System.out.println("AsyncCode.buildCode() 7");
+	HClass getEnv(Quad q) {
+	    if (env_map.containsKey(q))
+		return (HClass) env_map.get(q);
+	    HClass nhclass=(new EnvBuilder(ucf, hc, 
+					  q, liveness.getLiveOutArray(q))).makeEnv();
+	    env_map.put(q, nhclass);
+	    return nhclass;
+	}
 
-	// create new continuation
-	Temp newcont = new Temp(tf);
-	curr = new NEW(this.qf, cc, newcont, cont);
-	Quad.addEdge(prev, 0, curr, 0);
-	prev = curr;
-
-	// call constructor
-	Util.assert(cont.getConstructors().length == 1,
-		    "AsyncCode.buildCode(): " + cont.getConstructors().length +
-		    " constructor(s) found for continuation.");
-
-	// call to constructor is not virtual
-	// BCD needs exception handler...
-
-	curr = new CALL(this.qf, cc, cont.getConstructors()[0],
-			new Temp[] {newcont, newenv}, null, exc,
-			false, false, new Temp[0]);
-	needHandler.add(curr);
-	Quad.addEdge(prev, 0, curr, 0);
-	prev = curr;
-
-	System.out.println("AsyncCode.buildCode() 8");
-
-	System.out.println("Attempting Access to "+toCall.getReturnType()+" "+
-			   cont);
-
-	//BCD start
-	HClass[] interfaces=cont.getInterfaces();
-	for (int cci=0;cci<interfaces.length;cci++)
-	    System.out.println("implements " + interfaces[cci]);
-	//BCD stop
-	if (cont.getSuperclass()!=null)
-	    System.out.println("super "+cont.getSuperclass());
-
-	// setNext(<continuation>);
-
-	HMethod setnextmethod=null;
-	HMethod[] allMethods=toCall.getReturnType().getMethods();
-	for(int sMethod=0;sMethod<allMethods.length;sMethod++)
-	    if (allMethods[sMethod].getName().compareTo("setNext")==0)
-		//We found a possible method
-		if (allMethods[sMethod].getParameterTypes().length==1) {
-		    HClass param1=allMethods[sMethod].getParameterTypes()[0];
-		    if (param1.isAssignableFrom(cont)) {
-			setnextmethod=allMethods[sMethod];
-			break;
+	public void addEdges(Quad q, int resumeexception) {
+	    if (resumeexception!=-1) {
+		//Need to build headers here....[continuation]
+		//Need to load environment object and result codes
+		WorkSet done=new WorkSet();
+		WorkSet todo=new WorkSet();
+		todo.push(q.next(resumeexception));
+		while (!todo.isEmpty()) {
+		    Quad nq=(Quad)todo.pop();
+		    done.add(nq);
+		    Quad cnq=(Quad)quadmap.get(nq);
+		    Quad[] next=nq.next();
+		    for (int i=0;i<next.length;i++) {
+			if (quadmap.containsKey(next[i])) {
+			    //this quad was cloned
+			    if (!done.contains(next[i]))
+				todo.push(next[i]);
+			    Quad cn=(Quad)quadmap.get(next[i]);
+			    //add the edge in
+			    Quad.addEdge(cnq,i,nq,q.nextEdge(i).which_pred());
+			}
 		    }
 		}
-	Util.assert(setnextmethod!=null,"no setNext method found");
+		//Need to build header
+		QuadFactory qf=hcode.getFactory();
+		TempFactory tf=qf.tempFactory();
+		Quad first=(Quad) quadmap.get(q.next(resumeexception));
+		Temp oldrtemp=
+		    (resumeexception == 0) ?
+		    ((CALL)q).retval():((CALL)q).retex();
+		Temp newrtemp=ctmap.tempMap(oldrtemp);
+		Temp[] params=null;
+		if (oldrtemp==null)
+		    params=new Temp[1];
+		else {
+		    params=new Temp[2];
+		    params[1]=newrtemp;
+		}
+		params[0]=new Temp(tf);
+		HEADER header=new HEADER(qf,first);
+		METHOD method=new METHOD(qf,first,params,1);
+		Quad.addEdge(header,1,method,0);
+		Temp tenv=new Temp(tf);
+		GET get=new GET(qf,first,tenv,hcode.getMethod().getDeclaringClass().getField("e"),method.params(0));
+		Quad.addEdge(method,0,get,0);
+		
+		// assign each field in the Environment to the appropriate Temp
+		// except for the assignment we want to suppress
+		Temp suppress =
+		    (resumeexception == 0) ?
+		    ((CALL)q).retval() : ((CALL)q).retex();
+      		Temp[] liveout=liveness.getLiveOutArray(q);
 
-	//HMethod setnextmethod = 
-	//    toCall.getReturnType().getMethod("setNext", 
-	//				     new HClass[] {cont});
-	// this is a tail call, but that's not supported yet,
-	// so we mark it as not a tail call.
+		Quad prev = get;
+		HField[] envfields=getEnv(q).getDeclaredFields();
+		for(int i=0; i<liveout.length; i++) {
+		    if (suppress == null || !suppress.equals(liveout[i])) {
+			GET ng = new GET(qf, first, ctmap.tempMap(liveout[i]),
+					 envfields[i], tenv);
+			Quad.addEdge(prev, 0, ng, 0);
+			prev = ng;
+		    }
+		}
 
-	curr = new CALL(this.qf, cc, setnextmethod, 
-				  new Temp[] {async, newcont}, null, 
-				  exc, true, false, new Temp[0]);
-	needHandler.add(curr);
-	Quad.addEdge(prev, 0, curr, 0);
-	prev = curr;
+		// typecast the argument if necessary
+		if (!((CALL)q).method().getReturnType().isPrimitive()) {
+		    TYPECAST tc = 
+			new TYPECAST(qf, first, 
+				     ((CALL)q).retval(),
+				     ((CALL)q).method().getReturnType());
+		    Quad.addEdge(prev, 0, tc, 0);
+		    prev = tc;
+		}
+		Quad.addEdge(prev,0,
+			     (Quad)quadmap.get(q.next(resumeexception)),
+			     q.nextEdge(resumeexception).which_pred());
+		hcode.quadSet(header);
+	    } else {
+		WorkSet done=new WorkSet();
+		WorkSet todo=new WorkSet();
+		todo.push(q);
+		while (!todo.isEmpty()) {
+		    Quad nq=(Quad)todo.pop();
+		    done.add(nq);
+		    Quad cnq=(Quad)quadmap.get(nq);
+		    Quad[] next=nq.next();
+		    for (int i=0;i<next.length;i++) {
+			if (quadmap.containsKey(next[i])) {
+			    //this quad was cloned
+			    if (!done.contains(next[i]))
+				todo.push(next[i]);
+			    Quad cn=(Quad)quadmap.get(next[i]);
+			    //add the edge in
+			    Quad.addEdge(cnq,i,nq,q.nextEdge(i).which_pred());
+			}
+		    }
+		}
+		hcode.quadSet((Quad)quadmap.get(q));
+	    }
+	}
+
+	public void visit(Quad q) {
+	    followchildren=true;
+	    quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
+      	}
+
+	public void visit(CALL q) {
+	    if (blockingcalls.contains(q.method())) {
+		if (!cont_map.containsKey(q)) {
+		    cont_todo.add(q);
+		    HClass hclass=createContinuation(q.method(),  q,
+						     ucf); 
+		    cont_map.put(q,hclass);
+		    HMethod hm=((CALL) q).method();
+		    if (!old2new.containsKey(hm)) {
+			async_todo.add(hm);
+			HMethod temp=makeAsync(old2new, q.method(),
+					       ucf, classMap);
+		    }
+		}
+		followchildren=false;
+	    } else {
+		followchildren=true;
+		quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
+	    }
+	}
+    }
+
+//      // swop out all the calls to Socket.getInputStream and 
+//      // replace with calls to Socket.getAsyncInputStream:
+//      private void swop(Set s, Map quadmap) {
+//  	final HMethod gais = 
+//  	    HClass.forName("java.net.Socket").getDeclaredMethod
+//  	    ("getAsyncInputStream", new HClass[0]);
+//  	for (Iterator i=s.iterator(); i.hasNext(); ) {
+//  	    CALL cts = (CALL)quadmap.get(i.next()); // call to swop
+//  	    CALL replacement = new CALL(this.qf, cts, gais, cts.params(),
+//  					cts.retval(), cts.retex(), 
+//  					cts.isVirtual(), cts.isTailCall(),
+//  					new Temp[0]);
+//  	    // hook up all incoming edges
+//  	    Edge[] pe = cts.prevEdge();
+//  	    for (int j=0; j<pe.length; j++) {
+//  		Quad.addEdge((Quad)pe[j].from(), pe[j].which_succ(), 
+//  			     replacement, pe[j].which_pred());
+//  	    }
+//  	    // hook up outgoing edges
+//  	    Edge[] ne = cts.nextEdge();
+//  	    for (int j=0; j<ne.length; j++) {
+//  		Quad.addEdge(replacement, ne[j].which_succ(),
+//  			     (Quad)ne[j].to(), ne[j].which_pred());
+//  	    }
+//  	}
+//      }
+
+    // create asynchronous version of HMethod to replace blocking version
+    // does not create HCode that goes w/ it...
+    public static HMethod makeAsync(Map old2new, HMethod original,
+			      UpdateCodeFactory ucf, Map classmap)
+    {
+	//	final HMethod original = blocking.method();
+	final HClass originalClass = original.getDeclaringClass();
+	HClassSyn replacementClass;
+
+	// create a new HClassSyn that replaces the original HClass
+	if (classmap.containsKey(originalClass))
+	    replacementClass=(HClassSyn) classmap.get(originalClass);
+	else {
+	    replacementClass=new HClassSyn(originalClass, true);
+	    // clone HMethods from original class
+	    HMethod[] toClone = originalClass.getDeclaredMethods();
+	    for (int i = 0; i < toClone.length; i++) {
+		HMethod clone = replacementClass.getDeclaredMethod
+		    (toClone[i].getName(), toClone[i].getParameterTypes());
+		ucf.update(clone, 
+			   ((QuadNoSSA)ucf.convert(toClone[i])).clone(clone));
+	    }
+	    classmap.put(originalClass, replacementClass);
+	}
+	    
+	// use the return type of the original HMethod to get the String 
+	// prefix for the type of Continuation we want as the new return type
+	final String pref = ContBuilder.getPrefix(original.getReturnType());
+
+	// get the return type for the replacement HMethod
+	final HClass newReturnType = HClass.forName
+	    ("harpoon.Analysis.ContBuilder" + pref + "Continuation");
+
+	// find a unique name for the replacement HMethod
+	final String methodNamePrefix = original.getName() + "Async_";
+	String newMethodName = methodNamePrefix;
+	int i = 0;
+	while(true) {
+	    try {
+		newMethodName = methodNamePrefix + i++; 
+		replacementClass.getMethod(newMethodName, 
+					   original.getParameterTypes());
+	    } catch (NoSuchMethodError e) {
+		break;
+	    }
+	}
 	
-	// return(<continuation>);
-	curr = new RETURN(this.qf, cc, newcont);
-	Quad.addEdge(prev, 0, curr, 0);
-	prev = curr;
+	// create replacement method
+	final HMethodSyn replacement = 
+	    new HMethodSyn(replacementClass, newMethodName, 
+			   original.getParameterTypes(), newReturnType);
 
-	System.out.println("AsyncCode.buildCode() 9");
+	replacement.setExceptionTypes(original.getExceptionTypes());
+	replacement.setModifiers(original.getModifiers());
+	replacement.setParameterNames(original.getParameterNames());
+	replacement.setSynthetic(original.isSynthetic());
+	old2new.put(original, replacement);
+	return replacement;
+    }
 
-	// Build THROW/PHI's
-	PHI phi = new PHI(this.qf, curr, new Temp[0], needHandler.size());
-	int phiedge=0;
-	for(Iterator callIterator=needHandler.iterator();
-	    callIterator.hasNext();)
-	    Quad.addEdge((Quad)callIterator.next(),1, phi, phiedge++);
-	THROW throwq=new THROW(this.qf, curr, exc);
-	Quad.addEdge(phi,0,throwq,0);
+    // creates the HClass and constructor for the continuation
+    private static HClass createContinuation(HMethod blocking, CALL callsite,
+				      UpdateCodeFactory ucf) 
+	throws NoClassDefFoundError
+    {
+	final HClass template = 
+	    HClass.forName("harpoon.Analysis.ContBuilder.ContTemplate");
 
-	// find FOOTER
-	HEADER header = (HEADER) hc.getRootElement();
-	FOOTER q = (FOOTER) header.next(0);
+	final HClassSyn continuationClass = new HClassSyn(template);
+	final int numConstructors = continuationClass.getConstructors().length;
+	Util.assert(numConstructors == 1,
+		    "Found " + numConstructors + " constructors in " +
+		    "ContTemplate. Expected one");
 
-	FOOTER f = (FOOTER)quadmap.get(q); // cloned FOOTER
-	FOOTER newf = f.attach(prev,0);
-	newf=newf.attach(throwq,0);
+	// use the return type of the blocking HMethod to get the String 
+	// prefix for the superclass for the continuation we want to create
+	final String superPref = 
+	    ContBuilder.getPrefix(blocking.getReturnType());
 
-	//Note that quadmap is now invalid for the footer...
-	//But it doesn't escape
+	// get the superclass for the continuation
+	final HClass superclass = HClass.forName
+	    ("harpoon.Analysis.ContBuilder." + superPref + "Continuation");
 
+	continuationClass.setSuperclass(superclass);
 
-	System.out.println("AsyncCode.buildCode() 10");
+	// we want the return type of the blocking call
+	// this gives us the interface that our continuation should implement
+	final String interPref = 
+	    ContBuilder.getPrefix(callsite.method().getReturnType());
 
-	//quadmap is still okay for header...
-       	HEADER h = (HEADER)quadmap.get(root); // cloned HEADER
-	Unreachable.prune(h);
-	System.out.println("Leaving AsyncCode.buildCode()");
-	return h;
+	// get the interface that the continuation needs to implement
+	final HClass inter = HClass.forName("harpoon.Analysis.ContBuilder." + 
+					    interPref + "ResultContinuation");
+	
+	final HClass environment = HClass.forName
+	    ("harpoon.Analysis.EnvBuilder.Environment");
+
+	// clone template's constructor HCode
+	HConstructor hc = null;
+	HConstructor nhc = null;
+	try {
+	    hc = template.getConstructor(new HClass[] {environment});
+	    nhc = continuationClass.getConstructor(new HClass[] {environment});
+	    HCode hchc = ((Code)ucf.convert(hc)).clone(nhc);
+	    ucf.update(nhc, hchc);
+	} catch (NoSuchMethodError e) {
+	    System.err.println("Missing constructor for environment template");
+	}
+
+	// create resume method but HCode not yet created
+	HMethod hm = null;
+	HMethodSyn nhm = null;
+	try {
+	    hm = continuationClass.getDeclaredMethod("resume", new HClass[0]);
+	    nhm = new HMethodSyn(continuationClass, hm, true);
+	    continuationClass.removeDeclaredMethod(hm);
+	} catch (NoSuchMethodError e) {
+	    System.err.println("Missing resume() from constructor template");
+	}
+
+	// get the return value of the blocking call
+	// this is the parameter of the resume method, if any
+	HClass rettype = callsite.method().getReturnType();
+	Temp retval = callsite.retval();
+	boolean hasParameter = false;
+	if (retval != null) {
+	    hasParameter = true;
+	    String[] parameterNames = new String[1];
+	    parameterNames[0] = retval.name();
+	    HClass[] parameterTypes = new HClass[1];
+	    if (rettype.isPrimitive())
+		parameterTypes[0] = rettype;
+	    else {
+		parameterTypes[0] = HClass.forName("java.lang.Object");
+	    }
+	    nhm.setParameterNames(parameterNames);
+	    nhm.setParameterTypes(parameterTypes);
+	}
+
+	return continuationClass;
     }
 }

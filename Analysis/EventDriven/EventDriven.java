@@ -5,6 +5,7 @@ package harpoon.Analysis.EventDriven;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HMethodSyn;
 import harpoon.ClassFile.HClassSyn;
@@ -15,19 +16,22 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.Temp.Temp;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.3 1999-11-22 20:59:27 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.4 2000-01-02 22:15:19 bdemsky Exp $
  */
 public class EventDriven {
     protected final UpdateCodeFactory ucf;
     protected final HCode hc;
     protected final ClassHierarchy ch;
-    
+    protected Map classmap;
+
     /** Creates a <code>EventDriven</code>. The <code>UpdateCodeFactory</code>
      *  needs to have been created from a <code>QuadNoSSA</code> that contains
      *  type information.
@@ -38,14 +42,19 @@ public class EventDriven {
         this.ucf = ucf;
 	this.hc = hc;
 	this.ch = ch;
+	this.classmap=new HashMap();
     }
 
     /** Returns the converted main
      */
     public HMethod convert() {
 	// Clone the class that main was in, and replace it
+    
+	HClass origClass = this.hc.getMethod().getDeclaringClass();
 	HClassSyn hcs = 
-	    new HClassSyn(this.hc.getMethod().getDeclaringClass(), true);
+	    new HClassSyn(origClass, true);
+
+	classmap.put(origClass, hcs);
 
 	// clone methods
 	HMethod[] toClone = 
@@ -64,7 +73,7 @@ public class EventDriven {
 
 	// Clone main and replace it
 	HMethodSyn hms = new HMethodSyn(hcs, copyOfMain, true);
-	ToAsync as = new ToAsync(this.ucf, this.hc, this.ch);
+	ToAsync as = new ToAsync(this.ucf, this.hc, this.ch, this.classmap);
 	// transform main to mainAsync
 	HMethod newmain = as.transform();
 
