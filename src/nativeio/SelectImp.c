@@ -2,6 +2,7 @@
 #include <errno.h> /* for EINTR */
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h> /* for malloc/free */
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -114,7 +115,6 @@ void unregisterWriteSEL(jint fd)
 jint getFDsSEL(JNIEnv *env, jint blockMode, jintArray result)
 {
   //    jintArray result;
-    jsize len;
     jint *cresult, *buf;
     int size=0, j;
     fd_set newReadSet=readStruct.Interest, newWriteSet=writeStruct.Interest;
@@ -160,7 +160,7 @@ jint getFDsSEL(JNIEnv *env, jint blockMode, jintArray result)
 }
 
 int * getFDsintSEL(int blockMode) {
-    int *cresult, *buf;
+    int *buf;
     int size=0, j;
     fd_set newReadSet=readStruct.Interest, newWriteSet=writeStruct.Interest;
     int nFD=(readStruct.maxFD>writeStruct.maxFD)?
