@@ -1,0 +1,5 @@
+package harpoon.Analysis.*; for various analysis routines.
+SYNCHRONIZED analysis -- a class instance needs a synchronization object if
+ any of its methods are synchronized or there is a synchronization block
+ that references it.
+Extended type analysis.

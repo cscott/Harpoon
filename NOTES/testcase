@@ -1,0 +1,14 @@
+Test case is a java chip: a processor that executes java byte code.
+package silicon.JavaChip.
+throw Exceptions for javachip code exceptions (catch & handle)
+use arrays for register file, stack, etc.
+(so all the compiler features are used)
+32-bit machine.
+At boot load special-purpose registers with start/end of stack,heap,system
+ class area, and check dynamically during execution.
+ -- maybe use 16 bits for these registers?
+    (tests bitwidth analysis bigtime)
+unsigned int (address) as cast to long and & 0xFFFFFFFF. bitwidth anal again.
+alternatively, split stack/class/heap data areas to increase memory BW,
+  with special instructions to transfer data between these.
+special byte codes?  special methods?
