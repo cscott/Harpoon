@@ -51,6 +51,7 @@ public class Thresholding extends Node {
 	//first, run through image and find max/min average
 	int length = in.length;
 	int sum = 0;
+	int squareSum = 0;
 	int max = -1; //smaller than smallest possible value of 0
 	int min = 300; //larger than largest possible value of 255
 	int val;
@@ -59,6 +60,7 @@ public class Thresholding extends Node {
 	    val = (in[count]|256)&255;
 	    if (val > 25) {
 		sum += val;
+		squareSum += val*val;
 		if (val > max)
 		    max = val;
 		if (val < min)
@@ -68,7 +70,11 @@ public class Thresholding extends Node {
 	}
 	
 	int avg = sum/sampleCount;
-	T1 = (max + 3*avg)/4;
+	int avgSquared = avg*avg;
+	int totalDev = squareSum - 2*avg*sum + sampleCount * avgSquared;
+	double variance = totalDev/sampleCount;
+	
+	//T1 = (max + 3*avg)/4;
 	//System.out.println("\nThresholding: ");
 	//System.out.println("Samps: "+sampleCount);
 	//System.out.println("avg: "+avg);
