@@ -1549,7 +1549,7 @@ class NBodySystem {
 
   void maketreeParallelLoop(final int first, final int num) {
     final NBodySystem nb = this;
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(barnes.ctsize);
     m.enter(new Runnable () {
       public void run () {
         maketreeThread t[] = new maketreeThread[num];
@@ -1571,7 +1571,7 @@ class NBodySystem {
 
   void maketreeLoop(final int first, final int num) {
     final NBodySystem nb = this;
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(barnes.ctsize);
     m.enter(new Runnable () {
       public void run () {
         for (int i = 0; i < num; i++) {
@@ -1597,7 +1597,7 @@ class NBodySystem {
 
   void AdvanceParallelLoop(final double hts, final double ts, final int first, final int num) {
     final NBodySystem nb = this;
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(barnes.ctsize);
     m.enter(new Runnable () {
       public void run () {
         AdvanceThread t[] = new AdvanceThread[num];
@@ -1619,7 +1619,7 @@ class NBodySystem {
 
   void AdvanceLoop(final double hts, final double ts, final int first, final int num) {
     final NBodySystem nb = this;
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(barnes.ctsize);
     m.enter(new Runnable () {
       public void run () {
         for (int i = 0; i < num; i++) {
@@ -1645,7 +1645,7 @@ class NBodySystem {
 
   void SwapAccsParallelLoop(final int first, final int num) {
     final NBodySystem nb = this;
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(barnes.ctsize);
     m.enter(new Runnable () {
       public void run () {
         SwapAccsThread t[] = new SwapAccsThread[num];
@@ -1667,7 +1667,7 @@ class NBodySystem {
 
   void SwapAccsLoop(final int first, final int num) {
     final NBodySystem nb = this;
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(barnes.ctsize);
     m.enter(new Runnable () {
       public void run () {
         for (int i = 0; i < num; i++) {
@@ -1693,7 +1693,7 @@ class NBodySystem {
 
   void ComputeAccelsParallelLoop(final double tol, final double eps, final int first, final int num) {
     final NBodySystem nb = this;
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(barnes.ctsize);
     m.enter(new Runnable () {
       public void run() {
         ComputeAccelsThread t[] = new ComputeAccelsThread[num];
@@ -1715,7 +1715,7 @@ class NBodySystem {
 
   void ComputeAccelsLoop(final double tol, final double eps, final int first, final int num) {
     final NBodySystem nb = this;
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(barnes.ctsize);
     m.enter(new Runnable () {
       public void run() {
         for (int i = 0; i < num; i++) {
@@ -1741,7 +1741,7 @@ class NBodySystem {
 
   void StartVelsParallelLoop(final double hts, final int first, final int num) {
     final NBodySystem nb = this;
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(barnes.ctsize);
     m.enter(new Runnable () {
       public void run() {
         StartVelsThread t[] = new StartVelsThread[num];
@@ -1763,7 +1763,7 @@ class NBodySystem {
 
   void StartVelsLoop(final double hts, final int first, final int num) {
     final NBodySystem nb = this;
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(barnes.ctsize);
     m.enter(new Runnable () {
       public void run() {
         for (int i = 0; i < num; i++) {
@@ -1896,12 +1896,14 @@ class StartVelsThread extends Thread {
 class barnes { 
   public static parms simparms = new parms();
   public static NBodySystem Nbody = new NBodySystem();
-
+  public static long ctsize = 0;
+    
   public static void main(String args[]) throws java.lang.InterruptedException, java.io.IOException, java.io.FileNotFoundException { 
-    if (args.length == 0) {
+    if (args.length != 2) {
       System.out.print("usage: java barnes <input filename>\n");
       return;
     }
+    ctsize = Long.parseLong(args[1]);
     simparms.readParameterFile(args[0]);
     Nbody.init();
     Nbody.startrun(simparms);
