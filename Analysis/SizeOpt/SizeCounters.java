@@ -34,7 +34,7 @@ import java.util.List;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SizeCounters.java,v 1.1.2.4 2001-07-11 08:03:29 cananian Exp $
+ * @version $Id: SizeCounters.java,v 1.1.2.5 2001-10-29 16:17:54 cananian Exp $
  */
 public class SizeCounters extends MethodMutator {
     final Runtime.TreeBuilder tb;
@@ -112,6 +112,8 @@ public class SizeCounters extends MethodMutator {
 	    int size = tb.headerSize(q.hclass())+tb.objectSize(q.hclass());
 	    e = CounterFactory.spliceIncrement(qf, e,
 					       "sizecnt.object.size."+size);
+	    e = CounterFactory.spliceIncrement
+		(qf, e, "sizecnt.bytes_by_type."+q.hclass().getName(), size);
 	}
     }
     // private helper functions.
