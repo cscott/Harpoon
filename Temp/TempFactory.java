@@ -8,9 +8,14 @@ package harpoon.Temp;
  * <code>Temp</code>s within a given scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TempFactory.java,v 1.1.2.6 1999-09-13 00:34:33 cananian Exp $
+ * @version $Id: TempFactory.java,v 1.1.2.7 2000-02-08 00:31:13 pnkfelix Exp $
  */
 public abstract class TempFactory implements harpoon.Util.ReferenceUnique {
+    int nextID = 0;
+    int newID() {
+	return nextID++;
+    }
+
     /** Returns the static scope of this <code>TempFactory</code>.
      *  Should be unique among <code>TempFactory</code>s and invariant
      *  for a given <code>TempFactory</code>. */
