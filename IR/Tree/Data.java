@@ -32,7 +32,7 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.8 1999-08-11 10:48:39 duncan Exp $
+ * @version $Id: Data.java,v 1.1.2.9 1999-08-11 13:26:09 cananian Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
@@ -150,7 +150,7 @@ public class Data extends Code implements HData {
 	soList .add(0, new SEGMENT(tf, null, SEGMENT.STATIC_OBJECTS));
 	spList .add(0, new SEGMENT(tf, null, SEGMENT.STATIC_PRIMITIVES));
 	strList.add(0, new SEGMENT(tf, null, SEGMENT.STRING_CONSTANTS));
-	caList .add(0, new SEGMENT(tf, null, SEGMENT.STRING_CONSTANTS_CA));
+	caList .add(0, new SEGMENT(tf, null, SEGMENT.STRING_DATA));
 
 	// At last, assign the root element
 	this.tree = 

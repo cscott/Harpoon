@@ -16,26 +16,26 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.7 1999-08-11 10:48:39 duncan Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.8 1999-08-11 13:26:09 cananian Exp $
  */
 public class SEGMENT extends Stm {
-    /** Storage for static class data (display, vmtable, etc) */
+    /** R/O storage for static class data (display, vmtable, etc) */
     public static final int CLASS                = 0; 
     /** Read-only instruction memory */
     public static final int CODE                 = 1;
-    /** Storage for GC tables */
+    /** R/O storage for GC tables */
     public static final int GC                   = 2;
     /** R/W memory that must be initialized before use */
     public static final int INIT_DATA            = 3; 
-    /** Storage for static aggregate data */
+    /** R/W storage for static aggregate data */
     public static final int STATIC_OBJECTS       = 4;
-    /** Storage for static primitive data */
+    /** R/W storage for static primitive data */
     public static final int STATIC_PRIMITIVES    = 5;
-    /** Storage for string constants */
+    /** R/O storage for string constant objects */
     public static final int STRING_CONSTANTS     = 6;
-    /** Storage for character arrays of statically allocated 
-     *  string constants. */
-    public static final int STRING_CONSTANTS_CA  = 7;
+    /** R/O storage for component character arrays of statically allocated 
+     *  string constant objects. */
+    public static final int STRING_DATA  = 7;
     /** Read-only memory (other than machine instructions) */
     public static final int TEXT                 = 8; 
     /** R/W memory initialized at load time to be 0 */
@@ -51,9 +51,13 @@ public class SEGMENT extends Stm {
 	case INIT_DATA: return "INIT_DATA";
 	case STATIC_OBJECTS: return "STATIC_OBJECTS";
 	case STATIC_PRIMITIVES: return "STATIC_PRIMITIVES";
+	case STRING_CONSTANTS: return "STRING_CONSTANTS";
+	case STRING_DATA: return "STRING_DATA";
 	case TEXT: return "TEXT";
 	case ZERO_DATA: return "ZERO_DATA";
-	default: Util.assert(false, "Unknown segment type "+segtype); return null;
+	default:
+	    Util.assert(false, "Unknown segment type "+segtype);
+	    return "UNKNOWN SEGMENT TYPE"; // if assertions disabled
 	}
     }
 
@@ -89,19 +93,8 @@ public class SEGMENT extends Stm {
 
     public String toString() {
         StringBuffer sb = new StringBuffer("SEGMENT<");
-	sb.append(segtype==CLASS               ? "CLASS"               :
-		  segtype==CODE                ? "CODE"                :
-		  segtype==GC                  ? "GC"                  :
-		  segtype==INIT_DATA           ? "INIT_DATA"           :
-		  segtype==STATIC_OBJECTS      ? "STATIC_OBJECTS"      :
-		  segtype==STATIC_PRIMITIVES   ? "STATIC_PRIMITIVES"   :
-		  segtype==STRING_CONSTANTS    ? "STRING_CONSTANTS"    :
-		  segtype==STRING_CONSTANTS_CA ? "STRING_CONSTANTS_CA" :
-		  segtype==TEXT                ? "TEXT"                :
-		  segtype==ZERO_DATA           ? "ZERO_DATA"           :
-		  "UNKNOWN SEGMENT TYPE"); 
+	sb.append(decode(segtype));
 	sb.append(">");
 	return sb.toString();
     }
 }
-
