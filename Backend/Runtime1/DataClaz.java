@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.25 2001-06-12 03:29:30 kkz Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.26 2001-06-27 02:36:41 kkz Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -50,7 +50,7 @@ public class DataClaz extends Data {
         super("class-data", hc, f);
 	this.m_nm = f.getRuntime().nameMap;
 	this.m_tb = (TreeBuilder) f.getRuntime().treeBuilder;
-	this.MAX_SIZE = 8 * m_tb.POINTER_SIZE * m_tb.POINTER_SIZE;
+	this.BITS_IN_GC_BITMAP = 8 * m_tb.POINTER_SIZE;
 	this.root = build(f, hc, ch);
     }
 
@@ -100,35 +100,18 @@ public class DataClaz extends Data {
 	return (HDataElement) Stm.toStm(stmlist);
     }
 
-    // MAX_SIZE is the maximum size of an object (minus the header)
-    // that we can encode in the inline bitmap.
-    final int MAX_SIZE;
+    // the number of bits in the in-line gc bitmap is platform-dependent
+    final int BITS_IN_GC_BITMAP;
 
     /** Make gc bitmap or pointer to bitmap. */
     private Stm gc(Frame f, ClassHierarchy ch) {
-	if (hc.isArray()) { // arrays are special
-	    final List stmlist = new ArrayList();
-	    // In arrays, we don't actually need the bitmap, but since the 
-	    // space is there, we use it to indicate whether the array 
-	    // contains pointers, so that the GC won't have to look into 
-	    // the claz of the component type.
-	    final long bitmap = 
-		hc.getComponentType().isPrimitive() ? 0 : 1; 
-	    if (f.pointersAreLong()) {
-		//System.out.println("Array: " + Long.toBinaryString(bitmap));
-		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
-	    } else {
-		//System.out.println("Array: " + 
-		//		   Integer.toBinaryString((int)bitmap));
-		stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
-	    }
-	    return Stm.toStm(stmlist);
-	}
-	// non-arrays
-	final int objectSize = m_tb.objectSize(hc);
-	//System.out.println("Size: " + objectSize);
-	if (objectSize > MAX_SIZE) { // auxiliary table for large objects
-	    return gcaux(f, ch);
+	// use object size (w/o header) to determine how many bits we need (round up)
+	int bitsNeeded = (m_tb.objectSize(hc) + m_tb.POINTER_SIZE - 1)/m_tb.POINTER_SIZE;
+	// for arrays we keep an extra bit for the array elements
+	if (hc.isArray())
+	    bitsNeeded++;
+	if (bitsNeeded > BITS_IN_GC_BITMAP) { // auxiliary table for large objects
+	    return gcaux(f, ch, bitsNeeded);
 	} else { // in-line bitmap for small objects
 	    final List stmlist = new ArrayList();
 	    final List fields = m_tb.cfm.fieldList(hc);
@@ -144,10 +127,16 @@ public class DataClaz extends Data {
 		}
 		if (!type.isPrimitive()) {
 		    final int i = fieldOffset/m_tb.POINTER_SIZE;
-		    Util.assert(i >= 0 && i < 8 * m_tb.POINTER_SIZE);
+		    Util.assert(i >= 0 && i < BITS_IN_GC_BITMAP);
 		    bitmap |= (1 << i);
 		}
 	    }
+	    // for arrays, we use the bit at the end of the bitmap
+	    // for the array elements so the GC doesn't have to look 
+	    // into the component claz
+	    if (hc.isArray() && !hc.getComponentType().isPrimitive())
+		bitmap |= (1 << (bitsNeeded - 1));
+	    // write out in-line bitmap
 	    if (f.pointersAreLong()) {
 		//System.out.println("Compact: " + Long.toBinaryString(bitmap));
 		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
@@ -160,7 +149,7 @@ public class DataClaz extends Data {
 	}
     }
     // Make auxiliary gc bitmap
-    private Stm gcaux(Frame f, ClassHierarchy ch) {
+    private Stm gcaux(Frame f, ClassHierarchy ch, int bitsNeeded) {
 	final List stmlist = new ArrayList();
 	// large object, encoded in auxiliary table
 	stmlist.add(_DATUM(m_nm.label(hc, "gc_aux")));
@@ -171,13 +160,20 @@ public class DataClaz extends Data {
 	stmlist.add(new LABEL(tf, null, m_nm.label(hc, "gc_aux"), true));
 	final List fields = m_tb.cfm.fieldList(hc);
 	long bitmap = 0;
-	int j = 0; // keep track of number of bitmaps created
+	int numBitmaps = 0; // keep track of number of bitmaps created
 	for (Iterator it = fields.iterator(); it.hasNext(); ) {
 	    HField hf = (HField)it.next();
-	    final int fieldOffset = m_tb.cfm.fieldOffset(hf);
-	    Util.assert(j <= fieldOffset/m_tb.POINTER_SIZE);
+	    final int fo = m_tb.cfm.fieldOffset(hf);
+	    final int bitPosition = fo/m_tb.POINTER_SIZE;
+	    Util.assert(numBitmaps <= bitPosition/BITS_IN_GC_BITMAP);
+	    final HClass type = hf.getType();
+	    // unaligned fields should never contain pointers
+	    if (fo%m_tb.POINTER_SIZE != 0)  {
+		Util.assert(type.isPrimitive());
+		continue;
+	    }
 	    // write out completed bitmaps
-	    while(j < fieldOffset/MAX_SIZE) {
+	    while(numBitmaps < bitPosition/BITS_IN_GC_BITMAP) {
 		if (f.pointersAreLong()) {
 		    //System.out.println("Aux: " + 
 		    //		       Long.toBinaryString(bitmap));
@@ -187,24 +183,21 @@ public class DataClaz extends Data {
 		    //		       Integer.toBinaryString((int)bitmap));
 		    stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
 		}
-		bitmap = 0L; j++; // clear bitmap
-	    }
-	    final HClass type = hf.getType();
-	    // unaligned fields should never contain pointers
-	    if (fieldOffset%m_tb.POINTER_SIZE != 0)  {
-		Util.assert(type.isPrimitive());
-		continue;
+		bitmap = 0; numBitmaps++; // clear bitmap
 	    }
 	    if (!type.isPrimitive()) {
-		final int i = 
-		    (fieldOffset/m_tb.POINTER_SIZE)%(8*m_tb.POINTER_SIZE);
-		Util.assert(i >= 0 && i < 8 * m_tb.POINTER_SIZE);
-		bitmap |= (1 << i);
+		final int bp = bitPosition%BITS_IN_GC_BITMAP;
+		Util.assert(bp >= 0 && bp < BITS_IN_GC_BITMAP);
+		bitmap |= (1 << bp);
 	    }
 	}
 	// write out remaining bitmaps
-	final int objectSize = m_tb.objectSize(hc);
-	while(j*MAX_SIZE < objectSize) {
+	final int bitmapsNeeded = (bitsNeeded + BITS_IN_GC_BITMAP - 1)/BITS_IN_GC_BITMAP;
+	while(numBitmaps < bitmapsNeeded) {
+	    // use last bit of bitmap for array elements
+	    if ((numBitmaps == (bitmapsNeeded - 1)) && hc.isArray() && 
+		!hc.getComponentType().isPrimitive())
+		bitmap |= (1 << ((bitsNeeded - 1)%BITS_IN_GC_BITMAP));		
 	    if (f.pointersAreLong()) {
 		//System.out.println("Aux: " + 
 		//		   Long.toBinaryString(bitmap));
@@ -214,7 +207,7 @@ public class DataClaz extends Data {
 		//		   Integer.toBinaryString((int)bitmap));
 		stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
 	    }
-	    bitmap = 0L; j++; // clear bitmap
+	    bitmap = 0; numBitmaps++; // clear bitmap
 	}
 	// switch back to CLASS segment
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
