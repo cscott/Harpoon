@@ -1,5 +1,8 @@
 #include "config.h"
 #include "clheap.h"	/* prototypes */
+#ifdef WITH_DMALLOC
+#include "dmalloc.h"
+#endif
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"		/* GC_malloc_uncollectable, GC_free */
 #endif

@@ -4,6 +4,9 @@
 #include "config.h"	/* for BDW_CONSERVATIVE_GC */
 #include "stats.h"	/* for UPDATE_STATS */
 #include <stdlib.h>	/* for malloc, size_t */
+#ifdef WITH_DMALLOC
+#include "dmalloc.h"
+#endif
 #ifdef BDW_CONSERVATIVE_GC
 # include "gc.h"	/* for GC_malloc */
 #endif
