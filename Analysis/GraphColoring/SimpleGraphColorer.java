@@ -1,13 +1,15 @@
 // SimpleGraphColorer.java, created Wed Jan 13 14:17:43 1999 by pnkfelix
 package harpoon.Analysis.GraphColoring;
 
-import java.util.*;
+import java.util.Vector;
+import java.util.Stack;
+import java.util.Enumeration;
 
 /**
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.5 1999-01-15 02:09:39 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.6 1999-01-19 16:08:00 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {

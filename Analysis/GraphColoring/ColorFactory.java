@@ -1,7 +1,6 @@
 // ColorFactory.java, created Wed Jan 13 17:39:31 1999 by pnkfelix
 package harpoon.Analysis.GraphColoring;
 
-import harpoon.ClassFile.*;
 import java.util.Stack;
 import java.util.Vector;
 
@@ -9,7 +8,7 @@ import java.util.Vector;
  * <code>ColorFactory</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorFactory.java,v 1.1.2.2 1999-01-15 02:09:38 pnkfelix Exp $
+ * @version $Id: ColorFactory.java,v 1.1.2.3 1999-01-19 16:07:59 pnkfelix Exp $
  */
 
 public abstract class ColorFactory  {

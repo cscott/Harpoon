@@ -1,7 +1,8 @@
 // ColorableGraph.java, created Wed Jan 13 14:13:21 1999 by pnkfelix
 package harpoon.Analysis.GraphColoring;
 
-import java.util.*;
+import java.util.Enumeration;
+import java.util.NoSuchElementException;
 
 /**
  * <code>ColorableGraph</code> defines a set of methods that graphs to
@@ -9,7 +10,7 @@ import java.util.*;
  * graph colorers defined in this package.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraph.java,v 1.1.2.4 1999-01-18 20:49:19 pnkfelix Exp $ */
+ * @version $Id: ColorableGraph.java,v 1.1.2.5 1999-01-19 16:07:59 pnkfelix Exp $ */
 
 public abstract class ColorableGraph extends Graph {
 

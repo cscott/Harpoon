@@ -1,12 +1,11 @@
 // ColorableNode.java, created Wed Jan 13 14:12:37 1999 by pnkfelix
 package harpoon.Analysis.GraphColoring;
 
-import harpoon.ClassFile.*;
 /**
  * <code>ColorableNode</code>
  *  
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableNode.java,v 1.1.2.2 1999-01-14 23:16:29 pnkfelix Exp $
+ * @version $Id: ColorableNode.java,v 1.1.2.3 1999-01-19 16:07:59 pnkfelix Exp $
  */
 
 public class ColorableNode extends Node {

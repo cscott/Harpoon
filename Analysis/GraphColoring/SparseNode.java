@@ -1,7 +1,6 @@
 // SparseNode.java, created Wed Jan 13 16:17:46 1999 by pnkfelix
 package harpoon.Analysis.GraphColoring;
 
-import harpoon.ClassFile.*;
 import harpoon.Util.UniqueVector;
 import java.util.Enumeration;
 
@@ -10,7 +9,7 @@ import java.util.Enumeration;
  * use with the SparseGraph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseNode.java,v 1.1.2.3 1999-01-14 23:53:36 pnkfelix Exp $ 
+ * @version $Id: SparseNode.java,v 1.1.2.4 1999-01-19 16:08:00 pnkfelix Exp $ 
  */
 
 public class SparseNode extends ColorableNode {

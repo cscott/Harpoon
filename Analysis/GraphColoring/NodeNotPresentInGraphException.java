@@ -1,12 +1,11 @@
 // NodeNotPresentInGraphException.java, created Wed Jan 13 14:36:37 1999 by pnkfelix
 package harpoon.Analysis.GraphColoring;
 
-import harpoon.ClassFile.*;
 /**
  * <code>NodeNotPresentInGraphException</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: NodeNotPresentInGraphException.java,v 1.1.2.1 1999-01-14 20:12:11 pnkfelix Exp $
+ * @version $Id: NodeNotPresentInGraphException.java,v 1.1.2.2 1999-01-19 16:08:00 pnkfelix Exp $
  */
 
 public class NodeNotPresentInGraphException extends Exception {
