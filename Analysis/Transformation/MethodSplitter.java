@@ -40,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.17 2000-11-09 00:00:04 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.18 2000-11-10 02:45:18 cananian Exp $
  */
 public abstract class MethodSplitter implements java.io.Serializable {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -61,8 +61,18 @@ public abstract class MethodSplitter implements java.io.Serializable {
 
     /** Creates a <code>MethodSplitter</code>, based on the method
      *  representations in the <code>parent</code> <code>HCodeFactory</code>.
+     *  @param mutateOriginalBeforeSplit if <code>true</code>, the
+     *    <i>mutated</i> version of the original is cloned and given
+     *    to <code>mutateHCode</code> as source for a split methods;
+     *    otherwise, the <i>unmutated</i> version of the original is
+     *    taken as the source for the split method.  If it doesn't
+     *    matter, choose <code>true</code>, as this reduces the
+     *    memory footprint.
      */
-    public MethodSplitter(final HCodeFactory parent, ClassHierarchy ch) {
+    public MethodSplitter(final HCodeFactory parent, ClassHierarchy ch,
+			  final boolean mutateOriginalBeforeSplit) {
+	final Map origcache = //this is cache for unmutated version
+	    mutateOriginalBeforeSplit ? null : new HashMap();
         this.hcf = new CachingCodeFactory(new SerializableCodeFactory() {
 	    public String getCodeName() { return parent.getCodeName(); }
 	    public void clear(HMethod m) { parent.clear(m); }
@@ -71,14 +81,24 @@ public abstract class MethodSplitter implements java.io.Serializable {
 		Token tok = (swpair==null) ? ORIGINAL : (Token) swpair.get(1);
 		HCode hc = (tok==ORIGINAL) ? parent.convert(m) :
 		    hcf.convert( (HMethod)swpair.get(0) );
+		if (origcache!=null) {//put/get unmutated version to/from cache
+		    if (tok==ORIGINAL) origcache.put(m, hc);
+		    else hc = (HCode) origcache.get( swpair.get(0) );
+		}
 		try {
 		    if (hc!=null) hc = mutateHCode(hc.clone(m), tok);
 		} catch (CloneNotSupportedException ex) {
 		    Util.assert(false, "cloning HCode failed: "+ex);
 		}
 		return hc;
-	    };
-	}, true/* save cache */);
+	    }
+	}, true/* save cache */) {
+	    public void clear(HMethod m) {
+		// top cache responsible for origcache too.
+		super.clear(m);
+		if (origcache!=null) origcache.remove(m);
+	    }
+	};
 	this.ch = ch;
 	this.fm = new harpoon.Backend.Maps.CHFinalMap(ch);
     }
