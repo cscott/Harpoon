@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.93 2000-08-25 00:12:12 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.94 2000-10-12 22:32:01 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -193,10 +193,14 @@ public class SAMain extends harpoon.IR.Registration {
 	callGraph=null;// memory management.
  
 	if (LOOPOPTIMIZE) {
+	    // XXX: you might have to add a TypeSwitchRemover here, if
+	    //      LoopOptimize don't handle TYPESWITCHes. --CSA
 	    hcf=harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
 	    hcf=harpoon.Analysis.LowQuad.Loop.LoopOptimize.codeFactory(hcf);
 	}
 	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
+	// XXX: ToTree doesn't handle TYPESWITCHes right now.
+	hcf = new harpoon.IR.Quads.TypeSwitchRemover(hcf).codeFactory();
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
