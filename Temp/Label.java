@@ -6,7 +6,7 @@ package harpoon.Temp;
 /**
  * A <code>Label</code> represents a (symbolic) address in assembly language.
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Label.java,v 1.3.2.9 1999-09-11 20:06:43 cananian Exp $
+ * @version $Id: Label.java,v 1.3.2.10 2000-03-09 03:47:41 cananian Exp $
  */
 
 public class Label  {
@@ -37,7 +37,7 @@ public class Label  {
    * Makes a new label with an arbitrary name.
    */
    public Label() {
-	this("L" + count++);
+	this(".L" + count++);
    }
 
    public boolean equals(Object o) {
