@@ -42,9 +42,9 @@ public class Servo {
 	public synchronized void run() {
 	    while (true) {
 		wait();
-		car.move(servo, start);
+		car.moveLocal(servo, start);
 		sleep(time);
-		car.move(servo, stop);
+		car.moveLocal(servo, stop);
 	    }
 	}
 
