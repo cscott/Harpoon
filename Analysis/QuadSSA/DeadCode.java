@@ -20,7 +20,7 @@ import java.util.Hashtable;
  * unused and seeks to prove otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.11.2.6 1998-12-27 21:26:53 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.11.2.7 1999-01-23 07:58:18 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -67,7 +67,7 @@ public abstract class DeadCode  {
 	// evil: can't replace the header node. [ack]
 	for (int i=0; i<hce.length; i++)
 	    if (!(hce[i] instanceof HEADER))
-		Quad.replace(hce[i], hce[i].rename(nm));
+		Quad.replace(hce[i], hce[i].rename(nm, nm));
 
     } // end OPTIMIZE METHOD.
 

@@ -1,5 +1,14 @@
+---- Jan-23-98
+FLEX native backend TODO:
+- implement OffsetMap
+- write garbage-collector in C
+- write Quad-to-LowQuad translator (Scott will do)
+- write LowQuad-to-Tree translator.  Remember to preserve derivation.
+- write Tree-to-Instr pass (instruction selection)
+- do register allocation on Instrs (allocation, then construct stack frames,
+  then assignment)
 ---- Dec-31-98
-Make TempMap in QuadNoSSA/QuadSSA consistent with QuadFactory.tempFactory();
+X Make TempMap in QuadNoSSA/QuadSSA consistent with QuadFactory.tempFactory();
 Reclaim INSTANCEOF optimization opportunities by adding NULL check ahead of it.
 X Implement method & memory profiling:
 X   M classname method descriptor start_count end_count

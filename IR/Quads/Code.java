@@ -23,7 +23,7 @@ import java.util.Vector;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.6 1999-01-22 22:39:40 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.7 1999-01-23 07:58:19 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -109,6 +109,12 @@ public abstract class Code extends HCode {
 			s.push(next[i]);
 			visited.union(next[i]);
 		    }
+		// check that temps belong to q.
+		for (int j=0; j<2; j++) {
+		    Temp[] ta = (j==0)?q.use():q.def();
+		    for (int i=0; i<ta.length; i++)
+			Util.assert(ta[i].tempFactory()==qf.tempFactory());
+		}
 		// okay.
 		return q;
 	    }

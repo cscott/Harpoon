@@ -16,7 +16,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.12 1999-01-22 23:06:00 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.13 1999-01-23 07:58:20 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -79,13 +79,9 @@ public abstract class Quad
      *  <code>QuadFactory</code>.
      */
     public abstract Quad rename(QuadFactory qf, TempMap defMap,TempMap useMap);
-    /** Create a new <code>Quad</code> identical to the receiver, but 
-     *  with all <code>Temp</code>s renamed according to a mapping.
-     *  The new <code>Quad</code> will have no edges.<p>
-     *  The new <code>Quad</code> will come from the same 
-     *  <code>QuadFactory</code> as the receiver.
-     */
-    public final Quad rename(TempMap tm) { return rename(qf, tm, tm); }
+    public Quad rename(TempMap defMap,TempMap useMap) {
+	return rename(this.qf, defMap, useMap);
+    }
 
     // I want to get rid of these functions eventually.
     /* @deprecated does not preserve immutability. */
@@ -222,8 +218,17 @@ public abstract class Quad
     //-----------------------------------------------------
     // support cloning.  The pred/succ quads are not cloned, but the
     // array holding them is.
-    public final Object clone() { return clone(this.qf); }
-    public final Object clone(QuadFactory qf) { return rename(qf, null,null); }
+    public final Object clone() { return rename(this.qf, null, null); }
+    public final Object clone(QuadFactory qf, CloningTempMap tm) {
+	Quad qc = rename(qf, tm, tm);
+	// verify that cloning is legit.
+	for (int j=0; j<2; j++) {
+	    Temp[] ta = (j==0)?qc.use():qc.def();
+	    for (int i=0; i<ta.length; i++)
+		Util.assert(ta[i].tempFactory()==qf.tempFactory());
+	}
+	return qc;
+    }
 
     //-----------------------------------------------------
     /** Create a new copy of a string of <code>Quad</code>s starting at
@@ -232,31 +237,34 @@ public abstract class Quad
     {
 	Util.assert(header instanceof HEADER, 
 		    "Argument to Quad.clone() should be a HEADER.");
-	return copyone(qf, header, new Hashtable());
+	return copyone(qf, header, new Hashtable(),
+		       new CloningTempMap(header.qf.tempFactory(),
+					  qf.tempFactory()));
     }
-    private static Quad copyone(QuadFactory qf, Quad q, Hashtable old2new)
+    private static Quad copyone(QuadFactory qf, Quad q, Hashtable old2new,
+				CloningTempMap ctm)
     {
 	Quad r = (Quad) old2new.get(q);
 	// if we've already done this one, return previous clone.
 	if (r!=null) return r;
 	// clone the fields, add to hashtable.
-	r = (Quad) q.clone(qf);
+	r = (Quad) q.clone(qf, ctm);
 	old2new.put(q, r);
 	// fixup the edges.
 	for (int i=0; i<q.next.length; i++) {
 	    Util.assert(q.next[i].from == q);
-	    Quad to = copyone(qf, q.next[i].to, old2new);
+	    Quad to = copyone(qf, q.next[i].to, old2new, ctm);
 	    Quad.addEdge(r, q.next[i].from_index, to, q.next[i].to_index);
 	}
 	for (int i=0; i<q.prev.length; i++) {
 	    Util.assert(q.prev[i].to == q);
-	    Quad from = copyone(qf, q.prev[i].from, old2new);
+	    Quad from = copyone(qf, q.prev[i].from, old2new, ctm);
 	    Quad.addEdge(from, q.prev[i].from_index, r, q.prev[i].to_index);
 	}
 	return r;
     }
     // ----------------------------------------------------
-    // Useful for temp renaming.  Not exported.
+    // Useful for temp renaming.  Exported only to subclasses.
     protected final static Temp map(TempMap tm, Temp t) {
 	return (t==null)?null:(tm==null)?t:tm.tempMap(t);
     }

@@ -13,7 +13,7 @@ import java.util.Vector;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.5 1999-01-22 23:06:01 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.6 1999-01-23 07:58:21 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -22,7 +22,9 @@ final class UnHandler {
 	final HEADER old_header = (HEADER)code.getRootElement();
 	final METHOD old_method = (METHOD) old_header.next(1);
 	final HandlerMap hm = new HandlerMap(qf, old_method);
-	final StaticState ss = new StaticState(qf, qm, hm);
+	final CloningTempMap ctm = new CloningTempMap(code.qf.tempFactory(),
+						      qf.tempFactory());
+	final StaticState ss = new StaticState(qf, qm, hm, ctm);
 	visitAll(new Visitor(new TempInfo(), ss), old_header);
 	// now qm contains mappings from old to new, we just have to link them.
 	for (Enumeration e = code.getElementsE(); e.hasMoreElements(); ) {
@@ -34,14 +36,14 @@ final class UnHandler {
 			     qm.getHead((Quad)el[i].to()), el[i].which_pred());
 	}
 	// fixup try blocks.
-	final METHOD qM = new METHOD(qf, old_method, 
-				     ((METHOD)qm.getHead(old_method)).params(),
+	Temp[] qMp = ((METHOD)qm.getHead(old_method)).params();
+	final METHOD qM = new METHOD(qf, old_method, qMp,
 				     1 /* no HANDLERS any more */);
 	final HEADER qH = (HEADER)qm.getHead(old_header);
 	Quad.addEdge(qH, 1, qM, 0);
 	Edge e = old_method.nextEdge(0);
 	Quad.addEdge(qM, 0, qm.getHead((Quad)e.to()), e.which_pred());
-	hm.fixup(qf, qH, qm, ss.extra(0));
+	hm.fixup(qf, qH, qm, ss.extra(0), ctm);
 	// return new header.
 	return qH;
     }
@@ -175,7 +177,7 @@ final class UnHandler {
 
 	/** Link registered HANDLER and HandlerSet edges. */
 	final void fixup(QuadFactory qf, HEADER newQh,
-			 QuadMap qm, Temp Textra) {
+			 QuadMap qm, Temp Textra, CloningTempMap ctm) {
 	    METHOD newQm = (METHOD) newQh.next(1);
 	    // first attach throws to footer.
 	    FOOTER newQf = (FOOTER) newQh.next(0);
@@ -225,7 +227,7 @@ final class UnHandler {
 		Edge ed; Quad tail;
 		if (v.size()==0) {
 		    // MAKE impossible CJMP
-		    Temp Te = h.exceptionTemp();
+		    Temp Te = Quad.map(ctm, h.exceptionTemp());
 		    Quad q0 = new CONST(qf, h, Te, null, HClass.Void);
 		    Quad q1 = new OPER(qf, h, Qop.ACMPEQ, Textra,
 				       new Temp[] { Te, Te });
@@ -242,7 +244,8 @@ final class UnHandler {
 			ed = ((NOP)v.elementAt(i)).prevEdge(0);
 			Quad.addEdge((Quad)ed.from(), ed.which_succ(), q0, i);
 		    }
-		    MOVE q1 = new MOVE(qf, h, h.exceptionTemp(), Tex);
+		    MOVE q1 = new MOVE(qf, h, Quad.map(ctm, h.exceptionTemp()),
+				       Tex);
 		    Quad.addEdge(q0, 0, q1, 0);
 		    // link into handler.
 		    ed = qm.getFoot(h).nextEdge(0); tail = q1;
@@ -265,9 +268,11 @@ final class UnHandler {
 	final QuadFactory qf;
 	final QuadMap qm;
 	final HandlerMap hm;
+	final CloningTempMap ctm;
 	final Vector extra = new Vector(4);
-	StaticState(QuadFactory qf, QuadMap qm, HandlerMap hm) {
-	    this.qf = qf; this.qm = qm; this.hm = hm;
+	StaticState(QuadFactory qf, QuadMap qm, HandlerMap hm,
+		    CloningTempMap ctm) {
+	    this.qf = qf; this.qm = qm; this.hm = hm; this.ctm = ctm;
 	}
 	Temp extra(int i) {
 	    while (extra.size() <= i)
@@ -291,14 +296,14 @@ final class UnHandler {
 
 	/** By default, just clone and set all destinations to top. */
 	public void visit(Quad q) {
-	    Quad nq = (Quad) q.clone(qf);
+	    Quad nq = (Quad) q.clone(qf, ss.ctm);
 	    ss.qm.put(q, nq, nq);
 	    Temp d[] = q.def();
 	    for (int i=0; i<d.length; i++)
 		ti.put(d[i], Type.top);
 	}
 	public void visit(AGET q) {
-	    Quad nq = (Quad) q.clone(qf), head = nq;
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head = nq;
 	    Type Tobj = ti.get(q.objectref());
 	    Type Tind = ti.get(q.index());
 	    if (! (Tobj.isFixedArray() &&
@@ -316,7 +321,7 @@ final class UnHandler {
 	    ti.put(q.objectref(), alsoNonNull(Tobj));
 	}
 	public void visit(ALENGTH q) {
-	    Quad nq = (Quad) q.clone(qf), head = nq;
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head = nq;
 	    Type Tobj = ti.get(q.objectref());
 	    if (!Tobj.isNonNull())
 		head = nullCheck(q, head, q.objectref());
@@ -328,7 +333,7 @@ final class UnHandler {
 	    ti.put(q.objectref(), alsoNonNull(Tobj));
 	}
 	public void visit(ANEW q) {
-	    Quad nq = (Quad) q.clone(qf), head = nq;
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head = nq;
 	    Type Tdim = null;
 	    for (int i=q.dimsLength()-1; i>=0; i--) {
 		Tdim = ti.get(q.dims(i));
@@ -347,7 +352,7 @@ final class UnHandler {
 	    if (Tobj.isFixedArray() && q.offset() >= 0 &&
 		q.offset()+q.value().length <= Tobj.getArrayLength() ) {
 		// safe.
-		Quad nq = (Quad) q.clone(qf);
+		Quad nq = (Quad) q.clone(qf, ss.ctm);
 		ss.qm.put(q, nq, nq);
 	    } else { 
 		// not safe.  Break into components.
@@ -356,7 +361,7 @@ final class UnHandler {
 	    ti.put(q.objectref(), alsoNonNull(Tobj));
 	}
 	public void visit(ASET q) {
-	    Quad nq = (Quad) q.clone(qf), head = nq;
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head = nq;
 	    Type Tobj = ti.get(q.objectref());
 	    Type Tind = ti.get(q.index());
 	    // do COMPONENTOF test.
@@ -377,10 +382,11 @@ final class UnHandler {
 	public void visit(CALL q) {
 	    Quad nq, head;
 	    // if retex==null, add the proper checks.
-	    if (q.retex()!=null) nq=head=(Quad)q.clone(qf);
+	    if (q.retex()!=null) nq=head=(Quad)q.clone(qf, ss.ctm);
 	    else {
 		Temp Tex = ss.extra(0), Tnull = ss.extra(1), Tr = Tnull;
-		head = new CALL(qf, q, q.method(), q.params(), q.retval(),
+		head = new CALL(qf, q, q.method(), Quad.map(ss.ctm,q.params()),
+				Quad.map(ss.ctm, q.retval()),
 				Tex, q.isVirtual());
 		Quad q0 = new CONST(qf, q, Tnull, null, HClass.Void);
 		Quad q1 = new OPER(qf, q, Qop.ACMPEQ, Tr,
@@ -408,7 +414,7 @@ final class UnHandler {
 	/*public void visit(COMPONENTOF q);*/
 
 	public void visit(CONST q) {
-	    Quad nq = (Quad) q.clone(qf);
+	    Quad nq = (Quad) q.clone(qf, ss.ctm);
 	    ss.qm.put(q, nq, nq);
 	    if (q.type() == HClass.Int)
 		ti.put(q.dst(), new IntConst(((Integer)q.value()).intValue()));
@@ -419,7 +425,7 @@ final class UnHandler {
 	/*public void visit(DEBUG q);*/
 	/*public void visit(FOOTER q);*/
 	public void visit(GET q) {
-	    Quad nq = (Quad) q.clone(qf), head=nq;
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head=nq;
 	    if (!q.isStatic()) {
 		Type Tobj = ti.get(q.objectref());
 		if (!Tobj.isNonNull())
@@ -434,14 +440,14 @@ final class UnHandler {
 	/*public void visit(LABEL q);*/
 	/*public void visit(HANDLER q);*/
 	public void visit(METHOD q) {
-	    Quad nq = (Quad) q.clone(qf);
+	    Quad nq = (Quad) q.clone(qf, ss.ctm);
 	    for (int i=0; i<q.paramsLength(); i++)
 		ti.put(q.params(i), // 'this' is non-null for non-static.
 		       (i==0 && !q.isStatic()) ? Type.nonnull : Type.top);
 	    ss.qm.put(q, nq, nq);
 	}
 	public void visit(MONITORENTER q) {
-	    Quad nq = (Quad) q.clone(qf), head=nq;
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head=nq;
 	    Type Tlck = ti.get(q.lock());
 	    if (!Tlck.isNonNull())
 		head = nullCheck(q, head, q.lock());
@@ -449,7 +455,7 @@ final class UnHandler {
 	    ti.put(q.lock(), alsoNonNull(Tlck));
 	}
 	public void visit(MONITOREXIT q) {
-	    Quad nq = (Quad) q.clone(qf), head=nq;
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head=nq;
 	    Type Tlck = ti.get(q.lock());
 	    if (!Tlck.isNonNull())
 		head = nullCheck(q, head, q.lock());
@@ -457,20 +463,20 @@ final class UnHandler {
 	    ti.put(q.lock(), alsoNonNull(Tlck));
 	}
 	public void visit(MOVE q) {
-	    Quad nq = (Quad) q.clone(qf);
+	    Quad nq = (Quad) q.clone(qf, ss.ctm);
 	    Type Tsrc = ti.get(q.src());
 	    ss.qm.put(q, nq, nq);
 	    ti.put(q.dst(), Tsrc);
 	}
 	public void visit(NEW q) {
-	    Quad nq = (Quad) q.clone(qf);
+	    Quad nq = (Quad) q.clone(qf, ss.ctm);
 	    ss.qm.put(q, nq, nq);
 	    ti.put(q.dst(), Type.nonnull);
 	}
 	/*public void visit(NOP q);*/
 	public void visit(OPER q) {
 	    // if we were really ambitious, we'd do constant prop
-	    Quad nq = (Quad) q.clone(qf), head=nq;
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head=nq;
 	    Type Td = Type.top;
 	    if (q.operandsLength()==2) {
 		Type Tl = ti.get(q.operands(0));
@@ -518,7 +524,7 @@ final class UnHandler {
 	/*public void visit(PHI q);*/
 	/*public void visit(RETURN q);*/
 	public void visit(SET q) {
-	    Quad nq = (Quad) q.clone(qf), head=nq;
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head=nq;
 	    if (!q.isStatic()) {
 		Type Tobj = ti.get(q.objectref());
 		if (!Tobj.isNonNull())
@@ -530,7 +536,7 @@ final class UnHandler {
 	/*public void visit(SIGMA q);*/
 	/*public void visit(SWITCH q);*/
 	public void visit(THROW q) {
-	    Quad nq = (Quad) q.clone(qf), head=nq;
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head=nq;
 	    Type Tthr = ti.get(q.throwable());
 	    if (!Tthr.isNonNull())
 		head = nullCheck(q, head, q.throwable());
@@ -541,10 +547,12 @@ final class UnHandler {
 	    // translate as:
 	    //  if (obj!=null && !(obj instanceof class))
 	    //     throw new ClassCastException();
-	    Quad nq = (Quad) q.clone(qf), head;
+	    Quad nq = (Quad) q.clone(qf, ss.ctm), head;
 	    Type Tobj = ti.get(q.objectref());
 	    Temp Tr = ss.extra(0);
-	    Quad q1 = new INSTANCEOF(qf, q, Tr, q.objectref(), q.hclass());
+	    Quad q1 = new INSTANCEOF(qf, q, Tr,
+				     Quad.map(ss.ctm, q.objectref()),
+				     q.hclass());
 	    Quad q2 = new CJMP(qf, q, Tr, new Temp[0]);
 	    Quad q3 = _throwException_(qf, q, HCclasscastE);
 	    Quad.addEdges(new Quad[] { q1, q2, q3 });
@@ -553,7 +561,8 @@ final class UnHandler {
 	    if (!Tobj.isNonNull()) { // specially handle null.
 		Quad q4 = new CONST(qf, q, Tr, null, HClass.Void);
 		Quad q5 = new OPER(qf, q, Qop.ACMPEQ, Tr,
-				   new Temp[] { q.objectref(), Tr });
+				   new Temp[] { Quad.map(ss.ctm,q.objectref()),
+						Tr });
 		Quad q6 = new CJMP(qf, q, Tr, new Temp[0]);
 		Quad q7 = new PHI(qf, q, new Temp[0], 2); // a-ok merge
 		Quad.addEdges(new Quad[] { q4, q5, q6, head });
@@ -591,7 +600,7 @@ final class UnHandler {
 	    Temp Tr = ss.extra(0);
 	    Quad q0 = new CONST(qf, head, Tr, new Integer(0), HClass.Int);
 	    Quad q1 = new OPER(qf, head, Qop.ICMPEQ, Tr,
-			       new Temp[] { Tz, Tr });
+			       new Temp[] { Quad.map(ss.ctm,Tz), Tr });
 	    Quad q2 = new CJMP(qf, head, Tr, new Temp[0]);
 	    Quad q3 = _throwException_(qf, old, HCarithmeticE);
 	    Quad.addEdges(new Quad[] { q0, q1, q2, head });
@@ -603,7 +612,7 @@ final class UnHandler {
 	    Temp Tr = ss.extra(0);
 	    Quad q0 = new CONST(qf, head, Tr, new Long(0), HClass.Long);
 	    Quad q1 = new OPER(qf, head, Qop.LCMPEQ, Tr,
-			       new Temp[] { Tz, Tr });
+			       new Temp[] { Quad.map(ss.ctm, Tz), Tr });
 	    Quad q2 = new CJMP(qf, head, Tr, new Temp[0]);
 	    Quad q3 = _throwException_(qf, old, HCarithmeticE);
 	    Quad.addEdges(new Quad[] { q0, q1, q2, head });
@@ -613,7 +622,9 @@ final class UnHandler {
 	Quad componentCheck(Quad old, Quad head, Temp Tobj, Temp Tsrc) {
 	    QuadFactory qf = head.qf;
 	    Temp Tr = ss.extra(0);
-	    Quad q0 = new COMPONENTOF(qf, head, Tr, Tobj, Tsrc);
+	    Quad q0 = new COMPONENTOF(qf, head, Tr,
+				      Quad.map(ss.ctm, Tobj),
+				      Quad.map(ss.ctm, Tsrc));
 	    Quad q1 = new CJMP(qf, head, Tr, new Temp[0]);
 	    Quad q2 = _throwException_(qf, old, HCarraystoreE);
 	    Quad.addEdges(new Quad[] { q0, q1, q2 });
@@ -625,7 +636,7 @@ final class UnHandler {
 	    Temp Tr = ss.extra(0);
 	    Quad q0 = new CONST(qf, head, Tr, null, HClass.Void);
 	    Quad q1 = new OPER(qf, head, Qop.ACMPEQ, Tr,
-			       new Temp[] { Tobj, Tr });
+			       new Temp[] { Quad.map(ss.ctm, Tobj), Tr });
 	    Quad q2 = new CJMP(qf, head, Tr, new Temp[0]);
 	    Quad q3 = _throwException_(qf, old, HCnullpointerE);
 	    Quad.addEdges(new Quad[] { q0, q1, q2, head });
@@ -635,18 +646,24 @@ final class UnHandler {
 	Quad boundsCheck(Quad old, Quad head, int length, Temp Ttst) {
 	    Quad q0 = new CONST(qf, head, ss.extra(0),
 				new Integer(length), HClass.Int);
-	    Quad q1 = _boundsCheck_(old, head, ss.extra(0), Ttst, ss.extra(1));
+	    Quad q1 = _boundsCheck_(old, head, ss.extra(0),
+				    Quad.map(ss.ctm, Ttst), ss.extra(1));
 	    Quad.addEdge(q0, 0, q1, 0);
 	    return q0;
 	}
 	Quad boundsCheck(Quad old, Quad head, Temp Tobj, Temp Ttst) {
-	    Quad q0 = new ALENGTH(qf, head, ss.extra(0), Tobj);
-	    Quad q1 = _boundsCheck_(old, head, ss.extra(0), Ttst, ss.extra(1));
+	    Quad q0 = new ALENGTH(qf, head, ss.extra(0),
+				  Quad.map(ss.ctm, Tobj));
+	    Quad q1 = _boundsCheck_(old, head, ss.extra(0),
+				    Quad.map(ss.ctm, Ttst), ss.extra(1));
 	    Quad.addEdge(q0, 0, q1, 0);
 	    return q0;
 	}
 	private Quad _boundsCheck_(Quad old, Quad head, Temp Tlen, Temp Ttst,
 				   Temp Textra1) {
+	    Util.assert(Tlen.tempFactory()==head.qf.tempFactory());
+	    Util.assert(Ttst.tempFactory()==head.qf.tempFactory());
+	    Util.assert(Textra1.tempFactory()==head.qf.tempFactory());
 	    QuadFactory qf = head.qf;
 	    Quad q0 = new OPER(qf, head, Qop.ICMPGT, Tlen,
 			       new Temp[] { Tlen, Ttst });
@@ -670,7 +687,7 @@ final class UnHandler {
 	    Temp Tz = ss.extra(0);
 	    Quad q0 = new CONST(qf, head, Tz, new Integer(0), HClass.Int);
 	    Quad q1 = new OPER(qf, head, Qop.ICMPGT, Tz,
-			       new Temp[] { Tz, Ttst });
+			       new Temp[] { Tz, Quad.map(ss.ctm, Ttst) });
 	    Quad q2 = new CJMP(qf, head, Tz, new Temp[0]);
 	    Quad q3 = _throwException_(qf, old, HCnegativearrayE);
 	    Quad.addEdges(new Quad[] { q0, q1, q2, head });

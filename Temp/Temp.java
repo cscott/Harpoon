@@ -12,7 +12,7 @@ import harpoon.Util.ArrayFactory;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14.2.5 1998-12-27 21:09:00 cananian Exp $
+ * @version $Id: Temp.java,v 1.14.2.6 1999-01-23 07:58:21 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
@@ -55,6 +55,8 @@ public class Temp implements Cloneable {
   public String name() { return name; }
   /** Returns a string representation of this temporary. */
   public String toString() { return name; }
+  /** Returns the tempFactory of this temporary. */
+  public TempFactory tempFactory() { return tf; }
 
   /** Clones a <code>Temp</code> into a different <code>TempFactory</code>. */
   public Temp clone(TempFactory tf) {
