@@ -1,4 +1,5 @@
 .jdproperties
+gnu
 silicon
 harpoon
 harpoon.tgz
@@ -11,3 +12,5 @@ cvs-tmp
 *.ps
 *TIMESTAMP
 VERSIONS
+ChangeLog
+jdb
