@@ -10,19 +10,19 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.CALL;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
 import harpoon.Util.Util;
-import harpoon.Util.Worklist;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import harpoon.Util.WorkSet;
+
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.Map;
+import java.util.Set;
 /**
  * <code>CallGraph</code> constructs a simple directed call graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.1.2.1 1999-09-09 21:12:16 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.1.2.2 1999-10-14 19:59:04 cananian Exp $
  */
 
 public class CallGraph  {
@@ -48,40 +48,39 @@ public class CallGraph  {
 	    final Set s = new HashSet();
 	    final HCode hc = hcf.convert(m);
 	    if (hc==null) { cache.put(m,new HMethod[0]); return calls(m); }
-	    for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
-		Quad q = (Quad) e.nextElement();
+	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
+		Quad q = (Quad) it.next();
 		if (!(q instanceof CALL)) continue;
 		HMethod cm = ((CALL)q).method();
 		if (s.contains(cm)) continue; // duplicate.
 		// for 'special' invocations, we know the class exactly.
 		if ((!((CALL)q).isVirtual()) || ((CALL)q).isStatic()) {
-		    s.union(cm);
+		    s.add(cm);
 		    continue;
 		}
 		// all methods of children of this class are reachable.
-		Worklist W = new HashSet();
-		W.push(cm.getDeclaringClass());
+		WorkSet W = new WorkSet();
+		W.add(cm.getDeclaringClass());
 		while (!W.isEmpty()) {
-		    HClass c = (HClass) W.pull();
+		    HClass c = (HClass) W.pop();
 		    // if this class overrides the method, add it to vector.
 		    try {
-			s.union(c.getDeclaredMethod(cm.getName(),
+			s.add(c.getDeclaredMethod(cm.getName(),
 						    cm.getDescriptor()));
 		    } catch (NoSuchMethodError nsme) { }
 		    // recurse through all children of this method.
-		    for (Iterator it=ch.children(c).iterator(); it.hasNext();)
-			W.push(it.next());
+		    for (Iterator it2=ch.children(c).iterator();it2.hasNext();)
+			W.add(it2.next());
 		}
 	    }
 	    // finally, copy result vector to retval array.
-	    retval = new HMethod[s.size()];
-	    s.copyInto(retval);
+	    retval = (HMethod[]) s.toArray(new HMethod[s.size()]);
 	    // and cache result.
 	    cache.put(m, retval);
 	}
 	return retval;
     }
-    final private Hashtable cache = new Hashtable();
+    final private Map cache = new HashMap();
 
     /** Return a list of all possible methods called by this method at this call site. */
     public HMethod[] calls(final HMethod m, final CALL cs) {
@@ -92,23 +91,20 @@ public class CallGraph  {
 	if ((!cs.isVirtual()) || cs.isStatic()) return new HMethod[]{ cm };
 	final Set s = new HashSet();
 	// all methods of children of this class are reachable.
-	Worklist W = new HashSet();
-	W.push(cm.getDeclaringClass());
+	WorkSet W = new WorkSet();
+	W.add(cm.getDeclaringClass());
 	while (!W.isEmpty()) {
-	    HClass c = (HClass) W.pull();
+	    HClass c = (HClass) W.pop();
 	    // if this class overrides the method, add it to vector.
 	    try {
-		s.union(c.getDeclaredMethod(cm.getName(),
+		s.add(c.getDeclaredMethod(cm.getName(),
 					    cm.getDescriptor()));
 	    } catch (NoSuchMethodError nsme) { }
 	    // recurse through all children of this method.
 	    for (Iterator it=ch.children(c).iterator(); it.hasNext(); )
-		W.push(it.next());
+		W.add(it.next());
 	}
 	// finally, copy result vector to retval array.
-	HMethod[] retval = new HMethod[s.size()];
-	s.copyInto(retval);
-	return retval;
+	return (HMethod[]) s.toArray(new HMethod[s.size()]);
     }
-
 }
