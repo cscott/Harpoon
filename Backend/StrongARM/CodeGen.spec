@@ -64,7 +64,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.115 2000-01-05 23:22:04 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.116 2000-01-09 00:24:21 duncan Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -409,9 +409,9 @@ import java.util.Iterator;
 		   "Update the spec file to handle large SP offsets");
       if (stackOffset!=0) // optimize for common case.
 	  emit( ROOT, "add `d0, `s0, #" + stackOffset, SP , SP );
-      if (ROOT.retval==null) {
+      if (ROOT.getRetval()==null) {
 	  // this is a void method.  don't bother to emit move.
-      } else if (ROOT.retval.isDoubleWord()) {
+      } else if (ROOT.getRetval().isDoubleWord()) {
 	retval = makeTwoWordTemp(retval);
 	// not certain an emitMOVE is legal with the l/h modifiers
 	emit( ROOT, "mov `d0l, `s0", retval, r0 );
@@ -1157,7 +1157,7 @@ CONST<p>(c) = i %{
 
 MOVE(TEMP(dst), CONST<l,d>(c)) %{
     Temp i = makeTwoWordTemp(dst);
-    CONST cROOT = (CONST) ROOT.src;
+    CONST cROOT = (CONST) ROOT.getSrc();
     long val = (cROOT.type()==Type.LONG) ? cROOT.value.longValue()
 	: Double.doubleToLongBits(cROOT.value.doubleValue());
     // DOUBLEs are stored "backwards" on StrongARM.  No, I have no clue
@@ -1175,7 +1175,7 @@ MOVE(TEMP(dst), CONST<l,d>(c)) %{
 
 MOVE(TEMP(dst), CONST<f,i>(c)) %{
     Temp i = makeTemp(dst);	
-    CONST cROOT = (CONST) ROOT.src;
+    CONST cROOT = (CONST) ROOT.getSrc();
     int val = (cROOT.type()==Type.INT) ? cROOT.value.intValue()
 	: Float.floatToIntBits(cROOT.value.floatValue());
     emit(new Instr( instrFactory, ROOT,
@@ -1785,7 +1785,7 @@ MOVE(MEM<s:16,u:16>(d), src) %{ /* hack. ARMv4 has a special instr for this. */
 }%
 MOVE(MEM<s:8,u:8,p,i,f>(d), src) %{ // addressing mode 2
     String suffix="";
-    if (((MEM)ROOT.dst).isSmall() && ((MEM)ROOT.dst).bitwidth()==8)
+    if (((MEM)ROOT.getDst()).isSmall() && ((MEM)ROOT.getDst()).bitwidth()==8)
 	 suffix+="b";
     emit(new InstrMEM(instrFactory, ROOT,
 		      "str"+suffix+" `s0, [`s1]",
@@ -1793,7 +1793,7 @@ MOVE(MEM<s:8,u:8,p,i,f>(d), src) %{ // addressing mode 2
 }%
 MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, d1, d2)), src) %{ // addressing mode 2
     String suffix="";
-    if (((MEM)ROOT.dst).isSmall() && ((MEM)ROOT.dst).bitwidth()==8)
+    if (((MEM)ROOT.getDst()).isSmall() && ((MEM)ROOT.getDst()).bitwidth()==8)
 	 suffix+="b";
     emit(new InstrMEM(instrFactory, ROOT,
 		      "str"+suffix+" `s0, [`s1, `s2]",
@@ -1803,7 +1803,7 @@ MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, d, CONST<i,p>(c))), src)
 %pred %( is12BitOffset(c) )%
 %{
     String suffix="";
-    if (((MEM)ROOT.dst).isSmall() && ((MEM)ROOT.dst).bitwidth()==8)
+    if (((MEM)ROOT.getDst()).isSmall() && ((MEM)ROOT.getDst()).bitwidth()==8)
 	 suffix+="b";
     emit(new InstrMEM(instrFactory, ROOT,
 		      "str"+suffix+" `s0, [`s1, #"+c+"]",
@@ -1813,7 +1813,7 @@ MOVE(MEM<s:8,u:8,p,i,f>(BINOP<p>(ADD, CONST<i,p>(c), d)), src)
 %pred %( is12BitOffset(c) )%
 %{
     String suffix="";
-    if (((MEM)ROOT.dst).isSmall() && ((MEM)ROOT.dst).bitwidth()==8)
+    if (((MEM)ROOT.getDst()).isSmall() && ((MEM)ROOT.getDst()).bitwidth()==8)
 	 suffix+="b";
     emit(new InstrMEM(instrFactory, ROOT,
 		      "str"+suffix+" `s0, [`s1, #"+c+"]",
@@ -1929,23 +1929,23 @@ NATIVECALL(retval, NAME(funcLabel), arglist) %{
 }%
 
 DATA(CONST<i,f>(exp)) %{
-    int i = (ROOT.data.type()==Type.INT) ? exp.intValue()
+    int i = (ROOT.getData().type()==Type.INT) ? exp.intValue()
 		: Float.floatToIntBits(exp.floatValue());
     String lo = "0x"+Integer.toHexString(i);
     emitDIRECTIVE( ROOT, "\t.word "+lo+" @ "+exp);
 }%
 
 DATA(CONST<l,d>(exp)) %{
-    long l = (ROOT.data.type()==Type.LONG) ? exp.longValue()
+    long l = (ROOT.getData().type()==Type.LONG) ? exp.longValue()
 		: Double.doubleToLongBits(exp.doubleValue());
     String lo = "0x"+Integer.toHexString((int)l);
     String hi = "0x"+Integer.toHexString((int)(l>>32));
     // doubles are stored in reverse order on the StrongARM.  No, I don't
     // know why.  I suspect the StrongARM library designers were on *crack*!
-    if (ROOT.data.type()==Type.LONG)
+    if (ROOT.getData().type()==Type.LONG)
 	emitDIRECTIVE( ROOT, "\t.word "+lo+" @ lo("+exp+")");
     emitDIRECTIVE( ROOT, "\t.word "+hi+" @ hi("+exp+")");
-    if (ROOT.data.type()==Type.DOUBLE)
+    if (ROOT.getData().type()==Type.DOUBLE)
 	emitDIRECTIVE( ROOT, "\t.word "+lo+" @ lo("+exp+")");
 }%
 

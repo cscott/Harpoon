@@ -54,7 +54,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.19 2000-01-02 21:28:49 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.20 2000-01-09 00:24:11 duncan Exp $
  */
 %%
     private Instr root;
@@ -928,7 +928,7 @@ METHOD(params) %{
 
 // st* rs2, [ rs0 + rs1 ]
 MOVE(MEM<s:8,u:8,s:16,u:16,i,l,f,p,d>(BINOP(ADD, e1, e2)), e3) %{
-    MEM dst = (MEM)(((MOVE)ROOT).dst);
+    MEM dst = (MEM)(((MOVE)ROOT).getDst());
     String suff = (dst.isDoubleWord()) ? "h" : "";
     emitMEM (ROOT, "st"+storeSuffix(dst) + " `s2"+suff + ", [`s0 + `s1]\n",
                    null, new Temp[] { e1, e2, e3 });
@@ -938,7 +938,7 @@ MOVE(MEM<s:8,u:8,s:16,u:16,i,l,f,p,d>(BINOP(ADD, e1, e2)), e3) %{
 MOVE(MEM<s:8,u:8,s:16,u:16,i,l,f,p,d>(BINOP(ADD, e1, CONST<i>(c))), e2)
 %pred %( is13bit(c) )%
 %{
-    MEM dst = (MEM)(((MOVE)ROOT).dst);
+    MEM dst = (MEM)(((MOVE)ROOT).getDst());
     String suff = (dst.isDoubleWord()) ? "h" : "";
     emitMEM (ROOT, "st"+storeSuffix(dst) + " `s1"+suff + ", [ `s0 + "+c+" ]\n",
                    null, new Temp[] { e1, e2 });
@@ -948,7 +948,7 @@ MOVE(MEM<s:8,u:8,s:16,u:16,i,l,f,p,d>(BINOP(ADD, e1, CONST<i>(c))), e2)
 MOVE(MEM<s:8,u:8,s:16,u:16,i,l,f,p,d>(BINOP(ADD, CONST<i>(c), e1)), e2)
 %pred %( is13bit(c) )%
 %{
-    MEM dst = (MEM)(((MOVE)ROOT).dst);
+    MEM dst = (MEM)(((MOVE)ROOT).getDst());
     String suff = (dst.isDoubleWord()) ? "h" : "";
     emitMEM (ROOT, "st"+storeSuffix(dst) + " `s1"+suff + ", [ `s0 + "+c+" ]\n",
                    null, new Temp[] { e1, e2 });
@@ -958,7 +958,7 @@ MOVE(MEM<s:8,u:8,s:16,u:16,i,l,f,p,d>(BINOP(ADD, CONST<i>(c), e1)), e2)
 MOVE(MEM<s:8,u:8,s:16,u:16,i,l,f,p,d>(CONST<i>(c)), e) 
 %pred %( is13bit(c) )%
 %{
-    MEM dst = (MEM)(((MOVE)ROOT).dst);
+    MEM dst = (MEM)(((MOVE)ROOT).getDst());
     String suff = (dst.isDoubleWord()) ? "h" : "";
     emitMEM (ROOT, "st"+storeSuffix(dst) + " `s0"+suff + ", [ "+c+" ]\n",
                    null, new Temp[] { e });
@@ -966,7 +966,7 @@ MOVE(MEM<s:8,u:8,s:16,u:16,i,l,f,p,d>(CONST<i>(c)), e)
 
 // st* rs1, [ rs0 ]
 MOVE(MEM<s:8,u:8,s:16,u:16,i,l,f,p,d>(e1), e2) %{
-    MEM dst = (MEM)(((MOVE)ROOT).dst);
+    MEM dst = (MEM)(((MOVE)ROOT).getDst());
     String suff = (dst.isDoubleWord()) ? "h" : "";
     emitMEM (ROOT, "st"+storeSuffix(dst) + " `s1"+suff + ", [`s0]\n",
                    null, new Temp[] { e1, e2 });
