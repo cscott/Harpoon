@@ -15,7 +15,7 @@ import java.util.Enumeration;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.2 1998-10-12 02:30:00 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.3 1998-10-12 10:11:06 cananian Exp $
  */
 
 public class ClassHierarchy  {
@@ -33,26 +33,39 @@ public class ClassHierarchy  {
     }
     /** Returns an enumeration of all reachable/usable classes. */ 
     public Enumeration classes() {
-	return children.keys();
+	if (_classes == null) {
+	    _classes = new Set();
+	    for (Enumeration e = children.keys(); e.hasMoreElements(); )
+		_classes.union(e.nextElement());
+	    for (Enumeration e = children.elements(); e.hasMoreElements(); ){
+		HClass[] ch = (HClass[]) e.nextElement();
+		for (int i=0; i<ch.length; i++)
+		    _classes.union(ch[i]);
+	    }
+	}
+	return _classes.elements();
     }
+    private Set _classes = null;
+
     /** Returns a human-readable representation of the hierarchy. */
     public String toString() {
 	// not the most intuitive representation...
-	StringBuffer sb = new StringBuffer("(");
-	for (Enumeration e = classes(); e.hasMoreElements(); ) {
+	StringBuffer sb = new StringBuffer("{");
+	for (Enumeration e = children.keys(); e.hasMoreElements(); ) {
 	    HClass c = (HClass) e.nextElement();
 	    sb.append(c.toString());
-	    sb.append("=>");
+	    sb.append("={");
 	    HClass cc[] = children(c);
 	    for (int i=0; i<cc.length; i++) {
 		sb.append(cc[i].toString());
 		if (i<cc.length-1)
-		    sb.append(", ");
+		    sb.append(',');
 	    }
+	    sb.append('}');
 	    if (e.hasMoreElements())
-		sb.append("; ");
+		sb.append(", ");
 	}
-	sb.append(')');
+	sb.append('}');
 	return sb.toString();
     }
 
@@ -66,18 +79,17 @@ public class ClassHierarchy  {
 
 	// worklist algorithm.
 	Worklist W = new Set();
-	W.push(root);
+	methodPush(root, W, classMethodsUsed);
+	discoverClass(root.getDeclaringClass(), W, done,
+		      classKnownChildren, classMethodsUsed);
 	while (!W.isEmpty()) {
 	    HMethod m = (HMethod) W.pull();
 	    done.union(m); // mark us done with this method.
-	    // Mark this method as used in its class
+	    // This method should be marked as usable.
 	    {
 		Set s = (Set) classMethodsUsed.get(m.getDeclaringClass());
-		if (s==null) { 
-		    s = new Set(); 
-		    classMethodsUsed.put(m.getDeclaringClass(),s);
-		}
-		s.union(m);
+		Util.assert(s!=null);
+		Util.assert(s.contains(m));
 	    }
 	    // look at the hcode for the method.
 	    HCode hc = m.getCode("quad-ssa");
@@ -165,7 +177,7 @@ public class ClassHierarchy  {
 		try {
 		    HMethod nm = c.getDeclaredMethod(m.getName(),
 						     m.getDescriptor());
-		    if (!done.contains(nm)) W.push(nm);
+		    if (!done.contains(nm)) methodPush(nm, W, cmu);
 		} catch (NoSuchMethodError nsme) { }
 	    }
 	}
@@ -188,7 +200,7 @@ public class ClassHierarchy  {
 		HMethod nm = c.getDeclaredMethod(m.getName(),
 						 m.getDescriptor());
 		if (done.contains(nm)) continue; // nothing new to discover.
-		W.push(nm);
+		methodPush(nm, W, cmu);
 	    } catch (NoSuchMethodError e) { }
 	    // add all children to the worklist.
 	    if (!ckc.containsKey(c)) discoverClass(c,W,done,ckc,cmu);
@@ -203,8 +215,20 @@ public class ClassHierarchy  {
     private void discoverSpecial(HMethod m, 
 			 Worklist W, Set done, Hashtable ckc, Hashtable cmu) {
 	if (!done.contains(m))
-	    W.push(m);
+	    methodPush(m, W, cmu);
     }
+    private void methodPush(HMethod m, Worklist W, Hashtable cmu) {
+	// Add to worklist
+	W.push(m);
+	// mark this method as usable.
+	Set s = (Set) cmu.get(m.getDeclaringClass());
+	if (s==null) { 
+	    s = new Set(); 
+	    cmu.put(m.getDeclaringClass(),s);
+	}
+	s.union(m);
+    }
+
     /* ALGORITHM:
        for each class:
         table of all methods used in that class.

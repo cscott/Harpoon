@@ -12,7 +12,7 @@ import java.util.Vector;
  * <code>CallGraph</code> constructs a simple directed call graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.2 1998-10-12 02:30:00 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.3 1998-10-12 10:11:05 cananian Exp $
  */
 
 public class CallGraph  {
@@ -27,6 +27,7 @@ public class CallGraph  {
 	if (retval==null) {
 	    final Set s = new Set();
 	    final HCode hc = m.getCode("quad-ssa");
+	    if (hc==null) {cache.put(m,new HMethod[0]); return calls(m); }
 	    for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
 		Quad q = (Quad) e.nextElement();
 		if (!(q instanceof CALL)) continue;
