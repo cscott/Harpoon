@@ -48,15 +48,12 @@ VALUETYPE T(TRANSJNI_Get)(JNIEnv *env, jobject obj, jfieldID fieldID) {
   struct commitrec *cr = currTrans(env);
   struct vinfo *v;
   if (cr) { /* in a transaction! */
-    assert (fieldID->trans_isvalid);
-    EXACT_ensureReader(o, cr);
-    v = T(EXACT_setReadFlags)(o, fieldID->offset - OFFSETBASE(o),
-			      fieldID->trans_bitoff, 1<<fieldID->trans_bitnum,
-			      NULL, cr);
+    if (cr->state==ABORTED) { TRANSJNI_Abort(env); return (VALUETYPE)0; }
+    v = EXACT_ensureReader(o, cr);
+    T(EXACT_checkReadField)(o, fieldID->offset - OFFSETBASE(o));
     return T(EXACT_readT)(o, fieldID->offset - OFFSETBASE(o), v, cr);
   } else { /* non-transactional read */
-    return T(EXACT_readNT)(o, fieldID->offset - OFFSETBASE(o),
-			   fieldID->trans_bitoff, 1<<fieldID->trans_bitnum);
+    return T(EXACT_readNT)(o, fieldID->offset - OFFSETBASE(o));
   }
 }
 
@@ -66,17 +63,12 @@ void T(TRANSJNI_Set)(JNIEnv *env, jobject obj, jfieldID fieldID,
   struct commitrec *cr = currTrans(env);
   struct vinfo *v;
   if (cr) { /* in a transaction! */
-    assert (fieldID->trans_isvalid);
+    if (cr->state==ABORTED) { TRANSJNI_Abort(env); return; /* bail */ }
     v = EXACT_ensureWriter(o, cr);
-    if (v==NULL) { /* transaction wants to commit suicide */
-      TRANSJNI_Abort(env); return; // bail.
-    }
-    T(EXACT_setWriteFlags)(o, fieldID->offset - OFFSETBASE(o),
-			   fieldID->trans_bitoff, 1<<fieldID->trans_bitnum);
+    T(EXACT_checkWriteField)(o, fieldID->offset - OFFSETBASE(o));
     T(EXACT_writeT)(o, fieldID->offset - OFFSETBASE(o), value, v);
   } else { /* non-transactional write */
-    T(EXACT_writeNT)(o, fieldID->offset - OFFSETBASE(o), value,
-		     fieldID->trans_bitoff, 1 << fieldID->trans_bitnum);
+    T(EXACT_writeNT)(o, fieldID->offset - OFFSETBASE(o), value);
   }
 }
 
@@ -89,11 +81,12 @@ VALUETYPE T(TRANSJNI_Get_Array)(JNIEnv *env, struct aarray *arr, int index) {
   struct vinfo *v;
   unsigned offset = sizeof(VALUETYPE) * index;
   if (cr) { /* in a transaction! */
-    EXACT_ensureReader(o, cr);
-    v = T(EXACT_setReadFlags_Array)(o, offset, 0, 1 << (index & 31), NULL, cr);
+    if (cr->state==ABORTED) { TRANSJNI_Abort(env); return (VALUETYPE)0; }
+    v = EXACT_ensureReader(o, cr);
+    T(EXACT_checkReadField_Array)(o, offset);
     return T(EXACT_readT_Array)(o, offset, v, cr);
   } else { /* non-transactional read */
-    return T(EXACT_readNT_Array)(o, offset, 0, 1 << (index & 31));
+    return T(EXACT_readNT_Array)(o, offset);
   }
 }
 
@@ -105,14 +98,12 @@ void T(TRANSJNI_Set_Array)(JNIEnv *env, struct aarray *arr, int index,
   struct vinfo *v;
   unsigned offset = sizeof(VALUETYPE) * index;
   if (cr) { /* in a transaction! */
+    if (cr->state==ABORTED) { TRANSJNI_Abort(env); return; /* bail */ }
     v = EXACT_ensureWriter(o, cr);
-    if (v==NULL) { /* transaction wants to commit suicide */
-      TRANSJNI_Abort(env); return; // bail.
-    }
-    T(EXACT_setWriteFlags_Array)(o, offset, 0, 1 << (index & 31));
+    T(EXACT_checkWriteField_Array)(o, offset);
     T(EXACT_writeT_Array)(o, offset, value, v);
   } else { /* non-transactional write */
-    T(EXACT_writeNT_Array)(o, offset, value, 0, 1 << (index & 31));
+    T(EXACT_writeNT_Array)(o, offset, value);
   }
 }
 

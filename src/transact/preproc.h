@@ -17,9 +17,13 @@
 #  define T(x) x1(x,VALUENAME)
 #  define TA(x) T(A(x))
 
+# define PTRBITS (SIZEOF_VOID_P*8)
 # define FIELDBASE(obj) \
+	OBJ_OR_ARRAY(obj->field_start,((struct aarray *)obj)->element_start+\
+                                (((((struct aarray *)obj)->length+PTRBITS-1) &\
+				  (~(PTRBITS-1)))>>3))
+# define FLAGBASE(obj) \
 	OBJ_OR_ARRAY(obj->field_start,((struct aarray *)obj)->element_start)
-# define FLAGBASE(obj) (obj->field_start)
 # endif /* !NO_VALUETYPE */
 
 #else /* clean up after ourself */
@@ -31,5 +35,8 @@
 # undef x2
 # undef OBJ_OR_ARRAY
 # undef BASE
+# undef FIELDBASE
+# undef FLAGBASE
+# undef PTRBITS
 
 #endif

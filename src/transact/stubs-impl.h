@@ -4,9 +4,7 @@
 
 ///////////////////////////////////////////////////////////////////////////
 #if !defined(NO_VALUETYPE)
-extern inline VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset,
-					 unsigned flag_offset,
-					 unsigned flag_bit) {
+extern inline VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) {
   return *((VALUETYPE*)(FIELDBASE(obj)+offset));
 }
 // must have already recorded itself as a reader (set flags, etc)
@@ -17,8 +15,7 @@ extern inline VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
   return *((VALUETYPE*)(FIELDBASE(obj)+offset));
 }
 extern inline void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
-				     VALUETYPE value,
-				     unsigned flag_offset, unsigned flag_bit) {
+				     VALUETYPE value) {
   *((VALUETYPE*)(FIELDBASE(obj)+offset)) = value;
 }
 extern inline void TA(EXACT_writeT)(struct oobj *obj, unsigned offset,
@@ -26,29 +23,25 @@ extern inline void TA(EXACT_writeT)(struct oobj *obj, unsigned offset,
   assert(version!=NULL);
   *((VALUETYPE*)(FIELDBASE(obj)+offset)) = value;
 }
-extern inline struct vinfo *TA(EXACT_setReadFlags)
-     (struct oobj *obj, unsigned offset,
-      unsigned flag_offset, unsigned flag_bit,
-      struct vinfo *version, struct commitrec*cr/*this trans*/) {
-  assert(cr!=NULL);
+extern inline void TA(EXACT_checkReadField)(struct oobj *obj, unsigned offset){
   /* do nothing */
-  return NULL;
 }
-extern inline void TA(EXACT_setWriteFlags)
-     (struct oobj *obj, unsigned offset,
-      unsigned flag_offset, unsigned flag_bit) {
+extern inline void TA(EXACT_checkWriteField)(struct oobj *obj,unsigned offset){
   /* do nothing */
 }
 #endif
 #if defined(NO_VALUETYPE)
-extern inline void EXACT_ensureReader(struct oobj *obj, struct commitrec *cr) {
+extern inline struct vinfo *EXACT_ensureReader(struct oobj *obj,
+					       struct commitrec *cr) {
   /* do nothing */
+  assert(currentTrans!=NULL);
+  return NULL;
 }
 extern inline struct vinfo *EXACT_ensureWriter(struct oobj *obj,
 					       struct commitrec *currentTrans){
   /* do nothing */
   assert(currentTrans!=NULL);
-  return (struct vinfo *)1;// 'null' indicates we want to abort.
+  return NULL;
 }
 #endif
 

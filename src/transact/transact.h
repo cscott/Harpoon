@@ -7,6 +7,7 @@
 //#include "asm/atomicity.h" /* for compare_and_swap */
 #include "asm/llsc.h" /* for load-linked */
 #include "config.h" /* for OBJECT_PADDING */
+#include "transact/transact-ty.h" /* versionPair, opstatus, killer */
 
 /* package name for CommitRecord & etc */
 #define TRANSPKG "harpoon/Runtime/Transactions/"
@@ -15,7 +16,7 @@
 
 // OBJ_CHUNK_SIZE must be larger than zero and divisible by eight
 #ifndef OBJ_CHUNK_SIZE
-# define OBJ_CHUNK_SIZE 24
+# define OBJ_CHUNK_SIZE (0x80000000/*24*/)
 #endif
 #define INITIAL_CACHE_SIZE 24
 
@@ -26,13 +27,15 @@ struct commitrec {
     char _padding_[OBJECT_PADDING]; /* by default, OBJECT_PADDING is zero */
     /* keep the order of these fields synchronized with CommitRecord.java */
     struct commitrec *parent;/* Transaction that this depends upon, if any. */
-#   define WAITING   /*0*/ harpoon_Runtime_Transactions_CommitRecord_WAITING
-#   define COMMITTED /*1*/ harpoon_Runtime_Transactions_CommitRecord_COMMITTED
-#   define ABORTED   /*2*/ harpoon_Runtime_Transactions_CommitRecord_ABORTED
     jint state; /* initialized to W and write-once to C or A */
 #ifdef COMMITREC_PRIVATE /* private variables */
     jint retry_count;
 #endif
+};
+enum commitstatus {
+  WAITING=harpoon_Runtime_Transactions_CommitRecord_WAITING,     /* 0 */
+  COMMITTED=harpoon_Runtime_Transactions_CommitRecord_COMMITTED, /* 1 */
+  ABORTED=harpoon_Runtime_Transactions_CommitRecord_ABORTED      /* 2 */
 };
 
 /* A simple linked list of transaction identifiers */
@@ -47,11 +50,12 @@ struct vinfo {
     struct commitrec *transid; /* transaction id */ 
 #if 0
     struct tlist readers; /* list of readers.  first node is inlined. */
-#endif
     /* anext is the 'real' next version, which may be a parent of this one. */
     /* wnext is the "next transaction not my parent" */
     struct vinfo *anext; /* next version to look at if transid is aborted. */
     struct vinfo *wnext; /* next version to look at if transid is waiting. */
+#endif
+    struct vinfo *next; /* simple linked list of versions. */
     /* cached values are below this point. */
     char _direct_fields[0/*OBJ_CHUNK_SIZE*/];
     char _hashed_fields[0/* n times INITIAL_CACHE_SIZE */];
@@ -60,8 +64,17 @@ struct vinfo {
 #define HASHED_FIELDS(v) ((void*)v->_direct_fields+OBJ_CHUNK_SIZE)
 
 /* functions on commit records */
-static inline jint CommitCR(struct commitrec *cr) {
-    jint s;
+static inline struct commitrec *AllocCR() {
+#ifdef BDW_CONSERVATIVE_GC
+  // must zero-fill.
+  return GC_malloc_atomic(sizeof(struct commitrec));
+#else
+  extern void *calloc(size_t nmemb, size_t size);
+  return calloc(1, sizeof(struct commitrec));
+#endif
+}
+static inline enum commitstatus CommitCR(struct commitrec *cr) {
+    enum commitstatus s;
     if (cr==NULL) return COMMITTED;
     do {
 	/* avoid the atomic operation if possible */
@@ -71,8 +84,8 @@ static inline jint CommitCR(struct commitrec *cr) {
 	    return COMMITTED;
     } while (1);
 }
-static inline jint AbortCR(struct commitrec *cr) {
-    jint s;
+static inline enum commitstatus AbortCR(struct commitrec *cr) {
+    enum commitstatus s;
     if (cr==NULL) return COMMITTED;
     do {
 	/* avoid the atomic operation if possible */
@@ -82,7 +95,8 @@ static inline jint AbortCR(struct commitrec *cr) {
 	    return ABORTED;
     } while (1);
 }
-static inline jint AbortCRorParent(struct commitrec *cr) {
+#if 0
+static inline enum commitstatus AbortCRorParent(struct commitrec *cr) {
   // go up the chain until we either find a transaction we can abort,
   // or we can report that this transaction is *completely* committed.
   for (; cr!=NULL; cr=cr->parent)
@@ -90,5 +104,15 @@ static inline jint AbortCRorParent(struct commitrec *cr) {
       return ABORTED;
   return COMMITTED;
 }
+/** Return true iff cr1 is a subtransaction of cr2. */
+DECL int isSubtransaction(struct commitrec *cr1,
+			  struct commitrec *cr2) {
+  // xxx faster test possible.
+  for ( ; cr1!=NULL; cr1=cr1->parent)
+    if (cr1==cr2)
+      return 1;
+  return 0;
+}
+#endif
 
 #endif /* INCLUDED_TRANSACT_H */

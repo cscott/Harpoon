@@ -10,17 +10,29 @@
 
 // prototypes.
 #if defined(IN_READWRITE_HEADER)
-extern VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset,
-				  unsigned flag_offset, unsigned flag_bit);
+extern VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset);
 extern VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
 				 struct vinfo *version, struct commitrec *cr);
 extern void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
-			      VALUETYPE value,
-			      unsigned flag_offset, unsigned flag_bit);
+			      VALUETYPE value);
 extern void TA(EXACT_writeT)(struct oobj *obj, unsigned offset,
 			     VALUETYPE value, struct vinfo *version);
 // used in version-impl.c: copy_back
 extern VALUETYPE TA(readFromVersion)(struct vinfo *version, unsigned offset);
+extern void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
+			       unsigned offset, VALUETYPE value);
+
+#if 0
+// external references:
+//  from versions.c:
+extern struct versionPair findVersion(struct oobj *obj, struct commitrec *cr);
+extern enum opstatus TA(copyBackField)(struct oobj *obj, unsigned offset,
+                                       enum killer kill_whom);
+extern struct vinfo *EXACT_ensureWriter(struct oobj *obj,
+					struct commitrec *currentTrans);
+extern void TA(EXACT_checkWriteField)(struct oobj *obj, unsigned offset);
+#endif
+
 #endif /* IN_READWRITE_HEADER */
 
 
@@ -32,6 +44,7 @@ extern VALUETYPE TA(readFromVersion)(struct vinfo *version, unsigned offset);
 
 #if !defined(IN_READWRITE_HEADER)
 
+// XXX these should certainly be inlined!!!
 /////////////////////////////////////////////////////////////////////
 // reading from versions.
 DECL VALUETYPE TA(readFromVersion)(struct vinfo *version, unsigned offset) {
@@ -86,69 +99,64 @@ DECL void TA(writeToVersion)(struct oobj *obj, struct vinfo *version,
 // Now deep transaction magic.
 ///////////////////////////////////////////////////////////////////////
 
-DECL VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset,
-				unsigned flag_offset, unsigned flag_bit) {
+DECL VALUETYPE TA(EXACT_readNT)(struct oobj *obj, unsigned offset) {
   do {
     VALUETYPE f = *(VALUETYPE*)(FIELDBASE(obj) + offset);
     if (likely(f!=T(TRANS_FLAG))) return f;
-    // now, it would seem that we need to keep anyone from committing a
-    // more recent version now, but actually we only need to guarantee that
-    // we get *a* value for this field (i.e. that no one collects or
-    // scribbles on "version" between when we look it up and when we read it.
     if (unlikely(SAW_FALSE_FLAG ==
-		 TA(getVersion_readNT)(obj, offset, flag_offset, flag_bit)))
+		 TA(copyBackField)(obj, offset, KILL_WRITERS)))
       return T(TRANS_FLAG); // "false" transaction: field really is FLAG.
     // okay, we've done a copy-back now.  retry.
   } while(1);
 }
 
 // must have already recorded itself as a reader (set flags, etc)
+// XXX WANT TO RETURN THE NEW VERSION AS WELL AS THE VALUE.
 DECL VALUETYPE TA(EXACT_readT)(struct oobj *obj, unsigned offset,
 			       struct vinfo *version,
 			       struct commitrec *cr) {
-  // version may be null, if there are no transactional writes outstanding.
+  struct versionPair vp;
+  /* version may be null. */
+  /* we should always either be on the readerlist or aborted here. */
   do {
     VALUETYPE f = *(VALUETYPE*)(FIELDBASE(obj) + offset);
-    if (likely(f!=T(TRANS_FLAG))) return f;
-    // now, it would seem that we need to keep anyone from committing a
-    // more recent version now, but actually we only need to guarantee that
-    // we get *a* value for this field (i.e. that no one collects or
-    // scribbles on "version" between when we look it up and when we read it.
-    //  xxx think about copy back.  i think we're okay here.
-#if BROKEN
-    if (version!=NULL) break;
-#endif
-    version = getVersion_readT(obj, cr);
-    // version could be null again if we copy back a completed transaction.
-  } while (unlikely(version==NULL));
-  assert(version!=NULL);
-  // XXX if we're reading from a COMMITTED version (and we may), parallel
-  // writes may be made to it (behind our back) to implement a "false
-  // transaction"
-  //   is this a problem?
-  return TA(readFromVersion)(version, offset);
+    if (likely(f!=T(TRANS_FLAG))) return f; /* not yet involved in xaction. */
+    // object field is FLAG.
+    if (likely(version!=NULL))
+      return TA(readFromVersion)(version, offset); /* done! */
+    vp = findVersion(obj, cr);
+    if (vp.waiting==NULL) {  /* use value from committed version. */
+      assert(vp.committed!=NULL);
+      return TA(readFromVersion)(vp.committed, offset); /*perhaps false flag?*/
+    }
+    version = vp.waiting; /* XXX this should affect caller as well */
+    /* try, try again. */
+  } while(1);
 }
 
 DECL void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
-			    VALUETYPE value,
-			    unsigned flag_offset, unsigned flag_bit) {
-  while (1) {
-    if (unlikely(0!=(flag_bit & LL((jint*)(FLAGBASE(obj)+flag_offset))))) {
-      // oops, gotta kill the readers
-      TA(getVersion_writeNT)(obj, offset, flag_offset, flag_bit);
-      // copies back the field and and always returns with read flag cleared.
-      // So try again.  (note, other read flags will likely remain set)
-    } else if (unlikely(value==T(TRANS_FLAG))) {
-      // special means to write a "real" value of FLAG to the field.
-      assert(0); // XXX write me.
-    } else {
-      // note that T(store_conditional) is a bit of a hack.
-      if (likely(T(store_conditional)(FIELDBASE(obj), offset, value))) {
-	// okay, the store succeeded
-	return;
-      }
-      // hmm.  concurrent modification.  Try again.
-    }
+			    VALUETYPE value) {
+  if (unlikely(value != T(TRANS_FLAG))) {
+    do {
+      // LL(readerList)/SC(field)
+      if (likely(LL(OBJ_READERS_PTR(obj))==NULL) &&
+	  // note that T(store_conditional) is a bit of a hack.
+	  likely(T(store_conditional)(FIELDBASE(obj), offset, value)))
+	return; // done!
+      // unsuccessful LL or SC
+      TA(copyBackField)(obj, offset, KILL_ALL); // ignore return status
+    } while(1);
+  } else { // need to create a false flag
+    /* implement this as a short transactional write.  this may be slow,
+     * but it greatly reduces the race conditions we have to think about. */
+    jint st;
+    do {
+      struct commitrec *tid = AllocCR();
+      struct vinfo *ver = EXACT_ensureWriter(obj, tid);
+      TA(EXACT_checkWriteField)(obj, offset);
+      TA(EXACT_writeT)(obj, offset, value, ver);
+      st = CommitCR(tid);
+    } while (st!=COMMITTED);
   }
 }
 
@@ -158,6 +166,7 @@ DECL void TA(EXACT_writeNT)(struct oobj *obj, unsigned offset,
 DECL void TA(EXACT_writeT)(struct oobj *obj, unsigned offset,
 			   VALUETYPE value, struct vinfo *version) {
   // version should always be non-null
+  // this is easy!
   TA(writeToVersion)(obj, version, offset, value);
 }
 #endif /* IN_READWRITE_HEADER */

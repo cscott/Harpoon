@@ -13,12 +13,16 @@
 #include "transact/transact.h"
 #include "transact/objinfo.h" /* OBJ_READERS_PTR/OBJ_VERSION_PTR */
 #include "transact/readwrite.h"
+#include "transact/versions.h"
 
 /* deal with allocation variations */
 #ifdef BDW_CONSERVATIVE_GC
 # define MALLOC GC_malloc
+# define MALLOC_ATOMIC GC_malloc_atomic
 #else
+void *malloc(size_t size);
 # define MALLOC malloc
+# define MALLOC_ATOMIC malloc
 #endif
 
 #define NO_VALUETYPE
