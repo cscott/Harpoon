@@ -6,11 +6,13 @@ class Process {
   static Hashtable currtable=new Hashtable();
   static String declaration;
 
+
   static void debug(String str) {
     System.out.println(str);
   }
 
   static public void main(String[] args) {
+    String copy=null;
     debug("Opening file:"+args[0]);
     BufferedReader br=null;
     BufferedWriter bw=null;
@@ -22,10 +24,10 @@ class Process {
         String line=br.readLine();
         if (line==null)
           break;
-        String replacewith=line+".elem[";
+        String replacewith=line+".elem";
         if (replacewith==null)
           break;
-        currtable.put(line+"[",replacewith);
+        currtable.put(line,replacewith);
       }
 
       /* Built table */
@@ -56,12 +58,24 @@ class Process {
             for(Iterator it=currtable.keySet().iterator();it.hasNext();) {
               String str=(String)it.next();
               String replace=(String)currtable.get(str);
+              if (line.endsWith(str))
+                copy=line+"\n";
               line=replace(line,str,replace);
             }
-          }
+          } else
+            if (copy!=null) {
+              if ((count%4)==1)
+                copy+=replace(line,"[","_array[")+"\n";
+              else
+                copy+=line+"\n";
+            }
           bw.write(line);
           bw.newLine();
           count++;
+          if (copy!=null&&((count%4)==0)) {
+            bw.write(copy);
+            copy=null;
+          }
         } else {
           bw.write(line);
           bw.newLine();
@@ -94,12 +108,19 @@ class Process {
             for(Iterator it=currtable.keySet().iterator();it.hasNext();) {
               String str=(String)it.next();
               String replace=(String)currtable.get(str);
+              if (line.endsWith(str))
+                copy=line+"\n";
               line=replace(line,str,replace);
             }
-          }
+          } else if (copy!=null)
+            copy+=line+"\n";
           bw.write(line);
           bw.newLine();
           count++;
+          if (((count%3)==0)&&copy!=null) {
+            bw.write(copy);
+            copy=null;
+          }
         } else {
           bw.write(line);
           bw.newLine();
