@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1.2.5 1999-08-04 06:30:56 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.1.2.6 1999-08-07 04:14:19 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 abstract class HClassCls extends HClass {
@@ -35,9 +35,9 @@ abstract class HClassCls extends HClass {
   /** Name of the source file for this class. */
   String sourcefile;
   // CACHES: (reset to null to recompute)
-  HConstructor[] constructors = null;
-  HField[] fields = null;
-  HMethod[] methods = null;
+  transient HConstructor[] constructors = null;
+  transient HField[] fields = null;
+  transient HMethod[] methods = null;
 
   /** Implementations must provide their own constructor to initialize. */
   protected HClassCls() { /* no implementation */ }

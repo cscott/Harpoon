@@ -15,11 +15,11 @@ import java.util.Hashtable;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.8 1999-08-04 06:30:56 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.9 1999-08-07 04:14:20 cananian Exp $
  * @see HMember
  * @see HClass
  */
-public abstract class HMethod implements HMember {
+public abstract class HMethod implements HMember, java.io.Serializable {
   HClass parent;
   String name;
   int modifiers;
@@ -329,6 +329,22 @@ public abstract class HMethod implements HMember {
     new ArrayFactory() {
       public Object[] newArray(int len) { return new HMethod[len]; }
     };
+
+  /** Serializable interface. */
+  public Object writeReplace() { return new HMethodStub(this); }
+  private static final class HMethodStub implements java.io.Serializable {
+    private HClass parent;
+    private String name, descriptor;
+    HMethodStub() {}
+    HMethodStub(HMethod m) {
+      this.parent=m.getDeclaringClass();
+      this.name=m.getName().intern();
+      this.descriptor=m.getDescriptor().intern();
+    }
+    public Object readResolve() {
+      return parent.getDeclaredMethod(name, descriptor);
+    }
+  }
 }
 
 // set emacs indentation style.

@@ -12,7 +12,7 @@ import java.util.Vector;
  * single constructor for a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructorSyn.java,v 1.2.2.2 1999-08-04 06:30:56 cananian Exp $
+ * @version $Id: HConstructorSyn.java,v 1.2.2.3 1999-08-07 04:14:20 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -84,6 +84,25 @@ public class HConstructorSyn extends HMethod {
 
   public void setSynthetic(boolean isSynthetic) {
     this.isSynthetic = isSynthetic;
+  }
+
+  /** Serializable interface. */
+  public Object writeReplace() { return this; }
+  /** Serializable interface. */
+  public void writeObject(java.io.ObjectOutputStream out)
+    throws java.io.IOException {
+    // resolve class name pointers.
+    this.returnType = this.returnType.actual();
+    for (int i=0; i<this.parameterTypes.length; i++)
+      this.parameterTypes[i] = this.parameterTypes[i].actual();
+    for (int i=0; i<this.exceptionTypes.length; i++)
+      this.exceptionTypes[i] = this.exceptionTypes[i].actual();
+    // intern strings.
+    this.name = this.name.intern();
+    for (int i=0; i<this.parameterNames.length; i++)
+      this.parameterNames[i] = this.parameterNames[i].intern();
+    // write data
+    out.defaultWriteObject();
   }
 }
 

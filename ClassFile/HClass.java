@@ -30,7 +30,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.19 1999-08-07 02:29:57 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.20 1999-08-07 04:14:19 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  */
 public abstract class HClass extends HPointer implements java.io.Serializable {
@@ -983,13 +983,11 @@ public abstract class HClass extends HPointer implements java.io.Serializable {
   HClass actual() { return this; /* no dereferencing necessary. */ }
 
   /** Serializable interface. */
-  public Object writeReplace() {
-    return new HClassStub(getDescriptor());
-  }
+  public Object writeReplace() { return new HClassStub(this); }
   private static final class HClassStub implements java.io.Serializable {
     private String desc;
     HClassStub() {}
-    HClassStub(String desc) { this.desc = desc.intern(); }
+    HClassStub(HClass c) { this.desc = c.getDescriptor().intern(); }
     public Object readResolve() { return HClass.forDescriptor(desc); }
   }
 }

@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.4 1999-08-04 06:30:56 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.5 1999-08-07 04:14:19 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
@@ -180,6 +180,31 @@ public class HClassSyn extends HClassCls {
    */
   public void setSourceFile(String sf) { this.sourcefile = sf; }
 
+  /** Serializable interface. */
+  public Object writeReplace() { return this; }
+  /** Serializable interface. */
+  public void writeObject(java.io.ObjectOutputStream out)
+    throws java.io.IOException {
+    // resolve class name pointers.
+    this.superclass = this.superclass.actual();
+    for (int i=0; i<this.interfaces.length; i++)
+      this.interfaces[i] = this.interfaces[i].actual();
+    // intern strings.
+    this.name = this.name.intern();
+    this.sourcefile = this.sourcefile.intern();
+    // write class data.
+    out.defaultWriteObject();
+  }
+  /** Serializable interface. */
+  public void readObject(java.io.ObjectInputStream in)
+    throws java.io.IOException, ClassNotFoundException {
+    // read class data.
+    in.defaultReadObject();
+    // make name unique & register it.
+    this.name = uniqueName(name); register();
+  }
+  /** Constructor for the use of the Serializable interface. */
+  HClassSyn() { }
 }
 // set emacs indentation style.
 // Local Variables:

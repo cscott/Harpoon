@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldSyn.java,v 1.3.2.1 1999-08-04 06:30:56 cananian Exp $
+ * @version $Id: HFieldSyn.java,v 1.3.2.2 1999-08-07 04:14:20 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -54,6 +54,19 @@ public class HFieldSyn extends HField {
   public void setType(HClass type) { this.type = type; }
   public void setConstant(Object co) { this.constValue=co; }
   public void setSynthetic(boolean isSynthetic) {this.isSynthetic=isSynthetic;}
+
+  /** Serializable interface. */
+  public Object writeReplace() { return this; }
+  /** Serializable interface. */
+  public void writeObject(java.io.ObjectOutputStream out)
+    throws java.io.IOException {
+    // resolve class name pointers.
+    this.type = this.type.actual();
+    // intern strings.
+    this.name = this.name.intern();
+    // write class data.
+    out.defaultWriteObject();
+  }
 }
 // set emacs indentation style.
 // Local Variables:

@@ -10,14 +10,15 @@ import java.util.Hashtable;
  * a parent <code>HCodeFactory</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CachingCodeFactory.java,v 1.1.2.1 1999-02-01 00:40:31 cananian Exp $
+ * @version $Id: CachingCodeFactory.java,v 1.1.2.2 1999-08-07 04:14:19 cananian Exp $
  */
-public class CachingCodeFactory implements HCodeFactory {
+public class CachingCodeFactory implements SerializableCodeFactory {
     /** Parent code factory. Creates the representations this
-     *  <code>CachingCodeFactory</code> caches. */
+     *  <code>CachingCodeFactory</code> caches.
+     * @serial */
     public final HCodeFactory parent;
     /** Representation cache. */
-    private final Hashtable h = new Hashtable();
+    private final transient Hashtable h = new Hashtable();
     /** Special representation of <code>null</code> values. */
     private final static Object Onull = new Object();
 

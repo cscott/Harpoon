@@ -13,11 +13,11 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.15.2.6 1999-08-04 06:30:56 cananian Exp $
+ * @version $Id: HField.java,v 1.15.2.7 1999-08-07 04:14:20 cananian Exp $
  * @see HMember
  * @see HClass
  */
-public abstract class HField implements HMember {
+public abstract class HField implements HMember, java.io.Serializable {
   HClass parent;
   HPointer type;
   String name;
@@ -199,6 +199,21 @@ public abstract class HField implements HMember {
     new ArrayFactory() {
       public Object[] newArray(int len) { return new HField[len]; }
     };
+
+  /** Serializable interface. */
+  public Object writeReplace() { return new HFieldStub(this); }
+  private static final class HFieldStub implements java.io.Serializable {
+    private HClass parent;
+    private String name;
+    HFieldStub() {}
+    HFieldStub(HField f) {
+      this.parent = f.getDeclaringClass();
+      this.name = f.getName().intern();
+    }
+    public Object readResolve() {
+      return parent.getDeclaredField(name);
+    }
+  }
 }
 // set emacs indentation style.
 // Local Variables:
