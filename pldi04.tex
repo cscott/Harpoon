@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.8 2003-11-09 21:43:27 cananian Exp $
+% $Id: pldi04.tex,v 1.9 2003-11-10 07:49:52 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -76,14 +76,56 @@ Cambridge, MA 02139 \\
 %
 % abstract
 \begin{abstract}
-\ldots
+This paper proposes an efficient object-based implementation of
+non-blocking software transactions.  We integrate transactions into Java
+to provide race-safety for certain types of improperly synchronized
+code, to provide fault-tolerance and backtracking, and to express
+synchronization and optimistic concurrency.  We use ideas from
+distributed shared memory implementations to efficiently implement
+transactions with little overhead for non-transactional code.  We also
+show how functional arrays can be used to overcome object size
+limitations for non-blocking synchronization based on Herlihy's
+``small object'' scheme.\note{Also, transactions are exception-handling?}
+
+We present a detailed design of our proposal, justifying the choices
+we make with empirical performance results.  We describe compiler
+optimizations which greatly improve the common-case efficiency for
+typical Java benchmarks.  We argue that our transaction mechanism
+makes some racy existing code safe, is easier to use for new code,
+and promises better scalability than the existing
+mutual-exclusion--based synchronization methods.
 \end{abstract}
+
 %
 \section{Introduction}
 
 \subsection{Contributions}
 
-\section{Example}
+\section{Example and Motivation}
+
+\section{Related work}
+
+\section{Designing Efficient Transactions}
+
+\section{Algorithms}
+\subsection{Scales}
+\subsection{Allocation}
+\subsection{Object expansion}
+\subsection{Large objects}
+\subsection{Subsumption}
+
+\section{Optimizations}
+
+\section{Integration}
+% JNI tricks, etc.
+
+\section{Evaluation}
+
+\section{Conclusions}
+
+\section{EXTRA TEXT}
+xxx x xx x xxx xxxx xxx xxx xx x x x x x xxxxxxxx xx x x x x
+
 
 \section{Non-blocking synchronization}\label{sec:nb-sync}
 %\subsection{History}
