@@ -15,22 +15,24 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Iterator; 
+import java.util.Map;
+
 /**
  * <code>Translate</code> is a utility class which implements the 
  * <code>QuadSSA</code>/<code>QuadNoSSA</code> to 
  * <code>LowQuadSSA</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.7 1999-07-08 06:08:12 duncan Exp $
+ * @version $Id: Translate.java,v 1.1.2.8 1999-08-05 05:47:16 duncan Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
 				       final harpoon.IR.Quads.Code code,
 				       TypeMap tym, FinalMap fm,
-				       Hashtable derivationTable,
-				       Hashtable typeTable) {
+				       Map derivationTable,
+				       Map typeTable) {
 	final Quad old_header = (Quad) code.getRootElement();
 	final CloningTempMap ctm =
 	    new CloningTempMap(old_header.getFactory().tempFactory(),
@@ -40,25 +42,25 @@ final class Translate { // not public
 				      derivationTable, typeTable);
 
 	// visit all.
-	for (Enumeration e = code.getElementsE(); e.hasMoreElements(); ) 
-	    ((Quad)e.nextElement()).visit(v);
+	for (Iterator i = code.getElementsI(); i.hasNext(); ) 
+	    ((Quad)i.next()).visit(v);
 	// now qm contains mappings from old to new, we just have to link them
-	for (Enumeration e = code.getElementsE(); e.hasMoreElements(); ) {
-	    Quad old = (Quad)e.nextElement();
+	for (Iterator i = code.getElementsI(); i.hasNext(); ) {
+	    Quad old = (Quad)i.next();
 	    // link next
 	    Edge[] el = old.nextEdge();
-	    for (int i=0; i<el.length; i++)
-		Quad.addEdge(lqm.getFoot((Quad)el[i].from()),
-			     el[i].which_succ(),
-			     lqm.getHead((Quad)el[i].to()),
-			     el[i].which_pred());
+	    for (int n=0; n<el.length; n++)
+		Quad.addEdge(lqm.getFoot((Quad)el[n].from()),
+			     el[n].which_succ(),
+			     lqm.getHead((Quad)el[n].to()),
+			     el[n].which_pred());
 	}
 	// return new header.
 	return lqm.getHead(old_header);
     }
 
     private static class LowQuadMap {
-	final private Hashtable h  = new Hashtable();
+	final private Map h  = new HashMap();
         void put(Quad old, Quad new_header, Quad new_footer) {
 	    h.put(old, new Quad[] { new_header, new_footer });
 	}
@@ -79,11 +81,11 @@ final class Translate { // not public
 	final harpoon.IR.Quads.Code code;
 	final TypeMap tym;
 	final FinalMap fm;
-	final Hashtable dT, tT;
+	final Map dT, tT;
 
 	Visitor(LowQuadFactory qf, LowQuadMap lqm, CloningTempMap ctm,
 		harpoon.IR.Quads.Code code, TypeMap tym, FinalMap fm,
-		Hashtable dT, Hashtable tT) {
+		Map dT, Map tT) {
 	    this.qf = qf; this.lqm = lqm; this.ctm = ctm;
 	    this.code = code; this.tym = tym; this.fm = fm; this.dT = dT;
 	    this.tT = tT;

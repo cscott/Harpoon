@@ -17,117 +17,110 @@ import harpoon.IR.Quads.ToNoSSA;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-    
 /**
- * <blink><b>FILL ME IN</b></blink>
+ * The <code>LowQuadNoSSA</code> codeview exposes a lowquad-based 
+ * representation.  The distinguishing characteristic of this codeview
+ * is that is not in SSA form.  What this means is that, although there
+ * are still PHI and SIGMA quads in this codeview, they do not actually
+ * assign values to temporaries.  In other words, PHI and SIGMA functions
+ * exist solely to indicate flow of control in a program, but their 
+ * arity will always be 0. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.15 1999-08-04 06:30:58 cananian Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.16 1999-08-05 05:47:16 duncan Exp $
  */
-public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
-{
-  private Derivation m_derivation;
-  private TypeMap    m_typeMap;
+public class LowQuadNoSSA extends Code {/*which extends harpoon.IR.Quads.Code*/
+    private Derivation m_derivation;
+    private TypeMap    m_typeMap;
 
-  /** The name of this code view. */
-  public static final String codename  = "low-quad-no-ssa";
+    /** The name of this code view. */
+    public static final String codename  = "low-quad-no-ssa";
 
-  /** Creates a <code>LowQuadNoSSA</code> object from a LowQuad object */
-  LowQuadNoSSA(LowQuadSSA code)
-    {
-      super(code.getMethod(), null);
+    /** Creates a <code>LowQuadNoSSA</code> object from a LowQuad object */
+    LowQuadNoSSA(LowQuadSSA code) {
+	super(code.getMethod(), null);
       
-      ToNoSSA translator;
+	ToNoSSA translator;
       
-      translator   = new ToNoSSA(qf, code, code, code);
-      quads        = translator.getQuads();
-      m_derivation = translator;
-      m_typeMap    = translator;
+	translator   = new ToNoSSA(qf, code, code, code);
+	quads        = translator.getQuads();
+	m_derivation = translator;
+	m_typeMap    = translator;
     }
   
-  /**
-   * Create a new code object given a quadruple representation of the
-   * method instructions.
-   */
-  private LowQuadNoSSA(HMethod method, Quad quads)
-    {
-      super(method, quads);
+    /**
+     * Create a new code object given a quadruple representation of the
+     * method instructions.
+     */
+    private LowQuadNoSSA(HMethod method, Quad quads) {
+	super(method, quads);
     }
 
-  /**
-   * Clone this code representation.  The clone has its own copy of the
-   * quad graph.
-   */
-  public HCode  clone(HMethod newMethod)
-    {
-      LowQuadNoSSA lqns = new LowQuadNoSSA(newMethod, null);
-      lqns.quads        = Quad.clone(lqns.qf, quads);
-      return lqns;
+    /**
+     * Clone this code representation.  The clone has its own copy of the
+     * quad graph.
+     */
+    public HCode  clone(HMethod newMethod) {
+	LowQuadNoSSA lqns = new LowQuadNoSSA(newMethod, null);
+	lqns.quads        = Quad.clone(lqns.qf, quads);
+	return lqns;
     }
 
-  /**
-   * Return the name of this code view.
-   * @return the string <code>"low-quad-no-ssa"</code>
-   */
-  public String getName() { return codename; }
+    /**
+     * Return the name of this code view.
+     * @return the string <code>"low-quad-no-ssa"</code>
+     */
+    public String getName() { return codename; }
 
-  /**
-   * Return a code factory for <code>LowQuadNoSSA</code>, given a 
-   * code factory for either <code>LowQuadSSA</code>.
-   * <BR> <B>effects:</B> if <code>hcf</code> is a code factory for
-   *      <code>LowQuadSSA</code>, then creates and returns a code
-   *      factory for <code>LowQuadNoSSA</code>.  Else passes
-   *      <code>hcf</code> to
-   *      <code>LowQuadSSA.codeFactory()</code>, and reattempts to
-   *      create a code factory for <code>LowQuadNoSSA</code> from the
-   *      code factory returned by <code>LowQuadSSA</code>.
-   * @see LowQuadSSA#codeFactory(HCodeFactory)
-   */
-  public static HCodeFactory codeFactory(final HCodeFactory hcf)
-    {
-      if (hcf.getCodeName().equals(LowQuadSSA.codename))
-	{
-	  return new HCodeFactory() { 
-	    public HCode convert(HMethod m) { 
-	      HCode c = hcf.convert(m);
-	      return (c==null) ? null :
-		new LowQuadNoSSA((LowQuadSSA)c);
-	    }
-	    public void clear(HMethod m) { hcf.clear(m); }
-	    public String getCodeName() { return codename; }
-	  };
-	} else {
+    /**
+     * Return a code factory for <code>LowQuadNoSSA</code>, given a 
+     * code factory for either <code>LowQuadSSA</code>.
+     * <BR> <B>effects:</B> if <code>hcf</code> is a code factory for
+     *      <code>LowQuadSSA</code>, then creates and returns a code
+     *      factory for <code>LowQuadNoSSA</code>.  Else passes
+     *      <code>hcf</code> to
+     *      <code>LowQuadSSA.codeFactory()</code>, and reattempts to
+     *      create a code factory for <code>LowQuadNoSSA</code> from the
+     *      code factory returned by <code>LowQuadSSA</code>.
+     * @see LowQuadSSA#codeFactory(HCodeFactory)
+     */
+    public static HCodeFactory codeFactory(final HCodeFactory hcf) {
+	if (hcf.getCodeName().equals(LowQuadSSA.codename)) {
+	    return new HCodeFactory() { 
+		public HCode convert(HMethod m) { 
+		    HCode c = hcf.convert(m);
+		    return (c==null) ? null : new LowQuadNoSSA((LowQuadSSA)c);
+		}
+		public void clear(HMethod m) { hcf.clear(m); }
+		public String getCodeName() { return codename; }
+	    };
+	}
+	else {
 	    //throw new Error("don't know how to make " + codename +
 	    //	" from " + hcf.getCodeName());
 	    return codeFactory(LowQuadSSA.codeFactory(hcf));
 	}
     }
   
-  /**
-   * Return a code factory for <code>LowQuadNoSSA</code>, using the default
-   * code factory for <code>LowQuadSSA</code>
-   */
-  public static HCodeFactory codeFactory()
-    {  
-      return codeFactory(LowQuadSSA.codeFactory());
+    /**
+     * Return a code factory for <code>LowQuadNoSSA</code>, using the default
+     * code factory for <code>LowQuadSSA</code>
+     */
+    public static HCodeFactory codeFactory() {  
+	return codeFactory(LowQuadSSA.codeFactory());
     }
 
-  // obsolete
-  public static void register() 
-    {
-      HMethod.register(codeFactory());
+    // obsolete
+    public static void register() {
+	HMethod.register(codeFactory());
     }
 
-  public DList derivation(HCodeElement hce, Temp t)
-    {
-      return m_derivation.derivation(hce, t);
+    public DList derivation(HCodeElement hce, Temp t) {
+	return m_derivation.derivation(hce, t);
     }
 
-  public HClass typeMap(HCode hc, Temp t)
-    {
-      // Ignores hc parameter
-      return m_typeMap.typeMap(this, t);
+    public HClass typeMap(HCode hc, Temp t) {
+	// Ignores hc parameter
+	return m_typeMap.typeMap(this, t);
     }
 }
