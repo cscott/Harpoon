@@ -11,6 +11,7 @@ import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.Code; 
 import harpoon.IR.Tree.CONST; 
+import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.ESEQ; 
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.ExpList;
@@ -38,7 +39,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Simplification.java,v 1.1.2.2 2000-02-15 19:04:18 cananian Exp $
+ * @version $Id: Simplification.java,v 1.1.2.3 2000-02-15 20:15:09 cananian Exp $
  */
 public abstract class Simplification { 
     private static final boolean debug = false;
@@ -59,8 +60,12 @@ public abstract class Simplification {
 		    harpoon.IR.Tree.Code code = (harpoon.IR.Tree.Code) hc;
 		    // clone code...
 		    code = (harpoon.IR.Tree.Code) code.clone(m);
+		    DerivationGenerator dg = null;
+		    try {
+			dg = (DerivationGenerator) code.getTreeDerivation();
+		    } catch (ClassCastException ex) { /* i guess not */ }
 		    // ...and modify cloned code in-place.
-		    simplify((Stm)code.getRootElement(), rules);
+		    simplify((Stm)code.getRootElement(), dg, rules);
 		}
 		return hc;
 	    }
@@ -130,15 +135,18 @@ public abstract class Simplification {
      * </OL>
      * 
      * @param root  the tree to simplify
+     * @param dg    a <code>DerivationGenerator</code> for the tree,
+     *              or <code>null</code> to generate no type information.
      * @param rules the set of simplification rules to apply to the elements
      *              of <code>root</code>. 
      */ 
-    public static void simplify(Stm root, List rules) { 
+    public static void simplify(Tree root, DerivationGenerator dg, List rules)
+    {
 	// Shouldn't pass a null ptr. 
 	Util.assert(root != null && rules != null); 
 
 	// Perform the simplification. 
-	while (new SimplificationVisitor(root, rules).changed())
+	while (new SimplificationVisitor(root, dg, rules).changed())
 	    /* repeat */ ;
     }
 
@@ -147,10 +155,15 @@ public abstract class Simplification {
      * tree form. 
      */ 
     private static class SimplificationVisitor extends TreeVisitor { 
+	private final TreeFactory tf;
+	private final DerivationGenerator dg;
 	private final List  rules; 
 	private boolean changed = false;
 
-	public SimplificationVisitor(Stm root, List rules) { 
+	public SimplificationVisitor(Tree root, DerivationGenerator dg,
+				     List rules) { 
+	    this.tf = root.getFactory();
+	    this.dg = dg;
 	    this.rules = rules; 
 	    // evaluate each subtree from leaves up to root.
 	    postorder(root);
@@ -176,7 +189,7 @@ public abstract class Simplification {
 	    for (Iterator i = this.rules.iterator(); i.hasNext();) { 
 		Rule rule = (Rule)i.next();
 		if (rule.match(e)) {
-		    Exp simpleE = rule.apply(e); 
+		    Exp simpleE = rule.apply(tf, e, dg); 
 		    if (debug)
 			System.out.println("Replacing: " + e + " with " +
 					   simpleE + " by rule " + rule);
@@ -195,7 +208,7 @@ public abstract class Simplification {
 	    for (Iterator i = this.rules.iterator(); i.hasNext();) { 
 		Rule rule = (Rule)i.next();
 		if (rule.match(s)) {
-		    Stm simpleS = rule.apply(s); 
+		    Stm simpleS = rule.apply(tf, s, dg); 
 		    if (debug)
 			System.out.println("Replacing: " + s + " with " +
 					   simpleS + " by rule " + rule);
@@ -231,7 +244,9 @@ public abstract class Simplification {
 	 *  <code>match()</code> returns <code>true</code>.  Otherwise, 
 	 *  the behavior of <code>apply</code> is undefined. 
 	 */ 
-	public Exp apply(Exp exp) { throw new Error("unimplemented"); }
+	public Exp apply(TreeFactory tf, Exp exp, DerivationGenerator dg) {
+	    throw new Error("unimplemented");
+	}
 
 	/** Returns true if <code>stm</code> matches this rule. */ 
 	public boolean match(Stm stm) { return false; }
@@ -240,7 +255,9 @@ public abstract class Simplification {
 	 *  <code>match()</code> returns <code>true</code>.  Otherwise, 
 	 *  the behavior of <code>apply</code> is undefined. 
 	 */ 
-	public Stm apply(Stm stm) { throw new Error("unimplemented"); }
+	public Stm apply(TreeFactory tf, Stm stm, DerivationGenerator dg) {
+	    throw new Error("unimplemented");
+	}
     }
 
     /** Convenience function to test whether any of the bits in
