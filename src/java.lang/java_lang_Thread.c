@@ -39,7 +39,11 @@ struct thread_list {
   struct thread_list *next;
 };
 
-static struct thread_list running_threads = { NULL, 0, NULL, NULL }; /*header node*/
+static struct thread_list running_threads = { NULL, 0,
+#ifdef WITH_PRECISE_GC
+					      NULL, /* thrstate */
+#endif /* WITH_PRECISE_GC */
+					      NULL }; /*header node*/
 static pthread_key_t running_threads_key;
 static pthread_cond_t running_threads_cond = PTHREAD_COND_INITIALIZER;
 
