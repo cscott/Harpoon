@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.94 1999-11-02 19:05:28 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.95 1999-11-02 19:36:34 cananian Exp $
  */
 %%
 
@@ -612,7 +612,7 @@ BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
     emitMOVE( ROOT, "mov `d0, `s0", r0, j);
     emitMOVE( ROOT, "mov `d0, `s0", r1, k);
-    emit2( ROOT, "bl ___eqsf2",
+    emit2( ROOT, "bl ___nesf2",
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -628,7 +628,7 @@ BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     emit ( ROOT, "mov `d1, `s0h", r1, j);
     emit ( ROOT, "mov `d2, `s0l", r2, k);
     emit ( ROOT, "mov `d3, `s0h", r3, k);
-    emit2( ROOT, "bl ___eqdf2",
+    emit2( ROOT, "bl ___nedf2",
 	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
@@ -671,8 +671,8 @@ BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
+	        "moveq `d0, #0\n"+
+		"movne `d0, #1", i, r0 );
 }%
 
 BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
@@ -687,8 +687,8 @@ BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
+	        "moveq `d0, #0\n"+
+		"movne `d0, #1", i, r0 );
 }%
 
 
@@ -725,8 +725,8 @@ BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
+	        "moveq `d0, #0\n"+
+		"movne `d0, #1", i, r0 );
 }%
 
 BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
@@ -741,8 +741,8 @@ BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
+	        "moveq `d0, #0\n"+
+		"movne `d0, #1", i, r0 );
 }%
 
 
@@ -779,8 +779,8 @@ BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
+	        "moveq `d0, #0\n"+
+		"movne `d0, #1", i, r0 );
 }%
 
 BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
@@ -795,8 +795,8 @@ BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
+	        "moveq `d0, #0\n"+
+		"movne `d0, #1", i, r0 );
 }%
 
 BINOP(CMPLT, j, k) = i
@@ -832,8 +832,8 @@ BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
+	        "moveq `d0, #0\n"+
+		"movne `d0, #1", i, r0 );
 }%
 
 BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
@@ -848,8 +848,8 @@ BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     // dependency on the condition register so we don't want to risk
     // reordering them
     emit( ROOT, "cmp `s0, #0\n"+
-	        "moveq `d0, #1\n"+
-		"movne `d0, #0", i, r0 );
+	        "moveq `d0, #0\n"+
+		"movne `d0, #1", i, r0 );
 }%
 
 BINOP<p,i>(OR, j, k) = i %{
