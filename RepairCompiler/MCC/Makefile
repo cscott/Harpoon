@@ -42,7 +42,7 @@ IR/ForQuantifier.class IR/GraphNode.class IR/DependencyBuilder.class	\
 IR/RelationInclusion.class IR/SetInclusion.class IR/TupleOfExpr.class	\
 IR/ElementOfExpr.class IR/Rule.class IR/Inclusion.class			\
 IR/CodeWriter.class IR/SymbolTableStack.class	\
-IR/StandardCodeWriter.class 		\
+IR/StandardCodeWriter.class IR/SumExpr.class		\
 IR/WorkList.class 		\
 IR/RepairGenerator.class IR/AbstractInterferes.class			\
 IR/PrettyPrinter.class IR/AbstractRepair.class IR/Quantifiers.class	\
@@ -67,7 +67,7 @@ ALLJAVA = *.java IR/*.java
 
 .PHONY: java clean all tests javadoc
 
-all: $(TARGET).tar.gz $(TARGET).jar 
+all: $(TARGET).tar.gz $(TARGET).jar
 
 tests: $(TARGET).tar.gz $(TARGET).jar
 #	./tests.pl scanner
@@ -75,7 +75,7 @@ tests: $(TARGET).tar.gz $(TARGET).jar
 $(TARGET).tar.gz: $(TARGET).tar
 	gzip $(TARGET).tar -c > $(TARGET).tar.gz
 
-$(TARGET).tar: $(ALLJAVA) Makefile $(SCANNER).lex 
+$(TARGET).tar: $(ALLJAVA) Makefile $(SCANNER).lex
 	tar cf $@ $(ALLJAVA) Makefile $(SCANNER).lex
 
 $(TARGET).jar: java
@@ -109,4 +109,3 @@ $(SCANNER).java: $(SCANNER).lex.java
 
 javadoc:
 	javadoc -source 1.4 -classpath ../ -package -d ../javadoc/ -windowtitle MCC $(ALLJAVA)
-

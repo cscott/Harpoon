@@ -120,8 +120,8 @@ public class RepairGenerator {
 
     private void generate_updates() {
 	int count=0;
-        CodeWriter crhead = new StandardCodeWriter(outputhead);        
-        CodeWriter craux = new StandardCodeWriter(outputaux);        
+        CodeWriter crhead = new StandardCodeWriter(outputhead);
+        CodeWriter craux = new StandardCodeWriter(outputaux);
 	RelationDescriptor.prefix = "model->";
 	SetDescriptor.prefix = "model->";
 
@@ -141,7 +141,7 @@ public class RepairGenerator {
 	    for (int i=0;i<mun.numUpdates();i++) {
 		UpdateNode un=mun.getUpdate(i);
 		String methodname=(String)updatenames.get(un);
-		
+
 		switch(mun.op) {
 		case MultUpdateNode.ADD:
 		    if (isrelation) {
@@ -156,7 +156,7 @@ public class RepairGenerator {
 		    if (Compiler.GENERATEINSTRUMENT)
 			craux.outputline("updatecount++;");
 
-		    final SymbolTable st = un.getRule().getSymbolTable();                
+		    final SymbolTable st = un.getRule().getSymbolTable();
 		    CodeWriter cr = new StandardCodeWriter(outputaux) {
                         public SymbolTable getSymbolTable() { return st; }
                     };
@@ -174,7 +174,7 @@ public class RepairGenerator {
 			    methodcall+=","+sq.getVar().getType().getGenerateType().getSafeSymbol()+" "+sq.getVar().getSafeSymbol();
 			} else if (q instanceof RelationQuantifier) {
 			    RelationQuantifier rq=(RelationQuantifier) q;
-			    
+
 			    methodcall+=","+rq.x.getType().getGenerateType().getSafeSymbol()+" "+rq.x.getSafeSymbol();
 			    methodcall+=","+rq.y.getType().getGenerateType().getSafeSymbol()+" "+rq.y.getSafeSymbol();
 			} else if (q instanceof ForQuantifier) {
@@ -208,7 +208,7 @@ public class RepairGenerator {
 			    methodcall+=","+sq.getVar().getType().getGenerateType().getSafeSymbol()+" "+sq.getVar().getSafeSymbol();
 			} else if (q instanceof RelationQuantifier) {
 			    RelationQuantifier rq=(RelationQuantifier) q;
-			    
+
 			    methodcall+=", "+rq.x.getType().getGenerateType().getSafeSymbol()+" "+rq.x.getSafeSymbol();
 			    methodcall+=", "+rq.y.getType().getGenerateType().getSafeSymbol()+" "+rq.y.getSafeSymbol();
 			} else if (q instanceof ForQuantifier) {
@@ -242,7 +242,7 @@ public class RepairGenerator {
     }
 
     private void generate_call() {
-        CodeWriter cr = new StandardCodeWriter(outputrepair);        
+        CodeWriter cr = new StandardCodeWriter(outputrepair);
 	VarDescriptor vdstate=VarDescriptor.makeNew("repairstate");
 	cr.outputline(name+"_state * "+vdstate.getSafeSymbol()+"=new "+name+"_state();");
 	Iterator globals=state.stGlobals.descriptors();
@@ -261,8 +261,8 @@ public class RepairGenerator {
     }
 
     private void generate_tokentable() {
-        CodeWriter cr = new StandardCodeWriter(outputrepair);        
-        Iterator tokens = TokenLiteralExpr.tokens.keySet().iterator();        
+        CodeWriter cr = new StandardCodeWriter(outputrepair);
+        Iterator tokens = TokenLiteralExpr.tokens.keySet().iterator();
 
         cr.outputline("");
         cr.outputline("// Token values");
@@ -270,7 +270,7 @@ public class RepairGenerator {
 
         while (tokens.hasNext()) {
             Object token = tokens.next();
-            cr.outputline("// " + token.toString() + " = " + TokenLiteralExpr.tokens.get(token).toString());            
+            cr.outputline("// " + token.toString() + " = " + TokenLiteralExpr.tokens.get(token).toString());
         }
 
         cr.outputline("");
@@ -408,37 +408,37 @@ public class RepairGenerator {
 	}
         craux.outputline(name+"::"+name+"() {");
         craux.outputline("// creating hashtables ");
-        
+
         /* build sets */
         Iterator sets = state.stSets.descriptors();
-        
+
         /* first pass create all the hash tables */
         while (sets.hasNext()) {
             SetDescriptor set = (SetDescriptor) sets.next();
 	    crhead.outputline("SimpleHash* " + set.getSafeSymbol() + "_hash;");
             craux.outputline(set.getSafeSymbol() + "_hash = new SimpleHash();");
         }
-        
+
         /* second pass build relationships between hashtables */
         sets = state.stSets.descriptors();
-        
+
         while (sets.hasNext()) {
             SetDescriptor set = (SetDescriptor) sets.next();
             Iterator subsets = set.subsets();
-            
+
             while (subsets.hasNext()) {
-                SetDescriptor subset = (SetDescriptor) subsets.next();                
+                SetDescriptor subset = (SetDescriptor) subsets.next();
                 craux.outputline(subset.getSafeSymbol() + "_hash->addParent(" + set.getSafeSymbol() + "_hash);");
             }
-        } 
+        }
 
         /* build relations */
         Iterator relations = state.stRelations.descriptors();
-        
+
         /* first pass create all the hash tables */
         while (relations.hasNext()) {
             RelationDescriptor relation = (RelationDescriptor) relations.next();
-            
+
             if (relation.testUsage(RelationDescriptor.IMAGE)) {
                 crhead.outputline("SimpleHash* " + relation.getSafeSymbol() + "_hash;");
                 craux.outputline(relation.getSafeSymbol() + "_hash = new SimpleHash();");
@@ -447,7 +447,7 @@ public class RepairGenerator {
             if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
                 crhead.outputline("SimpleHash* " + relation.getSafeSymbol() + "_hashinv;");
                 craux.outputline(relation.getSafeSymbol() + "_hashinv = new SimpleHash();");
-            } 
+            }
         }
 
         craux.outputline("}");
@@ -457,27 +457,27 @@ public class RepairGenerator {
 
         /* build destructor */
         sets = state.stSets.descriptors();
-        
+
         /* first pass create all the hash tables */
         while (sets.hasNext()) {
             SetDescriptor set = (SetDescriptor) sets.next();
             craux.outputline("delete "+set.getSafeSymbol() + "_hash;");
-        } 
-        
+        }
+
         /* destroy relations */
         relations = state.stRelations.descriptors();
-        
+
         /* first pass create all the hash tables */
         while (relations.hasNext()) {
             RelationDescriptor relation = (RelationDescriptor) relations.next();
-            
+
             if (relation.testUsage(RelationDescriptor.IMAGE)) {
                 craux.outputline("delete "+relation.getSafeSymbol() + "_hash;");
             }
 
             if (relation.testUsage(RelationDescriptor.INVIMAGE)) {
                 craux.outputline("delete " + relation.getSafeSymbol() + "_hashinv;");
-            } 
+            }
         }
         craux.outputline("}");
     }
@@ -496,7 +496,7 @@ public class RepairGenerator {
 	    craux.outputline("int rebuildcount;");
 	    craux.outputline("int abstractcount;");
 	}
-	
+
 	crhead.outputline("void doanalysis();");
 	craux.outputline("void "+name +"_state::doanalysis()");
   	craux.startblock();
@@ -525,9 +525,9 @@ public class RepairGenerator {
 	if (Compiler.GENERATEINSTRUMENT)
 	    craux.outputline("rebuildcount++;");
     }
-    
+
     private void generate_teardown() {
-	CodeWriter cr = new StandardCodeWriter(outputaux);        
+	CodeWriter cr = new StandardCodeWriter(outputaux);
 	cr.endblock();
 	if (Compiler.TIME) {
 	    cr.outputline("gettimeofday(&_end_time,NULL);");
@@ -543,7 +543,7 @@ public class RepairGenerator {
     }
 
     private void generate_print() {
-	
+
 	final SymbolTable st = new SymbolTable();
 
 	CodeWriter cr = new StandardCodeWriter(outputaux) {
@@ -577,7 +577,7 @@ public class RepairGenerator {
 		VarDescriptor vd = new VarDescriptor ("__setval", "__setval", td, false);
 		std.generate_printout(cr, vd);
 	    } else { // Missing type descriptor or reserved type, just print int
-		cr.outputline("printf(\"<%d> \", __setval);"); 	    		
+		cr.outputline("printf(\"<%d> \", __setval);");
 	    }
 
 
@@ -597,7 +597,7 @@ public class RepairGenerator {
 	for(int sccindex=0;sccindex<mrd.numSCC();sccindex++) {
 	    ruleset=mrd.getSCC(sccindex);
 	    boolean needworklist=mrd.hasCycle(sccindex);
-	    
+
 	    if (!needworklist) {
 		Iterator iterator_rs = ruleset.iterator();
 		while (iterator_rs.hasNext()) {
@@ -629,7 +629,7 @@ public class RepairGenerator {
 				invariants.addAll(((RelationInclusion)rule.getInclusion()).getRightExpr().findInvariants(invariantvars));
 			    }
 			}
-			ListIterator quantifiers = rule.quantifiers();			
+			ListIterator quantifiers = rule.quantifiers();
 			while (quantifiers.hasNext()) {
 			    Quantifier quantifier = (Quantifier) quantifiers.next();
 			    if (quantifier instanceof ForQuantifier) {
@@ -654,18 +654,18 @@ public class RepairGenerator {
 			    Quantifier quantifier = (Quantifier) quantifiers.next();
 			    quantifier.generate_open(cr);
 			}
-			
+
 			/* pretty print! */
 			cr.output("//");
 			rule.getGuardExpr().prettyPrint(cr);
 			cr.outputline("");
-			
+
 			/* now we have to generate the guard test */
 			VarDescriptor guardval = VarDescriptor.makeNew();
 			rule.getGuardExpr().generate(cr, guardval);
 			cr.outputline("if (" + guardval.getSafeSymbol() + ")");
 			cr.startblock();
-			
+
 			/* now we have to generate the inclusion code */
 			currentrule=rule;
 			rule.getInclusion().generate(cr);
@@ -681,7 +681,7 @@ public class RepairGenerator {
 		}
 	    } else {
 		CodeWriter cr2 = new StandardCodeWriter(outputaux);
-		
+
 		for(Iterator initialworklist=ruleset.iterator();initialworklist.hasNext();) {
 		    /** Construct initial worklist set */
 		    Rule rule=(Rule)initialworklist.next();
@@ -692,21 +692,21 @@ public class RepairGenerator {
 		cr2.startblock();
 		VarDescriptor idvar=VarDescriptor.makeNew("id");
 		cr2.outputline("int "+idvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getid();");
-		
+
 		String elseladder = "if";
-		
+
 		Iterator iterator_rules = ruleset.iterator();
 		while (iterator_rules.hasNext()) {
-		    
+
 		    Rule rule = (Rule) iterator_rules.next();
 		    int dispatchid = rule.getNum();
-		    
+
 		    {
 			final SymbolTable st = rule.getSymbolTable();
 			CodeWriter cr = new StandardCodeWriter(outputaux) {
 				public SymbolTable getSymbolTable() { return st; }
 			    };
-			
+
 			cr.indent();
 			cr.outputline(elseladder + " ("+idvar.getSafeSymbol()+" == " + dispatchid + ")");
 			cr.startblock();
@@ -718,41 +718,41 @@ public class RepairGenerator {
 			cr.outputline("int "+leftvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getlvalue();");
 			cr.outputline("int "+rightvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getrvalue();");
 			cr.outputline("// build " +escape(rule.toString()));
-			
-			
+
+
 			for (int j=0;j<rule.numQuantifiers();j++) {
 			    Quantifier quantifier = rule.getQuantifier(j);
 			    quantifier.generate_open(cr, typevar.getSafeSymbol(),j,leftvar.getSafeSymbol(),rightvar.getSafeSymbol());
 			}
-			
+
 			/* pretty print! */
 			cr.output("//");
-			
+
 			rule.getGuardExpr().prettyPrint(cr);
 			cr.outputline("");
-			
+
 			/* now we have to generate the guard test */
-			
+
 			VarDescriptor guardval = VarDescriptor.makeNew();
 			rule.getGuardExpr().generate(cr, guardval);
-			
+
 			cr.outputline("if (" + guardval.getSafeSymbol() + ")");
 			cr.startblock();
-			
+
 			/* now we have to generate the inclusion code */
 			currentrule=rule;
 			rule.getInclusion().generate(cr);
 			cr.endblock();
-			
+
 			for (int j=0;j<rule.numQuantifiers();j++) {
 			    cr.endblock();
 			}
-			
+
 			// close startblocks generated by DotExpr memory checks
 			//DotExpr.generate_memory_endblocks(cr);
-			
+
 			cr.endblock(); // end else-if WORKLIST ladder
-			
+
 			elseladder = "else if";
 		    }
 		}
@@ -793,7 +793,7 @@ public class RepairGenerator {
 		constraint= (Constraint) ((GraphNode)i.next()).getOwner();
 	    else
 		constraint=(Constraint)i.next();
-	    
+
             {
 		final SymbolTable st = constraint.getSymbolTable();
 		CodeWriter cr = new StandardCodeWriter(outputaux);
@@ -810,12 +810,12 @@ public class RepairGenerator {
                 }
 
                 cr.outputline("int maybe = 0;");
-                        
+
                 /* now we have to generate the guard test */
-        
+
                 VarDescriptor constraintboolean = VarDescriptor.makeNew("constraintboolean");
                 constraint.getLogicStatement().generate(cr, constraintboolean);
-                
+
                 cr.outputline("if (maybe)");
                 cr.startblock();
                 cr.outputline("printf(\"maybe fail " +  escape(constraint.toString()) + ". \\n\");");
@@ -826,14 +826,14 @@ public class RepairGenerator {
                 cr.startblock();
                 if (!Compiler.REPAIR||Compiler.GENERATEDEBUGHOOKS)
 		    cr.outputline("printf(\"fail " + escape(constraint.toString()) + ". \\n\");");
-		
+
 		if (Compiler.REPAIR) {
 		/* Do repairs */
 		/* Build new repair table */
 	        cr.outputline("if ("+repairtable.getSafeSymbol()+")");
 		cr.outputline("delete "+repairtable.getSafeSymbol()+";");
                 cr.outputline(repairtable.getSafeSymbol()+"=new RepairHash();");
-		
+
 		if (Compiler.GENERATEDEBUGHOOKS)
 		    cr.outputline("debughook();");
 		/* Compute cost of each repair */
@@ -853,7 +853,7 @@ public class RepairGenerator {
 			Conjunction conj=((TermNode)gn.getOwner()).getConjunction();
 			if (removed.contains(gn))
 			    continue;
-			
+
 			VarDescriptor costvar;
 			if (first) {
 			    costvar=mincost;
@@ -867,14 +867,14 @@ public class RepairGenerator {
 			    p.generate(cr,predvalue);
 			    if (k==0)
 				cr.outputline("int "+costvar.getSafeSymbol()+"=0;");
-			    
+
 			    if (negate)
 				cr.outputline("if (maybe||"+predvalue.getSafeSymbol()+")");
 			    else
 				cr.outputline("if (maybe||!"+predvalue.getSafeSymbol()+")");
 			    cr.outputline(costvar.getSafeSymbol()+"+="+cost.getCost(dpred)+";");
 			}
-			
+
 			if(!first) {
 			    cr.outputline("if ("+costvar.getSafeSymbol()+"<"+mincost.getSafeSymbol()+")");
 			    cr.startblock();
@@ -923,14 +923,14 @@ public class RepairGenerator {
 		    cr.outputline("break;");
 		}
 		cr.outputline("}");
-		
+
 		cr.outputline("if ("+oldmodel.getSafeSymbol()+")");
 		cr.outputline("delete "+oldmodel.getSafeSymbol()+";");
 		cr.outputline(oldmodel.getSafeSymbol()+"="+newmodel.getSafeSymbol()+";");
 		cr.outputline("goto rebuild;");  /* Rebuild model and all */
 		}
                 cr.endblock();
-		
+
                 while (quantifiers.hasPrevious()) {
                     Quantifier quantifier = (Quantifier) quantifiers.previous();
                     cr.endblock();
@@ -952,9 +952,9 @@ public class RepairGenerator {
 	cr.outputline("break;");
 	cr.endblock();
 	cr.outputline("rebuild:");
-	cr.outputline(";");	
+	cr.outputline(";");
     }
-    
+
     private MultUpdateNode getmultupdatenode(Conjunction conj, DNFPredicate dpred, int repairtype) {
 	Set nodes=getmultupdatenodeset(conj,dpred,repairtype);
 	Iterator it=nodes.iterator();
@@ -1020,13 +1020,13 @@ public class RepairGenerator {
 	    MultUpdateNode mun=(MultUpdateNode)it.next();
 	    if (mun.getType()==MultUpdateNode.ADD) {
 		munadd=mun;
-	    } else if (mun.getType()==MultUpdateNode.REMOVE) { 
+	    } else if (mun.getType()==MultUpdateNode.REMOVE) {
 		munremove=mun;
 	    } else if (mun.getType()==MultUpdateNode.MODIFY) {
 		munmodify=mun;
 	    }
 	}
-	
+
 	ExprPredicate ep=(ExprPredicate)dpred.getPredicate();
 	RelationDescriptor rd=(RelationDescriptor)ep.getDescriptor();
 	boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
@@ -1210,7 +1210,7 @@ public class RepairGenerator {
 	    cr.outputline(change.getSafeSymbol()+"="+String.valueOf(size)+"-"+sizevar.getSafeSymbol()+";");
 	    if (size==0)
 		generateadd=false;
-	    else 
+	    else
 		generateadd=true;
 	    generateremove=true;
 	} else if (opcode==Opcode.NE) {
@@ -1223,7 +1223,7 @@ public class RepairGenerator {
 
 // In some cases the analysis has determined that generating removes
 // is unnecessary
-	if (generateremove&&munremove==null) 
+	if (generateremove&&munremove==null)
 	    generateremove=false;
 
 	Descriptor d=ep.getDescriptor();
@@ -1281,7 +1281,7 @@ public class RepairGenerator {
 
 // In some cases the analysis has determined that generating removes
 // is unnecessary
-	if (generateadd&&munadd==null) 
+	if (generateadd&&munadd==null)
 	    generateadd=false;
 
 	if (generateadd) {
@@ -1292,7 +1292,7 @@ public class RepairGenerator {
 	    if (d instanceof RelationDescriptor) {
 		VarDescriptor otherside=VarDescriptor.makeNew("otherside");
 		((ImageSetExpr)((SizeofExpr)expr.left).setexpr).generate_leftside(cr,otherside);
-		
+
 		RelationDescriptor rd=(RelationDescriptor)d;
 		if (termination.sources.relsetSource(rd,!ep.inverted())) {
 		    /* Set Source */
@@ -1471,7 +1471,7 @@ public class RepairGenerator {
         for (int i = 0; i < rules.size(); i++) {
             Rule rule = (Rule) rules.elementAt(i);
             Set requiredsymbols = rule.getRequiredDescriptors();
-            
+
             // #TBD#: in general this is wrong because these descriptors may contain descriptors
             // bound in "in?" expressions which need to be dealt with in a topologically sorted
             // fashion...
@@ -1547,7 +1547,7 @@ public class RepairGenerator {
 
 
 
-		    
+
 		    String parttype="";
 		    for(int i=0;i<currentrule.numQuantifiers();i++) {
 			if (currentrule.getQuantifier(i) instanceof RelationQuantifier)
@@ -1557,7 +1557,7 @@ public class RepairGenerator {
 		    }
 		    VarDescriptor funptr=VarDescriptor.makeNew("updateptr");
 		    VarDescriptor tmpptr=VarDescriptor.makeNew("tempupdateptr");
-		    
+
 		    String methodcall="("+funptr.getSafeSymbol()+") (this,"+oldmodel.getSafeSymbol()+","+repairtable.getSafeSymbol();
 		    for(int i=0;i<currentrule.numQuantifiers();i++) {
 			Quantifier q=currentrule.getQuantifier(i);
@@ -1573,9 +1573,9 @@ public class RepairGenerator {
 			    methodcall+=","+fq.getVar().getSafeSymbol();
 			}
 		    }
-		    
-		    
-		    
+
+
+
 		    cr.outputline("void *"+tmpptr.getSafeSymbol()+"=");
 		    cr.outputline("(void *) "+repairtable.getSafeSymbol()+"->getrelation("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
 		    cr.outputline("if ("+ismdfyptr.getSafeSymbol()+")");
@@ -1597,7 +1597,7 @@ public class RepairGenerator {
 		    cr.outputline("goto rebuild;");
 		}
 		cr.endblock();
-		
+
 		/* Build standard compensation actions */
 		if (need_compensation(currentrule)) {
 		    UpdateNode un=find_compensation(currentrule);
@@ -1630,19 +1630,13 @@ public class RepairGenerator {
         String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
 	cr.outputline("int " + addeditem + "=0;");
 
-	String ifstring="if (!maybe&&";
-	boolean dogenerate=false;
+	String ifstring="if (!maybe";
 	if (rd.getDomain().getType() instanceof StructureTypeDescriptor)  {
-	    dogenerate=true;
-	    ifstring+=leftvar;
+	    ifstring+="&&"+leftvar;
 	}
 
 	if (rd.getRange().getType() instanceof StructureTypeDescriptor)  {
-	    if (dogenerate)
-		ifstring+="&&"+rightvar;
-	    else
-		ifstring+=rightvar;
-	    dogenerate=true;
+            ifstring+="&&"+rightvar;
 	}
 
 	ifstring+=")";
@@ -1651,15 +1645,15 @@ public class RepairGenerator {
 	    cr.outputline(ifstring);
 	    cr.outputline(addeditem + " = " + rd.getSafeSymbol() + "_hash->add((int)" + leftvar + ", (int)" + rightvar+ ");");
 	}
-	
+
 	if (rd.testUsage(RelationDescriptor.INVIMAGE)) {
 	    cr.outputline(ifstring);
 	    cr.outputline(addeditem + " = " + rd.getSafeSymbol() + "_hashinv->add((int)" + rightvar + ", (int)" + leftvar + ");");
 	}
-	
+
 
         Vector dispatchrules = getrulelist(rd);
-        
+
 	Set toremove=new HashSet();
 	for(int i=0;i<dispatchrules.size();i++) {
 	    Rule r=(Rule)dispatchrules.get(i);
@@ -1674,7 +1668,7 @@ public class RepairGenerator {
 
 	cr.outputline("if (" + addeditem + ")");
 	cr.startblock();
-       
+
         for(int i = 0; i < dispatchrules.size(); i++) {
             Rule rule = (Rule) dispatchrules.elementAt(i);
 	    if (rule.getGuardExpr().getRequiredDescriptors().contains(rd)) {
@@ -1746,12 +1740,12 @@ public class RepairGenerator {
 		    ruleset.addAll((Set)state.implicitruleinv.get(currentrule));
 		for(int i=0;i<ruleset.size();i++) {
 		    Rule itrule=(Rule)ruleset.get(i);
-		    
+
 		    if (need_compensation(itrule)) {
 			UpdateNode un=find_compensation(itrule);
 			String name=(String)updatenames.get(un);
 			usedupdates.add(un); /* Mark as used */
-			
+
 			String methodcall=name+"(this,"+oldmodel.getSafeSymbol()+","+
 			    repairtable.getSafeSymbol();
 			for(int j=0;j<currentrule.numQuantifiers();j++) {
