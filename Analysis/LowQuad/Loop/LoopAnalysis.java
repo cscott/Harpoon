@@ -15,7 +15,7 @@ import harpoon.Analysis.SSITOSSAMap;
 import harpoon.Temp.TempMap;
 import harpoon.IR.Properties.HasEdges;
 import harpoon.Analysis.LowQuad.Loop.AllInductions;
-import harpoon.Analysis.LowQuad.Loop.BasicInduction;
+import harpoon.Analysis.LowQuad.Loop.BasicInductions;
 import harpoon.Analysis.LowQuad.Loop.LoopInvariance;
 
 
@@ -27,7 +27,7 @@ import java.util.Iterator;
  * <code>LoopAnalysis</code> implements 
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.3 1999-06-29 17:24:24 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.4 1999-06-29 19:05:15 bdemsky Exp $
  */
 
 public class LoopAnalysis {
@@ -76,7 +76,7 @@ public class LoopAnalysis {
 	WorkSet invariants=invar.invariants(elements);
 
 	//Find basic induction variables
-	BasicInduction binductor=new BasicInduction(tm,hc);
+	BasicInductions binductor=new BasicInductions(tm,hc);
 	HashMap basicinduction=binductor.doInduction(lp,invariants);
 
 	AllInductions ainductor=new AllInductions(tm,hc);
