@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.177 2001-11-13 23:21:29 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.178 2001-11-13 23:36:17 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -175,6 +175,10 @@ public class SAMain extends harpoon.IR.Registration {
 	    new harpoon.ClassFile.CachingCodeFactory(
 	    harpoon.IR.Quads.QuadWithTry.codeFactory()
 	    );
+	// the new mover will try to put NEWs closer to their constructors.
+	// in the words of a PLDI paper, this reduces "drag time".
+	// it also improves some analysis results. =)
+	hcf = new harpoon.Analysis.Quads.NewMover(hcf).codeFactory();
 
 	PRECISEGC = System.getProperty("harpoon.alloc.strategy", 
 				       "malloc").equalsIgnoreCase("precise");
@@ -419,6 +423,13 @@ public class SAMain extends harpoon.IR.Registration {
  		hcf = new harpoon.Analysis.SizeOpt.FieldReducer
 		    (hcf, frame, classHierarchy, roots, resource)
 		    .codeFactory();
+	    }
+	    if (System.getProperty("mzf.profile","").length()>0) {
+ 		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+		hcf = new harpoon.Analysis.SizeOpt.MZFCompressor
+		    (frame, hcf, classHierarchy,
+		     System.getProperty("mzf.profile")).codeFactory();
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
 	    /* -- add counters to all allocations? -- */
 	    if (Boolean.getBoolean("size.counters")) {
