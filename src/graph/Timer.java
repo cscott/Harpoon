@@ -16,13 +16,11 @@ public class Timer extends Node {
     private boolean start;
     private boolean announce;
     private boolean rawOutput;
-    private long total = 0;
-    private long squaresTotal = 0;
-    private long frames = 0;
-    private long max = 0;
-    private long min = Long.MAX_VALUE;
-    private long cache[] = new long[300];
-    private int cacheCount = 0;
+    private long lastTimeCalled = 0;
+    private StatArray latencyStats;
+    private StatArray rateStats;
+    private int frames;
+
     private String header;
 
     /** Create a new {@link Timer} node which can either stamp or read out 
@@ -67,6 +65,10 @@ public class Timer extends Node {
 	this.announce = announce;
 	this.header = header;
 	this.rawOutput = rawOutput;
+	if(!start){
+	    this.latencyStats = new StatArray(header + ":Latency");
+	    this.rateStats = new StatArray(header+ ":Rate");
+	}
     }
 
     /** Either stamp, or read out the latency of the processing of 
@@ -83,90 +85,24 @@ public class Timer extends Node {
 	if (start) {
 	    id.time = time;
 	} else {
-	    long diff = time-id.time;
-	    total += id.time = diff;
-	    squaresTotal += Math.pow(diff, 2);
-	    if (diff > max)
-		max = diff;
-	    if (diff < min)
-		min = diff;
-	    cache[cacheCount] = diff;
-	    cacheCount++;
-	    if(cacheCount >= cache.length){
-		if (announce) {
-		    if(rawOutput){
-			for(int i = 0; i< cache.length; i++){
-			    if (header != null) {
-				System.out.print(header+": ");
-			    }
-			    System.out.println(cache[i]);
-			}
-		    } else {
-			if (header != null) {
-			    System.out.print(header+": ");
-			}
-			for(int i = 0; i < cache.length; i++){
-			    System.out.print("Time (ms): " + cache[i]);
-			}
-			
-			//line below added by Benji 
-			System.out.print(" ** Avg(ms):"+(int)(getLatency()*1000));
-			System.out.print(" ** Min:"+min);
-			System.out.print(" ** Max:"+max);
-			System.out.println(" ** StdDev:"+getStdDev());
-		    }
+	    if(latencyStats.isFull() || rateStats.isFull()){
+		if(announce){
+		    latencyStats.printAll();
+		    rateStats.printAll();
 		}
-		cacheCount = 0;
+		latencyStats.clear();
+		rateStats.clear();
+	    }
+
+	    // The time since this image passed through the start node
+	    latencyStats.add(time - id.time);
+
+	    // The time since the last image passed through this node
+	    if(lastTimeCalled != 0){
+		rateStats.add(System.currentTimeMillis() - lastTimeCalled);
 	    }
 	}
+	lastTimeCalled = System.currentTimeMillis();
 	super.process(id);
-    }
-
-    /** Get the total amount of latency in milliseconds of all frames that
-     *  passed through this point. 
-     */
-    public long getTotal() {
-	return total;
-    }
-
-    /** Get the total number of frames that have passed through this point.
-     */
-    public long getFrames() {
-	return frames;
-    }
-
-    /** Get the average latency of frames that have passed through this point
-     *  in seconds.
-     */
-    //public synchronized float getLatency() {
-    public float getLatency() {
-	return ((float)total)/(1000*((float)frames));
-    }
-
-    /**
-     *  Get the standard deviation of the latency (in seconds) of the frames
-     *  that have passed through this point.
-     */
-    //public synchronized float getStdDev() {
-    public float getStdDev() {
-	/* PROOF: std. dev. = sqrt(E[(x-E[x])^2])
-	 *                  = sqrt(sum((x-(sum(x)/n))^2)/n)
-	 *                  = sqrt(sum((x^2 - 2*(sum(x)/n)*x + (sum(x)/n)^2))/n)
-	 *                  = sqrt((sum(x^2) - sum(2*(sum(x)/n)*x) + (sum((sum(x)/n)^2)))/n)
-	 *                  = sqrt((sum(x^2) - (2/n)*sum(sum(x)*x) + (sum(sum(x)^2)/(n^2)))/n)
-	 *                  = sqrt((sum(x^2) - (2/n)*sum(x)*sum(x) + n*(sum(x)^2)/(n^2))/n)
-	 *                  = sqrt((sum(x^2) - 2*(sum(x)/n)*sum(x) + n*(sum(x)/n)^2)/n)
-	 *                  = sqrt((squaresTotal - 2*avg*total + frames*avg^2)/frames)
-	 */
-
-	float avg = getLatency()*1000;
-	float avgSquared = (float)Math.pow(avg, 2);
-	float totalDeviation =
-	    squaresTotal
-	    - 2*avg*total
-	    + frames*avgSquared;
-	float variance = totalDeviation / frames;
-	float stdDev = (float)Math.sqrt(variance);
-        return stdDev ;
     }
 }
