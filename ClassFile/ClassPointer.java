@@ -9,11 +9,12 @@ import harpoon.Util.Util;
  * the HClass itself.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassPointer.java,v 1.1.2.2 1999-08-04 05:52:27 cananian Exp $
+ * @version $Id: ClassPointer.java,v 1.1.2.2.6.1 2000-01-10 22:06:52 cananian Exp $
  */
 class ClassPointer extends HPointer {
+    final Linker linker;
     final String descriptor;
-    ClassPointer(String descriptor) {
+    ClassPointer(Linker linker, String descriptor) {
 	Util.assert(descriptor.indexOf('.')==-1); // slashes, not dots.
 	// trim descriptor.
 	int i;
@@ -25,9 +26,10 @@ class ClassPointer extends HPointer {
 	}
 	descriptor = descriptor.substring(0,i+1);
 	// assign.
+	this.linker = linker;
 	this.descriptor = descriptor;
     }
-    HClass actual() { return HClass.forDescriptor(descriptor); }
+    HClass actual() { return linker.forDescriptor(descriptor); }
     String getDescriptor() { return descriptor; }
     String getName() {
 	// yes, unfortunately we can have HPointers to primitives and arrays.

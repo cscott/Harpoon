@@ -15,10 +15,10 @@ import java.lang.reflect.Modifier;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1.2.6 1999-08-07 04:14:19 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.1.2.6.6.1 2000-01-10 22:06:53 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
-abstract class HClassCls extends HClass {
+abstract class HClassCls extends HClassImpl {
   /** Fully qualified name of the class represented by this 
    *  <code>HClassCls</code> object. */
   String name;
@@ -40,7 +40,7 @@ abstract class HClassCls extends HClass {
   transient HMethod[] methods = null;
 
   /** Implementations must provide their own constructor to initialize. */
-  protected HClassCls() { /* no implementation */ }
+  protected HClassCls(Linker l) { super(l); }
 
   /** 
    * Returns the fully-qualified name of the class

@@ -9,10 +9,6 @@ import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
-import java.io.InputStream;
-import java.io.BufferedInputStream;
-import java.util.Hashtable;
-import java.util.Vector;
 
 /**
  * Instances of the class <code>HClass</code> represent classes and 
@@ -31,170 +27,24 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.29 1999-11-11 19:07:15 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.29.2.1 2000-01-10 22:06:53 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
 public abstract class HClass extends HPointer
-  implements java.io.Serializable, java.lang.Comparable, ReferenceUnique {
-  static Hashtable dsc2cls = new Hashtable();
+  implements java.lang.Comparable, ReferenceUnique {
+  /** The linker responsible for the resolution of this <code>HClass</code>
+   *  object. */
+  private final Linker _linker;
 
   /** Protected constructor, not for external use. */
-  HClass() { }
+  HClass(Linker l) { _linker = l; }
 
-  /** Make a unique class name from a given suggestion. */
-  static String uniqueName(String suggestion) {
-    if (suggestion==null || suggestion.equals("")) suggestion="MAGICc";
-    // remove trailing dollar-signs.
-    while (suggestion.charAt(suggestion.length()-1)=='$')
-      suggestion = suggestion.substring(0, suggestion.length()-1);
-    // remove anything after a double dollar sign.
-    if (suggestion.indexOf("$$")!=-1)
-      suggestion = suggestion.substring(0, suggestion.lastIndexOf("$$"));
-    // find lowest unique number for class.
-    for (int i=-1; true; i++) {
-      String className = (i<0)?suggestion:(suggestion + "$$" + i);
-      if (dsc2cls.containsKey("L"+className.replace('.','/')+";")) continue;
-      InputStream is = Loader.getResourceAsStream
-	(Loader.classToResource(className));
-      if (is != null) {
-	try{ is.close(); } catch(java.io.IOException e) { }
-	continue; // named file on disk.
-      }
-      // found a valid name.
-      return className;
-    }
-  }
-  /** 
-   * Returns the <code>HClass</code> object associated with the class with
-   * the given string name.  Given the fully-qualified name for a class or
-   * interface, this method attempts to locate and load the class.  If it
-   * succeeds, returns the <code>HClass</code> object representing the class.
-   * If it fails, the method throws a <code>NoClassDefFoundError</code>.
-   * @param className the fully qualified name of the desired class.
-   * @return the <code>HClass</code> descriptor for the class with the
-   *         specified name.
-   * @exception NoClassDefFoundError
-   *            if the class could not be found.
-   */
-  public static HClass forName(String className) {
-    if (className.charAt(0)=='[') {
-      Util.assert(className.indexOf('.')==-1); // should be desc, not name.
-      return forDescriptor(className);
-    } else {
-      Util.assert(className.indexOf('/')==-1); // should be name, not desc.
-      return forDescriptor("L"+className.replace('.','/')+";");
-    }
-  }
-  
   /**
-   * Returns the <code>HClass</code> object associated with the
-   * ComponentType descriptor given.  Throws <code>NoClassDefFoundError</code>
-   * if the descriptor references a class that cannot be found.  Throws
-   * <code>Error</code> if an invalid descriptor is given.
+   * Returns the linker responsible for the resolution of this
+   * <code>HClass</code> object.
    */
-  public static HClass forDescriptor(String descriptor) {
-    Util.assert(descriptor.indexOf('.')==-1); // should be desc, not name.
-    // Trim descriptor.
-    int i;
-    for (i=0; i<descriptor.length(); i++) {
-      char c = descriptor.charAt(i);
-      if (c=='(' || c==')') throw new Error("Bad Descriptor: "+descriptor);
-      if (c=='[') continue;
-      if (c=='L') i = descriptor.indexOf(';', i);
-      break;
-    }
-    descriptor = descriptor.substring(0, i+1);
-    // Check the cache.
-    HClass cls = (HClass) dsc2cls.get(descriptor);
-    if (cls!=null) return cls;
-    // not in the cache.
-    switch(descriptor.charAt(0)) {
-    case '[': // arrays.
-      {
-	// count dimensions
-	int d;
-	for (d=0; d<descriptor.length(); d++)
-	  if (descriptor.charAt(d)!='[') 
-	    break;
-	// recurse to fetch base type.
-	HClass basetype = forDescriptor(descriptor.substring(d));
-	// make it.
-	return new HClassArray(basetype, d);
-      }
-    case 'B':
-      return HClass.Byte;
-    case 'C':
-      return HClass.Char;
-    case 'D':
-      return HClass.Double;
-    case 'F':
-      return HClass.Float;
-    case 'I':
-      return HClass.Int;
-    case 'J':
-      return HClass.Long;
-    case 'S':
-      return HClass.Short;
-    case 'Z':
-      return HClass.Boolean;
-    case 'V':
-      return HClass.Void;
-    case 'L': // object type.
-      {
-	// classname in descriptor is '/' delimited.
-	String className = descriptor.substring(1, descriptor.indexOf(';'));
-	className = className.replace('/','.'); // make proper class name.
-	InputStream is = 
-	  Loader.getResourceAsStream(Loader.classToResource(className));
-	if (is == null) throw new NoClassDefFoundError(className);
-	// OK, go ahead and load this.
-	try {
-	  return /*ImplGNU*/ImplMagic.forStream(new BufferedInputStream(is));
-	} catch (java.lang.ClassFormatError e) {
-	  throw new NoClassDefFoundError(className+" ["+e.toString()+"]");
-	} catch (java.io.IOException e) {
-	  throw new NoClassDefFoundError(className);
-	} finally {
-	  try { is.close(); } catch(java.io.IOException e) { }
-	}
-      }
-    default:
-      break;
-    }
-    throw new Error("Bad Descriptor: "+descriptor);
-  }
-  /** 
-   * Returns the <code>HClass</code> object associated with the given java 
-   * <code>Class</code> object.  If (for some reason) the class file
-   * cannot be found, the method throws a <code>NoClassDefFoundError</code>.
-   * @return the <code>HClass</code> descriptor for this <code>Class</code>.
-   * @exception NoClassDefFoundError
-   *            if the classfile could not be found.
-   */
-  public static HClass forClass(Class cls) {
-    // if cls is an array...
-    if (cls.isArray())
-      return forDescriptor("[" +
-			   forClass(cls.getComponentType()).getDescriptor());
-    // or else if it's a primitive type...
-    if (cls.isPrimitive()) {
-      if (cls == java.lang.Boolean.TYPE) return HClass.Boolean;
-      if (cls == java.lang.Character.TYPE) return HClass.Char;
-      if (cls == java.lang.Byte.TYPE) return HClass.Byte;
-      if (cls == java.lang.Short.TYPE) return HClass.Short;
-      if (cls == java.lang.Integer.TYPE) return HClass.Int;
-      if (cls == java.lang.Long.TYPE) return HClass.Long;
-      if (cls == java.lang.Float.TYPE) return HClass.Float;
-      if (cls == java.lang.Double.TYPE) return HClass.Double;
-      if (cls == java.lang.Void.TYPE) return HClass.Void;
-      throw new Error("Unknown class primitive.");
-    }
-    // otherwise...
-    return forName(cls.getName());
-  }
-
-  void register() { dsc2cls.put(getDescriptor(), this); }
+  public final Linker getLinker() { return _linker; }
 
   /**
    * If this class represents an array type, returns the <code>HClass</code>
@@ -202,7 +52,7 @@ public abstract class HClass extends HPointer
    * null.
    * @see java.lang.reflect.Array
    */
-  public HClass getComponentType() { return null; }
+  public abstract HClass getComponentType();
 
   /** 
    * Returns the fully-qualified name of the type (class, interface,
@@ -219,13 +69,8 @@ public abstract class HClass extends HPointer
    * then returns null.  Returns <code>""</code> (a zero-length string)
    * if this class is not in a package.
    */
-  public String getPackage() {
-    if (isPrimitive() || isArray()) return null;
-    String fullname = getName();
-    int lastdot = fullname.lastIndexOf('.');
-    if (lastdot<0) return ""; // no package.
-    else return fullname.substring(0, lastdot);
-  }
+  public abstract String getPackage();
+
   /**
    * Returns a ComponentType descriptor for the type represented by this
    * <code>HClass</code> object.
@@ -242,17 +87,9 @@ public abstract class HClass extends HPointer
    *            if a field with the specified name is not found.
    * @see HField
    */
-  public HField getDeclaredField(String name)
-    throws NoSuchFieldError {
-    // construct master declaredField list, if we haven't already.
-    HField[] declaredFields=getDeclaredFields();
-    // look for field name in master list.
-    for (int i=0; i<declaredFields.length; i++)
-      if (declaredFields[i].getName().equals(name))
-	return declaredFields[i];
-    // not found.
-    throw new NoSuchFieldError(getName()+"."+name);
-  }
+  public abstract HField getDeclaredField(String name)
+    throws NoSuchFieldError;
+
   /**
    * Returns an array of <code>HField</code> objects reflecting all the
    * fields declared by the class or interface represented by this
@@ -282,17 +119,9 @@ public abstract class HClass extends HPointer
    *            if a field with the specified name is not found.
    * @see HField
    */
-  public HField getField(String name) throws NoSuchFieldError {
-    // construct master field list, if we haven't already.
-    HField[] fields=getFields();
-    // look for field name in master field list.
-    // look backwards to be sure we find local fields first (scoping)
-    for (int i=fields.length-1; i>=0; i--)
-      if (fields[i].getName().equals(name))
-	return fields[i];
-    // can't find it.
-    throw new NoSuchFieldError(getName()+"."+name);
-  }
+  public abstract HField getField(String name)
+    throws NoSuchFieldError;
+
   /**
    * Returns an array containing <code>HField</code> objects reflecting
    * all the accessible fields of the class or interface represented by this
@@ -311,55 +140,7 @@ public abstract class HClass extends HPointer
    * @see "The Java Language Specification, sections 8.2 and 8.3"
    * @see HField
    */
-  public HField[] getFields() { 
-    HField[] fields;
-    if (isPrimitive() || isArray()) {
-      fields = new HField[0];
-    } else {
-      fields = getFields(this); 
-    }
-    return fields;
-  }
-
-  /* does the actual work.  Because of permissions issues, it's important
-   * to know which class is asking for the fields listing.
-   */
-  HField[] getFields(HClass frmClass) {
-    String frmPackage = frmClass.getPackage();
-    UniqueVector v = new UniqueVector();
-    // add fields from interfaces.
-    HClass[] in = getInterfaces();
-    for (int i=0; i<in.length; i++) {
-      HField[] inf = in[i].getFields(frmClass);
-      for (int j=0; j<inf.length; j++)
-	v.addElement(inf[j]);
-    }
-    // now fields from superclasses, subject to access mode constraints.
-    HClass sup = getSuperclass();
-    HField supf[] = (sup==null)?new HField[0]:sup.getFields(frmClass);
-    for (int i=0; i<supf.length; i++) {
-      int m = supf[i].getModifiers();
-      // private fields of superclasses are invisible.
-      if (Modifier.isPrivate(m))
-	continue; // skip this field.
-      // default access is invisible if packages not identical.
-      /** DISABLED: see notes in getMethods() [CSA 6-22-99] */
-      if (!Modifier.isPublic(m) && !Modifier.isProtected(m))
-	if (!supf[i].getDeclaringClass().getPackage().equals(frmPackage))
-	  /*continue*/;
-      // all's good. Add this one.
-      v.addElement(supf[i]);
-    }
-    // now fields from our local class.
-    HField locf[] = getDeclaredFields();
-    for (int i=0; i<locf.length; i++)
-      v.addElement(locf[i]);
-    
-    // Merge into one array.
-    HField[] result = new HField[v.size()];
-    v.copyInto(result);
-    return result;
-  }
+  public abstract HField[] getFields();
 
   /**
    * Returns a <code>HMethod</code> object that reflects the specified 
@@ -373,25 +154,10 @@ public abstract class HClass extends HPointer
    *            if a matching method is not found.
    * @see HMethod
    */
-  public HMethod getDeclaredMethod(String name, HClass parameterTypes[])
-    throws NoSuchMethodError {
-    // construct master declaredMethod list, if we haven't already.
-    HMethod[] declaredMethods=getDeclaredMethods();
-    // look for method name/type in master list.
-    for (int i=0; i<declaredMethods.length; i++)
-      if (declaredMethods[i].getName().equals(name)) {
-	HClass[] methodParamTypes = declaredMethods[i].getParameterTypes();
-	if (methodParamTypes.length == parameterTypes.length) {
-	  int j; for (j=0; j<parameterTypes.length; j++)
-	    if (methodParamTypes[j] != parameterTypes[j])
-	      break; // oops, this one doesn't match.
-	  if (j==parameterTypes.length) // hey, we made it to the end!
-	    return declaredMethods[i];
-	}
-      }
-    // didn't find a match.  Oh, well.
-    throw new NoSuchMethodError(getName()+"."+name);
-  }
+  public abstract HMethod getDeclaredMethod(String name,
+					    HClass parameterTypes[])
+    throws NoSuchMethodError;
+
   /**
    * Returns a <code>HMethod</code> object that reflects the specified 
    * declared method of the class or interface represented by this 
@@ -403,18 +169,9 @@ public abstract class HClass extends HPointer
    *            if a matching method is not found.
    * @see HMethod#getDescriptor
    */
-  public HMethod getDeclaredMethod(String name, String descriptor)
-    throws NoSuchMethodError {
-    // construct master declaredMethod list, if we haven't already.
-    HMethod[] declaredMethods=getDeclaredMethods();
-    // look for method name/type in master list.
-    for (int i=0; i<declaredMethods.length; i++)
-      if (declaredMethods[i].getName().equals(name) &&
-	  declaredMethods[i].getDescriptor().equals(descriptor))
-	return declaredMethods[i];
-    // didn't find a match.  Oh, well.
-    throw new NoSuchMethodError(getName()+"."+name+"/"+descriptor);
-  }
+  public abstract HMethod getDeclaredMethod(String name, String descriptor)
+    throws NoSuchMethodError;
+
   /**
    * Returns an array of <code>HMethod</code> objects reflecting all the
    * methods declared by the class or interface represented by this
@@ -445,26 +202,9 @@ public abstract class HClass extends HPointer
    * @see "The Java Language Specification, sections 8.2 and 8.4"
    * @exception NoSuchMethodError if a matching method is not found.
    */
-  public HMethod getMethod(String name, HClass parameterTypes[])
-    throws NoSuchMethodError {
-    // construct master method list, if we haven't already.
-    HMethod[] methods=getMethods();
-    // look for method name in master method list.
-    // look backwards to be sure we find local methods first (scoping).
-    for (int i=methods.length-1; i>=0; i--)
-      if (methods[i].getName().equals(name)) {
-	HClass[] methodParamTypes = methods[i].getParameterTypes();
-	if (methodParamTypes.length == parameterTypes.length) {
-	  int j; for (j=0; j<parameterTypes.length; j++)
-	    if (methodParamTypes[j] != parameterTypes[j])
-	      break; // oops, this one doesn't match.
-	  if (j==parameterTypes.length) // hey, we made it to the end!
-	    return methods[i];
-	}
-      }
-    // didn't find a match. Oh, well.
-    throw new NoSuchMethodError(getName()+"."+name);
-  }
+  public abstract HMethod getMethod(String name, HClass parameterTypes[])
+    throws NoSuchMethodError;
+
   /**
    * Returns an <code>HMethod</code> object that reflects the specified
    * accessible method of the class or interface represented by this
@@ -479,19 +219,8 @@ public abstract class HClass extends HPointer
    * @see HMethod#getDescriptor
    * @exception NoSuchMethodError if a matching method is not found.
    */
-  public HMethod getMethod(String name, String descriptor)
-    throws NoSuchMethodError {
-    // construct master method list, if we haven't already.
-    HMethod[] methods=getMethods();
-    // look for method name in master method list.
-    // look backwards to be sure we find local methods first (scoping)
-    for (int i=methods.length-1; i>=0; i--)
-      if (methods[i].getName().equals(name) &&
-	  methods[i].getDescriptor().equals(descriptor))
-	return methods[i];
-    // didn't find a match.
-    throw new NoSuchMethodError(getName()+"."+name+"/"+descriptor);
-  }
+  public abstract HMethod getMethod(String name, String descriptor)
+    throws NoSuchMethodError;
 	
   /**
    * Returns an array containing <code>HMethod</code> object reflecting
@@ -504,84 +233,7 @@ public abstract class HClass extends HPointer
    * Constructors are included.
    * @see "The Java Language Specification, sections 8.2 and 8.4"
    */
-  public HMethod[] getMethods() {
-    HMethod[] methods;
-    if (isPrimitive()) {
-      methods = new HMethod[0];
-    } else { // class or interface.
-      methods = getMethods(this);
-    }
-    return methods;
-  }
-  /* does the actual work.  Because of permissions issues, it's important
-   * to know which class is asking for the methods listing.
-   */
-  HMethod[] getMethods(HClass frmClass) {
-    String frmPackage = frmClass.getPackage();
-    Hashtable h = new Hashtable(); // keep track of overriding
-    Vector v = new Vector(); // accumulate results.
-
-    // first methods we declare locally.
-    HMethod[] locm = getDeclaredMethods();
-    for (int i=0; i<locm.length; i++) {
-      h.put(locm[i].getName()+locm[i].getDescriptor(), locm[i]);
-      v.addElement(locm[i]);
-    }
-    locm=null; // free memory
-
-    // grab fields from superclasses, subject to access mode constraints.
-    HClass sup = getSuperclass();
-    HMethod supm[] = (sup==null)?new HMethod[0]:sup.getMethods(frmClass);
-    for (int i=0; i<supm.length; i++) {
-      int m = supm[i].getModifiers();
-      // private methods of superclasses are invisible.
-      if (Modifier.isPrivate(m))
-	continue; // skip this method.
-      // default access is invisible if packages not identical
-      /** SKIPPING this test, because the interpreter doesn't like it.
-       **  For example, harpoon.IR.Quads.OPER invokes
-       **  OperVisitor.dispatch() in method visit().  But dispatch() has
-       **  package visibility and thus doesn't show up in
-       **  SCCAnalysis...operVisitor, and a virtual dispatch to visit()
-       **  on an object of type SCCAnalysis...operVisitor fails.  Current
-       **  solution is to move this check into the interpreter; see
-       **  harpoon.Interpret.Quads.Method. [CSA, 6-22-99] */
-      if (!Modifier.isPublic(m) && !Modifier.isProtected(m))
-	if (!supm[i].getDeclaringClass().getPackage().equals(frmPackage))
-	  /*continue*/; // skip this (inaccessible) method.
-      // skip superclass constructors.
-      if (supm[i] instanceof HConstructor)
-	  continue;
-      // don't add methods which are overriden by locally declared methods.
-      if (h.containsKey(supm[i].getName()+supm[i].getDescriptor()))
-	continue;
-      // all's good.  Add this one.
-      h.put(supm[i].getName()+supm[i].getDescriptor(), supm[i]);
-      v.addElement(supm[i]);
-    }
-    sup=null; supm=null; // free memory.
-
-    // Lastly, interface methods, if not already declared.
-    // [interface methods will typically be explicitly declared in classes,
-    //  even if not implemented (abstract), but superinterface methods aren't
-    //  declared explicitly in interfaces.]
-    HClass[] intc = getInterfaces();
-    for (int i=0; i<intc.length; i++) {
-      HMethod intm[] = intc[i].getMethods(frmClass);
-      for (int j=0; j<intm.length; j++) {
-	// don't add methods which are overridden by locally declared methods
-	if (h.containsKey(intm[j].getName()+intm[j].getDescriptor()))
-	  continue;
-	v.addElement(intm[j]);
-      }
-    }
-    intc = null; // free memory.
-
-    // Merge into a single array.
-    HMethod[] result = new HMethod[v.size()];
-    v.copyInto(result);
-    return result;
-  }
+  public abstract HMethod[] getMethods();
 
   /**
    * Returns an <code>HConstructor</code> object that reflects the 
@@ -591,10 +243,8 @@ public abstract class HClass extends HPointer
    * identify the constructor's formal parameter types, in declared order.
    * @exception NoSuchMethodError if a matching method is not found.
    */
-  public HConstructor getConstructor(HClass parameterTypes[])
-    throws NoSuchMethodError {
-    return (HConstructor) getDeclaredMethod("<init>", parameterTypes);
-  }
+  public abstract HConstructor getConstructor(HClass parameterTypes[])
+    throws NoSuchMethodError;
 
   /**
    * Returns an array of <code>HConstructor</code> objects reflecting
@@ -606,36 +256,14 @@ public abstract class HClass extends HPointer
    * primitive type.
    * @see "The Java Language Specification, section 8.2"
    */
-  public HConstructor[] getConstructors() {
-    HConstructor[] constructors;
-    if (isPrimitive() || isArray() || isInterface())
-      constructors = new HConstructor[0];
-    else {
-      HMethod[] hm = getMethods();
-      int n=0;
-      for (int i=0; i<hm.length; i++)
-	if (hm[i] instanceof HConstructor)
-	  n++;
-      constructors = new HConstructor[n];
-      for (int i=0; i<hm.length; i++)
-	if (hm[i] instanceof HConstructor)
-	  constructors[--n] = (HConstructor) hm[i];
-    }
-    return constructors;
-  }
+  public abstract HConstructor[] getConstructors();
 
   /**
    * Returns the class initializer method, if there is one; otherwise
    * <code>null</code>.
    * @see "The Java Virtual Machine Specification, section 3.8"
    */
-  public HInitializer getClassInitializer() {
-    try {
-      return (HInitializer) getDeclaredMethod("<clinit>", new HClass[0]);
-    } catch (NoSuchMethodError e) {
-      return null;
-    }
-  }
+  public abstract HInitializer getClassInitializer();
 
   /**
    * Returns the Java language modifiers for this class or interface,
@@ -688,7 +316,7 @@ public abstract class HClass extends HPointer
    * zero-length string if the information is not available.
    * @see harpoon.IR.RawClass.AttributeSourceFile
    */
-  public String getSourceFile() { return ""; }
+  public abstract String getSourceFile();
 
   /**
    * If this <code>HClass</code> is a primitive type, return the
@@ -698,31 +326,20 @@ public abstract class HClass extends HPointer
    * Calling <code>getWrapper</code> with a non-primitive <code>HClass</code>
    * will return the value <code>null</code>.
    */
-  public HClass getWrapper() {
-    if (this==this.Boolean) return forName("java.lang.Boolean");
-    if (this==this.Byte)    return forName("java.lang.Byte");
-    if (this==this.Char)    return forName("java.lang.Character");
-    if (this==this.Double)  return forName("java.lang.Double");
-    if (this==this.Float)   return forName("java.lang.Float");
-    if (this==this.Int)     return forName("java.lang.Integer");
-    if (this==this.Long)    return forName("java.lang.Long");
-    if (this==this.Short)   return forName("java.lang.Short");
-    if (this==this.Void)    return forName("java.lang.Void");
-    return null; // not a primitive type;
-  }
+  public abstract HClass getWrapper();
 
   /**
    * If this <code>HClass</code> object represents an array type, 
    * returns <code>true</code>, otherwise returns <code>false</code>.
    */
-  public boolean isArray() { return false; }
+  public abstract boolean isArray();
   /**
    * Determines if the specified <code>HClass</code> object represents an
    * interface type.
    * @return <code>true</code> is this object represents an interface;
    *         <code>false</code> otherwise.
    */
-  public boolean isInterface() { return false; }
+  public abstract boolean isInterface();
 
   /**
    * Determines if the specified <code>HClass</code> object represents a
@@ -730,7 +347,7 @@ public abstract class HClass extends HPointer
    * There are nine predefined <code>HClass</code> objects to represent
    * the eight primitive Java types and void.
    */
-  public boolean isPrimitive() { return false; }
+  public abstract boolean isPrimitive();
 
   /**
    * Determines if the class or interface represented by this 
@@ -750,39 +367,7 @@ public abstract class HClass extends HPointer
    * @exception NullPointerException
    *            if the specified <code>HClass</code> parameter is null.
    */
-  public boolean isAssignableFrom(HClass cls) {
-    if (cls==null) throw new NullPointerException();
-    // test identity conversion.
-    if (cls==this) return true;
-    // widening reference conversions...
-    if (this.isPrimitive()) return false;
-    // widening reference conversions from the null type:
-    if (cls==HClass.Void) return true;
-    if (cls.isPrimitive()) return false;
-    // widening reference conversions from an array:
-    if (cls.isArray()) {
-      if (this == forName("java.lang.Object")) return true;
-      if (this == forName("java.lang.Cloneable")) return true;
-      // see http://java.sun.com/docs/books/jls/clarify.html
-      if (this == forName("java.io.Serializable")) return true;
-      if (isArray() &&
-	  !getComponentType().isPrimitive() &&
-	  !cls.getComponentType().isPrimitive() &&
-	  getComponentType().isAssignableFrom(cls.getComponentType()))
-	return true;
-      return false;
-    }
-    // widening reference conversions from an interface type.
-    if (cls.isInterface()) {
-      if (this.isInterface() && this.isSuperinterfaceOf(cls)) return true;
-      if (this == forName("java.lang.Object")) return true;
-      return false;
-    }
-    // widening reference conversions from a class type:
-    if (!this.isInterface() && this.isSuperclassOf(cls)) return true;
-    if (this.isInterface() && this.isSuperinterfaceOf(cls)) return true;
-    return false;
-  }
+  public abstract boolean isAssignableFrom(HClass cls);
 
   /**
    * Determines if this <code>HClass</code> is a superclass of a given
@@ -791,12 +376,7 @@ public abstract class HClass extends HPointer
    * @return <code>true</code> if <code>this</code> is a superclass of
    *         <code>hc</code>, <code>false</code> otherwise.
    */
-  public boolean isSuperclassOf(HClass hc) {
-    Util.assert(!this.isInterface());
-    for ( ; hc!=null; hc = hc.getSuperclass())
-      if (this == hc) return true;
-    return false;
-  }
+  public abstract boolean isSuperclassOf(HClass hc);
 
   /**
    * Determines if this <code>HClass</code> is a superinterface of a given
@@ -805,47 +385,13 @@ public abstract class HClass extends HPointer
    * @return <code>true</code> if <code>this</code> is a superinterface of
    *         <code>hc</code>, <code>false</code> otherwise.
    */
-  public boolean isSuperinterfaceOf(HClass hc) {
-    Util.assert(this.isInterface());
-    UniqueVector uv = new UniqueVector();//unique in case of circularity 
-    for ( ; hc!=null; hc = hc.getSuperclass())
-      uv.addElement(hc);
-
-    for (int i=0; i<uv.size(); i++)
-      if (uv.elementAt(i) == this) return true;
-      else {
-	HClass in[] = ((HClass)uv.elementAt(i)).getInterfaces();
-	for (int j=0; j<in.length; j++)
-	  uv.addElement(in[j]);
-      }
-    // ran out of possibilities.
-    return false;
-  }
+  public abstract boolean isSuperinterfaceOf(HClass hc);
 
   /**
    * Determines if this <code>HClass</code> is an instance of the given
    * <code>HClass</code> <code>hc</code>.
    */
-  public boolean isInstanceOf(HClass hc) {
-    if (this.isArray()) {
-      if (!hc.isArray()) 
-	// see http://java.sun.com/docs/books/jls/clarify.html
-	return (hc==HClass.forName("java.lang.Cloneable") ||
-		hc==HClass.forName("java.io.Serializable") ||
-		hc==HClass.forName("java.lang.Object"));
-      HClass SC = this.getComponentType();
-      HClass TC = hc.getComponentType();
-      return ((SC.isPrimitive() && TC.isPrimitive() && SC==TC) ||
-	      (!SC.isPrimitive()&&!TC.isPrimitive() && SC.isInstanceOf(TC)));
-    } else { // not array.
-      if (hc.isInterface())
-	return hc.isSuperinterfaceOf(this);
-      else // hc is class.
-	if (this.isInterface()) // in recursive eval of array instanceof.
-	  return (hc==HClass.forName("java.lang.Object"));
-	else return hc.isSuperclassOf(this);
-    }
-  }
+  public abstract boolean isInstanceOf(HClass hc);
 
   /**
    * Converts the object to a string.  The string representation is the
@@ -861,7 +407,7 @@ public abstract class HClass extends HPointer
    * Prints a formatted representation of this class.
    * Output is pseudo-Java source.
    */
-  public void print(java.io.PrintWriter pw) {
+  public final void print(java.io.PrintWriter pw) {
     int m;
     // package declaration.
     pw.println("package " + getPackage() + ";");
@@ -872,7 +418,7 @@ public abstract class HClass extends HPointer
 	       getSimpleTypeName(this));
     // superclass
     HClass sup = getSuperclass();
-    if ((sup != null) && (sup != forName("java.lang.Object")))
+    if ((sup != null) && (!sup.getName().equals("java.lang.Object")))
       pw.println("    extends " + getSimpleTypeName(sup));
     // interfaces
     HClass in[] = getInterfaces();
@@ -964,6 +510,7 @@ public abstract class HClass extends HPointer
 
   /*****************************************************************/
   // Special classes for primitive types.
+  // [note that these cannot be re-linked as they are hard-coded here]
 
   /** The <code>HClass</code> object representing the primitive type boolean.*/
   public static final HClass Boolean=new HClassPrimitive("boolean", "Z");
@@ -990,88 +537,14 @@ public abstract class HClass extends HPointer
       public Object[] newArray(int len) { return new HClass[len]; }
     };
   /** HPointer interface. */
-  HClass actual() { return this; /* no dereferencing necessary. */ }
+  final HClass actual() { return this; /* no dereferencing necessary. */ }
 
-  /** Serializable interface. */
-  public Object writeReplace() { return new HClassStub(this); }
-  private static final class HClassStub implements java.io.Serializable {
-    private String desc;
-    HClassStub(HClass c) { this.desc = c.getDescriptor().intern(); }
-    public Object readResolve() { return HClass.forDescriptor(desc); }
-  }
   // Comparable interface.
   /** Compares two <code>HClass</code>es by lexicographic order of their
    *  descriptors. */
-  public int compareTo(Object o) {
+  public final int compareTo(Object o) {
     return getDescriptor().compareTo(((HClass)o).getDescriptor());
   }
-}
-
-class HClassPrimitive extends HClass {
-  final String name, descriptor;
-  HClassPrimitive(final String name, final String descriptor) {
-    this.name = name; this.descriptor = descriptor;
-    register();
-  }
-  public String getName() { return this.name; }
-  public String getDescriptor() { return this.descriptor; }
-
-  public HField[]  getDeclaredFields () { return new HField [0]; }
-  public HMethod[] getDeclaredMethods() { return new HMethod[0]; }
-  public int getModifiers() { 
-    throw new Error("No modifiers for primitive types.");
-  }
-  public HClass getSuperclass() { return null; }
-  public HClass[] getInterfaces() { return new HClass[0]; }
-  public boolean isPrimitive() { return true; }
-  public String toString() { return getName(); }
-}
-
-class HClassArray extends HClass {
-  HClass baseType;
-  int dims;
-  HField lengthField;
-  HMethod cloneMethod;
-
-  HClassArray(HClass baseType, int dims) {
-    this.baseType = baseType; this.dims = dims;
-    register();
-    this.lengthField = new HArrayField(this, "length", HClass.Int,
-				       Modifier.PUBLIC | Modifier.FINAL);
-    this.cloneMethod = new HArrayMethod(this, "clone",
-					Modifier.PUBLIC | Modifier.NATIVE,
-					HCobject, new HClass[0], new String[0],
-					new HClass[0], false);
-  }
-  public HClass getComponentType() {
-    return forDescriptor(getDescriptor().substring(1));
-  }
-  public String getName() {
-    // handle arrays.
-    return getDescriptor(); // this is how sun's implementation works.
-  }
-  public String getDescriptor() {
-    return Util.repeatString("[", dims) + baseType.getDescriptor();
-  }
-  public HField [] getDeclaredFields () { 
-    return new HField[] { lengthField };
-  }
-  public HMethod[] getDeclaredMethods() {
-    return new HMethod[] { cloneMethod };
-  }
-  public int getModifiers() {throw new Error("No modifiers for an array.");}
-  public HClass getSuperclass() { return HCobject; }
-  public HClass[] getInterfaces() {
-    // see http://java.sun.com/docs/books/jls/clarify.html
-    return new HClass[] { HCcloneable, HCserializable };
-  }
-  public boolean isArray() { return true; }
-  public String toString() { return "class "+getName(); }
-
-  // cache class constants.
-  private static final HClass HCobject   =forName("java.lang.Object");
-  private static final HClass HCcloneable=forName("java.lang.Cloneable");
-  private static final HClass HCserializable=forName("java.io.Serializable");
 }
 
 // set emacs indentation style.

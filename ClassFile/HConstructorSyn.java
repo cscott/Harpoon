@@ -12,7 +12,7 @@ import java.util.Vector;
  * single constructor for a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructorSyn.java,v 1.2.2.4 1999-10-30 22:19:40 cananian Exp $
+ * @version $Id: HConstructorSyn.java,v 1.2.2.4.2.1 2000-01-10 22:06:53 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -56,7 +56,7 @@ public class HConstructorSyn extends HConstructor {
       String desc = descriptor.substring(1, descriptor.lastIndexOf(')'));
       Vector v = new Vector();
       for (int i=0; i<desc.length(); i++) {
-	v.addElement(new ClassPointer(desc.substring(i)));
+	v.addElement(new ClassPointer(parent.getLinker(), desc.substring(i)));
 	while (desc.charAt(i)=='[') i++;
 	if (desc.charAt(i)=='L') i=desc.indexOf(';', i);
       }
