@@ -12,6 +12,7 @@ import harpoon.IR.Quads.Quad;
  * implement.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
+ * @version $Id: CheckRemoval.java,v 1.1.2.4 2001-06-17 23:07:32 cananian Exp $
  */
 
 public interface CheckRemoval {

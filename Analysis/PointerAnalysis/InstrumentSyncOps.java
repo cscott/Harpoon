@@ -40,6 +40,7 @@ import java.util.Map;
  * statistics-gathering purposes.
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
+ * @version $Id: InstrumentSyncOps.java,v 1.1.2.7 2001-06-17 23:07:13 cananian Exp $
  */
 
 public class InstrumentSyncOps implements java.io.Serializable {

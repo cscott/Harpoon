@@ -30,6 +30,7 @@ import harpoon.Backend.Generic.Frame;
  * Realtime Java Specification</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
+ * @version $Id: Realtime.java,v 1.1.2.24 2001-06-17 23:07:32 cananian Exp $
  */
 
 public class Realtime {

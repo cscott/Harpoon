@@ -29,6 +29,7 @@ import java.lang.reflect.Member;
  * instruments code to add calls to methods in this class.)
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
+ * @version $Id: CollectSyncStats.java,v 1.1.2.4 2001-06-17 23:07:23 cananian Exp $
  */
 
 public abstract class CollectSyncStats {

@@ -12,8 +12,8 @@ package harpoon.IR.Tree;
  * with register-native types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @author  Duncan Bryce     <duncan@lcs.mit.edu>
- * @version $Id: PreciselyTyped.java,v 1.1.2.4 2000-01-17 23:41:30 cananian Exp $
+ * @author  Duncan Bryce <duncan@lcs.mit.edu>
+ * @version $Id: PreciselyTyped.java,v 1.1.2.5 2001-06-17 23:07:51 cananian Exp $
  */
 public interface PreciselyTyped extends Typed  {
     /** Returns <code>true</code> if this expression is a small type,

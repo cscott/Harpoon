@@ -48,6 +48,7 @@ import harpoon.Util.Util;
  * It takes QuadsNoSSA form code as input. 
  *
  * @author Wes Beebee <wbeebee@mit.edu>
+ * @version $Id: CheckAdderNoSSA.java,v 1.1.2.4 2001-06-17 23:07:32 cananian Exp $
  */
 
 

@@ -16,6 +16,7 @@ import harpoon.Util.Util;
  * and compilation of RTJ extensions.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
+ * @version $Id: Stats.java,v 1.1.2.7 2001-06-17 23:07:32 cananian Exp $
  */
 
 class Stats {

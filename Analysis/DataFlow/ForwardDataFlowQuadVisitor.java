@@ -10,6 +10,7 @@ import harpoon.IR.Quads.Quad;
  * ForwardDataFlowQuadVisitor
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
+ * @version $Id: ForwardDataFlowQuadVisitor.java,v 1.1.2.6 2001-06-17 23:06:45 cananian Exp $
  */
 
 public abstract class ForwardDataFlowQuadVisitor extends DataFlowQuadVisitor {

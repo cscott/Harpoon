@@ -44,6 +44,7 @@ import harpoon.Util.Util;
  * <code>CheckRemoval</code> indicates that the check cannot be removed.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
+ * @version $Id: CheckAdder.java,v 1.1.2.11 2001-06-17 23:07:32 cananian Exp $
  */
 
 // Fix to be non-static...

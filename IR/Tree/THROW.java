@@ -1,5 +1,5 @@
 // THROW.java, created Thu Feb 18 16:59:53 1999 by duncan
-// Copyright (C) 1998 Duncan Bryce  <duncan@lcs.mit.edu>
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
@@ -10,9 +10,9 @@ import harpoon.Util.Util;
 /**
  * <code>THROW</code> objects are used to represent a thrown exception.
  *
- * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
+ * @author   Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: THROW.java,v 1.1.2.16 2000-02-15 17:19:05 cananian Exp $
+ * @version  $Id: THROW.java,v 1.1.2.17 2001-06-17 23:07:53 cananian Exp $
  */
 public class THROW extends Stm implements Typed {
     /** Constructor 

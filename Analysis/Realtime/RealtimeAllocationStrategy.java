@@ -20,6 +20,7 @@ import harpoon.Temp.Temp;
  * <code>RealtimeAllocationStrategy</code> 
  *
  * @author Wes Beebee <wbeebee@mit.edu>
+ * @version $Id: RealtimeAllocationStrategy.java,v 1.1.2.3 2001-06-17 23:07:32 cananian Exp $
  */
 
 public class RealtimeAllocationStrategy extends MallocAllocationStrategy {

@@ -10,6 +10,7 @@ import harpoon.IR.Quads.Quad;
  * <code>CheckRemoval</code>: it just removes all the checks!
  * 
  * @author  Wes Beebee <wbeebee@mit.edu>
+ * @version $Id: AllCheckRemoval.java,v 1.1.2.4 2001-06-17 23:07:32 cananian Exp $
  */
 
 public class AllCheckRemoval implements CheckRemoval, NoHeapCheckRemoval {

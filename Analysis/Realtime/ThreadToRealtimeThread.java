@@ -30,6 +30,7 @@ import harpoon.Util.Util;
  * <code>javax.realtime.RealtimeThread</code>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
+ * @version $Id: ThreadToRealtimeThread.java,v 1.1.2.5 2001-06-17 23:07:32 cananian Exp $
  */
 
 class ThreadToRealtimeThread extends ClassReplacer {

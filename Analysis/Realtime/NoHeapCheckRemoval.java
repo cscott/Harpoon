@@ -13,6 +13,7 @@ import harpoon.IR.Quads.Quad;
  * should implement.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
+ * @version $Id: NoHeapCheckRemoval.java,v 1.1.2.3 2001-06-17 23:07:32 cananian Exp $
  */
 
 public interface NoHeapCheckRemoval {

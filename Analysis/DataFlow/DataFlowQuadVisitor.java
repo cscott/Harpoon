@@ -11,6 +11,7 @@ import harpoon.IR.Quads.QuadVisitor;
  * DataFlowQuadVisitor
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
+ * @version $Id: DataFlowQuadVisitor.java,v 1.1.2.6 2001-06-17 23:06:45 cananian Exp $
  */
 
 public abstract class DataFlowQuadVisitor extends QuadVisitor {

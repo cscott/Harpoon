@@ -7,6 +7,7 @@ package harpoon.Analysis.DataFlow;
  * ReversePostOrderEnumerator
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
+ * @version $Id: ReversePostOrderEnumerator.java,v 1.1.2.8 2001-06-17 23:06:45 cananian Exp $
  */
 
 import java.util.Enumeration;

@@ -7,6 +7,7 @@ package harpoon.Analysis.DataFlow;
  * ReversePostOrderIterator
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
+ * @version $Id: ReversePostOrderIterator.java,v 1.1.2.7 2001-06-17 23:06:45 cananian Exp $
  */
 
 import harpoon.Analysis.BasicBlock;

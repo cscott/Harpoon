@@ -7,6 +7,7 @@ package harpoon.IR.RawClass;
  * The <code>CONSTANT_InterfaceMethodref</code> structure represents
  * an interface method.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: ConstantInterfaceMethodref.java,v 1.1.2.3 2001-06-17 23:07:42 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.2"
  * @see Constant
  * @see ConstantFieldref
