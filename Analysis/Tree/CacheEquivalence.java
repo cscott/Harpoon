@@ -59,7 +59,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.5 2001-06-12 22:38:02 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.6 2001-06-13 13:35:02 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -153,7 +153,10 @@ public class CacheEquivalence {
 			dp = ko.def; offset = offset; // case 1
 		    } else {
 			Dataflow.UnknownOffset uo = (Dataflow.UnknownOffset) v;
-			if (objSize(uo.def.type()) <= CACHE_LINE_SIZE) {
+			if (objSize(uo.def.type()) <= CACHE_LINE_SIZE
+			    // arrays can't count as small because
+			    // length is not statically known.
+			    && !uo.def.type().isArray()) {
 			    dp = uo.def; offset = 0; // case 2;
 			}
 		    }
