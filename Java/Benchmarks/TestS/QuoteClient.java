@@ -16,6 +16,7 @@ public class QuoteClient extends Thread {
     private String[] stockIDs; // Array of requested IDs. 
     private String[] stockInfo; // Array of returned data. 
     private String currentAsOf = null; // Timestamp of data. 
+    private static boolean debug=false;
     /** 
      * Start the application running, first checking the 
      * arguments, then instantiating a StockQuoteClient, and 
@@ -25,14 +26,15 @@ public class QuoteClient extends Thread {
     public static void main(String[] args) { 
 	if (args.length < 2) { 
 	    System.out.println( 
-			       "Usage: QuoteClient <server> <port> <number of clients> <number of cycles> <stock ids>"); 
+			       "Usage: QuoteClient <server> <port> <number of clients> <number of cycles> <debug> <stock ids>"); 
 	    System.exit(1); 
 	}
 	long starttime=System.currentTimeMillis();
 	int SERVER_PORT=Integer.parseInt(args[1]);
 	int numclients=Integer.parseInt(args[2]);
 	int numcycles=Integer.parseInt(args[3]);
-	int numstocks=args.length-4;
+	QuoteClient.debug=(Integer.parseInt(args[4])==1);
+	int numstocks=args.length-5;
 	QuoteClient[] carray=new QuoteClient[numclients];
 	for (int i=0;i<numclients;i++) {
 	    carray[i]=new QuoteClient(args);
@@ -73,11 +75,11 @@ public class QuoteClient extends Thread {
 	// Server name is the first argument. 
 	serverName = args[0]; 
 	// Create arrays as long as arguments - 1. 
-	stockIDs = new String[args.length-4]; 
-	stockInfo = new String[args.length-4]; 
+	stockIDs = new String[args.length-5]; 
+	stockInfo = new String[args.length-5]; 
 	// Copy in the arguments into are stockIDs[] array. 
-	for (int index = 4; index < args.length; index++) { 
-	    stockIDs[index-4] = args[index]; 
+	for (int index = 5; index < args.length; index++) { 
+	    stockIDs[index-5] = args[index]; 
 	} 
 	// Contact the server and return the HELLO message. 
 	serverInfo = contactServer(); 
@@ -89,7 +91,8 @@ public class QuoteClient extends Thread {
  
         for(int i=0;i<Integer.parseInt(args[3]);i++) {
 	    getQuotes(); // Go get the quotes. 
-	    this.printQuotes(System.out); 
+	    if (QuoteClient.debug)
+		this.printQuotes(System.out); 
 	}
 	quitServer(); // Close the communication.
     }
