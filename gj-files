@@ -133,6 +133,7 @@ Analysis/Transactions/AnalysisCheckOracle.java
 Analysis/Transactions/DominatingCheckOracle.java
 Analysis/Transactions/CheckOracle.java
 Analysis/Transactions/SimpleCheckOracle.java
+Analysis/Transactions/SyncTransformer.java
 Analysis/Transformation/MethodMutator.java
 Analysis/Tree/AlignmentAnalysis.java
 Analysis/Tree/CacheEquivalence.java
