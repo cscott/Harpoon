@@ -3,26 +3,32 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec.corba;
 
+import FrameManip.Processor;
 import FrameManip.ProcessorPOA;
 import FrameManip.ProcessorHelper;
 import FrameManip.Frame;
 
 import ATRManip.ATRSysCond;
+import ATRManip.ATRSysCondPOA;
 import ATRManip.ATRSysCondHelper;
 import ATRManip.Coordinate;
 
-import org.omg.CosNaming.NamingContext;
 import org.omg.CORBA.ORB;
 import org.omg.PortableServer.POA;
 import org.omg.PortableServer.POAHelper;
-import org.omg.PortableServer.POAManager;
+import org.omg.PortableServer.Servant;
 import org.omg.CosNaming.NamingContextExt;
 import org.omg.CosNaming.NamingContextExtHelper;
 import org.omg.CosNaming.NameComponent;
 
+import omg.org.CosPropertyService.Property;
+
 import imagerec.graph.ImageData;
 
 import imagerec.util.ImageDataManip;
+
+import imagerec.graph.Alert;
+import imagerec.graph.ATR;
 
 /** {@link CORBA} provides a transport mechanism for
  *  <a href="http://www.omg.org/gettingstarted/corbafaq.htm">CORBA</a> servers
@@ -43,27 +49,39 @@ public class CORBA implements CommunicationsModel {
     public CORBA(String[] args) {
 	this.args=args;
     }
-
-    /**
-     *  Set up a server to receive {@link ImageData}s 
-     *  (used primarily between image recognition components) via JacORB.
+    
+    /** Return the naming context associated with an {@link ORB}.
      *
-     *  @param name The name to bind with the NameService.
-     *  @param out  An adapter to send <code>process</code> requests to.
+     *  @param orb The orb to find the naming context.
+     *  @return A naming context to resolve references.
      */
-    public void runIDServer(String name, final CommunicationsAdapter out) throws Exception {
-	final ORB orb = ORB.init(args, null);
+    protected NamingContextExt namingContext(ORB orb) throws Exception {
+	return NamingContextExtHelper.narrow(orb.resolve_initial_references("NameService"));
+    }
+
+    /** Create an object that connects to the service bound to <code>name</code> 
+     *  in the CORBA NameService.
+     *
+     *  @param name The name of the client to look up.
+     *  @return The object that provides that provides the connection.
+     */
+    protected org.omg.CORBA.Object setupClient(String name) throws Exception {
+	return namingContext(ORB.init(args, null))
+	    .resolve(new NameComponent[] {new NameComponent(name, "")});
+    }
+
+    /** Run a CORBA server.
+     *
+     *  @param name The name to bind in the name service.
+     *  @param servant The servant that does the work when a request comes in.
+     */
+    protected void runServer(String name, Servant servant) throws Exception {
+	ORB orb = ORB.init(args, null);
 	POA poa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
 	poa.the_POAManager().activate();
-	NamingContextExt namingContext = 
-	    NamingContextExtHelper.narrow(orb.resolve_initial_references("NameService"));
-	ClientServerPOA cs = new ClientServerPOA() {
-	    public synchronized void process(ImageData id) {
-		out.process(id);
-	    }
-	};
+	NamingContextExt namingContext = namingContext(orb);
 	namingContext.rebind(namingContext.to_name(name),
-			     ClientServerHelper.narrow(poa.servant_to_reference(cs)));
+			     poa.servant_to_reference(servant));
 	orb.run();
     }
 
@@ -73,21 +91,30 @@ public class CORBA implements CommunicationsModel {
      *              connect to.
      *  @return a {@link CommunicationsAdapter} which wraps the client method to be invoked.
      */
-    public CommunicationsAdapter setupIDClient(String name) {
-	try {
-	    ORB orb = ORB.init(args, null);
-	    final ClientServer cs = 
-		ClientServerHelper.narrow(NamingContextExtHelper.narrow(orb
-			     .resolve_initial_references("NameService"))
-			     .resolve(new NameComponent[] {new NameComponent(name, "")}));
-	    return new CommunicationsAdapter() {
-		public synchronized void process(ImageData id) {
-		    cs.process(id);
-		}
-	    };
-	} catch (Exception e) {
-	    throw new Error(e);
-	}
+    public CommunicationsAdapter setupIDClient(final String name) 
+	throws Exception {
+	final ClientServer cs = ClientServerHelper.narrow(setupClient(name));
+	return new CommunicationsAdapter() {
+	    public synchronized void process(ImageData id) {
+		cs.process(id);
+	    }
+	};
+    }
+
+    /**
+     *  Set up a server to receive {@link ImageData}s 
+     *  (used primarily between image recognition components) via JacORB.
+     *
+     *  @param name The name to bind with the NameService.
+     *  @param out  An adapter to send <code>process</code> requests to.
+     */
+    public void runIDServer(final String name, final CommunicationsAdapter out) 
+	throws Exception {
+	runServer(name, new ClientServerPOA() {
+	    public synchronized void process(ImageData id) {
+		out.process(id);
+	    }
+	});
     }
 
     /**
@@ -98,21 +125,68 @@ public class CORBA implements CommunicationsModel {
      *  @return a {@link CommunicationsAdapter} which wraps the UAV Alert RMI call.
      */
 
-    public CommunicationsAdapter setupAlertClient(String name) {
-	try {
-	    ORB orb = ORB.init(args, null);
-	    final ATRSysCond atr = 
-		ATRSysCondHelper.narrow(NamingContextExtHelper.narrow(orb
-			     .resolve_initial_references("NameService"))
-			     .resolve(new NameComponent[] {new NameComponent(name, "")}));
-	    return new CommunicationsAdapter() {
-		public synchronized void alert(float c1, float c2, float c3) {
-		    atr.send_coordinate(new Coordinate(c1, c2, c3));
-		}
-	    };
-	} catch (Exception e) {
-	    throw new Error(e);
-	}
+    public CommunicationsAdapter setupAlertClient(String name) 
+	throws Exception {
+	final ATRSysCond atr = ATRSysCondHelper.narrow(setupClient(name));
+	return new CommunicationsAdapter() {
+	    public synchronized void alert(float c1, float c2, float c3) {
+		atr.send_coordinate(new Coordinate(c1, c2, c3));
+	    }
+	};
+    }
+
+    /**
+     *  Run an {@link Alert} server that can catch alerts coming out of the ATR.
+     *  
+     *  @param name The name bound by the Alert server in the CORBA name service.
+     *  @param out a {@link CommunicationsAdapter} to send alerts to.
+     */
+    public void runAlertServer(String name, final CommunicationsAdapter out) 
+	throws Exception {
+	runServer(name, new ATRSysCondPOA() {
+	    public void send_coordinate(Coordinate c) {
+		out.alert(c.c1, c.c2, c.c3);
+	    }
+	    
+	    public boolean isReady() { return true; }
+	    public int getLong() { return 0; }
+	    public void setLong(int arg) {}
+	    public boolean booleanValue() { return false; }
+	    public void booleanValue(boolean newValue) {}
+	    public byte octetValue() { return 0; }
+	    public void octetValue(byte newValue) {}
+	    public char charValue() { return 'a'; }
+	    public void charValue(char newValue) {}
+	    public short shortValue() { return 0; }
+	    public void shortValue(short newValue) {}
+	    public int longValue() { return 0; }
+	    public void longValue(int newValue) {}
+	    public long longlongValue() { return 0; }
+	    public void longlongValue(long newValue) {}
+	    public float floatValue() { return 0; }
+	    public void floatValue(float newValue) {}
+	    public double doubleValue() { return 0; }
+	    public void doubleValue(double newValue) {}
+	    public String stringValue() { return ""; }
+	    public void stringValue(String newValue) {}
+	});
+    }
+
+    /**
+     *  Setup a client that can send images to the ATR.
+     *
+     *  @param name The name of the ATR to connect
+     *  @return a {@link CommunicationsAdapter} that can process images by 
+     *          sending them to the {@link ATR}.
+     */
+    public CommunicationsAdapter setupATRClient(String name) 
+	throws Exception {
+	final Processor p = ProcessorHelper.narrow(setupClient(name));
+	return new CommunicationsAdapter() {
+	    public void process(ImageData id) {
+		p.process(new Frame(new Property[0], ImageDataManip.writePPM(id)));
+	    }
+	};
     }
 
     /**
@@ -121,25 +195,20 @@ public class CORBA implements CommunicationsModel {
      *  @param name The name bound by the ATR client (from the receiver node).
      *  @param out a {@link CommunicationsAdapter} to send the process requests to.
      */
-    public void runATRServer(String name, final CommunicationsAdapter out) throws Exception {
-	final ORB orb = ORB.init(args, null);
-	POA poa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
-	poa.the_POAManager().activate();
-	NamingContextExt namingContext = 
-	    NamingContextExtHelper.narrow(orb.resolve_initial_references("NameService"));
-	ProcessorPOA p = new ProcessorPOA() {
-	    private int id = 0;
-
-	    public FrameManip.Frame transform(FrameManip.Frame f) {
+    public void runATRServer(String name, final CommunicationsAdapter out) 
+	throws Exception {
+	runServer(name, new ProcessorPOA() {
+	    public Frame transform(Frame f) {
 		return null; // Not currently used.
 	    }
 
+	    private int idNum = 0;
+
 	    public void process(Frame f) {
-		out.process(ImageDataManip.readPPM(f.data));
+		ImageData id = ImageDataManip.readPPM(f.data);
+		id.id = idNum++;
+		out.process(id);
 	    }
-	};
-	namingContext.rebind(namingContext.to_name(name),
-			     ProcessorHelper.narrow(poa.servant_to_reference(p)));
-	orb.run();
+	});
     }
 }
