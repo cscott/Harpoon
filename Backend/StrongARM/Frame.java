@@ -9,6 +9,7 @@ import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
@@ -47,7 +48,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.14 1999-10-21 23:06:11 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.14.2.1 2000-01-11 16:47:16 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -55,9 +56,11 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final InstrBuilder instrBuilder;
     private final CodeGen codegen;
     private final TempBuilder tempBuilder;
+    private final Linker linker;
 
     public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) { 
 	super();
+	linker = main.getDeclaringClass().getLinker();
 	regFileInfo = new RegFileInfo();
 	
 	// FSK: CodeGen ctor needs regFileInfo set in 'this' Frame, so
@@ -70,6 +73,8 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	instrBuilder = new InstrBuilder(regFileInfo);
 	tempBuilder = new TempBuilder();
     }
+
+    public Linker getLinker() { return linker; }
 
     public boolean pointersAreLong() { return false; }
 

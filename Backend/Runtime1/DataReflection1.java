@@ -46,7 +46,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection1.java,v 1.1.2.4 2000-01-10 05:08:35 cananian Exp $
+ * @version $Id: DataReflection1.java,v 1.1.2.4.2.1 2000-01-11 16:47:15 cananian Exp $
  */
 public class DataReflection1 extends Data {
     final NameMap m_nm;
@@ -60,7 +60,7 @@ public class DataReflection1 extends Data {
 	// only build one of these (so we can make sure the
 	// table is properly sorted); wait until hc is
 	// java.lang.Object
-	this.root = (hc==HClass.forName("java.lang.Object")) ?
+	this.root = (hc==linker.forName("java.lang.Object")) ?
 	    build(ch) : null;
     }
     private HDataElement build(ClassHierarchy ch) {
@@ -143,7 +143,7 @@ public class DataReflection1 extends Data {
     }
     private Stm buildClassObjects(List sorted) {
 	List stmlist = new ArrayList(sorted.size());
-	final HClass HCclass = HClass.forName("java.lang.Class");
+	final HClass HCclass = linker.forName("java.lang.Class");
 	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
 	    final HClass hc = (HClass) it.next();
 	    // make an ObjectInfo -- that doesn't actual provide any info.

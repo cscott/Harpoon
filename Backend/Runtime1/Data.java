@@ -6,6 +6,7 @@ package harpoon.Backend.Runtime1;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HDataElement;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.CONST;
@@ -23,15 +24,17 @@ import java.util.List;
  * <code>Runtime1</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Data.java,v 1.1.2.6 2000-01-10 05:08:35 cananian Exp $
+ * @version $Id: Data.java,v 1.1.2.6.2.1 2000-01-11 16:47:15 cananian Exp $
  */
 public class Data extends harpoon.IR.Tree.Data {
+    final Linker linker;
     final HClass hc;
     HDataElement root = null;
     
     /** Creates a <code>Data</code>. */
     Data(String desc, HClass hc, Frame f) {
 	super(desc, f);
+	this.linker = f.getLinker();
         this.hc = hc;
     }
     public HClass getHClass() { return hc; }

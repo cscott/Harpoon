@@ -36,7 +36,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.8 2000-01-10 05:08:35 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.8.2.1 2000-01-11 16:47:15 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -101,7 +101,7 @@ public class DataClaz extends Data {
 	    for (HClass hcp = base; hcp!=null; hcp=hcp.getSuperclass())
 		clslist.add(HClassUtil.arrayClass(hcp, dims));
 	    // now down the Object array hierarchy.
-	    HClass hcO = HClass.forName("java.lang.Object");
+	    HClass hcO = linker.forName("java.lang.Object");
 	    for (dims--; dims>=0; dims--)
 		clslist.add(HClassUtil.arrayClass(hcO, dims));
 	    // done.
@@ -113,7 +113,7 @@ public class DataClaz extends Data {
 	Collections.reverse(clslist);
 	// okay, root should always be java.lang.Object.
 	Util.assert(hc.isInterface() || hc.isPrimitive() ||
-		    clslist.get(0)==HClass.forName("java.lang.Object"));
+		    clslist.get(0)==linker.forName("java.lang.Object"));
 	// make statements.
 	List stmlist = new ArrayList(m_tb.cdm.maxDepth()+1);
 	for (Iterator it=clslist.iterator(); it.hasNext(); )

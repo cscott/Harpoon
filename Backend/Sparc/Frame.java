@@ -6,13 +6,14 @@ package harpoon.Backend.Sparc;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 
 /**
  * <code>Sparc.Frame</code> contains architecture specific info
  * for the Sparc Backend.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.3 1999-11-04 01:27:02 andyb Exp $
+ * @version $Id: Frame.java,v 1.1.2.3.2.1 2000-01-11 16:47:16 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame
 {
@@ -21,9 +22,11 @@ public class Frame extends harpoon.Backend.Generic.Frame
     private final CodeGen codegen;
     private final harpoon.Backend.Generic.Runtime runtime;
     private final TempBuilder tempBuilder;
+    private final Linker linker;
 
     public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) {
 	super();
+	linker = main.getDeclaringClass().getLinker();
 	tempBuilder = new TempBuilder();
 	regFileInfo = new RegFileInfo(tempBuilder);
 	instrBuilder = new InstrBuilder(regFileInfo, tempBuilder);
@@ -34,6 +37,8 @@ public class Frame extends harpoon.Backend.Generic.Frame
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy("_malloc");
 	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg);
     }
+
+    public Linker getLinker() { return linker; }
 
     public boolean pointersAreLong() { return false; }
 
