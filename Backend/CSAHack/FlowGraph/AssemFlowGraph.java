@@ -94,8 +94,11 @@ public class AssemFlowGraph extends FlowGraph {
     TempList tl = null;
     for (int i=d.length-1; i>=0; i--)
       if (twoWord && d[i] instanceof TwoWordTemp) {
-	tl = new TempList(((TwoWordTemp)d[i]).getLow(), tl);
-	tl = new TempList(((TwoWordTemp)d[i]).getHigh(), tl);
+	harpoon.Util.Util.assert(instr(n).getAssem().indexOf("`d"+i)!=-1);
+	if (instr(n).getAssem().indexOf("`d"+i+"l")!=-1)
+	  tl = new TempList(((TwoWordTemp)d[i]).getLow(), tl);
+	if (instr(n).getAssem().indexOf("`d"+i+"h")!=-1)
+	  tl = new TempList(((TwoWordTemp)d[i]).getHigh(), tl);
       } else tl = new TempList(d[i], tl);
     return tl;
   }
@@ -110,8 +113,11 @@ public class AssemFlowGraph extends FlowGraph {
     TempList tl = null;
     for (int i=u.length-1; i>=0; i--)
       if (twoWord && u[i] instanceof TwoWordTemp) {
-	tl = new TempList(((TwoWordTemp)u[i]).getLow(), tl);
-	tl = new TempList(((TwoWordTemp)u[i]).getHigh(), tl);
+	harpoon.Util.Util.assert(instr(n).getAssem().indexOf("`s"+i)!=-1);
+	if (instr(n).getAssem().indexOf("`s"+i+"l")!=-1)
+	  tl = new TempList(((TwoWordTemp)u[i]).getLow(), tl);
+	if (instr(n).getAssem().indexOf("`s"+i+"h")!=-1)
+	  tl = new TempList(((TwoWordTemp)u[i]).getHigh(), tl);
       } else tl = new TempList(u[i], tl);
     return tl;
   }
