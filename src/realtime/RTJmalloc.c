@@ -101,45 +101,51 @@ inline void RTJ_preinit() {
   jclass heapClaz;
   jmethodID methodID;
 #endif
+  checkException();
   (*env)->SetStaticBooleanField(env, clazz,
 				(*env)->GetStaticFieldID(env, clazz, 
 							 "RTJ_init_in_progress", "Z"),
 				JNI_TRUE);
+  checkException();
   RTJ_init_in_progress = 1;
 #ifdef WITH_MEMORYAREA_TAGS
   memoryAreaID = (*env)->GetFieldID(env, clazz, "memoryArea", 
 				    "Ljavax/realtime/MemoryArea;");
+  checkException();
   heapClaz = (*env)->FindClass(env, "javax/realtime/HeapMemory");    
+  checkException();
   methodID = 
     (*env)->GetStaticMethodID(env, heapClaz,
 			      "instance", "()Ljavax/realtime/HeapMemory;");
+  checkException();
   heapMem = (*env)->CallStaticObjectMethod(env, heapClaz, methodID, NULL);
+  checkException();
   heapMem = (*env)->NewGlobalRef(env, heapMem);
+  checkException();
 #endif
 #ifdef RTJ_DEBUG
   printf("RTJ_preinit()\n");
-  checkException();
 #endif
 }
 
 inline void RTJ_init() {
   JNIEnv* env = FNI_GetJNIEnv();
-  jclass clazz = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
+  jclass rtClazz = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
+  jfieldID RTJinitID;
 #ifdef RTJ_DEBUG
   printf("RTJ_init()\n");
-  checkException();
 #endif
+  checkException();
   MemBlock_setCurrentMemBlock(env,
 			      ((struct FNI_Thread_State *)env)->thread,
 			      Heap_MemBlock_new(env, heapMem));
-#ifdef RTJ_DEBUG
   checkException();
-#endif
   RTJ_init_in_progress = 0;
-  (*env)->SetStaticBooleanField(env, clazz,
-				(*env)->GetStaticFieldID(env, clazz,
-							 "RTJ_init_in_progress", "Z"),
-				JNI_FALSE);
+
+  RTJinitID = (*env)->GetStaticFieldID(env, rtClazz, "RTJ_init_in_progress", "Z");
+  checkException();
+  (*env)->SetStaticBooleanField(env, rtClazz, RTJinitID, JNI_FALSE);
+  checkException();
 }
 
 #ifdef WITH_MEMORYAREA_TAGS

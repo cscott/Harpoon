@@ -13,6 +13,20 @@
 
 #define HEAP_BIT_CHECK 1
 
+/* this structure will hold the information 
+ * needed to start the main Java thread
+ */
+struct main_closure_struct {
+  jobject thread;        //the thread object
+  jobject args;          //args from the command line
+  pthread_cond_t parampass_cond;   //thread info
+  pthread_mutex_t parampass_mutex;
+};
+
+struct thread_queue_struct* thread_queue;
+struct thread_queue_struct* end_thread_queue;
+struct thread_queue_struct* empty_queue;
+
 int do_switching = 0; //flag for whether or not to do switching
 /* scheduler object to set up - global so it doesn't die after it's set up */
 jobject scheduler;
@@ -76,7 +90,7 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
   jobject ref_marker;
   jclass schedClass, rttClass; //class of the scheduler & of the RealtimeThread
   jlong threadID; //threadID returned by the scheduler
-  jobject scheduler; //thread and scheduler objects
+  jobject scheduler; //scheduler object
   struct thread_queue_struct* threadq;
   /* methods to choose a new thread, and to get the scheduler */
   jmethodID chooseThreadMethod, getSchedMethod, emptyMethod; 
@@ -105,11 +119,12 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
     rttClass = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
     assert(!((*env)->ExceptionOccurred(env)));
       
-    getSchedMethod = (*env)->GetStaticMethodID(env, rttClass,
-					       "getScheduler",
-					       "()Ljavax/realtime/Scheduler;");
+    getSchedMethod = (*env)->GetMethodID(env, rttClass,
+					 "getScheduler",
+					 "()Ljavax/realtime/Scheduler;");
     assert(!((*env)->ExceptionOccurred(env)));      
-    scheduler = (*env)->CallStaticObjectMethod(env, rttClass, getSchedMethod);
+    scheduler = (*env)->CallObjectMethod(env, ((struct FNI_Thread_State*)env)->thread, 
+					 getSchedMethod);
     assert(!((*env)->ExceptionOccurred(env)));
     if(scheduler == NULL) { //if there is no scheduler
       RestoreSwitching(switching_state); //restore switching
@@ -229,43 +244,6 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
 
   }
 }
-
-// set up the scheduler
-void setupScheduler()
-{
-  JNIEnv *jnienv = (JNIEnv*)FNI_GetJNIEnv(); //JNI Env
-  jobject ref_marker = ((struct FNI_Thread_State *)jnienv)->localrefs_next;
-  jclass schedClass, rttClass; //scheduler & RealtimeThread classes
-  /* set current scheduler & scheduler construction methods */
-  jmethodID setSchedMethod, schedConstruct;
-
-  /* Get Scheduler instance & setup */
-  schedClass = (*jnienv)->FindClass(jnienv,
-				    "javax/realtime/PriorityScheduler");
-  assert(!((*jnienv)->ExceptionOccurred(jnienv)));
-
-  schedConstruct =
-    (*jnienv)->GetStaticMethodID(jnienv, schedClass,
-				 "getScheduler",
-				 "()Ljavax/realtime/PriorityScheduler;");
-  assert(!((*jnienv)->ExceptionOccurred(jnienv)));
-  scheduler = (*jnienv)->CallStaticObjectMethod(jnienv, schedClass,
-						schedConstruct);
-  assert(!((*jnienv)->ExceptionOccurred(jnienv)));
-  rttClass = (*jnienv)->FindClass(jnienv, "javax/realtime/RealtimeThread");
-  assert(!((*jnienv)->ExceptionOccurred(jnienv)));
-  setSchedMethod = (*jnienv)->GetStaticMethodID(jnienv, rttClass,
-						"setScheduler",
-						"(Ljavax/realtime/Scheduler;)V");
-  assert(!((*jnienv)->ExceptionOccurred(jnienv)));
-  (*jnienv)->CallStaticVoidMethod(jnienv, rttClass, setSchedMethod, scheduler);
-  
-  FNI_DeleteLocalRefsUpTo(jnienv, ref_marker);
-}
-
-struct thread_queue_struct* thread_queue;
-struct thread_queue_struct* end_thread_queue;
-struct thread_queue_struct* empty_queue;
 
 void print_queue(struct thread_queue_struct* q, char* message) {
   //  struct thread_queue_struct* t = q;
@@ -571,16 +549,71 @@ void EnableThreadList(struct thread_queue_struct* queue)
   print_queue(thread_queue, "END enableThreadList queue");
 }
 
-#ifdef WITH_REALTIME_THREADS
+/* setup the 'main' function as a thread */
+void FNI_java_lang_Thread_mainThreadSetup
+(JNIEnv *env, jobject mainThr, jobject args) {
+  jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
+  jint pri; //the thread's priority
+  void * stackptr; //pointer to the stack
+
+  struct inflated_oobj* infObj; //inflated object to hang on mainThr
+  
+  /* create the structure that will be passed to startMain later */
+  /* use RTJ_MALLOC_UNCOLLECTABLE so it will stay in memory when */
+  /* this function exits */
+  struct main_closure_struct oldmcls =
+  {mainThr,args, PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER};
+  struct main_closure_struct* mcls = (struct main_closure_struct *)
+    RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct main_closure_struct));
+  memcpy(mcls, &oldmcls, sizeof(struct main_closure_struct));
+  
+  /* get the inflated object for mainThr */
+  infObj = (struct inflated_oobj*)getInflatedObject(env, mainThr);
+
+  /* get the threads priority */
+  pri = (*env)->GetIntField(env, mainThr, priorityID);
+  assert(!((*env)->ExceptionOccurred(env)));
+
+  stackptr = __machdep_stack_alloc(STACKSIZE); //create the stack
+
+  __machdep_stack_set(&(infObj->mthread), stackptr); //set the thread's stack
+
+#ifdef WITH_PRECISE_GC
+  /* may need to stop for GC */
+  while (pthread_mutex_trylock(&gc_thread_mutex))
+    if (halt_for_GC_flag) halt_for_GC();
+#endif
+
+  /* create the thread with startMain as its startup routine and */
+  /* mcls as its start argument */
+  __machdep_pthread_create(&(infObj->mthread), &startMain,
+			   mcls,STACKSIZE, 0,0);
+  
+  /* wait for thread to copy mainThr */
+  pthread_mutex_lock(&(mcls->parampass_mutex));
+  pthread_cond_wait(&(mcls->parampass_cond), &(mcls->parampass_mutex));
+#ifdef WITH_PRECISE_GC
+  pthread_mutex_unlock(&gc_thread_mutex);
+#endif
+  pthread_cond_destroy(&(mcls->parampass_cond));
+  pthread_mutex_unlock(&(mcls->parampass_mutex));
+  pthread_mutex_destroy(&(mcls->parampass_mutex));
+  /* release locks & return */
+
+  FNI_DeleteLocalRefsUpTo(env, ref_marker);
+}
+
 void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args,
 			    jclass thrCls) {
   /*methods to get the scheduler, and to add a thread to it*/
   jobject scheduler; //scheduler object
   jmethodID addThreadMethod, getSchedMethod;
   int nest=0;
+  jboolean check;
 
-  setupScheduler(); //get the thread scheduler ready
-  
+  // Initialize the scheduler
+  setScheduler(env, mainthread);
+
   /* set up the main Java function as a thread, so we can switch back to it */
   FNI_java_lang_Thread_mainThreadSetup(env, mainthread, args);
   
@@ -590,19 +623,20 @@ void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args,
 					     "()Ljavax/realtime/Scheduler;");
   assert(!((*env)->ExceptionOccurred(env)));
 
-  scheduler = (*env)->CallStaticObjectMethod(env, thrCls, getSchedMethod);
+  scheduler = (*env)->CallObjectMethod(env, mainthread, getSchedMethod);
   assert(!((*env)->ExceptionOccurred(env)));
   
   //add the main Java thread to it
   addThreadMethod = (*env)->GetMethodID(env, 
 					FNI_GetObjectClass(env, scheduler),
 					"addToFeasibility",
-					"(Ljavax/realtime/Schedulable;)V");
+					"(Ljavax/realtime/Schedulable;)Z");
   assert(!((*env)->ExceptionOccurred(env)));
   //  printf("mthread->start_argument is %p\n",
   //	 mainthread->mthread->start_argument);
-  (*env)->CallVoidMethod(env, scheduler, addThreadMethod, mainthread);
+  check = (*env)->CallBooleanMethod(env, scheduler, addThreadMethod, mainthread);
   assert(!((*env)->ExceptionOccurred(env)));
+  assert(check == JNI_TRUE);
   
   //  printf("About to start switching\n");
   StartSwitching(); //startup thread switching
@@ -615,4 +649,180 @@ void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args,
   StopSwitching(); //stop Thread switching
   cleanupThreadQueue(env); //get rid of the threadQueue
 }
-#endif /* WITH_REALTIME_THREADS */
+
+/* start the main Java thread */
+void* startMain(void* mclosure) {
+  int top_of_stack; /* special variable holding top-of-stack position */
+  
+  jclass claz; //the class of the main Java thread
+  /* the main method id, id for getting the scheduler,
+     and an id for removing threads */
+  jmethodID mid, getSchedMethod, removeThreadMethod;
+  /* an object for this thread, it's thread group, and the scheduler */
+  jobject thread, threadgroup, scheduler;
+  /* an exception thrown by the thread */
+  jthrowable threadexc;
+  /* cast the incoming argument to a main_closure_struct */
+  struct main_closure_struct* mcls = (struct main_closure_struct*)mclosure;
+  
+  JNIEnv* env = FNI_CreateJNIEnv(); //create a JNI Environment
+  ((struct FNI_Thread_State *)env)->stack_top = &top_of_stack;
+  /* This thread is alive! */
+  ((struct FNI_Thread_State *)env)->is_alive = JNI_TRUE;
+  
+  /* make sure creating thread is in cond_wait before proceeding. */
+  pthread_mutex_lock(&(mcls->parampass_mutex));
+  /* copy thread wrapper to local stack */
+  thread = FNI_NewLocalRef(env, FNI_UNWRAP_MASKED(mcls->thread));
+
+  /* copy thread information */
+  ((struct FNI_Thread_State *)env)->thread = thread;
+  ((struct FNI_Thread_State *)env)->pthread = pthread_self();
+
+  FNI_SetJNIData(env, thread, env, NULL);
+#if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
+  ((struct FNI_Thread_State *)env)->noheap =
+    (*env)->IsInstanceOf(env, 
+			 ((struct FNI_Thread_State *)env)->thread,
+			 (*env)->FindClass(env,
+				      "javax/realtime/NoHeapRealtimeThread"));
+#endif  
+  /* add this to the running_threads list, unless its a daemon thread */
+  if((*env)->GetBooleanField(env, thread, daemonID) == JNI_FALSE)
+    add_running_thread(env);
+  /* okay, parameter passing is done. we can unblock the creating thread now.
+   * (note that we're careful to make sure we're on the 'running threads'
+   *  list before letting the parent --- who may decide to exit -- continue.)
+   */
+  pthread_cond_signal(&(mcls->parampass_cond));
+  pthread_mutex_unlock(&(mcls->parampass_mutex));
+  /* okay, now start run() method */
+
+  /* get the class of the main Java thead, and an id for the main method */
+  claz = (*env)->FindClass(env, FNI_javamain);
+  assert(!((*env)->ExceptionOccurred(env)));
+  mid = (*env)->GetStaticMethodID(env, claz, "main",
+				  "([Ljava/lang/String;)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+
+  /* call main */
+  (*env)->CallStaticVoidMethod(env, claz, mid, mcls->args);
+  if ( (threadexc = (*env)->ExceptionOccurred(env)) != NULL) {
+    // call thread.getThreadGroup().uncaughtException(thread, exception)
+     /* clear the thread's exception */
+    (*env)->ExceptionClear(env);
+    threadgroup = (*env)->CallObjectMethod(env, thread, gettgID);
+    (*env)->CallVoidMethod(env, threadgroup, 
+			   uncaughtID, thread, threadexc);
+  }
+  /* this thread is dead now.  give it a chance to clean up. */
+  /* (this also removes the thread from the ThreadGroup) */
+  /* (see also Thread.EDexit() -- keep these in sync) */
+  StopSwitching(); //stop thread switching
+
+  /* get the scheduler */
+  getSchedMethod = (*env)->GetStaticMethodID(env,
+					     FNI_GetObjectClass(env, thread),
+					     "getScheduler",
+					     "()Ljavax/realtime/Scheduler;");
+  assert(!((*env)->ExceptionOccurred(env)));
+  scheduler = (*env)->CallStaticObjectMethod(env,
+					     FNI_GetObjectClass(env, thread),
+					     getSchedMethod);
+  assert(!((*env)->ExceptionOccurred(env)));
+  /* remove this thread from the scheduler */
+  removeThreadMethod =
+    (*env)->GetMethodID(env, FNI_GetObjectClass(env, scheduler),
+			"removeFromFeasibility",
+			"(Ljavax/realtime/Schedulable;)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  (*env)->CallVoidMethod(env, scheduler, removeThreadMethod, thread);
+  assert(!((*env)->ExceptionOccurred(env)));
+
+  /* call it's exit function to clean up */
+  // by cata: I commented this out
+  //  (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
+  //  assert(!((*env)->ExceptionOccurred(env)));
+  /* This thread is dead now. */
+  ((struct FNI_Thread_State *)env)->is_alive = JNI_FALSE;
+  /** Get rid of the JNIEnv in the JNIData for the thread, since it is going
+   *  to be destroyed by the thread clean-up code [see isAlive() ] */
+  FNI_SetJNIData(env, thread, NULL, NULL);
+  /* Notify others that it's dead (before we deallocate the thread object!). */
+  FNI_MonitorEnter(env, thread);
+  FNI_MonitorNotify(env, thread, JNI_TRUE);
+  FNI_MonitorExit(env, thread);
+  assert(!((*env)->ExceptionOccurred(env)));
+#ifdef WITH_CLUSTERED_HEAPS
+  /* give us a chance to deallocate the thread-clustered heap */
+  NTHR_free(thread);
+#endif
+  /* main has finished, so it is time to exit, set currentThread to NULL */
+  // by cata: wait a second, what if we have other threads still running?
+  //  currentThread = NULL;
+  RTJ_FREE(mcls); //free the closure structure
+  CheckQuanta(1, 1, 0);
+  StartSwitching();
+}
+
+void realtime_unschedule_thread(JNIEnv *env, jobject thread) {
+  /* methods to get the scheduler and remove a thread */
+  jmethodID getSchedMethod, removeThreadMethod;
+  /* methods to check if there are threads, and to pick one to switch to */
+  jmethodID emptyMethod, chooseThreadMethod;
+  /* the threadID of the next thread to run */
+  jlong threadID;
+  /* the scheduler */
+  jobject scheduler;
+  
+  StopSwitching(); //stop thread switching
+  
+  /* get the scheduler */
+  getSchedMethod = (*env)->GetStaticMethodID(env,
+					     FNI_GetObjectClass(env, thread),
+					     "getScheduler",
+					     "()Ljavax/realtime/Scheduler;");
+  assert(!((*env)->ExceptionOccurred(env)));
+  scheduler = (*env)->CallStaticObjectMethod(env,
+					     FNI_GetObjectClass(env, thread),
+					     getSchedMethod);
+  assert(!((*env)->ExceptionOccurred(env)));
+  /* remove the thread from the scheduler */
+  removeThreadMethod =
+    (*env)->GetMethodID(env, FNI_GetObjectClass(env, scheduler),
+			"removeFromFeasibility",
+			"(Ljavax/realtime/Schedulable;)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+  (*env)->CallVoidMethod(env, scheduler, removeThreadMethod, thread);
+  assert(!((*env)->ExceptionOccurred(env)));
+}
+
+void realtime_destroy_thread(JNIEnv *env, jobject thread, void *cls) {
+  struct thread_queue_struct *oldthread;
+  oldthread = currentThread;
+  FNI_DeleteGlobalRef(env, thread); //remove the global ref to the thread
+  RTJ_FREE(cls); //free the closure argument
+
+  CheckQuanta(1, 1, 0);
+  FNI_DestroyThreadState(oldthread);
+  StartSwitching();
+}
+
+void setScheduler(JNIEnv *env, jobject thread) {
+	jclass schedClazz = (*env)->FindClass(env, "javax/realtime/Scheduler");
+	jmethodID getDefID, setSchedID;
+	jobject sched;
+  assert(!((*env)->ExceptionOccurred(env)));
+  getDefID = (*env)->GetStaticMethodID(env, schedClazz, 
+				       "getDefaultScheduler", 
+				       "()Ljavax/realtime/Scheduler;");
+  assert(!((*env)->ExceptionOccurred(env)));
+  sched = (*env)->CallStaticObjectMethod(env, schedClazz, getDefID, NULL);
+  assert(!((*env)->ExceptionOccurred(env)));
+	setSchedID = (*env)->GetMethodID(env, FNI_GetObjectClass(env, thread),
+																	 "setScheduler",
+																	 "(Ljavax/realtime/Scheduler;)V");
+  assert(!((*env)->ExceptionOccurred(env)));
+	(*env)->CallVoidMethod(env, thread, setSchedID, sched);
+  assert(!((*env)->ExceptionOccurred(env)));
+}
