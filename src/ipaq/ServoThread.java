@@ -34,9 +34,11 @@ public class ServoThread extends Thread {
 	while (true) {
 	    try {
 		wait();
+		//System.out.println(" ServoThread #"+servo+": notified, running commands");
 		car.moveLocal(servo, start);
 		sleep(time);
 		car.moveLocal(servo, stop);
+		//System.out.println(" ServoThread#"+servo+": done running commands");
 	    } catch (InterruptedException e) {
 		System.out.println(e.toString());
 		/* Keep on goin' */
@@ -52,6 +54,8 @@ public class ServoThread extends Thread {
      * @param stop The stopping motion.
      */
     public synchronized void command(int start, long time, int stop) {
+	//System.out.println("ServoThread #"+servo+" got command:");
+	//System.out.println("   start="+start+" time="+time+" stop="+stop);
 	this.start = start;
 	this.time = time;
 	this.stop = stop;

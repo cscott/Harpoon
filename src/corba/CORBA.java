@@ -75,6 +75,8 @@ public class CORBA implements CommunicationsModel {
      *  @return The object that provides that provides the connection.
      */
     protected org.omg.CORBA.Object setupClient(String name) throws Exception {
+	//return namingContext(ORB.init(args, null))
+	//    .resolve(new NameComponent[] {new NameComponent(name, "")});
 	return namingContext(ORB.init(args, null))
 	    .resolve(new NameComponent[] {new NameComponent(name, "")});
     }
@@ -102,7 +104,9 @@ public class CORBA implements CommunicationsModel {
      */
     public CommunicationsAdapter setupIDClient(final String name) 
 	throws Exception {
+	System.out.println("CORBA: about to run ClientServerHelper.narrow()");
 	final ClientServer cs = ClientServerHelper.narrow(setupClient(name));
+	System.out.println("CORBA: done running ClientServerHelper.narrow()");
 	return new CommunicationsAdapter() {
 	    public void process(ImageData id) {
 		cs.process(id);
