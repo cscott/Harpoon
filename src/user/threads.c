@@ -45,6 +45,9 @@ void restorethread() {
 
 /* when using RealtimeThreads, this function will be called with the */
 /* thread to switch to */
+
+/* The function that calls machdep_save_state must not return until */
+/* machdep_restore_state is called, or the stack frame may be trashed. */
 #ifndef WITH_REALTIME_THREADS
 void transfer()
 #else
@@ -54,7 +57,7 @@ void transfer(struct thread_queue_struct * mthread)
 #ifndef WITH_REALTIME_THREADS
   struct thread_list *tl;
   machdep_save_float_state(&(gtl->mthread));
-  if (machdep_save_state()) {
+  if (machdep_save_state(&(gtl->mthread))) {
     return;
   }
 #else
@@ -69,7 +72,7 @@ void transfer(struct thread_queue_struct * mthread)
   /* if there is currently a thread running, save it's state */
   if(currentThread != NULL) {
     machdep_save_float_state(currentThread->mthread);
-    if (machdep_save_state()) {
+    if (machdep_save_state(currentThread->mthread)) {
 #ifdef RTJ_DEBUG_THREADS
       printf(" returning directly!");
 #endif
@@ -108,7 +111,7 @@ void transfer(struct thread_queue_struct * mthread)
 #ifndef WITH_REALTIME_THREADS
 void context_switch() {
   machdep_save_float_state(&(gtl->mthread));
-  if (_setjmp(gtl->mthread.machdep_state)) {
+  if (machdep_save_state(&(gtl->mthread))) {
     return;
   }
   if (ioptr!=NULL)
@@ -125,26 +128,27 @@ void startnext() {
 #ifndef WITH_REALTIME_THREADS
   /* Moved threads...*/
   /*  if (gtl==NULL) */
-  static int count=0;
-
-  if ((gtl==NULL)&&(ioptr==NULL))
-    exit(0);
-  count++;
-  while(1) {
 #ifdef WITH_EVENT_DRIVEN
-    if ((gtl==NULL)||((ioptr!=NULL)&&(count==10))) {
+  static int count=0;
+#endif
+
+  while(1) {
+    if ((gtl==NULL)&&(ioptr==NULL))
+      exit(0);
+#ifdef WITH_EVENT_DRIVEN
+    count++;
+    if ((gtl==NULL)||((ioptr!=NULL)&&(count==10))) { 
       count=0;
       doFDs();
-    }
+    } 
 #endif
     if (gtl!=NULL)
       restorethread();
-  }
 #endif
+  }
 }
 
 #ifdef WITH_EVENT_DRIVEN
-
 void SchedulerAddRead(int fd) {
   /* Move current thread to IO queue */
   /* Lock on GTL */

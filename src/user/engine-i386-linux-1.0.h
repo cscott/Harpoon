@@ -1,7 +1,7 @@
 /* ==== machdep.h ============================================================
  * Copyright (c) 1993 Chris Provenzano, proven@athena.mit.edu
  *
- * $Id: engine-i386-linux-1.0.h,v 1.5 2002-09-13 13:14:17 wbeebee Exp $
+ * $Id: engine-i386-linux-1.0.h,v 1.6 2002-10-22 19:40:23 wbeebee Exp $
  */
 #ifndef MACHDEP
 #define MACHDEP
@@ -100,15 +100,25 @@ __BEGIN_DECLS
 void *  __machdep_stack_alloc       __P((size_t));
 void    __machdep_stack_free        __P((void *));
 
+// The function that calls machdep_save_state must never return.
+// This function is a macro, so that you don't end up creating
+// an extra stack frame that can be trashed by the next function
+// that the function that calls machdep_save_state calls before
+// restoring state back to the location saved by machdep_save_state.
+#ifndef WITH_REALTIME_THREADS
+#define machdep_save_state(mthread) _setjmp((mthread)->machdep_state)
+#else
+#define machdep_save_state(mthread) sigsetjmp((mthread)->machdep_state, 1)
+#endif
+
 void machdep_restore_state();
-int 	machdep_save_state      __P((void));
 
 void __machdep_pthread_create(struct machdep_pthread *machdep_pthread,
 			      void *(* start_routine)(), void *start_argument,
 			      long stack_size, long nsec, long flag);
 
 void machdep_restore_float_state();
-void machdep_save_float_state();
+void machdep_save_float_state(struct machdep_pthread *mthread);
 
 __END_DECLS
 #endif /*MACHDEP*/

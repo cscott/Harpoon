@@ -10,7 +10,7 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.11 2002-09-13 13:12:53 wbeebee Exp $";
+static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.12 2002-10-22 19:40:23 wbeebee Exp $";
 #endif
 
 #include "config.h"
@@ -32,18 +32,6 @@ static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.11 2002-09-13 13:1
 #ifdef WITH_REALTIME_THREADS
 #include <signal.h>
 #endif
-
-/* ==========================================================================
- * machdep_save_state()
- */
-int machdep_save_state(void)
-{
-#ifndef WITH_REALTIME_THREADS
-  return(_setjmp(gtl->mthread.machdep_state));
-#else
-  return sigsetjmp(currentThread->mthread->machdep_state, 1);
-#endif
-}
 
 /* ==========================================================================
  * machdep_restore_state()
@@ -158,11 +146,7 @@ void __machdep_pthread_create(struct machdep_pthread *machdep_pthread,
     machdep_pthread->machdep_timer.it_interval.tv_usec = 0;
     machdep_pthread->machdep_timer.it_value.tv_usec = nsec / 1000;
 
-#ifdef WITH_REALTIME_THREADS
-    sigsetjmp(machdep_pthread->machdep_state, 1);
-#else
-    setjmp(machdep_pthread->machdep_state);
-#endif
+    machdep_save_state(machdep_pthread);
     machdep_save_float_state(machdep_pthread);
     /*
      * Set up new stact frame so that it looks like it
