@@ -57,8 +57,9 @@ public class StackInfo {
    public static final int REGISTER      = 0;
    public static final int STACK         = 1;
    public static final int REGSTACKSPLIT = 2;
-   // Every stack frame is aligned on an 8 byte boundary
-   public static final int BYTEALIGNMENT = 8;
+   // Every stack frame is aligned on a 32 byte boundary to facilitate
+   // the tag unchecked load/store optimization
+   public static final int BYTEALIGNMENT = 32;
 
    private class CallInfo {
       public CallInfo() {
@@ -219,7 +220,8 @@ public class StackInfo {
     */
    public Temp calleeReg(int callee_idx) {
       Util.assert(callee_done);
-      Util.assert(callee_idx < callee_regs.size() && callee_idx >= 0);
+      Util.assert(callee_idx < callee_regs.size() && callee_idx >= 0, 
+                  "Callee idx=" + callee_idx + " Size=" + callee_regs.size());
       return (Temp)callee_regs.get(callee_idx);
    }
    /**
@@ -228,8 +230,7 @@ public class StackInfo {
    public int calleeSaveOffset(int callee_idx) {
       Util.assert(callee_done);
       Util.assert(callee_idx < callee_regs.size() && callee_idx >= 0);
-      return REGSIZE * (max_arg_words
-                        + callee_idx);
+      return frameSize() + fp_off - (REGSIZE * (callee_idx + 1));
    }
    /**
     * On top (highest address) of the MIPS stack frame are the
@@ -247,9 +248,8 @@ public class StackInfo {
    public int localSaveOffset(int local_idx) {
       Util.assert(callee_done && locals_done);
       Util.assert(local_idx < local_words && local_idx >= 0);
-      return REGSIZE * (max_arg_words
-                        + callee_regs.size()
-                        + local_idx);
+      return frameSize() + fp_off - (REGSIZE * (callee_regs.size() + 1 + 
+                                                local_idx));
    }
    public int getFPOffset() {
       return frameSize() + fp_off;
