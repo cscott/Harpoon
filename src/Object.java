@@ -4,13 +4,11 @@
 package java.lang;
 import javax.realtime.MemoryArea;
 
-/** <code>Object</code>
+/** Stub to be replaced in the compiler by the real java.lang.Object 
+ *  with the field memoryArea added.
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
-
-// Stub to be replaced in the compiler by the real java.lang.Object 
-// with the field memoryArea added.
 
 public class Object {
 

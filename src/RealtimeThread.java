@@ -3,10 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime; 
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** Class <code>RealtimeThread</code> extends <code>java.lang.Thread</code>
  *  and includes classes and methods to get and set parameterer objects,
  *  manage the execution of those threads with a
@@ -22,6 +18,8 @@ package javax.realtime;
  *  Parameters for constructors may be <code>null</code>. In such cases
  *  the default value will be the default value set for the particular
  *  type by the associated instance of <code>Scheduler</code>.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class RealtimeThread extends Thread implements Schedulable {
 

@@ -7,13 +7,11 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** <code>MemoryArea</code> is the abstract base class of all classes dealing
  *  with the representations of allocatable memory areas, including the
  *  immortal memory area, physical memory and scoped memory areas.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public abstract class MemoryArea {
 

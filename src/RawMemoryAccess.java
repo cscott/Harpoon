@@ -37,6 +37,8 @@ package javax.realtime;
  *  values are valid for <code>byte, short, int</code> and
  *  <code>long</code> values that are copied in and out of memory
  *  by the <code>set</code> and <code>get</code> methods of this class.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class RawMemoryAccess {
 

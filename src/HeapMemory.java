@@ -5,12 +5,10 @@ package javax.realtime;
 
 import java.lang.Runtime;
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** The <code>HeapMemory</code> class is a singleton object that allows logic
  *  within other scoped memory to allocate objects in the Java heap.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public final class HeapMemory extends MemoryArea {
     /** The one and only HeapMemory. */

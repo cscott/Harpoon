@@ -5,6 +5,8 @@ package javax.realtime;
 
 /** <code>NoGarbageCollector</code> provides a means of informing
  *  the program that no garbage collector is present.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
 public class NoGarbageCollector extends GarbageCollector {

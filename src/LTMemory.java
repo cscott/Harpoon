@@ -3,10 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** <code>LTMemory</code> represents a memory area, allocated per
  *  <code>RealtimeThread</code>, or for a group of real-time threads,
  *  guaranteed by the system to have linear time allocation. The memory
@@ -35,6 +31,8 @@ package javax.realtime;
  *  guarantee that memory between initial and maximum will always be available.
  *  (Node: to ensure that all requested memory is available set initial and
  *  maximum to the same value).
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class LTMemory extends ScopedMemory {
 

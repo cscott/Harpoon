@@ -8,6 +8,7 @@ package javax.realtime;
  *  the same cactus stack that is used to determine which MemoryArea x 
  *  RealtimeThread MemBlock to enter for the constructor of a .newArray'ed
  *  or a newInstance'd object.
+ *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 

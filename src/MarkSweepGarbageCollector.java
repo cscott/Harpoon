@@ -5,6 +5,8 @@ package javax.realtime;
 
 /** <code>MarkSweepGarbageCollector</code> provides a means of interfacing
  *  with the Mark and Sweep precise garbage collector written by Karen.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
 public class MarkSweepGarbageCollector extends GarbageCollector {

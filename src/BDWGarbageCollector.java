@@ -5,6 +5,8 @@ package javax.realtime;
 
 /** <code>BDWGarbageCollector</code> provides a means of interfacing with
  *  the Boehm-D-Waters garbage collector. 
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
 public class BDWGarbageCollector extends GarbageCollector {

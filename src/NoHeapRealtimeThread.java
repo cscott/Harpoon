@@ -3,10 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** A <code>NoHeapRealtimeThread</code> is a specialized form of
  *  <code>RealtimeThread</code>. Because an instance of
  *  <code>NoHeapRealtimeThread</code> may immediately preempt any
@@ -41,6 +37,8 @@ package javax.realtime;
  *  Parameters for constructors may be <code>null</code>. In such
  *  cases the default value will be the default value set for the
  *  particular type by the associated instance of <code>Scheduler</code>.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class NoHeapRealtimeThread extends RealtimeThread {
 

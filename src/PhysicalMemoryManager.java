@@ -1,3 +1,6 @@
+// PhysicalMemoryManager.java, created by Dumitru Daniliuc
+// Copyright (C) 2003 Dumitru Daniliuc
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
 /** The <code>PhysicalMemoryManager</code> is available for use
@@ -6,7 +9,7 @@ package javax.realtime;
  *  RawMemoryAccess, RawMemoryFloatAccess</code>) to create objects
  *  of the correct type that are bound to areas of physical memory
  *  with the appropriate characteristics -- or with appropriate
- *  accessor behavior. Esxamples of characteristics that might be
+ *  accessor behavior. Examples of characteristics that might be
  *  specified are: DMA memory, accessors with byte swapping, etc.
  *  <p>
  *  The base implementation will provide a <code>PhysicalMemoryManager</code>

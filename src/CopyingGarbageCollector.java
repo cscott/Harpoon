@@ -5,6 +5,8 @@ package javax.realtime;
 
 /** <code>CopyingGarbageCollector</code> provides a means of interfacing
  *  with the Stop and Copy garbage collector written by Karen.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
 public class CopyingGarbageCollector extends GarbageCollector {

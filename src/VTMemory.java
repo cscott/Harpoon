@@ -3,14 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** The execution time of an allocation from a <code>VTMemory</code> area may
  *  take a variable amount of time. However, since <code>VTMemory</code> areas
  *  are not subject to garbage collection and objects within it may not be moved,
  *  these areas can be used by instances of <code>NoHeapRealtimeThread</code>.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class VTMemory extends ScopedMemory {
 

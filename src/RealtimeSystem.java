@@ -10,6 +10,8 @@ package javax.realtime;
  *  a mechanism for obtaining access to the security manager, garbage
  *  collector and scheduler, to make queries from them or to set 
  *  parameters.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class RealtimeSystem {
 

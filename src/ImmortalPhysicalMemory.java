@@ -3,10 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** An instance of <code>ImmortalPhysicalMemory</code> allows objects to be
  *  allocated from a range of physical memory with particular attributes,
  *  determined by their memory type. This memory area has the same restrictive
@@ -14,6 +10,8 @@ package javax.realtime;
  *  may be used in any context where <code>ImmortalMemory</code> is appropriate.
  *  Objects allocated in immortal physical memory have a lifetime greater
  *  than the application as do objects allocated in immortal memory.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class ImmortalPhysicalMemory extends MemoryArea {
     private long base, size;

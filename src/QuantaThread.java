@@ -1,3 +1,6 @@
+// QuantaThread.java, created by Bryan Fink
+// Copyright (C) 2003 Bryan Fink
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
 public class QuantaThread extends RealtimeThread

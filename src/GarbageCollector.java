@@ -3,10 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** The system shall provide dynamic ans static information characterizing
  *  the temporal behavior and imposed overhead of any garbage collection
  *  algorithm provided by the system. This information shall be made
@@ -16,6 +12,8 @@ package javax.realtime;
  *  overhead are sufficiently categorized. The implementations are also
  *  required to fully document the subclasses. In addition, the method(s)
  *  in <code>GarbageCollector</code> shall be made available by all implementation.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public abstract class GarbageCollector {
     

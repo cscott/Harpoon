@@ -3,14 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** The error thrown by <code>MeoryArea.enter(Runnable)</code> when a
  *  <code>java.lang.Throwable</code> is allocated from memory that is
  *  not usable in the surrounding scope tries to propagate out of the
  *  scope of the <code>MemoryArea.enter(Runnable)</code>.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class ThrowBoundaryError extends Error {
 

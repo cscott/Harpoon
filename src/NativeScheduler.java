@@ -7,6 +7,8 @@ package javax.realtime;
 /** A <code>NativeScheduler</code> represents a scheduler that is
  *  implemented entirely in native code.  Examples may include 
  *  heavy threads and user threads.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
 public class NativeScheduler extends Scheduler {

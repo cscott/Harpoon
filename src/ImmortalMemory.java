@@ -3,10 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** <code>ImmortalMemory</code> is a memory resource that is shared among
  *  all threads. Objects allocated in the immortal memory live until the
  *  end of the application. Objects in immoral memory are nver subjected
@@ -15,7 +11,10 @@ package javax.realtime;
  *  to other immortal objects or to heap objects. Unlike standard Java
  *  heap objects, immoratl objects continue to exist even after there are
  *  no other references to them.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
+
 public /* specs says it's final */ class ImmortalMemory extends MemoryArea {
     private static ImmortalMemory immortalMemory;
    

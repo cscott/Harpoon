@@ -6,10 +6,6 @@ package javax.realtime;
 import java.util.LinkedList;
 import java.util.Iterator;
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** Memory parameters can be given on the constructor of
  *  <code>RealtimeThread</code> and <code>AsyncEventHandler</code>. These
  *  can be used both for the purposes of admission control by the
@@ -29,6 +25,8 @@ import java.util.Iterator;
  *  situations when it is being changed. No synchronization is done. It
  *  is assumed that users of this class who are mutating instances will
  *  be doing their own synchronization at a higher level.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class MemoryParameters {
 

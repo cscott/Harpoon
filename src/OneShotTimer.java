@@ -1,3 +1,6 @@
+// OneShotTimer.java, created by Dumitru Daniliuc
+// Copyright (C) 2003 Dumitru Daniliuc
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
 /** A timed <code>AsyncEvent</code> that is driven by a clock. It will

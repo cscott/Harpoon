@@ -18,6 +18,8 @@ package javax.realtime;
  *  that the value given in the size parameter is either negative,
  *  larger than an allowable range, or would cause an accessor
  *  method to access an address outside of the memory area.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class RawMemoryFloatAccess extends RawMemoryAccess {
     

@@ -10,6 +10,8 @@ import java.util.Iterator;
 
 /** <code>DebugScheduler</code> is a scheduler designed to test the rest of the system.
  *  It produces a prodigious amount of debugging output as well as asserting many invariants.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class DebugScheduler extends Scheduler {
     static DebugScheduler instance = null;

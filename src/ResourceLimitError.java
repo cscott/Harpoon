@@ -1,3 +1,6 @@
+// ResourceLimitError.java, created by Dumitru Daniliuc
+// Copyright (C) 2003 Dumitru Daniliuc
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
 /** Thrown if an attempt is made to exceed a system resource limit,

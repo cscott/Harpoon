@@ -10,6 +10,8 @@ import java.util.NoSuchElementException;
  *  all the relevant information about the threads accessable to the scheduler.
  *  Therefore, all memory allocations/deallocations must be made explicit.
  *  RefCountAreas are explicitly unsafe currently - an interesting research project to make them safe.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 class RefList {
     final RefCountArea ref = RefCountArea.refInstance();

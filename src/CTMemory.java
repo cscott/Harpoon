@@ -5,6 +5,7 @@ package javax.realtime;
 
 /** <code>CTMemory</code> represents a constant-sized memory scope.  
  *  It uses stack allocation and is very fast and has predictable performance.
+ *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 

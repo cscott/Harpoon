@@ -10,6 +10,8 @@ import java.util.Iterator;
 
 /** <code>PreAllocRoundRobinScheduler</code> is a round-robin scheduler that
  *  preallocates all of its memory up front.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class PreAllocRoundRobinScheduler extends Scheduler {
     static PreAllocRoundRobinScheduler instance = null;

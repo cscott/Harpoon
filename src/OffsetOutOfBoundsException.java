@@ -6,6 +6,8 @@ package javax.realtime;
 /** Thrown if the constructor of an <code>ImmortalPhysicalMemory,
  *  LTPhysicalMemory, VTPhysicalMemory, RawMemoryAccess</code>, or
  *  <code>RawMemoryFloatAccess</code> is given an invalid address.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class OffsetOutOfBoundsException extends Exception {
 

@@ -1,3 +1,6 @@
+// ArrivalTimeQueueOverflowException.java, created by Dumitru Daniliuc
+// Copyright (C) 2003 Dumitru Daniliuc
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
 /** If an arrival time occurs and should be queued but the queue already holds

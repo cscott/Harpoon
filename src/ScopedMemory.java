@@ -3,10 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** <code>ScopedMemory</code> is the abstract base class of all classes dealing
  *  with representations of memoryspaces with a limited lifetime. The
  *  <code>ScopedMemory</code> area is valid as long as there are real-time
@@ -51,6 +47,8 @@ package javax.realtime;
  *  <li>4. References to immortal of heap objects <i>may</i> be stored into an object
  *         allocated in a <code>ScopedMemory</code> area.
  *  </ul>
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public abstract class ScopedMemory extends MemoryArea {
     private int count = 0;

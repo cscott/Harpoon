@@ -11,6 +11,8 @@ import java.util.Iterator;
 /** <code>RoundRobinScheduler</code> is an example of the dumbest possible
  *  scheduler that actually switches between threads.
  *  It's great for getting an idea of what's required in a scheduler.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class RoundRobinScheduler extends Scheduler {
     static RoundRobinScheduler instance = null;

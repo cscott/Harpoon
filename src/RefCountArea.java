@@ -11,6 +11,7 @@ package javax.realtime;
  *  Cycles are strictly prohibited (use roles analysis).  Performance
  *  for this <code>MemoryArea</code> is expected to be slightly slower
  *  than for <code>VTMemory</code>'s.
+ *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 

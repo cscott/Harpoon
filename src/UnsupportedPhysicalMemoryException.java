@@ -3,12 +3,10 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/**
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
- */
-
 /** Thrown when the underlying hardware does not support the type of physical
  *  memory given to the physical memory <code>create()</code> method.
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class UnsupportedPhysicalMemoryException extends Exception {
     

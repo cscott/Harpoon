@@ -1,3 +1,6 @@
+// RationalTime.java, created by Dumitru Daniliuc
+// Copyright (C) 2003 Dumitru Daniliuc
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
 /** An object that represents a time interval millis/1E3+nanos/1E9
