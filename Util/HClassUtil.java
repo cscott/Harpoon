@@ -10,7 +10,7 @@ import harpoon.ClassFile.HClass;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.6.2.8 2000-01-13 23:48:29 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.6.2.9 2000-02-05 19:34:29 cananian Exp $
  */
 public abstract class HClassUtil  {
     // Only static methods.
@@ -55,7 +55,10 @@ public abstract class HClassUtil  {
 	    r[len] = hc;
 	return r;
     }
-    /** Find and return the first common superclass of a pair of classes. */
+    /** Find and return the first common superclass of a pair of classes.
+     *  Not valid for interface or array types --- both <code>a</code>
+     *  and <code>b</code> must be primitive or simple object types.
+     */
     public static final HClass commonSuper(HClass a, HClass b) {
 	Util.assert(!a.isInterface() && !b.isInterface());
 	Util.assert(!a.isArray() && !b.isArray());
@@ -75,7 +78,8 @@ public abstract class HClassUtil  {
 	// A[i] and B[i] now point to the first *different* parent.
 	return A[i-1];
     }
-    /** Find and return the first common superinterface of a pair of interfaces. */
+    /** Find and return the first common superinterface of a pair of
+     *  interfaces. */
     public static final HClass commonInterface(HClass a, HClass b) {
 	Util.assert(a.isInterface() && b.isInterface());
 	Util.assert(!a.isArray() && !b.isArray());
@@ -84,7 +88,9 @@ public abstract class HClassUtil  {
 	if (b.isSuperinterfaceOf(a)) return b;
 	return a.getLinker().forName("java.lang.Object");
     }
-    /** Find a class which is a common parent of both suppied classes. */
+    /** Find a class which is a common parent of both suppied classes.
+     *  Valid for array, interface, and primitive types.
+     */
     public static final HClass commonParent(HClass a, HClass b) {
 	if (a.isPrimitive() || b.isPrimitive()) return commonSuper(a, b);
 	Util.assert(a.getLinker()==b.getLinker());
