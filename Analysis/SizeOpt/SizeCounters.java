@@ -34,7 +34,7 @@ import java.util.Iterator;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SizeCounters.java,v 1.1.2.9 2001-11-06 22:37:23 cananian Exp $
+ * @version $Id: SizeCounters.java,v 1.1.2.10 2001-11-07 18:34:48 cananian Exp $
  */
 public class SizeCounters extends MethodMutator {
     final Frame frame;
@@ -142,13 +142,13 @@ public class SizeCounters extends MethodMutator {
 	    // special bitwidth-aware counters.
 	    if (bwa!=null) {
 		int bits=0, rounded_bits=0;
+		int unread_bits=0, unread_rounded_bits=0;
+		int const_bits=0, const_rounded_bits=0;
 		for (HClass hc=q.hclass(); hc!=null; hc=hc.getSuperclass()) {
 		    for (Iterator it=new ArrayIterator(hc.getDeclaredFields());
 			 it.hasNext(); ) {
 			HField hf = (HField) it.next();
 			if (hf.isStatic()) continue;
-			if (bwa.isConst(hf) || !bwa.isRead(hf))
-			    continue; // field is constant or unread!
 			int mybits;
 			if (hf.getType()==HClass.Float)
 			    mybits = 32;
@@ -159,14 +159,41 @@ public class SizeCounters extends MethodMutator {
 			else
 			    mybits = Math.max(bwa.plusWidthMap(hf),
 					      bwa.minusWidthMap(hf));
-			bits += mybits;
-			rounded_bits += ((mybits+7)/8)*8;
+			int rounded_mybits = ((mybits+7)/8)*8;
+			if (bwa.isConst(hf)) { // field is constant!
+			    const_bits += mybits;
+			    const_rounded_bits += rounded_mybits;
+			} else if (!bwa.isRead(hf)) { // field is unread!
+			    unread_bits += mybits;
+			    unread_rounded_bits += rounded_mybits;
+			} else {
+			    bits += mybits;
+			    rounded_bits += rounded_mybits;
+			}
 		    }
 		}
+		// count constant, unread, and other bits.
 		e = CounterFactory.spliceIncrement
-		    (qf, e, "sizecnt.bits_by_type."+q.hclass().getName(),bits);
+		    (qf,e, "sizecnt.bits_by_type."+q.hclass().getName(),bits);
 		e = CounterFactory.spliceIncrement
-		    (qf, e, "sizecnt.rounded_bits_by_type."+q.hclass().getName(),rounded_bits);
+		    (qf,e, "sizecnt.const_bits_by_type."+q.hclass().getName(),
+		     const_bits);
+		e = CounterFactory.spliceIncrement
+		    (qf,e, "sizecnt.unread_bits_by_type."+q.hclass().getName(),
+		     unread_bits);
+		// also byte-rounded versions of the same.
+		e = CounterFactory.spliceIncrement
+		    (qf, e,
+		     "sizecnt.rounded_bits_by_type."+q.hclass().getName(),
+		     rounded_bits);
+		e = CounterFactory.spliceIncrement
+		    (qf, e,
+		     "sizecnt.rounded_bits_by_type."+q.hclass().getName(),
+		     const_rounded_bits);
+		e = CounterFactory.spliceIncrement
+		    (qf, e,
+		     "sizecnt.rounded_bits_by_type."+q.hclass().getName(),
+		     unread_rounded_bits);
 	    }
 	}
     }
