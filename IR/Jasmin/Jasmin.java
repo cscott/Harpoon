@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.20 1999-11-04 16:49:23 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.21 1999-11-04 17:14:15 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -363,7 +363,8 @@ public class Jasmin {
 	    String h=labeler(q);
 	    out.println(h+":");
 	    store(q,q.exceptionTemp());
-	    out.println("    goto "+labeler(q.next(0)));
+	    //out.println("    goto "+labeler(q.next(0)));
+	    //covered by default...
 	    while(e.hasMoreElements()) {
 		Quad qd=(Quad)e.nextElement();
 		String start=labeler(qd);
