@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>CALL</code> objects represent method invocations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.2 1998-08-07 13:38:12 cananian Exp $
+ * @version $Id: CALL.java,v 1.3 1998-08-08 00:43:22 cananian Exp $
  */
 
 public class CALL extends Quad {
@@ -27,7 +27,16 @@ public class CALL extends Quad {
 	this.method = method;
 	this.params = params;
 	this.retval = retval;
-	// XXX should check params and retval here against method.
+	// check params and retval here against method.
+	if ((method.getReturnType()==HClass.Void &&
+	     retval!=null) ||
+	    (method.getReturnType()!=HClass.Void &&
+	     retval==null))
+	    throw new Error("Return value doesn't match descriptor.");
+	HClass[] pt = method.getParameterTypes();
+	if (pt.length != params.length)
+	    throw new Error("Parameters do not match method descriptor.");
+	// I guess it's legal, then.
     }
     /** Create a <Code>CALL</code> to a method with a <code>void</code>
      *  return-value descriptor. */

@@ -8,7 +8,7 @@ import harpoon.ClassFile.*;
  * op is canonical.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.2 1998-08-07 13:38:12 cananian Exp $
+ * @version $Id: CJMP.java,v 1.3 1998-08-08 00:43:22 cananian Exp $
  */
 
 public abstract class CJMP extends Quad {
@@ -21,9 +21,13 @@ public abstract class CJMP extends Quad {
     public int op;
     /** Creates a <code>CJMP</code>. */
     public CJMP(String sourcefile, int linenumber, int op) {
-        super(sourcefile, linenumber);
+        super(sourcefile, linenumber, 1, 2 /* two branch targets */);
 	this.op = op;
     }
     /** Swap if-true and if-false targets. */
-    public abstract void invert();
+    public void invert() {
+	Quad q = next[0];
+	next[0] = next[1];
+	next[1] = q;
+    }
 }

@@ -14,7 +14,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.6 1998-08-04 04:09:00 cananian Exp $
+ * @version $Id: Code.java,v 1.7 1998-08-08 00:43:22 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -46,13 +46,6 @@ public class Code extends HCode {
    * @return <code>null</code>, always.
    */
   public static HCode convertFrom(HCode codeview) { return null; }
-
-  static HCodeElement[] copy(HCodeElement[] src) {
-    if (src.length==0) return src;
-    HCodeElement[] dst = new HCodeElement[src.length];
-    System.arraycopy(src,0,dst,0,src.length);
-    return dst;
-  }
 
   /**
    * Return an ordered list of the <code>Bytecode.Instr</code>s
