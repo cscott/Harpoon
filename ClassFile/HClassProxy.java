@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.1.2.5 2000-01-13 00:20:42 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.1.2.6 2000-01-13 03:02:34 cananian Exp $
  */
 class HClassProxy extends HClass implements HClassMutator {
   Relinker relinker;
@@ -68,7 +68,7 @@ class HClassProxy extends HClass implements HClassMutator {
    */
   public HClassMutator getMutator() {
     if (proxyMutator==null) {
-      relink(new HClassSyn(relinker, proxy.getName(), proxy));
+      relink(new HClassSyn(relinker, proxy.getName(), this));
       proxy.hasBeenModified = false; // exact copy of proxy.
     }
     return (proxyMutator==null) ? null : this;
@@ -239,7 +239,7 @@ class HClassProxy extends HClass implements HClassMutator {
     if (sameLinker && hc != proxy) return hc; else return relinker.wrap(hc);
   }
   private HClass unwrap(HClass hc) {
-    if (sameLinker && hc != this) return hc; else return relinker.unwrap(hc);
+    if (sameLinker /*&& hc != this*/) return hc; else return relinker.unwrap(hc);
   }
   private HField wrap(HField hf) { return relinker.wrap(hf); }
   private HMethod wrap(HMethod hm) { return relinker.wrap(hm); }
