@@ -1,0 +1,127 @@
+% -*-latex-*- This is a LaTeX document.
+% $Id: ptran.tex,v 1.1 2002-07-22 16:45:05 cananian Exp $
+\documentclass[11pt,notitlepage]{article}
+\usepackage{comdef} % common definitions
+\usepackage{pdffonts} % PDF-friendly fonts
+\usepackage{stmaryrd} % for \rrbracket and \llbracket
+\author{C.~Scott~Ananian}
+\title{Points-To Analysis with Companion Objects}
+\date{\today \\ $ $Revision: 1.1 $ $}
+
+\begin{document}
+%\bibliographystyle{abbrv}
+\maketitle
+\section{Singular Values}
+
+We say a program variable $v$ is \newterm{singular} at a statement $s$
+if $v$ will have a different value at every execution of $s$.  An
+allocation site \code{a = new A()} produces a value which is singular
+at the site; other defintions of $a$ might reach other statements in
+the program, so $a$ is not guaranteed to be singular there.
+
+We can compute singularity using a dataflow algorithm as follows.
+Let $\text{SIN}(P)$ be the set of variables which are singular
+at program point $P$.  We will use an auxillary function
+$\text{USE}(v, P)$ be the set of uses of $v$ possibly executed before
+point $P$.  For statements at point $P$ we have the rules:
+\begin{displaymath}
+\begin{array}{lll}
+v_0 = \text{new } T & v_0 \in \text{SIN}_{\text{out}}(P)
+                    & \text{USE}_{\text{out}}(v_0, P) = \emptyset \\
+v_0 = v_1 & v_0 \in \text{SIN}_{\text{out}}(P) \text{ iff }
+            v_1 \in \text{SIN}_{\text{out}}(P)
+          & P \in \text{USE}_{\text{out}}(v_1, P) \\
+
+%
+%v = \ldots & \text{BSY}_{\text{in}}(v,P)=\code{false} \\
+%\ldots = v & \text{BSY}_{\text{in}}(v,P)=\code{true} \\
+%x=\phi(y_0,\ldots,y_n) &
+%       \text{BSY}_{\text{in}}(y_i,P)=\text{BSY}_{\text{out}}(x,P) \\
+%\tuple{x_0,\ldots,x_n}=\sigma(y) &
+%       \text{BSY}_{\text{in}}(y,P)=\bigwedge_{i=0}^n \text{BSY}_{\text{out}}(x_i,P) \\
+\end{array}
+\end{displaymath}
+
+We represent the analysis state as a tuple $\tuple{S, u}$, where $S
+\subset V$ is the set of all variables $v \in V$ which are singular,
+and $u:V \to 2^P$ is a function mapping each variable $v$ to the set
+of uses seen for the variable.  We let $P$ be the set of all program
+points.
+The transfer function
+$\tuple{S',u'} =
+  \llbracket\text{\code{\textbf{st}}}\rrbracket (\tuple{S,u})$
+defines the effect of each statement \code{st} on the analysis state.
+We start the analysis with $tuple{S_0, u_0}$ where $S_0 = \emptyset$
+and $u_0(v) = \emptyset$ for all $v \in V$.  Then we have:
+\begin{displaymath}
+\begin{array}{l}
+\llbracket v_0 = \text{new } T \rrbracket (\tuple{S, u}) =
+ \tuple{S \cup \{ v_0 \}, u'} \text{ where }
+    u'(v) = \left\{\begin{array}{l}
+      \emptyset \text{ if } v = v_0 \\
+      u(v) \text{ otherwise} \\
+    \end{array} \right\} % suppress this
+\\
+\llbracket v_0 = v_1 \rrbracket (\tuple{S, u}) =
+ \tuple{S', u'} \text{ where }
+   \begin{array}{l}
+     S' = \left\{\begin{array}{l}
+       S \cup \{ v_0 \} \text{ if } v_1 \in S \\
+       S \text{ otherwise } \\
+     \end{array} \right\} % suppress this
+     \\
+     u'(v) = \left\{\begin{array}{l}
+        u(v) \cup \{ P \} \text{ if } v=v_1 \\
+        u(v) \text{ otherwise } \\
+     \end{array} \right\} % suppress this
+   \end{array}
+\\
+
+\end{array}
+\end{displaymath}
+
+etc etc etc
+
+The notion of singular variables is useful, but say we would like to
+compare values at two statements $s_1$ and $s_2$.  Both use a variable
+$v$ which is singular at both $s_1$ and $s_2$.  So we know that $v$
+will have different values at $s_1$ for every execution of $s_1$, and
+similarly for $s_2$.  But will the values of $v$ at $s_1$ be different
+from the values of $v$ at $s_2$, or is there some execution of $s_2$
+where $v$ has the same value as at some execution of $s_1$?  We say
+$s_1$ and $s_2$ are \newterm{$v$-singular} in the first case.
+
+To help determine this pair-wise statement singularity, we will label
+singular values with the statement that created the values.  Given
+statement $s_d : v = \text{new }T$, we say $v$ is \newterm{singular
+  from $s_d$} after that point.  Thus the statement $s_1$ using $v$
+which is singular from $s_x$, and statement $s_2$ using $v$ which is
+singular from $s_y$, are pairwise $v$-singular if $s_x \neq s_y$.
+If $s_x = s_y$, they may still be pairwise $v$-singular if $s_1$ is
+not reachable from $s_2$ and $s_2$ is not reachable from $s_1$.  This
+guarantees that no value generated from $s_x$/$s_y$ can be used at
+both $s_1$ and $s_2$.
+
+We can extend this in the obvious way to a set of statements.  A
+set of statements is mutually $v$-singular if each individual pair of
+statements in the set is $v$-singular.
+
+Divorce this definition from one particular variable name by
+identifying values by \textit{generation site}; values generated from
+different generation sites are unique, regardless of what name they
+are given.
+
+Let us say that a statement is singular if the values used differ in
+each execution.  A pair of statements is mutually singular if the
+values used either come from different generation sites or cannot be
+included in the same trace from the generation site.
+
+We want all the 'set' operations associated with edges from $A$ to $B$
+to be mutually singular.
+
+\section{Compositional Pointer Analysis}
+
+\section{Allocating Polymorphism}
+
+%\bibliography{harpoon}
+\end{document}
