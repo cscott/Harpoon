@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.80 1999-08-22 05:15:55 cananian Exp $
+% $Id: thesis.tex,v 1.81 1999-08-22 05:24:06 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.80 $ $}
+\date{\today \\ $ $Revision: 1.81 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.80 $ $}{$ $Revision: 1.80 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.81 $ $}{$ $Revision: 1.81 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -401,10 +401,8 @@ the example of figure~\ref{fig:tossa}.%
 \label{fig:tossi}
 \end{myfigure}
 
-\subsection{Minimal and pruned SSI forms}
-\emph{Minimal} and \emph{pruned} SSI forms can be defined which
-parallel their SSA counterparts.  \emph{Minimal} SSI form would have the
-smallest number of \phisigfunction{s} such that:
+Formally, a program transformation to SSI form satisfies the following
+conditions:
 \begin{enumerate}
 \item If two nonnull paths $X \pathplus Z$ and $Y \pathplus Z$
 exist having only the node $Z$ where they converge in common,
@@ -435,7 +433,14 @@ node must contain every node $Y$ which is a use of that variable.
 \fixme{It would be nice to have a second set of eyes look over these
 criteria to ensure they are necessary and sufficient.}
 \end{enumerate}
+As with the SSA conditions, this definition does not prohibit
+``extra'' \phisigfunction[or]{s} not required by conditions 1 and 2.
 
+\subsection{Minimal and pruned SSI forms}
+\emph{Minimal} and \emph{pruned} SSI forms can be defined which
+parallel their SSA counterparts.  \emph{Minimal} SSI form would have the
+smallest number of \phisigfunction{s} such that the above
+conditions are satisfied.
 A \emph{pruned} SSI form would be the minimal form without any unused
 definitions, that is, \phisigfunction[or]{s} after which there are no
 subsequent uses of any of the variables defined on the left-hand side,
@@ -445,6 +450,8 @@ there are uses for \emph{exactly one} of the variables on the
 left-hand side, but by doing so one loses the ability to perform
 renaming at control-flow splits which generate additional value
 information.}
+\fixme{As with pruned SSA form, pruned SSI does not satisfy the
+definition conditions.}
 
 Figure~\vref{fig:prunedssi} compares minimal and pruned SSI form for
 our example program.
