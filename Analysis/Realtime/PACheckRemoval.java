@@ -49,7 +49,7 @@ import harpoon.Util.Util;
  * implementation of the <codE>CheckRemoval</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PACheckRemoval.java,v 1.5 2002-05-02 22:13:59 salcianu Exp $ */
+ * @version $Id: PACheckRemoval.java,v 1.6 2003-04-18 16:28:31 salcianu Exp $ */
 public class PACheckRemoval implements CheckRemoval {
 
     PointerAnalysis pa = null;
@@ -81,14 +81,14 @@ public class PACheckRemoval implements CheckRemoval {
 	    cg = new CallGraphImpl(ch, ccf);
 
 	MetaCallGraph mcg = 
-	    new FakeMetaCallGraph(cg, cg.callableMethods(), run_mms);
+	    new FakeMetaCallGraph(cg, run_mms);
 
 	MetaAllCallers mac = new MetaAllCallers(mcg);
 	System.out.println((time() - tstart) + "ms");
 
 	System.out.println("PointerAnalysis ... ");
 	tstart = time();
-        pa = new PointerAnalysis(mcg, mac,
+        pa = new PointerAnalysis(mcg, 
 				 new CachingSCCLBBFactory(lbbconv),
 				 linker);
 	// intrathread analysis of all the callable methods

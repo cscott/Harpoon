@@ -51,7 +51,7 @@ import harpoon.Util.Util;
  * <code>CheesyPACheckRemoval</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: CheesyPACheckRemoval.java,v 1.5 2002-05-02 22:13:59 salcianu Exp $
+ * @version $Id: CheesyPACheckRemoval.java,v 1.6 2003-04-18 16:28:31 salcianu Exp $
  */
 public class CheesyPACheckRemoval implements CheckRemoval {
 
@@ -105,7 +105,7 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 	else
 	    cg = new CallGraphImpl(ch, ccf);
 
-	mcg = new FakeMetaCallGraph(cg, cg.callableMethods(), run_mms);
+	mcg = new FakeMetaCallGraph(cg, run_mms);
 
 	MetaAllCallers mac = new MetaAllCallers(mcg);
 	System.out.println((time() - tstart) + "ms");
@@ -115,7 +115,7 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 
 	System.out.println("PointerAnalysis ... ");
 	tstart = time();
-        pa = new PointerAnalysis(mcg, mac,
+        pa = new PointerAnalysis(mcg, 
 				 new CachingSCCLBBFactory(lbbconv),
 				 linker);
 	/*
