@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.133 $)dnl
+AC_REVISION($Revision: 1.134 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -234,7 +234,7 @@ AM_CONDITIONAL(ROLE_INFER, test $with_role_infer = yes)
 dnl process option for Realtime Java support.
 AC_MSG_CHECKING([for realtime java support])
 AC_ARG_WITH(realtime-java,
-[  --with-realtime-java[={yes,full,stubs,fake,threads}][,noheap][,debug[-ref]][,threads-debug][,gc-stats][,timer]],
+[  --with-realtime-java[={yes,full,stubs,fake,threads}][,noheap][,debug[-ref]][,threads-debug][,gc-stats][,timer][,preempt]],
 with_realtime_java="$withval", with_realtime_java="no")
 with_realtime_java_stubs=no
 case ",$with_realtime_java," in
@@ -269,6 +269,17 @@ case ",$with_realtime_java," in
 	;;
 *)	AC_MSG_RESULT([no])
 	with_realtime_threads=no
+	;;
+esac
+AC_MSG_CHECKING([for realtime java thread preemption support])
+case ",$with_realtime_java," in
+,threads*preempt*) AC_MSG_RESULT([yes])
+	AC_DEFINE(WITH_REALTIME_THREADS_PREEMPT, 1,
+	[Define if you want to incorporate new realtime thread preemption support])
+	with_realtime_threads_preempt=yes
+	;;
+*)	AC_MSG_RESULT([no])
+	with_realtime_threads_preempt=no
 	;;
 esac
 AC_MSG_CHECKING([for realtime java NoHeapRealtimeThread support])
