@@ -11,7 +11,8 @@ import java.util.Iterator;
  * membership test, union element, and remove element operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HashSet.java,v 1.1.2.3 1999-05-27 01:55:56 pnkfelix Exp $
+ * @version $Id: HashSet.java,v 1.1.2.4 1999-06-17 21:00:53 cananian Exp $
+ * @deprecated Use <code>java.util.HashSet</code> instead.
  */
 
 public class HashSet extends Set {

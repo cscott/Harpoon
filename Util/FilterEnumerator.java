@@ -11,7 +11,8 @@ import java.util.NoSuchElementException;
  * <code>Enumeration</code> to generate a new one.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FilterEnumerator.java,v 1.1.2.2 1999-01-22 23:34:00 cananian Exp $
+ * @version $Id: FilterEnumerator.java,v 1.1.2.3 1999-06-17 21:00:53 cananian Exp $
+ * @deprecated Use harpoon.Util.FilterIterator instead.
  */
 public class FilterEnumerator implements Enumeration {
     /*final*/ Enumeration e;

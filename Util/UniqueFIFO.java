@@ -10,7 +10,8 @@ import java.util.EmptyStackException;
  * list of <b>unique</b> objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueFIFO.java,v 1.4.2.1 1999-02-03 23:13:09 pnkfelix Exp $
+ * @version $Id: UniqueFIFO.java,v 1.4.2.2 1999-06-17 21:00:53 cananian Exp $
+ * @deprecated Does not conform to the JDK 1.2 Collection API.
  */
 
 public class UniqueFIFO extends FIFO implements Worklist {

@@ -12,7 +12,8 @@ import java.util.Enumeration;
  * guaranteed to have log(N) search time.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: TreeSet.java,v 1.1.2.1 1999-02-05 23:10:05 pnkfelix Exp $
+ * @version $Id: TreeSet.java,v 1.1.2.2 1999-06-17 21:00:53 cananian Exp $
+ * @deprecated Use <code>java.util.TreeSet</code> instead.
  */
 public abstract class TreeSet extends Set {
     

@@ -10,7 +10,8 @@ import java.util.EmptyStackException;
  * list of objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FIFO.java,v 1.4.2.1 1999-02-03 23:13:08 pnkfelix Exp $
+ * @version $Id: FIFO.java,v 1.4.2.2 1999-06-17 21:00:53 cananian Exp $
+ * @deprecated Use java.util.List instead.
  */
 
 public class FIFO {

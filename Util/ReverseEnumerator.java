@@ -12,7 +12,8 @@ import java.util.Vector;
  * in reverse order.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ReverseEnumerator.java,v 1.1.2.1 1998-12-23 22:14:18 cananian Exp $
+ * @version $Id: ReverseEnumerator.java,v 1.1.2.2 1999-06-17 21:00:53 cananian Exp $
+ * @deprecated Use harpoon.Util.ReverseIterator instead.
  */
 public class ReverseEnumerator implements Enumeration {
     final Vector v = new Vector();

@@ -10,7 +10,8 @@ import java.util.NoSuchElementException;
  * <code>Enumeration</code>s into one.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CombineEnumerator.java,v 1.2.2.1 1999-01-08 04:54:24 cananian Exp $
+ * @version $Id: CombineEnumerator.java,v 1.2.2.2 1999-06-17 21:00:53 cananian Exp $
+ * @deprecated Use harpoon.Util.CombineIterator instead.
  */
 
 public class CombineEnumerator implements Enumeration {

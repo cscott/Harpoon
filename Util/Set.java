@@ -8,7 +8,8 @@ import java.util.Enumeration;
  * <code>Set</code> is an abstract set representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Set.java,v 1.3.2.5 1999-02-05 23:09:04 pnkfelix Exp $
+ * @version $Id: Set.java,v 1.3.2.6 1999-06-17 21:00:53 cananian Exp $
+ * @deprecated Use <code>java.util.Set</code> instead.
  */
 
 public abstract class Set implements Worklist {
