@@ -5,12 +5,13 @@ import java.lang.reflect.Modifier;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
  * <code>NEW</code> represents an object creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NEW.java,v 1.11 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: NEW.java,v 1.12 1998-09-13 23:57:27 cananian Exp $
  */
 
 public class NEW extends Quad {
@@ -34,6 +35,11 @@ public class NEW extends Quad {
     /** Returns the Temp defined by this Quad.
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	dst = tm.tempMap(dst);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

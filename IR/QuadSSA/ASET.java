@@ -3,12 +3,13 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 
 /**
  * <code>ASET</code> represents an array element assignment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ASET.java,v 1.6 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: ASET.java,v 1.7 1998-09-13 23:57:20 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ALENGTH
@@ -36,6 +37,13 @@ public class ASET extends Quad {
      *         <code>src</code> fields.
      */
     public Temp[] use() { return new Temp[] { objectref, index, src }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	objectref = tm.tempMap(objectref);
+	index = tm.tempMap(index);
+	src = tm.tempMap(src);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

@@ -6,7 +6,7 @@ import java.util.EmptyStackException;
  * list of objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FIFO.java,v 1.1 1998-09-11 03:52:31 cananian Exp $
+ * @version $Id: FIFO.java,v 1.2 1998-09-13 23:57:34 cananian Exp $
  */
 
 public class FIFO {
@@ -64,7 +64,7 @@ public class FIFO {
      * @return <code>true</code> if this stack is empty;
      *         <code>false</code> otherwise.
      */
-    public boolean empty() {
+    public boolean isEmpty() {
 	return (head==null);
     }
 }

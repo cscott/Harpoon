@@ -3,6 +3,7 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 /**
  * <code>INSTANCEOF</code> objects represent an 'instanceof' evaluation.
  * <code>INSTANCEOF</code> assigns a boolean value to a temporary after
@@ -10,7 +11,7 @@ import harpoon.Temp.Temp;
  * class type.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSTANCEOF.java,v 1.5 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: INSTANCEOF.java,v 1.6 1998-09-13 23:57:25 cananian Exp $
  */
 
 public class INSTANCEOF extends Quad {
@@ -34,6 +35,12 @@ public class INSTANCEOF extends Quad {
     public Temp[] use() { return new Temp[] { src }; }
     /** Returns the <code>Temp</code>s defined by this quad. */
     public Temp[] def() { return new Temp[] { dst }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	dst = tm.tempMap(dst);
+	src = tm.tempMap(src);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

@@ -3,12 +3,13 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 
 /**
  * <code>AGET</code> represents an element fetch from an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AGET.java,v 1.6 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: AGET.java,v 1.7 1998-09-13 23:57:19 cananian Exp $
  * @see ANEW
  * @see ASET
  * @see ALENGTH
@@ -37,6 +38,13 @@ public class AGET extends Quad {
     /** Returns all the Temps used by this quad.
      * @return the <code>objectref</code> and <code>index</code> fields. */
     public Temp[] use() { return new Temp[] { objectref, index }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	dst = tm.tempMap(dst);
+	objectref = tm.tempMap(objectref);
+	index = tm.tempMap(index);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

@@ -7,7 +7,7 @@ package harpoon.ClassFile;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.4 1998-08-03 21:33:31 cananian Exp $
+ * @version $Id: HCode.java,v 1.5 1998-09-13 23:57:14 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.ClassFile.Bytecode.Code
@@ -37,28 +37,11 @@ public abstract class HCode {
   public abstract HCodeElement[] getElements();
 
   /**
-   * Convert from a different code view, by way of intermediates.
-   * It is expected that each code view will have conversion functions
-   * from one or two other code views; the <code>convertFrom</code> function
-   * is thus expected to recursively invoke the <code>convertFrom</code>
-   * methods of the code views it understands, in an attempt to create
-   * a complete conversion chain.  <code>convertFrom</code> should return
-   * <code>null</code>, without throwing an exception, if it finds that
-   * conversion is impossible; this will indicate to a parent 
-   * <code>convertFrom</code> method that it should try a different 
-   * intermediate format.
-   * <p>
-   * All codeviews should be accessed using the <code>getCode</code> method
-   * of the appropriate <code>HMethod</code> to allow efficient caching.
-   * If a conversion is done, <code>putCode</code> should be called
-   * to cache the new view before <code>convertFrom</code> returns.
-   * <p>
-   * The default superclass implementation always returns <code>null</code>.  
-   * It is expected that all subclasses will override this implementation.
-   * @see HMethod#getCode
-   * @see HMethod#putCode
+   * Return the 'root' element of this code view.
+   * @return root of the code view, or <code>null</code> if this notion
+   *         is not applicable.
    */
-  public static HCode convertFrom(HCode codeview) { return null; }
+  public HCodeElement getRootElement() { return getElements()[0]; }
 
   /**
    * Pretty-print this code view.

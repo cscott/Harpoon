@@ -7,12 +7,21 @@ import java.util.EmptyStackException;
  * list of <b>unique</b> objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueFIFO.java,v 1.2 1998-09-11 03:52:31 cananian Exp $
+ * @version $Id: UniqueFIFO.java,v 1.3 1998-09-13 23:57:35 cananian Exp $
  */
 
-public class UniqueFIFO extends FIFO {
+public class UniqueFIFO extends FIFO implements Worklist {
 
     Hashtable uniq = new Hashtable();
+
+    /**
+     * Determines whether this fifo contains an object.
+     * @return <code>true</code> if the fifo contains <code>item</code>,
+     *         <code>false</code> otherwise.
+     */
+    public boolean contains(Object item) {
+	return uniq.containsKey(item);
+    }
 
     /** 
      * Pushes an item onto the front of this fifo, if it is unique.

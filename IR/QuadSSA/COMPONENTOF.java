@@ -3,6 +3,7 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 /**
  * <code>COMPONENTOF</code> objects implement the test needed to determine
  * if an <code>ASET</code> needs to throw an exception.  Specifically,
@@ -11,7 +12,7 @@ import harpoon.Temp.Temp;
  * array, or boolean <code>false</code> otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.4 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.5 1998-09-13 23:57:21 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */
@@ -37,6 +38,13 @@ public class COMPONENTOF extends Quad {
     public Temp[] use() { return new Temp[] { arrayref, objectref }; }
     /** Returns the <code>Temp</code>s defined by this quad. */
     public Temp[] def() { return new Temp[] { dst }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	dst = tm.tempMap(dst);
+	arrayref = tm.tempMap(arrayref);
+	objectref = tm.tempMap(objectref);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

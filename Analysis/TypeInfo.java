@@ -6,18 +6,19 @@ import harpoon.IR.QuadSSA.*;
 import harpoon.Temp.*;
 import harpoon.Util.Util;
 import harpoon.Util.UniqueFIFO;
+import harpoon.Util.Worklist;
 import harpoon.Util.HClassUtil;
 
 import java.util.Vector;
 import java.util.Hashtable;
 /**
- * <code>TypeInfo</code>
+ * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.5 1998-09-11 18:58:32 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.6 1998-09-13 23:57:12 cananian Exp $
  */
 
-public class TypeInfo implements TypeMap {
+public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
     UseDef usedef;
     
     Hashtable map = new Hashtable();
@@ -28,30 +29,31 @@ public class TypeInfo implements TypeMap {
     /** Creates a <code>TypeInfo</code> analyzer. */
     public TypeInfo() { this(new UseDef()); }
     
-    public HClass typeMap(HMethod m, Temp t) { 
-	analyze(m);  return (HClass) map.get(t); 
+    public HClass typeMap(HCode hc, Temp t) { 
+	analyze((harpoon.IR.QuadSSA.Code)hc);
+	return (HClass) map.get(t); 
     }
 
-    void analyze(HMethod method) {
+    void analyze(harpoon.IR.QuadSSA.Code hc) {
 	// don't do the same method more than once.
-	if (analyzed.containsKey(method)) return;
-	analyzed.put(method, method);
+	if (analyzed.containsKey(hc)) return;
+	analyzed.put(hc, hc);
 
-	Quad ql[] = (Quad[])harpoon.IR.QuadSSA.Code.code(method).getElements();
-
-	UniqueFIFO worklist = new UniqueFIFO();
+	Quad ql[] = (Quad[]) hc.getElements();
+	
+	Worklist worklist = new UniqueFIFO();
 	for (int i=0; i<ql.length; i++)
 	    worklist.push(ql[i]);
 	
-	TypeInfoVisitor tiv = new TypeInfoVisitor(method);
-	while(!worklist.empty()) {
+	TypeInfoVisitor tiv = new TypeInfoVisitor(hc);
+	while(!worklist.isEmpty()) {
 	    Quad q = (Quad) worklist.pull();
 	    tiv.modified = false;
 	    q.visit(tiv);
 	    if (tiv.modified) {
 		Temp[] d = q.def();
 		for (int i=0; i<d.length; i++) {
-		    Quad[] u = usedef.useSites(method, d[i]);
+		    Quad[] u = usedef.useSites(hc.getMethod(), d[i]);
 		    for (int j=0; j<u.length; j++) {
 			worklist.push(u[j]); // only pushes unique elements.
 		    }
@@ -61,81 +63,82 @@ public class TypeInfo implements TypeMap {
     }
 
     class TypeInfoVisitor extends QuadVisitor {
-	HMethod m;
+	harpoon.IR.QuadSSA.Code hc;
 	boolean modified = false;
-	TypeInfoVisitor(HMethod m) { this.m = m; }
+	TypeInfoVisitor(harpoon.IR.QuadSSA.Code hc) { this.hc = hc; }
 
 	public void visit(Quad q) { modified = false; }
 
 	public void visit(AGET q) {
-	    HClass ty = typeMap(m, q.objectref);
+	    HClass ty = typeMap(hc, q.objectref);
 	    if (ty==null) {modified=false; return; }
 	    Util.assert(ty.isArray());
-	    modified = merge(m, q.dst, ty.getComponentType());
+	    modified = merge(hc, q.dst, ty.getComponentType());
 	    return;
 	}
 	public void visit(ALENGTH q) {
-	    modified = merge(m, q.dst, HClass.Int);
+	    modified = merge(hc, q.dst, HClass.Int);
 	}
 	public void visit(ANEW q) {
-	    modified = merge(m, q.dst, q.hclass);
+	    modified = merge(hc, q.dst, q.hclass);
 	}
 	public void visit(CALL q) {
 	    boolean r1 = (q.retval==null) ? false:
-		merge(m, q.retval, q.method.getReturnType());
+		merge(hc, q.retval, q.method.getReturnType());
 	    // XXX specify class of exception better.
-	    boolean r2 = merge(m, q.retex, HClass.forClass(Throwable.class));
+	    boolean r2 = merge(hc, q.retex, HClass.forClass(Throwable.class));
 	    modified = r1 || r2;
 	}
 	public void visit(COMPONENTOF q) {
-	    modified = merge(m, q.dst, HClass.Boolean);
+	    modified = merge(hc, q.dst, HClass.Boolean);
 	}
 	public void visit(CONST q) {
-	    modified = merge(m, q.dst, q.type);
+	    modified = merge(hc, q.dst, q.type);
 	}
 	public void visit(GET q) {
-	    modified = merge(m, q.dst, q.field.getType());
+	    modified = merge(hc, q.dst, q.field.getType());
 	}
 	public void visit(INSTANCEOF q) {
-	    modified = merge(m, q.dst, HClass.Boolean);
+	    modified = merge(hc, q.dst, HClass.Boolean);
 	}
 	public void visit(METHODHEADER q) {
 	    boolean r = false;
-	    HClass[] hc = m.getParameterTypes();
+	    HMethod m = hc.getMethod();
+	    HClass[] pt = m.getParameterTypes();
 	    int offset = m.isStatic()?0:1;
 	    for (int i=offset; i<q.params.length; i++)
-		if (merge(m, q.params[i], hc[i-offset])) 
+		if (merge(hc, q.params[i], pt[i-offset])) 
 		    r = true;
 	    if (!m.isStatic())
-		r = merge(m, q.params[0], m.getDeclaringClass()) || r;
+		r = merge(hc, q.params[0], m.getDeclaringClass()) || r;
 	    modified = r;
 	}
 	public void visit(MOVE q) {
-	    HClass ty = typeMap(m, q.src);
+	    HClass ty = typeMap(hc, q.src);
 	    if (ty==null) { modified = false; return; }
-	    modified = merge(m, q.dst, ty);
+	    modified = merge(hc, q.dst, ty);
 	}
 	public void visit(NEW q) {
-	    modified = merge(m, q.dst, q.hclass);
+	    modified = merge(hc, q.dst, q.hclass);
 	}
 	public void visit(OPER q) {
-	    modified = merge(m, q.dst, q.evalType());
+	    modified = merge(hc, q.dst, q.evalType());
 	}
 	public void visit(PHI q) {
 	    boolean r = false;
 	    for (int i=0; i<q.dst.length; i++)
 		for (int j=0; j<q.src[i].length; j++) {
 		    if (q.src[i][j]==null) continue;
-		    HClass ty = typeMap(m, q.src[i][j]);
+		    HClass ty = typeMap(hc, q.src[i][j]);
 		    if (ty==null) continue;
-		    if (merge(m, q.dst[i], ty))
+		    if (merge(hc, q.dst[i], ty))
 			r = true;
 		}
 	    modified = r;
 	}
     }
-    boolean merge(HMethod m, Temp t, HClass newType) {
-	HClass oldType = typeMap(m, t);
+    boolean merge(HCode hc, Temp t, HClass newType) {
+	HClass oldType = typeMap(hc, t);
 	if (oldType==null) { map.put(t, newType); return true; }
 	if (oldType==newType) return false;
 	// special case 'Void' HClass, which is used for null constants.

@@ -3,13 +3,14 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
  * <code>CONST</code> objects represent an assignment of a constant value
  * to a compiler temporary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.8 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: CONST.java,v 1.9 1998-09-13 23:57:22 cananian Exp $
  */
 
 public class CONST extends Quad {
@@ -30,6 +31,11 @@ public class CONST extends Quad {
      * @return The <code>dst</code> field.
      */
     public Temp[] def() { return new Temp[] { dst }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	dst = tm.tempMap(dst);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

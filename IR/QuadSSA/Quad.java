@@ -3,14 +3,18 @@ package harpoon.IR.QuadSSA;
 import harpoon.ClassFile.*;
 import harpoon.Util.Util;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 /**
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.16 1998-09-11 18:28:23 cananian Exp $
+ * @version $Id: Quad.java,v 1.17 1998-09-13 23:57:29 cananian Exp $
  */
-public abstract class Quad implements HCodeElement {
+public abstract class Quad 
+    implements harpoon.ClassFile.HCodeElement, 
+               harpoon.IR.Properties.UseDef, harpoon.IR.Properties.Edges
+{
     String sourcefile;
     int linenumber;
     int id;
@@ -42,8 +46,12 @@ public abstract class Quad implements HCodeElement {
     public int getID() { return id; }
     /** Force everyone to reimplement toString() */
     public abstract String toString();
+
     /** Accept a visitor. */
     public abstract void visit(QuadVisitor v);
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public abstract void rename(TempMap tm);
 
     /*----------------------------------------------------------*/
     /** Return all the Temps used by this Quad. */
@@ -57,16 +65,16 @@ public abstract class Quad implements HCodeElement {
     Edge next[], prev[];
 
     /** Returns the <code>i</code>th successor of this quad. */
-    public Quad next(int i) { return next[i].to(); }
+    public Quad next(int i) { return (Quad) next[i].to(); }
     /** Returns the <code>i</code>th predecessor of this quad. */
-    public Quad prev(int i) { return prev[i].from(); }
+    public Quad prev(int i) { return (Quad) prev[i].from(); }
 
     /** Returns an array containing all the successors of this quad,
      *  in order. */
     public Quad[] next() { 
 	Quad[] r = new Quad[next.length];
 	for (int i=0; i<r.length; i++)
-	    r[i] = (next[i]==null)?null:next[i].to();
+	    r[i] = (next[i]==null)?null:(Quad)next[i].to();
 	return r;
     }
     /** Returns an array containing all the predecessors of this quad,
@@ -74,7 +82,7 @@ public abstract class Quad implements HCodeElement {
     public Quad[] prev() {
 	Quad[] r = new Quad[prev.length];
 	for (int i=0; i<r.length; i++)
-	    r[i] = (prev[i]==null)?null:prev[i].from();
+	    r[i] = (prev[i]==null)?null:(Quad)prev[i].from();
 	return r;
     }
     
@@ -86,6 +94,15 @@ public abstract class Quad implements HCodeElement {
     public Edge nextEdge(int i) { return next[i]; }
     /** Returns the <code>i</code>th incoming edge of this quad. */
     public Edge prevEdge(int i) { return prev[i]; }
+
+    /** Returns an array with all the edges to and from this 
+     *  <code>Quad</code>. */
+    public HCodeEdge[] edges() {
+	Edge[] e = new Edge[next.length+prev.length];
+	System.arraycopy(next,0,e,0,next.length);
+	System.arraycopy(prev,0,e,next.length,prev.length);
+	return (HCodeEdge[]) e;
+    }
 
     /** Adds an edge between two Quads.  The <code>from_index</code>ed
      *  outgoing edge of <code>from</code> is connected to the 

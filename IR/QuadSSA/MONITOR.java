@@ -3,11 +3,12 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 /**
  * <code>MONITOR</code> represents a synchronization block.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MONITOR.java,v 1.9 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: MONITOR.java,v 1.10 1998-09-13 23:57:26 cananian Exp $
  */
 
 public class MONITOR extends Quad {
@@ -28,6 +29,11 @@ public class MONITOR extends Quad {
     /** Returns the Temp used by this Quad.
      * @return the <code>lock</code> field. */
     public Temp[] use() { return new Temp[] { lock }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	lock = tm.tempMap(lock);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

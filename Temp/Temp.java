@@ -8,8 +8,9 @@ import java.util.Hashtable;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.10 1998-09-03 01:45:19 cananian Exp $
- * @see TypeMap
+ * @version $Id: Temp.java,v 1.11 1998-09-13 23:57:33 cananian Exp $
+ * @see harpoon.Analysis.Maps.TypeMap
+ * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
  */
 public class Temp {

@@ -3,13 +3,14 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
  * <code>ANEW</code> represents an array creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ANEW.java,v 1.7 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: ANEW.java,v 1.8 1998-09-13 23:57:20 cananian Exp $
  * @see NEW
  * @see AGET
  * @see ASET
@@ -47,6 +48,13 @@ public class ANEW extends Quad {
     /** Returns the Temps used by this Quad.
      * @return the <code>dims</code> field. */
     public Temp[] use() { return (Temp[]) Util.copy(dims); }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	dst = tm.tempMap(dst);
+	for (int i=0; i<dims.length; i++)
+	    dims[i] = tm.tempMap(dims[i]);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

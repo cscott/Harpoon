@@ -5,9 +5,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Hashtable;
 
+import harpoon.Analysis.Maps.ConstMap;
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
-import harpoon.Temp.ConstMap;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
  * <code>OPER</code> objects represent arithmetic/logical operations,
@@ -20,7 +21,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.14 1998-09-11 18:28:23 cananian Exp $
+ * @version $Id: OPER.java,v 1.15 1998-09-13 23:57:28 cananian Exp $
  */
 
 public class OPER extends Quad {
@@ -43,6 +44,13 @@ public class OPER extends Quad {
     public Temp[] use() { return (Temp[]) operands.clone(); }
     /** Returns the Temps defined by this OPER. */
     public Temp[] def() { return new Temp[] { dst }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	dst = tm.tempMap(dst);
+	for (int i=0; i<operands.length; i++)
+	    operands[i] = tm.tempMap(operands[i]);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 
@@ -80,17 +88,6 @@ public class OPER extends Quad {
 	} catch (IllegalAccessException e) {
 	    Util.assert(false); return null;
 	}
-    }
-    /** Evaluates a value for the result of an <code>OPER</code>, given
-     *  a mapping from the operand <code>Temp</code>s to constant
-     *  values. */
-    public Object evalValue(HMethod m, ConstMap cm) {
-	Object[] args = new Object[operands.length];
-	for (int i=0; i<operands.length; i++) {
-	    Util.assert(cm.isConst(m, operands[i]));
-	    args[i] = cm.constMap(m, operands[i]);
-	}
-	return evalValue(args);
     }
 
     // private stuff.

@@ -3,13 +3,14 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 
 /**
  * <code>MOVE</code> objects represent an assignment to a compiler temporary.
  * The source of the assignment must be another temporary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MOVE.java,v 1.7 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: MOVE.java,v 1.8 1998-09-13 23:57:26 cananian Exp $
  */
 
 public class MOVE extends Quad {
@@ -29,6 +30,12 @@ public class MOVE extends Quad {
     public Temp[] use() { return new Temp[] { src }; }
     /** Returns the Temps defined by this Quad. */
     public Temp[] def() { return new Temp[] { dst }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	dst = tm.tempMap(dst);
+	src = tm.tempMap(src);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

@@ -3,12 +3,13 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 
 /**
  * <code>SWITCH</code> represents a switch construct.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SWITCH.java,v 1.7 1998-09-11 18:28:23 cananian Exp $
+ * @version $Id: SWITCH.java,v 1.8 1998-09-13 23:57:30 cananian Exp $
  */
 
 public class SWITCH extends Quad {
@@ -34,6 +35,11 @@ public class SWITCH extends Quad {
     /** Returns the Temp used by this quad.
      * @return the <code>index</code> field. */
     public Temp[] use() { return new Temp[] { index }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	index = tm.tempMap(index);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

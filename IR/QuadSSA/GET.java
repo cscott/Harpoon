@@ -5,12 +5,13 @@ import java.lang.reflect.Modifier;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
  * <code>GET</code> represent field access (get) operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.15 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: GET.java,v 1.16 1998-09-13 23:57:24 cananian Exp $
  */
 
 public class GET extends Quad {
@@ -21,6 +22,7 @@ public class GET extends Quad {
     /** Reference to the object containing the field. <p>
      *  <code>null</code> if field is static.     */
     public Temp objectref;
+
     /** Creates a <code>GET</code> for a non-static field. */
     public GET(HCodeElement source,
 	       Temp dst, HField field, Temp objectref) {
@@ -45,6 +47,13 @@ public class GET extends Quad {
     /** Returns the Temp defined by this Quad.
      * @return the <code>dst</code> field. */
     public Temp[] def() { return new Temp[] { dst }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	dst = tm.tempMap(dst);
+	if (objectref!=null)
+	    objectref = tm.tempMap(objectref);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

@@ -2,11 +2,12 @@
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
+import harpoon.Temp.TempMap;
 /**
  * <code>NOP</code> nodes do nothing.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NOP.java,v 1.5 1998-09-11 18:28:23 cananian Exp $
+ * @version $Id: NOP.java,v 1.6 1998-09-13 23:57:27 cananian Exp $
  */
 
 public class NOP extends Quad {
@@ -15,6 +16,9 @@ public class NOP extends Quad {
     public NOP(HCodeElement source) {
         super(source);
     }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) { }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

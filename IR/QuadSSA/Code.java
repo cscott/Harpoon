@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9 1998-09-10 22:44:32 cananian Exp $
+ * @version $Id: Code.java,v 1.10 1998-09-13 23:57:23 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -29,11 +29,12 @@ public class Code extends HCode {
     Quad quads;
 
     /** Creates a <code>Code</code> object from a bytecode object. */
-    Code(HMethod parent, harpoon.ClassFile.Bytecode.Code bytecode) 
+    Code(harpoon.ClassFile.Bytecode.Code bytecode) 
     {
-	this.parent = parent;
+	this.parent = bytecode.getMethod();
         this.bytecode = bytecode;
 	this.quads = Translate.trans(bytecode);
+	CleanUp.cleanup(this);
 	parent.putCode(this);
     }
     /**
@@ -48,34 +49,21 @@ public class Code extends HCode {
      */
     public String getName() { return codename; }
     
-    /**
-     * Convert from a different code view, by way of intermediates.
-     * <code>QuadSSA</code> is created from the basic codeview,
-     * <code>Bytecode</code>.
-     */
-    public static HCode convertFrom(HCode codeview) {
-	// try to fetch pre-existing conversion results.
-	HCode c = codeview.getMethod().getCode(codename);
-	if (c!=null) return c;
-	// otherwise, try to make a 'bytecode,' which is the
-	// format we can convert from.
-	if (!codeview.getName().equals("bytecode"))
-	    codeview=harpoon.ClassFile.Bytecode.Code.convertFrom(codeview);
-	// if we can't get a format we understand, we can't convert.
-	if (codeview==null) return null;
-	// convert from bytecode.
-	if (!(codeview instanceof harpoon.ClassFile.Bytecode.Code))
-	    throw new Error("getName() or convertFrom() is not working.");
-	return new Code(codeview.getMethod(), 
-			(harpoon.ClassFile.Bytecode.Code) codeview);
-    }
-    /** Return code in QuadSSA form given a method. */
-    public static Code code(HMethod m) {
-	return (Code) convertFrom(m.getCode("bytecode"));
+    public static void register() {
+	HCodeFactory f = new HCodeFactory() {
+	    public HCode convert(HMethod m) {
+		return new Code( (harpoon.ClassFile.Bytecode.Code)
+				 m.getCode("bytecode"));
+	    }
+	    public String getCodeName() {
+		return codename;
+	    }
+	};
+	HMethod.register(f);
     }
 
     /**
-     * Return an ordered list of the <code>Quad</code>s
+     * Returns an ordered list of the <code>Quad</code>s
      * making up this code view.  The root of the graph
      * is in element 0 of the array.
      */
@@ -86,6 +74,9 @@ public class Code extends HCode {
 	v.copyInto(elements);
 	return (HCodeElement[]) elements;
     }
+
+    /** Returns the root of the control flow graph. */
+    public HCodeElement getRootElement() { return quads; }
 
     /** scan through quad graph and keep a list of the quads found. */
     private void traverse(Quad q, UniqueVector v) {

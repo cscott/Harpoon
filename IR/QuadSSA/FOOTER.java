@@ -2,6 +2,7 @@
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
  * <code>FOOTER</code> nodes are used to anchor the bottom end of the quad
@@ -10,7 +11,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.6 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.7 1998-09-13 23:57:24 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW
@@ -35,6 +36,9 @@ public class FOOTER extends Quad {
 	grow(); 
 	addEdge(q, which_succ, this, prev.length-1);
     }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) { }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

@@ -5,12 +5,13 @@ import java.lang.reflect.Modifier;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
  * <code>SET</code> represents field assignment-to operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SET.java,v 1.13 1998-09-11 18:28:23 cananian Exp $
+ * @version $Id: SET.java,v 1.14 1998-09-13 23:57:30 cananian Exp $
  */
 
 public class SET extends Quad {
@@ -44,6 +45,12 @@ public class SET extends Quad {
 	else return new Temp[] { objectref, src };
     }
 
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	if (objectref!=null)
+	    objectref = tm.tempMap(objectref);
+	src = tm.tempMap(src);
+    }
     public void visit(QuadVisitor v) { v.visit(this); }
 
     /** Returns a human-readable representation of this Quad. */

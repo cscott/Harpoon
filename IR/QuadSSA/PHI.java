@@ -3,12 +3,13 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.14 1998-09-11 20:45:11 cananian Exp $
+ * @version $Id: PHI.java,v 1.15 1998-09-13 23:57:28 cananian Exp $
  */
 
 public class PHI extends Quad {
@@ -69,6 +70,15 @@ public class PHI extends Quad {
     }
     /** Returns all the Temps defined by this Quad. */
     public Temp[] def() { return (Temp[]) dst.clone(); }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	for (int i=0; i<dst.length; i++) {
+	    dst[i] = tm.tempMap(dst[i]);
+	    for (int j=0; j<src[i].length; j++)
+		src[i][j] = tm.tempMap(src[i][j]);
+	}
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

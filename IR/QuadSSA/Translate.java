@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.64 1998-09-10 20:48:16 cananian Exp $
+ * @version $Id: Translate.java,v 1.65 1998-09-13 23:57:31 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -263,7 +263,7 @@ class Translate  { // not public.
 	boolean isSynchronized = Modifier.isSynchronized(bytecode.getMethod()
 							 .getModifiers());
 
-	Instr firstInstr = (Instr) bytecode.getElements()[0];
+	Instr firstInstr = (Instr) bytecode.getRootElement();
 	State s = new State(locals, bytecode.getTryBlocks(),
 			    new FOOTER(firstInstr));
 

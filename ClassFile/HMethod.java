@@ -17,7 +17,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.17 1998-09-10 20:47:59 cananian Exp $
+ * @version $Id: HMethod.java,v 1.18 1998-09-13 23:57:15 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -50,19 +50,39 @@ public class HMethod implements HMember {
   /** provide means for <code>HArrayMethod</code> to subclass. */
   HMethod(HClass parent) { this.hclass = parent; }
   
+  /** Register an <code>HCodeFactory</code> to be used by the
+   *  <code>getCode</code> method. */
+  public static void register(HCodeFactory f) {
+    factories.put(f.getCodeName(), f);
+  }
+  static Hashtable factories = new Hashtable();
+
   /**
    * Returns an object representing the executable code of this method.
    * The only <code>codetype</code> defined by default is "bytecode",
-   * which returns a byte[] array object containing the bytecode
-   * for the method.
+   * which returns an <code>harpoon.ClassFile.Bytecode.Code</code> object,
+   * but other <code>codetype</code>s can be registered using the
+   * <code>register()</code> method.
+   * The <code>getCode()</code> method will use any registered
+   * <code>HCodeFactory</code>s in order to create the <code>HCode</code>
+   * requested.
    * @param codetype a string representing the code representation
    *                 you would like.
    * @return the code representation you requested, or <code>null</code>
-   *         if the given <code>codetype</code> cannot be found.
+   *         if no factory for the <code>codetype</code> can be found.
    * @see putCode
    */
   public HCode getCode(String codetype) {
-    return (HCode) codetable.get(codetype);
+    // Check the cache.
+    HCode hc = (HCode) codetable.get(codetype);
+    if (hc != null) return hc;
+    // not cached. Make from scratch
+    HCodeFactory f = (HCodeFactory) factories.get(codetype);
+    if (f == null) return null; // oops! Can't find factory!
+    // convert, cache, and return.
+    hc = f.convert(this);
+    putCode(hc);
+    return hc;
   }
   /**
    * Add a new code representation for this method, or replace

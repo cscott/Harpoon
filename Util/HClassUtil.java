@@ -7,7 +7,7 @@ import harpoon.ClassFile.*;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.2 1998-09-11 17:01:03 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.3 1998-09-13 23:57:34 cananian Exp $
  */
 
 public final class HClassUtil  {
@@ -54,7 +54,7 @@ public final class HClassUtil  {
 	    r[len] = hc;
 	return r;
     }
-    /** Find an return the first common superclass of a pair of classes. */
+    /** Find and return the first common superclass of a pair of classes. */
     public static final HClass commonSuper(HClass a, HClass b) {
 	HClass[] A = parents(a);
 	HClass[] B = parents(b);

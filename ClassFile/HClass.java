@@ -7,6 +7,7 @@ import java.util.Vector;
 
 import harpoon.ClassFile.Raw.Attribute.AttributeSourceFile;
 import harpoon.Util.UniqueVector;
+import harpoon.Util.Util;
 
 /**
  * Instances of the class <code>HClass</code> represent classes and 
@@ -25,7 +26,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.27 1998-09-10 05:04:35 cananian Exp $
+ * @version $Id: HClass.java,v 1.28 1998-09-13 23:57:14 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -44,10 +45,13 @@ public class HClass {
    *            if the class could not be found.
    */
   public static HClass forName(String className) {
-    if (className.charAt(0)=='[')
+    if (className.charAt(0)=='[') {
+      Util.assert(className.indexOf('.')==-1); // should be desc, not name.
       return forDescriptor(className);
-    else
+    } else {
+      Util.assert(className.indexOf('/')==-1); // should be name, not desc.
       return forDescriptor("L"+className.replace('.','/')+";");
+    }
   }
   
   /**
@@ -57,6 +61,7 @@ public class HClass {
    * <code>Error</code> if an invalid descriptor is given.
    */
   public static HClass forDescriptor(String descriptor) {
+    Util.assert(descriptor.indexOf('.')==-1); // should be desc, not name.
     // Trim descriptor.
     int i;
     for (i=0; i<descriptor.length(); i++) {
@@ -876,6 +881,18 @@ public class HClass {
     if (this==HClass.Double) return true;
     if (this==HClass.Char) return true;
     if (this==HClass.Void) return true;
+    return false;
+  }
+
+  /**
+   * Determines if this <code>HClass</code> is a superclass of a given
+   * <code>HClass hc</code>.
+   * @return <code>true</code> if <code>this</code> is a superclass of
+   *         <code>hc</code>, <code>false</code> otherwise.
+   */
+  public boolean isSuperclassOf(HClass hc) {
+    for ( ; hc!=null; hc = hc.getSuperclass())
+      if (this == hc) return true;
     return false;
   }
 

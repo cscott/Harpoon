@@ -1,10 +1,35 @@
+---- Sep-13-98
+Write tool to print 'ConstantClass'es from bytecode files, and delete
+ .classes that depend on out-of-date classes. Then some other tool can
+ regenerate the missing classes.
+Hierarchy goes:
+ Top
+ xClassNull extends Top -- classes; value could be 'null'
+ xClass extends xClassNull -- a class; can *not* be null.
+ xClassArray extends xClass -- an array class with a constant length (not null)
+ BitSize extends xClass -- a value of the specified bit-width.
+                           <lowest set bit, highest set bit>
+ Bounds extends BitSize -- a bounded value lowval <= v <= highval
+ Constant               -- a particular constant value.
+For fast analysis, can not raise Bounds to another instance of Bounds.
+Bounds must be raised to BitSize if bounds proved invalid.
+---- Sep-12-98, cont
+Massive SCC-based analysis can keep: array size, canbeNull, class sets, etc.
+Move harpoon.ClassFile.Bytecode to harpoon.IR.Bytecode
+Rename all *.Code classes to QuadCode, BytecodeCode, etc.
+Make UseDef into map/general class
+Remove SymTable package.
+---- Sep-12-98
+X Add 'assert' statements to HClass.forName and HClass.forDescriptor to protect
+X  against '/' and '.' mistakes.
 ---- Sep-11-98, cont 2
-Move TypeMap, ConstMap to harpoon.Analysis
-Make ExecMap with two methods: isExec(Edge e) and isExec(Quad q).
-  this can be made to work whether the internal rep is Quads or Edges.
+O Move TypeMap, ConstMap to harpoon.Analysis
+X -- moved to harpoon.Analysis.Maps
+X Make ExecMap with two methods: isExec(Edge e) and isExec(Quad q).
+X   this can be made to work whether the internal rep is Quads or Edges.
 Make Optimization class that works given a ConstMap and an ExecMap.
-[make dummy execmap and constmap classes that return 'not a const' and
- 'is executable' for everything.]
+X [make dummy execmap and constmap classes that return 'not a const' and
+X  'is executable' for everything.]
 ---- Sep-11-98, cont
 Add SWITCH nodes to CJMP, SWITCH:
  call them lamba-functions.  <t1, t2, ...> = lambda(t0)
@@ -24,11 +49,11 @@ QUESTION: how does phi-function placement interact with lamba-function
           placement?
 write analysis to remove unnecessary control dependencies.  PARALLEL quad?
 
-Write registration routines for HMethod.
-Make superclass 'Register' or 'Initialize' or 'Harpoon' or something
- that registers all necessary representations (extend to do-it-yourself).
- Standard interface for registration object.  Static method in HCode
- to return instance of registration object.
+X Write registration routines for HMethod.
+X Make superclass 'Register' or 'Initialize' or 'Harpoon' or something
+X  that registers all necessary representations (extend to do-it-yourself).
+X  Standard interface for registration object.  Static method in HCode
+X  to return instance of registration object.
 ---- Sep-11-98
 Optimize INSTANCEOF and COMPONENTOF in SCC.
 Update xClass to hold 'canbeNull' boolean.
@@ -41,12 +66,12 @@ Rewrite SCC to use Visitor pattern.
 Rewrite SCC to use *sets* of classes?
 ---- Sep-10-98
 O Change PHI implementation to not make phi function entries for
-  local variables that have not yet been defined.  Change State initialization
-  to put 'null' in undefined local variables.
-Write CleanUp class in IR.QuadSSA to:
-  1) Remove phi functions that define a temp that is never used.
-     (this will magically remove undefined temps as well).
-  2) Shrink PHI functions that have phantom limbs (from impossible catches).
+O  local variables that have not yet been defined.  Change State initialization
+O  to put 'null' in undefined local variables.
+X Write CleanUp class in IR.QuadSSA to:
+X   1) Remove phi functions that define a temp that is never used.
+X      (this will magically remove undefined temps as well).
+X   2) Shrink PHI functions that have phantom limbs (from impossible catches).
 ---- Sep-09-98
 Undo MONITOR block transform.  Make it a poor statement.
 Change DCMPL/DCMPG/FCMPL/FCMPG bytecode operations to

@@ -1,10 +1,17 @@
 // SCC.java, created Fri Sep 11 00:57:39 1998 by cananian
 package harpoon.Analysis;
 
-import harpoon.ClassFile.*;
+import harpoon.Analysis.Maps.ConstMap;
+import harpoon.Analysis.Maps.TypeMap;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.QuadSSA.*;
-import harpoon.Temp.*;
-import harpoon.Util.*;
+import harpoon.Temp.Temp;
+import harpoon.Util.UniqueFIFO;
+import harpoon.Util.Worklist;
+import harpoon.Util.HClassUtil;
+import harpoon.Util.Util;
 
 import java.util.Hashtable;
 /**
@@ -12,7 +19,7 @@ import java.util.Hashtable;
  * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCC.java,v 1.4 1998-09-11 17:01:02 cananian Exp $
+ * @version $Id: SCC.java,v 1.5 1998-09-13 23:57:12 cananian Exp $
  */
 
 public class SCC implements TypeMap, ConstMap {
@@ -68,13 +75,13 @@ public class SCC implements TypeMap, ConstMap {
 
     /** Determine whether <code>Quad q</code> in <code>HMethod m</code>
      *  is executable. */
-    public boolean isExec(HMethod m, Quad q) {
-	analyze(m); return E.contains(q);
+    public boolean isExec(HCode hc, Quad q) {
+	analyze(hc); return E.contains(q);
     }
     /** Determine the static type of <code>Temp t</code> in 
      *  <code>HMethod m</code>. */
-    public HClass typeMap(HMethod m, Temp t) {
-	analyze(m);
+    public HClass typeMap(HCode hc, Temp t) {
+	analyze(hc);
 	Alphabet v = V.get(t);
 	if (v instanceof Value) return ((Value)v).type;
 	if (v instanceof xClass) return ((xClass)v).type;
@@ -82,15 +89,15 @@ public class SCC implements TypeMap, ConstMap {
     }
     /** Determine whether <code>Temp t</code> in <code>HMethod m</code>
      *  has a constant value. */
-    public boolean isConst(HMethod m, Temp t) {
-	analyze(m); return (V.get(t) instanceof Value);
+    public boolean isConst(HCode hc, Temp t) {
+	analyze(hc); return (V.get(t) instanceof Value);
     }
     /** Determine the constant value of <code>Temp t</code> in 
      *  <code>HMethod m</code>. 
      *  @exception Error if <code>Temp t</code> is not a constant.
      */
-    public Object constMap(HMethod m, Temp t) {
-	analyze(m);
+    public Object constMap(HCode hc, Temp t) {
+	analyze(hc);
 	Alphabet v = V.get(t);
 	if (v instanceof Value) return ((Value)v).value;
 	throw new Error(t.toString() + " not a constant");
@@ -108,25 +115,28 @@ public class SCC implements TypeMap, ConstMap {
     //-------------------------------------
     // Analysis code.
     /** Main analysis method.  */
-    void analyze(HMethod method) {
+    void analyze(HCode hc) {
 	// don't do things more than once.
-	if (analyzed.containsKey(method)) return;
-	analyzed.put(method, method);
+	if (analyzed.containsKey(hc)) return;
+	analyzed.put(hc, hc);
+
+	HMethod method = hc.getMethod();
+	Util.assert(hc instanceof harpoon.IR.QuadSSA.Code);
 
 	// initialize worklists.
-	UniqueFIFO Wv = new UniqueFIFO();
-	UniqueFIFO Wb = new UniqueFIFO();
+	Worklist Wv = new UniqueFIFO();
+	Worklist Wb = new UniqueFIFO();
 
 	// put the root entry on the worklist & mark it executable.
-	Quad root= (Quad)harpoon.IR.QuadSSA.Code.code(method).getElements()[0];
+	Quad root= (Quad) hc.getRootElement();
 	Wb.push(root);
 	E.set(root);
 
 	// Iterate
-	while (! (Wb.empty() && Wv.empty()) ) { // until both are empty
+	while (! (Wb.isEmpty() && Wv.isEmpty()) ) { // until both are empty
 	    Quad[] ql; // the statements to examine against conditions 3-8
 
-	    if (!Wb.empty()) { // grab statement from Wb if we can.
+	    if (!Wb.isEmpty()) { // grab statement from Wb if we can.
 		Quad q = (Quad) Wb.pull();
 		// Rule 2: for any executable block with only one successor
 		// C, set E[C] to true.
@@ -137,7 +147,7 @@ public class SCC implements TypeMap, ConstMap {
 		    }
 		}
 		ql = new Quad[] { q }; // examine this statement.
-	    } else if (!Wv.empty()) { // else grab temp from Wv
+	    } else if (!Wv.isEmpty()) { // else grab temp from Wv
 		Temp t = (Temp) Wv.pull();
 		ql = usedef.useSites(method, t); // list of uses of t
 	    } else ql = new Quad[0]; // should never execute.
@@ -168,7 +178,7 @@ public class SCC implements TypeMap, ConstMap {
 			       new xClass( ((CALL)q).method.getReturnType()) );
 		    raiseV(V, Wv, ((CALL)q).retex, // XXX can do better.
 			   new xClass( HClass.forClass(Throwable.class) ) );
-		} else if (q instanceof COMPONENTOF) {
+		} else if (q instanceof COMPONENTOF) { // XXX fixme
 		    raiseV(V, Wv, q.def()[0],
 			   new xClass( HClass.Boolean ) );
 		} else if (q instanceof CONST) {
@@ -178,18 +188,36 @@ public class SCC implements TypeMap, ConstMap {
 		    raiseV(V, Wv, q.def()[0],
 			   new xClass( ((GET)q).field.getType() ) );
 		} else if (q instanceof INSTANCEOF) {
-		    raiseV(V, Wv, q.def()[0],
-			   new xClass( HClass.Boolean ) );
+		    Alphabet result = new xClass(HClass.Boolean); // default.
+
+		    INSTANCEOF Q = (INSTANCEOF) q;
+		    Alphabet a = V.get( Q.src );
+		    if (Q.hclass == HClass.forClass(Object.class))
+			result = new Value(new Boolean(true), HClass.Boolean);
+		    else if (a instanceof Value) {
+			Value v = (Value)a;
+			if (v.type.isSuperclassOf(Q.hclass)) // unknowable.
+			    ;
+			else if (Q.hclass.isSuperclassOf(v.type)) //always true
+			    result = new Value(new Boolean(true), 
+					       HClass.Boolean);
+			else // always false
+			    result = new Value(new Boolean(false),
+					       HClass.Boolean);
+		    }
+		    // XXX can't do xClass analysis unless we know whether
+		    // xClass value can be null.
+		    raiseV(V, Wv, q.def()[0], result);
 		} else if (q instanceof METHODHEADER) {
 		    METHODHEADER Q = (METHODHEADER) q;
-		    HClass[] hc = method.getParameterTypes();
+		    HClass[] pt = method.getParameterTypes();
 		    int j=0;
 		    if (!method.isStatic())
 			raiseV(V, Wv, Q.params[j++],
 			       new xClass( method.getDeclaringClass() ) );
-		    for (int k=0; k<hc.length; j++, k++)
+		    for (int k=0; k<pt.length; j++, k++)
 			raiseV(V, Wv, Q.params[j], 
-			       new xClass( hc[k] ) );
+			       new xClass( pt[k] ) );
 		} else if (q instanceof MOVE) {
 		    Alphabet v = V.get(q.use()[0]);
 		    if (v!=null)
@@ -304,12 +332,12 @@ public class SCC implements TypeMap, ConstMap {
     // Utility functions to raise an element in E or V:
 
     /** Raise element q in E, adding q to Wb if necessary. */
-    void raiseE(QuadSet E, UniqueFIFO Wb, Quad q) {
+    void raiseE(QuadSet E, Worklist Wb, Quad q) {
 	if (E.contains(q)) return;
 	E.set(q); Wb.push(q);
     }
     /** Raise element t to a in V, adding t to Wv if necessary. */
-    void raiseV(AlphaMap V, UniqueFIFO Wv, Temp t, Alphabet a) {
+    void raiseV(AlphaMap V, Worklist Wv, Temp t, Alphabet a) {
 	Alphabet old = V.get(t);
 	// only allow raising value.  null->value->xClass->Top
 	if (old instanceof Value)

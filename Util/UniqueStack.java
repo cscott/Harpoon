@@ -7,10 +7,10 @@ import java.util.EmptyStackException;
  * stack of <b>unique</b> objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueStack.java,v 1.1 1998-09-10 23:20:00 cananian Exp $
+ * @version $Id: UniqueStack.java,v 1.2 1998-09-13 23:57:35 cananian Exp $
  */
 
-public class UniqueStack extends UniqueVector {
+public class UniqueStack extends UniqueVector implements Worklist {
     /** 
      * Pushes an item onto the top of this stack, if it is unique.
      * Otherwise, does nothing.
@@ -34,6 +34,8 @@ public class UniqueStack extends UniqueVector {
 	removeElementAt(len-1);
 	return obj;
     }
+    public Object pull() { return pop(); }
+
     /**
      * Looks at the object at the top of this stack without removing it
      * from the stack.
@@ -50,9 +52,8 @@ public class UniqueStack extends UniqueVector {
      * @return <code>true</code> if this stack is empty;
      *         <code>false</code> otherwise.
      */
-    public boolean empty() {
-	return size() == 0;
-    }
+    public boolean empty() { return isEmpty(); }
+
     /**
      * Returns where an object is on this stack.
      * @param o the desired object.

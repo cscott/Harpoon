@@ -3,6 +3,7 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 /**
  * <code>CJMP</code> represents conditional branches.<p>
  * <code>next[0]</code> is if-false, which is taken if 
@@ -11,7 +12,7 @@ import harpoon.Temp.Temp;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.13 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: CJMP.java,v 1.14 1998-09-13 23:57:21 cananian Exp $
  */
 
 public class CJMP extends Quad {
@@ -28,13 +29,18 @@ public class CJMP extends Quad {
 	Edge iftrue = nextEdge(0);
 	Edge iffalse= nextEdge(1);
 
-	Quad.addEdge(this, 0, iffalse.to(), iffalse.which_pred());
-	Quad.addEdge(this, 1, iftrue.to(), iftrue.which_pred());
+	Quad.addEdge(this, 0, (Quad)iffalse.to(), iffalse.which_pred());
+	Quad.addEdge(this, 1, (Quad)iftrue.to(), iftrue.which_pred());
     }
     /** Returns all the Temps used by this Quad.
      * @return the <code>test</code> field.
      */
     public Temp[] use() { return new Temp[] { test }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	test = tm.tempMap(test);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

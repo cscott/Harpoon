@@ -3,12 +3,13 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 /**
  * <code>RETURN</code> objects indicate a method return, with an
  * optional return value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RETURN.java,v 1.11 1998-09-11 18:28:23 cananian Exp $
+ * @version $Id: RETURN.java,v 1.12 1998-09-13 23:57:29 cananian Exp $
  */
 
 public class RETURN extends Quad {
@@ -28,6 +29,12 @@ public class RETURN extends Quad {
     public Temp[] use() {
 	if (retval==null) return new Temp[0];
 	else return new Temp[] { retval }; 
+    }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	if (retval!=null)
+	    retval = tm.tempMap(retval);
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

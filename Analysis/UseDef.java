@@ -16,7 +16,7 @@ import java.util.Enumeration;
  * the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.3 1998-09-10 22:45:18 cananian Exp $
+ * @version $Id: UseDef.java,v 1.4 1998-09-13 23:57:12 cananian Exp $
  */
 
 public class UseDef  {
@@ -31,8 +31,7 @@ public class UseDef  {
 	// make sure we don't analyze a method multiple times.
 	if (analyzed.containsKey(method)) return;
 
-	analyze((harpoon.IR.QuadSSA.Code) harpoon.IR.QuadSSA.Code.
-		convertFrom(method.getCode("bytecode")));
+	analyze((harpoon.IR.QuadSSA.Code) method.getCode("quad-ssa"));
     }
     void analyze(harpoon.IR.QuadSSA.Code code) {
 	// make sure we don't analyze a method multiple times.

@@ -3,12 +3,13 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 
 /**
  * <code>ALENGTH</code> represents an array length query.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ALENGTH.java,v 1.6 1998-09-11 18:28:22 cananian Exp $
+ * @version $Id: ALENGTH.java,v 1.7 1998-09-13 23:57:19 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ASET
@@ -34,6 +35,12 @@ public class ALENGTH extends Quad {
     /** Returns the Temp used by this Quad.
      * @return the <code>objectref</code> field. */
     public Temp[] use() { return new Temp[] { objectref }; }
+
+    /** Rename all variables in a Quad according to a mapping. */
+    public void rename(TempMap tm) {
+	dst = tm.tempMap(dst);
+	objectref = tm.tempMap(objectref);
+    }
 
     public void visit(QuadVisitor v) { v.visit(this); }
 

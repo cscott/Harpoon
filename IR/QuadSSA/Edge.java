@@ -10,10 +10,10 @@ import harpoon.ClassFile.*;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.1 1998-09-10 01:38:22 cananian Exp $
+ * @version $Id: Edge.java,v 1.2 1998-09-13 23:57:24 cananian Exp $
  */
 
-public class Edge  {
+public class Edge implements HCodeEdge {
     Quad from, to;
     int from_index, to_index;
     
@@ -26,9 +26,9 @@ public class Edge  {
     }
 
     /** Returns the source vertex of this Edge. */
-    public Quad from() { return from; }
+    public HCodeElement from() { return from; }
     /** Returns the destination vertex of this Edge. */
-    public Quad to() { return to; }
+    public HCodeElement to() { return to; }
     /** Returns the predecessor index of this Edge in <code>to</code>.
      *  <code>this.to().prevEdge(this.which_pred()) == this</code>. */
     public int which_pred() { return to_index; }
