@@ -1,3 +1,6 @@
+// OptimizedTreeCode.java, created Sun Aug  8  2:43:29 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
 import harpoon.Analysis.Tree.TreeFolding;
@@ -23,7 +26,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.6 1999-07-30 22:38:43 cananian Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.7 1999-08-04 05:52:30 cananian Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = "optimized-tree";

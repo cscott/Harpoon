@@ -1,4 +1,6 @@
 // ArrayRef.java, created Mon Dec 28 03:02:39 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Quads;
 
 import harpoon.ClassFile.HClass;
@@ -11,7 +13,7 @@ import harpoon.Util.Util;
  * by the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.1.2.5 1999-02-25 16:59:01 cananian Exp $
+ * @version $Id: ArrayRef.java,v 1.1.2.6 1999-08-04 05:52:30 cananian Exp $
  */
 final class ArrayRef extends Ref {
     /** Elements of the array (primitives or Refs) */

@@ -1,3 +1,6 @@
+// ArrayRef.java, created Tue Apr 27 18:05:07 1999 by duncan
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 // ArrayRef.java, created Mon Dec 28 03:02:39 1998 by cananian
@@ -13,7 +16,7 @@ import harpoon.Util.Util;
  * by the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.1.2.3 1999-05-10 00:01:14 duncan Exp $
+ * @version $Id: ArrayRef.java,v 1.1.2.4 1999-08-04 05:52:35 cananian Exp $
  */
 final class ArrayRef extends Ref {
     /** Elements of the array (primitives or Refs) */

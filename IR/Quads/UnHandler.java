@@ -1,4 +1,6 @@
 // UnHandler.java, created Wed Dec 23 23:30:32 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HClass;
@@ -17,7 +19,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.15 1999-07-23 06:59:22 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.16 1999-08-04 05:52:29 cananian Exp $
  */
 final class UnHandler {
     // entry point.

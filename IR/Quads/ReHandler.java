@@ -1,4 +1,6 @@
 // ReHandler.java, created Tue Aug 3 23:30:32 1999 by bdemsky
+// Copyright (C) 1998 Brian Demsky <bdemsky@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HClass;
@@ -19,7 +21,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.2 1999-08-03 22:26:02 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.3 1999-08-04 05:52:29 cananian Exp $
  */
 final class ReHandler {
     // entry point.

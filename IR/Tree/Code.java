@@ -1,3 +1,6 @@
+// Code.java, created Mon Mar  8 16:55:15 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
 import harpoon.Analysis.Maps.TypeMap;
@@ -30,7 +33,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.22 1999-07-30 20:54:11 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.23 1999-08-04 05:52:29 cananian Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {

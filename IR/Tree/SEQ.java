@@ -1,4 +1,6 @@
 // SEQ.java, created Wed Jan 13 21:14:57 1999 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
@@ -14,7 +16,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.10 1999-08-03 21:12:58 duncan Exp $
+ * @version $Id: SEQ.java,v 1.1.2.11 1999-08-04 05:52:30 cananian Exp $
  */
 public class SEQ extends Stm {
     /** The statement to evaluate first. */

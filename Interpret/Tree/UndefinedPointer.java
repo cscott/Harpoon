@@ -1,3 +1,6 @@
+// UndefinedPointer.java, created Tue Apr 27 18:05:10 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 import harpoon.ClassFile.HClass;
@@ -12,7 +15,7 @@ import harpoon.Util.Tuple;
  * type.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: UndefinedPointer.java,v 1.1.2.2 1999-06-28 18:57:35 duncan Exp $
+ * @version $Id: UndefinedPointer.java,v 1.1.2.3 1999-08-04 05:52:35 cananian Exp $
  */
 public class UndefinedPointer extends Pointer {
 

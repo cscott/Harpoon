@@ -1,11 +1,13 @@
 // ColorableNode.java, created Wed Jan 13 14:12:37 1999 by pnkfelix
+// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
 /**
  * <code>ColorableNode</code>
  *  
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableNode.java,v 1.1.2.8 1999-02-01 17:24:11 pnkfelix Exp $
+ * @version $Id: ColorableNode.java,v 1.1.2.9 1999-08-04 05:52:21 cananian Exp $
  */
 
 public abstract class ColorableNode extends Node {

@@ -1,4 +1,6 @@
 // MethodMap.java, created Sat Jan 16 21:20:45 1999 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Maps;
 
 import harpoon.ClassFile.HMethod;
@@ -17,7 +19,7 @@ import harpoon.ClassFile.HMethod;
  * various method pointers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodMap.java,v 1.1.2.1 1999-01-17 02:51:28 cananian Exp $ */
+ * @version $Id: MethodMap.java,v 1.1.2.2 1999-08-04 05:52:27 cananian Exp $ */
 public abstract class MethodMap  {
     /** Return an ordering of the given method. */
     public abstract int methodOrder(HMethod hm);

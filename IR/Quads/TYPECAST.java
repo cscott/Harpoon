@@ -1,4 +1,6 @@
 // TYPECAST.java, created Thu Dec 31 11:12:40 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HClass;
@@ -14,7 +16,7 @@ import harpoon.Util.Util;
  * instruction.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TYPECAST.java,v 1.1.2.2 1999-01-22 23:06:01 cananian Exp $
+ * @version $Id: TYPECAST.java,v 1.1.2.3 1999-08-04 05:52:29 cananian Exp $
  */
 public class TYPECAST extends NOP {
     /** The <code>Temp</code> to type cast. */

@@ -1,4 +1,6 @@
 // AuxUniqueFIFO.java, created Sun Dec  6 18:45:39 1998 by marinov
+// Copyright (C) 1998 Darko Marinov <marinov@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.TypeInference;
 
 import java.util.Hashtable;
@@ -9,7 +11,7 @@ import harpoon.ClassFile.*;
  * <code>AuxUniqueFIFO</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: AuxUniqueFIFO.java,v 1.1.2.2 1998-12-07 12:02:31 marinov Exp $
+ * @version $Id: AuxUniqueFIFO.java,v 1.1.2.3 1999-08-04 05:52:24 cananian Exp $
  */
 
 public class AuxUniqueFIFO {

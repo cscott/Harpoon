@@ -1,3 +1,6 @@
+// LowQuadNoSSA.java, created Wed Mar  3  1:02:14 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.LowQuad;
 
 import harpoon.Analysis.Maps.TypeMap;
@@ -21,7 +24,7 @@ import java.util.Hashtable;
  * <blink><b>FILL ME IN</b></blink>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.13 1999-08-04 02:01:55 pnkfelix Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.14 1999-08-04 05:52:28 cananian Exp $
  */
 public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 {

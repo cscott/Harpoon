@@ -1,3 +1,6 @@
+// LowQuadSSA.java, created Wed Mar  3 16:19:45 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
  package harpoon.IR.LowQuad;
 
 import harpoon.Backend.Maps.FinalMap;
@@ -21,7 +24,7 @@ import java.util.Hashtable;
  * <blink><b>FILL ME IN</b></blink>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.15 1999-08-04 02:01:55 pnkfelix Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.16 1999-08-04 05:52:28 cananian Exp $
  */
 public class LowQuadSSA extends Code
 {

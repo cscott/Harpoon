@@ -1,4 +1,6 @@
 // QuadKind.java, created Fri Dec 11 06:48:53 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
 /**
@@ -6,7 +8,7 @@ package harpoon.IR.Quads;
  * <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadKind.java,v 1.1.2.4 1999-05-07 18:43:13 cananian Exp $
+ * @version $Id: QuadKind.java,v 1.1.2.5 1999-08-04 05:52:29 cananian Exp $
  */
 public abstract class QuadKind  {
     private static int n = min();

@@ -1,3 +1,6 @@
+// TreeFolding.java, created Wed May  5 17:52:42 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Tree;
 
 import harpoon.Analysis.DataFlow.TreeSolver;
@@ -68,7 +71,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.3 1999-07-27 21:45:32 duncan Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.4 1999-08-04 05:52:24 cananian Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {

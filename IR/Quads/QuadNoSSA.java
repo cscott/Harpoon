@@ -1,4 +1,6 @@
 // QuadNoSSA.java, created Sat Dec 26 01:42:53 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HCode;
@@ -13,7 +15,7 @@ import java.util.Hashtable;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.11 1999-08-04 02:13:33 cananian Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.12 1999-08-04 05:52:29 cananian Exp $
  * @see QuadWithTry
  * @see QuadSSA
  */

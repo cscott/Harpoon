@@ -1,4 +1,6 @@
 // HandlerSet.java, created Wed Dec 23 02:37:47 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
 import harpoon.Util.IteratorEnumerator;
@@ -14,7 +16,7 @@ import java.util.NoSuchElementException;
  * both <code>Translate</code> and <code>Print</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HandlerSet.java,v 1.1.2.5 1999-06-18 01:48:05 cananian Exp $
+ * @version $Id: HandlerSet.java,v 1.1.2.6 1999-08-04 05:52:29 cananian Exp $
  */
 final public class HandlerSet {
     final HANDLER h;

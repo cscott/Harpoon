@@ -1,4 +1,6 @@
 // SetTypeMap.java, created Wed Nov  4 17:03:04 1998 by marinov
+// Copyright (C) 1998 Darko Marinov <marinov@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Maps;
 
 import harpoon.Temp.Temp;
@@ -11,7 +13,7 @@ import harpoon.ClassFile.HCode;
  * (For details see Ole Agesen's PhD Thesis, pp. 4-8.)
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: SetTypeMap.java,v 1.1.2.2 1999-01-22 23:33:37 cananian Exp $
+ * @version $Id: SetTypeMap.java,v 1.1.2.3 1999-08-04 05:52:22 cananian Exp $
  */
 
 public interface SetTypeMap {

@@ -1,4 +1,6 @@
 // WritableTempMap.java, created Thu Dec 31 11:25:09 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Temp;
 
 /**
@@ -6,7 +8,7 @@ package harpoon.Temp;
  * <code>TempMap</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WritableTempMap.java,v 1.1.2.1 1999-01-03 03:01:45 cananian Exp $
+ * @version $Id: WritableTempMap.java,v 1.1.2.2 1999-08-04 05:52:37 cananian Exp $
  */
 public interface WritableTempMap extends TempMap {
     /** Add a mapping from <code>Temp</code> <code>Told</code> to

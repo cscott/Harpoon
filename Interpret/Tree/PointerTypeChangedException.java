@@ -1,3 +1,6 @@
+// PointerTypeChangedException.java, created Tue Apr 27 18:05:09 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 /**
@@ -7,7 +10,7 @@ package harpoon.Interpret.Tree;
  * created.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: PointerTypeChangedException.java,v 1.1.2.3 1999-06-23 23:19:51 cananian Exp $
+ * @version $Id: PointerTypeChangedException.java,v 1.1.2.4 1999-08-04 05:52:35 cananian Exp $
  */
 public class PointerTypeChangedException extends RuntimeException {
     /** The <code>Pointer</code> whose type is changed. */

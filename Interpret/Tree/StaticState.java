@@ -1,4 +1,6 @@
 // StaticState.java, created Mon Dec 28 00:36:44 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 import harpoon.Backend.Maps.OffsetMap;
@@ -19,7 +21,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.5 1999-08-03 22:20:03 duncan Exp $
+ * @version $Id: StaticState.java,v 1.1.2.6 1999-08-04 05:52:35 cananian Exp $
  */
 final class StaticState extends HCLibrary {
     

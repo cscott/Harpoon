@@ -1,4 +1,6 @@
 // INClass.java, created Mon Dec 28 21:24:34 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 import harpoon.ClassFile.HClass;
@@ -11,7 +13,7 @@ import java.util.Hashtable;
  * <code>java.lang.Class</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INClass.java,v 1.1.2.1 1999-03-27 22:05:08 duncan Exp $
+ * @version $Id: INClass.java,v 1.1.2.2 1999-08-04 05:52:35 cananian Exp $
  */
 public class INClass extends HCLibrary {
     static final void register(StaticState ss) {

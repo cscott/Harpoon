@@ -1,3 +1,6 @@
+// INVOCATION.java, created Thu Mar 18 17:43:19 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
@@ -14,9 +17,9 @@ import java.util.Set;
  * stored in <code>retval</code>.  If the call throws an exception, 
  * the exception object will be placed in <code>retex</code>.
  * 
- * @author  Duncan Bryce, based on
+ * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.7 1999-08-03 22:20:37 duncan Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.8 1999-08-04 05:52:30 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL

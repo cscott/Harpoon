@@ -1,3 +1,6 @@
+// Pointer.java, created Tue Apr 27 18:05:09 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 import harpoon.Util.Tuple;
@@ -10,7 +13,7 @@ import harpoon.Util.Tuple;
  * <code>ObjectRef</code>. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Pointer.java,v 1.1.2.2 1999-06-28 18:57:35 duncan Exp $
+ * @version $Id: Pointer.java,v 1.1.2.3 1999-08-04 05:52:35 cananian Exp $
  */
 abstract class Pointer extends Tuple {
     public static final int  ARRAY_PTR = 0;

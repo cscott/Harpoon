@@ -1,4 +1,6 @@
 // Peephole.java, created Sun Dec 27 19:37:24 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
 import harpoon.Temp.Temp;
@@ -14,7 +16,7 @@ import java.util.Stack;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.6 1999-02-03 23:11:00 pnkfelix Exp $
+ * @version $Id: Peephole.java,v 1.1.2.7 1999-08-04 05:52:29 cananian Exp $
  */
 
 final class Peephole  {

@@ -1,4 +1,6 @@
 // InterProc.java, created Fri Nov 20 19:21:40 1998 by marinov
+// Copyright (C) 1998 Darko Marinov <marinov@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.TypeInference;
 
 import harpoon.IR.Quads.*;
@@ -13,7 +15,7 @@ import harpoon.Analysis.QuadSSA.ClassHierarchy;
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.1.2.7 1999-02-01 00:40:31 cananian Exp $
+ * @version $Id: InterProc.java,v 1.1.2.8 1999-08-04 05:52:24 cananian Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {

@@ -1,4 +1,6 @@
 // INRuntime.java, created Fri Jan  1 12:17:30 1999 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 import harpoon.ClassFile.HClass;
@@ -10,7 +12,7 @@ import harpoon.ClassFile.HMethod;
  * <code>java.lang.Runtime</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INRuntime.java,v 1.1.2.1 1999-03-27 22:05:08 duncan Exp $
+ * @version $Id: INRuntime.java,v 1.1.2.2 1999-08-04 05:52:35 cananian Exp $
  */
 public class INRuntime extends HCLibrary {
     static final void register(StaticState ss) {

@@ -1,4 +1,6 @@
 // Graph.java, created Thu Oct 15 20:22:46 1998 by marinov
+// Copyright (C) 1998 Darko Marinov <marinov@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
 import harpoon.Analysis.QuadSSA.ClassHierarchy;
@@ -15,7 +17,7 @@ import java.util.Enumeration;
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.2.2.5 1999-08-02 19:01:43 cananian Exp $
+ * @version $Id: Graph.java,v 1.2.2.6 1999-08-04 05:52:38 cananian Exp $
  */
 
 public abstract class Graph  {

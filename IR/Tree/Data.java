@@ -1,3 +1,6 @@
+// Data.java, created Sat Aug 28 14:17:31 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
 import harpoon.Backend.Generic.Frame;
@@ -27,7 +30,7 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.3 1999-08-03 21:12:57 duncan Exp $
+ * @version $Id: Data.java,v 1.1.2.4 1999-08-04 05:52:29 cananian Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";

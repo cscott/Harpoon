@@ -1,3 +1,4 @@
+// Partition.java, created Wed Dec 16 23:33:21 1998 by mfoltz
 // -*-Mode: Java-*- 
 // Partition.java -- 
 // Author: Mark Foltz <mfoltz@ai.mit.edu> 
@@ -6,6 +7,8 @@
 // Created: <Fri Oct 23 00:24:17 1998> 
 // Time-stamp: <1998-11-21 19:01:57 mfoltz> 
 // Keywords: 
+// Copyright (C) 1998 Mark A. Foltz <mfoltz@ai.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 
 package harpoon.Analysis.Partition;
 
@@ -15,7 +18,7 @@ import java.util.Vector;
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version $Id: Partition.java,v 1.3.2.2 1999-06-23 23:05:21 pnkfelix Exp $
+ * @version $Id: Partition.java,v 1.3.2.3 1999-08-04 05:52:23 cananian Exp $
  */
 
 public class Partition {

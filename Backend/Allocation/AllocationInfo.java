@@ -1,3 +1,6 @@
+// AllocationInfo.java, created Sat Aug 28 16:08:24 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Allocation;
 
 import harpoon.Temp.Label;
@@ -8,7 +11,7 @@ import harpoon.Temp.Temp;
  * to be needed for most memory allocation schemes.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AllocationInfo.java,v 1.1.2.2 1999-07-28 21:34:42 duncan Exp $
+ * @version $Id: AllocationInfo.java,v 1.1.2.3 1999-08-04 05:52:24 cananian Exp $
  */
 public interface AllocationInfo {
 

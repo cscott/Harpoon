@@ -1,4 +1,6 @@
 // SimpleGraphColorer.java, created Wed Jan 13 14:17:43 1999 by pnkfelix
+// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
 import java.util.Vector;
@@ -9,7 +11,7 @@ import java.util.Enumeration;
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.6 1999-01-19 16:08:00 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.7 1999-08-04 05:52:21 cananian Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {

@@ -1,3 +1,6 @@
+// QuadSolver.java, created Fri May  7 22:24:29 1999 by pnkfelix
+// Copyright (C) 1998 John Whaley
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
 /**

@@ -1,4 +1,6 @@
 // BasicCSE.java, created Sat Sep 26 04:27:12 1998 by marinov
+// Copyright (C) 1998 Darko Marinov <marinov@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.QuadSSA;
 
 import harpoon.IR.Quads.*;
@@ -13,7 +15,7 @@ import java.util.Hashtable;
  * common subexpression elemination, but only within basic blocks.
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: BasicCSE.java,v 1.2.2.3 1998-12-17 21:38:33 cananian Exp $
+ * @version $Id: BasicCSE.java,v 1.2.2.4 1999-08-04 05:52:23 cananian Exp $
  */
 
 public class BasicCSE  {

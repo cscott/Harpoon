@@ -1,4 +1,6 @@
 // InterpretedThrowable.java, created Mon Dec 28 01:27:53 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Quads;
 
 import harpoon.ClassFile.HClass;
@@ -9,7 +11,7 @@ import harpoon.Util.Util;
  * the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InterpretedThrowable.java,v 1.1.2.2 1999-07-17 11:47:12 cananian Exp $
+ * @version $Id: InterpretedThrowable.java,v 1.1.2.3 1999-08-04 05:52:30 cananian Exp $
  */
 final class InterpretedThrowable extends RuntimeException {
     final ObjectRef ex;

@@ -1,3 +1,6 @@
+// BasicBlock.java, created Sat Apr 10 10:00:53 1999 by jwhaley
+// Copyright (C) 1998 John Whaley
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
 import harpoon.Util.Util;
@@ -35,7 +38,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock (pnkfelix@mit.edu) 
- * @version $Id: BasicBlock.java,v 1.1.2.11 1999-06-23 23:17:59 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.12 1999-08-04 05:52:19 cananian Exp $
 */
 public class BasicBlock {
     

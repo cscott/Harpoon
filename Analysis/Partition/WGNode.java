@@ -1,3 +1,4 @@
+// WGNode.java, created Wed Dec 16 23:33:21 1998 by mfoltz
 // -*-Mode: Java-*- 
 // WGNode.java -- 
 // Author: Mark Foltz <mfoltz@ai.mit.edu> 
@@ -6,6 +7,8 @@
 // Created: <Thu Oct 22 23:42:00 1998> 
 // Time-stamp: <1998-11-16 23:50:01 mfoltz> 
 // Keywords: 
+// Copyright (C) 1998 Mark A. Foltz <mfoltz@ai.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 
 package harpoon.Analysis.Partition;
 
@@ -15,7 +18,7 @@ import java.util.Enumeration;
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version $Id: WGNode.java,v 1.2.2.2 1999-06-23 23:05:21 pnkfelix Exp $
+ * @version $Id: WGNode.java,v 1.2.2.3 1999-08-04 05:52:23 cananian Exp $
  */
 
 public class WGNode {

@@ -1,4 +1,6 @@
 // AO.java, created Sat Oct 17 03:07:33 1998 by marinov
+// Copyright (C) 1998 Darko Marinov <marinov@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -14,7 +16,7 @@ import harpoon.Analysis.Maps.UseDefMap;
  * <code>AO</code> deteremines which objects are accessed in the given method.
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: AO.java,v 1.1.2.3 1998-12-17 21:38:33 cananian Exp $
+ * @version $Id: AO.java,v 1.1.2.4 1999-08-04 05:52:23 cananian Exp $
  */
 
 public class AO  {

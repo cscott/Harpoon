@@ -1,4 +1,6 @@
 // GraphColorer.java, created Thu Jan 14 19:02:55 1999 by pnkfelix
+// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
 import java.util.Vector;
@@ -7,7 +9,7 @@ import java.util.Vector;
  * <code>GraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColorer.java,v 1.1.2.5 1999-02-03 23:10:46 pnkfelix Exp $
+ * @version $Id: GraphColorer.java,v 1.1.2.6 1999-08-04 05:52:21 cananian Exp $
  */
 
 public abstract class GraphColorer  {

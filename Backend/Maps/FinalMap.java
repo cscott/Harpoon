@@ -1,4 +1,6 @@
 // FinalMap.java, created Sat Jan 16 21:07:48 1999 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Maps;
 
 import harpoon.ClassFile.HClass;
@@ -15,7 +17,7 @@ import harpoon.ClassFile.HMethod;
  * <code>final</code> access modifier tag.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FinalMap.java,v 1.1.2.1 1999-01-17 02:51:28 cananian Exp $ */
+ * @version $Id: FinalMap.java,v 1.1.2.2 1999-08-04 05:52:27 cananian Exp $ */
 
 public abstract class FinalMap  {
     /** Returns <code>true</code> if the class is never subclassed. */

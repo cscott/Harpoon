@@ -1,4 +1,6 @@
 // HCLibrary.java, created Mon Dec 28 21:01:12 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 import harpoon.ClassFile.HClass;
@@ -8,7 +10,7 @@ import harpoon.ClassFile.HClass;
  * <code>HClass</code> objects for common classes into class scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCLibrary.java,v 1.1.2.3 1999-05-17 20:10:00 andyb Exp $
+ * @version $Id: HCLibrary.java,v 1.1.2.4 1999-08-04 05:52:35 cananian Exp $
  */
 class HCLibrary  {
     static void db(String str) { System.out.println(str); } 

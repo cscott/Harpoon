@@ -1,3 +1,6 @@
+// OffsetMap32.java, created Wed Mar  3 18:43:47 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Maps;
 
 import harpoon.Analysis.InterfaceMethodMap;
@@ -17,7 +20,7 @@ import java.util.StringTokenizer;
  * specializing them for 32-bit architectures.
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.10 1999-05-27 23:01:48 pnkfelix Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.11 1999-08-04 05:52:27 cananian Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {

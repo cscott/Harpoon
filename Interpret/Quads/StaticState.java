@@ -1,4 +1,6 @@
 // StaticState.java, created Mon Dec 28 00:36:44 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Quads;
 
 import harpoon.ClassFile.HClass;
@@ -16,7 +18,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.7 1999-06-24 16:47:42 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.8 1999-08-04 05:52:31 cananian Exp $
  */
 final class StaticState extends HCLibrary {
     /** which code representation to use. */

@@ -1,3 +1,6 @@
+// ConstPointer.java, created Tue Apr 27 18:05:07 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 import harpoon.ClassFile.HClass;
@@ -12,7 +15,7 @@ import harpoon.Temp.Label;
  * is simply a <code>Label</code> object.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ConstPointer.java,v 1.1.2.5 1999-08-03 22:20:03 duncan Exp $
+ * @version $Id: ConstPointer.java,v 1.1.2.6 1999-08-04 05:52:35 cananian Exp $
  */
 class ConstPointer extends Pointer {
     private final StaticState ss;

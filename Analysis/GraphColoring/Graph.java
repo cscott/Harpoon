@@ -1,4 +1,6 @@
 // Graph.java, created Wed Jan 13 15:51:26 1999 by pnkfelix
+// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
 import harpoon.Util.UniqueVector;
@@ -10,7 +12,7 @@ import java.util.Enumeration;
  * for implementing a graph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Graph.java,v 1.1.2.5 1999-06-25 04:10:53 pnkfelix Exp $
+ * @version $Id: Graph.java,v 1.1.2.6 1999-08-04 05:52:21 cananian Exp $
  */
 
 public abstract class Graph  {

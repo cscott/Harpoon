@@ -1,4 +1,6 @@
 // TempFactory.java, created Fri Dec 11 21:10:48 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Temp;
 
 /**
@@ -6,7 +8,7 @@ package harpoon.Temp;
  * <code>Temp</code>s within a given scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TempFactory.java,v 1.1.2.4 1999-05-24 19:09:41 pnkfelix Exp $
+ * @version $Id: TempFactory.java,v 1.1.2.5 1999-08-04 05:52:37 cananian Exp $
  */
 public abstract class TempFactory  {
     /** Returns the static scope of this <code>TempFactory</code>.

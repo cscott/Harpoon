@@ -1,3 +1,6 @@
+// ToNoSSA.java, created Wed Mar  3 16:18:56 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
 import harpoon.Analysis.Maps.TypeMap;
@@ -22,7 +25,7 @@ import java.util.Vector;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.14 1999-07-12 21:59:05 bdemsky Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.15 1999-08-04 05:52:29 cananian Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {

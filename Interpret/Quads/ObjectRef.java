@@ -1,4 +1,6 @@
 // ObjectRef.java, created Mon Dec 28 00:29:30 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Quads;
 
 import harpoon.ClassFile.HClass;
@@ -10,7 +12,7 @@ import harpoon.Util.Util;
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.1.2.7 1999-02-25 16:59:01 cananian Exp $
+ * @version $Id: ObjectRef.java,v 1.1.2.8 1999-08-04 05:52:31 cananian Exp $
  */
 class ObjectRef extends Ref {
     /** Fields in this instance of the object. */

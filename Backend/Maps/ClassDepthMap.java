@@ -1,4 +1,6 @@
 // ClassDepthMap.java, created Sat Jan 16 21:29:32 1999 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Maps;
 
 import harpoon.ClassFile.HClass;
@@ -10,7 +12,7 @@ import harpoon.ClassFile.HClass;
  * of <code>instanceof</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassDepthMap.java,v 1.1.2.1 1999-01-17 02:51:27 cananian Exp $
+ * @version $Id: ClassDepthMap.java,v 1.1.2.2 1999-08-04 05:52:26 cananian Exp $
  */
 public abstract class ClassDepthMap  {
     /** Return the nesting depth of the given class. Not valid for

@@ -1,4 +1,6 @@
 // SORE.java, created Tue Oct 20 22:41:52 1998 by marinov
+// Copyright (C) 1998 Darko Marinov <marinov@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
 import harpoon.ClassFile.HField;
@@ -17,7 +19,7 @@ import java.util.Enumeration;
  * "new" (special value to mark pointers that may point to newly allocated objects)
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: SORE.java,v 1.1.2.3 1999-06-18 01:48:10 cananian Exp $
+ * @version $Id: SORE.java,v 1.1.2.4 1999-08-04 05:52:38 cananian Exp $
  */
 
 public class SORE  {

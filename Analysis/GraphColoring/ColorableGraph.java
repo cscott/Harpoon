@@ -1,4 +1,6 @@
 // ColorableGraph.java, created Wed Jan 13 14:13:21 1999 by pnkfelix
+// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
 import java.util.Enumeration;
@@ -10,7 +12,7 @@ import java.util.NoSuchElementException;
  * graph colorers defined in this package.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraph.java,v 1.1.2.8 1999-02-18 21:31:44 cananian Exp $ */
+ * @version $Id: ColorableGraph.java,v 1.1.2.9 1999-08-04 05:52:21 cananian Exp $ */
 
 public abstract class ColorableGraph extends Graph {
 

@@ -1,4 +1,6 @@
 // QuadWithTry.java, created Sat Dec 19 23:55:52 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
 import harpoon.ClassFile.HCode;
@@ -11,7 +13,7 @@ import harpoon.Util.Util;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.7 1999-08-04 02:13:33 cananian Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.8 1999-08-04 05:52:29 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSA
  */

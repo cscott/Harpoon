@@ -1,4 +1,6 @@
 // InterfaceMethodMap.java, created Tue Jan 19 17:10:17 1999 by pnkfelix
+// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
 import java.util.Enumeration;
@@ -26,7 +28,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.2.9 1999-06-18 01:47:56 cananian Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.2.10 1999-08-04 05:52:15 cananian Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {

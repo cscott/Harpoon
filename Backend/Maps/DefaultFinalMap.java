@@ -1,4 +1,6 @@
 // DefaultFinalMap.java, created Sat Jan 16 21:12:44 1999 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Maps;
 
 import harpoon.ClassFile.HClass;
@@ -12,7 +14,7 @@ import java.lang.reflect.Modifier;
  * access modifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultFinalMap.java,v 1.1.2.2 1999-01-23 10:06:08 cananian Exp $
+ * @version $Id: DefaultFinalMap.java,v 1.1.2.3 1999-08-04 05:52:27 cananian Exp $
  */
 
 public class DefaultFinalMap extends FinalMap {

@@ -1,4 +1,6 @@
 // Start.java, created Fri Sep 25 02:24:11 1998 by marinov
+// Copyright (C) 1998 Darko Marinov <marinov@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
 import harpoon.ClassFile.CachingCodeFactory;
@@ -19,7 +21,7 @@ import harpoon.Util.Worklist;
  * <code>PrintTypes</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: TypesMain.java,v 1.1.2.4 1999-02-03 23:11:05 pnkfelix Exp $
+ * @version $Id: TypesMain.java,v 1.1.2.5 1999-08-04 05:52:36 cananian Exp $
  */
 public class TypesMain extends harpoon.IR.Registration {
     public static void main(String args[]) {

@@ -1,4 +1,6 @@
 // DefaultOffsetMap.java, created Sat Jan 16 21:04:18 1999 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Maps;
 
 /**
@@ -7,7 +9,7 @@ package harpoon.Backend.Maps;
  * Someone should fill it in at some point.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultOffsetMap.java,v 1.1.2.2 1999-01-23 08:25:29 cananian Exp $
+ * @version $Id: DefaultOffsetMap.java,v 1.1.2.3 1999-08-04 05:52:27 cananian Exp $
  */
 public abstract class DefaultOffsetMap  {
     /** Creates a <code>DefaultOffsetMap</code>. */

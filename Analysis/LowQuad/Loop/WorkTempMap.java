@@ -1,4 +1,6 @@
 // WorkTempMap.java, created Thu Jul 8 11:25:09 1999 by bdemsky
+// Copyright (C) 1998 Brian Demsky <bdemsky@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.LowQuad.Loop;
 
 import harpoon.Temp.Temp;
@@ -11,7 +13,7 @@ import java.util.HashMap;
  * <code>WritableTempMap</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: WorkTempMap.java,v 1.1.2.1 1999-07-09 15:24:23 bdemsky Exp $
+ * @version $Id: WorkTempMap.java,v 1.1.2.2 1999-08-04 05:52:22 cananian Exp $
  */
 
 class WorkTempMap implements WritableTempMap {

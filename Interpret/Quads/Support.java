@@ -1,4 +1,6 @@
 // Support.java, created Mon Dec 28 10:30:00 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Quads;
 
 import harpoon.ClassFile.HClass;
@@ -9,7 +11,7 @@ import harpoon.ClassFile.HMethod;
  * <code>Support</code> provides some native method implementations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Support.java,v 1.1.2.4 1999-01-22 23:53:19 cananian Exp $
+ * @version $Id: Support.java,v 1.1.2.5 1999-08-04 05:52:31 cananian Exp $
  */
 final class Support extends HCLibrary {
     static final void registerNative(StaticState ss) {

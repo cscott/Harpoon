@@ -1,4 +1,6 @@
 // FieldType.java, created Fri Nov 20 21:19:26 1998 by marinov
+// Copyright (C) 1998 Darko Marinov <marinov@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.TypeInference;
 
 import java.util.Enumeration;
@@ -9,7 +11,7 @@ import harpoon.ClassFile.*;
  * <code>FieldType</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: FieldType.java,v 1.1.2.2 1999-02-03 23:10:57 pnkfelix Exp $
+ * @version $Id: FieldType.java,v 1.1.2.3 1999-08-04 05:52:24 cananian Exp $
  */
 
 public class FieldType  {

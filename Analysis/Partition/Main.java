@@ -1,3 +1,4 @@
+// Main.java, created Wed Dec 16 23:33:21 1998 by mfoltz
 // -*-Mode: Java-*- 
 // Main.java -- 
 // Author: Mark Foltz <mfoltz@ai.mit.edu> 
@@ -6,6 +7,8 @@
 // Created: <Sun Oct 25 12:37:16 1998> 
 // Time-stamp: <1998-11-21 18:43:24 mfoltz> 
 // Keywords: 
+// Copyright (C) 1998 Mark A. Foltz <mfoltz@ai.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 
 package harpoon.Analysis.Partition;
 import java.util.Observer;
@@ -21,7 +24,7 @@ import java.io.FileReader;
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version $Id: Main.java,v 1.4.2.2 1999-06-23 23:05:21 pnkfelix Exp $
+ * @version $Id: Main.java,v 1.4.2.3 1999-08-04 05:52:23 cananian Exp $
  */
 
 public class Main  {

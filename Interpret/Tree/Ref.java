@@ -1,4 +1,6 @@
 // Ref.java, created Mon Dec 28 00:29:30 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 import harpoon.ClassFile.HClass;
@@ -10,7 +12,7 @@ import harpoon.Util.Util;
  * <code>Ref</code> is an abstract superclass for object and array references.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Ref.java,v 1.1.2.2 1999-06-28 19:32:25 duncan Exp $
+ * @version $Id: Ref.java,v 1.1.2.3 1999-08-04 05:52:35 cananian Exp $
  */
 abstract class Ref extends HCLibrary implements Cloneable {
     /** The type of the object. */

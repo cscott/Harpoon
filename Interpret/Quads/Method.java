@@ -1,4 +1,6 @@
 // Method.java, created Mon Dec 28 01:31:03 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Quads;
 
 import harpoon.ClassFile.HClass;
@@ -55,7 +57,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.11 1999-07-17 11:46:52 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.12 1999-08-04 05:52:30 cananian Exp $
  */
 public final class Method extends HCLibrary {
 

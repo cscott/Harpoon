@@ -1,4 +1,6 @@
 // INString.java, created Mon Dec 28 21:22:06 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 import harpoon.ClassFile.HClass;
@@ -10,7 +12,7 @@ import harpoon.ClassFile.HMethod;
  * <code>java.lang.String</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INString.java,v 1.1.2.1 1999-03-27 22:05:08 duncan Exp $
+ * @version $Id: INString.java,v 1.1.2.2 1999-08-04 05:52:35 cananian Exp $
  */
 public class INString extends HCLibrary {
     static final void register(StaticState ss) {

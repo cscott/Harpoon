@@ -1,4 +1,6 @@
 // Typed.java, created Thu Jan 14 18:59:52 1999 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
 /**
@@ -7,7 +9,7 @@ package harpoon.IR.Tree;
  * <code>OPER</code>, and <code>UNOP</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Typed.java,v 1.1.2.3 1999-02-05 12:02:47 cananian Exp $
+ * @version $Id: Typed.java,v 1.1.2.4 1999-08-04 05:52:30 cananian Exp $
  */
 public interface Typed  {
     // enumerated constants.

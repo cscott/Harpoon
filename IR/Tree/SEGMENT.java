@@ -1,3 +1,6 @@
+// SEGMENT.java, created Fri Aug 27 12:43:42 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
@@ -13,7 +16,7 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.3 1999-08-03 21:12:58 duncan Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.4 1999-08-04 05:52:30 cananian Exp $
  */
 public class SEGMENT extends Stm {
     /** Storage for static class data (display, vmtable, etc) */

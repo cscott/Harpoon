@@ -1,3 +1,6 @@
+// ReachingDefs.java, created Sat Apr 10 10:00:54 1999 by jwhaley
+// Copyright (C) 1998 John Whaley
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
 /**
@@ -33,7 +36,7 @@ import harpoon.Temp.Temp;
 
     @author  John Whaley
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: ReachingDefs.java,v 1.1.2.9 1999-06-18 18:27:26 pnkfelix Exp $
+    @version $Id: ReachingDefs.java,v 1.1.2.10 1999-08-04 05:52:20 cananian Exp $
 
 */
 public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {

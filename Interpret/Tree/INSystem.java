@@ -1,4 +1,6 @@
 // INSystem.java, created Mon Dec 28 20:25:36 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 import harpoon.ClassFile.HClass;
@@ -12,7 +14,7 @@ import java.util.Properties;
  * <code>java.lang.System</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSystem.java,v 1.1.2.3 1999-06-28 18:59:46 duncan Exp $
+ * @version $Id: INSystem.java,v 1.1.2.4 1999-08-04 05:52:35 cananian Exp $
  */
 final class INSystem extends HCLibrary {
     static final void register(StaticState ss) {

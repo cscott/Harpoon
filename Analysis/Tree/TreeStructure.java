@@ -1,3 +1,6 @@
+// TreeStructure.java, created Wed May  5 17:52:43 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Tree;
 
 import harpoon.IR.Tree.CONST;
@@ -19,7 +22,7 @@ import java.util.Map;
  * the codeview directly, so should be used with caution.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeStructure.java,v 1.1.2.2 1999-07-27 22:15:31 duncan Exp $
+ * @version $Id: TreeStructure.java,v 1.1.2.3 1999-08-04 05:52:24 cananian Exp $
  */
 public class TreeStructure { 
     private Map structure = new HashMap();

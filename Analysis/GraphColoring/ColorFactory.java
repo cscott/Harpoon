@@ -1,4 +1,6 @@
 // ColorFactory.java, created Wed Jan 13 17:39:31 1999 by pnkfelix
+// Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
 import java.util.Stack;
@@ -8,7 +10,7 @@ import java.util.Vector;
  * <code>ColorFactory</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorFactory.java,v 1.1.2.5 1999-02-02 22:08:21 pnkfelix Exp $
+ * @version $Id: ColorFactory.java,v 1.1.2.6 1999-08-04 05:52:21 cananian Exp $
  */
 
 public abstract class ColorFactory  {

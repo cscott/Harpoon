@@ -1,11 +1,13 @@
 // InRet.java, created Mon Dec 21 15:48:53 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
 
 /**
  * <code>InRet</code> is an InCti with an operand.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InRet.java,v 1.1.2.2 1998-12-21 21:19:21 cananian Exp $
+ * @version $Id: InRet.java,v 1.1.2.3 1999-08-04 05:52:27 cananian Exp $
  */
 public class InRet extends InCti {
     final OpLocalVariable operand;

@@ -1,4 +1,6 @@
 // HPointer.java, created Thu Dec 10 23:41:19 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
 /**
@@ -7,7 +9,7 @@ package harpoon.ClassFile;
  * to demand-load class files, instead of doing them all at once).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HPointer.java,v 1.1.2.2 1999-01-17 04:36:11 cananian Exp $
+ * @version $Id: HPointer.java,v 1.1.2.3 1999-08-04 05:52:27 cananian Exp $
  */
 abstract class HPointer  {
     /** Returns a genuine HClass from the (possible) pointer. */

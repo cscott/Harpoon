@@ -1,3 +1,6 @@
+// QuadBasicBlock.java, created Thu Apr 15 17:08:50 1999 by pnkfelix
+// Copyright (C) 1998 John Whaley
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
 /**

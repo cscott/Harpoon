@@ -1,3 +1,6 @@
+// THROW.java, created Thu Mar 18 16:59:53 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce  <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
@@ -9,7 +12,7 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: THROW.java,v 1.1.2.7 1999-08-03 21:12:58 duncan Exp $
+ * @version  $Id: THROW.java,v 1.1.2.8 1999-08-04 05:52:30 cananian Exp $
  */
 public class THROW extends Stm implements Typed {
     /** The exceptional value to return */

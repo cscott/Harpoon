@@ -1,4 +1,6 @@
 // SetHClass.java, created Wed Nov  4 17:21:09 1998 by marinov
+// Copyright (C) 1998 Darko Marinov <marinov@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.TypeInference;
 
 import harpoon.Util.HashSet;
@@ -12,7 +14,7 @@ import harpoon.ClassFile.*;
  * (i.e. class and all its subclasses) can be considered.
  *
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: SetHClass.java,v 1.1.2.2 1999-02-03 23:10:58 pnkfelix Exp $
+ * @version $Id: SetHClass.java,v 1.1.2.3 1999-08-04 05:52:24 cananian Exp $
  */
 
 public class SetHClass extends HashSet {

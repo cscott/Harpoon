@@ -1,3 +1,6 @@
+// ClazPointer.java, created Tue Apr 27 18:05:07 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
 import harpoon.Util.Tuple;
@@ -8,7 +11,7 @@ import harpoon.Temp.Label;
  * to static class data.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ClazPointer.java,v 1.1.2.4 1999-06-28 18:57:35 duncan Exp $
+ * @version $Id: ClazPointer.java,v 1.1.2.5 1999-08-04 05:52:35 cananian Exp $
  */
 class ClazPointer extends Pointer {
     private boolean isDerived;

@@ -1,4 +1,6 @@
 // Run.java, created Mon Dec 28 02:34:11 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
 
 import harpoon.ClassFile.CachingCodeFactory;
@@ -19,7 +21,7 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Run.java,v 1.1.2.7 1999-07-23 06:50:55 cananian Exp $
+ * @version $Id: Run.java,v 1.1.2.8 1999-08-04 05:52:36 cananian Exp $
  */
 public abstract class Run extends harpoon.IR.Registration {
     public static void main(String args[]) {
