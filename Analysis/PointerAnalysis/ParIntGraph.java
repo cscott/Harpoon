@@ -30,7 +30,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.3 2002-02-26 22:41:21 cananian Exp $
+ * @version $Id: ParIntGraph.java,v 1.4 2002-04-02 23:41:51 salcianu Exp $
  */
 public class ParIntGraph implements java.io.Serializable {
 
@@ -40,7 +40,7 @@ public class ParIntGraph implements java.io.Serializable {
     /** Debug for the aggressive shrinking. */
     public static boolean DEBUG_AS = false;
 
-    /** Generates some messages that show the gains due to AS. */
+    /** Display the gains due to AGGRESSIVE_SHRINKING. */
     public static boolean MEASURE_AS = false;
 
     /** Activates the aggressive shrinking. Buggy for the moment ... */
