@@ -13,7 +13,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.2.6 2000-01-12 18:24:58 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.2.7 2000-01-12 20:34:42 cananian Exp $
  */
 public class Relinker extends Linker {
     protected final Linker linker;
@@ -90,7 +90,7 @@ public class Relinker extends Linker {
 		result=wrap(hf.getDeclaringClass()).getField(hf.getName());
 	    else
 		result = new HFieldProxy(this, hf);
-	    Util.assert(hf.getDeclaringClass().getLinker()==this);
+	    Util.assert(result.getDeclaringClass().getLinker()==this);
 	    memberMap.put(hf, result);
 	}
 	return result;
@@ -106,7 +106,7 @@ public class Relinker extends Linker {
 		    .getMethod(hm.getName(), hm.getDescriptor());
 	    else
 		result = new HMethodProxy(this, hm);
-	    Util.assert(hm.getDeclaringClass().getLinker()==this);
+	    Util.assert(result.getDeclaringClass().getLinker()==this);
 	    memberMap.put(hm, result);
 	}
 	return result;
