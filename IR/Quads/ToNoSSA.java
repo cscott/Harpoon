@@ -34,7 +34,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.38 2001-09-25 22:57:56 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.39 2001-09-26 15:43:52 cananian Exp $
  */
 public class ToNoSSA
 {
@@ -351,19 +351,23 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
     }
     // insert MOVE on edge into PHI & update derivation table.
     private void pushBack(PHI q) {
+	boolean hasConflicts = q.hasConflicts();
 	Edge[] in = q.prevEdge();
 	Edge out = q.nextEdge(0);
 	for (int i=0; i<q.numPhis(); i++) {
 	    Temp Tdst = q.dst(i);
-	    Temp Tt = new Temp(Tdst);
 	    Object type = null;
 	    if (m_dT!=null) {
 		type = m_dT.remove(Default.pair(q, Tdst));
 		Util.assert(type!=null, "No type for "+Tdst+" in "+q);
 	    }
+	    Temp Tt = Tdst;
+	    if (hasConflicts) {
+		Tt = new Temp(Tdst);
+		out = addMoveAt(out, q, Tdst, Tt, type);
+	    }
 	    for (int j=0; j<in.length; j++)
 		in[j] = addMoveAt(in[j], q, Tt, q.src(i, j), type);
-	    out = addMoveAt(out, q, Tdst, Tt, type);
 	}
     }
 }

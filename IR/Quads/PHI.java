@@ -8,11 +8,14 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 /**
  * <code>PHI</code> objects represent blocks of phi functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.1.2.10 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: PHI.java,v 1.1.2.11 2001-09-26 15:43:52 cananian Exp $
  */
 public class PHI extends Quad {
     /** dst[i] is the left-hand side of the i'th phi function in this block. */
@@ -171,6 +174,17 @@ public class PHI extends Quad {
 	for (int i=0; i<dst.length; i++) {
 	    dst[i] = tm.tempMap(dst[i]);
 	}
+    }
+    /** Returns true if any of the sources of any of the phi functions
+     *  match a destination of a phi function.  This case is legal,
+     *  but makes translating PHI functions to MOVEs 'tricky'. */
+    public boolean hasConflicts() {
+	Set ds = new HashSet(Arrays.asList(dst));
+	for (int i=0; i<dst.length; i++)
+	    for (int j=0; j<src[i].length; j++)
+		if (ds.contains(src[i][j]))
+		    return true;
+	return false;
     }
 
     public void accept(QuadVisitor v) { v.visit(this); }
