@@ -75,7 +75,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.116 2000-11-13 20:39:08 bdemsky Exp $
+ * @version $Id: SAMain.java,v 1.1.2.117 2000-11-14 15:25:30 wbeebee Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -145,6 +145,8 @@ public class SAMain extends harpoon.IR.Registration {
     }
 
     public static void do_it() {
+
+      Realtime.objectSetup(linker);
 
 	if (SAMain.startset!=null)
 	    hcf=harpoon.IR.Quads.ThreadInliner.codeFactory(hcf,SAMain.startset, SAMain.joinset);
