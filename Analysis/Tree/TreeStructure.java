@@ -50,7 +50,7 @@ import java.util.Stack;
  * the codeview directly, so should be used with caution.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeStructure.java,v 1.1.2.6 1999-12-05 06:04:52 duncan Exp $
+ * @version $Id: TreeStructure.java,v 1.1.2.7 1999-12-05 06:16:54 duncan Exp $
  */
 public class TreeStructure { 
     private Map structure = new HashMap();
@@ -81,26 +81,44 @@ public class TreeStructure {
 	Util.assert
 	    (((Code.TreeFactory)stm.getFactory()).getParent().getName().equals("canonical-tree")); 
 
-	// Fill in the mappings necessary to represent this
-	// tree structure. 
+	// Fill in the mappings necessary to represent this tree structure. 
 	new StructureBuilder(stm, this.structure); 
     }
 
-    public SEQ getPredecessor(Stm stm) { 
-	return (SEQ)structure.get(stm);
+    /**
+     * Returns the direct parent of <code>e</code> in this tree structure. 
+     * <br><b>Requires:</b>
+     * <code>e</code> is contained in this tree structure. 
+     */ 
+    public Tree getParent(Exp e) { 
+	return (Tree)this.structure.get(e);
     }
 
+    /**
+     * Returns the direct parent of <code>s</code> in this tree structure.  
+     * The parent of a <code>Stm</code> is always a <code>SEQ</code> object. 
+     * <br>b>Requires:</b>
+     * <ol>
+     *   <li><code>s</code> is contained in this tree structure.
+     *   <li><code>s</code> is not the root of this tree structure. 
+     * </ol> 
+     */ 
+    public SEQ getParent(Stm s) { 
+	return (SEQ)this.structure.get(s);
+    }
+    
+    /**
+     * Returns the <code>Stm</code> in which <code>e</code> is used. 
+     * <br><b>Requires:</b>
+     * <code>e</code> is contained in this tree structure. 
+     */ 
     public Stm getStm(Exp e) { 
 	Tree result = e; 
-	while (!(result instanceof Stm)) { 
+	while (result instanceof Exp) { 
 	    result = (Tree)this.structure.get(result); 
 	    Util.assert(result != null); 
 	}
 	return (Stm)result; 
-    }
-
-    public Tree getParent(Exp e) { 
-	return (Tree)this.structure.get(e);
     }
 
     /** 
@@ -123,7 +141,7 @@ public class TreeStructure {
 	Util.assert(structure.containsKey(stm));
 
 	// All predecessors in canonical tree form must be SEQs
-	SEQ pred = this.getPredecessor(stm);
+	SEQ pred = this.getParent(stm);
 	Stm newPred;
 
 	if (!structure.containsKey(pred)) { 
@@ -189,8 +207,9 @@ public class TreeStructure {
 	    // not be null unless: 
 	    //
 	    // 1) tOld is not found in the Tree.  This is a user error. 
-	    // 2) tOld is the root of the Tree.  FIXME: 
-	    //    The behavior of Replacer in this situation is not yet defined!
+	    // 2) tOld is the root of the Tree.  
+	    //    FIXME: The behavior of Replacer in this situation 
+	    //           needs to be defined!
 	    // 
 	    Tree parent = (Tree)TreeStructure.this.structure.get(tOld); 
 	    if (parent == null) { 
