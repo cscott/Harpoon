@@ -25,7 +25,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.14 1999-09-03 15:35:11 pnkfelix Exp $
+ * @version $Id: Tree.java,v 1.1.2.15 1999-09-08 21:33:09 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -45,7 +45,7 @@ public abstract class Tree
 	this.id = tf.getUniqueID();
 	this.tf = tf;
 	// cache hashcode for efficiency.
-	this.hashCode = this.id ^ tf.getParent().hashCode();
+	this.hashCode = this.id ^ tf.hashCode();
 	
 	// Only next_arity can be determined from the type of the Tree object.
 	// We must use the EdgeInitializer class to compute prev_arity
@@ -61,7 +61,8 @@ public abstract class Tree
      *  codeviews which have been canonicalized.
      */
     public Temp[] def() { 
-	Util.assert(((Code)tf.getParent()).isCanonical());
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 
 	Set defSet = defSet();
 	return (Temp[])defSet.toArray(new Temp[0]); 
@@ -71,7 +72,8 @@ public abstract class Tree
      *  codeviews which have been canonicalized.
      */
     public Temp[] use() { 
-	Util.assert(((Code)tf.getParent()).isCanonical());
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 
 	Set useSet = useSet();
 	return (Temp[])useSet.toArray(new Temp[0]); 
@@ -150,32 +152,37 @@ public abstract class Tree
 
     /** Returns the <code>i</code>th successor of this tree. */
     public Tree next(int i) { 
-	Util.assert(((Code)tf.getParent()).isCanonical());
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	return (Tree) next[i].to(); 
     }
 
     /** Returns the <code>i</code>th predecessor of this tree. */
     public Tree prev(int i) { 
-	Util.assert(((Code)tf.getParent()).isCanonical());
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	return (Tree) prev[i].from(); 
     }
 
     /** Return the number of successors of this tree. */
     public int nextLength() { 
-	Util.assert(((Code)tf.getParent()).isCanonical());
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	return next.length; 
     }
 
     /** Return the number of predecessors of this tree. */
     public int prevLength() { 
-	Util.assert(((Code)tf.getParent()).isCanonical());
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	return prev.length; 
     }
 
     /** Returns an array containing all the successors of this tree,
      *  in order. */
     public Tree[] next() { 
-	Util.assert(((Code)tf.getParent()).isCanonical());
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	Tree[] r = new Tree[next.length];
 	for (int i=0; i<r.length; i++)
 	    r[i] = (next[i]==null)?null:(Tree)next[i].to();
@@ -184,7 +191,8 @@ public abstract class Tree
     /** Returns an array containing all the predecessors of this tree,
      *  in order. */
     public Tree[] prev() {
-	Util.assert(((Code)tf.getParent()).isCanonical());
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	Tree[] r = new Tree[prev.length];
 	for (int i=0; i<r.length; i++)
 	    r[i] = (prev[i]==null)?null:(Tree)prev[i].from();
@@ -193,32 +201,37 @@ public abstract class Tree
     
     /** Returns an array containing all the outgoing edges from this tree. */
     public Edge[] nextEdge() { 
-	Util.assert(((Code)tf.getParent()).isCanonical());     
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	return (Edge[]) Util.safeCopy(Edge.arrayFactory, next); 
     }
 
     /** Returns an array containing all the incoming edges of this tree. */
     public Edge[] prevEdge() {
-	Util.assert(((Code)tf.getParent()).isCanonical());	
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	return (Edge[]) Util.safeCopy(Edge.arrayFactory, prev); 
     }
     
     /** Returns the <code>i</code>th outgoing edge for this tree. */
     public Edge nextEdge(int i) { 
-	Util.assert(((Code)tf.getParent()).isCanonical());	
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	return next[i]; 
     }
 
     /** Returns the <code>i</code>th incoming edge of this tree. */
     public Edge prevEdge(int i) { 
-	Util.assert(((Code)tf.getParent()).isCanonical());
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	return prev[i]; 
     }
 
     /** Returns an array with all the edges to and from this 
      *  <code>Tree</code>. */
     public HCodeEdge[] edges() {
-	Util.assert(((Code)tf.getParent()).isCanonical());
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	Edge[] e = new Edge[next.length+prev.length];
 	System.arraycopy(next,0,e,0,next.length);
 	System.arraycopy(prev,0,e,next.length,prev.length);
@@ -226,12 +239,14 @@ public abstract class Tree
     }
 
     public HCodeEdge[] pred() { 
-	Util.assert(((Code)tf.getParent()).isCanonical());
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	return prevEdge(); 
     }
     
     public HCodeEdge[] succ() { 
-        Util.assert(((Code)tf.getParent()).isCanonical());
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 	return nextEdge(); 
     }
 
@@ -257,7 +272,8 @@ public abstract class Tree
      *  @return the added <code>Edge</code>.*/
     public static Edge addEdge(Tree from, int from_index,
 			       Tree to, int to_index) {
-	Util.assert(((Code)from.tf.getParent()).isCanonical(), from.tf.getParent().getName());
+	Util.assert(from.tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)from.tf).getParent().isCanonical());
 	
 	// assert validity
 	Util.assert(from.tf == to.tf, "TreeFactories should always be same");
@@ -282,7 +298,8 @@ public abstract class Tree
     /** Replace one tree with another. The number of in and out edges of
      *  the new and old trees must match exactly. */
     public static void replace(Tree oldT, Tree newT) {
-	Util.assert(((Code)oldT.tf.getParent()).isCanonical());
+	Util.assert(oldT.tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)oldT.tf).getParent().isCanonical());
 	Util.assert(oldT.tf==newT.tf, "TreeFactories should always be same");
 	Util.assert(oldT.next.length == newT.next.length);
 	Util.assert(oldT.prev.length == newT.prev.length);

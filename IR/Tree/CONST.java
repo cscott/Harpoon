@@ -4,6 +4,7 @@
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HDataElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
@@ -16,9 +17,9 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.18 1999-08-12 03:37:27 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.19 1999-09-08 21:33:08 cananian Exp $
  */
-public class CONST extends Exp implements PreciselyTyped {
+public class CONST extends Exp implements PreciselyTyped, HDataElement {
     /** The constant value of this <code>CONST</code> expression. */
     public final Number value;
     /** The type of this <code>CONST</code> expression. */

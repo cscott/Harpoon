@@ -17,7 +17,7 @@ import java.util.Hashtable;
  * <code>TreeStackFrame</code> is a stack frame for an interpreted method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeStackFrame.java,v 1.1.2.6 1999-08-04 06:31:01 cananian Exp $
+ * @version $Id: TreeStackFrame.java,v 1.1.2.7 1999-09-08 21:33:10 cananian Exp $
  */
 final class TreeStackFrame extends StackFrame {
     /** current location in the method */
@@ -85,7 +85,7 @@ final class TreeStackFrame extends StackFrame {
 	return state.containsKey(e);
     }
 
-    final HMethod getMethod() { return pc.getFactory().getMethod(); }
+    final HMethod getMethod() { return ((harpoon.IR.Tree.Code.TreeFactory)pc.getFactory()).getMethod(); }
     final String  getSourceFile() { return pc.getSourceFile(); }
     final int     getLineNumber() { return pc.getLineNumber(); }
 }

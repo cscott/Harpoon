@@ -14,7 +14,7 @@ import java.io.StringWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.22 1999-08-16 23:48:04 duncan Exp $
+ * @version $Id: Print.java,v 1.1.2.23 1999-09-08 21:33:08 cananian Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -31,7 +31,7 @@ public class Print {
 	Tree tr = (Tree)d.getRootElement();
         PrintVisitor pv = new PrintVisitor(pw, tm);
 
-        pw.print("Dataview \""+d.getName()+"\" for "+d.getHClass()+":");
+        pw.print("Dataview \""+d.getDesc()+"\" for "+d.getHClass()+":");
         tr.visit(pv);
         pw.println();
         pw.flush();
@@ -39,6 +39,9 @@ public class Print {
 
     public final static void print(PrintWriter pw, Code c) {
         print(pw, c, null);
+    }
+    public final static void print(PrintWriter pw, Data d) {
+        print(pw, d, null);
     }
 
     public final static void print(PrintWriter pw, Tree t) {

@@ -15,9 +15,9 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NAME.java,v 1.1.2.11 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: NAME.java,v 1.1.2.12 1999-09-08 21:33:08 cananian Exp $
  */
-public class NAME extends Exp {
+public class NAME extends Exp implements harpoon.ClassFile.HDataElement {
     /** The label which this NAME refers to. */
     public final Label label;
     /** Constructor. */

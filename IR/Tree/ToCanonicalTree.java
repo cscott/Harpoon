@@ -24,7 +24,7 @@ import java.util.Map;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.13 1999-08-16 23:48:04 duncan Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.14 1999-09-08 21:33:08 cananian Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -38,7 +38,8 @@ public class ToCanonicalTree implements Derivation, TypeMap {
      * @param code  The <code>TreeCode</code> which we wish to translate
      */
     public ToCanonicalTree(final TreeFactory tf, TreeCode code) { 
-	Util.assert(tf.getParent().getName().equals("canonical-tree"));
+	Util.assert(tf instanceof Code.TreeFactory);
+	Util.assert(((Code.TreeFactory)tf).getParent().getName().equals("canonical-tree"));
 	
     	final Map dT = new HashMap();
 	final Map tT = new HashMap();

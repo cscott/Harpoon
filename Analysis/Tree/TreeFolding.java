@@ -71,7 +71,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.6 1999-08-17 19:15:39 pnkfelix Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.7 1999-09-08 21:33:00 cananian Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -230,7 +230,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
     // Maps Temps to BitStrings representing the Tree IDs of the Trees 
     // they preserve
     private void initTempsToPrsvs(Map tempsToPrsvs) { 
-	for (Iterator i = root.getFactory().getParent().getElementsI();
+	for (Iterator i = ((Code.TreeFactory)root.getFactory()).getParent().getElementsI();
 	     i.hasNext();) { 
 	    UseDef u    = (UseDef)i.next();
 	    Temp[] tmps = (u instanceof Stm)?u.def():u.use();

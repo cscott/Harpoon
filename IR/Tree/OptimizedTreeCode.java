@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.10 1999-08-09 22:39:17 duncan Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.11 1999-09-08 21:33:08 cananian Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = CanonicalTreeCode.codename;
@@ -73,7 +73,7 @@ public class OptimizedTreeCode extends Code {
 	    new CloningTempMap
 	    (tree.getFactory().tempFactory(), this.tf.tempFactory());
 	final CanonicalTreeCode code = 
-	    (CanonicalTreeCode)tree.getFactory().getParent();
+	    (CanonicalTreeCode)((Code.TreeFactory)tree.getFactory()).getParent();
 	this.tree = (Tree)Tree.clone(this.tf, ctm, tree);
 	(this.edgeInitializer = new EdgeInitializer()).computeEdges();
 	

@@ -63,7 +63,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.36 1999-08-26 04:23:45 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.37 1999-09-08 21:33:09 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -72,7 +72,7 @@ public class ToTree implements Derivation, TypeMap {
    
     /** Class constructor */
     public ToTree(final TreeFactory tf, LowQuadNoSSA code) {
-	Util.assert(tf.getParent().getName().equals("tree"));
+	Util.assert(((Code.TreeFactory)tf).getParent().getName().equals("tree"));
 	translate(tf, code);
     }
     

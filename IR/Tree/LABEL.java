@@ -16,9 +16,9 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: LABEL.java,v 1.1.2.9 1999-08-26 04:23:45 cananian Exp $
+ * @version $Id: LABEL.java,v 1.1.2.10 1999-09-08 21:33:08 cananian Exp $
  */
-public class LABEL extends Stm { 
+public class LABEL extends Stm implements harpoon.ClassFile.HDataElement { 
     /** The symbolic name to define. */
     public final Label label;
     /** Flag indicating whether the label should be exported.

@@ -16,9 +16,9 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.10 1999-08-25 18:28:05 duncan Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.11 1999-09-08 21:33:08 cananian Exp $
  */
-public class SEGMENT extends Stm {
+public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     /** R/O storage for static class data (display, vmtable, etc) */
     public static final int CLASS                = 0; 
     /** Read-only instruction memory */

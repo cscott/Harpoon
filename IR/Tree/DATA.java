@@ -22,9 +22,9 @@ import harpoon.Util.Util;
  * </PRE>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DATA.java,v 1.1.2.7 1999-08-18 21:30:53 pnkfelix Exp $
+ * @version $Id: DATA.java,v 1.1.2.8 1999-09-08 21:33:08 cananian Exp $
  */
-public class DATA extends Stm { 
+public class DATA extends Stm implements harpoon.ClassFile.HDataElement { 
     /** The expression to write to memory.  If null, this location in 
      *  memory is reserved, with an unspecified value. */
     public final Exp data;
