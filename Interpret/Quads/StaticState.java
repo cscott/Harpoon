@@ -16,7 +16,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.6 1999-06-22 23:11:34 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.7 1999-06-24 16:47:42 cananian Exp $
  */
 final class StaticState extends HCLibrary {
     /** which code representation to use. */
@@ -103,10 +103,7 @@ final class StaticState extends HCLibrary {
     // intern() table for strings.
     final private Map internTable = new HashMap();
     final ObjectRef intern(ObjectRef src) {
-	String s = ref2str(src);
-	ObjectRef obj = (ObjectRef) internTable.get(s);
-	if (obj==null) { internTable.put(s, src); obj = src; }
-	return obj;
+	return makeStringIntern(ref2str(src));
     }
     final String ref2str(ObjectRef str) {
 	HField HFvalue = HCstring.getField("value");
