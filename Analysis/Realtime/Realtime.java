@@ -30,7 +30,7 @@ import harpoon.Backend.Generic.Frame;
  * Realtime Java Specification</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.1.2.24 2001-06-17 23:07:32 cananian Exp $
+ * @version $Id: Realtime.java,v 1.1.2.25 2001-06-22 18:51:43 wbeebee Exp $
  */
 
 public class Realtime {
@@ -334,15 +334,14 @@ public class Realtime {
 	return hcf;
     }
     
-    public static HCodeFactory addQuantaChecker(Frame f, HCodeFactory hcf)
-    {
-	if(REALTIME_THREADS)
-	    {
-		QuantaChecker qc = new QuantaChecker(f, hcf);
-		
-		return qc.codeFactory();
-	    }
+    /** Add code to check to see if a realtime thread quanta has passed to determine
+     *  whether to do a user-thread-level context switch. 
+     */
 
+    public static HCodeFactory addQuantaChecker(HCodeFactory hcf) {
+	if (REALTIME_THREADS) {
+	    return (new QuantaChecker(hcf)).codeFactory();
+	}
 	return hcf;
     }
 

@@ -31,11 +31,14 @@ import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.TreeCode;
 import harpoon.IR.Tree.Typed;
 import harpoon.IR.Tree.Type;
 
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
+
+import harpoon.Util.Util;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -43,17 +46,15 @@ import java.io.PrintWriter;
 
 /**
  * @author  Bryan Fink <wingman@mit.edu>
- * @version $Id: QuantaChecker.java,v 1.1.2.2 2001-06-17 22:31:33 cananian Exp $
+ * @version $Id: QuantaChecker.java,v 1.1.2.3 2001-06-22 18:51:43 wbeebee Exp $
  */
 public class QuantaChecker extends MethodMutator
 {
-    protected Frame frame;
-
-    public QuantaChecker(Frame f, HCodeFactory hcf)
+    public QuantaChecker(HCodeFactory hcf)
     {
 	super(hcf);
-
-	frame = f;
+	Util.assert(hcf.getCodeName().equals(TreeCode.codename),
+		    "QuantaChecker only works on Tree form");
     }
     
     protected HCode mutateHCode(HCodeAndMaps input) {
@@ -62,7 +63,7 @@ public class QuantaChecker extends MethodMutator
 	if (hc == null) {
 	    return hc;
 	}
-	final Linker linker = hc.getMethod().getDeclaringClass().getLinker();
+	final Linker linker = hclass.getLinker();
 
 	TreeVisitor visitor = new TreeVisitor() {
 		public void visit(METHOD e)
@@ -88,10 +89,10 @@ public class QuantaChecker extends MethodMutator
 		{}
 	    };
 
-	Tree[] ql = (Tree[]) hc.getElements();
+	Tree[] tl = (Tree[]) hc.getElements();
 
-	for (int i=0; i<ql.length; i++) {
-	    ql[i].accept(visitor);
+	for (int i=0; i<tl.length; i++) {
+	    tl[i].accept(visitor);
 	}
 
 	return hc;
@@ -102,7 +103,7 @@ public class QuantaChecker extends MethodMutator
       HField field = linker.forName("javax.realtime.QuantaThread").getField("timerFlag");  // get flag field
 	
 	MEM mem = new MEM(tf, e, Typed.INT,
-			  new NAME(tf, e, frame.getRuntime().nameMap.label(field))); //get memory at flag field
+			  new NAME(tf, e, tf.getFrame().getRuntime().nameMap.label(field))); //get memory at flag field
 
 	Label flagTrue = new Label("quantaFlagTrue"); //true jump
 	Label flagFalse = new Label("quantaFlagFalse"); //false jump
@@ -123,7 +124,7 @@ public class QuantaChecker extends MethodMutator
 	CALL javaHandleFlag = null;
 	if(javaFlagMethod != null)
 	 {
-	     NAME jmeth = new NAME(tf, e, frame.getRuntime().nameMap.label(javaFlagMethod));
+	     NAME jmeth = new NAME(tf, e, tf.getFrame().getRuntime().nameMap.label(javaFlagMethod));
 	     NAME falseJump = new NAME(tf, e, flagFalse);
 	     Temp Tobj = new Temp(tf.tempFactory(), "rt");
 	     javaHandleFlag = new CALL(tf, e, null, 
@@ -145,7 +146,7 @@ public class QuantaChecker extends MethodMutator
     protected NATIVECALL addCheck(TreeFactory tf, HCodeElement source,
 			   DerivationGenerator dg)
     {
-	Label func = new Label(frame.getRuntime().nameMap
+	Label func = new Label(tf.getFrame().getRuntime().nameMap
 			       .c_function_name("HandleQuantaFlag"));
 	return new NATIVECALL
 	    (tf, source,
