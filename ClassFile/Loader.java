@@ -32,7 +32,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.15 2000-04-04 08:28:21 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.16 2000-11-15 17:55:41 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -48,6 +48,7 @@ public abstract class Loader {
     ZipFileElement(ZipFile zf) { this.zf = zf; }
     public String toString() { return zf.getName(); }
     InputStream getResourceAsStream(String name) {
+      name = name.replace('\\','/'); // work around bug in windows java ports
       try { // look for name in zipfile, return null if something goes wrong.
 	ZipEntry ze = zf.getEntry(name);
 	return (ze==null)?null:zf.getInputStream(ze);

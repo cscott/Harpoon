@@ -1,19 +1,19 @@
-# $Id: GNUmakefile,v 1.61.2.88 2000-11-09 01:05:05 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.89 2000-11-15 17:55:02 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
 
-JAVA=java
+JAVA:=java
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
-JIKES=jikes $(JIKES_OPT)
+JIKES:=jikes $(JIKES_OPT)
 JCC=javac -J-mx64m
 JDOC=javadoc
 JAR=jar
 JDOCFLAGS=-J-mx64m -version -author # -package
 JDOCIMAGES=/usr/local/jdk/docs/api/images
 SSH=ssh
-SCP=scp -A
+SCP=scp -q
 MUNGE=bin/munge
 UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
@@ -44,7 +44,14 @@ SUPPORTC:= $(filter-out \
 CLASSPATH:=$(subst $(space),:,$(addprefix $(CURDIR)/,$(SUPPORTC))):$(CLASSPATH)
 CLASSPATH:=.:$(CLASSPATH)
 endif
-export CLASSPATH
+# cygwin compatibility
+ifdef CYGWIN
+CLASSPATH:=$(shell cygpath -w -p $(CLASSPATH))
+JAVA:=$(JAVA) -cp "$(CLASSPATH)"
+JIKES:=$(JIKES) -classpath "$(CLASSPATH);c:/jdk1.3.0_01/jre/lib/rt.jar"
+else
+	export CLASSPATH
+endif
 
 CVS_TAG=$(firstword $(shell cvs status GNUmakefile | grep -v "(none)" | \
 			awk '/Sticky Tag/{print $$3}'))
@@ -59,7 +66,8 @@ BUILD_IGNORE := $(strip $(shell if [ -f .ignore ]; then cat .ignore; fi))
 ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		$(patsubst %,egrep -v % |,$(BUILD_IGNORE)) \
 		egrep -v "^[.]/(harpoon|silicon|gnu|(src)?doc|NOTES|bin|jdb)"|\
-		egrep -v "^[.]/java_cup" | \
+		egrep -v "^[.]/(as|java_cup)" | \
+		egrep -v "/doc-files" | \
 		sed -e "s|^[.]/*||")
 
 SCRIPTS := bin/test-collections bin/annotate.perl $(MUNGE) $(UNMUNGE) \
@@ -191,14 +199,20 @@ olderfirst:
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 
+# the package-by-package hack below is made necessary by brain-dead shells
+# that don't accept arbitrarily-large argument lists.
 Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
-	@echo -n "Building JAR file... "
-	@${JAR} c0f Harpoon.jar COPYING VERSIONS \
-		$(foreach file,\
-		$(foreach pkg,$(JARPKGS),\
-		 $(wildcard $(pkg)/*.class) $(wildcard $(pkg)/*.properties)),\
-		'$(file)')
-	@echo done.
+	@echo -n "Building JAR file..."
+	@${JAR} c0f Harpoon.jar COPYING VERSIONS
+	@for pkg in $(JARPKGS); do \
+	  for suffix in class properties; do\
+	    if echo $$pkg/*.$$suffix | grep -vq '/[*][.]' ; then \
+	      ${JAR} u0f Harpoon.jar $$pkg/*.$$suffix ;\
+	      echo -n . ;\
+	    fi;\
+	  done;\
+	done
+	@echo " done."
 	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
 jar:	Harpoon.jar Harpoon.jar.TIMESTAMP $(SUPPORTP)
