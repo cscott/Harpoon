@@ -29,7 +29,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.37 2000-11-16 03:01:12 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.38 2000-11-16 03:04:34 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -230,6 +230,86 @@ public class ParIntGraph {
 	return new ParIntGraph(_G, _tau, _ar, _eo, Collections.EMPTY_SET);
     }
 
+
+
+    private ParIntGraph external_view(PANode[] params) {
+	// roots = ...
+	Set roots = new HashSet();
+	// 1. param nodes +
+	for(int i = 0; i < params.length; i++)
+	    roots.add(params[i]);
+	// 2. returned nodes +
+	roots.addAll(G.r);
+	// 3. excp. returned nodes +
+	roots.addAll(G.excp);
+	// 4. active thread nodes +
+	roots.addAll(tau.activeThreadSet());
+	// 5. static nodes
+	for(Iterator it = allNodes().iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(node.type == PANode.STATIC)
+		roots.add(node);
+	}
+
+	return copy_from_roots(roots);
+    }
+
+
+    private ParIntGraph copy_from_roots(Set roots) {
+	Set remaining_nodes = new HashSet();
+
+	PointsToGraph _G =
+	    G.copy_from_roots(roots, remaining_nodes);
+
+	PAThreadMap _tau = (PAThreadMap) tau.clone();
+
+	ActionRepository _ar = ar.keepTheEssential(remaining_nodes);
+
+	EdgeOrdering _eo = 
+	    PointerAnalysis.IGNORE_EO ? null : 
+	    eo.keepTheEssential(remaining_nodes);
+
+	return new ParIntGraph(_G, _tau, _ar, _eo, Collections.EMPTY_SET);
+    }
+
+
+
+    ParIntGraph intra_proc_trimming(PANode[] params) {
+	Set roots = new HashSet();
+	// 1. param nodes +
+	for(int i = 0; i < params.length; i++)
+	    roots.add(params[i]);
+	// 2. returned nodes +
+	roots.addAll(G.r);
+	// 3. excp. returned nodes +
+	roots.addAll(G.excp);
+	// 4. active thread nodes +
+	roots.addAll(tau.activeThreadSet());
+	// 5. static nodes and
+	for(Iterator it = allNodes().iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(node.type == PANode.STATIC)
+		roots.add(node);
+	}
+	// 6. nodes directly pointed by some variable
+	add_pointed_by_vars(roots, G.I);
+	add_pointed_by_vars(roots, G.O);
+
+	ParIntGraph newpig = copy_from_roots(roots);
+
+	System.out.println("ipt: " + this.allNodes().size() + " -> " +
+			   newpig.allNodes().size());
+
+	return newpig;
+    }
+    
+
+    private void add_pointed_by_vars(Set roots, PAEdgeSet E) {
+	for(Iterator it = E.allVariables().iterator(); it.hasNext(); ) {
+	    Temp v = (Temp) it.next();
+	    roots.addAll(E.pointedNodes(v));
+	}
+    }
 
     /** Aggressive shrinking: get rid of some unnecessary information.
 	TODO: write some better comments. */

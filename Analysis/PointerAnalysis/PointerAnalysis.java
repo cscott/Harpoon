@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.71 2000-11-15 21:48:38 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.72 2000-11-16 03:04:34 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -159,6 +159,8 @@ public class PointerAnalysis {
 	this name is supposed to be "as impossible as possible", so that we
 	don't have any conflict with real fields. */
     public static final String ARRAY_CONTENT = "+ae+";
+
+    public static final boolean DO_INTRA_PROC_TRIMMING = true;
 
     // The HCodeFactory providing the actual code of the analyzed methods
     private final MetaCallGraph  mcg;
@@ -1051,9 +1053,9 @@ public class PointerAnalysis {
     private PAVisitor pa_visitor = new PAVisitor();
     
     /** Analyzes a basic block - a Parallel Interaction Graph is computed at
-     *  the beginning of the basic block, it is next updated by all the 
-     *  instructions appearing in the basic block (in the order they appear
-     *  in the original program). */
+	the beginning of the basic block, it is next updated by all the 
+	instructions appearing in the basic block (in the order they appear
+	in the original program). */
     private void analyze_basic_block(LightBasicBlock lbb){
 	if(DEBUG2 || MEGA_DEBUG){
 	    System.out.println("BEGIN: Analyze_basic_block " + lbb);
@@ -1096,6 +1098,17 @@ public class PointerAnalysis {
 	}
 	else
 	    lbb.user_info = new ParIntGraphPair(lbbpig, null);
+
+	if(DO_INTRA_PROC_TRIMMING) {
+	    PANode[] params = nodes.getAllParams(current_intra_mmethod);
+	    ParIntGraphPair pp = (ParIntGraphPair) lbb.user_info;
+	    for(int i = 0; i < 2; i++) {
+		ParIntGraph pig = pp.pig[i];
+		if(pig != null)
+		    pig = pig.intra_proc_trimming(params);
+		pp.pig[i] = pig;
+	    }
+	}
 
 	if(DEBUG2 || MEGA_DEBUG){
 	    System.out.println("After:");
@@ -1194,8 +1207,8 @@ public class PointerAnalysis {
 	for(int i = 0; i < types.length; i++)
 	    if(!types[i].isPrimitive()) count++;
 	
-	nodes.addParamNodes(mm,count);
-	Stats.record_mmethod_params(mm,count);
+	nodes.addParamNodes(mm, count);
+	Stats.record_mmethod_params(mm, count);
 
 	// add all the edges of type <p,np> (i.e. parameter to 
 	// parameter node) - just for the non-primitive types (e.g. int params

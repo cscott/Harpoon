@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.33 2000-11-15 21:48:39 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.34 2000-11-16 03:04:35 salcianu Exp $
  */
 public class PointsToGraph implements Cloneable {
 
@@ -435,6 +435,49 @@ public class PointsToGraph implements Cloneable {
 	return new PointsToGraph(_O,_I,_e,_r,_excp);
     }
     
+
+    // TODO: keep the essential should be modified to use this method.
+    // there is a lot of code duplication here.
+    PointsToGraph copy_from_roots(final Set roots, final Set remaining_nodes) {
+	remaining_nodes.addAll(roots);
+
+	PAEdgeSet _O = new LightPAEdgeSet();
+	PAEdgeSet _I = new LightPAEdgeSet();
+
+	// the same sets of return nodes and exceptions
+	Set _r    = (Set) ((LinearSet) r).clone();
+	Set _excp = (Set) ((LinearSet) excp).clone();
+	// Add the normal return & exception nodes to the set of roots
+	remaining_nodes.addAll(r);
+	remaining_nodes.addAll(excp);
+
+	// worklist of "to be explored" nodes
+	final PAWorkList worklist = new PAWorkList();
+	// put all the roots in the worklist
+	worklist.addAll(remaining_nodes);
+
+	// copy the relevant edges and build the set of essential_nodes
+	PANodeVisitor visitor = new PANodeVisitor(){
+		public final void visit(PANode node){
+		    if(remaining_nodes.add(node))
+			worklist.add(node);
+		}		
+	    };
+
+	while(!worklist.isEmpty()){
+	    PANode node = (PANode)worklist.remove();
+	    O.copyEdges(node, _O);
+	    I.copyEdges(node, _I);
+	    O.forAllPointedNodes(node, visitor);
+	    I.forAllPointedNodes(node, visitor);
+	}
+
+	// retain only the escape information for the remaining nodes
+	PAEscapeFunc _e = e.select(remaining_nodes);
+
+	return new PointsToGraph(_O,_I,_e,_r,_excp);	
+    }
+
     /** Pretty-print function for debug purposes.
 	Two equal <code>PointsToGraph</code>s are guaranteed to have the same
 	string representation. */
