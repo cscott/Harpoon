@@ -16,20 +16,21 @@ import harpoon.IR.Assem.InstrDIRECTIVE;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.Backend.Generic.Frame;
 
-import java.util.*;
+import java.util.List;
+import java.util.Enumeration;
 
 /**
  * <code>Generic.Code</code> is an abstract superclass of codeviews
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.4 1999-05-17 19:56:03 andyb Exp $
+ * @version $Id: Code.java,v 1.1.2.5 1999-05-24 19:02:05 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
     protected HMethod parent;
     /** The Instrs composing this code view. */
-    protected Instr[] instrs;
+    protected List instrs; // FSK: was Instr[]
     /** Instruction factory. */
     protected final InstrFactory inf;
     /** The Frame associated with this codeview. */
@@ -54,7 +55,7 @@ public abstract class Code extends HCode {
         };
     }
 
-    protected Code(final HMethod parent, final Instr[] instrs, 
+    protected Code(final HMethod parent, final List instrs, 
                    final Frame frame) {
         this.parent = parent; this.instrs = instrs; this.frame = frame;
         this.inf = newINF(parent);
@@ -76,7 +77,9 @@ public abstract class Code extends HCode {
      *  @return         An array of HCodeElements containing the Instrs
      *                  from this codeview.
      */
-    public HCodeElement[] getElements() { return instrs; }
+    public HCodeElement[] getElements() { 
+	return (Instr[]) instrs.toArray(new Instr[instrs.size()]); 
+    }
   
     /** Returns an enumeration of the instructions in this codeview. <BR>
      *
@@ -85,7 +88,7 @@ public abstract class Code extends HCode {
      */
     public Enumeration getElementsE() {
         // return null;
-	return new harpoon.Util.ArrayEnumerator(instrs);
+	return new harpoon.Util.IteratorEnumerator(instrs.iterator());
     }
 
     /** Returns an array factory to create the instruction elements
@@ -93,7 +96,9 @@ public abstract class Code extends HCode {
      *
      *  @return         An ArrayFactory which produces Instrs.
      */
-    public ArrayFactory elementArrayFactory() { return Instr.arrayFactory; }
+    public ArrayFactory elementArrayFactory() { 
+	return Instr.arrayFactory; 
+    }
 
     /** Allows access to the InstrFactory used by this codeview.
      *
@@ -115,11 +120,11 @@ public abstract class Code extends HCode {
      */
     public void print(java.io.PrintWriter pw) {
         pw.println();
-        for (int i = 0; i < instrs.length; i++) {
-            if (instrs[i] instanceof InstrLABEL) {
-                pw.println(instrs[i]);
+        for (int i = 0; i < instrs.size(); i++) {
+            if (instrs.get(i) instanceof InstrLABEL) {
+                pw.println(instrs.get(i));
             } else {
-                pw.println("\t"+instrs[i]);
+                pw.println("\t"+instrs.get(i));
             }
         }
     }
