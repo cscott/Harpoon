@@ -19,6 +19,9 @@
 # ifndef GC_PRIVATE_H
 # define GC_PRIVATE_H
 
+/* use real-time clock, not user time (which is only accurate to 10ms) */
+#define REAL_TIME
+
 #if defined(mips) && defined(SYSTYPE_BSD) && defined(sony_news)
     /* sony RISC NEWS, NEWSOS 4 */
 #   define BSD_TIME
@@ -30,10 +33,15 @@
 #   define BSD_TIME
 #endif
 
+#if defined(linux) || defined(__linux__)
+#   define BSD_TIME
+#endif
+
 #ifdef BSD_TIME
 #   include <sys/types.h>
 #   include <sys/time.h>
 #   include <sys/resource.h>
+#   include <unistd.h>
 #endif /* BSD_TIME */
 
 # ifndef GC_H
@@ -140,6 +148,7 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 		    /* whether or not the block was found to be empty      */
 		    /* during the reclaim phase.  Typically generates       */
 		    /* about one screenful per garbage collection.         */
+/*#undef PRINTSTATS*/
 #undef PRINTBLOCKS
 
 #ifdef SILENT
@@ -275,9 +284,13 @@ void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
 #   undef GET_TIME
 #   undef MS_TIME_DIFF
 #   define CLOCK_TYPE struct timeval
+#ifdef REAL_TIME
+#   define GET_TIME(x) gettimeofday(&(x), NULL)
+#else /* user time */
 #   define GET_TIME(x) { struct rusage rusage; \
 			 getrusage (RUSAGE_SELF,  &rusage); \
 			 x = rusage.ru_utime; }
+#endif
 #   define MS_TIME_DIFF(a,b) ((double) (a.tv_sec - b.tv_sec) * 1000.0 \
                                + (double) (a.tv_usec - b.tv_usec) / 1000.0)
 #else /* !BSD_TIME */

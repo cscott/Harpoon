@@ -1504,7 +1504,7 @@
 # if defined(PCR) || defined(SRC_M3) || \
 	defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || \
 	defined(IRIX_THREADS) || defined(LINUX_THREADS) || \
-        defined(USER_THREADS) \
+        defined(USER_THREADS) || \
 	defined(HPUX_THREADS)
 #   define THREADS
 # endif
