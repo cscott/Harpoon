@@ -12,7 +12,7 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.1.2.7 2000-01-17 10:05:18 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.1.2.8 2000-01-17 10:59:08 cananian Exp $
  */
 public class WorkSet extends java.util.AbstractSet implements Worklist{
     private /*final*/ HashMap hm;
@@ -98,7 +98,9 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	return o;
     }
 
-    /** Returns the last element in the WorkSet, in constant-time. */
+    /** Looks at the object as the top of this <code>WorkSet</code>
+     *  (treating it as a <code>Stack</code>) without removing it
+     *  from the set/stack. */
     public Object peek() { return getLast(); }
 
     /** Removes some item from this and return it (Worklist adaptor
@@ -113,12 +115,15 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
     */
     public Object pull() { return removeLast(); }
 
-    /** Return and remove the last element in the WorkSet.
-     * @deprecated Use pull(), removeFirst(), or removeLast(). */
+    /** Removes the item at the top of this <code>WorkSet</code>
+     *  (treating it as a <code>Stack</code>) and returns that object
+     *  as the value of this function. */
     public Object pop() { return removeLast(); }
 
-    /** Pushes item onto this if it is not already there (Worklist
-	adapter method). 
+    /** Pushes item onto the top of this <code>WorkSet</code> (treating
+     *  it as a <code>Stack</code>), if it is not already there.
+     *  If the <code>item</code> is already in the set/on the stack,
+     *  then this method does nothing.
 	<BR> <B>modifies:</B> <code>this</code>
 	<BR> <B>effects:</B> If <code>item</code> is not already an
 	                     element of <code>this</code>, adds
