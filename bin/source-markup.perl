@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # Source-markup.perl --- (c) 1999 C. Scott Ananian
 # Licensed under the terms of the GNU GPL; see COPYING for details.
-# $Id: source-markup.perl,v 1.1.2.11 1999-09-24 06:22:01 cananian Exp $
+# $Id: source-markup.perl,v 1.1.2.12 1999-09-27 05:25:59 cananian Exp $
 
 use English;
 use Getopt::Std;
@@ -188,7 +188,7 @@ if (!$opt_c) {
 		$laststr=$annstr; $color=!$color;
 	    }
 	    my $colorstr=$color?"darkorange":"darkorchid";
-	    my $annstr="<FONT COLOR=$colorstr>$annstr</FONT>";
+	    $annstr="<FONT COLOR=$colorstr>$annstr</FONT>";
 	    # link to log browser
 	    my $diffurl = $u[$i];
 	    my $logurl = $diffurl; $logurl=~s/.diff.*?$/"#rev".$r[$i]/e;
