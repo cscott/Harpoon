@@ -217,15 +217,25 @@ public static void main(String args[]) {
     //participants.checkNoCalltoolsInTool(); System.out.println("\n");
     participants.setCorrect();
 
-    /*
-    System.out.println("Participants TOOL:   "+participants.numberParticipants("tool"));
-    System.out.println("Participants NOTOOL:   "+participants.numberParticipants("notool"));
-    System.out.println("\n");
-    */
-
-    participants.printPopulation("tool"); System.out.println("\n");
+    //participants.printPopulation("tool"); System.out.println("\n");
     
+    printStatistics();
+    	
+    participants.setExperience();
+    participants.sortByExperience();    
 
+    //printParticipants();
+
+    //printCorrectnessVsExperience();
+    //printTimeVsExperience(4);
+
+    participants.setLocalized();
+    printLocalizedVsExperience(3);
+}
+
+
+public static void printStatistics()
+{
     int noTotal, noCorrect, percentage;
     long totalTime, avTime;
     for (int prg=1; prg<=4; prg++) {	   
@@ -237,12 +247,12 @@ public static void main(String args[]) {
 	System.out.println("Correct solutions:"); 
 
 	noTotal = participants.numberRounds("tool", prg);
-	noCorrect = participants.numberCorrect("tool", prg);
+	noCorrect = participants.numberCorrectRounds("tool", prg);
 	percentage = (100*noCorrect)/noTotal;
 	System.out.println("   TOOL:   "+noCorrect+"/"+noTotal+" ("+percentage+"%)");
 	
 	noTotal = participants.numberRounds("notool", prg);
-	noCorrect = participants.numberCorrect("notool", prg);
+	noCorrect = participants.numberCorrectRounds("notool", prg);
 	percentage = (100*noCorrect)/noTotal;
 	System.out.println("   NOTOOL: "+noCorrect+"/"+noTotal+" ("+percentage+"%)");
 	
@@ -258,34 +268,87 @@ public static void main(String args[]) {
 	avTime = totalTime/noTotal;
 	System.out.println("   NOTOOL: "+printTime(avTime));
 
-	if (prg !=4)
-	    System.out.println("\n");
+	System.out.println("\n");
     }
-	
-    
-    /*
+}
+
+
+
+public static void printParticipants() {
     Iterator it = participants.iterator();
     while (it.hasNext()) {
-	Participant p = (Participant) it.next();
+	Participant p = (Participant) it.next();	
 	System.out.println("User name: "+p.getUserName()+" ("+p.getPopulation()+")");
-	System.out.println("Total time: "+printTime(p.getTotalTime())+"\n");
+	System.out.println("Experience: "+p.getExperience());
+	System.out.println("Correct solutions: "+p.numberCorrectRounds());
+	System.out.println("Total time: "+printTime(p.getTotalTime(true))+"\n");
     }	
-    */
-    
-    /*
-    Participant p = participants.getParticipant("daipeng");
-    System.out.println(p);
-    p.printRounds();
-    */
-
-    /*
-    Round r1 = p.getRound(1);
-    System.out.println("p1 - Start time: "+r1.getStartTime());
-    System.out.println("p1 - End time: "+r1.getEndTime());
-    System.out.println("p1 - Total time: "+r1.getTotalTime());
-    */
-    
-    
 }
+
+
+public static void printCorrectnessVsExperience() {
+    // Tool
+    Iterator it = participants.iterator();
+    while (it.hasNext()) {
+	Participant p = (Participant) it.next();	
+	if (p.getPopulation().equals("tool"))
+	    System.out.println(p.getExperience()+" "+p.numberCorrectRounds());
+    }
+    
+    // NoTool
+    System.out.println();
+    it = participants.iterator();
+    while (it.hasNext()) {
+	Participant p = (Participant) it.next();	
+	if (p.getPopulation().equals("notool"))
+	    System.out.println(p.getExperience()+" "+p.numberCorrectRounds());
+    }
+}
+
+
+public static void printTimeVsExperience(int program) {
+    // Tool
+    Iterator it = participants.iterator();
+    while (it.hasNext()) {
+	Participant p = (Participant) it.next();	
+	if (p.getPopulation().equals("tool"))
+	    System.out.println(p.getExperience()+" "+p.getTotalTime(program, false));
+    }
+    
+    // NoTool
+    System.out.println();
+    it = participants.iterator();
+    while (it.hasNext()) {
+	Participant p = (Participant) it.next();	
+	if (p.getPopulation().equals("notool"))
+	    System.out.println(p.getExperience()+" "+p.getTotalTime(program, false));
+    }
+}
+
+
+public static void printLocalizedVsExperience(int program) {
+    // Tool
+    Iterator it = participants.iterator();
+    while (it.hasNext()) {
+	Participant p = (Participant) it.next();	
+	if (p.getPopulation().equals("tool"))
+	    if (p.getLocalized(program, false)>0)
+		System.out.println(p.getExperience()+" "+60*p.getLocalized(program, false));
+	    else System.out.println(p.getExperience()+" "+p.getLocalized(program, false));
+    }
+    
+    // NoTool
+    System.out.println();
+    it = participants.iterator();
+    while (it.hasNext()) {
+	Participant p = (Participant) it.next();	
+	if (p.getPopulation().equals("notool"))
+	    if (p.getLocalized(program, false)>0)
+		System.out.println(p.getExperience()+" "+60*p.getLocalized(program, false));
+	    else System.out.println(p.getExperience()+" "+p.getLocalized(program, false));
+    }
+}
+
+
 
 }

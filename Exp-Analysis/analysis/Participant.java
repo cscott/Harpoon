@@ -9,11 +9,13 @@ import java.util.*;
 import java.io.*;
 
 
-public class Participant {
+public class Participant implements Comparable{
 
     private String userName; // the participant's user (identifies the participant)
     private String name;  // the participant's name (might be missing in some cases)
     private String population; // "tool" or "notool"
+    
+    private double experience; // the participant's level of experience
 
 
     private ArrayList rounds;  // the rounds in which this participant participated (usually four)
@@ -61,6 +63,10 @@ public class Participant {
 	return population;
     }
 
+    public double getExperience() {
+	return experience;
+    }
+
     public int getNumberOfRounds() {
 	return rounds.size();
     }
@@ -104,7 +110,7 @@ public class Participant {
 		t += r.getTotalTime(only_correct);
 	}
 
-	return t; // not found
+	return t; 
     }
 
 
@@ -117,7 +123,21 @@ public class Participant {
 		t += r.getTotalTime(only_correct);
 	}
 
-	return t; // not found
+	return t; 
+    }
+
+
+    // if only_correct is true, then we ignore the incorrect solutions
+    public long getLocalized(int program, boolean only_correct) {
+	long t = 0;
+	Iterator it = rounds.iterator();
+	while (it.hasNext()) {
+	    Round r = (Round) it.next();
+	    if (r.getProgram() == program)
+		t += r.getLocalized(only_correct);
+	}
+
+	return t; 
     }
 
 
@@ -149,12 +169,12 @@ public class Participant {
 
 
 
-    public int numberCorrect(String population, int program) {
+    public int numberCorrectRounds() {
 	int n = 0;
 	Iterator it = rounds.iterator();
 	while (it.hasNext()) {
 	    Round r = (Round) it.next();
-	    if ((r.getPopulation().equals(population)) && ((r.getProgram() == program)) && (r.correct()))
+	    if (r.correct())
 		n++;
 	}
 
@@ -176,6 +196,9 @@ public class Participant {
 	this.population = population;
     }
 
+    public void setExperience(double experience) {
+	this.experience = experience;
+    }
 
 
     public void fixSubmissions() {
@@ -241,4 +264,17 @@ public class Participant {
 	}	
     }
 
+
+    public int compareTo(Object o) {
+	if (o.equals(this))
+	    return 0;
+
+	if (this.getExperience() < ((Participant) o).getExperience())
+	    return 1;
+	else 
+	    if (this.getExperience() > ((Participant) o).getExperience())
+		return -1;
+	    else 
+		return this.getUserName().compareTo(((Participant) o).getUserName());    
+    }
 }
