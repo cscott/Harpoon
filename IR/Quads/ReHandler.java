@@ -28,7 +28,7 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.7 1999-08-11 22:25:24 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.8 1999-08-12 08:02:12 bdemsky Exp $
  */
 final class ReHandler {
     // entry point.
@@ -98,11 +98,12 @@ final class ReHandler {
 			while (ksit.hasNext()) {
 			    Temp t=(Temp)ksit.next();
 			    dst[count]=Quad.map(ss.ctm, t);
-			    src[count][1]=Quad.map(ss.ctm, t);
 			    src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
+			    src[count][1]=Quad.map(ss.ctm, t);
 			    count++;
 			}
 			Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
+			phiset.add(phi);
 			Quad.addEdge(qm.getFoot(call),0, phi, 0);
 			Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
 				     qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
@@ -123,11 +124,12 @@ final class ReHandler {
 			    while (ksit.hasNext()) {
 				Temp t=(Temp)ksit.next();
 				dst[count]=Quad.map(ss.ctm, t);
+				src[count][0]=Quad.map(ss.ctm,(Temp)phimap.get(t));
 				src[count][1]=Quad.map(ss.ctm, t);
-				src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
 				count++;
 			    }
 			    Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
+			    phiset.add(phi);
 			    Quad.addEdge(newhandler,0, phi, 0);
 			    Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
 					 qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
@@ -148,7 +150,7 @@ final class ReHandler {
 			if (needhand) {
 			    Quad newhandler = new HANDLER(qf, qm.getHead(call), 
 							  Quad.map(ss.ctm, call.retex()),
-							  null, protlist);
+							  nexth.hclass(), protlist);
 			    ss.al.add(newhandler);
 			    Map phimap=nexth.map();
 			    Temp[] dst=new Temp[phimap.size()];
@@ -158,11 +160,12 @@ final class ReHandler {
 			    while (ksit.hasNext()) {
 				Temp t=(Temp)ksit.next();
 				dst[count]=Quad.map(ss.ctm, t);
-				src[count][1]=Quad.map(ss.ctm, t);
 				src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
+				src[count][1]=Quad.map(ss.ctm, t);
 				count++;
 			    }
 			    Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
+			    phiset.add(phi);
 			    Quad.addEdge(newhandler,0, phi, 0);
 			    Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
 					 qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
@@ -343,6 +346,8 @@ final class ReHandler {
 	UseDef ud;
 	boolean reset;
 	HashMap phimap;
+	HashMap oldphimap;
+	boolean oldflag;
 	Quad last;
 	boolean flag;
 
@@ -357,6 +362,8 @@ final class ReHandler {
 	    this.reset=true;
 	    this.phimap=new HashMap();
 	    this.last=null;
+	    this.oldphimap=null;
+	    this.oldflag=false;
 	}
 
 	private Temp remap(Temp orig) {
@@ -370,10 +377,13 @@ final class ReHandler {
 	    phimap=new HashMap();
 	    last=null;
 	    reset=true;
+	    oldphimap=null;
+	    oldflag=false;
 	}
 
 	private void standard(Quad q) {
 	    last=q;
+	    oldflag=false;
 	    flag=true;
 	}
 
@@ -383,7 +393,10 @@ final class ReHandler {
 
 	private void weird(Quad q) {
 	    if (anyhandler!=null) {
-	        handlermap.add(callquad, new HandInfo(true, anyhandler, anyedge, new HashMap(phimap)));
+		if (oldflag)
+		    handlermap.add(callquad, new HandInfo(true, anyhandler, anyedge, new HashMap(oldphimap)));
+		else
+		    handlermap.add(callquad, new HandInfo(true, anyhandler, anyedge, new HashMap(phimap)));
 		anyhandler=null;
 		anyedge=0;
 	    }
@@ -419,11 +432,13 @@ final class ReHandler {
 	public void visit(PHI q) {
 	    Util.assert(last!=null);
 	    int ent=last.nextEdge(0).which_succ();
+	    oldphimap=new HashMap(phimap);
 	    for (int i=0;i<q.numPhis();i++) {
 		phimap.put(q.dst(i),remap(q.src(i,ent)));
 		phimap.remove(q.src(i,ent));
 	    }
 	    standard(q);
+	    oldflag=true;
 	}
 
 	public void visit(OPER q) {
@@ -493,6 +508,7 @@ final class ReHandler {
 			anyhandler=q.next(0);
 			anyedge=q.nextEdge(0).which_pred();
 		    }
+		    oldflag=false;
 		} else weird(q);
 	}
     }
