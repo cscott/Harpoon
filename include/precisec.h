@@ -5,9 +5,10 @@
 
 typedef void * jptr;
 
+/* select which calling convention you'd like to use in the generated code */
 #define USE_PAIR_RETURN
 
-#ifdef USE_PAIR_RETURN
+#ifdef USE_PAIR_RETURN /* ----------------------------------------------- */
 #define FIRST_DECL_ARG(x)
 #define DECLAREFUNC(rettype, funcname, args, segment) \
 rettype ## _and_ex funcname args __attribute__ ((section (segment)))
@@ -60,6 +61,6 @@ typedef struct {
   void *ex;
   jptr value;
 } jptr_and_ex;
-#endif
+#endif /* USE_PAIR_RETURN ----------------------------------------- */
 
 #endif /* INCLUDED_PRECISEC_H */
