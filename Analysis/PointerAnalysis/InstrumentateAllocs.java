@@ -30,7 +30,7 @@ import java.util.Map;
  * <code>InstrumentateAllocs</code>
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentateAllocs.java,v 1.1.2.3 2000-11-08 14:51:37 bdemsky Exp $
+ * @version $Id: InstrumentateAllocs.java,v 1.1.2.4 2000-11-08 16:38:13 bdemsky Exp $
  */
 public class InstrumentateAllocs extends MethodMutator implements java.io.Serializable {
     HashMap toint;
@@ -38,10 +38,12 @@ public class InstrumentateAllocs extends MethodMutator implements java.io.Serial
     int count;
     HMethod main;
     Linker linker;
-
+    HCodeFactory parenthcf;
+    
     /** Creates a <code>InstrumentateAllocs</code>. */
     public InstrumentateAllocs(HCodeFactory parent, HMethod main, Linker linker) {
         super(parent);
+	parenthcf=parent;
 	toint=new HashMap();
 	toalloc=new HashMap();
 	count=0;
@@ -60,6 +62,10 @@ public class InstrumentateAllocs extends MethodMutator implements java.io.Serial
 
     public Map toalloc() {
 	return toalloc;
+    }
+
+    public HCodeFactory parent() {
+	return parenthcf;
     }
 
     protected HCode mutateHCode(HCodeAndMaps input) {
