@@ -91,6 +91,11 @@ lctes03-talk.dvi lctes03-talk-notes.tex lctes03-talk-adobe.tex:	\
 	 Figures/Images/model-t-black.eps	\
 	 Figures/Images/model-t-redblue.eps	\
 
+# pldi04 paper dependencies
+pldi04.dvi: \
+	Figures/nb-single-obj.eps Figures/nb-multi-obj.eps \
+	Figures/chuang.eps Figures/funarr.eps
+
 # thesis figure dependencies
 export THESIS_FIGURES=\
 	Figures/THundir.fig \

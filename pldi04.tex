@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.5 2003-11-09 21:03:31 cananian Exp $
+% $Id: pldi04.tex,v 1.6 2003-11-09 21:23:43 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 \usepackage{times}
@@ -9,8 +9,11 @@
 \usepackage{multirow}
 \usepackage{hhline}
 \usepackage{dcolumn}
+
+\usepackage{amstext}
 \usepackage{varioref} % \vref command
 \usepackage{support}
+\usepackage{xspace}
 
 % work around fig2dev wanting to add colors to .figures.
 \providecommand{\color}[2][rgb]{}
@@ -54,6 +57,15 @@ Cambridge, MA 02139 \\
 %%   large objects?
 %% ---------
 %% concurrent updates?  we support concurrent *reads*.
+
+
+%%% macros for this paper
+\newcommand{\atomic}{\texttt{atomic}\xspace}
+\newcommand{\funcname}[1]{\ensuremath{\text{\sc #1}}}
+\newcommand{\var}[1]{\ensuremath{\text{\it #1}}}
+\newcommand{\fref}[2]{\ensuremath{#1\text{\tt .#2}}}
+\newcommand{\addr}[1]{\ensuremath{\text{\tt \&}(#1)}}
+\newcommand{\tuple}[1]{\ensuremath{\left\langle #1 \right\rangle}}
 
 
 %\renewcommand{\baselinestretch}{0.97}
@@ -467,23 +479,23 @@ $O(\lg n)$ worst-case access or update.
 For concreteness, functional arrays have the following three
 operations defined:
 \begin{itemize}
-\item $\func{FA-Create}(n)$: Return an array of size $n$.  The contents of
+\item $\funcname{FA-Create}(n)$: Return an array of size $n$.  The contents of
   the array are initialized to zero.
-\item $\func{FA-Update}(A_j, i, v)$: Return an array $A_{j'}$ which is
+\item $\funcname{FA-Update}(A_j, i, v)$: Return an array $A_{j'}$ which is
   functionally identical to array $A_j$ except that $A_{j'}(i)=v$.
   Array $A_j$ is not destroyed and can be accessed further.
-\item $\func{FA-Read}(A_j, i)$: Return $A_j(i)$.
+\item $\funcname{FA-Read}(A_j, i)$: Return $A_j(i)$.
 \end{itemize}
 We allow any of these operations to \emph{fail}.  Failed operations
 can be safely retried, as all operations are idempotent by definition.
 
 For the moment, consider the following na{\"\i}ve implementation:
 \begin{itemize}
-\item $\func{FA-Create}(n)$: Return an ordinary imperative array of size
+\item $\funcname{FA-Create}(n)$: Return an ordinary imperative array of size
   $n$.
-\item $\func{FA-Update}(A_j, i, v)$: Create a new imperative array
+\item $\funcname{FA-Update}(A_j, i, v)$: Create a new imperative array
   $A_{j'}$ and copy the contents of $A_j$ to $A_{j'}$.  Return $A_{j'}$.
-\item $\func{FA-Read}(A_j, i)$: Return $A_j[i]$.
+\item $\funcname{FA-Read}(A_j, i)$: Return $A_j[i]$.
 \end{itemize}
 This implementation has $O(1)$ read and $O(n)$ update, so it matches
 the performance of imperative arrays only when $n=O(1)$.  We will
@@ -494,7 +506,7 @@ never mutated after they are created.
 
 \subsection{A single-object protocol}
 \begin{figure}\centering
-\includegraphics[width=3.25in,clip=true]{single-o.eps}
+\includegraphics[width=3.25in,clip=true]{Figures/nb-single-obj.eps}
 \caption{Implementing non-blocking single-object concurrent operations
   with functional arrays.}
 \label{fig:single-o}
@@ -506,12 +518,12 @@ during the execution of the atomic method.
 
 We will consider the following two operations on objects:
 \begin{itemize}
-\item $\func{Read}(o, f)$: Read field $f$ of $o$.  We will assume that
+\item $\funcname{Read}(o, f)$: Read field $f$ of $o$.  We will assume that
   there is a constant mapping function which given a field name
   returns an integer index.  We will write the result of mapping $f$
   as \fref{f}{index}.  For simplicity, and without loss of generality,
   we will assume all fields are of equal size.
-\item $\func{Write}(o, f, v)$: Write value $v$ to field $f$ of $o$.
+\item $\funcname{Write}(o, f, v)$: Write value $v$ to field $f$ of $o$.
 \end{itemize}
 All other operations on Java objects, such as method dispatch and type
 interrogation, can be performed using the immutable {\tt type}
@@ -526,10 +538,10 @@ method, object reads and writes are implemented using the
 corresponding functional array operation, with the array reference in
 the object being updated appropriately:
 \begin{itemize}
-\item $\func{Read}(o, f)$:
-  Return $\func{FA-Read}(\fref{o}{fields}, \fref{f}{index})$.
-\item $\func{Write}(o, f, v)$: Replace \fref{o}{fields} with the
-  result of $\func{FA-Update}(\fref{o}{fields}, \fref{f}{index}, v)$.
+\item $\funcname{Read}(o, f)$:
+  Return $\funcname{FA-Read}(\fref{o}{fields}, \fref{f}{index})$.
+\item $\funcname{Write}(o, f, v)$: Replace \fref{o}{fields} with the
+  result of $\funcname{FA-Update}(\fref{o}{fields}, \fref{f}{index}, v)$.
 \end{itemize}
 
 The interesting cases are reads and writes inside an atomic method.
@@ -538,11 +550,11 @@ store \fref{o}{fields} in a local variable $u$.  We create another
 local variable $u'$ which we initialize to $u$.  Then our read and
 write operations are implemented as:
 \begin{itemize}
-\item $\func{ReadAtomic}(o, f)$:
-  Return $\func{FA-Read}(u', \fref{f}{index})$.
-\item $\func{WriteAtomic}(o, f, v)$:
+\item $\funcname{ReadAtomic}(o, f)$:
+  Return $\funcname{FA-Read}(u', \fref{f}{index})$.
+\item $\funcname{WriteAtomic}(o, f, v)$:
   Update variable $u'$ to the result of
-  $\func{FA-Update}(u', \fref{f}{index}, v)$.
+  $\funcname{FA-Update}(u', \fref{f}{index}, v)$.
 \end{itemize}
 
 At the end of the atomic method, we use Compare-And-Swap to atomically
@@ -550,7 +562,7 @@ set \fref{o}{fields} to $u'$ iff it contained $u$.  If the CAS fails,
 we back-off and retry.
 
 With our na{\"\i}ve ``small object'' functional arrays, this implementation is
-exactly the ``small object protocol'' of Herlihy \cite{161469}.
+exactly the ``small object protocol'' of Herlihy \cite{Herlihy93}.
 Herlihy's protocol is rightly criticized for an excessive amount of
 copying.  We will address this with a better implementation of
 functional arrays in Section~\ref{sec:large-obj}.
@@ -559,7 +571,7 @@ may be referenced within an atomic method is overly limiting.
 
 \subsection{Extension to multiple objects}
 \begin{figure}[t]\centering
-\includegraphics[width=3.25in,clip=true]{multi-o.eps}
+\includegraphics[width=3.25in,clip=true]{Figures/nb-multi-obj.eps}
 \caption{Data structures to support non-blocking multi-object
   concurrent operations.  Objects point to a linked list of versions,
   which reference operation identifiers.  Versions created within the
@@ -574,7 +586,7 @@ may be referenced within an atomic method is overly limiting.
 \renewcommand{\>}{~~}
 \newcommand{\com}[1]{\hfill [{\sl #1}]}
 \begin{tabular}{l}
-$\func{Read}(o, f)$:\\
+$\funcname{Read}(o, f)$:\\
 begin\\
 retry:\\
 \>$u \gets \fref{o}{versions}$ \\
@@ -588,14 +600,14 @@ retry:\\
 \>\>$\fref{u}{next} \gets \text{\bf null}$ \com{Trim version list}\\
 \>else\\
 \>\>$a \gets \fref{u'}{fields}$ \com{$u'$ is COMPLETE}\\
-\>return $\func{FA-Read}(a, \fref{f}{index})$ \com{Do the read}\\
+\>return $\funcname{FA-Read}(a, \fref{f}{index})$ \com{Do the read}\\
 end\\
 \\
-$\func{ReadAtomic}(o, f)$:\\
+$\funcname{ReadAtomic}(o, f)$:\\
 begin\\
 \>$u \gets \fref{o}{versions}$\\
 \>if ($\var{oid} = \fref{u}{owner}$) \com{My OID should be first}\\
-\>\>return $\func{FA-Read}(\fref{u}{fields}, \fref{f}{index})$
+\>\>return $\funcname{FA-Read}(\fref{u}{fields}, \fref{f}{index})$
 \com{Do the read}\\
 \>else \com{Make me first!}\\
 \>\>$u' \gets \fref{u}{next}$\\
@@ -616,7 +628,7 @@ begin\\
 \>\>goto retry\\
 end\\
 \end{tabular}
-\caption{\func{Read} and \func{ReadAtomic} implementations for the
+\caption{\funcname{Read} and \funcname{ReadAtomic} implementations for the
   multi-object protocol.}\label{fig:reads}
 \end{figure}
 
@@ -624,7 +636,7 @@ end\\
 \renewcommand{\>}{~~}
 \newcommand{\com}[1]{\hfill [{\sl #1}]}
 \begin{tabular}{l}
-$\func{Write}(o, f, v)$:\\
+$\funcname{Write}(o, f, v)$:\\
 begin\\
 retry:\\
 \>$u  \gets \fref{o}{versions}$\\
@@ -637,18 +649,18 @@ retry:\\
 \>else \com{$u$ is COMPLETE}\\
 \>\>$\fref{u}{next} \gets \text{\bf null}$ \com{Trim version list}\\
 \>\>$a \gets \fref{u}{fields}$\\
-\>\>$a' \gets \func{FA-Update}(a, \fref{f}{index}, v)$\\
+\>\>$a' \gets \funcname{FA-Update}(a, \fref{f}{index}, v)$\\
 \>\>if (CAS$(a, a', \addr{\fref{u}{fields}}) \neq \text{\sl FAIL}$)
 \com{Do the write}\\
 \>\>\>return \com{Success!}\\
 \>goto retry\\
 end\\
 \\
-$\func{WriteAtomic}(o, f, v)$:\\
+$\funcname{WriteAtomic}(o, f, v)$:\\
 begin\\
 \>$u  \gets \fref{o}{versions}$\\
 \>if ($oid = \fref{u}{owner}$) \com{My OID should be first}\\
-\>\>$\fref{u}{fields} \gets \func{FA-Update}(\fref{u}{fields}, \fref{f}{index}, v)$\com{Do write}\\
+\>\>$\fref{u}{fields} \gets \funcname{FA-Update}(\fref{u}{fields}, \fref{f}{index}, v)$\com{Do write}\\
 \>else \com{Make me first!}\\
 \>\>$u' \gets \fref{u}{next}$\\
 \>\>$s  \gets \fref{\fref{u}{owner}}{status}$\\
@@ -668,7 +680,7 @@ begin\\
 \>\>goto retry\\
 end\\
 \end{tabular}
-\caption{\func{Write} and \func{WriteAtomic} implementations for the
+\caption{\funcname{Write} and \funcname{WriteAtomic} implementations for the
   multi-object protocol.}\label{fig:writes}
 \end{figure}
 
@@ -729,31 +741,31 @@ the writes occur in the reverse order ({\sl COMPLETE} to
 {\tt owner.status}, then {\bf null} to {\tt next}) we have ensured that
 our {\tt next} pointer is valid whenever the status is not {\sl COMPLETE}.
 
-We begin an atomic method with \func{AtomicEntry} and attempt to
-complete an atomic method with \func{AtomicExit}.  They are defined as
+We begin an atomic method with \funcname{AtomicEntry} and attempt to
+complete an atomic method with \funcname{AtomicExit}.  They are defined as
 follows:
 \begin{itemize}
-\item $\func{AtomicEntry}$: create a new operation identifier, with
+\item $\funcname{AtomicEntry}$: create a new operation identifier, with
   its status initialized to {\sl IN-PROGRESS}.  Assign it to the
   thread-local variable \var{oid}.
-\item $\func{AtomicExit}$:
+\item $\funcname{AtomicExit}$:
   If
  $$\text{CAS}(\text{\sl IN-PROGRESS}, \text{\sl COMPLETE},
              \addr{\fref{\var{oid}}{status}})$$
   is successful, the atomic method as a whole has completed successfully,
   and can be linearized at the location of the CAS.
   Otherwise, the method has failed.  Back-off and retry from
-  \func{AtomicEntry}.
+  \funcname{AtomicEntry}.
 \end{itemize}
-Pseudo-code describing \func{Read}, \func{Write}, \func{AtomicRead},
-and \func{AtomicWrite} is presented in Figures~\ref{fig:reads} and
+Pseudo-code describing \funcname{Read}, \funcname{Write}, \funcname{AtomicRead},
+and \funcname{AtomicWrite} is presented in Figures~\ref{fig:reads} and
 \ref{fig:writes}.  In the absence of contention, all operations take
-constant time plus an invocation of \func{FA-Read} or
-\func{FA-Update}.
+constant time plus an invocation of \funcname{FA-Read} or
+\funcname{FA-Update}.
 
 \subsection{Lock-free functional arrays}\label{sec:large-obj}
 \begin{figure*}\centering
-\includegraphics[width=7in,clip=true]{chuang.eps}
+\includegraphics[width=7in,clip=true]{Figures/chuang.eps}
 \caption{Shallow binding scheme for functional arrays, from
   \cite[Figure~1]{156779}.}
 \label{fig:chuang}
@@ -836,12 +848,12 @@ $O(n)$ time, so we amortize it over $n$ operations by randomly
 choosing to perform a cut with probability $1/n$.
 
 \begin{figure*}\centering
-\includegraphics[width=7in,clip=true]{funarr.eps}
-\caption{Atomic steps in $\func{FA-Rotate}(B)$.  Time proceeds top-to-bottom
+\includegraphics[width=7in,clip=true]{Figures/funarr.eps}
+\caption{Atomic steps in $\funcname{FA-Rotate}(B)$.  Time proceeds top-to-bottom
   on the left hand side, and then top-to-bottom on the right.
-  Array $A$ is a root node, and $\func{FA-Read}(A, x)=z$.
+  Array $A$ is a root node, and $\funcname{FA-Read}(A, x)=z$.
   Array $B$ has the almost the same contents as $A$, but
-  $\func{FA-Read}(B, x)=y$.}
+  $\funcname{FA-Read}(B, x)=y$.}
 \label{fig:funarr}
 \end{figure*}
 
@@ -849,14 +861,14 @@ choosing to perform a cut with probability $1/n$.
 \renewcommand{\>}{~~}
 \newcommand{\com}[1]{\hfill [{\sl #1}]}
 \begin{tabular}{l}
-$\func{FA-Update}(A, i, v)$:\\
+$\funcname{FA-Update}(A, i, v)$:\\
 begin\\
 \>$d \gets \text{new DiffNode}(i, v, A)$\\
 \>$A'\gets \text{new Array}(\fref{A}{size}, d)$\\
 \>return $A'$\\
 end\\
 \\
-$\func{FA-Read}(A, i)$:\\
+$\funcname{FA-Read}(A, i)$:\\
 begin\\
 retry:\\
 \>$d_C \gets \fref{A}{node}$\\
@@ -866,18 +878,18 @@ retry:\\
 \>\>\>goto retry\\
 \>\>return $v$\\
 \>else\\
-\>\>\func{FA-Rotate}(A)\\
+\>\>\funcname{FA-Rotate}(A)\\
 \>\>goto retry\\
 end\\
 \\
-$\func{FA-Rotate}(B)$:\\
+$\funcname{FA-Rotate}(B)$:\\
 begin\\
 retry:\\
 \>$d_B \gets \fref{B}{node}$\com{step (1): assign names as per Figure~\ref{fig:funarr}.}\\
 \>$A \gets \fref{d_B}{array}$\\
 \>$x \gets \fref{d_B}{index}$\\
 \>$y \gets \fref{d_B}{value}$\\
-\>$z \gets \func{FA-Read}(A, x)$\com{rotates A as side effect}\\
+\>$z \gets \funcname{FA-Read}(A, x)$\com{rotates A as side effect}\\
 \\
 \>$d_C \gets \fref{A}{node}$\\
 \>if $d_C$ is not a cache, then \\
@@ -946,18 +958,18 @@ Thus in step 6 we need to again use DCAS to simultaneously swing
 $\fref{C}{node}$ away 
 from the cache as we swing $\fref{B}{node}$ to point to the cache.
 
-Figure~\ref{fig:fun-impl} presents pseudocode for \func{FA-Rotate},
-\func{FA-Read}, and \func{FA-Update}.  Note that \func{FA-Read} also
+Figure~\ref{fig:fun-impl} presents pseudocode for \funcname{FA-Rotate},
+\funcname{FA-Read}, and \funcname{FA-Update}.  Note that \funcname{FA-Read} also
 uses the cache pointer as a reservation,
 double-checking the cache pointer after it finishes its read to ensure that the
 cache hasn't been stolen from it.
 
-Let us now consider cuts, where \func{FA-Read} clones the cache
+Let us now consider cuts, where \funcname{FA-Read} clones the cache
 instead of performing a rotation.   Cuts also check the cache pointer
 to protect against concurrent rotations.  But what if the cut occurs
 while a rotation is mutating the cache in step 5?  In this case the
 only array adjacent to the root is $B$, so the cut must be occurring
-during an invocation of $\func{FA-Rotate}(B)$.  But then the
+during an invocation of $\funcname{FA-Rotate}(B)$.  But then the
 differential node $d_B$ will be applied after the cache is copied,
 which will safely overwrite the mutation we were concerned about.
 
@@ -966,25 +978,23 @@ we could cheaply perform the entire rotation atomically, instead of
 using this six-step approach.
 
 
-\dontfixme{
-\subsection{Optimizations}
-Re-rooting is the most complicated part of the functional array
-algorithm.  It can be optimized in a number of ways.  For example,
+%% \subsection{Optimizations}
+%% Re-rooting is the most complicated part of the functional array
+%% algorithm.  It can be optimized in a number of ways.  For example,
 
-%unsync rotate for transaction-local data.
-The first is to recognize that some array versions can only be seen by
-a single thread.  In particular, when we are working on an {\sl
-  IN-PROGRESS} operation, all array versions which it creates are
-unreachable from other threads until the operation is committed.
-We can add a field {\tt creator} to the {\tt Array} object which records what
-operation created that version.  If the {\tt creator} field of both
-$A$ and $B$ contains our own \var{oid} when we begin a rotate, we know
-that these versions are both thread local
+%% %unsync rotate for transaction-local data.
+%% The first is to recognize that some array versions can only be seen by
+%% a single thread.  In particular, when we are working on an {\sl
+%%   IN-PROGRESS} operation, all array versions which it creates are
+%% unreachable from other threads until the operation is committed.
+%% We can add a field {\tt creator} to the {\tt Array} object which records what
+%% operation created that version.  If the {\tt creator} field of both
+%% $A$ and $B$ contains our own \var{oid} when we begin a rotate, we know
+%% that these versions are both thread local
 
-.. uh, no.  This doesn't work.
+%% .. uh, no.  This doesn't work.
 
-% scales method of tagging fields.
-}
+%% % scales method of tagging fields.
 
 \section{Experimental Results}
 
