@@ -28,7 +28,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.23 2000-01-09 06:48:45 duncan Exp $
+ * @version $Id: Tree.java,v 1.1.2.24 2000-01-11 18:34:15 pnkfelix Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -161,11 +161,16 @@ public abstract class Tree
     /** Return a list of subexpressions of this <code>Tree</code>. */
     public ExpList kids() { 
 	List list = new LinkedList(); 
+	HashSet seen = new HashSet();
 
 	for (Exp child = (Exp)this.getFirstChild(); 
 	     child != null; 
 	     child = (Exp)child.sibling) { 
+	    harpoon.Util.Util.assert(seen.add(child),
+				     "already seen "+child +
+				     " in " + this);
 	    list.add(child); 
+
 	}
 
 	return ExpList.toExpList(list); 

@@ -6,6 +6,9 @@ package harpoon.IR.Tree;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.LabelList;
+
+import harpoon.Util.Util;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -14,7 +17,7 @@ import java.io.StringWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.32 2000-01-10 05:08:41 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.33 2000-01-11 18:34:15 pnkfelix Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -55,7 +58,12 @@ public class Print {
 	StringWriter sw = new StringWriter();
 	PrintWriter pw = new PrintWriter(sw);
 	PrintVisitor pv = new PrintVisitor(pw, null);
-	t.accept(pv);
+	if (t!=null) {
+	    t.accept(pv);
+	} else {
+	    pw.print("null");
+	}
+	    
 	pw.flush();
 	return sw.toString();
     }
@@ -70,6 +78,8 @@ public class Print {
             indlevel = 1;
             this.pw = pw;
             this.tm = tm;
+
+	    // Util.assert(false, "Printing Trees is *slow*");
         }
 
         private void indent(int dist) {

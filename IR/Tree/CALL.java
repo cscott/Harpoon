@@ -29,7 +29,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.26 2000-01-09 06:48:45 duncan Exp $
+ * @version $Id: CALL.java,v 1.1.2.27 2000-01-11 18:34:15 pnkfelix Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -60,6 +60,9 @@ public class CALL extends INVOCATION {
 	this.setArgs(this.getArgs()); 
 	this.isTailCall = isTailCall;
 	if (retval == null) { this.nullRetval = new CONST(tf, null); } 
+	
+	//FSK: debugging hack
+	this.accept(TreeVerifyingVisitor.norepeats());
     }
 
     public Tree getFirstChild() { 

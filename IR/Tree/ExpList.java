@@ -6,6 +6,8 @@ package harpoon.IR.Tree;
 
 import harpoon.Temp.CloningTempMap;
 
+import harpoon.Util.UnmodifiableIterator;
+
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List; 
@@ -17,7 +19,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ExpList.java,v 1.1.2.12 2000-01-09 02:12:05 duncan Exp $
+ * @version $Id: ExpList.java,v 1.1.2.13 2000-01-11 18:34:15 pnkfelix Exp $
  */
 public final class ExpList {
     /** The expression at this list entry. */
@@ -41,6 +43,24 @@ public final class ExpList {
 	    }
 	}
 	return THIS; 
+    }
+
+    /** FSK: didn't use standard JDK instance-local iterators because 
+	ExpLists are allowed to be null, and so such a definition
+	would encourage attempted method-calls on null.
+    */
+    public static Iterator iterator(final ExpList el) {
+	return new UnmodifiableIterator() {
+	    ExpList curr = el;
+	    public boolean hasNext() {
+		return (curr != null);
+	    }
+	    public Object next() {
+		Object o = curr.head;
+		curr = curr.tail;
+		return o;
+	    }
+	};
     }
 
     public static ExpList replace(ExpList e, Exp eOld, Exp eNew) { 

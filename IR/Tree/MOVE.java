@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.18 2000-01-09 02:12:05 duncan Exp $
+ * @version $Id: MOVE.java,v 1.1.2.19 2000-01-11 18:34:15 pnkfelix Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** The expression giving the destination for the computed value. */
@@ -39,6 +39,7 @@ public class MOVE extends Stm implements Typed {
 	super(tf, source);
 	this.dst = dst; this.src = src; 
 	this.setDst(dst); this.setSrc(src); 
+	Util.assert(dst != src, "dst and src cannot be same");
 	Util.assert(dst!=null && src!=null, "Dest and Source cannot be null");
 	Util.assert(dst.type()==src.type(), 
 		    "Dest (type:"+Type.toString(dst.type()) + 
@@ -46,6 +47,9 @@ public class MOVE extends Stm implements Typed {
 		    ") must have same type");
 	Util.assert(dst.tf == src.tf, "Dest and Src must have same tree factory");
 	Util.assert(tf == src.tf, "This and Src must have same tree factory");
+
+	//FSK: debugging hack
+	this.accept(TreeVerifyingVisitor.norepeats());
     }
   
     public Tree getFirstChild() { return this.dst; } 
@@ -62,6 +66,7 @@ public class MOVE extends Stm implements Typed {
 	this.src = src; 
 	this.src.parent = this;
 	this.src.sibling = null;
+	this.dst.sibling = this.src;
     }
 
     protected Set defSet() { 

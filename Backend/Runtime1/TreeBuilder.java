@@ -56,7 +56,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.14 2000-01-11 00:44:23 pnkfelix Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.15 2000-01-11 18:34:14 pnkfelix Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -213,18 +213,16 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	    (comType==HClass.Byte || comType==HClass.Boolean) ? 1 :
 	    (comType==HClass.Char || comType==HClass.Short) ? 2 :
 	    WORD_SIZE;
-	return new Translation.Ex
-	   (new ESEQ
-	    (tf, source,
-	     new SEQ
-	     (tf, source,
-	      new SEQ
-	      (tf, source,
-	       new MOVE // save 'length' in Tlen.
-	       (tf, source,
-		new TEMP(tf, source, Type.INT, Tlen),
-		length.unEx(tf)),
-	       new MOVE // save result in Tarr
+
+
+	Exp lengthExp = length.unEx(tf);
+
+	
+	MOVE saveLengthInTlen =
+	    new MOVE(tf, source, 
+		     new TEMP(tf, source, Type.INT, Tlen), lengthExp);
+
+	MOVE saveResultInTarr =	new MOVE
 	       (tf, source,
 		new TEMP(tf, source, Type.POINTER, Tarr),
 		objAlloc // allocate array data
@@ -238,7 +236,15 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		   // ...element size...
 		   new CONST(tf, source, elementSize)),
 		  // and add WORD_SIZE for length field.
-		  new CONST(tf, source, WORD_SIZE))))),
+		  new CONST(tf, source, WORD_SIZE))));
+	    
+	return new Translation.Ex
+	   (new ESEQ
+	    (tf, source,
+	     new SEQ
+	     (tf, source,
+	      new SEQ
+	      (tf, source, saveLengthInTlen, saveResultInTarr),
 	      new MOVE // now set length field of newly-created array.
 	      (tf, source,
 	       new MEM
