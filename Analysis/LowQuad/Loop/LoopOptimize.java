@@ -30,7 +30,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.12 1999-07-07 01:27:31 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.13 1999-07-07 19:29:18 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -51,11 +51,12 @@ public final class LoopOptimize {
 	ud=new UseDef();
     }
 
+    /**<code>LoopOptimize</code> constructor.  Used internally by codeFactory.*/
     public LoopOptimize(LoopAnalysis lanal, TempMap ssitossamap) {
 	this(lanal,lanal,lanal,lanal, ssitossamap);
     }
 
-    /** Returns a code factory that uses LoopOptimize. */
+    /** Returns a <code>HCodeFactory</code> that uses <code>LoopOptimize</code>. */
     public static HCodeFactory codeFactory(final HCodeFactory parent) {
 	return new HCodeFactory() {
 	    public HCode convert(HMethod m) {
@@ -71,6 +72,13 @@ public final class LoopOptimize {
 	};
     }
 
+    /**<code>optimize</code> takes in a <code>HCode</code> and performs loop optimizations on it.
+     * Optimization currently work only on loops with one entrance.   Furthermore, optimizations
+     * currently only work on loops that the header node is a phi function of arity 2 [ie. natural
+     * loops.]  This function really needs code that is passed to it to have been run through 
+     * Deadcode.  Otherwise, it may make some very poor decisions on moving test conditions.
+     */
+
     public void optimize(final HCode hc) {
     
 	//Want defmap of temps in my invariants list, not new temps...
@@ -81,46 +89,84 @@ public final class LoopOptimize {
 
 
 	// actual traversal code.
+	// We start at the root loop, and recurse down each of its subloops.
 	Loops lp=loopanal.rootloop(hc);
 	WorkSet kids=(WorkSet) lp.nestedLoops();
 	Iterator iterate=kids.iterator();
 	while (iterate.hasNext())
 	    recursetree(hc, (Loops)iterate.next(), new WorkSet());
-	//      Put this in soon
+	
+	//After doing optimizations we need to clean up any deadcode...
+
 	DeadCode.optimize(hc);
     }
 
+    /** <code>recursetree</code> recurses down the nested loop tree.*/
     void recursetree(HCode hc, Loops lp, WorkSet usedinvariants) {
+	
+	//We only treat loops with one entrance currently.  We only recognize
+	//loops with one entrance, so this isn't a limitation.
 	if (lp.loopEntrances().size()==1) {
 	    Quad header=(Quad)(lp.loopEntrances()).toArray()[0];
 	    if (header.prev().length==2) {
+		//Hoist loop invariants.  The workset usedinvariants
+		//keeps track of invariants we have moved, so we don't try again.
+
 		doLoopinv(hc, lp,header, usedinvariants);
+
+		//Create empty workset to pass induction variables that were created in.
 		WorkSet newinds=new WorkSet();
+
+		//Create induction variables.  Header has to be updated since
+		//we most likely create new header nodes.
 		header=doLoopind(hc, lp,header, usedinvariants, newinds);
+		//Move loop test conditions from the original induction variable
+		//to new ones
 		doLooptest(hc, lp, header, newinds, usedinvariants);
 	    }
-	    else System.out.println("More than one entrance.");
+	    else System.out.println("Multiple back edges.");
 	} else
 	    System.out.println("Multiple or No  entrance loop in LoopOptimize!");
+
+	//Look for child loops.  If there are any, recurse to them.
+
 	WorkSet kids=(WorkSet) lp.nestedLoops();
 	Iterator iterate=kids.iterator();
 	while (iterate.hasNext())
 	    recursetree(hc, (Loops)iterate.next(),usedinvariants);
     }
 
+    /** <code>doLooptest</code> moves test conditions from original induction variables
+     * to new ones whenever possible.*/
+
     void doLooptest(HCode hc, Loops lp,Quad header, Set newinds, Set usedinvariants) {
+	//Create the set of loop elements
 	Set elements=lp.loopIncelements();
+
+	//Iterate through this set
 	Iterator iterate=elements.iterator();
+
+	//create sets of loop invariants and map of induction variables
+	//to pass to the visitor
 	Set loopinvars=invmap.invariantsMap(hc,lp);
 	Map allinductions=aimap.allInductionsMap(hc,lp);
 
 	TestVisitor visitor=new TestVisitor(newinds, loopinvars, allinductions, header, ssitossamap,hc, lp);
+
+	//visit the nodes
 	while (iterate.hasNext()) {
 	    Quad q=(Quad) iterate.next();
+
+	    //make sure that our node hasn't been used...
+	    //Isn't required [should be caught by the fact
+	    //that loop invariant nodes don't rely on induction variables.]
 	    if (!usedinvariants.contains(q))
 		q.visit(visitor);
 	}
     }
+
+
+    /**<code>TestVisitor</code> does all the magic for changing test conditions.*/
 
     class TestVisitor extends LowQuadVisitor {
 	Set inductvars;
@@ -132,6 +178,7 @@ public final class LoopOptimize {
 	Loops lp;
 	HCode hc;
 
+	//Create TestVisitor, and inform it of everything.
 	TestVisitor(Set newinductvars, Set loopinvars, Map allinductions, Quad header, TempMap ssitossamap, HCode hc, Loops lp) {
 	    this.newinductvars=newinductvars;
 	    this.loopinvars=loopinvars;
@@ -143,17 +190,21 @@ public final class LoopOptimize {
 	    this.lp=lp;
 	}
 
+	//Default method...do nothing
 	public void visit(Quad q) {/* Do nothing*/}
+
+	//POPER visitor
+	//Only look at ICMPEQ, and ICMPGT
 
 	public void visit(POPER q) {
 	    switch (q.opcode()) {
 	    case Qop.ICMPEQ:
 	    case Qop.ICMPGT:
-		System.out.println("visited:"+q.toString());
+		//look at the POPER
+		//return new POPER if we can do stuff
 		POPER replace=lookat(q);
 		if (replace!=null) {
-		    System.out.println("replacing with:"+replace.toString());
-		    System.out.println(q.prev().length);
+		    //Put the new POPER in its place
 		    Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), replace,0);
 		    Quad.addEdge(replace, 0, q.next(0), q.nextEdge(0).which_pred());
 		}
@@ -162,12 +213,18 @@ public final class LoopOptimize {
 	    }
 	}
 
+	/**<code>lookat</code> examines a test condition, to see how we should replace it.*/
 	POPER lookat(POPER q) {
 	    Temp[] operands=q.operands();
 	    Util.assert (operands.length==2);
 	    boolean good=true;
 	    int flag=-1;
 	    POPER newpoper=null;
+
+	    //Loop through the operands
+	    //we need one induction variable
+	    //and one loop invariant
+
 	    for (int i=0;i<operands.length;i++) {
 		if (inductvars.contains(ssitossamap.tempMap(operands[i]))) {
 		    if (flag==-1)
@@ -182,36 +239,43 @@ public final class LoopOptimize {
 			good=false;
 		}
 	    }
+
+
+	    //if we found these, look for possible replacement induction variables
 	    if (good&&(flag!=-1)) {
-		//good to go ahead
+		//get the Induction data type for the current induction variable
 		Induction induction=(Induction)allinductions.get(ssitossamap.tempMap(operands[flag]));
+		//Iterate through all of the newly created induction variables
+
 		Iterator iterate=newinductvars.iterator();
 		while (iterate.hasNext()) {
 		    Temp indvar=(Temp) iterate.next();
 		    Induction t=(Induction) allinductions.get(indvar);
-		    //policy for moving
+		    /*Policy for moving:
+		      1) Both have the same base induction variable.
+		      2) The new one isn't used to derive any other induction variables.
+		         Presumably it has a use for being around.
+		      3) If the original test was on a pointer, make sure any new pointer
+		         has the same stride.
+		    */
+
 		    if (t.variable!=induction.variable) 
 			continue;
-		    System.out.println("1");
 		    if (t.copied)
 			continue;    
-		    System.out.println("2");
 		    if ((induction.intmultiplier!=1)&&(induction.intmultiplier!=-1))
 			if ((t.intmultiplier!=induction.intmultiplier)&&(t.intmultiplier!=-induction.intmultiplier))
 			    continue;
-		    System.out.println("3");
 		    if (induction.objectsize!=null) {
 			if ((t.objectsize!=induction.objectsize)||(t.intmultiplier!=induction.intmultiplier))
 			    continue;
 		    }
 		    
-		    //Need to copy
-		    Temp initial=operands[1-flag];
+		    //Found something that passes the policy
 
-		    System.out.println("generating new compare");
-		    //method for moving
+		    Temp initial=operands[1-flag];
+		    //Call the method to build us a new compare
 		    newpoper=movecompare(header, initial, induction, indvar,t,q, flag, new LoopMap(hc,lp,ssitossamap));
-		    System.out.println(newpoper.toString());
      		    break;
 		}
 	    }
@@ -219,8 +283,11 @@ public final class LoopOptimize {
 	}
     }
 
-
+    /** <code>movecompare</code> builds a new compare statement.  The new compared statement uses
+     *	the derived induction variable t instead of the original induction.*/
     POPER movecompare(Quad header, Temp initial, Induction induction, Temp indvar, Induction t, POPER q, int flag, TempMap loopmap) {
+
+	//Set up pointers for linking in nodes for providing new test constant
 	Quad loopcaller=header.prev(0);
 	int which_succ=header.prevEdge(0).which_succ();
 	Quad successor=header;
@@ -612,7 +679,7 @@ public final class LoopOptimize {
 	Quad.addEdge(newquad, which_succ, successor, which_pred);
     }
     
-    /** initialTemp takes in a <code>Temp</code> t that needs to be a basic
+    /** <code>initialTemp</code> takes in a <code>Temp</code> t that needs to be a basic
      *  induction variable, and returns a <code>Temp</code> with its initial value. */
     
     Temp initialTemp(HCode hc, PHI q, Temp t, Set loopelements) {
@@ -658,7 +725,8 @@ public final class LoopOptimize {
 	return (Quad)sources[0];
     }
 
-    /** <code>findIncrement</code>*/
+    /** <code>findIncrement</code> finds out how much the basic induction variable is
+     *  incremented by.*/
 
     Temp findIncrement(HCode hc, Temp t, Set loopelements, Quad header) {
 	Quad q=addQuad(hc,(PHI) header, t,loopelements);
@@ -678,6 +746,8 @@ public final class LoopOptimize {
 	}
 	return result;
     }
+
+    /** <code>doLoopinv</code> hoists loop invariants out of the loop.*/
 
     void doLoopinv(HCode hc, Loops lp,Quad header, WorkSet usedinvariants) {
 	WorkSet invariants=new WorkSet(invmap.invariantsMap(hc, lp));
