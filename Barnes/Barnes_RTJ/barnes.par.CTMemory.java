@@ -1900,7 +1900,7 @@ class barnes {
     
   public static void main(String args[]) throws java.lang.InterruptedException, java.io.IOException, java.io.FileNotFoundException { 
     if (args.length != 2) {
-      System.out.print("usage: java barnes <input filename>\n");
+      System.out.print("usage: java barnes <input filename> <ctsize>\n");
       return;
     }
     ctsize = Long.parseLong(args[1]);
