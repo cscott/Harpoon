@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.100 2004-02-08 01:48:38 cananian Exp $
+# $Id: GNUmakefile,v 1.101 2004-02-08 05:41:21 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -6,19 +6,16 @@ empty:=
 space:= $(empty) $(empty)
 
 JAVA:=java
-JFLAGS=-d . -g
+JFLAGS=-source 1.5 -d . -g
 JFLAGSVERB=#-verbose -J-Djavac.pipe.output=true
 JIKES:=jikes $(JIKES_OPT)
-# XXX FIX JAVA COMPILER SEARCH; SHOULD FIND JAVA 1.5 COMPILER.
-JCC:=javac -J-mx64m -source 1.4
 # find a gj compiler.  tries $JIKES first, then $JCC, then $JAVAC, then
-# $(JSR14DISTR)/scripts/javac, then some other paths.  Set JSR14_v1
-# in your environment to skip the check.
+# $(JSR14DISTR)/scripts/javac, then some other paths.
 export JAVAC JIKES JCC
-JSR14_v1?=$(shell chmod u+x bin/find-gj ; bin/find-gj) #-warnunchecked
-# hard-coded path to JSR-14 v2 compiler; set JSR14_v2 in your environment
-# to override.
-JSR14_v2?=bin/jsr14-2.0 -source 1.5
+FINDGJ:=$(shell chmod u+x bin/find-gj ; bin/find-gj)
+JCC:=$(word 1,$(FINDGJ))
+export JSR14DISTR=$(word 2,$(FINDGJ))
+
 JDOC:=sinjdoc
 JAR=jar
 JDOCFLAGS:=-J-mx128m -version -author -breakiterator \
@@ -144,7 +141,7 @@ PKGDESC:=$(wildcard overview.html) $(wildcard README) \
 endif
 # list all the definitions in the above block for export to children.
 export BUILD_IGNORE ALLPKGS MACHINE_SRC MACHINE_GEN CGSPECS CGJAVA
-export SCRIPTS ALLSOURCE JARPKGS PROPERTIES PKGDESC
+export SCRIPTS ALLSOURCE JARPKGS PROPERTIES PKGDESC FINDGJ
 # recompute these, to keep the size of the environment down.
 TARSOURCE := $(filter-out $(MACHINE_GEN), $(filter-out JavaChip%, \
 	        $(filter-out Test%,$(ALLSOURCE)))) GNUmakefile $(MACHINE_SRC)
@@ -202,14 +199,14 @@ java:	$(PROPERTIES) out-of-date
 	fi
 	@if [ -n "$(firstword $(shell cat out-of-date))" ] ; then \
 	  echo Compiling... ; \
-	  ${JSR14DISTR}/scripts/javac ${JFLAGS} $(shell cat out-of-date) ; \
+	  ${JCC} ${JFLAGS} $(shell cat out-of-date) ; \
 	fi
 	@if [ -f stubbed-out ]; then \
 	  $(RM) `sort -u stubbed-out`; \
 	  $(MAKE) --no-print-directory PASS=2 `sort -u stubbed-out` || exit 1; \
 	  echo Rebuilding `sort -u stubbed-out`; \
 	  if [ -x $(firstword ${JSR14_v1}) ]; then \
-	     ${JSR14DISTR}/scripts/javac ${JFLAGS} `sort -u stubbed-out` || exit 1; \
+	     ${JCC} ${JFLAGS} `sort -u stubbed-out` || exit 1; \
 	  fi ; \
 	  $(RM) stubbed-out; \
 	fi 

@@ -3,14 +3,12 @@
 ### don't accept v2 as a valid compiler, yet. see GNUMakefile for explanation.
 jsr14cc=not-found
 CLS=h$$
-echo "abstract class $CLS extends java.util.AbstractList<Integer> { }" \
+echo "abstract class $CLS extends java.util.AbstractList<Integer> { public boolean addAll(java.util.Collection<? extends Integer> c) { return false; } }" \
     > /tmp/$CLS.java
-echo "abstract class x$CLS { java.util.Set<-Integer> foo; }" \
-    > /tmp/x$CLS.java
 if false ; then # disabling caching for non-intuitiveness.
   # preload last successful result from cache.
   if [ -f .find-gj-cache ]; then
-    cached=$(cat .find-gj-cache)
+    cached=$(head -1 .find-gj-cache)
     if $cached -d /tmp /tmp/$CLS.java 1>/dev/null 2>/dev/null; then
       echo $cached
       /bin/rm -f /tmp/$CLS.java /tmp/$CLS.class
@@ -20,26 +18,25 @@ if false ; then # disabling caching for non-intuitiveness.
 fi
 # okay, cached value didn't work.  look through all the possibilities.
 for jc in ${JIKES:-jikes} ${JAVAC:-javac} ${JCC} \
-          ${JSR14DISTR:+$JSR14DISTR/scripts/javac} \
-          ${HOME}/jsr14_adding_generics-1_{3,2,0}-ea/scripts/javac ; do
-#    export JSR14DISTR=$jc/../../
-    if $jc -d /tmp -source 1.5 /tmp/x$CLS.java  1>/dev/null 2>/dev/null; then
-        # this is a JSR-14 v2 compiler; DON'T USE IT!
-        continue;
+          ${JSR14DISTR} ${HOME}/jsr14-ea-* ; do
+    if [ -x $jc/scripts/javac ]; then
+	export JSR14DISTR=$jc
+	jcc="$jc/scripts/javac"
+    else
+	jcc="$jc"
+	unset JSR14DISTR
     fi
-    if $jc -d /tmp -source 1.5 /tmp/$CLS.java 1>/dev/null 2>/dev/null; then
-      jsr14cc="$jc -source 1.5"
-      break
-    fi
-    if $jc -d /tmp -source 1.4 -gj /tmp/$CLS.java 1>/dev/null 2>/dev/null; then
-      jsr14cc="$jc -source 1.4 -gj"
+    if $jcc -d /tmp -source 1.5 /tmp/$CLS.java 1>/dev/null 2>/dev/null; then
+      jsr14cc="$jcc"
+      jsr14base="$JSR14DISTR"
       break
     fi
 done
 /bin/rm -f /tmp/$CLS.java /tmp/$CLS.class
-/bin/rm -f /tmp/x$CLS.java /tmp/x$CLS.class
 # cache successful result from last run
 if [ "$jsr14cc" != "not-found" ]; then
   echo $jsr14cc > .find-gj-cache
+  echo $jsr14base >> .find-gj-cache
 fi
 echo $jsr14cc
+echo $jsr14base

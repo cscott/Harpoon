@@ -7,6 +7,13 @@
 
 # set FLEX_DIR
 . `dirname $0`/find-flex-dir
+# find java
+export JSR14DISTR=$(`dirname $0`/find-gj | tail -1)
+if [ -x $JSR14DISTR/scripts/java ]; then
+    defjava=$JSR14DISTR/scripts/java
+else
+    defjava=java
+fi
 
 # grab more java opts from the command line.
 while [ -n "$1" ]; do
@@ -76,4 +83,4 @@ if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
 
-${JAVA:=$JSR14DISTR/scripts/java -ea} -${optprefix}ss${FLEXSTACK:=16m} -${optprefix}mx${FLEXMEM:=768m} -classpath $FLEX_DIR:$FLEX_DIR/Support/jutil.jar $javaopts -Dharpoon.class.path=$harpoonpath "$@"
+${JAVA:=$defjava -ea} -${optprefix}ss${FLEXSTACK:=16m} -${optprefix}mx${FLEXMEM:=768m} -classpath $FLEX_DIR:$FLEX_DIR/Support/jutil.jar $javaopts -Dharpoon.class.path=$harpoonpath "$@"
