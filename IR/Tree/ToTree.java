@@ -49,7 +49,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.17 1999-07-14 19:30:16 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.18 1999-07-16 08:03:02 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -276,72 +276,150 @@ class TranslationVisitor extends LowQuadVisitor {
 
     public void visit(harpoon.IR.Quads.ANEW q) {
 	Exp classPtr, hashcode, length;
-	Stm s0, s1, s2, s3; TEMP arrayref;
+	HClass arrayClass;
+	int instructionsPerIter = 12;
+	Stm[] stms = new Stm[instructionsPerIter * q.dimsLength() + 1];
+
+	LABEL[] loopHeaders   = new LABEL[q.dimsLength()];
+	LABEL[] loopMid       = new LABEL[q.dimsLength()];
+	LABEL[] loopFooters   = new LABEL[q.dimsLength()];
+	Exp[]   arrayDims     = new Exp[q.dimsLength()+1];
+	TEMP[]  arrayRefs     = new TEMP[q.dimsLength()];
+	TEMP[]  inductionVars = new TEMP[q.dimsLength()];
+	for (int i=0; i<q.dimsLength(); i++) { 
+	    loopHeaders[i]   = new LABEL(m_tf, q, new Label());
+	    loopMid[i]       = new LABEL(m_tf, q, new Label());
+	    loopFooters[i]   = new LABEL(m_tf, q, new Label());
+	    arrayDims[i+1]   = MAP(q.dims(i), q);
+	    arrayRefs[i]     = extra(q, Type.POINTER);
+	    inductionVars[i] = extra(q, Type.INT);
+	}
+	arrayDims[0] = new CONST(m_tf, q, 1);
 	
-	// Create a reference to the array we are going to create
-	//
-	arrayref = MAP(q.dst(), q);
+	for (int i=0; i<q.dimsLength(); i++) { 
+	    int base = i*9;
+	    int rear = (instructionsPerIter*q.dimsLength()) - (i*3) - 1;
+	    
+	    System.out.println("Adding to array: " + base);
+	    stms[base++] = 
+		new MOVE(m_tf, q, inductionVars[i], new CONST(m_tf, q, 0));
+		 
+	    System.out.println("Adding to array: " + base);
+	    stms[base++] = loopHeaders[i]; 
 
-	// Create the fields with which we'll initialize the array
-	// 
-	hashcode  = new UNOP(m_tf, q, Type.INT, Uop._2I, arrayref);
-	length    = MAP(q.dims(0), q);
-	classPtr  = new NAME(m_tf, q, m_offm.label(q.hclass()));
+	    System.out.println("Adding to array: " + base);
+	    stms[base++] = new CJUMP
+		(m_tf, q, 
+		 new BINOP
+		 (m_tf, q, Type.INT, Bop.CMPGE,
+		  inductionVars[i], 
+		  arrayDims[i]),
+		 loopFooters[i].label, 
+		 loopMid[i].label);
 
-	// Allocate memory for the array
-	// FIX:  needs to allocate memory for hashcode, classptr, length, and 
-	//       finalization info
-	//
-	s0 = new MOVE
-	    (m_tf, q, 
-	     arrayref, 
-	     m_frame.memAlloc(new BINOP
-			      (m_tf, q, Type.INT, Bop.MUL,
-			       length,
-			       new CONST
-			       (m_tf, q, 
-				m_offm.size(q.hclass().getComponentType())))));
-    
-	// Assign the array a hashcode
-	//
-	s1 = new MOVE
-	    (m_tf, q, 
-	     new MEM
-	     (m_tf, q, Type.INT, 
-	      new BINOP
-	      (m_tf, q, Type.POINTER, Bop.ADD,
-	       arrayref, 
-	       new CONST(m_tf, q, m_offm.hashCodeOffset(q.hclass())))),
-	     hashcode);
-    
-	// Assign the array's length field
-	//
-	s2 = new MOVE
-	    (m_tf, q,
-	     new MEM
-	     (m_tf, q, Type.INT, 
-	      new BINOP
-	      (m_tf, q, Type.POINTER, Bop.ADD,
-	       arrayref, 
-	       new CONST(m_tf, q, m_offm.lengthOffset(q.hclass())))),
-	     length);
-    
-	// Assign the array a class ptr
-	//
-	s3 = new MOVE
-	    (m_tf, q, 
-	     new MEM
-	     (m_tf, q, Type.POINTER, 
-	      new BINOP
-	      (m_tf, q, Type.POINTER, Bop.ADD,
-	       arrayref, 
-	       new CONST(m_tf, q, m_offm.classOffset(q.hclass())))), 
-	     classPtr);
+	    System.out.println("Adding to array: " + base);
+	    stms[base++] = loopMid[i];
+		  
+	    // Step 1: allocate memory needed for the array. 
+	    System.out.println("Adding to array: " + base);
+	    stms[base++] = new MOVE
+		(m_tf, q, arrayRefs[i], 
+		 m_frame.memAlloc
+		 (new BINOP
+		  (m_tf, q, Type.INT, Bop.ADD, 
+		   // Add space for hashcode, length, and finalization info
+		   new CONST(m_tf, q, m_offm.size(HClass.Int) * 3),
+		   new BINOP
+		   (m_tf, q, Type.INT, Bop.MUL,
+		    arrayDims[i+1],
+		    new CONST(m_tf, q, wordSize())))));
 
-	// Update derivation & type info
+	    hashcode  = new UNOP(m_tf, q, Type.INT, Uop._2I, arrayRefs[i]);
+	    length    = arrayDims[i+1];
+	    arrayClass = q.hclass();
+	    for (int n=0; n<i; n++) arrayClass = arrayClass.getComponentType();
+	    classPtr  = new NAME(m_tf, q, m_offm.label(arrayClass));
+	
+	    // Assign the array a hashcode
+	    //
+	    System.out.println("Adding to array: " + base);
+	    stms[base++] = new MOVE
+		(m_tf, q, 
+		 new MEM
+		 (m_tf, q, Type.INT, 
+		  new BINOP
+		  (m_tf, q, Type.POINTER, Bop.ADD,
+		   arrayRefs[i], 
+		   new CONST(m_tf, q, m_offm.hashCodeOffset(arrayClass)))),
+		 hashcode);
+	    
+	    // Assign the array's length field
+	    //
+	    System.out.println("Adding to array: " + base);
+	    stms[base++] = new MOVE
+		(m_tf, q,
+		 new MEM
+		 (m_tf, q, Type.INT, 
+		  new BINOP
+		  (m_tf, q, Type.POINTER, Bop.ADD,
+		   arrayRefs[i], 
+		   new CONST(m_tf, q, m_offm.lengthOffset(arrayClass)))),
+		 length);
+	    
+	    // Assign the array a class ptr
+	    //
+	    System.out.println("Adding to array: " + base);
+	    stms[base++] = new MOVE
+		(m_tf, q, 
+		 new MEM
+		 (m_tf, q, Type.POINTER, 
+		  new BINOP
+		  (m_tf, q, Type.POINTER, Bop.ADD,
+		   arrayRefs[i], 
+		   new CONST(m_tf, q, m_offm.classOffset(arrayClass)))), 
+		 classPtr);
+
+	    // Move the pointer to the new array into the appropriate 
+	    // memory location.	    
+	    
+	    System.out.println("Adding to array: " + base);
+	    if (i>0) { 
+		stms[base++] = new MOVE
+		    (m_tf, q, 
+		     new MEM
+		     (m_tf, q, Type.POINTER,
+		      new BINOP
+		      (m_tf, q, Type.POINTER, Bop.ADD, 
+		       arrayRefs[i-1],
+		       inductionVars[i])),
+		     arrayRefs[i]);
+	    }
+	    else { 
+		stms[base++] = new EXP(m_tf, q, new CONST(m_tf, q, 0));
+	    }
+	    
+	    // Increment the correct induction variable
+	    System.out.println("Adding to array: " + (rear-2));
+	    stms[rear-2] = new MOVE
+		(m_tf, q, 
+		 inductionVars[i], 
+		 new BINOP
+		 (m_tf, q, Type.INT, Bop.ADD, 
+		  inductionVars[i],
+		  new CONST(m_tf, q, 1)));
+	    
+	    System.out.println("Adding to array: " + (rear-1));
+	    stms[rear-1] = new JUMP(m_tf, q, loopHeaders[i].label);
+	    System.out.println("Adding to array: " + rear);
+	    stms[rear]   = loopFooters[i];
+	}
+
+    
+	// Make a reference to the array we are going to create
 	//
-	updateDT(q.dst(), q, arrayref);    
-	addStmt(q, new Stm[] { s0, s1, s2, s3 });      
+	stms[instructionsPerIter*q.dimsLength()] = 
+	    new MOVE(m_tf,q,MAP(q.dst(),q),arrayRefs[0]);
+	addStmt(q, stms);
     }
 
     public void visit(harpoon.IR.Quads.ARRAYINIT q) {
