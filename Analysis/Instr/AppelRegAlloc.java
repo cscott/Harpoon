@@ -54,7 +54,7 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.4 2001-06-17 22:29:48 cananian Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.5 2001-06-18 16:03:54 pnkfelix Exp $
  */
 public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     // FSK: super class really SHOULD be RegAlloc, but am doing this
@@ -86,6 +86,12 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	grapher= code.getInstrFactory().getGrapherFor ( InstrGroup.AGGREGATE );
 	usedefer=code.getInstrFactory().getUseDeferFor( InstrGroup.AGGREGATE );
 	// System.out.println("done constructing AppelRegAlloc");
+    }
+
+    boolean intersects(Collection a, Collection b) {
+	HashSet ns = new HashSet(a);
+	ns.retainAll(b);
+	return ! ns.isEmpty();
     }
 
     void buildTempToWebs() { 
@@ -143,9 +149,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		    
 		    if( web1.temp.equals( web2.temp )){
 			boolean combineWebs;
-			Set ns = new HashSet( web1.defs );
-			ns.retainAll( web2.defs );
-			combineWebs = ! ns.isEmpty();
+			combineWebs = intersects( web1.defs, web2.defs );
 
 			if( ! combineWebs ){
 			    // IMPORTANT: current temp->reg assignment
@@ -153,13 +157,9 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 			    // different regs for the same temp in the
 			    // uses and defines.  Take this clause out
 			    // after that is fixed.
-			    HashSet s1 = new HashSet( web1.defs );
-			    s1.retainAll( web2.uses );
 			    
-			    HashSet s2 = new HashSet( web2.defs );
-			    s2.retainAll( web1.uses );
-			    combineWebs = ( ! s1.isEmpty() || 
-					    ! s2.isEmpty() );
+			    combineWebs = ( intersects( web1.defs, web2.uses ) ||
+					    intersects( web2.defs, web1.uses ) );
 			}
 			
 			if( combineWebs ){
@@ -302,10 +302,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	for(int i=0; i<sets.length; i++) {
 	    HashSet s = sets[i];
 	    for(int j=i+1; j<sets.length; j++) {
-		// System.out.print("("+i+","+j+") ");
-		HashSet t = new HashSet(sets[j]);
-		t.retainAll(s);
-		Util.assert(t.isEmpty());
+		Util.assert( ! intersects( sets[j], s ));
 	    }
 	}
     }

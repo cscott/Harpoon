@@ -25,7 +25,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.3 2001-06-17 22:29:48 cananian Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.4 2001-06-18 16:03:54 pnkfelix Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public AppelRegAllocClasses(harpoon.Backend.Generic.Code code) { 
@@ -180,7 +180,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	Node head; // dummy element
 
 	public String toString() { return "NS<"+name+">"; }
-	void checkRep() { 
+	void checkRep() { if (true) return;
 	    Util.assert(size >= 0);
 	    Util.assert(head != null);
 	    Node curr = head;
