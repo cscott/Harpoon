@@ -19,20 +19,25 @@ import harpoon.IR.Bytecode.InMerge;
 import harpoon.IR.Bytecode.InRet;
 import harpoon.IR.Bytecode.InSwitch;
 import harpoon.IR.Bytecode.Code.ExceptionEntry;
+import harpoon.IR.Bytecode.Liveness; // liveness analysis on local variables
 import harpoon.IR.Quads.HANDLER.ProtectedSet;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Util.AbstractMapEntry;
 import harpoon.Util.FilterIterator;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Stack;
 
@@ -42,7 +47,7 @@ import java.util.Stack;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.11 1999-02-23 11:35:05 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.12 1999-02-23 22:54:33 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -65,10 +70,13 @@ final class Translate { // not public.
 	final MergeMap mergeMap;
 	/** Keep track of JSRs and RETs during translation. */
 	final ContInfo contInfo;
+	/** Liveness information from bytecode. */
+	final Liveness liveness;
 
 	/** Constructor. */
 	StaticState(QuadFactory qf, int max_stack, int max_locals,
-		    ExceptionEntry[] tryBlocks, HEADER header) {
+		    ExceptionEntry[] tryBlocks, HEADER header,
+		    Liveness liveness) {
 	    this.qf = qf;
 	    stack = new Temp[max_stack];
 	    for (int i=0; i<max_stack; i++)
@@ -82,6 +90,7 @@ final class Translate { // not public.
 	    this.header = header;
 	    this.mergeMap = new MergeMap();
 	    this.contInfo = new ContInfo();
+	    this.liveness = liveness;
 	}	
 	/** Get an "extra" <code>Temp</code>. */
 	final Temp extra(int n) {
@@ -237,6 +246,45 @@ final class Translate { // not public.
 	    if (js.next == nnxt) return js;
 	    return new JSRStack(js.index, js.target, nnxt);
 	}
+	/** Collection view of target <code>Instr</code>s in stack. */
+	static Map asMap(final JSRStack js) {
+	    return new AbstractMap () {
+		public Set entrySet() {
+		    return new AbstractSet() {
+			public int size() {
+			    int size=0;
+			    for (JSRStack jsp=js; jsp!=null; jsp=jsp.next)
+				size++;
+			    return size;
+			}
+			public boolean isEmpty() { return js==null; }
+			public Iterator iterator() {
+			    return new Iterator() {
+				private JSRStack jsp=js;
+				public boolean hasNext() { return jsp!=null; }
+				public Object next() {
+				    if (jsp==null)
+					throw new NoSuchElementException();
+				    final JSRStack oldjsp = jsp;
+				    jsp = jsp.next;
+				    return new AbstractMapEntry() {
+					public Object getKey() {
+					    return new Integer(oldjsp.index);
+					}
+					public Object getValue() {
+					    return oldjsp.target;
+					}
+				    }; // END anonymous Map.Entry
+				}
+				public void remove() {
+				    throw new UnsupportedOperationException();
+				}
+			    }; // END anonymous Iterator
+			}
+		    }; // END anonymous AbstractSet
+		}
+	    }; // END anonymous AbstractMap
+	}
     }
     /** Auxilliary stack to track LONG values on main stack. */
     static final private class LongStack {
@@ -268,9 +316,9 @@ final class Translate { // not public.
 	}
 	/** public constructor */
 	State(QuadFactory qf, int max_stack, int max_locals, 
-	      ExceptionEntry[] tryBlocks, HEADER header) {
+	      ExceptionEntry[] tryBlocks, HEADER header, Liveness liveness) {
 	    this.ss = new StaticState(qf, max_stack, max_locals, tryBlocks,
-				      header);
+				      header, liveness);
 	    this.stackSize = 0;
 	    this.ls = null;
 	    this.js = null;
@@ -445,7 +493,8 @@ final class Translate { // not public.
 	// set up initial state.
 	State s=new State(qf, bytecode.getMaxStack(), bytecode.getMaxLocals(),
 			  tb /* exception handling information */,
-			  header /* header quad for method. */ );
+			  header /* header quad for method. */,
+			  new Liveness(bytecode) /*local variable liveness*/);
 
  	// Make parameter array, then make METHOD.
 	HClass[] paramTypes = method.getParameterTypes();
