@@ -17,11 +17,13 @@ import java.util.*;
  * atomic transactions.  Works on <code>LowQuadNoSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.4 2000-11-07 23:45:13 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.5 2000-11-08 18:35:34 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
-    static final Token WITH_TRANSACTION = new Token("withtrans");
+    static final Token WITH_TRANSACTION = new Token("withtrans") {
+	public Object readResolve() { return WITH_TRANSACTION; }
+    };
     protected boolean isValidToken(Token which) {
 	return super.isValidToken(which) || which==WITH_TRANSACTION;
     }

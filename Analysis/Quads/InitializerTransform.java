@@ -56,12 +56,14 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.12 2000-10-22 08:46:18 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.13 2000-11-08 18:36:17 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
     /** Token for the initializer-ordering-check version of a method. */
-    public static final Token CHECKED = new Token("initcheck");
+    public static final Token CHECKED = new Token("initcheck") {
+	public Object readResolve() { return CHECKED; }
+    };
     /** Set of dependent native methods.  We know the dependencies of
      *  these methods statically; this is a Map from HMethods to
      *  Sets of HInitializers. HMethods with no dependencies are

@@ -40,12 +40,15 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.15 2000-11-07 23:41:03 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.16 2000-11-08 18:36:25 cananian Exp $
  */
-public abstract class MethodSplitter {
+public abstract class MethodSplitter implements java.io.Serializable {
     /** The <code>ORIGINAL</code> token represents the original pre-split
      *  version of a method. */
-    public static final Token ORIGINAL = new Token(null);
+    public static final Token ORIGINAL = new Token(null) {
+	public Object readResolve() { return ORIGINAL; }
+	public String toString() { return "TOKEN<ORIGINAL>"; }
+    };
     /** This is the code factory which contains the representations of the
      *  new split methods. */
     private final CachingCodeFactory hcf;
@@ -164,11 +167,36 @@ public abstract class MethodSplitter {
      *  class.  The argument to the constructor specifies a default
      *  suffix for the newly-split method's name.  Don't forget
      *  to extend <code>MethodSplitter.isValidToken()</code> to
-     *  include your new <code>MethodSplitter.Token</code> subclasses. */
-    protected static class Token {
+     *  include your new <code>MethodSplitter.Token</code> subclasses.
+     *  <p>
+     *  A typical subclass of <code>MethodSplitter</code> will include
+     *  the following code fragment:<p>
+     *  <pre>
+     *  public class FooBlah extends <code>MethodSplitter</code> {
+     *    /** Token for the foo-blah version of a method. *<b></b>/
+     *    public static final Token FOOBLAH = new Token("fooblah") {
+     *      /** This ensures that FOOBLAH is a singleton object. *<b></b>/
+     *      public Object readResolve() { return FOOBLAH; }
+     *    };
+     *    /** Checks the token types handled by this 
+     *     *  <code>MethodSplitter</code> subclass. *<b></b>/
+     *    protected boolean isValidToken(Token which) {
+     *      return which==FOOBLAH || super.isValidToken(which);
+     *    };
+     *  };
+     *  </pre>
+     */
+    protected abstract static class Token implements java.io.Serializable {
 	final String suffix;
-	public Token(String suggestedSuffix) {
+	/** Create a token, specifying the suggested method suffix. */
+	protected Token(String suggestedSuffix) {
 	    this.suffix = suggestedSuffix;
 	}
+	/** This method must be overridden to ensure that <code>Token</code>s
+	 *  are still singletons after deserialization.  See the template
+	 *  in the class description above. */
+	protected abstract Object readResolve();
+	/** Returns a human-readable representation of this token. */
+	public String toString() { return "TOKEN["+suffix+"]"; }
     }
 }
