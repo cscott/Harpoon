@@ -25,10 +25,11 @@ void *NSTK_malloc(size_t size) {
 	 (long) size, __builtin_return_address(0), result);
 #endif
   set_stackptr(result);
-  return result; /* stack pointer points to last full location */
+  /* stack pointer points to last full location */
 #else
-  return NGBL_malloc_noupdate(size);
+  result = NGBL_malloc_noupdate(size);
 #endif
+  return result;
 }
 
 #ifdef WITH_PRECISE_C_BACKEND
