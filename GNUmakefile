@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.28 1999-06-07 04:39:28 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.29 1999-06-07 05:01:49 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -96,12 +96,17 @@ first:
 		Util/UniqueVector.java Util/ArrayEnumerator.java \
 		Util/Set.java Util/Worklist.java \
 		Util/FilterIterator.java Util/WorkSet.java \
+		Util/EnumerationIterator.java \
+		Util/IteratorEnumerator.java \
 		Temp/Temp*.java
 	-${JCC} ${JFLAGS} IR/RawClass/*.java
 	-${JCC} ${JFLAGS} IR/Bytecode/*.java ClassFile/*.java \
 		IR/Properties/HasEdges.java
 	-${JCC} ${JFLAGS} IR/Quads/*.java IR/Properties/*.java \
 		2> /dev/null # not perfect, but it does the base quads well.
+	-${JCC} ${JFLAGS} \
+		Analysis/QuadSSA/*.java Analysis/QuadSSA/SCC/*.java \
+		2> /dev/null # not perfect, but gotta make those dirs somehow.
 #	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 
 Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
@@ -117,7 +122,8 @@ jar-install: jar
 
 VERSIONS: $(TARSOURCE) # collect all the RCS version ID tags.
 	@echo -n Compiling VERSIONS... ""
-	@grep -Fh ' $$I''d: ' $(TARSOURCE) > VERSIONS
+	@grep -Fh ' $$I''d: ' \
+		$(filter-out %.jar, $(TARSOURCE)) > VERSIONS
 	@echo done.
 
 ChangeLog: $(TARSOURCE) # not strictly accurate anymore.
@@ -134,7 +140,7 @@ cvs-commit: needs-cvs cvs-add
 	$(RM) cvs-tmp
 commit: cvs-commit # convenient abbreviation
 update: needs-cvs
-	cvs update -Pd $(CVS_REVISION)
+	cvs -q update -Pd $(CVS_REVISION)
 	@echo ""
 	@-$(FORTUNE)
 
