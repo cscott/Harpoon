@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: sas02.tex,v 1.3 2002-05-10 22:14:56 cananian Exp $
+% $Id: sas02.tex,v 1.4 2002-05-10 22:55:18 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[oribibl]{llncs}
 %\usepackage[section,plain]{algorithm}
@@ -154,7 +154,7 @@ analyses and transformations that our compiler performs.
 %
 \subsection{Field Reduction and Constant Field Elimination}
 %
-Figure~\ref{fig:value} presents the {\tt NValue} class, which is 
+Figure~\ref{fig:value}a presents the {\tt NValue} class, which is 
 a wrapper around either an {\tt Integer} object or a {\tt Float}
 object. The {\tt type} field indicates which kind of object
 is stored in the {\tt value} field of the class, 
@@ -184,7 +184,9 @@ and d) the {\tt positive} field always has a value between
 {\tt 0} and {\tt 1} (also inclusive).
 
 \begin{figure}[tp]
-\small\renewcommand{\baselinestretch}{0.5}\begin{samplecode}
+\renewcommand{\baselinestretch}{0.5}%
+\begin{tabular}{p{5.6cm}p{6.4cm}}%
+\small\tt\renewcommand{\>}{~}\begin{tabular}[t]{l}%
 public class NValue \{ \\
 \>int integerType = 0;\\
 \>int floatType = 1;\\
@@ -192,21 +194,41 @@ public class NValue \{ \\
 \>Object value;\\
 \>void setInteger(Integer i) \{ \\
 \>\>type = integerType; value = i;\\
-\>\>if (i.intValue() > 0) positive = 0;\\
-\>\>else positive = 1;\\
+\>\>positive =\\
+\>\>\>(i.intValue() > 0) ? 1 : 0;\\
 \>\}\\
 \>void setFloat(Float f) \{ \\
 \>\>type = floatType; value = f;\\
-\>\>if (f.floatValue() > 0.0) positive = 0;\\
-\>\>else positive = 1;\\
-\>\}\\
-\>void setValue(int t, int p, Object v) \{ \\
-\>\>type = t; value = v;\\
-\>\>positive = p;\\
+\>\>positive =\\
+\>\>\>(f.floatValue() > 0) ? 1 : 0;\\
 \>\}\\
 \}
-\end{samplecode}%
-\caption{\label{fig:value} Code for the {\tt NValue} class.}
+\end{tabular}%
+&\vline~%
+\small\tt\renewcommand{\>}{~}\begin{tabular}[t]{l}%
+public final class String \{\\
+\>private final char value[];\\
+\>private final int offset;\\
+\>private final int count;\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[offset+i];\\
+\>\}\\
+\>public String substring(int start)\\
+\>\{\\
+\>\>int noff = offset + start;\\
+\>\>int ncnt = count - start;\\
+\>\>return new String\\
+\>\>~~~~~~(noff, ncnt, value);\\
+\>\}\\
+\}\\
+\end{tabular}%
+\\%
+\centering (a)&\centering (b)
+\end{tabular}
+\caption{(a) The {\tt NValue} class.
+         (b) Portions of the {\tt java.lang.String} class.}
+\label{fig:value}\label{fig:string}
 \end{figure}
 
 Our compiler uses this information to remove all occurrences
@@ -227,13 +249,13 @@ object size by  the full six bytes.
 
 \subsection{Static Specialization} 
 
-Figure~\ref{fig:string}a presents portions of the implementation
+Figure~\ref{fig:string}b presents portions of the implementation
 of the Java {\tt java.lang.String} class. The {\tt value} field in this
 class refers to a character array that holds the characters
 in the string; the {\tt count} field holds the length of the
 string. In some cases, instances of the {\tt String} class
 are derived substrings of other instances 
-(see the {\tt substring} method in Figure~\ref{fig:string}a), in
+(see the {\tt substring} method in Figure~\ref{fig:string}b), in
 which case the
 {\tt offset} field provides the offset of the starting 
 point of the string within a shared {\tt value} character array. 
@@ -245,25 +267,6 @@ and do not change during the lifetime of the string.
 \renewcommand{\baselinestretch}{0.5}%
 \begin{tabular}{p{6cm}p{6cm}}%
 \small\tt\renewcommand{\>}{~}\begin{tabular}[t]{l}%
-public final class String \{\\
-\>private final char value[];\\
-\>private final int offset;\\
-\>private final int count;\\
-\>\ldots\\
-\>public char charAt(int i) \{\\
-\>\>return value[offset+i];\\
-\>\}\\
-\>public String substring(int start)\\
-\>\{\\
-\>\>int noff = offset + start;\\
-\>\>int ncnt = count - start;\\
-\>\>return new String\\
-\>\>~~~~~~(noff, ncnt, value);\\
-\>\}\\
-\}\\
-\end{tabular}%
-\vline&%
-\small\tt\renewcommand{\>}{~}\begin{tabular}[t]{l}%
 public final class SmallString \{\\
 \>private final char value[];\\
 \>private final int count;\\
@@ -273,19 +276,34 @@ public final class SmallString \{\\
 \>\>return value[getOffset()+i];\\
 \>\}\\
 \}\\
-\\
 public final class BigString\\
 \>\>extends SmallString \{\\
 \>private final int offset;\\
 \>int getOffset() \{ return offset; \}\\
 \}\\
 \end{tabular}%
+\vline&%
+\small\tt\renewcommand{\>}{~}\begin{tabular}[t]{l}%
+public SmallString substring(int start)\\
+\{\\
+\>int noff = offset + start;\\
+\>int ncnt = count - start;\\
+\>if (noff==0)\\
+\>\>return new SmallString\\
+\>\>~~~~~~~~~~~~~~(value, noff, ncnt);\\
+\>else\\
+\>\>return new BigString\\
+\>\>~~~~~~~~~~~~~~(value, noff, ncnt);\\
+\}\\
+\end{tabular}%
 \\%
 \centering (a) & \centering (b)
 \end{tabular}
-\caption{(a) Portions of the {\tt java.lang.String} class.
-         (b) Static specialization of {\tt java.lang.String}.}
-\label{fig:string}
+\caption{(a) Static specialization of {\tt java.lang.String}.
+         (b) Dynamic selection among specialized classes in a method
+             from {\tt java.lang.String}.
+}
+\label{fig:split}
 \end{figure}
 
 In practice, most strings are not substrings of other strings. 
@@ -308,7 +326,7 @@ Each of these two new classes implements a {\tt getOffset()} method
 that returns the value of the offset. The {\tt getOffset()} method
 in the {\tt SmallString} class simply returns zero; the {\tt
 getOffset()} method in the {\tt BigString} class returns the 
-value of the offset field.  Figure~\ref{fig:string}b illustrates
+value of the offset field.  Figure~\ref{fig:split}a illustrates
 this transformation.
 
 At every allocation site except the one inside the {\tt substring}
@@ -319,22 +337,6 @@ will be zero. If so, it allocates a {\tt SmallString} object;
 if not, it allocates a {\tt BigString} object. This transformation
 therefore eliminates the {\tt offset} field in the majority
 of strings. 
-%
-\begin{figure}[tp]
-\small\renewcommand{\baselinestretch}{0.5}\begin{samplecode}
-public SmallString substring(int start) \{\\
-\>int noff = offset + start;\\
-\>int ncnt = count - start;\\
-\>if (noff==0)\\
-\>\>return new SmallString(value, noff, ncnt);\\
-\>else\\
-\>\>return new BigString(value, noff, ncnt);\\
-\}\\
-\end{samplecode}
-\caption{Dynamic selection among specialized classes in a method
-  from {\tt java.lang.String}.}
-\label{fig:dyn-select}
-\end{figure}
 
 The analysis required to support this transformation takes place
 in two phases. The first phase scans the program
@@ -749,9 +751,9 @@ of the small version when possible.
 
 This analysis is simple, because it builds upon our previous results.
 In a single pass over the constructor, we merge the values written
-to a selected subclass-final field using the flat value lattice
-of Figure~\ref{fig:cclat}.  All constants have already been discovered
-by the bitwidth analysis.  We treat any call to a {\tt this()}
+to a selected subclass-final field, treating $\text{\tt Param}N$ as an
+abstract value for the $N$th constructor parameter.
+We treat any call to a {\tt this()}
 constructor as if it were inlined.  We know that all writes to the
 field are to the {\tt this} object and that there are no bad writes to
 the field outside of the constructor, by the properties of
@@ -762,14 +764,6 @@ then we can statically specialize on the field at this constructor
 site.  Further, we rule out specialization on any otherwise-suitable
 fields for which there is not at least one callable constructor
 amenable to static specialization.
-%
-\begin{figure}
-\begin{center}
-\renewcommand{\figscale}{0.6}\input{Figures/oopsla-lat}
-\end{center}
-\caption{Lattice for Constructor Classification.}
-\label{fig:cclat}
-\end{figure}
 
 We note briefly here that, although we use profiling to select desirable
 fields for static specialization, it is entirely possible that an
