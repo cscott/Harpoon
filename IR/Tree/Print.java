@@ -3,6 +3,7 @@ package harpoon.IR.Tree;
 
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
+import harpoon.Temp.LabelList;
 import java.io.PrintWriter;
 
 /**
@@ -10,236 +11,218 @@ import java.io.PrintWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.8 1999-02-24 21:11:05 andyb Exp $
+ * @version $Id: Print.java,v 1.1.2.9 1999-02-25 02:33:11 andyb Exp $
  */
-public class Print 
-{
-  private PrintVisitor pv;
+public class Print {
+    final static void print(PrintWriter pw, Code c, TempMap tm) {
+        Tree tr = (Tree) c.getRootElement();
+        PrintVisitor pv = new PrintVisitor(pw, tm);
 
-  public Print(PrintWriter o)
-    {
-      this(o, null);
+        pw.print("Codeview \""+c.getName()+"\" for "+c.getMethod()+":");
+        tr.visit(pv);
+        pw.println();
+        pw.flush();
     }
 
-  public Print(PrintWriter o, TempMap t)
-    {
-      pv = new PrintVisitor(o, t);
+    final static void print(PrintWriter pw, Code c) {
+        print(pw, c, null);
     }
 
-  public void prStm(Stm s)
-    {
-      s.visit(pv);
-    }
+    static class PrintVisitor extends TreeVisitor {
+        private final static int TAB = 1;
+        private PrintWriter pw;
+        private TempMap tm;
+        private int indlevel;
 
-  public void prExp(Exp e)
-    {
-      e.visit(pv);
-    }
+        PrintVisitor(PrintWriter pw, TempMap tm) {
+            indlevel = 1;
+            this.pw = pw;
+            this.tm = tm;
+        }
 
-  static class PrintVisitor extends TreeVisitor
-  {
-    private PrintWriter m_out; 
-    private TempMap     m_tMap;
-    private int         m_indent;
+        private void indent(int dist) {
+            pw.println();
+            for (int i=0; i < TAB * dist; i++)
+                pw.print(' ');
+        }
 
-    public PrintVisitor(PrintWriter out) { this(out, null); }
+        public void visit(Exp e) {
+            indent(indlevel);
+            pw.print("No Exp visitor yet");
+        }
 
-    public PrintVisitor(PrintWriter out, TempMap tMap)
-      {
-	m_out  = out;
-	m_tMap = tMap;
-      }
-    
-    private void indent(int d) 
-      {
-	for(int i=0; i<d; i++) 
-	  m_out.print(' ');
-      }
+        public void visit(Stm s) {
+            indent(indlevel);
+            pw.print("No Stm visitor yet");
+        }
 
-    private void say(String s) 
-      {
-	m_out.print(s);
-      }
-    
-    private void sayln(String s) 
-      {
-	say(s); say("\n");
-      }
+        public void visit(BINOP e) {
+            indent(indlevel++);
+            pw.print("BINOP<" + Type.toString(e.optype) + ">(");
+            pw.print(Bop.toString(e.op) + ", ");
+            e.left.visit(this);
+            pw.print(",");
+            e.right.visit(this);
+            pw.print(")");
+            indlevel--;
+        }
 
-    public void visit(BINOP e)
-      {
-	indent(m_indent++);
-	say("BINOP(");
-	say(Type.toString(e.optype));
-	say(", ");
-	say(Bop.toString(e.op));
-	sayln(",");
-	e.left.visit(this); sayln(","); 
-	e.right.visit(this); say(")");
-	m_indent--;
-      }
+        public void visit(CALL s) {
+            printInvocation("CALL", s);
+        }
 
-    public void visit(CALL s)
-      {
-	indent(m_indent++); sayln("CALL(");
-	indent(m_indent++); sayln("Return value in: "); 
-	s.retval.visit(this); sayln("");
-	indent(m_indent-1); sayln("Exceptional value in: ");
-	s.retex.visit(this); sayln("");
-	indent(m_indent-1); sayln("Function: ");
-	s.func.visit(this);
-        for(ExpList a = s.args; a!=null; a=a.tail) 
-	  {
-	    sayln(","); a.head.visit(this);
-	  }
-        say(")");
-	m_indent -= 2;
-      }
-    
-    public void visit(CONST e)  {
-	indent(m_indent);
-	say("CONST (");
-	say(Type.toString(e.type));
-	say(") ");
-	say(String.valueOf(e.value()));
-    }
+        private void printInvocation(String name, INVOCATION s) {
+            ExpList list = s.args;
+            indent(indlevel++);
+            pw.print(name + "(");
+            indent(indlevel++);
+            pw.print("return value:");
+            s.retval.visit(this);
+            pw.print(",");
+            indent(--indlevel); indlevel++;
+            pw.print("exceptional value:");
+            s.retex.visit(this);
+            pw.print(",");
+            indent(--indlevel); indlevel++;
+            pw.print("function:");
+            s.func.visit(this);
+            pw.print(",");
+            indent(--indlevel); indlevel++;
+            pw.print("arguments:");
+            while (list != null) {
+                list.head.visit(this);
+                if (list.tail != null) {
+                    pw.print(",");
+                }
+                list = list.tail;
+            }
+            pw.print(")");
+            indlevel -= 2;
+        }
+            
+        public void visit(CJUMP s) {
+            indent(indlevel++);
+            pw.print("CJUMP(");
+            s.test.visit(this); pw.print(",");
+            indent(indlevel);
+            pw.print("if-true: " + s.iftrue + ",");
+            indent(indlevel);
+            pw.print("if-false: " + s.iffalse + ")");
+            indlevel--;
+        }
 
-    public void visit(CJUMP s)
-      {
-	sayln("");
-	indent(m_indent++);
-	say("CJUMP("); s.test.visit(this); sayln(",");
-	indent(m_indent--);
-	say(s.iftrue.toString()); say(","); 
-	say(s.iffalse.toString()); say(")");
-      }
+        public void visit(CONST e) {
+            indent(indlevel);
+            pw.print("CONST<" + Type.toString(e.type) + ">(" + e.value + ")");
+        }
 
-    public void visit(ESEQ e)
-      {
-	indent(m_indent++);
-	sayln("ESEQ("); e.stm.visit(this); sayln(",");
-	e.exp.visit(this); say(")");
-	m_indent--;
-      }
+        public void visit(ESEQ e) {
+            indent(--indlevel);
+            indlevel++;
+            pw.print("ESEQ(");
+            e.stm.visit(this);
+            pw.print(",");
+            e.exp.visit(this);
+            pw.print(")");
+        }
 
-    public void visit(EXP s)
-      {
-	indent(m_indent++);
-	sayln("EXP(");
-	s.exp.visit(this); say(")");
-	m_indent--;
-      }
+        public void visit(EXP s) {
+            indent(indlevel++);
+            pw.print("EXP(");
+            s.exp.visit(this);
+            pw.print(")");
+            indlevel--;
+        }
 
-    public void visit(Exp e)
-      {
-	throw new Error("Print.visit(Exp e)");
-      }
-    
-    public void visit(JUMP s)
-      {
-	indent(m_indent++);
-	sayln("JUMP("); 
-	s.exp.visit(this); say(")");
-	m_indent--;
-      }
+        public void visit(JUMP s) {
+            LabelList list = s.targets;
+            indent(indlevel++);
+            pw.print("JUMP(");
+            indent(indlevel);
+            pw.print("targets:");
+            while (list != null) {
+                pw.print(" " + list.head);
+                if (list.tail != null) 
+                    pw.print(",");
+                list = list.tail;
+            }
+            s.exp.visit(this);
+            pw.print(")");
+            indlevel--;
+        }
+            
 
-    public void visit(LABEL s)
-      {
-	indent(m_indent);
-	say("LABEL "); say(s.label.toString());
-      }
+        public void visit(LABEL s) {
+            indent(indlevel);
+            pw.print("LABEL(" + s.label + ")");
+        }
 
-    public void visit(MEM e)  {
-	indent(m_indent++);
-	sayln("MEM("); say(Type.toString(e.type)); say(", ");
-	e.exp.visit(this);
-	say(")");
-	m_indent--;
-    }
+        public void visit(MEM e) {
+            indent(indlevel++);
+            pw.print("MEM<" + Type.toString(e.type) + ">(");
+            e.exp.visit(this);
+            pw.print(")");
+            indlevel--;
+        }
 
-    public void visit(MOVE s)
-      {
-	sayln("");
-	indent(m_indent++);
-	sayln("MOVE("); 
-	s.dst.visit(this); sayln(","); 
-	s.src.visit(this); say(")");
-	m_indent--;
-      }
+        public void visit(MOVE s) {
+            indent(indlevel++);
+            pw.print("MOVE(");
+            s.dst.visit(this);
+            pw.print(",");
+            s.src.visit(this);
+            pw.print(")");
+            indlevel--;
+        }
 
-    public void visit(NAME e)
-      {
-	indent(m_indent); say("NAME "); say(e.label.toString());
-      }
+        public void visit(NAME e) {
+            indent(indlevel);
+            pw.print("NAME(" + e.label + ")");
+        }
 
-    public void visit(NATIVECALL s)
-      {
-	indent(m_indent++); sayln("NATIVECALL(");
-	indent(m_indent++); sayln("Return value in: "); 
-	s.retval.visit(this); sayln("");
-	indent(m_indent-1); sayln("Exceptional value in: ");
-	s.retex.visit(this); sayln("");
-	indent(m_indent-1); sayln("Function: ");
-	s.func.visit(this);
-        for(ExpList a = s.args; a!=null; a=a.tail) 
-	  {
-	    sayln(","); a.head.visit(this);
-	  }
-        say(")");
-	m_indent -= 2;
-      }
+        public void visit(NATIVECALL s) {
+            printInvocation("NATIVECALL", s);
+        }
 
-    public void visit(RETURN s) {
-        indent(m_indent); say("RETURN (");
-	m_indent++;
-	s.retval.visit(this);
-	say (")");
-	m_indent--;
-    }
+        public void visit(RETURN s) {
+            indent(indlevel++);
+            pw.print("RETURN(");
+            s.retval.visit(this);
+            pw.print(")");
+            indlevel--;
+        }
 
-    public void visit(SEQ s)
-      {
-	sayln("");
-	indent(m_indent++);
-	say("SEQ("); 
-	s.left.visit(this); s.right.visit(this); say(")");
-	m_indent--;
-      }
+        public void visit(SEQ s) {
+            indent(--indlevel);
+            indlevel++;
+            pw.print("SEQ(");
+            s.left.visit(this);
+            pw.print(",");
+            s.right.visit(this);
+            pw.print(")");
+        }
 
-    public void visit(Stm s)
-      {
-	throw new Error("Print.visit(Stm s): NO DEFAULTS ALLOWED");
-      }
+        public void visit(TEMP e) {
+            Temp t = (tm == null) ? e.temp : tm.tempMap(e.temp);
+            indent(indlevel);
+            pw.print("TEMP<" + Type.toString(e.type) + ">(" + t + ")");
+        }
 
-    public void visit(TEMP e)  {
-	indent(m_indent); say("TEMP (");
-	say(Type.toString(e.type));
-	say(") ");
-	Temp t = (m_tMap==null)?e.temp:m_tMap.tempMap(e.temp);
-	say(t.toString());
-    }
-    
-    public void visit(THROW s) {
-        indent(m_indent); say("THROW (");
-	m_indent++;
-	s.retex.visit(this);
-	say (")");
-	m_indent--;
-    }
+        public void visit(THROW s) {
+            indent(indlevel++);
+            pw.print("THROW(");
+            s.retex.visit(this);
+            pw.print(")");
+            indlevel--;
+        }
 
-    public void visit(UNOP e)
-      {
-	indent(m_indent++); say("UNOP("); 
-	say(Type.toString(e.optype));
-	say(", ");
-	say(Uop.toString(e.op));
-	sayln(",");
-	e.operand.visit(this); say(")");
-	m_indent--;
-      }
-    
-  }
+        public void visit(UNOP e) {
+            indent(indlevel++);
+            pw.print("UNOP<" + Type.toString(e.optype) + ">(");
+            pw.print(Uop.toString(e.op) + ",");
+            e.operand.visit(this);
+            pw.print(")");
+            indlevel--;
+        }
+    } 
 }
-
-
-
