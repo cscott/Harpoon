@@ -99,13 +99,13 @@ int do_arraycopy_checks(JNIEnv *env, jobject src, jint srcpos,
     }
     if (FNI_UNWRAP(src)->claz->component_claz==NULL) {
       jclass asecls = (*env)->FindClass
-	(env, "java/lang/ArrayIndexOutOfBoundsException");
+	(env, "java/lang/ArrayStoreException");
       (*env)->ThrowNew(env, asecls, "src not an array");
       return -1;
     }
     if (FNI_UNWRAP(dst)->claz->component_claz==NULL) {
       jclass asecls = (*env)->FindClass
-	(env, "java/lang/ArrayIndexOutOfBoundsException");
+	(env, "java/lang/ArrayStoreException");
       (*env)->ThrowNew(env, asecls, "dst not an array");
       return -1;
     }
@@ -115,7 +115,7 @@ int do_arraycopy_checks(JNIEnv *env, jobject src, jint srcpos,
       if (FNI_UNWRAP(src)->claz !=
 	  FNI_UNWRAP(dst)->claz ) {
 	jclass asecls = (*env)->FindClass
-	  (env, "java/lang/ArrayIndexOutOfBoundsException");
+	  (env, "java/lang/ArrayStoreException");
 	(*env)->ThrowNew(env, asecls, "primitive array types don't match");
 	return -1;
       }
@@ -134,6 +134,7 @@ int do_arraycopy_checks(JNIEnv *env, jobject src, jint srcpos,
     return isPrimitive;
 }
 
+#ifndef WITH_TRANSACTIONS /* transactions has its own versions of arraycopy */
 /*
  * Class:     java_lang_System
  * Method:    arraycopy
@@ -183,77 +184,7 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
       return;
     }
 }
-
-#ifdef WITH_TRANSACTIONS
-/* transaction support */
-#include "../transact/java_lang_Object.h" /* version fetch methods */
-#include "java_lang_Class.h" /* Class.getComponentType() */
-/*
- * Class:     java_lang_System
- * Method:    arraycopy
- * Signature: (Ljava/lang/Object;ILjava/lang/Object;II)V
- */
-JNIEXPORT void JNICALL Java_java_lang_System_arraycopy_00024_00024withtrans
-  (JNIEnv *env, jclass syscls, jobject commitrec,
-   jobject src, jint srcpos, jobject dst, jint dstpos,
-   jint length) {
-    jint i; jclass type;
-    jobject srcR, dstW;
-    /* first check that everything's kosher. */
-    int isPrimitive=do_arraycopy_checks(env, src, srcpos, dst, dstpos, length);
-    if (isPrimitive<0) return; /* exception occurred. */
-    /* get a readable version of src */
-    srcR = Java_java_lang_Object_getReadableVersion(env, src, commitrec);
-    if ((*env)->ExceptionOccurred(env)!=NULL) return;
-    /* get a writable version of dst */
-    dstW = Java_java_lang_Object_getReadWritableVersion(env, dst, commitrec);
-    if ((*env)->ExceptionOccurred(env)!=NULL) return;
-    /* now for each field, do writeArrayElementFlag() */
-    type = Java_java_lang_Class_getComponentType(env,
-						 FNI_GetObjectClass(env, src));
-    for (i=0; i<length; i++) {
-	Java_java_lang_Object_writeArrayElementFlag(env, src, i+srcpos, type);
-	Java_java_lang_Object_writeArrayElementFlag(env, dst, i+dstpos, type);
-    }
-    /* and now we can really copy the array (whew!)
-
-    /* for primitive array, we're all set: */
-    if (isPrimitive) {
-      struct aarray *_src, *_dst;
-      int size=0;
-      assert(FNI_GetClassInfo(FNI_GetObjectClass(env, src))->name[0]=='[');
-      switch(FNI_GetClassInfo(FNI_GetObjectClass(env, src))->name[1]) {
-      case 'Z': size = sizeof(jboolean); break;
-      case 'B': size = sizeof(jbyte); break;
-      case 'C': size = sizeof(jchar); break;
-      case 'S': size = sizeof(jshort); break;
-      case 'I': size = sizeof(jint); break;
-      case 'J': size = sizeof(jlong); break;
-      case 'F': size = sizeof(jfloat); break;
-      case 'D': size = sizeof(jdouble); break;
-      default: assert(0); /* what kind of primitive array is this? */
-      }
-      _src=(struct aarray*) FNI_UNWRAP(srcR);
-      _dst=(struct aarray*) FNI_UNWRAP(dstW);
-      /* note: we use memmove to allow the areas to overlap. */
-      memmove(((char *)&(_dst->element_start))+(dstpos*size),
-	     ((char *)&(_src->element_start))+(srcpos*size),
-	     size*length);
-      return;
-    } else {
-      /* check for overlap */
-      int backward = ( FNI_IsSameObject(env, srcR, dstW) && srcpos < dstpos );
-      int i = backward ? (length-1) : 0;
-      while (backward ? (i >= 0) : (i < length)) {
-	jobject o = (*env)->GetObjectArrayElement(env, srcR, srcpos+i);
-	(*env)->SetObjectArrayElement(env, dstW, dstpos+i, o);
-	if ((*env)->ExceptionOccurred(env)!=NULL) return;
-	if (backward) i--; else i++;
-      }
-      return;
-    }
-}
-#endif
+#endif /* !WITH_TRANSACTIONS */
 
 /*
  * Class:     java_lang_System

@@ -37,6 +37,7 @@ static inline jobject cloneHelper(JNIEnv *env, jobject obj, jsize len) {
   return clone;
 }
 
+#ifndef WITH_TRANSACTIONS /* transactions defines own versions of clone() */
 /*
  * Class:     java_lang_Object
  * Method:    clone
@@ -66,6 +67,7 @@ PRIMITIVEARRAYCLONE(Float, jfloat, F);
 PRIMITIVEARRAYCLONE(Double, jdouble, D);
 /* not really a primitive =) */
 PRIMITIVEARRAYCLONE(Object, struct oobj *, Ljava_lang_Object_2);
+#endif /* !WITH_TRANSACTIONS */
 
 /*
  * Class:     java_lang_Object
