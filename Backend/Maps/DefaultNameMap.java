@@ -18,17 +18,30 @@ import harpoon.Util.Util;
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultNameMap.java,v 1.1.2.4 1999-10-17 17:41:16 cananian Exp $
+ * @version $Id: DefaultNameMap.java,v 1.1.2.5 2000-03-09 03:43:54 cananian Exp $
  */
 public class DefaultNameMap extends NameMap {
+    private final boolean prependUnderscore;
+
     private static final String member_prefix = "_Flex_";
     private static final String class_prefix = "_Class_";
     private static final String primitive_prefix = "_Primitive_";
     private static final String string_prefix = "_String_";
     private static final String suffix_sep = "_9"; // "$" is another option.
 
-    /** Creates a <code>DefaultNameMap</code>. */
-    public DefaultNameMap() { }
+    /** Creates a <code>DefaultNameMap</code>.  If 
+     *  <code>prependUnderscore</code> is <code>true</code>, then
+     *  underscores are prepended to c function names.  Otherwise,
+     *  the appear in the assembly output exactly as they do in C.
+     */
+    public DefaultNameMap(boolean prependUnderscore) {
+	this.prependUnderscore = prependUnderscore;
+    }
+
+    /* Map C function names to assembly label strings. */
+    public String c_function_name(String fn) {
+	if (prependUnderscore) return "_"+fn; else return fn;
+    }
 
     /** Mangle a method name. */
     public String mangle(HMethod hm, String suffix) {

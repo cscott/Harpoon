@@ -13,9 +13,14 @@ import harpoon.Temp.Label;
  * and fields to unique string labels legal in assembly code.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NameMap.java,v 1.1.2.7 1999-10-16 22:18:17 cananian Exp $
+ * @version $Id: NameMap.java,v 1.1.2.8 2000-03-09 03:43:54 cananian Exp $
  */
 public abstract class NameMap {
+    /** Maps a C function name to the appropriate label string.  For
+     *  many platforms, the label string has an underscore prepended.
+     *  For others, the label string is the function name exactly. */
+    public abstract String c_function_name(String function_name);
+
     /** Mangle a method name. */
     public String mangle(HMethod hm) { return mangle(hm, null); }
     /** Mangle a method name, adding a uniqueness suffix.
