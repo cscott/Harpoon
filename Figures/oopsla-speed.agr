@@ -1,7 +1,7 @@
 # Grace project file
 #
 @version 50107
-@page size 791, 611
+@page size 790, 610
 @page scroll 5%
 @page inout 5%
 @link page off
@@ -54,17 +54,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri Mar 22 16:17:27 2002"
-@with string
-@    string on
-@    string loctype view
-@    string 0.98, 0.86
-@    string color 1
-@    string rot 0
-@    string font 0
-@    string just 6
-@    string char size 0.770000
-@    string def "2.39"
+@timestamp def "Fri Mar 22 19:13:44 2002"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -114,7 +104,7 @@
 @    world xmin 1.5
 @    world xmax 9.5
 @    world ymin 0
-@    world ymax 1.55
+@    world ymax 1.6
 @    stack world 0, 0, 0, 0
 @    znorm 1
 @    view xmin 0.150000
@@ -281,7 +271,7 @@
 @    frame pattern 1
 @    frame background color 0
 @    frame background pattern 0
-@    s0 hidden false
+@    s0 hidden true
 @    s0 type bar
 @    s0 symbol 0
 @    s0 symbol size 0.650000
@@ -337,7 +327,7 @@
 @    s1 symbol color 1
 @    s1 symbol pattern 1
 @    s1 symbol fill color 1
-@    s1 symbol fill pattern 9
+@    s1 symbol fill pattern 1
 @    s1 symbol linewidth 1.0
 @    s1 symbol linestyle 1
 @    s1 symbol char 65
@@ -573,8 +563,8 @@
 @    s5 errorbar riser linestyle 1
 @    s5 errorbar riser clip off
 @    s5 errorbar riser clip length 0.100000
-@    s5 comment "+Hash -External"
-@    s5 legend  "+Hash -External"
+@    s5 comment "+Hash"
+@    s5 legend  "+Hash"
 @    s6 hidden true
 @    s6 type bar
 @    s6 symbol 0
@@ -681,20 +671,20 @@
                5           1.0213
                6           1.1253
                7           0.9523
-               8           2.3938
+               8           1.1211
                9           1.2575
 &
 @target G0.S5
 @type bar
-               1         104.1579
-               2           1.0289
-               3           1.2017
-               4            0.841
-               5            1.429
+               1                0
+               2           1.0433
+               3           1.4633
+               4           2.0043
+               5           1.4197
                6           1.3715
-               7           0.9739
-               8           0.9002
-               9           1.2457
+               7           0.9862
+               8           1.1626
+               9           1.5952
 &
 @target G0.S6
 @type bar
