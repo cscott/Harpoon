@@ -98,7 +98,7 @@ import harpoon.Util.DataStructs.LightMap;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPAMain.java,v 1.12 2003-04-02 20:41:22 salcianu Exp $
+ * @version $Id: ODPAMain.java,v 1.13 2003-04-08 04:17:03 salcianu Exp $
  */
 public abstract class ODPAMain {
 
@@ -880,8 +880,9 @@ public abstract class ODPAMain {
 		ODPointerAnalysis.ODA_precise = true;
 		break;
 	    case 'o':
-		SAMain.ASSEM_DIR = new java.io.File(g.getOptarg());
-		assert SAMain.ASSEM_DIR.isDirectory() : "" + SAMain.ASSEM_DIR + " must be a directory";
+		CodeGenerator.ASSEM_DIR = new java.io.File(g.getOptarg());
+		assert CodeGenerator.ASSEM_DIR.isDirectory() : 
+		    "" + CodeGenerator.ASSEM_DIR + " must be a directory";
 		break;
 	    case 'b':
 		COMPILE = true;

@@ -19,7 +19,9 @@ import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Tree.Data;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrFactory;
+import harpoon.IR.Quads.QuadWithTry;
 import harpoon.IR.Quads.QuadNoSSA;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Analysis.DataFlow.LiveTemps;
@@ -109,7 +111,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.44 2003-04-02 20:43:51 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.45 2003-04-08 04:17:04 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -118,15 +120,6 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean OPTIMIZE = false;
     static boolean LOOPOPTIMIZE = false;
     static boolean USE_OLD_CLINIT_STRATEGY = false;
-    static boolean INSTRUMENT_ALLOCS = false;
-    // 1 - Brian's instrumentation
-    // 2 - Alex's  instrumentation
-    static int INSTRUMENT_ALLOCS_TYPE = 2;
-    // TODO: add command line options about instrumenting syncs/calls
-    static boolean INSTRUMENT_SYNCS = false;
-    static boolean INSTRUMENT_CALLS = false;
-    static boolean INSTRUMENT_ALLOCS_STUB = false;
-    static String IFILE=null;
     static boolean ROLE_INFER= false;
 
     static boolean QUIET = false;
@@ -139,6 +132,15 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean READ_ALLOC_STATS = false;
     static String allocNumberingFileName;
     static String instrumentationResultsFileName;
+    static boolean INSTRUMENT_ALLOCS = false;
+    // 1 - Brian's instrumentation
+    // 2 - Alex's  instrumentation
+    static int INSTRUMENT_ALLOCS_TYPE = 2;
+    // TODO: add command line options about instrumenting syncs/calls
+    static boolean INSTRUMENT_SYNCS = false;
+    static boolean INSTRUMENT_CALLS = false;
+    static boolean INSTRUMENT_ALLOCS_STUB = false;
+    static String IFILE = null;
     static AllocationStatistics as;
 
     public static Linker linker = null; // can specify on the command-line.
@@ -150,7 +152,6 @@ public class SAMain extends harpoon.IR.Registration {
     static ClassHierarchy classHierarchy;
     static Frame frame;
 
-    static File ASSEM_DIR = null;
     static HCodeFactory hcf;
     static HMethod mainM; // main method of the program to compile
     static Set roots;     // all roots (includes mainM)
@@ -246,7 +247,7 @@ public class SAMain extends harpoon.IR.Registration {
 	if (MULTITHREADED) {
 	    assert PRECISEGC || Realtime.REALTIME_JAVA :
 		"Multi-threaded option is valid only for precise gc.";
-	    assert wbOptLevel == 0 : "Write barrier removal not supported "+
+	    assert wbOptLevel == 0 : "Write barrier removal not supported " +
 		"for multi-threaded programs.";
 	}
 	if (WRITEBARRIERS || DYNAMICWBS)
@@ -383,8 +384,7 @@ public class SAMain extends harpoon.IR.Registration {
 	tree_form_processing();
 
 	CodeGenerator.generate
-	    (ASSEM_DIR, 
-	     new CompilerState(mainM, roots, linker,
+	    (new CompilerState(mainM, roots, linker,
 			       hcf, classHierarchy, frame));
     }
 
@@ -413,7 +413,7 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 
 	// make a rough class hierarchy.
-	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	hcf = new CachingCodeFactory(hcf);
 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	
 	// use the rough class hierarchy to devirtualize as many call
@@ -439,13 +439,11 @@ public class SAMain extends harpoon.IR.Registration {
 	// which the frame will use (among other things, for vtable numbering)
 	frame.setClassHierarchy(classHierarchy);
 	if (USE_OLD_CLINIT_STRATEGY) {
-	    // construct a call graph
-	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    CallGraph callGraph = new CallGraphImpl2(classHierarchy, hcf);
-	    frame.setCallGraph(callGraph);
+	    // construct a call graph and send it to the frame
+	    hcf = new CachingCodeFactory(QuadSSI.codeFactory(hcf));
+	    frame.setCallGraph(new CallGraphImpl2(classHierarchy, hcf));
 	    System.getProperties().put
-		("harpoon.runtime1.order-initializers","true");
+		("harpoon.runtime1.order-initializers", "true");
 	}
  
 	// virtualize any uncallable methods using the final classhierarchy
@@ -468,12 +466,6 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     private static void quad_form_fancy_processing() {
-	if (EVENTDRIVEN)
-	    event_driven_step_one();
-	
-	if (ROLE_INFER)
-	    role_inference();
-
 	if (INSTRUMENT_ALLOCS || READ_ALLOC_STATS)
 	    handle_alloc_instrumentation();
 
@@ -482,6 +474,12 @@ public class SAMain extends harpoon.IR.Registration {
 		(linker, hcf, classHierarchy, mainM, roots, as, frame);
 	}
 	
+	if (EVENTDRIVEN)
+	    event_driven_step_one();
+	
+	if (ROLE_INFER)
+	    role_inference();
+
 	if (DO_TRANSACTIONS)
 	    do_transactions();
 
@@ -491,7 +489,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf = Realtime.addChecks(linker, classHierarchy, hcf, roots);
 	}
 
-	// Scott's fancy stuff: not part of the normal flow
+	// Scott's fancy stuff: not part of the normal flow of execution
 	handle_mzf_stuff();
 	
 	if (BACKEND == Backend.MIPSDA || BACKEND == Backend.MIPSYP)
@@ -625,13 +623,9 @@ public class SAMain extends harpoon.IR.Registration {
 	if (DO_TRANSACTIONS)
 	    hcf = syncTransformer.treeCodeFactory(frame, hcf);
 
-	if (MULTITHREADED) {
-	    /* pass to insert GC polling calls */
-	    System.out.println
-		("Compiling with precise gc for multiple threads.");
+	if (MULTITHREADED) /* pass to insert GC polling calls */
 	    hcf = harpoon.Backend.Analysis.MakeGCThreadSafe.
 		codeFactory(hcf, frame);
-	}
 
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 
@@ -772,7 +766,10 @@ public class SAMain extends harpoon.IR.Registration {
 		}
 		break;
 	    case 'm': // Multi-threaded (KKZ)
-		MULTITHREADED = true; break;
+		MULTITHREADED = true;
+		System.out.println
+		    ("Compiling with precise gc for multiple threads.");
+		break;
 	    case 'w': // Add write barriers (KKZ)
 		WRITEBARRIERS = true;
 		assert DYNAMICWBS == false :
@@ -897,9 +894,9 @@ public class SAMain extends harpoon.IR.Registration {
 		CodeGenerator.REG_ALLOC = true;
 		break;
 	    case 'o':
-		ASSEM_DIR = new File(g.getOptarg());
-		assert ASSEM_DIR.isDirectory() : 
-		    "" + ASSEM_DIR + " must be a directory";
+		CodeGenerator.ASSEM_DIR = new File(g.getOptarg());
+		assert CodeGenerator.ASSEM_DIR.isDirectory() : 
+		    "" + CodeGenerator.ASSEM_DIR + " must be a directory";
 		break;
 	    case 'b':
 		BACKEND = Options.getBackendID(g.getOptarg());
@@ -1149,7 +1146,7 @@ public class SAMain extends harpoon.IR.Registration {
 		(harpoon.Runtime.MZFExternalMap.class);
 	    roots.addAll(Arrays.asList(hcx.getDeclaredMethods()));
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	}	    
+	}
 	if (Boolean.getBoolean("bitwidth")) {
 	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);

@@ -99,7 +99,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.20 2003-04-02 20:41:23 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.21 2003-04-08 04:17:04 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -965,9 +965,9 @@ public abstract class PAMain {
 		CHECK_NO_CALLEES = true;
 		break;
 	    case 'o':
-		SAMain.ASSEM_DIR = new java.io.File(g.getOptarg());
-		assert SAMain.ASSEM_DIR.isDirectory() : 
-		    SAMain.ASSEM_DIR + " must be a directory";
+		CodeGenerator.ASSEM_DIR = new java.io.File(g.getOptarg());
+		assert CodeGenerator.ASSEM_DIR.isDirectory() : 
+		    CodeGenerator.ASSEM_DIR + " must be a directory";
 		break;
 	    case 'b':
 		COMPILE = true;

@@ -64,7 +64,7 @@ import java.io.PrintWriter;
  * <code>CodeGenerator</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CodeGenerator.java,v 1.2 2003-04-02 20:43:51 salcianu Exp $
+ * @version $Id: CodeGenerator.java,v 1.3 2003-04-08 04:17:03 salcianu Exp $
  */
 public abstract class CodeGenerator {
 
@@ -77,6 +77,7 @@ public abstract class CodeGenerator {
     static boolean HACKED_REG_ALLOC = false;
     static boolean LOCAL_REG_ALLOC = false;
     static boolean OUTPUT_INFO = false;
+    static File ASSEM_DIR;
 
     static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     static String  singleClassStr = null; 
@@ -88,9 +89,7 @@ public abstract class CodeGenerator {
     static String regAllocOptionsFilename; 
     private static RegAlloc.Factory regAllocFactory;
 
-    public static CompilerState generate(File dir, CompilerState cs) {
-	ASSEM_DIR = dir;
-
+    public static CompilerState generate(CompilerState cs) {
 	mainM = cs.getMain();
 	linker = cs.getLinker();
 	hcf = cs.getCodeFactory();
@@ -98,6 +97,12 @@ public abstract class CodeGenerator {
 	frame = cs.getFrame();
 
 	generate_code();
+
+	mainM = null;
+	linker = null;
+	hcf = null;
+	classHierarchy = null;
+	frame = null;
 
 	return cs;
     }
@@ -107,7 +112,6 @@ public abstract class CodeGenerator {
     private static HCodeFactory hcf;
     private static ClassHierarchy classHierarchy;
     private static Frame frame;
-    private static File ASSEM_DIR;
     private static PrintWriter out = new PrintWriter(System.out, true);
 
 
