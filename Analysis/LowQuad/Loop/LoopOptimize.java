@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.20 1999-09-09 21:42:54 cananian Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.21 1999-09-22 05:59:29 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -605,7 +605,7 @@ public final class LoopOptimize {
 		Temp[] consttemp=new Temp[induction.depth()];
 
 		//Use old header here...
-		Temp initial=initialTemp(hc,(PHI)oheader, induction.variable(), lp.loopIncelements());
+		Temp initial=loopanal.initialTemp(hc, induction.variable(), lp);
 		initial=hcnew.tempMap(initial);
 
 		QuadInserter addquad=new QuadInserter(header.prev(linkin), header.prevEdge(linkin).which_succ(), header, linkin);
@@ -731,7 +731,7 @@ public final class LoopOptimize {
 
 		//and calculate the increment size.. [done]
 
-		Temp increment=hcnew.tempMap(loopmap.tempMap(findIncrement(hc, induction.variable(), lp.loopIncelements(),oheader)));
+		Temp increment=hcnew.tempMap(loopmap.tempMap(loopanal.findIncrement(hc, induction.variable(), lp)));
 
 
 		    //Need to do multiply...
@@ -794,7 +794,7 @@ public final class LoopOptimize {
 		Util.assert(sources.length==1);
 		Quad delquad=(Quad)sources[0];
 
-		//Mark it used....wouldn't want to try to hoist this into existance the future...
+		//Mark it used....wouldn't want to try to hoist this into existance in the future...
 		usedinvariants.push(delquad);
 
 		//Get the right quad
@@ -885,7 +885,7 @@ public final class LoopOptimize {
     void makeADD(Induction induction, Temp addresult, Temp indvariable, Temp increment, HCode hc, MyLowQuadSSI hcnew, Loops lp, Quad oheader) {
 	//Build addresult=POPER(add(indvariable, increment))
 	Temp basic=induction.variable();
-	Quad addposition=hcnew.quadMap(addQuad(hc,(PHI) oheader,basic,lp.loopIncelements()));
+	Quad addposition=hcnew.quadMap(loopanal.addQuad(hc,(PHI) oheader,basic,lp.loopIncelements()));
 
 	Quad newquad=null;
 	Temp[] sources=new Temp[2];
@@ -911,73 +911,8 @@ public final class LoopOptimize {
 	Quad.addEdge(newquad, which_succ, successor, which_pred);
     }
 
-    /** <code>initialTemp</code> takes in a <code>Temp</code> t that needs to be a basic
-     *  induction variable, and returns a <code>Temp</code> with its initial value. */
-    
-    Temp initialTemp(HCode hc, PHI q, Temp t, Set loopelements) {
-	int j=0;
-	for (;j<q.numPhis();j++) {
-	    if (q.dst(j)==t) break;
-	}
-	Temp[] uses=q.src(j);
-	Util.assert(uses.length==2);
-	Temp initial=null;
-	for(int i=0;i<uses.length;i++) {
-	    HCodeElement[] sources=ud.defMap(hc,ssitossamap.tempMap(uses[i]));
-	    Util.assert(sources.length==1);
-	    if (!loopelements.contains(sources[0])) {
-		initial=uses[i];
-		break;
-	    }
-	}
-	return initial;
-    }
 
-    /** <code>addQuad</code> takes in a <code>Temp</code> t that needs to be a basic
-     *  induction variable, and returns the <code>Quad</code> that does the adding. */
-    
-    Quad addQuad(HCode hc, PHI q,Temp t, Set loopelements) {
-       	int j=0;
-	for (;j<q.numPhis();j++) {
-	    if (q.dst(j)==t) break;
-	}
-	Temp[] uses=q.src(j);
-	Util.assert(uses.length==2);
-	Temp initial=null;
-	for(int i=0;i<uses.length;i++) {
-	    HCodeElement[] sources=ud.defMap(hc,ssitossamap.tempMap(uses[i]));
-	    Util.assert(sources.length==1);
-	    if (loopelements.contains(sources[0])) {
-		initial=uses[i];
-		break;
-	    }
-	}
-	HCodeElement[] sources=ud.defMap(hc,ssitossamap.tempMap(initial));
-	Util.assert(sources.length==1);
-	return (Quad)sources[0];
-    }
 
-    /** <code>findIncrement</code> finds out how much the basic induction variable is
-     *  incremented by.*/
-
-    Temp findIncrement(HCode hc, Temp t, Set loopelements, Quad oheader) {
-	Quad q=addQuad(hc,(PHI) oheader, t,loopelements);
-	HCodeElement []source=ud.defMap(hc,ssitossamap.tempMap(t));
-	Util.assert(source.length==1);
-	PHI qq=(PHI)source[0];
-	Temp[] uses=q.use();
-	Temp result=null;
-
-	for (int i=0;i<uses.length;i++) {
-	    HCodeElement []sources=ud.defMap(hc,ssitossamap.tempMap(uses[i]));
-	    Util.assert(sources.length==1);
-	    if (sources[0]!=qq) {
-		result=uses[i];
-		break;
-	    }
-	}
-	return result;
-    }
 
 
     //**********************************

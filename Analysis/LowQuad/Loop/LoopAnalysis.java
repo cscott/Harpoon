@@ -7,8 +7,8 @@ import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Loops.LoopFinder;
 import harpoon.Util.WorkSet;
 import harpoon.ClassFile.*;
-import harpoon.IR.LowQuad.*;
-import harpoon.IR.Quads.*;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Quad;
 import harpoon.Analysis.Loops.*;
 import harpoon.Temp.Temp;
 import harpoon.Analysis.SSITOSSAMap;
@@ -20,6 +20,7 @@ import harpoon.Analysis.LowQuad.Loop.LoopInvariance;
 import harpoon.Analysis.Maps.AllInductionsMap;
 import harpoon.Analysis.Maps.BasicInductionsMap;
 import harpoon.Analysis.Maps.InvariantsMap;
+import harpoon.Util.Util;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +33,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.11 1999-09-20 22:03:00 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.12 1999-09-22 05:59:29 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -41,11 +42,13 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
     TempMap tm;
     HashMap aimap, bimap, invmap;
     LoopFinder rtloop;
+    UseDef ud;
 
     /** Creates a <code>LoopAnalysis</code>.  Takes in a TempMap
      that for SSI forms needs to map SSI->SSA.*/
     public LoopAnalysis(TempMap tm) {
 	this.tm=tm;
+	this.ud=new UseDef();
     }
 
     /*-----------------------------*/
@@ -74,6 +77,82 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	return (Set) invmap.get(lp.loopEntrances().toArray()[0]);
     }
 
+
+    /** <code>initialTemp</code> takes in a <code>Temp</code> t that needs to be a basic
+     *  induction variable, a <code>Loops</code> that is the loop that t is an
+     * induction variable in and returns a <code>Temp</code> with its initial value. */
+    
+    Temp initialTemp(HCode hc, Temp t, Loops lp) {
+	Set loopelements=lp.loopIncelements();
+	Util.assert(lp.loopEntrances().size()==1,"Loop must have one entrance");
+	PHI q=(PHI)(lp.loopEntrances()).toArray()[0];
+
+	int j=0;
+	for (;j<q.numPhis();j++) {
+	    if (q.dst(j)==t) break;
+	}
+	Temp[] uses=q.src(j);
+	Util.assert(uses.length==2);
+	Temp initial=null;
+	for(int i=0;i<uses.length;i++) {
+	    HCodeElement[] sources=ud.defMap(hc,tm.tempMap(uses[i]));
+	    Util.assert(sources.length==1);
+	    if (!loopelements.contains(sources[0])) {
+		initial=uses[i];
+		break;
+	    }
+	}
+	return initial;
+    }
+
+    /** <code>findIncrement</code> finds out how much the basic induction variable is
+     *  incremented by.*/
+
+    Temp findIncrement(HCode hc, Temp t, Loops lp) {
+	Set loopelements=lp.loopIncelements();
+	Util.assert(lp.loopEntrances().size()==1,"Loop must have one entrance");
+	PHI oheader=(PHI)(lp.loopEntrances()).toArray()[0];
+	Quad q=addQuad(hc, oheader, t,loopelements);
+	HCodeElement []source=ud.defMap(hc,tm.tempMap(t));
+	Util.assert(source.length==1);
+	PHI qq=(PHI)source[0];
+	Temp[] uses=q.use();
+	Temp result=null;
+
+	for (int i=0;i<uses.length;i++) {
+	    HCodeElement []sources=ud.defMap(hc,tm.tempMap(uses[i]));
+	    Util.assert(sources.length==1);
+	    if (sources[0]!=qq) {
+		result=uses[i];
+		break;
+	    }
+	}
+	return result;
+    }
+
+    /** <code>addQuad</code> takes in a <code>Temp</code> t that needs to be a basic
+     *  induction variable, and returns the <code>Quad</code> that does the adding. */
+    
+    Quad addQuad(HCode hc, PHI q,Temp t, Set loopelements) {
+       	int j=0;
+	for (;j<q.numPhis();j++) {
+	    if (q.dst(j)==t) break;
+	}
+	Temp[] uses=q.src(j);
+	Util.assert(uses.length==2);
+	Temp initial=null;
+	for(int i=0;i<uses.length;i++) {
+	    HCodeElement[] sources=ud.defMap(hc,tm.tempMap(uses[i]));
+	    Util.assert(sources.length==1);
+	    if (loopelements.contains(sources[0])) {
+		initial=uses[i];
+		break;
+	    }
+	}
+	HCodeElement[] sources=ud.defMap(hc,tm.tempMap(initial));
+	Util.assert(sources.length==1);
+	return (Quad)sources[0];
+    }
 
     /*---------------------------*/
     // Analysis code.
