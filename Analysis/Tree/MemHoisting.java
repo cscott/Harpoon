@@ -6,6 +6,7 @@ package harpoon.Analysis.Tree;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.CFGrapher;
@@ -26,9 +27,11 @@ import harpoon.Util.Util;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 /**
  * <code>MemHoisting</code> ensures that the ordering of MEM operations
  * is well-defined in the tree, by creating a temporary for and hoisting
@@ -36,7 +39,7 @@ import java.util.Map;
  * the transformation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemHoisting.java,v 1.1.2.1 2001-06-06 22:18:54 cananian Exp $
+ * @version $Id: MemHoisting.java,v 1.1.2.2 2001-06-11 17:09:15 cananian Exp $
  */
 public abstract class MemHoisting extends Simplification {
     // hide constructor
@@ -75,13 +78,28 @@ public abstract class MemHoisting extends Simplification {
 	m.put(tr, new Integer(memcnt));
 	return memcnt;
     }
+    private static void recurse(Stm stm, CFGrapher cfgr, Set done, Map m) {
+	// do this one.
+	done.add(stm);
+	count(stm, m);
+	// do successors.
+	for (Iterator it=cfgr.succElemC(stm).iterator(); it.hasNext(); ) {
+	    Stm next = (Stm) it.next();
+	    if (!done.contains(next))
+		recurse(next, cfgr, done, m);
+	}
+    }
 
     public static List HCE_RULES(final harpoon.IR.Tree.Code code) {
 	final CFGrapher cfgr = code.getGrapher();
 	// collect the number of MEMs in every subtree.
 	final Map memmap = new HashMap();
-	for (Iterator it=code.getElementsI(); it.hasNext(); )
-	    count((Stm)it.next(), memmap);
+
+	Set done = new HashSet();
+	HCodeElement[] roots = cfgr.getFirstElements(code);
+	for (int i=0; i<roots.length; i++)
+	    recurse((Stm)roots[i], cfgr, done, memmap);
+	roots=null; done=null; // free memory.
 
 	// now make rules.
 	return Arrays.asList(new Rule[] {
@@ -89,6 +107,12 @@ public abstract class MemHoisting extends Simplification {
 	    new Rule("hoistMem") {
 		public boolean match(Exp e) {
 		    if (e.kind() != TreeKind.MEM) return false;
+		    // no infinite application: rule out MOVE(t, MEM(x))
+		    // instances.
+		    // (this also prevents inadvertent application to
+		    //  MOVE(MEM(x), ...) trees)
+		    if (e.getParent()!=null &&
+			e.getParent().kind() == TreeKind.MOVE) return false;
 		    return true;
 		}
 		public Exp apply(TreeFactory tf,Exp e,DerivationGenerator dg) {
@@ -96,18 +120,22 @@ public abstract class MemHoisting extends Simplification {
 		    Temp t = new Temp(tf.tempFactory(), "memhoist");
 		    TEMP T1 = new TEMP(tf, e, mem.type(), t);
 		    TEMP T2 = new TEMP(tf, e, mem.type(), t);
+		    MEM nmem = (MEM) mem.build(tf, mem.kids());
 		    if (dg!=null) { // make types for the new TEMPs/Temp
 			HClass hc = dg.typeMap(mem);
 			if (hc!=null) {
 			    dg.putTypeAndTemp(T1, hc, t);
 			    dg.putTypeAndTemp(T2, hc, t);
+			    dg.putType(nmem, hc);
 			} else {
 			    dg.putDerivation(T1, dg.derivation(mem));
 			    dg.putDerivation(T2, dg.derivation(mem));
+			    dg.putDerivation(nmem, dg.derivation(mem));
 			}
+			dg.remove(mem);
 		    }
 		    return new ESEQ(tf, e,
-				    new MOVE(tf, e, T1, mem),
+				    new MOVE(tf, e, T1, nmem),
 				    T2);
 		}
 	    },
