@@ -1,48 +1,63 @@
+// ScopedMemory.java, created by wbeebee
+// Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
+/** <code>ScopedMemory</code>
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ */
+
 public abstract class ScopedMemory extends MemoryArea {
-  protected java.lang.Object portal;
+    protected Object portal;
 
-  public ScopedMemory(long size) {
-    super(size);
-    portal = null;
-    scoped = true;
-    parent = RealtimeThread.currentRealtimeThread().getMemoryArea();
-  }
+    /** */
 
-  public void enter(java.lang.Runnable logic) {
-    super.enter(logic);    
-  }
-  
-  public long getMaximumSize() { // For fixed size scopes...
-    return size;
-  }
-  
-  public MemoryArea getOuterScope() {
-    return parent;
-  }
-  
-  public java.lang.Object getPortal() {
-    return portal;
-  }
-  
-  public void setPortal(java.lang.Object object) {
-    portal = object;
-  }
+    public ScopedMemory(long size) {
+	super(size);
+	portal = null;
+	scoped = true;
+    }
+    
+    /** */
 
-  public synchronized void checkAccess(java.lang.Object obj) 
-      throws IllegalAccessException { 
-    Stats.addCheck();
-    if ((obj!=null)&&(obj.memoryArea!=null)&&obj.memoryArea.scoped) {
-      ScopedMemory target = (ScopedMemory)(obj.memoryArea);
-      MemoryArea p = this;
-      while (p != null) {
-        if (p == target) {
-          return;
-        }
-        p = p.parent;
-      }
-      throw new IllegalAccessException();
-    } 
-  }
+    public void enter(Runnable logic) {
+	enter(logic, true);
+    }
+    
+    /** */
+
+    public long getMaximumSize() { 
+	return size;
+    }
+    
+    /** */
+
+    public Object getPortal() {
+	return portal;
+    }
+    
+    /** */
+
+    public void setPortal(Object object) {
+	portal = object;
+    }
+    
+    /** */
+
+    public MemoryArea getOuterScope() {
+	return RealtimeThread.currentRealtimeThread().outerScope(this);
+    }
+
+    public void checkAccess(Object obj) { 
+	//      Stats.addCheck();
+	if (obj != null) {
+	    MemoryArea target = getMemoryArea(obj);
+	    if ((this != target) && target.scoped &&
+		(!RealtimeThread.currentRealtimeThread()
+		 .checkAccess(this, target))) {
+		throw new IllegalAssignmentError();	    
+	    }
+	}	    
+    }
 }

@@ -1,49 +1,105 @@
+// MemoryArea.java, created by wbeebee
+// Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 
+/** <code>MemoryArea</code>
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ */
+
 public abstract class MemoryArea {
-    protected MemoryArea parent;
-    protected long size, memoryConsumed;  // Size is somewhat inaccurate
+
+    /** */
+
+    protected long size;
+
+    /** */
+
+    protected long memoryConsumed;  // Size is somewhat inaccurate
+
+    /** */
+
     protected boolean scoped;
+
+    /** */
+
+    protected boolean heap;
+
+    /** */
+
     protected int id;
+
+    /** */
+
     private static int num = 0;
+
+    /** Indicates whether this memoryArea refers to a constant or not. 
+     *  This is set by the compiler.
+     */
+
+    boolean constant;
 
     protected MemoryArea(long sizeInBytes) {
 	size = sizeInBytes;
 	scoped = false; // To avoid the dreaded instanceof
-	parent = null;
+	heap = false;
 	id = num++;
+	constant = false;
     }
     
-    public void enter(java.lang.Runnable logic) {
+    /** */
+
+    public void enter(Runnable logic) {
+	enter(logic, false);
+    }
+
+    /** */
+
+    void enter(Runnable logic, boolean checkReentry) {
 	RealtimeThread current = RealtimeThread.currentRealtimeThread();
-	MemoryArea oldMem = current.mem;
-	current.mem = this;
+	current.enterFromMemArea(this, checkReentry);
 	logic.run();
-	current.mem = oldMem;
+	current.exit();
     }
+
+    /** */
     
-    public static MemoryArea getMemoryArea(java.lang.Object object) {
-	if (object.memoryArea == null) { // Constants/native objects 
-	    // are attached to theHeap
-	    return HeapMemory.instance();
+    public static MemoryArea getMemoryArea(Object object) {
+	MemoryArea mem = object.memoryArea;
+	if (mem == null) { // Native methods return objects 
+	    // allocated out of the current scope.
+	    return RealtimeThread.currentRealtimeThread().getMemoryArea();
+	} 
+	if (mem.constant) { 
+	    // Constants are allocated out of ImmortalMemory	    
+	    return ImmortalMemory.instance();
 	}
-	return object.memoryArea;
+	return mem;
     }
     
+    /** */
+
     public long memoryConsumed() {
 	return memoryConsumed;
     }
     
+    /** */
+
     public long memoryRemaining() {
 	return size-memoryConsumed;
     }
     
+    /** */
+
     public long size() {
 	return size;
     }
     
+    /** */
+
     private long checkMem(java.lang.Class type, int number) {
 	long size = 4 * number;
 	if ((memoryConsumed + size) > this.size) {
@@ -51,6 +107,8 @@ public abstract class MemoryArea {
 	}
 	return size;
     }
+
+    /** */
 
     private long checkMem(java.lang.Class type, int[] dimensions) {
 	long size = 4;
@@ -63,12 +121,16 @@ public abstract class MemoryArea {
 	return size;
     }
     
+    /** */
+
     private java.lang.Object update(java.lang.Object obj, long size) {
 	memoryConsumed += size;
 	obj.memoryArea = this;
 	return obj;
     }
     
+    /** */
+
     public synchronized void bless(java.lang.Object obj) { 
 	long size;
 	try {
@@ -80,6 +142,8 @@ public abstract class MemoryArea {
 	update(obj, size);
     }
     
+    /** */
+
     public synchronized void bless(java.lang.Object obj, int[] dimensions) { 
 	long size;
 	try {
@@ -90,13 +154,15 @@ public abstract class MemoryArea {
 	}
 	update(obj, size);
     }
-    
-    public synchronized java.lang.Object newArray(final java.lang.Class type,
-						  final int number) 
+
+    /** */
+
+    public synchronized Object newArray(final Class type, final int number) 
 	throws IllegalAccessException, InstantiationException, OutOfMemoryError
     {
 	long size = checkMem(type, number);
-	RealtimeThread.currentRealtimeThread().getMemoryArea().checkAccess(this);
+	RealtimeThread.currentRealtimeThread().getMemoryArea()
+	    .checkAccess(this);
 	class NewArray implements Runnable {
 	    public Object newObj;
 	    public void run() {
@@ -104,16 +170,19 @@ public abstract class MemoryArea {
 	    }
 	}
 	NewArray newArray = new NewArray();
-	enter(newArray);
+	newArray.run();
 	return update(newArray.newObj, size);
     }
     
-    public synchronized java.lang.Object newArray(final java.lang.Class type,
-						  final int[] dimensions) 
+    /** */
+
+    public synchronized Object newArray(final Class type,
+					final int[] dimensions) 
 	throws IllegalAccessException, OutOfMemoryError
     {
 	long size = checkMem(type, dimensions);
-	RealtimeThread.currentRealtimeThread().getMemoryArea().checkAccess(this);
+	RealtimeThread.currentRealtimeThread().getMemoryArea()
+	    .checkAccess(this);
 	class NewArray implements Runnable {
 	    public Object newObj;
 	    public void run() {
@@ -121,24 +190,28 @@ public abstract class MemoryArea {
 	    }
 	}
 	NewArray newArray = new NewArray();
-	enter(newArray);
+	newArray.run();
 	return update(newArray.newObj, size);
     }
+
+    /** */
     
-    public synchronized java.lang.Object newInstance(java.lang.Class type)
+    public synchronized Object newInstance(Class type)
 	throws IllegalAccessException, InstantiationException,
 	       OutOfMemoryError {
-	return newInstance(type, new java.lang.Class[0], new java.lang.Object[0]);
+	return newInstance(type, new Class[0], new Object[0]);
     }
     
-    public synchronized java.lang.Object 
-	newInstance(final java.lang.Class type,
-		    final java.lang.Class[] parameterTypes,
-		    final java.lang.Object[] parameters) 
+    /** */
+
+    public synchronized Object newInstance(final Class type,
+					   final Class[] parameterTypes,
+					   final Object[] parameters) 
 	throws IllegalAccessException, InstantiationException,
 	       OutOfMemoryError {
 	long size = checkMem(type, 1);
-	RealtimeThread.currentRealtimeThread().getMemoryArea().checkAccess(this);
+	RealtimeThread.currentRealtimeThread().getMemoryArea()
+	    .checkAccess(this);
 	class NewObject implements Runnable {
 	    public Object newObj;
 	    InstantiationException instantiationException;
@@ -167,7 +240,7 @@ public abstract class MemoryArea {
 	    }
 	}
 	NewObject newObject = new NewObject();
-	enter(newObject);
+	newObject.run();
 	if (newObject.newObj == null) {
 	    if (newObject.instantiationException != null) {
 		throw newObject.instantiationException;
@@ -180,15 +253,31 @@ public abstract class MemoryArea {
 	return update(newObject.newObj, size);
     }
     
-    public synchronized void checkAccess(java.lang.Object obj) 
-	throws IllegalAccessException {
-	Stats.addCheck();
-	if ((obj != null) && (obj.memoryArea != null) && obj.memoryArea.scoped) {
-	    throw new IllegalAccessException();
+    /** */
+
+    public void checkAccess(Object obj) {
+//  	Stats.addCheck();
+	if ((obj != null) && (obj.memoryArea != null) && 
+	    obj.memoryArea.scoped) {
+	  throw new IllegalAssignmentError();
 	}
     }
+
+    /** */
+
+    public MemoryArea getOuterScope() {
+	return null;
+    }
     
+    /** */
+
     public String toString() {
+	MemoryArea parent = null;
+	try {
+	    parent = getOuterScope();
+	} catch (MemoryScopeError e) {
+	    return String.valueOf(id + " not in execution path");
+	}
 	if (parent == null) {
 	    return String.valueOf(id);      
 	} else {

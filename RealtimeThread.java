@@ -1,118 +1,273 @@
+// RealtimeThread.java, created by wbeebee
+// Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime; 
 
-// This copy of RealtimeThread is to supply the HCode...
+/** <code>RealtimeThread</code>
+ * 
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ */
 
-public class RealtimeThread extends java.lang.Thread {
+public class RealtimeThread extends Thread {
+
+    /** Contains all of the previous memoryAreas... */
+
+    private MemAreaStack memAreaStack;
+
+    /** Contains the memoryArea associated with this mem. */
+
     MemoryArea mem;
 
+    /** Specifies whether this RealtimeThread has access to the heap */
+
+    boolean noHeap;
+
     public RealtimeThread() {  // All RealtimeThreads default to heap.
-	this(HeapMemory.instance());
+	this((MemoryArea)null);
     }
+
+    /** */
     
     public RealtimeThread(MemoryArea memory) {
 	this(memory, null);
     }
     
-    public RealtimeThread(MemoryArea memory, Runnable target) {
-	super(target);
-	mem = memory;
-    }
+    /** */
 
     public RealtimeThread(MemoryParameters mp, Runnable target) {
 	this(mp.getMemoryArea(), target);
     }
 
+    /** */
+
     public RealtimeThread(Runnable target) {
-	this(HeapMemory.instance(), target);
+	this((MemoryArea)null, target);
     }
     
-    public RealtimeThread(Runnable target, String name) {
-	super(target, name);
-	mem = HeapMemory.instance();
-    }
-    
+    /** */
+
     public RealtimeThread(String name) {
-	super(name);
-	mem = HeapMemory.instance();
+	this((Runnable)null, name);
     }
     
-    public RealtimeThread(ThreadGroup group, Runnable target) {
-	super(group, target);
-	mem = HeapMemory.instance();
-    }
-    
+    /** */
+
     public RealtimeThread(ThreadGroup group, Runnable target, String name) {
-	super(group, target, name);
-	mem = HeapMemory.instance();
+	this(group, target, name, null);
     }
+
+    /** */
     
     public RealtimeThread(ThreadGroup group, String name) {
-	super(group, name);
-	mem = HeapMemory.instance();
+	this(group, null, name);
     }
     
-    // Copy static methods...
-    public static final int MIN_PRIORITY = java.lang.Thread.MIN_PRIORITY;
-    public static final int NORM_PRIORITY = java.lang.Thread.NORM_PRIORITY;
-    public static final int MAX_PRIORITY = java.lang.Thread.MAX_PRIORITY;
+    /** */
+
+    public RealtimeThread(Runnable target, String name) {
+	super(target, name);
+	mem = null;
+	setup();
+    }
     
+    /** */
+
+    public RealtimeThread(MemoryArea memory, Runnable target) {
+	super(target);
+	mem = memory;
+	setup();
+    }
+
+    /** */
+
+    public RealtimeThread(ThreadGroup group, Runnable target) {
+	super(group, target);
+	mem = null;
+	setup();
+    }
+    
+    /** */
+
+    public RealtimeThread(ThreadGroup group, Runnable target, String name,
+			  MemoryArea mem) {
+	super(group, target, name);
+	this.mem = mem;
+	setup();
+    }
+
+    /** This sets up the unspecified local variables for the constructor. */
+
+    private void setup() {
+	memAreaStack = new MemAreaStack();
+	noHeap = false;
+	previousThread = null;
+    }
+
+    /** */
+
+    public static final int MIN_PRIORITY = Thread.MIN_PRIORITY;
+
+    /** */
+
+    public static final int NORM_PRIORITY = Thread.NORM_PRIORITY;
+
+    /** */
+
+    public static final int MAX_PRIORITY = Thread.MAX_PRIORITY;
+    
+    /** */
+
     public static int activeCount() {
-	return java.lang.Thread.activeCount();
+	return Thread.activeCount();
+    }
+
+    /** */    
+
+    public static Thread currentThread() {
+	return Thread.currentThread();
+    }
+
+    /** */
+    
+    public static int enumerate(Thread tarray[]) {
+	return Thread.enumerate(tarray);
     }
     
-    public static java.lang.Thread currentThread() {
-	return java.lang.Thread.currentThread();
-    }
-    
-    public static int enumerate(java.lang.Thread tarray[]) {
-	return java.lang.Thread.enumerate(tarray);
-    }
-    
+    /** */
+
     public static boolean interrupted() {
-	return java.lang.Thread.interrupted();
+	return Thread.interrupted();
     }
     
+    /** */
+
     public static void yield() {
-	java.lang.Thread.yield();
+	Thread.yield();
     }
     
+    /** */
+
     public static void sleep(long millis) throws InterruptedException {
-	java.lang.Thread.sleep(millis);
+	Thread.sleep(millis);
     }
     
+    /** */
+
     public static void sleep(long millis, int nanos) 
 	throws InterruptedException {
-	java.lang.Thread.sleep(millis, nanos);
+	Thread.sleep(millis, nanos);
     }
     
+    /** */
+
     public static void dumpStack() {
-	java.lang.Thread.dumpStack();
+	System.out.println("MemoryArea stack:");
+	System.out.println(currentRealtimeThread().memAreaStack.toString());
+	Thread.dumpStack();
     }
     
     // The following methods are part of the RTJ spec.
+
+    /** */
     
     public static RealtimeThread currentRealtimeThread() {
-	return (RealtimeThread)java.lang.Thread.currentThread();
+	return (RealtimeThread)Thread.currentThread();
     }
     
+    RealtimeThread previousThread;
+
+    public void start() {
+	previousThread = currentRealtimeThread();
+	super.start();
+    }
+
+    /** */
+
     public void run() { // When the run method is called, 
 	// RealtimeThread points to the current scope.
-	if ((java.lang.Thread.currentThread() != null) &&
-	    (java.lang.Thread.currentThread() instanceof RealtimeThread) &&
-	    (currentRealtimeThread().mem != null)) {
-	    mem = currentRealtimeThread().mem;
-	} else if (mem == null) {
-	    mem = HeapMemory.instance();
-    }
+	memAreaStack = previousThread.memAreaStack;
+	
+	MemoryArea newMem = previousThread.getMemoryArea();
+	if (mem == null) {
+	    enter(newMem, false);
+	} else {
+	    enter(mem, newMem.scoped && (mem != newMem));
+	}
+	mem = getMemoryArea();
 	super.run();
+	exit();
     }
     
+    /** */
+
     public MemoryArea getMemoryArea() {
 	if (mem == null) { // Bypass static initializer problem.
 	    mem = HeapMemory.instance();
 	}
 	return mem;
     }  
+
+    /** */
+   
+    void enterFromMemArea(MemoryArea mem, boolean checkStack) {
+	previousThread = this;
+	enter(mem, checkStack);
+    }
+
+    /** */
+
+    private void enter(MemoryArea mem, boolean checkStack) {
+	memAreaStack = 
+	    new MemAreaStack(previousThread.getMemoryArea(), memAreaStack);
+	if (checkStack && (memAreaStack.first(mem) != null)) {
+	    throw new MemoryScopeError("Re-entry of previous scope.");
+	}
+	this.mem = mem;
+    }
+
+    /** */
+
+    void exit() {
+	this.mem = memAreaStack.entry;
+	memAreaStack = memAreaStack.next;
+    }
+    
+    /** */
+
+    MemoryArea outerScope(MemoryArea child) {
+	MemAreaStack current = memAreaStack.first(child);
+	while ((current != null) && (!current.entry.scoped)) {
+	    current = current.next;
+	}
+	if (current == null) {
+	    return null;
+	} else {
+	    return current.entry;
+	}
+    }
+
+    /** */
+
+    boolean checkAccess(MemoryArea source, MemoryArea target) {
+	MemAreaStack sourceStack = (source == getMemoryArea()) ? 
+	    memAreaStack : memAreaStack.first(source);
+	return (sourceStack != null) && (sourceStack.first(target) != null);
+    }
+
+    /** */
+
+    public void checkNoHeapWrite(Object obj) {}
+
+    /** */
+
+    public void checkNoHeapRead(Object obj) {}
+
+    /** */
+    
+    public String toString() {
+	return "RealtimeThread";
+    }
+
 }
 
 

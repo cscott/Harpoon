@@ -1,10 +1,17 @@
+// ImmortalPhysicalMemoryFactory.java, created by wbeebee
+// Copyright (C) 2001 Wes Beebee <wbeebee@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-// I'm explicitly NOT going to worry about the correctness of checks to
-// data that's aliased through separate PhysicalMemoryFactory's....
+/** <code>ImmortalPhysicalMemory</code>
+ *
+ * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ */
 
 public class ImmortalPhysicalMemory extends MemoryArea {
     private long base, size;
+
+    /** */
 
     public ImmortalPhysicalMemory(long base, long size) {
 	super(size);
