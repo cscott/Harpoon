@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.45 1999-09-03 15:35:08 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.46 1999-09-07 18:52:51 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -265,6 +265,28 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	newiL.next = next;
 	if(next!=null)next.prev = newiL;
 	
+	String s = "";
+	Instr i;
+	if (prev != null) { 
+	    i = prev;
+	} else {
+	    s += "null | ";
+	    i = newiF;
+	}
+	while(i != null && 
+	      i != next) {
+	    s += i.toString() + " | ";
+	    if (i.next == null) System.out.println("next is null for " + i);
+	    i = i.next;
+	}
+	if (i != null) {
+	    s += i.toString();
+	} else {
+	    s += "null";
+	}
+
+	System.out.println("Changed \n" + prev +" "+ oldi +" "+ next +
+			   "\n to " + s);
     }
 
     private static String pprint(List l) {
@@ -290,19 +312,22 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	Instr next = null;
 
 	while(true) {
-	    if (i.succC().size() == 0) {
+	    int size = i.succC().size();
+	    Util.assert(size >= 0, "size should always be >= 0");
+	    if (size == 0) {
 		// reached the end (I hope)
 		Util.assert(i.next == null &&
 			    i.targets == null,
 			    "last instr should have next==targets==null");
 		break;
 	    }
-	    if (i.succC().size() > 1) {
+	    Instr n = (Instr) i.succC().iterator().next();
+	    if (i.next != n ||
+		size > 1) {
 		linear = false;
 		//Util.assert(false,"Instr " + i + " is nonlinear");
 		break;
 	    }
-	    i = (Instr) i.succC().iterator().next();
 	}
 
 	return linear;

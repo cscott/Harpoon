@@ -44,7 +44,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.32 1999-08-28 01:08:21 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.33 1999-09-07 18:52:50 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -259,11 +259,12 @@ public abstract class RegAlloc  {
 	    public void visit(FskLoad m) {
 		// look for non-Register Temps in use, adding
 		// them to internal map
-		for(int i=0; i<m.use().length; i++){
-		    if(!isTempRegister(m.use()[i]) &&
-		       tempsToOffsets.get(m.use()[i])==null){
-			tempsToOffsets.put
-			    (m.use()[i], new Integer(nextOffset));
+		Iterator uses = m.useC().iterator();
+		while(uses.hasNext()) {
+		    Temp use = (Temp) uses.next();
+		    if(!isTempRegister(use) &&
+		       tempsToOffsets.get(use)==null){
+			tempsToOffsets.put(use, new Integer(nextOffset));
 			nextOffset++;
 		    }
 		}
@@ -271,11 +272,12 @@ public abstract class RegAlloc  {
 	    public void visit(FskStore m) {
 		// look for non-Register Temps in def, adding
 		// them to internal map
-		for(int i=0; i<m.def().length; i++){
-		    if(!isTempRegister(m.def()[i]) &&
-		       tempsToOffsets.get(m.def()[i])==null){
-			tempsToOffsets.put
-			    (m.def()[i], new Integer(nextOffset));
+		Iterator defs = m.defC().iterator();
+		while(defs.hasNext()) {
+		    Temp def = (Temp) defs.next();
+		    if(!isTempRegister(def) &&
+		       tempsToOffsets.get(def)==null){
+			tempsToOffsets.put(def, new Integer(nextOffset)); 
 			nextOffset++;
 		    }
 		}
