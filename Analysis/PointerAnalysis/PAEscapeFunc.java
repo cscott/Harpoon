@@ -24,7 +24,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEscapeFunc.java,v 1.4 2003-06-04 18:44:32 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.5 2003-10-26 17:09:30 salcianu Exp $
  */
 public class PAEscapeFunc implements java.io.Serializable {
 
@@ -51,7 +51,7 @@ public class PAEscapeFunc implements java.io.Serializable {
     /** Records the fact that <code>node</code> can escape through
 	the node <code>n_hole</code>. Returns <code>true</code>
 	if new information has been gained */
-    public final boolean addNodeHole(PANode node, PANode n_hole){
+    public final boolean addNodeHole(PANode node, PANode n_hole) {
 	if(node.type == PANode.NULL) return false;
 	return rel_n.add(node, n_hole);
     }
@@ -396,8 +396,4 @@ public class PAEscapeFunc implements java.io.Serializable {
 	
 	return buffer.toString();
     }
-
 }
-
-
-

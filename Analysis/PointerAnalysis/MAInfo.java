@@ -76,7 +76,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.15 2003-06-05 22:14:03 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.16 2003-10-26 17:10:18 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -309,7 +309,7 @@ public class MAInfo implements AllocationInformation, Serializable {
     
     /** Returns the allocation policy for <code>allocationSite</code>. */
     public AllocationInformation.AllocationProperties query
-	(HCodeElement allocationSite){
+	(HCodeElement allocationSite) {
 	
 	AllocationInformation.AllocationProperties ap = 
 	    (AllocationInformation.AllocationProperties)
@@ -1133,9 +1133,11 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    HClass hclass = hm.getDeclaringClass();
 	    PANode node = node_rep.getCodeNode(newq, PANode.INSIDE, false);
 
+	    /*
 	    // don't print uninteresting allocation properties
 	    if(!(ap.canBeStackAllocated() || ap.canBeThreadAllocated() ||
 		 ap.noSync())) continue;
+	    */
 
 	    if(ap.canBeStackAllocated()) nb_sa++;
 	    if(ap.canBeThreadAllocated()) nb_ta++;
@@ -1236,7 +1238,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    // just allocate the thread node nt on its own heap
 	    MyAP ap = getAPObj(qnt);
 	    ap.ta  = true; // allocate on thread specific heap
-	    ap.ns  = true; // SYNC
+	    if(opt.GEN_SYNC_FLAG)
+		ap.ns  = true; // SYNC
 	    ap.mh  = true; // makeHeap
 	    // ap.ah = qnt.dst(); // use own heap
 	    return;
@@ -1265,7 +1268,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	MyAP newq_ap = getAPObj(newq);
 
 	newq_ap.ta = true;  // thread allocation
-	newq_ap.ns = true;  // SYNC
+	if(opt.GEN_SYNC_FLAG)
+	    newq_ap.ns = true;  // SYNC
 	newq_ap.mh = true;  // makeHeap for the thread object
 	// newq_ap.ah = newq.dst(); // use own heap
 	HClass hclass = getAllocatedType(newq);
@@ -1278,7 +1282,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    Quad cnewq = (Quad) it.next();
 	    MyAP cnewq_ap = getAPObj(cnewq);
 	    cnewq_ap.ta = true;
-	    cnewq_ap.ns = true; // SYNC
+	    if(opt.GEN_SYNC_FLAG)
+		cnewq_ap.ns = true; // SYNC
 	    cnewq_ap.ah = l2;
 	}
 
@@ -1577,7 +1582,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    MyAP ap = getAPObj(q);
 	    // new MyAP(getAllocatedType(q));
 	    ap.sa = true;
-	    ap.ns = true; // SYNC
+	    if(opt.GEN_SYNC_FLAG)
+		ap.ns = true; // SYNC
 	    setAPObj(q, ap);
 	}
     }
@@ -1596,7 +1602,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    MyAP ap = getAPObj(q);
 	    // new MyAP(getAllocatedType(q));
 	    if(!ap.sa) ap.ta = true;
-	    ap.ns = true; // SYNC
+	    if(opt.GEN_SYNC_FLAG)
+		ap.ns = true; // SYNC
 	    setAPObj(q, ap);
 	}
     }
@@ -1872,7 +1879,6 @@ public class MAInfo implements AllocationInformation, Serializable {
     // circular inlining in nests of mutually recursive methods).
     private void generate_inlining_chains(MetaMethod mm) {
 	ParIntGraph pig = pa.getExtParIntGraph(mm);
-
 	Set nodes = getInterestingLevel0InsideNodes(mm, pig);
 	if(nodes.isEmpty()) return;
 	Set sa_nodes = new HashSet();
@@ -2144,7 +2150,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    MyAP ap = getAPObj(q);
 	    // new MyAP(getAllocatedType(q));
 	    ap.sa = true;
-	    ap.ns = true; // SYNC
+	    if(opt.GEN_SYNC_FLAG)
+		ap.ns = true; // SYNC
 	    setAPObj(q, ap);
 	}
     }
@@ -2159,7 +2166,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    MyAP ap = getAPObj(q);
 	    // new MyAP(getAllocatedType(q));
 	    ap.ta = true;
-	    ap.ns = true; // SYNC
+	    if(opt.GEN_SYNC_FLAG)
+		ap.ns = true; // SYNC
 	    setAPObj(q, ap);
 	}
     }
