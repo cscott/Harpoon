@@ -87,7 +87,7 @@ struct inflated_oobj {
 #endif
   /* locking information */
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
-#if WITH_HEAVY_THREAD || WITH_PTH_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
   pthread_t tid; /* can be zero, if no one has this lock */
 #endif
 #if WITH_USER_THREADS
