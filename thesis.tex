@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.71 1999-08-21 04:05:38 cananian Exp $
+% $Id: thesis.tex,v 1.72 1999-08-21 04:25:43 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -33,14 +33,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.71 $ $}
+\date{\today \\ $ $Revision: 1.72 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.71 $ $}{$ $Revision: 1.71 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.72 $ $}{$ $Revision: 1.72 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -472,14 +472,14 @@ DFS spanning tree.
 \caption{Datatypes and operations for the cycle-equivalency algorithm.}
 \label{fig:CQdata}\end{myfigure}
 
-\begin{myfigure}\small\linespread{0.75}\input{Figures/THcqalg}
+\begin{myalgorithm}\small\linespread{0.75}\input{Figures/THcqalg}
 \caption{The cycle-equivalency algorithm
 	 (corrected from \cite{johnson93:sese}).}
-\label{fig:CQalg}\end{myfigure}
+\label{alg:CQalg}\end{myalgorithm}
 
 The above steps form an undirected graph $G'$ from the control-flow
 graph $G$.  The remainder of the cycle-equivalency algorithm is
-presented in figure~\vref{fig:CQalg}, with the above procedure
+presented in figure~\vref{alg:CQalg}, with the above procedure
 corresponding to the statement \code{G':=Preprocess(G)}.  The
 algorithm has been corrected from the published version in
 \cite{johnson93:sese}; in addition it has been extended to compute
@@ -530,7 +530,7 @@ of the CFG suffices to obtain to nesting of these regions,
 which is represented in a data structure called the 
 \emph{program structure tree}.
 The algorithm and data structures required are presented in figures
-\ref{fig:SESEdata} and \ref{fig:SESEalg}.  Figure~\vref{fig:SESEex}
+\ref{fig:SESEdata} and \ref{alg:SESEalg}.  Figure~\vref{fig:SESEex}
 shows the SESE regions on the left and program structure tree on
 the right for the example of figure~\vref{fig:CQex}.%
 \footnote{In addition, the regions ${c,d,e}$ and ${f,g}$ are
@@ -540,9 +540,9 @@ the right for the example of figure~\vref{fig:CQex}.%
 \caption{Datatypes and operations used in construction of the PST.}
 \label{fig:SESEdata}\end{myfigure}
 
-\begin{myfigure}\small\linespread{0.75}\input{Figures/THsesealg}
+\begin{myalgorithm}\small\linespread{0.75}\input{Figures/THsesealg}
 \caption{Computing nested SESE regions and the PST.}
-\label{fig:SESEalg}\end{myfigure}
+\label{alg:SESEalg}\end{myalgorithm}
 
 \begin{myfigure}\centering
 \vertcenter{\renewcommand*{\figscale}{0.5}\input{Figures/THcqex}}\hspace{1cm}
@@ -552,7 +552,7 @@ the right for the example of figure~\vref{fig:CQex}.%
 \label{fig:SESEex}\end{myfigure}
 
 The time complexity for constructing the PST is easily seen to be
-$O(E)$. The algorithm presented in figure~\vref{fig:SESEalg} begins
+$O(E)$. The algorithm presented in figure~\vref{alg:SESEalg} begins
 with a depth first traversal of $G$ to construct an ordered edge list
 for each cycle-equivalent region; the traversal is $O(E)$ and the
 list-append operation can be done in constant time.  We then iterate
@@ -674,7 +674,7 @@ be executed, from \emph{unused code elimination}, which deletes
 sections of code whose results are never used.  Both are often called
 ``dead code elimination'' in the literature.}  is performed to remove
 the extra \phisigfunction{s} added.  Figures \ref{fig:deaddata} and
-\ref{fig:deadalg} present an algorithm to identify unused code in
+\ref{alg:deadalg} present an algorithm to identify unused code in
 $O(N V_{SSI})$ time, after which a simple $O(N)$ pass suffices to remove it.
 The complexity analysis is simple: nodes and variables are visited at
 most once, raising their value in the analysis lattive from
@@ -700,11 +700,11 @@ PST, is $O(EV_0 + NV_{SSI})$.
 \label{fig:deaddata}
 \end{myfigure}
 
-\begin{myfigure}\small\linespread{0.75}
+\begin{myalgorithm}\small\linespread{0.75}
 \input{Figures/THdeadalg}
 \caption{Identifying unused code using SSI form.}
-\label{fig:deadalg}
-\end{myfigure}
+\label{alg:deadalg}
+\end{myalgorithm}
 
 \subsubsection{Discussion}
 Note that our algorithm for placing \phisigfunction{s} in
@@ -791,7 +791,7 @@ c     &   c  & c &\top & \top \\
 c     &   c  &c\oplus d& \top \\
 \top  & \top & \top & \top \\ \hline
 \end{array}$
-\caption{Meet and binary operation rules for SCC.}
+\caption{Meet and binary operation rules on the SCC value lattice.}
 \label{tab:sccmeet1}
 \end{table}
 \begin{myalgorithm}\small
