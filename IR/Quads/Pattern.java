@@ -10,11 +10,12 @@ import harpoon.Util.WorkSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
+import java.util.Stack;
 /**
  * <code>Pattern</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.1 1999-08-30 22:09:49 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.2 1999-09-07 21:28:12 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -48,8 +49,13 @@ public class Pattern {
 		break;
 	    hq=hq.prev(0);
 	}
-	if (lbv.success()||hbv.success())
-	    return new Object[] {lq, hq, lbv.exchandler(), hbv.exchandler()};
+
+	if (lbv.success()&&hbv.success()&&(lbv.exchandler()[0]==hbv.exchandler()[0]))
+	    return new Object[] { hq, hbv.exchandler()};
+	else if (lbv.success())
+	    return new Object[] { lq, lbv.exchandler()};
+	else if (hbv.success())
+	    return new Object[] { hq, hbv.exchandler()};
 	else
 	    return null;
     }
@@ -110,10 +116,15 @@ public class Pattern {
 	    Quad q=(Quad)iterate.next();
 	    HInfo hi=(HInfo)map.get(q);
 	    Quad.addEdge(hi.to().prev(0), hi.to().prevEdge(0).which_succ(), q, 0);
-	    if (hi.needHandler()) {
-		handlers.push(new HANDLER(q.getFactory(), q, new Temp(q.getFactory().tempFactory()), hi.hclass(), new ReProtection(q)));
+	    while (hi.needHandler()) {
+		Object[] handler=hi.pophandler();
+		HANDLER h=new HANDLER(q.getFactory(), q, new Temp(q.getFactory().tempFactory()), (HClass) handler[2] , new ReProtection(q));
+		handlers.push(h);
+		Quad.addEdge(h,0,(Quad)handler[0],((Integer)handler[1]).intValue());
 	    }
 	}
+	//need to add handlers in now
+	//************
     }
 }
 
@@ -129,34 +140,182 @@ class PatternVisitor extends QuadVisitor {
 	return map;
     }
 
+    private void addmap(Quad q, Quad qd) {
+	if (!map.containsKey(q))
+	    map.put(q, new HInfo(qd));
+	else {
+	    HInfo hi=(HInfo)map.get(q);
+	    hi.to(qd);
+	}
+    }
+
+    private void addmap(Quad q, Quad qd, Quad handler, Integer handleredge, HClass hclass) {
+	if (!map.containsKey(q))
+	    map.put(q, new HInfo(qd, handler, handleredge, hclass));
+	else {
+	    HInfo hi=(HInfo)map.get(q);
+	    hi.to(qd);
+	    hi.pushhandler(handler, handleredge.intValue(), hclass);
+	}
+    }
+
     public void visit(Quad q) {
     }
 
+    public void visit(AGET q) {
+	Quad qd=q;
+	Object[] n2=Pattern.boundCheck(qd.prev(0), q.objectref(), q.index());
+	if (n2!=null) {
+	    qd=(Quad)n2[0];
+	    HClass hclass2=Pattern.exceptionCheck((Quad)((Object[])n2[1])[0]);
+	    if (hclass2==HClass.forName("java.lang.ArrayIndexOutOfBoundsException")) {
+		addmap(q,qd);
+	    } else {
+		addmap(q, qd,(Quad)((Object[])n2[1])[0],
+		       (Integer)((Object[])n2[1])[1],
+		       HClass.forName("java.lang.ArrayIndexOutOfBoundsException"));
+	    }
+	}
+
+	Object[] nq=Pattern.nullCheck(qd.prev(0),q.objectref());
+	if (nq!=null) {
+	    qd=(Quad)nq[0];
+	    HClass hclass=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
+	    if (hclass==HClass.forName("java.lang.NullPointerException")) {
+		addmap(q,qd);
+	    } else {
+		addmap(q,qd, (Quad)((Object[])nq[1])[0],
+		       (Integer)((Object[])nq[1])[1],
+		       HClass.forName("java.lang.NullPointerException"));
+	    }
+	}
+    }
+
+    public void visit(ALENGTH q) {
+	Object[] nq=Pattern.nullCheck(q.prev(0), q.objectref());
+	if (nq!=null) {
+	    HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
+	    if (hc==HClass.forName("java.lang.NullPointerException"))
+		addmap(q, (Quad)nq[0]);
+	    else
+		addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+	}
+    }
+
     public void visit(ANEW q) {
-//  	Quad qd=q;
-//  	boolean flag=true;
-//  	HClass hclass=null;
-//  	Quad handler=null;
-//  	for (int i=0; i<q.dimsLength(); i++) {
-//  	    Quad[] nq=Pattern.minusCheck(qd.prev(0), q.dims(i));
-//  	    if (nq!=null) {
-//  		qd=nq[0];
-//  		//nq[1] is the exception thrown quad...
-//  		if (i==0) {
-//  		    hclass=Pattern.exceptionCheck(nq[1]);
-//  		    if (hclass==null)
-//  			handler=nq[1];
-//  		}
-//  		else
-//  		    if (hclass!=null)
-//  			flag=flag&&(hclass==Pattern.exceptionCheck(nq[1]));
-//  		    else
-//  			flag=flag&&(handler==nq[1]);
-//  		if (!flag) {
-//  		    //bail
-//  		}
-//  	    }
-//  	}
+	Quad qd=q;
+	boolean flag=true;
+	HClass hclass=null;
+	Quad handler=null;
+	Integer handleredge=null;
+	for (int i=q.dimsLength()-1; i>=0; i--) {
+	    Object[] nq=Pattern.minusCheck(qd.prev(0), q.dims(i));
+	    if (nq!=null) {
+		//nq[1] is the exception thrown quad...
+		if (i==0) {
+		    hclass=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
+		    if (hclass!=HClass.forName("java.lang.NegativeArraySizeException")) {
+			handler=(Quad)((Object[])nq[1])[0];
+			handleredge=(Integer)((Object[])nq[1])[1];
+			hclass=null;
+		    }
+		}
+		else
+		    if (hclass!=null)
+			flag=flag&&(hclass==Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]));
+		    else
+			flag=flag&&(handler==(Quad)((Object[])nq[1])[0]);
+		if (!flag)
+		    //bail
+		    break;
+		qd=(Quad)nq[0];
+	    }
+	}
+	if (hclass==HClass.forName("java.lang.NegativeArraySizeException")) {
+	    addmap(q, qd);
+	} else {
+	    addmap(q, qd, handler, handleredge, HClass.forName("java.lang.NegativeArraySizeException"));
+	}
+    }
+
+    public void visit(ASET q) {
+	Quad qd=q;
+	Object[] n2=Pattern.boundCheck(qd.prev(0), q.objectref(), q.index());
+	if (n2!=null) {
+	    qd=(Quad)n2[0];
+	    HClass hclass2=Pattern.exceptionCheck((Quad)((Object[])n2[1])[0]);
+	    if (hclass2==HClass.forName("java.lang.ArrayIndexOutOfBoundsException")) {
+		addmap(q,qd);
+	    } else {
+		addmap(q, qd,(Quad)((Object[])n2[1])[0],
+		       (Integer)((Object[])n2[1])[1],
+		       HClass.forName("java.lang.ArrayIndexOutOfBoundsException"));
+	    }
+	}
+
+	Object[] nq=Pattern.nullCheck(qd.prev(0),q.objectref());
+	if (nq!=null) {
+	    qd=(Quad)nq[0];
+	    HClass hclass=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
+	    if (hclass==HClass.forName("java.lang.NullPointerException")) {
+		addmap(q,qd);
+	    } else {
+		addmap(q,qd, (Quad)((Object[])nq[1])[0],
+		       (Integer)((Object[])nq[1])[1],
+		       HClass.forName("java.lang.NullPointerException"));
+	    }
+	}
+
+	Object[] n1=Pattern.componentCheck(qd.prev(0), q.src(), q.objectref());
+	if (n1!=null) {
+	    qd=(Quad)n1[0];
+	    HClass hclass=Pattern.exceptionCheck((Quad)((Object[])n1[1])[0]);
+	    if (hclass==HClass.forName("java.lang.ArrayStoreException")) {
+		addmap(q,qd);
+	    } else {
+		addmap(q,qd, (Quad)((Object[])n1[1])[0],
+		       (Integer)((Object[])n1[1])[1],
+		       HClass.forName("java.lang.ArrayStoreException"));
+	    }
+	}
+    }
+
+    public void visit(CALL q) {
+	if (!q.isStatic()) {
+	    Object[] nq=Pattern.nullCheck(q.prev(0), q.params(0));
+	    if (nq!=null) {
+		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
+		if (hc==HClass.forName("java.lang.NullPointerException"))
+		    addmap(q, (Quad)nq[0]);
+		else
+		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+	    }	
+	}
+    }
+
+    public void visit(GET q) {
+    }
+
+    public void visit(MONITORENTER q) {
+	Object[] nq=Pattern.nullCheck(q.prev(0), q.lock());
+	if (nq!=null) {
+	    HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
+	    if (hc==HClass.forName("java.lang.NullPointerException"))
+		addmap(q, (Quad)nq[0]);
+	    else
+		addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+	}
+    }
+    
+    public void visit(MONITOREXIT q) {
+	Object[] nq=Pattern.nullCheck(q.prev(0), q.lock());
+	if (nq!=null) {
+	    HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
+	    if (hc==HClass.forName("java.lang.NullPointerException"))
+		addmap(q, (Quad)nq[0]);
+	    else
+		addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.NullPointerException"));
+	}
     }
 
     public void visit(OPER q) {
@@ -164,53 +323,76 @@ class PatternVisitor extends QuadVisitor {
 	case Qop.IDIV:
 	case Qop.IREM:
 	    Object[] nq=Pattern.zeroCheck(q.prev(0), q.operands(1),true);
-	    HClass hc=Pattern.exceptionCheck(((Quad)nq[0]).prev(0));
-	    if (hc==HClass.forName("java.lang.ArithmeticException"))
-		map.put(q, new HInfo((Quad)nq[0]));
-	    else
-		map.put(q, new HInfo((Quad) nq[0], (Quad)nq[1], (Integer)nq[2], HClass.forName("java.lang.ArithmeticException")));
+	    if (nq!=null) {
+		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
+		if (hc==HClass.forName("java.lang.ArithmeticException"))
+		    addmap(q, (Quad)nq[0]);
+		else
+		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.ArithmeticException"));
+	    }
+	    break;
+	case Qop.LDIV:
+	case Qop.LREM:
+	    nq=Pattern.zeroCheck(q.prev(0), q.operands(1),false);
+	    if (nq!=null) {
+		HClass hc=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
+		if (hc==HClass.forName("java.lang.ArithmeticException"))
+		    addmap(q, (Quad)nq[0]);
+		else
+		    addmap(q, (Quad) nq[0], (Quad)((Object[])nq[1])[0], (Integer)((Object[])nq[1])[1], HClass.forName("java.lang.ArithmeticException"));
+	    }
+	    break;
 	default:
 	}
     }
+
+    public void visit(SET q) {
+    }
+
+    public void visit(THROW q) {
+    }
+
 }
 
 class HInfo {
     Quad to;
-    Quad handler;
-    int edge;
-    HClass hclass;
+    Stack handlers;
+    //entries look like
+    //new Object[] {handler, edge, hclass}
+
     HInfo(Quad to) {
 	this.to=to;
-	this.handler=null;
-	this.edge=-1;
+	this.handlers=new Stack();
     }
     HInfo(Quad to, Quad handler, Integer edge, HClass hclass) {
 	this.to=to;
-	this.handler=handler;
-	this.edge=edge.intValue();
-	this.hclass=hclass;
+	this.handlers=new Stack();
+	handlers.push(new Object[] {handler, edge, hclass});
     }
     HInfo(Quad to, Quad handler, int edge, HClass hclass) {
 	this.to=to;
-	this.handler=handler;
-	this.edge=edge;
-	this.hclass=hclass;
+	this.handlers=new Stack();
+	handlers.push(new Object[] {handler, new Integer(edge), hclass});
     }
+
     boolean needHandler() {
-	return (handler!=null);
+	return (!handlers.empty());
     }
+
+    void to(Quad to) {
+	this.to=to;
+    }
+
     Quad to() {
 	return to;
     }
 
-    HClass hclass() {
-	return hclass;
+    Object[] pophandler() {
+	return ((Object [])handlers.pop());
     }
-    Quad handler() {
-	return handler;
-    }
-    int edge() {
-	return edge;
+
+    void pushhandler(Quad handler, int edge, HClass hclass) {
+	handlers.push(new Object[] {handler, new Integer(edge), hclass});
     }
 }
 
