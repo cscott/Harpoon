@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.15 2000-01-26 07:49:59 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.16 2000-01-27 08:24:10 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -111,6 +111,8 @@ class HClassSyn extends HClassCls implements HClassMutator {
       addDeclaredMethod0(new HConstructorSyn(this, descriptor));
   }
   public HConstructor addConstructor(HClass[] paramTypes) {
+    for (int i=0; i<paramTypes.length; i++)
+      Util.assert(checkLinker(paramTypes[i]));
     return (HConstructor)
       addDeclaredMethod0(new HConstructorSyn(this, paramTypes));
   }
@@ -128,6 +130,9 @@ class HClassSyn extends HClassCls implements HClassMutator {
   public HMethod addDeclaredMethod(String name, HClass[] paramTypes,
 				   HClass returnType) {
     Util.assert(!name.equals("<init>") && !name.equals("<clinit>"));
+    Util.assert(checkLinker(returnType));
+    for (int i=0; i<paramTypes.length; i++)
+      Util.assert(checkLinker(paramTypes[i]));
     return addDeclaredMethod0(new HMethodSyn(this,name,paramTypes,returnType));
   }
   public HMethod addDeclaredMethod(String name, HMethod template) {

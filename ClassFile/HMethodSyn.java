@@ -16,7 +16,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6.2.9 2000-01-26 07:50:00 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6.2.10 2000-01-27 08:24:11 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -77,6 +77,12 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     this.parameterNames = new String[this.parameterTypes.length];
     this.exceptionTypes = new HClass[0];
     this.isSynthetic = false;
+    // ensure linker information is consistent.
+    Util.assert(checkLinker((HClass)this.returnType));
+    for(int i=0; i<this.parameterTypes.length; i++)
+      Util.assert(checkLinker((HClass)this.parameterTypes[i]));
+    for(int i=0; i<this.exceptionTypes.length; i++)
+      Util.assert(checkLinker((HClass)this.exceptionTypes[i]));
   }
 
   public HMethodMutator getMutator() { return this; }
