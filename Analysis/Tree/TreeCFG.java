@@ -24,7 +24,7 @@ import java.util.Stack;
  * in an <code>CanonicalTreeCode</code>.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeCFG.java,v 1.1.2.1 1999-04-05 21:52:42 duncan Exp $
+ * @version $Id: TreeCFG.java,v 1.1.2.2 1999-04-23 06:20:21 pnkfelix Exp $
  */
 public class TreeCFG { 
     private Hashtable cfg  = new Hashtable();
@@ -102,9 +102,11 @@ public class TreeCFG {
 	}
     }
 
+    private static final Object END = new Object();
+
     // Builds the control flow graph
     class CFGVisitor extends TreeVisitor { 
-	private static final Object END = new Object();
+
 	
 	private CanonicalTreeCode code;
 	private Hashtable         cfg;
