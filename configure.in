@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.135 $)dnl
+AC_REVISION($Revision: 1.136 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -371,6 +371,19 @@ yes)	AC_MSG_RESULT([yes])
 esac
 AM_CONDITIONAL(PREALLOC_OPT, test $with_prealloc_opt = yes) 
 
+dnl enable passing execution environment (e.g., MAX HEAP) arguments to the executable
+AC_MSG_CHECKING([enable command line execution environment arguments])
+AC_ARG_WITH(exec-env-args,
+[  --with-exec-env-args	 enable command line execution environment arguments],
+with_exec_env_args="$withval", with_exec_env_args="no")
+case "$with_exec_env_args" in
+yes)	AC_MSG_RESULT([yes])
+	AC_DEFINE(WITH_EXEC_ENV_ARGS, 1, [enable command line execution environment arguments])
+	;;
+*)	AC_MSG_RESULT([no])
+	;;
+esac
+AM_CONDITIONAL(EXEC_ENV_ARGS, test $with_exec_env_args = yes)
 
 dnl process option to select full stack trace on exceptions.
 AC_MSG_CHECKING([stack trace verbosity])

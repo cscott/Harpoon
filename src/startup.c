@@ -4,7 +4,9 @@
 #include <jni-private.h>
 #include "java.lang/thread.h"
 #include "flexthread.h"
-#include <getopt.h> /* for getopt */
+#ifdef WITH_EXEC_ENV_ARGS
+# include <getopt.h> /* for getopt */
+#endif
 #include <assert.h>
 #ifdef WITH_PRECISE_GC
 # include "jni-gc.h"
@@ -27,37 +29,54 @@ int max_heap_size=0;  /* max heap size (in Kbytes) */
 
 #define MAX_HEAP_SIZE_OPTION 70000
 
-void process_command_line_options(int *pargc, char ***pargv) {
+#ifdef WITH_EXEC_ENV_ARGS
+void process_command_line_options(int *pargc, char ***pargv) {  
   static struct option long_options[] = {
     {"Xmx", 1, NULL, MAX_HEAP_SIZE_OPTION},
     {NULL, 0, NULL, 0}
   };
 
+  /* prevent unwanted error messages */
+  int old_opterr = opterr;
+  opterr = 0; 
+
   while(1) {
     int longopt = 0;
     int option = getopt_long_only(*pargc, *pargv, "", long_options, &longopt);
     // if no more options or unrecognized options, get out of the loop
-    if((option == -1) || (option == '?')) break;
+    if(option == -1) break;
+    if(option == '?') {
+	/* last seen token was NOT one of our options */
+	optind--;
+	break;
+    }
     switch(option) {
     case MAX_HEAP_SIZE_OPTION:
       sscanf(optarg, "%d", &max_heap_size);
-      printf("MAX HEAP SIZE = %dKbytes\n", max_heap_size);
+      fprintf(stderr, "MAX HEAP SIZE = %dMbytes\n", max_heap_size);
+      fflush(stderr);
       break;
     case ':':
       printf("Missing argument for option %s\n", long_options[longopt].name);
       break;
     }
   }  
+  opterr = old_opterr; /* re-enable error messages */
 
-  /* optind is the index in argv of the first argument that is NOT an
-     option (if no option is present, optind = 1 because argv[0] is
-     the name of the executable, not an argument). we update argc and
-     argv such that the rest of the program doesn't see the already
-     processed options */
-  *pargc -= (optind-1);
-  *pargv += (optind-1);
+  /* eliminate the options that we've parsed from argv
+     the rest of the program behaves as if they never existed */
+  if(optind > 1) {
+      /* optind is the index in argv of the first argument that is NOT an
+	 option (if no option is present, optind = 1 because argv[0] is
+	 the name of the executable, not an argument). we update argc and
+	 argv such that the rest of the program doesn't see the already
+	 processed options */
+      *pargc -= (optind-1);
+      (*pargv)[optind-1] = (*pargv)[0];
+      *pargv += (optind-1);
+  }
 }
-
+#endif
 
 char *name_of_binary;
 
@@ -94,7 +113,9 @@ int main(int argc, char *argv[]) {
   jmethodID getCurrentThreadMethod;
 #endif
 
+#ifdef WITH_EXEC_ENV_ARGS
   process_command_line_options(&argc, &argv);
+#endif
 
 #ifdef WITH_REALTIME_THREADS
   StopSwitching(); //turn off thread switching to start
@@ -123,10 +144,8 @@ int main(int argc, char *argv[]) {
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_TRUE;
   /* setup GC */
 #ifdef BDW_CONSERVATIVE_GC
-  if(max_heap_size != 0) {
-    GC_set_max_heap_size(max_heap_size*1024);
-    printf("MAX HEAP SIZE = %d\n", max_heap_size);
-  }
+  if(max_heap_size != 0)
+    GC_set_max_heap_size(max_heap_size*1024*1024);
 #endif
 #ifdef WITH_PRECISE_GC
   precise_gc_init();
