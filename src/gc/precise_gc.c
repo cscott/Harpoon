@@ -18,6 +18,7 @@ int check_gc_index = 1;
 
 #ifdef HAVE_STACK_TRACE_FUNCTIONS
 #include "asm/stack.h" /* snarf in the stack trace functions. */
+#endif /* HAVE_STACK_TRACE_FUNCTIONS */
 
 /* saved_registers[13] <- lr (use to walk stack) */
 #ifdef WITH_PRECISE_C_BACKEND
@@ -27,7 +28,7 @@ void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[])
 #endif
 {
   void *result;
-  Frame fp; 
+  /*Frame fp; */
   struct gc_index *found;
   /* Explicitly trigger a full, world-stop collection. */
   /* if (GC_EVERY_TIME) GC_gcollect(); */
@@ -67,7 +68,6 @@ void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[])
   return copying_malloc(size_in_bytes);
 }
 
-#endif /* HAVE_STACK_TRACE_FUNCTIONS */
 #endif /* WITH_PRECISE_GC */
 
 
