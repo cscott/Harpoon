@@ -35,7 +35,7 @@ import harpoon.Util.DataStructs.RelationImpl;
     connected component in the call graph) decreased from 53 to 8.
 
     @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
-    @version $Id: SmartCallGraph.java,v 1.5 2002-05-02 22:11:39 salcianu Exp $
+    @version $Id: SmartCallGraph.java,v 1.6 2002-11-30 06:32:29 salcianu Exp $
 */
 public class SmartCallGraph implements CallGraph {
     
@@ -114,9 +114,14 @@ public class SmartCallGraph implements CallGraph {
 
     /** Returns the set of all the methods that can be called in the 
 	execution of the program. */
-    public Set callableMethods(){
+    public Set callableMethods() {
 	return hm2callees.keySet();
     }
+
+    public Set getRunMethods() {
+	return run_hms;
+    }
+    private Set run_hms;
 
     // Does the main computation: fill the hm2callees and hm2cs2callees
     // structures using the info from mcg.
@@ -160,6 +165,12 @@ public class SmartCallGraph implements CallGraph {
 		map.put(cs, callees.toArray(new HMethod[callees.size()]));
 	    }
 	    hm2cs2callees.put(hm, map);
+	}
+
+	run_hms = new HashSet();
+	for(Iterator it = mcg.getRunMetaMethods().iterator(); it.hasNext(); ) {
+	    MetaMethod mm = (MetaMethod) it.next();
+	    run_hms.add(mm.getHMethod());
 	}
     }
 
