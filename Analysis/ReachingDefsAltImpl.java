@@ -33,9 +33,10 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.14 2001-01-13 21:44:50 cananian Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.15 2001-05-08 15:17:03 pnkfelix Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
+
     final private CFGrapher cfger;
     final protected BasicBlock.Factory bbf;
 
@@ -211,15 +212,16 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 
     // do analysis
     private void analyze(Map Temp_To_Pairs) {
+	if (TIME) System.out.print("(");
 	// build Gen and Kill sets
 	report("Entering buildGenKillSets()");
 	buildGenKillSets(Temp_To_Pairs);
 
 	bsf.stats();
 	// report("Leaving buildGenKillSets()");
-
+	
 	// solve for fixed point
-	report("Entering solve()");
+	report("Entering solve()"); if (TIME) System.out.print("S");
 	solve();
 	// report("Leaving solve()");
 	// store only essential information
@@ -228,6 +230,8 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	    Record r = (Record) records.next();
 	    r.OUT = null; r.KILL = null; r.GEN = null;
 	}
+
+	if (TIME) System.out.print(")");
     }
 
     class DefPtRecord {
@@ -393,7 +397,8 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 		worklist.addLast(block);
 	    }
 	}
-	if (TIME) System.out.print("(r:"+revisits+"/"+bbf.blockSet().size()+")");
+	if (TIME) System.out.print("#iter:"+revisits+
+				   " #bbs:"+bbf.blockSet().size());
 
     }
     // debugging utility
@@ -404,7 +409,11 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 
     class AugSetFactory extends SetFactory {
 	AugSetFactory(Set universe) { 
-	    universe = new harpoon.Util.Collections.LinearSet(universe);
+
+	    // universe = new harpoon.Util.Collections.LinearSet(universe);
+	    // FSK: oog; don't do the above (BSF methods need fast
+	    // universe.contains(..) method implementation
+
 	    bitSetFact = new BitSetFactory(universe);
 	    final int unisize = universe.size();
 	    linToBitThreshold = unisize / 1000;
