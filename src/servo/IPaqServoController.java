@@ -3,10 +3,14 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package servo;
 
+import imagerec.util.Servo;
+
 /**
  * {@link IPaqServoController} is a stub that simulates a car.
  * This class is overridden by FLEX to provide an interface to the
  * actual car.
+ *
+ * @see Servo
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
