@@ -30,27 +30,29 @@ import java.lang.reflect.Modifier;
  * to inline this version and eliminate lots of checks in most cases.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayCopyImplementer.java,v 1.4 2002-04-10 03:01:43 cananian Exp $
+ * @version $Id: ArrayCopyImplementer.java,v 1.5 2003-10-03 19:46:33 cananian Exp $
  */
 public class ArrayCopyImplementer extends CachingCodeFactory {
     /** Parent code factory. */
-    final HMethod HMsysac, HMimpac;
+    final HMethod HMimpac;
 
     /** Creates a <code>ArrayCopyImplementer</code>. */
     public ArrayCopyImplementer(HCodeFactory parent, Linker l) {
 	super(parent);
-        this.HMsysac = l.forName("java.lang.System").getMethod
-	    ("arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
         this.HMimpac = l.forName("harpoon.Runtime.ArrayCopy").getMethod
 	    ("arraycopy", "(Ljava/lang/Object;ILjava/lang/Object;II)V");
-	// make System.arraycopy() non-native.
-	this.HMsysac.getMutator().removeModifiers(Modifier.NATIVE);
     }
     public HCode convert(HMethod m) {
-	if (HMsysac.equals(m))
+	if (m.getName().equals("arraycopy") &&
+	    m.getDescriptor().equals
+	    ("(Ljava/lang/Object;ILjava/lang/Object;II)V") &&
+	    (m.getDeclaringClass().getName().equals("java.lang.System") ||
+	     m.getDeclaringClass().getName().equals("java.lang.VMSystem")))
 	    try {
+		// ensure method is non-native.
+		m.getMutator().removeModifiers(Modifier.NATIVE);
 		// copy implementation from harpoon.Runtime.ArrayCopy.
-		return super.convert(HMimpac).clone(HMsysac).hcode();
+		return super.convert(HMimpac).clone(m).hcode();
 	    } catch (CloneNotSupportedException e) {
 		assert false : e; // shouldn't happen.
 	    }
