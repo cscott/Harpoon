@@ -144,7 +144,7 @@ __ll_mul:
 LLSHIFTSDONE
 }
 
-sub print_double_rem {
+sub print_rem {
 print <<'DOUBLEREMDONE';
 .text    
 .align 2    
@@ -174,6 +174,32 @@ __d_rem:
     j    ra
 .end __d_rem
 DOUBLEREMDONE
+print <<'FLOATREMDONE';
+.text    
+.align 2    
+.globl __f_rem
+.ent __f_rem
+__f_rem:
+    .set noreorder
+    .cpload $25
+    .set reorder
+    .frame sp, 48, $31
+    subu sp, 48
+    sw   ra, 44(sp)
+    sw   a0, 0(sp)
+    sw   a1, 4(sp)
+    lwc1 $f12, 0(sp)
+    lwc1 $f14, 4(sp)
+    jal  f_rem
+    swc1 $f0, 0(sp)
+    lw   v0, 0(sp)
+    lw   v1, 4(sp)
+    lw   ra, 44(sp)
+    addu sp, 48
+    j    ra
+.end __f_rem
+FLOATREMDONE
+
 }
 
 
@@ -333,4 +359,4 @@ Print_Asm_Jacket("__d2i", "doubleToWord", [d,of], 0);
 Print_Asm_Jacket("__f2d", "singleToDouble", [f,od], 0);
 Print_Asm_Jacket("__d2f", "doubleToSingle", [d,of], 0);
 print_double_long_conversion();
-print_double_rem();
+print_rem();

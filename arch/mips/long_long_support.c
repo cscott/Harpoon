@@ -59,3 +59,11 @@ d_rem( double a, double b)
    //printf("LLL %g %% %g = %g \n", a, b, fmod(a,b));
    return fmod(a,b);
 }
+
+float
+f_rem( float a, float b)
+{
+   //printf("LLL %g %% %g = %g (%g)\n", a, b, fmod(a,b), fmod(b,a));
+   //printf("LLL %g %% %g = %g \n", a, b, fmod(a,b));
+   return fmod(a,b);
+}
