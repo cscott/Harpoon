@@ -1,7 +1,7 @@
 #ifndef classlist_h
 #define classlist_h
 
-//#define DEBUGMESSAGES
+#define DEBUGMESSAGES
 //#define DEBUGMANYMESSAGES
 
 class TypeEle;
@@ -76,6 +76,7 @@ class FieldCheck;
 class FieldTuple;
 class ActionNormal;
 class typemap;
+//class RParser;
 
 extern model *exportmodel;
 #endif

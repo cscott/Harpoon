@@ -51,6 +51,8 @@ class DRelation {
   WorkRelation *getrelation();
   char *getdomain();
   char *getrange();
+  WorkSet *gettokenrange();
+  void settokenrange(WorkSet *ws);
   bool isstatic();
   void reset();
  private:
@@ -58,6 +60,7 @@ class DRelation {
   char *name;
   char *domain;
   char *range;
+  WorkSet *tokenrange; // the actual range, if the range is of type token
   int type;
   WorkRelation *relation;
 };

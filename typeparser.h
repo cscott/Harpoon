@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include "classlist.h"
 
+
+// This class defines a parser for the structure definitions
+
 class Typeparser {
  public:
   Typeparser(Reader *r);

@@ -10,7 +10,7 @@ class Token {
  public:
   Token(char *s, int tt);
   Token(const Token & t);
-  Token & operator=(const Token &right);
+   Token & operator=(const Token &right);
   Token();
   ~Token();
   int token_type;
@@ -75,6 +75,8 @@ void tokenname(int t);
 #define TOKEN_CAST 53
 #define TOKEN_SHORT 54
 #define TOKEN_NULL 55
+
+
 
 class Reader{
  public:

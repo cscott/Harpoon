@@ -5,6 +5,7 @@
 #include "aparser.h"
 #include "cparser.h"
 #include "oparser.h"
+#include "rparser.h"
 #include "dmodel.h"
 #include "omodel.h"
 #include "amodel.h"
@@ -25,6 +26,7 @@
 #include "repair.h"
 #include "fieldcheck.h"
 #include "tmap.h"
+#include "string.h"
 
 
 Hashtable * model::gethashtable() {
@@ -362,6 +364,46 @@ void model::parsemodelfile(char *modelfile) {
   delete(ifs);
   delete(list);
 }
+
+
+
+/* reads the testrange file, which keeps the ranges of the relations
+   of the form "relation: A -> token".  
+   This information is used only by the fault injection mechanism.  
+   This file should be read only after the testspace file.
+*/
+void model::parserangefile(char *rangefile) 
+{
+  ifstream *ifs=new ifstream();
+  ifs->open(rangefile);
+  Reader *r = new Reader(ifs);
+  RParser *rp = new RParser(r);
+
+  do {
+    char* relation = rp->parserelation();
+
+    if (relation != NULL)
+      {
+	// find the given relation, whose range should be of type "token"
+	DRelation *drel = domainrelation->getrelation(relation);
+	if (strcmp(drel->getrange(), "token") != 0)
+	  {
+	    printf("Error! Range of %s should be of type token.", relation);
+	    exit(0);
+	  }
+
+	WorkSet *ws = rp->parseworkset();
+	drel->settokenrange(ws);
+      }
+    else 
+      break;
+  } while(true);
+
+  ifs->close();
+  delete(ifs);
+}
+
+
 
 structure * model::getstructure(char *name) {
   for(int i=0;i<numstarray;i++) {

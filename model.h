@@ -44,6 +44,8 @@ class model {
   void parseabstractfile(char *abstractfile);
   void parseconcretefile(char *concretefile);
   void parsemodelfile(char *modelfile);
+  void parserangefile(char *rangefile);
+
   Hashtable *env;
   bitreader *br;
   Guidance * guidance;

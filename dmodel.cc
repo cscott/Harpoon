@@ -90,6 +90,7 @@ DRelation::DRelation(char *n, char *d, char *r, int t, bool b) {
   domain=d;range=r;type=t;name=n;
   relation=new WorkRelation();
   staticrel=b;
+  tokenrange = NULL;
 }
 
 void DRelation::reset() {
@@ -108,6 +109,16 @@ char * DRelation::getdomain() {
 char * DRelation::getrange() {
   return range;
 }
+
+WorkSet* DRelation::gettokenrange() {
+  return tokenrange;
+}
+
+void DRelation::settokenrange(WorkSet *ws) {
+  tokenrange = ws;
+}
+
+
 
 void DRelation::print() {
   printf("%s: %s -> %s (",name,domain,range);

@@ -4,6 +4,52 @@
 #include <stdio.h>
 #include "token.h"
 
+
+// class Token
+
+Token::Token(char *s, int tt) {
+  str=s;
+  token_type=tt;
+}
+
+Token::Token(const Token & t) {
+  token_type=t.token_type;
+  str=copystr(t.str);
+}
+
+Token::Token() {
+  token_type=-1;
+  str=NULL;
+}
+
+
+Token& Token::operator=(const Token &right) {
+  if (&right != this) {
+    token_type=right.token_type;
+    if (str!=NULL)
+    delete(str);
+    str=copystr(right.str);
+  }
+  return *this;
+}
+
+
+Token::~Token() {
+  if (str!=NULL)
+    delete(str);
+}
+
+
+
+
+// class Reader
+
+Reader::Reader(istream * is) {
+  readerin=is;
+  pos=0;
+}
+
+
 Token Reader::peakahead() {
   Token t=checktoken();
   if (t.token_type!=-1) {
@@ -191,6 +237,8 @@ Token Reader::checktoken() {
   return Token();
 }
 
+
+// return true if the given char is a separator
 bool Reader::breakchar(int chr) {
   switch(chr) {
   case ' ':
@@ -239,44 +287,12 @@ bool Reader::breakchar(int chr) {
 }
 
 
-Token::Token(char *s, int tt) {
-  str=s;
-  token_type=tt;
-}
-
-Token::Token(const Token & t) {
-  token_type=t.token_type;
-  str=copystr(t.str);
-}
-
-Token & Token::operator=(const Token &right) {
-  if (&right != this) {
-    token_type=right.token_type;
-    if (str!=NULL)
-    delete(str);
-    str=copystr(right.str);
-  }
-  return *this;
-}
-
-Token::Token() {
-  token_type=-1;
-  str=NULL;
-}
-
-Token::~Token() {
-  if (str!=NULL)
-    delete(str);
-}
-
-Reader::Reader(istream * is) {
-  readerin=is;
-  pos=0;
-}
 
 void Reader::error() {
   printf("%s\n",buf);
 }
+
+
 
 void tokenname(int t) {
   switch(t) {
