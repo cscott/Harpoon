@@ -1,3 +1,9 @@
+---- Oct-13-98
+Add gnu.getopt and gnu.bytecode to the Harpoon package.
+Rewrite Bytecode IR and Nate's stuff to use the gnu.bytecode package.
+Add gnu.getopt to make a friendly command-line interface to Main.Graph, etc.
+Make a decent dependency system: JavaDep doesn't cut it, as it takes 35s
+ just to regenerate all the dependencies (which it does en-masse).
 ---- Oct-09-98
 Write copy-quadssa method.
 ---- Oct-04-98

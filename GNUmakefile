@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.53 1998-10-12 01:57:50 cananian Exp $
+# $Id: GNUmakefile,v 1.54 1998-10-13 09:44:16 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -47,7 +47,7 @@ first:
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
-	${JAR} cf Harpoon.jar COPYING VERSIONS \
+	${JAR} c0f Harpoon.jar COPYING VERSIONS \
 		$(foreach pkg,$(JARPKGS),harpoon/$(pkg)/*.class)
 	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
