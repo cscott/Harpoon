@@ -11,7 +11,7 @@
 #define NOP()		asm ("nop")
 #endif
 
-inline void EXACT_XBEGIN(void) __attribute__((always_inline)) {
+inline void EXACT_XACTION_BEGIN(void) __attribute__((always_inline)) {
   int delay = 1, i;
   XBEGIN();
   for (i=1; i<delay; i++)
@@ -20,7 +20,7 @@ inline void EXACT_XBEGIN(void) __attribute__((always_inline)) {
   delay *= 2;
   NXEND();
 }
-inline void EXACT_XEND(void) __attribute__((always_inline)) {
+inline void EXACT_XACTION_END(void) __attribute__((always_inline)) {
   XEND();
 }
 
