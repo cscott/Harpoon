@@ -59,7 +59,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.12 2001-06-14 21:10:12 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.13 2001-06-14 21:31:39 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -482,7 +482,7 @@ public class CacheEquivalence {
 		else return Value.SOMEINT;
 	    }
 	    Value negate() {
-		return new ConstantModuloN(modulus-number, modulus);
+		return new ConstantModuloN(number==0?0:modulus-number,modulus);
 	    }
 	    public boolean equals(Object o) {
 		try {
@@ -508,8 +508,7 @@ public class CacheEquivalence {
 		long small=Math.min(this.number, c.number);
 		long large=Math.max(this.number, c.number);
 		long mod=(large-small);
-		Util.assert(mymod(small, mod)==mymod(large, mod),
-			    "S:"+small+"; L:"+large+"; M:"+mod);
+		Util.assert(mymod(small, mod)==mymod(large, mod));
 		if (mod>1) return new ConstantModuloN(mymod(small, mod), mod);
 		return Value.SOMEINT;
 	    }
@@ -518,9 +517,9 @@ public class CacheEquivalence {
 		if (v==Value.BOTTOM) return v;
 		if (v==Value.SOMEINT) {
 		    // SOMEINT * c = 0 mod c
-		    if (this.number>0)
+		    if (this.number>1)
 			return new ConstantModuloN(0, this.number);
-		    if (this.number<0)
+		    if (this.number<-1)
 			return new ConstantModuloN(0, -this.number).negate();
 		    return Value.SOMEINT;
 		}
