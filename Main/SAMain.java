@@ -54,7 +54,7 @@ import java.io.FileInputStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.10 1999-08-18 19:21:24 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.11 1999-08-18 19:38:38 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -68,7 +68,6 @@ public class SAMain extends harpoon.IR.Registration {
 	new java.io.PrintWriter(System.out, true);;
         
     private static String className;
-    
     private static String classHierarchyFilename;
     private static ClassHierarchy classHierarchy;
     private static Frame frame;
@@ -79,69 +78,11 @@ public class SAMain extends harpoon.IR.Registration {
 	    // harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory
 	    (harpoon.IR.Quads.QuadSSA.codeFactory()
 	     );
-	
-	Getopt g = new Getopt("SAMain", args, "m:c:DOPRLAh");
-	
-	int c;
-	String arg;
-	while((c = g.getopt()) != -1) {
-	    switch(c) {
-	    case 'm': // serialized ClassHierarchy
-		arg = g.getOptarg();
-		classHierarchyFilename = arg;
-		try {
-		    ObjectInputStream mIS = 
-			new ObjectInputStream(new FileInputStream(arg)); 
-		    classHierarchy = (ClassHierarchy) mIS.readObject();
-		} catch (OptionalDataException e) {
-		} catch (ClassNotFoundException e) {
-		} catch (IOException e) {
- 		    // something went wrong; rebuild the class
-		    // hierarchy and write it later.
-		    classHierarchy = null;
-		    System.out.println("Error reading class "+
-				       "hierarchy from " + 
-				       classHierarchyFilename);
-		}
-		break;
-	    case 'D':
-		PRINT_DATA = true;
-		break;
-	    case 'O': 
-		PRINT_ORIG = true;
-		break; 
-	    case 'P':
-		PRE_REG_ALLOC = true;
-		break;
-	    case 'R':
-		REG_ALLOC = true;
-		break;
-	    case 'L':
-		LIVENESS_TEST = true;
-		break;
-	    case 'A':
-		PRE_REG_ALLOC = PRINT_ORIG = 
-		    REG_ALLOC = LIVENESS_TEST = true;
-		break;
-	    case 'c':
-		arg = g.getOptarg();
-		System.out.println("Compiling: " + arg);
-		className = arg;
-		break;
-	    case '?':
-	    case 'h':
-		System.out.println("usage is: [-m <mapfile>] -c <class> [-DOPRLA]");
-		System.out.println();
-		printHelp();
-		System.exit(-1);
-	    default: 
-		System.out.println("getopt() returned " + c);
-		System.out.println("usage is: [-m <mapfile>] -c <class> [-DOPRLA]");
-		System.out.println();
-		printHelp();
-		System.exit(-1);
-	    }
-	}
+
+	parseOpts(args);
+	Util.assert(className!= null, "must pass a class to be compiled");
+
+	System.out.println("Compiling: " + className);
 
 	HClass hclass = HClass.forName(className);
 	HMethod hm[] = hclass.getDeclaredMethods();
@@ -156,9 +97,15 @@ public class SAMain extends harpoon.IR.Registration {
 	Util.assert(mainM != null, "Class " + className + 
 		    " has no main method");
 
-
+	if (classHierarchy == null) {
+	    classHierarchy = new ClassHierarchy(mainM, hcf);
+	    Util.assert(classHierarchy != null, "How the hell...");
+	}
+	offmap = new OffsetMap32(classHierarchy);
+	frame = new SAFrame(offmap);
+	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
     
-	HCodeFactory sahcf = saFactory(mainM, hcf);
+	HCodeFactory sahcf = SACode.codeFactory(hcf, frame);
 
 	if (classHierarchyFilename != null) {
 	    try {
@@ -281,33 +228,67 @@ public class SAMain extends harpoon.IR.Registration {
 	}
     }
 
-
-
-    /* part of the problem with speed here is that this method needs
-       to recreate SAFactories, which means that we need to remake the
-       ClassHierarchy each time.  Later I may add code to Serialize
-       the ClassHierarchy, but in the mean time I'll speed this up by
-       making the system pay the cost of generating an SAFactory occur
-       only once per method lookup, by using a method->saFactory map.
-    */
-    
-    
-    private static HCodeFactory saFactory(HMethod m, HCodeFactory qhcf) {
-	HCodeFactory sahcf;
-	//out.println("\t\tBeginning creation of a StrongARM Code Factory ");
-	long time = -System.currentTimeMillis();
-	HCode hc = qhcf.convert(m); 
-	if (classHierarchy == null) {
-	    classHierarchy = new ClassHierarchy(m, qhcf);
-	    Util.assert(classHierarchy != null, "How the hell...");
+    private static void parseOpts(String[] args) {
+	Getopt g = new Getopt("SAMain", args, "m:c:DOPRLAh");
+	
+	int c;
+	String arg;
+	while((c = g.getopt()) != -1) {
+	    switch(c) {
+	    case 'm': // serialized ClassHierarchy
+		arg = g.getOptarg();
+		classHierarchyFilename = arg;
+		try {
+		    ObjectInputStream mIS = 
+			new ObjectInputStream(new FileInputStream(arg)); 
+		    classHierarchy = (ClassHierarchy) mIS.readObject();
+		} catch (OptionalDataException e) {
+		} catch (ClassNotFoundException e) {
+		} catch (IOException e) {
+ 		    // something went wrong; rebuild the class
+		    // hierarchy and write it later.
+		    classHierarchy = null;
+		    System.out.println("Error reading class "+
+				       "hierarchy from " + 
+				       classHierarchyFilename);
+		}
+		break;
+	    case 'D':
+		PRINT_DATA = true;
+		break;
+	    case 'O': 
+		PRINT_ORIG = true;
+		break; 
+	    case 'P':
+		PRE_REG_ALLOC = true;
+		break;
+	    case 'R':
+		REG_ALLOC = true;
+		break;
+	    case 'L':
+		LIVENESS_TEST = true;
+		break;
+	    case 'A':
+		PRE_REG_ALLOC = PRINT_ORIG = 
+		    REG_ALLOC = LIVENESS_TEST = true;
+		break;
+	    case 'c':
+		className = g.getOptarg();
+		break;
+	    case '?':
+	    case 'h':
+		System.out.println("usage is: [-m <mapfile>] -c <class> [-DOPRLA]");
+		System.out.println();
+		printHelp();
+		System.exit(-1);
+	    default: 
+		System.out.println("getopt() returned " + c);
+		System.out.println("usage is: [-m <mapfile>] -c <class> [-DOPRLA]");
+		System.out.println();
+		printHelp();
+		System.exit(-1);
+	    }
 	}
-	offmap = new OffsetMap32(classHierarchy);
-	frame = new SAFrame(offmap);
-	sahcf = SACode.codeFactory(qhcf, frame);
-	time += System.currentTimeMillis();
-	//out.println("\t\tFinished creation of a StrongARM Code "+
-	//    "Factory.  Time (ms): " + time);
-	return sahcf;
     }
 
     private static void printHelp() {
