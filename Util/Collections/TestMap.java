@@ -1,4 +1,4 @@
-// MapTest.java, created Sat Nov  3 17:00:03 2001 by cananian
+// TestMap.java, created Sat Nov  3 17:00:03 2001 by cananian
 // Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Portions copyright (C) 2001 ACUNIA; borrowed from Mauve.
 // Licensed under the terms of the GNU GPL; see COPYING for details.
@@ -19,13 +19,13 @@ import java.util.Set;
 import java.util.Vector;
 
 /**
- * The <code>MapTest</code> tests our various <code>Map</code> implementations
- * for correctness.  Large portions borrowed from Mauve.
+ * The <code>TestMap</code> class tests our various <code>Map</code>
+ * implementations for correctness.  Large portions borrowed from Mauve.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MapTest.java,v 1.1.2.2 2001-11-04 02:39:45 cananian Exp $
+ * @version $Id: TestMap.java,v 1.1.2.1 2001-11-07 22:45:39 cananian Exp $
  */
-class MapTest {
+class TestMap {
     private final static boolean DEBUG=false;
     abstract static class Factory {
 	abstract Map build();
@@ -33,7 +33,7 @@ class MapTest {
     }
 
     public static void main(String[] args) {
-	MapTest mt;
+	TestMap mt;
 	doit(HashMap.class);
 	//doit(TreeMap.class);//sortedmap
 	doit(HashEnvironment.class);
@@ -92,7 +92,7 @@ class MapTest {
     }
     static void doit(Factory f, String str) {
 	System.err.println("TESTING "+str);
-	MapTest mt = new MapTest(f);
+	TestMap mt = new TestMap(f);
 	mt.test();
 	if (mt.failed) {
 	    System.err.println("FAILURES testing "+str);
@@ -100,9 +100,9 @@ class MapTest {
     }
 
     // my local state.
-    final MapTest th = this;
+    final TestMap th = this;
     final Factory f;
-    MapTest(Factory f) {  this.f = f; }
+    TestMap(Factory f) {  this.f = f; }
 
     // methods of test harness.
     boolean failed = false;
