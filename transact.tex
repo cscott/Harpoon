@@ -1,14 +1,20 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.3 2000-09-25 22:35:12 cananian Exp $
+% $Id: transact.tex,v 1.4 2000-09-26 21:19:39 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
-\usepackage{alltt}
+\usepackage[section,plain]{algorithm} % algorithm environment
+\usepackage{alltt} % alltt environment
+\usepackage{amstext} % the \text command for math mode
+\usepackage{comdef} % common definitions
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions in FLEX}
-\date{\today \\ $ $Revision: 1.3 $ $}
+\date{\today \\ $ $Revision: 1.4 $ $}
+
+% this is handy when talking about structure member references.
+\newcommand{\ptr}{\code{->}}
 
 \begin{document}
-%\bibliographystyle{abbrv}
+\bibliographystyle{abbrv}
 \maketitle
 \section{Data Structures}
 
@@ -21,7 +27,7 @@ unchanged, although fields containing the specified
 to indicate that the field value is ``not here''; that is, the code
 must consult the transaction information to find the field's current
 value.  This happens very rarely even when no transaction is
-associated with the object; Shasta \cite{shasta} has shown that the
+associated with the object; Shasta \cite{scales96:shasta} has shown that the
 overhead entailed by such ``false'' transactions is expected to be
 extremely low.
 
@@ -48,6 +54,23 @@ may contain a pointer to a ``parent'' transaction which it is
 dependent upon.  The commit record also contains a three-value
 ``status'' field which indicates whether the transaction it represents
 has been committed or aborted yet.
+
+We can also chain commit records together using the ``waiting'' field
+of the \texttt{commitrec} structure to more efficiently restart
+transactions which aborted because of reservations held by this
+one.  Experimentation will determine whether this is worthwhile or
+whether a simple exponential backoff scheme will work better.
+If this field is used, it is expected to link multiple ``aborted''
+commit records to a single ``waiting'' record at the head.  When the
+record at the head is either committed or aborted, the other
+transactions should be restarted.
+
+In practice, this will probably work better if there is a condition
+value/mutex pair associated with every commit record which
+transactions would signal when aborting or commiting --- but this
+seems to entail too much overhead.  We don't want to have to
+\texttt{pthread\_mutex\_lock} and \texttt{pthread\_cond\_signal} at every
+transaction commit/abort, do we?
 
 \begin{figure}
 \begin{alltt}\small
@@ -77,7 +100,8 @@ struct inflated_oobj \{
   ptroff_t hashcode; /* the real hashcode, since we've booted it */
   void *jni_data; /* information associated with this object by the JNI */
   void (*jni_cleanup_func)(void *jni_data);
-\textbf{  /* TRANSACTION SUPPORT */
+\textbf{  int use_count; /* determines when we can deflate the object */
+  /* TRANSACTION SUPPORT */
 #if WITH_TRANSACTIONS
   struct vinfo *first_version; /* linked list of object versions */
 #endif}
@@ -100,7 +124,8 @@ struct inflated_oobj \{
 #endif
 \};
 \end{alltt}
-\caption{The ``inflated object'' structure in the FLEX runtime.}
+\caption{The ``inflated object'' structure in the FLEX runtime.
+         Fields specific to transaction support are in boldface.}
 \label{fig:infl}
 \end{figure}
 
@@ -131,11 +156,37 @@ struct commitrec \{
   struct commitrec *parent;
   /* The 'state' should be initialized to W and write-once to C or A. */
   enum \{ WAITING=0, COMMITTED, ABORTED \} state;
+  /* optional! (not sure we need/can use this at all) */
+  /* this is a list of transactions which aborted waiting for this one. */
+  /* martin sez we should use exponential back-off instead. */
+  struct commitrec *waiting;
 \};
 #endif
 \end{alltt}
 \caption{Commit record structure.}
 \label{fig:commitrec}
+\end{figure}
+
+\section{Algorithms}
+
+Blah blah blah
+
+\begin{figure}
+$\text{Read}(\code{struct oobj *} o, \code{int } n)$ =
+\begin{myalgorithmic}
+\STATE $x \gets o\ptr \code{field}[n]$
+\IF{$x \neq \code{FLAG\_VALUE}$}
+  \RETURN x
+\ENDIF
+\STATE $v \gets o \ptr \code{hashunion.inflated} \ptr \code{first\_version}$
+\STATE \COMMENT{XXX: cache/optimize the transaction list}
+\WHILE{$\neg \text{CommitP}(v \ptr \code{transid})$}
+  \STATE $v \gets v \ptr \code{next}$
+\ENDWHILE
+\RETURN $v \ptr \code{field}[n]$
+\end{myalgorithmic}
+\caption{Algorithm for non-transactional read of a field.}
+\label{fig:readnotrans}
 \end{figure}
 
 %\begin{figure}
@@ -145,5 +196,5 @@ struct commitrec \{
 %\label{fig:}
 %\end{figure}
 
-%\bibliography{harpoon}
+\bibliography{harpoon}
 \end{document}
