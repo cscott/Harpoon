@@ -30,10 +30,10 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.17 1999-08-05 02:12:54 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.18 1999-08-07 02:09:21 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  */
-public abstract class HClass extends HPointer {
+public abstract class HClass extends HPointer implements java.io.Serializable {
   static Hashtable dsc2cls = new Hashtable();
 
   /** Protected constructor, not for external use. */
@@ -981,6 +981,17 @@ public abstract class HClass extends HPointer {
     };
   /** HPointer interface. */
   HClass actual() { return this; /* no dereferencing necessary. */ }
+
+  /** Serializable interface. */
+  public Object writeReplace() {
+    return new HClassStub(getDescriptor());
+  }
+  private static final class HClassStub implements java.io.Serializable {
+    private String desc;
+    HClassStub() {}
+    HClassStub(String desc) { this.desc = desc; }
+    public Object readResolve() { return HClass.forDescriptor(desc); }
+  }
 }
 
 class HClassPrimitive extends HClass {
