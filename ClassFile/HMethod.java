@@ -17,7 +17,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.11 1998-08-03 10:34:53 cananian Exp $
+ * @version $Id: HMethod.java,v 1.12 1998-08-04 01:49:56 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -123,6 +123,13 @@ public class HMethod implements HMember {
   }
   /** Cached value of <code>getReturnType</code>. */
   private HClass returnType=null;
+
+  /**
+   * Returns the descriptor for this method.
+   */
+  public String getDescriptor() {
+    return methodinfo.descriptor();
+  }
 
   /**
    * Returns an array of <code>HClass</code> objects that represent the
