@@ -38,7 +38,8 @@
 #-------------------------------------------------------------------
 ALL	chgrp -R -f java-dev $CVSROOT/.
 ALL	chmod -R go+rX,o-w $CVSROOT/.
+Benchmarks $CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
 Code	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
+EventDriven $CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
 Runtime	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
 Tests	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
-EventDriven $CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s

@@ -36,13 +36,14 @@ rcsinfo 	CVSROOT rcsinfo
 taginfo 	CVSROOT taginfo
 
 # Version controlled sources:
+Benchmarks Benchmarks
 Code	Code
 Design	Design
 Docs	Docs
+EventDriven EventDriven
 Runtime Runtime
 Tests	Tests
 FLEX    -a Code Runtime
-EventDriven EventDriven
 
 # pldi '99 paper (defunct)
 #pldi99 -d pldi99.sigma Design harpoon.bib acmconf.sty acmconfbig.sty \
