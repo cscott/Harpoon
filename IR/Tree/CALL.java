@@ -29,7 +29,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.33 2000-02-15 17:19:04 cananian Exp $
+ * @version $Id: CALL.java,v 1.1.2.34 2000-02-15 20:11:23 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -95,7 +95,7 @@ public class CALL extends INVOCATION {
 
     public Tree rename(TreeFactory tf, TempMap tm, CloneCallback cb) {
         return cb.callback(this,
-			   new CALL(tf, this, 
+			   new CALL(tf, this, getRetval()==null ? null :
 				    (TEMP)getRetval().rename(tf, tm, cb),
 				    (TEMP)getRetex().rename(tf, tm, cb), 
 				    (Exp)getFunc().rename(tf, tm, cb),
