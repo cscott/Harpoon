@@ -11,7 +11,7 @@ import java.util.NoSuchElementException;
  * <code>Iterator</code> to generate a new one.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FilterIterator.java,v 1.1.2.2 1999-06-16 02:35:02 cananian Exp $
+ * @version $Id: FilterIterator.java,v 1.1.2.3 1999-10-26 20:31:59 pnkfelix Exp $
  */
 public class FilterIterator extends UnmodifiableIterator implements Iterator {
     /*final*/ Iterator i;
@@ -43,9 +43,18 @@ public class FilterIterator extends UnmodifiableIterator implements Iterator {
 
     public static class Filter { // default is an identity mapping.
 	/** Return <code>true</code> if the specified element should be
-	 *  included in the filtered enumeration. */
+	    included in the filtered enumeration. 
+	 
+	    <BR> Default implementation returns true for all
+	    <code>Object</code>s (no filter).   
+	 */
 	public boolean isElement(Object o) { return true; }
-	/** Perform a mapping on elements from the source enumeration. */
-	public Object  map(Object o) { return o; }
+
+	/** Perform a mapping on elements from the source enumeration. 
+
+	    <BR> Default implementation returns <code>o</code>
+	    (identity mapping). 
+	 */
+	public Object map(Object o) { return o; }
     }
 }

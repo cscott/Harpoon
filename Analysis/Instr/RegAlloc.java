@@ -53,7 +53,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.44 1999-10-26 16:03:23 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.45 1999-10-26 20:31:59 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = true;
@@ -788,14 +788,14 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 		Temp t = (Temp) uses.next();
 		
 		
-		if (((Set)def.get(t)).isEmpty()) {
+		if ((def.getValues(t)).isEmpty()) {
 		    // if it uses a variable defined in
 		    // another block, then add to USE
-		    ((Set)use.get(t)).add(instr);
+		    use.add(t, instr);
 		} else {
 		    // put it in the DEF set; we'll move the DEF
 		    // set into the USE set later if we have to.
-		    ((Set)def.get(t)).add(instr);
+		    def.add(t, instr);
 		}
 	    }
 	}
@@ -805,17 +805,17 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    while(defs.hasNext()) {
 		Temp t = (Temp) defs.next();
 		
-		if (!((Set)def.get(t)).isEmpty()) {
+		if (!(def.getValues(t)).isEmpty()) {
 		    // We have seen a DEF for t in this block
 		    // before; need to move all those instrs over
 		    // before putting this in the DEF set
 		    Iterator instrs =
-			((Set)def.get(t)).iterator();
+			(def.getValues(t)).iterator();
 		    while(instrs.hasNext()) {
-			((Set)use.get(t)).add(instrs.next());
+			use.add(t, instrs.next());
 		    }
 		}
-		((Set)def.get(t)).add(instr);
+		def.add(t, instr);
 	    }
 	}
     }
@@ -881,7 +881,7 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    Map.Entry entry = (Map.Entry) inEntries.next();
 	    Temp t = (Temp) entry.getKey();
 	    Web web = (Web) entry.getValue();
-	    Iterator instrs = ((Set)webInfo.use.get(t)).iterator();
+	    Iterator instrs = webInfo.use.getValues(t).iterator();
 	    while(instrs.hasNext()) {
 		web.instrs.add(instrs.next());
 	    }
@@ -889,11 +889,10 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    webInfo.out.put(t, web);
 	}
 	
-	Iterator defEntries = webInfo.def.entrySet().iterator();
-	while(defEntries.hasNext()) {
-	    Map.Entry entry = (Map.Entry) defEntries.next();
-	    Temp t = (Temp) entry.getKey();
-	    Set instrs = (Set) entry.getValue();
+	Iterator defKeys = webInfo.def.keySet().iterator();
+	while(defKeys.hasNext()) {
+	    Temp t = (Temp) defKeys.next();
+	    Set instrs = (Set) webInfo.def.getValues(t);
 
 	    Web web = new Web(t, instrs);
 	    

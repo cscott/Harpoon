@@ -7,6 +7,7 @@ import harpoon.Util.Util;
 import harpoon.Util.PairMapEntry;
 import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.CombineIterator;
+import harpoon.Util.FilterIterator;
 
 import java.util.Map;
 import java.util.Iterator;
@@ -15,6 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
+import java.util.HashSet;
 
 /** <code>MultiMap</code> maps a key to a collection of values.  These
     collections are created as needed using a
@@ -68,9 +70,20 @@ import java.util.AbstractSet;
     constraints enforced by the <code>Map</code> interface does not
     ever attempt to use a <code>MultiMap</code> when any of its Keys
     map to more than one value.
+
+    <BR> Also, right now the implementation tries to preserve the
+         property that if a key 'k' maps to an empty collection 'c' in
+	 some MultiMap 'mm', then users of 'mm' will not be able to
+	 see that 'k' is a member of the keySet for 'mm'.  However, it
+	 does not preserve this property when mm.getValues(k) is used
+	 as a means to operate on the state of 'mm', and it is not
+	 clear to me whether one can even ensure that the property
+	 can be maintained if arbitrary operations on mm.getValues(k)
+	 are passed on to 'mm', because of the possibility that 
+
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.4 1999-10-26 16:03:24 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.5 1999-10-26 20:32:00 pnkfelix Exp $
  */
 public class MultiMap implements Map {
     
@@ -219,7 +232,19 @@ public class MultiMap implements Map {
     }
 
     public Set keySet() {
-	return internMap.keySet();
+	FilterIterator iter = 
+	    new FilterIterator(internMap.keySet().iterator(),
+			       new FilterIterator.Filter() {
+				   public boolean isElement( Object k ) {
+				       return !((Collection)internMap.get(k)).isEmpty();
+				   }
+			       });
+
+	HashSet set = new HashSet();
+	while(iter.hasNext()) {
+	    set.add(iter.next());
+	}
+	return Collections.unmodifiableSet(set);
     }
     
     /** Returns a collection view of the values contained in this
@@ -343,7 +368,10 @@ public class MultiMap implements Map {
 	        of the call
     */
     public boolean retainAll(Object key, Collection values) {
-	return getValues(key).retainAll(values);
+	boolean changed = false;
+	changed = getValues(key).retainAll(values);
+	if (getValues(key).isEmpty()) internMap.remove(key);
+	return changed;
     }
 
     /** Removes from the current mappings: associations for
@@ -355,7 +383,10 @@ public class MultiMap implements Map {
 	        of the call
     */
     public boolean removeAll(Object key, Collection values) {
-	return getValues(key).removeAll(values);
+	boolean changed = false;
+	changed = getValues(key).removeAll(values);
+	if (getValues(key).isEmpty()) internMap.remove(key);
+	return changed;
     }
     
     /** Returns the collection of Values associated with
@@ -366,7 +397,7 @@ public class MultiMap implements Map {
 	<code>Collection</code> and returns it.
 	(<code>MultiMap</code> specific operation). 
     */
-    public Collection getValues(Object key) {
+    public Collection getValues(final Object key) {
 	Collection c = (Collection) internMap.get(key);
 	if (c == null) {
 	    c = cf.makeCollection();
