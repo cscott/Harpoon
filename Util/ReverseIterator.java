@@ -13,21 +13,21 @@ import java.util.List;
  * in reverse order.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ReverseIterator.java,v 1.2 2002-02-25 21:08:52 cananian Exp $
+ * @version $Id: ReverseIterator.java,v 1.2.2.1 2002-03-16 01:27:44 cananian Exp $
  */
-public class ReverseIterator extends UnmodifiableIterator implements Iterator {
-    final List l = new ArrayList();
+public class ReverseIterator<E> extends UnmodifiableIterator<E> {
+    final ArrayList<E> l = new ArrayList<E>();
     int i;
 
     /** Creates a <code>ReverseIterator</code> of <code>Iterator</code>
      *  <code>it</code>. */
-    public ReverseIterator(Iterator it) {
+    public ReverseIterator(Iterator<E> it) {
 	while (it.hasNext()) l.add(it.next());
-	((ArrayList)l).trimToSize();
+	l.trimToSize();
 	i = l.size()-1;
     }
     public boolean hasNext() { return ( i >= 0 ); }
-    public Object  next() {
+    public E  next() {
 	try { return l.get(i--); }
 	catch (IndexOutOfBoundsException e)
 	{ throw new NoSuchElementException(); }

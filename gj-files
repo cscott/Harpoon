@@ -11,6 +11,8 @@ Util/FilterIterator.java
 Util/Grapher.java
 Util/Indexer.java
 Util/IteratorEnumerator.java
+Util/ReverseIterator.java
+Util/ReverseListIterator.java
 Util/UnmodifiableIterator.java
 Util/UnmodifiableListIterator.java
 Util/Util.java
