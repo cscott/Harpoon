@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.31 1998-10-11 19:19:55 cananian Exp $
+ * @version $Id: HClass.java,v 1.32 1998-10-12 01:38:02 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -430,7 +430,7 @@ public class HClass {
 	HClass[] methodParamTypes = declaredMethods[i].getParameterTypes();
 	if (methodParamTypes.length == parameterTypes.length) {
 	  int j; for (j=0; j<parameterTypes.length; j++)
-	    if (methodParamTypes[i] != parameterTypes[i])
+	    if (methodParamTypes[j] != parameterTypes[j])
 	      break; // oops, this one doesn't match.
 	  if (j==parameterTypes.length) // hey, we made it to the end!
 	    return declaredMethods[i];
@@ -537,7 +537,7 @@ public class HClass {
 	HClass[] methodParamTypes = methods[i].getParameterTypes();
 	if (methodParamTypes.length == parameterTypes.length) {
 	  int j; for (j=0; j<parameterTypes.length; j++)
-	    if (methodParamTypes[i] != parameterTypes[i])
+	    if (methodParamTypes[j] != parameterTypes[j])
 	      break; // oops, this one doesn't match.
 	  if (j==parameterTypes.length) // hey, we made it to the end!
 	    return methods[i];
