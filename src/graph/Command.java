@@ -55,6 +55,66 @@ public class Command extends Node {
      * @see Switch
      */
     public static final int GO_RIGHT = 121;
+    
+    /**
+     * Move car to the left
+     * @see Servo
+     */
+    public static final int SERVO_LEFT = 201;
+    
+    /**
+     * Move car to the right
+     * @see Servo
+     */
+    public static final int SERVO_RIGHT = 202;
+    
+    /**
+     * Move car forward
+     * @see Servo
+     */
+    public static final int SERVO_FORWARD = 203;
+    
+    /**
+     * Move car backward
+     * @see Servo
+     */
+    public static final int SERVO_BACKWARD = 204;
+
+    /**
+     * Move car left and continue moving left.
+     * @see Servo
+     */
+    public static final int SERVO_LEFT_CONTINUE = 205;
+    
+    /**
+     * Move car right and continue moving right.
+     * @see Servo
+     */
+    public static final int SERVO_RIGHT_CONTINUE = 206;
+    
+    /**
+     * Move car forward and continue moving forward.
+     * @see Servo
+     */
+    public static final int SERVO_FORWARD_CONTINUE = 207;
+    
+    /**
+     * Move car backward and continue moving backward.
+     * @see Servo
+     */
+    public static final int SERVO_BACKWARD_CONTINUE = 208;
+    
+    /**
+     * Stop the car from turning.
+     * @see Servo
+     */
+    public static final int SERVO_STOP_TURN = 209;
+    
+    /**
+     * Stop the car from moving.
+     * @see Servo
+     */
+    public static final int SERVO_STOP_MOVING = 210;
 
     private int tag;
 
@@ -75,7 +135,7 @@ public class Command extends Node {
     public void process(ImageData id) {
 	//if (tag == GO_RIGHT)
 	//  System.out.println("Adding command: GO_RIGHT");
-	id.command = tag;
+	tag(id, this.tag);
 	super.process(id);
     }
 
@@ -86,5 +146,9 @@ public class Command extends Node {
      */
     public static int read(ImageData id) {
 	return id.command;
+    }
+
+    public static void tag(ImageData id, int tag) {
+	id.command = tag;
     }
 }
