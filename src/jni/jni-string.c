@@ -4,6 +4,10 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include "config.h"
+#ifdef WITH_DMALLOC
+#include "dmalloc.h"
+#endif
 
 static jsize utf8length(const jchar *buf, jsize len);
 static jsize toUTF8(const jchar *src, int srclen, char *dst);
@@ -65,7 +69,11 @@ jstring FNI_NewStringUTF(JNIEnv *env, const char *bytes) {
   jclass strcls = (*env)->FindClass(env, "java/lang/String");
   jmethodID cid = (*env)->GetMethodID(env, strcls, "<init>", "([C)V");
   int       len = strlen(bytes);
+#ifdef WITH_DMALLOC /* dmalloc doesn't like zero-length allocations */
+  jchar *   buf = malloc(1+sizeof(jchar)*len);
+#else
   jchar *   buf = malloc(sizeof(jchar)*len);
+#endif
   jsize  newlen = fromUTF8(bytes, buf);
   jcharArray ca = (*env)->NewCharArray(env, newlen);
   (*env)->SetCharArrayRegion(env, ca, 0, newlen, buf);
