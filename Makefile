@@ -26,6 +26,8 @@ BISOURCES=$(wildcard src/corba/UAV/*.idl)
 JSOURCES=$(wildcard src/*.java src/graph/*.java src/util/*.java src/corba/*.java src/ipaq/*.java)
 GJSOURCES1=imagerec/graph/*.java imagerec/corba/*.java FrameManip/*.java
 GJSOURCES=$(GJSOURCES1) omg/org/CosPropertyService/*.java ATRManip/*.java quo/*.java rss/*.java
+ICHANNEL_SOURCES=*.idl
+JCHANNEL_SOURCES=RtecBase/*.java RtecDefaultEventData/*.java RtecEventChannelAdmin/*.java RtecEventChannelAdmin/EventChannelPackage/*.java RtecEventComm/*.java RtecScheduler/*.java TimeBase/*.java
 RTJSOURCES=$(wildcard src/rtj/*.java)
 STUBSOURCES=$(wildcard src/rtj/stubs/*.java)
 SOURCES=$(JSOURCES) $(ISOURCES) $(RTJSOURCES) $(STUBSOURCES)
@@ -83,6 +85,8 @@ IDLCC=$(shell if test $(CYGWIN) -eq 0; \
 	      else echo $(JAVAI) -classpath $(CP) org.jacorb.idl.parser $(IDL_FLAGS); \
 	      fi)
 
+IDLCC_ZEN=foo
+
 JDOCFLAGS += -classpath $(CP)
 
 JCC = $(JAVAC) -classpath $(CP)
@@ -94,14 +98,14 @@ clean:
 	@rm -rf doc $(JDIRS) $(EVENTDIRS) META-INF
 	@rm -f *.jar *.jar.TIMESTAMP
 	@rm -f imagerec.tgz imagerec.tgz.TIMESTAMP
+	@rm -f *.idl
 #	@rm -f ChangeLog
 
 doc:	$(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating documentation...
 	@rm -rf doc $(JDIRS)
 	@mkdir -p doc
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JDOC) $(JDOCFLAGS) -d doc/ $(JSOURCES) $(GJSOURCES) > doc/STATUS
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
@@ -110,8 +114,7 @@ doc:	$(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 imagerec.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -138,8 +141,7 @@ imagerec.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 GUI.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES) movie/tank.jar
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -153,8 +155,7 @@ GUI.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES) movie/tank.jar
 receiverStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -163,14 +164,38 @@ receiverStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
+receiverStub-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC_ZEN) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/zen.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+
 trackerStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+trackerStub-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC_ZEN) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/zen.jar
 	@rm -rf META-INF
 	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
 	@rm -rf $(JDIRS)
@@ -179,22 +204,33 @@ trackerStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 ATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
-	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
-	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/lm_eventChannel.jar
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(ICHANNEL_SOURCES) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES) $(JCHANNEL_SOURCES)
+	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
 	@rm -rf META-INF
 	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) $(EVENTDIRS)
-	@rm -rf $(JDIRS) $(EVENTDIRS)
+	@rm -rf $(JDIRS) $(EVENTDIRS) *.idl
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
+ATR-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(JAR) xf contrib/lm_eventChannel.jar
+	@$(IDLCC_ZEN) -d . -I$(UAVDIST) $(ISOURCES) $(ICHANNEL_SOURCES) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES) $(JCHANNEL_SOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/zen.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS) $(EVENTDIRS)
+	@rm -rf $(JDIRS) $(EVENTDIRS) *.idl
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
 embeddedATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -206,8 +242,7 @@ embeddedATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 groundATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -219,8 +254,7 @@ groundATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 groundManual.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -232,8 +266,7 @@ groundManual.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 embeddedManual.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -245,8 +278,7 @@ embeddedManual.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 carDemoGroundATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -258,8 +290,7 @@ carDemoGroundATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 carDemoEmbeddedATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -271,8 +302,7 @@ carDemoEmbeddedATR.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 carDemoReceiverStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -284,8 +314,7 @@ carDemoReceiverStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 carDemoTrackerStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -293,11 +322,11 @@ carDemoTrackerStub.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
 carDemoIPAQ.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -309,8 +338,7 @@ carDemoIPAQ.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 carDemoIPAQ2.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -322,8 +350,7 @@ carDemoIPAQ2.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 RTJ.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -335,8 +362,7 @@ RTJ.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 ns.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -345,11 +371,22 @@ ns.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
+ns-ZEN.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC_ZEN) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/zen.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
 buffer.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -361,8 +398,7 @@ buffer.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 Watermark.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES) movie/tank.jar
 	@echo Generating $@ file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
@@ -380,28 +416,33 @@ movie/tank.jar:
 jars: clean doc movie/tank.jar
 	@echo Generating imagerec.jar file...
 	@rm -rf $(JDIRS)
-	@$(IDLCC) -d . $(ISOURCES)
-	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
 	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
 	@rm -rf $(GJSOURCES)
 	@$(JAR) xf contrib/jacorb.jar
 	@rm -rf META-INF
 	@$(JAR) cfm imagerec.jar src/manifest/imagerec.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > imagerec.jar.TIMESTAMP
+
 	@echo Generating receiverStub.jar file...
 	@$(JAR) cfm receiverStub.jar src/manifest/receiverStub.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > receiverStub.jar.TIMESTAMP
+
 	@echo Generating trackerStub.jar file...
 	@$(JAR) cfm trackerStub.jar src/manifest/trackerStub.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > trackerStub.jar.TIMESTAMP
+
 	@echo Generating embeddedATR.jar file...
 	@$(JAR) cfm embeddedATR.jar src/manifest/embeddedATR.jar.MF $(JDIRS)
+
 	@echo Generating embeddedManual.jar file...
 	@$(JAR) cfm embeddedManual.jar src/manifest/embeddedManual.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > embeddedATR.jar.TIMESTAMP
+
 	@echo Generating groundATR.jar file...
 	@$(JAR) cfm groundATR.jar src/manifest/groundATR.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > groundATR.jar.TIMESTAMP
+
 	@echo Generating groundManual.jar file...
 	@$(JAR) cfm groundManual.jar src/manifest/groundManual.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > groundManual.jar.TIMESTAMP
@@ -433,27 +474,62 @@ jars: clean doc movie/tank.jar
 	@echo Generating ns.jar file...
 	@$(JAR) cfm ns.jar src/manifest/ns.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > ns.jar.TIMESTAMP
+
 	@echo Generating RTJ.jar file...
 	@$(JAR) cfm RTJ.jar src/manifest/RTJ.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > RTJ.jar.TIMESTAMP
+
 	@echo Generating buffer.jar file...
 	@$(JAR) cfm buffer.jar src/manifest/buffer.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > buffer.jar.TIMESTAMP
+
 	@echo Generating ATR.jar file...
 	@$(JAR) xf contrib/lm_eventChannel.jar
+	@$(IDLCC) -d . $(ICHANNEL_SOURCES)
+	@$(JCC) -d . -g $(JCHANNEL_SOURCES)
 	@$(JAR) cfm ATR.jar src/manifest/ATR.jar.MF $(JDIRS) $(EVENTDIRS)
+	@rm -rf $(EVENTDIRS) *.idl
 	@date '+%-d-%b-%Y at %r %Z.' > ATR.jar.TIMESTAMP
+
 	@echo Generating Watermark.jar file...
-	@$(JAR) cfm Watermark.jar src/manifest/Watermark.jar.MF $(JDIRS) $(EVENTDIRS)
+	@$(JAR) cfm Watermark.jar src/manifest/Watermark.jar.MF $(JDIRS) 
 	@date '+%-d-%b-%Y at %r %Z.' > Watermark.jar.TIMESTAMP
-	@rm -rf $(EVENTDIRS)
+
 	@echo Generating GUI.jar file...
 	@$(JAR) xf movie/tank.jar
 	@rm -rf META-INF
 	@$(JAR) cfm GUI.jar src/manifest/GUI.jar.MF $(JDIRS) tank.gz.*
 	@date '+%-d-%b-%Y at %r %Z.' > GUI.jar.TIMESTAMP
 	@rm -rf tank.gz.*
+	@rm -rf *idl
 	@rm -rf $(JDIRS)
+
+	@echo Generating receiverStub-ZEN.jar file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC_ZEN) -d . -I$(UAVDIST) $(ISOURCES) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/zen.jar
+	@rm -rf META-INF
+	@$(JAR) cfm receiverStub-ZEN.jar src/manifest/receiverStub-ZEN.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > receiverStub-ZEN.jar.TIMESTAMP
+
+	@echo Generating trackerStub-ZEN.jar file...
+	@$(JAR) cfm trackerStub-ZEN.jar src/manifest/trackerStub-ZEN.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > trackerStub-ZEN.jar.TIMESTAMP
+
+	@echo Generating ns-ZEN.jar file...
+	@$(JAR) cfm ns-ZEN.jar src/manifest/ns-ZEN.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > ns-ZEN.jar.TIMESTAMP
+
+	@echo Generating ATR-ZEN.jar file...
+	@$(JAR) xf contrib/lm_eventChannel.jar
+	@$(IDLCC) -d . $(ICHANNEL_SOURCES)
+	@$(JCC) -d . -g $(JCHANNEL_SOURCES)
+	@$(JAR) cfm ATR-ZEN.jar src/manifest/ATR-ZEN.jar.MF $(JDIRS)
+	@rm -rf $(EVENTDIRS) *.idl
+	@date '+%-d-%b-%Y at %r %Z.' > ATR-ZEN.jar.TIMESTAMP
+
 
 cardemo: carDemoReceiverStub.jar carDemoTrackerStub.jar carDemoEmbeddedATR.jar carDemoGroundATR.jar carDemoIPAQ.jar carDemoIPAQ2.jar
 

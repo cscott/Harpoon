@@ -39,6 +39,11 @@ import imagerec.graph.ATR;
 public class CORBA implements CommunicationsModel {
     private String[] args;
 
+    public static final int JACORB = 0;
+    public static final int ZEN = 1;
+
+    public static int implementation = JACORB;
+
     /** Construct a new {@link CORBA} {@link CommunicationsModel}
      *
      *  @param args should contain the command-line arguments to the program.
@@ -47,18 +52,42 @@ public class CORBA implements CommunicationsModel {
      *              file://home/wbeebee/.jacorb, for example.
      */
     public CORBA(String[] args) {
+	this(args, implementation);
+    }
+
+    /** Construct a new {@link CORBA} {@link CommunicationsModel}
+     *
+     *  @param args should contain the command-line arguments to the program.
+     *              It should have an -ORBInitRef NameService=X
+     *              where X is the location of the name service and could be 
+     *              file://home/wbeebee/.jacorb, for example.
+     *
+     *  @param implementation Choose an ORB to use (JacORB, ZEN).
+     */
+    public CORBA(String[] args, int implementation) {
 	this.args=args;
-	setupJacORB();
+
+	switch (implementation) {
+	case JACORB: { setupJacORB(); }
+	case ZEN: { setupZen(); }
+	default: { throw new Error("Invalid implementation chosen!"); }
+	}
     }
 
     /** Sets up the environment variables necessary to run JacORB 1.3.30.
      */
     public static void setupJacORB() {
 	System.setProperty("org.omg.CORBA.ORBClass", "org.jacorb.orb.ORB");
-	System.setProperty("org.omg.CORBA.ORBSingletonClass", 
-			   "org.jacorb.orb.ORBSingleton");
+	System.setProperty("org.omg.CORBA.ORBSingletonClass", "org.jacorb.orb.ORBSingleton");
     }
     
+    /** Sets up the environment variables necessary to run Zen.
+     */
+    public static void setupZen() {
+	System.setProperty("org.omg.CORBA.ORBClass", "edu.uci.ece.zen.orb.ORB");
+	System.setProperty("org.omg.CORBA.ORBSingletonClass", "edu.uci.ece.zen.orb.ORBSingleton");
+    }
+
     /** Return the naming context associated with an {@link ORB}.
      *
      *  @param orb The orb to find the naming context.

@@ -6,9 +6,10 @@ package imagerec;
 import imagerec.corba.CORBA;
 
 import org.jacorb.naming.NameServer;
+import edu.uci.ece.zen.naming.NamingService;
 
 /**
- * This is an easy-to-use front-end to the JacORB CORBA name service.
+ * This is an easy-to-use front-end to the JacORB/ZEN CORBA naming services.
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
@@ -27,7 +28,19 @@ public class NSMain {
 	    System.exit(-1);
 	}
 
-	CORBA.setupJacORB();
-	NameServer.main(args);
+	switch (CORBA.implementation) {
+	case CORBA.JACORB: {
+	    CORBA.setupJacORB();
+	    NameServer.main(args);
+	}
+	case CORBA.ZEN: {
+	    CORBA.setupZen();
+	    NamingService.main(args);
+	}
+	default: {
+	    System.out.println("Error: No CORBA implementation selected.");
+	    System.exit(-1);
+	}
+	}
     }
 }
