@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.36 2000-07-17 17:01:22 rinard Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.37 2000-10-17 00:27:56 cananian Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -852,7 +852,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    scc = scc.prevTopSort();
 	}
 	for(Iterator pit=toPrune.iterator();pit.hasNext();)
-	    Unreachable.prune((HEADER)((HCode)pit.next()).getRootElement());
+	    Unreachable.prune((HCode)pit.next());
     }
 
 

@@ -24,7 +24,7 @@ import java.util.List;
  * into chains of <code>INSTANCEOF</code> and <code>CJMP</code> quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeSwitchRemover.java,v 1.1.2.3 2000-10-12 22:30:41 cananian Exp $
+ * @version $Id: TypeSwitchRemover.java,v 1.1.2.4 2000-10-17 00:28:38 cananian Exp $
  */
 public final class TypeSwitchRemover
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -46,7 +46,7 @@ public final class TypeSwitchRemover
 	    if (allquads[i] instanceof TYPESWITCH)
 		replace((TYPESWITCH) allquads[i], dm);
 	// now we have to prune off any newly-unreachable TYPESWITCH cases.
-	Unreachable.prune((HEADER)hc.getRootElement());
+	Unreachable.prune(hc);
 	// yay, done!
 	return hc;
     }

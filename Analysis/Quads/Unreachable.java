@@ -3,12 +3,20 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
+import harpoon.Analysis.Maps.Derivation;
+
+import harpoon.ClassFile.HCode;
+
+import harpoon.IR.LowQuad.DerivationMap;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.MOVE;
 import harpoon.IR.Quads.PHI;
+
+import harpoon.Temp.Temp;
 
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
@@ -25,14 +33,35 @@ import java.util.Stack;
  * <b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Unreachable.java,v 1.1.2.2 2000-10-11 14:28:19 cananian Exp $
+ * @version $Id: Unreachable.java,v 1.1.2.3 2000-10-17 00:28:31 cananian Exp $
  */
 public abstract class Unreachable  {
 
-    /** Prunes unreachable code from a quad graph in-place. */
+    /** Prunes unreachable code from a quad graph in-place.  Also updates
+     *  the derivation for the <code>HCode</code>, if present. */
+    public static final void prune(HCode hc) {
+	// fetch or invalidate mutable derivation information.
+	DerivationMap dm = null;
+	if (((harpoon.IR.Quads.Code)hc).getDerivation()!=null) {
+	    harpoon.IR.LowQuad.Code c = (harpoon.IR.LowQuad.Code) hc;
+	    if (c.getDerivation() instanceof DerivationMap)
+		dm = (DerivationMap) c.getDerivation();
+	    else {
+		//c.setDerivation(null); // clear derivation information.
+		Util.assert(false); // can't invalidate, can't update, abort!
+	    }
+	}
+	prune((HEADER)hc.getRootElement(), dm);
+    }
+    /** Prunes unreachable code *without updating the derivation*. */
     public static final void prune(HEADER header) {
+	prune(header, null);
+    }
+    /** private pruning method. */
+    private static final void prune(HEADER header, DerivationMap dm) {
+	// okay, now find the unreachable code and prune it.
 	Set reachable = (new ReachabilityVisitor(header)).reachableSet();
-	(new PruningVisitor(reachable)).prune();
+	(new PruningVisitor(reachable, dm)).prune();
     }
 
     /** Class to do reachability analysis. */
@@ -61,9 +90,11 @@ public abstract class Unreachable  {
     /** Class to do the pruning of unreachable edges. */
     static private class PruningVisitor extends LowQuadVisitor {
 	final Set reachable;
-	PruningVisitor(Set reachable) {
+	final DerivationMap dm;
+	PruningVisitor(Set reachable, DerivationMap dm) {
 	    super(false); /* not strict low quad */
 	    this.reachable = reachable;
+	    this.dm = dm;
 	}
 	void prune() {
 	    // dump the original live elements into a list.
@@ -74,17 +105,30 @@ public abstract class Unreachable  {
 	public void visit(Quad q) { /* do nothing. */ }
 	public void visit(PHI q) {
 	    // remove unused inputs to PHI.
+	    PHI oldphi = q;
 	    for (int i=q.prevLength()-1; i>=0; i--)
 		if (!reachable.contains(q.prev(i)))
 		    q = q.shrink(i);
+	    if (oldphi != q) { // update derivation/make reachable
+		if (dm!=null) updateDM(oldphi, q);
+		reachable.add(q);
+	    }
 		
 	    // if it shrinks too small, then remove it.
-	    if (q.arity()==1) {
+	    if (q.arity()==1) { // make arity-1 PHI into MOVEs.
 		Edge in = q.prevEdge(0), out = q.nextEdge(0);
-		Quad.addEdge((Quad)in.from(), in.which_succ(),
+		Quad header = (Quad) in.from();
+		int which_succ = in.which_succ();
+		for (int i=0; i<q.numPhis(); i++) {
+		    MOVE m=new MOVE(q.getFactory(), q, q.dst(i), q.src(i, 0));
+		    Quad.addEdge(header, which_succ, m, 0);
+		    header = m; which_succ = 0;
+		    reachable.add(m);
+		    if (dm!=null) dm.update(q, q.dst(i), m, m.dst());
+		}
+		Quad.addEdge(header, which_succ,
 			     (Quad)out.to(), out.which_pred());
-	    } else // make sure new quad is marked as reachable
-		reachable.add(q);
+	    }
 	}
 	public void visit(FOOTER q) {
 	    // remove unused inputs to footer.
@@ -94,6 +138,17 @@ public abstract class Unreachable  {
 
 	    // make sure new quad is marked as reachable.
 	    reachable.add(q);
+	}
+
+	private void updateDM(Quad oldq, Quad newq) {
+	    // transfer derivations of temps defined in newq
+	    Temp[] defs = newq.def();
+	    for (int i=0; i<defs.length; i++)
+		dm.update(oldq, defs[i], newq, defs[i]);
+	    // clear out any left over derivations from oldq
+	    defs = oldq.def();
+	    for (int i=0; i<defs.length; i++)
+		dm.remove(oldq, defs[i]);
 	}
     }
 }
