@@ -12,7 +12,7 @@
 #define DUPTHRESHOLD 2
 #define ARRDUPTHRESHOLD 2
 
-static long int rolenumber=1;
+static long int rolenumber=2;
 struct heap_state *hshash;
 
 
@@ -77,14 +77,14 @@ void printrole(struct heap_state *heap,struct role *r, char * rolename) {
     while(al!=NULL) {
       if (al->role==0) {
 	if (al->duplicates<ARRDUPTHRESHOLD)
-	  fprintf(heap->rolefile,"  Element %s is non-null with multiplicity %d.\n",al->class->classname, al->duplicates);
+	  fprintf(heap->rolefile,"  Element %s is non-null with multiplicity %d.\n",al->class->classname, al->duplicates+1);
 	else
-	  fprintf(heap->rolefile,"  Element %s is non-null at least %d times.\n",al->class->classname, al->duplicates);
+	  fprintf(heap->rolefile,"  Element %s is non-null at least %d times.\n",al->class->classname, al->duplicates+1);
       } else {
 	if (al->duplicates<ARRDUPTHRESHOLD)
-	  fprintf(heap->rolefile,"  Element %s points to role R%d with multiplicity %d.\n",al->class->classname,al->role,al->duplicates);
+	  fprintf(heap->rolefile,"  Element %s points to role R%d with multiplicity %d.\n",al->class->classname,al->role,al->duplicates+1);
 	else
-	  fprintf(heap->rolefile,"  Element %s points to role R%d at least %d times.\n",al->class->classname,al->role,al->duplicates);
+	  fprintf(heap->rolefile,"  Element %s points to role R%d at least %d times.\n",al->class->classname,al->role,al->duplicates+1);
       }
       al=al->next;
     }
@@ -94,9 +94,9 @@ void printrole(struct heap_state *heap,struct role *r, char * rolename) {
   {
     if (r->methodscalled!=NULL) {
       int i=0;
-      for(i=0;i<hshash->statechangesize;i++) {
+      for(i=0;i<heap->statechangesize;i++) {
 	if(r->methodscalled[i]) {
-	  char *methodname=(char *)gettable(hshash->statechangereversetable, i);
+	  char *methodname=(char *)gettable(heap->statechangereversetable, i);
 	  fprintf(heap->rolefile,"   %s\n",methodname);
 	}
       }
@@ -128,17 +128,6 @@ int equivalentrc(struct rolechange *rc1, struct rolechange *rc2) {
 
 void printrolechange(struct heap_state * hs, struct rolechange *rc) {
   printf("Role Change: %s -> %s\n",rc->origrole, rc->newrole);
-}
-
-int equivalentstrings(char *str1, char *str2) {
-  if ((str1!=NULL)&&(str2!=NULL)) {
-    if (strcmp(str1,str2)!=0)
-      return 0;
-    else
-      return 1;
-  } else if ((str1==NULL)&&(str2==NULL))
-    return 1;
-  else return 0;
 }
 
 void rolechange(struct heap_state *hs, struct genhashtable * dommapping, struct heap_object *ho, char *newrole, int enterexit) {
@@ -404,33 +393,6 @@ int rolehashcode(struct role * r) {
   return r->hashcode;
 }
 
-int hashstring(char *strptr) {
-  int hashcode=0;
-  int *intptr=(int *) strptr;
-  if(intptr==NULL)
-    return 0;
-  while(1) {
-    int copy1=*intptr;
-    if((copy1&0xFF000000)&&
-       (copy1&0xFF0000)&&
-       (copy1&0xFF00)&&
-       (copy1&0xFF)) {
-      hashcode^=*intptr;
-      intptr++;
-    } else {
-      if (!copy1&0xFF000000)
-	hashcode^=copy1&0xFF000000;
-      else if (!copy1&0xFF0000)
-	hashcode^=copy1&0xFF0000;
-      else if (!copy1&0xFF00)
-	hashcode^=copy1&0xFF00;
-      else if (!copy1&0xFF)
-	hashcode^=copy1&0xFF;
-      return hashcode;
-    }
-  }
-}
-
 void freerole(struct role * role) {
   struct rolereferencelist * dr=role->dominatingroots;
   struct rolefieldlist * rfl=role->pointedtofl;
@@ -481,6 +443,10 @@ int currentrolenumber() {
 
 int parserolestring(char * input) {
   int value=0;
+  if (input==NULL)
+    return -1;
+  if (strcmp(input,"GARB")==0)
+    return 1;
   sscanf(input,"R%d",&value);
   return value;
 }
@@ -569,7 +535,6 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
     while(al!=NULL) {
       struct rolearraylist *ral=(struct rolearraylist *) calloc(1,sizeof(struct rolearraylist));
       ral->class=al->src->class;
-      ral->duplicates=1;
       insertral(objrole,ral);
       al=al->dstnext;
     }

@@ -15,7 +15,7 @@ void outputweb(struct heap_state *heap, struct genhashtable *dotmethodtable) {
     printwebmethod(methodfile, heap, method);
   }
   genfreeiterator(it);
-
+  fprintf(methodfile, "~~\n");
 
   it=gengetiterator(heap->roletable);
   while(1) {
@@ -27,6 +27,7 @@ void outputweb(struct heap_state *heap, struct genhashtable *dotmethodtable) {
     printwebrole(rolefile, heap,role, rolename);
   }
   genfreeiterator(it);
+  fprintf(rolefile, "~~\n");
 
   it=gengetiterator(dotmethodtable);
   while(1) {
@@ -37,6 +38,7 @@ void outputweb(struct heap_state *heap, struct genhashtable *dotmethodtable) {
     dotclass=(struct dotclass *) gengettable(dotmethodtable, class);
     printwebdot(transitions,heap,class, dotclass);
   }
+  fprintf(transitions, "~~\n");
   genfreeiterator(it);
   outputwebrolerelations(heap);
 
@@ -89,7 +91,7 @@ void outputwebrolerelations(struct heap_state *heap) {
 void printwebrole(FILE *rolefile, struct heap_state *heap,struct role *r, char * rolename) {
   struct rolereferencelist *dominators=r->dominatingroots;
 
-  fprintf(rolefile,"%s ",rolename);
+  fprintf(rolefile,"%d ",parserolestring(rolename));
   fprintf(rolefile,"%s ", r->class->classname);
 
   fprintf(rolefile, "%d ",r->contained);
@@ -109,7 +111,7 @@ void printwebrole(FILE *rolefile, struct heap_state *heap,struct role *r, char *
     struct rolefieldlist *fl=r->pointedtofl;
     struct rolearraylist *al=r->pointedtoal;
     while(fl!=NULL) {
-      fprintf(heap->rolefile,"%s %s %d ",fl->field->fieldname, fl->field->classname->classname, fl->duplicates+1);
+      fprintf(rolefile,"%s %s %d ",fl->field->fieldname, fl->field->classname->classname, fl->duplicates+1);
       fl=fl->next;
     }
     fprintf(rolefile,"~~ ");
@@ -166,14 +168,14 @@ void printwebmethod(FILE *methodfile, struct heap_state *heap, struct rolemethod
   fprintf(methodfile, " %d ",method->numobjectargs);
 
   for(i=0;i<method->numobjectargs;i++)
-    fprintf(methodfile,"%s ",method->paramroles[i]);
+    fprintf(methodfile,"%d ",parserolestring(method->paramroles[i]));
 
 
 
   while(rrs!=NULL) {
     for(i=0;i<method->numobjectargs;i++)
-      fprintf(methodfile,"%s ",rrs->paramroles[i]);
-    fprintf(methodfile," %s ",rrs->returnrole);
+      fprintf(methodfile,"%d ",parserolestring(rrs->paramroles[i]));
+    fprintf(methodfile," %d ",parserolestring(rrs->returnrole));
     rrs=rrs->next;
   }
 
@@ -189,7 +191,7 @@ void printwebrolechanges(FILE *methodfile, struct heap_state *heap, struct rolem
   while(1) {
     struct rolechangesum *rcs=(struct rolechangesum *)gennext(it);
     if (rcs==NULL) break;
-    fprintf(methodfile, "%s %s ",rcs->origrole, rcs->newrole);
+    fprintf(methodfile, "%d %d ",parserolestring(rcs->origrole), parserolestring(rcs->newrole));
   }
   genfreeiterator(it);
 }

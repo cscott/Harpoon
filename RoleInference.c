@@ -14,6 +14,7 @@
 #include "dot.h"
 #include "Container.h"
 #include "RoleRelation.h"
+#include "web.h"
 
 #ifdef MDEBUG
 #include <dmalloc.h>
@@ -45,7 +46,7 @@ void parseoptions(int argc, char **argv, struct heap_state *heap) {
     if(argv[param][0]=='-')
       switch(argv[param][1]) {
       case 'h':
-	printf("-h help\n");
+        printf("-h help\n");
 	printf("-cpolicyfile output containers\n");
 	printf("-u use containers\n");
 	printf("-n no effects\n");
@@ -55,6 +56,9 @@ void parseoptions(int argc, char **argv, struct heap_state *heap) {
 	printf("-pfileprefix\n");
 	exitstate=1;
 	break;
+      case 'w':
+        heap->options|=OPTION_WEB;
+        break;
       case 'p':
 	heap->prefix=copystr(&argv[param][2]);
 	break;
@@ -545,8 +549,11 @@ void doanalysis(int argc, char **argv) {
       printdot(&heap,class, dotclass);
     }
     genfreeiterator(it);
+    if (heap.options&OPTION_WEB)
+	outputweb(&heap, dotmethodtable);
   }
   outputrolerelations(&heap);
+
 
   /* Clean up heap state related stuff*/
   if (heap.options&OPTION_FCONTAINERS) {
@@ -1142,18 +1149,6 @@ void printmethod(struct method m) {
 char bufdata[bufsize];
 unsigned long buflength=0;
 unsigned long bufstart=0;
-
-char * copystr(const char *buf) {
-  int i;
-  if (buf==NULL)
-    return NULL;
-  for(i=0;;i++)
-    if (buf[i]==0) {
-      char *ptr=(char *)malloc(i+1);
-      memcpy(ptr,buf,i+1);
-      return ptr;
-    }
-}
 
 char * getline() {
   char *bufreturn=(char *)malloc(bufsize+1);

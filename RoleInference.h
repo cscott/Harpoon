@@ -152,6 +152,7 @@ struct heap_state {
 #define OPTION_NOEFFECTS 0x8
 #define OPTION_LIMITFIELDS 0x10
 #define OPTION_LIMITARRAYS 0x20
+#define OPTION_WEB 0x40
 
 
 struct identity_relation {

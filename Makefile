@@ -1,10 +1,22 @@
 CC = gcc -O0 -Wall -pg -g -a
 
-RoleInference: RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Names.o Container.o Fields.o RoleRelation.o web.o
-	$(CC) -o RoleInference RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Names.o Container.o Fields.o RoleRelation.o web.o
+all: FastScan RoleInference
+
+RoleInference: RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Names.o Container.o Fields.o RoleRelation.o web.o Common.o
+	$(CC) -o RoleInference RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Names.o Container.o Fields.o RoleRelation.o web.o Common.o
+
+
+FastScan: FastScan.o GenericHashtable.o Names.o Common.o
+	$(CC) -o FastScan FastScan.o GenericHashtable.o Names.o Common.o
+
+Common.o: Common.c
+	$(CC) -c Common.c
 
 RoleRelation.o: RoleRelation.c RoleRelation.h
 	$(CC) -c RoleRelation.c
+
+FastScan.o: FastScan.c FastScan.h RoleRelation.h
+	$(CC) -c FastScan.c
 
 Hashtable.o: Hashtable.c Hashtable.h
 	$(CC) -c Hashtable.c
@@ -52,5 +64,5 @@ CalculateDominators.o: CalculateDominators.c CalculateDominators.h
 	$(CC) -c CalculateDominators.c
 
 clean:
-	rm RoleInference.o Hashtable.o RoleInference ObjectPair.o ObjectSet.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Names.o Container.o Fields.o RoleRelation.o web.o
+	rm RoleInference.o Hashtable.o RoleInference ObjectPair.o ObjectSet.o GenericHashtable.o CalculateDominators.o Role.o Method.o Effects.o dot.o Incremental.o Names.o Container.o Fields.o RoleRelation.o web.o FastScan.o FastScan Common.o
 
