@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.149 2001-06-11 22:41:15 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.150 2001-06-14 20:39:09 witchel Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -506,6 +506,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    String resourceName="harpoon/Support/nativecode-makefile.template";
 	    if (BACKEND==PRECISEC_BACKEND)
 		resourceName="harpoon/Support/precisec-makefile.template";
+	    if (BACKEND==MIPSDA_BACKEND)
+		resourceName="harpoon/Support/mipsda-makefile.template";
 	    if (makefile.exists())
 		System.err.println("WARNING: not overwriting pre-existing "+
 				   "file "+makefile);
