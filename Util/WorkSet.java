@@ -12,7 +12,7 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.1.2.2 1999-02-23 09:00:36 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.1.2.3 1999-02-25 02:09:20 cananian Exp $
  */
 public class WorkSet extends java.util.AbstractSet {
     private /*final*/ HashMap hm;
@@ -43,16 +43,24 @@ public class WorkSet extends java.util.AbstractSet {
     }
 
     /** Returns the last element added to the WorkSet, in constant-time. */
-    public Object get() {
+    public Object peek() {
 	if (isEmpty()) throw new java.util.NoSuchElementException();
 	return el.next.o;
+    }
+    /** Return and remove the last element added to the WorkSet. */
+    public Object pop() {
+	if (isEmpty()) throw new java.util.NoSuchElementException();
+	Object o = el.next.o;
+	hm.remove(o);
+	el.next.remove();
+	return o;
     }
 
     public boolean add(Object o) {
 	if (o==null) throw new NullPointerException();
 	if (hm.containsKey(o)) return false;
-	EntryList nel = new EntryList(el, o, el.next);
-	el.next = nel.next.prev = nel; // always a predecessor and successor.
+	EntryList nel = new EntryList(o);
+	el.add(nel);
 	hm.put(o, nel);
 	// verify list/set correspondence.
 	if (debug) Util.assert(EntryList.equals(el, hm.keySet()));
@@ -82,10 +90,7 @@ public class WorkSet extends java.util.AbstractSet {
 	    public void remove() {
 		if (elp==el) throw new IllegalStateException();
 		hm.remove(elp.o);
-		// always a predecessor and successor.
-		elp.prev.next = elp.next;
-		elp.next.prev = elp.prev;
-		elp = elp.prev;
+		(elp = elp.prev).next.remove();
 		// verify list/set correspondence.
 		if (debug) Util.assert(EntryList.equals(el, hm.keySet()));
 	    }
@@ -97,8 +102,7 @@ public class WorkSet extends java.util.AbstractSet {
 	// remove from hashmap
 	hm.remove(o);
 	// remove from linked list.
-	elp.prev.next = elp.next; // always a predecessor and successor.
-	elp.next.prev = elp.prev;
+	elp.remove();
 	// verify list/set correspondence.
 	if (debug) Util.assert(EntryList.equals(el, hm.keySet()));
 	return true;
@@ -108,10 +112,9 @@ public class WorkSet extends java.util.AbstractSet {
     // INNER CLASS. -------------------------------------------
     private static final class EntryList {
 	final Object o;
-	EntryList prev, next;
-	EntryList(EntryList prev, Object o, EntryList next) {
-	    this.prev = prev; this.o = o; this.next = next;
-	}
+	EntryList prev=null, next=null;
+	EntryList(Object o) { this.o = o; }
+
 	public String toString() {
 	    StringBuffer sb = new StringBuffer("[");
 	    for (EntryList elp = this; elp!=null; elp=elp.next) {
@@ -128,11 +131,24 @@ public class WorkSet extends java.util.AbstractSet {
 	    if (size!=c.size()) return false;
 	    return true;
 	}
-	    
+	// utility.
+	/** Remove this entry from the list. */
+	void remove() {
+	    // always a predecessor and successor.
+	    this.prev.next = this.next;
+	    this.next.prev = this.prev;
+	    this.next = this.prev = null; // safety.
+	}
+	/** Link in the supplied entry after this one. */
+	void add(EntryList nel) {
+	    nel.next = this.next;
+	    nel.prev = this;
+	    this.next = nel.next.prev = nel;
+	}
 	// return a list with only a header and footer node.
 	static EntryList init() {
-	    EntryList header = new EntryList(null, null, null);
-	    EntryList footer = new EntryList(null, null, null);
+	    EntryList header = new EntryList(null);
+	    EntryList footer = new EntryList(null);
 	    header.next = footer;
 	    footer.prev = header;
 	    return header;
