@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.95 2003-07-23 19:12:55 cananian Exp $
+# $Id: GNUmakefile,v 1.96 2003-09-11 18:00:31 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -95,6 +95,8 @@ ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		sed -e "s|^[.]/*||")
 
 SCRIPTS := bin/test-collections bin/annotate.perl $(MUNGE) $(UNMUNGE) \
+	   bin/run-java bin/interpret bin/find-gj bin/jsr14-2.0 \
+	   bin/find-flex-dir bin/build-precisec \
 	   bin/source-markup.perl bin/cvsblame.pl
 
 MACHINE_SRC := Tools/PatMat/Lexer.jlex Tools/PatMat/Parser.cup \
