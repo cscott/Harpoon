@@ -37,6 +37,7 @@ import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.ANEW;
 import harpoon.IR.Quads.OPER;
 import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.PHI;
@@ -59,6 +60,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.Arrays;
+import java.util.Vector;
 import java.util.Collections;
 import java.lang.reflect.Modifier;
 
@@ -69,7 +71,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.23 2000-04-04 02:40:23 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.24 2000-04-06 06:31:06 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -252,6 +254,24 @@ public class CloningVisitor extends QuadVisitor {
     }
 
     public void visit(NEW q) {
+	//DONE AIMAP[if !methodstatus then change stack-->Thread Heap] 
+	followchildren=true;
+	Quad qc=(Quad)q.clone(qf,ctmap);
+	quadmap.put(q, qc);
+	if (newai!=null)
+	    if (methodstatus) {
+		newai.transfer(qc,q,ctmap, oldai);
+	    } else {
+		AllocationInformation.AllocationProperties aiprop=oldai.query(q);
+		newai.associate(qc,new AllocationInformationMap.AllocationPropertiesImpl(aiprop.hasInteriorPointers(),
+											 false,
+											 aiprop.canBeThreadAllocated()||aiprop.canBeStackAllocated(),
+											 aiprop.useOwnHeap(),
+											 (aiprop.allocationHeap()!=null)?ctmap.tempMap(aiprop.allocationHeap()) : null));
+	    }
+    }
+
+    public void visit(ANEW q) {
 	//DONE AIMAP[if !methodstatus then change stack-->Thread Heap] 
 	followchildren=true;
 	Quad qc=(Quad)q.clone(qf,ctmap);
@@ -836,21 +856,40 @@ public class CloningVisitor extends QuadVisitor {
 
 	Temp srco[]=getEnvTemps(q);
 	Temp src[]=map(ctmap,srco);
+	Temp srcarray[]=q.src();
+	Vector vsrc=new Vector(Arrays.asList(srcarray));
+	Vector vsrc2=new Vector(Arrays.asList(srco));
+	vsrc2.removeAll(vsrc);
+	vsrc.addAll(vsrc2);
+	Temp[] csrc=new Temp[vsrc.size()];
+	vsrc.copyInto(csrc);
+	Temp[] src2=map(ctmap,csrc);
+	
 	Temp dst[][]=new Temp[src.length][2];
-	for (int i=0;i<src.length;i++) {
-	    int j=0;
+	Temp dst2[][]=new Temp[src2.length][2];
+
+	for (int i=0;i<src2.length;i++) {
 	    boolean flag=true;
 	    if (optimistic)
-		for (;j<q.numSigmas();j++)
-		    if (srco[i]==q.src(j)) {
-			dst[i][0]=ctmap.tempMap(q.dst(j,0));
-			dst[i][1]=ctmap.tempMap(q.dst(j,1));
-			flag=false;
-			break;
-		    }
-	    if (flag) { 
-		dst[i][0]=new Temp(tf);
-		dst[i][1]=new Temp(tf);
+		for (int j=0;j<q.numSigmas();j++)
+		    if (csrc[i]==srcarray[j])
+			if (flag) {
+			    srcarray[j]=null;
+			    dst2[i][0]=ctmap.tempMap(q.dst(j,0));
+			    dst2[i][1]=ctmap.tempMap(q.dst(j,1));
+			    if (i<src.length) {
+				dst[i][0]=dst2[i][0];
+				dst[i][1]=dst2[i][1];
+			    }
+			    flag=false;
+			}
+	    if (flag) {
+		dst2[i][0]=new Temp(tf);
+		dst2[i][1]=new Temp(tf);
+		if (i<src.length) {
+		    dst[i][0]=dst2[i][0];
+		    dst[i][1]=dst2[i][1];
+		}
 	    }
 	}
 	
@@ -879,7 +918,7 @@ public class CloningVisitor extends QuadVisitor {
 			   calleemethod, newt,
 			   retcont,optimistic?ctmap.tempMap(q.retex()):retex[0],
 			   q.isVirtual(), q.isTailCall(),
-			   dst,src);
+			   dst2,src2);
 	Quad cnext=call;
 	
 	//---------------------------------------------------------------------
