@@ -20,7 +20,6 @@ import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.Linker;
-import harpoon.ClassFile.Relinker;
 import harpoon.ClassFile.UniqueName;
 
 import harpoon.IR.Quads.CALL;
@@ -70,7 +69,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: CloningVisitor.java,v 1.4 2002-04-10 02:59:30 cananian Exp $
+ * @version $Id: CloningVisitor.java,v 1.5 2002-06-10 20:20:50 cananian Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;

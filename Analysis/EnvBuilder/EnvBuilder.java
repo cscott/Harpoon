@@ -19,7 +19,6 @@ import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HMethodMutator;
 import harpoon.ClassFile.HMethod;
 
-import harpoon.ClassFile.Relinker;
 import harpoon.ClassFile.UniqueName;
 
 import harpoon.IR.Quads.QuadSSI;
@@ -34,7 +33,7 @@ import java.util.Set;
  * <code>EnvBuilder</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.4 2002-04-10 02:59:19 cananian Exp $
+ * @version $Id: EnvBuilder.java,v 1.5 2002-06-10 20:20:27 cananian Exp $
  */
 public class EnvBuilder {
     protected final CachingCodeFactory ucf;
