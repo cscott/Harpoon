@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Transformation;
 
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.DuplicateMemberException;
 import harpoon.ClassFile.HClass;
@@ -10,11 +11,14 @@ import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.SerializableCodeFactory;
 import harpoon.Util.Default;
 import harpoon.Util.Util;
+import harpoon.Util.WorkSet;
 
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +38,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.9 2000-10-20 01:38:12 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.10 2000-10-20 18:56:10 cananian Exp $
  */
 public abstract class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -43,11 +47,15 @@ public abstract class MethodSplitter {
     /** This is the code factory which contains the representations of the
      *  new split methods. */
     private final CachingCodeFactory hcf;
+    /** This is a class hierarchy, needed to properly split virtual methods.
+     *  (Virtual methods have to be also split in all subclasses, in order
+     *  for dynamic dispatch to work correctly.) */
+    private final ClassHierarchy ch;
 
     /** Creates a <code>MethodSplitter</code>, based on the method
      *  representations in the <code>parent</code> <code>HCodeFactory</code>.
      */
-    public MethodSplitter(final HCodeFactory parent) {
+    public MethodSplitter(final HCodeFactory parent, ClassHierarchy ch) {
         this.hcf = new CachingCodeFactory(new SerializableCodeFactory() {
 	    public String getCodeName() { return parent.getCodeName(); }
 	    public void clear(HMethod m) { parent.clear(m); }
@@ -64,6 +72,7 @@ public abstract class MethodSplitter {
 		return hc;
 	    };
 	}, true/* save cache */);
+	this.ch = ch;
     }
     
     /** Maps split methods to <original method, token> pairs. */
@@ -100,10 +109,37 @@ public abstract class MethodSplitter {
 	    /* now add this to known versions */
 	    versions.put(swpair, splitM);
 	    split2orig.put(splitM, swpair);
+	    /* now split all subclasses */
+	    if (isVirtual(orig)) { //only keep splitting if orig is inheritable
+		WorkSet cW= new WorkSet(ch.children(orig.getDeclaringClass()));
+		while (!cW.isEmpty()) {
+		    // pull a subclass off the list.
+		    HClass c = (HClass) cW.pop();
+		    // now check for decl'd methods with the same name as orig.
+		    try {
+			HMethod hm = c.getMethod(orig.getName(),
+						 orig.getDescriptor());
+			select(hm, which); // split hm and all children.
+		    } catch (NoSuchMethodError nsme) {
+			// keep looking for subclasses that declare method:
+			// add all subclasses of this one to the worklist.
+			cW.addAll(ch.children(c));
+		    }
+		}
+	    }
 	    /* done */
 	}
 	return splitM;
     }
+    /** Utility method to determine whether a method is inheritable (and
+     *  thus it's children should be split whenever it is). */
+    private static boolean isVirtual(HMethod m) {
+	if (m.isStatic()) return false;
+	if (Modifier.isPrivate(m.getModifiers())) return false;
+	if (m instanceof HConstructor) return false;
+	return true;
+    }
+
     /** Returns a <code>HCodeFactory</code> containing representations for
      *  the methods split by the <code>MethodSplitter</code>. */
     public final HCodeFactory codeFactory() { return hcf; }
