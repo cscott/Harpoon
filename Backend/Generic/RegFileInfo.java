@@ -58,11 +58,13 @@ import java.util.Iterator;
     maintained by the hardcoded references.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.15 2000-01-26 03:49:49 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.16 2000-01-26 04:47:11 pnkfelix Exp $ */
 public abstract class RegFileInfo {
     
     /** Common super class for <code>StackOffsetLoc</code> and 
-	<code>MachineRegLoc</code>.
+	<code>MachineRegLoc</code>.  Should only be implemented by
+	<code>Temp</code> objects (is an interface to get around
+	multiple inheritance problmes).
     */
     static interface CommonLoc {
 	/** Returns the <code>KIND</code> of Loc <code>this</code> is.
@@ -77,6 +79,7 @@ public abstract class RegFileInfo {
 	int kind();
     }
     
+    /** Represents Stack Offset <code>Temp</code>s. */
     static interface StackOffsetLoc extends CommonLoc {
 	public static int KIND = 1;
 	int stackOffset();
@@ -87,8 +90,20 @@ public abstract class RegFileInfo {
     */
     public abstract int regIndexRange();
 
+    /** Represents Machine Register <code>Temp</code>s. */
     static interface MachineRegLoc extends CommonLoc {
 	public static int KIND = 2;
+	
+	/** Returns the index of <code>this</code> in the register file.
+	    <BR> <B>effects:</B> returns the abstract index of
+	         <code>this</code> in the register file.  The index
+		 returned may not map directly to this register's
+		 position in the register file (for example, r8 may
+		 have an index of "0").  Each register for a given
+		 architecture will have a different index.  The index
+		 returned is guaranteed to fall between 
+		 0 and RegFileInfo.this.regIndexRange() 
+	*/
 	int regIndex();
     }
 
