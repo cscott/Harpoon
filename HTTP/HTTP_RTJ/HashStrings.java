@@ -34,5 +34,8 @@ class HashStrings {
 
 class Pair {
     String key, value;
-    Pair (String key, String value) { this.key = key; this.value = value; }
+    Pair (String key, String value) { 
+	this.key = key; 
+	this.value = value; 
+    }
 }

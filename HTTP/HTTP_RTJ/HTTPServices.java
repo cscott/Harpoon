@@ -2,11 +2,12 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 
-public class HTTPServices{
+public class HTTPServices {
 
     static private String webRoot = "/home/httpd/html";
 
-    static private Reader get_reader(String fileName, HTTPResponse resp)
+    static private Reader get_reader(String fileName, 
+				     HTTPResponse resp)
 	throws IOException {
 	try {
 //  	    if(fileName.equals("/daytime")){
@@ -85,7 +86,8 @@ public class HTTPServices{
 	
 
     public static void HEAD_handler(String fileName, 
-				   BufferedWriter out, HTTPResponse resp) {
+				    BufferedWriter out, 
+				    HTTPResponse resp) {
 	HEAD_handler_int(fileName, out, resp);
     }
 }

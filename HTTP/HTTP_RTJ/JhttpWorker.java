@@ -68,13 +68,16 @@ public class JhttpWorker extends Thread{
 		// call the appropriate hanndler
 		switch(method(in, params)) {
 		case 0:
-		    HTTPServices.GET_handler(params.fileName, out, resp);
+		    HTTPServices.GET_handler(params.fileName, 
+						     out, resp);
 		    break;
 		case 1:
-		    HTTPServices.HEAD_handler(params.fileName, out, resp);
+		    HTTPServices.HEAD_handler(params.fileName, 
+						      out, resp);
 		break;
 		case 2:
-		    HTTPServices.POST_handler(params.fileName, out, resp);
+		    HTTPServices.POST_handler(params.fileName, 
+						      out, resp);
 		    break;
 		default:
 		    resp.returnCode = 501; //error
@@ -84,10 +87,11 @@ public class JhttpWorker extends Thread{
 		    out.flush();
 		    if (logging)
 			LogFile.write_log(client,
-					  params.methodType, params.fileName,
-					  params.httpVersion,
-					  resp.returnCode, resp.sentBytes);
-		    
+						  params.methodType, 
+						  params.fileName,
+						  params.httpVersion,
+						  resp.returnCode, 
+						  resp.sentBytes);
 		    out.close();
 		    in.close();
 		    client.close();

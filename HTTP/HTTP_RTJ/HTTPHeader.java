@@ -4,7 +4,6 @@
 // Date:       April 24, 1998
 //****************************************************************************
 
-
 import java.net.*;
 import java.util.*;
 import java.io.*;
@@ -14,7 +13,7 @@ import java.io.*;
 // Purpose: constructs the header to be returned by the server
 //****************************************************************************
 
-public class HTTPHeader{
+public class HTTPHeader {
 
   // make a hashtable of return codes to messages
   static private HashStrings rc = new HashStrings();
