@@ -26,7 +26,7 @@ import java.util.Set;
  * <code>DataStaticFields</code> lays out the static fields of a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStaticFields.java,v 1.1.4.1 1999-10-12 20:04:50 cananian Exp $
+ * @version $Id: DataStaticFields.java,v 1.1.4.2 1999-10-14 20:30:56 cananian Exp $
  */
 public class DataStaticFields extends Data {
     final NameMap m_nm;
@@ -74,18 +74,19 @@ public class DataStaticFields extends Data {
 	if (ty==HClass.Double)
 	    return new CONST(tf, null, (double)
 			     (cvo==null?0:((Double)cvo).doubleValue()));
+	// sub-integer types represented by Integer wrapped values.
 	if (ty==HClass.Boolean)
 	    return new CONST(tf, null, 8, false, 
-			     (cvo==null?0:((Boolean)cvo).booleanValue()?1:0));
+			     (cvo==null?0:((Number)cvo).intValue()));
 	if (ty==HClass.Byte)
 	    return new CONST(tf, null, 8, true,
-			     (cvo==null?0:((Byte)cvo).intValue()));
+			     (cvo==null?0:((Number)cvo).intValue()));
 	if (ty==HClass.Char)
 	    return new CONST(tf, null, 16, false,
-			     (cvo==null?0:((Character)cvo).charValue()));
+			     (cvo==null?0:((Number)cvo).intValue()));
 	if (ty==HClass.Short)
 	    return new CONST(tf, null, 16, true,
-			     (cvo==null?0:((Short)cvo).intValue()));
+			     (cvo==null?0:((Number)cvo).intValue()));
 	throw new Error("Unknown primitive type");
     }
 }
