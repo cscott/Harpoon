@@ -26,6 +26,7 @@ import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.CALL;
 import harpoon.IR.Tree.MOVE;
 import harpoon.IR.Tree.MEM;
+import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Exp;
 import harpoon.Analysis.Tree.CacheEquivalence;
 import harpoon.Util.Util;
@@ -70,7 +71,7 @@ import java.util.Collection;
  used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.10 2001-06-12 04:17:46 cananian Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.11 2001-06-12 22:48:04 witchel Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -152,7 +153,7 @@ public class DominatingMemoryAccess {
          }
          return succ;
       }
-      public Set nodes() {
+      public Set getElements(HCode code) {
          return new HashSet(nodes);
       }
 
@@ -160,9 +161,15 @@ public class DominatingMemoryAccess {
       private CFGrapher cfgr;
       private Map edges;
    }
+
+   public abstract class Live {
+      public abstract Set in(HCodeElement hce);
+      public abstract Set out(HCodeElement hce);
+   }
+   
 /** Solves data flow equations for live variables
  */
-   class Live {
+   class LiveMove extends Live {
       // Buid a version of the graph
       private void collectElts(harpoon.ClassFile.HCodeElement hce, 
                                final MoveCFGrapher mcfgr,
@@ -195,10 +202,10 @@ public class DominatingMemoryAccess {
             out.put(hce, bsf.makeSet());
          }
       }
-      public Live(MoveCFGrapher mcfgr, HCode code,
-                  Map _defUseMap, Map _useDefMap) {
+      public LiveMove(CFGrapher mcfgr, HCode code,
+                      Map _defUseMap, Map _useDefMap) {
          Set nodes = new HashSet();
-         init(mcfgr, code, nodes);
+         init((MoveCFGrapher)mcfgr, code, nodes);
          this.defUseMap = _defUseMap;
          this.useDefMap = _useDefMap;
          init_inout(nodes);
@@ -215,7 +222,7 @@ public class DominatingMemoryAccess {
                 it.hasNext();) {
                HCodeElement hce = (HCodeElement) it.next();
                inbs  = bsf.makeSet(out(hce));
-               outbs = union_out(mcfgr, hce);
+               outbs = union_out((MoveCFGrapher)mcfgr, hce);
                if(def(hce) != null)
                   inbs.remove(def(hce));
                if(use(hce) != null) {
@@ -304,6 +311,178 @@ public class DominatingMemoryAccess {
       private Map out;
       private Map useDefMap;
       private Map defUseMap;
+      private harpoon.Util.Collections.BitSetFactory bsf;
+      private static final boolean trace = false;
+   }
+
+/** Solves data flow equations for live variables.
+    This version relies on the fact that there is at most one MEM per
+    Stm, which is guaranteed by the MemHoisting pass.
+    The in/out sets hold MEMs, but we traverse Stms.
+ */
+   class LiveOneMem extends Live {
+
+      private void doOne(Stm root, Tree m) {
+         for(Tree t = m.getFirstChild(); t != null; t = t.getSibling()) {
+            doOne(root, t);
+         }
+         if(m.kind() == TreeKind.MEM) {
+            Util.assert(stmToMem.containsKey(root) == false,
+                        "******* Stm*" 
+                        + harpoon.IR.Tree.Print.print(root) 
+                        + "\n******* tree* " 
+                        + harpoon.IR.Tree.Print.print(m));
+            Util.assert(memToStm.containsKey(m) == false);
+            System.err.println("Adding stm " 
+                               + harpoon.IR.Tree.Print.print(root) + "\n**tree " 
+                               + harpoon.IR.Tree.Print.print(m));
+            stmToMem.put(root, m);
+            memToStm.put(m, root);
+         }
+      }
+      // Not strictly necessary, but then in/out is never null
+      private void init_inout(Set nodes) {
+         this.in  = new HashMap(nodes.size());
+         this.out = new HashMap(nodes.size());
+         for(Iterator it = nodes.iterator(); it.hasNext();) {
+            HCodeElement hce = (HCodeElement) it.next();
+            in.put(hce, bsf.makeSet());
+            out.put(hce, bsf.makeSet());
+         }
+      }
+      private void initStmMemMaps(final CFGrapher cfgr, final HCode code) {
+         // Build the stm <-> MEM maps
+         for(Iterator it = cfgr.getElements(code).iterator(); it.hasNext(); ) {
+            Stm stm = (Stm) it.next();
+            Util.assert(stm != null);
+            doOne(stm, (Tree)stm);
+         }
+      }
+      private void init(final CFGrapher cfgr, final HCode code) {
+         stmToMem = new HashMap();
+         memToStm = new HashMap();
+         initStmMemMaps(cfgr, code);
+         HashSet universe = new HashSet(defUseMap.keySet());
+         universe.addAll(useDefMap.keySet());
+         this.bsf = new BitSetFactory (universe);
+         init_inout(cfgr.getElements(code));
+      }
+      public LiveOneMem(CFGrapher cfgr, HCode code, 
+                        Map _defUseMap, Map _useDefMap) {
+         this.defUseMap = _defUseMap;
+         this.useDefMap = _useDefMap;
+         init(cfgr, code);
+         boolean change;
+         Set inbs;
+         Set outbs;
+         int pass = 0;
+         do {
+            change = false;
+            if(trace) {
+               System.err.println("pass " + pass);
+            }
+            for(Iterator it = cfgr.getElements(code).iterator();it.hasNext();) {
+               HCodeElement hce = (HCodeElement) it.next();
+               inbs  = bsf.makeSet(out(hce));
+               outbs = union_out(cfgr, hce);
+               if(def(hce) != null)
+                  inbs.remove(def(hce));
+               if(use(hce) != null) {
+                  if(trace)
+                     System.err.println("USE " + use(hce));
+                  inbs.add(use(hce));
+               }
+               if(trace) {
+                  if(!inbs.equals(in(hce))) {
+                     System.err.println(hce.hashCode()
+                                        + " inbs "
+                                        + in(hce).toString()
+                                        + " -> "
+                                        + inbs.toString());
+                  }
+                  System.err.println(hce.hashCode()
+                                     + " outbs "
+                                     + out(hce).toString()
+                                     + " -> "
+                                     + outbs.toString());
+               }
+               change = change 
+                  || !inbs.equals(in(hce))
+                  || !outbs.equals(out(hce));
+               out.put(hce, outbs);
+               in.put(hce, inbs);
+            }
+            pass++;
+         } while(change);
+      }
+
+
+      ////////////////////////////////////////////////////////////
+      // Query functions
+      public HCodeElement use(HCodeElement hce) {
+         if(stmToMem.containsKey(hce)) {
+            MEM m = (MEM)stmToMem.get(hce);
+            if(useDefMap.containsKey(m)) {
+               HCodeElement dom = (HCodeElement)useDefMap.get(m);
+               Util.assert(defUseMap.containsKey(dom));
+               Util.assert(memToStm.containsKey(dom));
+               return dom;
+            }
+         }
+         return null;
+      }
+      public HCodeElement def(HCodeElement hce) {
+         if(stmToMem.containsKey(hce)) {
+            MEM m = (MEM)stmToMem.get(hce);
+            if(defUseMap.containsKey(m)) {
+               return m;
+            }
+         }
+         return null;
+      }
+      public Set in(HCodeElement hce) {
+         if(in.containsKey(hce) == true) {
+            return ((Set)in.get(hce));
+         }
+         //Util.assert(false);
+         return null;
+      }
+      public Set out(HCodeElement hce) {
+         if(out.containsKey(hce) == true) {
+            return ((Set)out.get(hce));
+         }
+         //Util.assert(false);
+         return null;
+      }
+
+      private Set union_out(final CFGrapher cfgr, HCodeElement hce) {
+         Collection succ = cfgr.succElemC(hce);
+         Set bs = bsf.makeSet();
+         if(trace) {
+            System.err.print(" union out " 
+                             + hce.hashCode()
+                             + " -> ");
+            if(succ.isEmpty()) {
+               System.err.print("\n");
+            }
+         }
+         for(Iterator it = succ.iterator(); it.hasNext(); ) {
+            HCodeElement suck = (HCodeElement)it.next();
+            if(trace)
+               System.err.println( suck.hashCode()
+                                   + " " + in(suck));
+            bs.addAll(in(suck));
+         }
+         return bs;
+      }
+      
+      private Map in;
+      private Map out;
+      private Map useDefMap;
+      private Map defUseMap;
+      // Map from Stm to enclosing MEM and back
+      private Map stmToMem;
+      private Map memToStm;
       private harpoon.Util.Collections.BitSetFactory bsf;
       private static final boolean trace = false;
    }
@@ -478,9 +657,9 @@ public class DominatingMemoryAccess {
       public Set usedDANum() {
          return usedDANum;
       }
-      DARegAlloc(MoveCFGrapher mcfgr, Live _live, 
+      DARegAlloc(CFGrapher cfgr, HCode code, Live _live, 
                  Map _defUseMap, Map _useDefMap) {
-         nodes = mcfgr.nodes();
+         nodes = cfgr.getElements(code);
          live = _live;
          defUseMap = _defUseMap;
          useDefMap = _useDefMap;
@@ -809,14 +988,14 @@ public class DominatingMemoryAccess {
          HCodeElement hce = elts[i];
          if(((Tree)hce).kind() == TreeKind.MEM) {
             MEM mem = (MEM)hce;
-	    if(eqClasses.needs_tag_check(mem)) {
-		if(eqClasses.num_using_this_tag(mem) > 1) {
-		    // Then this is a def that is used
-		    defUseMap.put(mem, eqClasses.ops_using_this_tag(mem));
-		}
-	    } else {
-		useDefMap.put(mem, eqClasses.whose_tag_check(mem));
-	    }
+            if(eqClasses.needs_tag_check(mem)) {
+               if(eqClasses.num_using_this_tag(mem) > 1) {
+                  // Then this is a def that is used
+                  defUseMap.put(mem, eqClasses.ops_using_this_tag(mem));
+               }
+            } else {
+               useDefMap.put(mem, eqClasses.whose_tag_check(mem));
+            }
          }
       }
    }
@@ -969,9 +1148,9 @@ public class DominatingMemoryAccess {
             public HCode convert(HMethod m) {
                hc = parent.convert(m);
                harpoon.IR.Tree.Code code = (harpoon.IR.Tree.Code) hc;
-               final CFGrapher cfgr = code.getGrapher();
+               CFGrapher cfgr = code.getGrapher();
                // My crapo analysis
-                EqClasses eqClasses = new EqClasses(hc);
+               EqClasses eqClasses = new EqClasses(hc);
                doEqClasses((Tree)cfgr.getFirstElement(code), cfgr, eqClasses, 
                            new HashMap());
                if( trace ) {
@@ -993,9 +1172,14 @@ public class DominatingMemoryAccess {
                                   defUseMap, useDefMap);
                   }
                }
-               MoveCFGrapher mcfgr = new MoveCFGrapher(code);
-               Live live = new Live(mcfgr, code, defUseMap, useDefMap);
-               alloc = new DARegAlloc(mcfgr, live, defUseMap, useDefMap);
+               Live live;
+               if(emmett_crappy) {
+                  cfgr = new MoveCFGrapher(code);
+                  live = new LiveMove(cfgr, code, defUseMap, useDefMap);
+               } else {
+                  live = new LiveOneMem(cfgr, code, defUseMap, useDefMap);
+               }
+               alloc = new DARegAlloc(cfgr, code, live, defUseMap, useDefMap);
                Map ref2dareg = alloc.getRef2Dareg();
                ((harpoon.Backend.MIPS.Frame)frame).setNoTagCheckMap(ref2dareg);
                ((harpoon.Backend.MIPS.Frame)frame).setUsedDANum(alloc.usedDANum());
