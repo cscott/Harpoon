@@ -53,7 +53,7 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.61 2000-01-24 00:51:23 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.62 2000-01-26 06:05:39 cananian Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -143,7 +143,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    // code (thus, not a removed InstrMOVE)
 	    Instr last;
 
-	    public void visit(Instr i) {
+	    public void visit(final Instr i) {
 		Iterator refs = new FilterIterator
 		    (getRefs(i), new FilterIterator.Filter() {
 			public boolean isElement(Object o) {
@@ -225,13 +225,17 @@ public class LocalCffRegAlloc extends RegAlloc {
 		// lets verify
 		Iterator refIter = getRefs(i);
 		while(refIter.hasNext()) {
-		    Temp ref = (Temp) refIter.next();
+		    final Temp ref = (Temp) refIter.next();
 		    Util.assert(isTempRegister(ref) ||
 				code.registerAssigned(i, ref),
+				new Object() {
+			public String toString() {
+			    return
 				"Instr: "+i + " / " +
-				code.toAssemRegsNotNeeded(i) +
+				code.toAssem(i) +
 				" needs register "+
-				"assignment for Ref: "+ref);
+				"assignment for Ref: "+ref;
+			}});
 		}
 		
 		last = i;
