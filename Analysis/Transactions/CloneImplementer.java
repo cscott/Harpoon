@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Transactions;
 
+import harpoon.Analysis.DefaultAllocationInformationMap;
 import harpoon.ClassFile.DuplicateMemberException;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
@@ -65,7 +66,7 @@ import java.util.Set;
  * <code>$clone$()</code> method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloneImplementer.java,v 1.6 2003-07-21 21:21:49 cananian Exp $
+ * @version $Id: CloneImplementer.java,v 1.7 2003-07-22 22:57:38 cananian Exp $
  * @see harpoon.IR.Quads.CloneSynthesizer */
 public class CloneImplementer implements HCodeFactory, java.io.Serializable {
     /** CONSTANTS */
@@ -190,6 +191,9 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    Quad.addEdge(q4, 0, qF, 2);
 	    // done!
 	    this.quads = q0;
+	    // no allocation in this method, so this next statement is
+	    // actually redundant.
+	    setAllocationInformation(new DefaultAllocationInformationMap());
 	}
     }
     /** this method throws a CloneNotSupportedException */
@@ -220,6 +224,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    Quad.addEdge(q5, 0, qF, 1);
 	    // done!
 	    this.quads = q0;
+	    setAllocationInformation(new DefaultAllocationInformationMap());
 	}
     }
     /* this method implements a specialized array clone operation */
@@ -271,6 +276,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    Quad.addEdge(qB, 0, q5, 1);
 	    // done!
 	    this.quads = q0;
+	    setAllocationInformation(new DefaultAllocationInformationMap());
 	}
     }
     /* this method implements a specialized object clone operation */
@@ -301,6 +307,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    Quad.addEdge(q0, 0, qF, 0);
 	    // done!
 	    this.quads = q0;
+	    setAllocationInformation(new DefaultAllocationInformationMap());
 	}
     }
     /** Return a <code>List</code> of all fields (including
