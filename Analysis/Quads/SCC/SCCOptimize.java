@@ -17,6 +17,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.MOVE;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
@@ -37,7 +38,7 @@ import java.util.Set;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.1.2.9 2000-11-16 04:53:13 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.1.2.10 2001-07-20 03:30:36 cananian Exp $
  */
 public final class SCCOptimize implements ExecMap {
     TypeMap  ti;
@@ -123,6 +124,7 @@ public final class SCCOptimize implements ExecMap {
 		// done.
 	    } // END VISIT quad.
 	    public void visit(CONST q) { /* do nothing. */ }
+	    public void visit(METHOD q) { /* do nothing. */ }
 	    public void visit(FOOTER q) {
 		// remove unexecutable FOOTER edges.
 		FOOTER newF = q;
@@ -185,6 +187,7 @@ public final class SCCOptimize implements ExecMap {
 		int i; for (i=0; i < next.length; i++)
 		    if (execMap(next[i]))
 			break;
+		Util.assert(i!=next.length, q/*NO EDGES EXECUTABLE!*/);
 		if (i==next.length-1 || !execMap(next[i+1])) {
 		    // only one edge is executable.
 		    int liveEdge = i;
