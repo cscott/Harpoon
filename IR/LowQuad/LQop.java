@@ -9,7 +9,7 @@ import harpoon.ClassFile.HClass;
  * <code>OPER</code> opcodes in <code>LowQuad</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LQop.java,v 1.1.2.1 1999-01-21 05:19:13 cananian Exp $
+ * @version $Id: LQop.java,v 1.1.2.2 1999-02-05 12:25:11 cananian Exp $
  */
 public abstract class LQop extends harpoon.IR.Quads.Qop {
     
@@ -21,8 +21,8 @@ public abstract class LQop extends harpoon.IR.Quads.Qop {
     public final static int PCMPGT = 101;
     /** Computes the sum of two <code>POINTER</code> values. */
     public final static int PADD = 102;
-    /** Computes the difference of two <code>POINTER</code> values. */
-    public final static int PSUB = 103;
+    /** Negates a <code>POINTER</code> value (used to compute differences). */
+    public final static int PNEG = 103;
 
     public static boolean isValid(int v) {
 	return harpoon.IR.Quads.Qop.isValid(v) ||
@@ -34,7 +34,7 @@ public abstract class LQop extends harpoon.IR.Quads.Qop {
 	case PCMPEQ: return "pcmpeq";
 	case PCMPGT: return "pcmpgt";
 	case PADD:   return "padd";
-	case PSUB:   return "psub";
+	case PNEG:   return "pneg";
 	default:     return harpoon.IR.Quads.Qop.toString(v);
 	}
     }
@@ -48,7 +48,7 @@ public abstract class LQop extends harpoon.IR.Quads.Qop {
 	h.put("pcmpeq", new Integer(PCMPEQ));
 	h.put("pcmpgt", new Integer(PCMPGT));
 	h.put("padd", new Integer(PADD));
-	h.put("psub", new Integer(PSUB));
+	h.put("pneg", new Integer(PNEG));
     }
 
     /** Determines the result type of an <code>OPER</code>. */
@@ -58,7 +58,7 @@ public abstract class LQop extends harpoon.IR.Quads.Qop {
 	case PCMPGT:
 	    return HClass.Boolean;
 	case PADD:
-	case PSUB:
+	case PNEG:
 	    throw new Error("I've no idea what to return in this case.");
 	default:
 	    return harpoon.IR.Quads.Qop.resultType(v);
@@ -71,7 +71,7 @@ public abstract class LQop extends harpoon.IR.Quads.Qop {
 	case PCMPEQ:
 	case PCMPGT:
 	case PADD:
-	case PSUB:
+	case PNEG:
 	    throw new Error("No idea how to handle these.");
 	default:
 	    return harpoon.IR.Quads.Qop.evaluate(opc, opd);
