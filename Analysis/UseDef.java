@@ -16,7 +16,7 @@ import java.util.Enumeration;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.5 1998-09-14 05:21:45 cananian Exp $
+ * @version $Id: UseDef.java,v 1.6 1998-09-15 05:59:22 cananian Exp $
  */
 
 public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
@@ -62,6 +62,8 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
 	if (analyzed.containsKey(code)) return;
 
 	HCodeElement[] el = code.getElements();
+	if (!(el instanceof harpoon.IR.Properties.UseDef[]))
+	    throw new Error(code.getName() + " does not implement UseDef");
 	harpoon.IR.Properties.UseDef[] udl =
 	    (harpoon.IR.Properties.UseDef[]) el;
 

@@ -12,7 +12,7 @@ import java.util.Vector;
  * <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.3 1998-09-15 03:40:05 cananian Exp $
+ * @version $Id: DomTree.java,v 1.4 1998-09-15 05:59:22 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {
@@ -56,6 +56,10 @@ public class DomTree /*implements Graph*/ {
     void analyze(HCode hc) {
 	if (analyzed.get(hc) != null) return;
 	analyzed.put(hc, hc);
+
+	// Check interfaces
+	if (! (hc.getRootElement() instanceof Edges) )
+	    throw new Error(hc.getName() + " does not implement Edges");
 
 	// Setup lists and tables.
 	final IntHTable dfnum = new IntHTable();
