@@ -7,15 +7,23 @@ import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.Quads.SCC.SCCAnalysis;
 import harpoon.ClassFile.HClass;
-import harpoon.ClassFile.HClassSyn;
+//import harpoon.ClassFile.HClassSyn;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HConstructor;
-import harpoon.ClassFile.HConstructorSyn;
+//import harpoon.ClassFile.HConstructorSyn;
 import harpoon.ClassFile.HField;
-import harpoon.ClassFile.HFieldSyn;
+//import harpoon.ClassFile.HFieldSyn;
 import harpoon.ClassFile.UpdateCodeFactory;
+import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Loader;
+import harpoon.ClassFile.HClassMutator;
+import harpoon.ClassFile.HMethodMutator;
+
+import harpoon.ClassFile.Relinker;
+import harpoon.ClassFile.UniqueName;
+
 import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -28,7 +36,7 @@ import java.util.Set;
  * <code>EnvBuilder</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.1.2.4 2000-01-02 22:17:27 bdemsky Exp $
+ * @version $Id: EnvBuilder.java,v 1.1.2.5 2000-01-13 23:51:47 bdemsky Exp $
  */
 public class EnvBuilder {
     protected final UpdateCodeFactory ucf;
@@ -36,6 +44,7 @@ public class EnvBuilder {
     protected final HCodeElement hce;
     protected static int counter = 0;
     public Temp[] liveout;
+    protected final Linker linker;
 
     /** Creates a <code>EnvBuilder</code>. Requires that the 
      *  <code>HCode</code> and <code>HCodeElement</code> objects
@@ -43,11 +52,12 @@ public class EnvBuilder {
      *  works with quad-no-ssa. <code>HCodeFactory</code> must
      *  be an <code>UpdateCodeFactory</code>.
      */
-    public EnvBuilder(UpdateCodeFactory ucf, HCode hc, HCodeElement hce, Temp[] lives) {
+    public EnvBuilder(UpdateCodeFactory ucf, HCode hc, HCodeElement hce, Temp[] lives, Linker linker) {
 	this.ucf = ucf;
         this.hc = hc;
 	this.hce = hce;
 	this.liveout = lives;
+	this.linker=linker;
     }
 
     public HClass makeEnv() {
@@ -55,35 +65,25 @@ public class EnvBuilder {
 	HClass template = null;
 	try {
 	    template = 
-		HClass.forName("harpoon.Analysis.EnvBuilder.EnvTemplate");
+		linker.forName("harpoon.Analysis.EnvBuilder.EnvTemplate");
 	} catch (NoClassDefFoundError e) {
 	    System.err.println("Caught exception " + e.toString() +
 			       " in EnvBuilder::makeEnv()");
 	    System.err.println("Cannot find " + 
 			       "harpoon.Analysis.EnvBuilder.EnvTemplate");
 	}
-
-	HClassSyn env = new HClassSyn(template);
+	String envName=UniqueName.uniqueClassName("harpoon.Analysis.EnvBuilder.EnvTemplate", linker);
+	HClass env = linker.createMutableClass(envName, template);
+	HClassMutator envmutator=env.getMutator();
+	
 	HConstructor[] c = env.getConstructors();
 	Util.assert(c.length == 1, 
 		    "There should be exactly one constructor in " +
 		    "synthesized environment class. Found " + c.length);
 
-	HConstructorSyn nc = new HConstructorSyn(env, c[0]);
+	HConstructor nc = c[0];
+	HMethodMutator ncmutator=nc.getMutator();
 
-	try {
-	    env.removeDeclaredMethod(c[0]);
-	} catch (NoSuchMethodError e) {
-	    System.err.println("Caught exception " + e.toString() +
-			       " in EnvBuilder::makeEnv()");
-	    System.err.println("Cannot find default constructor for " +
-			       "harpoon.Analysis.EnvBuilder.EnvTemplate");
-	}
-
-	//	final QuadLiveness ql = new QuadLiveness(this.hc);
-	//	Set s = ql.getLiveOut(this.hce);
-	//	Object[] vars = s.toArray();
-	//	this.liveout = new Temp[vars.length];
 	String[] parameterNames = new String[liveout.length];
 	HClass[] parameterTypes = new HClass[liveout.length];
 	HField[] fields = new HField[liveout.length];
@@ -95,7 +95,8 @@ public class EnvBuilder {
 	    //	    this.liveout[i] = (Temp)vars[i];
 	    String tempName = liveout[i].name();
 	    HClass type = map.typeMap(this.hce, liveout[i]);  
-	    new HFieldSyn(env, tempName, type);
+	    envmutator.addDeclaredField(tempName, type);
+		//	    new HFieldSyn(env, tempName, type);
 
 	    parameterNames[i] = tempName;
 	    parameterTypes[i] = type;
@@ -110,8 +111,8 @@ public class EnvBuilder {
 				   parameterNames[i]);
 	    }
 	}
-	nc.setParameterNames(parameterNames);
-	nc.setParameterTypes(parameterTypes);
+	ncmutator.setParameterNames(parameterNames);
+	ncmutator.setParameterTypes(parameterTypes);
 
 	ucf.update(nc, new EnvCode(nc, fields));
 

@@ -21,7 +21,7 @@ import harpoon.Util.Util;
  * <code>EnvCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvCode.java,v 1.1.2.3 1999-11-22 21:38:08 bdemsky Exp $
+ * @version $Id: EnvCode.java,v 1.1.2.4 2000-01-13 23:51:47 bdemsky Exp $
  */
 public class EnvCode extends harpoon.IR.Quads.QuadNoSSA {
 
@@ -75,12 +75,17 @@ public class EnvCode extends harpoon.IR.Quads.QuadNoSSA {
 	    quadList[i] = 
 		new SET(this.qf, null, fields[i], objectref, params[i+1]);
 	}
-	
-	Quad.addEdges(quadList);
-	Quad.addEdge(m, 0, quadList[0], 0);
+	if (fields.length>0) {
+	    Quad.addEdges(quadList);
+	    Quad.addEdge(m, 0, quadList[0], 0);
+	}
 
 	RETURN r = new RETURN(this.qf, null, null);
-	Quad.addEdge(quadList[fields.length-1], 0, r, 0);
+	if (fields.length>0) {
+	    Quad.addEdge(quadList[fields.length-1], 0, r, 0);
+	} else
+	    Quad.addEdge(m, 0, r, 0);
+	
 	Quad.addEdge(r, 0, f, 1);
 
 	System.out.println("Leaving EnvCode.buildCode()");
