@@ -166,7 +166,7 @@
 @timestamp rot 0
 @timestamp font 0
 @timestamp char size 1.000000
-@timestamp def "Fri Jun 20 16:10:00 2003"
+@timestamp def "Fri Jun 20 16:16:12 2003"
 @r0 off
 @link r0 to g0
 @r0 type above
@@ -365,27 +365,27 @@
 @    s0 hidden false
 @    s0 type xy
 @    s0 symbol 0
-@    s0 symbol size 1.000000
-@    s0 symbol color 1
+@    s0 symbol size 0.910000
+@    s0 symbol color 2
 @    s0 symbol pattern 1
-@    s0 symbol fill color 1
+@    s0 symbol fill color 2
 @    s0 symbol fill pattern 0
-@    s0 symbol linewidth 1.0
+@    s0 symbol linewidth 2.0
 @    s0 symbol linestyle 1
-@    s0 symbol char 65
+@    s0 symbol char 71
 @    s0 symbol char font 0
 @    s0 symbol skip 0
 @    s0 line type 1
 @    s0 line linestyle 1
 @    s0 line linewidth 1.0
-@    s0 line color 1
+@    s0 line color 2
 @    s0 line pattern 1
 @    s0 baseline type 0
 @    s0 baseline off
 @    s0 dropline off
-@    s0 fill type 0
+@    s0 fill type 2
 @    s0 fill rule 0
-@    s0 fill color 1
+@    s0 fill color 2
 @    s0 fill pattern 1
 @    s0 avalue off
 @    s0 avalue type 2
@@ -400,7 +400,7 @@
 @    s0 avalue offset 0.000000 , 0.000000
 @    s0 errorbar on
 @    s0 errorbar place both
-@    s0 errorbar color 1
+@    s0 errorbar color 2
 @    s0 errorbar pattern 1
 @    s0 errorbar size 1.000000
 @    s0 errorbar linewidth 1.0
@@ -410,14 +410,14 @@
 @    s0 errorbar riser clip off
 @    s0 errorbar riser clip length 0.100000
 @    s0 comment "/home/cananian/dataset.dat"
-@    s0 legend  "compress"
+@    s0 legend  "Geo. Mean"
 @    s1 hidden false
 @    s1 type xy
 @    s1 symbol 0
 @    s1 symbol size 1.000000
-@    s1 symbol color 2
+@    s1 symbol color 1
 @    s1 symbol pattern 1
-@    s1 symbol fill color 2
+@    s1 symbol fill color 1
 @    s1 symbol fill pattern 0
 @    s1 symbol linewidth 1.0
 @    s1 symbol linestyle 1
@@ -427,7 +427,7 @@
 @    s1 line type 1
 @    s1 line linestyle 1
 @    s1 line linewidth 1.0
-@    s1 line color 2
+@    s1 line color 1
 @    s1 line pattern 1
 @    s1 baseline type 0
 @    s1 baseline off
@@ -449,7 +449,7 @@
 @    s1 avalue offset 0.000000 , 0.000000
 @    s1 errorbar on
 @    s1 errorbar place both
-@    s1 errorbar color 2
+@    s1 errorbar color 1
 @    s1 errorbar pattern 1
 @    s1 errorbar size 1.000000
 @    s1 errorbar linewidth 1.0
@@ -459,14 +459,14 @@
 @    s1 errorbar riser clip off
 @    s1 errorbar riser clip length 0.100000
 @    s1 comment "/home/cananian/dataset.dat"
-@    s1 legend  "jess"
+@    s1 legend  "compress"
 @    s2 hidden false
 @    s2 type xy
 @    s2 symbol 0
 @    s2 symbol size 1.000000
-@    s2 symbol color 3
+@    s2 symbol color 9
 @    s2 symbol pattern 1
-@    s2 symbol fill color 3
+@    s2 symbol fill color 9
 @    s2 symbol fill pattern 0
 @    s2 symbol linewidth 1.0
 @    s2 symbol linestyle 1
@@ -476,14 +476,14 @@
 @    s2 line type 1
 @    s2 line linestyle 1
 @    s2 line linewidth 1.0
-@    s2 line color 3
+@    s2 line color 9
 @    s2 line pattern 1
 @    s2 baseline type 0
 @    s2 baseline off
 @    s2 dropline off
 @    s2 fill type 0
 @    s2 fill rule 0
-@    s2 fill color 1
+@    s2 fill color 9
 @    s2 fill pattern 1
 @    s2 avalue off
 @    s2 avalue type 2
@@ -498,7 +498,7 @@
 @    s2 avalue offset 0.000000 , 0.000000
 @    s2 errorbar on
 @    s2 errorbar place both
-@    s2 errorbar color 3
+@    s2 errorbar color 9
 @    s2 errorbar pattern 1
 @    s2 errorbar size 1.000000
 @    s2 errorbar linewidth 1.0
@@ -508,14 +508,14 @@
 @    s2 errorbar riser clip off
 @    s2 errorbar riser clip length 0.100000
 @    s2 comment "/home/cananian/dataset.dat"
-@    s2 legend  "raytrace"
+@    s2 legend  "jess"
 @    s3 hidden false
 @    s3 type xy
 @    s3 symbol 0
 @    s3 symbol size 1.000000
-@    s3 symbol color 4
+@    s3 symbol color 3
 @    s3 symbol pattern 1
-@    s3 symbol fill color 4
+@    s3 symbol fill color 3
 @    s3 symbol fill pattern 0
 @    s3 symbol linewidth 1.0
 @    s3 symbol linestyle 1
@@ -525,7 +525,7 @@
 @    s3 line type 1
 @    s3 line linestyle 1
 @    s3 line linewidth 1.0
-@    s3 line color 4
+@    s3 line color 3
 @    s3 line pattern 1
 @    s3 baseline type 0
 @    s3 baseline off
@@ -547,7 +547,7 @@
 @    s3 avalue offset 0.000000 , 0.000000
 @    s3 errorbar on
 @    s3 errorbar place both
-@    s3 errorbar color 4
+@    s3 errorbar color 3
 @    s3 errorbar pattern 1
 @    s3 errorbar size 1.000000
 @    s3 errorbar linewidth 1.0
@@ -557,14 +557,14 @@
 @    s3 errorbar riser clip off
 @    s3 errorbar riser clip length 0.100000
 @    s3 comment "/home/cananian/dataset.dat"
-@    s3 legend  "db"
+@    s3 legend  "raytrace"
 @    s4 hidden false
 @    s4 type xy
 @    s4 symbol 0
 @    s4 symbol size 1.000000
-@    s4 symbol color 5
+@    s4 symbol color 4
 @    s4 symbol pattern 1
-@    s4 symbol fill color 5
+@    s4 symbol fill color 4
 @    s4 symbol fill pattern 0
 @    s4 symbol linewidth 1.0
 @    s4 symbol linestyle 1
@@ -574,7 +574,7 @@
 @    s4 line type 1
 @    s4 line linestyle 1
 @    s4 line linewidth 1.0
-@    s4 line color 5
+@    s4 line color 4
 @    s4 line pattern 1
 @    s4 baseline type 0
 @    s4 baseline off
@@ -596,7 +596,7 @@
 @    s4 avalue offset 0.000000 , 0.000000
 @    s4 errorbar on
 @    s4 errorbar place both
-@    s4 errorbar color 5
+@    s4 errorbar color 4
 @    s4 errorbar pattern 1
 @    s4 errorbar size 1.000000
 @    s4 errorbar linewidth 1.0
@@ -606,14 +606,14 @@
 @    s4 errorbar riser clip off
 @    s4 errorbar riser clip length 0.100000
 @    s4 comment "/home/cananian/dataset.dat"
-@    s4 legend  "javac"
+@    s4 legend  "db"
 @    s5 hidden false
 @    s5 type xy
 @    s5 symbol 0
 @    s5 symbol size 1.000000
-@    s5 symbol color 6
+@    s5 symbol color 5
 @    s5 symbol pattern 1
-@    s5 symbol fill color 6
+@    s5 symbol fill color 5
 @    s5 symbol fill pattern 0
 @    s5 symbol linewidth 1.0
 @    s5 symbol linestyle 1
@@ -623,7 +623,7 @@
 @    s5 line type 1
 @    s5 line linestyle 1
 @    s5 line linewidth 1.0
-@    s5 line color 6
+@    s5 line color 5
 @    s5 line pattern 1
 @    s5 baseline type 0
 @    s5 baseline off
@@ -645,7 +645,7 @@
 @    s5 avalue offset 0.000000 , 0.000000
 @    s5 errorbar on
 @    s5 errorbar place both
-@    s5 errorbar color 6
+@    s5 errorbar color 5
 @    s5 errorbar pattern 1
 @    s5 errorbar size 1.000000
 @    s5 errorbar linewidth 1.0
@@ -655,14 +655,14 @@
 @    s5 errorbar riser clip off
 @    s5 errorbar riser clip length 0.100000
 @    s5 comment "/home/cananian/dataset.dat"
-@    s5 legend  "mpegaudio"
+@    s5 legend  "javac"
 @    s6 hidden false
 @    s6 type xy
 @    s6 symbol 0
 @    s6 symbol size 1.000000
-@    s6 symbol color 7
+@    s6 symbol color 6
 @    s6 symbol pattern 1
-@    s6 symbol fill color 7
+@    s6 symbol fill color 6
 @    s6 symbol fill pattern 0
 @    s6 symbol linewidth 1.0
 @    s6 symbol linestyle 1
@@ -672,7 +672,7 @@
 @    s6 line type 1
 @    s6 line linestyle 1
 @    s6 line linewidth 1.0
-@    s6 line color 7
+@    s6 line color 6
 @    s6 line pattern 1
 @    s6 baseline type 0
 @    s6 baseline off
@@ -694,7 +694,7 @@
 @    s6 avalue offset 0.000000 , 0.000000
 @    s6 errorbar on
 @    s6 errorbar place both
-@    s6 errorbar color 7
+@    s6 errorbar color 6
 @    s6 errorbar pattern 1
 @    s6 errorbar size 1.000000
 @    s6 errorbar linewidth 1.0
@@ -704,14 +704,14 @@
 @    s6 errorbar riser clip off
 @    s6 errorbar riser clip length 0.100000
 @    s6 comment "/home/cananian/dataset.dat"
-@    s6 legend  "mtrt"
+@    s6 legend  "mpegaudio"
 @    s7 hidden false
 @    s7 type xy
 @    s7 symbol 0
 @    s7 symbol size 1.000000
-@    s7 symbol color 8
+@    s7 symbol color 7
 @    s7 symbol pattern 1
-@    s7 symbol fill color 8
+@    s7 symbol fill color 7
 @    s7 symbol fill pattern 0
 @    s7 symbol linewidth 1.0
 @    s7 symbol linestyle 1
@@ -721,7 +721,7 @@
 @    s7 line type 1
 @    s7 line linestyle 1
 @    s7 line linewidth 1.0
-@    s7 line color 8
+@    s7 line color 7
 @    s7 line pattern 1
 @    s7 baseline type 0
 @    s7 baseline off
@@ -743,7 +743,7 @@
 @    s7 avalue offset 0.000000 , 0.000000
 @    s7 errorbar on
 @    s7 errorbar place both
-@    s7 errorbar color 8
+@    s7 errorbar color 7
 @    s7 errorbar pattern 1
 @    s7 errorbar size 1.000000
 @    s7 errorbar linewidth 1.0
@@ -753,32 +753,32 @@
 @    s7 errorbar riser clip off
 @    s7 errorbar riser clip length 0.100000
 @    s7 comment "/home/cananian/dataset.dat"
-@    s7 legend  "jack"
+@    s7 legend  "mtrt"
 @    s8 hidden false
 @    s8 type xy
-@    s8 symbol 10
-@    s8 symbol size 0.910000
-@    s8 symbol color 9
+@    s8 symbol 0
+@    s8 symbol size 1.000000
+@    s8 symbol color 8
 @    s8 symbol pattern 1
-@    s8 symbol fill color 9
+@    s8 symbol fill color 8
 @    s8 symbol fill pattern 0
-@    s8 symbol linewidth 2.0
+@    s8 symbol linewidth 1.0
 @    s8 symbol linestyle 1
-@    s8 symbol char 71
+@    s8 symbol char 65
 @    s8 symbol char font 0
 @    s8 symbol skip 0
 @    s8 line type 1
 @    s8 line linestyle 1
-@    s8 line linewidth 2.0
-@    s8 line color 9
+@    s8 line linewidth 1.0
+@    s8 line color 8
 @    s8 line pattern 1
-@    s8 baseline type 1
+@    s8 baseline type 0
 @    s8 baseline off
 @    s8 dropline off
 @    s8 fill type 0
 @    s8 fill rule 0
-@    s8 fill color 9
-@    s8 fill pattern 9
+@    s8 fill color 1
+@    s8 fill pattern 1
 @    s8 avalue off
 @    s8 avalue type 2
 @    s8 avalue char size 1.000000
@@ -792,7 +792,7 @@
 @    s8 avalue offset 0.000000 , 0.000000
 @    s8 errorbar on
 @    s8 errorbar place both
-@    s8 errorbar color 9
+@    s8 errorbar color 8
 @    s8 errorbar pattern 1
 @    s8 errorbar size 1.000000
 @    s8 errorbar linewidth 1.0
@@ -802,8 +802,28 @@
 @    s8 errorbar riser clip off
 @    s8 errorbar riser clip length 0.100000
 @    s8 comment "/home/cananian/dataset.dat"
-@    s8 legend  "Geo. Mean"
+@    s8 legend  "jack"
 @target G0.S0
+@type xy
+0 1
+1 1.0053
+2 1.0008
+3 1.0016
+4 1.0092
+5 1.016
+6 1.016
+7 1.0178
+8 1.0215
+9 1.021
+10 1.025
+11 1.0243
+12 1.0333
+13 1.0342
+14 1.0333
+15 1.0345
+16 1.0423
+&
+@target G0.S1
 @type xy
 0 1
 1 1.0101
@@ -823,7 +843,7 @@
 15 1.0045
 16 1.0076
 &
-@target G0.S1
+@target G0.S2
 @type xy
 0 1
 1 0.9995
@@ -843,7 +863,7 @@
 15 1.0201
 16 1.0275
 &
-@target G0.S2
+@target G0.S3
 @type xy
 0 1
 1 0.9944
@@ -863,7 +883,7 @@
 15 1.067
 16 1.07
 &
-@target G0.S3
+@target G0.S4
 @type xy
 0 1
 1 1.0219
@@ -883,7 +903,7 @@
 15 1.0525
 16 1.062
 &
-@target G0.S4
+@target G0.S5
 @type xy
 0 1
 1 1.0155
@@ -903,7 +923,7 @@
 15 1.0363
 16 1.0375
 &
-@target G0.S5
+@target G0.S6
 @type xy
 0 1
 1 0.9932
@@ -923,7 +943,7 @@
 15 0.9927
 16 0.9969
 &
-@target G0.S6
+@target G0.S7
 @type xy
 0 1
 1 1.0061
@@ -943,7 +963,7 @@
 15 1.0736
 16 1.0993
 &
-@target G0.S7
+@target G0.S8
 @type xy
 0 1
 1 1.0022
@@ -962,24 +982,4 @@
 14 1.0334
 15 1.0316
 16 1.041
-&
-@target G0.S8
-@type xy
-0 1
-1 1.0053
-2 1.0008
-3 1.0016
-4 1.0092
-5 1.016
-6 1.016
-7 1.0178
-8 1.0215
-9 1.021
-10 1.025
-11 1.0243
-12 1.0333
-13 1.0342
-14 1.0333
-15 1.0345
-16 1.0423
 &
