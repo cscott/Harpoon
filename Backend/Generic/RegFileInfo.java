@@ -50,8 +50,8 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.4 2002-04-10 03:02:44 cananian Exp $ */
-public abstract class RegFileInfo {
+    @version $Id: RegFileInfo.java,v 1.5 2003-04-19 01:03:44 salcianu Exp $ */
+public abstract class RegFileInfo implements java.io.Serializable {
 
     /** Defines function from 
 	(<code>Temp</code> x DefPoint) -> 

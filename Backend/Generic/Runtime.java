@@ -24,6 +24,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import java.io.Serializable;
+
 /**
  * A <code>Generic.Runtime</code> provides runtime-specific
  * information to the backend.  It should be largely-to-totally
@@ -35,9 +38,9 @@ import java.util.Set;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.4 2002-04-10 03:02:44 cananian Exp $
+ * @version $Id: Runtime.java,v 1.5 2003-04-19 01:03:44 salcianu Exp $
  */
-public abstract class Runtime {
+public abstract class Runtime implements Serializable {
     protected Runtime() { }
 
     /** Returns a <code>TreeBuilder</code> object for this
@@ -114,7 +117,7 @@ public abstract class Runtime {
      *  <code>IR.Tree</code> form to handle various runtime-dependent
      *  tasks---primarily method and field access.
      */
-    public abstract static class TreeBuilder {
+    public abstract static class TreeBuilder implements Serializable {
 	/** Utility method for external analyses that want to know the
 	 *  exact size of an object. This returns the size in bytes
 	 *  <strong>not including the header</strong>. */
@@ -299,7 +302,7 @@ public abstract class Runtime {
      *  be needed by the runtime---primarily string constant objects.
      *  Not every runtime need implement an <code>ObjectBuilder</code>.
      */
-    public abstract static class ObjectBuilder {
+    public abstract static class ObjectBuilder implements Serializable {
 	// bits of data about an object needed to build it.
 	/** General information about a built object's type and what label to
 	 *  use to refer to it. */

@@ -14,9 +14,9 @@ import harpoon.IR.Tree.TreeFactory;
  * of a memory allocation routine.
  * @author Duncan Bryce <duncan@lcs.mit.edu>
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationStrategy.java,v 1.2 2002-02-25 21:02:19 cananian Exp $
+ * @version $Id: AllocationStrategy.java,v 1.3 2003-04-19 01:03:55 salcianu Exp $
  */
-public abstract class AllocationStrategy {
+public abstract class AllocationStrategy implements java.io.Serializable {
     /** Return a <code>Tree.Exp</code> created with the given
      *  <code>TreeFactory</code> that returns a pointer to a piece of
      *  memory <code>length</code> bytes long. */

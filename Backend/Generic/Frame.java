@@ -19,10 +19,10 @@ import harpoon.ClassFile.Linker;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.2 2002-02-25 21:01:27 cananian Exp $
+ * @version $Id: Frame.java,v 1.3 2003-04-19 01:03:44 salcianu Exp $
  * @see harpoon.IR.Assem
  */
-public abstract class Frame {
+public abstract class Frame implements java.io.Serializable {
     /** The <code>Linker</code> object to use when compiling for this
      *  <code>Frame</code>. */
     public abstract Linker getLinker();

@@ -13,9 +13,9 @@ import harpoon.Temp.Label;
  * and fields to unique string labels legal in assembly code.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NameMap.java,v 1.2 2002-02-25 21:02:00 cananian Exp $
+ * @version $Id: NameMap.java,v 1.3 2003-04-19 01:03:54 salcianu Exp $
  */
-public abstract class NameMap {
+public abstract class NameMap implements java.io.Serializable {
     /** Maps a C function name to the appropriate label string.  For
      *  many platforms, the label string has an underscore prepended.
      *  For others, the label string is the function name exactly. */

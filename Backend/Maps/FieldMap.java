@@ -18,8 +18,8 @@ import java.util.List;
  * fieldSize() is taken into account.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldMap.java,v 1.3 2002-04-10 03:03:02 cananian Exp $ */
-public abstract class FieldMap  {
+ * @version $Id: FieldMap.java,v 1.4 2003-04-19 01:03:54 salcianu Exp $ */
+public abstract class FieldMap implements java.io.Serializable {
     /** Return an offset to the given field. */
     public abstract int fieldOffset(HField hf);
     /** Return an unmodifiable List over all appropriate fields in the given

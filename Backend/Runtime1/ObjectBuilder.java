@@ -46,7 +46,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.4 2002-04-10 03:03:20 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.5 2003-04-19 01:03:55 salcianu Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -271,7 +271,7 @@ public class ObjectBuilder
      *  <code>RootOracle.get()</code> method should return
      *  <code>NOT_A_VALUE</code>.
      */
-    public static abstract class RootOracle {
+    public static abstract class RootOracle implements java.io.Serializable {
 	/** This is the constant value returned which this
 	 *  oracle doesn't wish to override the given field. */
 	public static final Object NOT_A_VALUE = new Object();

@@ -35,9 +35,11 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.8 2002-08-08 17:51:25 cananian Exp $
+ * @version $Id: Runtime.java,v 1.9 2003-04-19 01:03:55 salcianu Exp $
  */
-public class Runtime extends harpoon.Backend.Generic.Runtime {
+public class Runtime extends harpoon.Backend.Generic.Runtime
+    implements java.io.Serializable {
+
     // The package and subclasses should be able to access these fields. WSB
     final protected Frame frame; 
     final protected HMethod main;
