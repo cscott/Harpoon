@@ -1,0 +1,6 @@
+*.class
+*.lo
+*.o
+*.la
+Makefile
+Makefile.in
