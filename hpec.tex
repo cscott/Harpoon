@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: hpec.tex,v 1.5 2004-05-31 02:20:22 cananian Exp $
+% $Id: hpec.tex,v 1.6 2004-05-31 02:37:23 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[twoside,twocolumn,notitlepage,letterpaper,9pt]{article}
 \usepackage{times}
@@ -71,23 +71,28 @@ use of non-blocking synchronization can prevent \emph{priority
 lower priority threads at any point.
 %\cite{Jones97}
 
-We propose the use of compiler-supported ``atomic'' blocks to specify
-synchronization.  This is less error-prone than manual maintenance of
-a locking discipline: deadlocks may be introduced when locks are not
-acquired and released in a highly disciplined manner, and the
-specification of locking discipline cuts across module boundaries.
-Races are common when multiple shared objects are involved in an
-operation, each with its own lock.  We provide several examples of
-problematic locking code.  A non-blocking transaction implementation
-prevents inadvertent deadlocks, and ``atomic'' declarations
-implemented with
-the transaction mechanism can extend across method invocations and
-module boundaries to protect multiple objects involved in an operation
-without allowing races between them.  An optimistic non-blocking
-implementation provides performance improvements over locking
-strategies in some cases as well.
+We show how to integrate non-blocking transactions into an
+object-oriented language, ``transactifying'' existing code to fix
+existing concurrency bugs and using transactions for modular fault-tolerance,
+backtracking, exception-handling, and concurrency control in new
+programs.
 
-Language-level transactions can also be viewed as a general
+We propose the use of compiler-supported ``atomic'' blocks to
+specify synchronization.  This is less error-prone than manual
+maintenance of a locking discipline: deadlocks may be introduced when
+locks are not acquired and released in a highly disciplined manner,
+and the specification of locking discipline cuts across module
+boundaries.  Races are common when multiple shared objects are
+involved in an operation, each with its own lock.  We provide several
+examples of such problematic locking code.  A non-blocking transaction
+implementation prevents inadvertent deadlocks, and \texttt{atomic}
+declarations implemented with the transaction mechanism can extend
+across method invocations and module boundaries to protect multiple
+objects involved in an operation without allowing races between them.
+An optimistic non-blocking implementation provides performance
+improvements over locking strategies in some cases as well.
+
+Language-level transactions are used as a general
 exception-handling and backtracking mechanism.  Instead of forcing the
 programmer to manually track changes made to program state in order to
 implement proper fault recovery, we can handle the exception using
@@ -98,31 +103,24 @@ programming language encourages a robust programming style where
 recovery and retry after an unexpected condition is made simple and
 faults and recovery do not break abstraction boundaries.
 
-We show how to integrate non-blocking transactions into an
-object-oriented language, ``transactifying'' existing code to fix
-existing concurrency bugs and using transactions for modular fault-tolerance,
-backtracking, exception-handling, and concurrency control in new
-programs.
-
 We describe an efficient pure-software transaction mechanism we have
 implemented for programs written in Java.  We also discuss our design
 and simulation (with Asanovi\'c, Kuszmaul, Leiserson, and Lie) of
-hardware primitives which allow most transactions to complete with
-near-zero overhead.  Unlike previous hardware approaches, our scheme
-is scalable supports transactions of unlimited size, although
-performance is best for transactions which fit in local cache.  The
-hardware scheme has minimal architecture impact.  Finally, we describe
-our hybrid hardware-software scheme combining
-architecturally-supported speed for small transactions with the
-flexibility the software implementation provides for large or
-long-lived transactions.
+minimally-intrusive architecture extensions which allow most
+transactions to complete with near-zero overhead.  Unlike previous
+hardware approaches, our scheme is scalable and supports transactions
+of unlimited size, although performance is best for transactions which
+fit in local cache.  Finally, we describe our hybrid hardware-software
+scheme combining the speed hardware provides for small
+transactions with the flexibility the software implementation allows
+for large or long-lived transactions.
 
 Integrating transactions into the programming language and
 implementing them with the high-efficiency techniques described
 enables the creation of software with higher reliability.
 Synchronization is more robust and its specification is modular and less
-error-prone, and faults and exceptions in general can be safely handled
-with low overhead using the transaction mechanism.
+error-prone, and faults and exceptions in general can be
+soundly handled with low overhead using the transaction mechanism.
 
 %\bibliographystyle{plain}
 %\bibliography{xaction}
