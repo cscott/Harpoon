@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.3 1999-01-15 17:56:40 duncan Exp $
+ * @version $Id: Print.java,v 1.1.2.4 1999-01-15 19:09:29 duncan Exp $
  */
 public class Print 
 {
@@ -65,7 +65,7 @@ public class Print
     private void printMEM(MEM e, String memStr)
       {
 	indent(m_indent++);
-	sayln(memStr + "("); visit(e.exp); say(")");
+	sayln(memStr + "("); e.exp.visit(this); say(")");
 	m_indent--;
       }
     
@@ -108,19 +108,23 @@ public class Print
 	  }
 	*/
 	sayln(",");
-	visit(e.left); sayln(","); 
-	visit(e.right); say(")");
+	e.left.visit(this); sayln(","); 
+	e.right.visit(this); say(")");
 	m_indent--;
       }
 
     public void visit(CALL s)
       {
 	indent(m_indent++); sayln("CALL(");
-	visit(s.func);
-	m_indent++;
+	indent(m_indent++); sayln("Return value in: "); 
+	s.retval.visit(this); sayln("");
+	indent(m_indent-1); sayln("Exceptional value in: ");
+	s.retex.visit(this); sayln("");
+	indent(m_indent-1); sayln("Function: ");
+	s.func.visit(this);
         for(ExpList a = s.args; a!=null; a=a.tail) 
 	  {
-	    sayln(","); visit(a.head);
+	    sayln(","); a.head.visit(this);
 	  }
         say(")");
 	m_indent -= 2;
@@ -139,7 +143,7 @@ public class Print
     public void visit(CJUMP s)
       {
 	indent(m_indent++);
-	say("CJUMP("); visit(s.test); sayln(",");
+	say("CJUMP("); s.test.visit(this); sayln(",");
 	indent(m_indent--);
 	say(s.iftrue.toString()); say(","); 
 	say(s.iffalse.toString()); say(")");
@@ -148,8 +152,8 @@ public class Print
     public void visit(ESEQ e)
       {
 	indent(m_indent++);
-	sayln("ESEQ("); visit(e.stm); sayln(",");
-	visit(e.exp); say(")");
+	sayln("ESEQ("); e.stm.visit(this); sayln(",");
+	e.exp.visit(this); say(")");
 	m_indent--;
       }
 
@@ -157,7 +161,7 @@ public class Print
       {
 	indent(m_indent++);
 	sayln("EXP(");
-	visit(s.exp); say(")");
+	s.exp.visit(this); say(")");
 	m_indent--;
       }
 
@@ -170,7 +174,7 @@ public class Print
       {
 	indent(m_indent++);
 	sayln("JUMP("); 
-	visit(s.exp); say(")");
+	s.exp.visit(this); say(")");
 	m_indent--;
       }
 
@@ -194,10 +198,11 @@ public class Print
 
     public void visit(MOVE s)
       {
+	sayln("");
 	indent(m_indent++);
 	sayln("MOVE("); 
-	visit(s.dst); sayln(","); 
-	visit(s.src); sayln(")");
+	s.dst.visit(this); sayln(","); 
+	s.src.visit(this); say(")");
 	m_indent--;
       }
 
@@ -210,7 +215,7 @@ public class Print
       {
 	indent(m_indent++);
 	sayln("SEQ("); 
-	visit(s.left); visit(s.right); say(")");
+	s.left.visit(this); s.right.visit(this); say(")");
 	m_indent--;
       }
 
@@ -252,7 +257,7 @@ public class Print
 	  }
 	*/
 	sayln(",");
-	visit(e.operand); say(")");
+	e.operand.visit(this); say(")");
 	m_indent--;
       }
     
