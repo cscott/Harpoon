@@ -29,7 +29,7 @@ import java.util.HashSet;
  *  called the Representative (or Rep for short).
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: EqTempSets.java,v 1.1.2.1 2000-05-26 00:26:25 pnkfelix Exp $
+ * @version $Id: EqTempSets.java,v 1.1.2.2 2000-06-08 06:25:01 pnkfelix Exp $
  */
 public abstract class EqTempSets {
     
@@ -216,7 +216,7 @@ class EqTempSets1 extends EqTempSets {
 	    Object rep = setToRep.get(s);
 	    sb.append(", Rep:" + rep);
 	    sb.append(", Reg:" + repToReg.get(rep)+" >");
-	    if (iter.hasNext()) sb.append(" ");
+	    if (iter.hasNext()) sb.append("\n");
 	}
 	return sb.toString();
     }

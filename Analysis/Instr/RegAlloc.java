@@ -74,7 +74,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.85 2000-05-23 17:25:44 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.86 2000-06-08 06:25:01 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -89,14 +89,14 @@ public abstract class RegAlloc  {
     private static String getSrcStr(int num) {
 	String s = "`s0";
 	for(int i=1; i<num; i++) {
-	    s += ", `s"+i;
+	    s += ", `s"+i; 
 	}
 	return s;
     }
     private static String getDstStr(int num) {
 	String s = "`d0";
 	for(int i=1; i<num; i++) {
-	    s += ", `d"+i;
+	    s += ", `d"+i; 
 	}
 	return s;
     }
@@ -627,8 +627,6 @@ class BrainDeadLocalAlloc extends RegAlloc {
     }
 	
     class BrainDeadInstrVisitor extends InstrVisitor {
-	Temp[] regs = frame.getRegFileInfo().getGeneralRegisters();
-		
 	public void visit(Instr instr) {
 	    InstrFactory inf = instr.getFactory();
 	    

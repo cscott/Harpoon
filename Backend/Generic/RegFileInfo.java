@@ -66,7 +66,7 @@ import java.util.Iterator;
     maintained by the hardcoded references.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.26 2000-05-31 18:04:57 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.27 2000-06-08 06:25:08 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -337,6 +337,13 @@ public abstract class RegFileInfo {
      *  <code>getRegister(index)==getAllRegisters()[index]</code>
      */
     public Temp getRegister(int index) { return getAllRegisters()[index]; }
+
+
+    // FSK: these two methods are probably unneeded with the General
+    // Register Allocator, and may encourage register allocation
+    // implementations to take a "dangerous" approach... look into
+    // deprecating it (or localizing it to
+    // Backend.StrongARM.RegFileInfo)
 
     /** Returns an array of <code>Temp</code>s for all the registers
      *  that the register allocator can feel free to play with */

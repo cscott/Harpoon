@@ -33,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.7 2000-05-23 17:25:49 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.8 2000-06-08 06:25:15 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -319,7 +319,8 @@ public abstract class Code extends HCode {
 	    }
 	}
 
-        return s.toString();
+        // return formatCommentedInstr(s.toString(),instr.toString());
+	return s.toString();
     }
 
     /** Returns the <code>Derivation</code> associated with
@@ -333,5 +334,35 @@ public abstract class Code extends HCode {
     */
     public abstract String getRegisterName(Instr i, Temp val, 
 					   String suffix);
+
+    /** Returns an assembly code String version of <code>exec</code>
+	with <code>orig</code> in the comments for <code>exec</code>.
+	<BR> <B>requires:</B> <code>exec</code> and <code>orig</code>
+	     have the same number of lines
+	<BR> <B>effects:</B>
+	     let s be a new empty string 
+	     in for each line:le in <code>exec</code>,
+	            let lo be the next line of <code>orig</code> ;
+	            s += (le + "\t\t @" + lo)
+		return s
+    */
+    public static String formatCommentedInstr(String exec, String orig) {
+	StringBuffer sb = new StringBuffer();	
+	try {
+	    BufferedReader er = new BufferedReader(new StringReader(exec));
+	    BufferedReader or = new BufferedReader(new StringReader(orig));
+	    String e = er.readLine();
+	    String o = or.readLine();
+	    while(e != null) {
+		sb.append(e + " @ " + o);
+		e = er.readLine();
+		o = or.readLine();
+	    }
+	    return sb.toString();
+	} catch (IOException e) {
+	    Util.assert(false);
+	    return "died";
+	}
+    }
 }
 

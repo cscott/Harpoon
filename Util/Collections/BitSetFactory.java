@@ -31,7 +31,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.10 2000-05-23 17:25:55 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.11 2000-06-08 06:25:18 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -111,7 +111,8 @@ public class BitSetFactory extends SetFactory {
 	return bss;
     }
 
-    private static class BitStringSet extends AbstractSet {
+    private static class BitStringSet extends AbstractSet 
+	implements Cloneable {
 	// internal rep for set
 	BitString bs;
 

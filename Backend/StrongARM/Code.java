@@ -27,7 +27,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.21 2000-05-23 17:25:48 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.22 2000-06-08 06:25:13 pnkfelix Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -138,6 +138,7 @@ public class Code extends harpoon.Backend.Generic.Code {
 		// high
 		reg = get(instr, t.getHigh());
 	    } else if (suffix.trim().equals("")) {
+		if (true) return "TW"+val;
 		Util.assert(false, "BREAK!  empty suffix " +
 			    "suffix: " + suffix + "\n" +
 			    "instr: " + instr + "\n" + 

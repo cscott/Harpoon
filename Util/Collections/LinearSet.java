@@ -15,7 +15,7 @@ import java.util.Iterator;
  * small.  It is backed by a <code>List</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearSet.java,v 1.1.2.2 2000-05-23 22:06:13 pnkfelix Exp $
+ * @version $Id: LinearSet.java,v 1.1.2.3 2000-06-08 06:25:18 pnkfelix Exp $
  */
 public class LinearSet extends AbstractSet {
     private List list;
@@ -44,7 +44,7 @@ public class LinearSet extends AbstractSet {
 	for(int i=0; i<sz; i++) {
 	    list.add(iter.next());
 	}
-	((ArrayList)list).trimToSize();
+	// ((ArrayList)list).trimToSize();
     }
 
     /** Creates an empty <code>LinearSet</code>, using a
