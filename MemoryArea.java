@@ -1,23 +1,10 @@
-package realtime;
+package javax.realtime;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 
-// A new foo[4] becomes:
-//   RealtimeThread.currentRealtimeThread().getMemoryArea().newArray(Class.forName("foo"),4);
-//
-// A new foo[4][5] becomes:
-//   RealtimeThread.currentRealtimeThread().getMemoryArea().newArray(Class.forName("foo",{4,5});
-//
-// A new foo() becomes:
-//   RealtimeThread.currentRealtimeThread().getMemoryArea().newInstance(Class.forName("foo"));
-//
-// A foo=bar becomes (if not in a class from realtime package...):
-//   foo.memoryArea.checkAccess(bar);
-//   foo=bar
-
 public abstract class MemoryArea {
   protected MemoryArea parent;
-  protected long size, memoryConsumed;  // Size is somewhat inaccurate - may want to fix in future
+  protected long size, memoryConsumed;  // Size is somewhat inaccurate
   protected boolean scoped;
   protected int id;
   private static int num = 0;
@@ -82,7 +69,7 @@ public abstract class MemoryArea {
     return obj;
   }
 
-  public synchronized void bless(java.lang.Object obj) { // Called implicitly by compiler...
+  public synchronized void bless(java.lang.Object obj) { 
     long size;
     try {
       size = checkMem(obj.getClass(), 1);
@@ -93,7 +80,7 @@ public abstract class MemoryArea {
     update(obj, size);
   }
 
-  public synchronized void bless(java.lang.Object obj, int[] dimensions) { // Called implicitly by compiler...
+  public synchronized void bless(java.lang.Object obj, int[] dimensions) { 
     long size;
     try {
       size = checkMem(obj.getClass(), dimensions);
@@ -123,10 +110,11 @@ public abstract class MemoryArea {
     return newInstance(type, new java.lang.Class[0], new java.lang.Object[0]);
   }
 
-  protected synchronized java.lang.Object newInstance(java.lang.Class type,
-                                                      java.lang.Class[] parameterTypes,
-                                                      java.lang.Object[]
-                                                      parameters) 
+  protected synchronized java.lang.Object 
+      newInstance(java.lang.Class type,
+		  java.lang.Class[] parameterTypes,
+		  java.lang.Object[]
+		  parameters) 
     throws IllegalAccessException, InstantiationException,
     OutOfMemoryError {
     long size = checkMem(type, 1);
@@ -141,7 +129,8 @@ public abstract class MemoryArea {
     return update(newObj, size);
   }
 
-  public synchronized void checkAccess(java.lang.Object obj) throws IllegalAccessException {
+  public synchronized void checkAccess(java.lang.Object obj) 
+      throws IllegalAccessException {
     Stats.addCheck();
     if ((obj!=null)&&(obj.memoryArea!=null)&&obj.memoryArea.scoped) {
       throw new IllegalAccessException();

@@ -1,4 +1,4 @@
-package realtime;
+package javax.realtime;
 
 public abstract class ScopedMemory extends MemoryArea {
   protected java.lang.Object portal;
@@ -30,7 +30,8 @@ public abstract class ScopedMemory extends MemoryArea {
     portal = object;
   }
 
-  public synchronized void checkAccess(java.lang.Object obj) throws IllegalAccessException { 
+  public synchronized void checkAccess(java.lang.Object obj) 
+      throws IllegalAccessException { 
     Stats.addCheck();
     if ((obj!=null)&&(obj.memoryArea!=null)&&obj.memoryArea.scoped) {
       ScopedMemory target = (ScopedMemory)(obj.memoryArea);

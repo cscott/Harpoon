@@ -1,13 +1,13 @@
-package realtime; 
+package javax.realtime; 
 
 // This copy of RealtimeThread is to supply the HCode...
 
 public class RealtimeThread extends java.lang.Thread {
   MemoryArea mem;
 
-  public RealtimeThread() {  // All of the same constructors as java.lang.Thread...
-    super();                 // This code should be automatically generated...
-    mem = HeapMemory.instance();  // All RealtimeThreads default to pointing to the heap.
+  public RealtimeThread() {  // All RealtimeThreads default to heap.
+    super();                 
+    mem = HeapMemory.instance();  
   }
 
   public RealtimeThread(MemoryArea memory) {
@@ -45,9 +45,7 @@ public class RealtimeThread extends java.lang.Thread {
     mem = HeapMemory.instance();
   }
 
-  // Need to copy all static methods/fields (from java.lang.Thread) - This should
-  // be automatically generated...
-
+    // Copy static methods...
   public static final int MIN_PRIORITY = java.lang.Thread.MIN_PRIORITY;
   public static final int NORM_PRIORITY = java.lang.Thread.NORM_PRIORITY;
   public static final int MAX_PRIORITY = java.lang.Thread.MAX_PRIORITY;
@@ -76,7 +74,8 @@ public class RealtimeThread extends java.lang.Thread {
     java.lang.Thread.sleep(millis);
   }
 
-  public static void sleep(long millis, int nanos) throws InterruptedException {
+  public static void sleep(long millis, int nanos) 
+      throws InterruptedException {
     java.lang.Thread.sleep(millis, nanos);
   }
 
@@ -90,7 +89,8 @@ public class RealtimeThread extends java.lang.Thread {
     return (RealtimeThread)java.lang.Thread.currentThread();
   }
 
-  public void run() { // When the run method is called, this Realtimerealtime.Thread points to the current scope.
+  public void run() { // When the run method is called, 
+                      // RealtimeThread points to the current scope.
     if ((java.lang.Thread.currentThread() != null) &&
         (java.lang.Thread.currentThread() instanceof RealtimeThread) &&
         (currentRealtimeThread().mem != null)) {

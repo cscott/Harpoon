@@ -1,4 +1,4 @@
-package realtime;
+package javax.realtime;
 
 final class Stats {
   private static long accessChecks = 0;

@@ -1,7 +1,7 @@
 package java.lang;
-import realtime.MemoryArea;
+import javax.realtime.MemoryArea;
 
-// Stub to be replaced in the compiler by the real java.lang.Object implementation
+// Stub to be replaced in the compiler by the real java.lang.Object 
 // with the field memoryArea added.
 
 public class Object {

@@ -1,4 +1,4 @@
-package realtime;
+package javax.realtime;
 
 public class CTMemory extends ScopedMemory {
   public CTMemory(long size) {

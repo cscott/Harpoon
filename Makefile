@@ -3,10 +3,11 @@ JAR=jar
 
 realtime.jar: 
 	rm -f *.class
-	rm -rf realtime
+	rm -rf javax
 	$(JCC) *.java
-	mkdir realtime
+	mkdir javax
+	mkdir javax/realtime
 	rm -f Object.class
-	mv *.class realtime/
-	jar -c realtime/*.class > ../Code/Support/realtime.jar
-	rm -rf realtime
+	mv *.class javax/realtime/
+	jar -c javax/realtime/*.class > ../Code/Support/realtime.jar
+	rm -rf javax
