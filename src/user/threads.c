@@ -13,6 +13,7 @@
 #include <jni-private.h>
 #include "../realtime/threads.h"
 #include "../realtime/qcheck.h"
+#include "../realtime/Scheduler.h"
 #include <setjmp.h>
 /* jump point for the final jump back to main - defined in startup.c */
 extern jmp_buf main_return_jump;
@@ -329,6 +330,13 @@ void inituser(int *bottom) {
 }
 
 int user_mutex_init(user_mutex_t *x, void * v) {
+#ifdef WITH_REALTIME_THREADS
+  if (handlerMask&javax_realtime_Scheduler_HANDLE_MUTEX_INIT) {
+    JNIEnv* env = FNI_GetJNIEnv();
+    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_init);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }
+#endif
   x->mutex=SEMAPHORE_CLEAR;
 #ifndef WITH_REALTIME_THREADS
   x->tl=NULL;
@@ -398,6 +406,13 @@ void wakewaitthread(user_mutex_t *x) {
 }
 
 int user_mutex_lock(user_mutex_t *x) {
+#ifdef WITH_REALTIME_THREADS
+  if (handlerMask&javax_realtime_Scheduler_HANDLE_MUTEX_LOCK) {
+    JNIEnv* env = FNI_GetJNIEnv();
+    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_lock);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }
+#endif
   while(SEMAPHORE_TEST_AND_SET(&(x->mutex))==SEMAPHORE_SET) {
     addwaitthread(x);
   }
@@ -405,10 +420,16 @@ int user_mutex_lock(user_mutex_t *x) {
 }
 
 int user_mutex_trylock(user_mutex_t *x) {
-  semaphore test= SEMAPHORE_TEST_AND_SET(&(x->mutex));
-  if (test==SEMAPHORE_CLEAR)
+#ifdef WITH_REALTIME_THREADS
+  if (handlerMask&javax_realtime_Scheduler_HANDLE_MUTEX_TRYLOCK) {
+    JNIEnv* env = FNI_GetJNIEnv();
+    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_trylock);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }
+#endif
+  if ((SEMAPHORE_TEST_AND_SET(&(x->mutex)))==SEMAPHORE_CLEAR) {
     return 0;
-  else {
+  } else {
 #ifndef WITH_REALTIME_THREADS
     // This is a tricky one -
     // Without this, bdemsky's user threads can livelock in the
@@ -430,26 +451,61 @@ int user_mutex_trylock(user_mutex_t *x) {
 }
 
 int user_mutex_unlock(user_mutex_t *x) {
+#ifdef WITH_REALTIME_THREADS
+  if (handlerMask&javax_realtime_Scheduler_HANDLE_MUTEX_UNLOCK) {
+    JNIEnv* env = FNI_GetJNIEnv();
+    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_unlock);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }
+#endif
   SEMAPHORE_RESET(&(x->mutex));
   wakewaitthread(x);
   return 0;
 }
 
 int user_mutex_destroy(user_mutex_t *x) {
+#ifdef WITH_REALTIME_THREADS
+  if (handlerMask&javax_realtime_Scheduler_HANDLE_MUTEX_DESTROY) {
+    JNIEnv* env = FNI_GetJNIEnv();
+    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_destroy);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }
+#endif
   return 0;
 }
 
 int user_cond_init(user_cond_t *x, void * v) {
+#ifdef WITH_REALTIME_THREADS
+  if (handlerMask&javax_realtime_Scheduler_HANDLE_COND_INIT) {
+    JNIEnv* env = FNI_GetJNIEnv();
+    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_init);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }
+#endif
   x->counter=0;
   return 0;
 }
 
 int user_cond_broadcast(user_cond_t *x) {
+#ifdef WITH_REALTIME_THREADS
+  if (handlerMask&javax_realtime_Scheduler_HANDLE_COND_BROADCAST) {
+    JNIEnv* env = FNI_GetJNIEnv();
+    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_broadcast);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }
+#endif
   wakeallcondthread(x);
   return 0;
 }
 
 int user_cond_signal(user_cond_t *x) {
+#ifdef WITH_REALTIME_THREADS
+  if (handlerMask&javax_realtime_Scheduler_HANDLE_COND_SIGNAL) {
+    JNIEnv* env = FNI_GetJNIEnv();
+    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_signal);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }
+#endif
   wakeacondthread(x);
   return 0;
 }
@@ -553,6 +609,13 @@ void wakeallcondthread(user_cond_t *x) {
 }
 
 int user_cond_wait(user_cond_t *cond, user_mutex_t *mutex) {
+#ifdef WITH_REALTIME_THREADS
+  if (handlerMask&javax_realtime_Scheduler_HANDLE_COND_WAIT) {
+    JNIEnv* env = FNI_GetJNIEnv();
+    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_wait);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }
+#endif
   /*Only one thread so this will work...*/
   user_mutex_unlock(mutex);
   /*Previous 2 lines need to be atomic!!!!*/
@@ -563,10 +626,24 @@ int user_cond_wait(user_cond_t *cond, user_mutex_t *mutex) {
 }
 
 int user_cond_timedwait(user_cond_t *cond, user_mutex_t *mutex, const struct timespec *abstime) {
+#ifdef WITH_REALTIME_THREADS
+  if (handlerMask&javax_realtime_Scheduler_HANDLE_COND_TIMEDWAIT) {
+    JNIEnv* env = FNI_GetJNIEnv();
+    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_cond_timedwait);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }
+#endif
   return user_cond_wait(cond,mutex);
 }
 
 int user_cond_destroy(user_cond_t *cond) {
+#ifdef WITH_REALTIME_THREADS
+  if (handlerMask&javax_realtime_Scheduler_HANDLE_COND_DESTROY) {
+    JNIEnv* env = FNI_GetJNIEnv();
+    (*env)->CallVoidMethod(env, SchedulerClaz, Scheduler_handle_mutex_lock);
+    assert(!((*env)->ExceptionOccurred(env)));
+  }
+#endif
   return 0;
 }
 #endif
