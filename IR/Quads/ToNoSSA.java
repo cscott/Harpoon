@@ -22,7 +22,7 @@ import java.util.Vector;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.11 1999-02-21 22:04:02 duncan Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.12 1999-03-12 20:41:15 duncan Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -258,7 +258,7 @@ class PHIVisitor extends LowQuadVisitor
 	for (int j=0; j<arity; j++)
 	  pushBack(q, i, j);
       
-      removePHIs(q, new LABEL(m_qf, q, q.label(), new Temp[] {}, q.arity()));
+      //removePHIs(q, new LABEL(m_qf, q, q.label(), new Temp[] {}, q.arity()));
       removeTuples(q);  // Updates derivation table
     }
       
@@ -270,7 +270,7 @@ class PHIVisitor extends LowQuadVisitor
 	for (int j=0; j<arity; j++)
 	  pushBack(q, i, j);
 
-      removePHIs(q, new PHI(m_qf, q, new Temp[] {}, q.arity()));
+      //removePHIs(q, new PHI(m_qf, q, new Temp[] {}, q.arity()));
       removeTuples(q);  // Updates derivation table
     }
 
@@ -284,9 +284,10 @@ class PHIVisitor extends LowQuadVisitor
 		     q0, q.prevEdge(i).which_pred());
       
       el = q.nextEdge();
-      for (int i=0; i<el.length; i++)
+      for (int i=0; i<el.length; i++) {
 	Quad.addEdge(q0, q.nextEdge(i).which_pred(),
 		     q.next(i), q.nextEdge(i).which_succ());
+      }
       
     }
 
