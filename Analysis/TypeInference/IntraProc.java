@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.3 1998-12-03 07:36:05 marinov Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.4 1998-12-05 16:03:16 marinov Exp $
  */
 
 public class IntraProc {
@@ -78,6 +78,22 @@ public class IntraProc {
 	sm.copyInto(am);
 	return am;
     }
+    
+    void nativeMethods() {
+	//DEBUG
+	//System.out.println("non-code=" + method.getDeclaringClass() + " " + method.getName());
+	//DEBUG
+	if (method.getDeclaringClass().getName().equals("java.lang.System")) {
+	    if (method.getName().equals("setIn0"))
+		environment.mergeType(HClass.forName("java.lang.System").getDeclaredField("in"), parameterTypes[0]);
+	    else if (method.getName().equals("setOut0"))
+		environment.mergeType(HClass.forName("java.lang.System").getDeclaredField("out"), parameterTypes[0]);
+	    else if (method.getName().equals("setErr0"))
+		environment.mergeType(HClass.forName("java.lang.System").getDeclaredField("err"), parameterTypes[0]);
+	}
+	returnType = environment.cone(method.getReturnType());
+	exceptionType = environment.cone(HClass.forClass(Throwable.class));
+    } 
 
     boolean outputChanged;
     void analyze() {
@@ -95,13 +111,9 @@ public class IntraProc {
 	//}
 	//DEBUG
 	outputChanged = false;
-	if (code==null) { // native or unanalyzable method
-	    returnType = environment.cone(method.getReturnType());
-	    exceptionType = environment.cone(HClass.forClass(Throwable.class));
-	    //DEBUG
-	    //System.out.println("non-code=" + method.getDeclaringClass() + " " + method.getName());
-	    //DEBUG
-	} else {
+	if (code==null) // native or unanalyzable method
+	    nativeMethods();
+	else {
 	    Quad ql[] = (Quad[]) code.getElements();
 	    Worklist worklist = new UniqueFIFO();
 	    for (int i=0; i<ql.length; i++)
@@ -132,16 +144,16 @@ public class IntraProc {
 	    }
 	}
 	//DEBUG
-	//if (method.getName().equals("t")) {
+	//if (method.getName().equals("main")) {
 	//System.out.println("   finished " + method.getDeclaringClass() + " " + method.getName());
 	//    for (int ii=0; ii<parameterTypes.length; ii++)
-	//	System.out.println("i" + ii + "=" + parameterTypes[ii]);
+	//      System.out.println("i" + ii + "=" + parameterTypes[ii]);
 	//    System.out.println("r = " + returnType);
 	//    System.out.println("e = " + exceptionType);
 	//    System.out.println("changed = " + outputChanged);
 	    /*
 	    for (Enumeration ee=map.keys(); ee.hasMoreElements(); ) {
-		Temp t = (Temp)ee.nextElement();
+                Temp t = (Temp)ee.nextElement();
 		System.out.println(t + "=" + map.get(t));
 	    }
 	    */

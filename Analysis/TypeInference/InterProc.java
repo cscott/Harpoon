@@ -13,7 +13,7 @@ import harpoon.Analysis.QuadSSA.ClassHierarchy;
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.1.2.2 1998-12-03 07:36:05 marinov Exp $
+ * @version $Id: InterProc.java,v 1.1.2.3 1998-12-05 16:03:16 marinov Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
@@ -28,12 +28,20 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 
     public SetHClass setTypeMap(HCode c, Temp t) { 
 	analyze();
-	return ((IntraProc)proc.get(c.getMethod())).getTempType(t);
+	IntraProc i = (IntraProc) proc.get(c.getMethod()); 
+	if (i==null)
+	    return i.getTempType(t);
+	else
+	    return new SetHClass();
     }
 
     public SetHClass getReturnType(HCode c) {
 	analyze();
-	return ((IntraProc)proc.get(c.getMethod())).getReturnType();
+	IntraProc i = (IntraProc) proc.get(c.getMethod()); 
+	if (i==null)
+	    return i.getReturnType();
+	else
+	    return new SetHClass();
     }
 
     public HMethod[] calls(HMethod m) { 
@@ -52,12 +60,15 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 	cc = new ClassCone(ch);
 	/* worklist of methods that are to be processed. */
 	wl = new UniqueFIFO();
-	/* put classinitializers for reachable classes on the worklist. */
+	/* put class initializers for reachable classes on the worklist. */
 	SetHClass[] ep = new SetHClass[0];
 	for (Enumeration e = classInitializers(ch); e.hasMoreElements(); ) {
 	    HMethod ci = (HMethod)e.nextElement();
 	    getIntra(null, ci, ep);
 	}       
+	/* ugly hack - add method(s) invoked automatically at jvm start-up??? */
+	HMethod ci = HClass.forName("java.lang.System").getMethod("initializeSystemClass", new HClass[0]);
+	getIntra(null, ci, ep);
 	/* put the main method on the worklist. */
 	HClass[] c = m.getParameterTypes();
 	SetHClass[] p = new SetHClass[c.length];
