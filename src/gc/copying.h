@@ -1,6 +1,9 @@
 #ifndef INCLUDED_COPYING_H
 #define INCLUDED_COPYING_H
 
+/* copying.h contains function declarations for functions in
+   copying.c that are used elsewhere */
+
 #ifdef WITH_PRECISE_C_BACKEND
 void copying_add_to_root_set(jobject_unwrapped *obj);
 
