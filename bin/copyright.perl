@@ -22,7 +22,7 @@ sub saneauthors {
 	if $author =~ m/Emmett.*Witchel/i or $author =~ m/witchel@/;
     return 'Duncan Bryce <duncan@lcs.mit.edu>'
 	if $author =~ m/Duncan.*Bryce/i or $author =~ m/duncan@/;
-    return 'Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>'
+    return 'Alexandru SALCIANU <salcianu@alum.mit.edu>'
 	if $author =~ m/Alexandru.*SALCIANU/i or $author =~ m/salcianu@/;
     return 'Andrew Berkheimer <andyb@mit.edu>'
 	if $author =~ m/And.*Berkheimer/i or $author =~ m/andyb@/;
