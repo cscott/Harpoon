@@ -42,6 +42,7 @@ struct claz {
   struct oobj * class_object; /* pointer to (unwrapped) class object. */
   struct claz *component_claz;	/* component type, or NULL if non-array. */
   struct claz **interfaces; /* NULL terminated list of implemented interfaces*/
+  u_int32_t size;		/* object size, including header */
   u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
   struct claz *display[0];	/* sized by FLEX */
   /* class method dispatch table after display */
@@ -63,6 +64,8 @@ struct oobj_offset {
 };
 #define OOBJ_OFFSET(unscaled) \
 	((struct oobj_offset *) (((char *)(unscaled)) - sizeof(u_int32_t)))
+#define OOBJ_UNOFFSET(offset) \
+	((struct oobj *) (((char *)(offset)) + sizeof(u_int32_t)))
 
 struct FNI_classinfo {
   struct claz *claz;

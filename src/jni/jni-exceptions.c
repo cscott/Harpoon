@@ -25,9 +25,8 @@ jint FNI_ThrowNew(JNIEnv *env, jclass clazz, const char *message) {
 
   /** No error-checking is being done here. */
   strobj = (*env)->NewStringUTF(env, message); 
-  excobj = (*env)->AllocObject(env, clazz);
   consID = (*env)->GetMethodID(env, clazz, "<init>", "(Ljava/lang/String;)V");
-  (*env)->CallNonvirtualVoidMethod(env, excobj, clazz, consID, strobj);
+  excobj = (*env)->NewObject(env, clazz, consID, strobj);
   return (*env)->Throw(env, excobj);
 }
 

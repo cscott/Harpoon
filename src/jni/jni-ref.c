@@ -61,7 +61,3 @@ void FNI_DeleteGlobalRef (JNIEnv *env, jobject globalRef) {
     prev->next = prev->next->next;
   }
 }
-
-jboolean FNI_IsSameObject (JNIEnv *env, jobject ref1, jobject ref2) {
-  return (FNI_UNWRAP(ref1) == FNI_UNWRAP(ref2)) ? JNI_TRUE : JNI_FALSE;
-}
