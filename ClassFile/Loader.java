@@ -32,7 +32,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.13 2000-01-13 23:47:47 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.14 2000-03-30 09:51:17 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
@@ -46,6 +46,7 @@ public abstract class Loader {
   static class ZipFileElement extends ClasspathElement {
     ZipFile zf;
     ZipFileElement(ZipFile zf) { this.zf = zf; }
+    public String toString() { return zf.getName(); }
     InputStream getResourceAsStream(String name) {
       try { // look for name in zipfile, return null if something goes wrong.
 	ZipEntry ze = zf.getEntry(name);
@@ -84,6 +85,7 @@ public abstract class Loader {
   static class PathElement extends ClasspathElement {
     String path;
     PathElement(String path) { this.path = path; }
+    public String toString() { return path; }
     InputStream getResourceAsStream(String name) {
       try { // try to open the file, starting from path.
 	File f = new File(path, name);
@@ -171,7 +173,10 @@ public abstract class Loader {
     for (Iterator it = classpathList.iterator(); it.hasNext(); ) {
       ClasspathElement cpe = (ClasspathElement) it.next();
       InputStream is = cpe.getResourceAsStream(name);
-      if (is!=null) return is; // return stream if found.
+      if (is!=null) {
+	//System.err.println("[LOADING "+new File(cpe.toString(),name)+"]");
+	return is; // return stream if found.
+      }
     }
     // Couldn't find resource.
     return null;
