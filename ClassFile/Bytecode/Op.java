@@ -1,7 +1,7 @@
 package harpoon.ClassFile.Bytecode;
 
 /**
- * The <code>Opcode</code> class contains constants and tables that we are
+ * The <code>Op</code> class contains constants and tables that we are
  * likely to find useful when grokking a java bytecode stream.
  * <p>
  * Included are: <UL>
@@ -13,13 +13,13 @@ package harpoon.ClassFile.Bytecode;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Opcode.java,v 1.2 1998-08-03 02:54:27 cananian Exp $
+ * @version $Id: Op.java,v 1.1 1998-08-03 03:22:30 cananian Exp $
  * @see     harpoon.ClassFile.Raw.Attribute.AttributeCode
  * @see     harpoon.ClassFile.Bytecode.Instr
  * @see     harpoon.ClassFile.Bytecode.Code
  */
 
-public final class Opcode {
+public final class Op {
   // Set up table of opcodes.
   public final static byte 
     NOP		= (byte) 0x00,
