@@ -9,13 +9,13 @@ import harpoon.Util.ArrayFactory;
  * about a single member (a field or a method) or a constructor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMember.java,v 1.5.2.3 2000-01-13 23:47:47 cananian Exp $
+ * @version $Id: HMember.java,v 1.5.2.4 2000-03-29 20:06:35 cananian Exp $
  * @see HClass
  * @see HField
  * @see HMethod
  * @see HConstructor
  */
-public interface HMember {
+public interface HMember extends java.lang.Comparable {
   /** 
    * Returns the <code>HClass</code> object representing the class or
    * interface that declares the member or constructor represented by this
@@ -46,6 +46,24 @@ public interface HMember {
    * of inner classes.
    */
   public abstract boolean isSynthetic();
+
+  /** Compares two <code>HMember</code>s lexicographically; first by
+   *  declaring class, then by name, and lastly by descriptor. */
+  public abstract int compareTo(Object o);
+  // implementation of a member comparator, for consistency among 
+  // implementations.
+  static final java.util.Comparator memberComparator = new MemberComparator();
+  static class MemberComparator implements java.util.Comparator {
+    public int compare(Object o1, Object o2) {
+	HMember hm1 = (HMember) o1, hm2 = (HMember) o2;
+	int c = hm1.getDeclaringClass().compareTo(hm2.getDeclaringClass());
+	if (c!=0) return c;
+	c = hm1.getName().compareTo(hm2.getName());
+	if (c!=0) return c;
+	c = hm1.getDescriptor().compareTo(hm2.getDescriptor());
+	return c;
+    }
+  }
 
   /** Array factory: returns new <code>HMember[]</code>. */
   public static final ArrayFactory arrayFactory =

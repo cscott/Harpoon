@@ -11,7 +11,7 @@ import java.lang.reflect.Modifier;
  * <code>HFieldImpl</code> is the basic implementation of <code>HField</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldImpl.java,v 1.1.4.1 2000-01-13 23:47:46 cananian Exp $
+ * @version $Id: HFieldImpl.java,v 1.1.4.2 2000-03-29 20:06:35 cananian Exp $
  * @see HField
  */
 abstract class HFieldImpl
@@ -170,11 +170,7 @@ abstract class HFieldImpl
   /** Compares two <code>HField</code>s lexicographically; first by
    *  declaring class, then by name. */
   public int compareTo(Object o) {
-    HField hf = (HField) o;
-    int c = getDeclaringClass().compareTo(hf.getDeclaringClass());
-    if (c!=0) return c;
-    c = getName().compareTo(hf.getName());
-    return c;
+    return memberComparator.compare(this, o);
   }
 }
 // set emacs indentation style.

@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HMember</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMemberProxy.java,v 1.1.4.2 2000-01-17 23:49:06 cananian Exp $
+ * @version $Id: HMemberProxy.java,v 1.1.4.3 2000-03-29 20:06:35 cananian Exp $
  * @see HFieldProxy
  * @see HMethodProxy
  */
@@ -38,6 +38,12 @@ abstract class HMemberProxy implements HMember {
 	if (obj instanceof HMemberProxy)
 	    return proxy.equals(((HMemberProxy)obj).proxy);
 	return proxy.equals(obj);
+    }
+    // Comparable interface
+    /** Compares two <code>HMember</code>s lexicographically; first by
+     *  declaring class, then by name, and lastly by descriptor. */
+    public int compareTo(Object o) {
+        return memberComparator.compare(this, o);
     }
 
     // keep member map up-to-date when hashcode changes.

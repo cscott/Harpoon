@@ -13,7 +13,7 @@ import java.util.Hashtable;
  * <code>HMethod</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodImpl.java,v 1.1.4.2 2000-01-29 11:05:54 cananian Exp $
+ * @version $Id: HMethodImpl.java,v 1.1.4.3 2000-03-29 20:06:35 cananian Exp $
  * @see HMethod
  */
 abstract class HMethodImpl
@@ -256,13 +256,7 @@ abstract class HMethodImpl
   /** Compares two <code>HMethod</code>s lexicographically; first by
    *  declaring class, then by name, and lastly by descriptor. */
   public int compareTo(Object o) {
-    HMethod hm = (HMethod) o;
-    int c = getDeclaringClass().compareTo(hm.getDeclaringClass());
-    if (c!=0) return c;
-    c = getName().compareTo(hm.getName());
-    if (c!=0) return c;
-    c = getDescriptor().compareTo(hm.getDescriptor());
-    return c;
+    return memberComparator.compare(this, o);
   }
 }
 
