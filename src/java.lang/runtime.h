@@ -64,7 +64,8 @@ void fni_runtime_runFinalization(JNIEnv *env) {
   /* unimplemented */
   printf("WARNING: Finalization not implemented for precise GC.\n");
 #else
-  assert(0/*unimplemented*/);
+  /* unimplemented */
+  printf("WARNING: Finalization not implemented.\n");
 #endif
 }
 

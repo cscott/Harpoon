@@ -37,6 +37,35 @@
 
 #include "threadlist.h" /* maintain list of running threads */
 
+#ifdef __GLIBC__
+/* Hack for compatibility 
+   with some versions of glibc. -WSB */
+#ifndef GLIBC_COMPAT2
+#define GLIBC_COMPAT2 1 
+#endif
+#endif
+
+#ifdef WITH_INIT_CHECK
+/* prototypes for dealing with threads deferred during static initialization */
+void fni_thread_addDeferredThread(JNIEnv *env, jobject thread);
+void fni_thread_startDeferredThreads(JNIEnv *env);
+
+/* Implementation of Thread.start$$inithcheck: */
+/* Not safe to actually start thread while doing static initializers.
+ * So just add this thread to a list of 'threads to start later' -- and
+ * we'll actually start them once static initialization is done.
+ * This is a hack --- you can break it by Thread.join()ing or
+ * Thread.isAlive() or probably other methods on the not-really-started-yet
+ * thread --- but hopefully it will work well enough for those odd cases
+ * where threads are launched in static initializers. */
+static inline
+void fni_thread_start_initcheck(JNIEnv *env, jobject thisthr) {
+  fprintf(stderr, "WARNING: "
+	  "deferring thread start until end of static initialization\n");
+  fni_thread_addDeferredThread(env, thisthr);
+}
+#endif /* WITH_INIT_CHECK */
+
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
 #define EXTRACT_OTHER_ENV(env, thread) \
   ( (struct FNI_Thread_State *) FNI_GetJNIData(env, thread) )
@@ -63,6 +92,10 @@ extern jmethodID cleanupID; /* RealtimeThread.cleanup() method. */
 extern jint MIN_PRIORITY, NORM_PRIORITY, MAX_PRIORITY;
 #ifdef WITH_HEAVY_THREADS
 extern int sched_min_priority, sched_norm_priority, sched_max_priority;
+#endif
+
+#ifdef WITH_INIT_CHECK
+extern int initDone;
 #endif
 
 /* these functions defined in src/java.lang/thread.c and only
@@ -158,6 +191,9 @@ static void * thread_startup_routine(void *closure) {
   ((struct FNI_Thread_State *)(env))->stack_top = &top_of_stack;
   /* This thread is alive! */
   ((struct FNI_Thread_State *)(env))->is_alive = JNI_TRUE;
+#ifdef WITH_REALTIME_THREADS
+  ((struct FNI_Thread_State *)(env))->thread = cls->thread;
+#endif
   /* make sure creating thread is in cond_wait before proceeding. */
   pthread_mutex_lock(&(cls->parampass_mutex));
   /* copy thread wrapper to local stack */
@@ -245,6 +281,12 @@ void fni_thread_start(JNIEnv *env, jobject _this) {
   struct closure_struct cls =
     { _this, PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
   int status;
+#ifdef WITH_INIT_CHECK
+  if (!initDone) {
+    fni_thread_start_initcheck(env, _this);
+    return;
+  }
+#endif
 #if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
   jclass noHeapThreadClass = 
     (*env)->FindClass(env, "javax/realtime/NoHeapRealtimeThread");
@@ -311,12 +353,18 @@ void fni_thread_start(JNIEnv *env, jobject _this) {
     { _this , PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
   struct closure_struct *clsp = &cls;
   void * stackptr;
+
 #if !defined(WITH_REALTIME_THREADS)
   struct thread_list *tl;
 #else /* WITH_REALTIME_THREADS */
   struct inflated_oobj *tl;
   int switching_state;
-
+#ifdef WITH_INIT_CHECK
+  if (!initDone) {
+    fni_thread_start_initcheck(env, _this);
+    return;
+  }
+#endif
 #ifdef RTJ_DEBUG_THREADS
   printf("\nThread.start(%p, %p)", env, FNI_UNWRAP(_this));
 #endif
@@ -468,26 +516,5 @@ void fni_thread_interrupt_withtrans(JNIEnv *env, jobject _this, jobject commitre
   assert(0); /* unimplemented */
 }
 #endif /* WITH_TRANSACTIONS */
-
-#ifdef WITH_INIT_CHECK
-/* prototypes for dealing with threads deferred during static initialization */
-void fni_thread_addDeferredThread(JNIEnv *env, jobject thread);
-void fni_thread_startDeferredThreads(JNIEnv *env);
-
-/* Implementation of Thread.start$$inithcheck: */
-/* Not safe to actually start thread while doing static initializers.
- * So just add this thread to a list of 'threads to start later' -- and
- * we'll actually start them once static initialization is done.
- * This is a hack --- you can break it by Thread.join()ing or
- * Thread.isAlive() or probably other methods on the not-really-started-yet
- * thread --- but hopefully it will work well enough for those odd cases
- * where threads are launched in static initializers. */
-static inline
-void fni_thread_start_initcheck(JNIEnv *env, jobject thisthr) {
-  fprintf(stderr, "WARNING: "
-	  "deferring thread start until end of static initialization\n");
-  fni_thread_addDeferredThread(env, thisthr);
-}
-#endif /* WITH_INIT_CHECK */
 
 #endif /* INCLUDED_FNI_THREAD_H */

@@ -102,6 +102,7 @@ void fni_properties_init(JNIEnv *env, jobject propobj,
       while ((cwd=getcwd(buf, size))==NULL) {
 	free(buf); size*=2; buf=malloc(size);
       }
+      errno = 0; /* Success */
       ckey = "user.dir";
       cvalue = buf;
       _putProperty(env, propobj, methodID, ckey, cvalue);

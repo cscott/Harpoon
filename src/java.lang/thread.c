@@ -60,6 +60,10 @@ int sched_min_priority, sched_norm_priority, sched_max_priority;
 pth_key_t flex_timedwait_key = PTH_KEY_INIT;
 #endif
 
+#ifdef WITH_INIT_CHECK
+int initDone = 0;
+#endif
+
 void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
 #ifndef WITH_REALTIME_JAVA
   jclass thrGrpCls;
@@ -248,6 +252,14 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
 
   /* done! */
 }
+
+#if defined(WITH_HEAVY_THREADS) && defined(GLIBC_COMPAT2)
+#undef errno
+extern int errno;
+int* __errno_location() {
+  return &errno;
+}
+#endif
 
 /* wait for all non-main non-daemon threads to terminate */
 void FNI_java_lang_Thread_finishMain(JNIEnv *env) {
