@@ -186,13 +186,13 @@ public class Label extends Node {
 			newImage.labelID = num;
 			right.process(newImage);
 		    }
-		    //To process only one object.
-		    if (findOneObject)
-			break;
 		    if ((--num)==0) {
 			throw new Error("Too many objects!");
 		    }
-
+		    //To process only one object.
+		    //This line should be below '--num'
+		    if (findOneObject)
+			break;
 		}
 	    }
 	}
