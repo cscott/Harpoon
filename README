@@ -3,4 +3,5 @@ This directory contains C source files for the FLEX runtime.
 See the file REQUIRED for the tools required to build it.
 After installing the tools, you'll want to run ./setup
 to let autoheader/autoconf/automake do their thing.
-See the INSTALL file for the rest of the build instructions.
+See the INSTALL file for generic build instructions;
+the BUILDING file has more specific information.
