@@ -20,7 +20,7 @@ import java.util.Map;
  * a reachable method which overrides it.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CHFinalMap.java,v 1.1.2.1 2000-10-21 20:05:58 cananian Exp $
+ * @version $Id: CHFinalMap.java,v 1.1.2.2 2000-10-21 22:48:34 cananian Exp $
  */
 public class CHFinalMap extends DefaultFinalMap {
     private final ClassHierarchy ch;
@@ -37,28 +37,15 @@ public class CHFinalMap extends DefaultFinalMap {
 	if (hm.isStatic() ||
 	    Modifier.isPrivate(hm.getModifiers()) ||
 	    hm instanceof HConstructor) return true;
+	// abstract methods are never final, even if no reachable methods
+	// implement it. (this deals with unexecutable method calls)
+	if (Modifier.isAbstract(hm.getModifiers())) return false;
 	// next bit is time consuming.  check cache first.
-	if (cache.containsKey(hm))
-	    return ((Boolean) cache.get(hm)).booleanValue();
-	// go through all children of the declaring class, looking for
-	// a method which overrides this.
-	WorkSet ws = new WorkSet(ch.children(hm.getDeclaringClass()));
-	while (!ws.isEmpty()) {
-	    HClass hc = (HClass) ws.pop();
-	    try {
-		hc.getDeclaredMethod(hm.getName(), hm.getDescriptor());
-		// not final, we found a method that overrides it.
-		cache.put(hm, new Boolean(false));
-		return false; 
-	    } catch (NoSuchMethodError nsme) {
-		// keep looking for subclasses that declare method:
-		// add all subclasses of this one to the worklist.
-		ws.addAll(ch.children(hc));
-	    }
+	if (!cache.containsKey(hm)) {
+	    // if no overrides, this is final.
+	    cache.put(hm, new Boolean(ch.overrides(hm).size()==0));
 	}
-	// this method is final.
-	cache.put(hm, new Boolean(true));
-	return true;
+	return ((Boolean) cache.get(hm)).booleanValue();
     }
     private final Map cache = new HashMap();
 }

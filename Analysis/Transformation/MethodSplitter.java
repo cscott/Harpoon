@@ -21,6 +21,7 @@ import harpoon.Util.WorkSet;
 
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 /**
@@ -39,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.12 2000-10-21 20:08:38 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.13 2000-10-21 22:48:30 cananian Exp $
  */
 public abstract class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -114,23 +115,13 @@ public abstract class MethodSplitter {
 	    versions.put(swpair, splitM);
 	    split2orig.put(splitM, swpair);
 	    /* now split all subclasses */
-	    if (isVirtual(orig)) { //only keep splitting if orig is inheritable
-		WorkSet cW= new WorkSet(ch.children(orig.getDeclaringClass()));
-		while (!cW.isEmpty()) {
-		    // pull a subclass off the list.
-		    HClass c = (HClass) cW.pop();
-		    // now check for decl'd methods with the same name as orig.
-		    try {
-			HMethod hm = c.getMethod(orig.getName(),
-						 orig.getDescriptor());
-			select(hm, which); // split hm and all children.
-		    } catch (NoSuchMethodError nsme) {
-			// keep looking for subclasses that declare method:
-			// add all subclasses of this one to the worklist.
-			cW.addAll(ch.children(c));
-		    }
-		}
-	    }
+	    if (isVirtual(orig)) //only keep splitting if orig is inheritable
+		for (Iterator it=ch.overrides(orig).iterator(); it.hasNext(); )
+		    // XXX: a little conservative, since select() will then
+		    // turn around and split all the child's children.
+		    // ch.overrides(orig, ..., true) would give more accurate
+		    // results.
+		    select((HMethod)it.next(), which);
 	    /* done */
 	}
 	return splitM;
