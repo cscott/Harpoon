@@ -19,13 +19,12 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.CachingCodeFactory;
 
-import harpoon.Util.Constraints.InclusionConstraints;
-import harpoon.Util.Constraints.InclusionConstraints.Var;
-import harpoon.Util.Constraints.InclusionConstraints.AtomSet;
-import harpoon.Util.Constraints.Unfeasible;
+import harpoon.Util.Constraints.ConstraintSolver;
+import harpoon.Util.Constraints.Var;
+//import harpoon.Util.Constraints.Unfeasible;
 import harpoon.Util.Graphs.Navigator;
 import harpoon.Util.Graphs.Reachability;
-import harpoon.Util.Graphs.Reachability.Action;
+//import harpoon.Util.Graphs.Reachability.Action;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
 import harpoon.Util.Collections.WorkSet;
@@ -44,7 +43,7 @@ import harpoon.IR.Quads.FOOTER;
  * <code>ComputeAnAe</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ComputeAnAe.java,v 1.3 2002-04-10 03:00:14 cananian Exp $
+ * @version $Id: ComputeAnAe.java,v 1.4 2002-04-11 18:53:45 salcianu Exp $
  */
 public class ComputeAnAe {
     
@@ -83,7 +82,7 @@ public class ComputeAnAe {
     private Map hm2vn;
     private Map hm2ve;
     private Map sol;
-    private InclusionConstraints ic;
+    private ConstraintSolver cs;
 
 
     private void create_vars() {
@@ -150,7 +149,7 @@ public class ComputeAnAe {
 	    }
 	}
 
-	ic.addConstraint(new AtomSet(allocations), v);
+	cs.addBasicConstraint(allocations, v);
 	if(STATS) nb_av_cons++;
     }
 
@@ -167,14 +166,14 @@ public class ComputeAnAe {
 	    if(!isAnalyzable(callee)) continue;
 
 	    Var v_callee = on_return ? getVn(callee) : getVe(callee);
-	    ic.addConstraint(v_callee, v);
+	    cs.addInclusionConstraint(v_callee, v);
 	    if(STATS) nb_vv_cons++;
 	}
     }
 	
 
     private void compute() {
-	ic = new InclusionConstraints();
+	cs = new ConstraintSolver();
 	create_vars();
 	add_constraints();
 
@@ -184,16 +183,7 @@ public class ComputeAnAe {
 			       nb_vv_cons + " v->v constraint(s) " +
 			       nb_av_cons + " a->v constraint(s) ");
 
-	try {
-	    sol = ic.solve();
-	}
-	catch(Unfeasible e) {
-	    System.out.println(e);
-	    System.exit(1);
-	}
-	finally {
-	    ic = null; // activate GC;	    
-	}
+	sol = cs.solve();
     }
 
     // returns the variable corresponding to A_n(hm)

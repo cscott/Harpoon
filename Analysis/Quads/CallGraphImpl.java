@@ -27,10 +27,9 @@ import java.util.Set;
  This is the most conservative implementation of <code>CallGraph</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl.java,v 1.6 2002-04-11 04:28:49 salcianu Exp $
+ * @version $Id: CallGraphImpl.java,v 1.7 2002-04-11 18:53:49 salcianu Exp $
  */
 public class CallGraphImpl extends AbstrCallGraph  {
-    //final HCodeFactory hcf;
     final ClassHierarchy ch;
     /** Creates a <code>CallGraph</code> using the specified 
      *  <code>ClassHierarchy</code>. <code>hcf</code> must be a code

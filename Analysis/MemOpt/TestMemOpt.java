@@ -21,6 +21,7 @@ import harpoon.ClassFile.CachingCodeFactory;
 
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Analysis.Quads.CallGraphImpl;
+import harpoon.Analysis.Quads.SSICallGraph;
 import harpoon.Analysis.Quads.CachingCallGraph;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.ClassHierarchy;
@@ -35,7 +36,7 @@ import harpoon.IR.Quads.CALL;
     soon.
  
  @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- @version $Id: TestMemOpt.java,v 1.3 2002-04-10 03:00:14 cananian Exp $ */
+ @version $Id: TestMemOpt.java,v 1.4 2002-04-11 18:53:45 salcianu Exp $ */
 public abstract class TestMemOpt {
     
     private static Linker linker = new Relinker(Loader.systemLinker);
@@ -63,20 +64,17 @@ public abstract class TestMemOpt {
 			   (time() - start) + "ms");
 
 	start = time();
-	CallGraph cg = new CachingCallGraph(new CallGraphImpl(ch, hcf));
+	CachingCallGraph cg =
+	    new CachingCallGraph(new SSICallGraph(ch, hcf), false, false);
+	cg.load_caches();
 	System.out.println("CallGraph done in " + (time() - start) + "ms");
 
 	start = time();
 	ComputeAnAe anae = new ComputeAnAe(hcf, cg);
-	System.out.println("\n\n\n1st ComputeAnAe done in " + 
-			   + (time() - start) + "ms\n\n\n");
-	
-	start = time();
-	anae = new ComputeAnAe(hcf, cg);
-	System.out.println("\n\n\n2nd ComputeAnAe done in " +
+	System.out.println("ComputeAnAe done in " +
 			   + (time() - start) + "ms\n\n\n");
 
-	System.exit(0);
+	//System.exit(0);
 
 	for(Iterator it = cg.callableMethods().iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();

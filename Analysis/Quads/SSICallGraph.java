@@ -36,13 +36,12 @@ import harpoon.Analysis.PointerAnalysis.Debug;
  * <code>SSICallGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SSICallGraph.java,v 1.3 2002-04-11 04:28:49 salcianu Exp $
+ * @version $Id: SSICallGraph.java,v 1.4 2002-04-11 18:53:50 salcianu Exp $
  */
 public class SSICallGraph extends AbstrCallGraph {
 
     private CallGraphImpl2 cg;
     private ClassHierarchy ch;
-    private HCodeFactory  hcf;
     
     /** Creates a <code>SSICallGraph</code>. */
     public SSICallGraph(ClassHierarchy ch, HCodeFactory hcf) {
