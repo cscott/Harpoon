@@ -16,10 +16,7 @@ if OPT_FLEX_SUPPORT_FILES has already been defined.
 Make sure that Runtime, Code, Realtime, and Benchmarks are up to date 
 (make clean, make).
 
-Then, su to root and execute the following:
-cp $HOME/Harpoon/Benchmarks/RTJ/RTJPerf/jTools/lib/libHRTime.so /lib/
-
-Then, as yourself:
+Then configure the runtime:
 cd $HOME/Harpoon/Runtime
 ./setup
 ./configure --with-precise-c --with-gc=copying --with-thread-model=user \
