@@ -1,1 +1,3 @@
-.
+The main documentation for this program is available through JavaDoc.
+Please type 'make doc' to generate the documentation.
+Then, point your browser to the doc/ directory.

@@ -1,0 +1,39 @@
+//====================================================================
+/**
+ *  @file    ImageData.idl
+ *
+ *  @author  Wes Beebee <wbeebee@mit.edu>
+ *
+ *  Copyright (C) 2003 Wes Beebee <wbeebee@mit.edu>
+ *  Licensed under the terms of the GNU GPL; see COPYING for details.
+ */
+//====================================================================
+
+#ifndef IMAGEDATA_IDL
+#define IMAGEDATA_IDL
+
+/**
+ * @namespace imagerec.graph
+ * @brief  Interface for sending data through MIT's ATR.
+ *
+ */
+module imagerec
+{
+  module graph {
+    struct ImageData {
+      sequence<octet> rvals;
+      sequence<octet> gvals;
+      sequence<octet> bvals;
+      long x;
+      long y;
+      long width;
+      long height;
+      unsigned long long time;
+      long id;
+      long command;
+      long receiverID;
+    };
+  };
+};
+
+#endif
