@@ -19,7 +19,7 @@ import java.util.Set;
  * embed boolean flags describing object fields.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitFieldNumbering.java,v 1.4.2.1 2003-07-15 03:28:40 cananian Exp $
+ * @version $Id: BitFieldNumbering.java,v 1.4.2.2 2003-07-21 20:51:04 cananian Exp $
  */
 public class BitFieldNumbering {
     // note: for 64-bit archs, might be worthwhile to make fields 64 bits.
@@ -99,6 +99,7 @@ public class BitFieldNumbering {
 	assert !hf.getDeclaringClass().isInterface();
 	if (!fieldNumbers.containsKey(hf))
 	    classNumber(hf.getDeclaringClass());
+	assert fieldNumbers.containsKey(hf) : hf + " / "+fieldNumbers;
 	return fieldNumbers.get(hf).intValue();
     }
     /* all fields in 'hc' are numbered *strictly less than* classNumber(hc) */
