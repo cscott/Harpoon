@@ -33,7 +33,7 @@ import java.util.Set;
  * process is repeated until no checks can be moved higher.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HoistingCheckOracle.java,v 1.1.2.7 2001-06-17 22:31:54 cananian Exp $
+ * @version $Id: HoistingCheckOracle.java,v 1.1.2.8 2001-10-29 16:58:54 cananian Exp $
  */
 class HoistingCheckOracle extends AnalysisCheckOracle {
     /** Creates a <code>HoistingCheckOracle</code> for the given
@@ -80,6 +80,7 @@ class HoistingCheckOracle extends AnalysisCheckOracle {
 	}
 	/** filter common checks */
 	if (hce instanceof MONITORENTER) common=null;
+	// XXX: common=null if hoisting past possible call to Object.wait().
 	if (common!=null) common.removeAll(udr.defC(hce));
 	/** steal filtered common checks from successors */
 	if (common!=null && !common.isEmpty()) {

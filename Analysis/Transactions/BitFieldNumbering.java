@@ -6,6 +6,7 @@ package harpoon.Analysis.Transactions;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HField;
+import harpoon.ClassFile.Linker;
 import harpoon.Util.Util;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,33 +16,45 @@ import java.util.Map;
  * embed boolean flags describing object fields.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitFieldNumbering.java,v 1.1.2.1 2001-05-02 21:12:53 cananian Exp $
+ * @version $Id: BitFieldNumbering.java,v 1.1.2.2 2001-10-29 16:58:54 cananian Exp $
  */
-class BitFieldNumbering {
+public class BitFieldNumbering {
     // note: for 64-bit archs, might be worthwhile to make fields 64 bits.
     public static final HClass FIELD_TYPE = HClass.Int;
     public static final int BITS_IN_FIELD = 32;
 
     // unique suffix for the fields created by this BitFieldNumbering.
     private final String suffix;
+    // cache HClass for java.lang.Object
+    private final HClass HCobject;
 
     /** Creates a <code>BitFieldNumbering</code>. */
-    public BitFieldNumbering() { this(""); }
-    public BitFieldNumbering(String suffix) { this.suffix=suffix; }
+    public BitFieldNumbering(Linker l) { this(l, ""); }
+    public BitFieldNumbering(Linker l, String suffix) {
+	this.suffix=suffix;
+	this.HCobject = l.forName("java.lang.Object");
+    }
 
-    static class BitFieldTuple {
-	HField field;
-	int bit;
+    public static class BitFieldTuple {
+	public final HField field;
+	public final int bit;
 	BitFieldTuple(HField field, int bit) {this.field=field; this.bit=bit;}
 	public String toString() { return "Bit "+bit+" of "+field; }
     }
     public BitFieldTuple bfLoc(HField hf) {
 	int n = fieldNumber(hf);
 	// which class would the check field belong to?
+	// answer: same class as contains the definition of field #(marker)
 	int marker = BITS_IN_FIELD * (n/BITS_IN_FIELD);
 	HClass hc = hf.getDeclaringClass();
-	while (classNumber(hc) >= marker)
-	    hc = hc.getSuperclass();
+	if (marker!=0) {
+	    while (classNumber(hc.getSuperclass()) > marker)
+		hc = hc.getSuperclass();
+	} else {
+	    /* special case: zero'th field goes in java.lang.Object.
+	     * this is to make the array case more regular. */
+	    hc = HCobject;
+	}
 	// okay, fetch this field, creating if necessary.
 	HField bff = getOrMake(hc, n/BITS_IN_FIELD);
 	// done.
@@ -49,11 +62,16 @@ class BitFieldNumbering {
     }
     public HField arrayBitField(HClass hc) {
 	Util.assert(hc.isArray());
-	return getOrMake(hc, 0);
+	/* okay, first 'field info' field is used for arrays. */
+	return getOrMake(HCobject, 0);
     }
 
     // fetch a bitfield, creating if necessary.
     private HField getOrMake(HClass where, int which) {
+	/* for safety: always call classNumber(where) to cache the field
+	 * numbering for 'where' *before* we screw it up by adding fields. */
+	classNumber(where);
+	/* okay, now fetch/make the bitfield field. */
 	String fieldname="$$bitfield"+which+suffix;
 	try {
 	    return where.getDeclaredField(fieldname);
@@ -71,6 +89,7 @@ class BitFieldNumbering {
 	    classNumber(hf.getDeclaringClass());
 	return ((Integer)fieldNumbers.get(hf)).intValue();
     }
+    /* all fields in 'hc' are numbered *strictly less than* classNumber(hc) */
     private int classNumber(HClass hc) {
 	Util.assert(!hc.isArray());
 	Util.assert(!hc.isInterface());

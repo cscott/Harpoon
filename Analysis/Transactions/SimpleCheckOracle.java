@@ -17,7 +17,7 @@ import java.util.Set;
  * simple-minded implementation of <code>CheckOracle</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SimpleCheckOracle.java,v 1.1.2.3 2001-02-23 03:10:40 cananian Exp $
+ * @version $Id: SimpleCheckOracle.java,v 1.1.2.4 2001-10-29 16:58:54 cananian Exp $
  */
 class SimpleCheckOracle extends CheckOracle {
     private final boolean noArrayModification;
@@ -41,21 +41,27 @@ class SimpleCheckOracle extends CheckOracle {
 	    return Collections.singleton(((SET)hce).objectref());
 	return Collections.EMPTY_SET;
     }
-    public Set checkField(HCodeElement hce) {
+    public Set checkFieldReads(HCodeElement hce) {
 	if (hce instanceof GET && !((GET)hce).isStatic())
 	    return Collections.singleton
 		(new RefAndField(((GET)hce).objectref(),((GET)hce).field()));
+	return Collections.EMPTY_SET;
+    }
+    public Set checkFieldWrites(HCodeElement hce) {
 	if (hce instanceof SET && !((SET)hce).isStatic())
 	    return Collections.singleton
 		(new RefAndField(((SET)hce).objectref(),((SET)hce).field()));
 	return Collections.EMPTY_SET;
     }
-    public Set checkArrayElement(HCodeElement hce) {
+    public Set checkArrayElementReads(HCodeElement hce) {
 	if (hce instanceof AGET && !noArrayModification) {
 	    AGET q = (AGET) hce;
 	    return Collections.singleton
 		(new RefAndIndexAndType(q.objectref(), q.index(), q.type()));
 	}
+	return Collections.EMPTY_SET;
+    }
+    public Set checkArrayElementWrites(HCodeElement hce) {
 	if (hce instanceof ASET && !noArrayModification) {
 	    ASET q = (ASET) hce;
 	    return Collections.singleton

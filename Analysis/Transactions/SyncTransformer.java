@@ -6,6 +6,7 @@ package harpoon.Analysis.Transactions;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.DomTree;
 import harpoon.Analysis.Counters.CounterFactory;
+import harpoon.Analysis.Transactions.BitFieldNumbering.BitFieldTuple;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
@@ -76,7 +77,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.20 2001-03-04 21:54:36 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.21 2001-10-29 16:58:54 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -91,6 +92,14 @@ import java.util.Set;
 // precise type when run in *SSA form. We currently work around the problem by
 // adding an extra type cast before the AGET.  This *should* be
 // optimized out in most cases.
+
+//XXX: could use sync-elimination analysis to remove unnecessary
+//     atomic operations?  this would reduce the overall cost by a *lot*,
+//     but it would make it much harder to come up w/ realistic benchmarks.
+//     maybe barnes/water?
+//  ACTUALLY we should skip ALL transformation on objects which are
+//     marked as non-escaping.  this too would be a big win.
+
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
     static final Token WITH_TRANSACTION = new Token("withtrans") {
@@ -119,6 +128,8 @@ public class SyncTransformer
 
     // FieldOracle to use.
     final FieldOracle fieldOracle;
+    // BitFieldNumbering to use
+    final BitFieldNumbering bfn;
 
     /** Cache the <code>java.lang.Class</code> <code>HClass</code>. */
     private final HClass HCclass;
@@ -138,8 +149,9 @@ public class SyncTransformer
     private final HMethod HMrCommitted;
     private final HMethod HMwCommitted;
     private final HMethod HMmkVersion;
-    private final HMethod HMwriteFlag;
-    private final HMethod HMwriteFlagA;
+    private final HMethod HMsetReadFlag;
+    private final HMethod HMsetWriteFlag;
+    private final HMethod HMsetWriteFlagA;
     /** flag value */
     private final HField HFflagvalue;
     /** last *reading* transaction */
@@ -192,29 +204,34 @@ public class SyncTransformer
 	// now create methods of java.lang.Object.
 	HClass HCobj = l.forName("java.lang.Object");
 	HClassMutator objM = HCobj.getMutator();
+	int mod = Modifier.FINAL | Modifier.NATIVE;
 	this.HMrVersion = objM.addDeclaredMethod
 	    ("getReadableVersion", new HClass[] { HCcommitrec }, HCobj);
-	HMrVersion.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
+	HMrVersion.getMutator().addModifiers(mod);
 	this.HMrwVersion = objM.addDeclaredMethod
 	    ("getReadWritableVersion", new HClass[] { HCcommitrec }, HCobj);
-	HMrwVersion.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
+	HMrwVersion.getMutator().addModifiers(mod);
 	this.HMrCommitted = objM.addDeclaredMethod
 	    ("getReadCommittedVersion", new HClass[0], HCobj);
-	HMrCommitted.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
+	HMrCommitted.getMutator().addModifiers(mod);
 	this.HMwCommitted = objM.addDeclaredMethod
 	    ("getWriteCommittedVersion", new HClass[0], HCobj);
-	HMwCommitted.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
+	HMwCommitted.getMutator().addModifiers(mod);
 	this.HMmkVersion = objM.addDeclaredMethod
 	    ("makeCommittedVersion", new HClass[0], HCobj);
-	HMmkVersion.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
-	this.HMwriteFlag = objM.addDeclaredMethod
-	    ("writeFieldFlag", new HClass[] { HCfield },
+	HMmkVersion.getMutator().addModifiers(mod);
+	this.HMsetReadFlag = objM.addDeclaredMethod
+	    ("setFieldReadFlag", new HClass[] { HCfield, HClass.Int },
 	    HClass.Void);
-	HMwriteFlag.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
-	this.HMwriteFlagA = objM.addDeclaredMethod
-	    ("writeArrayElementFlag", new HClass[] { HClass.Int, HCclass },
+	HMsetReadFlag.getMutator().addModifiers(mod);
+	this.HMsetWriteFlag = objM.addDeclaredMethod
+	    ("setFieldWriteFlag", new HClass[] { HCfield },
 	    HClass.Void);
-	HMwriteFlagA.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
+	HMsetWriteFlag.getMutator().addModifiers(mod);
+	this.HMsetWriteFlagA = objM.addDeclaredMethod
+	    ("setArrayElementWriteFlag", new HClass[] { HClass.Int, HCclass },
+	    HClass.Void);
+	HMsetWriteFlagA.getMutator().addModifiers(mod);
 	// create a pair of instance fields in java.lang.Object for
 	// statistics gathering.
 	if (useUniqueRWCounters) {
@@ -236,6 +253,13 @@ public class SyncTransformer
 		if (!(it.next() instanceof HMethod)) it.remove();
 	    // create fieldoracle
 	    this.fieldOracle = new GlobalFieldOracle(ch, mainM, myroots, hcf);
+	}
+	// set up our BitFieldNumbering (and create array-check fields in
+	// all array classes)
+	this.bfn = new BitFieldNumbering(l);
+	for (Iterator it=ch.classes().iterator(); it.hasNext(); ) {
+	    HClass hc = (HClass) it.next();
+	    if (hc.isArray()) bfn.arrayBitField(hc);
 	}
 
 	// fixup code factory for 'known safe' methods.
@@ -538,10 +562,15 @@ public class SyncTransformer
 	    handlers = handlers.tail;
 	    if (handlers==null) q1.remove(); // unneccessary.
 	}
-	Edge readNonTrans(Edge out, HCodeElement src,
+	// at entry, we've already done the (initial?) read, of the
+	// original object.  The 'out' edge is the edge immediately
+	// following the read, and we'll return an edge on which we
+	// want to insert a "correcting" read of the versioned object.
+	// all this method does is insert code to determine whether
+	// we need to execute the correcting read or bypass it.
+	Edge readCheck(Edge out, HCodeElement src,
 			  Temp dst, Temp objectref, HClass type) {
-	    out = CounterFactory.spliceIncrement(qf, out,
-						 "synctrans.read_nt");
+	    // if value read==FLAG, then do correcting read.
 	    Temp t0 = new Temp(tf, "readnt");
 	    out = addAt(out, makeFlagConst(qf, src, t0, type));
 	    out = addAt(out, new OPER(qf, src, cmpop(type), t0,
@@ -550,6 +579,12 @@ public class SyncTransformer
 	    out = addAt(out, q0);
 	    Quad q1 = new PHI(qf, src, new Temp[0], 2);
 	    out = addAt(out, q1);
+	    // transactional case: put another read here.
+	    if (handlers!=null) return Quad.addEdge(q0, 1, q1, 1);
+	    // non-transactional case: call fixup method first.
+	    // call 'getReadCommittedVersion' for the most recently
+	    // committed version of this object (probably the 'backup'
+	    // copy of the object)
 	    Quad q2 = new CALL(qf, src, HMrCommitted,
 			       new Temp[] { objectref },
 			       ts.versioned(objectref), retex,
@@ -566,30 +601,19 @@ public class SyncTransformer
 	    addChecks(q);
 	    if (noFieldModification || noArrayModification) return;
 	    addUniqueRWCounters(q.prevEdge(0), q, q.objectref(), true, true);
-	    if (handlers==null) { // non-transactional read
-		CounterFactory.spliceIncrement
-		    (qf, q.prevEdge(0), "synctrans.read_nt_array");
-		Edge e = readNonTrans(q.nextEdge(0), q,
-				      q.dst(), q.objectref(), q.type());
-		e = addArrayTypeCheck(e, q, ts.versioned(q.objectref()),
-				      q.type());
-		addAt(e, new AGET(qf, q, q.dst(),
-				  ts.versioned(q.objectref()),
-				  q.index(), q.type()));
-		// workaround for multi-dim arrays. yucky.
-		addArrayTypeCheck(q.prevEdge(0), q, q.objectref(), q.type());
-	    } else { // transactional read
-		CounterFactory.spliceIncrement
-		    (qf, q.prevEdge(0), "synctrans.read_t_array");
-		CounterFactory.spliceIncrement
-		    (qf, q.prevEdge(0), "synctrans.read_t");
-		AGET q0 = new AGET(qf, q, q.dst(),
-				   ts.versioned(q.objectref()),
-				   q.index(), q.type());
-		Quad.replace(q, q0);
-		addArrayTypeCheck(q0.prevEdge(0), q0, q0.objectref(),
-				  q0.type());
-	    }
+	    CounterFactory.spliceIncrement
+		(qf, q.prevEdge(0),(handlers==null) ?
+		 "synctrans.read_nt_array" : "synctrans.read_t_array");
+	    Edge e = readCheck(q.nextEdge(0), q,
+			       q.dst(), q.objectref(), q.type());
+	    e = addArrayTypeCheck(e, q, ts.versioned(q.objectref()),
+				  q.type());
+	    addAt(e, new AGET(qf, q, q.dst(),
+			      ts.versioned(q.objectref()),
+			      q.index(), q.type()));
+	    // workaround for multi-dim arrays. yucky.
+	    addArrayTypeCheck(q.prevEdge(0), q, q.objectref(), q.type());
+	    // done.
 	}
 	public void visit(GET q) {
 	    addChecks(q);
@@ -608,24 +632,32 @@ public class SyncTransformer
 		return;
 	    } else
 	    addUniqueRWCounters(q.prevEdge(0), q, q.objectref(), true, false);
-
-	    if (handlers==null) { // non-transactional read
-		Edge e = readNonTrans(q.nextEdge(0), q,
-				      q.dst(), q.objectref(),
-				      q.field().getType());
-		addAt(e, new GET(qf, q, q.dst(), q.field(),
-				 ts.versioned(q.objectref())));
-	    } else { // transactional read
-		CounterFactory.spliceIncrement
-		    (qf, q.prevEdge(0), "synctrans.read_t");
-		Quad.replace(q, new GET(qf, q, q.dst(), q.field(),
-					ts.versioned(q.objectref())));
-	    }
+	    CounterFactory.spliceIncrement
+		(qf, q.prevEdge(0),(handlers==null) ?
+		 "synctrans.read_nt_object" : "synctrans.read_t_object");
+	    Edge e = readCheck(q.nextEdge(0), q,
+			       q.dst(), q.objectref(),
+			       q.field().getType());
+	    addAt(e, new GET(qf, q, q.dst(), q.field(),
+			     ts.versioned(q.objectref())));
+	    // done.
 	}
+        // this routine does the necessary checks to see if any
+	// transactions need to be aborted as a result of a non-transactional
+	// write.  at entry, oldval contains the previous value of the
+	// field; if it is FLAG it means someone has written (or read?) this
+	// inside a transaction. if newval==FLAG, we need to create a
+	// (committed) version object to put this value in.
+	// readbit==1 implies that oldval==FLAG, apparently.
 	void writeNonTrans(Edge out, HCodeElement src, Temp objectref,
 			   Temp oldval, Temp newval, HClass type) {
-	    out = CounterFactory.spliceIncrement(qf, out,
-						 "synctrans.write_nt");
+	    // we only have to abort things if the field has been
+	    // *read* by a transaction.  If it's been written, we
+	    // can write to our special 'committed' version without
+	    // aborting anything.
+	    // XXX think about this one: obviously better to be able
+	    // to check just one flag, right?  can we gain anything
+	    // by making the 'read=0, field=FLAG' case special?
 	    Temp t0 = new Temp(tf, "writent");
 	    out = addAt(out, makeFlagConst(qf, src, t0, type));
 	    out = addAt(out, new OPER(qf, src, cmpop(type), oldval,
@@ -665,20 +697,16 @@ public class SyncTransformer
 	    addChecks(q);
 	    if (noFieldModification || noArrayModification) return;
 	    addUniqueRWCounters(q.prevEdge(0), q, q.objectref(), false, true);
+	    CounterFactory.spliceIncrement
+		(qf, q.prevEdge(0),(handlers==null) ?
+		 "synctrans.write_nt_array" : "synctrans.write_t_array");
 	    if (handlers==null) { // non-transactional write
-		CounterFactory.spliceIncrement
-		    (qf, q.prevEdge(0), "synctrans.write_nt_array");
 		Temp t0 = new Temp(tf, "oldval");
 		Edge in = q.prevEdge(0);
 		in = addArrayTypeCheck(in, q, q.objectref(), q.type());//workaround
 		in = addAt(in, new AGET(qf, q, t0, q.objectref(),
 					q.index(), q.type()));
 		writeNonTrans(in, q, q.objectref(), t0, q.src(), q.type());
-	    } else {
-		CounterFactory.spliceIncrement
-		    (qf, q.prevEdge(0), "synctrans.write_t");
-		CounterFactory.spliceIncrement
-		    (qf, q.prevEdge(0), "synctrans.write_t_array");
 	    }
 	    // both transactional and non-transactional write.
 	    ASET q0 = new ASET(qf, q, ts.versioned(q.objectref()),
@@ -703,16 +731,21 @@ public class SyncTransformer
 		return;
 	    } else
 	    addUniqueRWCounters(q.prevEdge(0), q, q.objectref(), false, false);
+	    CounterFactory.spliceIncrement
+		(qf, q.prevEdge(0),(handlers==null) ?
+		 "synctrans.write_nt_object" : "synctrans.write_t_object");
 
+	    // always write to 'versioned' copy of object (which may well
+	    // be the object itself).  In non-transactional case, we
+	    // need to read the field first and do special checks to
+	    // determine whether aborting some transaction in progress is
+	    // necessary.
 	    if (handlers==null) { // non-transactional write
 		Temp t0 = new Temp(tf, "oldval");
 		Edge in = q.prevEdge(0);
 		in = addAt(in, new GET(qf, q, t0, q.field(), q.objectref()));
 		writeNonTrans(in, q, q.objectref(), t0, q.src(),
 			      q.field().getType());
-	    } else {
-		CounterFactory.spliceIncrement
-		    (qf, q.prevEdge(0), "synctrans.write_t");
 	    }
 	    // both transactional and non-transactional write.
 	    Quad.replace(q, new SET(qf, q, q.field(),
@@ -750,8 +783,10 @@ public class SyncTransformer
 	    if (q.prevLength()!=1) {
 		Util.assert(co.createReadVersions(q).size()==0);
 		Util.assert(co.createWriteVersions(q).size()==0);
-		Util.assert(co.checkField(q).size()==0);
-		Util.assert(co.checkArrayElement(q).size()==0);
+		Util.assert(co.checkFieldReads(q).size()==0);
+		Util.assert(co.checkFieldWrites(q).size()==0);
+		Util.assert(co.checkArrayElementReads(q).size()==0);
+		Util.assert(co.checkArrayElementWrites(q).size()==0);
 		return;
 	    }
 	    Edge in = q.prevEdge(0);
@@ -764,6 +799,8 @@ public class SyncTransformer
 		Iterator it = (i==0) ? rS.iterator() : wS.iterator();
 		HMethod hm = (i==0) ? HMrVersion : HMrwVersion ;
 		while (it.hasNext()) {
+		    // for each temp, a call to 'getReadableVersion' or
+		    // 'getReadWritableVersion'.
 		    Temp t = (Temp) it.next();
 		    CALL q0= new CALL(qf, q, hm, new Temp[] { t, currtrans },
 		                      ts.versioned(t), retex,
@@ -779,20 +816,68 @@ public class SyncTransformer
 			 "synctrans."+((i==0)?"read":"write")+"_versions");
 		}
 	    }
-	    // do field checks where necessary.
-	    int skipped=0, done=0;
-	    for (Iterator it=co.checkField(q).iterator(); it.hasNext(); ) {
+	    // do field-read checks...
+	    for (Iterator it=co.checkFieldReads(q).iterator(); it.hasNext();) {
 		CheckOracle.RefAndField raf=(CheckOracle.RefAndField)it.next();
 		// skip check for fields unaccessed outside a sync context.
 		if (!fo.isUnsyncRead(raf.field) &&
 		    !fo.isUnsyncWrite(raf.field)) {
-		    skipped++;
+		    in = CounterFactory.spliceIncrement
+			(qf, in, "synctrans.field_read_checks_skipped");
 		    continue;
-		} else done++;
-		// create check code.
+		}
+		in = CounterFactory.spliceIncrement
+		    (qf, in, "synctrans.field_read_checks");
+		// create read check code (set read-bit to one).
+		// (check that read-bit is set, else call fixup code,
+		//  which will do atomic-set of this bit.)
+		BitFieldTuple bft = bfn.bfLoc(raf.field);
+		Temp t0 = new Temp(tf, "readcheck");
+		Temp t1 = new Temp(tf, "readcheck");
+		Quad q0 = new GET(qf, q, t0, bft.field, raf.objref);
+		Quad q1 = new CONST(qf, q, t1,
+				    new Integer(1<<bft.bit), HClass.Int);
+		Quad q2 = new OPER(qf, q, Qop.IAND, t0, new Temp[]{t0,t1});
+		Quad q3 = new OPER(qf, q, Qop.ICMPEQ, t0, new Temp[]{t0,t1});
+		Quad q4 = new CJMP(qf, q, t0, new Temp[0]);
+		Quad q5 = new PHI(qf, q, new Temp[0], 2);
+		in = addAt(in, q0);
+		in = addAt(in, q1);
+		in = addAt(in, q2);
+		in = addAt(in, q3);
+		in = addAt(in, 0, q4, 1);
+		in = addAt(in, q5);
+		// handle case that field is not already correct.
+		Quad q6 = new CONST(qf, q, t0, bft.field, HCfield);
+		Quad q7 = new CALL(qf, q, HMsetReadFlag,
+				   new Temp[] { raf.objref, t0, t1 },
+				   null, retex, false, false, new Temp[0]);
+		Quad q8 = new THROW(qf, q, retex);
+		Quad.addEdges(new Quad[] { q4, q6, q7 });
+		Quad.addEdge(q7, 0, q5, 1);
+		Quad.addEdge(q7, 1, q8, 0);
+		footer = footer.attach(q8, 0);
+		checkForAbort(q7.nextEdge(1), q, retex);
+		CounterFactory.spliceIncrement
+		    (qf, q6.prevEdge(0), "synctrans.field_read_checks_bad");
+	    }
+	    // do field-write checks...
+	    for (Iterator it=co.checkFieldWrites(q).iterator(); it.hasNext();){
+		CheckOracle.RefAndField raf=(CheckOracle.RefAndField)it.next();
+		// skip check for fields unaccessed outside a sync context.
+		if (!fo.isUnsyncRead(raf.field) &&
+		    !fo.isUnsyncWrite(raf.field)) {
+		    in = CounterFactory.spliceIncrement
+			(qf, in, "synctrans.field_write_checks_skipped");
+		    continue;
+		}
+		in = CounterFactory.spliceIncrement
+		    (qf, in, "synctrans.field_write_checks");
+		// create write check code (set field to FLAG).
+		// (check that field==FLAG is set, else call fixup code)
 		HClass ty = raf.field.getType();
-		Temp t0 = new Temp(tf, "fieldcheck");
-		Temp t1 = new Temp(tf, "fieldcheck");
+		Temp t0 = new Temp(tf, "writecheck");
+		Temp t1 = new Temp(tf, "writecheck");
 		Quad q0 = new GET(qf, q, t0, raf.field, raf.objref);
 		Quad q1 = makeFlagConst(qf, q, t1, ty);
 		Quad q2 = new OPER(qf, q, cmpop(ty), t1, new Temp[]{t0,t1});
@@ -805,7 +890,7 @@ public class SyncTransformer
 		in = addAt(in, q4);
 		// handle case that field is not already correct.
 		Quad q5 = new CONST(qf, q, t0, raf.field, HCfield);
-		Quad q7 = new CALL(qf, q, HMwriteFlag,
+		Quad q7 = new CALL(qf, q, HMsetWriteFlag,
 				   new Temp[] { raf.objref, t0 },
 				   null, retex, false, false, new Temp[0]);
 		Quad q8 = new THROW(qf, q, retex);
@@ -814,19 +899,69 @@ public class SyncTransformer
 		Quad.addEdge(q7, 1, q8, 0);
 		footer = footer.attach(q8, 0);
 		checkForAbort(q7.nextEdge(1), q, retex);
+		CounterFactory.spliceIncrement
+		    (qf, q5.prevEdge(0), "synctrans.field_write_checks_bad");
 	    }
-	    if (skipped > 0)
+	    // do array index read checks....
+	    for (Iterator it=co.checkArrayElementReads(q).iterator();
+		 it.hasNext(); ) {
+		// arrays have one check field (32 bits) which stand in
+		// (modulo 32) for all the elements in the array.
+		// we check that the appropriate read-bit is set, else
+		// call the fixup code, which will do an atomic-set of 
+		// the bit.
 		in = CounterFactory.spliceIncrement
-		    (qf, in, "synctrans.fieldchecks_skipped", skipped);
-	    if (done > 0)
-		in = CounterFactory.spliceIncrement
-		    (qf, in, "synctrans.fieldchecks", done);
-	    // do array index checks where necessary.
-	    for (Iterator it=co.checkArrayElement(q).iterator();it.hasNext();){
+		    (qf, in, "synctrans.element_read_checks");
 		CheckOracle.RefAndIndexAndType rit =
 		    (CheckOracle.RefAndIndexAndType) it.next();
-		Temp t0 = new Temp(tf, "arraycheck");
-		Temp t1 = new Temp(tf, "arraycheck");
+		HField arrayCheckField = bfn.arrayBitField
+		    (HClassUtil.arrayClass(qf.getLinker(), rit.type, 1));
+		Temp t0 = new Temp(tf, "arrayreadcheck");
+		Temp t1 = new Temp(tf, "arrayreadcheck");
+		Temp t2 = new Temp(tf, "arrayreadcheck");
+		Quad q0 = new GET(qf, q, t0, arrayCheckField, rit.objref);
+		Quad q1a= new CONST(qf, q, t1, new Integer(31), HClass.Int);
+		Quad q1b= new OPER(qf, q, Qop.IAND, t1,
+				   new Temp[]{ rit.index, t1 });
+		Quad q1c= new CONST(qf, q, t2, new Integer(1), HClass.Int);
+		Quad q1d= new OPER(qf, q, Qop.ISHL, t1, new Temp[]{t2, t1});
+		Quad q2 = new OPER(qf, q, Qop.IAND, t0, new Temp[]{t0,t1});
+		Quad q3 = new OPER(qf, q, Qop.ICMPEQ, t0, new Temp[]{t0,t1});
+		Quad q4 = new CJMP(qf, q, t0, new Temp[0]);
+		Quad q5 = new PHI(qf, q, new Temp[0], 2);
+		in = addAt(in, q0);
+		in = addAt(in, q1a);
+		in = addAt(in, q1b);
+		in = addAt(in, q1c);
+		in = addAt(in, q1d);
+		in = addAt(in, q2);
+		in = addAt(in, q3);
+		in = addAt(in, 0, q4, 1);
+		in = addAt(in, q5);
+		// handle case that field is not already correct.
+		Quad q6 = new CONST(qf, q, t0, arrayCheckField, HCfield);
+		Quad q7 = new CALL(qf, q, HMsetReadFlag,
+				   new Temp[] { rit.objref, t0, t1 },
+				   null, retex, false, false, new Temp[0]);
+		Quad q8 = new THROW(qf, q, retex);
+		Quad.addEdges(new Quad[] { q4, q6, q7 });
+		Quad.addEdge(q7, 0, q5, 1);
+		Quad.addEdge(q7, 1, q8, 0);
+		footer = footer.attach(q8, 0);
+		checkForAbort(q7.nextEdge(1), q, retex);
+		CounterFactory.spliceIncrement
+		    (qf, q6.prevEdge(0), "synctrans.element_read_checks_bad");
+	    }
+	    // do array index write checks.
+	    for (Iterator it=co.checkArrayElementWrites(q).iterator();
+		 it.hasNext(); ) {
+		// (check that element==FLAG is set, else call fixup code)
+		in = CounterFactory.spliceIncrement
+		    (qf, in, "synctrans.element_write_checks");
+		CheckOracle.RefAndIndexAndType rit =
+		    (CheckOracle.RefAndIndexAndType) it.next();
+		Temp t0 = new Temp(tf, "arraywritecheck");
+		Temp t1 = new Temp(tf, "arraywritecheck");
 		Quad q0 = new AGET(qf, q, t0, rit.objref, rit.index, rit.type);
 		Quad q1 = makeFlagConst(qf, q, t1, rit.type);
 		Quad q2 = new OPER(qf, q, cmpop(rit.type), t1,
@@ -840,7 +975,7 @@ public class SyncTransformer
 		in = addAt(in, q4);
 		// handle case that array element is not already correct.
 		Quad q6 = new CONST(qf, q, t1, rit.type, HCclass);
-		Quad q7 = new CALL(qf, q, HMwriteFlagA,
+		Quad q7 = new CALL(qf, q, HMsetWriteFlagA,
 				   new Temp[] { rit.objref, rit.index, t1 },
 				   null, retex, false, false, new Temp[0]);
 		Quad q8 = new THROW(qf, q, retex);
@@ -849,6 +984,8 @@ public class SyncTransformer
 		Quad.addEdge(q7, 1, q8, 0);
 		footer = footer.attach(q8, 0);
 		checkForAbort(q7.nextEdge(1), q, retex);
+		CounterFactory.spliceIncrement
+		    (qf, q6.prevEdge(0), "synctrans.element_write_checks_bad");
 	    }
 	}
 	private Edge addUniqueRWCounters(Edge in, HCodeElement src, Temp Tobj,
@@ -891,6 +1028,12 @@ public class SyncTransformer
 	    return q2.nextEdge(0);
 	}
 	// make a non-static equivalent field for static fields.
+	// (IDEAS: new object type for static fields of each class.
+	//  then only one static field per class, which points to
+	//  the (singleton) object-of-fields.  One dereference, but
+	//  from this point the fields behave 'normally'.  Since the
+	//  single static field is now final, no transactions need
+	//  be done on it.) [maybe this is a separate pre-pass]
 	private HField nonstatic(HField hf) {
 	    if (!hf.isStatic()) return hf;
 	    HClass hc = hf.getDeclaringClass();

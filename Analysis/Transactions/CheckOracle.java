@@ -14,7 +14,7 @@ import java.util.Set;
  * field and object version lookups and checks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CheckOracle.java,v 1.1.2.3 2001-01-16 19:31:33 cananian Exp $
+ * @version $Id: CheckOracle.java,v 1.1.2.4 2001-10-29 16:58:54 cananian Exp $
  */
 abstract class CheckOracle {
     
@@ -26,13 +26,21 @@ abstract class CheckOracle {
      *  versions should be created just before <code>hce</code> is executed. */
     public abstract Set createWriteVersions(HCodeElement hce);
     /** Returns a <code>Set</code> of <code>RefAndField</code> tuples
-     *  which should be checked just before <code>hce</code> is
+     *  which should be read-checked before <code>hce</code> is
      *  executed. */
-    public abstract Set checkField(HCodeElement hce);
+    public abstract Set checkFieldReads(HCodeElement hce);
+    /** Returns a <code>Set</code> of <code>RefAndField</code> tuples
+     *  which should be write-checked before <code>hce</code> is
+     *  executed. */
+    public abstract Set checkFieldWrites(HCodeElement hce);
     /** Returns a <code>Set</code> of <code>RefAndIndexAndType</code>
      *  typles which indicate indexed array elements which should be
-     *  checked just before <code>hce</code> is executed.  */
-    public abstract Set checkArrayElement(HCodeElement hce);
+     *  read-checked before <code>hce</code> is executed.  */
+    public abstract Set checkArrayElementReads(HCodeElement hce);
+    /** Returns a <code>Set</code> of <code>RefAndIndexAndType</code>
+     *  typles which indicate indexed array elements which should be
+     *  write-checked before <code>hce</code> is executed.  */
+    public abstract Set checkArrayElementWrites(HCodeElement hce);
 
     class RefAndField {
 	public final Temp objref;

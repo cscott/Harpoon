@@ -19,7 +19,7 @@ import java.util.Set;
  * on the results of a client <code>CheckOracle</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DominatingCheckOracle.java,v 1.1.2.2 2001-01-26 21:37:49 cananian Exp $
+ * @version $Id: DominatingCheckOracle.java,v 1.1.2.3 2001-10-29 16:58:54 cananian Exp $
  */
 class DominatingCheckOracle extends AnalysisCheckOracle {
     /** Creates a <code>DominatingCheckOracle</code>. */
@@ -45,6 +45,7 @@ class DominatingCheckOracle extends AnalysisCheckOracle {
 	/* nothing passes MONITORENTER or MONITOREXIT */
 	if (hce instanceof MONITORENTER || hce instanceof MONITOREXIT)
 	    checks.clear();
+	// XXX: nothing should pass Object.wait() either.
 	/* recurse down dom tree */
 	for (Iterator it=new ArrayIterator(dt.children(hce)); it.hasNext(); )
 	    propagate((HCodeElement)it.next(), dt, co, checks);
