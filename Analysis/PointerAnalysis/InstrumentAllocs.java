@@ -32,7 +32,7 @@ import java.util.Map;
  * <code>InstrumentAllocs</code> adds counters to each allocation site.
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentAllocs.java,v 1.1.2.7 2000-11-13 20:12:38 bdemsky Exp $
+ * @version $Id: InstrumentAllocs.java,v 1.1.2.8 2000-11-14 18:26:42 bdemsky Exp $
  */
 public class InstrumentAllocs extends MethodMutator implements java.io.Serializable {
     int count;
@@ -138,13 +138,16 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 			    Quad.addEdge(qcall,0,qphi,0);
 			    Quad.addEdge(qcall,1,qphi,1);
 			    Quad qq=q;
+			    /*
+			      Shouldn't need to actually place our stuff after
+			      initializer call statement...
 			    if (q instanceof NEW)
 				while (!(qq instanceof CALL)) {
 				    if (qq instanceof ALENGTH)
 					qq=qq.next(0).next(0).next(1);
 				    else
 					qq=qq.next(0);
-				}
+				} */
 			    Quad.addEdge(qphi, 0,qq.next(0),qq.nextEdge(0).which_pred());
 			    Quad.addEdge(qq,0,qcall,0);
 			}
