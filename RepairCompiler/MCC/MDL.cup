@@ -593,7 +593,7 @@ expr ::=
 	{:
 	debugMessage(PRODSTRING);
 	ParseNode bool = (new ParseNode("expr", parser.curLine(3))).addChild("operator");
-	bool.addChild("op").addChild("and");
+	bool.addChild("op").addChild("or");
 	bool.addChild("left", parser.curLine(3)).addChild(leftexpr);
 	bool.addChild("right", parser.curLine(1)).addChild(rightexpr);
 	RESULT = bool.getRoot();
