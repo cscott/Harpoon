@@ -44,7 +44,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.23 2000-10-20 18:54:28 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.24 2000-10-22 19:42:20 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -421,6 +421,9 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 				 Map ckc, Map cmu, Map cmp) {
 	if (done.contains(m) || W.contains(m)) return;
 	discoverClass(m.getDeclaringClass(), W, done, ckc, cmu, cmp);
+	// Thread.start() implicitly causes a call to Thread.run()
+	if (m.equals(HMthrStart))
+	    discoverMethod(HMthrRun, W, done, ckc, cmu, cmp);
 	// okay, push this method.
 	methodPush(m, W, done, cmu, cmp);
     }
