@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import harpoon.Util.Collections.MapSet;
+
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -16,7 +18,7 @@ import java.util.Set;
  * a <code>HashMap</code> as the backing store.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HashEnvironment.java,v 1.1.2.3 2000-10-19 22:13:33 cananian Exp $
+ * @version $Id: HashEnvironment.java,v 1.1.2.4 2001-11-04 02:34:05 cananian Exp $
  */
 public class HashEnvironment extends AbstractMap
     implements Environment {
@@ -90,8 +92,10 @@ public class HashEnvironment extends AbstractMap
     }
 
     // --- EVIL EVIL SET VIEW
+    /** The <code>Set</code> returned by this method is really a
+     *  <code>MapSet</code>. */
     public Set entrySet() {
-	return new AbstractSet() {
+	return new AbstractMapSet() {
 	    public int size() { return HashEnvironment.this.size; }
 	    public Iterator iterator() {
 		return new FilterIterator(HashEnvironment.this.back.entrySet().iterator(), new FilterIterator.Filter() {
@@ -108,8 +112,12 @@ public class HashEnvironment extends AbstractMap
 		    }
 		});
 	    }
+	    public Map asMap() { return HashEnvironment.this; }
 	};
     }
+    // needed to make the anonymous class declaration above work.
+    static abstract class AbstractMapSet extends AbstractSet
+	implements MapSet { }
 	
     private static class Mark implements Environment.Mark {
 	final int i;

@@ -19,7 +19,7 @@ import java.util.Set;
  * correctly extends <code>Map</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GenericInvertibleMultiMap.java,v 1.1.2.3 2001-11-04 00:23:29 cananian Exp $
+ * @version $Id: GenericInvertibleMultiMap.java,v 1.1.2.4 2001-11-04 02:34:14 cananian Exp $
  */
 public class GenericInvertibleMultiMap implements InvertibleMultiMap {
     private final MultiMap map, imap;
@@ -89,9 +89,11 @@ public class GenericInvertibleMultiMap implements InvertibleMultiMap {
     public boolean containsValue(Object value) {
 	return imap.containsKey(value);
     }
+    /** The <code>Set</code> returned by this method is actually an
+     *  instance of <code>MultiMapSet</code>. */
     public Set entrySet() {
 	// value field of entry set contains a single value.
-	return new AbstractSet() {
+	return new AbstractMultiMapSet() {
 		public Iterator iterator() {
 		    final Iterator it = map.entrySet().iterator();
 		    return new Iterator() {
@@ -126,8 +128,16 @@ public class GenericInvertibleMultiMap implements InvertibleMultiMap {
 		    return GenericInvertibleMultiMap.this.remove
 			(me.getKey(), me.getValue());
 		}
+		public Map asMap() { return asMultiMap(); }
+		public MultiMap asMultiMap() {
+		    return GenericInvertibleMultiMap.this;
+		}
 	    };
     }
+    // this declaration is necessary to make the anonymous class above work.
+    static abstract class AbstractMultiMapSet extends AbstractSet
+	implements MultiMapSet { }
+
     public boolean equals(Object o) {
 	return map.equals(o);
     }

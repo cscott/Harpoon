@@ -31,7 +31,7 @@ import java.util.HashSet;
  *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.9 2001-11-04 00:26:57 cananian Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.10 2001-11-04 02:34:15 cananian Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -364,12 +364,14 @@ public class GenericMultiMap implements MultiMap {
 
     /** Returns a set view of the mappings contained in this map.
 	This view is fully modifiable; the elements are
-	<code>Map.Entry</code>s.
+	<code>Map.Entry</code>s.  The returned set is actually a
+	<code>MultiMapSet</code>, from which you can get back the
+	original <code>MultiMap</code>.
     */
     public Set entrySet() {
 	return entrySet;
     }
-    private final Set entrySet = new EntrySet();
+    private final MultiMapSet entrySet = new EntrySet();
     
     // here are the class declarations that make the key set, entry set and
     // values collection work.
@@ -402,8 +404,11 @@ public class GenericMultiMap implements MultiMap {
 	    GenericMultiMap.this.clear();
 	}
     }
-    class EntrySet extends CollectionView implements Set {
+    class EntrySet extends CollectionView implements Set, MultiMapSet {
 	EntrySet() { super(ENTRY); }
+	// these are methods in MultiMapSet
+	public Map asMap() { return asMultiMap(); }
+	public MultiMap asMultiMap() { return GenericMultiMap.this; }
 	// these methods aren't in the collections interface
 	// (from classpath impl of AbstractSet)
 	public boolean equals(Object o) {
