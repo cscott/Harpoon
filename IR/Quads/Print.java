@@ -19,7 +19,7 @@ import java.util.Map;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.4 2002-04-10 03:05:15 cananian Exp $
+ * @version $Id: Print.java,v 1.5 2003-07-10 02:18:23 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
@@ -142,11 +142,11 @@ abstract class Print  {
 	    // DEFAULT branch for HEADER is 1-edge. For all others, 0-edge.
 	    int j = (ql[i] instanceof HEADER)?1:0;
 	    if (i<ql.length-1 && ql[i].next(j) != ql[i+1]) {
-		if (ql[i].next(0) instanceof FOOTER)
+		if (ql[i].next(j) instanceof FOOTER)
 		    indent(pw, null,
-			   "[footer at "+labels.get(ql[i].next(0))+"]");
+			   "[footer at "+labels.get(ql[i].next(j))+"]");
 		else
-		    indent(pw, null, "goto "+labels.get(ql[i].next(0)));
+		    indent(pw, null, "goto "+labels.get(ql[i].next(j)));
 	    }
 	    // printAfter callback.
 	    callback.printAfter(pw, ql[i]);
