@@ -344,7 +344,7 @@ done
 
 if [ x$install_me == xy ]; then
   export IMAGEREC=ImageRec;
-done
+fi
 
 cd Classpath
 echo Building Classpath...
