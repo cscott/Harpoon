@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.11 1998-09-09 17:43:36 cananian Exp $
+% $Id: quads.tex,v 1.12 1998-09-09 23:44:55 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn,twoside]{article}
 
@@ -8,8 +8,8 @@
 \newcommand{\harpoon}{harpoon}%{activeWorld}
 
 \author{C.~Scott~Ananian}
-\title{\Harpoon\ Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.11 $ $}
+\title{\Harpoon{} Project Compiler Intermediate Representation}
+\date{\today \\ $ $Revision: 1.12 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -25,7 +25,7 @@
 
 \section{Conceptual Overview}
 
-The \Harpoon\ project compiler front-end translates java bytecode files
+The \Harpoon{} project compiler front-end translates Java bytecode files
 into a class-oriented intermediate representation which is intended to
 be easier to analyze and manipulate than bytecode assembly language.
 The intermediate representation is control-flow-graph structured, with
@@ -103,7 +103,7 @@ constraints, but leads to code executable by real processors.
 
 Unless you are implementing code generator backends, it is unlikely
 you will need to so replace \phifunction{s} or view them as anything
-but magical n-ary operators.  However, it is important to observe and 
+but magical $n$-ary operators.  However, it is important to observe and 
 maintain the ordering relationship between control-flow edges and 
 \phifunction{} arguments during transformation and analysis.
 
@@ -157,7 +157,7 @@ explicit in the intermediate representation.  For example, null
 pointer and array bounds checks are inserted before object and array
 references, and division by zero is explicitly checked before every
 division operation.  These explicit and comprehensive checks are
-intended to be targeted by agressive optimizations designed to
+intended to be targeted by aggressive optimizations designed to
 removed those cases with are redundant, impossible, or otherwise
 unnecessary.  The design goal of the IR is that \textit{no} IR
 statement should throw an implicit exception under any 
@@ -300,9 +300,7 @@ object $t_2$ in variable $t_1$. $t_2$ is not necessary for static fields.
 \texttt{true} (1) in $t_1$ if object $t_2$ is an instance of class
 $c$, or \texttt{false} (0) otherwise.
 %
-\item[MOVE($t_1$, $t_2$)] Copys the value in $t_2$ into $t_1$.
-The current implementation makes \texttt{MOVE} a subclass of
-\texttt{OPER}, with opcode string \texttt{"move"}.
+\item[MOVE($t_1$, $t_2$)] Copies the value in $t_2$ into $t_1$.
 %
 \item[NEW($t$, $c$)] Create a new uninitialized instance of class $c$,
 storing a reference in $t$.  A class constructor must be invoked using
