@@ -26,7 +26,7 @@ $(TARGET): $(OBJS)
 # instruction which is specially interpreted by our ISA simulator
 %.o: %.s
 	@perl -pi'.bak' -e 's/(\w+)lda ([^,]*,[^,]*),\s*(\d+)/.set noreorder ; ph 1, $$3 ; $$1 $$2; .set reorder/;' -e 's/(\w+)da ([^,]*,[^,]*),\s*(\d+)/.set noreorder ; ph 0, $$3 ; $$1 $$2; .set reorder/;' $<
-	$(AS) -o $@ $<
+	$(AS) $(ASFLAGS) -o $@ $<
 clean:
 	$(RM) $(OBJS)
 wipe: clean
