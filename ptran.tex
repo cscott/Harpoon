@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.49 2002-08-01 19:21:48 cananian Exp $
+% $Id: ptran.tex,v 1.50 2002-09-23 00:14:28 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.49 $ $}
+\date{\today \\ $ $Revision: 1.50 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -17,6 +17,48 @@
 \begin{document}
 \bibliographystyle{abbrv}
 \maketitle
+\section{Motivation}
+Typical Java code makes extensive use of classes encapsulating abstract
+collections of objects: hashes, sets, and lists.  As has been
+previously noted, analyzing a collection using standard pointer-analysis
+techniques ``not only adds extra cost to the analysis, but also causes
+a context-insensitive points-to analysis to be less precise.  For
+example, data stored in one Vector instance may be returned by
+invoking \texttt{elementAt()} on another Vector instance because these
+data are referenced by the return statement of \texttt{elementAt()},
+which is shared by all instances of Vector'' \cite[p. 75]{379676}.
+The underlying cause is over-conservative may-aliasing of the data
+structures backing the collection.  Context-sensitivity helps, but the
+cost is often too high: Figure~\ref{fig:lotsa_context} shows a typical
+code path in \texttt{java.util.Vector} which requires four levels of
+context-sensitivity to disambiguate.  This amount of
+context-sensitivity applied to an entire program would severely
+curtail the scalability of the analysis, due to the exponential blowup
+in problem complexity which context-sensitivity entails.  Furthermore,
+it is impossible to know how much context-sensitivity is ``enough''
+for any particular program.  Every simple wrapper class around a
+collection increases the required context-sensitivity.
+
+We would like to disambiguate the backing stores used in collections
+frameworks (including in user-authored collections classes) without
+the large cost of indiscriminate context-sensitivity.  Furthermore, we
+would like this to work even for tree-based collections and iterator
+objects for collections (see Figure~\ref{fig:tree} and
+Figure~\ref{fig:iterator}).
+
+Our strategy will be to identify \newterm{companion objects}, which
+are objects related by a particular aliasing relationship.  Iterators
+will be \newterm{from-companions} of their related collections, and
+backing stores will be \newterm{to-companions} of the collection
+class.  By invoking additional context-sensitivity for companion
+objects, we will ensure that undesired may-aliasing does not occur.
+
+We will first define companion objects, and then introduce the notion
+of \newterm{singular values}.  We will then define an approximation to
+companionship based on approximated singularity.  We will then show
+how to construct a compositional pointer analysis which uses
+\newterm{possible companions} to guide its treatment of call sites.
+
 \section{Terms} % should be section 0?
 We will use $v\in V$ for variables and $s\in S$ for statements.  The
 function $\func{use}:S\to 2^V$ returns the set of variables whose
@@ -770,6 +812,8 @@ analysis we describe is sufficient to break some of their predicates.
 This could be used to construct a deobfuscator.  (These techniques
 have been used in at least one commerical obfuscator \cite{humper02}.)
 
+Liang et al resort to ``user-provided models'' for precision in
+analyzing collections and maps in Java code \cite{379676}.
 
 \bibliography{harpoon}
 \end{document}
