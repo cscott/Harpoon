@@ -41,10 +41,10 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_killlocal
   (JNIEnv *, jclass, jstring);
 
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_returnmethod
-  (JNIEnv *, jclass);
+  (JNIEnv *, jclass, jobject);
 
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_invokemethod
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jobject, jint);
 
 
 #ifdef __cplusplus

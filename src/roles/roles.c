@@ -127,11 +127,16 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_killlocal(JNIEnv *env, jclas
   (*env)->ReleaseCharArrayElements(env, carray, strchr, JNI_ABORT);
 }
 
-JNIEXPORT void JNICALL Java_java_lang_RoleInference_returnmethod(JNIEnv *env, jclass cls) {
-  printf("RM:\n");
+JNIEXPORT void JNICALL Java_java_lang_RoleInference_returnmethod(JNIEnv *env, jclass cls, jobject obj) {
+  jlong objuid;
+  if (obj!=NULL)
+    objuid=(*env)->GetLongField(env, obj, UIDfd);
+  else
+    objuid=-1;
+  printf("RM: %lld\n", objuid);
 }
 
-JNIEXPORT void JNICALL Java_java_lang_RoleInference_invokemethod(JNIEnv *env, jclass cls, jobject method) {
+JNIEXPORT void JNICALL Java_java_lang_RoleInference_invokemethod(JNIEnv *env, jclass cls, jobject method, jint isstatic) {
   char * methodstr, * classstr, * methoddesc;
   methodstr=FNI_GetMethodInfo(method)->methodID->name;
   methoddesc=FNI_GetMethodInfo(method)->methodID->desc;
@@ -139,7 +144,7 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_invokemethod(JNIEnv *env, jc
   classstr=FNI_GetClassInfo(FNI_WRAP(FNI_GetMethodInfo(method)->declaring_class_object))->name;
 
 
-  printf("IM: %s %s %s\n",classstr, methodstr,methoddesc);
+  printf("IM: %s %s %s %ld\n",classstr, methodstr,methoddesc,isstatic);
 }
 
 static jsize utf8length(const jchar *buf, jsize len) {
