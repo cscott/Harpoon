@@ -192,7 +192,16 @@ $label:
 ## Print the Functions
 ## First include the defines for a0, t8, etc.
 print "#include <regdef.h>\n";
-print_ll_shifts();
+## XXX This are wrong, try shifting by 32!
+# print_ll_shifts();
+################################################################
+## More long long support
+Print_Asm_Jacket("__ll_lshift", "ll_lshift", [d,f,od], 0);
+Print_Asm_Jacket("__ll_rshift", "ll_rshift", [d,f,od], 0);
+Print_Asm_Jacket("__ull_rshift", "ull_rshift", [d,f,od], 0);
+Print_Asm_Jacket("__ll_div", "ll_div", [d,d,od], 0);
+Print_Asm_Jacket("__ll_mul", "ll_mul", [d,d,od], 0);
+Print_Asm_Jacket("__ll_rem", "ll_rem", [d,d,od], 0);
 
 ################################################################
 ## Arithmetic
@@ -252,8 +261,3 @@ Print_Asm_Jacket("__d2i", "doubleToWord", [d,of], 0);
 Print_Asm_Jacket("__f2d", "singleToDouble", [f,od], 0);
 Print_Asm_Jacket("__d2f", "doubleToSingle", [d,of], 0);
 
-################################################################
-## More long long support
-Print_Asm_Jacket("__ll_div", "ll_div", [d,d,od], 0);
-Print_Asm_Jacket("__ll_mod", "ll_mod", [d,d,od], 0);
-Print_Asm_Jacket("__ll_rem", "ll_rem", [d,d,od], 0);

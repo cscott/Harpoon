@@ -8,8 +8,8 @@ LIBS =
 # automake complains.
 noinst_LTLIBRARIES = libheader.la libfooter.la
 
-libheader_la_SOURCES = header.S segments.h
-libfooter_la_SOURCES = lookup.S dispatch.S footer.S Flex_MIPS.S \
+libheader_la_SOURCES = segments.h
+libfooter_la_SOURCES = lookup.S dispatch.S Flex_MIPS.S \
 floatem.c long_long_support.c
 
 Flex_MIPS.S: Flex_MIPS.pl

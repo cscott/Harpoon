@@ -1,21 +1,37 @@
 typedef unsigned int uint32;
+typedef long long int64;
 typedef unsigned long long uint64;
 
 void
-ll_div( uint64* aPtr, uint64* bPtr, uint64* zPtr)
+ll_lshift( int64* aPtr, uint32* bPtr, int64* zPtr)
+{
+   *zPtr = *aPtr << *bPtr;
+}
+void
+ll_rshift( int64* aPtr, uint32* bPtr, int64* zPtr)
+{
+   *zPtr = *aPtr >> *bPtr;
+}
+void
+ull_rshift( uint64* aPtr, uint32* bPtr, int64* zPtr)
+{
+   *zPtr = *aPtr >> *bPtr;
+}
+
+void
+ll_div( int64* aPtr, int64* bPtr, int64* zPtr)
 {
    *zPtr = *aPtr / *bPtr;
 }
 
 void
-ll_mod( uint64* aPtr, uint64* bPtr, uint64* zPtr)
+ll_mul( int64* aPtr, int64* bPtr, int64* zPtr)
 {
-   *zPtr = *aPtr % *bPtr;
+   *zPtr = *aPtr * *bPtr;
 }
 
 void
-ll_rem( uint64* aPtr, uint64* bPtr, uint64* zPtr)
+ll_rem( int64* aPtr, int64* bPtr, int64* zPtr)
 {
-   ll_mod(aPtr, bPtr, zPtr);
-   *zPtr = *aPtr - (*bPtr * *zPtr);
+   *zPtr = *aPtr % *bPtr;
 }
