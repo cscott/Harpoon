@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.35 2001-11-26 17:59:48 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.36 2001-11-27 17:46:47 bdemsky Exp $
  */
 public final class LoopOptimize {
 
@@ -121,11 +121,12 @@ public final class LoopOptimize {
 	    //Lets fix them...
 	    //As soon as someone gives me something to do that...
 	    //After doing optimizations we need to clean up any deadcode...
-	    DeadCode.optimize(hcnew, null/*throw away AllocationInformation*/);
+	    
 
-	    hcnew=new LowQuadSSI(new MyLowQuadNoSSA(hcnew));
 
-	    //hcnew.print(new java.io.PrintWriter(System.out, true));
+	    MyLowQuadNoSSA hctemp=new MyLowQuadNoSSA(hcnew);
+	    hcnew=new LowQuadSSI(hctemp);
+	    //DeadCode.optimize(hcnew, null/*throw away AllocationInformation*/);
 	}
 	
 
@@ -304,6 +305,8 @@ public final class LoopOptimize {
 
 		Temp initial=operands[1-flag];
 		//Call the method to build us a new compare
+		//System.out.println("Compare statement "+q);
+		//System.out.println("induction="+induction+"  t="+t);
 		newpoper=movecompare(hcnew, header, initial, induction, indvar,t,q, flag, new LoopMap(hc,lp,ssitossamap));
 		break;
 	    }
@@ -320,7 +323,7 @@ public final class LoopOptimize {
 
 	//Set up pointers for linking in nodes for providing new test constant
 	Quad header=hcnew.quadMap(oheader);
-	Temp initial=hcnew.tempMap(oinitial);
+	Temp initial=hcnew.tempMap(loopmap.tempMap(oinitial));
 	Temp indvar=hcnew.tempMap(oindvar);
 	POPER q=(POPER)hcnew.quadMap(oq);
 
@@ -839,6 +842,11 @@ public final class LoopOptimize {
 				  null);
 		//System.out.println("Creating derivation2: "+addresult+" : "+merged);
 		hcnew.addDerivation(addresult, merged);
+
+		//Fix derivation out of phi function...just need to choose one of the branches and we are good...
+		//System.out.println("Creating derivationX: "+hcnew.tempMap(indvariable)+" : "+merged);
+
+		hcnew.addDerivation(hcnew.tempMap(indvariable), Derivation.DList.clone(merged));
 		if (addquad.changed())
 		    changed=true;
 	    }
