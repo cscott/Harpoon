@@ -1,7 +1,7 @@
 #! /usr/bin/perl
 # -*-Perl-*-
 #
-#ident	"@(#)cvs/contrib:$Name:  $:$Id: commit_prep,v 1.2 1998-10-18 09:21:43 cananian Exp $"
+#ident	"@(#)cvs/contrib:$Name:  $:$Id: commit_prep,v 1.3 1998-10-18 09:31:01 cananian Exp $"
 #
 # Perl filter to handle pre-commit checking of files.  This program
 # records the last directory where commits will be taking place for
@@ -210,6 +210,21 @@ if ($check_id != 0) {
 	print STDERR "\n";
 	exit(1);
     }
+}
+
+# Create a diff for each file name passed in.
+if ($track_diffs != 0) {
+    @diff_txt = ();
+    foreach $arg (@files) {
+	open(STATUS, "-|") ||
+	    exec 'cvs', '-nQq', 'diff', '-u', $arg;
+	while (<STATUS>) {
+	    chop;
+	    push(@diff_txt, $_);
+	}
+	close(STATUS);
+    }
+    print STDERR join("\n", @diff_txt), "\n";
 }
 
 # Record this directory as the last one checked.  This will be used
