@@ -52,16 +52,7 @@ class FileOutputStream extends OutputStream
      * @since      JDK1.0
      */
     public FileOutputStream(String name) throws IOException {
-	SecurityManager security = System.getSecurityManager();
-	if (security != null) {
-	    security.checkWrite(name);
-	}
-	try {
-	    fd = new FileDescriptor();
-	    open(name);
-	} catch (IOException e) {
-	    throw new FileNotFoundException(name);
-	}
+	this(name,false);
     }
 
     /**
