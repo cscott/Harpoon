@@ -2,16 +2,18 @@
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
-ALLDOCS=design bibnote readnote quads pldi
+ALLDOCS=design bibnote readnote quads pldi99
 
 all: $(ALLDOCS:=.ps)
-preview: pldi-xdvi
+preview: pldi99-xdvi
 
 # bibtex dependencies
 quads.dvi: harpoon.bib
 design.dvi: harpoon.bib
 bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
+# lots dependencies for the pldi paper
+pldi99.dvi: harpoon.bib pldi99-intro.tex pldi99-abstract.tex pldi99-body.tex
 
 # Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
 %.dvi %.aux: %.tex

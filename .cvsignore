@@ -1,0 +1,8 @@
+*.ps
+*.blg
+*.bbl
+*.log
+*.aux
+*.dvi
+harpoon_.bib
+unread_.bib

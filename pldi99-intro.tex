@@ -1,3 +1,6 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: pldi99-intro.tex,v 1.2 1998-10-06 05:25:44 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 
 Static Single Assignment (SSA) form transforms the
@@ -40,7 +43,7 @@ the advantages of SSA form for predicated analyses,
 or analyses which use the predicates in conditional
 branches to extract analysis information.
 The insight behind this representation is the use
-of $\sigma$ functions, which produce new names
+of \sigfunction{}s, which produce new names
 for variables at splits in the control flow.
 The analysis can then associate information
 with variable names, and propagate
@@ -50,8 +53,8 @@ definitions to uses.
 In addition to these practical properties, 
 SSI form has several appealing 
 theoretical properties. It is always possible 
-to place $\sigma$ functions so that the
-number of $\sigma$ functions is linear in the size
+to place \sigfunction{}s so that the
+number of \sigfunction{}s is linear in the size
 of the original input program. Furthermore, our
 placement algorithm also runs in linear time. 
 Finally, and perhaps most importantly, SSI form
