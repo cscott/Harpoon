@@ -93,7 +93,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.14 2002-08-08 17:51:38 cananian Exp $
+ * @version $Id: SAMain.java,v 1.15 2002-09-10 15:07:07 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -599,6 +599,18 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	callGraph=null;// memory management.
  
+	// virtualize any uncallable methods using the final classhierarchy
+	// (this keeps us from later getting link errors)
+	hcf = new harpoon.Analysis.Quads.Virtualize(hcf, classHierarchy)
+	    .codeFactory();
+	// non-virtualize any final methods -- this used to be done
+	// in the low-quad translation, but doing so is unsafe unless
+	// you've got a classHierarchy handy -- you could inadventently
+	// create a new dangling reference to an uncallable method.
+	hcf=new harpoon.Analysis.Quads.Nonvirtualize
+	    (hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy),
+	     classHierarchy).codeFactory();
+
 	if (LOOPOPTIMIZE) {
 	    // XXX: you might have to add a TypeSwitchRemover here, if
 	    //      LoopOptimize don't handle TYPESWITCHes. --CSA

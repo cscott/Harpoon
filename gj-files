@@ -97,6 +97,7 @@ Analysis/Quads/QuadClassHierarchy.java
 Analysis/Quads/QuadInterferenceGraph.java
 Analysis/Quads/QuadLiveness.java
 Analysis/Quads/SSICallGraph.java
+Analysis/Quads/Virtualize.java
 Analysis/ReachingDefs.java
 Analysis/ReachingDefsAltImpl.java
 Analysis/ReachingDefsCachingImpl.java

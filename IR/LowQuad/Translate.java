@@ -30,7 +30,7 @@ import java.util.Map;
  * <code>LowQuadSSI</code>/<code>LowQuadNoSSA</code> translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.2 2002-02-25 21:04:40 cananian Exp $
+ * @version $Id: Translate.java,v 1.3 2002-09-10 15:06:55 cananian Exp $
  */
 final class Translate { // not public
     public static final Quad translate(final LowQuadFactory qf,
@@ -159,7 +159,7 @@ final class Translate { // not public
 	public final void visit(harpoon.IR.Quads.CALL q) {
 	    boolean isVirtual;
 	    Quad q0, qN;
-	    if (!q.isVirtual() || fm.isFinal(q.method())) {
+	    if (!q.isVirtual() /*|| fm.isFinal(q.method())*/) {
 		// non-virtual or final.  Method address is constant.
 		isVirtual = false;
 		q0 = qN = new PMCONST(qf, q, extra(), q.method());
