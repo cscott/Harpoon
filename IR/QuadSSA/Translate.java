@@ -32,7 +32,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.90.4.2 1998-11-25 20:29:11 nkushman Exp $
+ * @version $Id: Translate.java,v 1.90.4.3 1998-12-01 16:38:27 mfoltz Exp $
  */
 
 class Translate  { // not public.
@@ -267,7 +267,7 @@ class Translate  { // not public.
 
 	Temp[] locals = new Temp[bytecode.getMaxLocals()];
 	// we may use as many as 5 'extra' variables above stack top.
-	Temp[] stack  = new Temp[bytecode.getMaxStack() + 5];
+	Temp[] stack  = new Temp[bytecode.getMaxStack() + 105];
 
 	// Initialize stack names
 	for (int i=0; i < stack.length; i++)
