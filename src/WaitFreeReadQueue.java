@@ -18,6 +18,9 @@ package javax.realtime;
  *  <p>
  *  The <code>write()</code> method of this queue is synchronized and
  *  may be called by more than one writer and will block on queue empty.
+ *  <p>
+ *  This class is provided for compliance with the RTSJ, see
+ *  <code>Queue</code>.
  */
 public class WaitFreeReadQueue {
 

@@ -5,6 +5,9 @@ package javax.realtime;
 
 /** The wait-free classes facilitate communication and synchronization
  *  between instances of <code>RealtimeThread</code> and <code>Thread</code>.
+ *  <p>
+ *  This class is provided for compliance with the RTSJ, see
+ *  <code>Queue</code> for details.
  */
 public class WaitFreeDequeue {
 
