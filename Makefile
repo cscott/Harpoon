@@ -280,6 +280,18 @@ carDemoIPAQ.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
+carDemoIPAQ2.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
 RTJ.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@echo Generating $@ file...
@@ -359,6 +371,9 @@ jars: clean doc
 	@$(JAR) cfm carDemoIPAQ.jar src/manifest/carDemoIPAQ.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > carDemoIPAQ.jar.TIMESTAMP
 
+	@echo Generating carDemoIPAQ2.jar file...
+	@$(JAR) cfm carDemoIPAQ2.jar src/manifest/carDemoIPAQ2.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > carDemoIPAQ2.jar.TIMESTAMP
 
 	@echo Generating ns.jar file...
 	@$(JAR) cfm ns.jar src/manifest/ns.jar.MF $(JDIRS)
@@ -373,6 +388,8 @@ jars: clean doc
 	@date '+%-d-%b-%Y at %r %Z.' > GUI.jar.TIMESTAMP
 	@rm -rf tank.gz.*
 	@rm -rf $(JDIRS)
+
+cardemo: carDemoReceiverStub.jar carDemoTrackerStub.jar carDemoEmbeddedATR.jar carDemoGroundATR.jar carDemoIPAQ.jar carDemoIPAQ2.jar
 
 imagerec.tgz: $(RELEASE) $(CONTRIB)
 	@echo Generating $@ file.
@@ -424,3 +441,7 @@ run: doc imagerec.jar
 run-nodoc: imagerec.jar
 	@echo Running the program...
 	@$(JAVA) -jar imagerec.jar
+
+run-ipaq: carDemoIPAQ.jar
+	@echo Running the program...
+	@$(JAVA) -jar carDemoIPAQ.jar

@@ -1,0 +1,3 @@
+Manifest-Version: 1.2
+Created-By: Reuben Sterling (benster@mit.edu)
+Main-Class: imagerec/CarDemoIPAQMain2
