@@ -1,0 +1,2 @@
+gcc -c list.c -o list.o
+g++ list.o libchecker.a -o list

@@ -1,0 +1,3 @@
+[], sizeof(HEAD)=1
+[], sizeof(TAIL)=1
+[forall e in ELEMS],!sizeof(e.NEXT)>1 or e.NEXT.PREV=e

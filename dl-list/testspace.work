@@ -1,0 +1,5 @@
+set HEAD(Node):
+set ELEMS(Node):
+set TAIL(Node):
+NEXT: Node -> Node (1->1)
+PREV: Node -> Node (1->1)
