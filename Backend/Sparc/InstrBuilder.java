@@ -17,7 +17,7 @@ import java.util.List;
  * <code>Generic.InstrBuilder</code> - for the Sparc architecture.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrBuilder.java,v 1.1.2.4 1999-11-04 09:04:24 andyb Exp $
+ * @version $Id: InstrBuilder.java,v 1.1.2.5 1999-11-04 09:15:08 andyb Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
     private final RegFileInfo regFileInfo;
@@ -32,8 +32,6 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
     public List makeLoad(Temp r, int offset, Instr template) {
 	if (tempBuilder.isTwoWord(r)) {
 	    // Should do some stuff later to convert this to ldd?
-	    // Also slightly bugged - I think d0l and d0h might
-	    // be backwards.
 	    InstrMEM load1 =
 		new InstrMEM(template.getFactory(), template,
 			     "ld [`s0 + " + (-4*offset) + "], `d0l",
