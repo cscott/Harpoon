@@ -31,6 +31,13 @@ import harpoon.Analysis.CallGraph;
 import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.Analysis.Quads.CallGraphImpl2;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
+
+import harpoon.Analysis.MetaMethods.MetaAllCallers;
+import harpoon.Analysis.MetaMethods.MetaCallGraph;
+import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
+import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Util.BasicBlocks.CachingBBConverter;
+
 import harpoon.Backend.Maps.NameMap;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.Default;
@@ -46,6 +53,7 @@ import gnu.getopt.Getopt;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -76,10 +84,14 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.120 2000-11-16 08:05:40 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.121 2000-12-05 17:13:08 bdemsky Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
+    static boolean EVENTDRIVEN = false;
+    static boolean recycle = false;
+    static boolean optimistic = false;
+
     static boolean PRINT_ORIG = false;
     static boolean PRINT_DATA = false;
     static boolean PRE_REG_ALLOC = false;
@@ -148,6 +160,7 @@ public class SAMain extends harpoon.IR.Registration {
     public static void do_it() {
 
       Realtime.setupObjects(linker);
+      MetaCallGraph mcg=null;
 
 	if (SAMain.startset!=null)
 	    hcf=harpoon.IR.Quads.ThreadInliner.codeFactory(hcf,SAMain.startset, SAMain.joinset);
@@ -193,7 +206,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 	    hcf=new harpoon.Analysis.Quads.Nonvirtualize
 	    	(hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy),
-		 classHierarchy).codeFactory();
+	    	 classHierarchy).codeFactory();
 
 	    if (!USE_OLD_CLINIT_STRATEGY) {
 		// transform the class initializers using the class hierarchy.
@@ -206,6 +219,24 @@ public class SAMain extends harpoon.IR.Registration {
 		// recompute the hierarchy after transformation.
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
+
+
+
+	    if (EVENTDRIVEN) {
+		CachingBBConverter bbconv=new CachingBBConverter(hcf);
+		
+		// costruct the set of all the methods that might be called by 
+		// the JVM (the "main" method plus the methods which are called by
+		// the JVM before main) and next pass it to the MetaCallGraph
+		// constructor. [AS]
+		Set mroots = extract_method_roots(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+		mroots.add(mainM);
+		mcg = new MetaCallGraphImpl(bbconv, classHierarchy, roots);
+		
+		
+	    }
+
+
 	    if (INSTRUMENT_ALLOCS) {
 		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
 		AllocationNumbering an =
@@ -235,13 +266,32 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	}
 
-	if (true) {
+	HMethod mconverted=null;
+	if (EVENTDRIVEN) {
+	    if (!OPTIMIZE) {
+		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf); 
+	    }
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf,true);
+	    HCode hc = hcf.convert(mainM);
+	    harpoon.Analysis.EventDriven.EventDriven ed = 
+		new harpoon.Analysis.EventDriven.EventDriven((harpoon.ClassFile.CachingCodeFactory)hcf, hc, classHierarchy, linker,optimistic,recycle);
+	    mainM=ed.convert(mcg);
+	    mcg=null; /*Memory management*/
+	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    Set roots = new java.util.HashSet
+		(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	    // and our main method is a root, too...
+	    roots.add(mainM);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    callGraph=new CallGraphImpl2(classHierarchy, hcf);
+	} else if (true) {
 	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	    callGraph = new CallGraphImpl2(classHierarchy, hcf);
 	} else {
 	    callGraph = new CallGraphImpl(classHierarchy, hcf);//less precise
 	}
+
 
 	switch(BACKEND) {
 	case STRONGARM_BACKEND:
@@ -552,16 +602,25 @@ public class SAMain extends harpoon.IR.Registration {
     
     protected static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:IDOPFHR::LlABthq1::C:r:");
+	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:EfpIDOPFHR::LlABthq1::C:r:");
 	
 	int c;
 	String arg;
 	while((c = g.getopt()) != -1) {
 	    switch(c) {
-       case 't': // Realtime Java extensions (WSB)
-         linker = new Relinker(Loader.systemLinker);
-         Realtime.REALTIME_JAVA = true;
-         break;
+	    case 'E':
+		EVENTDRIVEN=true;
+		break;
+	    case 'p':
+		optimistic=true;
+		break;
+	    case 'f':
+		recycle=true;
+		break;
+	    case 't': // Realtime Java extensions (WSB)
+		linker = new Relinker(Loader.systemLinker);
+		Realtime.REALTIME_JAVA = true;
+		break;
 	    case 's':
 		arg=g.getOptarg();
 		try {
@@ -721,6 +780,15 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("-R");
 	out.println("\tOutputs Global Register Allocated Instr IR for <class>");
 
+	out.println("-E");
+	out.println("EventDriven transformation");
+	
+	out.println("-p");
+	out.println("Optimistic option for EventDriven");
+
+	out.println("-f");
+	out.println("Recycle option for EventDriven.  Environmentally (f)riendly");
+	    
 	out.println("-A");
 	out.println("\tSame as -OPR");
 
@@ -757,5 +825,17 @@ public class SAMain extends harpoon.IR.Registration {
 
     protected static void info(String str) {
 	if(OUTPUT_INFO) out.println(str);
+    }
+
+    // extract the method roots from the set of all the roots
+    // (methods and classes)
+    private static Set extract_method_roots(Collection roots){
+	Set mroots = new HashSet();
+	for(Iterator it = roots.iterator(); it.hasNext(); ){
+	    Object obj = it.next();
+	    if(obj instanceof HMethod)
+		mroots.add(obj);
+	}
+	return mroots;
     }
 }
