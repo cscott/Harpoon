@@ -2040,7 +2040,7 @@ class interfOuterThread extends Thread {
 // ----------------------------------------------------------------------------
 // MAIN
 // ----------------------------------------------------------------------------
-class main { 
+class water { 
   public static simparm parms;
   public static ensemble liquid;
   

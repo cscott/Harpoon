@@ -1977,7 +1977,7 @@ class AdvanceThread extends Thread {
   }
 }
   
-class main { 
+class barnes { 
   public static parms simparms = new parms();
   public static NBodySystem Nbody = new NBodySystem();
 
