@@ -1,0 +1,59 @@
+% algorithm for computing nested single-entry single-exit regions.
+\begin{verbatim}
+Procedure nested_sese (G: CFG)
+{
+  /* initialize */
+  for all nodes n of G, do
+    mark(n) := false
+  for all edges e of G, do {
+    EntryRegion(e) := nil
+    ExitRegion(e) := nil
+  }
+
+  /* order edges within cycle-equivalency classes by dominance */
+  for each edge e of G, in depth first order, do
+    CQList(EQClass(e)) := append(CQList(EQClass(e)), e)
+
+  /* get all canonical SESE regions */
+  for all equivalency classes q, do {
+    l := CQList(q)
+    while ( size (l) > 1), do {
+      EntryRegion(head(l))      := < head(l), head(tail(l)) >
+      ExitRegion(head(tail(l))) := < head(l), head(tail(l)) >
+    }
+  }
+
+  /* determine proper nesting of SESE regions */
+  visit_node(START, top-region)
+}
+
+Procedure visit_node(n:node, r:Region) {
+  if mark(n) = false, then {
+    mark(n) := true
+
+    /* record mapping from n to r */
+    SESE(n) := r
+    Nodes(r):= append(Nodes(r), n)
+
+    for each edge <n, n'> from n to n', do {
+      r1 := EntryRegion(<n, n'>)
+      r2 := ExitRegion(<n, n'>)
+
+      if r = r1 or r = r2, then
+        rN := Parent(r) /* exiting current region */
+      else
+        rN := r
+
+      if r1 != nil and r1 != r, then {
+        LinkRegion(rN, r1) /* entering new region */
+        rN := r1
+      }
+      if r2 != nil and r2 != r, then {
+        LinkRegion(rN, r2) /* entering new region */
+        rN := r2
+      }
+      visit_node(n', rN)
+    }
+  }
+}
+\end{verbatim}

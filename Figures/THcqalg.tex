@@ -39,14 +39,14 @@ Procedure cycle_equiv (G: CFG)
 |     add <n, hi2> to capping backedges list of hi2;
     }
 
-    /* Compute Class (n) */
+    /* Compute NQClass (n) */
     if n is a representative node, then {
       if RecentSize (top (BList(n))) != size (BList(n)), then {
         /* start a new equivalence class */
         RecentSize (top (BList(n))) := size (BList(n));
         RecentClass (top (BList(n))) := new-class-name();
       }
-      Class (n) := RecentClass (top (Blist(n)));
+      NQClass (n) := RecentClass (top (Blist(n)));
     }
   } /* for each node */
 }

@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.23 1999-06-11 16:33:10 cananian Exp $
+% $Id: thesis.tex,v 1.24 1999-06-11 19:14:29 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.23 $ $}
+\date{\today \\ $ $Revision: 1.24 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.23 $ $}{$ $Revision: 1.23 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.24 $ $}{$ $Revision: 1.24 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -359,6 +359,14 @@ termed \emph{not representative}; the node $n'$ in $G'$ is said to be
 correspondence must be recorded during the transformation so we may
 properly attribute the cycle-equivalency properties of $n'$ to $n$
 later.
+\begin{myfigure}
+\begin{center}
+\input{Figures/THundir}
+\end{center}
+\caption{Transformation from directed to undirected graph
+	 (from \cite{johnson93:sese}).}
+\label{fig:CQundir}
+\end{myfigure}
 \item \textbf{Perform a pre-order numbering of nodes in $\mathbf{G'}$.}
 This is done with a simple depth-first search of $G'$.  When we visit
 a node $a_i$ or $a_o$, we prefer to visit $a'$ before any other
@@ -372,29 +380,26 @@ DFS spanning tree.
 The above steps form an undirected graph $G'$ from the control-flow
 graph $G$.  The remainder of the cycle-equivalency algorithm is
 presented in figure \ref{fig:CQalg}, with the above procedure
-corresponding to the statement \texttt{G':=Preprocess(G)}.
-Lines corrected from the presentation in \cite{johnson93:sese} as
-indicated in the figure with a vertical bar in the left margin.
-The datatype \texttt{BracketList} and the node and edge properties
-used in the algorithm are defined in figure \ref{fig:CQtypes}.
-The interested reader is encouraged to consult \cite{johnson93:sese}
-for additional detail on data structures and representations.%
-\fixme{Um, change to compute \emph{edge} equivalency as well as
-\emph{node} equivalency.  Merge algorithms from \cite{johnson93:sese}
-and \cite{johnson94:pst}.}
-
-\begin{myfigure}
-\begin{center}
-\input{Figures/THundir}
-\end{center}
-\caption{Transform from directed to undirected graph
-	 (from \cite{johnson93:sese}).}
-\label{fig:CQundir}
-\end{myfigure}
+corresponding to the statement \texttt{G':=Preprocess(G)}.  The
+algorithm has been corrected from the published version in
+\cite{johnson93:sese}; in addition it has been extended to compute
+both node and edge equivalencies (in effect, merging the algorithm of
+\cite{johnson94:pst}).  Lines modified from the presentation in
+\cite{johnson93:sese} are indicated in the figure with a vertical bar
+in the left margin.  The datatype \texttt{BracketList} and the node
+and edge properties used in the algorithm are described in figure
+\ref{fig:CQtypes}.  The interested reader is encouraged to consult
+\cite{johnson93:sese} for additional detail on these data structures
+and representations.%
+\fixme{Um, change to compute \emph{edge}
+equivalency as well as \emph{node} equivalency.  Merge algorithms from
+\cite{johnson93:sese} and \cite{johnson94:pst}.}
+Figure \ref{fig:CQex} shows cycle-equivalent regions in a sample
+control-flow graph.
 
 \begin{myfigure}\small
 \input{Figures/THcqdata}
-\caption{Datatypes and operation`s used in the cycle-equivalency algorithm.}
+\caption{Datatypes and operation's used in the cycle-equivalency algorithm.}
 \label{fig:CQtypes}
 \end{myfigure}
 
@@ -405,6 +410,15 @@ and \cite{johnson94:pst}.}
 \label{fig:CQalg}
 \end{myfigure}
 
+\subsubsection{Single-Entry Single-Exit Regions}
+
+\begin{myfigure}\small\linespread{0.75}
+\input{Figures/THsesealg}
+\caption{Computing nested SESE regions.}
+\label{fig:SESEalg}
+\end{myfigure}
+
+\subsubsection{Program Structure Tree}
 \textbf{Rest of algorithm: construct PST, then compute variable
 liveness.  Traverse the tree from bottom up, adding phi/sigmas if:
 the variable is used or defined inside the PST block, and the variable
