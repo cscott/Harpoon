@@ -19,6 +19,7 @@ import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.Typed;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempFactory;
 import harpoon.Temp.Label;
 import harpoon.Util.Util;
 
@@ -32,7 +33,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.14 1999-11-29 09:31:52 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.15 1999-11-30 02:35:34 andyb Exp $
  */
 %%
     private Instr root;
@@ -41,7 +42,9 @@ import java.util.Set;
     private final RegFileInfo regfile;
 
     // short variable names for commonly used register temps
-    private Temp r0, r1, r8, r9;
+    private Temp r0, r1, r8, r9, r10, r11;
+
+    private Map codeGenTempMap;
 
     public CodeGen(Frame frame) {
         super(frame);
@@ -50,6 +53,8 @@ import java.util.Set;
         r1 = regfile.getRegister(1);
         r8 = regfile.getRegister(8);
         r9 = regfile.getRegister(9);
+        r10 = regfile.getRegister(10);
+        r11 = regfile.getRegister(11);
     }
 
     private Instr emit(Instr i) {
@@ -63,7 +68,7 @@ import java.util.Set;
     // Lots of variations on emit() to make it a bit friendlier
     // to use in the patterns below.
 
-    // The main variabtion - this is the only one which should
+    // The main variation - this is the only one which should
     // call emit(Instr) directly - all others should go
     // through this one.
     private Instr emit(HCodeElement root, String assem,
@@ -108,8 +113,16 @@ import java.util.Set;
         return emit(new InstrEXIT(instrFactory, root));
     }
 
-    // AAA - FIX BELOW THIS LINE
+    private Temp makeTemp(Typed ROOT, Temp orig, TempFactory tf) {
+        Temp newTemp = (Temp) codeGenTempMap.get(orig);    
+        if (newTemp == null) {
+            newTemp = frame.getTempBuilder().makeTemp(ROOT, tf);
+            codeGenTempMap.put(orig, newTemp);
+        }
+        return newTemp;
+    }
 
+    // AAA - To Do
     public Instr procFixup(HMethod hm, Instr instr, int stackspace,
                            Set usedRegisters) {
         return null;
@@ -140,7 +153,7 @@ import java.util.Set;
 	          Temp[] dst, Temp[] src) {
 	    super(inf, source, assem, dst, src);
 	}
-	/** FIXME: How does Instr represent LabelLists? */
+	/** AAA: How does Instr represent LabelLists? */
     }
 
     private class InstrENTRY extends InstrDIRECTIVE {
@@ -202,6 +215,7 @@ import java.util.Set;
        root = null; 
        last = null;
        this.instrFactory = inf;
+       codeGenTempMap = new HashMap();
 }%
 
 %end with %{
@@ -296,7 +310,15 @@ BINOP<f,d>(ADD, e1, UNOP(NEG, e2))=r %{
 }%
 
 BINOP<l>(MUL, e1, e2) = r %{
-    /* AAA - to be implemented. */
+    emit (ROOT, "mov `s0h, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r9 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0h, `d0\n", new Temp[] { r10 }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r11 }, new Temp[] { e2 });
+    emit (ROOT, "call __muldi3\n",
+          new Temp[] { r1 }, new Temp[] { r8, r9, r10, r11 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r8 });
+    emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r9 });
 }%
 
 BINOP<i,p>(MUL, e1, e2) = r %{
@@ -314,7 +336,15 @@ BINOP<f,d>(MUL, e1, e2)=r %{
 }%
 
 BINOP<l>(DIV, e1, e2) = r %{
-    /* AAA - to be implemented. */
+    emit (ROOT, "mov `s0h, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r9 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0h, `d0\n", new Temp[] { r10 }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r11 }, new Temp[] { e2 });
+    emit (ROOT, "call __divdi3\n", 
+          new Temp[] { r1 }, new Temp[] { r8, r9, r10, r11 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r8 });
+    emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r9 });
 }%
 
 BINOP<i,p>(DIV, e1, e2) = r %{
@@ -332,7 +362,15 @@ BINOP<f,d>(DIV, e1, e2)=r %{
 }%
 
 BINOP<l>(REM, e1, e2) = r %{
-    /* AAA - to be implemented. */
+    emit (ROOT, "mov `s0h, `d0\n", new Temp[] { r8 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r9 }, new Temp[] { e1 });
+    emit (ROOT, "mov `s0h, `d0\n", new Temp[] { r10 }, new Temp[] { e2 });
+    emit (ROOT, "mov `s0l, `d0\n", new Temp[] { r11 }, new Temp[] { e2 });
+    emit (ROOT, "call __moddi3\n",
+          new Temp[] { r1 }, new Temp[] { r8, r9, r10, r11 });
+    emitDELAYSLOT (ROOT);
+    emit (ROOT, "mov `s0, `d0h\n", new Temp[] { r }, new Temp[] { r8 });
+    emit (ROOT, "mov `s0, `d0l\n", new Temp[] { r }, new Temp[] { r9 });
 }%
 
 BINOP<i,p>(REM, e1, e2) = r %{
@@ -547,6 +585,16 @@ CALL(retval, retex, func, arglist, handler) %pred %( !ROOT.isTailCall )% %{
     emitDIRECTIVE(ROOT, "\t@ coming soon: CALL support\n");
 }%
 
+CJUMP(e, true_label, false_label) %{
+    emitCC (ROOT, "cmp `s0, 0\n", null, new Temp[] { e });
+    emitCC (ROOT, "bne " + true_label + "\n", null, null); /* AAA - target */
+    emitDELAYSLOT (ROOT);
+
+    /* should be able to optimize these away. */
+    emitCC (ROOT, "ba " + false_label + "\n", null, null); /* AAA - target */
+    emitDELAYSLOT (ROOT);
+}%
+
 CONST<l,d>(c)=r %{
     long val = (ROOT.type() == Type.LONG)
                ? c.longValue()
@@ -639,6 +687,23 @@ EXP(e1) %{
     /* throw away temp e1 (not used) */
 }%
 
+JUMP(NAME(l)) %{
+    emit (ROOT, "b " + l + "\n", null, null); /* AAA - target list?! */
+    emitDELAYSLOT (ROOT);
+}%
+
+JUMP(BINOP(ADD, e1, e2)) %{
+    /* AAA - target list?! */
+    emit (ROOT, "jmpl `s0+`s1, %g0\n", null, new Temp[] { e1, e2 });
+    emitDELAYSLOT (ROOT);
+}%
+
+JUMP(e1) %{
+    /* AAA - target list?! */
+    emit (ROOT, "jmpl `s0, %g0\n", null, new Temp[] { e1 });
+    emitDELAYSLOT (ROOT);
+}%
+
 LABEL(l) %{
     emitLABEL (ROOT, l.toString()+":\n", ((LABEL) ROOT).label);
 }%
@@ -672,7 +737,7 @@ MEM<i,p>(e)=r %{
 }%
 
 MEM<l>(e)=r %{
-    emit (ROOT, "ldd [`s0], `d0l\n", new Temp[] { r }, new Temp[] { e });
+    emit (ROOT, "ldd [`s0], `d0h\n", new Temp[] { r }, new Temp[] { e });
 }%
 
 MEM<f>(e)=r %{
@@ -680,7 +745,7 @@ MEM<f>(e)=r %{
 }%
 
 MEM<d>(e)=r %{
-    emit (ROOT, "lddf [`s0], `d0l\n", new Temp[] { r }, new Temp[] { e });
+    emit (ROOT, "lddf [`s0], `d0h\n", new Temp[] { r }, new Temp[] { e });
 }%
 
 MEM<u:8>(e) = r %{
@@ -723,22 +788,22 @@ MOVE(MEM<l>(e), src) %{
 /* AAA - look at these 
 
 MOVE(MEM(CONST<l,i>(c)), e) %pred %( is13bit(c) )% %{
- emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s0l, ["+c+"]\n",
+ emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s0, ["+c+"]\n",
           new Temp[] {}, new Temp[] { e });
 }%
 
 MOVE(MEM(BINOP(ADD, CONST<l,i>(c), e1)), e2) %pred %( is13bit(c) )% %{
- emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s1l, [`s0+"+c+"]\n",
+ emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s1, [`s0+"+c+"]\n",
           new Temp[] {}, new Temp[] { e1, e2 });
 }%
 
 MOVE(MEM(BINOP(ADD, e1, CONST<l,i>(c))), e2) %pred %( is13bit(c) )% %{
- emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s1l, [`s0+"+c+"]\n",
+ emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s1, [`s0+"+c+"]\n",
           new Temp[] {}, new Temp[] { e1, e2 });
 }%
 
 MOVE(MEM(BINOP(ADD, e1, e2)), e3) %{
- emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s2l, [`s0+`s1]\n",
+ emitMEM (ROOT, "st"+suffix((Typed)ROOT.dst)+" `s2, [`s0+`s1]\n",
           new Temp[] {}, new Temp[] { e1, e2, e3 });
 }%
 
@@ -840,7 +905,7 @@ SEGMENT(TEXT) %{
 }%
 
 TEMP<p,i,f,l,d>(id) = i %{
-    i = frame.getTempBuilder().makeTemp(ROOT, inf.tempFactory());
+    i = makeTemp(ROOT, id, inf.tempFactory());
 }%
 
 THROW(val, handler) %{
@@ -915,36 +980,4 @@ UNOP(_2F, e) = r
     /* AAA - this is broken. need to do loads and stores, can't
        move directly from fp to normal registers. */
     emit (ROOT, "fitos `s0, `d0\n", new Temp[] { r }, new Temp[] { e });
-}%
-
-// OLD STUFF BELOW THIS LINE
-
-JUMP(NAME(l)) %{
- emit (ROOT, "b "+l+"\n", null, null); /* AAA - target list?! */
- emitDELAYSLOT (ROOT);
-}%
-
-JUMP(BINOP(ADD, e1, e2)) %{
- emit (ROOT, "jmpl `s0+`s1, %g0\n", 
-      null,  new Temp[] { e1, e2 }); /* AAA - target list?! */
- emitDELAYSLOT (ROOT);
-}%
-
-JUMP(e1) %{
- emit (ROOT, "jmpl `s0, %g0\n", 
-       null, new Temp[] { e1 }); /* AAA - target list?! */
- emitDELAYSLOT (ROOT);
-}%
-
-// patterns with a CJUMP at their root.
-
-CJUMP(e, true_label, false_label) %{
- emitCC (ROOT, "cmp `s0, 0\n", 
-         null,  new Temp[] { e });
- emitCC (ROOT, "bne "+true_label+"\n", null, null); /*target!?*/
- emitDELAYSLOT (ROOT);
-
- /* the next two lines can hopefully be left out. */
- emitCC (ROOT, "ba "+false_label+"\n", null, null); /*target?!*/
- emitDELAYSLOT (ROOT);
 }%
