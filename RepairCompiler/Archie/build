@@ -1,9 +1,0 @@
- #!/bin/bash
-
-java -jar MCC.jar specs/freeciv
-g++ -g -O9 -c calltool.cc -o calltool.o
-g++ SimpleHash.cc -c -o SimpleHash.o
-
-rm libchecker.a > /dev/null
-ar -r libchecker.a SimpleHash.o calltool.o
-ranlib libchecker.a
