@@ -28,7 +28,7 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.8 1999-08-12 08:02:12 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.9 1999-08-12 17:55:46 bdemsky Exp $
  */
 final class ReHandler {
     // entry point.
@@ -347,7 +347,6 @@ final class ReHandler {
 	boolean reset;
 	HashMap phimap;
 	HashMap oldphimap;
-	boolean oldflag;
 	Quad last;
 	boolean flag;
 
@@ -363,7 +362,6 @@ final class ReHandler {
 	    this.phimap=new HashMap();
 	    this.last=null;
 	    this.oldphimap=null;
-	    this.oldflag=false;
 	}
 
 	private Temp remap(Temp orig) {
@@ -378,12 +376,10 @@ final class ReHandler {
 	    last=null;
 	    reset=true;
 	    oldphimap=null;
-	    oldflag=false;
 	}
 
 	private void standard(Quad q) {
 	    last=q;
-	    oldflag=false;
 	    flag=true;
 	}
 
@@ -393,10 +389,7 @@ final class ReHandler {
 
 	private void weird(Quad q) {
 	    if (anyhandler!=null) {
-		if (oldflag)
-		    handlermap.add(callquad, new HandInfo(true, anyhandler, anyedge, new HashMap(oldphimap)));
-		else
-		    handlermap.add(callquad, new HandInfo(true, anyhandler, anyedge, new HashMap(phimap)));
+		handlermap.add(callquad, new HandInfo(true, anyhandler, anyedge, new HashMap(oldphimap)));
 		anyhandler=null;
 		anyedge=0;
 	    }
@@ -432,13 +425,11 @@ final class ReHandler {
 	public void visit(PHI q) {
 	    Util.assert(last!=null);
 	    int ent=last.nextEdge(0).which_succ();
-	    oldphimap=new HashMap(phimap);
 	    for (int i=0;i<q.numPhis();i++) {
 		phimap.put(q.dst(i),remap(q.src(i,ent)));
 		phimap.remove(q.src(i,ent));
 	    }
 	    standard(q);
-	    oldflag=true;
 	}
 
 	public void visit(OPER q) {
@@ -497,6 +488,7 @@ final class ReHandler {
 			//fix********
 			System.out.println("1**");
 			handlermap.add(callquad,new HandInfo(false, q.next(1), q.nextEdge(1).which_pred(), new HashMap(phimap)));
+			oldphimap=new HashMap(phimap);	
 			anyhandler=q.next(0);
 			anyedge=q.nextEdge(0).which_pred();
 		    } else {
@@ -505,10 +497,10 @@ final class ReHandler {
 			System.out.println("2**");
 			handlermap.add(callquad, 
 				       new HandInfo((HClass)callmap.get(q.test()), q.next(1), q.nextEdge(1).which_pred(),new HashMap(phimap)));
+			oldphimap=new HashMap(phimap);
 			anyhandler=q.next(0);
 			anyedge=q.nextEdge(0).which_pred();
 		    }
-		    oldflag=false;
 		} else weird(q);
 	}
     }
