@@ -21,7 +21,7 @@ import java.util.Set;
  * and gets most of the egregious dead vars.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Prune.java,v 1.5 2002-07-16 20:37:32 cananian Exp $
+ * @version $Id: Prune.java,v 1.6 2002-08-05 18:35:43 cananian Exp $
  */
 class Prune {
     private final static boolean DEBUG=false;
@@ -76,14 +76,14 @@ class Prune {
 	    // (or the running time, hopefully!)
 
 	    UniqueVector worklist = new UniqueVector();
-	    // order nodes in pre-order dfs.
+	    // order nodes in reverse post-order.
 	    worklist.add(hc.getRootElement());
 	    for (int i=0; i<worklist.size(); i++) {
 		Quad q = (Quad) worklist.get(i);
-		for (int j=0; j<q.nextLength(); j++)
+		for (int j=q.nextLength()-1; j>=0; j--)
 		    worklist.add(q.next(j));
 	    }
-	    // now post-order dfs is just the reverse of the pre-order dfs.
+	    // reverse order of worklist to get post-order dfs.
 	    // so, do knownDeadInto() in that order.
 	    for (int i=worklist.size()-1; i>=0; i--) {
 		Quad q = (Quad) worklist.get(i);
