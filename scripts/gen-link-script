@@ -37,7 +37,7 @@ cat > $tmpsed <<-__EOF__
 	  /^[ ]*[*]([.]text[.][*])$/!p
 	  c\\
 	    /* BEGIN FLEX ADDITIONS */\\
-	    code_start = . ; *(.flex.code) code_end = . ;\\
+	    code_start = . ; *(.flex.code .flex.code.rw) code_end = . ;\\
 	    . = ALIGN(8) ; fixup_start = . ; *(.flex.fixup) fixup_end = . ;\\
 	    /* END FLEX ADDITIONS */
 	}
