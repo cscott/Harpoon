@@ -14,50 +14,43 @@ import java.util.*;
  * Leiserson, and Rivest, on page 400 and following.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialHeap.java,v 1.1.2.1 2000-02-12 19:02:39 cananian Exp $
+ * @version $Id: BinomialHeap.java,v 1.1.2.2 2000-02-12 21:15:38 cananian Exp $
  */
 public class BinomialHeap extends AbstractHeap implements Cloneable {
     private static final boolean debug=false;
 
     Node head=null;
-    /*final*/ Comparator c;
+    final Comparator c; // convenience field.
     
     /** Constructs a new, empty <code>BinomialHeap</code>, sorted according
      *  to the keys' natural order. All keys inserted into the new map
      *  must implement the <code>Comparable</code> interface. O(1) time. */
-    public BinomialHeap() { super(Default.comparator); this.c = comparator(); }
+    public BinomialHeap() { this(Collections.EMPTY_SET, null); }
     /** Constructs a new, empty <code>BinomialHeap</code>, sorted according
      *  to the given comparator. O(1) time. */
-    public BinomialHeap(Comparator c) { super(c); this.c = comparator(); }
-    /** Constructs a new map containing the same mappings as the given map,
-     *  sorted according to the keys' natural order.  All keys inserted
-     *  into the new map must implement the <code>Comparable</code> 
-     *  interface. This constructor runs in O(n lg n) time. */
-    public BinomialHeap(Map m) {
-	super(Default.comparator); this.c = comparator();
-	for (Iterator it=m.entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry me = (Map.Entry) it.next();
-	    insert(me.getKey(), me.getValue());
-	}
-	Util.assert(isHeapOrdered(head, c));
-    }
+    public BinomialHeap(Comparator c) { this(Collections.EMPTY_SET, c); }
     /** Constructs a new map with the same mappings as the specified
-     *  <code>BinomialHeap</code>. O(n) time. */
-    public BinomialHeap(BinomialHeap m) {
-	super(m.comparator()); this.c = comparator();
-	this.head = _clone(null, m.head);
-	Util.assert(isHeapOrdered(head, c));
+     *  <code>Heap</code>. O(n) time. */
+    public BinomialHeap(Heap h) { this(h.entries(), h.comparator()); }
+    /** Constructs a binomial heap from a collection of
+     *  <code>Map.Entry</code>s and a key comparator.  O(n) time. */
+    public BinomialHeap(Collection collection, Comparator comparator) {
+	super(comparator);
+	c = entryComparator();
+	union(collection);
+	if (debug) checkHeap();
     }
 
     /** Returns a mapping entry with minimal key.  Takes O(lg n) time. */
     public Map.Entry minimum() {
-	Util.assert(isHeapOrdered(head, c));
+	if (debug) checkHeap();
 	Node y=null;
 	// minimum has to be one of the roots.
 	for (Node x=this.head; x!=null; x=x.sibling)
-	    if (y==null || c.compare(x.key, y.key) < 0)
+	    if (y==null || c.compare(x.entry, y.entry) < 0)
 		y=x;
-	return y;
+	if (y==null) throw new java.util.NoSuchElementException();
+	return y.entry;
     }
     /** Links the B_{k-1} tree rooted at node y to the B_{k-1} tree rooted
      *  at node z; that is, it makes z the parent of y.  Node z thus becomes
@@ -82,25 +75,54 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 	    return h2;
 	}
     }
+    /** Add all the entries from the given heap to this one.
+     *  The given heap will be empty on return.  Takes
+     *  O(lg n) time if the given heap is a <code>BinomialHeap</code>
+     *  and its entry comparator is the same as this one's.
+     *  Otherwise, it takes O(n) time. */
     public void union(Heap h) {
-	if (h instanceof BinomialHeap)
+	if (h instanceof BinomialHeap &&
+	    entryComparator().equals(((BinomialHeap)h).entryComparator()))
 	    union((BinomialHeap)h);
-	else super.union(h);
+	else { union(h.entries()); h.clear(); }
+    }
+    // union a set of Map.Entry's
+    private void union(Collection coll) {
+	// add an n-entry set to an m-entry heap in O(n+lg(n+m)) time.
+	// BUILD-HEAP in O(n) time by successive unions.
+	BinomialHeap[] ha = new BinomialHeap[coll.size()];
+	int size = 0;
+	for (Iterator it=coll.iterator(); it.hasNext(); ) {
+	    Map.Entry e = (Map.Entry) it.next();
+	    BinomialHeap bh = new BinomialHeap(this.comparator());
+	    bh.insert(e.getKey(), e.getValue());
+	    ha[size++] = bh;
+	}
+	// now successively union-ify
+	while (size>1) {
+	    for (int i=0; i<size; i+=2) {
+		ha[i/2] = ha[i];
+		if (i+1 < size)
+		    ha[i/2].union(ha[i+1]);
+	    }
+	    size=(size+1)/2; // divide-by-two, round up.
+	}
+	if (size>0) this.union(ha[0]); // and now merge into this.
     }
     /** Merges all of the mappings from the specified map to this
      *  map. Note that duplicates <b>are</b> permitted. This operation
      *  takes O(lg n), where n is the number of entries in the resulting
      *  map. The comparator for m <b>must be identical</b> to the comparator
-     *  for <code>this</code>. After calling <code>putAll()</code>, the
+     *  for <code>this</code>. After calling <code>union()</code>, the
      *  specified map will be empty. */
     public void union(BinomialHeap m) {
 	Util.assert(m.c.equals(this.c));
-	putAll(m.head);
+	union(m.head);
 	m.head = null; // empty out source map.
     }
     /** Union operation.  The specified node is the head of a binomial map. */
-    void putAll(Node n) { // the binomial-heap-union operation.
-	Util.assert(isHeapOrdered(head, c) && isHeapOrdered(n, c));
+    void union(Node n) { // the binomial-heap-union operation.
+	if (debug) { checkHeap(head, c); checkHeap(n, c); }
 	this.head = _merge(this.head, n);
 	if (this.head==null) return; // hmm.  both source maps were empty.
 	
@@ -111,7 +133,7 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 		((nextx.sibling!=null) && (nextx.sibling.degree==x.degree))) {
 		prevx=x;
 		x=nextx;
-	    } else if (c.compare(x.key, nextx.key) <= 0) {
+	    } else if (c.compare(x.entry, nextx.entry) <= 0) {
 		x.sibling = nextx.sibling;
 		_link(nextx, x);
 	    } else {
@@ -123,7 +145,7 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 		x = nextx;
 	    }
 	}
-	Util.assert(isHeapOrdered(this.head, c));
+	if (debug) checkHeap();
     }
 
     /** Associates the specified value with the specified key in the map.
@@ -133,21 +155,21 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
      * @return The <code>Map.Entry</code> added.
      */
     public Map.Entry insert(Object key, Object value) { // binomial-heap-insert
-	Util.assert(isHeapOrdered(head, c));
+	if (debug) checkHeap();
 	Node x = new Node(key, value);
-	putAll(x);
-	Util.assert(isHeapOrdered(head, c));
-	return x;
+	union(x);
+	if (debug) checkHeap();
+	return x.entry;
     }
     /** Remove and return the map entry with minimal key. O(lg n) time. */
     public Map.Entry extractMinimum() {
-	Util.assert(isHeapOrdered(head, c));
-	Node x=(Node)minimum(); // find min node...
+	if (debug) checkHeap();
+	Node x=((Entry)minimum()).node; // find min node...
 	// ..and remove it.
 	_removeRoot(x);
-	Util.assert(isHeapOrdered(head, c));
+	if (debug) checkHeap();
 	// return minimum entry
-	return x;
+	return x.entry;
     }
     /** Remove a tree root from the binomial heap. O(lg n) time. */
     private void _removeRoot(Node x) {
@@ -156,13 +178,13 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 	if (this.head==x) this.head=x.sibling;
 	else for (Node y=this.head; y!=null; y=y.sibling)
 	    if (y.sibling==x) { y.sibling=x.sibling; break; }
-	Util.assert(isHeapOrdered(head, c));
+	if (debug) checkHeap();
 	// reverse linked list of children of x.
 	Node hprime=_reverse(null, x.child);
-	Util.assert(isHeapOrdered(hprime, c));
+	if (debug) checkHeap(hprime, c);
 	// union this and hprime.
-	putAll(hprime);
-	Util.assert(isHeapOrdered(head, c));
+	union(hprime);
+	if (debug) checkHeap();
     }
     /** Reverse a linked list of siblings. */
     private Node _reverse(Node prev, Node n) {
@@ -176,39 +198,41 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
     /** Replace the key in the specified map entry with the specified
      *  <b>smaller</b> key.  O(lg n) time. */
     public void decreaseKey(Map.Entry me, Object newkey) {
-	Util.assert(isHeapOrdered(head, c));
-	Node x = (Node) me;
-	if (c.compare(newkey, x.key) > 0)
+	if (debug) checkHeap();
+	Node x = ((Entry) me).node;
+	if (_keyCompare(newkey, x.entry.getKey()) > 0)
 	    throw new UnsupportedOperationException("New key is greater than "+
 						    "current key.");
-	x.key = newkey;
+	x.entry._setKey(newkey);
 	_bubbleUp(x, false);
 	// done.
-	Util.assert(isHeapOrdered(head, c));
+	if (debug) checkHeap();
     }
-    // XXX FIXME! bubbleUp *exchanges* node information, which means that
-    // the Map.Entries the client's got tucked away are not valid anymore!
     private Node _bubbleUp(final Node x, boolean delete) {
 	Node y = x;
 	Node z = y.parent;
-	while ((z!=null) && (delete || (c.compare(y.key, z.key)<0))) {
+	while ((z!=null) && (delete || (c.compare(y.entry, z.entry)<0))) {
 	    // exchange fields of y and z.
-	    Object yk = y.key, yv = y.value;
-	    y.key = z.key; y.value = z.value;
-	    z.key = yk;    z.value = yv;
+	    _exchange(y, z);
 	    y = z;
 	    z = y.parent;
 	}
 	return y;
     }
+    /** Exchange the <code>Entry</code>s in two nodes. */
+    private void _exchange(Node a, Node b) {
+	Entry ea = a.entry, eb = b.entry;
+	a.entry = eb; eb.node = a;
+	b.entry = ea; ea.node = b;
+    }
     /** Remove the specified map entry from the mapping. O(lg n) time. */
     public void delete(Map.Entry me) {
-	Util.assert(isHeapOrdered(head, c));
-	Node x = (Node) me;
+	if (debug) checkHeap();
+	Node x = ((Entry) me).node;
 	Node y = _bubbleUp(x, true);
 	// y is now root node to be removed.
 	_removeRoot(y);
-	Util.assert(isHeapOrdered(head, c));
+	if (debug) checkHeap();
     }
 
     /** Return the next node after the specified node in the iteration order.
@@ -219,12 +243,9 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 	if (n.parent==null) return n.sibling; // first root only.
 	return n.parent.sibling;
     }
-    /** Return an unmodifiable set of entries in this mapping.
-     *  Note that the returned object may actually be a <b>Collection,
-     *  not a Set</b> because the <code>BinomialHeap</code> doesn't prohibit
-     *  duplicates. */
+    /** Return an unmodifiable collection of entries in this heap. */
     public Collection entries() {
-	Util.assert(isHeapOrdered(head, c));
+	if (debug) checkHeap();
 	return new AbstractCollection() {
 	    public int size() { return BinomialHeap.this.size(); }
 	    public Iterator iterator() {
@@ -232,7 +253,7 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 		    Node next = head;
 		    public boolean hasNext() { return next!=null; }
 		    public Object next() {
-			Node n=next; next = successor(next); return n;
+			Node n=next; next = successor(next); return n.entry;
 		    }
 		};
 	    }
@@ -240,7 +261,7 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
     }
     /** Returns the size of this map. O(lg n) time. */
     public int size() {
-	Util.assert(isHeapOrdered(head, c));
+	if (debug) checkHeap();
 	int s=0;
 	for (Node nx=head; nx!=null; nx=nx.sibling)
 	    s+=(1<<nx.degree);
@@ -258,16 +279,15 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
     /** Creates a new BinomialHeap with all the key-value pairs this one
      *  has.  O(n) time. */
     public Object clone() {
-	BinomialHeap bm=new BinomialHeap(this.c);
+	BinomialHeap bm=new BinomialHeap(comparator());
 	bm.head=_clone(null, this.head);
-	Util.assert(isHeapOrdered(head, c));
-	Util.assert(isHeapOrdered(bm.head, bm.c));
+	if (debug) { checkHeap(head, c); checkHeap(bm.head, bm.c); }
 	return bm;
     }
     /** Recursively clone a node. */
     private Node _clone(Node parent, Node n) {
 	if (n==null) return null;
-	Node nn = new Node(n.key, n.value);
+	Node nn = new Node(n.entry.getKey(), n.entry.getValue());
 	nn.degree = n.degree;
 	nn.parent = parent;
 	nn.child = _clone(nn, n.child);
@@ -275,25 +295,13 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 	return nn;
     }
 
-    /** Test whether the specified key is contained in this mapping.
-     *  O(n) time. */
-    public boolean containsKey(Object key) {
-	return find(head, key)!=null;
-    }
-    /** Returns the value to which this map maps the specified key, or
-     * <code>null</code> if there is no mapping for this key. O(n) time. */
-    public Object get(Object key) {
-	Node n = find(head, key);
-	return (n==null)?null:n.key;
-    }
-    /** Removes the mapping for this key from this map if present. 
-     *  O(n) time. */
-    public Object remove(Object key) {
-	Node n = find(head, key); // O(n)
-	if (n==null) return null;
-	Object oldvalue = n.value;
-	delete(n); // O(lg n)
-	return oldvalue;
+    /** Lookup a <code>Map.Entry</code> in the heap with key equal to
+     *  the specified key.  O(n), although pruning is done on subtrees
+     *  with root larger than the specified key.  What this means is
+     *  that the smaller the key is, the faster this will run. */
+    public Map.Entry find(Object key) {
+	Node x = find(head, key);
+	return x.entry;
     }
 
     /** Find the node with key equal to the specified key. O(n), although
@@ -302,46 +310,58 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
      *  run. */
     private Node find(Node n, Object key) {
 	if (n==null) return null;
-	int cmp=c.compare(n.key, key);
+	int cmp=_keyCompare(n.entry.getKey(), key);
 	if (cmp==0) return n;
 	Node s=find(n.sibling, key);
 	if (s!=null) return s;
 	if (cmp > 0) return null; // all children will have larger keys.
 	return find(n.child, key);
     }
+    // convenience method for key comparisons (which are pretty rare)
+    private int _keyCompare(Object key1, Object key2) {
+	Comparator kc = comparator();
+	if (kc==null) kc = Default.comparator;
+	return kc.compare(key1, key2);
+    }
 
+    /** The underlying <code>Map.Entry</code> representation. */
+    static final class Entry extends PairMapEntry {
+	Node node;
+	Entry(Object key, Object value, Node node) {
+	    super(key, value);
+	    this.node = node;
+	}
+	Object _setKey(Object key) { return super.setKey(key); }
+    }
     /** The underlying node representation for the binomial heap */
-    static class Node extends AbstractMapEntry {
+    static final class Node {
 	Node parent;
-	public Object key;
-	public Object value;
+	Entry entry;
 	int degree;
 	Node child, sibling; // left child, right sibling.
 	/*-----------------------------*/
 	Node(Object key, Object value) {
-	    this.key = key; this.value = value; this.degree=0;
-	}
-	public Object getKey() { return key; }
-	public Object getValue() { return value; }
-	public Object setValue(Object value) {
-	    Object old = this.value;
-	    this.value = value;
-	    return old;
+	    this.entry = new Entry(key, value, this);
+	    this.degree=0;
 	}
 	public String toString() {
-	    return "<"+super.toString()+", "+
+	    return "<"+entry.toString()+", "+
 		"degree: "+degree+", "+
 		"parent key: "
-		+((parent!=null)?parent.key.toString():"(nil)")+", "+
+		+((parent!=null)?parent.entry.getKey().toString():"(nil)")+", "+
 		"child key: "
-		+((child!=null)?child.key.toString():"(nil)")+", "+
+		+((child!=null)?child.entry.getKey().toString():"(nil)")+", "+
 		"sibling key: "
-		+((sibling!=null)?sibling.key.toString():"(nil)")+">";
+		+((sibling!=null)?sibling.entry.getKey().toString():"(nil)")+">";
 	}
     }
     /*-- debugging functions --*/
+    private void checkHeap() { checkHeap(this.head, this.c); }
+    private static void checkHeap(Node n, Comparator c) {
+	Util.assert(isHeapOrdered(n, c));
+    }
     private static boolean isTreeOrdered(Node n, Comparator c) {
-	if (!debug) return true; // skip costly test if not debugging.
+	Util.assert(debug);
 	if (n.parent==null) // special rules for root.
 	    return 
 		(n.sibling==null || n.sibling.parent==null) &&
@@ -351,7 +371,7 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 		 (n==n.child.parent)) &&
 		((n.child==null) == (n.degree==0));
 	// rules for non-root nodes.
-	if (! (c.compare(n.key, n.parent.key) >= 0)) return false;
+	if (! (c.compare(n.entry, n.parent.entry) >= 0)) return false;
 	if (n.sibling!=null) {
 	    if (! isTreeOrdered(n.sibling, c)) return false;
 	    if (! (n.degree==n.sibling.degree+1)) return false;
@@ -367,7 +387,7 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 	    :((n.child!=null) && (n.sibling!=null));
     }
     private static boolean isHeapOrdered(Node n, Comparator c) {
-	if (!debug) return true; // skip costly test if not debugging.
+	Util.assert(debug);
 	if (n==null) return true;
 	return (n.parent==null) && // all top-level trees
 	    isTreeOrdered(n, c) && // each tree in set is well-formed
@@ -432,5 +452,44 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 	    System.out.print(me.getKey().toString()+" ");
 	}
 	System.out.println();
+
+	// test union of non-heap
+	bm1 = new BinomialHeap(new AbstractCollection() {
+	    int el[] = { -4, -1, -3, -2, -16, -9, -10, -14, -8, -7 };
+	    public int size() { return el.length; }
+	    public Iterator iterator() {
+		return new harpoon.Util.UnmodifiableIterator() {
+		    int i = 0;
+		    public boolean hasNext() { return i<el.length; }
+		    public Object next() {
+			Integer io = new Integer(el[i++]);
+			return new harpoon.Util.PairMapEntry(io, io);
+		    }
+		};
+	    }
+	}, ic);
+	Util.assert(bm1.size()==10 && !bm1.isEmpty());
+	Util.assert(bm1.minimum().getKey().equals(new Integer(-16)));
+	System.out.println(bm1);
+	bm1.insert(new Integer(-15), new Integer(-15));
+	Util.assert(bm1.size()==11 && !bm1.isEmpty());
+	Util.assert(bm1.minimum().getKey().equals(new Integer(-16)));
+	System.out.println(bm1);
+	// now verify that we'll get all the keys out in properly sorted order
+	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-16)));
+	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-15)));
+	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-14)));
+	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-10)));
+	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-9)));
+	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-8)));
+	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-7)));
+	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-4)));
+	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-3)));
+	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-2)));
+	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-1)));
+	Util.assert(bm1.isEmpty() && bm1.size()==0);
+
+	// done!
+	System.out.println("PASSED.");
     }
 }
