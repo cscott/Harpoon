@@ -25,7 +25,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.5 1999-10-14 22:19:13 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.6 1999-10-15 03:48:22 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -160,6 +160,11 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 						  classKnownChildren,
 						  classMethodsUsed,
 						  classMethodsPending);
+			if (Q instanceof CONST) //string constants use intern()
+			    discoverMethod(HMstrIntern, W, done,
+					   classKnownChildren,
+					   classMethodsUsed,
+					   classMethodsPending);
 		    }			
 		    if (Q instanceof CALL) {
 			CALL q = (CALL) Q;
@@ -191,6 +196,8 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    children.put(c, ch);
 	}
     }
+    private static final HMethod HMstrIntern =
+	HClass.forName("java.lang.String").getMethod("intern",new HClass[0]);
 
     /* when we discover a new class nc:
         for each superclass c or superinterface i of this class,
