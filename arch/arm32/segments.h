@@ -14,4 +14,5 @@
 # define TEXT_SEGMENT		.text   @ .section text
 # define ZERO_DATA_SEGMENT	.bss    @ .section zero
 # define FIXUP_SEGMENT		.text 10 @ .section fixup
+# define GC_INDEX_SEGMENT       .data 10 @ .section gc_index
 #endif

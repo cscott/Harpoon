@@ -4,6 +4,10 @@
 	GC_SEGMENT
 .global _gc_end
 _gc_end:
+
+	GC_INDEX_SEGMENT
+.global _gc_index_end
+_gc_index_end:
 	
 	STATIC_OBJECTS_SEGMENT
 .global _static_objects_end

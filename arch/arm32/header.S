@@ -17,7 +17,12 @@
 	.align 4
 .global _gc_start
 _gc_start:
-	
+
+	GC_INDEX_SEGMENT
+	.align 4
+.global _gc_index_start
+_gc_index_start:
+
 	STATIC_OBJECTS_SEGMENT
 	.align 4
 .global _static_objects_start

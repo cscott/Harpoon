@@ -135,7 +135,6 @@ extern char *FNI_javamain;
 extern char *FNI_static_inits[];
 
 /* starts and ends of various segments */
-extern int *gc_start, *gc_end;
 extern int *static_objects_start, *static_objects_end;
 extern int *string_constants_start, *string_constants_end;
 extern int *code_start, *code_end;
