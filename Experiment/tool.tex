@@ -1,0 +1,121 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{dsfont}
+\usepackage{epsfig}
+\usepackage{bbold}
+
+\title{}
+\author{Debugging experiment - The Tool}
+\date{July 30, 2003}
+
+\setlength{\topmargin}{0in}
+\setlength{\oddsidemargin}{0in}
+\setlength{\evensidemargin}{0in}
+\setlength{\textwidth}{6.6in}
+\setlength{\textheight}{9in}
+\setlength{\parindent}{0.5in}
+
+
+
+\begin{document}
+\maketitle
+\begin{flushleft}
+
+\thispagestyle{empty}
+
+\vspace{0.5in}
+
+As already mentioned in the ``Consistency Constraints'' document, our tool 
+receives a set of consistency constraints and checks if any of these 
+constraints is violated.  The consistency constraints for the file system
+benchmarks are the following:
+
+\begin{verbatim}
+[],sizeof(SuperBlock)=1
+[],sizeof(GroupBlock)=1
+[],sizeof(InodeTableBlock)=1
+[],sizeof(InodeBitmapBlock)=1
+[],sizeof(BlockBitmapBlock)=1
+[],sizeof(RootDirectoryInode)=1
+
+[forall u in UsedInode], u.inodestatus=Used
+[forall f in FreeInode], f.inodestatus=Free
+
+[forall u in UsedBlock], u.blockstatus=Used
+[forall f in FreeBlock], f.blockstatus=Free
+
+[forall i in UsedInode], i.referencecount=sizeof(i.~inodeof) or i in RootDirectoryInode
+\end{verbatim}
+
+Each consistency constraint is composed of a quantifier $Q$, followed by a 
+body $B$.  The quantifier $Q$ can be either empty (``[]''), or of the form 
+``forall $e$ in $S$'', where $S$ is a set and $e$ an element of $S$.
+The body $B$ contains a number of basic statements, which are combined by
+the logical operators $\{not, and, or\}$.  These statements must hold for  
+all the possible values of the quantifier $Q$, or simply hold if $Q$ 
+is empty.  Finally, the only notation you might not understand is 
+``sizeof($S$)'', which denotes the number of elements of the set $S$.
+
+\vspace{0.1in}
+
+The tool checks whether any of these constraints is violated.  If so, the tool 
+provides information about the first violated constraint and then terminates 
+the program.  The tool specifies what constraint is violated and for what 
+values of the quantifier, and also provides the current values of the elements 
+appearing in the violated constraint.
+The information is provided in the following form:
+
+\begin{verbatim}
+Constraint violation
+   Violated constraint: [forall u in UsedBlock], u.blockstatus=Used
+   State for which it was violated: u=29
+   Actual value(s): u.blockstatus=Free
+\end{verbatim}
+
+All you need to use in order to understand the message above are the 
+set and function descriptions included in the ``Consistency Constraints'' 
+document. 
+Using those descriptions, the message above signals that the block {\it u=29}, 
+which belongs to the set {\it UsedBlock} -- 
+which means that block {\it 29} is actually in use (there exists an inode 
+pointing to it or is one of the special blocks {\it SuperBlock}, 
+{\it GroupBlock}, {\it InodeTableBlock}, {\it BlockBitmapBlock}) 
+-- was incorrectly marked in the block bitmap as free instead of used 
+(because {\it u.blockstatus} has the value {\it Free} instead of {\it Used}).
+
+
+\vspace{0.1in}
+In order to call the tool, you have to use the procedure 
+{\it calltool(char *text)}, which prints the text {\it text} and then 
+calls the tool.   For example, if you want to call the tool after a new file
+was open, you can add after
+\begin{verbatim}
+int fd = openfile(ptr,filename);
+\end{verbatim}
+
+the following lines of code:
+\begin{verbatim}
+char text[100]; // an error message used to identify this call
+sprintf(text, "After openfile(%s)", filename); // construct the error message
+calltool(text); // call the tool
+\end{verbatim}
+
+If a constraint violation is found when the $calltool$ procedure
+is called, the program terminates and prints the contents of $text$ 
+followed by a consistency violation message.
+Otherwise, it simply prints the contents of $text$ and continues the execution 
+of the program.
+
+\vspace{0.1in}
+The tool basically works like an {\it assert} statement. 
+You should use the tool as often as possible, in order to localize and 
+understand the bug.  However, note that there are points in the program
+where it is ``normal'' for the constraints not to hold.  For example, 
+if a new block $b$ of information is added to a file, we need to modify the 
+inode corresponding to that file to point to $b$, and we have to mark $b$ as
+used in the block bitmap. Of course, the constraints should hold before and
+after these two operations, but it is ``normal'' not to hold  between them.
+
+\end{flushleft}
+\end{document}

@@ -1,0 +1,251 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{dsfont}
+\usepackage{epsfig}
+\usepackage{url}
+\usepackage{bbold}
+
+\title{}
+\author{Short Description of the Linux ext2 File System \footnote{Adapted from the documents found at http://www.nongnu.org/ext2-doc and http://infocom.cqu.edu.au/Units/aut2000/85321/ Assessment/Exam/1995\_Supp\_Exam\_Solutions}}
+
+\date{July 30, 2003}
+
+\setlength{\topmargin}{0in}
+\setlength{\oddsidemargin}{0in}
+\setlength{\evensidemargin}{0in}
+\setlength{\textwidth}{6.6in}
+\setlength{\textheight}{9in}
+\setlength{\parindent}{0.5in}
+
+
+
+\begin{document}
+\maketitle
+\begin{flushleft}
+
+\thispagestyle{empty}
+
+\vspace{0.5in}
+
+
+
+In the Linux ext2 File System, the disk can be regarded as an array of blocks 
+of identical size. In our toy version, the block size is 8192 bytes, 
+and the file system has 1024 blocks.
+
+
+\vspace{0.1in}
+To read the information from a file, the file system needs to know where on 
+the disk the blocks that hold the information in the file are stored.  
+To accomplish this, the ext2 file system uses some additional structures, 
+called inodes.  More precisely, every physical file on the disk is represented 
+by an inode. Each inode keeps information about the size of the file, the 
+blocks it contains (up to a maximum of 12 blocks in our toy version), and the 
+number of entries in the root directory pointing to this inode (see below).
+
+\vspace{0.1in}
+As you might have noticed already, the only information about a file not 
+included in an inode is its name.  The names of the files are stored in a 
+special structure, called the root directory.  
+
+\vspace{0.1in}
+The root directory is stored in inode 0, and is composed of directory
+entries.  Each directory entry occupies 128 bytes and keeps information about 
+the name of a file and the inode number where this file is stored.  
+
+\vspace{0.1in}
+Note that  we can have multiple directory entries referencing the same inode.  
+In this case, we say that the corresponding  file names are links for one 
+another.
+
+\vspace{0.1in}
+
+Finally, the ext2 file system contains the following special blocks:
+
+\subsection*{SuperBlock}
+
+The superblock is the structure on an ext2 disk containing the very basic 
+information about the file system. It is stored in block 0, and is laid out 
+in the following form:
+
+\begin{verbatim}
+struct SuperBlock {
+  int FreeBlockCount;
+  int FreeInodeCount;
+  int NumberofBlocks;
+  int NumberofInodes;
+  int RootDirectoryInode;
+  int blocksize;
+};
+\end{verbatim}
+
+where:
+
+
+\begin{itemize}
+  \item{FreeBlockCount: indicates the total number of free blocks on the disk;}
+  \item{FreeInodeCount: indicates the total number of free inodes on the disk;}
+  \item{NumberofBlocks: indicates the total number of blocks on the disk;}
+  \item{NumberofInodes: indicates the total number of inodes on the disk;}
+  \item{RootDirectoryInode: indicates the inode where the root directory is 
+kept;}
+  \item{blocksize: stores the block size;}
+\end{itemize}
+
+
+\subsection*{GroupBlock}
+
+The file system is split into {\it block groups}.  However, our toy version 
+contains a single block group.   The groupblock is stored in block 1 and keeps 
+the following information:
+\begin{verbatim}
+struct GroupBlock {
+  int BlockBitmapBlock;
+  int InodeBitmapBlock;
+  int InodeTableBlock;
+  int GroupFreeBlockCount;
+  int GroupFreeInodeCount;
+};
+\end{verbatim}
+
+where:
+
+
+\begin{itemize}
+  \item{BlockBitmapBlock:  indicates the block in which the block bitmap is stored;}
+  \item{InodeBitmapBlock:  indicates the block in which the inode bitmap is stored;}
+  \item{InodeTableBlock:  indicates the block in which the inode table is stored;}
+  \item{GroupFreeBlockCount: indicates the total number of free blocks in the block group;}
+  \item{GroupFreeInodeCount: indicates the total number of free inodes in the block group;}
+
+\end{itemize}
+
+
+\subsection*{BlockBitmap}
+
+The block bitmap is an array of bits, which keeps information about which 
+blocks are free and which are used. It is kept in block 2.
+
+
+\subsection*{InodeBitmap}
+
+The inode bitmap is an array of bits, which keeps information about which 
+inodes are free and which are used. It is kept in block 3.
+
+
+\subsection*{InodeTable}
+The inode table is an array of inodes, used to keep track of every inode.
+It is kept in block 4.
+
+\vspace{0.2in}
+The next two diagrams show graphically the organization of the disk and 
+the organization of the InodeTable:
+
+\vspace{0.2in}
+
+\begin{center}
+\epsfxsize=5.5in
+\epsfbox{FS.eps}
+
+\epsfxsize=3in
+\epsfbox{InodeTable.eps}
+\end{center}
+
+\vspace{0.1in}
+Here are the contents of the file {\it file.h}, which keeps the structure 
+definitions, and which is almost identical for all the three variants of 
+the program:
+
+\begin{verbatim}
+#ifndef FILE_H
+#define FILE_H
+
+#define BLOCKSIZE 8192
+#define NUMBLOCK 1024
+#define LENGTH BLOCKSIZE*NUMBLOCK
+#define NUMINODES BLOCKSIZE/56
+#define NUMFILES 200
+
+struct block {
+  char array[BLOCKSIZE];
+};
+
+struct SuperBlock {
+  int FreeBlockCount;
+  int FreeInodeCount;
+  int NumberofBlocks;
+  int NumberofInodes;
+  int RootDirectoryInode;
+  int blocksize;
+};
+
+struct GroupBlock {
+  int BlockBitmapBlock;
+  int InodeBitmapBlock;
+  int InodeTableBlock;
+  int GroupFreeBlockCount;
+  int GroupFreeInodeCount;
+};
+
+struct BlockBitmap {
+  char blocks[NUMBLOCK/8+1];
+};
+
+struct InodeBitmap {
+  char inode[NUMINODES/8+1];
+};
+
+struct Inode {
+  int filesize;
+  int Blockptr[12];
+  int referencecount;
+};
+
+struct InodeBlock {
+  struct Inode entries[NUMINODES];
+};
+
+#define DIRECTORYENTRYSIZE 128
+struct DirectoryEntry {
+  char name[124];
+  int inodenumber;
+};
+
+struct DirectoryBlock {
+  struct DirectoryEntry entries[BLOCKSIZE/128];
+};
+
+
+void createdisk();
+void createfile(struct block *ptr,char *filename, char *buf,int buflen);
+void addtode(struct block *ptr, int inode, char * filename);
+int getinode(struct block *ptr);
+int getblock(struct block * ptr);
+void removefile(char *filename, struct block *ptr);
+void createlink(struct block *ptr,char *filename, char *linkname);
+struct block * chmountdisk(char *filename);
+void chunmountdisk(struct block *vptr);
+struct block * mountdisk(char *filename);
+void unmountdisk(struct block *vptr);
+void closefile(struct block *ptr, int fd);
+bool writefile(struct block *ptr, int fd, char *s);
+int writefile(struct block *ptr, int fd, char *s, int len);
+char readfile(struct block *ptr, int fd);
+int readfile(struct block *ptr, int fd, char *buf, int len);
+int openfile(struct block *ptr, char *filename);
+
+void calltool(char *text);
+
+#define MAXFILES 300
+struct filedesc {
+  int inode;
+  int offset;
+  bool used;
+};
+#endif
+\end{verbatim}
+
+
+\end{flushleft}
+\end{document}

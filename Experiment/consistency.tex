@@ -1,0 +1,136 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{dsfont}
+\usepackage{epsfig}
+\usepackage{bbold}
+
+\title{}
+\author{Consistency constraints}
+\date{July 30, 2003}
+
+\setlength{\topmargin}{0in}
+\setlength{\oddsidemargin}{0in}
+\setlength{\evensidemargin}{0in}
+\setlength{\textwidth}{6.6in}
+\setlength{\textheight}{9in}
+\setlength{\parindent}{0.5in}
+
+
+
+\begin{document}
+\maketitle
+\begin{flushleft}
+\thispagestyle{empty}
+
+\vspace{0.5in}
+
+
+The tool you are going to use receives a set of consistency constraints,
+and signals an error if any of these constraints is violated.
+
+\vspace{0.1in}
+These consistency constraints are based on a model that represents the 
+data structures used by the program under analysis.  The model is mathematical 
+and is composed of sets and functions that describe the properties of these 
+data structures.  These sets and functions can make reference to the actual
+data structures used in the program.
+
+\vspace{0.1in}
+The sets and functions in the model offer at least two views or perspectives 
+of each data structure property considered, and in this way we can make 
+statements concerning consistency. More precisely, if the tool finds any 
+discrepancies between two perspectives of the same property, a consistency 
+error is reported. 
+
+\vspace{0.2in}
+We provide below the descriptions of the sets and functions that are used for 
+constructing the model for the file system benchmarks. We use the following
+two notations: $f.x$ to denote $f(x)$, and $f.\sim x$ to denote $f^{-1}(x)$.
+
+\begin{itemize}
+  \item{{\bf SuperBlock:} {\it set of integers} 
+   \\ {\it SuperBlock} is a set that contains a single element, the number of 
+the block containing the super block.}
+
+  \item{{\bf GroupBlock:} {\it set of integers}
+   \\ {\it GroupBlock} is a set that contains a single element, the number of 
+the block containing the group block.}
+
+  \item{{\bf InodeTableBlock:} {\it set of integers} 
+  \\ {\it InodeTableBlock} is a set that contains a single element, the number 
+of the block containing the inode table.}
+
+  \item{{\bf InodeBitmapBlock:} {\it set of integers} 
+  \\ {\it InodeBitmapBlock} is a set that contains a single element, the number
+of the block containing the inode bitmap.}
+
+  \item{{\bf BlockBitmapBlock:} {\it set of integers} 
+  \\ {\it BlockBitmapBlock} is a set that contains a single element, the number
+of the block containing the block bitmap.}
+
+  \item{{\bf RootDirectoryInode:} {\it set of integers}
+  \\ {\it RootDirectoryInode} is a set that contains a single element, the 
+number of the inode containing the root directory.}
+
+
+  \item{{\bf UsedInode:} {\it set of integers}
+  \\If {\it i} is an inode number, then {\it i} belongs to the set 
+{\it UsedInode} if at least one of the following two conditions is fulfilled:
+      \begin{itemize}
+         \item{{\it i} is the only element of the set {\it RootDirectoryInode}}
+         \item{There exists a directory entry {\it de} in the program that 
+          points to inode {\it i}}
+      \end{itemize} }
+
+  \item{{\bf FreeInode} {\it set of integers}
+  \\If {\it i} is an inode, then {\it i} belongs to the set {\it FreeInode} 
+if and only if {\it i} doesn't belong to the set {\it UsedInode}}
+
+  \item{{\bf UsedBlock} {\it set of integers}
+  \\If {\it b} is a block number, then {\it b} belongs 
+to the set {\it UsedBlock} if at least one of the following conditions is 
+fulfilled:
+      \begin{itemize}
+         \item{{\it b} is the only element of the set {\it SuperBlock}}
+         \item{{\it b} is the only element of the set {\it GroupBlock}}
+         \item{{\it b} is the only element of the set {\it InodeTableBlock}}
+         \item{{\it b} is the only element of the set {\it InodeBitmapBlock}}
+         \item{{\it b} is the only element of the set {\it BlockBitmapBlock}}
+         \item{There exists an inode {\it i} in the set {\it UsedInode} such 
+               that the entry corresponding to inode {\it i} in the inode 
+               table points to block {\it b}}
+      \end{itemize} }
+
+  \item{{\bf FreeBlock} {\it set of integers}
+  \\If {\it b} is a block, then {\it b} belongs to the set {\it FreeBlock} if 
+and only if {\it b} doesn't belong to the set {\it UsedBlock}}
+
+
+  \item{{\bf referencecount} {\it function referencecount: set of Inode's in the program  $\rightarrow$  set of integers}
+  \\ If {\it i} is an inode, then {\it i.referencecount} denotes the value of 
+the {\it referencecount} field in the respective inode structure.}
+
+  \item{{\bf inodeof} {\it function inodeof: set of DirectoryEntry's in the 
+program  $\rightarrow$  UsedInode}
+  \\ If {\it de} is a directory entry, then {\it de.inodeof} denotes the value 
+  of the {\it inodenumber} field in the respective directory entry structure.}
+
+  \item{{\bf inodestatus} {\it function inodestatus: set of Inode's in the 
+program  $\rightarrow$  \{Used, Free\}}
+  \\ If {\it i} is an inode, {\it i.inodestatus} can have two values: 
+  {\it Used} and {\it Free}.  We have {\it i.inodestatus=Used} if and only if 
+  the inode {\it i} is marked as used in the inode bitmap.}
+
+  \item{{\bf blockstatus} {\it function blocktatus: set of integers  
+$\rightarrow$  \{Used, Free\}}
+  \\ If {\it b} is a block number, {\it b.blockstatus} can have two values: 
+  {\it Used} and {\it Free}. We have {\it b.blockstatus=Used} if and only if 
+  the block {\it b} is marked as used in the block bitmap.}
+
+
+\end{itemize}
+
+
+\end{flushleft}
+\end{document}
