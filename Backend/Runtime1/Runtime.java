@@ -27,7 +27,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.21 2000-03-24 19:40:56 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.22 2000-03-24 23:41:26 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -86,17 +86,22 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	HClass HCsystem = linker.forName("java.lang.System");
 	HClass HCstring = linker.forName("java.lang.String");
 	HClass HCcharA  = linker.forDescriptor("[C");
+	HClass HCthread = linker.forName("java.lang.Thread");
+	HClass HCthreadGroup = linker.forName("java.lang.ThreadGroup");
 	return Arrays.asList(new Object[] {
-	    // implicitly called during startup
+	    // implicitly called during startup/shutdown.
 	    HCsystem.getMethod("initializeSystemClass", "()V"),
-	    linker.forName("java.lang.Thread")
-		.getConstructor(new HClass[] {
-		    linker.forName("java.lang.ThreadGroup"),
+	    HCthread.getConstructor(new HClass[] {
+		    HCthreadGroup,
 		    linker.forName("java.lang.Runnable"),
 		    linker.forName("java.lang.String"),
 			}),
-	    linker.forName("java.lang.ThreadGroup")
-		.getConstructor(new HClass[0]),
+	    HCthread.getMethod("exit", new HClass[0]),
+	    HCthread.getMethod("getThreadGroup", new HClass[0]),
+	    HCthreadGroup.getConstructor(new HClass[0]),
+	    HCthreadGroup.getMethod("uncaughtException", new HClass[] {
+		    HCthread, linker.forName("java.lang.Throwable")
+			}),
 	    // jni implementation uses these:
 	    linker.forName("java.lang.NoClassDefFoundError")
 		.getConstructor(new HClass[] { HCstring }),
