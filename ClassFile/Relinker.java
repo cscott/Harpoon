@@ -13,7 +13,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.2.3 2000-01-11 15:31:41 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.2.4 2000-01-11 21:01:47 cananian Exp $
  */
 public class Relinker extends Linker {
     protected final Linker linker;
@@ -78,12 +78,16 @@ public class Relinker extends Linker {
     }
     HClass unwrap(HClass hc) {
 	if (hc==null || hc.isPrimitive()) return hc;
+	if (hc.isArray()) return linker.forDescriptor(hc.getDescriptor());
 	return ((HClassProxy)hc).proxy;
     }
     HField wrap(HField hf) {
-	HField result = (HFieldProxy) memberMap.get(hf);
+	HField result = (HField) memberMap.get(hf);
 	if (result==null) {
-	    result = new HFieldProxy(this, hf);
+	    if (hf.getDeclaringClass().isArray())
+		result=wrap(hf.getDeclaringClass()).getField(hf.getName());
+	    else
+		result = new HFieldProxy(this, hf);
 	    memberMap.put(hf, result);
 	}
 	return result;
@@ -93,7 +97,11 @@ public class Relinker extends Linker {
 	if (hm instanceof HConstructor) return wrap((HConstructor)hm);
 	HMethod result = (HMethodProxy) memberMap.get(hm);
 	if (result==null) {
-	    result = new HMethodProxy(this, hm);
+	    if (hm.getDeclaringClass().isArray())
+		result=wrap(hm.getDeclaringClass())
+		    .getMethod(hm.getName(), hm.getDescriptor());
+	    else
+		result = new HMethodProxy(this, hm);
 	    memberMap.put(hm, result);
 	}
 	return result;
@@ -101,6 +109,7 @@ public class Relinker extends Linker {
     HConstructor wrap(HConstructor hc) {
 	HConstructor result = (HConstructorProxy) memberMap.get(hc);
 	if (result==null) {
+	    Util.assert(!hc.getDeclaringClass().isArray());
 	    result = new HConstructorProxy(this, hc);
 	    memberMap.put(hc, result);
 	}
@@ -109,6 +118,7 @@ public class Relinker extends Linker {
     HInitializer wrap(HInitializer hi) {
 	HInitializer result = (HInitializerProxy) memberMap.get(hi);
 	if (result==null) {
+	    Util.assert(!hi.getDeclaringClass().isArray());
 	    result = new HInitializerProxy(this, hi);
 	    memberMap.put(hi, result);
 	}
