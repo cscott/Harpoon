@@ -1,5 +1,18 @@
 The harpoon.Backend.StrongARM package contains machine-dependent classes
 for the StrongARM backend. (Frame/CodeGen)
 
-Currently contains basic infrastructure for StrongARM code elements,
-more coming once the classes compile, as well as code generation itself.
+Useful notes:
+
+StrongARM NATIVECALL Caller Convention (As Seen In (tm): gcc arm32-netbsd):
+	full, descending stack
+	pass parameters 1, 2, 3, 4 in r0, r1, r2, r3 respectively
+	after that, push arguments onto the stack (last argument first)
+	return value in r0
+
+	r11 = fp, r12 = ip, r13 = sp, r14 = lr, r15 = pc
+	callee saves r4-r10
+	live on exit: fp, sp, pc
+
+For normal CALLs:
+	use same, except that r1 is used for retex (at least as long
+	as we're still explicitly returning exceptional values)	
