@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>BasicInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductions.java,v 1.1.2.3 1999-09-09 21:42:54 cananian Exp $
+ * @version $Id: BasicInductions.java,v 1.1.2.4 1999-09-22 06:07:45 bdemsky Exp $
  */
 public class BasicInductions {
     HCode hc;
@@ -185,8 +185,29 @@ public class BasicInductions {
 	    //Do nothing
 	}
 
+	/* All of these redefined to avoid error messagqes!*/
+	public void visit(harpoon.IR.Quads.AGET q)    {}
+
+	public void visit(harpoon.IR.Quads.ASET q)    {}
+
+	public void visit(harpoon.IR.Quads.CALL q)    {}
+
+	public void visit(harpoon.IR.Quads.GET q)     {}
+
+	public void visit(harpoon.IR.Quads.HANDLER q) {}
+
+	public void visit(harpoon.IR.Quads.OPER q)    {}
+
+	public void visit(harpoon.IR.Quads.SET q)     {}
+
 	public void visit(OPER q) {
-	    System.out.println("OPER found in LowQuad form.  Something is weird!");
+	    switch (q.opcode()) {
+	    case Qop.IADD:
+		//	    case Qop.LADD:
+		adds.push(q);
+		break;
+	    default:
+	    } 
 	}
 
 	public void visit(POPER q) {
@@ -206,3 +227,4 @@ public class BasicInductions {
 	}
     }
 }
+
