@@ -47,4 +47,6 @@ DECLARE_STATS_EXTERN(stk)
 DECLARE_STATS_EXTERN(gbl)
 DECLARE_STATS_EXTERN(thr)
 
+void print_statistics(void);
+
 #endif /* INCLUDED_NIFTY_STATS_H */
