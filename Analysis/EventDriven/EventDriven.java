@@ -24,7 +24,7 @@ import harpoon.Util.WorkSet;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.7 2000-02-08 08:40:10 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.8 2000-03-19 20:55:56 bdemsky Exp $
  */
 public class EventDriven {
     protected final CachingCodeFactory ucf;
@@ -32,6 +32,7 @@ public class EventDriven {
     protected final ClassHierarchy ch;
     protected Map classmap;
     protected final Linker linker;
+    protected boolean optimistic;
 
     /** Creates a <code>EventDriven</code>. The <code>CachingCodeFactory</code>
      *  needs to have been created from a <code>QuadSSI</code> that contains
@@ -39,18 +40,19 @@ public class EventDriven {
      *
      *  <code>HCode</code> needs to be the <code>HCode</code> for main.
      */
-    public EventDriven(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker) {
+    public EventDriven(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker, boolean optimistic) {
         this.ucf = ucf;
 	this.hc = hc;
 	this.ch = ch;
 	this.linker=linker;
+	this.optimistic=optimistic;
     }
 
     /** Returns the converted main
      */
     public HMethod convert() {
 	// Clone the class that main was in, and replace it
-	HMethod oldmain=this.hc.getMethod();
+	HMethod oldmain=hc.getMethod();
 	HClass origClass = oldmain.getDeclaringClass();
 
 
@@ -71,7 +73,7 @@ public class EventDriven {
 //  	    }
 //  	}
 
-	ToAsync as = new ToAsync(ucf,hc ,ch ,linker);
+	ToAsync as = new ToAsync(ucf,hc ,ch ,linker,optimistic);
 	// transform main to mainAsync
 	HMethod newmain = as.transform();
 

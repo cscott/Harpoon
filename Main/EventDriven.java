@@ -33,7 +33,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.9 2000-02-13 04:40:39 bdemsky Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.10 2000-03-19 20:55:39 bdemsky Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -106,7 +106,7 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 
 
 	harpoon.Analysis.EventDriven.EventDriven ed = 
-	    new harpoon.Analysis.EventDriven.EventDriven(hcf, hc, ch, linker);
+	    new harpoon.Analysis.EventDriven.EventDriven(hcf, hc, ch, linker,true);
 	
 	HMethod mconverted=ed.convert();
 

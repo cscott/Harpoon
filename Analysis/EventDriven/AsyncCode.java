@@ -10,6 +10,7 @@ import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.Unreachable;
 import harpoon.Analysis.Maps.TypeMap;
+import harpoon.Analysis.AllCallers;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
@@ -62,7 +63,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.53 2000-02-13 04:39:35 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.54 2000-03-19 20:55:56 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -92,10 +93,10 @@ public class AsyncCode {
     public static void buildCode(HCode hc, Map old2new, Set async_todo, 
 			   QuadLiveness liveness,
 			   Set blockingcalls, 
-			   CachingCodeFactory ucf, ToAsync.BlockingMethods bm,
+			   CachingCodeFactory ucf, AllCallers.MethodSet bm,
 			   HMethod mroot, Linker linker, ClassHierarchy ch,
 			   Set other, Set done_other, boolean methodstatus,
-			   TypeMap typemap) 
+			   TypeMap typemap, boolean optimistic) 
 	throws NoClassDefFoundError
     {
 	System.out.println("Entering AsyncCode.buildCode()");
@@ -122,7 +123,7 @@ public class AsyncCode {
 					   blockingcalls, hc.getMethod(), 
 					   hc, ucf,bm,mroot, linker,ch,
 					   other, done_other,methodstatus,
-					   typemap);
+					   typemap,optimistic);
 	    quadc.accept(cv);
 	}
     }
@@ -144,10 +145,10 @@ public class AsyncCode {
 			   Map env_map, QuadLiveness liveness,
 			   Set blockingcalls, HMethod hmethod, 
 			   HCode hc, CachingCodeFactory ucf,
-			   ToAsync.BlockingMethods bm, HMethod mroot, 
+			   AllCallers.MethodSet bm, HMethod mroot, 
 			   Linker linker, ClassHierarchy ch,
 			   Set other, Set done_other, boolean methodstatus,
-			   TypeMap typemap) {
+			   TypeMap typemap, boolean optimistic) {
 	    this.liveness=liveness;
 	    this.env_map=env_map;
 	    this.cont_todo=cont_todo;
@@ -165,14 +166,22 @@ public class AsyncCode {
 					       async_todo, old2new,
 					       hc,ucf,bm,mroot, linker,ch,
 					       other, done_other,methodstatus,
-					       typemap);
+					       typemap,optimistic);
 	}
 
 	void addCode(HMethod hm, HCode hc) {
 	    if (clonevisit.needsRepair()) {
+		//	hc.print(new java.io.PrintWriter(System.out, true));
 		ucf.put(hm,hc);
-	    } else
-		ucf.put(hm,new ContCodeSSI(new ContCodeNoSSA((QuadSSI)hc)));
+	    } else {
+		//hc.print(new java.io.PrintWriter(System.out, true));
+		ContCodeNoSSA hco=new ContCodeNoSSA((QuadSSI)hc);
+		//hco.print(new java.io.PrintWriter(System.out, true));
+		HCode hcn=new ContCodeSSI(hco);
+		//hcn.print(new java.io.PrintWriter(System.out, true));
+		ucf.put(hm,hcn);
+
+	    }
 	}
 
 	public void visit(Quad q) {
@@ -188,10 +197,15 @@ public class AsyncCode {
 	    System.out.println("ContVisiting"+ q);
 	    header=true;
 	    clonevisit.reset(nhm,q.getFactory().tempFactory(),false);
+
+
 	    System.out.println("Reset clone visitor");
 	    copy(q,-1);
 	    System.out.println("Finished copying");
 	    addCode(nhm, clonevisit.getCode());
+
+
+
 	}
 
 	public void visit(CALL q) {
@@ -215,12 +229,18 @@ public class AsyncCode {
 	    System.out.println("Finished resume copying");
 	    //addEdges should add appropriate headers
 	    addCode(resume, clonevisit.getCode());
+
+
+
+
 	    //Exception method
 	    clonevisit.reset(exception, q.getFactory().tempFactory(), true);
 	    copy(q,1);
 	    System.out.println("Finished exception copying");
 	    //addEdges should add appropriate headers
 	    addCode(exception, clonevisit.getCode());
+
+
 	}
 
 	//copies the necessary quads from the original HCode

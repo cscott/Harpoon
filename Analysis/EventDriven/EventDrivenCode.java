@@ -23,7 +23,7 @@ import harpoon.Temp.TempFactory;
  * <code>EventDrivenCode</code>
  *
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDrivenCode.java,v 1.1.2.9 2000-02-13 04:39:35 bdemsky Exp $
+ * @version $Id: EventDrivenCode.java,v 1.1.2.10 2000-03-19 20:55:56 bdemsky Exp $
  */
 public class EventDrivenCode extends harpoon.IR.Quads.QuadSSI {
     /** Creates a <code>EventDrivenCode</code>. */
@@ -107,6 +107,3 @@ public class EventDrivenCode extends harpoon.IR.Quads.QuadSSI {
 	return h;
     }    
 }
-
-
-

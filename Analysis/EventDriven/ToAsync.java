@@ -35,26 +35,28 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.19 2000-03-15 20:33:05 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.20 2000-03-19 20:55:56 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
     protected final HCode hc;
     protected final ClassHierarchy ch;
     protected final Linker linker;
+    protected boolean optimistic;
 
     /** Creates a <code>ToAsync</code>. */
-    public ToAsync(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker) {
+    public ToAsync(CachingCodeFactory ucf, HCode hc, ClassHierarchy ch, Linker linker, boolean optimistic) {
 	this.linker=linker;
         this.ucf = ucf;
 	this.hc = hc;
 	this.ch = ch;
+	this.optimistic=optimistic;
     }
     
     public HMethod transform() {
 	System.out.println("Entering ToAsync.transform()");
-	AllCallers ac = new AllCallers(this.ch, this.ucf);
-	BlockingMethods bm = new BlockingMethods(linker);
+	AllCallers ac = new AllCallers(ch, ucf);
+	AllCallers.MethodSet bm = optimistic?((AllCallers.MethodSet)new BlockingMethodsOpt(linker)):((AllCallers.MethodSet)new BlockingMethods(linker));
 	Set blockingcalls = ac.getCallers(bm);
 
 	HashMap old2new=new HashMap();
@@ -85,12 +87,14 @@ public class ToAsync {
 	    System.out.println("ToAsync is running AsyncCode on "+selone);
 	    AsyncCode.buildCode(selone, old2new, async_todo,
 				ql,blockingcalls,ucf,  bm, hc.getMethod(), 
-				linker,ch,other, done_other,status, typemap);
+				linker,ch,other, done_other,status, typemap, optimistic);
 	}
 	return nhm;
     }
 
-    static class BlockingMethods implements AllCallers.MethodSet {
+
+
+    static class BlockingMethods implements AllCallers.MethodSet,BMethod  {
 	final Linker linker;
 	public BlockingMethods(Linker linker) {
 	    this.linker=linker;
@@ -123,7 +127,7 @@ public class ToAsync {
 
 	    HMethod retval = (HMethod)cache.get(m);
 	    if (retval == null) {
-		if(m.equals(fd.getMethod("sync",
+		/*if(m.equals(fd.getMethod("sync",
 					 new HClass[0]))) {
 		    retval=fd.getMethod("syncAsync", new HClass[0]);
 		    cache.put(m,retval);
@@ -131,7 +135,7 @@ public class ToAsync {
 						 new HClass[]{HClass.Long}))) {
 		    retval=is.getMethod("skipAsync", new HClass[]{HClass.Long});
 		    cache.put(m,retval);
-		} else if (m.equals(HCthrd.getMethod("join",
+		    } else*/ if (m.equals(HCthrd.getMethod("join",
 						new HClass[0]))) {
 			retval=HCthrd.getMethod("join_Async",
 					    new HClass[0]);
@@ -185,7 +189,7 @@ public class ToAsync {
 			    cache.put(m, retval);
 			}
 		    }
-		} else if (os.equals(m.getDeclaringClass())){
+		} /*else if (os.equals(m.getDeclaringClass())){
 		    if (m.getName().equals("write")) {
 			final HMethod bm1 = 
 			    os.getDeclaredMethod("write", new HClass[]{HClass.Int});
@@ -237,7 +241,7 @@ public class ToAsync {
 			    cache.put(m, retval);
 			}
 		    }
-		} else if (ss.equals(m.getDeclaringClass())) {
+		    }*/ else if (ss.equals(m.getDeclaringClass())) {
 		    final HMethod bm4 = 
 			ss.getDeclaredMethod("accept", new HClass[0]);
 		    if (bm4.equals(m)) {
@@ -251,6 +255,168 @@ public class ToAsync {
 	} // swop
 
     } // BlockingMethods
+
+    static class BlockingMethodsOpt implements AllCallers.MethodSet,BMethod {
+	final Linker linker;
+	public BlockingMethodsOpt(Linker linker) {
+	    this.linker=linker;
+	}
+
+	/** Returns true if the <code>HMethod</code> blocks, false
+	 *  otherwise. Checks against a list of known blocking methods.
+	 */
+	public boolean select (final HMethod m) {
+	    if (swop(m) != null) {
+		System.out.println(m.toString());
+		return true;
+	    } else
+		return false;
+	}
+
+	/** Returns the corresponding asynchronous method for a given
+	 *  blocking method if one exists.
+	 */
+	final private Map cache = new HashMap();
+	public HMethod swop (final HMethod m) {
+	    final HClass is = linker.forName("java.io.InputStream");
+	    final HClass fis = linker.forName("java.io.FileInputStream");
+	    final HClass os = linker.forName("java.io.OutputStream");
+	    final HClass fos = linker.forName("java.io.FileOutputStream");
+	    final HClass ss = linker.forName("java.net.ServerSocket");
+	    final HClass fd = linker.forName("java.io.FileDescriptor");
+	    final HClass b = HClass.Byte;
+	    final HClass HCthrd = linker.forName("java.lang.Thread");
+
+	    HMethod retval = (HMethod)cache.get(m);
+	    if (retval == null) {
+		/*if(m.equals(fd.getMethod("sync",
+					 new HClass[0]))) {
+		    retval=fd.getMethod("syncAsyncO", new HClass[0]);
+		    cache.put(m,retval);
+		} else if (m.equals(is.getMethod("skip",
+						 new HClass[]{HClass.Long}))) {
+		    retval=is.getMethod("skipAsyncO", new HClass[]{HClass.Long});
+		    cache.put(m,retval);
+		    } else*/ if (m.equals(HCthrd.getMethod("join",
+						new HClass[0]))) {
+			retval=HCthrd.getMethod("join_AsyncO",
+					    new HClass[0]);
+
+		    cache.put(m, retval);
+		} else if (is.equals(m.getDeclaringClass())) {
+		    if (m.getName().equals("read")) {
+			final HMethod bm1 = 
+			    is.getDeclaredMethod("read", new HClass[0]);
+			final HMethod bm2 = is.getDeclaredMethod("read", 
+                            new HClass[] {HClassUtil.arrayClass(b, 1)});
+			final HMethod bm3 = is.getDeclaredMethod("read", 
+			    new HClass[] {HClassUtil.arrayClass(b, 1),
+					  HClass.Int, HClass.Int});
+			if (bm1.equals(m)) {
+			    retval = is.getMethod("readAsyncO", 
+						  new HClass[0]);
+			    cache.put(m, retval);
+			} else if (bm2.equals(m)) {
+			    retval = is.getMethod("readAsyncO", 
+			        new HClass[] {HClassUtil.arrayClass(b, 1)});
+			    cache.put(m, retval);
+			} else if (bm3.equals(m)) {
+			    retval = is.getMethod("readAsyncO", 
+				new HClass[] {HClassUtil.arrayClass(b, 1),
+					      HClass.Int, HClass.Int});
+			    cache.put(m, retval);
+			}
+		    }
+		} else if (fis.equals(m.getDeclaringClass())) {
+		    if (m.getName().equals("read")) {
+			final HMethod bm1 = 
+			    fis.getDeclaredMethod("read", new HClass[0]);
+			final HMethod bm2 = fis.getDeclaredMethod("read", 
+                            new HClass[] {HClassUtil.arrayClass(b, 1)});
+			final HMethod bm3 = fis.getDeclaredMethod("read", 
+			    new HClass[] {HClassUtil.arrayClass(b, 1),
+					  HClass.Int, HClass.Int});
+			if (bm1.equals(m)) {
+			    retval = fis.getMethod("readAsyncO", 
+						  new HClass[0]);
+			    cache.put(m, retval);
+			} else if (bm2.equals(m)) {
+			    retval = fis.getMethod("readAsyncO", 
+			        new HClass[] {HClassUtil.arrayClass(b, 1)});
+			    cache.put(m, retval);
+			} else if (bm3.equals(m)) {
+			    retval = fis.getMethod("readAsyncO", 
+				new HClass[] {HClassUtil.arrayClass(b, 1),
+					      HClass.Int, HClass.Int});
+			    cache.put(m, retval);
+			}
+		    }
+		} /*else if (os.equals(m.getDeclaringClass())){
+		    if (m.getName().equals("write")) {
+			final HMethod bm1 = 
+			    os.getDeclaredMethod("write", new HClass[]{HClass.Int});
+			final HMethod bm2 = 
+			    os.getDeclaredMethod("write", 
+						 new HClass[] {HClassUtil.arrayClass(b, 1)});
+			final HMethod bm3 = 
+			    os.getDeclaredMethod("write", 
+						 new HClass[] {HClassUtil.arrayClass(b, 1),
+							       HClass.Int, HClass.Int});
+			if (bm1.equals(m)) {
+			    retval = os.getMethod("writeAsyncO", 
+						  new HClass[] {HClass.Int});
+			    cache.put(m, retval);
+			} else if (bm2.equals(m)) {
+			    retval = os.getMethod("writeAsyncO", 
+				  new HClass[] {HClassUtil.arrayClass(b, 1)});
+			    cache.put(m, retval);
+			} else if (bm3.equals(m)) {
+			    retval = os.getMethod("writeAsyncO", 
+				new HClass[] {HClassUtil.arrayClass(b, 1),
+					      HClass.Int, HClass.Int});
+			    cache.put(m, retval);
+			}
+		    }
+		} else if (fos.equals(m.getDeclaringClass())){
+		    if (m.getName().equals("write")) {
+			final HMethod bm1 = 
+			    fos.getDeclaredMethod("write", new HClass[]{HClass.Int});
+			final HMethod bm2 = 
+			    fos.getDeclaredMethod("write", 
+						  new HClass[] {HClassUtil.arrayClass(b, 1)});
+			final HMethod bm3 = 
+			    fos.getDeclaredMethod("write", 
+						 new HClass[] {HClassUtil.arrayClass(b, 1),
+							       HClass.Int, HClass.Int});
+			if (bm1.equals(m)) {
+			    retval = fos.getMethod("writeAsyncO", 
+						  new HClass[]{HClass.Int});
+			    cache.put(m, retval);
+			} else if (bm2.equals(m)) {
+			    retval = fos.getMethod("writeAsyncO", 
+				  new HClass[] {HClassUtil.arrayClass(b, 1)});
+			    cache.put(m, retval);
+			} else if (bm3.equals(m)) {
+			    retval = fos.getMethod("writeAsyncO", 
+				new HClass[] {HClassUtil.arrayClass(b, 1),
+					      HClass.Int, HClass.Int});
+			    cache.put(m, retval);
+			}
+		    }
+		    }*/ else if (ss.equals(m.getDeclaringClass())) {
+		    final HMethod bm4 = 
+			ss.getDeclaredMethod("accept", new HClass[0]);
+		    if (bm4.equals(m)) {
+			retval = ss.getDeclaredMethod("acceptAsyncO", 
+						      new HClass[0]);
+			cache.put(m, retval);
+		    }
+		}
+	    }
+	    return retval;
+	} // swop
+
+    } // BlockingMethodsOpt
 
 } // ToAsync
 
