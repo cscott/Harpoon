@@ -293,6 +293,9 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
     /* use default allocation strategy. */
     (*env)->AllocObject(env, thrCls);
 #endif
+#ifdef WITH_ROLE_INFER
+    NativeassignUID(env,mainThr,thrCls);
+#endif
   /* put thread in env structure as 'current thread' */
   assert(((struct FNI_Thread_State *)env)->thread == NULL);
   ((struct FNI_Thread_State *)env)->thread = mainThr;

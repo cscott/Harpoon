@@ -51,7 +51,6 @@ jarray FNI_NewObjectArray(JNIEnv *env, jsize length,
     arrayclazz = FNI_FindClass(env, arraydesc);
     if (arrayclazz==NULL) return NULL; /* bail on exception */
     info = FNI_GetClassInfo(arrayclazz);
-    FNI_DeleteLocalRef(env, arrayclazz);
   }
   result = FNI_Alloc(env, info, info->claz, NULL/* default alloc func */,
 		     sizeof(struct aarray) + sizeof(ptroff_t)*length);
@@ -66,8 +65,9 @@ jarray FNI_NewObjectArray(JNIEnv *env, jsize length,
 #ifdef WITH_ROLE_INFER
   printf("Building Array\n");
   printf("Doing assignUID\n");
-  Java_java_lang_Object_assignUID(env,result);
+  NativeassignUID(env,result,arrayclazz);
 #endif
+  FNI_DeleteLocalRef(env, arrayclazz);
 
   return (jobjectArray) result;
 }
@@ -85,17 +85,17 @@ type##Array FNI_New##name##Array(JNIEnv *env, jsize length) {\
   arrayclazz = FNI_FindClass(env, sig);\
   if (arrayclazz==NULL) return NULL; /* bail on error */\
   info = FNI_GetClassInfo(arrayclazz);\
-  FNI_DeleteLocalRef(env, arrayclazz);\
   result = FNI_Alloc(env, info, info->claz, NULL/*default alloc func*/,\
 		     sizeof(struct aarray) + sizeof(type)*length);\
   if (result==NULL) return NULL; /* bail on error */\
   ((struct aarray *)FNI_UNWRAP(result))->length = length;\
   ASSIGN_UID;\
+  FNI_DeleteLocalRef(env, arrayclazz);\
   return (type##Array) result;\
 }
 /* special object fixup if we're building with role inference support */
 #ifdef WITH_ROLE_INFER
-#  define ASSIGN_UID  Java_java_lang_Object_assignUID(env,result)
+#  define ASSIGN_UID  NativeassignUID(env,result,arrayclazz)
 #else /* !WITH_ROLE_INFER */
 #  define ASSIGN_UID
 #endif /* WITH_ROLE_INFER */

@@ -62,6 +62,9 @@ jobject FNI_NewObjectA(JNIEnv *env, jclass clazz, jmethodID methodID,
   assert(FNI_NO_EXCEPTIONS(env));
   result = FNI_AllocObject(env, clazz);
   if (FNI_ExceptionOccurred(env)) return result; /* bail */
+#ifdef WITH_ROLE_INFER
+  NativeassignUID(env,result,clazz);
+#endif
   FNI_CallNonvirtualVoidMethodA(env, result, clazz, methodID, args);
   return result;
 }
@@ -71,6 +74,9 @@ jobject FNI_NewObjectV(JNIEnv *env, jclass clazz, jmethodID methodID,
   assert(FNI_NO_EXCEPTIONS(env));
   result = FNI_AllocObject(env, clazz);
   if (FNI_ExceptionOccurred(env)) return result; /* bail */
+#ifdef WITH_ROLE_INFER
+  NativeassignUID(env,result,clazz);
+#endif
   FNI_CallNonvirtualVoidMethodV(env, result, clazz, methodID, args);
   return result;
 }

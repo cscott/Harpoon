@@ -11,7 +11,10 @@ extern "C" {
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_assignUID
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject,jclass);
+
+void NativeassignUID
+  (JNIEnv *, jobject,jclass);
 
 /*
  * Class:     java_lang_RoleInference
@@ -33,6 +36,9 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_fieldassign
  */
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_marklocal
   (JNIEnv *, jclass, jstring, jobject);
+
+JNIEXPORT void JNICALL Java_java_lang_RoleInference_killlocal
+  (JNIEnv *, jclass, jstring);
 
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_returnmethod
   (JNIEnv *, jclass);
