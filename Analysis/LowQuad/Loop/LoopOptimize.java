@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.30 2000-04-14 04:06:15 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.31 2000-04-14 18:10:36 bdemsky Exp $
  */
 public final class LoopOptimize {
 
@@ -78,8 +78,8 @@ public final class LoopOptimize {
 	return new HCodeFactory() {
 	    public HCode convert(HMethod m) {
 		HCode hc = parent.convert(m);
-		SSITOSSAMap ssitossa=new SSITOSSAMap(hc);
 		if (hc!=null) {
+		    SSITOSSAMap ssitossa=new SSITOSSAMap(hc);
 		    return (new LoopOptimize(new LoopAnalysis(ssitossa),ssitossa)).optimize(hc);
 		} else
 		return hc;
@@ -114,15 +114,19 @@ public final class LoopOptimize {
 	while (iterate.hasNext())
 	    recursetree(hc, (MyLowQuadSSI) hcnew, (Loops)iterate.next(), new WorkSet());
 
+	//hcnew.print(new java.io.PrintWriter(System.out, true));
+
 	if (changed) {
 	    //We've likely broken SSI invariants...EVIL SSI!
 	    //Lets fix them...
 	    //As soon as someone gives me something to do that...
 	    hcnew=new LowQuadSSI(new MyLowQuadNoSSA(hcnew));
+	    //hcnew.print(new java.io.PrintWriter(System.out, true));
 	}
 	
 	//After doing optimizations we need to clean up any deadcode...
 	DeadCode.optimize(hcnew, null/*throw away AllocationInformation*/);
+	//hcnew.print(new java.io.PrintWriter(System.out, true));
 	return hcnew;
     }
 

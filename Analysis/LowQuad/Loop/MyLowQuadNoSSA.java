@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>MyLowQuadNoSSA</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadNoSSA.java,v 1.1.2.1 2000-04-14 04:06:15 bdemsky Exp $
+ * @version $Id: MyLowQuadNoSSA.java,v 1.1.2.2 2000-04-14 18:10:36 bdemsky Exp $
  */
 
 public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA {
@@ -44,6 +44,7 @@ public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA {
 	quadmap=translate.quadMap();
 	dT=new HashMap();
 	tT=new HashMap();
+	parent=code;
 	buildmaps(code);
     }
 
@@ -71,7 +72,7 @@ public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA {
     
 
     public HClass typeMap(HCodeElement hce, Temp t) {
-	Util.assert(hce!=null && t!=null);
+	Util.assert(t!=null);
 	Object type = tT.get(t);
 	try { return (HClass)type; } 
 	catch (ClassCastException cce) { 

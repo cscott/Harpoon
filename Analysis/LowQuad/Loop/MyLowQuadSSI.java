@@ -23,7 +23,7 @@ import java.util.Iterator;
  * <code>MyLowQuadSSI</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadSSI.java,v 1.1.2.8 2000-02-25 00:53:41 cananian Exp $
+ * @version $Id: MyLowQuadSSI.java,v 1.1.2.9 2000-04-14 18:10:36 bdemsky Exp $
  */
 
 public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI {
@@ -103,7 +103,7 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI {
     }
 
     public HClass typeMap(HCodeElement hce, Temp t) {
-	Util.assert(hce!=null && t!=null);
+	Util.assert(t!=null);
 	Object type = tT.get(t);
 	try { return (HClass)type; } 
 	catch (ClassCastException cce) { 

@@ -5,6 +5,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.IR.LowQuad.LowQuadVisitor;
+import harpoon.IR.LowQuad.LowQuadFactory;
+import harpoon.IR.LowQuad.PCALL;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.Temp.CloningTempMap;
@@ -24,7 +27,7 @@ import java.util.Map;
  * <code>RSSIToNoSSA</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: RSSIToNoSSA.java,v 1.1.2.4 2000-04-14 04:06:24 bdemsky Exp $
+ * @version $Id: RSSIToNoSSA.java,v 1.1.2.5 2000-04-14 18:10:45 bdemsky Exp $
  */
 public class RSSIToNoSSA {
     QuadFactory newQF;
@@ -101,7 +104,7 @@ public class RSSIToNoSSA {
 	}
 	return newRoot;
     }
-    static class Remover extends QuadVisitor {
+    static class Remover extends LowQuadVisitor {
 	Set done;
 	public Remover(Set done) {
 	    this.done=done;}
@@ -125,12 +128,37 @@ public class RSSIToNoSSA {
 	}
 	public void visit(Quad q) {}
 	
+	public void visit(harpoon.IR.Quads.AGET q)    {}
+
+	public void visit(harpoon.IR.Quads.ASET q)    {}
+
+	public void visit(harpoon.IR.Quads.GET q)     {}
+
+	public void visit(harpoon.IR.Quads.HANDLER q) {}
+
+	public void visit(harpoon.IR.Quads.OPER q)    {}
+
+	public void visit(harpoon.IR.Quads.SET q)     {}      
+	
 	public void visit(CALL q) {
 	    fixsigma(q);
 	    CALL nc= new CALL(q.getFactory(), q, q.method(), q.params(),
 			      q.retval(),
 			      q.retex(), q.isVirtual(), q.isTailCall(),
 			      new Temp[0]);
+	    for (int i=0;i<q.arity();i++)
+		Quad.addEdge(nc,i,q.next(i),q.nextEdge(i).which_pred());
+	    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),
+			 nc,0);
+	    done.add(nc);
+	}
+
+	public void visit(PCALL q) {
+	    fixsigma(q);
+	    PCALL nc= new PCALL((LowQuadFactory)q.getFactory(), q, q.ptr(), 
+				q.params(),
+				q.retval(), q.retex(), new Temp[0],
+				q.isVirtual(), q.isTailCall());
 	    for (int i=0;i<q.arity();i++)
 		Quad.addEdge(nc,i,q.next(i),q.nextEdge(i).which_pred());
 	    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),
@@ -179,3 +207,4 @@ public class RSSIToNoSSA {
 	}
     }
 }
+
