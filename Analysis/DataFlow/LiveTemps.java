@@ -26,7 +26,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.25 2001-04-11 08:02:47 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.26 2001-05-15 19:53:26 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -263,6 +263,9 @@ public class LiveTemps extends LiveVars.BBVisitor {
 
 	Iterator instrs = bb.statements().listIterator();	
 	
+	if (LiveVars.DEBUG) 
+	    System.out.println(bb+" use:"+info.use+" def:"+info.def);
+
 	while (instrs.hasNext()) {
 	    HCodeElement h = (HCodeElement) instrs.next();
 	    
@@ -273,17 +276,27 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	    for(int i=0; i<ud.use(h).length; i++) {
 		Temp t = ud.use(h)[i];
 		if ( !info.def.contains(t) ) {
-		    info.use.add(t);
+		    boolean changed = info.use.add(t);
+		    if (LiveVars.DEBUG) {
+			System.out.println("adding use:"+t+" from "+h);
+		    }
 		}
 	    }	    
 	    // DEF: set of vars defined in block before being used
 	    for(int i=0; i<ud.def(h).length; i++) {
 		Temp t = ud.def(h)[i];
 		if ( !info.use.contains(t) ) {
-		    info.def.add(t);
+		    boolean changed = info.def.add(t);
+		    if (LiveVars.DEBUG) {
+			System.out.println("adding def:"+t+" from "+h);
+		    }
 		}
 	    }
 	}
+
+	if (LiveVars.DEBUG) 
+	    System.out.println(bb+" use:"+info.use+" def:"+info.def);
+
 	return info;
     }
 
@@ -303,7 +316,11 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	    HCodeElement h = (HCodeElement) i.next();
 	    sb.append(j+"\t"+h.toString()+"\n");
 	    sb.append("\t"+"USES:"+ud.useC(h)+"\tDEFS:"+ud.defC(h));
-	    sb.append("\t"+getLiveAfter(h)+"\n");
+	    if (bbFact.getBlock(h)==null) {
+		sb.append("\t(NO BASIC BLOCK)\n");		
+	    } else {
+		sb.append("\tLIVE-AFTER:"+getLiveAfter(h)+"\n");
+	    }
 	    j++;
 	}
 	return sb.toString();
