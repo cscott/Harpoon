@@ -5,8 +5,17 @@ package harpoon.Analysis;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.WorkSet;
-import harpoon.IR.LowQuad.*;
-import harpoon.IR.Quads.*;
+import harpoon.IR.LowQuad.LowQuadVisitor;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.HANDLER;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SIGMA;
 import harpoon.ClassFile.HCode;
 
 import java.util.HashMap;
@@ -16,7 +25,7 @@ import java.util.Set;
  * <code>SSITOSSAMap</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: SSITOSSAMap.java,v 1.1.2.8 1999-09-19 16:17:14 cananian Exp $
+ * @version $Id: SSITOSSAMap.java,v 1.1.2.9 2000-01-14 12:32:37 cananian Exp $
  */
 public class SSITOSSAMap implements TempMap {
     

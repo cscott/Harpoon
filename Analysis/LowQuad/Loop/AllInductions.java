@@ -3,13 +3,25 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.LowQuad.Loop;
 
-import harpoon.Analysis.Loops.*;
+import harpoon.Analysis.Loops.Loops;
 import harpoon.Util.WorkSet;
 import harpoon.Analysis.UseDef;
-import harpoon.ClassFile.*;
-import harpoon.IR.LowQuad.*;
+import harpoon.ClassFile.HCode;
+import harpoon.IR.LowQuad.LQop;
+import harpoon.IR.LowQuad.LowQuadVisitor;
+import harpoon.IR.LowQuad.PAOFFSET;
+import harpoon.IR.LowQuad.POPER;
 import harpoon.IR.Properties.CFGraphable;
-import harpoon.IR.Quads.*;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.HANDLER;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.Qop;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.SET;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -21,7 +33,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.10 1999-11-30 05:24:49 cananian Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.11 2000-01-14 12:32:50 cananian Exp $
  */
 public class AllInductions {
     TempMap tm;

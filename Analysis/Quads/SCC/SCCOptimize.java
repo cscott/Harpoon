@@ -8,8 +8,21 @@ import harpoon.Analysis.Maps.ExecMap;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.Analysis.Quads.DeadCode;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.SIGMA;
 import harpoon.Temp.Temp;
 import harpoon.Util.Set;
 import harpoon.Util.HashSet;
@@ -20,7 +33,7 @@ import harpoon.Util.Util;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.1.2.3 1999-11-30 05:24:53 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.1.2.4 2000-01-14 12:32:52 cananian Exp $
  */
 public final class SCCOptimize {
     TypeMap  ti;

@@ -6,12 +6,11 @@ package harpoon.Analysis.TypeInference;
 import java.util.Hashtable;
 import java.util.EmptyStackException;
 import harpoon.Util.FIFO;
-import harpoon.ClassFile.*;
 /**
  * <code>AuxUniqueFIFO</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: AuxUniqueFIFO.java,v 1.1.2.3 1999-08-04 05:52:24 cananian Exp $
+ * @version $Id: AuxUniqueFIFO.java,v 1.1.2.4 2000-01-14 12:32:54 cananian Exp $
  */
 
 public class AuxUniqueFIFO {

@@ -9,9 +9,11 @@ package harpoon.Analysis.DataFlow;
  * @author  John Whaley
  */
 
-import harpoon.Util.*;
+import harpoon.Util.HashSet;
+import harpoon.Util.Set;
+import harpoon.Util.Worklist;
 import java.util.Enumeration;
-import harpoon.IR.Quads.*;
+import harpoon.IR.Quads.Quad;
 
 class QuadEnumerator implements Enumeration {
 

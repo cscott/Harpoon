@@ -6,16 +6,33 @@ package harpoon.Analysis;
 import harpoon.Analysis.SSITOSSAMap;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
-import harpoon.IR.LowQuad.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.HANDLER;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SWITCH;
+import harpoon.IR.LowQuad.LowQuadFactory;
+import harpoon.IR.LowQuad.LowQuadVisitor;
+import harpoon.IR.LowQuad.PCALL;
 
 /**
  * <code>ToSSA</code>
  * Converts SSI to SSA.  Should work on LowQuads and Quads. 
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ToSSA.java,v 1.1.2.8 2000-01-14 05:12:05 cananian Exp $
+ * @version $Id: ToSSA.java,v 1.1.2.9 2000-01-14 12:32:37 cananian Exp $
  */
 
 public final class ToSSA {

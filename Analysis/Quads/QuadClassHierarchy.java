@@ -3,8 +3,21 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HConstructor;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.Code;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.SET;
 import harpoon.Util.ArraySet;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
@@ -29,7 +42,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.15 2000-01-13 23:47:30 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.16 2000-01-14 12:32:51 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy

@@ -3,13 +3,18 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.TypeInference;
 
-import harpoon.IR.Quads.*;
-import harpoon.Temp.*;
+import harpoon.IR.Quads.CALL;
+import harpoon.Temp.Temp;
 import java.util.Hashtable;
 import java.util.Enumeration;
 import harpoon.Util.UniqueFIFO;
 import harpoon.Util.Worklist;
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 
@@ -18,7 +23,7 @@ import java.util.Collections;
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.1.2.12 2000-01-13 23:47:34 cananian Exp $
+ * @version $Id: InterProc.java,v 1.1.2.13 2000-01-14 12:32:54 cananian Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {

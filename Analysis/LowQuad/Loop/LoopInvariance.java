@@ -4,9 +4,48 @@
 package harpoon.Analysis.LowQuad.Loop;
 
 import harpoon.Analysis.UseDef;
-import harpoon.ClassFile.*;
-import harpoon.IR.LowQuad.*;
-import harpoon.IR.Quads.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.LowQuad.LowQuadVisitor;
+import harpoon.IR.LowQuad.PAOFFSET;
+import harpoon.IR.LowQuad.PARRAY;
+import harpoon.IR.LowQuad.PCALL;
+import harpoon.IR.LowQuad.PFCONST;
+import harpoon.IR.LowQuad.PFIELD;
+import harpoon.IR.LowQuad.PFOFFSET;
+import harpoon.IR.LowQuad.PGET;
+import harpoon.IR.LowQuad.PMCONST;
+import harpoon.IR.LowQuad.PMETHOD;
+import harpoon.IR.LowQuad.PMOFFSET;
+import harpoon.IR.LowQuad.POPER;
+import harpoon.IR.LowQuad.PSET;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ALENGTH;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.ARRAYINIT;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.COMPONENTOF;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.HANDLER;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MONITORENTER;
+import harpoon.IR.Quads.MONITOREXIT;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.NOP;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Qop;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SIGMA;
+import harpoon.IR.Quads.THROW;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
 import harpoon.Util.WorkSet;
@@ -16,7 +55,7 @@ import java.util.Iterator;
  * <code>LoopInvariance</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopInvariance.java,v 1.1.2.9 1999-09-22 06:15:46 bdemsky Exp $
+ * @version $Id: LoopInvariance.java,v 1.1.2.10 2000-01-14 12:32:50 cananian Exp $
  */
 public class LoopInvariance {
     

@@ -3,9 +3,21 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.LowQuad.Loop;
 
-import harpoon.ClassFile.*;
-import harpoon.IR.LowQuad.*;
-import harpoon.IR.Quads.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.LowQuad.LQop;
+import harpoon.IR.LowQuad.LowQuadFactory;
+import harpoon.IR.LowQuad.LowQuadSSA;
+import harpoon.IR.LowQuad.PAOFFSET;
+import harpoon.IR.LowQuad.POPER;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Qop;
+import harpoon.IR.Quads.Quad;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Loops.Loops;
@@ -33,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.24 1999-11-30 05:24:49 cananian Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.25 2000-01-14 12:32:50 cananian Exp $
  */
 public final class LoopOptimize {
     

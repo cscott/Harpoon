@@ -3,15 +3,50 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Jasmin;
 
-import harpoon.IR.Quads.*;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ALENGTH;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.ARRAYINIT;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.COMPONENTOF;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.HANDLER;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.LABEL;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MONITORENTER;
+import harpoon.IR.Quads.MONITOREXIT;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.NOP;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Qop;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.QuadWithTry;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SWITCH;
+import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.TYPECAST;
 import harpoon.Temp.Temp;
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
 import harpoon.Analysis.UseDef;
 import harpoon.Util.WorkSet;
 import harpoon.Util.Util;
 import harpoon.Analysis.Maps.TypeMap;
 
-import java.io.*;
+import java.io.PrintStream;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
@@ -25,7 +60,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.31 2000-01-13 23:47:54 cananian Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.32 2000-01-14 12:32:56 cananian Exp $
  */
 public class Jasmin {
     HCode[] hc;

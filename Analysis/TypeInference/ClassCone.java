@@ -4,7 +4,7 @@
 package harpoon.Analysis.TypeInference;
 
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
 import harpoon.Util.Worklist;
 import harpoon.Util.Set;
 import harpoon.Util.HashSet;
@@ -16,7 +16,7 @@ import java.util.Iterator;
  * <code>ClassCone</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: ClassCone.java,v 1.1.2.4 1999-09-08 19:30:17 cananian Exp $
+ * @version $Id: ClassCone.java,v 1.1.2.5 2000-01-14 12:32:54 cananian Exp $
  */
 
 public class ClassCone  {

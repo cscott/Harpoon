@@ -5,7 +5,7 @@ package harpoon.Analysis.DataFlow;
 
 import java.util.Enumeration;
 import harpoon.Util.Worklist;
-import harpoon.IR.Quads.*;
+import harpoon.IR.Quads.Quad;
 /**
  * ForwardDataFlowQuadVisitor
  *

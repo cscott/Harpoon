@@ -13,7 +13,14 @@
 
 package harpoon.Analysis.Partition;
 
-import java.awt.*;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Panel;
+import java.awt.Point;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.Observer;
@@ -25,7 +32,7 @@ import java.util.Hashtable;
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version $Id: PartitionGraphViewer.java,v 1.3.2.4 1999-08-04 06:30:51 cananian Exp $
+ * @version $Id: PartitionGraphViewer.java,v 1.3.2.5 2000-01-14 12:32:51 cananian Exp $
  */
 
 public class PartitionGraphViewer extends Observable implements ActionListener {

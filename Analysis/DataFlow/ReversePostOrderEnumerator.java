@@ -12,8 +12,11 @@ package harpoon.Analysis.DataFlow;
 import java.util.Enumeration;
 import java.util.Stack;
 import harpoon.Analysis.BasicBlock;
-import harpoon.Util.*;
-import harpoon.IR.Quads.*;
+import harpoon.Util.ArrayEnumerator;
+import harpoon.Util.HashSet;
+import harpoon.Util.Set;
+import harpoon.Util.Util;
+import harpoon.IR.Quads.Quad;
 
 public class ReversePostOrderEnumerator implements Enumeration {
 

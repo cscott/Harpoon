@@ -13,7 +13,7 @@ package harpoon.Analysis.DataFlow;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ListIterator;
-import harpoon.IR.Quads.*;
+import harpoon.IR.Quads.Quad;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Worklist;

@@ -6,7 +6,7 @@ package harpoon.Util.Collections;
 import harpoon.Util.Util;
 import harpoon.Util.UnmodifiableIterator;
 
-import java.util.*;
+import java.util.Set;
 
 /**
  * <code>DisjointSetStructure</code> is a <code>SetFactory</code> that
@@ -32,7 +32,7 @@ import java.util.*;
  * a view of <code>s</code> of type 'Set[ T ]'.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: DisjointSetStructure.java,v 1.1.2.2 2000-01-13 19:01:19 pnkfelix Exp $
+ * @version $Id: DisjointSetStructure.java,v 1.1.2.3 2000-01-14 12:33:02 cananian Exp $
  */
 public abstract class DisjointSetStructure { 
     // note: having this extend SetFactory doesn't make sense any

@@ -6,7 +6,7 @@ package harpoon.Analysis.TypeInference;
 import harpoon.Util.HashSet;
 
 import java.util.Enumeration;
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
 /**
  * <code>SetHClass</code> represents concrete type.
  * Right now it is just a <code>Set</code> of <code>HClass</code>es,
@@ -14,7 +14,7 @@ import harpoon.ClassFile.*;
  * (i.e. class and all its subclasses) can be considered.
  *
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: SetHClass.java,v 1.1.2.3 1999-08-04 05:52:24 cananian Exp $
+ * @version $Id: SetHClass.java,v 1.1.2.4 2000-01-14 12:32:54 cananian Exp $
  */
 
 public class SetHClass extends HashSet {

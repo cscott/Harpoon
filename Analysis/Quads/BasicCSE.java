@@ -3,9 +3,15 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
-import harpoon.IR.Quads.*;
-import harpoon.ClassFile.*;
-import harpoon.Temp.*;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.Qop;
+import harpoon.IR.Quads.Quad;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.Temp.Temp;
 import harpoon.Util.UniqueVector;
 import java.util.Vector;
 import java.util.Hashtable;
@@ -15,7 +21,7 @@ import java.util.Hashtable;
  * common subexpression elemination, but only within basic blocks.
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: BasicCSE.java,v 1.1.2.1 1999-09-09 21:12:16 cananian Exp $
+ * @version $Id: BasicCSE.java,v 1.1.2.2 2000-01-14 12:32:51 cananian Exp $
  */
 
 public class BasicCSE  {

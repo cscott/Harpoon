@@ -44,12 +44,13 @@ import harpoon.Tools.PatMat.Spec.StmSeq;
 import harpoon.Tools.PatMat.Spec.StmThrow;
 import harpoon.Tools.PatMat.Spec.TypeSet;
 
-import java_cup.runtime.*;
+import java_cup.runtime.Symbol;
+import java_cup.runtime.lr_parser;
 
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.31 2000-01-10 05:08:44 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.32 2000-01-14 12:32:59 cananian Exp $
  */
 
 action code {:

@@ -10,8 +10,11 @@ package harpoon.Analysis.Quads;
  * @author  Felix Klock (pnkfelix@mit.edu)
  */
 
-import harpoon.Util.*;
-import harpoon.IR.Quads.*;
+import harpoon.Util.HashSet;
+import harpoon.Util.Util;
+import harpoon.Util.Worklist;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.Quad;
 import harpoon.IR.Properties.CFGrapher;
 import java.util.Map;
 import java.util.Hashtable;

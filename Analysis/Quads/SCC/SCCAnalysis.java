@@ -7,8 +7,43 @@ import harpoon.Analysis.Maps.ConstMap;
 import harpoon.Analysis.Maps.ExecMap;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.Maps.UseDefMap;
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeEdge;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ALENGTH;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.COMPONENTOF;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MONITORENTER;
+import harpoon.IR.Quads.MONITOREXIT;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.NOP;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.OperVisitor;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Qop;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadSSI;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SWITCH;
+import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Set;
@@ -24,7 +59,7 @@ import java.util.Enumeration;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.7 2000-01-13 23:47:31 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.8 2000-01-14 12:32:52 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
