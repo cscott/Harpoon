@@ -39,7 +39,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.1.2.8 2000-03-09 03:56:17 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.1.2.9 2000-03-28 11:39:12 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -168,6 +168,18 @@ public class DataReflection2 extends Data {
     private List sortedMembers(HClass hc) {
 	List members = new ArrayList(Arrays.asList(hc.getFields()));
 	members.addAll(Arrays.asList(hc.getMethods()));
+	// add back private members of superclasses, which
+	// getFields()/getMethods() omit. [CSA FIX: 3-28-00]
+	for (HClass hcp=hc.getSuperclass();hcp!=null;hcp=hcp.getSuperclass()) {
+	    List l = new ArrayList(Arrays.asList(hcp.getDeclaredFields()));
+	    l.addAll(Arrays.asList(hcp.getDeclaredMethods()));
+	    for (Iterator it=l.iterator(); it.hasNext(); ) {
+		HMember hm = (HMember) it.next();
+		if (Modifier.isPrivate(hm.getModifiers()))
+		    members.add(hm);
+	    }
+	}
+	// okay, now sort members.
 	Collections.sort(members, new Comparator() {
 	    public int compare(Object o1, Object o2) {
 		HMember hm1 = (HMember) o1, hm2 = (HMember) o2;
