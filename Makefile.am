@@ -28,6 +28,11 @@ update: needs-cvs
 	cvs -q update -Pd $(CVS_REVISION)
 	@-if [ -x @FORTUNE@ ]; then echo ""; @FORTUNE@; fi
 
+ChangeLog: needs-cvs
+	-$(RM) $@
+	rcs2log > $@
+dist: ChangeLog
+
 # the 'cvs' rules only make sense if you've got a copy checked out from CVS
 needs-cvs:
 	@if [ ! -d CVS ]; then \
