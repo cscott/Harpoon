@@ -286,21 +286,6 @@ class FileOutputStream extends OutputStream
      */
     public native void close() throws IOException;
 
-    public VoidContinuation closeAsync() {
-	try {
-	    close();
-	} catch (IOException e) {
-	    return new VoidDoneContinuation(e);
-	}
-	return new VoidDoneContinuation();
-    }
-
-    public VoidContinuation closeAsyncO() throws IOException {
-	close();
-	return new VoidContinuationOpt();
-    }
-    
-
 
      /**
       * Returns the file descriptor associated with this stream.
