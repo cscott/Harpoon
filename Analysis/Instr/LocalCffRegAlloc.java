@@ -6,6 +6,8 @@ package harpoon.Analysis.Instr;
 import harpoon.Backend.Generic.Code;
 import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.Backend.Generic.RegFileInfo.SpillException;
+import harpoon.Analysis.Maps.Derivation;
+import harpoon.Backend.Maps.BackendDerivation;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.Instr.TempInstrPair;
@@ -18,6 +20,9 @@ import harpoon.IR.Assem.InstrMEM;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Label;
+
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeElement;
 
 import harpoon.Util.CombineIterator;
 import harpoon.Util.Util;
@@ -59,7 +64,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.94 2000-07-11 20:38:07 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.95 2000-07-11 22:50:02 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -78,14 +83,40 @@ public class LocalCffRegAlloc extends RegAlloc {
     // `c' have been replaced with references to `o'
     private HTempMap coalescedTemps;
 
+    // maps Instr:n -> Instr:b where `n' is backed by `b' with respect
+    // to Derivation information.
+    private Map backedInstrs;
+
     /** Creates a <code>LocalCffRegAlloc</code>. */
     public LocalCffRegAlloc(Code code) {
         super(code);
 	allRegisters = frame.getRegFileInfo().getAllRegistersC();
+	coalescedTemps = new HTempMap();
+	backedInstrs = new HashMap();
     }
     
-    protected TempMap getTempMap() {
-	return coalescedTemps;
+    protected Derivation getDerivation() {
+	final Derivation oldD = code.getDerivation();
+	return new BackendDerivation() {
+	    private HCodeElement orig(HCodeElement h){
+		return (backedInstrs.containsKey(h)) ?
+		    (HCodeElement) backedInstrs.get(h) : h;
+	    }
+	    public HClass typeMap(HCodeElement hce, Temp t) {
+		hce = orig(hce); t = coalescedTemps.tempMap(t);
+		return oldD.typeMap(hce, t);
+	    }
+	    public Derivation.DList derivation(HCodeElement hce, Temp t) {
+		hce = orig(hce); t = coalescedTemps.tempMap(t);
+		return Derivation.DList.rename
+		    (oldD.derivation(hce, t), coalescedTemps);
+	    }
+	    public BackendDerivation.Register
+		calleeSaveRegister(HCodeElement hce, Temp t) { 
+		hce = orig(hce); t = coalescedTemps.tempMap(t);
+		return ((BackendDerivation)oldD).calleeSaveRegister(hce, t);
+	    }
+	};
     }
 
     final Collection instrsToRemove = new java.util.LinkedList();
@@ -198,7 +229,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    Instr pre = (Instr) replace.next();
 	    Instr post = (Instr) replace.next();
 	    Instr.replace(pre, post);
-	    replacedInstrs.put(post, pre);
+	    backedInstrs.put(post, pre);
 	}
    }
 
@@ -729,11 +760,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 			// System.out.println("adding "+load+" to "+regfile);
 			spillLoads.add(load);
 			spillLoads.add(iloc);
+			backedInstrs.put(load, i);
 		    }
 
 		    code.assignRegister(i, t, regList);
 
-		    regfile.assign(t, regList);
+		    regfile.assign(t, regList, i);
 		    
 		    
 		    // remove preassignments
@@ -781,7 +813,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    if (regfile.isEmpty(reg)) { 
 			Temp preassign = new RegFileInfo.PreassignTemp(reg);
 
-			regfile.assign( preassign, list(reg) );
+			// preassigntemps should never be spilled, so
+			// their sources should never be accessed, so
+			// 'null' should be safe to add...
+			regfile.assign( preassign, list(reg) , null);
 			preassignTempSet.add(preassign);
 		    }
 		}
@@ -905,12 +940,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    Util.assert(!(isRegister(u) && isRegister(d)));
 		    
 		    if (isRegister(u)) {
-			regfile.assign(d, list(u));
+			regfile.assign(d, list(u), i);
 			regfile.writeTo(d);
 		    } else if (isRegister(d)) {
 			if (regfile.getTemp(d) == null) {
 			    // FSK: can this actually EVER work???
-			    regfile.assign(u, list(d));
+			    regfile.assign(u, list(d), i);
 			} else {
 			    Util.assert(regfile.getTemp(d) == u);
 			}
@@ -1083,7 +1118,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 				Temp tt = (Temp) remapped.next();
 				if (liveTemps.getLiveAfter(iloc).contains(tt)) {
 				    // System.out.println("spilling "+tt+" before "+iloc+", live after:"+liveTemps.getLiveAfter(iloc));
-				    spillValue(tt, iloc.getPrev(), regfile, 2);
+				    spillValue(tt, iloc.getPrev(),
+					       regfile,
+					       regfile.getSource(value), 2);
 				}
 				remappedTemps.remove(tt);
 			    }
@@ -1130,7 +1167,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 			if (SPILL_INFO) 
 			    System.out.println("spilling "+val+
 					       " 'cause its live (0)");
-			chooseSpillSpot(val, instr, regfile, iloc);
+			chooseSpillSpot(val, instr, regfile, 
+					regfile.getSource(locval), iloc);
 		    }
 		}
 
@@ -1169,6 +1207,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	private void chooseSpillSpot(Temp val, Instr instr, 
 				     RegFile regfile, Instr iloc) {
+	    chooseSpillSpot(val, instr, regfile, 
+			    regfile.getSource(val), iloc);
+	}
+
+	private void chooseSpillSpot(Temp val, Instr instr, 
+				     RegFile regfile, Instr src, Instr iloc) {
 	    // need to insert the spill in a place where we can be
 	    // sure it will be executed; the easy case is where
 	    // 'instr' does not redefine the 'val' (so we can just put 
@@ -1182,11 +1226,11 @@ public class LocalCffRegAlloc extends RegAlloc {
 		prev.getTargets().isEmpty() &&
 		prev.canFallThrough) {
 		
-		spillValue(val, prev, regfile, 1);
+		spillValue(val, prev, regfile, src, 1);
 		
 	    } else {
 		
-		spillValue(val, iloc, regfile, 0);
+		spillValue(val, iloc, regfile, src, 0);
 		
 	    }
 	}
@@ -1254,12 +1298,20 @@ public class LocalCffRegAlloc extends RegAlloc {
 	}
 	
 	
-
-	
 	/** spills `val', adding a store after `loc', but does *NOT*
 	    update the regfile. 
 	*/
-	private void spillValue(Temp val, Instr loc, RegFile regfile, int thread) {
+	private void spillValue(Temp val, Instr loc, RegFile regfile,
+				int thread) {
+	    spillValue(val, loc, regfile, regfile.getSource(val), thread);
+	}	
+
+	/** spills `val', adding a store after `loc', but does *NOT*
+	    update the regfile, and using `src' as the source for
+	    `val'.
+	*/
+	private void spillValue(Temp val, Instr loc, RegFile regfile,
+				Instr src, int thread) {
 	    Util.assert(! (val instanceof RegFileInfo.PreassignTemp),
 			"cannot spill Preassigned Temps");
 	    Util.assert(!isRegister(val), val+" should not be reg");
@@ -1278,6 +1330,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	    spillStores.add(spillInstr);
 	    spillStores.add(loc);
+	    backedInstrs.put(spillInstr, src);
 	}
 
 	// *** helper methods for debugging within BlockAlloc ***

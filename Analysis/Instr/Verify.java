@@ -192,7 +192,8 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	    }
 	}
 	
-	regfile.assign(def, new ArrayList(c));
+	// don't need Instr source info here, so can use null
+	regfile.assign(def, new ArrayList(c), null);
     }
     
 }

@@ -78,7 +78,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.101 2000-07-11 20:38:08 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.102 2000-07-11 22:50:02 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -90,11 +90,13 @@ public abstract class RegAlloc  {
 
     protected HashSet checked = new HashSet();
 
-    /** Map[ Instr:r -> Instr:i ], where `i' was replaced *by* `r' in
-	`code'.  Subclasses must update this mapping whenever it
-	modifies `code' with such a replacement.
+    /** Map[ Instr:i -> Instr:b ], where `i' was added to `code'
+	because of `b'.  The `b' is used when queries are performed on
+	`i', so it is important that all of the <code>Temp</code>s
+	referenced by `i' are also referenced by `b' (so that
+	Derivation lookups will succeed).
     */
-    protected Map replacedInstrs = new HashMap();
+    protected Map backingInstrs = new HashMap();
 
     /** Class for <code>RegAlloc</code> usage in loading registers. 
 	
@@ -202,23 +204,15 @@ public abstract class RegAlloc  {
 	computeBasicBlocks();
     }
 
-    /** returns a <code>TempMap</code> for analyses to use on the
-	register-allocated code.  This method is intended for use with
-	move-coalescing code transformations so that Temps removed
-	during register allocation will not break later analyses.  The
-	default implementation returns an identity temp map
-	( tempMap(t) == t )
+    /** returns a <code>Derivation</code> for analyses to use on the
+	register-allocated code.  This allows for register allocation
+	routines to make transformations on the code and still allow
+	Derivation information to propagate to later analyses.
 	<BR> <B>requires:</B> 
 	     <code>this.generateRegAssignment()</code> has been
 	     called. 
     */
-    protected TempMap getTempMap() {
-	return new TempMap() {
-	    public Temp tempMap(Temp t) {
-		return t;
-	    }
-	};
-    }
+    protected abstract Derivation getDerivation();
     
     protected void computeBasicBlocks() {
 	// requires: `this.code' has been set
@@ -343,8 +337,6 @@ public abstract class RegAlloc  {
 		final Code mycode = globalCode.code;
 		final int numLocals = ((Integer)triple.get(2)).intValue();
 		final Set usedRegs = globalCode.computeUsedRegs(instr);
-		final Map riMap = globalCode.replacedInstrs;
-		final TempMap tempmap = globalCode.getTempMap();
 		Util.assert(mycode != null);
 		
 		abstract class MyCode extends Code 
@@ -356,35 +348,8 @@ public abstract class RegAlloc  {
 		}
 
 	        return new MyCode(mycode, instr,
-				mycode.getDerivation(),
+				globalCode.getDerivation(),
 				mycode.getName()) {
-		    public Derivation getDerivation() {
-			final Derivation oldD = super.getDerivation();
-			return new BackendDerivation() {
-			    private HCodeElement orig(HCodeElement h){
-				return (riMap.containsKey(h)) ?
-				    (HCodeElement) riMap.get(h) : h;
-			    }
-			    public HClass typeMap
-				(HCodeElement hce, Temp t) {
-				hce = orig(hce);
-				return oldD.typeMap(hce, t);
-			    }
-			    public Derivation.DList derivation
-				(HCodeElement hce, Temp t) {
-				hce = orig(hce);
-				return Derivation.DList.rename
-				    (oldD.derivation(hce, t),tempmap);
-			    }
-			    public BackendDerivation.Register
-				calleeSaveRegister(HCodeElement hce,
-						   Temp t) { 
-				hce = orig(hce);
-				return ((BackendDerivation)oldD).
-				    calleeSaveRegister(hce, t);
-			    }
-			};
-		    }
 		    public String getName() { return mycode.getName(); }
 		    public String getRegisterName(Instr i, Temp t,
 						  String s) {
@@ -746,16 +711,6 @@ public abstract class RegAlloc  {
     */ 
     protected boolean isRegister(Temp t) {
 	return frame.getRegFileInfo().isRegister(t);
-        
-	// Temp[] allRegs = frame.getAllRegisters();
-	// boolean itIs = false;
-	// for (int i=0; i < allRegs.length; i++) {
-	//    if (t.equals(allRegs[i])) {
-	//	itIs = true;
-	//	break;
-	//    }
-	// }
-	// return itIs;
     }
 
     /** Checks if <code>i</code> is last use of <code>reg</code> in
@@ -782,26 +737,16 @@ public abstract class RegAlloc  {
     protected static boolean lastUse(Temp reg, UseDef i, Iterator iter) {
 	UseDef curr = i;
 	boolean r = true;
-	while (iter.hasNext() && ! contained( curr.def(), reg ) ) {
+	while (iter.hasNext() && ! curr.defC().contains(reg ) ) {
 	    curr = (UseDef) iter.next();
-	    if (contained( curr.use(), reg )) {
+
+	    if (curr.useC().contains(reg)) {
 		r = false;
 		break;
 	    }
 	}
 	return r;
     } 
-
-    private static boolean contained(Object[] array, Object o) {
-	boolean yes = false;
-	for (int i=0; i<array.length; i++) {
-	    if (array[i] == o) {
-		yes = true;
-		break;
-	    }
-	}
-	return yes;
-    }
     
 }
 

@@ -11,6 +11,7 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Analysis.UseMap;
 import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.Maps.Derivation;
 
 import java.util.Hashtable;
 import java.util.Set;
@@ -26,7 +27,7 @@ import java.util.HashMap;
     <code>Instr</code>s in a <code>Code</code>.
 
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.12 2000-06-21 07:22:27 pnkfelix Exp $ 
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.13 2000-07-11 22:50:01 pnkfelix Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 
@@ -62,6 +63,9 @@ public class DemandDrivenRegAlloc extends RegAlloc {
 
 	bbToLiveVarMap = findLiveVars(code); // invariant during allocation
     }
+    
+    /** stub implementation. */
+    protected Derivation getDerivation() { return null; }
    
     protected void generateRegAssignment() {
 

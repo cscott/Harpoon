@@ -4,6 +4,7 @@
 package harpoon.Analysis.Instr;
 
 import harpoon.Temp.Temp;
+import harpoon.IR.Assem.Instr;
 import harpoon.Util.LinearMap;
 import harpoon.Util.Util;
 import harpoon.Util.Collections.MultiMap;
@@ -23,7 +24,7 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.1.2.9 2000-06-29 01:31:47 pnkfelix Exp $
+ * @version $Id: RegFile.java,v 1.1.2.10 2000-07-11 22:50:02 pnkfelix Exp $
  */
 class RegFile {
 
@@ -32,7 +33,7 @@ class RegFile {
     private Collection allRegs;
 
     private Map regToTmp; // Map[ Reg -> Temp ]
-    private Map tmpToRegLst; // Map[ Temp -> List<Reg> ]
+    private Map tmpToRegLst; // Map[ Temp -> (List<Reg>, Instr) ]
 
     private Set dirtyTemps; // Set of all Temps that have been written
 
@@ -129,16 +130,27 @@ class RegFile {
     public Temp getTemp(Temp reg) {
 	return (Temp) regToTmp.get(reg);
     }
+
+    class RegListAndInstr {
+	final List l; final Instr i;
+	RegListAndInstr(List regs, Instr instr) {
+	    l = regs; i = instr;
+	}
+	public String toString() { 
+	    return "( "+(l!=null?l.toString():"") + ", "+
+		(i!=null?i.toString():"")+" )";
+	}
+    }
     
-    /** Assigns <code>pseudoReg</code> to <code>regs</code>.
+    /** Assigns <code>pseudoReg</code> to <code>regs</code> and
+	<code>src</code>.
 	<BR> <B>requires:</B> <OL>
 	     <LI> <code>pseudoReg</code> does not currently have an
 	          assignment in <code>this</code>.
 	     </OL>
 	<BR> <B>modifies:</B> <code>this</code>
 	<BR> <B>effects:</B> Creates an association between
-   	     <code>pseudoReg</code> and all of the elements of
-	     <code>regs</code>.
+   	     <code>pseudoReg</code> and <code>(regs, src)</code>.
 	<BR> Note: Requirement 1 may seem strange, as its not
  	     strictly illegal in a compiler to assign a pseudo register
 	     multiple times to different machine registers.  
@@ -147,7 +159,7 @@ class RegFile {
 	     would have been ugly, and theres no place i know of where
 	     it would make sense to assign preg multiple times.
      */
-    public void assign(final Temp pseudoReg, final List regs) { 
+    public void assign(final Temp pseudoReg, final List regs, Instr src) { 
 	final Iterator regIter = regs.iterator();
 	while (regIter.hasNext()) {
 	    Temp reg = (Temp) regIter.next();
@@ -159,15 +171,17 @@ class RegFile {
 	    regToTmp.put(reg, pseudoReg);
 	    // regToTmp.add(reg, pseudoReg); // use if mult. assoc. 
 	}
+	RegListAndInstr rli = new RegListAndInstr(regs, src);
 
 	if (tmpToRegLst.containsKey(pseudoReg)) {
-	    Util.assert(tmpToRegLst.get(pseudoReg).equals(regs),
+	    Util.assert(((RegListAndInstr)tmpToRegLst.get
+			 (pseudoReg)).l.equals(regs),
 			"dont assign preg:"+pseudoReg+" more than once \n"+
 			"curr: "+tmpToRegLst.get(pseudoReg)+"\n"+
-			"next: "+regs);
+			"next: "+rli);
 	}
 	Util.assert(!regs.isEmpty(), "regs should not be empty");
-	tmpToRegLst.put(pseudoReg, regs);
+	tmpToRegLst.put(pseudoReg, rli);
 
 	if (PRINT_USAGE) System.out.println(this+".assign: "+regs+" <- "+pseudoReg);
     } 
@@ -191,7 +205,8 @@ class RegFile {
 	return tmpToRegLst.containsKey(pseudoReg);
     } 
     
-    /** Returns the current assignment for <code>pseudoReg</code>.
+    /** Returns the currently assigned register List for
+	<code>pseudoReg</code>. 
 	<BR> <B>requires:</B> <code>pseudoReg</code> current has an
 	     assignment in <code>this</code>. 
 	<BR> <B>effects:</B> Returns the <code>List</code> of register
@@ -199,8 +214,23 @@ class RegFile {
 	     <code>pseudoReg</code> in <code>this</code>.
      */
     public List getAssignment(final Temp pseudoReg) { 
-	return (List) tmpToRegLst.get(pseudoReg);
+	return ((RegListAndInstr)tmpToRegLst.get(pseudoReg)).l;
     }  
+
+    /** Returns the currently assigned Source for
+	<code>pseudoReg</code>. 
+	<BR> <B>requires:</B> <code>pseudoReg</code> current has an
+	     assignment in <code>this</code>. 
+	<BR> <B>effects:</B> Returns the <code>Instr</code>
+	     currently associated with <code>pseudoReg</code> in
+	     <code>this</code>. 
+     */
+    public Instr getSource(final Temp pseudoReg) {
+	RegListAndInstr rli = (RegListAndInstr) 
+	    tmpToRegLst.get(pseudoReg);
+	Util.assert(rli != null, "Temp:"+pseudoReg+" has no assignment");
+	return rli.i;
+    }
     
     /** Removes the assignment for <code>pseudoReg</code>.
 	<BR> <B>requires:</B> <code>pseudoReg</code> currently has an
@@ -211,16 +241,10 @@ class RegFile {
 	     register <code>Temp</code>s.
     */
     public void remove(final Temp pseudoReg) {
-	List regs = (List) tmpToRegLst.remove(pseudoReg);
+	List regs = ((RegListAndInstr)tmpToRegLst.remove(pseudoReg)).l;
 	final Iterator regIter = regs.iterator();
 	while(regIter.hasNext()) {
 	    Temp reg = (Temp) regIter.next();
-	    /*
-	      boolean mapped = regToTmp.removeAll
-		(reg, Collections.singleton(pseudoReg));
-	    Util.assert(mapped, "reg: "+reg+
-			" should have mapped to "+pseudoReg);
-	    */
 	    regToTmp.remove(reg);
 	}
 	dirtyTemps.remove(pseudoReg);
