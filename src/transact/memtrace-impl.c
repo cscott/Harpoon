@@ -8,19 +8,20 @@
 
 ////////////////////////////////////////////////////////////////////////
 //                         prototypes
-#if defined(IN_VERSIONS_HEADER)
+#if defined(IN_MEMTRACE_HEADER)
 #if defined(NO_VALUETYPE)
+struct oobj;
 void EXACT_XACTION_BEGIN(void);
 void EXACT_XACTION_END(void);
 #else /* !NO_VALUETYPE */
 void TA(EXACT_traceRead)(struct oobj *obj, int offset, int istran);
 void TA(EXACT_traceWrite)(struct oobj *obj, int offset, int istran);
 #endif /* !NO_VALUETYPE */
-#endif /* IN_VERSIONS_HEADER */
+#endif /* IN_MEMTRACE_HEADER */
 //                         end prototypes
 ////////////////////////////////////////////////////////////////////////
 
-#if !defined(IN_VERSIONS_HEADER)
+#if !defined(IN_MEMTRACE_HEADER)
 #if defined(NO_VALUETYPE)
 
 static FILE *trace=NULL;
@@ -31,11 +32,11 @@ static void trace_close() {
   pclose(trace);
 }
 static void trace_init() {
-  char *trace_name, *bzip_cmd = "bzip2 > ", *cmd;
+  char *trace_name, *bzip_cmd = "bzip2 > ";
   assert(trace==NULL);
 
   trace_name = getenv("MEMTRACE_FILE");
-  if (trace_name==NULL) trace_name="memtrace.out";
+  if (trace_name==NULL) trace_name="memtrace.bz2";
   {
     char buf[strlen(bzip_cmd)+strlen(trace_name)+1];
     strcpy(buf, bzip_cmd);
@@ -56,17 +57,17 @@ void EXACT_XACTION_END(void) {
 }
 #else /* !NO_VALUETYPE */
 void TA(EXACT_traceRead)(struct oobj *obj, int offset, int istran) {
-  VALUETYPE *ptr = FIELDBASE(obj) + offset;
+  VALUETYPE *ptr = (VALUETYPE *)(FIELDBASE(obj) + offset);
   if (trace==NULL) trace_init();
-  fprintf(trace, "%c %p %d\n", istran ? 'r' : 'R', ptr, sizeof(*ptr));
+  fprintf(trace, "%c %p %d\n", istran ? 'r' : 'R', ptr, (int)sizeof(*ptr));
 }
 void TA(EXACT_traceWrite)(struct oobj *obj, int offset, int istran) {
-  VALUETYPE *ptr = FIELDBASE(obj) + offset;
+  VALUETYPE *ptr = (VALUETYPE *)(FIELDBASE(obj) + offset);
   if (trace==NULL) trace_init();
-  fprintf(trace, "%c %p %d\n", istran ? 'w' : 'W', ptr, sizeof(*ptr));
+  fprintf(trace, "%c %p %d\n", istran ? 'w' : 'W', ptr, (int)sizeof(*ptr));
 }
 #endif /* !NO_VALUETYPE */
-#endif /* !IN_VERSIONS_HEADER */
+#endif /* !IN_MEMTRACE_HEADER */
 
 /* clean up after ourselves */
 #include "transact/preproc.h"
