@@ -15,7 +15,7 @@ foreach $dir (@ARGV) {
     #filter out CVS directories, backup files, and some obvious binary formats.
     @files=split(/(?:\r\n?|\n)+/,`find $dir -name CVS -prune -o ! -name "*~" ! -name "*.class" ! -name "*.gif" ! -name "*.jar" -print`);
     foreach $f (@files) {
-	if (-f $f) { # only files, not directories.
+	if (`file $f` =~ /text/) { # only plain-text files, not directories.
 	    # snarf up all contents.
 	    open(FH, "< $f") or die "Can't open $f.\n";
 	    $_ = <FH>;
