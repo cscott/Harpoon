@@ -21,7 +21,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.1 1999-07-08 06:43:29 duncan Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.2 1999-07-17 11:58:16 cananian Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = "optimized-tree";
@@ -30,7 +30,7 @@ public class OptimizedTreeCode extends Code {
     };
 
     private /*final*/ Derivation       derivation;
-    private   final   EdgeInitializer  edgeInitializer;
+    private /*final*/ EdgeInitializer  edgeInitializer;
     private /*final*/ TypeMap          typeMap;
   
     /** Create a new <code>OptimizedTreeCode</code> from a

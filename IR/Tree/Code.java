@@ -30,7 +30,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.19 1999-07-07 09:17:25 duncan Exp $
+ * @version $Id: Code.java,v 1.1.2.20 1999-07-17 11:58:16 cananian Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {
@@ -237,18 +237,19 @@ public abstract class Code extends HCode
      *                                                           *
      *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-    //    private static final int COMPUTE_EDGE_SETS = 0;
-    //    private static final int ALLOC_EDGE_ARRAYS = 1;
-    //    private static final int ASSIGN_EDGE_DATA  = 2;
+    /** JDK1.1 work-around for odd restrictions on static members of inner
+     *  classes.  This interface declares the state constants for the
+     *  Visitor class below. [CSA] */
+    private interface VisitorStates {
+	static final int COMPUTE_EDGE_SETS = 0;
+	static final int ALLOC_EDGE_ARRAYS = 1;
+	static final int ASSIGN_EDGE_DATA  = 2;
+    }
 
     /* Only for canonical views, a class to initialize
      *  the edges representing the CFG of this Tree form
      */
-    class EdgeInitializer extends TreeVisitor { 
-	private static final int COMPUTE_EDGE_SETS = 0;
-	private static final int ALLOC_EDGE_ARRAYS = 1;
-	private static final int ASSIGN_EDGE_DATA  = 2;
-
+    class EdgeInitializer extends TreeVisitor implements VisitorStates { 
 	private Map    labels        = new HashMap();
 	private Map    successors    = new HashMap();
 	private Map    predecessors  = new HashMap();
