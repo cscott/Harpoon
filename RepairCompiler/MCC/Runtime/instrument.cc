@@ -8,6 +8,7 @@ extern "C" {
 }
 #include <stdio.h>
 #include "tmap.h"
+#include "size.h"
 
 typemap * memmap;
 
@@ -47,4 +48,24 @@ void alloc(void *ptr,int size) {
 
 void dealloc(void *ptr) {
   memmap->deallocate(ptr);
+}
+
+void initializemmap() {
+  typeobject *to=new typeobject();
+  memmap=new typemap(to);
+}
+
+typeobject * gettypeobject() {
+  return memmap->size;
+}
+
+void resettypemap() {
+  memmap->reset();
+}
+
+bool assertvalidtype(int ptr, int structure) {
+  return memmap->asserttype((void *)ptr, structure);
+}
+bool assertvalidmemory(int ptr, int structure) {
+  return memmap->assertvalidmemory((void *)ptr, structure);
 }

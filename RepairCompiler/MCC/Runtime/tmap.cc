@@ -2,7 +2,7 @@
 #include "tmap.h"
 #include "size.h"
 extern "C" {
-#include "libredblack/redblack.h"
+#include "redblack.h"
 }
 
 #define CHECKTYPE
@@ -28,7 +28,6 @@ typemap::~typemap() {
 void typemap::reset() {
   rbdestroy(typetree,freefunction);
   typetree=rbinit();
-  size->reset();
 }
 
 structuremap::structuremap(int s) {
@@ -38,6 +37,14 @@ structuremap::structuremap(int s) {
 
 structuremap::~structuremap() {
   rbdestroy(typetree,freefunction);
+}
+
+bool typemap::asserttype(void *ptr, int s) {
+  int toadd=size->size(s);
+  int inbytes=toadd>>3;
+  if (toadd%8)
+    inbytes++;
+  return asserttype(ptr,((char *) ptr)+inbytes,s);
 }
 
 bool typemap::asserttype(void *ptr, void *high, int s) {
@@ -50,6 +57,14 @@ bool typemap::asserttype(void *ptr, void *high, int s) {
   return b;
 #endif
   return assertvalidmemory(ptr, high);
+}
+
+bool typemap::assertvalidmemory(void* low, int s) {
+  int toadd=size->size(s);
+  int inbytes=toadd>>3;
+  if (toadd%8)
+    inbytes++;
+  return assertvalidmemory(low,((char *)low)+inbytes);
 }
 
 bool typemap::assertvalidmemory(void* low, void* high) {
