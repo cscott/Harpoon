@@ -63,8 +63,8 @@ import java.util.Collection;
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BasicBlock.java,v 1.1.2.48 2001-11-08 00:21:12 cananian Exp $ */
-public class BasicBlock implements java.io.Serializable {
+ * @version $Id: BasicBlock.java,v 1.1.2.49 2001-12-16 05:08:02 salcianu Exp $ */
+public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
     
     static final boolean DEBUG = false;
     static final boolean TIME = false;
@@ -324,7 +324,7 @@ public class BasicBlock implements java.io.Serializable {
 	that we'd have many different types of BasicBlocks, but I'm
 	not sure about that actually being a useful set of subtypes
      */
-    public void accept(BasicBlockVisitor v) { v.visit(this); }
+    public void accept(BasicBlockInterfVisitor v) { v.visit(this); }
     
     /** Constructs a new BasicBlock with <code>h</code> as its first
 	element.  Meant to be used only during construction.
@@ -367,7 +367,9 @@ public class BasicBlock implements java.io.Serializable {
     /** Factory structure for generating BasicBlock views of
 	an <code>HCode</code>.  	
     */
-    public static class Factory implements java.io.Serializable { 
+    public static class Factory 
+	implements BasicBlockFactoryInterf, java.io.Serializable { 
+
 	// the underlying HCode
 	private final HCode hcode;
 
@@ -392,6 +394,12 @@ public class BasicBlock implements java.io.Serializable {
 	    return root;
 	}
 
+	/** Does the same thing as <code>getRoot</code>.
+	    Work around Java's weak typing system. */
+	public BasicBlockInterf getRootBBInterf() {
+	    return getRoot();
+	}
+
 	/** Returns the leaf <code>BasicBlock</code>s.
 	    <BR> <B>effects:</B> returns a <code>Set</code> of
 	         <code>BasicBlock</code>s that are at the ends of the
@@ -399,6 +407,12 @@ public class BasicBlock implements java.io.Serializable {
 	*/
 	public Set getLeaves() {
 	    return leaves;
+	}
+
+	/** Does the same thing as <code>getLeaves</code>.
+	    Work around Java's weak typing system. */
+	public Set getLeavesBBInterf() {
+	    return getLeaves();
 	}
 
 	/** Returns the <code>HCode</code> that <code>this</code> factory
@@ -499,6 +513,12 @@ public class BasicBlock implements java.io.Serializable {
 	*/
 	public BasicBlock getBlock(HCodeElement hce) {
 	    return (BasicBlock) hceToBB.get(hce);
+	}
+
+	/** Does the same thing as <code>getBlock</code>.
+	    Work around Java's weak typing system. */
+	public BasicBlockInterf getBBInterf(HCodeElement hce) {
+	    return getBlock(hce);
 	}
 	
 	/** Constructs a <code>BasicBlock.Factory</code> using the
