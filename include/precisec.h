@@ -122,8 +122,9 @@ void (*) argtypes
 #define FIRST_CALL_ARG(x)
 #define SETUP_HANDLER(exv, hlabel, restoreexpr)\
 { struct FNI_Thread_State *fts=(struct FNI_Thread_State *)FNI_GetJNIEnv();\
-  jptr _ex_; IFPRECISE(void *_top_=STACKTOP());\
-  jmp_buf _jb_; memcpy(_jb_, fts->handler, sizeof(_jb_));\
+  jptr _ex_; jmp_buf _jb_;\
+  IFPRECISE(void *_top_=STACKTOP());\
+  memcpy(_jb_, fts->handler, sizeof(_jb_));\
   if ((_ex_=(jptr)setjmp(fts->handler))!=NULL) {\
     exv=_ex_; memcpy(fts->handler, _jb_, sizeof(_jb_));\
     IFPRECISE(SETSTACKTOP(_top_)); restoreexpr; goto hlabel;\
