@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.25 1998-09-02 23:16:18 cananian Exp $
+ * @version $Id: Translate.java,v 1.26 1998-09-02 23:48:51 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -212,7 +212,7 @@ class Translate  { // not public.
 	Quad  header; 
 	/** Which exit edge of <code>header</code> to append the translation
 	 * of <code>in</code> to. */
-	int which_succ;
+	int   which_succ;
 	/** Constructor. */
 	TransState(State initialState, Instr in, Quad header, int which_succ) {
 	    this.initialState = initialState;
@@ -1021,12 +1021,23 @@ class Translate  { // not public.
     /** Translate a single <code>InSwitch</code>. */
     static final TransState[] transInSwitch(TransState ts) {
 	InSwitch in = (InSwitch) ts.in;
-	switch (ts.in.getOpcode()) {
-	case Op.LOOKUPSWITCH:
-	case Op.TABLESWITCH:
-	    break;
-	}
-	return null;
+	State s = ts.initialState;
+	State ns = s.pop();
+	Instr nxt[] = in.next();
+	// make keys array.
+	int keys[] = new int[nxt.length-1];
+	for (int i=0; i<keys.length; i++)
+	    keys[i] = in.key(i+1);
+	// make & link SWITCH quad.
+	Quad q = new SWITCH(in, s.stack[0], keys);
+	Quad.addEdge(ts.header, ts.which_succ, q, 0);
+	// Make next states.
+	TransState[] r = new TransState[nxt.length];
+	for (int i=0; i<nxt.length-1; i++)
+	    r[i] = new TransState(ns, nxt[i+1], q, i);
+	Util.assert(keys.length == nxt.length-1);
+	r[keys.length] = new TransState(ns, nxt[0], q, keys.length);
+	return r;
     }
     /** Translate a single <code>InCti</code>. */
     static final TransState[] transInCti(TransState ts) {
