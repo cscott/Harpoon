@@ -16,11 +16,11 @@ public class RoundRobinScheduler extends Scheduler {
     static RoundRobinScheduler instance = null;
     RefList threadList = new RefList();
     RefList disabledThreads = new RefList();
-    Iterator iterator = threadList.iterator();
+    Iterator iterator = threadList.roundIterator();
 
     protected RoundRobinScheduler() {
 	super();
-	setQuanta(10000); // Switch every 10 milliseconds
+	setQuanta(10000); // Switch every 100 milliseconds
     }
 
     /** Return an instance of a RoundRobinScheduler */
@@ -77,18 +77,15 @@ public class RoundRobinScheduler extends Scheduler {
     }
 
     protected long chooseThread(long currentTime) {
-	if (threadList.isEmpty()) {
+	try {
+	    return ((Long)iterator.next()).longValue();
+	} catch (NoSuchElementException e) {
+	    print();
 	    if (disabledThreads.isEmpty()) {
 		return 0; // End of the program... or the beginning...
 	    } else {
 		throw new RuntimeException("Deadlock detected!");
 	    }
-	}
-	try {
-	    return ((Long)iterator.next()).longValue();
-	} catch (NoSuchElementException e) {
-	    iterator = threadList.iterator();
-	    return chooseThread(currentTime);
 	}
     }
 

@@ -149,6 +149,59 @@ class RefList {
 	return new RefListIterator();
     }
 
+    public Iterator roundIterator() {
+	class RefListIterator implements Iterator {
+	    private Elt prev;
+	    private Elt curr;
+	    
+	    public RefListIterator() {
+		if ((prev = curr = RefList.this.elt) != null) {
+		    ref.INCREF(curr);
+		}
+	    }
+
+	    /** Warning: not thread safe under mutation! */
+	    public boolean hasNext() {  
+		return !RefList.this.isEmpty();
+	    }
+	    
+	    public Object next() throws NoSuchElementException {
+		RefCountArea ref = RefList.this.ref;
+		if (!hasNext()) {
+		    throw new NoSuchElementException();
+		}
+		if (curr == null) {
+		    if ((prev = curr = RefList.this.elt) != null) {
+			ref.INCREF(curr);
+		    }
+		    return next();
+		}
+		if (curr.beingRemoved) {
+		    Elt newElt = curr.next;
+		    if (newElt != null) { 
+			ref.INCREF(newElt);
+		    }
+		    ref.DECREF(curr);
+		    curr = newElt;
+		    return next();
+		}
+		Elt newElt = curr.next;
+		if (newElt != null) {
+		    ref.INCREF(newElt);
+		}
+		Object obj = curr.obj;
+		ref.DECREF(prev = curr);
+		curr = newElt;
+		return obj;
+	    }
+
+	    public void remove() {
+		throw new UnsupportedOperationException("Not implemented!");
+	    }
+	}
+	return new RefListIterator();
+    }
+
     public String toString() {
 	String s = "[";
 	try {

@@ -19,10 +19,12 @@ import java.util.HashSet;
  */
 public abstract class Scheduler {
     protected static Scheduler defaultScheduler = null;
+    private VTMemory vt;
     
     /** Create an instance of <code>Scheduler</code>. */
     protected Scheduler() {
 	addToRootSet();
+	vt = new VTMemory();
     }
 
     /** Inform the scheduler and cooperating facilities that the resource
@@ -196,6 +198,7 @@ public abstract class Scheduler {
 	    noThreads();
 	    jDisableThread(null, 0);
 	    jEnableThread(null, 0);
+	    jChooseThread(0);
 	    (new RealtimeThread()).schedule();
 	    (new RealtimeThread()).unschedule();
 	    new NoSuchMethodException();
@@ -266,5 +269,16 @@ public abstract class Scheduler {
 		}
 	    }	    
 	});
+    }
+
+    long temp;
+
+    final protected long jChooseThread(final long currentTime) {
+	vt.enter(new Runnable() {
+	    public void run() {
+		Scheduler.this.temp = chooseThread(currentTime);
+	    }
+	});
+	return temp;
     }
 }
