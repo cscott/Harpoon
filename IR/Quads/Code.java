@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.Analysis.AllocationInformationMap;
 import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.ClassFile.HCode;
@@ -29,7 +30,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.19 2000-10-06 23:02:39 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.20 2000-10-12 21:32:27 cananian Exp $
  */
 public abstract class Code extends HCode implements java.io.Serializable {
     /** The method that this code view represents. */
@@ -69,13 +70,29 @@ public abstract class Code extends HCode implements java.io.Serializable {
 	return cloneHelper(this, qc);
     }
     /** Helper for clone */
-    protected static final HCodeAndMaps cloneHelper(final Code _this,
-						    final Code qc) {
+    protected HCodeAndMaps cloneHelper(Code _this, Code qc) {
 	final HCodeAndMaps hcam = Quad.cloneWithMaps(qc.qf, _this.quads);
 	qc.quads = (HEADER) hcam.elementMap().get(_this.quads);
+	// clone allocation information.
+	if (_this.getAllocationInformation()!=null)
+	    qc.setAllocationInformation(cloneAllocationInformation(hcam));
+	// derivation is cloned in LowQuad.cloneHelper()
 	return new HCodeAndMaps(qc, hcam.elementMap(), hcam.tempMap(),
 				_this, hcam.ancestorElementMap(),
 				hcam.ancestorTempMap());
+    }
+    private static AllocationInformation cloneAllocationInformation
+	(HCodeAndMaps hcam) {
+	Code ocode = (Code) hcam.ancestorHCode();
+	AllocationInformation oaim = ocode.getAllocationInformation();
+	AllocationInformationMap naim = new AllocationInformationMap();
+	for (Iterator it=ocode.getElementsI(); it.hasNext(); ) {
+	    HCodeElement ohce = (HCodeElement) it.next();
+	    HCodeElement nhce = (HCodeElement) hcam.elementMap().get(ohce);
+	    if (ohce instanceof ANEW || ohce instanceof NEW)
+		naim.transfer(nhce, ohce, hcam.tempMap(), oaim);
+	}
+	return naim;
     }
 	
     /**
