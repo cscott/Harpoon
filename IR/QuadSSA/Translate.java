@@ -3,6 +3,7 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.*;
+import harpoon.ClassFile.Bytecode.Instr;
 import harpoon.ClassFile.Bytecode.Code.ExceptionEntry;
 
 import java.lang.reflect.Modifier;
@@ -11,15 +12,14 @@ import java.lang.reflect.Modifier;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.2 1998-08-20 22:43:25 cananian Exp $
+ * @version $Id: Translate.java,v 1.3 1998-08-22 00:48:36 cananian Exp $
  */
 
 /*
- * To do: implement Cloneable for State. 
- *        figure out interface for trans(State, ...)
- *        does state mean state *before* opcode exec or *after*?
+ * To do: figure out interface for trans(State, ...)
  */
 
+/* State holds state *after* execution of corresponding instr. */
 class Translate  { // not public.
     static class State { // inner class
 	/** Current temps used for each position of stack */
@@ -68,6 +68,12 @@ class Translate  { // not public.
 	State(Temp[] locals) {
 	    this(new Temp[0], locals, new ExceptionEntry[0]);
 	}
+	/** Creates a new State object identical to this one. */
+	public Object clone() {
+	    return new State((Temp[]) stack.clone(), 
+			     (Temp[]) lv.clone(), 
+			     (ExceptionEntry[]) tryBlock.clone());
+	}
     }
 
     static final Quad trans(harpoon.ClassFile.Bytecode.Code bytecode) {
@@ -102,4 +108,6 @@ class Translate  { // not public.
     static final void trans(State s) {
 	// FIXME do schtuff here.
     }
+
+    static final Instr[] transBasicBlock(State s, 
 }
