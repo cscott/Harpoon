@@ -192,16 +192,20 @@ static void * thread_startup_routine(void *closure) {
   }
   /* this thread is dead now.  give it a chance to clean up. */
 #ifdef CLASSPATH_VERSION
+#ifndef WITH_REALTIME_JAVA /* RTJ spec forbids ThreadGroups */
   /* remove from thread group using ThreadGroup.removeThread(this) */
   threadgroup = (*env)->CallObjectMethod(env, thread, gettgID);
   if (threadgroup) /* sometimes thread groups are disabled */
     (*env)->CallVoidMethod(env, threadgroup, removeThreadID, thread);
   assert(!((*env)->ExceptionOccurred(env)));
+#endif 
 #else
   /* (this also removes the thread from the ThreadGroup) */
   /* (see also Thread.EDexit() -- keep these in sync) */
+#ifndef WITH_REALTIME_JAVA /* RTJ spec forbids ThreadGroups */
   (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
   assert(!((*env)->ExceptionOccurred(env)));
+#endif
 #endif /* !CLASSPATH_VERSION */
 #ifdef WITH_REALTIME_JAVA
 //  (*env)->CallVoidMethod(env, thread, cleanupID);
@@ -360,20 +364,19 @@ void fni_thread_start(JNIEnv *env, jobject _this) {
 			   STACKSIZE, 0,0);
 
 
-
-#if !defined(WITH_REALTIME_THREADS)
+#ifdef WITH_REALTIME_THREADS
+  realtime_schedule_thread(env, _this);
+  StartSwitching();
+#else
   /*LOCK ON GTL*/
   tl->next=gtl->next;
   tl->prev=gtl;
   tl->prev->next=tl;
   tl->next->prev=tl;
 #endif
+
   pthread_mutex_lock(&(clsp->parampass_mutex));
   /* wait for new thread to copy _this before proceeding */
-#ifdef WITH_REALTIME_THREADS
-  realtime_schedule_thread(env, _this);
-  StartSwitching();
-#endif
   pthread_cond_wait(&(clsp->parampass_cond), &(clsp->parampass_mutex));
 #ifdef WITH_PRECISE_GC
   pthread_mutex_unlock(&gc_thread_mutex);
