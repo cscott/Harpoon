@@ -52,7 +52,7 @@ public class Monitor {
     } catch (Throwable e) { }
   }
 
-  public static synchronized void logNEW(Object creator, String creator_class, 
+  public static synchronized void logNEW(Object creator,  
 			    String creator_method, Object created, int id) {
     try {
 
