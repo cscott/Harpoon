@@ -5,9 +5,9 @@ import harpoon.ClassFile.*;
  * <code>Quad</code> is the base class for the quadruple representation.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.4 1998-08-08 00:43:22 cananian Exp $
+ * @version $Id: Quad.java,v 1.5 1998-08-08 02:11:13 cananian Exp $
  */
-public abstract class Quad implements HCodeElement,QuadList {
+public abstract class Quad implements HCodeElement {
     String sourcefile;
     int linenumber;
     int id;

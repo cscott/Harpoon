@@ -4,7 +4,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.3 1998-08-07 09:52:02 cananian Exp $
+ * @version $Id: Util.java,v 1.4 1998-08-08 02:11:13 cananian Exp $
  */
 public final class Util {
   // Disable constructor.  Only static methods here.
@@ -34,6 +34,11 @@ public final class Util {
       else sb.append(c);
     }
     return sb.toString();
+  }
+  /** Hacked assertion facility */
+  public static final void assert(boolean val) {
+    if (!val)
+      throw new RuntimeException("Assertion Failure.") { };
   }
 }
 
