@@ -12,6 +12,7 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HMethodMutator;
 import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.NoSuchClassException;
 import harpoon.IR.Quads.AGET;
 import harpoon.IR.Quads.ALENGTH;
 import harpoon.IR.Quads.ANEW;
@@ -64,7 +65,7 @@ import java.util.Set;
  * <code>$clone$()</code> method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloneImplementer.java,v 1.4 2002-04-10 03:01:43 cananian Exp $
+ * @version $Id: CloneImplementer.java,v 1.5 2003-06-20 08:56:55 cananian Exp $
  * @see harpoon.IR.Quads.CloneSynthesizer */
 public class CloneImplementer implements HCodeFactory, java.io.Serializable {
     /** CONSTANTS */
@@ -74,8 +75,13 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
     private final static String CLONEX_NAME = "$clone$";
     /** Descriptor of all clone methods. */
     private final static String CLONE_DESC = "()Ljava/lang/Object;";
+    /** Descriptor of the GNU Classpath clone method. */
+    private final static String GNUCP_CLONE_DESC =
+	"(Ljava/lang/Cloneable;)Ljava/lang/Object;";
     /** Modifiers of all standard clone methods. */
     private final static int    CLONE_MODS = Modifier.PROTECTED;
+    /** Descriptor of java.lang.VMObject (GNU Classpath only) */
+    private final static String GNUCP_VMOBJ_DESC = "Ljava/lang/VMObject;";
     /** Descriptor of java.lang.Object */
     private final static String OBJ_DESC = "Ljava/lang/Object;";
     /** Descriptor of Object[] */
@@ -116,6 +122,12 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	for (int i=0; i<descs.length; i++)
 	    l.forDescriptor(descs[i]).getMethod(CLONE_NAME, CLONE_DESC)
 		.getMutator().removeModifiers(Modifier.NATIVE);
+	// classpath compatibility.
+	try {
+	    l.forDescriptor(GNUCP_VMOBJ_DESC)
+		.getMethod(CLONE_NAME, GNUCP_CLONE_DESC)
+		.getMutator().removeModifiers(Modifier.NATIVE);
+	} catch (NoSuchClassException e) { /* not using classpath */ }
 	/* done */
     }
     public String getCodeName() { return parent.getCodeName(); }
@@ -129,6 +141,12 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    (m.getDeclaringClass().getDescriptor().equals(OBJ_DESC) ||
 	     m.getDeclaringClass().isArray()))
 	      return new CloneRedirectCode(m);
+	// classpath compatibility: VMObject.clone()
+	if (m.getName().equals(CLONE_NAME) &&
+	    m.getDescriptor().equals(GNUCP_CLONE_DESC) &&
+	    m.getDeclaringClass().getDescriptor().equals(GNUCP_VMOBJ_DESC))
+	    return new CloneRedirectCode(m);
+	// okay, now implement $clone$
 	if (m.getName().equals(CLONEX_NAME) &&
 	    m.getDescriptor().equals(CLONE_DESC)) {
 	    if (m.getDeclaringClass().getDescriptor().equals(OBJ_DESC))
