@@ -13,10 +13,10 @@ import java.util.Enumeration;
  * references <code>SparseNode</code>s store internally.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.1.2.8 1999-08-04 05:52:21 cananian Exp $ 
+ * @version $Id: SparseGraph.java,v 1.1.2.9 2000-07-20 21:05:37 pnkfelix Exp $ 
  */
 
-public class SparseGraph extends ColorableGraph {
+public class SparseGraph extends ColorableGraphImpl {
 
     // List of hidden nodes, so that we may properly check when nodes
     // are unhid.
@@ -123,8 +123,8 @@ public class SparseGraph extends ColorableGraph {
 	// (guaranteed by representation given above)  
 	SparseNode snode = (SparseNode) node;
 	
-	ColorableGraph.HiddenFilteringEnum filter = 
-	    new ColorableGraph.HiddenFilteringEnum(snode.getToNodes());
+	ColorableGraphImpl.HiddenFilteringEnum filter = 
+	    new ColorableGraphImpl.HiddenFilteringEnum(snode.getToNodes());
 	return filter;
     }
 
@@ -143,8 +143,8 @@ public class SparseGraph extends ColorableGraph {
 	// (guaranteed by representation given above)  
 	SparseNode snode = (SparseNode) node;
 
-	ColorableGraph.HiddenFilteringEnum filter = 
-	    new ColorableGraph.HiddenFilteringEnum( snode.getFromNodes() );
+	ColorableGraphImpl.HiddenFilteringEnum filter = 
+	    new ColorableGraphImpl.HiddenFilteringEnum( snode.getFromNodes() );
 	return filter;
     }
 
@@ -165,8 +165,8 @@ public class SparseGraph extends ColorableGraph {
 	// (guaranteed by representation given above)  
 	SparseNode snode = (SparseNode) node;
 
-	ColorableGraph.HiddenFilteringEnum filter = 
-	    new ColorableGraph.HiddenFilteringEnum( snode.getNeighboringNodes());
+	ColorableGraphImpl.HiddenFilteringEnum filter = 
+	    new ColorableGraphImpl.HiddenFilteringEnum( snode.getNeighboringNodes());
 	return filter;
     }
 

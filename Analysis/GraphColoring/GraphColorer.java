@@ -9,7 +9,7 @@ import java.util.List;
  * <code>GraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColorer.java,v 1.1.2.7 1999-11-05 22:32:17 pnkfelix Exp $
+ * @version $Id: GraphColorer.java,v 1.1.2.8 2000-07-20 21:05:37 pnkfelix Exp $
  */
 
 public abstract class GraphColorer  {
@@ -43,7 +43,7 @@ public abstract class GraphColorer  {
 			     set is found, colors <code>graph</code>
 			     accordingly.
     */
-    public void findColoring( ColorableGraph graph ) {
+    public void findColoring( ColorableGraphImpl graph ) {
 	// modifies: this.factory
 	if (factory == null) {
 	    throw new NoFactorySetException
@@ -91,7 +91,7 @@ public abstract class GraphColorer  {
 			     of colors, returning true if successful
 			     and false otherwise.
     */
-    private boolean ableToColor( ColorableGraph graph, int numCols ) {
+    private boolean ableToColor( ColorableGraphImpl graph, int numCols ) {
 	// modifies: this.factory
 	boolean colored = false;
 	while (numCols != factory.getColors().size()) {
@@ -121,7 +121,7 @@ public abstract class GraphColorer  {
 			     <code>graph</code>, throws
 			     <code>UncolorableGraphException</code>. 
      */
-    public abstract void color(ColorableGraph graph,
+    public abstract void color(ColorableGraphImpl graph,
 			       List colors ) 
 	throws UncolorableGraphException;
 			       

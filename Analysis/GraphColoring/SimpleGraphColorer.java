@@ -12,7 +12,7 @@ import java.util.Enumeration;
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.8 1999-11-05 22:32:17 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.9 2000-07-20 21:05:37 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {
@@ -26,7 +26,7 @@ public class SimpleGraphColorer extends GraphColorer {
     /** Simple Graph Colorer based on algorithm given in 6.035 lecture
 	( http://ceylon.lcs.mit.edu/6035/lecture18/sld064.htm ).
     */
-    public final void color( ColorableGraph graph, 
+    public final void color( ColorableGraphImpl graph, 
 			     List colors ) 
 	throws UncolorableGraphException {
 	try {

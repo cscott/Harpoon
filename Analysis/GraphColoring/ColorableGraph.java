@@ -7,189 +7,130 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 
 /**
- * <code>ColorableGraph</code> defines a set of methods that graphs to
- * be colored should implement.  They are meant to be called by the
- * graph colorers defined in this package.
+ * <code>ColorableGraph</code> is an extension of <code>Graph</code>
+ * that adds methods that are useful for the purposes of a
+ * graph-coloring system.  Two main pieces of state are added:
+ * <OL>
+ * <LI> A Node -> Color mapping
+ * <LI> A stack of "hidden" nodes.
+ * </OL>
+ * The first component is inherent in the nature of a colorable
+ * graph.  
+ * The second component of state is to allow optimization of a common 
+ * routine required by graph-coloring algorithms: the ability to
+ * temporarily remove a node and its associated edges from a graph but 
+ * retaining the information for later replacement into the graph
+ * again.  When a node is hidden, all methods on the graph will
+ * operate as if it has been removed from the graph, except for
+ * <code>addNode(Object)</code>.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraph.java,v 1.1.2.10 2000-07-20 17:55:43 pnkfelix Exp $ */
+ * @version $Id: ColorableGraph.java,v 1.1.2.11 2000-07-20 21:05:37 pnkfelix Exp $ */
 
-public abstract class ColorableGraph extends GraphImpl {
+public interface ColorableGraph extends Graph {
 
-    private boolean mutable;
-
-    /** Creates a <code>ColorableGraph</code>. */
-    public ColorableGraph() {
-        super();
-	mutable = true;
-    }
-
-    /** Returns the graph to a modifiable state.
-	<BR> <B>modifies:</B> all colored and hidden nodes in
-	                      <code>this</code>.
-	<BR> <B>effects:</B> each colored node is given an 'uncolored'
-	                     state and each hidden node is unhid.
+    /** Ensures that this graph contains <code>node</code> (optional operation).
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B>  If this method returns normally,
+	     <code>node</code> will be present in the node-set for
+	     <code>this</code>.  Returns <tt>true</tt> if this graph
+	     changed as a result of the call, <tt>false</tt>
+	     otherwise.
+	@throws UnsupportedOperationException addNode is not supported
+	        by this graph.
+	@throws ClassCastException class of specified element prevents
+	        it from being added to this graph.
+	@throws AlreadyHiddenException node is part of the set of
+	        hidden nodes in <code>this</code>
+	@throws IllegalArgumentException some aspect of
+	        <code>node</code> prevents it from being added to the
+		node-set for this graph.
     */
-    public void resetGraph() {
-	unhideAllNodes();
-	resetColors();
+    boolean addNode( Object node );
+
+    /** AlreadyHiddenException will be thrown on attempt to call
+	<code>g.addNode(n)</code> while n is a member of the set of
+	hidden nodes in <code>g</code>.
+    */
+    public static class AlreadyHiddenException 
+	extends IllegalArgumentException {
+	public AlreadyHiddenException() { super(); }
+	public AlreadyHiddenException(String s) { super(s); }
     }
+    
+    /** Returns all nodes in graph to their original state.
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> the Node -> Color mapping 
+	     is cleared and each hidden node is restored;
+	     <code>this</code> is otherwise unchanged.
+    */
+    void resetGraph();
 
     /** Reverts the graph to an uncolored state.
-	<BR> <B>modifies:</B> all colored nodes in <code>this</code>
-	<BR> <B>effects:</B> Each colored node is given an 'uncolored'
-	                     state. 
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> clears the Node -> Color mapping.
     */
-    void resetColors() {
-	Enumeration nodes = super.getNodes();
-	while(nodes.hasMoreElements()) {
-	    ColorableNode node = (ColorableNode) nodes.nextElement();
-	    try {
-		node.setColor(null);
-	    } catch (NodeAlreadyColoredException e) {
-		// this should not be thrown, because we are not
-		// coloring the node.
-		throw new RuntimeException
-		    (e.getMessage());
-	    }
-	}
-	mutable = true;
-    }
+    void resetColors();
 
-    /** Sets the color of <code>node</code>.
-	<BR> <B>requires:</B> <code>node</code> is present in graph
-	                      and has not been colored.
-	<BR> <B>effects:</B> Sets the color of <code>node</code> to
-	                     <code>color</code>.  If
-			     <code>color</code> is <code>null</code>
-			     then <code>node</code> is given an
-			     'uncolored' state.  Marks
-			     <code>this</code> as unmodifiable.
+    /** Sets the color of <code>n</code>.
+	<BR> <B>effects:</B> If <code>c</code> is null, then
+	     removes <code>n</code> from the Node -> Color mapping.
+	     Else puts (n, c) in the Node -> Color mapping.
+        @throws IllegalArgumentException If <code>n</code> is not
+	     present in the node set for <code>this</code> or
+	     <code>n</code> has already been colored.
     */
-    void setColor(ColorableNode node, Color color) {
-	// modifies: this.mutable
-	mutable = false;
-	node.setColor( color );
-    }
+    void setColor(Object n, Color c);
 
+
+    /** Returns the color of <code>node</code>.
+	<BR> <B>effects:</B> Returns the color associated with
+	     <code>node</code> in the Node -> Color mapping, or null
+	     if there is no entry in the mapping for
+	     <code>node</code>.  
+        @throws IllegalArgumentException If <code>node</code> is not
+	     present in the node set for <code>this</code>.
+    */
+    Color getColor(Object node);
 
     /** Temporarily removes <code>node</code> from graph.
-	<BR> <B>requires:</B> <code>node</code> is present in
-	                      <code>this</code>.
 	<BR> <B>modifies:</B> <code>this</code>, <code>node</code>
-	<BR> <B>effects:</B> Removes <code>node</code> from
-	                     <code>this</code>, placing it in storage
-			     for later replacement in the graph.  Also
-			     updates all edges and nodes of
-			     <code>this</code> to reflect that
-			     <code>node</code> has been hidden.
+	<BR> <B>effects:</B> Removes <code>node</code> and
+	     <code>node</code>'s associated edges from
+	     <code>this</code>, pushing it onto hidden-nodes stack
+	     for later replacement in the graph.  Also updates all
+	     edges and nodes of <code>this</code> to reflect that 
+	     <code>node</code> has been hidden.
+        @throws IllegalArgumentException If <code>node</code> is not
+	     present in the node set for <code>this</code>.
     */
-    abstract void hideNode( ColorableNode node );
+    void hide( Object node );
     
-    /** Replaces a hidden <code>node</code> in graph.
-	<BR> <B>NOTE:</B> This method may be replaced by a "unhide
-	                  last node" or equivalent method, like
-			  popping a stack, because the current
-			  implementation does not support unhiding
-			  nodes out-of-reverse-order.  (I will look
-			  into the difficulty of implementing this
-			  correctly). 
-	<BR> <B>requires:</B> <code>node</code> was previously hidden
-	                      in <code>this</code> and has not been
-			      replaced since its last removal.
-	<BR> <B>modifies:</B> <code>this</code>, <code>node</code>
-	<BR> <B>effects:</B> Moves <code>node</code> back into
-			     the graph.  It also updates all edges and
-			     nodes of <code>this</code> to reflect
-			     that <code>node</code> has been replaced.  
+    /** Replaces the last hidden node</code> into the graph.
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> 
+	     if hidden-nodes stack is empty,
+	     then returns null
+	     else let n = Pop(hidden-nodes stack).
+	          puts `n' and its associated edges back in the
+		  graph, updating all edges and nodes of
+		  <code>this</code> to reflect that n has been 
+		  replaced. 
+		  Returns n. 
     */
-    abstract void unhideNode( ColorableNode node );
+    Object replace();
 
     /** Replaces all hidden nodes in graph.
-	<BR> <B>modifies:</B> <code>this</code>, all
-	                      <code>Node</code>s in <code>this</code> 
-	<BR> <B>effects:</B> If a node was previously removed from
-	                     <code>this</code>, and has not been
-			     replaced since its last removal, then
-			     moves node (and all other hidden ones)
-			     back into the graph.  It also updates all
-			     edges and nodes of <code>this</code> to
-			     reflect that the nodes have been
-			     replaced.   
+	<BR> <B>modifies:</B> <code>this</code>
+	<BR> <B>effects:</B> 
+	     until hidden-nodes stack is empty,
+	          let n = Pop(hidden-nodes stack).
+	          puts `n' and its associated edges back in the
+		  graph, updating all edges and nodes of
+		  <code>this</code> to reflect that n has been 
+		  replaced. 
     */
-    abstract void unhideAllNodes();
+    void replaceAll();
     
-    /** Ensures that only <code>ColorableNode</code>s are added to <code>this</code>.
-	<BR> <B>requires:</B> <code>node</code> is an instance of a
-	                      <code>ColorableNode</code>. 
-	<BR> <B>effects:</B> Does nothing.
-    */
-    protected void checkNode( Node node ) {
-	if (! (node instanceof ColorableNode) ) {
-	    throw new WrongNodeTypeException(node + " is not a ColorableNode.");
-	}
-    }
-
-    /** Wrapper class for Enumeration that filters out hidden nodes. */
-    protected static class HiddenFilteringEnum implements Enumeration {
-	Enumeration nodes;
-	ColorableNode next = null;
-
-	HiddenFilteringEnum(Enumeration e) {
-	    nodes = e;
-	}
-
-	public boolean hasMoreElements() {
-	    while(next == null && nodes.hasMoreElements()) {
-		ColorableNode n = (ColorableNode)
-		    nodes.nextElement();
-		if (! n.isHidden()) {
-		    next = n;
-		}
-	    } 
-	    return (next != null);
-	}
-
-	public Object nextElement() {
-	    Object rtrn;
-	    if (hasMoreElements()) {
-		rtrn = next;
-		next = null;
-	    } else {
-		throw new NoSuchElementException();
-	    }
-	    return rtrn;
-	}
-    }
-
-
-    /** Constructs an enumeration for all the nodes.
-	<BR> <B>effects:</B> Returns an <code>Enumeration</code> of
-	                     the <code>ColorableNode</code>s that have
-			     been successfully added to
-			     <code>this</code> that are not currently
-			     hidden. 
-	<BR> <B>requires:</B> <code>this</code> is not modified while
-	                      the <code>Enumeration</code> returned is
-			      in use.
-    */
-    public Enumeration getNodes() {
-	HiddenFilteringEnum hf = new HiddenFilteringEnum(super.getNodes());
-	return hf;
-    }
-    
-    /** Modifiability check.
-	Subclasses should override this method to incorporate
-	consistency checks, and should ensure that they call
-	<code>super.isModifiable</code> in their check.
-	<BR> <B>effects:</B> if <code>this</code> is allowed to be
-	                     modified, returns true.  Else returns
-			     false.   
-    */
-    public boolean isModifiable() {
-	return mutable && super.isModifiable();
-    }
-
-
 }
 

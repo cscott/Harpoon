@@ -12,10 +12,10 @@ import java.util.Enumeration;
  * for implementing a graph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: GraphImpl.java,v 1.1.2.1 2000-07-20 17:53:26 pnkfelix Exp $
+ * @version $Id: GraphImpl.java,v 1.1.2.2 2000-07-20 21:05:37 pnkfelix Exp $
  */
 
-public abstract class GraphImpl  {
+public abstract class GraphImpl {
     
     private UniqueVector nodes;
 
