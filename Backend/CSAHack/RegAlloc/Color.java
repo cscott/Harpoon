@@ -158,7 +158,7 @@ class Color implements TempMap {
     TempList use = flow.use(m);
     TempList def = flow.def(m);
     if (use.tail != null || def.tail != null)
-      throw new Error("Node supposed to be a MOVE");
+      throw new Error("Node supposed to be a MOVE: "+m);
 
     Node x = GetAlias(ig.tnode(def.head));
     Node y = GetAlias(ig.tnode(use.head));
