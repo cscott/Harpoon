@@ -1,3 +1,4 @@
+#include <signal.h> /* for signal(), to ignore SIGPIPE */
 #include <jni.h>
 #include <jni-private.h>
 #include "java.lang/java_lang_Thread.h"
@@ -36,6 +37,9 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_PTH_THREADS
   pth_init();
 #endif
+
+  /* ignore SIGPIPE; we look at errno to handle this condition */
+  signal(SIGPIPE, SIG_IGN);
 
   /* set up JNIEnv structures. */
   FNI_InitJNIEnv();
