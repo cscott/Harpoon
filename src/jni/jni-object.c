@@ -5,6 +5,10 @@
 #include <assert.h>
 #include <stdlib.h>
 
+/* this prototype is only used in an assert */
+JNIEXPORT jboolean JNICALL Java_java_lang_Class_isInterface
+  (JNIEnv *, jobject);
+
 /* Allocates a new Java object without invoking any of the constructors
  * for the object. Returns a reference to the object. 
  * The clazz argument must not refer to an array class. 

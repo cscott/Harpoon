@@ -453,7 +453,7 @@ static jobject findMember(JNIEnv *env, jclass cls,
       return FNI_WRAP(ptr->f.reflectinfo->field_object);
   /* not found =( */
   excls = (*env)->FindClass(env, exclassname);
-  if ((*env)->ExceptionOccurred(env)) return;
+  if ((*env)->ExceptionOccurred(env)) return NULL;
   (*env)->ThrowNew(env, excls, "no such member");
   return NULL;
 }

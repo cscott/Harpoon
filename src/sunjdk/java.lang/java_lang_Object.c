@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <jni-private.h>
 #include "java_lang_Object.h"
+#include "java_lang_System.h" /* for Java_java_lang_System_identityHashCode */
 
 #include <assert.h>
 #include "config.h" /* for WITH_TRANSACTIONS */

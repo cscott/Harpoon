@@ -74,7 +74,7 @@ int initializeJLS(JNIEnv *env) {
 JNIEXPORT jstring JNICALL Java_java_lang_String_intern
   (JNIEnv *env, jobject str) {
     jobject result;
-    if (!inited && !initializeJLS(env)) return; /* exception occurred; bail */
+    if (!inited && !initializeJLS(env)) return NULL;/*exception occurred;bail*/
 
     result = (*env)->CallObjectMethod(env, internTable, getID, str);
     if ((*env)->ExceptionOccurred(env)) return NULL;

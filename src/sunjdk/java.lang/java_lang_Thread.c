@@ -660,6 +660,7 @@ static void * thread_startup_routine(void *closure) {
   /* give us a chance to deallocate the thread-clustered heap */
   NTHR_free(thread);
 #endif
+  return NULL; /* pthread_create expects some value to be returned */
 }
 
 #ifndef WITH_USER_THREADS
