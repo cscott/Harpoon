@@ -1,4 +1,8 @@
 Research ideas:
+ - live variable analysis?  only add phi/sigma if variable is live in/out.
+ - automatic partitioning for dsps... Given DSP algorithm, DSP core,
+      take part of the algorithm and make a hardware coprocessor
+      out of it, integrating with the semi-custom DSP.
  - java car... use single unified language for uC programming and
                simple fpga hdl for vision processing or somesuch.
                [get names & details from martin]

@@ -1,3 +1,7 @@
+---- Sep-19-98
+Remove Tnull, Tzero code from top of function.  It's increasing the
+ phi/sigma count by a lot (some multiple of n, where n is the number of
+ splits/joins).
 ---- Sep-18-98
 X Fix MONITOR handling.
 ---- Sep-16-98
