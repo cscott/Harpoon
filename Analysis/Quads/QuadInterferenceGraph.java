@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
+import harpoon.Analysis.InterferenceGraph;
 import harpoon.Analysis.Liveness;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
@@ -13,7 +14,9 @@ import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Grapher;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 /**
  * <code>QuadInterferenceGraph</code> constructs a variable-liveness
@@ -26,9 +29,9 @@ import java.util.Set;
  * for <code>Temp</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadInterferenceGraph.java,v 1.1.2.1 2000-11-25 16:30:21 cananian Exp $
+ * @version $Id: QuadInterferenceGraph.java,v 1.1.2.2 2000-12-17 18:08:11 cananian Exp $
  */
-public class QuadInterferenceGraph implements Grapher {
+public class QuadInterferenceGraph implements InterferenceGraph {
     private final MultiMap mm;
     
     /** Creates a <code>QuadInterferenceGraph</code>. */
@@ -51,6 +54,11 @@ public class QuadInterferenceGraph implements Grapher {
 	    }
 	}
     }
+    /** unimplemented.  always returns 1. */
+    public int spillCost(Temp t) { return 1; }
+    /** unimplemented.  always returns 0-element list. */
+    public List moves() { return Collections.EMPTY_LIST; }
+
     public boolean isEdge(Object from, Object to) {
 	return mm.contains(from, to);
     }
