@@ -13,7 +13,7 @@ import java.util.AbstractMap;
     methds of the <code>MultiMap</code> interface.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: UnmodifiableMultiMap.java,v 1.2.2.1 2002-02-27 22:24:15 cananian Exp $
+    @version $Id: UnmodifiableMultiMap.java,v 1.2.2.2 2002-03-18 23:01:42 cananian Exp $
 */
 public abstract class UnmodifiableMultiMap<K,V> 
     extends AbstractMap<K,V> implements MultiMap<K,V> {
@@ -29,7 +29,7 @@ public abstract class UnmodifiableMultiMap<K,V>
 		public Collection<V> getValues(K key) { 
 		    return mmap.getValues(key);
 		}
-		public boolean contains(K a, V b) { 
+		public boolean contains(Object a, Object b) { 
 		    return mmap.contains(a, b);
 		}
 		public Set<Map.Entry<K,V>> entrySet() { return mmap.entrySet(); }
@@ -41,7 +41,7 @@ public abstract class UnmodifiableMultiMap<K,V>
     /** Throws UnsupportedOperationException. */
     public V remove(Object key) { die(); return null; }
     /** Throws UnsupportedOperationException. */
-    public boolean remove(K key, V value) { return die(); }
+    public boolean remove(Object key, Object value) { return die(); }
     /** Throws UnsupportedOperationException. */
     public void putAll(Map<K,V> t) { die(); }
     /** Throws UnsupportedOperationException. */

@@ -19,7 +19,7 @@ import java.util.Set;
  * correctly extends <code>Map</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GenericInvertibleMultiMap.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $
+ * @version $Id: GenericInvertibleMultiMap.java,v 1.2.2.2 2002-03-18 23:01:41 cananian Exp $
  */
 public class GenericInvertibleMultiMap<K,V> implements InvertibleMultiMap<K,V> {
     private final MultiMap<K,V> map;
@@ -84,7 +84,7 @@ public class GenericInvertibleMultiMap<K,V> implements InvertibleMultiMap<K,V> {
 	return changed;
     }
     public void clear() { map.clear(); imap.clear(); }
-    public boolean contains(K a, V b) {
+    public boolean contains(Object a, Object b) {
 	return map.contains(a, b);
     }
     public boolean containsKey(Object key) {
@@ -127,8 +127,7 @@ public class GenericInvertibleMultiMap<K,V> implements InvertibleMultiMap<K,V> {
 		    return GenericInvertibleMultiMap.this.size();
 		}
 		public boolean remove(Object o) {
-		    if (!(o instanceof Map.Entry))
-			throw new UnsupportedOperationException();
+		    if (!(o instanceof Map.Entry)) return false;
 		    Map.Entry<K,V> me = (Map.Entry) o;
 		    return GenericInvertibleMultiMap.this.remove
 			(me.getKey(), me.getValue());
@@ -230,7 +229,7 @@ public class GenericInvertibleMultiMap<K,V> implements InvertibleMultiMap<K,V> {
 	}
 	return old;
     }
-    public boolean remove(K key, V value) {
+    public boolean remove(Object key, Object value) {
 	imap.remove(value, key);
 	return map.remove(key, value);
     }

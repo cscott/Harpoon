@@ -31,7 +31,7 @@ import java.util.HashSet;
  *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.3.2.2 2002-02-27 22:24:13 cananian Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.3.2.3 2002-03-18 23:01:42 cananian Exp $ */
 public class GenericMultiMap<K,V> implements MultiMap<K,V> {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -179,7 +179,7 @@ public class GenericMultiMap<K,V> implements MultiMap<K,V> {
 	Returns true if <code>this</code> was modified as a result of
 	this operation, else returns false.
     */
-    public boolean remove(K key, V value) {
+    public boolean remove(Object key, Object value) {
 	Collection<V> c = internMap.get(key);
 	boolean result = (c!=null) ? c.remove(value) : false;
 	if (c!=null && c.size()==0) internMap.remove(key);
@@ -308,7 +308,7 @@ public class GenericMultiMap<K,V> implements MultiMap<K,V> {
 	in <code>this</code>.
 	(<code>MultiMap</code> specific operation). 
     */
-    public boolean contains(K a, V b) {
+    public boolean contains(Object a, Object b) {
 	Collection<V> c = internMap.get(a);
 	if (c != null)
 	    return c.contains(b);
@@ -479,11 +479,15 @@ public class GenericMultiMap<K,V> implements MultiMap<K,V> {
 	public boolean add(Map.Entry<K,V> me) {
 	    return GenericMultiMap.this.add(me.getKey(), me.getValue());
 	}
-	public boolean remove(Map.Entry<K,V> me) {
+	public boolean remove(Object o) {
+	    if (!(o instanceof Map.Entry)) return false;
+	    Map.Entry me = (Map.Entry) o;
 	    return GenericMultiMap.this.remove(me.getKey(), me.getValue());
 	}
 	// other methods for efficiency.
-	public boolean contains(Map.Entry<K,V> me) {
+	public boolean contains(Object o) {
+	    if (!(o instanceof Map.Entry)) return false;
+	    Map.Entry me = (Map.Entry) o;
 	    return GenericMultiMap.this.contains(me.getKey(), me.getValue());
 	}
 	public void clear() {

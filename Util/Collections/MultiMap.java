@@ -83,9 +83,13 @@ import java.util.Map;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $
+    @version $Id: MultiMap.java,v 1.2.2.2 2002-03-18 23:01:42 cananian Exp $
  */
-public interface MultiMap<K,V> extends Map<K,V>, harpoon.Util.BinaryRelation<K,V> {
+public interface MultiMap<K,V> extends Map<K,V>
+				       // XXX unfortunately no covariant
+				       //   subtyping on contains().
+				       //, harpoon.Util.BinaryRelation<K,V>
+{
     /** Returns some arbitrary value from the collection of values to
 	which this map maps the specified key.  Returns
 	<code>null</code> if the map contains no mapping for the key;
@@ -140,7 +144,7 @@ public interface MultiMap<K,V> extends Map<K,V>, harpoon.Util.BinaryRelation<K,V
 	Returns true if <code>this</code> was modified as a result of
 	this operation, else returns false.
     */
-    boolean remove(K key, V value);
+    boolean remove(Object key, Object value);
     
     /** Ensures that <code>this</code> contains an association from
 	<code>key</code> to <code>value</code>.
@@ -199,7 +203,7 @@ public interface MultiMap<K,V> extends Map<K,V>, harpoon.Util.BinaryRelation<K,V
 	in <code>this</code>.
 	(<code>MultiMap</code> specific operation).
     */
-    public boolean contains(K a, V b);
+    public boolean contains(Object a, Object b);
 
     /** Returns the number of key-value mappings in this map (keys which
      *  map to multiple values count multiple times). */
