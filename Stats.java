@@ -110,7 +110,8 @@ public final class Stats {
     /** Should we still be collecting heap reference statistics? */
     public static long COLLECT_HEAP_STATS = 1;
 
-    /** Has anything been added?  If not, it's possible that the user
+    /** Has anything been added? */
+    /** If not, it's possible that the user
      *  did not compile with the _STATS compiler option to add Runtime
      *  statistics to the compiled output. 
      */
