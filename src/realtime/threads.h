@@ -4,6 +4,8 @@
 # include <setjmp.h> //for setjmp and longjmp
 # include "../java.lang/threadlist.h" /* for add_running_thread */
 
+#define WITH_REALTIME_THREADS_PREEMPT 1
+
 jmp_buf main_return_jump; //a jump point for when the main thread exits
 
 void StartSwitching(); //turn thread switching on
@@ -26,6 +28,10 @@ void EnableThread(struct thread_queue_struct* queue);
 void EnableThreadList(struct thread_queue_struct* queue);
 
 void settimer();
+
+#ifndef WITH_REALTIME_THREADS_PREEMPT
+void CheckTimeSwitch();
+#endif
 
 #define IN_ACTIVE_QUEUE 0
 #define IN_MUTEX_QUEUE 1

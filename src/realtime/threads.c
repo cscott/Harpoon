@@ -116,7 +116,25 @@ void Threads_init(JNIEnv *env) {
   assert(!((*env)->ExceptionOccurred(env)));
   Scheduler_print = (*env)->GetStaticMethodID(env, SchedulerClaz, "print", "()V");
   assert(!((*env)->ExceptionOccurred(env)));
+  setQuanta((jlong)0);
+  settimer();
 }
+
+#ifndef WITH_REALTIME_THREADS_PREEMPT
+struct timeval compareSwitch;
+
+void CheckTimeSwitch() {
+  struct timeval time;
+  if ((!quanta.it_value.tv_sec)&&(!quanta.it_value.tv_usec)) return;
+  gettimeofday(&time, NULL);
+
+  if ((time.tv_sec>compareSwitch.tv_sec)||
+      ((time.tv_sec==compareSwitch.tv_sec)&&
+       (time.tv_usec>=compareSwitch.tv_usec))) {
+    context_switch();
+  }  
+}
+#endif
 
 void context_switch() {
   sigset_t empty_mask;
@@ -297,6 +315,7 @@ void CheckQuanta(int signal)
   transfer(threadq); //transfer to the new thread
 }
 
+#ifdef WITH_REALTIME_THREADS_PREEMPT
 void settimer() {
   struct sigaction timer;
 #ifdef RTJ_DEBUG_THREADS
@@ -308,7 +327,17 @@ void settimer() {
   sigaction(SIGALRM, &timer, NULL);
   setitimer(ITIMER_REAL, &quanta, NULL);
 }
-
+#else
+void settimer() {
+  struct timeval time;
+  long long int microsecs;
+  gettimeofday(&time, NULL);
+  microsecs = time.tv_sec * 1000000 + time.tv_usec;
+  microsecs += quanta.it_value.tv_sec * 1000000 + quanta.it_value.tv_usec;
+  compareSwitch.it_value.tv_sec  = microsecs/1000000;
+  compareSwitch.it_value.tv_usec = microsecs%1000000;
+}
+#endif
 
 void print_queue(struct thread_queue_struct* q, char* message) {
 #ifdef RTJ_DEBUG_THREADS
