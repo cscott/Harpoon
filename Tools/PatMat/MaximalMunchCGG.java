@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.52 2000-02-13 04:00:01 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.53 2000-02-14 04:00:29 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -408,7 +408,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "// check expression type");
 	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_RETURN+"");
 
-	    String checkPrefix = "(("+TREE_RETURN+")" + stmPrefix + ").getRetval()";
+	    String checkPrefix = "(("+TREE_RETURN+")" + stmPrefix + ")";
 	    appendTypeCheck(this, exp, checkPrefix, s.types);
 	    
 	    // look at exp
