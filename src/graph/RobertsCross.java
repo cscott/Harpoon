@@ -24,12 +24,16 @@ public class RobertsCross extends Node {
 	int width = id.width;
 	int height = id.height;
 	byte[] outs = new byte[width*height];
-	byte[][] vals = new byte[][] {id.rvals, id.gvals, id.bvals}; 
+	byte[][] vals = new byte[][] {id.rvals, id.gvals, id.bvals};
 	for (int i=0; i<(width*(height-1)-1); i++) {
 	    int out = 0;
+	    //Cycle through image data colors (R, G, then B)
+	    //Find the maximum gradient of each color, then store
+	    //the result (scaled by a constant) in the outs[] array.
 	    for (int j = 0; j<3; j++) {
+		//val contains image data for single color
 		byte[] val = vals[j];
-		out = Math.max(out, 
+		out = Math.max(out,
 			       Math.abs(((val[i]|256)&255)-
 					((val[i+width+1]|256)&255))+
 			       Math.abs(((val[i+1]|256)&255)-
