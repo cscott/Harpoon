@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Realtime;
 
+import java.io.PrintWriter;
+
 import harpoon.Analysis.Transformation.MethodMutator;
 
 import harpoon.ClassFile.HClass;
@@ -17,6 +19,7 @@ import harpoon.IR.Quads.ARRAYINIT;
 import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.MOVE;
 import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.SET;
@@ -26,7 +29,6 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.QuadWithTry;
-
 
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
@@ -45,16 +47,24 @@ import harpoon.Util.Util;
 
 class CheckAdder extends MethodMutator {
     private static CheckRemoval checkRemoval;
+    private static NoHeapCheckRemoval noHeapCheckRemoval;
+    private static final boolean fastNew = true;
+    private static final boolean smartMemAreaLoads = false;
+    
+    private static METHOD currentMethod;  // For smartMemAreaLoads
+    private static Temp currentMemArea;
 
     /** Creates a new <code>CheckAdder</code>, adding only the checks that
-     *  can't be removed as specified by <code>CheckRemoval</code>.
-     *  Use <code>hcf = (new CheckAdder(cr, hcf)).codeFactory(); to link
+     *  can't be removed as specified by <code>CheckRemoval</code> and 
+     *  <code>NoHeapCheckRemoval</code>.
+     *  Use <code>hcf = (new CheckAdder(cr, nhcr, hcf)).codeFactory(); to link
      *  this <code>CheckAdder</code> into the <code>HCodeFactory</code> chain.
      */
 
-    CheckAdder(CheckRemoval cr, HCodeFactory parent) {
+    CheckAdder(CheckRemoval cr, NoHeapCheckRemoval nhcr, HCodeFactory parent) {
 	super(parent);
 	checkRemoval = cr;
+	noHeapCheckRemoval = nhcr;
 	Util.assert(parent.getCodeName().equals(QuadWithTry.codename),
 		    "CheckAdder takes a QuadWithTry HCodeFactory not a " +
 		    parent.getCodeName() + " HCodeFactory.");
@@ -80,7 +90,7 @@ class CheckAdder extends MethodMutator {
 		public void visit(ARRAYINIT q) {
 		    Util.assert(false, "ArrayInitRemover has not been run.");
 		}
-		
+
 		public void visit(ASET q) {
 		    if (!q.type().isPrimitive()) {
 			CheckAdder.checkAccess(linker, q, 
@@ -89,8 +99,13 @@ class CheckAdder extends MethodMutator {
 		}
 		
 		public void visit(ANEW q) {
-		    CheckAdder.newArrayObject(linker, q, q.dst(), 
-					    q.hclass(), q.dims());
+		    if (fastNew) {
+			CheckAdder.newArrayObjectFast(linker, q, q.dst(),
+						      q.hclass(), q.dims());
+		    } else {
+			CheckAdder.newArrayObject(linker, q, q.dst(), 
+						  q.hclass(), q.dims());
+		    }
 		}
 		
 		public void visit(SET q) {
@@ -100,20 +115,61 @@ class CheckAdder extends MethodMutator {
 		    }
 		}
 		
+		public void visit(METHOD q) {
+		    currentMethod = q;
+		}
+
 		public void visit(NEW q) {
-		    CheckAdder.newObject(linker, q, q.dst(), q.hclass());
+		    if (fastNew) {
+			CheckAdder.newObjectFast(linker, q, q.dst(), q.hclass());
+		    } else {
+			CheckAdder.newObject(linker, q, q.dst(), q.hclass());
+		    }
 		}
 		
 		public void visit(Quad q) {}
 	    };
-	
+
+	currentMethod = null;
+	currentMemArea = null;
+//  	System.out.println("Before:");
+//  	hc.print(new PrintWriter(System.out));
 	Quad[] ql = (Quad[]) hc.getElements();
 	for (int i=0; i<ql.length; i++) 
 	    ql[i].accept(visitor);
-	
+//  	System.out.println("After:");
+//  	hc.print(new PrintWriter(System.out));
+
 	Stats.realtimeEnd();
 	return hc;
     }
+
+    /** Attaches the current memory area to a new instance of an object.
+     * <p>
+     * <p>obj = new foo() becomes:
+     * <p>t = RealtimeThread.currentRealtimeThread().getMemoryArea();
+     * <p>obj = new foo();
+     * <p>obj.memoryArea = t;
+     * <p>
+     */
+
+    private static void newObjectFast(Linker linker, Quad inst,
+				      Temp dst, HClass hclass) {
+	Stats.addNewObject();
+	QuadFactory qf = inst.getFactory();
+	HMethod hm = qf.getMethod();
+	Temp memArea = addGetCurrentMemArea(linker, qf, hm, inst);
+	Quad next = inst.next(0);
+	Quad q0 = new SET(qf, inst, 
+			  linker.forName("java.lang.Object")
+			  .getDeclaredField("memoryArea"), 
+			  dst, memArea);
+	Edge splitEdge = next.prevEdge(0);
+	Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
+	Quad.addEdge(q0, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
+	q0.addHandlers(inst.handlers());
+    }
+
 
     /** Attaches the current memory area to a new instance of an object.
      * <p>
@@ -124,7 +180,7 @@ class CheckAdder extends MethodMutator {
      * <p>
      */
 
-    private static void newObject(final Linker linker, Quad inst, 
+    private static void newObject(Linker linker, Quad inst, 
 				  Temp dst, HClass hclass) {
 	Stats.addNewObject();
 	QuadFactory qf = inst.getFactory();
@@ -145,6 +201,34 @@ class CheckAdder extends MethodMutator {
 	q0.addHandlers(inst.handlers());
     }
     
+
+    /** Attaches the current memory area to a new instance of an object.
+     * <p>
+     * <p>obj = new foo()[1][2][3] becomes:
+     * <p>t = RealtimeThread.currentRealtimeThread().getMemoryArea();
+     * <p>obj = new foo()[1][2][3]
+     * <p>obj.memoryArea = t;
+     * <p>
+     */
+
+    private static void newArrayObjectFast(Linker linker, Quad inst,
+					   Temp dst, HClass hclass, 
+					   Temp[] dims) {
+	Stats.addNewArrayObject();
+	QuadFactory qf = inst.getFactory();
+	HMethod hm = qf.getMethod();
+	Temp memArea = addGetCurrentMemArea(linker, qf, hm, inst);
+	Quad next = inst.next(0);
+	Quad q0 = new SET(qf, inst,
+			  linker.forName("java.lang.Object")
+			  .getDeclaredField("memoryArea"),
+			  dst, memArea);
+	Edge splitEdge = next.prevEdge(0);
+	Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
+	Quad.addEdge(q0, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
+	q0.addHandlers(inst.handlers());
+    }
+
     /** Attaches the current memory area to a new instance of an object.
      * <p>
      * <p>obj = new foo()[1][2][3] becomes:
@@ -206,7 +290,7 @@ class CheckAdder extends MethodMutator {
      *  a must be able to access b.
      */
        
-    private static void checkAccess(final Linker linker, Quad inst, 
+    private static void checkAccess(Linker linker, Quad inst, 
 				    Temp object, Temp src) {
 	if (needsCheck(inst)) {
 	    QuadFactory qf = inst.getFactory();
@@ -243,11 +327,40 @@ class CheckAdder extends MethodMutator {
 	}
     }
     
-    /** Adds t = RealtimeThread.currentRealtimeThread().getMemoryArea() */
-    
-    private static Temp addGetCurrentMemArea(final Linker linker, 
-					     QuadFactory qf, HMethod hm, 
+    /** */
+
+//      private static void checkNoHeapWrite(Linker linker, Quad inst,
+//  					 Temp object, Temp src) {
+//  	if (needsNoHeapWriteCheck(inst)) {
+	    
+
+//  	}
+//      }
+
+    /** */
+
+    private static void checkNoHeapRead(Linker linker) {
+
+
+    }
+
+    private static Temp addGetCurrentMemArea(Linker linker,
+					     QuadFactory qf, HMethod hm,
 					     Quad inst) {
+	if (!smartMemAreaLoads) {
+	    return realAddGetCurrentMemArea(linker, qf, hm, inst);
+	} else if (currentMemArea == null) {
+	    currentMemArea = 
+		realAddGetCurrentMemArea(linker, qf, hm, currentMethod.next(0));
+	} 
+	return currentMemArea;
+    }
+
+    /** Adds t = RealtimeThread.currentRealtimeThread().getMemoryArea() */
+
+    private static Temp realAddGetCurrentMemArea(Linker linker, 
+						 QuadFactory qf, HMethod hm, 
+						 Quad inst) {
 	TempFactory tf = qf.tempFactory();
 	Stats.addMemAreaLoad();
 	Temp t1 = new Temp(tf, "realtimeThread");
@@ -268,7 +381,7 @@ class CheckAdder extends MethodMutator {
 	q0.addHandlers(inst.handlers());
 	q1.addHandlers(inst.handlers());
 	return currentMemArea;
-  }
+    }
     
 
     /** Indicates if the given instruction needs an access check wrapped 

@@ -8,6 +8,7 @@ import harpoon.Analysis.CallGraph;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.ClassDepthMap;
 import harpoon.Backend.Maps.NameMap;
+import harpoon.Backend.Runtime1.ObjectBuilder.RootOracle;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
@@ -28,24 +29,34 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.34 2000-11-22 06:04:35 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.35 2001-01-31 21:36:16 wbeebee Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
-    final Frame frame;
-    final HMethod main;
-    final ClassHierarchy ch;
-    final ObjectBuilder ob;
-    final List staticInitializers;
+    // The package and subclasses should be able to access these fields. WSB
+    final protected Frame frame; 
+    final protected HMethod main;
+    final protected ClassHierarchy ch;
+    final protected ObjectBuilder ob;
+    final protected List staticInitializers;
     
     /** Creates a new <code>Runtime1.Runtime</code>. */
     public Runtime(Frame frame, AllocationStrategy as,
 		   HMethod main, ClassHierarchy ch, CallGraph cg,
 		   boolean prependUnderscore) {
+	this(frame, as, main, ch, cg, prependUnderscore, null);
+    }
+
+    /** Creates a new <code>Runtime1.Runtime</code>. */
+    public Runtime(Frame frame, AllocationStrategy as,
+		   HMethod main, ClassHierarchy ch, CallGraph cg,
+		   boolean prependUnderscore, RootOracle rootOracle) {
 	super(new Object[] { frame, as, ch, new Boolean(prependUnderscore) });
 	this.frame = frame;
 	this.main = main;
 	this.ch = ch;
-	this.ob = new harpoon.Backend.Runtime1.ObjectBuilder(this);
+	this.ob = (rootOracle == null) ?
+	    new harpoon.Backend.Runtime1.ObjectBuilder(this) :
+	    new harpoon.Backend.Runtime1.ObjectBuilder(this, rootOracle);
 	this.staticInitializers =
 	    new harpoon.Backend.Analysis.InitializerOrdering(ch, cg).sorted;
 	/* // when using InitializerTransform, can order randomly:

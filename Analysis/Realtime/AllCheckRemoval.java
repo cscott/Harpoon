@@ -12,7 +12,7 @@ import harpoon.IR.Quads.Quad;
  * @author  Wes Beebee <wbeebee@MIT.EDU>
  */
 
-public class AllCheckRemoval implements CheckRemoval {
+public class AllCheckRemoval implements CheckRemoval, NoHeapCheckRemoval {
     
     /** Creates a <code>SimpleCheckRemoval</code>. */
     public AllCheckRemoval() { }
@@ -20,4 +20,9 @@ public class AllCheckRemoval implements CheckRemoval {
     /** <i>Too</i> aggressive treatment. */
     public boolean shouldRemoveCheck(Quad inst) { return true; }
     
+    /** <i>Too</i> aggressive treatment. */
+    public boolean shouldRemoveNoHeapWriteCheck(Quad inst) { return true; }
+
+    /** <i>Too</i> aggressive treatment. */
+    public boolean shouldRemoveNoHeapReadCheck(Quad inst) { return true; }
 }

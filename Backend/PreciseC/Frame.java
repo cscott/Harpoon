@@ -5,6 +5,8 @@ package harpoon.Backend.PreciseC;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.CallGraph;
+import harpoon.Analysis.Realtime.Realtime;
+import harpoon.Analysis.Realtime.RealtimeRuntime;
 import harpoon.Backend.Generic.GCInfo;
 import harpoon.Backend.Generic.LocationFactory;
 import harpoon.Backend.Analysis.BasicGCInfo;
@@ -41,7 +43,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.8 2000-11-12 04:05:18 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.9 2001-01-31 21:36:12 wbeebee Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -80,11 +82,13 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
 								  "malloc");
-	runtime = System.getProperty("harpoon.runtime", "1").equals("2") ?
-	    new harpoon.Backend.Runtime2.Runtime(this, as, main, ch, cg,
-						 !is_elf) :
-	    new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg,
-						 !is_elf);
+	runtime = Realtime.REALTIME_JAVA ?
+	    new RealtimeRuntime(this, as, main, ch, cg, !is_elf) :
+	    (System.getProperty("harpoon.runtime", "1").equals("2") ?
+	     new harpoon.Backend.Runtime2.Runtime(this, as, main, ch, cg, 
+						  !is_elf) :
+	     new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg, 
+						  !is_elf));
     }
     public Linker getLinker() { return linker; }
     public boolean pointersAreLong() { return pointersAreLong; }

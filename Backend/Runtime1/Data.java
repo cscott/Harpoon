@@ -24,15 +24,16 @@ import java.util.List;
  * <code>Runtime1</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Data.java,v 1.1.2.7 2000-01-13 23:47:40 cananian Exp $
+ * @version $Id: Data.java,v 1.1.2.8 2001-01-31 21:36:16 wbeebee Exp $
  */
 public class Data extends harpoon.IR.Tree.Data {
     final Linker linker;
     final HClass hc;
-    HDataElement root = null;
+    // All subclasses should be able to set this.
+    protected HDataElement root = null;
     
     /** Creates a <code>Data</code>. */
-    Data(String desc, HClass hc, Frame f) {
+    protected Data(String desc, HClass hc, Frame f) {
 	super(desc, f);
 	this.linker = f.getLinker();
         this.hc = hc;

@@ -11,13 +11,18 @@ import harpoon.IR.Quads.Quad;
  * checks!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SimpleCheckRemoval.java,v 1.1.2.1 2001-01-23 01:08:41 salcianu Exp $ */
-public class SimpleCheckRemoval implements CheckRemoval {
+ * @version $Id: SimpleCheckRemoval.java,v 1.1.2.2 2001-01-31 21:35:49 wbeebee Exp $ */
+public class SimpleCheckRemoval implements CheckRemoval, NoHeapCheckRemoval {
     
     /** Creates a <code>SimpleCheckRemoval</code>. */
     public SimpleCheckRemoval() { }
 
     /** <i>Very</i> conservative treatment. */
     public boolean shouldRemoveCheck(Quad inst) { return false; }
-    
+
+    /** <i>Very</i> conservative treatment. */
+    public boolean shouldRemoveNoHeapWriteCheck(Quad inst) { return false; }
+
+    /** <i>Very</i> conservative treatment. */
+    public boolean shouldRemoveNoHeapReadCheck(Quad inst) { return false; }    
 }

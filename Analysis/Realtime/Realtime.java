@@ -191,11 +191,13 @@ public class Realtime {
 	    break;
 	}
 	default: {
+
 	    Util.assert(false, "No RTJ analysis method specified.");
 	}
 	}
 	Stats.analysisEnd();
-	HCodeFactory hcf = (new CheckAdder(cr, parent)).codeFactory();
+	HCodeFactory hcf = (new CheckAdder(cr, new AllCheckRemoval(), 
+					   parent)).codeFactory();
 	hcf = Stats.trackQuadsOut(hcf);
 	Stats.realtimeEnd();
 	return hcf;
