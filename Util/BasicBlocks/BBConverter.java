@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * which returns a basic block view of the code of a method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: BBConverter.java,v 1.1.2.4 2001-12-16 05:16:34 salcianu Exp $
+ * @version $Id: BBConverter.java,v 1.1.2.5 2002-01-09 13:45:14 salcianu Exp $
  */
 public class BBConverter implements java.io.Serializable{
     // the HCode factory used to generate the code of the methods.
@@ -39,6 +39,9 @@ public class BBConverter implements java.io.Serializable{
 	of <code>this</code>. */
     public BasicBlockFactoryInterf convert2bb(HMethod hm){
 	HCode hcode = hcf.convert(hm);
+	// special case: methods with no available code (e.g., native methods)
+	if(hcode == null) return null;
+	// normal case
 	if(quad_with_try)
 	    return new FCFGBasicBlock.Factory(hcode);
 	else

@@ -61,7 +61,7 @@ import harpoon.Util.Util;
 
  * 
  * @author  Alexandru SALCIANU <salcianu@mit.edu>
- * @version $Id: LightBasicBlock.java,v 1.1.2.9 2001-12-16 05:19:20 salcianu Exp $ */
+ * @version $Id: LightBasicBlock.java,v 1.1.2.10 2002-01-09 13:45:58 salcianu Exp $ */
 public class LightBasicBlock implements java.io.Serializable {
 
     /** The user can place its annotations here.
@@ -166,7 +166,12 @@ public class LightBasicBlock implements java.io.Serializable {
 	    by <code>bbfact</code> into smaller, array based, light basic
 	    blocks. */
 	public Factory(BasicBlockFactoryInterf bbfact) {
+	    // special case: method with inaccessible code (e.g. natives)
+	    if(bbfact == null) return;
 	    hcode = bbfact.getHCode();
+	    // special case: method with inaccessible code (e.g. natives)
+	    if(hcode == null) return;
+
 	    Set bbs = bbfact.blockSet();
 	    int nb_bbs = bbs.size();
 	    lbbs = new LightBasicBlock[nb_bbs];
@@ -186,11 +191,11 @@ public class LightBasicBlock implements java.io.Serializable {
 	}
 
 	// the underlying hcode
-	HCode hcode;
+	HCode hcode = null;
 	// all the light basic blocks 
 	LightBasicBlock[] lbbs = null;
 	// the root LightBasicBlock
-	LightBasicBlock root_lbb;
+	LightBasicBlock root_lbb = null;
 
 	/** Returns the underlying <code>HCode</code>. This factory returns
 	    <code>LightBasicBlock</code>s of the code returned by this
