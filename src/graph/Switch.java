@@ -34,7 +34,10 @@ public class Switch extends Node {
 	//System.out.println("Switch: width:"+id.width);
 	//System.out.println("Switch: height:"+id.height);
 	
-	if (cmd == Command.GO_RIGHT) {
+	if (cmd == Command.GO_BOTH) {
+	    super.process(id);
+	}
+	else if (cmd == Command.GO_RIGHT) {
 	    //System.out.println("Switch: Going RIGHT");
 	    if (getRight() != null)
 		getRight().process(id);
