@@ -37,6 +37,7 @@ import harpoon.Util.Util;
 import gnu.getopt.Getopt;
 
 import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Set;
@@ -65,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.35 1999-10-13 16:04:46 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.36 1999-10-13 18:22:47 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -113,7 +114,10 @@ public class SAMain extends harpoon.IR.Registration {
 		    " has no main method");
 
 	if (classHierarchy == null) {
-	    classHierarchy = new QuadClassHierarchy(mainM, hcf);
+	    HMethod startM = HClass.forName("java.lang.System")
+		.getMethod("initializeSystemClass", "()V");
+	    Collection roots = Arrays.asList(new HMethod[] {startM, mainM});
+	    classHierarchy = new QuadClassHierarchy(roots, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
 	frame = new Frame(classHierarchy);
@@ -144,10 +148,10 @@ public class SAMain extends harpoon.IR.Registration {
 	    messageln("Compiling: " + hclass.getName());
 
 	    try {
+		String filename = frame.getRuntime().nameMap.mangle(hclass);
 		out = new PrintWriter
 		    (new FileWriter
-		     (new File(ASSEM_DIR, 
-			       hclass.getName() + ".s")));
+		     (new File(ASSEM_DIR, filename + ".s")));
 		
 		HMethod[] hmarray = hclass.getDeclaredMethods();
 		Set hmset = new TreeSet(Arrays.asList(hmarray));
