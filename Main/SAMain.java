@@ -74,7 +74,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.110 2000-11-11 16:21:32 bdemsky Exp $
+ * @version $Id: SAMain.java,v 1.1.2.111 2000-11-12 01:29:07 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -228,8 +228,6 @@ public class SAMain extends harpoon.IR.Registration {
  		hcf=insta.codeFactory();
 	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
-	    if ((!INSTRUMENT_ALLOCS)&&USE_OLD_CLINIT_STRATEGY)
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	} // don't need the root set anymore.
 
 
