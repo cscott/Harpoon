@@ -11,7 +11,7 @@ import java.lang.reflect.Modifier;
  * a class initializer method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HInitializerSyn.java,v 1.1.4.3 2000-01-29 11:05:54 cananian Exp $
+ * @version $Id: HInitializerSyn.java,v 1.1.4.4 2000-11-30 21:56:46 vivien Exp $
  */
 class HInitializerSyn extends HMethodSyn implements HInitializer {
     
@@ -22,9 +22,21 @@ class HInitializerSyn extends HMethodSyn implements HInitializer {
     }
     
     public boolean isInterfaceMethod() { return false; }
+    public int hashCode() { return HInitializerImpl.hashCode(this); }
 
     // can't really change any of the properties of a class initializer.
-    public HMethodMutator getMutator() { return null; }
-   
-    public int hashCode() { return HInitializerImpl.hashCode(this); }
+    public void addModifiers(int m) { Util.assert(m==0); }
+    public void setModifiers(int m) { Util.assert(m==getModifiers()); }
+    public void removeModifiers(int m) { Util.assert((m&getModifiers())==0); }
+    public void setReturnType(HClass returnType) {
+	Util.assert(returnType==HClass.Void);
+    }
+    public void addExceptionType(HClass exceptionType) { Util.assert(false); }
+    public void setExceptionTypes(HClass[] exceptionTypes) {
+	Util.assert(exceptionTypes.length==0);
+    }
+    public void removeExceptionType(HClass exceptionType) { Util.assert(false); }
+    public void setSynthetic(boolean isSynthetic) {
+	Util.assert(isSynthetic==isSynthetic());
+    }
 }
