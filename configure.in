@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.26 $)dnl
+AC_REVISION($Revision: 1.27 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -7,6 +7,7 @@ AM_INIT_AUTOMAKE(flexrun, 0.0)
 AM_CONFIG_HEADER(include/config.h)
 AC_PREREQ(2.13) dnl require autoconf version 2.13
 
+AC_SUBST(CFLAGS) CFLAGS='-g' 
 AC_SUBST(IFLAGS) IFLAGS='' 
 AC_SUBST(GC_LIB) GC_LIB='' 
 
