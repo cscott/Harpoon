@@ -90,6 +90,9 @@ void context_switch() {
   sigprocmask(SIG_BLOCK, &empty_mask, &old_set);
   /* Lock/thread end during atomic section => deadlock */
   assert(!sigismember(&old_set, SIGALRM)); 
+#ifdef WITH_REALTIME_THREADS_MEASURE_JITTER
+  gettimeofday(&compareSwitch);
+#endif  
   kill(getpid(), SIGALRM);
 }
 
