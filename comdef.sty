@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.1 1999-05-08 00:18:33 cananian Exp $
+% $Id: comdef.sty,v 1.2 1999-06-10 14:44:53 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -12,6 +12,11 @@
 
 % A breaking non-space for URLs
 \newcommand{\bp}{\hspace{0pt}}
+
+% put horizontal rules at top and bottom of figure environment
+\newenvironment{myfigure}[1][tbp]
+	{\begin{figure}[#1]\hrule\vspace{8pt}}
+	{\vspace{8pt}\hrule\end{figure}}
 
 % environment for code examples
 \ifthenelse{\boolean{@compatibility}}{}{% don't define this in 2.09 mode.
