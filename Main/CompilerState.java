@@ -9,6 +9,8 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.ClassHierarchy;
 
+import harpoon.Util.Collections.PersistentMap;
+
 import java.util.Set;
 import java.io.Serializable;
 
@@ -30,10 +32,13 @@ import java.io.Serializable;
  * compiler&quot;)
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompilerState.java,v 1.4 2003-04-17 00:27:13 salcianu Exp $ */
+ * @version $Id: CompilerState.java,v 1.5 2003-04-19 01:12:32 salcianu Exp $ */
 public class CompilerState implements Cloneable, Serializable {
    
-    private CompilerState() { }
+    private CompilerState() { 
+	attribs = new PersistentMap/*<String,Object>*/();
+    }
+
     public static CompilerState EMPTY_STATE = new CompilerState();
 
     private HMethod main;
@@ -45,6 +50,9 @@ public class CompilerState implements Cloneable, Serializable {
     // should be only one compiler stage, instead of part of the
     // compiler state
     private Frame frame;
+    // other attributes (that don't occcur that often and don't
+    // deserve separate fields)
+    private PersistentMap/*<String,Object>*/ attribs;
 
     /** @return main method of the compiled program */
     public HMethod getMain() { return main; }
@@ -64,6 +72,11 @@ public class CompilerState implements Cloneable, Serializable {
 
     /** @return backend specific details for the compiled program */
     public Frame getFrame() { return frame; }
+
+
+    /** @return (persistent) map from attribute names to attribute
+        values */
+    public PersistentMap/*<String,Object>*/ getAttributes() { return attribs; }
 
 
     // helper method used by the change* methods: returns a clone of
@@ -130,5 +143,15 @@ public class CompilerState implements Cloneable, Serializable {
 	CompilerState newCS = this.newCopy();
 	newCS.frame = frame;
 	return newCS;
-    }    
+    }
+
+    
+    /** @return identical copy of <code>this</code> compiler state,
+        with the exception of the attribute map, which is now set to
+        <code>attribs</code> */
+    public CompilerState changeAttributes(PersistentMap/*<String,Object>*/ attribs) {
+	CompilerState newCS = this.newCopy();
+	newCS.attribs = attribs;
+	return newCS;
+    }
 }

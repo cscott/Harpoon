@@ -9,6 +9,8 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.ClassHierarchy;
 
+import harpoon.Util.Collections.PersistentMap;
+
 import java.util.Set;
 import java.util.Collections;
 import java.util.List;
@@ -17,7 +19,7 @@ import java.util.List;
  * <code>CompilerStageEZ</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompilerStageEZ.java,v 1.2 2003-04-18 16:27:14 salcianu Exp $
+ * @version $Id: CompilerStageEZ.java,v 1.3 2003-04-19 01:12:32 salcianu Exp $
  */
 public abstract class CompilerStageEZ extends CompilerStage {
 
@@ -48,6 +50,7 @@ public abstract class CompilerStageEZ extends CompilerStage {
     protected HCodeFactory hcf;
     protected ClassHierarchy classHierarchy;
     protected Frame frame;
+    protected PersistentMap/*<String,Object>*/ attribs;
 
     protected final void _UNPACK_CS(CompilerState cs) {
 	this.old_cs = cs;
@@ -57,6 +60,7 @@ public abstract class CompilerStageEZ extends CompilerStage {
 	this.hcf = cs.getCodeFactory();
 	this.classHierarchy = cs.getClassHierarchy();
 	this.frame = cs.getFrame();
+	this.attribs = cs.getAttributes();
     }
 
     protected final CompilerState _PACK_CS() {
@@ -67,7 +71,8 @@ public abstract class CompilerStageEZ extends CompilerStage {
 	    .changeLinker(linker)
 	    .changeCodeFactory(hcf)
 	    .changeClassHierarchy(classHierarchy)
-	    .changeFrame(frame);
+	    .changeFrame(frame)
+	    .changeAttributes(attribs);
 	
 	mainM = null;
 	roots = null;
@@ -75,6 +80,7 @@ public abstract class CompilerStageEZ extends CompilerStage {
 	hcf = null;
 	classHierarchy = null;
 	frame = null;
+	attribs = null;
 
 	return new_cs;
     }
