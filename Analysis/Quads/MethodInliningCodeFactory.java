@@ -5,30 +5,35 @@ package harpoon.Analysis.Quads;
 
 import harpoon.Analysis.Maps.UseDefMap;
 import harpoon.Analysis.UseDef;
-import harpoon.ClassFile.HCodeFactory;
-import harpoon.ClassFile.CachingCodeFactory;
-import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
-import harpoon.IR.Quads.QuadSSI;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.CALL;
-import harpoon.IR.Quads.THROW;
-import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.QuadFactory;
+import harpoon.IR.Quads.Edge;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
-import harpoon.IR.Quads.NOP;
 import harpoon.IR.Quads.MOVE;
-import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.NOP;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.THROW;
 import harpoon.Util.Util;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.CloningTempMap;
 
 
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import java.io.PrintWriter;
 import harpoon.ClassFile.HClass;
@@ -42,27 +47,18 @@ import harpoon.ClassFile.HCodeElement;
  * facilities for specifying number of recursive inlinings.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.6 2001-06-17 22:31:27 cananian Exp $ */
+ * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.7 2001-06-18 19:39:01 cananian Exp $ */
 public class MethodInliningCodeFactory implements HCodeFactory {
 
-    static PrintWriter pw = new PrintWriter(System.out);
-    
     HCodeFactory parent;
+    private final Map h = new HashMap(); // code cache.
 
     // sites to be inlined
     HashSet  inlinedSites;
 
     // sites that have already been inlined (used to detect recursive
     // inlining)  
-    private HashSet currentlyInlining;
-
-    /** Creates a <code>MethodInliningCodeFactory</code>, using the
-	default code factory for QuadSSI. 
-    */ 
-    public MethodInliningCodeFactory() {
-        parent = new CachingCodeFactory(QuadSSI.codeFactory());
-	inlinedSites = new HashSet();
-    }
+    private HashSet currentlyInlining = new HashSet();
 
     /** Creates a <code>MethodInliningCodeFactory</code>, using
 	<code>parentFactory</code>. 
@@ -100,40 +96,38 @@ public class MethodInliningCodeFactory implements HCodeFactory {
        method. 
      */
     public HCode convert(HMethod m) {  
+	if (h.containsKey(m)) return (HCode) h.get(m); // even if get()==null.
 	QuadSSI newCode = (QuadSSI) parent.convert(m);
-	if (newCode == null) return null;
+	if (newCode == null) { h.put(m, null); return null; }
 	
 	// The below was added in response to Scott's request that the
 	// HCode be cloned prior to being fuddled with by the Inliner
-	newCode = (QuadSSI) newCode.clone( m ).hcode();
+	HCodeAndMaps hcam = newCode.clone( m );
+	newCode = (QuadSSI) hcam.hcode();
+	Map aem = hcam.ancestorElementMap();
 
 	Quad[] ql = (Quad[]) newCode.getElements();
-	QuadVisitor qv;
-	currentlyInlining = new HashSet();
 
 	// pw.println( "Sites to inline are " +  inlinedSites );
 
 	for (int i=0; i<ql.length; i++) {
 	    
-	    boolean inline = inlinedSites.contains( ql[i] ) && 
-		! currentlyInlining.contains( ql[i] );
+	    boolean inline = inlinedSites.contains( aem.get(ql[i]) ) && 
+		! currentlyInlining.contains( ((CALL)ql[i]).method() );
 	    if (inline) {
 		
-		// pw.println("Hey, I'm supposed to inline " + ql[i]);
+		// pw.out.println("Hey, I'm supposed to inline " + ql[i]);
 		
 		// ql[i] is a CALL site that has been marked to be
 		// inlined and isn't being inlined currently.  Inline it.
 		CALL call = (CALL) ql[i];
-		currentlyInlining.add( call ); // prevent recursive inlining.
+		currentlyInlining.add( call.method() );// no recursive inlining
 		HCode calledCode = this.convert( call.method() );
+		currentlyInlining.remove( call.method() );
 		
 		
-		Quad[] methodQuads = 
-		    (Quad[]) calledCode.getElements();
-		Quad header = methodQuads[0];
-
+		Quad header = (HEADER) calledCode.getRootElement();
 		Quad newQ = Quad.clone(call.getFactory(), header);
-		
 
 		class QuadArrayBuilder {
 		    Set s;
@@ -143,6 +137,7 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 		    }
 		    
 		    private void recurse(Quad q) {
+			if (s.contains(q)) return;
 			s.add(q);
 			Quad[] next = q.next();
 			for (int j=0; j<next.length; j++) {
@@ -151,23 +146,44 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 		    }
 
 		    Quad[] getElements() {
-			return (Quad[]) s.toArray( new Quad[0] );
+			return (Quad[]) s.toArray( new Quad[s.size()] );
 		    }
 		}
 		
 
-		Quad[] newElems;
 		QuadArrayBuilder build = new QuadArrayBuilder((HEADER) newQ);
-		newElems = build.getElements();
-		UseDefMap map = new UseDef( /*Quad.arrayFactory, newElems*/ );
+		Quad[] newElems = build.getElements();
+		// make method-renaming map.
+		TempMap renameMap = makeMap((METHOD)newQ.next(1), call);
 
-		qv = new InliningVisitor( map, call );
+		InliningVisitor qv = new InliningVisitor( call );
 		for(int j=0; j<newElems.length; j++) {
-		    newElems[j].accept(qv);
+		    if (newElems[j] instanceof HEADER) continue;
+		    Quad nq = newElems[j].rename(renameMap, renameMap);
+		    Quad.replace(newElems[j], nq);
+		    nq.accept(qv);
 		}
+		// now make phis for throw/return merge.
+		PHI retphi = new PHI(newQ.getFactory(), call,
+				     new Temp[0], qv.return_sites.size());
+		PHI thrphi = new PHI(newQ.getFactory(), call,
+				     new Temp[0], qv.throw_sites.size());
+		Edge ret = call.nextEdge(0), thr = call.nextEdge(1);
+		Quad.addEdge(retphi, 0, (Quad)ret.to(), ret.which_pred());
+		Quad.addEdge(thrphi, 0, (Quad)thr.to(), thr.which_pred());
+		int j=0;
+		for (Iterator it=qv.return_sites.iterator(); it.hasNext(); )
+		    Quad.addEdge((Quad)it.next(), 0, retphi, j++);
+		j=0;
+		for (Iterator it=qv.throw_sites.iterator(); it.hasNext(); )
+		    Quad.addEdge((Quad)it.next(), 0, thrphi, j++);
 	    }
 	}
-	
+	// remove useless/unreachable phis
+	// (methods which don't return/don't throw exceptions, etc)
+	Unreachable.prune(newCode);
+	// done!
+	h.put(m, newCode); // cache this puppy.
 	return newCode;
     }
 
@@ -194,17 +210,33 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	inlinedSites.remove(site);
     }
 
+    private static class MapTempMap extends HashMap implements TempMap {
+	public Temp tempMap(Temp t) {
+	    return containsKey(t)?(Temp)get(t):t;
+	}
+    }
+    private TempMap makeMap(METHOD q, CALL site) {
+	Temp[] passedParams = site.params();
+	MapTempMap mtm = new MapTempMap();
+	// METHOD has temp var parameters for this sequence of
+	// quads...make a temp map to substitute in the passed
+	// arguments.
+	Temp[] params = q.params();
+	for (int i=0; i<params.length; i++)
+	    mtm.put(params[i], passedParams[i]);
+	return mtm;
+    }
+
     static class InliningVisitor extends QuadVisitor {
 	
-	UseDefMap uses;
-	Temp[] passedParams;
 	CALL site;
+	MapTempMap renameMap = new MapTempMap();
+	List return_sites = new ArrayList();
+	List throw_sites = new ArrayList();
 	
 	
-	InliningVisitor( UseDefMap uses, CALL site ) {
-	    this.uses = uses;
+	InliningVisitor( CALL site ) {
 	    this.site = site;
-	    passedParams = site.params();
 	}
 
 	public void visit(Quad q) {
@@ -212,36 +244,12 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	    
 	}
 	
-	// A single <key, value> pairing map
-	static class SingleTempMap implements TempMap {
-	    Temp key, value;
-	    public SingleTempMap(Temp key, Temp value) { 
-		this.key = key; this.value = value; 
-	    }
-	    public Temp tempMap(Temp t) { return (t.equals(key))?value:t; }
-	}
-
 	public void visit(METHOD q) {
-	    
 	    // METHOD succ[0] is the first bit of executable bytecode;
 	    // make the code prior to the CALL point to it.
-	    Quad[] qArray = { site.prev()[0], q.next()[0] };
-	    Quad.addEdges( qArray );
-	    
-	    // METHOD has temp var parameters for this sequence of
-	    // quads...use the UseDefMap to find their corresponding
-	    // uses, and then substitute in the passed arguments.
-	    Temp[] params = q.params();
-	    for (int i=0; i<params.length; i++) {
-		HCode hc = q.getFactory().getParent();
-		Quad[] useArray = (Quad[]) uses.useMap(hc, params[i] );
-		TempMap useMap = new SingleTempMap(params[i], passedParams[i]);
-		
-		for (int j=0; j<useArray.length; j++) {
-		    Quad useQ = useArray[j];
-		    Quad.replace(useQ, useQ.rename(useMap, useMap));
-		}
-	    }
+	    Edge frm = site.prevEdge(0), to = q.nextEdge(0);
+	    Quad.addEdge((Quad) frm.from(), frm.which_succ(),
+			 (Quad) to.to(), to.which_pred());
 	}
 	
 	public void visit(THROW q) { 
@@ -256,11 +264,13 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	    // situation this would occur...perhaps put in an
 	    // assertion to ensure that it doesn't?
 	    replace = new NOP(site.getFactory(), null);
+	    Util.assert(false);
 	  }
 	  // make the successor(replace) be the 1-successor of the
 	  // calling site (the succesor for the "exception thrown" case).
-	  Quad[] qArray = { q.prev()[0], replace, site.next()[1] };
-	  Quad.addEdges( qArray );
+	  Edge frm = q.prevEdge(0);
+	  Quad.addEdge((Quad)frm.from(), frm.which_succ(), replace, 0);
+	  throw_sites.add(replace);
 	}
 
 	public void visit(RETURN q) {
@@ -279,8 +289,9 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	    }
 	    // make the successor(replace) be the 0-successor of the
 	    // calling site (the succesor for the normal case).
-	    Quad[] qArray = { q.prev()[0], replace, site.next()[0] };
-	    Quad.addEdges( qArray );
+	    Edge frm = q.prevEdge(0);
+	    Quad.addEdge((Quad)frm.from(), frm.which_succ(), replace, 0);
+	    return_sites.add(replace);
 	}
     }
 
