@@ -20,7 +20,7 @@ import java.util.Iterator;
  * <code>LoopFinder</code> implements Dominator Tree Loop detection.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopFinder.java,v 1.1.2.10 2001-05-15 05:01:26 pnkfelix Exp $
+ * @version $Id: LoopFinder.java,v 1.1.2.11 2001-06-15 08:25:52 cananian Exp $
  */
 
 public class LoopFinder implements Loops {
@@ -65,8 +65,9 @@ public class LoopFinder implements Loops {
      *but it doesn't regenerate the internal tree
      *so any external calls would result in garbage.*/
     
-    private LoopFinder(HCode hc, DomTree dt, Loop root, Loop ptr) {
+    private LoopFinder(HCode hc, CFGrapher grapher, DomTree dt, Loop root, Loop ptr) {
 	this.lasthc=hc;
+	this.grapher=grapher;
 	this.hc=hc;
 	this.dominator=dt;
 	this.root=root;
@@ -82,12 +83,12 @@ public class LoopFinder implements Loops {
     public Loops getRootloop(HCode hc) {
       this.hc=hc;
       analyze();
-      return new LoopFinder(hc,dominator,root,root);
+      return new LoopFinder(hc,grapher,dominator,root,root);
     }
     
     /**  This method returns the entry point of the loop.
      *   For the natural loops we consider, that is simply the header. 
-     *   It returns a <code>Set</code> of <code>HCodeElements</code>.*/
+     *   It returns a <code>Set</code> of <code>HCodeElement</code>s.*/
     
     public Set loopEntrances() {
       analyze();
@@ -99,7 +100,7 @@ public class LoopFinder implements Loops {
     /**  This method finds all of the backedges of the loop.
      *   Since we combine natural loops with the same header, this
      *   can be greater than one. This method returns a <code>Set</code> of
-     *   <code>HCodeElements</code>.*/
+     *   <code>HCodeEdge</code>s.*/
 
     public Set loopBackedges() {
 	analyze();
@@ -107,9 +108,10 @@ public class LoopFinder implements Loops {
 	Iterator iterate=ptr.entries.iterator();
 	while (iterate.hasNext()) {
 	    HCodeElement hce=(HCodeElement)iterate.next();
-	    for (int i=0;i< grapher.succ(hce).length;i++) {
-		if (grapher.succ(hce)[i].to()==ptr.header) {
-		    A.push(hce);
+	    HCodeEdge[] edges = grapher.succ(hce);
+	    for (int i=0; i<edges.length; i++) {
+		if (edges[i].to()==ptr.header) {
+		    A.push(edges[i]);
 		    break;
 		}
 	    }
@@ -117,8 +119,9 @@ public class LoopFinder implements Loops {
 	return A;
     }
     
-    /**  This metho returns all of the exits from a loop.
-     *   It returns them in the form <code>Set</code> of <code>HCodeElements</code>.*/
+    /**  This method returns all of the exits from a loop.
+     *   It returns them in the form of a <code>Set</code> of
+     *   <code>HCodeEdge</code>s.*/
     
     public Set loopExits() {
 	analyze();
@@ -126,9 +129,10 @@ public class LoopFinder implements Loops {
 	Iterator iterate=ptr.entries.iterator();
 	while (iterate.hasNext()) {
 	    HCodeElement hce=(HCodeElement)iterate.next();
-	    for (int i=0;i<grapher.succ(hce).length;i++) {
-		if (!ptr.entries.contains(grapher.succ(hce)[i].to())) {
-		    A.push(hce);
+	    HCodeEdge[] edges = grapher.succ(hce);
+	    for (int i=0; i<edges.length; i++) {
+		if (!ptr.entries.contains(edges[i].to())) {
+		    A.push(edges[i]);
 		    break;
 		}
 	    }
@@ -177,7 +181,7 @@ public class LoopFinder implements Loops {
 	WorkSet L=new WorkSet();
 	Iterator iterate=ptr.children.iterator();
 	while (iterate.hasNext())
-	    L.push(new LoopFinder(hc,dominator,root,(Loop) iterate.next()));
+	    L.push(new LoopFinder(hc,grapher,dominator,root,(Loop) iterate.next()));
 	return L;
     }
     
@@ -187,7 +191,7 @@ public class LoopFinder implements Loops {
     public Loops parentLoop() {
 	analyze();
 	if (ptr.parent!=null)
-	    return new LoopFinder(hc,dominator,root,ptr.parent);
+	    return new LoopFinder(hc,grapher,dominator,root,ptr.parent);
 	else return null;
     }
     

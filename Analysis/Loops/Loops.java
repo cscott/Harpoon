@@ -13,7 +13,7 @@ import java.util.Set;
  *
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Loops.java,v 1.1.2.5 1999-06-21 17:02:29 bdemsky Exp $
+ * @version $Id: Loops.java,v 1.1.2.6 2001-06-15 08:25:52 cananian Exp $
  */
 
 public interface Loops {
@@ -23,11 +23,11 @@ public interface Loops {
     public Set loopEntrances();
     
     /** Returns backedges in the Loop.
-     *  This is a <code>Set</code> of <code>HCodeElement</code>s.*/
+     *  This is a <code>Set</code> of <code>HCodeEdge</code>s.*/
     public Set loopBackedges();
 
     /** Returns nodes that have edges exiting the loop.
-     *  This is a <code>Set</code> of <code>HCodeElement</code>s.*/
+     *  This is a <code>Set</code> of <code>HCodeEdge</code>s.*/
     public Set loopExits();
     
     /** Returns elements of this loops and all nested loop.
