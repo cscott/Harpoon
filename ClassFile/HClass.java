@@ -24,7 +24,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.11 1998-08-02 00:45:40 cananian Exp $
+ * @version $Id: HClass.java,v 1.12 1998-08-02 01:53:00 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -776,8 +776,8 @@ public class HClass {
   }
 
   /**
-   * Prints a formatted representation of this class, in Java source
-   * format.
+   * Prints a formatted representation of this class.
+   * Output is pseudo-Java source.
    */
   public void print(java.io.PrintWriter pw) {
     int m;
