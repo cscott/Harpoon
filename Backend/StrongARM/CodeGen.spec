@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.165 2000-10-18 20:14:32 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.166 2000-10-21 00:04:37 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -2031,7 +2031,7 @@ THROW(val, handler) %{
 
   // slow version when we don't know exactly which method we're calling.
 CALL(retval, retex, func, arglist, handler)
-%pred %( !ROOT.isTailCall )%
+// %pred %( !ROOT.isTailCall )%
 %{
     CallState cs = emitCallPrologue(ROOT, arglist, code.getTreeDerivation());
     Label rlabel = new Label(), elabel = new Label();
@@ -2058,7 +2058,7 @@ CALL(retval, retex, func, arglist, handler)
 }%
   // optimized version when we know exactly which method we're calling.
 CALL(retval, retex, NAME(funcLabel), arglist, handler)
-%pred %( !ROOT.isTailCall )%
+// %pred %( !ROOT.isTailCall )%
 %{
     CallState cs = emitCallPrologue(ROOT, arglist, code.getTreeDerivation());
     Label rlabel = new Label(), elabel = new Label();
