@@ -1,7 +1,7 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.2 1998-09-08 14:32:01 cananian Exp $
+% $Id: quads.tex,v 1.3 1998-09-08 14:32:44 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[11pt,notitlepage,twocolumn]{article}
+\documentclass[11pt,notitlepage,twocolumn,twoside]{article}
 
 % What's the name of this project this week?
 \newcommand{\Harpoon}{Harpoon}%{ActiveWorld}
@@ -9,7 +9,7 @@
 
 \author{C.~Scott~Ananian}
 \title{\Harpoon\ Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.2 $ $}
+\date{\today \\ $ $Revision: 1.3 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -206,7 +206,7 @@ special subclass of \texttt{HEADER}, \texttt{METHODHEADER}, provides
 information on the assignment of method arguments to compiler
 temporary variables at the start of method code.
 
-\begin{figure}[!p]
+\begin{figure*}[!p]
 \begin{tabular}{p{1.25in}p{4.5in}} 
 \small\bf Class Name & \small\bf Description \\ \hline
 \tt HEADER & Start node for control-flow graph.  Performs no operation.\\
@@ -240,7 +240,26 @@ temporary variables at the start of method code.
 \caption{Class names of QuadSSA statement types.
 \small (Public classes in \texttt{harpoon.IR.QuadSSA})}
 \label{fig:quads}
-\end{figure}
+\end{figure*}
+
+\newcommand{\cls}[1]{\textrm{\textbf{#1}}}
+\newcommand{\expn}[1]{\textrm{\textit{#1}}}
+\begin{figure*}
+\texttt{
+package harpoon.IR.QuadSSA; \\
+\\
+\expn{Quadruple statements} \\
+abstract class Quad implements harpoon.ClassFile.HCodeElement \\
+\cls{AGET}(HCodeElement from, Temp dst, Temp objectref, Temp index) \\
+\cls{ALENGTH}(HCodeElement from, Temp dst, Temp objectref) \\
+\cls{ANEW}(HCodeElement from, Temp dst, HClass hclass, Temp dims[]) \\
+\cls{ASET}(HCodeElement from, Temp objectref, Temp index, Temp src) \\
+\cls{CALL}(HCodeElement from, HMethod method, Temp objectref, Temp
+params[], Temp retex) \\
+}
+\caption{caption}
+\label{fig:classes}
+\end{figure*}
 
 \bibliography{harpoon}
 
