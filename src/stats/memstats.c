@@ -19,6 +19,17 @@ long lastpeaka;
 long startclock;
 long initialclock;
 
+void update_stacksize(long size) {
+  long t;
+  struct timeval tv; struct timezone tz;
+
+  gettimeofday(&tv, &tz);
+  t = tv.tv_sec; /* seconds */
+  t*=1000; /* milliseconds */
+  t+= (tv.tv_usec/1000); /* adjust milliseconds & add them in */
+  fprintf(stderr,"\n Stime= %ld size= %ld\n",t-initialclock,size);
+}
+
 void update_stats() {
   long memstat=memorystat;
   long heapsize=GC_get_heap_size();
@@ -41,7 +52,7 @@ void update_stats() {
     /* log the current peak value and zero it */
     if (initialclock==0)
       initialclock=t;
-    fprintf(stderr,"\n time= %ld peak= %ld\n",t-initialclock,lastpeaka);
+    fprintf(stderr,"\n Ttime= %ld peak= %ld\n",t-initialclock,lastpeaka);
     lastpeak=0;
     lastpeaka=0;
     startclock=t;

@@ -12,6 +12,7 @@ extern flex_mutex_t memstat_mutex;
 extern long peakusage;
 extern long peakusagea;
 void update_stats();
+void update_stacksize(long);
 
 #define INCREMENT_MALLOC(x) \
 FLEX_MUTEX_LOCK(&memstat_mutex);\
