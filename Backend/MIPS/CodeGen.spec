@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.25 2000-10-20 02:44:08 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.26 2000-10-21 03:26:41 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -1549,7 +1549,7 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), NAME(src))
    declare( extra0, HClass.Void );
    declare( extra1, HClass.Void );
    emit(ROOT, "la `d0, " + src, extra0);
-   emit(ROOT, "la `d0, " + src, extra1);
+   emit(ROOT, "la `d0, " + dst, extra1);
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, (`s1)",
                      null, new Temp[] {extra0, extra1}));
 }%
@@ -1622,7 +1622,7 @@ MEM<d,l>(NAME(id)) = i %{
    emit(new InstrMEM( instrFactory, ROOT,
                       "lw `d0l, " + id + " +4\n"
                       + "lw `d0h, " + id,
-                      new Temp[]{i}, new Temp[]{i}) );
+                      new Temp[]{i}, new Temp[]{}));
 }%
 
 
@@ -1896,7 +1896,6 @@ THROW(val, handler) %{
 
 // slow version when we don't know exactly which method we're calling.
 CALL(retval, retex, func, arglist, handler)
-   %pred %( !ROOT.isTailCall )%
 %{
    CallState cs = emitCallPrologue(ROOT, arglist, code.getTreeDerivation());
    Label rlabel = new Label(), elabel = new Label();
@@ -1924,7 +1923,6 @@ CALL(retval, retex, func, arglist, handler)
 }%
 // optimized version when we know exactly which method we're calling.
 CALL(retval, retex, NAME(funcLabel), arglist, handler)
-   %pred %( !ROOT.isTailCall )%
 %{
    CallState cs = emitCallPrologue(ROOT, arglist, code.getTreeDerivation());
    Label rlabel = new Label(), elabel = new Label();
