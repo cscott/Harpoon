@@ -13,7 +13,7 @@ import java.util.List;
  * assembly-level instruction representations.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InstrMEM.java,v 1.1.2.3 1999-09-02 21:28:11 pnkfelix Exp $ 
+ * @version $Id: InstrMEM.java,v 1.1.2.4 1999-09-10 22:26:05 pnkfelix Exp $ 
  */
 public class InstrMEM extends Instr {
     
@@ -32,5 +32,5 @@ public class InstrMEM extends Instr {
     }
 
     /** Accept a visitor */
-    public void visit(InstrVisitor v) { v.visit(this); }    
+    public void accept(InstrVisitor v) { v.visit(this); }    
 }

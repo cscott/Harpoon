@@ -19,7 +19,7 @@ import java.util.Set;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.11 1999-09-02 15:40:42 pnkfelix Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.12 1999-09-10 22:26:05 pnkfelix Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
@@ -39,7 +39,7 @@ public class InstrLABEL extends Instr {
     // should clone label!!!!!!!
 
     /** Accept a visitor. */
-    public void visit(InstrVisitor v) { v.visit(this); }
+    public void accept(InstrVisitor v) { v.visit(this); }
 
     /** Returns true.
 	Labels are designed to have multiple predecessors.

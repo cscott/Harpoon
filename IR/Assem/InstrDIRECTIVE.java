@@ -11,7 +11,7 @@ import harpoon.Temp.Label;
  * directives.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrDIRECTIVE.java,v 1.1.2.2 1999-08-04 06:30:57 cananian Exp $
+ * @version $Id: InstrDIRECTIVE.java,v 1.1.2.3 1999-09-10 22:26:05 pnkfelix Exp $
  */
 public class InstrDIRECTIVE extends Instr {
 
@@ -19,5 +19,5 @@ public class InstrDIRECTIVE extends Instr {
         super(inf, src, a, null, null);
     } 
 
-    public void visit(InstrVisitor v) { v.visit(this); }
+    public void accept(InstrVisitor v) { v.visit(this); }
 }

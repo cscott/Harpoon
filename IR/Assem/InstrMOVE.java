@@ -24,7 +24,7 @@ import harpoon.Temp.Temp;
  * <code>InstrMEM</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrMOVE.java,v 1.1.2.1 1999-08-03 03:38:38 pnkfelix Exp $ 
+ * @version $Id: InstrMOVE.java,v 1.1.2.2 1999-09-10 22:26:05 pnkfelix Exp $ 
  */
 public class InstrMOVE extends Instr {
     
@@ -35,5 +35,5 @@ public class InstrMOVE extends Instr {
     }
     
     /** Accept a visitor */
-    public void visit(InstrVisitor v) { v.visit(this); }
+    public void accept(InstrVisitor v) { v.visit(this); }
 }

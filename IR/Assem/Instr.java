@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.49 1999-09-10 21:42:33 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.50 1999-09-10 22:26:05 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -122,7 +122,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	statements)). 
 	@see Instr#canFallThrough
 	@see Instr#getNext
-	@see Instr#hasUnmodifiableTargets 
+	@see Instr#hasModifiableTargets 
     */
     public List getTargets() {
 	if (targets != null) {
@@ -461,10 +461,10 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 		  equals <code>to</code> and <code>to.getPrev()</code>
 		  equals <code>from</code>.
 	     <LI> <code>this</code> is not currently in an instruction
-	          stream (ie this.getPrev() == null and 
-		  this.getNext() == null).  This is true for newly
-		  created <code>Instr</code>s and for
-		  <code>Instr</code> which have just had their
+	          stream (ie <nobr> this.getPrev() == null </nobr> and 
+		  <nobr> this.getNext() == null) </nobr>.  
+		  This is true for newly created <code>Instr</code>s
+		  and for <code>Instr</code> which have just had their 
 		  <code>remove()</code> method called.
         </OL>
         <BR> <B>modifies:</B> <code>from</code>, <code>to</code>
@@ -491,7 +491,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     }
 
     /** Accept a visitor. */
-    public void visit(InstrVisitor v) { v.visit(this); }
+    public void accept(InstrVisitor v) { v.visit(this); }
 
     /** Returns the <code>InstrFactory</code> that generated this. */
     public InstrFactory getFactory() { return inf; }
@@ -711,19 +711,19 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	arbitrary fixup code on edges between <code>Instr</code>s by
 	adding new branches and labels.  
 
-	<P> For example: <BR>
-	<code> beq L0
+	<P> For example: <BR><code><pre>
+	       beq L0
 	       ...assembly code...
 	       L0:
-	</code> <BR>
-	can be turned into: <BR>
-	<code> beq L1
+	</pre></code> <BR>
+	can be turned into: <BR><code><pre>
+	       beq L1
 	       ...assembly code...
 	       L1:
 	       ...fixup code...
 	       b L0
 	       L0:
-        </code>
+        </pre></code>
 	For those instructions, this method returns
 	<code>true</code>.  
 

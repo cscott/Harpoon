@@ -19,7 +19,7 @@ import java.util.Arrays;
     the code. 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrJUMP.java,v 1.1.2.1 1999-08-28 00:48:28 pnkfelix Exp $ */
+    @version $Id: InstrJUMP.java,v 1.1.2.2 1999-09-10 22:26:05 pnkfelix Exp $ */
 public class InstrJUMP extends Instr {
     
     /** Creates a <code>InstrJUMP</code>. */
@@ -28,5 +28,6 @@ public class InstrJUMP extends Instr {
         super(inf, source, assem, null, null, false, 
 	      Arrays.asList(new Label[]{ target }));
     }
-    
+
+    public void accept(InstrVisitor v) { v.visit(this); }
 }
