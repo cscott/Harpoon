@@ -30,7 +30,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.21 1999-07-30 20:41:35 duncan Exp $
+ * @version $Id: Code.java,v 1.1.2.22 1999-07-30 20:54:11 pnkfelix Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {
@@ -89,7 +89,7 @@ public abstract class Code extends HCode
     public HCodeElement getRootElement() { 
 	// Ensures that the root is a SEQ, and the first instruction is 
 	// a SEGMENT.
-	Util.assert(((SEQ)this.tree).left.kind() == TreeKind.SEGMENT);
+	// Util.assert(((SEQ)this.tree).left.kind() == TreeKind.SEGMENT);
 	return this.tree; 
     }
 
