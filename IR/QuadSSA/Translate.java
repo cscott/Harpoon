@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.40 1998-09-04 01:39:22 cananian Exp $
+ * @version $Id: Translate.java,v 1.41 1998-09-04 06:07:14 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -228,14 +228,14 @@ class Translate  { // not public.
 
 	Temp[] locals = new Temp[bytecode.getMaxLocals()];
 	if (!Modifier.isStatic(bytecode.getMethod().getModifiers())) {
-	    locals[0] = new Temp("this");
+	    locals[0] = new Temp("$this");
 	    System.arraycopy(params, 0, locals, 1, params.length);
 	    for (int i=params.length+1; i<locals.length; i++)
-		locals[i] = new Temp("lv"+i);
+		locals[i] = new Temp("lv$"+i);
 	} else {
 	    System.arraycopy(params, 0, locals, 0, params.length);
 	    for (int i=params.length; i<locals.length; i++)
-		locals[i] = new Temp("lv"+i);
+		locals[i] = new Temp("lv$"+i);
 	}
 
 	State s = new State(locals, bytecode.getTryBlocks());
@@ -391,20 +391,57 @@ class Translate  { // not public.
 	case Op.FALOAD:
 	case Op.IALOAD:
 	case Op.SALOAD:
+	    {
 	    ns = s.pop(2).push(new Temp());
-	    q = new AGET(in, ns.stack[0], s.stack[1], s.stack[0]);
+
+	    Temp Tnull = new Temp("$null");
+	    Temp Tzero = new Temp("$zero");
+	    Temp Tobj  = s.stack[1];
+	    Temp Tindex= s.stack[0];
+	    // Check for null pointer.
+	    q = new CONST(in, Tnull, null, HClass.Void);
+	    Quad q1= new CONST(in, Tzero, new Integer(0), HClass.Int);
+	    // the actual operation.
+	    Quad q2= new AGET(in, ns.stack[0], Tobj, Tindex);
+	    // bounds check
+	    r = transBoundsCheck(Tobj, Tindex, Tnull, Tzero,
+				 q2, in, s, handlers, q1, 0);
+	    last = q2;
+	    // link
+	    Quad.addEdge(q,  0, q1, 0);
+	    // done.
 	    break;
-	case Op.AASTORE:
+	    }
+	case Op.AASTORE: // FIXME - also throws ArrayStoreException.
 	case Op.BASTORE:
 	case Op.CASTORE:
 	case Op.FASTORE:
 	case Op.IASTORE:
 	case Op.SASTORE:
+	    {
 	    ns = s.pop(3);
-	    q = new ASET(in, s.stack[2], s.stack[1], s.stack[0]);
+
+	    Temp Tnull = new Temp("$null");
+	    Temp Tzero = new Temp("$zero");
+	    Temp Tobj  = s.stack[2];
+	    Temp Tindex= s.stack[1];
+	    Temp Tsrc  = s.stack[0];
+	    // Check for null pointer.
+	    q = new CONST(in, Tnull, null, HClass.Void);
+	    Quad q1= new CONST(in, Tzero, new Integer(0), HClass.Int);
+	    // the actual operation.
+	    Quad q2= new ASET(in, Tobj, Tindex, Tsrc);
+	    // bounds check
+	    r = transBoundsCheck(Tobj, Tindex, Tnull, Tzero,
+				 q2, in, s, handlers, q1, 0);
+	    last = q2;
+	    // link
+	    Quad.addEdge(q,  0, q1, 0);
+	    // done.
 	    break;
+	    }
 	case Op.ACONST_NULL:
-	    ns = s.push(new Temp("null"));
+	    ns = s.push(new Temp("$null"));
 	    q = new CONST(in, ns.stack[0], null, HClass.Void);
 	    break;
 	case Op.ALOAD:
@@ -452,7 +489,7 @@ class Translate  { // not public.
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
 		int val = ((Byte)opd.getValue()).intValue();
-		ns = s.push(new Temp("const"));
+		ns = s.push(new Temp("$const"));
 		q = new CONST(in, ns.stack[0], new Integer(val), HClass.Int);
 		break;
 	    }
@@ -463,10 +500,10 @@ class Translate  { // not public.
 	    {
 		OpClass opd = (OpClass) in.getOperand(0);
 		Temp Tobj = s.stack[0];
-		Temp Tnull = new Temp("null");
+		Temp Tnull = new Temp("$null");
 		Temp Tr0 = new Temp();
 		Temp Tr1 = new Temp();
-		Temp Tex = new Temp("checkcast");
+		Temp Tex = new Temp("$checkcast");
 
 		HClass HCex = HClass.forClass(ClassCastException.class);
 
@@ -477,37 +514,21 @@ class Translate  { // not public.
 		Quad q2 = new CJMP(in, Tr0);
 		Quad q3 = new INSTANCEOF(in, Tr1, Tobj, opd.value());
 		Quad q4 = new CJMP(in, Tr1);
-		Quad q5 = new NEW(in, Tex, HCex);
-		Quad q6 = new CALL(in, HCex.getConstructor(new HClass[0]),
-				   Tex, new Temp[0], new Temp());
-		// check whether the constructor threw an exception.
-		Quad q7 = new OPER(in, "acmpeq", new Temp(),
-				   new Temp[] { q6.def()[0], Tnull });
-		Quad q8 = new CJMP(in, q7.def()[0]);
-		Quad q9 = new PHI(in, 
-				  new Temp[] { new Temp() },
-				  new Temp[][]{new Temp[] {q6.def()[0], Tex}},
-				  2);
-		r = transThrow(new TransState(s.push(q9.def()[0]), in, q9, 0),
+		Quad q5 = transNewException(HCex, Tex, Tnull, in, q4, 0);
+		r = transThrow(new TransState(s.push(Tex), in, q5, 0),
 			       handlers, false);
-		Quad q10 = new PHI(in, new Temp[0], 2);
+		Quad q6 = new PHI(in, new Temp[0], 2);
 		// link quads.
 		Quad.addEdge(q0, 0, q1, 0);
 		Quad.addEdge(q1, 0, q2, 0);
 		Quad.addEdge(q2, 0, q3, 0);
-		Quad.addEdge(q2, 1, q10,0);
+		Quad.addEdge(q2, 1, q6, 0);
 		Quad.addEdge(q3, 0, q4, 0);
-		Quad.addEdge(q4, 0, q5, 0);
-		Quad.addEdge(q4, 1, q10,1);
-		Quad.addEdge(q5, 0, q6, 0);
-		Quad.addEdge(q6, 0, q7, 0);
-		Quad.addEdge(q7, 0, q8, 0);
-		Quad.addEdge(q8, 0, q9, 0);
-		Quad.addEdge(q8, 1, q9, 1);
+		Quad.addEdge(q4, 1, q6, 1);
 		// and setup the next state.
 		ns = s;
 		q = q0;
-		last = q10;
+		last = q6;
 		break;
 	    }
 	case Op.D2F:
@@ -564,7 +585,7 @@ class Translate  { // not public.
 	case Op.LCONST_1:
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
-		ns = s.push(null).push(new Temp("const"));
+		ns = s.push(null).push(new Temp("$const"));
 		q = new CONST(in, ns.stack[0], opd.getValue(), opd.getType());
 		break;
 	    }
@@ -690,7 +711,7 @@ class Translate  { // not public.
 	case Op.ICONST_5:
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
-		ns = s.push(new Temp("const"));
+		ns = s.push(new Temp("$const"));
 		q = new CONST(in, ns.stack[0], opd.getValue(), opd.getType());
 		break;
 	    }
@@ -757,7 +778,7 @@ class Translate  { // not public.
 	    {
 		OpLocalVariable opd0 = (OpLocalVariable) in.getOperand(0);
 		OpConstant opd1 = (OpConstant) in.getOperand(1);
-		Temp constant = new Temp("const");
+		Temp constant = new Temp("$const");
 		ns = s.assignLV(opd0.getIndex(),
 				new Temp(s.lv[opd0.getIndex()]));
 		q = new CONST(in, constant, opd1.getValue(), opd1.getType());
@@ -1060,7 +1081,7 @@ class Translate  { // not public.
 	case Op.IFNONNULL:
 	    {
 		State ns = s.pop();
-		q = new CONST(in, new Temp("null"), null, HClass.Void);
+		q = new CONST(in, new Temp("$null"), null, HClass.Void);
 		Quad q0 = new OPER(in, "acmpeq", new Temp(), 
 				   new Temp[] { s.stack[0], q.def()[0] });
 		Quad q1 = new CJMP(in, q0.def()[0]);
@@ -1121,7 +1142,8 @@ class Translate  { // not public.
 		Quad Qo;
 		if (opcode>=Op.IFEQ && opcode<=Op.IFLE) {
 		    ns = s.pop();
-		    q  = new CONST(in, new Temp(), new Integer(0), HClass.Int);
+		    q  = new CONST(in, new Temp("$zero"), 
+				   new Integer(0), HClass.Int);
 		    Qo = new OPER(in, op, new Temp(),
 				  new Temp[] { s.stack[0], q.def()[0] });
 		    Quad.addEdge(q, 0, Qo, 0);
@@ -1168,7 +1190,7 @@ class Translate  { // not public.
 	    //     try { Tex = new NullPointerException(); }
 	    //     catch (Throwable t) { Tex = t; }
 	    //   }
-	    Quad q1 = new CONST(ts.in, new Temp("null"), null, HClass.Void);
+	    Quad q1 = new CONST(ts.in, new Temp("$null"), null, HClass.Void);
 	    Quad q2 = new OPER(ts.in, "acmpeq", new Temp(),
 			       new Temp[] { Tex, q1.def()[0] } );
 	    Quad q3 = new CJMP(ts.in, q2.def()[0]);
@@ -1227,6 +1249,80 @@ class Translate  { // not public.
 	// grok rTS into TransState[]
 	TransState[] r = new TransState[rTS.size()];
 	rTS.copyInto(r);
+	return r;
+    }
+    static final Quad transNewException(HClass exClass, Temp Tex, Temp Tnull,
+					Instr in, Quad header, int which_succ)
+    {
+	Quad q0 = new NEW(in, new Temp(), exClass);
+	Quad q1 = new CALL(in, exClass.getConstructor(new HClass[0]),
+			   q0.def()[0], new Temp[0], new Temp() /*ex*/);
+	// check whether the constructor threw an exception.
+	Quad q2 = new OPER(in, "acmpeq", new Temp(),
+			   new Temp[] { q1.def()[0], Tnull } );
+	Quad q3 = new CJMP(in, q2.def()[0]);
+	Quad q4 = new PHI(in, 
+			  new Temp[] { Tex },
+			  new Temp[][]{new Temp[]{q1.def()[0], q0.def()[0]}},
+			  2);
+	Quad.addEdge(header, which_succ, q0, 0);
+	Quad.addEdge(q0, 0, q1, 0);
+	Quad.addEdge(q1, 0, q2, 0);
+	Quad.addEdge(q2, 0, q3, 0);
+	Quad.addEdge(q3, 0, q4, 0);
+	Quad.addEdge(q3, 1, q4, 1);
+	return q4;
+    }
+    static final TransState[] transBoundsCheck(Temp Tobj, Temp Tindex,
+					       Temp Tnull, Temp Tzero,
+					       Quad q, Instr in, State s,
+					       MergeMap handlers,
+					       Quad header, int which_succ) {
+	// if (obj==null) throw new NullPointerException();
+	// if (0<=index && index<obj.length) do(q); /* actual operation */
+	// else throw new ArrayIndexOutOfBoundsException();
+
+	HClass HCnull = HClass.forClass(NullPointerException.class);
+	HClass HCoob  = HClass.forClass(ArrayIndexOutOfBoundsException.class);
+	Temp Tex   = new Temp();
+
+	Quad q0= new OPER(in, "acmpeq", new Temp(),
+			  new Temp[] { Tobj, Tnull });
+	Quad q1= new CJMP(in, q0.def()[0]);
+	Quad q2 = transNewException(HCnull, new Temp(), Tnull,
+				    in, q1, 1);
+	// array bounds check.
+	Quad q3 = new OPER(in, "icmpge", new Temp(),
+			   new Temp[] { Tzero, Tindex });
+	Quad q4 = new CJMP(in, q3.def()[0]);
+	Quad q5 = new ALENGTH(in, new Temp("$len"), Tobj);
+	Quad q6 = new OPER(in, "icmpgt", new Temp(),
+			   new Temp[] { Tindex, q5.def()[0] });
+	Quad q7 = new CJMP(in, q6.def()[0]);
+	Quad q8 = new PHI(in, new Temp[0], 2);
+	Quad q9 = transNewException(HCoob, new Temp(), Tnull,
+				    in, q8, 0);
+	// throw exception if necessary.
+	Quad q10= new PHI(in,
+			  new Temp[] { Tex },
+			  new Temp[][]{new Temp[]{ q2.def()[0],
+						   q9.def()[0] }}, 2);
+	TransState[] r = transThrow(new TransState(s.push(Tex), in, q10, 0),
+				    handlers, false);
+	// link.
+	Quad.addEdge(header, which_succ, q0, 0);
+	Quad.addEdge(q0, 0, q1, 0);
+	Quad.addEdge(q1, 0, q3, 0);
+	Quad.addEdge(q2, 0, q10,0);
+	Quad.addEdge(q3, 0, q4, 0);
+	Quad.addEdge(q4, 0, q8,0);
+	Quad.addEdge(q4, 1, q5, 0);
+	Quad.addEdge(q5, 0, q6, 0);
+	Quad.addEdge(q6, 0, q7, 0);
+	Quad.addEdge(q7, 0, q8, 1);
+	Quad.addEdge(q7, 1, q,  0); /* actual operation, after bounds check */
+	Quad.addEdge(q9, 0, q10,1);
+	// done.
 	return r;
     }
 
