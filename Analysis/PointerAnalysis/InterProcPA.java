@@ -25,7 +25,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.19 2000-03-30 03:05:14 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.20 2000-03-30 04:18:30 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -64,13 +64,17 @@ abstract class InterProcPA {
 	MetaMethod[] mms = mcg.getCallees(current_mmethod,q);
 	int nb_callees = mms.length;
 
-	if(nb_callees < 1){
+	if(nb_callees == 0){
 	    if(WARNINGS){
 		System.out.print("Error: CALL site with no callee! ");
 		System.out.print(current_mmethod);
 		System.out.println(" " + q);
 	    }
-	    return skip_call(q,pig_before,node_rep);
+	    // I count on the fact that if a call site has 0 callees, it 
+	    // means that it doesn't occur in practice (some classes are not
+	    // instantiated, not because the call graph is buggy!
+	    return new ParIntGraphPair(pig_before, pig_before);
+	    //return skip_call(q,pig_before,node_rep);
 	}
 
 	if(DEBUG){

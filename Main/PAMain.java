@@ -62,7 +62,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.28 2000-03-30 03:05:15 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.29 2000-03-30 04:18:46 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -626,7 +626,7 @@ public abstract class PAMain {
 	}
 
 	Set holes = new HashSet();
-	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext();){
+	for(Iterator it = set.iterator(); it.hasNext();){
 	    MetaMethod mm = (MetaMethod) it.next();
 	    if(!pa.analyzable(mm.getHMethod())) continue;
 	    ParIntGraph pig = pa.threadInteraction(mm);
