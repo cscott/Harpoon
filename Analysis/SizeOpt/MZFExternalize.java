@@ -44,7 +44,7 @@ import java.util.Set;
  * really *are* mostly-zero, then the net will be a space savings.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFExternalize.java,v 1.1.2.3 2001-11-14 23:05:14 cananian Exp $
+ * @version $Id: MZFExternalize.java,v 1.1.2.4 2001-11-19 19:01:38 cananian Exp $
  */
 class MZFExternalize {
     public static final double THRESHOLD =
@@ -110,13 +110,11 @@ class MZFExternalize {
 	    ((CachingCodeFactory)hcf).put
 		(setter, makeSetter(hcf, setter, hf, mostly));
 	}
-	/*
 	// okay, it should now be safe to go ahead and remove those fields.
 	for (Iterator it=myfields.keySet().iterator(); it.hasNext(); ) {
 	    HField hf = (HField) it.next();
 	    hf.getDeclaringClass().getMutator().removeDeclaredField(hf);//ta-da
 	}
-	*/
 	// set the externally-visible code factory.
 	this.hcf = hcf;
     }
