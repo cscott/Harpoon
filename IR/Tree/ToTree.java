@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.92 2001-06-05 20:56:30 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.93 2001-07-05 19:21:15 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -85,8 +85,7 @@ class ToTree {
     // to ensure the target method is not null (which happens when the
     // method has been proven to be uncallable by the classhierarchy)
     private static boolean checkDispatch =
-	!System.getProperty("harpoon.check.dispatch", "no")
-	.equalsIgnoreCase("no");
+	Boolean.getBoolean("harpoon.totree.check.dispatch");
    
     /** Class constructor.  Uses the default <code>EdgeOracle</code>
      *  and <code>ReachingDefs</code> for <code>LowQuadNoSSA</code>. */
