@@ -19,6 +19,7 @@ import harpoon.ClassFile.HMethodMutator;
 import harpoon.ClassFile.Linker;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ARRAYINIT;
 import harpoon.IR.Quads.ASET;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.CJMP;
@@ -67,7 +68,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.8 2001-01-16 20:18:52 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.9 2001-01-23 22:02:43 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -92,10 +93,14 @@ public class SyncTransformer
     }
 
     // for statistics:
-    private final boolean noFieldModification=false;
-    // configuration:
-    private final boolean useSmartFieldOracle=true;
-    private final boolean useSmartCheckOracle=true;
+    private final boolean enabled = // turns off the transformation.
+	!Boolean.getBoolean("harpoon.synctrans.disabled");
+    private final boolean noFieldModification = // only do monitorenter/exit
+	Boolean.getBoolean("harpoon.synctrans.nofieldmods");
+    private final boolean useSmartFieldOracle = // dumb down field oracle
+	!Boolean.getBoolean("harpoon.synctrans.nofieldoracle");
+    private final boolean useSmartCheckOracle = // dumb down check oracle
+	!Boolean.getBoolean("harpoon.synctrans.nocheckoracle");
 
     // FieldOracle to use.
     final FieldOracle fieldOracle;
@@ -237,7 +242,8 @@ public class SyncTransformer
 	FOOTER qF = qH.footer();
 	METHOD qM = qH.method();
 	// recursively decend the dominator tree, rewriting as we go.
-	if (! ("harpoon.Runtime.Transactions".equals
+	if (enabled &&
+	    ! ("harpoon.Runtime.Transactions".equals
 	       (hc.getMethod().getDeclaringClass().getPackage()))) {
 	    CheckOracle co = new SimpleCheckOracle();
 	    if (useSmartCheckOracle) {
@@ -597,6 +603,12 @@ public class SyncTransformer
 	    Quad.replace(q, new SET(qf, q, q.field(),
 				    ts.versioned(q.objectref()),
 				    q.src()));
+	}
+	public void visit(ARRAYINIT q) {
+	    addChecks(q);
+	    if (noFieldModification) return;
+	    // XXX: we don't handle ARRAYINIT yet.
+	    Util.assert(false, "ARRAYINIT transformation unimplemented.");
 	}
 	// add a type check to edge e so that TypeInfo later knows the
 	// component type of this array access.
