@@ -7,9 +7,9 @@ package harpoon.Analysis.ContBuilder;
  * <code>ByteResultContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ByteResultContinuation.java,v 1.1.2.1 1999-11-06 05:28:23 kkz Exp $
+ * @version $Id: ByteResultContinuation.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
  */
-public interface ByteResultContinuation {
+public interface ByteResultContinuation extends Continuation {
 
     public void resume(byte result);
 }

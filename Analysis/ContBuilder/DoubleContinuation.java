@@ -7,9 +7,9 @@ package harpoon.Analysis.ContBuilder;
  * <code>DoubleContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: DoubleContinuation.java,v 1.1.2.1 1999-11-06 05:28:24 kkz Exp $
+ * @version $Id: DoubleContinuation.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
  */
-public abstract class DoubleContinuation extends Continuation {
+public abstract class DoubleContinuation implements Continuation {
     protected DoubleResultContinuation next;
 
     public void setNext(DoubleResultContinuation next) {

@@ -7,9 +7,10 @@ package harpoon.Analysis.ContBuilder;
  * <code>ShortResultContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ShortResultContinuation.java,v 1.1.2.1 1999-11-06 05:28:24 kkz Exp $
+ * @version $Id: ShortResultContinuation.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
  */
-public interface ShortResultContinuation {
+public interface ShortResultContinuation extends Continuation {
 
     public void resume(short result);
+
 }

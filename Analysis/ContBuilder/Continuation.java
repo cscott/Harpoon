@@ -8,8 +8,8 @@ package harpoon.Analysis.ContBuilder;
  * deal with <code>Continuation</code>s together.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: Continuation.java,v 1.1.2.1 1999-11-06 05:28:24 kkz Exp $
+ * @version $Id: Continuation.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
  */
-public abstract class Continuation {
-    public abstract void exception(Throwable t);
+public interface Continuation {
+    public void exception(Throwable t);
 }

@@ -7,9 +7,9 @@ package harpoon.Analysis.ContBuilder;
  * <code>LongContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: LongContinuation.java,v 1.1.2.1 1999-11-06 05:28:24 kkz Exp $
+ * @version $Id: LongContinuation.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
  */
-public abstract class LongContinuation extends Continuation {
+public abstract class LongContinuation implements Continuation {
     protected LongResultContinuation next;
 
     public void setNext(LongResultContinuation next) {

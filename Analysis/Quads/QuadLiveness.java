@@ -21,7 +21,7 @@ import java.util.Set;
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.1.2.1 1999-10-28 05:04:50 kkz Exp $
+ * @version $Id: QuadLiveness.java,v 1.1.2.2 1999-11-12 05:18:41 kkz Exp $
  */
 public class QuadLiveness extends Liveness {
     final Hashtable livein;
@@ -59,10 +59,12 @@ public class QuadLiveness extends Liveness {
     }
 
     private Hashtable[] analyze() {
+	System.out.println("Entering QuadLiveness.analyze()");
 	WorkSet ws = new WorkSet(this.hc.getElementsL());
 
 	if (ws.isEmpty()) {
 	    Hashtable[] retval = {new Hashtable(), new Hashtable()};
+	    System.out.println("Leaving QuadLiveness.analyze()");
 	    return retval;
 	}
 
@@ -144,6 +146,7 @@ public class QuadLiveness extends Liveness {
 
 	    if (ws.isEmpty()) {
 		Hashtable[] retval = {in, out};
+		System.out.println("Leaving QuadLiveness.analyze()");
 		return retval;
 	    }
 	    hce = (Quad)ws.pull();

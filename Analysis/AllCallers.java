@@ -21,7 +21,7 @@ import java.util.Iterator;
  * of the call graph for methods that fulfill a certain condition.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AllCallers.java,v 1.1.2.2 1999-10-20 03:28:17 kkz Exp $
+ * @version $Id: AllCallers.java,v 1.1.2.3 1999-11-12 05:18:22 kkz Exp $
  */
 
 public class AllCallers {
@@ -32,7 +32,7 @@ public class AllCallers {
     /** Creates an <code>AllCallers</code> object using the specified
      *  <code>ClassHierarchy</code>. Currently, <code>hcf</code> must be a
      *  code factory that generates quad-no-ssa or quad-ssi form because
-     *  the dual of the call graph is build using <code>CallGraph</code>.
+     *  the dual of the call graph is built using <code>CallGraph</code>.
      */
     public AllCallers(ClassHierarchy ch, HCodeFactory hcf) {
 	this.hcf = hcf;

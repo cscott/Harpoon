@@ -7,9 +7,10 @@ package harpoon.Analysis.ContBuilder;
  * <code>LongResultContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: LongResultContinuation.java,v 1.1.2.1 1999-11-06 05:28:24 kkz Exp $
+ * @version $Id: LongResultContinuation.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
  */
-public interface LongResultContinuation {
+public interface LongResultContinuation extends Continuation {
 
     public void resume(long result);
+
 }

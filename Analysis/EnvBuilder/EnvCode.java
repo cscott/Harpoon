@@ -21,7 +21,7 @@ import harpoon.Util.Util;
  * <code>EnvCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvCode.java,v 1.1.2.1 1999-11-06 05:28:24 kkz Exp $
+ * @version $Id: EnvCode.java,v 1.1.2.2 1999-11-12 05:18:39 kkz Exp $
  */
 public class EnvCode extends Code {
 
@@ -53,6 +53,7 @@ public class EnvCode extends Code {
     }
 
     private Quad buildCode(HField[] fields) {
+	System.out.println("Entering EnvCode.buildCode()");
 	HEADER h = new HEADER(this.qf, null);
 	FOOTER f = new FOOTER(this.qf, null, 2);
 	Quad.addEdge(h, 0, f, 0);
@@ -82,6 +83,7 @@ public class EnvCode extends Code {
 	Quad.addEdge(quadList[fields.length-1], 0, r, 0);
 	Quad.addEdge(r, 0, f, 1);
 
+	System.out.println("Leaving EnvCode.buildCode()");
 	return h;
     }
 }

@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * <code>quad-no-ssa</code> form.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContBuilder.java,v 1.1.2.1 1999-11-06 05:28:24 kkz Exp $
+ * @version $Id: ContBuilder.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
  */
 public class ContBuilder {
     protected final UpdateCodeFactory ucf;
@@ -127,7 +127,7 @@ public class ContBuilder {
 	    cont.removeDeclaredMethod(hm);
 	} catch (NoSuchMethodError e) {
 	    reportException(e, methodname, "Cannot find harpoon." +
-			    "Analysis.ContBuilder.ContTemplate::resume()");
+			    "Analysis.ContBuilder.ContTemplate.resume()");
 	}
 
 	boolean hasParameter = false;
@@ -142,12 +142,14 @@ public class ContBuilder {
 	}
 
 	HMethod next_resume;
-	if (hcrettype != HClass.Void)
-	    next_resume = cont.getField("next").getType().getDeclaredMethod("resume", new HClass[] {hcrettype});
-	else
-	    next_resume = cont.getField("next").getType().getDeclaredMethod("resume", new HClass[0]);
+	if (hcrettype != HClass.Void) {
+	    next_resume = cont.getField("next").getType().getDeclaredMethod
+		("resume", new HClass[] {hcrettype});
+	} else {
+	    next_resume = cont.getField("next").getType().getDeclaredMethod
+		("resume", new HClass[0]);
+	}
 	    
-	nhm.setReturnType(hcrettype);
 	// create resume() method and register w/ codeFactory
 	this.ucf.update(nhm, new ContCode(nhm, this.hc, this.c, hasParameter, 
 					  next_resume, this.live, 
@@ -162,16 +164,24 @@ public class ContBuilder {
 	}
 
 	HMethod exc = null;
+	HMethod next_exception = null;
 	try {
 	    exc = cont.getDeclaredMethod("exception", new HClass[] {t});
 	} catch (NoSuchMethodError e) {
 	    reportException(e, methodname, "Cannot find harpoon.Analysis." +
-			    "ContBuilder.ContTemplate::exception()");
+			    "ContBuilder.ContTemplate.exception()");
 	}
-	    
+	try {
+	    next_exception = cont.getField("next").getType().
+		getMethod("exception", new HClass[] {t});
+	} catch (NoSuchMethodError e) {
+	    reportException(e, methodname, "Cannot find exception() method" +
+			    " for next Continuation");
+	}
+	
 	// create exception() method and register w/ codeFactory
 	this.ucf.update(exc, new ContCode(exc, this.hc, this.c, hasParameter, 
-					  next_resume, this.live, 
+					  next_exception, this.live, 
 					  cont.getField("e"), 
 					  this.env.getDeclaredFields(), 1));
 	return cont;
@@ -179,7 +189,7 @@ public class ContBuilder {
 
     // Given a type, returns the prefix for
     // a continuation of that type.
-    private String getPrefix(HClass t) {
+    public static String getPrefix(HClass t) {
 	if (t == HClass.Boolean) {
 	    return "Boolean";
 	} else if (t == HClass.Byte) {
@@ -205,7 +215,7 @@ public class ContBuilder {
 
     private void reportException(Throwable t, String methodname, String msg) {
 	System.err.println("Caught exception " + t.toString() + 
-			   " in harpoon.Analysis.ContBuilder.ContBuilder" +
+			   " in harpoon.Analysis.ContBuilder.ContBuilder." +
 			   methodname);
 	System.err.println(msg);
     }

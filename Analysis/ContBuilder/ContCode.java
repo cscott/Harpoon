@@ -16,6 +16,8 @@ import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.TYPECAST;
 import harpoon.IR.Quads.Quad;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
@@ -29,7 +31,7 @@ import java.util.Map;
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContCode.java,v 1.1.2.1 1999-11-06 05:28:24 kkz Exp $
+ * @version $Id: ContCode.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
  */
 public class ContCode extends Code {
 
@@ -45,7 +47,9 @@ public class ContCode extends Code {
      *  to assign.
      *
      *  <code>i</code> determines whether we are building the code
-     *  for resume (0) or for exception (1).
+     *  for resume (0) or for exception (1). <code>resume</code> should be
+     *  the resume <code>HMethod</code> if <code>i</code> is (0) or the
+     *  exception <code>HMethod</code> if <code>i</code> is (1).
      */
     public ContCode(HMethod parent, HCode hc, CALL c, boolean hasParameter,
 		    HMethod resume, Temp[] liveout, HField env,
@@ -81,8 +85,10 @@ public class ContCode extends Code {
 	return harpoon.IR.Quads.QuadNoSSA.codename;
     }
 
+    private final int RESUME = 0;
+    private final int EXCEPTION = 1;
     private Quad buildCode(HCode hc, CALL c, boolean hasParameter, 
-			   HMethod resume, Temp[] liveout, HField env,
+			   HMethod resume, Temp[] liveout, HField env, 
 			   HField[] envfields, int indicator) {
 	Quad root = (Quad)hc.getRootElement();
 
@@ -115,11 +121,24 @@ public class ContCode extends Code {
 	Quad.addEdge(m, 0, g, 0);
 
 	// assign each field in the Environment to the appropriate Temp
+	// except for the assignment we want to suppress
+	Temp suppress = (indicator == RESUME) ? c.retval() : c.retex();
 	Quad prev = g;
 	for(int i=0; i<liveout.length; i++) {
-	    GET ng = new GET(this.qf, h.next(1), liveout[i], envfields[i], e);
-	    Quad.addEdge(prev, 0, ng, 0);
-	    prev = ng;
+	    if (suppress.compareTo(liveout[i]) != 0) {
+		GET ng = new GET(this.qf, h.next(1), liveout[i], 
+				 envfields[i], e);
+		Quad.addEdge(prev, 0, ng, 0);
+		prev = ng;
+	    }
+	}
+
+	// typecast the argument if necessary
+	if (!c.method().getReturnType().isPrimitive()) {
+	    TYPECAST tc = new TYPECAST(this.qf, h.next(1), c.retval(), 
+				       c.method().getReturnType());
+	    Quad.addEdge(prev, 0, tc, 0);
+	    prev = tc;
 	}
 
 	CALL nc = (CALL)((Map)maps[0]).get(c);
@@ -134,22 +153,34 @@ public class ContCode extends Code {
 	Quad q = null;
 	for (Iterator i=hc.getElementsI(); i.hasNext(); ) {
 	    q = (Quad)i.next();
-	    if (q instanceof RETURN) break;
+	    if (indicator == RESUME) {
+		if (q instanceof RETURN) break;
+	    } else if (indicator == EXCEPTION) {
+		if (q instanceof THROW) break;
+	    } else {
+		System.err.println("Can't happen in Analysis.ContBuilder." +
+				   "ContCode.buildCode");
+	    }
 	}
 
-	RETURN r = (RETURN)quadmap.get(q);
+	Quad r = (Quad)quadmap.get(q); 
 	
-	// add "next.resume(retval)" CALL
-	Temp retval = r.retval();
-	CALL rc = null;
+	Temp retval;
+	CALL rc;
+	if (indicator == RESUME) {
+	    retval = ((RETURN)r).retval();
+	} else {
+	    retval = ((THROW)r).throwable();
+	}
 
+	// add "next.resume(retval)" or "next.exception(retval)" CALL
 	if (retval != null) {
 	    rc = new CALL(this.qf, r, resume, 
-                          new Temp[] {new Temp(tf), retval}, null, null, 
-                          true, false, new Temp[0]);
+			  new Temp[] {new Temp(tf), retval}, null, null, 
+			  true, false, new Temp[0]);
 	} else {
 	    rc = new CALL(this.qf, r, resume, new Temp[] {new Temp(tf)}, 
-                          null, null, true, false, new Temp[0]);
+	    null, null, true, false, new Temp[0]);
 	}
 
 	Edge[] prevs = r.prevEdge();
@@ -166,6 +197,5 @@ public class ContCode extends Code {
 	Unreachable.prune(h);
 
 	return h;
-    }
-    
+    }    
 }

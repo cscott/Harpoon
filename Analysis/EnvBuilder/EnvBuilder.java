@@ -26,7 +26,7 @@ import java.util.Set;
  * <code>EnvBuilder</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.1.2.1 1999-11-06 05:28:24 kkz Exp $
+ * @version $Id: EnvBuilder.java,v 1.1.2.2 1999-11-12 05:18:38 kkz Exp $
  */
 public class EnvBuilder {
     protected final UpdateCodeFactory ucf;
@@ -48,6 +48,7 @@ public class EnvBuilder {
     }
 
     public HClass makeEnv() {
+	System.out.println("Entering EnvBuilder.makeEnv()");
 	HClass template = null;
 	try {
 	    template = 
@@ -84,10 +85,12 @@ public class EnvBuilder {
 	HClass[] parameterTypes = new HClass[vars.length];
 	HField[] fields = new HField[vars.length];
 
+	System.out.println("Starting SCCAnalysis");
+	SCCAnalysis map = new SCCAnalysis(this.hc);
+	System.out.println("Finished SCCAnalysis");
 	for (int i=0; i<vars.length; i++) {
 	    this.liveout[i] = (Temp)vars[i];
 	    String tempName = ((Temp)vars[i]).name();
-	    SCCAnalysis map = new SCCAnalysis(this.hc);
 	    HClass type = map.typeMap(this.hce, (Temp)vars[i]);  
 	    new HFieldSyn(env, tempName, type);
 
@@ -109,6 +112,7 @@ public class EnvBuilder {
 
 	ucf.update(nc, new EnvCode(nc, fields));
 
+	System.out.println("Leaving EnvBuilder.makeEnv()");
 	return env;
     }
 

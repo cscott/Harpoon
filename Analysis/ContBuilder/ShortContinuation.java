@@ -7,9 +7,9 @@ package harpoon.Analysis.ContBuilder;
  * <code>ShortContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ShortContinuation.java,v 1.1.2.1 1999-11-06 05:28:24 kkz Exp $
+ * @version $Id: ShortContinuation.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
  */
-public abstract class ShortContinuation extends Continuation {
+public abstract class ShortContinuation implements Continuation {
     protected ShortResultContinuation next;
 
     public void setNext(ShortResultContinuation next) {

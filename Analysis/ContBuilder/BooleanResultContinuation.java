@@ -7,9 +7,9 @@ package harpoon.Analysis.ContBuilder;
  * <code>BooleanResultContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: BooleanResultContinuation.java,v 1.1.2.1 1999-11-06 05:28:23 kkz Exp $
+ * @version $Id: BooleanResultContinuation.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
  */
-public interface BooleanResultContinuation {
+public interface BooleanResultContinuation extends Continuation {
 
     public void resume(boolean result);
 }

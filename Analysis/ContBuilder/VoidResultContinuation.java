@@ -7,9 +7,10 @@ package harpoon.Analysis.ContBuilder;
  * <code>VoidResultContinuation</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: VoidResultContinuation.java,v 1.1.2.1 1999-11-06 05:28:24 kkz Exp $
+ * @version $Id: VoidResultContinuation.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
  */
-public interface VoidResultContinuation {
+public interface VoidResultContinuation extends Continuation {
 
     public void resume();
+
 }
