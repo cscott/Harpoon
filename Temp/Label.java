@@ -1,4 +1,4 @@
-// Label.java, created Fri Aug 28  1:09:44 1998 by cananian
+// Label.java, created Tue Jul 28  1:09:44 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Temp;
@@ -6,7 +6,7 @@ package harpoon.Temp;
 /**
  * A <code>Label</code> represents a (symbolic) address in assembly language.
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Label.java,v 1.3.2.6 1999-08-04 05:52:37 cananian Exp $
+ * @version $Id: Label.java,v 1.3.2.7 1999-08-04 06:31:02 cananian Exp $
  */
 
 public class Label  {

@@ -1,4 +1,4 @@
-// Graph.java, created by cananian
+// Graph.java, created Mon Sep 14 22:18:14 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * <code>Graph</code> is a command-line graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Graph.java,v 1.12.2.7 1999-08-02 19:01:34 cananian Exp $
+ * @version $Id: Graph.java,v 1.12.2.8 1999-08-04 06:31:02 cananian Exp $
  */
 
 public abstract class Graph extends harpoon.IR.Registration {

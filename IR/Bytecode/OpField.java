@@ -1,4 +1,4 @@
-// OpField.java, created by cananian
+// OpField.java, created Sun Sep 13 22:49:23 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
@@ -14,7 +14,7 @@ import harpoon.IR.RawClass.ConstantFieldref;
  * <code>CONSTANT_Fieldref</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpField.java,v 1.2.2.3 1999-01-22 23:05:48 cananian Exp $
+ * @version $Id: OpField.java,v 1.2.2.4 1999-08-04 06:30:57 cananian Exp $
  * @see harpoon.IR.RawClass.ConstantFieldref
  */
 public final class OpField extends Operand {

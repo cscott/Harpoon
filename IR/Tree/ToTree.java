@@ -1,4 +1,4 @@
-// ToTree.java, created Tue Mar 16 16:46:36 1999 by duncan
+// ToTree.java, created Tue Feb 16 16:46:36 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
@@ -52,7 +52,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.21 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.22 1999-08-04 06:31:00 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;

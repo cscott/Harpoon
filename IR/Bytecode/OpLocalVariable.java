@@ -1,4 +1,4 @@
-// OpLocalVariable.java, created by cananian
+// OpLocalVariable.java, created Sun Sep 13 22:49:23 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
@@ -8,7 +8,7 @@ package harpoon.IR.Bytecode;
  * instruction which indicates a local variable index.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpLocalVariable.java,v 1.2.2.2 1999-01-22 23:05:48 cananian Exp $
+ * @version $Id: OpLocalVariable.java,v 1.2.2.3 1999-08-04 06:30:57 cananian Exp $
  */
 public final class OpLocalVariable extends Operand {
   final int index;

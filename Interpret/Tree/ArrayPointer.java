@@ -1,4 +1,4 @@
-// ArrayPointer.java, created Tue Apr 27 18:05:07 1999 by duncan
+// ArrayPointer.java, created Sat Mar 27 17:05:07 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
@@ -13,7 +13,7 @@ import harpoon.Util.Tuple;
  * modified with <code>updateValue()</code>.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ArrayPointer.java,v 1.1.2.5 1999-08-04 05:52:33 cananian Exp $
+ * @version $Id: ArrayPointer.java,v 1.1.2.6 1999-08-04 06:31:01 cananian Exp $
  */
 class ArrayPointer extends Pointer {
     private boolean isDerived;

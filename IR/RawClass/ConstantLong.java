@@ -1,4 +1,4 @@
-// ConstantLong.java, created by cananian
+// ConstantLong.java, created Mon Jan 18 22:44:37 1999 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.RawClass;
@@ -7,7 +7,7 @@ package harpoon.IR.RawClass;
  * The <code>CONSTANT_Long_info</code> structure represents eight-byte
  * integer numeric constants.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantLong.java,v 1.1.2.2 1999-06-18 01:48:08 cananian Exp $
+ * @version $Id: ConstantLong.java,v 1.1.2.3 1999-08-04 06:30:59 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.5"
  * @see Constant
  * @see ConstantDouble

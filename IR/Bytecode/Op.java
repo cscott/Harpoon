@@ -1,4 +1,4 @@
-// Op.java, created by cananian
+// Op.java, created Sun Sep 13 22:49:21 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.3.2.2 1999-06-20 23:03:14 cananian Exp $
+ * @version $Id: Op.java,v 1.3.2.3 1999-08-04 06:30:57 cananian Exp $
  * @see     harpoon.IR.RawClass.AttributeCode
  * @see     harpoon.IR.Bytecode.Instr
  * @see     harpoon.IR.Bytecode.Code

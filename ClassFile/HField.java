@@ -1,4 +1,4 @@
-// HField.java, created by cananian
+// HField.java, created Fri Jul 31  9:33:47 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -13,7 +13,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.15.2.5 1999-06-18 01:48:04 cananian Exp $
+ * @version $Id: HField.java,v 1.15.2.6 1999-08-04 06:30:56 cananian Exp $
  * @see HMember
  * @see HClass
  */

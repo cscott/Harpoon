@@ -1,4 +1,4 @@
-// HConstructorSyn.java, created by cananian
+// HConstructorSyn.java, created Fri Oct 16  3:30:52 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -12,7 +12,7 @@ import java.util.Vector;
  * single constructor for a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructorSyn.java,v 1.2.2.1 1998-12-11 06:54:51 cananian Exp $
+ * @version $Id: HConstructorSyn.java,v 1.2.2.2 1999-08-04 06:30:56 cananian Exp $
  * @see HMember
  * @see HClass
  */

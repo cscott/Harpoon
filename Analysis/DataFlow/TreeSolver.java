@@ -1,4 +1,4 @@
-// TreeSolver.java, created Fri Aug 27 17:53:34 1999 by duncan
+// TreeSolver.java, created Tue Jul 27 17:53:34 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
@@ -18,7 +18,7 @@ import harpoon.Analysis.EdgesIterator;
 
 /* <b>FILL ME IN</b>.
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeSolver.java,v 1.1.2.3 1999-08-04 05:52:20 cananian Exp $
+ * @version $Id: TreeSolver.java,v 1.1.2.4 1999-08-04 06:30:45 cananian Exp $
  */
 public abstract class TreeSolver {
 

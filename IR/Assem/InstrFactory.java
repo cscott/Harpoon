@@ -1,4 +1,4 @@
-// InstrFactory.java, created by andyb
+// InstrFactory.java, created Tue Feb  9  0:45:33 1999 by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
@@ -13,7 +13,7 @@ import harpoon.ClassFile.HCode;
  * generic <code>Assem.Instr</code>s used in code generation.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrFactory.java,v 1.1.2.3 1999-03-08 09:08:07 andyb Exp $
+ * @version $Id: InstrFactory.java,v 1.1.2.4 1999-08-04 06:30:57 cananian Exp $
  */
 public abstract class InstrFactory {
     /** Returns the <code>TempFactory</code> to use for creating

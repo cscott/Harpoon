@@ -1,4 +1,4 @@
-// Loader.java, created by cananian
+// Loader.java, created Fri Jul 31  4:33:28 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -25,7 +25,7 @@ import harpoon.Util.Util;
  * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.7 1999-06-20 22:06:16 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.8 1999-08-04 06:30:56 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {

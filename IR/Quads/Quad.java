@@ -1,4 +1,4 @@
-// Quad.java, created by cananian
+// Quad.java, created Tue Dec  1  7:36:43 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
@@ -24,7 +24,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.21 1999-07-07 22:14:01 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.22 1999-08-04 06:30:58 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 

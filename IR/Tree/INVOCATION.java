@@ -1,4 +1,4 @@
-// INVOCATION.java, created Thu Mar 18 17:43:19 1999 by duncan
+// INVOCATION.java, created Thu Feb 18 17:43:19 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
@@ -19,7 +19,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.8 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.9 1999-08-04 06:31:00 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL

@@ -1,4 +1,4 @@
-// LocalVariableTable.java, created by cananian
+// LocalVariableTable.java, created Mon Jan 18 22:44:38 1999 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.RawClass;
@@ -8,7 +8,7 @@ package harpoon.IR.RawClass;
  * within which a local variable has a value.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LocalVariableTable.java,v 1.1.2.1 1999-01-19 03:44:38 cananian Exp $
+ * @version $Id: LocalVariableTable.java,v 1.1.2.2 1999-08-04 06:30:59 cananian Exp $
  * @see AttributeLocalVariableTable
  */
 public class LocalVariableTable {

@@ -1,4 +1,4 @@
-// HConstructor.java, created by cananian
+// HConstructor.java, created Sat Aug  1  4:54:58 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * constructor for a class.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructor.java,v 1.9.2.2 1998-11-30 21:58:25 cananian Exp $
+ * @version $Id: HConstructor.java,v 1.9.2.3 1999-08-04 06:30:56 cananian Exp $
  * @see HMethod
  * @see HMember
  * @see HClass

@@ -1,4 +1,4 @@
-// ExpValue.java, created by andyb
+// ExpValue.java, created Mon May 17 16:02:07 1999 by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.StrongARM;
@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * from an expression in a tree on a 32-bit architecture.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: ExpValue.java,v 1.1.2.1 1999-05-17 20:02:07 andyb Exp $
+ * @version $Id: ExpValue.java,v 1.1.2.2 1999-08-04 06:30:56 cananian Exp $
  */
 public class ExpValue {
 	private Temp low, high;

@@ -1,4 +1,4 @@
-// OpClass.java, created by cananian
+// OpClass.java, created Sun Sep 13 22:49:22 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
@@ -13,7 +13,7 @@ import harpoon.IR.RawClass.ConstantClass;
  * <code>CONSTANT_Class</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpClass.java,v 1.2.2.3 1999-01-22 23:05:47 cananian Exp $
+ * @version $Id: OpClass.java,v 1.2.2.4 1999-08-04 06:30:57 cananian Exp $
  * @see harpoon.IR.RawClass.ConstantClass
  */
 public final class OpClass extends Operand {

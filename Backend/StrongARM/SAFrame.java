@@ -1,4 +1,4 @@
-// SAFrame.java, created by andyb
+// SAFrame.java, created Tue Feb 16 22:29:44 1999 by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.StrongARM;
@@ -43,7 +43,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.22 1999-07-30 20:26:38 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.23 1999-08-04 06:30:56 cananian Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];

@@ -1,4 +1,4 @@
-// ConstantValue.java, created by cananian
+// ConstantValue.java, created Mon Jan 18 22:44:38 1999 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.RawClass;
@@ -14,7 +14,7 @@ package harpoon.IR.RawClass;
  * not have an obvious object wrapper.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantValue.java,v 1.1.2.1 1999-01-19 03:44:38 cananian Exp $
+ * @version $Id: ConstantValue.java,v 1.1.2.2 1999-08-04 06:30:59 cananian Exp $
  * @see ConstantDouble
  * @see ConstantFloat
  * @see ConstantInteger

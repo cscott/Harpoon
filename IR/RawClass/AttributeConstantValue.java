@@ -1,4 +1,4 @@
-// AttributeConstantValue.java, created by cananian
+// AttributeConstantValue.java, created Mon Jan 18 22:44:34 1999 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.RawClass;
@@ -22,7 +22,7 @@ package harpoon.IR.RawClass;
  * the attribute is silently ignored.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeConstantValue.java,v 1.1.2.1 1999-01-19 03:44:34 cananian Exp $
+ * @version $Id: AttributeConstantValue.java,v 1.1.2.2 1999-08-04 06:30:59 cananian Exp $
  * @see Attribute
  * @see FieldInfo
  * @see ClassFile

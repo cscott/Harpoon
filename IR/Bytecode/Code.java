@@ -1,4 +1,4 @@
-// Code.java, created by cananian
+// Code.java, created Sun Sep 13 22:49:20 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Bytecode;
@@ -28,7 +28,7 @@ import java.util.Set;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.10 1999-02-24 22:51:22 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.11 1999-08-04 06:30:57 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {

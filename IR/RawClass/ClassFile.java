@@ -1,4 +1,4 @@
-// ClassFile.java, created by cananian
+// ClassFile.java, created Mon Jan 18 22:44:36 1999 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.RawClass;
@@ -8,7 +8,7 @@ package harpoon.IR.RawClass;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.1.2.3 1999-06-18 01:48:05 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.1.2.4 1999-08-04 06:30:59 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class ClassFile {

@@ -1,4 +1,4 @@
-// HData.java, created Sat Aug 28 13:55:51 1999 by duncan
+// HData.java, created Wed Jul 28 13:55:51 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce     <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -13,7 +13,7 @@ import java.util.List;
  * An <code>HData</code> corresponds roughly to a "memory layout".
  *
  * @author  Duncan Bryce     <duncan@lcs.mit.edu>
- * @version $Id: HData.java,v 1.1.2.3 1999-08-04 05:52:27 cananian Exp $
+ * @version $Id: HData.java,v 1.1.2.4 1999-08-04 06:30:56 cananian Exp $
  */
 public interface HData { 
     

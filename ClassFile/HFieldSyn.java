@@ -1,4 +1,4 @@
-// HFieldSyn.java, created by cananian
+// HFieldSyn.java, created Fri Oct 16  2:21:03 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldSyn.java,v 1.3 1998-10-21 21:50:24 cananian Exp $
+ * @version $Id: HFieldSyn.java,v 1.3.2.1 1999-08-04 06:30:56 cananian Exp $
  * @see HMember
  * @see HClass
  */

@@ -1,4 +1,4 @@
-// Temp.java, created by cananian
+// Temp.java, created Tue Jul 28  1:09:44 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Temp;
@@ -12,7 +12,7 @@ import harpoon.Util.ArrayFactory;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14.2.9 1999-02-25 19:01:27 cananian Exp $
+ * @version $Id: Temp.java,v 1.14.2.10 1999-08-04 06:31:02 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList

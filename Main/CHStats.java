@@ -1,4 +1,4 @@
-// CHStats.java, created by cananian
+// CHStats.java, created Mon Aug  2 11:15:22 1999 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
@@ -15,7 +15,7 @@ import java.util.Enumeration;
  * compiler class hierarchy for inclusion in papers and theses.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CHStats.java,v 1.1.2.2 1999-08-02 19:55:25 cananian Exp $
+ * @version $Id: CHStats.java,v 1.1.2.3 1999-08-04 06:31:02 cananian Exp $
  */
 
 public abstract class CHStats extends harpoon.IR.Registration {

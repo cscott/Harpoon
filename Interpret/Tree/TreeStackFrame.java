@@ -1,4 +1,4 @@
-// TreeStackFrame.java, created Tue Apr 27 18:05:10 1999 by duncan
+// TreeStackFrame.java, created Sat Mar 27 17:05:10 1999 by duncan
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
@@ -17,7 +17,7 @@ import java.util.Hashtable;
  * <code>TreeStackFrame</code> is a stack frame for an interpreted method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeStackFrame.java,v 1.1.2.5 1999-08-04 05:52:35 cananian Exp $
+ * @version $Id: TreeStackFrame.java,v 1.1.2.6 1999-08-04 06:31:01 cananian Exp $
  */
 final class TreeStackFrame extends StackFrame {
     /** current location in the method */

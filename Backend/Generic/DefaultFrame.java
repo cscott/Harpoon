@@ -1,4 +1,4 @@
-// DefaultFrame.java, created Mon Mar 15  3:36:39 1999 by duncan
+// DefaultFrame.java, created Mon Feb 15  3:36:39 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
@@ -39,7 +39,7 @@ import java.util.Map;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.20 1999-08-04 05:52:25 cananian Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.21 1999-08-04 06:30:53 cananian Exp $
  */
 public class DefaultFrame extends Frame implements AllocationInfo {
 

@@ -1,4 +1,4 @@
-// HClass.java, created by cananian
+// HClass.java, created Fri Jul 31  4:33:28 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -30,7 +30,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.15 1999-08-02 18:50:34 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.16 1999-08-04 06:30:56 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  */
 public abstract class HClass extends HPointer {

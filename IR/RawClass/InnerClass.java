@@ -1,4 +1,4 @@
-// InnerClass.java, created by cananian
+// InnerClass.java, created Mon Jan 18 22:44:38 1999 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.RawClass;
@@ -9,7 +9,7 @@ package harpoon.IR.RawClass;
  * of the originally declared, untransformed access flags.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InnerClass.java,v 1.1.2.1 1999-01-19 03:44:38 cananian Exp $
+ * @version $Id: InnerClass.java,v 1.1.2.2 1999-08-04 06:30:59 cananian Exp $
  * @see "Inner Classes Specification"
  * @see AttributeInnerClasses
  */

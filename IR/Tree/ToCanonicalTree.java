@@ -1,4 +1,4 @@
-// ToCanonicalTree.java, created Thu Apr 29  1:08:40 1999 by duncan
+// ToCanonicalTree.java, created Mon Mar 29  0:08:40 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
@@ -24,7 +24,7 @@ import java.util.Map;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.9 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.10 1999-08-04 06:31:00 cananian Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;

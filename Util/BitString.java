@@ -1,4 +1,4 @@
-// BitString.java, created Sat Apr 10  9:57:56 1999 by jwhaley
+// BitString.java, created Wed Mar 10  8:57:56 1999 by jwhaley
 // Copyright (C) 1998 John Whaley
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;

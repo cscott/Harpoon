@@ -1,4 +1,4 @@
-// HClassCls.java, created by cananian
+// HClassCls.java, created Fri Oct 16  2:21:02 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1.2.4 1999-01-22 10:46:33 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.1.2.5 1999-08-04 06:30:56 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 abstract class HClassCls extends HClass {

@@ -1,4 +1,4 @@
-// Instr.java, created by andyb
+// Instr.java, created Mon Feb  8  0:33:19 1999 by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
@@ -21,7 +21,7 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.20 1999-07-30 23:40:48 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.21 1999-08-04 06:30:57 cananian Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;

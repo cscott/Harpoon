@@ -1,4 +1,4 @@
-// ErrorMsg.java, created Wed Mar 17  5:58:23 1999 by cananian
+// ErrorMsg.java, created Wed Feb 17  5:58:23 1999 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Tools.PatMat;
@@ -7,7 +7,7 @@ package harpoon.Tools.PatMat;
  *  generate intelligible error messages.
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *         <i>Modern Compiler Implementation in Java</i>, by Andrew Appel.
- * @version $Id: ErrorMsg.java,v 1.1.2.4 1999-08-04 05:52:37 cananian Exp $
+ * @version $Id: ErrorMsg.java,v 1.1.2.5 1999-08-04 06:31:03 cananian Exp $
  */
 class ErrorMsg {
   private LineList linePos = new LineList(-1,null);

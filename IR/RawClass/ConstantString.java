@@ -1,4 +1,4 @@
-// ConstantString.java, created by cananian
+// ConstantString.java, created Mon Jan 18 22:44:37 1999 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.RawClass;
@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * <code>java.lang.String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ConstantString.java,v 1.1.2.1 1999-01-19 03:44:37 cananian Exp $
+ * @version $Id: ConstantString.java,v 1.1.2.2 1999-08-04 06:30:59 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.4.3"
  * @see Constant
  */

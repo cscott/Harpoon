@@ -1,4 +1,4 @@
-// TreeKind.java, created Wed Jul 28 14:46:11 1999 by duncan
+// TreeKind.java, created Mon Jun 28 14:46:11 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
@@ -9,7 +9,7 @@ package harpoon.IR.Tree;
  * class. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * $Id: TreeKind.java,v 1.1.2.5 1999-08-04 05:52:30 cananian Exp $
+ * $Id: TreeKind.java,v 1.1.2.6 1999-08-04 06:31:00 cananian Exp $
  */
 public abstract class TreeKind  {
     public final static int BINOP      = 0;

@@ -1,4 +1,4 @@
-// Edge.java, created by andyb
+// Edge.java, created Tue May 25 12:45:13 1999 by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Edge.java,v 1.1.2.2 1999-06-14 07:12:07 pnkfelix Exp $
+ * @version $Id: Edge.java,v 1.1.2.3 1999-08-04 06:30:57 cananian Exp $
  */
 public class Edge implements HCodeEdge {
     Instr from, to;

@@ -1,4 +1,4 @@
-// HMember.java, created by cananian
+// HMember.java, created Fri Jul 31  9:33:48 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * about a single member (a field or a method) or a constructor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMember.java,v 1.5 1998-10-11 03:01:01 cananian Exp $
+ * @version $Id: HMember.java,v 1.5.2.1 1999-08-04 06:30:56 cananian Exp $
  * @see HClass
  * @see HField
  * @see HMethod

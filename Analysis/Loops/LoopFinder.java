@@ -1,5 +1,4 @@
-// LoopFinder.java, created Thu Jul 15 23:15:07 1999 by bdemsky
-// LoopFinder.java written by bdemsky
+// LoopFinder.java, created Tue Jun 15 23:15:07 1999 by bdemsky
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 // Copyright 1999 by Brian Demsky
 
@@ -21,7 +20,7 @@ import java.util.Iterator;
  * <code>LoopFinder</code> implements Dominator Tree Loop detection.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopFinder.java,v 1.1.2.6 1999-08-04 05:52:22 cananian Exp $
+ * @version $Id: LoopFinder.java,v 1.1.2.7 1999-08-04 06:30:50 cananian Exp $
  */
 
 public class LoopFinder implements Loops {

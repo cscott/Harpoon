@@ -1,4 +1,4 @@
-// HCode.java, created by cananian
+// HCode.java, created Sun Aug  2 20:11:26 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -14,7 +14,7 @@ import java.util.Iterator;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.12.2.4 1999-02-23 07:12:08 cananian Exp $
+ * @version $Id: HCode.java,v 1.12.2.5 1999-08-04 06:30:56 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code

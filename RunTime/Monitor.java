@@ -1,4 +1,7 @@
-// Monitor.java, created Wed Dec 16 23:34:36 1998 by mfoltz
+// Monitor.java, created Mon Nov 16 23:34:36 1998 by mfoltz
+// Copyright (C) 1998 Mark A. Foltz <mfoltz@ai.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+
 // -*-Mode: Java-*- 
 // Monitor.java -- Static class that logs profiling info.
 // Author: Mark Foltz <mfoltz@ai.mit.edu> 
@@ -7,8 +10,6 @@
 // Created: <Tue Oct  6 11:24:14 1998> 
 // Time-stamp: <1998-11-27 17:36:14 mfoltz> 
 // Keywords: 
-// Copyright (C) 1998 Mark A. Foltz <mfoltz@ai.mit.edu>
-// Licensed under the terms of the GNU GPL; see COPYING for details.
 
 package harpoon.RunTime;
 
@@ -20,7 +21,7 @@ import java.util.Properties;
 /**
  * <code>Monitor</code> is a static class that logs profiling info.
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version $Id: Monitor.java,v 1.1.2.6 1999-08-04 05:52:36 cananian Exp $
+ * @version $Id: Monitor.java,v 1.1.2.7 1999-08-04 06:31:02 cananian Exp $
  */
 
 public class Monitor {

@@ -1,4 +1,4 @@
-// QuadEnumerator.java, created Sat Apr 10 10:00:53 1999 by jwhaley
+// QuadEnumerator.java, created Wed Mar 10  9:00:53 1999 by jwhaley
 // Copyright (C) 1998 John Whaley
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;

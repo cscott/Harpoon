@@ -1,4 +1,4 @@
-// HMethodSyn.java, created by cananian
+// HMethodSyn.java, created Fri Oct 16  2:21:03 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -15,7 +15,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6.2.1 1998-12-02 00:52:18 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6.2.2 1999-08-04 06:30:56 cananian Exp $
  * @see HMember
  * @see HClass
  */

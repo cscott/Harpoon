@@ -1,4 +1,4 @@
-// HClassInfo.java, created Sat Feb 13 17:09:19 1999 by duncan
+// HClassInfo.java, created Wed Jan 13 17:09:19 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce  <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Analysis.DisplayInfo;
@@ -17,7 +17,7 @@ import java.util.Enumeration;
  * information about an <code>HClass</code>. 
  *
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: HClassInfo.java,v 1.1.2.11 1999-08-04 05:52:25 cananian Exp $
+ * @version $Id: HClassInfo.java,v 1.1.2.12 1999-08-04 06:30:52 cananian Exp $
  * @see     harpoon.ClassFile.HClass
  */
 public class HClassInfo

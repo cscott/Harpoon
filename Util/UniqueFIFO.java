@@ -1,4 +1,4 @@
-// UniqueFIFO.java, created by cananian
+// UniqueFIFO.java, created Thu Sep 10 23:49:40 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
@@ -10,7 +10,7 @@ import java.util.EmptyStackException;
  * list of <b>unique</b> objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UniqueFIFO.java,v 1.4.2.2 1999-06-17 21:00:53 cananian Exp $
+ * @version $Id: UniqueFIFO.java,v 1.4.2.3 1999-08-04 06:31:03 cananian Exp $
  * @deprecated Does not conform to the JDK 1.2 Collection API.
  */
 

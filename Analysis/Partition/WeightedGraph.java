@@ -1,4 +1,7 @@
-// WeightedGraph.java, created Wed Dec 16 23:33:21 1998 by mfoltz
+// WeightedGraph.java, created Mon Nov 16 23:33:21 1998 by mfoltz
+// Copyright (C) 1998 Mark A. Foltz <mfoltz@ai.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
+
 // -*-Mode: Java-*- 
 // WeightedGraph.java -- 
 // Author: Mark Foltz <mfoltz@ai.mit.edu> 
@@ -7,8 +10,6 @@
 // Created: <Thu Oct 22 23:11:21 1998> 
 // Time-stamp: <1998-11-21 18:59:53 mfoltz> 
 // Keywords: 
-// Copyright (C) 1998 Mark A. Foltz <mfoltz@ai.mit.edu>
-// Licensed under the terms of the GNU GPL; see COPYING for details.
 
 package harpoon.Analysis.Partition;
 
@@ -18,7 +19,7 @@ import java.util.Hashtable;
 /**
  * 
  * @author  Mark A. Foltz <mfoltz@ai.mit.edu>
- * @version $Id: WeightedGraph.java,v 1.3.2.3 1999-08-04 05:52:23 cananian Exp $
+ * @version $Id: WeightedGraph.java,v 1.3.2.4 1999-08-04 06:30:51 cananian Exp $
  */
 
 public class WeightedGraph {

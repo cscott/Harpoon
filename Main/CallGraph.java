@@ -1,4 +1,4 @@
-// CallGraph.java, created by cananian
+// CallGraph.java, created Mon Oct 12  6:11:27 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
@@ -17,7 +17,7 @@ import java.util.Vector;
  * <code>CallGraph</code> is a command-line call-graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.2.2.2 1999-02-01 00:40:38 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.2.2.3 1999-08-04 06:31:02 cananian Exp $
  */
 
 public abstract class CallGraph extends harpoon.IR.Registration {

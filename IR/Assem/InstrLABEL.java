@@ -1,4 +1,4 @@
-// InstrLABEL.java, created by andyb
+// InstrLABEL.java, created Wed Feb 17 16:32:40 1999 by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
@@ -11,7 +11,7 @@ import harpoon.Temp.Label;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.5 1999-06-29 05:21:24 cananian Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.6 1999-08-04 06:30:57 cananian Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;

@@ -1,4 +1,4 @@
-// HMethod.java, created by cananian
+// HMethod.java, created Fri Jul 31 22:02:43 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.7 1999-06-23 22:53:26 pnkfelix Exp $
+ * @version $Id: HMethod.java,v 1.30.2.8 1999-08-04 06:30:56 cananian Exp $
  * @see HMember
  * @see HClass
  */

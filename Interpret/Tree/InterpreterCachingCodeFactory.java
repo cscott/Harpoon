@@ -1,4 +1,4 @@
-// InterpreterCachingCodeFactory.java, created by Duncan Bryce
+// InterpreterCachingCodeFactory.java, created Sun May  9 20:01:15 1999 by Duncan Bryce
 // Copyright (C) 1999 Duncan Bryce
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
@@ -11,7 +11,7 @@ import harpoon.ClassFile.HMethod;
 
 /** <b>FILL ME IN</b>.
  * @author Duncan Bryce
- * @version $Id: InterpreterCachingCodeFactory.java,v 1.1.2.3 1999-08-04 04:34:11 cananian Exp $
+ * @version $Id: InterpreterCachingCodeFactory.java,v 1.1.2.4 1999-08-04 06:31:01 cananian Exp $
  */
 public class InterpreterCachingCodeFactory implements HCodeFactory { 
     private HCodeFactory factory;

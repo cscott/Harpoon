@@ -1,4 +1,4 @@
-// HClassSyn.java, created by cananian
+// HClassSyn.java, created Wed Oct 14 16:03:26 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.3 1998-12-11 06:54:51 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.4 1999-08-04 06:30:56 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {

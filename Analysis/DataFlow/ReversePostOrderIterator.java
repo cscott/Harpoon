@@ -1,4 +1,4 @@
-// ReversePostOrderIterator.java, created Fri Aug 27 17:33:06 1999 by duncan
+// ReversePostOrderIterator.java, created Tue Jul 27 17:33:06 1999 by duncan
 // Copyright (C) 1998 John Whaley
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
