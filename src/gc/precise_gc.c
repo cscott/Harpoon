@@ -36,15 +36,59 @@ void precise_gc_init() {
 #ifdef WITH_THREADED_GC
   gc_data_init();
 #endif
-#ifdef MARKSWEEP
-  marksweep_gc_init();
-#else
-  copying_gc_init();
-#endif
+  internal_gc_init();
 }
 
-/* saved_registers[13] <- lr (use to walk stack) */
 #ifdef WITH_PRECISE_C_BACKEND
+inline void *precise_malloc (size_t size_in_bytes)
+{
+  return internal_malloc(size_in_bytes);
+}
+#else
+/* for StrongARM backend only
+   saved_registers[13] <- lr (use to walk stack) */
+void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[])
+{
+  /*Frame fp; */
+  struct gc_index *found;
+
+  if (print_gc_index) {
+    struct gc_index *entry;
+    print_gc_index = 0;
+    for(entry = gc_index_start; entry < gc_index_end; entry++)
+      printf("%p %p %p\n", entry, entry->retaddr, entry->gc_data);
+    /*	printf("%p %p\n", entry->retaddr, entry->gc_data); */
+    printf("Code    : %p -> %p\n", &code_start, &code_end);
+    printf("GC index: %p -> %p\n", gc_index_start, gc_index_end);
+    printf("GC      : %p -> %p\n", gc_start, gc_end);
+  }
+  if (check_gc_index) {
+    struct gc_index *entry;
+    void *prev = NULL;
+    for(entry = gc_index_start; entry < gc_index_end; entry++) {
+      if (prev >= entry->retaddr)
+	  printf("FAIL: entries in the GC index must be "
+		 "ordered and unique: %p %p\n", prev, entry->retaddr);
+	prev = entry->retaddr;
+    }
+    check_gc_index = 0;
+  }
+  /*
+  printf("lr: %p\t", saved_registers[13]);
+  fp = (Frame)(saved_registers+14);
+  printf("fp: %p\t", fp);
+  if (found == NULL)
+    printf("NOT FOUND\n");
+  else
+    printf("%p\n", found->gc_data);
+  */
+  /*  printf("%d:------------------- %p\n", size_in_bytes, saved_registers);
+      for(i = 0; i < 16; i++)
+      printf("r%d: %p\n", i, saved_registers[i]); */
+
+  return copying_malloc(size_in_bytes, saved_registers);
+}
+#endif
 
 /* simply declarations to avoid lots of tedious #ifdef'ing. */
 /* declare nop-variants of ops if WITH_THREADED_GC not defined */
@@ -101,63 +145,7 @@ void cleanup_after_threaded_GC() {
   pthread_mutex_unlock(&gc_thread_mutex);
   pthread_mutex_unlock(&running_threads_mutex);
 }
-#else /* when no threads, do nothing. */
-void halt_for_GC() {}
-void setup_for_threaded_GC() {}
-void cleanup_after_threaded_GC() {}
-#endif /* WITH_THREADED_GC */
-
-void *precise_malloc (size_t size_in_bytes)
-#else
-void *precise_malloc_int (size_t size_in_bytes, void *saved_registers[])
 #endif
-{
-  /*Frame fp; */
-  struct gc_index *found;
-
-  if (print_gc_index) {
-    struct gc_index *entry;
-    print_gc_index = 0;
-    for(entry = gc_index_start; entry < gc_index_end; entry++)
-      printf("%p %p %p\n", entry, entry->retaddr, entry->gc_data);
-    /*	printf("%p %p\n", entry->retaddr, entry->gc_data); */
-    printf("Code    : %p -> %p\n", &code_start, &code_end);
-    printf("GC index: %p -> %p\n", gc_index_start, gc_index_end);
-    printf("GC      : %p -> %p\n", gc_start, gc_end);
-  }
-  if (check_gc_index) {
-    struct gc_index *entry;
-    void *prev = NULL;
-    for(entry = gc_index_start; entry < gc_index_end; entry++) {
-      if (prev >= entry->retaddr)
-	  printf("FAIL: entries in the GC index must be "
-		 "ordered and unique: %p %p\n", prev, entry->retaddr);
-	prev = entry->retaddr;
-    }
-    check_gc_index = 0;
-  }
-  /*
-  printf("lr: %p\t", saved_registers[13]);
-  fp = (Frame)(saved_registers+14);
-  printf("fp: %p\t", fp);
-  if (found == NULL)
-    printf("NOT FOUND\n");
-  else
-    printf("%p\n", found->gc_data);
-  */
-  /*  printf("%d:------------------- %p\n", size_in_bytes, saved_registers);
-      for(i = 0; i < 16; i++)
-      printf("r%d: %p\n", i, saved_registers[i]); */
-#ifdef WITH_PRECISE_C_BACKEND
-#ifdef MARKSWEEP
-  return marksweep_malloc(size_in_bytes);
-#else
-  return copying_malloc(size_in_bytes);
-#endif
-#else
-  return copying_malloc(size_in_bytes, saved_registers);
-#endif
-}
 
 void trace_array(struct aarray *arr)
 {
@@ -173,28 +161,32 @@ void trace_array(struct aarray *arr)
 	  if (elements[i] != NULL)
 	    {
 	      error_gc("    array element at %p ", elements[i]);
-	      handle_nonroot(&elements[i]);
+	      handle_reference(&elements[i]);
 	    }
 	}
     }
 }
 
 /* prints given bitmap */
-inline void print_bitmap(ptroff_t bitmap)
 #ifndef DEBUG_GC
-{ /* do absolutely nothing */ }
+#define print_bitmap(bitmap)
 #else
+void print_bitmap(ptroff_t bitmap)
 {
   int i, j;
-  error_gc("BITMAP ", "");
+
+  printf("BITMAP ");
+
+  // start from the high bit
   for (i = SIZEOF_VOID_P*8 - 1; i >= 0; i--)
     {
-      error_gc("%d", ((bitmap & (1 << i)) != 0));
+      // print a 1 for every set bit,
+      // a 0 for every cleared bit
+      printf("%d", ((bitmap & (1 << i)) != 0));
     }
-  error_gc("\n", "");
+  printf("\n");
 }
 #endif
-
 
 /* GC bitmaps for objects whose size (minus the object header) is 
    less than COMPACT_ENCODING_SIZE fits inside the claz object. */
@@ -257,7 +249,7 @@ void trace_object(jobject_unwrapped obj)
 	  if ((bitmap & 1) && field_ptrs[j] != NULL)
 	    {
 	      error_gc("    field at %p ", field_ptrs[j]);
-	      handle_nonroot(&field_ptrs[j]);
+	      handle_reference(&field_ptrs[j]);
 	    }
 
 	  // shift bitmap one right; this should always shift

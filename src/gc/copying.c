@@ -67,29 +67,33 @@ void overwrite_to_space();
 
 void relocate(jobject_unwrapped *obj);
 
-/* copying_handle_nonroot handles refereneces to non-root objects in the heap.
-   objects that need to be moved are moved. if the object has already been 
-   moved, the pointer is updated. */
-void copying_handle_nonroot(jobject_unwrapped *nonroot)
+/* copying_handle_references handles refereneces to objects. objects in the
+   heap that need to be copied to the new semispace are copied. if the 
+   object has already been copied, the pointer is updated. the second
+   argument tells the function whether the given reference is a part of
+   the root set. if not, references outside the heap are ignored, since
+   tracing them can put the GC in an infinite loop. if so, even references
+   outside the heap are traced. */
+void copying_handle_reference(jobject_unwrapped *ref)
 {
   // we only have to do something if we are given a reference in the heap.
   // we cannot trace through non-root references outside the heap because 
   // we may end up in an undetectable infinite loop.
-  if (IN_HEAP((void *)(*nonroot)))
+  if (IN_HEAP((void *)(*ref)))
     {
       // handle objects that have already been moved
-      if (((void *)((*nonroot)->claz) >= to_space) && 
-	  ((void *)((*nonroot)->claz) < top_of_to_space))
+      if (((void *)((*ref)->claz) >= to_space) && 
+	  ((void *)((*ref)->claz) < top_of_to_space))
 	{
 	  // forward pointer appropriately
-	  (*nonroot) = (jobject_unwrapped)((*nonroot)->claz);
-	  error_gc("already moved to %p.\n", (*nonroot));
+	  (*ref) = (jobject_unwrapped)((*ref)->claz);
+	  error_gc("already moved to %p.\n", (*ref));
 	}
       else
 	{
 	  // move to new semispace
-	  relocate(nonroot);
-	  error_gc("relocated to %p.\n", (*nonroot));
+	  relocate(ref);
+	  error_gc("relocated to %p.\n", (*ref));
 	}
     }
   else
@@ -126,62 +130,35 @@ void relocate(jobject_unwrapped *obj) {
   free += obj_size;
 }
 
-/* copying_add_to_root_set handles references that are part of
-   the root set, which may or may not be in the heap. objects 
-   that need to be moved are moved. if the object has already 
-   been moved, the pointer is updated.*/
-void copying_add_to_root_set(jobject_unwrapped *obj) {
-  if (IN_HEAP((void *)(*obj)))
-    {
-      void *forwarding_address = (*obj)->claz;
-      if (forwarding_address >= to_space && 
-	 forwarding_address < top_of_to_space)
-	{
-	  /* relocated, needs forwarding */
-	  error_gc("    already moved from %p to", (*obj));
-	  (*obj) = (jobject_unwrapped)forwarding_address;
-	  error_gc(" %p\n", (*obj));
-	} 
-      else 
-	{
-	  /* needs relocation */
-	  error_gc("    relocated from %p to", (*obj));
-	  relocate(obj);
-	  error_gc(" %p\n", (*obj));
-	}
-    }
-  else
-    {
-      // objects that are not in the heap are not moved, but
-      // they still need to be inspected for references.
-      error_gc("    tracing object at %p\n", (*obj));
-      trace(*obj);
-    }
-}
-
 /* magic number (quite arbitrary) used to determine start size of heap */
 #define INITIAL_HEAP_SIZE     1024
 
 /* statistics for determining when to grow heap. */
 static float avg_occupancy = 0; // 0 <= avg_occupancy <= 0.5
 static int num_collections = 0;
+static size_t max_heap_size = 0;
 
 /* initializatiion: set up heap */
 void copying_gc_init()
 {
-    heap_size = INITIAL_HEAP_SIZE;
-    fd = open("/dev/zero", O_RDONLY);
-    from_space = mmap
-      (0, heap_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
-    assert(from_space != MAP_FAILED);
-    error_gc("Initializing copying heap of size x%x\n", heap_size);
-    free = from_space;
-    to_space = from_space + heap_size/2;
-    top_of_space = to_space;
-    top_of_to_space = to_space + heap_size/2;
-    error_gc("Free space from %p ", from_space);
-    error_gc("to %p\n\n", top_of_space);
-}
+  heap_size = INITIAL_HEAP_SIZE;
+  fd = open("/dev/zero", O_RDONLY);
+  from_space = mmap(0, heap_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+
+  // could not allocate memory. we really should throw an exception,  
+  // but there are various problems with this. even if we pre-allocated
+  // the exception object, throwing the exception would involve
+  // allocating more memory.
+  assert(from_space != MAP_FAILED);
+
+  error_gc("Initializing copying heap of size x%x\n", heap_size);
+  free = from_space;
+  to_space = from_space + heap_size/2;
+  top_of_space = to_space;
+  top_of_to_space = to_space + heap_size/2;
+  error_gc("Free space from %p ", from_space);
+  error_gc("to %p\n\n", top_of_space);
+} 
 
 #ifdef WITH_PRECISE_C_BACKEND
 void *copying_malloc (size_t size_in_bytes)
@@ -256,6 +233,10 @@ void *copying_malloc (size_t size_in_bytes, void *saved_registers[])
   
   result = free;
   free += aligned_size_in_bytes;
+
+  // calculate statistics for max_heap_size
+  max_heap_size = (max_heap_size > (free - from_space)) ? max_heap_size : (free - from_space);
+  error_gc("Maximum heap size = %d bytes\n", max_heap_size);
 
   error_gc("%d\t", ++num_mallocs);
   error_gc("Allocated x%x bytes ", aligned_size_in_bytes);

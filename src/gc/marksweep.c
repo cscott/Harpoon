@@ -184,19 +184,22 @@ struct block *find_free_block(size_t size) {
 }
 
 /* effects: marks object as well as any objects pointed to by it */
-void marksweep_add_to_root_set(jobject_unwrapped *obj) {
+void marksweep_handle_reference(jobject_unwrapped *obj)
+{
   struct block *root;
-  if (allocated_by_marksweep((void *)(*obj))) {
-    // mark or check for mark
-    root = (void *)(*obj) - sizeof(struct block_header);
-    if (root->bheader.markunion.mark)
-      // if already marked, done
-      return;
-    else
-      // mark
-      root->bheader.markunion.mark = 1;
-  }
-  trace(*obj);
+  if (allocated_by_marksweep((void *)(*obj)))
+    {
+      // mark or check for mark
+      root = (void *)(*obj) - sizeof(struct block_header);
+      if (!root->bheader.markunion.mark)
+	{
+	  // if not already marked, mark and trace
+	  // if already marked, done
+	  error_gc("being marked.\n", "");
+	  root->bheader.markunion.mark = 1;
+	  trace(*obj);
+	}
+    }
 }
 
 void marksweep_collect() {
@@ -208,23 +211,6 @@ void marksweep_collect() {
 
 void marksweep_gc_init() {
   create_new_page(INITIAL_HEAP_SIZE);
-}
-
-void marksweep_handle_nonroot(jobject_unwrapped *obj) {
-  struct block *root;
-  if (allocated_by_marksweep((void *)(*obj))) {
-    // mark or check for mark
-    root = (void *)(*obj) - sizeof(struct block_header);
-    if (root->bheader.markunion.mark)
-      // if already marked, done
-      return;
-    else
-      // mark
-      root->bheader.markunion.mark = 1;
-    // for nonroot, only trace if allocated by us
-    // otherwise, no way to identify loops
-    trace(*obj);
-  }
 }
 
 void* marksweep_malloc(size_t size_in_bytes) {
@@ -246,9 +232,7 @@ void* marksweep_malloc(size_t size_in_bytes) {
   if (result == NULL)
     {
       error_gc("\nx%x bytes needed\n", aligned_size_in_bytes);
-#ifdef WITH_THREADED_GC
       setup_for_threaded_GC();
-#endif
       // don't have any free blocks handy, allocate new
       marksweep_collect();
       // see if we've managed to free the necessary memory
@@ -262,9 +246,7 @@ void* marksweep_malloc(size_t size_in_bytes) {
 			size_of_new_page : HEAP_INCREMENT);
 	result = (struct block_header *)find_free_block(aligned_size_in_bytes);
       }
-#ifdef WITH_THREADED_GC
       cleanup_after_threaded_GC();
-#endif
     }
   assert(result != NULL);
 
@@ -273,9 +255,7 @@ void* marksweep_malloc(size_t size_in_bytes) {
   error_gc("at %p (for a total of ", result+1);
   error_gc("%d bytes)\n", (total_memory_requested += size_in_bytes));
   // increment past header
-#ifdef WITH_THREADED_GC
   FLEX_MUTEX_UNLOCK(&marksweep_gc_mutex);
-#endif
   return (result+1);
 }
 

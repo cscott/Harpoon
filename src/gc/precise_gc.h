@@ -9,12 +9,16 @@
 
 #ifdef MARKSWEEP
 #include "marksweep.h"
-#define add_to_root_set  marksweep_add_to_root_set
-#define handle_nonroot   marksweep_handle_nonroot
+#define add_to_root_set  marksweep_handle_reference
+#define internal_gc_init marksweep_gc_init
+#define handle_reference marksweep_handle_reference
+#define internal_malloc  marksweep_malloc
 #else
 #include "copying.h"
-#define add_to_root_set  copying_add_to_root_set
-#define handle_nonroot   copying_handle_nonroot
+#define add_to_root_set  copying_handle_reference
+#define internal_gc_init copying_gc_init
+#define handle_reference copying_handle_reference
+#define internal_malloc  copying_malloc
 #endif
 
 #define ALIGN                  7
@@ -32,6 +36,11 @@ void trace_array(struct aarray *arr);
 
 void trace_object(jobject_unwrapped obj);
 
+#ifndef WITH_THREADED_GC
+#define halt_for_GC()
+#define setup_for_threaded_GC()
+#define cleanup_after_threaded_GC()
+#else
 /* halt thread so garbage collection can begin */
 void halt_for_GC();
 
@@ -40,6 +49,7 @@ void setup_for_threaded_GC();
 
 /* release locks and allow threads to continue */
 void cleanup_after_threaded_GC();
+#endif
 
 /* x: jobject_unwrapped
    effects: if obj is an object, adds object fields to root set;
