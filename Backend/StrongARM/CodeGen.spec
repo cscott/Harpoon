@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.60 1999-10-14 06:21:52 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.61 1999-10-14 06:38:44 cananian Exp $
  */
 %%
 
@@ -1120,10 +1120,35 @@ UNOP(NEG, arg) = i
     Temp i = makeTemp();		
     emit( ROOT, "rsb `d0, `s0, #0", i, arg );
 }% 
+UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
+    Temp i = makeTwoWordTemp();		
+    emit( ROOT, "rsbs `d0l, `s0l\n" + // uses condition codes, so keep together
+    	        "rsc  `d0h, `s0h", i, arg );
+}% 
+UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
+    Temp i = makeTemp();		
+    emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
+    emit( ROOT, "bl ___negsf2" );
+    emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
+}%
+UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )%
+%{
+    Temp i = makeTwoWordTemp();		
+    emit( ROOT, "mov `d0, `s0l", r0, arg );
+    emit( ROOT, "mov `d0, `s0h", r1, arg );
+    emit( ROOT, "bl ___negdf2" );
+    emit( ROOT, "mov `d0l, `s0", i, r0 );
+    emit( ROOT, "mov `d0h, `s0", i, r1 );	 
+}%
 
 UNOP(NOT, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     Temp i = makeTemp();		
     emit( ROOT, "mvn `d0, `s0", i, arg );
+}% 
+UNOP(NOT, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
+    Temp i = makeTwoWordTemp();		
+    emit( ROOT, "mvn `d0l, `s0l", i, arg );
+    emit( ROOT, "mvn `d0h, `s0h", i, arg );
 }% 
 
 /* STATEMENTS */
