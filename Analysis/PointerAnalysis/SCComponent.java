@@ -9,6 +9,9 @@ import java.util.Set;
 import java.util.Iterator;
 import java.util.Hashtable;
 
+import harpoon.Analysis.Quads.CallGraph;
+import harpoon.ClassFile.HMethod;
+
 /**
  * <code>SCComponent</code> models a <i>Strongly connected component</i> \
  of a graph.
@@ -25,9 +28,9 @@ import java.util.Hashtable;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCComponent.java,v 1.1.2.1 2000-01-26 06:35:47 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.1.2.2 2000-01-27 06:19:09 salcianu Exp $
  */
-public class SCComponent {
+public final class SCComponent {
 
     /** The <code>Navigator</code> interface allows the algorithm to detect
      * (and use) the arcs from and to a certain node. This allows the
@@ -37,9 +40,9 @@ public class SCComponent {
      * of the nodes. */
     public static interface Navigator{
 	/** Returns an iterator over the predecessors of <code>node</code>. */
-	public Iterator next(Object node);
+	public Object[] next(Object node);
 	/** Returns an iterator over the successors of <code>node</code>. */
-	public Iterator prev(Object node);
+	public Object[] prev(Object node);
     }
 
     // The internal version of a SCC: basically the same as the external
@@ -53,16 +56,21 @@ public class SCComponent {
 	public Set next;
 	// the "economic format" component
 	public SCComponent comp;
-	
+	// is there any edge to itself?
+	public boolean loop;
+
 	public SCComponentInt(){
 	    nodes = new HashSet();
 	    next  = new HashSet();
 	    comp  = new SCComponent();
+	    loop  = false;
 	}
     }
     
+    // the set of nodes that are reachable from the root object
+    private static Set reachable_nodes;
     // the set of reached nodes (to avoid reanalyzing them "ad infinitum")
-    private static HashSet   reached_nodes;
+    private static Set analyzed_nodes;  
     // Mapping node (Object) -> Strongly Connected Component (SCComponentInt)
     private static Hashtable node2scc;
     // The vector of the reached nodes, in the order DFS finished them
@@ -82,7 +90,7 @@ public class SCComponent {
 	// At the end of this step, nodes_vector will contain all the reached
 	// nodes, in the order of their "finished" time. 
 	nav = navigator;
-	reached_nodes = new HashSet();
+	analyzed_nodes = new HashSet();
 	nodes_vector  = new Vector();
 	DFS_first(root);
 
@@ -90,19 +98,23 @@ public class SCComponent {
 	node2scc = new Hashtable();
 	// "in reverse" navigator
 	nav = new Navigator(){
-		public Iterator next(Object node){
+		public Object[] next(Object node){
 		    return navigator.prev(node);
 		}
-		public Iterator prev(Object node){
+		public Object[] prev(Object node){
 		    return navigator.next(node);
 		}
 	    };
+
 	// Explore the nodes in the decreasing order of their finishing time.
 	// This phase will create the SCCs (big format) and initialize the
 	// node2scc mapping (but it won't set the inter-SCC edges). Also,
 	// the SCCs are put in scc_vector.
-	reached_nodes.clear();
-	int nb_nodes = nodes_vector.capacity();
+
+	// only the nodes reachable from root count!
+	reachable_nodes = analyzed_nodes; 
+	analyzed_nodes  = new HashSet();
+	int nb_nodes = nodes_vector.size();
 	for(int i = nb_nodes - 1; i >= 0; i--){
 	    Object node = nodes_vector.elementAt(i);
 	    if(node2scc.get(node) == null){
@@ -113,18 +125,22 @@ public class SCComponent {
 	}
 
 	// Put the edges between the SCCs.
-	int nb_scc = scc_vector.capacity();
+	int nb_scc = scc_vector.size();
 	for(int i = 0; i < nb_scc; i++){
 	    SCComponentInt comp = (SCComponentInt) scc_vector.elementAt(i);
 	    Iterator it = comp.nodes.iterator();
 	    while(it.hasNext()){
 		Object node = it.next();
-		Iterator it_edges = navigator.next(node);
-		while(it_edges.hasNext()){
-		    Object node2 = it_edges.next();
-		    SCComponent comp2 = 
-			((SCComponentInt)node2scc.get(node2)).comp;
-		    comp.next.add(comp2);
+		Object[] edges = navigator.next(node);
+
+		for(int j = 0; j < edges.length; j++){
+		    Object node2 = edges[j];
+		    SCComponentInt comp2 = 
+			((SCComponentInt)node2scc.get(node2));
+
+		    if(comp2 == comp) comp.loop = true; 
+		    else comp.next.add(comp2.comp);
+
 		}
 	    }
 	}
@@ -133,8 +149,10 @@ public class SCComponent {
 	for(int i = 0; i < nb_scc ; i++){
 	    SCComponentInt compInt = (SCComponentInt) scc_vector.elementAt(i);
 	    SCComponent comp = compInt.comp;
-	    comp.nodes = compInt.nodes.toArray();
-	    comp.next = (SCComponent[]) compInt.next.toArray();
+	    comp.loop  = compInt.loop;
+	    comp.nodes = compInt.nodes;
+	    comp.next = 
+		(SCComponent[]) compInt.next.toArray(new SCComponent[0]);
 	}
 
 	// Save the root SSC somewhere before activating the GCC.
@@ -142,7 +160,8 @@ public class SCComponent {
 	
 	nav             = null; // enable the GC
 	nodes_vector    = null;
-	reached_nodes   = null;
+	reachable_nodes = null;
+	analyzed_nodes  = null;
 	node2scc        = null;
 	current_scc_int = null;
 
@@ -151,33 +170,51 @@ public class SCComponent {
 
     public static void DFS_first(Object node){
 	// do not analyze nodes already reached
-	if(reached_nodes.contains(node)) return;
+	if(analyzed_nodes.contains(node)) return;
 
-	reached_nodes.add(node);
-	Iterator it = nav.next(node);
-	while(it.hasNext())
-	    DFS_first(it.next());
+	analyzed_nodes.add(node);
+
+	Object[] next = nav.next(node);
+	int nb_next = next.length;
+	for(int i = 0 ; i < nb_next ; i++)
+	    DFS_first(next[i]);
+
 	nodes_vector.add(node);
     }
 
     public static void DFS_second(Object node){
-	if(reached_nodes.contains(node)) return;
+	if(analyzed_nodes.contains(node) ||
+	   !reachable_nodes.contains(node)) return;
 
-	reached_nodes.add(node);
+	analyzed_nodes.add(node);
 	node2scc.put(node,current_scc_int);
 	current_scc_int.nodes.add(node);
-	Iterator it = nav.next(node);
-	while(it.hasNext())
-	    DFS_second(it.next());
+
+	Object[] next = nav.next(node);
+	int nb_next = next.length;
+	for(int i = 0 ; i < nb_next ; i++)
+	    DFS_second(next[i]);
     }
     
 
+    private static int count = 0;
+    private int id;
+
+    /** Returns the numeric ID of <code>this</code> <code>SCComponent</code>.
+	Just for debug purposes ... */
+    public int getId(){ return id; }
+
     // The nodes of this SCC (Strongly Connected Component).
-    private Object[] nodes;
+    Set nodes;
     // The successors.
     private SCComponent[] next;
-    // The only way to produce SCCs is through SCComponent.buildSSC !
-    private SCComponent(){}
+
+    // is there any edge to itself?
+    private boolean loop;
+    public final boolean isLoop(){ return loop; }
+
+    //The only way to produce SCCs is through SCComponent.buildSSC !
+    SCComponent(){ id = count++;}
     
     /** Returns the number of successors. */
     public final int nextLength(){
@@ -189,16 +226,73 @@ public class SCComponent {
 	return next[i];
     }
 
-    /** Returns the number of nodes inside <code>this</code> strongly \
+    /** Returns an iterator over the nodes of <code>this</code> strongly \
 	connected component. */
-    public final int nodesLength(){
-	return nodes.length;
+    public final Iterator nodes(){
+	return nodes.iterator();
     }
 
-    /** Returns the <code>i</code>th node of <code>this</code> strongly \
-	connected component */
-    public final Object nodes(int i){
-	return nodes[i];
+    /** Returns the nodes of <code>this</code> strongly connected component. */
+    public final Set nodeSet(){
+	return nodes;
     }
-    
+
+    /** Checks whether <code>node</code> belongs to <code>this</code> \
+	strongly connected component. */
+    public final boolean contains(Object node){
+	return nodes.contains(node);
+    }
+
+    // the next and prev links in the double linked list of SCCs in
+    // decreasing topological order
+    SCComponent nextTopSort = null;
+    SCComponent prevTopSort = null;
+
+    /** Returns the next <code>SCComponent</code> according to the decreasing
+     * topological order */
+    public final SCComponent nextTopSort(){
+	return nextTopSort;
+    }
+
+    /** Returns the previous <code>SCComponent</code> according to the
+     * decreasing topological order */
+    public final SCComponent prevTopSort(){
+	return prevTopSort;
+    }
+
+    /** Pretty print debug function. */
+    public final String toString(CallGraph cg){
+	StringBuffer buffer = new StringBuffer();
+
+	boolean extended = nodes.size() > 1;
+
+	buffer.append("SCC" + id + " {\n");
+	Iterator it = nodes.iterator();
+	while(it.hasNext()){
+	    Object o = it.next();
+	    buffer.append(o);
+	    buffer.append("\n");
+	    if(extended){
+		Object[] next = cg.calls((HMethod)o);
+		for(int i = 0; i<next.length; i++)
+		    if(nodes.contains(next[i]))
+		       buffer.append("  " + next[i] + "\n");
+		buffer.append("\n");
+	    }
+	}
+	buffer.append("}\n");
+	int nb_next = nextLength();
+	if(nb_next > 0){
+	    buffer.append("Next:");
+	    for(int i = 0; i < nb_next ; i++){
+		buffer.append(" SCC" + next(i).id);
+	    }
+	    buffer.append("\n");
+	}
+	return buffer.toString();
+    }
+
 }
+
+
+

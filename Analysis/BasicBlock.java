@@ -45,7 +45,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.11 2000-01-18 15:23:26 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.12 2000-01-27 06:19:05 salcianu Exp $
 */
 public class BasicBlock {
     
@@ -275,6 +275,17 @@ public class BasicBlock {
     public int nextLength() { return succ_bb.size(); }
     public Enumeration prev() { return new IteratorEnumerator(pred_bb.iterator()); }
     public Enumeration next() { return new IteratorEnumerator(succ_bb.iterator()); }
+
+    /** Returns all the predecessors of <code>this</code> basic block. */
+    public BasicBlock[] getPrev() {
+	return (BasicBlock[]) pred_bb.toArray(new BasicBlock[0]);
+    }
+
+    /** Returns all the successors of <code>this</code> basic block. */
+    public BasicBlock[] getNext() {
+	return (BasicBlock[]) succ_bb.toArray(new BasicBlock[0]);
+    }
+
     
     /** Returns an <code>Enumeration</code> of
 	<code>HCodeElement</code>s within <code>this</code>.  

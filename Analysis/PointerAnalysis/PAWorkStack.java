@@ -10,7 +10,7 @@ import java.util.HashSet;
  * <code>PAWorkStack</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAWorkStack.java,v 1.1.2.3 2000-01-24 03:11:11 salcianu Exp $
+ * @version $Id: PAWorkStack.java,v 1.1.2.4 2000-01-27 06:19:09 salcianu Exp $
  */
 public class PAWorkStack extends PAWorkSet {
 
@@ -24,11 +24,13 @@ public class PAWorkStack extends PAWorkSet {
     }
 
     // add an object to the workset
-    public final void add(Object o){
+    public final boolean add(Object o){
 	if(!set.contains(o)){
 	    set.add(o);
 	    list.addLast(o);
+	    return true;
 	}
+	return false;
     }
     // take an object from the workset
     public final Object remove(){

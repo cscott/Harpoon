@@ -22,7 +22,7 @@ import java.util.Collections;
  * of the call graph for methods that fulfill a certain condition.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AllCallers.java,v 1.1.2.5 2000-01-18 16:27:18 bdemsky Exp $
+ * @version $Id: AllCallers.java,v 1.1.2.6 2000-01-27 06:19:05 salcianu Exp $
  */
 
 public class AllCallers {
@@ -106,12 +106,18 @@ public class AllCallers {
 	return ht;
     }
 
-    /** Returns an iterator over the direct callers of the
-     *  <code>hm</code> method. */
-    public Iterator getDirectCallers(HMethod hm){
+    /** Returns all the direct callers of the <code>hm</code> method. */
+    public HMethod[] directCallers(HMethod hm){
 	WorkSet wset = (WorkSet)g.get(hm);
-	if(wset==null) return Collections.EMPTY_SET.iterator();
-	return wset.iterator();
+	if(wset==null) return new HMethod[0];
+	return (HMethod[]) (wset.toArray(new HMethod[0]));
+    }
+
+    /** Returns all the direct callers of the <code>hm</code> method. */
+    public Set directCallerSet(HMethod hm){
+	WorkSet wset = (WorkSet)g.get(hm);
+	if(wset==null) return Collections.EMPTY_SET;
+	return wset;
     }
 
 }

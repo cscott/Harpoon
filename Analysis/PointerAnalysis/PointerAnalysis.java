@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Date;
 
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HClass;
@@ -49,18 +50,19 @@ import harpoon.IR.Quads.FOOTER;
  * computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.8 2000-01-24 03:11:11 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.9 2000-01-27 06:19:09 salcianu Exp $
  */
 public class PointerAnalysis {
 
     public static final boolean DEBUG = true;
+    public static final boolean EXTENDED_DEBUG = false;
 
     public static final String ARRAY_CONTENT = "array_elements";
 
     // The HCodeFactory providing the actual code of the analyzed methods
     private CallGraph cg;
     private AllCallers ac;
-    private CachingBBFactory bb_factory;
+    private CachingSCCBBFactory scc_bb_factory;
 
     // Maintains the partial points-to and escape information for the
     // analyzed methods. This info is successively refined by the fixed
@@ -89,7 +91,7 @@ public class PointerAnalysis {
 			   HCodeFactory _hcf, HMethod hm){
 	cg  = _cg;
 	ac  = _ac;
-	bb_factory = new CachingBBFactory(_hcf);
+	scc_bb_factory = new CachingSCCBBFactory(_hcf);
 	analyze(hm);
     }
 
@@ -135,56 +137,150 @@ public class PointerAnalysis {
     // Top-level procedure for the analysis. Receives the main method as
     // parameter. For the moment, it is not doing the inter-thread analysis
     private void analyze(HMethod hm){
-	initialize_W_inter_proc(hm);
+
+	SCComponent.Navigator navigator =
+	    new SCComponent.Navigator(){
+		    public Object[] next(Object node){
+			return cg.calls((HMethod)node);
+		    }
+		    public Object[] prev(Object node){
+			return ac.directCallers((HMethod)node);
+		    }
+		};
+
+
+	long begin_time = new Date().getTime();
+	if(DEBUG)
+	  System.out.println("Creating the strongly connected components " +
+			     "of methods ...");
+
+	// the topologically sorted graph of strongly connected components
+	// composed of mutually recursive methods (the edges model the
+	// caller-callee interaction).
+	SCCTopSortedGraph method_sccs = 
+	    SCCTopSortedGraph.topSort(SCComponent.buildSCC(hm,navigator));
+
+
+	if(DEBUG){
+	    long total_time = new Date().getTime() - begin_time;
+	    int counter = 0;
+	    int methods = 0;
+	    SCComponent scc = method_sccs.getFirst();
+	    while(scc != null){
+		if(EXTENDED_DEBUG) System.out.print(scc.toString(cg));
+		counter++;
+		methods += scc.nodeSet().size();
+		scc = scc.nextTopSort();
+	    }
+	    System.out.println(counter + " component(s); " +
+			       methods + " method(s); " +
+			       total_time + "ms processing time");
+	}
+
+	SCComponent scc = method_sccs.getLast();
+	while(scc != null){
+	    analyze_inter_proc_scc(scc);
+	    scc = scc.prevTopSort();
+	}
+    }
+
+    // inter-procedural analysis of a group of mutually recursive methods
+    private void analyze_inter_proc_scc(SCComponent scc){
+
+	// Initially, the worklist (actually a workstack) contains only one
+	// of the methods from the actual group of mutually recursive
+	// methods. The others will be added later (because they are reachable
+	// in the AllCaller graph from this initial node). 
+	HMethod method = (HMethod)scc.nodes().next();
+	// if SCC composed of a native or abstract method, return immediately!
+	if(!analyzable(method)){
+	    System.out.println("SCC" + scc.getId() + " is unanalyzable");
+	    return;
+	}
+	W_inter_proc.add(method);
+
+	Set methods = scc.nodeSet();
+	boolean must_check = scc.isLoop();
+
+	System.out.print(scc.toString(cg));
+	System.out.println("must_check = " + must_check);
 
 	while(!W_inter_proc.isEmpty()){
 	    // grab a method from the worklist
 	    HMethod hm_work = (HMethod)W_inter_proc.remove();
 
 	    ParIntGraph old_info = (ParIntGraph) hash_proc_int.get(hm_work);
-	    analyze_intra(hm_work);
+	    analyze_intra_proc(hm_work);
 	    ParIntGraph new_info = (ParIntGraph) hash_proc_int.get(hm_work);
 
 	    // new info?
 	    // TODO: this test is overkill! think about it!
-	    if(!new_info.equals(old_info)){
-		// yes! The callers of hm_work should be added to
+	    if(must_check && !new_info.equals(old_info)){
+
+		//System.out.println("----- The information has changed:");
+		//System.out.println("Old graph: " + old_info);
+		//System.out.println("New graph: " + new_info);
+
+		//yes! The callers of hm_work should be added to
 		// the inter-procedural worklist
-		Iterator it = ac.getDirectCallers(hm_work);
+		Iterator it = ac.directCallerSet(hm_work).iterator();
 		while(it.hasNext()){
-		    HMethod hm_caller = (HMethod) it.next();
-		    if(analyzable(hm_caller))
+		   HMethod hm_caller = (HMethod) it.next();
+		   if(methods.contains(hm_caller))
 		       W_inter_proc.add(hm_caller);
 		}
+		//System.out.println("-----");
 	    }
 	}
+
+	// System.out.println("SCC"+scc.getId() + " analysis finished.");
     }
 
-    Hashtable hash_bb = new Hashtable();
+    // Mapping BB -> ParIntGraph.
+    Hashtable bb2pig = new Hashtable();
 
     HMethod current_intra_method = null;
+    ParIntGraph initial_pig = null;
 
     // Performs the intra-procedural pointer analysis.
-    private void analyze_intra(HMethod hm){
-
-	System.out.println("Method: " + hm);
+    private void analyze_intra_proc(HMethod hm){
+	//System.out.println("Method: " + hm);
 
 	current_intra_method = hm;
 
-	// add the header basic block to the intra-procedural worklist
-	W_intra_proc.add(bb_factory.computeBasicBlocks(hm));
+	// cut the method into SCCs of basic blocks
+	SCComponent scc = scc_bb_factory.computeSCCBB(hm).getFirst();
+
+	// construct the ParIntGraph at the beginning of the method 
+	BasicBlock first_bb = (BasicBlock)scc.nodes().next();
+	HEADER first_hce = (HEADER) first_bb.getFirst();
+	METHOD m  = (METHOD) first_hce.next(1); 
+	initial_pig = get_method_initial_pig(hm,m);
+
+	// analyze the SCCs in decreasing topolofgical order
+	while(scc != null){
+	    analyze_intra_proc_scc(scc);
+	    scc = scc.nextTopSort();
+	}
+
+	bb2pig.clear();
+    }
+
+    // Intra-procedural analysis of a strongly connected component of
+    // basic blocks.
+    private void analyze_intra_proc_scc(SCComponent scc){
+	// add ALL the BB from this SCC to the worklist.
+	W_intra_proc.addAll(scc.nodeSet());
+	boolean must_check = scc.isLoop();
+
 	while(!W_intra_proc.isEmpty()){
-	    // grab some "interesting" Basic Block from the worklist
+	    // grab a Basic Block from the worklist
 	    BasicBlock bb_work = (BasicBlock)W_intra_proc.remove();
 
-	    ParIntGraph old_info = (ParIntGraph) hash_bb.get(bb_work);
+	    ParIntGraph old_info = (ParIntGraph) bb2pig.get(bb_work);
 	    ParIntGraph new_info = analyze_basic_block(bb_work);
-	    
-	    // new info?
-	    // TODO: this test is overkill! think about it!
-	    // IDEA: the equality should be checked only for basic blocks
-	    // with backedges
-	    if(!new_info.equals(old_info)){
+
+	    if(must_check && !new_info.equals(old_info)){
 		// yes! The succesors of the analyzed basic block
 		// are potentially "interesting", so they should be added
 		// to the intra-procedural worklist
@@ -195,13 +291,14 @@ public class PointerAnalysis {
 		while(enum.hasMoreElements()){
 		    BasicBlock bb_next = (BasicBlock)enum.nextElement();
 		    /// System.out.print(bb_next + " ");
-		    W_intra_proc.add(bb_next);
+		    // remain in the current strongly connected component
+		    if(scc.contains(bb_next))
+			W_intra_proc.add(bb_next);
 		}
 		
 		/// System.out.println();
 	    }
 	}
-	hash_bb.clear();
     }
 
 
@@ -428,7 +525,7 @@ public class PointerAnalysis {
 	    q.accept(visitor);
 	}
 
-	hash_bb.put(bb,bbpig);
+	bb2pig.put(bb,bbpig);
 
 	/// System.out.println("END: Analyze_basic_block " + bb);
 
@@ -440,7 +537,7 @@ public class PointerAnalysis {
      *  by the caller. This function is used by 
      *  <code>get_initial_bb_pig</code>. */
     private ParIntGraph get_after_bb_pig(BasicBlock bb){
-	ParIntGraph pig = (ParIntGraph) hash_bb.get(bb);
+	ParIntGraph pig = (ParIntGraph) bb2pig.get(bb);
 	return (pig==null)?ParIntGraph.EMPTY_GRAPH:pig;
     }
 
@@ -455,7 +552,7 @@ public class PointerAnalysis {
 	if(bb.prevLength() == 0){
 	    // This case is treated specially, it's about the
 	    // graph at the beginning of the current method.
-	    ParIntGraph pig = method_initial_pig(current_intra_method);
+	    ParIntGraph pig = initial_pig;
 	    return pig;
 	}
 	else{
@@ -479,10 +576,7 @@ public class PointerAnalysis {
      *  for the object formal parameter (i.e. primitive type parameters
      *  such as <code>int</code>, <code>float</code> do not have associated
      *  nodes */
-    private ParIntGraph method_initial_pig(HMethod hm){
-	BasicBlock bb = bb_factory.computeBasicBlocks(hm); 
-	HEADER hce = (HEADER) bb.getFirst();
-	METHOD m  = (METHOD) hce.next(1); 
+    private ParIntGraph get_method_initial_pig(HMethod hm, METHOD m){
 	Temp[] params = m.params();
 	HClass[] types = hm.getParameterTypes();
 
@@ -527,7 +621,6 @@ public class PointerAnalysis {
 	return pig;
     }
 
-
     /** Check if <code>hm</code> can be analyzed by the pointer analysis. */
     public final boolean analyzable(HMethod hm){
 	int modifier = hm.getModifiers();
@@ -538,42 +631,6 @@ public class PointerAnalysis {
 	    
     }
 
-    // put into the initial inter-procedural worklist all the
-    // methods that could be called (directly and indirectly)
-    // by the main method (which is transmited as a parameter in hm)
-    //
-    // In order to implement the efficiency of the fixed-point algorithm,
-    // the methods are put into the inter-procedural worklist in reverse
-    // dfs order (i.e. the "leaf" procedures are at the beginning, main is
-    // at the end). For the same reason, this worklist is implemented as
-    // a stack - this will force the fixed point algorithm to work with
-    // strongly connected components of the call graph.
-    private void initialize_W_inter_proc(HMethod hm){
-	// temporary worklist for the dfs exploration
-	PAWorkStack W_temp = new PAWorkStack();
-
-	if(!analyzable(hm)) return;
-
-	W_temp.add(hm);
-	W_inter_proc.add(hm);
-
-	while(!W_temp.isEmpty()){
-	    HMethod hm_work = (HMethod)W_temp.remove();
-	    // get all the methods that could be called by hm_work ...
-	    HMethod[] callees = cg.calls(hm_work);
-
-	    for(int i=0;i<callees.length;i++){
-		HMethod hm_callee = callees[i];
-		if(analyzable(hm_callee) && !W_inter_proc.contains(hm_callee)){
-		    // ... and put them in the worklists if they haven't been
-		    // analyzed yet.
-		    W_temp.add(hm_callee);
-		    W_inter_proc.add(hm_callee);
-		}
-	    }
-	}
-    }
 }
-
 
 
