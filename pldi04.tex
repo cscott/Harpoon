@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.18 2003-11-11 21:37:14 cananian Exp $
+% $Id: pldi04.tex,v 1.19 2003-11-11 23:17:56 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -35,7 +35,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-\date{\today \\ $ $Revision: 1.18 $ $}
+\date{\today \\ $ $Revision: 1.19 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -742,6 +742,136 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 \subsection{Subsumption?}
 
 \secput{algo}{Algorithms}
+
+The ReadNT function does a non-transactional read of field $f$ from
+object $o$.  In the common-case, the only overhead is to check that
+the read value is not FLAG.  If it is, we copy back the field value
+from the most-recently committed transaction (aborting all other
+transactions) and try again.  The copy-back procedure will notify
+us if this is a ``false flag'', in which case the value of this
+field really is FLAG.  Passing 'false' to the copy-back procedure
+indicates that only writers need be killed, not transactional readers.
+
+The only possible races are within the copy-back procedure.
+\par {\footnotesize\samepage
+\begin{verbatim}
+ReadNT(o, f) {
+  do {
+    v = load(o, f);
+    if (v!=FLAG) return v;
+  } while (FALSE_FLAG !=
+           copyBackField(o, f, KILL_WRITERS));
+  return FLAG;
+}
+\end{verbatim}
+}
+
+The WriteNT function does a non-transactional write of new value $nv$
+to field $f$ of object $o$.  Passing 'true' to the copy-back procedure
+indicates that both transactions readers *and* writers should be killed.
+\par {\footnotesize\samepage
+\begin{verbatim}
+WriteNT(o, f, nval) {
+  if (nval != FLAG) {
+    do {
+      if (LL(readFlag(f))==FLAG_CLEAR)
+        if (SC(o, f, nval)==SUCCESS)
+          return; // done!
+      else copyBackField(o, f, KILL_ALL);
+      // copyBackField should leave read flag CLEAR on FALSE_FLAG
+    } while(true);
+  } else {
+    // create FALSE_FLAG.
+    do {
+      copyBackField(o, f, KILL_ALL);
+      ensure a committed version 'ver' is first in the chain.
+      // put FLAG in version:
+      if (LL(first_version)==ver)
+        if (readFlag(f)==FLAG_CLEAR)
+          if (SC(o, f, nval)==SUCCESS)
+            return; // done!
+    } while(true);
+  }
+}
+\end{verbatim}
+}
+
+
+What if another transaction does a copy-back, cancelling us?
+We'll see that $o.f$ is no longer FLAG, so we'll read this
+(later) value, which might be inconsistent.  We'll already
+be aborted, but we'd like to avoid computing with
+stale data.
+\par {\footnotesize\samepage
+\begin{verbatim}
+ReadT(o, f, ver) {
+  val = load(o, f);
+  if (val!=FLAG)
+    // optionally validate current trans!=ABORTED
+    return val;
+  return load(ver, f);
+}
+\end{verbatim}
+}
+Pre-read, we need to ensure the read flags are set and that we're on
+the readers list.  This is a list because we don't need to abort
+anyone as long as we're all just reading this field.  But this is the
+list of transactions to abort if anyone tries to *write* this field.
+
+Writes are easy; we always write to our transactional version.
+Pre-write, we need to create the version and ensure the read
+flags for this field are set.  We also need to abort everyone on
+the readers list which is not us.
+\par {\footnotesize\samepage
+\begin{verbatim}
+WriteT(ver, f, nval) {
+  store(v, f, nval);
+}
+\end{verbatim}
+}
+
+The copyBackField method should leave read flag CLEAR on FALSE\_FLAG.
+\par {\footnotesize\samepage
+\begin{verbatim}
+copyBackField(o, f, kill) {
+top:
+ status = SUCCESS;
+ if (kill==KILL_ALL) {
+   for each reader on list:
+     try to abort.
+     reader is now aborted or committed.
+     remove from list.
+   }
+ }
+ try to abort and remove each version, when abort fails...
+ the head of the version list is now committed.
+  call this 'ver'.
+ make a new aborted version and make it first on the
+  versions list. points to 'ver'.
+  call this 'nonce'.
+ [once we have the nonce, no-one else can copyback]
+ if (load(o, f)==FLAG) { // check that this hasn't been done already
+   val = load(ver, f);
+   if (val==FLAG)
+     status = FALSE_FLAG; // no copy needed.
+   else // not a false flag
+     if (LL(first_version)!=nonce ||
+         SC(o, f, val) != SUCCESS)
+       goto top;
+ }
+ if (kill==KILL_WRITERS) // done for readNT
+   return status;
+ // reset read flags to zero:
+ if (readers list not empty)
+   goto top; // race.
+ if (LL(first_version)==nonce &&
+     SC(o, readFlag(f), 0)
+   return status; // done!
+ goto retry; // try, try again.
+}
+\end{verbatim}
+}
+
 
 \secput{opt}{Optimizations}
 \subsection{Hoisting}
