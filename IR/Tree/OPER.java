@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: OPER.java,v 1.1.2.9 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: OPER.java,v 1.1.2.10 2000-01-09 00:21:56 duncan Exp $
  */
 public abstract class OPER extends Exp {
     /** An enumerated type encoding the operator.
@@ -33,6 +33,8 @@ public abstract class OPER extends Exp {
     }
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
+
+    public abstract Tree getFirstChild(); 
 
     // <code>Typed</code> interface.
 

@@ -34,7 +34,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.38 2000-01-05 04:06:35 duncan Exp $
+ * @version $Id: Code.java,v 1.1.2.39 2000-01-09 00:21:56 duncan Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {
@@ -106,7 +106,7 @@ public abstract class Code extends HCode
 	// Ensures that the root is a SEQ, and the first instruction is 
 	// a SEGMENT.
 	Tree first = (SEQ)this.tree;
-	while(first.kind()==TreeKind.SEQ) first = ((SEQ)first).left; 
+	while(first.kind()==TreeKind.SEQ) first = ((SEQ)first).getLeft(); 
 	Util.assert(first.kind()==TreeKind.SEGMENT); 
 	return this.tree; 
     }
@@ -121,24 +121,24 @@ public abstract class Code extends HCode
 	    Tree t = (Tree)nodes.pop();
 	    if (t.kind()==TreeKind.SEQ) {
 		SEQ seq = (SEQ)t;
-		if (seq.left==null) {
-		    if (seq.right==null) { leaves.add(seq); }
-		    else                 { nodes.push(seq.right);  }
+		if (seq.getLeft()==null) {
+		    if (seq.getRight()==null) { leaves.add(seq); }
+		    else                 { nodes.push(seq.getRight());  }
 		}
 		else {
-		    nodes.push(seq.left);
-		    if (seq.right!=null) nodes.push(seq.right);
+		    nodes.push(seq.getLeft());
+		    if (seq.getRight()!=null) nodes.push(seq.getRight());
 		}
 	    }
 	    else if (t.kind()==TreeKind.ESEQ) {
 		ESEQ eseq = (ESEQ)t;
-		if (eseq.exp==null) {
-		    if (eseq.stm==null) { leaves.add(eseq); }
-		    else                { nodes.push(eseq.stm);    }
+		if (eseq.getExp()==null) {
+		    if (eseq.getStm()==null) { leaves.add(eseq); }
+		    else                { nodes.push(eseq.getStm());    }
 		}
 		else {
-		    nodes.push(eseq.exp);
-		    if (eseq.stm!=null) nodes.push(eseq.stm);
+		    nodes.push(eseq.getExp());
+		    if (eseq.getStm()!=null) nodes.push(eseq.getStm());
 		}
 	    }
 	    else {
@@ -190,13 +190,13 @@ public abstract class Code extends HCode
 		    switch (t.kind()) { 
 		    case TreeKind.SEQ: 
 			SEQ seq = (SEQ)t;
-			if (seq.left!=null)  visitElement(seq.left);
-			if (seq.right!=null) visitElement(seq.right);
+			if (seq.getLeft()!=null)  visitElement(seq.getLeft());
+			if (seq.getRight()!=null) visitElement(seq.getRight());
 			break;
 		    case TreeKind.ESEQ: 
 			ESEQ eseq = (ESEQ)t;
-			if (eseq.exp!=null) visitElement(eseq.exp);
-			if (eseq.stm!=null) visitElement(eseq.stm);
+			if (eseq.getExp()!=null) visitElement(eseq.getExp());
+			if (eseq.getStm()!=null) visitElement(eseq.getStm());
 			break;
 		    default:
 			ExpList explist = t.kids();

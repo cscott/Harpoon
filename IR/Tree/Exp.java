@@ -14,11 +14,11 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Exp.java,v 1.1.2.10 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: Exp.java,v 1.1.2.11 2000-01-09 00:21:56 duncan Exp $
  */
 abstract public class Exp extends Tree implements Typed {
     protected Exp(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
-	super(tf, source, 0);
+	super(tf, source);
     }
   
     // Only ESEQs can define anything, and they are not permitted in 
@@ -45,5 +45,7 @@ abstract public class Exp extends Tree implements Typed {
     /** Returns <code>true</code> if the expression corresponds to a
      *  floating-point value. */
     public boolean isFloatingPoint() { return Type.isFloatingPoint(type()); }
+
 }
+
 

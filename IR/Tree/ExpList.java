@@ -8,6 +8,8 @@ import harpoon.Temp.CloningTempMap;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List; 
+import java.util.ListIterator; 
 import java.util.Set;
 
 /**
@@ -15,7 +17,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ExpList.java,v 1.1.2.8 1999-12-05 06:23:49 duncan Exp $
+ * @version $Id: ExpList.java,v 1.1.2.9 2000-01-09 00:21:56 duncan Exp $
  */
 public final class ExpList {
     /** The expression at this list entry. */
@@ -24,6 +26,24 @@ public final class ExpList {
     public final ExpList tail;
     /** List constructor. */
     public ExpList(Exp head, ExpList tail) { this.head=head; this.tail=tail; }
+    
+    public ExpList(List list) { 
+	ExpList THIS; 
+
+	if (list.isEmpty()) { 
+	    THIS = new ExpList(null, null); 
+	}
+	else { 
+	    THIS = new ExpList((Exp)list.get(list.size()-1), null); 
+	    for (ListIterator i = list.listIterator(list.size()-2); 
+		 i.hasPrevious();) { 
+		THIS = new ExpList((Exp)i.next(), THIS); 
+	    }
+	}
+
+	this.head = THIS.head; 
+	this.tail = THIS.tail; 
+    }
 
     public static ExpList replace(ExpList e, Exp eOld, Exp eNew) { 
 	if (e==null) return null; 

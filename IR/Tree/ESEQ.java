@@ -22,23 +22,41 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.17 1999-11-01 01:56:27 cananian Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.18 2000-01-09 00:21:56 duncan Exp $
  */
 public class ESEQ extends Exp implements PreciselyTyped {
     /** The statement to evaluate for side-effects. */
-    public Stm stm;
+    private Stm stm;
     /** The expression whose value is the the value of the <code>ESEQ</code>.*/
-    public Exp exp;
+    private Exp exp;
     /** Constructor. */
     public ESEQ(TreeFactory tf, HCodeElement source,
 		Stm stm, Exp exp) {
 	super(tf, source);
-	this.stm=stm; this.exp=exp;
+	this.exp = exp; this.stm = stm; 
+	this.setExp(exp); this.setStm(stm); 
 	Util.assert(stm!=null && exp!=null);
 	Util.assert(tf == exp.tf);
 	Util.assert(tf == stm.tf); 
     }
 
+    public Tree getFirstChild() { return this.exp; } 
+    public Exp getExp() { return this.exp; } 
+    public Stm getStm() { return this.stm; } 
+
+    public void setExp(Exp exp) { 
+	this.exp         = exp; 
+	this.exp.parent  = this;
+	this.exp.sibling = stm; 
+    }
+
+    public void setStm(Stm stm) { 
+	this.stm         = stm; 
+	stm.parent       = this; 
+	stm.sibling      = null;
+	this.exp.sibling = stm; 
+    }
+	
     protected Set defSet() { 
 	throw new Error
 	    ("DEF and USE can only be extracted from canonical trees");

@@ -14,22 +14,32 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CJUMP.java,v 1.1.2.13 1999-10-19 19:53:09 cananian Exp $
+ * @version $Id: CJUMP.java,v 1.1.2.14 2000-01-09 00:21:56 duncan Exp $
  */
 public class CJUMP extends Stm {
     /** An expression that evaluates into a boolean result. */
-    public Exp test;
+    private Exp test;
     /** The label to jump to if <code>test</code> is <code>true</code>. */
     public Label iftrue;
     /** The label to jump to if <code>test</code> is <code>false</code>. */
     public Label iffalse;
+    
     /** Constructor. */
     public CJUMP(TreeFactory tf, HCodeElement source,
 		 Exp test, Label iftrue, Label iffalse) {
-	super(tf, source, 2);
-	this.test = test; this.iftrue = iftrue; this.iffalse = iffalse;
+	super(tf, source);
+	this.setTest(test); this.iftrue = iftrue; this.iffalse = iffalse;
 	Util.assert(test!=null && iftrue!=null && iffalse!=null);
 	Util.assert(tf == test.tf, "This and Test must have same tree factory");
+    }
+
+    public Tree getFirstChild() { return this.test; } 
+    public Exp getTest() { return this.test; } 
+
+    public void setTest(Exp test) { 
+	this.test = test; 
+	this.test.parent = this;
+	this.test.sibling = null;
     }
     
     public ExpList kids() {return new ExpList(test, null); }

@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.16 1999-12-18 22:37:29 duncan Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.17 2000-01-09 00:21:56 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
@@ -32,17 +32,17 @@ public class NATIVECALL extends INVOCATION {
     public NATIVECALL(TreeFactory tf, HCodeElement source,
 		      TEMP retval, Exp func, ExpList args) {
 	super(tf, source, retval, func, args);
-	if (this.retval == null) { this.nullRetval = new CONST(tf, null); } 
+	if (retval == null) { this.nullRetval = new CONST(tf, null); } 
     }
 
     public boolean isNative() { return true; }
-  
+
     public ExpList kids() { 
-	ExpList result = new ExpList(func, args); 
-	if (this.retval == null) { 
+	ExpList result = new ExpList(this.getFunc(), this.getArgs()); 
+	if (this.getRetval() == null) { 
 	    result = new ExpList(nullRetval, result); 
 	} else { 
-	    result = new ExpList(retval, result); 
+	    result = new ExpList(this.getRetval(), result); 
 	}
 	return result; 
     }
@@ -69,19 +69,48 @@ public class NATIVECALL extends INVOCATION {
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new NATIVECALL(tf, this, 
-			      (retval==null) ? null :
-			      (TEMP)retval.rename(tf, ctm),
-			      (Exp)func.rename(tf, ctm),
-			      ExpList.rename(args, tf, ctm));
+			      (this.getRetval()==null) ? null :
+			      (TEMP)this.getRetval().rename(tf, ctm),
+			      (Exp)this.getFunc().rename(tf, ctm),
+			      ExpList.rename(this.getArgs(), tf, ctm));
     }
+
+    public Tree getFirstChild() { return this.getRetval(); } 
+  
+    public void setRetval(TEMP retval) { 
+	super.setRetval(retval); 
+	retval.parent  = this;
+	retval.sibling = this.getFunc(); 
+    }
+
+    public void setFunc(Exp func) { 
+	super.setFunc(func); 
+	func.parent  = this;
+	func.sibling = this.getArgs().head; 
+	this.getRetval().sibling = func; 
+    }
+
+    public void setArgs(ExpList args) { 
+	super.setArgs(args); 
+	ExpList e; 
+	for (e = args; e.tail != null; e = e.tail) { 
+	    e.head.parent = this; 
+	    e.head.sibling = e.tail.head; 
+	}
+	e.head.parent  = this;
+	e.head.sibling = null; 
+	this.getFunc().sibling = args.head; 
+    }
+
 
     public String toString() {
         StringBuffer s = new StringBuffer();
 
         s.append("NATIVECALL(");
-	if (retval!=null) s.append(" # "+retval.getID()+",");
-	s.append(" #"+func.getID()+", {");
-        for (ExpList list = args; list != null; list=list.tail) {
+	if (this.getRetval()!=null) 
+	    { s.append(" # "+this.getRetval().getID()+","); } 
+	s.append(" #"+this.getFunc().getID()+", {");
+        for (ExpList list = this.getArgs(); list != null; list=list.tail) {
             s.append(" #" + list.head.getID());
             if (list.tail != null) s.append(",");
         }

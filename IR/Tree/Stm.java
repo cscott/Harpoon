@@ -19,16 +19,11 @@ import java.util.Stack;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Stm.java,v 1.1.2.13 2000-01-05 04:06:35 duncan Exp $
+ * @version $Id: Stm.java,v 1.1.2.14 2000-01-09 00:21:56 duncan Exp $
  */
 abstract public class Stm extends Tree {
     protected Stm(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
 	super(tf, source);
-    }
-    
-    protected Stm(TreeFactory tf, harpoon.ClassFile.HCodeElement source,
-		  int next_arity) {
-	super(tf, source, next_arity);
     }
 
     /** Build an <code>Stm</code> of this type from the given list of
@@ -83,8 +78,8 @@ abstract public class Stm extends Tree {
 	    Stm next = (Stm)s.pop();
 	    if (next.kind() == TreeKind.SEQ) { 
 		SEQ seq = (SEQ)next; 
-		s.push(seq.right);
-		s.push(seq.left);
+		s.push(seq.getRight());
+		s.push(seq.getLeft());
 	    } 
 	    else { 
 		l.add(next);
@@ -98,7 +93,7 @@ abstract public class Stm extends Tree {
      */
     public static boolean isNop(Stm stm) { 
 	return (stm.kind()==TreeKind.EXP) && 
-	    ((((EXP)stm).exp).kind()==TreeKind.CONST);
+	    ((((EXP)stm).getExp()).kind()==TreeKind.CONST);
     }
 }
 

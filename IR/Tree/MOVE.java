@@ -22,13 +22,13 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.15 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: MOVE.java,v 1.1.2.16 2000-01-09 00:21:56 duncan Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** The expression giving the destination for the computed value. */
-    public Exp dst;
+    private Exp dst;
     /** The expression for the computed value. */
-    public Exp src;
+    private Exp src;
     /** Constructor. 
      * <p>The type of the <code>src</code> expression and of the
      * <code>dst</code> expression must be identical.  (Use
@@ -37,7 +37,9 @@ public class MOVE extends Stm implements Typed {
     public MOVE(TreeFactory tf, HCodeElement source,
 		Exp dst, Exp src) {
 	super(tf, source);
-	this.dst=dst; this.src=src;
+	// Set elements in reverse order to avoid null pointer exception. 
+	this.setSrc(src);
+	this.setDst(dst); 
 	Util.assert(dst!=null && src!=null, "Dest and Source cannot be null");
 	Util.assert(dst.type()==src.type(), 
 		    "Dest (type:"+Type.toString(dst.type()) + 
@@ -47,6 +49,22 @@ public class MOVE extends Stm implements Typed {
 	Util.assert(tf == src.tf, "This and Src must have same tree factory");
     }
   
+    public Tree getFirstChild() { return this.dst; } 
+    public Exp getDst() { return this.dst; } 
+    public Exp getSrc() { return this.src; } 
+
+    public void setDst(Exp dst) { 
+	this.dst = dst; 
+	this.dst.parent = this;
+	this.dst.sibling = src; 
+    }
+
+    public void setSrc(Exp src) { 
+	this.src = src; 
+	this.src.parent = this;
+	this.src.sibling = null;
+    }
+
     protected Set defSet() { 
 	Set def = new HashSet();
 	if (dst.kind()==TreeKind.TEMP) def.add(((TEMP)dst).temp);
@@ -62,9 +80,6 @@ public class MOVE extends Stm implements Typed {
     }
 
     public ExpList kids() {
-	//        if (dst.kind()==TreeKind.MEM)
-	//	   return new ExpList(((MEM)dst).exp, new ExpList(src,null));
-	//	else return new ExpList(src,null);
 	return new ExpList(dst, new ExpList(src, null));
     }
 

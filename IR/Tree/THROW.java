@@ -12,13 +12,13 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: THROW.java,v 1.1.2.11 1999-10-19 19:53:10 cananian Exp $
+ * @version  $Id: THROW.java,v 1.1.2.12 2000-01-09 00:21:56 duncan Exp $
  */
 public class THROW extends Stm implements Typed {
     /** The exceptional value to return */
-    public Exp retex;
+    private Exp retex;
     /** The location of the exception-handling code */
-    public Exp handler;
+    private Exp handler;
 
     /** Constructor 
      *  @param retex   the exceptional value to return 
@@ -26,14 +26,32 @@ public class THROW extends Stm implements Typed {
      */
     public THROW(TreeFactory tf, HCodeElement source, 
 		 Exp retex, Exp handler) {
-	super(tf, source, 0);
-	this.retex=retex;
-	this.handler=handler;
+	super(tf, source);
+	// Set elements in reverse order to avoid null pointer exception. 
+	this.setHandler(handler);
+	this.setRetex(retex);
+
 	Util.assert(retex.type()==POINTER); 
 	Util.assert(handler.type()==POINTER);
 	Util.assert(tf == retex.tf, "This and Retex must have same tree factory");
 	Util.assert(tf == handler.tf, "This and Handler must have the same tree factory");
     }		
+    
+    public Tree getFirstChild() { return this.retex; } 
+    public Exp getRetex() { return this.retex; } 
+    public Exp getHandler() { return this.handler; } 
+
+    public void setRetex(Exp retex) { 
+	this.retex = retex; 
+	this.retex.parent = this; 
+	this.retex.sibling = handler; 
+    }
+
+    public void setHandler(Exp handler) { 
+	this.handler = handler; 
+	this.handler.parent = this;
+	this.handler.sibling = null;
+    }
   
     public ExpList kids() { return new ExpList
 				(retex, new ExpList(handler, null)); }

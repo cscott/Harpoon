@@ -21,7 +21,7 @@ import java.util.Stack;
  * control-flow graph information with elements of an canonical tree. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeGrapher.java,v 1.1.2.2 2000-01-05 04:06:35 duncan Exp $
+ * @version $Id: TreeGrapher.java,v 1.1.2.3 2000-01-09 00:21:56 duncan Exp $
  */
 public class TreeGrapher extends CFGrapher { 
     private Map predecessors = new HashMap(); 
@@ -119,12 +119,12 @@ public class TreeGrapher extends CFGrapher {
 
 	public void visit(final CALL s) { 
 	    this.nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
-	    Util.assert(labels.containsKey(s.handler.label),
+	    Util.assert(labels.containsKey(s.getHandler().label),
 			"labels should contain Label:" + 
-			s.handler.label);
+			s.getHandler().label);
 	    Util.assert(this.nextNode!=null, 
 			"nextNode shouldn't be null");
-	    Util.assert(RS(this.nextNode)!=(Stm)labels.get(s.handler.label),
+	    Util.assert(RS(this.nextNode)!=(Stm)labels.get(s.getHandler().label),
 			new Util.LazyString() {
 			    public String eval() {
 				return "both normal and exceptional"+
@@ -132,7 +132,7 @@ public class TreeGrapher extends CFGrapher {
 				" for "+Print.print(s);}});
 	    
 	    addEdge(s, RS(this.nextNode)); 
-	    addEdge(s, (Stm)labels.get(s.handler.label));
+	    addEdge(s, (Stm)labels.get(s.getHandler().label));
 	}
 
 	public void visit(CJUMP s) { 
@@ -152,9 +152,9 @@ public class TreeGrapher extends CFGrapher {
 	}
 
 	public void visit(SEQ s) { 
-	    Util.assert(s.left!=null && s.right!=null);
-	    nodes.push(s.right);
-	    this.nextNode = s.left;
+	    Util.assert(s.getLeft()!=null && s.getRight()!=null);
+	    nodes.push(s.getRight());
+	    this.nextNode = s.getLeft();
 	}
 
 	public void visit(RETURN s) { 
@@ -194,7 +194,7 @@ public class TreeGrapher extends CFGrapher {
 	}	    
 
 	private Stm RS(Stm seq) { 
-	    while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).left;  
+	    while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).getLeft();  
 	    return seq;
 	}
     }

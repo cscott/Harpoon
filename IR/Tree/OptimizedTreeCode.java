@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
-import harpoon.Analysis.Tree.TreeFolding;
+//import harpoon.Analysis.Tree.TreeFolding;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
@@ -26,19 +26,19 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.13 2000-01-05 04:06:35 duncan Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.14 2000-01-09 00:21:56 duncan Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = CanonicalTreeCode.codename;
     private static final TreeOptimizer[] standard_opts = {
 	// Add all standard optimization passes here
-	new TreeOptimizer() { 
+	/*	new TreeOptimizer() { 
 	    public CanonicalTreeCode optimize(CanonicalTreeCode code) { 
 		code = (CanonicalTreeCode)code.clone
 		   (code.getMethod(), code.getFrame());
 		return (CanonicalTreeCode)new TreeFolding(code).fold();
 	    }
-	}
+	    }*/ 
     };
 
     private /*final*/ Derivation       derivation;

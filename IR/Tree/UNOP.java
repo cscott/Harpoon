@@ -13,21 +13,30 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.17 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: UNOP.java,v 1.1.2.18 2000-01-09 00:21:56 duncan Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
     /** The subexpression to be operated upon. */
-    public Exp operand;
+    private Exp operand;
     /** Constructor.
      * @param unop Enumerated operation type, from <code>Uop</code>.
      */
     public UNOP(TreeFactory tf, HCodeElement source,
 		int optype, int unop, Exp operand) {
 	super(tf, source, optype, unop);
-	this.operand = operand;
+	this.setOperand(operand);
 	Util.assert(Uop.isValid(unop));
 	Util.assert(tf == operand.tf, "This and Operand must have same tree factory");
+    }
+
+    public Tree getFirstChild() { return this.operand; } 
+    public Exp getOperand() { return this.operand; } 
+
+    public void setOperand(Exp operand) { 
+	this.operand = operand; 
+	this.operand.parent = this;
+	this.operand.sibling = null;
     }
 
     /** Returns an <code>int</code> identifying the TYPE that this

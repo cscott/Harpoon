@@ -16,11 +16,11 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MEM.java,v 1.1.2.19 1999-12-05 06:23:49 duncan Exp $
+ * @version $Id: MEM.java,v 1.1.2.20 2000-01-09 00:21:56 duncan Exp $
  */
 public class MEM extends Exp implements PreciselyTyped {
     /** A subexpression evaluating to a memory reference. */
-    public Exp exp;
+    private Exp exp;
     /** The type of this memory reference expression. */
     public int type;
 
@@ -33,7 +33,7 @@ public class MEM extends Exp implements PreciselyTyped {
     public MEM(TreeFactory tf, HCodeElement source,
 	       int type, Exp exp) {
 	super(tf, source);
-	this.type=type; this.exp=exp; this.isSmall=false;
+	this.type=type; this.setExp(exp); this.isSmall=false;
 	Util.assert(Type.isValid(type) && exp!=null);
 	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
     }
@@ -47,7 +47,7 @@ public class MEM extends Exp implements PreciselyTyped {
     public MEM(TreeFactory tf, HCodeElement source, 
 	       int bitwidth, boolean signed, Exp exp) { 
 	super(tf, source);
-	this.type=INT; this.exp=exp; this.isSmall=true;
+	this.type=INT; this.setExp(exp); this.isSmall=true;
 	this.bitwidth=bitwidth; this.signed=signed;
 	Util.assert(exp!=null);
 	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
@@ -57,12 +57,21 @@ public class MEM extends Exp implements PreciselyTyped {
     private MEM(TreeFactory tf, HCodeElement source, int type, Exp exp, 
 		boolean isSmall, int bitwidth, boolean signed) { 
 	super(tf, source);
-	this.type=type; this.exp=exp; this.isSmall=isSmall;
+	this.type=type; this.setExp(exp); this.isSmall=isSmall;
 	this.bitwidth=bitwidth; this.signed=signed;
 	Util.assert(exp!=null);
 	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
 	Util.assert(Type.isValid(type));
 	Util.assert(!isSmall || type==INT);
+    }
+
+    public Tree getFirstChild() { return this.exp; } 
+    public Exp getExp() { return this.exp; } 
+
+    public void setExp(Exp exp) { 
+	this.exp = exp;
+	this.exp.parent = this; 
+	this.exp.sibling = null;
     }
 
     public ExpList kids() {return new ExpList(exp,null);}

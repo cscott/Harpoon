@@ -29,7 +29,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.22 1999-11-29 03:32:12 duncan Exp $
+ * @version $Id: CALL.java,v 1.1.2.23 2000-01-09 00:21:56 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -37,10 +37,10 @@ import java.util.Set;
 public class CALL extends INVOCATION {
     /** Destination for any exception which the callee might throw.
      *  Must be non-null. */
-    public TEMP retex;
+    private TEMP retex;
     /** Expression indicating the destination to which we should return
      *  if our caller throws an exception. */
-    public NAME handler;
+    private NAME handler;
     /** Whether this invocation should be performed as a tail call. */
     public boolean isTailCall;
 
@@ -48,22 +48,63 @@ public class CALL extends INVOCATION {
     public CALL(TreeFactory tf, HCodeElement source,
 		TEMP retval, TEMP retex, Exp func, ExpList args,
 		NAME handler, boolean isTailCall) {
-	super(tf, source, retval, func, args, 2); // this.next_arity()==2
+	super(tf, source, retval, func, args); 
 	Util.assert(retex != null && handler != null);
 	Util.assert(retex.tf == tf);
-	this.retex = retex;
-	this.handler = handler;
+	this.retex = retex; this.handler = handler; 
+	this.setRetex(retex); this.setHandler(handler);
+	this.setRetval(this.getRetval()); 
+	this.setFunc(this.getFunc()); 
+	this.setArgs(this.getArgs()); 
 	this.isTailCall = isTailCall;
     }
-  
-    public boolean isNative() { return false; }
 
-    public ExpList kids() {
-	ExpList result = new ExpList(retex, new ExpList
-				     (handler, new ExpList(func, args))); 
-	if (retval==null) return result;
-	else return new ExpList(retval, result);
+    public Tree getFirstChild() { return this.getRetval(); } 
+    public TEMP getRetex() { return this.retex; } 
+    public NAME getHandler() { return this.handler; } 
+  
+    public void setRetval(TEMP retval) { 
+	super.setRetval(retval); 
+	retval.parent  = this;
+	retval.sibling = this.retex; 
     }
+
+    public void setRetex(TEMP retex) { 
+	this.retex    = retex; 
+	retex.parent  = this; 
+	retex.sibling = this.getFunc(); 
+	this.getRetval().sibling = retex; 
+    }
+
+    public void setFunc(Exp func) { 
+	super.setFunc(func); 
+	func.parent  = this;
+	func.sibling = this.getArgs().head; 
+	this.retex.sibling = func; 
+    }
+
+    public void setArgs(ExpList args) { 
+	super.setArgs(args); 
+	ExpList e; 
+	for (e = args; e.tail != null; e = e.tail) { 
+	    e.head.parent = this; 
+	    e.head.sibling = e.tail.head; 
+	}
+	e.head.parent  = this;
+	e.head.sibling = handler; 
+	this.getFunc().sibling = args.head; 
+    }
+
+    public void setHandler(NAME handler) { 
+	this.handler = handler; 
+	handler.parent = this;
+	handler.sibling = null; 
+	ExpList e; 
+	for (e = this.getArgs(); e.tail != null; e=e.tail); 
+	e.head.sibling = handler; 
+    }
+
+    public boolean isNative() { return false; }
 
     public int kind() { return TreeKind.CALL; }
 
@@ -90,10 +131,10 @@ public class CALL extends INVOCATION {
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new CALL(tf, this, 
-			(TEMP)retval.rename(tf, ctm),
+			(TEMP)this.getRetval().rename(tf, ctm),
 			(TEMP)retex.rename(tf, ctm), 
-			(Exp)func.rename(tf, ctm),
-			ExpList.rename(args, tf, ctm),
+			(Exp)this.getFunc().rename(tf, ctm),
+			ExpList.rename(this.getArgs(), tf, ctm),
 			(NAME)handler.rename(tf, ctm),
 			isTailCall);
   }
@@ -114,10 +155,11 @@ public class CALL extends INVOCATION {
         ExpList list;
         StringBuffer s = new StringBuffer();
         s.append("CALL(");
-	if (retval==null) s.append("null"); else s.append("#"+retval.getID());
+	if (this.getRetval()==null) { s.append("null"); } 
+	else { s.append("#"+this.getRetval().getID()); } 
 	s.append(", #"+retex.getID()+
-                 ", #" + func.getID() + ", {");
-        list = args;
+                 ", #" + this.getFunc().getID() + ", {");
+        list = this.getArgs();
         while (list != null) {
             s.append(" #"+list.head.getID());
             if (list.tail != null) {

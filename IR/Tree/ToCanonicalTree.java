@@ -24,7 +24,7 @@ import java.util.Map;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.18 1999-11-01 04:41:44 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.19 2000-01-09 00:21:56 duncan Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -40,9 +40,14 @@ public class ToCanonicalTree implements Derivation, TypeMap {
     public ToCanonicalTree(final TreeFactory tf, TreeCode code) { 
 	Util.assert(tf instanceof Code.TreeFactory);
 	Util.assert(((Code.TreeFactory)tf).getParent().getName().equals("canonical-tree"));
+
+	code.print(new java.io.PrintWriter(System.out)); 
 	
     	final Map dT = new HashMap();
 	final Map tT = new HashMap();
+	System.err.println("Converting to canonical tree: " + code.getMethod()); 
+	long time = System.currentTimeMillis(); 
+	
 
 	m_tree = translate(tf, code, dT, tT);
 	m_derivation = new Derivation() {
@@ -62,6 +67,8 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 		}
 	    }
 	};
+
+	System.err.println("Total conversion time: " + ((System.currentTimeMillis()-time))); 
     }
     
     /** Returns the updated derivation information for the 
@@ -98,6 +105,10 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	// This visitor recursively visits all relevant nodes on its own
 	root.accept(cv);
 
+	for (int i=0; i<6; i++) { 
+	    System.err.println("TIME, NUM: " + cv.times[i] + ", " +cv.nums[i]);
+	}
+
 	// Return the node which rootClone has been mapped to
 	return tm.get(root);
     }
@@ -112,6 +123,9 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	private TypeMap     typeMap;
 	private Map         dT, tT;
 	private java.util.Set visited = new java.util.HashSet();
+	public long times[] = new long[10]; 
+	public int nums[] = new int[10]; 
+	
 
 	public CanonicalizingVisitor(TreeFactory tf, TreeMap tm, 
 				     TreeCode code, Map dT, Map tT) {
@@ -132,81 +146,107 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	}
 
 	public void visit(MOVE s) {
+	    long time = System.currentTimeMillis(); 
+	    
 	    if (!visited.add(s)) return;
 
-	    s.src.accept(this);
-	    if (s.dst.kind()==TreeKind.ESEQ) {
+	    //s.getSrc().accept(this);
+	    if (s.getDst().kind()==TreeKind.ESEQ) {
 		Util.assert(false, "Dangerous use of ESEQ");
-		ESEQ eseq = (ESEQ)s.dst;
-		eseq.exp.accept(this);
-		eseq.stm.accept(this);
+		ESEQ eseq = (ESEQ)s.getDst();
+		eseq.getExp().accept(this);
+		eseq.getStm().accept(this);
 		SEQ tmp = new SEQ
-		    (tf, treeMap.get(eseq.stm), 
+		    (tf, treeMap.get(eseq.getStm()), 
 		     s, 
 		     new MOVE
 		     (tf, s, 
-		      treeMap.get(eseq.exp), 
-		      treeMap.get(s.src)));
+		      treeMap.get(eseq.getExp()), 
+		      treeMap.get(s.getSrc())));
 		tmp.accept(this);
 		treeMap.map(s, treeMap.get(tmp));
 	    }
 	    else {
 		treeMap.map(s, reorderMove(s));
 	    }
+
+	    times[0] += (System.currentTimeMillis()-time); 
+	    nums[0]++; 
 	}
       
 	public void visit(SEQ s) {
+	    //long time = System.currentTimeMillis(); 
+
 	    if (!visited.add(s)) return;
-	    s.left.accept(this);
-	    s.right.accept(this);
-	    treeMap.map(s, seq(treeMap.get(s.left), treeMap.get(s.right)));
+	    s.getLeft().accept(this);
+	    s.getRight().accept(this);
+	    treeMap.map(s, seq(treeMap.get(s.getLeft()), treeMap.get(s.getRight())));
 	}
 
 	public void visit(DATA s) { 
+
+	    long time = System.currentTimeMillis(); 
+
 	    if (!visited.add(s)) return;
 	    treeMap.map(s, reorderData(s));
+	    times[1] += (System.currentTimeMillis()-time); 
+	    nums[1]++; 
 	}
 
 	public void visit(Stm s) {
+	    long time = System.currentTimeMillis(); 
 	    if (!visited.add(s)) return;
 	    treeMap.map(s, reorderStm(s));
+	    times[2] += (System.currentTimeMillis()-time); 
+	    nums[2]++; 
 	}
 
 	public void visit(Exp e) { 
+	    long time = System.currentTimeMillis(); 
 	    if (!visited.add(e)) { 
 		return;
 	    }
 	    treeMap.map(e, reorderExp(e));
+	    times[3] += (System.currentTimeMillis()-time); 
+	    nums[3]++; 
+
 	}
 
 	public void visit(TEMP e) { 
+	    long time = System.currentTimeMillis(); 
 	    if (!visited.add(e)) return;
 	    TEMP tNew = _MAP(e);
 	    treeMap.map(e, reorderExp(tNew));
+	    times[4] += (System.currentTimeMillis()-time); 
+	    nums[4]++; 
+
 	}
 
 	public void visit(ESEQ e) { 
+	    long time = System.currentTimeMillis(); 
 	    if (!visited.add(e)) return;
-	    e.stm.accept(this);
-	    e.exp.accept(this);
+	    e.getStm().accept(this);
+	    e.getExp().accept(this);
 	    treeMap.map(e, new ESEQ(tf, e, 
-				    seq(treeMap.get(e.stm), 
-					((ESEQ)treeMap.get(e.exp)).stm),
-				    ((ESEQ)treeMap.get(e.exp)).exp));
+				    seq(treeMap.get(e.getStm()), 
+					((ESEQ)treeMap.get(e.getExp())).getStm()),
+				    ((ESEQ)treeMap.get(e.getExp())).getExp()));
+	    times[5] += (System.currentTimeMillis()-time); 
+	    nums[5]++; 
 	}
 
 	private Stm reorderData(DATA s) { 
 	    ExpList kids = s.kids();
 	    if (kids.head==null) return s.build(tf, kids);
 	    else {
-		StmExpList x = reorder(s.kids());
-		return seq(x.stm, s.build(tf, x.exps));
+		StmExpList x = reorder(kids);
+		return seq((x.stm), s.build(tf, x.exps));
 	    }
 	}
-
+    
 	private Stm reorderMove(MOVE m) { 
-	    if (m.dst.kind() == TreeKind.TEMP) { 
-		TEMP tNew = _MAP((TEMP)m.dst);
+	    if (m.getDst().kind() == TreeKind.TEMP) { 
+		TEMP tNew = _MAP((TEMP)m.getDst());
 		StmExpList x = reorder(m.kids().tail);
 		return seq(x.stm, m.build(tf, new ExpList(tNew, x.exps)));
 	    }
@@ -241,21 +281,21 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 		Exp a = exps.head; a.accept(this);
 		ESEQ aa = (ESEQ)treeMap.get(a);
 		StmExpList bb = reorder(exps.tail);
-		if (commute(bb.stm, aa.exp))
-		    return new StmExpList(seq(aa.stm,bb.stm), 
-					  new ExpList(aa.exp,bb.exps));
+		if (commute(bb.stm, aa.getExp()))
+		    return new StmExpList(seq(aa.getStm(),bb.stm), 
+					  new ExpList(aa.getExp(),bb.exps));
 		else { // FIXME: must update DT for new Temp
 		    Temp t = new Temp(tf.tempFactory());
 		    return new StmExpList
 			(seq
-			 (aa.stm, 
+			 (aa.getStm(), 
 			  seq
 			  (new MOVE
 			   (tf, aa, 
-			    new TEMP(tf, aa, aa.exp.type(), t),
-			    aa.exp),
+			    new TEMP(tf, aa, aa.getExp().type(), t),
+			    aa.getExp()),
 			   bb.stm)),
-			 new ExpList(new TEMP(tf, aa, aa.exp.type(), t), 
+			 new ExpList(new TEMP(tf, aa, aa.getExp().type(), t), 
 				     bb.exps));
 		}
 	    }
@@ -287,13 +327,7 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	}
     
 	private TEMP _MAP(TEMP t) { 
-	    if (code.getFrame().getRegFileInfo().isRegister(t.temp)) { 
-		return (TEMP)t.build(tf, t.kids());
-	    }
-	    else { 
-		Temp tmp = t.temp==null?null:this.ctm.tempMap(t.temp);
-		return new TEMP(tf, t, t.type(), tmp);
-	    }
+	    return (TEMP)Tree.clone(tf, ctm, t); 
 	}
     }
     
@@ -305,7 +339,7 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 
     static boolean isNop(Stm s) {
 	return (s.kind()==TreeKind.EXP) && 
-	    ((((EXP)s).exp).kind()==TreeKind.CONST);
+	    ((((EXP)s).getExp()).kind()==TreeKind.CONST);
     }
 }
 

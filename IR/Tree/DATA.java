@@ -22,11 +22,11 @@ import harpoon.Util.Util;
  * </PRE>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DATA.java,v 1.1.2.11 1999-10-19 19:53:09 cananian Exp $
+ * @version $Id: DATA.java,v 1.1.2.12 2000-01-09 00:21:56 duncan Exp $
  */
 public class DATA extends Stm implements harpoon.ClassFile.HDataElement { 
     /** The expression to write to memory.  Never null. */
-    public final Exp data;
+    private Exp data;
     /** If false, the memory is not initialized; instead it is reserved
      *  with an unspecified value. */
     public final boolean initialized;
@@ -40,7 +40,7 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
      */
     public DATA(TreeFactory tf, HCodeElement source, Exp data) {
 	super(tf, source);
-	this.data = data;
+	this.setData(data);
 	this.initialized = true;
 	Util.assert(data.kind()==TreeKind.CONST || 
 		    data.kind()==TreeKind.NAME);
@@ -56,15 +56,15 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
 	super(tf, source);
 	Util.assert(Type.isValid(type));
 	if (type==Type.INT)
-	    this.data = new CONST(tf, source, (int)0);
+	    this.setData(new CONST(tf, source, (int)0));
 	else if (type==Type.LONG)
-	    this.data = new CONST(tf, source, (long)0);
+	    this.setData(new CONST(tf, source, (long)0));
 	else if (type==Type.FLOAT)
-	    this.data = new CONST(tf, source, (float)0);
+	    this.setData(new CONST(tf, source, (float)0));
 	else if (type==Type.DOUBLE)
-	    this.data = new CONST(tf, source, (double)0);
+	    this.setData(new CONST(tf, source, (double)0));
 	else if (type==Type.POINTER)
-	    this.data = new CONST(tf, source); // null
+	    this.setData(new CONST(tf, source)); // null
 	else throw new Error("Impossible!");
 	this.initialized = false;
     }
@@ -76,14 +76,14 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
     public DATA(TreeFactory tf, HCodeElement source,
 		int bitwidth, boolean signed) { 
 	super(tf, source);
-	this.data = new CONST(tf, source, bitwidth, signed, 0);
+	this.setData(new CONST(tf, source, bitwidth, signed, 0));
 	this.initialized = false;
     }
 
     private DATA(TreeFactory tf, HCodeElement source,
 		 Exp data, boolean initialized) {
 	super(tf, source);
-	this.data = data;
+	this.setData(data);
 	this.initialized = initialized;
 	Util.assert(data.kind()==TreeKind.CONST || 
 		    data.kind()==TreeKind.NAME);
@@ -91,6 +91,14 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
 		    "Dest and Src must have same tree factory");
     }
 
+    public Exp getData() { return this.data; } 
+    public Tree getFirstChild() { return this.data; } 
+    
+    public void setData(Exp data) { 
+	this.data = data;
+	this.data.parent = this;
+	this.data.sibling = null;
+    }
 
     public ExpList kids() { return new ExpList(data, null); } 
     

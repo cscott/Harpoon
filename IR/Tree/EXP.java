@@ -15,18 +15,27 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: EXP.java,v 1.1.2.11 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: EXP.java,v 1.1.2.12 2000-01-09 00:21:56 duncan Exp $
  */
 public class EXP extends Stm {
     /** The expression to evaluate. */
-    public Exp exp; 
+    private Exp exp; 
     /** Constructor. */
-    public EXP(TreeFactory tf, HCodeElement source,
+    public EXP(TreeFactory tf, HCodeElement source, 
 	       Exp exp) {
 	super(tf, source);
-	this.exp=exp;
+	this.setExp(exp);
 	Util.assert(exp!=null);
 	Util.assert(tf == exp.tf, "Dest and Src must have same tree factory");
+    }
+
+    public Tree getFirstChild() { return this.exp; } 
+    public Exp getExp() { return this.exp; }
+
+    public void setExp(Exp exp) { 
+	this.exp = exp; 
+	this.exp.parent = this;
+	this.exp.sibling = null;
     }
 
     public ExpList kids() {return new ExpList(exp,null);}

@@ -21,37 +21,35 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.14 1999-11-29 02:24:41 duncan Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.15 2000-01-09 00:21:56 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL
  */
 public abstract class INVOCATION extends Stm {
     /** A subexpression which evaluates to the function reference to invoke.*/
-    public Exp func;
+    private Exp func;
     /** Subexpressions for the arguments to the function. */
-    public ExpList args;
+    private ExpList args;
     /** Expression indicating the destination of the return value.
      *  The <code>retval</code> is <code>null</code> for <code>void</code>
      *  functions. */
-    public TEMP retval;
-
+    private TEMP retval;
 
     /** Constructor. */
     protected INVOCATION(TreeFactory tf, HCodeElement source,
 			 TEMP retval, Exp func, ExpList args) {
-	this(tf, source, retval, func, args, 1);
-    }
-
-    protected INVOCATION(TreeFactory tf, HCodeElement source,
-			 TEMP retval, Exp func, ExpList args, int next_arity) {
-	super(tf, source, next_arity);
-	this.retval=retval; this.func=func; this.args=args;
+	super(tf, source); 
+	this.args = args; this.func = func; this.retval = retval; 
 	Util.assert(func!=null);
 	Util.assert(tf==func.tf, "This and Func must have same tree factory");
 	Util.assert(retval==null || tf == retval.tf,
 		    "This and Retval must have same tree factory");
     }
+
+    public TEMP getRetval() { return this.retval; }
+    public Exp getFunc() { return this.func; }
+    public ExpList getArgs() { return this.args; } 
 
     protected Set defSet() { 
 	Set def = new HashSet();
@@ -70,9 +68,13 @@ public abstract class INVOCATION extends Stm {
     }
     
     abstract public boolean isNative();
-    abstract public ExpList kids();
     abstract public Stm build(ExpList kids);
     abstract public void accept(TreeVisitor v);
     abstract public Tree rename(TreeFactory tf, CloningTempMap ctm);
+    abstract public Tree getFirstChild();
+
+    public void setArgs(ExpList args) { this.args = args; }
+    public void setFunc(Exp func) { this.func = func; }
+    public void setRetval(TEMP retval) { this.retval = retval; }
 }
  

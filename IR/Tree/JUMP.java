@@ -15,18 +15,18 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: JUMP.java,v 1.1.2.10 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: JUMP.java,v 1.1.2.11 2000-01-09 00:21:56 duncan Exp $
  */
 public class JUMP extends Stm {
     /** An expression giving the address to jump to. */
-    public Exp exp;
+    private Exp exp;
     /** A list of possible branch targets. */
     public LabelList targets;
     /** Full constructor. */
     public JUMP(TreeFactory tf, HCodeElement source,
 		Exp exp, LabelList targets) {
 	super(tf, source);
-	this.exp=exp; this.targets=targets;
+	this.setExp(exp); this.targets=targets;
 	Util.assert(exp!=null && targets!=null);
 	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
 
@@ -37,6 +37,16 @@ public class JUMP extends Stm {
 	this(tf, source,
 	     new NAME(tf, source, target), new LabelList(target,null));
     }
+
+    public Tree getFirstChild() { return this.exp; }     
+    public Exp getExp() { return this.exp; } 
+
+    public void setExp(Exp exp) { 
+	this.exp = exp;
+	this.exp.parent = this;
+	this.exp.sibling = null;
+    }
+    
     public ExpList kids() { return new ExpList(exp,null); }
 
     public int kind() { return TreeKind.JUMP; }

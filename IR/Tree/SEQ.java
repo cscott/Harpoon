@@ -16,21 +16,38 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.13 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: SEQ.java,v 1.1.2.14 2000-01-09 00:21:56 duncan Exp $
  */
 public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     /** The statement to evaluate first. */
-    public Stm left;
+    private Stm left;
     /** The statement to evaluate last. */
-    public Stm right;
+    private Stm right;
     /** Constructor. */
     public SEQ(TreeFactory tf, HCodeElement source,
 	       Stm left, Stm right) {
-	super(tf, source, 0); // No edges in or out of SEQ
+	super(tf, source); // No edges in or out of SEQ
 	this.left=left; this.right=right;
 	Util.assert(left!=null && right!=null);
 	Util.assert(left.tf == right.tf, "Left and Right must have same tree factory");
 	Util.assert(tf == right.tf, "This and Right must have same tree factory");
+    }
+    
+    public Tree getFirstChild() { return this.left; } 
+    public Stm getLeft() { return this.left; }
+    public Stm getRight() { return this.right; } 
+
+    public void setLeft(Stm left) { 
+	this.left = left; 
+	this.left.parent = this;
+	this.left.sibling = null;
+    }
+
+    public void setRight(Stm right) { 
+	this.right = right; 
+	right.parent = this;
+	right.sibling = null; 
+	this.left.sibling = right; 
     }
 
     protected Set defSet() { return Collections.EMPTY_SET; }

@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NAME.java,v 1.1.2.13 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: NAME.java,v 1.1.2.14 2000-01-09 00:21:56 duncan Exp $
  */
 public class NAME extends Exp implements harpoon.ClassFile.HDataElement {
     /** The label which this NAME refers to. */
@@ -27,6 +27,9 @@ public class NAME extends Exp implements harpoon.ClassFile.HDataElement {
 	this.label=label;
 	Util.assert(label!=null);
     }
+    
+    public Tree getFirstChild() { return null; } 
+    
     public ExpList kids() { return null; }
     public int kind() { return TreeKind.NAME; }
 	

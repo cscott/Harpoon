@@ -21,7 +21,7 @@ import java.util.Map;
  * ease the task of statically creating Java objects in the tree form. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.2.4 1999-09-11 20:06:41 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.2.5 2000-01-09 00:21:56 duncan Exp $
  *
  */
 public abstract class ObjectBuilder { 
@@ -41,9 +41,9 @@ public abstract class ObjectBuilder {
 
     /** 
      * Constructs an object using the specified parameters.  Returns an
-     * <code>ESEQ</code>, <code>e</code>, such that <code>e.stm</code>
+     * <code>ESEQ</code>, <code>e</code>, such that <code>e.getStm()</code>
      * contains the tree instructions necessary to construct the object
-     * in memory and <code>e.exp,</code> contains a pointer to the 
+     * in memory and <code>e.getExp(),</code> contains a pointer to the 
      * newly constructed object.  
      * 
      * Some classes require special handling, and cannot be created with this
@@ -111,9 +111,9 @@ public abstract class ObjectBuilder {
 
     /** 
      * Constructs an array using the specified parameters.  Returns an
-     * <code>ESEQ</code>, <code>e</code>, such that <code>e.stm</code>
+     * <code>ESEQ</code>, <code>e</code>, such that <code>e.getStm()</code>
      * contains the tree instructions necessary to construct the array
-     * in memory and <code>e.exp,</code> contains a pointer to the 
+     * in memory and <code>e.getExp(),</code> contains a pointer to the 
      * newly constructed object.  The length of the array will be equal
      * to <code>elements.length</code>. 
      * 
@@ -162,9 +162,9 @@ public abstract class ObjectBuilder {
 
     /**
      * Returns an <code>ESEQ</code> object, <code>e</code>, such that
-     * <code>e.stm</code> contains the tree instructions necessary to 
+     * <code>e.getStm()</code> contains the tree instructions necessary to 
      * lay out a new <code>java.lang.Class</code> object in read-only memory, 
-     * and <code>e.exp</code> contains a pointer to this object.  The returned
+     * and <code>e.getExp()</code> contains a pointer to this object.  The returned
      * <code>ESEQ</code> will contain instructions to lay out the object in
      * memory only the first time this method is called.  Subsequent calls
      * return only a pointer to this memory. 
@@ -222,10 +222,10 @@ public abstract class ObjectBuilder {
 	Exp[]     methodsInTreeForm;
 	for (int i=0; i<methods.length; i++) { 
 	    ESEQ methodData = buildMethod(tf,frame,methods[i]);
-	    if (!Stm.isNop(methodData.stm)) stms.add(methodData.stm);
-	    if (methods[i].isStatic()) {} //s.add(methodData.exp); }
+	    if (!Stm.isNop(methodData.getStm())) stms.add(methodData.getStm());
+	    if (methods[i].isStatic()) {} //s.add(methodData.getExp()); }
 	    else { 
-		addE(offm.offset(methods[i])/ws,methodData.exp,u,d);
+		addE(offm.offset(methods[i])/ws,methodData.getExp(),u,d);
 	    }
 	}
 	Collections.reverse(u);
@@ -249,9 +249,9 @@ public abstract class ObjectBuilder {
 	Exp[]    fieldsInTreeForm;
 	for (int i=0; i<fields.length; i++) { 
 	    ESEQ fieldData = buildField(tf,frame,fields[i]);
-	    if (!Stm.isNop(fieldData.stm)) stms.add(fieldData.stm);
-	    if (fields[i].isStatic()) {} //s.add(fieldData.exp); }
-	    else { addE(offm.offset(fields[i])/ws,fieldData.exp,u,d); }
+	    if (!Stm.isNop(fieldData.getStm())) stms.add(fieldData.getStm());
+	    if (fields[i].isStatic()) {} //s.add(fieldData.getExp()); }
+	    else { addE(offm.offset(fields[i])/ws,fieldData.getExp(),u,d); }
 	}
 	Collections.reverse(u);
 	u.addAll(d);
@@ -271,19 +271,19 @@ public abstract class ObjectBuilder {
 	
 	// Create a string object representing the name of this Class object
 	ESEQ stringData  = buildString(tf, frame, hclass.getName());
-	if (!Stm.isNop(stringData.stm)) stms.add(stringData.stm);
+	if (!Stm.isNop(stringData.getStm())) stms.add(stringData.getStm());
 
 	// Create a method array representing the methods of this class object
 	ESEQ methodArray = buildArray(tf,frame, HCmethodA,
 				      methodsInTreeForm.hashCode(),
 				      methodsInTreeForm);
-	if (!Stm.isNop(methodArray.stm)) stms.add(methodArray.stm);
+	if (!Stm.isNop(methodArray.getStm())) stms.add(methodArray.getStm());
 
 	// Create a field array representing the fields of this class object
 	ESEQ fieldArray  = buildArray(tf,frame, HCfieldA,
 				      fieldsInTreeForm.hashCode(),
 				      fieldsInTreeForm);
-	if (!Stm.isNop(fieldArray.stm)) stms.add(fieldArray.stm);
+	if (!Stm.isNop(fieldArray.getStm())) stms.add(fieldArray.getStm());
 
 	
 	// Assign the Class object a hashcode
@@ -293,15 +293,15 @@ public abstract class ObjectBuilder {
 	addS(offm.clazzPtrOffset(HCClass)/ws,
 	    _D(new NAME(tf,null,nm.label(HCClass))),u,d);
 	// Assign the Class object a name field
-	addS(offm.fieldsOffset(HCClass)/ws, _D(stringData.exp), u,d);
+	addS(offm.fieldsOffset(HCClass)/ws, _D(stringData.getExp()), u,d);
 	// Assign the Class object a pointer to the class descriptor it 
 	// of the class it represents
 	addS((offm.fieldsOffset(HCClass)/ws)+1, 
 	     _D(new NAME(tf,null,nm.label(hclass))),u,d);
 	// Assign the Class object a pointer to an array of Method objects
-	addS((offm.fieldsOffset(HCClass)/ws)+2,_D(methodArray.exp),u,d);
+	addS((offm.fieldsOffset(HCClass)/ws)+2,_D(methodArray.getExp()),u,d);
 	// Assign the Class object a pointer to an array of Field objects
-	addS((offm.fieldsOffset(HCClass)/ws)+3,_D(fieldArray.exp),u,d);
+	addS((offm.fieldsOffset(HCClass)/ws)+3,_D(fieldArray.getExp()),u,d);
 	
 	Collections.reverse(u);
 	stms.addAll(u);
@@ -341,7 +341,7 @@ public abstract class ObjectBuilder {
 	}
 	
 	ESEQ stringData = buildString(tf,frame,name);
-	if (!Stm.isNop(stringData.stm)) stms.add(stringData.stm);
+	if (!Stm.isNop(stringData.getStm())) stms.add(stringData.getStm());
 
 	// Assign the Class object a hashcode
 	addS(offm.hashCodeOffset(HCClass)/ws, 
@@ -350,7 +350,7 @@ public abstract class ObjectBuilder {
 	addS(offm.clazzPtrOffset(HCClass)/ws,
 	    _D(new NAME(tf,null,nm.label(HCClass))),u,d);
 	// Assign the Class object a name field
-	addS(offm.fieldsOffset(HCClass)/ws, _D(stringData.exp), u,d);
+	addS(offm.fieldsOffset(HCClass)/ws, _D(stringData.getExp()), u,d);
 	// Assign the Class object a pointer to the class descriptor it 
 	// of the class it represents
 	addS((offm.fieldsOffset(HCClass)/ws)+1, 
@@ -367,9 +367,9 @@ public abstract class ObjectBuilder {
 
     /**
      * Returns an <code>ESEQ</code> object, <code>e</code>, such that
-     * <code>e.stm</code> contains the tree instructions necessary to 
+     * <code>e.getStm()</code> contains the tree instructions necessary to 
      * lay out a new <code>java.lang.reflect.Field</code> object in 
-     * read-only memory, and <code>e.exp</code> contains a pointer to this 
+     * read-only memory, and <code>e.getExp()</code> contains a pointer to this 
      * object.  The returned <code>ESEQ</code> will contain instructions to lay
      * out the object in memory only the first time this method is called.  
      * Subsequent calls return only a pointer to this memory. 
@@ -401,11 +401,11 @@ public abstract class ObjectBuilder {
 
 	// Compute tree representation of field name
 	ESEQ stringData = buildString(tf,frame, field.getName());
-	if (!Stm.isNop(stringData.stm)) stms.add(stringData.stm);
+	if (!Stm.isNop(stringData.getStm())) stms.add(stringData.getStm());
 
 	// Compute tree representation of field type
 	ESEQ typeData   = buildClass(tf,frame, field.getType());
-	if (!Stm.isNop(typeData.stm)) stms.add(typeData.stm);
+	if (!Stm.isNop(typeData.getStm())) stms.add(typeData.getStm());
 
 	HField[] HCFfields = new HField[] { 
 	    HCfield.getField("name"),
@@ -416,8 +416,8 @@ public abstract class ObjectBuilder {
 	};
 
 	Exp[]    HCFfieldValues = { 
-	    stringData.exp,   // The "name" field
-	    typeData.exp,     // The "type" field
+	    stringData.getExp(),   // The "name" field
+	    typeData.getExp(),     // The "type" field
 	    new NAME          // The "clazz" field
 	    (tf,null,nm.label(HCfield))
 	};
@@ -446,9 +446,9 @@ public abstract class ObjectBuilder {
     
     /**
      * Returns an <code>ESEQ</code> object, <code>e</code>, such that
-     * <code>e.stm</code> contains the tree instructions necessary to 
+     * <code>e.getStm()</code> contains the tree instructions necessary to 
      * lay out a new <code>java.lang.reflect.Method</code> object in 
-     * read-only memory, and <code>e.exp</code> contains a pointer to this 
+     * read-only memory, and <code>e.getExp()</code> contains a pointer to this 
      * object.  The returned <code>ESEQ</code> will contain instructions to lay
      * out the object in memory only the first time this method is called.  
      * Subsequent calls return only a pointer to this memory. 
@@ -487,37 +487,37 @@ public abstract class ObjectBuilder {
 
 	// Compute tree representation of method name
 	ESEQ stringData = buildString(tf,frame, method.getName());
-	if (!Stm.isNop(stringData.stm)) stms.add(stringData.stm);
+	if (!Stm.isNop(stringData.getStm())) stms.add(stringData.getStm());
 	
 	// Compute tree representation of return type
 	ESEQ rtData     = buildClass(tf,frame, method.getReturnType());
-	if (!Stm.isNop(rtData.stm)) stms.add(rtData.stm);
+	if (!Stm.isNop(rtData.getStm())) stms.add(rtData.getStm());
 
 	// Compute tree representation of parameter types 
 	parameterTypes  = method.getParameterTypes();
 	tParameterTypes = new Exp[parameterTypes.length];
 	for (int j=0; j<parameterTypes.length; j++) { 
 	    ESEQ paramTypeData = buildClass(tf,frame, parameterTypes[j]);
-	    if (!Stm.isNop(paramTypeData.stm)) stms.add(paramTypeData.stm);
-	    tParameterTypes[j] = paramTypeData.exp;
+	    if (!Stm.isNop(paramTypeData.getStm())) stms.add(paramTypeData.getStm());
+	    tParameterTypes[j] = paramTypeData.getExp();
 	}
 	ESEQ ptData = buildArray(tf,frame, HCclassA, 
 				 parameterTypes.hashCode(),
 				 tParameterTypes);
-	if (!Stm.isNop(ptData.stm)) stms.add(ptData.stm);
+	if (!Stm.isNop(ptData.getStm())) stms.add(ptData.getStm());
 
 	// Compute tree representation of exception types
 	exceptionTypes  = method.getExceptionTypes();
 	tExceptionTypes = new Exp[exceptionTypes.length];
 	for (int j=0; j<exceptionTypes.length; j++) { 
 	    ESEQ excTypeData = buildClass(tf,frame, exceptionTypes[j]);
-	    if (!Stm.isNop(excTypeData.stm)) stms.add(excTypeData.stm);
-	    tExceptionTypes[j] = excTypeData.exp;
+	    if (!Stm.isNop(excTypeData.getStm())) stms.add(excTypeData.getStm());
+	    tExceptionTypes[j] = excTypeData.getExp();
 	}
 	ESEQ etData = buildArray(tf,frame, HCclassA,
 				 exceptionTypes.hashCode(),
 				 tExceptionTypes);
-	if (!Stm.isNop(etData.stm)) stms.add(etData.stm);
+	if (!Stm.isNop(etData.getStm())) stms.add(etData.getStm());
 
 	// Finally, combine this data into one object.
 	HField[] HCMfields = new HField[] { 
@@ -530,10 +530,10 @@ public abstract class ObjectBuilder {
 	    //HCmethod.getField("slot")
 	};
 	Exp[] HCMfieldValues = new Exp[] { 
-	    stringData.exp,   // the "name" field
-	    rtData.exp,       // the "returnType" field
-	    ptData.exp,       // the "parameterTypes" field
-	    etData.exp,       // the "exceptionTypes" field
+	    stringData.getExp(),   // the "name" field
+	    rtData.getExp(),       // the "returnType" field
+	    ptData.getExp(),       // the "parameterTypes" field
+	    etData.getExp(),       // the "exceptionTypes" field
 	    new NAME	      // the "clazz" field
 	    (tf,null,nm.label(method.getDeclaringClass()))
 	};
@@ -561,9 +561,9 @@ public abstract class ObjectBuilder {
 
     /**
      * Returns an <code>ESEQ</code> object, <code>e</code>, such that
-     * <code>e.stm</code> contains the tree instructions necessary to 
+     * <code>e.getStm()</code> contains the tree instructions necessary to 
      * lay out a new <code>java.lang.String</code> object in read-only memory, 
-     * and <code>e.exp</code> contains a pointer to this object.  The returned
+     * and <code>e.getExp()</code> contains a pointer to this object.  The returned
      * <code>ESEQ</code> will contain instructions to lay out the object in
      * memory only the first time this method is called.  Subsequent calls
      * return only a pointer to this memory. 
@@ -603,7 +603,7 @@ public abstract class ObjectBuilder {
 
 	ESEQ charArrayData = buildArray(tf, frame, HCcharA, 
 					strCA.hashCode(),tStrCA);
-	if (!Stm.isNop(charArrayData.stm)) stms.add(charArrayData.stm);
+	if (!Stm.isNop(charArrayData.getStm())) stms.add(charArrayData.getStm());
 
 	// Assign the Class object a hashcode
 	addS(offm.hashCodeOffset(HCstring)/ws, 
@@ -616,7 +616,7 @@ public abstract class ObjectBuilder {
 	addS(offm.offset(HCstring.getField("offset"))/ws,
 	    _D(new CONST(tf,null,0)),u,d);
 	addS(offm.offset(HCstring.getField("value"))/ws,
-	    _D(charArrayData.exp),u,d);
+	    _D(charArrayData.getExp()),u,d);
 
 	Collections.reverse(u);
 	stms.addAll(u);
