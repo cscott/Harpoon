@@ -62,6 +62,10 @@ THussi.tex: Data/ussi.data
 THv0.tex: Data/v0.data
 ptrsize.tex: ptrsize.data
 
+# default .jpg-to-eps rule
+%.eps: %.jpg
+	jpegtopnm $< | pnmtops -dpi 72 -equalpixels -noturn -nocenter > $@
+
 # fix bounding boxes of kontour eps files (hence the a4 papersize)
 %-bbox.eps : %.eps
 	( head -1 $< ; \
