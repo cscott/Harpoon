@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.19 1999-06-10 21:44:33 cananian Exp $
+% $Id: thesis.tex,v 1.20 1999-06-10 22:32:18 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.19 $ $}
+\date{\today \\ $ $Revision: 1.20 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.19 $ $}{$ $Revision: 1.19 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.20 $ $}{$ $Revision: 1.20 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -561,8 +561,8 @@ set of valid transitions is generated from the program text.
 
 The semantics operate over a lifted value domain
 $\domain{V}=\domain{Int}_\bot$. When some variable
-$t = \bot_\domain{V}$ we say it is
-\emph{undefined}; conversely $t\succ\bot_\domain{V}$ indicates that the
+$t = \bot_\domainsm{V}$ we say it is
+\emph{undefined}; conversely $t\succ\bot_\domainsm{V}$ indicates that the
 variable is \emph{defined}.  ``Store'' metavariables $S_x$ are not
 explicitly handled by the semantics, but the extension is trivial with
 an appropriate redefinition of the value domain $\domain{V}$.  Floating-point
@@ -645,10 +645,10 @@ finite function---its domain $\domain{N} \subseteq \domain{Nam}$ is
 finite.  The notation $\rho[t\mapsto c]$ represents an environment
 identical to $\rho$ except for name $t$ which is mapped to $c$.
 \item The null environment $\rho_\emptyset$ maps every $t\in\domain{N}$ to
-$\bot_\domain{V}$.
+$\bot_\domainsm{V}$.
 \item A \emph{configuration} consists of an environment.  The initial
 configuration is $\rho_\emptyset$, that is, all names in $\domain{N}$
-are mapped to $\bot_\domain{V}$. \textbf{FIXME: START CONDITION.}
+are mapped to $\bot_\domainsm{V}$. \textbf{FIXME: START CONDITION.}
 \end{enumerate}
 \end{definition}
 
@@ -733,8 +733,8 @@ transition rules, not by the definition of $E$.
 $\tuple{E, S}:\domain{Evt}^* \times (\domain{Xif}\to\domain{Evt}^*)$ consisting
 of an event set and an invariant store.  The initial
 configuration is
-$\tuple{\{\}_{\domain{Evt}},
-        []_{\domain{Xif} \to \domain{Evt}^*}}$
+$\tuple{\{\}_{\domainsm{Evt}},
+        []_{\domainsm{Xif} \to \domainsm{Evt}^*}}$
 that is, it consists of an empty event set and
 an empty mapping for the invariant store.%
 \footnote{FIXME: start condition.}
