@@ -23,7 +23,7 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
   LineList lineL = new LineList(-line_pos, null); // sentinel for line #0
   
   public Lexer(Reader reader) {
-    this(reader, 4); // by default, use a Java 1.4-compatible lexer.
+    this(reader, 5); // by default, use a Java 1.5-compatible lexer.
   }
   public Lexer(Reader reader, int java_minor_version) {
     this.reader = new LineNumberReader(new EscapedUnicodeReader(reader));
