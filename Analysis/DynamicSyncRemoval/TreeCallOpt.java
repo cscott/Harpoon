@@ -28,9 +28,12 @@ import java.util.List;
  * <code>TreeCallOpt</code> performs some low-level transformations to
  * tree form to make the calls inserted by <code>SyncRemover</code>
  * more efficient.
+ * <p>
+ * This optimization may not be safe if you are using precise garbage
+ * collection.
  *
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeCallOpt.java,v 1.1 2003-07-09 22:28:55 cananian Exp $
+ * @version $Id: TreeCallOpt.java,v 1.2 2003-07-10 02:27:51 cananian Exp $
  */
 class TreeCallOpt extends harpoon.Analysis.Tree.Simplification {
     private final List<Rule> RULES = new ArrayList<Rule>(); 
@@ -39,7 +42,7 @@ class TreeCallOpt extends harpoon.Analysis.Tree.Simplification {
 	final NameMap nm = f.getRuntime().getNameMap();
 
 	HMethod checkMethod =
-	    l.forName("harpoon.Runtime.Transactions.ImplHelper")
+	    l.forName("harpoon.Runtime.DynamicSyncImpl")
 	    .getMethod("isSync", new HClass[] {l.forName("java.lang.Object")});
 	final Label LisSync = nm.label(checkMethod);
 	final Label Lnative_isSync = new Label

@@ -64,7 +64,7 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.13 2003-07-04 03:44:47 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.14 2003-07-10 02:27:47 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     // Support losing platforms (like, say, AIX) where multiple segments
@@ -303,7 +303,9 @@ public class TreeToC extends java.io.PrintWriter {
 	/** functions we have exact prototypes for */
 	static Set exactproto = new HashSet();
 	static { exactproto.add("memset"); exactproto.add("alloca");
-	         exactproto.add("generational_write_barrier"); }
+	         exactproto.add("generational_write_barrier");
+		 exactproto.add("DYNSYNC_isSync");
+	}
 	
 	/** these are the *local* labels which are defined *inside functions*
 	 *  in this file. */
