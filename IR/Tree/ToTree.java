@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.7 2003-10-21 21:02:01 cananian Exp $
+ * @version $Id: ToTree.java,v 1.7.2.1 2003-12-01 16:26:35 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -378,11 +378,8 @@ static class TranslationVisitor extends LowQuadVisitor {
 		(m_tf, q,
 		 _TEMP(q, arrayClasses[i], arrayTemps[i]),
 		 initializer);
-	    if (i>0) // suppress the "d1[i]" part for outermost
-		s1 = new MOVE
-		    (m_tf, q,
-		     makeMEM // d1[i] = ...
-		     (q, arrayClasses[i],
+	    if (i>0) { // suppress the "d1[i]" part for outermost
+		Exp d1p =
 		      new BINOP
 		      (m_tf, q, Type.POINTER, Bop.ADD,
 		       m_rtb.arrayBase
@@ -395,10 +392,35 @@ static class TranslationVisitor extends LowQuadVisitor {
 			new Translation.Ex
 			(_TEMP(q, HClass.Int, indexTemps[i-1])))
 			.unEx(m_tf)
-			)),
+			);
+		if (Boolean.getBoolean("harpoon.runtime1.arraybloat")) {
+		    int ptrbits = Type.isDoubleWord(m_tf, Type.POINTER)?64:32;
+		    // offset additional one bit per element for trans. bloat.
+		    //  d1p += ((Tlen+ptrbits-1) & (~(ptrbits-1))) >> 3
+		    d1p = 
+			new BINOP
+			(m_tf, q, Type.POINTER, Bop.ADD,
+			 d1p,
+			 new BINOP
+			 (m_tf, q, Type.INT, Bop.USHR,
+			  new BINOP
+			  (m_tf, q, Type.INT, Bop.AND,
+			   new BINOP
+			   (m_tf, q, Type.INT, Bop.ADD,
+			    _TEMP(q, HClass.Int, dimTemps[i-1]),
+			    new CONST(m_tf, q, ptrbits-1)),
+			   new CONST(m_tf, q, ~(ptrbits-1))),
+			  new CONST(m_tf, q, 3)));
+		}
+		s1 = new MOVE
+		    (m_tf, q,
+		     makeMEM // d1[i] = ...
+		     (q, arrayClasses[i],
+		      d1p),
 		     new ESEQ // ... (d2 = initializer)
 		     (m_tf, q, s1,
 		      _TEMP(q, arrayClasses[i], arrayTemps[i])));
+	    }
 		      
 	    addStmt(s1);
 	    // for (i=0; i<ilen; i++) ...
