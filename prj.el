@@ -26,6 +26,28 @@
 (defun user-specific-project-dir ()
   "Returns the pathname to the root project directory."
   (harpoon-basepath-name "Harpoon/Code/"))
+;;;; template for generating visitor classes.
+(defun harpoon-list-of-quads ()
+  "Returns list of all quadruple type files defined in IR/QuadSSA."
+  (directory-files (concat (user-specific-project-dir) "IR/QuadSSA/") nil "^[A-Z]+.java"))
+(defun harpoon-list-of-visit-quads (file-names)
+  "Returns string which lists empty methods for visiting quad types in file-names."
+  (let ((r '(l))
+	(n (length file-names))
+	(i 0))
+    (while (< i n)
+      (setq r (append r (list 'n>) (list (concat "public void visit (" 
+						 (substring (nth i file-names) 0 -5) " q) { }"))))
+      (setq i (1+ i)))
+    r))
+(tempo-define-template 
+ "harpoon-visitor-class" 
+ '('& '> "class " (P "Visitor class name: " class) " extends QuadVisitor {" 
+     'n> (s class) "() { }"
+     (harpoon-list-of-visit-quads (harpoon-list-of-quads))
+     'n "}" '> 'n>)
+ nil 
+ "Insert a class which extends QuadVisitor class.")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; jde properties & settings.
 (jde-set-project-name "harpoon")
@@ -107,4 +129,4 @@
  '(jde-compile-option-verbose nil)
  '(jde-mode-abbreviations (quote (("ab" . "abstract") ("bo" . "boolean") ("br" . "break") ("by" . "byte") ("byv" . "byvalue") ("cas" . "cast") ("ca" . "catch") ("ch" . "char") ("cl" . "class") ("co" . "const") ("con" . "continue") ("de" . "default") ("dou" . "double") ("el" . "else") ("ex" . "extends") ("fa" . "false") ("fi" . "final") ("fin" . "finally") ("fl" . "float") ("fo" . "for") ("fu" . "future") ("ge" . "generic") ("go" . "goto") ("impl" . "implements") ("impo" . "import") ("ins" . "instanceof") ("in" . "int") ("inte" . "interface") ("lo" . "long") ("na" . "native") ("ne" . "new") ("nu" . "null") ("pa" . "package") ("pri" . "private") ("pro" . "protected") ("pu" . "public") ("re" . "return") ("sh" . "short") ("st" . "static") ("su" . "super") ("sw" . "switch") ("sy" . "synchronized") ("th" . "this") ("thr" . "throw") ("throw" . "throws") ("tra" . "transient") ("tr" . "true") ("vo" . "void") ("vol" . "volatile") ("wh" . "while"))))
  '(jde-make-args (concat "-C " (user-specific-project-dir) " java") t)
- '(jde-gen-code-templates (quote (("Get Set Pair" . jde-gen-get-set) ("toString method" . jde-gen-to-string-method) ("Action Listener" . jde-gen-action-listener) ("Window Listener" . jde-gen-window-listener) ("Mouse Listener" . jde-gen-mouse-listener) ("Mouse Motion Listener" . jde-gen-mouse-motion-listener) ("Inner Class" . jde-gen-inner-class)))))
+ '(jde-gen-code-templates (quote (("Get Set Pair" . jde-gen-get-set) ("toString method" . jde-gen-to-string-method) ("Action Listener" . jde-gen-action-listener) ("Window Listener" . jde-gen-window-listener) ("Mouse Listener" . jde-gen-mouse-listener) ("Mouse Motion Listener" . jde-gen-mouse-motion-listener) ("Inner Class" . jde-gen-inner-class)  ("Visitor Class" . tempo-template-harpoon-visitor-class)))))
