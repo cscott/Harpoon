@@ -9,7 +9,7 @@ import harpoon.Backend.Generic.Code;
 
 import java.io.*;
 /**
- * <code>TestLRA</code> tests Local Register Allocation.  (FSK: It
+ * <code>TestLRA</code> tests Local Register Allocation.  (FSK: LRA
  * already works; this class is to test the testing strategy itself). 
  *
  * Created: Mon Jul 24 19:57:55 2000
@@ -20,13 +20,13 @@ import java.io.*;
 
 public class TestLRA  {
     
-    public TestLRA() {
+    private TestLRA() {
 	
     }
     
     public static void main(String[] args) {
 	if (args.length != 1) {
-	    System.out.println("Usage: AbsAssem <input-file>");
+	    System.out.println("Usage: TestLRA <input-file>");
 	    System.exit(-1);
 	}
 	final String infile = args[0];

@@ -52,7 +52,7 @@ public class AbsAssem  {
 	tf = new AbsTempFactory();
 	declClass = new AbsHClass();
 	frm = new AbsFrame();
-	declClass.hm = new AbsMethod(declClass, "");	
+	declClass.hm = new AbsMethod(declClass, "main");	
     }
 
     public static void main(final String[] args) {
@@ -64,7 +64,7 @@ public class AbsAssem  {
 
 	try {
 	    Reader r = new FileReader(args[0]);
-	    Code c = makeCode(r, "methodName");
+	    Code c = new Code(makeCode(r, "methodName"));
 	    c.print();
 	} catch (IOException e) {
 	    e.printStackTrace();
@@ -76,27 +76,23 @@ public class AbsAssem  {
     public static Frame getFrame() { return frm; }
     public static HMethod getHMethod() { return declClass.hm; }
 
-    /** Total hack... an HCodeFactory that will only produce the Code
-	that this specified by <code>r</code>, regardless of which is
-	requested by the client.
-    */
-    public static HCodeFactory makeCodeFactory(final Reader r,
-					       final String name){ 
+    public static HCodeFactory makeCodeFactory(final Reader r, 
+					       final String name) {
+	final TCode tc = makeCode(r, name);
 	return new HCodeFactory() {
 	    public HCode convert(HMethod hm) {
-		System.out.println("AbsAssem: code request for "+hm);
-		return makeCode(r, name);
+		System.out.println("AbsAssem: code request for "+hm.getName());
+		return new Code(tc);
 	    }
 	    public String getCodeName() { return codename; }
 	    public void clear(HMethod hm) { }
 	};
     }
 
-    public static Code makeCode(Reader r, String name) {
+    public static TCode makeCode(Reader r, String name) {
 	BufferedReader br = new BufferedReader(r);
 	TCode tc = new TCode(declClass.hm, frm, br);
-	Code c = new Code(tc);
-	return c;
+	return tc;
     }
 
     private static Instr buildCode(BufferedReader br, InstrFactory inf) {
@@ -229,7 +225,6 @@ public class AbsAssem  {
     private static void addIdentifiers(boolean twoWord, StringTokenizer st) {
 	while(st.hasMoreTokens()) {
 	    String s = st.nextToken();
-	    Util.assert(!idToTemp.containsKey(s));
 	    Temp t;
 	    if (twoWord) {
 		t = new DoubleTemp(tf, s);
@@ -357,7 +352,7 @@ public class AbsAssem  {
 	}
     }
     
-    public static RegFileInfo rfi = new AbsRegFileInfo(6);
+    public static RegFileInfo rfi = new AbsRegFileInfo(4);
     public static class AbsRegFileInfo extends RegFileInfo {
 	private Temp[] regs;
 	private Set swAssigns;
@@ -385,11 +380,15 @@ public class AbsAssem  {
 	    return (t instanceof RegTemp);
 	}
 	public Set getRegAssignments(Temp t) {
-	    if (t instanceof DoubleTemp) {
-		return new HashSet(dwAssigns);
+	    if(!isRegister(t)) {
+		if (t instanceof DoubleTemp) {
+		    return new HashSet(dwAssigns);
+		} else {
+		    Util.assert(!(t instanceof RegTemp));
+		    return new HashSet(swAssigns);		
+		}
 	    } else {
-		Util.assert(!(t instanceof RegTemp));
-		return new HashSet(swAssigns);		
+		return Collections.singleton(Collections.nCopies(1, t));
 	    }
 	}
 	public Iterator suggestRegAssignment(Temp t, Map regfile) {
@@ -416,7 +415,9 @@ public class AbsAssem  {
 	public List genCode(harpoon.IR.Tree.Code code, 
 			    InstrFactory inf) {
 	    TCode tc = (TCode) code;
-	    Instr i = buildCode(tc.br, inf);
+	    Instr i = buildCode
+		(new BufferedReader(new StringReader(tc.contents)), 
+		 inf);
 
 	    Derivation d = new Derivation() {
 		public Derivation.DList derivation(HCodeElement hce,
@@ -438,10 +439,21 @@ public class AbsAssem  {
     }
 
     static class TCode extends harpoon.IR.Tree.Code {
-	BufferedReader br;
+	String contents;
 	TCode(HMethod parent, Frame f, BufferedReader br) {
 	    super(parent, null, f);
-	    this.br = br;
+	    StringWriter sw = new StringWriter();
+	    try {
+		for(String l=br.readLine(); l!=null; l=br.readLine()) {
+		    sw.write(l);
+		    sw.write('\n');
+		}
+	    } catch (IOException e) {
+		e.printStackTrace();
+		System.exit(-1);
+	    }
+	    contents = sw.toString();
+	    // System.out.println("TCode contents:\n"+contents);
 	}
 	public harpoon.IR.Tree.Code clone(HMethod m, Frame f) {
 	    return null;
