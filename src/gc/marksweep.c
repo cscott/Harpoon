@@ -172,9 +172,20 @@ void* marksweep_malloc(size_t size_in_bytes)
       // see if we have the necessary memory,
       // either with or without collection
       result = allocate_in_marksweep_heap(aligned_size_in_bytes, &heap);
+
+      // if we didn't collect already and we
+      // ran out of memory, run a collection
+      if (result == NULL && bytes_allocated != 0) {
+	  setup_for_threaded_GC();
+
+	  marksweep_collect();
+	  bytes_allocated = 0;
+	  
+	  cleanup_after_threaded_GC();
+      }
     }
 
-  // if not, just fail
+  // if no memory at this point, just fail
   assert(result != NULL);
 
   bytes_allocated += aligned_size_in_bytes;
