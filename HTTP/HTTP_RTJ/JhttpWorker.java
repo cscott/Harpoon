@@ -17,9 +17,6 @@ import sun.io.CharToByteConverter;
 //****************************************************************************
 
 public class JhttpWorker extends Thread{
-    public  String fileName = null;
-    public  String methodType = null;
-    public  String httpVersion = "http/1.0";
     private Socket client;
     public  int    fileLength, returnCode;
     private boolean logging;
@@ -29,7 +26,15 @@ public class JhttpWorker extends Thread{
 	this.logging=logging;
     }
     
+    private class Params {
+	String fileName = null;
+	String methodType = null;
+	String httpVersion = "http/1.0";
+    };
+    
     public void run() { 
+	Params params = new Params();
+
 	try {
 	    HTTPResponse resp = new HTTPResponse();
 	    
@@ -61,15 +66,15 @@ public class JhttpWorker extends Thread{
 
 	    if(resp.returnCode == 200) {
 		// call the appropriate hanndler
-		switch(method(in)) {
+		switch(method(in, params)) {
 		case 0:
-		    HTTPServices.GET_handler(fileName, out, resp);
+		    HTTPServices.GET_handler(params.fileName, out, resp);
 		    break;
 		case 1:
-		    HTTPServices.HEAD_handler(fileName, out, resp);
+		    HTTPServices.HEAD_handler(params.fileName, out, resp);
 		break;
 		case 2:
-		    HTTPServices.POST_handler(fileName, out, resp);
+		    HTTPServices.POST_handler(params.fileName, out, resp);
 		    break;
 		default:
 		    resp.returnCode = 501; //error
@@ -78,8 +83,9 @@ public class JhttpWorker extends Thread{
 		try {
 		    out.flush();
 		    if (logging)
-			LogFile.write_log(client, methodType, fileName,
-					  httpVersion,
+			LogFile.write_log(client,
+					  params.methodType, params.fileName,
+					  params.httpVersion,
 					  resp.returnCode, resp.sentBytes);
 		    
 		    out.close();
@@ -106,7 +112,7 @@ public class JhttpWorker extends Thread{
 // Returns:  Boolean value for success or failure
 //*****************************************************************************
 
-  private int method(BufferedReader in){
+  private int method(BufferedReader in, Params params){
       int ret = -1;
 
       try{
@@ -122,15 +128,15 @@ public class JhttpWorker extends Thread{
           
 		  if ( str.equals("GET") ){
 		      ret = 0;
-		      methodType = "GET";
+		      params.methodType = "GET";
 		  }
 		  else if ( str.equals("HEAD") ){
 		      ret = 1;
-		      methodType = "HEAD";
+		      params.methodType = "HEAD";
 		  }
 		  else if ( str.equals("POST") ){
 		      ret = 2;
-		      methodType = "POST";
+		      params.methodType = "POST";
 		  }
 		  else{
 		      // System.out.println("501 - unsupported request");
@@ -145,10 +151,10 @@ public class JhttpWorker extends Thread{
 	  // get the filename
 	  if (tok.hasMoreTokens())
 	      {
-		  fileName = tok.nextToken();
-		  if(fileName.equals("/"))
+		  params.fileName = tok.nextToken();
+		  if(params.fileName.equals("/"))
 		      {
-			  fileName = "/index.html";
+			  params.fileName = "/index.html";
 		      }
 	      }
 	  else
@@ -156,18 +162,18 @@ public class JhttpWorker extends Thread{
 		  // this is weird... why am i taking the first character of
 		  // the filename if there are no more tokens?
 		  // - catch should take care of this
-		  fileName = fileName.substring(1);
+		  params.fileName = params.fileName.substring(1);
 	      }  
 	  
 	  // read the http version number
 	  // - right now nothing is done with this information
 	  if (tok.hasMoreTokens())
 	      {
-		  httpVersion = tok.nextToken();
+		  params.httpVersion = tok.nextToken();
 	      }
 	  else
 	      {
-		  httpVersion = "http/1.0";              // default
+		  params.httpVersion = "http/1.0";              // default
 	      }
 	  
 	  // read remainder of the browser's header
