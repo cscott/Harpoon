@@ -39,7 +39,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Simplification.java,v 1.1.2.5 2000-02-17 01:27:11 cananian Exp $
+ * @version $Id: Simplification.java,v 1.1.2.6 2000-02-23 17:34:45 cananian Exp $
  */
 public abstract class Simplification { 
     private static final boolean debug = false;
@@ -275,10 +275,11 @@ public abstract class Simplification {
 	    case TreeKind.CONST:      
 		CONST c = (CONST)t; 
 		return _CONST |
-		    (c.value            == null ? _CONSTNULL : 
-		     c.value.intValue() == 0    ? _CONST0 : 
-		     c.value.intValue() == 1    ? _CONST1 :
-		     c.value.intValue() ==-1    ? _CONSTm1:
+		    (c.isFloatingPoint() ? 0 :
+		     c.value            == null ? _CONSTNULL : 
+		     c.value.longValue() == 0    ? _CONST0 : 
+		     c.value.longValue() == 1    ? _CONST1 :
+		     c.value.longValue() ==-1    ? _CONSTm1:
 		     0);
 	    case TreeKind.DATUM:      return _DATUM;
 	    case TreeKind.ESEQ:       return _ESEQ;
