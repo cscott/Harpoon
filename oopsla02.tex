@@ -1,0 +1,303 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: oopsla02.tex,v 1.1 2002-03-22 00:46:44 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[preprint]{acmconf}
+% don't forget to turn off 'preprint' before submission!
+%\usepackage[section,plain]{algorithm}
+%\usepackage{amsthm} % proof environment
+%\usepackage{amstext} % the \text command for math mode (replaces \mbox)
+\usepackage{varioref} % \vref command
+\usepackage{graphicx} % for eps figures
+\usepackage{color}
+\usepackage{comdef}
+\newcommand{\figscale}{1.0}
+
+%setup varioref package
+\renewcommand{\reftextbefore}{on the preceding page}\vrefwarning
+
+\newcommand{\mycomment}[1]{}
+
+\title{\bf Data Size Optimizations for Java Programs}
+
+\author{C.~Scott~Ananian and Martin~Rinard\\
+        Laboratory for Computer Science\\
+        Massachusetts Institute of Technology\\ 
+        Cambridge, MA 02139 \\ 
+        {\tt \{cananian, rinard\}@lcs.mit.edu} }
+
+\begin{document}
+% in preprint mode, tag pages with a revision identifier.
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.1 $ $}{$ $Revision: 1.1 $ $}
+\bibliographystyle{plain}
+
+\maketitle
+
+% abstract
+\begin{abstract}
+
+This paper presents a set of Java optimizations targetted at
+memory-constrained embedded devices.  Using the FLEX compiler system,
+we aggressively transform
+programs using both source-level transformations and
+specializations of the runtime environment to save as much
+as 54\% of the storage requested by the allocator.
+
+Our techniques fall into three broad categories: header optimizations,
+bitwidth analyses, and mostly-zero field elimination.  Header
+optimizations reduce the size penalties associated with 
+Java's virtual dispatch, hashcode, and locking features.  Bitwidth
+analyses allow compile-time reduction of field sizes when the
+full range of a datatype is unused.  Mostly-zero field elimination
+attempts to factor out fields which are ``usually zero'' (as
+determined by profiling) to obtain savings.  Combined, these
+techniques allow the compiler to shoulder the burden of space accounting
+and allow the use of general-purpose software on extremely
+memory-constrained embedded devices.
+
+\end{abstract}
+
+\section{Introduction}
+
+\section{Example}
+Figure \ref{fig:jess-classes} presents an example that illustrates the
+kinds of application code where our transformations can optimize space
+utilization.  The code presented is taken from the SPECjvm98 {\tt
+  \_202\_jess} benchmark, which is a rule-based expert system shell
+written at Sandia National Laboratories.  The class presented is {\tt
+  jess.Value}, which implements a tagged-union type, and {\tt
+  jess.RU}, which defines the tag constants used.  Some slight
+modifications have been made for clarity and ease of exposition.
+
+\begin{figure}
+\begin{samplecode}
+public final class Value \{\\
+\>private final int NUM\_TYPES = RU.INTEGER | RU.FLOAT;\\
+\>private int FACT\_TYPES = RU.FACT\_ID | NUM\_TYPES;\\
+\>\ldots\\
+\\
+\>private int            \_type;\\
+\>private int            intval;\\
+\>private double       floatval;\\
+\>private Object      Objectval;\\
+\\
+\>public Value(Object o, int type) throws ReteException \{\\
+\>\>if (type != RU.EXTERNAL\_ADDRESS)\\
+\>\>\>throw new ReteException();\\
+\>\>\_type = type;\\
+\>\>Objectval = o;\\
+\>\}\\
+\\
+\>public int FactIDValue() throws ReteException \{\\
+\>\>if ((\_type {\&} FACT\_TYPES) != 0)\\
+\>\>\>return intval;\\
+\>\>throw new ReteException();\\
+\>\}\\
+\>\ldots\\
+\}\\
+\\
+public class RU \{\\
+\>final public static int NONE             =     0;\\
+\>final public static int ATOM             =     1;\\
+\>final public static int STRING           =     2;\\
+\>final public static int INTEGER          =     4;\\
+\>\ldots\\
+\>final public static int MULTISLOT        = 32768;\\
+\}\\
+\end{samplecode}
+\caption{Portions of the {\tt jess.Value} and {\tt jess.RU} classes.}
+\label{fig:jess-classes}
+\end{figure}
+
+\subsection{Small integer types in the Example}
+\newcommand{\tyf}{\texttt{\_type}\xspace}
+
+Programmers often use the {\tt int} type in Java when a smaller type
+would suffice.  This may be done to provide for future extension, or
+to improve the clarity or maintainability of the code.  At
+compile-time, none of these need constrain us.  The \tyf field of 
+{\tt jess.Value} is typical of the bitfields and enumerations which are
+the most common examples of this.  As examination of the enumeration
+in {\tt jess.RU} would reveal, the maximum value ever stored in the
+\tyf field is {\tt RU.MULTISLOT}, or 32768.\footnote{The power-of-two
+  constant values in {\tt jess.RU} are used only to implement
+  efficient inclusion tests; the \tyf field is never given a compound
+  tag.}  The minimum value stored in \tyf is {\tt RU.NONE}, or 0.  A
+16-bit unsigned type ({\tt char} in Java) would suffice to hold this
+value, saving two bytes per instance of this class.
+
+\subsection{Unused and constant fields in the Example}
+The {\tt NUM\_TYPES} and {\tt FACT\_TYPES} fields were not marked
+{\tt static} by the programmer, causing them to occupy 8 bytes in every
+instance of {\tt jess.Value}.  Furthermore, the {\tt NUM\_TYPES} field
+is never actually read by the program!  The original Java-to-bytecode
+compiler performed constant propagation on {\tt NUM\_TYPES} because it
+was marked final, so that the computation of {\tt FACT\_TYPES} does
+not actually read the {\tt NUM\_TYPES} field.  Thus, both fields are
+{\it constant}, and {\tt NUM\_TYPES} is, in addition, {\it unused}.
+Table \ref{tab:const-unused} shows that such fields are surprisingly
+common in Java code, although often unused fields are found in
+infrequently-instantiated classes.
+
+\begin{table}
+\begin{tabular}{lcccr@{.}l}
+&\bf total&&&\multicolumn{2}{c}{\bf\% alloc'ed}\\
+\bf Benchmark &\bf fields &\bf unread &\bf constant &
+\multicolumn{2}{c}{\bf space saved} \\\hline
+200\_check      & 279 &   79   &   35   &  2&6\% \\
+201\_compress   & 298 &   75   &   31   &  2&5\% \\
+202\_jess       & 485 &   91   &   43   &  9&9\% \\
+205\_raytrace   & 341 &   75   &   30   &  0&0\% \\
+209\_db         & 286 &   75   &   35   &  0&0\% \\
+213\_javac      & 531 &   85   &   34   &  0&6\% \\
+222\_mpegaudio  & 286 &   75   &   35   &  1&4\% \\
+227\_mtrt       & 341 &   75   &   30   &  0&0\% \\
+228\_jack       & 378 &   77   &   31   & 10&2\% \\
+\end{tabular}
+\caption{Number of unused and constant fields in SPEC benchmarks,
+  and the savings realized (in \% of total dynamic allocated bytes) by
+  removing them.}
+\label{tab:const-unused}
+\end{table}
+
+In this case, the {\tt Value} object accounts for 23\% of the total
+allocations made by the {\tt jess} benchmark, and so eliminating these
+field has a major impact.
+
+\subsection{Mostly-zero fields in the Example}
+% add 'suffix' function to String to motivate externalization.
+\subsection{An Optimization Example}
+% talk about MZF implementation details here.
+
+%%%% static specialization example.
+
+\begin{figure}
+\begin{samplecode}
+public final class String \{\\
+\>private final char value[];\\
+\>private final int offset;\\
+\>private final int count;\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[offset+i];\\
+\>\}\\
+\>public String substring(int start) \{\\
+\>\>int noff = offset + start;\\
+\>\>int ncnt = count - start;\\
+\>\>return new String(value, noff, ncnt);\\
+\>\}\\
+\}\\
+\end{samplecode}
+\caption{Portions of the {\tt java.lang.String} class.}
+\label{fig:string-fields}
+\end{figure}
+
+\begin{figure}
+\begin{samplecode}
+public final class SmallString \{\\
+\>private final char value[];\\
+\>private final int count;\\
+\>int getOffset() \{ return 0; \}\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[getOffset()+i];\\
+\>\}\\
+\}\\
+public final class String\\
+\>\>extends SmallString \{\\
+\>private final int offset;\\
+\>int getOffset() \{ return offset; \}\\
+\}\\
+\end{samplecode}
+\caption{Static specialization of {\tt java.lang.String}.}
+\label{fig:big-small}
+\end{figure}
+
+\begin{figure}
+\begin{samplecode}
+public SmallString substring(int start) \{\\
+\>int noff = offset + start;\\
+\>int ncnt = count - start;\\
+\>if (noff==0)\\
+\>\>return new SmallString(value, noff, ncnt);\\
+\>else\\
+\>\>return new String(value, noff, ncnt);\\
+\}\\
+\end{samplecode}
+\caption{Dynamic selection among specialized classes in a method
+  from {\tt java.lang.String}.}
+\label{fig:dyn-select}
+\end{figure}
+
+\subsection{Required Analysis Information}
+
+
+\section{Analysis Algorithms}
+
+\section{Extensions} % ???
+% header optimizations.
+% pointer compression?
+
+\section{Experimental Results}
+\begin{figure}
+\includegraphics[scale=0.32,clip=true]{Figures/spaceopt.eps}
+\caption{Cumulative reduction in dynamic allocation achieved with
+  our transformations.}
+\label{fig:total}
+\end{figure}
+%\begin{figure*}
+%\includegraphics[scale=0.65]{Figures/spaceopt-bit.eps}
+%\caption{results w/ bit alignment}
+%\end{figure*}
+\begin{figure}
+\includegraphics[scale=0.32,clip=true]{Figures/spec-space.eps}
+\caption{Total allocation in spec benchmarks}
+\label{fig:space}
+\end{figure}
+
+\section{Related work}
+
+%%%% XXXXXXXX FIX ME XXXXXXXXXXXX %%%%%%%%%%%%
+
+Bitwidth analysis of high-level languages is still a fairly new
+technique.  To date, the focus has been on
+reducing the width of variables to enable the use of limited-bitwidth
+operators (such as the MMX instruction set provides)
+or removing unnecessary bits from a datapath for
+hardware synthesis \cite{stephenson00,ananian:siliconc}.
+
+Similarly, the implementation focus for locking primitives has been to
+reduce their size \cite{bacon98} (although they are still present in
+every object) or eliminate the synchronization code
+\cite{salcianu01} (without removing the lock field from the object).
+In this work we attempt to completely remove the fields from the
+header, and since locks often share space with other
+header information (hashcodes, in the common case), our analysis and
+implementation is quite different.  I do not believe there has been
+any prior study of the utilization of the system hashcode features.
+
+Sweeny and Tip \cite{SweeneyTip98DeadDataMembers} did a study of dead
+members of C++ programs which parallels the unread field
+elimination done by our bitwidth analysis.  However, they
+fail to identify {\it constant} members, which our SCC-based algorithm
+does easily.  Further, our results show that unread and constant field
+elimination is very dependent on the coding style of a particular
+application.  The collection of techniques we have presented here
+gives much more consistent savings over a wide range of benchmarks.
+
+Aggarwal and Randall \cite{aggarwal01} described a array bounds check
+removal method using {\it related fields}.  This work attempted to
+discover fields, such as {\tt Vector.size}, which are guaranteed to be
+less than or equal to the length of some array, for example, the
+backing array stored in {\tt Vector.data}.  Tests against the related
+field could then provide information about bounds checks on accesses
+to the array.  A similar technique could be used in this work to
+extend the utility of bitwidth information discovered on related fields.
+
+
+\section{Conclusions}
+
+\bibliography{harpoon}
+
+%\appendix
+%\input{pldi02-appendix}
+\end{document}

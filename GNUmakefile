@@ -5,7 +5,8 @@ INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 export TEXINPUTS=/home/cananian/src/tex4ht//:
 
-ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99 pldi02
+ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99 pldi02 \
+	oopsla02
 
 all: $(ALLDOCS:=.ps)
 preview: thesis-xdvi
