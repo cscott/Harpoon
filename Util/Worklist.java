@@ -7,7 +7,7 @@ package harpoon.Util;
  * A <code>Worklist</code> is a unique set.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Worklist.java,v 1.2.2.3 1999-02-05 23:09:05 pnkfelix Exp $
+ * @version $Id: Worklist.java,v 1.2.2.4 1999-04-08 02:51:04 pnkfelix Exp $
  */
 public interface Worklist  {
    
@@ -20,12 +20,13 @@ public interface Worklist  {
      */
     public void push(Object item);
 
-    /** Removes an item from the Worklist and return it. 
+    /** Removes some item from the Worklist and return it. 
 	<BR> <B>modifies:</B> <code>this</code>
-	<BR> <B>effects:</B> If <code>item</code> is an element of
-	                     <code>this</code>, removes
-			     <code>item</code> from this.  Else does
-			     nothing.     
+	<BR> <B>effects:</B> If there exists an <code>Object</code>,
+	                     <code>item</code>, that is an element of
+			     <code>this</code>, removes
+			     <code>item</code> from this and returns
+			     <code>item</code>. Else does nothing.      
     */
     public Object pull();
 
