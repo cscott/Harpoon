@@ -64,7 +64,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.47 1999-09-14 00:50:54 pnkfelix Exp $
+ * @version $Id: ToTree.java,v 1.1.2.47.2.1 1999-09-19 06:46:28 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -146,18 +146,10 @@ public class ToTree implements Derivation, TypeMap {
 	    lqm.get(qa[i]).accept(dv);
 	}
 
-	// *MODIFY* the cloned (and labeled) quad graph to 
-	// a) Not explicitly check exceptional values.   
-	// b) Accept an LABEL to exception handling code as a parameter
-	TempRenameMap trm = new TempRenameMap();
-	dv = new CallConversionVisitor(dv, dv, trm);
-	for (Iterator i=quadGraph(lqm.get(root)); i.hasNext();)
-	    ((Quad)i.next()).accept(dv);
-	
 	// Construct a list of harpoon.IR.Tree.Stm objects
-	handlers = ((CallConversionVisitor)dv).getHandlers();
+	TempRenameMap trm = new TempRenameMap();
 	dv = new TranslationVisitor(tf, dv, dv, trm, ctm);
-	for (Iterator i=quadGraph(lqm.get(root),handlers,true);i.hasNext();)
+	for (Iterator i=quadGraph(lqm.get(root),true);i.hasNext();)
 	    ((Quad)i.next()).accept(dv);
 
 	// Assign member variables
@@ -167,38 +159,26 @@ public class ToTree implements Derivation, TypeMap {
     }
     
     private Iterator quadGraph(final Quad head) {
-	return quadGraph(head, new HashSet(), false);
+	return quadGraph(head, false);
     }
 
     // Enumerates the Quad graph in depth-first order.  
-    // The handlers parameter refers to exception handling code not reachable
-    // from head through any set of edges, but referred to through the 
-    // "retex" parameter of a function.  
     // If explicitJumps is true, adds a "JMP" quad (defined in this file)
     // when quads connected by an edge are not 
     //       a) iterated contiguously            
     // AND   b) not connected by a SIGMA node
     // 
     private Iterator quadGraph(final Quad    head,
-			       final Set     handlers, 
 			       final boolean explicitJumps) { 
 	return new Iterator() {
 	    private QuadFactory qf      = head.getFactory();
-	    private Iterator    H       = handlers.iterator();
 	    private Set         visited = new HashSet();
 	    private Stack       s       = new Stack();
 	    { s.push(head); }
 	    public void remove() { throw new UnsupportedOperationException(); }
-	    public boolean hasNext() { return !s.isEmpty() || H.hasNext(); }
+	    public boolean hasNext() { return !s.isEmpty(); }
 	    public Object next() { 
-		if (s.isEmpty()) {
-		    if (!H.hasNext()) { throw new NoSuchElementException(); }
-		    else { 
-			Object l = H.next();
-			Util.assert(!visited.contains(l));
-			s.push(l); visited.add(l);
-		    }
-		}
+		if (s.isEmpty()) throw new NoSuchElementException();
 		Quad q = (Quad)s.pop();
 		Quad[] next = q.next();
 		for (int i=0; i<next.length; i++) {
@@ -230,11 +210,13 @@ public class ToTree implements Derivation, TypeMap {
 	    }
 	};
     }
-}
+    // don't close class: all of the following are inner classes,
+    // even if they don't look that way.  I'm just don't feel like
+    // reindenting all of this existing code.
   
 // Translates the LowQuadNoSSA code into tree form. 
 //
-class TranslationVisitor extends LowQuadWithDerivationVisitor {
+static class TranslationVisitor extends LowQuadWithDerivationVisitor {
     // Keep track of which strings we have allocated 
     private static Set        m_strings = new HashSet();
 
@@ -273,7 +255,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	      (m_tf, q, Type.POINTER, Bop.ADD,
 	       _TEMP(q.objectref(), q),
 	       new CONST
-	       (m_tf, q, m_offm.lengthOffset(typeMap(q,q.objectref()))))));
+	       (m_tf, q, m_offm.lengthOffset(this.typeMap(q,q.objectref()))))));
 
 	addStmt(s0);
     }
@@ -431,7 +413,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	      objTemp, 
 	      new CONST
 	      (m_tf, q, 
-	       m_offm.elementsOffset(typeMap(q,q.objectref())))));
+	       m_offm.elementsOffset(this.typeMap(q,q.objectref())))));
 
 	addDT(nextPtr.temp, nextPtr, dl, null);
 	updateDT(q.objectref(), q, objTemp.temp, objTemp);
@@ -474,7 +456,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    (m_tf, q, 
 	     dst, 
 	     isInstanceOf(q, q.objectref(), 
-			  typeMap(q,q.arrayref()).getComponentType()));
+			  this.typeMap(q,q.arrayref()).getComponentType()));
 
 	updateDT(q.dst(), q, dst.temp, dst);
 	addStmt(s0);
@@ -656,10 +638,6 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 
 
     public void visit(PCALL q) { 
-	throw new Error("Should not have unlabeled PCALLs in the quad graph");
-    }
-
-    public void visit(PCALL_WITH_LABEL q) {
 	ExpList params; Temp[] qParams; TEMP retval, retex, func; 
 	Stm s0;
 
@@ -668,7 +646,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	// If q.retval() is null, create a dummy TEMP for the retval
 	//
 	if (q.retval()==null) {
-	    retval = extra(q, TYPE(q, q.retval()));
+	    retval = extra(q, Type.POINTER);//hmmm...
 	    addDT(retval.temp, retval, null, HClass.Void);
 	}
 	else {
@@ -688,10 +666,13 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    updateDT(qParams[i], q, ((TEMP)params.head).temp, params.head);
 	}
 	    
+	// both out edges should be LABELs, right?
+	harpoon.IR.Quads.LABEL Lex = ((harpoon.IR.Quads.LABEL)q.next(1));
+
 	s0 = new CALL
 	    (m_tf, q, 
 	     retval, 
-	     new NAME(m_tf, q, _LABEL(q.labelex).label),
+	     new NAME(m_tf, q, _LABEL(Lex).label),
 	     func, params);
 
 	updateDT(q.retex(), q, retex.temp, retex);
@@ -745,7 +726,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
     }
 
     public void visit(PMETHOD q) {
-	HClass type = typeMap(q,q.objectref());
+	HClass type = this.typeMap(q,q.objectref());
 	TEMP   dst  = _TEMP(q.dst(), q), objectref = _TEMP(q.objectref(), q);
 
 	// FIXME: type of object should not be void!
@@ -952,17 +933,17 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 
     private TEMP _TEMP(Temp t, HCodeElement source, int type) { 
 	Util.assert(!hastype(source, t) || 
-		    isValidMapping(typeMap(source,t), type));
+		    isValidMapping(this.typeMap(source,t), type));
 	Temp nTmp = m_ctm.tempMap(m_trm.tempMap(t));
 	return new TEMP(m_tf, source, type, nTmp);
     }
 
     private int TYPE(HCodeElement src, Temp t) { 
-	return hastype(src, t)?maptype(typeMap(src,t)):Type.POINTER; 
+	return hastype(src, t)?maptype(this.typeMap(src,t)):Type.POINTER; 
     }
 
     private boolean hastype(HCodeElement hce, Temp t) { 
-	return derivation(hce, t)==null; 
+	return this.derivation(hce, t)==null; 
     }
   
     private boolean isValidMapping(HClass hc, int type) {
@@ -1189,7 +1170,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	updateDT(RESULT1.temp, RESULT1, RESULT3.temp, RESULT3);
 
 	if (type.isPrimitive()) {
-	    return new CONST(m_tf,q,type==typeMap(q,src)?1:0);
+	    return new CONST(m_tf,q,type==this.typeMap(q,src)?1:0);
 	}
 	else {
 	    Util.assert(TYPE(q,src)==Type.POINTER);
@@ -1231,7 +1212,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 			     (m_tf, q, Type.POINTER, Bop.ADD,
 			      new CONST
 			      (m_tf, q, 
-			       m_offm.clazzPtrOffset(typeMap(q,src))),
+			       m_offm.clazzPtrOffset(this.typeMap(q,src))),
 			      SRC2)), 
 			    type) : 
 			   classExtends
@@ -1241,7 +1222,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 			     (m_tf, q, Type.POINTER, Bop.ADD,
 			      new CONST
 			      (m_tf, q, 
-			       m_offm.clazzPtrOffset(typeMap(q,src))),
+			       m_offm.clazzPtrOffset(this.typeMap(q,src))),
 			      SRC2)),
 			    type)), 
 		      end})),
@@ -1396,7 +1377,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 // Abstract visitor class which preserves derivation and type information.
 // This is used by all of the auxiliary translation visitors. 
 //
-abstract class LowQuadWithDerivationVisitor 
+static abstract class LowQuadWithDerivationVisitor // inner class
     extends ExtendedLowQuadVisitor implements Derivation, TypeMap {
     private Map         dT, tT;
     private Derivation  derivation;
@@ -1441,9 +1422,9 @@ abstract class LowQuadWithDerivationVisitor
 				     tmps[j]));;
 		}
 		else {
-		    if (typeMap(qOld, tmps[j]) != null) {
+		    if (this.typeMap(qOld, tmps[j]) != null) {
 			tT.put(new Tuple(new Object[] { qNew, tmps[j] }), 
-			       typeMap(qOld, tmps[j]));
+			       this.typeMap(qOld, tmps[j]));
 		    }
 		}
 	    }
@@ -1460,8 +1441,8 @@ abstract class LowQuadWithDerivationVisitor
 			     
 	}
 	else {
-	    if (typeMap(hOld, tOld) != null) {
-		tT.put(new Tuple(new Object[]{hNew,tNew}),typeMap(hOld, tOld));
+	    if (this.typeMap(hOld, tOld) != null) {
+		tT.put(new Tuple(new Object[]{hNew,tNew}),this.typeMap(hOld, tOld));
 	    }
 	}
     }
@@ -1485,7 +1466,7 @@ abstract class LowQuadWithDerivationVisitor
 
 // Clones the quad graph, while preserving type/derivation information
 // for the new quads
-class CloningVisitor extends LowQuadWithDerivationVisitor {
+static class CloningVisitor extends LowQuadWithDerivationVisitor { //inner
     private LowQuadMap m_lqm;
     public CloningVisitor(Derivation d, TypeMap t, LowQuadMap lqm) {
 	super(d, t);
@@ -1499,110 +1480,11 @@ class CloningVisitor extends LowQuadWithDerivationVisitor {
 }
 
 
-// Updates the CFG to remove explicit exception checks.  Additionally
-// converts PCALL quads into PCALL_WITH_LABEL quads.  The LABEL associated
-// with these quads is a pointer to the exception handling code of the
-// PCALL.  
-//
-// FIXME:  needs to deal with PCALLs that do not match this simple pattern
-//
-class CallConversionVisitor extends LowQuadWithDerivationVisitor { 
-    private Set                    handlers = new HashSet();
-    private PCALL                  pcall;
-    private harpoon.IR.Quads.CONST nconst;
-    private POPER                  acmpeq;
-    private harpoon.IR.Quads.CJMP  cjump;
-    private TempRenameMap          trm;
- 
-    public CallConversionVisitor(Derivation d, TypeMap t, TempRenameMap trm) {
-	super(d, t);
-	this.trm = trm;
-    }
-
-    public void visit(harpoon.IR.Quads.Quad quad) { 
-	this.pcall=null; this.nconst=null; this.acmpeq=null; this.cjump=null; 
-    }
-
-    public void visit(harpoon.IR.Quads.CJMP cjump) { 
-	if ((acmpeq != null) && (this.acmpeq.dst() == cjump.test())) {
-	    if (this.nconst==null)
-		System.err.println("WARNING: possibly unsafe CALL pattern");
-	    this.cjump = cjump;
-	    replaceExceptionCheck();
-	}
-	this.pcall=null; this.nconst=null; this.acmpeq=null; this.cjump=null;
-    }
-
-    public void visit(harpoon.IR.Quads.CONST nconst) { 
-	if ((this.pcall != null) && (nconst.value() == null)) { 
-	    this.nconst = nconst; 
-	    this.acmpeq = null; this.cjump = null;
-	}
-	else {   
-	    this.pcall=null; this.nconst=null; 
-	    this.acmpeq=null; this.cjump=null; 
-	}
-    }
-
-    public void visit(PCALL pcall) { 
-	// If the pcall does not have a place for a return value, give it one
-	if (pcall.retval()==null) { 
-	    Temp  retval = new Temp(pcall.retex().tempFactory());
-	    PCALL rCall  = new PCALL((LowQuadFactory)pcall.getFactory(), pcall,
-				     pcall.ptr(), pcall.params(), retval, 
-				     pcall.retex());
-	    updateDT(pcall, rCall);
-	    addDT(retval,rCall,null,typeMap(pcall,pcall.retex()));
-	    Quad.replace(pcall, rCall);  pcall=rCall;
-	}
-	this.pcall = pcall;
-	this.nconst=null; this.acmpeq=null; this.cjump=null;
-	trm.map(this.pcall.retex(), this.pcall.retval());
-    }
-
-    public void visit(POPER poper) { 
-	// CSA: significantly weakened the pattern to combat
-	// constant propagation.  there must be a better way.
-	if ((this.pcall!=null)                          &&
-	    /*(this.nconst != null)                       && */
-	    (poper.opcode() == Qop.ACMPEQ)              &&
-	    (this.pcall.retex() == poper.operands()[0]) &&
-	    /*(this.nconst.dst() == poper.operands()[1])*/true) {
-	    this.acmpeq = poper;
-	    this.cjump  = null;
-	}
-	else { 	
-	    this.pcall=null; this.nconst=null;
-	    this.acmpeq=null; this.cjump = null; 
-	}
-    }
-
-    // Return a set of LABELs which precede each block of exception handling
-    // code. 
-    Set getHandlers() { return this.handlers; } 
-
-    // Convert   pcall --> nconst --> acmpeq --> cjump(-->true, -->false)
-    // to        pcall --> true
-    //             
-    private void replaceExceptionCheck() { 
-	PCALL newCall    = 
-	    new PCALL_WITH_LABEL((LowQuadFactory)pcall.getFactory(), pcall, 
-				 pcall.ptr(),pcall.params(), pcall.retval(), 
-				 pcall.retex(),
-				 (harpoon.IR.Quads.LABEL)cjump.next(0));
-	updateDT(pcall, newCall);
-	Quad.replace(pcall, newCall);
-	Quad.addEdge(newCall, 0, 
-		     cjump.next()[1], cjump.nextEdge(1).which_pred());
-	handlers.add(cjump.next(0));
-    }
-}
-    
 // Adds LABELs to the destination of every branch.  This actually modifies
 // the supplied Quad graph, so it is imperative that a previous 
 // transformation clones the graph prior to using this visitor.    
 //
-class LabelingVisitor extends LowQuadWithDerivationVisitor {  
+static class LabelingVisitor extends LowQuadWithDerivationVisitor {//inner
     private Map m_QToL;
     public LabelingVisitor(Derivation d, TypeMap t) { 
 	super(d, t);
@@ -1667,34 +1549,12 @@ class LabelingVisitor extends LowQuadWithDerivationVisitor {
 //                                                            //
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-// A simple extension of PCALL, provides an additional field, labelex,
-// which is the location of the PCALL's exception handler.
-//
-class PCALL_WITH_LABEL extends PCALL { 
-    harpoon.IR.Quads.LABEL labelex;
-    PCALL_WITH_LABEL(LowQuadFactory qf, HCodeElement source,
-		     Temp ptr, Temp[] params, Temp retval, Temp retex, 
-		     harpoon.IR.Quads.LABEL labelex) {
-	super(qf, source, ptr, params, retval, retex);
-	this.labelex = labelex;
-    }
-    public int kind() { return QuadKind.min(); }  
-    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
-	throw new Error("Should not use this method");
-    }
-    public void accept(QuadVisitor v) { accept((ExtendedLowQuadVisitor)v); } 
-    public void accept(ExtendedLowQuadVisitor v) { v.visit(this); }
-    public String toString() {
-	return "PCALL_WITH_LABEL: "+labelex.toString()+"\n"+super.toString();
-    }
-}
-
 // Although explicit jump instructions are not necessary in quad form, 
 // they are necessary in tree form.  The JMP quad instructions indicates 
 // that a corresponding IR.Tree.JUMP instruction must be added in the 
 // Tree form.
 //
-class JMP extends harpoon.IR.Quads.Quad { 
+static class JMP extends harpoon.IR.Quads.Quad { // inner class
     harpoon.IR.Quads.LABEL label;
     JMP(QuadFactory qf, HCodeElement source, harpoon.IR.Quads.LABEL label) { 
 	super(qf, source);
@@ -1713,10 +1573,9 @@ class JMP extends harpoon.IR.Quads.Quad {
 
 // An extension of LowQuadVisitor to handle the extra Quads
 //
-abstract class ExtendedLowQuadVisitor extends LowQuadVisitor { 
+static abstract class ExtendedLowQuadVisitor extends LowQuadVisitor { // inner class
     protected ExtendedLowQuadVisitor() { } 
-    public void visit(PCALL_WITH_LABEL q) { visit((PCALL)q); } 
-    public void visit(JMP q)              { visit((Quad)q); }
+    public void visit(JMP q)              { this.visit((Quad)q); }
 }
 
 
@@ -1726,14 +1585,14 @@ abstract class ExtendedLowQuadVisitor extends LowQuadVisitor {
 //                                                            //
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 
-class LowQuadMap {
+static class LowQuadMap { // inner class
     final private Map h = new HashMap();
     void put(Quad qOld, Quad qNew)  { h.put(qOld, qNew); }
     Quad get(Quad old)              { return (Quad)h.get(old); }
     boolean contains(Quad old)      { return h.containsKey(old); }
 }
 
-class TempRenameMap implements TempMap {
+static class TempRenameMap implements TempMap { // inner class
     Map h = new HashMap();
     public Temp tempMap(Temp t) {
 	while (h.containsKey(t)) { t = (Temp)h.get(t); }
@@ -1744,3 +1603,5 @@ class TempRenameMap implements TempMap {
 	h.put(Told, Tnew); 
     }
 }
+
+} // end of public class ToTree
