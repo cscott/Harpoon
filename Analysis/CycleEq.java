@@ -28,10 +28,11 @@ import java.util.Set;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.8 1999-03-02 03:52:50 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.9 1999-03-02 06:44:08 cananian Exp $
  */
 
 public class CycleEq  {
+    List elements = new ArrayList();
     Map equiv = new HashMap();
     public CycleEq(HCode hc, boolean edgegraph) {
 	Graph g = (edgegraph) ?
@@ -40,15 +41,21 @@ public class CycleEq  {
 	compute_cyeq(g);
 	for (Iterator e = g.primes(); e.hasNext(); ) {
 	    Node n = (Node) e.next();
-	    Set s = (Set) equiv.get(n.cd_class);
-	    if (s==null) { s = new HashSet(); equiv.put(n.cd_class, s); }
-	    s.add(n.source());
+	    List l = (List) equiv.get(n.cd_class);
+	    if (l==null) { l = new ArrayList(); equiv.put(n.cd_class, l); }
+	    l.add(n.source());
+	    elements.add(n.source());
 	}
-	// make equiv unmodifiable.
+	// make equiv and elements unmodifiable.
 	equiv = Collections.unmodifiableMap(equiv);
+	elements = Collections.unmodifiableList(elements);
 	// throw away all temp info now.
     }
+    /** Return <code>Collection</code> of cycle-equivalency
+     *	<code>List</code>s. */
     public Collection cdClasses() { return equiv.values(); }
+    /** Return <code>List</code> of edges/nodes, in DFS order. */
+    public List elements() { return elements; }
 
     //
     private static void compute_cyeq(Graph g) {
@@ -166,7 +173,7 @@ public class CycleEq  {
 		}
 	    };
 	}
-	/** Enumerated the primed nodes in depth-first search order. */
+	/** Enumerate the primed nodes in depth-first search order. */
 	public Iterator primes() {
 	    FilterIterator.Filter f = new FilterIterator.Filter() {
 		public boolean isElement(Object o) {
