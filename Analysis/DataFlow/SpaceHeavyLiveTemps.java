@@ -5,7 +5,7 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.IR.Properties.UseDefer;
-import harpoon.IR.Properties.CFGraphable;
+import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.CFGEdge;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
@@ -37,9 +37,10 @@ import java.util.Iterator;
  * can be treated as if the scaling factor were equal to 1.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: SpaceHeavyLiveTemps.java,v 1.1.2.3 2000-10-20 03:33:30 witchel Exp $
+ * @version $Id: SpaceHeavyLiveTemps.java,v 1.1.2.4 2001-05-15 20:05:32 pnkfelix Exp $
  */
 public class SpaceHeavyLiveTemps extends LiveTemps {
+    CFGrapher grapher;
 
     public static LiveTemps make(HCode code, Set liveOnExit) {
 	BasicBlock.Factory bbf = new BasicBlock.Factory(code);
@@ -54,17 +55,30 @@ public class SpaceHeavyLiveTemps extends LiveTemps {
     
     /** Creates a <code>SpaceHeavyLiveTemps</code>. */
     public SpaceHeavyLiveTemps(BasicBlock.Factory bbf, Set liveOnExit) {
-        super(bbf, liveOnExit);
+        this(bbf, liveOnExit, UseDefer.DEFAULT);
     }
     
     public SpaceHeavyLiveTemps(BasicBlock.Factory bbf, Set liveOnExit,
 			       UseDefer ud) {
-        super(bbf, liveOnExit, ud);
+        this(bbf, liveOnExit, ud, CFGrapher.DEFAULT);
     }
+
+    public SpaceHeavyLiveTemps(BasicBlock.Factory bbf, Set liveOnExit,
+			       UseDefer ud, CFGrapher grapher) {
+	super(bbf, liveOnExit, ud);
+	this.grapher = grapher;
+    }
+
     
     public SpaceHeavyLiveTemps(BasicBlock.Factory bbf, Set liveOnExit,
 			       SetFactory tempSetFact, UseDefer ud) {
+	this(bbf, liveOnExit, tempSetFact, ud, CFGrapher.DEFAULT);
+    }
+
+    public SpaceHeavyLiveTemps(BasicBlock.Factory bbf, Set liveOnExit,
+			       SetFactory tempSetFact, UseDefer ud, CFGrapher grapher) {
 	super(bbf, liveOnExit, tempSetFact, ud);
+	this.grapher = grapher;
     }
 
     private HashMap hce2liveAfter = new HashMap();
@@ -77,8 +91,8 @@ public class SpaceHeavyLiveTemps extends LiveTemps {
 	BasicBlock bb = bbFact.getBlock(hce);
     if(bb == null) return java.util.Collections.EMPTY_SET;
 	List stms = bb.statements();
-	CFGraphable last = (CFGraphable) stms.get(stms.size() - 1);
-	CFGraphable cfg = (CFGraphable) hce;
+	HCodeElement last = (HCodeElement) stms.get(stms.size() - 1);
+	HCodeElement cfg = hce;
 	while (!hce2liveAfter.containsKey(cfg)) {
 	    if (cfg.equals(last)) {
 		Set liveAfter = 
@@ -86,7 +100,7 @@ public class SpaceHeavyLiveTemps extends LiveTemps {
 		hce2liveAfter.put(cfg, liveAfter);
 		break;
 	    } else {
-		Collection succC = cfg.succC();
+		Collection succC = grapher.succC(cfg);
 		Util.assert(succC.size() == 1, cfg);
 		cfg = ((CFGEdge) succC.iterator().next()).toCFG();
 	    }
@@ -94,7 +108,7 @@ public class SpaceHeavyLiveTemps extends LiveTemps {
 	    
 	Set liveAfter = (Set) hce2liveAfter.get(cfg);
 	while(!cfg.equals(hce)) {
-	    Collection predC = cfg.predC();
+	    Collection predC = grapher.predC(cfg);
 	    Util.assert(predC.size() == 1, cfg);
 	    liveAfter = mySetFactory.makeSet(liveAfter);
 	    liveAfter.removeAll(ud.defC(cfg));
