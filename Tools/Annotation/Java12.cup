@@ -509,7 +509,7 @@ terminal BOOLEAN; // primitive_type
 terminal BYTE, SHORT, INT, LONG, CHAR; // integral_type
 terminal FLOAT, DOUBLE; // floating_point_type
 terminal LBRACK, RBRACK; // array_type
-terminal String IDENTIFIER; // name
+terminal java.lang.String IDENTIFIER; // name
 terminal DOT; // qualified_name
 terminal SEMICOLON, MULT, COMMA, LBRACE, RBRACE, EQ, LPAREN, RPAREN, COLON;
 terminal PACKAGE; // package_declaration
@@ -659,7 +659,7 @@ non terminal assert_statement;
 non terminal HClass primary, primary_no_new_array;
 non terminal class_instance_creation_expression;
 non terminal List argument_list_opt, argument_list;
-non terminal array_creation_expression;
+non terminal HClass array_creation_init, array_creation_uninit;
 non terminal Integer dim_exprs, dim_expr, dims_opt, dims;
 non terminal HClass field_access, method_invocation, array_access;
 non terminal HClass postfix_expression;
@@ -676,6 +676,7 @@ non terminal assignment;
 non terminal assignment_operator;
 non terminal HClass expression;
 // JSR-14 2.1) Type Syntax 2.3) Handling Consecutive Type Brackets
+non terminal String class_or_interface_nn;
 non terminal String type_variable;
 non terminal type_arguments, type_arguments_opt;
 non terminal reference_type_list;
@@ -790,8 +791,18 @@ type_variable ::=
 		IDENTIFIER:id
 		{: RESULT=id; :}
 	;
+class_or_interface_nn ::=
+		name:n1 type_arguments DOT name:n2
+		{: RESULT=combineWithDot(n1, n2); :}
+	|	class_or_interface_nn:n1 type_arguments DOT name:n2
+		{: RESULT=combineWithDot(n1, n2); :}
+	;
 class_or_interface_type ::=
 		name:n type_arguments_opt
+		{: QualName qn=typeName(n);
+		   RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright, qn, n); :}
+	|	class_or_interface_nn:n type_arguments_opt
 		{: QualName qn=typeName(n);
 		   RESULT=(qn==null)?null:qn.toClass();
 		   annotateURL(nleft,nright, qn, n); :}
@@ -808,7 +819,19 @@ array_type ::=	primitive_type:ty dims:d
 		   if (RESULT!=null)
 		     RESULT=HClassUtil.arrayClass(parser.linker,RESULT,d.intValue());
 		   annotateURL(nleft,nright, qn, n); :}
+	|	class_or_interface_nn:n dims:d
+		{: QualName qn=typeName(n);
+		   RESULT = (qn==null)?null:qn.toClass();
+		   if (RESULT!=null)
+		     RESULT=HClassUtil.arrayClass(parser.linker,RESULT,d.intValue());
+		   annotateURL(nleft,nright, qn, n); :}
 	|	name:n type_arguments dims:d
+		{: QualName qn=typeName(n);
+		   RESULT = (qn==null)?null:qn.toClass();
+		   if (RESULT!=null)
+		     RESULT=HClassUtil.arrayClass(parser.linker,RESULT,d.intValue());
+		   annotateURL(nleft,nright, qn, n); :}
+	|	class_or_interface_nn:n type_arguments dims:d
 		{: QualName qn=typeName(n);
 		   RESULT = (qn==null)?null:qn.toClass();
 		   if (RESULT!=null)
@@ -842,11 +865,15 @@ reference_type_1 ::=
 		reference_type GT
 	|	name LT reference_type_list_2
 	|	name PLT reference_type_list_2
+	|	class_or_interface_nn LT reference_type_list_2
+	|	class_or_interface_nn PLT reference_type_list_2
 	;
 reference_type_2 ::=
 		reference_type RSHIFT
 	|	name LT reference_type_list_3
 	|	name PLT reference_type_list_3
+	|	class_or_interface_nn LT reference_type_list_3
+	|	class_or_interface_nn PLT reference_type_list_3
 	;
 reference_type_3 ::=
 		reference_type URSHIFT
@@ -1115,8 +1142,8 @@ constructor_body ::=
 explicit_constructor_invocation ::=
 		THIS LPAREN argument_list_opt RPAREN SEMICOLON
 	|	SUPER LPAREN argument_list_opt RPAREN SEMICOLON
-	|	primary DOT THIS LPAREN argument_list_opt RPAREN SEMICOLON
 	|	primary DOT SUPER LPAREN argument_list_opt RPAREN SEMICOLON
+	|	name DOT SUPER LPAREN argument_list_opt RPAREN SEMICOLON
 	;
 
 // 19.9) Interfaces
@@ -1152,11 +1179,12 @@ interface_member_declaration ::=
 	|	abstract_method_declaration
 	|	class_declaration
 	|	interface_declaration
+	|	SEMICOLON
 	;
 constant_declaration ::=
 		field_declaration
 	// need to semantically check that modifiers of field declaration
-	// include only PUBIC, STATIC, or FINAL.  Other modifiers are
+	// include only PUBLIC, STATIC, or FINAL.  Other modifiers are
 	// disallowed.
 	;
 abstract_method_declaration ::=
@@ -1393,7 +1421,8 @@ assert_statement ::=
 
 // 19.12) Expressions
 primary ::=	primary_no_new_array:p {: RESULT=p; :}
-	|	array_creation_expression
+	|	array_creation_init:ty {: RESULT=ty; :}
+	|	array_creation_uninit:ty {: RESULT=ty; :}
 	;
 primary_no_new_array ::=
 		literal:l {: RESULT=l; :}
@@ -1413,17 +1442,17 @@ primary_no_new_array ::=
 	// "Type DOT CLASS", but expanded
 	|	primitive_type DOT CLASS
 			{: RESULT=parser.linker.forName("java.lang.Class"); :}
-	|	name DOT CLASS
+	|	name DOT CLASS // not 'class_or_interface'?
 			{: RESULT=parser.linker.forName("java.lang.Class"); :}
 // this production *might* be valid, but introduces conflicts.
-//	|	name type_arguments DOT CLASS
+//	|	class_or_interface type_arguments DOT CLASS
 //			{: RESULT=parser.linker.forName("java.lang.Class"); :}
 	|	primitive_type dims DOT CLASS
 			{: RESULT=parser.linker.forName("java.lang.Class"); :}
-	|	name dims DOT CLASS
+	|	name dims DOT CLASS // not 'class_or_interface'?
 			{: RESULT=parser.linker.forName("java.lang.Class"); :}
 // this production *might* be valid, but introduces conflicts.
-//	|	name type_arguments dims DOT CLASS
+//	|	class_or_interface type_arguments dims DOT CLASS
 //			{: RESULT=parser.linker.forName("java.lang.Class"); :}
 	;
 class_instance_creation_expression ::=
@@ -1441,6 +1470,13 @@ class_instance_creation_expression ::=
 		  Integer innerindex=newInner(); pushenv();
 		  newClassScope(innerindex.toString());
 		:} class_body {: popenv(); :}
+	|	name DOT NEW IDENTIFIER type_arguments_opt
+			LPAREN argument_list_opt RPAREN
+	|	name DOT NEW IDENTIFIER type_arguments_opt
+			LPAREN argument_list_opt RPAREN {:
+		  Integer innerindex=newInner(); pushenv();
+		  newClassScope(innerindex.toString());
+		:} class_body {: popenv(); :}
 	;
 argument_list_opt ::=
     		{: RESULT=Collections.EMPTY_LIST; :}
@@ -1453,11 +1489,21 @@ argument_list ::=
 	|	argument_list:l COMMA expression:e
 		{: RESULT=l; RESULT.add(e); :}
 	;
-array_creation_expression ::=
-		NEW primitive_type dim_exprs dims_opt
-	|	NEW class_or_interface_type dim_exprs dims_opt
-	|	NEW primitive_type dims array_initializer
-	|	NEW class_or_interface_type dims array_initializer
+array_creation_uninit ::=
+		NEW primitive_type:ty dim_exprs:d1 dims_opt:d2
+		{: RESULT=HClassUtil.arrayClass
+			(parser.linker,ty,d1.intValue()+d2.intValue()); :}
+	|	NEW class_or_interface_type:ty dim_exprs:d1 dims_opt:d2
+		{: RESULT=HClassUtil.arrayClass
+			(parser.linker,ty,d1.intValue()+d2.intValue()); :}
+	;
+array_creation_init ::=
+		NEW primitive_type:ty dims:d array_initializer
+		{: RESULT=HClassUtil.arrayClass
+			(parser.linker,ty,d.intValue()); :}
+	|	NEW class_or_interface_type:ty dims:d array_initializer
+		{: RESULT=HClassUtil.arrayClass
+			(parser.linker,ty,d.intValue()); :}
 	;
 dim_exprs ::=	dim_expr:d {: RESULT=d; :}
 	|	dim_exprs:d1 dim_expr:d2
@@ -1519,6 +1565,8 @@ array_access ::=
 		:}
 	|	primary_no_new_array:ty LBRACK expression RBRACK
 		{: RESULT=(ty==null)?null:ty.getComponentType(); :}
+	|	array_creation_init:ty LBRACK expression RBRACK
+		{: RESULT=(ty==null)?null:ty.getComponentType(); :}
 	;
 postfix_expression ::=
 		primary:p {: RESULT=p; :}
@@ -1558,12 +1606,28 @@ unary_expression_not_plus_minus ::=
 cast_expression ::=
 		LPAREN primitive_type:ty dims_opt:d RPAREN unary_expression
 		{: RESULT=HClassUtil.arrayClass(parser.linker,ty,d.intValue()); :}
-	|	LPAREN name RPAREN unary_expression_not_plus_minus
-	|	LPAREN name PLT reference_type_list_1 RPAREN unary_expression_not_plus_minus
+	|	LPAREN name:n RPAREN unary_expression_not_plus_minus
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
+	|	LPAREN name:n PLT reference_type_list_1 RPAREN unary_expression_not_plus_minus
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
 	|	LPAREN name:n dims RPAREN unary_expression_not_plus_minus
 		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
 		   annotateURL(nleft,nright,qn,n); :}
 	|	LPAREN name:n PLT reference_type_list_1 dims RPAREN unary_expression_not_plus_minus
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
+	|	LPAREN class_or_interface_nn:n RPAREN unary_expression_not_plus_minus
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
+	|	LPAREN class_or_interface_nn:n PLT reference_type_list_1 RPAREN unary_expression_not_plus_minus
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
+	|	LPAREN class_or_interface_nn:n dims RPAREN unary_expression_not_plus_minus
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
+	|	LPAREN class_or_interface_nn:n PLT reference_type_list_1 dims RPAREN unary_expression_not_plus_minus
 		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
 		   annotateURL(nleft,nright,qn,n); :}
 	;
@@ -1638,13 +1702,10 @@ assignment_expression ::=
 		conditional_expression:e {: RESULT=e; :}
 	|	assignment
 	;
-assignment ::=
-		name:n {:
-		  HField hf=expName2(n);
-		  if (hf!=null) annotateURL(nleft,nright,hf);
-		          :} assignment_operator assignment_expression
-	|	field_access assignment_operator assignment_expression
-	|	array_access assignment_operator assignment_expression
+// semantic check necessary here to ensure a valid left-hand side.
+// allowing a parenthesized variable here on the lhs was introduced in
+// JLS 2; thanks to Eric Blake for pointing this out.
+assignment ::=	postfix_expression assignment_operator assignment_expression
 	;
 assignment_operator ::=
 		EQ
@@ -1853,12 +1914,28 @@ unary_expression_not_plus_minus_l ::=
 cast_expression_l ::=
 		LPAREN primitive_type:ty dims_opt:d RPAREN unary_expression_l
 		{: RESULT=HClassUtil.arrayClass(parser.linker,ty,d.intValue()); :}
-	|	LPAREN name RPAREN unary_expression_not_plus_minus_l
-	|	LPAREN name PLT reference_type_list_1 RPAREN unary_expression_not_plus_minus_l
+	|	LPAREN name:n RPAREN unary_expression_not_plus_minus_l
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
+	|	LPAREN name:n PLT reference_type_list_1 RPAREN unary_expression_not_plus_minus_l
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
 	|	LPAREN name:n dims RPAREN unary_expression_not_plus_minus_l
 		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
 		   annotateURL(nleft,nright,qn,n); :}
 	|	LPAREN name:n PLT reference_type_list_1 dims RPAREN unary_expression_not_plus_minus_l
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
+	|	LPAREN class_or_interface_nn:n RPAREN unary_expression_not_plus_minus_l
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
+	|	LPAREN class_or_interface_nn:n PLT reference_type_list_1 RPAREN unary_expression_not_plus_minus_l
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
+	|	LPAREN class_or_interface_nn:n dims RPAREN unary_expression_not_plus_minus_l
+		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
+		   annotateURL(nleft,nright,qn,n); :}
+	|	LPAREN class_or_interface_nn:n PLT reference_type_list_1 dims RPAREN unary_expression_not_plus_minus_l
 		{: QualName qn=typeName(n);RESULT=(qn==null)?null:qn.toClass();
 		   annotateURL(nleft,nright,qn,n); :}
 	;
@@ -1936,13 +2013,10 @@ assignment_expression_l ::=
 		conditional_expression_l:e {: RESULT=e; :}
 	|	assignment_l
 	;
-assignment_l ::=
-		name:n {:
-		  HField hf=expName2(n);
-		  if (hf!=null) annotateURL(nleft,nright,hf);
-		          :} assignment_operator assignment_expression_l
-	|	field_access assignment_operator assignment_expression_l
-	|	array_access assignment_operator assignment_expression_l
+// semantic check necessary here to ensure a valid left-hand side.
+// allowing a parenthesized variable here on the lhs was introduced in
+// JLS 2; thanks to Eric Blake for pointing this out.
+assignment_l ::= postfix_expression assignment_operator assignment_expression_l
 	;
 expression_l ::=	assignment_expression_l:e {: RESULT=e; :}
 	;
