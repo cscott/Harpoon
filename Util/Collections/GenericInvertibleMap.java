@@ -14,7 +14,7 @@ public class GenericInvertibleMap extends MapWrapper implements InvertibleMap {
     /** Constructs an invertible map backed by a HashMap.
      */
     public GenericInvertibleMap() {
-	this(Factories.hashMapFactory(), new MultiMap.Factory());
+	this(Factories.hashMapFactory, new MultiMap.Factory());
     }
 
     /** Constructs an invertible map backed by a map constructed by

@@ -23,7 +23,7 @@ import java.util.Set;
  * thesis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10.2.10 2000-07-01 01:34:54 cananian Exp $
+ * @version $Id: Place.java,v 1.10.2.11 2000-07-13 14:29:52 cananian Exp $
  */
 public class Place {
     private final MultiMap phis;
@@ -39,9 +39,9 @@ public class Place {
 	    vars.addAll(((UseDef)it.next()).defC());
 	// create result multimaps
 	phis = new GenericMultiMap(new BitSetFactory(vars),
-				   Factories.hashMapFactory());
+				   Factories.hashMapFactory);
 	sigmas = new GenericMultiMap(new BitSetFactory(vars),
-				   Factories.hashMapFactory());
+				   Factories.hashMapFactory);
 	// for each variable v in G, do:
 	for (Iterator it=vars.iterator(); it.hasNext(); ) {
 	    Temp v = (Temp) it.next();

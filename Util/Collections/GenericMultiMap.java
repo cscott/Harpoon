@@ -44,7 +44,7 @@ import java.util.HashSet;
  *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.6 2000-06-28 23:36:06 pnkfelix Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.7 2000-07-13 14:29:57 cananian Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -64,7 +64,7 @@ public class GenericMultiMap implements MultiMap {
 	that takes <code>CollectionFactory</code>s.
     */
     public GenericMultiMap() {
-	this(Factories.hashSetFactory(), Factories.hashMapFactory());
+	this(Factories.hashSetFactory, Factories.hashMapFactory);
     }
 
     /** Creates a <code>MultiMap</code> from a

@@ -66,7 +66,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.101 2000-07-13 07:20:20 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.102 2000-07-13 14:29:55 cananian Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -515,7 +515,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		new BitSetFactory(new LinearSet(new HashSet(regs)));
 	    
 	    MultiMap tempToRegs = new 
-		GenericMultiMap(regSetFact,Factories.hashMapFactory()) 
+		GenericMultiMap(regSetFact,Factories.hashMapFactory) 
 	    {
 		public boolean addAll(Object k, Collection v) {
 		    if (PREASSIGN_INFO) 

@@ -16,7 +16,7 @@ import java.util.Set;
     operate on or return <code>CollectionFactory</code>s. 
  
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Factories.java,v 1.1.2.4 2000-02-01 05:30:57 cananian Exp $
+    @version $Id: Factories.java,v 1.1.2.5 2000-07-13 14:29:57 cananian Exp $
  */
 public final class Factories {
     
@@ -25,29 +25,21 @@ public final class Factories {
         
     }
     
-    /** Returns a <code>MapFactory</code> that generates
-	<code>HashMap</code>s. */ 
-    public static MapFactory hashMapFactory() {
-	return new MapFactory() {
+    /** A <code>MapFactory</code> that generates <code>HashMap</code>s. */ 
+    public static final MapFactory hashMapFactory = new MapFactory() {
 	    public java.util.Map makeMap(java.util.Map map) {
 		return new java.util.HashMap(map);
 	    }
-	};
-    }
+    };
     
-    /** Returns a <code>SetFactory</code> that generates
-	<code>HashSet</code>s. */
-    public static SetFactory hashSetFactory() {
-	return new SetFactory() {
+    /** A <code>SetFactory</code> that generates <code>HashSet</code>s. */
+    public static final SetFactory hashSetFactory = new SetFactory() {
 	    public java.util.Set makeSet(java.util.Collection c) {
 		return new java.util.HashSet(c);
 	    }
-	};
-    }
+    };
     
-    /** Returns a <code>SetFactory</code> that generates
-	<code>WorkSet</code>s. */
-    public static SetFactory workSetFactory() { return workSetFactory; }
+    /** A <code>SetFactory</code> that generates <code>WorkSet</code>s. */
     private static final SetFactory workSetFactory = new SetFactory() {
 	    public java.util.Set makeSet(java.util.Collection c) {
 		return new harpoon.Util.WorkSet(c);
@@ -56,23 +48,19 @@ public final class Factories {
     
     /** Returns a <code>ListFactory</code> that generates
 	<code>LinkedList</code>s. */
-    public static ListFactory linkedListFactory() {
-	return new ListFactory() {
+    public static final ListFactory linkedListFactory = new ListFactory() {
 	    public java.util.List makeList(java.util.Collection c) {
 		return new java.util.LinkedList(c);
 	    }
-	};
-    }
+    };
 
     /** Returns a <code>ListFactory</code> that generates
 	<code>ArrayList</code>s. */
-    public static ListFactory arrayListFactory() {
-	return new ListFactory() {
+    public static ListFactory arrayListFactory = new ListFactory() {
 	    public java.util.List makeList(java.util.Collection c) {
 		return new java.util.ArrayList(c);
 	    }
-	};
-    }
+    };
     
     /** Returns a <code>CollectionFactory</code> that generates
 	synchronized (thread-safe) <code>Collection</code>s.  
