@@ -65,7 +65,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.19 2001-01-25 02:49:16 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.20 2001-01-26 03:17:22 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -470,8 +470,10 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			if (useSigmas&& q.src(i) == q.test()) {
 			    raiseV(V, Wv, q.dst(i,0), 
 				   new xIntConstant(toInternal(HClass.Boolean), 0));
-			    raiseV(V, Wv, q.dst(i,1),
-				   new xIntConstant(toInternal(HClass.Boolean), 1));
+			    // CJMP test is possibly non-boolean, so we don't
+			    // in fact know the value of the true side
+			    // (except that it is non-zero)
+			    raiseV(V, Wv, q.dst(i,1), v.rename(q, 1));
 			} else {
 			    LatticeVal v2 = get ( q.src(i) );
 			    if (v2 != null) {
