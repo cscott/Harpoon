@@ -71,20 +71,20 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.5 1999-08-04 06:30:51 cananian Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.6 1999-08-17 19:15:39 pnkfelix Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
     private       boolean        initialized = false;
 
-    private final int            maxTreeID;
-    private final Code           code;
-    private final Map            bb2tfi;
-    private final Map            DUChains, UDChains;
-    private final Map            tempsToPrsvs;
-    private final Stm            root;
-    private final BasicBlock     rootbb;
-    private final TreeStructure  structure;
+    private /*final*/ int            maxTreeID;
+    private /*final*/ Code           code;
+    private /*final*/ Map            bb2tfi;
+    private /*final*/ Map            DUChains, UDChains;
+    private /*final*/ Map            tempsToPrsvs;
+    private /*final*/ Stm            root;
+    private /*final*/ BasicBlock     rootbb;
+    private /*final*/ TreeStructure  structure;
 
     /** Constructs a new <code>TreeFolding</code> object for the
      *  <code>code</code>.

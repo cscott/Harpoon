@@ -43,7 +43,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.23 1999-08-12 20:42:33 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.24 1999-08-17 19:15:38 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -201,17 +201,29 @@ public abstract class RegAlloc  {
 	    public HCode convert(HMethod m) {
 		HCode preAllocCode = parent.convert(m);
 
-		BrainDeadLocalAlloc localCode = 
-		    new BrainDeadLocalAlloc((Code) preAllocCode);
+		RegAlloc localCode, globalCode;
+		if (false) {
+		    // very dumb (but correct) reg alloc
+		    localCode = 
+			new BrainDeadLocalAlloc((Code) preAllocCode);
+		} else {
+		    localCode = 
+			new LocalCffRegAlloc((Code) preAllocCode);
+		}
 
-		// FSK: <<sigh>> these were too smart for their own good
-		// LocalCffRegAlloc localCode = 
-		// new LocalCffRegAlloc((Code) preAllocCode);
-		//DemandDrivenRegAlloc globalCode = 
-		//   new DemandDrivenRegAlloc(frame, localCode.generateRegAssignment()); 
-		//return globalCode.generateRegAssignment();
+		if (true) {
+		    // no global reg alloc
+		    globalCode = localCode;
+		} else {
+		    /*
+		      globalCode = 
+			new DemandDrivenRegAlloc
+			(frame, localCode.generateRegAssignment()); 
+		    */
+		}
 
-		return localCode.resolveOutstandingTemps( localCode.generateRegAssignment() );
+		return globalCode.resolveOutstandingTemps
+		    ( globalCode.generateRegAssignment() );
 	    }
 	    public String getCodeName() {
 		return parent.getCodeName();
@@ -411,92 +423,92 @@ public abstract class RegAlloc  {
 	return yes;
     }
 
-    static class BrainDeadLocalAlloc extends RegAlloc {
-	BrainDeadLocalAlloc(Code code) {
-	    super(code);
-	}
-	
-	class BrainDeadInstrVisitor extends InstrVisitor {
-	    Temp[] regs = frame.getGeneralRegisters();
-		
-	    public void visit(Instr instr) {
-		InstrFactory inf = instr.getFactory();
-		    
-		try {
-		    // in this (dumb) model, each instruction will
-		    // load all uses and store all defs, so we can
-		    // treat the register file as being empty for each
-		    // instruction
-
-		    Map regFile = new LinearMap();
-
-		    // load srcs
-		    for(int i=0; i<instr.use().length; i++) {
-			Temp preg = instr.use()[i];
-			if (!isTempRegister(preg)) {
-			    Iterator iter =
-				frame.suggestRegAssignment(preg, regFile); 
-			    List regList = (List) iter.next();
-			    InstrMEM loadSrcs = 
-				new FskLoad(inf, null, "FSK-LOAD", 
-					    regList, preg); 
-			    Instr.insertInstrBefore(instr, loadSrcs);
-			    code.assignRegister(instr, preg, regList);
-			}
-		    }
-		    // store dsts
-		    for(int i=0; i<instr.def().length; i++) {
-			Temp preg = instr.def()[i];
-			if(!isTempRegister(preg)) {
-			    Iterator iter =
-				frame.suggestRegAssignment(preg, regFile); 
-			    List regList = (List) iter.next();
-			    InstrMEM storeDsts = 
-				new FskStore(inf, null, "FSK-STORE",
-					     preg, regList);
-			    Instr.insertInstrAfter(instr, storeDsts);
-			    // I'm not certain this code will handle 
-			    // "add t0, t0, t1" properly
-			    code.assignRegister(instr, preg, regList);
-			}
-		    }
-		} catch (Frame.SpillException e) {
-		    // actually...this doesn't necessarily imply that
-		    // we have to fail; if a TwoWordTemp can't be
-		    // fitted, we could potentially shift the
-		    // register files contents around to make room for
-		    // it.   While we STILL shouldn't ever encounter
-		    // this problem (after all, we have an empty
-		    // register file and usually at most three pseudo
-		    // registers to assign) I should give some thought
-		    // on how to handle this case
-		
-		    Util.assert(false, "Either a TwoWordTemp screwed us, or "+
-				"One Instr uses/defines more "+
-				"registers than "+frame+" can accomidate "+
-				"in Register File!"); 
-		}
-	    }
-
-	}
-	/** For each instruction:
-	        1. Load every use from memory into the register file.
-		2. Execute the instruction
-		3. Store every dest from the register file
-	    regFile will be clean in between each instruction in this
-	    (very dumb) allocation strategy. 
-	*/
-	protected Code generateRegAssignment() {
-	    Iterator instrs = code.getElementsI();
-	    InstrVisitor memVisitor = new BrainDeadInstrVisitor();
-
-	    while(instrs.hasNext()) {
-		((Instr)instrs.next()).visit(memVisitor);
-	    }
-
-	    return code;
-	}
-    }
-   
 }
 
+class BrainDeadLocalAlloc extends RegAlloc {
+    BrainDeadLocalAlloc(Code code) {
+	super(code);
+    }
+	
+    class BrainDeadInstrVisitor extends InstrVisitor {
+	Temp[] regs = frame.getGeneralRegisters();
+		
+	public void visit(Instr instr) {
+	    InstrFactory inf = instr.getFactory();
+	    
+	    try {
+		// in this (dumb) model, each instruction will
+		// load all uses and store all defs, so we can
+		// treat the register file as being empty for each
+		// instruction
+		
+		Map regFile = new LinearMap();
+
+		// load srcs
+		for(int i=0; i<instr.use().length; i++) {
+		    Temp preg = instr.use()[i];
+		    if (!isTempRegister(preg)) {
+			Iterator iter =
+			    frame.suggestRegAssignment(preg, regFile); 
+			List regList = (List) iter.next();
+			InstrMEM loadSrcs = 
+			    new FskLoad(inf, null, "FSK-LOAD", 
+					regList, preg); 
+			Instr.insertInstrBefore(instr, loadSrcs);
+			code.assignRegister(instr, preg, regList);
+		    }
+		}
+		// store dsts
+		for(int i=0; i<instr.def().length; i++) {
+		    Temp preg = instr.def()[i];
+		    if(!isTempRegister(preg)) {
+			Iterator iter =
+			    frame.suggestRegAssignment(preg, regFile); 
+			List regList = (List) iter.next();
+			InstrMEM storeDsts = 
+			    new FskStore(inf, null, "FSK-STORE",
+					 preg, regList);
+			Instr.insertInstrAfter(instr, storeDsts);
+			// I'm not certain this code will handle "add
+			// t0, t0, t1" properly 
+			code.assignRegister(instr, preg, regList);
+		    }
+		}
+	    } catch (Frame.SpillException e) {
+		// actually...this doesn't necessarily imply that we
+		// have to fail; if a TwoWordTemp can't be fitted, we
+		// could potentially shift the register files contents
+		// around to make room for it.   While we STILL
+		// shouldn't ever encounter this problem (after all,
+		// we have an empty register file and usually at most
+		// three pseudo registers to assign (potentially six
+		// though, with double worded operands)) I should give
+		// some thought on how to handle this case 
+		
+		Util.assert(false, "Either a TwoWordTemp screwed us, or "+
+			    "One Instr uses/defines more "+
+			    "registers than "+frame+" can accomidate "+
+			    "in Register File!"); 
+	    }
+	}
+	
+    }
+    
+    /** For each instruction:
+	1. Load every use from memory into the register file.
+	2. Execute the instruction
+	3. Store every dest from the register file
+	regFile will be clean in between each instruction in this
+	(very dumb) allocation strategy. 
+    */
+    protected Code generateRegAssignment() {
+	Iterator instrs = code.getElementsI();
+	InstrVisitor memVisitor = new BrainDeadInstrVisitor();
+	
+	while(instrs.hasNext()) {
+	    ((Instr)instrs.next()).visit(memVisitor);
+	}
+	
+	return code;
+    }
+}

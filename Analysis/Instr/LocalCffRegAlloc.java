@@ -31,7 +31,7 @@ import java.util.AbstractSet;
  * <code>LocalCffRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.33 1999-08-12 20:44:51 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.34 1999-08-17 19:15:38 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -94,11 +94,33 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	}
 	
+	if(true) { // debugging code 
+	    Iterator instrIter = b.listIterator();
+	    while(instrIter.hasNext()) {
+		Instr i = (Instr) instrIter.next();
+		Iterator refIter = getRefs(i);
+		while(refIter.hasNext()) {
+		    Temp ref = (Temp) refIter.next();
+		    if (isTempRegister(ref)) continue;
+		    MutInt dist = (MutInt) nextRef.get(new TempInstrPair(i, ref));
+		    Util.assert(dist != null, "Should have a mapping from " + i +
+				" x " + ref + " to a dist for block " + b);
+		}
+	    }
+	}
+
 	// maps Regs -> PseudoRegs
 	TwoWayMap regfile = new TwoWayMap();
 	instrs = b.listIterator();
 	while(instrs.hasNext()) {
 	    Instr i = (Instr) instrs.next();
+
+	    // skip any Spill Instructions
+	    if (i instanceof FskLoad ||
+		i instanceof FskStore) {
+		continue; 
+	    }
+
 	    Iterator refs = getRefs(i);
 	    while(refs.hasNext()) {
 		Temp ref = (Temp) refs.next();
@@ -155,6 +177,19 @@ public class LocalCffRegAlloc extends RegAlloc {
 				// pseudoReg should NOT be null; Frame
 				// spec says it won't tell us to spill
 				// regs that are not occupied.
+				Util.assert(pseudoReg != null, 
+					    "pseudoReg should not be null");
+
+				// AHA!  pseudoReg is NOT necessarily
+				// used at 'i', its merely being
+				// proposed as a variable to
+				// spill...need a better way to track
+				// this (perhaps back track through
+				// the instr list?  Or make nextRef
+				// save information about all live
+				// variables, not just ones used in
+				// the current instruction?)  
+
 				MutInt dist = (MutInt) nextRef.get
 				    (new TempInstrPair(i, pseudoReg));
 				if (dist.i >= 0 && // neg -> no refs

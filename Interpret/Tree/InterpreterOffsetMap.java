@@ -21,13 +21,14 @@ import harpoon.Util.Util;
 import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
  * A simple OffsetMap, used by the Tree Interpreter
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterOffsetMap.java,v 1.1.2.8 1999-08-11 10:50:37 duncan Exp $
+ * @version $Id: InterpreterOffsetMap.java,v 1.1.2.9 1999-08-17 19:15:40 pnkfelix Exp $
  */
 public class InterpreterOffsetMap extends OffsetMap {
 
@@ -136,8 +137,8 @@ public class InterpreterOffsetMap extends OffsetMap {
 	return (Label)m_strings.get(stringConstant);
     }
 
-    public Iterator stringConstants() { 
-	return m_strings.keySet().iterator();
+    public Set stringConstants() { 
+	return m_strings.keySet();
     }
 
     public Map stringConstantMap() { 
