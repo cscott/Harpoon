@@ -44,13 +44,22 @@ public class ComputeMaxSize {
 				}
 				if ((size!=0)&&(d==d2))
 				    size=-1;
-			    } if (q instanceof SetQuantifier) {
+			    } else if (q instanceof SetQuantifier) {
 				Descriptor d2=((SetQuantifier)q).getSet();
 				if (sizemap.containsKey(d2)) {
 				    size=((Integer)sizemap.get(d2)).intValue();
 				}
 				if ((size!=0)&&(d==d2))
 				    size=-1;
+			    } else if (q instanceof ForQuantifier) {
+				ForQuantifier fq=(ForQuantifier)q;
+				boolean lowint=OpExpr.isInt(fq.lower);
+				boolean highint=OpExpr.isInt(fq.upper);
+				if (lowint&&highint) {
+				    size=1+OpExpr.getInt(fq.upper)-OpExpr.getInt(fq.lower);
+				    if (size<=0) /* Catch sneaky bounds */
+					throw new Error("Funny bounds in: "+fq);
+				} else size=-1;
 			    } else {
 				size=-1;
 			    }

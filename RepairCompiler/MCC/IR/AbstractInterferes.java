@@ -2,6 +2,11 @@ package MCC.IR;
 import java.util.*;
 
 class AbstractInterferes {
+    Termination termination;
+
+    public AbstractInterferes(Termination t) {
+	termination=t;
+    }
 
     /** Does performing the AbstractRepair ar satisfy (or falsify if satisfy=false)
      * Rule r */
@@ -55,7 +60,7 @@ class AbstractInterferes {
 
     /** Does performing the AbstractRepair ar falsify the predicate dp */
 
-    static public boolean interferes(AbstractRepair ar, DNFPredicate dp) {
+    public boolean interferes(AbstractRepair ar, DNFPredicate dp) {
 	if ((ar.getDescriptor()!=dp.getPredicate().getDescriptor()) &&
 	    ((ar.getDescriptor() instanceof SetDescriptor)||
 	     !dp.getPredicate().usesDescriptor((RelationDescriptor)ar.getDescriptor())))
@@ -74,35 +79,24 @@ class AbstractInterferes {
 	    boolean neg2=dp.isNegated();
 	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
 	    int size2=((ExprPredicate)dp.getPredicate()).rightSize();
-	    if ((!neg1&&((op1==Opcode.EQ)||(op1==Opcode.NE)||(op1==Opcode.GT)||op1==Opcode.GE))||
-		(neg1&&((op1==Opcode.EQ)||(op1==Opcode.NE)||(op1==Opcode.LT)||op1==Opcode.LE))) {
+	    op1=Opcode.translateOpcode(neg1,op1);
+	    op2=Opcode.translateOpcode(neg2,op2);
+
+	    if ((op1==Opcode.EQ)||(op1==Opcode.NE)||(op1==Opcode.GT)||op1==Opcode.GE) {
 		int size1a=0;
-		if (!neg1) {
-		    if((op1==Opcode.EQ)||(op1==Opcode.GE))
-			size1a=size1;
-		    if((op1==Opcode.GT)||(op1==Opcode.NE))
-			size1a=size1+1;
-		}
-		if (neg1) {
-		    if((op1==Opcode.EQ)||(op1==Opcode.LE))
-			size1a=size1+1;
-		    if((op1==Opcode.LT)||(op1==Opcode.NE))
-			size1a=size1;
-		}
-		if ((!neg2&&(op2==Opcode.EQ)&&(size1a==size2))||
-		    (neg2&&(op2==Opcode.EQ)&&(size1a!=size2))||
-		    (!neg2&&(op2==Opcode.NE)&&(size1a!=size2))||
-		    (neg2&&(op2==Opcode.NE)&&(size1a==size2))||
-		    (!neg2&&(op2==Opcode.GE))||
-		    (!neg2&&(op2==Opcode.GT))||
-		    (neg2&&(op2==Opcode.LE))||
-		    (neg2&&(op2==Opcode.LT))||
-   		    (neg2&&(op2==Opcode.GE)&&(size1a<size2))||
-		    (neg2&&(op2==Opcode.GT)&&(size1a<=size2))||
-		    (!neg2&&(op2==Opcode.LE)&&(size1a<=size2))||
-		    (!neg2&&(op2==Opcode.LT)&&(size1a<size2)))
+		if((op1==Opcode.EQ)||(op1==Opcode.GE))
+		    size1a=size1;
+		if((op1==Opcode.GT)||(op1==Opcode.NE))
+		    size1a=size1+1;
+
+		if (((op2==Opcode.EQ)&&(size1a==size2))||
+		    ((op2==Opcode.NE)&&(size1a!=size2))||
+		    (op2==Opcode.GE)||
+		    (op2==Opcode.GT)||
+		    ((op2==Opcode.LE)&&(size1a<=size2))||
+		    ((op2==Opcode.LT)&&(size1a<size2)))
 		    return false;
-	    } 
+	    }
 	}
 
 	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
@@ -113,16 +107,23 @@ class AbstractInterferes {
 	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
 	    int size2=((ExprPredicate)dp.getPredicate()).rightSize();
 
-	    op2=translateOpcode(neg2,op2);
+	    op2=Opcode.translateOpcode(neg2,op2);
 
-	    if (((op2==Opcode.EQ)&&(size2==0))||
+	    int maxsize=termination.maxsize.getsize(dp.getPredicate().getDescriptor());
+
+	    if ((maxsize!=-1)&&
+		((op2==Opcode.LT&&size2>maxsize)||
+		 (op2==Opcode.LE&&size2>=maxsize)||
+		 (op2==Opcode.EQ&&size2>=maxsize)))
+		return false;
+
+	    if (((op2==Opcode.NE)&&(size2==0))||
 		(op2==Opcode.GE)||
 		(op2==Opcode.GT))
 		return false;
 	}
 
 	if (ar.getDescriptor()==dp.getPredicate().getDescriptor()&&
-	    
 	    (ar.getType()==AbstractRepair.MODIFYRELATION)&&
 	    (dp.getPredicate() instanceof ExprPredicate)&&
 	    (dp.getPredicate().inverted()==ar.getPredicate().getPredicate().inverted())&&
@@ -142,8 +143,8 @@ class AbstractInterferes {
 	    Expr expr2=((OpExpr)((ExprPredicate)ar.getPredicate().getPredicate()).expr).right;
 
 	    /* Translate the opcodes */
-	    op1=translateOpcode(neg1,op1);
-	    op2=translateOpcode(neg2,op2);
+	    op1=Opcode.translateOpcode(neg1,op1);
+	    op2=Opcode.translateOpcode(neg2,op2);
 	    
 	    /* Obvious cases which can't interfere */
 	    if (((op1==Opcode.GT)||
@@ -236,8 +237,8 @@ class AbstractInterferes {
 	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
 	    int size2=((ExprPredicate)dp.getPredicate()).rightSize();
 	    /* Translate the opcodes */
-	    op1=translateOpcode(neg1,op1);
-	    op2=translateOpcode(neg2,op2);
+	    op1=Opcode.translateOpcode(neg1,op1);
+	    op2=Opcode.translateOpcode(neg2,op2);
 
 	    if (((op1==Opcode.EQ)||(op1==Opcode.LT)||op1==Opcode.LE)||(op1==Opcode.NE)) {
 		int size1a=0;
@@ -264,12 +265,11 @@ class AbstractInterferes {
 	    boolean neg2=dp.isNegated();
 	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
 	    int size2=((ExprPredicate)dp.getPredicate()).rightSize();
-	    if ((!neg2&&(op2==Opcode.EQ)&&(size2==0))||
-		(neg2&&(op2==Opcode.NE)&&(size2==0))||
-		(neg2&&(op2==Opcode.GE))||
-		(neg2&&(op2==Opcode.GT))||
-		(!neg2&&(op2==Opcode.LE))||
-		(!neg2&&(op2==Opcode.LT)))
+	    op2=Opcode.translateOpcode(neg2,op2);
+
+	    if (((op2==Opcode.EQ)&&(size2==0))||
+		(op2==Opcode.LE)||
+		(op2==Opcode.LT))
 		return false;
 	    
 	}
@@ -288,30 +288,10 @@ class AbstractInterferes {
 	return true;
     }
 
-    static private Opcode translateOpcode(boolean neg, Opcode op) {
-	if (neg) {
-        /* remove negation through opcode translation */
-            if (op==Opcode.GT)
-                op=Opcode.LE;
-            else if (op==Opcode.GE)
-                op=Opcode.LT;
-            else if (op==Opcode.EQ)
-                op=Opcode.NE;
-            else if (op==Opcode.NE)
-                op=Opcode.EQ;
-            else if (op==Opcode.LT)
-                op=Opcode.GE;
-            else if (op==Opcode.LE)
-                op=Opcode.GT;
-        }
-
-	return op;
-    }
-
     /** Does the increase (or decrease) in scope of a model defintion rule represented by sn
      * falsify the predicate dp */
 
-    static public boolean interferes(ScopeNode sn, DNFPredicate dp) {
+    public boolean interferes(ScopeNode sn, DNFPredicate dp) {
 	if (!sn.getSatisfy()&&(sn.getDescriptor() instanceof SetDescriptor)) {
 	    Rule r=sn.getRule();
 	    Set target=r.getInclusion().getTargetDescriptors();
@@ -333,21 +313,8 @@ class AbstractInterferes {
 		boolean neg=dp.isNegated();
 		Opcode op=((ExprPredicate)dp.getPredicate()).getOp();
 		int size=((ExprPredicate)dp.getPredicate()).rightSize();
-		if (neg) {
-		    /* remove negation through opcode translation */
-		    if (op==Opcode.GT)
-			op=Opcode.LE;
-		    else if (op==Opcode.GE)
-			op=Opcode.LT;
-		    else if (op==Opcode.EQ)
-			op=Opcode.NE;
-		    else if (op==Opcode.NE)
-			op=Opcode.EQ;
-		    else if (op==Opcode.LT)
-			op=Opcode.GE;
-		    else if (op==Opcode.LE)
-			op=Opcode.GT;
-		}
+		op=Opcode.translateOpcode(neg,op);
+
 		if ((op==Opcode.GE)&&
 		    ((size==0)||(size==1)))
 		    return false;
@@ -362,7 +329,7 @@ class AbstractInterferes {
     /** Does increasing (or decreasing if satisfy=false) the size of the set or relation des
      * falsify the predicate dp */
 
-    static public boolean interferes(Descriptor des, boolean satisfy, DNFPredicate dp) {
+    public boolean interferes(Descriptor des, boolean satisfy, DNFPredicate dp) {
 	if ((des!=dp.getPredicate().getDescriptor()) &&
 	    ((des instanceof SetDescriptor)||
 	     !dp.getPredicate().usesDescriptor((RelationDescriptor)des)))
@@ -376,13 +343,20 @@ class AbstractInterferes {
 	    boolean neg2=dp.isNegated();
 	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
 	    int size2=((ExprPredicate)dp.getPredicate()).rightSize();
+	    op2=Opcode.translateOpcode(neg2,op2);
+
+
+	    int maxsize=termination.maxsize.getsize(dp.getPredicate().getDescriptor());
 	    {
-		if ((!neg2&&(op2==Opcode.GE))||
-		    (!neg2&&(op2==Opcode.GT))||
-		    (neg2&&(op2==Opcode.EQ)&&(size2==0))||
-		    (!neg2&&(op2==Opcode.NE)&&(size2==0))||
-		    (neg2&&(op2==Opcode.LE))||
-		    (neg2&&(op2==Opcode.LT)))
+		if ((maxsize!=-1)&&
+		    ((op2==Opcode.LT&&size2>maxsize)||
+		     (op2==Opcode.LE&&size2>=maxsize)||
+		     (op2==Opcode.EQ&&size2>=maxsize)))
+		    return false;
+
+		if ((op2==Opcode.GE)||
+		    (op2==Opcode.GT)||
+		    (op2==Opcode.NE)&&(size2==0))
 		    return false;
 	    }
 	}
@@ -394,13 +368,11 @@ class AbstractInterferes {
 	    boolean neg2=dp.isNegated();
 	    Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
 	    int size2=((ExprPredicate)dp.getPredicate()).rightSize();
+	    op2=Opcode.translateOpcode(neg2,op2);
 	    {
-		if ((neg2&&(op2==Opcode.GE))||
-		    (neg2&&(op2==Opcode.GT))||
-		    (!neg2&&(op2==Opcode.EQ)&&(size2==0))||
-		    (neg2&&(op2==Opcode.NE)&&(size2==0))||
-		    (!neg2&&(op2==Opcode.LE))||
-		    (!neg2&&(op2==Opcode.LT)))
+		if (((op2==Opcode.EQ)&&(size2==0))||
+		    (op2==Opcode.LE)||
+		    (op2==Opcode.LT))
 		    return false;
 	    } 
 	}

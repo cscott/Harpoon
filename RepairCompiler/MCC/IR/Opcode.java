@@ -27,6 +27,27 @@ public class Opcode {
     public static final Opcode NOP = new Opcode("NOP");
     public static final Opcode SHL = new Opcode("<<");
     public static final Opcode SHR = new Opcode(">>");
+    
+    static public Opcode translateOpcode(boolean neg, Opcode op) {
+	if (neg) {
+        /* remove negation through opcode translation */
+            if (op==Opcode.GT)
+                op=Opcode.LE;
+            else if (op==Opcode.GE)
+                op=Opcode.LT;
+            else if (op==Opcode.EQ)
+                op=Opcode.NE;
+            else if (op==Opcode.NE)
+                op=Opcode.EQ;
+            else if (op==Opcode.LT)
+                op=Opcode.GE;
+            else if (op==Opcode.LE)
+                op=Opcode.GT;
+	    else throw new Error("Unrecognized Opcode");
+        }
+
+	return op;
+    }
 
     public static Opcode decodeFromString(String opname) {
         Opcode opcode;

@@ -18,7 +18,6 @@ public class ForQuantifier extends Quantifier {
 	return var;
     }
 
-
     public void setBounds(Expr lower, Expr upper) {
         this.lower = lower;
         this.upper = upper;

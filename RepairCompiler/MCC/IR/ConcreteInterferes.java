@@ -93,22 +93,8 @@ class ConcreteInterferes {
 
 
 		    Opcode op=expr.getOpcode();
+		    op=Opcode.translateOpcode(dexpr.getNegation(),op);
 
-		    if (dexpr.getNegation()) {
-			/* remove negation through opcode translation */
-			if (op==Opcode.GT)
-			    op=Opcode.LE;
-			else if (op==Opcode.GE)
-			    op=Opcode.LT;
-			else if (op==Opcode.EQ)
-			    op=Opcode.NE;
-			else if (op==Opcode.NE)
-			    op=Opcode.EQ;
-			else if (op==Opcode.LT)
-			    op=Opcode.GE;
-			else if (op==Opcode.LE)
-			    op=Opcode.GT;
-		    }
 		    boolean match=false;
 		    for(int k=0;k<un.numUpdates();k++) {
 			Updates update=un.getUpdate(k);
@@ -297,21 +283,8 @@ class ConcreteInterferes {
 		Expr lexpr2=expr.getLeftExpr();
 		Expr rexpr2=expr.getRightExpr();
 		Opcode op2=expr.getOpcode();
-		if (dexpr.getNegation()) {
-		    /* remove negation through opcode translation */
-		    if (op2==Opcode.GT)
-			op2=Opcode.LE;
-		    else if (op2==Opcode.GE)
-			op2=Opcode.LT;
-		    else if (op2==Opcode.EQ)
-			op2=Opcode.NE;
-		    else if (op2==Opcode.NE)
-			op2=Opcode.EQ;
-		    else if (op2==Opcode.LT)
-			op2=Opcode.GE;
-		    else if (op2==Opcode.LE)
-			op2=Opcode.GT;
-		}
+		op2=Opcode.translateOpcode(dexpr.getNegation(),op2);
+
 		good=true;
 		vars=rexpr2.freeVars();
 		VarDescriptor leftdescriptor=null;

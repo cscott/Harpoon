@@ -27,21 +27,9 @@ class Updates {
 	    System.out.println("Building invalid update");
 	leftexpr=lexpr;
 	type=Updates.EXPR;
-	if (negate) {
-	/* remove negation through opcode translation */
-	    if (op==Opcode.GT)
-		op=Opcode.LE;
-	    else if (op==Opcode.GE)
-		op=Opcode.LT;
-	    else if (op==Opcode.EQ)
-		op=Opcode.NE;
-	    else if (op==Opcode.NE)
-		op=Opcode.EQ;
-	    else if (op==Opcode.LT)
-		op=Opcode.GE;
-	    else if (op==Opcode.LE)
-		op=Opcode.GT;
-	}
+
+	op=Opcode.translateOpcode(negate,op);
+
 	opcode=op;
 	rightexpr=rexpr;
     }

@@ -25,6 +25,8 @@ public class Termination {
     Set removedset;
     ComputeMaxSize maxsize;
     State state;
+    AbstractInterferes abstractinterferes;
+
 
     public Termination(State state) {
 	this.state=state;
@@ -45,6 +47,7 @@ public class Termination {
 	if (!Compiler.REPAIR)
 	    return;
 
+	
 	for(int i=0;i<state.vRules.size();i++)
 	    System.out.println(state.vRules.get(i));
 	for(int i=0;i<state.vConstraints.size();i++)
@@ -53,6 +56,7 @@ public class Termination {
 
 	maxsize=new ComputeMaxSize(state);
 
+	abstractinterferes=new AbstractInterferes(this);
 	generateconjunctionnodes();
 	generatescopenodes();
 	generaterepairnodes();
@@ -109,9 +113,14 @@ public class Termination {
 	}
 
     }
-    
+
+
+    /** This method generates a node for each conjunction in the DNF form of each constraint. 
+     * It also converts the quantifiers into conjunctions also - constraints can be satisfied by
+     * removing items from the sets and relations they are quantified over */
     void generateconjunctionnodes() {
 	Vector constraints=state.vConstraints;
+	// Constructs conjunction nodes
 	for(int i=0;i<constraints.size();i++) {
 	    Constraint c=(Constraint)constraints.get(i);
 	    DNFConstraint dnf=c.dnfconstraint;
@@ -126,6 +135,7 @@ public class Termination {
 		((Set)conjunctionmap.get(c)).add(gn);
 		conjtonodemap.put(dnf.get(j),gn);
 	    }
+	    // Construct quantifier "conjunction" nodes
 	    for(int j=0;j<c.numQuantifiers();j++) {
 		Quantifier q=c.getQuantifier(j);
 		if (q instanceof SetQuantifier) {
@@ -200,7 +210,7 @@ public class Termination {
 		for(int i=0;i<conj.size();i++) {
 		    DNFPredicate dp=conj.get(i);
 		    if (AbstractInterferes.interferes(ar,cons)||
-			AbstractInterferes.interferes(ar,dp)) {
+			abstractinterferes.interferes(ar,dp)) {
 			GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
 			gn.addEdge(e);
 			break;
@@ -234,7 +244,7 @@ public class Termination {
 		Constraint constr=tn2.getConstraint();
 		for(int i=0;i<conj.size();i++) {
 		    DNFPredicate dp=conj.get(i);
-		    if (AbstractInterferes.interferes(sn,dp)||
+		    if (abstractinterferes.interferes(sn,dp)||
 			AbstractInterferes.interferes(sn.getDescriptor(),sn.getSatisfy(),constr)) {
 			GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
 			GraphNode gnconseq=(GraphNode)consequence.get(sn);
@@ -263,7 +273,7 @@ public class Termination {
 	}
     }
 
-    /* Generates the abstract repair nodes */
+    /** This method generates the abstract repair nodes. */
     void generaterepairnodes() {
 	/* Generate repairs of conjunctions */
 	for(Iterator conjiterator=conjunctions.iterator();conjiterator.hasNext();) {
@@ -529,7 +539,7 @@ public class Termination {
 	}
     }
 
-    static void increment(int count[], Vector rules,boolean isremove) {
+    static private void increment(int count[], Vector rules,boolean isremove) {
 	count[0]++;
 	for(int i=0;i<(rules.size()-1);i++) {
 	    int num=isremove?(((Rule)rules.get(i)).numQuantifiers()+(((Rule)rules.get(i)).getDNFNegGuardExpr().size())):((Rule)rules.get(i)).getDNFGuardExpr().size();
@@ -540,7 +550,7 @@ public class Termination {
 	}
     }
 
-    static boolean remains(int count[], Vector rules, boolean isremove) {
+    static private boolean remains(int count[], Vector rules, boolean isremove) {
 	for(int i=0;i<rules.size();i++) {
 	    int num=isremove?(((Rule)rules.get(i)).numQuantifiers()+(((Rule)rules.get(i)).getDNFNegGuardExpr().size())):((Rule)rules.get(i)).getDNFGuardExpr().size();
 	    if (count[i]>=num) {
@@ -635,7 +645,10 @@ public class Termination {
 	    increment(count,possiblerules,false);
 	}
     }
-
+    /** This method constructs bindings for an update using rule
+     * r. The boolean flag isremoval indicates that the update
+     * performs a removal.  The function returns true if it is able to
+     * generate a valid set of bindings and false otherwise. */
 
     boolean constructbindings(Vector bindings, Rule r, boolean isremoval) {
 	boolean goodupdate=true;
@@ -647,8 +660,10 @@ public class Termination {
 		SetDescriptor set=null;
 		if (q instanceof SetQuantifier) {
 		    vd=((SetQuantifier)q).getVar();
-		} else
+		    set=((SetQuantifier)q).getSet();
+		} else {
 		    vd=((ForQuantifier)q).getVar();
+		}
 		if(inc instanceof SetInclusion) {
 		    SetInclusion si=(SetInclusion)inc;
 		    if ((si.elementexpr instanceof VarExpr)&&
@@ -656,8 +671,9 @@ public class Termination {
 			/* Can solve for v */
 			Binding binding=new Binding(vd,0);
 			bindings.add(binding);
-		    } else
+		    } else {
 			goodupdate=false;
+		    }
 		} else if (inc instanceof RelationInclusion) {
 		    RelationInclusion ri=(RelationInclusion)inc;
 		    boolean f1=true;
@@ -679,11 +695,17 @@ public class Termination {
 		} else throw new Error("Inclusion not recognized");
 		if (!goodupdate)
 		    if (isremoval) {
-			Binding binding=new Binding(vd);
+			/* Removals don't need bindings anymore
+			   Binding binding=new Binding(vd);
+			   bindings.add(binding);*/
+			goodupdate=true;
+		    } else {
+			/* Create new element to bind to */
+			Binding binding=new Binding(vd,set,createorsearch(set));
 			bindings.add(binding);
 			goodupdate=true;
-		    } else
-			break;
+			//FIXME
+		    }
 	    } else if (q instanceof RelationQuantifier) {
 		RelationQuantifier rq=(RelationQuantifier)q;
 		for(int k=0;k<2;k++) {
@@ -718,8 +740,9 @@ public class Termination {
 		    } else throw new Error("Inclusion not recognized");
 		    if (!goodupdate)
 			if (isremoval) {
-			    Binding binding=new Binding(vd);
-			    bindings.add(binding);
+			    /* Removals don't need bindings anymore
+			       Binding binding=new Binding(vd);
+			       bindings.add(binding);*/
 			    goodupdate=true;
 			} else
 			    break;
@@ -731,15 +754,17 @@ public class Termination {
 	return goodupdate;
     }
 
+    /** Returns true if we search for an element from sd
+     *  false if we create an element for sd */
+    private boolean createorsearch(SetDescriptor sd) {
+	return false;
+    }
+
     static int addtocount=0;
     void generateaddtosetrelation(GraphNode gn, AbstractRepair ar) {
-	//	System.out.println("Attempting to generate add to set");
-	//System.out.println(ar.getPredicate().getPredicate().name());
-	//System.out.println(ar.getPredicate().isNegated());
 	for(int i=0;i<state.vRules.size();i++) {
 	    Rule r=(Rule) state.vRules.get(i);
 	    /* See if this is a good rule*/
-	    //System.out.println(r.getGuardExpr().name());
 	    if ((r.getInclusion() instanceof SetInclusion&&
 		ar.getDescriptor()==((SetInclusion)r.getInclusion()).getSet())||
 		(r.getInclusion() instanceof RelationInclusion&&
@@ -748,10 +773,8 @@ public class Termination {
 		/* First solve for quantifiers */
 		Vector bindings=new Vector();
 		/* Construct bindings */
-		//System.out.println("Attempting to generate add to set: #2");
 		if (!constructbindings(bindings,r,false))
 		    continue;
-		//System.out.println("Attempting to generate add to set: #3");
 		//Generate add instruction
 		DNFRule dnfrule=r.getDNFGuardExpr();
 		for(int j=0;j<dnfrule.size();j++) {
@@ -805,16 +828,15 @@ public class Termination {
 		    }
 		    //Finally build necessary updates to satisfy conjunction
 		    RuleConjunction ruleconj=dnfrule.get(j);
+
 		    /* Add in updates for quantifiers */
-		    //System.out.println("Attempting to generate add to set #4");
 		    MultUpdateNode mun=new MultUpdateNode(ar,MultUpdateNode.ADD);
 		    TermNode tn=new TermNode(mun);
 		    GraphNode gn2=new GraphNode("UpdateAdd"+addtocount,tn);
 
-		    if (processquantifers(gn2,un, r)&&debugdd()&&
+		    if (processquantifers(gn2,un, r)&&
 			processconjunction(un,ruleconj)&&
 			un.checkupdates()) {
-			//System.out.println("Attempting to generate add to set #5");
 			mun.addUpdate(un);
 			GraphNode.Edge e=new GraphNode.Edge("abstract"+addtocount,gn2);
 			addtocount++;
@@ -824,12 +846,10 @@ public class Termination {
 	    }
 	}
     }
-
-    boolean debugdd() {
-	//System.out.println("Attempting to generate add to set DD");
-	return true;
-    }
-
+    
+    /** Adds updates that add an item to the appropriate set or
+     * relation quantified over by the model definition rule.. */
+    
     boolean processquantifers(GraphNode gn,UpdateNode un, Rule r) {
 	Inclusion inc=r.getInclusion();
 	for(Iterator iterator=r.quantifiers();iterator.hasNext();) {
@@ -849,7 +869,7 @@ public class Termination {
 		} else {
 		    return false;
 		}
-
+		
 	    } else if (q instanceof SetQuantifier) {
 		SetQuantifier sq=(SetQuantifier)q;
 		ElementOfExpr eoe=new ElementOfExpr(new VarExpr(sq.var),sq.set);

@@ -177,6 +177,14 @@ class UpdateNode {
 	binding.put(b.getVar(),b);
     }
 
+    public int numBindings() {
+	return bindings.size();
+    }
+
+    public Binding getBinding(int i) {
+	return (Binding)bindings.get(i);
+    }
+    
     public Binding getBinding(VarDescriptor vd) {
 	if (binding.containsKey(vd))
 	    return (Binding)binding.get(vd);
@@ -420,8 +428,9 @@ class UpdateNode {
     private void generate_bindings(CodeWriter cr, String slot0, String slot1) {
 	for(int i=0;i<bindings.size();i++) {
 	    Binding b=(Binding)bindings.get(i);
-	    if (b.search)
-		throw new Error("Search not implemented for bindings");
+	    if (b.getType()!=Binding.POSITION)
+		throw new Error("Only position bindings implemented!");
+
 	    VarDescriptor vd=b.getVar();
 	    switch(b.getPosition()) {
 	    case 0:
