@@ -10,6 +10,8 @@ void FNI_java_lang_Thread_finishMain(JNIEnv *env);
 #define CHECK_EXCEPTIONS(env) \
 if ((*env)->ExceptionOccurred(env)){ (*env)->ExceptionDescribe(env); exit(1); }
 
+extern char *name_of_binary;
+
 int main(int argc, char *argv[]) {
   char *firstclasses[] = {
     "java/util/Properties", "java/io/FileDescriptor", "java/lang/System", 
@@ -22,6 +24,9 @@ int main(int argc, char *argv[]) {
   char **namep;
   int i;
   
+  /* set up for bfd */
+  name_of_binary = argv[0];
+
   /* random package initialization */
 #ifdef WITH_PTH_THREADS
   pth_init();
