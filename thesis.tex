@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.109 1999-09-02 18:19:44 cananian Exp $
+% $Id: thesis.tex,v 1.110 1999-09-02 19:34:33 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -41,14 +41,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.109 $ $}
+\date{\today \\ $ $Revision: 1.110 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.109 $ $}{$ $Revision: 1.109 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.110 $ $}{$ $Revision: 1.110 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -2571,7 +2571,21 @@ although we currently do not use the bitwidth information produced.
 \ssiplus\ and hardware compilation are the focus of current work.
 
 \section{Conclusions}
-SSI is wonderful.  You will all rejoice, hop, and skip merrily.  Yay.
+The Static Single Information form extends SSA without adding unneeded
+complexity to allow efficient predicated analysis and backward
+dataflow analyses.  Futher, the \ssiplus\ variant removes all explicit
+control-dependence relations, allowing extraction of parallelism from
+the code, and possesses a complete and straight-forward semantics
+which makes it useful for, among other things, abstract interpretation
+and hardware compilation.
+
+We have demonstrated efficient construction of SSI form, and several
+optimizations which use it to obtain efficiency improvements over
+previous methods.  The many SSA-variant papers in the literature
+attest to limitations of standard SSA form; we believe SSI form solves
+these problems in the simplest and most symmetric manner.  The FLEX
+compiler infrastructure demonstrates practically the real advantages
+of SSI form.
 
 \newpage
 \bibliography{harpoon}
