@@ -16,7 +16,7 @@ import java.util.Set;
     operate on or return <code>CollectionFactory</code>s. 
  
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Factories.java,v 1.1.2.3 1999-11-15 07:49:05 pnkfelix Exp $
+    @version $Id: Factories.java,v 1.1.2.4 2000-02-01 05:30:57 cananian Exp $
  */
 public final class Factories {
     
@@ -44,6 +44,15 @@ public final class Factories {
 	    }
 	};
     }
+    
+    /** Returns a <code>SetFactory</code> that generates
+	<code>WorkSet</code>s. */
+    public static SetFactory workSetFactory() { return workSetFactory; }
+    private static final SetFactory workSetFactory = new SetFactory() {
+	    public java.util.Set makeSet(java.util.Collection c) {
+		return new harpoon.Util.WorkSet(c);
+	    }
+    };
     
     /** Returns a <code>ListFactory</code> that generates
 	<code>LinkedList</code>s. */
