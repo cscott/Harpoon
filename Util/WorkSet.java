@@ -12,7 +12,7 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.1.2.9 2000-01-18 23:02:16 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.1.2.10 2000-01-21 12:09:07 cananian Exp $
  */
 public class WorkSet extends java.util.AbstractSet implements Worklist{
     private /*final*/ HashMap hm;
@@ -38,9 +38,9 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
     /** Constructs a new <code>WorkSet</code> with the contents of the
      *  specified <code>Collection</code>. */
     public WorkSet(java.util.Collection c) {
-	hm = new HashMap(c.size());
-	for (Iterator i = c.iterator(); i.hasNext(); )
-	    add(i.next());
+	// make hash map about twice as big as the collection.
+	hm = new HashMap(Math.max(2*c.size(),11));
+	addAll(c);
     }
 
     /** Adds an element to the front of the (ordered) set and returns true,
