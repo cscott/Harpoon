@@ -13,7 +13,7 @@ import java.util.ListIterator;
  * <code>java.util.Collections</code> and such.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnmodifiableListIterator.java,v 1.1.4.1 1999-10-12 20:05:01 cananian Exp $
+ * @version $Id: UnmodifiableListIterator.java,v 1.1.4.2 1999-11-05 22:40:53 pnkfelix Exp $
  */
 public abstract class UnmodifiableListIterator implements ListIterator {
     /** Returns <code>true</code> if the list iterator has more elements
@@ -25,7 +25,7 @@ public abstract class UnmodifiableListIterator implements ListIterator {
      *  (Note that alternating calls to <code>next()</code> and 
      *  <code>previous()</code> will return the same element
      *   repeatedly.)
-     * @exception NoSuchElementException if the iteration has no next element.
+     * @exception java.util.NoSuchElementException if the iteration has no next element.
      */
     public abstract Object next();
     /** Returns <code>true</code> if the list iterator has more elements
@@ -36,7 +36,7 @@ public abstract class UnmodifiableListIterator implements ListIterator {
      *  with calls to <code>next()</code> to go back and forth.
      *  (Note that alternating calls to <code>next()</code> and 
      *  <code>previous()</code> will return the same element repeatedly.)
-     * @exception NoSuchElementException if the iteration has no previous
+     * @exception java.util.NoSuchElementException if the iteration has no previous
      *            element.
      */
     public abstract Object previous();
