@@ -7,16 +7,18 @@ import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
+import harpoon.Util.HashSet;
+import harpoon.Util.Set;
 import harpoon.Util.Util;
 
 /**
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.3 1999-02-09 22:47:11 duncan Exp $
+ * @version $Id: Tree.java,v 1.1.2.4 1999-04-05 21:48:26 duncan Exp $
  */
 public abstract class Tree 
-    implements harpoon.ClassFile.HCodeElement
+    implements harpoon.ClassFile.HCodeElement, harpoon.IR.Properties.UseDef
 {
     final TreeFactory tf;
     final String source_file;
@@ -34,6 +36,22 @@ public abstract class Tree
 	// cache hashcode for efficiency.
 	this.hashCode = this.id ^ tf.getParent().hashCode();
     }
+
+    public Temp[] def() { 
+	throw new Error("not implemented");
+    }
+
+    public Temp[] use() { 
+	Set useSet = useSet();
+	Temp[] use = new Temp[useSet.size()];
+	useSet.copyInto(use);
+	
+	return use;
+    }
+
+    abstract protected Set defSet();
+    abstract protected Set useSet();   
+
     public int hashCode() { return hashCode; }
 
     /** Returns the <code>TreeFactory</code> that generated this
@@ -80,3 +98,6 @@ public abstract class Tree
 
       
 }
+
+
+
