@@ -1,5 +1,6 @@
 package harpoon.ClassFile;
 
+import java.util.Enumeration;
 /**
  * <code>HCode</code> is an abstract class that all views of a particular
  * method's executable code should extend.
@@ -7,7 +8,7 @@ package harpoon.ClassFile;
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.8 1998-09-21 01:57:30 cananian Exp $
+ * @version $Id: HCode.java,v 1.9 1998-09-21 02:31:17 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.IR.Bytecode.Code
