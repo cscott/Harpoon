@@ -83,7 +83,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.5.2.4 2003-07-15 07:08:18 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5.2.5 2003-07-15 07:41:12 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -94,7 +94,7 @@ import java.util.Set;
 //     (not done yet)
 
 // stages:
-//  1) guts into C code.
+// X1) guts into C code.
 // X2) code dup for sync check (actually, separate pass)
 //  3) indirectize trans to support object.wait()
 //  4) separate out sync transform and implement general trans mech.
@@ -102,7 +102,7 @@ import java.util.Set;
 //  6) separate pass to virtualize static fields?
 //  7) strictness optimizations?
 //  8) changes to caching read version over commit of subtransaction
-//     (possibly paralle commit?)
+//     (possibly parallel commit?)
 
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -324,8 +324,16 @@ public class SyncTransformer
 	METHOD qM = qH.method();
 	// recursively decend the dominator tree, rewriting as we go.
 	if (enabled &&
+	    // don't transform the transactions runtime support
 	    (! "harpoon.Runtime.Transactions".equals
 	       (hc.getMethod().getDeclaringClass().getPackage())) &&
+	    // don't transform static initialization code.
+	    /* xxx runtime calls other startup code interspersed with static
+	     *     initialization; probably not safe to skip transform.
+	    (! (hc.getMethod() instanceof HInitializer ||
+		hc.getMethod().getName().endsWith("$$initcheck"))) &&
+	    */
+	    // don't transform the counter/statistic code.
 	    (!excludeCounters || ! "harpoon.Runtime.Counters".equals
 	     (hc.getMethod().getDeclaringClass().getName()))) {
 	    CheckOracle co = new SimpleCheckOracle(noArrayModification);
