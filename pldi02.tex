@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.5 2001-11-15 19:21:35 cananian Exp $
+% $Id: pldi02.tex,v 1.6 2001-11-15 22:26:04 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -26,7 +26,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.5 $ $}{$ $Revision: 1.5 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.6 $ $}{$ $Revision: 1.6 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -284,19 +284,40 @@ advantage of these potential savings.
 Mostly-zero field analysis attempts to take advantage of commonly
 recurring field values to reduce the space consumption of an object.
 For example, the {\tt java.lang.String} class in the Java standard
-library (see figure {\bf XX}) uses {\tt offset} and {\tt count} fields
-to index into a character array, allowing the implementation of the
-substring operation in constant time (without copying data from the
-{\tt String}'s underlying character array into a new array).  However,
-all of {\tt String}'s public constructors initialize the {\tt offset}
-field to zero.  The single private constructor which does otherwise is
-used only in the implementation of the {\tt substring()} method.  So
-we can reasonably expect the vast majority of the {\tt String} objects
-created in a typical program to have a zero {\tt offset} field.
-We use dynamic selection of statically specialized classes to
-eliminate the field when its value is the ``common'' one.
-Where this transformation is inappropriate, we can use an external
-storage technique to only store ``uncommon'' values of the field.
+library (see figure \ref{fig:string-fields}) uses {\tt offset} and
+{\tt count} fields to index into a character array, allowing the
+implementation of the substring operation in constant time (without
+copying data from the {\tt String}'s underlying character array into a
+new array).  However, all of {\tt String}'s public constructors
+initialize the {\tt offset} field to zero.  The single private
+constructor which does otherwise is used only in the implementation of
+the {\tt substring()} method.  So we can reasonably expect the vast
+majority of the {\tt String} objects created in a typical program to
+have a zero {\tt offset} field.  We use dynamic selection of
+statically specialized classes to eliminate the field when its value
+is the ``common'' one.  Where this transformation is inappropriate, we
+can use an external storage technique to only store ``uncommon''
+values of the field.
+\begin{figure}
+\begin{samplecode}
+public final class String \{\\
+\>private final char value[];\\
+\>private final int offset;\\
+\>private final int count;\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[offset+i];\\
+\>\}\\
+\>public String substring(int start) \{\\
+\>\>int noff = offset + start;\\
+\>\>int ncnt = count - start;\\
+\>\>return new String(value, noff, ncnt);\\
+\>\}\\
+\}\\
+\end{samplecode}
+\caption{Portions of the {\tt java.lang.String} class.}
+\label{fig:string-fields}
+\end{figure}
 
 \subsection{Static specialization of near-final fields}
 For fields which are effectively {\tt final}---i.e. not modified after
@@ -308,9 +329,29 @@ getter methods.  The ``small'' class will have a getter method
 which will simply return the constant common value.  The ``large''
 subclass will actually consult the field (which is only present in the
 ``large'' version of the class) and return or set its value (in the
-getter and setter, respectively).  Figure {\bf XXX} illustrates this
+getter and setter, respectively).  Figure \ref{fig:big-small} illustrates this
 conversion for a illustrative fragment of a {\tt java.lang.String}
 implementation.
+\begin{figure}
+\begin{samplecode}
+public final class SmallString \{\\
+\>private final char value[];\\
+\>private final int count;\\
+\>int getOffset() \{ return 0; \}\\
+\>\ldots\\
+\>public char charAt(int i) \{\\
+\>\>return value[getOffset()+i];\\
+\>\}\\
+\}\\
+public final class String\\
+\>\>extends SmallString \{\\
+\>private final int offset;\\
+\>int getOffset() \{ return offset; \}\\
+\}\\
+\end{samplecode}
+\caption{Static specialization of {\tt java.lang.String}.}
+\label{fig:big-small}
+\end{figure}
 
 This transformation is only correct for fields which are immutable
 after their initialization.  However, since we will make subclasses of the
@@ -335,10 +376,30 @@ prove that a field is zero iff a certain constructor parameter is
 zero, then we can insert a test at the instantiation site to select
 small class if the parameter is zero, or else use the large class.
 An example of this approach on code which might constitute an
-implementation of {\tt String.substring()} is shown in figure {\bf XX}.
+implementation of {\tt String.substring()} is shown in figure
+\ref{fig:dyn-select}.  Notice that rewriting the return type of the
+method is necessary to ensure consistency with the new split
+classes; array creation expressions and {\tt instanceof} tests must be
+similarly widened for proper type-checking.
 
 {\bf MORE INFO HERE? Maybe numbers on how many call sites use constant
   versus parameter-dependent tests?  Details on the analysis used?}
+
+\begin{figure}
+\begin{samplecode}
+public SmallString substring(int start) \{\\
+\>int noff = offset + start;\\
+\>int ncnt = count - start;\\
+\>if (noff==0)\\
+\>\>return new SmallString(value, noff, ncnt);\\
+\>else\\
+\>\>return new String(value, noff, ncnt);\\
+\}\\
+\end{samplecode}
+\caption{Dynamic selection among specialized classes in a method
+  from {\tt java.lang.String}.}
+\label{fig:dyn-select}
+\end{figure}
 
 \subsection{Creating external fields}
 It is often the case that promising mostly-zero fields do not satisfy
