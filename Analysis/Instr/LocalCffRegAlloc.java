@@ -26,7 +26,7 @@ import java.util.Iterator;
     it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.1 1999-04-20 19:49:01 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.2 1999-04-20 20:18:05 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -110,11 +110,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		Temp dest = instr.def()[d];		
 		for (int i=0; i<registers.length; i++) {
 		    if (values[i] == null) {
-			values[i] = dest;
-			
-			// TODO: generate a new Instr here with <dest> 
-			// replaced by registers[i]
-			
+			values[i] = dest;			
+			instr.dst[d] = registers[i];
 			break defs;
 		    }
 		} 
@@ -128,6 +125,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		// TODO: make a new InstrMEM 
 		// storing registers[index] -> values[index]
 		
+
 		// TODO: generate a new Instr
 		
 		
