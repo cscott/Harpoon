@@ -20,7 +20,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.9 1999-10-16 20:12:41 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.10 1999-10-17 01:17:40 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -70,7 +70,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    new DataInitializers(frame, hc, staticInitializers),
 	    new DataJavaMain(frame, hc, main),
 	    new DataReflection1(frame, hc, ch),
-	    new DataReflection2(frame, hc, ch),
+	    new DataReflection2(frame, hc, ch, frame.pointersAreLong()),
 	});
     }
     final Set stringsSeen = new HashSet();
