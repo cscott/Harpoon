@@ -22,7 +22,7 @@ import java.util.Map;
  * Leiserson, and Rivest, on page 400 and following.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialHeap.java,v 1.3.2.2 2002-04-07 20:34:26 cananian Exp $
+ * @version $Id: BinomialHeap.java,v 1.3.2.3 2002-04-09 21:47:35 cananian Exp $
  */
 public class BinomialHeap<K,V> extends AbstractHeap<K,V> implements Cloneable {
     private static final boolean debug=false;
@@ -369,30 +369,30 @@ public class BinomialHeap<K,V> extends AbstractHeap<K,V> implements Cloneable {
     }
     /*-- debugging functions --*/
     private void checkHeap() { checkHeap(this.head, this.c); }
-    // XXX BUG IN JAVAC
-    private /*static <K,V>*/ void checkHeap(Node<K,V> n, Comparator<Map.Entry<K,V>> c) {
+    private static <K,V> void checkHeap(Node<K,V> n, Comparator<Map.Entry<K,V>> c) {
 	assert isHeapOrdered(n, c);
     }
-    // XXX BUG IN JAVAC
-    private /*static <K,V>*/ boolean isTreeOrdered(Node<K,V> n, Comparator<Map.Entry<K,V>> c) {
+    // XXX BUG IN JAVAC: recursive inference.  this func shouldn't be needed
+    private static <K,V> boolean isTreeOrdered2(Node<K,V> n, Comparator<Map.Entry<K,V>> c) { return isTreeOrdered(n, c); }
+    private static <K,V> boolean isTreeOrdered(Node<K,V> n, Comparator<Map.Entry<K,V>> c) {
 	assert debug;
 	if (n.parent==null) // special rules for root.
 	    return 
 		(n.sibling==null || n.sibling.parent==null) &&
 		(n.child==null || 
-		 (isTreeOrdered(n.child, c)) &&
+		 (isTreeOrdered2(n.child, c)) &&
 		 (n.degree==n.child.degree+1) &&
 		 (n==n.child.parent)) &&
 		((n.child==null) == (n.degree==0));
 	// rules for non-root nodes.
 	if (! (c.compare(n.entry, n.parent.entry) >= 0)) return false;
 	if (n.sibling!=null) {
-	    if (! isTreeOrdered(n.sibling, c)) return false;
+	    if (! isTreeOrdered2(n.sibling, c)) return false;
 	    if (! (n.degree==n.sibling.degree+1)) return false;
 	    if (! (n.parent==n.sibling.parent)) return false;
 	}
 	if (n.child!=null) {
-	    if (! isTreeOrdered(n.child, c)) return false;
+	    if (! isTreeOrdered2(n.child, c)) return false;
 	    if (! (n.degree==n.child.degree+1)) return false;
 	    if (! (n==n.child.parent)) return false;
 	}
@@ -400,15 +400,16 @@ public class BinomialHeap<K,V> extends AbstractHeap<K,V> implements Cloneable {
 	    ?((n.child==null) && (n.sibling==null))
 	    :((n.child!=null) && (n.sibling!=null));
     }
-    // XXX BUG IN JAVAC
-    private /*static <K,V>*/ boolean isHeapOrdered(Node<K,V> n, Comparator<Map.Entry<K,V>> c) {
+    // XXX BUG IN JAVAC: recursive inference.  this func shouldn't be needed
+    private static <K,V> boolean isHeapOrdered2(Node<K,V> n, Comparator<Map.Entry<K,V>> c) { return isHeapOrdered(n,c); }
+    private static <K,V> boolean isHeapOrdered(Node<K,V> n, Comparator<Map.Entry<K,V>> c) {
 	assert debug;
 	if (n==null) return true;
 	return (n.parent==null) && // all top-level trees
 	    isTreeOrdered(n, c) && // each tree in set is well-formed
 	    ((n.sibling==null) ||  // either left-most, or
 	     ((n.degree < n.sibling.degree) && // strictly increasing
-	      isHeapOrdered(n.sibling, c)));   // and sibling well-formed.
+	      isHeapOrdered2(n.sibling, c)));   // and sibling well-formed.
     }
     /** Self-test function. */
     public static void main(String argv[]) {
