@@ -18,7 +18,7 @@ import harpoon.IR.QuadNoSSA.*;
  * <code>Main</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ProfileMain.java,v 1.2.4.1 1998-11-27 23:13:28 mfoltz Exp $
+ * @version $Id: ProfileMain.java,v 1.2.4.2 1998-11-27 23:21:44 mfoltz Exp $
  */
 
 //<<<<<<< Main.java
@@ -26,7 +26,7 @@ import harpoon.IR.QuadNoSSA.*;
     // hide away constructor.
 //private Main() { }
 //=======
-public abstract class Main extends harpoon.IR.Registration {
+public class ProfileMain extends harpoon.IR.Registration {
     //>>>>>>> 1.7
 
     /** The compiler should be invoked with the names of classes
