@@ -26,7 +26,7 @@ pldi99.dvi: pldi99-example.tex pldi99-results.tex
 pldi99.dvi: Figures/THussi.tex Figures/THv0.tex Figures/THscccomp.eps
 
 # more dependencies for the pldi02 paper.
-#pldi02.dvi: pldi02-abstract.tex
+pldi02.dvi: pldi02-abstract.tex
 
 
 # thesis figure dependencies

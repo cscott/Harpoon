@@ -1,0 +1,24 @@
+% -*- latex -*- This is a LaTeX document.
+% $Id: pldi02-abstract.tex,v 1.1 2001-11-15 01:26:01 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+
+This paper presents a set of Java optimizations targetted at
+memory-constrained embedded devices.  We aggressively transform
+the program using both source-level transformations and
+specializations of the runtime environment to save as much
+as {\bf XX}\% of the storage requested by the allocator.
+
+Our techniques fall into three broad categories: header optimizations,
+bitwidth analyses, and mostly-zero field elimination.  Header
+optimizations reduce the size penalties associated with virtual
+dispatch and Java hashcode and locking semantics.  Bitwidth
+analyses allow static compile-time reduction of field sizes where the
+full range of a datatype is unused.  Mostly-zero field elimination
+attempts to factor out fields which are ``usually zero'' (as
+determined by profiling) to obtain savings.  Combined, these
+techniques free the programmer from the burden of space accounting
+and allow the use of general-purpose software on extremely
+memory-constrained embedded devices.
+
+\end{abstract}
