@@ -319,9 +319,7 @@ action code {:
 	   s = s.substring(0, s.lastIndexOf('.')) ) {
 	  if ((!s.equals(this_package)) &&
 	      (qn = className(s)) != null) {
-	      Iterator it=allParents(qn.toClass()).iterator();
-	      while (it.hasNext()) {
-		  HClass hc = (HClass) it.next();
+	      for (HClass hc : allParents(qn.toClass())) {
 		  // first try replacing '$' with '.' to name inner class.
 		  String dots = hc.getName().replace('$','.');
 		  if (null!=(qn = className(combineWithDot(dots, ty))))
@@ -493,11 +491,11 @@ action code {:
       return innerindex;
   }
 
-  private List allParents(HClass hc) {
-      List l = new ArrayList();
+  private List<HClass> allParents(HClass hc) {
+      List<HClass> l = new ArrayList<HClass>();
       l.add(hc);
       for (int i=0; i<l.size(); i++) {
-	  HClass hcc = (HClass) l.get(i);
+	  HClass hcc = l.get(i);
 	  HClass sc = hcc.getSuperclass();
 	  if (sc!=null) l.add(sc);
 	  l.addAll(Arrays.asList(hcc.getInterfaces()));

@@ -44,7 +44,7 @@ import java.util.Vector;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.10 2004-02-08 01:55:08 cananian Exp $ */
+ * @version $Id: Instr.java,v 1.11 2004-02-08 05:09:51 cananian Exp $ */
 public class Instr implements HCodeElement, UseDefable,
 			      CFGraphable<Instr,InstrEdge> {
     private static boolean PRINT_UPDATES_TO_IR = false;
@@ -354,9 +354,8 @@ public class Instr implements HCodeElement, UseDefable,
 	oldi.inf.getParent().modCount++;
 
 	Instr last = oldi.prev;
-	Iterator iter = newis.iterator();
-	while(iter.hasNext()) { 
-	    Instr i = (Instr) iter.next();
+	for (Object iO : newis) { 
+	    Instr i = (Instr) iO;
 	    if (last != null) last.next = i;
 	    i.prev = last;
 	    last = i;
@@ -365,11 +364,9 @@ public class Instr implements HCodeElement, UseDefable,
 	if (oldi.next != null) oldi.next.prev = last;
     }
 
-    private static String pprint(List l) {
+    private static String pprint(List<Instr> l) {
 	String s="";
-	Iterator instrs = l.iterator();
-	while(instrs.hasNext()) {
-	    Instr i = (Instr) instrs.next();
+	for (Instr i : l) {
 	    s += i.toString() + "\n";
 	}
 	return s;
@@ -544,8 +541,7 @@ public class Instr implements HCodeElement, UseDefable,
 
 	if (PRINT_REMOVES) System.out.println("removing Instr:"+this);
 
-	for(Iterator groups=getGroups().iterator(); groups.hasNext();){
-	    InstrGroup group = (InstrGroup) groups.next();
+	for(InstrGroup group : getGroups()){
 	    assert group.entry != this : "Can't handle group component removes yet (entry)";
 	    assert group.exit != this : "Can't handle group component removes yet (exit)";
 	}
@@ -564,12 +560,9 @@ public class Instr implements HCodeElement, UseDefable,
 	this.next = null;
 	this.prev = null;
 	/* remove mappings in inf.labelToBranchingInstrsSetMap */
-	if (this.targets!=null) {
-	    for (Iterator<Label> it=this.targets.iterator(); it.hasNext(); ) {
-		Label l = it.next();
-		((Set)inf.labelToBranches.get(l)).remove(this);
-	    }
-	}
+	if (this.targets!=null)
+	    for (Label l : this.targets)
+		inf.labelToBranches.get(l).remove(this);
 
 	// increment parent's modification count (for fail-fast iterator)
 	this.inf.getParent().modCount++;
@@ -618,14 +611,9 @@ public class Instr implements HCodeElement, UseDefable,
 	if (to!=null) to.prev = this;
 
 	/* add this to inf.labelToBranchingInstrSetMap */
- 	if (this.targets != null) {
-	    Iterator<Label> titer = this.targets.iterator();
-	    while(titer.hasNext()) {
-		Label l = titer.next();
-		((Set)inf.labelToBranches.
-		 get(l)).add(this);
-	    }
-	}
+ 	if (this.targets != null)
+	    for (Label l : this.targets)
+		inf.labelToBranches.get(l).add(this);
 
 	// choose group of whichever group is in the SURROUNDING area
 	// (ie higher in the nested scopes)

@@ -70,7 +70,7 @@ import harpoon.Util.DataStructs.LightMap;
  * <code>ODMAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODMAInfo.java,v 1.8 2004-02-08 01:53:07 cananian Exp $
+ * @version $Id: ODMAInfo.java,v 1.9 2004-02-08 05:09:36 cananian Exp $
  */
 public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -218,8 +218,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	if(DO_METHOD_INLINING)
 	    ih = new HashMap();
 
-	for(Iterator it = mms.iterator(); it.hasNext(); ){
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : mms){
+	    MetaMethod mm = (MetaMethod) mmO;
 	    if(pa.analyzable(mm.getHMethod()))
 		analyze_mm(mm);
 	}
@@ -284,8 +284,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	HClass excp_class = 
 	    linker.forName("java.lang.Exception");
 
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    if(node.type != PANode.INSIDE) continue;
 	    GenType[] types = node.getPossibleClasses();
 	    boolean isExcp = false;
@@ -417,8 +417,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	/// DUMMY CODE: Stack allocate ALL the threads
 	if(NO_TG) {
 	    Set set = getLevel0InsideNodes(pig);
-	    for(Iterator it = set.iterator(); it.hasNext(); ) {
-		PANode node = (PANode) it.next();
+	    for(Object nodeO : set) {
+		PANode node = (PANode) nodeO;
 		Quad q = (Quad) node_rep.node2Code(node);
 		if(q == null) {
 		    System.out.println("BELL: " + node + " " + q);
@@ -494,8 +494,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    }
 	}
 
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    if(node.type != PANode.INSIDE) continue;
 
 	    if (ODMAInfo.Nodes2Status.get(node)==null){
@@ -619,8 +619,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	/// DUMMY CODE: Stack allocate ALL the threads
 	if(NO_TG) {
 	    Set set = getLevel0InsideNodes(pig);
-	    for(Iterator it = set.iterator(); it.hasNext(); ) {
-		PANode node = (PANode) it.next();
+	    for(Object nodeO : set) {
+		PANode node = (PANode) nodeO;
 		Quad q = (Quad) node_rep.node2Code(node);
 		if(q == null) {
 		    System.out.println("BELL: " + node + " " + q);
@@ -808,8 +808,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	and started into the currently analyzed method has a thread specific
 	heap associated with it. */
     private void set_make_heap(Set threads){
-	for(Iterator it = threads.iterator(); it.hasNext(); ) {
-	    PANode nt = (PANode) it.next();
+	for(Object ntO : threads) {
+	    PANode nt = (PANode) ntO;
 	    if((nt.type != PANode.INSIDE) || 
 	       (nt.getCallChainDepth() != 0) ||
 	       (nt.isTSpec())) continue;
@@ -890,8 +890,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	// grab into "news" the set of the NEW/ANEW quads allocating objects
 	// that should be put into the heap of "nt".
 	Set news = new HashSet();
-	for(Iterator it = pointed.iterator(); it.hasNext(); ){
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : pointed){
+	    PANode node = (PANode) nodeO;
 	    news.add(node_rep.node2Code(node));
 	}
 	
@@ -963,8 +963,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	
 	// the objects pointed by the thread node and which don't escape
 	// anywhere else are allocated on the heap of the thread node
-	for(Iterator it = news.iterator(); it.hasNext(); ){
-	    Quad cnewq = (Quad) it.next();
+	for(Object cnewqO : news){
+	    Quad cnewq = (Quad) cnewqO;
 	    MyAP cnewq_ap = getAPObj(cnewq);
 	    if (ODMAInfo.MEM_OPTIMIZATION){
 		cnewq_ap.sa = false;
@@ -992,8 +992,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	System.out.println("After the preallocation transformation:");
 	    hcode.print(new java.io.PrintWriter(System.out, true));
 	    System.out.println("Thread specific NEW:");
-	    for(Iterator it = news.iterator(); it.hasNext(); ){
-		Quad new_site = (Quad) it.next();
+	    for(Object new_siteO : news){
+		Quad new_site = (Quad) new_siteO;
 		System.out.println(new_site.getSourceFile() + ":" + 
 				   new_site.getLineNumber() + " " + 
 				   new_site);
@@ -1063,8 +1063,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    return false;
 	}
 
-	for(Iterator it=pig.G.e.nodeHolesSet(node).iterator();it.hasNext();){
-	    PANode nhole = (PANode)it.next();
+	for(Object nholeO : pig.G.e.nodeHolesSet(node)){
+	    PANode nhole = (PANode) nholeO;
 	    // if the node escapes through some node that is not a parameter
 	    // it's wrong ...
 	    if(nhole.type != PANode.PARAM){
@@ -1271,8 +1271,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	System.out.println("FV Node " + node);
 	System.out.println("FV spec " + node.getAllCSSpecs());
 
-	for(Iterator it = node.getAllCSSpecs().iterator(); it.hasNext(); ){
-	    Map.Entry entry = (Map.Entry) it.next();
+	for(Object entryO : node.getAllCSSpecs()){
+	    Map.Entry entry = (Map.Entry) entryO;
 	    CALL   call = (CALL) entry.getKey();
 	    PANode spec = (PANode) entry.getValue();
 	    
@@ -1347,8 +1347,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
     /** Pretty printer for debug. */
     public void print(){
 	System.out.println("ALLOCATION POLLICIES:");
-	for(Iterator it = aps.keySet().iterator(); it.hasNext(); ){
-	    Quad newq = (Quad) it.next();
+	for(Object newqO : aps.keySet()){
+	    Quad newq = (Quad) newqO;
 	    MyAP ap   = (MyAP) aps.get(newq);
 	    HMethod hm = newq.getFactory().getMethod();
 	    HClass hclass = hm.getDeclaringClass();
@@ -1410,8 +1410,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    level0.retainAll(candidates);
 // 	System.out.println("original candidates " + level0);
 	Set A = new HashSet();
-	for(Iterator it = level0.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : level0) {
+	    PANode node = (PANode) nodeO;
 // 	    if(!pig.G.captured(node) && lostOnlyInCaller(node, pig, mm)) {
 	    if(!captured(pig, mm, node)){
 		pig = pa.getIntParIntGraph(mm);
@@ -1443,9 +1443,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    MetaMethod mcaller = callers[i];
 	    HMethod hcaller = mcaller.getHMethod();
 //  	    System.out.println("Caller : " + mcaller);
-	    for(Iterator it = mcg.getCallSites(mcaller).iterator();
-		it.hasNext(); ) {
-		CALL cs = (CALL) it.next();
+	    for(Object csO : mcg.getCallSites(mcaller)) {
+		CALL cs = (CALL) csO;
 		MetaMethod[] callees = mcg.getCallees(mcaller, cs);
 
 		if (callees.length==0) continue;
@@ -1472,8 +1471,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    }
 	}
 	
-	for(Iterator it = A.iterator(); it.hasNext(); ) {
-	    PANode n = (PANode) it.next();
+	for(Object nO : A) {
+	    PANode n = (PANode) nO;
 	    ODNodeStatus status = (ODNodeStatus) Nodes2Status.get(n);
 	    if (status==null) {
 		System.err.println("Problem somewhere with Nodes2Status");
@@ -1500,8 +1499,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
 	// obtain in A the set of nodes that might be captured after inlining 
 	Set A = new HashSet();
-	for(Iterator it = candidates.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : candidates) {
+	    PANode node = (PANode) nodeO;
 	    if(!captured(pig, mm, node)){
 		pig = pa.getIntParIntGraph(mm);
 		if(lostOnlyInCaller(node, pig, mm)) {
@@ -1574,8 +1573,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	System.out.println("Inside try_inlining");
 
 	Set B = new HashSet();
-	for(Iterator it = A.iterator(); it.hasNext(); ){
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : A){
+	    PANode node = (PANode) nodeO;
 	    PANode spec = node.csSpecialize(cs);
 	    if(spec == null) continue;
 	    if(captured(caller_pig, mcaller, spec, true, false)){
@@ -1642,8 +1641,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
     private SCComponent reverse_top_sort_of_cs(Map ih) {
 	final Relation m2csINm = new LightRelation();
 	final Relation m2csTOm = new LightRelation();
-	for(Iterator it = ih.keySet().iterator(); it.hasNext(); ) {
-	    CALL cs = (CALL) it.next();
+	for(Object csO : ih.keySet()) {
+	    CALL cs = (CALL) csO;
 	    m2csINm.add(quad2method(cs), cs);
 	    m2csTOm.add(cs.method(), cs);
 	}
@@ -1863,8 +1862,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
 
     private void translate_ap(Map old2new) {
-	for(Iterator it = old2new.entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry entry = (Map.Entry) it.next();
+	for(Object entryO : old2new.entrySet()) {
+	    Map.Entry entry = (Map.Entry) entryO;
 	    Quad old_q = (Quad) entry.getKey();
 	    Quad new_q = (Quad) entry.getValue();
 	    setAPObj(new_q, (MyAP) (getAPObj(old_q).clone()));
@@ -2003,8 +2002,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 // 	    if ((methodcapture)&&(pig.G.e.hasEscapedIntoANode(node))){
 	    if (pig.G.e.hasEscapedIntoANode(node)){
 		if (!methodcapture){
-		    for(Iterator n_it=pig.G.e.nodeHolesSet(node).iterator(); n_it.hasNext(); ){
-			PANode n = (PANode) n_it.next();
+		    for(Object nO : pig.G.e.nodeHolesSet(node)){
+			PANode n = (PANode) nO;
 			if (n.type != PANode.PARAM)
 			    {
 				System.out.println("--escaping (no analysis) " + 
@@ -2083,8 +2082,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		holefound = false;
 		MethodHole thehole = null;
 
-		for(Iterator hole_it=mm_holeset.iterator(); hole_it.hasNext(); ) {
-		    MethodHole hole = (MethodHole)hole_it.next();
+		for(Object holeO : mm_holeset) {
+		    MethodHole hole = (MethodHole) holeO;
 		    // The node must be reachable from the parameters
 		    if (hole.arguments()==null)
 			System.err.println(hole);
@@ -2152,8 +2151,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		PANode ret = thehole.ret();
 		PANode exc = thehole.exc();
 
-		for(Iterator it = mm_holes_whithout_hole.iterator(); it.hasNext(); ){
-		    MethodHole mh = (MethodHole) it.next();
+		for(Object mhO : mm_holes_whithout_hole){
+		    MethodHole mh = (MethodHole) mhO;
 		    CALL cs = mh.callsite();
 		    if (hm.equals(cs.method())){
 			annoyingCS.add(mh);
@@ -2233,17 +2232,16 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 					   reachable);
 		    
 		    // Update of escape functions
-		    Iterator upd_it = reachable.iterator();
-		    while(upd_it.hasNext()){
-			PANode upd_n = (PANode) upd_it.next();
+		    for (Object upd_nO : reachable){
+			PANode upd_n = (PANode) upd_nO;
  			if(verbose) 
 			    System.out.println("    " + upd_n + " updated !!!");
 			pig.G.e.removeMethodHole(upd_n, hm);
 		    }
 
 		    // Checking whether the params are still escaping
-		    for(Iterator par_it=arguments.iterator(); par_it.hasNext(); ) {
-			PANode param = (PANode) par_it.next();
+		    for(Object paramO : arguments) {
+			PANode param = (PANode) paramO;
 			if ((!pig.G.willEscape(param))&&(!pig.G.e.hasEscaped(param)))
 			    pig.G.e.removeNodeHoleFromAll(param);
 		    }
@@ -2370,8 +2368,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    holefound = false;
 	    MethodHole thehole = null;
 
-	    for(Iterator hole_it=mm_holeset.iterator(); hole_it.hasNext(); ) {
-		MethodHole c_hole = (MethodHole)hole_it.next();
+	    for(Object c_holeO : mm_holeset) {
+		MethodHole c_hole = (MethodHole) c_holeO;
 		// The HMethod of one of its specialization
 		// (MetaMethods) must be the targeted one
 		MetaMethod[] mms = c_hole.callees();
@@ -2472,8 +2470,8 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		PANode ret = thehole.ret();
 		PANode exc = thehole.exc();
 
-		for(Iterator it = callsites.iterator(); it.hasNext(); ){
-		    MethodHole mh = (MethodHole) it.next();
+		for(Object mhO : callsites){
+		    MethodHole mh = (MethodHole) mhO;
 		    hmnodes_ret.addAll(mh.parameters());
 		    hmnodes_exc.addAll(mh.parameters());
 		    hmnodes.addAll(mh.arguments());
@@ -2525,15 +2523,14 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 // 		}
 		    
 		// Update of escape functions
-		Iterator upd_it = reachable.iterator();
-		while(upd_it.hasNext()){
-		    PANode upd_n = (PANode) upd_it.next();
+		for (Object upd_nO : reachable){
+		    PANode upd_n = (PANode) upd_nO;
 		    pig.G.e.removeMethodHole(upd_n, hm);
 		}
 		  
 		// Checking whether the params are still escaping
-		for(Iterator par_it=arguments.iterator(); par_it.hasNext(); ) {
-		    PANode param = (PANode) par_it.next();
+		for(Object paramO : arguments) {
+		    PANode param = (PANode) paramO;
 		    if ((!pig.G.willEscape(param))&&(!pig.G.e.hasEscaped(param)))
 			pig.G.e.removeNodeHoleFromAll(param);
 		}

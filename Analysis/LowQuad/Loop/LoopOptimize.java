@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.5 2004-02-08 01:52:54 cananian Exp $
+ * @version $Id: LoopOptimize.java,v 1.6 2004-02-08 05:09:34 cananian Exp $
  */
 public final class LoopOptimize {
 
@@ -272,9 +272,8 @@ public final class LoopOptimize {
 	    Induction induction=(Induction)allinductions.get(ssitossamap.tempMap(operands[flag]));
 	    //Iterate through all of the newly created induction variables
 
-	    Iterator iterate=newinductvars.iterator();
-	    while (iterate.hasNext()) {
-		Temp indvar=(Temp) iterate.next();
+	    for (Object indvarO : newinductvars) {
+		Temp indvar = (Temp) indvarO;
 		Induction t=(Induction) allinductions.get(indvar);
 		/*Policy for moving:
 		  1) Both have the same base induction variable.

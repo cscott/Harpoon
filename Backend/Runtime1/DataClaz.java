@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.6 2003-10-21 02:11:02 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.7 2004-02-08 05:09:43 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -332,10 +332,7 @@ public class DataClaz extends Data {
 	// inherited methods of Object don't make it into the methods
 	// set.
 	Set<String> sigs = new HashSet<String>();
-	for (Iterator<HMethod> it=Arrays.asList
-		 (linker.forName("java.lang.Object").getMethods()).iterator();
-	     it.hasNext(); ) {
-	    HMethod hm = it.next();
+	for (HMethod hm : linker.forName("java.lang.Object").getMethods()) {
 	    String sig = hm.getName() + hm.getDescriptor();
 	    sigs.add(sig);
 	}	    

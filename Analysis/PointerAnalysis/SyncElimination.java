@@ -76,7 +76,7 @@ import harpoon.Util.Util;
  * based on the results of pointer analysis.
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: SyncElimination.java,v 1.3 2004-02-08 01:53:07 cananian Exp $
+ * @version $Id: SyncElimination.java,v 1.4 2004-02-08 05:09:37 cananian Exp $
  */
 public class SyncElimination implements java.io.Serializable {
 
@@ -177,9 +177,8 @@ public class SyncElimination implements java.io.Serializable {
 	    // change calls to refer to specialized methods
 	    // eliminate all other syncs
 	    callpath2syncops = new LightRelation();
-	    Iterator i = necessarySyncs.iterator();
-	    while (i.hasNext()) {
-		PASync s = (PASync)i.next();
+	    for (Object sO : necessarySyncs) {
+		PASync s = (PASync) sO;
 		System.out.println("Looking at necessary sync : "+s);
 		ListCell lc = s.call_path;
 		System.out.println("Specialization depth : "+s.depth);
@@ -197,9 +196,8 @@ public class SyncElimination implements java.io.Serializable {
 	    int specialization_path_number = 1;
 	    // generate specialized versions of all of the call paths in
 	    // the multimap.
-	    Iterator e = callpath2syncops.keys().iterator();
-	    while (e.hasNext()) {
-		CallPath cp = (CallPath)e.next();
+	    for (Object cpO : callpath2syncops.keys()) {
+		CallPath cp = (CallPath) cpO;
 		Iterator calliter = cp.iterator();
 		int count = 1;
 		while (calliter.hasNext()) {
@@ -208,7 +206,7 @@ public class SyncElimination implements java.io.Serializable {
 		    HMethod caller = null; // = cq.getContainingMethod();
 		    HClass hc = caller.getDeclaringClass();
 		    HClassMutator mut = hc.getMutator();
-		    String newMethodName = caller.getName()+"__spec"+specialization_path_number+"_"+i;
+		    String newMethodName = caller.getName()+"__spec"+specialization_path_number+"_"+(count++);
 		    HMethod specmethod = mut.addDeclaredMethod(newMethodName,
 							       caller.getParameterTypes(),
 							       caller.getReturnType());

@@ -16,7 +16,7 @@ import net.cscott.jutil.Util;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.5 2004-02-08 01:58:03 cananian Exp $
+ * @version $Id: Relinker.java,v 1.6 2004-02-08 05:09:46 cananian Exp $
  */
 public class Relinker extends Linker implements java.io.Serializable {
     protected final Linker linker;
@@ -194,8 +194,8 @@ public class Relinker extends Linker implements java.io.Serializable {
 	out.defaultWriteObject();
 	// write out list of relinked descriptors.
 	List l = new ArrayList();
-	for (Iterator it=descCache.keySet().iterator(); it.hasNext(); ) {
-	    String descK = (String) it.next();
+	for (Object descKO : descCache.keySet()) {
+	    String descK = (String) descKO;
 	    String descV = forDescriptor(descK).getDescriptor();
 	    if (descK.equals(descV)) continue; // not an interesting entry.
 	    l.add(descK); l.add(descV);

@@ -76,7 +76,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.18 2004-02-08 01:53:07 cananian Exp $
+ * @version $Id: MAInfo.java,v 1.19 2004-02-08 05:09:36 cananian Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -347,8 +347,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    hm2rang = get_hm2rang();
 	}
 
-	for(Iterator it = mms.iterator(); it.hasNext(); ){
-	    MetaMethod mm = (MetaMethod) it.next();
+	for(Object mmO : mms){
+	    MetaMethod mm = (MetaMethod) mmO;
 	    if(pa.analyzable(mm.getHMethod()))
 		analyze_mm(mm);
 	}
@@ -502,8 +502,8 @@ public class MAInfo implements AllocationInformation, Serializable {
     // aux method for generate_aps: generate stack allocation hints
     private void generate_aps_sa(MetaMethod mm, ParIntGraph pig, Set lost,
 				 Set nodes) {
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    Quad q  = (Quad) node_rep.node2Code(node);
 	    assert q != null : "No quad for " + node;
 	    MyAP ap = getAPObj(q);
@@ -522,8 +522,8 @@ public class MAInfo implements AllocationInformation, Serializable {
     // aux method for generate_aps: generate thread allocation hints
     private void generate_aps_ta(MetaMethod mm, Set nodes) {
 	HMethod hm = mm.getHMethod();	
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    Quad q  = (Quad) node_rep.node2Code(node);
 	    assert q != null : "No quad for " + node;
 	    MyAP ap = getAPObj(q);
@@ -560,8 +560,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     // aux method for generate_aps: generate "no syncs" hints
     private void generate_aps_ns(MetaMethod mm, Set nodes) {
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    Quad q  = (Quad) node_rep.node2Code(node);
 	    if(! (q instanceof NEW)) continue;
 	    MyAP ap = getAPObj((Quad) node_rep.node2Code(node));
@@ -605,8 +605,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	/// DUMMY CODE: Stack allocate ALL the threads
 	if(NO_TG) {
 	    Set set = getLevel0InsideNodes(pig);
-	    for(Iterator it = set.iterator(); it.hasNext(); ) {
-		PANode node = (PANode) it.next();
+	    for(Object nodeO : set) {
+		PANode node = (PANode) nodeO;
 		Quad q = (Quad) node_rep.node2Code(node);
 		if(q == null) {
 		    System.out.println("BELL: " + node + " " + q);
@@ -626,8 +626,8 @@ public class MAInfo implements AllocationInformation, Serializable {
     // and started into the currently analyzed method has a thread specific
     // heap associated with it.
     private void set_make_heap(Set threads) {
-	for(Iterator it = threads.iterator(); it.hasNext(); ) {
-	    PANode nt = (PANode) it.next();
+	for(Object ntO : threads) {
+	    PANode nt = (PANode) ntO;
 	    if((nt.type != PANode.INSIDE) || 
 	       (nt.getCallChainDepth() != 0) ||
 	       (nt.isTSpec())) continue;
@@ -656,8 +656,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     /** Checks whether <code>node</code> escapes through a static field. */
     private boolean lostInAStatic(PANode node, ParIntGraph pig) {
-	for(Iterator it = pig.G.e.nodeHolesSet(node).iterator();it.hasNext();){
-	    PANode nhole = (PANode)it.next();
+	for(Object nholeO : pig.G.e.nodeHolesSet(node)){
+	    PANode nhole = (PANode) nholeO;
 	    if(nhole.type == PANode.STATIC)
 		return true;
 	}
@@ -676,8 +676,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	exceptions). */
     private boolean lostInCaller(PANode node, ParIntGraph pig) {
 	// 1. maybe node escapes through a parameter
-	for(Iterator it = pig.G.e.nodeHolesSet(node).iterator();it.hasNext();){
-	    PANode nhole = (PANode)it.next();
+	for(Object nholeO : pig.G.e.nodeHolesSet(node)){
+	    PANode nhole = (PANode) nholeO;
 	    if(nhole.type == PANode.PARAM)
 		return true;
 	}
@@ -694,8 +694,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	Set threads = pig.tau.activeThreadSet();
 	// go over all the node holes node escapes into and
 	// check if any of them corresponds to a thread.
-	for(Iterator it = pig.G.e.nodeHolesSet(node).iterator();it.hasNext();){
-	    PANode nhole = (PANode) it.next();
+	for(Object nholeO : pig.G.e.nodeHolesSet(node)){
+	    PANode nhole = (PANode) nholeO;
 	    if(threads.contains(nhole))
 		return true;
 	}
@@ -841,8 +841,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    return retval;
 	}
 	
-	for(Iterator it = node.getAllCSSpecs().iterator(); it.hasNext(); ){
-	    Map.Entry entry = (Map.Entry) it.next();
+	for(Object entryO : node.getAllCSSpecs()){
+	    Map.Entry entry = (Map.Entry) entryO;
 	    CALL   call = (CALL) entry.getKey();
 	    PANode spec = (PANode) entry.getValue();
 	    
@@ -940,9 +940,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	       (node.getCallChainDepth() < 
 		PointerAnalysis.MAX_SPEC_DEPTH - 1)) {
 
-		for(Iterator it = node.getAllCSSpecs().iterator();
-		    it.hasNext(); ) {
-		    Map.Entry entry = (Map.Entry) it.next();
+		for(Object entryO : node.getAllCSSpecs()) {
+		    Map.Entry entry = (Map.Entry) entryO;
 		    CALL   call = (CALL) entry.getKey();
 		    PANode spec = (PANode) entry.getValue();
 		    
@@ -1103,8 +1102,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	long nb_ns = 0;
 
 	System.out.println("\n(INTERESTING) ALLOCATION PROPERTIES:");
-	for(Iterator it = aps.keySet().iterator(); it.hasNext(); ) {
-	    Quad newq = (Quad) it.next();
+	for(Object newqO : aps.keySet()) {
+	    Quad newq = (Quad) newqO;
 	    MyAP ap   = (MyAP) aps.get(newq);
 	    HMethod hm = newq.getFactory().getMethod();
 	    HClass hclass = hm.getDeclaringClass();
@@ -1203,8 +1202,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	// grab into "news" the set of the NEW/ANEW quads allocating objects
 	// that should be put into the heap of "nt".
 	Set news = new HashSet();
-	for(Iterator it = pointed.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : pointed) {
+	    PANode node = (PANode) nodeO;
 	    news.add(node_rep.node2Code(node));
 	}
 	
@@ -1255,8 +1254,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	
 	// the objects pointed by the thread node and which don't escape
 	// anywhere else are allocated on the heap of the thread node
-	for(Iterator it = news.iterator(); it.hasNext(); ){
-	    Quad cnewq = (Quad) it.next();
+	for(Object cnewqO : news){
+	    Quad cnewq = (Quad) cnewqO;
 	    MyAP cnewq_ap = getAPObj(cnewq);
 	    cnewq_ap.ta = true;
 	    if(opt.GEN_SYNC_FLAG)
@@ -1268,8 +1267,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    System.out.println("After the preallocation transformation:");
 	    hcode.print(new java.io.PrintWriter(System.out, true));
 	    System.out.println("Thread specific NEW:");
-	    for(Iterator it = news.iterator(); it.hasNext(); ){
-		Quad new_site = (Quad) it.next();
+	    for(Object new_siteO : news){
+		Quad new_site = (Quad) new_siteO;
 		System.out.println(new_site.getSourceFile() + ":" + 
 				   new_site.getLineNumber() + " " + 
 				   new_site);
@@ -1575,8 +1574,8 @@ public class MAInfo implements AllocationInformation, Serializable {
     }
 
     private void translate_ap(Map old2new) {
-	for(Iterator it = old2new.entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry entry = (Map.Entry) it.next();
+	for(Object entryO : old2new.entrySet()) {
+	    Map.Entry entry = (Map.Entry) entryO;
 	    Quad old_q = (Quad) entry.getKey();
 	    Quad new_q = (Quad) entry.getValue();
 	    if(!((old_q instanceof NEW) || (old_q instanceof ANEW)))
@@ -1715,8 +1714,8 @@ public class MAInfo implements AllocationInformation, Serializable {
     private LinkedList current_chain_callees;
     
     private void split_nodes(Set nodes, Set sa_nodes, Set ta_nodes) {
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    Quad q = (Quad) node_rep.node2Code(node);
 	    if(opt.stack_allocate_not_in_loops() && in_a_loop(q)) {
 		if(DEBUG)
@@ -1781,8 +1780,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    if(DEBUG)
 		System.out.println(header + "CALLER: " + mcaller.getHMethod());
 
-	    for(Iterator it = call_sites.iterator(); it.hasNext(); ) {
-		CALL cs = (CALL) it.next();
+	    for(Object csO : call_sites) {
+		CALL cs = (CALL) csO;
 
 		MetaMethod[] callees = mcg.getCallees(mcaller, cs);
 		if(callees.length == 0) {
@@ -1806,8 +1805,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 			System.out.println(header + Util.code2str(cs) +
 					   " is in a loop -> don't sa");
 		    ta_nodes = new HashSet(ta_nodes);
-		    for(Iterator itn = sa_nodes.iterator(); itn.hasNext(); ) {
-			PANode node = (PANode) itn.next();
+		    for(Object nodeO : sa_nodes) {
+			PANode node = (PANode) nodeO;
 			MyAP ap = getAP_special(node);
 			if(!ap.ta)
 			    ta_nodes.add(node);
@@ -1914,8 +1913,8 @@ public class MAInfo implements AllocationInformation, Serializable {
     // specialize a set of nodes for a given call site
     private Set specializeNodes(final Set nodes, final CALL cs) {
 	Set result = new HashSet();
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    PANode spec = node.csSpecialize(cs);
 	    if(spec == null) continue;
 	    result.add(spec);
@@ -1929,8 +1928,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 				final ParIntGraph pig,
 				final Set lost) {
 	Set result = new HashSet();
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    if(!lost.contains(pig) && pig.G.captured(node))
 		result.add(node);
 	}
@@ -1943,8 +1942,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 				      final ParIntGraph pig,
 				      final Set lost) {
 	Set result = new HashSet();
-	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
+	for(Object nodeO : nodes) {
+	    PANode node = (PANode) nodeO;
 	    if(pig.G.captured(node)) continue;
 
 	    if(!lost.contains(node) && lostOnlyInCaller(node, pig))
@@ -1960,8 +1959,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 
     private void extra_stack_allocation(Set news) {
-	for(Iterator it = news.iterator(); it.hasNext(); ) {
-	    Quad q  = (Quad) it.next();
+	for(Object qO : news) {
+	    Quad q = (Quad) qO;
 
 	    System.out.println("STKALLOC " + Util.code2str(q));
 
@@ -1976,8 +1975,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 
     private void extra_thread_allocation(Set news) {
-	for(Iterator it = news.iterator(); it.hasNext(); ) {
-	    Quad q  = (Quad) it.next();
+	for(Object qO : news) {
+	    Quad q = (Quad) qO;
 
 	    System.out.println("THRALLOC " + Util.code2str(q));
 
@@ -2013,8 +2012,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	public String toString() {
 	    StringBuffer buff = new StringBuffer();
 	    buff.append("INLINING CHAIN (" + calls.size() + "): {\n CALLS:\n");
-	    for(Iterator it = calls.iterator(); it.hasNext(); ) {
-		CALL cs = (CALL) it.next();
+	    for(Object csO : calls) {
+		CALL cs = (CALL) csO;
 		buff.append("  ")
 		    .append(Util.code2str(cs))
 		    .append(" [ ")
@@ -2048,8 +2047,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	public boolean isAcceptable() {
 	    if(isDone()) return true;
 	    int size = get_method_size(extract_caller(getLastCall()));
-	    for(Iterator it = calls.iterator(); it.hasNext(); ) {
-		CALL cs = (CALL) it.next();
+	    for(Object csO : calls) {
+		CALL cs = (CALL) csO;
 		HMethod hm = extract_callee(cs);
 		if(get_method_size(hm) > opt.MAX_INLINABLE_METHOD_SIZE)
 		    return false;
@@ -2116,8 +2115,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	private Set project_set(Set set, Map old2new) {
 	    Set result = new HashSet();
-	    for(Iterator it = set.iterator(); it.hasNext(); ) {
-		Quad old_quad = (Quad) it.next();
+	    for(Object old_quadO : set) {
+		Quad old_quad = (Quad) old_quadO;
 		Quad new_quad = (Quad) old2new.get(old_quad);
 		assert new_quad != null : "Warning: no new Quad for " + 
 			    Util.code2str(old_quad) + " in [ " +
@@ -2205,8 +2204,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 
       // db debug
       System.out.println("Chains that influence Main.run"); 
-      for(Iterator it = chains.iterator(); it.hasNext(); ) {
-	  InliningChain ic = (InliningChain) it.next();
+      for(Object icO : chains) {
+	  InliningChain ic = (InliningChain) icO;
 	  HMethod hm = ic.getLastCallee();
 	  if(hm.getName().equals("run") &&
 	     hm.getClass().getName().equals("Main"))
@@ -2226,8 +2225,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	  process_chain((InliningChain) it.next());
       
       // remove the newly introduced unreachable code
-      for(Iterator pit = toPrune.iterator(); pit.hasNext(); ) {
-	  Code hcode = (Code) pit.next();
+      for(Object hcodeO : toPrune) {
+	  Code hcode = (Code) hcodeO;
 	  if(DEBUG_IC)
 	      System.out.print("Pruning " + hcode.getMethod());
 	  Unreachable.prune(hcode);

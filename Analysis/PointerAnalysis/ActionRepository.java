@@ -44,7 +44,7 @@ import harpoon.Util.Util;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ActionRepository.java,v 1.5 2004-02-08 01:53:07 cananian Exp $
+ * @version $Id: ActionRepository.java,v 1.6 2004-02-08 05:09:36 cananian Exp $
  */
 public class ActionRepository implements java.io.Serializable {
     
@@ -80,8 +80,8 @@ public class ActionRepository implements java.io.Serializable {
 	and <code>ar2</code>. For debug purposes. */
     private void print_difference(final ActionRepository ar2) {
 	System.out.println("--- LD actions:");
-	for(Iterator it = alpha_ld.iterator(); it.hasNext(); ){
-	    PALoad load = (PALoad) it.next();
+	for(Object loadO : alpha_ld){
+	    PALoad load = (PALoad) loadO;
 	    if(!ar2.alpha_ld.contains(load))
 		System.out.println(load);
 	}
@@ -203,9 +203,8 @@ public class ActionRepository implements java.io.Serializable {
     public final void add_ld(Set set_n1, String f, PANode n2, PANode nt,
 		       Set active_threads){
 	if(set_n1.isEmpty()) return;
-	Iterator it_n1 = set_n1.iterator();
-	while(it_n1.hasNext()){
-	    PANode n1 = (PANode) it_n1.next();
+	for (Object n1O : set_n1){
+	    PANode n1 = (PANode) n1O;
 	    add_ld(n1,f,n2,nt,active_threads);
 	}
     }
@@ -219,9 +218,8 @@ public class ActionRepository implements java.io.Serializable {
     public final void add_ld(Set set_n1, String f, PANode n2, Set set_nt,
 			Set active_threads){
 	if(set_nt.isEmpty()) return;
-	Iterator it_nt = set_nt.iterator();
-	while(it_nt.hasNext()){
-	    PANode nt = (PANode) it_nt.next();
+	for (Object ntO : set_nt){
+	    PANode nt = (PANode) ntO;
 	    add_ld(set_n1,f,n2,nt,active_threads);
 	}
     }
@@ -236,9 +234,8 @@ public class ActionRepository implements java.io.Serializable {
     public final void add_ld(Set set_n1, String f, Set set_n2, Set set_nt,
 			Set active_threads){
 	if(set_n2.isEmpty()) return;
-	Iterator it_n2 = set_n2.iterator();
-	while(it_n2.hasNext()){
-	    PANode n2 = (PANode) it_n2.next();
+	for (Object n2O : set_n2){
+	    PANode n2 = (PANode) n2O;
 	    add_ld(set_n1,f,n2,set_nt,active_threads);
 	}
     }
@@ -246,9 +243,8 @@ public class ActionRepository implements java.io.Serializable {
     public final void add_ld(Set set_n1, String f, Set set_n2, PANode nt,
 			     Set active_threads){
 	if(set_n2.isEmpty()) return;
-	Iterator it_n2 = set_n2.iterator();
-	while(it_n2.hasNext()){
-	    PANode n2 = (PANode) it_n2.next();
+	for (Object n2O : set_n2){
+	    PANode n2 = (PANode) n2O;
 	    add_ld(set_n1,f,n2,nt,active_threads);
 	}
     }
@@ -273,9 +269,8 @@ public class ActionRepository implements java.io.Serializable {
 	    System.out.println("]");
 	}
 
-	Iterator it = active_threads.iterator();
-	while(it.hasNext()){
-	    PANode nt2 = (PANode) it.next();
+	for (Object nt2O : active_threads){
+	    PANode nt2 = (PANode) nt2O;
 	    pi_add_sync(sync,nt2);
 	}
     }
@@ -313,9 +308,8 @@ public class ActionRepository implements java.io.Serializable {
 	pi_ld.union(ar2.pi_ld);
 	alpha_sync.union(ar2.alpha_sync);
 	// this one is a bit more difficult; we have to do it by hand
-	Iterator  it = ar2.pi_sync.entrySet().iterator();
-	while(it.hasNext()){
-	    Map.Entry entry = (Map.Entry) it.next();
+	for (Object entryO : ar2.pi_sync.entrySet()){
+	    Map.Entry entry = (Map.Entry) entryO;
 	    PANode    nt2 = (PANode)   entry.getKey();
 	    Relation rel2 = (Relation) entry.getValue();
 	    Relation rel1 = (Relation) pi_sync.get(nt2);
@@ -335,8 +329,8 @@ public class ActionRepository implements java.io.Serializable {
 	    visitor.visit_ld((PALoad) it_ld.next());
 	}
 	// visit all the "sync" actions
-	for(Iterator it_n = alpha_sync.keys().iterator(); it_n.hasNext(); ){
-	    PANode n = (PANode) it_n.next();
+	for(Object nO : alpha_sync.keys()){
+	    PANode n = (PANode) nO;
 	    Iterator it_sync = alpha_sync.getValues(n).iterator();
 	    while(it_sync.hasNext())
 		visitor.visit_sync((PASync) it_sync.next());
@@ -351,21 +345,20 @@ public class ActionRepository implements java.io.Serializable {
 	<code>action</code>. */
     public final void forAllParActions(ParActionVisitor visitor){
 	// visit all the "ld" || nt entries
-	for(Iterator it_nt2 = pi_ld.keys().iterator(); it_nt2.hasNext(); ) {
-	    PANode nt2 = (PANode) it_nt2.next();
-	    Iterator it_loads = pi_ld.getValues(nt2).iterator();
-	    while(it_loads.hasNext()){
-		PALoad load = (PALoad) it_loads.next();
+	for(Object nt2O : pi_ld.keys()) {
+	    PANode nt2 = (PANode) nt2O;
+	    for (Object loadO : pi_ld.getValues(nt2)){
+		PALoad load = (PALoad) loadO;
 		visitor.visit_par_ld(load,nt2);
 	    }
 	}
 
 	// visit all the "sync" || nt entries
-	for(Iterator it_nt2 = pi_sync.keySet().iterator(); it_nt2.hasNext();){
-	    PANode nt2 = (PANode) it_nt2.next();
+	for(Object nt2O : pi_sync.keySet()){
+	    PANode nt2 = (PANode) nt2O;
 	    Relation rel = (Relation) pi_sync.get(nt2);
-	    for(Iterator it_n = rel.keys().iterator(); it_n.hasNext(); ){
-		PANode n = (PANode) it_n.next();
+	    for(Object nO : rel.keys()){
+		PANode n = (PANode) nO;
 		Iterator it_sync = rel.getValues(n).iterator();
 		while(it_sync.hasNext())
 		    visitor.visit_par_sync((PASync) it_sync.next(), nt2);
@@ -647,9 +640,8 @@ public class ActionRepository implements java.io.Serializable {
 	Relation new_alpha_sync = (Relation) alpha_sync.clone();
 
 	Hashtable new_pi_sync   = new Hashtable();
-	Iterator  it = pi_sync.entrySet().iterator();
-	while(it.hasNext()){
-	    Map.Entry entry = (Map.Entry) it.next();
+	for (Object entryO : pi_sync.entrySet()){
+	    Map.Entry entry = (Map.Entry) entryO;
 	    PANode   nt2  = (PANode)   entry.getKey();
 	    Relation rel2 = (Relation) entry.getValue();
 	    new_pi_sync.put(nt2,(Relation) rel2.clone());

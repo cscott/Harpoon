@@ -44,7 +44,7 @@ import java.util.Set;
  * speed up dispatch.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DispatchTreeTransformation.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: DispatchTreeTransformation.java,v 1.5 2004-02-08 05:09:40 cananian Exp $
  */
 public class DispatchTreeTransformation
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -119,8 +119,7 @@ public class DispatchTreeTransformation
     private int numChildren(HClass hc) {
 	// note that we don't count abstract classes in the total.
 	int n=0;
-	for (Iterator it=ch.children(hc).iterator(); it.hasNext(); ) {
-	    HClass hcc = (HClass) it.next();
+	for (HClass hcc : ch.children(hc)) {
 	    if (!Modifier.isAbstract(hcc.getModifiers())) n += 1;
 	    n += numChildren(hcc);
 	}
@@ -166,8 +165,8 @@ public class DispatchTreeTransformation
 
 	// make devirtualized calls.
 	List spcalls = new ArrayList(methods.size());
-	for (Iterator it=methods.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
+	for (Object hmO : methods) {
+	    HMethod hm = (HMethod) hmO;
 	    // note that the quad will no longer be in SSI form when
 	    // we're done because all CALLs have the same sigma functions.
 	    CALL ncall = new CALL(qf, call, hm, call.params(),

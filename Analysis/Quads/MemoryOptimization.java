@@ -55,7 +55,7 @@ import net.cscott.jutil.Default.PairList;
  * It should be safe with respect to the revised Java memory model.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemoryOptimization.java,v 1.6 2004-02-08 01:53:14 cananian Exp $
+ * @version $Id: MemoryOptimization.java,v 1.7 2004-02-08 05:09:40 cananian Exp $
  */
 public final class MemoryOptimization
     extends harpoon.Analysis.Transformation.MethodMutator<Quad> {
@@ -83,10 +83,9 @@ public final class MemoryOptimization
 	// okay, rename quads and eliminate useless stuff.
 	Iterator<Quad> qit = new SnapshotIterator<Quad>(hc.getElementsI());
 	// add moves to edges.
-	for (Iterator<Edge> it=a.moves.keySet().iterator(); it.hasNext(); ) {
-	    Edge e = it.next(); Quad q = e.to();
-	    for (Iterator<Temp[]> it2=a.moves.getValues(e).iterator(); it2.hasNext();){
-		Temp[] pair = it2.next();
+	for (Edge e : a.moves.keySet()) {
+	    Quad q = e.to();
+	    for (Temp[] pair : a.moves.getValues(e)){
 		e = addAt(e, new MOVE(q.getFactory(), q,
 				      a.ds.find(pair[0]),
 				      a.ds.find(pair[1])));
@@ -190,9 +189,7 @@ public final class MemoryOptimization
 					  Quad q, int which_pred) {
 	    if (m==null) return null;
 	    HashMap<Value,List<Temp>> result = new HashMap<Value,List<Temp>>();
-	    for (Iterator<Map.Entry<Value,Temp>> it = m.entrySet().iterator();
-		 it.hasNext(); ) {
-		Map.Entry<Value,Temp> me = it.next();
+	    for (Map.Entry<Value,Temp> me : m.entrySet()) {
 		Value v = me.getKey().map(ds, q, which_pred);
 		Temp t = ds.find(me.getValue());// not phi-mapped
 		Temp tt = Value.map(t, ds, q, which_pred);// phi-mapped.
@@ -225,8 +222,7 @@ public final class MemoryOptimization
 	    }
 	    // handle merged inputs.
 	    if (merged!=null && allknown)
-		for (Iterator<Value> it=merged.iterator(); it.hasNext(); ) {
-		    Value v = it.next();
+		for (Value v : merged) {
 		    Temp t=null; boolean same=true;
  		    for (int i=0; i<pred.length; i++) {
  			if (prin.get(i)==null) continue; // no info.
@@ -253,8 +249,7 @@ public final class MemoryOptimization
 		    
 
 	    ReadVisitor rv = new ReadVisitor(in);
-	    for (Iterator<Quad> it=quads.iterator(); it.hasNext(); ) {
-		Quad q = it.next();
+	    for (Quad q : quads) {
 		if (!useless.contains(q))
 		    q.accept(rv);
 	    }

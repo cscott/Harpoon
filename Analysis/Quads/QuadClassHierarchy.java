@@ -47,7 +47,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.6 2004-02-08 01:53:14 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.7 2004-02-08 05:09:40 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -78,9 +78,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    for(Iterator<HClass> it = children.keySet().iterator();
 		it.hasNext(); )
 		_classes.add(it.next());
-	    for(Iterator<HClass[]> it = children.values().iterator();
-		it.hasNext(); ) {
-		HClass[] ch = it.next();
+	    for(HClass[] ch : children.values()) {
 		for (int i=0; i<ch.length; i++)
 		    _classes.add(ch[i]);
 	    }
@@ -273,9 +271,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	     it.hasNext(); )
 	    methods.addAll(it.next());
 	// now generate children set from classKnownChildren.
-	for (Iterator<HClass> it = S.classKnownChildren.keySet().iterator();
-	     it.hasNext(); ) {
-	    HClass c = it.next();
+	for (HClass c : S.classKnownChildren.keySet()) {
 	    Set<HClass> s = S.classKnownChildren.get(c);
 	    HClass ch[] = s.toArray(new HClass[s.size()]);
 	    children.put(c, ch);
@@ -303,8 +299,8 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	if (c.isArray())
 	    discoverClass(S, c.getComponentType());
 	// work through parents (superclass and interfaces)
-	for (Iterator it=parents(c).iterator(); it.hasNext(); ) {
-	    HClass p = (HClass) it.next();
+	for (Object pO : parents(c)) {
+	    HClass p = (HClass) pO;
 	    discoverClass(S, p);
 	    Set<HClass> knownChildren = S.classKnownChildren.get(p);
 	    knownChildren.add(c); // kC non-null after discoverClass.
@@ -338,8 +334,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    Set<HMethod> calledMethods =
 		new WorkSet<HMethod>(S.classMethodsUsed.get(s));
 	    calledMethods.addAll(S.classMethodsPending.get(s));
-	    for (Iterator<HMethod> it=calledMethods.iterator(); it.hasNext();){
-		HMethod m = it.next();
+	    for (HMethod m : calledMethods){
 		if (!isVirtual(m)) continue; // not inheritable.
 		try {
 		    HMethod nm = c.getMethod(m.getName(),
