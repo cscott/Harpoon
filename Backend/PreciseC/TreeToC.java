@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.30 2001-07-10 01:09:52 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.31 2001-10-18 23:47:23 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -653,8 +653,7 @@ public class TreeToC extends java.io.PrintWriter {
 			     label(e.label)+";");
 	    if (take_address) {
 		pw.print("(");
-		if (lv.local_table_labels.contains(e.label))
-		    pw.print("(void*)");
+		pw.print("(void*)");
 		pw.print("&");
 		if (lv.local_code_labels.contains(e.label)) pw.print("&");
 	    }
