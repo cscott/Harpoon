@@ -24,7 +24,7 @@ import java.util.HashSet;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.25 2000-02-13 15:49:26 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.26 2000-02-14 21:51:27 cananian Exp $
  */
 public class ToCanonicalTree {
     private Tree m_tree;
@@ -147,6 +147,35 @@ public class ToCanonicalTree {
 	    treeMap.map(e, reorderExp(e));
 	}
 
+	public void visit(METHOD e) {
+	    if (!visited.add(e)) return;
+	    TEMP[] pOld = e.getParams();
+	    TEMP[] pNew = new TEMP[pOld.length];
+	    for(int i=0; i<pNew.length; i++) {
+		pNew[i] = _MAP(pOld[i]);
+	    }
+	    treeMap.map(e, new METHOD(tf, e, pNew));
+	}
+	public void visit(CALL s) {
+	    if (!visited.add(s)) return;
+	    TEMP tNewV = (s.getRetval()==null)?null:_MAP(s.getRetval());
+	    TEMP tNewX = _MAP(s.getRetex());
+	    NAME handler = new NAME(tf, s.getHandler(), s.getHandler().label);
+	    StmExpList x = reorder(s.kids());
+	    CALL c = new CALL(tf, s, tNewV, tNewX, 
+			      x.exps.head, x.exps.tail, handler,
+			      s.isTailCall);
+	    treeMap.map(s, c);
+	}
+	public void visit(NATIVECALL s) {
+	    if (!visited.add(s)) return;
+	    TEMP tNew = (s.getRetval()==null)?null:_MAP(s.getRetval());
+	    StmExpList x = reorder(s.kids());
+	    NATIVECALL nc = new NATIVECALL(tf, s, tNew,
+					   x.exps.head, x.exps.tail);
+	    treeMap.map(s, nc);
+	}
+
 	public void visit(TEMP e) { 
 	    if (!visited.add(e)) return;
 	    TEMP tNew = _MAP(e);
@@ -175,16 +204,19 @@ public class ToCanonicalTree {
 	private Stm reorderMove(MOVE m) { 
 	    if (m.getDst().kind() == TreeKind.TEMP) { 
 		TEMP tNew = _MAP((TEMP)m.getDst());
-		StmExpList x = reorder(m.kids().tail);
-		return seq(x.stm, m.build(tf, new ExpList(tNew, x.exps)));
+		StmExpList x = reorder(m.kids());
+		Util.assert(x.exps.tail==null);
+		return seq(x.stm, new MOVE(tf, m, tNew, x.exps.head));
 	    }
 	    else {
+		Util.assert(m.getDst().kind() == TreeKind.MEM);
 		StmExpList d = reorder(new ExpList(m.kids().head, null));
 		StmExpList s = reorder(m.kids().tail);
 		Util.assert(d.exps.tail==null && s.exps.tail==null);
-		ExpList el = // combine src and dst exp lists.
-		    new ExpList(d.exps.head, new ExpList(s.exps.head, null));
-		return seq(s.stm, seq(d.stm, m.build(tf, el)));
+		MOVE nm = new MOVE(tf, m,
+				   m.getDst().build(tf, d.exps),
+				   s.exps.head);
+		return seq(s.stm, seq(d.stm, nm));
 	    }
 	}
 
