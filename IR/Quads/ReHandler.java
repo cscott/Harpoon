@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.28.2.1 1999-09-16 19:48:24 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.28.2.2 1999-09-16 20:36:34 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -493,14 +493,16 @@ final class ReHandler {
 	Iterator iterate=callset.iterator();
 	while (iterate.hasNext()) {
 	    WorkSet qm=new WorkSet();
-	    CALL ptr=(CALL) iterate.next();
+	    Quad ptr=(Quad) iterate.next();
 	    v.reset();
 	    ptr.accept(v);
+	    int edge=1;
 	    while (v.more()&&(!qm.contains(ptr))) {
 		//System.out.println("**"+v.more());
 		//System.out.println("Visiting:" +ptr.toString());
 		qm.add(ptr);
-		ptr = ptr.next(0);
+		ptr = ptr.next(edge);
+		edge=0;
 		ptr.accept(v);
 		//System.out.println(v.more());
 	    }
@@ -658,7 +660,6 @@ final class ReHandler {
 
     private static final class AnalysingVisitor extends QuadVisitor {
 	HashMapList handlermap;
-	Set nullset;
 	CALL callquad;
 	HashMap callmap;
 	Quad anyhandler;
@@ -673,7 +674,6 @@ final class ReHandler {
 
 	AnalysingVisitor(HashMapList handlermap, Code code) {
 	    this.handlermap=handlermap;
-	    this.nullset=new WorkSet();
 	    this.callquad=null;
 	    this.anyhandler=null;
 	    this.anyedge=0;
@@ -731,10 +731,12 @@ final class ReHandler {
 	    if (reset) {
 		reset=false;
 		if (q.retex()!=null) {
+		    handlermap.add(callquad,new HandInfo(false, q.next(0), q.nextEdge(0).which_pred(), new HashMap(phimap)));
+		    oldphimap=new HashMap(phimap);	
+		    anyhandler=q.next(1);
+		    anyedge=q.nextEdge(1).which_pred();
 		    callquad=q;
 		    callmap=new HashMap();
-		    anyhandler=null;
-		    anyedge=0;
 		    flag=true;
 		} else {
 		    flag=false;
@@ -755,38 +757,6 @@ final class ReHandler {
 	    standard(q);
 	}
 
-	public void visit(OPER q) {
-	    if ((q.opcode()==Qop.ACMPEQ)&&(callquad!=null)) {
-		Temp dest=q.dst();
-		if (ud.useMap(code,dest).length==1) {
-		    //make sure it is only used once
-		    int nulls=0, exceptions=0;
-		    for (int i=0;i<q.operands().length;i++) {
-			if (nullset.contains(q.operands(i)))
-			    nulls++;
-			if (remap(q.operands(i))==callquad.retex())
-			    exceptions++;
-		    }
-		    //want exactly 1 null and 1 exception
-		    if ((nulls==1)&&(exceptions==1)) {
-			callmap.put(q.dst(),null);
-			standard(q);
-		    } else weird(q);
-		} else weird(q);
-	    } else weird(q);
-	}
-
-	public void visit(CONST q) {
-	    if (q.value()==null) {
-		//System.out.println("C:1");
-		if (ud.useMap(code,q.dst()).length==1) {
-		    //System.out.println("C:2");
-		    nullset.add(q.dst());
-		    standard(q);
-		} else weird(q);
-	    } else weird(q);
-	}
-
 	public void visit(INSTANCEOF q) {
 	    Temp dest=q.dst();
 	    if ((ud.useMap(code,dest).length==1)&&(callquad!=null)) {
@@ -803,23 +773,13 @@ final class ReHandler {
 	public void visit(CJMP q) {
 	    if (callquad!=null)
 		if (callmap.containsKey(q.test())) {
-		    if (callmap.get(q.test())==null) {
-			//we have a acmpeq
-			//next[1] is the no exception case
-			//fix********
-			handlermap.add(callquad,new HandInfo(false, q.next(1), q.nextEdge(1).which_pred(), new HashMap(phimap)));
-			oldphimap=new HashMap(phimap);	
-			anyhandler=q.next(0);
-			anyedge=q.nextEdge(0).which_pred();
-		    } else {
-			//we have an exception
-			//next[1] is the case of this exception
-			handlermap.add(callquad, 
-				       new HandInfo((HClass)callmap.get(q.test()), q.next(1), q.nextEdge(1).which_pred(),new HashMap(phimap)));
-			oldphimap=new HashMap(phimap);
-			anyhandler=q.next(0);
-			anyedge=q.nextEdge(0).which_pred();
-		    }
+		    //we have an exception
+		    //next[1] is the case of this exception
+		    handlermap.add(callquad, 
+				   new HandInfo((HClass)callmap.get(q.test()), q.next(1), q.nextEdge(1).which_pred(),new HashMap(phimap)));
+		    oldphimap=new HashMap(phimap);
+		    anyhandler=q.next(0);
+		    anyedge=q.nextEdge(0).which_pred();
 		    standard(q);
 		} else weird(q);
 	}
