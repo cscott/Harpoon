@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * about a single member (a field or a method) or a constructor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMember.java,v 1.5.2.1 1999-08-04 06:30:56 cananian Exp $
+ * @version $Id: HMember.java,v 1.5.2.2 1999-10-16 22:17:15 cananian Exp $
  * @see HClass
  * @see HField
  * @see HMethod
@@ -21,6 +21,10 @@ public interface HMember {
    * <code>HMember</code>.
    */
   public abstract HClass getDeclaringClass();
+  /**
+   * Returns the type descriptor for this member.
+   */
+  public abstract String getDescriptor();
   /**
    * Returns the simple name of the underlying member or constructor
    * represented by this <code>HMember</code>.
