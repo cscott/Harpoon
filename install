@@ -1,13 +1,58 @@
+echo Welcome to the FLEX installer.
+echo 
+echo Please E-mail Wes Beebee \<wbeebee@mit.edu\> if you have
+echo any questions.
+echo
+echo 1\) Standard FLEX Java compiler install
+echo 2\) Custom FLEX install
+
+export inst=
+while [ x$inst = x ]; do
+  read -p "Choose an install: " inst leftover;
+  case $inst in
+     1) export arm=N;
+	export GUI=N;
+	export version='-A';
+	export RTJ=N;;
+     2) export arm=;
+	export GUI=;
+	export version=;
+	export RTJ=;;
+     *) export inst=;;
+  esac;
+done
+
+while [ x$arm = x ]; do
+  read -p "Do you want support for cross-compiling to StrongARM (Y/N)? " arm leftover;
+  case $arm in
+     y* | Y*) export arm=Y;;
+     n* | N*) export arm=N;;
+     *) export arm=;;
+  esac;
+done
+
+while [ x$GUI = x ]; do
+  read -p "Do you want GUI support (experimental) (Y/N)? " GUI leftover;
+  case $GUI in
+     y* | Y*) export GUI=Y;;
+     n* | N*) export GUI=N;;
+     *) export GUI=;;
+  esac;
+done
+
+echo Downloading dependencies...
 if [ -f /etc/redhat-release ]; then 
    export WEB_ROOT=http://flex-cvs.csail.mit.edu/ImageRec/RPMS; 
    mkdir RPMS;
    cd RPMS;
    if fgrep -q -c '7.2' /etc/redhat-release; then 
-      echo RedHat 7.2 detected.; 
+      echo RedHat 7.2 detected.;
+
       wget -q $WEB_ROOT/noGUI/arm-linux-binutils-2.10-1.i386.rpm; 
       wget -q $WEB_ROOT/noGUI/arm-linux-classpath-libs-0.05-1.i386.rpm; 
       wget -q $WEB_ROOT/noGUI/arm-linux-gcc-2.95.2-2.i386.rpm; 
       wget -q $WEB_ROOT/noGUI/arm-linux-glibc-2.1.3-2.i386.rpm;
+
       wget -q $WEB_ROOT/noGUI/autoconf-2.53-8.noarch.rpm; 
       wget -q $WEB_ROOT/noGUI/automake-1.6.3-1.noarch.rpm; 
       wget -q $WEB_ROOT/noGUI/db3x-3.2.9-4.i386.rpm; 
@@ -102,7 +147,6 @@ cd ..
 export CVS_RSH=ssh
 export CVSEDITOR=emacs
 
-export version=
 while [ x$version = x ]; do
   echo FLEX Versions: 1.3 2.0 3.0 3.1 3.2 latest;
   read -p "What version of FLEX do you want? " version leftover;
@@ -117,6 +161,15 @@ while [ x$version = x ]; do
   esac;
 done
 
+while [ x$RTJ = x ]; do
+  read -p "Do you want to use Real-Time Java (Y/N)? " RTJ leftover;
+  case $RTJ in
+     y* | Y*) export RTJ=Y;;
+     n* | N*) export RTJ=N;;
+     *) export RTJ=;;
+  esac;
+done
+
 export prmpt=
 while [ x$prmpt = x ]; do
    read -p "Do you have read/write access to the FLEX repository (Y/N)? " prmpt leftover;
@@ -124,11 +177,35 @@ while [ x$prmpt = x ]; do
         y* | Y*)
 	   read -p "What's your username on the FLEX CVS server? " pass leftover;
 	   echo Please type your password to the FLEX repository:;
-           cvs -d :ext:$pass@flex-cvs.csail.mit.edu:/data/cvs co $version Classpath Code Realtime ImageRec Runtime Tests Benchmarks;;
+           cvs -d :ext:$pass@flex-cvs.csail.mit.edu:/data/cvs co $version Classpath Code Realtime ImageRec Runtime Tests Benchmarks;
+	   cd Runtime/Contrib/gc;
+           echo Please type your password to the FLEX repository (again):;
+	   cvs update -r BOEHM_DIST;
+	   echo Please type your password to the FLEX repository (one last time):;
+	   cvs update $version;
+	   cd -;;
 	n* | N*)
-	   cvs -d :pserver:cvsguest@flex-cvs.csail.mit.edu:/data/cvs co $version Classpath Code Realtime ImageRec Runtime Tests Benchmarks;;
+	   echo Please type 'cvsguest' as the password.;
+	   export CVSROOT=:pserver:cvsguest@flex-cvs.csail.mit.edu:/data/cvs;
+	   cvs login;
+	   cvs co $version Classpath Code Realtime ImageRec Runtime Tests Benchmarks;
+	   cd Runtime/Contrib/gc;
+	   cvs update -r BOEHM_DIST;
+	   cvs update $version;
+	   cd -;;
 	*) export prmpt=;;
    esac;
 done
 
+cd Classpath
+echo Building Classpath...
+
+./build
+./build-noGUI
+./build-noGUI-debug
+./build-arm
 	    
+cd -
+echo Building Runtime...
+cd Runtime
+./configure --disable-shared --with-gc=conservative --with-precise-c --with-thread-model=heavy --with-classpath=`pwd`/../install-noGUI/lib/classpath CC="gcc -O9 -DNDEBUG"
