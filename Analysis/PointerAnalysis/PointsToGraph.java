@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.Enumeration;
+import java.util.LinkedList;
 
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -22,7 +23,7 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.15 2000-03-18 23:39:28 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.16 2000-03-22 17:39:14 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -46,11 +47,60 @@ public class PointsToGraph {
 	     new PAEscapeFunc(),new HashSet(),new HashSet());
     }
 
-    /** Tests whether the node <code>n</code> is an escaped node; 
-     * i.e. it has escaped through some node or method hole or will be 
-     * returned from the procedure. */
+    // set of nodes reachable from nodes from r (r included)
+    private Set reachable_from_r = null;
+    // set of nodes reachable from nodes from excp (excp included)
+    private Set reachable_from_excp = null;
+
+    /** Computes the set of nodes reachable from nodes in <code>roots</code>
+	through paths that use inside and outside edges. The argument must
+	be a set of <code>PANode</code>s. The <code>roots</code> set is
+	included in the returned set (i.e. 0-length paths are considered). */
+    public final Set reachableNodes(final Set roots){
+	// Invariant 1: set contains all the reached nodes
+	final Set set = new HashSet();
+	// Invariant 2: W contains all the reached nodes whose out-edges
+	// have not been explored yet.
+	// Obs: W is used as a stack (addLast + removeLast) which corresponds
+	// to an "in depth" graph exploration.
+	final LinkedList W = new LinkedList();
+	// visitor for exploring reached nodes
+	final PANodeVisitor nvisitor =
+	    new PANodeVisitor(){
+		    public void visit(PANode n){
+			if(set.add(n)) // newly reached node
+			    W.addLast(n); // add it to the worklist
+			// note that a node can be added to W at most once!
+		    }
+		};
+
+	set.addAll(roots);
+	W.addAll(roots);
+
+	while(!W.isEmpty()){
+	    PANode node = (PANode) W.removeLast();
+	    O.forAllPointedNodes(node, nvisitor);
+	    I.forAllPointedNodes(node, nvisitor);
+	}
+
+	return set;
+    }
+
+    /** Tests whether the node <code>n</code> is an escaped node.
+	An <i>escaped</i> node is a node which has escaped through some node
+	or method hole or is reachable (possibly through a 0-length path)
+	from a node which is returned as a normal result or as an exception,
+	from the method.  */
     public boolean escaped(PANode n){
-	return e.hasEscaped(n) || r.contains(n);
+	if(reachable_from_r == null)
+	    reachable_from_r = reachableNodes(r);
+	if(reachable_from_excp== null)
+	    reachable_from_excp = reachableNodes(excp);
+	
+	return 
+	    e.hasEscaped(n) || 
+	    reachable_from_r.contains(n) ||
+	    reachable_from_excp.contains(n);
     }
 
     /** Tests whether the node <code>n</code> is captured. 
