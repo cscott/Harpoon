@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.28 2002-07-25 15:42:35 cananian Exp $
+% $Id: ptran.tex,v 1.29 2002-07-25 16:10:14 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.28 $ $}
+\date{\today \\ $ $Revision: 1.29 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -386,6 +386,7 @@ and then recursively:
  \text{escaped}%_\text{n}
                (\tuple{O,I,e,s,r},n')\right)
 \end{multline*}
+% INVARIANT: a node n never *un*escapes during the (intraproc?) analysis.
 
 We can determine whether an inside edge is a companion or possible
 companion as follows:
@@ -404,6 +405,93 @@ companion as follows:
 At the start of the analysis, we set $I=\emptyset$, $O=\emptyset$,
 $e(n)=\emptyset$ for all $n\in N$, $c(i)=\emptyset$ for all $i\in I$,
 and $r=\emptyset$.
+
+\subsubsection{Static fields}
+
+\begin{displaymath}
+\dfrac{1\leq i \leq j}{\tuple{\tuple{c_i,f_i},n_{c_i.f_i}}\in O}
+\end{displaymath}
+
+\subsubsection{Method header}
+Given method $m$ with formals $p_0,\ldots,p_k$:
+\begin{displaymath}
+\dfrac{0\leq i \leq k}{\tuple{p_i, n_{p_i}}\in I}
+\end{displaymath}
+
+\subsubsection{Copy statement}
+
+\begin{displaymath}
+\dfrac
+{\text{\tt [l=v]}\in\mathcal{P} \wedge \tuple{v,n}\in I}
+{\tuple{l,n}\in I}
+\end{displaymath}
+
+\subsubsection{Load statement}
+
+\begin{eqnarray*}
+&
+\dfrac
+{\text{\tt [l$_1$=l$_2$.f]}\in\mathcal{P} \wedge
+ \tuple{l_2,n}\in I \wedge
+ \tuple{\tuple{n,f},n'}\in I}
+{\tuple{l_1,n'}\in I}
+\\&
+\dfrac
+{\text{\tt [l$_1$=l$_2$.f]}\in\mathcal{P} \wedge
+ \tuple{l_2,n}\in I \wedge
+ \text{escaped}(n) \wedge
+ n' \text{ is load node for statement} }
+{\tuple{l_1,n'}\in I \wedge \tuple{\tuple{n,f},n'}\in O}
+\end{eqnarray*}
+
+\subsubsection{Store statement}
+
+\begin{displaymath}
+\dfrac
+{\text{\tt [l$_1$.f=l$_2$]}\in\mathcal{P} \wedge
+ \tuple{l_1,n_1}\in I \wedge
+ \tuple{l_2,n_2}\in I }
+{\tuple{\tuple{n_1,f},n_2}\in I \wedge
+ \text{\tt [l$_1$.f=l$_2$]}\in c(\tuple{\tuple{n_1,f},n_2}) }
+\end{displaymath}
+
+\subsubsection{Global load}
+
+\begin{displaymath}
+\dfrac
+{\text{\tt [l=c.f]}\in\mathcal{P} \wedge
+ \tuple{\tuple{c,f},n}\in (O\cup I) }
+{\tuple{l,n}\in I}
+\end{displaymath}
+
+\subsubsection{Global store}
+
+\begin{displaymath}
+\dfrac
+{\text{\tt [c.f=l]}\in\mathcal{P} \wedge
+ \tuple{l,n}\in I}
+{\tuple{\tuple{c,f},n}\in I}
+\end{displaymath}
+
+\subsubsection{Allocation}
+
+\begin{displaymath}
+\dfrac
+{\text{\tt [l=new c]}\in\mathcal{P} \wedge
+ n \text{ is inside node for statement} }
+{\tuple{l,n}\in I}
+\end{displaymath}
+
+\subsubsection{Method return}
+% analogously; method throw.
+
+\begin{displaymath}
+\dfrac
+{\text{\tt [return l]}\in\mathcal{P} \wedge
+ \tuple{l,n}\in I}
+{n\in r}
+\end{displaymath}
+
 
 \subsection{Evaluating a call-site monomorphically}
 
