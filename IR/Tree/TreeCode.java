@@ -32,10 +32,12 @@ import harpoon.Util.Util;
  * The tree form is based around Andrew Appel's tree form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: TreeCode.java,v 1.1.2.33 2000-10-06 21:20:44 cananian Exp $
+ * @version $Id: TreeCode.java,v 1.1.2.34 2001-01-11 23:12:38 cananian Exp $
  * 
  */
 public class TreeCode extends Code {
+    /** The <code>getName()</code> method return <code>codename</code>,
+     *  which is "tree" for this <code>Code</code>. */
     public  static   final   String     codename = "tree";
     private final    TreeDerivation     treeDerivation;
   

@@ -26,11 +26,13 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.26 2000-10-06 21:20:43 cananian Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.27 2001-01-11 23:12:37 cananian Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
     private final static boolean useOldCanonicalize = false;
+    /** The <code>getName()</code> method return <code>codename</code>,
+     *  which is "canonical-tree" for this <code>Code</code>. */
     public  static   final String           codename = "canonical-tree";
     private          final TreeDerivation   treeDerivation;
 
