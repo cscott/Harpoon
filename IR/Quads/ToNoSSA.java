@@ -22,7 +22,7 @@ import java.util.Vector;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.5 1999-02-08 17:24:30 duncan Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.6 1999-02-08 20:15:19 duncan Exp $
  */
 public class ToNoSSA implements Derivation, TypeMap
 {
@@ -368,8 +368,7 @@ class QuadMap
 	Object next = e.nextElement();
 	if (next instanceof Tuple) {
 	  tuple       = (Tuple)next;
-	  dl          = (DList)m_dT.get(tuple);
-	  dl          = (dl==null)?null:dl.rename(defmap);
+	  dl          = DList.rename((DList)m_dT.get(tuple), defmap);
 	  tupleElems  = tuple.elements();
 	  q           = ((Quad)tupleElems.nextElement()).rename(qf, defmap, 
 								usemap);
@@ -402,16 +401,14 @@ class QuadMap
 
       tDef = qOld.def(); tUse = qOld.use();
       for (int i=0; i<tDef.length; i++) {
-	dl = m_derivation.derivation(qOld, tDef[i]);
-	if (dl!=null) m_dT.put(new Tuple(new Object[] { qNew, map(tDef[i]) }),
-			       dl.clone(m_ctm));
+	dl = DList.clone(m_derivation.derivation(qOld, tDef[i]), m_ctm);
+	if (dl!=null) m_dT.put(new Tuple(new Object[] {qNew,map(tDef[i])}),dl);
 	hc = m_typeMap.typeMap(m_code, tDef[i]);
 	if (hc!=null) m_dT.put(map(tDef[i]), hc);
       }
       for (int i=0; i<tUse.length; i++) {
-	dl = m_derivation.derivation(qOld, tUse[i]);
-	if (dl!=null) m_dT.put(new Tuple(new Object[] { qNew, map(tUse[i]) }),
-			       dl.clone(m_ctm));
+	dl = DList.clone(m_derivation.derivation(qOld, tUse[i]), m_ctm);
+	if (dl!=null) m_dT.put(new Tuple(new Object[] {qNew,map(tUse[i])}),dl);
 	hc = m_typeMap.typeMap(m_code, tUse[i]);
 	if (hc!=null) m_dT.put(map(tUse[i]), hc);
       }
