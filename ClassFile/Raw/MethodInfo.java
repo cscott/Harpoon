@@ -8,9 +8,10 @@ import harpoon.ClassFile.Raw.Constant.*;
  * structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodInfo.java,v 1.7 1998-07-31 07:05:54 cananian Exp $
+ * @version $Id: MethodInfo.java,v 1.8 1998-07-31 13:38:51 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.6"
  * @see ClassFile
+ * @see harpoon.ClassFile.HMethod
  */
 public class MethodInfo {
   /** ClassFile in which this method information is found. */

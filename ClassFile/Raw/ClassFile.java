@@ -7,7 +7,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.8 1998-07-31 08:33:38 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.9 1998-07-31 13:38:51 cananian Exp $
+ * @see harpoon.ClassFile.HClass
  */
 
 public class ClassFile {

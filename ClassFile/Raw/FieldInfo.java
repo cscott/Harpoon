@@ -7,9 +7,10 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>field_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldInfo.java,v 1.8 1998-07-31 13:33:58 cananian Exp $
+ * @version $Id: FieldInfo.java,v 1.9 1998-07-31 13:38:51 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.5"
  * @see ClassFile
+ * @see harpoon.ClassFile.HField
  */
 public class FieldInfo {
   /** ClassFile in which this field information is found. */
