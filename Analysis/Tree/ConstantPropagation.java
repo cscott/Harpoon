@@ -43,7 +43,7 @@ import java.util.Stack;
  * <p><b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: ConstantPropagation.java,v 1.1.2.9 2000-02-01 16:42:37 pnkfelix Exp $
+ * @version $Id: ConstantPropagation.java,v 1.1.2.10 2000-02-14 04:23:44 cananian Exp $
  */
 public final class ConstantPropagation { 
 
@@ -83,11 +83,11 @@ public final class ConstantPropagation {
 	    mapTempsToDefs(code); 
 
 	    // Perform reaching definitions analysis on the tree code. 
-	    BasicBlock root = (new BasicBlock.Factory
-		(RS((Stm)code.getRootElement()), 
-		 CFGrapher.DEFAULT)).getRoot(); 
-	    this.rch = new ReachingHCodeElements(root.blocksIterator());
-	    Solver.forwardRPOSolve(root, this.rch); 
+	    BasicBlock.Factory bbf = new BasicBlock.Factory
+		(RS((Stm)code.getRootElement()), code.getGrapher());
+
+	    this.rch = new ReachingHCodeElements(bbf.blocksIterator());
+	    Solver.forwardRPOSolve(bbf.getRoot(), this.rch); 
 
 
 	    // Traverse the tree. 

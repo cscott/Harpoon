@@ -72,7 +72,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.15 2000-02-01 16:42:37 pnkfelix Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.16 2000-02-14 04:23:44 cananian Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -84,7 +84,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
     private /*final*/ Map            DUChains, UDChains;
     private /*final*/ Map            tempsToPrsvs;
     private /*final*/ Stm            root;
-    private /*final*/ BasicBlock     rootbb;
+    private /*final*/ BasicBlock.Factory bbfactory;
 
     private CFGrapher grapher;
 
@@ -118,8 +118,8 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	this.DUChains     = new HashMap();
 	this.UDChains     = new HashMap();
 	this.tempsToPrsvs = new HashMap();
-	this.rootbb       = (new BasicBlock.Factory(RS(this.root),
-						    grapher)).getRoot();
+	this.bbfactory    = new BasicBlock.Factory(RS(this.root), grapher);
+	BasicBlock rootbb = bbfactory.getRoot();
 	
 	initTempsToPrsvs(tempsToPrsvs);
 	initTempsToDefs (tempsToDefs);
@@ -130,7 +130,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
 	}
 
 	TreeSolver.forward_rpo_solver(rootbb, this);
-	computeUseDef(rootbb, tempsToDefs);
+	computeUseDef(bbfactory, tempsToDefs);
 
 	initialized = true;
     }
@@ -149,7 +149,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
     public harpoon.IR.Tree.Code fold() { 
 	Map IDsToTrees;
 	initIDsToTrees(IDsToTrees = new HashMap());
-	fold(this.rootbb, IDsToTrees, this.DUChains, this.UDChains);
+	fold(bbfactory.getRoot(), IDsToTrees, this.DUChains, this.UDChains);
 	return this.code;
     }
 
@@ -264,8 +264,8 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
     // Computes UD and DU chains based on the computed IN and OUT sets
     // FIX: this method could probably be cleaned up substantially
     // 
-    private void computeUseDef(BasicBlock root, Map tempsToDefs) { 
-	for (Iterator i = root.blocksIterator(); i.hasNext();) { 
+    private void computeUseDef(BasicBlock.Factory bbf, Map tempsToDefs) { 
+	for (Iterator i = bbf.blocksIterator(); i.hasNext();) { 
 	    BasicBlock      bb      = (BasicBlock)i.next();
 	    TreeFoldingInfo bbInfo  = (TreeFoldingInfo)bb2tfi.get(bb);
 	    BitString       bbIn    = (BitString)((bbInfo.inSet[0]).clone());
