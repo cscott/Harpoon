@@ -9,7 +9,7 @@ package harpoon.IR.AIRE;
  * classes.  The enumeration may be implemented as a true enumerated type
  * or (preferred) as an integer and constant set.  In either case, the
  * type must include the following labels prior to any labels associated
- * with completely new, instatiable IIR extension classes:
+ * with completely new, instantiable IIR extension classes:
  */
 public abstract class IR_SignalKind {
     public static int IR_NO_SIGNAL_KIND = 0;

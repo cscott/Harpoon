@@ -9,7 +9,7 @@ import java.util.Hashtable;
  * object created from an IIR class.  The enumeration may be implemented
  * as a true enumerated type or (preferred) as an integer and constant
  * set.  In either case, the type must include the following labels
- * prior to any labels associated with completely new, instatiable IIR
+ * prior to any labels associated with completely new, instantiable IIR
  * extension classes:
  */
 public abstract class IR_Kind {
