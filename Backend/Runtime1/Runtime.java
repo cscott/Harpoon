@@ -26,7 +26,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.13 1999-11-04 00:48:01 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.14 1999-11-04 09:46:24 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -105,6 +105,8 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    // wrappers (java.lang.Integer, java.lang.Character, etc)
 	    HClass.Boolean, HClass.Byte, HClass.Short, HClass.Int,
 	    HClass.Long, HClass.Float, HClass.Double, HClass.Char,
+	    // passed to main()
+	    HClass.forDescriptor("[Ljava/lang/String;"),
 	});
     }
 
