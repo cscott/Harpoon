@@ -31,7 +31,7 @@ import java.util.Collections;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.12 2000-03-01 01:11:02 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.13 2000-03-02 04:43:08 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -186,8 +186,7 @@ public class ActionRepository {
 	<code>n</code> in <code>set_n</code> and each 
 	<code>nt</code> in <code>set_nt</code>. */ 
     public final void add_sync(Set set_n, Set set_nt, Set active_threads){
-	if(set_n.isEmpty() || set_nt.isEmpty() || active_threads.isEmpty())
-	    return;
+	if(set_n.isEmpty() || set_nt.isEmpty()) return;
 	Iterator it_n = set_n.iterator();
 	while(it_n.hasNext()){
 	    PANode n = (PANode) it_n.next();
