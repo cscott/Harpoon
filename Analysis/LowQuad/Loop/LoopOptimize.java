@@ -29,7 +29,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.8 1999-07-01 20:57:23 bdemsky Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.9 1999-07-02 05:50:01 bdemsky Exp $
  */
 public final class LoopOptimize {
     
@@ -114,7 +114,6 @@ public final class LoopOptimize {
     void doLoopind(HCode hc, Loops lp,Quad header) {
 	Map basmap=bimap.basicInductionsMap(hc,lp);
 	Map allmap=aimap.allInductionsMap(hc,lp);
-
 	WorkSet basic=new WorkSet(basmap.keySet());
 	WorkSet complete=new WorkSet(allmap.keySet());
 
@@ -141,20 +140,20 @@ public final class LoopOptimize {
 	    } else {
 		//Non pointer index...
 		//We have a derived induction variable...
-
+		Temp consttemp=null;
 		Temp initial=initialTemp(hc, induction.variable, lp.loopIncelements());
 		if (induction.intmultiplier!=1) {
 		    //Add multiplication
-		    Temp newtemp=new Temp(initial.tempFactory(),initial.name());
+		    consttemp=new Temp(initial.tempFactory(),initial.name());
 		    Temp newtemp2=new Temp(initial.tempFactory(),initial.name());
 		    Temp[] sources=new Temp[2];
-		    sources[0]=newtemp;
+		    sources[0]=consttemp;
 		    sources[1]=initial;
-		    Quad newquad=new CONST(loopcaller.getFactory(),loopcaller,newtemp, new Integer(induction.intmultiplier), HClass.Int);
+		    Quad newquad=new CONST(loopcaller.getFactory(),loopcaller,consttemp, new Integer(induction.intmultiplier), HClass.Int);
 		    Quad.addEdge(loopcaller, which_succ,newquad,0);
 		    loopcaller=newquad; which_succ=0;
 		    newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,Qop.IMUL,newtemp2, sources);
-		    Quad.addEdge(loopcaller, which_succ,newquad,0);
+		    Quad.addEdge(loopcaller, which_succ, newquad,0);
 		    loopcaller=newquad; which_succ=0;
 		    Quad.addEdge(loopcaller, which_succ, successor, which_pred);
 		    initial=newtemp2;
@@ -202,6 +201,37 @@ public final class LoopOptimize {
 			initial=newtemp;
 		    }
 		}
+		//Now we need to add phi's
+		//delete original definitions
+		//and add the add operands...
+		//and calculate the increment size.. [done]
+
+		Temp increment=findIncrement(hc, induction.variable, lp.loopIncelements());
+		    //Need to do multiply...
+		if (induction.intmultiplier!=1) {
+		    //Add multiplication
+		    Temp newtemp2=new Temp(increment.tempFactory(),increment.name());
+		    Temp[] sources=new Temp[2];
+		    sources[0]=consttemp;
+		    sources[1]=increment;
+		    Quad newquad=new POPER(((LowQuadFactory)loopcaller.getFactory()),loopcaller,Qop.IMUL,newtemp2, sources);
+		    Quad.addEdge(loopcaller, which_succ,newquad,0);
+		    loopcaller=newquad; which_succ=0;
+		    Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+		    increment=newtemp2;
+		}		    
+		
+		if (induction.objectsize!=null) {
+		    //Integer induction variable		    
+		    //add array dereference
+		    Temp newtemp=new Temp(increment.tempFactory(),increment.name());
+		    Quad newquad=new PAOFFSET(((LowQuadFactory)loopcaller.getFactory()),loopcaller,newtemp,induction.objectsize, increment);
+		    Quad.addEdge(loopcaller, which_succ,newquad,0);
+		    loopcaller=newquad; which_succ=0;
+		    Quad.addEdge(loopcaller, which_succ, successor, which_pred);
+		    increment=newtemp;
+		}
+
 	    }
 	}
     }
@@ -237,29 +267,41 @@ public final class LoopOptimize {
     Quad addQuad(HCode hc, Temp t, Set loopelements) {
 	HCodeElement []sources=ud.defMap(hc,ssitossamap.tempMap(t));
 	Util.assert(sources.length==1);
-	Quad q=(Quad)sources[0];
-	Temp[] uses=q.use();
+	PHI q=(PHI)sources[0];
+	int j=0;
+	for (;j<q.numPhis();j++) {
+	    if (q.dst(j)==t) break;
+	}
+	Temp[] uses=q.src(j);
 	Util.assert(uses.length==2);
-	Quad adder=null;
+	Temp initial=null;
 	for(int i=0;i<uses.length;i++) {
 	    sources=ud.defMap(hc,ssitossamap.tempMap(uses[i]));
 	    Util.assert(sources.length==1);
 	    if (loopelements.contains(sources[0])) {
-		adder=(Quad)sources[0];
+		initial=uses[i];
 		break;
 	    }
 	}
-	return adder;
+	sources=ud.defMap(hc,ssitossamap.tempMap(initial));
+	Util.assert(sources.length==1);
+	return (Quad)sources[0];
     }
 
     /** <code>findIncrement</code>*/
 
-    Temp findIncrement(HCode hc, Temp t, Set loopelements, Set loopinvariants) {
+    Temp findIncrement(HCode hc, Temp t, Set loopelements) {
 	Quad q=addQuad(hc,t,loopelements);
+	HCodeElement []source=ud.defMap(hc,ssitossamap.tempMap(t));
+	Util.assert(source.length==1);
+	PHI qq=(PHI)source[0];
 	Temp[] uses=q.use();
 	Temp result=null;
+
 	for (int i=0;i<uses.length;i++) {
-	    if (loopinvariants.contains(ud.defMap(hc,ssitossamap.tempMap(uses[i])))) {
+	    HCodeElement []sources=ud.defMap(hc,ssitossamap.tempMap(uses[i]));
+	    Util.assert(sources.length==1);
+	    if (sources[0]!=qq) {
 		result=uses[i];
 		break;
 	    }
@@ -321,3 +363,10 @@ public final class LoopOptimize {
 	}
     } 
 }
+
+
+
+
+
+
+
