@@ -17,7 +17,7 @@ import java.util.Map;
     even though <code>HashMap</code> is a subtype of <code>Map</code>.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MapFactory.java,v 1.2.2.1 2002-02-27 22:24:13 cananian Exp $
+    @version $Id: MapFactory.java,v 1.2.2.2 2002-04-07 20:30:11 cananian Exp $
  */
 public abstract class MapFactory<K,V> {
     
@@ -34,7 +34,7 @@ public abstract class MapFactory<K,V> {
     /** Generates a new <code>Map</code>, using the entries of
 	<code>map</code> as a template for its initial mappings. 
     */
-    public abstract Map<K,V> makeMap(Map<K,V> map);
+    public abstract <K2 extends K, V2 extends V> Map<K,V> makeMap(Map<K2,V2> map);
 
     
 }

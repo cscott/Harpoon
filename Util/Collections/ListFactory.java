@@ -24,7 +24,7 @@ import java.util.Arrays;
     even though <code>LinkedList</code> is a subtype of <code>List</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ListFactory.java,v 1.2.2.2 2002-03-04 20:22:18 cananian Exp $
+ * @version $Id: ListFactory.java,v 1.2.2.3 2002-04-07 20:30:11 cananian Exp $
  */
 public abstract class ListFactory<V> extends CollectionFactory<V> {
     
@@ -41,14 +41,13 @@ public abstract class ListFactory<V> extends CollectionFactory<V> {
 	return makeList(initCapacity);
     }
 
-    public final List<V> makeCollection(Collection<V> c) {
+    public final <T extends V> List<V> makeCollection(Collection<T> c) {
 	return makeList(c);
     }
 
     /** Generates a new, mutable, empty <code>List</code>. */
     public List<V> makeList() {
-	// XXX BUG IN JAVAC: should be Collections.EMPTY_LIST
-	return makeList(Default.EMPTY_LIST());
+	return makeList(Collections.EMPTY_LIST);
     }
 
     /** Generates a new, mutable, empty <code>List</code>, using 
@@ -61,7 +60,7 @@ public abstract class ListFactory<V> extends CollectionFactory<V> {
     /** Generates a new mutable <code>List</code>, using the elements
 	of <code>c</code> as a template for its initial contents. 
     */
-    public abstract List<V> makeList(Collection<V> c); 
+    public abstract <T extends V> List<V> makeList(Collection<T> c); 
 
 
     /** Creates and returns an unmodifiable <code>List</code> view of

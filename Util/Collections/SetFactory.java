@@ -21,7 +21,7 @@ import java.util.Set;
     even though <code>HashSet</code> is a subtype of <code>Set</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SetFactory.java,v 1.2.2.2 2002-03-04 20:22:18 cananian Exp $
+ * @version $Id: SetFactory.java,v 1.2.2.3 2002-04-07 20:30:11 cananian Exp $
  */
 public abstract class SetFactory<V> extends CollectionFactory<V> {
     
@@ -34,7 +34,7 @@ public abstract class SetFactory<V> extends CollectionFactory<V> {
 	return makeSet();
     }
 
-    public final Set<V> makeCollection(Collection<V> c) {
+    public final <T extends V> Set<V> makeCollection(Collection<T> c) {
 	return makeSet(c);
     }
 
@@ -44,8 +44,7 @@ public abstract class SetFactory<V> extends CollectionFactory<V> {
 
     /** Generates a new, mutable, empty <code>Set</code>. */
     public Set<V> makeSet() {
-	// XXX BUG IN JAVAC: should be Collections.EMPTY_SET
-	return makeSet(Default.EMPTY_SET());
+	return makeSet(Collections.EMPTY_SET);
     }
 
     /** Generates a new, mutable, empty <code>Set</code>, using
@@ -58,7 +57,7 @@ public abstract class SetFactory<V> extends CollectionFactory<V> {
     /** Generates a new mutable <code>Set</code>, using the elements
 	of <code>c</code> as a template for its initial contents. 
     */ 
-    public abstract Set<V> makeSet(Collection<V> c);
+    public abstract <T extends V> Set<V> makeSet(Collection<T> c);
     
 }
  

@@ -31,7 +31,7 @@ import java.util.HashMap;
     cause <code>IllegalArgumentException</code> to be thrown.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.3.2.2 2002-03-14 10:18:51 cananian Exp $
+    @version $Id: BitSetFactory.java,v 1.3.2.3 2002-04-07 20:30:11 cananian Exp $
  */
 public class BitSetFactory<V> extends SetFactory<V> {
     
@@ -109,7 +109,7 @@ public class BitSetFactory<V> extends SetFactory<V> {
 	<BR> <B>effects:</B> Constructs a lightweight
 	     <code>Set</code> with the elements from <code>c</code>.
     */ 
-    public BitStringSet<V> makeSet(Collection<V> c) {
+    public <T extends V> BitStringSet<V> makeSet(Collection<T> c) {
 	BitStringSet<V> bss = new BitStringSet<V>(bitStringSize, this);
 	bss.addAll(c);
 	return bss;
@@ -156,7 +156,7 @@ public class BitSetFactory<V> extends SetFactory<V> {
 	    }
 	}
 
-	public boolean addAll(Collection<V> c) {
+	public <T extends V> boolean addAll(Collection<T> c) {
 	    if (c instanceof BitStringSet &&
 		((BitStringSet)c).fact == this.fact) {
 		BitStringSet bss = (BitStringSet) c;

@@ -6,6 +6,7 @@ package harpoon.Util.Collections;
 import harpoon.Util.Default;
 
 import java.util.Collection;
+import java.util.Collections;
 
 /** <code>CollectionFactory</code> is a <code>Collection</code>
     generator.  Subclasses should implement constructions of specific
@@ -26,7 +27,7 @@ import java.util.Collection;
     even though <code>Set</code> is a subtype of <code>Collection</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CollectionFactory.java,v 1.2.2.2 2002-03-04 20:22:18 cananian Exp $
+ * @version $Id: CollectionFactory.java,v 1.2.2.3 2002-04-07 20:30:11 cananian Exp $
  */
 public abstract class CollectionFactory<V> {
     
@@ -37,8 +38,7 @@ public abstract class CollectionFactory<V> {
     
     /** Generates a new, mutable, empty <code>Collection</code>. */
     public Collection<V> makeCollection() {
-	// XXX BUG IN JAVAC: should be Collections.EMPTY_SET
-	return makeCollection(Default.EMPTY_SET());
+	return makeCollection(Collections.EMPTY_SET);
     }
 
     /** Generates a new, mutable, empty <code>Collection</code>, using
@@ -55,7 +55,7 @@ public abstract class CollectionFactory<V> {
 	changes to <code>c</code> are not reflected in the returned
 	<code>Collection</code>. 
     */  
-    public abstract Collection<V> makeCollection(Collection<V> c);
+    public abstract <T extends V> Collection<V> makeCollection(Collection<T> c);
 
     
     

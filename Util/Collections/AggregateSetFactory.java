@@ -24,7 +24,7 @@ import java.util.Set;
  * but the iterator is as fast as <code>ArrayList</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AggregateSetFactory.java,v 1.2.2.1 2002-03-14 01:06:03 cananian Exp $
+ * @version $Id: AggregateSetFactory.java,v 1.2.2.2 2002-04-07 20:30:11 cananian Exp $
  */
 public class AggregateSetFactory<V> extends SetFactory<V>
     implements java.io.Serializable {
@@ -41,7 +41,7 @@ public class AggregateSetFactory<V> extends SetFactory<V>
      *  The <code>remove()</code> method of the returned <code>Set</code>
      *  is very slow.
      */
-    public Set<V> makeSet(final Collection<V> c) {
+    public <T extends V> Set<V> makeSet(final Collection<T> c) {
 	return new AbstractSet<V>() {
 	    final ID IDENTITY;
 	    /* backing store for efficient iteration */
