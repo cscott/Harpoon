@@ -40,7 +40,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.31 2000-07-02 08:37:44 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.32 2000-07-17 17:01:21 rinard Exp $
  */
 public abstract class InterThreadPA {
 
@@ -308,13 +308,13 @@ public abstract class InterThreadPA {
 	else
 	    pig[1] = pa.getExtParIntGraph(op);
 
-	if(DEBUG2){
+	 if(DEBUG2){
 	    System.out.println("interact_once_op:");
 	    System.out.println("  nt node: " + nt);
 	    System.out.println("  run method: " + op);
 	    System.out.println("PIG STARTER: " + pig[0]);
 	    System.out.println("PIG STARTEE: " + pig[1]);
-	}
+ 	}
 	
 	PANode[] params = pa.getParamNodes(op);
 	
@@ -433,6 +433,7 @@ public abstract class InterThreadPA {
 	    new_info[i].removeKey(node);
 
 	    // Matching.rule0(node,new_mappings,pig,W,mu,new_info,i,ib);
+
 	    Matching.rule2(node,new_mappings,pig,W,mu,new_info,i,ib);
 	    Matching.rule22(node,new_mappings,pig,W,mu,new_info,i,ib);
 	    Matching.rule3(node,new_mappings,pig,W,mu,new_info,i,ib);
@@ -458,7 +459,8 @@ public abstract class InterThreadPA {
 	PANodeVisitor visitor_startee = new PANodeVisitor(){
 		public void visit(PANode node){
 		    int type = node.type();
-		    if(type == PANode.PARAM)
+		    if ((type == PANode.PARAM) ||
+                        (node == ActionRepository.THIS_THREAD))
 			mu[1].add(node, nt);
 		    else
 			mu[1].add(node, node);

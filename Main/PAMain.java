@@ -80,7 +80,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.75 2000-07-16 21:07:44 cananian Exp $
+ * @version $Id: PAMain.java,v 1.1.2.76 2000-07-17 17:01:33 rinard Exp $
  */
 public abstract class PAMain {
 
@@ -122,6 +122,9 @@ public abstract class PAMain {
     private static boolean INST_SYNCOPS = false;
 
     private static boolean DUMP_JAVA = false;
+
+    private static boolean ANALYZE_ALL_ROOTS = false;
+    private static boolean SYNC_ELIM_ALL_ROOTS = false;
     
     private static boolean COMPILE = false;
     
@@ -223,6 +226,12 @@ public abstract class PAMain {
 	if(DO_ANALYSIS)
 	    do_analysis();
 
+        if (ANALYZE_ALL_ROOTS) 
+            analyze_all_roots();
+
+        if (SYNC_ELIM_ALL_ROOTS) 
+            sync_elim_all_roots();
+
 	if(DO_INTERACTIVE_ANALYSIS)
 	    do_interactive_analysis();
     
@@ -244,7 +253,7 @@ public abstract class PAMain {
 	if(COMPILE) {
 	    SAMain.HACKED_REG_ALLOC = true;
 	    SAMain.hcf = hcf;
-	    SAMain.className = params[optind];
+	    SAMain.className = root_method.declClass; // params[optind];
 	    SAMain.do_it();
 	}
     }
@@ -342,8 +351,18 @@ public abstract class PAMain {
 
     // Finds the root method: the "main" method of "class".
     private static void get_root_method(String root_class) {
-	root_method.name = "main";
-	root_method.declClass = root_class;
+/*
+        if (root_class.indexOf(".") > 0) { 
+          root_method.name = root_class.substring(root_class.indexOf(".")+1);
+          root_method.declClass = root_class.substring(0, root_class.indexOf("."));
+        } else { 
+*/
+	  root_method.name = "main";
+	  root_method.declClass = root_class;
+/*
+        }
+*/
+        System.out.println("root method :" + root_method.declClass + "." + root_method.name);
 	HClass hclass = linker.forName(root_method.declClass);
 	HMethod[] hm  = hclass.getDeclaredMethods();
 
@@ -377,7 +396,7 @@ public abstract class PAMain {
 				       + " ->\n META-METHOD " + mm);
 		    ParIntGraph int_pig = pa.getIntParIntGraph(mm);
 		    ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
-		    ParIntGraph pig_inter_thread = pa.threadInteraction(mm);
+		    ParIntGraph pig_inter_thread = pa.getIntThreadInteraction(mm);
 		    PANode[] nodes = pa.getParamNodes(mm);
 		    System.out.println("META-METHOD " + mm);
 		    System.out.print("POINTER PARAMETERS: ");
@@ -454,6 +473,8 @@ public abstract class PAMain {
 	    new LongOpt("syncelim",  LongOpt.NO_ARGUMENT,       null, 21),
 	    new LongOpt("instsync",  LongOpt.NO_ARGUMENT,       null, 22),
 	    new LongOpt("dumpjava",  LongOpt.NO_ARGUMENT,       null, 23),
+	    new LongOpt("analyzeroots",  LongOpt.NO_ARGUMENT,       null, 24),
+	    new LongOpt("syncelimroots",  LongOpt.NO_ARGUMENT,       null, 25),
 	    new LongOpt("backend",   LongOpt.REQUIRED_ARGUMENT, null, 'b'),
 	    new LongOpt("output",    LongOpt.REQUIRED_ARGUMENT, null, 'o'),
 	};
@@ -538,6 +559,12 @@ public abstract class PAMain {
 		break;
 	    case 23:
 		DUMP_JAVA = true;
+		break;
+	    case 24:
+		ANALYZE_ALL_ROOTS = true;
+		break;
+	    case 25:
+		SYNC_ELIM_ALL_ROOTS = true;
 		break;
 	    case 'o':
 		SAMain.ASSEM_DIR = new java.io.File(g.getOptarg());
@@ -635,6 +662,15 @@ public abstract class PAMain {
 	if(DO_SAT)
 	    System.out.print(" DO_SAT (" + SAT_FILE + ")");
 
+	if(ANALYZE_ALL_ROOTS)
+	    System.out.print(" ANALYZE_ALL_ROOTS");
+
+	if(SYNC_ELIM_ALL_ROOTS)
+	    System.out.print(" SYNC_ELIM_ALL_ROOTS");
+	
+	if(INST_SYNCOPS)
+	    System.out.print(" INST_SYNCOPS");
+
 	if(ELIM_SYNCOPS)
 	    System.out.print(" ELIM_SYNCOPS");
 	
@@ -683,7 +719,7 @@ public abstract class PAMain {
           for(Iterator it = allmms.iterator(); it.hasNext(); ) {
             MetaMethod mm = (MetaMethod) it.next();
             if(!analyzable(mm)) continue;
-            pa.threadInteraction(mm);
+            pa.getIntThreadInteraction(mm);
           }
           System.out.println("Tnterthread Analysis time: " +
                            (time() - g_tstart) + "ms");
@@ -777,6 +813,138 @@ public abstract class PAMain {
 	}
     }
 
+    private static void analyze_all_roots() {
+	MetaCallGraph mcg = pa.getMetaCallGraph();
+	Set allmms = mcg.getAllMetaMethods();
+
+	// The following loop has just the purpose of timing the analysis of
+	// the entire program. Doing it here, before any memory allocation
+	// optimization, allows us to time it accurately.
+       g_tstart = System.currentTimeMillis();
+       for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+            MetaMethod mm = (MetaMethod) it.next();
+            if(!analyzable(mm)) continue;
+            pa.getIntParIntGraph(mm);
+        }
+        System.out.println("Intrathread Analysis time: " +
+                           (time() - g_tstart) + "ms");
+
+        if (USE_INTER_THREAD) {
+          g_tstart = System.currentTimeMillis();
+          for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+            MetaMethod mm = (MetaMethod) it.next();
+            if(!analyzable(mm)) continue;
+            System.out.println("Thread Interaction for: " + mm);
+            pa.getIntThreadInteraction(mm);
+          }
+          System.out.println("Tnterthread Analysis time: " +
+                           (time() - g_tstart) + "ms");
+        }
+    }
+/*
+        MetaCallGraph mcg = pa.getMetaCallGraph();
+	Set allmms = mcg.getAllMetaMethods();
+
+        g_tstart = System.currentTimeMillis();
+       for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+            MetaMethod mm = (MetaMethod) it.next();
+            if(!analyzable(mm)) continue;
+	    nbmm++;
+        for(Iterator mit = mroots.iterator(); mit.hasNext(); ) {
+            HMethod hm = (HMethod) mit.next();
+            int nbmm = 0;
+            for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
+	     MetaMethod mm = (MetaMethod) it.next();
+             if(!analyzable(mm)) continue;
+	     nbmm++;
+	      System.out.println("HMETHOD " + hm
+				       + " ->\n META-METHOD " + mm);
+	      ParIntGraph int_pig = pa.getIntParIntGraph(mm);
+    	      ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
+ 	      ParIntGraph pig_inter_thread = pa.getIntThreadInteraction(mm);
+              System.out.println("META-METHOD " + mm);
+              System.out.print("POINTER PARAMETERS: ");
+              PANode[] nodes = pa.getParamNodes(mm);
+              System.out.print("[ ");
+              for(int j = 0; j < nodes.length; j++)
+                 System.out.print(nodes[j] + " ");
+              System.out.println("]");
+              System.out.print("INT. GRAPH AT THE END OF THE METHOD:");
+              System.out.println(int_pig);
+              System.out.print("EXT. GRAPH AT THE END OF THE METHOD:");
+              System.out.println(ext_pig);
+              System.out.print("INT. GRAPH AT THE END OF THE METHOD" +
+              	     " + INTER-THREAD ANALYSIS:");
+              System.out.println(pig_inter_thread);
+	    }
+	}
+    }
+*/
+
+    private static void sync_elim_all_roots() {
+	SyncElimination se = new SyncElimination(pa);
+	for(Iterator mit = mroots.iterator(); mit.hasNext(); ) {
+            HMethod hm = (HMethod) mit.next();
+	    System.out.println("\n sync elim root " + hm);
+    	    for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
+	      MetaMethod mm = (MetaMethod) it.next();
+              if(!analyzable(mm)) continue;
+              if (USE_INTER_THREAD) { 
+                se.addRoot_interthread(mm);
+              } else { 
+	        se.addRoot_intrathread(mm);
+              }
+	    }
+	}
+        if (!USE_INTER_THREAD) {
+          Set s = ch.callableMethods();
+	  for(Iterator mit = s.iterator(); mit.hasNext(); ) {
+            HMethod hm = (HMethod) mit.next();
+            // Should really check to see that hm is in a runnable class
+            // or one that inherits from Thread
+            if (hm.getName().equals("run") &&
+                (hm.getParameterTypes().length == 0)) { 
+    	      for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
+	        MetaMethod mm = (MetaMethod) it.next();
+                if(!analyzable(mm)) continue;
+                se.addRoot_intrathread(mm);
+              }
+            } 
+          }
+	}
+
+	se.calculate();
+	java.io.PrintWriter out = new java.io.PrintWriter(System.out, true);
+	HCodeFactory hcf_nosync = SyncElimination.codeFactory(hcf, se);
+        Set s = ch.callableMethods();
+	for(Iterator mit = s.iterator(); mit.hasNext(); ) {
+            HMethod hm = (HMethod) mit.next();
+	    System.out.println("sync elim converting " + hm);
+	    HCode hcode = hcf_nosync.convert(hm);
+	    if (hcode != null) hcode.print(out);
+            for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
+                MetaMethod mm = (MetaMethod) it.next();
+                if(!analyzable(mm)) continue;
+                ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
+                ParIntGraph int_pig = pa.getIntParIntGraph(mm);
+		ParIntGraph pig_inter_thread = pa.getIntThreadInteraction(mm);
+                PANode[] nodes = pa.getParamNodes(mm);
+                System.out.println("META-METHOD " + mm);
+                System.out.print("POINTER PARAMETERS: ");
+                System.out.print("[ ");
+                for(int j = 0; j < nodes.length; j++)
+                    System.out.print(nodes[j] + " ");
+                System.out.println("]");
+                System.out.print("INT. GRAPH AT THE END OF THE METHOD:");
+                System.out.println(int_pig);
+                System.out.print("EXT. GRAPH AT THE END OF THE METHOD:");
+                System.out.println(ext_pig);
+		System.out.print("INT. GRAPH AT THE END OF THE METHOD" +
+				     " + INTER-THREAD ANALYSIS:");
+		System.out.println(pig_inter_thread);
+            }
+	}
+    }
 
     // Analyzes the methods given interactively by the user.
     private static void do_interactive_analysis() {
@@ -914,10 +1082,11 @@ public abstract class PAMain {
 
     	for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
 	    MetaMethod mm = (MetaMethod) it.next();
-	    if (USE_INTER_THREAD)
-		se.addRoot_interthread(mm);
-	    else
-		se.addRoot_intrathread(mm);
+            if (USE_INTER_THREAD) { 
+              se.addRoot_interthread(mm);
+            } else { 
+	      se.addRoot_intrathread(mm);
+            }
 	}
 	
 	se.calculate();

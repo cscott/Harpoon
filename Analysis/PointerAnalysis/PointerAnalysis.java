@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.66 2000-07-02 00:54:39 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.67 2000-07-17 17:01:22 rinard Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -162,6 +162,10 @@ public class PointerAnalysis {
     private final MetaAllCallers mac;
     public final MetaAllCallers getMetaAllCallers() { return mac; }
     private final CachingSCCLBBFactory scc_lbb_factory;
+
+    private Map hash_proc_interact_int = new HashMap();
+
+    private Map hash_proc_interact_ext = new HashMap();
 
     // Maintains the partial points-to and escape information for the
     // analyzed methods. This info is successively refined by the fixed
@@ -319,6 +323,56 @@ public class PointerAnalysis {
 	ParIntGraph pig = (ParIntGraph) getIntParIntGraph(mm);
 	return InterThreadPA.resolve_threads(this, pig);
     }
+
+    private ParIntGraph threadIntInteraction(MetaMethod mm){
+	System.out.println("threadIntInteraction for " + mm);
+	ParIntGraph pig = (ParIntGraph) getIntParIntGraph(mm);
+	return InterThreadPA.resolve_threads(this, pig);
+    }
+
+    private ParIntGraph threadExtInteraction(MetaMethod mm){
+	System.out.println("threadExtInteraction for " + mm);
+
+	ParIntGraph pig = (ParIntGraph) getIntThreadInteraction(mm);
+            PANode[] nodes = getParamNodes(mm);
+            boolean is_main =
+                mm.getHMethod().getName().equals("main");
+
+            ParIntGraph shrinked_graph = pig.keepTheEssential(nodes,is_main);
+
+            // We try to correct some imprecisions in the analysis:
+            //  1. if the meta-method is not returning an Object, clear
+            // the return set of the shrinked_graph
+            HMethod hm = mm.getHMethod();
+            if(hm.getReturnType().isPrimitive())
+                shrinked_graph.G.r.clear();
+            //  2. if the meta-method doesn't throw any exception,
+            // clear the exception set of the shrinked_graph.
+            if(hm.getExceptionTypes().length == 0)
+                shrinked_graph.G.excp.clear();
+      return(shrinked_graph);
+    }
+
+    public ParIntGraph getExtThreadInteraction(MetaMethod mm){
+            ParIntGraph pig = (ParIntGraph)hash_proc_interact_ext.get(mm);
+            if(pig == null){
+                pig = threadExtInteraction(mm);
+                hash_proc_interact_ext.put(mm, pig);
+            }
+            return pig;
+    }
+
+    public ParIntGraph getIntThreadInteraction(MetaMethod mm){
+            ParIntGraph pig = (ParIntGraph)hash_proc_interact_int.get(mm);
+            if(pig == null){
+                pig = threadIntInteraction(mm);
+                hash_proc_interact_int.put(mm, pig);
+            }
+            return pig;
+    }
+
+
+
 
 
     // Worklist of <code>MetaMethod</code>s for the inter-procedural analysis

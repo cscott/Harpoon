@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.35 2000-07-15 21:54:14 bdemsky Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.36 2000-07-17 17:01:22 rinard Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -135,6 +135,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	this.mms = mms;
 	this.node_rep = pa.getNodeRepository();
 	this.USE_INTER_THREAD = USE_INTER_THREAD;
+        this.DO_PREALLOCATION = USE_INTER_THREAD;
 
 	analyze();
 

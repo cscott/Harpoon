@@ -14,7 +14,7 @@ import java.net.ServerSocket;
  * worker threads
  *
  * @author P.Govereau govereau@mit.edu
- * @version $Id: PhoneServer.java,v 1.2.2.2 2000-04-03 20:22:56 salcianu Exp $
+ * @version $Id: PhoneServer.java,v 1.2.2.3 2000-07-17 17:01:36 rinard Exp $
  */
 public class PhoneServer extends Thread {
     private ServerSocket socket;
@@ -23,6 +23,8 @@ public class PhoneServer extends Thread {
     public PhoneServer(int port) {
 	try {
 	    theMap = new Str2StrMap();
+            theMap.put("operator", "411");
+            theMap.put("emergency", "911");
 	    socket = new ServerSocket(port);
 	}
 	catch (IOException e){

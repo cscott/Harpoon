@@ -76,7 +76,7 @@ import harpoon.Util.Util;
  * based on the results of pointer analysis.
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: SyncElimination.java,v 1.1.2.2 2000-07-15 14:42:38 jwhaley Exp $
+ * @version $Id: SyncElimination.java,v 1.1.2.3 2000-07-17 17:01:22 rinard Exp $
  */
 public class SyncElimination {
 
@@ -93,6 +93,9 @@ public class SyncElimination {
     
     public void addRoot_intrathread(MetaMethod mm) {
 	
+	System.out.println("Adding intrathread info from root method "+mm);
+        
+
 	final ParIntGraph pig = pa.getExtParIntGraph(mm);
 	final ActionRepository ar = pig.ar;
 	// add to the set of necessary sync ops.
@@ -113,8 +116,10 @@ public class SyncElimination {
 
 	System.out.println("Adding interthread info from root method "+mm);
 
-	final ParIntGraph pig = pa.threadInteraction(mm);
+	final ParIntGraph pig = pa.getIntThreadInteraction(mm);
+	// final ParIntGraph pig = pa.getExtThreadInteraction(mm);
 	final ActionRepository ar = pig.ar;
+        System.out.println(pig);
 	// add to the set of necessary sync ops.
 	// a sync op is necessary if it is executed in parallel with another
 	// thread that has a sync op on the same node.
@@ -131,8 +136,11 @@ public class SyncElimination {
 		    // ... PUNT on this for now because we have no unanalyzed calls in our benchmarks.
 		    
 		    // If nt2 has syncs on node n, this sync is necessary.
+                    // if (nt == nt2) return;
+                    System.out.println("sync on " + n + " by " + nt + " || " + nt2);
 		    Iterator i = ar.syncsOn(n, nt2);
 		    if (!i.hasNext()) return;
+                    System.out.println("some syncs on " + n + " by " + nt2);
 		    necessarySyncs.add(sync);
 		    // Also add all syncs by nt2 on node n as necessary.
 		    do {
@@ -141,7 +149,19 @@ public class SyncElimination {
 		}
 	    };
 	ar.forAllParActions(par_act_visitor);
-
+/*
+	ActionVisitor act_visitor = new ActionVisitor() {
+		public void visit_ld(PALoad load){
+		}
+		public void visit_sync(PASync sync){
+		    // this sync exists in the action repository, so it operates
+		    // on an escaped node, therefore it is necessary.
+                    PANode n = sync.n;
+		    necessarySyncs.add(sync);
+		}
+	    };
+	ar.forAllActions(act_visitor);
+*/
     }
     
     public HMethod[] calculate() {
