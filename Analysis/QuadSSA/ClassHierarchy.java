@@ -15,18 +15,19 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 /**
  * <code>ClassHierarchy</code> computes the class hierarchy of *reachable*
  * classes; that is, classes possibly usable starting from some root method.
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.4.2.8 1999-08-17 22:00:55 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.4.2.9 1999-08-18 18:36:20 cananian Exp $
  */
 
 public class ClassHierarchy implements java.io.Serializable {
     private Map children = new HashMap();
-    private Set methods = new HashSet();
+    private Set methods = new TreeSet(); // sorted for niceness
 
     /** Returns set of all callable methods. */
     public Set callableMethods() {
