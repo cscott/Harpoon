@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.18 2003-04-25 21:51:09 cananian Exp $
+% $Id: lctes03.tex,v 1.19 2003-04-25 22:08:14 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lctes03.tex
 % Data Size Optimizations for Java Programs
@@ -111,7 +111,8 @@ within each object and the header information used by the
 run-time system:
 \begin{itemize}
 \item {\bf Field Reduction:} 
-Our flow-sensitive, interprocedural bitwidth analysis
+Our flow-sensitive, interprocedural combined value-propagation and 
+bitwidth analysis
 computes the range of values that the program
 may assign to each field. The compiler then transforms the program
 to reduce the size of the field to the smallest type
@@ -514,14 +515,10 @@ amply suffices in these three cases.
 
 \subsection{Bitwidth Analysis}
 % this allows us to reduce fields and remove unused/const fields.
-We use a flow-sensitive interprocedural bitwidth analysis to
+We use a flow-sensitive interprocedural combined value-propagation and
+bitwidth analysis to
 find constant values, unread and constant fields, and to reduce
-field sizes where possible.  This analysis extends our previous
-intraprocedural analysis \cite{ananian99:tech} and is able
-to derive all the dataflow facts found by
-Wegman and Zadeck's Sparse Conditional Constant (SCC) propagation
-algorithm \cite{wegman91:scc}, in addition to discovering properties
-of Java objects and arrays and bitwidth information for integral types.
+field sizes where possible.
 Since almost all types in Java are signed (with the exception of the
 16-bit {\tt char}), we must be able to describe bitwidths of both
 negative and positive numbers, which we do by splitting the set of
@@ -566,16 +563,18 @@ bitwise operations on positive numbers.
 \subsubsection{Treatment of Fields}
 Dataflow on this bitwidth lattice is performed on the entire Java
 program interprocedurally.  The analysis is
-{\it field-based} \cite{heintze01}; that is, given a field $f$ defined in
-class $X$, and an instance of $X$ named $x$, we consider an assignment
-to $x.f$ to be an assignment to the field $X.f$ and ignore the base
-object $x$.\footnote{An obvious extension is to use pointer
+{\it field-based} \cite{heintze01}: for each field $f$ in 
+class $X$, the analysis uses the abstract analysis value $X.f$ to represent
+all of the values in the $f$ field of instances of $X$. 
+The analysis therefore models an assignment to $f$ in any instance of 
+$X$ as an assignment to the corresponding analysis value $X.f$.%
+\footnote{An obvious extension is to use pointer
 analysis to discriminate between fields allocated at different sites
 in the program.}  The result of the analysis is a bitwidth
-specification for each variable and field in the program.  As the
-analysis encompasses SCC, we also identify constant variables and
+specification for each variable and field in the program.
+We also identify constant variables and
 fields; we replace reads of constant fields with their constant
-value and the field is eliminated.  Fields for which no reads are
+value and eliminate the field.  Fields for which no reads are
 found (even if writes are present) are also eliminated.%
 \footnote{Note that checks which may throw exceptions on reads and
   writes are preserved.}
@@ -682,7 +681,7 @@ every constructor of {\tt A} assigns a value to {\tt f} before
 returning or calling an unsafe method.
 Adding constructor {\tt A$_2$} allows the
 default $\mathbf{0}$ value of {\tt f} to be seen; {\tt f} is then no longer
-definitely-initialized.
+definitely initialized.
 
 We actually allow the constructor great flexibility with regard to
 definite initialization; it is free to call any method which does not
