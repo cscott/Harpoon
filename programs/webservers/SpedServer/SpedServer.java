@@ -1,115 +1,104 @@
+// SpedServer.java, created Sat Mar 7 2000 by govereau
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 
-import java.io.*;
-import java.net.*;
+import java.net.Socket;
+import java.net.ServerSocket;
 
-import harpoon.Analysis.ContBuilder.*;
+import harpoon.Analysis.EnvBuilder.Environment;
+import harpoon.Analysis.ContBuilder.VoidContinuation;
+import harpoon.Analysis.ContBuilder.VoidResultContinuation;
+import harpoon.Analysis.ContBuilder.ObjectContinuation;
+import harpoon.Analysis.ContBuilder.ObjectResultContinuation;
+
+import harpoon.Analysis.ContBuilder.Scheduler;
 
 /**
- * Runs a S.P.E.D web server
+ * Runs a Single Process Event Driven web server
  *
  * @author P.Govereau govereau@mit.edu
+ * @version $Id: SpedServer.java,v 1.2 2000-03-22 09:09:13 govereau Exp $
  */
 public class SpedServer
     extends VoidContinuation
-    implements VoidResultContinuation
+    implements VoidResultContinuation, ObjectResultContinuation
 {
 		/**
-		 * This class holds the env. for SpedServer class
-		 *
+		 * <code>SpedEnv</code> holds the environment for
+		 * instances of <code>SpedServer</code> class
 		 */
-    public class SpedEnv {
-	int port;
-	String args[];
-	ServerSocket listenSocket;
-	
-	public SpedEnv(String args[]) {
-	    this.args = args;
-	    port = 0;
-	    listenSocket = null;
-	}
+    public class SpedEnv implements Environment {
+		int port;
+		String args[];
+		ServerSocket listenSocket;
+		
+		public SpedEnv(String args[]) {
+			this.args = args;
+			port = 0;
+			listenSocket = null;
+		}
     }
     
-    //
-    // Constructors
-    //
+		//
+		// Constructors
+		//
     private SpedEnv env;
     public SpedServer(String args[]) {
-	this.env = new SpedEnv(args);
+		this.env = new SpedEnv(args);
     }
     
     public SpedServer(SpedEnv env) {
-	this.env = env;
+		this.env = env;
     }
     
-    public void exception(Throwable t) {}
-    
-    //
-    // resume (void)
-    //
+		//
+		// VoidResultContinuation interface
+		//
     public void resume() {
-	try {
-	    if (env == null)
-		throw new Exception("enviornment is null");
-	    
-	    if ((env.args == null) || (env.args.length != 1))
-		throw new Exception("Usage: Sped <port>");
-	    
-	    env.port = Integer.parseInt(env.args[0]);			
-	    System.out.println("Using port: " + env.port);
-
-	    env.listenSocket = new ServerSocket(env.port);
-	    env.listenSocket.makeAsync();
-	    
-	    ObjectContinuation oc = env.listenSocket.acceptAsync();			
-	    Acceptor a = new Acceptor(env);
-	    oc.setNext(a);
-	    a.setNext(next);
-	}
-	catch (Throwable ex) {
-	    exception(ex);
-	    return;
-	}
+		try {
+			if (env == null)
+				throw new Exception("enviornment is null");
+			
+			if ((env.args == null) || (env.args.length != 1))
+				throw new Exception("Usage: Sped <port>");
+			
+			env.port = Integer.parseInt(env.args[0]);			
+			System.out.println("Using port: " + env.port);
+			
+			env.listenSocket = new ServerSocket(env.port);
+			env.listenSocket.makeAsync();
+			
+			ObjectContinuation oc = env.listenSocket.acceptAsync();			
+			oc.setNext(this);
+		}
+		catch (Throwable ex) {
+			exception(ex);
+			return;
+		}
     }
-
-    /**
-     * Accepts request and starts new async "threads"
-     * to handle them
-     */
-    class Acceptor
-	extends VoidContinuation
-	implements ObjectResultContinuation
-    {
-	//
-	// Constructor
-	//
-	private SpedEnv env;
-	public Acceptor(SpedEnv env) {
-	    this.env = env;
-	}
-	public void exception(Throwable t) {}
-	//
-	// ObjectResultContinuation interface
-	// this one is scheduled when connections come in
-	//
+	
+		//
+		// ObjectResultContinuation interface
+		//
 	public void resume(Object result) {
-	    try {
-		Response res = new Response((Socket)result);
-		res.start_Async();
-		
-		ObjectContinuation oc = env.listenSocket.acceptAsync();			
-		Acceptor a = new Acceptor(env);
-		oc.setNext(a);
-		a.setNext(next);
-	    }
-	    catch (Throwable ex) {
-		exception(ex);
-		return;
-	    }	
-	}
-    }
+		try {
+			Response res = new Response((Socket)result);
+			res.start_Async();			
 
+			ObjectContinuation oc = env.listenSocket.acceptAsync();			
+			oc.setNext(this);
+		}
+		catch (Throwable ex) {
+			exception(ex);
+			return;
+		}	
+	}
+	
+    public void exception(Throwable t) {
+		t.printStackTrace(System.out);
+	}
+	
     public static void main(String args[]) {
-	Scheduler.addReady((VoidResultContinuation)new SpedServer(args));
-	Scheduler.loop();
+		Scheduler.addReady((VoidResultContinuation)new SpedServer(args));
+		Scheduler.loop();
     }
 }
