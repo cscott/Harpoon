@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * leading to/coming from the <code>PHI</code>/<code>SIGMA</code> nodes.
  * 
  * @author  Brian Demsky
- * @version $Id: QuadRSSI.java,v 1.1.2.3 2000-10-06 21:20:33 cananian Exp $
+ * @version $Id: QuadRSSI.java,v 1.1.2.4 2000-10-17 03:29:46 cananian Exp $
  */
 public class QuadRSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -51,4 +51,23 @@ public class QuadRSSI extends Code /* which extends HCode */ {
      * @return the string <code>"relaxed-quad-ssi"</code>.
      */
     public String getName() { return codename; }
+
+    /** Return a code factory for <code>QuadRSSI</code>, given a code
+     *  factory for <code>QuadNoSSA</code> or <code>QuadSSI</code>.
+     */
+    public static HCodeFactory codeFactory(final HCodeFactory hcf) {
+	if (hcf.getCodeName().equals(codename)) return hcf;
+	if (hcf.getCodeName().equals(QuadNoSSA.codename) ||
+	    hcf.getCodeName().equals(QuadSSI.codename)) {
+	    return new harpoon.ClassFile.SerializableCodeFactory() {
+		public HCode convert(HMethod m) {
+		    Code c = (Code) hcf.convert(m);
+		    return c.cloneHelper(new QuadRSSI(m, null)).hcode();
+		}
+		public void clear(HMethod m) { hcf.clear(m); }
+		public String getCodeName() { return codename; }
+	    };
+	} else throw new Error("don't know how to make " + codename +
+			       " from " + hcf.getCodeName());
+    }
 }
