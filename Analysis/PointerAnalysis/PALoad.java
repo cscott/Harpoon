@@ -12,7 +12,7 @@ import java.util.Set;
  * outside reference <code>n1--f-->n2</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PALoad.java,v 1.1.2.3 2000-02-25 00:49:35 salcianu Exp $
+ * @version $Id: PALoad.java,v 1.1.2.4 2000-02-25 01:06:12 salcianu Exp $
  */
 class PALoad {
     
@@ -55,7 +55,7 @@ class PALoad {
     /** Checks whether <code>this</code> load contains only remaining nodes.
 	This method is designed to be used by <code>keepTheEssential</code>.
     	Warning: <code>isGood</code> is NOT the negation of
-	<code>isBad</code>. */*/
+	<code>isBad</code>. */
     boolean isGood(Set remaining_nodes){
 	return
 	    remaining_nodes.contains(n1) && remaining_nodes.contains(n2) &&

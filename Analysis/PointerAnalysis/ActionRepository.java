@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Collections;
 
 /**
  * <code>ActionRepository</code> merges together the <code>alpha</code> and
@@ -29,7 +30,7 @@ import java.util.Map;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.9 2000-02-24 22:35:40 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.10 2000-02-25 01:06:12 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -52,15 +53,9 @@ public class ActionRepository {
     // Relation<PANode,PALoad>
     Relation pi_ld;
 
-
-    /** Adds a <code>ld</code> action.
-	The thread <code>nt</code> read the outside edge from <code>n1</code>
-	to <code>n2</code> through field <code>f</code>, in parallel with
-	all the threads from <code>active_threads</code>. */
-    public void add_ld(PANode n1, String f, PANode n2, PANode nt,
-		       Set active_threads){
-	PALoad load = new PALoad(n1,f,n2,nt);
-
+    /** Adds a load action in parallel with all the 
+	<code>active_threads</code>. */
+    private void add_ld(PALoad load, Set active_threads){
 	alpha_ld.add(load);
 
 	if(active_threads == null) return;
@@ -68,6 +63,15 @@ public class ActionRepository {
 	Iterator it = active_threads.iterator();
 	while(it.hasNext())
 	    pi_ld.add((PANode)it.next(), load);
+    }
+
+    /** Adds a <code>ld</code> action.
+	The thread <code>nt</code> read the outside edge from <code>n1</code>
+	to <code>n2</code> through field <code>f</code>, in parallel with
+	all the threads from <code>active_threads</code>. */
+    public void add_ld(PANode n1, String f, PANode n2, PANode nt,
+		       Set active_threads){
+	add_ld(new PALoad(n1,f,n2,nt),active_threads);
     }
 
     /** Convenient function.
@@ -350,7 +354,7 @@ public class ActionRepository {
     }
 
 
-    /** Private constructor for <code>clone</code>. */
+    // Private constructor for clone and keepTheEssential
     private ActionRepository(HashSet alpha_ld, Relation pi_ld,
 			     Relation alpha_sync, Hashtable pi_sync){
 	this.alpha_ld   = alpha_ld;
@@ -358,6 +362,49 @@ public class ActionRepository {
 	this.alpha_sync = alpha_sync;
 	this.pi_sync    = pi_sync;
     }
+
+
+    // TODO: different internal function for add_alpha and add_pi
+    // (so that we don't rely on Colections.singleton) You will
+    // understand
+
+    /** Produces an <code>ActionRepository</code> containing only the \
+	nodes that could be reached from the outside.
+	(i.e. via parameters,
+	class nodes, normally or exceptionally returned nodes or the
+	started thread nodes) */
+    private ActionRepository keepTheEssential(final Set remaining_nodes){
+	final ActionRepository _ar = new ActionRepository();
+
+	forAllActions(new ActionVisitor(){
+		public void visit_ld(PALoad load){
+		    if(load.isGood(remaining_nodes))
+			_ar.add_ld(load,Collections.EMPTY_SET);
+		}
+		public void visit_sync(PANode n, PANode nt){
+		    if(remaining_nodes.contains(n) &&
+		       remaining_nodes.contains(nt))
+			_ar.add_sync(n,nt,Collections.EMPTY_SET);
+		}
+	    });
+	
+	forAllParActions(new ParActionVisitor(){
+		public void visit_par_ld(PALoad load, PANode nt2){
+		    if(load.isGood(remaining_nodes) &&
+		       remaining_nodes.contains(nt2))
+			_ar.add_ld(load,Collections.singleton(nt2));
+		}
+		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
+		    if(remaining_nodes.contains(n) &&
+		       remaining_nodes.contains(nt1) &&
+		       remaining_nodes.contains(nt2))
+			_ar.add_sync(n,nt1,Collections.singleton(nt2));
+		}
+	    });
+
+	return _ar;
+    }
+
 
 
     /** Produce a copy of <code>this</code> object. 

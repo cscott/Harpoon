@@ -19,7 +19,7 @@ import harpoon.Temp.Temp;
  correctly; speed is only a second issue.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: EdgeOrdering.java,v 1.1.2.3 2000-02-24 22:35:40 salcianu Exp $
+ * @version $Id: EdgeOrdering.java,v 1.1.2.4 2000-02-25 01:06:12 salcianu Exp $
  */
 public class EdgeOrdering{
 
@@ -144,13 +144,9 @@ public class EdgeOrdering{
 		public void visit(Object o1, Object o2){
 		    PAEdge eo = (PAEdge) o1;
 		    PAEdge ei = (PAEdge) o2;
-		    if(good_edge(eo) && good_edge(ei))
+		    if(ei.goodEdge(remaining_nodes) && 
+		       eo.goodEdge(remaining_nodes))
 			essence.add(eo,ei);
-		}
-		private boolean good_edge(PAEdge e){
-		    return 
-			remaining_nodes.contains(e.n1) &&
-			remaining_nodes.contains(e.n2);
 		}
 	    });
 	return new EdgeOrdering(essence);

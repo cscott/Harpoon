@@ -9,7 +9,7 @@ import java.util.Set;
  * <code>PAEdge</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdge.java,v 1.1.2.3 2000-02-25 00:49:35 salcianu Exp $
+ * @version $Id: PAEdge.java,v 1.1.2.4 2000-02-25 01:06:12 salcianu Exp $
  */
 public class PAEdge {
 
@@ -55,3 +55,8 @@ public class PAEdge {
 	return bad_nodes.contains(n1) || bad_nodes.contains(n2);
     }
 }
+
+
+
+
+
