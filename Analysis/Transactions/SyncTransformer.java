@@ -88,7 +88,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.8 2003-07-28 22:35:22 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.9 2003-10-31 03:52:20 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -102,12 +102,17 @@ import java.util.Set;
 // X1) guts into C code.
 // X2) code dup for sync check (actually, separate pass)
 //  3) indirectize trans to support object.wait()
+//     (analyze possible calls to wait() and only indirectize the cases
+//      that need it.  indirectize by reloading from a cell, or by
+//      returning the new transaction value or some such (maybe put
+//      it in thread-local memory)
 //  4) separate out sync transform and implement general trans mech.
 //  5) handle 'recovery' transaction?
 //  6) separate pass to virtualize static fields?
 //  7) strictness optimizations?
 //  8) changes to caching read version over commit of subtransaction
 //     (possibly parallel commit?)
+//  9) solution for static fields (virtualize static fields)
 
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -134,6 +139,10 @@ public class SyncTransformer
 	Boolean.getBoolean("harpoon.synctrans.checkoracle");
     private final boolean useUniqueRWCounters = // high-overhead counters
 	Boolean.getBoolean("harpoon.synctrans.uniquerwcounters");
+    private final boolean useHardwareTrans =// use hardware xaction mechanism
+	Boolean.getBoolean("harpoon.synctrans.hwtrans");
+    private final boolean doMemoryTrace =// add hooks to generate memory traces
+	Boolean.getBoolean("harpoon.synctrans.memorytrace");
     // this might have to be tweaked if we're using counters which are
     // added *before* SyncTransformer gets the code.
     private final boolean excludeCounters = true;
@@ -257,10 +266,13 @@ public class SyncTransformer
 	}
 	// set up our BitFieldNumbering (and create array-check fields in
 	// all array classes)
-	this.bfn = new BitFieldNumbering(l);
-	for (Iterator<HClass> it=ch.classes().iterator(); it.hasNext(); ) {
+	if (noFieldModification) this.bfn = null;
+	else {
+	  this.bfn = new BitFieldNumbering(l);
+	  for (Iterator<HClass> it=ch.classes().iterator(); it.hasNext(); ) {
 	    HClass hc = it.next();
 	    if (hc.isArray()) bfn.arrayBitField(hc);
+	  }
 	}
 
 	// fixup code factory for 'known safe' methods.
@@ -553,7 +565,8 @@ public class SyncTransformer
 				  q.dst(), q.src());
 	    Quad.replace(q, ncall);
 	    // now check for abort case.
-	    checkForAbort(ncall.nextEdge(1), ncall, ncall.retex());
+	    if (!useHardwareTrans)
+		checkForAbort(ncall.nextEdge(1), ncall, ncall.retex());
 	    // done.
 	}
 	public void visit(MONITORENTER q) {
@@ -575,6 +588,30 @@ public class SyncTransformer
 	    if (handlers!=null)
 		in = CounterFactory.spliceIncrement
 		    (qf, in, "synctrans.nested_transactions");
+	    if (useHardwareTrans) {
+		// we use hardware state-restore/jump mechansism.  So we
+		// just need a call to some inlined asm magic here, and
+		// we don't have to wrap the transaction in a loop.
+		// note that XACTION_BEGIN will never fail.
+		Temp tX = new Temp(tf, "retex");
+		Quad qC = new CALL(qf, q, gen.lookupMethod
+				   ("XACTION_BEGIN", new HClass[0],
+				    HClass.Void),
+				   new Temp[0], null, tX, false, false,
+				   new Temp[0]);
+		Quad qP = new PHI(qf, q, new Temp[0], 2);
+		// set currtrans to null. (you got a better idea?)
+		Quad qT = new CONST(qf, q, currtrans, null, HClass.Void);
+		Quad.addEdge(in.from(), in.which_succ(), qC, 0);
+		Quad.addEdge(qC, 0, qP, 0);
+		Quad.addEdge(qC, 1, qP, 1);
+		Quad.addEdge(qP, 0, qT, 0);
+		Quad.addEdge(qT, 0, out.to(), out.which_pred());
+		// tell everyone we're in transaction context.
+		handlers=new ListList<THROW>(new ArrayList<THROW>(), handlers);
+		// done.
+		return;
+	    }
 	    // loop looks like:
 	    // c=newTransaction(c);
 	    // L1: try {
@@ -631,6 +668,28 @@ public class SyncTransformer
 			     out.to(), out.which_pred());
 		return;
 	    }
+	    if (useHardwareTrans) {
+		// we use hardware state-restore/jump mechansism.  So we
+		// just need a call to some inlined asm magic here, and
+		// we don't have to wrap the transaction in a loop.
+		// note that XACTION_END will never fail.
+		// (well, it might fail, but it's invisible to us)
+		Temp tX = new Temp(tf, "retex");
+		Quad qC = new CALL(qf, q, gen.lookupMethod
+				   ("XACTION_END", new HClass[0],
+				    HClass.Void),
+				   new Temp[0], null, tX, false, false,
+				   new Temp[0]);
+		Quad qP = new PHI(qf, q, new Temp[0], 2);
+		Quad.addEdge(in.from(), in.which_succ(), qC, 0);
+		Quad.addEdge(qC, 0, qP, 0);
+		Quad.addEdge(qC, 1, qP, 1);
+		Quad.addEdge(qP, 0, out.to(), out.which_pred());
+		// pop the transaction context.
+		handlers = handlers.tail;
+		// done.
+		return;
+	    }
 	    // call c.commitTransaction(), linking to abort code if fails.
 	    Quad q0 = new CALL(qf, q, HMcommitrec_commit,
 			       new Temp[] { currtrans }, null, retex,
@@ -648,17 +707,38 @@ public class SyncTransformer
 	}
 	public void visit(AGET q) {
 	    addChecks(q);
-	    if (noFieldModification || noArrayModification) return;
-	    addUniqueRWCounters(q.prevEdge(0), q, q.objectref(), true, true);
-	    CounterFactory.spliceIncrement
-		(qf, q.prevEdge(0),(handlers==null) ?
-		 "synctrans.read_nt_array" : "synctrans.read_t_array");
 
 	    HClass compType = etm.typeMap(q, q.dst());
 	    // this is great for object arrays, but sub-integer components
 	    // are all squashed into HClass.Int.  So ask the quad in this case
 	    if (compType.isPrimitive()) compType = q.type();
 	    HClass arrType = HClassUtil.arrayClass(linker, compType, 1);
+
+	    if (doMemoryTrace) {
+		// log this read.
+		Edge in = q.prevEdge(0);
+		Temp tT = new Temp(tf, "is_trans");
+		Temp tX = new Temp(tf, "retex");
+		Quad qC, qP;
+		in = addAt(in, new CONST(qf, q, tT,
+					 new Integer((handlers==null) ? 0 : 1),
+					 HClass.Int));
+		in = addAt(in, qC = 
+			   new CALL(qf, q, gen.lookupMethod
+				    ("traceRead_Array", new HClass[]
+					{ arrType, HClass.Int, HClass.Int },
+				     HClass.Void),
+				    new Temp[]{ q.objectref(), q.index(), tT },
+				    null, tX, false, false, new Temp[0]));
+		in = addAt(in, qP = new PHI(qf, q, new Temp[0], 2));
+		Quad.addEdge(qC, 1, qP, 1);
+	    }
+	    if (noFieldModification || noArrayModification) return;
+	    addUniqueRWCounters(q.prevEdge(0), q, q.objectref(), true, true);
+	    CounterFactory.spliceIncrement
+		(qf, q.prevEdge(0),(handlers==null) ?
+		 "synctrans.read_nt_array" : "synctrans.read_t_array");
+
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
 	    Temp t1 = new Temp(tf, "retex");
 	    Quad q1;
@@ -711,6 +791,28 @@ public class SyncTransformer
 	}
 	public void visit(GET q) {
 	    addChecks(q);
+	    if (doMemoryTrace && !q.isStatic()/*XXX*/) {
+		// log this read.
+		Edge in = q.prevEdge(0);
+		Temp tT = new Temp(tf, "is_trans");
+		Temp tF = new Temp(tf, "field");
+		Temp tX = new Temp(tf, "retex");
+		Quad qC, qP;
+		in = addAt(in, new CONST(qf, q, tT,
+					 new Integer((handlers==null) ? 0 : 1),
+					 HClass.Int));
+		in = addAt(in, new CONST(qf, q, tF, q.field(), HCfield));
+		in = addAt(in, qC = 
+			   new CALL(qf, q, gen.lookupMethod
+				    ("traceRead", new HClass[]
+					{ HCobj, HCfield, HClass.Int },
+				     HClass.Void),
+				    new Temp[]{ q.objectref(), tF, tT },
+				    null, tX, false, false, new Temp[0]));
+		in = addAt(in, qP = new PHI(qf, q, new Temp[0], 2));
+		Quad.addEdge(qC, 1, qP, 1);
+		transFields.add(q.field());
+	    }
 	    if (noFieldModification) return;
 	    if (handlers==null &&
 		!fo.isSyncRead(q.field()) && !fo.isSyncWrite(q.field())) {
@@ -780,14 +882,35 @@ public class SyncTransformer
 
 	public void visit(ASET q) {
 	    addChecks(q);
+
+	    HClass compType = q.type(); // don't need extra precision here.
+	    HClass arrType = HClassUtil.arrayClass(linker, compType, 1);
+
+	    if (doMemoryTrace) {
+		// log this write.
+		Edge in = q.prevEdge(0);
+		Temp tT = new Temp(tf, "is_trans");
+		Temp tX = new Temp(tf, "retex");
+		Quad qC, qP;
+		in = addAt(in, new CONST(qf, q, tT,
+					 new Integer((handlers==null) ? 0 : 1),
+					 HClass.Int));
+		in = addAt(in, qC = 
+			   new CALL(qf, q, gen.lookupMethod
+				    ("traceWrite_Array", new HClass[]
+					{ arrType, HClass.Int, HClass.Int },
+				     HClass.Void),
+				    new Temp[]{ q.objectref(), q.index(), tT },
+				    null, tX, false, false, new Temp[0]));
+		in = addAt(in, qP = new PHI(qf, q, new Temp[0], 2));
+		Quad.addEdge(qC, 1, qP, 1);
+	    }
 	    if (noFieldModification || noArrayModification) return;
 	    addUniqueRWCounters(q.prevEdge(0), q, q.objectref(), false, true);
 	    CounterFactory.spliceIncrement
 		(qf, q.prevEdge(0),(handlers==null) ?
 		 "synctrans.write_nt_array" : "synctrans.write_t_array");
 
-	    HClass compType = q.type(); // don't need extra precision here.
-	    HClass arrType = HClassUtil.arrayClass(linker, compType, 1);
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
 	    Temp t1 = new Temp(tf, "retex");
 	    Quad q1;
@@ -842,6 +965,28 @@ public class SyncTransformer
 	}
 	public void visit(SET q) {
 	    addChecks(q);
+	    if (doMemoryTrace && !q.isStatic()/*XXX*/) {
+		// log this write.
+		Edge in = q.prevEdge(0);
+		Temp tT = new Temp(tf, "is_trans");
+		Temp tF = new Temp(tf, "field");
+		Temp tX = new Temp(tf, "retex");
+		Quad qC, qP;
+		in = addAt(in, new CONST(qf, q, tT,
+					 new Integer((handlers==null) ? 0 : 1),
+					 HClass.Int));
+		in = addAt(in, new CONST(qf, q, tF, q.field(), HCfield));
+		in = addAt(in, qC = 
+			   new CALL(qf, q, gen.lookupMethod
+				    ("traceWrite", new HClass[]
+					{ HCobj, HCfield, HClass.Int },
+				     HClass.Void),
+				    new Temp[]{ q.objectref(), tF, tT },
+				    null, tX, false, false, new Temp[0]));
+		in = addAt(in, qP = new PHI(qf, q, new Temp[0], 2));
+		Quad.addEdge(qC, 1, qP, 1);
+		transFields.add(q.field());
+	    }
 	    if (noFieldModification) return;
 	    if (handlers==null &&
 		!fo.isSyncRead(q.field()) && !fo.isSyncWrite(q.field())) {
@@ -1285,13 +1430,14 @@ public class SyncTransformer
      *  which can't be represented in quad form. */
     public HCodeFactory treeCodeFactory(Frame f, HCodeFactory hcf) {
 	Set<HField> allFields = new HashSet<HField>(transFields);
-	allFields.addAll(bfn.bitfields);
+	if (bfn!=null) allFields.addAll(bfn.bitfields);
 	return new TreePostPass(f, FLAG_VALUE, HFflagvalue, gen, allFields)
 	    .codeFactory(hcf);
     }
 
     /** Munge <code>HData</code>s to insert bit-field numbering information. */
     public Iterator<HData> filterData(Frame f, Iterator<HData> it) {
+	if (bfn==null) return it;
 	if (tdf==null) tdf = new TreeDataFilter(f, bfn, transFields);
 	return new FilterIterator<HData,HData>(it, tdf);
     }
@@ -1369,12 +1515,6 @@ public class SyncTransformer
 	    Temp[] params = new Temp[nargs];
 	    for (int i=0; i<params.length; i++)
 		params[i] = new Temp(qf.tempFactory(), "param"+i);
-	    Temp[] nparams = new Temp[nargs-1];
-	    int i=0;
-	    if (!hm.isStatic())
-		nparams[i++] = params[0];
-	    for (i++ ; i<params.length; i++)
-		nparams[i-1] = params[i];
 
 	    HClass type = hm.getReturnType();
 	    Temp retval = new Temp(qf.tempFactory(), "retval");

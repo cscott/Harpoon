@@ -48,7 +48,7 @@ import java.util.Set;
  * This pass is invoked by <code>SyncTransformer.treeCodeFactory()</code>.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreePostPass.java,v 1.5 2003-07-21 21:21:49 cananian Exp $
+ * @version $Id: TreePostPass.java,v 1.6 2003-10-31 03:52:20 cananian Exp $
  */
 class TreePostPass extends harpoon.Analysis.Tree.Simplification {
     private final List<Rule> RULES = new ArrayList<Rule>(); 
@@ -223,6 +223,37 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 		return subst(subst(javaArgs, offsetE, 1), flagE, 2);
 	    }
 	};
+    final Transformer limitedFieldTransformer = new Transformer() {
+	    HClass functionSuffix(HMethod hm, ExpList javaArgs) {
+		return findField(extract(javaArgs, 1)).getType();
+	    }
+	    ExpList transformArgs(TreeFactory tf, HCodeElement source,
+				  DerivationGenerator dg,
+				  HMethod hm, ExpList javaArgs) {
+		// args are <obj, field, ...>
+		// we need to calculate offset from fields
+		HField objF = findField(extract(javaArgs, 1));
+		Exp offsetE= tb.fieldOffset(tf, source, dg, objF).unEx(tf);
+		return subst(javaArgs, offsetE, 1);
+	    }
+	};
+    final Transformer limitedArrayTransformer = new Transformer() {
+	    HClass functionSuffix(HMethod hm, ExpList javaArgs) {
+		return hm.getParameterTypes()[0].getComponentType();
+	    }
+	    ExpList transformArgs(TreeFactory tf, HCodeElement source,
+				  DerivationGenerator dg,
+				  HMethod hm, ExpList javaArgs) {
+		HClass objType = hm.getParameterTypes()[0];
+		// args are <obj, index, ...>
+		// we need to calculate offset from index.
+		Exp indexE = extract(javaArgs, 1);
+		Exp offsetE = tb.arrayOffset
+		    (tf, source, dg, objType, new Translation.Ex(indexE))
+		    .unEx(tf);
+		return subst(javaArgs, offsetE, 1);
+	    }
+	};
 
     final Map<String,Transformer> methodTransformer =
 	new HashMap<String,Transformer>();
@@ -355,6 +386,16 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 	//                              struct vinfo *version);
 	methodTransformer.put("setWriteFlags", fieldTransformer);
 	methodTransformer.put("setWriteFlags_Array", arrayTransformer);
+
+	// methods related to hardware transaction mechanism.
+	methodTransformer.put("XACTION_BEGIN", nullTransformer);
+	methodTransformer.put("XACTION_END", nullTransformer);
+	// void TA(EXACT_traceRead)(struct oobj *obj, int offset, int istran);
+	// void TA(EXACT_traceWrite)(struct oobj *obj, int offset, int istran);
+	methodTransformer.put("traceRead", limitedFieldTransformer);
+	methodTransformer.put("traceRead_Array", limitedArrayTransformer);
+	methodTransformer.put("traceWrite", limitedFieldTransformer);
+	methodTransformer.put("traceWrite_Array", limitedArrayTransformer);
     }
 
     /** Code factory for applying the post pass to the given tree
