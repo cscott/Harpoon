@@ -150,7 +150,8 @@ class Color implements TempMap {
     sets.worklist.simplify.remove(n);
     sets.selectStack.push(n);
     for (NodeList nl=Adjacent(n); nl!=null; nl=nl.tail)
-      DecrementDegree(nl.head);
+      if (!sets.precolored.contains(nl.head))
+	DecrementDegree(nl.head);
   }
   void Coalesce() {
     Node m = moves.worklist.head();
@@ -212,7 +213,12 @@ class Color implements TempMap {
       else
 	  v = GetAlias(ig.tnode(y));
 
-      if ( (NodeMoves(v)==null) && (Degree(v) < K) ) {
+      /** Degree(v) should be >> K for precolored nodes, but we don't
+       *  actually keep the adjacency info for precolored nodes around,
+       *  so opt out of the test instead. [CSA] */
+      if ( (NodeMoves(v)==null) && (Degree(v) < K)
+	   && !sets.precolored.contains(v)) {
+	Util.assert(sets.worklist.freeze.contains(v));
 	sets.worklist.freeze.remove(v);
 	sets.worklist.simplify.add(v);
       }
@@ -239,11 +245,15 @@ class Color implements TempMap {
     int i=0, k;
     color = new Hashtable();
 
-    for(TempList tl=registers; tl!=null; tl=tl.tail, i++)
-      color.put(tl.head, new Integer(i));
+    /* Color precolored nodes. */
+    Util.assert(reg.size()==K);
+    for (int i=0; i<reg.size(); i++)
+	color.put(reg.elementAt(i), new Integer(i));
     
     while(!sets.selectStack.empty()) {
       Node n = (Node) sets.selectStack.pop();
+      // node should be previously uncolored.
+      Util.assert(!color.containsKey(ig.gtemp(n)));
       boolean okColors[] = new boolean[K];
       for (k=0; k<K; k++)
 	okColors[k]=true;
@@ -261,9 +271,12 @@ class Color implements TempMap {
       if (k==K)  // no ok colors!
 	sets.spilled.add(n);
     }
-    for (NodeList nl = sets.coalesced.nodes(); nl!=null; nl=nl.tail)
+    for (NodeList nl = sets.coalesced.nodes(); nl!=null; nl=nl.tail) {
+      // node should be previously uncolored.
+      Util.assert(!color.containsKey(ig.gtemp(nl.head)));
       color.put(ig.gtemp(nl.head), 
 		new Integer(getColor(ig.gtemp(GetAlias(nl.head)))));
+    }
 //    for (java.util.Enumeration e=color.keys(); e.hasMoreElements(); ) {
 //      Temp t = (Temp) e.nextElement();
 //      System.out.println(t.toString()+" <= "+
@@ -271,11 +284,13 @@ class Color implements TempMap {
 //    }
   }
   int getColor(Temp w) {
-    harpoon.Util.Util.assert(color.get(w)!=null, "No color for "+w);
+    Util.assert(color.get(w)!=null, "No color for "+w);
     return ((Integer)color.get(w)).intValue();
   }
 
   public Temp tempMap(Temp t) {
+    Util.assert(!reg.contains(t) || // registers should map to themselves
+		(reg.elementAt(getColor(t))==t));
     return initial.tempMap((Temp)reg.elementAt(getColor(t)));
   }
 
@@ -283,14 +298,16 @@ class Color implements TempMap {
   void AddEdge(Node u, Node v) {
     if (!u.adj(v) && (u!=v)) {
       ig.addEdge(u,v);
-//      if (!sets.precolored.contains(u))
+      if (!sets.precolored.contains(u))
 	degree.put(u, new Integer(Degree(u)+1));
-//      if (!sets.precolored.contains(v))
+      if (!sets.precolored.contains(v))
 	degree.put(v, new Integer(Degree(v)+1));
     }
   }
 
   NodeList Adjacent(Node n) {
+    /* We don't maintain adjacency lists for precolored nodes */
+    Util.assert(!sets.precolored.contains(n));
     NodeList r=null;
     for (NodeList nl=union(n.succ(),n.pred()); nl!=null; nl=nl.tail)
       if (!sets.coalesced.contains(nl.head) &&
@@ -307,8 +324,10 @@ class Color implements TempMap {
     }
   }
   boolean OK(Node t, Node r) {
-    return ((Degree(t) < K) ||
-	    sets.precolored.contains(t) ||
+    /* precolored nodes will always have degree >> K, but we don't
+     * actually maintain this info in the array. */
+    return (sets.precolored.contains(t) ||
+	    (Degree(t) < K) ||
 	    t.adj(r));
   }
   boolean OK(NodeList nl, Node r) {
@@ -319,7 +338,9 @@ class Color implements TempMap {
   boolean Conservative(NodeList nl) {
     int k = 0;
     for ( ; nl!=null; nl=nl.tail)
-      if (Degree(nl.head) >= K)
+      /* precolored nodes will always have degree >> K, but we don't
+       * actually maintain this info in the array. */
+      if (sets.precolored.contains(nl.head) || Degree(nl.head) >= K)
 	k++;
     return ( k < K );
   }
@@ -343,15 +364,19 @@ class Color implements TempMap {
 			  (NodeList)moveList.get(v)));
     for (NodeList nl = Adjacent(v); nl!=null; nl=nl.tail) {
       AddEdge(nl.head,u);
-      DecrementDegree(nl.head);
+      /* We don't keep degree information for precolored nodes. */
+      if (!sets.precolored.contains(nl.head))
+	  DecrementDegree(nl.head);
     }
-    if (Degree(u) >= K && sets.worklist.freeze.contains(u)) {
+    if (sets.worklist.freeze.contains(u) && Degree(u) >= K) {
       sets.worklist.freeze.remove(u);
       sets.worklist.spill.add(u);
     }
   }
 
   int Degree(Node m) {
+    /* We don't keep accurate degree information for precolored nodes. */
+    Util.assert(!sets.precolored.contains(m));
     return ((Integer)degree.get(m)).intValue();
   }
   void DecrementDegree(Node m) {
