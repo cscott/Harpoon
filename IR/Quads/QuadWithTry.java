@@ -22,7 +22,7 @@ import java.util.Map;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.25 2000-10-20 23:30:56 cananian Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.26 2000-11-16 04:49:21 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSI
  */
@@ -36,8 +36,10 @@ public class QuadWithTry extends Code /* which extends HCode */ {
     QuadWithTry(harpoon.IR.Bytecode.Code bytecode) {
         super(bytecode.getMethod(), null);
 	quads = Translate.trans(bytecode, this);
+	CleanHandlers.clean(this); // translate is sloppy about handler sets
 	Peephole.normalize(quads); // put variables where they belong.
 	Peephole.optimize(quads,false); //don't disrupt the handlers too much
+	CleanHandlers.clean(this); // be safe and clean again.
 	// if we allow far moves, the state which the handlers expect is
 	// destroyed.  not sure how to make the optimization handler-safe.
 	// maybe don't allow moves past instructions that might throw
