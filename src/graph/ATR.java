@@ -14,10 +14,9 @@ import imagerec.corba.CORBA;
  *
  *  @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
-public class ATR extends Node {
-    private String name;
-    private CommunicationsModel cm;
-
+public class ATR extends Server {
+    private Node out;
+    
     /** Construct an {@link ATR} node with the default {@link CommunicationsModel}
      *  and name of server for integration with existing BBN UAV software.
      * 
@@ -39,9 +38,8 @@ public class ATR extends Node {
      *  @param out the node to send images to.
      */
     public ATR(CommunicationsModel cm, String name, Node out) {
-	super(out);
-	this.name = name;
-	this.cm = cm;
+	super(cm, name, out);
+	this.out = out;
     }
 
     /** The <code>process</code> call that sets up and starts the server.
@@ -53,7 +51,7 @@ public class ATR extends Node {
 	try {
 	    cm.runATRServer(name, new CommunicationsAdapter() {
 		public synchronized void process(ImageData id) {
-		    ATR.super.process(id);
+		    ATR.this.out.process(id);
 		}
 	    });
 	} catch (Exception e) {

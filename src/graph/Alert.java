@@ -8,15 +8,13 @@ import imagerec.corba.CommunicationsModel;
 import imagerec.corba.CORBA;
 
 /**
- * {@link Alert} is a {@link Node} which sets an alert syscond
+ * {@link Alert} is a {@link Client} which sets an alert syscond
  * for every input image.  This effectively tells the tracking
  * system: "I've found it - and here's how far away it is!".
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
-public class Alert extends Node {
-    private final CommunicationsAdapter cs;
-
+public class Alert extends Client {
     /** Construct an {@link Alert} node with the default {@link CommunicationsModel}
      *  and name of server for integration with existing BBN UAV software. 
      *
@@ -35,9 +33,8 @@ public class Alert extends Node {
      *  @param name the name of the server to connect to.
      */
     public Alert(CommunicationsModel cm, String name) {
-	super();
 	try {
-   	    cs = cm.setupAlertClient(name);
+	    cs = cm.setupAlertClient(name);
 	} catch (Exception e) {
 	    throw new Error(e);
 	}
@@ -50,9 +47,10 @@ public class Alert extends Node {
      *  @param id The input image that contains data for the tracker.
      */
     public synchronized void process(final ImageData id) {
+	final CommunicationsAdapter finalCS = cs;
 	(new Thread() {
 	    public void run() {
-		cs.alert(id.c1, id.c2, id.c3);
+		finalCS.alert(id.c1, id.c2, id.c3);
 	    }
 	}).start();
     }

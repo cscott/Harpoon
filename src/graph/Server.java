@@ -14,8 +14,8 @@ import imagerec.corba.CommunicationsModel;
  *  @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 public class Server extends Node {
-    private String name;
-    private CommunicationsModel cm;
+    protected String name;
+    protected CommunicationsModel cm;
 
     /** Construct a {@link Server} node with <code>name</code> as
      *  the name of the server.
