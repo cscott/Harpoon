@@ -82,7 +82,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.77 2000-11-08 20:06:15 bdemsky Exp $
+ * @version $Id: PAMain.java,v 1.1.2.78 2000-11-08 20:45:44 bdemsky Exp $
  */
 public abstract class PAMain {
 
@@ -191,8 +191,7 @@ public abstract class PAMain {
 
     // The set of classes and methods that are instantiated/called by
     // the current implementation of the runtime.
-    private static Set runtime_callable = new HashSet
-	(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+    private static Set runtime_callable = null;
 
     // global variable used for timing measurements
     private static long g_tstart = 0L;
@@ -205,6 +204,9 @@ public abstract class PAMain {
 	    System.exit(1);
 	}
 	print_options();
+
+	runtime_callable = new HashSet
+	    (harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 
 	get_root_method(params[optind]);
 	if(hroot == null){
