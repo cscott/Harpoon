@@ -12,7 +12,7 @@ import java.util.Set;
     <code>Set</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SetFactory.java,v 1.1.2.2 1999-11-02 20:32:58 pnkfelix Exp $
+ * @version $Id: SetFactory.java,v 1.1.2.3 2000-07-01 01:00:48 cananian Exp $
  */
 public abstract class SetFactory extends CollectionFactory {
     
@@ -21,12 +21,12 @@ public abstract class SetFactory extends CollectionFactory {
         super();
     }
     
-    public Collection makeCollection(Collection c) {
+    public final Collection makeCollection(Collection c) {
 	return makeSet(c);
     }
 
     /** Generates a new, mutable, empty <code>Set</code>. */
-    public java.util.Set makeSet() {
+    public final java.util.Set makeSet() {
 	return makeSet(Collections.EMPTY_SET);
     }
 
