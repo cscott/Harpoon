@@ -12,7 +12,7 @@ import java.util.List;
  * using a <code>ColorFactory</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: UnboundedGraphColorer.java,v 1.1.2.4 2000-07-28 03:06:47 pnkfelix Exp $
+ * @version $Id: UnboundedGraphColorer.java,v 1.1.2.5 2000-08-25 18:33:22 pnkfelix Exp $
  */
 public class UnboundedGraphColorer extends GraphColorer {
 
@@ -60,6 +60,9 @@ public class UnboundedGraphColorer extends GraphColorer {
 		lowerBound = trial;
 	    }
 	}
+
+	// final call to ableToColor to properly set factory size.
+	ableToColor(graph, upperBound);
 	
 	try {
 	    color( graph, factory.getColors() );
