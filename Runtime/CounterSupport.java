@@ -10,14 +10,14 @@ import java.io.PrintStream;
  * using counters identified by integers.
  * 
  * @author  bdemsky <bdemsky@lm.lcs.mit.edu>
- * @version $Id: CounterSupport.java,v 1.1.2.2 2000-11-10 06:46:06 bdemsky Exp $
+ * @version $Id: CounterSupport.java,v 1.1.2.3 2000-11-10 18:55:47 bdemsky Exp $
  */
 public class CounterSupport {
     static int size,sizesync;
     static int numbins, bincap;
     static long[] array;
     static long[] arraysync;
-    static int[][] boundedkey;
+    static Object[][] boundedkey;
     static int[][] boundedvalue;
     static Object lock=new Object();
     static boolean counton;
@@ -26,8 +26,8 @@ public class CounterSupport {
     static {
 	//redefine these
 	numbins=211;
-	bincap=10;
-	boundedkey=new int[numbins][bincap];
+	bincap=30;
+	boundedkey=new Object[numbins][bincap];
 	boundedvalue=new int[numbins][bincap];
 
 	overflow=0;
@@ -53,7 +53,6 @@ public class CounterSupport {
 	}
     }
 
-
     //Sync code only
     static void countm(Object obj) {
 	synchronized(lock) {
@@ -62,7 +61,7 @@ public class CounterSupport {
 		int hashmod=hash % numbins;
 		int bin=-1;
 		for(int i=0;i<bincap;i++)
-		    if (boundedkey[hashmod][i]==hash) {
+		    if (boundedkey[hashmod][i]==obj) {
 			bin=i;
 			break;
 		    }
@@ -74,7 +73,7 @@ public class CounterSupport {
 			boundedkey[hashmod][i]=boundedkey[hashmod][i-1];
 			boundedvalue[hashmod][i]=boundedvalue[hashmod][i-1];
 		    }
-		    boundedkey[hashmod][0]=hash;
+		    boundedkey[hashmod][0]=obj;
 		    boundedvalue[hashmod][0]=value;
 		    if (value>sizesync) {
 			long[] newarray=new long[value*2];
@@ -89,16 +88,22 @@ public class CounterSupport {
     }
 
     static void label(Object obj, int value) {
-	int hash=obj.hashCode();
-	int hashmod=hash % numbins;
-	if (boundedkey[hashmod][bincap-1]!=0)
-	    overflow++;
-	for (int i=bincap-1;i>0;i--) {
-	    boundedkey[hashmod][i]=boundedkey[hashmod][i-1];
-	    boundedvalue[hashmod][i]=boundedvalue[hashmod][i-1];
+	if (counton)
+	synchronized(lock) {
+	    int hash=obj.hashCode();
+	    int hashmod=hash % numbins;
+	    if (boundedkey[hashmod][bincap-1]!=null)
+		overflow++;
+	    //	    for (int i=bincap-1;i>0;i--) {
+	    //	boundedkey[hashmod][i]=boundedkey[hashmod][i-1];
+	    //}
+	    System.arraycopy(boundedkey[hashmod],0,boundedkey[hashmod],1,bincap-1);
+	    for (int i=bincap-1;i>0;i--) {
+		boundedvalue[hashmod][i]=boundedvalue[hashmod][i-1];
+	    }
+	    boundedkey[hashmod][0]=obj;
+	    boundedvalue[hashmod][0]=value;
 	}
-	boundedkey[hashmod][0]=hash;
-	boundedvalue[hashmod][0]=value;
     }
 
     static void exit() {
