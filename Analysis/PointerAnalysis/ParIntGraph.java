@@ -11,10 +11,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Collections;
 
-
 import harpoon.Temp.Temp;
 import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Util.Util;
 
 /**
  * <code>ParIntGraph</code> models a Parallel Interaction Graph data
@@ -22,12 +22,17 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.24 2000-04-02 03:27:55 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.25 2000-04-02 09:42:46 salcianu Exp $
  */
 public class ParIntGraph {
 
     public static boolean DEBUG = false;
     public static boolean DEBUG2 = false;
+
+    /** Debug for the aggressive shrinking. */
+    public static boolean DEBUG_AS = false;
+    /** Activates the aggressive shrinking. */
+    public static boolean AGGRESSIVE_SHRINKING = true;
 
     /** Default (empty) graph. It doesn't contain any information.  */
     public static final ParIntGraph EMPTY_GRAPH = new ParIntGraph();
@@ -183,8 +188,88 @@ public class ParIntGraph {
 	EdgeOrdering _eo = eo.keepTheEssential(remaining_nodes);
 	// the "touched_threads" info is valid only for captured threads
 	// i.e. not for the remaining nodes (accessible from the outside).
-	return new ParIntGraph(_G,_tau,_ar,_eo,Collections.EMPTY_SET);
+	ParIntGraph pig2 = new ParIntGraph(_G,_tau,_ar,_eo,Collections.EMPTY_SET);
+
+	if(AGGRESSIVE_SHRINKING)
+	    pig2.aggressiveShrinking();
+
+	return pig2;
     }
+
+    /** Remove the load nodes that don't lead to anything interesting.
+	This nodes are useless for our analysis (although they could
+	be interesting for other analysis, such as determining the
+	memory area which is read by an application, etc.) and so,
+	we decide not to carry it over the entire call graph. */
+    private final void aggressiveShrinking(){
+
+	final Set unuseful_loads = new HashSet();
+	forAllNodes(new PANodeVisitor(){
+		public void visit(PANode node){
+		    if(node.type != PANode.LOAD) return;
+		    if(!ParIntGraph.this.interesting(node))
+			unuseful_loads.add(node);
+		}
+	    });
+	
+	if(!unuseful_loads.isEmpty()){
+	    if(DEBUG_AS){
+		System.out.println("Unuseful loads: " + unuseful_loads);
+		System.out.println("Before aggressive shrinking : " + this);
+	    }
+	    remove(unuseful_loads);
+	    if(DEBUG_AS)
+		System.out.println("After aggressive shrinking  : " + this);
+	}
+    }
+    
+    /** A node is directly interesting if there is a sync action executed
+	on him or it coudl be returned (normally or exceptionally) from
+	the method. (Normally, we should also analyze the case when the
+	node is a started thread node but anyway, our analysis deal only
+	with INSIDE thread nodes). */
+    private final boolean directlyInteresting(PANode node){
+	if(ar.isSyncOn(node)) return true;
+	if(G.r.contains(node) || G.excp.contains(node)) return true;
+	return false;
+    }
+
+    private boolean important = false;
+    private final boolean interesting(PANode node){
+	Util.assert(node.type == PANode.LOAD, "not a LOAD node");
+
+	if(directlyInteresting(node)) return true;
+	
+	important = false;
+
+	final Set set = new HashSet();
+	final PAWorkList W = new PAWorkList();
+	set.add(node);
+	W.add(node);
+	while(!W.isEmpty()){
+	    PANode n = (PANode) W.remove();
+	    G.I.forAllPointedNodes(n, new PANodeVisitor(){
+		    public void visit(PANode n2){
+			important = true;
+		    }
+		});
+	    if(important) return true;
+	    G.O.forAllPointedNodes(n, new PANodeVisitor(){
+		    public void visit(PANode n2){
+			// add to the worklist newly discovered nodes
+			if(set.add(n2)){
+			    if(directlyInteresting(n2))
+				important = true;
+			    W.add(n2);
+			}
+		    }
+		});
+	    if(important) return true;
+	}
+
+	return false;
+    }
+
 
     // Visits all the nodes from set_nodes.
     private void forSet(Set set_nodes, PANodeVisitor visitor){

@@ -36,7 +36,7 @@ import harpoon.ClassFile.HCodeElement;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.17 2000-03-30 03:05:14 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.18 2000-04-02 09:42:46 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -387,6 +387,11 @@ public class ActionRepository {
 	return true;
     }
 
+    /** Checks whether any <code>sync</code> action is done on the node
+	<code>node</code>. */
+    public boolean isSyncOn(PANode node){
+	return !alpha_sync.getValuesSet(node).isEmpty();
+    }
 
     // Private constructor for clone and keepTheEssential
     private ActionRepository(HashSet alpha_ld, Relation pi_ld,
