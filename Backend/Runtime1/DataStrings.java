@@ -24,7 +24,7 @@ import java.util.Set;
  * <code>DataStrings</code> lays out string constant objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStrings.java,v 1.1.4.5 2001-07-10 22:49:50 cananian Exp $
+ * @version $Id: DataStrings.java,v 1.1.4.6 2001-09-20 01:47:01 cananian Exp $
  */
 public class DataStrings extends Data {
     final NameMap m_nm;
@@ -57,13 +57,17 @@ public class DataStrings extends Data {
 	    public Label label() { return m_nm.label(str); }
 	    public Object get(HField hf) {
 		if (HFval.equals(hf)) return charArray;
-		if (HFoff.equals(hf)) return new Integer(0);
 		if (HFcnt.equals(hf)) return new Integer(str.length());
+		// this test is different because size optimizations
+		// may eliminate the 'offset' field as a compile-time
+		// constant.
+		if (hf.getName().equals("offset") &&
+		    hf.getDeclaringClass().equals(HCstr))
+			return new Integer(0);
 		throw new Error("Unknown field "+hf+" of string object.");
 	    }
 	    final HClass HCstr = linker.forName("java.lang.String");
 	    final HField HFval = HCstr.getField("value");
-	    final HField HFoff = HCstr.getField("offset");
 	    final HField HFcnt = HCstr.getField("count");
 	};
 	List stmlist = new ArrayList(4);
