@@ -26,7 +26,7 @@ import java.util.Stack;
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.2.2.1 2002-03-14 01:13:21 cananian Exp $
+ * @version $Id: CFGrapher.java,v 1.2.2.2 2002-03-15 16:28:17 cananian Exp $
  * @see harpoon.IR.Properties.CFGraphable
  */
 public abstract class CFGrapher<HCE extends HCodeElement> {
@@ -142,7 +142,7 @@ public abstract class CFGrapher<HCE extends HCodeElement> {
 		    Stack<HCE> s = new Stack<HCE>();
 		    { // initialize stack/set.
 			Iterator<HCE> it =
-			    new ArrayIterator(getFirstElements(code));
+			    new ArrayIterator<HCE>(getFirstElements(code));
 			HCE[] leaves = getLastElements(code);
 			if (leaves!=null)
 			    it = new CombineIterator<HCE>

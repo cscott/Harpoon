@@ -13,7 +13,7 @@ import java.util.ListIterator;
  * <code>java.util.Collections</code> and such.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnmodifiableListIterator.java,v 1.2.2.1 2002-03-11 14:26:42 cananian Exp $
+ * @version $Id: UnmodifiableListIterator.java,v 1.2.2.2 2002-03-15 16:28:12 cananian Exp $
  */
 public abstract class UnmodifiableListIterator<E> implements ListIterator<E> {
     /** Returns <code>true</code> if the list iterator has more elements
@@ -59,13 +59,15 @@ public abstract class UnmodifiableListIterator<E> implements ListIterator<E> {
     /** Always throws an <code>UnsupportedOperationException</code>.
      * @exception UnsupportedOperationException always.
      */
-    public final void set(E o) {
+    // XXX BUG IN JAVAC
+    public /*final*/ void set(E o) {
 	throw new UnsupportedOperationException("Unmodifiable ListIterator");
     }
     /** Always throws an <code>UnsupportedOperationException</code>.
      * @exception UnsupportedOperationException always.
      */
-    public final void add(E o) {
+    // XXX BUG IN JAVAC
+    public /*final*/ void add(E o) {
 	throw new UnsupportedOperationException("Unmodifiable ListIterator");
     }
 }
