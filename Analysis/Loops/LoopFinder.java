@@ -14,13 +14,14 @@ import harpoon.IR.Properties.CFGrapher;
 import harpoon.Util.Util;
 
 import java.util.Set;
+import java.util.Stack;
 import java.util.Hashtable;
 import java.util.Iterator;
 /**
  * <code>LoopFinder</code> implements Dominator Tree Loop detection.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopFinder.java,v 1.1.2.12 2001-06-15 14:26:16 cananian Exp $
+ * @version $Id: LoopFinder.java,v 1.1.2.13 2001-07-03 23:57:08 pnkfelix Exp $
  */
 
 public class LoopFinder implements Loops {
@@ -334,40 +335,45 @@ public class LoopFinder implements Loops {
 	else return 0;
     }
 
-    void findloopheaders(HCodeElement current_node) {
-        //look at the current node
-        visit(current_node);
-	
-        //add it to the all inclusive root loop
-        root.entries.push(current_node);
-
-        //See if those we dominate are backedges
-        HCodeElement[] children=dominator.children(current_node);
-        for (int i=0;i<children.length;i++)
-	    findloopheaders(children[i]);
+    void findloopheaders(HCodeElement current_nodeOrig) {
+	Stack stk = new Stack();
+	stk.push( current_nodeOrig );
+	while( ! stk.isEmpty() ){
+	    HCodeElement current_node = (HCodeElement) stk.pop();
+	    //look at the current node
+	    visit(current_node);
+	    
+	    //add it to the all inclusive root loop
+	    root.entries.push(current_node);
+	    
+	    //See if those we dominate are backedges
+	    HCodeElement[] children=dominator.children(current_node);
+	    for (int i=0;i<children.length;i++)
+		stk.push( children[i] );
+	}
     }
-
 
     void visit(HCodeElement q) {
 	Loop A=new Loop();
 	WorkSet B=new WorkSet();
 
 	//Loop through all of our outgoing edges
-	for (int i=0;i<grapher.succ(q).length;i++) {
+	HCodeEdge[] succ_q = grapher.succ(q);
+	for (int i=0;i<succ_q.length;i++) {
 	    HCodeElement temp=q;
 	    
 	    //Go up the dominator tree until
 	    //we hit the root element or we
 	    //find the node we jump back too
 	    while ((temp!=(hc.getRootElement()))&&
-		   (grapher.succ(q)[i].to()!=temp)) {
+		   (succ_q[i].to()!=temp)) {
 		temp=dominator.idom(temp);
 	    }
 
 	    //If we found the node we jumped back to
 	    //then build loop
 
-	    if (grapher.succ(q)[i].to()==temp) {
+	    if (succ_q[i].to()==temp) {
 		
 		//found a loop
 		A.entries.push(temp); //Push the header
@@ -383,9 +389,10 @@ public class LoopFinder implements Loops {
 		    
 		    //Add all of the new incoming edges that we haven't already
 		    //visited
-		    for (int j=0;j<grapher.pred(newnode).length;j++) {
-			if (!A.entries.contains(grapher.pred(newnode)[j].from()))
-			    B.push(grapher.pred(newnode)[j].from());
+		    HCodeEdge[] pred_newnode = grapher.pred(newnode);
+		    for (int j=0;j<pred_newnode.length;j++) {
+			if (!A.entries.contains(pred_newnode[j].from()))
+			    B.push(pred_newnode[j].from());
 		    }
 		    
 		    //push the new node on our list of nodes in the loop
