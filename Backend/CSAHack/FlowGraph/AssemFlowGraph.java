@@ -26,7 +26,7 @@ import java.util.Iterator;
  * A flow graph whose nodes correspond to machine instructions.
  * @version	1.00, 25 Nov 1996
  * @author	C. Scott Ananian
- * @see Assem.Instr
+ * @see harpoon.IR.Assem.Instr
  */
 public class AssemFlowGraph extends FlowGraph {
   UseDefer ud;
@@ -89,7 +89,7 @@ public class AssemFlowGraph extends FlowGraph {
   /**
    * @param n a node in the flow graph.
    * @return a list of temps defined by the instruction at node 'n'
-   * @see Temp.Temp
+   * @see harpoon.Temp.Temp
    */
   public TempList def(Node n) {
     // CSA'99: clunk.  def() returns an array in FLEX.  Thunk it to a TempList.
@@ -108,7 +108,7 @@ public class AssemFlowGraph extends FlowGraph {
   /**
    * @param n a node in the flow graph.
    * @return a list of temps used by the instruction at node 'n'
-   * @see Temp.Temp
+   * @see harpoon.Temp.Temp
    */
   public TempList use(Node n) {
     // CSA'99: clunk.  use() returns an array in FLEX.  Thunk it to a TempList.

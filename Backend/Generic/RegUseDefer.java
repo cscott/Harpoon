@@ -18,10 +18,10 @@ import java.util.ArrayList;
  * Backend Codes.
  *
  * @see harpoon.IR.Assem.Instr
- * @see harpoon.Backend.Generic.Code;
+ * @see harpoon.Backend.Generic.Code
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegUseDefer.java,v 1.2 2002-02-25 21:01:28 cananian Exp $
+ * @version $Id: RegUseDefer.java,v 1.3 2002-03-10 05:52:48 cananian Exp $
  */
 public class RegUseDefer extends UseDefer {
     

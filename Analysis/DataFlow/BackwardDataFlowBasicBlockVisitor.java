@@ -11,7 +11,7 @@ import harpoon.Util.Worklist;
  * <code>BackwardDataFlowBasicBlockVisitor</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.2 2002-02-25 20:56:36 cananian Exp $
+ * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.3 2002-03-10 05:52:32 cananian Exp $
  */
 public abstract class BackwardDataFlowBasicBlockVisitor 
     extends DataFlowBasicBlockVisitor {
@@ -27,7 +27,7 @@ public abstract class BackwardDataFlowBasicBlockVisitor
 	     <code>true</code> for a given <code>p</code>, adds
 	     <code>p</code> to <code>W</code>, indicating that
 	     <code>p</code> must be revisited by <code>this</code>.
-	@see merge
+       @see #merge(BasicBlock, BasicBlock)
     */
     public void addSuccessors(Worklist W, BasicBlock q) {
 	for (Enumeration e=q.prev(); e.hasMoreElements(); ) {

@@ -11,7 +11,7 @@ import harpoon.Util.Worklist;
  * ForwardDataFlowBasicBlockVisitor
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: ForwardDataFlowBasicBlockVisitor.java,v 1.2 2002-02-25 20:56:39 cananian Exp $
+ * @version $Id: ForwardDataFlowBasicBlockVisitor.java,v 1.3 2002-03-10 05:52:32 cananian Exp $
  */
 
 public abstract class ForwardDataFlowBasicBlockVisitor extends DataFlowBasicBlockVisitor {
@@ -27,7 +27,7 @@ public abstract class ForwardDataFlowBasicBlockVisitor extends DataFlowBasicBloc
 	   <code>true</code> for a given <code>s</code>, adds
 	   <code>s</code> to <code>W</code>, indicating that
 	   <code>s</code> must be revisited by <code>this</code>.
-       @see merge
+       @see #merge(BasicBlock, BasicBlock)
    */
   public void addSuccessors(Worklist W, BasicBlock q) {
     if (DEBUG) db("adding successors of "+q+" to worklist");

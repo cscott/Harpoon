@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.4 2002-03-10 05:11:18 cananian Exp $
+ * @version $Id: Spec.java,v 1.5 2002-03-10 05:52:54 cananian Exp $
  */
 public class Spec  {
 
@@ -79,7 +79,7 @@ public class Spec  {
 	<code>visit</code> method for generic <code>Rule</code>s and
 	also override the <code>visit</code> method for subclasses of
 	<code>Rule</code> that the subclass cares about.
-	@see <U>Design Patterns</U> pgs. 331-344
+	@see "<U>Design Patterns</U> pgs. 331-344"
     */
     public static abstract class RuleVisitor {
 	public abstract void visit(Rule r);
@@ -134,7 +134,7 @@ public class Spec  {
 	    emulate <B>multiple dispatch</B>.  Must be reimplemented
 	    by all subclasses of <code>Spec.Rule</code>.
 	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
-	    @see <U>Design Patterns</U> pgs. 331-344
+	    @see "<U>Design Patterns</U> pgs. 331-344"
 	*/
 	public abstract void accept(RuleVisitor v);
 
@@ -240,7 +240,7 @@ public class Spec  {
 	<code>visit</code> method for generic <code>Spec.Exp</code>s and
 	also override the <code>visit</code> method for subclasses of
 	<code>Spec.Exp</code> that the subclass cares about.
-	@see <U>Design Patterns</U> pgs. 331-344
+	@see "<U>Design Patterns</U> pgs. 331-344"
     */
     public static abstract class ExpVisitor {
 	public abstract void visit(Exp e);
@@ -264,7 +264,7 @@ public class Spec  {
 	    emulate <B>multiple dispatch</B>.  Must be reimplemented
 	    by all subclasses of <code>Spec.Exp</code>.
 	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
-	    @see <U>Design Patterns</U> pgs. 331-344
+	    @see "<U>Design Patterns</U> pgs. 331-344"
 	*/
 	public abstract void accept(ExpVisitor v);
 	
@@ -507,7 +507,7 @@ public class Spec  {
 	<code>visit</code> method for generic <code>Spec.Stm</code>s and
 	also override the <code>visit</code> method for subclasses of
 	<code>Spec.Stm</code> that the subclass cares about.
-	@see <U>Design Patterns</U> pgs. 331-344
+	@see "<U>Design Patterns</U> pgs. 331-344"
     */
     public static abstract class StmVisitor {
 	public abstract void visit(Stm s);
@@ -538,7 +538,7 @@ public class Spec  {
 	    emulate <B>multiple dispatch</B>.  Must be reimplemented
 	    by all subclasses of <code>Spec.Stm</code>.
 	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
-	    @see <U>Design Patterns</U> pgs. 331-344
+	    @see "<U>Design Patterns</U> pgs. 331-344"
 	*/
 	public abstract void accept(StmVisitor v);
 
@@ -955,7 +955,7 @@ public class Spec  {
 	<code>visit</code> method for generic <code>Spec.Leaf</code>s (ed. note: Leaves?) and
 	also override the <code>visit</code> method for subclasses of
 	<code>Spec.Leaf</code> that the subclass cares about.
-	@see <U>Design Patterns</U> pgs. 331-344
+	@see "<U>Design Patterns</U> pgs. 331-344"
     */
     public static abstract class LeafVisitor {
 	public abstract void visit(Leaf l);
@@ -977,7 +977,7 @@ public class Spec  {
 	    dispatch</B>.  Must be reimplemented by all subclasses of
 	    <code>Spec.Leaf</code>.
 	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
-	    @see <U>Design Patterns</U> pgs. 331-344
+	    @see "<U>Design Patterns</U> pgs. 331-344"
 	*/
 	public abstract void accept(Spec.LeafVisitor v);
     }
@@ -998,7 +998,7 @@ public class Spec  {
 	    dispatch</B>.  Must be reimplemented by all subclasses of
 	    <code>Spec.Leaf</code>.
 	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
-	    @see <U>Design Patterns</U> pgs. 331-344
+	    @see "<U>Design Patterns</U> pgs. 331-344"
 	*/
 	public void accept(Spec.LeafVisitor v) { v.visit(this); }
 	public String toString() { return id; }
@@ -1030,7 +1030,7 @@ public class Spec  {
 	    dispatch</B>.  Must be reimplemented by all subclasses of
 	    <code>Spec.Leaf</code>.
 	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
-	    @see <U>Design Patterns</U> pgs. 331-344
+	    @see "<U>Design Patterns</U> pgs. 331-344"
 	*/
 	public void accept(Spec.LeafVisitor v) { v.visit(this); }
     }
@@ -1055,7 +1055,7 @@ public class Spec  {
 	    dispatch</B>.  Must be reimplemented by all subclasses of
 	    <code>Spec.Leaf</code>.
 	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
-	    @see <U>Design Patterns</U> pgs. 331-344
+	    @see "<U>Design Patterns</U> pgs. 331-344"
 	*/
 	public void accept(Spec.LeafVisitor v) { v.visit(this); }
     }
@@ -1078,7 +1078,7 @@ public class Spec  {
 	    dispatch</B>.  Must be reimplemented by all subclasses of
 	    <code>Spec.Leaf</code>.
 	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
-	    @see <U>Design Patterns</U> pgs. 331-344
+	    @see "<U>Design Patterns</U> pgs. 331-344"
 	*/
 	public void accept(Spec.LeafVisitor v) { v.visit(this); }
     }
@@ -1090,7 +1090,7 @@ public class Spec  {
 	<code>visit</code> method for generic <code>Detail</code>s and
 	also override the <code>visit</code> method for subclasses of
 	<code>Detail</code> that the subclass cares about.
-	@see <U>Design Patterns</U> pgs. 331-344
+	@see "<U>Design Patterns</U> pgs. 331-344"
     */
     public static abstract class DetailVisitor {
 	public abstract void visit(Detail d);
@@ -1116,7 +1116,7 @@ public class Spec  {
 	    emulate <B>multiple dispatch</B>.  Must be reimplemented
 	    by all subclasses of <code>Spec.Detail</code>.
 	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
-	    @see <U>Design Patterns</U> pgs. 331-344
+	    @see "<U>Design Patterns</U> pgs. 331-344"
 	*/
 	public abstract void accept(DetailVisitor v);
     }
