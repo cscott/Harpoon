@@ -25,7 +25,7 @@ Search($\tuple{s,d}$:~edge) =
           \label{line:phisrc2}
   \ENDFOR
   \BREAK \COMMENT{end of basic block}
- \ELSIF{$s$ is a node containing \sigfunction{s}}
+ \ELSIF{$d$ is a node containing \sigfunction{s}}
   \FOREACH{\sigfunction $S$ in $d$}
    \STATE replace the operand $V$ of $S$ by $\text{get}(\mathcal{E}, V)$
           \label{line:sigsrc}
