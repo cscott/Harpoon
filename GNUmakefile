@@ -1,4 +1,4 @@
-# $Revision: 1.42 $
+# $Revision: 1.43 $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -12,7 +12,7 @@ SCP=scp -A
 MUNGE=bin/munge
 UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
-INSTALLMACHINE=magic@lesser-magoo.lcs.mit.edu
+INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
 ALLPKGS = $(shell find . -type d | grep -v CVS | \
@@ -47,7 +47,7 @@ Harpoon.jar:	java
 	${JAR} c0f Harpoon.jar harpoon silicon
 
 jar:	Harpoon.jar
-jar-install: only-me jar
+jar-install: jar
 	chmod a+r Harpoon.jar
 	$(SCP) Harpoon.jar $(INSTALLMACHINE):$(INSTALLDIR)
 
@@ -75,7 +75,7 @@ harpoon.tgz: $(TARSOURCE)
 	tar czf harpoon.tgz $(TARSOURCE)
 
 tar:	harpoon.tgz
-tar-install: only-me tar
+tar-install: tar
 	chmod a+r harpoon.tgz
 	$(SCP) harpoon.tgz $(INSTALLMACHINE):$(INSTALLDIR)
 
@@ -102,7 +102,7 @@ doc/TIMESTAMP:	$(ALLSOURCE)
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	chmod a+rx doc ; chmod a+r doc/*
 
-doc-install: only-me doc/TIMESTAMP
+doc-install: doc/TIMESTAMP
 	$(SSH) $(INSTALLMACHINE) \
 		/bin/rm -rf $(INSTALLDIR)/doc
 	$(SCP) -r doc $(INSTALLMACHINE):$(INSTALLDIR)
@@ -132,9 +132,10 @@ backup: only-me # DOESN'T WORK ON NON-LOCAL MACHINES
 		miris.lcs.mit.edu:public_html/Projects/Harpoon
 	$(RM) ../harpoon-backup.tar.gz
 
-# the 'install' rules only make sense if you're me.
+# some rules only make sense if you're me.
 only-me:
 	if [ ! `whoami` = "cananian" ]; then exit 1; fi
+
 # the 'cvs' rules only make sense if you've got a copy checked out from CVS
 needs-cvs:
 	@if [ ! -d CVS ]; then \
