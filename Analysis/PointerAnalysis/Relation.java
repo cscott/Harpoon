@@ -19,7 +19,7 @@ import java.util.Map;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.8 2000-02-07 02:11:46 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.9 2000-02-08 05:28:40 salcianu Exp $
  */
 public class Relation{
     
@@ -106,8 +106,10 @@ public class Relation{
 	return hash.keySet();
     }
 
-    /** Combines <code>this</code> relation with a new one. */
+    /** Combines <code>this</code> relation with a new one.
+	A <code>null</code> parameter is considered to be an empty relation. */
     public void union(Relation rel){
+	if(rel==null) return;
 	Enumeration enum = rel.keys();
 	while(enum.hasMoreElements()){
 	    Object o = enum.nextElement();

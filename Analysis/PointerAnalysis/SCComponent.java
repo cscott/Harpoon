@@ -28,7 +28,7 @@ import harpoon.ClassFile.HMethod;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCComponent.java,v 1.1.2.2 2000-01-27 06:19:09 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.1.2.3 2000-02-08 05:28:40 salcianu Exp $
  */
 public final class SCComponent {
 
@@ -151,8 +151,8 @@ public final class SCComponent {
 	    SCComponent comp = compInt.comp;
 	    comp.loop  = compInt.loop;
 	    comp.nodes = compInt.nodes;
-	    comp.next = 
-		(SCComponent[]) compInt.next.toArray(new SCComponent[0]);
+	    comp.next  = (SCComponent[]) compInt.next.toArray(
+			      new SCComponent[compInt.next.size()]);
 	}
 
 	// Save the root SSC somewhere before activating the GCC.
