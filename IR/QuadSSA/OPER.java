@@ -1,8 +1,14 @@
 // OPER.java, created Wed Aug  5 06:47:58 1998
 package harpoon.IR.QuadSSA;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Hashtable;
+
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Temp.ConstMap;
+import harpoon.Util.Util;
 /**
  * <code>OPER</code> objects represent arithmetic/logical operations,
  * including mathematical operators such as add and subtract, 
@@ -14,7 +20,7 @@ import harpoon.Temp.Temp;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.8 1998-09-08 14:38:39 cananian Exp $
+ * @version $Id: OPER.java,v 1.9 1998-09-10 04:43:30 cananian Exp $
  */
 
 public class OPER extends Quad {
@@ -49,4 +55,47 @@ public class OPER extends Quad {
 	sb.append(')');
 	return sb.toString();
     }
+
+    // -------------------------------------------------------
+    //   Evaluation functions.
+
+    /** Determines the result type of an <code>OPER</code>. */
+    HClass evalType() {
+	Method m = (Method) operMethods.get(opcode);
+	Util.assert(m!=null);
+	return HClass.forClass(m.getReturnType());
+    }
+    /** Evaluates a constant value for the result of an <code>OPER</code>, 
+     *  given constant values for the operands. */
+    Object evalValue(Object[] opValues) {
+	Method m = (Method) operMethods.get(opcode);
+	Util.assert(m!=null);
+	try {
+	    return m.invoke(null, opValues);
+	} catch (InvocationTargetException e) {
+	    throw new Error("OPER evaluation threw "+e.getTargetException());
+	} catch (IllegalAccessException e) {
+	    Util.assert(false); return null;
+	}
+    }
+    /** Evaluates a value for the result of an <code>OPER</code>, given
+     *  a mapping from the operand <code>Temp</code>s to constant
+     *  values. */
+    Object evalValue(ConstMap cm) {
+	Object[] args = new Object[operands.length];
+	for (int i=0; i<operands.length; i++) {
+	    Util.assert(cm.isConst(operands[i]));
+	    args[i] = cm.constMap(operands[i]);
+	}
+	return evalValue(args);
+    }
+
+    // private stuff.
+    static private Hashtable operMethods = new Hashtable();
+    static {
+	Method[] m = Eval.class.getDeclaredMethods();
+	for (int i=0; i<m.length; i++)
+	    operMethods.put(m[i].getName(), m[i]);
+    }
+
 }
