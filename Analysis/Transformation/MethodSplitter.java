@@ -40,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.5 2002-06-11 20:25:29 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.6 2002-07-16 17:49:16 cananian Exp $
  */
 public abstract class MethodSplitter implements java.io.Serializable {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -81,6 +81,12 @@ public abstract class MethodSplitter implements java.io.Serializable {
 	    public HCode convert(HMethod m) {
 		List swpair = (List) split2orig.get(m);
 		Token tok = (swpair==null) ? ORIGINAL : (Token) swpair.get(1);
+
+		// For !mutateOriginalBeforeSplit, always do ORIGINAL before
+		// split. [Karen found this bug.]
+		if (!mutateOriginalBeforeSplit && tok!=ORIGINAL)
+		    MethodSplitter.this.hcf.convert( (HMethod)swpair.get(0) );
+
 		HCode hc = (tok==ORIGINAL) ? _parent.convert(m) :
 		    // get unmutated version from cache...
 		    (origcache!=null) ? (HCode)origcache.get( swpair.get(0) ) :
