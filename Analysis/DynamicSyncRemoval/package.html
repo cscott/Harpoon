@@ -1,0 +1,14 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<!-- $Id: package.html,v 1.1 2003-07-09 22:28:55 cananian Exp $ -->
+<body bgcolor="white">
+This package defines a transformation that inserts a dynamic check
+before every synchronization operation, skipping the synchronization
+if the check returns true.  This can be used to skip synchronization
+on non-escaping objects.  The dynamic check is a C function called
+DYNSYNC_isSync(), and the default implementation returns the second
+bit of the hash code.
+
+@author C. Scott Ananian (cananian@alumni.princeton.edu)
+</body>
+</html>

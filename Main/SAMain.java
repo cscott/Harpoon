@@ -67,7 +67,7 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.58 2003-07-09 21:11:16 cananian Exp $
+ * @version $Id: SAMain.java,v 1.59 2003-07-09 22:28:51 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -158,6 +158,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 	addStage(new EventDrivenTransformation.QuadPass1());
 	addStage(new RoleInference());
+	addStage(new DynamicSyncRemoval.QuadPass());
 	addStage(new Transactions.QuadPass());
 	addStage(new Realtime.QuadPass());
 	addStage(new MZFCompilerStage());
@@ -179,6 +180,7 @@ public class SAMain extends harpoon.IR.Registration {
 	addStage(new WriteBarriers.WBDynamicWBTreePass());
 	addStage(new PreallocOpt.TreePass());
 	addStage(new Realtime.TreePass());
+	addStage(new DynamicSyncRemoval.TreePass());
 	addStage(new Transactions.TreePass());
 
 	addStage(new RegularTreePass());

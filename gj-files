@@ -77,6 +77,8 @@ Analysis/Counters/RuntimeMethodCloner.java
 Analysis/DefaultAllocationInformation.java
 Analysis/DefaultAllocationInformationMap.java
 Analysis/DomTree.java
+Analysis/DynamicSyncRemoval/SyncRemover.java
+Analysis/DynamicSyncRemoval/TreeCallOpt.java
 Analysis/EnvBuilder/EnvCode.java
 Analysis/EventDriven/EventDrivenCode.java
 Analysis/GenericContextFactory.java
@@ -245,6 +247,7 @@ Main/CompilerStage.java
 Main/CompilerStageEZ.java
 Main/CompilerState.java
 Main/CompStagePipeline.java
+Main/DynamicSyncRemoval.java
 Main/SAMain.java
 Temp/CloningTempMap.java
 Temp/Temp.java
