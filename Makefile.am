@@ -14,7 +14,7 @@ EXTRA_DIST = AUTHORS COPYING INSTALL NEWS README REQUIRED \
 	include/precisec.c include/precisec.h include/sym.h \
 	scripts/config.guess scripts/config.sub scripts/gen-link-script \
 	scripts/install-sh scripts/ltconfig scripts/ltmain.sh \
-	scripts/missing scripts/mkinstalldirs
+	scripts/missing scripts/mkinstalldirs scripts/flexrun-config.in
 SUBDIRS = Contrib arch src
 
 CVS_TAG=$(firstword $(shell cvs status Makefile.am | grep -v "(none)" | \
@@ -32,6 +32,11 @@ ChangeLog: needs-cvs
 	-$(RM) $@
 	rcs2log > $@
 dist: ChangeLog
+
+flexrun-config: scripts/flexrun-config
+	cp $< $@
+	chmod 755 $@
+all: flexrun-config
 
 # the 'cvs' rules only make sense if you've got a copy checked out from CVS
 needs-cvs:
