@@ -21,13 +21,15 @@ import harpoon.Util.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 /**
  * <code>DataInterfaceList</code> lays out the expanded list of interfaces.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataInterfaceList.java,v 1.1.4.7 2001-11-08 00:24:37 cananian Exp $
+ * @version $Id: DataInterfaceList.java,v 1.1.4.8 2001-11-12 22:52:01 cananian Exp $
  */
 public class DataInterfaceList extends Data {
     final TreeBuilder m_tb;
@@ -63,8 +65,12 @@ public class DataInterfaceList extends Data {
 	// filter out those not in the class hierarchy.
 	in.retainAll(ch.classes());
 	// and make a list of stms.
-	for (Iterator it=in.iterator(); it.hasNext(); )
-	    stmlist.add(_DATUM(m_nm.label((HClass)it.next())));
+	Set done = new HashSet();
+	for (Iterator it=in.iterator(); it.hasNext(); ) {
+	    HClass hcc = (HClass) it.next();
+	    if (done.add(hcc)) // if not already in done...
+		stmlist.add(_DATUM(m_nm.label(hcc)));
+	}
 	// ...and null-terminate the list.
 	stmlist.add(_DATUM(new CONST(tf, null)));
 	return (HDataElement) Stm.toStm(stmlist);
