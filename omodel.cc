@@ -517,7 +517,9 @@ void Valueexpr::print_value(Hashtable *stateenv, model *m) {
   //printf("\n");
 }
 
-
+Valueexpr * Valueexpr::getvalueexpr() {
+  return valueexpr;
+}
 
 
 
