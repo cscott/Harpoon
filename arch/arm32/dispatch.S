@@ -25,8 +25,24 @@
 #define argptr	r2
 #define excptr  r3
 
-	.global	csymbol(FNI_Dispatch)
-csymbol(FNI_Dispatch):
+/* declarations of FNI_Dispatch_<type> for different return types. */
+#define DECLARE_FNI_Dispatch(type) \
+csymbol(FNI_Dispatch_##type):	.global	csymbol(FNI_Dispatch_##type)
+	
+DECLARE_FNI_Dispatch(Void)
+DECLARE_FNI_Dispatch(Object)
+DECLARE_FNI_Dispatch(Boolean)
+DECLARE_FNI_Dispatch(Byte)
+DECLARE_FNI_Dispatch(Char)
+DECLARE_FNI_Dispatch(Short)
+DECLARE_FNI_Dispatch(Int)
+DECLARE_FNI_Dispatch(Long)
+/* need to use a different calling convention for float unless -msoft-float */
+#ifdef WITH_SOFT_FLOAT
+DECLARE_FNI_Dispatch(Float)
+DECLARE_FNI_Dispatch(Double)
+#endif /* WITH_SOFT_FLOAT */
+.entry:
 	stmfd sp!, { methptr, excptr, fp, sp, lr } @ save caller''s state
 	add fp, sp, #16			@ make frame pointer point at lr.
 	cmp nargs, #2
@@ -58,3 +74,26 @@ csymbol(FNI_Dispatch):
 	b 3b		@ and return.
 
 	@ done!
+
+/* When compiling on a -mhard-float platform, floating-point retvals are
+ * passed in f0, according to the C calling convention.  Our java calling
+ * convention always uses the -msoft-float style of retval (returned in
+ * r0, r1), so we need to fix things up when calling from C to Java.
+ * [CSA, 4-apr-2000]
+ */
+#ifndef WITH_SOFT_FLOAT
+DECLARE_FNI_Dispatch(Float)
+	str lr, [sp, #-4]!	@ push retaddr on stack.
+	bl .entry		@ do the standard FNI_Dispatch stuff,
+				@ but return here before going back to C.
+	str r0, [sp, #-4]!	@ push retval on stack.
+	ldfs f0, [sp], #4	@ reload where C expects to find it.
+	ldr pc, [sp], #4	@ return.
+DECLARE_FNI_Dispatch(Double)
+	str lr, [sp, #-4]!	@ push retaddr on stack.
+	bl .entry		@ do the standard FNI_Dispatch stuff,
+				@ but return here before going back to C.
+	stmfd sp!, {r0, r1}	@ push retval on stack.
+	ldfd  f0, [sp], #8	@ reload where C expects to find it.
+	ldr pc, [sp], #4	@ return.
+#endif /* ! WITH_SOFT_FLOAT */
