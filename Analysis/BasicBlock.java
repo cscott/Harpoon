@@ -45,7 +45,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.12 2000-01-27 06:19:05 salcianu Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.13 2000-01-27 15:26:18 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -278,12 +278,12 @@ public class BasicBlock {
 
     /** Returns all the predecessors of <code>this</code> basic block. */
     public BasicBlock[] getPrev() {
-	return (BasicBlock[]) pred_bb.toArray(new BasicBlock[0]);
+	return (BasicBlock[]) pred_bb.toArray(new BasicBlock[pred_bb.size()]);
     }
 
     /** Returns all the successors of <code>this</code> basic block. */
     public BasicBlock[] getNext() {
-	return (BasicBlock[]) succ_bb.toArray(new BasicBlock[0]);
+	return (BasicBlock[]) succ_bb.toArray(new BasicBlock[succ_bb.size()]);
     }
 
     
