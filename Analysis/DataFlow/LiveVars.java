@@ -48,10 +48,10 @@ import java.util.Iterator;
  * <code>UseDefer</code>s 
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.26 2001-01-21 01:23:05 pnkfelix Exp $ */
+ * @version $Id: LiveVars.java,v 1.1.2.27 2001-01-21 18:01:25 pnkfelix Exp $ */
 public class LiveVars extends Liveness {
     
-    private static final boolean DEBUG = true; 
+    private static final boolean DEBUG = false; 
 
     LiveTemps lv;
 
