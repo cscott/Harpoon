@@ -7,7 +7,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <p>Drawn from <i>The Java Virtual Machine Specification</i>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFile.java,v 1.7 1998-07-31 07:05:54 cananian Exp $
+ * @version $Id: ClassFile.java,v 1.8 1998-07-31 08:33:38 cananian Exp $
  */
 
 public class ClassFile {
@@ -215,13 +215,21 @@ public class ClassFile {
 
   /** Create a <code>ClassFile</code> object by reading data from a
       bytecode file. */
-  public ClassFile(ClassDataInputStream in) throws java.io.IOException {
-    read(in);
+  public ClassFile(ClassDataInputStream in) {
+    try {
+      read(in);
+    } catch (java.io.IOException e) {
+      throw new ClassFormatError(e.toString());
+    }
   }
   /** Create a <code>ClassFile</code> object by reading data from a
       bytecode file. */
-  public ClassFile(java.io.InputStream in) throws java.io.IOException {
-    read(new ClassDataInputStream(in));
+  public ClassFile(java.io.InputStream in) {
+    try {
+      read(new ClassDataInputStream(in));
+    } catch (java.io.IOException e) {
+      throw new ClassFormatError(e.toString());
+    }
   }
 
   // Interrogate the data structures. (convenience functions)
@@ -242,4 +250,11 @@ public class ClassFile {
       <code>interfaces[i]</code>. */
   public ConstantClass interfaces(int i)
   { return (ConstantClass) constant_pool[interfaces[i]]; }
+
+  // more conveniences.
+  public int constant_pool_count() { return constant_pool.length; }
+  public int interfaces_count() { return interfaces.length; }
+  public int fields_count() { return fields.length; }
+  public int methods_count() { return methods.length; }
+  public int attributes_count() { return attributes.length; }
 }
