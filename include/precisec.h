@@ -70,6 +70,7 @@ typedef struct {
 #ifdef USE_GLOBAL_SETJMP /* ----------------------------------------------- */
 #include "fni-threadstate.h" /* for struct FNI_Thread_State */
 #include <setjmp.h>
+extern void *memcpy(void *dst, const void *src, size_t n);
 
 #define FIRST_DECL_ARG(x)
 #define DECLAREFUNC(rettype, funcname, args, segment) \
@@ -96,14 +97,21 @@ void (*) argtypes
 #define SETUP_HANDLER(exv, hlabel)\
 { struct FNI_Thread_State *fts=(struct FNI_Thread_State *)FNI_GetJNIEnv();\
   jptr _ex_;\
-  if ((_ex_=(jptr)setjmp(fts->handler))!=NULL) { exv=_ex_; goto hlabel; }\
+  jmp_buf _jb_; memcpy(_jb_, fts->handler, sizeof(_jb_));\
+  if ((_ex_=(jptr)setjmp(fts->handler))!=NULL) {\
+    exv=_ex_; memcpy(fts->handler, _jb_, sizeof(_jb_)); goto hlabel;\
+  }
+#define RESTORE_HANDLER\
+  memcpy(fts->handler, _jb_, sizeof(_jb_));\
 }
 #define CALL(rettype, retval, funcref, args, exv, handler)\
 SETUP_HANDLER(exv, handler)\
-retval = (funcref) args
+retval = (funcref) args;\
+RESTORE_HANDLER
 #define CALLV(funcref, args, exv, handler)\
 SETUP_HANDLER(exv, handler)\
-(funcref) args
+(funcref) args;\
+RESTORE_HANDLER
 
 #endif /* USE_GLOBAL_SETJMP ----------------------------------------- */
 

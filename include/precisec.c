@@ -66,6 +66,7 @@ void FNI_Dispatch_Void(ptroff_t method_pointer, int narg_words,
     JNIEnv *env = FNI_GetJNIEnv(); /* for FNI_WRAP */
     struct FNI_Thread_State *fts = (struct FNI_Thread_State *)env;
     jobject_unwrapped ex;
+    jmp_buf jb; memcpy(jb, fts->handler, sizeof(jb));
     if ((ex=(jobject_unwrapped)setjmp(fts->handler))!=NULL)
       fts->exception = FNI_WRAP(ex);
     else switch (narg_words) {
@@ -77,11 +78,12 @@ case x: \
 #undef CASE
     default: assert(0); break;
     }
+    memcpy(fts->handler, jb, sizeof(jb)); /* restore handler */
     return;
 }
-#define CASE(ctype,rtype,x) \
+#define CASE(ctype,x) \
 case x: \
-return (rtype) ((ctype(*)(REPEAT##x(JPTR)))method_pointer)(REPEAT##x(ARG));
+_r = ((ctype(*)(REPEAT##x(JPTR)))method_pointer)(REPEAT##x(ARG)); break;
 #define FNI_DISPATCH(Type, ctype, rtype)\
 rtype FNI_Dispatch_##Type(ptroff_t method_pointer, int narg_words,\
 			    void *_argptr, jobject_unwrapped *exception) {\
@@ -89,17 +91,19 @@ rtype FNI_Dispatch_##Type(ptroff_t method_pointer, int narg_words,\
     JNIEnv *env = FNI_GetJNIEnv(); /* for FNI_WRAP */\
     struct FNI_Thread_State *fts = (struct FNI_Thread_State *)env;\
     jobject_unwrapped ex;\
+    ctype _r = 0;\
+    jmp_buf jb; memcpy(jb, fts->handler, sizeof(jb));\
     if ((ex=(jobject_unwrapped)setjmp(fts->handler))!=NULL)\
       fts->exception = FNI_WRAP(ex);\
     else switch (narg_words) {\
-	CASE(ctype,rtype, 0) CASE(ctype,rtype, 1) CASE(ctype,rtype, 2)\
-        CASE(ctype,rtype, 3) CASE(ctype,rtype, 4) CASE(ctype,rtype, 5)\
-        CASE(ctype,rtype, 6) CASE(ctype,rtype, 7) CASE(ctype,rtype, 8)\
-        CASE(ctype,rtype, 9) CASE(ctype,rtype,10) CASE(ctype,rtype,11)\
-        CASE(ctype,rtype,12) CASE(ctype,rtype,13) CASE(ctype,rtype,14)\
-        CASE(ctype,rtype,15)\
-    default: assert(0); return (rtype) 0;\
+        CASE(ctype, 0) CASE(ctype, 1) CASE(ctype, 2) CASE(ctype, 3)\
+        CASE(ctype, 4) CASE(ctype, 5) CASE(ctype, 6) CASE(ctype, 7)\
+        CASE(ctype, 8) CASE(ctype, 9) CASE(ctype,10) CASE(ctype,11)\
+        CASE(ctype,12) CASE(ctype,13) CASE(ctype,14) CASE(ctype,15)\
+    default: assert(0); break;\
     }\
+    memcpy(fts->handler, jb, sizeof(jb)); /* restore handler */\
+    return (rtype) _r;\
 }
 #endif /* USE_GLOBAL_SETJMP ------------------------------------------- */
 
