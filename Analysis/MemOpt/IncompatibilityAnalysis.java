@@ -1393,7 +1393,7 @@ public class IncompatibilityAnalysis {
         }
 
         for (Iterator it = statics.iterator(); it.hasNext();) {
-            usize +=  ((harpoon.IR.Quads.NEW) it.next()).hclass().getFields(true).length + ADD_FIELDS;
+            usize +=  ((harpoon.IR.Quads.NEW) it.next()).hclass().getFields(/*true*/).length + ADD_FIELDS;
         }
         
         System.out.println("Sizes before packing: " + statics.size() + " slots;  " + usize + " fields");
@@ -1434,7 +1434,7 @@ public class IncompatibilityAnalysis {
         int sum = 0;
         
         for (Iterator it = cls.iterator(); it.hasNext(); ) {
-            int fields =((harpoon.IR.Quads.NEW) it.next()).hclass().getFields(true).length + ADD_FIELDS;
+            int fields =((harpoon.IR.Quads.NEW) it.next()).hclass().getFields(/*true*/).length + ADD_FIELDS;
             sum += fields;
             max = Math.max(max, fields);
         }
