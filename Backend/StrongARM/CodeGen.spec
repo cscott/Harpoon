@@ -47,13 +47,14 @@ import harpoon.IR.Tree.UNOP;
 import harpoon.IR.Tree.SEQ;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * <code>CodeGen</code> is a code-generator for the ARM architecture.
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.32 1999-08-28 01:08:22 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.33 1999-08-31 00:06:24 pnkfelix Exp $
  */
 %%
 
@@ -85,37 +86,54 @@ import java.util.Arrays;
 	r3 = frame.getAllRegisters()[3];
     }
 
+    /** Emits <code>i</code> as the next instruction in the
+        instruction stream.
+    */	
     private void emit(Instr i) {
 	debug( "Emitting "+i.toString() );
-	if (first == null) first = i;
-	if (last == null) {
-	    last = i;
-	} else {
-	    i.insertAt(new InstrEdge(last, last.getNext()));
-	    last = i;
-	}
+	if (first == null) {
+	    first = i;
+	}	   
+	// its correct that last==null the first time this is called
+	i.layout(last, null);
+	last = i;
     }
-    
+
+    /** The main Instr layer; nothing below this line should call
+	emit(Instr) directly.  
+    */
+    private void emit(HCodeElement root, String assem,
+		      Temp[] dst, Temp[] src,
+		      boolean canFallThrough, List targets) {
+	emit(new Instr( instrFactory, root, assem,
+			dst, src, canFallThrough, targets));
+    }		      
+
+    /** Secondary emit layer; for primary usage by the other emit
+	methods. 
+    */
+    private void emit2(HCodeElement root, String assem,
+		      Temp[] dst, Temp[] src) {
+	emit(root, assem, dst, src, true, null);
+    }
+
     /** Single dest Single source Emit Helper. */
     private void emit( HCodeElement root, String assem, 
 		       Temp dst, Temp src) {
-	emit(new Instr( instrFactory, root, assem,
-			new Temp[]{ dst },
-			new Temp[]{ src }));
+	emit2(root, assem, new Temp[]{ dst }, new Temp[]{ src });
     }
     
 
     /** Single dest Two source Emit Helper. */
     private void emit( HCodeElement root, String assem, 
 		       Temp dst, Temp src1, Temp src2) {
-	emit(new Instr( instrFactory, root, assem,
-			new Temp[]{ dst },
-			new Temp[]{ src1, src2 }));
+	emit2(root, assem, new Temp[]{ dst },
+			new Temp[]{ src1, src2 });
     }
 
     /** Null dest Null source Emit Helper. */
     private void emit( HCodeElement root, String assem ) {
-	emit(new Instr( instrFactory, root, assem, null, null));
+	emit2(root, assem, null, null);
     }
 
     /** Single dest Single source emit InstrMOVE helper */

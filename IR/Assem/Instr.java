@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.39 1999-08-30 22:20:07 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.40 1999-08-31 00:06:26 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -66,7 +66,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	called since the last call to <code>remove()</code> or since
 	construction). 
     */
-    Instr prev;
+    protected Instr prev;
 
     /** The <code>Instr</code> that is output prior to
 	<code>this</code>.  Should be <code>null</code> if
@@ -88,7 +88,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	called since the last call to <code>remove()</code> or since
 	construction).
     */
-    Instr next;
+    protected Instr next;
 
     /** The next <code>Instr</code> to output after
 	<code>this</code>.  <code>next</code> can be significant
@@ -293,7 +293,12 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	return linear;
     }
     
-    /** Inserts <code>this</code> at <code>edge</code>.
+    /** Inserts <code>this</code> at <code>edge</code>.  The purpose 
+	of this insertion is to modify CONTROL FLOW, rather than just
+	instruction layout.  See <code>layout(HCodeEdge)</code> for
+	direct modification of layout (which is less constrained than
+	this method but is not intended for generic program
+	transformation use.
 	<BR> <B>requires:</B> <OL>
 	     <LI> <code>edge.from()</code> and <code>edge.to()</code>
 	          are instances of <code>Instr</code> or one is
@@ -301,14 +306,15 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 		  <code>Instr</code>.  
 	     <LI> if <code>edge.from()</code> is not
 	          <code>null</code>, then
-		  <code>!edge.from().hasUnmodifiableTargets()</code>.   
+		  <code>edge.from().hasModifiableTargets()</code>.   
  	     <LI> if <code>edge.from()</code> and
 	          <code>edge.to()</code> are not <code>null</code>,
 		  then <code>edge.to()</code> is a successor of    
 		  <code>edge.from()</code>.
 	     <LI> <code>this</code> is a non-branching instruction
-	          (ie, has no extra targets and
-		  this.canFallThrough).
+	          (ie, <code>this.targets</code> equals
+		  <code>null</code> and
+		  <code>this.canFallThrough</code>). 
 	     <LI> <code>this</code> is not currently in an instruction
 	          stream (ie this.getPrev() == null and 
 		  this.getNext() == null).  This is true for newly
@@ -326,6 +332,9 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
         @see Instr#remove
     */
     public void insertAt(HCodeEdge edge) {
+	Util.assert(this.next == null &&
+		    this.prev == null, 
+		    "next and prev fields should be null");
 	Util.assert(this.getTargets().isEmpty() &&
 		    this.canFallThrough,
 		    "this should be nonbranching");
@@ -333,23 +342,38 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 		    edge.from() != null, 
 		    "edge shouldn't have null for both to and from");
 
+	Instr from = null, to = null;
 	if (edge.from() != null) {
-	    Instr from = (Instr) edge.from();
-	    Util.assert( Arrays.asList(from.edges()).contains(edge));
-	    from.next = this;
-	    this.prev = from;
+	    from = (Instr) edge.from();
+	    Util.assert(from.hasModifiableTargets(), 
+			"<from> should have mutable target list");
+	    Util.assert( Arrays.asList(from.edges()).contains(edge),
+			 "edge should be in <from>.edges()");
 	}
 	if (edge.to() != null) {
-	    Instr to = (Instr) edge.to();
-	    Util.assert( Arrays.asList(to.edges()).contains(edge));
-	    to.prev = this; 
-	    this.next = to;	
+	    to = (Instr) edge.to();
+	    Util.assert( Arrays.asList(to.edges()).contains(edge),
+			 "edge should be in <to>.edges()");
 	}
+
+	// TODO: add code that will check if edge.from().next !=
+	// edge.to(), in which case frame should create a new InstrLabel
+	// and a new branch, and then we'll find a place to put them
+	// in the code.  (add a pointer to the tail of the instruction
+	// stream to InstrFactory)
+	// then do: edge.from() -> newInstrLabel -> this -> 
+	//          newBranch -> edge.to()
+
+
+	// the following code is the else condition
+
+	layout(from, to);
     }
 
-    /** Removes <code>this</code> from its current
-	<code>HCodeEdge</code>. 
-	<BR> <B>requires:</B> <code>this</code> has a current edge.
+    /** Removes <code>this</code> from its current place in the
+	instruction layout.
+	<BR> <B>requires:</B> <code>this</code> has a current location
+	     in the instruction layout.
 	     (ie <code>insertAt(HCodeEdge)</code> has been called
 	     since the last time <code>remove()</code> was called, or
 	     since construction if <code>remove()</code> has never
@@ -375,6 +399,45 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	}
 	this.next = null;
 	this.prev = null;
+    }
+
+    /** Places <code>this</code> in the instruction layout between
+	<code>from</code> and <code>to</code>.
+	<BR> <B>requires:<B> <OL>
+	     <LI> <code>from</code> and <code>to</code> are each
+    	          instances of <code>Instr</code> or null
+ 	     <LI> if <code>from</code> and <code>to</code> are not
+	          <code>null</code>, then <code>from.getNext()</code>
+		  equals <code>to</code> and <code>to.getPrev()</code>
+		  equals <code>from</code>.
+	     <LI> <code>this</code> is not currently in an instruction
+	          stream (ie this.getPrev() == null and 
+		  this.getNext() == null).  This is true for newly
+		  created <code>Instr</code>s and for
+		  <code>Instr</code> which have just had their
+		  <code>remove()</code> method called.
+        </OL>
+        <BR> <B>modifies:</B> <code>from</code>, <code>to</code>
+        <BR> <B>effects:</B> Inserts <code>this</code> into the
+	     instruction stream in between <code>from</code> and
+	     <code>to</code>.
+    */
+    public void layout(Instr from, Instr to) { 
+	Util.assert(this.next == null &&
+		    this.prev == null, 
+		    "next and prev fields should be null");
+	if (to != null &&
+	    from != null) {
+	    Util.assert(to.prev == from &&
+			from.next == to,
+			"to should follow from in the instruction layout "+
+			"if they already exist");
+	}
+	
+	from.next = this;
+	this.prev = from;
+	this.next = to;
+	to.prev = this;
     }
 
     /** Accept a visitor. */
