@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.37 1999-06-23 22:53:17 pnkfelix Exp $
+# $Id: GNUmakefile,v 1.61.2.38 1999-06-24 00:44:35 pnkfelix Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -205,20 +205,21 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	$(RM) -rf doc-link
 	mkdir doc-link
 	cd doc-link; ln -s .. harpoon ; ln -s .. silicon ; ln -s ../Contrib gnu
-	cd doc-link; ${JDOC} ${JDOCFLAGS} -d ../doc \
+	-cd doc-link; ${JDOC} ${JDOCFLAGS} -d ../doc \
 		$(subst harpoon.Contrib,gnu, \
 		$(foreach dir, $(filter-out Test, \
 			  $(filter-out JavaChip,$(NONEMPTYPKGS))), \
 			  harpoon.$(subst /,.,$(dir))) silicon.JavaChip) | \
 		grep -v "^@see warning:"
 	$(RM) -r doc-link
+	chmod -R a+rX doc
 	$(MUNGE) doc | \
 	  sed -e 's/<\([a-z]\+\)@\([a-z.]\+\).edu>/\&lt;\1@\2.edu\&gt;/g' \
 	      -e 's/<dd> "The,/<dd> /g' -e 's/<body>/<body bgcolor=white>/' | \
 		$(UNMUNGE)
-	cd doc; ln -s $(JDOCIMAGES) images
-	cd doc; ln -s packages.html index.html
-	cd doc; ln -s index.html API_users_guide.html
+	cd doc; if [ -e $(JDOCIMAGES) ]; then ln -s $(JDOCIMAGES) images; fi
+	cd doc; if [ ! -f index.html]; then ln -s packages.html index.html; fi
+	cd doc; if [ ! -f API_users_guide.html ]; then ln -s index.html API_users_guide.html; fi
 	# only include ChangeLog if we've got CVS access
 	if [ -d CVS ]; then \
           make ChangeLog; \
