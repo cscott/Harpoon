@@ -1,19 +1,23 @@
 // InterfaceMethodMap.java, created Tue Jan 19 17:10:17 1999 by pnkfelix
 // Copyright (C) 1998 Felix S Klock <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis;
+package harpoon.Backend.Analysis;
 
+import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HMethod;
 import harpoon.Backend.Maps.MethodMap;
 
 import harpoon.Util.Util;
 import harpoon.Util.UniqueVector;
 
+import harpoon.Analysis.ClassHierarchy;
 
 import harpoon.Analysis.GraphColoring.Color;
 import harpoon.Analysis.GraphColoring.ColorableNode;
@@ -28,7 +32,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.2.13 1999-09-14 23:46:20 pnkfelix Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.4.1 1999-10-12 20:04:47 cananian Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -71,6 +75,27 @@ public class InterfaceMethodMap extends MethodMap {
 	colorer.findColoring( g );
 	
     }
+    /** Creates a <code>InterfaceMethodMap</code> for interfaces in
+	the given <code>ClassHierarchy</code> <code>ch</code>. 
+	<BR> <B>effects:</B> Iterates through the class hierarchy
+	              accumulating all of the interface-methods and
+		      returns a method->int mapping, where the integer
+		      returned represents the placement of the method.
+		      This method is not guaranteed to use any
+		      information besides what is passed to it;
+		      methods from interfaces not in the
+		      class hierarchy are not required to be
+		      included in the method map returned, and
+		      interferences from classes not in
+		      the class hierarchy are not required to be
+		      accounted for.  
+	@see HClass
+	@see harpoon.Analysis.ClassHierarchy
+	@see harpoon.Main.CallGraph
+     */
+    public InterfaceMethodMap( ClassHierarchy ch ) {
+	this(Collections.enumeration(ch.classes()));
+    }
     
     /** Returns an ordering of the given method. 
 	<BR> <B>requires:</B> <code>this</code> contains an ordering
@@ -80,6 +105,11 @@ public class InterfaceMethodMap extends MethodMap {
 			     placement in the ordering.  
      */
     public int methodOrder( HMethod hm ) {
+	// method must be an interface method and thus public,
+	// not static, and not a constructor.
+	Util.assert(hm.isInterfaceMethod() && !hm.isStatic());
+	Util.assert(Modifier.isPublic(hm.getModifiers()));
+	Util.assert(!(hm instanceof HConstructor));
 	HmNode node = (HmNode) mtable.get( hm );
 	Util.assert(node != null, 
 		    "InterfaceMethodMap must contain "+

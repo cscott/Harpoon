@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.69 1999-09-16 05:52:55 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.70 1999-10-12 20:04:37 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -278,10 +278,14 @@ srcdoc: $(patsubst srcdoc/harpoon/Contrib/%,srcdoc/gnu/%,\
 	$(addprefix srcdoc/Code/,$(addsuffix .html,\
 	$(MACHINE_SRC) $(SCRIPTS) GNUmakefile))
 srcdoc/java srcdoc/sun srcdoc/sunw: Support/stdlibdoc.tgz
-	if [ -r $< ]; then mkdir srcdoc; tar -C srcdoc -xzf $<; fi
+	mkdir -p srcdoc
+	$(RM) -r $@
+	if [ -r $< ]; then tar -C srcdoc -xzf $<; fi
+	touch $@
 srcdoc-clean:
 	-${RM} -r srcdoc
 srcdoc-install: srcdoc srcdoc/java
+	chmod -R a+rX srcdoc
 	$(SSH) $(INSTALLMACHINE) \
 		/bin/rm -rf $(INSTALLDIR)/srcdoc
 	$(SCP) -r srcdoc $(INSTALLMACHINE):$(INSTALLDIR)

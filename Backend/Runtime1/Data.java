@@ -15,10 +15,12 @@ import harpoon.Temp.Label;
 
 import java.util.ArrayList;
 /**
- * <code>Data</code>
+ * <code>Data</code> is an abstract superclass with handy useful methods
+ * for the <code>harpoon.IR.Tree.Data</code> subclasses in
+ * <code>Runtime1</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Data.java,v 1.1.2.3 1999-09-09 15:42:39 cananian Exp $
+ * @version $Id: Data.java,v 1.1.2.4 1999-10-12 20:04:50 cananian Exp $
  */
 public class Data extends harpoon.IR.Tree.Data {
     final HClass hc;
@@ -40,28 +42,6 @@ public class Data extends harpoon.IR.Tree.Data {
      *                                                          *
      *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-    void add(int index, Tree elem, ArrayList up, ArrayList down) { 
-	int size, requiredSize;
-	if (index<0) { 
-	    requiredSize = (-index);
-	    if (requiredSize > up.size()) { 
-		up.ensureCapacity(requiredSize);
-		for (int i=up.size(); i<requiredSize; i++) 
-		    up.add(new DATA(elem.getFactory(), elem, Type.POINTER));
-	    }	    
-	    up.set(-index-1, elem);
-	}
-	else {
-	    requiredSize = index+1;
-	    if (requiredSize > down.size()) { 
-		down.ensureCapacity(requiredSize);
-		for (int i=down.size(); i<requiredSize; i++) 
-		    down.add(new DATA(elem.getFactory(), elem, Type.POINTER));
-	    }	    
-	    down.set(index, elem);
-	}
-    }
-  
     DATA _DATA(Exp e) { 
 	return new DATA(tf, null, e); 
     }
@@ -69,6 +49,4 @@ public class Data extends harpoon.IR.Tree.Data {
     DATA _DATA(Label l) {
 	return new DATA(tf,null,new NAME(tf,null,l));
     }
-
-    int wordsize() { return frame.pointersAreLong() ? 8 : 4; }
 }

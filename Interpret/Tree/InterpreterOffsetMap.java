@@ -3,11 +3,10 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Interpret.Tree;
 
-import harpoon.Analysis.InterfaceMethodMap;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Backend.Analysis.DisplayInfo.HClassInfo;
+import harpoon.Backend.Analysis.InterfaceMethodMap;
 import harpoon.Backend.Maps.ClassDepthMap;
-import harpoon.Backend.Maps.FieldMap;
 import harpoon.Backend.Maps.MethodMap;
 import harpoon.Backend.Maps.DefaultNameMap;
 import harpoon.Backend.Maps.NameMap;
@@ -28,7 +27,7 @@ import java.util.StringTokenizer;
  * A simple OffsetMap, used by the Tree Interpreter
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterOffsetMap.java,v 1.1.2.12 1999-09-08 19:30:19 cananian Exp $
+ * @version $Id: InterpreterOffsetMap.java,v 1.1.2.13 1999-10-12 20:04:59 cananian Exp $
  */
 public class InterpreterOffsetMap extends OffsetMap {
 
@@ -255,6 +254,11 @@ public class InterpreterOffsetMap extends OffsetMap {
     }
 
     public int wordsize() { return 1; } 
+
+    // stub for old FieldMap interface
+    abstract class FieldMap {
+	public abstract int fieldOrder(HField hf);
+    }
 }
 
 

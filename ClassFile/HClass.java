@@ -31,7 +31,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.26 1999-09-13 08:35:26 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.27 1999-10-12 20:04:54 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -652,6 +652,8 @@ public abstract class HClass extends HPointer
    * <p> If this object is the one that represents the class
    * <code>Object</code> or this object represents an interface, 
    * <code>null</code> is returned.
+   * If this object represents an array, then the <code>HClass</code>
+   * representing <code>java.lang.Object</code> is returned.
    * @return the superclass of the class represented by this object.
    */
   public abstract HClass getSuperclass();

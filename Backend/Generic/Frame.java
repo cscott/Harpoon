@@ -37,17 +37,11 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.32 1999-09-11 18:47:09 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.33 1999-10-12 20:04:47 cananian Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
 
-    /** Returns a <code>Tree.Exp</code> object which represents a pointer
-     *  to a newly allocated block of memory, of the specified size.  
-     *  Generates code to handle garbage collection, and OutOfMemory errors.
-     */
-    public abstract Exp memAlloc(Exp size);
-    
     /** Returns <code>false</code> if pointers can be represented in
      *  32 bits, or <code>true</code> otherwise. */
     public abstract boolean pointersAreLong();
@@ -69,8 +63,10 @@ public abstract class Frame {
 
     /** Returns the appropriate <code>OffsetMap</code> for
 	this <code>Frame</code>. 
+	@deprecated Runtime re-organization replaces this will a
+	            collection of special-purpose maps.
     */
-    public abstract OffsetMap getOffsetMap();
+    public OffsetMap getOffsetMap() { return null; }
 
     /** Returns the appropriate <code>Generic.Runtime</code> for
      *  this <code>Frame</code>. */

@@ -5,6 +5,7 @@ package harpoon.IR.Tree;
 
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Generic.Runtime;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.ClassFile.HClass;
@@ -64,7 +65,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.49 1999-09-21 00:48:23 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.50 1999-10-12 20:04:56 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -212,22 +213,19 @@ public class ToTree implements Derivation, TypeMap {
     }
     // don't close class: all of the following are inner classes,
     // even if they don't look that way.  I'm just don't feel like
-    // reindenting all of this existing code.
+    // reindenting all of this existing code. [CSA]
   
 // Translates the LowQuadNoSSA code into tree form. 
 //
 static class TranslationVisitor extends LowQuadWithDerivationVisitor {
-    // Keep track of which strings we have allocated 
-    private static Set        m_strings = new HashSet();
-
     private CloningTempMap    m_ctm;          // Clones Temps to new tf
-    private OffsetMap         m_offm;         // Machine-specific offset map
     private NameMap           m_nm;           // Runtime-specific label naming
     private List              m_stmList;      // Holds translated statements
     private TreeFactory       m_tf;           // The new TreeFactory
     private TempRenameMap     m_trm;          // Temp renaming
     private TEMP              m_handler = null; 
     private Map               m_labels  = new HashMap();
+    private Runtime.TreeBuilder m_rtb;
   
     public TranslationVisitor(TreeFactory tf, Derivation derivation, 
 			      TypeMap typeMap, TempRenameMap trm,
@@ -235,10 +233,10 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	super(derivation, typeMap);
 	m_ctm          = ctm;
 	m_tf           = tf; 
-	m_offm         = m_tf.getFrame().getOffsetMap();
 	m_nm           = m_tf.getFrame().getRuntime().nameMap;
 	m_trm          = trm;
 	m_stmList      = new ArrayList();
+	m_rtb	       = m_tf.getFrame().getRuntime().treeBuilder;
     }
 
     Tree getTree() { return Stm.toStm(m_stmList); } 
@@ -249,21 +247,16 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	Stm s0 = new MOVE
 	    (m_tf, q, 
 	     _TEMP(q.dst(), q),
-	     new MEM  
-	     (m_tf, q, Type.INT, // The "length" field is of type INT
-	      new BINOP
-	      (m_tf, q, Type.POINTER, Bop.ADD,
-	       _TEMP(q.objectref(), q),
-	       new CONST
-	       (m_tf, q, m_offm.lengthOffset(this.typeMap(q,q.objectref()))))));
-
+	     m_rtb.arrayLength
+	     (m_tf, q, new Translation.Ex(_TEMP(q.objectref(), q))).unEx(m_tf)
+	     );
 	addStmt(s0);
     }
 
     public void visit(harpoon.IR.Quads.ANEW q) {
 	Exp classPtr, hashcode, length;
 	HClass arrayClass;
-	int instructionsPerIter = 12;
+	int instructionsPerIter = 9;
 	Stm[] stms = new Stm[instructionsPerIter * q.dimsLength() + 1];
 
 	LABEL[] loopHeaders   = new LABEL[q.dimsLength()];
@@ -303,59 +296,14 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    stms[base++] = loopMid[i];
 		  
 	    // Step 1: allocate memory needed for the array. 
-	    stms[base++] = new MOVE
-		(m_tf, q, arrayRefs[i], 
-		 m_tf.getFrame().memAlloc
-		 (new BINOP
-		  (m_tf, q, Type.INT, Bop.ADD, 
-		   // Add space for hashcode, length, and finalization info
-		   new CONST(m_tf, q, m_offm.size(HClass.Int) * 3),
-		   new BINOP
-		   (m_tf, q, Type.INT, Bop.MUL,
-		    arrayDims[i+1],
-		    new CONST(m_tf, q, wordSize())))));
-
-	    hashcode  = new UNOP(m_tf, q, Type.INT, Uop._2I, arrayRefs[i]);
 	    length    = arrayDims[i+1];
 	    arrayClass = q.hclass();
 	    for (int n=0; n<i; n++) arrayClass = arrayClass.getComponentType();
-	    classPtr  = new NAME(m_tf, q, m_nm.label(arrayClass));
-	
-	    // Assign the array a hashcode
-	    //
+
 	    stms[base++] = new MOVE
-		(m_tf, q, 
-		 new MEM
-		 (m_tf, q, Type.INT, 
-		  new BINOP
-		  (m_tf, q, Type.POINTER, Bop.ADD,
-		   arrayRefs[i], 
-		   new CONST(m_tf, q, m_offm.hashCodeOffset(arrayClass)))),
-		 hashcode);
-	    
-	    // Assign the array's length field
-	    //
-	    stms[base++] = new MOVE
-		(m_tf, q,
-		 new MEM
-		 (m_tf, q, Type.INT, 
-		  new BINOP
-		  (m_tf, q, Type.POINTER, Bop.ADD,
-		   arrayRefs[i], 
-		   new CONST(m_tf, q, m_offm.lengthOffset(arrayClass)))),
-		 length);
-	    
-	    // Assign the array a class ptr
-	    //
-	    stms[base++] = new MOVE
-		(m_tf, q, 
-		 new MEM
-		 (m_tf, q, Type.POINTER, 
-		  new BINOP
-		  (m_tf, q, Type.POINTER, Bop.ADD,
-		   arrayRefs[i], 
-		   new CONST(m_tf, q, m_offm.clazzPtrOffset(arrayClass)))), 
-		 classPtr);
+		(m_tf, q, arrayRefs[i], 
+		 m_rtb.arrayNew(m_tf, q, arrayClass,
+				new Translation.Ex(length)).unEx(m_tf));
 
 	    // Move the pointer to the new array into the appropriate 
 	    // memory location.	    
@@ -388,6 +336,8 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    stms[rear]   = loopFooters[i];
 	}
 
+	// FIXME: ZERO FILL! (arrayNew doesn't initialize elements)
+	// only need to zero fill leaf arrays; all others are initialized.
     
 	// Make a reference to the array we are going to create
 	//
@@ -397,6 +347,7 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
     }
 
     public void visit(harpoon.IR.Quads.ARRAYINIT q) {
+	HClass arrayType = HClassUtil.arrayClass(q.type(), 1);
 	Stm s0, s1, s2;
 
 	// Create a pointer which we'll use to initialize the array
@@ -405,15 +356,18 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	// Create derivation information for the new TEMP
 	DList dl = new DList(objTemp.temp, true, null);
 
+	// set nextPtr to point to arrayBase + q.offset() * size.
 	s0 = new MOVE
 	    (m_tf, q, 
 	     nextPtr,
 	     new BINOP
 	     (m_tf, q, Type.POINTER, Bop.ADD,
-	      objTemp, 
-	      new CONST
-	      (m_tf, q, 
-	       m_offm.elementsOffset(this.typeMap(q,q.objectref())))));
+	      m_rtb.arrayBase
+	      (m_tf, q, new Translation.Ex(objTemp)).unEx(m_tf),
+	      m_rtb.arrayOffset
+	      (m_tf, q, arrayType,
+	       new Translation.Ex(new CONST(m_tf, q, q.offset()))).unEx(m_tf)
+	      ));
 
 	addDT(nextPtr.temp, nextPtr, dl, null);
 	updateDT(q.objectref(), q, objTemp.temp, objTemp);
@@ -429,7 +383,10 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 		 new BINOP
 		 (m_tf, q, Type.POINTER, Bop.ADD, 
 		  nextPtr, 
-		  new CONST(m_tf, q, m_offm.size(q.type()))));
+		  m_rtb.arrayOffset
+		  (m_tf, q, arrayType,
+		   new Translation.Ex(new CONST(m_tf, q, 1))).unEx(m_tf)
+		  ));
 
 	    addStmt(Stm.toStm(Arrays.asList(new Stm[] { s0, s1 })));
 	}
@@ -452,12 +409,14 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
   
     public void visit(harpoon.IR.Quads.COMPONENTOF q) {
 	TEMP dst = _TEMP(q.dst(), q);
+	TEMP aref= _TEMP(q.arrayref(), q);
+	TEMP oref= _TEMP(q.objectref(), q);
 	Stm s0 = new MOVE 
 	    (m_tf, q, 
 	     dst, 
-	     isInstanceOf(q, q.objectref(), 
-			  this.typeMap(q,q.arrayref()).getComponentType()));
-
+	     m_rtb.componentOf(m_tf, q,
+			       new Translation.Ex(aref),
+			       new Translation.Ex(oref)).unEx(m_tf));
 	updateDT(q.dst(), q, dst.temp, dst);
 	addStmt(s0);
     }
@@ -471,7 +430,12 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
   
     public void visit(harpoon.IR.Quads.INSTANCEOF q) {
 	TEMP dst = _TEMP(q.dst(), q);
-	Stm s0   = new MOVE(m_tf, q, dst, isInstanceOf(q,q.src(),q.hclass()));
+	TEMP src = _TEMP(q.src(), q);
+	Stm s0   = new MOVE
+	    (m_tf, q,
+	     dst,
+	     m_rtb.instanceOf(m_tf, q, 
+			      new Translation.Ex(src), q.hclass()).unEx(m_tf));
 	updateDT(q.dst(), q, dst.temp, dst);
 	addStmt(s0);
     }
@@ -504,11 +468,15 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
     }
 
     public void visit(harpoon.IR.Quads.MONITORENTER q) {
-	// Call to runtime libraries here
+	TEMP obj = _TEMP(q.lock(), q);
+	addStmt(m_rtb.monitorEnter(m_tf, q, new Translation.Ex(obj))
+		     .unNx(m_tf));
     }
 
     public void visit(harpoon.IR.Quads.MONITOREXIT q) {
-	// Call to runtime libraries here
+	TEMP obj = _TEMP(q.lock(), q);
+	addStmt(m_rtb.monitorExit(m_tf, q, new Translation.Ex(obj))
+		     .unNx(m_tf));
     }
 
     public void visit(harpoon.IR.Quads.MOVE q) {
@@ -520,41 +488,10 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
     }
 
     public void visit(harpoon.IR.Quads.NEW q) { 
-	Stm s0, s1, s2;
-
 	TEMP objectref = _TEMP(q.dst(), q);
-
-	// Allocate memory for the new object
-	s0 = new MOVE
-	    (m_tf, q, 
-	     objectref, 
-	     m_tf.getFrame().
-	     memAlloc(new CONST(m_tf, q, m_offm.size(q.hclass()))));
-
-	// Assign the new object a hashcode
-	s1 = new MOVE
-	    (m_tf, q, 
-	     new MEM
-	     (m_tf, q, Type.INT, 
-	      new BINOP
-	      (m_tf, q, Type.POINTER, Bop.ADD,
-	       objectref,
-	       new CONST(m_tf, q, m_offm.hashCodeOffset(q.hclass())))),
-	     new UNOP(m_tf, q, Type.POINTER, Uop._2I, objectref));
-	
-	// Assign the new object a class pointer
-	s2 = new MOVE
-	    (m_tf, q,
-	     new MEM
-	     (m_tf, q, Type.POINTER,
-	      new BINOP
-	      (m_tf, q, Type.POINTER, Bop.ADD,
-	       objectref,
-	       new CONST(m_tf, q, m_offm.clazzPtrOffset(q.hclass())))),
-	     new NAME(m_tf, q, m_nm.label(q.hclass())));
-	
+	addStmt(new MOVE(m_tf, q, objectref,
+			 m_rtb.objectNew(m_tf, q, q.hclass()).unEx(m_tf)));
 	updateDT(q.dst(), q, objectref.temp, objectref);
-	addStmt(Stm.toStm(Arrays.asList(new Stm[] { s0, s1, s2 })));
     }
 	
     public void visit(harpoon.IR.Quads.RETURN q) {
@@ -616,12 +553,8 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    new MOVE
 	    (m_tf, q, 
 	     dst, 
-	     new BINOP // Array offset are always INT types
-	     (m_tf, q, Type.INT, Bop.MUL, 
-	      new CONST
-	      (m_tf, q, m_offm.size(q.arrayType().getComponentType())),
-	      index));
-
+	     m_rtb.arrayOffset(m_tf, q, q.arrayType(),
+			       new Translation.Ex(index)).unEx(m_tf));
 	updateDT(q.dst(), q, dst.temp, dst);
 	updateDT(q.index(), q, index.temp, index);
 	addStmt(s0);
@@ -629,14 +562,17 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 
     public void visit(PARRAY q) {
 	TEMP dst = _TEMP(q.dst(), q), objectref = _TEMP(q.objectref(), q);
-	Stm  s0  = new MOVE(m_tf, q, dst, objectref);
-
+	Stm  s0  = new MOVE
+	    (m_tf, q, dst, 
+	     m_rtb.arrayBase(m_tf, q,
+			     new Translation.Ex(objectref)).unEx(m_tf));
 	updateDT(q.dst(), q, dst.temp, dst);
 	updateDT(q.objectref(), q, objectref.temp, objectref);
 	addStmt(s0);
     }
 
 
+    // runtime-independent
     public void visit(PCALL q) { 
 	ExpList params; Temp[] qParams; TEMP retval, retex, func; 
 	Stm s0, s1;
@@ -684,6 +620,7 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	addStmt(s1); 
     }
 
+    // just refer to the runtime's NameMap
     public void visit(PFCONST q) {
 	TEMP dst = _TEMP(q.dst(), q);
 	Stm s0 = 
@@ -698,7 +635,10 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 
     public void visit(PFIELD q) { 
 	TEMP dst = _TEMP(q.dst(), q), objectref = _TEMP(q.objectref(), q);
-	Stm s0 = new MOVE(m_tf, q, dst, objectref);
+	Stm  s0  = new MOVE
+	    (m_tf, q, dst, 
+	     m_rtb.fieldBase(m_tf, q,
+			     new Translation.Ex(objectref)).unEx(m_tf));
 	updateDT(q.dst(), q, dst.temp, dst);
 	updateDT(q.objectref(), q, objectref.temp, objectref);
 	addStmt(s0);
@@ -706,12 +646,15 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
   
     public void visit(PFOFFSET q) {
 	TEMP dst = _TEMP(q.dst(), q);
-	Stm s0 = 
-	    new MOVE(m_tf, q, dst, new CONST(m_tf,q,m_offm.offset(q.field())));
+	Stm s0 = new MOVE
+	    (m_tf, q,
+	     dst,
+	     m_rtb.fieldOffset(m_tf, q, q.field()).unEx(m_tf));
 	updateDT(q.dst(), q, dst.temp, dst);
 	addStmt(s0);
     }
 
+    // runtime-independent
     public void visit(PGET q) {
 	TEMP dst = _TEMP(q.dst(), q), ptr = _TEMP(q.ptr(), q);
 	MEM m = makeMEM(q, q.type(), ptr);
@@ -721,6 +664,7 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	addStmt(s0);
     }
   
+    // just refer to the runtime's NameMap
     public void visit(PMCONST q) { 
 	TEMP dst = _TEMP(q.dst(), q);
 	Stm s0 = 
@@ -733,21 +677,11 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	HClass type = this.typeMap(q,q.objectref());
 	TEMP   dst  = _TEMP(q.dst(), q), objectref = _TEMP(q.objectref(), q);
 
-	// FIXME: type of object should not be void!
-	if (type==HClass.Void) type = HClass.forName("java.lang.Object");
-	
-	Stm s0 = 
-	    new MOVE
+	Stm s0 = new MOVE
 	    (m_tf, q, 
-	     dst, 
-	     new MEM
-	     (m_tf, q, Type.POINTER,
-	      new BINOP
-	      (m_tf, q, Type.POINTER, Bop.ADD, 
-	       objectref, 
-	       new CONST
-	       (m_tf, q, m_offm.clazzPtrOffset(type)))));
-	
+	     dst,
+	     m_rtb.methodBase(m_tf, q,
+			      new Translation.Ex(objectref)).unEx(m_tf));
 	updateDT(q.dst(), q, dst.temp, dst);
 	updateDT(q.objectref(), q, objectref.temp, objectref);
 	addStmt(s0);
@@ -756,7 +690,8 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
     public void visit(PMOFFSET q) {
 	TEMP dst = _TEMP(q.dst(), q);
 	Stm s0 = 
-	    new MOVE(m_tf,q,dst,new CONST(m_tf,q,m_offm.offset(q.method())));
+	    new MOVE(m_tf,q,dst,
+		     m_rtb.methodOffset(m_tf,q,q.method()).unEx(m_tf));
 	updateDT(q.dst(), q, dst.temp, dst);
 	addStmt(s0);
     }
@@ -1040,333 +975,11 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	    constant = new CONST(m_tf, src, ((Float)value).floatValue()); 
 	else if (type==HClass.Double)
 	    constant = new CONST(m_tf, src, ((Double)value).doubleValue());
-	else if (type==HClass.forName("java.lang.String")) {
-	    constant = new MEM
-		(m_tf, src, Type.POINTER, 
-		 new NAME(m_tf, src, m_nm.label((String)value)));
-	    if (!m_strings.contains(value)) { allocString((String)value); } 
-	}
+	else if (type==HClass.forName("java.lang.String"))
+	    constant = m_rtb.stringConst(m_tf, src, (String)value).unEx(m_tf);
 	else 
 	    throw new Error("Bad type for CONST: " + type); 
 	return constant;
-    }
-
-    // Allocates an instanceof of java.lang.String somewhere in 
-    // the string segments.  
-    private void allocString(String str) { 
-	HClass    HCstring  = HClass.forName("java.lang.String");
-	HClass    HCcharA   = HClass.forDescriptor("[C");
-	Label     strClsPtr = m_nm.label(HCstring);
-	Label     caClsPtr  = m_nm.label(HCcharA);
-	HField    count     = HCstring.getField("count");
-	HField    offset    = HCstring.getField("offset");
-	HField    value     = HCstring.getField("value");
-
-	ArrayList u         = new ArrayList();
-	ArrayList d         = new ArrayList();
-	List      stms      = new ArrayList();
-
-	//
-	// STEP 1: Construct the String object
-
-	// Assign the String a HashCode
-	add(m_offm.hashCodeOffset(HCstring),
-	    new DATA(m_tf,null,new CONST(m_tf,null,str.hashCode())),u,d);
-	// Assign the String a clazz ptr
-	add(m_offm.clazzPtrOffset(HCstring),
-	    new DATA(m_tf,null,new NAME(m_tf,null,strClsPtr)),u,d);
-	// Set the "count" field to the length of the string constant
-	add(m_offm.offset(count),
-	    new DATA(m_tf,null,new CONST(m_tf,null,str.length())),u,d);
-	// Set the "offset" field to 0
-	add(m_offm.offset(offset),
-	    new DATA(m_tf,null,new CONST(m_tf,null,0)),u,d);
-	// Set the "value" field to point to a char array (created below)
-	add(m_offm.offset(value),
-	    new DATA
-	    (m_tf,null,
-	     new NAME
-	     (m_tf,null,_LABEL(str+"CA",null).label)),u,d);
-	
-	Collections.reverse(u);
-	u.add(0, new LABEL(m_tf, null, m_nm.label(str), true));
-	u.add(0, new SEGMENT(m_tf, null, SEGMENT.STRING_CONSTANTS));
-	stms.addAll(u);
-	stms.addAll(d);
-
-	u.clear(); d.clear();
-	//
-	// STEP 2: Construct the character array the string points to
-	// Assign the character array a HashCode
-	add(m_offm.lengthOffset(HCcharA),
-	    new DATA(m_tf,null, 
-		     new CONST(m_tf,null,str.length())),u,d);
-	add(m_offm.hashCodeOffset(HCcharA),
-	    new DATA(m_tf,null,
-		     new CONST(m_tf,null,str.toCharArray().hashCode())),u,d);
-	// Assign the character array a clazz ptr
-	add(m_offm.clazzPtrOffset(HCcharA),
-	    new DATA(m_tf,null,new NAME(m_tf,null,caClsPtr)),u,d);
-	for (int i=0; i<str.length(); i++) { 
-	    add(m_offm.elementsOffset(HCcharA)+i, 
-		new DATA
-		(m_tf, null, 
-		 new CONST(m_tf, null, 16, true, (int)str.charAt(i))),u,d);
-	}
-	Collections.reverse(u);
-	u.add(0, _LABEL(str+"CA", null));
-	u.add(0, new SEGMENT(m_tf, null, SEGMENT.STRING_DATA));
-	stms.addAll(u);
-	stms.addAll(d);
-	stms.add(new SEGMENT(m_tf, null, SEGMENT.CODE));
-	
-	addStmt(Stm.toStm(stms));
-    }
-    
-    private void add(int index, Tree elem, ArrayList up, ArrayList down) { 
-	int requiredSize;
-	if (index<0) { 
-	    requiredSize = (-index);
-	    if (requiredSize > up.size()) { 
-		up.ensureCapacity(requiredSize);
-		for (int i=up.size(); i<requiredSize; i++) 
-		    up.add(new DATA(elem.getFactory(), elem, Type.POINTER));
-	    }	    
-	    up.set(-index-1, elem);
-	}
-	else {
-	    requiredSize = index+1;
-	    if (requiredSize > down.size()) { 
-		down.ensureCapacity(requiredSize);
-		for (int i=down.size(); i<requiredSize; i++) 
-		    down.add(new DATA(elem.getFactory(), elem, Type.POINTER));
-	    }	    
-	    down.set(index, elem);
-	}
-    }
-
-    /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*
-     *                                                            *
-     *                Run-time typechecking code                  *
-     *                                                            *
-     *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-
-    
-    // Returns an Exp that evaluates to true if "q" can be cast to "type"
-    // with this algorithm.  This algorithm is now substantially different
-    // than the recursive casting conversion algorithm
-    // found in the Java Language Specification at 
-    // http://java.sun.com/docs/books/jls/html/5.doc.html#176921.  
-    // 
-    // FIXME:  <insert description of algorithm here>
-    private Exp isInstanceOf(Quad q, Temp src, HClass type) {
-
-	TEMP SRC1     = _TEMP(src, q);
-	TEMP SRC2     = _TEMP(src, q);
-	TEMP RESULT1  = extra(q, Type.INT);
-	TEMP RESULT2  = _TEMP(RESULT1);
-	TEMP RESULT3  = _TEMP(RESULT1);
-	
-	updateDT(src, q, SRC1.temp, SRC1);
-	updateDT(src, q, SRC2.temp, SRC2);
-	addDT(RESULT1.temp, RESULT1, null, HClass.Int);
-	updateDT(RESULT1.temp, RESULT1, RESULT2.temp, RESULT2);
-	updateDT(RESULT1.temp, RESULT1, RESULT3.temp, RESULT3);
-
-	if (type.isPrimitive()) {
-	    return new CONST(m_tf,q,type==this.typeMap(q,src)?1:0);
-	}
-	else {
-	    Util.assert(TYPE(q,src)==Type.POINTER);
-	    LABEL isNonNull = new LABEL(m_tf, q, new Label(), false);
-	    LABEL isNull    = new LABEL(m_tf, q, new Label(), false);
-	    LABEL end       = new LABEL(m_tf, q, new Label(), false);
-
-	    return new ESEQ
-		(m_tf, q, 
-		 Stm.toStm
-		 (Arrays.asList
-		  (new Stm[] {
-		      // null instanceof X  is always false
-		      new CJUMP
-			  (m_tf, q, 
-			   new BINOP
-			   (m_tf, q, Type.POINTER, Bop.CMPEQ,
-			    SRC1, 
-			    new CONST(m_tf, q, 0)),
-			   isNull.label, 
-			   isNonNull.label),
-
-		      // we've done instanceof on a null pointer, return false
-		      isNull,
-		      new MOVE(m_tf, q, RESULT1, new CONST(m_tf, q, 0)),
-		      new JUMP(m_tf, q, end.label),
-
-		      // the pointer is not null, use our run-time 
-		      // type-checking algorithm
-		      isNonNull,
-		      new MOVE
-			  (m_tf, q, 
-			   RESULT2,
-			   HClassUtil.baseClass(type).isInterface() ? 
-			   isImplemented
-			   (new MEM 
-			    (m_tf, q, Type.POINTER,
-			     new BINOP
-			     (m_tf, q, Type.POINTER, Bop.ADD,
-			      new CONST
-			      (m_tf, q, 
-			       m_offm.clazzPtrOffset(this.typeMap(q,src))),
-			      SRC2)), 
-			    type) : 
-			   classExtends
-			   (new MEM 
-			    (m_tf, q, Type.POINTER,
-			     new BINOP
-			     (m_tf, q, Type.POINTER, Bop.ADD,
-			      new CONST
-			      (m_tf, q, 
-			       m_offm.clazzPtrOffset(this.typeMap(q,src))),
-			      SRC2)),
-			    type)), 
-		      end})),
-		 RESULT3);
-	}
-    }
-  
-    private Exp classExtends(Exp classPtr, HClass type) { 
-	Util.assert(!(HClassUtil.baseClass(type).isInterface() || 
-		      HClassUtil.baseClass(type).isPrimitive()));
-
-	NAME typeLabel   = new NAME(m_tf, classPtr, m_nm.label(type));
-	return new BINOP
-	    (m_tf, classPtr, Type.POINTER, Bop.CMPEQ,
-	     typeLabel,
-	     new MEM
-	     (m_tf, classPtr, Type.POINTER,
-	      new BINOP
-	      (m_tf, classPtr, Type.POINTER, Bop.ADD,
-	       classPtr,
-	       new CONST
-	       (m_tf, classPtr, m_offm.offset(type)))));
-    }
-
-    private Exp isImplemented(Exp classPtr, HClass type) {
-	Util.assert(HClassUtil.baseClass(type).isInterface());
-
-	NAME  typeLabel   = new NAME(m_tf, classPtr, m_nm.label(type));
-	TEMP  IFACEPTR1   = extra(classPtr, Type.POINTER);
-	TEMP  IFACEPTR2   = _TEMP(IFACEPTR1);
-	TEMP  IFACEPTR3   = _TEMP(IFACEPTR1);
-	TEMP  IFACEPTR4   = _TEMP(IFACEPTR1);
-	TEMP  IFACELABEL1 = extra(classPtr, Type.POINTER);
-	TEMP  IFACELABEL2 = _TEMP(IFACELABEL1);
-	TEMP  IFACELABEL3 = _TEMP(IFACELABEL1);
-	TEMP  RESULT1     = extra(classPtr, Type.INT);
-	TEMP  RESULT2     = _TEMP(RESULT1);
-	TEMP  RESULT3     = _TEMP(RESULT1);
-
-	// FIXME: add deriv info 
-
-	LABEL endLabel      = new LABEL(m_tf, classPtr, new Label(), false);
-	LABEL loop          = new LABEL(m_tf, classPtr, new Label(), false);
-	LABEL next          = new LABEL(m_tf, classPtr, new Label(), false);
-	LABEL successLabel  = new LABEL(m_tf, classPtr, new Label(), false);
-	LABEL failureLabel  = new LABEL(m_tf, classPtr, new Label(), false);
-	
-	return new ESEQ
-	    (m_tf, classPtr, 
-	     Stm.toStm
-	     (Arrays.asList
-	      (new Stm[] {
-
-		  // Assign IFACEPTR to point to the block of memory 
-		  // directly before the first interface.
-		  // 
-		  new MOVE
-		      (m_tf, classPtr,
-		       IFACEPTR1,
-		       new MEM
-		       (m_tf, classPtr, Type.POINTER, 
-			new BINOP
-			(m_tf, classPtr, Type.POINTER, Bop.ADD,
-			 classPtr, 
-			 new CONST
-			 (m_tf, classPtr, 
-			  m_offm.interfaceListOffset(type)-wordSize())))),
-		  
-		  // Label the top of the loop
-		  //
-		  loop,
-
-		  // Increment the current interface ptr
-	          // 
-		  new MOVE
-		      (m_tf, classPtr, 
-		       IFACEPTR2,
-		       new BINOP
-		       (m_tf, classPtr, Type.POINTER, Bop.ADD,
-			IFACEPTR3,
-			new CONST(m_tf, classPtr, wordSize()))),
-
-		  new MOVE
-		      (m_tf, classPtr,
-		       IFACELABEL1, 
-			new MEM(m_tf, classPtr, Type.POINTER, IFACEPTR4)),
-
-		  // Check if we have reached the end of the interface list
-		  //
-		  new CJUMP
-		      (m_tf, classPtr, 
-		       new BINOP
-		       (m_tf, classPtr, Type.POINTER, Bop.CMPEQ,
-			IFACELABEL2, 
-			new CONST(m_tf, classPtr)),
-		       failureLabel.label,
-		       next.label),
-		  
-		  next,
-	
-		  // See if we've found the correct label
-		  // 
-		  new CJUMP
-		      (m_tf, classPtr, 
-		       new BINOP
-		       (m_tf, classPtr, Type.POINTER, Bop.CMPEQ,
-			typeLabel,
-			IFACELABEL3),
-		       successLabel.label,
-		       loop.label),
-		  
-		  // We've reached the end of the interface list without
-		  // finding a match.  Return 0.
-		  // 
-		  failureLabel,
-	
-		  new MOVE
-		      (m_tf, classPtr, 
-		       RESULT1, 
-		       new CONST(m_tf, classPtr, 0)),
-
-		  new JUMP(m_tf, classPtr, endLabel.label),
-
-		  // We found the interface label we wanted.  Yay!  Return 1.
-		  // 
-		  successLabel,
-		  new MOVE
-		      (m_tf, classPtr, 
-		       RESULT2, 
-		       new CONST(m_tf, classPtr, 1)),
-		  
-		  endLabel
-		      })),
-	     RESULT3);
-
-    }
-	
-    private int wordSize() {
-	int size = m_offm.size(HClass.forName("java.lang.Object"));
-	return size;
     }
 }
 

@@ -1,11 +1,15 @@
 // DefaultFrame.java, created Mon Feb 15  3:36:39 1999 by duncan
 // Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Backend.Generic;
+package harpoon.Interpret.Tree;
 
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.Backend.Allocation.AllocationInfo;
 import harpoon.Backend.Allocation.AllocationStrategy;
 import harpoon.Backend.Allocation.DefaultAllocationStrategy;
+import harpoon.Backend.Generic.InstrBuilder;
+import harpoon.Backend.Generic.RegFileInfo;
+import harpoon.Backend.Generic.Runtime;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
@@ -42,10 +46,12 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.30 1999-09-11 18:24:11 cananian Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.4.1 1999-10-12 20:04:59 cananian Exp $
  */
-public class DefaultFrame extends Frame implements AllocationInfo {
+public class DefaultFrame extends harpoon.Backend.Generic.Frame
+    implements AllocationInfo {
 
+    private ClassHierarchy      m_classHierarchy;
     private AllocationStrategy  m_allocator;
     private Temp                m_nextPtr;
     private Temp                m_memLimit;
@@ -82,28 +88,33 @@ public class DefaultFrame extends Frame implements AllocationInfo {
 	throw new Error("Default constructor not impl");
     }
 
-    public DefaultFrame(OffsetMap map) {
-	this(map, null);
+    public DefaultFrame(ClassHierarchy ch, OffsetMap map) {
+	this(ch, map, null);
     }
 	
-    public DefaultFrame(OffsetMap map, AllocationStrategy st) {
+    public DefaultFrame(ClassHierarchy ch, OffsetMap map, AllocationStrategy st) {
+	m_classHierarchy = ch;
 	m_allocator   = st==null?new DefaultAllocationStrategy(this):st;
 	m_tempFactory = Temp.tempFactory("");
 	m_nextPtr     = new Temp(m_tempFactory);
 	m_memLimit    = new Temp(m_tempFactory);
 	if (map==null) throw new Error("Must specify OffsetMap");
 	else m_offsetMap = map;
-	m_runtime = new harpoon.Backend.Runtime1.Runtime();
+	m_runtime = new harpoon.Backend.Runtime1.Runtime(this, ch);
     }
 	
-    public Frame newFrame(String scope) {
-        DefaultFrame fr = new DefaultFrame(m_offsetMap, m_allocator);
+    public harpoon.Backend.Generic.Frame newFrame(String scope) {
+        DefaultFrame fr = new DefaultFrame(m_classHierarchy, m_offsetMap, m_allocator);
         fr.m_tempFactory = Temp.tempFactory(scope);
 	fr.m_nextPtr     = new Temp(fr.m_tempFactory);
 	fr.m_memLimit    = new Temp(fr.m_tempFactory);
         return fr;
     }
 
+    /** Returns a <code>Tree.Exp</code> object which represents a pointer
+     *  to a newly allocated block of memory, of the specified size.  
+     *  Generates code to handle garbage collection, and OutOfMemory errors.
+     */
     public Exp memAlloc(Exp size) {
         return m_allocator.memAlloc(size);
     }

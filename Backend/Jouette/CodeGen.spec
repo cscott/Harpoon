@@ -13,7 +13,6 @@ import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.Uop;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.Typed;
-import harpoon.Backend.Generic.DefaultFrame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Util.Util;
 import harpoon.Temp.Temp;
@@ -35,7 +34,7 @@ class JouetteCode extends Code {
     }
     public String getName() { return "jouette"; }
 }
-class JouetteFrame extends DefaultFrame {
+class JouetteFrame extends harpoon.Backend.Generic.Frame {
     public Temp regZero() { return getRegister(0); }
 }
 // end of stub classes.
@@ -45,7 +44,7 @@ class JouetteFrame extends DefaultFrame {
  * 
  * @see Appel, <U>Modern Compiler Implementation in Java</U>, pg. 196, 213-214 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.5 1999-09-11 17:57:59 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.6 1999-10-12 20:04:49 cananian Exp $
  */
 %%
 

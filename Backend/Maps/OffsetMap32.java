@@ -3,9 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Maps;
 
-import harpoon.Analysis.InterfaceMethodMap;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Backend.Analysis.DisplayInfo.HClassInfo;
+import harpoon.Backend.Analysis.InterfaceMethodMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
@@ -72,7 +72,7 @@ import java.util.StringTokenizer;
  * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.27 1999-09-11 20:06:39 cananian Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.28 1999-10-12 20:04:49 cananian Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -291,4 +291,9 @@ public class OffsetMap32 extends OffsetMap
     }    
 
     public int wordsize() { return WORDSIZE; } 
+
+    // stub for old FieldMap interface
+    abstract class FieldMap {
+	public abstract int fieldOrder(HField hf);
+    }
 }

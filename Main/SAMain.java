@@ -62,7 +62,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.33 1999-09-20 16:06:25 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.34 1999-10-12 20:04:59 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -259,7 +259,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     public static void outputClassData(HClass hclass, PrintWriter out) 
 	throws IOException {
-      for (Iterator it=frame.getRuntime().classData(frame, hclass, classHierarchy).iterator();
+      for (Iterator it=frame.getRuntime().classData(hclass).iterator();
 	     it.hasNext(); ) {
 	final Data data = (Data) it.next();
 	
@@ -272,6 +272,8 @@ public class SAMain extends harpoon.IR.Registration {
 	}		
 	
 	if (!PRE_REG_ALLOC && !LIVENESS_TEST && !REG_ALLOC) continue;
+
+	if (data.getRootElement()==null) continue; // nothing to do here.
 
 	final Instr instr = 
 	    frame.getCodeGen().gen((harpoon.IR.Tree.Data)data, new InstrFactory() {

@@ -4,9 +4,6 @@
 package harpoon.Backend.StrongARM;
 
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Backend.Allocation.AllocationInfo;
-import harpoon.Backend.Allocation.AllocationStrategy;
-import harpoon.Backend.Allocation.DefaultAllocationStrategy;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
@@ -48,11 +45,9 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.5 1999-09-20 16:06:25 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.6 1999-10-12 20:04:53 cananian Exp $
  */
-public class Frame extends harpoon.Backend.Generic.Frame implements AllocationInfo {
-    private AllocationStrategy mas;
-    private final OffsetMap offmap;
+public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
     private final RegFileInfo regFileInfo; 
     private final InstrBuilder instrBuilder;
@@ -60,27 +55,13 @@ public class Frame extends harpoon.Backend.Generic.Frame implements AllocationIn
     
     public Frame(ClassHierarchy ch) { 
 	super();
-        mas = new DefaultAllocationStrategy(this);
 	codegen = new CodeGen(this);
-	runtime = new harpoon.Backend.Runtime1.Runtime();
-	offmap = new OffsetMap32(ch);
 	regFileInfo = new RegFileInfo();
+	runtime = new harpoon.Backend.Runtime1.Runtime(this, ch);
 	instrBuilder = new InstrBuilder(regFileInfo);
     }
 
     public boolean pointersAreLong() { return false; }
-
-
-    /* Generic version of the next six methods copied from 
-     * DefaultFrame for now */
-
-    public Label exitOutOfMemory() { return new Label("_EXIT_OOM"); }
-    public Label GC()              { return new Label("_RUNTIME_GC"); }
-    public Temp  getMemLimit()     { return RegFileInfo.TP; } 
-    public Temp  getNextPtr()      { return RegFileInfo.HP; }
-    public Exp memAlloc(Exp size) { return mas.memAlloc(size); }
-    public OffsetMap getOffsetMap() { return offmap; }
-    public harpoon.Backend.Generic.Runtime getRuntime() { return runtime; }
 
 
     public Stm procPrologue(TreeFactory tf, HCodeElement src, 
@@ -144,6 +125,9 @@ public class Frame extends harpoon.Backend.Generic.Frame implements AllocationIn
 	return codegen;
     }
 
+    public harpoon.Backend.Generic.Runtime getRuntime() {
+	return runtime;
+    }
 
     public harpoon.Backend.Generic.RegFileInfo getRegFileInfo() { 
 	return regFileInfo; 

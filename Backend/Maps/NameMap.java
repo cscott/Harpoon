@@ -13,7 +13,7 @@ import harpoon.Temp.Label;
  * and fields to unique string labels legal in assembly code.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NameMap.java,v 1.1.2.5 1999-09-11 20:06:39 cananian Exp $
+ * @version $Id: NameMap.java,v 1.1.2.6 1999-10-12 20:04:49 cananian Exp $
  */
 public abstract class NameMap {
     /** Mangle a method name. */
@@ -71,6 +71,10 @@ public abstract class NameMap {
     /** Maps an <code>HClass</code> to a <code>Label</code> representing the 
      *  location of its class pointer  */
     public Label label(HClass hc) { return new Label(mangle(hc)); }
+    /** Maps an <code>HClass</code> to a <code>Label</code> representing the
+     *  class data structure associated with the given suffix. */
+    public Label label(HClass hc, String suffix)
+    { return new Label(mangle(hc, suffix)); }
     /** Maps a static <code>HField</code> to a <code>Label</code>. */
     public Label label(HField hf) { return new Label(mangle(hf)); }
     /** Maps an <code>HMethod</code> to a <code>Label</code>. Note that
@@ -81,4 +85,9 @@ public abstract class NameMap {
     public Label label(HMethod hm) { return new Label(mangle(hm)); }
     /** Maps a <code>String</code> constant to a <code>Label</code>. */
     public Label label(String stringConstant) { return new Label(mangle(stringConstant)); }
+    /** Maps a <code>String</code> constant to a <code>Label</code>
+     *  representing the string data structure associated with the given
+     *  suffix. */
+    public Label label(String stringConstant, String suffix)
+    { return new Label(mangle(stringConstant, suffix)); }
 }

@@ -21,7 +21,6 @@ import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Typed;
 import harpoon.IR.Tree.PreciselyTyped;
 import harpoon.IR.Tree.ExpList;
-import harpoon.Backend.Generic.DefaultFrame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Util.Util;
 import harpoon.Temp.Temp;
@@ -58,7 +57,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.52 1999-10-12 18:12:34 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.53 1999-10-12 20:04:53 cananian Exp $
  */
 %%
 
@@ -1328,17 +1327,33 @@ NATIVECALL(retval, func, arglist) %{
 }%
 
 DATA(CONST<i>(exp)) %{
-    emitDIRECTIVE( ROOT, ".data "+exp);
+    emitDIRECTIVE( ROOT, "\t.word "+exp.intValue());
+}%
+
+DATA(CONST<l>(exp)) %{
+    long l = exp.longValue();
+    emitDIRECTIVE( ROOT, "\t.word "+(l&0xFFFFFFFF)+" @ lsb");
+    emitDIRECTIVE( ROOT, "\t.word "+((l>>32)&0xFFFFFFFF)+" @ long "+l);
 }%
 
 DATA(CONST<f>(exp)) %{
-    emitDIRECTIVE( ROOT, ".data "+
-		   Float.floatToIntBits(exp.floatValue()) +
-		   " @ floatnum: " + exp);
+    emitDIRECTIVE( ROOT, "\t.word 0x" +
+		   Integer.toHexString(Float.floatToIntBits(exp.floatValue()))+
+		   " @ float " + exp.floatValue());
 }%
 
 DATA(CONST<p>(exp)) %{
-    emitDIRECTIVE( ROOT, ".data 0 @ null constant");
+    emitDIRECTIVE( ROOT, "\t.word 0 @ null pointer constant");
+}%
+
+DATA(CONST<s:8,u:8>(exp)) %{
+    emitDIRECTIVE( ROOT, "\t.byte "+exp);
+}%
+
+DATA(CONST<s:16,u:16>(exp)) %{
+    String chardesc = (exp.intValue()>=32 && exp.intValue()<127) ?
+	(" @ character "+((char)exp.intValue())) : "";
+    emitDIRECTIVE( ROOT, "\t.short "+exp+chardesc);
 }%
 
 DATA(NAME(l)) %{
