@@ -23,6 +23,8 @@ public class RMAScheduler extends Scheduler {
     private long currentThreadID; /* What thread was running */
     private long lastTime; /* When I last chose to start it */
 
+    private static final boolean WALLCLOCK_WORK = false; /* Use the wall clock to estimate work. */
+
     protected RMAScheduler() {
 	super();
 	setQuanta(0); // Start switching after a specified number of microseconds
@@ -120,8 +122,11 @@ public class RMAScheduler extends Scheduler {
 	    if (lastTime == 0) {
 		lastTime = startPeriod[threadID];
 	    }
-	    work[threadID]+= currentTime - lastTime; // I've done some work...
-	    lastTime = currentTime;
+	    
+	    long clock = WALLCLOCK_WORK?currentTime:(long)clock();
+	    work[threadID]+= clock - lastTime; // I've done some work...
+	    lastTime = clock;
+
 	    if (enabled[threadID]) {
 		long timeLeft = (cost[threadID] - work[threadID])*1000;
  		if ((cost[threadID]!=0)&&(timeLeft > 0)) { // I'm not done yet with the current thread, choose one (including current thread).
@@ -133,7 +138,7 @@ public class RMAScheduler extends Scheduler {
 		return currentThreadID=chooseThread2(minPeriod);
 	    }
 	} else { // Choose the first to run
-	    lastTime = currentTime;
+	    lastTime = WALLCLOCK_WORK?currentTime:(long)clock();
 	    return currentThreadID=chooseThread2(minPeriod);
 	}
     }

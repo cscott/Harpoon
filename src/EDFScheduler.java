@@ -23,6 +23,9 @@ public class EDFScheduler extends Scheduler {
     private long currentThreadID; /* What thread was running */
     private long lastTime; /* When I last chose to start it */
 
+    private static final boolean WALLCLOCK_WORK = false; 
+    /* Use the wall clock to estimate work. */
+
     protected EDFScheduler() {
 	super();
 	setQuanta(0); // Start switching after a specified number of microseconds
@@ -121,15 +124,17 @@ public class EDFScheduler extends Scheduler {
 	    // Convert from milliseconds to microseconds...
 	    minPeriod *= 1000;
 	}
+	
+	long clock = WALLCLOCK_WORK?currentTime:(long)clock();
 
 	if (currentThreadID != 0) {
 	    int threadID = (int)(currentThreadID+OFFSET);
 	    if (lastTime == 0) {
 		lastTime = startPeriod[threadID];
 	    }
-	    work[threadID]+= currentTime - lastTime; // I've done some work...
+	    work[threadID]+= clock - lastTime; // I've done some work...
 	}
-	lastTime = currentTime;
+	lastTime = clock;
 	return currentThreadID=chooseThread2(minPeriod, tid);
     }
 
