@@ -79,7 +79,7 @@ import harpoon.Util.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDXMain.java,v 1.1.2.1 2000-04-04 05:39:48 bdemsky Exp $
+ * @version $Id: EDXMain.java,v 1.1.2.2 2000-04-06 21:06:18 bdemsky Exp $
  */
 public class EDXMain extends harpoon.IR.Registration {
  
@@ -256,9 +256,11 @@ public class EDXMain extends harpoon.IR.Registration {
     public static void main(String[] args) throws IOException, ClassNotFoundException {
 	//Linker linker;
 	EDXMain.hcf=null;
+	linker=null;
 	parseOpts(args);
+	if (linker==null)
+	    linker = new Relinker(Loader.systemLinker);
 
-	linker = new Relinker(Loader.systemLinker);
 	Stage1 stage1 = new Stage1(linker); 
 	
 	// done with stage 1.
