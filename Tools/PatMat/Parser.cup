@@ -46,7 +46,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.17 1999-07-30 14:42:23 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.18 1999-08-03 21:06:39 cananian Exp $
  */
 
 action code {:
@@ -213,8 +213,11 @@ stm	::=	CALL LPAREN exp:e1 COMMA exp:e2 COMMA exp:e3 COMMA ID:id RPAREN
 		{: RESULT = new StmLabel(id); :}
 	|	MOVE opt_types:t LPAREN exp:dst COMMA exp:src RPAREN
 		{: RESULT = new StmMove(t, dst, src); :}
+	/* The following rule is for transition purposes only. */
 	|	NATIVECALL LPAREN exp:e1 COMMA exp:e2 COMMA exp:e3 COMMA ID:id RPAREN
 		{: RESULT = new StmNativeCall(e1, e2, e3, id); :}
+	|	NATIVECALL LPAREN exp:e1 COMMA exp:e2 COMMA ID:id RPAREN
+		{: RESULT = new StmNativeCall(e1, e2, id); :}
 	|	RETURN opt_types:t LPAREN exp:e RPAREN
 		{: RESULT = new StmReturn(t, e); :}
 	|	SEGMENT LPAREN sym_segtype:n RPAREN
