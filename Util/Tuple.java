@@ -3,14 +3,16 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
-
+import java.util.List;
 /**
  * A <code>Tuple</code> is an ordered list of objects that works
- * properly in Hashtables & etc.
+ * properly in Hashtables & etc.  Tuples may have <code>null</code> elements.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tuple.java,v 1.2.2.2 1999-01-22 23:34:00 cananian Exp $
+ * @version $Id: Tuple.java,v 1.2.2.3 1999-02-24 00:48:18 cananian Exp $
  */
 public class Tuple  {
     Object elements[];
@@ -22,12 +24,17 @@ public class Tuple  {
     public Object proj(int i) { return elements[i]; }
     /** Returns an enumeration of the elements of the <code>Tuple</code>. */
     public Enumeration elements() { return new ArrayEnumerator(elements); }
+    /** Returns an unmodifiable list view of the <code>tuple</code>. */
+    public List asList() {
+	return Collections.unmodifiableList(Arrays.asList(elements));
+    }
 
     /** Synthesizes a hashcode from the hashcodes of the elements. */
     public int hashCode() {
 	int hc = elements.length;
 	for (int i=0; i<elements.length; i++)
-	    hc ^= elements[i].hashCode();
+	    if (elements[i]!=null)
+		hc ^= elements[i].hashCode();
 	return hc;
     }
     /** Does an element-by-element comparison of two <code>Tuple</code>s. */
@@ -36,8 +43,11 @@ public class Tuple  {
 	Tuple t = (Tuple) obj;
 	if (this.elements.length != t.elements.length) return false;
 	for (int i=0; i<elements.length; i++)
-	    if (!this.elements[i].equals(t.elements[i]))
-		return false;
+	    if (this.elements[i]==null) {
+		if (t.elements[i]!=null) return false;
+	    } else {
+		if (!this.elements[i].equals(t.elements[i])) return false;
+	    }
 	return true;
     }
 }
