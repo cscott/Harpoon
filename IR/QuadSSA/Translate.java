@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.23 1998-09-02 20:50:43 cananian Exp $
+ * @version $Id: Translate.java,v 1.24 1998-09-02 23:10:53 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -91,6 +91,29 @@ class Translate  { // not public.
 	    stk[0] = t;
 	    return new State(stk, lv, tryBlock, monitorDepth, nest);
 	}
+	/** Make new state by changing the temp corresponding to an lv. */
+	State assignLV(int lv_index, Temp t) {
+	    Temp nlv[] = (Temp[]) lv.clone();
+	    nlv[lv_index] = t;
+	    return new State(stack, nlv, tryBlock, monitorDepth, nest);
+	}
+	/** Make new state by renaming all the Stack and Local Variable slots.
+	 */
+	State merge() {
+	    Temp stk[] = new Temp[this.stack.length];
+	    Temp nlv[] = new Temp[this.lv.length];
+	    for (int i=0; i<this.stack.length; i++)
+		if (this.stack[i] == null)
+		    stk[i] = null;
+		else
+		    stk[i] = new Temp(this.stack[i]);
+	    for (int i=0; i<this.lv.length; i++)
+		if (this.lv[i] == null)
+		    nlv[i] = null;
+		else
+		    nlv[i] = new Temp(this.lv[i]);
+	    return new State(stk, nlv, tryBlock, monitorDepth, nest);
+	}
 	/** Make new state by exiting innermost try/catch context. */
 	State exitTry() {
 	    ExceptionEntry tb[] = (ExceptionEntry[]) shrink(this.tryBlock);
@@ -127,12 +150,6 @@ class Translate  { // not public.
 	    Util.assert(monitorDepth>0);
 	    BlockContext ns[] = (BlockContext[]) shrink(this.nest);
 	    return new State(stack, lv, tryBlock, monitorDepth-1, ns);
-	}
-	/** Make new state by changing the temp corresponding to an lv. */
-	State assignLV(int lv_index, Temp t) {
-	    Temp nlv[] = (Temp[]) lv.clone();
-	    nlv[lv_index] = t;
-	    return new State(stack, nlv, tryBlock, monitorDepth, nest);
 	}
 	/** Initialize state with temps corresponding to parameters. */
 	State(Temp[] locals) {
@@ -206,10 +223,17 @@ class Translate  { // not public.
     }
     /** Keep track of MERGE instrs and the PHI quads that they correspond to.*/
     static class MergeMap {
-	private Hashtable map;
-	MergeMap() { map = new Hashtable(); }
-	void put(InMerge in, PHI phi) { map.put(in, phi); }
-	PHI get(InMerge in) { return (PHI) map.get(in); }
+	private Hashtable phimap, predmap;
+	MergeMap() { 
+	    phimap = new Hashtable(); 
+	    predmap= new Hashtable();
+	}
+	void put(InMerge in, PHI phi, int which_pred) 
+	{ phimap.put(in, phi); predmap.put(in, new Integer(which_pred)); }
+	PHI getPhi(InMerge in) 
+	{ return (PHI) phimap.get(in); }
+	int getPred(InMerge in) 
+	{ return ((Integer) predmap.get(in)).intValue(); }
     }
 
     /** Return a <code>Quad</code> representation of the method code in
@@ -962,7 +986,36 @@ class Translate  { // not public.
      * Translate a single <Code>InMerge</code> using a <code>MergeMap</code>.
      */
     static final TransState[] transInMerge(MergeMap mm, TransState ts) {
-	return null;
+	InMerge in = (InMerge) ts.in;
+	State s = ts.initialState; // abbreviation.
+	TransState[] result = new TransState[0]; // eventual result.
+
+	// First, look up the InMerge in the MergeMap.
+	PHI phi = mm.getPhi(in);
+	if (phi==null) {
+	    // Create new State.
+	    State ns = s.merge();
+	    // Create list of all local variables and stack slots.
+	    Temp nt[] = collateTemps(ns);
+	    phi = new PHI(in, nt, in.arity());
+	    mm.put(in, phi, 0);
+	    // Create new state & keep it around.
+	    result = new TransState[] { new TransState(ns, in.next()[0],
+						       phi, 0) };
+	}
+	// Look up the edge to use.
+	int which_pred = mm.getPred(in);
+	// Set up one argument to phi function.
+	Temp nt[] = collateTemps(s);
+	Util.assert(phi.dst.length == nt.length);
+	for (int i=0; i<phi.dst.length; i++)
+	    phi.src[i][which_pred] = nt[i];
+	// link
+	Quad.addEdge(ts.header, ts.which_succ, phi, which_pred);
+	// increment which_pred
+	mm.put(in, phi, which_pred+1);
+	// done
+	return result;
     }
     /** Translate a single <code>InCti</code>. */
     static final TransState[] transInCti(TransState ts) {
@@ -1046,5 +1099,25 @@ class Translate  { // not public.
 	    }
 	}
 	return newTry; // null if can't find.
+    }
+    /** Count non-null entries in an array. */
+    private static final int countNonNull(Object[] oa) {
+	int r=0;
+	for (int i=0; i<oa.length; i++)
+	    if (oa[i]!=null) r++;
+	return r;
+    }
+    /** Combine stack and local variables in single Temp array. */
+    private static final Temp[] collateTemps(State s) {
+	Temp t[] = new Temp[countNonNull(s.stack)+countNonNull(s.lv)];
+	int j=0;
+	for (int i=0; i<s.stack.length; i++)
+	    if (s.stack[i]!=null)
+		t[j++] = s.stack[i];
+	for (int i=0; i<s.lv.length; i++)
+	    if (s.lv[i]!=null)
+		t[j++] = s.lv[i];
+	Util.assert(t.length == j);
+	return t;
     }
 }
