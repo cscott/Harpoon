@@ -7,6 +7,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
+import harpoon.Util.ArrayFactory;
 import harpoon.Util.Set;
 
 import java.util.Hashtable;
@@ -22,7 +23,7 @@ import java.util.Vector;
  * it. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: UseMap.java,v 1.1.2.2 1999-02-01 17:24:02 pnkfelix Exp $
+ * @version $Id: UseMap.java,v 1.1.2.3 1999-02-12 21:41:07 pnkfelix Exp $
  */
 public class UseMap extends TempToHceArrayMap {
     
@@ -37,23 +38,42 @@ public class UseMap extends TempToHceArrayMap {
 			     analysis during construction.
     */
     public UseMap( HCode hc ) {
-        super(hc);
-	analyze();
+        super(hc.elementArrayFactory());
+	analyze(hc.getElements());
     }
+    
+    /** Creates a <code>UseMap</code> for <code>hc</code>.
+	
+	<BR> NOTE: look into adding <code>getFactory</code> method to
+	the <code>HCodeElement</code> interface, so that I can get rid
+	of the second requirement.
+	
+	<BR> <B>requires:</B> <code>hces</code> is an instance of
+	                      <code>harpoon.IR.Properties.UseDef[]</code>,
+			      <code>arrayFact</code> produces
+			      arrays typed to store objects of the
+			      type stored in <code>hces</code>.
+			      
+	<BR> <B>effects:</B> creates a <code>UseMap</code> for
+	                     <code>hces</code>, performing the necessary
+			     analysis during construction.			     
+    */
+    public UseMap( ArrayFactory arrayFact, HCodeElement[] hces ) {
+        super(arrayFact);
+	analyze(hces);
+    }
+
     
     /* Helper method for analysis of <code>this.hcode</code> during
        construction.  
-       <BR> <B>requires:</B> <code>hc</code>'s internal representation
-                             implements
-			     <code>harpoon.IR.Properties.UseDef</code>.  
+       <BR> <B>requires:</B> <code>hces</code> is an instance of 
+	                     <code>harpoon.IR.Properties.UseDef[]</code>. 
        <BR> <B>effects:</B> performs Variable->Use analysis on
-                            the <code>HCode</code> associated with
-			    <code>this</code>.   
+                            the <code>hces</code>.
     */
-    private void analyze() {
-	HCodeElement[] hces = hcode.getElements();
+    private void analyze(HCodeElement[] hces) {
 	Util.assert(hces instanceof harpoon.IR.Properties.UseDef[],
-		    hcode.getName() + " does not implement UseDef");
+		    "HCodeElement array in UseMap must implement UseDef.");
 	harpoon.IR.Properties.UseDef[] udl = 
 	    (harpoon.IR.Properties.UseDef[]) hces;
 
@@ -86,8 +106,8 @@ public class UseMap extends TempToHceArrayMap {
     public HCodeElement[] useMap(Temp t) {
 	HCodeElement[] r = extractTempMapping(t);
 	return (r == null) ? 
-	    (HCodeElement[]) hcode.elementArrayFactory().newArray(0) :
-	    (HCodeElement[]) Util.safeCopy(hcode.elementArrayFactory(), r);
+	    (HCodeElement[]) arrayFact.newArray(0) :
+	    (HCodeElement[]) Util.safeCopy(arrayFact, r);
     }
     
     /** Returns an array of all <code>Temp</code> used in the

@@ -6,6 +6,7 @@ package harpoon.Analysis;
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCode;
+import harpoon.Util.ArrayFactory;
 import harpoon.Util.Set;
 import harpoon.Util.HashSet;
 
@@ -16,20 +17,29 @@ import java.util.Hashtable;
  * arrays of <code>HCodeElement</code>s
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: TempToHceArrayMap.java,v 1.1.2.3 1999-02-03 23:10:40 pnkfelix Exp $
+ * @version $Id: TempToHceArrayMap.java,v 1.1.2.4 1999-02-12 21:41:07 pnkfelix Exp $
  */
 abstract class TempToHceArrayMap {
-    
-    protected HCode hcode; // need to have an hcode object to convert
-                           // sets 
+
+    // need to have an array factory to convert sets
+    protected ArrayFactory arrayFact; 
 
     private Hashtable map;
 
-    /** Constructs a TempToHceArrayMap with <code>hc</code> for its
-	<code>HCode</code>. 
+    /** Constructs a TempToHceArrayMap with
+	<code>hc.elementArrayFactory()</code> as its associated
+	<code>ArrayFactory</code>. 
      */
     TempToHceArrayMap(HCode hc) {
-	this.hcode = hc;
+	this.arrayFact = hc.elementArrayFactory();
+	map = new Hashtable();
+    }
+
+    /** Constructs a TempToHceArrayMap with <code>fact</code> as its
+	associated <code>ArrayFactory</code>.
+     */
+    TempToHceArrayMap(ArrayFactory fact) {
+	this.arrayFact = fact;
 	map = new Hashtable();
     }
 
@@ -59,7 +69,8 @@ abstract class TempToHceArrayMap {
     */
     protected HCodeElement[] setToHces(Set s) {
 	HCodeElement[] hcel = 
-	    (HCodeElement[]) hcode.elementArrayFactory().newArray(s.size()); 
+	    (HCodeElement[]) arrayFact.newArray(s.size()); 
+	  
 	s.copyInto(hcel);
 	return hcel;
 

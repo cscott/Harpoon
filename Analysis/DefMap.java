@@ -24,7 +24,7 @@ import java.util.Vector;
  * with it. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: DefMap.java,v 1.1.2.3 1999-02-01 19:13:36 pnkfelix Exp $
+ * @version $Id: DefMap.java,v 1.1.2.4 1999-02-12 21:41:07 pnkfelix Exp $
  */
 public class DefMap extends TempToHceArrayMap {
 
@@ -40,22 +40,20 @@ public class DefMap extends TempToHceArrayMap {
     */
     public DefMap( HCode hc ) {
 	super(hc);
-	analyze();
+	analyze(hc.getElements());
     }
     
     /* Helper method for analysis of <code>this.hcode</code> during
        construction.  
-       <BR> <B>requires:</B> <code>hc</code>'s internal representation
-                             implements
-			     <code>harpoon.IR.Properties.UseDef</code>.  
+       <BR> <B>requires:</B> <code>hces</code> instanceof
+                             <code>harpoon.IR.Properties.UseDef[]</code>.
        <BR> <B>effects:</B> performs Variable->Def analysis on
                             the <code>HCode</code> associated with
 			    <code>this</code>.
     */
-    private void analyze() {
-	HCodeElement[] hces = hcode.getElements();
+    private void analyze(HCodeElement[] hces) {
 	Util.assert(hces instanceof harpoon.IR.Properties.UseDef[],
-		    hcode.getName() + " does not implement UseDef");
+		    "HCodeElement array in DefMap must implement UseDef.");
 	harpoon.IR.Properties.UseDef[] udl = 
 	    (harpoon.IR.Properties.UseDef[]) hces;
 
@@ -89,8 +87,8 @@ public class DefMap extends TempToHceArrayMap {
     public HCodeElement[] defMap(Temp t) {
 	HCodeElement[] r = extractTempMapping(t);
 	return (r == null) ? 
-	    (HCodeElement[]) hcode.elementArrayFactory().newArray(0) :
-	    (HCodeElement[]) Util.safeCopy(hcode.elementArrayFactory(), r);
+	    (HCodeElement[]) arrayFact.newArray(0) :
+	    (HCodeElement[]) Util.safeCopy(arrayFact, r);
     }
     
     /** Returns an array of all <code>Temp</code> defined in the
