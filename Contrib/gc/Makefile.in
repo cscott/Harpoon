@@ -1,4 +1,6 @@
-# Generated automatically from Makefile.in by configure.
+# This is the original manually generated Makefile.  It may stil be used
+# to build the collector.
+#
 # Primary targets:
 # gc.a - builds basic library
 # c++ - adds C++ interface to library
@@ -26,6 +28,8 @@ CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_
 
 # To build the parallel collector on Linux, add to the above:
 # -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
+# To build the parallel collector n a static library on HP/UX, add to the above:
+# -DGC_HPUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC -DUSE_HPUX_TLS -D_POSIX_C_SOURCE=199506L
 
 # HOSTCC and HOSTCFLAGS are used to build executables that will be run as
 # part of the build process, i.e. on the build machine.  These will usually
@@ -54,7 +58,7 @@ HOSTCFLAGS=$(CFLAGS)
 #   Define SOLARIS_THREADS as well.
 # -DGC_IRIX_THREADS enables support for Irix pthreads.  See README.irix.
 # -DGC_HPUX_THREADS enables support for HP/UX 11 pthreads.
-#   Also requires -D_REENTRANT. See README.hp.
+#   Also requires -D_REENTRANT or -D_POSIX_C_SOURCE=199506L. See README.hp.
 # -DGC_LINUX_THREADS enables support for Xavier Leroy's Linux threads.
 #   see README.linux.  -D_REENTRANT may also be required.
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
@@ -205,6 +209,9 @@ HOSTCFLAGS=$(CFLAGS)
 #   These may otherwise alter its configuration, or turn off GC altogether.
 #   I don't know of a reason to disable this, except possibly if the
 #   resulting process runs as a privileged user?
+# -DSTUBBORN_ALLOC allows allocation of "hard to change" objects, and thus
+#   makes incremental collection easier.  Was enabled by default until 6.0.
+#   Rarely used, to my knowledge.
 #
 
 CXXFLAGS= $(CFLAGS) 
@@ -225,8 +232,8 @@ CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     sparc_mach_dep.s include/gc.h include/gc_typed.h \
     include/private/gc_hdrs.h include/private/gc_priv.h \
-    include/private/gcconfig.h include/private/gc_mark.h \
-    include/gc_inl.h include/gc_inline.h \
+    include/private/gcconfig.h include/private/gc_pmark.h \
+    include/gc_inl.h include/gc_inline.h include/gc_mark.h \
     threadlibs.c if_mach.c if_not_there.c gc_cpp.cc include/gc_cpp.h \
     include/weakpointer.h include/private/gc_locks.h \
     gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h \
@@ -250,12 +257,12 @@ DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 	tests/leak_test.c tests/thread_leak_test.c
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
-           setjmp_t.c SMakefile.amiga \
+           setjmp_t.c SMakefile.amiga configure.in Makefile.am \
            callprocs pc_excludes \
-           MacProjects.sit.hqx MacOS.c EMX_MAKEFILE makefile.depend \
+           MacProjects.sit.hqx MacOS.c EMX_MAKEFILE \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-           add_gc_prefix.c \
+           add_gc_prefix.c gc_cpp.cpp \
 	   win32_threads.c NT_THREADS_MAKEFILE gc.mak Makefile.dj \
 	   version.h Makefile.DLLs WCC_MAKEFILE AmigaOS.c $(TESTS)
 
@@ -307,7 +314,7 @@ $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
 # options such as -DSILENT affects the size of GC_arrays,
 # invalidating all .o files that rely on gc_priv.h
 
-mark.o typd_mlc.o finalize.o: $(srcdir)/include/private/gc_mark.h
+mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h $(srcdir)/include/private/gc_pmark.h
 
 specific.o linux_threads.o user_threads.o: $(srcdir)/include/private/specific.h
 
@@ -419,9 +426,6 @@ mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ul
 	./if_mach SPARC SUNOS4 $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC OPENBSD $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
 	./if_mach SPARC NETBSD $(AS) -o mach_dep.o $(srcdir)/sparc_netbsd_mach_dep.s
-	./if_mach HP_PA HPUX $(AS) -o hpux_test_and_clear.o $(srcdir)/hpux_test_and_clear.s
-	./if_mach HP_PA HPUX $(CC) -c -o md_tmp.o $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
-	./if_mach HP_PA HPUX ld -r -o mach_dep.o md_tmp.o hpux_test_and_clear.o
 	./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 
 mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
@@ -478,7 +482,7 @@ if_not_there: $(srcdir)/if_not_there.c
 	$(HOSTCC) $(HOSTCFLAGS) -o if_not_there $(srcdir)/if_not_there.c
 
 clean: 
-	rm -f gc.a *.o gctest gctest_dyn_link test_cpp \
+	rm -f gc.a *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
 	      setjmp_test  mon.out gmon.out a.out core if_not_there if_mach \
 	      threadlibs $(CORD_OBJS) cord/cordtest cord/de
 	-rm -f *~

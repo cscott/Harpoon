@@ -20,8 +20,7 @@
 #endif
 
 #define I_HIDE_POINTERS	/* To make GC_call_with_alloc_lock visible */
-#include "private/gc_priv.h"
-#include "private/gc_mark.h"
+#include "private/gc_pmark.h"
 
 #ifdef SOLARIS_THREADS
 # include <sys/syscall.h>
@@ -86,7 +85,13 @@ void (*GC_start_call_back) GC_PROTO((void)) = (void (*) GC_PROTO((void)))0;
 
 ptr_t GC_stackbottom = 0;
 
+#ifdef IA64
+  ptr_t GC_register_stackbottom = 0;
+#endif
+
 GC_bool GC_dont_gc = 0;
+
+GC_bool GC_dont_precollect = 0;
 
 GC_bool GC_quiet = 0;
 
@@ -268,7 +273,8 @@ ptr_t arg;
     register word sp = (word)GC_approx_sp();  /* Hotter than actual sp */
 #   ifdef THREADS
         word dummy[SMALL_CLEAR_SIZE];
-	unsigned random_no = 0;  /* Should be more random than it is ... */
+	static unsigned random_no = 0;
+       			 	 /* Should be more random than it is ... */
 				 /* Used to occasionally clear a bigger	 */
 				 /* chunk.				 */
 #   endif
@@ -445,9 +451,21 @@ void GC_init()
 
 extern void GC_setpagesize();
 
+#ifdef UNIX_LIKE
+
+extern void GC_set_and_save_fault_handler GC_PROTO((void (*handler)(int)));
+
+static void looping_handler(sig)
+int sig;
+{
+    GC_err_printf1("Caught signal %d: looping in handler\n", sig);
+    for(;;);
+}
+#endif
+
 void GC_init_inner()
 {
-#   ifndef THREADS
+#   if !defined(THREADS) && defined(GC_ASSERTIONS)
         word dummy;
 #   endif
     word initial_heap_sz = (word)MINHINCR;
@@ -468,9 +486,14 @@ void GC_init_inner()
     if (0 != GETENV("GC_DONT_GC")) {
       GC_dont_gc = 1;
     }
+#   ifdef UNIX_LIKE
+      if (0 != GETENV("GC_LOOP_ON_ABORT")) {
+        GC_set_and_save_fault_handler(looping_handler);
+      }
+#   endif
     /* Adjust normal object descriptor for extra allocation.	*/
-    if (ALIGNMENT > DS_TAGS && EXTRA_BYTES != 0) {
-      GC_obj_kinds[NORMAL].ok_descriptor = ((word)(-ALIGNMENT) | DS_LENGTH);
+    if (ALIGNMENT > GC_DS_TAGS && EXTRA_BYTES != 0) {
+      GC_obj_kinds[NORMAL].ok_descriptor = ((word)(-ALIGNMENT) | GC_DS_LENGTH);
     }
 #   if defined(MSWIN32) || defined(MSWINCE)
 	InitializeCriticalSection(&GC_write_cs);
@@ -486,7 +509,6 @@ void GC_init_inner()
  	GC_init_win32();
 #   endif
 #   if defined(SEARCH_FOR_DATA_START)
-	/* This doesn't really work if the collector is in a shared library. */
 	GC_init_linux_data_start();
 #   endif
 #   if defined(NETBSD) && defined(__ELF__)
@@ -505,6 +527,9 @@ void GC_init_inner()
        || defined(HPUX_THREADS)
       if (GC_stackbottom == 0) {
 	GC_stackbottom = GC_get_stack_base();
+#       if defined(LINUX) && defined(IA64)
+	  GC_register_stackbottom = GC_get_register_stack_base();
+#       endif
       }
 #   endif
     GC_ASSERT(sizeof (ptr_t) == sizeof(word));
@@ -573,7 +598,7 @@ void GC_init_inner()
       GC_pcr_install();
 #   endif
     /* Get black list set up */
-      GC_gcollect_inner();
+      if (!GC_dont_precollect) GC_gcollect_inner();
     GC_is_initialized = TRUE;
 #   ifdef STUBBORN_ALLOC
     	GC_stubborn_init();

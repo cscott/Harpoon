@@ -486,17 +486,7 @@ ptr_t GC_get_stack_base()
 #   undef GC_AMIGA_SB
 # endif /* AMIGA */
 
-# ifdef NEED_FIND_LIMIT
-  /* Some tools to implement HEURISTIC2	*/
-#   define MIN_PAGE_SIZE 256	/* Smallest conceivable page size, bytes */
-    /* static */ jmp_buf GC_jmp_buf;
-    
-    /*ARGSUSED*/
-    void GC_fault_handler(sig)
-    int sig;
-    {
-        longjmp(GC_jmp_buf, 1);
-    }
+# if defined(NEED_FIND_LIMIT) || defined(UNIX_LIKE)
 
 #   ifdef __STDC__
 	typedef void (*handler)(int);
@@ -513,12 +503,17 @@ ptr_t GC_get_stack_base()
         static handler old_segv_handler, old_bus_handler;
 #   endif
     
-    void GC_setup_temporary_fault_handler()
+#   ifdef __STDC__
+      void GC_set_and_save_fault_handler(handler h)
+#   else
+      void GC_set_and_save_fault_handler(h)
+      handler h;
+#   endif
     {
 #	if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1)
 	  struct sigaction	act;
 
-	  act.sa_handler	= GC_fault_handler;
+	  act.sa_handler	= h;
           act.sa_flags          = SA_RESTART | SA_NODEFER;
           /* The presence of SA_NODEFER represents yet another gross    */
           /* hack.  Under Solaris 2.3, siglongjmp doesn't appear to     */
@@ -543,11 +538,29 @@ ptr_t GC_get_stack_base()
 #		endif
 #	  endif	/* IRIX_THREADS */
 #	else
-    	  old_segv_handler = signal(SIGSEGV, GC_fault_handler);
+    	  old_segv_handler = signal(SIGSEGV, h);
 #	  ifdef SIGBUS
-	    old_bus_handler = signal(SIGBUS, GC_fault_handler);
+	    old_bus_handler = signal(SIGBUS, h);
 #	  endif
 #	endif
+    }
+# endif /* NEED_FIND_LIMIT || UNIX_LIKE */
+
+# ifdef NEED_FIND_LIMIT
+  /* Some tools to implement HEURISTIC2	*/
+#   define MIN_PAGE_SIZE 256	/* Smallest conceivable page size, bytes */
+    /* static */ jmp_buf GC_jmp_buf;
+    
+    /*ARGSUSED*/
+    void GC_fault_handler(sig)
+    int sig;
+    {
+        longjmp(GC_jmp_buf, 1);
+    }
+
+    void GC_setup_temporary_fault_handler()
+    {
+	GC_set_and_save_fault_handler(GC_fault_handler);
     }
     
     void GC_reset_fault_handler()
@@ -608,6 +621,26 @@ ptr_t GC_get_stack_base()
 # define STAT_SKIP 27   /* Number of fields preceding startstack	*/
 			/* field in /proc/self/stat			*/
 
+# pragma weak __libc_stack_end
+  extern ptr_t __libc_stack_end;
+
+# ifdef IA64
+#   pragma weak __libc_ia64_register_backing_store_base
+    extern ptr_t __libc_ia64_register_backing_store_base;
+
+    ptr_t GC_get_register_stack_base(void)
+    {
+      if (0 != &__libc_ia64_register_backing_store_base) {
+	return __libc_ia64_register_backing_store_base;
+      } else {
+	word result = (word)GC_stackbottom - BACKING_STORE_DISPLACEMENT;
+	result += BACKING_STORE_ALIGNMENT - 1;
+	result &= ~(BACKING_STORE_ALIGNMENT - 1);
+	return (ptr_t)result;
+      }
+    }
+# endif
+
   ptr_t GC_linux_stack_base(void)
   {
     /* We read the stack base value from /proc/self/stat.  We do this	*/
@@ -625,6 +658,10 @@ ptr_t GC_get_stack_base()
     word result = 0;
     size_t i, buf_offset = 0;
 
+    /* First try the easy way.  This should work for glibc 2.2	*/
+      if (0 != &__libc_stack_end) {
+	return __libc_stack_end;
+      }
     f = open("/proc/self/stat", O_RDONLY);
     if (f < 0 || STAT_READ(f, stat_buf, STAT_BUF_SIZE) < 2 * STAT_SKIP) {
 	ABORT("Couldn't read /proc/self/stat");
@@ -656,7 +693,6 @@ ptr_t GC_get_stack_base()
 
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/syscts.h>
 #include <sys/sysctl.h>
 
   ptr_t GC_freebsd_stack_base(void)
@@ -1466,8 +1502,7 @@ void GC_unmap_gap(ptr_t start1, word bytes1, ptr_t start2, word bytes2)
 
 /* Routine for pushing any additional roots.  In THREADS 	*/
 /* environment, this is also responsible for marking from 	*/
-/* thread stacks.  In the SRC_M3 case, it also handles		*/
-/* global variables.						*/
+/* thread stacks. 						*/
 #ifndef THREADS
 void (*GC_push_other_roots)() = 0;
 #else /* THREADS */
@@ -1522,6 +1557,10 @@ void GC_default_push_other_roots GC_PROTO((void))
     --> misconfigured
 # endif
 
+void GC_push_thread_structures GC_PROTO((void))
+{
+    /* Not our responsibibility. */
+}
 
 extern void ThreadF__ProcessStacks();
 
@@ -1539,37 +1578,19 @@ int dummy3;
 {
     word q = *p;
     
-    if ((ptr_t)(q) >= GC_least_plausible_heap_addr
-	 && (ptr_t)(q) < GC_greatest_plausible_heap_addr) {
-	 GC_push_one_checked(q,FALSE);
-    }
+    GC_PUSH_ONE_STACK(q, p);
 }
 
 /* M3 set equivalent to RTHeap.TracedRefTypes */
 typedef struct { int elts[1]; }  RefTypeSet;
 RefTypeSet GC_TracedRefTypes = {{0x1}};
 
-/* From finalize.c */
-extern void GC_push_finalizer_structures();
-
-/* From stubborn.c: */
-# ifdef STUBBORN_ALLOC
-    extern GC_PTR * GC_changing_list_start;
-# endif
-
-
 void GC_default_push_other_roots GC_PROTO((void))
 {
-    /* Use the M3 provided routine for finding static roots.	*/
-    /* This is a bit dubious, since it presumes no C roots.	*/
-    /* We handle the collector roots explicitly.		*/
-       {
-# 	 ifdef STUBBORN_ALLOC
-           GC_push_one(GC_changing_list_start);
-#	 endif
-      	 GC_push_finalizer_structures();
-      	 RTMain__GlobalMapProc(GC_m3_push_root, 0, GC_TracedRefTypes);
-       }
+    /* Use the M3 provided routine for finding static roots.	 */
+    /* This is a bit dubious, since it presumes no C roots.	 */
+    /* We handle the collector roots explicitly in GC_push_roots */
+      	RTMain__GlobalMapProc(GC_m3_push_root, 0, GC_TracedRefTypes);
 	if (GC_words_allocd > 0) {
 	    ThreadF__ProcessStacks(GC_push_thread_stack);
 	}
@@ -1787,7 +1808,7 @@ struct hblk *h;
 #   if defined(ALPHA) || defined(M68K)
       typedef void (* REAL_SIG_PF)(int, int, s_c *);
 #   else
-#     if defined(IA64)
+#     if defined(IA64) || defined(HP_PA)
         typedef void (* REAL_SIG_PF)(int, siginfo_t *, s_c *);
 #     else
         typedef void (* REAL_SIG_PF)(int, s_c);
@@ -2018,7 +2039,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #   if defined(ALPHA) || defined(M68K)
       void GC_write_fault_handler(int sig, int code, s_c * sc)
 #   else
-#     if defined(IA64)
+#     if defined(IA64) || defined(HP_PA)
         void GC_write_fault_handler(int sig, siginfo_t * si, s_c * scp)
 #     else
         void GC_write_fault_handler(int sig, s_c sc)
@@ -2112,7 +2133,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #	  ifdef ALPHA
             char * addr = get_fault_addr(sc);
 #	  else
-#	    ifdef IA64
+#	    if defined(IA64) || defined(HP_PA)
 	      char * addr = si -> si_addr;
 	      /* I believe this is claimed to work on all platforms for	*/
 	      /* Linux 2.3.47 and later.  Hopefully we don't have to	*/
@@ -2182,7 +2203,7 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #		    if defined(ALPHA) || defined(M68K)
 		        (*(REAL_SIG_PF)old_handler) (sig, code, sc);
 #		    else 
-#		      if defined(IA64)
+#		      if defined(IA64) || defined(HP_PA)
 		        (*(REAL_SIG_PF)old_handler) (sig, si, scp);
 #		      else
 		        (*(REAL_SIG_PF)old_handler) (sig, sc);
@@ -2446,7 +2467,8 @@ word len;
     	      ((ptr_t)end_block - (ptr_t)start_block) + HBLKSIZE);
 }
 
-#if !defined(MSWIN32) && !defined(MSWINCE) && !(defined(LINUX_THREADS)||defined(USER_THREADS))
+#if !defined(MSWIN32) && !defined(MSWINCE) && !(defined(LINUX_THREADS)||defined(USER_THREADS)) \
+    && !defined(GC_USE_LD_WRAP)
 /* Replacement for UNIX system call.	 */
 /* Other calls that write to the heap	 */
 /* should be handled similarly.		 */

@@ -2,7 +2,7 @@
  * Copyright (c) 1994 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1996 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1998 by Fergus Henderson.  All rights reserved.
- * Copyright (c) 2000 by Hewlett-Packard Company.  All rights reserved.
+ * Copyright (c) 2000-2001 by Hewlett-Packard Company.  All rights reserved.
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -56,13 +56,20 @@
 
 # include "private/gc_priv.h"
 # ifdef THREAD_LOCAL_ALLOC
-#   ifndef USE_PTHREAD_SPECIFIC
+#   if !defined(USE_PTHREAD_SPECIFIC) && !defined(USE_HPUX_TLS)
 #     include "private/specific.h"
-#   else
+#   endif
+#   if defined(USE_PTHREAD_SPECIFIC)
 #     define GC_getspecific pthread_getspecific
 #     define GC_setspecific pthread_setspecific
 #     define GC_key_create pthread_key_create
-#     define GC_key_t pthread_key_t
+      typedef pthread_key_t GC_key_t;
+#   endif
+#   if defined(USE_HPUX_TLS)
+#     define GC_getspecific(x) (x)
+#     define GC_setspecific(key, v) ((key) = (v), 0)
+#     define GC_key_create(key, d) 0
+      typedef void * GC_key_t;
 #   endif
 # endif
 # include <stdlib.h>
@@ -190,11 +197,18 @@ GC_thread GC_lookup_thread(pthread_t id);
 static GC_bool fully_initialized = FALSE;
 
 # if defined(__GNUC__)
-  void GC_full_init() __attribute__ ((constructor));
+    void GC_full_init() __attribute__ ((constructor));
+# else
+    void GC_full_init();
 # endif
 
-# ifdef THREAD_LOCAL_ALLOC
+# if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
 
+/* We don't really support thread-local allocation with DBG_HDRS_ALL */
+
+#ifdef USE_HPUX_TLS
+  __thread
+#endif
 GC_key_t GC_thread_key;
 
 static GC_bool keys_initialized;
@@ -283,7 +297,8 @@ GC_PTR GC_local_malloc(size_t bytes)
 	GC_key_t k = GC_thread_key;
 	void * tsd;
 
-#	if defined(REDIRECT_MALLOC) && !defined(USE_PTHREAD_SPECIFIC)
+#	if defined(REDIRECT_MALLOC) && !defined(USE_PTHREAD_SPECIFIC) \
+	   || !defined(__GNUC__)
 	    if (EXPECT(0 == k, 0)) {
 		/* This can happen if we get called when the world is	*/
 		/* being initialized.  Whether we can actually complete	*/
@@ -393,7 +408,7 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 
 #endif /* GC_GCJ_SUPPORT */
 
-# else  /* !THREAD_LOCAL_ALLOC */
+# else  /* !THREAD_LOCAL_ALLOC  && !DBG_HDRS_ALL */
 
 #   define GC_destroy_thread_local(t)
 
@@ -454,7 +469,9 @@ long GC_nprocs = 1;	/* Number of processors.  We may not have	*/
 
 #ifdef PARALLEL_MARK
 
-#define MAX_MARKERS 16
+# ifndef MAX_MARKERS
+#   define MAX_MARKERS 16
+# endif
 
 static ptr_t marker_sp[MAX_MARKERS] = {0};
 
@@ -499,8 +516,10 @@ static void start_mark_threads()
 	WARN("Limiting number of mark threads\n", 0);
 	GC_markers = MAX_MARKERS;
     }
-    pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    if (0 != pthread_attr_init(&attr)) ABORT("pthread_attr_init failed");
+	
+    if (0 != pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
+	ABORT("pthread_attr_setdetachstate failed");
 #   ifdef CONDPRINT
       if (GC_print_stats) {
 	GC_printf1("Starting %ld marker threads\n", GC_markers - 1);
@@ -509,7 +528,7 @@ static void start_mark_threads()
     for (i = 0; i < GC_markers - 1; ++i) {
       if (0 != PTHREAD_CREATE(GC_mark_threads + i, &attr,
 			      GC_mark_thread, (void *)(word)i)) {
-	WARN("Marker thread creation failed.\n", 0);
+	WARN("Marker thread creation failed, errno = %ld.\n", errno);
       }
     }
 }
@@ -629,6 +648,11 @@ GC_bool GC_thr_initialized = FALSE;
 
 # define THREAD_TABLE_SZ 128	/* Must be power of 2	*/
 volatile GC_thread GC_threads[THREAD_TABLE_SZ];
+
+void GC_push_thread_structures GC_PROTO((void))
+{
+    GC_push_all((ptr_t)(GC_threads), (ptr_t)(GC_threads)+sizeof(GC_threads));
+}
 
 /* Add a thread to GC_threads.  We assume it wasn't already there.	*/
 /* Caller holds allocation lock.					*/
@@ -899,6 +923,7 @@ int GC_segment_is_thread_stack(ptr_t lo, ptr_t hi)
 }
 #endif /* USE_PROC_FOR_LIBRARIES */
 
+#ifdef LINUX_THREADS
 /* Return the number of processors, or i<= 0 if it can't be determined.	*/
 int GC_get_nprocs()
 {
@@ -934,6 +959,7 @@ int GC_get_nprocs()
     }
     return result;
 }
+#endif /* LINUX_THREADS */
 
 /* We hold the allocation lock.	*/
 void GC_thr_init()
@@ -991,9 +1017,13 @@ void GC_thr_init()
 	if (nprocs_string != NULL) GC_nprocs = atoi(nprocs_string);
       }
       if (GC_nprocs <= 0) {
-#       if defined(HPUX_THREADS) || defined(GC_OSF1_THREADS)
+#       if defined(HPUX_THREADS)
+	  GC_nprocs = pthread_num_processors_np();
+#       endif
+#       if defined(OSF1_THREADS)
           GC_nprocs = 1;
-#	else
+#       endif
+#	ifdef LINUX_THREADS
           GC_nprocs = GC_get_nprocs();
 #	endif
       }
@@ -1042,7 +1072,7 @@ void GC_full_init()
         if (GC_parallel) start_mark_threads();
 #     endif
     /* Initialize thread local free lists if used.	*/
-#   ifdef THREAD_LOCAL_ALLOC
+#   if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
       LOCK();
       GC_init_thread_local(GC_lookup_thread(pthread_self()));
       UNLOCK();
@@ -1138,7 +1168,8 @@ void GC_thread_exit_proc(void *arg)
     } else {
 	me -> flags |= FINISHED;
     }
-#   if defined(THREAD_LOCAL_ALLOC) && !defined(USE_PTHREAD_SPECIFIC)
+#   if defined(THREAD_LOCAL_ALLOC) && !defined(USE_PTHREAD_SPECIFIC) \
+       && !defined(USE_HPUX_TLS) && !defined(DBG_HDRS_ALL)
       GC_remove_specific(GC_thread_key);
 #   endif
     if (GC_incremental && GC_collection_in_progress()) {
@@ -1252,7 +1283,7 @@ void * GC_start_routine(void * arg)
     sem_post(&(si -> registered));	/* Last action on si.	*/
     					/* OK to deallocate.	*/
     pthread_cleanup_push(GC_thread_exit_proc, 0);
-#   ifdef THREAD_LOCAL_ALLOC
+#   if defined(THREAD_LOCAL_ALLOC) && !defined(DBG_HDRS_ALL)
  	LOCK();
         GC_init_thread_local(me);
 	UNLOCK();
@@ -1280,11 +1311,13 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     pthread_t my_new_thread;
     int detachstate;
     word my_flags = 0;
-    struct start_info * si = GC_malloc(sizeof(struct start_info)); 
+    struct start_info * si; 
 	/* This is otherwise saved only in an area mmapped by the thread */
 	/* library, which isn't visible to the collector.		 */
-        /* This also forces collector initialization.			 */
-
+ 
+    LOCK();
+    si = (struct start_info *)GC_INTERNAL_MALLOC(sizeof(struct start_info), NORMAL);
+    UNLOCK();
     if (!fully_initialized) GC_full_init();
     if (0 == si) return(ENOMEM);
     sem_init(&(si -> registered), 0, 0);
@@ -1322,6 +1355,35 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     return(result);
 }
 
+#ifdef GENERIC_COMPARE_AND_SWAP
+  pthread_mutex_t GC_compare_and_swap_lock = PTHREAD_MUTEX_INITIALIZER;
+
+  GC_bool GC_compare_and_exchange(volatile GC_word *addr,
+  			          GC_word old, GC_word new_val)
+  {
+    GC_bool result;
+    pthread_mutex_lock(&GC_compare_and_swap_lock);
+    if (*addr == old) {
+      *addr = new_val;
+      result = TRUE;
+    } else {
+      result = FALSE;
+    }
+    pthread_mutex_unlock(&GC_compare_and_swap_lock);
+    return result;
+  }
+  
+  GC_word GC_atomic_add(volatile GC_word *addr, GC_word how_much)
+  {
+    GC_word old;
+    pthread_mutex_lock(&GC_compare_and_swap_lock);
+    old = *addr;
+    *addr = old + how_much;
+    pthread_mutex_unlock(&GC_compare_and_swap_lock);
+    return old;
+  }
+
+#endif /* GENERIC_COMPARE_AND_SWAP */
 /* Spend a few cycles in a way that can't introduce contention with	*/
 /* othre threads.							*/
 void GC_pause()
@@ -1472,10 +1534,6 @@ void GC_lock()
 
 #ifdef GC_ASSERTIONS
   pthread_t GC_mark_lock_holder = NO_THREAD;
-#endif
-
-#ifdef GENERIC_COMPARE_AND_SWAP
-  pthread_mutex_t GC_compare_and_swap_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 #ifdef IA64

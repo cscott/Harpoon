@@ -94,12 +94,12 @@
 #    endif
 #    define mach_type_known
 # endif
-# if defined(sequent) && defined(i386)
+# if defined(sequent) && (defined(i386) || defined(__i386__))
 #    define I386
 #    define SEQUENT
 #    define mach_type_known
 # endif
-# if defined(sun) && defined(i386)
+# if defined(sun) && (defined(i386) || defined(__i386__))
 #    define I386
 #    define SUNOS5
 #    define mach_type_known
@@ -190,6 +190,10 @@
 #    define ARM32
 #    define mach_type_known
 # endif
+# if defined(LINUX) && defined(__sh__)
+#    define SH
+#    define mach_type_known
+# endif
 # if defined(__alpha) || defined(__alpha__)
 #   define ALPHA
 #   if !defined(LINUX) && !defined(NETBSD)
@@ -230,26 +234,26 @@
 #   define NEXT
 #   define mach_type_known
 # endif
-# if defined(NeXT) && defined(i386)
+# if defined(NeXT) && (defined(i386) || defined(__i386__))
 #   define I386
 #   define NEXT
 #   define mach_type_known
 # endif
-# if defined(__OpenBSD__) && defined(i386)
+# if defined(__OpenBSD__) && (defined(i386) || defined(__i386__))
 #   define I386
 #   define OPENBSD
 #   define mach_type_known
 # endif
-# if defined(__FreeBSD__) && defined(i386)
+# if defined(__FreeBSD__) && (defined(i386) || defined(__i386__))
 #   define I386
 #   define FREEBSD
 #   define mach_type_known
 # endif
-# if defined(__NetBSD__) && defined(i386)
+# if defined(__NetBSD__) && (defined(i386) || defined(__i386__))
 #   define I386
 #   define mach_type_known
 # endif
-# if defined(bsdi) && defined(i386)
+# if defined(bsdi) && (defined(i386) || defined(__i386__))
 #    define I386
 #    define BSDI
 #    define mach_type_known
@@ -271,6 +275,9 @@
 # endif
 # if defined(_WIN32_WCE)
     /* SH3, SH4, MIPS already defined for corresponding architectures */
+#   if defined(SH3) || defined(SH4)
+#     define SH
+#   endif
 #   if defined(x86)
 #     define I386
 #   endif
@@ -339,6 +346,10 @@
 #   endif
 #   define mach_type_known
 # endif
+# if defined(__s390__) && defined(LINUX)
+#    define S370
+#    define mach_type_known
+# endif
 
 /* Feel free to add more clauses here */
 
@@ -367,7 +378,7 @@
                     /*		   RS6000     ==> IBM RS/6000 AIX3.X	*/
                     /*		   RT	      ==> IBM PC/RT		*/
                     /*		   HP_PA      ==> HP9000/700 & /800	*/
-                    /*				  HP/UX			*/
+                    /*				  HP/UX, LINUX			*/
 		    /*		   SPARC      ==> SPARC	v7/v8/v9	*/
 		    /*			(SUNOS4, SUNOS5, LINUX,		*/
 		    /*			 DRSNX variants)		*/
@@ -377,9 +388,12 @@
 		    /* 		        (CX_UX and DGUX)		*/
 		    /* 		   S370	      ==> 370-like machine	*/
 		    /* 			running Amdahl UTS4		*/
+		    /*			or a 390 running LINUX		*/
 		    /* 		   ARM32      ==> Intel StrongARM	*/
 		    /* 		   IA64	      ==> Intel IA64		*/
 		    /*				  (e.g. Itanium)	*/
+		    /*		   SH	      ==> Hitachi SuperH	*/
+		    /* 			(LINUX & MSWINCE)		*/
 
 
 /*
@@ -696,9 +710,16 @@
 #	define PROC_VDB
 /*	HEURISTIC1 reportedly no longer works under 2.7.  		*/
 /*  	HEURISTIC2 probably works, but this appears to be preferable.	*/
+/*	Apparently USRSTACK is defined to be USERLIMIT, but in some	*/
+/* 	installations that's undefined.  We work around this with a	*/
+/*	gross hack:							*/
 #       include <sys/vmparam.h>
-#	define STACKBOTTOM USRSTACK
-#	define HEURISTIC2
+#	ifdef USERLIMIT
+	  /* This should work everywhere, but doesn't.	*/
+#	  define STACKBOTTOM USRSTACK
+#       else
+#	  define HEURISTIC2
+#       endif
 #	include <unistd.h>
 #       define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
 		/* getpagesize() appeared to be missing from at least one */
@@ -931,6 +952,7 @@
 		/* os_dep.c. OS2 actually has the right			*/
 		/* system call!						*/
 #	define DATAEND	/* not needed */
+#	define USE_GENERIC_PUSH_REGS
 #   endif
 #   ifdef MSWIN32
 #	define OS_TYPE "MSWIN32"
@@ -974,7 +996,7 @@
 #   ifdef BSDI
 #	define OS_TYPE "BSDI"
 #   endif
-#   if defined(OPENBSD) || defined(NETBSD) \
+#   if defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
         || defined(THREE86BSD) || defined(BSDI)
 #	define HEURISTIC2
 	extern char etext;
@@ -1108,7 +1130,6 @@
 # endif
 
 # ifdef HP_PA
-    /* OS is assumed to be HP/UX	*/
 #   define MACH_TYPE "HP_PA"
 #   define OS_TYPE "HPUX"
 #   ifdef __LP64__
@@ -1119,9 +1140,25 @@
 #     define ALIGNMENT 4
 #     define ALIGN_DOUBLE
 #   endif
-    extern int __data_start;
-#   define DATASTART ((ptr_t)(&__data_start))
-#   if 0
+#   if !defined(GC_HPUX_THREADS) && !defined(HPUX_THREADS) \
+       && !defined(GC_LINUX_THREADS) && !defined(LINUX_THREADS)
+#     ifndef LINUX /* For now. */
+#       define MPROTECT_VDB
+#     endif
+#   else
+#     define GENERIC_COMPARE_AND_SWAP
+	/* No compare-and-swap instruction.  Use pthread mutexes 	*/
+	/* when we absolutely have to.					*/
+#     ifdef PARALLEL_MARK
+#	define USE_MARK_BYTES
+		/* Minimize compare-and-swap usage.		*/
+#     endif
+#   endif
+#   define STACK_GROWS_UP
+#   ifdef HPUX
+      extern int __data_start;
+#     define DATASTART ((ptr_t)(&__data_start))
+#     if 0
 	/* The following appears to work for 7xx systems running HP/UX	*/
 	/* 9.xx Furthermore, it might result in much faster		*/
 	/* collections than HEURISTIC2, which may involve scanning	*/
@@ -1130,27 +1167,32 @@
 	/* combinations. (Thanks to Raymond X.T. Nijssen for uncovering	*/
 	/* this.)							*/
 #       define STACKBOTTOM ((ptr_t) 0x7b033000)  /* from /etc/conf/h/param.h */
-#   else
+#     else
 	/* Gustavo Rodriguez-Rivera suggested changing HEURISTIC2	*/
 	/* to this.  Note that the GC must be initialized before the	*/
     	/* first putenv call.						*/
 	extern char ** environ;
 #       define STACKBOTTOM ((ptr_t)environ)
-#   endif
-#   define STACK_GROWS_UP
-#   define DYNAMIC_LOADING
-#   if !defined(GC_HPUX_THREADS) && !defined(HPUX_THREADS)
-#     define MPROTECT_VDB
-#   endif
-#   include <unistd.h>
-#   define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
-#   ifndef __GNUC__
-#     define PREFETCH(x)  { \
-                            register long addr = (long)(x); \
-                            (void) _asm ("LDW", 0, 0, addr, 0); \
-                          }
-#   endif
-# endif
+#     endif
+#     define DYNAMIC_LOADING
+#     include <unistd.h>
+#     define GETPAGESIZE() sysconf(_SC_PAGE_SIZE)
+#     ifndef __GNUC__
+#       define PREFETCH(x)  { \
+                              register long addr = (long)(x); \
+                              (void) _asm ("LDW", 0, 0, addr, 0); \
+                            }
+#     endif
+#   endif /* HPUX */
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+#     define LINUX_STACKBOTTOM
+#     define DYNAMIC_LOADING
+#     define LINUX_DATA_START
+      extern int _end;
+#     define DATAEND (&_end)
+#   endif /* LINUX */
+# endif /* HP_PA */
 
 # ifdef ALPHA
 #   define MACH_TYPE "ALPHA"
@@ -1234,14 +1276,13 @@
 	/* This does not work on NUE:				*/
 #       define LINUX_STACKBOTTOM
 	/* We also need the base address of the register stack	*/
-	/* backing store.  There should be a better way to get	*/
-	/* this:						*/
-#	define APPROX_BS_BASE ((word)GC_stackbottom-0x80000000)
-	/* We round to the next multiple of 1 MB, to compensate	*/
-	/* for the fact that the stack base is displaced by	*/
-	/* the environment, etc.				*/
-#	define BACKING_STORE_BASE \
-		(ptr_t)((APPROX_BS_BASE + 0xfffff) & ~0xfffff)
+	/* backing store.  This is computed in 			*/
+	/* GC_linux_register_stack_base based on the following	*/
+	/* constants:						*/
+#       define BACKING_STORE_ALIGNMENT 0x100000
+#       define BACKING_STORE_DISPLACEMENT 0x80000000
+	extern char * GC_register_stackbottom;
+#	define BACKING_STORE_BASE ((ptr_t)GC_register_stackbottom)
 #	define SEARCH_FOR_DATA_START
 #	define DATASTART GC_data_start
 #       define DYNAMIC_LOADING
@@ -1279,15 +1320,25 @@
 
 # ifdef S370
 #   define MACH_TYPE "S370"
-#   define OS_TYPE "UTS4"
 #   define ALIGNMENT 4	/* Required by hardware	*/
-    extern int etext;
+#   define USE_GENERIC_PUSH_REGS
+#   ifdef UTS4
+#       define OS_TYPE "UTS4"
+        extern int etext;
 	extern int _etext;
 	extern int _end;
 	extern char * GC_SysVGetDataStart();
 #       define DATASTART (ptr_t)GC_SysVGetDataStart(0x10000, &_etext)
 #	define DATAEND (&_end)
 #	define HEURISTIC2
+#   endif
+#   ifdef LINUX
+#       define OS_TYPE "LINUX"
+#       define HEURISTIC1
+#       define DYNAMIC_LOADING
+        extern int __data_start;
+#       define DATASTART ((ptr_t)(&__data_start))
+#   endif
 # endif
 
 # if defined(PJ)
@@ -1344,11 +1395,22 @@
 #   endif
 #endif
 
-# ifdef SH3
-#   define MACH_TYPE "SH3"
-#   define OS_TYPE "MSWINCE"
+# ifdef SH
+#   define MACH_TYPE "SH"
 #   define ALIGNMENT 4
-#   define DATAEND /* not needed */
+#   ifdef MSWINCE
+#     define OS_TYPE "MSWINCE"
+#     define DATAEND /* not needed */
+#   endif
+#   ifdef LINUX
+#     define OS_TYPE "LINUX"
+#     define STACKBOTTOM ((ptr_t) 0x7c000000)
+#     define USE_GENERIC_PUSH_REGS
+#     define DYNAMIC_LOADING
+#     define LINUX_DATA_START
+      extern int _end;
+#     define DATAEND (&_end)
+#   endif
 # endif
  
 # ifdef SH4
@@ -1540,14 +1602,16 @@
 	defined(SOLARIS_THREADS) || defined(WIN32_THREADS) || \
 	defined(IRIX_THREADS) || defined(LINUX_THREADS) || \
         defined(USER_THREADS) || \
-	defined(HPUX_THREADS)
+	defined(HPUX_THREADS) || defined(OSF1_THREADS)
 #   define THREADS
 # endif
 
 # if defined(HP_PA) || defined(M88K) || defined(POWERPC) && !defined(MACOSX) \
-     || (defined(I386) && defined(OS2)) || defined(UTS4) || defined(LINT) \
-     || defined(MSWINCE) || (defined(I386) && defined(__LCC__))
-	/* Use setjmp based hack to mark from callee-save registers. */
+     || defined(LINT) || defined(MSWINCE) \
+     || (defined(I386) && defined(__LCC__))
+	/* Use setjmp based hack to mark from callee-save registers.    */
+	/* The define should move to the individual platform 		*/
+	/* descriptions.						*/
 #	define USE_GENERIC_PUSH_REGS
 # endif
 # if defined(I386) && defined(LINUX)

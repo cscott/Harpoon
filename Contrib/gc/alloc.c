@@ -710,20 +710,20 @@ word bytes;
     GC_n_heap_sects++;
     words = BYTES_TO_WORDS(bytes);
     phdr -> hb_sz = words;
-    phdr -> hb_map = (char *)1;   /* A value != GC_invalid_map	*/
+    phdr -> hb_map = (unsigned char *)1;   /* A value != GC_invalid_map	*/
     phdr -> hb_flags = 0;
     GC_freehblk(p);
     GC_heapsize += bytes;
-    if ((ptr_t)p <= GC_least_plausible_heap_addr
+    if ((ptr_t)p <= (ptr_t)GC_least_plausible_heap_addr
         || GC_least_plausible_heap_addr == 0) {
-        GC_least_plausible_heap_addr = (ptr_t)p - sizeof(word);
+        GC_least_plausible_heap_addr = (GC_PTR)((ptr_t)p - sizeof(word));
         	/* Making it a little smaller than necessary prevents	*/
         	/* us from getting a false hit from the variable	*/
         	/* itself.  There's some unintentional reflection	*/
         	/* here.						*/
     }
-    if ((ptr_t)p + bytes >= GC_greatest_plausible_heap_addr) {
-        GC_greatest_plausible_heap_addr = (ptr_t)p + bytes;
+    if ((ptr_t)p + bytes >= (ptr_t)GC_greatest_plausible_heap_addr) {
+        GC_greatest_plausible_heap_addr = (GC_PTR)((ptr_t)p + bytes);
     }
 }
 
@@ -750,8 +750,8 @@ void GC_print_heap_sects()
 }
 # endif
 
-ptr_t GC_least_plausible_heap_addr = (ptr_t)ONES;
-ptr_t GC_greatest_plausible_heap_addr = 0;
+GC_PTR GC_least_plausible_heap_addr = (GC_PTR)ONES;
+GC_PTR GC_greatest_plausible_heap_addr = 0;
 
 ptr_t GC_max(x,y)
 ptr_t x, y;
@@ -807,6 +807,12 @@ word n;
     }
     space = GET_MEM(bytes);
     if( space == 0 ) {
+#	ifdef CONDPRINT
+	  if (GC_print_stats) {
+	    GC_printf1("Failed to expand heap by %ld bytes\n",
+		       (unsigned long)bytes);
+	  }
+#       endif
 	return(FALSE);
     }
 #   ifdef CONDPRINT

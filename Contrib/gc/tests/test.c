@@ -256,10 +256,10 @@ struct fake_vtable gcj_class_struct2 =
 				{ 0, (3l << (CPP_WORDSZ - 3)) | DS_BITMAP};
 			/* Bitmap based descriptor.	*/
 
-struct ms_entry * fake_gcj_mark_proc(word * addr,
-				     struct ms_entry *mark_stack_ptr,
-				     struct ms_entry *mark_stack_limit,
-				     word env   )
+struct GC_ms_entry * fake_gcj_mark_proc(word * addr,
+				        struct ms_entry *mark_stack_ptr,
+				        struct ms_entry *mark_stack_limit,
+				        word env   )
 {
     sexpr x;
     if (1 == env) {

@@ -96,9 +96,10 @@
 # endif
 #endif
 
-#if defined(_MSC_VER) && (defined(_DLL) || defined(GC_DLL))
+#if defined(_MSC_VER) && (defined(_DLL) && !defined(NOT_GC_DLL) \
+	                  || defined(GC_DLL))
 # ifdef GC_BUILD
-#   define GC_API __declspec(dllexport)
+#   define GC_API extern __declspec(dllexport)
 # else
 #   define GC_API __declspec(dllimport)
 # endif
@@ -206,6 +207,15 @@ GC_API int GC_java_finalization;
 			/* ordered finalization.  Default value is	*/
 			/* determined by JAVA_FINALIZATION macro.	*/
 
+GC_API void (* GC_finalizer_notifier)();
+			/* Invoked by the collector when there are 	*/
+			/* objects to be finalized.  Invoked at most	*/
+			/* once per GC cycle.  Never invoked unless 	*/
+			/* GC_finalize_on_demand is set.		*/
+			/* Typically this will notify a finalization	*/
+			/* thread, which will call GC_invoke_finalizers */
+			/* in response.					*/
+
 GC_API int GC_dont_gc;	/* Dont collect unless explicitly requested, e.g. */
 			/* because it's not safe.			  */
 
@@ -277,8 +287,16 @@ GC_API char *GC_stackbottom;	/* Cool end of user stack.		*/
 				/* automatically.			*/
 				/* For multithreaded code, this is the	*/
 				/* cold end of the stack for the	*/
-				/* primordial thread.			*/
+				/* primordial thread.			*/	
 				
+GC_API int GC_dont_precollect;  /* Don't collect as part of 		*/
+				/* initialization.  Should be set only	*/
+				/* if the client wants a chance to	*/
+				/* manually initialize the root set	*/
+				/* before the first collection.		*/
+				/* Interferes with blacklisting.	*/
+				/* Wizards only.			*/
+
 /* Public procedures */
 /*
  * general purpose allocation routines, with roughly malloc calling conv.
@@ -291,6 +309,10 @@ GC_API char *GC_stackbottom;	/* Cool end of user stack.		*/
  * collectable.  The object is scanned even if it does not appear to
  * be reachable.  GC_malloc_uncollectable and GC_free called on the resulting
  * object implicitly update GC_non_gc_bytes appropriately.
+ *
+ * Note that the GC_malloc_stubborn support is stubbed out by default
+ * starting in 6.0.  GC_malloc_stubborn is an alias for GC_malloc unless
+ * the collector is built with STUBBORN_ALLOC defined.
  */
 GC_API GC_PTR GC_malloc GC_PROTO((size_t size_in_bytes));
 GC_API GC_PTR GC_malloc_atomic GC_PROTO((size_t size_in_bytes));
