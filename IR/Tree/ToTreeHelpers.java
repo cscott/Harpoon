@@ -37,7 +37,7 @@ import java.util.Set;
  * <code>ToTreeHelpers</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTreeHelpers.java,v 1.1.2.5 2000-02-14 00:56:32 cananian Exp $
+ * @version $Id: ToTreeHelpers.java,v 1.1.2.6 2000-06-01 00:17:16 cananian Exp $
  */
 abstract class ToTreeHelpers {
     //------------ EdgeOracle IMPLEMENTATIONS ------------------
@@ -137,10 +137,11 @@ abstract class ToTreeHelpers {
     }
 
     //------------ ReachingDefs IMPLEMENTATIONS ------------------
-    static class SSIReachingDefs extends ReachingDefs {
+    // reachingdefs for SSA/SSI form.
+    static class SSXReachingDefs extends ReachingDefs {
 	final Map m = new HashMap();
-	SSIReachingDefs(HCode hc) { this(hc, UseDefer.DEFAULT); }
-	SSIReachingDefs(HCode hc, UseDefer ud) {
+	SSXReachingDefs(HCode hc) { this(hc, UseDefer.DEFAULT); }
+	SSXReachingDefs(HCode hc, UseDefer ud) {
 	    super(hc);
 	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
 		HCodeElement hce = (HCodeElement) it.next();
@@ -161,9 +162,9 @@ abstract class ToTreeHelpers {
 	DefaultFoldNanny() { }
 	public boolean canFold(HCodeElement hce, Temp t) { return false; }
     }
-    static class SSISimpleFoldNanny implements ToTree.FoldNanny {
+    static class SSXSimpleFoldNanny implements ToTree.FoldNanny {
 	final Set safe = new HashSet();
-	SSISimpleFoldNanny(HCode hc) {
+	SSXSimpleFoldNanny(HCode hc) {
 	    // first, find all the single-use variables
 	    HashSet singleUse = new HashSet(), multiUse = new HashSet();
 	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {

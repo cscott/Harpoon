@@ -13,6 +13,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.LowQuadNoSSA;
+import harpoon.IR.LowQuad.LowQuadSSA;
 import harpoon.IR.LowQuad.LowQuadSSI;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
@@ -30,7 +31,7 @@ import harpoon.Util.Util;
  * The tree form is based around Andrew Appel's tree form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: TreeCode.java,v 1.1.2.31 2000-02-25 00:54:09 cananian Exp $
+ * @version $Id: TreeCode.java,v 1.1.2.32 2000-06-01 00:17:16 cananian Exp $
  * 
  */
 public class TreeCode extends Code {
@@ -41,6 +42,18 @@ public class TreeCode extends Code {
      *  <code>LowQuadNoSSA</code> object, and a <code>Frame</code>.
      */
     TreeCode(LowQuadNoSSA code, Frame topframe) {
+	super(code.getMethod(), null, topframe);
+
+	ToTree translator;
+
+	translator = new ToTree(this.tf, code);
+	tree       = translator.getTree();
+	treeDerivation = translator.getTreeDerivation();
+    }
+    /** Create a new <code>TreeCode</code> from a
+     *  <code>LowQuadSSA</code> object, and a <code>Frame</code>.
+     */
+    TreeCode(LowQuadSSA code, Frame topframe) {
 	super(code.getMethod(), null, topframe);
 
 	ToTree translator;
@@ -127,6 +140,17 @@ public class TreeCode extends Code {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
 			new TreeCode((LowQuadSSI)c, frame);
+		}
+		public void clear(HMethod m) { hcf.clear(m); }
+		public String getCodeName() { return codename; }
+	    };
+	} else if (hcf.getCodeName().equals(LowQuadSSA.codename)) {
+	    // note that result will not be serializable unless frame is.
+	    return new harpoon.ClassFile.SerializableCodeFactory() { 
+		public HCode convert(HMethod m) { 
+		    HCode c = hcf.convert(m);
+		    return (c==null) ? null :
+			new TreeCode((LowQuadSSA)c, frame);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }

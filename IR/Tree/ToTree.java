@@ -22,6 +22,7 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadNoSSA;
+import harpoon.IR.LowQuad.LowQuadSSA;
 import harpoon.IR.LowQuad.LowQuadSSI;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.LowQuad.LQop;
@@ -72,7 +73,7 @@ import java.util.Stack;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.80 2000-05-17 03:19:50 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.81 2000-06-01 00:17:15 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -93,12 +94,19 @@ class ToTree {
 	     new ToTreeHelpers.DefaultFoldNanny(),
 	     new ReachingDefsImpl(code));
     }
+    public ToTree(final TreeFactory tf, final LowQuadSSA code) {
+	this(tf, code,
+	     code.getAllocationInformation(),
+	     new ToTreeHelpers.MinMaxEdgeOracle(code),
+	     new ToTreeHelpers.SSXSimpleFoldNanny(code),
+	     new ToTreeHelpers.SSXReachingDefs(code));
+    }
     public ToTree(final TreeFactory tf, final LowQuadSSI code) {
 	this(tf, code,
 	     code.getAllocationInformation(),
 	     new ToTreeHelpers.MinMaxEdgeOracle(code),
-	     new ToTreeHelpers.SSISimpleFoldNanny(code),
-	     new ToTreeHelpers.SSIReachingDefs(code));
+	     new ToTreeHelpers.SSXSimpleFoldNanny(code),
+	     new ToTreeHelpers.SSXReachingDefs(code));
     }
     /** Class constructor. */
     public ToTree(final TreeFactory tf, harpoon.IR.LowQuad.Code code,
