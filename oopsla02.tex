@@ -1,7 +1,8 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.11 2002-03-22 22:38:09 cananian Exp $
+% $Id: oopsla02.tex,v 1.12 2002-03-22 23:25:09 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[preprint]{acmconf}
+%\documentclass[preprint]{acmconf}
+\documentclass{acmconf}
 % don't forget to turn off 'preprint' before submission!
 %\usepackage[section,plain]{algorithm}
 %\usepackage{amsthm} % proof environment
@@ -16,6 +17,7 @@
 \renewcommand{\reftextbefore}{on the preceding page}\vrefwarning
 
 \newcommand{\mycomment}[1]{}
+\newcommand{\meet}{\ensuremath{\sqcap}}
 
 \title{\bf Data Size Optimizations for Java Programs}
 
@@ -27,7 +29,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.11 $ $}{$ $Revision: 1.11 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.12 $ $}{$ $Revision: 1.12 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -496,13 +498,41 @@ exhaustive description.
 
 \subsection{Definite Initialization Analysis}
 The Java field semantics dictate that uninitialized fields must have
-the value zero (or {\tt null}, for pointer fields).  If a field is not
-{\it definitely initialized}, this default zero value may be seen by
-the program.  In order to make our bitwidth analysis more precise, we
-must determine whether a field is {\it definitely initialized} in its
-constructors.  If it is, then the lattice value for the field can
-start at $\bot$.  Otherwise, the lattice value must start at
-{\bf 0}, which makes it more difficult to extract constants.
+the value zero (or {\tt null}, for pointer fields).  It may seem,
+then, that the starting lattice value for every integer field should
+be {\tt 0}.  This, however, prevents us from finding non-zero field
+constants in the program: a simple initialization statement like {\tt
+  x=5} will assign {\tt x} the value $\mathbf{0}\meet\mathbf{5}$,
+which is not equal to $\mathbf{5}$!\footnote{On the lattice of
+  figure~\ref{fig:scclat6}, $\mathbf{0}\meet\mathbf{5}=\text{\tt
+    (-ZP)}$.}
+
+We perform a {\it definite initialization} analysis to remedy this
+problem and restore precision to our analysis.
+Figure~\ref{fig:definit-example} shows an example of a simple
+constant field.
+With only constructor {\tt A$_1$}, field {\tt f} will get the
+lattice value {\bf 5}.  Without constructor {\tt A$_2$} in the class,
+we say that field {\tt f} is {\it definitely initialized} because
+every constructor of {\tt A} assigns a value to {\tt f} before
+control-flow leaves it.  
+Adding constructor {\tt A$_2$} allows the
+default {\bf 0} value of {\tt f} to be seen by not {\it definitely
+  assigning} a value to {\tt f}; {\tt f} is thus no longer
+definitely-initialized.  We construct a mapping from methods to all
+fields which they may read (in a flow-insensitive manner) and
+transitively close over the call-graph to determine a ``safe set'' of
+methods which the constructor may call before a definite
+initialization of {\tt f}.  If control flow may pass to a method not
+in the safe set before {\tt f} is initialized, then {\tt f} is not
+definitely initialized.
+
+Definitely-initialized fields are allowed to start at $\bot$ in the
+bitwidth analysis lattice.  All other fields must start at value
+{\bf 0}, which will make it impossible for the field to represent a
+non-zero constant value.  The results of the definite initialization
+analysis are also used to profile mostly-constant fields, as described
+in the next section.
 
 \begin{figure}
 \begin{samplecode}
@@ -515,14 +545,11 @@ public class A \{\\
 \}\\
 \end{samplecode}
 \caption{Use example for the definite initialization analysis.
-With only constructor {\tt A$_1$}, field {\tt f} will get the
-lattice value {\bf 5}.  But constructor {\tt A$_2$} allows the
-default {\bf 0} value of {\tt f} to be seen, because {\tt f}
-is not {\it definitely-initialized}.}
+The field {\tt f} is {\it definitely initialized} if only constructor
+{\tt A$_1$} is in the class; with constructor {\tt A$_2$} present it
+is not.}
 \label{fig:definit-example}
 \end{figure}
-
-{\bf XXX fixme, refer to figure \ref{fig:definit-example}.}
 
 \subsection{Profiling Mostly-Constant Fields}
 instrument the code to increment a per-class counter the first time a
