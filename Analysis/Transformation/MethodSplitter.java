@@ -40,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.16 2000-11-08 18:36:25 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.17 2000-11-09 00:00:04 cananian Exp $
  */
 public abstract class MethodSplitter implements java.io.Serializable {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -70,7 +70,7 @@ public abstract class MethodSplitter implements java.io.Serializable {
 		List swpair = (List) split2orig.get(m);
 		Token tok = (swpair==null) ? ORIGINAL : (Token) swpair.get(1);
 		HCode hc = (tok==ORIGINAL) ? parent.convert(m) :
-		    convert( (HMethod)swpair.get(0) );
+		    hcf.convert( (HMethod)swpair.get(0) );
 		try {
 		    if (hc!=null) hc = mutateHCode(hc.clone(m), tok);
 		} catch (CloneNotSupportedException ex) {
