@@ -43,10 +43,12 @@ import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
@@ -63,7 +65,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.15 2001-01-24 21:18:13 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.16 2001-01-24 21:34:57 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -121,6 +123,11 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     public boolean isExactType(HCodeElement hce, Temp t) {
 	// ignore hce
 	return V.get(t) instanceof xClassExact;
+    }
+    /** Determine whether the given <code>Temp</code> can possibly be
+     *  <code>null</code>. */
+    public boolean isPossiblyNull(HCodeElement hce, Temp t) {
+	return !(V.get(t) instanceof xClassNonNull);
     }
     /** Determine whether <code>Temp</code> <code>t</code>
      *  has a constant value. */
@@ -238,7 +245,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	// utility functions.
 	LatticeVal get(Temp t) { return (LatticeVal) V.get(t); }
 
-	void handleSigmas(CJMP q, INSTANCEOF def) {
+	void handleSigmas(CJMP q, xInstanceofResult io) {
 	    // for every sigma source:
 	    for (int i=0; i < q.numSigmas(); i++) {
 		// check if this is the CJMP condition.
@@ -254,25 +261,26 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		if (v == null) continue; // skip: insufficient info.
 
 		// check to see if this is the temp tested by INSTANCEOF
-		if (q.src(i) == def.src()) {
+		if (q.src(i) == io.tested()) {
 		    // no new info on false branch.
-		    raiseV(V, Wv, q.dst(i,0), v);
+		    raiseV(V, Wv, q.dst(i,0), v.rename(q, 0));
 		    // we know q.dst[i][1] is INSTANCEOF def.hclass
 		    // secret inside info: INSTANCEOF src is always non-null.
 		    raiseV(V, Wv, q.dst(i,1), 
-			   new xClassNonNull(def.hclass()));
+			   new xClassNonNull(io.def().hclass()));
 		} else {
 		    // fall back.
-		    raiseV(V, Wv, q.dst(i,0), v);
-		    raiseV(V, Wv, q.dst(i,1), v);
+		    raiseV(V, Wv, q.dst(i,0), v.rename(q, 0));
+		    raiseV(V, Wv, q.dst(i,1), v.rename(q, 1));
 		}
 	    }
 	}
 	
-	void handleSigmas(CJMP q, OPER def) {
-	    int opc = def.opcode();
-	    LatticeVal left = def.operandsLength()<1?null:get(def.operands(0));
-	    LatticeVal right= def.operandsLength()<2?null:get(def.operands(1));
+	void handleSigmas(CJMP q, xOperBooleanResult or) {
+	    int opc = or.def().opcode();
+	    int opa = or.operands().length;
+	    LatticeVal left = opa<1?null:get(or.operands()[0]);
+	    LatticeVal right= opa<2?null:get(or.operands()[1]);
 
 	    // for every sigma source:
 	    for (int i=0; i < q.numSigmas(); i++) {
@@ -290,7 +298,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 
 		// check to see if it comes from the OPER defining the boolean.
 		boolean handled = false;
-		if (q.src(i) == def.operands(0)) { // left is source.
+		if (q.src(i) == or.operands()[0]) { // left is source.
 		    if (opc == Qop.ACMPEQ &&
 			left  instanceof xClass && // not already xClassNonNull
 			right instanceof xNullConstant) {
@@ -303,9 +311,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 				opc == Qop.FCMPEQ || opc == Qop.DCMPEQ) &&
 			       right instanceof xConstant) {
 			raiseV(V, Wv, q.dst(i,0), // false branch: no info
-			       v);
+			       v.rename(q, 0));
 			raiseV(V, Wv, q.dst(i,1), // true branch: constant!
-			       right);
+			       right.rename(q, 1));
 			handled = true;
 		    } else if ((/*opc == Qop.ICMPGE || opc == Qop.LCMPGE ||*/
 				opc == Qop.ICMPGT || opc == Qop.LCMPGT ) &&
@@ -323,7 +331,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
                                Math.max(sr.plusWidth(), bw.plusWidth()) ));
 			handled = true;
 		    }
-		} else if (q.src(i) == def.operands(1)) { // right is source.
+		} else if (q.src(i) == or.operands()[1]) { // right is source.
 		    if (opc == Qop.ACMPEQ &&
 			right instanceof xClass && // not already xClassNonNull
 			left  instanceof xNullConstant) {
@@ -336,9 +344,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 				opc == Qop.FCMPEQ || opc == Qop.DCMPEQ) &&
 			       left instanceof xConstant) {
 			raiseV(V, Wv, q.dst(i,0), // false branch: no info
-			       v);
+			       v.rename(q, 0));
 			raiseV(V, Wv, q.dst(i,1), // true branch: constant!
-			       left);
+			       left.rename(q, 1));
 			handled = true;
 		    } else if ((/*opc == Qop.ICMPGE || opc == Qop.LCMPGE ||*/
 				opc == Qop.ICMPGT || opc == Qop.LCMPGT ) &&
@@ -359,8 +367,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		}
 		// fall back.
 		if (!handled) {
-		    raiseV(V, Wv, q.dst(i,0), v);
-		    raiseV(V, Wv, q.dst(i,1), v);
+		    raiseV(V, Wv, q.dst(i,0), v.rename(q, 0));
+		    raiseV(V, Wv, q.dst(i,1), v.rename(q, 1));
 		}
 	    }
 	}
@@ -413,7 +421,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		raiseV(V, Wv, q.retval(), v);
 	    }
 	    raiseV(V, Wv, q.retex(), 
-		   new xClass( linker.forName("java.lang.Throwable") ) );
+		   new xClassNonNull( linker.forName("java.lang.Throwable") ));
 	    // both outgoing edges are potentially executable.
 	    raiseE(Ee, Eq, Wq, q.nextEdge(1) );
 	    raiseE(Ee, Eq, Wq, q.nextEdge(0) );
@@ -424,8 +432,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		// did.
 		LatticeVal v2 = get ( q.src(i) );
 		if (v2 != null) {
-		    raiseV(V, Wv, q.dst(i, 0), v2);
-		    raiseV(V, Wv, q.dst(i, 1), v2);
+		    raiseV(V, Wv, q.dst(i, 0), v2.rename(q, 0));
+		    raiseV(V, Wv, q.dst(i, 1), v2.rename(q, 1));
 		}
 	    }
 	}
@@ -443,7 +451,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		for (int i=0; i < q.numSigmas(); i++) {
 		    LatticeVal v2 = get( q.src(i) );
 		    if (v2 != null)
-			raiseV(V, Wv, q.dst(i,test?1:0), v2);
+			raiseV(V,Wv, q.dst(i,test?1:0), v2.rename(q,test?1:0));
 		}
 		return; // done.
 	    } else if (v instanceof xClass) { // ie, not bottom.
@@ -452,11 +460,10 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		raiseE(Ee, Eq, Wq, q.nextEdge(0) );
 
 		// look at definition of boolean condition.
-		Quad def= (Quad)udm.defMap(hc, q.test())[0];// SSA form, right?
-		if (useSigmas&& def instanceof OPER) // only case we care about
-		    handleSigmas((CJMP) q, (OPER) def);
-		else if (useSigmas&& def instanceof INSTANCEOF) // ok, i lied.
-		    handleSigmas((CJMP) q, (INSTANCEOF) def);
+		if (useSigmas && v instanceof xOperBooleanResult)
+		    handleSigmas((CJMP) q, (xOperBooleanResult)v);
+		else if (useSigmas && v instanceof xInstanceofResult)
+		    handleSigmas((CJMP) q, (xInstanceofResult) v);
 		else // fallback.
 		    for (int i=0; i < q.numSigmas(); i++) {
 			// is this the CJMP condition?
@@ -468,8 +475,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			} else {
 			    LatticeVal v2 = get ( q.src(i) );
 			    if (v2 != null) {
-				raiseV(V, Wv, q.dst(i,0), v2);
-				raiseV(V, Wv, q.dst(i,1), v2);
+				raiseV(V, Wv, q.dst(i,0), v2.rename(q,0));
+				raiseV(V, Wv, q.dst(i,1), v2.rename(q,1));
 			    }
 			}
 		    }
@@ -479,6 +486,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    // we're guaranteed that q.arrayref is non-null here.
 	    LatticeVal vA = get( q.arrayref() );
 	    LatticeVal vO = get( q.objectref() );
+	    // XXX: we can probably optimize more of these out if we take
+	    // *exact* types into consideration.
 	    if (vA instanceof xClass && vO instanceof xClass) {
 		HClass hcA = ((xClass) vA).type().getComponentType() ;
 		HClass hcO = ((xClass) vO).type();
@@ -545,7 +554,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		if (hcO.isInstanceOf(q.hclass())) // always true
 		    raiseV(V,Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),1) );
 		else if (q.hclass().isInstanceOf(hcO)) // unknowable.
-		    raiseV(V,Wv, q.dst(), new xBitWidth(toInternal(HClass.Boolean),0,1) );
+		    raiseV(V,Wv, q.dst(), new xInstanceofResult(q));
 		else // always false.
 		    raiseV(V,Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0) );
 	    }
@@ -553,7 +562,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		HClass hcO = ((xClass)v).type();
 		if (q.hclass().isInstanceOf(hcO) || 
 		    hcO.isInstanceOf(q.hclass()) ) // unknowable.
-		    raiseV(V,Wv, q.dst(), new xBitWidth(toInternal(HClass.Boolean),0,1) );
+		    raiseV(V,Wv, q.dst(), new xInstanceofResult(q));
 		else // always false (even if src==null)
 		    raiseV(V,Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0) );
 	    }
@@ -626,6 +635,15 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		      get( q.operands(1) ) instanceof xNullConstant) ) )
 		    raiseV(V, Wv, q.dst(), // always false.
 			   new xIntConstant(toInternal(HClass.Boolean), 0));
+		// special case boolean operations.
+		else if (opc == Qop.ACMPEQ ||
+			 opc == Qop.DCMPEQ || opc == Qop.DCMPGE ||
+			 opc == Qop.DCMPGT ||
+			 opc == Qop.FCMPEQ || opc == Qop.FCMPGE ||
+			 opc == Qop.FCMPGT ||
+			 opc == Qop.ICMPEQ || opc == Qop.ICMPGT ||
+			 opc == Qop.LCMPEQ || opc == Qop.LCMPGT)
+		    raiseV(V, Wv, q.dst(), new xOperBooleanResult(q));
 		else {
 		    // RULE 4:
 		    HClass ty = q.evalType();
@@ -643,6 +661,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		boolean allExact = true;
 		boolean allNonNull=true;
 		boolean someValidValue=false;
+		int     oneValidValue=-1;
 
 		Object constValue = null;
 		HClass mergedType = null;
@@ -654,8 +673,10 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    LatticeVal v = get ( q.src(i,j) );
 		    if (v == null)
 			continue; // skip this arg function.
-		    else 
+		    else if (!someValidValue) { // first valid value.
 			someValidValue=true;
+			oneValidValue = j;
+		    } else oneValidValue=-1; // more than one valid value.
 		    // constant merge.
 		    if (v instanceof xConstant) {
 			Object o = ((xConstant)v).constValue();
@@ -691,6 +712,10 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		// assess results.
 		if (!someValidValue)
 		    continue; // nothing to go on.
+		else if (oneValidValue>=0) // use the single valid value
+		    raiseV(V, Wv, q.dst(i),
+			   get(q.src(i, oneValidValue))
+			   .rename(q, oneValidValue) );
 		else if (allConst) {
 		    LatticeVal v;
 		    if (constValue == null)
@@ -736,7 +761,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		for (int j=0; j < q.numSigmas(); j++) {
 		    LatticeVal v2 = get( q.src(j) );
 		    if (v2 != null)
-			raiseV(V, Wv, q.dst(j,i), v2);
+			raiseV(V, Wv, q.dst(j,i), v2.rename(q,i));
 		}
 	    }
 	    // XXX maybe stuff we can learn about v from bitwidth?
@@ -748,7 +773,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    LatticeVal v2 = get( q.src(i) );
 		    if (v2 != null)
 			for (int j=0; j < q.arity(); j++)
-			    raiseV(V, Wv, q.dst(i,j), v2);
+			    raiseV(V, Wv, q.dst(i,j), v2.rename(q,j));
 		}
 	    }
 	}
@@ -783,7 +808,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			else {
 			    LatticeVal v2 = get( q.src(j) );
 			    if (v2 != null)
-				raiseV(V, Wv, q.dst(j,i), v2);
+				raiseV(V, Wv, q.dst(j,i), v2.rename(q,i));
 			}
 		    }
 		}
@@ -796,7 +821,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    LatticeVal v2 = get( q.src(i) );
 		    if (v2 != null)
 			for (int j=0; j < q.arity(); j++)
-			    raiseV(V, Wv, q.dst(i,j), v2);
+			    raiseV(V, Wv, q.dst(i,j), v2.rename(q,j));
 		}
 	    }
 	}
@@ -1033,6 +1058,9 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	public String toString() { return "Top"; }
 	public boolean equals(Object o) { return o instanceof LatticeVal; }
 	public boolean higherThan(LatticeVal v) { return false; }
+	// by default, the renaming does nothing.
+	public LatticeVal rename(PHI p, int i) { return this; }
+	public LatticeVal rename(SIGMA s, int i) { return this; }
     }
     /** A typed temp. */
     static class xClass extends LatticeVal {
@@ -1166,6 +1194,101 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    if (!(v instanceof xClassNonNull)) return false;
 	    if (v.equals(this)) return false;
 	    return true;
+	}
+    }
+    /** An integer value which is the result of an INSTANCEOF. */
+    static class xInstanceofResult extends xBitWidth {
+	Temp tested;
+	INSTANCEOF q;
+	public xInstanceofResult(INSTANCEOF q) { this(q, q.src()); }
+	private xInstanceofResult(INSTANCEOF q, Temp tested) {
+	    super(toInternal(HClass.Boolean),0,1);
+	    this.q = q;
+	    this.tested = tested;
+	}
+	public Temp tested() { return tested; }
+	public INSTANCEOF def() { return q; }
+	public String toString() {
+	    return "xInstanceofResult: " + type + " " +q;
+	}
+	public boolean equals(Object o) {
+	    return (o instanceof xInstanceofResult && super.equals(o) &&
+		    ((xInstanceofResult)o).q == q &&
+		    ((xInstanceofResult)o).tested == tested);
+	}
+	public boolean higherThan(LatticeVal v) {
+	    if (!(v instanceof xInstanceofResult)) return false;
+	    if (v.equals(this)) return false;
+	    return true;
+	}
+	// override renaming functions.
+	public LatticeVal rename(PHI q, int j) {
+	    for (int i=0; i<q.numPhis(); i++)
+		if (q.src(i, j)==this.tested)
+		    return new xInstanceofResult(def(), q.dst(i));
+	    return this;
+	}
+	public LatticeVal rename(SIGMA q, int j) {
+	    for (int i=0; i<q.numSigmas(); i++)
+		if (q.src(i)==this.tested)
+		    return new xInstanceofResult(def(), q.dst(i, j));
+	    return this;
+	}
+    }
+    /** An integer value which is the result of an OPER. */
+    static class xOperBooleanResult extends xBitWidth {
+	OPER q;
+	Temp[] operands;
+	public xOperBooleanResult(OPER q) { this(q, q.operands()); }
+	private xOperBooleanResult(OPER q, Temp[] operands) {
+	    super(toInternal(HClass.Boolean),0,1);
+	    this.q = q;
+	    this.operands = operands;
+	}
+	public Temp[] operands() { return operands; }
+	public OPER def() { return q; }
+	public String toString() {
+	    return "xOperBooleanResult: " + type + " " +q;
+	}
+	public boolean equals(Object o) {
+	    if (o==this) return true; // common case.
+	    if (!(o instanceof xOperBooleanResult)) return false;
+	    if (!super.equals(o)) return false;
+	    xOperBooleanResult oo = (xOperBooleanResult)o;
+	    if (oo.q != q) return false;
+	    if (oo.operands.length != operands.length) return false;
+	    for (int i=0; i<operands.length; i++)
+		if (oo.operands[i] != operands[i]) return false;
+	    return true;
+	}
+	public boolean higherThan(LatticeVal v) {
+	    if (!(v instanceof xOperBooleanResult)) return false;
+	    if (v.equals(this)) return false;
+	    return true;
+	}
+	// override renaming functions.
+	public LatticeVal rename(PHI q, int j) {
+	    MyTempMap mtm = new MyTempMap();
+	    for (int i=0; i<q.numPhis(); i++)
+		mtm.put(q.src(i,j), q.dst(i));
+	    return new xOperBooleanResult(def(), mtm.tempMap(operands()));
+	}
+	public LatticeVal rename(SIGMA q, int j) {
+	    MyTempMap mtm = new MyTempMap();
+	    for (int i=0; i<q.numSigmas(); i++)
+		mtm.put(q.src(i), q.dst(i, j));
+	    return new xOperBooleanResult(def(), mtm.tempMap(operands()));
+	}
+	private static class MyTempMap extends HashMap implements TempMap {
+	    public Temp tempMap(Temp t) {
+		return containsKey(t) ? (Temp) get(t) : t;
+	    }
+	    public Temp[] tempMap(Temp[] t) {
+		Temp[] r = new Temp[t.length];
+		for (int i=0; i<r.length; i++)
+		    r[i] = tempMap(t[i]);
+		return r;
+	    }
 	}
     }
     /** An integer or boolean constant. */
