@@ -63,7 +63,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.41 1999-09-09 21:43:04 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.42 1999-09-10 00:27:44 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -421,16 +421,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
     
 	for (int i=0; i<q.value().length; i++) {
 	    Exp c = mapconst(q, q.value()[i], q.type());
-	    MEM m;
-	    if (q.type().equals(HClass.Boolean) ||
-		q.type().equals(HClass.Byte))
-		m = new MEM(m_tf, q, 8, true, nextPtr);
-	    else if (q.type().equals(HClass.Char))
-		m = new MEM(m_tf, q, 16, false, nextPtr);
-	    else if (q.type().equals(HClass.Short))
-		m = new MEM(m_tf, q, 16, true, nextPtr);
-	    else 
-		m = new MEM(m_tf, q, maptype(q.type()), nextPtr);
+	    MEM m = makeMEM(q, q.type(), nextPtr);
 	    s0 = new MOVE(m_tf, q, m, c);
 	    s1 = new MOVE
 		(m_tf, q, 
@@ -720,7 +711,8 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 
     public void visit(PGET q) {
 	TEMP dst = _TEMP(q.dst(), q), ptr = _TEMP(q.ptr(), q);
-	Stm s0 = new MOVE(m_tf, q, dst, new MEM(m_tf,q,TYPE(q,q.dst()),ptr));
+	MEM m = makeMEM(q, q.type(), ptr);
+	Stm s0 = new MOVE(m_tf, q, dst, m);
 	updateDT(q.dst(), q, dst.temp, dst);
 	updateDT(q.ptr(), q, ptr.temp, ptr);
 	addStmt(s0);
@@ -896,7 +888,8 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
   
     public void visit(PSET q) {
 	TEMP src = _TEMP(q.src(), q), ptr = _TEMP(q.ptr(), q);
-	Stm s0 = new MOVE(m_tf, q, new MEM(m_tf,q,TYPE(q,q.src()),ptr),src);
+	MEM m = makeMEM(q, q.type(), ptr);
+	Stm s0 = new MOVE(m_tf, q, m, src);
 	updateDT(q.src(), q, src.temp, src);
 	updateDT(q.ptr(), q, ptr.temp, ptr);
 	addStmt(s0);
@@ -977,6 +970,17 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	else if (hc==HClass.Float)   return Type.FLOAT;
 	else if (hc==HClass.Double)  return Type.DOUBLE;
 	else                         return Type.POINTER;
+    }
+
+    // make a properly-sized MEM
+    private MEM makeMEM(HCodeElement source, HClass type, Exp ptr) {
+	if (type.equals(HClass.Boolean) || type.equals(HClass.Byte))
+	    return new MEM(m_tf, source, 8, true, ptr);
+	if (type.equals(HClass.Char))
+	    return new MEM(m_tf, source, 16, false, ptr);
+	if (type.equals(HClass.Short))
+	    return new MEM(m_tf, source, 16, true, ptr);
+	return new MEM(m_tf, source, maptype(type), ptr);
     }
 
     // Implmentation of binary numeric promotion found in the Java
@@ -1651,8 +1655,8 @@ class PCALL_WITH_LABEL extends PCALL {
     public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
 	throw new Error("Should not use this method");
     }
-    public void visit(QuadVisitor v) { visit((ExtendedLowQuadVisitor)v); } 
-    public void visit(ExtendedLowQuadVisitor v) { v.visit(this); }
+    public void accept(QuadVisitor v) { accept((ExtendedLowQuadVisitor)v); } 
+    public void accept(ExtendedLowQuadVisitor v) { v.visit(this); }
     public String toString() {
 	return "PCALL_WITH_LABEL: "+labelex.toString()+"\n"+super.toString();
     }
