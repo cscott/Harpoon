@@ -30,7 +30,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.2 2001-06-11 23:27:32 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.3 2001-06-12 03:55:12 cananian Exp $
  */
 public class CacheEquivalence {
     
@@ -93,6 +93,7 @@ public class CacheEquivalence {
 		if (ces==null) ces = new CacheEquivSet(mem);
 		else ces.others.add(mem);
 		cache_equiv.put(mem, ces);
+		post.put(t, ces);
 	    } else { /* case 3 */
 		cache_equiv.put(mem, new CacheEquivSet(mem));
 	    }
