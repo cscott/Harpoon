@@ -2,6 +2,10 @@
 
 echo "TODO: Write a more elegant version of me!"
 
+./buildone Fib
+
+./buildone RTWater/Water
+
 ./buildone ETruc
 
 ./buildone Barnes/Barnes

@@ -15,9 +15,9 @@ BUILD_OUT_DIR=${CALL_DIR}/none/${name}.none
 rm -rf ${BUILD_OUT_DIR} 
 mkdir ${BUILD_OUT_DIR}
 
-if[$cls = "java_cup.main"]
+if test $cls = "java_cup.main"
 then
-    HARPOON_OPTIONS="-r ${FLEX_DIR}/Support/locale-root-set "$HARPOON_OPTIONS
+    SAMAIN_OPTIONS="-r ${FLEX_DIR}/Support/locale-root-set "
 fi
 
 echo "pwd="`pwd`
@@ -26,6 +26,7 @@ echo "HARPOON_OPTIONS="${HARPOON_OPTIONS}
 java -mx128m -oss100m \
     ${HARPOON_OPTIONS} \
 harpoon.Main.SAMain \
+    ${SAMAIN_OPTIONS} \
     -c $cls -bprecisec -o ${BUILD_OUT_DIR}
 
 exit $?

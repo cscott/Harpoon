@@ -27,7 +27,7 @@ make
 cd ${CALL_DIR};
 
 #for opt in inter intra none; do
-for opt in intra; do
+for opt in inter intra; do
 
  if [ $opt = none ]; then
     echo "Building the normal runtime (no clustered heaps)"
@@ -39,7 +39,7 @@ for opt in intra; do
         --with-thread-model=heavy --disable-shared \
 	--with-statistics
 
-    ./make
+    make
 
     cd ${CALL_DIR};
  fi

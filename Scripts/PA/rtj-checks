@@ -1,17 +1,21 @@
+#!/bin/sh
+
+# E.g. rtj-checks Fib /home/salcianu/Harpoon/Benchmarks/Fib
+
+
 CALL_DIR=`pwd`
 
 cd 
 cd Harpoon/Code
 
 cls=$1
-name=$2
-dir=$3
-levels=$4
+name=$1
+dir=$2
+levels=2
 
 echo "Analyzing $cls to analyze-$name"
 
 PRE_FILE=${CALL_DIR}/pre-analysis/pre${name}
-
 
 if test -e $PRE_FILE
 then
@@ -21,18 +25,6 @@ else
 fi
 
 
-#PA_FILE=pa-${name}
-
-#echo Current directory `pwd`
-
-#if test -e $PA_FILE
-#then
-#     ANALYSIS_OPT=--loadpa=$PA_FILE
-#else
-#     ANALYSIS_OPT=--savepa=$PA_FILE
-#fi
-
-
 
 # the class path with NewThread.jar
 stdPath=${HARPOON_DIR}/Code/Support/AbstractList.jar:${HARPOON_DIR}/Code/Support/NewThread.jar:${HARPOON_DIR}/Code/Support/sunthunk.jar:${HARPOON_DIR}/Code/Support/reflect-thunk.jar:${HARPOON_DIR}/Code/Support/collections.jar:${HARPOON_DIR}/Code/classes.zip:${HARPOON_DIR}/Code/Support/realtime.jar:.
@@ -40,12 +32,21 @@ stdPath=${HARPOON_DIR}/Code/Support/AbstractList.jar:${HARPOON_DIR}/Code/Support
 # the class path without NewThread.jar
 #stdPath=${HARPOON_DIR}/Code/Support/AbstractList.jar:${HARPOON_DIR}/Code/Support/sunthunk.jar:${HARPOON_DIR}/Code/Support/reflect-thunk.jar:${HARPOON_DIR}/Code/Support/collections.jar:${HARPOON_DIR}/Code/classes.zip:${HARPOON_DIR}/Code/Support/realtime.jar:.
 
-echo "harpoon.class.path = \""${stdPath}:${dir}"\""
+echo "harpoon.class.path = \""${dir}:${stdPath}"\""
 
 HARPOON_OPTIONS=" -mx512m -oss100m \
 		  -Dharpoon.runtime=2 \
     	          -Dharpoon.alloc.strategy=niftystats \
     	          -Dharpoon.target.elf=yes \
-                  -Dharpoon.class.path=$stdPath:$dir"
+                  -Dharpoon.class.path=$dir:$stdPath"
 
+echo "HARPOON_OPTIONS = "${HARPOON_OPTIONS}
 
+java -mx128m -oss100m \
+    ${HARPOON_OPTIONS} \
+harpoon.Main.PAMain ${PREANALYSIS_OPT} \
+    -s --ccs=$levels --wts \
+    --rtjchecks \
+$cls
+
+exit $?
