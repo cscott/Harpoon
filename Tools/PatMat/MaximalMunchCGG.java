@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.5 1999-06-29 06:10:45 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.6 1999-06-29 06:20:07 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
     
     /** Creates a <code>MaximalMunchCGG</code>. 
@@ -560,7 +560,19 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		Util.assert(false, "SpecRuleVisitor should never visit Rule");
 	    }
 	    public void visit(Spec.RuleStm r) { 
+		TypeStmRecurse recurse = 
+		    new TypeStmRecurse(expArg, indent + "\t");
+		r.stm.accept(recurse);
 
+		String typeCheck = recurse.exp.toString();
+		int munchFactor = recurse.degree;
+
+		// TODO: add Visitor to also check predicates and set _matched_ to true
+		// faking it for now...
+		String matchStm = indent + "_matched_ = (" + typeCheck + indent + ");";
+		expMatchActionPairs.add( new RuleTriplet( matchStm,
+							  r.action_str,
+							  recurse.degree ) );
 	    }
 	    public void visit(Spec.RuleExp r) { 
 		TypeExpRecurse recurse = 
@@ -570,7 +582,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		String typeCheck = recurse.exp.toString();
 		int munchFactor = recurse.degree;
 
-		// TODO: add code to also check predicates and set _matched_ to true
+		// TODO: add Visitor to also check predicates and set _matched_ to true
 		// for now faking it ...
 		String matchStm = indent + "_matched_ =  (" + typeCheck + indent + ");";
 		expMatchActionPairs.add( new RuleTriplet( matchStm,
@@ -614,7 +626,19 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	// for each rule for a statement we need to implement a
 	// clause in munchStm()
-
+	out.println("\t\t void munchStm(Stm " + expArg + ") {");
+	
+	out.println("\t\t\tboolean _matched_ = false;");
+	
+	Iterator stmPairsIter = stmMatchActionPairs.iterator();
+	while(stmPairsIter.hasNext()) {
+	    RuleTriplet triplet = (RuleTriplet) stmPairsIter.next();
+	    out.println(triplet.matchExp);
+	    out.println("\t\t\tif (_matched_) { // action code!");
+	    out.println(triplet.actionStms);
+	    
+	    out.println("\t\t\t}");
+	}
 	
 	out.println("\t}"); // end CggVisitor
 	
