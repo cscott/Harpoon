@@ -25,21 +25,25 @@ import harpoon.Util.Util;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 /**
  * <code>ObjectBuilder</code> is an implementation of
  * <code>harpoon.Backend.Generic.Runtime.ObjectBuilder</code> for the
  * <code>Runtime1</code> runtime.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.4 2000-01-10 05:08:36 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.5 2000-03-27 02:51:41 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
+    final boolean pointersAreLong;
     final NameMap nm;
     final FieldMap cfm;
+    private final Random rnd = new Random();
 
     /** Creates a <code>ObjectBuilder</code>. */
     public ObjectBuilder(Runtime runtime) {
+	this.pointersAreLong = runtime.frame.pointersAreLong();
 	this.nm = runtime.nameMap;
 	this.cfm= ((TreeBuilder) runtime.treeBuilder).cfm;
     }
@@ -83,7 +87,14 @@ public class ObjectBuilder
 	// claz pointer
 	stmlist.add(_DATUM(tf, nm.label(info.type())));
 	// hash code.
-	stmlist.add(_DATUM(tf, info.label()));
+	// this is of pointer size, and must have the low bit set.  we *could*
+	// emit a symbolic reference to info.label()+1 or some such, but
+	// this would complicate the pattern-matching instruction selector.
+	// so instead we'll just select a random number of the right length
+	// and set the low bit.
+	stmlist.add(makeDatum(tf, pointersAreLong ?
+			      (Number) new Long(1 | rnd.nextLong()) :
+			      (Number) new Integer(1 | rnd.nextInt())));
 	// okay, done with header.
 	return Stm.toStm(stmlist);
     }
