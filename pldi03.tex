@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi03.tex,v 1.3 2002-11-15 05:42:05 cananian Exp $
+% $Id: pldi03.tex,v 1.4 2002-11-15 21:17:07 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 %\usepackage[section,plain]{algorithm}
@@ -18,6 +18,7 @@
 \newcommand{\meet}{\ensuremath{\sqcap}}
 
 \renewcommand{\floatpagefraction}{0.8}
+\renewcommand{\topfraction}{0.25}
 
 \title{Data Size Optimizations for Java Programs}
 
@@ -27,6 +28,19 @@ Massachusetts Institute of Technology\\
 Cambridge, MA 02139 \\
 {\tt \{cananian, rinard\}@lcs.mit.edu}
 }
+
+% MISSING IDEAS:
+%  pointer compression?
+%  more discussion of multithreading semantics?
+%  atomic update of 3-byte objects
+%  hashtable picture?
+%  more discussion of exectution time?
+%  more back-patting on bitwidth analysis?  signed integers.
+%  which fields got split/specialized?
+%  make the case for constant field elimination *in the compiler*
+%  talk about static elimination of hash/locks?
+%  kava paper in related work?
+%  page numbers for citations
 
 %\renewcommand{\baselinestretch}{0.97}
 \begin{document}
@@ -69,7 +83,7 @@ run-time system:
 \begin{itemize}
 \item {\bf Field Reduction:} 
 Our flow-sensitive, interprocedural bitwidth analysis
-analysis computes the range of values that the program
+computes the range of values that the program
 may assign to each field. The compiler then transforms the program
 to reduce the size of the field to the smallest type
 capable of storing that range of values. 
@@ -181,7 +195,7 @@ and d) the {\tt positive} field always has a value between
 
 \begin{figure}[tp]
 \renewcommand{\baselinestretch}{0.6}%
-\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
+{\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
 public class JValue \{ \\
 \>int integerType = 0;\\
 \>int floatType = 1;\\
@@ -196,13 +210,13 @@ public class JValue \{ \\
 \>\>positive = (f.floatValue() > 0) ? 1 : 0;\\
 \>\}\\
 \}
-\end{tabular}%
+\end{tabular}}%
 \caption{The {\tt JValue} class.}
 \label{fig:value}
 \end{figure}
 \begin{figure}[tp]
 \renewcommand{\baselinestretch}{0.6}%
-\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
+{\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
 public final class String \{\\
 \>private final char value[];\\
 \>private final int offset;\\
@@ -218,7 +232,7 @@ public final class String \{\\
 \>\>return new String(noff, ncnt, value);\\
 \>\}\\
 \}\\
-\end{tabular}%
+\end{tabular}}%
 \caption{Portions of the {\tt java.lang.String} class.}
 \label{fig:string}
 \end{figure}
@@ -258,7 +272,7 @@ and do not change during the lifetime of the string.
 
 \begin{figure}[tp]
 \renewcommand{\baselinestretch}{0.6}%
-\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
+{\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
 public final class SmallString \{\\
 \>private final char value[];\\
 \>private final int count;\\
@@ -272,13 +286,13 @@ public final class BigString extends SmallString \{\\
 \>private final int offset;\\
 \>int getOffset() \{ return offset; \}\\
 \}\\
-\end{tabular}%
+\end{tabular}}%
 \caption{Static specialization of {\tt java.lang.String}.}
 \label{fig:split}
 \end{figure}
 \begin{figure}[tp]
 \renewcommand{\baselinestretch}{0.6}%
-\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
+{\small\tt\renewcommand{\>}{~~~}\begin{tabular}[t]{l}%
 public SmallString substring(int start)\\
 \{\\
 \>int noff = offset + start;\\
@@ -288,7 +302,7 @@ public SmallString substring(int start)\\
 \>else\\
 \>\>return new BigString(value, noff, ncnt);\\
 \}\\
-\end{tabular}%
+\end{tabular}}%
 \caption{Dynamic selection among specialized classes in a method
              from {\tt java.lang.String}.
 }
@@ -469,7 +483,7 @@ negative and positive numbers, which we do by splitting the set of
 values into negative, zero, and positive parts, and describing the
 bitwidth of each individually.
 
-We abstract sets of non-singleton integer values into a tuple
+We abstract non-singleton sets of integer values into a tuple
 \tuple{m,p} where $m\ge 1+\lfloor\log_2 N\rfloor$ for all negative $N$
 in the set, and $p\ge 1+\lfloor\log_2 N\rfloor$ for positive $N$.  We
 use $m=p=0$ to represent the constant zero.
@@ -483,7 +497,7 @@ additional rules giving it greater precision for common special cases,
 such as multiplication by
 a one-bit quantity, division by a constant, or (as the figure shows)
 bitfield operations on positive numbers.
-\begin{figure}[tbp]
+\begin{figure}[tp]
 \begin{eqnarray*}
 -\tuple{m,p} &=& \tuple{p,m}\\
 \tuple{m_l,p_l} + \tuple{m_r,p_r} &=& \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}\\
@@ -495,10 +509,12 @@ bitfield operations on positive numbers.
 \tuple{0,p_l} \wedge \tuple{0,p_r} &=& \tuple{0,\min(p_l,p_r)}\\
 \tuple{m_l,p_l}\wedge \tuple{m_r,p_r} &=& \tuple{\max(m_l,m_r),\max(p_l,p_r)}
 \end{eqnarray*}%
-\caption{Some combination rules for bitwidth analysis.
+\caption{Some combination rules for bitwidth analysis of arithmetic
+  and bitwise-logical operators.
   Note that the penultimate entry is a
   special-case rule that only applies if the neither of the
-  arguments can be negative.}\label{fig:bitrules}
+  arguments can be negative.
+}\label{fig:bitrules}
 \end{figure}
 
 \subsubsection{Treatment of Fields}
@@ -602,7 +618,8 @@ to determine which fields are {\it mostly-constant}.  Our implementation
 builds one binary per examined constant, that is, one binary to look
 for ``mostly-zero'' fields, a separate binary to look for fields which
 are usually ``one'', a third binary to look for fields commonly
-``two'', and so forth.  We built ten binaries for each benchmark, looking for
+``two'', and so forth.  We built eleven binaries for each benchmark,
+looking for
 field default values in the interval $[-5,5]$.
 For pointer fields, we only look for {\tt null} as a default value.
 Although our use of multiple binaries is by no means necessary,
@@ -655,13 +672,14 @@ written to from any method of a \emph{subclass} of {\tt A}, as well as
 in any constructor of {\tt A}.  In each write, the receiver's type
 must be a subtype of {\tt A}, except inside {\tt A}'s constructors,
 where the receiver may also be the method's {\tt this} parameter.
-Multiple writes to {\tt f} are permitted, unlike the Java-{\tt final}
-fields.
+Other writes are disallowed.  Unlike Java-{\tt final} fields,
+multiple writes to {\tt f} are permitted, as long as each write
+satisfies the above constraints.
 
 Subclass-finality matches the requirements of the static
 specialization transformation.  Since we always insert a ``big''
-version of the original split class as parent to any subclasses,
-subclasses can write to the field in objects of the ``big'' type
+version of the class between the specialized class and its children,
+subclasses can write to the field present in objects of the ``big'' type
 without restriction.
 We need only restrict writes which occur in the class proper.
 
@@ -682,7 +700,7 @@ class with a smaller split version; the second case allows us to wrap
 the constructor in an appropriate conditional to enable the creation
 of the small version when possible.
 
-This analysis is simple, because it builds upon our previous results.
+This analysis builds upon our previous results.
 In a single pass over the constructor, we merge the values written
 to a selected subclass-final field, treating $\text{\tt Param}N$ as an
 abstract value for the $N$th constructor parameter.
@@ -694,8 +712,9 @@ the field outside of the constructor.
 If the merged value at the end of the pass 
 is a {\tt Param} value or a constant equal to the desired ``default''
 value of the selected field,
-then we can statically specialize on the field at this constructor
-site.  Further, we rule out specialization on any otherwise-suitable
+then we can statically specialize on the field for calls to this
+particular constructor.
+Further, we rule out specialization on any otherwise-suitable
 fields for which there is not at least one callable constructor
 amenable to static specialization.
 %
@@ -717,7 +736,12 @@ analysis is sufficient to {\it bit}-pack the fields in the object
 when space is truly at a premium.  Preliminary investigation
 indicated that the amount of additional space gained by bit-packing 
 is typically only a few percent, because there aren't enough sub-byte
-fields to fill the space ``wasted'' by byte alignment.
+fields to fill the space ``wasted'' by byte alignment.%
+\footnote{Note also that ``bit-packing'' may lead to the loss of
+atomicity on concurrent writes to adjacent fields packed within a byte,
+typically the processor's smallest atomic write size.  An escape
+analysis would be sufficient to ensure that fields accessed from
+differing threads are not packed within the same atomic unit.}
 
 Some architectures penalize unaligned accesses to fields.  It is
 worthwhile to {\it attempt} to align fields to their preferred
@@ -927,7 +951,7 @@ The reason for our poor performance on {\tt compress} is now
 %
 We next evaluate the execution time impact of applying our space
 optimizations. Figure~\ref{fig:results}e presents the normalized execution 
-times of each application after the application of our sequence
+times of each benchmark after the application of our sequence
 of optimizations. These numbers show that the first several
 optimizations (class pointer compression, field reduction, and byte packing)
 typically reduce the execution times, while the
@@ -968,7 +992,7 @@ techniques typically reduce the lock space overhead to 24 header bits
 
 Research in escape analysis and related analyses can enable the
 compiler to find objects whose locks are never 
-acquired~\cite{ACSE99,BH99,WR99:OOPSLA99,CGSSM99,Ruf00:PLDI00,SR01:PPOPP01}.
+acquired~\cite{ACSE99,BH99,whaley99,CGSSM99,Ruf00:PLDI00,salcianu01}.
 This information can enable the compiler to remove the space
 reserved for synchronization support in these objects. 
 Our hash/lock removal algorithm uses a totally dynamic approach
@@ -977,7 +1001,7 @@ based on our field externalization mechanism.
 Several researchers have used bitwidth analysis to reduce the size
 of the generated circuits for compilers that generate hardware
 implementations of programs written in C or similar programming 
-languages~\cite{ananian:siliconc,ananian99:tech,RR00:PLDI00,SBA00:PLDI00,BGSW00}.
+languages~\cite{ananian:siliconc,ananian99:tech,RR00:PLDI00,stephenson00,BGSW00}.
 
 Dieckmann and H\"olzle have performed an in-depth analysis of the
 memory allocation behavior of Java programs~\cite{DH99}. Although 
