@@ -1,0 +1,32 @@
+pass  start    end       Loader  forStream-related  adjusted-cycles
+noopt 10392348 19759858  207262       7256101
+ssi   10392348 19759803  205521       7251174
+\null 10390257 19754816  203401       7260844
+
+initializeSystemClass:
+noopt 491322 1.0000
+wz    491322 1.0000
+ssi   491115 0.9995
+\null 491115 0.9995
+\arr  491115 0.9995
+full  447398 0.9106
+
+completion of 3rd call to Bytecode.Code.getElementsL():
+noopt 19761884 1.0000
+wz    19761874 0.9999
+ssi   19761874 0.9999
+\null 19758582 0.9998
+\arr  19756730 0.9997
+full  17571472 0.8891
+
+Hello, world:
+noopt 494058
+wz    494058
+ssi   493851
+\null 494058
+\arr  494058
+full  449895
+
+----- not counting CONSTs -----
+noopt - 383959 1.0000
+full  - 350140 0.9119
