@@ -30,7 +30,7 @@ import java.util.Stack;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.16 1999-06-18 01:47:56 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.17 1999-06-18 07:00:50 cananian Exp $
  */
 
 public class CycleEq  {
@@ -76,18 +76,13 @@ public class CycleEq  {
 	    }
 
 	    int hi1 = g.size(); // how high through children.
+	    int hi2 = g.size(); // second highest through children.
 	    for (NodeList nlp=n.childtree; nlp!=null; nlp=nlp.next) {
 		Node c = nlp.n;
 		if (c.hi < hi1) {
+		    if (hi1 < hi2) hi2 = hi1; 
 		    hi1 = c.hi;
-		}
-	    }
-
-	    // find min(hi) through children.
-	    int hi2 = 0; // lowest hi through children
-	    for (NodeList nlp=n.childtree; nlp!=null; nlp=nlp.next) {
-		Node c = nlp.n;
-		if (c.hi > hi2) {
+		} else if (c.hi < hi2) {
 		    hi2 = c.hi;
 		}
 	    }
