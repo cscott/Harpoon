@@ -22,7 +22,7 @@ import java.util.Iterator;
  * equality tests for treaps.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentTreeNode.java,v 1.12 2003-06-10 15:13:39 cananian Exp $
+ * @version $Id: PersistentTreeNode.java,v 1.13 2003-06-14 20:39:59 cananian Exp $
  */
 abstract class PersistentTreeNode<N extends PersistentTreeNode<N,K,V>,K,V>
     extends AbstractMapEntry<K,V> implements java.io.Serializable {
@@ -280,7 +280,7 @@ abstract class PersistentTreeNode<N extends PersistentTreeNode<N,K,V>,K,V>
 	    for (N n=root; n!=null; n=n.left)
 		stack = new NodeList<N,K,V>(n, stack);
 	}
-	public boolean hasNext() { return stack==null; }
+	public boolean hasNext() { return stack!=null; }
 	public N next() {
 	    N n = stack.head;
 	    stack = stack.tail;
