@@ -17,17 +17,17 @@ import java.io.FileNotFoundException;
 
 import harpoon.Util.Util;
 /** 
- * Quick and dirty class file loader.
- * Looks through CLASSPATH to find the class.  Understands .jar and .zip
- * files.
+ * Class file loader.
+ * Looks through CLASSPATH to find resources.  Understands .jar and .zip
+ * files.  Platform-independent (hopefully).
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Loader.java,v 1.10.2.2 1998-12-02 00:52:18 cananian Exp $
+ * @version $Id: Loader.java,v 1.10.2.3 1998-12-02 01:06:35 cananian Exp $
  */
 public abstract class Loader {
   static abstract class ClasspathElement {
-    /** Open a stream to read the given resource, or return null if
-     *  resource cannot be found. */
+    /** Open a stream to read the given resource, or return 
+     *  <code>null</code> if resource cannot be found. */
     abstract InputStream getResourceAsStream(String resourcename);
   }
   /** A .zip or .jar file in the CLASSPATH. */
@@ -78,7 +78,9 @@ public abstract class Loader {
     }
   }
 
-  /** Enumerate the components of the system CLASSPATH. */
+  /** Enumerate the components of the system CLASSPATH. 
+   *  Each element is a <code>String</code> naming one segment of the
+   *  CLASSPATH. */
   public static Enumeration classpaths() {
     String classpath = System.getProperty("java.class.path");
     final String pathsep   = System.getProperty("path.separator");
@@ -102,6 +104,9 @@ public abstract class Loader {
     };
   }
 
+  /** Translate a class name into a corresponding resource name. 
+   * @param classname The class name to translate.
+   */
   public static String classToResource(String classname) {
     Util.assert(classname.indexOf('/')==-1); // should have '.' separators.
     String filesep   = System.getProperty("file.separator");
@@ -109,7 +114,8 @@ public abstract class Loader {
     return classname.replace('.', filesep.charAt(0)) + ".class";
   }
 
-  /** Open an InputStream on a resource found somewhere in the CLASSPATH.
+  /** Open an <code>InputStream</code> on a resource found somewhere 
+   *  in the CLASSPATH.
    * @param name The filename of the resource to locate.
    */
   public static InputStream getResourceAsStream(String name) {
