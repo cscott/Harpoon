@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.113 $)dnl
+AC_REVISION($Revision: 1.114 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -169,16 +169,6 @@ yes)	AC_MSG_RESULT([yes])
 esac
 AM_CONDITIONAL(ROLE_INFER, test $with_role_infer = yes)
 
-dnl set up RTJPerf performance benchmarks - requires native code
-AC_MSG_CHECKING([for RTJPerf library support])
-AC_ARG_WITH(rtj-perf,
-[  --with-rtj-perf	  use RTJPerf for RTJ performance benchmarking],
-rtj_perf="$withval", )
-if test "$rtj_perf" = "yes"; then
-  LIBS="$LIBS -lHRTime"
-fi
-AC_MSG_RESULT($rtj_perf)
-
 dnl process option for Realtime Java support.
 AC_MSG_CHECKING([for realtime java support])
 AC_ARG_WITH(realtime-java,
@@ -269,6 +259,20 @@ esac
 AM_CONDITIONAL(REALTIME_JAVA, test $with_realtime_java != no)
 AM_CONDITIONAL(REALTIME_JAVA_STUBS, test $with_realtime_java_stubs = yes)
 AM_CONDITIONAL(REALTIME_JAVA_THREADS, test $with_realtime_threads = yes)
+
+dnl set up RTJPerf performance benchmarks - requires native clock code
+AC_MSG_CHECKING([for RTJPerf library support])
+AC_ARG_WITH(rtj-perf,
+[  --with-rtj-perf	  use RTJPerf for RTJ performance benchmarking],
+with_rtj_perf="$withval", with_rtj_perf="no")
+case "$with_rtj_perf" in
+yes)	AC_MSG_RESULT([yes])
+	AC_DEFINE(WITH_RTJ_PERF, 1, [Define if you want RTJPerf support])
+	;;
+*)	AC_MSG_RESULT([no])
+	;;
+esac
+AM_CONDITIONAL(RTJ_PERF, test $with_rtj_perf = yes) 
 
 dnl process option to select full stack trace on exceptions.
 AC_MSG_CHECKING([stack trace verbosity])
@@ -691,6 +695,15 @@ AC_MSG_CHECKING(link script for $target_cpu)
 CC="$CC" scripts/gen-link-script > arch/${archdir}/link-script
 AC_MSG_RESULT(created in arch/${archdir}/link-script)
 
+if test x$with_rtj_perf = xyes; then
+  AC_PATH_PROG(PYTHON, 'python', x)
+  if test $PYTHON != x ; then 
+    cd src/rtjperf
+    $PYTHON genSysInfo.py
+    cd ../..
+  fi
+fi
+
 AC_LINK_FILES(arch/${archdir}, include/asm)
 AC_OUTPUT(Makefile arch/Makefile
 	  arch/arm32/Makefile arch/sparc32/Makefile arch/sparc64/Makefile
@@ -702,5 +715,5 @@ AC_OUTPUT(Makefile arch/Makefile
 	  src/java.util/Makefile src/java.util.zip/Makefile
 	  src/clheap/Makefile src/nativeio/Makefile src/gc/Makefile
 	  src/stats/Makefile src/user/Makefile src/realtime/Makefile
-	  src/transact/Makefile src/roles/Makefile src/mzf/Makefile
-	  scripts/flexrun-config)
+	  src/rtjperf/Makefile src/transact/Makefile src/roles/Makefile 
+	  src/mzf/Makefile scripts/flexrun-config)
