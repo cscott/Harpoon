@@ -6,12 +6,17 @@ package harpoon.Main;
 import harpoon.ClassFile.Loader;
 import harpoon.IR.RawClass.AccessFlags;
 import harpoon.IR.RawClass.Attribute;
+import harpoon.IR.RawClass.AttributeCode;
 import harpoon.IR.RawClass.AttributeExceptions;
+import harpoon.IR.RawClass.AttributeLineNumberTable;
+import harpoon.IR.RawClass.AttributeLocalVariableTable;
 import harpoon.IR.RawClass.AttributeSignature;
 import harpoon.IR.RawClass.AttributeSourceFile;
 import harpoon.IR.RawClass.ClassFile;
 import harpoon.IR.RawClass.ConstantClass;
 import harpoon.IR.RawClass.FieldInfo;
+import harpoon.IR.RawClass.LineNumberTable;
+import harpoon.IR.RawClass.LocalVariableTable;
 import harpoon.IR.RawClass.MethodInfo;
 import harpoon.Util.Util;
 
@@ -21,7 +26,7 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.13 2003-08-28 22:02:16 cananian Exp $
+ * @version $Id: Javap.java,v 1.14 2003-09-05 21:49:52 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     /** Print out disassembled code. */
@@ -100,9 +105,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 		 "   -c         Disassemble the code\n"+
 		 */
 		 "   -help      Print this usage message\n"+
-		 /*
 		 "   -l         Print line number and local variable tables\n"+
-		 */
 		 "   -public    Show only public classes and members\n"+
 		 "   -protected Show protected/public classes and members\n"+
 		 "   -package   Show package/protected/public classes\n"+
@@ -132,12 +135,12 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 
 	// print "Compiled from"
 	AttributeSourceFile asf = (AttributeSourceFile)
-	    findAttribute(raw, "SourceFile");
+	    findAttribute(raw, AttributeSourceFile.ATTRIBUTE_NAME);
 	if (asf!=null)
 	    System.out.println("Compiled from \""+asf.sourcefile()+"\"");
 	// get generic signature.
 	AttributeSignature asig = (AttributeSignature)
-	    findAttribute(raw, "Signature");
+	    findAttribute(raw, AttributeSignature.ATTRIBUTE_NAME);
 	String gjsig = (asig==null) ? null : asig.signature();
 	// print class modifiers.
 	System.out.print(modString(raw.access_flags, true));
@@ -178,20 +181,22 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	}
 	System.out.println();
 	if (MORE_INFO) {
-	    System.out.println("  SourceFile: \"ArraySet.java\"");
-	    System.out.println("  minor version: 0");
-	    System.out.println("  major version: 0");
+	    if (asf!=null)
+		System.out.println("  SourceFile: \""+asf.sourcefile()+"\"");
+	    System.out.println("  minor version: "+raw.minor_version);
+	    System.out.println("  major version: "+raw.major_version);
 	    System.out.println("  Constant pool:");
-	    System.out.println("const #1 = Method       #6.#27; //  java/util/AbstractSet.\"<init>\":()V");
-	    System.out.println("const #2 = Field        #5.#28; //  harpoon/Util/ArraySet.oa:[Ljava/lang/Object;c");
-	    assert false : "unimplemented";
+	    for (int i=1; i<raw.constant_pool.length; ) {
+		System.out.println("const #"+i+" = "+raw.constant_pool[i]);
+		i+=raw.constant_pool[i].entrySize();
+	    }
 	}
 	System.out.println("{");
 	// fields.
 	for (int i=0; i<raw.fields_count(); i++) {
 	    FieldInfo fi = raw.fields[i];
 	    AttributeSignature fis = (AttributeSignature)
-		findAttribute(fi.attributes, "Signature");
+		findAttribute(fi.attributes,AttributeSignature.ATTRIBUTE_NAME);
 	    if (!access_flags_okay(fi.access_flags)) continue; // skip
 	    if (INDENT) System.out.print("    "); // indent.
 	    // access flags
@@ -211,12 +216,13 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 		if (fis!=null)
 		    System.out.println("  Generic Signature: "+fis.signature());
 	    }
+	    if (!INDENT) System.out.println(); // match Sun javap spacing
 	}
 	// methods.
 	for (int i=0; i<raw.methods_count(); i++) {
 	    MethodInfo mi = raw.methods[i];
 	    AttributeSignature mis = (AttributeSignature)
-		findAttribute(mi.attributes, "Signature");
+		findAttribute(mi.attributes,AttributeSignature.ATTRIBUTE_NAME);
 	    if (!access_flags_okay(mi.access_flags)) continue; // skip
 	    // assign descriptor.
 	    String md;
@@ -225,7 +231,8 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 		md = mi.descriptor();
 		// add throws clauses.
 		AttributeExceptions ae = (AttributeExceptions)
-		    findAttribute(mi.attributes, "Exceptions");
+		    findAttribute(mi.attributes,
+				  AttributeExceptions.ATTRIBUTE_NAME);
 		for (int j=0; ae!=null && j<ae.number_of_exceptions(); j++) {
 		    ConstantClass cc = ae.exception_index_table(j);
 		    if (cc==null) continue;
@@ -292,30 +299,47 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 		    System.out.println("  Generic Signature: "+mis.signature());
 	    }
 	    // print code
-	    if (DISASSEMBLE) {
+	    AttributeCode ac = (AttributeCode)
+		findAttribute(mi.attributes, AttributeCode.ATTRIBUTE_NAME);
+	    if (DISASSEMBLE && ac!=null) {
 		System.out.println("  Code:");
 		if (MORE_INFO) {
-		    System.out.println("Stack=2, Locals=2, Args_size=2");
+		    System.out.println("Stack="+ac.max_stack+", "+
+				       "Locals="+ac.max_locals+", "+
+				       "Args_size=?");
 		}
 		System.out.println("   0:   aload_0");
  		assert false : "unimplemented";
 	    }
 	    // print line number table
-	    if (LINE_NUMBER_TABLE) {
+	    AttributeLineNumberTable alnt = (AttributeLineNumberTable)
+		(ac==null ? null :
+		 findAttribute(ac.attributes,
+			       AttributeLineNumberTable.ATTRIBUTE_NAME));
+	    if (LINE_NUMBER_TABLE && alnt!=null) {	
+		LineNumberTable[] lnt = alnt.line_number_table;
 		System.out.println("  LineNumberTable:");
-		System.out.println("   line 20: 0");
-		System.out.println("   line 21: 4");
-		System.out.println("   line 22: 9");
-		assert false : "unimplemented";
+		for (int j=0; j<lnt.length; j++)
+		    System.out.println("   line "+lnt[j].line_number+": "+
+				       lnt[j].start_pc);
 	    }
 	    // print local variable table
-	    if (LOCAL_VARIABLE_TABLE) {
+	    AttributeLocalVariableTable alvt = (AttributeLocalVariableTable)
+		(ac==null ? null :
+		 findAttribute(ac.attributes,
+			       AttributeLocalVariableTable.ATTRIBUTE_NAME));
+	    if (LOCAL_VARIABLE_TABLE && alvt!=null) {
+		LocalVariableTable[] lvt = alvt.local_variable_table;
 		System.out.println("  LocalVariableTable:");
 		System.out.println("   Start  Length  Slot  Name   Signature");
-		System.out.println("   0      10      0    this       Lharpoon/Util/ArraySet;");
-		System.out.println("   0      10      1    oa       [Ljava/lang/Object;");
-		assert false : "unimplemented";
+		for (int j=0; j<lvt.length; j++)
+		    System.out.println("   "+lvt[j].start_pc+
+				       "      "+lvt[j].length+
+				       "      "+lvt[j].index+
+				       "    "+lvt[j].name()+
+				       "       "+lvt[j].descriptor());
 	    }
+	    if (!INDENT) System.out.println(); // match Sun javap spacing
 	}
 	System.out.println("}");
     }
