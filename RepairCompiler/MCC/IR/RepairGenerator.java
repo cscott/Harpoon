@@ -1295,94 +1295,98 @@ public class RepairGenerator {
 	    return;
 
         cr.outputline("// RELATION DISPATCH ");
-	cr.outputline("if ("+oldmodel.getSafeSymbol()+"&&");
-	if (usageimage)
-	    cr.outputline("!"+oldmodel.getSafeSymbol() +"->"+rd.getJustSafeSymbol()+"_hash->contains("+leftvar+","+rightvar+"))");
-	else
-	    cr.outputline("!"+oldmodel.getSafeSymbol() +"->"+rd.getJustSafeSymbol()+"_hashinv->contains("+rightvar+","+leftvar+"))");
-	cr.startblock(); {
-	    /* Adding new item */
-	    /* Perform safety checks */
-	    cr.outputline("if ("+repairtable.getSafeSymbol()+"&&");
-	    cr.outputline(repairtable.getSafeSymbol()+"->containsrelation("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+"))");
+	if (Compiler.REPAIR) {
+	    cr.outputline("if ("+oldmodel.getSafeSymbol()+"&&");
+	    if (usageimage)
+		cr.outputline("!"+oldmodel.getSafeSymbol() +"->"+rd.getJustSafeSymbol()+"_hash->contains("+leftvar+","+rightvar+"))");
+	    else
+		cr.outputline("!"+oldmodel.getSafeSymbol() +"->"+rd.getJustSafeSymbol()+"_hashinv->contains("+rightvar+","+leftvar+"))");
+
 	    cr.startblock(); {
-		/* Have update to call into */
-		VarDescriptor mdfyptr=VarDescriptor.makeNew("modifyptr");
-		cr.outputline("int "+mdfyptr.getSafeSymbol()+"="+repairtable.getSafeSymbol()+"->getrelation2("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
-
-		String parttype="";
-		for(int i=0;i<currentrule.numQuantifiers();i++) {
-		    if (currentrule.getQuantifier(i) instanceof RelationQuantifier)
-			parttype=parttype+", int, int";
-		    else
-			parttype=parttype+", int";
-		}
-		VarDescriptor funptr=VarDescriptor.makeNew("updateptr");
-		VarDescriptor tmpptr=VarDescriptor.makeNew("tempupdateptr");
-
-		String methodcall="("+funptr.getSafeSymbol()+") (this,"+oldmodel.getSafeSymbol()+","+repairtable.getSafeSymbol();
-		for(int i=0;i<currentrule.numQuantifiers();i++) {
-		    Quantifier q=currentrule.getQuantifier(i);
-		    if (q instanceof SetQuantifier) {
-			SetQuantifier sq=(SetQuantifier) q;
-			methodcall+=","+sq.getVar().getSafeSymbol();
-		    } else if (q instanceof RelationQuantifier) {
-			RelationQuantifier rq=(RelationQuantifier) q;
-			methodcall+=","+rq.x.getSafeSymbol();
-			methodcall+=","+rq.y.getSafeSymbol();
-		    } else if (q instanceof ForQuantifier) {
-			ForQuantifier fq=(ForQuantifier) q;
-			methodcall+=","+fq.getVar().getSafeSymbol();
+		/* Adding new item */
+		/* Perform safety checks */
+		cr.outputline("if ("+repairtable.getSafeSymbol()+"&&");
+		cr.outputline(repairtable.getSafeSymbol()+"->containsrelation("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+"))");
+		cr.startblock(); {
+		    /* Have update to call into */
+		    VarDescriptor mdfyptr=VarDescriptor.makeNew("modifyptr");
+		    cr.outputline("int "+mdfyptr.getSafeSymbol()+"="+repairtable.getSafeSymbol()+"->getrelation2("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
+		    
+		    String parttype="";
+		    for(int i=0;i<currentrule.numQuantifiers();i++) {
+			if (currentrule.getQuantifier(i) instanceof RelationQuantifier)
+			    parttype=parttype+", int, int";
+			else
+			    parttype=parttype+", int";
 		    }
-		}
-
-
+		    VarDescriptor funptr=VarDescriptor.makeNew("updateptr");
+		    VarDescriptor tmpptr=VarDescriptor.makeNew("tempupdateptr");
+		    
+		    String methodcall="("+funptr.getSafeSymbol()+") (this,"+oldmodel.getSafeSymbol()+","+repairtable.getSafeSymbol();
+		    for(int i=0;i<currentrule.numQuantifiers();i++) {
+			Quantifier q=currentrule.getQuantifier(i);
+			if (q instanceof SetQuantifier) {
+			    SetQuantifier sq=(SetQuantifier) q;
+			    methodcall+=","+sq.getVar().getSafeSymbol();
+			} else if (q instanceof RelationQuantifier) {
+			    RelationQuantifier rq=(RelationQuantifier) q;
+			    methodcall+=","+rq.x.getSafeSymbol();
+			    methodcall+=","+rq.y.getSafeSymbol();
+			} else if (q instanceof ForQuantifier) {
+			    ForQuantifier fq=(ForQuantifier) q;
+			    methodcall+=","+fq.getVar().getSafeSymbol();
+			}
+		    }
+		    
+		    
 		
-		cr.outputline("void *"+tmpptr.getSafeSymbol()+"=");
-		cr.outputline("(void *) "+repairtable.getSafeSymbol()+"->getrelation("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
-		cr.outputline("if ("+mdfyptr.getSafeSymbol()+")");
-		{
-		    cr.startblock();
-		    cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)) "+tmpptr.getSafeSymbol());
-		    cr.outputline(methodcall+leftvar+", "+rightvar+", "+mdfyptr.getSafeSymbol() +");");
-		    cr.endblock();
+		    cr.outputline("void *"+tmpptr.getSafeSymbol()+"=");
+		    cr.outputline("(void *) "+repairtable.getSafeSymbol()+"->getrelation("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
+		    cr.outputline("if ("+mdfyptr.getSafeSymbol()+")");
+		    {
+			cr.startblock();
+			cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)) "+tmpptr.getSafeSymbol());
+			cr.outputline(methodcall+leftvar+", "+rightvar+", "+mdfyptr.getSafeSymbol() +");");
+			cr.endblock();
+		    }
+		    cr.outputline("else ");
+		    {
+			cr.startblock();
+			cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")) "+tmpptr.getSafeSymbol());
+			cr.outputline(methodcall+");");
+			cr.endblock();
+		    }
+		    cr.outputline("goto rebuild;");
 		}
-		cr.outputline("else ");
-		{
-		    cr.startblock();
-		    cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")) "+tmpptr.getSafeSymbol());
-		    cr.outputline(methodcall+");");
-		    cr.endblock();
+		cr.endblock();
+		
+		/* Build standard compensation actions */
+		if (need_compensation(currentrule)) {
+		    UpdateNode un=find_compensation(currentrule);
+		    String name=(String)updatenames.get(un);
+		    usedupdates.add(un); /* Mark as used */
+		    String methodcall=name+"(this,"+oldmodel.getSafeSymbol()+","+repairtable.getSafeSymbol();
+		    for(int i=0;i<currentrule.numQuantifiers();i++) {
+			Quantifier q=currentrule.getQuantifier(i);
+			if (q instanceof SetQuantifier) {
+			    SetQuantifier sq=(SetQuantifier) q;
+			    methodcall+=","+sq.getVar().getSafeSymbol();
+			} else if (q instanceof RelationQuantifier) {
+			    RelationQuantifier rq=(RelationQuantifier) q;
+			    methodcall+=","+rq.x.getSafeSymbol();
+			    methodcall+=","+rq.y.getSafeSymbol();
+			} else if (q instanceof ForQuantifier) {
+			    ForQuantifier fq=(ForQuantifier) q;
+			    methodcall+=","+fq.getVar().getSafeSymbol();
+			}
+		    }
+		    methodcall+=");";
+		    cr.outputline(methodcall);
+		    cr.outputline("goto rebuild;");
 		}
-		cr.outputline("goto rebuild;");
 	    }
 	    cr.endblock();
-	    /* Build standard compensation actions */
-	    if (need_compensation(currentrule)) {
-		UpdateNode un=find_compensation(currentrule);
-		String name=(String)updatenames.get(un);
-		usedupdates.add(un); /* Mark as used */
-		String methodcall=name+"(this,"+oldmodel.getSafeSymbol()+","+repairtable.getSafeSymbol();
-		for(int i=0;i<currentrule.numQuantifiers();i++) {
-		    Quantifier q=currentrule.getQuantifier(i);
-		    if (q instanceof SetQuantifier) {
-			SetQuantifier sq=(SetQuantifier) q;
-			methodcall+=","+sq.getVar().getSafeSymbol();
-		    } else if (q instanceof RelationQuantifier) {
-			RelationQuantifier rq=(RelationQuantifier) q;
-			methodcall+=","+rq.x.getSafeSymbol();
-			methodcall+=","+rq.y.getSafeSymbol();
-		    } else if (q instanceof ForQuantifier) {
-			ForQuantifier fq=(ForQuantifier) q;
-			methodcall+=","+fq.getVar().getSafeSymbol();
-		    }
-		}
-		methodcall+=");";
-		cr.outputline(methodcall);
-		cr.outputline("goto rebuild;");
-	    }
 	}
-	cr.endblock();
 
         String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
 	cr.outputline("int " + addeditem + ";");
@@ -1436,75 +1440,76 @@ public class RepairGenerator {
     public void generate_dispatch(CodeWriter cr, SetDescriptor sd, String setvar) {
                
         cr.outputline("// SET DISPATCH ");
-
-	cr.outputline("if ("+oldmodel.getSafeSymbol()+"&&");
-	cr.outputline("!"+oldmodel.getSafeSymbol() +"->"+sd.getJustSafeSymbol()+"_hash->contains("+setvar+"))");
-	cr.startblock(); {
-	    /* Adding new item */
-	    /* Perform safety checks */
-	    cr.outputline("if ("+repairtable.getSafeSymbol()+"&&");
-	    cr.outputline(repairtable.getSafeSymbol()+"->containsset("+sd.getNum()+","+currentrule.getNum()+","+setvar+"))");
+	if (Compiler.REPAIR) {
+	    cr.outputline("if ("+oldmodel.getSafeSymbol()+"&&");
+	    cr.outputline("!"+oldmodel.getSafeSymbol() +"->"+sd.getJustSafeSymbol()+"_hash->contains("+setvar+"))");
 	    cr.startblock(); {
-		/* Have update to call into */
-		VarDescriptor funptr=VarDescriptor.makeNew("updateptr");
-		String parttype="";
-		for(int i=0;i<currentrule.numQuantifiers();i++) {
-		    if (currentrule.getQuantifier(i) instanceof RelationQuantifier)
-			parttype=parttype+", int, int";
-		    else
-			parttype=parttype+", int";
-		}
-		cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")=");
-		cr.outputline("(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")) "+repairtable.getSafeSymbol()+"->getset("+sd.getNum()+","+currentrule.getNum()+","+setvar+");");
-		String methodcall="("+funptr.getSafeSymbol()+") (this,"+oldmodel.getSafeSymbol()+","+
-			      repairtable.getSafeSymbol();
-		for(int i=0;i<currentrule.numQuantifiers();i++) {
-		    Quantifier q=currentrule.getQuantifier(i);
-		    if (q instanceof SetQuantifier) {
-			SetQuantifier sq=(SetQuantifier) q;
-			methodcall+=","+sq.getVar().getSafeSymbol();
-		    } else if (q instanceof RelationQuantifier) {
-			RelationQuantifier rq=(RelationQuantifier) q;
-			methodcall+=","+rq.x.getSafeSymbol();
-			methodcall+=","+rq.y.getSafeSymbol();
-		    } else if (q instanceof ForQuantifier) {
-			ForQuantifier fq=(ForQuantifier) q;
-			methodcall+=","+fq.getVar().getSafeSymbol();
+		/* Adding new item */
+		/* Perform safety checks */
+		cr.outputline("if ("+repairtable.getSafeSymbol()+"&&");
+		cr.outputline(repairtable.getSafeSymbol()+"->containsset("+sd.getNum()+","+currentrule.getNum()+","+setvar+"))");
+		cr.startblock(); {
+		    /* Have update to call into */
+		    VarDescriptor funptr=VarDescriptor.makeNew("updateptr");
+		    String parttype="";
+		    for(int i=0;i<currentrule.numQuantifiers();i++) {
+			if (currentrule.getQuantifier(i) instanceof RelationQuantifier)
+			    parttype=parttype+", int, int";
+			else
+			    parttype=parttype+", int";
 		    }
+		    cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")=");
+		    cr.outputline("(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+")) "+repairtable.getSafeSymbol()+"->getset("+sd.getNum()+","+currentrule.getNum()+","+setvar+");");
+		    String methodcall="("+funptr.getSafeSymbol()+") (this,"+oldmodel.getSafeSymbol()+","+
+			repairtable.getSafeSymbol();
+		    for(int i=0;i<currentrule.numQuantifiers();i++) {
+			Quantifier q=currentrule.getQuantifier(i);
+			if (q instanceof SetQuantifier) {
+			    SetQuantifier sq=(SetQuantifier) q;
+			    methodcall+=","+sq.getVar().getSafeSymbol();
+			} else if (q instanceof RelationQuantifier) {
+			    RelationQuantifier rq=(RelationQuantifier) q;
+			    methodcall+=","+rq.x.getSafeSymbol();
+			    methodcall+=","+rq.y.getSafeSymbol();
+			} else if (q instanceof ForQuantifier) {
+			    ForQuantifier fq=(ForQuantifier) q;
+			    methodcall+=","+fq.getVar().getSafeSymbol();
+			}
+		    }
+		    methodcall+=");";
+		    cr.outputline(methodcall);
+		    cr.outputline("goto rebuild;");
 		}
-		methodcall+=");";
-		cr.outputline(methodcall);
-		cr.outputline("goto rebuild;");
+		cr.endblock();
+		/* Build standard compensation actions */
+		if (need_compensation(currentrule)) {
+		    UpdateNode un=find_compensation(currentrule);
+		    String name=(String)updatenames.get(un);
+		    usedupdates.add(un); /* Mark as used */
+		    
+		    String methodcall=name+"(this,"+oldmodel.getSafeSymbol()+","+
+			repairtable.getSafeSymbol();
+		    for(int i=0;i<currentrule.numQuantifiers();i++) {
+			Quantifier q=currentrule.getQuantifier(i);
+			if (q instanceof SetQuantifier) {
+			    SetQuantifier sq=(SetQuantifier) q;
+			    methodcall+=","+sq.getVar().getSafeSymbol();
+			} else if (q instanceof RelationQuantifier) {
+			    RelationQuantifier rq=(RelationQuantifier) q;
+			    methodcall+=","+rq.x.getSafeSymbol();
+			    methodcall+=","+rq.y.getSafeSymbol();
+			} else if (q instanceof ForQuantifier) {
+			    ForQuantifier fq=(ForQuantifier) q;
+			    methodcall+=","+fq.getVar().getSafeSymbol();
+			}
+		    }
+		    methodcall+=");";
+		    cr.outputline(methodcall);
+		    cr.outputline("goto rebuild;");
+		}
 	    }
 	    cr.endblock();
-	    /* Build standard compensation actions */
-	    if (need_compensation(currentrule)) {
-		UpdateNode un=find_compensation(currentrule);
-		String name=(String)updatenames.get(un);
-		usedupdates.add(un); /* Mark as used */
-
-		String methodcall=name+"(this,"+oldmodel.getSafeSymbol()+","+
-			      repairtable.getSafeSymbol();
-		for(int i=0;i<currentrule.numQuantifiers();i++) {
-		    Quantifier q=currentrule.getQuantifier(i);
-		    if (q instanceof SetQuantifier) {
-			SetQuantifier sq=(SetQuantifier) q;
-			methodcall+=","+sq.getVar().getSafeSymbol();
-		    } else if (q instanceof RelationQuantifier) {
-			RelationQuantifier rq=(RelationQuantifier) q;
-			methodcall+=","+rq.x.getSafeSymbol();
-			methodcall+=","+rq.y.getSafeSymbol();
-		    } else if (q instanceof ForQuantifier) {
-			ForQuantifier fq=(ForQuantifier) q;
-			methodcall+=","+fq.getVar().getSafeSymbol();
-		    }
-		}
-		methodcall+=");";
-		cr.outputline(methodcall);
-		cr.outputline("goto rebuild;");
-	    }
 	}
-	cr.endblock();
 
         String addeditem = (VarDescriptor.makeNew("addeditem")).getSafeSymbol();
 	cr.outputline("int " + addeditem + " = 1;");
