@@ -55,7 +55,7 @@ int doanalysisfordebugging()
 #ifdef DEBUGMANYMESSAGES
   exportmodel->getdomainrelation()->print();
 #endif
-
+exportmodel->getdomainrelation()->fixstuff();
   return found;
 }
 
