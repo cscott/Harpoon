@@ -1,3 +1,22 @@
+---- Aug-24-98
+Test:
+ method() {
+   synchronized(new Object()) {
+     synchronized(new Object()) {
+     }
+   }
+ }
+Test:
+ method() {
+  try {
+   try {
+    ;
+   } catch (x) {
+   }
+  } catch (y) {
+  }
+ }
+
 ---- Aug-21-98
 Implement INSTANCEOF in the IR (special method? special Quad?  subclass OPER?)
 Implement CHECKCAST
