@@ -9,6 +9,7 @@ import harpoon.Backend.Generic.Runtime.ObjectBuilder.ObjectInfo;
 import harpoon.Backend.Generic.Runtime.ObjectBuilder;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HDataElement;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMember;
@@ -51,7 +52,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflectionMemberList.java,v 1.1.2.2 2001-02-27 02:07:40 cananian Exp $
+ * @version $Id: DataReflectionMemberList.java,v 1.1.2.3 2001-02-27 18:48:27 cananian Exp $
  */
 public class DataReflectionMemberList extends Data {
     final NameMap m_nm;
@@ -88,9 +89,20 @@ public class DataReflectionMemberList extends Data {
 	// change to object data segment.
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.REFLECTION_OBJECTS));
 	// build actual field objects
-	stmlist.add(buildMemberObjects(orderedFields, false));
-	// build actual method objects
-	stmlist.add(buildMemberObjects(orderedMethods, true));
+	stmlist.add(buildMemberObjects(orderedFields, "Field"));
+	// split off the constructors.
+	List orderedConstructors = new ArrayList(orderedMethods.size());
+	for (Iterator it=orderedMethods.iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    if (hm instanceof HConstructor) {
+		orderedConstructors.add(hm);
+		it.remove();
+	    }
+	}
+	// build constructor objects
+	stmlist.add(buildMemberObjects(orderedConstructors, "Constructor"));
+	// build method objects
+	stmlist.add(buildMemberObjects(orderedMethods, "Method"));
 	// yay, done.
 	return (HDataElement) Stm.toStm(stmlist);
     }
@@ -121,12 +133,11 @@ public class DataReflectionMemberList extends Data {
 					(member+"2info_end")), true));
 	return Stm.toStm(stmlist);
     }
-    private Stm buildMemberObjects(List ordered, boolean membersAreMethods) {
+    private Stm buildMemberObjects(List ordered, String objectClassName) {
 	List stmlist = new ArrayList(ordered.size());
 	final HClass HCclass = linker.forName("java.lang.Class");
 	final HClass type = linker.forName
-	    ("java.lang.reflect."+
-	     (membersAreMethods ? "Method" : "Field"));
+	    ("java.lang.reflect."+ objectClassName);
 	for (Iterator it=ordered.iterator(); it.hasNext(); ) {
 	    final HMember hm = (HMember) it.next();
 	    // make an ObjectInfo -- that doesn't actual provide any info.

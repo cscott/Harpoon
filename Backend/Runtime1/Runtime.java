@@ -29,7 +29,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.35 2001-01-31 21:36:16 wbeebee Exp $
+ * @version $Id: Runtime.java,v 1.1.2.36 2001-02-27 18:48:27 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -142,9 +142,16 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    linker.forName("java.lang.OutOfMemoryError")
 		.getConstructor(new HClass[] { HCstring }),
 	    // runtime's reflection implementation mentions these
-	    linker.forName("java.lang.Class"),
-	    linker.forName("java.lang.reflect.Field"),
-	    linker.forName("java.lang.reflect.Method"),
+	    // (and they are (staticly) instantiated, so reference the
+	    //  constructors)
+	    linker.forName("java.lang.Class")
+		.getConstructor(new HClass[0]),
+	    linker.forName("java.lang.reflect.Constructor")
+		.getConstructor(new HClass[0]),
+	    linker.forName("java.lang.reflect.Field")
+		.getConstructor(new HClass[0]),
+	    linker.forName("java.lang.reflect.Method")
+		.getConstructor(new HClass[0]),
 	    // FNI_ExceptionDescribe uses this
 	    linker.forName("java.lang.Throwable")
 		.getMethod("toString", new HClass[0]),
