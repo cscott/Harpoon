@@ -87,7 +87,7 @@ for ($i=0; $i<=$#markdata; $i+=3) {
 
 # insert line numbers
 for ($i=0; $i<=$#lines; $i++) {
-    my $numstr = $i; while(length($numstr)<3) { $numstr=" $numstr"; }
+    my $numstr = 1+$i; while(length($numstr)<3) { $numstr=" $numstr"; }
     &insertBefore($i,0,"<A NAME=\"$i\"><FONT color=purple>$numstr</FONT></A> ");
 }
 
