@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.16 1999-07-29 00:11:51 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.17 1999-07-29 18:16:22 cananian Exp $
  */
 public class Spec  {
 
@@ -462,6 +462,7 @@ public class Spec  {
 	public void visit(StmMove s) { visit((Stm)s); }
 	public void visit(StmNativeCall s) { visit((Stm)s); }
 	public void visit(StmReturn s) { visit((Stm)s); }
+	public void visit(StmSegment s) { visit((Stm)s); }
 	public void visit(StmSeq s) { visit((Stm)s); }
 	public void visit(StmThrow s) { visit((Stm)s); }
     }
@@ -674,6 +675,22 @@ public class Spec  {
 	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "RETURN"+types+"("+retval+")"; }
     }
+
+    /** Extension of <code>Spec.Stm</code> representing a change of
+     *  output segment.
+     *  @see IR.Tree.SEGMENT
+     */
+    public static class StmSegment extends Stm {
+	/** Type of segment. */
+	public final Leaf segtype;
+	/** Constructs a new <code>Spec.StmSegment</code>.
+	 *  @param segtype Segment type.
+	 */
+	public StmSegment(Leaf segtype) { this.segtype = segtype; }
+	public void accept(StmVisitor v) { v.visit(this); }
+	public String toString() { return "SEGMENT("+segtype+")"; }
+    }
+
     /** Extension of <code>Spec.Stm</code> representing a sequence of
 	statements to be executed in order.
 	@see IR.Tree.SEQ
