@@ -13,7 +13,7 @@ import imagerec.util.Servo;
  */
 public class ServoThread extends Thread {
     private final int servo;
-    private byte start, stop;
+    private int start, stop;
     private long time;
     private static final IPaqServoController car = new IPaqServoController();
     
@@ -51,7 +51,7 @@ public class ServoThread extends Thread {
      * @param time How long to do it (in milliseconds).
      * @param stop The stopping motion.
      */
-    public synchronized void command(byte start, long time, byte stop) {
+    public synchronized void command(int start, long time, int stop) {
 	this.start = start;
 	this.time = time;
 	this.stop = stop;
