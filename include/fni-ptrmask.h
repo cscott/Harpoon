@@ -1,3 +1,6 @@
+#ifndef INCLUDED_FNI_PTRMASK_H
+#define INCLUDED_FNI_PTRMASK_H
+
 /* ----- bit-masking for stuffing extra info into low bits of pointers ----- */
 
 #include "config.h"
@@ -9,3 +12,5 @@
 # define PTRMASK(x) ((void *) (x))
 #endif
 #endif
+
+#endif /* INCLUDED_FNI_PTRMASK_H */
