@@ -2,7 +2,9 @@
 #include <jni-private.h>
 #include "java_lang_System.h"
 #include <sys/time.h>
-#include <sys/utsname.h>
+#ifdef HAVE_UNAME
+# include <sys/utsname.h>
+#endif
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -182,7 +184,6 @@ JNIEXPORT jobject JNICALL Java_java_lang_System_initProperties
     jmethodID methodID = (*env)->GetMethodID(env, propcls, "put",
 		   "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
 #endif
-    struct utsname buf;
     char *ckey, *cvalue;
     int i;
     /* do all the easy (constant) properties first */
@@ -193,6 +194,9 @@ JNIEXPORT jobject JNICALL Java_java_lang_System_initProperties
     cvalue = getenv("CLASSPATH");
     _putProperty(env, propobj, methodID, ckey, cvalue);
     /* uname stuff... */
+#ifdef HAVE_UNAME
+    {
+    struct utsname buf;
     if (uname(&buf)==0) {
       ckey = "os.name";
       cvalue = buf.sysname;
@@ -204,6 +208,8 @@ JNIEXPORT jobject JNICALL Java_java_lang_System_initProperties
       cvalue = buf.release;
       _putProperty(env, propobj, methodID, ckey, cvalue);
     }
+    }
+#endif /* HAVE_UNAME */
     /* user info */
     ckey = "user.name";
     cvalue = getenv("USER");
@@ -211,6 +217,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_System_initProperties
     ckey = "user.home";
     cvalue = getenv("HOME");
     _putProperty(env, propobj, methodID, ckey, cvalue);
+#ifdef HAVE_GETCWD
     {
       /* note, as this is a (temporary) char array, it is safe to use
        * malloc instead of GC_malloc. (ie, there are no pointers in here) */
@@ -224,6 +231,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_System_initProperties
       _putProperty(env, propobj, methodID, ckey, cvalue);
       free(buf);
     }
+#endif /* HAVE_GETCWD */
     /* done */
     return propobj;
 }
