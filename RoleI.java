@@ -938,7 +938,8 @@ class RoleI {
     }
 
     private boolean mergeable(Integer rolenumber) {
-	return ((Role)roletable.get(rolenumber)).contained;
+	return true;
+	//	return ((Role)roletable.get(rolenumber)).contained;
     }
 
     private void writemergeddiagram() {

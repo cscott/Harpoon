@@ -509,14 +509,14 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
 
   objrole->class=ho->class;
 
-  if ((heap->options&OPTION_ECLASS)&&classcontained(heap, ho->class)) {
-    assignhashcode(objrole);
-    return objrole;
-  }
-
   if (heap->options&OPTION_UCONTAINERS) {
     if (contains(heap->containedobjects, ho->uid))
       objrole->contained=1;
+  }
+
+  if ((heap->options&OPTION_ECLASS)&&classcontained(heap, ho->class)) {
+    assignhashcode(objrole);
+    return objrole;
   }
 
   if(ho->methodscalled!=NULL) {
