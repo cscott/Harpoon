@@ -19,7 +19,7 @@ import java.util.Set;
  * permitted.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialMap.java,v 1.1.2.1 1999-06-20 05:30:21 cananian Exp $
+ * @version $Id: BinomialMap.java,v 1.1.2.2 1999-06-20 05:48:02 cananian Exp $
  */
 public class BinomialMap extends AbstractMap implements Cloneable {
     private static final boolean debug=false;
@@ -256,6 +256,10 @@ public class BinomialMap extends AbstractMap implements Cloneable {
     public void clear() {
 	this.head=null;
     }
+    /** Returns <code>true</code> if this map contains no key-value mappings.*/
+    public boolean isEmpty() {
+	return this.head==null;
+    }
 
     /** Creates a new BinomialMap with all the key-value pairs this one
      *  has.  O(n) time. */
@@ -275,6 +279,40 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	nn.child = _clone(nn, n.child);
 	nn.sibling=_clone(parent, n.sibling);
 	return nn;
+    }
+
+    /** Test whether the specified key is contained in this mapping.
+     *  O(n). */
+    public boolean containsKey(Object key) {
+	return find(head, key)!=null;
+    }
+    /** Returns the value to which this map maps the specified key, or
+     * <code>null</code> if there is no mapping for this key. O(n). */
+    public Object get(Object key) {
+	Node n = find(head, key);
+	return (n==null)?null:n.key;
+    }
+    /** Removes the mapping for this key from this map if present. O(n) */
+    public Object remove(Object key) {
+	Node n = find(head, key); // O(n)
+	if (n==null) return null;
+	Object oldvalue = n.value;
+	removeEntry(n); // O(lg n)
+	return oldvalue;
+    }
+
+    /** Find the node with key equal to the specified key. O(n), although
+     *  pruning is done on subtrees with root larger than the specified key.
+     *  What this means is that the smaller the key is, the faster this will
+     *  run. */
+    private Node find(Node n, Object key) {
+	if (n==null) return null;
+	int cmp=c.compare(n.key, key);
+	if (cmp==0) return n;
+	Node s=find(n.sibling, key);
+	if (s!=null) return s;
+	if (cmp > 0) return null; // all children will have larger keys.
+	return find(n.child, key);
     }
 
     /** The underlying node representation for the binomial heap */
@@ -393,7 +431,7 @@ public class BinomialMap extends AbstractMap implements Cloneable {
 	bm1.removeEntry((Map.Entry) it.next());
 	Util.assert(bm1.size()==25);
 
-	while (bm1.size()>0) {
+	while (!bm1.isEmpty()) {
 	    Map.Entry me = bm1.minimum();
 	    bm1.removeEntry(me);
 	    System.out.print(me.getKey().toString()+" ");
