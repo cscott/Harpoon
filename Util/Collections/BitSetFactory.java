@@ -31,7 +31,7 @@ import java.util.HashMap;
     cause <code>IllegalArgumentException</code> to be thrown.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.17 2000-07-18 22:40:19 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.18 2000-11-14 22:01:31 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -239,12 +239,27 @@ public class BitSetFactory extends SetFactory {
 			throw new IllegalStateException();
 		    BitStringSet.this.bs.clear(lastindex);
 		}
-	    } : (Iterator) new FilterIterator // slower fall-back
-		(fact.universe.iterator(), 
-		 new FilterIterator.Filter() {
-		    public boolean isElement(Object o) {
-			return BitStringSet.this.bs.get(fact.indexer.getID(o));
-		    }});
+	    } : new Iterator() { // slower fall-back
+		    // need to wrap a *modifiable* iterator 
+		    // around an internal filter iterator...
+		    Iterator internIter = new FilterIterator
+			(fact.universe.iterator(), 
+			 new FilterIterator.Filter() {
+				 public boolean isElement(Object o) {
+				     return BitStringSet.this.bs.get
+					 (fact.indexer.getID(o));
+				 }});
+		    Object last = null;
+		    public Object next() {
+			last = internIter.next();
+			return last;
+		    }
+		    public boolean hasNext() {
+			return internIter.hasNext();
+		    }
+		    public void remove() {
+			BitStringSet.this.bs.clear(fact.indexer.getID(last));
+		    }};
 	}
 	
 	public boolean remove(Object o) {
@@ -271,7 +286,17 @@ public class BitSetFactory extends SetFactory {
 		notBSS.setAll(); // -> string of ones
 		notBSS.xor(bss.bs); // -> complement(bss)
 		return this.bs.and(notBSS);
-	    } else return super.removeAll(c); // slower generic implementation
+	    } else if (c.size() < this.size()) {
+		// optimization hack; super.removeAll takes time
+		// proportional to this.size()
+		boolean changed = false;
+		for(Iterator i=c.iterator(); i.hasNext();) {
+		    changed |= remove(i.next());
+		}
+		return changed;
+	    } else {		
+		return super.removeAll(c); // slower generic implementation
+	    }
 	}
 
 	public boolean retainAll(Collection c) {
@@ -279,7 +304,9 @@ public class BitSetFactory extends SetFactory {
 		((BitStringSet)c).fact == this.fact) {
 		BitStringSet bss = (BitStringSet) c;
 		return this.bs.and(bss.bs);
-	    } else return super.retainAll(c); // slower generic implementation
+	    } else {
+		return super.retainAll(c); // slower generic implementation
+	    }
 	}
 
 	public int size() {
