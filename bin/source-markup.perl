@@ -3,10 +3,14 @@ use English;
 use Getopt::Std;
 
 # configuration:
+
+# tab size.  self-explanatory, no?
 my $tabsize = 8;
-# uncomment out the next line if cvsblame.pl is not in the same directory
-# as this script. [CSA]
-#my $cvsblame="cvsblame.pl"; # path to cvsblame script.
+# set $cvsblame to the full path to the cvsblame script if it is not
+# in the same directory as this script.
+undef $cvsblame; # full path to cvsblame.pl
+# set alt_cvsblame non-zero to try alternate layout for cvsblame information.
+undef $alt_cvsblame;
 
 # end configuration
 
@@ -17,13 +21,14 @@ sub usage {
     die
 "$progname: usage: [options] filename\n",
 "   Options:\n",
-"      -c       Don't try to annotate with CVS information\n",
-"      -j       Don't try to syntax-color Java files\n",
-"      -h       Print help (this message)\n\n"
+"      -c           Don't try to annotate with CVS information\n",
+"      -j           Don't try to syntax-color Java files\n",
+"      -u <baseurl> Link CVS blame information to log browser CGI\n",
+"      -h           Print help (this message)\n\n"
     ;
 }
 
-&usage if (!&getopts('cjh'));
+&usage if (!&getopts('cju:h'));
 &usage if $opt_h; # help option
 &usage if $#ARGV!=0; # too few or too many options.
 
@@ -145,25 +150,44 @@ for ($i=0; $i<=$#lines; $i++) {
 
 # cvsblame annotation (unless user doesn't want it)
 if (!$opt_c) {
-    open(CVSBLAME, "$cvsblame -qav $filename |")
+    my $optstr = "-u $opt_u" if defined $opt_u;
+    open(CVSBLAME, "$cvsblame -qav $optstr $filename |")
 	or die("Couldn't start cvsblame.\n");
-    my @a; my @r; my $alen=0; my $rlen=0;
+    my @a; my @r; my @u; my $alen=0; my $rlen=0;
     while (<CVSBLAME>) {
-	my ($author, $rev) = m/(\S+)\s+(\S+)/;
-	push(@a,$author); push(@r,$rev);
+	my ($author, $rev, $url) = m/(\S+)\s+(\S+)(?:\s+(\S+))?/;
+	push(@a,$author); push(@r,$rev); push(@u,$url);
 	$alen=length $author if $alen < length $author; 
 	$rlen=length $rev    if $rlen < length $rev;
     }
     close(CVSBLAME);
-    die "Invalid cvsblame information.\n" unless $#lines==$#a && $#a==$#r;
-    my $laststr; my $color=1;
-    for ($i=0; $i<=$#lines; $i++) {
-	my $annstr=sprintf("%-*s %-*s",$alen,$a[$i],$rlen,$r[$i]);
-        if ($i==0 || $annstr ne $laststr) {
-	    $laststr=$annstr; $color=!$color;
+    # only add cvsblame information if it is valid...
+    if ($#lines==$#a && $#a==$#r) {
+	my $laststr; my $color=1;
+	for ($i=0; $i<=$#lines; $i++) {
+	    # output properly padded string.
+	    my $annstr=sprintf("%-*s %-*s",$alen,$a[$i],$rlen,$r[$i]);
+	    # boldface if a local modification, else italics.
+	    $annstr = ( $r[$i]=~m/LOCAL/ ) ?
+		"<B>$annstr</B>" : "<I>$annstr</I>";
+	    # alternate colors when source changes.
+	    if ($i==0 || $annstr ne $laststr) {
+		$laststr=$annstr; $color=!$color;
+	    }
+	    my $colorstr=$color?"darkorange":"darkorchid";
+	    my $annstr="<FONT COLOR=$colorstr>$annstr</FONT>";
+	    # link to log browser
+	    my $diffurl = $u[$i];
+	    my $logurl = $diffurl; $logurl=~s/.diff.*?$/"#rev".$r[$i]/e;
+	    $annstr = !$alt_cvsblame ?
+		"<A HREF=\"$diffurl\">$annstr</A>" :
+		"$annstr <A HREF=\"$diffurl\">D</A> <A HREF=\"$logurl\">L</A>"
+		    if defined $opt_u && !($r[$i]=~m/1.1|LOCAL/);
+	    # don't hyperlink spaces (looks ugly)
+            $annstr =~ s|(\s+)(</([^>]*></)*[^>]*>)|$2$1|i;
+	    # okay, make the annotation at the beginning of the line.
+	    &insertBefore($i,0, "<FONT SIZE=-1>$annstr </FONT>");
 	}
-        my $colorstr=$color?"darkorange":"darkorchid";
-        &insertBefore($i,0, "<FONT COLOR=$colorstr SIZE=-1><i>$annstr</i></FONT> ");
     }
 }
 
