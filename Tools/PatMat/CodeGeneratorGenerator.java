@@ -17,7 +17,7 @@ import java.io.PrintWriter;
  * 
  * @see harpoon.Backend.Generic.CodeGen
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.18 1999-10-26 01:47:56 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.19 2000-02-13 01:32:17 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -151,25 +151,22 @@ public abstract class CodeGeneratorGenerator {
 
 	<BR> <B>Subclass Implementation Notes:</B>
 	     <BR> Generated method has one parameter available to be
-	     referenced: <code>tree</code>, a <code>TreeCode</code>
+	     referenced: <code>code</code>, a <code>Tree.Code</code>
 	     that represents the input set of <code>Tree</code>
-	     <code>HCodeElement</code>s.
+	     <code>HCodeElement</code>s.  From this the code may
+	     access the <code>Frame</code>,
+	     <code>TreeDerivation</code>, and
+	     <code>IR.Tree.Tree</code> objects necessary to create
+	     assembly code <code>Instr</code>s using the actions
+	     provided by a spec file.
+
 	     <BR>Generated method must, for each pattern in
 	     <code>this.spec</code>, define variables for the action
 	     statements in the pattern to refer to.  These variables
 	     are:<OL>
 	     <LI>The <code>Spec.ExpId</code> objects defined in the
-  	         pattern.  
-		 <B>NOTE:</B> This italicized section is about to go
-		 away, and the documentation should be updated
-		 accordingly. 
-		 <I>Note that this does not include the
-		 <code>Spec.RuleExp.result_id</code> of the whole  
-		 Pattern; it is the responsibility of the action code
-		 of the Rule to properly initialize and assign a
-		 <code>Temp</code> to the name given in
-		 <code>Spec.RuleExp.result_id</code>.</I> 
-
+  	         pattern, including the result_id and %extra Temp
+		 objects. 
 	     <LI>The <code>HCodeElement</code> <code>ROOT</code>.  
 	         This should be defined as the
 		 <code>IR.Tree.Tree</code> element being analyzed.  To
