@@ -3,12 +3,12 @@ package harpoon.ClassFile;
 /**
  * <Code>HCodeElement</code> is an interface that all views of a particular
  * method's executable instructions should implement.<p>
- * <code>HCodeElements</code> are "components" of an <code>HCode</code>.
+ * <code>HCodeElement</code>s are "components" of an <code>HCode</code>.
  * The correspond roughly to "an instruction" in the <code>HCode</code>
  * "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeElement.java,v 1.1 1998-08-03 00:11:27 cananian Exp $
+ * @version $Id: HCodeElement.java,v 1.2 1998-08-03 00:27:37 cananian Exp $
  * @see HCode
  * @see harpoon.ClassFile.Bytecode.Instruction
  */

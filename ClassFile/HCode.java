@@ -1,13 +1,13 @@
 package harpoon.ClassFile;
 
 /**
- * <code>HCode</code> is an interface that all views of a particular
- * method's executable code should implement.
+ * <code>HCode</code> is an abstract class that all views of a particular
+ * method's executable code should extend.
  * <p>
  * An <code>HCode</code> corresponds roughly to a "list of instructions".
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCode.java,v 1.1 1998-08-03 00:11:26 cananian Exp $
+ * @version $Id: HCode.java,v 1.2 1998-08-03 00:27:37 cananian Exp $
  * @see HMethod
  * @see HCodeElement
  * @see harpoon.ClassFile.Bytecode.Code

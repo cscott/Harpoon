@@ -17,13 +17,13 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.8 1998-08-02 09:25:15 cananian Exp $
+ * @version $Id: HMethod.java,v 1.9 1998-08-03 00:27:37 cananian Exp $
  * @see HMember
  * @see HClass
  */
 public class HMethod implements HMember {
   HClass hclass;
-  HClass returnType, parameterTypes[], exceptionTypes[];
+
   // raw data.
   harpoon.ClassFile.Raw.MethodInfo methodinfo;
   AttributeCode code;
@@ -35,10 +35,6 @@ public class HMethod implements HMember {
 		    harpoon.ClassFile.Raw.MethodInfo methodinfo) {
     this.hclass = parent;
     this.methodinfo = methodinfo;
-    // the following fields are computed on demand.
-    this.returnType=null;
-    this.parameterTypes=null;
-    this.exceptionTypes=null;
     // Crunch the attribute information.
     this.code = null;
     this.exceptions=null;
@@ -51,9 +47,11 @@ public class HMethod implements HMember {
       else if (methodinfo.attributes[i] instanceof AttributeSynthetic)
 	this.synthetic = (AttributeSynthetic) methodinfo.attributes[i];
     }
-    // Add the default code representation.
+    // Add the default code representation. FIXME
+    /*
     if (this.code != null) // interface methods don't have code attributes.
       putCode("bytecode", this.code.code);
+    */
   }
 
   /**
@@ -67,19 +65,22 @@ public class HMethod implements HMember {
    *         if the given <code>codetype</code> cannot be found.
    * @see putCode
    */
-  public Object getCode(String codetype) {
-    return codetable.get(codetype);
+  public HCode getCode(String codetype) {
+    return (HCode) codetable.get(codetype);
   }
   /**
    * Add a new code representation for this method, or replace
-   * a previously existing one.
-   * @param codetype a string describing this code representation.
+   * a previously existing one.<p>
+   * The 'codetype' string used for <code>getCode</code> is
+   * the value of the <code>getName</code> method of 
+   * <code>codeobj</code>.
    * @param codeobj  an object representing the code, or <code>null</code>
    *                 to delete a previously existing representation.
    * @see getCode
+   * @see HCode#getName
    */
-  public void putCode(String codetype, Object codeobj) {
-    codetable.put(codetype, codeobj);
+  public void putCode(HCode codeobj) {
+    codetable.put(codeobj.getName(), codeobj);
   }
   private Hashtable codetable = new Hashtable();
 
@@ -91,6 +92,7 @@ public class HMethod implements HMember {
   public HClass getDeclaringClass() {
     return hclass;
   }
+
   /**
    * Returns the name of the method represented by this <code>HMethod</code>
    * object, as a <code>String</code>.
@@ -98,6 +100,7 @@ public class HMethod implements HMember {
   public String getName() {
     return methodinfo.name();
   }
+
   /**
    * Returns the Java language modifiers for the method represented by this
    * <code>HMethod</code> object, as an integer.  The <code>Modifier</code>
@@ -107,6 +110,7 @@ public class HMethod implements HMember {
   public int getModifiers() {
     return methodinfo.access_flags.access_flags;
   }
+
   /**
    * Returns a <code>HClass</code> object that represents the formal
    * return type of the method represented by this <code>HMethod</code>
@@ -120,6 +124,9 @@ public class HMethod implements HMember {
     }
     return returnType;
   }
+  /** Cached value of <code>getReturnType</code>. */
+  private HClass returnType=null;
+
   /**
    * Returns an array of <code>HClass</code> objects that represent the
    * formal parameter types, in declaration order, of the method
@@ -144,6 +151,9 @@ public class HMethod implements HMember {
     }
     return HClass.copy(parameterTypes);
   }
+  /** Cached value of <code>getParameterTypes</code>. */
+  private HClass[] parameterTypes = null;
+
   /**
    * Returns an array of <code>String</code> objects giving the declared
    * names of the formal parameters of the method.  The length of the
@@ -170,7 +180,9 @@ public class HMethod implements HMember {
     System.arraycopy(parameterNames,0,retval,0,parameterNames.length);
     return retval;
   }
+  /** Cached value of <code>getParameterNames</code>. */
   private String[] parameterNames=null;
+
   /**
    * Returns an array of <code>HClass</code> objects that represent the
    * types of the checked exceptions thrown by the underlying method
@@ -195,12 +207,14 @@ public class HMethod implements HMember {
     }
     return HClass.copy(exceptionTypes);
   }
+  /** Cached value of <code>getExceptionTypes</code>. */
+  private HClass[] exceptionTypes = null;
 
   /**
    * Determines whether this <code>HMethod</code> is synthetic.
    */
   public boolean isSynthetic() {
-    return (synthetic!=null);
+    return (synthetic!=null); /*it's synthetic if we found a Synthetic attrib*/
   }
 
   /**
@@ -208,9 +222,10 @@ public class HMethod implements HMember {
    * Returns <code>true</code> if the objects are the same.  Two
    * <code>HMethod</code>s are the same if they were declared by the same
    * class and have the same name and formal parameter types.
-   */
+   */ // in actual practice, I think HMethods are unique.
   public boolean equals(Object obj) {
     if (obj==null) return false;
+    if (this==obj) return true; // common case.
     if (!(obj instanceof HMethod)) return false;
     HMethod method = (HMethod) obj;
     if (hclass != method.hclass) return false;
@@ -223,6 +238,7 @@ public class HMethod implements HMember {
 	return false;
     return true;
   }
+
   /**
    * Returns a hashcode for thie <code>HMethod</code>.  The hashcode
    * is computed as the exclusive-or of the hashcodes for the
@@ -231,6 +247,7 @@ public class HMethod implements HMember {
   public int hashCode() {
     return hclass.getName().hashCode() ^ getName().hashCode();
   }
+
   /**
    * Returns a string describing this <code>HMethod</code>.  The string
    * is formatted as the method access modifiers, if any, followed by
