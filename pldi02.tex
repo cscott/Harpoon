@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.10 2001-11-16 18:05:03 cananian Exp $
+% $Id: pldi02.tex,v 1.11 2001-11-16 19:36:25 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -8,6 +8,7 @@
 %\usepackage{amstext} % the \text command for math mode (replaces \mbox)
 \usepackage{varioref} % \vref command
 %\usepackage{graphicx} % for SCC bargraph
+\usepackage{color}
 \usepackage{comdef}
 \newcommand{\figscale}{1.0}
 
@@ -18,7 +19,7 @@
 
 \title{\bf Data Size Optimizations for Java Programs}
 
-\author{C. Scott Ananian \\
+\author{C.~Scott~Ananian \\
 	Laboratory for Computer Science\\
 	Massachusetts Institute of Technology\\ 
 	Cambridge, MA 02139 \\ 
@@ -26,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.10 $ $}{$ $Revision: 1.10 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.11 $ $}{$ $Revision: 1.11 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -299,12 +300,88 @@ runtime system.
 
 \subsection{Bitwidth analysis}
 Our bitwidth analysis is an inter-procedural extension of that
-described in {\bf reference here}.  It is based on Wegman and Zadeck's
-Sparse Conditional Constant (SCC) propagation algorithm
-\cite{wegman91:scc}\ldots
+described in \cite{ananian99:tech}.  It is based on Wegman and
+Zadeck's Sparse Conditional Constant (SCC) propagation algorithm
+\cite{wegman91:scc}, with extensions to a bitwidth lattice.
+Since almost all types in Java are signed (with the exception of the
+16-bit {\tt char}), we must handle both negative and positive numbers.
+We first extend the basic three level value lattice of Wegman and
+Zadeck to allow the classification of negative, positive, or zero
+values, as illustrated in figure~\ref{fig:scclat6}.
+A join on two negative numbers yields the entry \code{(M--)}, a
+join on a negative and a positive number yields \code{(M-P)}, and so on.
+\begin{figure}
+\centering\renewcommand{\figscale}{0.6}\input{Figures/THlat6}
+\caption[An integer lattice for signed integers.]
+{An integer lattice for signed integers. A classification into
+negative (M), positive (P), or zero (Z) is grafted onto the standard
+flat integer constant domain.  The \code{(M-P)} entry is duplicated to
+aid clarity.}
+\label{fig:scclat6}
+\end{figure}
 
-{\bf write me}
-% field-based
+Now substitute integers $M$ and $P$ into the tuples, to represent the
+widths of the absolute value of the negative and positive portion of
+the number.  Merging the constants $2$ and $4$ would result in the lattice
+value \code{(--3)}, for example, and merging $-4$ with $4$ would result in
+\code{(3-3)}.  Some combination rules for arithmetic operations are
+shown in figure~\ref{fig:bitrules}.
+\begin{figure}
+\begin{eqnarray*}
+-\tuple{M,P} &=& \tuple{P,M}\\
+\tuple{M_l,P_l} + \tuple{M_r,P_r} &=& \tuple{1+\max(M_l,M_r),1+\max(P_l,P_r)}\\
+%\tuple{M_l,P_l} \times \tuple{M_r,P_r} &=& \langle\max(M_l+P_r,P_l+M_r),\\
+%                                       &&  \max(M_l+M_r,P_l+P_r)\rangle\\
+\tuple{M_l,P_l} \times \tuple{M_r,P_r} &=&
+\tuple{\begin{array}{l}\max(M_l+P_r,P_l+M_r),\\
+                       \max(M_l+M_r,P_l+P_r)\end{array}}\\
+\tuple{0,P_l} \wedge \tuple{0,P_r} &=& \tuple{0,\min(P_l,P_r)}\\
+\tuple{M_l,P_l}\wedge \tuple{M_r,P_r} &=& \tuple{\max(M_l,M_r),\max(P_l,P_r)}
+\end{eqnarray*}%
+\caption{Some combination rules for bit-width analysis.  The \code{Z}
+  element indicating whether zero is a possible value has been omitted
+  for clarity.}\label{fig:bitrules}
+\end{figure}
+
+Dataflow on this bitwidth lattice is performed on the entire Java
+program interprocedurally.  The analysis is what Heintze and Tardieu
+\cite{heintze01}
+would call {\it field-based}; that is, given a field $f$ defined in
+class $X$, and an instance of $X$ named $x$, we consider an assignment
+to $x.f$ to be an assignment to the field $X.f$ and ignore the base
+object $x$.\footnote{An obvious extension is to use pointer
+analysis to discriminate between fields allocated at different sites
+in the program.}  The result of the analysis is a bitwidth
+specification for each variable and field in the program.  As the
+analysis is based on SCC, we also identify constant variables and
+fields; reads of constant fields are replaced with their constant
+value and the field is eliminated.  Fields which we do not discover
+any reads of during our analysis are also removed as unused.
+Table~\ref{tab:const-unused} shows the number of unused and constant
+fields discovered by our analysis, and the dynamic space savings
+realized by removing them.  With the exception of 202\_jess and
+228\_jack, the objects containing most unused or constant fields are
+very rarely instantiated.
+\begin{table}
+\begin{tabular}{lcccr@{.}l}
+&total&&&\multicolumn{2}{c}{\% alloc'ed}\\
+\bf Benchmark & fields & unread & constant &
+\multicolumn{2}{c}{space saved} \\\hline
+200\_check	& 279 &   79   &   35   &  2&6\% \\
+201\_compress	& 298 &   75   &   31   &  2&5\% \\
+202\_jess	& 485 &   91   &   43   &  9&9\% \\
+205\_raytrace	& 341 &   75   &   30   &  0&0\% \\
+209\_db 	& 286 &   75   &   35   &  0&0\% \\
+213\_javac	& 531 &   85   &   34   &  0&6\% \\
+222\_mpegaudio	& 286 &   75   &   35   &  1&4\% \\
+227\_mtrt	& 341 &   75   &   30   &  0&0\% \\
+228\_jack	& 378 &   77   &   31   & 10&2\% \\
+\end{tabular}
+\caption{Number of unused and constant fields in SPEC benchmarks,
+  and the savings realized (in \% of total dynamic allocated bytes) by
+  removing them.}
+\label{tab:const-unused}
+\end{table}
 
 \subsection{Field packing}
 \label{sec:field-packing}
@@ -369,7 +446,7 @@ space,\footnote{Not to mention a 64-bit address space!} due to
 limitations on the amount of memory and I/O address space actually attached
 to the device.  If we are byte- or bit-packing our fields already,
 it is straight-forward to implement sub-word widths for fields of
-reference type.  Figure {\bf XX} shows the expected space savings
+reference type.  Figure~{\bf XX} shows the expected space savings
 across our benchmarks as one shrinks the pointer size.  A
 space-optimizing java compiler ought to be able to specialize the code
 emitted for the address space size of the target device to take
@@ -388,7 +465,7 @@ advantage of these potential savings.
 Mostly-zero field analysis attempts to take advantage of commonly
 recurring field values to reduce the space consumption of an object.
 For example, the {\tt java.lang.String} class in the Java standard
-library (see figure \ref{fig:string-fields}) uses {\tt offset} and
+library (see figure~\ref{fig:string-fields}) uses {\tt offset} and
 {\tt count} fields to index into a character array, allowing the
 implementation of the substring operation in constant time (without
 copying data from the {\tt String}'s underlying character array into a
@@ -434,7 +511,7 @@ getter methods.  The ``small'' class will have a getter method
 which will simply return the constant zero.  The ``large''
 subclass will actually consult the field (which is only present in the
 ``large'' version of the class) and return or set its value (in the
-getter and setter, respectively).  Figure \ref{fig:big-small} illustrates this
+getter and setter, respectively).  Figure~\ref{fig:big-small} illustrates this
 conversion for a illustrative fragment of a {\tt java.lang.String}
 implementation.
 \begin{figure}
@@ -478,8 +555,8 @@ prove that a field is zero iff a certain constructor parameter is
 zero, then we can insert a test at the instantiation site to select
 the small class if the parameter is zero, or else to use the large class.
 An example of this approach on code which might constitute an
-implementation of {\tt String.substring()} is shown in figure
-\ref{fig:dyn-select}.  Notice that rewriting the return type of the
+implementation of {\tt String.substring()} is shown in
+figure~\ref{fig:dyn-select}.  Notice that rewriting the return type of the
 method is necessary to ensure consistency with the new split
 classes; in general, mentions of the split class in field/method signatures,
 array creation expressions, and {\tt instanceof} tests must be
