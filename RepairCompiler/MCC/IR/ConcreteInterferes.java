@@ -344,12 +344,12 @@ public class ConcreteInterferes {
 	return null;
     }
     
-    
     /** This function checks to see if an update is only performed if
-     * a given set is empty, and the algorithm is computing whether
-     * the update may falsify a rule that adds something to the set */
+     * a given set (or image set produced by a relation) is empty, and
+     * the algorithm is computing whether the update may falsify a
+     * rule that adds something to the set */
 
-    static private boolean initialinterferes(MultUpdateNode mun, Rule r, boolean satisfy) {
+    private boolean initialinterferes(MultUpdateNode mun, Rule r, boolean satisfy) {
 	AbstractRepair ar=mun.getRepair();
 	if ((!satisfy)&&(ar!=null)&&(ar.getType()==AbstractRepair.ADDTOSET)) {
 	    if (!r.getInclusion().getTargetDescriptors().contains(ar.getDescriptor()))
@@ -368,7 +368,42 @@ public class ConcreteInterferes {
 		((op==Opcode.GT)&&(ep.rightSize()==0))|| //(>0)
 		((op==Opcode.GE)&&(ep.rightSize()==1))) //(>=1)
 		return false;
-	}
+	} else if ((!satisfy)&&(ar!=null)&&(ar.getType()==AbstractRepair.ADDTORELATION)) {
+	    /* This test is for image sets of relations. */
+	    if (!r.getInclusion().getTargetDescriptors().contains(ar.getDescriptor()))
+		return true;
+	    boolean negated=ar.getPredicate().isNegated();
+	    Predicate p=ar.getPredicate().getPredicate();
+	    if (!(p instanceof ExprPredicate))
+		return true;
+	    ExprPredicate ep=(ExprPredicate)p;
+	    if (ep.getType()!=ExprPredicate.SIZE)
+		return true;
+
+	    Opcode op=Opcode.translateOpcode(negated,ep.getOp());
+ 	    if (!(((op==Opcode.EQ)&&(ep.rightSize()==1))|| //(=1)
+		((op==Opcode.NE)&&(ep.rightSize()==0))|| //(!=0)
+		((op==Opcode.GT)&&(ep.rightSize()==0))|| //(>0)
+		((op==Opcode.GE)&&(ep.rightSize()==1)))) //(>=1)
+		return true;
+
+	    RelationInclusion ri=(RelationInclusion)r.getInclusion();
+	    Expr tmpve=ep.inverted()?ri.getRightExpr():ri.getLeftExpr();
+	    if (!(tmpve instanceof VarExpr))
+		return true;
+	    for(int i=0;i<mun.numUpdates();i++) {
+		UpdateNode un=mun.getUpdate(i);
+		for (int j=0;j<un.numUpdates();j++) {
+		    Updates update=un.getUpdate(j);
+		    //Abstract updates don't have concrete interference1
+		    if (update.isAbstract()) 
+			continue;
+		    if (testdisjoint(update, r, r.getGuardExpr()))
+			return true;
+		}
+	    }
+	    return false;
+   	}
 	return true;
     }
 
