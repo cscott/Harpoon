@@ -32,7 +32,6 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 import harpoon.Util.Default;
-import harpoon.Util.Collections.LinearMap;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Collections.MultiMapFactory;
 import harpoon.Util.Collections.GenericMultiMap;
@@ -82,7 +81,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.3.2.3 2002-04-07 20:59:45 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.3.2.4 2002-04-09 21:38:34 cananian Exp $ 
  */
 public abstract class RegAlloc  {
 
