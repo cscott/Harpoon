@@ -33,8 +33,9 @@ public class TupleOfExpr extends Expr {
         right.generate(writer, rd);
 
         writer.outputline("int " + dest.getSafeSymbol() + " = " + 
-                          relation.getSafeSymbol() + "_hash->get(" + ld.getSafeSymbol() + 
-                          ") == " + rd.getSafeSymbol() + ";");
+                          relation.getSafeSymbol() + "_hash->contains(" + 
+                          ld.getSafeSymbol() + ", " +
+                          rd.getSafeSymbol() + ");");
     }
 
     public void prettyPrint(PrettyPrinter pp) {

@@ -71,6 +71,10 @@ public class OpExpr extends Expr {
 
         boolean ok = true;
 
+        // #ATTN#: if we want node.next != literal(0) to represent a null check than we need to allow ptr arithmetic
+        // either that or we use a isvalid clause to check for null
+
+        /*
         if (lt != ReservedTypeDescriptor.INT) {
             sa.getErrorReporter().report(null, "Left hand side of expression is of type '" + lt.getSymbol() + "' but must be type 'int'");
             ok = false;
@@ -82,6 +86,7 @@ public class OpExpr extends Expr {
                 ok = false;
             }
         }
+        */
 
         if (!ok) {
             return null;

@@ -60,16 +60,20 @@ public class RelationDescriptor extends Descriptor {
         if (newusage == null || newusage == NONE || newusage == BOTH) {
             throw new IllegalArgumentException();
         }
-        
+
+        Usage oldusage = usage;
+
         if (usage == BOTH) {
             return;
         } else if (usage == IMAGE && newusage == INVIMAGE) {
             usage = BOTH;
         } else if (usage == INVIMAGE && newusage == IMAGE) {
             usage = BOTH;
-        } else if (usage == NONE) {
+        } else {
             usage = newusage;
         }             
+
+        //System.out.println(getSymbol() + " usage: " + oldusage + " + " + newusage + " => " + usage);
     }
 
     public boolean testUsage(Usage testusage) {

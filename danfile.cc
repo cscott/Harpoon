@@ -19,6 +19,7 @@ extern "C" {
 #include "Hashtable.h"
 #include "model.h"
 #include "element.h"
+#include "tmap.h"
 
 char *dstring="d\0";
 struct filedesc files[MAXFILES];
@@ -54,7 +55,12 @@ int testblock(int i) {
     return temp == 0 ? 0 : 1;
 }
 
-void selfcheck2(struct block* d) {
+void assertvalidmemory(int low, int high) {
+  typemap *tm=exportmodel->gettypemap();
+  assert(tm->assertvalidmemory((void*) low, (void*) high));
+}
+
+unsigned long selfcheck2(struct block* d) {
 
     struct timeval begin,end;
     unsigned long t;
@@ -64,7 +70,7 @@ void selfcheck2(struct block* d) {
 
     gettimeofday(&end,NULL);
     t=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
-    printf("\ncodegen in %ld u-seconds!\n", t);
+    return t;
 }
 
 void selfcheck(struct block* diskptr) {
@@ -412,14 +418,17 @@ int main(int argc, char **argv)
     printinodeblock(ptr);
 
     // check the DSs
-    doanalysis();
-    
+    unsigned long time = 0;
+    for (int i = 0; i < 50; i++) {
+        time += benchmark();
+    }
 
+    printf("\ninterpreted: %u us\n", (time/50)); 
+    
     dealloc(ptr);
     unmountdisk(ptr);
     break;
-  }
-
+  }      
 
   case 's': {
     struct block * ptr=mountdisk("disk");
@@ -453,8 +462,13 @@ int main(int argc, char **argv)
     printinodeblock(ptr);
 
     // check the DSs
-    selfcheck2(ptr);
-    
+    // check the DSs
+    unsigned long time = 0;
+    for (int i = 0; i < 50; i++) {
+        time += selfcheck2(ptr);
+    }
+
+    printf("\ncompiled: %u us\n", (time/50));    
 
     dealloc(ptr);
     unmountdisk(ptr);

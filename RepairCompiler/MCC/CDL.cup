@@ -202,11 +202,14 @@ nonterminal	ParseNode		operator;
 
 precedence left OR;
 precedence left AND;
-precedence right EQ, NE; 
-precedence right LT, LE, GE, GT;
+precedence left EQ, NE; 
+precedence left LT, LE, GE, GT;
+
 precedence left ADD, SUB;
 precedence left MULT, DIV;
+
 precedence left NOT;
+
 precedence left DOT, DOTINV;
 
 // PRODUCTION RULES  /////////////////////////////////////////////////////
@@ -380,34 +383,25 @@ body ::=
 
 predicate ::=
 
-	ID:var IN setexpr:setexpr
+	expr:expr IN setexpr:setexpr
 	{:
 	debugMessage(PRODSTRING);
 	ParseNode inclusion = (new ParseNode("predicate", parser.curLine(3))).addChild("inclusion");
-	inclusion.addChild("quantifiervar", parser.curLine(3)).addChild(var);
+	inclusion.addChild(expr);
 	inclusion.addChild(setexpr);
 	RESULT = inclusion.getRoot();
 	:}
      
-	| SIZEOF OPENPAREN setexpr:setexpr CLOSEPAREN compare:compare LITERAL OPENPAREN DECIMAL:dec CLOSEPAREN
-	{:
-	ParseNode sizeof = (new ParseNode("predicate", parser.curLine(4))).addChild("sizeof");
-	sizeof.addChild(setexpr);
-	sizeof.addChild("compare", parser.curLine(2)).addChild(compare);
-	sizeof.addChild("decimal", parser.curLine(1)).addChild(dec);
-	RESULT = sizeof.getRoot();
-	:}
-
-	| ID:var DOT ID:relation compare:compare expr:expr
+	| expr:lexpr compare:compare expr:rexpr
 	{:
 	debugMessage(PRODSTRING);
-	ParseNode comparison = (new ParseNode("predicate", parser.curLine(3))).addChild("comparison");
-	comparison.addChild("compare", parser.curLine(2)).addChild(compare);
-	comparison.addChild("relation", parser.curLine(3)).addChild(relation);
-	comparison.addChild("quantifier", parser.curLine(5)).addChild(var);
-	comparison.addChild(expr);
+	ParseNode comparison = (new ParseNode("predicate", parser.curLine(3))).addChild("expr").addChild("operator");
+	comparison.addChild("op").addChild(compare);
+	comparison.addChild("left", parser.curLine(2)).addChild(lexpr);
+	comparison.addChild("right", parser.curLine(2)).addChild(rexpr);
 	RESULT = comparison.getRoot();
 	:}
+
 	;
 
 setexpr ::=

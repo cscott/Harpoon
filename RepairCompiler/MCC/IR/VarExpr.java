@@ -6,6 +6,7 @@ public class VarExpr extends Expr {
 
     String varname;
     VarDescriptor vd = null;
+    boolean typechecked = false;
 
     public VarExpr(String varname) {
         this.varname = varname; 
@@ -16,8 +17,16 @@ public class VarExpr extends Expr {
     }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {        
+
+        // #TBD#: bit of a hack, really should have been type checked properly 
+
+        vd = (VarDescriptor) writer.getSymbolTable().get(varname);        
+        assert vd != null;
+        assert vd.getType() != null;
+        this.td = vd.getType();
+
         writer.outputline(vd.getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() + 
-                          " = (" + vd.getType().getGenerateType().getSafeSymbol() + ") " + vd.getSafeSymbol() + ";");
+                          " = (" + vd.getType().getGenerateType().getSafeSymbol() + ") " + vd.getSafeSymbol() + "; //varexpr");
     }
 
     public void prettyPrint(PrettyPrinter pp) {
@@ -25,6 +34,7 @@ public class VarExpr extends Expr {
     }
 
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {
+        typechecked = true;
         vd = (VarDescriptor) sa.getSymbolTable().get(varname);
 
         if (vd == null) {

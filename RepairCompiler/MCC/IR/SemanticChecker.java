@@ -560,7 +560,7 @@ public class SemanticChecker {
             return new LogicStatement(LogicStatement.OR, left, right);
         } else if (pn.getChild("not") != null) {
             /* NOT body */
-            LogicStatement left = parse_body(pn.getChild("not").getChild("left").getChild("body"));
+            LogicStatement left = parse_body(pn.getChild("not").getChild("body"));
             
             if (left == null) {
                 return null;
@@ -582,10 +582,10 @@ public class SemanticChecker {
         if (pn.getChild("inclusion") != null) {
             ParseNode in = pn.getChild("inclusion");
             
-            /* get quantiifer var */
-            VarDescriptor vd = parse_quantifiervar(in.getChild("quantifiervar"));
+            /* Expr */
+            Expr expr = parse_expr(in.getChild("expr"));
            
-            if (vd == null) { 
+            if (expr == null) { 
                 return null;
             }
 
@@ -596,81 +596,15 @@ public class SemanticChecker {
                 return null;
             }
 
-            return new InclusionPredicate(vd, setexpr);
-        } else if (pn.getChild("sizeof") != null) {
-            ParseNode sizeof = pn.getChild("sizeof");
+            return new InclusionPredicate(expr, setexpr);
+        } else if (pn.getChild("expr") != null) {
+            Expr expr = parse_expr(pn.getChild("expr"));
             
-            /* get set expr */
-            SetExpr setexpr = parse_setexpr(sizeof.getChild("setexpr"));
-
-            if (setexpr == null) {
-                return null;
-            }
-
-            /* get comparison operator */
-            String compareop = sizeof.getChild("compare").getTerminal();
-            Opcode opcode = Opcode.decodeFromString(compareop);
-
-            if (opcode == null) {
-                er.report(pn, "Unsupported operation '" + compareop + "'");
-                return null;
-            } else if (opcode != Opcode.EQ &&
-                       opcode != Opcode.GE &&
-                       opcode != Opcode.LE) {
-                er.report(pn, "Invalid operation '" + compareop + "': Must be one of '=', '>=', '<='");
-                return null;
-            }
-            
-            /* get decimal */
-            String decimal = sizeof.getChild("decimal").getTerminal();
-            IntegerLiteralExpr cardinality = new IntegerLiteralExpr(Integer.parseInt(decimal));
-                       
-            return new SizeofPredicate(setexpr, opcode, cardinality);
-        } else if (pn.getChild("comparison") != null) {
-            ParseNode cn = pn.getChild("comparison");
-
-            /* get quantifier variable */
-            String varname = cn.getChild("quantifier").getTerminal();
-            String relation = cn.getChild("relation").getTerminal();            
-
-            if (!sts.peek().contains(varname)) {
-                er.report(pn, "Undefined quantifier '" + varname + "'");
-                return null;
-            } 
-
-            VarDescriptor vd = (VarDescriptor) sts.peek().get(varname);
-
-            if (!stRelations.contains(relation)) {
-                er.report(pn, "Undefined relation '" + varname + "'");
-                return null;
-            }
-
-            RelationDescriptor rd = (RelationDescriptor) stRelations.get(relation);
-
-            /* get the expr's */
-            Expr expr = parse_expr(cn.getChild("expr"));
-
             if (expr == null) {
                 return null;
             }
 
-            /* get comparison operator */
-            String compareop = cn.getChild("compare").getTerminal();
-            Opcode opcode = Opcode.decodeFromString(compareop);
-
-            if (opcode == null) {
-                er.report(pn, "Unsupported operation '" + compareop + "'");
-                return null;
-            } else if (opcode != Opcode.EQ &&
-                       opcode != Opcode.GE &&
-                       opcode != Opcode.LE) {
-                er.report(pn, "Invalid operation '" + compareop + "': Must be one of '=', '>=', '<='");
-                return null;
-            }
-            
-            rd.addUsage(RelationDescriptor.IMAGE);
-
-            return new ComparisonPredicate(vd, rd, opcode, expr);
+            return new ExprPredicate(expr);
         } else {
             throw new IRException();
         }       
@@ -1384,7 +1318,7 @@ public class SemanticChecker {
         }
 
         String relname = pn.getChild("name").getTerminal();
-        boolean inverse = pn.getChild("inv") == null;
+        boolean inverse = pn.getChild("inv") != null;
         Expr expr = parse_expr(pn.getChild("expr"));        
 
         if (expr == null) {

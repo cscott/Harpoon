@@ -30,12 +30,12 @@ IR/RelationDescriptor.class IR/ReservedSetDescriptor.class IR/TokenSetDescriptor
 IR/Quantifier.class IR/SetQuantifier.class IR/ImageSetExpr.class \
 IR/CastExpr.class IR/SizeofExpr.class IR/SetExpr.class IR/VarDescriptor.class \
 IR/LogicStatement.class IR/Predicate.class IR/InclusionPredicate.class \
-IR/ComparisonPredicate.class IR/Constraint.class IR/RelationExpr.class \
+IR/ExprPredicate.class IR/Constraint.class IR/RelationExpr.class \
 IR/RelationQuantifier.class IR/ForQuantifier.class IR/GraphNode.class \
 IR/DependencyBuilder.class IR/RelationInclusion.class IR/SetInclusion.class \
 IR/TupleOfExpr.class IR/ElementOfExpr.class IR/Rule.class IR/Inclusion.class \
 IR/NaiveGenerator.class IR/CodeWriter.class IR/SymbolTableStack.class \
-IR/SizeofPredicate.class
+IR/StandardCodeWriter.class
 
 #MODEL_CLASS = Field.class Literal.class Quantifier.class 		\
 #Set.class TypeElement.class						\

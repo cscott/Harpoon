@@ -36,21 +36,24 @@ public class DotExpr extends Expr {
         writer.output("// " +  leftd.getSafeSymbol() + " = ");
         left.prettyPrint(writer);
         writer.outputline("");
-
       
         StructureTypeDescriptor struct = (StructureTypeDescriptor) left.getType();        
         FieldDescriptor fd = struct.getField(field);
         LabelDescriptor ld = struct.getLabel(field);        
+        TypeDescriptor fieldtype;
         Expr intindex = index;
         Expr offsetbits;
 
         if (ld != null) { /* label */
             assert fd == null;
+            fieldtype = ld.getType(); // d.s ==> Superblock, while,  d.b ==> Block
             fd = ld.getField();
             assert fd != null;
             assert intindex == null;
             intindex = ld.getIndex();
-        } 
+        } else {
+            fieldtype = fd.getType();
+        }
 
         // #ATTN#: getOffsetExpr needs to be called with the fielddescriptor obect that is in teh vector list
         // this means that if the field is an arraydescriptor you have to call getOffsetExpr with the array 
@@ -87,6 +90,14 @@ public class DotExpr extends Expr {
         // #TBD#: ptr's to bits and byte's and stuff are a little iffy... 
         // right now, a bit* is the same as a int* = short* = byte* (that is there 
         // is no post-derefernce mask)
+        
+        // #ATTN#: do we handle int* correctly? what is the correct behavior? we automatically 
+        // dereference pointers, but for structures that means that if we have a nested structure
+        // we return an integer address to that nested structure. if we have a pointer to a 
+        // structure else where we want that base address ... yeah so we *(int *) it... ok we are
+        // correct
+
+        boolean dotypecheck = false;
 
         if (offsetbits instanceof IntegerLiteralExpr) {
             int offsetinbits = ((IntegerLiteralExpr) offsetbits).getValue();
@@ -104,8 +115,13 @@ public class DotExpr extends Expr {
             } else { /* a structure address or a ptr! */
                 String ptr = fd.getPtr() ? "*(int *)" : "";
                 /* type var = [*(int *)] (base + offset) */
-                writer.outputline(getType().getGenerateType() + " " + dest.getSafeSymbol() + 
+
+                // #ATTN: was 'getType.getGeneratedType()' instead of 'int' but all pointers are represented
+                // by integers
+                writer.outputline("int " + dest.getSafeSymbol() + 
                                   " = " + ptr + "(" + leftd.getSafeSymbol() + " + " + offset + ");");  
+
+                dotypecheck = true;
             }
         } else { /* offset in bits is an expression that must be generated */                        
             VarDescriptor ob = VarDescriptor.makeNew("offsetinbits");
@@ -135,10 +151,33 @@ public class DotExpr extends Expr {
             } else { /* a structure address or a ptr */
                 String ptr = fd.getPtr() ? "*(int *)" : "";
                 /* type var = [*(int *)] (base + offset) */
-                writer.outputline(getType().getGenerateType() + " " + dest.getSafeSymbol() + 
+
+                // #ATTN: was 'getType.getGeneratedType()' instead of 'int' but all pointers are represented
+                // by integers
+                writer.outputline("int " + dest.getSafeSymbol() + 
                                   " = " + ptr + "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ");");  
+                dotypecheck = true;
             }            
         }
+
+
+        if (dotypecheck) { /* typemap checks! */
+            // dest is 'low'
+            // high is 'low' + sizeof(fd.getDataStructure) <<< can be cached!!
+
+            // #ATTN#: we need to get the size of the fieldtype (if its a label the type of the label, not the 
+            // underlying field's type
+
+            Expr sizeofexpr = fieldtype.getSizeExpr();
+            VarDescriptor sizeof = VarDescriptor.makeNew("sizeof");
+            sizeofexpr.generate(writer, sizeof);
+
+            String low = dest.getSafeSymbol();
+            String high = VarDescriptor.makeNew("high").getSafeSymbol();
+            writer.outputline("int " + high + " = " + low + " + " + sizeof.getSafeSymbol() + ";");            
+            writer.outputline("assertvalidmemory(" + low + ", " + high + ");");            
+        }
+
     }
 
     private int bitmask(int bits) {

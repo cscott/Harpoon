@@ -8,6 +8,9 @@ extern "C" {
 #include "processabstract.h"
 #include "element.h"
 
+#define CHECKTYPE
+#define CHECKMEMORY
+
 typemap::typemap(model *m) {
   alloctree=rbinit();
   typetree=rbinit();
@@ -40,21 +43,52 @@ structuremap::~structuremap() {
 }
 
 bool typemap::asserttype(void *ptr, structure *s) {
+
+#ifdef CHECKTYPE
   bool b=checktype(true,ptr,s);
   if (!b) {
     printf("Assertion failure\n");
-    bool b=checktype(true,ptr,s);
+    bool testb=checktype(true,ptr,s);
   }
   return b;
+#endif
+
+  return assertvalidmemory(ptr, s);
+}
+
+bool typemap::assertvalidmemory(void* low, void* high) {
+
+#ifdef CHECKMEMORY
+  return checkmemory(low, high);
+#endif
+
+  return true;
+}
+
+bool typemap::assertvalidmemory(void* ptr, structure* s) {
+
+#ifdef CHECKMEMORY
+  int size=s->getsize(globalmodel->getbitreader(),globalmodel,globalmodel->gethashtable());
+  void *low=ptr;
+  void *high=((char *)low)+size;
+  return checkmemory(low, high);
+#endif
+  
+  return true;
 }
 
 bool typemap::istype(void *ptr, structure *s) {
+
+#ifdef CHECKTYPE
   bool b=checktype(false,ptr,s);
   if (!b) {
     printf("Verify failure\n");
-    bool b=checktype(false,ptr,s);
+    bool testb=checktype(false,ptr,s);
   }
   return b;
+#endif
+
+  return assertvalidmemory(ptr, s);
 }
 
 void typemap::allocate(void *ptr, int size) {
@@ -96,6 +130,19 @@ void typemap::deallocate(void *ptr) {
     printf("Freeing unallocated memory\n");
 }
 
+bool typemap::checkmemory(void* low, void* high) {
+  struct pair allocp=rbfind(low,high,alloctree);
+
+  if (allocp.low == NULL) {
+      return false; 
+  } else if ((allocp.low > low) || (allocp.high < high)) { /* make sure this block is used */
+      return false;
+  } else {
+      return true;
+  }
+}
+
+
 bool typemap::checktype(bool doaction,void *ptr, structure *structure) {
   int size=structure->getsize(globalmodel->getbitreader(),globalmodel,globalmodel->gethashtable());
   void *low=ptr;
@@ -122,7 +169,6 @@ bool typemap::checktype(bool doaction,void *ptr, structure *structure) {
 
   return checktype(doaction, low,high, structure, typetree);
 }
-
 
 bool typemap::checktype(bool doaction, void *low, void *high,structure *structre, struct rbtree *ttree) {
   struct pair typep=rbfind(low,high,ttree);

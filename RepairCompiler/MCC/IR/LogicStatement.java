@@ -53,36 +53,106 @@ public class LogicStatement {
     }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
-        VarDescriptor leftd = VarDescriptor.makeNew("leftboolean");
-        left.generate(writer, leftd);        
-        VarDescriptor rightd = VarDescriptor.makeNew("rightboolean");
 
-        if (right != null) {
-            right.generate(writer, rightd);
-        }
+        writer.outputline("int " + dest.getSafeSymbol() + ";");
 
         if (op == NOT) {
+
+            VarDescriptor leftd = VarDescriptor.makeNew("leftboolean");
+            left.generate(writer, leftd);
+
             writer.outputline("// 3-valued NOT");
-            writer.outputline("int " + dest.getSafeSymbol() + " = " + leftd.getSafeSymbol() + " == -1 ? -1 : !" + leftd.getSafeSymbol() + ";");
-        } else if (op == AND) {
-            writer.outputline("// 3-valued AND");
-            // !a || !b ? 0 : either maybe ? maybe : AND;
-            String a = leftd.getSafeSymbol();
-            String b = rightd.getSafeSymbol();
-            String expr = a + " == 0 || " + b + " == 0 ? 0 : " + a + " == -1 || " + b + " == -1 ? -1 : 1;";
-            writer.outputline("int " + dest.getSafeSymbol() + " = " + expr);
-        } else if (op == OR) {
-            writer.outputline("// 3-valued OR");
-            // a == 1 || b == 1 ? 1 : a == -1 || b == -1 ? -1 : 0;
-            String a = leftd.getSafeSymbol();
-            String b = rightd.getSafeSymbol();
-            String expr = a + " == 1 || " + b + " == 1 ? 1 : " + a + " == -1 || " + b + " == -1 ? -1 : 0;";
-            writer.outputline("int " + dest.getSafeSymbol() + " = " + expr);
-        } else {
-            throw new IRException();
-        }        
-    }
-   
+            writer.outputline("if (!maybe)");
+            writer.startblock();
+            writer.outputline(dest.getSafeSymbol() + " =  !" + leftd.getSafeSymbol() + ";");
+            writer.endblock();
+
+        } else { // two operands
+
+            VarDescriptor leftd = VarDescriptor.makeNew("leftboolean");
+            String lm = (VarDescriptor.makeNew("leftmaybe")).getSafeSymbol();
+            left.generate(writer, leftd);
+            writer.outputline("int " + lm + " = maybe;");
+            
+            VarDescriptor rightd = VarDescriptor.makeNew("rightboolean");
+            String rm = (VarDescriptor.makeNew("rightmaybe")).getSafeSymbol();
+            assert right != null;
+            right.generate(writer, rightd);
+            writer.outputline("int " + rm + " = maybe;");
+
+            String l = leftd.getSafeSymbol();
+            String r = rightd.getSafeSymbol();
+            
+            if (op == AND) {
+
+                /* 
+                 * 3-value AND LOGIC
+                 *
+                 * LRLR
+                 * MM    M O
+                 * ----  ---
+                 * 0000  0 0
+                 * 0001  0 0
+                 * 0010  0 0
+                 * 0011  0 1
+                 * 0100  0 0
+                 * 0101  0 0
+                 * 0110  1 X
+                 * 0111  1 X
+                 * 1000  0 0
+                 * 1001  1 X
+                 * 1010  0 0
+                 * 1011  1 X
+                 * 1100  1 X
+                 * 1101  1 X
+                 * 1110  1 X
+                 * 1111  1 X
+                 *
+                 * M = (L*RM) + (R*LM) + (LM*RM)                 
+                 * O = (L*R)
+                 */
+               
+                // maybe = (l && rm) || (r && lm) || (lm && rm)
+                writer.outputline("maybe = (" + l + " && " + rm + ") || (" + r + " && " + lm + ") || (" + lm + " && " + rm + ");");
+                writer.outputline(dest.getSafeSymbol() + " = " + l + " && " + r + ";");
+
+            } else if (op == OR) {
+
+                /* 
+                 * 3-value OR LOGIC
+                 *
+                 * LRLR
+                 * MM    M O
+                 * ----  ---
+                 * 0000  0 0
+                 * 0001  0 1
+                 * 0010  0 1
+                 * 0011  0 1
+                 * 0100  1 X
+                 * 0101  1 X
+                 * 0110  0 1
+                 * 0111  0 1
+                 * 1000  1 X
+                 * 1001  0 1
+                 * 1010  1 X
+                 * 1011  0 1
+                 * 1100  1 X
+                 * 1101  1 X
+                 * 1110  1 X
+                 * 1111  1 X
+                 *
+                 * M = (!L*RM) + (!R*LM) + (LM*RM)
+                 * O = L+R
+                 */
+
+                // maybe = (!l && rm) || (!r && lm) || (lm && rm)
+                writer.outputline("maybe = (!" + l + " && " + rm + ") || (!" + r + " && " + lm + ") || (" + lm + " && " + rm + ");");
+                writer.outputline(dest.getSafeSymbol() + " = " + l + " || " + r + ";");
+            } else {
+                throw new IRException();
+            }        
+        }
+    }   
 }
 
 

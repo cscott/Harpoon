@@ -157,18 +157,19 @@ int SimpleHash::count(int key) {
     return count;
 }
 
-int SimpleHash::get(int key) {
+int SimpleHash::get(int key, int&data) {
     unsigned int hashkey = (unsigned int)key % size;
     
     LinkedHashNode *ptr = &bucket[hashkey];
     while (ptr->next) {
         ptr = ptr->next;
         if (ptr->key == key) {
-            return ptr->data;
+            data = ptr->data;
+            return 1; // success
         }
     }
         
-    throw SimpleHashException();
+    return 0; // failure
 }
 
 int SimpleHash::countdata(int data) {

@@ -5,7 +5,7 @@
 [forall i in UsedInode, forall itb in InodeTableBlock, for j=literal(0) to literal(11)], j < sizeof(i.contents) => cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]=element j of i.contents
 [forall i in UsedInode, forall itb in InodeTableBlock, for j=literal(0) to literal(11)], !j<sizeof(i.contents) => cast(InodeTable,d.b[itb]).itable[i].Blockptr[j]=literal(0)
 [forall ibb in InodeBitmapBlock, forall <j,status> in inodestatus], status=literal(Free) => cast(InodeBitmap,d.b[ibb]).inodebitmap[j]=literal(false)
-[forall ibb in InodeBitmapBlock, forall <j, status> in inodestatus], status=literal(Used) => cast(InodeBitmap,d.b[ibb]).inodebitmap[j]=literal(true)
+[forall ibb in InodeBitmapBlock, forall <j,status> in inodestatus], status=literal(Used) => cast(InodeBitmap,d.b[ibb]).inodebitmap[j]=literal(true)
 [forall <de, u> in inodeof], true => de.inodenumber=u
 [forall itb in InodeTableBlock, forall <j,u> in referencecount], true => cast(InodeTable,d.b[itb]).itable[j].referencecount=u
 [forall itb in InodeTableBlock, forall <j,u> in filesize], true => cast(InodeTable,d.b[itb]).itable[j].filesize=u

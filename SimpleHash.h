@@ -97,7 +97,7 @@ public:
 
     bool contains(int key, int data);
 
-    int get(int key);
+    int get(int key, int& data);
 
     int countdata(int data);
 

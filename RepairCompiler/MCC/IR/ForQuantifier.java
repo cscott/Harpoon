@@ -33,8 +33,8 @@ public class ForQuantifier extends Quantifier {
         lower.generate(writer, ld);
         upper.generate(writer, ud);
         
-        writer.outputline("for (int " + var.getSafeSymbol() + " = " + ld.getSafeSymbol() + "; " + var.getSafeSymbol() + " <= " + ud.getSafeSymbol() + "; " + var.getSafeSymbol() + "++) {");
-        writer.indent();
+        writer.outputline("for (int " + var.getSafeSymbol() + " = " + ld.getSafeSymbol() + "; " + var.getSafeSymbol() + " <= " + ud.getSafeSymbol() + "; " + var.getSafeSymbol() + "++)");
+        writer.startblock();
     }
 
     public boolean typecheck(SemanticAnalyzer sa) {

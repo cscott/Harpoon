@@ -8,10 +8,13 @@ class typemap {
   ~typemap();
   void allocate(void *, int);
   void deallocate(void *);
+  bool assertvalidmemory(void* low, void* high);
+  bool assertvalidmemory(void* ptr, structure *structure);
   bool asserttype(void *ptr, structure *structure);
   bool istype(void *ptr, structure *structure);
   void reset();
  private:
+  bool checkmemory(void* low, void* high);
   bool checktype(bool doaction,void *ptr, structure *structure);
   bool checktype(bool doaction, void *low, void *high,structure *structure, struct rbtree *ttree);
   structure * findoffsetstructure(structure *s, int offset);

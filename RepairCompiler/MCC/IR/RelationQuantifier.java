@@ -29,8 +29,8 @@ public class RelationQuantifier extends Quantifier {
     }
 
     public void generate_open(CodeWriter writer) {
-        writer.outputline("for (SimpleIterator* " + x.getSafeSymbol() + "_iterator = " + relation.getSafeSymbol() + "_hash->iterator(); " + x.getSafeSymbol() + "_iterator->hasNext(); ) {");
-        writer.indent();
+        writer.outputline("for (SimpleIterator* " + x.getSafeSymbol() + "_iterator = " + relation.getSafeSymbol() + "_hash->iterator(); " + x.getSafeSymbol() + "_iterator->hasNext(); )");
+        writer.startblock();
         writer.outputline(y.getType().getSafeSymbol() + " " + y.getSafeSymbol() + " = (" + y.getType().getSafeSymbol() + ") " + x.getSafeSymbol() + "_iterator->next();");        
         // #ATTN#: key is called second because next() forwards ptr and key does not! 
         writer.outputline(x.getType().getSafeSymbol() + " " + x.getSafeSymbol() + " = (" + x.getType().getSafeSymbol() + ") " + x.getSafeSymbol() + "_iterator->key();");

@@ -26,24 +26,7 @@ public class NaiveGenerator {
 
     private void generate_tokentable() {
 
-        CodeWriter cr = new CodeWriter() {
-                
-                int indent = 0;
-                public void indent() { indent++; }
-                public void unindent() { indent--; assert indent >= 0; }
-                private void doindent() {
-                    for (int i = 0; i < indent; i++) { 
-                        output.print("  ");
-                    }
-                }
-                public void outputline(String s) {
-                    doindent();
-                    output.println(s);
-                }                                                             
-                public void output(String s) { throw new IRException(); }
-                public SymbolTable getSymbolTable() { throw new IRException(); }
-            };
-        
+        CodeWriter cr = new StandardCodeWriter(output);        
         Iterator tokens = TokenLiteralExpr.tokens.keySet().iterator();        
 
         cr.outputline("");
@@ -61,26 +44,8 @@ public class NaiveGenerator {
 
     private void generate_hashtables() {
 
-        CodeWriter cr = new CodeWriter() {
-                
-                int indent = 0;
-                public void indent() { indent++; }
-                public void unindent() { indent--; assert indent >= 0; }
-                private void doindent() {
-                    for (int i = 0; i < indent; i++) { 
-                        output.print("  ");
-                    }
-                }
-                public void outputline(String s) {
-                    doindent();
-                    output.println(s);
-                }                                                             
-                public void output(String s) { throw new IRException(); }
-                public SymbolTable getSymbolTable() { throw new IRException(); }
-            };
-
-        cr.outputline("int __Success = 1;");
-        
+        CodeWriter cr = new StandardCodeWriter(output);
+        cr.outputline("int __Success = 1;\n");       
         cr.outputline("// creating hashtables ");
         
         /* build all the hashtables */
@@ -94,7 +59,7 @@ public class NaiveGenerator {
             SetDescriptor set = (SetDescriptor) sets.next();
             cr.outputline("SimpleHash* " + set.getSafeSymbol() + "_hash = new SimpleHash();");
         } 
-
+        
         /* second pass build relationships between hashtables */
         sets = state.stSets.descriptors();
         
@@ -154,39 +119,13 @@ public class NaiveGenerator {
 
             {
 
-                final SymbolTable st = rule.getSymbolTable();
-                
-                CodeWriter cr = new CodeWriter() {
-                        boolean linestarted = false;
-                        int indent = 0;
-                        public void indent() { indent++; }
-                        public void unindent() { indent--; assert indent >= 0; }
-                        private void doindent() {
-                            for (int i = 0; i < indent; i++) { 
-                                output.print("  ");
-                            }
-                            linestarted = true;
-                        }
-                        public void outputline(String s) {
-                            if (!linestarted) {
-                                doindent();
-                            }
-                            output.println(s);
-                            linestarted = false;
-                        }                 
-                        public void output(String s) {
-                            if (!linestarted) {
-                                doindent();
-                            }
-                            output.print(s);
-                            output.flush(); 
-                        }
+                final SymbolTable st = rule.getSymbolTable();                
+                CodeWriter cr = new StandardCodeWriter(output) {
                         public SymbolTable getSymbolTable() { return st; }
                     };
                 
                 cr.outputline("// build " + rule.getLabel());
-                cr.outputline("{");
-                cr.indent();
+                cr.startblock();
 
                 ListIterator quantifiers = rule.quantifiers();
 
@@ -205,25 +144,19 @@ public class NaiveGenerator {
                 VarDescriptor guardval = VarDescriptor.makeNew();
                 rule.getGuardExpr().generate(cr, guardval);
                 
-                cr.outputline("if (" + guardval.getSafeSymbol() + ") {");
-
-                cr.indent();
+                cr.outputline("if (" + guardval.getSafeSymbol() + ")");
+                cr.startblock();
 
                 /* now we have to generate the inclusion code */
                 rule.getInclusion().generate(cr);
-
-                cr.unindent();
-
-                cr.outputline("}");
+                cr.endblock();
 
                 while (quantifiers.hasPrevious()) {
                     Quantifier quantifier = (Quantifier) quantifiers.previous();
-                    cr.unindent();                    
-                    cr.outputline("}");
+                    cr.endblock();
                 }
 
-                cr.unindent();
-                cr.outputline("}");
+                cr.endblock();
                 cr.outputline("");
                 cr.outputline("");
             }
@@ -234,37 +167,10 @@ public class NaiveGenerator {
 
         /* do post checks */
          
-        CodeWriter cr = new CodeWriter() {
-                boolean linestarted = false;
-                int indent = 0;
-                public void indent() { indent++; }
-                public void unindent() { indent--; assert indent >= 0; }
-                private void doindent() {
-                    for (int i = 0; i < indent; i++) { 
-                        output.print("  ");
-                    }
-                    linestarted = true;
-                }
-                public void outputline(String s) {
-                    if (!linestarted) {
-                        doindent();
-                    }
-                    output.println(s);
-                    linestarted = false;
-                }                 
-                public void output(String s) {
-                    if (!linestarted) {
-                        doindent();
-                    }
-                    output.print(s);
-                    output.flush(); 
-                }
-                public SymbolTable getSymbolTable() { throw new IRException(); }
-            };
+        CodeWriter cr = new StandardCodeWriter(output);
            
         // #TBD#: these should be implicit checks added to the set of constraints
         //output.println("check multiplicity");
-
     }
 
     private void generate_checks() {
@@ -280,37 +186,12 @@ public class NaiveGenerator {
 
                 final SymbolTable st = constraint.getSymbolTable();
                 
-                CodeWriter cr = new CodeWriter() {
-                        boolean linestarted = false;
-                        int indent = 0;
-                        public void indent() { indent++; }
-                        public void unindent() { indent--; assert indent >= 0; }
-                        private void doindent() {
-                            for (int i = 0; i < indent; i++) { 
-                                output.print("  ");
-                            }
-                            linestarted = true;
-                        }
-                        public void outputline(String s) {
-                            if (!linestarted) {
-                                doindent();
-                            }
-                            output.println(s);
-                            linestarted = false;
-                        }                 
-                        public void output(String s) {
-                            if (!linestarted) {
-                                doindent();
-                            }
-                            output.print(s);
-                            output.flush(); 
-                        }
+                CodeWriter cr = new StandardCodeWriter(output) {
                         public SymbolTable getSymbolTable() { return st; }
                     };
                 
                 cr.outputline("// checking " + constraint.getLabel());
-                cr.outputline("{");
-                cr.indent();
+                cr.startblock();
 
                 ListIterator quantifiers = constraint.quantifiers();
 
@@ -318,31 +199,33 @@ public class NaiveGenerator {
                     Quantifier quantifier = (Quantifier) quantifiers.next();                   
                     quantifier.generate_open(cr);
                 }            
+
+                cr.outputline("int maybe = 0;");
                         
                 /* now we have to generate the guard test */
         
                 VarDescriptor constraintboolean = VarDescriptor.makeNew("constraintboolean");
                 constraint.getLogicStatement().generate(cr, constraintboolean);
                 
-                cr.outputline("if (!" + constraintboolean.getSafeSymbol() + ") {");
+                cr.outputline("if (maybe)");
+                cr.startblock();
+                cr.outputline("__Success = 0;");
+                cr.outputline("printf(\"maybe fail " + (i+1) + ". \");");
+                cr.endblock();
 
-                cr.indent();
+                cr.outputline("else if (!" + constraintboolean.getSafeSymbol() + ")");
+                cr.startblock();
 
                 cr.outputline("__Success = 0;");
-                cr.outputline("printf(\"fail. \");");
-
-                cr.unindent();
-
-                cr.outputline("}");
+                cr.outputline("printf(\"fail " + (i+1) + ". \");");
+                cr.endblock();
 
                 while (quantifiers.hasPrevious()) {
                     Quantifier quantifier = (Quantifier) quantifiers.previous();
-                    cr.unindent();                    
-                    cr.outputline("}");
+                    cr.endblock();
                 }
 
-                cr.unindent();
-                cr.outputline("}");
+                cr.endblock();
                 cr.outputline("");
                 cr.outputline("");
             }
@@ -353,3 +236,6 @@ public class NaiveGenerator {
     }    
 
 }
+
+
+

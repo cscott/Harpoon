@@ -1,4 +1,4 @@
-static char rcsid[]="$Id: redblack.c,v 1.5 2003-06-18 18:39:05 bdemsky Exp $";
+static char rcsid[]="$Id: redblack.c,v 1.6 2003-08-06 14:34:10 droy Exp $";
 
 /*
    Redblack balanced tree algorithm
@@ -180,6 +180,10 @@ void rbcloselist(RBLIST *rblistp) {
   rb_closelist(rblistp);
 }
 
+/** 
+ * finds an overlapping region with low->high and returns the object associated with
+ * that region 
+ */
 void * rblookup(const void *low,const void *high, struct rbtree *rbinfo) {
   struct rbnode *x;
 
@@ -192,6 +196,9 @@ void * rblookup(const void *low,const void *high, struct rbtree *rbinfo) {
   return((x==RBNULL) ? NULL : x->object);
 }
 
+/**
+ * finds an overlapping region with low->high and returns the pair <low, high>
+ */
 struct pair rbfind(const void *low,const void *high, struct rbtree *rbinfo) {
   struct rbnode *x;
   struct pair p;
@@ -924,7 +931,10 @@ dumptree(struct rbnode *x, int n)
 
 /*
  * $Log: redblack.c,v $
- * Revision 1.5  2003-06-18 18:39:05  bdemsky
+ * Revision 1.6  2003-08-06 14:34:10  droy
+ * test
+ *
+ * Revision 1.5  2003/06/18 18:39:05  bdemsky
  *
  *
  * Changed header files/etc to allow dmalloc to easily be used.

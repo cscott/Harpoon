@@ -1,8 +1,121 @@
 
+today's todo:
+
+// INITIAL SUPPORT FINISHED - add support for three valued logic 
+
+- create typing system which dynamically types the memory and revists
+  portions to double check the validity of claims.
+
+lets talk about the type checker. it is going to based loosely on what
+the current implementation (brian's) does. the only difference is that
+the initial data structure pointers ('d' in this case) need to be
+checked... from then on, only pointers need to be checked. (though this
+begs the question whether we will continue to attempt to 
+
+................
+
+
+
+
+
+
+
+short term todo -------------------------------------------------------
+
+- add checks for each pointer dereference (before dereference!) to make
+  sure the pointer points to valid memory... this does not provide type
+  safety but it does provide memory safety
+
+- add support for three valued logic in the system... i suggest maybe a
+  goto mechanism or a exception mechanism... or maybe something a lot
+  more clever... anyway, gotta do three valued logic
+
+- start thinking of ways to deal with limiting space consumption (as
+  well as measuring it... (add methods to brian's code to dump sizes of
+  sets and what not... we want actual sizes... bytes.. perhaps
+
+- at some point it might be a good idea to handle cyclic graphs!!!
+  
+--------------------
+  
+  
+
+-- arg... 3 valued logic --------
+alright... so it turns out that three valued logic is needed because
+doubly linked lists are not 1->1 ... they are infact 1->1/0... which is
+not 1->1... and we can not expect the programmer to include guards all
+the time .... so maybe's it is!
+
+
+
+
+about typing ***********************************************************
+ok... so it turns out that typing is not that easy. first off, there is
+a distinction between typing the root types and then tying
+pointers. when you start off you can go ahead and type the regions that
+are global variables. these regions that are typed use a different
+system for testing types. basically when you are typing something and
+determining sizes of structures and what not its important not to try to
+type data structures as you go along because you may find that it is
+impossible getting in an infinite loop... instead you must just look at
+the fields and verify that they are in the correct regions. you must do
+this because otherwise it is impossible to type things... the claim
+might be that given a heap and a set of accesses to that heap with
+specific claims as to the types of these accesses, is it possible to
+determine whether that access is well typed? it may be better to only
+type what you actually need... for instance always do field type checks
+... of course the question might be, when do you go ahead and type an
+entire structure.
+
+now typing is of course a moot point in a memory-safe, type-safe
+language like Java. 
+
+there is another issue of explicit array bounds checks versus allowing
+these to be checked by the typemaps. if you have two adjacent arrays
+with the same types back to back then an out of bounds check on the
+first may not fail in the typemap (unless it goes beyond the 2nd array
+and you are lucky even in this case.) explicit array bounds checks may
+be in order. 
+
+the issue may boil down to this: what can we guarantee in a system where
+we check things at a structure level in some places but at a field level
+in other places? can we guarantee anything? if not, perhaps we should
+just use the typemaps as valid memory checks at a field level so that we
+don't get unexpected crashes at runtime...
+
+in short: this problem seems to be a lot more complicated then what was
+perceived initially and the returns seem to be diminishing the more we
+think about it. certainly the system now proposed (check root data
+structures and any pointers accessed) seems to be inately flawed in some
+sense (though i can not put my finger on it :) 
+
+i think my time is better spent working on something else... ?
+************************************************************************
+
+
+#STOPPED#
+
+about typemaps : allow flag to gear level of checks. nothing, bounds,
+the types. implement bounds check for now.
+
+
+
+can we implement typemaps so that they are fast usually and slow if
+something is wrong?
+
+we're interested in space. hit theoretically low without reaching
+quadratic time
+
+create optimum benchmark sets... recognize typpical specs and generalize
+heuristics to deal with these...
+
+
+
+
 MARTIN's IDEA ************************************************* 7/9/03
-use type safe language and check only on reads (when data is accessed)
-check consistency properties only when the porperty needs to be
-consistent... only when it needs the property to be true 
+use memory/type safe language and check only on reads (when data is
+accessed) check consistency properties only when the property needs to
+be consistent... only when it needs the property to be true
 **********************************************************************
 
 issue: what if you are building the model and you are adding elements to

@@ -46,6 +46,21 @@ bool doanalysis()
   return found;
 }
 
+// returns true if a violated constraint was found
+unsigned long benchmark() 
+{
+  struct timeval begin,end;
+  unsigned long t;
+  gettimeofday(&begin,NULL);
+  exportmodel->doabstraction();
+  exportmodel->getdomainrelation()->fixstuff();  
+  bool found = exportmodel->docheck();
+  exportmodel->doconcrete();
+  gettimeofday(&end,NULL);
+  t=(end.tv_sec-begin.tv_sec)*1000000+end.tv_usec-begin.tv_usec;
+  return t;
+}
+
 
 // insert errors that break the specs
 void doanalysis2() 
