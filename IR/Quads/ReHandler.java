@@ -28,7 +28,7 @@ import java.util.Set;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.6 1999-08-11 20:31:50 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.7 1999-08-11 22:25:24 bdemsky Exp $
  */
 final class ReHandler {
     // entry point.
@@ -37,7 +37,8 @@ final class ReHandler {
 	(new ToSSA(new SSITOSSAMap(ncode))).optimize(ncode);
 	
 	WorkSet callset=new WorkSet();
-	HashMapList handlermap=analyze(ncode,callset);
+	WorkSet throwset=new WorkSet();
+	HashMapList handlermap=analyze(ncode,callset,throwset);
 
 	final QuadMap qm = new QuadMap();
 	final HEADER old_header = (HEADER)ncode.getRootElement();
@@ -69,6 +70,20 @@ final class ReHandler {
 	    HandInfo next;
 	    if(handlermap.containsKey(call)) {
 		Iterator iterate=handlermap.get(call).iterator();
+		boolean any=false;
+		while (iterate.hasNext()) {
+		    HandInfo hi=(HandInfo)iterate.next();
+		    if (hi.anyhandler()) {
+			if (throwset.contains(hi.handler())) {
+			    Temp t=((THROW)hi.handler()).throwable();
+			    if (hi.map().containsKey(t))
+				t=(Temp)hi.map().get(t);
+			    if (t==call.retex())
+				any=true;
+			}
+		    }
+		}
+		iterate=handlermap.get(call).iterator();
 		while(iterate.hasNext()) {
 		    ReProtection protlist=new ReProtection();
 		    protlist.insert(qm.getHead(call));
@@ -95,51 +110,64 @@ final class ReHandler {
 		    }
 		    if (nexth.anyhandler()) {
 			System.out.println("any");
-			Quad newhandler = new HANDLER(qf, qm.getHead(call),
-						      Quad.map(ss.ctm, call.retex()),
-						      null, protlist);
-			ss.al.add(newhandler);
-			Map phimap=nexth.map();
-			Temp[] dst=new Temp[phimap.size()];
-			Temp[][] src=new Temp[phimap.size()][2];
-			Iterator ksit=phimap.keySet().iterator();
-			int count=0;
-			while (ksit.hasNext()) {
-			    Temp t=(Temp)ksit.next();
-			    dst[count]=Quad.map(ss.ctm, t);
-			    src[count][1]=Quad.map(ss.ctm, t);
-			    src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
-			    count++;
+			if (!any) {
+			    Quad newhandler = new HANDLER(qf, qm.getHead(call),
+							  Quad.map(ss.ctm, call.retex()),
+							  null, protlist);
+			    ss.al.add(newhandler);
+			    Map phimap=nexth.map();
+			    Temp[] dst=new Temp[phimap.size()];
+			    Temp[][] src=new Temp[phimap.size()][2];
+			    Iterator ksit=phimap.keySet().iterator();
+			    int count=0;
+			    while (ksit.hasNext()) {
+				Temp t=(Temp)ksit.next();
+				dst[count]=Quad.map(ss.ctm, t);
+				src[count][1]=Quad.map(ss.ctm, t);
+				src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
+				count++;
+			    }
+			    Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
+			    Quad.addEdge(newhandler,0, phi, 0);
+			    Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
+					 qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
+			    Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
 			}
-			Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
-			Quad.addEdge(newhandler,0, phi, 0);
-			Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
-				     qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
-			Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
 		    }
 		    if (nexth.specificex()) {
 			System.out.println("spec");
-			Quad newhandler = new HANDLER(qf, qm.getHead(call), 
-						      Quad.map(ss.ctm, call.retex()),
-						      null, protlist);
-			ss.al.add(newhandler);
-			Map phimap=nexth.map();
-			Temp[] dst=new Temp[phimap.size()];
-			Temp[][] src=new Temp[phimap.size()][2];
-			Iterator ksit=phimap.keySet().iterator();
-			int count=0;
-			while (ksit.hasNext()) {
-			    Temp t=(Temp)ksit.next();
-			    dst[count]=Quad.map(ss.ctm, t);
-			    src[count][1]=Quad.map(ss.ctm, t);
-			    src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
-			    count++;
+
+			boolean needhand=true;
+			if (throwset.contains(nexth.handler())&&any) {
+			    Temp t=((THROW)nexth.handler()).throwable();
+			    if (nexth.map().containsKey(t))
+				t=(Temp)nexth.map().get(t);
+			    if (t==call.retex())
+				needhand=false;
 			}
-			Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
-			Quad.addEdge(newhandler,0, phi, 0);
-			Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
-				     qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
-			Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
+			if (needhand) {
+			    Quad newhandler = new HANDLER(qf, qm.getHead(call), 
+							  Quad.map(ss.ctm, call.retex()),
+							  null, protlist);
+			    ss.al.add(newhandler);
+			    Map phimap=nexth.map();
+			    Temp[] dst=new Temp[phimap.size()];
+			    Temp[][] src=new Temp[phimap.size()][2];
+			    Iterator ksit=phimap.keySet().iterator();
+			    int count=0;
+			    while (ksit.hasNext()) {
+				Temp t=(Temp)ksit.next();
+				dst[count]=Quad.map(ss.ctm, t);
+				src[count][1]=Quad.map(ss.ctm, t);
+				src[count][0]=Quad.map(ss.ctm, (Temp)phimap.get(t));
+				count++;
+			    }
+			    Quad phi = new PHI(qf, qm.getHead(call), dst, src, 2);
+			    Quad.addEdge(newhandler,0, phi, 0);
+			    Quad.addEdge(qm.getHead(nexth.handler()).prev(nexth.handleredge()),
+					 qm.getHead(nexth.handler()).prevEdge(nexth.handleredge()).which_succ(),phi,1);
+			    Quad.addEdge(phi, 0, qm.getHead(nexth.handler()), nexth.handleredge());
+			}
 		    }
 		}  
 	    }
@@ -167,9 +195,9 @@ final class ReHandler {
 	return qH;
     }
     
-    private static HashMapList analyze(final Code code, Set callset) {
+    private static HashMapList analyze(final Code code, Set callset, Set throwset) {
 
-	CALLVisitor cv=new CALLVisitor(callset);
+	CALLVisitor cv=new CALLVisitor(callset, throwset);
 	for (Iterator e =  code.getElementsI(); e.hasNext(); )
 	    ((Quad)e.next()).visit(cv);
 
@@ -240,11 +268,17 @@ final class ReHandler {
 
     private static final class CALLVisitor extends QuadVisitor {
 	Set callset;
+	Set throwset;
 
-	CALLVisitor(Set callset) {
+	CALLVisitor(Set callset, Set throwset) {
 	    this.callset=callset;
+	    this.throwset=throwset;
 	}
 	public void visit(Quad q) {}
+
+	public void visit(THROW q) {
+	    throwset.add(q);
+	}
 
 	public void visit(CALL q) {
 	    callset.add(q);
@@ -580,8 +614,6 @@ class PHVisitor extends QuadVisitor
 	    Quad.addEdge(q.prev(srcIndex), from.which_succ(), m, 0);
 	    Quad.addEdge(m, 0, q, from.which_pred());
 	}
-	// Type information does not change, *but* we need to update
-	// the derivation table
     }
 
 }
