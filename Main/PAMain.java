@@ -80,7 +80,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.74 2000-07-15 15:07:05 jwhaley Exp $
+ * @version $Id: PAMain.java,v 1.1.2.75 2000-07-16 21:07:44 cananian Exp $
  */
 public abstract class PAMain {
 
@@ -242,6 +242,7 @@ public abstract class PAMain {
 	    dump_java(get_classes(pa.getMetaCallGraph().getAllMetaMethods()));
 
 	if(COMPILE) {
+	    SAMain.HACKED_REG_ALLOC = true;
 	    SAMain.hcf = hcf;
 	    SAMain.className = params[optind];
 	    SAMain.do_it();
