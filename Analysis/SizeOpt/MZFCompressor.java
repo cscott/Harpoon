@@ -49,7 +49,7 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.1.2.10 2001-11-14 08:29:54 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.1.2.11 2001-11-14 08:31:53 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
@@ -112,7 +112,7 @@ public class MZFCompressor {
 	// cache, to be safe.
 	hcf = new CachingCodeFactory(hcf);
 	// now delete fields which we can represent using an external hashtable
-	//hcf = new MZFExternalize(hcf,linker, pp, stoplist, flds).codeFactory();
+	hcf = new MZFExternalize(hcf,linker, pp, stoplist, flds).codeFactory();
 	// we should be done now.
 	this.parent = new CachingCodeFactory(hcf);
     }
