@@ -92,24 +92,32 @@ void AElementexpr::print() {
     label->print();
     break;
   case AELEMENTEXPR_SUB:
+    printf("(");
     left->print();
     printf("-");
     right->print();
+    printf(")");
     break;
   case AELEMENTEXPR_ADD:
+    printf("(");
     left->print();
     printf("+");
     right->print();
+    printf(")");
     break;
   case AELEMENTEXPR_MULT:
+    printf("(");
     left->print();
     printf("*");
     right->print();
+    printf(")");
     break;
   case AELEMENTEXPR_DIV:
+    printf("(");
     left->print();
     printf("/");
     right->print();
+    printf(")");
     break;
   case AELEMENTEXPR_LIT:
     literal->print();
@@ -334,6 +342,7 @@ Set * Statementa::getset() {
 }
 
 void Statementa::print() {
+  printf("(");
   switch(type) {
   case STATEMENTA_SET:
     leftee->print();
@@ -368,6 +377,7 @@ void Statementa::print() {
     printf("true");
     break;
   }
+  printf(")");
 }
 
 // class Statementb

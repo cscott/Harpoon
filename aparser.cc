@@ -128,7 +128,8 @@ Statementa * AParser::parsestatementa(bool flag) {
       {
 	skiptoken();
 	Statementa *st=parsestatementa(false);
-	
+	if (flag)
+	  return st;
 	if (oldst==NULL) {
 	  oldst=st;
 	} else {
@@ -162,7 +163,8 @@ Statementa * AParser::parsestatementa(bool flag) {
       {
 	skiptoken();
 	Statementa *st=new Statementa();
-	
+	if (flag)
+	  return st;
 	if (oldst==NULL) {
 	  oldst=st;
 	} else {
@@ -181,7 +183,8 @@ Statementa * AParser::parsestatementa(bool flag) {
       {
 	skiptoken();
 	Statementa * st=new Statementa(parsestatementa(true));
-	
+	if (flag)
+	  return st;
 	if (oldst==NULL) {
 	  oldst=st;
 	} else {
@@ -202,6 +205,8 @@ Statementa * AParser::parsestatementa(bool flag) {
       if (oldee==NULL||eeflag!=-1)
 	error();
       Statementa * st=new Statementa(oldee,s);
+      if (flag)
+	return st;
       oldee=NULL;
       if (oldst==NULL) {
 	oldst=st;
@@ -231,6 +236,8 @@ Statementa * AParser::parsestatementa(bool flag) {
       }
       Statementa *st=new Statementa(ae, type);
       needtoken(TOKEN_CLOSEPAREN);
+      if (flag)
+	return st;
       if (oldst==NULL) {
 	oldst=st;
       } else {
@@ -265,6 +272,7 @@ Statementa * AParser::parsestatementa(bool flag) {
 	Statementa * sa=new Statementa(oldee, parseaelementexpr(false), eeflag);
 	eeflag=-1;
 	oldee=NULL;
+	if (flag) return sa;
 	if (oldst==NULL) {
 	  oldst=sa;
 	} else {

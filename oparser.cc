@@ -47,7 +47,8 @@ Statement * Parser::parsestatement(bool flag) {
       {
 	skiptoken();
 	Statement *st=parsestatement(false);
-	
+	if (flag)
+	  return st;
 	if (oldst==NULL) {
 	  oldst=st;
 	} else {
@@ -79,7 +80,8 @@ Statement * Parser::parsestatement(bool flag) {
       {
 	skiptoken();
 	Statement * st=new Statement(parsestatement(true));
-	
+	if (flag)
+	  return st;
 	if (oldst==NULL) {
 	  oldst=st;
 	} else {
@@ -194,6 +196,7 @@ Elementexpr * Parser::parseelementexpr() {
       break;
     }
   case TOKEN_CLOSEPAREN:
+    skiptoken();
     return oldee;
     break;
   case TOKEN_SUB:
