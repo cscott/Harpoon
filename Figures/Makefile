@@ -33,9 +33,9 @@ THundir.tex: THundir.fig
 
 THseseex.tex: THcqex.fig
 	fig2dev -L latex -m 0.5 $< $@
-# sed out dashed arc-boxes and left-justified italic text from the figure.
+# sed out dashed arc-boxes and left-justified special text from the figure.
 THcqex.tex: THcqex.fig
-	awk "/^[[:blank:]]/{if (foo==1) next;} /^2 4 1/||/^4 0 0 100 0 3/{foo=1;next} {print; foo=0;}" < $< | \
+	awk "/^[[:blank:]]/{if (foo==1) next;} /^2 4 1/||/^4 0 0 100 0 0 12 0.0000 2/{foo=1;next} {print; foo=0;}" < $< | \
 	fig2dev -L latex -m 0.5 > $@
 
 THpst.tex: THpst.fig
