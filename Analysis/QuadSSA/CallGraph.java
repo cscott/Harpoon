@@ -14,7 +14,7 @@ import java.util.Vector;
  * <code>CallGraph</code> constructs a simple directed call graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.4.2.1 1998-12-01 12:36:26 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.4.2.2 1998-12-04 09:05:24 marinov Exp $
  */
 
 public class CallGraph  {
@@ -36,7 +36,7 @@ public class CallGraph  {
 		HMethod cm = ((CALL)q).method;
 		if (s.contains(cm)) continue; // duplicate.
 		// for 'special' invocations, we know the class exactly.
-		if (((CALL)q).isSpecial) {
+		if (((CALL)q).isSpecial || ((CALL)q).isStatic()) {
 		    s.union(cm);
 		    continue;
 		}
