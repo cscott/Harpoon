@@ -19,10 +19,10 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.3 1999-05-10 00:01:17 duncan Exp $
+ * @version $Id: StaticState.java,v 1.1.2.4 1999-06-28 19:32:25 duncan Exp $
  */
 final class StaticState extends HCLibrary {
-
+    
     /** mapping of classes to their static fields. */
     final private Hashtable classInfo = new Hashtable();// no unloading.
     final private Hashtable nonclassInfo = new Hashtable();   
@@ -32,16 +32,13 @@ final class StaticState extends HCLibrary {
     /** used to map fields & methods to labels */
     /*final*/ InterpreterOffsetMap map; 
     
-
     // Class constructor 
     StaticState(HCodeFactory hcf, InterpreterOffsetMap map) { 
-	this(hcf, null, map); 
+	this(hcf, null, map);     //prof is null for no profiling.
     }
 
-    //prof is null for no profiling.
-
     StaticState(HCodeFactory hcf, PrintWriter prof, InterpreterOffsetMap map) {
-	// Only translate TreeCodes
+	// Only translate trees in canonical form 
 	Util.assert(hcf.getCodeName().equals("canonical-tree"));
 	this.hcf = hcf; this.prof = prof; this.map = map;
 	Support.registerNative(this);
@@ -82,32 +79,46 @@ final class StaticState extends HCLibrary {
 	loadStaticFields(clsLabel, cls);
 	loadNonStaticFields(clsLabel, cls);
 	loadMethods(clsLabel, cls);
-	loadDisplay(clsLabel, cls);
-
-	// map pointer to type tag
-	int tag;
-
+	if (!(cls.isInterface() || cls.isPrimitive())) 
+	    loadDisplay(clsLabel, cls, map.displaySize(cls));
+	else  
+	    loadDisplay(clsLabel, cls);
+	
+	if (!(cls.isPrimitive() || cls.isArray())) 
+	    loadInterfaces(clsLabel, cls);
+	
+	int tag; // type tag
 	if (cls.isArray())          tag = map.arrayTag();
 	else if (cls.isInterface()) tag = map.interfaceTag();
 	else if (cls.isPrimitive()) tag = map.primitiveTag();
 	else                        tag = map.classTag();
 
-	map(new ClazPointer(clsLabel, this, map.tagOffset(cls)), 
+	map(new ClazPointer(clsLabel, this, map.tagOffset(cls)),
 	    new Integer(tag));
-	
-	// get static initializer.
+
+	// execute <clinit>() 
 	HMethod hm = cls.getClassInitializer();
 	if (hm!=null) Method.invoke(this, hm, new Object[0]);
 	Util.assert(isLoaded(cls));
     }
 
-    private void loadDisplay(Label clsLabel, HClass current) {
-	HClass sc = current.getSuperclass();
+    private void loadDisplay(Label clsLabel, HClass current, int size) { 
+	for (int i=0; i<size; i++) { 
+	    map(new ClazPointer(clsLabel, this, i), ConstPointer.NULL_POINTER);
+	}
+	loadDisplay(clsLabel, current);
+    }
 
+    private void loadDisplay(Label clsLabel, HClass current) {
+	HClass sc;
+	int    tag;
+
+	sc = current.getSuperclass();
 	if (sc!=null) loadDisplay(clsLabel, sc);
 
 	map(new ClazPointer(clsLabel, this, map.displayOffset(current)),
 	    new ConstPointer(map.label(current), this));
+
     }
 
     private void loadInterfaces(Label clsLabel, HClass cls) {
@@ -119,9 +130,12 @@ final class StaticState extends HCLibrary {
 		(new ConstPointer(map.label(interfaces[i]), this), i);
 	    //
 	    // Map interface methods
+	    //
+	    // FIX:  should not assume interfaces grow upwards
 	    HMethod[] hm = interfaces[i].getDeclaredMethods();
 	    for (int j=0; i<hm.length; i++) 
-		map(new ClazPointer(clsLabel, this, map.offset(hm[j])), hm[j]);
+		map(new ClazPointer(clsLabel, this, map.offset(hm[j])-1), 
+		    hm[j]);
 	}
 	
 	map(new ClazPointer(clsLabel, this, map.interfaceListOffset(cls)),
@@ -218,17 +232,23 @@ final class StaticState extends HCLibrary {
     
     /** Returns the HMethod with the specified label */
     Object getValue(ConstPointer ptr) { 
-	if (!classInfo.containsKey(ptr.getBase())) {
-	    classInfo.put(ptr.getBase(), 
-			  map.decodeLabel((Label)ptr.getBase()));
+	// Do null-pointer check
+	if (ptr==ConstPointer.NULL_POINTER) { 
+	    return new Integer(0);
 	}
-
-	Util.assert(classInfo.containsKey(ptr.getBase()));
-	if (classInfo.get(ptr.getBase()) instanceof HField) {
-	    return get((HField)classInfo.get(ptr.getBase())); 
-	}
-	else {
-	    return classInfo.get(ptr.getBase());
+	else { 
+	    if (!classInfo.containsKey(ptr.getBase())) {
+		classInfo.put(ptr.getBase(), 
+			      map.decodeLabel((Label)ptr.getBase()));
+	    }
+	    
+	    Util.assert(classInfo.containsKey(ptr.getBase()));
+	    if (classInfo.get(ptr.getBase()) instanceof HField) {
+		return get((HField)classInfo.get(ptr.getBase())); 
+	    }
+	    else {
+		return classInfo.get(ptr.getBase());
+	    }
 	}
     }
 

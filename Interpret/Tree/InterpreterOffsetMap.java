@@ -21,7 +21,7 @@ import java.util.StringTokenizer;
  * A simple OffsetMap, used by the Tree Interpreter
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: InterpreterOffsetMap.java,v 1.1.2.2 1999-05-10 00:01:16 duncan Exp $
+ * @version $Id: InterpreterOffsetMap.java,v 1.1.2.3 1999-06-28 19:32:25 duncan Exp $
  */
 public class InterpreterOffsetMap extends OffsetMap {
 
@@ -50,7 +50,7 @@ public class InterpreterOffsetMap extends OffsetMap {
 	};
 	m_fields = new Hashtable();
 	m_labels = new Hashtable();
-	m_imm = null; //new InterfaceMethodMap(ch.classes());
+	m_imm = new InterfaceMethodMap(ch.classes());
     }
 
 
@@ -229,7 +229,7 @@ public class InterpreterOffsetMap extends OffsetMap {
 	Util.assert(!hm.isStatic());
 	HClass hc = hm.getDeclaringClass(); 
     
-	if (hc.isInterface()) return -4; //-m_imm.methodOrder(hm) - 3;
+	if (hc.isInterface()) return -m_imm.methodOrder(hm) - 3;
 	else return m_cmm.methodOrder(hm) + displaySize(hc);
     }
 

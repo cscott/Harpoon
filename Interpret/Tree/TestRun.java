@@ -23,21 +23,24 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestRun.java,v 1.1.2.3 1999-05-10 00:01:17 duncan Exp $
+ * @version $Id: TestRun.java,v 1.1.2.4 1999-06-28 19:32:25 duncan Exp $
  */
 public abstract class TestRun extends HCLibrary {
     public static void main(String args[]) {
 	java.io.PrintWriter out = new java.io.PrintWriter(System.err, true);
 	
-	//HClass cls = HClass.forName(args[0]);
-	HClass cls = HClass.forName(args[0]);
-	//HMethod method = cls.getMethod("<clinit>", new HClass[] {  });
-
 	HCodeFactory hcf = // default code factory.
 	    harpoon.IR.Quads.QuadSSA.codeFactory();
-	
-	
-	Frame frame = new DefaultFrame(new InterpreterOffsetMap(null),
+      	
+	HClass cls = HClass.forName(args[0]);
+	System.err.println("Collecting class hierarchy information...");
+	ClassHierarchy ch = new ClassHierarchy
+	    (cls.getMethod("main", new HClass[] { HCstringA }), hcf);
+	System.err.println("done!");
+
+	//HMethod method = cls.getMethod("<clinit>", new HClass[] {  });
+
+	Frame frame = new DefaultFrame(new InterpreterOffsetMap(ch),
 				       new InterpreterAllocationStrategy());
 
 	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
@@ -55,6 +58,7 @@ public abstract class TestRun extends HCLibrary {
 	harpoon.Interpret.Tree.Method.run(prof, hcf, cls, params);
 	
 	if (prof!=null) prof.close(); 
+	
     }
 }
 

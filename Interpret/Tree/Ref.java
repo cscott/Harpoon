@@ -10,9 +10,9 @@ import harpoon.Util.Util;
  * <code>Ref</code> is an abstract superclass for object and array references.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Ref.java,v 1.1.2.1 1999-03-27 22:05:09 duncan Exp $
+ * @version $Id: Ref.java,v 1.1.2.2 1999-06-28 19:32:25 duncan Exp $
  */
-abstract class Ref implements Cloneable {
+abstract class Ref extends HCLibrary implements Cloneable {
     /** The type of the object. */
     final HClass type;
     /** A pointer to the static state, so we can finalize. */

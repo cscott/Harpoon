@@ -56,7 +56,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.2 1999-05-10 00:01:16 duncan Exp $
+ * @version $Id: Method.java,v 1.1.2.3 1999-06-28 19:32:25 duncan Exp $
  */
 public final class Method extends HCLibrary {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -66,8 +66,10 @@ public final class Method extends HCLibrary {
     public static final void run(PrintWriter prof, 
 				 HCodeFactory hcf,
 				 HClass cls, String[] args) {
-	HMethod method; OffsetMap map; StaticState ss;
-	CanonicalTreeCode tc;
+	CanonicalTreeCode tc;  // The code of the method to interpret
+	HMethod method;        // The method to interpret
+	OffsetMap map;         // The offset map used by the tree interpreter
+	StaticState ss;        // The interpreter's static state
 
 	method=cls.getMethod("main", new HClass[]{ HCstringA });
 	
@@ -103,7 +105,7 @@ public final class Method extends HCLibrary {
 	    StaticState.printStackTrace(err, (String[]) it.ex.getClosure());
 	} finally {
 	    // try to force finalization of object classes
-	    if (Method.DEBUG) System.out.println("Try to force finalization...");
+	    if (DEBUG) db("Try to force finalization...");
 	    ss=null;
 	    System.gc();
 	    System.runFinalization();
@@ -115,61 +117,85 @@ public final class Method extends HCLibrary {
      *  of the <code>obj</code> parameter.  
      */
     static final Object toNativeFormat(Object obj, HClass type) { 
-	Util.assert(!(obj instanceof ClazPointer));
-	Util.assert(!(obj instanceof UndefinedPointer));
 	Util.assert(type!=null);
 
-	// Can we have a pointer to a pointer?
-	if (obj instanceof ConstPointer) { // correct?
-	    ConstPointer cptr = (ConstPointer)obj;
-	    return toNativeFormat(cptr.getValue(), cptr.getType());
-	}
-	else if (obj instanceof FieldPointer) {
-	    return (ObjectRef)((FieldPointer)obj).getBase();
-	}
-	else if (obj instanceof ArrayPointer) {
-	    return (ArrayRef)((ArrayPointer)obj).getBase();
-	}
-	else if (type == HClass.Byte)
-	    return new Byte((byte)((Integer)obj).intValue());
-	else if (type == HClass.Short)
-	    return new Short((short)((Integer)obj).intValue());
-	else if (type == HClass.Char)
-	    return new Character((char)((Integer)obj).intValue());
-	else if (type == HClass.Boolean)
-	    return new Boolean(((Integer)obj).intValue()!=0);
-	else if ((!type.isPrimitive()) &&
-		 (obj instanceof Integer) &&
-		 (((Integer)obj).intValue()==0)) { 
-	    System.out.println("Converted to null");
-	    return null;
-	}
-	else 
-	    return obj;
-    }
+	Object  retval = null;
+	Pointer ptr    = null;
 
+	if (DEBUG) db("TONF: " + obj + ", " + type);
+
+	try { ptr = (Pointer)obj; }
+	catch (ClassCastException e) { 
+	    // obj is not a pointer type
+	    if (type == HClass.Byte)
+		retval = new Byte((byte)((Integer)obj).intValue());
+	    else if (type == HClass.Short)
+		retval = new Short((short)((Integer)obj).intValue());
+	    else if (type == HClass.Char)
+		retval = new Character((char)((Integer)obj).intValue());
+	    else if (type == HClass.Boolean)
+		retval = new Boolean(((Integer)obj).intValue()!=0);
+ 	    else if (!type.isPrimitive())  {
+		Util.assert(((Integer)obj).intValue()==0);
+		retval = null;
+	    }
+	    else 
+		retval = obj;
+
+ 	    return retval;
+	}
+	    
+	// obj must be a Pointer
+	switch (ptr.kind()) { 
+	case Pointer.ARRAY_PTR:
+	    retval = ((ArrayPointer)obj).getBase();  // --> ArrayRef
+	    break;
+	case Pointer.CONST_PTR:
+	    ConstPointer cptr = (ConstPointer)obj; 
+	    retval = toNativeFormat(cptr.getValue(), cptr.getType());
+	    break;
+	case Pointer.FIELD_PTR:
+	    retval = ((FieldPointer)obj).getBase();  // --> ObjectRef
+	    break;
+	default: 
+	    // Cannot convert any other type of pointer
+	    throw new Error("Can't convert " + ptr.getClass().toString() +
+		 	    " to native format");
+	}
+
+	if (DEBUG) db("   --> " + retval);
+ 	return retval;
+    } 
+   
     /** Returns the value obtained by converting <code>obj</code> into 
      *  non-native format. 
      */
     static final Object toNonNativeFormat(Object obj) { 
 	Util.assert(!(obj instanceof UndefinedRef));
 
-	//System.err.println("ToNNF: " + obj.getClass() + ", " + obj);
+	Object result;
+
+	if (DEBUG) db("TONNF: " + obj);
+
 	if (obj ==null) 
-	    return TREE_NULL;
+	    result = TREE_NULL;
 	else if (obj instanceof ObjectRef)
-	    return new FieldPointer((ObjectRef)obj, 0);
+	    result = new FieldPointer((ObjectRef)obj, 0);
 	else if (obj instanceof ArrayRef) 
-	    return new ArrayPointer((ArrayRef)obj, 0);
+	    result = new ArrayPointer((ArrayRef)obj, 0);
 	else if (obj instanceof Byte ||
 		 obj instanceof Short)
-	    return new Integer(((Number)obj).intValue());
+	    result = new Integer(((Number)obj).intValue());
 	else if (obj instanceof Character)
-	    return new Integer((int)((Character)obj).charValue());
+	    result = new Integer((int)((Character)obj).charValue());
 	else if (obj instanceof Boolean)
-	    return new Integer(((Boolean)obj).booleanValue()?1:0);
+	    result = new Integer(((Boolean)obj).booleanValue()?1:0);
 	else 
-	    return obj;
+	    result = obj;
+
+	if (DEBUG) db("   ---> " + result);
+
+	return result;
     }
 
     /** invoke the specified method.  void methods return null. */
@@ -242,7 +268,7 @@ public final class Method extends HCLibrary {
 		return null;
 	    }
 	    else {
-	      if (Method.DEBUG)System.out.println("Returning: " + i.Tret);
+		if (DEBUG) db("Returning: " + i.Tret);
 		// Convert to native format, and return
 	        return toNativeFormat(i.Tret, method.getReturnType());
 	    }
@@ -491,7 +517,7 @@ public final class Method extends HCLibrary {
 		    ptr.updateValue(sf.get(s.src));
 		}
 		catch (PointerTypeChangedException e) {
-		  System.out.println("PTR resolved: " + ptr + " --> " + e.ptr);
+		    if (DEBUG) db("PTYPE resolved: " + ptr + " --> " + e.ptr);
 		    // The type of ptr has been resolved.  Update the
 		    // stack frame accordingly. 
 		    ptr = ptr.add(-ptr.getOffset());
