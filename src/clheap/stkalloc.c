@@ -25,5 +25,18 @@ void *NSTK_malloc(size_t size) {
   return NGBL_malloc_noupdate(size);
 #endif
 }
+#else
+
+/** XXX THIS BREAKS IF THE STACK DOESN'T GROW DOWN */
+
+#include "alloc.h"	/* for declaration of NSTK_malloc */
+#include "misc.h"	/* for ALIGN, REALLY_DO_ALLOC, NGBL_malloc_noupdate. */
+#include "stats.h"	/* for UPDATE_STATS */
+
+void *NSTK2_malloc(size_t size) {
+  register char *result;
+  UPDATE_NIFTY_STATS(stk, size);
+  return NGBL_malloc_noupdate(size);
+}
 
 #endif /* !WITH_PRECISE_C_BACKEND */
