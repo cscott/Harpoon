@@ -3,11 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-import harpoon.Util.Util;
+import harpoon.Util.Default;
 import harpoon.Util.PairMapEntry;
-import harpoon.Util.UnmodifiableIterator;
-import harpoon.Util.CombineIterator;
-import harpoon.Util.FilterIterator;
+import harpoon.Util.Util;
 
 import java.util.Map;
 import java.util.Iterator;
@@ -21,19 +19,8 @@ import java.util.HashSet;
 /**
  * <code>GenericMultiMap</code> is a default implementation of a
  * <code>MultiMap</code>.  
- * <P> FSK: This data structure is a bit experimental; a few changes
- *     may be coming:<OL>
- *       <LI> The <code>Collection</code> views returned right now
- *	      don't offer very much in terms of modifying the
- *	      state of <code>this</code> internally.
- *	 <LI> Some of the views returned do not properly reflect
- *	      modification in <code>this</code>.  This is a gross
- *	      oversight of <code>Collection</code>'s interface
- *	      on my part and I need to fix it, which I will do when I
- *	      have free time.
- *	 </OL> 
  *
- * <P>   Also, right now the implementation tries to preserve the
+ * <P>   FSK: right now the implementation tries to preserve the
  *       property that if a key 'k' maps to an empty collection 'c' in
  *	 some MultiMap 'mm', then users of 'mm' will not be able to
  *	 see that 'k' is a member of the keySet for 'mm'.  However, it
@@ -44,7 +31,7 @@ import java.util.HashSet;
  *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.8 2000-11-10 19:55:11 cananian Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.9 2001-11-04 00:26:57 cananian Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -55,6 +42,9 @@ public class GenericMultiMap implements MultiMap {
     
     // used by identity constructor
     private MapFactory mf;
+
+    // for efficiency, we keep track of the number of mappings separately.
+    private int size=0;
     
     /** Creates a <code>MultiMap</code> using a <code>HashMap</code> for
 	the map and <code>HashSet</code>s for the value collections.
@@ -95,6 +85,7 @@ public class GenericMultiMap implements MultiMap {
 	this.mf = mm.mf;
 	this.cf = mm.cf;
 	this.internMap = this.mf.makeMap(mm.internMap);
+	this.size = mm.size();
     }
 	
     /** Makes a new <code>MultiMap</code> initialized with all of the
@@ -110,20 +101,11 @@ public class GenericMultiMap implements MultiMap {
     }
 
     public int size() {
-	return entrySet().size();
+	return size;
     }
 
     public boolean isEmpty() {
-	boolean empty = true;
-	Iterator entries = internMap.entrySet().iterator();
-	while(entries.hasNext()) {
-	    Collection s = (Collection)
-		((Map.Entry)entries.next()).getValue();
-	    if (s != null && s.size() != 0) {
-		empty = false;
-	    }
-	}
-	return empty;
+	return size==0;
     }
     
     public boolean containsKey(Object key) {
@@ -173,8 +155,12 @@ public class GenericMultiMap implements MultiMap {
     */
     public Object put(Object key,
 		      Object value) {
-	Object prev = get(key);
-	internMap.put(key, cf.makeCollection(Collections.singleton(value)));
+	Collection c = getValues(key);
+	Object prev = c.size()==0 ? null : c.iterator().next();
+	size -= c.size();
+	c.clear();
+	c.add(value);
+	size += c.size();
 	return prev;
     }
 
@@ -183,9 +169,10 @@ public class GenericMultiMap implements MultiMap {
 	<code>null</code> if there was no mapping for key.  
      */
     public Object remove(Object key) {
-	Object prev = get(key);
+	Collection c = (Collection) internMap.get(key);
+	if (c!=null) size -= c.size();
 	internMap.remove(key);
-	return prev;
+	return (c==null || c.size()==0) ? null : c.iterator().next();
     }
 
     /** Removes a mapping from key to value from this map if present.
@@ -196,10 +183,10 @@ public class GenericMultiMap implements MultiMap {
     */
     public boolean remove(Object key, Object value) {
 	Collection c = (Collection) internMap.get(key);
-	if (c != null) 
-	    return c.remove(value);
-	else 
-	    return false;
+	boolean result = (c!=null) ? c.remove(value) : false;
+	if (result) size--;
+	if (c!=null && c.size()==0) internMap.remove(key);
+	return result;
     }
 
     /** Copies the mappings from the specified map to this
@@ -222,108 +209,9 @@ public class GenericMultiMap implements MultiMap {
     
     public void clear() {
 	internMap.clear();
+	size=0;
     }
 
-    /** Returns a set view of the keys in this map.
-
-	NOTE: Does not properly implement Map.keySet(), since changes
-	in Map structure are not reflected in previously returned
-	keySets.  Fix this at some point for safety.
-    */
-    public Set keySet() {
-	FilterIterator iter = 
-	    new FilterIterator(internMap.keySet().iterator(),
-			       new FilterIterator.Filter() {
-				   public boolean isElement( Object k ) {
-				       return !((Collection)internMap.get(k)).isEmpty();
-				   }
-			       });
-
-	HashSet set = new HashSet();
-	while(iter.hasNext()) {
-	    set.add(iter.next());
-	}
-	return Collections.unmodifiableSet(set);
-    }
-    
-    /** Returns a collection view of the values contained in this
-	map.  
-
-	NOTE: Does not properly implement Map.values(), since changes
-	in Map structure are not reflected in previously returned
-	Collections.  Fix this at some point for safety.
-    */
-    public Collection values() { 
-	final Iterator collIter = internMap.values().iterator();
-	final Iterator iterIter = new UnmodifiableIterator() {
-	    public boolean hasNext() {
-		return collIter.hasNext();
-	    }
-	    public Object next() {
-		return ((Collection)collIter.next()).iterator();
-	    }
-	};
-	return new AbstractCollection() {
-	    public Iterator iterator() {
-		return new CombineIterator(iterIter);
-	    }
-	    public int size() {
-		return GenericMultiMap.this.size();
-	    }
-	};
-    }
-
-    /** Returns a set view of the mappings contained in this map.
-
-	NOTE: Does not properly implement Map.entrySet(), since changes
-	in Map structure are not reflected in previously returned
-	entrySets.  Fix this at some point for safety.
-    */
-    public Set entrySet() {
-	int size = 0;
-	Iterator k2cEntries = internMap.entrySet().iterator();
-	while(k2cEntries.hasNext()) {
-	    Iterator cIter = 
-		((Collection) ((Map.Entry)
-			       k2cEntries.next()).getValue()).iterator(); 
-	    while(cIter.hasNext()) { 
-		size++; cIter.next(); 
-	    }
-	}
-	final int sz = size;
-
-	final Iterator entries = internMap.entrySet().iterator();
-	final Iterator iterIter = new UnmodifiableIterator() {
-	    public boolean hasNext() {
-		return entries.hasNext();
-	    }
-	    public Object next() {
-		Map.Entry entry = (Map.Entry) entries.next();
-		final Object key = entry.getKey();
-		final Iterator valueC = ((Collection) entry.getValue()).iterator();
-		return new UnmodifiableIterator() {
-		    public boolean hasNext() {
-			return valueC.hasNext();
-		    }
-		    public Object next() {
-			final Object val = valueC.next();
-			return new PairMapEntry(key, val);
-		    }
-		};
-	    }
-	};
-	return new AbstractSet() {
-	    public Iterator iterator() {
-		return new CombineIterator(iterIter);
-	    }
-
-	    public int size() {
-		return sz;
-	    }
-	};
-    }
-    
-    
     public boolean equals(Object o) {
 	try {
 	    Set entrySet = ((Map) o).entrySet();
@@ -351,7 +239,9 @@ public class GenericMultiMap implements MultiMap {
 	        the call
     */
     public boolean add(Object key, Object value) {
-	return getValues(key).add(value);
+	boolean changed = getValues(key).add(value);
+	if (changed) size++;
+	return changed;
     }
     
     /** Adds to the current mappings: associations for
@@ -363,7 +253,21 @@ public class GenericMultiMap implements MultiMap {
 	        of the call
     */
     public boolean addAll(Object key, Collection values) {
-	return getValues(key).addAll(values);
+	boolean changed = false;
+	for (Iterator it=values.iterator(); it.hasNext(); )
+	    if (this.add(key, it.next()))
+		changed = true;
+	return changed;
+    }
+    /** Add all mappings in the given multimap to this multimap. */
+    public boolean addAll(MultiMap mm) {
+	boolean changed = false;
+	for (Iterator it=mm.entrySet().iterator(); it.hasNext(); ) {
+	    Map.Entry me = (Map.Entry) it.next();
+	    if (add(me.getKey(), me.getValue()))
+		changed = true;
+	}
+	return changed;
     }
 	
     /** Removes from the current mappings: associations for
@@ -376,7 +280,12 @@ public class GenericMultiMap implements MultiMap {
     */
     public boolean retainAll(Object key, Collection values) {
 	boolean changed = false;
-	changed = getValues(key).retainAll(values);
+	for (Iterator it=getValues(key).iterator(); it.hasNext(); )
+	    if (!values.contains(it.next())) {
+		it.remove();
+		changed = true;
+		size--;
+	    }
 	if (getValues(key).isEmpty()) internMap.remove(key);
 	return changed;
     }
@@ -391,8 +300,9 @@ public class GenericMultiMap implements MultiMap {
     */
     public boolean removeAll(Object key, Collection values) {
 	boolean changed = false;
-	changed = getValues(key).removeAll(values);
-	if (getValues(key).isEmpty()) internMap.remove(key);
+	for (Iterator it=values.iterator(); it.hasNext(); )
+	    if (this.remove(key, it.next()))
+		changed = true;
 	return changed;
     }
 
@@ -436,5 +346,170 @@ public class GenericMultiMap implements MultiMap {
 	}
 	sb.append("]");
 	return sb.toString();
+    }
+
+    /** Returns a set view of the keys in this map. */
+    public Set keySet() {
+	return keySet;
+    }
+    private final Set keySet = new KeySet();
+    
+    /** Returns a collection view of the values contained in this
+	map.  
+    */
+    public Collection values() { 
+	return valuesCollection;
+    }
+    private final Collection valuesCollection = new ValuesCollection();
+
+    /** Returns a set view of the mappings contained in this map.
+	This view is fully modifiable; the elements are
+	<code>Map.Entry</code>s.
+    */
+    public Set entrySet() {
+	return entrySet;
+    }
+    private final Set entrySet = new EntrySet();
+    
+    // here are the class declarations that make the key set, entry set and
+    // values collection work.
+    class KeySet extends AbstractSet {
+	public int size() { return internMap.keySet().size(); }
+	public Iterator iterator() {
+	    return new Iterator() {
+		    Iterator it = internMap.keySet().iterator();
+		    Object lastKey;
+		    public boolean hasNext() { return it.hasNext(); }
+		    public Object next() { return (lastKey=it.next()); }
+		    public void remove() {
+			Collection c = (Collection) internMap.get(lastKey);
+			it.remove();
+			if (c!=null) size-=c.size();
+		    }
+		};
+	}
+	public boolean remove(Object o) {
+	    boolean changed = contains(o);
+	    GenericMultiMap.this.remove(o);
+	    return changed;
+	}
+	// for efficiency.
+	public boolean contains(Object o) {
+	    // note that this is slightly different from MM.containsKey(o)
+	    return internMap.containsKey(o);
+	}
+	public void clear() {
+	    GenericMultiMap.this.clear();
+	}
+    }
+    class EntrySet extends CollectionView implements Set {
+	EntrySet() { super(ENTRY); }
+	// these methods aren't in the collections interface
+	// (from classpath impl of AbstractSet)
+	public boolean equals(Object o) {
+	    if (o == this)
+		return true;
+	    else if (o instanceof Set && ((Set) o).size() ==
+		     EntrySet.this.size())
+		return EntrySet.this.containsAll((Collection) o);
+	    else
+		return false;
+	}
+	public int hashCode() {
+	    Iterator itr = EntrySet.this.iterator();
+	    int size = EntrySet.this.size();
+	    int hash = 0;
+	    for (int pos = 0; pos < size; pos++)
+		{
+		    Object obj = itr.next();
+		    if (obj != null)
+			hash += obj.hashCode();
+		}
+	    return hash;
+	}
+    }
+    class ValuesCollection extends CollectionView {
+	ValuesCollection() { super(VALUES); }
+    }
+    // common code
+    class CollectionView extends AbstractCollection {
+	static final int ENTRY = 0; // set, really.
+	static final int VALUES = 1;
+	final int type;
+	protected CollectionView(int type) {
+	    this.type = type;
+	    if (type==ENTRY)
+		Util.assert(this instanceof Set);
+	}
+	public int size() { return size; }
+	public Iterator iterator() {
+	    return new Iterator() {
+		    Iterator mapit = internMap.entrySet().iterator();
+		    Iterator setit = Default.nullIterator;
+		    Iterator lastit;
+		    Object key;
+		    { advance(); }
+		    public boolean hasNext() { return setit.hasNext(); }
+		    public Object next() {
+			Object o = setit.next();
+			Object k = key;
+			advance();
+			if (type==ENTRY)
+			    return new PairMapEntry(k, o) {
+				    public Object setValue(Object newValue) {
+					Object oldValue = getValue();
+					GenericMultiMap.this.remove(getKey(),
+								    oldValue);
+					GenericMultiMap.this.add(getKey(),
+								 newValue);
+					super.setValue(newValue);
+					return oldValue;
+				    }
+				};
+			else return o;
+		    }
+		    void advance() {
+			lastit = setit;
+			if (!setit.hasNext() && mapit.hasNext()) {
+			    Map.Entry me = (Map.Entry) mapit.next();
+			    key = me.getKey();
+			    Collection c = (Collection) me.getValue();
+			    setit = c.iterator();
+			}
+		    }
+		    public void remove() {
+			lastit.remove();
+			size--;
+		    }
+		};
+	}
+	public boolean add(Object o) {
+	    if (type==VALUES) throw new UnsupportedOperationException();
+	    // o should be a Map.Entry.
+	    if (!(o instanceof Map.Entry))
+		throw new UnsupportedOperationException();
+	    Map.Entry me = (Map.Entry) o;
+	    return GenericMultiMap.this.add(me.getKey(), me.getValue());
+	}
+	public boolean remove(Object o) {
+	    if (type==VALUES) throw new UnsupportedOperationException();
+	    // o should be a Map.Entry.
+	    if (!(o instanceof Map.Entry))
+		throw new UnsupportedOperationException();
+	    Map.Entry me = (Map.Entry) o;
+	    return GenericMultiMap.this.remove(me.getKey(), me.getValue());
+	}
+	// other methods for efficiency.
+	public boolean contains(Object o) {
+	    if (type==VALUES)
+		return GenericMultiMap.this.containsValue(o);
+	    // o should be a Map.Entry.
+	    if (!(o instanceof Map.Entry)) return false;
+	    Map.Entry me = (Map.Entry) o;
+	    return GenericMultiMap.this.contains(me.getKey(), me.getValue());
+	}
+	public void clear() {
+	    GenericMultiMap.this.clear();
+	}
     }
 }
