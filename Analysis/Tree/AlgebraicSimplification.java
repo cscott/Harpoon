@@ -38,9 +38,10 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.9 2000-02-13 20:19:10 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.10 2000-02-13 20:24:46 cananian Exp $
  */
 public abstract class AlgebraicSimplification { 
+    private static final boolean debug = false;
     // hide constructor
     private AlgebraicSimplification() { }
 
@@ -195,7 +196,9 @@ public abstract class AlgebraicSimplification {
 		Rule rule = (Rule)i.next();
 		if (rule.match(e)) {
 		    Exp simpleE = rule.apply(e); 
-		    System.out.println("Replacing: " + e + " with " + simpleE); 
+		    if (debug)
+			System.out.println("Replacing: " + e + " with " +
+					   simpleE + " by rule " + rule); 
 		    this.code.replace(e, simpleE); 
 		    this.worklist.push(simpleE); 
 		    return; 
@@ -234,6 +237,7 @@ public abstract class AlgebraicSimplification {
 	// K1 ^ K2 --> K3 
 	// 
 	Rule combineConstants = new Rule() { 
+	    public String toString() { return "combineConstants"; }
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
@@ -282,6 +286,7 @@ public abstract class AlgebraicSimplification {
 	// const ^ exp --> exp ^ const
 	//
 	Rule commute = new Rule() { 
+	    public String toString() { return "commute"; }
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
@@ -307,6 +312,7 @@ public abstract class AlgebraicSimplification {
 	// exp >>> 0 --> exp
 	// 
 	Rule removeZero = new Rule() { 
+	    public String toString() { return "removeZero"; }
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
@@ -327,6 +333,7 @@ public abstract class AlgebraicSimplification {
 	// -(-i) --> i 
 	// 
 	Rule doubleNegative = new Rule() { 
+	    public String toString() { return "doubleNegative"; }
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _UNOP) { return false; } 
 		else { 
@@ -349,6 +356,7 @@ public abstract class AlgebraicSimplification {
 	// -0 --> 0 
 	//
 	Rule negZero = new Rule() {  
+	    public String toString() { return "negZero"; }
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _UNOP) { return false; } 
 		else { 
@@ -364,6 +372,7 @@ public abstract class AlgebraicSimplification {
 	}; 
 
 	Rule mulToShift = new Rule() { 
+	    public String toString() { return "mulToShift"; }
 	    public boolean match (Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
@@ -387,6 +396,7 @@ public abstract class AlgebraicSimplification {
 
 
 	Rule divToMul = new Rule() { 
+	    public String toString() { return "divToMul"; }
 	    public boolean match(Exp e) { 
 		if (_KIND(e) != _BINOP) { return false; } 
 		else { 
