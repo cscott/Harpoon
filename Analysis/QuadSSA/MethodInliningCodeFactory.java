@@ -41,7 +41,7 @@ import harpoon.ClassFile.HCodeElement;
  * facilities for specifying number of recursive inlinings.
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.3 1999-02-12 21:42:11 pnkfelix Exp $ */
+ * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.4 1999-02-13 09:58:40 pnkfelix Exp $ */
 public class MethodInliningCodeFactory implements HCodeFactory {
 
     static PrintWriter pw = new PrintWriter(System.out);
@@ -101,6 +101,10 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	QuadSSA newCode = (QuadSSA) parent.convert(m);
 	if (newCode == null) return null;
 	
+	// The below was added in response to Scott's request that the
+	// HCode be cloned prior to being fuddled with by the Inliner
+	newCode = (QuadSSA) newCode.clone( m );
+
 	Quad[] ql = (Quad[]) newCode.getElements();
 	QuadVisitor qv;
 	currentlyInlining = new HashSet();
@@ -159,13 +163,6 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 		for(int j=0; j<newElems.length; j++) {
 		    newElems[j].visit(qv);
 		}
-
-	        /* build = new QuadArrayBuilder((HEADER) newQ);
-		newElems = build.getElements();
-		for(int j=0; j<newElems.length; j++) {
-		    pw.println( "FSK " + newElems[j] );
-		    } 
-		*/
 	    }
 	}
 	
@@ -245,7 +242,20 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	}
 	
 	public void visit(THROW q) { 
-	    // do something similar to RETURN here 
+	  // do something similar to RETURN here 
+	  Temp retEx = site.retex();
+	  Quad replace;
+	  if (retEx != null) {
+	    replace = new MOVE(site.getFactory(), null,
+			       retEx, q.throwable());
+	  } else {
+	    // no place to put the exception...don't know under what
+	    // situation this would occur...perhaps put in an
+	    // assertion to ensure that it doesn't?
+	    replace = new NOP(site.getFactory(), null);
+	  }
+	  Quad[] qArray = { q.prev()[0], replace, site.next()[0] };
+	  Quad.addEdges( qArray );
 	}
 
 	public void visit(RETURN q) {
@@ -262,9 +272,8 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 		// a NOP and replace := NOP
 		replace = new NOP(site.getFactory(), null);
 	    }
-	    // make the
-	    // successor(replace) be the successor of the calling
-	    // site. 
+	    // make the successor(replace) be the successor of the
+	    // calling site.
 	    Quad[] qArray = { q.prev()[0], replace, site.next()[0] };
 	    Quad.addEdges( qArray );
 	}
