@@ -23,9 +23,9 @@ import harpoon.Temp.TempFactory;
  * <code>EventDrivenCode</code>
  *
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDrivenCode.java,v 1.1.2.6 2000-01-13 23:51:10 bdemsky Exp $
+ * @version $Id: EventDrivenCode.java,v 1.1.2.7 2000-02-08 08:40:10 bdemsky Exp $
  */
-public class EventDrivenCode extends harpoon.IR.Quads.QuadNoSSA {
+public class EventDrivenCode extends harpoon.IR.Quads.QuadSSI {
     public static final String codename = "quad-no-ssa";
     
     /** Creates a <code>EventDrivenCode</code>. */
@@ -53,36 +53,28 @@ public class EventDrivenCode extends harpoon.IR.Quads.QuadNoSSA {
      * @return the name of the <code>parent</code>'s code view.
      */
     public String getName() {
-	return harpoon.IR.Quads.QuadNoSSA.codename;
+	return harpoon.IR.Quads.QuadSSI.codename;
     }
 
     private Quad buildCode(HMethod newmain, Temp[] params, Linker linker) {
 	System.out.println("Entering EventDrivenCode.buildCode()");
-	HEADER h = new HEADER(this.qf, null);
-	FOOTER f = new FOOTER(this.qf, null, 4);
+	HEADER h = new HEADER(qf, null);
+	FOOTER f = new FOOTER(qf, null, 4);
 	Quad.addEdge(h, 0, f, 0);
-
-	System.out.println("Debug 1");
-
-	METHOD m = new METHOD(this.qf, null, params, 1);
+	METHOD m = new METHOD(qf, null, params, 1);
 	Quad.addEdge(h, 1, m, 0);
-
-	System.out.println("Debug 2");
 
 	if (newmain == null) System.out.println("newmain is null");
 
 	// call to new main method (mainAsync)
-	System.out.println(newmain);
-	TempFactory tf=this.qf.tempFactory();
+	TempFactory tf=qf.tempFactory();
 	Temp t=new Temp(tf);
 	Temp exc=new Temp(tf);
 
-	CALL c1 = new CALL(this.qf, null, newmain, params, t, exc, true,
+	CALL c1 = new CALL(qf, null, newmain, params, t, exc, true,
 			   false, new Temp[0]);
-	THROW throwq=new THROW(this.qf, null, exc);
+	THROW throwq=new THROW(qf, null, exc);
 	Quad.addEdge(c1, 1, throwq,0);
-	System.out.println("Debug 3");
-
 	Quad.addEdge(m, 0, c1, 0);
 
 	// call to scheduler
@@ -90,26 +82,22 @@ public class EventDrivenCode extends harpoon.IR.Quads.QuadNoSSA {
 	try {
 	    final HClass sch = 
 		linker.forName("harpoon.Analysis.ContBuilder.Scheduler");
-		//		HClass.forName("java.continuation.Scheduler");
 	    schloop = sch.getDeclaredMethod("loop", new HClass[0]);
 	} catch (Exception e) {
 	    System.err.println
 		("Cannot find harpoon.Analysis.EventDriven.Scheduler");
 	}
-
-	System.out.println("Debug 4");
+	
 
 	Temp exc2=new Temp(tf);
-	CALL c2 = new CALL(this.qf, null, schloop, new Temp[0], null, exc2, 
+	CALL c2 = new CALL(qf, null, schloop, new Temp[0], null, exc2, 
 			   true, false, new Temp[0]);
-	THROW throwq2=new THROW(this.qf, null, exc2);
+	THROW throwq2=new THROW(qf, null, exc2);
 	Quad.addEdge(c1, 0, c2, 0);
 	Quad.addEdge(c2, 1, throwq2,0);
 
 
-	System.out.println("Debug 5");
-
-	RETURN r = new RETURN(this.qf, null, null);
+	RETURN r = new RETURN(qf, null, null);
 	Quad.addEdge(c2,0,r,0);
 	Quad.addEdge(r, 0, f, 1);
 	Quad.addEdge(throwq,0,f,2);

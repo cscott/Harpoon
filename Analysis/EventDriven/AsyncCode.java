@@ -39,7 +39,7 @@ import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
-import harpoon.IR.Quads.QuadNoSSA;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPECAST;
@@ -60,7 +60,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.51 2000-02-07 23:44:10 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.52 2000-02-08 08:40:09 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -92,7 +92,8 @@ public class AsyncCode {
 			   Set blockingcalls, 
 			   CachingCodeFactory ucf, ToAsync.BlockingMethods bm,
 			   HMethod mroot, Linker linker, ClassHierarchy ch,
-			   Set other, Set done_other, boolean methodstatus) 
+			   Set other, Set done_other, boolean methodstatus,
+			   TypeMap typemap) 
 	throws NoClassDefFoundError
     {
 	System.out.println("Entering AsyncCode.buildCode()");
@@ -118,7 +119,8 @@ public class AsyncCode {
 					   env_map, liveness,
 					   blockingcalls, hc.getMethod(), 
 					   hc, ucf,bm,mroot, linker,ch,
-					   other, done_other,methodstatus);
+					   other, done_other,methodstatus,
+					   typemap);
 	    quadc.accept(cv);
 	}
     }
@@ -142,7 +144,8 @@ public class AsyncCode {
 			   HCode hc, CachingCodeFactory ucf,
 			   ToAsync.BlockingMethods bm, HMethod mroot, 
 			   Linker linker, ClassHierarchy ch,
-			   Set other, Set done_other, boolean methodstatus) {
+			   Set other, Set done_other, boolean methodstatus,
+			   TypeMap typemap) {
 	    this.liveness=liveness;
 	    this.env_map=env_map;
 	    this.cont_todo=cont_todo;
@@ -159,7 +162,8 @@ public class AsyncCode {
 					       cont_map, env_map, liveness,
 					       async_todo, old2new,
 					       hc,ucf,bm,mroot, linker,ch,
-					       other, done_other,methodstatus);
+					       other, done_other,methodstatus,
+					       typemap);
 	}
 
 	public void visit(Quad q) {

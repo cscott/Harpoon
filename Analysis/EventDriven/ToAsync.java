@@ -5,6 +5,8 @@ package harpoon.Analysis.EventDriven;
 
 import harpoon.Analysis.AllCallers;
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Quads.TypeInfo;
+import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.Analysis.ContBuilder.ContBuilder;
 import harpoon.Analysis.EnvBuilder.EnvBuilder;
@@ -17,7 +19,7 @@ import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.QuadNoSSA;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.Temp.Temp;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
@@ -33,7 +35,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.15 2000-02-07 20:36:35 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.16 2000-02-08 08:40:10 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -66,22 +68,23 @@ public class ToAsync {
 	WorkSet done_other=new WorkSet();
 	   
 	while (!async_todo.isEmpty()|!other.isEmpty()) {
-	    HCode selone=null;
+	    QuadSSI selone=null;
 	    boolean status=false;
 	    if (async_todo.isEmpty()) {
 		HMethod hm=(HMethod) other.pop();
 		done_other.push(hm);
-		selone=ucf.convert(hm);
+		selone=(QuadSSI) ucf.convert(hm);
 		if (selone==null)
 		    continue;
 		status=true;
 	    } else
-		selone=(HCode) async_todo.pop();
+		selone=(QuadSSI) async_todo.pop();
 	    final QuadLiveness ql = new QuadLiveness(selone);
+	    final TypeMap typemap=new TypeInfo(selone);
 	    System.out.println("ToAsync is running AsyncCode on "+selone);
 	    AsyncCode.buildCode(selone, old2new, async_todo,
 				ql,blockingcalls,ucf,  bm, hc.getMethod(), 
-				linker,ch,other, done_other,status);
+				linker,ch,other, done_other,status, typemap);
 	}
 	return nhm;
     }

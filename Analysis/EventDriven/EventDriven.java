@@ -4,6 +4,7 @@
 package harpoon.Analysis.EventDriven;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.Quads.CallGraph;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
@@ -12,18 +13,18 @@ import harpoon.ClassFile.Linker;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.QuadNoSSA;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.Temp.Temp;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
+import harpoon.Util.WorkSet;
 /**
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.6 2000-01-15 01:12:31 cananian Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.7 2000-02-08 08:40:10 bdemsky Exp $
  */
 public class EventDriven {
     protected final CachingCodeFactory ucf;
@@ -33,7 +34,7 @@ public class EventDriven {
     protected final Linker linker;
 
     /** Creates a <code>EventDriven</code>. The <code>CachingCodeFactory</code>
-     *  needs to have been created from a <code>QuadNoSSA</code> that contains
+     *  needs to have been created from a <code>QuadSSI</code> that contains
      *  type information.
      *
      *  <code>HCode</code> needs to be the <code>HCode</code> for main.
@@ -53,7 +54,24 @@ public class EventDriven {
 	HClass origClass = oldmain.getDeclaringClass();
 
 
-	ToAsync as = new ToAsync(this.ucf, this.hc, this.ch, linker);
+//  	CallGraph cg=new CallGraph(ch, ucf);
+//  	WorkSet todo=new WorkSet();
+//  	WorkSet done=new WorkSet();
+//  	todo.add(hc.getMethod());
+//  	while(!todo.isEmpty()) {
+//  	    HMethod hm=(HMethod)todo.pop();
+//  	    done.add(hm);
+//  	    System.out.println(hm);
+//  	    System.out.println("-------------------------------------");
+//  	    HMethod[] hma=cg.calls(hm);
+//  	    for (int i=0;i<hma.length;i++) {
+//  		System.out.println("calls "+hma[i]);
+//  		if (!done.contains(hma[i]))
+//  		    todo.add(hma[i]);
+//  	    }
+//  	}
+
+	ToAsync as = new ToAsync(ucf,hc ,ch ,linker);
 	// transform main to mainAsync
 	HMethod newmain = as.transform();
 
@@ -65,9 +83,11 @@ public class EventDriven {
 	METHOD method=(METHOD) (header.next(1));
 	params=method.params();
 
-	this.ucf.put(oldmain, new EventDrivenCode(oldmain, newmain, params, linker));
+	ucf.put(oldmain, new EventDrivenCode(oldmain, newmain, params, linker));
 	return oldmain;
     }
 }
+
+
 
 

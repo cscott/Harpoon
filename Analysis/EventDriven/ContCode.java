@@ -22,9 +22,9 @@ import java.util.Map;
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContCode.java,v 1.1.2.1 2000-01-02 22:15:19 bdemsky Exp $
+ * @version $Id: ContCode.java,v 1.1.2.2 2000-02-08 08:40:10 bdemsky Exp $
  */
-public class ContCode extends harpoon.IR.Quads.QuadNoSSA {
+public class ContCode extends harpoon.IR.Quads.QuadSSI {
 
     /** Creates a <code>ContCode</code> for an <code>HMethod</code> using
      *  the <code>HCode</code> from which we want to build the continuation
@@ -41,7 +41,7 @@ public class ContCode extends harpoon.IR.Quads.QuadNoSSA {
      * @return the name of the <code>parent</code>'s code view.
      */
     public String getName() {
-	return harpoon.IR.Quads.QuadNoSSA.codename;
+	return harpoon.IR.Quads.QuadSSI.codename;
     }
 
     public void quadSet(Quad q) {

@@ -21,9 +21,9 @@ import harpoon.Util.Util;
  * <code>EnvCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvCode.java,v 1.1.2.4 2000-01-13 23:51:47 bdemsky Exp $
+ * @version $Id: EnvCode.java,v 1.1.2.5 2000-02-08 08:40:09 bdemsky Exp $
  */
-public class EnvCode extends harpoon.IR.Quads.QuadNoSSA {
+public class EnvCode extends harpoon.IR.Quads.QuadSSI {
 
     /** Creates a <code>EnvCode</code>. */
     public EnvCode(HMethod parent, HField[] fields) {
@@ -49,23 +49,23 @@ public class EnvCode extends harpoon.IR.Quads.QuadNoSSA {
      * @return the name of the <code>parent</code>'s code view.
      */
     public String getName() {
-	return harpoon.IR.Quads.QuadNoSSA.codename;
+	return harpoon.IR.Quads.QuadSSI.codename;
     }
 
     private Quad buildCode(HField[] fields) {
 	System.out.println("Entering EnvCode.buildCode()");
-	HEADER h = new HEADER(this.qf, null);
-	FOOTER f = new FOOTER(this.qf, null, 2);
+	HEADER h = new HEADER(qf, null);
+	FOOTER f = new FOOTER(qf, null, 2);
 	Quad.addEdge(h, 0, f, 0);
 
-	TempFactory tf = this.qf.tempFactory();
+	TempFactory tf = qf.tempFactory();
 
 	Temp[] params = new Temp[fields.length+1];
 	for (int i=0; i<params.length; i++) {
 	    params[i] = new Temp(tf);
 	}
 
-	METHOD m = new METHOD(this.qf, null, params, 1);
+	METHOD m = new METHOD(qf, null, params, 1);
 	Quad.addEdge(h, 1, m, 0);
 
 	Temp objectref = m.params(0);
@@ -73,14 +73,14 @@ public class EnvCode extends harpoon.IR.Quads.QuadNoSSA {
 	Quad[] quadList = new Quad[fields.length];
 	for (int i=0; i < fields.length; i++) {
 	    quadList[i] = 
-		new SET(this.qf, null, fields[i], objectref, params[i+1]);
+		new SET(qf, null, fields[i], objectref, params[i+1]);
 	}
 	if (fields.length>0) {
 	    Quad.addEdges(quadList);
 	    Quad.addEdge(m, 0, quadList[0], 0);
 	}
 
-	RETURN r = new RETURN(this.qf, null, null);
+	RETURN r = new RETURN(qf, null, null);
 	if (fields.length>0) {
 	    Quad.addEdge(quadList[fields.length-1], 0, r, 0);
 	} else

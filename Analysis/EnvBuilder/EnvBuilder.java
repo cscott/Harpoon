@@ -21,7 +21,7 @@ import harpoon.ClassFile.HMethodMutator;
 import harpoon.ClassFile.Relinker;
 import harpoon.ClassFile.UniqueName;
 
-import harpoon.IR.Quads.QuadNoSSA;
+import harpoon.IR.Quads.QuadSSI;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>EnvBuilder</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.1.2.7 2000-01-15 01:12:28 cananian Exp $
+ * @version $Id: EnvBuilder.java,v 1.1.2.8 2000-02-08 08:40:09 bdemsky Exp $
  */
 public class EnvBuilder {
     protected final CachingCodeFactory ucf;
@@ -42,6 +42,7 @@ public class EnvBuilder {
     protected static int counter = 0;
     public Temp[] liveout;
     protected final Linker linker;
+    protected TypeMap typemap;
 
     /** Creates a <code>EnvBuilder</code>. Requires that the 
      *  <code>HCode</code> and <code>HCodeElement</code> objects
@@ -49,12 +50,13 @@ public class EnvBuilder {
      *  works with quad-no-ssa. <code>HCodeFactory</code> must
      *  be an <code>CachingCodeFactory</code>.
      */
-    public EnvBuilder(CachingCodeFactory ucf, HCode hc, HCodeElement hce, Temp[] lives, Linker linker) {
+    public EnvBuilder(CachingCodeFactory ucf, HCode hc, HCodeElement hce, Temp[] lives, Linker linker,TypeMap typemap) {
 	this.ucf = ucf;
         this.hc = hc;
 	this.hce = hce;
 	this.liveout = lives;
 	this.linker=linker;
+	this.typemap=typemap;
     }
 
     public HClass makeEnv() {
@@ -80,11 +82,10 @@ public class EnvBuilder {
 
 	HConstructor nc = c[0];
 	HMethodMutator ncmutator=nc.getMutator();
-	TypeMap map = ((QuadNoSSA) this.hc).typeMap;
 
 	int size=0;
 	for (int ii=0;ii<liveout.length;ii++)
-	    if (map.typeMap(this.hce,liveout[ii])!=HClass.Void)
+	    if (typemap.typeMap(hce,liveout[ii])!=HClass.Void)
 		size++;
 
 	String[] parameterNames = new String[size];
@@ -94,12 +95,10 @@ public class EnvBuilder {
 	System.out.println("Starting SCCAnalysis");
 	System.out.println("Finished SCCAnalysis");
 	for (int i=0,j=0; i<liveout.length; i++) {
-	    //	    this.liveout[i] = (Temp)vars[i];
-	    if (map.typeMap(this.hce,liveout[i])!=HClass.Void) {
+	    if (typemap.typeMap(hce,liveout[i])!=HClass.Void) {
 		    String tempName = liveout[i].name();
-		    HClass type = map.typeMap(this.hce, liveout[i]);  
+		    HClass type = typemap.typeMap(hce, liveout[i]);  
 		    envmutator.addDeclaredField(tempName, type);
-		    //	    new HFieldSyn(env, tempName, type);
 		    
 		    parameterNames[j] = tempName;
 		    parameterTypes[j] = type;
