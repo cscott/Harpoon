@@ -32,7 +32,7 @@ import java.util.Random;
  * <code>Runtime1</code> runtime.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.6 2000-03-27 20:33:50 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.7 2000-11-14 21:50:26 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -100,7 +100,9 @@ public class ObjectBuilder
 	return Stm.toStm(stmlist);
     }
     Stm makeDatum(TreeFactory tf, Object datum) {
-	if (datum instanceof Integer)
+	if (datum==null)
+	    return _DATUM(tf, new CONST(tf, null)); // null constant.
+	else if (datum instanceof Integer)
 	    return _DATUM(tf, new CONST(tf, null,
 				   ((Integer)datum).intValue()));
 	else if (datum instanceof Long)
