@@ -6,11 +6,19 @@ for dir in $@; do
   files=`find $dir -name CVS -prune -o ! -name "*~" ! -name "*.class" ! -name "*.gif" -print`
   for f in $files; do
     if [ -f $f ]; then
-	echo "---- CUT HERE ----"
-        echo $f
+	# pipeline safe: don't output anything until we're done reading it all.
+	doctmp=`mktemp -q /var/tmp/doc-tmp.$$.XXXXXX`
+	if [ $? -ne 0 ]; then
+	    echo "$0: Can't create temp file, aborting."
+	    exit 1
+	fi
+	echo "---- CUT HERE ----" >> $doctmp
+        echo $f >> $doctmp
 	# old way: sed -e "s/^-/- /" < $f
 	# new way makes sure every line ends in a newline.
-	perl -ne 'chomp;s/^-/- /;print $_ . "\n";' < $f
+	perl -ne 'chomp;s/^-/- /;print $_ . "\n";' < $f >> $doctmp
+	# NOW output.
+	cat $doctmp ; rm -f $doctmp
     fi
   done
 done
