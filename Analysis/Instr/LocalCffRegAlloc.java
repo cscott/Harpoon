@@ -54,7 +54,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.56 1999-12-11 23:31:10 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.57 2000-01-18 15:23:38 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -207,9 +207,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    // ref already has register assigned to it --> skip
 	    if (code.registerAssigned(instr, ref)) {
 		Util.assert( !regfile.inverseMap().getValues(ref).isEmpty(),
-			     new Util.LazyString() { 
+			     new Object() { 
 		    // made Lazy 'cause dumpElems is SLOW
-		    public String eval() {
+		    public String toString() {
 			return "If a ref: "+ref+" is assigned a register, it "+
 			    "should have a mapping in the regfile"+
 			    "\nLiveOnExit: "+ liveOnExit +

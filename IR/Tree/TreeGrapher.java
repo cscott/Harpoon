@@ -24,7 +24,7 @@ import java.util.Stack;
  * control-flow graph information with elements of an canonical tree. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeGrapher.java,v 1.1.2.5 2000-01-17 23:41:30 cananian Exp $
+ * @version $Id: TreeGrapher.java,v 1.1.2.6 2000-01-18 15:23:42 pnkfelix Exp $
  */
 class TreeGrapher extends CFGrapher { 
     private Map predecessors = new HashMap(); 
@@ -128,8 +128,8 @@ class TreeGrapher extends CFGrapher {
 	    Util.assert(this.nextNode!=null, 
 			"nextNode shouldn't be null");
 	    Util.assert(RS(this.nextNode)!=(Stm)labels.get(s.getHandler().label),
-			new Util.LazyString() {
-			    public String eval() {
+			new Object() {
+			    public String toString() {
 				return "both normal and exceptional"+
 				" return should not target same location"+
 				" for "+Print.print(s);}});

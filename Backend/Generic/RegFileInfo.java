@@ -58,7 +58,7 @@ import java.util.Iterator;
     maintained by the hardcoded references.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.13 2000-01-18 15:11:20 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.14 2000-01-18 15:23:39 pnkfelix Exp $ */
 public abstract class RegFileInfo {
     
     private static TempFactory preassignTF = new TempFactory() {
@@ -90,7 +90,7 @@ public abstract class RegFileInfo {
 	seperate basic blocks can map to the same physical register in
 	the register file.
     */
-    abstract class VRegAllocator {
+    public abstract class VRegAllocator {
 	/** Returns a Virtual Register Temp for <code>t</code>.
 	    <BR> <B> effects: </B> If <code>regfile</code> has space
 	         to hold a value of the type held in <code>t</code>, 

@@ -45,7 +45,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.10 2000-01-09 09:17:37 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.11 2000-01-18 15:23:26 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -311,8 +311,8 @@ public class BasicBlock {
 		if (CHECK_REP) {
 		    Util.assert((next == first) ||
 				(grapher.pred(next).length == 1), 
-				new Util.LazyString() {
-			public String eval() {
+				new Object() {
+			public String toString() {
 			    return "BasicBlock REP error; non-first elem has only " + 
 				"one predecessor\n" +
 				BasicBlock.this.dumpElems();
@@ -320,8 +320,8 @@ public class BasicBlock {
 		    });
 		    Util.assert((next == last) ||
 				(grapher.succ(next).length == 1),
-				new Util.LazyString() {
-			public String eval() {
+				new Object() {
+			public String toString() {
 			    return "BasicBlock REP error; non-last elem has only " + 
 				"one successor\n" + BasicBlock.this.dumpElems();
 			}

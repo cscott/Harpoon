@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.16 1999-12-06 14:45:37 pnkfelix Exp $
+ * @version $Id: Util.java,v 1.12.2.17 2000-01-18 15:23:43 pnkfelix Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -172,21 +172,21 @@ public abstract class Util {
     if (!val)
       throw new RuntimeException("Assertion Failure: "+msg) { };
   }
-  /** Assertion facility, with lazy-evaluated explanatory string.
-   *  Throws a <code>RuntimeException</code> including the specified
-   *  message string if the boolean parameter is <code>false</code>. 
-   *  Used for code where evaluating the <code>msg</code> string
-   *  takes too long or can't be done if <code>val</code> is true.
+  /** Assertion facility, with a <code>Object</code> as an explanation
+   *  string. 
+   *  Throws a <code>RuntimeException</code> including the output of
+   *  <code>msg.toString()</code> if the boolean parameter is
+   *  <code>false</code>.  
+   *  <p>Note that this can be used as a <i>Lazy Evaluation</i> hack;
+   *  since it only evaluates <code>msg.toString()</code> if 
+   *  <code>val</code> is <code>false</code>), it can be used for code
+   *  where evaluating the <code>msg</code> string takes too long to
+   *  do everytime the assertion is checked or the explanation string
+   *  can't be generated if <code>val</code> is true.
    */
-  public static final void assert(boolean val, LazyString msg) {
+  public static final void assert(boolean val, Object msg) {
     if (!val)
-      throw new RuntimeException("Assertion Failure: "+msg.eval()) { };
-  }
-  
-  // Note: when we move to GJ, change this to a 'Lazy<T>' class with a 
-  // 'eval' method that returns a 'T'.  (Or perhaps Promise<T> or Thunk<T>?)
-  public static abstract class LazyString {
-    public abstract String eval();
+      throw new RuntimeException("Assertion Failure: "+msg.toString()) { };
   }
   
   /** Repeat a given string a certain number of times.

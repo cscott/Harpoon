@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.69 2000-01-18 15:11:23 pnkfelix Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.70 2000-01-18 15:23:41 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private final String assem; 
     private InstrFactory inf;
@@ -325,8 +325,8 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 		Util.assert(i.next == null, "last should have next == null");
 		Util.assert(i.targets == null, "last should have targets == null");
 		Util.assert(!iter.hasNext(), 
-			    new Util.LazyString() {
-		    public String eval() {
+			    new Object() {
+		    public String toString() {
 			return ("last should have nothing left in iter "+
 				iter.next());
 		    }

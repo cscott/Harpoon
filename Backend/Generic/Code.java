@@ -43,7 +43,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.36 2000-01-18 15:11:20 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.37 2000-01-18 15:23:39 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
 
@@ -216,8 +216,8 @@ public abstract class Code extends HCode {
 	    while(needed.hasNext()) {
 		final Label l = (Label) needed.next();
 		Util.assert(outputLabels.contains(l), 
-			    new Util.LazyString() {
-		    public String eval() {
+			    new Object() {
+		    public String toString() {
 			Iterator instrs = getElementsI();
 			boolean labelFound = false;
 			while(instrs.hasNext()) {
