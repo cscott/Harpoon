@@ -51,7 +51,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.18 1999-09-09 00:48:44 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.19 1999-09-09 13:30:48 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -1821,7 +1821,10 @@ final class Translate { // not public.
 	    if (v.size()==0) offset=index.intValue();
 	    else if (index.intValue()!=offset+v.size()) break;
 	    // okay, this is element N of array initializer.
-	    v.add(extractConst(in2).getValue());
+	    Number value = (Number) extractConst(in2).getValue();
+	    if (in2.getOpcode()==Op.BIPUSH || in2.getOpcode()==Op.SIPUSH)
+		value = new Integer(value.intValue());
+	    v.add(value);
 	    in = in3.next(0);
 	} while (true);
 	if (v.size()==0) return ts;
