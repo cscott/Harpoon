@@ -25,7 +25,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.20 1998-08-04 01:49:13 cananian Exp $
+ * @version $Id: HClass.java,v 1.21 1998-08-04 02:09:08 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -821,8 +821,6 @@ public class HClass {
    */
   public boolean isPrimitive() {
     if (isArray()) return false;
-    if (this instanceof Primitive) return true;
-    /*
     if (this==HClass.Boolean) return true;
     if (this==HClass.Byte) return true;
     if (this==HClass.Short) return true;
@@ -832,7 +830,6 @@ public class HClass {
     if (this==HClass.Double) return true;
     if (this==HClass.Char) return true;
     if (this==HClass.Void) return true;
-    */
     return false;
   }
 
