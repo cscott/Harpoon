@@ -37,6 +37,7 @@ import harpoon.IR.Tree.UNOP;
 import harpoon.IR.Tree.Uop;
 import harpoon.Temp.Label;
 import harpoon.Temp.LabelList;
+import harpoon.Util.Util;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -51,7 +52,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.5 2000-06-27 21:32:05 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.6 2000-06-27 22:52:23 cananian Exp $
  */
 public class TreeToC {
     
@@ -78,7 +79,17 @@ public class TreeToC {
 	}
 	// StringWriters and PrintWriters for the translation.
 	// four output sections: gbl_decls, meth_decls, meth_body, gbl_data
-	private final int GS=0, MD=1, MB=2, GD=3, SECTIONS=4;
+	/** Method declaration and local variables */
+	private final int MD=0;
+	/** Method body. */
+	private final int MB=1;
+	/** Data declarations (as struct) */
+	private final int DD=2;
+	/** Data initializations. */
+	private final int DI=3;
+	/** Number of sections */
+	private final int SECTIONS=4;
+
 	private StringWriter[] swa = new StringWriter[SECTIONS];
 	private PrintWriter[] pwa = new PrintWriter[SECTIONS];
 	private PrintWriter pw;
@@ -87,31 +98,77 @@ public class TreeToC {
 		swa[i] = new StringWriter();
 		pwa[i] = new PrintWriter(swa[i]);
 	    }
-	    pw = pwa[GD];
+	    pw = null;
 	}
 	// keep track of current alignment, section, method, etc.
-	ALIGN alignment = null;
+	ALIGN align = null;
 	SEGMENT segment = null;
 	METHOD method = null;
+	LABEL label = null;
+	int field_counter = 0;
+
+	// switch from one mode to the next.
+	private static final int NONE = 0;
+	private static final int DATA = 1;
+	private static final int CODE = 2;
+	int current_mode = NONE;
+	void switchto(int mode) {
+	    switch(current_mode) {
+	    case CODE:
+		flushAndAppend(MD);
+		pwa[MB].println("}");
+		flushAndAppend(MB);
+		temps_seen.clear();
+		break;
+	    case DATA:
+		pwa[DI].println("};");
+		flushAndAppend(DD);
+		flushAndAppend(DI);
+		break;
+	    default: break;
+	    }
+	    current_mode = mode;
+	    switch(current_mode) {
+	    case CODE:
+		pw = pwa[MD];
+		break;
+	    case DATA:
+		field_counter = 0;
+		pw = pwa[DI];
+		break;
+	    default: break;
+	    }
+	}
+	StringBuffer output = new StringBuffer();
+	void flushAndAppend(int which) {
+	    pwa[which].flush();
+	    StringBuffer sb = swa[which].getBuffer();
+	    output.append(sb);
+	    sb.setLength(0);
+	}
 
 	/** these are the symbols referenced (and declarations for them) */
 	Map sym2decl = new HashMap();
 	/** these are the *local* labels which are defined in this file. */
 	Set local_labels = new HashSet();
 	String translate(Tree t, boolean isCode) {
-	    StringBuffer sb=new StringBuffer();
+	    // foreach tree...
+	    switchto(NONE);
 	    trans(t);
-	    if (isCode) pwa[MB].println("}");
+	    switchto(NONE);
+	    // collect symbol declarations.
+	    StringWriter mysw = new StringWriter();
+	    PrintWriter mypw = new PrintWriter(mysw);
+	    mypw.println("#include <precisec.h>");
 	    for (Iterator it=sym2decl.keySet().iterator(); it.hasNext(); ) {
 		Label l = (Label) it.next();
 		if (!local_labels.contains(l))
-		    pwa[GS].println(sym2decl.get(l));
+		    mypw.println(sym2decl.get(l));
 	    }
-	    for (int i=0; i<SECTIONS; i++) {
-		pwa[i].close();
-		sb.append(swa[i].getBuffer());
-	    }
-	    return sb.toString();
+	    // now collect output.
+	    mypw.print(output);
+	    mypw.close();
+	    return mysw.getBuffer().toString();
 	}
 	// useful line number update function.
 	private boolean EMIT_LINE_DIRECTIVES=false;
@@ -165,7 +222,7 @@ public class TreeToC {
 
 	// okay, shoot:
 	public void visit(ALIGN e) {
-	    this.alignment = e;
+	    this.align = e;
 	}
 	public void visit(BINOP e) {
 	    pw.print("(");
@@ -235,7 +292,18 @@ public class TreeToC {
 	    pw.print(e.value==null?"NULL":e.value.toString());
 	}
 	public void visit(DATUM e) {
-	    pw.print("\t/* datum "); trans(e.getData()); pw.println(" */");
+	    // we ought to handle mode==CODE case, but I don't feel like
+	    // thinking hard today.
+	    Util.assert(current_mode==DATA);
+	    pwa[DD].print("\t"+ctype(e.getData())+" ");
+	    pwa[DD].print("f"+(field_counter++));
+	    pwa[DD].print(" __attribute__ ((packed))");
+	    if (align!=null)
+		pwa[DD].print(" __attribute__ ((aligned (" +
+			      this.align.alignment + ")))");
+	    this.align=null; // clear alignment.
+	    pwa[DD].println(";");
+	    pw.print("\t"); trans(e.getData()); pw.println(",");
 	}
 	public void visit(ESEQ e) {
 	    throw new Error("Non-canonical tree form.");
@@ -253,7 +321,23 @@ public class TreeToC {
 	}
 	public void visit(LABEL e) {
 	    if (!e.exported) local_labels.add(e.label);
-	    pw.println(label(e.label)+":");
+	    if (current_mode==CODE) pw.println(label(e.label)+":");
+	    else {
+		switchto(DATA);
+		pwa[DD].println("struct "+label(e.label)+" {");
+		pwa[DI].print("} "+label(e.label));
+		// XXX: GCC ignores the following attribute, though
+		// we'd like to have it!
+		//pwa[DI].print(" __attribute__ ((packed))");
+		if (this.align!=null)
+		    pwa[DI].print(" __attribute__ ((aligned (" +
+				  this.align.alignment + ")))");
+		this.align=null; // clear alignment.
+		if (segment!=null)
+		    pwa[DI].print(" __attribute__ ((section (\"" +
+				  sectionname(this.segment) +"\")))");
+		pwa[DI].println(" = {");
+	    }
 	}
 	public void visit(MEM e) {
 	    Exp exp = e.getExp();
@@ -265,6 +349,10 @@ public class TreeToC {
 	private boolean isVoidMethod = false;
 	public void visit(METHOD e) {
 	    this.method = e;
+	    // have to discard the alignment (gcc won't let us specify it)
+	    this.align = null;
+	    // switch!
+	    switchto(CODE);
 	    // emit declaration.
 	    pw = pwa[MD];
 	    if (e.getReturnType() < 0) {
@@ -295,7 +383,8 @@ public class TreeToC {
 	public void visit(NAME e) { visit(e, true); }
 	public void visit(NAME e, boolean take_address) {
 	    /* add entry in symbol declaration table */
-	    sym2decl.put(e.label, "extern "+ctype(e)+" "+label(e.label)+";");
+	    sym2decl.put(e.label, "extern struct "+label(e.label)+" "+
+			 label(e.label)+";");
 	    if (take_address) pw.print("(&");
 	    pw.print(label(e.label));
 	    if (take_address) pw.print(")");
