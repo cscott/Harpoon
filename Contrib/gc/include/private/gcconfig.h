@@ -186,7 +186,7 @@
 #    define SPARC
 #    define mach_type_known
 # endif
-# if defined(LINUX) && defined(arm)
+# if defined(LINUX) && defined(__arm__)
 #    define ARM32
 #    define mach_type_known
 # endif
@@ -318,6 +318,11 @@
 #   define PJ
 #   define mach_type_known
 # endif
+# if defined(__embedded__) && defined(PPC)
+#   define POWERPC
+#   define NOSYS
+#   define mach_type_known
+# endif
 /* Ivan Demakov */
 # if defined(__WATCOMC__) && defined(__386__)
 #   define I386
@@ -426,7 +431,9 @@
  * Gustavo Rodriguez-Rivera points out that on most (all?) Unix machines,
  * the value of environ is a pointer that can serve as STACKBOTTOM.
  * I expect that HEURISTIC2 can be replaced by this approach, which
- * interferes far less with debugging. 
+ * interferes far less with debugging.  However it has the disadvantage
+ * that it's confused by a putenv call before the collector is initialized.
+ * This could be dealt with by intercepting putenv ...
  *
  * If no expression for STACKBOTTOM can be found, and neither of the above
  * heuristics are usable, the collector can still be used with all of the above
@@ -615,11 +622,9 @@
 #     define DATASTART ((ptr_t) get_etext())
 #     define STACKBOTTOM ((ptr_t) 0xc0000000)
 #     define DATAEND	/* not needed */
-#     ifdef POWERPC
-#        define MPROTECT_VDB
-#     endif
-#  	include <unistd.h>
-#	   define GETPAGESIZE() getpagesize()
+#     define MPROTECT_VDB
+#     include <unistd.h>
+#     define GETPAGESIZE() getpagesize()
 #   endif
 #   ifdef NETBSD
 #     define ALIGNMENT 4
@@ -628,6 +633,17 @@
       extern char etext;
 #     define DATASTART GC_data_start
 #     define DYNAMIC_LOADING
+#   endif
+#   ifdef NOSYS
+#     define ALIGNMENT 4
+#     define OS_TYPE "NOSYS"
+      extern void __end, __dso_handle;
+#     define DATASTART (&__dso_handle)  /* OK, that's ugly.  */
+#     define DATAEND (&__end)
+	/* Stack starts at 0xE0000000 for the simulator.  */
+#     undef STACK_GRAN
+#     define STACK_GRAN 0x10000000
+#     define HEURISTIC1
 #   endif
 # endif
 
@@ -678,9 +694,10 @@
 #	  define HEAP_START DATAEND
 #       endif
 #	define PROC_VDB
-/*	HEURISTIC1 reportedly no longer works under 2.7.  Thus we	*/
-/* 	switched to HEURISTIC2, eventhough it creates some debugging	*/
-/*	issues.								*/
+/*	HEURISTIC1 reportedly no longer works under 2.7.  		*/
+/*  	HEURISTIC2 probably works, but this appears to be preferable.	*/
+#       include <sys/vmparam.h>
+#	define STACKBOTTOM USRSTACK
 #	define HEURISTIC2
 #	include <unistd.h>
 #       define GETPAGESIZE()  sysconf(_SC_PAGESIZE)
@@ -784,7 +801,13 @@
   	extern int etext, _start;
   	extern char * GC_SysVGetDataStart();
 #       define DATASTART GC_SysVGetDataStart(0x1000, &etext)
-#	define STACKBOTTOM ((ptr_t)(&_start))
+/*	# define STACKBOTTOM ((ptr_t)(&_start)) worked through 2.7,  	*/
+/*      but reportedly breaks under 2.8.  It appears that the stack	*/
+/* 	base is a property of the executable, so this should not break	*/
+/* 	old executables.						*/
+/*  	HEURISTIC2 probably works, but this appears to be preferable.	*/
+#       include <sys/vmparam.h>
+#	define STACKBOTTOM USRSTACK
 /** At least in Solaris 2.5, PROC_VDB gives wrong values for dirty bits. */
 /*#	define PROC_VDB*/
 #	define DYNAMIC_LOADING
@@ -940,6 +963,7 @@
 #   ifdef FREEBSD
 #	define OS_TYPE "FREEBSD"
 #	define MPROTECT_VDB
+#	define FREEBSD_STACKBOTTOM
 #   endif
 #   ifdef NETBSD
 #	define OS_TYPE "NETBSD"
@@ -950,7 +974,7 @@
 #   ifdef BSDI
 #	define OS_TYPE "BSDI"
 #   endif
-#   if defined(OPENBSD) || defined(FREEBSD) || defined(NETBSD) \
+#   if defined(OPENBSD) || defined(NETBSD) \
         || defined(THREE86BSD) || defined(BSDI)
 #	define HEURISTIC2
 	extern char etext;
@@ -1108,8 +1132,8 @@
 #       define STACKBOTTOM ((ptr_t) 0x7b033000)  /* from /etc/conf/h/param.h */
 #   else
 	/* Gustavo Rodriguez-Rivera suggested changing HEURISTIC2	*/
-	/* to this.  We'll probably do this on other platforms, too.	*/
-	/* For now I'll use it where I can test it.			*/
+	/* to this.  Note that the GC must be initialized before the	*/
+    	/* first putenv call.						*/
 	extern char ** environ;
 #       define STACKBOTTOM ((ptr_t)environ)
 #   endif
@@ -1153,6 +1177,8 @@
 #   	define DATAEND ((ptr_t) &_end)
  	extern char ** environ;
 	/* round up from the value of environ to the nearest page boundary */
+	/* Probably breaks if putenv is called before collector 	   */
+	/* initialization.						   */
 #	define STACKBOTTOM ((ptr_t)(((word)(environ) | (getpagesize()-1))+1))
 /* #   	define HEURISTIC2 */
 	/* Normally HEURISTIC2 is too conervative, since		*/
@@ -1170,9 +1196,9 @@
 #       define CPP_WORDSZ 64
 #       define STACKBOTTOM ((ptr_t) 0x120000000)
 #       ifdef __ELF__
-#	  define LINUX_DATA_START
+#	  define SEARCH_FOR_DATA_START
+#	  define DATASTART GC_data_start
 #         define DYNAMIC_LOADING
-	  /* This doesn't work if the collector is in a dynamic library. */
 #       else
 #           define DATASTART ((ptr_t) 0x140000000)
 #       endif
@@ -1203,31 +1229,34 @@
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define CPP_WORDSZ 64
-	/* This should really be done through /proc, but that	*/
-	/* requires we run on an IA64 kernel.			*/
-#       define STACKBOTTOM ((ptr_t) 0xa000000000000000l)
+	/* The following works on NUE and older kernels:	*/
+/* #       define STACKBOTTOM ((ptr_t) 0xa000000000000000l)	*/
+	/* This does not work on NUE:				*/
+#       define LINUX_STACKBOTTOM
 	/* We also need the base address of the register stack	*/
-	/* backing store.  There is probably a better way to	*/
-	/* get that, too ...					*/
-#	define BACKING_STORE_BASE ((ptr_t) 0x9fffffff80000000l)
-#	if 1
-#	    define SEARCH_FOR_DATA_START
-#	    define DATASTART GC_data_start
-#	else
-	    extern int data_start;
-#	    define DATASTART ((ptr_t)(&data_start))
-#	endif
+	/* backing store.  There should be a better way to get	*/
+	/* this:						*/
+#	define APPROX_BS_BASE ((word)GC_stackbottom-0x80000000)
+	/* We round to the next multiple of 1 MB, to compensate	*/
+	/* for the fact that the stack base is displaced by	*/
+	/* the environment, etc.				*/
+#	define BACKING_STORE_BASE \
+		(ptr_t)((APPROX_BS_BASE + 0xfffff) & ~0xfffff)
+#	define SEARCH_FOR_DATA_START
+#	define DATASTART GC_data_start
 #       define DYNAMIC_LOADING
 #	define MPROTECT_VDB
 		/* Requires Linux 2.3.47 or later.	*/
 	extern int _end;
 #	define DATAEND (&_end)
-#	define PREFETCH(x) \
-	  __asm__ ("	lfetch	[%0]": : "r"((void *)(x)))
-#	define PREFETCH_FOR_WRITE(x) \
-	  __asm__ ("	lfetch.excl	[%0]": : "r"((void *)(x)))
-#	define CLEAR_DOUBLE(x) \
-	  __asm__ ("	stf.spill	[%0]=f0": : "r"((void *)(x)))
+#       ifdef __GNUC__
+#	  define PREFETCH(x) \
+	    __asm__ ("	lfetch	[%0]": : "r"((void *)(x)))
+#	  define PREFETCH_FOR_WRITE(x) \
+	    __asm__ ("	lfetch.excl	[%0]": : "r"((void *)(x)))
+#	  define CLEAR_DOUBLE(x) \
+	    __asm__ ("	stf.spill	[%0]=f0": : "r"((void *)(x)))
+#       endif
 #   endif
 # endif
 
@@ -1396,6 +1425,12 @@
 #   define SUNOS5SIGS
 # endif
 
+# if defined(SVR4) || defined(LINUX) || defined(IRIX) || defined(HPUX) \
+    || defined(OPENBSD) || defined(NETBSD) || defined(FREEBSD) \
+    || defined(BSD) || defined(AIX) || defined(MACOSX) || defined(OSF1)
+#   define UNIX_LIKE   /* Basic Unix-like system calls work.	*/
+# endif
+
 # if CPP_WORDSZ != 32 && CPP_WORDSZ != 64
    -> bad word size
 # endif
@@ -1511,14 +1546,16 @@
 
 # if defined(HP_PA) || defined(M88K) || defined(POWERPC) && !defined(MACOSX) \
      || (defined(I386) && defined(OS2)) || defined(UTS4) || defined(LINT) \
-     || defined(MSWINCE)
+     || defined(MSWINCE) || (defined(I386) && defined(__LCC__))
 	/* Use setjmp based hack to mark from callee-save registers. */
 #	define USE_GENERIC_PUSH_REGS
 # endif
 # if defined(I386) && defined(LINUX)
     /* SAVE_CALL_CHAIN is supported if the code is compiled to save	*/
     /* frame pointers by default, i.e. no -fomit-frame-pointer flag.	*/
-/* #   define SAVE_CALL_CHAIN */
+# ifdef SAVE_CALL_COUNT
+#   define SAVE_CALL_CHAIN 
+# endif
 # endif
 # if defined(SPARC)
 #   define SAVE_CALL_CHAIN

@@ -50,7 +50,6 @@
 
 /* ANSI C requires that a compilation unit contains something */
 
-/* Should eventuallu also test for HPUX_THREADS or GC_OSF1_THREADS */
 # if defined(GC_LINUX_THREADS) || defined(LINUX_THREADS) \
      || defined(GC_HPUX_THREADS) || defined(HPUX_THREADS) \
      || defined(GC_OSF1_THREADS) || defined(OSF1_THREADS) \
@@ -93,6 +92,7 @@
 #   undef pthread_create
 #   undef pthread_sigmask
 #   undef pthread_join
+#   undef pthread_detach
 #endif
 
 
@@ -118,10 +118,8 @@ void GC_print_sig_mask()
 /* We use the allocation lock to protect thread-related data structures. */
 
 /* The set of all known threads.  We intercept thread creation and 	*/
-/* joins.  We never actually create detached threads.  We allocate all 	*/
-/* new thread stacks ourselves.  These allow us to maintain this	*/
-/* data structure.							*/
-/* Protected by GC_thr_lock.						*/
+/* joins.								*/
+/* Protected by allocation/GC lock.					*/
 /* Some of this should be declared volatile, but that's inconsistent	*/
 /* with some library routine declarations.  		 		*/
 typedef struct GC_Thread_Rep {
@@ -163,11 +161,7 @@ typedef struct GC_Thread_Rep {
 #	endif
 	/* The ith free list corresponds to size (i+1)*GRANULARITY */
 #	define INDEX_FROM_BYTES(n) (ADD_SLOP(n) - 1)/GRANULARITY
-#	ifdef ADD_BYTE_AT_END
-#	  define BYTES_FROM_INDEX(i) (((i) + 1) * GRANULARITY - 1)
-#	else
-#	  define BYTES_FROM_INDEX(i) (((i) + 1) * GRANULARITY)
-#	endif
+#	define BYTES_FROM_INDEX(i) (((i) + 1) * GRANULARITY - EXTRA_BYTES)
 #	define SMALL_ENOUGH(bytes) (ADD_SLOP(bytes) <= NFREELISTS*GRANULARITY)
 	ptr_t ptrfree_freelists[NFREELISTS];
 	ptr_t normal_freelists[NFREELISTS];
@@ -280,7 +274,7 @@ extern GC_PTR GC_generic_malloc_many();
 
 GC_PTR GC_local_malloc(size_t bytes)
 {
-    if (!SMALL_ENOUGH(bytes)) {
+    if (EXPECT(!SMALL_ENOUGH(bytes),0)) {
         return(GC_malloc(bytes));
     } else {
 	int index = INDEX_FROM_BYTES(bytes);
@@ -289,8 +283,8 @@ GC_PTR GC_local_malloc(size_t bytes)
 	GC_key_t k = GC_thread_key;
 	void * tsd;
 
-#	ifdef REDIRECT_MALLOC
-	    if (0 == k) {
+#	if defined(REDIRECT_MALLOC) && !defined(USE_PTHREAD_SPECIFIC)
+	    if (EXPECT(0 == k, 0)) {
 		/* This can happen if we get called when the world is	*/
 		/* being initialized.  Whether we can actually complete	*/
 		/* the initialization then is unclear.			*/
@@ -306,7 +300,7 @@ GC_PTR GC_local_malloc(size_t bytes)
 #	endif
 	my_fl = ((GC_thread)tsd) -> normal_freelists + index;
 	my_entry = *my_fl;
-	if ((word)my_entry >= HBLKSIZE) {
+	if (EXPECT((word)my_entry >= HBLKSIZE, 1)) {
 	    ptr_t next = obj_link(my_entry);
 	    GC_PTR result = (GC_PTR)my_entry;
 	    *my_fl = next;
@@ -328,14 +322,14 @@ GC_PTR GC_local_malloc(size_t bytes)
 
 GC_PTR GC_local_malloc_atomic(size_t bytes)
 {
-    if (!SMALL_ENOUGH(bytes)) {
+    if (EXPECT(!SMALL_ENOUGH(bytes), 0)) {
         return(GC_malloc_atomic(bytes));
     } else {
 	int index = INDEX_FROM_BYTES(bytes);
 	ptr_t * my_fl = ((GC_thread)GC_getspecific(GC_thread_key))
 		        -> ptrfree_freelists + index;
 	ptr_t my_entry = *my_fl;
-	if ((word)my_entry >= HBLKSIZE) {
+	if (EXPECT((word)my_entry >= HBLKSIZE, 1)) {
 	    GC_PTR result = (GC_PTR)my_entry;
 	    *my_fl = obj_link(my_entry);
 	    return result;
@@ -366,14 +360,14 @@ GC_PTR GC_local_gcj_malloc(size_t bytes,
 			   void * ptr_to_struct_containing_descr)
 {
     GC_ASSERT(GC_gcj_malloc_initialized);
-    if (!SMALL_ENOUGH(bytes)) {
+    if (EXPECT(!SMALL_ENOUGH(bytes), 0)) {
         return GC_gcj_malloc(bytes, ptr_to_struct_containing_descr);
     } else {
 	int index = INDEX_FROM_BYTES(bytes);
 	ptr_t * my_fl = ((GC_thread)GC_getspecific(GC_thread_key))
 	                -> gcj_freelists + index;
 	ptr_t my_entry = *my_fl;
-	if ((word)my_entry >= HBLKSIZE) {
+	if (EXPECT((word)my_entry >= HBLKSIZE, 1)) {
 	    GC_PTR result = (GC_PTR)my_entry;
 	    GC_ASSERT(!GC_incremental);
 	    /* We assert that any concurrent marker will stop us.	*/
@@ -507,8 +501,10 @@ static void start_mark_threads()
     }
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-#   ifdef PRINTSTATS
+#   ifdef CONDPRINT
+      if (GC_print_stats) {
 	GC_printf1("Starting %ld marker threads\n", GC_markers - 1);
+      }
 #   endif
     for (i = 0; i < GC_markers - 1; ++i) {
       if (0 != PTHREAD_CREATE(GC_mark_threads + i, &attr,
@@ -577,6 +573,7 @@ void GC_suspend_handler(int sig)
       if (sigdelset(&mask, SIGINT) != 0) ABORT("sigdelset() failed");
       if (sigdelset(&mask, SIGQUIT) != 0) ABORT("sigdelset() failed");
       if (sigdelset(&mask, SIGTERM) != 0) ABORT("sigdelset() failed");
+      if (sigdelset(&mask, SIGABRT) != 0) ABORT("sigdelset() failed");
 #   endif
     do {
 	    me->signal = 0;
@@ -653,7 +650,7 @@ GC_thread GC_new_thread(pthread_t id)
     result -> id = id;
     result -> next = GC_threads[hv];
     GC_threads[hv] = result;
-    /* result -> flags = 0; */
+    GC_ASSERT(result -> flags == 0 && result -> thread_blocked == 0);
     return(result);
 }
 
@@ -958,6 +955,7 @@ void GC_thr_init()
 #   ifdef NO_SIGNALS
       if (sigdelset(&act.sa_mask, SIGINT) != 0
 	  || sigdelset(&act.sa_mask, SIGQUIT != 0)
+	  || sigdelset(&act.sa_mask, SIGABRT != 0)
 	  || sigdelset(&act.sa_mask, SIGTERM != 0)) {
         ABORT("sigdelset() failed");
       }
@@ -988,7 +986,7 @@ void GC_thr_init()
 
     /* Set GC_nprocs.  */
       {
-	char * nprocs_string = getenv("GC_NPROCS");
+	char * nprocs_string = GETENV("GC_NPROCS");
 	GC_nprocs = -1;
 	if (nprocs_string != NULL) GC_nprocs = atoi(nprocs_string);
       }
@@ -1011,14 +1009,18 @@ void GC_thr_init()
 #	endif
       }
 #   ifdef PARALLEL_MARK
-#     ifdef PRINTSTATS
-        GC_printf2("Number of processors = %ld, "
+#     ifdef CONDPRINT
+        if (GC_print_stats) {
+          GC_printf2("Number of processors = %ld, "
 		 "number of marker threads = %ld\n", GC_nprocs, GC_markers);
+	}
 #     endif
       if (GC_markers == 1) {
 	GC_parallel = FALSE;
-#	ifdef PRINTSTATS
-	  GC_printf0("Single marker thread, turning off parallel marking\n");
+#	ifdef CONDPRINT
+	  if (GC_print_stats) {
+	    GC_printf0("Single marker thread, turning off parallel marking\n");
+	  }
 #	endif
       } else {
 	GC_parallel = TRUE;
@@ -1119,7 +1121,11 @@ struct start_info {
 				/* parent hasn't yet noticed.		*/
 };
 
-
+/* Called at thread exit.				*/
+/* Never called for main thread.  That's OK, since it	*/
+/* results in at most a tiny one-time leak.  And 	*/
+/* linuxthreads doesn't reclaim the main threads 	*/
+/* resources or id anyway.				*/
 void GC_thread_exit_proc(void *arg)
 {
     GC_thread me;
@@ -1164,10 +1170,34 @@ int WRAP_FUNC(pthread_join)(pthread_t thread, void **retval)
     /* cant have been recycled by pthreads.				*/
     UNLOCK();
     result = REAL_FUNC(pthread_join)(thread, retval);
+    if (result == 0) {
+        LOCK();
+        /* Here the pthread thread id may have been recycled. */
+        GC_delete_gc_thread(thread, thread_gc_id);
+        UNLOCK();
+    }
+    return result;
+}
+
+int
+WRAP_FUNC(pthread_detach)(pthread_t thread)
+{
+    int result;
+    GC_thread thread_gc_id;
+    
     LOCK();
-    /* Here the pthread thread id may have been recycled. */
-    GC_delete_gc_thread(thread, thread_gc_id);
+    thread_gc_id = GC_lookup_thread(thread);
     UNLOCK();
+    result = REAL_FUNC(pthread_detach)(thread);
+    if (result == 0) {
+      LOCK();
+      thread_gc_id -> flags |= DETACHED;
+      /* Here the pthread thread id may have been recycled. */
+      if (thread_gc_id -> flags & FINISHED) {
+        GC_delete_gc_thread(thread, thread_gc_id);
+      }
+      UNLOCK();
+    }
     return result;
 }
 
@@ -1240,41 +1270,6 @@ void * GC_start_routine(void * arg)
     return(result);
 }
 
-# ifdef HPUX_THREADS
-  /* pthread_attr_t is not a structure, thus a simple structure copy	*/
-  /* won't work.							*/
-  static void copy_attr(pthread_attr_t * pa_ptr,
-			const pthread_attr_t  * source) {
-    int tmp;
-    size_t stmp;
-    void * vtmp;
-    struct sched_param sp_tmp;
-    pthread_spu_t ps_tmp;
-    (void) pthread_attr_init(pa_ptr);
-    (void) pthread_attr_getdetachstate(source, &tmp);
-    (void) pthread_attr_setdetachstate(pa_ptr, tmp);
-    (void) pthread_attr_getinheritsched(source, &tmp);
-    (void) pthread_attr_setinheritsched(pa_ptr, tmp);
-    (void) pthread_attr_getschedpolicy(source, &tmp);
-    (void) pthread_attr_setschedpolicy(pa_ptr, tmp);
-    (void) pthread_attr_getstacksize(source, &stmp);
-    (void) pthread_attr_setstacksize(pa_ptr, stmp);
-    (void) pthread_attr_getguardsize(source, &stmp);
-    (void) pthread_attr_setguardsize(pa_ptr, stmp);
-    (void) pthread_attr_getstackaddr(source, &vtmp);
-    (void) pthread_attr_setstackaddr(pa_ptr, vtmp);
-    (void) pthread_attr_getscope(source, &tmp);
-    (void) pthread_attr_setscope(pa_ptr, tmp);
-    (void) pthread_attr_getschedparam(source, &sp_tmp);
-    (void) pthread_attr_setschedparam(pa_ptr, &sp_tmp);
-    (void) pthread_attr_getprocessor_np(source, &ps_tmp, &tmp);
-    (void) pthread_attr_setprocessor_np(pa_ptr, ps_tmp, tmp);
-  }
-# else
-#   define copy_attr(pa_ptr, source) *(pa_ptr) = *(source)
-# endif
-
-
 int
 WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 		  const pthread_attr_t *attr,
@@ -1283,9 +1278,6 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     int result;
     GC_thread t;
     pthread_t my_new_thread;
-    void * stack;
-    size_t stacksize;
-    pthread_attr_t new_attr;
     int detachstate;
     word my_flags = 0;
     struct start_info * si = GC_malloc(sizeof(struct start_info)); 
@@ -1301,12 +1293,10 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
     LOCK();
     if (!GC_thr_initialized) GC_thr_init();
     if (NULL == attr) {
-        stack = 0;
-	(void) pthread_attr_init(&new_attr);
+	detachstate = PTHREAD_CREATE_JOINABLE;
     } else {
-        copy_attr(&new_attr, attr);
+        pthread_attr_getdetachstate(attr, &detachstate);
     }
-    pthread_attr_getdetachstate(&new_attr, &detachstate);
     if (PTHREAD_CREATE_DETACHED == detachstate) my_flags |= DETACHED;
     si -> flags = my_flags;
     UNLOCK();
@@ -1314,7 +1304,7 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
         GC_printf1("About to start new thread from thread 0x%X\n",
 		   pthread_self());
 #   endif
-    result = REAL_FUNC(pthread_create)(new_thread, &new_attr, GC_start_routine, si);
+    result = REAL_FUNC(pthread_create)(new_thread, attr, GC_start_routine, si);
 #   ifdef DEBUG_THREADS
         GC_printf1("Started thread 0x%X\n", *new_thread);
 #   endif
@@ -1329,8 +1319,6 @@ WRAP_FUNC(pthread_create)(pthread_t *new_thread,
 	LOCK();
 	GC_INTERNAL_FREE(si);
 	UNLOCK();
-    /* pthread_attr_destroy(&new_attr); */
-    /* pthread_attr_destroy(&new_attr); */
     return(result);
 }
 

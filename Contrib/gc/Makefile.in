@@ -21,7 +21,7 @@ AS=as $(ABI_FLAG)
 srcdir= .
 VPATH= $(srcdir)
 
-CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSILENT \
+CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DSILENT -DALL_INTERIOR_POINTERS \
 	-DGC_GCJ_SUPPORT -DJAVA_FINALIZATION -g @BDWFLAGS@
 
 # To build the parallel collector on Linux, add to the above:
@@ -59,14 +59,16 @@ HOSTCFLAGS=$(CFLAGS)
 #   see README.linux.  -D_REENTRANT may also be required.
 # -DALL_INTERIOR_POINTERS allows all pointers to the interior
 #   of objects to be recognized.  (See gc_priv.h for consequences.)
+#   Alternatively, GC_all_interior_pointers can be set at process
+#   initialization time.
 # -DSMALL_CONFIG tries to tune the collector for small heap sizes,
 #   usually causing it to use less space in such situations.
 #   Incremental collection no longer works in this case.
 # -DLARGE_CONFIG tunes the collector for unusually large heaps.
 #   Necessary for heaps larger than about 500 MB on most machines.
 #   Recommended for heaps larger than about 64 MB.
-# -DDONT_ADD_BYTE_AT_END is meaningful only with
-#   -DALL_INTERIOR_POINTERS.  Normally -DALL_INTERIOR_POINTERS
+# -DDONT_ADD_BYTE_AT_END is meaningful only with -DALL_INTERIOR_POINTERS or
+#   GC_all_interior_pointers = 1.  Normally -DALL_INTERIOR_POINTERS
 #   causes all objects to be padded so that pointers just past the end of
 #   an object can be recognized.  This can be expensive.  (The padding
 #   is normally more than one byte due to alignment constraints.)
@@ -90,12 +92,19 @@ HOSTCFLAGS=$(CFLAGS)
 # -DREDIRECT_MALLOC=X causes malloc, realloc, and free to be defined
 #   as aliases for X, GC_realloc, and GC_free, respectively.
 #   Calloc is redefined in terms of the new malloc.  X should
-#   be either GC_malloc or GC_malloc_uncollectable.
+#   be either GC_malloc or GC_malloc_uncollectable, or
+#   GC_debug_malloc_replacement.  (The latter invokes GC_debug_malloc
+#   with dummy source location information, but still results in
+#   properly remembered call stacks on Linux/X86 and Solaris/SPARC.)
 #   The former is occasionally useful for working around leaks in code
 #   you don't want to (or can't) look at.  It may not work for
 #   existing code, but it often does.  Neither works on all platforms,
 #   since some ports use malloc or calloc to obtain system memory.
 #   (Probably works for UNIX, and win32.)
+# -DREDIRECT_REALLOC=X causes GC_realloc to be redirected to X.
+#   The canonical use is -DREDIRECT_REALLOC=GC_debug_realloc_replacement,
+#   together with -DREDIRECT_MALLOC=GC_debug_malloc_replacement to
+#   generate leak reports with call stacks for both malloc and realloc.
 # -DIGNORE_FREE turns calls to free into a noop.  Only useful with
 #   -DREDIRECT_MALLOC.
 # -DNO_DEBUGGING removes GC_dump and the debugging routines it calls.
@@ -151,10 +160,17 @@ HOSTCFLAGS=$(CFLAGS)
 #   writes past the end of an object.  This is intended for environments
 #   in which most client code is written in a "safe" language, such as
 #   Scheme or Java.  Assumes that all client allocation is done using
-#   the GC_debug_ functions (or through the macros that expand to these.
+#   the GC_debug_ functions, or through the macros that expand to these,
+#   or by redirecting malloc to GC_debug_malloc_replacement.
 #   (Also eliminates the field for the requested object size.)
 #   occasionally be useful for debugging of client code.  Slows down the
 #   collector somewhat, but not drastically.
+# -DSAVE_CALL_COUNT=<n> Set the number of call frames saved with objects
+#   allocated through the debugging interface.  Affects the amount of
+#   information generated in leak reports.  Only matters on platforms
+#   on which we can quickly generate call stacks, currently Linux/(X86 & SPARC)
+#   and Solaris/SPARC.  Turns on call chain saving on X86.  On X86, client
+#   code should NOT be compiled with -fomit-frame-pointer.
 # -DCHECKSUMS reports on erroneously clear dirty bits, and unexpectedly
 #   altered stubborn objects, at substantial performance cost.
 #   Use only for debugging of the incremental collector.
@@ -185,6 +201,10 @@ HOSTCFLAGS=$(CFLAGS)
 #   for multiprocessors.  Currently requires Linux on X86 or IA64, though
 #   support for other Posix platforms should be fairly easy to add,
 #   if the thread implementation is otherwise supported.
+# -DNO_GETENV prevents the collector from looking at environment variables.
+#   These may otherwise alter its configuration, or turn off GC altogether.
+#   I don't know of a reason to disable this, except possibly if the
+#   resulting process runs as a privileged user?
 #
 
 CXXFLAGS= $(CFLAGS) 
@@ -198,7 +218,7 @@ user_threads.o
 CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c irix_threads.c linux_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c gcj_mlc.c specific.c gc_dlopen.c \
 user_threads.c
 
-CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC cord/SCOPTIONS.amiga cord/SMakefile.amiga
+CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC
 
 CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 
@@ -216,24 +236,28 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     hpux_test_and_clear.s include/gc_gcj.h \
     include/gc_local_alloc.h include/private/dbg_mlc.h \
     include/private/specific.h powerpc_macosx_mach_dep.s \
-    include/leak_detector.h $(CORD_SRCS)
+    include/leak_detector.h include/gc_amiga_redirects.h \
+    include/gc_pthread_redirects.h $(CORD_SRCS)
 
 DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
 	doc/README.amiga doc/README.cords doc/README.debugging \
 	doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
 	doc/README.sgi doc/README.solaris2 doc/README.uts \
 	doc/README.win32 doc/barrett_diagram doc/README \
-        doc/README.contributors doc/README.changes doc/gc.man
+        doc/README.contributors doc/README.changes doc/gc.man \
+	doc/README.environment
 
+TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
+	tests/leak_test.c tests/thread_leak_test.c
 OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
-           tests/test.c tests/test_cpp.cc setjmp_t.c SMakefile.amiga \
-           SCoptions.amiga callprocs pc_excludes \
+           setjmp_t.c SMakefile.amiga \
+           callprocs pc_excludes \
            MacProjects.sit.hqx MacOS.c EMX_MAKEFILE makefile.depend \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
            add_gc_prefix.c \
 	   win32_threads.c NT_THREADS_MAKEFILE gc.mak Makefile.dj \
-	   version.h Makefile.DLLs WCC_MAKEFILE 
+	   version.h Makefile.DLLs WCC_MAKEFILE AmigaOS.c $(TESTS)
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
 	$(srcdir)/include/ec.h $(srcdir)/include/private/cord_pos.h
@@ -409,16 +433,19 @@ mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
 
 alloc.o: version.h
 
-cord/cordbscs.o: $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
+cord:
+	mkdir cord
+
+cord/cordbscs.o: cord $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordbscs.c
 	mv cordbscs.o cord/cordbscs.o
 #  not all compilers understand -o filename
 
-cord/cordxtra.o: $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
+cord/cordxtra.o: cord $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordxtra.c
 	mv cordxtra.o cord/cordxtra.o
 
-cord/cordprnt.o: $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
+cord/cordprnt.o: cord $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordprnt.c
 	mv cordprnt.o cord/cordprnt.o
 
@@ -426,6 +453,7 @@ cord/cordtest: $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a $(UTILS)
 	rm -f cord/cordtest
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a -lucb
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a -ldld `./threadlibs`
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cord/cordtest $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a `./threadlibs`
 	./if_not_there cord/cordtest $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a `./threadlibs`
 
 cord/de: $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
@@ -437,7 +465,7 @@ cord/de: $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
 	./if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
 	./if_mach IA64 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
 	./if_not_there cord/de $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) `./threadlibs`
 
 if_mach: $(srcdir)/if_mach.c $(srcdir)/include/private/gcconfig.h
@@ -459,6 +487,7 @@ gctest: tests/test.o gc.a $(UTILS)
 	rm -f gctest
 	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o gctest  tests/test.o gc.a -lucb
 	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o gctest  tests/test.o gc.a -ldld `./threadlibs`
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o gctest  tests/test.o gc.a `./threadlibs`
 	./if_not_there gctest $(CC) $(CFLAGS) -o gctest tests/test.o gc.a `./threadlibs`
 
 # If an optimized setjmp_test generates a segmentation fault,

@@ -245,15 +245,10 @@ void GC_register_dynamic_libraries()
 #if defined(LINUX) && defined(__ELF__) || defined(SCO_ELF) || \
     (defined(NETBSD) && defined(__ELF__))
 
+
 #ifdef USE_PROC_FOR_LIBRARIES
 
 #include <string.h>
-
-#ifdef GC_USE_LD_WRAP
-#   define READ __real_read
-#else
-#   define READ read
-#endif
 
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -261,21 +256,9 @@ void GC_register_dynamic_libraries()
 
 #define MAPS_BUF_SIZE (32*1024)
 
-/* Repeatedly perform a read call until the buffer is filled or	*/
-/* we encounter EOF.						*/
-static ssize_t repeat_read(int fd, char *buf, size_t count)
-{
-    ssize_t num_read = 0;
-    ssize_t result;
-    
-    while (num_read < count) {
-	result = READ(fd, buf + num_read, count - num_read);
-	if (result < 0) return result;
-	if (result == 0) break;
-	num_read += result;
-    }
-    return num_read;
-}
+extern ssize_t GC_repeat_read(int fd, char *buf, size_t count);
+	/* Repeatedly read until buffer is filled, or EOF is encountered */
+	/* Defined in os_dep.c.  					 */
 
 static char *parse_map_entry(char *buf_ptr, word *start, word *end,
                              char *prot_buf, unsigned int *maj_dev);
@@ -304,7 +287,7 @@ void GC_register_dynamic_libraries()
 	   read it to find out how large it is... */
 	maps_size = 0;
 	do {
-	    result = repeat_read(f, maps_temp, sizeof(maps_temp));
+	    result = GC_repeat_read(f, maps_temp, sizeof(maps_temp));
 	    if (result <= 0) ABORT("Couldn't read /proc/self/maps");
 	    maps_size += result;
 	} while (result == sizeof(maps_temp));
@@ -316,7 +299,7 @@ void GC_register_dynamic_libraries()
 	    if (-1 == f) ABORT("Couldn't open /proc/self/maps");
 	    maps_buf = alloca(maps_size);
 	    if (NULL == maps_buf) ABORT("/proc/self/maps alloca failed");
-	    result = repeat_read(f, maps_buf, maps_size);
+	    result = GC_repeat_read(f, maps_buf, maps_size);
 	    if (result <= 0) ABORT("Couldn't read /proc/self/maps");
 	} else {
 	    /* Otherwise use the fixed size buffer */
@@ -434,7 +417,7 @@ static char *parse_map_entry(char *buf_ptr, word *start, word *end,
     return buf_ptr;
 }
 
-#else
+#else /* !USE_PROC_FOR_LIBRARIES */
 
 /* Dynamic loading code for Linux running ELF. Somewhat tested on
  * Linux/x86, untested but hopefully should work on Linux/Alpha. 

@@ -80,7 +80,7 @@ register int k;
     LOCK();
     result = (ptr_t)GC_alloc_large(lw, k, IGNORE_OFF_PAGE);
     if (GC_debugging_started) {
-	BZERO(result, n_blocks * HBLKSIZE - HDR_BYTES);
+	BZERO(result, n_blocks * HBLKSIZE);
     }
     GC_words_allocd += lw;
     UNLOCK();
@@ -89,7 +89,7 @@ register int k;
         return((*GC_oom_fn)(lb));
     } else {
     	if (init & !GC_debugging_started) {
-	    BZERO(result, n_blocks * HBLKSIZE - HDR_BYTES);
+	    BZERO(result, n_blocks * HBLKSIZE);
         }
         return(result);
     }
@@ -294,7 +294,7 @@ DCL_LOCK_STATE;
 		-- GC_fl_builder_count;
 		if (GC_fl_builder_count == 0) GC_notify_all_builder();
 		GC_release_mark_lock();
-		return op;
+		return GC_clear_stack(op);
 #	      else
 	        GC_words_allocd += my_words_allocd;
 	        goto out;
@@ -352,7 +352,7 @@ DCL_LOCK_STATE;
 	    -- GC_fl_builder_count;
 	    if (GC_fl_builder_count == 0) GC_notify_all_builder();
 	    GC_release_mark_lock();
-	    return op;
+	    return GC_clear_stack(op);
 #	  else
 	    goto out;
 #	  endif
@@ -367,7 +367,7 @@ DCL_LOCK_STATE;
   out:
     UNLOCK();
     ENABLE_SIGNALS();
-    return(op);
+    return(GC_clear_stack(op));
 }
 
 GC_PTR GC_malloc_many(size_t lb)
@@ -394,11 +394,9 @@ DCL_LOCK_STATE;
 
     if( SMALL_OBJ(lb) ) {
 #       ifdef MERGE_SIZES
-#	  ifdef ADD_BYTE_AT_END
-	    if (lb != 0) lb--;
+	  if (EXTRA_BYTES != 0 && lb != 0) lb--;
 	    	  /* We don't need the extra byte, since this won't be	*/
 	    	  /* collected anyway.					*/
-#	  endif
 	  lw = GC_size_map[lb];
 #	else
 	  lw = ALIGNED_WORDS(lb);
@@ -460,11 +458,9 @@ DCL_LOCK_STATE;
 
     if( SMALL_OBJ(lb) ) {
 #       ifdef MERGE_SIZES
-#	  ifdef ADD_BYTE_AT_END
-	    if (lb != 0) lb--;
+	  if (EXTRA_BYTES != 0 && lb != 0) lb--;
 	    	  /* We don't need the extra byte, since this won't be	*/
 	    	  /* collected anyway.					*/
-#	  endif
 	  lw = GC_size_map[lb];
 #	else
 	  lw = ALIGNED_WORDS(lb);
