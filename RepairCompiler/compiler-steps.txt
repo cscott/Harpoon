@@ -29,11 +29,26 @@ A) copy the Runtime directory in Repair/Ex:
    cp -r <path to RepairCompiler>/MCC/Runtime .
 B) copy generated files into the Runtime directory 
    cp ex.cc ex_aux.* size.* Runtime
-B) remove old object files 
+C) remove old object files 
    cd Runtime; rm *.o
-C) ./buildruntime
-D) build checking object: 
+D) ./buildruntime
+E) build checking object: 
    g++ -g -c ex_aux.cc
-E) If ex_test.c is the application under testing, run:
+
+
+Step 4: Check the application
+-----------------------------
+
+If ex_test.c is the application under testing, then:
+
+A) in ex_test.c, add:
+   #include "ex_aux.h" 
+   #include "memory.h"
+B) at the beginning of the main method, add:
+   initializemmap();
+C) wherever you want to check the consistency constraints, add:
+   #include "ex.cc"
+D) compile the application:
    g++ -g ex_test.cc *.o -o ex_test
-F) ./ex_test
+E) run the application: 
+   ./ex_test

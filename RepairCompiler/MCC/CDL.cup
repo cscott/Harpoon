@@ -472,7 +472,7 @@ expr ::=
      	RESULT = expr;
      	:}     
 	
-     	| LITERAL OPENPAREN literal:literal CLOSEPAREN
+     	| literal:literal
      	{:
      	debugMessage(PRODSTRING);
      	ParseNode expr = new ParseNode("expr", parser.curLine(4));
@@ -596,6 +596,12 @@ literal ::=
 	debugMessage(PRODSTRING);
 	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("boolean").addChild("false").getRoot();
 	:}
+
+	| NULL
+	{:
+	debugMessage(PRODSTRING);
+	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("decimal").addChild("0").getRoot();
+	:}
 	 
 	| DECIMAL:dec
 	{:
@@ -615,7 +621,7 @@ literal ::=
 	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("char").addChild(chr).getRoot();
 	:}
 	 
-	| ID:literal
+	| LITERAL OPENPAREN ID:literal CLOSEPAREN
 	{:
 	debugMessage(PRODSTRING);
 	RESULT = (new ParseNode("literal", parser.curLine(1))).addChild("token").addChild(literal).getRoot();

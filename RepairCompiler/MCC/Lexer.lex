@@ -100,6 +100,7 @@ CHAR=(\\\"|\\\'|\\\\|\\t|\\n|[\x20-\x21\x23-\x26\x28-\x5B\x5D-\x7E])
 <YYINITIAL> cast			{ return tok(Sym.CAST, yytext()); }
 <YYINITIAL> short			{ return tok(Sym.SHORT, yytext()); }
 <YYINITIAL> null			{ return tok(Sym.NULL, yytext()); }
+<YYINITIAL> NULL			{ return tok(Sym.NULL, yytext()); }
 <YYINITIAL> crash			{ return tok(Sym.CRASH, yytext()); }
 
 <YYINITIAL> {ALPHA}({ALPHA}|{DIGIT})*	{ return tok(Sym.ID, yytext()); }
