@@ -25,7 +25,7 @@
 if ((*env)->ExceptionOccurred(env)){ (*env)->ExceptionDescribe(env); exit(1); }
 
 
-int max_heap_size=0;  /* max heap size (in Kbytes) */
+int max_heap_size=0;  /* max heap size (in Mbytes) */
 
 #define MAX_HEAP_SIZE_OPTION 70000
 
@@ -146,6 +146,7 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_PRECISE_GC
   precise_gc_init();
 #endif
+
   if(max_heap_size != 0) {
 #ifdef BDW_CONSERVATIVE_GC
     GC_set_max_heap_size(max_heap_size*1024*1024);
@@ -154,6 +155,7 @@ int main(int argc, char *argv[]) {
     exit(1);
 #endif
   }
+
   /* initialize Realtime Java extensions */
   /* setup main thread info. */
 #ifdef WITH_GC_STATS
