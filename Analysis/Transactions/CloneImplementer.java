@@ -65,7 +65,7 @@ import java.util.Set;
  * <code>$clone$()</code> method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloneImplementer.java,v 1.5 2003-06-20 08:56:55 cananian Exp $
+ * @version $Id: CloneImplementer.java,v 1.6 2003-07-21 21:21:49 cananian Exp $
  * @see harpoon.IR.Quads.CloneSynthesizer */
 public class CloneImplementer implements HCodeFactory, java.io.Serializable {
     /** CONSTANTS */
@@ -89,7 +89,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
     /** Parent code factory. */
     final HCodeFactory parent;
     /** Representation cache. */
-    final Map cache = new HashMap();
+    final Map<HMethod,HCode> cache = new HashMap<HMethod,HCode>();
 
      /** Creates a <code>CloneImplementer</code> based on the
       *  given <code>HCodeFactory</code>, which must produce
@@ -113,6 +113,10 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    } catch(DuplicateMemberException dme) {
 		assert false : "Can't create "+CLONEX_NAME+" in "+hc;
 	    }
+	    // for compatibility with other transformations that may
+	    // add fields, cache away the declared fields of this class
+	    for (; hc!=null; hc=hc.getSuperclass())
+		declaredFieldMap.put(hc,Arrays.asList(hc.getDeclaredFields()));
 	}
 	/* 'un-native-ify' standard clone() methods (incl prim arrays)  */
 	String descs[] = new String[] {
@@ -134,29 +138,32 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
     public void clear(HMethod m) { cache.remove(m); parent.clear(m); }
     public HCode convert(HMethod m) {
 	// check cache first
-	if (cache.containsKey(m)) return (HCode) cache.get(m);
+	if (cache.containsKey(m))
+	    /* do nothing; cache already contains appropriate HCode */;
 	// now see if we need to synthesize a code for this method.
-	if (m.getName().equals(CLONE_NAME) &&
+	else if (m.getName().equals(CLONE_NAME) &&
 	    m.getDescriptor().equals(CLONE_DESC) &&
 	    (m.getDeclaringClass().getDescriptor().equals(OBJ_DESC) ||
 	     m.getDeclaringClass().isArray()))
-	      return new CloneRedirectCode(m);
+	    cache.put(m, new CloneRedirectCode(m));
 	// classpath compatibility: VMObject.clone()
-	if (m.getName().equals(CLONE_NAME) &&
+	else if (m.getName().equals(CLONE_NAME) &&
 	    m.getDescriptor().equals(GNUCP_CLONE_DESC) &&
 	    m.getDeclaringClass().getDescriptor().equals(GNUCP_VMOBJ_DESC))
-	    return new CloneRedirectCode(m);
+	    cache.put(m, new CloneRedirectCode(m));
 	// okay, now implement $clone$
-	if (m.getName().equals(CLONEX_NAME) &&
+	else if (m.getName().equals(CLONEX_NAME) &&
 	    m.getDescriptor().equals(CLONE_DESC)) {
 	    if (m.getDeclaringClass().getDescriptor().equals(OBJ_DESC))
-		return new NotCloneableCode(m);
+		cache.put(m, new NotCloneableCode(m));
 	    else if (m.getDeclaringClass().isArray())
-		return new ArrayCloneCode(m);
+		cache.put(m, new ArrayCloneCode(m));
 	    else
-		return new ObjectCloneCode(m);
-	}
-	return parent.convert(m); // not synthetic: use parent's code.
+		cache.put(m, new ObjectCloneCode
+			  (m, fields(m.getDeclaringClass())));
+	} else  // not synthetic: use parent's code.
+	    cache.put(m, parent.convert(m));
+	return cache.get(m);
     }
     /** this method just redirects to Object.$clone$() */
     private static class CloneRedirectCode extends QuadSSI {
@@ -268,7 +275,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
     }
     /* this method implements a specialized object clone operation */
     private static class ObjectCloneCode extends QuadSSI {
-	ObjectCloneCode(HMethod m) {
+	ObjectCloneCode(HMethod m, List<HField> fields) {
 	    super(m, null);
 	    HClass hc = m.getDeclaringClass();
 	    Temp thisT = new Temp(qf.tempFactory());
@@ -279,8 +286,8 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    Quad.addEdge(q0, 1, q1, 0);
 	    Quad.addEdge(q1, 0, q2, 0);
 	    Quad qq = q2;
-	    for (Iterator it=fields(hc).iterator(); it.hasNext(); ) {
-		HField hf = (HField) it.next();
+	    for (Iterator<HField> it=fields.iterator(); it.hasNext(); ) {
+		HField hf = it.next();
 		Temp tT = new Temp(qf.tempFactory());
 		Quad q3 = new GET(qf, null, tT, hf, thisT);
 		Quad q4 = new SET(qf, null, hf, objT, tT);
@@ -295,19 +302,21 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 	    // done!
 	    this.quads = q0;
 	}
-	/** Return a <code>List</code> of all fields (including
-            private fields of superclasses) belonging to
-            <code>HClass</code> <code>hc</code>. */
-	private static List fields(HClass hc) {
-	    List l = new ArrayList(hc.getFields().length);
-	    for (; hc!=null; hc=hc.getSuperclass())
-		l.addAll(0, Arrays.asList(hc.getDeclaredFields()));
-	    // filter out static fields.
-	    for (Iterator it=l.iterator(); it.hasNext(); )
-		if (((HField) it.next()).isStatic())
-		    it.remove();
-	    // done.
-	    return l;
-	}
     }
+    /** Return a <code>List</code> of all fields (including
+	private fields of superclasses) belonging to
+	<code>HClass</code> <code>hc</code>. */
+    private List<HField> fields(HClass hc) {
+	List<HField> l = new ArrayList<HField>(hc.getFields().length);
+	for (; hc!=null; hc=hc.getSuperclass())
+	    l.addAll(0, declaredFieldMap.get(hc));
+	// filter out static fields.
+	for (Iterator<HField> it=l.iterator(); it.hasNext(); )
+	    if (it.next().isStatic())
+		it.remove();
+	// done.
+	return l;
+    }
+    private final Map<HClass,List<HField>> declaredFieldMap =
+	new HashMap<HClass,List<HField>>();
 }

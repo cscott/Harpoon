@@ -8,15 +8,18 @@ import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.Linker;
 import harpoon.Util.Util;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * <code>BitFieldNumbering</code> finds a bit-position and a field to
  * embed boolean flags describing object fields.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitFieldNumbering.java,v 1.4 2002-04-10 03:01:43 cananian Exp $
+ * @version $Id: BitFieldNumbering.java,v 1.5 2003-07-21 21:21:49 cananian Exp $
  */
 public class BitFieldNumbering {
     // note: for 64-bit archs, might be worthwhile to make fields 64 bits.
@@ -27,6 +30,12 @@ public class BitFieldNumbering {
     private final String suffix;
     // cache HClass for java.lang.Object
     private final HClass HCobject;
+    // set of all referenced 'bitfield' fields: mutable version.
+    private final Set<HField> _bitfields = new HashSet<HField>();
+    /** Set of all fields returned as part of a <code>BitFieldTuple</code>
+     *  by <code>bfLoc</code> or <code>arrayBitField</code>. */
+    public final Set<HField> bitfields =
+	Collections.unmodifiableSet(_bitfields);
 
     /** Creates a <code>BitFieldNumbering</code>. */
     public BitFieldNumbering(Linker l) { this(l, ""); }
@@ -76,18 +85,22 @@ public class BitFieldNumbering {
 	try {
 	    return where.getDeclaredField(fieldname);
 	} catch (NoSuchFieldError nsfe) {
-	    return where.getMutator().addDeclaredField(fieldname, FIELD_TYPE);
+	    HField hf =
+		where.getMutator().addDeclaredField(fieldname, FIELD_TYPE);
+	    _bitfields.add(hf);
+	    return hf;
 	}
     }
     // field numbering.
-    final Map fieldNumbers = new HashMap();
-    final Map classNumbers = new HashMap();
+    final Map<HField,Integer> fieldNumbers = new HashMap<HField,Integer>();
+    final Map<HClass,Integer> classNumbers = new HashMap<HClass,Integer>();
     private int fieldNumber(HField hf) {
 	assert !hf.isStatic();
 	assert !hf.getDeclaringClass().isInterface();
 	if (!fieldNumbers.containsKey(hf))
 	    classNumber(hf.getDeclaringClass());
-	return ((Integer)fieldNumbers.get(hf)).intValue();
+	assert fieldNumbers.containsKey(hf) : hf + " / "+fieldNumbers;
+	return fieldNumbers.get(hf).intValue();
     }
     /* all fields in 'hc' are numbered *strictly less than* classNumber(hc) */
     private int classNumber(HClass hc) {
@@ -102,6 +115,6 @@ public class BitFieldNumbering {
 		    fieldNumbers.put(hfa[i], new Integer(start++));
 	    classNumbers.put(hc, new Integer(start));
 	}
-	return ((Integer)classNumbers.get(hc)).intValue();
+	return classNumbers.get(hc).intValue();
     }
 }
