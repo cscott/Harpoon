@@ -39,7 +39,7 @@ import java.util.Arrays;
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.11 1999-06-15 04:35:21 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.12 1999-06-16 01:54:33 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements DefaultAllocationInfo {
      static Temp[] reg = new Temp[16];
@@ -77,8 +77,10 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
 
             public String getScope() { return scope; }
             protected synchronized String getUniqueID(String suggestion) {
-                Util.assert(i <= names.length);
-                return names[i++];
+                Util.assert(i < names.length, "Don't use the "+
+			    "TempFactory of Register bound Temps");
+		i++;
+                return names[i-1];
             }
         };
         for (int i = 0; i < 16; i++) {

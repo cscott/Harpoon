@@ -10,6 +10,7 @@ import harpoon.Analysis.DataFlow.DataFlowBasicBlockVisitor;
 import harpoon.Analysis.DataFlow.InstrSolver;
 import harpoon.Analysis.DataFlow.LiveVars;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempFactory;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Assem.InstrMEM;
@@ -42,13 +43,14 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.18 1999-06-15 04:35:17 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.19 1999-06-16 01:54:29 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
     private static final boolean DEBUG = false;
     private static final boolean DEBUG_REF = false;
-    
+    private static final boolean DEBUG_SKIP = false;
+
     /** Creates a <code>LocalRegAlloc</code>. 
 	
     */
@@ -208,11 +210,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 	if (DEBUG) System.out.println(regFile);
 	MaxPriorityQueue pregPriQueue = new BinHeapPriorityQueue();
 
-	// for all j's and l's do
-	//     next-ref(j, l) := the next step with a reference to the
-	//                       l'th pseudo-register requested at
-	//                       step j 
-	// done
+
+
+	// ***** BUILD NEXT-REF TABLE *****
+
 	CloneableIterator jnstrs = (CloneableIterator) instrs.clone();
 	int step = 0;
 	while (jnstrs.hasNext()) {
@@ -249,18 +250,27 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	}
 
-	// for j = 1 to r do
+
+	// ***** For each Instr 'J': *****
 	jnstrs = (CloneableIterator) instrs.clone();
 	while (jnstrs.hasNext()) {
-	    // f := the number of pseudo registers requested at step
-	    //      j, but not in the register file
 	    Instr j = (Instr) jnstrs.next();
 	    inf = j.getFactory();
+	    
+
+	    // ***** Make space in the Register File  *****
+	    // ***** for Temp references in 'J'       *****	
+
+	    // f := the number of pseudo registers requested at step
+	    //      j, but not in the register file
 	    Iterator references = getReferences(j);
 	    UniqueVector refsV = new UniqueVector();
 	    while(references.hasNext()) {
 		Temp t = (Temp) references.next();
 		if (!isTempRegister(t)) {
+		    if (DEBUG_SKIP) 
+			System.out.println
+			    ("adding ref "+ t + " for " +j );
 		    refsV.addElement(t);
 		}
 	    }
@@ -284,15 +294,17 @@ public class LocalCffRegAlloc extends RegAlloc {
 			" the current pseudo-register priority queue");
 
 	    for (int l = 0; l<f; l++) {
-		
-		
 		Temp preg = (Temp) pregPriQueue.deleteMax();
+		Util.assert(regFile.containsValue(preg),
+			    "The Pseudo Register Priority Queue "+
+			    "should not contain the value " + preg +
+			    " because it is not in the register file");
 		boolean dirty = regFile.isDirty(preg);
 		Temp realReg = regFile.evict(preg);
 		
 		if (dirty) {
 		    InstrMEM store = 
-			new InstrMEM(inf, null, "FSK-STORE `d0, `s0", // change string to null later
+			new InstrMEM(inf, null, "FSK-STORE `d0, `s0",
 				     new Temp[] { preg },
 				     new Temp[] { realReg });
 
@@ -301,48 +313,67 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 		if (DEBUG) System.out.println("EVICT: Instr " + j + " " + regFile);
 	    }
+
+
+
+	    // ***** Assign Registers to Temp USE references in 'J'*****
 	    
-	    for (int l=0; l<j.use().length; l++) {
-		Temp i = j.use()[l];
+	    for (int l=0; l<j.src.length; l++) {
+		Temp i = j.src[l];
 
-		if (isTempRegister(i)) continue;
-
+		if (isTempRegister(i)) {
+		    if(regFile.get(i) != null) {
+			i = regFile.get(i);
+		    } else {
+			// Instr is referencing some register directly
+			continue;
+		    }
+		} 
+		
 		if (regFile.values().contains(i)) {
 		    // we need to DELETE(i) from the priority queue so
 		    // we can INSERT it again later with an updated
 		    // distance to its next use.
 		    pregPriQueue.remove(i);
+		    
+
 		} else { // regFile does NOT contain 'i'
-		    Temp reg = regFile.getEmptyRegister();
+
+		    Temp reg = 
+			regFile.getFreeRegister
+			(i, (CloneableIterator)jnstrs.clone());
 		    Util.assert(reg != null, 
 				"There should be an empty register in " + 
-				regFile);
+				regFile + " to hold USE " + i);
 		    regFile.put(reg, i);
 		    
 		    InstrMEM load =
-			new InstrMEM(inf, null, "FSK-LOAD `d0, `s0", // change string to null later
+			new InstrMEM(inf, null, "FSK-LOAD `d0, `s0", 
 				     new Temp[] { reg },
 				     new Temp[] { i });
 		    
 		    memInstrs.getPrior(j).push(load);
-
+		    
 		    for (int ji = 0; ji < j.dst.length; ji++) {
 			// FSK: Following two lines were ignoring
 			// invariant that Temps have only one def
 			//if (j.dst[ji] == i) { j.dst[ji] = reg; }
 			//regFile.writeTo(j.dst[ji]); // set DIRTY bit
+			    
 			if (j.dst[ji] == i) { 
 			    Util.assert(false, "Why is Temp " + i + 
-					" being used in its own definition: " + j + " ?");
+					" being used in its own definition: " + 
+					j + " ?");
 			}
 		    }
 		    for (int ji = 0; ji < j.src.length; ji++) {
 			if (j.src[ji] == i) { j.src[ji] = reg; }
 		    }
-
+		    
 		    // visit all the remaining instructions,
 		    // replacing 'i' with 'reg'
-		    CloneableIterator remainInstrs = (CloneableIterator) jnstrs.clone();
+		    CloneableIterator remainInstrs = 
+			(CloneableIterator) jnstrs.clone();
 		    while (remainInstrs.hasNext()) {
 			Instr instr = (Instr) remainInstrs.next();
 			for (int ind=0; ind<instr.src.length; ind++) {
@@ -358,41 +389,75 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    }
 			}
 		    } // done updating remaining instructions
-
+		    
 		    if (DEBUG) 
 			System.out.println("PUT: Instr " + j + " " + regFile);
 		}
-
+		
 		// x := next-ref(j, l)
 		Integer intgr = (Integer) nextRef.get(new TempInstrPair(j, i));
-
-		Util.assert(intgr != null, "At any USE of temp i in instr j, "+
+		
+		Util.assert(intgr != null, "At any USE of temp " + i +
+			    " in instr " + j + " , " +
 			    "there should be an entry in next-ref");
 		
 		int x= intgr.intValue();
-
+		    
 		// if i is dirty then x := x + 1/2 end if
-		if (isDirty(i, j, bb)) { 
+		if (regFile.isDirty(i)) { // if(isDirty(i, j, bb)) { 
 		    x = x + 1; // add 1 instead of 1/2
 		}
 		
 		pregPriQueue.insert(i, x); // INSERT(i, x)
-
+		
 	    } //done with uses
 	    
-	    for(int l=0; l<j.def().length; l++) {
-		Temp i = j.def()[l];
-		if (isTempRegister(i)) continue;
+
+
+	    // ***** Assign Registers to Temp DEF references *****
+
+	    for(int l=0; l<j.dst.length; l++) {
+		Temp i = j.dst[l];
+		if (isTempRegister(i)) {
+		    //regFile.put(i, new Temp(regFile.unknownTF, "unk_"));
+		    //regFile.writeTo(i);
+		    continue;
+		}
+		
+		if (DEBUG_SKIP) 
+		    System.out.println
+			("Processing DEF " + i + " for " +j );
 
 		Util.assert(!regFile.values().contains(i),
 			    "Temp " + i + 
-			    " should have only one definition point;"+
+			    " should have only one definition point;" +
 			    " why is one already in regFile " +
 			    regFile + " ?");
-
-		Temp reg = regFile.getEmptyRegister();
-		Util.assert(reg != null, "There should be an empty register in " + regFile);
+		
+		Temp reg = 
+		    regFile.getFreeRegister
+		    (i, (CloneableIterator)jnstrs.clone());
+		Util.assert(reg != null, 
+			    "There should be an empty register in " + 
+			    regFile + " to hold DEF " + i);
 		regFile.put(reg, i);
+		regFile.writeTo(reg); // set DIRTY bit
+
+		// Replace occurances of 'i' in 'j' with 'reg'
+		for (int ji = 0; ji < j.dst.length; ji++) {
+		    if (j.dst[ji] == i) {
+			j.dst[ji] = reg;
+		    }
+		}
+		for (int ji = 0; ji < j.src.length; ji++) {
+		    if (j.src[ji] == i) { 
+			Util.assert(false, "Why is Temp " + i +
+				    " being used in its own definition: "+
+				    j + " ?");
+		    }
+		}
+		
+
 		
 		CloneableIterator remainInstrs = (CloneableIterator) jnstrs.clone();
 		while(remainInstrs.hasNext()) {
@@ -404,7 +469,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    }
 		    for (int ind=0; ind<instr.dst.length; ind++) {
 			if (instr.dst[ind].equals(i)) {
-			    Util.assert(false, "Why is Temp " + i + " being redefined in " + instr);
+			    Util.assert(false, "Why is Temp " + i + 
+					" being redefined in " + instr);
 			}
 		    }
 		} // done updating remaining instructions
@@ -412,7 +478,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		Integer intgr = (Integer) 
 		    nextRef.get(new TempInstrPair(j, i));
 		
-		Util.assert(intgr != null, "At any DEF of temp i in instr j, "+
+		Util.assert(intgr != null, "At any DEF of temp "+i+" in instr "+j+" , "+
 			    "there should be an entry in next-ref");
 
 		//DEF --> can skip isDirty check
@@ -425,17 +491,18 @@ public class LocalCffRegAlloc extends RegAlloc {
 	} //done with instrs
 	
 	// Now need to append a series of STOREs to the BasicBlock (so
-	// that Temp locations in memory are updated
+	// that Temp locations in memory are updated)  Fix this so
+	// that only LIVE variables are updated
 
 	Instr instr = (Instr) bb.getLast();
 
-	for (int i=0; i<regFile.regs.length; i++) {
-	    Temp val = regFile.get(regFile.regs[i]);
+	for (int i=0; i<regFile.genRegs.length; i++) {
+	    Temp val = regFile.get(regFile.genRegs[i]);
 	    if (val != null && regFile.isDirty(val)) {
 		InstrMEM store = 
-		    new InstrMEM(inf, null, "FSK-STORE `d0, `s0", // change string to null later
+		    new InstrMEM(inf, null, "FSK-STORE `d0, `s0",
 				 new Temp[] { val },
-				 new Temp[] { regFile.regs[i] });
+				 new Temp[] { regFile.genRegs[i] });
 		
 		memInstrs.getSucceeding(instr).push(store);
 	    }
@@ -580,22 +647,30 @@ public class LocalCffRegAlloc extends RegAlloc {
 
     }
 
+
     class RegToValueMap {
 	// if 'REGISTER( i )' (which is stored in regs[ i ] ) is holding
 	// a value, vals[ i ] will have that value.  Else, vals[ i ]
 	// will be set to null.
-	Temp[] regs;
+	Temp[] allRegs;
+	Temp[] genRegs;
 	Temp[] vals;
 	boolean[] dirty; // tracks dirty bit for regs
 
+	// A place holder for unknown values (needed for Instrs that
+	// directly write to registers instead of pseudo registers)
+	TempFactory unknownTF = 
+	    Temp.tempFactory("values-preassigned-to-registers");
+	
 
 	/** Constructs a new RegToValueMap, with all of the registers
 	    mapped to no value.
 	*/
 	public RegToValueMap() {
-	    regs = frame.getGeneralRegisters();
-	    vals = new Temp[ regs.length ];
-	    dirty = new boolean[ regs.length ]; 
+	    allRegs = frame.getAllRegisters();
+	    genRegs = frame.getGeneralRegisters();
+	    vals = new Temp[ allRegs.length ];
+	    dirty = new boolean[ allRegs.length ]; 
 	}
 	
 	/** Returns the value associated with <code>reg</code>
@@ -608,8 +683,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		 associated with <code>reg</code>
 	*/
 	public Temp get(Temp reg) {
-	    for (int i=0; i<regs.length; i++) {
-		if (regs[i].equals(reg)) {
+	    for (int i=0; i<allRegs.length; i++) {
+		if (allRegs[i].equals(reg)) {
 		    return vals[i];
 		}
 	    }
@@ -626,8 +701,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 		 <code>Temp</code> 
 	*/
 	public void put(Temp reg, Temp value) {
-	    for (int i=0; i<regs.length; i++) {
-		if (regs[i].equals(reg)) {
+	    for (int i=0; i<allRegs.length; i++) {
+		if (allRegs[i].equals(reg)) {
+		    Util.assert(vals[i] == null,
+				"Evict value " + vals[i] +
+				" in register " + reg + " before " +
+				"replacing it with " + value);
 		    vals[i] = value;
 		    dirty[i] = false;
 		}
@@ -637,8 +716,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	/** Sets <code>t</code> as "dirty".
 	 */
 	public void writeTo(Temp t) {
-	    for (int i=0; i<regs.length; i++) {
-		if (vals[i] == t || regs[i] == t) {
+	    for (int i=0; i<allRegs.length; i++) {
+		if (vals[i] == t || allRegs[i] == t) {
 		    dirty[i] = true;
 		}
 	    }
@@ -653,9 +732,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 		 <code>this.dirty[i]</code> 
 	*/
 	public boolean isDirty(Temp t) {
-	    for (int i=0; i<regs.length; i++) {
+	    for (int i=0; i<allRegs.length; i++) {
 		if ((vals[i] != null && vals[i].equals(t)) || 
-		    (regs[i] != null && regs[i].equals(t))) {
+		    (allRegs[i] != null && allRegs[i].equals(t))) {
 		    return dirty[i];
 		}
 	    }
@@ -671,32 +750,62 @@ public class LocalCffRegAlloc extends RegAlloc {
 	         mapping to <code>value</code>, maps the key to no
 		 value, and returns the key.
 	*/
-	    public Temp evict(Temp value) {
+	public Temp evict(Temp value) {
 	    for (int i=0; i<vals.length; i++) {
 		if (vals[i] != null &&
 		    vals[i].equals(value)) {
 		    vals[i] = null;
 		    dirty[i] = false;
-		    return regs[i];
+		    return allRegs[i];
 		}
 	    }
 	    return null;
 	}
 	
-
 	/** Returns a <code>Temp</code> representing a register
-	    suitable for storing a value in. 
-	    <BR> <B> effects: </B> Returns a <code>Temp</code> that is
-	    mapped to <code>null</code> in <code>this</code>, or
-	    <code>null</code> if no such <code>Temp</code> exists.
+	    suitable for storing <code>val</code>.
+	    <BR> <B>requires:</B> <code>futureInstrs</code> is a
+	         linear series of <code>Instr</code>s in the order
+		 that they will be executed.
+	    <BR> <B>effects:</B> Returns a <code>Temp</code> that is
+	         mapped to <code>null</code> in <code>this</code>, and
+		 that is not DEFined by any <code>Instr</code> in
+		 <code>futureInstrs</code>, or <code>null</code>.
 	*/
-	public Temp getEmptyRegister() {
-	    for (int i=0; i<regs.length; i++) {
+	public Temp getFreeRegister(Temp val, 
+				    CloneableIterator futureInstrs) {
+	    for (int i=0; i<genRegs.length; i++) {
 		if (vals[i] == null) {
-		    return regs[i];
+		    Temp r = genRegs[i];
+		    boolean regFree = true;
+		    while(regFree && futureInstrs.hasNext()) { 
+			Instr j = (Instr) futureInstrs.next();
+			
+			// Code reuse may not be helpful below
+			if (false && RegAlloc.lastUse
+			    (val, j, (Iterator) futureInstrs.clone())) {
+			    return r;
+			}
+			
+			for (int x=0; x<j.dst.length; x++) {
+			    if (j.dst[x].equals(r)) {
+				regFree = false;
+				break;
+			    }
+			}
+		    } 
+
+		    if (regFree) { 
+			// Iterated through all of the Instructions
+			return r;
+		    } else {
+			// register is written to before last ref to val
+			continue;
+		    }
 		}
 	    }
 	    return null;
+	    
 	}
 	
 	/** Returns true if <code>this</code> contains some register
@@ -712,13 +821,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    return false;
 	}
 	
-	/** Returns the number of registers in <code>this</code> that
+	/** Returns the number of general registers in <code>this</code> that
 	    map to no value.
 	*/
 	public int numEmptyRegisters() {
 	    int count = 0;
-	    for (int i=0; i<vals.length; i++) {
-		if (vals[i] == null) {
+	    for (int i=0; i<genRegs.length; i++) {
+		if (get(genRegs[i]) == null) {
 		    count++;
 		}
 	    }
@@ -738,8 +847,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	public String toString() {
 	    String s = "RegFile[ ";
-	    for (int i=0; i<regs.length; i++) {
-		s += "{ " + vals[i] + 
+	    for (int i=0; i<vals.length; i++) {
+		s += "{ " + vals[i] + " " +
 		    (dirty[i]?"Dirty":"Clean") + " } ";
 	        // if (i == regs.length/2) s += "\n";
 	    }

@@ -49,7 +49,7 @@ import java.util.*;
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.16 1999-06-15 04:35:21 pnkfelix Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.17 1999-06-16 01:54:33 pnkfelix Exp $
  */
 final class CodeGen {
 
@@ -554,13 +554,15 @@ final class CodeGen {
         public void visit(NAME e) {
             ExpValue retval = new ExpValue(new Temp(tf));
             emitLabelRef(((NAME)e).label, e);
-            emit(new Instr(inf, e, "ldr `d0, "+ getLabelRef(((NAME)e).label) + "  \t\t; " + e,
+            emit(new Instr(inf, e,"ldr `d0, " +
+			   getLabelRef(((NAME)e).label) +
+			   "  \t\t; " + e,
                            new Temp[] { retval.temp() },null));
             visitRet = retval;
         }
 
         public void visit(NATIVECALL e) {
-
+	    Util.assert(false, "Don't know how to handle NATIVECALL");
         }
 
         public void visit(TEMP e) {

@@ -39,7 +39,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.8 1999-06-15 04:35:17 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.9 1999-06-16 01:54:30 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -110,7 +110,8 @@ public abstract class RegAlloc  {
 		HCode preAllocCode = parent.convert(m);
 		LocalCffRegAlloc localCode = 
 		    new LocalCffRegAlloc(frame, (Code) preAllocCode);
-		//DemandDrivenRegAlloc globalCode = new DemandDrivenRegAlloc(frame, localCode.generateRegAssignment());		
+		//DemandDrivenRegAlloc globalCode = 
+		//   new DemandDrivenRegAlloc(frame, localCode.generateRegAssignment()); 
 		//return globalCode.generateRegAssignment();
 
 		return localCode.resolveOutstandingTemps( localCode.generateRegAssignment() );
@@ -159,8 +160,24 @@ public abstract class RegAlloc  {
 		    }
 		}
 	    } 
-	    public void visit(Instr i) {
+	    public void visit(Instr m) {
 		// do nothing
+		 
+		// adding a check to see if use/def are indeed all "in
+		// registers"
+		boolean check = true;
+		for(int i=0; i<m.def().length; i++){
+		    if(!isTempRegister(m.def()[i])) {
+		       check = false; break;
+		    }
+		}
+		for(int i=0; i<m.use().length; i++){
+		    if(!isTempRegister(m.use()[i])) {
+		       check = false; break;
+		    }
+		}
+		Util.assert(check, " Temp reference in " + m);
+
 	    }
 	}
 	
@@ -247,30 +264,33 @@ public abstract class RegAlloc  {
 	the block of instructions lists in <code>iter</code>.  
 	
 	<BR> <B>requires:</B> 
-	     1. <code>i</code> is an element in <code>iter</code> 
-	     2. <code>iter</code> is currently indexed at
-	        <code>i</code> 
-	     3. <code>reg</code> is used by <code>i</code>
-	<BR> <B>effects:</B> Returns true if no instruction after
-	     <code>i</code> in <code>iter</code> uses <code>reg</code>
-	     before <code>reg</code> is redefined (<code>i</code>
-	     redefining <code>reg</code> is sufficient).  Else returns
-	     false.  
+	     <BR> 1. <code>i</code> is an element in <code>iter</code> 
+	     <BR> 2. <code>iter</code> is an <code>Iterator</code> of
+	             a linear series of <code>Instr</code>s in the
+		     order that they will be executed.
+	     <BR> 3. <code>iter</code> is currently indexed at
+	             <code>i</code> 
+	     <BR> 4. <code>reg</code> is used by <code>i</code>
+	<BR> <B>modifies:</B> <code>iter</code>
+	<BR> <B>effects:</B> 
+             <BR> 1. Returns true if no instruction after
+	             <code>i</code> in <code>iter</code> uses
+		     <code>reg</code> before <code>reg</code> is
+		     redefined (<code>i</code> redefining
+		     <code>reg</code> is sufficient).  Else returns
+		     false. 
+	     <BR> 2. <code>iter</code> is left at an undetermined
+	             index. 
     */
-    protected boolean lastUse(Temp reg, UseDef i, ListIterator iter) {
-	int index = 0;
+    protected static boolean lastUse(Temp reg, UseDef i, Iterator iter) {
 	UseDef curr = i;
 	boolean r = true;
 	while (iter.hasNext() && ! contained( curr.def(), reg ) ) {
-	    curr = (UseDef) iter.next(); index++;
+	    curr = (UseDef) iter.next();
 	    if (contained( curr.use(), reg )) {
 		r = false;
 		break;
 	    }
-	}
-	// reset the index (to preserve state of iter)
-	while (index > 0) {
-	    iter.previous();
 	}
 	return r;
     } 
