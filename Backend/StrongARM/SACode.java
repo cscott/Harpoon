@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>SACode</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SACode.java,v 1.1.2.18 1999-09-08 18:02:22 cananian Exp $
+ * @version $Id: SACode.java,v 1.1.2.19 1999-09-09 00:36:32 cananian Exp $
  */
 public class SACode extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -84,6 +84,7 @@ public class SACode extends harpoon.Backend.Generic.Code {
 	}
     }
     
+    /* THIS NEEDS RETHINKING
     public static HCodeFactory codeFactory(final HCodeFactory hcf,
 					   final OffsetMap offmap) {
 	return codeFactory(hcf, new SAFrame(offmap));
@@ -93,6 +94,7 @@ public class SACode extends harpoon.Backend.Generic.Code {
 	return codeFactory(CanonicalTreeCode.
 			   codeFactory( new SAFrame(offmap) ), offmap);
     }
+    */
     
     private Temp get(Instr instr, Temp val) {
 	return (Temp) tempInstrPairToRegisterMap.get(new TempInstrPair(instr, val)); 

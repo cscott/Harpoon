@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.41 1999-09-08 00:36:56 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.42 1999-09-09 00:36:32 cananian Exp $
  */
 %%
 
@@ -186,11 +186,11 @@ import java.util.Iterator;
     }
 
     private Temp makeTemp() {
-	    return new Temp(frame.tempFactory());
+	    return new Temp(instrFactory.tempFactory());
     }
 
     private TwoWordTemp makeTwoWordTemp() {
-	    return new TwoWordTemp(frame.tempFactory());
+	    return new TwoWordTemp(instrFactory.tempFactory());
     }
 
     Map origTempToNewTemp;

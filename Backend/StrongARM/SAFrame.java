@@ -3,15 +3,16 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.StrongARM;
 
-import harpoon.Temp.Temp;
-import harpoon.Temp.TempFactory;
+import harpoon.Analysis.ClassHierarchy;
 import harpoon.Backend.Allocation.AllocationInfo;
 import harpoon.Backend.Allocation.AllocationStrategy;
 import harpoon.Backend.Allocation.DefaultAllocationStrategy;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.GenericCodeGen;
+import harpoon.Backend.Generic.Runtime;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
@@ -29,8 +30,9 @@ import harpoon.IR.Tree.SEQ;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.TreeFactory;
+import harpoon.Temp.Temp;
+import harpoon.Temp.TempFactory;
 import harpoon.Temp.Label;
-import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Util;
 import harpoon.Util.LinearSet;
 import harpoon.Util.ListFactory;
@@ -49,16 +51,16 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.37 1999-08-31 01:40:53 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.38 1999-09-09 00:36:32 cananian Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
     private static Temp[] regLiveOnExit = new Temp[5];
     private static Temp[] regGeneral = new Temp[11];
     private static TempFactory regtf;
-    private TempFactory tf;
     private AllocationStrategy mas;
-    private static OffsetMap offmap;
+    private final OffsetMap offmap;
+    private final Runtime   runtime;
 
     static final Temp TP;  // Top of memory pointer
     static final Temp HP;  // Heap pointer
@@ -117,26 +119,11 @@ public class SAFrame extends Frame implements AllocationInfo {
 
     CodeGen codegen;
     
-    /** this form of the ctor may become deprecated. */
-    private SAFrame() { 
+    public SAFrame(ClassHierarchy ch) { 
         mas = new DefaultAllocationStrategy(this);
 	codegen = new CodeGen(this);
-	tf = Temp.tempFactory( "S@Frame_scope" );
-    }
-
-    /** This probably isn't implemented correctly; this class needs
-	serious review/revision. 
-    */ 
-    public SAFrame(OffsetMap map) {
-	this();
-	offmap = map;
-    }
-
-    /* "method" constructor, use for per-method initializations */
-    public Frame newFrame(String scope) {
-        SAFrame fr = new SAFrame();
-        fr.tf = Temp.tempFactory(scope);
-        return fr;
+	runtime = new harpoon.Backend.Runtime1.Runtime();
+	offmap = new OffsetMap32(ch, runtime.nameMap());
     }
 
     public boolean pointersAreLong() { return false; }
@@ -165,7 +152,7 @@ public class SAFrame extends Frame implements AllocationInfo {
 
     public OffsetMap getOffsetMap() { return offmap; }
 
-    public TempFactory tempFactory() { return tf; }
+    public Runtime getRuntime() { return runtime; }
 
     public TempFactory regTempFactory() { return regtf; }
 

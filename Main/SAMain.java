@@ -61,7 +61,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.23 1999-09-09 00:10:44 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.24 1999-09-09 00:36:35 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -112,8 +112,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    classHierarchy = new QuadClassHierarchy(mainM, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
-	offmap = new OffsetMap32(classHierarchy);
-	frame = new SAFrame(offmap);
+	frame = new SAFrame(classHierarchy);
+	offmap = frame.getOffsetMap();
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
     
 	HCodeFactory sahcf = SACode.codeFactory(hcf, frame);

@@ -36,7 +36,7 @@ import java.util.Iterator;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.26 1999-08-31 01:40:50 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.27 1999-09-09 00:36:20 cananian Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -77,14 +77,13 @@ public abstract class Frame {
     public abstract Instr procAssemDirectives(Instr body);
 
     /** Returns the appropriate <code>OffsetMap</code> for
-	<code>this</code>. 
+	this <code>Frame</code>. 
     */
     public abstract OffsetMap getOffsetMap();
 
-    /** Returns the <code>TempFactory</code> to create new
-	<code>Temp</code>s in <code>this</code>. 
-    */
-    public abstract TempFactory tempFactory();
+    /** Returns the appropriate <code>Runtime</code> for
+     *  this <code>Frame</code>. */
+    public abstract Runtime getRuntime();
 
     /** Returns the <code>TempFactory</code> of the register
 	<code>Temp</code>s in <code>this</code>. 
@@ -235,9 +234,6 @@ public abstract class Frame {
     public int getSize(Temp temp) {
 	return 1;
     }
-
-    /** Create a new Frame one level below the current one. */
-    public abstract Frame newFrame(String scope);
 
     /** Analyzes <code>regfile</code> to find free registers that
 	<code>t</code> can be assigned to.  

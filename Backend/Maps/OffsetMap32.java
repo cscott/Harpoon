@@ -72,7 +72,7 @@ import java.util.StringTokenizer;
  * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.25 1999-09-08 19:30:18 cananian Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.26 1999-09-09 00:36:29 cananian Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -118,12 +118,6 @@ public class OffsetMap32 extends OffsetMap
 	this.nm  = nm;
     }
     
-    /** Create an <code>OffsetMap32</code> using a
-     *  <code>DefaultNameMap</code>. */
-    public OffsetMap32(ClassHierarchy ch) {
-	this(ch, new DefaultNameMap());
-    }
-
     /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
      *                                                           *
      *            Implementation of label mappings               *
