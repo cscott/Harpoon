@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include "flexthread.h" /* soft syscall mapping for select, etc, in GNU pth */
 
 #define ERROR         -2
 #define TRYAGAIN         -3
