@@ -77,7 +77,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.4 2002-04-10 03:01:43 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5 2003-06-17 16:37:58 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -159,7 +159,7 @@ public class SyncTransformer
     /** last *writing* transaction */
     private final HField HFlastWTrans;
     /** Set of safe methods. */
-    private final Set safeMethods;
+    private final Set<HMethod> safeMethods;
     /** Our version of the codefactory. */
     private final HCodeFactory hcf;
 
@@ -179,7 +179,7 @@ public class SyncTransformer
      *  method set. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
 			   HMethod mainM, Set roots,
-			   Set safeMethods) {
+			   Set<HMethod> safeMethods) {
 	// hcf should be SSI. our input is SSA...
         super(harpoon.IR.Quads.QuadSSA.codeFactory(hcf), ch, false);
 	// and output is NoSSA
@@ -257,8 +257,8 @@ public class SyncTransformer
 	// set up our BitFieldNumbering (and create array-check fields in
 	// all array classes)
 	this.bfn = new BitFieldNumbering(l);
-	for (Iterator it=ch.classes().iterator(); it.hasNext(); ) {
-	    HClass hc = (HClass) it.next();
+	for (Iterator<HClass> it=ch.classes().iterator(); it.hasNext(); ) {
+	    HClass hc = it.next();
 	    if (hc.isArray()) bfn.arrayBitField(hc);
 	}
 
@@ -342,10 +342,10 @@ public class SyncTransformer
 	for (int i=0; i<nxt.length; i++, tw.handlers=handlers/*restore*/)
 	    tweak(dt, (Quad) nxt[i], tw);
     }
-    static class ListList {
-	public final List head;
-	public final ListList tail;
-	public ListList(List head, ListList tail) {
+    static class ListList<T> {
+	public final List<T> head;
+	public final ListList<T> tail;
+	public ListList(List<T> head, ListList<T> tail) {
 	    this.head = head; this.tail = tail;
 	}
     }
@@ -355,14 +355,15 @@ public class SyncTransformer
 	final TempFactory tf;
 	final Temp retex;
 	final Temp currtrans; // current transaction.
-	private final Map fixupmap = new HashMap();
-	private final Set typecheckset = new HashSet();
+	private final Map<PHI,List<THROW>> fixupmap =
+	    new HashMap<PHI,List<THROW>>();
+	private final Set<NOP> typecheckset = new HashSet<NOP>();
 	final CheckOracle co;
 	final FieldOracle fo;
 	final TempSplitter ts=new TempSplitter();
 	// mutable.
 	FOOTER footer; // we attach new stuff to the footer.
-	ListList handlers = null; // points to current abort handler
+	ListList<THROW> handlers = null; // points to current abort handler
 	Tweaker(CheckOracle co, FOOTER qF, boolean with_transaction) {
 	    this.co = co;
 	    this.fo = fieldOracle; // cache in this object.
@@ -372,15 +373,15 @@ public class SyncTransformer
 	    // indicate that we're inside transaction context, but
 	    // that we need to rethrow TransactionAbortExceptions
 	    if (with_transaction)
-		handlers = new ListList(null, handlers);
+		handlers = new ListList<THROW>(null, handlers);
 	    this.currtrans = new Temp(tf, "transid");
 	    this.retex = new Temp(tf, "trabex"); // transaction abort exception
 	}
 	/** helper routine to add a quad on an edge. */
 	private Edge addAt(Edge e, Quad q) { return addAt(e, 0, q, 0); }
 	private Edge addAt(Edge e, int which_pred, Quad q, int which_succ) {
-	    Quad frm = (Quad) e.from(); int frm_succ = e.which_succ();
-	    Quad to  = (Quad) e.to();   int to_pred = e.which_pred();
+	    Quad frm = e.from(); int frm_succ = e.which_succ();
+	    Quad to  = e.to();   int to_pred = e.which_pred();
 	    Quad.addEdge(frm, frm_succ, q, which_pred);
 	    Quad.addEdge(q, which_succ, to, to_pred);
 	    return to.prevEdge(to_pred);
@@ -391,8 +392,8 @@ public class SyncTransformer
 	    Temp tst = new Temp(tf);
 	    e = addAt(e, new INSTANCEOF(qf, src, tst, tex, HCabortex));
 	    e = addAt(e, new CJMP(qf, src, tst, new Temp[0]));
-	    Quad q0 = new THROW(qf, src, tex);
-	    Quad.addEdge((Quad)e.from(), 1, q0, 0);
+	    THROW q0 = new THROW(qf, src, tex);
+	    Quad.addEdge(e.from(), 1, q0, 0);
 	    handlers.head.add(q0);
 	    CounterFactory.spliceIncrement(qf, q0.prevEdge(0),
 					   "synctrans.aborts");
@@ -400,21 +401,23 @@ public class SyncTransformer
 	}
 	/** Fix up PHIs leading to abort handler after we're all done. */
 	void fixup() {
-	    for(Iterator it=fixupmap.entrySet().iterator(); it.hasNext(); ) {
-		Map.Entry me = (Map.Entry) it.next();
-		PHI phi = (PHI) me.getKey();
-		List throwlist = (List) me.getValue();
+	    for(Iterator<Map.Entry<PHI,List<THROW>>> it =
+		    fixupmap.entrySet().iterator(); it.hasNext(); ) {
+		Map.Entry<PHI,List<THROW>> me = it.next();
+		PHI phi = me.getKey();
+		List<THROW> throwlist = me.getValue();
 		PHI nphi = new PHI(qf, phi, new Temp[0], throwlist.size());
 		Edge out = phi.nextEdge(0);
-		Quad.addEdge(nphi, 0, (Quad)out.to(), out.which_pred());
+		Quad.addEdge(nphi, 0, out.to(), out.which_pred());
 		int n=0;
-		for (Iterator it2 = throwlist.iterator(); it2.hasNext(); n++) {
-		    THROW thr = (THROW) it2.next();
+		for (Iterator<THROW> it2 = throwlist.iterator();
+		     it2.hasNext(); n++) {
+		    THROW thr = it2.next();
 		    Temp tex = thr.throwable();
 		    Edge in = thr.prevEdge(0);
 		    if (tex!=retex)
 			in = addAt(in, new MOVE(qf, thr, retex, tex));
-		    Quad.addEdge((Quad)in.from(), in.which_succ(), nphi, n);
+		    Quad.addEdge(in.from(), in.which_succ(), nphi, n);
 		    // NOTE THAT WE ARE NOT DELINKING THE THROW FROM THE
 		    // FOOTER: this should be done before it is added to the
 		    // list.
@@ -424,9 +427,9 @@ public class SyncTransformer
 	    if (typecheckset.size()==0) return;
 	    PHI phi = new PHI(qf, footer, new Temp[0], typecheckset.size()+1);
 	    int i=0;
-	    for (Iterator it=typecheckset.iterator(); it.hasNext(); ) {
-		Edge in = ((NOP) it.next()).prevEdge(0);
-		Quad.addEdge((Quad)in.from(), in.which_succ(), phi, i++);
+	    for (Iterator<NOP> it=typecheckset.iterator(); it.hasNext(); ) {
+		Edge in = it.next().prevEdge(0);
+		Quad.addEdge(in.from(), in.which_succ(), phi, i++);
 	    }
 	    // this is a hack: create an infinite loop.
 	    // this path should never be executed.
@@ -519,16 +522,16 @@ public class SyncTransformer
 			       false, false, new Temp[0]);
 	    Quad q3 = new PHI(qf, q, new Temp[0], 3);
 	    Quad q4 = new THROW(qf, q, retex);
-	    Quad.addEdge((Quad)in.from(), in.which_succ(), q0, 0);
+	    Quad.addEdge(in.from(), in.which_succ(), q0, 0);
 	    Quad.addEdge(q0, 0, q1, 0);
 	    Quad.addEdge(q0, 1, q3, 0);
-	    Quad.addEdge(q1, 0, (Quad)out.to(), out.which_pred());//delink q
+	    Quad.addEdge(q1, 0, out.to(), out.which_pred());//delink q
 	    Quad.addEdge(q2, 0, q1, 1);
 	    Quad.addEdge(q2, 1, q3, 1);
 	    Quad.addEdge(q3, 0, q4, 0);
 	    footer = footer.attach(q4, 0); // attach throw to FOOTER.
 	    // add test to TransactionAbortException;
-	    Quad q5 = new PHI(qf, q, new Temp[0], 0); // stub
+	    PHI q5 = new PHI(qf, q, new Temp[0], 0); // stub
 	    Temp tst = new Temp(tf), stop = new Temp(tf);
 	    Quad q6 = new GET(qf, q, stop, HFabortex_upto, retex);
 	    Quad q7 = new OPER(qf, q, Qop.ACMPEQ, tst,
@@ -539,7 +542,7 @@ public class SyncTransformer
 	    Quad.addEdge(q8, 1, q2, 0); // else, retry.
 	    // all transactionabortexceptions need to link to q5,
 	    // with the exception in retex.
-	    handlers = new ListList(new ArrayList(), handlers);
+	    handlers = new ListList<THROW>(new ArrayList<THROW>(), handlers);
 	    fixupmap.put(q5, handlers.head);
 	}
 	public void visit(MONITOREXIT q) {
@@ -553,10 +556,10 @@ public class SyncTransformer
 			       false, false, new Temp[0]);
 	    Quad q1 = new GET(qf, q, currtrans, HFcommitrec_parent, currtrans);
 	    Quad q2 = new THROW(qf, q, retex);
-	    Quad.addEdge((Quad)in.from(), in.which_succ(), q0, 0);
+	    Quad.addEdge(in.from(), in.which_succ(), q0, 0);
 	    Quad.addEdge(q0, 0, q1, 0);
 	    Quad.addEdge(q0, 1, q2, 0);
-	    Quad.addEdge(q1, 0, (Quad)out.to(), out.which_pred());
+	    Quad.addEdge(q1, 0, out.to(), out.which_pred());
 	    footer = footer.attach(q2, 0); // add q2 to FOOTER.
 	    checkForAbort(q0.nextEdge(1), q, retex);
 	    handlers = handlers.tail;
@@ -768,7 +771,7 @@ public class SyncTransformer
 	Edge addTypeCheck(Edge e, HCodeElement src, Temp t, HClass type) {
 	    Quad q0 = new TYPESWITCH(qf, src, t, new HClass[] { type },
 				     new Temp[0], true);
-	    Quad q1 = new NOP(qf, src);
+	    NOP q1 = new NOP(qf, src);
 	    Quad.addEdge(q0, 1, q1, 0);
 	    typecheckset.add(q1);
 	    return addAt(e, 0, q0, 0);
@@ -796,12 +799,12 @@ public class SyncTransformer
 	    rS.removeAll(wS); // write really is read-write.
 	    for (int i=0; i<2; i++) {
 		// iteration 0 for read; iteration 1 for write versions.
-		Iterator it = (i==0) ? rS.iterator() : wS.iterator();
+		Iterator<Temp> it = (i==0) ? rS.iterator() : wS.iterator();
 		HMethod hm = (i==0) ? HMrVersion : HMrwVersion ;
 		while (it.hasNext()) {
 		    // for each temp, a call to 'getReadableVersion' or
 		    // 'getReadWritableVersion'.
-		    Temp t = (Temp) it.next();
+		    Temp t = it.next();
 		    CALL q0= new CALL(qf, q, hm, new Temp[] { t, currtrans },
 		                      ts.versioned(t), retex,
 				      false/*final, not virtual*/, false,
@@ -817,8 +820,9 @@ public class SyncTransformer
 		}
 	    }
 	    // do field-read checks...
-	    for (Iterator it=co.checkFieldReads(q).iterator(); it.hasNext();) {
-		CheckOracle.RefAndField raf=(CheckOracle.RefAndField)it.next();
+	    for (Iterator<CheckOracle.RefAndField> it =
+		     co.checkFieldReads(q).iterator(); it.hasNext();) {
+		CheckOracle.RefAndField raf = it.next();
 		// skip check for fields unaccessed outside a sync context.
 		if (!fo.isUnsyncRead(raf.field) &&
 		    !fo.isUnsyncWrite(raf.field)) {
@@ -862,8 +866,9 @@ public class SyncTransformer
 		    (qf, q6.prevEdge(0), "synctrans.field_read_checks_bad");
 	    }
 	    // do field-write checks...
-	    for (Iterator it=co.checkFieldWrites(q).iterator(); it.hasNext();){
-		CheckOracle.RefAndField raf=(CheckOracle.RefAndField)it.next();
+	    for (Iterator<CheckOracle.RefAndField> it =
+		     co.checkFieldWrites(q).iterator(); it.hasNext();) {
+		CheckOracle.RefAndField raf = it.next();
 		// skip check for fields unaccessed outside a sync context.
 		if (!fo.isUnsyncRead(raf.field) &&
 		    !fo.isUnsyncWrite(raf.field)) {
@@ -903,8 +908,8 @@ public class SyncTransformer
 		    (qf, q5.prevEdge(0), "synctrans.field_write_checks_bad");
 	    }
 	    // do array index read checks....
-	    for (Iterator it=co.checkArrayElementReads(q).iterator();
-		 it.hasNext(); ) {
+	    for (Iterator<CheckOracle.RefAndIndexAndType> it =
+		     co.checkArrayElementReads(q).iterator(); it.hasNext(); ) {
 		// arrays have one check field (32 bits) which stand in
 		// (modulo 32) for all the elements in the array.
 		// we check that the appropriate read-bit is set, else
@@ -912,8 +917,7 @@ public class SyncTransformer
 		// the bit.
 		in = CounterFactory.spliceIncrement
 		    (qf, in, "synctrans.element_read_checks");
-		CheckOracle.RefAndIndexAndType rit =
-		    (CheckOracle.RefAndIndexAndType) it.next();
+		CheckOracle.RefAndIndexAndType rit = it.next();
 		HField arrayCheckField = bfn.arrayBitField
 		    (HClassUtil.arrayClass(qf.getLinker(), rit.type, 1));
 		Temp t0 = new Temp(tf, "arrayreadcheck");
@@ -953,13 +957,12 @@ public class SyncTransformer
 		    (qf, q6.prevEdge(0), "synctrans.element_read_checks_bad");
 	    }
 	    // do array index write checks.
-	    for (Iterator it=co.checkArrayElementWrites(q).iterator();
-		 it.hasNext(); ) {
+	    for (Iterator<CheckOracle.RefAndIndexAndType> it =
+		     co.checkArrayElementWrites(q).iterator(); it.hasNext(); ){
 		// (check that element==FLAG is set, else call fixup code)
 		in = CounterFactory.spliceIncrement
 		    (qf, in, "synctrans.element_write_checks");
-		CheckOracle.RefAndIndexAndType rit =
-		    (CheckOracle.RefAndIndexAndType) it.next();
+		CheckOracle.RefAndIndexAndType rit = it.next();
 		Temp t0 = new Temp(tf, "arraywritecheck");
 		Temp t1 = new Temp(tf, "arraywritecheck");
 		Quad q0 = new AGET(qf, q, t0, rit.objref, rit.index, rit.type);
@@ -1015,8 +1018,8 @@ public class SyncTransformer
 	    Quad.addEdge(q0, 1, q2, 0);
 	    Quad.addEdge(q1, 0, q2, 1);
 	    Quad.addEdge(q1, 1, q2, 2);
-	    Quad.addEdge((Quad)in.from(), in.which_succ(), q0, 0);
-	    Quad.addEdge(q2, 0, (Quad)in.to(), in.which_pred());
+	    Quad.addEdge(in.from(), in.which_succ(), q0, 0);
+	    Quad.addEdge(q2, 0, in.to(), in.which_pred());
 	    // increment counters
 	    CounterFactory.spliceIncrement
 		(qf, q1.nextEdge(0), "synctrans." +
@@ -1139,16 +1142,17 @@ public class SyncTransformer
     }
     
     private class TempSplitter {
-	private final Map m = new HashMap();
+	private final Map<Temp,Temp> m = new HashMap<Temp,Temp>();
 	public Temp versioned(Temp t) {
 	    if (!m.containsKey(t))
 		m.put(t, new Temp(t));
-	    return (Temp) m.get(t);
+	    return m.get(t);
 	}
     }
 
-    private static Set parseResource(final Linker l, String resourceName) {
-	final Set result = new HashSet();
+    private static Set<HMethod> parseResource(final Linker l,
+					      String resourceName) {
+	final Set<HMethod> result = new HashSet<HMethod>();
 	try {
 	    ParseUtil.readResource(resourceName, new ParseUtil.StringParser() {
 		public void parseString(String s)
