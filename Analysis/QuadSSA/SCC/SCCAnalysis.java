@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.10 1998-09-25 17:04:50 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.11 1998-09-25 17:08:13 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -912,7 +912,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    } else if (type == HClass.Int) {
 		this.minusWidth = Math.min(32, minusWidth);
 		this.plusWidth  = Math.min(31, plusWidth);
-	    } else if (type == HClass.Short) {
+/*	    } else if (type == HClass.Short) {
 		this.minusWidth = Math.min(16, minusWidth);
 		this.plusWidth  = Math.min(15, plusWidth);
 	    } else if (type == HClass.Byte) {
@@ -921,7 +921,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    } else if (type == HClass.Char) {
 		this.minusWidth = Math.min( 0, minusWidth);
 		this.plusWidth  = Math.min(16, plusWidth);
-	    } else if (type == HClass.Boolean) {
+*/	    } else if (type == HClass.Boolean) {
 		this.minusWidth = Math.min( 0, minusWidth);
 		this.plusWidth  = Math.min( 1, plusWidth);
 	    } else throw new Error("Unknown type for xBitWidth: "+type);
