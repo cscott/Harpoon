@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@@ai.mit.edu> 
 // Version: 
 // Created: <Tue Oct  6 12:41:25 1998> 
-// Time-stamp: <1998-12-03 00:39:31 mfoltz> 
+// Time-stamp: <1998-12-03 00:48:25 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.QuadSSA;
@@ -82,7 +82,7 @@ public class Profile {
      */
     Temp _this, _null_temp, _calling_method_name_temp, _calling_class_name_temp;
 
-    /** The <code>java.lang.String HClass</code>.
+    /** The <code>java.lang.String HClass</code>. */
     HClass _java_lang_string;
 
     /** The static profiling methods, from <code>harpoon.RunTime.Monitor</code>. */
