@@ -13,6 +13,9 @@ import java.util.Date;
 import java.util.Collections;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Collection;
+import java.util.List;
+import java.util.LinkedList;
 
 import java.lang.reflect.Modifier;
 
@@ -57,14 +60,20 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
 import harpoon.Analysis.MetaMethods.MetaAllCallers;
 
-//import harpoon.Util.TypeInference.CachingArrayInfo;
+import harpoon.Analysis.MetaMethods.GenType;
 
 import harpoon.Util.LightBasicBlocks.LBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.Navigator;
+import harpoon.Util.Graphs.DiGraph;
+import harpoon.Util.Graphs.ForwardNavigator;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.UComp;
+import harpoon.Util.Collections.LinearSet;
+
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.LightRelation;
 
 import harpoon.Util.Util;
 
@@ -75,7 +84,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.11 2003-05-06 15:22:30 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.12 2003-06-04 18:44:32 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -85,10 +94,65 @@ public class PointerAnalysis implements java.io.Serializable {
 
     /** crazy, isn't it? */
     public static boolean MEGA_DEBUG = false;
+    public static boolean MEGA_DEBUG2 = false;
+    private static boolean SHOW_INSTR = false;
 
     /** Turns on the recording of the actions done by the program. */
     public static boolean RECORD_ACTIONS = false;
 
+    /** Hack to speed it up: it appears to me that the edge ordering
+	relation is not extremely important: in recursive methods or in
+	methods with loops, it tends to be just a cartesian product between
+	I and O. */
+    public static final boolean IGNORE_EO = true;
+
+
+    /** Ignore what is load from a RETURN/EXCEPT node.  Anyway, we
+        cannot determine what is load from there.  */
+    public static boolean IGNORE_LOADS_FROM_NATIVES = true;
+    
+    /** If <code>false</code>, do not keep track of all un-analyzed
+        methods where a node escapes.  Instead, just record the fact
+        whether a node escapes (or not) in some un-analyzed method. */
+    public static boolean CONDENSED_ESCAPE_INFO = true;
+
+    /** If <code>true</code>, compress all load nodes that escape into
+        an unanalyzed method and/or a static field into the single
+        summar node NodeRepository.LOST_SUMMARY</code> (currently,
+        this is done only at the end of a method, when producing the
+        external version of the <code>ParIntGraph</code>).  This
+        compression is applied to the external versions of the
+        parallel interaction graphs, after the end of the fixed point
+        computation for a SCC of methods. */
+    public static boolean COMPRESS_LOST_NODES = true;
+
+    /** Same as <code>COMPRESS_LOST_NODES</code>, but done at the end
+        of the analysis of each method. BREAKS MONOTONICITY! */
+    public static boolean AGGRESSIVE_COMPRESS_LOST_NODES = true;
+    
+    /** If <code>true</code>, then each time we try to load something
+	from an escaped node that already has a few load nodes (for
+	the field we load), we reuse the smallest existent node,
+	instead of generating a node for that LOAD instruction.
+	BREAKS MONOTONICITY! */
+    public static boolean REUSE_LOAD_NODES = true;
+
+    /** Controls whether the analysis models the <code>null</code>
+        references by edges to the special node <code>NULL</code>, or
+        simply ignores them.  */
+    public static boolean TREAT_NULL = false;
+
+    /** Controls whether the analysis models references to constant
+        Strings by edges to the special node <code>CONST</code>, or
+        simply ignores them.  */
+    public static boolean TREAT_CONST = false;
+
+    /** If <code>true</code>, then we do not introduce edges about
+        which we can infer that they violate the type declarations:
+        e.g., an edge on the field &quot;foo&quot; from an inside node
+        for <code>new Integer</code>. */
+    public static boolean CONSIDER_TYPES = true;
+    
     /** Turns on the save memory mode. In this mode, some of the speed is
 	sacrified for the sake of the memory consumption. More specifically,
 	the <i>Interior</i>, large version of the Parallel Interaction Graph
@@ -103,22 +167,10 @@ public class PointerAnalysis implements java.io.Serializable {
 
     /** Turns on the printing of some timing info. */
     public static boolean TIMING = true;
+    public static boolean FINE_TIMING = true;
     public static final boolean STATS = true;
     public static boolean SHOW_NODES = true;
     public static final boolean DETAILS2 = false;
-
-
-    /** Hack to speed it up: it appears to me that the edge ordering
-	relation is not extremely important: in recursive methods or in
-	methods with loops, it tends to be just a cartesian product between
-	I and O. */
-    public static final boolean IGNORE_EO = true;
-
-    // TODO: Most of the following flags should be final (which will
-    // help somehow the compiler to perform some dead code elimination
-    // etc. and maybe gain some speed). For the moment, they are non-final
-    // so that the main modeule can modify them (according to the command
-    // line options).
 
     /** Activates the calling context sensitivity. When this flag is
 	on, the nodes from the graph of the callee are specialized for each
@@ -217,13 +269,16 @@ public class PointerAnalysis implements java.io.Serializable {
      *</ul> */
     public PointerAnalysis(MetaCallGraph mcg,
 			   CachingSCCLBBFactory caching_scc_lbb_factory,
-			   Linker linker) {
+			   Linker linker, ClassHierarchy ch) {
 	this.mcg  = mcg;
 	this.mac  = new MetaAllCallers(mcg);
 	this.scc_lbb_factory = caching_scc_lbb_factory;
 	// OLD STUFF: new CachingSCCLBBFactory(lbbconv);
 	this.linker = linker;
-	this.nodes = new NodeRepository(linker); 
+	this.nodes = new NodeRepository(linker);
+
+	PointerAnalysis.ch = ch;
+	PointerAnalysis.java_lang_Object = linker.forName("java.lang.Object");
 	
 	InterProcPA.static_init(this);
 
@@ -231,24 +286,34 @@ public class PointerAnalysis implements java.io.Serializable {
 	    aamm = new HashSet();
     }
 
+    static ClassHierarchy ch = null;
+    static HClass java_lang_Object = null;
+
     // the set of already analyzed meta-methods
     private Set aamm = null;
 
-    /** Returns the full (internal) <code>ParIntGraph</code> attached to
-     * the method <code>hm</code> i.e. the graph at the end of the method.
-     * Returns <code>null</code> if no such graph is available. */
-    public ParIntGraph getIntParIntGraph(MetaMethod mm){
+    /** Returns the full (internal) <code>ParIntGraph</code> attached
+	to the method <code>hm</code> i.e. the graph at the end of the
+	method.  If <code>mm</code> was not analyzed yet and
+	<code>analyze</code> is true, analyze <code>mm</code> (and
+	store the result of the analysis in the internal cache).  May
+	return <code>null</code> if <code>mm</code> is unanalyzable,
+	or if it has not been analyzed yet and <code>analyze</code> is
+	false.  */
+    public ParIntGraph getIntParIntGraph(MetaMethod mm, boolean analyze) {
 	if(SAVE_MEMORY) {
-	    if(!aamm.contains(mm))
+	    if(!aamm.contains(mm)) {
+		if(!analyze) return null;
 		analyze(mm);
+	    }
 	    analyze_intra_proc(mm);
-	    ParIntGraph pig = (ParIntGraph)hash_proc_int.get(mm);
+	    ParIntGraph pig = (ParIntGraph) hash_proc_int.get(mm);
 	    hash_proc_int.clear();
 	    return pig;
 	}
 	else {
 	    ParIntGraph pig = (ParIntGraph) hash_proc_int.get(mm);
-	    if(pig == null) {
+	    if((pig == null) && analyze) {
 		analyze(mm);
 		pig = (ParIntGraph) hash_proc_int.get(mm);
 	    }
@@ -256,7 +321,14 @@ public class PointerAnalysis implements java.io.Serializable {
 	}
     }
 
+    /** Equivalent to
+        <code>getIntParIntGraph</code>(<code>mm</code>,<code>true</code>). */
+    public ParIntGraph getIntParIntGraph(MetaMethod mm) {
+	return getIntParIntGraph(mm, true);
+    }
 
+    /** That's what you probably want: equivalent to
+        <code>getIntParIntGraph(new MetaMethod(hm, true))</code>. */
     public ParIntGraph getIntParIntGraph(HMethod hm) {
 	return getIntParIntGraph(new MetaMethod(hm, true));
     }
@@ -411,14 +483,14 @@ public class PointerAnalysis implements java.io.Serializable {
     }
 
     // Worklist of <code>MetaMethod</code>s for the inter-procedural analysis
-    private PAWorkStack W_inter_proc = new PAWorkStack();
+    private PAWorkList  W_inter_proc = new PAWorkList();
 
     // Worklist for the intra-procedural analysis; at any moment, it
     // contains only basic blocks from the same method.
     private PAWorkList  W_intra_proc = new PAWorkList();
 
     // Repository for node management.
-    final NodeRepository nodes;
+    static NodeRepository nodes = null;
     public final NodeRepository getNodeRepository() { return nodes; }
 
 
@@ -534,12 +606,9 @@ public class PointerAnalysis implements java.io.Serializable {
     }
     
 
-    // information about the interesting AGET quads
-    //CachingArrayInfo cai = new CachingArrayInfo();
-
     // inter-procedural analysis of a group of mutually recursive methods
     private void analyze_inter_proc_scc(SCComponent scc){
-	if(TIMING || DEBUG){
+	if(TIMING || DEBUG) {
 	    System.out.print("SCC" + scc.getId() + 
 			     "\t (" + scc.size() + " meta-method(s)){");
 	    Object[] nodes = scc.nodes();
@@ -551,62 +620,128 @@ public class PointerAnalysis implements java.io.Serializable {
 	long b_time = TIMING ? System.currentTimeMillis() : 0;
 
 	// start by analyzing one of the methods from the group of mutually
-	// recursive methods (the other will be transitively introduced into
+	// recursive methods (the others will be transitively introduced into
 	// the worklist)
 	MetaMethod mmethod = (MetaMethod) scc.nodes()[0];
 
 	// if SCC composed of a native or abstract method, return immediately!
 	if(!analyzable(mmethod.getHMethod())){
 	    if(TIMING)
-		System.out.println(System.currentTimeMillis() - b_time + "ms");
-	    if(DEBUG)
-		System.out.println(scc.toString(mcg) + " is unanalyzable");
+		System.out.println((System.currentTimeMillis() - b_time) + 
+				   "ms + (unanalyzable)");
 	    return;
 	}
+
+	boolean must_check = scc.isLoop();
+
+	// add all methods here; supposedly better than just the 1st one
+	Object allmms[] = scc.nodes();
+	for(int i = 0; i < allmms.length; i++)
+	    W_inter_proc.add(allmms[i]);
 
 	// Initially, the worklist (actually a workstack) contains only one
 	// of the methods from the actual group of mutually recursive
 	// methods. The others will be added later (because they are reachable
 	// in the AllCaller graph from this initial node). 
-	W_inter_proc.add(mmethod);
+	// W_inter_proc.add(mmethod);
 
-	boolean must_check = scc.isLoop();
-
-	while(!W_inter_proc.isEmpty()){
+	while(!W_inter_proc.isEmpty()) {
 	    // grab a method from the worklist
 	    MetaMethod mm_work = (MetaMethod) W_inter_proc.remove();
+
+	    //if(DEBUG_INTRA)
+	    System.out.println("\nMETHOD: " + mm_work.getHMethod());
+	    System.out.println("size: " + method_stats(mm_work.getHMethod()));
 
 	    ParIntGraph old_info = (ParIntGraph) hash_proc_ext.get(mm_work);
 	    analyze_intra_proc(mm_work);
 	    ParIntGraph new_info = (ParIntGraph) hash_proc_ext.get(mm_work);
 
-	    if(must_check && !new_info.equals(old_info)) { // new info?
-		// since the original graph associated with hm_work changed,
-		// the old specializations for it are no longer actual;
-		if(CALL_CONTEXT_SENSITIVE)
-		    cs_specs.remove(mm_work);
+	    if(must_check) {
+		if(REUSE_LOAD_NODES && (old_info != null)) {
+		    new_info.join(old_info);
+		    hash_proc_ext.put(mm_work, new_info);
+		}
 
-		Object[] mms = mac.getCallers(mm_work);    
-		if(DETERMINISTIC){
-		    Arrays.sort(mms,UComp.uc);
+		if(!new_info.equals(old_info)) { // new info?
+
+		    System.out.println("HAS CHANGED!");
+		    
+		    // since the original graph associated with
+		    // hm_work changed, the old specializations for it
+		    // are no longer actual;
+		    if(CALL_CONTEXT_SENSITIVE)
+			cs_specs.remove(mm_work);
+		    
+		    Object[] mms = mac.getCallers(mm_work);
+		    if(DETERMINISTIC) {
+			Arrays.sort(mms,UComp.uc);
+		    }
+		    for(int i = 0; i < mms.length ; i++) {
+			MetaMethod mm_caller = (MetaMethod) mms[i];
+			if(scc.contains(mm_caller))
+			    W_inter_proc.add(mm_caller);
+		    }
 		}
-		for(int i = 0; i < mms.length ; i++){
-		    MetaMethod mm_caller = (MetaMethod) mms[i];
-		    if(scc.contains(mm_caller))
-			W_inter_proc.add(mm_caller);
-		}
+		else
+		    System.out.println("HAS NOT CHANGED!");
 	    }
 	}
 
+	if(COMPRESS_LOST_NODES && !AGGRESSIVE_COMPRESS_LOST_NODES)
+	    post_compress(scc);
+
 	// clear various data structures to save some memory space
-	analyze_inter_proc_scc_clean();
+	analyze_inter_proc_scc_clean(scc);
 
 	if(TIMING)
 	    System.out.println((System.currentTimeMillis() - b_time) + "ms");
     }
 
+
+    private void post_compress(SCComponent scc) {
+	Object[] methods = scc.nodes();
+	for(int i = 0; i < methods.length; i++) {
+	    MetaMethod mm = (MetaMethod) methods[i];
+
+	    PANode[] nodes = getParamNodes(mm);
+	    boolean is_main = mm.getHMethod().getName().equals("main");
+	    ParIntGraph pig = (ParIntGraph) hash_proc_ext.get(mm);
+
+	    hash_proc_ext.put
+		(mm, pig.compressLostNodes(get_compression_map(mm)));
+	}
+    }
+
+
+    private String method_stats(HMethod hm) {
+	int nb_sccs = 0;
+	int nb_lbbs = 0;
+	int nb_instrs = 0;
+
+	SCComponent scc = 
+	    scc_lbb_factory.computeSCCLBB(hm).getFirst();
+	
+	while(scc != null) {
+	    nb_sccs++;
+	    
+	    Object[] lbbs = scc.nodes();
+	    nb_lbbs += lbbs.length;
+	    for(int i = 0; i < lbbs.length; i++)
+		nb_instrs += ((LightBasicBlock) lbbs[i]).getElements().length;
+	    
+	    scc = scc.nextTopSort();
+	}
+
+	return
+	    nb_sccs + " SCCs; " + 
+	    nb_lbbs + " LBBs; " + 
+	    nb_instrs + " instrs";
+    }
+    
+
     // clean work data structs used by analyze_inter_proc_scc
-    private void analyze_inter_proc_scc_clean() {
+    private void analyze_inter_proc_scc_clean(SCComponent scc) {
 	// 1. get rid of the cache from the scc_lbb factory; anyway, it is
 	// unuseful, since the methods from scc are never reanalyzed. 
 	// 1b. the info attached to the LBBs will be collected by the GCC too
@@ -616,14 +751,44 @@ public class PointerAnalysis implements java.io.Serializable {
 	// usefull any more
 	if(CALL_CONTEXT_SENSITIVE)
 	    cs_specs.clear();
-	// 3. clear the array info
-	// cai.clear();
-	// 4. to save memory, the cache of "internal" graphs can be flushed
+	// 3. to save memory, the cache of "internal" graphs can be flushed
 	// If necessary, this graph can be reconstructed.
-	if(SAVE_MEMORY){
+	if(SAVE_MEMORY) {
 	    System.out.println("hash_proc_int cleared!");
 	    hash_proc_int.clear();
 	}
+	// 4. Clean the compression maps for the methods from the last
+	// analyzed SCC.
+	if(COMPRESS_LOST_NODES) {
+	    Object[] mms = scc.nodes();
+	    for(int i = 0; i < mms.length; i++) {
+		MetaMethod mm = (MetaMethod) mms[i];
+		Set lost = extract_lost_nodes((Relation) mm2cmu.get(mm));
+		mm2lost.put(mm, selectInsideNodes(lost));
+	    }
+	    mm2cmu.clear();
+	}
+    }
+
+
+    private Set/*<PANode>*/ extract_lost_nodes(Relation mu) {
+	Set lost = new HashSet();
+	for(Iterator it = mu.keys().iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(mu.getValues(node).contains(NodeRepository.LOST_SUMMARY))
+		lost.add(node);
+	}
+	return lost;
+    }
+
+    private Set/*<PANode>*/ selectInsideNodes(Set/*<PANode>*/ s) {
+	Set result = new HashSet();
+	for(Iterator it = s.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(node.type == PANode.INSIDE)
+		result.add(node);
+	}
+	return result;
     }
 
     private MetaMethod current_intra_mmethod = null;
@@ -637,10 +802,8 @@ public class PointerAnalysis implements java.io.Serializable {
     // If clear_cache is true, the basic block -> dataflow info maps
     // are erased at the end of the intra_proc_analysis.
     private void analyze_intra_proc(MetaMethod mm, boolean clear_cache) {
-	//if(DEBUG_INTRA)
-	    System.out.println("\nMETHOD: " + mm.getHMethod());
-
 	long b_time = System.currentTimeMillis();
+	if(FINE_TIMING) reset_fine_timing();
 
 	if(STATS) Stats.record_mmethod_pass(mm);
 
@@ -653,7 +816,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	SCComponent scc = 
 	    scc_lbb_factory.computeSCCLBB(mm.getHMethod()).getFirst();
 
-	if(DEBUG2){
+	if(DEBUG2 || MEGA_DEBUG) {
 	    System.out.println("THE CODE FOR :" + mm.getHMethod());
 	    Debug.show_lbb_scc(scc);
 	}
@@ -677,26 +840,67 @@ public class PointerAnalysis implements java.io.Serializable {
 	if(clear_cache)
 	    clear_lbb2pig(lbbf); // <- annotation style
 
-	/*
-	System.out.println("\nAnalysis time: " + 
-			   (System.currentTimeMillis() - b_time) + " ms\t" +
-			   mm.getHMethod());
-	*/
+	if(FINE_TIMING) {
+	    long delta = System.currentTimeMillis() - b_time;
+	    System.out.println
+		("Analysis time: " + delta + " ms\n" + 
+		 "(intra: " + (delta - InterProcPA.total_interproc_time) +
+		 " inter: " + InterProcPA.total_interproc_time + 
+		 " (map: "   + InterProcPA.total_mapping_time + 
+		 " mrg: "    + InterProcPA.total_merging_time + 
+		 " ppg: "    + InterProcPA.total_propagate_time + 
+		 " cln: "    + InterProcPA.total_cleaning_time + ")" +
+		 " clone: "  + ParIntGraph.total_cloning_time + 
+		 " equals: " + ParIntGraph.total_equals_time + 
+		 " join: "   + ParIntGraph.total_join_time + " / " + 
+		 intra_join + ")\n");
+	}
     }
+
+    
+    private static void reset_fine_timing() {
+	InterProcPA.total_interproc_time = 0;
+	InterProcPA.total_mapping_time   = 0;
+	InterProcPA.total_merging_time   = 0;
+	InterProcPA.total_propagate_time = 0;
+	InterProcPA.total_cleaning_time  = 0;
+	ParIntGraph.total_cloning_time   = 0;
+	ParIntGraph.total_equals_time    = 0;
+	ParIntGraph.total_join_time      = 0;
+	intra_join = 0;
+    }
+    private static long intra_join = 0;
+	
+
+    // DEBUG
+    private Map/*<LightBasicBlock,Integer>*/ lbb2passes = null;
 
     // Intra-procedural analysis of a strongly connected component of
     // basic blocks.
     private void analyze_intra_proc_scc(SCComponent scc){
-	if(DEBUG2)
+
+	if(MEGA_DEBUG) {
+	    lbb2passes = new HashMap();
+	    Object[] objs = scc.nodes();
+	    for(int i = 0; i < objs.length; i++)
+		lbb2passes.put(objs[i], new Integer(0));
+	}
+
+	if(DEBUG2 || MEGA_DEBUG)
 	    System.out.println("\nSCC" + scc.getId());
 
-	Object[] objs = scc.nodes();
+	// add only the entry nodes to the worklist; the other basic
+	// blocks will be eventually added too by the fixed point alg.
+	Object[] objs = scc.entries();
+	if(objs.length == 0) // first SCC does not have an entry
+	    objs = scc.nodes();
 	for(int i = 0; i < objs.length; i++)
-		W_intra_proc.add(objs[i]);
+	    W_intra_proc.add(objs[i]);
+
 
 	boolean must_check = scc.isLoop();
 
-	while(!W_intra_proc.isEmpty()){
+	while(!W_intra_proc.isEmpty()) {
 	    // grab a Basic Block from the worklist
 	    LightBasicBlock lbb_work = (LightBasicBlock) W_intra_proc.remove();
 
@@ -704,27 +908,39 @@ public class PointerAnalysis implements java.io.Serializable {
 	    analyze_basic_block(lbb_work); // ^ v  annotation style 
 	    ParIntGraphPair new_info = (ParIntGraphPair) lbb_work.user_info;
 
-	    // Normally this should be unnecessary - just a desperate debugging
-	    // TODO: debug the error and remove this
-	    // Make sure we maintain the monotonicity of the pa info.
-	    if(new_info != null)
-		new_info.join(old_info);
+	    // Some "optimizations" break the monotonicity of the
+	    // transfer functions.  Make a "join" to ensure the
+	    // monotonicity of the pa info.
+	    if(REUSE_LOAD_NODES || 
+	       (COMPRESS_LOST_NODES && AGGRESSIVE_COMPRESS_LOST_NODES)) {
+		long b_start = System.currentTimeMillis();
+		if(new_info != null)
+		    new_info.join(old_info);
+		intra_join += System.currentTimeMillis() - b_start;
+	    }
 
 	    if(must_check && !ParIntGraphPair.identical(old_info, new_info)) {
+
+		if(MEGA_DEBUG)
+		    System.out.println("bb info changed!");
+
 		// yes! The succesors of the analyzed basic block
 		// are potentially "interesting", so they should be added
 		// to the intra-procedural worklist
 
 		LightBasicBlock[] next_lbbs = lbb_work.getNextLBBs();
 		int len = next_lbbs.length;
-		for(int i = 0; i < len; i++){
+		for(int i = 0; i < len; i++) {
 		    LightBasicBlock lbb_next = next_lbbs[i];
 		    if(scc.contains(lbb_next))
 			W_intra_proc.add(lbb_next);
 		}
 	    }
+	    else if(must_check)
+		if(MEGA_DEBUG) System.out.println("bb info has not changed!");
 	}
 
+	lbb2passes = null;
     }
 
 
@@ -761,9 +977,6 @@ public class PointerAnalysis implements java.io.Serializable {
 	    // do nothing
 	}
 
-	public void visit(TYPECAST q){
-	    // do nothing
-	}
 
 	/** Copy statements **/
 	public void visit(MOVE q){
@@ -783,19 +996,38 @@ public class PointerAnalysis implements java.io.Serializable {
 	    if(hf.getType().isPrimitive()) return;
 
 	    if(l2 != null)
-		process_load(q,q.dst(),l2,hf.getName());
-	    else {
-		// special treatement of the static fields
-		l2 = ArtificialTempFactory.getTempFor(hf);
-		// this part should really be put in some preliminary step
-		PANode static_node =
-		    nodes.getStaticNode(hf.getDeclaringClass().getName());
-		lbbpig.G.I.addEdge(l2, static_node);
-		lbbpig.G.e.addNodeHole(static_node, static_node);
-		process_load(q, q.dst(), l2, hf.getName());
-		lbbpig.G.I.removeEdge(l2, static_node);
-	    }	    
+		process_load(q, q.dst(), l2, getFieldName(hf));
+	    else
+		process_static_load(q);
 	}
+	
+
+	private void process_static_load(GET q) {
+	    HField hf = q.field();
+	    String f = getFieldName(hf);
+	    Temp l = q.dst();
+
+	    PANode static_node =
+		nodes.getStaticNode(hf.getDeclaringClass().getName());
+
+	    PANode target = 
+		COMPRESS_LOST_NODES ? 
+		NodeRepository.LOST_SUMMARY :
+		nodes.getCodeNode(q, PANode.LOAD); 
+		
+	    // set local variable state
+	    lbbpig.G.I.removeEdges(l);
+	    lbbpig.G.I.addEdge(l, target);
+
+	    // add outside edge
+	    lbbpig.G.O.addEdge(static_node, f, target);
+	    record_load_edge(static_node, f, target);
+
+	    // update escape info: set and propagate
+	    lbbpig.G.e.addNodeHole(static_node, static_node);
+	    lbbpig.G.propagate(Collections.singleton(static_node));
+	}
+
 	
 	/** Load statement; special case - arrays. */
 	public void visit(AGET q) {
@@ -811,68 +1043,76 @@ public class PointerAnalysis implements java.io.Serializable {
 	    }
 
 	    // All the elements of an array are collapsed in a single
-	    // node, referenced through a conventional named field
+	    // node, referenced through a conventionally named field
 	    process_load(q, q.dst(), q.objectref(), ARRAY_CONTENT);
 	}
 
 	/** Does the real processing of a load statement. */
-	public void process_load(Quad q, Temp l1, Temp l2, String f){
+	public void process_load(Quad q, Temp l1, Temp l2, String f) {
 	    Set set_aux = lbbpig.G.I.pointedNodes(l2);
-	    // set_S will contain the nodes that l1 will point to after q
-	    Set set_S = lbbpig.G.I.pointedNodes(set_aux, f);
-	    // set_E will contain all the nodes that escape and don't already
-	    // a  load point on the f link; we need to create a new load node
-	    // if this set is non_empty
-	    Set set_E = new HashSet();
-	    
-	    for(Iterator it = set_aux.iterator(); it.hasNext(); ) {
-		PANode node = (PANode) it.next();
-		// hasEscaped instead of escaped (there is no problem
-		// with the nodes that *will* escape - the future cannot
-		// affect us).
-		if(lbbpig.G.e.hasEscaped(node)) {
-		    Set pointed = lbbpig.G.O.pointedNodes(node, f);
-		    if(pointed.isEmpty())
-			set_E.add(node);
-		    else {
-			PANode node2 = get_min_node(pointed);
-			set_S.add(node2);
-			if(RECORD_ACTIONS)
-			    lbbpig.ar.add_ld(node, f, node2,
-					     ActionRepository.THIS_THREAD,
-					     lbbpig.tau.activeThreadSet());
-			if(!IGNORE_EO)
-			    lbbpig.eo.add(Collections.singleton(node),
-					  f, node2, lbbpig.G.I);
-		    }
-		}
-	    }
-	    
+	    if(CONSIDER_TYPES)
+		set_aux = selectNodesWithField(set_aux, f);
+
 	    lbbpig.G.I.removeEdges(l1);
 	    
-	    if(set_E.isEmpty()){ // easy case; don't need to create a load node
-		lbbpig.G.I.addEdges(l1, set_S);
-		if(!IGNORE_EO)
-		    assert false : "Unimplemented yet!";
-		return;
-	    }
+	    // set_S will contain the nodes that l1 will point to after q
+	    Set set_S = new LinearSet(lbbpig.G.I.pointedNodes(set_aux, f));
+	    // set_E will contain all the nodes that escape and don't
+	    // already have a load point on the f link; we need to
+	    // create a new load node iff this set is non-empty
+	    Set set_E = new LinearSet();
 
-	    PANode load_node = nodes.getCodeNode(q, PANode.LOAD); 
-	    set_S.add(load_node);
-	    lbbpig.G.O.addEdges(set_E, f, load_node);
-	    lbbpig.G.I.addEdges(l1, set_S);
-	    lbbpig.G.propagate(set_E);
-	    
-	    if(RECORD_ACTIONS) {
-		// update the action repository
-		Set active_threads = lbbpig.tau.activeThreadSet();
-		for(Iterator ite = set_E.iterator(); ite.hasNext(); ) {
-		    PANode ne = (PANode) ite.next();
-		    lbbpig.ar.add_ld(ne, f, load_node,
-				     ActionRepository.THIS_THREAD,
-				     active_threads);
+	    for(Iterator it = set_aux.iterator(); it.hasNext(); ) {
+		PANode node = (PANode) it.next();
+
+		if((IGNORE_LOADS_FROM_NATIVES &&
+		    ((node.type == PANode.EXCEPT) ||
+		     (node.type == PANode.RETURN))) ||
+		   // nodes loaded from lost nodes are lost too
+		   (COMPRESS_LOST_NODES && 
+		    (node == NodeRepository.LOST_SUMMARY))) {
+		    lbbpig.G.O.addEdge(node, f, NodeRepository.LOST_SUMMARY);
+		    set_S.add(NodeRepository.LOST_SUMMARY);
+		    continue;
+		}
+
+		if(lbbpig.G.e.hasEscaped(node)) {
+		    if(REUSE_LOAD_NODES) {
+			Set pointed = lbbpig.G.O.pointedNodes(node, f);
+			if(pointed.isEmpty())
+			    set_E.add(node);
+			else {
+			    PANode node2 = get_min_node(pointed);
+			    set_S.add(node2);
+			    record_load_edge(node, f, node2);
+			}
+		    }
+		    else // always use the load node for this load instruction
+			set_E.add(node);
 		}
 	    }
+
+	    if(!set_E.isEmpty()) {
+		PANode load_node = nodes.getCodeNode(q, PANode.LOAD);
+		set_S.add(load_node);
+		lbbpig.G.O.addEdges(set_E, f, load_node);
+	    }
+
+	    lbbpig.G.I.addEdges(l1, set_S);
+	    
+	    if(!set_E.isEmpty())
+		lbbpig.G.propagate(set_E);
+	}
+
+	// records the load action and its ordering (if necessary)
+	private void record_load_edge(PANode node, String f, PANode node2) {
+	    if(RECORD_ACTIONS)
+		lbbpig.ar.add_ld(node, f, node2,
+				 ActionRepository.THIS_THREAD,
+				 lbbpig.tau.activeThreadSet());
+	    if(!IGNORE_EO)
+		lbbpig.eo.add(Collections.singleton(node),
+			      f, node2, lbbpig.G.I);   
 	}
 
 	// Given a set of PANodes, returns the node having the minimal
@@ -896,17 +1136,21 @@ public class PointerAnalysis implements java.io.Serializable {
 	/** Object creation sites; normal case */
 	public void visit(NEW q) {
 	    PANode node = process_new(q, q.dst());
-	    HField[] fields = q.hclass().getFields();
-	    for(int i = 0; i < fields.length; i++)
-		if(!fields[i].isStatic())
-		    lbbpig.G.I.addEdge(node, fields[i].getName(),
-				       NodeRepository.NULL_NODE);
+	    if(TREAT_NULL) {
+		HField[] fields = q.hclass().getFields();
+		for(int i = 0; i < fields.length; i++)
+		    if(!fields[i].isStatic())
+			lbbpig.G.I.addEdge(node, getFieldName(fields[i]),
+					   NodeRepository.NULL_NODE);
+	    }
 	}
 	
 	/** Object creation sites; special case - arrays */
 	public void visit(ANEW q) {
 	    PANode node = process_new(q, q.dst());
-	    lbbpig.G.I.addEdge(node, ARRAY_CONTENT, NodeRepository.NULL_NODE);
+	    if(TREAT_NULL)
+		lbbpig.G.I.addEdge(node, ARRAY_CONTENT,
+				   NodeRepository.NULL_NODE);
 	}
 	
 	private PANode process_new(Quad q, Temp tmp) {
@@ -921,11 +1165,21 @@ public class PointerAnalysis implements java.io.Serializable {
 	public void visit(CONST q) {
 	    // remove previous edges from q.dst()
 	    lbbpig.G.I.removeEdges(q.dst());
-	    // if we load a reference to a constant object, make
-	    // q.dst() to point to the corresponding node
-	    if(!q.type().isPrimitive())
-		lbbpig.G.I.addEdge(q.dst(), nodes.getConstNode(q.value()));
+	    if(TREAT_CONST) {
+		// if we load a reference to a constant object, make
+		// q.dst() to point to the corresponding node
+		if(!q.type().isPrimitive())
+		    lbbpig.G.I.addEdge(q.dst(), nodes.getConstNode(q.value()));
+	    }
 	}
+
+	public void visit(TYPECAST q) {
+	    Temp l = q.objectref();
+	    Set set = lbbpig.G.I.pointedNodes(l);
+	    lbbpig.G.I.removeEdges(l);
+	    lbbpig.G.I.addEdges(l, typeFilter(set, q.hclass()));
+	}
+
 
 	/** Return statement: r' = I(l) */
 	public void visit(RETURN q){
@@ -949,21 +1203,28 @@ public class PointerAnalysis implements java.io.Serializable {
 	// STORE STATEMENTS
 	/** Store statements; normal case */
 	public void visit(SET q){
-	    Temp   l1 = q.objectref();
+	    Temp l1 = q.objectref();
+	    Temp l2 = q.src();  
 	    HField hf = q.field();
+
+	    String f = getFieldName(hf);
+
 	    // do not analyze stores into non-pointer fields
 	    if(hf.getType().isPrimitive()) return;
+
 	    // static field -> get the corresponding artificial node
-	    if(l1 == null){
+	    if(l1 == null) {
 		// special treatement of the static fields
-		l1 = ArtificialTempFactory.getTempFor(hf);
-		// this part should really be put in some preliminary step
 		PANode static_node =
 		    nodes.getStaticNode(hf.getDeclaringClass().getName());
-		lbbpig.G.I.addEdge(l1,static_node);
-		lbbpig.G.e.addNodeHole(static_node,static_node);
+		lbbpig.G.I.addEdges(static_node, f,
+				    lbbpig.G.I.pointedNodes(l2));
+		lbbpig.G.e.addNodeHole(static_node, static_node);
+		lbbpig.G.propagate(Collections.singleton(static_node));
+		return;
 	    }
-	    process_store(l1,hf.getName(),q.src());
+	    
+	    process_store(l1, f, q.src());
 	}
 	
 	/** Store statement; special case - array */
@@ -977,6 +1238,8 @@ public class PointerAnalysis implements java.io.Serializable {
 	/** Does the real processing of a store statement */
 	public void process_store(Temp l1, String f, Temp l2){
 	    Set set1 = lbbpig.G.I.pointedNodes(l1);
+	    if(CONSIDER_TYPES)
+		set1 = selectNodesWithField(set1, f);
 	    Set set2 = lbbpig.G.I.pointedNodes(l2);
 		
 	    lbbpig.G.I.addEdges(set1, f, set2);
@@ -1066,7 +1329,7 @@ public class PointerAnalysis implements java.io.Serializable {
 
 	/** End of the currently analyzed method; store the graph
 	    in the hash table. */
-	public void visit(FOOTER q){
+	public void visit(FOOTER q) {
 	    // The full graph is stored in the hash_proc_int hashtable;
 	    hash_proc_int.put(current_intra_mmethod,lbbpig);
 	    // To obtain the external view of the method, the graph must be
@@ -1080,13 +1343,25 @@ public class PointerAnalysis implements java.io.Serializable {
 	    PANode[] nodes = getParamNodes(current_intra_mmethod);
 	    boolean is_main = 
 		current_intra_mmethod.getHMethod().getName().equals("main");
-	    ParIntGraph shrinked_graph =lbbpig.keepTheEssential(nodes,is_main);
+
+	    if(MEGA_DEBUG)
+		System.out.println("Unshrinked graph: " + lbbpig);
+
+	    Relation compression_map = 
+		(COMPRESS_LOST_NODES && AGGRESSIVE_COMPRESS_LOST_NODES) ?
+		get_compression_map(current_intra_mmethod) : null;
+		
+	    ParIntGraph shrinked_graph =
+		lbbpig.keepTheEssential(nodes, is_main, compression_map);
+
+	    if(MEGA_DEBUG)
+		System.out.println("Unshrinked graph: " + shrinked_graph);
 
 	    // The external view of the graph is stored in the
 	    // hash_proc_ext hashtable;
-	    hash_proc_ext.put(current_intra_mmethod,shrinked_graph);
+	    hash_proc_ext.put(current_intra_mmethod, shrinked_graph);
 	}
-	
+
     }
     
 
@@ -1098,8 +1373,22 @@ public class PointerAnalysis implements java.io.Serializable {
 	instructions appearing in the basic block (in the order they appear
 	in the original program). */
     private void analyze_basic_block(LightBasicBlock lbb){
-	if(DEBUG2 || MEGA_DEBUG){
-	    System.out.println("BEGIN: Analyze_basic_block " + lbb);
+
+	/*
+	MEGA_DEBUG =
+	    current_intra_mmethod.getHMethod().getDeclaringClass().getName()
+	    .equals("JLex.CNfa2Dfa")
+	    &&
+	    current_intra_mmethod.getHMethod().getName().equals("make_dtrans")
+	    && (lbb.getElements()[0].getLineNumber() == 300);
+	*/
+
+	if(DEBUG2 || MEGA_DEBUG) {
+	    int pass = ((Integer) lbb2passes.get(lbb)).intValue() + 1;
+	    System.out.println
+		("\nBEGIN: Analyze_basic_block " + lbb +
+		 " pass: " + (((Integer) lbb2passes.get(lbb)).intValue() + 1));
+	    lbb2passes.put(lbb, new Integer(pass));
 	    System.out.print("Prev BBs: ");
 	    Object[] prev_lbbs = lbb.getPrevLBBs();
 	    Arrays.sort(prev_lbbs, UComp.uc);
@@ -1108,22 +1397,24 @@ public class PointerAnalysis implements java.io.Serializable {
 	    System.out.println();
 	}
 
+	if(MEGA_DEBUG) System.out.println();
+
 	// lbbpig is the graph at the *bb point; it will be 
 	// updated till it becomes the graph at the bb* point
 	lbbpig = get_initial_bb_pig(lbb);
 
-	if(DEBUG2 || MEGA_DEBUG){
-	    System.out.println("Before:");
-	    System.out.println(lbbpig);
-	}
+	/*
+	if(DEBUG2 || MEGA_DEBUG)
+	    System.out.println("Before1: " + lbbpig);
+	*/
 
 	// go through all the instructions of this basic block
 	HCodeElement[] instrs = lbb.getElements();
 
-	for(int i = 0; i < instrs.length; i++){
+	for(int i = 0; i < instrs.length; i++) {
 	    Quad q = (Quad) instrs[i];
 
-	    if(DEBUG2 || MEGA_DEBUG)
+	    if(DEBUG2 || MEGA_DEBUG || SHOW_INSTR)
 		System.out.println("INSTR: " + Util.code2str(q));
 	    
 	    // update the Parallel Interaction Graph according
@@ -1131,10 +1422,16 @@ public class PointerAnalysis implements java.io.Serializable {
 	    q.accept(pa_visitor);
 	}
 
-	if(DEBUG2 || MEGA_DEBUG){
-	    System.out.println("After:");
-	    System.out.println(lbbpig);
-	}
+	/*
+	if(DEBUG2 || MEGA_DEBUG)
+	    System.out.println("After1:  " + lbbpig);
+	*/
+
+	// CRAZY DEBUG; REMOVE
+	/*
+	if(MEGA_DEBUG)
+	    find_trace(lbbpig);
+	*/
 
 	// if there was a pair, store the pair computed by the inter proc
 	// module, otherwise, only the first element of the pair is essential.
@@ -1156,7 +1453,8 @@ public class PointerAnalysis implements java.io.Serializable {
 	    }
 	}
 
-	if(DEBUG2 || MEGA_DEBUG){
+	/*
+	if(DEBUG2 || MEGA_DEBUG) {
 	    System.out.print("Next BBs: ");
 	    Object[] next_lbbs = lbb.getNextLBBs();
 	    Arrays.sort(next_lbbs, UComp.uc);
@@ -1164,8 +1462,43 @@ public class PointerAnalysis implements java.io.Serializable {
 		System.out.print((LightBasicBlock) next_lbbs[i] + " ");
 	    System.out.println("\n");
 	}
+	*/
     }
     
+
+    // get the compression map for mm
+    private Relation get_compression_map(MetaMethod mm) {
+	Relation mu = (Relation) mm2cmu.get(mm);
+	if(mu == null)
+	    mm2cmu.put(mm, mu = new LightRelation());
+	return mu;
+    }
+    // Maintains the compression maps for all the analyzed methods:
+    // The compression maps are always maintained by growing them: the
+    // new map is the old one + some new stuff.  Constructing a new
+    // compression map from scratch is NOT monotonic.
+    private Map/*<MetaMethod,Relation>*/ mm2cmu = 
+	COMPRESS_LOST_NODES ? new HashMap() : null;
+
+    // For each method, maintains the set of inside nodes that are
+    // merged into LOST during the analysis of that method.  These
+    // nodes do not appear in the pig for the method, but they are
+    // definitely not captured ....
+    private Map/*<MetaMethod,Set<PANode>*/ mm2lost = 
+	COMPRESS_LOST_NODES ? new HashMap() : null;
+
+    /** @return set of inside nodes that are merged into LOST during
+        the analysis of <code>mm</code>.  These are nodes that do not
+        appear in the pig for the method, but clearly escape. */
+    public Set/*<PANode>*/ getLostNodes(MetaMethod mm) {
+	if(!COMPRESS_LOST_NODES)
+	    return Collections.EMPTY_SET;
+	Set lost = (Set) mm2lost.get(mm);
+	if(lost == null)
+	    lost = Collections.EMPTY_SET;
+	return lost;
+    }
+
     /** Returns the Parallel Interaction Graph at the point bb*
      *  The returned <code>ParIntGraph</code> must not be modified 
      *  by the caller. This function is used by 
@@ -1421,4 +1754,308 @@ public class PointerAnalysis implements java.io.Serializable {
     public final Set pointedNodes(Quad q, Temp l) {
 	return pointedNodes(new MetaMethod(quad2method(q), true), q, l);
     }
+
+
+    private Collection typeFilter(Set nodes, HClass hclass) {
+	List result = new LinkedList();
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(node.type != PANode.INSIDE) {
+		result.add(node);
+		continue;
+	    }
+	    HClass type = getType(node);
+	    if((type == null) || type.isInstanceOf(hclass))
+		result.add(node);
+	}
+	return result;
+    }
+
+    static HClass getType(PANode node) {
+	assert node.type == PANode.INSIDE;
+	HCodeElement q = nodes.node2Code(node);
+	if(q == null) return null;
+	if(q instanceof NEW)
+	    return ((NEW) q).hclass();
+	else
+	    return ((ANEW) q).hclass();
+    }
+
+
+    private static class PathEdge {
+	PathEdge(PathEdge pred, PANode start, String f, PANode end, 
+		 boolean inside) {
+	    this.pred = pred;
+	    this.start = start;
+	    this.end = end;
+	    this.f = f;
+	    this.inside = inside;
+	}
+	
+	final PathEdge pred;
+	final PANode start, end;
+	final String f;
+	final boolean inside;
+    }
+
+    private void find_trace(ParIntGraph pig) {
+	final LinkedList W = new LinkedList();
+	final Set reachable = new HashSet();
+
+	W.addLast(new PathEdge(null, null, null, NodeRepository.LOST_SUMMARY,
+			   false));
+	reachable.add(NodeRepository.LOST_SUMMARY);
+	while(!W.isEmpty()) {
+	    final PathEdge edge = (PathEdge) W.removeFirst();
+	    final PANode node = edge.end;
+
+	    if(node.number == 1533) {
+		print_path(edge);
+		System.exit(1);
+	    }
+
+	    pig.G.I.forAllEdges
+		(node,
+		 new PAEdgeVisitor() {
+		    public void visit(Temp v, PANode node) {}
+		    public void visit(PANode node, String f, PANode node2) {
+			if(reachable.contains(node2)) return;
+			W.addLast(new PathEdge(edge, node, f, node2, true));
+			reachable.add(node2);
+		    }
+		});
+
+	    pig.G.O.forAllEdges
+		(node,
+		 new PAEdgeVisitor() {
+		    public void visit(Temp v, PANode node) {}
+		    public void visit(PANode node, String f, PANode node2) {
+			if(reachable.contains(node2)) return;
+			W.addLast(new PathEdge(edge, node, f, node2, false));
+			reachable.add(node2);
+		    }
+		});
+	}
+    }
+
+    private void print_path(PathEdge edge) {
+	System.out.println("\n\nEscapability path for " + edge.end);
+	print_path2(edge);
+	System.out.println();
+    }
+
+    private void print_path2(PathEdge edge) {
+	if(edge.pred != null) {
+	    print_path2(edge.pred);
+	    System.out.println
+		((edge.inside ? "I" : "O") + 
+		 ": <" + edge.start + "," + edge.f + "," + edge.end + ">");
+	}
+	else 
+	    System.out.println("START: " + edge.end);
+    }
+
+    static Set/*<PANode>*/ selectNodesWithField(Set nodes, String f) {
+	Set result = new LinearSet();
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(hasField(node, f))
+		result.add(node);
+	}
+	return result;
+    }
+
+
+    static boolean hasField(PANode node, String f) {
+	// now with caching!
+	hasFieldQuery.init(node, f);
+	Boolean answer = (Boolean) hasFieldCache.get(hasFieldQuery);
+	if(answer == null) {
+	    answer = new Boolean(_hasField(node, f));
+	    hasFieldCache.put(new HasFieldQuery(node, f), answer);
+	}
+	return answer.booleanValue();
+    }
+    private static class HasFieldQuery {
+	HasFieldQuery() { }
+	HasFieldQuery(PANode node, String f) { init(node, f); }
+	void init(PANode node, String f) {
+	    this.node = node;
+	    this.f = f;
+	    this.hash = node.hashCode() ^ f.hashCode();
+	}
+	PANode node;
+	String f;
+	int hash;
+	
+	public int hashCode() { return hash; }
+	public boolean equals(Object o) {
+	    if(this.hashCode() != o.hashCode())
+		return false;
+	    HasFieldQuery q = (HasFieldQuery) o;
+	    return
+		(this.node == q.node) && 
+		(this.f.equals(q.f));	    
+	}
+    }
+    private static HasFieldQuery hasFieldQuery = new HasFieldQuery();
+    private static Map/*<HasFieldQuery,Boolean>*/ hasFieldCache = 
+	new HashMap();
+
+    private static boolean _hasField(PANode node, String f) {
+	if(f.equals(PointerAnalysis.ARRAY_CONTENT))
+	    return isArrayOfObjs(node);
+	
+	GenType gts[] = node.getPossibleClasses();
+	if(gts == null)
+	    return true;
+
+	for(int i = 0; i < gts.length; i++) {
+	    GenType gt = gts[i];
+
+	    if(gt.isPOLY()) {
+		if(gt.getHClass().getName().equals("java.lang.Object"))
+		    return true;
+		Set/*<HClass>*/ allClasses = 
+		    DiGraph.reachableVertices
+		    (Collections.singleton(gt.getHClass()),
+		     new ForwardNavigator() {
+			 public Object[] next(Object node) {
+			     Set sons = ch.children((HClass) node);
+			     return sons.toArray(new HClass[sons.size()]);
+			 }
+		     });
+		for(Iterator it = allClasses.iterator(); it.hasNext(); ) {
+		    HClass hclass = (HClass) it.next();
+		    if(classHasField(hclass, f))
+			return true;
+		}
+	    }
+	    else { // monomorphic type
+		if(classHasField(gt.getHClass(), f))
+		    return true;
+	    }
+	}
+
+	System.out.println
+	    ("YYY: no " + f + " in " + node + " type: " + pp_types(gts));
+	
+	return false;
+    }
+
+
+    private static boolean classHasField(HClass hclass, String f) {
+	if(hclass == null) return false;
+
+	HField fields[] = hclass.getDeclaredFields();
+	for(int i = 0; i < fields.length; i++) {
+	    if(getFieldName(fields[i]).equals(f))
+		return true;
+	}
+
+	return classHasField(hclass.getSuperclass(), f);
+    }
+
+
+    static boolean isArrayOfObjs(PANode node) {
+	// now with caching!
+	Boolean answer = (Boolean) isArrayOfObjsCache.get(node);
+	if(answer == null) {
+	    answer = new Boolean(_isArrayOfObjs(node));
+	    isArrayOfObjsCache.put(node, answer);
+	}
+	return answer.booleanValue();
+    }
+    private static Map/*<PANode,Boolean>*/ isArrayOfObjsCache = new HashMap();
+    
+    // does the real job
+    private static boolean _isArrayOfObjs(PANode node) {
+	GenType gts[] = node.getPossibleClasses();
+	if(gts == null) // conservative answer about unknown types
+	    return true;
+	
+	for(int i = 0; i < gts.length; i++) {
+	    GenType gt = gts[i];
+	    HClass hclass = gt.getHClass();
+	    // an array is a special case of java.lang.Object
+	    if(gt.isPOLY() && hclass.equals(java_lang_Object))
+		return true;
+	    
+	    if(hclass.isArray() && 
+	       !hclass.getComponentType().isPrimitive())
+		return true;
+	}
+	
+	System.out.println
+	    ("YYY: not an array of objs: " + node + " type: " + pp_types(gts));
+	
+	return false;
+    }
+
+
+    private static String pp_types(GenType[] gts) {
+	StringBuffer buff = new StringBuffer();
+	for(int i = 0; i < gts.length; i++) {
+	    if(i != 0) buff.append(", ");
+	    buff.append(gts[i]);
+	}
+	return buff.toString();
+    }
+
+    // If node may be an array of objects, than return a set of
+    // conservative estimates for the component types of the array
+    // Otherwise, return null.
+    static Set/*<HClass>*/ getObjArrayComp(PANode node) {
+
+	GenType gts[] = node.getPossibleClasses();
+	if(gts == null) // conservative answer about unknown types
+	    return Collections.singleton(java_lang_Object);
+
+	Set compTypes = new LinearSet();
+
+	for(int i = 0; i < gts.length; i++) {
+	    GenType gt = gts[i];
+	    HClass hclass = gt.getHClass();
+	    // an array is a special case of java.lang.Object
+	    if(gt.isPOLY() && hclass.equals(java_lang_Object))
+		return Collections.singleton(java_lang_Object);
+	    
+	    if(hclass.isArray() && !hclass.getComponentType().isPrimitive())
+		compTypes.add(hclass.getComponentType());
+	}
+
+	if(compTypes.size() == 0)
+	    compTypes = null;
+
+	return compTypes;
+    }
+
+
+    // TODO: look at the type of the node directly
+    // select only the nodes that may represent arrays of objects
+    static Set/*<PANode>*/ selectArraysOfObjs(Set/*<PANode>*/ nodes) {
+	Set result = new HashSet();
+
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(isArrayOfObjs(node))
+		result.add(node);
+	}
+
+	return result;
+    }
+
+    // TODO: use HFields, instead of Strings, as edge labels
+    // It's much healthier!
+    // returns the string name for a field
+    static String getFieldName(HField hf) {
+	String name = (String) getFieldNameCache.get(hf);
+	if(name == null) {
+	    // it used to be only hf.getName();
+	    name = hf.getDeclaringClass().getName() + "." + hf.getName();
+	    getFieldNameCache.put(hf, name);
+	}
+	return name;
+    }
+    private static Map/*<HField,String>*/ getFieldNameCache = new HashMap();
 }

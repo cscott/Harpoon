@@ -31,11 +31,15 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.7 2003-05-06 15:33:55 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.8 2003-06-04 18:44:32 salcianu Exp $
  */
 public class NodeRepository implements java.io.Serializable {
 
-    public final static PANode NULL_NODE  = new PANode(PANode.NULL);
+    public final static PANode NULL_NODE    = getNewNode(PANode.NULL);
+
+    // this node acts as a summary for all load nodes that escape into
+    // an unanalyzed method or into a static node.
+    public final static PANode LOST_SUMMARY = getNewNode(PANode.LOST);
     
     private Hashtable/*<String,PANode>*/    static_nodes;
     private Hashtable/*<HMethod,PANode[]>*/ param_nodes;
@@ -52,26 +56,34 @@ public class NodeRepository implements java.io.Serializable {
 	cf_nodes     = new Hashtable();
 	except_nodes = new Hashtable();
 	node2code    = new Hashtable();
-	java_lang_Throwable = linker.forName("java.lang.Throwable");
+	jl_Throwable = linker.forName("java.lang.Throwable");
+	jl_Object    = linker.forName("java.lang.Object");
     }
 
     // debug flag: if it's set on, it shows how each node is created
-    private final static boolean SHOW_NODE_CREATION = false;
+    private final static boolean SHOW_NODE_CREATION = true;
 
 
     /** Returns the node that models the constant object
         <code>value</code>.  Currently, all constant objects are
         modelled by a single node. */
     public final PANode getConstNode(Object value) {
+	if(value == null)
+	    return NULL_NODE;
 	return CONST_NODE;
     }
-    private static final PANode CONST_NODE = new PANode(PANode.CONST);
+    // should be private
+    static final PANode CONST_NODE = getNewNode(PANode.CONST);
 
     /** Returns the static node associated with the class
      * <code>class_name</code>. The node is automatically created if it
      * doesn't exist yet. <code>class_name</code> MUST be the full
      * (and hence unique) name of the class */
-    public final PANode getStaticNode(String class_name){
+    public final PANode getStaticNode(String class_name) {
+
+	if(PointerAnalysis.COMPRESS_LOST_NODES)
+	    return LOST_SUMMARY;
+
 	PANode node = (PANode) static_nodes.get(class_name);
 	if(node == null) {
 	    node = getNewNode(PANode.STATIC, null); // TODO
@@ -87,7 +99,7 @@ public class NodeRepository implements java.io.Serializable {
     /** Creates all the parameter nodes associated with <code>mmethod</code>.
      *  <code>param_number</code> must contain the number of formal
      *  parameters of the meta-method. */
-    public final void addParamNodes(MetaMethod mmethod, int param_number){
+    public final void addParamNodes(MetaMethod mmethod, int param_number) {
 	// do not create the parameter nodes twice for the same procedure
 	if(param_nodes.containsKey(mmethod)) return;
 	// grab the types for the method's object parameters
@@ -169,7 +181,8 @@ public class NodeRepository implements java.io.Serializable {
     private PANode coalesced_native_ret  = null;
     private final boolean COALESCE_RESULTS_FROM_NATIVES = true;
     private PANode coalesced_excp = null;
-    private final HClass java_lang_Throwable;
+    private final HClass jl_Throwable;
+    private final HClass jl_Object;
     private final boolean COALESCE_EXCEPTIONS = true;
 
     // Auxiliary class: the key type for the "cf_nodes" hashtable.
@@ -213,6 +226,14 @@ public class NodeRepository implements java.io.Serializable {
     }
 
 
+    public final PANode getCodeNode(HCodeElement hce, int type) {
+	return getCodeNode(hce, type, null, true);
+    }
+
+    public final PANode getCodeNode(HCodeElement hce, int type, boolean make) {
+	return getCodeNode(hce, type, null, make);
+    }
+
     /** Returns a <i>code</i> node: a node associated with the
      * instruction <code>hce</code>: a load node 
      * (associated with a <code>GET</code> quad), a return node (associated
@@ -220,14 +241,20 @@ public class NodeRepository implements java.io.Serializable {
      * with a <code>NEW</code>). The node is automatically created if it
      * doesn't exist yet. The type of the node should be passed in the
      * <code>type</code> argument. */
-    public final PANode getCodeNode(HCodeElement hce, int type) {
-	return getCodeNode(hce, type, true);
+    public final PANode getCodeNode(HCodeElement hce, int type, GenType[] gts){
+	return getCodeNode(hce, type, gts, true);
     }
 
     /** Returns a <i>code</i> node: a node associated with an instruction.
 	The boolean parameter <code>make</code> controls the generation of
 	such a node in case it doesn't exist yet. */
-    public final PANode getCodeNode(HCodeElement hce, int type, boolean make) {
+    public final PANode getCodeNode(HCodeElement hce, int type, GenType[] gts,
+				    boolean make) {
+
+	if((type == PANode.RETURN || (type == PANode.EXCEPT)) &&
+	   PointerAnalysis.COMPRESS_LOST_NODES)
+	    return LOST_SUMMARY;
+
 	// we can have a RETURN node and an EXCEPT node associated to the
 	// same code instruction. This is the only case where we have
 	// two nodes associated with an instruction. We fix this by handling
@@ -236,24 +263,29 @@ public class NodeRepository implements java.io.Serializable {
 
 	if(type == PANode.RETURN && COALESCE_RESULTS_FROM_NATIVES) {
 	    if(coalesced_native_ret == null)
-		coalesced_native_ret = getNewNode(PANode.RETURN);
+		coalesced_native_ret = 
+		    getNewNode
+		    (PANode.RETURN,
+		     new GenType[] { new GenType(jl_Object, GenType.POLY) });
 	    return coalesced_native_ret;
 	}
 
 	if((type == PANode.INSIDE) && COALESCE_EXCEPTIONS &&
-	   getAllocatedType(hce).isInstanceOf(java_lang_Throwable)) {
+	   ((hce instanceof NEW) || (hce instanceof ANEW)) &&
+	   getAllocatedType(hce).isInstanceOf(jl_Throwable)) {
 	    if(coalesced_excp == null)
 		coalesced_excp = 
-		    getNewNode(PANode.INSIDE, 
-			       new GenType[] { 
-				   new GenType
-				   (java_lang_Throwable, GenType.POLY)});
+		    getNewNode
+		    (PANode.INSIDE, 
+		     new GenType[] { new GenType(jl_Throwable, GenType.POLY)});
 	    return coalesced_excp;
 	}
 
 	PANode node = (PANode) code_nodes.get(hce);
 	if((node == null) && make) {
-	    node = getNewNode(type, new GenType[]{get_code_node_type(hce)});
+	    if(gts == null)
+		gts = new GenType[] { get_code_node_type(hce) };
+	    node = getNewNode(type, gts);
 	    code_nodes.put(hce, node);
 	    node2code.put(node, hce);
 

@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Collections;
 
 import harpoon.ClassFile.HMethod;
 
@@ -23,7 +24,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEscapeFunc.java,v 1.3 2002-03-10 02:32:55 cananian Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.4 2003-06-04 18:44:32 salcianu Exp $
  */
 public class PAEscapeFunc implements java.io.Serializable {
 
@@ -51,13 +52,15 @@ public class PAEscapeFunc implements java.io.Serializable {
 	the node <code>n_hole</code>. Returns <code>true</code>
 	if new information has been gained */
     public final boolean addNodeHole(PANode node, PANode n_hole){
+	if(node.type == PANode.NULL) return false;
 	return rel_n.add(node, n_hole);
     }
 
     /** Records the fact that <code>node</code> can escape through
 	the node <code>n_holes</code>. Returns <code>true</code>
 	if new information has been gained */
-    public final boolean addNodeHoles(PANode node, Set n_holes){
+    public final boolean addNodeHoles(PANode node, Set n_holes) {
+	if(node.type == PANode.NULL) return false;
 	return rel_n.addAll(node, n_holes);
     }
 
@@ -89,8 +92,14 @@ public class PAEscapeFunc implements java.io.Serializable {
 
     /** Records the fact that <code>node</code> escaped into a method hole.
 	Returns <code>true</code> if this was a new information. */
-    public boolean addMethodHole(PANode node, HMethod hm){
-	// System.out.println("addMethodHole " + node);
+    public boolean addMethodHole(PANode node, HMethod hm) {
+	if(node.type == PANode.NULL) return false;
+
+	if(PointerAnalysis.CONDENSED_ESCAPE_INFO) {
+	    if(!rel_m.getValues(node).isEmpty())
+		return false;
+	}
+
 	////// return escaped_into_mh.add(node);
 	return rel_m.add(node, hm);
     }
@@ -120,7 +129,12 @@ public class PAEscapeFunc implements java.io.Serializable {
 	can be erased from the set of method holes into which a specific node
 	escapes. */
     public void removeMethodHoles(final Set good_holes) {
-	rel_m.removeValues(new PredicateWrapper(){
+
+	// for condensed escape info, we cannot remove method holes
+	if(PointerAnalysis.CONDENSED_ESCAPE_INFO)
+	    return;
+
+	rel_m.removeValues(new PredicateWrapper() {
 		public boolean check(Object obj) {
 		    return good_holes.contains(obj);
 		}
@@ -178,31 +192,67 @@ public class PAEscapeFunc implements java.io.Serializable {
 	}
     }
 
+    public void union(PAEscapeFunc e2) {
+	union(e2, null);
+    }
+
     /** Computes the union of <code>this</code> <code>PAEscapeFunc</code>
 	with <code>e2</code>. This function is called in the control flow
 	<i>join</i> points. */
-    public void union(PAEscapeFunc e2){
-	rel_n.union(e2.rel_n);
-	//////// escaped_into_mh.addAll(e2.escaped_into_mh);
-	rel_m.union(e2.rel_m);
+    public void union(PAEscapeFunc e2, Set/*<PANode>*/ ppgRoots) {
+	// rel_n.union(e2.rel_n) + collect in ppgRoots nodes whose
+	// escape info has changed
+	for(Iterator it = e2.rel_n.keys().iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    Set holes = e2.rel_n.getValues(node);
+	    if(rel_n.addAll(node, holes) && (ppgRoots != null))
+		ppgRoots.add(node);
+	}
+
+	if(PointerAnalysis.CONDENSED_ESCAPE_INFO) {
+	    //////// escaped_into_mh.addAll(e2.escaped_into_mh);
+	    // avoid adding multiple method holes for the same node
+	    for(Iterator/*<PANode>*/ it = e2.getEscapedIntoMH().iterator();
+		it.hasNext(); ) {
+		PANode node = (PANode) it.next();
+		Set/*<HMethod>*/ newMHs = e2.methodHolesSet(node);
+		if(!newMHs.isEmpty() && methodHolesSet(node).isEmpty()) {
+		    addMethodHole(node, (HMethod) newMHs.iterator().next());
+		    if(ppgRoots != null)
+			ppgRoots.add(node);
+		}
+	    }
+	}
+	else { /* !PointerAnalysis.CONDENSED_ESCAPE_INFO) */
+	    assert ppgRoots == null : 
+		"ppgRoots implemented only for CONDENSED_ESCAPE_INFO";
+	    rel_m.union(e2.rel_m);
+	}
     }
+
 
     /** Inserts the image of <code>e2</code> through the <code>mu</code>
 	mapping into <code>this</code> <code>PAEscapeFunc</code>. */
-    public void insert(PAEscapeFunc e2, final Relation mu, final Set noholes) {
+    public void insert(PAEscapeFunc e2, final Relation mu, final Set noholes,
+		       final Set/*<PANode>*/ ppgRoots) {
 	// insert the node holes
 	RelationEntryVisitor nvisitor =
-	    new RelationEntryVisitor(){
-		    public void visit(Object key, Object value){
-			if(noholes.contains(value)) return;
-			Iterator it_key_image = mu.getValues(key).iterator();
-			while(it_key_image.hasNext()){
-			    PANode node = (PANode) it_key_image.next();
-			    PAEscapeFunc.this.addNodeHoles(
-				     node, mu.getValues(value)); 
-			}
+	    new RelationEntryVisitor() {
+		public void visit(Object key, Object value) {
+		    if(noholes.contains(value)) return;
+		    PANode origHole = (PANode) value;
+		    Set holes =
+		        (origHole.type == PANode.LOST) ?
+		        Collections.singleton(origHole) :
+		        mu.getValues(origHole);
+		    Set nodes = mu.getValues(key);
+		    for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+			PANode node = (PANode) it.next();
+			if(addNodeHoles(node, holes) && (ppgRoots != null))
+			   ppgRoots.add(node);
 		    }
-		};
+		}
+	    };
 
 	e2.rel_n.forAllEntries(nvisitor);
 
@@ -212,13 +262,14 @@ public class PAEscapeFunc implements java.io.Serializable {
 	///// }
 	for(Iterator it = e2.getEscapedIntoMH().iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
-	    Iterator it_img = mu.getValues(node).iterator();
-	    while(it_img.hasNext()) {
+	    Set imgs = mu.getValues(node);
+	    Set holes = e2.methodHolesSet(node);
+	    for(Iterator it_img = imgs.iterator(); it_img.hasNext(); ) {
 		PANode node_img = (PANode) it_img.next();
-		addMethodHoles(node_img, e2.methodHolesSet(node));
+		if(addMethodHoles(node_img, holes) && (ppgRoots != null))
+		    ppgRoots.add(node_img);
 	    }
 	}
-	/////
     }
 
     /* Specializes <code>this</code> according to <code>map</code>. */
@@ -257,7 +308,10 @@ public class PAEscapeFunc implements java.io.Serializable {
 	/////    rel_n.equals(e2.rel_n) &&
 	/////    escaped_into_mh.equals(e2.escaped_into_mh);
 	return
-	    rel_n.equals(e2.rel_n) && rel_m.equals(e2.rel_m);
+	    rel_n.equals(e2.rel_n) && 
+	    (PointerAnalysis.CONDENSED_ESCAPE_INFO ? 
+	     rel_m.keys().equals(e2.rel_m.keys()) :
+	     rel_m.equals(e2.rel_m));
     }
 
     /** Returns the set of escaped nodes. */
@@ -331,7 +385,7 @@ public class PAEscapeFunc implements java.io.Serializable {
 
 	    Object[] mholes = Debug.sortedSet(methodHolesSet(n));
 	    for(int j = 0 ; j < mholes.length ; j++){
-		buffer.append(" ");
+		buffer.append("\n\t");
 		buffer.append((HMethod)mholes[j]);
 	    }
 

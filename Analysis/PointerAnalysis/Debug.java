@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.4 2003-02-12 19:03:34 salcianu Exp $
+ * @version $Id: Debug.java,v 1.5 2003-06-04 18:44:31 salcianu Exp $
  */
 public abstract class Debug implements java.io.Serializable {
 
@@ -122,8 +122,12 @@ public abstract class Debug implements java.io.Serializable {
     public static void show_lbb_scc(SCComponent scc){
 	for(; scc != null; scc = scc.nextTopSort()){
 	    System.out.println("SCC" + scc.getId() + "{");
-	    for(Iterator it = scc.nodeSet().iterator(); it.hasNext(); )
-		show_lbb((LightBasicBlock) it.next());
+
+	    Object nodes[] = scc.nodes();
+	    Arrays.sort(nodes, harpoon.Util.UComp.uc);
+	    for(int i = 0; i < nodes.length; i++) 
+		show_lbb((LightBasicBlock) nodes[i]);
+
 	    System.out.println("}");
 	}
     }

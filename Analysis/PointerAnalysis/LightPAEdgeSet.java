@@ -23,7 +23,7 @@ import harpoon.Temp.Temp;
  * <code>LightPAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: LightPAEdgeSet.java,v 1.6 2003-05-06 15:23:50 salcianu Exp $
+ * @version $Id: LightPAEdgeSet.java,v 1.7 2003-06-04 18:44:31 salcianu Exp $
  */
 public class LightPAEdgeSet extends AbstrPAEdgeSet
     implements java.io.Serializable {
@@ -72,22 +72,43 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
     }
 
 
-    public void addEdge(PANode node1, String f, PANode node2) {
-	if(node1.type == PANode.NULL) return;
+    public boolean addEdge(PANode node1, String f, PANode node2) {
+	// no edges out of NULL or CONST (const. strings are immutable)
+	if((node1.type == PANode.NULL) ||
+	   (node1.type == PANode.CONST)) return false;
+	// edges from LOST to LOST are informationless
+	if(PointerAnalysis.COMPRESS_LOST_NODES &&
+	   (node1 == NodeRepository.LOST_SUMMARY) &&
+	   (node2 == NodeRepository.LOST_SUMMARY)) return false;
 	Relation rel = (Relation) node_edges.get(node1);
 	if(rel == null)
 	    node_edges.put(node1, rel = new LightRelation());
-	rel.add(f, node2);
+	return rel.add(f, node2);
     }
 
 
-    public void addEdges(PANode node1, String f, Collection node2s) {
-	if(node1.type == PANode.NULL) return;
-	if(node2s.isEmpty()) return;
+    public boolean addEdges(PANode node1, String f, Collection node2s) {
+	// no edges out of NULL or CONST (const. strings are immutable)
+	if((node1.type == PANode.NULL) ||
+	   (node1.type == PANode.CONST)) return false;
+	if(node2s.isEmpty()) return false;
+
 	Relation rel = (Relation) node_edges.get(node1);
 	if(rel == null)
 	    node_edges.put(node1, rel = new LightRelation());
-	rel.addAll(f, node2s);
+
+	boolean result = rel.addAll(f, node2s);
+
+	// edges from LOST to LOST are informationless
+	if((node1 == NodeRepository.LOST_SUMMARY) && 
+	   node2s.contains(NodeRepository.LOST_SUMMARY)) {
+	    rel.remove(f, NodeRepository.LOST_SUMMARY);
+	    if(rel.isEmpty())
+		node_edges.remove(node1);
+	    if(node2s.size() == 1) result=false;
+	}
+
+	return result;
     }
 
 
@@ -207,7 +228,7 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
     }
 
 
-    public void union(PAEdgeSet edges2) {
+    public void union(PAEdgeSet edges2, Set ppgRoots) {
 	// for efficiency reasons, treat only the homogeneous case
 	if(!(edges2 instanceof LightPAEdgeSet))
 	    throw new UnsupportedOperationException();
@@ -218,14 +239,20 @@ public class LightPAEdgeSet extends AbstrPAEdgeSet
 	var_edges.union(les2.var_edges);
 
 	// union of the node edges
-	for(Iterator it = les2.node_edges.keySet().iterator(); it.hasNext(); ){
+	for(Iterator it = les2.node_edges.keySet().iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    LightRelation rel2 = (LightRelation) les2.node_edges.get(node);
 	    LightRelation rel1 = (LightRelation) node_edges.get(node);
-	    if(rel1 == null)
+	    if(rel1 == null) {
 		node_edges.put(node, (LightRelation) rel2.clone());
-	    else
-		rel1.union(rel2);
+		if(ppgRoots != null)
+		    ppgRoots.add(node);
+	    }
+	    else {
+		if(rel1.union(rel2))
+		    if(ppgRoots != null)
+			ppgRoots.add(node);
+	    }
 	}
     }
 

@@ -18,7 +18,7 @@ import harpoon.Temp.Temp;
  * <code>PAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEdgeSet.java,v 1.3 2002-03-10 02:32:55 cananian Exp $
+ * @version $Id: PAEdgeSet.java,v 1.4 2003-06-04 18:44:32 salcianu Exp $
  */
 public interface PAEdgeSet {
     
@@ -41,9 +41,9 @@ public interface PAEdgeSet {
 
 
 
-    public void addEdge(PANode node1, String f, PANode node2);
+    public boolean addEdge(PANode node1, String f, PANode node2);
 
-    public void addEdges(PANode node1, String f, Collection node2s);
+    public boolean addEdges(PANode node1, String f, Collection node2s);
 
     public void addEdges(Collection node1s, String f, PANode node2);
 
@@ -101,7 +101,18 @@ public interface PAEdgeSet {
 
     public void remove(Set set);
 
+    /** Add all the edges from edges2 to <code>this</code>
+        <code>PAEdgeSet</code>.
 
+	@param ppgRoots If non-null, the starting points of all new
+	edges will be added to this set (this is useful for doing
+	efficient escape info propagation after points-to graph
+	updates). */
+    public void union(PAEdgeSet edges2, Set ppgRoots);
+
+
+    /** Convenient version of <code>union</code>, equivalent to
+	<code>union(edges2, null)</code>. */
     public void union(PAEdgeSet edges2);
 
 

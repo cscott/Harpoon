@@ -17,6 +17,10 @@ import java.util.HashMap;
 import java.lang.reflect.Modifier;
 
 import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.ANEW;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Temp.Temp;
 
@@ -25,9 +29,11 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.HCodeElement;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
+import harpoon.Analysis.MetaMethods.GenType;
 
 import harpoon.Util.TypeInference.ExactTemp;
 import harpoon.Util.TypeInference.TypeInference;
@@ -51,7 +57,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterProcPA.java,v 1.7 2003-02-12 19:03:34 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.8 2003-06-04 18:44:31 salcianu Exp $
  */
 public abstract class InterProcPA implements java.io.Serializable {
 
@@ -67,6 +73,18 @@ public abstract class InterProcPA implements java.io.Serializable {
      *  never instantiates a <code>SecurityManager</code>,
      *	each call to a method of that class has ZERO callees! */
     public static final boolean WARNINGS = true;
+
+    /** Trust that a call to java.lang.Object.equals doesn't do
+        anything interesting. */
+    public static boolean TRUST_EQUALS = true;
+
+    /** Trust that a call to java.lang.Object.hashCode doesn't do
+        anything interesting. */
+    public static boolean TRUST_HASHCODE = true;
+
+    /** Trust that a call to java.lang.Object.toString doesn't do
+        anything interesting. */
+    public static boolean TRUST_TOSTRING = true;
 
     private static final boolean CONSIDER_WES_GOOD = false;
 
@@ -95,6 +113,30 @@ public abstract class InterProcPA implements java.io.Serializable {
 					       MetaMethod current_mmethod,
 					       CALL q,
 					       ParIntGraph pig_before) {
+	long b_time = 
+	    PointerAnalysis.FINE_TIMING ? System.currentTimeMillis() : 0;
+
+	ParIntGraphPair result = 
+	    analyze_call2(pa, current_mmethod, q, pig_before);
+	if(PointerAnalysis.FINE_TIMING)
+	    total_interproc_time += System.currentTimeMillis() - b_time;
+	return result;
+    }
+
+
+    private static ParIntGraphPair analyze_call2(PointerAnalysis pa,
+						 MetaMethod current_mmethod,
+						 CALL q,
+						 ParIntGraph pig_before) {
+	/*
+	PointerAnalysis.MEGA_DEBUG2 = 
+	    PointerAnalysis.MEGA_DEBUG && 
+	    q.method().getName().equals("append");
+	
+	if(PointerAnalysis.MEGA_DEBUG2) 
+	    System.out.println("Method: " + q.method());
+	*/
+
 	if(DEBUG || DEBUG_MU)
 	    System.out.println("\nInter-procedural analysis " +
 			       Util.code2str(q));
@@ -112,8 +154,8 @@ public abstract class InterProcPA implements java.io.Serializable {
 	// means that it doesn't occur in practice (because some classes
 	// are not instantiated), not that the call graph is buggy!
 	// So, the CALL is simply ignored.
-	if(nb_callees == 0){
-	    if(WARNINGS){
+	if(nb_callees == 0) {
+	    if(WARNINGS) {
 		System.out.println("Warning: CALL site with no callee! ");
 		System.out.println("Warning:  " + Util.code2str(q));
 	    }
@@ -123,9 +165,17 @@ public abstract class InterProcPA implements java.io.Serializable {
 	// Due to the imprecisions in the call graph, most of them due to
 	// dynamic dispatches, several call sites have a huge number of callees
 	// These CALLs are not analyzed (i.e. they are treated as method holes)
-	if(nb_callees > MAX_CALLEES){
-	    if(DEBUG)
+	if(nb_callees > MAX_CALLEES) {
+	    //if(DEBUG)
 		System.out.println("TOO MANY CALLEES (" + nb_callees + ") "+q);
+	    if((TRUST_EQUALS    &&  q.method().equals(jlO_equals)) ||
+	       (TRUST_HASHCODE  &&  q.method().equals(jlO_hashCode)) ||
+	       (TRUST_TOSTRING  &&  q.method().equals(jlO_toString))) {
+		//if(DEBUG)
+		    System.out.println("BUT equals/hashCode/toString ");
+		return treatNatives(pa, new MetaMethod(q.method(), true),
+				    q, pig_before);
+	    }
 	    return skip_call(pa, q, pig_before, q.method());
 	}
 
@@ -135,7 +185,7 @@ public abstract class InterProcPA implements java.io.Serializable {
 	// the so-called unharmful native methods - native method that we can't
 	// analyze as we don't have their code but we know what their pig will
 	// look like (for most of them it's empty - they don't create new
-	// pointer links).
+	// pointer links and don't do any relevant action (e.g., syncs)).
 	//
 	// For the unharmful native methods the associated pig will be null
 	// (they will be specially treated inside mapUp).
@@ -155,7 +205,7 @@ public abstract class InterProcPA implements java.io.Serializable {
 	      if(DEBUG)
 		System.out.println("NATIVE: " + hm);
 	      if(isTotallyHarmful(hm)) {
-		if(DEBUG)
+		  //if(DEBUG)
 		  System.out.print("NEED TO SKIP: " + Util.code2str(q));
 		return skip_call(pa, q, pig_before, hm);
 	      }
@@ -180,13 +230,13 @@ public abstract class InterProcPA implements java.io.Serializable {
 	    // RTJ stuff END
 
 	    if(!(PointerAnalysis.analyzable(hm))){
-		if(DEBUG)
+		//if(DEBUG)
 		    System.out.println("NEED TO SKIP: " + Util.code2str(q));
 		return skip_call(pa, q, pig_before, hm);
 	    }
 	    
 	    ParIntGraph pig = pa.getExtParIntGraph(mms[i], false);
-	    if(pig != null){
+	    if(pig != null) {
 		pigs[nb_callees_with_pig] = pig;
 		mms[nb_callees_with_pig]  = mms[i];
 		nb_callees_with_pig++;
@@ -217,8 +267,11 @@ public abstract class InterProcPA implements java.io.Serializable {
 	// minimum number of clone() (cloning a ParIntGraph is very expensive).
 
 	// 1. Special case: only one callee; no ParIntGraph is cloned.
-	if(nb_callees_with_pig == 1)
+	if(nb_callees_with_pig == 1) {
+	    if(PointerAnalysis.MEGA_DEBUG2)
+		System.out.println("Special case: 1 callee");
 	    return mapUp(pa, mms[0], q, pig_before, pigs[0]);
+	}
 
 	// 2. More than one callee: 
 	// 2.1. Compute the first term of the join operation.
@@ -279,7 +332,7 @@ public abstract class InterProcPA implements java.io.Serializable {
 	Temp l_R = q.retval();
 	if(l_R != null){
 	    pig_caller.G.I.removeEdges(l_R);
-	    if(!hm.getReturnType().isPrimitive()){
+	    if(!hm.getReturnType().isPrimitive()) {
 		PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
 		pig_caller.G.I.addEdge(l_R, n_R);
 		pig_caller.G.e.addMethodHole(n_R, hm);
@@ -387,29 +440,43 @@ public abstract class InterProcPA implements java.io.Serializable {
 					 CALL q, 
 					 ParIntGraph pig_caller,
 					 ParIntGraph pig_callee) {
+
 	// if native method, apply special treatment
 	if(pig_callee == null)
 	    return treatNatives(pa, mm, q, pig_caller);
 
 	PANode[] callee_params = pa.getParamNodes(mm);
 
-	if(DEBUG){
+	if(DEBUG || PointerAnalysis.MEGA_DEBUG2) {
 	    System.out.println("Pig_caller:" + pig_caller);
 	    System.out.println("Pig_callee:" + pig_callee);
 	}
 
+	long b_time = 
+	    PointerAnalysis.FINE_TIMING ? System.currentTimeMillis() : 0;
+
 	Relation mu = 
 	    compute_mapping(q, pig_caller, pig_callee, callee_params);
 
-	PAEdgeSet old_caller_I = (PAEdgeSet) pig_caller.G.I.clone();
+	if(PointerAnalysis.FINE_TIMING) {
+	    long delta = System.currentTimeMillis() - b_time;
+	    total_mapping_time += delta;
+	    b_time = System.currentTimeMillis();
+	}
 
+	PAEdgeSet old_caller_I = 
+	    PointerAnalysis.RECORD_ACTIONS ?
+	    (PAEdgeSet) pig_caller.G.I.clone() : null;
 
 	// Inserts the image of the callee's graph into the caller's graph.
 	Set params = new HashSet();
 	for(int i = 0; i < callee_params.length; i++)
 	    if(!pig_callee.tau.isStarted(callee_params[i]))
 		params.add(callee_params[i]);
-	pig_caller.insertAllButArEo(pig_callee, mu, false, params);
+
+	Set ppgRoots = new HashSet();
+	pig_caller.insertAllButArEo
+	    (pig_callee, mu, false, params, ppgRoots, false);
 
 	// bring the actions of the callee into the caller's graph
 	if(PointerAnalysis.RECORD_ACTIONS)
@@ -421,27 +488,50 @@ public abstract class InterProcPA implements java.io.Serializable {
 	    bring_eo(pig_caller.eo, old_caller_I, pig_callee.eo,
 		     pig_callee.G.O, mu);
 
+	if(PointerAnalysis.FINE_TIMING) { // TIMING
+	    long delta = System.currentTimeMillis() - b_time;
+	    total_merging_time += delta;
+	    b_time = System.currentTimeMillis();
+	}
+
 	// recompute the escape info
-	pig_caller.G.propagate();
+	pig_caller.G.propagate(ppgRoots);
+
+	if(PointerAnalysis.FINE_TIMING) {
+	    long delta = System.currentTimeMillis() - b_time;
+	    total_propagate_time += delta;
+	    b_time = System.currentTimeMillis();
+	}
 
 	if(DEBUG)
 	    System.out.println("Unsimplified graph:\n" + pig_caller);
 
 	// simplify the graph by removing the empty loads
 	pig_caller.removeEmptyLoads();
-	pig_caller = mergeRedundantLoads(pig_caller);
+
+	if(PointerAnalysis.FINE_TIMING) {
+	    long delta = System.currentTimeMillis() - b_time;
+	    total_cleaning_time += delta;
+	    b_time = System.currentTimeMillis();
+	}
 
 	if(DEBUG)
 	    System.out.println("Simplified graph:\n" + pig_caller);
 
 	// make a copy of the parallel interaction graph
 	ParIntGraph pig_caller1 = (ParIntGraph) (pig_caller.clone());
+
 	// set the edges for the exception on the out-edge 1
 	set_edges_res_ex(q.retex() , mu, pig_caller1, pig_callee.G.excp);
 	// set the edges for the result on the out-edge 0
 	set_edges_res_ex(q.retval(), mu, pig_caller,  pig_callee.G.r);
 
-	if(DEBUG){
+	if(PointerAnalysis.MEGA_DEBUG2) {
+	    System.out.println("Final graph on edge 0:");
+	    System.out.println(pig_caller);
+	}
+
+	if(DEBUG) {
 	    System.out.println("Final graphs:{");
 	    System.out.println(" The graph on edge 0:");
 	    System.out.println(pig_caller);
@@ -453,6 +543,11 @@ public abstract class InterProcPA implements java.io.Serializable {
 	return new ParIntGraphPair(pig_caller, pig_caller1);
     }
 
+    static long total_mapping_time = 0;
+    static long total_merging_time = 0;
+    static long total_propagate_time = 0;
+    static long total_cleaning_time = 0;
+    static long total_interproc_time = 0;
 
     // Conversion array -> set
     private static final Set array2set(Object[] array) {
@@ -669,12 +764,6 @@ public abstract class InterProcPA implements java.io.Serializable {
 	    });
     }
 
-    private static ParIntGraph mergeRedundantLoads(final ParIntGraph pig) {
-	// TODO: better implementation of this
-	return pig;
-    }
-
-
 
     /** Sets the edges for the result or the exception returned by the callee.
      * Remember the syntax of a method invocation: 
@@ -695,7 +784,7 @@ public abstract class InterProcPA implements java.io.Serializable {
     private static void bring_actions(final ActionRepository ar_caller,
 				      final ActionRepository ar_callee,
 				      final Set active_threads_in_caller,
-				      final Relation mu){
+				      final Relation mu) {
 	// Add this "common-sense" rule to the mapping: the inter-procedural
 	// analysis stays in the same thread.
 	mu.add(ActionRepository.THIS_THREAD, ActionRepository.THIS_THREAD);
@@ -840,12 +929,16 @@ public abstract class InterProcPA implements java.io.Serializable {
 	Set retval = new HashSet();
 	for(Iterator it = types.iterator();it.hasNext(); ){
 	    HClass hclass = (HClass) it.next();
-	    if(hclass.isArray())
+	    if(hclass.isArray()) {
 		System.out.println("CLONE: might be called for an array");
-	    HField[] hfields = hclass.getFields();
-	    for(int i = 0; i < hfields.length; i++)
-		if(!hfields[i].getType().isPrimitive())
-		    retval.add(hfields[i].getName());
+		retval.add(PointerAnalysis.ARRAY_CONTENT);
+	    }
+	    else {
+		HField[] hfields = hclass.getFields();
+		for(int i = 0; i < hfields.length; i++)
+		    if(!hfields[i].getType().isPrimitive())
+			retval.add(PointerAnalysis.getFieldName(hfields[i]));
+	    }
 	}
 	return retval;
     }
@@ -894,8 +987,12 @@ public abstract class InterProcPA implements java.io.Serializable {
 
 	// do the actions of the "clone()" method: create a new object (n_R),
 	// copy the fields from the objects passed as params to clone to n_R
-	NodeRepository node_rep = pa.getNodeRepository(); 
-	PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
+	NodeRepository node_rep = pa.getNodeRepository();
+	// [AS] clone is a special way of creating objects; therefore,
+	// it returns an INSIDE node, not a RETURN node.  This also
+	// protects us against losses of precision if we coalesce all
+	// RETURN nodes into LOST.
+	PANode n_R = node_rep.getCodeNode(q, PANode.INSIDE2);
 
 	Set lo_types = aux_clone_get_types(q);
 	if(DEBUG)
@@ -955,7 +1052,7 @@ public abstract class InterProcPA implements java.io.Serializable {
     // (Object src, int, Object dst, int, int);
     // We hope that we really know what arraycopy does ...
     private static ParIntGraphPair treat_arraycopy(PointerAnalysis pa, CALL q,
-						   ParIntGraph pig_before){
+						   ParIntGraph pig_before) {
 	HMethod hm = q.method();
 	if(!hm.getName().equals("arraycopy") ||
 	   !hm.getDeclaringClass().getName().equals("java.lang.System"))
@@ -964,23 +1061,34 @@ public abstract class InterProcPA implements java.io.Serializable {
 	if(DEBUG)
 	    System.out.println("NATIVE (special): " + Util.code2str(q));
 
+	if(PointerAnalysis.MEGA_DEBUG2)
+	    System.out.println("VerySpecialNative BEFORE: " + pig_before);
+
 	// the conventional field name used for the array's entries
 	final String f = PointerAnalysis.ARRAY_CONTENT;
 
 	Temp l_src = q.params(0);
 	Temp l_dst = q.params(2);
 
-	Set dst_set = pig_before.G.I.pointedNodes(l_dst);
+	Set dst_set = 
+	    PointerAnalysis.selectArraysOfObjs
+	    (pig_before.G.I.pointedNodes(l_dst));
+	Set src_set = 
+	    PointerAnalysis.selectArraysOfObjs
+	    (pig_before.G.I.pointedNodes(l_src));
 
-	Set src_set = pig_before.G.I.pointedNodes(l_src);
-	Set set_S = 
-	    pig_before.G.I.pointedNodes(src_set, f);
+	Set set_S = pig_before.G.I.pointedNodes(src_set, f);
 
 	Set set_E = new HashSet();
+	Set gtypes = new HashSet();
 	for(Iterator it = src_set.iterator(); it.hasNext(); ){
 	    PANode node = (PANode) it.next();
-	    if(pig_before.G.e.hasEscaped(node))
+	    if(pig_before.G.e.hasEscaped(node)) {
 		set_E.add(node);
+		Set compTypes = PointerAnalysis.getObjArrayComp(node);
+		for(Iterator it2 = compTypes.iterator(); it2.hasNext(); )
+		    gtypes.add(new GenType((HClass) it2.next(), GenType.POLY));
+	    }
 	}
 
 	NodeRepository node_rep = pa.getNodeRepository();
@@ -988,7 +1096,9 @@ public abstract class InterProcPA implements java.io.Serializable {
 	if(set_E.isEmpty())
 	    pig_before.G.I.addEdges(dst_set, f, set_S);
 	else {
-	    PANode load_node = node_rep.getCodeNode(q, PANode.LOAD);
+	    GenType[] gts = 
+		(GenType[]) gtypes.toArray(new GenType[gtypes.size()]);
+	    PANode load_node = node_rep.getCodeNode(q, PANode.LOAD, gts);
 
 	    pig_before.G.O.addEdges(set_E, f, load_node);
 
@@ -1009,6 +1119,9 @@ public abstract class InterProcPA implements java.io.Serializable {
 					 active_threads);
 	    }
 	}
+
+	if(PointerAnalysis.MEGA_DEBUG2)
+	    System.out.println("VerySpecialNative  AFTER: " + pig_before);
 
 	ParIntGraph pig_after1 = (ParIntGraph) pig_before.clone();
 	// Set the edges for the exception node in graph 1.
@@ -1094,6 +1207,8 @@ public abstract class InterProcPA implements java.io.Serializable {
 	    {"java.net.PlainSocketImpl", "socketListen"},
 
 	    {"java.lang.Object", "hashCode"},
+	    {"java.lang.Object", "equals"},
+	    {"java.lang.Object", "toString"},
 
 	    // this one does a sync on its argument; that's why it
 	    // we also create a graph modelling its execution
@@ -1131,7 +1246,14 @@ public abstract class InterProcPA implements java.io.Serializable {
     
 	
     private static Map graphs_for_natives = new HashMap();
+
     private static void build_graphs_for_natives(PointerAnalysis pa) {
+	add_graph4java_lang_Object_wait(pa);
+    }
+
+    private static void add_graph4java_lang_Object_wait
+	(PointerAnalysis pa) {
+
 	// java_lang_Object_wait
 	HMethod hm = get_method(pa, "java.lang.Object", "wait", 0);
 	MetaMethod mm = new MetaMethod(hm, true);
@@ -1143,9 +1265,11 @@ public abstract class InterProcPA implements java.io.Serializable {
 	ParIntGraph pig = new ParIntGraph();
 	if(PointerAnalysis.RECORD_ACTIONS)
 	    pig.ar.add_sync
-		(new PASync(node, ActionRepository.THIS_THREAD, null), null);
+		(new PASync(node, ActionRepository.THIS_THREAD,null), null);
+
 	graphs_for_natives.put(hm, pig);
     }
+
 
     private static HMethod get_method(PointerAnalysis pa,
 				      String cls_name, String mthd_name,
@@ -1175,6 +1299,14 @@ public abstract class InterProcPA implements java.io.Serializable {
 	    build_rtj_methods(pa.getLinker());
 
 	build_graphs_for_natives(pa);
+
+	jlO_equals   = get_method(pa, "java.lang.Object", "equals", 1);
+	jlO_hashCode = get_method(pa, "java.lang.Object", "hashCode", 0);
+	jlO_toString = get_method(pa, "java.lang.Object", "toString", 0);
     }
+
+    private static HMethod jlO_equals   = null;
+    private static HMethod jlO_hashCode = null;
+    private static HMethod jlO_toString = null;
 
 }// end of the class

@@ -20,46 +20,25 @@ import harpoon.Temp.Temp;
  * <code>AbstrPAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: AbstrPAEdgeSet.java,v 1.2 2002-02-25 20:58:38 cananian Exp $
+ * @version $Id: AbstrPAEdgeSet.java,v 1.3 2003-06-04 18:44:31 salcianu Exp $
  */
 public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
     
-    public void addEdge(Temp v, PANode node) {
-	throw new UnsupportedOperationException();
-    }
+    public abstract void addEdge(Temp v, PANode node);
+    public abstract void addEdges(Temp v, Collection nodes);
 
-    public void addEdges(Temp v, Collection nodes) {
-	throw new UnsupportedOperationException();
-    }
+    public abstract void removeEdge(Temp v, PANode node);
+    public abstract void removeEdges(Temp v);
 
 
-    public void removeEdge(Temp v, PANode node) {
-	throw new UnsupportedOperationException();
-    }
+    public abstract Set pointedNodes(Temp v);
 
-    public void removeEdges(Temp v) {
-	throw new UnsupportedOperationException();
-    }
-
-
-    public Set pointedNodes(Temp v) {
-	throw new UnsupportedOperationException();
-    }
-
-
-    public Set allVariables() {
-	throw new UnsupportedOperationException();
-    }
+    public abstract Set allVariables();
 
 
 
-    public void addEdge(PANode node1, String f, PANode node2) {
-	throw new UnsupportedOperationException();
-    }
-
-    public void addEdges(PANode node1, String f, Collection node2s) {
-	throw new UnsupportedOperationException();
-    }
+    public abstract boolean addEdge(PANode node1, String f, PANode node2);
+    public abstract boolean addEdges(PANode node1, String f,Collection node2s);
 
     public void addEdges(Collection node1s, String f, PANode node2) {
 	for(Iterator it = node1s.iterator(); it.hasNext(); )
@@ -73,22 +52,12 @@ public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
     }
 
 
-    public void removeEdge(PANode node1, String f, PANode node2) {
-	throw new UnsupportedOperationException();
-    }
-    
-    public void removeEdges(PANode node1, String f) {
-	throw new UnsupportedOperationException();
-    }
-
-    public void removeEdges(PANode node1) {
-	throw new UnsupportedOperationException();
-    }
+    public abstract void removeEdge(PANode node1, String f, PANode node2);
+    public abstract void removeEdges(PANode node1, String f);
+    public abstract void removeEdges(PANode node1);
 
 
-    public Set pointedNodes(PANode node, String f) {
-	throw new UnsupportedOperationException();
-    }
+    public abstract Set pointedNodes(PANode node, String f);
 
     public Set pointedNodes(Collection nodes, String f) {
 	Set retval = new HashSet();
@@ -97,20 +66,11 @@ public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
 	return retval;
     }
 
-    public Set pointedNodes(PANode node) {
-	throw new UnsupportedOperationException();
-    }
+    public abstract Set pointedNodes(PANode node);
 
+    public abstract Set allFlagsForNode(PANode node);
 
-
-    public Set allFlagsForNode(PANode node) {
-	throw new UnsupportedOperationException();
-    }
-
-
-    public Set allSourceNodes() {
-	throw new UnsupportedOperationException();
-    }
+    public abstract Set allSourceNodes();
 
 
     // I think this should be removed in the future
@@ -135,10 +95,8 @@ public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
 	    visitor.visit((PANode) it.next());
     }
 
-    // for maximum performance, this is implemented in the concrecet class
-    public void forAllPointedNodes(PANode node, PANodeVisitor visitor) {
-	throw new UnsupportedOperationException();
-    }
+    // for maximum performance, this is implemented in the concrete class
+    public abstract void forAllPointedNodes(PANode node, PANodeVisitor visitor);
 
     public void forAllNodes(PANodeVisitor visitor) {
 	for(Iterator it = allVariables().iterator(); it.hasNext(); )
@@ -151,16 +109,13 @@ public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
 	}
     }
 
-    
 
     public void forAllEdges(Temp v, PAEdgeVisitor visitor) {
 	for(Iterator it = pointedNodes(v).iterator(); it.hasNext(); )
 	    visitor.visit(v, (PANode) it.next());
     }
     
-    public void forAllEdges(PANode node, PAEdgeVisitor visitor) {
-	throw new UnsupportedOperationException();
-    }
+    public abstract void forAllEdges(PANode node, PAEdgeVisitor visitor);
 
     public void forAllEdges(PAEdgeVisitor visitor) {
 	for(Iterator it = allVariables().iterator(); it.hasNext(); )
@@ -169,10 +124,7 @@ public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
 	    forAllEdges((PANode) it.next(), visitor);
     }
 
-
-    protected PAEdgeSet getEmptyPAEdgeSet() {
-	throw new UnsupportedOperationException();
-    }
+    protected abstract PAEdgeSet getEmptyPAEdgeSet();
 
     // very easy implementation (can be hand-crafted into the concrete class)
     public PAEdgeSet specialize(final Map map) {
@@ -193,14 +145,10 @@ public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
     }
 
 
-    public void remove(Set set) {
-	throw new UnsupportedOperationException();
-    }
+    public abstract void remove(Set set);
 
-
-    public void union(PAEdgeSet edges2) {
-	throw new UnsupportedOperationException();
-    }
+    public abstract void union(PAEdgeSet edges2, Set ppgRoots);
+    public void union(PAEdgeSet edges2) { union(edges2, null); }
 
 
     public Relation getPrecedenceRelation() {
@@ -295,7 +243,7 @@ public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
 	set contains elements of type <code>PASimpleEdge</code> or
 	<code>PAComplexEdge</code>. For debug purposes. */
     public static Set difference(final PAEdgeSet es1,
-				 final PAEdgeSet es2){
+				 final PAEdgeSet es2) {
 	final Set retval = new HashSet();
 	es1.forAllEdges(new PAEdgeVisitor(){
 		public void visit(Temp l, PANode node){
@@ -315,9 +263,9 @@ public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
 	added while passing from <code>es_old</code> to 
 	<code>es_new</code>. */
     public static void show_evolution(final PAEdgeSet es_old,
-				      final PAEdgeSet es_new){
+				      final PAEdgeSet es_new) {
 	Set old_edges = difference(es_old, es_new);
-	if(!old_edges.isEmpty()){
+	if(!old_edges.isEmpty()) {
 	    System.out.println("Some edges were removed:");
 	    for(Iterator it = old_edges.iterator(); it.hasNext();)
 		System.out.println("  " + it.next());
@@ -328,6 +276,8 @@ public abstract class AbstrPAEdgeSet implements PAEdgeSet, Cloneable {
 	    for(Iterator it = new_edges.iterator(); it.hasNext();)
 		System.out.println("  " + it.next());
 	}
+	if(!old_edges.isEmpty())
+	    System.exit(1);
     }
     
 }

@@ -4,6 +4,7 @@
 package harpoon.Analysis.PointerAnalysis;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
@@ -26,7 +27,7 @@ import harpoon.Util.DataStructs.Relation;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.6 2003-05-06 15:26:47 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.7 2003-06-04 18:44:32 salcianu Exp $
  */
 public class PointsToGraph implements Cloneable, java.io.Serializable{
 
@@ -146,19 +147,27 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 
     /** Tests whether node <code>node</code> is captured. 
      * This method is simply the negation of <code>escaped</code>. */
-    public boolean captured(PANode node){
+    public boolean captured(PANode node) {
 	return !escaped(node);
     }
 
 
     /** <code>join</code> is called in the control-flow join points. */
-    public void join(PointsToGraph G2){
-	O.union(G2.O);
-	I.union(G2.I);
-	e.union(G2.e);
+    public void join(PointsToGraph G2) {
+	Set ppgRoots = PointerAnalysis.CONDENSED_ESCAPE_INFO ?
+	    new HashSet() : null;
+
+	O.union(G2.O, ppgRoots);
+	I.union(G2.I, ppgRoots);
+	e.union(G2.e, ppgRoots);
 	r.addAll(G2.r);
 	excp.addAll(G2.excp);
 	flushCaches();
+
+	if(PointerAnalysis.CONDENSED_ESCAPE_INFO)
+	    propagate(ppgRoots);
+	else
+	    propagate();
     }
 
     /** Remove all the <code>PANode</code>s that appear in <code>set</code>
@@ -182,11 +191,16 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 
 	<code>principal</code> controls whether the return and
 	exception set are inserted. */
-    public void insert(PointsToGraph G2, Relation mu,
-		       boolean principal, Set noholes){
-	insert_edges(G2.O , G2.I , mu );
-	e.insert(G2.e , mu , noholes );
-	if(principal){
+    public void insert(PointsToGraph G2, Relation mu, boolean principal,
+		       Set noholes) {
+	insert(G2, mu, principal, noholes, null, false);
+    }
+
+    void insert(PointsToGraph G2, Relation mu, boolean principal,
+		Set noholes, Set/*<PANode>*/ ppgRoots, boolean fullProj) {
+	insert_edges(G2.O, G2.I, mu, ppgRoots, fullProj);
+	e.insert(G2.e, mu, noholes, ppgRoots);
+	if(principal) {
 	    insert_set(G2.r    , mu , r );
 	    insert_set(G2.excp , mu , excp );
 	}
@@ -206,7 +220,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 		     holes_b4_callee,
 		     odi_new);
 
-	e.insert(G2.e, mu, noholes);
+	e.insert(G2.e, mu, noholes, null);
     }
 
     public void insert(PAEdgeSet O_org,
@@ -222,38 +236,70 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 		     pig);
     }
 
+
     // Insert the outside edges O2 and the inside edges I2 into this graph,
     // transforming them through the mu mapping.
-    // FV changed from private to public 
-    public void insert_edges(PAEdgeSet O2, PAEdgeSet I2, final Relation mu){
+    // FV changed from private to public
+    public void insert_edges(PAEdgeSet O2, PAEdgeSet I2, final Relation mu) {
+	insert_edges(O2, I2, mu, null, false);
+    }
+
+    // if fullProj is true, even the target of the load edges will be
+    // projected through the mu relation.
+    // if ppgRoots != null, collect in ppgRoots all nodes that are
+    // starting points for new edges (Note: works only if !fullProj)
+    void insert_edges(PAEdgeSet O2, PAEdgeSet I2, final Relation mu,
+		      final Set/*<PANode>*/ ppgRoots,
+		      final boolean fullProj) {
+	
+	assert !((ppgRoots != null) && fullProj) :
+	    "ppgRoots != null does not work with fullProj";
 
 	// visitor for the outside edges
-	PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
-		public void visit(Temp var, PANode node){
-		    assert false : (" var2node edge in O: " + 
-				       var + "->" + node);
+	PAEdgeVisitor visitor_O = new PAEdgeVisitor() {
+	    public void visit(Temp var, PANode node) {
+		assert false : " var2node edge in O: " + var + "->" + node;
+	    }
+	    public void visit(PANode node1, String f, PANode node2) {
+		if(fullProj) {
+		    O.addEdges(mu.getValues(node1), f, mu.getValues(node2));
+		    return;
 		}
-		public void visit(PANode node1,String f, PANode node2){
-		    if(!mu.contains(node2,node2)) return;
-		    Set mu_node1 = mu.getValues(node1);
-		    O.addEdges(mu_node1, f, node2);
+		// TODO: why is this test here?  it doesn't
+		// appear in the formalism; try without it
+		if(!mu.contains(node2, node2)) return;
+		Set mu_node1 = mu.getValues(node1);
+		for(Iterator it = mu_node1.iterator(); it.hasNext(); ) {
+		    PANode node1_img = (PANode) it.next();
+		    if(PointerAnalysis.CONSIDER_TYPES &&
+		       !PointerAnalysis.hasField(node1_img, f)) continue;
+		    if(O.addEdge(node1_img, f, node2) && (ppgRoots != null))
+		       ppgRoots.add(node1_img);
 		}
-	    };
+	    }
+	};
 
 	O2.forAllEdges(visitor_O);
 
 	// visitor for the inside edges
-	PAEdgeVisitor visitor_I = new PAEdgeVisitor(){
-		public void visit(Temp var, PANode node){
-		    Set mu_node = mu.getValues(node);
-		    I.addEdges(var,mu_node);
+	PAEdgeVisitor visitor_I = new PAEdgeVisitor() {
+	    public void visit(Temp var, PANode node) {
+		Set mu_node = mu.getValues(node);
+		I.addEdges(var, mu_node);
+	    }
+	    public void visit(PANode node1, String f, PANode node2) {
+		Set mu_node1 = mu.getValues(node1);
+		Set mu_node2 = mu.getValues(node2);
+		for(Iterator it = mu_node1.iterator(); it.hasNext(); ) {
+		    PANode node1_img = (PANode) it.next();
+		    if(PointerAnalysis.CONSIDER_TYPES &&
+		       !PointerAnalysis.hasField(node1_img, f)) continue;
+		    if(I.addEdges(node1_img, f, mu_node2) && 
+		       (ppgRoots != null))
+		       ppgRoots.add(node1_img);
 		}
-		public void visit(PANode node1,String f, PANode node2){
-		    Set mu_node1 = mu.getValues(node1);
-		    Set mu_node2 = mu.getValues(node2);
-		    I.addEdges(mu_node1,f,mu_node2);
-		}
-	    };
+	    }
+	};
 
 	I2.forAllEdges(visitor_I);
     }
@@ -266,20 +312,23 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 			     final ODInformation odi_new)
     {
 	// visitor for the outside edges
-	PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
-		public void visit(Temp var, PANode node){
-		    assert false : (" var2node edge in O: " + 
-				var + "->" + node);
-		}
-		public void visit(PANode node1,String f, PANode node2){
-		    if(!mu.contains(node2,node2)) return;
-		    Set mu_node1 = mu.getValues(node1);
-		    O.addEdges(mu_node1, f, node2);
-		    odi_new.addOutsideEdges(node1, f, node2,
-					    odi_org,
-					    mu_node1, holes_b4_callee);
-		}
-	    };
+	PAEdgeVisitor visitor_O = new PAEdgeVisitor() {
+	    public void visit(Temp var, PANode node) {
+		assert false : " v->n edge in O: " + var + "->" + node;
+	    }
+	    public void visit(PANode node1,String f, PANode node2) {
+		if(!mu.contains(node2,node2)) return;
+		Set mu_node1 = 
+		   (node1.type == PANode.LOST) ?
+		   // don't project LOST
+		   Collections.singleton(node1) : 
+		   mu.getValues(node1);
+		O.addEdges(mu_node1, f, node2);
+		odi_new.addOutsideEdges(node1, f, node2,
+					odi_org,
+					mu_node1, holes_b4_callee);
+	    }
+	};
 	
 	O2.forAllEdges(visitor_O);
 
@@ -314,8 +363,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 	// visitor for the outside edges
 	PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
 	    public void visit(Temp var, PANode node){
-		assert false : (" var2node edge in O: " + 
-			    var + "->" + node);
+		assert false : " var2node edge in O: " + var + "->" + node;
 	    }
 	    public void visit(PANode node1,String f, PANode node2){
 		Set mu_node1 = mu.getValues(node1);
@@ -390,89 +438,104 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 	}
     }
 
-    // TODO: the return result is used in a single place in the program
-    // but the cost of its computation is quite big. We could make a
-    // lightweight version of this function with return type void.
-    /** Propagates the escape information along the edges.
-	Returns the set of the newly escaped nodes. */
-    public Set propagate(Collection escaped){
-	final PAWorkList W_prop = new PAWorkList();
-	final Set newly_escaped = new HashSet();
+    /** Propagates the escape information along the edges. */
+    public void propagate(Collection/*<PANode>*/ escaped) {
+	final PAWorkList/*<PANode>*/ W_prop = new PAWorkList/*<PANode>*/();
 
-	W_prop.addAll(escaped);
-	while(!W_prop.isEmpty()){
-	    final PANode current_node = (PANode) W_prop.remove();
+	// We generate one visitor for each call to propagate (instead
+	// of one for each analyzed node).  The downside is that we
+	// need to initialize it (by calling init), for each analyzed
+	// node.
+	final class PropagateNodeVisitor implements PANodeVisitor {
+	    PANode current_node;
+	    Set/*<HMethod>*/ method_holes;
 
-	    PANodeVisitor p_visitor = new PANodeVisitor(){
-		    public final void visit(PANode node){
-			boolean was_escaped = e.hasEscaped(node);
-			boolean changed = false;
-			if(e.addNodeHoles(node,e.nodeHolesSet(current_node))){
+	    void init(PANode current_node, Set method_holes) {
+		this.current_node = current_node;
+		this.method_holes = method_holes;
+	    }
+
+	    public final void visit(PANode node) {
+		boolean changed = false;
+
+		if(e.addNodeHoles(node, e.nodeHolesSet(current_node))) {
+		    changed = true;
+		    if(PointerAnalysis.MEGA_DEBUG &&
+		       e.nodeHolesSet(current_node).contains
+		       (NodeRepository.LOST_SUMMARY))
+			System.out.println(node + " due to " + current_node);
+		}
+
+		///// if(e.getEscapedIntoMH().contains(current_node) &&
+		/////   e.addMethodHole(node, null))
+		/////    changed = true;
+		if(!method_holes.isEmpty()) {
+		    if(PointerAnalysis.CONDENSED_ESCAPE_INFO) {
+			if(e.methodHolesSet(node).isEmpty()) {
+			    e.addMethodHoles(node, method_holes);
 			    changed = true;
-// 			    System.out.println(node + " because of node " +
-// 					       current_node + 
-// 					       e.nodeHolesSet(current_node));
-			}
-			///// if(e.getEscapedIntoMH().contains(current_node) &&
-			/////   e.addMethodHole(node, null))
-			/////    changed = true;
-			if(e.addMethodHoles(node,
-					    e.methodHolesSet(current_node))){
-			    changed = true;
-// 			    System.out.println(node + " because of node " +
-// 					       current_node + 
-// 					       e.methodHolesSet(current_node));
-			}
-			/////
-			if(changed){
-			    W_prop.add(node);
-			    if(!was_escaped) newly_escaped.add(node);
 			}
 		    }
-		};
+		    else { /* !PointerAnalysis.CONDENSED_ESCAPE_INFO */ 
+			if(e.addMethodHoles(node, method_holes))
+			    changed = true;
+		    }
+		}
+		
+		if(changed)
+		    W_prop.add(node);
+	    }
+	};
+	PropagateNodeVisitor p_visitor = new PropagateNodeVisitor();
 
+	W_prop.addAll(escaped);
+	while(!W_prop.isEmpty()) {
+	    PANode current_node = (PANode) W_prop.remove();
+	    p_visitor.init(current_node, e.methodHolesSet(current_node));
+	    
 	    I.forAllPointedNodes(current_node, p_visitor);
 	    O.forAllPointedNodes(current_node, p_visitor);
 	}
-	return newly_escaped;
     }
 
-    /** Convenient function equivalent that recomputes all the escape
-	information.
+
+    /** Convenient function that recomputes all the escape info.
 	Equivalent to <code>propagate(e.escapedNodes())</code>. */
-    public Set propagate(){
-	return propagate(e.escapedNodes());
+    public void propagate(){
+	//return
+	propagate(e.escapedNodes());
     }
 
     /** Checks the equality of two <code>PointsToGraph</code>s. */
     public boolean equals(Object o){
-	if(o==null) return false;
-	PointsToGraph G2 = (PointsToGraph)o;
-	if(!O.equals(G2.O)){
-	    if(ParIntGraph.DEBUG2 || DEBUG){
+	if((o == null) || !(o instanceof PointsToGraph))
+	    return false;
+	PointsToGraph G2 = (PointsToGraph) o;
+	if(!O.equals(G2.O)) {
+	    if(ParIntGraph.DEBUG2 || DEBUG) {
 		System.out.println("different O's");
-		AbstrPAEdgeSet.show_evolution(G2.O, O);
+		AbstrPAEdgeSet.show_evolution(O, G2.O);
 	    }
 	    return false;
 	}
-	if(!I.equals(G2.I)){
-	    if(ParIntGraph.DEBUG2 || DEBUG){
+	if(!I.equals(G2.I)) {
+	    if(ParIntGraph.DEBUG2 || DEBUG) {
 		System.out.println("different I's");
-		AbstrPAEdgeSet.show_evolution(G2.I, I);
+		AbstrPAEdgeSet.show_evolution(I, G2.I);
 	    }
 	    return false;
 	}
-	if(!r.equals(G2.r)){
+	if(!r.equals(G2.r)) {
 	    if(ParIntGraph.DEBUG2 || DEBUG)
 		System.out.println("different r's");
 	    return false;
 	}
-	if(!excp.equals(G2.excp)){
+	if(!excp.equals(G2.excp)) {
 	    if(ParIntGraph.DEBUG2 || DEBUG)
 		System.out.println("different excp's");
 	    return false;
 	}
-	if(!e.equals(G2.e)){
+	if(!e.equals(G2.e)) {
 	    if(ParIntGraph.DEBUG2 || DEBUG) {
 		System.out.println("different e's");
 		System.out.println("this.e : " + e);
@@ -534,7 +597,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 	<code>remaining_nodes</code> */
     public PointsToGraph keepTheEssential(PANode[] params,
 					  final Set remaining_nodes,
-					  boolean is_main){
+					  boolean is_main) {
 	PAEdgeSet _O = new LightPAEdgeSet();
 	PAEdgeSet _I = new LightPAEdgeSet();
 	// the same sets of return nodes and exceptions
@@ -600,7 +663,7 @@ public class PointsToGraph implements Cloneable, java.io.Serializable{
 	    final Temp v = (Temp) it.next();
 	    I.forAllPointedNodes
 		(v,
-		 new PANodeVisitor(){
+		 new PANodeVisitor() {
 			 public void visit(PANode node) {
 			     _I.addEdge(v, node);
 			     remaining_nodes.add(node);

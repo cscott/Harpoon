@@ -20,6 +20,7 @@ import harpoon.Util.Options.Option;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Iterator;
 
 
@@ -27,7 +28,7 @@ import java.util.Iterator;
  * <code>AllocSyncOptCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocSyncOptCompStage.java,v 1.1 2003-04-30 19:56:42 salcianu Exp $
+ * @version $Id: AllocSyncOptCompStage.java,v 1.2 2003-06-04 18:44:31 salcianu Exp $
  */
 public class AllocSyncOptCompStage extends CompilerStageEZ {
 
@@ -100,7 +101,7 @@ public class AllocSyncOptCompStage extends CompilerStageEZ {
 	});
 	
 	opts.add(new Option("sync-removal", "", "wit",
-			    "Synchronization removal optimization; if optional argument \"wit\" is present, use the inter-thread pointer analysis.") {
+			    "Synchronization removal optimization; if optional argument \"wit\" is present, use the inter-thread pointer analysis (unrecommended).") {
 	    public void action() {
 		maio.GEN_SYNC_FLAG = true;
 		if(getOptionalArg(0) != null) {
@@ -118,10 +119,19 @@ public class AllocSyncOptCompStage extends CompilerStageEZ {
 	opts.add(new Option("show-ap", "Show alocation properties") {
 	    public void action() { SHOW_ALLOC_PROPERTIES = true; }
 	});
+
+	opts.add(new Option("pa-optimize-all", "Optimize all code, including the static initializers (by default, optimize only code reachable from the main method)") {
+	    public void action() { OPTIMIZE_ALL = true; }
+	});
 	
 	return opts;
     }
     
+    /** Controls whether we optimize all the code or not.  By default,
+	do not optimize the static initializers - some of them are
+	really big (ex: jaca.util.Locale) and there is little interest
+	in optimizing them anyway: they are executed only once.*/
+    private boolean OPTIMIZE_ALL = false;
     
     public boolean enabled() {
 	return
@@ -135,25 +145,47 @@ public class AllocSyncOptCompStage extends CompilerStageEZ {
 	    (PointerAnalysis) attribs.get("PointerAnalysis");
 	
 	MetaCallGraph mcg = pa.getMetaCallGraph();
-	Set allmms = mcg.getAllMetaMethods();
+
+	Set/*<MetaMethod>*/ mms = 
+	    OPTIMIZE_ALL ? mcg.getAllMetaMethods() : 
+	    mcg.transitiveSucc(new MetaMethod(mainM, true));
+
+	time_analysis(pa, mms);
 	
-	// The following loop has just the purpose of timing the
-	// analysis of the entire program. Doing it here, before
-	// any memory allocation optimization, allows us to time
-	// it accurately.
+	System.out.println("MAInfo options: ");
+	maio.print("\t");
+	
 	long g_tstart = time();
-	for(Iterator it = allmms.iterator(); it.hasNext(); ) {
-	    MetaMethod mm = (MetaMethod) it.next();
-	    if(!analyzable(mm)) continue;
-	    pa.getIntParIntGraph(mm);
+	MAInfo mainfo = new MAInfo(pa, hcf, linker, mms, maio);
+	System.out.println("GENERATION OF MA INFO TIME  : " +
+			   (time() - g_tstart) + "ms");
+	System.out.println("===================================\n");
+	
+	if(SHOW_ALLOC_PROPERTIES) // show allocation policies
+	    mainfo.print();
+    }
+
+    // time the pointer analysis over all (meta)methods from mms. 
+    private void time_analysis(PointerAnalysis pa, Set/*<MetaMethod>*/ mms) {
+	// The following loop times the analysis of the relevant part
+	// of the program (i.e., methods from mms).  Doing it here,
+	// before any optimization, allows us to time it accurately.
+	long g_tstart = time();
+	if(OPTIMIZE_ALL) {
+	    for(Iterator it = mms.iterator(); it.hasNext(); ) {
+		MetaMethod mm = (MetaMethod) it.next();
+		if(!analyzable(mm)) continue;
+		pa.getIntParIntGraph(mm);
+	    }
 	}
+	else pa.getIntParIntGraph(new MetaMethod(mainM, true));
 	System.out.println("Intrathread Analysis time: " +
 			   (time() - g_tstart) + "ms");
 	System.out.println("===================================\n");
 	
 	if (maio.USE_INTER_THREAD) {
 	    g_tstart = System.currentTimeMillis();
-	    for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+	    for(Iterator it = mms.iterator(); it.hasNext(); ) {
 		MetaMethod mm = (MetaMethod) it.next();
 		if(!analyzable(mm)) continue;
 		    pa.getIntThreadInteraction(mm);
@@ -162,19 +194,8 @@ public class AllocSyncOptCompStage extends CompilerStageEZ {
 			       (time() - g_tstart) + "ms");
 	    System.out.println("===================================\n");
 	}
-	
-	System.out.println("MAInfo options: ");
-	maio.print("\t");
-	
-	g_tstart = time();
-	MAInfo mainfo = new MAInfo(pa, hcf, linker, allmms, maio);
-	System.out.println("GENERATION OF MA INFO TIME  : " +
-			   (time() - g_tstart) + "ms");
-	System.out.println("===================================\n");
-	
-	if(SHOW_ALLOC_PROPERTIES) // show allocation policies
-	    mainfo.print();
     }
+
 
     // TODO: change this to invoke hcf.convert and check result against null
     private static boolean analyzable(MetaMethod mm) {

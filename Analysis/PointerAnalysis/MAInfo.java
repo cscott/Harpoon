@@ -76,12 +76,15 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.13 2003-05-09 16:35:24 cananian Exp $
+ * @version $Id: MAInfo.java,v 1.14 2003-06-04 18:44:31 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
     /** Options for the <code>MAInfo</code> processing. */
     public static class MAInfoOptions implements Cloneable, Serializable {
+
+
+	public boolean IGNORE_INIT_CODE = true;
 
 	/** Controls the generation of stack allocation hints.
 	    Default <code>false</code>. */
@@ -261,7 +264,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	java_lang_Thread    = linker.forName("java.lang.Thread");
 	java_lang_Throwable = linker.forName("java.lang.Throwable");
-	init_good_holes();
+	//init_good_holes();
 
 	analyze();
 	// the nullify part was moved to prepareForSerialization
@@ -293,7 +296,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 		good_holes.add(hms[i]);
 
 	if(DEBUG)
-	    System.out.println("GOOD HOLES: " + good_holes);
+	    System.out.println("\nGOOD HOLES: " + good_holes);
     }
 
     private Set good_holes = null;
@@ -434,15 +437,29 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     /* Analyze a single method: take the object creation sites from it
        and generate an allocation policy for each one. */
-    private final void analyze_mm(MetaMethod mm){
-	// debug for JLEX; TODO: remove
-	DEBUG = mm.getHMethod().getDeclaringClass().getName().equals("Test");
-
+    private final void analyze_mm(MetaMethod mm) {
 	if(DEBUG)
 	    System.out.println("\n\nMAInfo: Analyzed Meta-Method: " + mm);
 
 	HCode hcode = hcf.convert(mm.getHMethod());
+	if(hcode == null)
+	    return; // unanalyzable method
 	((Code) hcode).setAllocationInformation(this);
+
+	// Obtain a clone of the internal pig (no interthread analysis yet)
+	// at the end of hm and "cosmetize" it a bit.
+	ParIntGraph pig = pa.getIntParIntGraph(mm);
+	if(pig == null) {
+	    if(DEBUG)
+		System.out.println("PA cannot analyze " + mm);
+	    return;
+	}
+	pig = (ParIntGraph) pig.clone();
+	pig.G.flushCaches();
+	//pig.G.e.removeMethodHoles(good_holes);
+	Set lost = pa.getLostNodes(mm);
+	if(DEBUG)
+	    System.out.println("Parallel Interaction Graph:" + pig);
 
 	Set nodes = new HashSet();
 	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
@@ -462,17 +479,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    System.out.println("inside nodes " + mm.getHMethod() + 
 			       " " + nodes);
 
-	// Obtain a clone of the internal pig (no interthread analysis yet)
-	// at the end of hm and "cosmetize" it a bit.
-	ParIntGraph pig = (ParIntGraph) pa.getIntParIntGraph(mm).clone();
-	if(pig == null) return; // strange things happen these days ...
-	pig.G.flushCaches();
-	pig.G.e.removeMethodHoles(good_holes);
-
-	if(DEBUG)
-	    System.out.println("Parallel Interaction Graph:" + pig);
-
-	generate_aps(mm, pig, nodes);
+	generate_aps(mm, pig, lost, nodes);
 
 	if(opt.DO_PREALLOCATION)
 	    try_prealloc(mm, hcode, pig);
@@ -494,35 +501,38 @@ public class MAInfo implements AllocationInformation, Serializable {
     // INPUT: a metamethod mm and the pig at its end.
     // ACTION: goes over all the level 0 inside nodes from pig
     //       and try to stack allocate or thread allocate them.
-    private void generate_aps(MetaMethod mm, ParIntGraph pig, Set nodes) {
+    private void generate_aps(MetaMethod mm, ParIntGraph pig, Set lost,
+			      Set nodes) {
 	// we study only level 0 nodes (ie allocated in THIS method).
 	// Set nodes = getLevel0InsideNodes(pig);
 
 	if(opt.DO_STACK_ALLOCATION) {
 	    if(DEBUG) System.out.println("Stack allocation");
-	    generate_aps_sa(mm, pig, nodes);
+	    generate_aps_sa(mm, pig, lost, nodes);
 	}
 
 	if(opt.DO_THREAD_ALLOCATION) {
 	    if(DEBUG) System.out.println("Thread allocation");
-	    generate_aps_ta(mm, pig, nodes);
+	    generate_aps_ta(mm, nodes);
 	}
 
 	if(opt.GEN_SYNC_FLAG) {
 	    if(DEBUG) System.out.println("Generating sync flag");
-	    generate_aps_ns(mm, pig, nodes);
+	    generate_aps_ns(mm, nodes);
 	}
     }
 
     // aux method for generate_aps: generate stack allocation hints
-    private void generate_aps_sa(MetaMethod mm, ParIntGraph pig, Set nodes) {
+    private void generate_aps_sa(MetaMethod mm, ParIntGraph pig, Set lost,
+				 Set nodes) {
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    Quad q  = (Quad) node_rep.node2Code(node);
 	    assert q != null : "No quad for " + node;
 	    MyAP ap = getAPObj(q);
 	    
-	    if(pig.G.captured(node) && stack_alloc_extra_cond(node, q)) {
+	    if((!lost.contains(node) && pig.G.captured(node)) &&
+	       stack_alloc_extra_cond(node, q)) {
 		ap.sa = true;
 		if(DEBUG)
 		    System.out.println("STACK: " + node + 
@@ -533,17 +543,29 @@ public class MAInfo implements AllocationInformation, Serializable {
     }
 
     // aux method for generate_aps: generate thread allocation hints
-    private void generate_aps_ta(MetaMethod mm, ParIntGraph pig, Set nodes) {
+    private void generate_aps_ta(MetaMethod mm, Set nodes) {
 	HMethod hm = mm.getHMethod();	
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    Quad q  = (Quad) node_rep.node2Code(node);
 	    assert q != null : "No quad for " + node;
 	    MyAP ap = getAPObj(q);
-	    
+
+	    // CRAZY DEBUG; REMOVE
+	    /*
+	    DEBUG = 
+		(q instanceof NEW) && 
+		((NEW) q).hclass().getName().equals("java.util.Vector");
+	    */
+
 	    if(!ap.sa) {
 		// the node is not stack allocated; maybe we can
 		// thread allocate it
+
+		if(DEBUG)
+		    System.out.println("\ngen_ta for " + node + " from " + 
+				       Util.code2str(q));
+
 		if(remainInThread(node, hm, "")) {
 		    ap.ta = true; // thread allocation
 		    ap.ah = null; // on the current heap
@@ -553,23 +575,25 @@ public class MAInfo implements AllocationInformation, Serializable {
 					   Util.getLine(q));
 		}
 	    }
+
+	    DEBUG = false;
 	}
     }
 
     // aux method for generate_aps: generate "no syncs" hints
-    private void generate_aps_ns(MetaMethod mm, ParIntGraph pig, Set nodes) {
+    private void generate_aps_ns(MetaMethod mm, Set nodes) {
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    Quad q  = (Quad) node_rep.node2Code(node);
+	    if(! (q instanceof NEW)) continue;
 	    MyAP ap = getAPObj((Quad) node_rep.node2Code(node));
 	    if(ap.sa || ap.ta) 
 		ap.ns = true; // trivial setting of ns
-	    else { // the hard work ...
+	    else {// the hard work ...
 		ap.ns = noConflictingSyncs(node, mm);
-		if(ap.ns) {
-		    System.out.println("BRAVO: " + node + " " +
+		if(ap.ns)
+		    System.out.println("BRAVO: " + node + " " + 
 				       Util.code2str(q));
-		}
 	    }
 	}
     }
@@ -582,13 +606,13 @@ public class MAInfo implements AllocationInformation, Serializable {
     private Set getLevel0InsideNodes(ParIntGraph pig) {
 	final Set retval = new HashSet();
 	pig.forAllNodes(new PANodeVisitor() {
-		public void visit(PANode node) {
-		    if((node.type == PANode.INSIDE) &&
-		       !(node.isTSpec()) &&
-		       (node.getCallChainDepth() == 0))
-			retval.add(node);
+	    public void visit(PANode node) {
+		if((node.type == PANode.INSIDE) && !(node.isTSpec()) &&
+		   (node.getCallChainDepth() == 0)) {
+		    retval.add(node);
 		}
-	    });
+	    }
+	});
 	retval.remove(ActionRepository.THIS_THREAD);
 	return retval;
     }
@@ -645,9 +669,9 @@ public class MAInfo implements AllocationInformation, Serializable {
     /** Checks whether <code>node</code> escapes only in the caller:
 	it is reached through a parameter or it is returned from the
 	method but not lost due to some other reasons. */
-    private boolean lostOnlyInCaller(PANode node, ParIntGraph pig){
+    private boolean lostOnlyInCaller(PANode node, ParIntGraph pig) {
 	return
-	    ! ( lostInAStatic(node, pig) ||
+	    ! (	lostInAStatic(node, pig) ||
 		lostInAMethodHole(node, pig) ||
 		lostInAThread(node, pig) );
     }
@@ -706,30 +730,50 @@ public class MAInfo implements AllocationInformation, Serializable {
     
     private static int MAX_LEVEL_BOTTOM_MODE = 10;
     private boolean remainInThreadBottom(PANode node, MetaMethod mm,
-					 int level, String ident){
-	if(node == null)
-	    return true; // it was false before
-
+					 int level, String ident) {
 	if(DEBUG)
 	    System.out.println(ident + "remainInThreadBottom called for " + 
 			       node + " mm = " + mm);
 
+	if(!mms.contains(mm)) {
+	    if(DEBUG)
+		System.out.println(mm + " was not analyzed -> false");
+	    return false;	    
+	}
+
 	ParIntGraph pig = pa.getIntParIntGraph(mm);
+	// the analysis is unable to analyze mm
+	if(pig == null) {
+	    if(DEBUG)
+		System.out.println("PA cannot analyze " + mm + " -> false");
+	    return false;
+	}
+	Set/*<PANode>*/ lost = pa.getLostNodes(mm);
+	if(DEBUG) {
+	    System.out.println("PIG: " + pig);
+	    System.out.println("Lost nodes = " + lost);
+	}
+
+	if(pa.getLostNodes(mm).contains(node)) {
+	    if(DEBUG) 
+		System.out.println(ident + node + " is lost -> false");
+	    return false;
+	}
 	
-	if(pig.G.captured(node)){
+	if(pig.G.captured(node)) {
 	    if(DEBUG)
 		System.out.println(ident + node+ " is captured -> true");
 	    return true;
 	}
 	
-	if(!lostOnlyInCaller(node, pig)){
+	if(!lostOnlyInCaller(node, pig)) {
 	    if(DEBUG)
 		System.out.println(ident + node +
 				   " escapes somewhere else -> false");
 	    return false;
 	}
 
-	if(level == MAX_LEVEL_BOTTOM_MODE){
+	if(level == MAX_LEVEL_BOTTOM_MODE) {
 	    if(DEBUG)
 		System.out.println(ident + node + 
 				   "max level reached -> false");
@@ -738,19 +782,19 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	MetaMethod[] callers = mac.getCallers(mm);
 
-	// This is a very, very delicate case: if there is no caller, it means
-	// the currently analyzed method is either "main" or the run method of
-	// some thread; the node might accessible from outside the current
-	// thread => we conservatively return "false".
-	if(callers.length == 0){
+	// This is a very, very delicate case: if there is no caller,
+	// it means the currently analyzed method is either "main" or
+	// the run method of some thread; the node might be accessible
+	// from outside the current thread => we conservatively return
+	// "false".
+	if(callers.length == 0) {
 	    if(DEBUG)
-		System.out.println(ident + node + "pours out of main/run");
+		System.out.println(ident + node + " pours out of main/run");
 	    return false;
 	}
 
-	for(int i = 0; i < callers.length; i++){
-	    if(!remainInThreadBottom(node.getBottom(), callers[i], level+1,
-				     ident + " ")){
+	for(int i = 0; i < callers.length; i++) {
+	    if(!remainInThreadBottom(node, callers[i], level+1, ident + " ")) {
 		if(DEBUG)
 		    System.out.println(ident + node + " -> false");
 		return false;
@@ -758,15 +802,15 @@ public class MAInfo implements AllocationInformation, Serializable {
 	}
 	
 	if(DEBUG)
-	    System.out.println(ident + node +
-			       " remains in the current thread");
+	    System.out.println(ident + node + " stays in current thread");
+
 	return true;
     }
 
 
     // Checks whether node defined into hm, remains into the current
     // thread even if it escapes from the method which defines it.
-    private boolean remainInThread(PANode node, HMethod hm, String ident){
+    private boolean remainInThread(PANode node, HMethod hm, String ident) {
 	if(DEBUG)
 	    System.out.println(ident + "remainInThread called for " +
 			       node + "  hm = " + hm);
@@ -778,9 +822,15 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 	MetaMethod mm = new MetaMethod(hm, true);
 	ParIntGraph pig = pa.getIntParIntGraph(mm);
+	if(pig == null) // PA unable to process mm
+	    return false;
 
-	assert pig != null : "pig is null for hm = " + hm + " " + mm;
-	
+	if(pa.getLostNodes(mm).contains(node)) {
+	    if(DEBUG) 
+		System.out.println(ident + node + " is lost -> false");
+	    return false;
+	}
+
 	if(pig.G.captured(node)){
 	    if(DEBUG)
 		System.out.println(ident + node+ " is captured -> true");
@@ -794,12 +844,15 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    return false;
 	}
 
-	if(node.getCallChainDepth() == PointerAnalysis.MAX_SPEC_DEPTH - 1){
+	if(!PointerAnalysis.CALL_CONTEXT_SENSITIVE || 
+	   (node.getCallChainDepth() == PointerAnalysis.MAX_SPEC_DEPTH - 1)) {
 	    if(DEBUG)
 		System.out.println(ident + node + 
 				   " is almost too old and uncaptured -> " + 
 				   "bottom mode");
-	    boolean retval = remainInThreadBottom(node, mm, 0, ident);
+	    PANode node2 = PointerAnalysis.CALL_CONTEXT_SENSITIVE ?
+		node.getBottom() : node;
+	    boolean retval = remainInThreadBottom(node2, mm, 0, ident);
 	    if(DEBUG)
 		System.out.println(ident + node + " " + retval);
 	    return retval;
@@ -812,7 +865,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    
 	    HMethod hm_caller = quad2method(call);
 
-	    if(!remainInThread(spec, hm_caller, ident + " ")){
+	    if(!remainInThread(spec, hm_caller, ident + " ")) {
 		if(DEBUG)
 		    System.out.println(ident + node +
 				       " might escape -> false");
@@ -847,8 +900,9 @@ public class MAInfo implements AllocationInformation, Serializable {
     // be quite easy from the comments I've put into the code.
     private boolean noConflictingSyncs(PANode node, MetaMethod mm,
 				       int level, String ident) {
+
 	if(DEBUG)
-	    System.out.print("noConflictingSyncs \n" +
+	    System.out.print(ident + "noConflictingSyncs \n" +
 			     "\tnode  = " + node +
 			     "\tcreated at " + 
 			     Util.code2str
@@ -868,15 +922,21 @@ public class MAInfo implements AllocationInformation, Serializable {
 	if(level > MAInfo.MAX_LEVEL_NO_CONCURRENT_SYNCS)
 	    return false;
 
+	// avoid analyzing forbiden methods
+	if(!mms.contains(mm))
+	    return false;
 	ParIntGraph pig = pa.getIntParIntGraph(mm);
+	if(pig == null) // PA unable to process mm
+	    return false;
 
-	// Case 1: node is captured in mm -> true
+	// Case 1: node escapes into the entire program -> false
+	if(pa.getLostNodes(mm).contains(node) ||
+	   lostInAStatic(node, pig) || lostInAMethodHole(node, pig))
+	    return false;
+
+	// Case 2: node is captured in mm -> true
 	if(pig.G.captured(node))
 	    return true;
-
-	// Case 2: node escapes into the entire program -> false
-	if(lostInAStatic(node, pig) || lostInAMethodHole(node, pig))
-	    return false;
 
 	// Case 3: node escapes into the caller(s) -> recursively call
 	// the function on each of the callers and compute a big AND.
@@ -1055,8 +1115,12 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     /** Pretty printer for debug. */
     public void print() {
+	long nb_sa = 0;
+	long nb_ta = 0;
+	long nb_ns = 0;
+
 	System.out.println("\n(INTERESTING) ALLOCATION PROPERTIES:");
-	for(Iterator it = aps.keySet().iterator(); it.hasNext(); ){
+	for(Iterator it = aps.keySet().iterator(); it.hasNext(); ) {
 	    Quad newq = (Quad) it.next();
 	    MyAP ap   = (MyAP) aps.get(newq);
 	    HMethod hm = newq.getFactory().getMethod();
@@ -1067,12 +1131,21 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    if(!(ap.canBeStackAllocated() || ap.canBeThreadAllocated() ||
 		 ap.noSync())) continue;
 
+	    if(ap.canBeStackAllocated()) nb_sa++;
+	    if(ap.canBeThreadAllocated()) nb_ta++;
+	    if(ap.noSync()) nb_ns++;
+
 	    System.out.println(hclass.getPackage() + "." + 
 			       newq.getSourceFile() + ":" +
 			       newq.getLineNumber() + " " +
 			       newq + "(" + node + ") (" + 
 			       hm + ") \t -> " + ap); 
 	}
+	System.out.println("====================");
+	System.out.println("TOTAL ALLOCATION SITES:\t" + aps.keySet().size());
+	System.out.println("SA SITES:\t" +  nb_sa);
+	System.out.println("TA SITES:\t" +  nb_ta);
+	System.out.println("NS SITES:\t" +  nb_ns);
 	System.out.println("====================");
     }
 
@@ -1266,14 +1339,16 @@ public class MAInfo implements AllocationInformation, Serializable {
 	if(hcode.getElementsL().size() > MAX_INLINING_SIZE) return;
 
 	// obtain in A the set of nodes that might be captured after inlining 
-	Set A = getInterestingLevel0InsideNodes(mm.getHMethod(), pig);
+	Set A = getInterestingLevel0InsideNodes(mm, pig);
 	if(A.isEmpty()) return;
 
 	// very dummy 1-level inlining
 	MetaMethod[] callers = mac.getCallers(mm);
 	for(int i = 0; i < callers.length; i++) {
 	    MetaMethod mcaller = callers[i];
-	    HMethod hcaller = mcaller.getHMethod();
+	    // avoid going into unoptimizable or unanalyzable methods
+	    if(!mms.contains(mcaller) || 
+	       (pa.getIntParIntGraph(mcaller) == null)) continue;
 	    for(Iterator it = mcg.getCallSites(mcaller).iterator();
 		it.hasNext(); ) {
 		CALL cs = (CALL) it.next();
@@ -1412,31 +1487,17 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     //////////// B. AUXILIARY METHODS FOR INLINING START //////////////////
 
-    private Set getInterestingLevel0InsideNodes(ParIntGraph pig) {
-	Set level0 = getLevel0InsideNodes(pig);
+    private Set getInterestingLevel0InsideNodes(MetaMethod mm,
+						ParIntGraph pig) {
 	Set A = new HashSet();
-	for(Iterator it = level0.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
-	    if(!pig.G.captured(node) && lostOnlyInCaller(node, pig)) {
-		// we are not interested in stack allocating the exceptions
-		// since they  don't appear in normal case and so, they
-		// are not critical for the memory management
-		HClass hclass = getAllocatedType(node_rep.node2Code(node));
-		if(!java_lang_Throwable.isSuperclassOf(hclass))
-		    A.add(node);
-	    }
-	}
-	return A;
-    }
-
-    private Set getInterestingLevel0InsideNodes(HMethod hm, ParIntGraph pig) {
-	Set A = new HashSet();
-	HCode hcode = hcf.convert(hm);
+	HCode hcode = hcf.convert(mm.getHMethod());
+	Set lost = pa.getLostNodes(mm);
 	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
 	    if((q instanceof NEW) || (q instanceof ANEW)) {
 		PANode node = node_rep.getCodeNode(q, PANode.INSIDE);
-		if(!pig.G.captured(node) && lostOnlyInCaller(node, pig)) {
+		if(!pig.G.captured(node) && !lost.contains(node) &&
+		   lostOnlyInCaller(node, pig)) {
 		    // we are not interested in stack allocating the exceptions
 		    // since they  don't appear in normal case and so, they
 		    // are not critical for the memory management
@@ -1806,7 +1867,7 @@ public class MAInfo implements AllocationInformation, Serializable {
     private void generate_inlining_chains(MetaMethod mm) {
 	ParIntGraph pig = pa.getExtParIntGraph(mm);
 
-	Set nodes = getInterestingLevel0InsideNodes(mm.getHMethod(), pig);
+	Set nodes = getInterestingLevel0InsideNodes(mm, pig);
 	if(nodes.isEmpty()) return;
 	Set sa_nodes = new HashSet();
 	Set ta_nodes = new HashSet();
@@ -1828,8 +1889,9 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    PANode node = (PANode) it.next();
 	    Quad q = (Quad) node_rep.node2Code(node);
 	    if(opt.stack_allocate_not_in_loops() && in_a_loop(q)) {
-		System.out.println("split_nodes: " + Util.code2str(q) + 
-				   " in a loop -> no sa, try to ta");
+		if(DEBUG)
+		    System.out.println("split_nodes: " + Util.code2str(q) + 
+				       " in a loop -> no sa, try to ta");
 		ta_nodes.add(node);
 	    }
 	    else
@@ -1876,13 +1938,15 @@ public class MAInfo implements AllocationInformation, Serializable {
 	MetaMethod[] callers = mac.getCallers(mm);
 	for(int i = 0; i < callers.length; i++) {
 	    MetaMethod mcaller = callers[i];
-	    // avoid inlining the class initializers: past experience
-	    // showed this might lead to circular dependencies in the
-	    // static initializer code
-	    if(mcaller.getHMethod().getName().equals("<clinit>"))
-		continue;
 
-	    Set call_sites = mcg.getCallSites(mcaller);
+	    // mcaller should not be optimized
+	    if(!mms.contains(mcaller)) continue;
+	    ParIntGraph pig_caller = pa.getIntParIntGraph(mcaller);
+	    // the analysis is unable to analyze mcaller
+	    if(pig_caller == null) continue;
+
+	    Set/*<PANode>*/ lost_caller = pa.getLostNodes(mcaller);
+	    Set/*<CALL>*/ call_sites = mcg.getCallSites(mcaller);
 
 	    if(DEBUG)
 		System.out.println(header + "CALLER: " + mcaller.getHMethod());
@@ -1896,13 +1960,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 
 		// we can only inline call sites that calls only mm
 		if((callees.length != 1) || !callees[0].equals(mm)
-		   || !good_cs2(cs) ) {
-		    /*
-		    if(DEBUG)
-			System.out.println(header + Util.code2str(cs) + " is not good -> don't sa; callees.length = " + callees.length + " callees[0].equals(mm)=" + callees[0].equals(mm) + "\ncallees[0] = " + callees[0] + "\nmm = " + mm);
-		    */
+		   || !good_cs2(cs) )
 		    continue;
-		}
 
 		if(DEBUG)
 		    System.out.println(header + "good: " + Util.code2str(cs));
@@ -1929,11 +1988,9 @@ public class MAInfo implements AllocationInformation, Serializable {
 		Set sa_specs = specializeNodes(sa_nodes, cs);
 		Set ta_specs = specializeNodes(ta_nodes, cs);
 		
-		ParIntGraph pig_caller = pa.getIntParIntGraph(mcaller);
-		
 		// B = specs that are captured in mcaller
-		Set sa_B = captured_subset(sa_specs, pig_caller);
-		Set ta_B = captured_subset(ta_specs, pig_caller);
+		Set sa_B = captured_subset(sa_specs, pig_caller, lost_caller);
+		Set ta_B = captured_subset(ta_specs, pig_caller, lost_caller);
 
 		if(DEBUG && 
 		   opt.DO_STACK_ALLOCATION && opt.DO_INLINING_FOR_SA)
@@ -1962,9 +2019,18 @@ public class MAInfo implements AllocationInformation, Serializable {
 		
 		// the length of current_chain_cs is level + 1
 		if(level + 1 < opt.MAX_INLINING_LEVEL) {
+
+		    // avoid inlining the class initializers: past experience
+		    // showed this might lead to circular dependencies in the
+		    // static initializer code
+		    if(mcaller.getHMethod().getName().equals("<clinit>"))
+			continue;
+
 		    // C = specs that escape only in caller 
-		    Set sa_C = only_in_caller_subset(sa_specs, pig_caller);
-		    Set ta_C = only_in_caller_subset(ta_specs, pig_caller);
+		    Set sa_C = only_in_caller_subset(sa_specs, pig_caller,
+						     lost_caller);
+		    Set ta_C = only_in_caller_subset(ta_specs, pig_caller,
+						     lost_caller);
 		    
 		    if((opt.DO_STACK_ALLOCATION &&
 			opt.DO_INLINING_FOR_SA && !sa_C.isEmpty()) ||
@@ -2026,11 +2092,12 @@ public class MAInfo implements AllocationInformation, Serializable {
     
     // Returns a subset of nodes containing the nodes captured in pig
     private Set captured_subset(final Set nodes,
-				final ParIntGraph pig) {
+				final ParIntGraph pig,
+				final Set lost) {
 	Set result = new HashSet();
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
-	    if(pig.G.captured(node))
+	    if(!lost.contains(pig) && pig.G.captured(node))
 		result.add(node);
 	}
 	return result;
@@ -2039,13 +2106,14 @@ public class MAInfo implements AllocationInformation, Serializable {
     // Returns a subset of nodes containing the nodes that escape
     // only (exactly) in the caller
     private Set only_in_caller_subset(final Set nodes,
-				      final ParIntGraph pig) {
+				      final ParIntGraph pig,
+				      final Set lost) {
 	Set result = new HashSet();
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    if(pig.G.captured(node)) continue;
 
-	    if(lostOnlyInCaller(node, pig))
+	    if(!lost.contains(node) && lostOnlyInCaller(node, pig))
 		result.add(node);
 	    else {
 		if(DEBUG) {

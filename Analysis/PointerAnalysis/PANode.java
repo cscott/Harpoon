@@ -21,7 +21,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PANode.java,v 1.6 2003-05-06 15:25:46 salcianu Exp $
+ * @version $Id: PANode.java,v 1.7 2003-06-04 18:44:32 salcianu Exp $
  */
 final public class PANode implements java.io.Serializable {
     // activates some safety tests
@@ -51,6 +51,13 @@ final public class PANode implements java.io.Serializable {
 
     /** Possible type: constant objects (e.g., Strings) */
     public static final int CONST           = 8;
+
+    /** Possible type: lost objects (i.e., objects reachable from
+        unanalyzed parts of the program). */
+    public static final int LOST            = 9;
+
+    /** Possible type: node returned by java.lang.Object.clone */
+    public static final int INSIDE2         = 10;
 
     /** The type of the node */
     public int type;
@@ -392,16 +399,18 @@ final public class PANode implements java.io.Serializable {
     public final String toString() {
 	String str = null;
 	switch(type) {
-	case INSIDE: str="I"; break;
-	case LOAD:   str="L"; break;
-	case PARAM:  str="P"; break;
-	case RETURN: str="R"; break;
-	case EXCEPT: str="E"; break;
-	case STATIC: str="S"; break;
-	case NULL:   str="NULL"; break;
-	case CONST:  str="CONST"; break;
+	case INSIDE:  str="I"; break;
+	case INSIDE2: str="IC"; break;
+	case LOAD:    str="L"; break;
+	case PARAM:   str="P"; break;
+	case RETURN:  str="R"; break;
+	case EXCEPT:  str="E"; break;
+	case STATIC:  str="S"; break;
+	case NULL:    str="NULL"; break;
+	case CONST:   str="CONST"; break;
+	case LOST:    str="LOST"; break;
 	}
-	if((type != NULL) && (type != CONST))
+	if((type != NULL) && (type != CONST) && (type != LOST))
 	    str = str + number;
 	if(isBottom()) str += "B";
 	return str;

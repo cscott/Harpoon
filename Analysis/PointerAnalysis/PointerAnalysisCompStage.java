@@ -57,7 +57,7 @@ import java.io.InputStreamReader;
  * <code>PointerAnalysisCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysisCompStage.java,v 1.4 2003-04-30 20:04:37 salcianu Exp $
+ * @version $Id: PointerAnalysisCompStage.java,v 1.5 2003-06-04 18:44:32 salcianu Exp $
  */
 public class PointerAnalysisCompStage extends CompilerStageEZ {
 
@@ -220,7 +220,7 @@ public class PointerAnalysisCompStage extends CompilerStageEZ {
 	PointerAnalysis pa = 
 	    new PointerAnalysis(pre_analysis.mcg,
 				pre_analysis.caching_scc_lbb_factory,
-				linker);
+				linker, classHierarchy);
 	
 	if(DO_ANALYSIS)
 	    do_analysis(pa, methodsToAnalyze);

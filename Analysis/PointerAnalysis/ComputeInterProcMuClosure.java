@@ -19,10 +19,10 @@ import java.util.Iterator;
    comments around that method for more info.
  
    @author  Alexandru Salcianu <salcianu@MIT.EDU>
-   @version $Id: ComputeInterProcMuClosure.java,v 1.2 2003-02-12 19:03:34 salcianu Exp $ */
+   @version $Id: ComputeInterProcMuClosure.java,v 1.3 2003-06-04 18:44:31 salcianu Exp $ */
 public class ComputeInterProcMuClosure {
 
-    private static final boolean DEBUG = false;
+    private static boolean DEBUG = false;
 
     /** Compute the node mappings for the inter-procedural analysis,
 	according to the method outlined in Alex Salcianu's SM thesis
@@ -38,12 +38,16 @@ public class ComputeInterProcMuClosure {
 	(CALL call, ParIntGraph pig_caller, ParIntGraph pig_callee,
 	 PANode[] callee_params) {
 
+	DEBUG = PointerAnalysis.MEGA_DEBUG2;
+
 	if(DEBUG) {
 	    System.out.println
 		("computeInterProcMu:\n" + 
 		 "call = " + Util.code2str(call) + "\n" +
+		 /*
 		 "pig_caller = " + pig_caller + "\n" + 
 		 "pig_callee = " + pig_callee + "\n" +
+		 */
 		 "callee_params = {");
 	    for(int i = 0; i < callee_params.length; i++)
 		System.out.println(" " + callee_params[i]);
@@ -53,6 +57,9 @@ public class ComputeInterProcMuClosure {
 	ComputeInterProcMuClosure cmc = new ComputeInterProcMuClosure
 	    (call, pig_caller, pig_callee, callee_params);
 	cmc.compute_mu();
+
+	DEBUG = false;
+
 	return cmc.mu;
     }
 
@@ -98,8 +105,10 @@ public class ComputeInterProcMuClosure {
 	// extend mu to obtain mu'
 	compute_final_mu();
 
+	/*
 	if(DEBUG)
 	    System.out.println("Final mu: " + mu);
+	*/
     }
     
 
@@ -111,7 +120,10 @@ public class ComputeInterProcMuClosure {
 	// 2.6: reflexive mapping of static (i.e., class) nodes from callee
 	pig_callee.forAllNodes(new PANodeVisitor() {
 	    public void visit(PANode node) {
-		if(node.type == PANode.STATIC)
+		if((node.type == PANode.STATIC) ||
+		   // LOST nodes may represent STATIC nodes
+		   (PointerAnalysis.COMPRESS_LOST_NODES &&
+		    (node.type == PANode.LOST)))
 		    mu.add(node, node);
 	    }
 	});
@@ -184,6 +196,7 @@ public class ComputeInterProcMuClosure {
     // true if this is indeed a new mapping
     private boolean add_mapping_aux(PANode source, PANode target) {
 	if(mu.add(source, target)) {
+	    NEWINFO = true;
 	    if(DEBUG)
 		System.out.println("new mapping: " + source + " -> " + target);
 	    new_mu.add(source, target);
@@ -227,13 +240,15 @@ public class ComputeInterProcMuClosure {
 	Set node4s = pig_caller.G.I.pointedNodes(new_mu.getValues(node1), f);
 	if(node4s.isEmpty()) return;
 
-	if(DEBUG)
-	    System.out.println("2.7 for node1=" + node1 + ", f=" + f);
+	NEWINFO = false;
 
 	for(Iterator it2 = node2s.iterator(); it2.hasNext(); ) {
 	    PANode node2 = (PANode) it2.next();
 	    add_mappings(node2, node4s);
 	}
+
+	if(NEWINFO && DEBUG)
+	    System.out.println("2.7 for node1=" + node1 + ", f=" + f + "\n");
     }
 
     // try to apply constraint 2.8 for node1/node3 = node
@@ -267,11 +282,10 @@ public class ComputeInterProcMuClosure {
 
     // "apply" all possible instantiations of 2.8 for node1 and node3
     private void match_callee_callee(PANode node1, PANode node3) {
-	if( ! ( (node1 == node3) || (node1.type == PANode.LOAD) ) )
+	if( ! ( (node1 != node3) || 
+		((node1.type == PANode.LOAD) ||
+		 (node1.type == PANode.LOST)) ) )
 	    return;
-
-	if(DEBUG)
-	    System.out.println("2.8 for node1=" + node1 + ", node3=" + node3);
 
 	for(Iterator itf = pig_callee.G.O.allFlagsForNode(node1).iterator();
 	    itf.hasNext(); ) {
@@ -279,16 +293,34 @@ public class ComputeInterProcMuClosure {
 	    Set node2s = pig_callee.G.O.pointedNodes(node1, f);
 	    Set node4s = pig_callee.G.I.pointedNodes(node3, f);
 	    if(node4s.isEmpty()) continue;
-	    
+
 	    for(Iterator it2 = node2s.iterator(); it2.hasNext(); ) {
 		PANode node2 = (PANode) it2.next();
 		for(Iterator it4 = node4s.iterator(); it4.hasNext(); ) {
+
+		    NEWINFO = false;
+
 		    PANode node4 = (PANode) it4.next();
 		    if(node4.type != PANode.PARAM)
 			add_mapping(node2, node4);
+		    
+		    if(NEWINFO && DEBUG)
+			System.out.println
+			    ("2.8a for node1=" + node1 + ", node2=" + node2 + 
+			     ", f=" + f +
+			     ", node3=" + node3 + ", node4=" + node4 + "\n");
+		    NEWINFO = false;
+
 		    add_mappings(node2, mu.getValues(node4));
+
+		    if(NEWINFO && DEBUG)
+			System.out.println
+			    ("2.8b for node1=" + node1 + ", node2=" + node2 + 
+			     ", f=" + f +
+			     ", node3=" + node3 + ", node4=" + node4 + "\n");
 		}
 	    }
 	}
     }
+    private boolean NEWINFO = false;
 }

@@ -18,7 +18,7 @@ package harpoon.Analysis.PointerAnalysis;
 
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraphPair.java,v 1.2 2002-02-25 20:58:41 cananian Exp $
+ * @version $Id: ParIntGraphPair.java,v 1.3 2003-06-04 18:44:32 salcianu Exp $
  */
 class ParIntGraphPair implements java.io.Serializable {
 
@@ -34,7 +34,7 @@ class ParIntGraphPair implements java.io.Serializable {
     }
 
     /** Checks whether two pairs are equal or not. */
-    static boolean identical(ParIntGraphPair pp1, ParIntGraphPair pp2){
+    static boolean identical(ParIntGraphPair pp1, ParIntGraphPair pp2) {
 	if((pp1 == null) || (pp2 == null))
 	    return pp1 == pp2;
 	return

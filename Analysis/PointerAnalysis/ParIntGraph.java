@@ -30,7 +30,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.6 2003-05-06 15:27:28 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.7 2003-06-04 18:44:32 salcianu Exp $
  */
 public class ParIntGraph implements java.io.Serializable {
 
@@ -84,6 +84,9 @@ public class ParIntGraph implements java.io.Serializable {
     public void join(ParIntGraph pig2){
 	if(pig2 == null) return;
 
+	long b_time = PointerAnalysis.FINE_TIMING ? 
+	    System.currentTimeMillis() : 0;
+
 	G.join(pig2.G);
 	tau.join(pig2.tau);
 	
@@ -92,6 +95,11 @@ public class ParIntGraph implements java.io.Serializable {
 
 	if(!PointerAnalysis.IGNORE_EO)
 	    eo.join(pig2.eo);
+
+	if(PointerAnalysis.FINE_TIMING) {
+	    long delta = System.currentTimeMillis() - b_time;
+	    total_join_time += delta;
+	}   
     }
 
 
@@ -105,8 +113,18 @@ public class ParIntGraph implements java.io.Serializable {
 	<code>principal</code> controls whether the return and exception set
 	are inserted. */
     void insertAllButArEo(ParIntGraph pig2, Relation mu,
-			boolean principal, Set noholes){
-	G.insert(pig2.G, mu, principal, noholes);
+			  boolean principal, Set noholes) {
+	insertAllButArEo(pig2, mu, principal, noholes, null, false);
+    }
+
+    // If ppgRoots != null, collect in ppgRoots all nodes that we need
+    // to re-propagate escape info from:
+    // 1. starting points for new edges
+    // 2. nodes whose escape info has changed
+    // Note: works only if !fullProj
+    void insertAllButArEo(ParIntGraph pig2, Relation mu, boolean principal,
+			  Set noholes, Set ppgRoots, boolean fullProj) {
+	G.insert(pig2.G, mu, principal, noholes, ppgRoots, fullProj);
 	tau.insert(pig2.tau, mu);
     }
 
@@ -138,24 +156,40 @@ public class ParIntGraph implements java.io.Serializable {
 	return g2b;
     }
 
+    
+
     /** Check the equality of two <code>ParIntGraph</code>s. */
-    public boolean equals(Object obj){
+    public boolean equals(Object obj) {
+	long b_time = PointerAnalysis.FINE_TIMING ? 
+	    System.currentTimeMillis() : 0;
+
+	boolean result = equals2(obj);
+
+	if(PointerAnalysis.FINE_TIMING) {
+	    long delta = System.currentTimeMillis() - b_time;
+	    total_equals_time += delta;
+	}   
+
+	return result;
+    }
+
+    private boolean equals2(Object obj) {
 	if(obj == null) return false;
 
 	ParIntGraph pig2 = (ParIntGraph) obj;
-	if(!G.equals(pig2.G)){
+	if(!G.equals(pig2.G)) {
 	    if(DEBUG2)
 		System.out.println("The graphs are different");
 	    return false;
 	}
-	if(!tau.equals(pig2.tau)){
+	if(!tau.equals(pig2.tau)) {
 	    if(DEBUG2)
 		System.out.println("The tau's are different");
 	    return false;
 	}
 
 	if(PointerAnalysis.RECORD_ACTIONS)
-	    if(!ar.equals(pig2.ar)){
+	    if(!ar.equals(pig2.ar)) {
 		if(DEBUG2){
 		    System.out.println("The ar's are different");
 		    ar.show_evolution(pig2.ar);
@@ -187,6 +221,9 @@ public class ParIntGraph implements java.io.Serializable {
 	Parallel Interaction Graph. */
     public Object clone() {
 
+	long b_time = 
+	    PointerAnalysis.FINE_TIMING? System.currentTimeMillis() : 0;
+
 	ActionRepository _ar =
 	    PointerAnalysis.RECORD_ACTIONS ?
 	    (ActionRepository) ar.clone() : null;
@@ -194,38 +231,81 @@ public class ParIntGraph implements java.io.Serializable {
 	EdgeOrdering _eo = 
 	    PointerAnalysis.IGNORE_EO ? null : (EdgeOrdering) eo.clone();
 
-	return new ParIntGraph((PointsToGraph)G.clone(),
-			       (PAThreadMap)tau.clone(),
-			       _ar, _eo );
+	ParIntGraph result = new ParIntGraph((PointsToGraph)G.clone(),
+					     (PAThreadMap)tau.clone(),
+					     _ar, _eo );
+
+	if(PointerAnalysis.FINE_TIMING) {
+	    long delta = System.currentTimeMillis() - b_time;
+	    total_cloning_time += delta;
+	}
+
+	return result;
     }
 
+    static long total_cloning_time = 0;
+    static long total_equals_time  = 0;
+    static long total_join_time  = 0;
 
-    private String nodeStats() {
+
+
+    String stats() {
 	Set/*<PANode>*/ nodes = allNodes();
 	int nb_param  = 0;
 	int nb_inside = 0;
 	int nb_load   = 0;
+	int nb_compressable = 0;
 	int nb_static = 0;
 	int nb_return = 0;
 	int nb_except = 0;
+	int nb_other  = 0;
 	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    switch(node.type()) {
 	    case PANode.PARAM:  nb_param++; break;
+	    case PANode.INSIDE2:
 	    case PANode.INSIDE: nb_inside++; break;
-	    case PANode.LOAD:   nb_load++; break;
+	    case PANode.LOAD:   nb_load++;   break;
 	    case PANode.STATIC: nb_static++; break;
 	    case PANode.RETURN: nb_return++; break;
 	    case PANode.EXCEPT: nb_except++; break;
+	    case PANode.LOST:
+	    case PANode.NULL:   nb_other++; break;
 	    default: // do nothing
 	    }
+	    if(compressable_node(node))
+		nb_compressable++;
 	}
-	return
-	    nodes.size() + 
-	    "\t(P:" + nb_param  + ",I:" + nb_inside + 
-	    ",L:" + nb_load   + ",S:" + nb_static + 
-	    ",R:" + nb_return + ",E:" + nb_except + ")";
+
+	StringBuffer buff = new StringBuffer();
+	buff.append
+	    (nodes.size() + " nodes " + 
+	     "\t(P:" + nb_param  + ", I:" + nb_inside + 
+	     ", L:" + nb_load   + ", S:" + nb_static + 
+	     ", R:" + nb_return + ", E:" + nb_except + 
+	     ", O:" + nb_other + "; " +
+	     nb_compressable + ");");
+
+	edge_visitor.reset();
+	G.I.forAllEdges(edge_visitor);
+	buff.append("\tv->n: " + edge_visitor.v2n_edges +
+		    ";\tn->n: (" + edge_visitor.n2n_edges + " inside;  " );
+
+	edge_visitor.reset();
+	G.O.forAllEdges(edge_visitor);
+	assert edge_visitor.v2n_edges == 0;
+	buff.append(edge_visitor.n2n_edges + " outside)");
+
+	return buff.toString();
     }
+    private static class StatEdgeVisitor implements PAEdgeVisitor {
+	int v2n_edges;
+	int n2n_edges;
+	void reset() { v2n_edges = 0; n2n_edges = 0; }
+	public void visit(Temp v, PANode node) { v2n_edges++; }
+	public void visit(PANode n1, String f, PANode n2) { n2n_edges++; }
+    }
+    private static final StatEdgeVisitor edge_visitor = new StatEdgeVisitor();
 
     
     /** Produces a <code>ParIntGraph</code> containing only the
@@ -233,17 +313,80 @@ public class ParIntGraph implements java.io.Serializable {
 	(i.e. via parameters,
 	class nodes, normally or exceptionally returned nodes or the
 	started thread nodes) */
-    public ParIntGraph keepTheEssential(PANode[] params, boolean is_main){
+    public ParIntGraph keepTheEssential(PANode[] params, boolean is_main) {
+	return keepTheEssential(params, is_main, null);
+    }
+
+
+    public ParIntGraph keepTheEssential
+	(PANode[] params, boolean is_main, Relation compression_mu) {
+
+	Relation new_mu = null;
+	if(PointerAnalysis.MEGA_DEBUG)
+	    System.out.println("Before kTE graph is " + this);
+
 	ParIntGraph pig2 = retain_essential(params, is_main);
 
-	if(AGGRESSIVE_SHRINKING){
+	//if(PointerAnalysis.MEGA_DEBUG)
+	//    System.out.println("After retain_essential graph is " + pig2);
+
+	if(AGGRESSIVE_SHRINKING) {
 	    pig2.shrinking();
 	    pig2 = pig2.retain_essential(params, is_main);
 	}
 
-	System.out.println(pig2.nodeStats());
+	if(compression_mu != null)
+	    pig2 = pig2.compressLostNodes(compression_mu);
+
+	System.out.println("End of kTE:    " + pig2.stats());
+	//System.out.println("GRAPH IS " + pig2);
 
 	return pig2;
+    }
+
+
+    public ParIntGraph compressLostNodes(Relation compression_mu) {
+	System.out.println("Before cmprss: " + stats());
+
+	// don't do any optimization in this case
+	if(PointerAnalysis.RECORD_ACTIONS || !PointerAnalysis.IGNORE_EO)
+	    return this;
+
+	extend_compression_map(compression_mu);
+
+	if(PointerAnalysis.MEGA_DEBUG)
+	    System.out.println("Compress relation mu = " + compression_mu);
+
+	ParIntGraph pig2 = new ParIntGraph();
+	pig2.insertAllButArEo
+	    (this, compression_mu, true, Collections.EMPTY_SET, null, true);
+	
+	return pig2;
+    }
+
+    
+    // return null if there is compresion is useless
+    // (i.e., no node is mapped to LOST except LOST itself).
+    private void extend_compression_map
+	(final Relation/*<PANode,PANode>*/ mu) {
+
+	for(Iterator it = allNodes().iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(compressable_node(node))
+		mu.add(node, NodeRepository.LOST_SUMMARY);
+	    else
+		mu.add(node, node);
+	}
+    }
+
+    // checks whether "node" escapes globally (i.e., in an unanalyzed
+    // method or in a static field).
+    private boolean compressable_node(PANode node) {
+	return
+	    ((node.type == PANode.INSIDE) || 
+	     (node.type == PANode.INSIDE2) ||
+	     (node.type == PANode.LOAD)) &&
+	    G.e.hasEscaped(node) && !G.e.escapesOnlyInCaller(node);
     }
 
     private final ParIntGraph retain_essential(PANode[] params,
@@ -476,9 +619,9 @@ public class ParIntGraph implements java.io.Serializable {
 	// present into G.O and G.I and so, they have been already visited
     }
 
-    /** Returns the set of all the nodes that appear in <code>this</code>
+    /** Returns the set of all nodes that appear in <code>this</code>
 	parallel interaction graph.<br> */
-    public Set allNodes(){
+    public Set/*<PANode>*/ allNodes() {
 	final Set nodes = new HashSet();
 	forAllNodes(new PANodeVisitor(){
 		public void visit(PANode node){
@@ -583,17 +726,21 @@ public class ParIntGraph implements java.io.Serializable {
 	final Set empty_loads = new HashSet();
 	final Set fake_outside_edges = new HashSet();
 	
+	for(Iterator it = allNodes().iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if((node.type == PANode.LOAD) && !G.e.hasEscaped(node))
+		empty_loads.add(node);
+	}
+
 	G.O.forAllEdges(new PAEdgeVisitor(){
 		public void visit(Temp var, PANode node){}
 		public void visit(PANode node1, String f, PANode node2){
 		    if(!G.e.hasEscaped(node1))
 			fake_outside_edges.add(new PAEdge(node1,f,node2));
-		    if(!G.e.hasEscaped(node2))
-			empty_loads.add(node2);
 		}
 	    });
-
-	if(DEBUG){
+	
+	if(DEBUG) {
 	    System.out.println("Empty loads:" + empty_loads);
 	    System.out.println("Fake outside edges: " + fake_outside_edges);
 	}

@@ -83,7 +83,7 @@ import harpoon.Util.DataStructs.LightMap;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPointerAnalysis.java,v 1.5 2003-05-06 15:34:58 salcianu Exp $
+ * @version $Id: ODPointerAnalysis.java,v 1.6 2003-06-04 18:44:32 salcianu Exp $
  */
 public class ODPointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -1012,22 +1012,23 @@ public class ODPointerAnalysis {
 	    // do not analyze loads from non-pointer fields
 	    if(hf.getType().isPrimitive()) return;
 
-	    if(l2 == null){
+	    if(l2 == null) {
 		// special treatement of the static fields
-		l2 = ArtificialTempFactory.getTempFor(hf);
-		// this part should really be put in some preliminary step
 		PANode static_node =
 		    nodes.getStaticNode(hf.getDeclaringClass().getName());
-		lbbpig.G.I.addEdge(l2,static_node);
 		// l2 is a variable, do nothing more for ODA.
-		lbbpig.G.e.addNodeHole(static_node,static_node);
+		lbbpig.G.e.addNodeHole(static_node, static_node);
+		process_load(q, q.dst(), Collections.singleton(static_node),
+			     hf.getName());
+		return;
 	    }
-	    process_load(q,q.dst(),l2,hf.getName());
+	    process_load(q, q.dst(), lbbpig.G.I.pointedNodes(l2),
+			 hf.getName());
 	    //System.out.println(lbbpig);
 	}
 	
 	/** Load statement; special case - arrays. */
-	public void visit(AGET q){
+	public void visit(AGET q) {
 	    if(DEBUG2){
 		System.out.println("AGET: " + q);
 		System.out.println("good_agets: " + good_agets);
@@ -1048,13 +1049,15 @@ public class ODPointerAnalysis {
 	    }
 	    // All the elements of an array are collapsed in a single
 	    // node, referenced through a conventional named field
-	    process_load(q, q.dst(), q.objectref(), ARRAY_CONTENT);
+
+	    process_load(q, q.dst(), lbbpig.G.I.pointedNodes(q.objectref()),
+			 ARRAY_CONTENT);
 	    //System.out.println(lbbpig);
 	}
 	
 	/** Does the real processing of a load statement. */
-	public void process_load(Quad q, Temp l1, Temp l2, String f){
-	    Set set_aux = lbbpig.G.I.pointedNodes(l2);
+	public void process_load(Quad q, Temp l1, Set loadFrom, String f) {
+	    Set set_aux = loadFrom;
 	    Set set_S   = lbbpig.G.I.pointedNodes(set_aux,f);
 	    HashSet set_E = new HashSet();
 	    
@@ -1262,45 +1265,54 @@ public class ODPointerAnalysis {
 	
 	
 	// STORE STATEMENTS
+
+	// [AS] changed the code to remove the infamous
+	// ArtificialTempFactory.  process_store takes as arguments
+	// the sets of source / destination nodes, instead of l1/l2.
+	// This way, we can treat the static field assignment without
+	// introducing a bogus artificial temp.
 	/** Store statements; normal case */
-	public void visit(SET q){
+	public void visit(SET q) {
 	    //System.out.println("SET " + q);	    
 	    Temp   l1 = q.objectref();
+	    Temp   l2 = q.src();
 	    HField hf = q.field();
 	    // do not analyze stores into non-pointer fields
 	    if(hf.getType().isPrimitive()) return;
 	    // static field -> get the corresponding artificial node
-	    if(l1 == null){
-		// special treatement of the static fields
-		l1 = ArtificialTempFactory.getTempFor(hf);
-		// this part should really be put in some preliminary step
+	    if(l1 == null) {
 		PANode static_node =
 		    nodes.getStaticNode(hf.getDeclaringClass().getName());
-		lbbpig.G.I.addEdge(l1,static_node);
 		// l1 is a variable : do nothing more for ODA
 		lbbpig.G.e.addNodeHole(static_node,static_node);
+
+		process_store(Collections.singleton(static_node),
+			      hf.getName(),
+			      lbbpig.G.I.pointedNodes(l2));
+		return;
 	    }
-	    process_store(l1,hf.getName(),q.src());
+	    process_store(lbbpig.G.I.pointedNodes(l1),
+			  hf.getName(),
+			  lbbpig.G.I.pointedNodes(l2));
 	    //System.out.println(lbbpig);
 	}
 	
 	/** Store statement; special case - array */
-	public void visit(ASET q){
+	public void visit(ASET q) {
 	    //System.out.println("ASET " + q);	    
 	    // All the elements of an array are collapsed in a single
 	    // node
-	    process_store(q.objectref(), ARRAY_CONTENT, q.src());
+	    process_store(lbbpig.G.I.pointedNodes(q.objectref()),
+			  ARRAY_CONTENT,
+			  lbbpig.G.I.pointedNodes(q.src()));
 	    //System.out.println(lbbpig);
 	}
 	
-	/** Does the real processing of a store statement */
-	public void process_store(Temp l1, String f, Temp l2){
-	    Set set1 = lbbpig.G.I.pointedNodes(l1);
-	    Set set2 = lbbpig.G.I.pointedNodes(l2);
-		
-	    //System.out.println("PROCESS_STORE " + l1 + " " + f + " " + l2);
-
-	    lbbpig.G.I.addEdges(set1,f,set2);
+	/** Does the real processing of a store statement: edges from
+            any node in set1 toward any node in set2, labeled with
+            field f. */
+	public void process_store(Set set1, String f, Set set2) {
+	    lbbpig.G.I.addEdges(set1, f, set2);
 	    if (ODPointerAnalysis.ON_DEMAND_ANALYSIS){
 		//System.out.println("in_edge_always");
 		lbbpig.odi.addInsideEdges(set1, f, set2);
