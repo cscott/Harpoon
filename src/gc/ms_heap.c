@@ -69,6 +69,7 @@ int expand_marksweep_heap(size_t size, struct marksweep_heap *h)
 
   h->heap_end += bytes;
   h->heap_size += bytes;
+  h->free_memory += bytes;
 
   add_to_free_blocks(b, &h->free_list, h->small_blocks);
 
