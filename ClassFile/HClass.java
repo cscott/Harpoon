@@ -2,6 +2,7 @@ package harpoon.ClassFile;
 
 import java.lang.reflect.Modifier;
 import java.io.InputStream;
+import java.io.BufferedInputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -26,7 +27,7 @@ import harpoon.Util.Util;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.28 1998-09-13 23:57:14 cananian Exp $
+ * @version $Id: HClass.java,v 1.29 1998-09-16 00:42:48 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -116,7 +117,7 @@ public class HClass {
 	if (is == null) throw new NoClassDefFoundError(className);
 	// OK, go ahead and load this.
 	harpoon.ClassFile.Raw.ClassFile raw =
-	  new harpoon.ClassFile.Raw.ClassFile(is);
+	  new harpoon.ClassFile.Raw.ClassFile(new BufferedInputStream(is));
 	// Make a HClass with the raw classfile.
 	return new HClass(raw);
       }
