@@ -1,6 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 MAINTAINERCLEANFILES = Makefile.in
 CFLAGS=-Darm32
+LIBS =
 
 # changing libheader.la to libheader.lo fixes a lot of problems, but
 # automake complains.
