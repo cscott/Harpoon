@@ -35,7 +35,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock (pnkfelix@mit.edu) 
- * @version $id$
+ * @version $Id: BasicBlock.java,v 1.1.2.11 1999-06-23 23:17:59 pnkfelix Exp $
 */
 public class BasicBlock {
     
