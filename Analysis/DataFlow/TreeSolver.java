@@ -25,11 +25,11 @@ import harpoon.Analysis.BasicBlock;
  * <code>BasicBlockSolver</code> class. 
  * 
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeSolver.java,v 1.1.2.6 1999-09-20 16:06:23 pnkfelix Exp $
+ * @version $Id: TreeSolver.java,v 1.1.2.7 1999-11-29 02:21:52 duncan Exp $
  */
 public abstract class TreeSolver {
 
-    public static boolean DEBUG = false;
+    public static boolean DEBUG = false; 
     public static void db(String s) { System.out.println(s); }
 
 
@@ -62,6 +62,21 @@ public abstract class TreeSolver {
 
 	Worklist W = new HashSet();
 	W.push(root);
+	while (!W.isEmpty()) {
+	    //v.changed = false;
+	    BasicBlock q = (BasicBlock) W.pull();
+	    if (DEBUG) db("visiting: "+q);
+	    q.visit(v);
+	    v.addSuccessors(W, q);
+	}
+    }
+
+
+    public static void worklist_solver(Iterator iter, 
+				       DataFlowBasicBlockVisitor v) {
+
+	Worklist W = new HashSet();
+	while (iter.hasNext()) W.push(iter.next());
 	while (!W.isEmpty()) {
 	    //v.changed = false;
 	    BasicBlock q = (BasicBlock) W.pull();
