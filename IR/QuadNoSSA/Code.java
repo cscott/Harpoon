@@ -1,4 +1,4 @@
-// Code.java, created Fri Aug  7 13:45:29 1998 by cananian
+// Code.java, created by nkushman
 package harpoon.IR.QuadNoSSA;
 
 //import harpoon.Analysis.QuadSSA.DeadCode;
@@ -16,15 +16,10 @@ import harpoon.IR.QuadSSA.*;
 
 import java.util.*;
 /**
- * <code>QuadSSA.Code</code> is a code view that exposes the details of
- * the java classfile bytecodes in a quadruple format.  Implementation
- * details of the stack-based JVM are hidden in favor of a flat consistent
- * temporary-variable based approach.  The generated quadruples adhere
- * to an SSA form; that is, every variable has exactly one definition,
- * and <code>PHI</code> functions are used where control flow merges.
+ * <code>QuadNoSSA.Code</code> is <blink><b>fill me in</b></blink>.
  * 
- * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1 1998-10-14 07:07:58 nkushman Exp $
+ * @author  Nate Kushman <nkushman@lcs.mit.edu>
+ * @version $Id: Code.java,v 1.2 1998-10-16 12:09:59 cananian Exp $
  */
 
 public class Code extends HCode{
