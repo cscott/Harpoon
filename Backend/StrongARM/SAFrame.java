@@ -32,13 +32,14 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Util;
 
 import java.util.List;
+import java.util.Arrays;
 
 /**
  * <code>SAFrame</code> contains the machine-dependant
  * information necessary to compile for the StrongARM processor.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.9 1999-06-14 07:12:06 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.10 1999-06-14 23:53:44 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements DefaultAllocationInfo {
     private static Temp[] reg = new Temp[16];
@@ -49,6 +50,12 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
     private AllocationStrategy mas;
     private static OffsetMap offmap;
     private static int nextPtr;
+
+    private static int FP = 11;
+    private static int IP = 12;
+    private static int SP = 13;
+    private static int LR = 14;
+    private static int PC = 15;
 
     static {
         regtf = new TempFactory() {
@@ -198,13 +205,24 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
     }
 
     /** Stub added by FSK */
-    public List makeLoad(Temp reg, int offset) {
-	return null;
+    public List makeLoad(Temp r, int offset, Instr template) {
+	InstrMEM load = 
+	    new InstrMEM(template.getFactory(), template,
+			 "ldr `d0, [`s0, #" +(-4*offset) + "] \t; " + template,
+			 new Temp[]{ r },
+			 new Temp[]{ reg[ SP ] });
+	return Arrays.asList(new Object[] { load });
+				     
     }
 
     /** Stub added by FSK */
-    public List makeStore(Temp reg, int g) {
-	return null;
+    public List makeStore(Temp r, int offset, Instr template) {
+	InstrMEM store = 
+	    new InstrMEM(template.getFactory(), template,
+			 "str `s0, [`s1, #" +(-4*offset) + "] \t; " + template,
+			 new Temp[]{ },
+			 new Temp[]{ r , reg[SP] });
+	return Arrays.asList(new Object[] { store });
     }
 
 }

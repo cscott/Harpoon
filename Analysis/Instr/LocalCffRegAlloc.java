@@ -42,7 +42,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.16 1999-06-14 07:12:05 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.17 1999-06-14 23:53:42 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -221,7 +221,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    Iterator references = getReferences(j);
 	    while (references.hasNext()) {
 		Temp l = (Temp) references.next();
-		if (!regFile.isRegister(l)) { // just pseudo-regs in nextRef
+		if (!isTempRegister(l)) { // just pseudo-regs in nextRef
 		    CloneableIterator search = 
 			(CloneableIterator) instrs.clone();
 		    while (search.hasNext()) {
@@ -256,7 +256,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    UniqueVector refsV = new UniqueVector();
 	    while(references.hasNext()) {
 		Temp t = (Temp) references.next();
-		if (regFile.isRegister(t)) {
+		if (!isTempRegister(t)) {
 		    refsV.addElement(t);
 		}
 	    }
@@ -309,14 +309,14 @@ public class LocalCffRegAlloc extends RegAlloc {
 		Temp i = j.use()[l];
 
 		// check that 'i' is a pseudo register (not a REAL register)
-		if (regFile.isRegister(i)) continue;
+		if (isTempRegister(i)) continue;
 
 		// if i is not in a register then load i else DELETE(i) 
 		if (regFile.values().contains(i)) {
-		    pregPriQueue.remove(i); // we need to DELETE(i)
-		    // from the priority queue so we can INSERT it
-		    // again later with an updated distance to its
-		    // next use.
+		    // we need to DELETE(i) from the priority queue so
+		    // we can INSERT it again later with an updated
+		    // distance to its next use.
+		    pregPriQueue.remove(i);
 		} else {
 		    Temp reg = regFile.getEmptyRegister();
 		    Util.assert(reg != null, 
@@ -331,7 +331,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    
 		    memInstrs.getPrior(j).push(load);
 
-		    // TODO: replace the following for loops with some
+		    // TODO: replace the following FOR-loops with some
 		    // sort of cloning Temp Map in the instruction
 		    // perhaps? 
 		    for (int ji = 0; ji < j.dst.length; ji++) {
@@ -631,19 +631,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 			"that 't' is currently in the map");
 	    return false; 
 	}
-
-	/** Identifies <code>t</code> as a register or memory
-	    location.
-	*/
-	public boolean isRegister(Temp t) {
-	    for (int i=0; i<regs.length; i++) {
-		if (regs[i].equals(t)) {
-		    return true;
-		}
-	    }
-	    return false;
-	}
-		    
 
 	/** Evicts <code>value</code> from <code>this</code>.
 	    <BR> <B>requires:</B> <code>value</code> is mapped to by

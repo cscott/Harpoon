@@ -33,7 +33,7 @@ import java.util.List;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.11 1999-06-14 07:12:06 pnkfelix Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.12 1999-06-14 23:53:43 pnkfelix Exp $
  */
 public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
@@ -179,12 +179,12 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
 
 
     /** Stub added by FSK */
-    public List makeLoad(Temp reg, int offset) {
+    public List makeLoad(Temp reg, int offset, Instr template) {
 	return null;
     }
 
     /** Stub added by FSK */
-    public List makeStore(Temp reg, int g) {
+    public List makeStore(Temp reg, int offset, Instr template) {
 	return null;
     }
 }

@@ -20,7 +20,7 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.16 1999-06-14 07:12:07 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.17 1999-06-14 23:53:44 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -141,7 +141,28 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	loses its original Edges but gets oldi's old Edges 
     */
     public static void replaceInstrList(Instr oldi, List newis) {
-	// TODO
+	Util.assert(oldi != null && newis != null, "Null Arguments are bad");
+	Instr newi = (Instr) newis.get(0);
+	newi.pred = new Vector();
+	for(int i=0; i<oldi.pred.size(); i++) {
+	    Edge e = (Edge) oldi.pred.get(i);
+	    addEdge( e.from, newi );
+	}
+	for(int i=0; i<newi.pred.size(); i++) {
+	    Edge e = (Edge) newi.pred.get(i);
+	    removeEdge( e.from, oldi );
+	}
+
+	newi = (Instr) newis.get(newis.size() - 1);
+	newi.succ = new Vector();
+	for(int i=0; i<oldi.succ.size(); i++) {
+	    Edge e = (Edge) oldi.succ.get(i);
+	    addEdge( newi, e.to );
+	}
+	for(int i=0; i<newi.succ.size(); i++) {
+	    Edge e = (Edge) newi.succ.get(i);
+	    removeEdge( oldi, e.to );
+	}
     }
 
     /** Replaces <code>oldi</code> in the Instruction Stream with

@@ -21,7 +21,7 @@ import java.util.List;
  * needed for compilation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.13 1999-06-14 07:12:06 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.14 1999-06-14 23:53:43 pnkfelix Exp $
  */
 public abstract class Frame {
 
@@ -71,17 +71,19 @@ public abstract class Frame {
 
     /** Generates a new set of Instrs for memory traffic from RAM to
 	the register file. 'offset' is an ordinal number, it is NOT
-	meant to be a multiple of some byte size.  This frame should
-	perform the necessary magic to turn the number into an
-	appropriate stack offset. */
-    public abstract List makeLoad(Temp reg, int offset);
+	meant to be a multiple of some byte size.  This offset is
+	zero-indexed.  This frame should perform the necessary magic
+	to turn the number into an appropriate stack
+	offset. 'template' gives the Frame the ability to incorporate
+	additional information into the produced List of Instrs.  */
+    public abstract List makeLoad(Temp reg, int offset, Instr template);
 
     /** Generates a new set of Instrs for memory traffic from the
 	register file to RAM. 'offset' is an ordinal number, it is NOT
 	meant to be a multiple of some byte size.  This frame should
 	perform the necessary magic to turn the number into an
 	appropriate stack offset. */
-    public abstract List makeStore(Temp reg, int offset);
+    public abstract List makeStore(Temp reg, int offset, Instr template);
 
     /** Create a new Frame one level below the current one. */
     public abstract Frame newFrame(String scope);

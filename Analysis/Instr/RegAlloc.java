@@ -17,10 +17,12 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
+import harpoon.Util.Util;
 
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.Vector;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.Iterator;
 import java.util.HashSet;
@@ -37,7 +39,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.6 1999-06-14 07:12:05 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.7 1999-06-14 23:53:42 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -122,8 +124,17 @@ public abstract class RegAlloc  {
 	};
     }
 
-    
+    /** Transforms Temp references in 'in' into appropriate offsets
+	from the Stack Pointer in the Memory.    
+	<BR> <B>requires:</B> All InstrMEMs in 'in' have only ONE Temp
+                              reference.
+        <BR> <B>modifies:</B> in
+	<BR> <B>effects:</B> TODO: FILL IN
+    */
     protected HCode resolveOutstandingTemps(HCode in) {
+	// This implementation is REALLY braindead.  Fix to do a
+	// smarter Graph-Coloring stack offset allocator
+
 	class TempFinder extends InstrVisitor {
 	    HashMap tempsToOffsets = new HashMap();
 	    int nextOffset = 1;
@@ -152,6 +163,44 @@ public abstract class RegAlloc  {
 	    }
 	}
 	
+	// Not sure how to handle multiple Temp references in one
+	// InstrMEM...for now will assume that there is only one
+	// memory references per InstrMEM...
+	class InstrReplacer extends InstrVisitor {
+	    HashMap tempsToOffsets;
+	    InstrReplacer(HashMap t2o) {
+		tempsToOffsets = t2o; 
+	    }
+	    
+	    public void visit(InstrMEM m) {
+		// replace all non-Register Temps with appropriate
+		// stack offset locations
+		if(!isTempRegister(m.def()[0])) {
+		    List instrs = frame.makeStore
+			(m.use()[0], 
+			 ((Integer)tempsToOffsets.get(m.def()[0])).intValue(),
+			 m);
+		    Instr.replaceInstrList(m, instrs);
+		    return;
+		}
+
+		if(!isTempRegister(m.use()[0])) {
+		    List instrs = frame.makeLoad
+			(m.def()[0], 
+			 ((Integer)tempsToOffsets.get(m.use()[0])).intValue(),
+			 m);
+		    Instr.replaceInstrList(m, instrs);
+		    return;
+		}
+		
+		Util.assert(false, "Should have replaced SOMETHING in " + m);
+	    }
+	 
+	    public void visit(Instr i) {
+		//Do nothing
+	    }
+	}
+
 	TempFinder tf = new TempFinder();
 	Iterator instrs = in.getElementsI();
 	while(instrs.hasNext()) {
@@ -161,7 +210,14 @@ public abstract class RegAlloc  {
 	// now tf should have a full map of Temps to needed Stack
 	// Offsets.
 
-	return null;
+	InstrReplacer ir = new InstrReplacer(tf.tempsToOffsets);
+	instrs = in.getElementsI();
+	while(instrs.hasNext()) {
+	    Instr i = (Instr) instrs.next();
+	    i.visit(ir);
+	}
+
+	return in;
     }
     
 

@@ -48,7 +48,7 @@ import java.util.*;
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.14 1999-06-11 04:28:23 pnkfelix Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.15 1999-06-14 23:53:44 pnkfelix Exp $
  */
 final class CodeGen {
 
@@ -194,7 +194,7 @@ final class CodeGen {
             s.test.visit(this);
             Util.assert(visitRet!=null, "visitRet was null after visiting " + s.test);
 	    ExpValue test = visitRet;
-            emit(new Instr(inf, s, "cmp `s0, #0  ; " + s, 
+            emit(new Instr(inf, s, "cmp `s0, #0  \t\t; " + s, 
                            null,
 			   new Temp[] { test.temp() }));
 
@@ -218,7 +218,7 @@ final class CodeGen {
             /* TODO: this may not produce working code.  Check it. */
 	    s.exp.visit(this);
 	    Util.assert(visitRet != null, "visitRet was null after visiting " + s.exp);
-	    Instr i = new Instr(inf, s, "b j0  ; " + s, null, new Temp[]{visitRet.temp()} );
+	    Instr i = new Instr(inf, s, "b `s0  \t\t\t; " + s, null, new Temp[]{visitRet.temp()} );
 	    emit(i);
 	    LabelList targets = s.targets;
 	    while (targets != null) {
@@ -262,14 +262,14 @@ final class CodeGen {
 			    s.src);
 		ExpValue source = visitRet;
 		if (dest.isDouble()) {
-		    emit(new Instr(inf, s, movStr + "  ; " + s,
+		    emit(new Instr(inf, s, movStr + "  \t; " + s,
 				   new Temp[] { dest.low() },
 				   new Temp[] { source.low() }));
 		    emit(new Instr(inf, s, movStr,
 				   new Temp[] { dest.high() },
 				   new Temp[] { source.high() }));
 		} else {
-		    emit(new Instr(inf, s, movStr + "  ; " + s,
+		    emit(new Instr(inf, s, movStr + "  \t\t; " + s,
 				   new Temp[] { dest.temp() },
 				   new Temp[] { source.temp() }));
 		}
@@ -285,7 +285,7 @@ final class CodeGen {
 		// typing r0 and r1 into the String directly below) so
 		// that the allocator can identify when operations are
 		// occuring in the register file.
-                emit(new Instr(inf, s, "mov `d0, #0  ; " + s, new Temp[] {f.getAllRegisters()[1]}, null));
+                emit(new Instr(inf, s, "mov `d0, #0  \t\t; " + s, new Temp[] {f.getAllRegisters()[1]}, null));
                 emit(new Instr(inf, s, "mov `d0, `s0",
 			       new Temp[] { f.getAllRegisters()[0] }, new Temp[] { retval.temp() }));
                 emit(new Instr(inf, s, "ldmea fp, {fp, sp, pc}", null, null));
@@ -301,7 +301,7 @@ final class CodeGen {
         public void visit(THROW s) {
             s.retex.visit(this);
             ExpValue retval = visitRet;
-            emit(new Instr(inf, s, "mov `d0, `s0  ; " + s,
+            emit(new Instr(inf, s, "mov `d0, `s0  \t\t; " + s,
                            new Temp[] { f.getAllRegisters()[1] },
 			   new Temp[] { retval.temp() }));
             emit(new Instr(inf, s, "mov `d0, #0", new Temp[]{ f.getAllRegisters()[0] }, null));
@@ -319,7 +319,7 @@ final class CodeGen {
                 e.right.visit(this);
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
-                emit(new Instr(inf, e, "add `d0, `s0, `s1  ; " + e,
+                emit(new Instr(inf, e, "add `d0, `s0, `s1  \t\t; " + e,
                                new Temp[] { retval.temp() } ,
 			       new Temp[] { left.temp(), right.temp() } ));
                 visitRet = retval;
@@ -330,7 +330,7 @@ final class CodeGen {
 		e.right.visit(this);
 		right = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "and `d0, `s0, `s1  ; " + e,
+		emit(new Instr(inf, e, "and `d0, `s0, `s1  \t\t; " + e,
 			       new Temp[] { retval.temp() },
 			       new Temp[] { left.temp(), right.temp() }));
 		visitRet = retval;
@@ -341,7 +341,7 @@ final class CodeGen {
                 e.right.visit(this);
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
-                emit(new Instr(inf, e, "mov `d0, #0  ; " + e,
+                emit(new Instr(inf, e, "mov `d0, #0  \t\t; " + e,
                                new Temp[] { retval.temp() }, null));
                 emit(new Instr(inf, e, "cmp `s0, `s1",
                                null,new Temp[] { left.temp(), right.temp() }));
@@ -355,7 +355,7 @@ final class CodeGen {
                 e.right.visit(this);
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
-                emit(new Instr(inf, e, "mov `d0, #0  ; " + e,
+                emit(new Instr(inf, e, "mov `d0, #0  \t\t; " + e,
                                new Temp[] { retval.temp() },null));
                 emit(new Instr(inf, e, "cmp `s0, `s1",
                                null,new Temp[] { left.temp(), right.temp() }));
@@ -369,7 +369,7 @@ final class CodeGen {
                 e.right.visit(this);
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
-                emit(new Instr(inf, e, "mov `d0, #0  ; " + e,
+                emit(new Instr(inf, e, "mov `d0, #0  \t\t; " + e,
                                new Temp[] { retval.temp() }, null));
                 emit(new Instr(inf, e, "cmp `s0, `s1",
                                null,new Temp[] { left.temp(), right.temp() }));
@@ -383,7 +383,7 @@ final class CodeGen {
                 e.right.visit(this);
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
-                emit(new Instr(inf, e, "mov `d0, #0  ; " + e,
+                emit(new Instr(inf, e, "mov `d0, #0  \t\t; " + e,
                                new Temp[] { retval.temp() },null));
                 emit(new Instr(inf, e, "cmp `s0, `s1",
                                null,new Temp[] { left.temp(), right.temp() }));
@@ -400,7 +400,7 @@ final class CodeGen {
                 e.right.visit(this);
                 right = visitRet;
                 retval = new ExpValue(new Temp(tf));
-                emit(new Instr(inf, e, "mul `d0, `s0, `s1  ; " + e,
+                emit(new Instr(inf, e, "mul `d0, `s0, `s1  \t\t; " + e,
                                new Temp[] { retval.temp() },
 			       new Temp[] { left.temp(), right.temp() }));
                 visitRet = retval;
@@ -411,7 +411,7 @@ final class CodeGen {
 		e.right.visit(this);
 		right = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "orr `d0, `s0, `s1  ; " + e,
+		emit(new Instr(inf, e, "orr `d0, `s0, `s1  \t\t; " + e,
 			       new Temp[] { retval.temp() },
 			       new Temp[] { left.temp(), right.temp() }));
 		visitRet = retval;
@@ -425,7 +425,7 @@ final class CodeGen {
 		e.right.visit(this);
 		right = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "mov `d0, `s0 LSL `s1  ; " + e,
+		emit(new Instr(inf, e, "mov `d0, `s0 LSL `s1  \t\t; " + e,
 			       new Temp[] { retval.temp() } ,
 			       new Temp[] { left.temp(), right.temp() }));
 		visitRet = retval;
@@ -436,7 +436,7 @@ final class CodeGen {
 		e.right.visit(this);
 		right = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "mov `d0, `s0 LSR `s1  ; " + e,
+		emit(new Instr(inf, e, "mov `d0, `s0 LSR `s1  \t\t; " + e,
 			       new Temp[] { retval.temp() } ,
 			       new Temp[] { left.temp(), right.temp() }));
 		visitRet = retval;
@@ -450,7 +450,7 @@ final class CodeGen {
 		e.right.visit(this);
 		right = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "eor `d0, `s0, `s1  ; " + e,
+		emit(new Instr(inf, e, "eor `d0, `s0, `s1  \t\t; " + e,
 			       new Temp[] { retval.temp() },
 			       new Temp[] { left.temp(), right.temp() }));
 		visitRet = retval;
@@ -479,7 +479,7 @@ final class CodeGen {
                 args = args.tail;
                 i++;
             }
-            emit(new Instr(inf, e, "mov `d0, `s0  ; " + e,
+            emit(new Instr(inf, e, "mov `d0, `s0  \t\t; " + e,
                                     new Temp[] { (f.getAllRegisters())[15] },
                                     new Temp[] { (f.getAllRegisters())[14] }));
             /* need someway to get label for branch target info */
@@ -526,7 +526,7 @@ final class CodeGen {
 	    e.exp.visit(this);
 	    ExpValue addr = visitRet;
 	    visitRet = new ExpValue(new Temp(tf));
-	    emit(new Instr(inf, e, "ldr `d0, `s0  ; " + e, 
+	    emit(new Instr(inf, e, "ldr `d0, `s0  \t\t; " + e, 
 			   new Temp[] { visitRet.temp() },
 			   new Temp[] { addr.temp() }));
 	}
@@ -534,7 +534,7 @@ final class CodeGen {
         public void visit(NAME e) {
             ExpValue retval = new ExpValue(new Temp(tf));
             emitLabelRef(((NAME)e).label, e);
-            emit(new Instr(inf, e, "ldr `d0, "+ getLabelRef(((NAME)e).label) + "  ; " + e,
+            emit(new Instr(inf, e, "ldr `d0, "+ getLabelRef(((NAME)e).label) + "  \t\t; " + e,
                            new Temp[] { retval.temp() },null));
             visitRet = retval;
         }
@@ -561,7 +561,7 @@ final class CodeGen {
 		e.operand.visit(this);
 		exp = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "_2b `d0, `s0  ; " + e,
+		emit(new Instr(inf, e, "_2b `d0, `s0  \t\t; " + e,
 			       new Temp[] { retval.temp() },
 			       new Temp[] { exp.temp() }));
 		break;
@@ -570,7 +570,7 @@ final class CodeGen {
 		e.operand.visit(this);
 		exp = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "_2c `d0, `s0  ; " + e,
+		emit(new Instr(inf, e, "_2c `d0, `s0  \t\t; " + e,
 			       new Temp[] { retval.temp() },
 			       new Temp[] { exp.temp() }));
 		break;
@@ -579,7 +579,7 @@ final class CodeGen {
 		e.operand.visit(this);
 		exp = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "_2d `d0, `s0  ; " + e,
+		emit(new Instr(inf, e, "_2d `d0, `s0  \t\t; " + e,
 			       new Temp[] { retval.temp() },
 			       new Temp[] { exp.temp() }));
 		break;
@@ -588,7 +588,7 @@ final class CodeGen {
 		e.operand.visit(this);
 		exp = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "_2f `d0, `s0  ; " + e,
+		emit(new Instr(inf, e, "_2f `d0, `s0  \t\t; " + e,
 			       new Temp[] { retval.temp() },
 			       new Temp[] { exp.temp() }));
 		break;
@@ -597,7 +597,7 @@ final class CodeGen {
 		e.operand.visit(this);
 		exp = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "_2i `d0, `s0  ; " + e,
+		emit(new Instr(inf, e, "_2i `d0, `s0  \t\t; " + e,
 			       new Temp[] { retval.temp() },
 			       new Temp[] { exp.temp() }));
 		break;
@@ -606,7 +606,7 @@ final class CodeGen {
 		e.operand.visit(this);
 		exp = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "_2l `d0, `s0  ; " + e,
+		emit(new Instr(inf, e, "_2l `d0, `s0  \t\t; " + e,
 			       new Temp[] { retval.temp() },
 			       new Temp[] { exp.temp() }));
 		break;
@@ -615,7 +615,7 @@ final class CodeGen {
 		e.operand.visit(this);
 		exp = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "_2s `d0, `s0  ; " + e,
+		emit(new Instr(inf, e, "_2s `d0, `s0  \t\t; " + e,
 			       new Temp[] { retval.temp() },
 			       new Temp[] { exp.temp() }));
 		break;
@@ -624,7 +624,7 @@ final class CodeGen {
 		e.operand.visit(this);
 		exp = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "neg `d0, `s0  ; " + e,
+		emit(new Instr(inf, e, "neg `d0, `s0  \t\t; " + e,
 			       new Temp[] { retval.temp() },
 			       new Temp[] { exp.temp() }));
 		break;
@@ -633,7 +633,7 @@ final class CodeGen {
 		e.operand.visit(this);
 		exp = visitRet;
 		retval = new ExpValue(new Temp(tf));
-		emit(new Instr(inf, e, "not `d0, `s0  ; " + e,
+		emit(new Instr(inf, e, "not `d0, `s0  \t\t; " + e,
 			       new Temp[] { retval.temp() },
 			       new Temp[] { exp.temp() }));
 		break;
@@ -644,7 +644,7 @@ final class CodeGen {
         }
 
         private void emitMoveConst(HCodeElement s, Temp t, Number n) {
-            emit(new Instr(inf, s, "mov `d0, #"+n.intValue()  + "  ; " + s,
+            emit(new Instr(inf, s, "mov `d0, #"+n.intValue()  + "  \t\t; " + s,
                            new Temp[] { t },null));
         }
     }

@@ -20,7 +20,7 @@ import java.util.Iterator;
  * speed becomes an issue. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.1 1999-06-03 01:49:32 pnkfelix Exp $
+ * @version $Id: BinHeapPriorityQueue.java,v 1.1.2.2 1999-06-14 23:53:45 pnkfelix Exp $
  */
 public class BinHeapPriorityQueue extends AbstractCollection implements MaxPriorityQueue {
 
@@ -42,6 +42,10 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
 	priorities = new Vector();
     }
     
+    private int _parent(int i) { return i/2; }
+    private int _left(int i) { return 2*i; }
+    private int _right(int i) { return 2*i + 1; }
+
     private void _add(Object item, Integer priority) {
 	heap.add(item);
 	priorities.add(priority);
@@ -61,6 +65,28 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
     private void _set(int index, Object item, Integer priority) {
 	heap.set(index, item);
 	priorities.set(index, priority);
+    }
+
+    private void _heapify(int i) {
+	int l = _left(i);
+	int r = _right(i);
+	int largest;
+	if (l <= heap.size() && 
+	    ((Integer)priorities.get(l)).intValue() >
+	    ((Integer)priorities.get(i)).intValue()) {
+	    largest = l;
+	} else {
+	    largest = i;
+	}
+	if (r <= heap.size() && 
+	    ((Integer)priorities.get(r)).intValue() >
+	    ((Integer)priorities.get(largest)).intValue()) {
+	    largest = r;
+	}
+	if (largest != i) {
+	    _swap(i, largest);
+	    _heapify(largest);
+	}
     }
 
     public void insert(Object item, int priority) {
@@ -85,31 +111,16 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
     }
 
     public Object deleteMax() {
+	Util.assert(heap.size() > 0, "Heap Underflow");
 	int moveIndex = 0;
 	Object rtrn = heap.get(moveIndex);
+
 	Object mov = heap.remove(heap.size() - 1);
 	Integer pri = (Integer) priorities.remove(priorities.size() - 1);
 	_set(moveIndex, mov, pri);
-	while(true) {
-	    int childIndex = (moveIndex + 1)*2 - 1;
-	    Integer child1 = (Integer) priorities.get( childIndex );
-	    Integer child2 = (Integer) priorities.get( childIndex + 1 );
-	    if (pri.intValue() >= child1.intValue() &&
-		pri.intValue() >= child2.intValue()) {
-		break; // heap property is now fulfilled
-	    } else { 
-		if (child1.intValue() > child2.intValue()) {
-		    // swap child1 and mov
-		    _swap(moveIndex, childIndex);
-		    moveIndex = childIndex;
-		} else {
-		    // swap child2 and mov
-		    _swap(moveIndex, childIndex + 1);
-		    moveIndex = childIndex + 1;
-		}
-		// now loop again
-	    }
-	}
+
+	_heapify(0);
+
 	return rtrn;
     }
 
