@@ -1,6 +1,10 @@
 GNU m4 1.4 (required for autoconf)
+
 autoconf 2.13 or autoconf 2.5x
-automake 1.4 or automake 1.6 or higher (automake 1.5 probably does not work)
+
+automake 1.6 (currently, no other version/subversion will work: the
+              setup script invokes automake-1.6)
+
 libtool 1.3.4 (libtool 1.2 will *not* work)
 
 It helps to have GNU gcc and GNU ld installed on the system, too.
