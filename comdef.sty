@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.15 1999-08-17 16:39:20 cananian Exp $
+% $Id: comdef.sty,v 1.16 1999-08-17 18:38:46 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,7 +118,8 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
 \renewcommand{\algorithmiccomment}[1]{/* \textsl{#1} */}
 \newcommand{\FOREACH}[1]{\FOR{\textbf{each} #1}}
 \newcommand{\LET}{\STATE \textbf{let}\xspace}
-\newcommand{\EMPTYLINE}{\vspace{0.6\baselineskip}}
+%\newcommand{\EMPTYLINE}{\vspace{0.6\baselineskip}}
+\newcommand{\EMPTYLINE}{\STATE}
 \newcommand{\RETURN}{\STATE \textbf{return}\xspace}
 
 % hyphenation problems
