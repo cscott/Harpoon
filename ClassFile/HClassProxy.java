@@ -15,9 +15,9 @@ import java.lang.reflect.Modifier;
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.1.2.1 2000-01-11 15:31:41 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.1.2.2 2000-01-11 20:04:58 cananian Exp $
  */
-class HClassProxy extends HClass {
+class HClassProxy extends HClass implements HClassMutator {
   Relinker relinker;
   HClass proxy;
   HClassMutator proxyMutator;
@@ -28,6 +28,7 @@ class HClassProxy extends HClass {
       relink(proxy);
   }
   void relink(HClass newproxy) {
+    Util.assert(newproxy!=null);
     // first update all the fields and methods hanging around.
     if (proxy!=null) {
       HField[] hf = proxy.getDeclaredFields();
@@ -35,11 +36,10 @@ class HClassProxy extends HClass {
 	try {
 	  HFieldProxy hfp = (HFieldProxy) relinker.memberMap.get(hf[i]);
 	  if (hfp==null) continue;
-	  hfp.flushMemberMap();
+	  hfp.flushMemberMap(); hfp.relink(null);
 	  HField nhf = newproxy.getDeclaredField(hf[i].getName());
 	  if (!nhf.getDescriptor().equals(hf[i].getDescriptor())) continue;
-	  hfp.relink(nhf); hfp.relink(null);
-	  hfp.updateMemberMap();
+	  hfp.relink(nhf); hfp.updateMemberMap();
 	} catch (NoSuchFieldError e) { /* skip */ }
       HMethod[] hm = proxy.getDeclaredMethods();
       for (int i=0; i<hm.length; i++)
@@ -49,8 +49,7 @@ class HClassProxy extends HClass {
 	  hmp.flushMemberMap(); hmp.relink(null);
 	  HMethod nhm = newproxy.getDeclaredMethod(hm[i].getName(),
 						   hm[i].getDescriptor());
-	  hmp.relink(nhm);
-	  hmp.updateMemberMap();
+	  hmp.relink(nhm); hmp.updateMemberMap();
 	} catch (NoSuchMethodError e) { /* skip */ }
     }
     // okay, now that the members are updated, let's update this guy.
@@ -67,7 +66,7 @@ class HClassProxy extends HClass {
       relink(new HClassSyn(relinker, proxy.getName(), proxy));
       proxy.hasBeenModified = false; // exact copy of proxy.
     }
-    return proxyMutator;
+    return (proxyMutator==null) ? null : this;
   }
 
   // the following methods need no special handling:
