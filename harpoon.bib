@@ -1,3 +1,5 @@
+% -*-bibtex-*- This is a BibTeX document.
+% $Id: harpoon.bib,v 1.19 1998-07-15 08:28:19 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -616,7 +618,7 @@
   month =	 jan,
   annote =	 {"This paper presents a method for area optimal
                   technology mapping for Xilinx FPGAs."  Maps logic
-                  onto CLBs; 10% better than the Xilinx method.  If we
+                  onto CLBs; 10\% better than the Xilinx method.  If we
                   ever need to do this, this is the method to
                   use. [Hopefully we can use their code!]}
 }
@@ -636,6 +638,8 @@
                   synthesis. "[A]ssumes as input a scheduled data flow
                   graph."}
 }
+
+%%%% Asynchronous design
 
 @InProceedings{emerson97:async_design,
   author = 	 {Kimberly D. Emerson},
@@ -684,6 +688,20 @@
                   for this system.  Completely delay-insensitive;
                   *however* very area expensive.  Might be useful for
                   automated async design, though.}
+}
+
+@TechReport{hauck93:async_design,
+  author = 	 {Scott Hauck},
+  title = 	 {Asynchronous Design Methodologies: An Overview},
+  institution =  {University of Washington},
+  year = 	 1993,
+  number =	 {TR-93-05-07},
+  month =	 may,
+  annote =	 {Very good overview of state of the art in
+                  asynchronous design.  As of 1993, there were
+                  significant problems with each async design
+                  methodology presented.  Is there recent work
+                  overcoming some of these difficulties?}
 }
 
 %%%%%% DECISION DIAGRAMS
