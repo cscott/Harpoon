@@ -75,7 +75,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.97 2000-07-06 21:03:41 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.98 2000-07-06 21:08:20 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -273,7 +273,7 @@ public abstract class RegAlloc  {
         HCode convert(HMethod m);
     }
     
-    /** Produces an <code>IntermedateCodeFactory</code> which can be
+    /** Produces an <code>IntermediateCodeFactory</code> which can be
 	used to extract Derivation information about code it
 	generates. 
 	<BR> <B>requires:</B> <code>parentFactory</code> produces code
