@@ -10,7 +10,7 @@ import java.util.List;
  * An <code>HData</code> corresponds roughly to a "memory layout".
  *
  * @author  Duncan Bryce     <duncan@lcs.mit.edu>
- * @version $Id: HData.java,v 1.1.2.1 1999-07-28 17:55:51 duncan Exp $
+ * @version $Id: HData.java,v 1.1.2.2 1999-07-30 22:05:29 duncan Exp $
  */
 public interface HData { 
     
@@ -35,4 +35,8 @@ public interface HData {
      * 'root' to the data view, it should be the first element in the
      * List. */
     public List     getElementsL();
+
+    /**
+     * Print a human-readable representation of this dataview */
+    public void     print(java.io.PrintWriter pw); 
 }
