@@ -499,6 +499,7 @@ addr)
 	  /* SWP on ARM is very similar to XCHG on x86.  Doesn't lock the
 	   * bus because there are no SMP ARM machines.  If/when there are,
 	   * this code will likely need to be updated. */
+	  /* See linuxthreads/sysdeps/arm/pt-machine.h in glibc-2.1 */
 	  __asm__ __volatile__("swp %0, %1, [%2]"
 		: "=r"(oldval)
 		: "r"(1), "r"(addr));
