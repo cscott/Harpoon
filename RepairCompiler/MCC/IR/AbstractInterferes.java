@@ -155,16 +155,17 @@ class AbstractInterferes {
 		} else return false; // bad match
 	    }
 	    Set freevars=rexpr1.freeVars();
-	    for(Iterator it=freevars.iterator();it.hasNext();) {
-		VarDescriptor vd=(VarDescriptor)it.next();
-		if (vd.isGlobal())
-		    continue; //globals are fine
-		else if (varmap.containsKey(vd)&&onetoone) //the mapped variable is fine if we have a 1-1 mapping
-		    continue;
-		else if (termination.maxsize.getsize(vd.getSet())==1)
-		    continue;
-		return false;
-	    }
+	    if (freevars!=null)
+		for(Iterator it=freevars.iterator();it.hasNext();) {
+		    VarDescriptor vd=(VarDescriptor)it.next();
+		    if (vd.isGlobal())
+			continue; //globals are fine
+		    else if (varmap.containsKey(vd)&&onetoone) //the mapped variable is fine if we have a 1-1 mapping
+			continue;
+		    else if (termination.maxsize.getsize(vd.getSet())==1)
+			continue;
+		    return false;
+		}
 	    return rexpr1.equals(varmap,rexpr2);
 	}
 	return false;
