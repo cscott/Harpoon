@@ -39,7 +39,7 @@ import java.util.Map;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.21 1999-08-04 06:30:53 cananian Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.22 1999-08-09 22:04:46 duncan Exp $
  */
 public class DefaultFrame extends Frame implements AllocationInfo {
 
@@ -47,9 +47,33 @@ public class DefaultFrame extends Frame implements AllocationInfo {
     private Temp                m_nextPtr;
     private Temp                m_memLimit;
     private OffsetMap           m_offsetMap;
-    private Temp[]              m_registers;
     private TempFactory         m_tempFactory;
-  
+    private static Temp[]       registers;
+    private static TempFactory  regTempFactory;
+
+    static {
+        regTempFactory = new TempFactory() {
+            private int i = 0;
+            private final String scope = "registers";
+            private final String[] names = {"r0", "r1", "r2", "r3", "r4", "r5",
+                                            "r6", "r7", "r8", "r9", "r10", 
+                                            "fp", "ip", "sp", "lr", "pc"};
+
+            public String getScope() { return scope; }
+            protected synchronized String getUniqueID(String suggestion) {
+                Util.assert(i < names.length, "Don't use the "+
+			    "TempFactory of Register bound Temps");
+		i++;
+                return names[i-1];
+            }
+        };
+	registers = new Temp[16];
+        for (int i = 0; i < 16; i++) {
+            registers[i] = new Temp(regTempFactory);
+        }
+    }
+
+
     public DefaultFrame() {
 	throw new Error("Default constructor not impl");
     }
@@ -69,12 +93,9 @@ public class DefaultFrame extends Frame implements AllocationInfo {
 	
     public Frame newFrame(String scope) {
         DefaultFrame fr = new DefaultFrame(m_offsetMap, m_allocator);
-        fr.m_registers = new Temp[16];
         fr.m_tempFactory = Temp.tempFactory(scope);
 	fr.m_nextPtr     = new Temp(fr.m_tempFactory);
 	fr.m_memLimit    = new Temp(fr.m_tempFactory);
-        for (int i = 0; i < 16; i++)
-            fr.m_registers[i] = new Temp(fr.m_tempFactory, "register_");
         return fr;
     }
 
@@ -95,11 +116,11 @@ public class DefaultFrame extends Frame implements AllocationInfo {
     }
 
     public Temp[] getAllRegisters() {
-        return (Temp[]) Util.safeCopy(Temp.arrayFactory, m_registers);
+        return (Temp[]) Util.safeCopy(Temp.arrayFactory, registers);
     }
 
     public Temp[] getGeneralRegisters() {
-        return (Temp[]) Util.safeCopy(Temp.arrayFactory, m_registers);
+        return (Temp[]) Util.safeCopy(Temp.arrayFactory, registers);
     }
 
     public TempFactory tempFactory() { 
@@ -107,7 +128,7 @@ public class DefaultFrame extends Frame implements AllocationInfo {
     }
 
     public TempFactory regTempFactory() {
-        return m_tempFactory;
+        return regTempFactory;
     }
 
     public Stm procPrologue(TreeFactory tf, HCodeElement src, 
@@ -119,7 +140,7 @@ public class DefaultFrame extends Frame implements AllocationInfo {
         for (i = 0; i < paramdsts.length && i < 16; i++) {
             move =  new MOVE(tf, src, 
                         new TEMP(tf, src, paramtypes[i], paramdsts[i]),
-                        new TEMP(tf, src, paramtypes[i], m_registers[i]));
+                        new TEMP(tf, src, paramtypes[i], registers[i]));
             if (prologue == null) {
                 prologue = move;
             } else {
