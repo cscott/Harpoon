@@ -14,6 +14,9 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.ObjectOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
@@ -63,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.38 2000-04-04 04:29:43 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.39 2000-04-04 05:42:36 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -76,7 +79,7 @@ public abstract class PAMain {
 
     // load the meta call graph from a file.
     private static boolean LOAD_MCG = false;
-    private static String MCG_FILE_NAME = "";
+    private static String  MCG_FILE_NAME = "";
 
     // show the call graph
     private static boolean SHOW_CG = false;
@@ -91,8 +94,11 @@ public abstract class PAMain {
     private static boolean DO_ANALYSIS = false;
     // turns on the interactive analysis
     private static boolean DO_INTERACTIVE_ANALYSIS = false;
+
     // turns on the computation of the memory allocation policies
     private static boolean MA_MAPS = false;
+    //
+    private static String MA_MAPS_OUTPUT_FILE = null;
 
     private static String[] examples = {
 	"java -mx200M harpoon.Main.PAMain -a multiplyAdd --ccs=2 --wts" + 
@@ -121,7 +127,9 @@ public abstract class PAMain {
 	"--ts           activates full thread sensitivity",
 	"--wts          activates weak thread sensitivity",
 	"--ls           activates loop sensitivity",
-	"--mamaps       computes the allocation policy map",
+	"--mamaps=file  computes the allocation policy map and serializes",
+	"              the CachingCodeFactory (and implicitly the allocation",
+	"              map) and the linker to disk",
 	"--mastats      shows some statistics about memory allocation",
 	"--holestats    shows statistics about holes",
 	"-a method      analyzes he given method. If the method is in the",
@@ -149,6 +157,8 @@ public abstract class PAMain {
     private static Relation split_rel = null;
 
     private static Set roots = null;
+
+    private static Linker linker = Loader.systemLinker;
 
     // the code factory (in fact a quad factory) generating the code of
     // the methods.
@@ -189,7 +199,6 @@ public abstract class PAMain {
 	long tstop  = 0;
 
 	long start_pre_time = System.currentTimeMillis();
-	Linker linker = Loader.systemLinker;
 	root_method.name = "main";
 	root_method.declClass = params[optind];
 	optind++;
@@ -228,8 +237,7 @@ public abstract class PAMain {
 
 	System.out.print("ClassHierarchy ... ");
 	tstart = System.currentTimeMillis();
-	ClassHierarchy ch = 
-	    new QuadClassHierarchy(linker,roots,hcf);
+	ClassHierarchy ch = new QuadClassHierarchy(linker, roots, hcf);
 	    // new QuadClassHierarchy(linker,Collections.singleton(hroot),hcf);
 	tstop  = System.currentTimeMillis();
 	System.out.println((tstop - tstart) + "ms");
@@ -368,7 +376,6 @@ public abstract class PAMain {
     }
     
     private static void display_method(Method method){
-	Linker linker = Loader.systemLinker;
 	HClass hclass = linker.forName(method.declClass);
 	HMethod[] hm  = hclass.getDeclaredMethods();
 
@@ -446,7 +453,7 @@ public abstract class PAMain {
 	longopts[9]  = new LongOpt("shownodes", LongOpt.NO_ARGUMENT, null, 11);
 	longopts[10] = new LongOpt("mastats", LongOpt.NO_ARGUMENT, null, 12);
 	longopts[11] = new LongOpt("holestats", LongOpt.NO_ARGUMENT, null, 13);
-	longopts[12] = new LongOpt("mamaps", LongOpt.NO_ARGUMENT, null, 14);
+	longopts[12] = new LongOpt("mamaps",LongOpt.REQUIRED_ARGUMENT,null,14);
 	
 
 	Getopt g = new Getopt("PAMain", argv, "l:mscoa:i", longopts);
@@ -509,6 +516,7 @@ public abstract class PAMain {
 		break;
 	    case 14:
 		MA_MAPS = true;
+		MA_MAPS_OUTPUT_FILE = new String(g.getOptarg());
 		break;
 	    }
 
@@ -565,7 +573,7 @@ public abstract class PAMain {
 	    System.out.print(" DO_INTERACTIVE_ANALYSIS");
 
 	if(MA_MAPS)
-	    System.out.print(" MA_MAPS");
+	    System.out.print(" MA_MAPS (" + MA_MAPS_OUTPUT_FILE + ")");
 
 	System.out.println();
     }
@@ -714,62 +722,24 @@ public abstract class PAMain {
 	mainfo.print();
 
 	System.out.println("===================================");
-    }
 
-    /*
-    // displays the set of method holes from the analyzed program
-    private static void hole_stats(PointerAnalysis pa){
-	 
-	System.out.println("HOLE STARTISTICS STARTED:");
-
-	MetaCallGraph mcg = pa.getMetaCallGraph();
-	harpoon.Analysis.PointerAnalysis.InterThreadPA.TIMING = false;
-	MetaMethod mroot = new MetaMethod(hroot, true);
-
-	Set set = mcg.getTransCallees(mroot);
-	set.add(mroot);
-
-	System.out.println("Set of interesting methods:("+set.size()+") {");
-	for(Iterator it = set.iterator(); it.hasNext(); )
-	    System.out.println(" " + (MetaMethod) it.next());
-	System.out.println("}");
-
-	pa.getIntParIntGraph(mroot);
-	pa.getExtParIntGraph(mroot);
-	pa.threadInteraction(mroot);  
-
-	for(Iterator it = set.iterator(); it.hasNext();){
-	    MetaMethod mm = (MetaMethod) it.next();
-	    if(!pa.analyzable(mm.getHMethod())) continue;
-	    pa.getIntParIntGraph(mm);
-	    pa.getExtParIntGraph(mm);
-	    pa.threadInteraction(mm);  
+	System.out.print("Dumping the code factory + maps into the file " +
+			 MA_MAPS_OUTPUT_FILE + " ... ");
+	try{
+	    ObjectOutputStream oos = new ObjectOutputStream
+		(new FileOutputStream(MA_MAPS_OUTPUT_FILE));
+	    // write the CachingCodeFactory on the disk
+	    oos.writeObject(hcf);
+	    // write the Linker on the disk
+	    oos.writeObject(linker);
+	    oos.close();
+	}
+	catch(IOException e){
+	    System.err.println(e);
 	}
 
-	Set holes = new HashSet();
-	for(Iterator it = set.iterator(); it.hasNext();){
-	    MetaMethod mm = (MetaMethod) it.next();
-	    if(!pa.analyzable(mm.getHMethod())) continue;
-	    ParIntGraph pig = pa.threadInteraction(mm);
-	    for(Iterator it2 = pig.allNodes().iterator(); it2.hasNext(); ){
-		PANode node = (PANode) it2.next();
-		Set mhs = pig.G.e.methodHolesSet(node);
-		for(Iterator it_mh = mhs.iterator(); it_mh.hasNext(); ){
-		    CALL q = (CALL) it_mh.next();
-		    HCodeElement hce = (HCodeElement) q;
-		    if(holes.add(q.method()))
-			System.out.println("NEW HOLE:" + hce.getSourceFile() + 
-					   ":" + hce.getLineNumber() +" "+q);
-		}
-	    }
-	}
-
-	System.out.println("METHOD HOLES:");
-	for(Iterator it = holes.iterator(); it.hasNext(); )
-	    System.out.println("  " + (HMethod) it.next());
-	System.out.println("==========================================");
+	System.out.println("done!");
     }
-    */
 
     // extract the method roots from the set of all the roots
     // (methods and classes)
@@ -784,5 +754,3 @@ public abstract class PAMain {
     }
 
 }
-
-

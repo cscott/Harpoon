@@ -13,9 +13,10 @@ import harpoon.Util.Util;
  <code>AllocationProperties</code>. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MyAP.java,v 1.1.2.1 2000-04-04 04:29:31 salcianu Exp $
+ * @version $Id: MyAP.java,v 1.1.2.2 2000-04-04 05:42:35 salcianu Exp $
  */
-public class MyAP implements AllocationInformation.AllocationProperties {
+public class MyAP implements AllocationInformation.AllocationProperties,
+			     java.io.Serializable {
     
     // hasInteriorPointers
     public boolean hip = true;

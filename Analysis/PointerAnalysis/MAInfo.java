@@ -38,9 +38,9 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.1 2000-04-04 04:29:31 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.2 2000-04-04 05:42:35 salcianu Exp $
  */
-public class MAInfo implements AllocationInformation {
+public class MAInfo implements AllocationInformation, java.io.Serializable {
     
     private static boolean DEBUG = true;
 
@@ -50,7 +50,7 @@ public class MAInfo implements AllocationInformation {
     // started by the main or by one of the threads (transitively) started
     // by the main thread.
     Set             mms;
-    NodeRepository node_rep;
+    NodeRepository  node_rep;
     
     /** Creates a <code>MAInfo</code>. */
     public MAInfo(PointerAnalysis pa, HCodeFactory hcf,
@@ -61,11 +61,17 @@ public class MAInfo implements AllocationInformation {
 	this.node_rep = pa.getNodeRepository();
 
 	analyze();
+
+	// nullifying some stuff to ease the serialization
+	this.pa  = null;
+	this.hcf = null;
+	this.mms = null;
+	this.node_rep = null;
     }
 
 
     // Map<NEW, AllocationProperties>
-    Map aps = new HashMap();
+    private final Map aps = new HashMap();
     
     // conservative allocation property: on the global heap
     // (by default).
@@ -87,14 +93,7 @@ public class MAInfo implements AllocationInformation {
 	return cons_ap;
     }
 
-
-    //    /** Records the allocation policy <code>ap</code> for the
-    //	object creation site <code>quad</code>. */
-    //    public record_newAP(HCodeElement quad,
-    //			AllocationInformation.AllocationProperties ap){
-    //	aps.put(quad, ap);
-    //    }
-
+    // analyze all the methods
     public final void analyze(){
 	for(Iterator it = mms.iterator(); it.hasNext(); ){
 	    MetaMethod mm = (MetaMethod) it.next();
@@ -103,7 +102,9 @@ public class MAInfo implements AllocationInformation {
 	}
     }
 
-    public HClass getAllocatedType(HCodeElement hce){
+    // get the type of the object allocated by the object creation site hce;
+    // hce should be NEW or ANEW.
+    public HClass getAllocatedType(final HCodeElement hce){
 	if(hce instanceof NEW)
 	    return ((NEW) hce).hclass();
 	if(hce instanceof ANEW)
@@ -112,6 +113,8 @@ public class MAInfo implements AllocationInformation {
 	return null; // should never happen
     }
 
+    // analyze a single method: take the object creation sites from it
+    // and generate an allocation policy for each one.
     public final void analyze_mm(MetaMethod mm){
 	HMethod hm  = mm.getHMethod();
 	HCode hcode = hcf.convert(hm);
@@ -171,7 +174,9 @@ public class MAInfo implements AllocationInformation {
 
     }
 
-
+    // checks whether node escapes only in some method. We assume that
+    // no method hole starts a new thread and so, we can allocate
+    // the onject on the thread specific heap
     private boolean escapes_only_in_methods(PANode node, ParIntGraph pig){
 	if(!pig.G.e.nodeHolesSet(node).isEmpty())
 	    return false;
@@ -183,7 +188,7 @@ public class MAInfo implements AllocationInformation {
 	return true;
     }
 
-    // hope that this eavil string really don't exsist anywhere else
+    // hope that this evil string really don't exsist anywhere else
     private static String my_scope = "pa!";
     private static final TempFactory 
 	temp_factory = Temp.tempFactory(my_scope);
