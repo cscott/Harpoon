@@ -65,7 +65,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.1 1999-07-27 16:56:40 duncan Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.2 1999-07-27 17:00:16 duncan Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -410,9 +410,6 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
     
     // TreeFoldingInfo is a record type grouping together four sets: 
     class TreeFoldingInfo { 
-	static final int DATA_INDEX = 0;
-	static final int MEM_INDEX  = 1;
-	
 	final BitString[] genSet   = new BitString[2];  
 	final BitString[] prsvSet  = new BitString[2];
 	final BitString[] inSet    = new BitString[2];
