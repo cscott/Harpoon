@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.2 1999-06-10 14:44:53 cananian Exp $
+% $Id: comdef.sty,v 1.3 1999-06-10 20:50:47 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -15,7 +15,7 @@
 
 % put horizontal rules at top and bottom of figure environment
 \newenvironment{myfigure}[1][tbp]
-	{\begin{figure}[#1]\hrule\vspace{8pt}}
+	{\begin{figure}[#1]\linespread{1}\hrule\vspace{8pt}}
 	{\vspace{8pt}\hrule\end{figure}}
 
 % environment for code examples
@@ -50,6 +50,19 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
 \newtheorem{property}{Property}
 \newtheorem{lemma}{Lemma}
 \newtheorem{theorem}{Theorem}
+
+% enumerated environment with no indent
+\newcounter{enumnoind}
+\newenvironment{enumnoind}
+  {\setcounter{enumnoind}{0}
+   \begin{list}{\arabic{enumnoind}.}
+               {\usecounter{enumnoind} \setlength{\leftmargin}{.4cm}}}
+  {\end{list}}
+
+% description environment without so much space between items
+\newenvironment{tightdesc}
+  {\begin{description}\setlength{\itemsep}{2pt}\setlength{\parskip}{0pt}}
+  {\end{description}}
 
 % phi, sigma, and xi functions
 \newcommand{\phifunction}{$\phi$-function}
