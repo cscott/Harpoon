@@ -1,4 +1,5 @@
 package harpoon.Analysis.Realtime;
+import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Relinker;
 import harpoon.ClassFile.HClass;
 import harpoon.Util.Util;
@@ -8,7 +9,7 @@ import harpoon.Util.Util;
 public class Realtime {
   public static boolean REALTIME_JAVA = false; // Is Realtime JAVA support turned on?
 
-  public static void objectSetup(Relinker linker) {
+  public static void objectSetup(Linker linker) {
     if (REALTIME_JAVA) {
       linker.forName("java.lang.Object").getMutator().addDeclaredField("memoryArea",
                                                                        linker.forName("realtime.MemoryArea"));
