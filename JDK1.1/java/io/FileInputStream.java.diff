@@ -1,0 +1,204 @@
+--- /j/io/FileInputStream.java	Mon Mar  6 23:14:03 2000
++++ FileInputStream.java	Mon Mar  6 23:08:47 2000
+@@ -14,6 +14,8 @@
+ 
+ package java.io;
+ 
++import harpoon.Analysis.ContBuilder.*;
++
+ /**
+  * A <code>FileInputStream</code> obtains input bytes
+  * from a file in a file system. What files
+@@ -67,6 +69,13 @@
+ 	fd = new FileDescriptor();
+ 	open(name);
+     }
++    
++    
++    
++    public void makeAsync()
++    {
++    	NativeIO.makeNonBlockJNI(fd.fd);
++    }
+ 
+     /**
+      * Creates a <code>FileInputStream</code> by
+@@ -122,7 +131,7 @@
+ 	    throw new NullPointerException();
+ 	}
+ 	if (security != null) {
+-	    security.checkRead(fdObj);
++	    //security.checkRead(fdObj);
+ 	}
+ 	fd = fdObj;
+     }
+@@ -142,6 +151,50 @@
+      * @exception  IOException  if an I/O error occurs.
+      */
+     public native int read() throws IOException;
++    
++    // pesimistic version of this inherited from InputStream
++    public IntContinuation _readAsync() throws IOException
++    {
++	int b= NativeIO.getCharJNI(fd.fd);
++	switch(b)
++	    {
++	    case NativeIO.ERROR: throw new IOException();
++	    case NativeIO.EOF: IntContinuation.result= -1; return null;
++	    case NativeIO.TRYAGAIN: return new readAsyncC();
++	    default: IntContinuation.result= b; return null;
++	    }
++    }
++
++    class readAsyncC extends IntContinuation implements IOContinuation
++    {
++	public void exception(Throwable t) {}
++      
++	private Continuation link;
++
++	public void setLink(Continuation newLink) { 
++	    link= newLink;
++	}
++
++	public Continuation getLink() { 
++	    return link;
++	}
++	public readAsyncC() { Scheduler.addRead(this); }
++	public void resume()
++	{
++	    int b= NativeIO.getCharJNI(fd.fd);
++	    switch(b)
++		{
++		case NativeIO.ERROR: next.exception( new IOException() );return;
++		case NativeIO.EOF: next.resume(-1);return;
++		case NativeIO.TRYAGAIN:  Scheduler.addRead(this); return;
++		default: next.resume(b);
++		} 
++			
++	}
++		
++	public FileDescriptor getFD() { return fd; }
++		
++    }
+ 
+ 
+     /**
+@@ -152,7 +205,8 @@
+      * @exception IOException If an I/O error has occurred.
+      */
+     private native int readBytes(byte b[], int off, int len) throws IOException;
+-
++    
++ 
+     /**
+      * Reads up to <code>b.length</code> bytes of data from this input
+      * stream into an array of bytes. This method blocks until some input
+@@ -167,6 +221,10 @@
+     public int read(byte b[]) throws IOException {
+ 	return readBytes(b, 0, b.length);
+     }
++    
++    public IntContinuation readAsync(byte b[]) throws IOException {
++    	return readAsync(b, 0, b.length);
++    }
+ 
+     /**
+      * Reads up to <code>len</code> bytes of data from this input stream
+@@ -184,6 +242,97 @@
+     public int read(byte b[], int off, int len) throws IOException {
+ 	return readBytes(b, off, len);
+     }
++
++    // again, inherited pesimistic version
++    public IntContinuation _readAsync(byte b[], int ofs, int len) throws IOException
++    {
++		if (b == null) {
++	    		throw new NullPointerException();
++		} else if ((ofs < 0) || (ofs > b.length) || (len < 0) ||
++		   		((ofs + len) > b.length) || ((ofs + len) < 0)) {
++	    				throw new IndexOutOfBoundsException();
++		} else if (len == 0) {
++		    IntContinuation.result= 0;
++	    		return null;
++		}
++		
++    		int n= NativeIO.readJNI(fd.fd, b, ofs, len);
++    		switch(n)
++    		{
++    			case NativeIO.ERROR: throw new IOException();
++    			case NativeIO.EOF: IntContinuation.result= -1; return null;
++    			case NativeIO.TRYAGAIN: return new readAsync2C(b, ofs, len);
++    			default: IntContinuation.result= n; return null;
++    		}
++    }
++    // Reuses the continuation passed to it if it's not null
++    public IntContinuation readAsyncFunky(byte b[], int ofs, int len, IntContinuation prev) throws IOException
++    {
++		if (b == null) {
++	    		throw new NullPointerException();
++		} else if ((ofs < 0) || (ofs > b.length) || (len < 0) ||
++		   		((ofs + len) > b.length) || ((ofs + len) < 0)) {
++	    				throw new IndexOutOfBoundsException();
++		} else if (len == 0) {
++		    IntContinuation.result= 0;
++	    		return null;
++		}
++		
++    		int n= NativeIO.readJNI(fd.fd, b, ofs, len);
++    		switch(n)
++    		{
++    			case NativeIO.ERROR: throw new IOException();
++    			case NativeIO.EOF: IntContinuation.result= -1; return null;
++    			case NativeIO.TRYAGAIN:
++			    if (prev!=null) {
++				((readAsync2C) prev) .init (b, ofs, len);
++				return prev;
++			    } else return new readAsync2C(b, ofs, len);
++    			default: IntContinuation.result= n; return null;
++    		}
++    }
++
++	class readAsync2C extends IntContinuation implements IOContinuation
++	{
++	    public void exception(Throwable t) {}
++	    
++	    private Continuation link;
++
++	    public void setLink(Continuation newLink) { 
++		link= newLink;
++	    }
++
++	    public Continuation getLink() { 
++		return link;
++	    }
++	    byte b[];
++	    int ofs, len;
++	    public readAsync2C(byte b[], int ofs, int len) {
++		init(b, ofs, len);
++	    }
++
++	    public void init(byte b[], int ofs, int len ) { 
++		this.b= b;
++		this.ofs= ofs;
++		this.len= len;
++		Scheduler.addRead(this); 
++	    }
++	    public void resume()
++	    {
++		int n= NativeIO.readJNI(fd.fd,b, ofs, len);
++		switch(n)
++		    {
++		    case NativeIO.ERROR: next.exception( new IOException() );return;
++		    case NativeIO.EOF: next.resume(-1);return;
++		    case NativeIO.TRYAGAIN: Scheduler.addRead(this); return;
++		    default: next.resume(n);
++		    } 
++		
++	    }
++	    
++	    public FileDescriptor getFD() { return fd; }
++	}
++    
+ 
+     /**
+      * Skips over and discards <code>n</code> bytes of data from the

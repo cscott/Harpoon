@@ -1,0 +1,260 @@
+--- /j/io/InputStream.java	Mon Mar  6 23:14:03 2000
++++ InputStream.java	Mon Mar  6 23:08:47 2000
+@@ -12,7 +12,6 @@
+  * you entered into with Sun.
+  */
+ 
+-package java.io;
+ 
+ /**
+  * This abstract class is the superclass of all classes representing
+@@ -32,6 +31,11 @@
+  * @see     java.io.PushbackInputStream
+  * @since   JDK1.0
+  */
++ 
++package java.io;
++
++import harpoon.Analysis.ContBuilder.*;
++
+ public abstract class InputStream {
+ 
+     // SKIP_BUFFER_SIZE is used to determine the size of skipBuffer
+@@ -55,6 +59,25 @@
+      */
+     public abstract int read() throws IOException;
+ 
++    // Here's the deal: I've got optimistic versions that I feel we're going
++    // to use again soon. Rather than writing new, pesimistic ones, I wrap them
++    // up in pesimistic procedures.
++    public IntContinuation _readAsync() throws IOException
++    // default version: blocks
++    {
++	IntContinuation.result= read();
++	return null;
++    }
++
++    // pesimistic versions are guarranteed not to return null;
++    public IntContinuation readAsync() throws IOException
++    {
++	return IntDoneContinuation.pesimistic(_readAsync());
++    }
++    
++    // make this input stream asynchronous
++    public void makeAsync() { };
++
+     /**
+      * Reads some number of bytes from the input stream and stores them into
+      * the buffer array <code>b</code>. The number of bytes actually read is
+@@ -95,6 +118,10 @@
+ 	return read(b, 0, b.length);
+     }
+ 
++    public IntContinuation readAsync(byte b[]) throws IOException {
++	return readAsync(b, 0, b.length);
++    }
++
+     /**
+      * Reads up to <code>len</code> bytes of data from the input stream into
+      * an array of bytes.  An attempt is made to read as many as
+@@ -165,11 +192,13 @@
+ 	} else if (len == 0) {
+ 	    return 0;
+ 	}
++	
+ 
+ 	int c = read();
+ 	if (c == -1) {
+ 	    return -1;
+ 	}
++	
+ 	b[off] = (byte)c;
+ 
+ 	int i = 1;
+@@ -187,7 +216,72 @@
+ 	}
+ 	return i;
+     }
++    
++    // default implementation: uses read();
++    // kinda dumb: always reads 1 byte
++   
+ 
++    public IntContinuation _readAsync(byte b[], int off, int len) throws IOException {
++	if (b == null) {
++	    throw new NullPointerException();
++	} else if ((off < 0) || (off > b.length) || (len < 0) ||
++		   ((off + len) > b.length) || ((off + len) < 0)) {
++	    throw new IndexOutOfBoundsException();
++	} else if (len == 0) {
++	    IntContinuation.result= 0;
++	    return null;
++	}
++	  	
++
++	IntContinuation c = readAsync();
++	if (c == null) {
++	    b[off]= (byte) IntContinuation.result;
++	    IntContinuation.result= 1;
++	    return null;
++	}
++		
++	// I don't need the length     :)
++	readAsync2C thisC= new readAsync2C(b, off);
++	c.setNext(thisC);
++	return thisC;
++    }
++
++    public IntContinuation readAsync(byte b[], int off, int len) throws IOException {
++	return IntDoneContinuation.pesimistic(_readAsync(b, off, len));
++    }
++
++       	
++    // Proposed style of naming Continuations: <classname>$<methodname><methodnr>C<contnr> 
++    // <classname> : here: added implicitly by javac
++    // <methodnr>  : the number of this method among the methods with the same name (here, two read methods);
++    // <contnr>    : the number of this Continuation in the sequence
++    // I ommit any of the last two if they are 1.
++    class readAsync2C extends IntContinuation implements IntResultContinuation
++    {
++	public void exception(Throwable t) {
++	}
++
++	private Continuation link;
++
++	public void setLink(Continuation newLink) { 
++	    link= newLink;
++	}
++
++	public Continuation getLink() { 
++	    return link;
++	}
++
++	    
++	byte b[]; int off;
++	public readAsync2C(byte b[], int off) { this.b= b; this.off= off; }
++		
++	public void resume(int result)
++	{
++	    b[off]= (byte) result;
++	    next.resume(1);
++	}
++    }
++	
+     /**
+      * Skips over and discards <code>n</code> bytes of data from this input
+      * stream. The <code>skip</code> method may, for a variety of reasons, end
+@@ -212,7 +306,8 @@
+ 	int nr;
+ 	if (skipBuffer == null)
+ 	    skipBuffer = new byte[SKIP_BUFFER_SIZE];
+-
++	
++	// I have NO IDEA why they do this here. So I kinda skipped it
+ 	byte[] localSkipBuffer = skipBuffer;
+ 		
+ 	if (n <= 0) {
+@@ -230,7 +325,98 @@
+ 	
+ 	return n - remaining;
+     }
++    
++    // I use readAsync(byte[], int, int). Right now, I'd be better off using readAsync(), but the former is supposed to get more efficient
++    public LongContinuation _skipAsync(long n) throws IOException
++    {
++	long remaining = n;
++	int nr;
++	
++	if (skipBuffer == null)
++	    skipBuffer = new byte[SKIP_BUFFER_SIZE];
++		
++	if (n <= 0) {
++	    LongContinuation.result= 0;
++	    return null;
++	}
+ 
++	while (remaining > 0) {
++	    IntContinuation c= readAsync(skipBuffer, 0, (int) Math.min(SKIP_BUFFER_SIZE, remaining));
++	    if (c!=null)
++		{
++		    skipAsyncC thisC= new skipAsyncC(n, remaining);
++		    c.setNext(thisC);
++		    return thisC;
++		}
++	    else nr= IntContinuation.result;
++	    if (nr < 0) {
++		break;
++	    }
++	    remaining -= nr;
++	}
++	
++	// got away with no contns.
++	LongContinuation.result= (int) (n - remaining);    	
++	return null;
++    }
++    
++    // note: the current instance of InputStream is implicitly stored by java.
++    class skipAsyncC extends LongContinuation implements IntResultContinuation
++    {
++	public void exception(Throwable t) {
++	}
++
++	private Continuation link;
++
++	public void setLink(Continuation newLink) { 
++	    link= newLink;
++	}
++
++	public Continuation getLink() { 
++	    return link;
++	}
++	long n;
++	long remaining;
++	public skipAsyncC(long n, long remaining)
++	{
++	    this.n= n; this.remaining= remaining;
++	}
++          
++	public void resume(int nr)
++	{
++            try{
++		// rewrite what's left of the loop; if you guys have some sort of goto, that would be nice indeed
++		if (nr<0) {
++	    			// just happens that there's not much after the loop, otherwise: new continuation or goto really needed
++                    next.resume(n-remaining);
++		}
++		remaining-= nr;
++     		
++     		while (remaining>0) {
++		    IntContinuation c= readAsync(skipBuffer, 0, (int) Math.min(SKIP_BUFFER_SIZE, remaining));
++		    if (c!=null)
++			{
++			    c.setNext(this);
++			    return;
++			}
++		    else nr= IntContinuation.result;
++	    		
++		    if (nr < 0) {
++			break;
++		    }
++		    remaining -= nr;
++		}
++	    		
++		next.resume(n-remaining);
++	    } catch (IOException e) { next.exception(e); }
++	}
++    }
++
++    public LongContinuation skipAsync(long n) throws IOException
++    {
++	return LongDoneContinuation.pesimistic(_skipAsync(n));
++    }
++    
+     /**
+      * Returns the number of bytes that can be read (or skipped over) from
+      * this input stream without blocking by the next caller of a method for
+@@ -351,3 +537,4 @@
+     }
+ 
+ }
++

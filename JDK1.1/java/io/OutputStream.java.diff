@@ -1,0 +1,116 @@
+--- /j/io/OutputStream.java	Mon Mar  6 23:14:03 2000
++++ OutputStream.java	Mon Mar  6 23:08:47 2000
+@@ -14,6 +14,8 @@
+ 
+ package java.io;
+ 
++import harpoon.Analysis.ContBuilder.*;
++
+ /**
+  * This abstract class is the superclass of all classes representing 
+  * an output stream of bytes. An output stream accepts output bytes 
+@@ -50,6 +52,14 @@
+      *             output stream has been closed.
+      */
+     public abstract void write(int b) throws IOException;
++    
++    public VoidContinuation writeAsync(int b) throws IOException
++    {
++    	write(b);
++    	return null;
++    }
++    
++    public void makeAsync() { }
+ 
+     /**
+      * Writes <code>b.length</code> bytes from the specified byte array 
+@@ -64,6 +74,11 @@
+     public void write(byte b[]) throws IOException {
+ 	write(b, 0, b.length);
+     }
++    
++    public VoidContinuation writeAsync(byte b[]) throws IOException
++    {
++    	return writeAsync(b, 0, b.length);
++    }
+ 
+     /**
+      * Writes <code>len</code> bytes from the specified byte array 
+@@ -105,6 +120,77 @@
+ 	for (int i = 0 ; i < len ; i++) {
+ 	    write(b[off + i]);
+ 	}
++    }
++    
++    public VoidContinuation writeAsync(byte b[], int off, int len) throws IOException
++    // default: uses write 1 byte
++    {
++	if (b == null) {
++	    throw new NullPointerException();
++	} else if ((off < 0) || (off > b.length) || (len < 0) ||
++		   ((off + len) > b.length) || ((off + len) < 0)) {
++	    throw new IndexOutOfBoundsException();
++	} else if (len == 0) {
++	    return null;
++	}    	
++	
++ 	while (len>0) {
++		VoidContinuation c= writeAsync(b[off]);
++		if (c!= null)
++		{
++			WriteAsyncC thisC= new WriteAsyncC(b, off, len);
++			c.setNext(thisC);
++			return thisC;
++		}
++		
++		len--;
++		off++;
++	} 
++	return null;
++    }
++    
++    public class WriteAsyncC extends VoidContinuation implements VoidResultContinuation
++    {
++	public void exception(Throwable t) {}
++
++	private Continuation link;
++	
++	public void setLink(Continuation newLink) { 
++	    link= newLink;
++	}
++	
++	public Continuation getLink() { 
++	    return link;
++	}
++
++    	byte b[];
++    	int off, len;
++    	
++    	public WriteAsyncC(byte b[], int off, int len)
++    	{
++    		this.b= b; this.off= off; this.len= len;
++    	}
++    	
++    	public void resume()
++    	{
++    	  try {
++    		len--;
++    		off++;
++    		// the same thing again
++ 		while (len>0) {
++			VoidContinuation c= writeAsync(b[off]);
++			if (c!= null)
++			{
++				c.setNext(this);
++				return;
++			}
++		
++			len--;
++			off++;
++		} 
++		next.resume();    	
++	  } catch (IOException e) { next.exception(e); }
++    	}
+     }
+ 
+     /**
