@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.81 1998-10-10 02:00:05 cananian Exp $
+ * @version $Id: Translate.java,v 1.82 1998-10-10 02:15:35 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -422,9 +422,7 @@ class Translate  { // not public.
 	    // the actual operation.
 	    Quad q0= new AGET(in, ns.stack(0), Tobj, Tindex);
 	    // bounds check
-	    r = transBoundsCheck(SS, Tobj, Tindex, q0, handlers, 
-				 new TransState(s.pop(2), in,
-						ts.header, ts.which_succ));
+	    r = transBoundsCheck(SS, Tobj, Tindex, q0, handlers, ts);
 	    q = ts.header.next()[ts.which_succ];
 	    last = q0;
 	    // done.
@@ -466,7 +464,7 @@ class Translate  { // not public.
 		Quad qq2 = transNewException(SS, HCase, SS.Tex, 
 					     new TransState(ts.initialState, 
 							    in, qq1, 0));
-		r = transThrow(SS, new TransState(ns.push(SS.Tex),
+		r = transThrow(SS, new TransState(ts.initialState.push(SS.Tex),
 						  ts.in, qq2, 0),
 			       handlers, false);
 		// link
@@ -475,9 +473,8 @@ class Translate  { // not public.
 		q0 = qq0;
 	    }
 	    // bounds check
-	    TransState r2[] = transBoundsCheck(SS, Tobj, Tindex, q0, handlers,
-					       new TransState(ns,in, ts.header,
-							      ts.which_succ));
+	    TransState r2[] = transBoundsCheck(SS, Tobj, Tindex, 
+					       q0, handlers, ts);
 	    // merge TransState arrays.
 	    r = mergeTS(r, r2);
 	    // set up next state.
@@ -516,8 +513,7 @@ class Translate  { // not public.
 		Quad q3 = new CJMP(in, q2.def()[0], new Temp[0]);
 		Quad q4 = transNewException(SS, HCex, SS.Tex, 
 					    new TransState(s, in, q3, 0));
-		r = transThrow(SS, new TransState(ns.pop().push(SS.Tex), 
-						  in, q4, 0),
+		r = transThrow(SS, new TransState(s.push(SS.Tex), in, q4, 0),
 			       handlers, false);
 		Quad q5 = new ANEW(in, ns.stack(0), hc, 
 				   new Temp[] { s.stack(0) });
@@ -539,9 +535,7 @@ class Translate  { // not public.
 	    // actual operation:
 	    Quad q0 = new ALENGTH(in, ns.stack(0), Tobj);
 	    // null check.
-	    r = transNullCheck(SS, Tobj, q0, handlers,
-			       new TransState(s.pop(), in, 
-					      ts.header, ts.which_succ));
+	    r = transNullCheck(SS, Tobj, q0, handlers, ts);
 	    // setup next state
 	    q = ts.header.next()[ts.which_succ];
 	    last = q0;
@@ -785,7 +779,7 @@ class Translate  { // not public.
 	    Quad q1 = new CJMP(in, q0.def()[0], new Temp[0]);
 	    Quad q2 = transNewException(SS, HCex, SS.Tex, 
 					new TransState(s, in, q1, 1));
-	    r = transThrow(SS,new TransState(ns.pop().push(SS.Tex), in, q2, 0),
+	    r = transThrow(SS, new TransState(s.push(SS.Tex), in, q2, 0),
 			   handlers, false);
 	    // actual division operation:
 	    Quad q3 = new OPER(in, Op.toString(in.getOpcode()), // idiv/ldiv
@@ -813,8 +807,7 @@ class Translate  { // not public.
 	    Quad q2 = new CJMP(in, q1.def()[0], new Temp[0]);
 	    Quad q3 = transNewException(SS, HCex, SS.Tex, 
 					new TransState(s, in, q2, 1));
-	    r = transThrow(SS, new TransState(ns.pop(2).push(SS.Tex), 
-					      in, q3, 0),
+	    r = transThrow(SS, new TransState(s.push(SS.Tex), in, q3, 0),
 			   handlers, false);
 	    // actual division operation:
 	    Quad q4 = new OPER(in, Op.toString(in.getOpcode()), // idiv/ldiv
@@ -924,9 +917,7 @@ class Translate  { // not public.
 	    // actual operation:
 	    Quad q0 = new GET(in, ns.stack(0), opd.value(), s.stack(0));
 	    // null check.
-	    r = transNullCheck(SS, s.stack(0), q0, handlers,
-			       new TransState(s.pop(), in,
-					      ts.header,ts.which_succ));
+	    r = transNullCheck(SS, s.stack(0), q0, handlers, ts);
 	    // setup next state.
 	    q = ts.header.next()[ts.which_succ]; 
 	    last = q0;
@@ -998,9 +989,7 @@ class Translate  { // not public.
 	    Quad q1 = new OPER(in, "acmpeq", ns.extra(0),
 			       new Temp[] { Tex, SS.Tnull });
 	    Quad q2 = new CJMP(in, q1.def()[0], new Temp[0]);
-	    r = transThrow(SS, 
-			   new TransState(s.pop(j+(isStatic?0:1)).push(Tex), 
-					  in, q2, 0),
+	    r = transThrow(SS, new TransState(s.push(Tex), in, q2, 0),
 			   handlers, false);
 	    Quad.addEdge(q,  0, q1, 0);
 	    Quad.addEdge(q1, 0, q2, 0);
@@ -1076,16 +1065,14 @@ class Translate  { // not public.
 	    ns = s.pop();
 	    last = new MONITORENTER(in, s.stack(0));
 	    // null dereference check.
-	    r = transNullCheck(SS, s.stack(0), last, handlers, 
-			       new TransState(ns,in,ts.header,ts.which_succ));
+	    r = transNullCheck(SS, s.stack(0), last, handlers, ts);
 	    q = ts.header.next()[ts.which_succ];
 	    break;
 	case Op.MONITOREXIT:
 	    ns = s.pop();
 	    last = new MONITOREXIT(in, s.stack(0));
 	    // null dereference check.
-	    r = transNullCheck(SS, s.stack(0), last, handlers,
-			       new TransState(ns,in,ts.header,ts.which_succ));
+	    r = transNullCheck(SS, s.stack(0), last, handlers, ts);
 	    q = ts.header.next()[ts.which_succ];
 	    break;
 	case Op.MULTIANEWARRAY:
@@ -1102,8 +1089,7 @@ class Translate  { // not public.
 		Quad Qp = new PHI(in, new Temp[0], dims);
 		Quad Qn = transNewException(SS, HCex, SS.Tex, 
 					    new TransState(s, in, Qp, 0));
-		r = transThrow(SS, new TransState(s.pop(dims).push(SS.Tex),
-						  in, Qn, 0),
+		r = transThrow(SS, new TransState(s.push(SS.Tex), in, Qn, 0),
 			       handlers, false);
 
 		last = ts.header; which_succ = ts.which_succ;
@@ -1169,8 +1155,7 @@ class Translate  { // not public.
 		Quad q1 = new CJMP(in, q0.def()[0], new Temp[0]);
 		Quad q2 = transNewException(SS, HCex, SS.Tex, 
 					    new TransState(s, in, q1, 0));
-		r = transThrow(SS, new TransState(s.pop().push(SS.Tex),
-						  in, q2, 0),
+		r = transThrow(SS, new TransState(s.push(SS.Tex), in, q2, 0),
 			       handlers, false);
 		// actual operation:
 		Quad q3 = new ANEW(in, ns.stack(0), arraytype, 
@@ -1210,8 +1195,8 @@ class Translate  { // not public.
 		last = new SET(in, opd.value(), s.stack(1), s.stack(0));
 	    }
 	    // null check.
-	    r = transNullCheck(SS, ((SET)last).objectref, last, handlers,
-			       new TransState(ns,in,ts.header,ts.which_succ));
+	    r = transNullCheck(SS, ((SET)last).objectref, last, 
+			       handlers, ts);
 	    // setup next state.
 	    q = ts.header.next()[ts.which_succ];
 	    break;
