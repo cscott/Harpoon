@@ -167,6 +167,11 @@ void FNI_SetObjectArrayElement(JNIEnv *env, jobjectArray array,
   if (objCls!=NULL) FNI_DeleteLocalRef(env, objCls);
   FNI_DeleteLocalRef(env, arrCls);
   FNI_DeleteLocalRef(env, comCls);
+#ifdef WITH_GENERATIONAL_GC
+  generational_write_barrier((jobject_unwrapped *)
+			     ( ((char *) &(a->element_start)) + 
+			       (index*sizeof(result)) ));
+#endif
   /* do set */
   *( (jobject_unwrapped *)
      ( ((char *) &(a->element_start)) + (index*sizeof(result)) ) ) =

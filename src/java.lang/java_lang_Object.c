@@ -31,6 +31,9 @@ JNIEXPORT jint JNICALL Java_java_lang_Object_hashCode
 static inline jobject cloneHelper(JNIEnv *env, jobject obj, jsize len) {
   jobject clone = FNI_Alloc(env, NULL, FNI_CLAZ(FNI_UNWRAP_MASKED(obj)),
 			    NULL/*default alloc func*/, len);
+#ifdef WITH_GENERATIONAL_GC
+  add_to_curr_obj_list(FNI_UNWRAP_MASKED(clone));
+#endif
   memcpy(FNI_UNWRAP_MASKED(clone)->field_start,
 	 FNI_UNWRAP_MASKED(obj  )->field_start,
 	 len - sizeof(struct oobj));

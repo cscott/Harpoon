@@ -37,6 +37,9 @@ void FNI_SetObjectField(JNIEnv *env, jobject obj,
 #ifdef WITH_ROLE_INFER
   Java_java_lang_RoleInference_fieldassign(env, NULL, obj, fieldID->reflectinfo, value);
 #endif
+#ifdef WITH_GENERATIONAL_GC
+  generational_write_barrier(fieldID->offset+(ptroff_t)FNI_UNWRAP_MASKED(obj));
+#endif
   *((jobject_unwrapped *)(fieldID->offset+(ptroff_t)FNI_UNWRAP_MASKED(obj))) =
     FNI_UNWRAP(value);
 }
