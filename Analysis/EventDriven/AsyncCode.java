@@ -62,7 +62,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.32 2000-01-14 20:11:56 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.33 2000-01-14 21:57:04 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -811,14 +811,26 @@ public class AsyncCode {
 	    HClass HCthrd=linker.forName("java.lang.Thread");
 	    if (HCthrd.equals(old.getDeclaringClass())&&
 		(old.equals(old.getDeclaringClass().getMethod("start",
-							      new HClass[0]))))
+							      new HClass[0])))) {
+		HMethod hmrun=old.getDeclaringClass().getMethod("run",
+							       new HClass[0]);
+		if (blockingcalls.contains(hmrun))
+		    if (!old2new.containsKey(hmrun)) {
+			if (bm.swop(hmrun)!=null) {
+			    //handle actual blocking call swapping
+			    old2new.put(hmrun, bm.swop(hmrun));
+			} else {
+			    async_todo.add(ucf.convert(hmrun));
+			    HMethod temp=makeAsync(old2new, hmrun,
+						   ucf,linker);
+			}
+		    }
 		return old.getDeclaringClass().getMethod("start_Async",
 							 new HClass[0]);
-
+	    }
 	    return null;
 	}
     }
-
 
     static class ChangingVisitor extends QuadVisitor {
 	HClass oldn, newn;
