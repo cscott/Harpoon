@@ -1,12 +1,18 @@
 package harpoon.Analysis.Instr;
 
 import harpoon.Analysis.BasicBlock;
-import harpoon.IR.Assem.*;
+import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrMEM;
+import harpoon.IR.Assem.InstrVisitor;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.Collections.ListFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 
 /** Verify uses the inherent definitions of the instruction
