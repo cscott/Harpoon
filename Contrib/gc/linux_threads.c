@@ -345,6 +345,12 @@ GC_thread GC_lookup_thread(pthread_t id);
 
 #define SIG_RESTART SIGXCPU
 
+/* Sparc/Linux doesn't properly define SIGPWR in <signal.h>.
+ * It is aliased to SIGLOST in asm/signal.h, though. */
+#if defined(SPARC) && !defined(SIGPWR)
+#  define SIGPWR SIGLOST
+#endif
+
 sem_t GC_suspend_ack_sem;
 
 /*

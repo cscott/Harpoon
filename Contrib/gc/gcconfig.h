@@ -678,6 +678,7 @@
           Linux Sparc/a.out not supported
 #     endif
       extern int _end;
+      extern int _etext;
 #     define DATAEND (&_end)
 #     define SVR4
 #     ifdef __arch64__
