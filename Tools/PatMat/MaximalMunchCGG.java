@@ -25,7 +25,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.30 1999-08-11 00:04:01 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.31 1999-08-18 20:59:47 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -394,29 +394,6 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    initStms.append(r.initStms.toString());
 	}
 
-	public void visit(Spec.StmSeq s) {
-	    degree++;
-
-	    append(exp, "// check statement type");
-	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_SEQ+"");
-	    
-	    // save state before outputting children-checking code
-	    String oldPrefix = stmPrefix;
-	    String oldIndent = indentPrefix;
-
-	    indentPrefix = oldIndent + "\t";
-
-	    append(exp, "// check left child"); 
-	    stmPrefix = "(("+TREE_SEQ+") " + oldPrefix + ").left";
-	    s.s1.accept(this);
-	    append(exp, "// check right child");
-	    stmPrefix = "(("+TREE_SEQ+") " + oldPrefix + ").right";
-	    s.s2.accept(this);
-
-	    // restore original state
-	    indentPrefix = oldIndent;
-	    stmPrefix = oldPrefix;
-	}
 
 	public void visit(Spec.StmThrow s) {
 	    degree++;
@@ -894,6 +871,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	out.println("\t\t\tmunchStm(treee);");
 	out.println("\t\t} // end visit("+TREE_Stm+")");
 	
+	out.println("\t\tpublic void visit("+TREE_SEQ+" treee){");
+	out.println("\t\t\ttreee.left.visit(this);");
+	out.println("\t\t\ttreee.right.visit(this);");
+	out.println("\t\t}");
 	// BAD DOG!  Don't implement visit(TREE_Exp)...we should never
 	// be munching those directly; only from calls to visit(TREE_Stm) 
 	
@@ -901,11 +882,12 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	
 	out.println("\tCggVisitor visitor = new CggVisitor();");
 	out.println("\t"+TREE_Tree+" t = ("+TREE_Tree+") code.getRootElement();");
-	out.println("\twhile(t instanceof "+TREE_SEQ+") {");
-	out.println("\t\t"+TREE_SEQ+" seq = ("+TREE_SEQ+")t;");
-	out.println("\t\tseq.left.visit(visitor);");
-	out.println("\t\tt=seq.right;");
-	out.println("\t}");
+
+	//out.println("\twhile(t instanceof "+TREE_SEQ+") {");
+	//out.println("\t\t"+TREE_SEQ+" seq = ("+TREE_SEQ+")t;");
+	//out.println("\t\tseq.left.visit(visitor);");
+	//out.println("\t\tt=seq.right;");
+	//out.println("\t}");
 	out.println("\tt.visit(visitor);");
 	
 	
