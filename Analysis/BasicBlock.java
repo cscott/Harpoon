@@ -63,7 +63,7 @@ import java.util.Collection;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.40 2000-07-28 03:08:53 pnkfelix Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.41 2000-08-22 04:37:35 pnkfelix Exp $ */
 public class BasicBlock implements java.io.Serializable {
     
     static final boolean DEBUG = false;
@@ -489,8 +489,11 @@ public class BasicBlock implements java.io.Serializable {
 	
 	/** Returns the <code>BasicBlock</code> containing
 	    <code>hce</code>. 
+	    <BR> <B>requires:</B> hce is present in the code for
+	         <code>this</code>. 
 	*/
 	public BasicBlock getBlock(HCodeElement hce) {
+	    Util.assert(hceToBB.containsKey(hce));
 	    return (BasicBlock) hceToBB.get(hce);
 	}
 	

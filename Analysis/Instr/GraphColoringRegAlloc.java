@@ -32,6 +32,8 @@ import harpoon.Util.Collections.Factories;
 import harpoon.Util.Collections.LinearSet;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.InvertibleMap;
+import harpoon.Util.Collections.GenericInvertibleMap;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -53,7 +55,7 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.26 2000-08-22 01:08:42 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.27 2000-08-22 04:37:49 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -111,7 +113,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
     Map implicitAssigns; // VReg -> AReg -> Assign
 
 
+    InvertibleMap webPrecolor; // WebRecord -> AReg
     Map regToColor;  // AReg -> RegColor
+    Map regToWeb; // AReg -> RegWebRecord
 
     Map ixtToWebPreCombine; // Instr x VReg -> WebRecord    
     Map ixtToWeb; // Instr x VReg -> WebRecord
@@ -210,6 +214,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	if (TIME) System.out.println();
 
+
 	do {
 	    do {
 		buildRegAssigns();
@@ -217,6 +222,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		liveTemps = LiveTemps.make(code, rfi.liveOnExit());
 		ixtToWeb = new HashMap();
 		ixtToWebPreCombine = new HashMap();
+		webPrecolor = new GenericInvertibleMap();
 
 		if (TIME) System.out.println("Making Webs");
 
@@ -581,12 +587,14 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	
 	regWebRecords = new ArrayList(regToColor.keySet().size());
 	
+	regToWeb = new HashMap();
 	Iterator rs = regToColor.keySet().iterator();
 	for(i=0; rs.hasNext(); i++) {
 	    Temp reg = (Temp) rs.next();
 	    WebRecord w = new RegWebRecord(reg);
 	    w.sreg(i);
 	    regWebRecords.add(w);
+	    regToWeb.put(reg, w);
 	}
 	tempWebRecords = new ArrayList(webSet.size());
 	for(Iterator webs = webSet.iterator(); webs.hasNext(); i++) {
@@ -641,21 +649,14 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	    for(j=i+1; j<sz; j++) {
 		WebRecord wr2 = (WebRecord) webRecords.get(j);
-		//adjMtx.set(wr1.sreg(),wr2.sreg(),wr1.conflictsWith(wr2)); 
-
-		int x=wr1.sreg();
-		int y=wr2.sreg();
-		boolean b=wr1.conflictsWith(wr2);
-		adjMtx.set(x,y,b);
+		adjMtx.set(wr1.sreg(),wr2.sreg(),wr1.conflictsWith(wr2)); 
 	    }
 	}
 
 	return adjMtx;
     }
     
-    // This '.left' stuff is bullshit... just a complicated way of
-    // indicating the definition type and doing the necessary
-    // replacement... temp remapping should look cleaner...
+    /** returns true if we succeeded in coalescing any registers. */
     private boolean coalesceRegs(AdjMtx adjMtx) { 
 	HashSet willRemove = new HashSet();
 	
@@ -664,20 +665,36 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	for(Iterator is=code.getElementsI(); is.hasNext();) {
 	    Instr i = (Instr) is.next();
 	    if (i instanceof harpoon.IR.Assem.InstrMOVE) {
-		WebRecord w1 = getWR(i, i.use()[0]);
-		WebRecord w2 = getWR(i, i.def()[0]);
-		if (!w1.conflictsWith(w2)) {
-		    
+		Temp use = i.use()[0];
+		Temp def = i.def()[0];
+		WebRecord wUse = getWR(i, use);
+		WebRecord wDef = getWR(i, def);
+		if (!wUse.conflictsWith(wDef)) {
 		    // System.out.println("Removed " + i);
-		    if (i.def()[0].equals(i.use()[0])) {
-			// skip (nothing special to update)
+		    if (def.equals(use)) {
+			// (nothing special to update)
 			willRemove.add(i);
-		    } else if (isRegister(i.def()[0])) {
-			// remap.associate(i.use()[0], i.def()[0]);
-		    } else if (isRegister(i.use()[0])) {
-			// remap.associate(i.def()[0], i.use()[0]);
+
+			
+			// THESE are special; can't entirely remove
+			// the instr, b/c then the webPrecolor map
+			// won't be updated with the correct
+			// data... but if we replace with a MoveProxy
+			// (as we'll need to eventually anyway) then
+			// can update webPrecolor map just fine.
+		    } else if (isRegister(def)) {
+			if (webPrecolor.containsKey(wUse)) 
+			    continue;
+			webPrecolor.put(wUse, def);
+			// INSERT PROXY HERE
+		    } else if (isRegister(use)) {
+			if (webPrecolor.containsKey(wUse))
+			    continue;
+			webPrecolor.put(wDef, use);
+			// INSERT PROXY HERE
+
 		    } else {
-			remap.union(i.def()[0], i.use()[0]);
+			remap.union(def, use);
 			willRemove.add(i);
 		    }
 		}
@@ -685,70 +702,27 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	}
 
 	// TRANSFORM
-	for(Iterator is=code.getElementsI(); is.hasNext();) {
-	    Instr i= (Instr) is.next();
-	    if (willRemove.contains(i)) {
-		i.remove();
-	    } else {
-		boolean replace = false;
-		Iterator itr = new
-		    CombineIterator(i.useC().iterator(),
-				    i.defC().iterator());
-		while(itr.hasNext()) {
-		    Temp t = (Temp) itr.next();
-		    if (!remap.tempMap(t).equals(t)) {
-			replace = true;
-			break;
+	if (!willRemove.isEmpty()) {
+	    for(Iterator is=code.getElementsI(); is.hasNext();) {
+		Instr i= (Instr) is.next();
+		if (willRemove.contains(i)) {
+		    i.remove();
+		} else {
+		    Iterator itr = new
+			CombineIterator(i.useC().iterator(),
+					i.defC().iterator());
+		    while(itr.hasNext()) {
+			Temp t = (Temp) itr.next();
+			if (!remap.tempMap(t).equals(t)) {
+			    Instr.replace(i, i.rename(remap));
+			    break;
+			}
 		    }
 		}
-		
-		if (replace) 
-		    Instr.replace(i, i.rename(remap));
 	    }
-	}
-
-	if (!willRemove.isEmpty()) 
 	    System.out.print("R:"+willRemove.size());
-	return !willRemove.isEmpty();
-	/*
-	int i, j, k, l, p, q;
-	Instr inst, pqinst;
-	for(i=1; i<=nblocks; i++) {
-	    for(j=1; j<=ninsts[i]; j++) {
-		inst = LBlock[i][j];
-		if (inst.kind = regval) {
-		    k = Reg_to_Int(inst.left);
-		    l = Reg_to_Int(inst.opd.val);
-		    if (! adjMtx.get(k,l) ||
-			nonStore(LBlock,k,l,i,j)) {
-			for(p=1; p<nblocks; p++) {
-			    for(q=1; q<ninsts[p]; q++) {
-				pqinst = LBlock[p][q];
-				if (LIR_Has_Left(pqinst) &&
-				    pqinst.left == inst.opt.val) {
-				    pqinst.left = inst.left;
-				}
-			    }
-			}
-		    }
-		    // remove the copy instruction 
-		    inst.remove();
-		    ((WebRecord)symReg.get(k)).defs
-			.addAll(((WebRecord)symReg.get(l)).defs);
-		    ((WebRecord)symReg.get(k)).uses
-			.addAll(((WebRecord)symReg.get(l)).uses);
-		    symReg.set(1, symReg.get(nwebs));
-		    for(p=1; p<=nwebs; p++) {
-			if (adjMtx.get(p,l)) {
-			    adjMtx.set(p,l,true);
-			}
-			adjMtx.set(p,l, adjMtx.get(nwebs,p));
-		    }
-		    nwebs--;
-		}
-	    }
 	}
-	*/
+	return !willRemove.isEmpty();
     }
 
     private WebRecord[] buildAdjLists(AdjMtx adjMtx) { 
@@ -967,6 +941,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		n.color = regToColor(wr.temp());
 		nodes.add(n);
 		wr2node.add(wr, n);
+	    } else if (webPrecolor.keySet().contains(wr)) {
+		Node n = new Node(wr, 0);
+		n.color = regToColor((Temp)webPrecolor.get(wr));
+		nodes.add(n);
+		wr2node.add(wr, n);
 	    } else {
 		Map r2a = (Map) implicitAssigns.get(wr.temp());
 		Util.assert(r2a != null, 
@@ -1180,8 +1159,16 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	// ( interference based on Muchnick, page 494.)
 	boolean conflictsWith(WebRecord wr) {
-	    return this.conflictsWith1D(wr) ||
+	    boolean r =
+		this.conflictsWith1D(wr) ||
 		wr.conflictsWith1D(this);
+	    if (!r &&
+		webPrecolor.containsKey(this)) {
+		WebRecord rwr = (WebRecord) 
+		    regToWeb.get(webPrecolor.get(this));
+		r = rwr.conflictsWith(wr);
+	    }
+	    return r;
 	}
 
 	// one directional conflict check (helper function) 
@@ -1234,11 +1221,21 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	boolean conflictsWith1D(WebRecord wr) {
 	    if (wr instanceof RegWebRecord) {
 		return true;
-	    } else if (isRegister(wr.temp())) {
-		Util.assert(false);
-		return !wr.temp().equals(this.reg);
 	    } else {
-		return super.conflictsWith1D(wr);
+		boolean r = super.conflictsWith1D(wr);
+		if (!r &&
+		    webPrecolor.invert().containsKey(reg)) {
+		    Iterator wbs =
+			webPrecolor.invert().getValues(reg).iterator();
+		    while(wbs.hasNext()) {
+			WebRecord _wr = (WebRecord) wbs.next();
+			if (_wr.conflictsWith1D(wr) ||
+			    wr.conflictsWith1D(_wr)) {
+			    return true;
+			}
+		    }
+		}
+		return r;
 	    }
 	}
     }
@@ -1268,6 +1265,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    super();
 	    sym = symbol; defs = defSet; uses = useSet;
 	    spill = false; disp = -1;
+	    Util.assert(!isRegister(sym));
 	}
 	
 	public Temp temp() { return sym; }
@@ -1284,15 +1282,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		    " >";
 	    else 
 		return "w:"+sym+" degree:"+adjnds.size();
-	}
-
-	boolean conflictsWith1D(WebRecord wr) {
-	    if (isRegister(this.sym) && 
-		isRegister(wr.temp())) {
-		return !this.sym.equals(wr.temp());
-	    } else {
-		return super.conflictsWith1D(wr);
-	    }
 	}
     }
 
