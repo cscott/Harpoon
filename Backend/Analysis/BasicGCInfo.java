@@ -48,7 +48,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.6 2000-02-10 23:54:01 kkz Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.7 2000-02-11 00:10:30 pnkfelix Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -210,6 +210,12 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 	    public harpoon.Analysis.Maps.Derivation getDerivation() {
 		return ((IntermediateCodeFactory)parent).getDerivation();
 	    }
+	    public harpoon.Backend.Generic.RegFileInfo.TempLocator
+		getTempLocator() { 
+		return ((IntermediateCodeFactory)
+			parent).getTempLocator(); 
+	    }
+
 	    class GCPointFinder extends InstrVisitor {
 		protected final List results;
 		protected final LiveTemps lt;

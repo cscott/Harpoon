@@ -70,7 +70,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.77 2000-02-07 23:46:38 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.78 2000-02-11 00:10:29 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -219,6 +219,7 @@ public abstract class RegAlloc  {
     */
     public static interface IntermediateCodeFactory extends HCodeFactory {
 	Derivation getDerivation();
+	harpoon.Backend.Generic.RegFileInfo.TempLocator getTempLocator();
     }
     
     /** Produces an <code>IntermediateCodeFactory</code> which can be
@@ -286,6 +287,8 @@ public abstract class RegAlloc  {
 	    public String getCodeName() { return p.getCodeName(); }
 	    public void clear(HMethod m) { p.clear(m); }
 	    public Derivation getDerivation() { return null; }
+	    public harpoon.Backend.Generic.RegFileInfo.TempLocator
+		getTempLocator() { return null; }
 	};
     }
     
