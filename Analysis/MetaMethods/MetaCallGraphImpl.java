@@ -58,7 +58,7 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.12 2000-04-03 02:28:52 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.13 2000-04-03 10:07:37 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
@@ -350,19 +350,41 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	return hclass.getName().equals("java.lang.Thread");
     }
 
-    // Examine a possible thread start site
-    private void check_thread_start(CALL cs, HMethod hm){
-	if(!thread_start_site(hm)) return;
+    private boolean found_a_run = false;
 
-	GenType gt = param_types[0];
-	if(gt.isPOLY()){
-	    Iterator it = 
-		get_instantiated_children(ch,gt.getHClass()).iterator();
-	    while(it.hasNext())
-		check_thread_object(cs, (HClass) it.next());
+    // Examine a possible thread start site
+    private boolean check_thread_start_site(CALL cs){
+	if(!thread_start_site(cs.method())) return false;
+
+	found_a_run = false;
+	// tbase points to the receiver class
+	Temp tbase = cs.params(0);
+
+	// reaching defs for tbase
+	Set rdefs = rdef.reachingDefs(cs, tbase);
+	Util.assert(!rdefs.isEmpty(), 
+		    "Thread start site with no reaching def: " + cs);
+	
+	for(Iterator it_qdef = rdefs.iterator(); it_qdef.hasNext(); ){
+	    Quad qdef = (Quad) it_qdef.next();
+	    // possible general types for tbase (as defined in line qdef)
+	    Set pos_gts = getExactTemp(tbase, qdef).getTypeSet();
+	    for(Iterator it_gt = pos_gts.iterator(); it_gt.hasNext(); ){
+		GenType gt = (GenType) it_gt.next();
+		
+		if(gt.isPOLY()){
+		    Set cls = get_instantiated_children(ch,gt.getHClass());
+		    for(Iterator it_cls = cls.iterator(); it_cls.hasNext(); )
+			check_thread_object(cs, (HClass) it_cls.next());
+		}
+		else
+		    check_thread_object(cs, gt.getHClass());	
+	    }
 	}
-	else
-	    check_thread_object(cs, gt.getHClass());
+
+	Util.assert(found_a_run,"No run method was found for " + cs);
+
+	return true;
     }
 
     // hclass.start() might be called. Check it and detect the possible
@@ -392,10 +414,14 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	if(!analyzed_mm.contains(mm))
 	    WMM.add(mm);
 
-	runmms.add(mm);
+	run_mms.add(mm);
+	found_a_run = true;
 
-	if(DEBUG)
-	    System.out.println("THREAD START SITE:" + cs + " => " + mm);
+	//if(DEBUG)
+	    System.out.println("THREAD START SITE:" + 
+			       cs.getSourceFile() + ":" + 
+			       cs.getLineNumber() + " " + 
+			       cs + " => " + mm);
     }
 
     // analyze the CALL site "cs" inside the MetaMethod "mm".
@@ -420,8 +446,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	    HClass[] types = hm.getParameterTypes();
 	    for(int i = 0; i < types.length; i++)
 		param_types[i+1] = new GenType(types[i],GenType.POLY);
-	    check_thread_start(cs, hm);
-	    specialize_the_call(hm,cs);
+	    if(!check_thread_start_site(cs))
+		specialize_the_call(hm, cs);
 	    return;
 	}
 

@@ -29,7 +29,7 @@ import harpoon.IR.Quads.CALL;
  <code>FakeMetaCallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: FakeMetaCallGraph.java,v 1.1.2.2 2000-03-21 18:27:27 salcianu Exp $
+ * @version $Id: FakeMetaCallGraph.java,v 1.1.2.3 2000-04-03 10:07:37 salcianu Exp $
  */
 public class FakeMetaCallGraph extends MetaCallGraphAbstr {
 
@@ -41,9 +41,16 @@ public class FakeMetaCallGraph extends MetaCallGraphAbstr {
       The resulting <code>FakeMetaCallGraph</code> object is just a
       <code>MetaMethod</code> view of the data contained into <code>cg</code>.
     */
-    public FakeMetaCallGraph(CallGraph cg, Set methods) {
+    public FakeMetaCallGraph(CallGraph cg, Set methods, Set runs) {
 	Map map = create_map(methods);
 	translate(cg,map);
+
+	// set the set of "run" methods.
+	if(runs != null)
+	    for(Iterator it = runs.iterator(); it.hasNext(); ){
+		MetaMethod mm = (MetaMethod) it.next();
+		run_mms.add(new MetaMethod(mm.getHMethod(), true));
+	    }
     }
 
     // Create the HMethod -> MetaMethod one-to-one map.

@@ -70,7 +70,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.48 2000-04-03 06:15:27 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.49 2000-04-03 10:07:43 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -336,13 +336,19 @@ public class PointerAnalysis {
 		    // selects only the (yet) unanalyzed methods
 		    private MetaMethod[] get_new_mmethods(MetaMethod[] mms){
 			int count = 0;
+			boolean good[] = new boolean[mms.length];
 			for(int i = 0 ; i < mms.length ; i++)
-			    if(!hash_proc_ext.containsKey(mms[i]))
+			    if(!hash_proc_ext.containsKey(mms[i])){
+				good[i] = true;
 				count++;
+			    }
+			    else
+				good[i] = false;
+			
 			MetaMethod[] new_mms = new MetaMethod[count];
 			int j = 0;
 			for(int i = 0 ; i < mms.length ; i++)
-			    if(!hash_proc_ext.containsKey(mms[i]))
+			    if(good[i])
 				new_mms[j++] = mms[i];
 			return new_mms;
 		    }
@@ -671,8 +677,10 @@ public class PointerAnalysis {
 	
 	/** Load statement; special case - arrays. */
 	public void visit(AGET q){
-	    System.out.println("AGET: " + q);
-	    System.out.println("good_agets: " + good_agets);
+	    if(DEBUG){
+		System.out.println("AGET: " + q);
+		System.out.println("good_agets: " + good_agets);
+	    }
 
 	    // AGET from an array of primitive objects (int, float, ...)
 	    if(!good_agets.contains(q)){

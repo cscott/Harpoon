@@ -62,7 +62,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.34 2000-04-03 02:29:09 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.35 2000-04-03 10:07:46 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -233,9 +233,14 @@ public abstract class PAMain {
 	    System.out.println("}");
 	}
 
-
-	Set mroots = extract_method_roots(roots);
-	mroots.add(hroot);
+	// I think our set of roots is too conservative and pollutes
+	// our call graph too much. I'm considering only the methods
+	// that could be called (directly or indirectly) by main
+	// or by threads (transitively) launched by main.
+	/*
+	  Set mroots = extract_method_roots(roots);
+	  mroots.add(hroot);
+	*/
 
 	CachingBBConverter bbconv = new CachingBBConverter(hcf);
 	LBBConverter lbbconv = new CachingLBBConverter(bbconv);
@@ -243,7 +248,9 @@ public abstract class PAMain {
 	if(METAMETHODS){ // real meta-methods
 	    System.out.print("MetaCallGraph ... ");
 	    tstart = System.currentTimeMillis();
-	    mcg = new MetaCallGraphImpl(bbconv, ch, mroots);
+	    mcg = new MetaCallGraphImpl(bbconv, ch,
+					Collections.singleton(hroot));
+	    // mcg = new MetaCallGraphImpl(bbconv, ch, mroots);
 	    tstop  = System.currentTimeMillis();
 	    System.out.println((tstop - tstart) + "ms");
 
@@ -254,13 +261,22 @@ public abstract class PAMain {
 	    System.out.println((tstop - tstart) + "ms");
 	}
 	else{
+	    // the set of "run()" methods (the bodies of threads)
+	    Set run_mms = null;
 	    CallGraph cg = null;
 	    if(SMART_CALL_GRAPH){ // smart call graph!
 		System.out.print("MetaCallGraph ... ");
 		tstart = System.currentTimeMillis();
-		MetaCallGraph fmcg = new MetaCallGraphImpl(bbconv, ch, mroots);
+
+		System.out.println("UU!");
+
+		MetaCallGraph fmcg = 
+		    new MetaCallGraphImpl(bbconv, ch,
+					  Collections.singleton(hroot));
 		tstop  = System.currentTimeMillis();
 		System.out.println((tstop - tstart) + "ms");
+
+		run_mms = fmcg.getRunMetaMethods();
 
 		System.out.print("SmartCallGraph ... ");
 		tstart = System.currentTimeMillis();
@@ -273,7 +289,7 @@ public abstract class PAMain {
 
 	    System.out.print("FakeMetaCallGraph ... ");
 	    tstart = System.currentTimeMillis();
-	    mcg = new FakeMetaCallGraph(cg, cg.callableMethods());
+	    mcg = new FakeMetaCallGraph(cg, cg.callableMethods(), run_mms);
 	    tstop  = System.currentTimeMillis();
 	    System.out.println((tstop - tstart) + "ms");
 	    

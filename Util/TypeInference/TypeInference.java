@@ -46,11 +46,11 @@ import harpoon.IR.Quads.CONST;
  extensions for the other quads).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: TypeInference.java,v 1.1.2.2 2000-04-03 06:15:51 salcianu Exp $
+ * @version $Id: TypeInference.java,v 1.1.2.3 2000-04-03 10:07:55 salcianu Exp $
  */
 public class TypeInference {
     // switch on the debug messages
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
 
     /** Creates a <code>TypeInference</code>. This object is
 	supposed to provide type information about the <code>ExactTemp</code>s

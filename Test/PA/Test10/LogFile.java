@@ -28,11 +28,18 @@ public class LogFile
 {
     static public final String log_file_name = "server.log";
 
-    static public String write_log(Socket s, String Method, String URI, String Protocol, 
+    static public String write_log(Socket s, String Method, String URI,
+				   String Protocol, 
 				   int ReturnCode, long BytesSent){
 
+	// Socket.toString() calls (indirectly) some Hashtable.get
+	// method  - I tool care of it!
+
+	/*
 	String addr = s.toString();	
-	String Address = addr.substring(addr.indexOf('/') + 1, addr.indexOf(','));
+	String Address = addr.substring(addr.indexOf('/') + 1,
+					addr.indexOf(','));
+	*/
 
 	//	SimpleDateFormat sdf =
 	//	    new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");  // RFC 1123
@@ -40,8 +47,8 @@ public class LogFile
 	//	String Date = sdf.format(new Date());
 
 	String Entry = 
-	    Address + " - - [" +                      // IP address
-	    "Date" + "] \"" +                           // date
+	    /* Address + */ " - - [" +                      // IP address
+	    "Date" + "] \"" +                         // date
 	    Method + " " +                            // get, post, head
 	    URI + " " +                               // filename
 	    Protocol + "\" " +                        // http/1.?
