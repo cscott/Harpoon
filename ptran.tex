@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.35 2002-07-25 22:54:59 cananian Exp $
+% $Id: ptran.tex,v 1.36 2002-07-26 02:54:14 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.35 $ $}
+\date{\today \\ $ $Revision: 1.36 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -41,16 +41,19 @@ We say a variable $v$ is singular at a use $s$ iff:
 \item all reaching definitions of $v$ are either allocation statements 
 $v = \text{new }T(\ldots)$ or moves $v = x$ where $x$ is singular at
 the move, and
-\item every non-trivial path from $s$ to $s$ redefines $v$.
+\item every non-trivial path from $s$ to $s$ redefines $v$ (where a
+  non-trivial path traverses at least one edge).
 \end{itemize}
 
-Let $\text{Rd}(s,v)$ be the set of reaching definitions of $v$ at $s$.
+Let $\text{RD}(s,v)$ be the set of (intraprocedural) reaching
+definitions
+of $v$ at $s$.
 We define the set of \newterm{generation sites} for a variable $v$ singular at
 use $s$ as:
 \begin{displaymath}
 \text{GenSite}(s,v) %\text{ where } v\in\text{use}(s)
  =
-\bigcup_{d \in \text{Rd}(s,v)} g(d)
+\bigcup_{d \in \text{RD}(s,v)} g(d)
 \text{ where }
 g(d) = \begin{cases}
                 \text{GenSite}(d,x) &\text{when } d \text{ is } v=x \\
@@ -122,11 +125,11 @@ of $v$ at $n$.
 The appropriate Gen and Kill rules are:
 \begin{eqnarray*}
 % this is the standard reaching-def rule:
-%\text{Gen}_\text{Rd}(n) &=&
+%\text{Gen}_\text{RD}(n) &=&
 %       \left\{ \tuple{v, n} | v \in \text{def}(n) \right\} \\
-%\text{Kill}_\text{Rd}(n) &=&
+%\text{Kill}_\text{RD}(n) &=&
 %       \left\{ \tuple{v, s} | v \in \text{def}(n) \wedge
-%                          \tuple{v,s} \in \text{In}_\text{Rd}(n) \right\} \\
+%                          \tuple{v,s} \in \text{In}_\text{RD}(n) \right\} \\
 %%%%%%%%%%%%%%%%%%%%%%%%
 \text{Gen}_\text{Ru}(n) &=&
         \left\{ \tuple{v, n} | v \in \text{use}(n) \right\} \\
@@ -356,8 +359,9 @@ $s\in S$ & statements                &$N_G\subseteq N_O$ & global nodes\\
 A points-to graph $\mathcal{G}_p$ is a quintuple of the form \tuple{O,I,e,s,r}, where
 \begin{itemize}
 \item $O \subseteq (N\times F)\times(N_L \cup N_G)$ is a set of
-outside edges.  Outside edges represent references created outside the
-current analysis scope.
+outside edges.  Outside edges represent references which may be
+created outside the current analysis scope.%
+\footnote{They may also (perhaps exclusively) alias to inside edges.}
 \item $I \subseteq (V\cup(N\times F))\times N$ is a set of inside
 edges.  Inside edges represent references created inside the current
 analysis scope.
@@ -422,6 +426,10 @@ an edge $\tuple{\tuple{n_1,f},n_2} \in I$ is a:
 \end{itemize}
 We will say that an edge is a \newterm{companion edge} if it is a
 definite or possible companion.
+
+\textbf{XXX: a) companion edges must be defined only in terms of rhs
+  of store statements. b) should be a dual; dealing only with lhs of
+  store statements?}
 
 \subsection{Inference rules}
 At the start of the analysis, we set $I=\emptyset$, $O=\emptyset$,
