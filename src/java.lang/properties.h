@@ -10,6 +10,12 @@
 # include <sys/utsname.h>
 #endif
 
+/* extra properties defined on the command-line. */
+extern struct property_list {
+  char *key, *value;
+  struct property_list *next;
+} *extra_properties;
+
 /* for stringifying preprocessor #defines */
 #define stringify(x) stringify2(x)
 #define stringify2(x) #x
@@ -124,6 +130,17 @@ void fni_properties_init(JNIEnv *env, jobject propobj,
 # endif
     }
 #endif /* HAVE_LOCALTIME */
+    /* extra properties defined on the command line. */
+    while (extra_properties!=NULL) {
+      struct property_list *npl = extra_properties->next;
+      printf("Extra property: %s %s\n", extra_properties->key, extra_properties->value);
+      _putProperty(env, propobj, methodID,
+		   extra_properties->key, extra_properties->value);
+      free(extra_properties->key);
+      free(extra_properties->value);
+      free(extra_properties);
+      extra_properties = npl;
+    }
     /* done */
     return;
 }

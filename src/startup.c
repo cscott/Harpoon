@@ -1,8 +1,9 @@
 #include <signal.h> /* for signal(), to ignore SIGPIPE */
-#include <string.h> /* for strcmp */
+#include <string.h> /* for strcmp, strchr */
 #include <jni.h>
 #include <jni-private.h>
 #include "java.lang/thread.h"
+#include "java.lang/properties.h" /*to define property_list, extra_properties*/
 #include "flexthread.h"
 #ifdef WITH_EXEC_ENV_ARGS
 # include <getopt.h> /* for getopt */
@@ -28,14 +29,17 @@
 if ((*env)->ExceptionOccurred(env)){ (*env)->ExceptionDescribe(env); exit(1); }
 
 
-int max_heap_size=0;  /* max heap size (in Mbytes) */
-
-#define MAX_HEAP_SIZE_OPTION 70000
+static int max_heap_size=0;  /* max heap size (in Mbytes) */
+struct property_list *extra_properties = NULL;
 
 #ifdef WITH_EXEC_ENV_ARGS
 void process_command_line_options(int *pargc, char ***pargv) {  
+  /* Note that getopt accepts '--' to indicate "no more options" */
+  enum option_codes { MAX_HEAP_SIZE_OPTION=256, PROPERTY_OPTION };
   static struct option long_options[] = {
     {"Xmx", 1, NULL, MAX_HEAP_SIZE_OPTION},
+    {"D", 1, NULL, PROPERTY_OPTION}, /* -D property definitions */
+    // (must initialize 'Properties' & intern strings first)
     {NULL, 0, NULL, 0}
   };
 
@@ -45,7 +49,7 @@ void process_command_line_options(int *pargc, char ***pargv) {
 
   while(1) {
     int longopt = 0;
-    int option = getopt_long_only(*pargc, *pargv, "", long_options, &longopt);
+    int option = getopt_long_only(*pargc, *pargv, ":", long_options, &longopt);
     // if no more options or unrecognized options, get out of the loop
     if(option == -1) break;
     if(option == '?') {
@@ -58,8 +62,24 @@ void process_command_line_options(int *pargc, char ***pargv) {
       sscanf(optarg, "%d", &max_heap_size);
       fprintf(stderr, "MAX HEAP SIZE = %dMbytes\n", max_heap_size);
       break;
+    case PROPERTY_OPTION: {
+      struct property_list *np;
+      char *equals = strchr(optarg, '=');
+      if (equals==NULL) {
+	fprintf(stderr, "Missing value for property definition %s\n", optarg);
+	break;
+      }
+      *equals='\0';
+      np = malloc(sizeof(*np));
+      np->key = strdup(optarg);
+      np->value = strdup(equals+1);
+      np->next = extra_properties;
+      extra_properties=np;
+      break;
+    }
     case ':':
-      printf("Missing argument for option %s\n", long_options[longopt].name);
+      fprintf(stderr, "Missing argument for option %s\n",
+	      long_options[longopt].name);
       break;
     }
   }  
@@ -90,6 +110,11 @@ int main(int argc, char *argv[]) {
      * have to change if you try to compile CLASSPATH w/o WITH_INIT_CHECK.
      * I wouldn't actually recommend doing that. */
     "java/lang/String", "java/lang/ref/Reference", "java/util/WeakHashMap",
+# if 0 /* (CLASSPATH_VERSION >= 0.06) */
+    /* this #if test is not yet functional; when it is made so, work-around
+     * code below here can/ought be removed. */
+    "java/lang/VMString",
+# endif
 #else
     "java/util/Properties", "java/io/FileDescriptor", "java/lang/System", 
     "java/io/BufferedWriter",
@@ -217,6 +242,20 @@ int main(int argc, char *argv[]) {
 
 #ifdef CLASSPATH_VERSION
   /* classpath need only initialize the String.intern() table. */
+  /* --- this code can be deleted when CLASSPATH_VERSION is reliable --- */
+  cls = (*env)->FindClass(env, "java/lang/VMString");
+  if ((*env)->ExceptionOccurred(env) != NULL) {
+    /* VMString only exists on classpath >= 0.06 */
+    (*env)->ExceptionClear(env);
+  } else {
+    /* If VMString exists, initialize it. */
+    mid = (*env)->GetStaticMethodID(env, cls, "<clinit>","()V");
+    CHECK_EXCEPTIONS(env);
+    (*env)->CallStaticVoidMethod(env, cls, mid);
+    CHECK_EXCEPTIONS(env);
+    (*env)->DeleteLocalRef(env, cls);
+  }
+  /* --- end CLASSPATH_VERSION brokenness work-around --- */
   cls = (*env)->FindClass(env, "java/lang/String");
   CHECK_EXCEPTIONS(env);
   mid = (*env)->GetMethodID(env, cls, "intern","()Ljava/lang/String;");
