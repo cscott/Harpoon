@@ -544,6 +544,7 @@ void doanalysis(int argc, char **argv) {
     }
     genfreeiterator(it);
   }
+  outputrolerelations(&heap);
 
   /* Clean up heap state related stuff*/
   if (heap.options&OPTION_FCONTAINERS) {

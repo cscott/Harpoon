@@ -42,7 +42,7 @@ void outputrolerelations(struct heap_state *heap) {
       break;
     sprintf(srcname, "R%d", rr->srcrole);
     {
-      struct role *srcrole=(struct role *)gengettable(heap->roletable,srcname);
+      struct role *srcrole=(struct role *)gengettable(heap->reverseroletable,srcname);
       struct rolefieldlist *rfl=srcrole->nonnullfields;
       while(rfl!=NULL) {
 	if ((rfl->field==rr->field)&&
@@ -51,9 +51,9 @@ void outputrolerelations(struct heap_state *heap) {
 	rfl=rfl->next;
       }
       if (rfl==NULL) {
-	fprintf(heap->rolediagramfile,"R%d -> R%d [label=%s]\n",rr->srcrole, rr->dstrole,rr->field->fieldname);
+	fprintf(heap->rolediagramfile,"R%d -> R%d [label=\"%s\"]\n",rr->srcrole, rr->dstrole,rr->field->fieldname);
       } else {
-	fprintf(heap->rolediagramfile,"R%d -> R%d [style=dotted,label=%s]\n",rr->srcrole, rr->dstrole,rr->field->fieldname);
+	fprintf(heap->rolediagramfile,"R%d -> R%d [style=dotted,label=\"%s\"]\n",rr->srcrole, rr->dstrole,rr->field->fieldname);
       }
     }
   }
