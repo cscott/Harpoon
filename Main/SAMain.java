@@ -84,7 +84,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.125 2001-01-09 20:59:43 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.126 2001-01-09 23:53:54 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -692,7 +692,7 @@ public class SAMain extends harpoon.IR.Registration {
 		OUTPUT_INFO = ABSTRACT_REG_ALLOC = true;
 		break;
 	    case 'R':
-		if (g.getOptarg != null)
+		if (g.getOptarg() != null)
 		    regAllocOptionsFilename = g.getOptarg();
 		REG_ALLOC = true;
 		break;
