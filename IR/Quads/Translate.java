@@ -25,6 +25,7 @@ import harpoon.IR.Quads.HANDLER.ProtectedSet;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.AbstractMapEntry;
+import harpoon.Util.Default;
 import harpoon.Util.ListComparator;
 import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Util;
@@ -35,6 +36,7 @@ import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -52,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.20 1999-09-19 16:17:35 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.21 1999-10-10 06:04:08 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -98,7 +100,16 @@ final class Translate { // not public.
 	    this.mergeMap = new MergeMap();
 	    this.liveness = liveness;
 	    this.transHandler =
-		new TreeMap(new ListComparator(true, new SafeComparator()));
+		new TreeMap(new Comparator() {
+		    public int compare(Object o1, Object o2) {
+			ExceptionEntry e1 = (ExceptionEntry) ((List)o1).get(0);
+			ExceptionEntry e2 = (ExceptionEntry) ((List)o2).get(0);
+			// null is larger than anything else.
+			if (e1==null) return (e2==null)?0:1;
+			if (e2==null) return (e1==null)?0:-1;
+			return e1.compareTo(e2);
+		    }
+		});
 	    this.todoHandler = new Stack();
 	}	
 	/** Get an "extra" <code>Temp</code>. */
@@ -275,7 +286,7 @@ final class Translate { // not public.
 	    this.ls = null;
 	    this.js = null;
 	    this.jlv= null;
-	    this.calls = Collections.unmodifiableMap(new HashMap());
+	    this.calls = Default.EMPTY_MAP;
 	}
 
 	State pop()       { return pop(1); }
@@ -407,6 +418,10 @@ final class Translate { // not public.
 			   HCodeElement src, HClass caughtException) {
 	    HANDLER h = new HANDLER(ss.qf, src, s.stack(0), caughtException,
 				    new TransProtection());
+	    // null hpair is special: it means we're synthesizing an outer
+	    // handler context for a synchronized method.
+	    if (hpair==null)
+		hpair=Arrays.asList(new Object[] { null, Default.EMPTY_MAP });
 	    // add <tryBlock, callStack> mapping.
 	    ss.transHandler.put(hpair, h);
 	    // return new handler.
@@ -1886,19 +1901,5 @@ final class Translate { // not public.
 	if (hc == HClass.Long || hc == HClass.Double)
 	    return true;
 	return false;
-    }
-
-    /** Safe comparator uses natural ordering when it can, otherwise it
-     *  uses the hashCode() to impose an arbitrary ordering.
-     *  The ordering is consistent with equals().
-     *  (no class cast exceptions). */
-    private static final class SafeComparator implements java.util.Comparator {
-	public int compare(Object o1, Object o2) {
-	    if (o1 instanceof Comparable && o2 instanceof Comparable)
-		return ((Comparable)o1).compareTo(o2);
-	    else if (o1.equals(o2))
-		return 0;
-	    else return o1.hashCode() - o2.hashCode(); // arbitrary.
-	}
     }
 }
