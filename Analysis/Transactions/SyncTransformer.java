@@ -76,7 +76,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.19 2001-03-04 00:08:27 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.20 2001-03-04 21:54:36 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -111,6 +111,8 @@ public class SyncTransformer
 	!Boolean.getBoolean("harpoon.synctrans.nofieldoracle");
     private final boolean useSmartCheckOracle = // dumb down check oracle
 	!Boolean.getBoolean("harpoon.synctrans.nocheckoracle");
+    private final boolean useUniqueRWCounters = // high-overhead counters
+	Boolean.getBoolean("harpoon.synctrans.uniquerwcounters");
     // this might have to be tweaked if we're using counters which are
     // added *before* SyncTransformer gets the code.
     private final boolean excludeCounters = true;
@@ -140,6 +142,10 @@ public class SyncTransformer
     private final HMethod HMwriteFlagA;
     /** flag value */
     private final HField HFflagvalue;
+    /** last *reading* transaction */
+    private final HField HFlastRTrans;
+    /** last *writing* transaction */
+    private final HField HFlastWTrans;
     /** Set of safe methods. */
     private final Set safeMethods;
     /** Our version of the codefactory. */
@@ -209,7 +215,12 @@ public class SyncTransformer
 	    ("writeArrayElementFlag", new HClass[] { HClass.Int, HCclass },
 	    HClass.Void);
 	HMwriteFlagA.getMutator().addModifiers(Modifier.FINAL|Modifier.NATIVE);
-	
+	// create a pair of instance fields in java.lang.Object for
+	// statistics gathering.
+	if (useUniqueRWCounters) {
+	    this.HFlastRTrans=objM.addDeclaredField("lastRTrans", HCcommitrec);
+	    this.HFlastWTrans=objM.addDeclaredField("lastWTrans", HCcommitrec);
+	} else { this.HFlastRTrans=this.HFlastWTrans=null; }
 	// create a static final field in java.lang.Object that will hold
 	// our 'unique' value.
 	this.HFflagvalue = objM.addDeclaredField("flagValue", HCobj);
@@ -554,6 +565,7 @@ public class SyncTransformer
 	public void visit(AGET q) {
 	    addChecks(q);
 	    if (noFieldModification || noArrayModification) return;
+	    addUniqueRWCounters(q.prevEdge(0), q, q.objectref(), true, true);
 	    if (handlers==null) { // non-transactional read
 		CounterFactory.spliceIncrement
 		    (qf, q.prevEdge(0), "synctrans.read_nt_array");
@@ -594,7 +606,9 @@ public class SyncTransformer
 		System.err.println("WARNING: read of "+q.field()+" in "+
 				   qf.getMethod());
 		return;
-	    }
+	    } else
+	    addUniqueRWCounters(q.prevEdge(0), q, q.objectref(), true, false);
+
 	    if (handlers==null) { // non-transactional read
 		Edge e = readNonTrans(q.nextEdge(0), q,
 				      q.dst(), q.objectref(),
@@ -650,6 +664,7 @@ public class SyncTransformer
 	public void visit(ASET q) {
 	    addChecks(q);
 	    if (noFieldModification || noArrayModification) return;
+	    addUniqueRWCounters(q.prevEdge(0), q, q.objectref(), false, true);
 	    if (handlers==null) { // non-transactional write
 		CounterFactory.spliceIncrement
 		    (qf, q.prevEdge(0), "synctrans.write_nt_array");
@@ -686,7 +701,9 @@ public class SyncTransformer
 		System.err.println("WARNING: write of "+q.field()+" in "+
 				   qf.getMethod());
 		return;
-	    }
+	    } else
+	    addUniqueRWCounters(q.prevEdge(0), q, q.objectref(), false, false);
+
 	    if (handlers==null) { // non-transactional write
 		Temp t0 = new Temp(tf, "oldval");
 		Edge in = q.prevEdge(0);
@@ -757,6 +774,9 @@ public class SyncTransformer
 		    Quad.addEdge(q0, 1, q1, 0);
 		    footer = footer.attach(q1, 0);
 		    checkForAbort(q0.nextEdge(1), q, retex);
+		    in = CounterFactory.spliceIncrement
+			(qf, in,
+			 "synctrans."+((i==0)?"read":"write")+"_versions");
 		}
 	    }
 	    // do field checks where necessary.
@@ -830,6 +850,45 @@ public class SyncTransformer
 		footer = footer.attach(q8, 0);
 		checkForAbort(q7.nextEdge(1), q, retex);
 	    }
+	}
+	private Edge addUniqueRWCounters(Edge in, HCodeElement src, Temp Tobj,
+					 boolean isRead, boolean isArray) {
+	    if (!useUniqueRWCounters) return in; // disabled
+	    if (handlers==null) return in; // not a transaction.
+	    String suffix = isArray ? "_array" : "_object";
+	    // check whether last read/written is the same as this transaction.
+	    Temp Ttmp0 = new Temp(tf);
+	    in = addAt(in, new GET(qf, src, Ttmp0, HFlastRTrans, Tobj));
+	    Temp TsameR = new Temp(tf);
+	    in = addAt(in, new OPER(qf, src, Qop.ACMPEQ, TsameR,
+				    new Temp[] { Ttmp0, currtrans }));
+	    Temp Ttmp1 = new Temp(tf);
+	    in = addAt(in, new GET(qf, src, Ttmp1, HFlastWTrans, Tobj));
+	    Temp TsameW = new Temp(tf);
+	    in = addAt(in, new OPER(qf, src, Qop.ACMPEQ, TsameW,
+				    new Temp[] { Ttmp1, currtrans }));
+	    // update last read/written according to whether we're r/writing.
+	    in = addAt(in, new SET(qf, src, isRead? HFlastRTrans: HFlastWTrans,
+				   Tobj, currtrans));
+	    // test for counters
+	    Quad q0 = new CJMP(qf, src, isRead ? TsameR : TsameW, new Temp[0]);
+	    Quad q1 = new CJMP(qf, src, isRead ? TsameW : TsameR, new Temp[0]);
+	    Quad q2 = new PHI(qf, src, new Temp[0], 3);
+	    Quad.addEdge(q0, 0, q1, 0);
+	    Quad.addEdge(q0, 1, q2, 0);
+	    Quad.addEdge(q1, 0, q2, 1);
+	    Quad.addEdge(q1, 1, q2, 2);
+	    Quad.addEdge((Quad)in.from(), in.which_succ(), q0, 0);
+	    Quad.addEdge(q2, 0, (Quad)in.to(), in.which_pred());
+	    // increment counters
+	    CounterFactory.spliceIncrement
+		(qf, q1.nextEdge(0), "synctrans." +
+		 (isRead ? "virgin_read" : "virgin_write") + suffix);
+	    CounterFactory.spliceIncrement
+		(qf, q1.nextEdge(1), "synctrans." +
+		 (isRead ? "read_of_written" : "write_of_read") + suffix);
+	    // done.
+	    return q2.nextEdge(0);
 	}
 	// make a non-static equivalent field for static fields.
 	private HField nonstatic(HField hf) {
