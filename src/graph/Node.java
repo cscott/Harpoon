@@ -10,6 +10,8 @@ import java.io.Serializable;
  *  {@link ImageData}s flow along the edges.
  *  Object references point in the direction of {@link ImageData} flow.
  *
+ *  All instantiated Nodes have a unique identifying number.
+ *  
  *  {@link Node}s are composable first-class entities.
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
@@ -18,9 +20,12 @@ import java.io.Serializable;
 public class Node implements Serializable, Runnable {
     private Node out1, out2;
 
+    protected int uniqueID;
+    private static int uniqueIDCounter = 0;
+
     /** Construct a {@link Node} with zero out-edges. */
     public Node() {
-	this(null);
+	init(null, null);
     }
 
     /** Construct a {@link Node} with one out-edge. 
@@ -28,7 +33,7 @@ public class Node implements Serializable, Runnable {
      *  @param out1 The first out edge of the new {@link Node}.
      */
     public Node(Node out1) {
-	this(out1, null);
+	init(out1,null);
     }
 
     /** Construct a {@link Node} with two out-edges. 
@@ -37,8 +42,17 @@ public class Node implements Serializable, Runnable {
      *  @param out2 The second out edge of the new {@link Node}.
      */
     public Node(Node out1, Node out2) {
+	init(out1, out2);
+    }
+
+    private void init(Node out1, Node out2) {
 	this.out1 = out1;
 	this.out2 = out2;
+	this.uniqueID = uniqueIDCounter++;
+    }
+
+    public int getUniqueID() {
+	return uniqueID;
     }
 
     /** Set the first out edge. 
