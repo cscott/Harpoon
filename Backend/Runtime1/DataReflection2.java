@@ -39,7 +39,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.1.2.4 1999-10-21 22:10:20 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.1.2.5 1999-10-28 04:02:54 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -122,11 +122,14 @@ public class DataReflection2 extends Data {
     }
     private int memberOffset(HMember hmf) {
 	if (hmf instanceof HField)
-	    return  m_tb.cfm.fieldOffset((HField)hmf);
+	    return  m_tb.OBJ_FZERO_OFF + m_tb.cfm.fieldOffset((HField)hmf);
 	HMethod hm = (HMethod) hmf;
-	int off = hm.isInterfaceMethod() ?
-	    m_tb.imm.methodOrder(hm) : m_tb.cmm.methodOrder(hm);
-	return off * m_tb.POINTER_SIZE;
+	if (hm.isInterfaceMethod())
+	    return m_tb.CLAZ_INTERFACES_OFF -
+		m_tb.POINTER_SIZE * m_tb.imm.methodOrder(hm);
+	// virtual method
+	return m_tb.CLAZ_METHODS_OFF +
+	    m_tb.POINTER_SIZE * m_tb.cmm.methodOrder(hm);
     }
     private void emitNargs(List stmlist, HMember hmf) {
 	final int REGS_PER_WORD = 1;
