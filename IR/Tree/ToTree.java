@@ -63,7 +63,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.38 1999-09-09 03:47:09 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.39 1999-09-09 06:31:53 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -781,6 +781,9 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	case Qop.D2L:
 	case Qop.F2L:
 	case Qop.I2L: optype = Uop._2L; break; 
+	case Qop.I2D:
+	case Qop.F2D:
+	case Qop.L2D: optype = Uop._2D; break;
 	case Qop.DADD: 
 	case Qop.FADD:
 	case Qop.IADD:
@@ -827,7 +830,7 @@ class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	case Qop.LUSHR: 
 	    visitShiftOper(q); return;  // Special case
  	default: 
-	    throw new Error("Unknown optype in ToTree");
+	    throw new Error("Unknown optype in ToTree: "+q.opcode());
 	}
     
 	if (operands.length==1) {
