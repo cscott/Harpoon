@@ -18,10 +18,14 @@ clean:
 	@rm -rf $(FLEX_DIR)/Support/realtime.jar
 	@rm -rf realtime.tgz
 
-doc:
+doc:	doc/TIMESTAMP
+doc/TIMESTAMP:
 	@echo Generating documentation...
-	@mkdir doc
+	@$(RM) -rf doc
+	@mkdir -p doc
 	@javadoc -quiet -private -linksource -d doc/ *.java > /dev/null
+	@date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
+	@chmod -R a+rX doc
 
 realtime.jar: 
 	@echo Generating realtime.jar file...
@@ -35,18 +39,19 @@ realtime.jar:
 	@jar -c javax/realtime/*.class > $(FLEX_DIR)/Support/realtime.jar
 	@rm -rf javax
 
-realtime.tgz:
+realtime.tgz realtime.tgz.TIMESTAMP:
 	@echo Generating realtime.tgz file.
 	tar c $(RELEASE) | gzip -9 > realtime.tgz 	
+	@date '+%-d-%b-%Y at %r %Z.' > realtime.tgz.TIMESTAMP
 
 jar-install: realtime.jar
 	@echo Installing realtime.jar.
 	tar -C $(FLEX_DIR)/Support -c realtime.jar | \
 		$(SSH) $(INSTALLMACHINE) "tar -C $(INSTALLDIR) -x"
 
-tar-install: realtime.tgz
+tar-install: realtime.tgz realtime.tgz.TIMESTAMP
 	@echo Installing realtime.tgz.
-	tar c realtime.tgz | \
+	tar c realtime.tgz realtime.tgz.TIMESTAMP | \
 		$(SSH) $(INSTALLMACHINE) "tar -C $(INSTALLDIR) -x"
 
 doc-install: doc
