@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.9.2.1 2000-01-11 04:52:46 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.9.2.2 2000-01-11 08:23:26 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -48,11 +48,12 @@ class HClassSyn extends HClassCls implements HClassMutator {
       if (methods[i] instanceof HInitializer)
 	addClassInitializer();
       else if (methods[i] instanceof HConstructor)
-	addConstructor(methods[i].getDescriptor());
+	addConstructor((HConstructor)methods[i]);
       else
 	addDeclaredMethod(methods[i].getName(), methods[i]);
     Util.assert(methods.length == declaredMethods.length);
   }
+  public HClassMutator getMutator() { return this; }
 
   // implementation of HClassMutator.
   public HField addDeclaredField(String name, HClass type) {
@@ -71,7 +72,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
       if (declaredFields[i].equals(f))
 	throw new DuplicateMemberException("Field "+f+" in "+this);
     declaredFields = 
-      (HField[]) Util.grow(HField.arrayFactory,
+      (HField[]) Util.grow(HField.DEFAULT.arrayFactory,
 			   declaredFields, f, declaredFields.length);
     fields=null; // invalidate cache.
     return f;
@@ -79,7 +80,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
   public void removeDeclaredField(HField f) throws NoSuchFieldError {
     for (int i=0; i<declaredFields.length; i++) {
       if (declaredFields[i].equals(f)) {
-	declaredFields = (HField[]) Util.shrink(HField.arrayFactory,
+	declaredFields = (HField[]) Util.shrink(HField.DEFAULT.arrayFactory,
 						declaredFields, i);
 	fields=null; // invalidate cache.
 	return;
@@ -102,6 +103,10 @@ class HClassSyn extends HClassCls implements HClassMutator {
   public HConstructor addConstructor(HClass[] paramTypes) {
     return (HConstructor)
       addDeclaredMethod0(new HConstructorSyn(this, paramTypes));
+  }
+  public HConstructor addConstructor(HConstructor template) {
+    return (HConstructor)
+      addDeclaredMethod0(new HConstructorSyn(this, template));
   }
   public void removeConstructor(HConstructor c) {
     removeDeclaredMethod(c);
@@ -126,7 +131,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
       if (declaredMethods[i].equals(m))
 	throw new DuplicateMemberException("Method "+m+" in "+this);
     declaredMethods = 
-      (HMethod[]) Util.grow(HMethod.arrayFactory,
+      (HMethod[]) Util.grow(HMethod.DEFAULT.arrayFactory,
 			    declaredMethods, m, declaredMethods.length);
     methods=null; // invalidate cache.
     constructors=null;
@@ -135,7 +140,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
   public void removeDeclaredMethod(HMethod m) throws NoSuchMethodError {
     for (int i=0; i<declaredMethods.length; i++) {
       if (declaredMethods[i].equals(m)) {
-	declaredMethods = (HMethod[]) Util.shrink(HMethod.arrayFactory,
+	declaredMethods = (HMethod[]) Util.shrink(HMethod.DEFAULT.arrayFactory,
 						  declaredMethods, i);
 	methods=null; // invalidate cache.
 	constructors=null;
@@ -175,11 +180,10 @@ class HClassSyn extends HClassCls implements HClassMutator {
 			"first. ("+this+")");
       // interfaces have no superclass.
       superclass = null;
-      // tag all the methods as abstract & strip the code.
+      // tag all the methods as abstract
       for (int i=0; i<declaredMethods.length; i++) {
 	HMethodSyn hm = (HMethodSyn) declaredMethods[i];
 	hm.setModifiers(hm.getModifiers() | Modifier.ABSTRACT);
-	hm.removeAllCode();
       }
     }
     modifiers = m;
