@@ -1,4 +1,7 @@
 install
+install-arm
+install-noGUI
+install-noGUI-debug
 aclocal.m4
 configure
 config.log
