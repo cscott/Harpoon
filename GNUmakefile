@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.20 1999-02-25 21:10:31 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.21 1999-03-02 01:33:02 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes +$$ $(JIKES_OPT)
@@ -14,6 +14,8 @@ UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
+
+CLASSPATH:=$(CURDIR)/Support/Lex.jar:$(CURDIR)/Support/CUP.jar:.:$(CLASSPATH)
 
 CVS_TAG=$(firstword $(shell cvs status GNUmakefile | grep -v "(none)" | \
 			awk '/Sticky Tag/{print $$3}'))
