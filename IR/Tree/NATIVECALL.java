@@ -20,26 +20,31 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.15 1999-10-25 22:15:17 cananian Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.16 1999-12-18 22:37:29 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
  */
 public class NATIVECALL extends INVOCATION {
     /** Constructor. */
+    private CONST nullRetval; 
+
     public NATIVECALL(TreeFactory tf, HCodeElement source,
 		      TEMP retval, Exp func, ExpList args) {
 	super(tf, source, retval, func, args);
+	if (this.retval == null) { this.nullRetval = new CONST(tf, null); } 
     }
 
     public boolean isNative() { return true; }
   
     public ExpList kids() { 
-	ExpList result = new ExpList(func, args);
-	if (retval!=null)
-	    return new ExpList(retval, result);
-	else // make placeholder.
-	    return new ExpList(new CONST(tf, this), result);
+	ExpList result = new ExpList(func, args); 
+	if (this.retval == null) { 
+	    result = new ExpList(nullRetval, result); 
+	} else { 
+	    result = new ExpList(retval, result); 
+	}
+	return result; 
     }
 
     public int kind() { return TreeKind.NATIVECALL; }
