@@ -274,7 +274,9 @@ public class ImageDataManip {
 	    System.arraycopy(id.bvals, oldPos, bvals, newPos, width);
 	    newPos+=width;
 	}
-	return create(id, rvals, gvals, bvals, x, y, width, height);
+	ImageData croppedID =
+	    create(id, rvals, gvals, bvals, x, y, width, height);
+	return croppedID;
     }
 
     /**
@@ -388,10 +390,12 @@ public class ImageDataManip {
      *  @return The cloned {@link ImageData}.
      */
     public static ImageData clone(ImageData id) {
-	return create(id, (id.rvals!=null)?(byte[])id.rvals.clone():null,
-		      (id.gvals!=null)?(byte[])id.gvals.clone():null,
-		      (id.bvals!=null)?(byte[])id.bvals.clone():null,
-		      id.width, id.height);
+	ImageData newID =
+	    create(id, (id.rvals!=null)?(byte[])id.rvals.clone():null,
+		   (id.gvals!=null)?(byte[])id.gvals.clone():null,
+		   (id.bvals!=null)?(byte[])id.bvals.clone():null,
+		   id.width, id.height);
+	return newID;
     }
 
     /** Factory to create an {@link ImageData} given partial information.
@@ -439,12 +443,14 @@ public class ImageDataManip {
 				 id.time, id.id, id.command, id.receiverID,
 				 id.c1, id.c2, id.c3, id.lastImage, id.labelID,
 				 id.conditional, id.angle, id.blueThreshold1,
-				 id.blueThreshold2);
+				 id.blueThreshold2, id.scaleFactor,
+				 id.trackedObjectUniqueID);
 	} else {
 	    return new ImageData(rvals, gvals, bvals,
 				 x, y, width, height,
-				 0, 0, 0, 0, (float)0.0, (float)0.0, 
-				 (float)0.0, false, (byte)0, false, 0, 0, 0);
+				 0, 0, 0, 0, (float)0.0, (float)0.0, (float)0.0,
+				 false, (byte)0, false, 0, 0, 0, (float)0.0,
+				 -1);
 	}
     }
 
@@ -458,7 +464,8 @@ public class ImageDataManip {
     public static ImageData create(float c1, float c2, float c3) {
 	return new ImageData(new byte[0], new byte[0], new byte[0],
 			     0, 0, 0, 0, 0, 0, 0, 0,
-			     c1, c2, c3, false, (byte)0, false, 0, 0, 0);
+			     c1, c2, c3, false, (byte)0, false, 0, 0, 0, 0,
+			     -1);
     }
 
     /** Factory to create an {@link ImageData} given partial information.
@@ -473,7 +480,7 @@ public class ImageDataManip {
 	return new ImageData(new byte[0], new byte[0], new byte[0],
 			     0, 0, 0, 0, time, 0, command, 0,
 			     (float)0.0, (float)0.0, (float)0.0, 
-			     false, (byte)0, false, 0, 0, 0);
+			     false, (byte)0, false, 0, 0, 0, 0, -1);
     }
 
     /**
