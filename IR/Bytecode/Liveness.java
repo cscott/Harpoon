@@ -16,7 +16,7 @@ import harpoon.Util.WorkSet;
  * form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Liveness.java,v 1.1.2.3 1999-02-23 22:22:29 cananian Exp $
+ * @version $Id: Liveness.java,v 1.1.2.4 1999-02-25 02:09:46 cananian Exp $
  */
 public class Liveness  {
     /** internal data structure is a hashtable of boolean arrays */
@@ -40,7 +40,7 @@ public class Liveness  {
 	WorkSet workset = new WorkSet(bcode.getElementsL());
         /* iterate until stable. */
 	while (!workset.isEmpty()) {
-	    Instr in = (Instr) workset.get(); workset.remove(in);
+	    Instr in = (Instr) workset.pop();
 	    LiveSet liveIn = new LiveSet(max_locals);
 	    if (Op.JSR == in.getOpcode() || Op.JSR_W == in.getOpcode()) {
 		// jsrs are special: live set of subroutine except where
