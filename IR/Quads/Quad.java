@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.6 1998-12-24 03:23:10 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.7 1998-12-24 03:28:56 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -173,7 +173,7 @@ public abstract class Quad
 	    Util.assert(to instanceof HANDLER);
 	//  [ONLY HEADER, THROW and RETURN connects to FOOTER]
 	if (to instanceof FOOTER)
-	    Util.assert((from instanceoxff HEADER && to_index==0) ||
+	    Util.assert((from instanceof HEADER && to_index==0) ||
 			(from instanceof THROW  && to_index >0) ||
 			(from instanceof RETURN && to_index >0) );
 	// OK, add the edge.
