@@ -31,7 +31,7 @@ import java.util.HashSet;
  *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.13 2001-11-08 20:47:16 cananian Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.14 2001-11-09 00:36:33 cananian Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -121,16 +121,10 @@ public class GenericMultiMap implements MultiMap {
     }
     
     public boolean containsValue(Object value) {
-	Iterator entries = internMap.entrySet().iterator();
-	boolean foundVal = false;
-	while(entries.hasNext()) {
-	    Collection s = (Collection) ((Map.Entry)entries.next()).getValue();
-	    if (s.contains(value)) {
-		foundVal = true;
-		break;
-	    }
-	}
-	return foundVal;
+	for (Iterator it=internMap.keySet().iterator(); it.hasNext(); )
+	    if (getValues(it.next()).contains(value))
+		return true;
+	return false;
     }
 
 
@@ -215,6 +209,8 @@ public class GenericMultiMap implements MultiMap {
     }
 
     public boolean equals(Object o) {
+	if (o==null) return false;
+	if (o==this) return true;
 	try {
 	    Set entrySet = ((Map) o).entrySet();
 	    return this.entrySet().equals(entrySet);
@@ -254,18 +250,14 @@ public class GenericMultiMap implements MultiMap {
 	        of the call
     */
     public boolean addAll(Object key, Collection values) {
-	boolean changed = false;
-	for (Iterator it=values.iterator(); it.hasNext(); )
-	    if (this.add(key, it.next()))
-		changed = true;
-	return changed;
+	return getValues(key).addAll(values);
     }
     /** Add all mappings in the given multimap to this multimap. */
     public boolean addAll(MultiMap mm) {
 	boolean changed = false;
-	for (Iterator it=mm.entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry me = (Map.Entry) it.next();
-	    if (add(me.getKey(), me.getValue()))
+	for (Iterator it=mm.keySet().iterator(); it.hasNext(); ) {
+	    Object key = it.next();
+	    if (addAll(key, mm.getValues(key)))
 		changed = true;
 	}
 	return changed;
@@ -280,14 +272,7 @@ public class GenericMultiMap implements MultiMap {
 	        of the call
     */
     public boolean retainAll(Object key, Collection values) {
-	boolean changed = false;
-	for (Iterator it=getValues(key).iterator(); it.hasNext(); )
-	    if (!values.contains(it.next())) {
-		it.remove();
-		changed = true;
-	    }
-	if (getValues(key).isEmpty()) internMap.remove(key);
-	return changed;
+	return getValues(key).retainAll(values);
     }
 
     /** Removes from the current mappings: associations for
@@ -299,11 +284,7 @@ public class GenericMultiMap implements MultiMap {
 	        of the call
     */
     public boolean removeAll(Object key, Collection values) {
-	boolean changed = false;
-	for (Iterator it=values.iterator(); it.hasNext(); )
-	    if (this.remove(key, it.next()))
-		changed = true;
-	return changed;
+	return getValues(key).removeAll(values);
     }
 
     /** Returns the collection of Values associated with
