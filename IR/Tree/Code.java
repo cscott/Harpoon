@@ -177,7 +177,8 @@ public abstract class Code extends HCode
 
   public void print(java.io.PrintStream ps) 
     {
-      throw new Error("Tree printing is not yet implemented");
+      Print printer = new Print(ps);
+      printer.prStm((Stm)getRootElement());
     }
 
   public abstract DList derivation(HCodeElement hce, Temp t);
