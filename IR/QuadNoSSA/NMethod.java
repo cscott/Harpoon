@@ -68,12 +68,12 @@ public class NMethod {
     
     //print out all the instructions
     for (int i = 0; i < instructions.size(); i++){
-	out.println (";before printing instruction");
+      // out.println (";before printing instruction");
 	if (instructions.elementAt(i) instanceof LookupswitchInsn){
 	    out.println (";I actually thing this is a switch");
 	}
 	((NInsn)instructions.elementAt(i)).writeInsn (out, myIndexTable);
-	out.println (";after printing instruction");
+	// out.println (";after printing instruction");
     }
 
     out.print (".end method\n");
