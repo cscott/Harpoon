@@ -59,11 +59,11 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.29 2000-06-13 19:18:12 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.30 2000-06-28 23:05:30 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
-    private static boolean DEBUG = true;
+    private static boolean DEBUG = false;
 
     /** Enabless the application of some method inlining to increase the
 	effectiveness of the stack allocation. Only inlinings that

@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
@@ -23,7 +24,7 @@ import harpoon.Util.Util;
  Look into one of Martin and John Whaley papers for the complete definition.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointsToGraph.java,v 1.1.2.28 2000-05-18 01:48:14 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.29 2000-06-28 23:05:30 salcianu Exp $
  */
 public class PointsToGraph {
 
@@ -248,11 +249,11 @@ public class PointsToGraph {
     // lightweight version of this function with return type void.
     /** Propagates the escape information along the edges.
 	Returns the set of the newly escaped nodes. */
-    public Set propagate(Set set){
+    public Set propagate(Collection escaped){
 	final PAWorkList W_prop = new PAWorkList();
 	final Set newly_escaped = new HashSet();
 
-	W_prop.addAll(set);
+	W_prop.addAll(escaped);
 	while(!W_prop.isEmpty()){
 	    final PANode current_node = (PANode) W_prop.remove();
 

@@ -3,11 +3,14 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
+import java.util.List;
+import java.util.LinkedList;
 
 import java.lang.reflect.Modifier;
 
@@ -19,6 +22,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
+import harpoon.ClassFile.Loader;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
@@ -41,7 +45,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.43 2000-06-28 15:57:49 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.44 2000-06-28 23:05:30 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -86,23 +90,23 @@ abstract class InterProcPA {
 	if(DEBUG)
 	    System.out.println("Inter-procedural analysis " + q);
 
-	// specially treat some native methods
-	ParIntGraphPair pair = treatNatives(pa, q, pig_before);
-	if(pair != null)
-	    return pair;
+	ParIntGraphPair pp_after = null;
+
+	// treat some very special native methods
+	if((pp_after = treatVerySpecialNatives(pa, q, pig_before)) != null)
+	    return pp_after;
 
 	MetaMethod[] mms = pa.getMetaCallGraph().getCallees(current_mmethod,q);
 	int nb_callees   = mms.length;
 
 	// I count on the fact that if a call site has 0 callees, it 
 	// means that it doesn't occur in practice (because some classes
-	// are not instantiated), not because the call graph is buggy!
+	// are not instantiated), not that the call graph is buggy!
 	// So, the CALL is simply ignored.
 	if(nb_callees == 0){
 	    if(WARNINGS){
 		System.out.println("Warning: CALL site with no callee! ");
-		System.out.println("Warning:  " + q.getSourceFile() + ":" +
-				   q.getLineNumber() + " " + q);
+		System.out.println("Warning:  " + Debug.code2str(q));
 	    }
  	    return new ParIntGraphPair(pig_before, pig_before);
 	}
@@ -129,27 +133,34 @@ abstract class InterProcPA {
 	//
 	// pig could be also null if the method has not be analyzed yet; this
 	// happens only in strongly connected components of mutually recursive
-	// methods. In this case, we simply don't consider that callee; it will
-	// be analyzed later, this will force its callers to be reanalyzed, so
-	// in the end it will be considered (due to the fixed-point algorithm).
+	// methods. In this case, we simply don't consider that callee; the
+	// called method will be analyzed later, this will force its callers
+	// to be reanalyzed, so in the end it will be considered (due to the
+	// fixed-point algorithm).
 	int nb_callees_with_pig = 0;
 	ParIntGraph pigs[] = new ParIntGraph[nb_callees];
 	for(int i = 0; i < nb_callees; i++){
 	    HMethod hm = mms[i].getHMethod();
 
-	    if(Modifier.isNative(hm.getModifiers()) && 
-	       !pa.harmful_native(hm)){
+	    if(Modifier.isNative(hm.getModifiers())) {
 		//if(DEBUG)
 		    System.out.println("NATIVE: " + hm);
-		pigs[nb_callees_with_pig] = null;
-		mms[nb_callees_with_pig]  = mms[i];
-		nb_callees_with_pig++;
-		continue;
+		if(isTotallyHarmful(hm)) {
+		    if(DEBUG)
+			System.out.print("NEED TO SKIP: " + Debug.code2str(q));
+		    return skip_call(pa, q, pig_before, hm);
+		}
+		else {
+		    pigs[nb_callees_with_pig] = null;
+		    mms[nb_callees_with_pig]  = mms[i];
+		    nb_callees_with_pig++;
+		    continue;
+		}
 	    }
 
 	    if(!(PointerAnalysis.analyzable(hm))){
 		if(DEBUG)
-		    System.out.println("NEED TO SKIP: " + hm);
+		    System.out.println("NEED TO SKIP: " + Debug.code2str(q));
 		return skip_call(pa, q, pig_before, hm);
 	    }
 	    
@@ -173,7 +184,7 @@ abstract class InterProcPA {
 		if(pigs[i] != null){
 		    if(DEBUG)
 			System.out.println("BEFORE SPEC: " + pigs[i]);
-		    pigs[i] = pa.getSpecializedExtParIntGraph(mms[i],q);
+		    pigs[i] = pa.getSpecializedExtParIntGraph(mms[i], q);
 		    if(DEBUG)
 			System.out.println("AFTER  SPEC: " + pigs[i]);
 		}
@@ -190,8 +201,8 @@ abstract class InterProcPA {
 
 	// 2. More than one callee: 
 	// 2.1. Compute the first term of the join operation.
-	ParIntGraphPair pp_after = 
-	    mapUp(pa, mms[0], q, (ParIntGraph)pig_before.clone(), pigs[0]);
+	pp_after = 
+	    mapUp(pa, mms[0], q, (ParIntGraph) pig_before.clone(), pigs[0]);
 	
 	// 2.2. Join to it all the others, except for the last one.
 	for(int i = 1; i < nb_callees_with_pig - 1; i++)
@@ -267,16 +278,19 @@ abstract class InterProcPA {
     }
 
 
-    // Specially treat unharmful native methods.
-    private static ParIntGraphPair treatUnharmfulNative(PointerAnalysis pa,
-							ParIntGraph pig_before,
-							MetaMethod mm,
-							CALL q){
-	HMethod hm = mm.getHMethod();
+    // Treat the calls to native methods.
+    private static ParIntGraphPair treatNative(PointerAnalysis pa,
+					       MetaMethod mm,
+					       CALL q,
+					       ParIntGraph pig_caller) {
 	NodeRepository node_rep = pa.getNodeRepository();
-	
-	if(DEBUG)
-	    System.out.println("treatUnharmfulNative: " + mm);
+	HMethod hm = mm.getHMethod();
+	if(DEBUG) System.out.println("treatNative: " + hm);
+
+	ParIntGraph pig_before = (ParIntGraph) pig_caller.clone();
+
+	if(!isUnharmful(hm))
+	    markEscapedParameters(q, hm, pig_before);
 
 	ParIntGraph pig0 = (ParIntGraph) pig_before.clone();
 	ParIntGraph pig1 = (ParIntGraph) pig_before.clone();
@@ -297,9 +311,36 @@ abstract class InterProcPA {
 	    pig1.G.e.addMethodHole(n_E, hm);
 	}
 
-	return new ParIntGraphPair(pig0, pig1);
+	return new ParIntGraphPair(pig0, pig1);	
     }
 
+    private static void markEscapedParameters(CALL q, HMethod hm,
+					      ParIntGraph pig) {
+	if(markEscapedParametersSpecial(q, hm, pig))
+	    return;
+	List escaped = new LinkedList();
+	Temp[] params = q.params();
+	for(int i = 0; i < params.length; i++) {
+	    HClass hc = q.paramType(i);
+	    if(!hc.isPrimitive())
+		escaped.addAll(pig.G.I.pointedNodes(params[i]));
+	}
+
+	// Update the escape information
+	//  1. all the object parameters directly escape into the method hole
+	for(Iterator it = escaped.iterator(); it.hasNext(); )
+	    pig.G.e.addMethodHole((PANode)it.next(), hm);
+	//  2. propagate the new escape information
+	pig.G.propagate(escaped);
+    }
+
+    // For some native methods, maybe only some of the parameters escape
+    // (ie, we know that the others are not "harmed").
+    // For the moment, we don't treat any method in this special way.
+    private static boolean markEscapedParametersSpecial(CALL q, HMethod hm,
+							ParIntGraph pig) {
+	return false;
+    }
 
     /** Updates the graph of the caller at an analyzed call site. This consists
      * of mapping the important parts of the callee's graph into the graph of
@@ -325,8 +366,9 @@ abstract class InterProcPA {
 					 CALL q, 
 					 ParIntGraph pig_caller,
 					 ParIntGraph pig_callee) {
+	// if native method, apply special treatment
 	if(pig_callee == null)
-	    return treatUnharmfulNative(pa, pig_caller, mm, q);
+	    return treatNative(pa, mm, q, pig_caller);
 
 	PANode[] callee_params = pa.getParamNodes(mm);
 
@@ -375,18 +417,14 @@ abstract class InterProcPA {
 	// recompute the escape info
 	pig_caller.G.propagate();
 
-	if(DEBUG){
-	    System.out.println("Unsimplified graph:");
-	    System.out.println(pig_caller);
-	}
+	if(DEBUG)
+	    System.out.println("Unsimplified graph:\n" + pig_caller);
 
 	// simplify the graph by removing the empty loads
 	pig_caller.removeEmptyLoads();
 
-	if(DEBUG){
-	    System.out.println("Simplified graph:");
-	    System.out.println(pig_caller);
-	}
+	if(DEBUG)
+	    System.out.println("Simplified graph:\n" + pig_caller);
 
 	// make a copy of the parallel interaction graph
 	ParIntGraph pig_caller1 = (ParIntGraph) (pig_caller.clone());
@@ -650,26 +688,16 @@ abstract class InterProcPA {
 
     // Treats some native methods in a special way. Returns a pair of
     // ParIntGraphs or null if it cannot handle this call.
-    private static ParIntGraphPair treatNatives(PointerAnalysis pa, CALL q,
-						ParIntGraph pig_before){
+    private static ParIntGraphPair treatVerySpecialNatives
+	(PointerAnalysis pa, CALL q, ParIntGraph pig_before){
 
 	HMethod hm = q.method();
 	if(hm == null) return null;
-	
-	int mod = hm.getModifiers();
-	if(!Modifier.isNative(hm.getModifiers())) return null;
-
-	// System.out.println("NATIVE: " + q);
-
 	ParIntGraphPair pair = null;
 
 	if((pair = treat_arraycopy(pa, q, pig_before)) != null)
 	    return pair;
 	if((pair = treat_clone(pa, q, pig_before)) != null)
-	    return pair;
-	if((pair = treat_fillInStackTrace(pa, q, pig_before)) != null)
-	    return pair;
-	if((pair = treat_setPriority0(pa, q, pig_before)) != null)
 	    return pair;
 
 	return null;
@@ -744,6 +772,9 @@ abstract class InterProcPA {
 	   !callee.getDeclaringClass().getName().equals("java.lang.Object"))
 	    return null;
 
+	//if(DEBUG)
+	    System.out.println("NATIVE (special): " + callee);
+
 	ParIntGraph pig_after0 = pig_before;
 	ParIntGraph pig_after1 = (ParIntGraph) pig_before.clone();
 
@@ -816,8 +847,8 @@ abstract class InterProcPA {
 	   !hm.getDeclaringClass().getName().equals("java.lang.System"))
 	    return null;
 
-	if(DEBUG)
-	    System.out.println(q + "is treated specially (arraycopy)");
+	//if(DEBUG)
+	    System.out.println("NATIVE (special): " + Debug.code2str(q));
 
 	// the conventional field name used for the array's entries
 	final String f = PointerAnalysis.ARRAY_CONTENT;
@@ -876,6 +907,7 @@ abstract class InterProcPA {
     }
 
 
+    /*
     // special treatment for
     // "public native Throwable java.lang.Throwable.fillInStackTrace()"
     private static ParIntGraphPair 
@@ -904,7 +936,6 @@ abstract class InterProcPA {
 	return new ParIntGraphPair(pig_before, pig_after1);	
     }
 
-
     // special treatment for 
     // "private native void java.lang.Thread.setPriority0(int)"
     private static ParIntGraphPair
@@ -921,5 +952,57 @@ abstract class InterProcPA {
 
 	return new ParIntGraphPair(pig_before, pig_before);
     }
+    */
 
+
+    // Many native methods don't do any synchronizations on their object
+    // parameters, don't store them in static fields and don't modify the
+    // points-to graph accessible from these object parameters.
+    private static boolean isUnharmful(HMethod hm) {
+	return uhms.contains(hm); 
+    }
+    // Checks whether a method is totally harmful (i.e. all the parameters
+    // must be marked as escaping into it). 
+    private static boolean isTotallyHarmful(HMethod hm) {
+	return !isUnharmful(hm); // for the moment, conservative treatment
+    }
+    private static Set uhms = new HashSet();
+    static{
+	String[][] methods = {
+	    {"java.io.FileInputStream", "open"},
+	    {"java.io.FileInputStream", "close"},
+	    {"java.io.FileInputStream", "available"},
+	    {"java.io.FileInputStream", "read"},
+	    {"java.io.FileInputStream", "readBytes"},
+
+	    {"java.io.FileOutputStream", "open"},
+	    {"java.io.FileOutputStream", "openAppend"},
+	    {"java.io.FileOutputStream", "close"},
+	    {"java.io.FileOutputStream", "write"},
+	    {"java.io.FileOutputStream", "writeBytes"},
+
+	    {"java.lang.Throwable", "printStackTrace0"},
+	    {"java.lang.Throwable", "fillInStackTrace"},
+	    {"java.lang.Class", "getName"},
+	    {"java.lang.Class", "getPrimitiveClass"},
+
+	    {"java.lang.Object", "hashCode"}
+	};
+
+	for(int i = 0; i < methods.length; i++)
+	    uhms.addAll(getMethods(methods[i][0], methods[i][1]));
+    }
+
+    // Returns all the methods having the name m_name
+    // that are declared in class c_name.
+    private static Collection getMethods(String c_name, String m_name) {
+	List retval = new LinkedList();
+	HClass hclass = Loader.systemLinker.forName(c_name);
+	HMethod[] hms = hclass.getDeclaredMethods();
+	for(int i = 0; i < hms.length; i++)
+	    if(m_name.equals(hms[i].getName()))
+		retval.add(hms[i]);
+	return retval;
+    }
+	
 }// end of the class
