@@ -78,7 +78,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.5 2001-07-19 22:20:12 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.6 2001-07-20 01:26:10 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -115,6 +115,18 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	System.out.println("BITWIDTH RESULTS: "+before+"/"+after+" bits; "+
 			   before8+"/"+after8+" bytes");
+	HashSet flds = new HashSet(5*ch.classes().size());
+	for (Iterator it=ch.classes().iterator(); it.hasNext(); )
+	    flds.addAll(Arrays.asList(((HClass)it.next()).getFields()));
+	for (Iterator it=flds.iterator(); it.hasNext(); )
+	    if (((HField)it.next()).isStatic()) it.remove();
+	int ttl = flds.size();
+	flds.retainAll(fieldMap.keySet());
+	int lft = flds.size();
+	for (Iterator it=flds.iterator(); it.hasNext(); )
+	    if (isConst((HField)it.next())) it.remove();
+	int lss = flds.size();
+	System.out.println("BITWIDTH RESULTS: "+lss+"/"+lft+"/"+ttl+" unread fields");
     }
 
     /*-----------------------------*/
@@ -137,10 +149,18 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     /** Mapping from <code>HMethod</code>s to <code>CALL</code> quads
      *  which may invoke them. */
     final MultiMap callMap = new GenericMultiMap(new AggregateSetFactory());
+    /** Mapping from <code>HMethod</code>s to all retval temps. */
+    final MultiMap returnMap = new GenericMultiMap(new AggregateSetFactory());
+    /** Mapping from <code>HMethod</code>s to all retex temps. */
+    final MultiMap throwMap = new GenericMultiMap(new AggregateSetFactory());
 
     /*---------------------------*/
     // public information accessor methods.
 
+    /** Determine whether the given <code>HField</code> is ever read. */
+    public boolean isRead(HField hf) {
+	return fieldMap.containsKey(hf);
+    }
     /** Determine whether <code>Quad</code> <code>q</code>
      *  is executable. */
     public boolean execMap(HCodeElement quad) {
@@ -158,6 +178,13 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
     public HClass typeMap(HCodeElement hce, Temp t) {
 	// ignore hce
 	LatticeVal v = (LatticeVal) V.get(t);
+	if (v instanceof xClass) return ((xClass)v).type();
+	return null;
+    }
+    /** Determine the static type of <code>Temp</code> <code>t</code> in 
+     *  <code>HMethod</code> <code>m</code>. */
+    public HClass typeMap(HField hf) {
+	LatticeVal v = get( hf );
 	if (v instanceof xClass) return ((xClass)v).type();
 	return null;
     }
@@ -188,6 +215,20 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	if (v instanceof xConstant) return ((xConstant)v).constValue();
 	throw new Error(t.toString() + " not a constant");
     }
+    /** Determine whether <code>HField</code> <code>hf</code>
+     *  has a constant value. */
+    public boolean isConst(HField hf) {
+	return (get(hf) instanceof xConstant);
+    }
+    /** Determine the constant value of <code>HField</code> <code>hf</code>.
+     *  @exception Error if <code>HField</code> <code>hf</code> is not a
+     *             constant.
+     */
+    public Object constMap(HField hf) {
+	LatticeVal v = get(hf);
+	if (v instanceof xConstant) return ((xConstant)v).constValue();
+	throw new Error(hf + " not a constant");
+    }
 
     /** Determine the positive bit width of <code>Temp</code> <code>t</code>.
      */
@@ -204,6 +245,24 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	// ignore hce -- this is SSA form.
 	LatticeVal v = (LatticeVal) V.get(t);
 	if (v==null) throw new Error("Unknown "+t);
+	xBitWidth bw = extractWidth(v);
+	return bw.minusWidth();
+    }
+    /** Determine the positive bit width of <code>HField</code>
+     *  <code>hf</code>.
+     */
+    public int plusWidthMap(HField hf) {
+	LatticeVal v = get( hf );
+	if (v==null) throw new Error("Unknown "+hf);
+	xBitWidth bw = extractWidth(v);
+	return bw.plusWidth();
+    }
+    /** Determine the negative bit width of <code>HField</code>
+     *  <code>hf</code>.
+     */
+    public int minusWidthMap(HField hf) {
+	LatticeVal v = get( hf );
+	if (v==null) throw new Error("Unknown "+hf);
 	xBitWidth bw = extractWidth(v);
 	return bw.minusWidth();
     }
@@ -269,6 +328,17 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		       new xClass( pt[k] ) );
 	}
 	// XXX: main method *could* use xClassExact on String[] arg.
+
+	// special runtime-initialized fields (ugh!)
+	{
+	    HClass HCsystem = linker.forName("java.lang.System");
+	    HField in = HCsystem.getField("in");
+	    HField out= HCsystem.getField("out");
+	    HField err= HCsystem.getField("err");
+	    mergeV(V, Wf, in,  new xClass(in .getType()));
+	    mergeV(V, Wf, out, new xClass(out.getType()));
+	    mergeV(V, Wf, err, new xClass(err.getType()));
+	}
 
 	// Iterate until worklists are empty.
 	while (! (Wq.isEmpty() && Wv.isEmpty() && Wf.isEmpty()) ) {
@@ -608,7 +678,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    callable.add(hm);
 	    // for every callable method, raise its Vparam.
 	    // flag if any callable methods are native.
-	    boolean anyNative = true;//false;
+	    boolean anyNative = false;
 	    Temp[] myparams = q.params();
 	    for (Iterator it=callable.iterator(); it.hasNext(); ) {
 		HMethod hmm = (HMethod) it.next();
@@ -620,12 +690,28 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		for (int i=0; i<myparams.length; i++)
 		    mergeV(V, Wv, method.params(i), get( myparams[i] ));
 		// also mark "method" executable.
-		Wq.push(method); Eq.add(method);
+		raiseE(Ee, Eq, Wq, method.prevEdge(0));
 		// analysis of "method" (in particular, the RETURN/THROW
 		// quads) will raiseE on appropriate outgoing edge and
 		// raiseV on retval/retex.
+		for (Iterator it2=returnMap.getValues(hmm).iterator();
+		     it2.hasNext(); ) {
+		    Temp t = (Temp) it2.next();
+		    LatticeVal v = get( t );
+		    if (v==null) continue;
+		    mergeV(V, Wv, q.retval(), v);
+		    raiseE(Ee, Eq, Wq, q.nextEdge(0) );
+		}
+		for (Iterator it2=throwMap.getValues(hmm).iterator();
+		     it2.hasNext(); ) {
+		    Temp t = (Temp) it2.next();
+		    LatticeVal v = get( t );
+		    if (v==null) continue;
+		    mergeV(V, Wv, q.retex(), v);
+		    raiseE(Ee, Eq, Wq, q.nextEdge(1) );
+		}
 	    }
-	    if (!anyNative) return; // done.
+	    if (anyNative) {
 	    // if *native* method in callable methods set, then use
 	    // conservative retval/retex/edge assumptions.
 	    if (q.retval() != null) {
@@ -649,16 +735,18 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    // both outgoing edges are potentially executable.
 	    raiseE(Ee, Eq, Wq, q.nextEdge(1) );
 	    raiseE(Ee, Eq, Wq, q.nextEdge(0) );
+	    }
 	    // handle SIGMAs
 	    for (int i=0; i < q.numSigmas(); i++) {
 		// no q.src(x) should equal retval or retex...
 		// not that it would particularly break anything if it
 		// did.
 		LatticeVal v2 = get ( q.src(i) );
-		if (v2 != null) {
+		if (v2 == null) continue;
+		if (execMap(q.nextEdge(0)))
 		    raiseV(V, Wv, q.dst(i, 0), v2.rename(q, 0));
+		if (execMap(q.nextEdge(1)))
 		    raiseV(V, Wv, q.dst(i, 1), v2.rename(q, 1));
-		}
 	    }
 	}
 	public void visit(CJMP q) {
@@ -891,6 +979,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	}
 	public void visit(RETURN q) {
 	    if (get( q.retval() )==null) return; // wait for definition!
+	    returnMap.add( q.getFactory().getMethod(), q.retval() );
 	    // for all CALLs which may invoke this method...
 	    for (Iterator it=callMap.getValues(q.getFactory().getMethod())
 		     .iterator(); it.hasNext(); ) {
@@ -963,6 +1052,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		Util.assert(get(q.throwable())==null ||
 			    get(q.throwable()) instanceof xClassNonNull);
 	    if (get( q.throwable() )==null) return; // wait for definition!
+	    throwMap.add( q.getFactory().getMethod(), q.throwable() );
 	    // for all CALLs which may invoke this method...
 	    for (Iterator it=callMap.getValues(q.getFactory().getMethod())
 		     .iterator(); it.hasNext(); ) {
