@@ -11,5 +11,5 @@
  */
 JNIEXPORT jboolean JNICALL Java_harpoon_Runtime_DynamicSyncImpl_isNoSync
   (JNIEnv *env, jclass cls, jobject obj) {
-  return DYNSYNC_isNoSync(FNI_UNWRAP(obj)) ? JNI_TRUE : JNI_FALSE;
+  return EXACT_isNoSync(FNI_UNWRAP(obj)) ? JNI_TRUE : JNI_FALSE;
 }

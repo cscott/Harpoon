@@ -13,7 +13,7 @@
 
 /* For 'runtime2', we set the 2nd bit of the hashcode if synchronization
  * operations on this object can be skipped. */
-extern inline int DYNSYNC_isNoSync(struct oobj *obj) {
+extern inline int EXACT_isNoSync(struct oobj *obj) {
   return (((struct oobj*)PTRMASK(obj))->hashunion.hashcode & 2);
 }
 
