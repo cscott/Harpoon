@@ -22,7 +22,7 @@ import java.util.Iterator;
  * equality tests for treaps.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentTreeNode.java,v 1.9 2003-06-08 16:44:03 cananian Exp $
+ * @version $Id: PersistentTreeNode.java,v 1.10 2003-06-08 16:45:58 cananian Exp $
  */
 // XXX implement the javadoc
 // parameterize the allocation function. (pass it in as an argument?)
@@ -32,23 +32,23 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
     implements java.io.Serializable {
 
     public final K key;
-    public final V value;
+    //public final V value;//optional
     public final PersistentTreeNode<K,V> left;
     public final PersistentTreeNode<K,V> right;
 
     PersistentTreeNode(K key, V value,
 		       PersistentTreeNode<K,V> left,
 		       PersistentTreeNode<K,V> right) {
-	this.key = key;  this.value = value;
+	this.key = key;  //this.value = value;
 	this.left= left; this.right = right;
     }
     // ACCESSOR FUNCTIONS for Map.Entry.
-    public K getKey() { return key; }
-    public V getValue() { return value; }
+    public final K getKey() { return key; }
+    public V getValue() { return null; } // can be overridden by subclass
 
     // For debugging
     public String toString() {
-	return "["+key+"->"+value+", left="+left+", right="+right+"]";
+	return "["+key+"->"+getValue()+", left="+left+", right="+right+"]";
     }
     /** Returns the length of the longest path from the root to a leaf. */
     static <K,V> int depth(PersistentTreeNode<K,V> n) {
@@ -70,7 +70,7 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
 	if (this==n) return true; // quick common case
 	if (null==n) return false; // protect us from evil; this!=null
 	return
-	    isSame(key,  n.key)  && isSame(value, n.value) &&
+	    isSame(key,  n.key)  && isSame(getValue(), n.getValue()) &&
 	    isSame(left, n.left) && isSame(right, n.right);
     }
     private static boolean isSame(Object o1, Object o2) {
@@ -88,7 +88,7 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
 					K key, V value,
 					PersistentTreeNode<K,V> left,
 					PersistentTreeNode<K,V> right) {
-	if (n != null && n.key.equals(key) && n.value.equals(value) &&
+	if (n != null && n.key.equals(key) && isSame(n.getValue(), value) &&
 	    n.left == left && n.right == right)
 	    return n;
 	// check heap condition
@@ -111,7 +111,7 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
 	    //   b   e     a   d
 	    //  / \           / \
 	    // a   c         c   e
-	    return newNode(left, left.key, left.value,
+	    return newNode(left, left.key, left.getValue(),
 			   left.left, newNode(n, key, value,
 					      left.right, right));
 	} else { // okay as is
@@ -133,7 +133,7 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
 	    //   a   d      b   e
 	    //      / \    / \
 	    //     c   e  a   c
-	    return newNode(right, right.key, right.value,
+	    return newNode(right, right.key, right.getValue(),
 			   newNode(n, key, value, left, right.left),
 			   right.right);
 	} else { // okay as is
@@ -165,10 +165,10 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
 	    // already heap-balanced
 	    return newNode(n, key, value, n.left, n.right);
 	if (r < 0)
-	    return newNode_balanceLeft(n, n.key, n.value,
+	    return newNode_balanceLeft(n, n.key, n.getValue(),
 				       put(n.left, c, key, value), n.right);
 	if (r > 0)
-	    return newNode_balanceRight(n, n.key, n.value,
+	    return newNode_balanceRight(n, n.key, n.getValue(),
 					n.left, put(n.right, c, key, value));
 	throw new Error("Impossible!");
     }
@@ -184,10 +184,10 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
 	if (r==0) // remove this node.
 	    return merge(n.left, n.right);
 	if (r < 0)
-	    return newNode_balanceLeft(n, n.key, n.value,
+	    return newNode_balanceLeft(n, n.key, n.getValue(),
 				       remove(n.left, c, key), n.right);
 	if (r > 0)
-	    return newNode_balanceRight(n, n.key, n.value,
+	    return newNode_balanceRight(n, n.key, n.getValue(),
 					n.left, remove(n.right, c, key));
 	throw new Error("Impossible!");
     }
@@ -200,10 +200,10 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
 	// the node with the smallest heap key goes on top.
 	// in case of tie, the smallest tree key goes on top (left node)
 	if (heapKey(left.key) > heapKey(right.key))
-	    return newNode(null, right.key, right.value,
+	    return newNode(null, right.key, right.getValue(),
 			   merge(left, right.left), right.right);
 	else
-	    return newNode(null, left.key, left.value,
+	    return newNode(null, left.key, left.getValue(),
 			   left.left, merge(left.right, right));
     }
 
