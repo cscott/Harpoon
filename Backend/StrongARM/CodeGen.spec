@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.40 1999-09-02 21:28:10 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.41 1999-09-08 00:36:56 pnkfelix Exp $
  */
 %%
 
@@ -1111,7 +1111,7 @@ RETURN(val) %{
 
 THROW(val, handler) %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
-    emit( ROOT, "\t.global _lookup\n"+
+    emit( ROOT, "\t.global _lookup \t @ THROW\n"+
 		"bl _lookup @ only r0, lr (& ip?) "+
 		"need to be preserved during lookup" ); 
     emit( ROOT, "b stdexit", null, null, false, null);

@@ -20,7 +20,7 @@ import java.util.Map;
  * ease the task of statically creating Java objects in the tree form. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.2.1 1999-09-06 18:45:12 duncan Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.2.2 1999-09-08 00:36:58 pnkfelix Exp $
  *
  */
 public abstract class ObjectBuilder { 
@@ -28,6 +28,15 @@ public abstract class ObjectBuilder {
     private static final Map fields  = new HashMap();
     private static final Map methods = new HashMap(); 
     private static final Map strings = new HashMap();
+
+    private static final boolean DEBUG = true;
+    private static final void DEBUGln(String s) {
+	if (DEBUG) System.out.println("Data ctor: " + s);
+    }
+    private static final void DEBUG(String s) {
+	if (DEBUG) System.out.print("Data ctor: " + s);
+    }
+
 
     /** 
      * Constructs an object using the specified parameters.  Returns an
@@ -180,7 +189,7 @@ public abstract class ObjectBuilder {
 	Label     clsRef = new Label();
 
 	// Check the cache of class object
-	if (classes.containsKey(hclass.getDescriptor())) 
+	if (classes.containsKey(hclass.getDescriptor()))  
 	    return (ESEQ)classes.get(hclass.getDescriptor());
 	else 
 	    classes.put(hclass.getDescriptor(), 
@@ -221,8 +230,8 @@ public abstract class ObjectBuilder {
 	u.removeAll(Collections.nCopies(1, null));
 
 	// Transfer static & non-static methods to separate arrays
-   	Exp[] tNSMethods = (Exp[])u.toArray(new Exp[0]);
-  	Exp[] tSMethods  = (Exp[])s.toArray(new Exp[0]);
+   	Exp[] tNSMethods = (Exp[])u.toArray(new Exp[u.size()]);
+  	Exp[] tSMethods  = (Exp[])s.toArray(new Exp[s.size()]);
 	methodsInTreeForm = new Exp[tNSMethods.length+tSMethods.length];
 	// Copy all methods into one array 
 	System.arraycopy

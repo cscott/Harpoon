@@ -33,10 +33,18 @@ import java.util.List;
  * class.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Data.java,v 1.1.2.17 1999-09-07 18:52:52 pnkfelix Exp $
+ * @version $Id: Data.java,v 1.1.2.18 1999-09-08 00:36:58 pnkfelix Exp $
  */
 public class Data extends Code implements HData { 
     public static final String codename = "tree-data";
+
+    private static final boolean DEBUG = true;
+    private static final void DEBUGln(String s) {
+	if (DEBUG) System.out.println("Data ctor: " + s);
+    }
+    private static final void DEBUG(String s) {
+	if (DEBUG) System.out.print("Data ctor: " + s);
+    }
 
     private /*final*/ EdgeInitializer  edgeInitializer;
     private /*final*/ HClass           cls;
@@ -45,6 +53,9 @@ public class Data extends Code implements HData {
     
     public Data(HClass cls, Frame frame, ClassHierarchy ch) { 
 	super(cls.getMethods()[0], null, frame);
+	
+	DEBUGln("Begining Data construction");
+
 	this.cls = cls;
 	this.classHierarchy = ch;
 
@@ -87,6 +98,9 @@ public class Data extends Code implements HData {
 	// Construct null-terminated list of interfaces and
 	// add all interface methods
 	HClass[] interfaces = cls.getInterfaces();
+	
+	DEBUGln("reached interface loop");
+
 	for (int i=0; i<interfaces.length; i++) { 
 	    HClass    iFace    = interfaces[i];
 	    HMethod[] iMethods = iFace.getMethods();
@@ -108,11 +122,14 @@ public class Data extends Code implements HData {
 	iList.add(_DATA(new CONST(tf, null, 0)));
 	iList.add(0, new LABEL(tf, null, iListPtr, false));
 	
+	DEBUGln("reached display loop");
 
 	// Add display to list
 	for (HClass sCls=cls; sCls!=null; sCls=sCls.getSuperclass()) 
 	    add(offm.offset(sCls)/ws,_DATA(offm.label(sCls)),up,down);
 	
+	DEBUGln("reached static method loop");
+
 	// Add non-static class methods to list 
 	HMethod[] methods = cls.getMethods();
 	for (int i=0; i<methods.length; i++) { 
@@ -134,6 +151,8 @@ public class Data extends Code implements HData {
 	Collections.reverse(up);
 	down.add(0, new LABEL(tf,null,offm.label(cls), true));
 
+	DEBUGln("reached fields loop");
+
 	for (HClass sCls = cls; sCls!=null; sCls=sCls.getSuperclass()) { 
 	    HField[] hfields  = sCls.getDeclaredFields();
 	    for (int i=0; i<hfields.length; i++) { 
@@ -151,7 +170,6 @@ public class Data extends Code implements HData {
 	    }
 	}
 
-
 	// Assign segment types:
 	iList  .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
 	up     .add(0, new SEGMENT(tf, null, SEGMENT.CLASS));
@@ -159,6 +177,8 @@ public class Data extends Code implements HData {
 	spList .add(0, new SEGMENT(tf, null, SEGMENT.STATIC_PRIMITIVES));
 	rList  .add(   new SEGMENT(tf, null, SEGMENT.REFLECTION_PTRS));
 	rList  .add(   new SEGMENT(tf, null, SEGMENT.REFLECTION_DATA));
+
+	DEBUGln("building class");
 
 	ESEQ objectData = ObjectBuilder.buildClass(tf,frame,this.cls);
 	rList.add(new LABEL(tf,null,offm.jlClass(this.cls),false));
@@ -174,7 +194,12 @@ public class Data extends Code implements HData {
 	result.addAll(iList);
 	result.addAll(rList);
 
+	DEBUGln("converting result to Stm");
+
 	this.tree = Stm.toStm(result);
+
+	DEBUGln("almost done; about to compute edges");
+
 	(this.edgeInitializer = new EdgeInitializer()).computeEdges();
     }
     
