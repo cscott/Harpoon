@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.108 1999-09-02 16:49:33 cananian Exp $
+% $Id: thesis.tex,v 1.109 1999-09-02 18:19:44 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -41,14 +41,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.108 $ $}
+\date{\today \\ $ $Revision: 1.109 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.108 $ $}{$ $Revision: 1.108 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.109 $ $}{$ $Revision: 1.109 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -239,7 +239,7 @@ the explicit control dependency between them.  Prior work often
 focused on fine-grain intra-loop parallelism and ignored this coarser
 inter-loop parallelism.\footnote{We discuss the dataflow-architecture
 work of Traub \cite{traub86:ttda} in particular in section
-\ref{sec:ssiplus}.} Our objective in this work is to fully utilize
+\ref{sec:parallelism}.} Our objective in this work is to fully utilize
 coarse parallelism by removing source-language control-dependency artifacts.
 
 \textbf{It is efficient for both forward and backward dataflow analyses.}
@@ -2486,20 +2486,48 @@ most transitions remove some event from the event set $E$, replacing
 it with a new event.  The invariant store $S$ stores
 the values of loop invariants for regeneration at each loop iteration.
 
-\subsection{Construction algorithms}
-\textbf{Presentation of algorithms; complexity analysis.}
-\footnote{Basic algorithm for generating \xifunction{s}: the top
-tuple is found with a depth-first search of the source
-control-flow graph, and the bottom tuple can be determined by a
-traversal of the same SESE-region tree which generates \ssizero\
-form.}
-\footnote{Constant trigger is found via traversal of the SESE-region
-tree. (First node post-dominated by a use of the constant?)}
+\subsection{Construction}
+Construction of \ssiplus\ is only a slight variation on the
+construction algorithms for \ssizero.  First, dominator and
+post-dominator trees are produced using the Lengauer-Tarjan
+\cite{lengauer79} or Harel \cite{harel85} algorithm.  The nodes of the
+dominator tree are numbered in pre-order such that for all nodes $N$,
+$\text{num}[N]>\text{num}[\text{idom}[N]]$.
+Then, in a single traversal of the post-dominator tree, we find the
+lowest-numbered node post-dominated by any given node.  We add
+triggers to constants from variables defined at this lowest node
+post-dominated by the constant use; using the default trigger
+$\mathcal{C}_T$ where necessary.  We then place \phisigfunction{s}
+for all variables, including constant triggers, using
+algorithm~\ref{alg:SSIplace}.
 
-\subsection{Uses and applications}
-\subsubsection{Analysis and optimization.}
-\subsubsection{Abstract Interpretation.}
-\subsubsection{Hardware compilation.}\label{sec:hardware}
+We then generate \xifunction{s}.  A standard interval analysis
+creates a loop nesting tree, and each loop is scanned for invariants
+and other definitions/uses to create the proper \xifunction{} tuples.
+Renaming is done using algorithm~\ref{alg:SSIrename1}, as before.
+
+\subsection{Dataflow and control dependence}\label{sec:parallelism}
+The \ssiplus\ semantics are data-driven, and thus bring to mind work
+on compilers for dataflow machines.  Beck, Johnson, and Pingali have
+previously written \cite{beck91:ctrlflow} on the benefits of
+dataflow-oriented intermediate representations.  However, the previous
+work on dataflow compilers (Traub \cite{traub86:ttda}, for example)
+has concentrated on intra-loop dependencies, often leaving in
+pseudo-control-flow edges to serialize non-loop structures.  This
+strategy results in the sort of fine-grain intra-loop parallelism
+suitable for parallel dataflow machines, vector processors, and VLIW
+machines.
+
+The current work concentrates on removing unnecessary dependencies
+\emph{between} loops, which allows a coarser parallelism which does
+not require as many functional units to take advantage of.  Moreover,
+we extract parallel sequential threads that are not loop-based.
+Obviously both fine-grain and coarse-grain parallelism are important,
+but we feel the current industry trends towards loosely coupled
+multiprocessors support our coarser-grained approach which has, to
+date, seemingly been neglected by dataflow approaches.
+
+\subsection{Hardware compilation.}\label{sec:hardware}
 The observant reader may have noticed that the two 
 operational semantics given in section \ref{sec:semantics} closely
 resemble circuit implementations for the program according to
@@ -2508,41 +2536,42 @@ synchronous and asynchronous design methodologies.  In fact,
 high-level program into hardware.  The two semantics differ primarily
 on how cyclic dependencies (i.e. loops) are handled.
 
-In this section, we will describe how to translate \ssiplus{} to
-hardware, glossing over details of how the store is handled, which is
-outside the scope of this work.  Upon concluding this section, it will
-be obvious how to generate hardware for simple functional constructs
-using \ssiplus.
-
-\textbf{Er, at this point I will do what I just said I would do.  I'm
-working on generating the figures to illustrate this section.}%
-\fixme{Don't forget to reference \cite{tanaka89:harp} and
-\cite{galloway95:transmogrifier} when talking about Java-to-hardware.}
-
-\subsection{Dataflow and control dependence}
-\fixme{Mention the work of Traub, like the introduction said we would.}
-\footnote{Note that Arvind's
-dataflow compiler \cite{traub86:ttda} looked for exactly the opposite type of
-parallelism.  By concentrating on intra-loop dependencies, as he did, you get
-fine-grain parallelism suitable for VLIW-type machine with many
-functional units.  We try to remove dependencies \emph{between} loops,
-which gets us coarser parallelism that does not require as many
-functional units to take advantage of.  This should be in the paper
-body, but I'm not quite sure where a discussion of the differences
-between Arvind's work and mine belongs.}
-
+Translation of high-level languages directly to hardware has long been
+a goal of researchers.  Tanaka et al. constructed a system based on FORTRAN
+\cite{tanaka89:harp}, and Galloway's C-based hardware description
+language \cite{galloway95:transmogrifier} inspired a new interest in
+applying general-purpose languages to the task.  The recent general
+use of type-safe object-oriented languages has encouraged speculation
+that the more favorable analysis properties of these stricter
+languages would enable further advances in general-use hardware
+compilation.  In this context, the well-defined semantics and
+data-flow orientation of \ssiplus\ solve the local-level hardware
+compilation problem and allow effort to be concentrated on the more
+difficult intra-procedural analyses required.
 
 \section{Methodology}\label{sec:methodology}
-\textbf{Numbers, numbers, and more numbers.}
+The SSI intermediate representation described in this paper is the
+core IR for the FLEX compiler infrastructure project, started in July
+1998 and currently containing about 70,000 lines of Java source code.
+The FLEX compiler reads in Java bytecodes, and targets both the JVM
+(for high-level portable code transformations) and several
+combinations of machine architectures and runtime systems.  Currently
+the bytecode and ARM processor backends are near completion.
+Interpreters exist for the various intermediate representations used
+in the compiler, allowing the correctness of the earlier passes of the
+compiler to be verified.  The compiler will correctly compile itself
+to IR and interpret itself.
 
-\section{Future work}
-\textbf{Get a PhD.}\footnote{This involves finishing section
-\ref{sec:hardware} by describing how memory is handled in hardware
-compilation.  Answer: using lots and lots of sophisticated analysis,
-that's how.}
+The FLEX compiler implements the algorithms described in this paper,
+validating their correctness.  Variable counting for the graphs of
+section~\ref{sec:ssi_complexity} was done by a special statistics
+module that could be applied to the results of any pass.  The full
+bitwidth-extended SPTC constant propagation algorithm was implemented,
+although we currently do not use the bitwidth information produced.
+\ssiplus\ and hardware compilation are the focus of current work.
 
 \section{Conclusions}
-\textbf{Scott is done.}
+SSI is wonderful.  You will all rejoice, hop, and skip merrily.  Yay.
 
 \newpage
 \bibliography{harpoon}
