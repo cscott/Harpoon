@@ -13,7 +13,7 @@ import harpoon.ClassFile.HMethod;
  * environment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Options.java,v 1.4 2003-02-11 21:40:03 salcianu Exp $
+ * @version $Id: Options.java,v 1.5 2003-02-11 21:49:20 salcianu Exp $
  */
 public class Options {
     /** Stream for writing statistics. */
@@ -57,7 +57,8 @@ public class Options {
 
 	@param asFact factory that produces the
 	<code>AllocationStrategy</code> for compiling allocation
-	sites.  May be null. */
+	sites.  Currently, relevant only for the <code>PreciseC</code>
+	backend.*/
     public static Frame frameFromString(String backendName, HMethod mainMethod,
 					AllocationStrategyFactory asFact)
     {
