@@ -48,8 +48,8 @@ FLEX_MUTEX_DECLARE_STATIC(global_inflate_mutex);
 static void deflate_object(void* obj, void* client_data);
 #elif defined(BDW_CONSERVATIVE_GC)
 static void deflate_object(GC_PTR obj, GC_PTR client_data);
-#elif defined(WITH_PRECISE_GC)
-static void deflate_object(struct oobj *obj, ptroff_t client_data);
+#elif defined(WITH_PRECISE_GC
+static void deflate_object(jobject_unwrapped obj, ptroff_t client_data);
 #endif
 
 void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
@@ -108,7 +108,11 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
 	   (!((struct FNI_Thread_State*)env)->noheap));
     if (((ptroff_t)FNI_UNWRAP(wrapped_obj))&1)  /* register only if in heap */
 #endif
-      precise_register_inflated_obj(obj, deflate_object);
+      precise_register_inflated_obj(obj, 
+#ifdef WITH_REALTIME_JAVA
+				    (void (*)(jobject_unwrapped, ptroff_t))
+#endif
+				    deflate_object);
 #elif defined(BDW_CONSERVATIVE_GC)
     /* register finalizer to deallocate inflated_oobj on gc */
     if (GC_base(obj)!=NULL) {// skip if this is not a heap-allocated object
