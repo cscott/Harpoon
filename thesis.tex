@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.100 1999-08-31 22:13:04 cananian Exp $
+% $Id: thesis.tex,v 1.101 1999-09-01 15:42:25 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -25,6 +25,9 @@
 \newcommand{\latlt}{\ensuremath{\sqsubset}}
 \newcommand{\latleq}{\ensuremath{\sqsubseteq}}
 
+% get rid of crutft
+\newcommand{\ignore}[1]{}
+
 % number tables and figures according to section
 \let\oldsection\section
 \renewcommand{\section}{\setcounter{figure}{0}\setcounter{table}{0}\oldsection}
@@ -38,14 +41,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.100 $ $}
+\date{\today \\ $ $Revision: 1.101 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.100 $ $}{$ $Revision: 1.100 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.101 $ $}{$ $Revision: 1.101 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -394,7 +397,7 @@ control-flow graph context.  Analyses can then associate information
 with variable names and propagate this information efficiently and
 directly both with and against the control-flow direction.
 
-\subsection{Definition of SSI form}
+\subsection{Definition of SSI form}\label{sec:ssidef}
 Building SSI form involves adding pseudo-assignments for a variable $V$:
 \begin{enumerate}
 \item[$(\phi)$] at a control-flow merge when disjoint paths from a
@@ -482,25 +485,52 @@ Note that condition \ref{crit_phiname} and this property do not require
 there to be exactly one definition of any variable $V$, just that at
 every use only a single definition is relevant.  The renaming
 algorithm we will present enforces the stricter single-definition
-constraint.\fixme{Do we prove this?}
+constraint.
 
-\begin{property}
+\begin{property}\label{pty:ssi_dom}
 Every path $S \pathplus Y$ from the \code{START} node to a node $Y$
-containing a use of a variable must contain exactly one node $X$
-defining that variable in the new program.  Likewise, every path $X
-\pathplus E$ from a node $X$ containing a definition of a variable to
-the \code{END} node must contain every node $Y$ which is a use of that
-variable in the new program.
+containing a non-\phifunction{} use of a variable must contain exactly
+one node $X$ defining that variable in the new program.  Likewise,
+every path $X \pathplus E$ from a node $X$ containing a
+non-\sigfunction{} definition of a variable to the \code{END} node
+must contain every node $Y$ which is a use of that variable in the new
+program.
 \end{property}
 \begin{proof}
-The first statement is direct from conditions \ref{crit_phiname} and
-\ref{crit_boundary}; the second statement follows from conditions
-\ref{crit_signame} and \ref{crit_boundary}.
+Let us call the variable $v$.  Conditions~\ref{crit_boundary} and
+\ref{crit_correct} ensure that there exists at least one definition
+node $X$ for $v$ from which $Y$ is
+reachable---conditions~\ref{crit_boundary} and \ref{crit_correct}
+substitute the \code{START} node, from which every node is reachable,
+for any use of $v$ not reachable by some other definition in the
+original program.  So assume this definition node $X$ exists, but is
+not on the path $S\pathplus Y$.  Then $X\pathplus Y$ and $S\pathplus
+Y$ must have some earliest node $N$ in common.  But $N$ must then have
+a \phifunction{} for $v$ by condition~\ref{crit_phiplace}, which
+violates either our choice of $Y$ as a non-\phifunction{} use (if
+$N=Y$) or else condition~\ref{crit_phiname} which prohibits
+definitions other than at $X$.  If $S\pathplus Y$ contains more than
+one node $X_i$ defining $v$, then the path $X_0\pathplus Y$ between
+the first and $Y$ also violates condition~\ref{crit_phiname}.  So
+$S\pathplus Y$ must contain exactly one definition $X$ of $v$.
+
+The second part is symmetric.  Assume there exists some node $Y$ using
+$v$ which is not contained on some path $X \pathplus E$.  The path
+$X\pathplus Y$ must exist by conditions~\ref{crit_phiname} and
+\ref{crit_boundary}.  And $X\pathplus E$ and $X\pathplus Y$ must
+have some final node $N$ in common, which must have a \sigfunction{}
+for $v$ by condition~\ref{crit_sigplace}. The case $N=X$ violates the
+choice of $X$ as a non-\sigfunction{} definition.  But if $N\not= X$,
+then condition~\ref{crit_phiname}, which prohibits paths with multiple
+definitions, is violated.  Thus $X\pathplus E$ must contain every use
+of $v$.
 \end{proof}
 
 \begin{property}
-Every definition of a variable $V$ dominates all uses of $V$ and
-every use of $V$ post-dominates the reaching definition of $V$ in the
+Every definition of a variable $V$ dominates all non-\phifunction{}
+uses of $V$ and
+every use of $V$ post-dominates any non-\sigfunction{}
+reaching definition of $V$ in the
 new program.
 \end{property}
 \begin{proof}
@@ -512,8 +542,16 @@ every path from $s$ [\code{START}] to $y$ includes $x$.
 \end{quote}
 Post-dominance is the dual on a flow graph with edges reversed: $x$
 post-dominates $y$ iff every path from \code{END} to $y$ includes $x$.
-With these terms defined, this property follows immediately from the
-previous one.
+
+The previous property showed that every path from \code{START} to a
+non-\phifunction{} use contained a unique definition node $X$.  If two
+paths from \code{START} to $Y$ contained different definition nodes
+$X_i$, then $Y$ would be a \phifunction, which it was chosen not to
+be.  So every non-\phifunction{} use is dominated by the single
+definition node.  Likewise the previous property showed that every
+path from a non-\sigfunction{} definition to \code{END} must include
+every use; therefore every use post-dominates a non-\sigfunction{}
+definition.
 \end{proof}
 
 \subsection{Minimal and pruned SSI forms}
@@ -846,7 +884,7 @@ on page~\pageref{line:place_skip}, which skips over any SESE region
 not containing a definition (use) of $v$ when placing
 \phifunction{s} (\sigfunction{s}) for $v$.
 
-\begin{lemma}\label{lem:ssi_dom}
+\begin{lemma}\label{lem:ssi_place_dom}
 If a definition (use) or a \phisigfunction[or]{} for a variable $v$ is
 present at some node $D$ (\/$U$), then a \phifunction (\sigfunction) for
 $v$ is needed at every node $N$:
@@ -871,7 +909,7 @@ is less than 2 or there is no path to a use of $v$, then it fails the
 $\sigma$-placement criterion \ref{crit_sigplace}.
 \item If there exists a SESE containing $N$ that does not contain any
 definition, \phisigfunction[or]{} $D$ for $v$, then $N$ does not require a
-\phisigfunction[or]{} for $v$.
+\phisigfunction[or]{} for $v$ by lemma~\ref{lem:sese_child}.
 \item Let us suppose every $D_i$ containing a definition,
 \phisigfunction[or]{} for $v$ dominates $N$.  If $N$ requires a
 \phifunction for $v$,  there exist paths $D_1 \pathplus N$ and
@@ -893,7 +931,7 @@ of the SSI form definition and lemma \ref{lem:sese_child} that they are
 sufficient.
 \end{proof}
 
-In practice, the conditions of lemma \ref{lem:ssi_dom} are too expensive
+In practice, the conditions of lemma \ref{lem:ssi_place_dom} are too expensive
 to implement directly.  Instead, we use a conservative approximation
 to SSI form, which allows us to place more \phisigfunction{s} than
 minimal SSI requires (for example, a \phifunction for $v$ at the
@@ -924,7 +962,7 @@ is dead without harming the correctness of the \phisigfunction{}
 placement.
 \end{proof}
 \dontfixme{It would be nice to be able to show a means of using the
-algorithm and the conditions in \ref{lem:ssi_dom} to produce exactly
+algorithm and the conditions in \ref{lem:ssi_place_dom} to produce exactly
 minimal form or exactly pruned form.  It doesn't hurt our time bounds
 to do fixup later, though.}
 
@@ -1025,38 +1063,81 @@ the new program and node $Y$ containing a use of that variable, there
 exists at least one path $X \pathplus Y$ and no such path contains a
 definition of $V$ other than at $X$.
 \end{quote}
-We consider the path $\code{START}\pathplus Y$ for some use of a
+We consider the path $\code{START}\pathplus Y$ terminating in edge $e$
+for some use of a
 variable $v$, constructed according to lemma~\ref{lem:path_construct}
-from a stack trace of calls to \code{Search}.  Every edge is visited
-exactly once by \code{Search}, so the path $\code{START}\pathplus Y$
-exists and is unique.  This path must contain $X$, a definition of
+from a stack trace of calls to \code{Search} at the point at which $e$
+is encountered.  Every edge is encountered exactly once, ensuring that
+the path exists and is unique.  The termination node $Y$ may not be
+unique, as more than one edge enters a node with a \phifunction.
+We identify each operand of a \phifunction{} with the appropriate
+incoming edge $e$ to ensure that the path we will refer to as 
+$\code{START}\pathplus Y$ terminating in $e$ is well-defined and
+unique for the variable $v$ use under consideration.
+
+The path $\code{START}\pathplus Y$ must contain $X$, a definition of
 $v$, if $Y$ uses a variable defined in $X$, as \code{Search} renames
 all definitions (in lines \ref{line:rendef1}, \ref{line:rendef2}, and
 \ref{line:rendef3}) and destroys the name mapping in $\mathcal{E}$
-just it returns.  The call to \code{Search} which creates the
-definition of $v$ must always be on the stack for any use to receive
-the name $v$.
+just before it returns.  The call to \code{Search} which creates the
+definition of $v$ must therefore always be on the stack, and thus in
+the path, for any use to receive a the name $v$.  Note that this is
+true for \phifunction{s} as well, which receive names when the
+appropriate incoming edge is traversed, not necessarily when the node
+$Y$ containing the \phifunction{} is first encountered.
 
 We have proved that $\code{START}\pathplus X\pathplus Y$ exists; now
 we must prove that no other path from $X$ to $Y$ contains a definition
-of $v$.  Obviously this other definition cannot be on our canonical
-path $\code{START}\pathplus X\pathplus Y$, or line~\ref{line:rendef3}
-would have caused $Y$ to use a different name.  So let us call this
+of $v$.  Call this other definition $D$.  Obviously $D$ cannot be on
+our canonical path $\code{START}\pathplus X\pathplus Y$, or
+line~\ref{line:rendef3} would have caused $Y$ to use a different name.
+But as we just stated, all variable name mappings done by $D$ will be
+removed when the call to \code{Search} which touched $D$ is taken off
+the call stack.  So $D$ must be on the call stack, and thus on the
+canonical path; a contradiction. %
+\ignore{%ackackackacakack I HATE PROOFS!!! HATE EM HATE EM HATE EM!
+So let us call this
 definition node $D$, and consider the path $D\pathplus Y$.  Since
 $D\pathplus Y$ and $\code{START}\pathplus X\pathplus Y$ share at least
 node $Y$ in common, there must be an earliest node $N$ where they
-converge.  But by condition~\ref{crit_phiplace} of the SSI form
-definition there should be a \phifunction for $v$ at $N$, and
-line~\ref{line:rendef1} would have caused $Y$ to use a different name.
-Since assuming the existence of such a path leads to contradiction no
-other path $X\pathplus Y$ can contain a definition of $v$, completing
-the proof of the lemma.
+converge.  By condition~\ref{crit_phiplace} of the SSI form
+definition there should be a \phifunction for $v$ at $N$.
+If $N\not= Y$, then line~\ref{line:rendef1} would have caused $Y$ to
+use a different name, a contradiction.  If $N=Y$ then $Y$ is a
+\phifunction for $v$ and thus present on multiple possible call stacks
+for \code{Search}.  As every edge is visited exactly once, however,
+there will be only one call stack-derived path that enters the
+\phifunction{} through the same edge as terminates the path
+$D\pathplus Y$.  Consider this path.  If it contains $D$, then
+line~\ref{line:rendef3} would have caused $Y$\ldots
+
+Consider the call stack corresponding to the path
+$\code{START}\pathplus N=Y$ through the incoming edge of $Y$ which terminates
+the path $D\pathplus Y$.  The node $Y$, as a \phifunction, will be
+present on multiple call stacks, but as every edge is visited exactly
+once there is only one call stack-derived path that enters the
+\phifunction{} through the same edge\ldots
+
+Consider the path $\code{START}\pathplus
+X\pathplus D\pathplus N=Y$.  By the properties of depth-first search
+every node reachable from $X$, including $D$, will be visited before
+the call to \code{Search} which first reached $X$ is popped off the
+stack.  Because the incoming edge to $Y$ from $D$ is also reachable
+from $X$ and every edge will be visited exactly once,
+$\code{START}\pathplus X\pathplus D\pathplus N=Y$ will correspond to
+the algorithm call stack at some point in time.
+Line~\ref{line:rendef3} of \code{Search} will ensure that the variable
+$D$ defines will not be named $v$, contradicting our choice of $D$.
+}
+%
+Since assuming the existence of some other path $X\pathplus Y$
+containing a definition of $v$ leads to contradiction no other such
+path may exist, completing the proof of the lemma.
 \end{proof}
 
-\begin{lemma}\label{lem:rename_postdom1}
-If every node $U$ containing a use of a variable $v$ post-dominates
-every node $D$ containing a definition $D$, then SSI form condition
-\ref{crit_signame} holds.
+\begin{lemma}\label{lem:renamesig}
+SSI form condition~\ref{crit_signame} holds for variables renamed
+according to algorithm~\ref{alg:SSIrename1}.
 \end{lemma}
 \begin{proof}
 We restate SSI form condition~\ref{crit_signame} for reference:
@@ -1066,51 +1147,31 @@ variable $V$ defined at node $Z$ in the new program, either every path
 $Z \pathplus X$ must contain $Y$ or every path $Z \pathplus Y$ must
 contain $X$.
 \end{quote}
-Let us assume that there are paths $Z\pathplus X$ and $Z\pathplus Y$
-violating this condition even though both $X$ and $Y$ post-dominate
-$Z$; that is, let us choose nodes $X$ and $Y$ using $v$ which both
-dominate a node $Z$ defining $v$ such that there exists a path
-$Z\pathplus X$ not containing $Y$ and a path $Z\pathplus Y$ not
-containing $X$.  Since $X$ post-dominates $Z$, every path $E\pathplus
-Z$ includes $X$.  But $E \pathplus X \pathplus Z$ must contain $Y$ as
-well, as $Y$ also post-dominates $Z$.  Either $X$ must precede $Y$ in
-the path or vice-versa:
+Let us assume there are paths $Z\pathplus X$ and $Z\pathplus Y$
+violating this condition; that is, let us chose nodes $X$ and $Y$
+which use $V$ and $Z$ defining $V$ such that there exists a path $P_1$
+from $Z$ to $X$ not containing $Y$ and a path $P_2$ from $Z$ to $Y$ not
+containing $X$.  By the argument of the previous lemma, there exists
+a path $P_3$ from \code{START} to $X$ through $Z$ corresponding to a stack
+trace of \code{Search}; note that $P_3$ need not contains $P_1$.
+There are two cases:
 \begin{description}
-\item[Case I:] $E \pathplus X \pathplus Y \pathplus Z$.  Replace the
-segment $X\pathplus Y\pathplus Z$ with the path $X\pathplus Z$ not
-containing $Y$.  We now have a path $E\pathplus Z$ not containing
-$Y$.  But this violates our claim that $Y$ post-dominates $Z$.
-\item[Case II:] $E \pathplus Y \pathplus X \pathplus Z$.  As before,
-replace $Y\pathplus X\pathplus Z$ with the path $Y\pathplus Z$ not
-containing $X$.  But then $X$ cannot post-dominate $Z$.
+\item[Case I:] $P_3$ does not contains $Y$.  Then there is some last
+node $N$ present on both $P_2: Z\pathstar N\pathplus Y$ and
+$P_3: \code{START}\pathplus Z\pathstar N\pathplus X$.  By SSI
+condition~\ref{crit_sigplace} this node $N$ requires a \sigfunction{}
+for $V$.  If $N\not=Z$ then line~\ref{line:rendef1} of
+algorithm~\ref{alg:SSIrename1} would rename $V$ along $P_3$
+and $X$ would not use the same variable $Z$ defined; if
+$N=Z$, then line~\ref{line:rendef2} would have ensured that $X$
+and $Y$ used different names.  Either case contradicts our choices of
+$X$, $Y$, and $Z$.
+\item[Case II:] $P_3$ does contain $Y$.  Then consider the path
+$\code{START}\pathplus Z\pathplus Y$ along $P_3$, which does not
+contain $X$.  The argument of case I applies with $X$ and $Y$ reversed.
 \end{description}
-Both options lead to contradiction.  Therefore SSI form condition
-\ref{crit_signame} must hold if $X$ and $Y$ both post-dominate $Z$.
-\end{proof}
-
-\begin{lemma}\label{lem:rename_postdom2}
-Every node $U$ containing a use of a variable $v$ postdominates the
-node $D$ containing the definition of $v$ in a graph renamed according
-to algorithm~\ref{alg:SSIrename1}.
-\end{lemma}
-\begin{proof}
-Let us assume there are some nodes $U$ using $v$ and $D$ defining $v$
-such that $U$ does not post-dominate $D$.  Construct the canonical
-path $\code{START}\pathplus U$ according to
-lemma~\ref{lem:path_construct}.  As we did in the proof of
-lemma~\ref{lem:renamephi} we can show that this path contains $D$, and
-speak of the ``canonical'' path $D\pathplus U$ contained in
-$\code{START}\pathplus U$.  If $U$ does not post-dominate $D$, then
-there is some edge $\tuple{N_0,N_1}$ on $D\pathplus U$ such that $U$
-post-dominates $N_1$ and all nodes on the every path $N_1 \pathplus U$
-but not does not post-dominate $N_0$.  Because $U$ does not
-post-dominate $N_0$, there must exist some path $\code{END}\pathplus
-N_0$ that does not include $U$.  But by SSI form
-conditions~\ref{crit_sigplace} and \ref{crit_boundary} there should be
-a \sigfunction at $N_0$.  Thus line~\ref{line:rendef2} would have
-renamed $v$ on the path $D\pathplus N_0 \pathplus U$ and $U$ could not
-be a use of the variable defined at $D$.  Assuming $U$ does not
-post-dominate $D$ leads to contradiction, proving the lemma.
+Any assumed violation of condition~\ref{crit_signame} leads to
+contradiction, proving the lemma.
 \end{proof}
 
 \begin{theorem}\label{thm:renameproof}
@@ -1118,10 +1179,7 @@ Algorithm~\ref{alg:SSIrename1} renames variables such that SSI form
 conditions \ref{crit_phiname} and \ref{crit_signame} hold.
 \end{theorem}
 \begin{proof}
-Lemma~\ref{lem:renamephi} proves that condition~\ref{crit_phiname}
-holds, and lemmas~\ref{lem:rename_postdom1} and
-\ref{lem:rename_postdom2} together prove that
-condition~\ref{crit_signame} holds.
+Direct from lemmas~\ref{lem:renamephi} and \ref{lem:renamesig}.
 \end{proof}
 
 \begin{theorem}
@@ -1133,8 +1191,8 @@ Theorem~\ref{thm:placeproof} proves that \phisigfunction{s} are placed
 correctly to satisfy conditions~\ref{crit_phiplace},
 \ref{crit_sigplace} and \ref{crit_boundary} of the SSI form
 definition, and theorem~\ref{thm:renameproof} proves that variables
-are renamed correctly to satisfy conditions~\ref{crit_phiname} and
-\ref{crit_signame}.
+are renamed correctly to satisfy conditions~\ref{crit_phiname}
+and~\ref{crit_signame}.
 \end{proof}
 
 \subsubsection{Pruning SSI form}\label{sec:unusedcode}
@@ -1194,7 +1252,8 @@ algorithms, by contrast, are \emph{optimistic}; they assume no
 \phisigfunction[or]{s} are needed and attempt to determine where
 they are provably necessary.  In my experience, optimistic algorithms tend to
 have poor time bounds because of the possibility of input graphs like
-figure~\vref{fig:evil}.  Proving that all but two nodes require
+the one illustrated in figure~\vref{fig:evil}.
+Proving that all but two nodes require
 \phisigfunction[and/or]{s} for the variable $a$ in this example seems to
 inherently require $O(N)$ passes over the graph; each pass can prove
 that \phisigfunction[or]{s} are required for only those nodes adjacent to
@@ -1714,6 +1773,86 @@ utility of SPTC is given as table \vref{fig:sptc_numbers}.%
 The algorithm of the previous section\fixme{refer to precise section}
 can also be extended to allow bitwidth analysis of the program data.%
 \fixme{Finish this.}
+
+\dontfixme{
+\section{SSI is stronger than SSA}
+In this section we will show that SSI is strictly more expressive than
+SSA, by showing how an efficiently-generated name mapping can be used
+to apply any SSA-based algorithm to a program in SSI form.  This, and
+the existence of algorithms such as SPTC and even simple liveness
+analysis which cannot be performed efficiently in SSA form, means that
+the class of efficient SSI-based algorithms is a proper superset of
+those efficient using SSA forms.
+
+Although one could apply an SSA-based algorithm to a program in SSI
+form by converting out of SSI and into SSA forms, using the fairly
+efficient algorithms in this thesis and the literature, doing so
+negates the advantages of maintaining the program in SSI form in the
+first place.  Furthermore, properties derived from the SSI form
+representation may not survive the translation process.  SSI form
+provides an extremely elegant solution: a simple variable name mapping
+is all that is required.  The SSA-based algorithm procedes using
+mapped versions of the variable names and ignoring all
+\sigfunction{s}.  Resulting SSA-derived variable properties may be
+easily and efficiently mapped back onto their corresponding SSI
+variables using the same name mapping. Note that the SSI form requires
+a superset of the \phifunction{s} required in SSA form, due to
+\sigfunction{s} counting as definitions in the $\phi$-placement
+condition in SSI form.  So all SSI \phifunction{s} may be treated as
+SSA \phifunction{s} without difficulty.  The other requirements of SSA
+form, including single reaching definitions for uses and definitions
+dominating all uses are maintained in SSI form, as the various
+properties derived in section~\ref{sec:ssidef} showed.  In fact, 
+simply replacing \sigfunction{s} by assignments on either side of a
+control-flow branch would generate a valid SSA form program.
+
+This simple replacement, aside from violating the integrity of the
+SSI form, adds unnecessary \code{move}s to the SSA form which
+interrupt dataflow and may impact the precision of some algorithms.
+Moreover, it is not clear that the extra assignments don't adversely
+impact the running-time of the SSA-based algorithm.
+
+In addition, simple \sigfunction{}-renaming leaves ``extra''
+\phifunction{s} in the SSA-view of the program, which merge identical
+values created at (invisible) \sigfunction{s}.  These useless
+\phifunction{s} take the form $x\gets\phi(y,y,\ldots)$ or, in the
+case of a loop, $x\gets\phi(x,y,\ldots)$: the operands are either
+identical to the destination or identical to each other.
+
+\begin{myalgorithm}\small
+\input{Figures/THssi2ssa}
+\caption{SSI to SSA name mapping algorithm.}
+\label{alg:ssi2ssa}
+\end{myalgorithm}
+Algorithm~\ref{alg:ssi2ssa} uses a two-phase approach and proper
+ordering to remove both \sigfunction{s} and phantom \phifunction{s} to
+create a useful SSA name mapping of an SSI form CFG.  If the SSI form
+is pruned or minimal, the generated SSA view will be as well.
+
+Lines~\ref{line:sigelide1} to \ref{line:sigelide2} of the
+\code{ConstructMap} function rename variables in the
+name-map-under-construction $N$ to remove \sigfunction{s}.
+Lines~\ref{line:phiprune1} to \ref{line:phiprune2} prune
+\phifunction{s} made redundant as a result.
+
+Note that as \sigfunction{s} are removed the newly-redundant
+\phifunction{s} may exist in any dominance relation to the
+\sigfunction{}, as the guarantees of property~\ref{pty:ssi_dom} do not
+hold for definitions at \sigfunction{s}.  However, \phifunction{s} can
+only be made newly-redundant during the $\phi$-pruning stage of the
+algorithm by the removal of \phifunction{s} which dominate them, as
+every use post-dominates a \phifunction{} definition.
+
+Note that as \sigfunction{s} are removed, unused \phifunction{s}
+appear ``below'' them in the CFG, as the variables defined in the
+\sigfunction{} must dominate (by the SSI constraints) any
+newly-redundant use.  Contrariwise, any \phifunction{s} found
+redundant causes ``higher'' \phifunction{s} to become redundant, as
+the redundant use\ldots
+%
+In this section we will show a $O(N\alpha(N))$ algorithm for
+efficiently convertin\ldots %um, no.
+} % sorry, folks, that algorithm don't work.
 
 \section{An executable representation}\label{sec:ssiplus}
 The Static Single Information (SSI) form, as presented in the first
