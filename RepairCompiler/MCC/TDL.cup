@@ -162,6 +162,7 @@ parser code {:
     terminal LABEL;
     terminal INT;
     terminal SUBTYPE;
+    terminal SUBCLASS;
     terminal OF;
 
     terminal SEMICOLON;
@@ -256,11 +257,21 @@ structure ::=
 	;
 
 optsubtype ::= 
-	   
+	   	/* subtype */
 	SUBTYPE OF ID:type
 	{:
 	debugMessage(PRODSTRING);
 	ParseNode subtype = new ParseNode("subtype", parser.curLine(3));
+	subtype.addChild(type);
+	RESULT = subtype;
+	:}
+
+	| /* subclass */
+
+	SUBCLASS OF ID:type
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode subtype = new ParseNode("subclass", parser.curLine(3));
 	subtype.addChild(type);
 	RESULT = subtype;
 	:}

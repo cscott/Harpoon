@@ -29,6 +29,10 @@ public class StructureTypeDescriptor extends TypeDescriptor {
         return fields.keys();
     }
     
+    public void setSubClass(boolean b) {
+	this.subclass=b;
+    }
+
     public Expr getSizeExpr() {
         return getOffsetExpr(null);
     }

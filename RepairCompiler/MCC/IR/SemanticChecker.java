@@ -1070,6 +1070,19 @@ public class SemanticChecker {
 
             /* lookup the type to get the type descriptor */
             type.setSuperType(lookupType(subtype, CREATE_MISSING));
+        } else if (pn.getChild("subclass") != null) {
+            // has a subtype, lets try to resolve it
+            String subclass = pn.getChild("subclass").getTerminal();
+	    
+            if (subclass.equals(typename)) {
+                // Semantic Error: cyclic inheritance
+                er.report(pn, "Cyclic inheritance prohibited");
+                ok = false;
+            }
+
+            /* lookup the type to get the type descriptor */
+            type.setSuperType(lookupType(subclass, CREATE_MISSING));
+            type.setSubClass(true);
         }
 
         // set the current type so that the recursive parses on the labels

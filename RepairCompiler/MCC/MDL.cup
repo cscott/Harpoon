@@ -181,6 +181,7 @@ parser code {:
     terminal LABEL;
     terminal INT;
     terminal SUBTYPE;
+    terminal SUBCLASS;
     terminal OF;
 
     terminal SEMICOLON;

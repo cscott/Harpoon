@@ -82,6 +82,7 @@ CHAR=(\\\"|\\\'|\\\\|\\t|\\n|[\x20-\x21\x23-\x26\x28-\x5B\x5D-\x7E])
 <YYINITIAL> byte                        { return tok(Sym.BYTE, yytext()); }
 
 <YYINITIAL> subtype			{ return tok(Sym.SUBTYPE, yytext()); }
+<YYINITIAL> subclass			{ return tok(Sym.SUBCLASS, yytext()); }
 <YYINITIAL> of 				{ return tok(Sym.OF, yytext()); }
 
 <YYINITIAL> ";"				{ return tok(Sym.SEMICOLON, yytext()); }
