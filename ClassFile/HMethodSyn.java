@@ -16,7 +16,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6.2.11 2000-10-20 22:50:45 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6.2.12 2000-11-10 02:32:53 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -79,28 +79,24 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     this.modifiers = 0;
     { // parse descriptor for return type.
       String desc = descriptor.substring(descriptor.lastIndexOf(')')+1);
-      this.returnType = parent.getLinker().forDescriptor(desc);
+      this.returnType = new ClassPointer(parent.getLinker(), desc);
     }
     { // parse descriptor for parameter types.
       String desc = descriptor.substring(1, descriptor.lastIndexOf(')'));
       Vector v = new Vector();
       for (int i=0; i<desc.length(); i++) {
-	v.addElement(parent.getLinker().forDescriptor(desc.substring(i)));
+	int first = i;
 	while (desc.charAt(i)=='[') i++;
 	if (desc.charAt(i)=='L') i=desc.indexOf(';', i);
+	v.addElement(new ClassPointer(parent.getLinker(),
+				      desc.substring(first, i+1)));
       }
-      this.parameterTypes = new HClass[v.size()];
+      this.parameterTypes = new HPointer[v.size()];
       v.copyInto(this.parameterTypes);
     }
     this.parameterNames = new String[this.parameterTypes.length];
     this.exceptionTypes = new HClass[0];
     this.isSynthetic = false;
-    // ensure linker information is consistent.
-    Util.assert(checkLinker((HClass)this.returnType));
-    for(int i=0; i<this.parameterTypes.length; i++)
-      Util.assert(checkLinker((HClass)this.parameterTypes[i]));
-    for(int i=0; i<this.exceptionTypes.length; i++)
-      Util.assert(checkLinker((HClass)this.exceptionTypes[i]));
   }
 
   public HMethodMutator getMutator() { return this; }
@@ -203,25 +199,6 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     return hc.isPrimitive() || hc.getLinker()==parent.getLinker();
   }
   //----------------------------------------------------------
-
-  /** Serializable interface. */
-  public Object writeReplace() { return this; }
-  /** Serializable interface. */
-  public void writeObject(java.io.ObjectOutputStream out)
-    throws java.io.IOException {
-    // resolve class name pointers.
-    this.returnType = this.returnType.actual();
-    for (int i=0; i<this.parameterTypes.length; i++)
-      this.parameterTypes[i] = this.parameterTypes[i].actual();
-    for (int i=0; i<this.exceptionTypes.length; i++)
-      this.exceptionTypes[i] = this.exceptionTypes[i].actual();
-    // intern strings.
-    this.name = this.name.intern();
-    for (int i=0; i<this.parameterNames.length; i++)
-      this.parameterNames[i] = this.parameterNames[i].intern();
-    // write data
-    out.defaultWriteObject();
-  }
 }
 
 // set emacs indentation style.

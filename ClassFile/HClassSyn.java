@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * <code>HClassSyn</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.17 2000-11-09 01:09:33 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.18 2000-11-10 02:32:53 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -63,18 +63,16 @@ class HClassSyn extends HClassCls implements HClassMutator {
   /** private constructor for serialization. */
   private HClassSyn(Linker l, String name,
 		    HClass superclass, HClass[] interfaces,
-		    int modifiers, String sourcefile,
-		    HField[] declaredFields, HMethod[] declaredMethods,
-		    boolean hasBeenModified) {
+		    int modifiers, String sourcefile) {
     super(l);
     this.name = name;
     this.superclass = superclass;
     this.interfaces = interfaces;
     this.modifiers  = modifiers;
     this.sourcefile = sourcefile;
-    this.declaredFields = declaredFields;
-    this.declaredMethods= declaredMethods;
-    this.hasBeenModified = hasBeenModified;
+    this.declaredFields = null; // fill in during second pass
+    this.declaredMethods= null; // fill in during second pass
+    this.hasBeenModified = false; // fill in during second pass
   }
   public HClassMutator getMutator() { return this; }
 
@@ -281,8 +279,7 @@ class HClassSyn extends HClassCls implements HClassMutator {
 
   /** Serializable interface. */
   public Object writeReplace() {
-    if (!hasBeenModified()) return super.writeReplace();
-    else return new Stub(this);
+    return new Stub(this);
   }
   private static final class Stub implements java.io.Serializable {
     private final Linker linker;
@@ -291,8 +288,8 @@ class HClassSyn extends HClassCls implements HClassMutator {
     private final HClass[] interfaces;
     private final int modifiers;
     private final String sourcefile;
-    private final HField[] declaredFields;
-    private final HMethod[] declaredMethods;
+    private final FieldStub[] declaredFields;
+    private final MethodStub[] declaredMethods;
     private final boolean hasBeenModified;
     Stub(HClassSyn c) { // store salient information
       // using the method versions below allows up to resolve
@@ -303,15 +300,86 @@ class HClassSyn extends HClassCls implements HClassMutator {
       this.interfaces = c.getInterfaces();
       this.modifiers  = c.getModifiers();
       this.sourcefile = c.getSourceFile().intern();
-      this.declaredFields = c.getDeclaredFields();
-      this.declaredMethods= c.getDeclaredMethods();
       this.hasBeenModified = c.hasBeenModified();
+      // stub out fields and methods.
+      HField[] declf = c.getDeclaredFields();
+      this.declaredFields = new FieldStub[declf.length];
+      for (int i=0; i<declf.length; i++)
+	this.declaredFields[i] = new FieldStub(declf[i]);
+      HMethod[] declm = c.getDeclaredMethods();
+      this.declaredMethods= new MethodStub[declm.length];
+      for (int i=0; i<declm.length; i++)
+	this.declaredMethods[i] = new MethodStub(declm[i]);
     }
-    public Object readResolve() {
-      return new HClassSyn(linker, name, superclass, interfaces,
-			   modifiers, sourcefile,
-			   declaredFields, declaredMethods,
-			   hasBeenModified);
+    public Object readResolve() throws java.io.ObjectStreamException {
+      HClassSyn c = new HClassSyn(linker, name, superclass, interfaces,
+				  modifiers, sourcefile);
+      c.declaredFields = new HField[declaredFields.length];
+      for (int i=0; i<declaredFields.length; i++)
+	c.declaredFields[i] = declaredFields[i].reconstruct(c);
+      c.declaredMethods = new HMethod[declaredMethods.length];
+      for (int i=0; i<declaredMethods.length; i++)
+	c.declaredMethods[i] = declaredMethods[i].reconstruct(c);
+      // last because reconstruction twiddles the field.
+      c.hasBeenModified = this.hasBeenModified;
+      return c;
+    }
+  }
+  private static class MemberStub implements java.io.Serializable {
+    final String name;
+    final int modifiers;
+    final boolean isSynthetic;
+    MemberStub(HMember hm) {
+      this.name = hm.getName().intern();
+      this.modifiers = hm.getModifiers();
+      this.isSynthetic = hm.isSynthetic();
+    }
+  }
+  private static class FieldStub extends MemberStub {
+    final HPointer type;
+    final Object constValue;
+    FieldStub(HField hf) {
+      super(hf);
+      this.type = new ClassPointer(hf.getType());
+      this.constValue = hf.getConstant();
+    }
+    HFieldSyn reconstruct(HClassSyn parent) {
+      HFieldSyn hf = new HFieldSyn(parent, name, type);
+      HFieldMutator hfm = hf.getMutator();
+      hfm.setModifiers(modifiers);
+      hfm.setConstant(constValue);
+      hfm.setSynthetic(isSynthetic);
+      return hf;
+    }
+  }
+  static class MethodStub extends MemberStub {
+    final String descriptor;
+    final String[] parameterNames;
+    final HPointer[] exceptionTypes;
+    MethodStub(HMethod hm) {
+      super(hm);
+      this.descriptor = hm.getDescriptor().intern();
+      String[] pn = hm.getParameterNames();
+      this.parameterNames = new String[pn.length];
+      for (int i=0; i<pn.length; i++)
+	this.parameterNames[i] = (pn[i]==null) ? null : pn[i].intern();
+      HClass[] et = hm.getExceptionTypes();
+      this.exceptionTypes = new HPointer[et.length];
+      for (int i=0; i<et.length; i++)
+	this.exceptionTypes[i] = new ClassPointer(et[i]);
+    }
+    HMethodSyn reconstruct(HClassSyn parent) {
+      return reconstruct(new HMethodSyn(parent, name, descriptor));
+    }
+    HMethodSyn reconstruct(HClassArraySyn parent) {
+      return reconstruct(new HMethodSyn(parent, name, descriptor));
+    }
+    private HMethodSyn reconstruct(HMethodSyn hm) {
+      HMethodMutator hmm = hm.getMutator();
+      hmm.setParameterNames(parameterNames);
+      // back door so that HPointer isn't resolved yet.
+      hm.exceptionTypes = this.exceptionTypes;
+      return hm;
     }
   }
 }

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldSyn.java,v 1.3.2.6 2000-01-26 07:49:59 cananian Exp $
+ * @version $Id: HFieldSyn.java,v 1.3.2.7 2000-11-10 02:32:53 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -36,7 +36,7 @@ class HFieldSyn extends HFieldImpl implements HFieldMutator {
     this(parent, name, parent.getLinker().forDescriptor(descriptor));
   }
   /** Create a new field of the specified name, class, and type. */
-  public HFieldSyn(HClassSyn parent, String name, HClass type) {
+  public HFieldSyn(HClassSyn parent, String name, HPointer type) {
     this.parent = parent;
     this.type = type;
     this.name = name;
@@ -44,7 +44,7 @@ class HFieldSyn extends HFieldImpl implements HFieldMutator {
     this.constValue = null;
     this.isSynthetic = false;
     // ensure linker information is consistent.
-    Util.assert(checkLinker(type));
+    if (type instanceof HClass) Util.assert(checkLinker((HClass)type));
   }
 
   public HFieldMutator getMutator() { return this; }
@@ -74,19 +74,6 @@ class HFieldSyn extends HFieldImpl implements HFieldMutator {
   // assertion helper.
   private boolean checkLinker(HClass hc) {
     return hc.isPrimitive() || hc.getLinker()==parent.getLinker();
-  }
-
-  /** Serializable interface. */
-  public Object writeReplace() { return this; }
-  /** Serializable interface. */
-  public void writeObject(java.io.ObjectOutputStream out)
-    throws java.io.IOException {
-    // resolve class name pointers.
-    this.type = this.type.actual();
-    // intern strings.
-    this.name = this.name.intern();
-    // write class data.
-    out.defaultWriteObject();
   }
 }
 // set emacs indentation style.

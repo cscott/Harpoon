@@ -9,9 +9,9 @@ import harpoon.Util.Util;
  * the HClass itself.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassPointer.java,v 1.1.2.3 2000-01-13 23:47:43 cananian Exp $
+ * @version $Id: ClassPointer.java,v 1.1.2.4 2000-11-10 02:32:53 cananian Exp $
  */
-class ClassPointer extends HPointer {
+class ClassPointer extends HPointer implements java.io.Serializable {
     final Linker linker;
     final String descriptor;
     ClassPointer(Linker linker, String descriptor) {
@@ -29,6 +29,7 @@ class ClassPointer extends HPointer {
 	this.linker = linker;
 	this.descriptor = descriptor;
     }
+    ClassPointer(HClass hc) { this(hc.getLinker(), hc.getDescriptor()); }
     HClass actual() { return linker.forDescriptor(descriptor); }
     String getDescriptor() { return descriptor; }
     String getName() {

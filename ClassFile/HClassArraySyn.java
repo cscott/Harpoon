@@ -6,6 +6,7 @@ package harpoon.ClassFile;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 /**
  * <code>HClassArraySyn</code> is a simple subclass of
@@ -14,7 +15,7 @@ import java.util.List;
  * an array type.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassArraySyn.java,v 1.1.2.4 2000-11-09 01:09:33 cananian Exp $
+ * @version $Id: HClassArraySyn.java,v 1.1.2.5 2000-11-10 02:32:53 cananian Exp $
  */
 class HClassArraySyn extends HClassArray implements HClassMutator {
     final List declaredMethods = new ArrayList(4);
@@ -146,8 +147,7 @@ class HClassArraySyn extends HClassArray implements HClassMutator {
 
     /** Serializable interface. */
     public Object writeReplace() {
-	if (!hasBeenModified()) return super.writeReplace();
-	else return new Stub(this);
+	return new Stub(this);
     }
     private static final class Stub implements java.io.Serializable {
 	private final Linker linker;
@@ -159,13 +159,20 @@ class HClassArraySyn extends HClassArray implements HClassMutator {
 	    this.linker = c.getLinker();
 	    this.baseType = c.baseType;
 	    this.dims = c.dims;
-	    this.declaredMethods = c.declaredMethods;
 	    this.modified = c.hasBeenModified;
+	    this.declaredMethods = new ArrayList(c.declaredMethods.size()-1);
+	    for (Iterator it=c.declaredMethods.iterator(); it.hasNext(); ) {
+		HMethod hm = (HMethod) it.next();
+		if (hm==c.cloneMethod) continue;
+		this.declaredMethods.add(new HClassSyn.MethodStub(hm));
+	    }
 	}
 	public Object readResolve() {
 	    HClassArraySyn c = new HClassArraySyn(linker, baseType, dims);
-	    c.declaredMethods.clear();
-	    c.declaredMethods.addAll(this.declaredMethods);
+	    for (Iterator it=declaredMethods.iterator(); it.hasNext(); ) {
+		HMethod hm = ((HClassSyn.MethodStub)it.next()).reconstruct(c);
+		c.declaredMethods.add(hm);
+	    }
 	    c.hasBeenModified = this.modified;
 	    return c;
 	}
