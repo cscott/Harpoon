@@ -1,0 +1,20 @@
+echo javac
+which javac
+export CLASSPATH=../JDK1.1/:/research/Harpoon/classes.zip:./
+
+cd ../JDK1.1/
+rm java/io/NativeIO.class
+javac java/io/NativeIO.java
+cd ../CommonSelect
+
+echo javah
+rm NativeIO.h
+javah -o NativeIO.h java.io.NativeIO
+
+echo gcc
+rm libC_IO.so
+gcc -shared -I/usr/java/include -I/usr/java/include/linux NativeIOImp.c -o libC_IO.so
+
+echo cleanup
+rm *~
+
