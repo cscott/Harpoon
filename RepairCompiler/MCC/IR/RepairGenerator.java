@@ -938,9 +938,8 @@ public class RepairGenerator {
 
     private Set getmultupdatenodeset(Conjunction conj, DNFPredicate dpred, int repairtype) {
 	HashSet hs=new HashSet();
-	MultUpdateNode mun=null;
 	GraphNode gn=(GraphNode) termination.conjtonodemap.get(conj);
-	for(Iterator edgeit=gn.edges();(mun==null)&&edgeit.hasNext();) {
+	for(Iterator edgeit=gn.edges();edgeit.hasNext();) {
 	    GraphNode gn2=((GraphNode.Edge) edgeit.next()).getTarget();
 	    TermNode tn2=(TermNode)gn2.getOwner();
 	    if (tn2.getType()==TermNode.ABSTRACT) {
@@ -952,7 +951,7 @@ public class RepairGenerator {
 			if (!removed.contains(gn3)) {
 			    TermNode tn3=(TermNode)gn3.getOwner();
 			    if (tn3.getType()==TermNode.UPDATE) {
-				hs.add(mun);
+				hs.add(tn3.getUpdate());
 			    }
 			}
 		    }
@@ -1011,7 +1010,16 @@ public class RepairGenerator {
 	VarDescriptor leftside=VarDescriptor.makeNew("leftside");
 	VarDescriptor rightside=VarDescriptor.makeNew("rightside");
 	VarDescriptor newvalue=VarDescriptor.makeNew("newvalue");
-	if (!inverted) {
+	boolean needremoveloop=ar.mayNeedFunctionEnforcement(state)&&ar.needsRemoves(state);
+
+	if (needremoveloop&&((munadd==null)||(munremove==null))) {
+	    System.out.println("Warning:  need to have individual remove operations for"+dpred.name());
+	    needremoveloop=false;
+	}
+	if (needremoveloop)
+	    cr.outputline("while (1) {");
+
+   	if (!inverted) {
 	    ((RelationExpr)expr.getLeftExpr()).getExpr().generate(cr,leftside);
 	    expr.getRightExpr().generate(cr,newvalue);
 	    cr.outputline(rd.getRange().getType().getGenerateType().getSafeSymbol()+" "+rightside.getSafeSymbol()+";");
@@ -1022,22 +1030,8 @@ public class RepairGenerator {
 	    cr.outputline(rd.getDomain().getType().getGenerateType().getSafeSymbol()+" "+leftside.getSafeSymbol()+";");
 	    cr.outputline(rd.getSafeSymbol()+"_hashinv->get("+rightside.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
 	}
-	if (negated)
-	    if (opcode==Opcode.GT) {
-		opcode=Opcode.LE;
-	    } else if (opcode==Opcode.GE) {
-		opcode=Opcode.LT;
-	    } else if (opcode==Opcode.LT) {
-		opcode=Opcode.GE;
-	    } else if (opcode==Opcode.LE) {
-		opcode=Opcode.GT;
-	    } else if (opcode==Opcode.EQ) {
-		opcode=Opcode.NE;
-	    } else if (opcode==Opcode.NE) {
-		opcode=Opcode.EQ;
-	    } else {
-		throw new Error("Unrecognized Opcode");
-	    }
+
+	opcode=Opcode.translateOpcode(negated,opcode);
 
 	if (opcode==Opcode.GT) {
 	    cr.outputline(newvalue.getSafeSymbol()+"++;");
@@ -1057,6 +1051,35 @@ public class RepairGenerator {
 	/* Do abstract repairs */
 	if (usageimage) {
 	    cr.outputline(rd.getSafeSymbol()+"_hash->remove("+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
+	}
+	if (usageinvimage) {
+	    cr.outputline(rd.getSafeSymbol()+"_hashinv->remove("+rightside.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
+	}
+
+	if (needremoveloop) {
+	    if (!inverted) {
+		cr.outputline("if ("+rd.getSafeSymbol()+"_hash->contains("+leftside.getSafeSymbol()+")) {");
+	    } else {
+		cr.outputline("if ("+rd.getSafeSymbol()+"_hashinv->contains("+rightside.getSafeSymbol()+")) {");
+	    }
+	    for(int i=0;i<state.vRules.size();i++) {
+		Rule r=(Rule)state.vRules.get(i);
+		if (r.getInclusion().getTargetDescriptors().contains(rd)) {
+		    for(int j=0;j<munremove.numUpdates();j++) {
+			UpdateNode un=munremove.getUpdate(i);
+			if (un.getRule()==r) {
+				/* Update for rule r */
+			    String name=(String)updatenames.get(un);
+			    cr.outputline(repairtable.getSafeSymbol()+"->addrelation("+rd.getNum()+","+r.getNum()+","+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+",(int) &"+name+");");
+			}
+		    }
+		}
+	    }
+	    cr.outputline("continue;");
+	    cr.outputline("}");
+	}
+
+	if (usageimage) {
 	    if (!inverted) {
 		cr.outputline(rd.getSafeSymbol()+"_hash->add("+leftside.getSafeSymbol()+","+newvalue.getSafeSymbol()+");");
 	    } else {
@@ -1064,7 +1087,6 @@ public class RepairGenerator {
 	    }
 	}
 	if (usageinvimage) {
-	    cr.outputline(rd.getSafeSymbol()+"_hashinv->remove("+rightside.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
 	    if (!inverted) {
 		cr.outputline(rd.getSafeSymbol()+"_hashinv->add("+newvalue.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
 	    } else {
@@ -1072,7 +1094,7 @@ public class RepairGenerator {
 	    }
 	}
 	/* Do concrete repairs */
-	if (munmodify!=null) {
+	if (munmodify!=null&&(!ar.mayNeedFunctionEnforcement(state))||(munadd==null)||(ar.needsRemoves(state)&&(munremove==null))) {
 	    for(int i=0;i<state.vRules.size();i++) {
 		Rule r=(Rule)state.vRules.get(i);
 		if (r.getInclusion().getTargetDescriptors().contains(rd)) {
@@ -1110,6 +1132,10 @@ public class RepairGenerator {
 	    } else {
 		cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+newvalue.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
 	    }
+	}
+	if (needremoveloop) {
+	    cr.outputline("break;");
+	    cr.outputline("}");
 	}
     }
 
