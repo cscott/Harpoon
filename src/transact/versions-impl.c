@@ -496,8 +496,8 @@ DECL struct vinfo *TA(createVersion)(struct oobj *obj, struct commitrec *cr,
 				     struct vinfo *template) {
   struct vinfo *v;
   // get size, not including header, rounded up to word boundary
-  u_int32_t size = (3+FNI_ObjectSize(obj)-sizeof(struct oobj))&~3;
-  u_int32_t allocsize;
+  uint32_t size = (3+FNI_ObjectSize(obj)-sizeof(struct oobj))&~3;
+  uint32_t allocsize;
   // if that's larger than OBJ_CHUNK_SIZE, then allow for one
   // chunk of hashtable (INITIAL_CACHE_SIZE)
   if (size <= OBJ_CHUNK_SIZE) {

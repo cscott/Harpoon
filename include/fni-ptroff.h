@@ -5,10 +5,10 @@
 
 #include "config.h"
 #if SIZEOF_VOID_P==4
-  typedef u_int32_t ptroff_t;
+  typedef uint32_t ptroff_t;
 #else
 # if SIZEOF_VOID_P==8
-   typedef u_int64_t ptroff_t;
+   typedef uint64_t ptroff_t;
 # else
 #  error unsupported pointer size.
 # endif

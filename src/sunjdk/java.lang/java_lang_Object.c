@@ -39,7 +39,7 @@ JNIEXPORT jint JNICALL Java_java_lang_Object_hashCode
 JNIEXPORT jobject JNICALL Java_java_lang_Object_clone
   (JNIEnv *env, jobject obj) {
     struct claz *claz = FNI_CLAZ(FNI_UNWRAP_MASKED(obj));
-    u_int32_t size = claz->size;
+    uint32_t size = claz->size;
     assert(claz->component_claz==NULL/* not an array*/);
     return fni_object_cloneHelper(env, obj, size);
 }

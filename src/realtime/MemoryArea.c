@@ -267,7 +267,7 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_shadow
 (JNIEnv* env, jobject memoryArea) {
   jobject clone = memoryArea;
 #ifdef WITH_NOHEAP_SUPPORT
-  u_int32_t size;
+  uint32_t size;
   if (((ptroff_t)FNI_UNWRAP(memoryArea))&1) {
       size = FNI_CLAZ(FNI_UNWRAP_MASKED(memoryArea))->size;
       clone = FNI_Alloc(env, NULL, FNI_CLAZ(FNI_UNWRAP_MASKED(memoryArea)), allocfunc, size);

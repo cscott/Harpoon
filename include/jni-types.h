@@ -4,12 +4,12 @@
 #ifndef INCLUDED_JNI_TYPES_H
 #define INCLUDED_JNI_TYPES_H
 
-#include <sys/types.h>
+#include <inttypes.h> /* ISO C99 header */
 
 /* java primitive types and their machine-dependent native equivalents */
-typedef u_int8_t  jboolean;
+typedef  uint8_t  jboolean;
 typedef   int8_t  jbyte;
-typedef u_int16_t jchar;
+typedef  uint16_t jchar;
 typedef   int16_t jshort;
 typedef   int32_t jint;
 typedef   int64_t jlong;

@@ -19,9 +19,9 @@
 
 typedef void * jptr;
 #define SHR(x,y) (((int32_t)(x))>>((y)&0x1f))
-#define USHR(x,y) (((u_int32_t)(x))>>((y)&0x1f))
+#define USHR(x,y) (((uint32_t)(x))>>((y)&0x1f))
 #define LSHR(x,y) (((int64_t)(x))>>((y)&0x3f))
-#define LUSHR(x,y) (((u_int64_t)(x))>>((y)&0x3f))
+#define LUSHR(x,y) (((uint64_t)(x))>>((y)&0x3f))
 
 /* thread-state optimization for single-threaded case */
 #ifndef WITH_THREADS

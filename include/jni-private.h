@@ -58,7 +58,7 @@ struct claz {
   struct oobj * class_object; /* pointer to (unwrapped) class object. */
   struct claz *component_claz;	/* component type, or NULL if non-array. */
   struct claz **interfaces; /* NULL terminated list of implemented interfaces*/
-  u_int32_t size;		/* object size, including header */
+  uint32_t size;		/* object size, including header */
   union {
     void *_ignore;		/* just to set the size of the union.  */
 #ifdef WITH_SEMI_PRECISE_GC
@@ -75,9 +75,9 @@ struct claz {
   } gc_info;
   /* extra claz info goes here */
 #ifdef WITH_CLAZ_SHRINK
-  u_int32_t claz_index;         /* enumerated value of this claz */
+  uint32_t claz_index;          /* enumerated value of this claz */
 #endif
-  u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
+  uint32_t scaled_class_depth;  /* sizeof(struct claz *) * class_depth */
   struct claz *display[0];	/* sized by FLEX */
   /* class method dispatch table after display */
 };

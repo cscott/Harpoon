@@ -25,7 +25,7 @@ jobject FNI_AllocObject_using (JNIEnv *env, jclass clazz,
 			       void *(*allocfunc)(size_t length)) {
   struct FNI_classinfo *info;
   struct claz *claz;
-  u_int32_t size;
+  uint32_t size;
 
   assert(FNI_NO_EXCEPTIONS(env) && clazz!=NULL);
 

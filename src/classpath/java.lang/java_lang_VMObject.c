@@ -19,7 +19,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_VMObject_clone
     struct claz *claz = FNI_CLAZ(FNI_UNWRAP_MASKED(obj));
     if (claz->component_claz==NULL) {
       /* not an array */
-      u_int32_t size = claz->size;
+      uint32_t size = claz->size;
       return fni_object_cloneHelper(env, obj, size);
     } else { 
       /* an array of some primitive type */
@@ -88,6 +88,8 @@ JNIEXPORT void JNICALL Java_java_lang_VMObject_wait
 }
 
 #ifdef WITH_TRANSACTIONS
+// at the moment, all of this is very bogus.
+
 /* transaction support.  no monitor is held initially. */
 /*
  * Class:     java_lang_VMObject
