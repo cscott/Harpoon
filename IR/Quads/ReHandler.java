@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.41 1999-11-11 18:28:41 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.42 1999-11-12 00:37:56 bdemsky Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 
@@ -437,10 +437,16 @@ final class ReHandler {
 			while (iterate2.hasNext()) {
 			    Tuple tple=(Tuple)iterate2.next();
 			    if ((tple.asList().get(0))==t)
-				if (((HClass)cast.asList().get(1)).isAssignableFrom((HClass)tple.asList().get(1))) {
-				    found=true;
-				    break;
-			    }
+				if (((HClass)cast.asList().get(1)).isArray()) {
+				    if (((HClass)cast.asList().get(1)).compareTo((HClass)tple.asList().get(1))==0) {
+					found=true;
+					break;
+				    }
+				} else
+				    if (((HClass)cast.asList().get(1)).isAssignableFrom((HClass)tple.asList().get(1))) {
+					found=true;
+					break;
+				    }
 			}
 			if (!found) {
 			    //Gotta add TYPECAST 'cast' quad
@@ -1187,24 +1193,48 @@ static class TypeVisitor extends QuadVisitor { // this is an inner class
 	    //never seen yet...
 	    Set parentcast=(Set)typecast.get(q.prev(0));
 	    WorkSet ourcasts=new WorkSet(parentcast);
-	    if (!(ti.typeMap(null,q.objectref)).isArray()) {
+	    if ((!(ti.typeMap(null,q.objectref())).isArray())||
+		(!(ti.typeMap(null,q.objectref())).getComponentType().isAssignableFrom(ti.typeMap(null,q.src())))) {
 		//Need typecast??
 		Iterator iterate=ourcasts.iterator();
 		boolean foundcast=false;
-		while (iterate.hasNext()) {
+		while (iterate.hasNext()&&(foundcast==false)) {
 		    Tuple cast=(Tuple)iterate.next();
 		    List list=cast.asList();
 		    if (list.get(0)==q.objectref()) {
 			HClass hc=(HClass)list.get(1);
-			if (otype.isAssignableFrom(hc)) {
+			if (hc.isArray()&&
+			    hc.getComponentType().isAssignableFrom(ti.typeMap(null,q.src()))) {
 			    foundcast=true;
 			    break;
+			} else {
+			    Iterator iterate2=ourcasts.iterator();
+			    while (iterate2.hasNext()) {
+				Tuple cast2=(Tuple)iterate.next();
+				List list2=cast2.asList();
+				if (list2.get(0)==q.src()) {
+				    HClass hc2=(HClass)list.get(1);
+				    if ((ti.typeMap(null,q.objectref())).isArray()&&
+					(ti.typeMap(null,q.objectref())).getComponentType().isAssignableFrom(hc2)) {
+					foundcast=true;
+					break;
+				    }
+				    if (hc.isArray()&&
+					hc.getComponentType().isAssignableFrom(hc2)) {
+					foundcast=true;
+					break;
+				    }
+				}
+			    }
 			}
 		    }
 		}
 		if (!foundcast) {
 		    //Add typecast
-		    ourcasts.add(new Tuple(new Object[]{q.objectref(), otype}));
+		    if (!(ti.typeMap(null,q.objectref())).isArray())
+			ourcasts.add(new Tuple(new Object[]{q.objectref(), otype}));
+		    else
+			ourcasts.add(new Tuple(new Object[]{q.src(), (ti.typeMap(null,q.objectref())).getComponentType()}));
 		}
 	    }
 	    typecast.put(q, ourcasts);
