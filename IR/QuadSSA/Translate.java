@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.49 1998-09-04 08:17:24 cananian Exp $
+ * @version $Id: Translate.java,v 1.50 1998-09-04 08:51:36 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -925,6 +925,29 @@ class Translate  { // not public.
 	    Quad.addEdge(q,  0, q1, 0);
 	    Quad.addEdge(q1, 0, q2, 0);
 	    last = q2; which_succ = 1;
+	    // null dereference check.
+	    if (!isStatic) {
+		HClass HCex = HClass.forClass(NullPointerException.class);
+		Temp Tex1 = new Temp();
+		Temp Tex2 = new Temp();
+
+		// test objectref against null.
+		Quad q3 = new OPER(in, "acmpeq", new Temp(),
+				   new Temp[] { objectref, Tnull } );
+		Quad q4 = new CJMP(in, q3.def()[0]);
+		Quad q5 = transNewException(HCex, Tex1, Tnull, in, q4, 1);
+		Quad q6 = new PHI(in,
+				  new Temp[] { Tex },
+				  new Temp[][]{new Temp[] {Tex1, Tex2} }, 2);
+		// rewrite links.
+		Quad.addEdge(q3, 0, q4, 0);
+		Quad.addEdge(q4, 0, q,  0);
+		Quad.addEdge(q5, 0, q6, 0);
+		Quad.addEdge(q6, 0, q2.next()[0], 0);
+		Quad.addEdge(q2, 0, q6, 1);
+		((CALL)q).retex = ((OPER)q1).operands[0] = Tex2;
+		q = q3;
+	    }
 	    }
 	    break;
 	case Op.LCMP: // break this up into lcmpeq, lcmpgt, etc.
