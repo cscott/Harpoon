@@ -84,7 +84,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.21 2001-11-14 19:08:37 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.22 2001-11-14 21:21:43 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -141,6 +141,7 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    if (isConst((HField)it.next())) it.remove();
 	int lss = flds.size();
 	System.out.println("BITWIDTH RESULTS: "+lss+"/"+lft+"/"+ttl+" unread fields");
+	System.out.println("TOTAL CLASSES: "+ch.classes().size());
     }
 
     /*-----------------------------*/
