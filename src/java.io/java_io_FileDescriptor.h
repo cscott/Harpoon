@@ -7,16 +7,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Inaccessible static: in */
-/* Inaccessible static: out */
-/* Inaccessible static: err */
 /*
  * Class:     java_io_FileDescriptor
- * Method:    initIDs
- * Signature: ()V
+ * Method:    valid
+ * Signature: ()Z
  */
-JNIEXPORT void JNICALL Java_java_io_FileDescriptor_initIDs
-  (JNIEnv *, jclass);
+JNIEXPORT jboolean JNICALL Java_java_io_FileDescriptor_valid
+  (JNIEnv *, jobject);
 
 /*
  * Class:     java_io_FileDescriptor
@@ -25,6 +22,14 @@ JNIEXPORT void JNICALL Java_java_io_FileDescriptor_initIDs
  */
 JNIEXPORT void JNICALL Java_java_io_FileDescriptor_sync
   (JNIEnv *, jobject);
+
+/*
+ * Class:     java_io_FileDescriptor
+ * Method:    initSystemFD
+ * Signature: (Ljava/io/FileDescriptor;I)Ljava/io/FileDescriptor;
+ */
+JNIEXPORT jobject JNICALL Java_java_io_FileDescriptor_initSystemFD
+  (JNIEnv *, jclass, jobject, jint);
 
 #ifdef __cplusplus
 }

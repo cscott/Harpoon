@@ -7,12 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Inaccessible static: btcConverter */
-/* Inaccessible static: ctbConverter */
-#undef java_lang_String_serialVersionUID
-#define java_lang_String_serialVersionUID -6849794470754667710LL
-/* Inaccessible static: serialPersistentFields */
-/* Inaccessible static: CASE_INSENSITIVE_ORDER */
 /*
  * Class:     java_lang_String
  * Method:    intern

@@ -7,16 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#undef java_lang_Throwable_serialVersionUID
-#define java_lang_Throwable_serialVersionUID -3042686055658047285LL
-/*
- * Class:     java_lang_Throwable
- * Method:    fillInStackTrace
- * Signature: ()Ljava/lang/Throwable;
- */
-JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
-  (JNIEnv *, jobject);
-
 /*
  * Class:     java_lang_Throwable
  * Method:    printStackTrace0
@@ -24,6 +14,14 @@ JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
  */
 JNIEXPORT void JNICALL Java_java_lang_Throwable_printStackTrace0
   (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     java_lang_Throwable
+ * Method:    fillInStackTrace
+ * Signature: ()Ljava/lang/Throwable;
+ */
+JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

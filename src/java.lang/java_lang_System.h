@@ -7,18 +7,29 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Inaccessible static: in */
-/* Inaccessible static: out */
-/* Inaccessible static: err */
-/* Inaccessible static: security */
-/* Inaccessible static: props */
 /*
  * Class:     java_lang_System
- * Method:    arraycopy
- * Signature: (Ljava/lang/Object;ILjava/lang/Object;II)V
+ * Method:    setIn0
+ * Signature: (Ljava/io/InputStream;)V
  */
-JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
-  (JNIEnv *, jclass, jobject, jint, jobject, jint, jint);
+JNIEXPORT void JNICALL Java_java_lang_System_setIn0
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     java_lang_System
+ * Method:    setOut0
+ * Signature: (Ljava/io/PrintStream;)V
+ */
+JNIEXPORT void JNICALL Java_java_lang_System_setOut0
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     java_lang_System
+ * Method:    setErr0
+ * Signature: (Ljava/io/PrintStream;)V
+ */
+JNIEXPORT void JNICALL Java_java_lang_System_setErr0
+  (JNIEnv *, jclass, jobject);
 
 /*
  * Class:     java_lang_System
@@ -30,11 +41,11 @@ JNIEXPORT jlong JNICALL Java_java_lang_System_currentTimeMillis
 
 /*
  * Class:     java_lang_System
- * Method:    getCallerClass
- * Signature: ()Ljava/lang/Class;
+ * Method:    arraycopy
+ * Signature: (Ljava/lang/Object;ILjava/lang/Object;II)V
  */
-JNIEXPORT jclass JNICALL Java_java_lang_System_getCallerClass
-  (JNIEnv *, jclass);
+JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
+  (JNIEnv *, jclass, jobject, jint, jobject, jint, jint);
 
 /*
  * Class:     java_lang_System
@@ -50,46 +61,6 @@ JNIEXPORT jint JNICALL Java_java_lang_System_identityHashCode
  * Signature: (Ljava/util/Properties;)Ljava/util/Properties;
  */
 JNIEXPORT jobject JNICALL Java_java_lang_System_initProperties
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     java_lang_System
- * Method:    mapLibraryName
- * Signature: (Ljava/lang/String;)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_java_lang_System_mapLibraryName
-  (JNIEnv *, jclass, jstring);
-
-/*
- * Class:     java_lang_System
- * Method:    registerNatives
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_java_lang_System_registerNatives
-  (JNIEnv *, jclass);
-
-/*
- * Class:     java_lang_System
- * Method:    setErr0
- * Signature: (Ljava/io/PrintStream;)V
- */
-JNIEXPORT void JNICALL Java_java_lang_System_setErr0
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     java_lang_System
- * Method:    setIn0
- * Signature: (Ljava/io/InputStream;)V
- */
-JNIEXPORT void JNICALL Java_java_lang_System_setIn0
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     java_lang_System
- * Method:    setOut0
- * Signature: (Ljava/io/PrintStream;)V
- */
-JNIEXPORT void JNICALL Java_java_lang_System_setOut0
   (JNIEnv *, jclass, jobject);
 
 #ifdef __cplusplus

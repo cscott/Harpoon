@@ -7,153 +7,44 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Inaccessible static: getPDperm */
-/* Inaccessible static: allPermDomain */
-#undef java_lang_Class_serialVersionUID
-#define java_lang_Class_serialVersionUID 3206093459760846163LL
-/* Inaccessible static: serialPersistentFields */
 /*
  * Class:     java_lang_Class
- * Method:    forName0
- * Signature: (Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;
- */
-JNIEXPORT jclass JNICALL Java_java_lang_Class_forName0
-  (JNIEnv *, jclass, jstring, jboolean, jobject);
-
-/*
- * Class:     java_lang_Class
- * Method:    getClassLoader0
- * Signature: ()Ljava/lang/ClassLoader;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_getClassLoader0
-  (JNIEnv *, jobject);
-
-/*
- * Class:     java_lang_Class
- * Method:    getComponentType
- * Signature: ()Ljava/lang/Class;
- */
-JNIEXPORT jclass JNICALL Java_java_lang_Class_getComponentType
-  (JNIEnv *, jobject);
-
-/*
- * Class:     java_lang_Class
- * Method:    getConstructor0
- * Signature: ([Ljava/lang/Class;I)Ljava/lang/reflect/Constructor;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_getConstructor0
-  (JNIEnv *, jobject, jobjectArray, jint);
-
-/*
- * Class:     java_lang_Class
- * Method:    getConstructors0
- * Signature: (I)[Ljava/lang/reflect/Constructor;
- */
-JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getConstructors0
-  (JNIEnv *, jobject, jint);
-
-/*
- * Class:     java_lang_Class
- * Method:    getDeclaredClasses0
- * Signature: ()[Ljava/lang/Class;
- */
-JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getDeclaredClasses0
-  (JNIEnv *, jobject);
-
-/*
- * Class:     java_lang_Class
- * Method:    getDeclaringClass
- * Signature: ()Ljava/lang/Class;
- */
-JNIEXPORT jclass JNICALL Java_java_lang_Class_getDeclaringClass
-  (JNIEnv *, jobject);
-
-/*
- * Class:     java_lang_Class
- * Method:    getField0
- * Signature: (Ljava/lang/String;I)Ljava/lang/reflect/Field;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_getField0
-  (JNIEnv *, jobject, jstring, jint);
-
-/*
- * Class:     java_lang_Class
- * Method:    getFields0
- * Signature: (I)[Ljava/lang/reflect/Field;
- */
-JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getFields0
-  (JNIEnv *, jobject, jint);
-
-/*
- * Class:     java_lang_Class
- * Method:    getInterfaces
- * Signature: ()[Ljava/lang/Class;
- */
-JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getInterfaces
-  (JNIEnv *, jobject);
-
-/*
- * Class:     java_lang_Class
- * Method:    getMethod0
- * Signature: (Ljava/lang/String;[Ljava/lang/Class;I)Ljava/lang/reflect/Method;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_getMethod0
-  (JNIEnv *, jobject, jstring, jobjectArray, jint);
-
-/*
- * Class:     java_lang_Class
- * Method:    getMethods0
- * Signature: (I)[Ljava/lang/reflect/Method;
- */
-JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getMethods0
-  (JNIEnv *, jobject, jint);
-
-/*
- * Class:     java_lang_Class
- * Method:    getModifiers
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_java_lang_Class_getModifiers
-  (JNIEnv *, jobject);
-
-/*
- * Class:     java_lang_Class
- * Method:    getName
- * Signature: ()Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_java_lang_Class_getName
-  (JNIEnv *, jobject);
-
-/*
- * Class:     java_lang_Class
- * Method:    getPrimitiveClass
+ * Method:    forName
  * Signature: (Ljava/lang/String;)Ljava/lang/Class;
  */
-JNIEXPORT jclass JNICALL Java_java_lang_Class_getPrimitiveClass
+JNIEXPORT jclass JNICALL Java_java_lang_Class_forName
   (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     java_lang_Class
- * Method:    getProtectionDomain0
- * Signature: ()Ljava/security/ProtectionDomain;
+ * Method:    newInstance
+ * Signature: ()Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_getProtectionDomain0
+JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance
   (JNIEnv *, jobject);
 
 /*
  * Class:     java_lang_Class
- * Method:    getSigners
- * Signature: ()[Ljava/lang/Object;
+ * Method:    isInstance
+ * Signature: (Ljava/lang/Object;)Z
  */
-JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getSigners
-  (JNIEnv *, jobject);
+JNIEXPORT jboolean JNICALL Java_java_lang_Class_isInstance
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     java_lang_Class
- * Method:    getSuperclass
- * Signature: ()Ljava/lang/Class;
+ * Method:    isAssignableFrom
+ * Signature: (Ljava/lang/Class;)Z
  */
-JNIEXPORT jclass JNICALL Java_java_lang_Class_getSuperclass
+JNIEXPORT jboolean JNICALL Java_java_lang_Class_isAssignableFrom
+  (JNIEnv *, jobject, jclass);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    isInterface
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_java_lang_Class_isInterface
   (JNIEnv *, jobject);
 
 /*
@@ -166,30 +57,6 @@ JNIEXPORT jboolean JNICALL Java_java_lang_Class_isArray
 
 /*
  * Class:     java_lang_Class
- * Method:    isAssignableFrom
- * Signature: (Ljava/lang/Class;)Z
- */
-JNIEXPORT jboolean JNICALL Java_java_lang_Class_isAssignableFrom
-  (JNIEnv *, jobject, jclass);
-
-/*
- * Class:     java_lang_Class
- * Method:    isInstance
- * Signature: (Ljava/lang/Object;)Z
- */
-JNIEXPORT jboolean JNICALL Java_java_lang_Class_isInstance
-  (JNIEnv *, jobject, jobject);
-
-/*
- * Class:     java_lang_Class
- * Method:    isInterface
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_java_lang_Class_isInterface
-  (JNIEnv *, jobject);
-
-/*
- * Class:     java_lang_Class
  * Method:    isPrimitive
  * Signature: ()Z
  */
@@ -198,27 +65,59 @@ JNIEXPORT jboolean JNICALL Java_java_lang_Class_isPrimitive
 
 /*
  * Class:     java_lang_Class
- * Method:    newInstance0
- * Signature: ()Ljava/lang/Object;
+ * Method:    getName
+ * Signature: ()Ljava/lang/String;
  */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance0
+JNIEXPORT jstring JNICALL Java_java_lang_Class_getName
   (JNIEnv *, jobject);
 
 /*
  * Class:     java_lang_Class
- * Method:    registerNatives
- * Signature: ()V
+ * Method:    getClassLoader
+ * Signature: ()Ljava/lang/ClassLoader;
  */
-JNIEXPORT void JNICALL Java_java_lang_Class_registerNatives
-  (JNIEnv *, jclass);
+JNIEXPORT jobject JNICALL Java_java_lang_Class_getClassLoader
+  (JNIEnv *, jobject);
 
 /*
  * Class:     java_lang_Class
- * Method:    setProtectionDomain0
- * Signature: (Ljava/security/ProtectionDomain;)V
+ * Method:    getSuperclass
+ * Signature: ()Ljava/lang/Class;
  */
-JNIEXPORT void JNICALL Java_java_lang_Class_setProtectionDomain0
-  (JNIEnv *, jobject, jobject);
+JNIEXPORT jclass JNICALL Java_java_lang_Class_getSuperclass
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    getInterfaces
+ * Signature: ()[Ljava/lang/Class;
+ */
+JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getInterfaces
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    getComponentType
+ * Signature: ()Ljava/lang/Class;
+ */
+JNIEXPORT jclass JNICALL Java_java_lang_Class_getComponentType
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    getModifiers
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_java_lang_Class_getModifiers
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    getSigners
+ * Signature: ()[Ljava/lang/Object;
+ */
+JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getSigners
+  (JNIEnv *, jobject);
 
 /*
  * Class:     java_lang_Class
@@ -227,6 +126,62 @@ JNIEXPORT void JNICALL Java_java_lang_Class_setProtectionDomain0
  */
 JNIEXPORT void JNICALL Java_java_lang_Class_setSigners
   (JNIEnv *, jobject, jobjectArray);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    getPrimitiveClass
+ * Signature: (Ljava/lang/String;)Ljava/lang/Class;
+ */
+JNIEXPORT jclass JNICALL Java_java_lang_Class_getPrimitiveClass
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    getFields0
+ * Signature: (I)[Ljava/lang/reflect/Field;
+ */
+JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getFields0
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    getMethods0
+ * Signature: (I)[Ljava/lang/reflect/Method;
+ */
+JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getMethods0
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    getConstructors0
+ * Signature: (I)[Ljava/lang/reflect/Constructor;
+ */
+JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getConstructors0
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    getField0
+ * Signature: (Ljava/lang/String;I)Ljava/lang/reflect/Field;
+ */
+JNIEXPORT jobject JNICALL Java_java_lang_Class_getField0
+  (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    getMethod0
+ * Signature: (Ljava/lang/String;[Ljava/lang/Class;I)Ljava/lang/reflect/Method;
+ */
+JNIEXPORT jobject JNICALL Java_java_lang_Class_getMethod0
+  (JNIEnv *, jobject, jstring, jobjectArray, jint);
+
+/*
+ * Class:     java_lang_Class
+ * Method:    getConstructor0
+ * Signature: ([Ljava/lang/Class;I)Ljava/lang/reflect/Constructor;
+ */
+JNIEXPORT jobject JNICALL Java_java_lang_Class_getConstructor0
+  (JNIEnv *, jobject, jobjectArray, jint);
 
 #ifdef __cplusplus
 }

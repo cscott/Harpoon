@@ -7,59 +7,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#undef java_lang_Math_E
-#define java_lang_Math_E 2.718281828459045D
-#undef java_lang_Math_PI
-#define java_lang_Math_PI 3.141592653589793D
-/* Inaccessible static: randomNumberGenerator */
-/* Inaccessible static: negativeZeroFloatBits */
-/* Inaccessible static: negativeZeroDoubleBits */
 /*
  * Class:     java_lang_Math
- * Method:    IEEEremainder
- * Signature: (DD)D
- */
-JNIEXPORT jdouble JNICALL Java_java_lang_Math_IEEEremainder
-  (JNIEnv *, jclass, jdouble, jdouble);
-
-/*
- * Class:     java_lang_Math
- * Method:    acos
+ * Method:    sin
  * Signature: (D)D
  */
-JNIEXPORT jdouble JNICALL Java_java_lang_Math_acos
-  (JNIEnv *, jclass, jdouble);
-
-/*
- * Class:     java_lang_Math
- * Method:    asin
- * Signature: (D)D
- */
-JNIEXPORT jdouble JNICALL Java_java_lang_Math_asin
-  (JNIEnv *, jclass, jdouble);
-
-/*
- * Class:     java_lang_Math
- * Method:    atan
- * Signature: (D)D
- */
-JNIEXPORT jdouble JNICALL Java_java_lang_Math_atan
-  (JNIEnv *, jclass, jdouble);
-
-/*
- * Class:     java_lang_Math
- * Method:    atan2
- * Signature: (DD)D
- */
-JNIEXPORT jdouble JNICALL Java_java_lang_Math_atan2
-  (JNIEnv *, jclass, jdouble, jdouble);
-
-/*
- * Class:     java_lang_Math
- * Method:    ceil
- * Signature: (D)D
- */
-JNIEXPORT jdouble JNICALL Java_java_lang_Math_ceil
+JNIEXPORT jdouble JNICALL Java_java_lang_Math_sin
   (JNIEnv *, jclass, jdouble);
 
 /*
@@ -72,18 +25,42 @@ JNIEXPORT jdouble JNICALL Java_java_lang_Math_cos
 
 /*
  * Class:     java_lang_Math
- * Method:    exp
+ * Method:    tan
  * Signature: (D)D
  */
-JNIEXPORT jdouble JNICALL Java_java_lang_Math_exp
+JNIEXPORT jdouble JNICALL Java_java_lang_Math_tan
   (JNIEnv *, jclass, jdouble);
 
 /*
  * Class:     java_lang_Math
- * Method:    floor
+ * Method:    asin
  * Signature: (D)D
  */
-JNIEXPORT jdouble JNICALL Java_java_lang_Math_floor
+JNIEXPORT jdouble JNICALL Java_java_lang_Math_asin
+  (JNIEnv *, jclass, jdouble);
+
+/*
+ * Class:     java_lang_Math
+ * Method:    acos
+ * Signature: (D)D
+ */
+JNIEXPORT jdouble JNICALL Java_java_lang_Math_acos
+  (JNIEnv *, jclass, jdouble);
+
+/*
+ * Class:     java_lang_Math
+ * Method:    atan
+ * Signature: (D)D
+ */
+JNIEXPORT jdouble JNICALL Java_java_lang_Math_atan
+  (JNIEnv *, jclass, jdouble);
+
+/*
+ * Class:     java_lang_Math
+ * Method:    exp
+ * Signature: (D)D
+ */
+JNIEXPORT jdouble JNICALL Java_java_lang_Math_exp
   (JNIEnv *, jclass, jdouble);
 
 /*
@@ -96,11 +73,35 @@ JNIEXPORT jdouble JNICALL Java_java_lang_Math_log
 
 /*
  * Class:     java_lang_Math
- * Method:    pow
+ * Method:    sqrt
+ * Signature: (D)D
+ */
+JNIEXPORT jdouble JNICALL Java_java_lang_Math_sqrt
+  (JNIEnv *, jclass, jdouble);
+
+/*
+ * Class:     java_lang_Math
+ * Method:    IEEEremainder
  * Signature: (DD)D
  */
-JNIEXPORT jdouble JNICALL Java_java_lang_Math_pow
+JNIEXPORT jdouble JNICALL Java_java_lang_Math_IEEEremainder
   (JNIEnv *, jclass, jdouble, jdouble);
+
+/*
+ * Class:     java_lang_Math
+ * Method:    ceil
+ * Signature: (D)D
+ */
+JNIEXPORT jdouble JNICALL Java_java_lang_Math_ceil
+  (JNIEnv *, jclass, jdouble);
+
+/*
+ * Class:     java_lang_Math
+ * Method:    floor
+ * Signature: (D)D
+ */
+JNIEXPORT jdouble JNICALL Java_java_lang_Math_floor
+  (JNIEnv *, jclass, jdouble);
 
 /*
  * Class:     java_lang_Math
@@ -112,27 +113,19 @@ JNIEXPORT jdouble JNICALL Java_java_lang_Math_rint
 
 /*
  * Class:     java_lang_Math
- * Method:    sin
- * Signature: (D)D
+ * Method:    atan2
+ * Signature: (DD)D
  */
-JNIEXPORT jdouble JNICALL Java_java_lang_Math_sin
-  (JNIEnv *, jclass, jdouble);
+JNIEXPORT jdouble JNICALL Java_java_lang_Math_atan2
+  (JNIEnv *, jclass, jdouble, jdouble);
 
 /*
  * Class:     java_lang_Math
- * Method:    sqrt
- * Signature: (D)D
+ * Method:    pow
+ * Signature: (DD)D
  */
-JNIEXPORT jdouble JNICALL Java_java_lang_Math_sqrt
-  (JNIEnv *, jclass, jdouble);
-
-/*
- * Class:     java_lang_Math
- * Method:    tan
- * Signature: (D)D
- */
-JNIEXPORT jdouble JNICALL Java_java_lang_Math_tan
-  (JNIEnv *, jclass, jdouble);
+JNIEXPORT jdouble JNICALL Java_java_lang_Math_pow
+  (JNIEnv *, jclass, jdouble, jdouble);
 
 #ifdef __cplusplus
 }
