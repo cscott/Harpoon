@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.Collection;
+import java.util.AbstractCollection;
 import java.util.Collections;
 
 /**
@@ -46,7 +47,7 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.7 2000-07-27 22:43:48 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.8 2000-07-28 00:24:40 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -128,9 +129,33 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	    computeSpillCosts();
 
-	    ColorableGraph graph = new Graph(adjLsts);
+	    final ColorableGraph graph = new Graph(adjLsts);
 	    
-	    System.out.println("edges of graph "+graph.edges());
+	    final Map nodeToNum = new HashMap(); 
+	    System.out.println("nodes of graph");
+	    int i=0;
+	    for(Iterator nodes=graph.nodeSet().iterator();nodes.hasNext();){
+		i++;
+		Object n=nodes.next();
+		nodeToNum.put(n, new Integer(i));
+		System.out.println(i+"\t"+n);
+	    }
+
+	    Collection readEdges = new AbstractCollection() {
+		public int size() { return graph.edges().size(); }
+		public Iterator iterator() { 
+		    return new FilterIterator
+		    (graph.edges().iterator(),
+		     new FilterIterator.Filter() {
+			 public Object map(Object o) {
+			     List l=(List)o;
+			     return Default.pair(nodeToNum.get(l.get(0)),
+						 nodeToNum.get(l.get(1)));
+			 }
+		     });
+		}
+	    };
+	    System.out.println("edges of graph "+readEdges);
 
 	    try {
 		List colors = new ArrayList(regToColor.values());
@@ -219,6 +244,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Instr inst = (Instr) instrs.next();
 	    for(Iterator uses = inst.useC().iterator(); uses.hasNext();){ 
 		Temp t = (Temp) uses.next();
+		if (isRegister(t)) continue;
+
 		TempWebRecord web = 
 		    new TempWebRecord
 		    (t, new LinearSet(rdefs.reachingDefs(inst,t)),
@@ -231,6 +258,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    // a corresponding use, the system breaks.
 	    for(Iterator defs = inst.defC().iterator(); defs.hasNext();){
 		Temp t = (Temp) defs.next();
+		if (isRegister(t)) continue;
+
 		TempWebRecord web =
 		    new TempWebRecord
 		    (t, new LinearSet(Collections.singleton(inst)),
@@ -540,16 +569,22 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    setYet = true;
 	}
 	
-	// exists i elem defs(), t elem temps(), 
-	// such that reachingDefs(i, t) /\ wr.defs() is not empty? 
+	// ( interference based on Muchnick, page 494.)
+	// exists i elem defs() and t elem temps()
+	// such that the intersection of reachingDefs(i, t) and
+	// wr.defs() is not empty? 
 	boolean conflictsWith(WebRecord wr) {
 	    for(Iterator defs=defs().iterator(); defs.hasNext();){
 		Instr i = (Instr) defs.next();
 		for (Iterator ts=temps().iterator(); ts.hasNext();){
 		    Temp t = (Temp) ts.next();
 		    HashSet wrDefs = new HashSet(wr.defs());
-		    wrDefs.removeAll(rdefs.reachingDefs(i, t));
-		    if (!wrDefs.isEmpty()) return true;
+		    wrDefs.retainAll(rdefs.reachingDefs(i, t));
+		    if (!wrDefs.isEmpty()) {
+			System.out.println("conflict "+this+"\nand "+wr+
+					   "\ndue to "+wrDefs);
+			return true;
+		    }
 		}
 	    }
 	    return false;
