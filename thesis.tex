@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.105 1999-09-02 01:15:17 cananian Exp $
+% $Id: thesis.tex,v 1.106 1999-09-02 15:20:50 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -41,14 +41,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.105 $ $}
+\date{\today \\ $ $Revision: 1.106 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.105 $ $}{$ $Revision: 1.105 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.106 $ $}{$ $Revision: 1.106 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -2057,7 +2057,6 @@ requires control-flow graph information in order to be executable. We
 would like to have a demand-driven operational semantics for SSI form
 that does not require control-flow information; thus freeing us to
 more flexibly reorder execution.
-\fixme{Mention the work of Traub, like the introduction said we would.}
 
 In particular, we would like a representation that eliminates
 unnecessary control dependencies such as exist in the program of
@@ -2068,15 +2067,7 @@ been assigned; that is, the second loop will be
 \emph{control-dependent} on the first.  We would like to remove this
 control dependence in order to provide greater parallelism---in this
 case, to allow the assignments to \code{A[]} and \code{B[]} to
-take place in parallel, if possible.\footnote{Note that Arvind's
-dataflow compiler \cite{traub86:ttda} looked for exactly the opposite type of
-parallelism.  By concentrating on intra-loop dependencies, as he did, you get
-fine-grain parallelism suitable for VLIW-type machine with many
-functional units.  We try to remove dependencies \emph{between} loops,
-which gets us coarser parallelism that does not require as many
-functional units to take advantage of.  This should be in the paper
-body, but I'm not quite sure where a discussion of the differences
-between Arvind's work and mine belongs.}
+take place in parallel, if possible.
 
 \begin{myfigure}[t]
 \begin{samplecode}
@@ -2092,18 +2083,12 @@ is \emph{control-dependent} on the first and so assignments to
 \label{fig:ctrldep}
 \end{myfigure}
 
-In addition, an executable representation allows us to apply the
-techniques of abstract interpretation \cite{idunno}.  Although abstract
-interpretation may be applied to the original SSI form using
-information extracted from the control flow graph, as in \cite{foo}
-and \cite{bar}, an executable SSI form allows more concise (and thus,
-more easily derived and verified) interpretation
-algorithms.\fixme{I'm still working on understanding abstract
-interpretation techniques.  It may be that we can do stuff with
-\ssiplus\ that is plain impossible with \ssizero\ (instead of merely
-more difficult); if so, I'll mention that here, of course.
-\textbf{ADDENDUM:} seems we might be able to \emph{prove} properties
-of \ssiplus\ more easily than \ssizero; still working on this.}
+In addition, an executable representation allows us to more easily
+apply the techniques of abstract interpretation \cite{pingali90:dfg}.
+Although abstract interpretation may be applied to the original SSI
+form using information extracted from the control flow graph, an
+executable SSI form allows more concise (and thus, more easily derived
+and verified) interpretation algorithms.
 
 The modifications outlined here will extend SSI form in order to
 provide a useful and descriptive operational semantics.  We will call
@@ -2112,23 +2097,169 @@ presented we will call \ssizero.  We will describe algorithms to
 contruct \ssiplus{} efficiently,\fixme{I will make this more precise
 as soon as I get the math done; construction should be $O(N)$, and space
 $O(N^2)$, but $\Theta(N)$.} and illustrate analyses and
-optimizations using the form.\fixme{maybe something here like: we
-will also show how to apply the techniques of abstract interpretation
-to \ssiplus?}
+optimizations using the form.
 
-\subsection{Discussion}
-\textbf{Why an executable representation is desirable.  Also,
-deficiencies in \ssizero{} form.}
+\subsection{Deficiencies in \ssizero}
+Although a demand-driven execution model can be constructed for
+\ssizero,  it fails to handle loops and imperative
+constructs well. \ssiplus\ form addresses these deficiencies.
 
-\textbf{A couple of paragraphs here on why an executable
-representation is desirable.  Many some of the information above
-should be moved down here.}
+\subsubsection{Imperative constructs, pointer variables, and side-effects}
+The presentation of \ssizero\ ignored pointers,
+concentrating on so-called register variables.  Extending \ssizero\ to
+handle these imperative constructs is quite easy: we simply define a
+``variable'' $S$ to represent an updatable store.  This variable is
+renamed and numbered as before, so that $S_0$ represents the initial
+contents of the store and $S_i, i>0$ represents the contents of the
+store after some sequence of writes.  Figure \ref{fig:store} shows a
+simple imperative program in \ssiplus\ form.  Note that modifications
+to the store typically take the previous contents of the store as
+input, and that subroutines with side-effects modifying the store must
+be written in \ssiplus\ form such that they both take a store and
+return a store.
 
-\textbf{A couple paragraphs describing deficiencies in \ssizero{} form.
-Structure question: I'd like to describe the fixes \ssiplus{} proposes
-right next to the bits saying what's broken in \ssizero{}; but the way
-the outline is laid out currently, the fixes are described later.  I'm
-going to try it the way the outline has it for now.}
+\begin{figure}[t]
+\begin{samplecode}[2]
+\com{swap A[i] and B[j]} & \com{\ssiplus\ form:}\\
+x = A[i];	& $x_0$ = FETCH($S_0$, $A_0 + i_0$) \\
+y = B[j];	& $y_0$ = FETCH($S_0$, $B_0 + j_0$) \\
+A[i] = y;	& $S_1$ = STORE($S_0$, $A_0 + i_0$, $y_0$); \\
+B[j] = x;	& $S_2$ = STORE($S_1$, $B_0 + j_0$, $x_0$); \\
+\end{samplecode}
+\caption{Use of the ``store variable'' $S_x$ in \ssiplus\ form.}
+\label{fig:store}
+\end{figure}
+
+It is worth noting that the store may be decomposed for added
+precision.  In type-safe languages, it is trivial to define multiple
+stores for differing type sets.  Even greater precision may be
+obtained by using the \emph{may-point} relation from pointer
+analysis to define a very fine-grained model of the store.
+Figure \ref{fig:manystore} shows a simple example of this type of
+decomposition using two different subtypes (\texttt{Integer} and
+\texttt{Float}) of a common base class (\texttt{Number}).
+
+\begin{figure}[t]
+\centering$\vdash N:\mathbf{Number},I:\mathbf{Integer},F:\mathbf{Float}$\\
+\centering$I \subset N \mbox{ and } F \subset N$\\
+\begin{samplecode}[2]
+if(P)           & \com{\ssiplus\ form:}\\
+\>N=I;\\
+else            & $N_0=\phi(I_0,F_0)$ \\
+\>N=F;\\
+F.add(3.14159); & $S^F_1=\mbox{\tt CALL}(\mbox{\tt add},S^F_0,F_0,3.14159)$\\
+N.add(5);       & $\tuple{S^I_1,S^F_2}=
+                         \mbox{\tt CALL}(\mbox{\tt add},S^I_0,S^F_1,N_0,5)$\\
+\end{samplecode}
+\caption{Factoring the store ($S_x$) using type information
+         in a type-safe language.}
+\label{fig:manystore}
+\end{figure}
+
+Statements with side-effects may be handled in a similar way: a
+special SSI name is used/defined where side-effects occur to impose an
+implicit ordering.  For maximum symmetry with the `store' case, we
+will name this special variable $S^{fx}$.
+
+\begin{figure}[t]
+\begin{samplecode}[2]
+int x=1;	& $x_0 = 1$ \\
+int y=2;	& $y_0 = 2$ \\
+int *p = \&x; 	& $p_0 = \set{\mbox{x}}$ \com{P is of type ``location set''} \\
+if (P)  	& \com{Some \sigfunction{} goes here?} \\%$\tuple{S^{fx}_1,S^{fx}_2}=\sigma(P, S^{fx}_0)$ \\
+\>p = \&y;	& $p_1 = \set{\mbox{y}}$ \\
+		& $p_2 = \phi(p_0, p_1)$ \\
+*p = 3; 	& $\tuple{x_1,y_1} = \mbox{\tt DEREF}(p_2, 3)$\\
+return x;	& $\mbox{\tt return } x_1$ \\
+\end{samplecode}
+\caption{Pointer manipulation of local variables in C.}
+\label{fig:messyC}
+\end{figure}
+
+Pointer handling is substantially easier in Java-like languages.  The
+example on the left in figure \ref{fig:messyC} shows the difficulties
+one may encounter in dealing with pointer variables that may rewrite
+SSI temporaries.  It is possible to deal with this in the manner of
+figure \ref{fig:manystore} using explicit stores\footnote{Pointer+SSA
+references here.}, or with sufficient analysis one may write the SSI
+representation on the right in the figure.  When compiling Java (or
+some other object-oriented languages\footnote{which?}) this difficulty
+is avoided: there are no pointers to base types, so the IR does not
+have to worry about values changing ``behind its back'' like in the
+example.\textbf{PROBABLY BETTER NOT TO ATTEMPT THE RIGHT-HAND SIDE.}
+
+\textbf{SIGMA FUNCTIONS HAVE A HOLE: SEE FIGURE \ref{fig:problem}.}
+\begin{figure}[t]
+\begin{samplecode}[2]
+int x=0;	& $x_0 = 0$ \\
+if (P)		& \com{what \sigfunction{} goes here?} \\
+\>x=1;		& $x_1 = 1$ \\
+else		& \\
+\>x=2;		& $x_2 = 2$ \\
+		& $x_3 = \phi(x_1, x_2)$ \\
+return x;	& $\mbox{\tt return } x_3$ \\
+\end{samplecode}
+\caption{A problem with SSI form. Need to hoist the constants.}
+\label{fig:problem}
+\end{figure}
+
+\subsubsection{Loop constructs}
+\begin{figure}[t]
+\begin{samplecode}[3]
+\com{a simple loop} & \com{\ssizero\ form:} & \com{\ssiplus\ form:}\\
+j=1;	& \>$j_0 = 1$			& $j_0=1$\\
+i=0;	& \>$i_0 = 0$			& $i_0=0$\\
+do	& L1:			& $\xivec{j_1}{i_5}=\xi(\xivec{j_0}{i_3})$\\
+$\{$	& \>$i_1 = \phi(i_0, i_3)$	& $i_1 = \phi(i_0, i_5)$ \\
+\>i+=j; & \>$i_2 = i_1 + j_0$		& $i_2 = i_1 + j_1$ \\
+$\}$ while (i<5);	& \>$P_0=(i_2<5)$	& $P_0=(i_2<5)$\\
+	& \>if $P_0$ goto L1		& $\tuple{i_3,i_4}=\sigma(P_0, i_2)$ \\
+	& \>~~$\tuple{i_3,i_4}=\sigma(i_2)$ &\\
+\end{samplecode}
+\caption{A simple loop, in \ssizero\ and \ssiplus\ forms.}
+\label{fig:loop}
+\end{figure}
+
+The center column of figure \ref{fig:loop} shows a typical loop in
+\ssizero\ form.  Note first that an explicit ``control flow''
+expression (\texttt{goto L1}) is required in order to make sense of
+the program.  Note also that $i_1$, $i_2$ and $i_3$ are potentially
+\emph{dynamically} assigned many times, although \emph{statically}
+they have only one definition each.  This complicates any sort of
+demand-driven semantics: should the \phifunction{} demand the value of
+$i_0$, or $i_3$, when it is evaluated the first time?  Which of the
+values of $i_3$ does it receive when the \phifunction{} is
+subsequently evaluated?  A token-based dataflow interpretation fails
+as well: it is easy to see that tokens for $i_x$ flow around the loop
+before flowing out at the end, but the token for $j_0$ seems to be
+``used up'' in the first iteration.
+
+\ssiplus\ introduces a \xifunction\ in the block of \phifunction{s} to
+clarify the loop semantics. The left-hand column of figure
+\ref{fig:loop} illustrates the nature of this function.  The
+\xifunction{} arbitrates loop iteration, and will be defined precisely
+in the operational semantics of \ssiplus\ form.  For now note that it
+relates iteration variables (the top tuple of the parameter and result
+vectors) to loop invariants (the bottom tuple of the vectors).  We
+followed the statement ordering of \ssizero\ in the figure, but unlike
+\ssizero, the statements of \ssiplus\ could appear in any order
+without affecting their meaning---and so the statement label
+\texttt{L1} of the \ssizero\ representation is unnecessary in \ssiplus.
+
+There is at most one \xifunction{} per \phifunction{} block, and it
+always precedes the \phifunction{s}.  Construction of \xifunction{s}
+takes place before the renaming step associated with SSI form, and the
+\xifunction{s} are then renamed in the same manner as any other
+definition.  The top tuple of the constructed \xifunction{} contains
+the names of all variables reaching the guarded \phifunction{} via a
+backedge, and the bottom tuple contains all variables used inside the
+guarded loop that are {\em not} mentioned in the header's
+\phifunction{}.\footnote{I can give a rigorous algorithm: the top
+tuple is found with a depth-first search of the source
+control-flow graph, and the bottom tuple can be determined by a
+traversal of the same SESE-region tree which generates \ssizero\
+form.}
+
 
 \subsection{Definition}
 \begin{itemize}
@@ -2375,6 +2506,19 @@ using \ssiplus.
 working on generating the figures to illustrate this section.}%
 \fixme{Don't forget to reference \cite{tanaka89:harp} and
 \cite{galloway95:transmogrifier} when talking about Java-to-hardware.}
+
+\subsection{Dataflow and control dependence}
+\fixme{Mention the work of Traub, like the introduction said we would.}
+\footnote{Note that Arvind's
+dataflow compiler \cite{traub86:ttda} looked for exactly the opposite type of
+parallelism.  By concentrating on intra-loop dependencies, as he did, you get
+fine-grain parallelism suitable for VLIW-type machine with many
+functional units.  We try to remove dependencies \emph{between} loops,
+which gets us coarser parallelism that does not require as many
+functional units to take advantage of.  This should be in the paper
+body, but I'm not quite sure where a discussion of the differences
+between Arvind's work and mine belongs.}
+
 
 \section{Methodology}\label{sec:methodology}
 \textbf{Numbers, numbers, and more numbers.}
