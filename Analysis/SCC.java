@@ -21,7 +21,7 @@ import java.util.Hashtable;
  * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCC.java,v 1.6 1998-09-14 05:21:45 cananian Exp $
+ * @version $Id: SCC.java,v 1.7 1998-09-14 05:54:03 cananian Exp $
  */
 
 public class SCC implements TypeMap, ConstMap {
@@ -136,7 +136,8 @@ public class SCC implements TypeMap, ConstMap {
 
 	// Iterate
 	while (! (Wb.isEmpty() && Wv.isEmpty()) ) { // until both are empty
-	    Quad[] ql; // the statements to examine against conditions 3-8
+	    // the statements to examine against conditions 3-8
+	    HCodeElement[] ql; 
 
 	    if (!Wb.isEmpty()) { // grab statement from Wb if we can.
 		Quad q = (Quad) Wb.pull();
@@ -151,13 +152,11 @@ public class SCC implements TypeMap, ConstMap {
 		ql = new Quad[] { q }; // examine this statement.
 	    } else if (!Wv.isEmpty()) { // else grab temp from Wv
 		Temp t = (Temp) Wv.pull();
-		HCodeElement[] ul = usedef.useMap(hc, t); // list of uses of t 
-		ql = new Quad[ul.length];
-		System.arraycopy(ul, 0, ql, 0, ql.length);
+		ql = usedef.useMap(hc, t); // list of uses of t 
 	    } else ql = new Quad[0]; // should never execute.
 	    // consider conditions 3-8 for all statements in ql.
 	    for (int i=0; i<ql.length; i++) {
-		Quad q = ql[i]; // consider this.
+		Quad q = (Quad) ql[i]; // consider this.
 
 		if (!E.contains(q)) continue; // not executable.
 
