@@ -111,7 +111,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.40 2003-04-01 02:59:51 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.41 2003-04-01 15:48:33 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -219,10 +219,10 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 	checkOptionConsistency();
 
-	HMethod mainM = getMainMethod();
+	mainM = getMainMethod();
 
 	// create the target Frame way up here!
-	frame = constructFrame(mainM);
+	frame = construct_frame(mainM);
 
 	do_it();
     }
@@ -250,7 +250,7 @@ public class SAMain extends harpoon.IR.Registration {
     // the frame specifies the combination of target architecture,
     // runtime, and allocation strategy we want to use.
     // ADD YOUR FRAME SETTING CODE HERE
-    private static Frame constructFrame(HMethod mainM) {
+    private static Frame construct_frame(HMethod mainM) {
 	Frame frame = Backend.getFrame(BACKEND, mainM,
 				       getAllocationStrategyFactory());
 	

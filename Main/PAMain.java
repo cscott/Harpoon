@@ -99,7 +99,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.18 2003-03-28 20:20:19 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.19 2003-04-01 15:48:33 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -341,8 +341,9 @@ public abstract class PAMain {
 	    SAMain.hcf    = hcf;
 	    SAMain.className = root_method.declClass;
 	    SAMain.rootSetFilename = rootSetFilename;
+	    SAMain.mainM = hroot;
 
-	    SAMain.do_it(hroot);
+	    SAMain.do_it();
 
 	    System.out.println("Backend time: " +
 			       (time() - g_tstart) + "ms");
