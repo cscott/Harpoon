@@ -454,7 +454,11 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
   public void errorMsg(String msg, java_cup.runtime.Symbol info) {
     LinePos lp = linepos(info.left);
     System.err.println(msg+" at line "+lp.line);
+    num_errors++;
   }
+  private int num_errors = 0;
+  public int numErrors() { return num_errors; }
+
   public LinePos linepos(int character_offset) {
     int n=line_num, c=character_offset-lineL.head;
     for (LineList p = lineL; p!=null; p=p.tail, n--)

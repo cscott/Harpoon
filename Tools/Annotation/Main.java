@@ -18,5 +18,6 @@ public class Main {
     Lexer l = new harpoon.Tools.Annotation.Lex.Lexer(fr, true);
     Java12 g = new Java12(l);
     g./*debug_*/parse();
+    System.exit(l.numErrors());
   }
 }

@@ -8,6 +8,9 @@ import harpoon.Tools.Annotation.Lex.LinePos;
 
 public interface Lexer {
     public java_cup.runtime.Symbol nextToken() throws java.io.IOException;
-    public void errorMsg(String msg, java_cup.runtime.Symbol info);
     public LinePos linepos(int character_offset);
+    /** report an error */
+    public void errorMsg(String msg, java_cup.runtime.Symbol info);
+    /** return the number of errors reported */
+    public int numErrors();
 }
