@@ -2,7 +2,7 @@ Visit($n$:node) =
 \begin{myalgorithmic}
 \FOREACH{assignment ``$v \gets x \oplus y$'' in $n$}
  \STATE RaiseV($v$, $V[x] \oplus V[y]$)
- \COMMENT{binop rule: see table~\ref{tab:sccmeet2}}
+ \COMMENT{binop rule: see figure~\ref{fig:scc_typed_binop}}
 \ENDFOR
                \EMPTYLINE
 \FOREACH{assignment ``$v \gets \text{MEM}(\ldots)$'' or 

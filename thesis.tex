@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.69 1999-08-21 00:59:51 cananian Exp $
+% $Id: thesis.tex,v 1.70 1999-08-21 03:57:28 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -30,14 +30,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.69 $ $}
+\date{\today \\ $ $Revision: 1.70 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.69 $ $}{$ $Revision: 1.69 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.70 $ $}{$ $Revision: 1.70 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -937,6 +937,17 @@ identical to that of the previous algorithm.
 \caption{``Typed'' category of figure \ref{fig:scclat3} shown expanded.}
 \label{fig:scclat4}
 \end{myfigure}
+\begin{myfigure}%
+\begin{eqnarray*}
+\code{int}\oplus\code{int}&=&\code{int}\\
+\code{long}\oplus\{\code{int},\code{long}\}&=&\code{long}\\
+\code{float}\oplus\{\code{int},\code{long},\code{float}\}&=&\code{float}\\
+\code{double}\oplus\{\code{int},\code{long},\code{float},\code{double}\}&=&\code{double}\\
+\code{String}\oplus\{\code{int},\code{long},\code{float},\code{double},\code{Object},\ldots\} &=& \code{String}
+\end{eqnarray*}%
+\caption{Java typing rules for binary operations.}
+\label{fig:scc_typed_binop}
+\end{myfigure}
 \begin{table}%[t]
 \begin{tabular}{|l|l|c|c|c|}\hline
 Hierarchy & Source language & Classes & Avg. depth & Max. depth \\ \hline
@@ -1043,6 +1054,11 @@ A(C, i) \sqsubset C\\
 \end{array}\]%
 \caption{SPTC value lattice inequalities.}\label{fig:sptc_rules}
 \end{myfigure}
+\begin{myalgorithm}\small
+\input{Figures/THsptc}
+\caption{\code{Visit} procedure outline for SPTC.}
+\label{alg:sptc}
+\end{myalgorithm}
 \begin{myfigure}
 \begin{samplecode}
 x = 5 + 6;\\

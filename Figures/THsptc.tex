@@ -1,0 +1,33 @@
+Visit($n$:node) =
+\begin{myalgorithmic}
+\STATE\COMMENT{Binop and \phifunction rules as in algorithm~\ref{alg:scctyped}}
+               \EMPTYLINE
+\FOREACH{assignment ``$v \gets \text{MEM}(\ldots)$'' or 
+                    ``$v \gets \text{CALL}(\ldots)$'' in $n$}
+ \LET $t\in\text{Class}_{\text{possibly-null}}\cup\text{Class}_{\text{primitive}}$
+      be the type of the \code{MEM} or \code{CALL}% expression
+ \STATE RaiseV($v$, $t$)
+\ENDFOR
+               \EMPTYLINE
+\FOREACH{array creation expression ``$v \gets \text{new T}[x]$''}
+ \IF{$L[x]$ is an integer constant}
+  \STATE RaiseV($v$, $A(T, L[x])$)
+ \ELSE
+  \STATE RaiseV($v$, $T_{\text{non-null}}$)
+ \ENDIF
+\ENDFOR
+               \EMPTYLINE
+\FOREACH{array length assignment ``$v \gets \text{arraylength}(x)$''}
+ \IF{$L[x]$ is an array of known constant length $n$}
+  \STATE RaiseV($v$, $n$)
+ \ELSE
+  \STATE RaiseV($v$, \code{int})
+ \ENDIF
+\ENDFOR
+               \EMPTYLINE
+\STATE \COMMENT{Branch rules as in algorithm~\ref{alg:scctyped}, with
+               the obvious extension to allow tests against
+               \code{null} to lower a lattice value from
+               $\text{Class}_{\text{possibly-null}}$ to
+               $\text{Class}_{\text{non-null}}$.}
+\end{myalgorithmic}
