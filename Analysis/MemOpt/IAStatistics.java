@@ -55,7 +55,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>IAStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: IAStatistics.java,v 1.4 2003-01-07 15:05:02 salcianu Exp $
+ * @version $Id: IAStatistics.java,v 1.5 2003-01-07 16:53:13 salcianu Exp $
  */
 public abstract class IAStatistics {
     
@@ -196,8 +196,6 @@ public abstract class IAStatistics {
 	printTotal("NON-ARRAYS",     TypeStat.diff(total, total_arrays));
 	printTotal("THROWABLES",     total_throwables);
 	printTotal("NON_THROWABLES", TypeStat.diff(total, total_throwables));
-	
-	System.exit(1);
     }
 
 
