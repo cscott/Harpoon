@@ -6,6 +6,7 @@ package harpoon.IR.Assem;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Label;
 import harpoon.Util.CombineIterator;
+import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Default;
 
 import java.util.Iterator;
@@ -18,7 +19,7 @@ import java.util.Set;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.9 1999-08-30 21:04:15 pnkfelix Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.10 1999-08-31 01:20:38 pnkfelix Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
@@ -71,8 +72,16 @@ public class InstrLABEL extends Instr {
 			 Default.nullIterator),
 
 			// second iterator: branches to this?
-			    ((Set) (getFactory().labelToBranchingInstrSetMap.get
-			     (label))).iterator() });
+			new UnmodifiableIterator() {
+			    Iterator instrs = 
+				((Set) (getFactory().labelToBranchingInstrSetMap.get
+					(label))).iterator();
+			    public boolean hasNext() { return instrs.hasNext(); }
+			    public Object next() { 
+				return new InstrEdge
+				    ((Instr)instrs.next(), InstrLABEL.this); 
+			    }
+			}});
 	    }
 	};
     }

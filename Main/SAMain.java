@@ -59,7 +59,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.15 1999-08-25 23:48:17 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.16 1999-08-31 01:20:39 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -372,6 +372,9 @@ public class SAMain extends harpoon.IR.Registration {
 	out.println("\tIn the event of an error loading the object,");
 	out.println("\tconstructs a new ClassHierarchy and stores it");
 	out.println("\tin <file>");
+
+	out.println("-o <dir> (optional)");
+	out.println("\tOutputs the program text to files within <dir>.");
 	
 	out.println("-D");
 	out.println("\tOutputs DATA information for <class>");

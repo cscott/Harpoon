@@ -48,7 +48,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.35 1999-08-28 01:08:22 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.36 1999-08-31 01:20:27 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -234,6 +234,7 @@ public class SAFrame extends Frame implements AllocationInfo {
 			     "ldr `d0h, [`s0, #" +(-4*(offset+1)) + "] ",
 			     new Temp[]{ r },
 			     new Temp[]{ SP  });
+	    load2.layout(load1, null);
 	    return Arrays.asList(new InstrMEM[] { load1, load2 });
 	} else {
 	    InstrMEM load = 
@@ -259,6 +260,7 @@ public class SAFrame extends Frame implements AllocationInfo {
 			     "str `s0h, [`s1, #" +(-4*(offset+1)) + "] ",
 			     new Temp[]{ },
 			     new Temp[]{ r , SP });
+	    store2.layout(store1, null);
 	    return Arrays.asList(new InstrMEM[]{ store1, store2 });
 	} else {
 	    InstrMEM store = 

@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.40 1999-08-31 00:06:26 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.41 1999-08-31 01:20:38 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -252,7 +252,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	Util.assert(oldi.canFallThrough &&
 		    oldi.getTargets().isEmpty(), 
 		    "oldi must be a nonbranching instruction.");
-	Util.assert(isLinear(newis), "newis must be a basic block");
+	Util.assert(isLinear(newis), "newis must be a basic block: " +
+		    pprint(newis));
 	
 	Instr next = oldi.next;
 	Instr prev = oldi.prev;
@@ -266,8 +267,21 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	
     }
 
+    private static String pprint(List l) {
+	String s="";
+	Iterator instrs = l.iterator();
+	while(instrs.hasNext()) {
+	    Instr i = (Instr) instrs.next();
+	    s += i.toString() + "\n";
+	}
+	return s;
+    }
+
     /** Helper method to ensure that <code>instrs</code> is
 	effectively a basic block. 
+	Checks: each Instr 'i' in 'instrs' has only one successor
+	(with regards to Control Flow) except for the last, which
+	should be non-branching and have no next.
     */
     private static boolean isLinear(List instrs) {
 	boolean linear = true;
@@ -275,24 +289,30 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	Instr i = (Instr) instrs.get(index);
 	Instr next = null;
 
-	while(index < instrs.size() &&
-	      linear) {
-	    if (! (i.canFallThrough &&
-		   i.getTargets().isEmpty()) ) {
-		linear = false;
+	while(true) {
+	    if (i.succC().size() == 0) {
+		// reached the end (I hope)
+		Util.assert(i.next == null &&
+			    i.targets == null,
+			    "last instr should have next==targets==null");
+		break;
 	    }
-	    
-	    index++;
-	    if (index < instrs.size()) {
-		next = (Instr) instrs.get(index);
-		if (next != i.next) linear = false;
-		i = next;
-	    } 
+	    if (i.succC().size() > 1) {
+		linear = false;
+		//Util.assert(false,"Instr " + i + " is nonlinear");
+		break;
+	    }
+	    i = (Instr) i.succC().iterator().next();
 	}
 
 	return linear;
     }
     
+    /** Not implemented yet. */
+    public static void insertInstrsAt(HCodeEdge edge, List instrs) {
+	
+    }
+
     /** Inserts <code>this</code> at <code>edge</code>.  The purpose 
 	of this insertion is to modify CONTROL FLOW, rather than just
 	instruction layout.  See <code>layout(HCodeEdge)</code> for
@@ -347,12 +367,14 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	    from = (Instr) edge.from();
 	    Util.assert(from.hasModifiableTargets(), 
 			"<from> should have mutable target list");
-	    Util.assert( Arrays.asList(from.edges()).contains(edge),
+	    Util.assert( edge.to() == null || 
+			 from.edgeC().contains(edge),
 			 "edge should be in <from>.edges()");
 	}
 	if (edge.to() != null) {
 	    to = (Instr) edge.to();
-	    Util.assert( Arrays.asList(to.edges()).contains(edge),
+	    Util.assert( edge.from() == null || 
+			 to.edgeC().contains(edge),
 			 "edge should be in <to>.edges()");
 	}
 
@@ -374,7 +396,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	instruction layout.
 	<BR> <B>requires:</B> <code>this</code> has a current location
 	     in the instruction layout.
-	     (ie <code>insertAt(HCodeEdge)</code> has been called
+	     (ie <code>insertAt(HCodeEdge)</code> or
+	     <code>layout(Instr, Instr)</code> has been called 
 	     since the last time <code>remove()</code> was called, or
 	     since construction if <code>remove()</code> has never
 	     been called.)
@@ -387,6 +410,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	     layout, not according to control flow) and setting the
 	     <code>this.prev</code> and <code>this.next</code> fields
 	     to <code>null</code>. 
+	Instr#insertAt
+	Instr#layout
     */    
     public void remove() {
 	if (this.next != null) {
@@ -403,7 +428,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 
     /** Places <code>this</code> in the instruction layout between
 	<code>from</code> and <code>to</code>.
-	<BR> <B>requires:<B> <OL>
+	<BR> <B>requires:</B> <OL>
 	     <LI> <code>from</code> and <code>to</code> are each
     	          instances of <code>Instr</code> or null
  	     <LI> if <code>from</code> and <code>to</code> are not
@@ -434,10 +459,10 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 			"if they already exist");
 	}
 	
-	from.next = this;
+	if(from!=null)from.next = this;
 	this.prev = from;
 	this.next = to;
-	to.prev = this;
+	if(to!=null)to.prev = this;
     }
 
     /** Accept a visitor. */
