@@ -69,7 +69,7 @@ always:
 		$< > $@
 # dvi-to-postscript-to-acrobat chain.
 %.ps : %.dvi
-	dvips -e 0 -o $@ $<
+	dvips -t letter -e 0 -o $@ $<
 %.pdf : %.ps
 	ps2pdf $< $@
 %-xdvi : %.dvi
