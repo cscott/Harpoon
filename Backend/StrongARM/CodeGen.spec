@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.49 1999-09-13 23:31:57 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.50 1999-09-20 15:29:40 pnkfelix Exp $
  */
 %%
 
@@ -74,20 +74,20 @@ import java.util.Iterator;
     private InstrFactory instrFactory;
     
     // Frame for instructions to access to get platform specific variables (Register Temps, etc) 
-    private SAFrame frame;
+    private Frame frame;
 
     private Temp r0, r1, r2, r3;
 
     private TEMP param0;
 
 
-    public CodeGen(SAFrame frame) {
+    public CodeGen(Frame frame) {
 	last = null;
 	this.frame = frame;
-	r0 = SARegFileInfo.reg[0];
-	r1 = SARegFileInfo.reg[1];
-	r2 = SARegFileInfo.reg[2];
-	r3 = SARegFileInfo.reg[3];
+	r0 = RegFileInfo.reg[0];
+	r1 = RegFileInfo.reg[1];
+	r2 = RegFileInfo.reg[2];
+	r3 = RegFileInfo.reg[3];
     }
 
     /** Emits <code>i</code> as the next instruction in the
@@ -1049,7 +1049,7 @@ JUMP(e) %{
     Instr j = 
        emit(new Instr( instrFactory, ROOT, 
 		       "mov `d0, `s0",
-		       new Temp[]{ SARegFileInfo.PC },
+		       new Temp[]{ RegFileInfo.PC },
 		       new Temp[]{ e },
 		       false, labelList ) {
 			      public boolean hasModifiableTargets(){ 
@@ -1121,10 +1121,10 @@ RETURN(val) %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
     emit(new InstrMEM( instrFactory, ROOT, 
 		       "ldmea `s0, { `d0, `d1, `d2 } @ RETURN",
-		       new Temp[]{ SARegFileInfo.FP, 
-				   SARegFileInfo.SP, 
-				   SARegFileInfo.PC },
-		       new Temp[]{ SARegFileInfo.FP },
+		       new Temp[]{ RegFileInfo.FP, 
+				   RegFileInfo.SP, 
+				   RegFileInfo.PC },
+		       new Temp[]{ RegFileInfo.FP },
 		       false, null));
 			
 }%
@@ -1172,20 +1172,20 @@ CALL(retval, NAME(retex), func, arglist) %{
 	     stackOffset += 4;
 	     emit(new InstrMEM( instrFactory, ROOT,
 		      "str `s0h, [`s1, #-4]!",
-		      new Temp[]{ SARegFileInfo.SP }, // SP *implicitly* modified
-		      new Temp[]{ tempExp.temp, SARegFileInfo.SP })); 
+		      new Temp[]{ RegFileInfo.SP }, // SP *implicitly* modified
+		      new Temp[]{ tempExp.temp, RegFileInfo.SP })); 
 	     break;
 	   default: // start putting args in memory
 	     emit(new InstrMEM( instrFactory, ROOT,
 				"str `s0l, [`s1, #-4]!", 
 				null, 
-			     new Temp[]{ SARegFileInfo.SP, tempExp.temp }));
+			     new Temp[]{ RegFileInfo.SP, tempExp.temp }));
 	     index++;
 	     stackOffset += 4;
 	     emit(new InstrMEM( instrFactory, ROOT,
 		      "str `s0h, [`s1, #-4]!",
-		      new Temp[]{ SARegFileInfo.SP }, // SP *implicitly* modified
-		      new Temp[]{ tempExp.temp, SARegFileInfo.SP })); 
+		      new Temp[]{ RegFileInfo.SP }, // SP *implicitly* modified
+		      new Temp[]{ tempExp.temp, RegFileInfo.SP })); 
 	     stackOffset += 4;
 	     break;
 	   }
@@ -1198,8 +1198,8 @@ CALL(retval, NAME(retex), func, arglist) %{
 	     emit(new InstrMEM(
 		      instrFactory, ROOT,
 		      "str `s0, [`s1, #-4]!",
-		      new Temp[]{ SARegFileInfo.SP }, // SP *implicitly* modified
-		      new Temp[]{ tempExp.temp, SARegFileInfo.SP }));
+		      new Temp[]{ RegFileInfo.SP }, // SP *implicitly* modified
+		      new Temp[]{ tempExp.temp, RegFileInfo.SP }));
 	     stackOffset += 4;
 	  }
 	}	     
@@ -1211,9 +1211,9 @@ CALL(retval, NAME(retex), func, arglist) %{
     // local labels
     // emit(new Instr( instrFactory, ROOT, "bl `s0", null, new Temp[]{ func }));
     emit(new InstrMOVE( instrFactory, ROOT, "mov `d0, `s0", 
-		    new Temp[]{ SARegFileInfo.LR }, new Temp[]{ SARegFileInfo.PC }));
+		    new Temp[]{ RegFileInfo.LR }, new Temp[]{ RegFileInfo.PC }));
     emit(new InstrMOVE( instrFactory, ROOT, "mov `d0, `s0",
-		    new Temp[]{ SARegFileInfo.PC }, new Temp[]{ func }));
+		    new Temp[]{ RegFileInfo.PC }, new Temp[]{ func }));
 
     // these may need to be included in the previous instr to preserve
     // ordering semantics, but for now this way they indent properly
@@ -1226,7 +1226,7 @@ CALL(retval, NAME(retex), func, arglist) %{
     // this will break if stackOffset > 255 (ie >63 args)
     Util.assert( stackOffset < 256, 
 		 "Update the spec file to handle large SP offsets");
-    emit( ROOT, "add `d0, `s0, #" + stackOffset, SARegFileInfo.SP , SARegFileInfo.SP );
+    emit( ROOT, "add `d0, `s0, #" + stackOffset, RegFileInfo.SP , RegFileInfo.SP );
     if (((INVOCATION) ROOT).retval.isDoubleWord()) {
         // not certain an emitMOVE is legal with the l/h modifiers
         emit( ROOT, "mov `d0l, `s0", retval, r0 );
@@ -1268,20 +1268,20 @@ NATIVECALL(retval, func, arglist) %{
 	     stackOffset += 4;
 	     emit(new InstrMEM( instrFactory, ROOT,
 		      "str `s0h, [`s1, #-4]!",
-		      new Temp[]{ SARegFileInfo.SP }, // SP *implicitly* modified
-		      new Temp[]{ tempExp.temp, SARegFileInfo.SP })); 
+		      new Temp[]{ RegFileInfo.SP }, // SP *implicitly* modified
+		      new Temp[]{ tempExp.temp, RegFileInfo.SP })); 
 	     break;
 	   default: // start putting args in memory
 	     emit(new InstrMEM( instrFactory, ROOT,
 				"str `s0l, [`s1, #-4]!", 
 				null, 
-			     new Temp[]{ SARegFileInfo.SP, tempExp.temp }));
+			     new Temp[]{ RegFileInfo.SP, tempExp.temp }));
 	     index++;
 	     stackOffset += 4;
 	     emit(new InstrMEM( instrFactory, ROOT,
 		      "str `s0h, [`s1, #-4]!",
-		      new Temp[]{ SARegFileInfo.SP }, // SP *implicitly* modified
-		      new Temp[]{ tempExp.temp, SARegFileInfo.SP })); 
+		      new Temp[]{ RegFileInfo.SP }, // SP *implicitly* modified
+		      new Temp[]{ tempExp.temp, RegFileInfo.SP })); 
 	     stackOffset += 4;
 	     break;
 	   }
@@ -1294,8 +1294,8 @@ NATIVECALL(retval, func, arglist) %{
 	     emit(new InstrMEM(
 		      instrFactory, ROOT,
 		      "str `s0, [`s1, #-4]!",
-		      new Temp[]{ SARegFileInfo.SP }, // SP *implicitly* modified
-		      new Temp[]{ tempExp.temp, SARegFileInfo.SP }));
+		      new Temp[]{ RegFileInfo.SP }, // SP *implicitly* modified
+		      new Temp[]{ tempExp.temp, RegFileInfo.SP }));
 	     stackOffset += 4;
 	  }
 	}
@@ -1304,14 +1304,14 @@ NATIVECALL(retval, func, arglist) %{
 
 
     emit(new InstrMOVE( instrFactory, ROOT, "mov `d0, `s0", 
-		    new Temp[]{ SARegFileInfo.LR }, new Temp[]{ SARegFileInfo.PC }));
+		    new Temp[]{ RegFileInfo.LR }, new Temp[]{ RegFileInfo.PC }));
     emit(new InstrMOVE( instrFactory, ROOT, "mov `d0, `s0",
-		    new Temp[]{ SARegFileInfo.PC }, new Temp[]{ func }));
+		    new Temp[]{ RegFileInfo.PC }, new Temp[]{ func }));
     
 
 
     // this will break if stackOffset > 255 (ie >63 args)
-    emit( ROOT, "add `d0, `s0, #" + stackOffset, SARegFileInfo.SP, SARegFileInfo.SP );
+    emit( ROOT, "add `d0, `s0, #" + stackOffset, RegFileInfo.SP, RegFileInfo.SP );
     if (((INVOCATION) ROOT).retval.isDoubleWord()) {
         // not certain an emitMOVE is legal with the l/h modifiers
         emit( ROOT, "mov `d0l, `s0", retval, r0 );
