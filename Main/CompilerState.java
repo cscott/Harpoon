@@ -10,6 +10,7 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.ClassHierarchy;
 
 import java.util.Set;
+import java.io.Serializable;
 
 /**
  * <code>CompilerState</code> is an immutable tuple that encapsulates
@@ -28,8 +29,8 @@ import java.util.Set;
  * <code>CompilerState</code>.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompilerState.java,v 1.1 2003-04-02 20:41:22 salcianu Exp $ */
-public class CompilerState implements Cloneable {
+ * @version $Id: CompilerState.java,v 1.2 2003-04-08 05:25:22 salcianu Exp $ */
+public class CompilerState implements Cloneable, Serializable {
    
     /** Creates a <code>CompilerState</code>.
 	

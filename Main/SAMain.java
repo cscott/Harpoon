@@ -111,7 +111,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.45 2003-04-08 04:17:04 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.46 2003-04-08 05:25:22 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -431,7 +431,6 @@ public class SAMain extends harpoon.IR.Registration {
     // DO NOT PUT YOUR CALLS TO FANCY ANALYSES HERE: PUT THEM INTO
     // quad_form_fancy_processing() INSTEAD.
     private static void quad_form_processing() {
-
 	// execute the relevant fancy analyses
 	quad_form_fancy_processing();
 
@@ -469,10 +468,9 @@ public class SAMain extends harpoon.IR.Registration {
 	if (INSTRUMENT_ALLOCS || READ_ALLOC_STATS)
 	    handle_alloc_instrumentation();
 
-	if (PreallocOpt.PREALLOC_OPT || PreallocOpt.ONLY_SYNC_REMOVAL) {
+	if (PreallocOpt.PREALLOC_OPT || PreallocOpt.ONLY_SYNC_REMOVAL)
 	    hcf = PreallocOpt.preallocAnalysis
 		(linker, hcf, classHierarchy, mainM, roots, as, frame);
-	}
 	
 	if (EVENTDRIVEN)
 	    event_driven_step_one();
@@ -525,7 +523,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf = new harpoon.Analysis.Quads.InitializerTransform
 		(hcf, classHierarchy, linker, resource).codeFactory();
 	    // recompute the hierarchy after transformation.
-	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	    hcf = new CachingCodeFactory(hcf);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    // config checking
 	    frame.getRuntime().configurationSet.add
@@ -544,27 +542,6 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
 	hcf = harpoon.Analysis.LowQuad.Loop.LoopOptimize.codeFactory(hcf);
 	hcf = harpoon.Analysis.LowQuad.DerivationChecker.codeFactory(hcf);
-    }
-
-
-    // TODO: add some comments: why are these optimizations done only
-    // for MIPS architectures?
-    private static void quad_form_mips_specific_optimizations() {
-	hcf = new harpoon.Analysis.Quads.ArrayUnroller(hcf).codeFactory();
-	/*
-	  hcf = new harpoon.Analysis.Quads.DispatchTreeTransformation
-	  (hcf, classHierarchy).codeFactory();
-	*/
-	hcf = harpoon.IR.Quads.QuadSSA.codeFactory(hcf);
-	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	hcf = new harpoon.Analysis.Quads.SmallMethodInliner
-	    (hcf, classHierarchy);
-	hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
-	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	hcf = new harpoon.Analysis.Quads.MemoryOptimization
-	    (hcf, classHierarchy, new CallGraphImpl(classHierarchy, hcf))
-	    .codeFactory();
-	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     }
 
 
@@ -597,6 +574,7 @@ public class SAMain extends harpoon.IR.Registration {
 
     
     private static void tree_form_processing() {
+	// low quad -> tree form
 	// XXX: ToTree doesn't handle TYPESWITCHes right now.
 	hcf = new harpoon.Analysis.Quads.TypeSwitchRemover(hcf).codeFactory();
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
@@ -627,7 +605,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf = harpoon.Backend.Analysis.MakeGCThreadSafe.
 		codeFactory(hcf, frame);
 
-	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	hcf = new CachingCodeFactory(hcf);
 
 	if(BACKEND == Backend.MIPSDA || BACKEND == Backend.MIPSYP)
 	    tree_form_mips_specific_optimizations();
@@ -635,87 +613,6 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);    
     }
 
-
-    private static void tree_form_mips_specific_optimizations() {
-	hcf = harpoon.Analysis.Tree.MemHoisting.codeFactory(hcf);
-	hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess
-	    (hcf, frame, classHierarchy).codeFactory();
-    }
-
-    private static void handle_alloc_instrumentation() {
-	if (INSTRUMENT_ALLOCS)
-	    instrument_allocations();
-	// Try not to add anything in between instrument_allocs and
-	// read_allocation_statistics.  When we load the allocation
-	// stats, we want to be in the same place where we were when
-	// we instrumented the code.
-	if (READ_ALLOC_STATS)
-	    read_allocation_statistics();
-    }
-
-    private static void instrument_allocations() {
-	hcf = QuadNoSSA.codeFactory(hcf);
-	hcf = new CachingCodeFactory(hcf, true);
-	// create the allocation numbering
-	AllocationNumbering an =
-	    new AllocationNumbering
-	    ((CachingCodeFactory) hcf, classHierarchy, INSTRUMENT_CALLS);
-
-	try {
-	    if(INSTRUMENT_ALLOCS_STUB) { // "textualize" only a stub
-		System.out.println
-		    ("Writing AllocationNumbering into " + IFILE);
-		AllocationNumberingStub.writeToFile(an, IFILE, linker);
-	    }
-	    else { // classic INSTRUMENT_ALLOCS: serialize serious stuff
-		ObjectOutputStream oos =
-		    new ObjectOutputStream(new FileOutputStream(IFILE));
-		oos.writeObject(hcf);
-		oos.writeObject(linker);
-		oos.writeObject(roots);
-		oos.writeObject(mainM);
-		oos.writeObject(an);
-		oos.close();
-	    }
-	} catch (java.io.IOException e) {
-	    System.out.println(e + " was thrown:");
-	    e.printStackTrace(System.out);
-	    System.exit(1);
-	}
-
-	switch(INSTRUMENT_ALLOCS_TYPE) {
-	case 1:
-	    hcf = (new InstrumentAllocs(hcf, mainM, linker, an,
-					INSTRUMENT_SYNCS,
-					INSTRUMENT_CALLS)).codeFactory();
-	    break;
-	case 2:
-	    hcf = (new InstrumentAllocs2(hcf, mainM,
-					 linker, an)).codeFactory();
-	    roots.add(InstrumentAllocs.getMethod
-		      (linker,
-		       "harpoon.Runtime.CounterSupport", "count2",
-		       new HClass[]{HClass.Int, HClass.Int}));
-	    break;
-	default:
-	    assert false :
-		"Illegal INSTRUMENT_ALLOCS_TYPE" + INSTRUMENT_ALLOCS_TYPE;
-	}
-	
-	hcf = new CachingCodeFactory(hcf);
-	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-    }
-
-
-    private static void read_allocation_statistics() {
-	hcf = QuadNoSSA.codeFactory(hcf);
-	as = new AllocationStatistics(linker,
-				      allocNumberingFileName,
-				      instrumentationResultsFileName);
-	if(!PreallocOpt.PREALLOC_OPT)
-	    as.printStatistics(AllocationStatistics.getAllocs
-			       (classHierarchy.callableMethods(), hcf));
-    }
 
     
     protected static void parseOpts(String[] args) {
@@ -1090,6 +987,113 @@ public class SAMain extends harpoon.IR.Registration {
 	return mroots;
     }
 
+
+
+    // ALLOCATION INSTRUMENTATION BEGIN
+    private static void handle_alloc_instrumentation() {
+	if (INSTRUMENT_ALLOCS)
+	    instrument_allocations();
+	// Try not to add anything in between instrument_allocs and
+	// read_allocation_statistics.  When we load the allocation
+	// stats, we want to be in the same place where we were when
+	// we instrumented the code.
+	if (READ_ALLOC_STATS)
+	    read_allocation_statistics();
+    }
+
+    private static void instrument_allocations() {
+	hcf = QuadNoSSA.codeFactory(hcf);
+	hcf = new CachingCodeFactory(hcf, true);
+	// create the allocation numbering
+	AllocationNumbering an =
+	    new AllocationNumbering
+	    ((CachingCodeFactory) hcf, classHierarchy, INSTRUMENT_CALLS);
+
+	try {
+	    if(INSTRUMENT_ALLOCS_STUB) { // "textualize" only a stub
+		System.out.println
+		    ("Writing AllocationNumbering into " + IFILE);
+		AllocationNumberingStub.writeToFile(an, IFILE, linker);
+	    }
+	    else { // classic INSTRUMENT_ALLOCS: serialize serious stuff
+		ObjectOutputStream oos =
+		    new ObjectOutputStream(new FileOutputStream(IFILE));
+		oos.writeObject(hcf);
+		oos.writeObject(linker);
+		oos.writeObject(roots);
+		oos.writeObject(mainM);
+		oos.writeObject(an);
+		oos.close();
+	    }
+	} catch (java.io.IOException e) {
+	    System.out.println(e + " was thrown:");
+	    e.printStackTrace(System.out);
+	    System.exit(1);
+	}
+
+	switch(INSTRUMENT_ALLOCS_TYPE) {
+	case 1:
+	    hcf = (new InstrumentAllocs(hcf, mainM, linker, an,
+					INSTRUMENT_SYNCS,
+					INSTRUMENT_CALLS)).codeFactory();
+	    break;
+	case 2:
+	    hcf = (new InstrumentAllocs2(hcf, mainM,
+					 linker, an)).codeFactory();
+	    roots.add(InstrumentAllocs.getMethod
+		      (linker,
+		       "harpoon.Runtime.CounterSupport", "count2",
+		       new HClass[]{HClass.Int, HClass.Int}));
+	    break;
+	default:
+	    assert false :
+		"Illegal INSTRUMENT_ALLOCS_TYPE" + INSTRUMENT_ALLOCS_TYPE;
+	}
+	
+	hcf = new CachingCodeFactory(hcf);
+	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+    }
+
+
+    private static void read_allocation_statistics() {
+	hcf = QuadNoSSA.codeFactory(hcf);
+	as = new AllocationStatistics(linker,
+				      allocNumberingFileName,
+				      instrumentationResultsFileName);
+	if(!PreallocOpt.PREALLOC_OPT)
+	    as.printStatistics(AllocationStatistics.getAllocs
+			       (classHierarchy.callableMethods(), hcf));
+    }
+    // ALLOCATION INSTRUMENTATION END
+
+
+    // MIPS SPECIFIC OPTIMIZATION BEGIN
+    // TODO: add some comments: why are these optimizations done only
+    // for MIPS architectures?
+    private static void quad_form_mips_specific_optimizations() {
+	hcf = new harpoon.Analysis.Quads.ArrayUnroller(hcf).codeFactory();
+	/*
+	  hcf = new harpoon.Analysis.Quads.DispatchTreeTransformation
+	  (hcf, classHierarchy).codeFactory();
+	*/
+	hcf = harpoon.IR.Quads.QuadSSA.codeFactory(hcf);
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	hcf = new harpoon.Analysis.Quads.SmallMethodInliner
+	    (hcf, classHierarchy);
+	hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+	hcf = new harpoon.Analysis.Quads.MemoryOptimization
+	    (hcf, classHierarchy, new CallGraphImpl(classHierarchy, hcf))
+	    .codeFactory();
+	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+    }
+
+    private static void tree_form_mips_specific_optimizations() {
+	hcf = harpoon.Analysis.Tree.MemHoisting.codeFactory(hcf);
+	hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess
+	    (hcf, frame, classHierarchy).codeFactory();
+    }
+    // MIPS SPECIFIC OPTIMIZATION END
 
 
     // DO_TRANSACTIONS BEGIN
