@@ -238,10 +238,10 @@ int main(int argc, char *argv[]) {
   skip:;
   }
 
-#ifdef WITH_INIT_CHECK
+#if defined(WITH_INIT_CHECK) && defined(WITH_THREADS)
   /* start up any threads that were deferred during static initialization */
   fni_thread_startDeferredThreads(env);
-#endif /* WITH_INIT_CHECK */
+#endif /* WITH_INIT_CHECK && WITH_THREADS */
 
   /* Wrap argv strings */
   cls = (*env)->FindClass(env, "java/lang/String");
