@@ -28,7 +28,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.29 2000-10-16 16:53:34 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.30 2000-10-20 23:41:31 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -75,30 +75,11 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    public HCode convert(HMethod m) {
 		HCode c = hcf.convert(m);
 		// substitute stub for native methods.
-		if (c==null && Modifier.isNative(m.getModifiers())) {
-		    // careful w/ array clone methods -- alias out all except
-		    // java.lang.Object[].clone(). UGLY.  but it works.
-		    if (isArrayCloneMethod(m)) {
-			if (m.equals(HMobjAclone)) {
-			    // collect all other array clone methods.
-			    Set all_acm = new HashSet(ch.callableMethods());
-			    for (Iterator it=all_acm.iterator(); it.hasNext();)
-				if (!isArrayCloneMethod((HMethod)it.next()))
-				    it.remove();
-			    all_acm.remove(HMobjAclone);
-			    HMethod[] acm = (HMethod[]) all_acm.toArray
-				(new HMethod[all_acm.size()]);
-			    c = new StubCode(m, frame, acm);
-			} else { /* skip non-Object[] array clone methods */ }
-		    } else c = new StubCode(m, frame);
-		}
+		if (c==null && Modifier.isNative(m.getModifiers()))
+		    c = new StubCode(m, frame);
 		return c;
 	    }
 	};
-    }
-    private static boolean isArrayCloneMethod(HMethod m) {
-	return m.getDeclaringClass().isArray() && m.getName().equals("clone")
-	    && m.getDescriptor().equals("()Ljava/lang/Object;");
     }
 
     /** Return a <code>Set</code> of <code>HMethod</code>s 

@@ -51,30 +51,21 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.15 2000-06-23 23:05:38 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.16 2000-10-20 23:41:31 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
-    final HMethod otherNames[];
     final TreeBuilder m_tb;
     final NameMap m_nm;
     final int EXC_OFFSET;
     final int REF_OFFSET;
     final DerivationGenerator m_dg;
 
-    /** Creates a <code>StubCode</code>. */
-    public StubCode(HMethod method, Frame frame) {
-	this(method, frame, null);
-    }
     /** Creates a <code>StubCode</code>.
      * @param method The method for which to generate code.
      * @param frame The frame for the generated code.
-     * @param otherNames an array of other methods which should point to
-     *        the piece of stub code that we're generating. */
-    // otherNames is used for array clone methods -- all array clone methods
-    // share a single stub, which links to java.lang.Object[].clone().
-    public StubCode(HMethod method, Frame frame, HMethod[] otherNames) {
+     */
+    public StubCode(HMethod method, Frame frame) {
         super(method, null, frame, new DerivationGenerator());
-	this.otherNames = otherNames;
 	this.m_nm = frame.getRuntime().nameMap;
 	this.m_tb = (TreeBuilder) frame.getRuntime().treeBuilder;
 	// keep this synchronized with struct FNI_Thread_State in
@@ -93,14 +84,6 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 	List stmlist = new ArrayList();
 	// segment change
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.CODE));
-	// kludge!  we want to alias the array clone stub.  so we stick in
-	// an align directive and lots of exported labels...
-	if (otherNames!=null && otherNames.length > 0) {
-	    stmlist.add(new ALIGN(tf, null, m_tb.POINTER_SIZE));
-	    for (int i=0; i<otherNames.length; i++)
-		stmlist.add(new LABEL(tf, null,
-				      m_nm.label(otherNames[i]), true));
-	}
 	// add method header.
 	// (remember that first method parameter in tree form is the
 	//  'return exception address')
