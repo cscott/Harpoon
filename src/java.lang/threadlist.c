@@ -145,11 +145,6 @@ void wait_on_running_thread() {
 #endif /* WITH_HEAVY_THREADS || WITH_PTH_THREADS */
 
 #if WITH_USER_THREADS
-#define EXTRACT_OTHER_ENV(env, thread) \
-  ( (struct FNI_Thread_State *) FNI_GetJNIData(env, thread) )
-#define EXTRACT_PTHREAD_T(env, thread) \
-  ( EXTRACT_OTHER_ENV(env, thread)->pthread )
-
 #ifdef WITH_PRECISE_GC
 struct gc_thread_list {
   struct FNI_Thread_State *thrstate;

@@ -5,7 +5,11 @@
 #include "config.h" /* for WITH_PRECISE_GC */
 
 void add_running_thread(JNIEnv *env);
+#ifdef WITH_USER_THREADS
+void remove_running_thread();
+#else
 void remove_running_thread(void *cl);
+#endif
 void wait_on_running_thread();
 
 extern pthread_key_t running_threads_key;

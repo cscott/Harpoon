@@ -29,20 +29,20 @@
 #endif
 #endif
 #ifdef WITH_REALTIME_THREADS
-#include "../realtime/RTJconfig.h" /* for RTJ_MALLOC_UNCOLLECTABLE */
+#include <string.h> /* for memcpy */
+#include "../realtime/RTJmalloc.h" 
 #include "../realtime/threads.h"
 #include "../realtime/qcheck.h"
 #endif /* WITH_REALTIME_THREADS */
 
 #include "threadlist.h" /* maintain list of running threads */
 
-#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
 #define EXTRACT_OTHER_ENV(env, thread) \
   ( (struct FNI_Thread_State *) FNI_GetJNIData(env, thread) )
 #define EXTRACT_PTHREAD_T(env, thread) \
   ( EXTRACT_OTHER_ENV(env, thread)->pthread )
 #endif
-
 
 extern jclass thrCls; /* clazz for java/lang/Thread. */
 extern jfieldID priorityID; /* "priority" field in Thread object. */
@@ -69,6 +69,8 @@ extern int sched_min_priority, sched_norm_priority, sched_max_priority;
  * used in src/startup.c. */
 void FNI_java_lang_Thread_setupMain(JNIEnv *env);
 void FNI_java_lang_Thread_finishMain(JNIEnv *env);
+
+void context_switch();
 
 #ifdef WITH_HEAVY_THREADS
 /* scale priority levels from java values to sched.h values */
@@ -293,7 +295,7 @@ void fni_thread_start(JNIEnv *env, jobject _this) {
 }
 #endif
 #ifdef WITH_USER_THREADS
-#include "../../user/engine-i386-linux-1.0.h"
+#include "../user/engine-i386-linux-1.0.h"
 
 static inline
 void fni_thread_start(JNIEnv *env, jobject _this) {
@@ -303,7 +305,6 @@ void fni_thread_start(JNIEnv *env, jobject _this) {
     { _this , PTHREAD_COND_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
   struct closure_struct *clsp = &cls;
   void * stackptr;
-  struct machdep_pthread *mp;
 #if !defined(WITH_REALTIME_THREADS)
   struct thread_list *tl;
 #else /* WITH_REALTIME_THREADS */
