@@ -13,6 +13,9 @@ package harpoon.Backend.CSAHack.RegAlloc;
 import harpoon.Backend.CSAHack.Graph.Node;
 import harpoon.Backend.CSAHack.Graph.NodeList;
 
+import harpoon.Backend.CSAHack.RegAlloc.RegWork.Moves;
+import harpoon.Backend.CSAHack.RegAlloc.RegWork.NodeSet;
+
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempList;
 import harpoon.Temp.TempMap;

@@ -14,13 +14,14 @@ import harpoon.Temp.TempList;
 import java.util.Hashtable;
 import java.util.Stack;
 
-class Worklist {
+abstract class RegWork { // make all of these inner classes.
+static class Worklist {
   Set simplify  = new Set("simplifyWorklist");
   Set freeze	= new Set("freezeWorklist");
   Set spill	= new Set("spillWorklist");
 }
 
-class NodeSet {
+static class NodeSet {
   Set precolored = new Set("precolored");
   Set initial    = new Set("initial");
   Worklist worklist = new Worklist();
@@ -56,7 +57,7 @@ class NodeSet {
   }
 }
 
-class Moves { 
+static class Moves { 
   Set coalesced		= new Set("coalescedMoves");
   Set constrained	= new Set("constrainedMoves");
   Set frozen		= new Set("frozenMoves");
@@ -69,3 +70,5 @@ class Moves {
 	worklist.add(nl.head);
   }
 }
+
+} // end RegWork
