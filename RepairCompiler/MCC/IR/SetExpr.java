@@ -18,6 +18,10 @@ public class SetExpr extends Expr {
         return new HashSet();
     }
 
+    public Descriptor getDescriptor() {
+	return sd;
+    }
+
     public Set getRequiredDescriptors() {
         HashSet v = new HashSet();
         v.add(sd);

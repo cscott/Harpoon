@@ -31,7 +31,50 @@ public class OpExpr extends Expr {
         } else throw new Error();
     }
 
+    public boolean usesDescriptor(RelationDescriptor rd) {
+	if (opcode==Opcode.GT||opcode==Opcode.GE||opcode==Opcode.LT||
+	    opcode==Opcode.LE||opcode==Opcode.EQ||opcode==Opcode.NE)
+	    return right.usesDescriptor(rd);
+	else
+	    return left.usesDescriptor(rd)||(right!=null&&right.usesDescriptor(rd));
+    }
+    
+    public int[] getRepairs(boolean negated) {
+	if (left instanceof RelationExpr)
+	    return new int[] {AbstractRepair.MODIFYRELATION};
+	if (left instanceof SizeofExpr) {
+	    boolean isRelation=((SizeofExpr)left).setexpr instanceof ImageSetExpr;
+	    if (isRelation) {
+		if (opcode==Opcode.EQ)
+		    return new int[] {AbstractRepair.ADDTORELATION,
+					  AbstractRepair.REMOVEFROMRELATION};
+		if (((opcode==Opcode.GE)&&!negated)||
+		    ((opcode==Opcode.LE)&&negated))
+		    return new int[]{AbstractRepair.ADDTORELATION};
+		else
+		    return new int[]{AbstractRepair.REMOVEFROMRELATION};
+	    } else {
+		if (opcode==Opcode.EQ)
+		    return new int[] {AbstractRepair.ADDTOSET,
+					  AbstractRepair.REMOVEFROMSET};
+		
+		if (((opcode==Opcode.GE)&&!negated)||
+		    ((opcode==Opcode.LE)&&negated))
+		    return new int[] {AbstractRepair.ADDTOSET};
+		else
+		    return new int[] {AbstractRepair.REMOVEFROMSET};
+	    }
+	}
+	throw new Error("BAD");
+    }
+    
+    public Descriptor getDescriptor() {
+	return left.getDescriptor();
+    }
 
+    public boolean inverted() {
+	return left.inverted();
+    }
 
     public Set getInversedRelations() {
         Set set = left.getInversedRelations();

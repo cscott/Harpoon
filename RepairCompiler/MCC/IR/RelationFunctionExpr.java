@@ -17,6 +17,10 @@ public class RelationFunctionExpr extends Expr {
         this.rule = rule;
     }
 
+    public Descriptor getDescriptor() {
+	return relation;
+    }
+
     public RelationDescriptor getRelation() {
         return relation;
     }
@@ -29,6 +33,13 @@ public class RelationFunctionExpr extends Expr {
         Set v = expr.getRequiredDescriptors();        
         v.add(relation);
         return v;
+    }
+
+    public boolean usesDescriptor(RelationDescriptor rd) {
+	if (rd==relation)
+	    return true;
+	else
+	    return expr.usesDescriptor(rd);
     }
 
     public void generate(CodeWriter cr, VarDescriptor dest) {

@@ -7,6 +7,11 @@ public class InclusionPredicate extends Predicate {
     Expr expr;
     SetExpr setexpr;
 
+    public boolean inverted() {
+	return setexpr.inverted();
+    }
+
+
     public InclusionPredicate(Expr expr, SetExpr setexpr) {
         if (expr == null) {
             throw new NullPointerException();
@@ -41,6 +46,13 @@ public class InclusionPredicate extends Predicate {
         //return set;
     }
 
+    public Descriptor getDescriptor() {
+	if (setexpr instanceof ImageSetExpr) {
+	    return ((ImageSetExpr)setexpr).getRelation();
+	} else
+	    return setexpr.sd;
+    }
+
     public int[] getRepairs(boolean negated) {
 	if (setexpr instanceof ImageSetExpr) {
 	    if (negated)
@@ -56,3 +68,4 @@ public class InclusionPredicate extends Predicate {
     }
 }
     
+

@@ -54,9 +54,10 @@ public class Compiler {
 	    success = parse(state) || error(state, "Parsing failed, not attempting semantic analysis.");
 	    success = semantics(state) || error(state, "Semantic analysis failed, not attempting variable initialization.");
 
-	    if (REPAIR)
+	    if (REPAIR) {
 		(new ImplicitSchema(state)).update();
-
+		Termination t=new Termination(state);
+	    }
             
             (new DependencyBuilder(state)).calculate();
             

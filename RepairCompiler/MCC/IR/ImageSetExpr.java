@@ -22,12 +22,24 @@ public class ImageSetExpr extends SetExpr {
         this.inverse = inverse;
     }
 
+    public boolean inverted() {
+	return inverse;
+    }
+
     public VarDescriptor getVar() {
         return vd;
     }
 
     public RelationDescriptor getRelation() {
         return rd;
+    }
+
+    public Descriptor getDescriptor() {
+	return rd;
+    }
+
+    public boolean usesDescriptor(RelationDescriptor rd) {
+	return (rd==this.rd);
     }
 
     public Set getInversedRelations() {

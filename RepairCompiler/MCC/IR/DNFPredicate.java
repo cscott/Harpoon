@@ -18,4 +18,8 @@ public class DNFPredicate {
     void negatePred() {
 	negate=!negate;
     }
+
+    boolean isNegated() {
+	return negate;
+    }
 }

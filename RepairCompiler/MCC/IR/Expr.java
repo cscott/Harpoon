@@ -29,4 +29,20 @@ public abstract class Expr {
 	return new DNFRule(this);
     }
 
+    public Descriptor getDescriptor() {
+	return null;
+    }
+
+    public int[] getRepairs(boolean negated) {
+	return new int[0];
+    }
+
+    public boolean inverted() {
+	return false;
+    }
+
+    public boolean usesDescriptor(RelationDescriptor rd) {
+	return false;
+    }
+
 }

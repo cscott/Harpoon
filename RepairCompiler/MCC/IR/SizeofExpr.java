@@ -14,6 +14,19 @@ public class SizeofExpr extends Expr {
         this.setexpr = setexpr;
     }
 
+    public boolean usesDescriptor(RelationDescriptor rd) {
+	return setexpr.usesDescriptor(rd);
+    }
+
+
+    public Descriptor getDescriptor() {
+	return setexpr.getDescriptor();
+    }
+
+    public boolean inverted() {
+	return setexpr.inverted();
+    }
+
     public SetExpr getSetExpr() {
         return setexpr;
     }

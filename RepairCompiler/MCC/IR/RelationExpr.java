@@ -17,9 +17,24 @@ public class RelationExpr extends Expr {
     public Expr getExpr() {
         return expr;
     }
+
+    public boolean usesDescriptor(RelationDescriptor rd) {
+	if (rd==relation)
+	    return true;
+	else
+	    return expr.usesDescriptor(rd);
+    }
     
     public RelationDescriptor getRelation() {
         return relation;
+    }
+
+    public Descriptor getDescriptor() {
+        return relation;
+    }
+
+    public boolean inverted() {
+        return inverse;
     }
 
     public Set getInversedRelations() {
