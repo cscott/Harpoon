@@ -66,7 +66,7 @@ public class Buffer extends Node implements Runnable {
      *  @param out   The node to send output to.
      */
     public Buffer(int size, Node out) {
-	this(size, out, false)
+	this(size, out, false);
 	buf = new ImageData[size];
 	this.debug = false;
 	thread.start();

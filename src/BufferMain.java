@@ -18,16 +18,19 @@ public class BufferMain {
      *  @param args Should include buffer size.
      */
     public static void main(String args[]) {
-	if (args.length<2) {
+	if (args.length<4) {
 	    System.out.println("Usage: java -jar buffer.jar ");
+	    System.out.println("       <length of buffer>");
+	    System.out.println("       <debug | nodebug>");
 	    System.out.println("       <CORBA name for server> <CORBA name for client>");
 	    System.out.println("       [CORBA options]");
 	    System.exit(-1);
 	}
 
-	ATR server = new ATR(new CORBA(args), args[1], null);
-	ATRClient client = new ATRClient(new CORBA(args), args[2]);
-	Buffer buffer = new Buffer(Integer.parseInt(args[0]), null);
+	boolean debug = args[1].equalsIgnoreCase("debug");
+	ATR server = new ATR(new CORBA(args), args[2], null);
+	ATRClient client = new ATRClient(new CORBA(args), args[3]);
+	Buffer buffer = new Buffer(Integer.parseInt(args[0]), null, debug);
 
 	server.linkL(buffer.linkL(client)).run();
     }
