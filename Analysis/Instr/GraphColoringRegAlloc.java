@@ -18,6 +18,7 @@ import harpoon.IR.Assem.Instr;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.CombineIterator;
+import harpoon.Util.FilterIterator;
 import harpoon.Util.Default;
 import harpoon.Util.ArraySet;
 import harpoon.Util.Collections.ListFactory;
@@ -45,7 +46,7 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.6 2000-07-26 21:30:53 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.7 2000-07-27 22:43:48 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -112,23 +113,25 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    do {
 		makeWebs(rdefs); 
 		
-		System.out.println("webs: "+webRecords);
+		// System.out.println("webs: "+webRecords);
 
 		adjMtx = buildAdjMatrix();
-		System.out.println("Adjacency Matrix");
-		System.out.println(adjMtx);
+		// System.out.println("Adjacency Matrix");
+		// System.out.println(adjMtx);
 		coalesced = coalesceRegs(adjMtx);
 	    } while (coalesced);
 
 	    WebRecord[] adjLsts = buildAdjLists(adjMtx); 
 	    adjMtx = null;
 
-	    System.out.println(Arrays.asList(adjLsts));
+	    // System.out.println(Arrays.asList(adjLsts));
 
 	    computeSpillCosts();
 
 	    ColorableGraph graph = new Graph(adjLsts);
 	    
+	    System.out.println("edges of graph "+graph.edges());
+
 	    try {
 		List colors = new ArrayList(regToColor.values());
 		System.out.println("colors:"+colors);
@@ -222,15 +225,27 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		     new LinearSet(Collections.singleton(inst)));
 		webSet.add(web);
 	    }
+
+	    // in practice, the remainder of the web building should
+	    // work W/O the following loop.  but if there is a def w/o
+	    // a corresponding use, the system breaks.
+	    for(Iterator defs = inst.defC().iterator(); defs.hasNext();){
+		Temp t = (Temp) defs.next();
+		TempWebRecord web =
+		    new TempWebRecord
+		    (t, new LinearSet(Collections.singleton(inst)),
+		     new LinearSet(Collections.EMPTY_SET));
+		webSet.add(web);
+	    }
 	}
 
-	System.out.println("pre-duchain-combination");
-	System.out.println("webSet: "+webSet);
+	// System.out.println("pre-duchain-combination");
+	// System.out.println("webSet: "+webSet);
 
 	boolean changed;
 	do {
 	    // combine du-chains for the same symbol and that have a
-	    // use in common to make webs  
+	    // def in common to make webs  
 	    changed = false;
 	    tmp1 = new HashSet(webSet);
 	    while(!tmp1.isEmpty()) {
@@ -254,8 +269,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	} while ( changed );
 	
-	System.out.println("post-duchain-combination");
-	System.out.println("webSet: "+webSet);
+	// System.out.println("post-duchain-combination");
+	// System.out.println("webSet: "+webSet);
 	
 	// FSK: may need to switch the thinking here from "number of
 	// regs" to "number of possible assignments" which is a
@@ -588,11 +603,30 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	
 	public List temps() { return Collections.nCopies(1, sym); }
 	public Set defs() { return Collections.unmodifiableSet(defs); }
+
+
+	private Integer i2int(Instr i) { return new Integer(i.getID()); }
+	public Set readable(final Set instrs) {
+	    final FilterIterator.Filter fltr = new FilterIterator.Filter() {
+		public Object map(Object o) { return i2int((Instr)o); }
+	    };
+	    return new AbstractSet() {
+		public int size() { return instrs.size(); }
+		public Iterator iterator() {
+		    return new FilterIterator(instrs.iterator(), fltr);
+		}
+	    };
+	}
 	public String toString() {
-	    if (false) 
-		return "< sym:"+sym+", defs:"+defs+", uses:"+uses+
-		    ", spill:"+spill+", sreg:"+sreg+", disp:"+disp+" >";
-	    return "w:"+sym;
+	    if (true) 
+		return "< sym:"+sym+
+		    ", defs:"+readable(defs)+
+		    ", uses:"+readable(uses)+
+		    // ", spill:"+spill+", sreg:"+sreg+
+		    // ", disp:"+disp+
+		    " >";
+	    else 
+		return "w:"+sym;
 	}
     }
 
