@@ -28,7 +28,7 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  * <code>Util</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Util.java,v 1.5 2002-05-11 14:43:56 salcianu Exp $
+ * @version $Id: Util.java,v 1.6 2002-05-11 14:58:04 ovy Exp $
  */
 public abstract class Util {
 
@@ -56,7 +56,8 @@ public abstract class Util {
 	for(Iterator it = methods.iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    Code hcode = (Code) hcf.convert(hm);
-	    dnews.addAll(hcode.selectAllocations());
+            if (hcode != null) 
+                dnews.addAll(hcode.selectAllocations());
 	}
 	return dnews;
     }
