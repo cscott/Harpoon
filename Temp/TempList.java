@@ -5,11 +5,14 @@ package harpoon.Temp;
 
 /** A singly-linked list of temporary variables.
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TempList.java,v 1.3.2.2 1999-08-04 06:31:03 cananian Exp $
+ * @version $Id: TempList.java,v 1.3.2.3 1999-10-21 13:29:29 cananian Exp $
  */
 public class TempList {
    public Temp head;
    public TempList tail;
    public TempList(Temp h, TempList t) {head=h; tail=t;}
+   public String toString() {
+       return head + ((tail==null)?"":", "+tail);
+   }
 }
 
