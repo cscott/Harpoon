@@ -11,11 +11,11 @@ import java.lang.reflect.Modifier;
  * <p> Used for the <code>length()</code> field of an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HArrayField.java,v 1.3.2.1 1999-06-24 00:03:03 cananian Exp $
+ * @version $Id: HArrayField.java,v 1.3.2.1.6.1 2000-01-11 08:26:53 cananian Exp $
  * @see HArrayMethod
  * @see HArrayConstructor
  */
-class HArrayField extends HField {
+class HArrayField extends HFieldImpl {
     /** Creates a <code>HArrayField</code>. */
     HArrayField(HClass parent, 
 		String name, HClass type, int modifiers) {

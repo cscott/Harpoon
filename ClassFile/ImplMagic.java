@@ -23,7 +23,7 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.8.6.2 2000-01-11 02:08:55 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.8.6.3 2000-01-11 08:26:53 cananian Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -83,7 +83,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
     } // END MagicClass
     
     // utility function to initialize HMethod/HConstructor/HInitializer.
-    static private final void initMethod(HMethod _this, HClass parent,
+    static private final void initMethod(HMethodImpl _this, HClass parent,
 		      harpoon.IR.RawClass.MethodInfo methodinfo) {
 	_this.parent = parent;
 	_this.name = methodinfo.name();
@@ -179,10 +179,8 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    repository.remove(m); // make methodinfo garbage.
 	}
     };
-    // register method is obsolete, but what the heck.
-    static { HMethod.register(codeFactory); }
     
-    static class MagicMethod extends HMethod {
+    static class MagicMethod extends HMethodImpl {
 	/** Creates a <code>MagicMethod</code> from a 
 	 *  <code>harpoon.IR.RawClass.MethodInfo</code>. */
 	MagicMethod(HClass parent, 
@@ -190,14 +188,14 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    initMethod(this, parent, methodinfo);
 	}
 	// optimize hashcode.
-	private int hashcode=0;
+	private transient int hashcode=0;
 	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
 	    if (hashcode==0) hashcode = super.hashCode();
 	    return hashcode;
 	}
     } // END MagicMethod
 
-    static class MagicConstructor extends HConstructor {
+    static class MagicConstructor extends HConstructorImpl {
 	/** Creates a <code>MagicConstructor</code> from a 
 	 *  <code>harpoon.IR.RawClass.MethodInfo</code>. */
 	MagicConstructor(HClass parent,
@@ -205,14 +203,14 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    initMethod(this, parent, methodinfo);
 	}
 	// optimize hashcode.
-	private int hashcode=0;
+	private transient int hashcode=0;
 	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
 	    if (hashcode==0) hashcode = super.hashCode();
 	    return hashcode;
 	}
     } // END MagicConstructor
 
-    static class MagicInitializer extends HInitializer {
+    static class MagicInitializer extends HInitializerImpl {
 	/** Creates a <code>MagicInitializer</code> from a
 	 *  <code>harpoon.IR.RawClass.MethodInfo</code>. */
 	MagicInitializer(HClass parent,
@@ -220,14 +218,14 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    initMethod(this, parent, methodinfo);
 	}
 	// optimize hashcode.
-	private int hashcode=0;
+	private transient int hashcode=0;
 	public int hashCode() { // 1 in 2^32 chance of recomputing frequently.
 	    if (hashcode==0) hashcode = super.hashCode();
 	    return hashcode;
 	}
     } // END MagicInitializer
 
-    static class MagicField extends HField {
+    static class MagicField extends HFieldImpl {
 	/** Creates a <code>MagicField</code> from a 
 	 *  <code>harpoon.IR.RawClass.FieldInfo</code>. */
 	MagicField(HClass parent, 
