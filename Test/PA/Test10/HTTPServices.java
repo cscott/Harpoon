@@ -47,6 +47,7 @@ public class HTTPServices{
 	try{
 	    while((size = reader.read(buffer,0,buffer.length)) != -1)
 		out.write(buffer,0,size);
+	    reader.close();
 	}
 	catch(IOException e){
 	    resp.returnCode = 501; // error during transmision
