@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.125 2000-01-31 21:53:59 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.126 2000-02-08 01:13:56 kkz Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1931,6 +1931,10 @@ SEGMENT(REFLECTION_OBJECTS) %{
 
 SEGMENT(REFLECTION_DATA) %{
     emitDIRECTIVE( ROOT, ".data 9\t@.section reflection_data");
+}%
+
+SEGMENT(GC_INDEX) %{
+    emitDIRECTIVE( ROOT, ".data 10\t@.section gc_index");
 }%
 
 SEGMENT(TEXT) %{

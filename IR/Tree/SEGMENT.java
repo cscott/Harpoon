@@ -16,7 +16,7 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.16 2000-01-09 01:04:41 duncan Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.17 2000-02-08 01:13:02 kkz Exp $
  */
 public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     /** R/O storage for static class data (display, vmtable, etc) */
@@ -44,6 +44,8 @@ public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     public static final int TEXT                 = 10; 
     /** R/W memory initialized at load time to be 0 */
     public static final int ZERO_DATA            = 11; 
+    /** R/O storage for GC index */
+    public static final int GC_INDEX             = 12;
 
     /** Converts a segtype into its string representation.
      */
@@ -61,6 +63,7 @@ public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
 	case STRING_DATA:         return "STRING_DATA";
 	case TEXT:                return "TEXT";
 	case ZERO_DATA:           return "ZERO_DATA";
+	case GC_INDEX:            return "GC_INDEX";
 	default: 
 	    Util.assert(false, "Unknown segment type "+segtype); 
 	    return null;
