@@ -82,6 +82,7 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_fieldassign(JNIEnv *env, jcl
   jclass methodclass;
   char * fieldstr;
   char * classstr;
+  char * descstr;
 
   if (source!=NULL)
     sourceuid=(*env)->GetLongField(env, source, UIDfd);
@@ -95,7 +96,8 @@ JNIEXPORT void JNICALL Java_java_lang_RoleInference_fieldassign(JNIEnv *env, jcl
   methodclass=FNI_WRAP(FNI_GetFieldInfo(field)->declaring_class_object);
   classstr=FNI_GetClassInfo(methodclass)->name;
   fieldstr=FNI_GetFieldInfo(field)->fieldID->name;
-  fprintf(rolefile,"FA: %lld %s %s %lld\n",sourceuid,classstr,fieldstr,componentuid);
+  descstr=FNI_GetFieldInfo(field)->fieldID->desc;
+  fprintf(rolefile,"FA: %lld %s %s %s %lld\n",sourceuid,classstr,fieldstr,descstr,componentuid);
 }
 
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_fieldload(JNIEnv *env, jclass cls, jstring localvar, jobject source, jobject field, jobject component) {
