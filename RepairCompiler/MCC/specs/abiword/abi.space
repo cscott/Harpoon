@@ -7,3 +7,4 @@ Next: Frags -> Frags;
 Prev: Frags -> Frags;
 set LFrag(pf_Frag);
 PLast: Fragments -> LFrag;
+Length: Frags -> int;

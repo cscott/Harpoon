@@ -11,7 +11,7 @@ import MCC.IR.DebugItem;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.11 2004-08-13 19:22:23 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.12 2004-08-16 20:53:53 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -106,6 +106,7 @@ public class CLI {
 	    System.out.println("-aggressivesearch");
 	    System.out.println("-prunequantifiernodes");
 	    System.out.println("-cplusplus");
+	    System.out.println("-time");
 	    System.exit(-1);
 	}
 
@@ -123,6 +124,8 @@ public class CLI {
 		i+=3;
 	    } else if (args[i].equals("-debug")) {
                 Compiler.GENERATEDEBUGHOOKS=true;
+	    } else if (args[i].equals("-time")) {
+                Compiler.TIME=true;
 	    } else if (args[i].equals("-instrument")) {
                 Compiler.GENERATEINSTRUMENT=true;
 	    } else if (args[i].equals("-aggressivesearch")) {

@@ -5,3 +5,4 @@
 [forall f in Frags], (sizeof(f.~Next)<=1);
 [forall f in firstblock], sizeof(f.~Next)=0;
 [forall l in Last, forall f in Fragments], f.PLast=l and sizeof(f.PLast)=1;
+[forall f in Frags], f.Length>=1;

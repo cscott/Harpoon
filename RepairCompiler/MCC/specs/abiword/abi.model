@@ -6,5 +6,6 @@
 [forall f in Frags], !(f.m_next=null) => <f,f.m_next> in Next;
 [forall f in Frags], !(f.m_prev=null) => <f,f.m_prev> in Prev;
 [forall f in Frags], (f.m_next=null) => f in Last;
+[forall f in Frags], true => <f,f.m_length> in Length;
 [forall f in Fragments], !(f.m_pLast=null) => <f,f.m_pLast> in PLast;
 [forall f in Fragments], !(f.m_pLast=null) => f.m_pLast in LFrag;

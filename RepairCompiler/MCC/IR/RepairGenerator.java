@@ -497,6 +497,11 @@ public class RepairGenerator {
 	crhead.outputline("void doanalysis();");
 	craux.outputline("void "+name +"_state::doanalysis()");
   	craux.startblock();
+	if (Compiler.TIME) {
+	    craux.outputline("struct timeval _begin_time,_end_time;");
+	    craux.outputline("gettimeofday(&_begin_time,NULL);");
+	}
+
 	if (Compiler.GENERATEINSTRUMENT) {
 	    craux.outputline("updatecount=0;");
 	    craux.outputline("rebuildcount=0;");
@@ -521,6 +526,11 @@ public class RepairGenerator {
     private void generate_teardown() {
 	CodeWriter cr = new StandardCodeWriter(outputaux);        
 	cr.endblock();
+	if (Compiler.TIME) {
+	    cr.outputline("gettimeofday(&_end_time,NULL);");
+	    cr.outputline("printf(\"time=%ld uS\\n\",(_end_time.tv_sec-_begin_time.tv_sec)*1000000+_end_time.tv_usec-_begin_time.tv_usec)");
+	}
+
 	if (Compiler.GENERATEINSTRUMENT) {
 	    cr.outputline("printf(\"updatecount=%d\\n\",updatecount);");
 	    cr.outputline("printf(\"rebuildcount=%d\\n\",rebuildcount);");
