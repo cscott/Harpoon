@@ -28,7 +28,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.25 2000-06-24 04:44:56 kkz Exp $
+ * @version $Id: Runtime.java,v 1.1.2.26 2000-07-02 04:33:28 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -155,6 +155,11 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 		.getConstructor(new HClass[] { HCstring }), // .newInstance()
 	    linker.forName("java.util.Properties")
 		.getMethod("setProperty", new HClass[] { HCstring, HCstring }),
+		// java.lang.Throwable.printStackTrace0 uses println([C)
+		// of whatever object it is passed.  Let's assume that's
+		// java.io.PrintStream (for System.out/System.err)
+	    linker.forName("java.io.PrintStream")
+		.getMethod("println", new HClass[] { HCcharA }),
 
 	    // in java.net implementations
 		// in static initializer of java.net.InetAddress:
