@@ -33,7 +33,7 @@ import java.util.Set;
  * process is repeated until no checks can be moved higher.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HoistingCheckOracle.java,v 1.3 2003-07-21 21:21:49 cananian Exp $
+ * @version $Id: HoistingCheckOracle.java,v 1.4 2004-02-07 21:28:37 cananian Exp $
  */
 // note: doesn't allow hoisting past sigmas.  since input is SSA, this is
 // fine.  If you ever want to give it SSI instead, you should fix this.
@@ -67,7 +67,7 @@ class HoistingCheckOracle extends AnalysisCheckOracle {
 	    checks.addAll(hoister((HCodeElement)it.next(),
 				  co, cfgr, udr, dt, pdt, true));
 	/** find common checks in successors. */
-	HCodeEdge[] succ = cfgr.succ(hce);
+	HCodeEdge[] succ = (HCodeEdge[]) cfgr.succC(hce).toArray(new HCodeEdge[0]);
 	CheckSet common = null; // will contain intersection of all succ. chks
 	for (int i=0; i<succ.length; i++) {
 	    CheckSet scs = (CheckSet) results.get(succ[i].to());

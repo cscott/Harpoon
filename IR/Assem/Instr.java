@@ -16,17 +16,18 @@ import harpoon.Util.Default;
 import harpoon.Util.Util;
 import harpoon.Util.Collections.UnmodifiableIterator;
 
-import java.util.Vector;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.AbstractCollection;
+import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.AbstractCollection;
-import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.Vector;
 
 /**
  * <code>Instr</code> is the primary class for representing
@@ -43,7 +44,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.8 2003-05-09 20:38:41 cananian Exp $ */
+ * @version $Id: Instr.java,v 1.9 2004-02-07 21:28:47 cananian Exp $ */
 public class Instr implements HCodeElement, UseDefable,
 			      CFGraphable<Instr,InstrEdge> {
     private static boolean PRINT_UPDATES_TO_IR = false;
@@ -821,13 +822,12 @@ public class Instr implements HCodeElement, UseDefable,
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
-    public Collection<InstrEdge> edgeC() {
-	return new AbstractCollection<InstrEdge>() {
-	    public int size() { return predC().size()+succC().size(); }
-	    public Iterator<InstrEdge> iterator() {
-		return new CombineIterator<InstrEdge>
-		    (new Iterator<InstrEdge>[] { predC().iterator(),
-						     succC().iterator() });
+    public List<InstrEdge> edgeC() {
+	return new AbstractList<InstrEdge>() {
+	    List<InstrEdge> p=predC(), s=succC();
+	    public int size() { return p.size()+s.size(); }
+	    public InstrEdge get(int i) {
+		return (i < p.size()) ? p.get(i) : s.get(i - p.size());
 	    }
 	};
     }
@@ -862,10 +862,10 @@ public class Instr implements HCodeElement, UseDefable,
 	layout. 
     */
     // XXX make fail-fast?
-    public Collection<InstrEdge> predC() {
+    public List<InstrEdge> predC() {
 	assert !this.hasMultiplePredecessors() : "should not call Instr.predC() if instr"+
 		    "has multiple predecessors...override method";
-	return new AbstractCollection<InstrEdge>(){
+	return new AbstractList<InstrEdge>(){
 	    public int size() {
 		if ((prev != null) && prev.canFallThrough) {
 		    return 1;
@@ -873,13 +873,12 @@ public class Instr implements HCodeElement, UseDefable,
 		    return 0;
 		}
 	    }
-	    public Iterator<InstrEdge> iterator() {
+	    public InstrEdge get(int i) {
 		if ((prev != null) && prev.canFallThrough) {
-		    return Default.singletonIterator
-			(new InstrEdge(prev, Instr.this));
-		} else {
-		    return Default.nullIterator;
+		    if (i--==0) return new InstrEdge(prev, Instr.this);
 		}
+		// no more edges
+		throw new IndexOutOfBoundsException();
 	    }
 	};
     }
@@ -902,8 +901,8 @@ public class Instr implements HCodeElement, UseDefable,
 	layout. 
     */
     // XXX make fail-fast?
-    public Collection<InstrEdge> succC() {
-	return new AbstractCollection<InstrEdge>() {
+    public List<InstrEdge> succC() {
+	return new AbstractList<InstrEdge>() {
 	    public int size() {
 		int total=0;
 		if (canFallThrough && (next != null)) {
@@ -914,32 +913,18 @@ public class Instr implements HCodeElement, UseDefable,
 		}
 		return total;
 	    }
-	    public Iterator<InstrEdge> iterator() {
-		return new CombineIterator<InstrEdge>
-		    (new Iterator<InstrEdge>[] {
-
-			// first iterator: fall to next?
-			(((next!=null)&&canFallThrough)?
-			 Default.singletonIterator
-			  (new InstrEdge(Instr.this,next)):
-			 Default.nullIterator),
-
-			// second iterator: branch to targets?
-                        ((targets!=null)?
-			 new UnmodifiableIterator<InstrEdge>(){
-			    Iterator<Label> titer = targets.iterator();
-			    public boolean hasNext() {
-				return titer.hasNext();
-			    }
-			    public InstrEdge next() {
-				return new InstrEdge
-				    (Instr.this, 
-				     inf.labelToInstrLABELmap.get
-				     (titer.next())); 
-			    }
-			}:Default.nullIterator)
-
-                    });
+	    public InstrEdge get(int i) {
+		// first edge: fall-through to next?
+		if ((next!=null)&&canFallThrough) {
+		    if (i--==0) return new InstrEdge(Instr.this,next);
+		}
+		// second edge: branch to targets?
+		if (targets!=null)
+		    return new InstrEdge(Instr.this,
+					 inf.labelToInstrLABELmap.get
+					 ( targets.get(i) ));
+		// no more edges.
+		throw new IndexOutOfBoundsException();
 	    }
 	};
     }

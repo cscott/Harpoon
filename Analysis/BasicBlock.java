@@ -64,7 +64,7 @@ import java.util.Collection;
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BasicBlock.java,v 1.6 2004-01-30 20:09:37 cananian Exp $ */
+ * @version $Id: BasicBlock.java,v 1.7 2004-02-07 21:28:08 cananian Exp $ */
 public class BasicBlock<HCE extends HCodeElement>
     implements BasicBlockInterf<HCE,BasicBlock<HCE>>, java.io.Serializable {
     
@@ -202,7 +202,7 @@ public class BasicBlock<HCE extends HCodeElement>
 		    curr = first;
 		    int bound = Math.min(index, size-1);
 		    for(int i=0; i < bound; i++) {
-			curr = factory.grapher.succ(curr)[0].to();
+			curr = factory.grapher.succC(curr).get(0).to();
 		    }
 		} else {
 		    curr = last;
@@ -284,7 +284,7 @@ public class BasicBlock<HCE extends HCodeElement>
 			// special case: if ind == size, then we just
 			// return <next>
 			if (ind != size) {
-			    next = factory.grapher.pred(next)[0].from();
+			    next = factory.grapher.predC(next).get(0).from();
 			}
 			ind--;
 
@@ -579,7 +579,7 @@ public class BasicBlock<HCE extends HCodeElement>
 			if(DEBUG) System.out.println("found split: "+last);
 			
 			for (int i=0; i<n; i++) {
-			    HCE e_n = grapher.succ(last)[i].to();
+			    HCE e_n = grapher.succC(last).get(i).to();
 			    BasicBlock<HCE> bb = h.get(e_n);
 			    if (bb == null) {
 				h.put(e_n, bb=new BasicBlock<HCE>(e_n, this));
@@ -592,7 +592,7 @@ public class BasicBlock<HCE extends HCodeElement>
 			
 		    } else { // one successor
 			assert n == 1 : "must have one successor";
-			HCE next = grapher.succ(last)[0].to();
+			HCE next = grapher.succC(last).get(0).to();
 			int m = grapher.predC(next).size();
 			if (m > 1) { // control flow join
 			    if(DEBUG) System.out.println("found join:  "+next);
@@ -623,7 +623,7 @@ public class BasicBlock<HCE extends HCodeElement>
 		final HCE flast = last;
 		final BasicBlock<HCE> fcurr = current;
 		assert grapher.succC(last).size() != 1 ||
-			     grapher.predC(grapher.succ(last)[0].
+			     grapher.predC(grapher.succC(last).get(0).
 				      to()).size() > 1 : "succC invariant broken";
 
 	    }
@@ -697,7 +697,7 @@ public class BasicBlock<HCE extends HCodeElement>
 		    curr = h;
 		} else {
 		    assert grapher.succC(curr).size() == 1;
-		    assert grapher.succ(curr)[0].to() == h;
+		    assert grapher.succC(curr).get(0).to() == h;
 
 		    curr = h;
 		}

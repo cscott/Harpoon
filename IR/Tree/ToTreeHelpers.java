@@ -38,7 +38,7 @@ import java.util.Set;
  * <code>ToTreeHelpers</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTreeHelpers.java,v 1.4 2002-04-10 03:05:46 cananian Exp $
+ * @version $Id: ToTreeHelpers.java,v 1.5 2004-02-07 21:29:06 cananian Exp $
  */
 abstract class ToTreeHelpers {
     //------------ EdgeOracle IMPLEMENTATIONS ------------------
@@ -64,7 +64,7 @@ abstract class ToTreeHelpers {
 	    this.eo = eo;
 	}
 	public int defaultEdge(HCodeElement hce) {
-	    HCodeEdge[] succ = cfg.succ(hce);
+	    HCodeEdge[] succ = (HCodeEdge[]) cfg.succC(hce).toArray(new HCodeEdge[0]);
 	    int ln[] = new int[succ.length];
 	    for (int i=0; i<succ.length; i++)
 		ln[i] = succ[i].to().getLineNumber();
@@ -156,7 +156,7 @@ abstract class ToTreeHelpers {
 	}
 	/** defaultEdge corresponds to the edge with largest shortest path */
 	public int defaultEdge(HCodeElement hce) {
-	    HCodeEdge[] succ = cfg.succ(hce);
+	    HCodeEdge[] succ = (HCodeEdge[]) cfg.succC(hce).toArray(new HCodeEdge[0]);
 	    // hacks for SWITCH & other common cases.
 	    if (succ.length!=2) return 0;
 	    int maxedge=0, maxscore=d(succ[0].to());

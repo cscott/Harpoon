@@ -26,7 +26,7 @@ import java.util.Map;
  * control-flow graph information with elements of a canonical tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeGrapher.java,v 1.4 2002-04-10 03:05:46 cananian Exp $
+ * @version $Id: TreeGrapher.java,v 1.5 2004-02-07 21:29:06 cananian Exp $
  */
 class TreeGrapher extends CFGrapher<Tree> {
     Tree firstElement = null;
@@ -49,11 +49,11 @@ class TreeGrapher extends CFGrapher<Tree> {
 	return
 	    lastElements.toArray(new Tree[lastElements.size()]);
     }
-    public Collection<HCodeEdge<Tree>> predC(Tree hce) {
-	return predMap.getValues(hce);
+    public List<HCodeEdge<Tree>> predC(Tree hce) {
+	return (List<HCodeEdge<Tree>>) predMap.getValues(hce);
     }
-    public Collection<HCodeEdge<Tree>> succC(Tree hce) {
-	return succMap.getValues(hce);
+    public List<HCodeEdge<Tree>> succC(Tree hce) {
+	return (List<HCodeEdge<Tree>>) succMap.getValues(hce);
     }
 
     /** this class does the real work of the grapher */

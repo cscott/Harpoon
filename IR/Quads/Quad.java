@@ -17,6 +17,7 @@ import harpoon.Util.EnumerationIterator;
 import harpoon.Util.Util;
 
 import java.util.AbstractCollection;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,7 +30,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.10 2003-05-09 20:38:47 cananian Exp $
+ * @version $Id: Quad.java,v 1.11 2004-02-07 21:28:58 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -173,21 +174,27 @@ public abstract class Quad
     public Edge[] pred() { return prevEdge(); }
     public Edge[] succ() { return nextEdge(); }
 
-    public Collection<Edge> edgeC() {
-	return new AbstractCollection<Edge>() {
+    public List<Edge> edgeC() {
+	return new AbstractList<Edge>() {
 	    public int size() { return next.length + prev.length; }
-	    public Iterator<Edge> iterator() {
-		return new CombineIterator<Edge>(new Iterator<Edge>[] {
-		    new ArrayIterator<Edge>(next),
-		    new ArrayIterator<Edge>(prev) });
+	    public Edge get(int index) {
+		return (index < next.length) ?
+		    next[index] :
+		    prev[index - next.length];
 	    }
 	};
     }
-    public Collection<Edge> predC() {
-	return Collections.unmodifiableList(Arrays.asList(prev));
+    public List<Edge> predC() { // unmodifiable list
+	return new AbstractList<Edge>() {
+	    public int size() { return prev.length; }
+	    public Edge get(int i) { return prev[i]; }
+	};
     }
-    public Collection<Edge> succC() {
-	return Collections.unmodifiableList(Arrays.asList(next));
+    public List<Edge> succC() { // unmodifiable list
+	return new AbstractList<Edge>() {
+	    public int size() { return next.length; }
+	    public Edge get(int i) { return next[i]; }
+	};
     }
     public boolean isSucc(Quad q) {
 	for (int i=0;i<next.length; i++)

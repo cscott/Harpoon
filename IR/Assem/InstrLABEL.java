@@ -10,9 +10,11 @@ import harpoon.Util.CombineIterator;
 import harpoon.Util.Default;
 import harpoon.Util.Collections.UnmodifiableIterator;
 
-import java.util.Iterator;
-import java.util.AbstractCollection;
+import java.util.AbstractList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -20,7 +22,7 @@ import java.util.Set;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.4 2002-08-30 22:39:11 cananian Exp $
+ * @version $Id: InstrLABEL.java,v 1.5 2004-02-07 21:28:47 cananian Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
@@ -67,40 +69,33 @@ public class InstrLABEL extends Instr {
 	return true;
     }
 
-    public Collection<InstrEdge> predC() {
-	return new AbstractCollection<InstrEdge>() {
+    public List<InstrEdge> predC() {
+	// XXX not entirely happy w/ this.  We're taking an O(s.size())
+	// performance hit on each call to predC().  But this beats taking
+	// the same hit on each call to precC().get().
+	Set<Instr> s = getFactory().labelToBranches.get(label);
+	final List<Instr> branchesHere =
+	    Arrays.asList(s.toArray(new Instr[s.size()]));
+	return new AbstractList<InstrEdge>() {
 	    public int size() {
 		int total=0;
 		if (prev!=null && prev.canFallThrough) {
 		    total++;
 		}
 
-		Set s = getFactory().labelToBranches.get(label);
-		total += s.size();
+		total += branchesHere.size();
 
 		return total;
 	    }
-	    public Iterator<InstrEdge> iterator() {
-		return new CombineIterator<InstrEdge>
-		    (new Iterator<InstrEdge>[] {
-			
-			// first iterator: prev falls to this?
-			((prev!=null && prev.canFallThrough)?
-			 Default.singletonIterator
-			 (new InstrEdge(prev, InstrLABEL.this)):
-			 Default.nullIterator),
-
-			// second iterator: branches to this?
-			new UnmodifiableIterator<InstrEdge>() {
-			    Iterator<Instr> instrs = 
-				getFactory().labelToBranches.get
-					(label).iterator();
-			    public boolean hasNext() { return instrs.hasNext(); }
-			    public InstrEdge next() { 
-				return new InstrEdge
-				    ((Instr)instrs.next(), InstrLABEL.this); 
-			    }
-			}});
+	    public InstrEdge get(int i) {
+		// first iterator: prev falls to this?
+		if ((prev != null) && prev.canFallThrough) {
+		    if (i--==0) return new InstrEdge(prev, InstrLABEL.this);
+		}
+		// second iterator: branches to this?
+		// hm. need to index these; using the static branchesHere
+		// list may be non-optimal.
+		return new InstrEdge(branchesHere.get(i), InstrLABEL.this);
 	    }
 	};
     }

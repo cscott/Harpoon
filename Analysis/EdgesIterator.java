@@ -19,7 +19,7 @@ import java.util.HashSet;
  * <code>CFGraphable</code> objects. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EdgesIterator.java,v 1.3 2002-08-30 22:37:12 cananian Exp $
+ * @version $Id: EdgesIterator.java,v 1.4 2004-02-07 21:28:08 cananian Exp $
  */
 public class EdgesIterator extends UnmodifiableIterator implements Iterator {
     private CFGrapher grapher;
@@ -57,9 +57,9 @@ public class EdgesIterator extends UnmodifiableIterator implements Iterator {
     */ 
     public Object next() {
 	HCodeElement e = (HCodeElement) worklist.pop();
-	HCodeEdge[] edges = grapher.succ(e);
-	for (int i=0, n=edges.length; i<n; ++i) {
-	    HCodeElement ne = edges[i].to();
+	for (Iterator it=grapher.succC(e).iterator(); it.hasNext(); ) {
+	    HCodeEdge edge = (HCodeEdge) it.next();
+	    HCodeElement ne = edge.to();
 	    if (!done.contains(ne)) {
 		done.add(ne);
 		worklist.add(ne);

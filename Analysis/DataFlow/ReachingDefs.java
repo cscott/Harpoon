@@ -4,7 +4,6 @@
 package harpoon.Analysis.DataFlow;
 
 
-import harpoon.Analysis.EdgesIterator;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.BasicBlockInterf;
 import harpoon.ClassFile.HCodeElement;
@@ -30,7 +29,7 @@ import java.util.Set;
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ReachingDefs.java,v 1.3 2002-04-02 23:39:11 salcianu Exp $
+ * @version $Id: ReachingDefs.java,v 1.4 2004-02-07 21:28:31 cananian Exp $
  */
 public abstract class ReachingDefs { 
     

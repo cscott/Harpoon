@@ -7,14 +7,14 @@ import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Collections.Graph;
 
-import java.util.Collection;
+import java.util.List;
 /**
  * <code>CFGraphable</code> defines an interface for intermediate 
  * representations that are inherently interconnected in a directed
  * control-flow graphs.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGraphable.java,v 1.5 2003-05-09 20:38:45 cananian Exp $
+ * @version $Id: CFGraphable.java,v 1.6 2004-02-07 21:28:54 cananian Exp $
  * @see harpoon.IR.Properties.CFGrapher
  * @see harpoon.IR.Properties.CFGrapher#DEFAULT
  */
@@ -32,23 +32,23 @@ public interface CFGraphable<CFG extends CFGraphable<CFG,E>,
     public E[] succ();
 
     // JDK 1.2 collections API: [CSA, 15-Jun-1999]
-    /** Returns a <code>Collection</code> of all the edges to and from
+    /** Returns a <code>List</code> of all the edges to and from
      *  this <code>HCodeElement</code>. */
-    public Collection<E> edgeC();
-    /** Returns a <code>Collection</code> of all the edges to
+    public List<E> edgeC();
+    /** Returns a <code>List</code> of all the edges to
 	this <code>HCodeElement</code>. 
         Each <code>CFGEdge</code> returned is guaranteed to return 
 	<code>this</code> in response to a call to <code>to()</code>;
 	the actual predecessor will be returned from
 	<code>from()</code>.  
      */
-    public Collection<E> predC();
-    /** Returns a <code>Collection</code> of all the edges from
+    public List<E> predC();
+    /** Returns a <code>List</code> of all the edges from
 	this <code>HCodeElement</code>. 
         Each <code>CFGEdge</code> returned is guaranteed to return
 	<code>this</code> in response to a call to
 	<code>from()</code>; the actual successor to <code>this</code>
 	will be returned from <code>to()</code>.
      */
-    public Collection<E> succC();
+    public List<E> succC();
 }

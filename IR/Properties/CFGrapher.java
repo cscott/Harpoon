@@ -13,10 +13,13 @@ import harpoon.Util.Collections.UnmodifiableIterator;
 
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Stack;
@@ -26,7 +29,7 @@ import java.util.Stack;
  * representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CFGrapher.java,v 1.4 2002-08-30 22:39:22 cananian Exp $
+ * @version $Id: CFGrapher.java,v 1.5 2004-02-07 21:28:54 cananian Exp $
  * @see harpoon.IR.Properties.CFGraphable
  */
 public abstract class CFGrapher<HCE extends HCodeElement> {
@@ -44,52 +47,31 @@ public abstract class CFGrapher<HCE extends HCodeElement> {
      *  @deprecated Use getFirstElements() instead. */
     public abstract HCE getFirstElement(HCode<HCE> hcode);
 
-    /** Returns an array of all the edges to and from the specified
-     *  <code>HCodeElement</code>. */
-    public HCodeEdge<HCE>[] edges(HCE hc) {
-	Collection<HCodeEdge<HCE>> c = edgeC(hc);
-	return c.toArray(new HCodeEdge<HCE>[c.size()]);
-    }
-    /** Returns an array of all the edges entering the specified
-     *  <code>HCodeElement</code>. */
-    public HCodeEdge<HCE>[] pred(HCE hc) {
-	Collection<HCodeEdge<HCE>> c = predC(hc);
-	return c.toArray(new HCodeEdge<HCE>[c.size()]);
-    }
-    /** Returns an array of all the edges leaving the specified
-     *  <code>HCodeElement</code>. */
-    public HCodeEdge<HCE>[] succ(HCE hc) {
-	Collection<HCodeEdge<HCE>> c = succC(hc);
-	return c.toArray(new HCodeEdge<HCE>[c.size()]);
-    }
-
     // JDK 1.2 collections API: [CSA, 15-Jun-1999]
-    /** Returns a <code>Collection</code> of all the edges to and from
+    /** Returns a <code>List</code> of all the edges to and from
      *  this <code>HCodeElement</code>. */
-    public Collection<HCodeEdge<HCE>> edgeC(HCE hc) {
+    public List<HCodeEdge<HCE>> edgeC(HCE hc) {
 	Collection<HCodeEdge<HCE>> p = predC(hc), s = succC(hc);
-	HCodeEdge<HCE>[] ea = new HCodeEdge<HCE>[p.size()+s.size()];
-	Iterator<HCodeEdge<HCE>> it
-	    = new CombineIterator<HCodeEdge<HCE>>(p.iterator(),s.iterator());
-	for (int i=0; it.hasNext(); i++) ea[i] = it.next();
-	return Arrays.asList(ea);
+	List<HCodeEdge<HCE>> ea = new ArrayList(p.size()+s.size());
+	ea.addAll(p); ea.addAll(s);
+	return Collections.unmodifiableList(ea);
     }
-    /** Returns a <code>Collection</code> of all the edges to
+    /** Returns a <code>List</code> of all the edges to
 	this <code>HCodeElement</code>. 
         Each <code>HCodeEdge</code> returned is guaranteed to return 
 	<code>hc</code> in response to a call to <code>to()</code>;
 	the actual predecessor will be returned from
 	<code>from()</code>.  
      */
-    public abstract Collection<HCodeEdge<HCE>> predC(HCE hc);
-    /** Returns a <code>Collection</code> of all the edges from
+    public abstract List<HCodeEdge<HCE>> predC(HCE hc);
+    /** Returns a <code>List</code> of all the edges from
 	this <code>HCodeElement</code>. 
         Each <code>HCodeEdge</code> returned is guaranteed to return
 	<code>hc</code> in response to a call to
 	<code>from()</code>; the actual successor to <code>this</code>
 	will be returned from <code>to()</code>.
      */
-    public abstract Collection<HCodeEdge<HCE>> succC(HCE hc);
+    public abstract List<HCodeEdge<HCE>> succC(HCE hc);
     
     /** Returns a <code>Collection</code> of all the 
 	<code>HCodeElement</code>s preceeding <code>hc</code>.
@@ -200,24 +182,24 @@ public abstract class CFGrapher<HCE extends HCodeElement> {
 	public HCE[] getLastElements(HCode<HCE> hcode) {
 	    return grapher.getFirstElements(hcode);
 	}
-	public Collection<HCodeEdge<HCE>> predC(HCE hc) {
+	public List<HCodeEdge<HCE>> predC(HCE hc) {
 	    return reverseEdges(grapher.succC(hc));
 	}
-	public Collection<HCodeEdge<HCE>> succC(HCE hc) {
+	public List<HCodeEdge<HCE>> succC(HCE hc) {
 	    return reverseEdges(grapher.predC(hc));
 	}
 	private static <HCE extends HCodeElement>
-        Collection<HCodeEdge<HCE>> reverseEdges(Collection<HCodeEdge<HCE>> edges) {
-	    HCodeEdge<HCE>[] ea = new HCodeEdge<HCE>[edges.size()];
-	    Iterator<HCodeEdge<HCE>> it=edges.iterator();
-	    for (int i=0; it.hasNext(); i++) {
+        List<HCodeEdge<HCE>> reverseEdges(List<HCodeEdge<HCE>> edges) {
+	    List<HCodeEdge<HCE>> ea =
+		new ArrayList<HCodeEdge<HCE>>(edges.size());
+	    for (Iterator<HCodeEdge<HCE>> it=edges.iterator(); it.hasNext(); ){
 		final HCodeEdge<HCE> e = it.next();
-		ea[i] = new HCodeEdge<HCE>() {
+		ea.add(new HCodeEdge<HCE>() {
 		    public HCE from() { return e.to(); }
 		    public HCE to() { return e.from(); }
-		};
+		});
 	    }
-	    return Arrays.asList(ea);
+	    return Collections.unmodifiableList(ea);
 	}
 	public CFGrapher<HCE> edgeReversed() { return grapher; }
     }
@@ -254,13 +236,13 @@ public abstract class CFGrapher<HCE extends HCodeElement> {
 	public HCodeEdge[] succ(HCodeElement hc) {
 	    return ((CFGraphable)hc).succ();
 	}
-	public Collection edgeC(HCodeElement hc) {
+	public List edgeC(HCodeElement hc) {
 	    return ((CFGraphable)hc).edgeC();
 	}
-	public Collection predC(HCodeElement hc) {
+	public List predC(HCodeElement hc) {
 	    return ((CFGraphable)hc).predC();
 	}
-	public Collection succC(HCodeElement hc) {
+	public List succC(HCodeElement hc) {
 	    return ((CFGraphable)hc).succC();
 	}
     };

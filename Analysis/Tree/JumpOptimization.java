@@ -35,7 +35,7 @@ import java.util.List;
  * and redundant labels.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JumpOptimization.java,v 1.6 2003-03-11 18:46:47 cananian Exp $
+ * @version $Id: JumpOptimization.java,v 1.7 2004-02-07 21:28:41 cananian Exp $
  */
 public abstract class JumpOptimization extends Simplification {
     // hide constructor
@@ -76,10 +76,10 @@ public abstract class JumpOptimization extends Simplification {
 	    Tree tr = it.next();
 	    if (tr.kind() == TreeKind.LABEL) {
 		LABEL label = (LABEL) tr;
-		HCodeEdge<Tree>[] succ = cfgr.succ(label);
-		if (succ.length==1 &&
-		    succ[0].to().kind() == TreeKind.JUMP) {
-		    JUMP jump = (JUMP) succ[0].to();
+		List<HCodeEdge<Tree>> succ = cfgr.succC(label);
+		if (succ.size()==1 &&
+		    succ.get(0).to().kind() == TreeKind.JUMP) {
+		    JUMP jump = (JUMP) succ.get(0).to();
 		    assert jump.targets!=null;
 		    // note that self-loops are not considered useless.
 		    if (jump.targets.tail==null && // only one target.

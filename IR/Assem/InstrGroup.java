@@ -15,12 +15,13 @@ import harpoon.Temp.Temp;
 import harpoon.Util.Default;
 import harpoon.Util.Util;
 
+import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList; // XXX BUG IN JAVAC
+import java.util.List;
 import java.util.Map;
 /**
  * <code>InstrGroup</code> collects a group of assembly instructions
@@ -31,7 +32,7 @@ import java.util.Map;
  * single-entry single-exit region.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrGroup.java,v 1.4 2002-04-10 03:04:29 cananian Exp $ */
+ * @version $Id: InstrGroup.java,v 1.5 2004-02-07 21:28:47 cananian Exp $ */
 public class InstrGroup {
     Type type;
     Instr entry, exit;
@@ -128,42 +129,41 @@ public class InstrGroup {
 	    return hcode.getRootElement();
 	}
 
-	public Collection<HCodeEdge<Instr>> predC(Instr i) { 
-	    if (!i2g.containsKey(i)){
-		return Default.unmodifiableCollection(i.predC(),
-						      new LinkedList<HCodeEdge<Instr>>() // XXX BUG IN JAVAC this param should not be necessary.
-						      );
+	public List<HCodeEdge<Instr>> predC(Instr i) {
+	    if (!i2g.containsKey(i)) {
+		return /*Collections.*/unmodifiableList(i.predC());
 	    } else {
 		InstrGroup ig = i2g.get(i);
 		if (i == ig.exit) {
-		    return Collections.singleton
+		    return Collections.singletonList /* XXX: CAST DUE TO BUG */
 			((HCodeEdge<Instr>)new InstrEdge(ig.entry, ig.exit));
 		} else {
 		    assert i == ig.entry;
-		    return Default.unmodifiableCollection(i.predC(),
-						      new LinkedList<HCodeEdge<Instr>>() // XXX BUG IN JAVAC this param should not be necessary.
-						      );
+		    return /*Collections.*/unmodifiableList(i.predC());
 		}
 	    }
 	}
 
-	public Collection<HCodeEdge<Instr>> succC(Instr i) { 
+	public List<HCodeEdge<Instr>> succC(Instr i) { 
 	    if (!i2g.containsKey(i)) {
-		return Default.unmodifiableCollection(i.succC(),
-						      new LinkedList<HCodeEdge<Instr>>() // XXX BUG IN JAVAC this param should not be necessary.
-						      );
+		return /*Collections.*/unmodifiableList(i.succC());
 	    } else {
 		InstrGroup ig = i2g.get(i);
 		if (i == ig.entry) {
-		    return Collections.singleton
+		    return Collections.singletonList /* XXX:CAST DUE TO BUG */
 			((HCodeEdge<Instr>)new InstrEdge(ig.entry, ig.exit));
 		} else {
 		    assert i == ig.exit;
-		    return Default.unmodifiableCollection(i.succC(),
-							  new LinkedList<HCodeEdge<Instr>>() // XXX BUG IN JAVAC this param should not be necessary.
-							  );
+		    return /*Collections.*/unmodifiableList(i.succC());
 		}
 	    }
+	}
+	/**XXX:BUG IN JAVAC, fixed in 1.5.0*/
+	private List<HCodeEdge<Instr>> unmodifiableList(final List<InstrEdge> l) {
+	    return new AbstractList<HCodeEdge<Instr>>() {
+		public int size() { return l.size(); }
+		public HCodeEdge<Instr> get(int i) { return l.get(i); }
+	    };
 	}
     }
     /** <code>InstrGroup.GroupUseDefer</code> turns an Instr -> Group
