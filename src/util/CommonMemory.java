@@ -3,16 +3,20 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec.util;
 
+//needed so that javadoc can find it
+import imagerec.graph.Node;
+
 /**
- * {@link CommonMemory} implements a utility that allows communication between Nodes that are typically
- * isolated.
+ * {@link CommonMemory} implements a utility that allows
+ * communication between {@link Node}s that are typically
+ * isolated.<br><br>
  * 
- * Items in memory are keyed by a string.
- * All methods may be referenced statically.
- * All methods are synchronized.
+ * Items in memory are keyed by a string.<br>
+ * All methods may be referenced statically.<br>
+ * All methods are synchronized.<br><br>
  *
  * Currently inefficient for large amounts variables.
- * Search time is linear in # of variables stored. 
+ * Search time is linear in # of variables stored.
  * Also very inefficient for large numbers of additions/removals
  * of variables, since internal array is resized every time.
  * 
