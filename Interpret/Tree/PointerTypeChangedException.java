@@ -7,15 +7,10 @@ package harpoon.Interpret.Tree;
  * created.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: PointerTypeChangedException.java,v 1.1.2.2 1999-06-23 22:53:27 pnkfelix Exp $
+ * @version $Id: PointerTypeChangedException.java,v 1.1.2.3 1999-06-23 23:19:51 cananian Exp $
  */
 public class PointerTypeChangedException extends RuntimeException {
-    /** The <code>Pointer</code> whose type is changed.
-	@serial insert something here that "describes the meaning of the field and its
-	        acceptable values" see <A
-		HREF="http://java.sun.com/products/jdk/1.2/docs/guide/serialization/spec/serial-arch.doc6.html">
-		Documenting Serializable Fields and Data for a Class</A>.
-     */
+    /** The <code>Pointer</code> whose type is changed. */
     public Pointer ptr;
 
     /** Class constructor */
