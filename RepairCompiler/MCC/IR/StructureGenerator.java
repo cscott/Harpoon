@@ -42,6 +42,7 @@ public class StructureGenerator {
     private void generatecalls() {
 	int max=TypeDescriptor.counter;
 	cr.outputline("int arsize["+max+"];");
+	cr.outputline("int arsizeBytes["+max+"];");
 
 	for(int i=0;i<max;i++) {
 	    TypeDescriptor ttd=tdarray[i];
@@ -72,6 +73,10 @@ public class StructureGenerator {
 	cr.outputline("return arsize[type];");
 	cr.outputline("}");
 
+	cr.outputline("int typeobject::sizeBytes(int type) {");
+	cr.outputline("return arsizeBytes[type];");
+	cr.outputline("}");
+
 	cr.outputline("int typeobject::numElements(int type, int fieldindex) {");
 	cr.outputline("return arnumelements[type][fieldindex];");
 	cr.outputline("}");
@@ -82,6 +87,12 @@ public class StructureGenerator {
 	int max=TypeDescriptor.counter;
 	cr.outputline("void typeobject::computesizes("+rg.name+"_state * obj) {");
 	cr.outputline("obj->computesizes(arsize,arnumelements);");
+	cr.outputline("for(int i=0;i<"+max+";i++) {");
+	cr.outputline("int bits=arsize[i];");
+	cr.outputline("int bytes=bits>>3;");
+	cr.outputline("if (bits%8) bytes++;");
+	cr.outputline("arsizeBytes[i]=bytes;");
+	cr.outputline("}");
 	cr.outputline("}");
     }
 
@@ -95,6 +106,7 @@ public class StructureGenerator {
 	crhead.outputline("int isPtr(int type, int fieldindex);");
 	crhead.outputline("int numElements(int type, int fieldindex);");
 	crhead.outputline("int size(int type);");
+	crhead.outputline("int sizeBytes(int type);");
 	crhead.outputline("int getnumfields(int type);");
 	crhead.outputline("bool issubtype(int subtype, int type);");
 	crhead.outputline("void computesizes("+rg.name+"_state *);");

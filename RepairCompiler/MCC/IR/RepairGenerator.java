@@ -410,6 +410,8 @@ public class RepairGenerator {
 	crhead.outputline("void doanalysis();");
 	craux.outputline("void "+name +"_state::doanalysis()");
   	craux.startblock();
+	craux.outputline("int highmark;");
+	craux.outputline("initializestack(&highmark);");
 	craux.outputline("typeobject *typeobject1=gettypeobject();");
 	craux.outputline("typeobject1->computesizes(this);");
 	craux.outputline("recomputesizes();");

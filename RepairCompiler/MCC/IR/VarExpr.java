@@ -83,6 +83,8 @@ public class VarExpr extends Expr {
                           " = (" + vd.getType().getGenerateType().getSafeSymbol() + ") " + vd.getSafeSymbol() + "; //varexpr");
 	if (vd.isGlobal() && (DOTYPECHECKS||DOMEMCHECKS) && (td instanceof StructureTypeDescriptor)) {
 	    VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
+	    writer.outputline("if ("+dest.getSafeSymbol()+")");
+	    writer.startblock();
 	    if (DOTYPECHECKS)
 		writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + td.getId() + ");"); 
 	    else
@@ -92,6 +94,7 @@ public class VarExpr extends Expr {
 	    writer.outputline(dest.getSafeSymbol()+"=0;");
 	    if (DONULL)
 		writer.outputline(vd.getSafeSymbol()+"=0;");
+	    writer.endblock();
 	    writer.endblock();
 	}
     }

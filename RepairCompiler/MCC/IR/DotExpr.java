@@ -168,16 +168,18 @@ public class DotExpr extends Expr {
                 /* type var = [*(int *)] (base + offset) */
                 writer.outputline("int " + dest.getSafeSymbol()+"=0;");
 		writer.outputline("if ("+leftd.getSafeSymbol()+")");
+		writer.startblock();
                 writer.outputline(dest.getSafeSymbol() + 
                                   " = " + ptr + "(" + leftd.getSafeSymbol() + " + " + offset + ");");  
-		writer.outputline("else maybe=1;");
 		if (fd.getPtr()) {
+		    writer.outputline("if ("+dest.getSafeSymbol()+")");
+		    writer.startblock();
 		    VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
 		    if (DOMEMCHECKS&&(!DOTYPECHECKS)) {
-			writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + td.getId() + ");");
+			writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
 			dotypecheck = true;
 		    } else if (DOTYPECHECKS) {
-			writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + td.getId() + ");");
+			writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
 		    }
 		    writer.outputline("if (!"+typevar.getSafeSymbol()+")");
 		    writer.startblock();
@@ -185,7 +187,10 @@ public class DotExpr extends Expr {
 		    if (DONULL)
 			writer.outputline(ptr + "(" + leftd.getSafeSymbol() + " + " + offset + ")=0;");
 		    writer.endblock();
+		    writer.endblock();
 		}
+		writer.endblock();
+		writer.outputline("else maybe=1;");
             }
         } else { /* offset in bits is an expression that must be generated */                        
             VarDescriptor ob = VarDescriptor.makeNew("offsetinbits");
@@ -220,16 +225,18 @@ public class DotExpr extends Expr {
                 /* type var = [*(int *)] (base + offset) */
                 writer.outputline("int " + dest.getSafeSymbol() +"=0;"); 
 		writer.outputline("if ("+leftd.getSafeSymbol()+")");
+		writer.startblock();
                 writer.outputline(dest.getSafeSymbol() + 
                                   " = " + ptr + "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ");");  
-		writer.outputline("else maybe=1;");
 		if (fd.getPtr()) {
+		    writer.outputline("if ("+dest.getSafeSymbol()+")");
+		    writer.startblock();
 		    VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
 		    if (DOMEMCHECKS&&(!DOTYPECHECKS)) {
-			writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + td.getId() + ");");
+			writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
 			dotypecheck = true;
 		    } else if (DOTYPECHECKS) {
-			writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + td.getId() + ");");
+			writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
 		    }
 		    writer.outputline("if (!"+typevar.getSafeSymbol()+")");
 		    writer.startblock();
@@ -237,7 +244,10 @@ public class DotExpr extends Expr {
 		    if (DONULL)
 			writer.outputline(ptr + "(" + leftd.getSafeSymbol() + " + " + offset.getSafeSymbol() + ")=0;");
 		    writer.endblock();
+		    writer.endblock();
 		}
+		writer.endblock();
+		writer.outputline("else maybe=1;");
             }
         }
     }
