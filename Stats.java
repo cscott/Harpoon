@@ -68,12 +68,18 @@ public final class Stats {
     /** How many array objects were allocated out of ImmortalMemory? */
     private static long NEW_ARRAY_IMMORTAL = 0;
 
+    /** How many checks to the heap were there? */
+    public static long heapChecks = 0;
+    
+    /** How many pointers to the heap were dereferenced? */
+    public static long heapRefs = 0;
+
     /** Has anything been added?  If not, it's possible that the user
      *  did not compile with the _STATS compiler option to add Runtime
      *  statistics to the compiled output. 
      */
     private static boolean touched = false;
-
+    
     /** Add an access check from one MemoryArea to another MemoryArea. 
      */
     public final static void addCheck(MemoryArea from,
@@ -175,7 +181,14 @@ public final class Stats {
 	    System.err.println("  in heap:    " + NEW_ARRAY_HEAP);
 	    System.err.println("  in scope:   " + NEW_ARRAY_SCOPE);
 	    System.err.println("  in immortal:" + NEW_ARRAY_IMMORTAL);
+	    if ((heapChecks!=0)||(heapRefs!=0)) {
+		System.err.println();
+		System.err.println("Heap checks: " + heapChecks);
+		System.err.println("Heap references: " + heapRefs);
+	    }
+
 	    System.err.println("-------------------------------------");
+	    
 	} else {
 	    System.err.println();
 	    System.err.println("Did you forget to compile with the -t STATS option?");
