@@ -1,5 +1,8 @@
 /* Stack allocation function. */
 
+/* we use alloca directly when compiling w/ precisec */
+#if !defined(WITH_PRECISE_C_BACKEND)
+
 #include "alloc.h"	/* for declaration of NSTK_malloc */
 #include "asm/stack.h"	/* for get_stackptr/set_stackptr */
 #include "misc.h"	/* for ALIGN, REALLY_DO_ALLOC, NGBL_malloc_noupdate. */
@@ -21,3 +24,5 @@ void *NSTK_malloc(size_t size) {
   return NGBL_malloc_noupdate(size);
 #endif
 }
+
+#endif /* !WITH_PRECISE_C_BACKEND */
