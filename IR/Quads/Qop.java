@@ -6,7 +6,8 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.HClass;
 /**
  * <code>Qop</code> is an enumerated type for the various kinds of
- * <code>OPER</code> opcodes.
+ * <code>OPER</code> opcodes.  The basic rationale is to use a
+ * minimal set of opcodes to simplify later analysis.
  * <p>
  * Note that (x - y) is uniformly expressed as (x + (-y)), and that
  * (~x) is typically expressed (compiler-dependent) as (x ^ (-1)).
@@ -18,7 +19,7 @@ import harpoon.ClassFile.HClass;
  * steps to be deemed worthwhile.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.9 1999-02-05 10:35:56 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.10 1999-02-05 12:19:17 cananian Exp $
  */
 public abstract class Qop  {
     /** Compares references for equality. */

@@ -7,9 +7,25 @@ package harpoon.IR.Tree;
  * <code>Bop</code> is an enumerated type for <code>BINOP</code>s.
  * Operations are typed: pointer (A), integer (I), long (L), float (F) or
  * double (D).
+ * <p>
+ * Basic rationale: Include full set of comparisons so we can optimize
+ * jump direction for best cache locality, etc.  Include minimal
+ * arithmetic, because we can pattern match <code>(x+(-y))</code> for SUB
+ * pretty easily. Include full set of bitwise-operators to make it easier to
+ * pattern-match on those architectures with insanely complete sets of
+ * boolean ops (eg, SPARC has AND/OR/NAND/NOR/XOR/XNOR...).
+ * Allow fully-flexible typing for easy pointer manipulation (ie pointer
+ * shifts, pointer ANDs, pointer ORs, etc).
+ * <p>
+ * Note that SHL/SHR/USHR mask off all but the low 5 or 6 bits of
+ * their right-hand operand, just as Qop.xSHL/xSHR/xUSHR do.
+ * Also note that the NOT operation is included in <code>Uop</code>, but
+ * not in <code>harpoon.IR.Quads.Qop</code>.  Thus you'll have to do
+ * some pattern matching on <code>(x ^ (-1))</code> to properly generate
+ * <code>Uop.NOT</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Bop.java,v 1.1.2.1 1999-02-05 10:40:41 cananian Exp $
+ * @version $Id: Bop.java,v 1.1.2.2 1999-02-05 12:19:28 cananian Exp $
  */
 public abstract class Bop  {
     public final static int

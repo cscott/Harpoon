@@ -7,9 +7,15 @@ package harpoon.IR.Tree;
  * <code>Uop</code> is an enumerated type for <code>UNOP</code>s.
  * Operations are typed: pointer (P), integer (I), long (L), float (F) or
  * double (D).
+ * <p>
+ * See <code>Bop</code> for basic rationale.  We provide full set of
+ * conversion operations and both negation and bitwise-not.  Some of
+ * these <code>Uop</code>s are not in <code>harpoon.IR.Quad.Qop</code>
+ * and thus will require pattern-matching during translation for
+ * proper generation.  This could also be done in a peephole optimization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Uop.java,v 1.1.2.1 1999-02-05 10:40:46 cananian Exp $
+ * @version $Id: Uop.java,v 1.1.2.2 1999-02-05 12:19:28 cananian Exp $
  */
 public class Uop  {
     public final static int
