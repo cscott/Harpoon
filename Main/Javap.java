@@ -21,13 +21,15 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.12 2003-08-28 21:30:49 cananian Exp $
+ * @version $Id: Javap.java,v 1.13 2003-08-28 22:02:16 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     /** Print out disassembled code. */
     public static boolean DISASSEMBLE=false;
     /** Print out help message. */
     public static boolean HELP=false;
+    /** Indent members (fields/methods). */
+    public static boolean INDENT=true;
     /** Print out line number tables. */
     public static boolean LINE_NUMBER_TABLE=false;
     /** Print out local variable tables. */
@@ -64,12 +66,20 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    else if (opt=="-package") PUBLIC_PROTECTED_PACKAGE_ONLY=true;
 	    else if (opt=="-private") PUBLIC_PROTECTED_PACKAGE_PRIVATE=true;
 	    else if (opt=="-s") SIGNATURES=true;
-	    else if (opt=="-verbose") MORE_INFO=true;
-	    else {
+	    else if (opt=="-verbose") {
+		DISASSEMBLE=true;
+		LINE_NUMBER_TABLE=LOCAL_VARIABLE_TABLE=true;
+		SIGNATURES=true;
+		MORE_INFO=true;
+	    } else {
 		System.err.println("Unrecognized option: "+opt);
 		HELP=true;
 	    }
 	}
+	// don't indent if we're printing out additional per-member info:
+	INDENT = !
+	    (DISASSEMBLE || LINE_NUMBER_TABLE || LOCAL_VARIABLE_TABLE ||
+	     SIGNATURES || MORE_INFO);
 	// normalize public/protected/package/private
 	if (PUBLIC_ONLY)
 	    PUBLIC_PROTECTED_ONLY=false;
@@ -167,6 +177,15 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    }
 	}
 	System.out.println();
+	if (MORE_INFO) {
+	    System.out.println("  SourceFile: \"ArraySet.java\"");
+	    System.out.println("  minor version: 0");
+	    System.out.println("  major version: 0");
+	    System.out.println("  Constant pool:");
+	    System.out.println("const #1 = Method       #6.#27; //  java/util/AbstractSet.\"<init>\":()V");
+	    System.out.println("const #2 = Field        #5.#28; //  harpoon/Util/ArraySet.oa:[Ljava/lang/Object;c");
+	    assert false : "unimplemented";
+	}
 	System.out.println("{");
 	// fields.
 	for (int i=0; i<raw.fields_count(); i++) {
@@ -174,7 +193,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    AttributeSignature fis = (AttributeSignature)
 		findAttribute(fi.attributes, "Signature");
 	    if (!access_flags_okay(fi.access_flags)) continue; // skip
-	    if (!SIGNATURES) System.out.print("    "); // indent.
+	    if (INDENT) System.out.print("    "); // indent.
 	    // access flags
 	    System.out.print(modString(fi.access_flags, false));
 	    // type/signature.
@@ -219,7 +238,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    // some kind to indicate varargs.
 	    boolean isVarArgs= (null!=findAttribute(mi.attributes, "Varargs"));
 	    // indent.
-	    if (!SIGNATURES) System.out.print("    ");
+	    if (INDENT) System.out.print("    ");
 	    // access flags
 	    System.out.print(modString(mi.access_flags, false));
 	    // type formal parameters
@@ -266,10 +285,36 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    // done!
 	    System.out.print(';');
 	    System.out.println();
+	    // print signatures
 	    if (SIGNATURES) {
 		System.out.println("  Signature: "+mi.descriptor());
 		if (mis!=null)
 		    System.out.println("  Generic Signature: "+mis.signature());
+	    }
+	    // print code
+	    if (DISASSEMBLE) {
+		System.out.println("  Code:");
+		if (MORE_INFO) {
+		    System.out.println("Stack=2, Locals=2, Args_size=2");
+		}
+		System.out.println("   0:   aload_0");
+ 		assert false : "unimplemented";
+	    }
+	    // print line number table
+	    if (LINE_NUMBER_TABLE) {
+		System.out.println("  LineNumberTable:");
+		System.out.println("   line 20: 0");
+		System.out.println("   line 21: 4");
+		System.out.println("   line 22: 9");
+		assert false : "unimplemented";
+	    }
+	    // print local variable table
+	    if (LOCAL_VARIABLE_TABLE) {
+		System.out.println("  LocalVariableTable:");
+		System.out.println("   Start  Length  Slot  Name   Signature");
+		System.out.println("   0      10      0    this       Lharpoon/Util/ArraySet;");
+		System.out.println("   0      10      1    oa       [Ljava/lang/Object;");
+		assert false : "unimplemented";
 	    }
 	}
 	System.out.println("}");
