@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.16 2000-05-20 18:54:19 bdemsky Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.17 2000-05-20 19:06:05 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -241,18 +241,30 @@ public class DataClaz extends Data {
 	}
 	return Stm.toStm(stmlist);
     }
+    /* XXX UGLY UGLY: some bug in the relinker makes methods comparisons
+     * bogus sometimes.  This is a hack to work around the problem so that
+     * we can benchmark properly: we should really fix the relinker.
+     * Even the property we're using here is stolen from ClassFile.Loader,
+     * where it specifies that Linkers should be re-serialized as Relinkers,
+     * another hack designed to avoid needing to run Alex's analysis using
+     * a (historically buggy) relinker. CSA. */
+    private static final boolean relinkerHack =
+	System.getProperty("harpoon.relinker.hack", "no")
+	.equalsIgnoreCase("yes");
     /** Make interface methods table. */
     private Stm interfaceMethods(HClass hc, ClassHierarchy ch) {
 	// collect all interfaces implemented by this class
 	Set interfaces = new HashSet();
 	for (HClass hcp=hc; hcp!=null; hcp=hcp.getSuperclass())
 	    interfaces.addAll(Arrays.asList(hcp.getInterfaces()));
-	//interfaces.retainAll(ch.classes());
+	if (!relinkerHack) // XXX EVIL: see above.
+	    interfaces.retainAll(ch.classes());
 	// all methods included in these interfaces.
 	Set methods = new HashSet();
 	for (Iterator it=interfaces.iterator(); it.hasNext(); )
 	    methods.addAll(Arrays.asList(((HClass)it.next()).getMethods()));
-	//methods.retainAll(ch.callableMethods());
+	if (!relinkerHack) // XXX EVIL: see above.
+	    methods.retainAll(ch.callableMethods());
 	// double-check that these are all interface methods
 	// (also discard class initializers from the list)
 	for (Iterator it=methods.iterator(); it.hasNext(); ) {
