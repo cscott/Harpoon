@@ -8,14 +8,14 @@ echo
 
 export FLEX_ROOT=`pwd`/..
 
-if [ ! -d /usr/java/j2sdk* ]; then 
+if [ ! -d /usr/java/j2* ]; then 
    echo Please install the Sun JDK 1.4 before installing FLEX.; 
    echo;
    echo Visit http://java.sun.com/;
    exit 1;
 fi;
 
-java -version >& foo
+PATH=$PATH:`echo /usr/java/j2*/bin | awk '{ print gensub(/\ /, ":", "g") }'` java -version >& foo
 export TEST=`fgrep -c '1.4' foo`
 rm -f foo
 if test $TEST == 0; then 
