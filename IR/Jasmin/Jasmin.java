@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.3 1999-08-11 20:30:39 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.4 1999-08-17 17:23:13 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -467,7 +467,11 @@ public class Jasmin {
 	    out.println(iflabel(q));
 	    load(q.objectref());
 	    out.println("    checkcast "+q.hclass().getName().replace('.','/'));
-	    out.println("    pop");
+	    TempInfo dest=(TempInfo)tempmap.get(q.objectref());
+	    if (!dest.stack)
+		store(q.objectref());
+	    else
+		out.println("    pop");
 	}
 
 	public void visit(OPER q) {
