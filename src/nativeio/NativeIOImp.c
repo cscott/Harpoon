@@ -17,7 +17,9 @@
 /* Note that the entire NativeIO implementation is intimately wired into the Sun JDK.
  * This directory will eventually be replaced by an implementation that uses wrappers
  * on OS calls rather than intimate ties to a JDK implementation. - WSB */
+#ifndef CLASSPATH_VERSION
 #include "../sunjdk/java.io/javaio.h"
+#endif
 
 #define ERROR         -2
 #define TRYAGAIN         -3
@@ -287,7 +289,16 @@ JNIEXPORT jint JNICALL Java_java_io_NativeIO_socketAccept
 
     /* fill in SocketImpl */
     fdObj = (*env)->GetObjectField(env, s, SI_fdObjID);
+    /* Completely gross hack... - WSB - should be library independent! */
+#ifdef CLASSPATH_VERSION
+    (*env)->CallVoidMethod(env, fdObj, 
+			   (*env)->GetMethodID(env, 
+					       (*env)->GetObjectClass(env, fdObj),
+					       "setNativeFD", "()V"),
+			   rc);
+#else
     Java_java_io_FileDescriptor_setfd(env, fdObj, rc);
+#endif
     address = (*env)->GetObjectField(env, s, SI_addrID);
     (*env)->SetIntField(env, address, IA_familyID, sa.sin_family);
     (*env)->SetIntField(env, address, IA_addrID, ntohl(sa.sin_addr.s_addr));
