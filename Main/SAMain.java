@@ -74,7 +74,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.109 2000-11-10 06:46:18 bdemsky Exp $
+ * @version $Id: SAMain.java,v 1.1.2.110 2000-11-11 16:21:32 bdemsky Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -185,9 +185,11 @@ public class SAMain extends harpoon.IR.Registration {
 	    Util.assert(classHierarchy != null, "How the hell...");
 	    // use the rough class hierarchy to devirtualize as many call sites
 	    // as possible.
+
 	    hcf=new harpoon.Analysis.Quads.Nonvirtualize
-		(hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy))
+	    	(hcf, new harpoon.Backend.Maps.CHFinalMap(classHierarchy))
 		.codeFactory();
+
 	    if (!USE_OLD_CLINIT_STRATEGY) {
 		// transform the class initializers using the class hierarchy.
 		java.util.Properties p = new java.util.Properties();
@@ -226,6 +228,8 @@ public class SAMain extends harpoon.IR.Registration {
  		hcf=insta.codeFactory();
 	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
+	    if ((!INSTRUMENT_ALLOCS)&&USE_OLD_CLINIT_STRATEGY)
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	} // don't need the root set anymore.
 
 
