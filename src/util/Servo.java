@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package imagerec.util;
 
-import servo.ServoThread;
+import ipaq.ServoThread;
 
 /**
  * {@link Servo} maneuvers the vehicle.
