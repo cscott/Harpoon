@@ -43,6 +43,7 @@ public class CarDemoGroundMain {
 	}
 	else {
 	    if (pipelineNumber == 1) {
+
 		Node pipe;
 		Server embedToGrServer = new Server(new CORBA(args), args[2], null);
 
