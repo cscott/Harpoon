@@ -60,7 +60,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.44 2000-01-24 17:27:39 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.45 2000-01-25 20:56:34 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -512,11 +512,16 @@ public class AsyncCode {
 		HClass hclass=hcode.getMethod().getDeclaringClass();
 		HField hfield=hclass.getField("next");
 		HMethod resume=null;
-		if (hc.getMethod().getReturnType()!=HClass.Void)
-		    resume=
-			hfield.getType().getMethod("resume",
-						   new HClass[] {hc.getMethod().getReturnType()});
-		else
+		if (hc.getMethod().getReturnType()!=HClass.Void) {
+		    if (hc.getMethod().getReturnType().isPrimitive())
+			resume=
+			    hfield.getType().getMethod("resume",
+						       new HClass[] {hc.getMethod().getReturnType()});
+		    else
+			resume=
+			    hfield.getType().getMethod("resume",
+						       new HClass[] {linker.forName("java.lang.Object")});
+		} else
 		    resume=hfield.getType().getMethod("resume",
 						      new HClass[0]);
 		Temp tnext=new Temp(tf);
@@ -738,7 +743,9 @@ public class AsyncCode {
 		    }
 		}
 	    }
-	    if ((methodstatus==false)&&blockingcalls.contains(q.method())) {
+	    if ((methodstatus==false)&&
+		(!q.method().getName().equals("<init>"))&&
+		blockingcalls.contains(q.method())) {
 		if (!cont_map.containsKey(q)) {
 		    cont_todo.add(q);
 		    HClass hclass=createContinuation(hc.getMethod(),  q,
@@ -770,7 +777,7 @@ public class AsyncCode {
 					HMethod temp=makeAsync(old2new, hm,
 							       ucf,linker);
 				    } else {
-					System.out.println("ERROR "+hm+" is blocking!");
+					System.out.println("XXX:ERROR "+hm+" is blocking!");
 				    }
 				}
 			    } catch (NoSuchMethodError e) {
