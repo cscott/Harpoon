@@ -2,10 +2,13 @@
 
 SUBDIRS = gnu.vm.stack java.lang
 
-cpvm.jar:
-	jikes-classpath -d cpvm -g `find . -name "*.java"`
-	cd cpvm && jar cf ../$@ .
-	$(RM) -rf cpvm
+noinst_DATA = cpvm.jar
+
+cpvm.jar: $(wildcard */*.java)
+	-$(RM) -rf $(basename $@)
+	jikes-classpath -d $(basename $@) -g $^
+	cd $(basename $@) && jar -cf ../$@ .
+	$(RM) -rf $(basename $@)
 
 %.h: %.java
 	javah -bootclasspath cpvm.jar `echo $< | sed -e 's:^./::' -e 's:/:.:g' -e 's:.java$::'`
