@@ -15,12 +15,12 @@ class Updates {
     ArrayAnalysis.AccessPath ap;
     int fieldnum;
 
-    public Updates(Expr lexpr, int fieldnum, ArrayAnalysis.AccessPath ap, int slot) {
+    public Updates(Expr lexpr, int fieldnum, ArrayAnalysis.AccessPath ap, Expr rexpr, int slot) {
 	this.leftexpr=lexpr;
 	this.fieldnum=fieldnum;
 	this.ap=ap;
 	this.rightposition=slot;
-
+	this.rightexpr=rexpr;
 	this.type=Updates.ACCESSPATH;
 	this.opcode=Opcode.EQ;
     }

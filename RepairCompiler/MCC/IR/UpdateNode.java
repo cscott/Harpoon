@@ -356,6 +356,7 @@ class UpdateNode {
 	    if (u.getType()==Updates.ACCESSPATH) {
 		VarDescriptor newright=VarDescriptor.makeNew("right");
 		/* Need to do the modulo computation here...FIXME */
+		generate_accesspath(cr, right,newright,u);
 		right=newright;
 	    }
 	    VarDescriptor left=VarDescriptor.makeNew("left");
@@ -430,6 +431,38 @@ class UpdateNode {
 	    }
  	    cr.endblock();
 	}
+    }
+
+
+    private void generate_accesspath(CodeWriter cr, VarDescriptor right, VarDescriptor newright, Updates u) {
+	Vector dotvector=new Vector();
+	Expr ptr=u.getRightExpr();
+
+	while(true) {
+	    /* Does something other than a dereference? */
+	    dotvector.add(ptr);
+	    if (ptr instanceof DotExpr)
+		ptr=((DotExpr)ptr).left;
+	    else if (ptr instanceof CastExpr)
+		ptr=((CastExpr)ptr).getExpr();
+
+	    if (ptr instanceof VarExpr) {
+		/* Finished constructing vector */
+		break;
+	    }
+	}
+	ArrayAnalysis.AccessPath ap=u.getAccessPath();
+	VarDescriptor init=VarDescriptor.makeNew("init");
+	if (ap.isSet()) {
+	    cr.outputline("int "+init.getSafeSymbol()+"="+ap.getSet().getSafeSymbol()+"_hash->firstkey();")
+	} else {
+	    init=ap.getVar();
+	}
+	for(int i=dotvector.size()-1;i>=0;i--) {
+	    Expr e=(Expr)dotvector.get(i);
+	    
+	}
+	
     }
 
     private void generate_bindings(CodeWriter cr, String slot0, String slot1) {

@@ -885,7 +885,7 @@ public class Termination {
 		    System.out.println("ERROR:Index is assignable");
 		    return false;
 		}
-		Updates updates=new Updates(index,i,ap,slotnumber);
+		Updates updates=new Updates(index,i,ap,lexpr,slotnumber);
 		un.addUpdate(updates);
 	    }
 	}

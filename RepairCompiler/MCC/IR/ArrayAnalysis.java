@@ -156,6 +156,18 @@ public class ArrayAnalysis {
 	SetDescriptor startset;
 	VarDescriptor startvar;
 
+	public boolean isSet() {
+	    return setStart;
+	}
+
+	public SetDescriptor getSet() {
+	    return startset;
+	}
+
+	public VarDescriptor getVar() {
+	    return startvar;
+	}
+
 
 	public void startSet(SetDescriptor sd) {
 	    this.startset=sd;
