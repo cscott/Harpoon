@@ -2067,11 +2067,21 @@ class water {
       break;
     } 
     case CT_MEMORY: {
-      ct[i].enter(r);
+      try {
+	ct[i].enter(r);
+      } catch (javax.realtime.ScopedCycleException e) {
+	System.out.println(e);
+	System.exit(1);
+      }
       break;
     }
     case VT_MEMORY: {
-      (new javax.realtime.VTMemory()).enter(r);
+      try {
+	(new javax.realtime.VTMemory()).enter(r);
+      } catch (javax.realtime.ScopedCycleException e) {
+	System.out.println(e);
+	System.exit(1);
+      }
       break;
     } 
     default: {
@@ -2112,9 +2122,14 @@ class water {
 	  }
 	};
       if (noheap) {
+	try {
 	  javax.realtime.ImmortalMemory.instance().enter(r);
+	} catch (javax.realtime.ScopedCycleException e) {
+	  System.out.println(e);
+	  System.exit(1);
+	}
       } else {
-	  r.run();
+	r.run();
       }
     } else if (args[2].equalsIgnoreCase("VT")) {
       noheap = (args.length>4)&&(args[4].equalsIgnoreCase("noheap"));
@@ -2126,7 +2141,8 @@ class water {
 
     numThreads = Integer.parseInt(args[1]);
     if (noheap) {
-      javax.realtime.ImmortalMemory.instance().enter(new Runnable() {
+      try {
+	javax.realtime.ImmortalMemory.instance().enter(new Runnable() {
 	  public void run() {
 	    parmsFile = new String(args[0].toCharArray());
 	    mainThreadNoHeap m = 
@@ -2140,6 +2156,10 @@ class water {
 	    }
 	  }
 	});
+      } catch (javax.realtime.ScopedCycleException e) {
+	System.out.println(e);
+	System.exit(1);
+      }
     } else {
       parmsFile = args[0];
       mainThread m = new mainThread();

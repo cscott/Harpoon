@@ -5,7 +5,12 @@ class main {
 	int i = Integer.parseInt(args[0]);
 	Fib f = new Fib(i);
 	CTMemory scope = new CTMemory(1000000);
-	scope.enter(f);
+	try {
+	    scope.enter(f);
+	} catch (javax.realtime.ScopedCycleException e) {
+	    System.out.println(e);
+	    System.exit(1);
+	}
     }
 }
 class Fib implements Runnable {
