@@ -1,7 +1,7 @@
 #ifndef INCLUDED_HWTRANS_H
 #define INCLUDED_HWTRANS_H
 
-#ifdef DONT_REALLY_DO_HWTRANS
+#if defined(DONT_REALLY_DO_HWTRANS) || defined(HWTRANS_NO_SYNC)
 # define XBEGIN()	0
 # define XEND()		0
 # define NXBEGIN()	0
@@ -26,6 +26,7 @@
  * gcc 3.3.1 we're using. */
 
 extern inline void EXACT_XACTION_BEGIN(void) {
+#if !defined(HWTRANS_NO_SYNC)
   int delay = 1, i;
   XBEGIN();
   for (i=1; i<delay; i++)
@@ -33,6 +34,7 @@ extern inline void EXACT_XACTION_BEGIN(void) {
   NXBEGIN();
   delay *= 2;
   NXEND();
+#endif
 }
 extern inline void EXACT_XACTION_END(void) {
   XEND();
