@@ -23,7 +23,7 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.5 1999-01-19 03:44:27 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.6 1999-01-22 10:44:55 cananian Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -66,6 +66,13 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 			.sourcefile();
 		    break;
 		}
+	    // for some odd reason, interfaces have 'java.lang.Object'
+	    // as their superclass in the class file format.  In the
+	    // rarified "real world", interfaces have *no* superclass.
+	    // So fix fantasy to match reality.  See the Java Virtual
+	    // Machine Specification, section 4.1, which offers zero
+	    // explanation for this strange behaviour.
+	    if (isInterface()) this.superclass = null;
 	} 
 	// optimize hashcode.
 	private final int hashcode;

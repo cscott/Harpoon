@@ -11,6 +11,7 @@ import java.lang.reflect.Modifier;
 import java.io.InputStream;
 import java.io.BufferedInputStream;
 import java.util.Hashtable;
+import java.util.Vector;
 
 /**
  * Instances of the class <code>HClass</code> represent classes and 
@@ -29,7 +30,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.7 1999-01-19 03:44:26 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.8 1999-01-22 10:44:55 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  */
 public abstract class HClass extends HPointer {
@@ -498,7 +499,7 @@ public abstract class HClass extends HPointer {
     HMethod[] methods;
     if (isPrimitive()) {
       methods = new HMethod[0];
-    } else {
+    } else { // class or interface.
       methods = getMethods(this);
     }
     return methods;
@@ -508,11 +509,17 @@ public abstract class HClass extends HPointer {
    */
   HMethod[] getMethods(HClass frmClass) {
     String frmPackage = frmClass.getPackage();
-    UniqueVector v = new UniqueVector();
-    // can ignore methods from interfaces (they'll be declared methods)
-    //  (this is correct from experiment.  The compiler adds
-    //   abstract methods from the interface to the classfile if they're
-    //   not explicitly present in the source.)
+    Hashtable h = new Hashtable(); // keep track of overriding
+    Vector v = new Vector(); // accumulate results.
+
+    // first methods we declare locally.
+    HMethod[] locm = getDeclaredMethods();
+    for (int i=0; i<locm.length; i++) {
+      h.put(locm[i].getName()+locm[i].getDescriptor(), locm[i]);
+      v.addElement(locm[i]);
+    }
+    locm=null; // free memory
+
     // grab fields from superclasses, subject to access mode constraints.
     HClass sup = getSuperclass();
     HMethod supm[] = (sup==null)?new HMethod[0]:sup.getMethods(frmClass);
@@ -528,13 +535,30 @@ public abstract class HClass extends HPointer {
       // skip superclass constructors.
       if (supm[i] instanceof HConstructor)
 	  continue;
+      // don't add methods which are overriden by locally declared methods.
+      if (h.containsKey(supm[i].getName()+supm[i].getDescriptor()))
+	continue;
       // all's good.  Add this one.
+      h.put(supm[i].getName()+supm[i].getDescriptor(), supm[i]);
       v.addElement(supm[i]);
     }
-    // now methods we declare locally.
-    HMethod[] locm = getDeclaredMethods();
-    for (int i=0; i<locm.length; i++)
-      v.addElement(locm[i]);
+    sup=null; supm=null; // free memory.
+
+    // Lastly, interface methods, if not already declared.
+    // [interface methods will typically be explicitly declared in classes,
+    //  even if not implemented (abstract), but superinterface methods aren't
+    //  declared explicitly in interfaces.]
+    HClass[] intc = getInterfaces();
+    for (int i=0; i<intc.length; i++) {
+      HMethod intm[] = intc[i].getMethods(frmClass);
+      for (int j=0; j<intm.length; j++) {
+	// don't add methods which are overridden by locally declared methods
+	if (h.containsKey(intm[j].getName()+intm[j].getDescriptor()))
+	  continue;
+	v.addElement(intm[j]);
+      }
+    }
+    intc = null; // free memory.
 
     // Merge into a single array.
     HMethod[] result = new HMethod[v.size()];
