@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.47 2002-08-01 17:35:32 cananian Exp $
+% $Id: ptran.tex,v 1.48 2002-08-01 18:44:06 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.47 $ $}
+\date{\today \\ $ $Revision: 1.48 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -403,16 +403,16 @@ edges.  Inside edges represent references created inside the current
 analysis scope.
 \item $\func{e}:N\to 2^S$ is an escape function that records the set of
 unanalyzed method invocation sites that a node escapes down into.
-\item $\func{c}_\text{from}:I\to 2^{V\times S}_\bot$ collects static values
+\item $\func{c}_\text{from}:I\to 2^{(V\times S)_\bot}$ collects static values
 used on the left-hand side of store statements associated with
 inside edges.  This allows us to detect possible from-companion edges.
-The bottom value $\bot$ designates that this edge cannot possibly be
-a from-companion.
-\item $\func{c}_\text{to}:I\to 2^{V\times S}_\bot$ collects static values
+The presence of the bottom value $\bot$ in the set designates that
+this edge cannot possibly be a from-companion.
+\item $\func{c}_\text{to}:I\to 2^{(V\times S)_\bot}$ collects static values
 used on the right-hand size of store statements associated with
 inside edges.  This allows us to detect possible to-companion edges.
-The bottom value $\bot$ designates that this edge cannot possibly be
-a to-companion.
+The presence of the bottom value $\bot$ in the set designates that
+this edge cannot possibly be a to-companion.
 \item $r \subseteq N$ is a return set representing the set of objects
 that may be returned by the currently analyzed method.
 \end{itemize}
@@ -460,8 +460,8 @@ and then recursively:
 
 We define the following auxilliary functions:
 \begin{eqnarray*}
-\func{condsing}(\bigvar{SV}):2^{V\times S}_\bot\to 2^P_\bot &=& \begin{cases}
-\bot & \text{if }\bigvar{SV}=\bot\text{, else}\\
+\func{condsing}(\bigvar{SV}):2^{(V\times S)_\bot}\to 2^P_\bot &=& \begin{cases}
+\bot & \text{if }\bot\in\bigvar{SV}\text{, else}\\
 P&\text{such that }\bigvar{SV}\text{ are mutually-singular conditional
                                      on }P\text{, else} \\
 \bot & \text{if no such }P\text{ exists.}
@@ -558,29 +558,15 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
 
 \subsubsection{Store statement}
 
-\begin{eqnarray*}&
+\begin{displaymath}
 \dfrac
-{\text{\tt [l$_1$.f=l$_2$]}\in\mathcal{P},
+{s=\text{\tt [l$_1$.f=l$_2$]}\wedge s\in\mathcal{P},
  \tuple{l_1,n_1}\in I,
  \tuple{l_2,n_2}\in I }
-{\tuple{\tuple{n_1,f},n_2}\in I}
-\\&
-\dfrac
-{s=\text{\tt [l$_1$.f=l$_2$]}, s\in\mathcal{P},
- \tuple{l_1,n_1}\in I,
- \tuple{l_2,n_2}\in I,
- \func{c}_\text{from}(\tuple{\tuple{n_1,f},n_2})\neq\bot
-}
-{\tuple{l_1,s}\in\func{c}_\text{from}(\tuple{\tuple{n_1,f},n_2}) }
-\\&
-\dfrac
-{s=\text{\tt [l$_1$.f=l$_2$]}, s\in\mathcal{P},
- \tuple{l_1,n_1}\in I,
- \tuple{l_2,n_2}\in I,
- \func{c}_\text{to}(\tuple{\tuple{n_1,f},n_2})\neq\bot
-}
-{\tuple{l_2,s}\in\func{c}_\text{to}(\tuple{\tuple{n_1,f},n_2}) }
-\end{eqnarray*}
+{\tuple{\tuple{n_1,f},n_2}\in I,
+ \tuple{l_1,s}\in\func{c}_\text{from}(\tuple{\tuple{n_1,f},n_2}),
+ \tuple{l_2,s}\in\func{c}_\text{to}(\tuple{\tuple{n_1,f},n_2}) }
+\end{displaymath}
 
 \textbf{More unification here??}
 
