@@ -292,10 +292,10 @@ fi
 
 if test $LINE1 == 0 -o $LINE2 == 0 -o $LINE3 == 0; then
   echo;
-  echo Do you want to add the following lines to your ~/.bashrc \(Y/N\)?;
+  echo Do you want to add the following lines to your ~/.bashrc\?;
   if test $LINE1 == 0; then echo    export CVS_RSH=ssh; fi;
   if test $LINE2 == 0; then echo    export CVSEDITOR=emacs; fi;
-  if test $LINE3 == 0; then echo    export PATH=`cd /usr/java/j2sdk*/bin; pwd`:\$PATH; fi;
+  if test $LINE3 == 0; then echo    export PATH=`echo /usr/java/j2*/bin | awk '{ print gensub(/\ /, ":", "g") }'`:\$PATH; fi;
   export prmpt=;
   while [ x$prmpt = x ]; do
     read -p "Add lines (Y/N)? " prmpt leftover;
@@ -303,7 +303,7 @@ if test $LINE1 == 0 -o $LINE2 == 0 -o $LINE3 == 0; then
         y* | Y*)
 	   if test $LINE1 == 0; then echo export CVS_RSH=ssh >> ~/.bashrc; fi;
 	   if test $LINE2 == 0; then echo export CVSEDITOR=emacs >> ~/.bashrc; fi;
-	   if test $LINE3 == 0; then echo export PATH=`cd /usr/java/j2sdk*/bin; pwd`:\$PATH >> ~/.bashrc; fi;;
+	   if test $LINE3 == 0; then echo export PATH=`echo /usr/java/j2*/bin | awk '{ print gensub(/\ /, ":", "g") }'`:\$PATH >> ~/.bashrc; fi;;
 	n* | N*) export prmpt=N;;
 	*) export prmpt=;;
     esac;
