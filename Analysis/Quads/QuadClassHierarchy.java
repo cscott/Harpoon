@@ -10,12 +10,14 @@ import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 /**
@@ -25,7 +27,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.7 1999-10-15 21:03:12 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.8 1999-10-17 07:54:55 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -188,6 +190,14 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 				      classMethodsUsed,
 				      classMethodsPending);
 		    }
+		    // make sure we have the class we're testing against
+		    // handy.
+		    if (Q instanceof INSTANCEOF) {
+			discoverClass(((INSTANCEOF)Q).hclass(), W, done,
+				      classKnownChildren,
+				      classMethodsUsed,
+				      classMethodsPending);
+		    }
 		}
 	    }
 	} // END worklist.
@@ -266,8 +276,9 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 
 	// first, wake up all methods of this class that were
 	// pending instantiation, and clear the pending list.
-	Set s1 = (Set) cmp.get(c), s2 = (Set) cmu.get(c);
-	s2.addAll(s1); s1.clear();
+	List ml = new ArrayList((Set) cmp.get(c)); // copy list.
+	for (Iterator it=ml.iterator(); it.hasNext(); )
+	    methodPush((HMethod)it.next(), W, done, cmu, cmp);
 
 	// if instantiated,
 	// add all called methods of superclasses/interfaces to worklist.
