@@ -38,4 +38,13 @@ extern inline void EXACT_XACTION_END(void) {
   XEND();
 }
 
+extern inline void *NXALLOC(int size) {
+  extern void *malloc(int);
+  void *result;
+  NXBEGIN();
+  result = malloc(size);
+  NXEND();
+  return result;
+}
+
 #endif /* INCLUDED_HWTRANS_H */
