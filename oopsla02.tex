@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.15 2002-03-23 01:43:09 cananian Exp $
+% $Id: oopsla02.tex,v 1.16 2002-03-23 02:10:03 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -29,7 +29,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.15 $ $}{$ $Revision: 1.15 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.16 $ $}{$ $Revision: 1.16 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -638,27 +638,48 @@ definite-initialization analysis in the previous section to increment the
 definitely initialized.
 
 \subsection{Finding Subclass-Final Fields}
-a generalization of java's ``final''.
 
-first generalization: allow multiple writes, but all must be in the
+Our static specialization transformation can only be applied to what
+we call {\it subclass-final} fields.  Subclass-finality is a looser
+but similar constraint to Java's {\tt final} modifier.  We do a
+single-pass analysis to determine subclass-finality, using the results
+from the bitwidth analysis to improve our results.  In particular we
+wish to note that we do {\it not} rely on the programmer's manual
+specification of the {\it final} modifier on fields.
+
+The first generalization past Java's {\tt final} semantics is what we
+will call {\it this-final} fields.  This final fields can be written
+multiple times (or not at all), but all writes must occur within
+constructors of the field's declaring class.
+Fields marked {\tt final} in Java, by
+contrast, must be written to {\it exactly once} in each constructor of
+the declaring class.
+As in Java, the object containing the field must match the receiver of
+the constructor in which it can be written; you cannot write a final
+field in another instance of the class from your instance's
 constructor.
 
-a ``this-final'' field is only written in constructors of its type;
-not subclass constructors (how would it be?).  the receiver of every
-write to the field must be 'this'.
+We then loosen the restriction further, and define
+{\it subclass-final} fields which can be written in {\it any method of
+  a subclass}, in addition to within the constructor of its declaring
+class.  As before, you can only write to subclass-final fields of {\tt
+  this} inside a constructor of the fields declaring field, but you
+can write to the field zero or more times.
 
-a ``subclass-final'' field is only written in constructors of its type
-*and any method of a subclass*.  every write within its own
-constructor must be to the 'this' field as before.  (subclasses
-can write indiscriminately because they always inherit from the 'expanded'
-version of the class)
+Subclass-finality matches the requirements of the static
+specialization transformation.  Since we always insert a ``Big''
+version of the original split class as parent to any subclasses,
+subclasses can write to the split field without restriction.
+We need only restrict writes which occur in the class proper.
 
-construct set of subclass final fields by constructing its dual:
-for every SET in a method: if method is a constructor and receiver
-is this (must-param 0) then okay.  if field belongs to a superclass
-(not this) then okay.  if method is a constructor and field belongs
-to this class or a superclass then okay????  otherwise add to set
-of bad fields.
+Our analysis constructs the set of subclass-final fields by finding
+its dual, the set of {\it non}-subclass-final fields.  We scan every
+method and pull out all writes to fields which belong to
+a {\it superclass} of the method's declaring class---writes to fields
+in the method's declaring class are not removed, only fields in
+superclasses.  If the method is a constructor, we additionally remove
+all writes to fields of the {\tt this} parameter.  All remaining
+fields are added to the set of non-subclass-final fields.
 
 \subsection{Constructor Classification}
 % includes MustParamOracle and ConstMap
