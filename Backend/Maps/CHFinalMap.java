@@ -20,9 +20,10 @@ import java.util.Map;
  * a reachable method which overrides it.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CHFinalMap.java,v 1.1.2.3 2000-10-22 19:44:33 cananian Exp $
+ * @version $Id: CHFinalMap.java,v 1.1.2.4 2000-11-08 18:38:25 cananian Exp $
  */
-public class CHFinalMap extends DefaultFinalMap {
+public class CHFinalMap extends DefaultFinalMap
+    implements java.io.Serializable {
     private final ClassHierarchy ch;
     
     /** Creates a <code>CHFinalMap</code>. */
@@ -42,11 +43,12 @@ public class CHFinalMap extends DefaultFinalMap {
 	    Modifier.isPrivate(hm.getModifiers()) ||
 	    hm instanceof HConstructor) return true;
 	// next bit is time consuming.  check cache first.
+	if (cache==null) cache = new HashMap();
 	if (!cache.containsKey(hm)) {
 	    // if no overrides, this is final.
 	    cache.put(hm, new Boolean(ch.overrides(hm).size()==0));
 	}
 	return ((Boolean) cache.get(hm)).booleanValue();
     }
-    private final Map cache = new HashMap();
+    private transient Map cache = null;
 }
