@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.22 2000-11-17 07:30:58 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.23 2000-12-17 20:25:08 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -316,9 +316,12 @@ public class DataClaz extends Data {
 	    methods.retainAll(ch.callableMethods());
 	// double-check that these are all interface methods
 	// (also discard class initializers from the list)
+	// (also discard inherited methods of java.lang.Object)
 	for (Iterator it=methods.iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    if (hm instanceof HInitializer) it.remove();
+	    else if (hm.getDeclaringClass().getName()
+		     .equals("java.lang.Object")) it.remove();
 	    else Util.assert(hm.isInterfaceMethod());
 	}
 	// remove duplicates (two methods with same signature)

@@ -29,7 +29,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.35 2000-12-17 19:49:51 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.36 2000-12-17 20:24:45 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -339,7 +339,9 @@ public abstract class HClass extends HPointer
     locm=null; // free memory
 
     // grab fields from superclasses, subject to access mode constraints.
+    // note interfaces have the methods of java.lang.Object, too.
     HClass sup = getSuperclass();
+    if (isInterface()) sup=_linker.forName("java.lang.Object");//this not prim.
     HMethod supm[] = (sup==null)?new HMethod[0]:sup.getMethods();
     for (int i=0; i<supm.length; i++) {
       int m = supm[i].getModifiers();
