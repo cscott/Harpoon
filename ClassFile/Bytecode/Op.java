@@ -13,7 +13,7 @@ package harpoon.ClassFile.Bytecode;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.2 1998-08-03 08:13:21 cananian Exp $
+ * @version $Id: Op.java,v 1.3 1998-08-03 08:32:07 cananian Exp $
  * @see     harpoon.ClassFile.Raw.Attribute.AttributeCode
  * @see     harpoon.ClassFile.Bytecode.Instr
  * @see     harpoon.ClassFile.Bytecode.Code
@@ -293,8 +293,11 @@ public final class Op {
     IMPDEP1	    = (byte) 0xFE,
     IMPDEP2	    = (byte) 0xFF;
 
+  /** Get the human-readable name of a given opcode. */
+  public final static String toString(byte opcode) 
+    { return opcodeNames[((int)opcode)&0xFF]; }
   // Table of opcode names
-  public final static String[] opcodeNames = new String[] {
+  private final static String[] opcodeNames = new String[] {
     /* 0x00 */ "nop",
     /* 0x01 */ "aconst_null",
     /* 0x02 */ "iconst_m1",
