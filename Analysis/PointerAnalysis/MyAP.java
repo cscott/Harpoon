@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  <code>AllocationProperties</code>. 
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MyAP.java,v 1.4 2002-11-29 20:37:53 salcianu Exp $
+ * @version $Id: MyAP.java,v 1.5 2003-02-08 23:24:38 salcianu Exp $
  */
 public class MyAP implements AllocationInformation.AllocationProperties,
 			     java.io.Serializable,
@@ -83,6 +83,7 @@ public class MyAP implements AllocationInformation.AllocationProperties,
     }
 
     public HField getMemoryChunkField() { return null; }
+    public int getUniqueID() { return -1; }
 
     public Object clone() {
 	try{
