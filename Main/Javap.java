@@ -21,16 +21,104 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.10 2003-08-27 21:15:51 cananian Exp $
+ * @version $Id: Javap.java,v 1.11 2003-08-28 19:27:15 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
-    public static final void main(String args[]) {
-	String classname = args[0];
+    /** Print out disassembled code. */
+    public static boolean DISASSEMBLE=false;
+    /** Print out help message. */
+    public static boolean HELP=false;
+    /** Print out line number tables. */
+    public static boolean LINE_NUMBER_TABLE=false;
+    /** Print out local variable tables. */
+    public static boolean LOCAL_VARIABLE_TABLE=false;
+    /** Show only public classes and members. */
+    public static boolean PUBLIC_ONLY=false;
+    /** Show protected/public classes and members. */
+    public static boolean PUBLIC_PROTECTED_ONLY=false;
+    /** Show package/protected/public classes and members. */
+    public static boolean PUBLIC_PROTECTED_PACKAGE_ONLY=false;//default
+    /** Show all classes and members. */
+    public static boolean PUBLIC_PROTECTED_PACKAGE_PRIVATE=false;
+    /** Print internal type signatures. */
+    public static boolean SIGNATURES=false;
+    /** Print stack size, number of locals, and number of method args. */
+    public static boolean MORE_INFO=false;
 
+    public static final void main(String[] args) {
+	String[] classes = parseOpts(args);
+	for (int i=0; i<classes.length; i++)
+	    doClass(classes[i]);
+    }
+
+    public static String[] parseOpts(String[] opts) {
+	int optNum = 0;
+	while (optNum < opts.length && opts[optNum].startsWith("-")) {
+	    String opt = opts[optNum++].intern();
+	    if (false) ;
+	    else if (opt=="-c") DISASSEMBLE=true;
+	    else if (opt=="-help") HELP=true;
+	    else if (opt=="-l") { LINE_NUMBER_TABLE=LOCAL_VARIABLE_TABLE=true;}
+	    else if (opt=="-public") PUBLIC_ONLY=true;
+	    else if (opt=="-protected") PUBLIC_PROTECTED_ONLY=true;
+	    else if (opt=="-package") PUBLIC_PROTECTED_PACKAGE_ONLY=true;
+	    else if (opt=="-private") PUBLIC_PROTECTED_PACKAGE_PRIVATE=true;
+	    else if (opt=="-s") SIGNATURES=true;
+	    else if (opt=="-verbose") MORE_INFO=true;
+	    else {
+		System.err.println("Unrecognized option: "+opt);
+		HELP=true;
+	    }
+	}
+	// normalize public/protected/package/private
+	if (PUBLIC_ONLY)
+	    PUBLIC_PROTECTED_ONLY=false;
+	if (PUBLIC_ONLY||PUBLIC_PROTECTED_ONLY)
+	    PUBLIC_PROTECTED_PACKAGE_ONLY=false;
+	if (PUBLIC_ONLY||PUBLIC_PROTECTED_ONLY||PUBLIC_PROTECTED_PACKAGE_ONLY)
+	    PUBLIC_PROTECTED_PACKAGE_PRIVATE=false;
+	if (!(PUBLIC_ONLY||PUBLIC_PROTECTED_ONLY||
+	      PUBLIC_PROTECTED_PACKAGE_ONLY||PUBLIC_PROTECTED_PACKAGE_PRIVATE))
+	    PUBLIC_PROTECTED_PACKAGE_ONLY=true; // default.
+	// handle 'help' option.
+	if (HELP) {
+	    System.out.println
+		("Usage: java "+Javap.class+" <options> <classes>...\n"+
+		 "\n"+
+		 "where options include:\n"+
+		 /*
+		 "   -c         Disassemble the code\n"+
+		 */
+		 "   -help      Print this usage message\n"+
+		 /*
+		 "   -l         Print line number and local variable tables\n"+
+		 "   -public    Show only public classes and members\n"+
+		 "   -protected Show protected/public classes and members\n"+
+		 "   -package   Show package/protected/public classes\n"+
+		 "              and members (default)\n"+
+		 "   -private   Show all classes and members\n"+
+		 */
+		 "   -s         Print internal type signatures\n"+
+		 /*
+                 "   -verbose   Print stack size, number of locals and args\n"+
+		 "              for methods\n"+
+		 */
+		 // also to do: translate <clinit> and <init> method names.
+		 "");
+	    return new String[0];
+	}
+	// okay, return the non-option arguments.
+	String[] classes = new String[opts.length-optNum];
+	System.arraycopy(opts, optNum, classes, 0, opts.length - optNum);
+	return classes;
+    }
+
+    public static void doClass(String classname) {
 	InputStream is = 
 	    Loader.getResourceAsStream(Loader.classToResource(classname));
 	if (is==null) throw new NoClassDefFoundError(classname);
 	ClassFile raw = new ClassFile(is);
+	try { is.close(); } catch (java.io.IOException ex) { /* ignore */ }
 
 	// print "Compiled from"
 	AttributeSourceFile asf = (AttributeSourceFile)
@@ -85,7 +173,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    FieldInfo fi = raw.fields[i];
 	    AttributeSignature fis = (AttributeSignature)
 		findAttribute(fi.attributes, "Signature");
-	    System.out.print("    "); // indent.
+	    if (!SIGNATURES) System.out.print("    "); // indent.
 	    // access flags
 	    System.out.print(modString(fi.access_flags, false));
 	    // type/signature.
@@ -98,6 +186,11 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    System.out.print(fi.name());
 	    System.out.print(";");
 	    System.out.println();
+	    if (SIGNATURES) {
+		System.out.println("  Signature: "+fi.descriptor());
+		if (fis!=null)
+		    System.out.println("  Generic Signature: "+fis.signature());
+	    }
 	}
 	// methods.
 	for (int i=0; i<raw.methods_count(); i++) {
@@ -124,7 +217,7 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    // some kind to indicate varargs.
 	    boolean isVarArgs= (null!=findAttribute(mi.attributes, "Varargs"));
 	    // indent.
-	    System.out.print("    ");
+	    if (!SIGNATURES) System.out.print("    ");
 	    // access flags
 	    System.out.print(modString(mi.access_flags, false));
 	    // type formal parameters
@@ -171,6 +264,11 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	    // done!
 	    System.out.print(';');
 	    System.out.println();
+	    if (SIGNATURES) {
+		System.out.println("  Signature: "+mi.descriptor());
+		if (mis!=null)
+		    System.out.println("  Generic Signature: "+mis.signature());
+	    }
 	}
 	System.out.println("}");
     }
