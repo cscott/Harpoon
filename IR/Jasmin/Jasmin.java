@@ -60,7 +60,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.32 2000-01-14 12:32:56 cananian Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.33 2000-01-16 06:53:08 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -190,7 +190,8 @@ public class Jasmin {
 	//we need to do a goto
 	if (start.next().length!=0)
 	    if (qm.contains(start.next(0)))
-		out.println("    goto "+visitor.labeler(start.next(0)));
+		if(visitor.supGoto()==false)
+		    out.println("    goto "+visitor.labeler(start.next(0)));
 	//add this node to the done list
 	qm.add(start);
 	//visit the kids
@@ -229,6 +230,7 @@ public class Jasmin {
 	UseDef ud;
 	WorkSet skip;
 	CJMPVisitor cjmp;
+	boolean supGoto;
 
 	Visitor(PrintStream out, Map tempmap, HCode hc, TypeMap tm) {
 	    this.out=out;
@@ -240,7 +242,16 @@ public class Jasmin {
 	    this.skip=new WorkSet();
 	    this.ud=new UseDef();
 	    this.cjmp=new CJMPVisitor();
+	    this.supGoto=false;
 	}
+
+	public boolean supGoto() {
+	    if (supGoto) {
+		supGoto=false;
+		return true;}
+	    return false;
+	}
+	    
 
 	public void visit(Quad q) {
 	    System.out.println("**********Unhandled quad"+q.toString());
@@ -421,7 +432,8 @@ public class Jasmin {
 
 	public void visit(FOOTER q) {
 	    out.println(labeler(q)+":");
-	    out.println("    return");
+	    //not needed
+	    //	    out.println("    return");
 	    out.println(iflabel2(q));
 	}
 
@@ -542,6 +554,7 @@ public class Jasmin {
 	}
 
 	public void visit(THROW q) {
+	    supGoto=true;
 	    out.println(iflabel(q));
 	    load(q,q.throwable());
 	    out.println("    athrow");
@@ -611,6 +624,7 @@ public class Jasmin {
 	}
 	
 	public void visit(RETURN q) {
+	    supGoto=true;
 	    out.println(iflabel(q));
 	    if (q.retval()!=null) {
 		String operand="Error";
