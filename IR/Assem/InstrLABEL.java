@@ -20,7 +20,7 @@ import java.util.Set;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.15 2000-11-17 23:17:29 pnkfelix Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.16 2001-06-19 16:47:05 pnkfelix Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
@@ -104,4 +104,6 @@ public class InstrLABEL extends Instr {
 	    }
 	};
     }
+
+    public boolean isLabel() { return true; }
 }

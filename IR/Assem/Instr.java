@@ -43,7 +43,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.86 2001-06-17 22:33:12 cananian Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.87 2001-06-19 16:47:05 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDefable, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -549,6 +549,13 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
 	if (PRINT_REMOVES) System.out.println("removing Instr:"+this);
 
+	for(Iterator groups=getGroups().iterator(); groups.hasNext();){
+	    InstrGroup group = (InstrGroup) groups.next();
+	    Util.assert( group.entry != this, "Can't handle group component removes yet (entry)");
+	    Util.assert( group.exit != this,  "Can't handle group component removes yet (exit)");
+	}
+
+
 	if (this.next != null) {
 	    // remove ref to this in this.next
 	    this.next.prev = this.prev; 
@@ -655,6 +662,11 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
 	inNew.setGroup(inOld.groupList);
 	inOld.groupList = null;
+	if (inNew.groupList != null) {
+	    if (inNew.groupList.entry == inOld) inNew.groupList.entry = inNew;
+	    if (inNew.groupList.exit == inOld) inNew.groupList.exit = inNew;
+	    inNew.inf.addGroup( inNew.groupList );
+	}
 
 	inNew.layout(inOld, inOld.getNext());
 	inOld.remove();
@@ -1058,4 +1070,17 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	     before this instruction.
     */
     public boolean isDummy() { return false; }
+
+    /** Returns true if this is a directive instruction that is meant
+	to represent data stored in the code segment, not actual
+	executable code.
+    */
+    public boolean isDirective() { return false; } 
+
+    /** Returns true if this is a label instruction that is meant
+	to mark a location in the code segment, not actual
+	executable code.
+    */
+    public boolean isLabel() { return false; } 
+
 }

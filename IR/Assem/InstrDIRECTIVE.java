@@ -12,7 +12,7 @@ import harpoon.Temp.TempMap;
  * directives.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrDIRECTIVE.java,v 1.1.2.6 2000-11-17 23:17:29 pnkfelix Exp $
+ * @version $Id: InstrDIRECTIVE.java,v 1.1.2.7 2001-06-19 16:47:05 pnkfelix Exp $
  */
 public class InstrDIRECTIVE extends Instr {
 
@@ -39,4 +39,6 @@ public class InstrDIRECTIVE extends Instr {
     }
 
     public void accept(InstrVisitor v) { v.visit(this); }
+
+    public boolean isDirective() { return true; }
 }
