@@ -1159,7 +1159,7 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
   }
 
   void potengOuterLoop(final int first, final int num){
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(water.ctsize);
     final ensemble en = this;
     m.enter(new Runnable() { 
       public void run() { 
@@ -1172,7 +1172,7 @@ void INITIA()  throws java.io.FileNotFoundException, java.io.IOException {
   }
 
   void potengOuterSplit(final int first, final int num) {
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(water.ctsize);
     final ensemble en = this;
     m.enter(new Runnable() { 
       public void run() { 
@@ -1695,7 +1695,7 @@ void storeData(int dest){
   }
 
   void interfOuterLoop(final int first, final int num){
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(water.ctsize);
     final ensemble en=this;
     m.enter(new Runnable() { 
       public void run() { 
@@ -1708,7 +1708,7 @@ void storeData(int dest){
   }
 
   void interfOuterSplit(final int first, final int num) {
-    CTMemory m = new CTMemory(10);
+    CTMemory m = new CTMemory(water.ctsize);
     final ensemble en=this;
     m.enter(new Runnable() { 
       public void run() { 
@@ -1828,6 +1828,7 @@ class interfThread extends Thread {
 class water { 
   public static simparm parms;
   public static ensemble liquid;
+  public static long ctsize;
   
   public static void main(String args[]) throws java.io.IOException, java.io.FileNotFoundException { 
 
@@ -1839,11 +1840,13 @@ class water {
   start_time = System.currentTimeMillis();
 
   parms = new simparm();
-  if (args.length == 0) { 
-    System.out.print("usage: java main <input filename>\n");
+  if (args.length != 2) { 
+    System.out.print("usage: java main <input filename> <ctsize>\n");
     return;
   }
+  ctsize = Long.parseLong(args[1]);
   parms.loadParms(args[0]);
+ 
   n = parms.getNMOL();
   liquid = new ensemble(parms);
 
