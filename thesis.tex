@@ -1,7 +1,7 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.2 1999-03-20 06:50:53 cananian Exp $
+% $Id: thesis.tex,v 1.3 1999-03-20 20:23:16 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[notitlepage,twoside]{article}
+\documentclass[12pt,notitlepage,twoside]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
 
 % the name of the project
@@ -23,10 +23,10 @@
 
 \title{\magic: An Optimizing Java Compiler using SSI Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.2 $ $}
+\date{\today \\ $ $Revision: 1.3 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.2 $ $}{$ $Revision: 1.2 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.3 $ $}{$ $Revision: 1.3 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -35,6 +35,7 @@
 The choice of compiler internal representation is fundamental.
 Advances in IRs translate to advances in compilers.
 This paper represents another advance in IRs.
+\textbf{blah, blah, blah}.
 
 \section{Intermediate Representations}
 \section{Static Single Assignment Form}
@@ -45,7 +46,7 @@ Static Single Assignment (SSA) form, introduced by Cytron in
 
 \textbf{Define SSA form here.}
 
-\subsection{Minimal SSA form}
+\subsection{Minimal and pruned SSA forms}
 Cytron defines a minimal SSA form in \cite{cytron91:ssa}.  His minimal
 form is defined to use the smallest number of \phifunction{s} such
 that the following three conditions hold:
@@ -62,15 +63,40 @@ leaving the new program in SSA form.
 (in the original program) and the corresponding use of $V_i$ (in the
 new program).  Then $V$ and $V_i$ have the same value.
 \end{enumerate}
-Of these criteria, \ref{criteria1} is the most important.  A variation
+Of these criteria, the first %\ref{criteria1}
+is the most important.
+%The other two can be summarized by noting that in proper SSA form,
+%there is exactly one reaching definition for a variable $V$ at every
+%non-$\phi$ use of $V$.
+
+A variation
 on minimal SSA form, called \textit{pruned} form \cite{ferrante91:pruned},
 avoids placing \phifunction{s} which define variables which are never used.
+In most cases, the more regular properties of minimal SSA form
+outweigh the pruned form's slight increase in space efficiency.
 
 \section{Static Single Information Form}
 
-\textbf{Define SSI form here.}
+SSI form extends SSA form to achieve symmetry for both forward and
+reverse dataflow.   SSI form recognizes that information about
+variables is generated at branches and generates new names at these
+points.  This provides us with a one-to-one mapping between variable
+names and information about those variables which is independant of
+control-flow graph context.  Analyses can then associate information
+with variable names and propagate this information efficiently and
+directly both with and against the dataflow direction.
 
-\subsection{Minimal SSI form}
+\subsection{Definition of SSI form}
+Building SSI form involves adding pseudo-assignments for a variable $V$:
+\begin{enumerate}
+\item[$(\phi)$] at a control-flow merge when disjoint paths from a
+conditional branch come together and at least one of the paths
+contains a definition of $V$; and
+\item[$(\sigma)$] at locations where control-flow splits and at least
+one of the disjoint paths from the split uses the value of $V$.
+\end{enumerate}
+
+\subsection{Minimal and pruned SSI forms}
 \textit{Minimal} and \textit{pruned} SSI forms can be defined which
 parallel their SSA counterparts.  \textit{Minimal} SSI form would have the
 smallest number of $\phi$- and \sigfunction{s} such that:
@@ -85,12 +111,19 @@ exist having only the node $Z$ where they diverge in common,
 and nodes $X$ and $Y$ contain either uses of a variable $V$ in the
 original program or a $\phi$- or \sigfunction{} for $V$ in the new program,
 then a \sigfunction{} for $V$ has been inserted at $Z$ in the new program.
+\item There is exactly one reaching definition of $V$ at every
+non-$\phi$ use of $V$ in the new program.
+\item \textbf{FIXME: what's the equivalent condition for \sigfunction{s}?}
 \end{enumerate}
 
 A \textit{pruned} SSI form would be the minimal form without any unused
 definitions, that is, $\phi$ or \sigfunction{s} after which there are no
 subsequent uses of any of the variables defined on the left-hand side,
-except in other $\phi$ or \sigfunction{s}.
+except in other $\phi$ or \sigfunction{s}.\footnote{An even more
+compact SSI form may be produced by removing \sigfunction{s} for which
+there are uses for \textit{exactly one} of the variables on the
+left-hand side, but it does not seem profitable to split this
+particular hair.}
 
 \section{Results}
 \section{Conclusions}
