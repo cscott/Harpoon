@@ -356,3 +356,19 @@ if [ x$IMAGEREC == xImageRec ]; then
   cd ../ImageRec;
   make jars;
 fi;
+
+cd $FLEX_ROOT/BuildScripts
+echo Writing configuration file...
+echo export arm=$arm > config.status
+echo export GUI=$GUI >> config.status
+echo export version=$version >> config.status
+echo export RTJ=$RTJ >> config.status
+echo export BENCHMARKS=$BENCHMARKS >> config.status
+echo export IMAGEREC=$IMAGEREC >> config.status
+echo export dep=$dep >> config.status
+echo export prmpt=$prmpt >> config.status
+echo export inst=$inst >> config.status
+echo export dep=$dep >> config.status
+echo export version=$version >> config.status
+echo export REALTIME=$REALTIME >> config.status
+chmod a+rx config.status

@@ -1,3 +1,4 @@
+source ./config.status
 cd ..
 export FLEXPATH=""
 export CLASSPATH=""
@@ -18,8 +19,10 @@ export JSR14_v1=/usr/java/jsr14_adding_generics-1_2-ea/scripts/javac
 
 #FLEX
 export FLEX=`pwd`
-export CLASSPATH=.:$FLEX/Realtime/realtime.jar:$CLASSPATH
-export OPT_FLEX_SUPPORT_FILES="$FLEX/Realtime/support/rtjperf.jar"
+if [ x$REALTIME = xRealtime ]; then
+  export CLASSPATH=.:$FLEX/Realtime/realtime.jar:$CLASSPATH
+  export OPT_FLEX_SUPPORT_FILES="$FLEX/Realtime/support/rtjperf.jar"
+fi
 export CLASSPATH=$FLEX/Code/Support/gjlib.jar:$CLASSPATH
 export PRECISEC_CFLAGS="-g"
 
@@ -39,14 +42,14 @@ export USE_GNU_CLASSPATH=true
 #More FLEX
 export FLEXPATH=$FLEX/Runtime/src/classpath/cpvm.jar:$FLEXPATH
 export FLEXPATH=$FLEX/Runtime/src/java.lang.reflect/reflect-thunk.jar:$FLEXPATH
-export FLEXPATH=$FLEX/Realtime/realtime.jar:$FLEXPATH
 
-if [ "$1" == "arm" ]; then \
-echo "Adding arm-linux, camera, video support"; \
-export FLEXPATH=$FLEX/Runtime/src/cam/video.jar:$FLEXPATH; \
-export FLEXPATH=$FLEX/Runtime/src/servo/servo.jar:$FLEXPATH; \
-export PATH=/usr/local/arm-linux/bin:$PATH; \
-else \
-echo "Not adding arm-linux, camera, video support"; \
+if [ x$REALTIME = xRealtime ]; then 
+  export FLEXPATH=$FLEX/Realtime/realtime.jar:$FLEXPATH; 
+fi
+
+if [ x$arm = xY ]; then 
+  export FLEXPATH=$FLEX/Runtime/src/cam/video.jar:$FLEXPATH; 
+  export FLEXPATH=$FLEX/Runtime/src/servo/servo.jar:$FLEXPATH;
+  export PATH=/usr/local/arm-linux/bin:$PATH; 
 fi;
 
