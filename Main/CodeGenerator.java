@@ -26,6 +26,7 @@ import harpoon.Temp.TempFactory;
 
 import harpoon.Util.Default;
 import harpoon.Util.CombineIterator;
+import harpoon.Util.Options.Option;
 
 import harpoon.Analysis.MemOpt.PreallocOpt;
 import harpoon.Analysis.Realtime.Realtime;
@@ -37,6 +38,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Map;
@@ -64,11 +66,71 @@ import java.io.PrintWriter;
  * <code>CodeGenerator</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CodeGenerator.java,v 1.3 2003-04-08 04:17:03 salcianu Exp $
+ * @version $Id: CodeGenerator.java,v 1.4 2003-04-17 00:29:18 salcianu Exp $
  */
-public abstract class CodeGenerator {
+public class CodeGenerator extends CompilerStage {
+    
+    public CodeGenerator() { super("code-generator"); }
 
-    /** code generation options (MANY!) */
+    public List/*<Option>*/ getOptions() {
+	List/*<Option>*/ opts = new LinkedList/*<Option>*/();
+
+	opts.add(new Option("D", "Outputs DATA information for <class>") {
+	    public void action() { OUTPUT_INFO = PRINT_DATA = true; }
+	});
+	opts.add(new Option("O", "Outputs Original Tree IR for <class>") {
+	    public void action() { OUTPUT_INFO = PRINT_ORIG = true; }
+	});
+	opts.add(new Option
+		 ("P", "Outputs Pre-Register Allocated Instr IR for <class>") {
+	    public void action() { OUTPUT_INFO = PRE_REG_ALLOC = true; }
+	});
+	opts.add(new Option("B", "Outputs Abstract Register Allocated Instr IR for <class>") {
+	    public void action() { OUTPUT_INFO = ABSTRACT_REG_ALLOC = true; }
+	});
+	opts.add(new Option("H", "Hacked register allocator") {
+	    public void action() { HACKED_REG_ALLOC = true; }
+	});
+	opts.add(new Option("R", "", "<regAllocFilename>", "Outputs Global Register Allocated Instr IR for <class>") {
+	    public void action() {
+		if(getOptionalArg(0) != null)
+		    regAllocOptionsFilename = getOptionalArg(0);
+		REG_ALLOC = true;
+	    }
+	});
+	opts.add(new Option("L", "Outputs Local Register Allocated Instr IR for <class>") {
+	    public void action() { REG_ALLOC = LOCAL_REG_ALLOC = true; }
+	});
+	opts.add(new Option("A", "Same as -OPR") {
+	    public void action() {
+		OUTPUT_INFO = PRE_REG_ALLOC = true;
+		PRINT_ORIG = REG_ALLOC = true;
+	    }
+	});
+	opts.add(new Option("o", "<outputDir>",
+			    "Output directory for compilation result") {
+	    public void action() { 
+		ASSEM_DIR = new File(getArg(0));
+		assert ASSEM_DIR.isDirectory() : 
+		    ASSEM_DIR + " must be a directory";
+
+	    }
+	});
+	opts.add(new Option("1", "", "<classname>", "Compiles only a single method or class.  Without a classname, only compiles <class>.main()") {
+	    public void action() {
+		String optclassname = getOptionalArg(0);
+		if (optclassname != null)
+		    singleClassStr = optclassname;
+		else
+		    ONLY_COMPILE_MAIN = true;
+	    }
+	});
+
+	return opts;
+    }
+
+
+    /** code generation options ([TOO] MANY!) */
     static boolean PRINT_ORIG = false;
     static boolean PRINT_DATA = false;
     static boolean PRE_REG_ALLOC = false;
@@ -89,7 +151,8 @@ public abstract class CodeGenerator {
     static String regAllocOptionsFilename; 
     private static RegAlloc.Factory regAllocFactory;
 
-    public static CompilerState generate(CompilerState cs) {
+    public CompilerState action(CompilerState cs) {
+	// always enabled; unpack cs and go to work!
 	mainM = cs.getMain();
 	linker = cs.getLinker();
 	hcf = cs.getCodeFactory();
@@ -116,8 +179,8 @@ public abstract class CodeGenerator {
 
 
     // take a tree code factory and generate native / preciseC code
-    private static void generate_code() {
-	// QUESTION: what does "sahcf" stand for?
+    private void generate_code() {
+	// sahcf = "Strong-Arm HCodeFactory"
 	HCodeFactory sahcf = frame.getCodeFactory(hcf);
 	if (sahcf != null)
 	    sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
@@ -160,7 +223,7 @@ public abstract class CodeGenerator {
     // <code>hclass</code> that are in the set
     // <code>callableMethods</code>.
     // QUESTION: What's <code>sahcf</code>.
-    private static void generate_code_for_class
+    private void generate_code_for_class
 	(HClass hclass, Set callableMethods, HCodeFactory sahcf)
 	throws IOException {
 
@@ -212,7 +275,7 @@ public abstract class CodeGenerator {
 
     // generate the Makefile that can be used to assemble / compile the
     // generated files into a single executable
-    private static void generate_Makefile() {	
+    private void generate_Makefile() {	
 	// put a proper makefile in the directory.
 	File makefile = new File(ASSEM_DIR, "Makefile");
 	InputStream templateStream;
@@ -244,10 +307,10 @@ public abstract class CodeGenerator {
     }
 
 
-    public static void outputMethod(final HMethod hmethod, 
-				    final HCodeFactory hcf,
-				    final HCodeFactory sahcf,
-				    final PrintWriter out) throws IOException {
+    public void outputMethod(final HMethod hmethod, 
+			     final HCodeFactory hcf,
+			     final HCodeFactory sahcf,
+			     final PrintWriter out) throws IOException {
 	if (PRINT_ORIG) {
 	    HCode hc = hcf.convert(hmethod);
 	    
@@ -355,17 +418,18 @@ public abstract class CodeGenerator {
 	if (sahcf!=null) sahcf.clear(hmethod);
     }
     
-    public static void outputClassData(HClass hclass, PrintWriter out) 
+    public void outputClassData(HClass hclass, PrintWriter out) 
 	throws IOException {
       Iterator it=frame.getRuntime().classData(hclass).iterator();
       // output global data with the java.lang.Object class.
       if (hclass==linker.forName("java.lang.Object")) {
 	  HData data=frame.getLocationFactory().makeLocationData(frame);
 	  it=new CombineIterator(it, Default.singletonIterator(data));
-	  if (SAMain.WB_STATISTICS) {
-	      assert SAMain.writeBarrierStats != null :
+	  if (WriteBarriers.WB_STATISTICS) {
+	      assert WriteBarriers.writeBarrierStats != null :
 		  "WriteBarrierStats need to be run before WriteBarrierData.";
-	      HData wbData = SAMain.writeBarrierStats.getData(hclass, frame);
+	      HData wbData = 
+		  WriteBarriers.writeBarrierStats.getData(hclass, frame);
 	      it=new CombineIterator(it, Default.singletonIterator(wbData));
 	  }
 	  if(PreallocOpt.PREALLOC_OPT) {
