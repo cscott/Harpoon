@@ -95,3 +95,10 @@ inline void Block_free(struct Block* block) {
   printf("Block_free: %ds %dus\n", end.tv_sec-begin.tv_sec, end.tv_usec-begin.tv_usec);
 #endif
 }
+
+inline void Block_reset(struct Block* block) {
+#ifdef RTJ_DEBUG
+  printf("Block_reset(%08x)\n", block);
+#endif
+  block->free = block->begin;
+}

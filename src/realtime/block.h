@@ -29,5 +29,6 @@ inline struct Block* Block_new(void* superBlockTag, size_t size);
 inline void* Block_alloc(struct Block* block, size_t size);
 inline void* BlockVec_alloc(struct Block* block, size_t size);
 inline void Block_free(struct Block* block);
+inline void Block_reset(struct Block* block);
 
 #endif /* __BLOCK_H__ */

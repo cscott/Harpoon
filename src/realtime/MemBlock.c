@@ -301,6 +301,12 @@ void  CTScope_RThread_MemBlock_free(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   printf("CTScope_RThread_MemBlock_free(%08x)\n", mem);
 #endif
+#ifdef ALLOW_SCOPE_REENTRY
+#ifdef RTJ_DEBUG
+  printf("  resetting block... \n");
+#endif
+  Block_reset(mem->block);
+#else
   Block_free(mem->block);
 #ifdef BDW_CONSERVATIVE_GC
 #ifdef WITH_GC_STATS
@@ -312,6 +318,7 @@ void  CTScope_RThread_MemBlock_free(struct MemBlock* mem) {
     free
 #endif
     (mem);
+#endif
 }
 
 inline Allocator CTScope_RThread_MemBlock_allocator(jobject memoryArea) {

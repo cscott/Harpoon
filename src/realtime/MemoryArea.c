@@ -11,8 +11,13 @@
  */
 JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_enterMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread, jobject memAreaStack) {
-  struct MemBlock* memBlock = MemBlock_currentMemBlock();
-  getInflatedObject(env, memAreaStack)->temp = memBlock;
+  struct MemBlock* memBlock;
+#ifdef RTJ_DEBUG
+  printf("MemoryArea.enterMemBlock(%08x, %08x, %08x, %08x)\n", 
+	 env, memoryArea, realtimeThread, memAreaStack);
+#endif
+  getInflatedObject(env, memAreaStack)->temp = 
+    (memBlock = MemBlock_currentMemBlock());
   MemBlock_setCurrentMemBlock(env, realtimeThread,
 			      MemBlock_new(env, memoryArea, 
 					   realtimeThread, memBlock));
@@ -25,7 +30,12 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_enterMemBlock
  */
 JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_exitMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
-  struct MemBlock* memBlock = MemBlock_currentMemBlock();
+  struct MemBlock* memBlock;
+#ifdef RTJ_DEBUG
+  printf("MemoryArea.exitMemBlock(%08x, %08x, %08x)\n",
+	 env, memoryArea, realtimeThread);
+#endif
+  memBlock = MemBlock_currentMemBlock();
   MemBlock_setCurrentMemBlock(env, realtimeThread, 
 			      MemBlock_prevMemBlock(memBlock));
   MemBlock_free(memBlock);
@@ -39,6 +49,10 @@ jarray RTJ_NewObjectArray(JNIEnv *env, jsize length,
   struct FNI_classinfo *info;
   jclass arrayclazz;
   jobject result;
+#ifdef RTJ_DEBUG
+  printf("RTJ_NewObjectArray(%08x, %d, %08x, %08x)\n",
+	 env, length, elementClass, initialElement);
+#endif
   assert(FNI_NO_EXCEPTIONS(env) && length>=0 && elementClass!=NULL);
   assert(Java_java_lang_Class_isPrimitive(env, elementClass)==JNI_FALSE);
   info = FNI_GetClassInfo(elementClass);
@@ -78,11 +92,16 @@ jarray RTJ_NewObjectArray(JNIEnv *env, jsize length,
 JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2ILjava_lang_Object_2
 (JNIEnv *env, jobject memoryArea, jobject realtimeThread, 
  jclass componentClass, jint length, jobject memBlockObj) {
-  struct MemBlock* oldMemBlock = MemBlock_currentMemBlock();
+  struct MemBlock* oldMemBlock;
   jobject result;
   jarray (*oldNewObjectArray) (JNIEnv *env, jsize length,
-			       jclass elementClass, jobject initialElement) 
-    = (*env)->NewObjectArray;
+			       jclass elementClass, jobject initialElement);
+#ifdef RTJ_DEBUG
+  printf("MemoryArea.newArray(%08x, %08x, %08x, %08x, %d, %08x)\n",
+	 env, memoryArea, realtimeThread, componentClass, length, memBlockObj);
+#endif  
+  oldMemBlock = MemBlock_currentMemBlock();
+  oldNewObjectArray = (*env)->NewObjectArray;
   MemBlock_setCurrentMemBlock(env, realtimeThread, 
 			      getInflatedObject(env, memBlockObj)->temp);
   ((struct JNINativeInterface*)(*env))->NewObjectArray = RTJ_NewObjectArray;
@@ -100,11 +119,16 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realti
 JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2_3ILjava_lang_Object_2
 (JNIEnv *env, jobject memoryArea, jobject realtimeThread, 
  jclass componentClass, jintArray dims, jobject memBlockObj) {
-  struct MemBlock* oldMemBlock = MemBlock_currentMemBlock();
+  struct MemBlock* oldMemBlock;
   jobject result;
   jarray (*oldNewObjectArray) (JNIEnv *env, jsize length,
-			       jclass elementClass, jobject initialElement) 
-    = (*env)->NewObjectArray;
+			       jclass elementClass, jobject initialElement);
+#ifdef RTJ_DEBUG
+  printf("MemoryArea.newArray(%08x, %08x, %08x, %08x, %08x, %08x)\n",
+	 env, memoryArea, realtimeThread, componentClass, dims, memBlockObj);
+#endif
+  oldNewObjectArray = (*env)->NewObjectArray;
+  oldMemBlock = MemBlock_currentMemBlock();
   MemBlock_setCurrentMemBlock(env, realtimeThread,
 			      getInflatedObject(env, memBlockObj)->temp);
   ((struct JNINativeInterface*)(*env))->NewObjectArray = RTJ_NewObjectArray;
@@ -122,11 +146,16 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realti
 JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newInstance
 (JNIEnv *env, jobject memoryArea, jobject realtimeThread, 
  jobject constructor, jobjectArray parameters, jobject memBlockObj) {
-  struct MemBlock* oldMemBlock = MemBlock_currentMemBlock();
+  struct MemBlock* oldMemBlock; 
   struct FNI_method2info *method; /* method information */
   jclass methodclazz; /* declaring class of method */
   jobject result;
-
+#ifdef RTJ_DEBUG
+  printf("MemoryArea.newInstance(%08x, %08x, %08x, %08x, %08x, %08x)\n",
+	 env, memoryArea, realtimeThread, constructor, parameters, memBlockObj);
+#endif
+  oldMemBlock = MemBlock_currentMemBlock();
+  
   assert(constructor != NULL);
   method = FNI_GetMethodInfo(constructor);
   assert(method != NULL);
