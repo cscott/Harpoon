@@ -20,7 +20,7 @@ import java.util.Set;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.17 2001-06-25 19:20:52 bdemsky Exp $
+ * @version $Id: Peephole.java,v 1.1.2.18 2001-09-18 21:45:55 cananian Exp $
  */
 
 final class Peephole  {
@@ -299,6 +299,12 @@ final class Peephole  {
 	    for (int i=0; i<Tset.length; i++)
 		if (t == Tset[i]) return true;
 	    return false;
+	}
+	private void replace(Quad oldQ, Quad newQ) {
+	    Peephole.replace(oldQ, newQ);
+	    if (pquads.contains(oldQ)) {
+		pquads.remove(oldQ); pquads.add(newQ);
+	    }
 	}
     }
     // replace oldQ with newQ, updating handlers, too.
