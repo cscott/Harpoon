@@ -21,7 +21,7 @@ import java.util.Map;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.39 2001-01-24 19:33:58 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.40 2001-06-12 00:04:18 cananian Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm,
@@ -132,7 +132,6 @@ public class Print {
             pw.print(",");
             e.getRight().accept(this);
             pw.print(")");
-            pw.print(e.hashCode());
 	    cb.printAfter(pw, e);
             indlevel--;
         }
@@ -247,7 +246,6 @@ public class Print {
         public void visit(LABEL s) {
             indent(indlevel);
             pw.print("LABEL(" + s.label + ")");
-            pw.print(s.hashCode());
 	    cb.printAfter(pw, s);
         }
 
@@ -256,7 +254,6 @@ public class Print {
             pw.print("MEM<" + Type.toString(e) + ">(");
             e.getExp().accept(this);
             pw.print(")");
-            pw.print(e.hashCode());
 	    cb.printAfter(pw, e);
             indlevel--;
         }
@@ -279,7 +276,6 @@ public class Print {
             pw.print(",");
             s.getSrc().accept(this);
             pw.print(")");
-            pw.print(s.hashCode());
 	    cb.printAfter(pw, s);
             indlevel--;
         }
