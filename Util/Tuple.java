@@ -5,20 +5,31 @@ package harpoon.Util;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
 /**
  * A <code>Tuple</code> is an ordered list of objects that works
  * properly in Hashtables & etc.  Tuples may have <code>null</code> elements.
+ * <code>Tuple</code>s are <code>Comparable</code> iff the objects in
+ * the elements array are <code>Comparable</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tuple.java,v 1.2.2.5 1999-06-18 01:48:10 cananian Exp $
+ * @version $Id: Tuple.java,v 1.2.2.6 1999-08-28 18:46:06 cananian Exp $
  */
-public class Tuple  {
-    Object elements[];
+public class Tuple implements Comparable {
+    final Comparator objcmp;
+    final Object elements[];
     /** Creates a <code>Tuple</code>. */
     public Tuple(Object[] elements) {
         this.elements = elements;
+	this.objcmp = Default.comparator;
+    }
+    /** Creates a <code>Comparable</code> <code>Tuple</code> which will use
+     *  the specified <code>Comparator</code> to do object comparisons. */
+    public Tuple(Object[] elements, Comparator objcmp) {
+	this.elements = elements;
+	this.objcmp = objcmp;
     }
     /** Projects an element of the <code>Tuple</code>. */
     public Object proj(int i) { return elements[i]; }
@@ -51,5 +62,18 @@ public class Tuple  {
 		if (!this.elements[i].equals(t.elements[i])) return false;
 	    }
 	return true;
+    }
+    /** Does an element-by-element comparison of two <code>Tuple</code>s.
+     *  Inconsistent with <code>equals()</code> only if the underlying
+     *  comparator is.  Shorter tuples are compared as less than longer
+     *  tuples. */
+    public int compareTo(Object o) { // dict order: smaller first.
+	Object[] el2 = ((Tuple)o).elements;
+	if (elements.length!=el2.length) return elements.length-el2.length;
+	for (int i=0; i<elements.length; i++) {
+	    int c = objcmp.compare(elements[i], el2[i]);
+	    if (c!=0) return c;
+	}
+	return 0;
     }
 }
