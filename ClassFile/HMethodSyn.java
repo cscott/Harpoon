@@ -15,7 +15,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6.2.4 1999-10-30 22:15:22 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6.2.5 1999-11-12 19:04:49 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -33,9 +33,25 @@ public class HMethodSyn extends HMethod {
    *  but in class <code>parent</code>. 
    *  The new method will be added to class <code>parent</code>. */
   public HMethodSyn(HClassSyn parent, HMethod template) {
+    this(parent, template, false);
+  }
+  /** Create a new method like the <code>template</code>, but in class
+   * <code>parent</code>.  The new method will be added to class
+   * <code>parent</code>.  If the <code>replaceOriginal</code>
+   * parameter is true, the newly created method will have the exact
+   * same name as the template <code>HMethod</code>.  This is
+   * dangerous functionality to use; valid <code>HClass</code>es do not have
+   * multiple methods with the same name and descriptor.  If
+   * <code>replaceOriginal</code> is false, the new method will have a
+   * unique name derived from the name of the template method, and you
+   * needn't worry about danger. */
+  public HMethodSyn(HClassSyn parent, HMethod template,
+		    boolean replaceOriginal) {
     this.parent = parent;
-    this.name = uniqueName(parent, template.getName(), 
-			   template.getDescriptor());
+    this.name = replaceOriginal ?
+      template.getName() :
+      uniqueName(parent, template.getName(), 
+		 template.getDescriptor());
     this.modifiers = template.getModifiers();
     this.returnType = template.getReturnType();
     this.parameterTypes = template.getParameterTypes();
