@@ -62,10 +62,11 @@ public class Main {
 	}
 
 	if (true) {
-	    Node n4 = new RangeFind(null);
+	    Node n4 = new RangeFind(new Alert(args));
 	    Node n3 = new Thinning(new Pruning(new Label(null, n4 /* new Match(n4) */)));
 	    Node n2 = new RobertsCross(new Thresholding(new Hysteresis(n3)));
 	    Node n1 = new Load("movie/movie.jar", "mov3.gz", 139, n2);
+//  	    Node n1 = new ATR(args, n2);
 	    n1.run();
 	}
 

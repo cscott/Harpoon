@@ -51,21 +51,13 @@ public class ATR extends Node {
      */
     public synchronized void process(ImageData id) {
 	try {
-	    (new Thread() {
-		public void run() {
-		    try {
-			cm.runATRServer(name, new CommunicationsAdapter() {
-			    public synchronized void process(ImageData id) {
-				ATR.super.process(id);
-			    }
-			});
-		    } catch (Exception e) {
-			throw new Error(e);
-		    }
+	    cm.runATRServer(name, new CommunicationsAdapter() {
+		public synchronized void process(ImageData id) {
+		    ATR.super.process(id);
 		}
-	    }).start();
+	    });
 	} catch (Exception e) {
 	    throw new Error(e);
-	} 
+	}
     }
 }

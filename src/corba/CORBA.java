@@ -64,6 +64,7 @@ public class CORBA implements CommunicationsModel {
 	};
 	namingContext.rebind(namingContext.to_name(name),
 			     ClientServerHelper.narrow(poa.servant_to_reference(cs)));
+	orb.run();
     }
 
     /**
@@ -138,6 +139,7 @@ public class CORBA implements CommunicationsModel {
 	    }
 	};
 	namingContext.rebind(namingContext.to_name(name),
-			     ProcessorHelper.narrow(poa.servant_to_reference(p)));	
+			     ProcessorHelper.narrow(poa.servant_to_reference(p)));
+	orb.run();
     }
 }
