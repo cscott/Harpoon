@@ -44,8 +44,40 @@ public class Label extends Node {
      *                   If <code>null</code>, no individual objects are sent.
      */
     public Label(Node outImage, Node outImages) {
-	//this(outImage, outImages, 38, 78, 23, 69, 77, 129, 3.);
-	this(outImage, outImages, 33, 300, 33, 200, 0, 1200, 3.);
+	super(outImage, outImages);
+	init(33, 300, 33, 200, 0, 1200, 3.);
+    }
+
+    /**
+     * Default setting for pipeline 1.
+     */
+    public final static int DEFAULT1 = 0;
+    /**
+     * Default setting for pipeline 2.
+     */
+    public final static int DEFAULT2 = 1;
+
+    
+    /** Construct a new {@link Label} node which will trace the outlines
+     *  of objects and retain all objects with a bounding box that fits
+     *  within a default range.
+     *
+     *  @param defaultNumber Specifies the particular set of internal defaults
+     *                       to use for this {@link Label} node.
+     *  @param outImage Node to send the labelled composite to.
+     *                  If <code>null</code>, no composite is sent.
+     *  @param outImages Node to send individual labelled objects to.
+     *                   If <code>null</code>, no individual objects are sent.
+     */
+    public Label(int defaultNumber, Node outImage, Node outImages) {
+	super(outImage, outImages);
+	
+	if (defaultNumber == DEFAULT1) {
+	    init(38, 78, 23, 69, 77, 129, 3.);
+	}
+	else if (defaultNumber == DEFAULT2) {
+	    init(33, 300, 33, 200, 0, 1200, 3.);
+	}
     }
 
     /** Construct a new {@link Label} node which will trace the outlines
@@ -68,6 +100,23 @@ public class Label extends Node {
 		 int maxwidth, int minheight, int maxheight,
 		 int minsum, int maxsum, double maxratio) {
 	super(outImage, outImages);
+	init(minwidth, maxwidth, minheight, maxheight, minsum, maxsum, maxratio);
+    }
+
+    /** 
+     *  Method should be called by all constructors to initialize object fields.
+     *
+     *  @param minwidth The minimum width of the bounding box for a target object.
+     *  @param maxwidth The maximum width of the bounding box for a target object.
+     *  @param minheight The minimum height of the bounding box for a target object.
+     *  @param maxheight The maximum height of the bounding box for a target object.
+     *  @param minsum The minimum sum of width and height.
+     *  @param maxsum The maximum sum of width and height.
+     *  @param maxratio The maximum value of width/height and height/width
+     */
+    private void init(int minwidth, 
+		 int maxwidth, int minheight, int maxheight,
+		 int minsum, int maxsum, double maxratio) {
 	this.minwidth = minwidth;
 	this.maxwidth = maxwidth;
 	this.minheight = minheight;
