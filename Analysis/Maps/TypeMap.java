@@ -5,13 +5,13 @@ package harpoon.Analysis.Maps;
 
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.HClass;
-import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
 
 /**
  * A <code>TypeMap</code> is a mapping from temporaries to their types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeMap.java,v 1.3.2.1 1999-08-08 19:40:02 duncan Exp $
+ * @version $Id: TypeMap.java,v 1.3.2.2 1999-08-09 20:22:10 duncan Exp $
  */
 public interface TypeMap  { 
     /** 
@@ -20,9 +20,9 @@ public interface TypeMap  {
      * pointer, an error is thrown.  If either parameter is null, an 
      * error is thrown.  
      * 
-     * @param hc The <code>HCode</code> containing <code>t</code>.
+     * @param hc The <code>HCodeElement</code> containing <code>t</code>.
      * @param t The temporary to examine.
      * @return the static type of <code>t</code>.  
      */
-    public HClass typeMap(HCode hc, Temp t);
+    public HClass typeMap(HCodeElement hc, Temp t);
 }
