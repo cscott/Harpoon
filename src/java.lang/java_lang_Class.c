@@ -147,17 +147,31 @@ JNIEXPORT jboolean JNICALL Java_java_lang_Class_isPrimitive
 JNIEXPORT jstring JNICALL Java_java_lang_Class_getName
   (JNIEnv *env, jobject cls) {
     struct FNI_classinfo *info = FNI_GetClassInfo((jclass)cls);
-    return (*env)->NewStringUTF(env, info->name);
+    /* replace / with . so that we do the same thing as Sun's JDKs */
+    char buf[strlen(info->name)+1], *src, *dst;
+    for (src=info->name, dst=buf; *src; src++, dst++)
+      *dst = (*src=='/')?'.':*src;
+    *dst='\0';
+    /* okay, create java string and go home */
+    return (*env)->NewStringUTF(env, buf);
 }
 
-#if 0
 /*
  * Class:     java_lang_Class
  * Method:    getClassLoader
  * Signature: ()Ljava/lang/ClassLoader;
  */
+    /**
+     * Determines the class loader for the class. 
+     *
+     * @return  the class loader that created the class or interface
+     *          represented by this object, or <code>null</code> if the
+     *          class was not created by a class loader.
+     */
 JNIEXPORT jobject JNICALL Java_java_lang_Class_getClassLoader
-  (JNIEnv *, jobject);
+  (JNIEnv *env, jobject _this) {
+  return NULL; // XXX let's say nothing was ever created by a class loader.
+}
 
 /*
  * Class:     java_lang_Class
@@ -165,7 +179,9 @@ JNIEXPORT jobject JNICALL Java_java_lang_Class_getClassLoader
  * Signature: ()Ljava/lang/Class;
  */
 JNIEXPORT jclass JNICALL Java_java_lang_Class_getSuperclass
-  (JNIEnv *, jobject);
+  (JNIEnv *env, jobject _this) {
+  return (*env)->GetSuperclass(env, (jclass) _this);
+}
 
 /*
  * Class:     java_lang_Class
@@ -173,7 +189,27 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_getSuperclass
  * Signature: ()[Ljava/lang/Class;
  */
 JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getInterfaces
-  (JNIEnv *, jobject);
+  (JNIEnv *env, jobject _this) {
+  struct claz *thisclz = FNI_GetClassInfo((jclass)_this)->claz;
+  struct claz **cp;
+  jclass clscls;
+  jobjectArray r;
+  jsize i, ninterfaces = 0;
+  /* count length of interfaces list */
+  for (cp = thisclz->interfaces; *cp!=NULL; cp++)
+    ninterfaces++;
+  /* now create a Class array of the proper size */
+  clscls = (*env)->FindClass(env, "java/lang/Class");
+  if (!clscls) return NULL;
+  r = (*env)->NewObjectArray(env, ninterfaces, clscls, NULL);
+  if (!r) return NULL;
+  /* set the elements of the Class array to the proper things. */
+  for (i=0; i<ninterfaces; i++)
+    (*env)->SetObjectArrayElement
+      (env, r, i, FNI_WRAP(thisclz->interfaces[i]->class_object));
+  /* done! */
+  return r;
+}
 
 /*
  * Class:     java_lang_Class
@@ -181,8 +217,13 @@ JNIEXPORT jobjectArray JNICALL Java_java_lang_Class_getInterfaces
  * Signature: ()Ljava/lang/Class;
  */
 JNIEXPORT jclass JNICALL Java_java_lang_Class_getComponentType
-  (JNIEnv *, jobject);
+  (JNIEnv *env, jobject _this) {
+  struct claz *thisclz = FNI_GetClassInfo((jclass)_this)->claz;
+  struct claz *compclz = thisclz->component_claz;
+  return compclz ? FNI_WRAP(compclz->class_object) : NULL;
+}
 
+#if 0
 /*
  * Class:     java_lang_Class
  * Method:    getModifiers
