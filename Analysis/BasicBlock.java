@@ -50,7 +50,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.20 2000-02-11 00:45:40 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.21 2000-02-11 06:35:00 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -395,9 +395,23 @@ public class BasicBlock {
 		    }
 		}
 
-		Util.assert( gr.succC(last).size() != 1);
-
 		current.last = last;
+
+		final HCodeElement flast = last;
+		final BasicBlock fcurr = current;
+		Util.assert( gr.succC(last).size() != 1 ||
+			     gr.predC(gr.succ(last)[0].
+				      to()).size() > 1,
+			     new Object() { 
+				 public String toString() {
+				     return 
+				     "last elem: "+flast+" of "+ 
+				     fcurr+" breaks succC "+
+				     "invariant: "+gr.succC(flast)+
+				     " BB: " + fcurr.dumpElems();
+				 }
+			     });
+
 	    }
 
 	    // efficiency hack; make various immutable Collections

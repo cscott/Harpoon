@@ -53,12 +53,12 @@ import java.util.Iterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.72 2000-02-11 00:45:41 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.73 2000-02-11 06:35:01 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
     private static boolean TIME = false;
-    private static boolean VERIFY = false;
+    private static boolean VERIFY = true;
     
     /** Creates a <code>LocalCffRegAlloc</code>. */
     public LocalCffRegAlloc(Code code) {
