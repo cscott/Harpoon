@@ -16,7 +16,7 @@ import java.util.Arrays;
 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ListFactory.java,v 1.1.2.4 2000-05-23 22:06:13 pnkfelix Exp $
+ * @version $Id: ListFactory.java,v 1.1.2.5 2000-07-13 14:43:55 cananian Exp $
  */
 public abstract class ListFactory extends CollectionFactory {
     
@@ -25,16 +25,12 @@ public abstract class ListFactory extends CollectionFactory {
         
     }
     
-    public Collection makeCollection() {
-	return makeList();
-    }
-
-    public Collection makeCollection(Collection c) {
+    public final Collection makeCollection(Collection c) {
 	return makeList(c);
     }
 
     /** Generates a new, mutable, empty <code>List</code>. */
-    public List makeList() {
+    public final List makeList() {
 	return makeList(Collections.EMPTY_LIST);
     }
 

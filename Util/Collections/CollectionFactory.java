@@ -17,7 +17,7 @@ import java.util.Collection;
     <code>Collection</code> interface.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CollectionFactory.java,v 1.1.2.2 2000-05-23 22:06:13 pnkfelix Exp $
+ * @version $Id: CollectionFactory.java,v 1.1.2.3 2000-07-13 14:43:55 cananian Exp $
  */
 public abstract class CollectionFactory {
     
@@ -27,7 +27,7 @@ public abstract class CollectionFactory {
     }
     
     /** Generates a new, mutable, empty <code>Collection</code>. */
-    public Collection makeCollection() {
+    public final Collection makeCollection() {
 	return makeCollection(java.util.Collections.EMPTY_SET);
     }
 

@@ -10,7 +10,7 @@ import java.util.Map;
     <code>Map</code>s.
  
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MapFactory.java,v 1.1.2.1 1999-10-20 06:00:26 pnkfelix Exp $
+    @version $Id: MapFactory.java,v 1.1.2.2 2000-07-13 14:43:55 cananian Exp $
  */
 public abstract class MapFactory {
     
@@ -20,7 +20,7 @@ public abstract class MapFactory {
     }
 
     /** Generates a new, mutable, empty <code>Map</code>. */
-    public Map makeMap() {
+    public final Map makeMap() {
 	return this.makeMap(harpoon.Util.Default.EMPTY_MAP);
     }
 
