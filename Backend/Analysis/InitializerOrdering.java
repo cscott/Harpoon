@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Analysis;
 
-import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.CallGraph;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HInitializer;
@@ -28,7 +28,7 @@ import java.util.Set;
  * in that case.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerOrdering.java,v 1.1.2.2 2000-01-29 11:05:40 cananian Exp $
+ * @version $Id: InitializerOrdering.java,v 1.1.2.3 2000-08-24 23:35:35 cananian Exp $
  */
 public class InitializerOrdering {
     public final List sorted;

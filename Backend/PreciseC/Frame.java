@@ -4,7 +4,7 @@
 package harpoon.Backend.PreciseC;
 
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.CallGraph;
 import harpoon.Backend.Generic.GCInfo;
 import harpoon.Backend.Generic.LocationFactory;
 import harpoon.Backend.Analysis.BasicGCInfo;
@@ -41,7 +41,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.4 2000-07-25 03:08:09 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.5 2000-08-24 23:35:40 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;

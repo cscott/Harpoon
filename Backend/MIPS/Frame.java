@@ -4,7 +4,7 @@
 package harpoon.Backend.MIPS;
 
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.CallGraph;
 import harpoon.Backend.Generic.GCInfo;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.3 2000-07-12 14:31:56 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.4 2000-08-24 23:35:38 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
    private final harpoon.Backend.Generic.Runtime   runtime;

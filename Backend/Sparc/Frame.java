@@ -4,7 +4,7 @@
 package harpoon.Backend.Sparc;
 
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.CallGraph;
 import harpoon.Backend.Generic.GCInfo;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -15,7 +15,7 @@ import harpoon.ClassFile.Linker;
  * for the Sparc Backend.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.9 2000-06-29 02:17:21 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.10 2000-08-24 23:35:47 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame
 {

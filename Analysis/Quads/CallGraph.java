@@ -12,14 +12,14 @@ import harpoon.IR.Quads.CALL;
  implemented by a call graph.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CallGraph.java,v 1.1.2.6 2000-03-22 05:23:09 salcianu Exp $
+ * @version $Id: CallGraph.java,v 1.1.2.7 2000-08-24 23:35:33 cananian Exp $
  */
-public interface CallGraph {
-    
-    /** Returns an array containing all possible methods called by
-	method <code>m</code>. If <code>hm</code> doesn't call any 
-	method, return an array of length <code>0</code>. */
-    public HMethod[] calls(final HMethod hm);
+public interface CallGraph extends harpoon.Analysis.CallGraph {
+    // XXX: to talk about a CALL quad, you really need to have the HCode
+    //      for context.  An HCode should be a parameter in these methods;
+    //      the only reason implementations of this interface generally work
+    //      is that the HCode is generally coming from a CachedCodeFactory
+    //      so is consistent over the various CallGraph method calls. [CSA]
 
     /** Returns an array containing  all possible methods called by 
 	method <code>m</code> at the call site <code>cs</code>.
