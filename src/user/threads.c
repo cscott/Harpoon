@@ -24,6 +24,15 @@ extern jmp_buf main_return_jump;
 
 #endif
 
+#ifdef GLIBC_COMPAT5
+#include <ctype.h>
+#endif
+
+#ifdef GLIBC_COMPAT4
+#include <string.h> /* for memset prototype */
+#include <fni-ptroff.h>
+#endif
+
 struct thread_list *gtl,*ioptr;
 #ifdef WITH_REALTIME_THREADS
 struct thread_queue_struct *currentThread; //pointer to the current thread
