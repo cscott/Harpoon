@@ -99,7 +99,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.19 2003-04-01 15:48:33 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.20 2003-04-02 20:41:23 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -343,7 +343,7 @@ public abstract class PAMain {
 	    SAMain.rootSetFilename = rootSetFilename;
 	    SAMain.mainM = hroot;
 
-	    SAMain.do_it();
+	    SAMain.compile();
 
 	    System.out.println("Backend time: " +
 			       (time() - g_tstart) + "ms");
@@ -973,7 +973,7 @@ public abstract class PAMain {
 		COMPILE = true;
 		SAMain.BACKEND = Options.getBackendID(g.getOptarg());
 		if (SAMain.BACKEND == Backend.STRONGARM)
-		    SAMain.HACKED_REG_ALLOC = true;
+		    CodeGenerator.HACKED_REG_ALLOC = true;
 		break;
 	    case 32:
 		mainfo_opts.DO_PREALLOCATION = true;

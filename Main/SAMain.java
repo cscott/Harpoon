@@ -24,8 +24,6 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.DataFlow.InstrSolver;
-import harpoon.Analysis.Instr.RegAlloc;
-import harpoon.Analysis.Instr.RegAllocOpts;
 import harpoon.Backend.Backend;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.BasicBlock;
@@ -111,21 +109,12 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.42 2003-04-02 00:44:36 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.43 2003-04-02 20:41:23 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
     static boolean EVENTDRIVEN = false;
 
-    static boolean PRINT_ORIG = false;
-    static boolean PRINT_DATA = false;
-    static boolean PRE_REG_ALLOC = false;
-    static boolean REG_ALLOC = false;
-    static boolean ABSTRACT_REG_ALLOC = false;
-    static boolean HACKED_REG_ALLOC = false;
-    static boolean LOCAL_REG_ALLOC = false;
-    static boolean OUTPUT_INFO = false;
-    static boolean QUIET = false;
     static boolean OPTIMIZE = false;
     static boolean LOOPOPTIMIZE = false;
     static boolean USE_OLD_CLINIT_STRATEGY = false;
@@ -139,9 +128,8 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean INSTRUMENT_ALLOCS_STUB = false;
     static String IFILE=null;
     static boolean ROLE_INFER= false;
-    static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
-    static String  singleClassStr = null; 
-    static HClass  singleClass = null; // for testing single classes
+
+    static boolean QUIET = false;
 
     /** Backend kind.  Has to be one of the constants defined in
 	<code>harpoon.Backend.Backend</code>;
@@ -153,22 +141,11 @@ public class SAMain extends harpoon.IR.Registration {
     static String instrumentationResultsFileName;
     static AllocationStatistics as;
 
-    
     public static Linker linker = null; // can specify on the command-line.
-    static java.io.PrintWriter out = 
-	new java.io.PrintWriter(System.out, true);
         
     static String className;
 
     static String rootSetFilename;
-
-    // FSK: contains specialization options to be used during
-    // RegAlloc.  Take out when no longer necessary.  
-    // May be null (in which case no options are being passed).
-    static String regAllocOptionsFilename; 
-    static RegAlloc.Factory regAllocFactory;
-
-    static String methodName;
 
     static ClassHierarchy classHierarchy;
     static Frame frame;
@@ -187,9 +164,11 @@ public class SAMain extends harpoon.IR.Registration {
     static SyncTransformer syncTransformer = null;
 
     // Support for precise garbage collection
-    static boolean DYNAMICWBS = false;
     static boolean PRECISEGC = false;
     static boolean MULTITHREADED = false;
+
+    // flags for the write barrier elimination analysis
+    static boolean DYNAMICWBS = false;
     static boolean WRITEBARRIERS = false;
     static boolean WB_STATISTICS = false;
     static int WB_TRANSFORMS = 0; // no transformations by default
@@ -215,7 +194,7 @@ public class SAMain extends harpoon.IR.Registration {
 	frame = construct_frame(mainM); // target frame
 	roots = getRoots(mainM);        // set of roots
 
-	do_it();
+	compile();
     }
 
 
@@ -390,8 +369,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     // top level method for compiling a program
-    // TODO: find a more appropriate name for this method
-    static void do_it() {
+    static void compile() {
 	build_quad_form();
 	// Now, we have a full compiler context (including class
 	// hierarchy). Let it roll!
@@ -400,7 +378,10 @@ public class SAMain extends harpoon.IR.Registration {
 
 	tree_form_processing();
 
-	generate_code();
+	CodeGenerator.generate
+	    (ASSEM_DIR, 
+	     new CompilerState(mainM, roots, linker,
+			       hcf, classHierarchy, frame));
     }
 
 
@@ -490,7 +471,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    role_inference();
 
 	if (INSTRUMENT_ALLOCS || READ_ALLOC_STATS)
-	    handle_alloc_instr();
+	    handle_alloc_instrumentation();
 
 	if (PreallocOpt.PREALLOC_OPT || PreallocOpt.ONLY_SYNC_REMOVAL) {
 	    hcf = PreallocOpt.preallocAnalysis
@@ -663,323 +644,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    (hcf, frame, classHierarchy).codeFactory();
     }
 
-
-    // take a tree code factory and generete native / preciseC code
-    private static void generate_code() {
-	// QUESTION: what does "sahcf" stand for?
-	HCodeFactory sahcf = frame.getCodeFactory(hcf);
-	if (sahcf != null)
-	    sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
-	
-	regAllocFactory = LOCAL_REG_ALLOC ? RegAlloc.LOCAL : RegAlloc.GLOBAL;
-	regAllocFactory = (new RegAllocOpts
-			   (regAllocOptionsFilename)).factory(regAllocFactory);
-
-	Set callableMethods = classHierarchy.callableMethods();
-	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
-
-	if (ONLY_COMPILE_MAIN)
-	    classes = Default.singletonIterator(mainM.getDeclaringClass());
-	if (singleClassStr != null) {
-	    singleClass = linker.forName(singleClassStr);
-	    classes = Default.singletonIterator(singleClass);
-	}
-
-	while(classes.hasNext()) {
-	    HClass hclass = (HClass) classes.next();
-	    if (singleClass != null && singleClass != hclass) continue; //skip
-	    messageln("Compiling: " + hclass.getName());
-	    try {
-		generate_code_for_class(hclass, callableMethods, sahcf);
-	    } catch (IOException e) {
-		System.err.println("Error outputting class "+
-				   hclass.getName() + ": " + e);
-		System.exit(1);
-	    }
-	}
-	
-	if (Realtime.REALTIME_JAVA)
-	    Realtime.printStats();
-
-	generate_Makefile();
-    }
-
-
-    // Generate class data + code for all methods of
-    // <code>hclass</code> that are in the set
-    // <code>callableMethods</code>.
-    // QUESTION: What's <code>sahcf</code>.
-    private static void generate_code_for_class
-	(HClass hclass, Set callableMethods, HCodeFactory sahcf)
-	throws IOException {
-
-	String filesuffix = (BACKEND == Backend.PRECISEC) ? ".c" : ".s";
-	String filename = frame.getRuntime().getNameMap().mangle(hclass);
-	java.io.Writer w;
-	try {
-	    w = new FileWriter
-		(new File(ASSEM_DIR, filename + filesuffix));
-	} catch (java.io.FileNotFoundException ffe) {
-	    // filename too long?  try shorter, unique, name.
-	    // XXX: sun's doc for File.createTempFile() states
-	    // "If the prefix is too long then it will be
-	    // truncated" but it is actually not.  We must
-	    // truncate it ourselves, for now.  200-chars?
-	    if (filename.length()>200)
-		filename=filename.substring(0, 200);
-	    w = new FileWriter
-		(File.createTempFile(filename, filesuffix, ASSEM_DIR));
-	}
-	out = new PrintWriter(new BufferedWriter(w));
-	
-	if (BACKEND == Backend.PRECISEC)
-	    out = new harpoon.Backend.PreciseC.TreeToC(out);
-	
-	HMethod[] hmarray = hclass.getDeclaredMethods();
-	Set hmset = new TreeSet(Arrays.asList(hmarray));
-	hmset.retainAll(callableMethods);
-	Iterator hms = hmset.iterator();
-	if (ONLY_COMPILE_MAIN)
-	    hms = Default.singletonIterator(mainM);
-	message("\t");
-	while(hms.hasNext()) {
-	    HMethod m = (HMethod) hms.next();
-	    message(m.getName());
-	    if (!Modifier.isAbstract(m.getModifiers()))
-		outputMethod(m, hcf, sahcf, out);
-	    if (hms.hasNext()) message(", ");
-	}
-	messageln("");
-	
-	//out.println();
-	messageln("Writing data for " + hclass.getName());
-	outputClassData(hclass, out);
-       
-	out.close();
-    }
-
-
-    // generate the Makefile that can be used to assemble / compile the
-    // generated files into a single executable
-    private static void generate_Makefile() {	
-	// put a proper makefile in the directory.
-	File makefile = new File(ASSEM_DIR, "Makefile");
-	InputStream templateStream;
-	String resourceName = "harpoon/Support/nativecode-makefile.template";
-
-	if (BACKEND == Backend.PRECISEC)
-	    resourceName="harpoon/Support/precisec-makefile.template";
-	if (BACKEND == Backend.MIPSDA)
-	    resourceName="harpoon/Support/mipsda-makefile.template";
-	if (makefile.exists())
-	    System.err.println("WARNING: not overwriting pre-existing " +
-			       "file " + makefile);
-	else if ((templateStream = 
-		  ClassLoader.getSystemResourceAsStream(resourceName)) == null)
-	    System.err.println("WARNING: can't find Makefile template.");
-	else try {
-	    BufferedReader in = new BufferedReader
-		(new InputStreamReader(templateStream));
-	    out = new PrintWriter
-		(new BufferedWriter(new FileWriter(makefile)));
-	    String line;
-	    while ((line=in.readLine()) != null)
-		out.println(line);
-	    in.close(); out.close();
-	} catch (IOException e) {
-	    System.err.println("Error writing "+makefile+".");
-	    System.exit(1);
-	}
-    }
-
-
-    public static void outputMethod(final HMethod hmethod, 
-				    final HCodeFactory hcf,
-				    final HCodeFactory sahcf,
-				    final PrintWriter out) throws IOException {
-	if (PRINT_ORIG) {
-	    HCode hc = hcf.convert(hmethod);
-	    
-	    info("\t--- TREE FORM ---");
-	    if (hc!=null) hc.print(out); 
-	    else 
-		info("null returned for " + hmethod);
-	    info("\t--- end TREE FORM ---");
-	    out.println();
-	    out.flush();
-	}
-	    
-	if (PRE_REG_ALLOC) {
-	    HCode hc = sahcf.convert(hmethod);
-	    
-	    info("\t--- INSTR FORM (no register allocation)  ---");
-	    if (hc!=null) {
-		info("Codeview \""+hc.getName()+"\" for "+
-		     hc.getMethod()+":");
-		// myPrint avoids register-allocation-dependant
-		// peephole optimization code in print
-		((harpoon.IR.Assem.Code)hc).myPrint(out,false); 
-	    } else {
-		info("null returned for " + hmethod);
-	    }
-	    info("\t--- end INSTR FORM (no register allocation)  ---");
-	    out.println();
-	    out.flush();
-	}
-	
-	if (ABSTRACT_REG_ALLOC) {
-	    HCode hc = sahcf.convert(hmethod);
-	    
-	    info("\t--- INSTR FORM (register allocation)  ---");
-	    HCodeFactory regAllocCF = 
-		RegAlloc.abstractSpillFactory(sahcf, frame, regAllocFactory);
-	    HCode rhc = regAllocCF.convert(hmethod);
-
-	    if (rhc != null) {
-		info("Codeview \""+rhc.getName()+"\" for "+
-		     rhc.getMethod()+":");
-		rhc.print(out);
-	    } else {
-		info("null returned for " + hmethod);
-	    }
-	    info("\t--- end INSTR FORM (register allocation)  ---");
-	    out.println();
-	    out.flush();
-	}
-
-	if (REG_ALLOC) {
-	    HCode hc = sahcf.convert(hmethod);
-	    info("\t--- INSTR FORM (register allocation)  ---");
-	    HCodeFactory regAllocCF;
-	    
-	    regAllocCF = RegAlloc.codeFactory(sahcf,frame,regAllocFactory);
-
-	    HCode rhc = regAllocCF.convert(hmethod);
-	    if(BACKEND == Backend.MIPSYP && rhc != null) {
-		harpoon.Backend.Generic.Code cd = 
-		    (harpoon.Backend.Generic.Code) rhc;
-		harpoon.Backend.MIPS.BypassLatchSchedule b = 
-		    new harpoon.Backend.MIPS.BypassLatchSchedule(cd, frame);
-	    }
-	    
-	    if (rhc != null) {
-		info("Codeview \"" + rhc.getName() + "\" for " +
-		     rhc.getMethod() + ":");
-		rhc.print(out);
-	    } else {
-		info("null returned for " + hmethod);
-	    }
-	    info("\t--- end INSTR FORM (register allocation)  ---");
-	    out.println();
-	    out.flush();
-	}
-	
-	if (HACKED_REG_ALLOC) {
-	    HCode hc = sahcf.convert(hmethod);
-	    info("\t--- INSTR FORM (hacked register allocation)  ---");
-	    HCode rhc = (hc==null) ? null :
-		new harpoon.Backend.CSAHack.RegAlloc.Code
-		(hmethod, (Instr) hc.getRootElement(),
-		 ((harpoon.IR.Assem.Code) hc).getDerivation(), frame);
-	    if (rhc != null) {
-		info("Codeview \"" + rhc.getName() + "\" for " +
-		     rhc.getMethod() + ":");
-		rhc.print(out);
-	    } else {
-		info("null returned for " + hmethod);
-	    }
-	    info("\t--- end INSTR FORM (register allocation)  ---");
-	    out.println();
-	    out.flush();
-	}
-
-	if (BACKEND == Backend.PRECISEC) {
-	    HCode hc = hcf.convert(hmethod);
-	    if (hc != null)
-		((harpoon.Backend.PreciseC.TreeToC) out).translate(hc);
-	}
-
-	// free memory associated with this method's IR:
-	hcf.clear(hmethod);
-	if (sahcf!=null) sahcf.clear(hmethod);
-    }
-    
-    public static void outputClassData(HClass hclass, PrintWriter out) 
-	throws IOException {
-      Iterator it=frame.getRuntime().classData(hclass).iterator();
-      // output global data with the java.lang.Object class.
-      if (hclass==linker.forName("java.lang.Object")) {
-	  HData data=frame.getLocationFactory().makeLocationData(frame);
-	  it=new CombineIterator(it, Default.singletonIterator(data));
-	  if (WB_STATISTICS) {
-	      assert writeBarrierStats != null :
-		  "WriteBarrierStats need to be run before WriteBarrierData.";
-	      HData wbData = writeBarrierStats.getData(hclass, frame);
-	      it=new CombineIterator(it, Default.singletonIterator(wbData));
-	  }
-	  if(PreallocOpt.PREALLOC_OPT) {
-	      HData poData = PreallocOpt.getData(hclass, frame);
-	      it = new CombineIterator(it, Default.singletonIterator(poData));
-	  }
-      }
-      while (it.hasNext() ) {
-	final Data data = (Data) it.next();
-	
-	if (PRINT_ORIG) {
-	    info("\t--- TREE FORM (for DATA)---");
-	    data.print(out);
-	    info("\t--- end TREE FORM (for DATA)---");
-	}		
-	
-	if (BACKEND == Backend.PRECISEC)
-	    ((harpoon.Backend.PreciseC.TreeToC)out).translate(data);
-
-	if (!PRE_REG_ALLOC && !REG_ALLOC && !HACKED_REG_ALLOC) continue;
-
-	if (data.getRootElement()==null) continue; // nothing to do here.
-
-	final Instr instr = 
-	    frame.getCodeGen().genData((harpoon.IR.Tree.Data) data,
-				       new InstrFactory() {
-		private int id = 0;
-		public TempFactory tempFactory() { return null; }
-		public harpoon.IR.Assem.Code getParent() {
-		    return null /*data*/;  // FIXME!
-		}
-		public harpoon.Backend.Generic.Frame getFrame() {return frame;}
-		public synchronized int getUniqueID() { return id++; }
-		public HMethod getMethod() { return null; }
-		public int hashCode() { return data.hashCode(); }
-	    });
-	
-	assert instr != null : 
-	    "no instrs generated; check that CodeGen.java was built " +
-	    "from spec file";
-	// messageln("First data instruction " + instr);
-
-
-	/* trying different method. */
-	Instr di = instr; 
-	info("\t--- INSTR FORM (for DATA)---");
-	while(di!=null) { 
-	    //messageln("Writing " + di);
-	    out.println(di); 
-	    di = di.getNext(); 
-	}
-	info("\t--- end INSTR FORM (for DATA)---");
-      }
-    }
-
-    protected static void message(String msg) {
-	if(!QUIET) System.out.print(msg);
-    }
-
-    protected static void messageln(String msg) {
-	if(!QUIET) System.out.println(msg);
-    }
-
-
-    private static void handle_alloc_instr() {
+    private static void handle_alloc_instrumentation() {
 	if (INSTRUMENT_ALLOCS)
 	    instrument_allocations();
 	// Try not to add anything in between instrument_allocs and
@@ -1195,38 +860,42 @@ public class SAMain extends harpoon.IR.Registration {
 		ROLE_INFER=true;
 		break;
 	    case 'D':
-		OUTPUT_INFO = PRINT_DATA = true;
+		CodeGenerator.OUTPUT_INFO = CodeGenerator.PRINT_DATA = true;
 		break;
 	    case 'O': 
-		OUTPUT_INFO = PRINT_ORIG = true;
+		CodeGenerator.OUTPUT_INFO = CodeGenerator.PRINT_ORIG = true;
 		break; 
 	    case 'P':
-		OUTPUT_INFO = PRE_REG_ALLOC = true;
+		CodeGenerator.OUTPUT_INFO = CodeGenerator.PRE_REG_ALLOC = true;
 		break;
 	    case 'H':
-		HACKED_REG_ALLOC = true;
+		CodeGenerator.HACKED_REG_ALLOC = true;
 		break;
 	    case 'B':
-		OUTPUT_INFO = ABSTRACT_REG_ALLOC = true;
+		CodeGenerator.OUTPUT_INFO = true;
+		CodeGenerator.ABSTRACT_REG_ALLOC = true;
 		break;
 	    case 'R':
 		if (g.getOptarg() != null)
-		    regAllocOptionsFilename = g.getOptarg();
-		REG_ALLOC = true;
+		    CodeGenerator.regAllocOptionsFilename = g.getOptarg();
+		CodeGenerator.REG_ALLOC = true;
 		break;
 	    case 'L':
-		REG_ALLOC = LOCAL_REG_ALLOC = true;
+		CodeGenerator.REG_ALLOC = CodeGenerator.LOCAL_REG_ALLOC = true;
 		break;
 	    case 'F':
 		OPTIMIZE = true;
 		break;
 	    case 'A':
-		OUTPUT_INFO = PRE_REG_ALLOC = PRINT_ORIG = 
-		    REG_ALLOC = true;
+		CodeGenerator.OUTPUT_INFO = true;
+		CodeGenerator.PRE_REG_ALLOC = true;
+		CodeGenerator.PRINT_ORIG = true; 
+		CodeGenerator.REG_ALLOC = true;
 		break;
 	    case 'o':
 		ASSEM_DIR = new File(g.getOptarg());
-		assert ASSEM_DIR.isDirectory() : ""+ASSEM_DIR+" must be a directory";
+		assert ASSEM_DIR.isDirectory() : 
+		    "" + ASSEM_DIR + " must be a directory";
 		break;
 	    case 'b':
 		BACKEND = Options.getBackendID(g.getOptarg());
@@ -1234,19 +903,16 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'c':
 		className = g.getOptarg();
 		break;
-	    case 'M':
-		methodName = g.getOptarg();
-		break;
 	    case 'q':
 		QUIET = true;
 		break;
 	    case 'C':
 	    case '1':  
 		String optclassname = g.getOptarg();
-		if (optclassname!=null) {
-		    singleClassStr = optclassname;
+		if (optclassname != null) {
+		    CodeGenerator.singleClassStr = optclassname;
 		} else {
-		    ONLY_COMPILE_MAIN = true;
+		    CodeGenerator.ONLY_COMPILE_MAIN = true;
 		}
 		break;
 	    case 'r':
@@ -1409,10 +1075,6 @@ public class SAMain extends harpoon.IR.Registration {
     protected static void printHelp() {
 	for(int i = 0; i < help_lines.length; i++)
 	    System.out.println(help_lines[i]);
-    }
-
-    protected static void info(String str) {
-	if(OUTPUT_INFO) out.println(str);
     }
 
     // extract the method roots from the set of all the roots
@@ -1676,4 +1338,13 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     }
     // REALTIME END
+
+
+    protected static void message(String msg) {
+	if(!QUIET) System.out.print(msg);
+    }
+
+    protected static void messageln(String msg) {
+	if(!QUIET) System.out.println(msg);
+    }
 }

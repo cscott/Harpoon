@@ -98,7 +98,7 @@ import harpoon.Util.DataStructs.LightMap;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPAMain.java,v 1.11 2003-04-01 15:48:32 salcianu Exp $
+ * @version $Id: ODPAMain.java,v 1.12 2003-04-02 20:41:22 salcianu Exp $
  */
 public abstract class ODPAMain {
 
@@ -342,7 +342,7 @@ public abstract class ODPAMain {
 	    SAMain.USE_OLD_CLINIT_STRATEGY = USE_OLD_CLINIT_STRATEGY;
 	    SAMain.className = root_method.declClass; // params[optind];
 	    SAMain.mainM = hroot;
-	    SAMain.do_it();
+	    SAMain.compile();
 	}
     }
     
@@ -887,7 +887,7 @@ public abstract class ODPAMain {
 		COMPILE = true;
 		SAMain.BACKEND = Options.getBackendID(g.getOptarg());
 		if (SAMain.BACKEND == Backend.STRONGARM)
-		    SAMain.HACKED_REG_ALLOC = true;
+		    CodeGenerator.HACKED_REG_ALLOC = true;
 		break;
 	    }
 	
