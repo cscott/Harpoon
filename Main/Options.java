@@ -15,7 +15,7 @@ import java.util.HashMap;
  * environment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Options.java,v 1.6 2003-03-28 20:20:19 salcianu Exp $
+ * @version $Id: Options.java,v 1.7 2003-05-31 13:58:47 wbeebee Exp $
  */
 public class Options {
     /** Stream for writing statistics. */
@@ -26,6 +26,8 @@ public class Options {
     /** Make a code factory to implement a pass, given a string name. */
     public static HCodeFactory cfFromString(String name, HCodeFactory hcf) {
 	name = name.intern();
+	if (name=="none")
+	    return hcf;
 	if (name=="to-quad-with-try")
 	    return harpoon.IR.Quads.QuadWithTry.codeFactory(hcf);
 	if (name=="to-quad")
