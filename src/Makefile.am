@@ -4,12 +4,13 @@ INCLUDES = @IFLAGS@
 SUBDIRS = jni java.lang java.lang.reflect \
 	$(NATIVEDIR) \
 	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) stats cam servo $(USERDIR) \
-	transact $(REALTIMEDIR) $(RTJPERFDIR) $(ROLEINFERDIR) $(MZFDIR)
+	dynsync transact $(REALTIMEDIR) $(RTJPERFDIR) $(ROLEINFERDIR) \
+	$(MZFDIR)
 # make sure even the conditionally-compiled subdirectories are included
 # in the distribution.
 DIST_SUBDIRS = jni java.lang java.lang.reflect sunjdk classpath \
         gc clheap nativeio stats cam servo user \
-        transact realtime rtjperf roles mzf
+        dynsync transact realtime rtjperf roles mzf
 EXTRA_DIST = README
 
 # cruft to define the conditional directories. --------------------------
@@ -63,6 +64,9 @@ USERDIR=user
 USERLIB=user/libuser.la
 endif
 
+# for dynamic synchronization removal support, build libdynsync libraries.
+# (always built, sometimes library is empty)
+
 # for transaction support, build transaction libraries.
 # (always built, sometimes library is empty)
 
@@ -104,6 +108,7 @@ libflexc1_la_LIBADD = \
 	java.lang.reflect/libjavalangreflect-indep.la \
 	$(NATIVELIB) \
 	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) stats/libstats.la cam/libcam.la servo/libservo.la $(USERLIB) \
-	transact/libtransact.la $(REALTIMELIB) $(RTJPERFLIB) $(ROLEINFERLIB) $(MZFLIB)
+	dynsync/libdynsync.la transact/libtransact.la $(REALTIMELIB) $(RTJPERFLIB) $(ROLEINFERLIB) $(MZFLIB)
+
 libflexc1_la_LDFLAGS = -version-info 0:0:0 # -lbfd -liberty
 # this library depends on -lbfd and -liberty, but these ought to be in $LIBS

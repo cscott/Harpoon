@@ -1,14 +1,17 @@
 #ifndef INCLUDED_PRECISEC_H
 #define INCLUDED_PRECISEC_H
 
-#include "jni.h"
 #include "config.h"
+#include "jni.h"
 #include "fni-threadstate.h" /* for struct FNI_Thread_State */
 #include "fni-ptroff.h" /* for ptroff_t */
 #include "fni-ptrmask.h" /* for PTRMASK */
 #ifdef WITH_GENERATIONAL_GC
 # include "write_barrier.h" /* for generational_write_barrier */
-#endif
+#endif /* WITH_GENERATIONAL_GC */
+#ifdef WITH_DYNAMIC_SYNC_REMOVAL
+# include "dynsync.h"
+#endif /* WITH_DYNAMIC_SYNC_REMOVAL */
 
 typedef void * jptr;
 #define SHR(x,y) (((int32_t)(x))>>((y)&0x1f))

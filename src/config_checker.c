@@ -79,6 +79,10 @@ FLAG check_with_claz_shrink_should_be_##x
  FLAG check_with_clustered_heaps_needed;
 #endif
 
+#ifdef WITH_DYNAMIC_SYNC_REMOVAL
+ FLAG check_with_dynamic_sync_removal_needed;
+#endif
+
 #ifdef WITH_TRANSACTIONS
  FLAG check_with_transactions_needed;
 #endif
