@@ -9,9 +9,10 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
  * <code>GET</code> represent field access (get) operations.
+ * The <code>objectref</code> is null if the field is static.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.17 1998-09-16 06:32:48 cananian Exp $
+ * @version $Id: GET.java,v 1.18 1998-10-07 23:29:03 cananian Exp $
  */
 
 public class GET extends Quad {

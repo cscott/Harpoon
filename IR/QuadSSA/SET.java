@@ -9,9 +9,10 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
  * <code>SET</code> represents field assignment-to operations.
+ * The <code>objectref</code> is null if the field is static.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SET.java,v 1.15 1998-09-16 06:32:50 cananian Exp $
+ * @version $Id: SET.java,v 1.16 1998-10-07 23:29:03 cananian Exp $
  */
 
 public class SET extends Quad {
