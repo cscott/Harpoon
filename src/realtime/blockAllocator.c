@@ -13,8 +13,8 @@ static struct BlockAllocator* BlockAllocator_new(size_t size) {
     RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct BlockAllocator));
   struct Block* block = (struct Block*)
     RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct Block));
-  block->end = (block->free = block->begin = 
-		RTJ_MALLOC_UNCOLLECTABLE(size)) + size;
+/*    block->end = (block->free = block->begin =  */
+/*  		RTJ_MALLOC_UNCOLLECTABLE(size)) + size; */
   block->next = block->prev = ba->inUse = NULL;
   ba->freeList = block;
   return ba;

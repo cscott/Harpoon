@@ -13,6 +13,12 @@
 #include "listAllocator.h"
 #include "RTJconfig.h"
 
+/* To avoid unwanted macro expansions in strange places */
+#ifdef WITH_DMALLOC  
+#undef free
+#undef malloc
+#endif
+
 typedef void* Allocator;
 
 struct MemBlock;

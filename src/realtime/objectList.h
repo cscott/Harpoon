@@ -10,9 +10,8 @@
 #ifndef __OBJECT_LIST_H__
 #define __OBJECT_LIST_H__
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include "config.h"
+#include "RTJconfig.h"
 #include "flexthread.h"
 
 /* Small (but not too small) prime number */
