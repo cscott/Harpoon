@@ -70,7 +70,6 @@ struct claz {
 	/* The least significant bit of the first word is one if	*/
 	/* the first word in the object may be a pointer.		*/
 #endif
-
   } gc_info;
   u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
   struct claz *display[0];	/* sized by FLEX */
@@ -129,6 +128,7 @@ struct aarray {
 struct FNI_classinfo {
   struct claz *claz;
   const char *name;
+  jint modifiers;
   union _jmemberID *memberend;
   union _jmemberID memberinfo[0];
 };

@@ -32,10 +32,9 @@ JNIEXPORT jobject JNICALL Java_java_lang_reflect_Constructor_newInstance
   methodclazz = FNI_WRAP(method->declaring_class_object);
   assert(!(*env)->ExceptionOccurred(env));
 
-  /* XXX: check that declaring class is not abstract.  Can't do that right now
-   * because modifiers for class are not currently available to the flex
-   * runtime. */
-  if (0 & java_lang_reflect_Modifier_ABSTRACT) {
+  /* check that declaring class is not abstract. */
+  if (FNI_GetClassInfo(methodclazz)->modifiers & 
+      java_lang_reflect_Modifier_ABSTRACT) {
       jclass excls=(*env)->FindClass(env,"java/lang/IllegalAccessException");
       (*env)->ThrowNew(env, excls,
 		       "attempted instantiation of an abstract class");

@@ -328,15 +328,19 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_getComponentType_00024_00024initch
 }
 #endif /* WITH_INIT_CHECK */
 
-#if 0
 /*
  * Class:     java_lang_Class
  * Method:    getModifiers
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_java_lang_Class_getModifiers
-  (JNIEnv *, jobject);
+  (JNIEnv *env, jclass _this) {
+    struct FNI_classinfo *info = FNI_GetClassInfo(_this);
+    assert(info);
+    return info->modifiers;
+}
 
+#if 0
 /*
  * Class:     java_lang_Class
  * Method:    getSigners
