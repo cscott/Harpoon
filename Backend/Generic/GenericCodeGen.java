@@ -12,7 +12,7 @@ import harpoon.IR.Assem.Instr;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericCodeGen.java,v 1.1.2.3 1999-07-30 23:40:47 pnkfelix Exp $ */
+ * @version $Id: GenericCodeGen.java,v 1.1.2.4 1999-08-03 22:24:04 pnkfelix Exp $ */
 public abstract class GenericCodeGen {
     
     /** Creates a <code>CodeGen</code>. */
@@ -29,5 +29,23 @@ public abstract class GenericCodeGen {
     public abstract Instr gen(harpoon.IR.Tree.Code tree,
 			      harpoon.IR.Assem.InstrFactory inf); 
 
+
+    protected String prettyPrint(harpoon.IR.Tree.Tree exp) {
+	final StringBuffer accum = new StringBuffer();
+	harpoon.IR.Tree.TreeVisitor visitor = new harpoon.IR.Tree.TreeVisitor(){
+	    public void visit(harpoon.IR.Tree.Tree t) {
+		accum.append(t.toString());
+	    }
+	    public void visit(harpoon.IR.Tree.MOVE t) {
+		accum.append("MOVE(");
+		t.dst.visit(this);
+		accum.append(", ");
+		t.src.visit(this);
+		accum.append(")");
+	    }
+	};
+	exp.visit(visitor);
+	return accum.toString();
+    }
     
 } 

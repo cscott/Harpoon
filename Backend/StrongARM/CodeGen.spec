@@ -48,7 +48,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.17 1999-08-03 21:35:47 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.18 1999-08-03 22:24:05 pnkfelix Exp $
  */
 %%
 
@@ -561,6 +561,14 @@ CONST<i>(c) = i %{
 			   new Temp[]{ i }, null));
 }%
 
+CONST<p>(c) = i %{
+    // the only CONST of type Pointer we should see is NULL
+    Temp i = makeTemp();
+    int val = 0;
+    emit(new Instr( instrFactory, ROOT, 
+		    "mov `d0, #0", new Temp[]{ i }, null));
+}%
+
 BINOP<p,i>(MUL, j, k) = i %{
     Temp i = makeTemp();		
     emit( ROOT, "mul `d0, `s0, `s1", i, j, k );
@@ -707,7 +715,6 @@ TEMP<l,d>(id) = i %{
     // TwoWordTemp i = makeTwoWordTemp();		
 
 }%
-
 
 UNOP<l>(_2B, arg) = i %{
     Temp i = makeTemp();		
@@ -931,8 +938,17 @@ MOVE<d,l>(dst, src) %{
 }%
 
 MOVE<i>(dst, CONST(s)) %{
+    // TODO: this needs to be fixed, because StrongARM can't load more
+    // than a byte of information at a time...
     emit(new Instr(instrFactory, ROOT,
 		   "mov `d0, #"+((CONST)((MOVE)ROOT).src).value.intValue(),
+		   new Temp[] { dst }, null));
+}%
+
+MOVE<p>(dst, CONST<p>(s)) %{ 
+    // we should only see CONST of type pointer when the value is NULL
+    emit(new Instr(instrFactory, ROOT,
+		   "mov `d0, #0",
 		   new Temp[] { dst }, null));
 }%
 

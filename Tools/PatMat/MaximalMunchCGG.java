@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.19 1999-08-03 21:35:47 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.20 1999-08-03 22:24:05 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -768,9 +768,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    out.println("\t\t\t}");
 	}
 	
-	out.println("\t\tharpoon.Util.Util.assert(false, \"Uh oh... "+
-		    "maximal munch didn't match anything...SPEC file "+
-		    "is not complete enough for this program\");");
+	out.println("\t\tharpoon.Util.Util.assert(false, \"Uh oh...\\n"+
+		    "maximal munch didn't match anything...SPEC file\\n"+
+		    "is not complete enough for this program\\n"+
+		    "Died on \"+prettyPrint("+expArg+"));");
 	out.println("\t\treturn null; // doesn't matter, we're dead if we didn't match...");
 	out.println("\t\t }"); // end munchExp
 	
