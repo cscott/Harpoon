@@ -29,16 +29,16 @@ rm -f $tmpscript $tmpsed
 cat > $tmpsed <<-__EOF__
 	/^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]text\( [ ]*[.][a-z.*]*\)*)$/{
 	  i\\
-	    text_start = . ;
+	    PROVIDE(text_start = .);
 	  n
 	  /^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]text[.][*]\( [ ]*[.][a-z.*]*\)*)$/p
 	  i\\
-	    text_end = . ;
+	    PROVIDE(text_end = .);
 	  /^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]text[.][*]\( [ ]*[.][a-z.*]*\)*)$/!p
 	  c\\
 	    /* BEGIN FLEX ADDITIONS */\\
-	    code_start = . ; *(.flex.code .flex.code.rw) code_end = . ;\\
-	    . = ALIGN(8) ; fixup_start = . ; *(.flex.fixup) fixup_end = . ;\\
+	    PROVIDE(code_start = .); *(.flex.code .flex.code.rw) PROVIDE(code_end = .);\\
+	    . = ALIGN(8) ; PROVIDE(fixup_start = .); *(.flex.fixup) PROVIDE(fixup_end = .);\\
 	    /* END FLEX ADDITIONS */
 	}
 	/^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]data\( [ ]*[.][a-z.*]*\)*)$/{
@@ -47,17 +47,17 @@ cat > $tmpsed <<-__EOF__
 	  i\\
 	    /* BEGIN FLEX ADDITIONS */\\
 	    /* unmarked segments */\\
-	    . = ALIGN(4) ; claz_start = . ; *(.flex.class) claz_end = . ;\\
 	    . = ALIGN(4) ; *(.flex.init_data)\\
 	    . = ALIGN(4) ; *(.flex.static_primitives)\\
 	    . = ALIGN(4) ; *(.flex.string_data)\\
 	    . = ALIGN(4) ; *(.flex.reflection_objects)\\
 	    . = ALIGN(4) ; *(.flex.reflection_data)\\
 	    /* marked segments */\\
-	    . = ALIGN(4) ; gc_index_start = . ; *(.flex.gc_index) gc_index_end = . ;\\
-	    . = ALIGN(4) ; gc_start = . ; *(.flex.gc) gc_end = . ;\\
-	    . = ALIGN(4) ; static_objects_start = . ; *(.flex.static_objects) static_objects_end = . ;\\
-	    . = ALIGN(4) ; string_constants_start = . ; *(.flex.string_constants) string_constants_end = . ;\\
+	    . = ALIGN(4) ; PROVIDE(claz_start = .); *(.flex.class) PROVIDE(claz_end = .);\\
+	    . = ALIGN(4) ; PROVIDE(gc_index_start = .); *(.flex.gc_index) PROVIDE(gc_index_end = .);\\
+	    . = ALIGN(4) ; PROVIDE(gc_start = .); *(.flex.gc) PROVIDE(gc_end = .);\\
+	    . = ALIGN(4) ; PROVIDE(static_objects_start = .); *(.flex.static_objects) PROVIDE(static_objects_end = .);\\
+	    . = ALIGN(4) ; PROVIDE(string_constants_start = .); *(.flex.string_constants) PROVIDE(string_constants_end = .);\\
 	    /* END FLEX ADDITIONS */
 	}
 	/^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]bss\( [ ]*[.][a-z.*]*\)*)$/{
