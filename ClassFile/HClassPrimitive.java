@@ -3,12 +3,13 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import java.lang.reflect.Modifier;
 /**
  * <code>HClassPrimitive</code> is a simple <code>HClass</code>
  * implementation to represent primitive types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassPrimitive.java,v 1.1.4.2 2000-01-15 00:49:06 cananian Exp $
+ * @version $Id: HClassPrimitive.java,v 1.1.4.3 2000-10-20 22:48:21 cananian Exp $
  */
 class HClassPrimitive extends HClassImpl {
   final String name, descriptor;
@@ -22,7 +23,8 @@ class HClassPrimitive extends HClassImpl {
   public HField[]  getDeclaredFields () { return new HField [0]; }
   public HMethod[] getDeclaredMethods() { return new HMethod[0]; }
   public int getModifiers() { 
-    throw new Error("No modifiers for primitive types.");
+    // this is what java.lang.Class returns.
+    return Modifier.PUBLIC | Modifier.ABSTRACT | Modifier.FINAL;
   }
   public HClass getSuperclass() { return null; }
   public HClass[] getInterfaces() { return new HClass[0]; }

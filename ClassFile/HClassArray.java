@@ -11,7 +11,7 @@ import java.lang.reflect.Modifier;
  * representing array types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassArray.java,v 1.1.4.2 2000-01-15 00:49:06 cananian Exp $
+ * @version $Id: HClassArray.java,v 1.1.4.3 2000-10-20 22:48:20 cananian Exp $
  */
 class HClassArray extends HClassImpl {
   HClass baseType;
@@ -45,7 +45,10 @@ class HClassArray extends HClassImpl {
   public HMethod[] getDeclaredMethods() {
     return new HMethod[] { cloneMethod };
   }
-  public int getModifiers() {throw new Error("No modifiers for an array.");}
+  public int getModifiers() {
+    // this is what java.lang.Class returns.
+    return Modifier.PUBLIC | Modifier.ABSTRACT | Modifier.FINAL;
+  }
   public HClass getSuperclass() { return HCobject; }
   public HClass[] getInterfaces() {
     // see http://java.sun.com/docs/books/jls/clarify.html
