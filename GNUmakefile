@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.75 2002-06-11 00:54:38 cananian Exp $
+# $Id: GNUmakefile,v 1.76 2002-06-11 20:21:08 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -159,25 +159,42 @@ Support/gjlib.jar: $(shell grep -v ^\# gj-files ) gj-files
 	${JAR} cf $@ -C gjlib .
 	$(RM) -rf gjlib
 
+# collect the names of all source files modified since last compile
+out-of-date:	$(ALLSOURCE) FORCE
+	@for f in $(filter-out FORCE,$?) ; do echo $$f >> $@ ; done
+	@if [ "$(REBUILD)" != "no" -a ! -s $@ ]; then \
+	  echo "No files are outdated.  Forcing rebuild of everything." ; \
+	  for f in $(ALLSOURCE); do echo $$f >> $@ ; done ; \
+	fi
+	@sort -u -o $@ $@
+FORCE: # force target eval, even if no source files are outdated
+# this allows us to implement the "rebuild everything if nothing's old" rule
+
 java:	PASS = 1
-java:	$(ALLSOURCE) $(PROPERTIES) gj-files
+java:	$(PROPERTIES) out-of-date gj-files
 # some folk might not have the GJ compiler; use the pre-built gjlib for them.
 # also use gjlib when building the first time from scratch, to work around
 # two-compiler dependency problems.
+# [also don't build w/ GJ if there are no out-of-date GJ files, although
+#  the GJ compiler doesn't really seem to mind.]
 	@if [ -d harpoon -a -x $(firstword ${JCC5}) ]; then \
-	  echo Building with $(firstword ${JCC5}). ;\
-	  ${JCC5} ${JFLAGS} $(shell grep -v "^#" gj-files) ; \
+	  if [ -n "$(filter $(shell grep -v '^#' gj-files), $(shell cat out-of-date))" ] ; then \
+	    echo Building with $(firstword ${JCC5}). ;\
+	    ${JCC5} ${JFLAGS} $(filter $(shell grep -v "^#" gj-files), $(shell cat out-of-date)) ; \
+	  fi \
 	else \
 	  echo "**** Using pre-built GJ classes (in Support/gjlib.jar) ****" ;\
 	  echo "See http://www.flex-compiler.lcs.mit.edu/Harpoon/jsr14.txt"  ;\
 	  echo " for information on how to install/use the GJ compiler." ; \
 	  ${JAR} xf Support/gjlib.jar harpoon ; \
 	fi
-	if [ ! -d harpoon ]; then \
+	@if [ ! -d harpoon ]; then \
 	  $(MAKE) first; \
 	fi
-	@echo Compiling...
-	@${JCC} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files), $(ALLSOURCE))
+	@if [ -n "$(filter-out $(shell grep -v '^#' gj-files), $(shell cat out-of-date))" ] ; then \
+	  echo Compiling... ; \
+	  ${JCC} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files), $(shell cat out-of-date)) ; \
+	fi
 	@if [ -f stubbed-out ]; then \
 	  $(RM) `sort -u stubbed-out`; \
 	  $(MAKE) --no-print-directory PASS=2 `sort -u stubbed-out` || exit 1; \
@@ -186,18 +203,33 @@ java:	$(ALLSOURCE) $(PROPERTIES) gj-files
 	  $(RM) stubbed-out; \
 	fi 
 	@$(MAKE) --no-print-directory properties
-	touch java
+	@-rm out-of-date
+	@touch out-of-date
 
 jikes:	PASS = 1
-jikes: 	$(MACHINE_GEN)
+jikes: 	$(PROPERTIES) out-of-date gj-files
 	@echo JIKES DOESNT YET SUPPORT JAVA 1.5
 	@echo YOU MUST USE "'make java'"
 	@exit 1
-	@if [ ! -d harpoon ]; then $(MAKE) first; fi
-	@${JCC5} ${JFLAGS} $(shell grep -v "^#" gj-files)
-	@echo -n Compiling... ""
-	@${JIKES} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files), $(ALLSOURCE))
-	@echo done.
+	@if [ -d harpoon -a -x $(firstword ${JCC5}) ]; then \
+	  if [ -n "$(filter $(shell grep -v '^#' gj-files), $(shell cat out-of-date))" ] ; then \
+	    echo Building with $(firstword ${JCC5}). ;\
+	    ${JCC5} ${JFLAGS} $(filter $(shell grep -v "^#" gj-files), $(shell cat out-of-date)) ; \
+	  fi \
+	else \
+	  echo "**** Using pre-built GJ classes (in Support/gjlib.jar) ****" ;\
+	  echo "See http://www.flex-compiler.lcs.mit.edu/Harpoon/jsr14.txt"  ;\
+	  echo " for information on how to install/use the GJ compiler." ; \
+	  ${JAR} xf Support/gjlib.jar harpoon ; \
+	fi
+	@if [ ! -d harpoon ]; then \
+	  $(MAKE) first; \
+	fi
+	@if [ -n "$(filter-out $(shell grep -v '^#' gj-files), $(shell cat out-of-date))" ] ; then \
+	  echo -n Compiling... "" && \
+	  ${JIKES} ${JFLAGS} $(filter-out $(shell grep -v "^#" gj-files), $(shell cat out-of-date)) && \
+	  echo done. ; \
+	fi
 	@if [ -f stubbed-out ]; then \
 	  $(RM) `sort -u stubbed-out`; \
 	  $(MAKE) --no-print-directory PASS=2 `sort -u stubbed-out` || exit 1; \
@@ -206,7 +238,8 @@ jikes: 	$(MACHINE_GEN)
 	  $(RM) stubbed-out; \
 	fi 
 	@$(MAKE) --no-print-directory properties
-	@touch java
+	@-rm out-of-date
+	@touch out-of-date
 
 properties:
 	@echo -n Updating properties... ""
@@ -226,6 +259,7 @@ first:
 
 # the package-by-package hack below is made necessary by brain-dead shells
 # that don't accept arbitrarily-large argument lists.
+Harpoon.jar Harpoon.jar.TIMESTAMP: REBUILD=no
 Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
 	@echo -n "Building JAR file..."
 	@${JAR} c0f Harpoon.jar COPYING VERSIONS
@@ -439,7 +473,7 @@ wc:
 
 clean:
 	-${RM} -r harpoon silicon gnu Harpoon.jar* harpoon.tgz* \
-		VERSIONS ChangeLog $(MACHINE_GEN)
+		VERSIONS ChangeLog $(MACHINE_GEN) out-of-date
 	-${RM} java `find . -name "*.class"`
 
 polish: clean
