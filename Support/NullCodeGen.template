@@ -4,12 +4,12 @@ package harpoon.PACKAGE;
  * <code>NullCodeGen</code> does nothing.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NullCodeGen.template,v 1.1.2.7 1999-10-20 20:34:15 cananian Exp $ */
+ * @version $Id: NullCodeGen.template,v 1.1.2.8 1999-10-26 01:47:56 pnkfelix Exp $ */
 public class NullCodeGen extends harpoon.Backend.Generic.CodeGen {
     // a constructor here corresponding to every type of codegen
     //  constructor we have
-    public NullCodeGen() { }
-    public NullCodeGen(harpoon.Backend.Generic.Frame f) { }
+    /*    public NullCodeGen() { super(null); } */
+    public NullCodeGen(harpoon.Backend.Generic.Frame f) { super(f); }
     public harpoon.IR.Assem.Instr gen(harpoon.IR.Tree.Code tree, 
 				      harpoon.IR.Assem.InstrFactory inf) {
 	return null;
@@ -18,7 +18,7 @@ public class NullCodeGen extends harpoon.Backend.Generic.CodeGen {
 				      harpoon.IR.Assem.InstrFactory inf) {
 	return null;
     }
-    public NullCodeGen(harpoon.PACKAGE.Frame f) { }
+    public NullCodeGen(harpoon.PACKAGE.Frame f) { super(f); }
     public harpoon.IR.Assem.Instr procFixup(harpoon.ClassFile.HMethod hm,
 					    harpoon.IR.Assem.Instr instr,
 					    int stackspace,

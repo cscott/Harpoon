@@ -14,14 +14,18 @@ import harpoon.IR.Tree.Print;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.2 1999-10-20 20:34:06 cananian Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.3 1999-10-26 01:47:54 pnkfelix Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
+
+    // Frame for instructions to access to get platform specific
+    // variables (Register Temps, etc)   
+    protected final Frame frame;
     
     /** Creates a <code>Generic.CodeGen</code>. */
-    public CodeGen() {
-        
+    public CodeGen(Frame frame) {
+        this.frame = frame;
     }
     
     /** Fixes up the procedure entry and exit code for a list of instrs, once
@@ -37,7 +41,7 @@ public abstract class CodeGen {
 	@return The head of a list of <code>Instr</code>s
     */
     public abstract Instr gen(harpoon.IR.Tree.Code tree,
-			      harpoon.IR.Assem.InstrFactory inf); 
+			      final harpoon.IR.Assem.InstrFactory inf); 
 
     /** Creates a <code>Instr</code> list from the
 	<code>IR.Tree.Data</code> <code>tree</code>. 
@@ -47,7 +51,7 @@ public abstract class CodeGen {
 	@return The head of a list of <code>Instr</code>s
     */
     public abstract Instr gen(harpoon.IR.Tree.Data tree,
-			      harpoon.IR.Assem.InstrFactory inf); 
+			      final harpoon.IR.Assem.InstrFactory inf); 
     
     public void debug(String s) {
 	if (DEBUG) System.out.println(s);

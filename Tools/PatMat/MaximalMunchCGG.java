@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.46 1999-10-23 05:59:36 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.47 1999-10-26 01:47:57 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -779,15 +779,19 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		if (r.details!=null) r.details.accept(makePred);
 		
 		// TODO: add PREDICATE CHECK to end of matchStm
-		String matchStm = (indent + "if ("+typeCheck+indent+"){\n" +
-				   recurse.initStms.toString() +
-				   indent + recurse.rootType + " ROOT = (" + recurse.rootType + ") " + expArg + ";\n" +
-				   indent + "\t_matched_ = "+makePred.predicate.toString()+";\n" +
-				   "");
+		String matchStm = 
+		(indent + "if ("+typeCheck+indent+"){\n" +
+		 recurse.initStms.toString() + indent + recurse.rootType + 
+		 " ROOT = (" + recurse.rootType + ") " + expArg + ";\n" +
+		 indent + "\t_matched_ = "+makePred.predicate.toString()+";\n");
 		//String matchStm = indent + "_matched_ =  (" + typeCheck + indent + ");";
 		expMatchActionPairs.add( new RuleTuple
 					 ( r.exp.toString(),
-					   matchStm, r.action_str + 
+					   matchStm, 
+					   "Temp " + r.result_id + " = " +
+					   "frame.getTempBuilder()."+
+					   "makeTemp( ROOT , inf.tempFactory());" +
+					   r.action_str + 
 					   indent + "return " + r.result_id + ";\n" +
 					   indent + "}", r.result_id,
 					   recurse.degree ) );

@@ -17,7 +17,7 @@ import java.io.PrintWriter;
  * 
  * @see harpoon.Backend.Generic.CodeGen
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.17 1999-09-11 17:58:01 cananian Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.18 1999-10-26 01:47:56 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -103,7 +103,7 @@ public abstract class CodeGeneratorGenerator {
 	out.println("\t                that form the body of the procedure being compiled.");
 	out.println("\t*/");
 	out.println("\tpublic final "+ASSEM_Instr+" gen(" + 
-		    TREE_Code +" code, " + ASSEM_InstrFactory +
+		    TREE_Code +" code, final " + ASSEM_InstrFactory +
 		    " inf) {"); // method start
 
 	out.println(spec.method_prologue_stms);
@@ -124,7 +124,7 @@ public abstract class CodeGeneratorGenerator {
 	out.println("\t                that form the body of the data structure being compiled.");
 	out.println("\t*/");
 	out.println("\tpublic final "+ASSEM_Instr+" gen(" + 
- 		    TREE_Data +" code, " + ASSEM_InstrFactory + 
+ 		    TREE_Data +" code, final " + ASSEM_InstrFactory + 
 		    " inf) {"); // method start
 
 	out.println(spec.method_prologue_stms);
@@ -140,7 +140,9 @@ public abstract class CodeGeneratorGenerator {
     }
 
     /** Writes the Instruction Selection Method to <code>out</code>.
+
 	<BR> <B>modifies:</B> <code>out</code>
+
 	<BR> <B>effects:</B>
 	     <BR> Generates Java source for the instruction selection
 	     method, not including method signature or surrounding
@@ -157,12 +159,17 @@ public abstract class CodeGeneratorGenerator {
 	     statements in the pattern to refer to.  These variables
 	     are:<OL>
 	     <LI>The <code>Spec.ExpId</code> objects defined in the
-  	         pattern.  Note that this does not include the
-		 <code>Spec.RuleExp.result_id</code> of the whole
+  	         pattern.  
+		 <B>NOTE:</B> This italicized section is about to go
+		 away, and the documentation should be updated
+		 accordingly. 
+		 <I>Note that this does not include the
+		 <code>Spec.RuleExp.result_id</code> of the whole  
 		 Pattern; it is the responsibility of the action code
 		 of the Rule to properly initialize and assign a
 		 <code>Temp</code> to the name given in
-		 <code>Spec.RuleExp.result_id</code>. 
+		 <code>Spec.RuleExp.result_id</code>.</I> 
+
 	     <LI>The <code>HCodeElement</code> <code>ROOT</code>.  
 	         This should be defined as the
 		 <code>IR.Tree.Tree</code> element being analyzed.  To
@@ -172,11 +179,13 @@ public abstract class CodeGeneratorGenerator {
 		 subclass of <code>IR.Tree.Tree</code> (though this
 		 requirement may be dropped in the future).
 	     </OL>
+
 	     <BR>Generated method finds a tiling for
 	     <code>tree</code>, using the information in
 	     <code>this.spec</code> as a <code>Spec.Rule</code> tile
 	     source, and then runs <code>Spec.Rule.action_str</code>
 	     for each matching tile.
+
 	     <BR>Awards bonus points to subclasses that implement this
 	     method to output documentation for the generated method
 	     body. 
