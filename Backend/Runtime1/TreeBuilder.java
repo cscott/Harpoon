@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.41 2001-07-05 19:35:14 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.42 2001-07-06 19:50:46 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -108,8 +108,22 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // set of string references made
     final Set stringSet = new HashSet();
 
+    // if non-zero, then all pointer values are masked before
+    // dereference.  this allows us to stuff additional information
+    // into the low bits of the pointer. the value specifies the
+    // alignment of all object pointers; thus how many bits we
+    // should/may mask.
+    private final int pointerAlignment;
+
     protected TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
 			  AllocationStrategy as, boolean pointersAreLong) {
+	this(runtime,linker,ch,as,pointersAreLong,0);
+    }
+    // pointerAlignment==0 means don't mask pointers.
+    protected TreeBuilder(Runtime runtime, Linker linker, ClassHierarchy ch,
+			  AllocationStrategy as, boolean pointersAreLong,
+			  int pointerAlignment) {
+	this.pointerAlignment = pointerAlignment;
 	this.runtime = runtime;
 	this.linker = linker;
 	this.as  = as;
@@ -173,6 +187,18 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	return exp;
     }
 
+    // pointer masking.
+    protected Exp PTRMASK(TreeFactory tf, HCodeElement source,
+			  DerivationGenerator dg,
+			  Exp e) {
+	if (pointerAlignment<2) return e;
+	// declare result as derived pointer.
+	CONST c = (POINTER_SIZE>WORD_SIZE) ?
+	    new CONST(tf, source, ~((long)(pointerAlignment-1))) :
+	    new CONST(tf, source, ~((int)(pointerAlignment-1))) ;
+	return new BINOP
+	    (tf, source, Type.POINTER, Bop.AND, e, c);
+    }
     // use the field offset map to get the object size (not including header)
     public int objectSize(HClass hc) {
 	List l = cfm.fieldList(hc);
@@ -710,7 +736,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	return new Translation.Ex
 	    (new BINOP
 	     (tf, source, Type.POINTER, Bop.ADD,
-	      objectref.unEx(tf),
+	      PTRMASK(tf, source, dg, objectref.unEx(tf)),
 	      new CONST(tf, source, OBJ_AZERO_OFF)));
     }
     public Translation.Exp arrayOffset(TreeFactory tf, HCodeElement source,
@@ -741,7 +767,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	return new Translation.Ex
 	    (new BINOP
 	     (tf, source, Type.POINTER, Bop.ADD,
-	      objectref.unEx(tf),
+	      PTRMASK(tf, source, dg, objectref.unEx(tf)),
 	      new CONST(tf, source, OBJ_FZERO_OFF)));
     }
     public Translation.Exp fieldOffset(TreeFactory tf, HCodeElement source,
@@ -762,7 +788,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	      (tf, source, Type.POINTER,
 	       new BINOP
 	       (tf, source, Type.POINTER, Bop.ADD,
-		objectref.unEx(tf),
+		PTRMASK(tf, source, dg, objectref.unEx(tf)),
 		new CONST(tf, source, OBJ_CLAZ_OFF)))),
 	      new CONST(tf, source, CLAZ_METHODS_OFF)));
     }

@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Tree.Exp</code>s can be inferred from these.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationGenerator.java,v 1.1.2.7 2001-02-13 21:55:19 kkz Exp $
+ * @version $Id: DerivationGenerator.java,v 1.1.2.8 2001-07-06 19:50:41 cananian Exp $
  */
 public class DerivationGenerator implements TreeDerivation {
     /** private partial type map */
@@ -181,6 +181,7 @@ public class DerivationGenerator implements TreeDerivation {
 		this.tad = type2tad(e.type());
 	    else switch (e.op) { // this is a pointer operation 
 	    case Bop.ADD:
+	    case Bop.AND: // XXX: not quite right.
 		this.tad = TADadd(getDT(e.getLeft()), getDT(e.getRight()));
 		break;
 	    default:
