@@ -39,6 +39,18 @@ class Dominator {
 	return false;
     }
 
+    public String shortname() {
+	if (global==null) {
+	    if (sourcename!=null)
+		return sourcename;
+	    else
+		return lvname;
+	} else {
+	    int last=global.lastIndexOf('.');
+	    return global.substring(last+1);
+	}
+    }
+
     public String toString() {
 	if (global==null) {
 	    return lvname+" ["+sourcename+"]"+location+"<p>\n";

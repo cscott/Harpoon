@@ -57,7 +57,103 @@ class Role {
 	    invokedmethods.length==0&&
 	    identityrelations.length==0)
 	    return "Initial"+ourclassname;
-	return ourclassname+" "+rolenumber;
+	/* Tree elements processing */
+	int state=0;
+	for (int i=0;i<nonnullfields.length;i++) {
+	    if (nonnullfields[i].fieldname.equalsIgnoreCase("left")||
+		nonnullfields[i].fieldname.equalsIgnoreCase("right"))
+		state|=1;
+	    else
+		state|=2;
+	}
+
+	for (int i=0;i<rolefieldlist.length;i++) {
+	    if (rolefieldlist[i].fieldname.equalsIgnoreCase("left")||
+		rolefieldlist[i].fieldname.equalsIgnoreCase("right"))
+		state|=1;
+	    else
+		state|=2;
+	}
+	
+	if ((state&1)==1) {
+	    if (dominators.length==0&&
+		rolearraylist.length==0&&
+		nonnullarrays.length==0&&
+		invokedmethods.length==0)
+		state|=4;
+	    	    
+	    String base=null;
+	    if (state==5)
+		base=ourclassname;
+	    else
+		base=ourclassname+" "+rolenumber;
+	    
+	    if ((state&1)==1) {
+		boolean leftused=false, rightused=false;
+		for (int i=0;i<rolefieldlist.length;i++) {
+		    if (rolefieldlist[i].fieldname.equalsIgnoreCase("left")&&!leftused) {
+			base="left "+base;leftused=true;
+		    }
+		    if (rolefieldlist[i].fieldname.equalsIgnoreCase("right")&&!rightused) {
+			base="right "+base;rightused=true;
+		    }
+		}
+		leftused=false; rightused=false;
+		for (int i=0;i<nonnullfields.length;i++) {
+		    if (nonnullfields[i].fieldname.equalsIgnoreCase("left")&&!leftused) {
+			if (!rightused)
+			    base= base + " w/ ";
+			else
+			    base= base + " & ";
+			base=base + "left";leftused=true;
+		    }
+		    if (nonnullfields[i].fieldname.equalsIgnoreCase("right")&&!rightused) {
+			if (!leftused)
+			    base= base + " w/ ";
+			else
+			    base= base + " & ";
+			base=base + " right";rightused=true;
+		    }
+		}
+	    }
+	    
+	    return base;
+	} else if (dominators.length==0&&
+	    rolefieldlist.length<=1&&
+	    rolearraylist.length==0&&
+	    nonnullfields.length<=2&&
+	    nonnullarrays.length==0&&
+	    invokedmethods.length==0&&
+	    identityrelations.length==0) {
+	    String start=ourclassname;
+	    if (rolefieldlist.length==1)
+		start=rolefieldlist[0].fieldname+" "+start;
+	    if (nonnullfields.length==0)
+		return start;
+	    else if (nonnullfields.length==1)
+		return start+" w/ "+nonnullfields[0].fieldname;
+	    else
+		return start+" w/ "+nonnullfields[0].fieldname+" & "+nonnullfields[1].fieldname;
+	} else if (dominators.length==1&&
+	    rolefieldlist.length==0&&
+	    rolearraylist.length==0&&
+	    nonnullfields.length<=2&&
+	    nonnullarrays.length==0&&
+	    invokedmethods.length==0&&
+	    identityrelations.length==0) {
+	    String start=ourclassname;
+
+	    start=dominators[0].shortname()+" "+start;
+
+	    if (nonnullfields.length==0)
+		return start;
+	    else if (nonnullfields.length==1)
+		return start+" w/ "+nonnullfields[0].fieldname;
+	    else
+		return start+" w/ "+nonnullfields[0].fieldname+" & "+nonnullfields[1].fieldname; 
+	} else {
+	    return ourclassname+" "+rolenumber;
+	}
     }
 
     public Role project(RoleUniverse univ) {
@@ -121,8 +217,6 @@ class Role {
 	Role r=new Role(rolei, -1, newclassname, contained, newdominators,
 			newrolefieldlist, newrolearraylist,
 			newidentityrelations, newnonnullfields, newnonnullarrays, newinvokedmethods);
-	System.out.println(r.rolenumber);
-	System.out.println(rolei.roletable.get(new Integer(r.rolenumber)));
 	return (Role) rolei.roletable.get(new Integer(r.rolenumber));
     }
 

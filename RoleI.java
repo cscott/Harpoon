@@ -53,6 +53,7 @@ class RoleI {
     HashMap revmethodsmap;
     int methodscount;
 	
+    RoleDisplay roledisp;
 
     static final Integer P_NEVER=new Integer(0);
     static final Integer P_ONCEEVER=new Integer(1);
@@ -74,7 +75,10 @@ class RoleI {
 	universes=new ArrayList();
 	RoleUniverse completeuniverse=new RoleUniverse();
 	universes.add(completeuniverse);
-	view=new View(this,new RoleUniverse[] {completeuniverse});
+	view=new View(this,new RoleUniverse[] {completeuniverse}, new RoleUniverse[] {});
+	roledisp=new RoleDisplay();
+	view.attach(roledisp);
+
 	maxrolecomb=0;
 	rolecombmap=new HashMap();
 	revrolecombmap=new HashMap();
@@ -97,8 +101,6 @@ class RoleI {
 	fields.buildfieldspage();
 	methods=new Methods(this);
 	methods.readentries();
-
-
     }
 
     void readclasses() {
@@ -301,25 +303,36 @@ class RoleI {
 	    return "/index.html";
 	case 'B':
 	    char type2=filename.charAt(dash+2);
-	    boolean include=true;
+	    int include=0;
 	    switch(type2) {
 	    case 'A':
 		return buildviewpage();
 	    case 'B':
-		include=false; /*use case C code now*/
+		include++; /*use case C code now*/
 	    case 'C':
+		include++;
+	    case 'L':
 		Integer universe=Integer.valueOf(filename.substring(dash+3));
 		ArrayList auniv=new ArrayList(java.util.Arrays.asList(view.universes));
-		if (include) {
+		ArrayList aunivd=new ArrayList(java.util.Arrays.asList(view.display));
+		if (include==1) {
 		    auniv.add(universes.get(universe.intValue()));
-		} else {
+		} else if (include==2) {
 		    int iremove=auniv.indexOf(universes.get(universe.intValue()));
 		    if (iremove>=0)
 			auniv.remove(iremove);
+		    int iremoved=aunivd.indexOf(universes.get(universe.intValue()));
+		    if (iremoved>=0)
+			aunivd.remove(iremoved);
+
+		} else if (include==0) {
+		    aunivd.add(universes.get(universe.intValue()));
 		}
-		this.view=new View(this, (RoleUniverse[]) auniv.toArray(new RoleUniverse[auniv.size()]));
+		view=new View(this, (RoleUniverse[]) auniv.toArray(new RoleUniverse[auniv.size()]), (RoleUniverse[]) aunivd.toArray(new RoleUniverse[aunivd.size()]));
 		return buildviewpage();
 	    case 'D':
+		roledisp=new RoleDisplay();
+		view.attach(roledisp);
 		rebuildgraphs(true);
 		gendiagram();
 		genmergeddiagram();
@@ -664,19 +677,29 @@ class RoleI {
 	    PrintStream ps=new PrintStream(fos);
 	    menuline(ps);
 	    for(int i=0;i<universes.size();i++) {
-		boolean included=false;
+		int included=0;
 		for (int j=0;j<view.universes.length;j++) {
 		    if (view.universes[j]==universes.get(i)) {
-			included=true;
+			included=1;
 			break;
 		    }
 		}
-		if (included) {
-		    ps.println("Universe "+i+" Included in View<p>");
+		for (int j=0;j<view.display.length;j++) {
+		    if (view.display[j]==universes.get(i)) {
+			included=2;
+			break;
+		    }
+		}
+		if (included!=0) {
+		    if (included==1)
+			ps.println("Universe "+i+" Included in Cross Product<p>");
+		    else
+			ps.println("Universe "+i+" Included in List<p>");
 		    ps.println("<a href=\"rm-BB"+i+"\">Exclude</a><p>");
 		} else {
 		    ps.println("Universe "+i+" Excluded from View<p>");
-		    ps.println("<a href=\"rm-BC"+i+"\">Include</a><p>");
+		    ps.println("<a href=\"rm-BC"+i+"\">Include in Cross Product</a><p>");
+		    ps.println("<a href=\"rm-BL"+i+"\">Include in List</a><p>");
 		}
 	    }
 	    ps.println("<a href=\"rm-BD\">Rebuild Graphs with new View</a><p>");
@@ -958,7 +981,7 @@ class RoleI {
 		ps.println("<a href=\"rm-A"+file+"\">Make Atomic</a><p>");
 	    }
 	    if (classinfo.staticmethods.contains(methodname)) {
-		System.out.println("STATIC<p>");
+		ps.println("STATIC<p>");
 	    }
 
 	    if (classinfo.callgraph.containsKey(methodname)) {
@@ -1036,6 +1059,7 @@ class RoleI {
 		FileOutputStream fos1=new FileOutputStream("RC"+rolenumc+".html");
 		
 		PrintStream ps1=new PrintStream(fos1);
+		menuline(ps1);
 		for(int i=0;i<rolec.roleidentifiers.length;i++) {
 		    int rolenum=rolec.roleidentifiers[i];
 		    if (rolenum==1) {
@@ -1056,6 +1080,25 @@ class RoleI {
 			ps1.println("<a href=\"R"+rolenum+".html\">"+role.shortname()+"</a><p>");
 		    }
 		}
+		ps1.println("Also has following roles:<p>");
+		if (roledisp!=null) {
+		    RoleDisplay.RoleDisplayEntry rde=roledisp.get(rolec);
+		    for(int i=0;i<rde.sets.length;i++) {
+			Iterator it=rde.sets[i].iterator();
+			while(it.hasNext()) {
+			    Integer rolenumber=(Integer)it.next();
+			    Role role=(Role)roletable.get(rolenumber);		
+			    FileOutputStream fos=new FileOutputStream("R"+rolenumber+".html");
+			    PrintStream ps=new PrintStream(fos);
+			    menuline(ps);
+			    ps.println(role);
+			    ps.close();
+			    ps1.println("<a href=\"R"+rolenumber+".html\">"+role.shortname()+"</a><p>");
+			    
+			}
+			ps1.println("---------------------------------------<p>");
+		    }
+		}
 		ps1.close();
 	    } catch (Exception e) {
 		e.printStackTrace();
@@ -1071,7 +1114,6 @@ class RoleI {
 	Iterator it=ks.iterator();
 	while(it.hasNext()) {
 	    String clss=(String)it.next();
-	    System.out.println(clss);
 	    Integer i=(Integer) classinfo.classes.get(clss);
 	    genpictures(clss, i.toString(),dot);
 	}

@@ -1,12 +1,17 @@
 class View {
     RoleUniverse [] universes;
     RoleI rolei;
+    RoleUniverse []display;
+    RoleDisplay roled;
 
-    public View(RoleI rolei,RoleUniverse[] universes) {	
+    public View(RoleI rolei,RoleUniverse[] universes, RoleUniverse[] display) {
 	this.rolei=rolei;
 	this.universes=new RoleUniverse[universes.length];
 	for(int i=0;i<universes.length;i++)
 	    this.universes[i]=universes[i];
+	this.display=new RoleUniverse[display.length];
+	for(int i=0;i<display.length;i++)
+	    this.display[i]=display[i];
     }
 
     public RoleCombination project(Role alluniverses) {
@@ -14,6 +19,25 @@ class View {
 	for(int i=0;i<universes.length;i++) {
 	    roles[i]=alluniverses.project(universes[i]).rolenumber;
 	}
-	return new RoleCombination(rolei,roles);
+	RoleCombination rc=new RoleCombination(rolei, roles);
+
+	if (roled!=null) {
+	    int [] droles=new int[display.length];
+	    for (int i=0;i<display.length;i++) {
+		/*log */
+		droles[i]=alluniverses.project(display[i]).rolenumber;
+	    }
+	    roled.register(rc,droles);
+	}
+	return rc;
+    }
+
+    public void attach(RoleDisplay roled) {
+	this.roled=roled;
+    }
+
+    public void detach() {
+	this.roled=null;
     }
 }
+
