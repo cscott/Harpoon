@@ -28,7 +28,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.41 2000-10-17 20:59:46 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.42 2000-10-19 21:04:59 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -249,6 +249,11 @@ public abstract class Quad
 	    hs.h.protectedSet.remove(oldQ);
 	    hs.h.protectedSet.insert(newQ);
 	}
+    }
+    /** Add this quad to the given handler sets. */
+    public final void addHandlers(HandlerSet handlers) {
+	for (HandlerSet hs=handlers; hs!=null; hs=hs.next)
+	    hs.h.protectedSet.insert(this);
     }
     /** Return a set of all the handlers guarding this <code>Quad</code>. */
     public final HandlerSet handlers() {
