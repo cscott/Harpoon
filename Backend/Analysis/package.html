@@ -1,0 +1,15 @@
+<HTML>
+<!-- $Id: package.html,v 1.1.2.1 1999-06-24 19:39:35 cananian Exp $ -->
+<BODY>
+This package contains the various analyses needed
+for the backend.  These are not generic optimizations; they are specific
+information directly needed by the back end.  Examples would include
+class/interface numbering, code reordering for cache locality, certain
+escape analyses, etc.
+<p>
+All analyses that don't easily fit into a single class should have their
+own subpackage under harpoon.Backend.Analysis.
+
+@author none
+</BODY>
+</HTML>
