@@ -13,6 +13,13 @@ while (@ARGV) {
 
 $directory = shift @files;
 
+# sometimes we just want to close the whole tree for some reason or other
+if (1) {
+    print STDERR "The FLEX CVS tree is closed.  It will reopen momentarily.\n".
+	"Email me if you've got questions.  --scott.\n";
+    exit(1);
+}
+
 # Suck in the CVS/Entries file
 #
 open(ENTRIES, $ENTRIES) || die("Cannot open $ENTRIES.\n");
