@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.32 2000-05-18 01:48:14 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.33 2000-05-18 03:31:07 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -324,7 +324,7 @@ public class ParIntGraph {
 		}
 	    });
 
-	// the edgess appearing in the edge ordering relation are also
+	// the edges appearing in the edge ordering relation are also
 	// present into G.O and G.I and so, they have been already visited
     }
 
@@ -337,7 +337,7 @@ public class ParIntGraph {
 	are final (ie they won't be modified through something as an edge
 	addition, etc.). */
     public Set allNodes(){
-	if(all_nodes == null){
+	//	if(all_nodes == null){
 	    final Set nodes = new HashSet();
 	    forAllNodes(new PANodeVisitor(){
 		    public void visit(PANode node){
@@ -345,7 +345,7 @@ public class ParIntGraph {
 		    }
 		});
 	    all_nodes = nodes;
-	}
+	    //	}
 	all_nodes.remove(ActionRepository.THIS_THREAD);
 	return all_nodes;
     }
@@ -363,11 +363,21 @@ public class ParIntGraph {
 		map.put(node, node.csSpecialize(call));
 	} 
 
-	return
+	//System.out.println("csSPECIALIZE -----------------");
+	//System.out.println("Map: " + map);
+	//System.out.println("AllNodes: " + allNodes());
+	//System.out.println("OLD GRAPH: " + this);
+
+	ParIntGraph new_graph = 
 	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
 			    ar.csSpecialize(map, call),
 			    PointerAnalysis.IGNORE_EO? null:eo.specialize(map),
 			    PANode.specialize_set(touched_threads, map));
+
+	//	System.out.println("NEW GRAPH: " + new_graph);
+	//	System.out.println("-------------------------------");
+
+	return new_graph;
     }
 
     /* Specializes <code>this</code> <code>ActionRepository</code> for the

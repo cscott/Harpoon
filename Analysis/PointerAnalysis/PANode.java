@@ -20,7 +20,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.20 2000-05-15 22:49:34 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.21 2000-05-18 03:31:07 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -300,6 +300,13 @@ final public class PANode {
 	return node;
     }
 
+    /** Tests whether <code>this</code> is the bottom of some specialization
+	chain, i.e.
+	<code>call_chain_depth == PointerAnalysis.MAX_SPEC_DEPTH</code>. */
+    public boolean isBottom(){
+	return call_chain_depth == PointerAnalysis.MAX_SPEC_DEPTH;
+    }
+
     /** Pretty-print function for debug purposes */
     public final String toString(){
 	String str = null;
@@ -311,7 +318,9 @@ final public class PANode {
 	case EXCEPT: str="E";break;
 	case STATIC: str="S";break;
 	}
-	return str + number;
+	str = str + number;
+	if(isBottom()) str += "B";
+	return str;
     }
 
     /** Returns a detailed description of <code>this</code> node for debug

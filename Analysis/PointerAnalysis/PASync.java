@@ -18,7 +18,7 @@ import harpoon.Analysis.PointerAnalysis.Relation;
  * <code>PASync</code> models a <code>sync</code> action.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PASync.java,v 1.1.2.1 2000-03-30 03:11:03 salcianu Exp $
+ * @version $Id: PASync.java,v 1.1.2.2 2000-05-18 03:31:07 salcianu Exp $
  */
 public class PASync {
     /** The node on which the <code>sync</code> is performed on. */
@@ -58,14 +58,27 @@ public class PASync {
 	this.wtspec_run = wtspec_run;
     }
 
+    /** Checks whether <code>node</code> can still be specialized. 
+	(is an INSIDE node that is not bottom) */
+    private boolean ableToBeSpecialized(PANode node){
+	return
+	    (node != ActionRepository.THIS_THREAD) &&
+	    (node.type == PANode.INSIDE) && !node.isBottom();
+    }
+
     /** Specializes this action for a specific call site. The argument is
 	supposed to be a <code>CALL</code>. It is added at the end of the 
 	call chain. The new, specialized action is returned.<br>
 	<b>Note:</b> If the depth of this action is too big, no specialization
 	takes place; instead, <code>this</code> object is returned. */
     public PASync csSpecialize(final Map map, final CALL call){
-	if(depth == PointerAnalysis.MAX_SPEC_DEPTH)
-	    return this;
+	if(depth >= PointerAnalysis.MAX_SPEC_DEPTH){
+	    if(!(ableToBeSpecialized(n) || ableToBeSpecialized(nt)))
+		return this;
+	}
+
+	System.out.println("DEPTH: " + (depth + 1) + " < sync , " + n +
+			   " , " + nt + " >");
 
 	return 
 	    new PASync(PANode.translate(n, map),

@@ -41,7 +41,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.15 2000-05-18 01:48:13 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.16 2000-05-18 03:31:07 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -137,9 +137,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	return null; // should never happen
     }
 
-    // the object construction sites from the currently analyzed method
-    Set obs_here = null;
-
     // analyze a single method: take the object creation sites from it
     // and generate an allocation policy for each one.
     public final void analyze_mm(MetaMethod mm){
@@ -182,8 +179,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    }
 	}
 
-	obs_here = news;
-
 	Set nodes = pig.allNodes();
 	
 	for(Iterator it = nodes.iterator(); it.hasNext(); ){
@@ -196,7 +191,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    int depth = node.getCallChainDepth();
 
 	    if(pig.G.captured(node)){
-		if( (depth == 0) && news.contains(node_rep.node2Code(node)) ) {
+		if((depth == 0) /* && news.contains(node_rep.node2Code(node)) */ ) {
 		    // captured nodes of depth 0 (ie allocated in this method,
 		    // not in a callee) are allocated on the stack.
 		    Quad q  = (Quad) node_rep.node2Code(node);
@@ -212,7 +207,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		}
 	    }
 	    else{
-		if((depth == 0) && news.contains(node_rep.node2Code(node)) ) {
+		if((depth == 0) /* && news.contains(node_rep.node2Code(node)) */ ) {
 		    if(remainInThread(node, hm)){
 			Quad q = (Quad) node_rep.node2Code(node);
 			Util.assert(q != null, "No quad for " + node);
