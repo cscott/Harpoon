@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_ProcessStatement</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ProcessStatement.java,v 1.1 1998-10-10 07:53:40 cananian Exp $
+ * @version $Id: IIR_ProcessStatement.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -20,7 +20,7 @@ public class IIR_ProcessStatement extends IIR_ConcurrentStatement
     public void set_postponed(boolean postponed)
     { _postponed = postponed; }
  
-    public Boolean get_postponed()
+    public boolean get_postponed()
     { return _postponed; }
  
     //MEMBERS:  

@@ -5,7 +5,7 @@ package harpoon.IR.AIRE;
  * The predefined <code>IIR_SpectrumSourceQuantityDeclaration</code> class.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_SpectrumSourceQuantityDeclaration.java,v 1.1 1998-10-10 07:53:44 cananian Exp $
+ * @version $Id: IIR_SpectrumSourceQuantityDeclaration.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -20,22 +20,16 @@ public class IIR_SpectrumSourceQuantityDeclaration extends IIR_QuantityDeclarati
     //METHODS:  
     public void set_subnature_indication(IIR_NatureDefinition subnature_indication)
     { _subnature_indication = subnature_indication; }
- 
     public IIR get_subnature_indication()
     { return _subnature_indication; }
- 
-    public IIR get_subnature_indication()
-    { return _subnature_indication; } 
 
     void set_magnitude_simple_expression(IIR value)
     { _magnitude_simple_expression = value; }
- 
     public IIR get_magnitude_simple_expression()
     { return _magnitude_simple_expression; }
  
     public void set_phase_simple_expression(IIR value)
     { _phase_simple_expression = value; }
- 
     public IIR get_phase_simple_expression()
     { return _phase_simple_expression; }
  

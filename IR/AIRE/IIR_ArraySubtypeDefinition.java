@@ -1,6 +1,8 @@
 // IIR_ArraySubtypeDefinition.java, created by cananian
 package harpoon.IR.AIRE;
 
+import harpoon.Util.Tuple;
+import java.util.Hashtable;
 /**
  * The predefined <code>IIR_ArraySubtypeDefinition</code> class represents
  * the subtype of a pre-existing array type definition; always a constrained
@@ -8,7 +10,7 @@ package harpoon.IR.AIRE;
  * is a subset of the base type's domain.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ArraySubtypeDefinition.java,v 1.1 1998-10-10 07:53:32 cananian Exp $
+ * @version $Id: IIR_ArraySubtypeDefinition.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -21,12 +23,14 @@ public class IIR_ArraySubtypeDefinition extends IIR_ArrayTypeDefinition
     
     
     //METHODS:  
-    static IIR_ArraySubtypeDefinition 
-	get(IIR_ArrayTypeDefinition base_type,
-	    IIR_ScalarTypeDefinition index_subtype, 
-	    IIR_FunctionDeclaration resolution_function) {
-	return new IIR_ArraySubtypeDefinition(base_type, index_subtype,
-					      resolution_function);
+    public static IIR_ArraySubtypeDefinition get(IIR_ArrayTypeDefinition base_type, IIR_ScalarTypeDefinition index_subtype, IIR_FunctionDeclaration resolution_function) {
+        Tuple t = new Tuple(new Object[] { base_type, index_subtype, resolution_function } );
+        IIR_ArraySubtypeDefinition ret = (IIR_ArraySubtypeDefinition) _h.get(t);
+        if (ret==null) {
+            ret = new IIR_ArraySubtypeDefinition(base_type, index_subtype, resolution_function);
+            _h.put(t, ret);
+        }
+        return ret;
     }
  
     public void set_resolution_function(IIR_FunctionDeclaration 
@@ -42,15 +46,14 @@ public class IIR_ArraySubtypeDefinition extends IIR_ArrayTypeDefinition
     //MEMBERS:  
 
 // PROTECTED:
-    IIR_ArraySubtypeDefinition(IIR_ArrayTypeDefinition base_type,
-			       IIR_ScalarTypeDefinition index_subtype,
-			       IIR_FunctionDeclaration resolution_function) {
-	_base_type = base_type;
-	_index_subtype = index_subtype;
-	_resolution_function = resolution_function;
-    }
-    IIR_ArrayTypeDeclaration _base_type;
+    IIR_ArrayTypeDefinition _base_type;
     IIR_ScalarTypeDefinition _index_subtype;
     IIR_FunctionDeclaration _resolution_function;
+    private IIR_ArraySubtypeDefinition(IIR_ArrayTypeDefinition base_type, IIR_ScalarTypeDefinition index_subtype, IIR_FunctionDeclaration resolution_function) {
+        _base_type = base_type;
+        _index_subtype = index_subtype;
+        _resolution_function = resolution_function;
+    }
+    private static Hashtable _h = new Hashtable();
 } // END class
 

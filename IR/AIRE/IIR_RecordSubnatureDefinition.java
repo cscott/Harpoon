@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_RecordSubnatureDefinition</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_RecordSubnatureDefinition.java,v 1.1 1998-10-10 07:53:41 cananian Exp $
+ * @version $Id: IIR_RecordSubnatureDefinition.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -29,9 +29,11 @@ public class IIR_RecordSubnatureDefinition extends IIR_RecordNatureDefinition
     public IIR get_through_tolerance()
     { return _through_tolerance; }
  
+    /* FIXME
     public IIR_RecordNatureDefinition get_base_nature()
     { return _base_nature; }
- 
+    */
+
     //MEMBERS:  
 
 // PROTECTED:

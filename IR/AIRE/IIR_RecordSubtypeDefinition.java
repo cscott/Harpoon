@@ -10,7 +10,7 @@ import java.util.Hashtable;
  * is a subset of the base type's domain.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_RecordSubtypeDefinition.java,v 1.1 1998-10-10 07:53:41 cananian Exp $
+ * @version $Id: IIR_RecordSubtypeDefinition.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -33,10 +33,12 @@ public class IIR_RecordSubtypeDefinition extends IIR_RecordTypeDefinition
     }
  
     public void set_base_type(IIR_RecordTypeDefinition base_type)
+    { super.set_base_type(base_type); }
+    /*
     { _base_type = base_type; }
- 
-    public IIR_TypeDefinition /*IIR_RecordTypeDefinition*/ get_base_type()
-    { return _base_type; } // FIXME?
+    public IIR_TypeDefinition get_base_type()
+    { return _base_type; }
+    */
  
     public void set_resolution_function(IIR_FunctionDeclaration resolution_function)
     { _resolution_function = resolution_function; }

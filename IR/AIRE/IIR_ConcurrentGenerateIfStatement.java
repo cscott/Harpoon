@@ -2,9 +2,12 @@
 package harpoon.IR.AIRE;
 
 /**
- * <code>IIR_ConcurrentGenerateIfStatement</code> 
+ * The predefined <code>IIR_ConcurrentGenerateIfStatement</code> represents
+ * a block which is either elaborated once or not at all, depending on the
+ * value of a boolean condition.
+ *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ConcurrentGenerateIfStatement.java,v 1.1 1998-10-10 07:53:33 cananian Exp $
+ * @version $Id: IIR_ConcurrentGenerateIfStatement.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -27,6 +30,6 @@ public class IIR_ConcurrentGenerateIfStatement extends IIR_ConcurrentStatement
     //MEMBERS:  
 
 // PROTECTED:
-    IIR _condition;
+    IIR _if_condition;
 } // END class
 

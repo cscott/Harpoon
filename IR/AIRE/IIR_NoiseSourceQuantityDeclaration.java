@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_NoiseSourceQuantityDeclaration</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_NoiseSourceQuantityDeclaration.java,v 1.1 1998-10-10 07:53:38 cananian Exp $
+ * @version $Id: IIR_NoiseSourceQuantityDeclaration.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -33,6 +33,6 @@ public class IIR_NoiseSourceQuantityDeclaration extends IIR_QuantityDeclaration
 
 // PROTECTED:
     IIR_NatureDefinition _subnature_indication;
-    IIR _value;
+    IIR _magnitude_simple_expression;
 } // END class
 

@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_OthersInitialization</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_OthersInitialization.java,v 1.1 1998-10-10 07:53:39 cananian Exp $
+ * @version $Id: IIR_OthersInitialization.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -26,6 +26,6 @@ public class IIR_OthersInitialization extends IIR_Expression
     //MEMBERS:  
 
 // PROTECTED:
-    IIR _v;
+    IIR _expression;
 } // END class
 

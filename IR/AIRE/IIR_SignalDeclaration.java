@@ -2,9 +2,11 @@
 package harpoon.IR.AIRE;
 
 /**
- * <code>IIR_SignalDeclaration</code> 
+ * The predefined <code>IIR_SignalDeclaration</code> class represents
+ * signals which may take on a sequence of values as execution proceeds.
+ *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_SignalDeclaration.java,v 1.1 1998-10-10 07:53:43 cananian Exp $
+ * @version $Id: IIR_SignalDeclaration.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,18 +19,20 @@ public class IIR_SignalDeclaration extends IIR_ObjectDeclaration
     //CONSTRUCTOR:
     public IIR_SignalDeclaration() { }
     //METHODS:  
+    public void set_value(IIR value)
+    { _value = value; }
     public IIR get_value()
     { return _value; }
  
     public void set_signal_kind(IR_SignalKind signal_kind)
     { _signal_kind = signal_kind; }
- 
     public IR_SignalKind get_signal_kind()
     { return _signal_kind; }
  
     //MEMBERS:  
 
 // PROTECTED:
+    IIR _value;
     IR_SignalKind _signal_kind;
 } // END class
 

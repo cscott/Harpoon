@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_AccessTypeDefinition</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_AccessTypeDefinition.java,v 1.1 1998-10-10 07:53:31 cananian Exp $
+ * @version $Id: IIR_AccessTypeDefinition.java,v 1.2 1998-10-10 09:21:37 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -28,7 +28,7 @@ public class IIR_AccessTypeDefinition extends IIR_TypeDefinition
     //MEMBERS:  
 
 // PROTECTED:
-    IIR_AccessTypeDefinition( IIR_TypeDefinition designated_type ) {
+    protected IIR_AccessTypeDefinition( IIR_TypeDefinition designated_type ) {
 	_designated_type = designated_type;
     }
     IIR_TypeDefinition _designated_type;

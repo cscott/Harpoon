@@ -5,7 +5,7 @@ package harpoon.IR.AIRE;
  * The predefined <code>IIR_TerminalDeclaration</code> class.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_TerminalDeclaration.java,v 1.1 1998-10-10 07:53:45 cananian Exp $
+ * @version $Id: IIR_TerminalDeclaration.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -29,6 +29,6 @@ public class IIR_TerminalDeclaration extends IIR_ObjectDeclaration
     //MEMBERS:  
 
 // PROTECTED:
-    IIR_NatureDefinition nature;
+    IIR_NatureDefinition _nature;
 } // END class
 

@@ -1,12 +1,14 @@
 // IIR_IntegerSubtypeDefinition.java, created by cananian
 package harpoon.IR.AIRE;
 
+import harpoon.Util.Tuple;
+import java.util.Hashtable;
 /**
  * The predefined <code>IIR_IntegerSubtypeDefinition</code> class
  * represents a subset of an existing integer base type definition.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_IntegerSubtypeDefinition.java,v 1.1 1998-10-10 07:53:37 cananian Exp $
+ * @version $Id: IIR_IntegerSubtypeDefinition.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -19,20 +21,23 @@ public class IIR_IntegerSubtypeDefinition extends IIR_IntegerTypeDefinition
     
     
     //METHODS:  
-    static IIR_IntegerSubtypeDefinition 
-	get( IIR_IntegerTypeDefinition base_type,
-	     IIR left_limit, IIR direction, IIR right_limit,
-	     IIR_FunctionDeclaration resolution_function) {
-	return new IIR_IntegerSubtypeDefinition(base_type, left_limit,
-						direction, right_limit,
-						resolution_function);
+    public static IIR_IntegerSubtypeDefinition get(IIR_IntegerTypeDefinition base_type, IIR left_limit, IIR direction, IIR right_limit, IIR_FunctionDeclaration resolution_function) {
+        Tuple t = new Tuple(new Object[] { base_type, left_limit, direction, right_limit, resolution_function } );
+        IIR_IntegerSubtypeDefinition ret = (IIR_IntegerSubtypeDefinition) _h.get(t);
+        if (ret==null) {
+            ret = new IIR_IntegerSubtypeDefinition(base_type, left_limit, direction, right_limit, resolution_function);
+            _h.put(t, ret);
+        }
+        return ret;
     }
  
     public void set_base_type(IIR_IntegerTypeDefinition base_type)
+    { super.set_base_type(base_type); }
+    /*
     { _base_type = base_type; }
- 
     public IIR_IntegerTypeDefinition get_base_type()
     { return _base_type; }
+    */
  
     public void set_resolution_function(IIR_FunctionDeclaration resolution_function)
     { _resolution_function = resolution_function; }
@@ -45,18 +50,18 @@ public class IIR_IntegerSubtypeDefinition extends IIR_IntegerTypeDefinition
     //MEMBERS:  
 
 // PROTECTED:
-    IIR_IntegerSubtypeDefinition(IIR_IntegerTypeDefinition base_type, 
-				 IIR left_limit,IIR direction,IIR right_limit,
-				 IIR_FunctionDeclaration resolution_function)
-    {
-	_base_type = base_type;
-	_left_limit = left_limit;
-	_direction = direction;
-	_right_limit = right_limit;
-	_resolution_function = resolution_function;
-    }
     IIR_IntegerTypeDefinition _base_type;
-    IIR _left_limit, _direction, _right_limit;
+    IIR _left_limit;
+    IIR _direction;
+    IIR _right_limit;
     IIR_FunctionDeclaration _resolution_function;
+    private IIR_IntegerSubtypeDefinition(IIR_IntegerTypeDefinition base_type, IIR left_limit, IIR direction, IIR right_limit, IIR_FunctionDeclaration resolution_function) {
+        _base_type = base_type;
+        _left_limit = left_limit;
+        _direction = direction;
+        _right_limit = right_limit;
+        _resolution_function = resolution_function;
+    }
+    private static Hashtable _h = new Hashtable();
 } // END class
 

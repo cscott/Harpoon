@@ -1,21 +1,24 @@
-// IIR_ScalarSubnatureDefinition.java, created by cananian
+// IIR_ArraySubnatureDefinition.java, created by cananian
 package harpoon.IR.AIRE;
 
 /**
- * <code>IIR_ScalarSubnatureDefinition</code> 
+ * The <code>IIR_ArraySubnatureDefinition</code> class represents predefined
+ * methods, subprograms, and public data elements describing array
+ * subnatures.
+ *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ScalarSubnatureDefinition.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
+ * @version $Id: IIR_ArraySubnatureDefinition.java,v 1.1 1998-10-10 09:21:37 cananian Exp $
  */
 
 //-----------------------------------------------------------
-public class IIR_ScalarSubnatureDefinition extends IIR_ScalarNatureDefinition
+public class IIR_ArraySubnatureDefinition extends IIR_ArrayNatureDefinition
 {
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
-    //IR_KIND = IR_SCALAR_SUBNATURE_DEFINITION
+    //IR_KIND = IR_ARRAY_SUBNATURE_DEFINITION
     //CONSTRUCTOR:
-    public IIR_ScalarSubnatureDefinition() { }
+    public IIR_ArraySubnatureDefinition() { }
     //METHODS:  
     public void set_across_tolerance(IIR across_tolerance)
     { _across_tolerance = across_tolerance; }
@@ -29,15 +32,16 @@ public class IIR_ScalarSubnatureDefinition extends IIR_ScalarNatureDefinition
     public IIR get_through_tolerance()
     { return _through_tolerance; }
  
-    /* FIXME
+    public void set_base_nature(IIR_ArrayNatureDefinition base_nature)
+    { _base_nature = base_nature; }
     public IIR_ArrayNatureDefinition get_base_nature()
     { return _base_nature; }
-    */
-
+ 
     //MEMBERS:  
 
 // PROTECTED:
     IIR _across_tolerance;
     IIR _through_tolerance;
+    IIR_ArrayNatureDefinition _base_nature;
 } // END class
 

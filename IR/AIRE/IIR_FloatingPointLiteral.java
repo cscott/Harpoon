@@ -10,14 +10,12 @@ import java.util.Hashtable;
  * limitations of a specific IIR foundation.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_FloatingPointLiteral.java,v 1.1 1998-10-10 07:53:36 cananian Exp $
+ * @version $Id: IIR_FloatingPointLiteral.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
  */
 
 //-----------------------------------------------------------
 public class IIR_FloatingPointLiteral extends IIR_Literal
 {
-
-    // FIXME FIXME FIXME FIXME FIXME
 
 // PUBLIC:
     public void accept(IIR_Visitor visitor ){visitor.visit(this);}
@@ -34,7 +32,8 @@ public class IIR_FloatingPointLiteral extends IIR_Literal
         return ret;
     }
  
-    public String print(int length) { throw new Error(); /* FIXME */ }
+    public String print(int length)
+    { throw new Error("unimplemented."); /* FIXME */ }
  
     public void release() { /* do nothing */ }
  

@@ -2,9 +2,13 @@
 package harpoon.IR.AIRE;
 
 /**
- * <code>IIR_EntityClassEntry</code> 
+ * A predefined <code>IIR_EntityClassEntry</code> represents a specific
+ * kind of entity within an <code>IIR_EntityClassList</code>.  The
+ * <code>IIR_EntityClassList</code> in turn appears only within a group
+ * template declaration.
+ *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_EntityClassEntry.java,v 1.1 1998-10-10 07:53:35 cananian Exp $
+ * @version $Id: IIR_EntityClassEntry.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -19,13 +23,11 @@ public class IIR_EntityClassEntry extends IIR_Tuple
     //METHODS:  
     public void set_entity_kind(int entity_kind)
     { _entity_kind = entity_kind; }
- 
     public int get_entity_kind()
     { return _entity_kind; }
  
     public void set_boxed(boolean is_boxed)
     { _boxed = is_boxed; }
- 
     public boolean get_boxed()
     { return _boxed; }
  
@@ -33,6 +35,6 @@ public class IIR_EntityClassEntry extends IIR_Tuple
 
 // PROTECTED:
     int _entity_kind;
-    boolean _is_boxed;
+    boolean _boxed;
 } // END class
 

@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR.java,v 1.1 1998-10-10 07:53:31 cananian Exp $
+ * @version $Id: IIR.java,v 1.2 1998-10-10 09:21:37 cananian Exp $
  *///
 
 //-----------------------------------------------------------
@@ -19,7 +19,7 @@ public abstract class IIR
     //METHODS:  
     public int get_kind() { return _kind; }
  
-    static String get_kind_text(int kind) 
+    public static String get_kind_text(int kind) 
     { return IR_Kind.toString(kind); }
  
     public void set_file_name(IIR_Identifier file_name)

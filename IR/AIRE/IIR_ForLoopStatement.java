@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_ForLoopStatement</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ForLoopStatement.java,v 1.1 1998-10-10 07:53:36 cananian Exp $
+ * @version $Id: IIR_ForLoopStatement.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -24,10 +24,10 @@ public class IIR_ForLoopStatement extends IIR_SequentialStatement
     { return _iteration_scheme; }
  
     //MEMBERS:  
-    IIR_SequentialStatementList sequence_of_statements;
-    IIR_DeclarationList loop_declarations;
+    public IIR_SequentialStatementList sequence_of_statements;
+    public IIR_DeclarationList loop_declarations;
 
 // PROTECTED:
-    IIR_ConstantDeclaration _iterator;
+    IIR_ConstantDeclaration _iteration_scheme;
 } // END class
 

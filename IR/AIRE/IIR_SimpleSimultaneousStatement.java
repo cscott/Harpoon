@@ -2,9 +2,11 @@
 package harpoon.IR.AIRE;
 
 /**
- * <code>IIR_SimpleSimultaneousStatement</code>
+ * The predefined <code>IIR_SimpleSimultaneousStatement</code> class
+ * described zero or more characteristic expressions.
+ *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_SimpleSimultaneousStatement.java,v 1.1 1998-10-10 07:53:43 cananian Exp $
+ * @version $Id: IIR_SimpleSimultaneousStatement.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,29 +19,26 @@ public class IIR_SimpleSimultaneousStatement extends IIR_SimultaneousStatement
     //CONSTRUCTOR:
     public IIR_SimpleSimultaneousStatement(){}
     //METHODS:  
-    public void set_left_expression(IIR left_expression){
-       _left_expression = left_expression;
-    }
+    public void set_left_expression(IIR left_expression)
+    { _left_expression = left_expression; }
+    public IIR get_left_expression()
+    { return _left_expression; }
  
-    public IIR get_left_expression(){return _left_expression; }
+    public void set_right_expression(IIR right_expression)
+    { _right_expression = right_expression; }
+    public IIR get_right_expression()
+    { return _right_expression; }
  
-    public void set_right_expression(IIR right_expression){_right_expression=
-       right_expression;
-    }
- 
-    public IIR get_right_expression(){ return right_expression; }
- 
-    public void set_tolerence_aspect(IIR tolerence_aspect){ _tolerence_aspect =
-       tolerence_aspect;
-    }
- 
-    public IIR get_tolerence_aspect(){return _tolerence_aspect;}
+    public void set_tolerance_aspect(IIR tolerance_aspect)
+    { _tolerance_aspect = tolerance_aspect; }
+    public IIR get_tolerance_aspect()
+    { return _tolerance_aspect;}
  
     //MEMBERS:  
 
 // PROTECTED:
     IIR _left_expression;
     IIR _right_expression;
-    IIR _tolerence_aspect;
+    IIR _tolerance_aspect;
 } // END class
 

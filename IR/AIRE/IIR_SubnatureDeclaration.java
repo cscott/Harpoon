@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_SubnatureDeclaration</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_SubnatureDeclaration.java,v 1.1 1998-10-10 07:53:44 cananian Exp $
+ * @version $Id: IIR_SubnatureDeclaration.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,16 +17,17 @@ public class IIR_SubnatureDeclaration extends IIR_Declaration
     //CONSTRUCTOR:
     public IIR_SubnatureDeclaration() { }
     //METHODS:  
-    public void set_subnature(IIR_SubnatureDefinition subnature)
+
+    public void set_subnature(IIR_NatureDefinition subnature)
     { _subnature = subnature; }
  
-    public IIR_SubnatureDefinition get_subnature()
+    public IIR_NatureDefinition get_subnature()
     { return _subnature; }
  
     //MEMBERS:  
-    IIR_AttributeSpecificationList attributes;
+    public IIR_AttributeSpecificationList attributes;
 
 // PROTECTED:
-    IIR_SubnatureDefinition _subnature;
+    IIR_NatureDefinition _subnature;
 } // END class
 

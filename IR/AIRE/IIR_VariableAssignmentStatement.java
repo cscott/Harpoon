@@ -2,9 +2,12 @@
 package harpoon.IR.AIRE;
 
 /**
- * <code>IIR_VariableAssignmentStatement</code> 
+ * The <code>IIR_VariableAssignmentStatement</code> updates the value
+ * of a variable with the value specified in an expression.  Such
+ * statements may appear anywhere a sequential statement may appear.
+ *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_VariableAssignmentStatement.java,v 1.1 1998-10-10 07:53:46 cananian Exp $
+ * @version $Id: IIR_VariableAssignmentStatement.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -23,8 +26,8 @@ public class IIR_VariableAssignmentStatement extends IIR_SequentialStatement
     public IIR get_target()
     { return _target; }
  
-    public void set_expression(IIR target)
-    { _expression = target; }
+    public void set_expression(IIR expression)
+    { _expression = expression; }
  
     public IIR get_expression()
     { return _expression; }
@@ -33,6 +36,6 @@ public class IIR_VariableAssignmentStatement extends IIR_SequentialStatement
 
 // PROTECTED:
     IIR _target;
-    IIR _target;
+    IIR _expression;
 } // END class
 

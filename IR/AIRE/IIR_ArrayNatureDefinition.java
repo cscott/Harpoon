@@ -10,7 +10,7 @@ package harpoon.IR.AIRE;
  * which is itself an array.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_ArrayNatureDefinition.java,v 1.1 1998-10-10 07:53:32 cananian Exp $
+ * @version $Id: IIR_ArrayNatureDefinition.java,v 1.2 1998-10-10 09:21:37 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -29,18 +29,18 @@ public class IIR_ArrayNatureDefinition extends IIR_CompositeNatureDefinition
     { _index_subtype = index_subtype; }
  
     public IIR_ScalarTypeDefinition get_index_subtype()
-    { return index_subtype; }
+    { return _index_subtype; }
  
-    public void set_element_subtype(IIR_TypeDefinition element_subtype)
+    public void set_element_subtype(IIR_NatureDefinition element_subtype)
     { _element_subtype = element_subtype; }
  
     public IIR_NatureDefinition get_element_subtype()
-    { return element_subtype; }
+    { return _element_subtype; }
  
     //MEMBERS:  
 
 // PROTECTED:
     IIR_ScalarTypeDefinition _index_subtype;
-    IIR_TypeDefinition _element_subtype;
+    IIR_NatureDefinition _element_subtype;
 } // END class
 

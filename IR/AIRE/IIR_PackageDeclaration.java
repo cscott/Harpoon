@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_PackageDeclaration</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_PackageDeclaration.java,v 1.1 1998-10-10 07:53:39 cananian Exp $
+ * @version $Id: IIR_PackageDeclaration.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -17,12 +17,15 @@ public class IIR_PackageDeclaration extends IIR_LibraryUnit
     //CONSTRUCTOR:
     public IIR_PackageDeclaration() { }
     //METHODS:  
+    public void set_package_body( IIR_PackageBodyDeclaration package_body)
+    { _package_body = package_body; }
     public IIR_PackageBodyDeclaration get_package_body()
     { return _package_body; }
  
     //MEMBERS:  
-    IIR_DeclarationList package_declarative_part;
+    public IIR_DeclarationList package_declarative_part;
 
 // PROTECTED:
+    IIR_PackageBodyDeclaration _package_body;
 } // END class
 

@@ -6,7 +6,7 @@ package harpoon.IR.AIRE;
  * of zero or more character literals defined by ISO Std. 8859-1.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_StringLiteral.java,v 1.1 1998-10-10 07:53:44 cananian Exp $
+ * @version $Id: IIR_StringLiteral.java,v 1.2 1998-10-10 09:21:39 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -19,7 +19,7 @@ public class IIR_StringLiteral extends IIR_TextLiteral
     
     
     //METHODS:  
-    static IIR_StringLiteral get_value( String value, Iint length)
+    public static IIR_StringLiteral get_value( String value, int length)
     { return new IIR_StringLiteral(value); }
  
     public String get_text()

@@ -4,7 +4,7 @@ package harpoon.IR.AIRE;
 /**
  * <code>IIR_NextStatement</code> 
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_NextStatement.java,v 1.1 1998-10-10 07:53:38 cananian Exp $
+ * @version $Id: IIR_NextStatement.java,v 1.2 1998-10-10 09:21:38 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -32,7 +32,7 @@ public class IIR_NextStatement extends IIR_SequentialStatement
     //MEMBERS:  
 
 // PROTECTED:
-    IIR_SequentialStatement _loop;
+    IIR_SequentialStatement _enclosing_loop;
     IIR _condition;
 } // END class
 
