@@ -1,11 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.2 1998-11-25 04:24:37 cananian Exp $
-CVS_TAG=$(shell cvs status GNUmakefile | awk '/Sticky Tag/{print $$3}')
-CVS_BRANCH=$(shell cvs status GNUmakefile | awk '/Sticky Tag/{print $$5}' | \
-	sed -e 's/[^0-9.]//g')
-# FIXME: don't add -r option unless CVS_TAG contains something.
-CVS_REVISION=-r $(CVS_TAG)
-# FIXME: fix cvs-add command to use CVS_BRANCH instead of CVS_REVISION
-
+# $Id: GNUmakefile,v 1.61.2.3 1998-11-25 06:16:20 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -21,6 +14,12 @@ UNMUNGE=bin/unmunge
 FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
+
+CVS_TAG=$(firstword $(shell cvs status GNUmakefile | \
+			awk '/Sticky Tag/{print $$3}'))
+CVS_BRANCH=$(firstword $(shell cvs status GNUmakefile | \
+			awk '/Sticky Tag/{print $$5}' | sed -e 's/[^0-9.]//g'))
+CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
 
 ALLPKGS = $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
@@ -88,7 +87,7 @@ cvs-add: needs-cvs
 	done
 cvs-commit: needs-cvs cvs-add
 	cvs -q diff -u | tee cvs-tmp # view changes we are committing.
-	cvs -q commit # $(CVS_REVISION)
+	cvs -q commit $(patsubst %,-r %,$(CVS_BRANCH))
 	$(RM) cvs-tmp
 commit: cvs-commit # convenient abbreviation
 update: needs-cvs
