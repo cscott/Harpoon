@@ -130,6 +130,7 @@ public class IPaqServoController {
 	for(int i=0; i<c.length; i++) {
 	    sendSerial((byte)c[i]);
 	}
+	sendSerial((byte)'\n');
     }
 
     public static void main(String args[]) {
