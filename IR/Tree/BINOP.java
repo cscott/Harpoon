@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.13 1999-07-14 19:23:40 duncan Exp $
+ * @version $Id: BINOP.java,v 1.1.2.14 1999-07-20 18:38:48 duncan Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -159,8 +159,8 @@ public class BINOP extends OPER {
 	    }
 	case Bop.SHL:
 	    switch (optype) {
-	    case Type.INT:      return _i(_i(left)<<_n(right));
-	    case Type.LONG:     return _l(_l(left)<<_n(right));
+	    case Type.INT:      return _i(_i(left)<<_i(right));
+	    case Type.LONG:     return _l(_l(left)<<_i(right));
 	    case Type.FLOAT:
 	    case Type.DOUBLE:
 	    case Type.POINTER:
@@ -168,8 +168,8 @@ public class BINOP extends OPER {
 	    }
 	case Bop.SHR:
 	    switch (optype) {
-	    case Type.INT:      return _i(_i(left)>>_n(right));
-	    case Type.LONG:     return _l(_l(left)>>_n(right));
+	    case Type.INT:      return _i(_i(left)>>_i(right));
+	    case Type.LONG:     return _l(_l(left)>>_i(right));
 	    case Type.FLOAT:
 	    case Type.DOUBLE:
 	    case Type.POINTER:
@@ -177,8 +177,8 @@ public class BINOP extends OPER {
 	    }
 	case Bop.USHR:
 	    switch (optype) {
-	    case Type.INT:      return _i(_i(left)>>>_n(right));
-	    case Type.LONG:     return _l(_l(left)>>>_n(right));
+	    case Type.INT:      return _i(_i(left)>>>_i(right));
+	    case Type.LONG:     return _l(_l(left)>>>_i(right));
 	    case Type.FLOAT:
 	    case Type.DOUBLE:
 	    case Type.POINTER:
@@ -223,7 +223,6 @@ public class BINOP extends OPER {
     private static Double  _d(double d)  { return new Double(d);  }
     private static Boolean _b(boolean b) { return new Boolean(b); }
     // unwrapper functions.
-    private static int    _n(Object o) { return ((Number)o).intValue(); }
     private static int    _i(Object o) { return ((Integer)o).intValue(); }
     private static long   _l(Object o) { return ((Long)o)   .longValue(); }
     private static float  _f(Object o) { return ((Float)o)  .floatValue(); }
