@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.9 1999-02-12 08:03:09 duncan Exp $
+ * @version $Id: TEMP.java,v 1.1.2.10 1999-02-24 01:18:54 andyb Exp $
  */
 public class TEMP extends Exp implements Typed {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -45,6 +45,10 @@ public class TEMP extends Exp implements Typed {
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new TEMP(tf, this, this.type, map(ctm, this.temp));
+    }
+
+    public String toString() {
+        return "TEMP<"+Type.toString(type)+">("+temp+")";
     }
 }
 

@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CJUMP.java,v 1.1.2.5 1999-02-17 21:29:41 cananian Exp $
+ * @version $Id: CJUMP.java,v 1.1.2.6 1999-02-24 01:18:54 andyb Exp $
  */
 public class CJUMP extends Stm {
     /** An expression that evaluates into a boolean result. */
@@ -37,6 +37,10 @@ public class CJUMP extends Stm {
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new CJUMP(tf, this, (Exp)test.rename(tf, ctm), iftrue, iffalse);
+    }
+
+    public String toString() {
+        return "CJUMP(#"+test.getID()+", "+iftrue+", "+iffalse+")";
     }
 }
 

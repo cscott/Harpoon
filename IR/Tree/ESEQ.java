@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.4 1999-02-09 21:54:23 duncan Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.5 1999-02-24 01:18:54 andyb Exp $
  */
 public class ESEQ extends Exp {
     /** The statement to evaluate for side-effects. */
@@ -36,6 +36,10 @@ public class ESEQ extends Exp {
         return new ESEQ(tf, this, 
 			(Stm)stm.rename(tf, ctm), 
 			(Exp)exp.rename(tf, ctm));
+    }
+
+    public String toString() {
+        return "ESEQ(#" + stm.getID() + ", #" + exp.getID() + ")";
     }
 }
 

@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NAME.java,v 1.1.2.4 1999-02-09 21:54:23 duncan Exp $
+ * @version $Id: NAME.java,v 1.1.2.5 1999-02-24 01:18:54 andyb Exp $
  */
 public class NAME extends Exp {
     /** The label which this NAME refers to. */
@@ -31,6 +31,10 @@ public class NAME extends Exp {
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new NAME(tf, this, this.label);
+    }
+
+    public String toString() {
+        return "NAME("+label+")";
     }
 }
 

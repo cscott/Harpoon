@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.6 1999-02-09 21:54:23 duncan Exp $
+ * @version $Id: UNOP.java,v 1.1.2.7 1999-02-24 01:18:54 andyb Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -49,6 +49,11 @@ public class UNOP extends OPER {
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new UNOP(tf, this, optype, op, (Exp)operand.rename(tf, ctm));
+    }
+
+    public String toString() {
+        return "UNOP<" + Type.toString(optype) + ">(" + Uop.toString(op) +
+                ", #" + operand.getID() + ")";
     }
 }
 

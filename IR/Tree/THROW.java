@@ -8,7 +8,7 @@ import harpoon.Temp.CloningTempMap;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: THROW.java,v 1.1.2.1 1999-02-18 21:59:53 duncan Exp $
+ * @version  $Id: THROW.java,v 1.1.2.2 1999-02-24 01:18:54 andyb Exp $
  */
 public class THROW extends Stm {
   /** The exceptional value to return */
@@ -35,4 +35,7 @@ public class THROW extends Stm {
     return new THROW(tf, this, (Exp)retex.rename(tf, ctm));
   }
 
+  public String toString() {
+    return "THROW(#"+retex.getID()+")";
+  }
 }

@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.8 1999-02-18 22:43:19 duncan Exp $
+ * @version $Id: CALL.java,v 1.1.2.9 1999-02-24 01:18:53 andyb Exp $
  * @see harpoon.IR.Quads.CALL, INVOCATION, NATIVECALL
  */
 public class CALL extends INVOCATION {
@@ -45,8 +45,21 @@ public class CALL extends INVOCATION {
 			(Exp)func.rename(tf, ctm),
 			ExpList.rename(args, tf, ctm));
   }
-    
+
+    public String toString() {
+        ExpList list;
+        StringBuffer s = new StringBuffer();
+        s.append("CALL(#"+retval.getID()+", #"+retex.getID()+
+                 ", #" + func.getID() + ", {");
+        list = args;
+        while (list != null) {
+            s.append(" #"+list.head.getID());
+            if (list.tail != null) {
+                s.append(",");
+            }
+            list = list.tail;
+        }
+        s.append(" })");
+        return new String(s);
+    }
 }
-
-
-

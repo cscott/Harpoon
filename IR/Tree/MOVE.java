@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.5 1999-02-09 21:54:23 duncan Exp $
+ * @version $Id: MOVE.java,v 1.1.2.6 1999-02-24 01:18:54 andyb Exp $
  */
 public class MOVE extends Stm {
     /** The expression giving the destination for the computed value. */
@@ -48,6 +48,9 @@ public class MOVE extends Stm {
 			(Exp)dst.rename(tf, ctm),
 			(Exp)src.rename(tf, ctm));
     }
-		  
+
+    public String toString() {
+        return "MOVE(#"+dst.getID()+", #"+src.getID()+")";
+    }
 }
 

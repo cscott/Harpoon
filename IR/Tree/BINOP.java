@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.6 1999-02-09 21:54:22 duncan Exp $
+ * @version $Id: BINOP.java,v 1.1.2.7 1999-02-24 01:18:53 andyb Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -48,6 +48,11 @@ public class BINOP extends OPER {
         return new BINOP(tf, this, optype, op, 
 			 (Exp)left.rename(tf, ctm), 
 			 (Exp)right.rename(tf, ctm));
+    }
+
+    public String toString() {
+        return "BINOP<"+Type.toString(optype)+">("+Bop.toString(op)+
+               ", #" + left.getID() + ", #" + right.getID() + ")";
     }
 }
 
