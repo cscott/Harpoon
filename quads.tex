@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.14 1998-09-10 01:58:40 cananian Exp $
+% $Id: quads.tex,v 1.15 1998-09-10 05:10:59 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn,twoside]{article}
 
@@ -9,7 +9,7 @@
 
 \author{C.~Scott~Ananian}
 \title{\Harpoon{} Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.14 $ $}
+\date{\today \\ $ $Revision: 1.15 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -159,7 +159,7 @@ references, and division by zero is explicitly checked before every
 division operation.  These explicit and comprehensive checks are
 intended to be targeted by aggressive optimizations designed to
 removed those cases with are redundant, impossible, or otherwise
-unnecessary.  The design goal of the IR is that \textit{no} IR
+unnecessary.  The design goal of the IR is that \textit{no}
 statement should throw an implicit exception under any 
 circumstance.
 Pursuing that goal involves changing the semantics of method
@@ -187,11 +187,13 @@ The
 QuadSSA statements are called \texttt{Quad}s and are subclasses of
 \texttt{harpoon.IR.QuadSSA.Quad}; they are graph-structured and
 doubly-linked to enable both forward and reverse traversal of the
-control-flow graph.  The parent class \texttt{Quad} contains the
+control-flow graph.  Edges are represented by Objects to facilitate
+associating analysis data with these control-flow graph edges.
+The parent class \texttt{Quad} contains the
 graph-oriented methods of the objects.  Its superinterface
 \texttt{harpoon.ClassFile.HCodeElement} defines standard methods to
 get object ID numbers and source file information which
-ought to be implemented for elements of any intermediate representation.
+are valid for elements of any intermediate representation.
 
 An enumeration of
 \texttt{Quad} types and their uses is provided in figure
