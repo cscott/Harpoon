@@ -1,3 +1,5 @@
+---- Oct-09-98
+Write copy-quadssa method.
 ---- Oct-04-98
 Target AIRE for backend.
 Write 'UndoRecursion' analysis/optimization pass.
@@ -8,9 +10,9 @@ Undo peephole optimization and replace with a rule in SCCAnalysis that
  this would entail switching all CJMPs that use boolean value and
  negative value in all other uses.  May be more complicated.
 Make LCMP/FCMP/DCMP smarter.  We currently two twice as many tests as is
-necessary sometimes.
+necessary at times.
 ---- Sep-24-98
-figure out what to do about related variables/induction variables.
+figure out what to do about related variables/induction variables in bitwidth.
 ---- Sep-23-98, cont
 X Fix optimization bug exhibited by harpoon.Test.f!
 X Merge improvements to harpoon.Test.Graph over to std harpoon.Main.Graph class
@@ -20,7 +22,8 @@ Make sure common
 construct lets i dip to -1 properly.
 ---- Sep-21-98
 Finish bitwidth analysis in SCC.
-Write move/const collation pass to remove unnecesssary quads and collate MOVEs.
+X Write move/const collation pass to remove unnecesssary quads and collate 
+  MOVEs. [const collation not done; MOVE collation in DeadCode now.]
 Figure out what to do about OutOfMemoryError. (explicit?)
 Check that, if Tnull is on Stack, phis are handled correctly.
 Check merges of try: only constrain state to be equivalent.  Possibly
