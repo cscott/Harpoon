@@ -16,7 +16,7 @@ import java.io.Serializable;
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.1.4.5 2000-03-30 09:58:27 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.1.4.6 2000-04-02 03:53:12 cananian Exp $
  */
 class HClassProxy extends HClass implements HClassMutator, Serializable {
   Relinker relinker;
@@ -220,10 +220,7 @@ class HClassProxy extends HClass implements HClassMutator, Serializable {
     public Object readResolve() {
       // leverage relinker during reconstruct.  this makes sure all our
       // mappings are consistent with the descCache.
-      HClassProxy hcp = (HClassProxy)
-	relinker.forDescriptor(proxy.getDescriptor());
-      if (hcp.proxy!=proxy) hcp.relink(proxy);// common case are the same.
-      return hcp;
+      return relinker.load(proxy.getDescriptor(), proxy);
     }
   }
 
