@@ -249,12 +249,11 @@ JNIEXPORT jint JNICALL Java_java_io_NativeIO_startListenerJNI
 }
 
 JNIEXPORT jint JNICALL Java_java_io_NativeIO_socketAccept
-  (JNIEnv *env, jint fd, jobject/*SocketImpl*/ s) {
+  (JNIEnv *env, jobject obj, jint fd, jobject/*SocketImpl*/ s) {
     struct sockaddr_in sa;
     jobject fdObj, address;
     int rc, sa_size = sizeof(sa);
     if (!inited && !initializePSI(env)) return;
-
     do {
       rc = accept(fd, (struct sockaddr *) &sa, &sa_size);
     } while (rc<0 && errno==EINTR); /* repeat if interrupted */

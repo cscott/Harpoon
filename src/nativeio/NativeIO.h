@@ -84,7 +84,7 @@ JNIEXPORT jint JNICALL Java_java_io_NativeIO_getCharJNI
   (JNIEnv *, jclass, jint);
 
 JNIEXPORT jint JNICALL Java_java_io_NativeIO_socketAccept
-  (JNIEnv *env, jint fd, jobject/*SocketImpl*/ s);
+  (JNIEnv *, jclass, jint, jobject);
 
 /*
  * Class:     java_io_NativeIO
