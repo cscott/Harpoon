@@ -1,6 +1,6 @@
-import realtime.RealtimeThread;
-import realtime.HeapMemory;
-import realtime.MemoryArea;
+import javax.realtime.RealtimeThread;
+import javax.realtime.HeapMemory;
+import javax.realtime.MemoryArea;
 
 public class Hello2 {
   public static void main(String argv[]) {

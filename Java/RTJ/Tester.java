@@ -1,6 +1,6 @@
-import realtime.RealtimeThread;
-import realtime.MemoryArea;
-import realtime.HeapMemory;
+import javax.realtime.RealtimeThread;
+import javax.realtime.MemoryArea;
+import javax.realtime.HeapMemory;
 
 // This is a testing driver for the Realtime Java support.
 
