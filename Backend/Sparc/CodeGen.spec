@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * <code>CodeGen</code> is a code-generator for the Sparc architecture.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.4 1999-06-29 07:40:16 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.5 1999-07-06 17:38:36 cananian Exp $
  */
 %%
     // FIELDS
@@ -93,25 +93,21 @@ import harpoon.Util.Util;
 // patterns with MOVE at their root.
 //  32- and 64-bit integer and floating-point STOREs:
 MOVE(MEM(CONST(c)), e) %pred %( is13bit(c) )% %{
- String op=((Typed) ROOT.dst).isDoubleWord()?"std":"st";
  emit(new InstrMEM(if, ROOT,
 		   "\t st"+suffix((Typed)ROOT.dst)+" `s0, ["+c+"]\n",
 		   null, new Temp[] { e }));
 }%
 MOVE(MEM(BINOP(ADD, CONST(c), e1)), e2) %pred %( is13bit(c) )% %{
- String op=((Typed) ROOT.dst).isDoubleWord()?"std":"st";
  emit(new InstrMEM(if, ROOT,
 		   "\t st"+suffix((Typed)ROOT.dst)+" `s1, [`s0+"+c+"]\n",
 		   null, new Temp[] { e1, e2 }));
 }%
 MOVE(MEM(BINOP(ADD, e1, CONST(c))), e2) %pred %( is13bit(c) )% %{
- String op=((Typed) ROOT.dst).isDoubleWord()?"std":"st";
  emit(new InstrMEM(if, ROOT,
 		   "\t st"+suffix((Typed)ROOT.dst)+" `s1, [`s0+"+c+"]\n", null,
 		   new Temp[] { e1, e2 }));
 }%
 MOVE(MEM(BINOP(ADD, e1, e2)), e3) %{
- String op=((Typed) ROOT.dst).isDoubleWord()?"std":"st";
  emit(new InstrMEM(if, ROOT,
 		   "\t st"+suffix((Typed)ROOT.dst)+" `s2, [`s0+`s1]\n", null,
                    new Temp[] { e1, e2, e3 }));
@@ -184,7 +180,7 @@ CJUMP(e, true_label, false_label) %{
 
 // labels.
 LABEL(l) %{
- emit(new InstrLABEL(if, ROOT, l.toString()+":\n", ROOT.label));
+ emit(new InstrLABEL(if, ROOT, l.toString()+":\n", ((LABEL) ROOT).label));
 }%
 
 // expressions
@@ -230,22 +226,22 @@ BINOP<i,p>(ADD, e1, UNOP(NEG, e2))=r /* subtraction */ %{
 /* FIXME: write long rules */
 /* floating-point binops: */
 BINOP<f,d>(ADD, e1, e2)=r %{
- String s =(Type.isDoubleWord(ROOT.type()))?"d":"s";
+ String s =(Type.isDoubleWord(((BINOP)ROOT).type()))?"d":"s";
  emit(new Instr(if, ROOT, "\t fadd"+s+" `s0, `s1, `d0\n",
 		new Temp[] { r }, new Temp[] { e1, e2 }));
 }%
 BINOP<f,d>(ADD, e1, UNOP(NEG, e2))=r %{
- String s =(Type.isDoubleWord(ROOT.type()))?"d":"s";
+ String s =(Type.isDoubleWord(((BINOP)ROOT).type()))?"d":"s";
  emit(new Instr(if, ROOT, "\t fsub"+s+" `s0, `s1, `d0\n",
 		new Temp[] { r }, new Temp[] { e1, e2 }));
 }%
 BINOP<f,d>(MUL, e1, e2)=r %{
- String s =(Type.isDoubleWord(ROOT.type()))?"d":"s";
+ String s =(Type.isDoubleWord(((BINOP)ROOT).type()))?"d":"s";
  emit(new Instr(if, ROOT, "\t fmul"+s+" `s0, `s1, `d0\n",
 		new Temp[] { r }, new Temp[] { e1, e2 }));
 }%
 BINOP<f,d>(DIV, e1, e2)=r %{
- String s =(Type.isDoubleWord(ROOT.type()))?"d":"s";
+ String s =(Type.isDoubleWord(((BINOP)ROOT).type()))?"d":"s";
  emit(new Instr(if, ROOT, "\t fdiv"+s+" `s0, `s1, `d0\n",
 		new Temp[] { r }, new Temp[] { e1, e2 }));
 }%
