@@ -249,6 +249,48 @@ int main(int argc, char **argv)
     }
     unmountdisk(ptr);
   }
+
+  case '9': {
+    for(int i=0;i<MAXFILES;i++)
+      files[i].used=false;
+    
+    
+    struct block * ptr=mountdisk("disk");
+    
+    for(int i=0; i<NUMFILES; i++) 
+      {
+	char filename[10];
+	sprintf(filename,"file_%d", i);
+	openfile(ptr,filename);
+      }
+    
+    for(int i=0; i<NUMFILES; i++) 
+      {	    
+	char buf[100];
+	sprintf(buf,"This is file_%d.", i);
+	writefile(ptr,i,buf,strlen(buf));
+      }    
+    
+    
+    createlink(ptr, "file_1", "link_1");
+    createlink(ptr, "file_1", "link_2");
+
+    removefile("file_1", ptr);
+
+    int fd = openfile(ptr, "new");
+    writefile(ptr, fd, "new", 3);
+    
+    printfile("file_1", ptr);
+    printfile("link_1", ptr);
+    printfile("link_2", ptr);
+  
+    for(int i=0; i<NUMFILES; i++)
+      closefile(ptr,i);
+    
+    
+    unmountdisk(ptr);    
+  }
+  
   }
 }
 
@@ -343,7 +385,7 @@ void createlink(struct block *ptr,char *filename, char *linkname) {
   struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
   for(int i=0;i<12;i++) {
     struct DirectoryBlock *db=(struct DirectoryBlock *) &ptr[itb->entries[rdiptr].Blockptr[i]];
-    for(int j=0;j<BLOCKSIZE/128;j++) {
+    for(int j=0;j<BLOCKSIZE/DIRECTORYENTRYSIZE;j++) {
       if (db->entries[j].name[0]!=0) {
 	if(strcmp(filename,db->entries[j].name)==0) {
 	  /* Found file */
@@ -628,11 +670,13 @@ void printdirectory(struct block *ptr)
 }
 
 // prints the contents of the file with filename "filename"
-void printfile(char *filename, struct block *ptr) {
+void printfile(char *filename, struct block *ptr) 
+{
+  printf("=== BEGIN of %s ===\n", filename);
   struct InodeBlock * itb=(struct InodeBlock *) &ptr[itbptr];
   for(int i=0;i<12;i++) {
     struct DirectoryBlock *db=(struct DirectoryBlock *) &ptr[itb->entries[rdiptr].Blockptr[i]];
-    for(int j=0;j<BLOCKSIZE/128;j++) {
+    for(int j=0;j<BLOCKSIZE/DIRECTORYENTRYSIZE;j++) {
       if (db->entries[j].name[0]!=0) {
 	if(strcmp(filename,db->entries[j].name)==0) {
 	  /* Found file */
@@ -647,6 +691,7 @@ void printfile(char *filename, struct block *ptr) {
       }
     }
   }
+  printf("\n=== END of %s ===\n", filename);
 }
 
 
