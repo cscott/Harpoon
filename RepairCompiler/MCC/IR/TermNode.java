@@ -14,6 +14,16 @@ class TermNode {
     AbstractRepair repair;
     ScopeNode scope;
     MultUpdateNode update;
+    boolean quantifiernode=false;
+
+    public void setquantifiernode() {
+	quantifiernode=true;
+    }
+    
+    public boolean getquantifiernode() {
+	return quantifiernode;
+    }
+
 
     public int getType() {
 	return type;

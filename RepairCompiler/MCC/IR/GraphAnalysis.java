@@ -134,8 +134,21 @@ public class GraphAnalysis {
 		    if (!foundupdate)
 			allgood=false;
 		}
-		if (allgood)
+		if (allgood) {
 		    couldremove.remove(gn);
+		    if (Compiler.PRUNEQUANTIFIERS) {
+			TermNode tn=(TermNode)gn.getOwner();
+			Constraint constr=tn.getConstraint();
+			for(Iterator consit=((Set)termination.conjunctionmap.get(constr)).iterator();consit.hasNext();) {
+			    GraphNode gn4=(GraphNode)consit.next();
+			    TermNode tn4=(TermNode)gn4.getOwner();
+			    if (tn4.getquantifiernode()) {
+				mustremove.add(gn4); /* This node is history */
+				System.out.println("Eliminating: "+gn4.getTextLabel());
+			    }
+			}
+		    }
+		}
 	    }
 
 

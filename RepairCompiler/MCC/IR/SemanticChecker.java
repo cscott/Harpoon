@@ -404,6 +404,7 @@ public class SemanticChecker {
             TypeDescriptor constype = cons.getLogicStatement().typecheck(sa);
 
             if (constype == null) {
+		System.out.println("Failed attempting to type constraint");
                 ok = false;
             } else if (constype != ReservedTypeDescriptor.INT) {
                 er.report(null, "Type of guard must be 'int' not '" + constype.getSymbol() + "'");
@@ -439,6 +440,7 @@ public class SemanticChecker {
                 assert qn.getLabel().equals("quantifier");
                 Quantifier quantifier = parse_quantifier(qn);
                 if (quantifier == null) {
+		    System.out.println("Failed parsing quantifier");
                     ok = false;
                 } else {
                     constraint.addQuantifier(quantifier);
@@ -450,6 +452,7 @@ public class SemanticChecker {
         LogicStatement logicexpr = parse_body(pn.getChild("body"));
 
         if (logicexpr == null) {
+	    System.out.println("Failed parsing logical expression");
             ok = false;
         } else {
             constraint.setLogicStatement(logicexpr);

@@ -20,6 +20,7 @@ public class Compiler {
     /* Set this flag to false to turn repairs off */
     public static boolean REPAIR=true;
     public static boolean AGGRESSIVESEARCH=false;
+    public static boolean PRUNEQUANTIFIERS=false;
 
     public static void main(String[] args) {
         State state = null;

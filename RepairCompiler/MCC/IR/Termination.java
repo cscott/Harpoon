@@ -143,8 +143,6 @@ public class Termination {
 		    conjunctionmap.put(c,new HashSet());
 		((Set)conjunctionmap.get(c)).add(gn);
 		conjtonodemap.put(dnf.get(j),gn);
-
-
 	    }
 	    // Construct quantifier "conjunction" nodes
 	    for(int j=0;j<c.numQuantifiers();j++) {
@@ -156,6 +154,7 @@ public class Termination {
 		    DNFConstraint dconst=new DNFConstraint(ip);
 		    dconst=dconst.not();
 		    TermNode tn=new TermNode(c,dconst.get(0));
+		    tn.setquantifiernode();
 		    GraphNode gn=new GraphNode("Conj"+i+"AQ"+j,
 					       "Conj ("+i+","+j+") "+dconst.get(0).name()
 					       ,tn);
@@ -172,6 +171,7 @@ public class Termination {
 		    DNFConstraint dconst=new DNFConstraint(ip);
 		    dconst=dconst.not();
 		    TermNode tn=new TermNode(c,dconst.get(0));
+		    tn.setquantifiernode();
 		    GraphNode gn=new GraphNode("Conj"+i+"AQ"+j,
 					       "Conj ("+i+","+j+") "+dconst.get(0).name()
 					       ,tn);

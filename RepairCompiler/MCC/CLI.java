@@ -11,7 +11,7 @@ import java.util.StringTokenizer;
  * files.
  *
  * @author  le01, 6.035 Staff (<tt>6.035-staff@mit.edu</tt>)
- * @version <tt>$Id: CLI.java,v 1.4 2004-05-10 21:54:40 bdemsky Exp $</tt>
+ * @version <tt>$Id: CLI.java,v 1.5 2004-05-11 21:14:24 bdemsky Exp $</tt>
  */
 public class CLI {
     /**
@@ -106,6 +106,8 @@ public class CLI {
                 Compiler.REPAIR=false;
 	    } else if (args[i].equals("-aggressivesearch")) {
                 Compiler.AGGRESSIVESEARCH=true;
+	    } else if (args[i].equals("-prunequantifiernodes")) {
+                Compiler.PRUNEQUANTIFIERS=true;
             } else if (args[i].equals("-verbose") || args[i].equals("-v")) {
                 context = 0;
                 verbose++;

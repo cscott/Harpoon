@@ -9,7 +9,7 @@ public class DotExpr extends Expr {
     String field;
     Expr index;
     
-    static boolean DOMEMCHECKS=true;
+    static boolean DOMEMCHECKS=false;
     static boolean DOTYPECHECKS=false;
     static boolean DONULL=false;
 

@@ -3,7 +3,7 @@ package MCC.IR;
 import java.util.*;
 
 public class VarExpr extends Expr {
-    static boolean DOMEMCHECKS=true;
+    static boolean DOMEMCHECKS=false;
     static boolean DOTYPECHECKS=false;
     static boolean DONULL=false;
 

@@ -10,9 +10,17 @@ public class InclusionPredicate extends Predicate {
     public TypeDescriptor typecheck(SemanticAnalyzer sa) {
 	TypeDescriptor t=expr.typecheck(sa);
 	TypeDescriptor ts=setexpr.typecheck(sa);
-	if (t!=ts)
+	if (t instanceof StructureTypeDescriptor) {
+	    while(((StructureTypeDescriptor)t).getSuperType()!=null)
+		t=((StructureTypeDescriptor)t).getSuperType();
+	}
+	if (ts instanceof StructureTypeDescriptor) {
+	    while(((StructureTypeDescriptor)ts).getSuperType()!=null)
+		ts=((StructureTypeDescriptor)ts).getSuperType();
+	}
+	if (t!=ts) {
 	    return null;
-	
+	}
 	return ReservedTypeDescriptor.INT;
     }
 
