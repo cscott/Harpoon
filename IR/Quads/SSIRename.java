@@ -31,7 +31,7 @@ import java.util.Stack;
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.3 1999-08-30 22:37:47 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.3.2.1 1999-09-16 19:24:35 cananian Exp $
  */
 class SSIRename {
     private static final boolean sort_phisig = false;
@@ -178,14 +178,23 @@ class SSIRename {
 		    break;
 		}
 		if (q instanceof SIGMA) { /* update src */
-		    Temp[] r = (Temp[]) rhs.get(q);
-		    for (int i=0; i < r.length; i++)
-			r[i] = varmap.get(r[i]);
 		    if (q instanceof CJMP)
 			arg.put(q, varmap.get(((CJMP)q).test()));
 		    else if (q instanceof SWITCH)
 			arg.put(q, varmap.get(((SWITCH)q).index()));
-		    else throw new Error("Ack!");
+		    else if (q instanceof CALL) {
+			CALL Q = (CALL) q;
+			Temp[] args = new Temp[Q.paramsLength()+2];
+			for (int i=0; i<Q.paramsLength(); i++)
+			    args[2+i] = varmap.get(Q.params(i));
+			args[0] = Q.retval()!=null?varmap.inc(Q.retval()):null;
+			args[1] = varmap.inc(Q.retex());
+			arg.put(q, args);
+		    } else throw new Error("Ack!");
+		    // sigmas come 'after' definitions in CALL.
+		    Temp[] r = (Temp[]) rhs.get(q);
+		    for (int i=0; i < r.length; i++)
+			r[i] = varmap.get(r[i]);
 		    break;
 		}
 		/* else, rename src, then rename dst */
@@ -215,14 +224,20 @@ class SSIRename {
 		} else if (q instanceof SIGMA) {
 		    Temp[][] l = (Temp[][]) lhs.get(q);
 		    Temp[] r = (Temp[]) rhs.get(q);
-		    Temp a = (Temp) arg.get(q);
-		    if (a==null) System.out.println("WHOA: "+q);
 		    Quad nq;
 		    if (q instanceof CJMP)
-			nq = new CJMP(nqf, q, a, l, r);
+			nq = new CJMP(nqf, q, (Temp) arg.get(q), l, r);
 		    else if (q instanceof SWITCH)
-			nq = new SWITCH(nqf, q, a, ((SWITCH)q).keys(), l, r);
-		    else throw new Error("Ack!");
+			nq = new SWITCH(nqf, q, (Temp) arg.get(q),
+					((SWITCH)q).keys(), l, r);
+		    else if (q instanceof CALL) {
+			CALL Q = (CALL) q;
+			Temp[] a = (Temp[]) arg.get(q);
+			Temp[] np= new Temp[Q.paramsLength()];
+			System.arraycopy(a,2,np,0,np.length);
+			nq = new CALL(nqf, Q, Q.method(), np, a[0], a[1],
+				      Q.isVirtual(), l, r);
+		    } else throw new Error("Ack!");
 		    old2new.put(q, nq);
 		}
 	    }
