@@ -3,10 +3,15 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Transformation;
 
-import harpoon.ClassFile.*;
-import harpoon.Util.*;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.SerializableCodeFactory;
+import harpoon.Util.Util;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 /**
  * <code>MethodMutator</code> makes it easier to implement simple
  * method code mutations.  It is meant to be subclassed.  In your
@@ -14,7 +19,7 @@ import java.util.*;
  * to effect the change.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodMutator.java,v 1.1.2.1 2000-10-07 01:18:34 cananian Exp $
+ * @version $Id: MethodMutator.java,v 1.1.2.2 2000-10-12 21:36:21 cananian Exp $
  */
 public abstract class MethodMutator {
     /** This is the code factory which contains the representations of the
