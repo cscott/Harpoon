@@ -246,6 +246,28 @@
                   properties of Java give us this for free.)}
 }
 
+@Article{gerlek95:inductssa,
+  author = 	 {Michael P. Gerlek and Eric Stoltz and Michael Wolfe},
+  title = 	 {Beyond Induction Variables: Detecting and
+                  Classifying Sequences Using a Demand-Driven {SSA} Form},
+  journal = 	 TOPLAS,
+  year = 	 1995,
+  volume =	 17,
+  number =	 1,
+  month =	 jan,
+  pages =	 {85-122},
+  url =		 {http://www.acm.org/pubs/citations/journals/toplas/1995-17-1/p85-gerlek/},
+  annote =	 {Very powerful technique for induction variable
+                  analysis using a variant of the SSA form.  Requires
+                  a symbolic math package for full power, but can
+                  accomplish classification easily.  mu and nu nodes
+                  are used in addition to phi nodes; they might be
+                  worthwhile subclasses.  Min/max bounds can often be
+                  computed.  Useful useful stuff.  Reference to paper
+                  on 'loop distribution' and 'loop interchanging' that
+                  might be worthwhile to track down.}
+}
+
 % Statecharts.
 
 @InProceedings{mueller95:condbran,
@@ -464,20 +486,6 @@
   pages =	 {291-300},
   url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/231379/p291-bilardi/},
   annote =	 {haven't read.}
-}
-
-@Article{gerlek95:inductssa,
-  author = 	 {Michael P. Gerlek and Eric Stoltz and Michael Wolfe},
-  title = 	 {Beyond Induction Variables: Detecting and
-                  Classifying Sequences Using a Demand-Driven {SSA} Form},
-  journal = 	 TOPLAS,
-  year = 	 1995,
-  volume =	 17,
-  number =	 1,
-  month =	 jan,
-  pages =	 {85-122},
-  url =		 {http://www.acm.org/pubs/citations/journals/toplas/1995-17-1/p85-gerlek/},
-  annote =	 {Haven't read.}
 }
 
 @Unpublished{briggs97:ssa,
