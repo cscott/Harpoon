@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * a method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.3 1998-09-22 02:31:45 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.4 1998-09-23 19:42:53 cananian Exp $
  */
 
 public class DeadCode  {
@@ -40,14 +40,40 @@ public class DeadCode  {
 	int n = uses.getInt(t)-1;
 	uses.putInt(t, n);
 	Util.assert(n >= 0);
-	if (n==0)
+	if (n==0 && defs.get(t) != null)// protect against undefined variables.
 	    W.push(defs.get(t));
+    }
+
+    static void removePhis(HCode hc) {
+	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
+	    Quad q = (Quad) e.nextElement();
+	    if (q instanceof PHI && q.prev().length==1) {
+		PHI Q = (PHI) q;
+		Edge predE = q.prevEdge(0);
+		Quad header = (Quad)predE.from();
+		int  which_succ =   predE.which_succ();
+		// make MOVE chain.
+		for (int i=0; i < Q.dst.length; i++) {
+		    Quad qq = new MOVE(Q.getSourceElement(),
+				       Q.dst[i], Q.src[i][0]);
+		    Quad.addEdge(header, which_succ, qq, 0);
+		    header = qq; which_succ = 0;
+		}
+		// now link PHI out of the graph.
+		Edge succE = Q.nextEdge(0);
+		Quad.addEdge(header, which_succ, 
+			     (Quad) succE.to(), succE.which_pred());
+	    }
+	}
     }
 
     public static void optimize(HCode hc) {
 	Hashtable defs = new Hashtable();
 	IntTable uses = new IntTable();
 	Worklist W = new Set();
+
+	// get rid of arity-1 phi functions.
+	removePhis(hc);
 
 	// collect uses/defs
 	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
