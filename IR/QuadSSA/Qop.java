@@ -1,4 +1,6 @@
-/// Qop.java, created Mon Nov  9 22:36:21 1998 by cananian
+// Qop.java, created Mon Nov  9 22:36:21 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -7,7 +9,7 @@ import harpoon.ClassFile.*;
  * <code>OPER</code> opcodes.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1 1998-11-11 05:06:23 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.1 1998-11-22 02:18:18 cananian Exp $
  */
 
 public abstract class Qop  {
