@@ -4,6 +4,7 @@
 package harpoon.Analysis.PointerAnalysis;
 
 import java.util.Set;
+import java.util.Map;
 import java.util.HashSet;
 import java.util.Iterator;
 
@@ -11,7 +12,7 @@ import java.util.Iterator;
  * <code>PAEdge</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdge.java,v 1.1.2.6 2000-03-03 06:23:15 salcianu Exp $
+ * @version $Id: PAEdge.java,v 1.1.2.7 2000-03-18 23:39:27 salcianu Exp $
  */
 public class PAEdge {
 
@@ -26,7 +27,7 @@ public class PAEdge {
 	this.n2 = n2;
     }
 
-
+    /* Project this edge through the relation <code>mu</code>. */
     public Set project(Relation mu){
 	Set edges = new HashSet();
 	Iterator it_n1 = mu.getValues(n1);
@@ -39,6 +40,30 @@ public class PAEdge {
 	    }
 	}
 	return edges;
+    }
+
+    /* Specialize <code>this</code> edge by using the mapping
+       <code>map</code>. <code>map</code> should be a mappig from
+       <code>PANode</code> to <code>PANode</code>.
+       Returns an edge obtained from <code>this</code>
+       one by translating the two ends of it according to the mapping
+       <code>map</code>. Each node that don't appear in <code>map</code>
+       is implicitly assumed to be mapped to itself.
+       This method is smart enough not to reallocated a new object if 
+       none of its ends is mapped to something else; in this case, it returns
+       <code>this</code> object. */
+    public PAEdge specialize(Map map){
+	PANode n1p = (PANode) map.get(n1);
+	PANode n2p = (PANode) map.get(n2);
+	if(n1p == null){
+	    // hack to avoid regenerating the same edge
+	    if(n2p == null) return this;
+	    // an unmaped nodes is implicitly maped to itself
+	    n1p = n1;
+	}
+	// an unmaped nodes is implicitly maped to itself
+	if(n2p == null) n2p = n2;
+	return new PAEdge(n1p,f,n2p);
     }
 
     /** Checks the equality of two edges. */ 

@@ -5,18 +5,24 @@ package harpoon.Analysis.PointerAnalysis;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Enumeration;
+import java.util.Map;
 import java.util.Iterator;
+import java.util.Enumeration;
 
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
 
 /**
- * <code>PointsToGraph</code>
- * 
+ * <code>PointsToGraph</code> models the memory, as specified by the 
+ abstraction of the object creation sites. Each &quot;node&quot; in our
+ abstraction models one or moree objects and the graph of concrete objects
+ is modelled as a graph of nodes. In addition, we preserve some escape 
+ information.
+ Look into one of Martin and John Whaley papers for the complete definition.
+ *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.14 2000-03-03 06:23:15 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.15 2000-03-18 23:39:28 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -29,10 +35,10 @@ public class PointsToGraph {
     public PAEscapeFunc e;
     
     /** The set of normally returned objects */
-    public HashSet r;
+    public Set r;
 
     /** The set of objects which are returned as exception */
-    public HashSet excp;
+    public Set excp;
     
     /** Creates a <code>PointsToGraph</code>. */
     public PointsToGraph() {
@@ -125,6 +131,17 @@ public class PointsToGraph {
 	I2.forAllEdges(visitor_I);
     }
 
+    /* Specializes <code>this</code> <code>PointsToGraph</code> according to
+       <code>map</code>, a mapping from <code>PANode<code> to
+       <code>PANode</code>. Each node which is not explicitly mapped is
+       considered to be mapped to itself. */
+    public PointsToGraph specialize(final Map map){
+	return
+	    new PointsToGraph(O.specialize(map), I.specialize(map),
+			      e.specialize(map),
+			      PANode.specialize_set(r,map),
+			      PANode.specialize_set(excp,map));
+    }
 
     // Insert the image of the source set through the mu mapping into
     // dest. Forall node in source, addAll mu(node) to dest. source
@@ -224,7 +241,7 @@ public class PointsToGraph {
 
     /** Private constructor for the <code>clone</code> method. */
     private PointsToGraph(PAEdgeSet _O, PAEdgeSet _I,
-			  PAEscapeFunc _e, HashSet _r, HashSet _excp){
+			  PAEscapeFunc _e, Set _r, Set _excp){
 	O = _O;
 	I = _I;
 	e = _e;
@@ -238,8 +255,8 @@ public class PointsToGraph {
 	return new PointsToGraph((PAEdgeSet)(O.clone()),
 				 (PAEdgeSet)(I.clone()),
 				 (PAEscapeFunc)(e.clone()),
-				 (HashSet)(r.clone()),
-				 (HashSet)(excp.clone()));
+				 (Set)( ((HashSet)r).clone()),
+				 (Set)( ((HashSet)excp).clone()));
     }
 
 
@@ -272,8 +289,8 @@ public class PointsToGraph {
 	PAEdgeSet _O = new PAEdgeSet();
 	PAEdgeSet _I = new PAEdgeSet();
 	// the same sets of return nodes and exceptions
-	HashSet _r = (HashSet) r.clone();
-	HashSet _excp = (HashSet) excp.clone();
+	Set _r = (Set) ((HashSet)r).clone();
+	Set _excp = (Set) ((HashSet)excp).clone();
 
 	// Put the parameter nodes in the root set
 	for(int i=0;i<params.length;i++)

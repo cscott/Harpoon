@@ -5,8 +5,10 @@ package harpoon.Analysis.PointerAnalysis;
 
 
 import java.util.Set;
-import java.util.Iterator;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Collections;
 
 
@@ -17,7 +19,7 @@ import harpoon.IR.Quads.CALL;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.17 2000-03-08 00:36:02 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.18 2000-03-18 23:39:28 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -237,31 +239,29 @@ public class ParIntGraph {
 	return all_nodes;
     }
 
-    public ParIntGraph specialize(CALL q){
-	Relation mu = new Relation();
-
-	Iterator it_nodes = allNodes().iterator();
-	while(it_nodes.hasNext()){
-	    PANode node = (PANode) it_nodes.next();
-
+    /* Specialize <code>this</code> <code>ParIntGraph</code> for the call
+       site <code>q</code>. */
+    public final ParIntGraph specialize(CALL q){
+	Map map = new HashMap();
+	for(Iterator itn = allNodes().iterator(); itn.hasNext(); ){
+	    PANode node = (PANode) itn.next();
 	    if(node.type == PANode.INSIDE)
-		mu.add(node,node.specialize(q));
-	    else mu.add(node,node);
-	}
-
-	mu.add(ActionRepository.THIS_THREAD, ActionRepository.THIS_THREAD);
-
-	//if(InterProcPA.DEBUG)
-	//    System.out.println("Specialization: " + mu);
-
-	ParIntGraph new_pig = new ParIntGraph();
-	new_pig.insertAllButArEo(this,mu,true);
-	ActionRepository.insertProjection(this.ar,new_pig.ar,mu);
-	EdgeOrdering.insertProjection(this.eo,new_pig.eo,mu);
-
-	return new_pig;
+		map.put(node, node.specialize(q));
+	} 
+	
+	return specialize(map);
     }
 
+    /* Specializes <code>this</code> <code>ActionRepository</code> according
+       to <code>map</code>, a mapping from <code>PANode<code> to
+       <code>PANode</code>. Each node which is not explicitly mapped is
+       considered to be mapped to itself. */
+    public final ParIntGraph specialize(final Map map){
+	return
+	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
+			    ar.specialize(map), eo.specialize(map),
+			    PANode.specialize_set(touched_threads, map));
+    }
 
     /** Removes the nodes from <code>nodes</code> from <code>this</code>
 	graph. */

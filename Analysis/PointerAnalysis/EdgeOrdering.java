@@ -6,6 +6,7 @@ package harpoon.Analysis.PointerAnalysis;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Iterator;
 import java.util.Enumeration;
 
@@ -29,7 +30,7 @@ import harpoon.Temp.Temp;
  correctly; speed was only a second issue.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: EdgeOrdering.java,v 1.1.2.7 2000-03-03 06:23:15 salcianu Exp $
+ * @version $Id: EdgeOrdering.java,v 1.1.2.8 2000-03-18 23:39:26 salcianu Exp $
  */
 public class EdgeOrdering{
 
@@ -184,8 +185,8 @@ public class EdgeOrdering{
 
 
     public static void insertProjection(final EdgeOrdering eo_source,
-				 final EdgeOrdering eo_dest,
-				 final Relation mu){
+					final EdgeOrdering eo_dest,
+					final Relation mu){
 
 	eo_source.forAllEntries(new RelationEntryVisitor(){
 		public void visit(Object key, Object value){
@@ -208,6 +209,26 @@ public class EdgeOrdering{
 		    }
 		}
 	    });
+    }
+
+    /* Specializes <code>this</code> edge ordering by mapping 
+       the nodes appearing in the edges according to <code>map</code>.
+       The nodes which are not explicitly mapped, are considered 
+       to be mapped to themselves (identity mapping). */
+    public EdgeOrdering specialize(final Map map){
+	final EdgeOrdering eord2 = new EdgeOrdering();
+
+	forAllEntries(new RelationEntryVisitor(){
+		public void visit(Object key, Object value){
+		    PAEdge eo = (PAEdge) key;
+		    PAEdge ei = (PAEdge) value;
+		    PAEdge eo2 = eo.specialize(map);
+		    PAEdge ei2 = ei.specialize(map);
+		    eord2.add(eo2,ei2);
+		}
+	    });
+
+	return eord2;
     }
 
     /** Checks the equality of two <code>NodeOrdering</code> objects. */

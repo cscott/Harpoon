@@ -19,7 +19,7 @@ import harpoon.ClassFile.HCodeElement;
  and unanalyzed call sites <code>n</code> escapes through.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.10 2000-02-21 04:47:59 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.11 2000-03-18 23:39:27 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -178,6 +178,28 @@ public class PAEscapeFunc {
 
 	e2.rel_m.forAllEntries(mvisitor);
 
+    }
+
+    /* Specializes <code>this</code> according to <code>map</code>. */
+    public PAEscapeFunc specialize(Map map){
+	PAEscapeFunc e2 = new PAEscapeFunc();
+
+	for(Iterator itn = rel_n.keySet().iterator(); itn.hasNext(); ){
+	    PANode node  = (PANode) itn.next();
+	    PANode node2 = PANode.translate(node, map);
+	    for(Iterator itnh = rel_n.getValues(node); itnh.hasNext(); )
+		e2.addNodeHole(node2,
+			       PANode.translate((PANode)itnh.next(),map));
+	}
+
+	for(Iterator itn = rel_m.keySet().iterator(); itn.hasNext(); ){
+	    PANode node  = (PANode) itn.next();
+	    PANode node2 = PANode.translate(node, map);
+	    for(Iterator itmh = rel_m.getValues(node); itmh.hasNext(); )
+		e2.addMethodHole(node2, (HCodeElement) itmh.next());
+	}
+	
+	return e2;
     }
 
     /** Checks the equality of two <code>PAEscapeFunc</code> */

@@ -4,6 +4,9 @@
 package harpoon.Analysis.PointerAnalysis;
 
 import java.util.Set;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Collections;
 
 import harpoon.Util.Util;
@@ -15,7 +18,7 @@ import harpoon.IR.Quads.CALL;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.8 2000-03-05 03:12:38 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.9 2000-03-18 23:39:28 salcianu Exp $
  */
 public class PANode {
     
@@ -105,6 +108,23 @@ public class PANode {
 	case STATIC: str="S";break;
 	}
 	return str + number;
+    }
+
+
+    /* Translate node <code>n</code> according to the map <code>map</code>.
+       An unmapped node is implicitly mapped to itself. */
+    static final PANode translate(PANode n, Map map){
+	PANode n2 = (PANode) map.get(n);
+	if(n2 == null) return n;
+	return n2;
+    }
+
+    // specialize a set of PANodes according to the node mapping map. 
+    static Set specialize_set(final Set set, final Map map){
+	final Set set2 = new HashSet();
+	for(Iterator it = set.iterator(); it.hasNext(); )
+	    set2.add(PANode.translate((PANode) it.next(), map));
+	return set2;
     }
 
 }

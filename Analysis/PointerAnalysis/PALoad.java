@@ -3,8 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
-
 import java.util.Set;
+import java.util.Map;
+
 
 /**
  * <code>PALoad</code> models a LD action.
@@ -12,7 +13,7 @@ import java.util.Set;
  * outside reference <code>n1--f-->n2</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PALoad.java,v 1.1.2.4 2000-02-25 01:06:12 salcianu Exp $
+ * @version $Id: PALoad.java,v 1.1.2.5 2000-03-18 23:39:28 salcianu Exp $
  */
 class PALoad {
     
@@ -32,6 +33,18 @@ class PALoad {
 	this.n2 = n2;
 	this.nt = nt;
     }    
+
+    /* Specializes <code>this</code> <code>PALoad</code> according
+       to <code>map</code>, a mapping from <code>PANode<code> to
+       <code>PANode</code>. Each node which is not explicitly mapped is
+       considered to be mapped to itself. */
+    public final PALoad specialize(Map map){
+	PANode n1p = PANode.translate(n1, map);
+	PANode n2p = PANode.translate(n2, map);
+	PANode ntp = PANode.translate(nt, map);
+	if((n1p == n1) && (n2p == n2) && (ntp == nt)) return this;
+	return new PALoad(n1p, f, n2p, ntp);
+    }
 
     /** Checks the equality of two <code>PALoad</code> objects. */
     public boolean equals(Object o){

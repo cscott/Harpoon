@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.12 2000-03-08 00:36:02 salcianu Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.13 2000-03-18 23:39:28 salcianu Exp $
  */
 public class PAThreadMap{
 
@@ -171,6 +171,23 @@ public class PAThreadMap{
 		add(new_node,tau_node);
 	    }
 	}
+    }
+
+    /* Specializes <code>this</code> <code>PAThreadMap</code> according to
+       <code>map</code>, a mapping from <code>PANode<code> to
+       <code>PANode</code>. Each node which is not explicitly mapped is
+       considered to be mapped to itself. */
+    public PAThreadMap specialize(final Map map){
+	final PAThreadMap tau2 = new PAThreadMap();
+
+	for(Iterator it = hash.entrySet().iterator(); it.hasNext(); ){
+	    Map.Entry entry = (Map.Entry) it.next();
+	    PANode node2 = PANode.translate((PANode) entry.getKey(), map);
+
+	    tau2.hash.put(node2, (Integer) entry.getValue());
+	}
+	
+	return tau2;
     }
 
     /** Private constructor used by <code>clone</code> and  

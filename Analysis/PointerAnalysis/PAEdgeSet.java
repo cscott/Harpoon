@@ -25,7 +25,7 @@ import harpoon.Temp.Temp;
  than the straightforward solution of a <code>HashSet</code> of edges.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdgeSet.java,v 1.1.2.11 2000-02-21 04:47:59 salcianu Exp $
+ * @version $Id: PAEdgeSet.java,v 1.1.2.12 2000-03-18 23:39:27 salcianu Exp $
  */
 public class PAEdgeSet {
 
@@ -266,6 +266,27 @@ public class PAEdgeSet {
 	    forAllEdges((PANode)enum_node_edges.nextElement(),visitor);
     }
 
+
+    /* Specializes <code>this</code> set of edges according to
+       <code>map</code>, a mapping from <code>PANode<code> to
+       <code>PANode</code>. Each node which is not explicitly mapped is
+       considered to be mapped to itself. */
+    public PAEdgeSet specialize(final Map map){
+	final PAEdgeSet es2 = new PAEdgeSet();
+
+	forAllEdges(new PAEdgeVisitor(){
+		public void visit(Temp var, PANode node){
+		    es2.addEdge(var, PANode.translate(node,map));
+		}
+		public void visit(PANode node1, String f, PANode node2){
+		    es2.addEdge(PANode.translate(node1,map),
+				f,
+				PANode.translate(node2,map));
+		}
+	    });
+
+	return es2;
+    }
 
     /** Remove all the <code>PANode</code>s that appear in <code>set</code>
 	from <code>this</code> edge set together with the related edges. */

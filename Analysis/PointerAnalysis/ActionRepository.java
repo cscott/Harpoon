@@ -31,7 +31,7 @@ import java.util.Collections;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.14 2000-03-03 06:23:14 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.15 2000-03-18 23:39:23 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -490,6 +490,38 @@ public class ActionRepository {
 	    };
 
 	ar_source.forAllParActions(par_act_visitor_starter);
+    }
+
+    /* Specializes <code>this</code> <code>ActionRepository</code> according
+       to <code>map</code>, a mapping from <code>PANode<code> to
+       <code>PANode</code>. Each node which is not explicitly mapped is
+       considered to be mapped to itself. */
+    public final ActionRepository specialize(final Map map){
+	final ActionRepository ar2 = new ActionRepository();
+
+	forAllActions(new ActionVisitor(){
+		public void visit_ld(PALoad load){
+		    ar2.alpha_add_ld(load.specialize(map));
+		}
+		public void visit_sync(PANode n, PANode nt1){
+		    ar2.alpha_add_sync(PANode.translate(n,  map),
+				       PANode.translate(nt1, map));
+		}
+	    });
+
+	forAllParActions(new ParActionVisitor(){
+		public void visit_par_ld(PALoad load, PANode nt2){
+		    ar2.pi_add_ld(load.specialize(map),
+				  PANode.translate(nt2, map));
+		}
+		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
+		    ar2.pi_add_sync(PANode.translate(n, map),
+				    PANode.translate(nt1, map),
+				    PANode.translate(nt2, map));
+		}
+	    });
+
+	return ar2;
     }
 
     /** Produce a copy of <code>this</code> object. 
