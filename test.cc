@@ -46,13 +46,24 @@ void doanalysis()
 }
 
 
-/* exits if a bug was found */
+/* This procedure invokes the tool.
+   If the model hasn't been initialized, it simply returns. 
+   If a bug was constraint violation was found, displays a message
+   and terminates the program. */
 void doanalysisfordebugging(char* msg)
 { 
+  if (exportmodel == NULL) {
+    printf("Initialize tool first...\n");
+    return;
+  }
+
   printf("%s\n", msg);
   exportmodel->doabstraction(); 
-  bool found = exportmodel->getdomainrelation()->fixstuff() ||
-    exportmodel->docheck();
+  
+  //exportmodel->getdomainrelation()->fixstuff();
+  //bool found = exportmodel->docheck();  
+  
+  bool found = exportmodel->getdomainrelation()->fixstuff() || exportmodel->docheck(); 
 
 #ifdef DEBUGMANYMESSAGES
   exportmodel->getdomainrelation()->print();
@@ -62,7 +73,7 @@ void doanalysisfordebugging(char* msg)
     exit(1);
 
   resetanalysis();
-  printf("\n");
+  printf("\n");  
 }
 
 
