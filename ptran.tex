@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.13 2002-07-24 15:53:49 cananian Exp $
+% $Id: ptran.tex,v 1.14 2002-07-24 16:07:11 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.13 $ $}
+\date{\today \\ $ $Revision: 1.14 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -72,6 +72,25 @@ does not pass through $z$.
 An infeasible path analysis \cite{267921} could be used to refine
 this predicate by excluding paths never traversed by any
 execution of the program.
+
+\begin{myfigure}
+\begin{samplecode}[2]%
+while (\ldots) \{         &while (\ldots) \{         \\
+\>v = new T(\ldots)       &\>v1 = new T(\ldots)      \\
+\>if (\ldots)             &\>if (\ldots)             \\
+\>\>\ldots = v;  /* s1 */ &\>\>v2 = v1;              \\
+\>else                    &\>if (\ldots)             \\
+\>\>\ldots = v;  /* s2 */ &\>\>\ldots = v2;  /* s3 */ \\
+\}                        &\>else                    \\
+                          &\>\>\ldots = v2;  /* s4 */ \\
+                          &\}                        \\
+\end{samplecode}%
+\caption{Statements $s_1$ and $s_2$ are pairwise-singular in the code
+  on the left; statements $s_3$ and $s_4$ are not singular because
+  there exist paths $s_3\pathplus s_3$ and $s_4\pathplus s_4$ which do not
+  redefine \texttt{v2}.}
+\label{fig:xxx}
+\end{myfigure}
 
 \subsection{Intraprocedural singular value analysis}
 
