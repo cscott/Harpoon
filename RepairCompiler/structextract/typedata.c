@@ -72,6 +72,7 @@ char tag_is_relevant_entry(unsigned long tag)
     case DW_TAG_base_type:
     case DW_TAG_typedef:
     case DW_TAG_const_type:
+    case DW_TAG_inheritance:
     case DW_TAG_enumerator:
     case DW_TAG_subprogram:
     case DW_TAG_volatile_type:
@@ -218,7 +219,7 @@ char entry_is_listening_for_attribute(dwarf_entry* e, unsigned long attr)
     case DW_AT_const_value:
       return tag_is_enumerator(tag);
     case DW_AT_data_member_location:
-      return tag_is_member(tag);
+      return tag_is_member(tag)||tag==DW_TAG_inheritance;
     case DW_AT_type:
       return (tag_is_modifier_type(tag) ||
               tag_is_member(tag) ||
@@ -226,7 +227,8 @@ char entry_is_listening_for_attribute(dwarf_entry* e, unsigned long attr)
               tag_is_formal_parameter(tag) ||
               tag_is_function_type(tag)||
 	      tag==DW_TAG_typedef||
-	      tag==DW_TAG_const_type);
+	      tag==DW_TAG_const_type||
+	      tag==DW_TAG_inheritance);
     case DW_AT_upper_bound:
       return (tag==DW_TAG_subrange_type);
     case DW_AT_encoding:
@@ -262,6 +264,9 @@ char harvest_type_value(dwarf_entry* e, unsigned long value)
     return 1;
   } else if (tag==DW_TAG_typedef) {
     ((tdef*)e->entry_ptr)->target_ID = value;
+    return 1;
+  } else if (tag==DW_TAG_inheritance) {
+    ((inherit*)e->entry_ptr)->target_ID = value;
     return 1;
   } else if (tag==DW_TAG_const_type) {
     ((consttype*)e->entry_ptr)->target_ID = value;
@@ -510,6 +515,10 @@ char harvest_data_member_location(dwarf_entry* e, long value)
       ((member*)e->entry_ptr)->data_member_location = value;
       return 1;
     }
+  else if (tag==DW_TAG_inheritance) {
+    ((inherit*)e->entry_ptr)->data_member_location = value;
+    return 1;
+  }
   else
     return 0;
 }
@@ -768,6 +777,20 @@ void link_entries_to_type_entries()
               bound_ptr->target_ptr=&dwarf_entry_array[target_index];
             }
       }
+      else if (tag==DW_TAG_inheritance) {
+          char success = 0;
+          unsigned long target_index = 0;
+          inherit* bound_ptr = (inherit*)(cur_entry->entry_ptr);
+          unsigned long target_ID = bound_ptr->target_ID;
+
+          // Use a binary search to try to find the index of the entry in the
+          // array with the corresponding target_ID
+          success = binary_search_dwarf_entry_array(target_ID, &target_index);
+          if (success)
+            {
+              bound_ptr->target_ptr=&dwarf_entry_array[target_index];
+            }
+      }
       else if (tag_is_function(tag))
         {
           char success = 0;
@@ -883,7 +906,9 @@ void link_collection_to_members(dwarf_entry* e, unsigned long dist_to_end)
       while ((member_count < dist_to_end) // put this first! short-circuit eval.
              && cur_entry->level>currentlevel)
         {
-	  if (cur_entry->tag_name==DW_TAG_member&&cur_entry->level==(currentlevel+1))
+	  if ((cur_entry->tag_name==DW_TAG_member||
+	       cur_entry->tag_name==DW_TAG_inheritance)&&
+	      cur_entry->level==(currentlevel+1))
 	    member_count++;
           cur_entry++;
         }
@@ -917,7 +942,9 @@ void link_collection_to_members(dwarf_entry* e, unsigned long dist_to_end)
       while ((member_count < dist_to_end) // put this first! short-circuit eval.
              && cur_entry->level>currentlevel)
         {
-	  if (cur_entry->tag_name==DW_TAG_member&&cur_entry->level==(currentlevel+1))
+	  if ((cur_entry->tag_name==DW_TAG_member||
+	       cur_entry->tag_name==DW_TAG_inheritance)
+	      &&cur_entry->level==(currentlevel+1))
 	    collection_ptr->members[member_count++]=cur_entry;
           cur_entry++;
         }
@@ -1214,6 +1241,9 @@ void initialize_dwarf_entry_ptr(dwarf_entry* e)
       }
       else if (e->tag_name==DW_TAG_typedef) {
 	e->entry_ptr=calloc(1,sizeof(tdef));
+      }
+      else if (e->tag_name==DW_TAG_inheritance) {
+	e->entry_ptr=calloc(1,sizeof(inherit));
       }
       else if (e->tag_name==DW_TAG_const_type) {
 	e->entry_ptr=calloc(1,sizeof(consttype));

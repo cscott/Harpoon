@@ -19,7 +19,8 @@
 #define DUMP_H
 
 #include "typedata.h"
-
+#include "common.h"
+#include "GenericHashtable.h"
 
 struct StructureElement {
   char *fieldname;
@@ -52,4 +53,5 @@ void initializeTypeArray();
 int entry_is_type(dwarf_entry *entry);
 char * printname(dwarf_entry * entry,int op);
 int getsize(dwarf_entry *type);
+int printtype(collection_type *collection_ptr,struct genhashtable *);
 #endif
