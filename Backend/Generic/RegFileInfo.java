@@ -58,9 +58,40 @@ import java.util.Iterator;
     maintained by the hardcoded references.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.14 2000-01-18 15:23:39 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.15 2000-01-26 03:49:49 pnkfelix Exp $ */
 public abstract class RegFileInfo {
     
+    /** Common super class for <code>StackOffsetLoc</code> and 
+	<code>MachineRegLoc</code>.
+    */
+    static interface CommonLoc {
+	/** Returns the <code>KIND</code> of Loc <code>this</code> is.
+	    <BR> <B>effects:</B> 
+	         If <code>this</code> is a
+		 <code>StackOffsetLoc</code>, returns
+		 <code>StackOffsetLoc.KIND</code> 
+		 Else <code>this</code> implicitly is a
+		 <code>MachineRegLoc</code>, and returns
+		 <code>MachineRegLoc.KIND</code>. 
+	*/
+	int kind();
+    }
+    
+    static interface StackOffsetLoc extends CommonLoc {
+	public static int KIND = 1;
+	int stackOffset();
+    }
+
+    /** Defines the upper bound on possible indexes for
+	<code>MachineRegLoc</code>s. 
+    */
+    public abstract int regIndexRange();
+
+    static interface MachineRegLoc extends CommonLoc {
+	public static int KIND = 2;
+	int regIndex();
+    }
+
     private static TempFactory preassignTF = new TempFactory() {
 	public String getScope() { 
 	    return "private TF for RegFileInfo"; 
@@ -90,7 +121,7 @@ public abstract class RegFileInfo {
 	seperate basic blocks can map to the same physical register in
 	the register file.
     */
-    public abstract class VRegAllocator {
+    public static abstract class VRegAllocator {
 	/** Returns a Virtual Register Temp for <code>t</code>.
 	    <BR> <B> effects: </B> If <code>regfile</code> has space
 	         to hold a value of the type held in <code>t</code>, 
@@ -100,7 +131,8 @@ public abstract class RegFileInfo {
 		 registers could be removed from <code>regfile</code>
 		 to make room for <code>t</code>.
 	*/
-	abstract Temp vreg(Temp t, Map regfile) throws RegFileInfo.SpillException; 
+	public abstract Temp vreg(Temp t, Map regfile) 
+	    throws RegFileInfo.SpillException; 
     }
 
     /** Creates a <code>RegFileInfo</code>. */
