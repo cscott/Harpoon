@@ -80,7 +80,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.73 2000-07-15 14:14:26 rinard Exp $
+ * @version $Id: PAMain.java,v 1.1.2.74 2000-07-15 15:07:05 jwhaley Exp $
  */
 public abstract class PAMain {
 
@@ -887,14 +887,18 @@ public abstract class PAMain {
     }
 
     static void do_elim_syncops() {
-       MetaCallGraph mcg = pa.getMetaCallGraph();
-       MetaMethod mroot = new MetaMethod(hroot, true);
-       Set allmms = mcg.getAllMetaMethods();
-       SyncElimination se = new SyncElimination(pa);
-       se.calculate();
+	MetaCallGraph mcg = pa.getMetaCallGraph();
+	MetaMethod mroot = new MetaMethod(hroot, true);
+	Set allmms = mcg.getAllMetaMethods();
+	SyncElimination se = new SyncElimination(pa);
+	if (USE_INTER_THREAD)
+	    se.addRoot_interthread(mroot);
+	else
+	    se.addRoot_intrathread(mroot);
+	se.calculate();
 	
-       HCodeFactory hcf_nosync = SyncElimination.codeFactory(hcf, se);
-       for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+	HCodeFactory hcf_nosync = SyncElimination.codeFactory(hcf, se);
+	for(Iterator it = allmms.iterator(); it.hasNext(); ) {
             MetaMethod mm = (MetaMethod) it.next();
             HMethod m = mm.getHMethod();
             System.out.println("Eliminating Sync Ops in Method "+m);
@@ -909,7 +913,10 @@ public abstract class PAMain {
 
     	for(Iterator it = split_rel.getValues(hm).iterator(); it.hasNext();){
 	    MetaMethod mm = (MetaMethod) it.next();
-	    se.addRoot(mm);
+	    if (USE_INTER_THREAD)
+		se.addRoot_interthread(mm);
+	    else
+		se.addRoot_intrathread(mm);
 	}
 	
 	se.calculate();
