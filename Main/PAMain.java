@@ -96,7 +96,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.10 2002-08-07 21:59:10 cananian Exp $
+ * @version $Id: PAMain.java,v 1.11 2002-08-07 23:48:53 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -330,7 +330,7 @@ public abstract class PAMain {
 	    // the transformation associated with the new strategy has
 	    // already been applied while performing the pre-analysis
 	    // (so that the analysis can see the modified/added code)
-	    SAMain.USE_OLD_CLINIT_STRATEGY = USE_OLD_STYLE;
+	    SAMain.USE_OLD_CLINIT_STRATEGY = !USE_OLD_STYLE;
 	    SAMain.OPTIMIZE = true;
 	    SAMain.linker = linker;
 	    SAMain.hcf    = hcf;
@@ -349,7 +349,7 @@ public abstract class PAMain {
 
     // For debug purposes,
     // we sometimes use the old static initializers strategy
-    private static final boolean USE_OLD_STYLE = true;
+    private static final boolean USE_OLD_STYLE = false;
     
     // Constructs some data structures used by the analysis: the code factory
     // providing the code of the methods, the class hierarchy, call graph etc.
