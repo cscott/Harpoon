@@ -21,7 +21,7 @@ import java.io.InputStream;
  * GJ signatures.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Javap.java,v 1.6 2003-05-30 19:20:24 cananian Exp $
+ * @version $Id: Javap.java,v 1.7 2003-05-30 21:41:08 cananian Exp $
  */
 public abstract class Javap /*extends harpoon.IR.Registration*/ {
     public static final void main(String args[]) {
@@ -391,17 +391,33 @@ public abstract class Javap /*extends harpoon.IR.Registration*/ {
 	off+=oas.offset;
 	return new OffsetAndString(sb.toString(), off);
     }
+    static OffsetAndString munchArrayTypeSig(String descriptor) {
+	assert descriptor.charAt(0)=='[';
+	StringBuffer sb = new StringBuffer();
+	int off=0;
+	while (descriptor.charAt(off)=='[') {
+	    sb.append('[');
+	    // there could be variance specifiers -/+/=
+	    switch(descriptor.charAt(++off)) { // no '*' allowed!
+	    case '-':
+	    case '+':
+	    case '=':
+		sb.append(descriptor.charAt(off++));
+		break;
+	    }
+	    sb.append(']');
+	}
+	// okay, parse the rest
+	OffsetAndString oas = munchTypeSig(descriptor.substring(off));
+	sb.insert(0, oas.string); // reverse the pieces.
+	off+=oas.offset;
+	// done!
+	return new OffsetAndString(sb.toString(), off);
+    }
     static OffsetAndString munchTypeSig(String descriptor) {
 	switch(descriptor.charAt(0)) {
-	case '[': { // arrays
-	    int arrcnt=1;
-	    while (descriptor.charAt(arrcnt)=='[')
-		arrcnt++;
-	    OffsetAndString oas =
-		munchVariantTypeSig(descriptor.substring(arrcnt));
-	    return new OffsetAndString
-		(oas.string+Util.repeatString("[]",arrcnt), oas.offset+arrcnt);
-	}
+	case '[': // arrays
+	    return munchArrayTypeSig(descriptor);
 	 case 'L': // object type.
 	     return munchClassTypeSig(descriptor);
 	case 'T': // type variable signature
