@@ -16,13 +16,20 @@ import java.util.Set;
  * total size of an <code>HClass</code> object.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: OffsetMap.java,v 1.1.2.15 1999-08-16 23:41:51 duncan Exp $
+ * @version $Id: OffsetMap.java,v 1.1.2.16 1999-08-18 19:22:42 duncan Exp $
  */
 public abstract class OffsetMap { // use an abstract class, if we can.
 
     /** Maps an <code>HClass</code> to an offset (in bytes).  
      *  Returns the offset from an object reference of the class pointer */
     public abstract int clazzPtrOffset(HClass hc);
+
+    /** If returns the offset from the clazz pointer of the component type
+     *  of <code>hc</code>.  This location in memory will contain 
+     *  <code>null</code> if <code>hc</code> is not an array.  If 
+     *  <code>hc</code> is an array, contains a pointer to the 
+     *  component type of the array. */
+    public abstract int componentTypeOffset(HClass hc);
 
     /** Returns the size (in bytes) of the display information.  
      */
@@ -90,6 +97,10 @@ public abstract class OffsetMap { // use an abstract class, if we can.
     /** Returns an <code>Iterator</code> of all string constants which this
      *  offset map knows about.  */
     public abstract Set stringConstants();
+
+    /** Returns the size (in bytes) of a word in the architecture represented
+     *  by this <code>OffsetMap</code>. */
+    public abstract int wordsize();
 }
 
 

@@ -68,7 +68,7 @@ import java.util.StringTokenizer;
  * 
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.19 1999-08-16 03:44:17 duncan Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.20 1999-08-18 19:22:42 duncan Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -178,7 +178,6 @@ public class OffsetMap32 extends OffsetMap
     /** If hc is an array type, returns the offset of its component
      *  type's class pointer */
     public int componentTypeOffset(HClass hc) { 
-	Util.assert(hc.isArray());
 	return -1 * WORDSIZE;
     }
 
@@ -191,7 +190,7 @@ public class OffsetMap32 extends OffsetMap
      *  type, otherwise generates an assertion failure */
     public int elementsOffset(HClass hc) { 
 	Util.assert(hc.isArray());
-	return 0; 
+	return 1 * WORDSIZE; 
     }
 
     /** Returns the offset of the first field in an object of the
@@ -212,14 +211,14 @@ public class OffsetMap32 extends OffsetMap
     /** If hc is a class type, or an interface, returns the offset from
      *  the class pointer of the pointer to implemented interfaces */
     public int interfaceListOffset(HClass hc) { 
-	Util.assert(!hc.isPrimitive() && !hc.isArray());
+	Util.assert(!hc.isPrimitive());
 	return -2 * WORDSIZE;
     }
 
     /** If hc is an array type, returns the offset of its length field */
     public int lengthOffset(HClass hc) { 
 	Util.assert(hc.isArray());
-	return -3 * WORDSIZE; 
+	return 0;
     }
 
     /** Returns the offset from the class pointer of this class's pointer
@@ -242,12 +241,16 @@ public class OffsetMap32 extends OffsetMap
 	    hc            = hf.getDeclaringClass();
 	    hfields       = hc.getDeclaredFields();
 	    orderedFields = new HField[hfields.length];
-	    for (int i=0; i<hfields.length; i++) 
-		if (!hfields[i].isStatic())
+	    int numNonStatic = 0;
+	    for (int i=0; i<hfields.length; i++) {
+		if (!hfields[i].isStatic()) { 
 		    orderedFields[fm.fieldOrder(hfields[i])] = hfields[i];
-	    for (int i=0; i<hfields.length; i++) { 
-		HClass type = orderedFields[i].getType();
-		this.fields.put(hfields[i], new Integer(offset));
+		    numNonStatic++;
+		}
+	    }
+	    for (int j=0; j<numNonStatic; j++) { 
+		HClass type = orderedFields[j].getType();
+		this.fields.put(hfields[j], new Integer(offset));
 		// No inlining
 		offset += ((type==HClass.Long)||(type==HClass.Double)) ? 8 : 4;
 	    }
@@ -293,4 +296,6 @@ public class OffsetMap32 extends OffsetMap
 	    return size; 
 	}
     }    
+
+    public int wordsize() { return WORDSIZE; } 
 }
