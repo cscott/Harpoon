@@ -86,7 +86,7 @@ public class RealtimeAllocationStrategy extends MallocAllocationStrategy {
      */
     public static Stm emitStrings(TreeFactory tf, HCodeElement src) {
 	List stmList = new ArrayList();
-	stmList.add(new SEGMENT(tf, src, SEGMENT.STRING_CONSTANTS));
+	stmList.add(new SEGMENT(tf, src, SEGMENT.TEXT));
 
 	Enumeration keys = string2label.keys();
 	while (keys.hasMoreElements()) {
