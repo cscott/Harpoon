@@ -52,7 +52,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.12 2000-06-30 06:15:40 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.13 2000-07-01 06:27:11 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -177,23 +177,38 @@ public class TreeToC extends java.io.PrintWriter {
 	}
 
 	// useful line number update function.
-	private boolean EMIT_LINE_DIRECTIVES=false;
+	private boolean EMIT_LINE_DIRECTIVES=true;
 	private String last_file = null;
 	private int last_line = 0;
 	private void updateLine(Tree e) {
 	    if (!EMIT_LINE_DIRECTIVES) return;
+	    if (e instanceof SEQ) return;
+	    if (pw==null) return;
 	    String curr_file = e.getSourceFile();
 	    int curr_line = e.getLineNumber();
-	    if (last_line == curr_line &&
-		(last_file==null?curr_file==null:last_file.equals(curr_file)))
-		return;
+	    boolean files_match =
+		last_file==null ? curr_file==null :last_file.equals(curr_file);
+	    if (last_line == curr_line && files_match) return;
 	    pw.println();
-	    pw.print("#line "+curr_line);
-	    if (!(last_file==null?curr_file==null:last_file.equals(curr_file)))
-		pw.print(" \""+curr_file+"\"");
-	    pw.println();
+	    boolean line_needed = !(last_line == curr_line-1 && files_match);
 	    last_file = curr_file;
 	    last_line = curr_line;
+	    if (line_needed) emitLineDirective(!files_match);
+	}
+	private void emitLineDirective(boolean emitFile) {
+	    if (!EMIT_LINE_DIRECTIVES) return;
+	    if (last_file==null && last_line==0) return;
+	    pw.println();
+	    pw.print("#line "+last_line);
+	    if (emitFile) pw.print(" \""+last_file+"\"");
+	    pw.println();
+	}
+	private void nl() {
+	    if ((!EMIT_LINE_DIRECTIVES) ||
+		(last_file==null && last_line==0))
+		pw.println();
+	    else
+		pw.print(" ");
 	}
 	private void trans(Tree e) { updateLine(e); e.accept(this); }
 	private static int sizeof(Typed t) {
@@ -296,13 +311,13 @@ public class TreeToC extends java.io.PrintWriter {
 	    pw.print("), ");
 	    trans(e.getRetex());
 	    pw.print(", "+label(e.getHandler().label)+");");
-	    pw.println();
+	    nl();
 	}
 	public void visit(CJUMP e) {
 	    pw.print("\tif ("); trans(e.getTest()); pw.print(")");
 	    pw.print(" goto "+label(e.iftrue)+";");
 	    pw.print(" else goto "+label(e.iffalse)+";");
-	    pw.println();
+	    nl();
 	}
 	public void visit(CONST e) {
 	    if (e.value()==null) { pw.print("NULL"); return; }
@@ -356,13 +371,13 @@ public class TreeToC extends java.io.PrintWriter {
 			      this.align.alignment + ")))");
 	    this.align=null; // clear alignment.
 	    pwa[DD].println(";");
-	    pw.print("\t"); trans(e.getData()); pw.println(",");
+	    pw.print("\t"); trans(e.getData()); pw.print(","); nl();
 	}
 	public void visit(ESEQ e) {
 	    throw new Error("Non-canonical tree form.");
 	}
 	public void visit(EXPR e) {
-	    pw.print("\t"); trans(e.getExp()); pw.println(";");
+	    pw.print("\t"); trans(e.getExp()); pw.print(";"); nl();
 	}
 	public void visit(JUMP e) {
 	    pw.print("\tgoto ");
@@ -370,11 +385,12 @@ public class TreeToC extends java.io.PrintWriter {
 	    if (exp instanceof NAME)
 		visit(((NAME)exp), false/*don't take address*/);
 	    else { pw.print("*("); trans(exp); pw.print(")"); }
-	    pw.println("; /* targets: "+LabelList.toList(e.targets)+" */");
+	    pw.print("; /* targets: "+LabelList.toList(e.targets)+" */");
+	    nl();
 	}
 	public void visit(LABEL e) {
 	    if (current_mode==CODE) {
-		pw.println(label(e.label)+":");
+		pw.print(label(e.label)+":"); nl();
 		local_labels.add(e.label);
 	    }
 	    else startData(e.label, e.exported);
@@ -427,7 +443,7 @@ public class TreeToC extends java.io.PrintWriter {
 		if (i==0) pw.print("FIRST_DECL_ARG(");
 		pw.print(ctype(e.getParams(i))+" ");
 		temps_seen.add(e.getParams(i).temp);//suppress declaration
-		trans(e.getParams(i));
+		e.getParams(i).accept(this);
 		if (i==0) pw.print(") ");
 		else if (i+1 < e.getParamsLength()) pw.print(", ");
 	    }
@@ -436,14 +452,16 @@ public class TreeToC extends java.io.PrintWriter {
 	    sym2decl.put(e.getMethod(), "DECLARE"+declw.getBuffer()+";");
 	    // emit declaration.
 	    pw = pwa[MD];
-	    pw.println("DEFINE"+declw.getBuffer());
+	    last_file=null; last_line=0; updateLine(e);
+	    pw.print("DEFINE"+declw.getBuffer()); nl();
 	    pw.println("{");
 	    pw = pwa[MB];
+	    emitLineDirective(false);
 	}
 	public void visit(MOVE e) {
 	    pw.print("\t");
 	    trans(e.getDst()); pw.print(" = "); trans(e.getSrc());
-	    pw.println(";");
+	    pw.print(";"); nl();
 	}
 	public void visit(NAME e) { visit(e, true); }
 	public void visit(NAME e, boolean take_address) {
@@ -477,16 +495,17 @@ public class TreeToC extends java.io.PrintWriter {
 		trans(el.head);
 		if (el.tail!=null) pw.print(", ");
 	    }
-	    pw.println(");");
+	    pw.print(");"); nl();
 	}
 	public void visit(RETURN e) {
 	    if (isVoidMethod)
-		pw.println("\tRETURNV();");
+		pw.print("\tRETURNV();");
 	    else {
 		pw.print("\tRETURN("+ctype(this.method.getReturnType())+",");
 		trans(e.getRetval());
-		pw.println(");");
+		pw.print(");");
 	    }
+	    nl();
 	}
 	public void visit(SEGMENT e) {
 	    this.segment = e;
@@ -506,12 +525,13 @@ public class TreeToC extends java.io.PrintWriter {
 	}
 	public void visit(THROW e) {
 	    if (isVoidMethod) {
-		pw.print("\tTHROWV("); trans(e.getRetex()); pw.println(");");
+		pw.print("\tTHROWV("); trans(e.getRetex()); pw.print(");");
 	    } else {
 		pw.print("\tTHROW("+ctype(this.method.getReturnType())+", ");
 		trans(e.getRetex());
-		pw.println(");");
+		pw.print(");");
 	    }
+	    nl();
 	}
 	public void visit(UNOP e) {
 	    pw.print("(");
