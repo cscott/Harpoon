@@ -24,6 +24,7 @@ import harpoon.Util.ArrayIterator;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -45,7 +46,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.3.2.3 2002-03-15 23:36:45 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.3.2.4 2002-03-16 01:45:21 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -93,14 +94,12 @@ public class ObjectBuilder
 	stmlist.add(makeHeader(tf, info, exported));
 	// fields, in field order
 	List<HField> l = cfm.fieldList(info.type());
-	for (Iterator<HField> it = l.iterator(); it.hasNext(); )
-	    stmlist.add(makeDatum(tf, lookup(info, it.next())));
+	int endOffset = (l.size()==0) ? 0 :
+	   cfm.fieldOffset(l.get(l.size()-1))+cfm.fieldSize(l.get(l.size()-1));
+	Stm s = makeFields(tf, info, l, 0, endOffset);
+	if (s!=null) stmlist.add(s);
 	// done -- ta da!
 	return Stm.toStm(stmlist);
-    }
-    private Object lookup(ObjectInfo info, HField hf) {
-	Object o = ro.get(hf, info);
-	return (o==ro.NOT_A_VALUE) ? info.get(hf) : o;
     }
     public Stm buildArray(TreeFactory tf, ArrayInfo info,
 			  boolean exported) {
@@ -112,8 +111,11 @@ public class ObjectBuilder
 	stmlist.add(makeHeader(tf, info, exported));
 	// fields of java.lang.Object, in proper field order
 	List<HField> l = cfm.fieldList(HCobject);
-	for (Iterator<HField> it = l.iterator(); it.hasNext(); )
-	    stmlist.add(makeDatum(tf, lookup(info, it.next())));
+	// XXX we should specify offset of length field more precisely.
+	int endOffset = (l.size()==0) ? 0 :
+	   cfm.fieldOffset(l.get(l.size()-1))+cfm.fieldSize(l.get(l.size()-1));
+	Stm s = makeFields(tf, info, l, 0, endOffset);
+	if (s!=null) stmlist.add(s);
 	// length
 	stmlist.add(_DATUM(tf, new CONST(tf, null, info.length())));
 	// data
@@ -122,10 +124,11 @@ public class ObjectBuilder
 	// done -- ta da!
 	return Stm.toStm(stmlist);
     }
-    private Object lookup(ArrayInfo info, HField hf) {
+    private Object lookup(Info info, HField hf) {
 	Object o = ro.get(hf, info);
-	assert o != ro.NOT_A_VALUE : "field of array not given a value";
-	return o;
+	if (o != ro.NOT_A_VALUE) return o;
+	assert info instanceof ObjectInfo : "field of array not given a value";
+	return ((ObjectInfo)info).get(hf);
     }
     protected Stm makeHeader(TreeFactory tf, Info info, boolean exported)
     {
@@ -146,6 +149,50 @@ public class ObjectBuilder
 			      (Number) new Long(1 | rnd.nextLong()) :
 			      (Number) new Integer(1 | rnd.nextInt())));
 	// okay, done with header.
+	return Stm.toStm(stmlist);
+    }
+    protected Stm makeFields(TreeFactory tf, Info info, List<HField> fields,
+			     int startOffset, int endOffset) {
+	assert endOffset >= startOffset;
+	FieldMap cfm = ((TreeBuilder) runtime.getTreeBuilder()).cfm;
+	List<Stm> stmlist = new ArrayList<Stm>(2*fields.size());
+	int offset = startOffset;
+	for (Iterator<HField> it = fields.iterator(); it.hasNext(); ) {
+	    HField hf = it.next();
+	    int thisOffset = cfm.fieldOffset(hf);
+	    if (thisOffset<startOffset) continue; // ignore
+	    if (thisOffset>endOffset) break; // done.
+	    assert thisOffset >= offset : "fields in order";
+	    if (thisOffset > offset) // handle padding
+		stmlist.add(makePadding(tf, thisOffset-offset));
+	    stmlist.add(makeDatum(tf, lookup(info, hf)));
+	    offset = thisOffset+cfm.fieldSize(hf);
+	}
+	// final padding, if needed.
+	if (endOffset > offset)
+	    stmlist.add(makePadding(tf, endOffset-offset));
+	// done -- ta da!
+	return Stm.toStm(stmlist); // MAY RETURN NULL.
+    }
+    Stm makePadding(TreeFactory tf, int bytes) {
+	List<Stm> stmlist = new ArrayList<Stm>();
+	while (bytes > 0)
+	    if (bytes>=8) {
+		stmlist.add(_DATUM(tf, new CONST(tf, null, (long)0)));
+		bytes-=8;
+	    } else if (bytes>=4) {
+		stmlist.add(_DATUM(tf, new CONST(tf, null, (int)0)));
+		bytes-=4;
+	    } else if (bytes>=2) {
+		stmlist.add(_DATUM(tf, new CONST(tf, null, 16, false, 0)));
+		bytes-=2;
+	    } else {
+		stmlist.add(_DATUM(tf, new CONST(tf, null, 8, false, 0)));
+		bytes-=1;
+	    }
+	// small-to-big
+	Collections.reverse(stmlist);
+	// done!
 	return Stm.toStm(stmlist);
     }
     Stm makeDatum(TreeFactory tf, Object datum) {
