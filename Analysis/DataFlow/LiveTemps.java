@@ -25,7 +25,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.6 2000-01-26 21:08:33 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.7 2000-01-26 21:39:56 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars {
     private Map hceToBB; 
@@ -64,6 +64,7 @@ public class LiveTemps extends LiveVars {
 	// duplicating code from LiveVars.java
 	CloneableIterator blocks = new CloneableIterator(basicBlocks);
 	Set universe = findUniverse((Iterator) blocks.clone());
+	universe.addAll(liveOnProcExit);
 	SetFactory setFact = new BitSetFactory(universe);
 	
 	initializeHceToBB( (Iterator)blocks.clone() ); 
