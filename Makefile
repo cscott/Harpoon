@@ -5,7 +5,7 @@ SSH=ssh
 FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
-SOURCES=$(wildcard *.java)
+SOURCES=$(wildcard src/*.java)
 RELEASE=$(SOURCES) README BUILDING Makefile ChangeLog
 
 # figure out what the current CVS branch is, by looking at the Makefile
@@ -20,7 +20,7 @@ clean:
 	@rm -rf doc java javax
 	@rm -f realtime.jar realtime.jar.TIMESTAMP
 	@rm -f realtime.tgz realtime.tgz.TIMESTAMP
-	@rm -f *.class
+	@rm -f *.class src/*.class
 	@rm -f ChangeLog
 
 doc:	$(SOURCES)
@@ -63,7 +63,7 @@ doc-install: doc
 
 install: jar-install tar-install doc-install
 
-ChangeLog: needs-cvs *.java # dependency is not strictly accurate.
+ChangeLog: needs-cvs $(SOURCES) # dependency is not strictly accurate.
 	@echo Generating ChangeLog...
 	@-$(RM) $@
 	@rcs2log | sed -e 's:/[^,]*/CVSROOT/Realtime/::g' > $@
