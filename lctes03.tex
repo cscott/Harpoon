@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: lctes03.tex,v 1.19 2003-04-25 22:08:14 cananian Exp $
+% $Id: lctes03.tex,v 1.20 2003-04-25 22:35:11 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % lctes03.tex
 % Data Size Optimizations for Java Programs
@@ -711,28 +711,29 @@ in the next section.
 \begin{table}[t]
 \centering\small
 \begin{tabular}{llrc}
-              &          &\bf bytes & \\
-              &          &\bf alloc'd & \\
-\bf Benchmark &\bf field &\bf for field &\bf \% zero \\ \hline
-compress   & Hashtable\$Entry.next & 3,552 & 49.7\% \\
-           & String.offset & 3,180 & 90.9\% \\
-jess       & jess.Token.negcnt & 7,573,616 & 100.0\% \\
-           & jess.Value.floatval & 5,688,080 & 55.9\% \\
-raytrace   & Point.z & 4,101,328 & 23.5\% \\
-           & Point.x & 3,291,076 & 18.8\% \\
-db         & String.offset & 508,204 & 99.9\% \\
-           & Vector.capacityIncrement & 62,548 & 100.0\% \\
-javac      & String.offset & 3,735,388 & 97.1\% \\
+              &          &\bf field & \\
+\bf Benchmark &\bf field &\bf alloc'n &\bf \% zero \\ \hline
+compress   & Hashtable\$Entry.next & 7k & 49.7\% \\
+           & String.offset & 3k & 90.9\% \\
+jess       & jess.Token.negcnt & 7,396k & 100.0\% \\
+           & jess.Value.floatval & 9,937k & 55.9\% \\
+raytrace   & Point.z & 17,043k & 23.5\% \\
+           & Point.x & 17,095k & 18.8\% \\
+db         & String.offset & 497k & 99.9\% \\
+           & Vector.capacityIncrement & 61k & 100.0\% \\
+javac      & String.offset & 3,757k & 97.1\% \\
 % missing one here
-           & Statement.labels & 578,608 & 100.0\% \\
-mpegaudio  & Hashtable\$Entry.next & 3,616 & 49.3\% \\
-           & String.offset & 2,352 & 88.0\% \\
-%mtrt       & Point.z & 4,106,728 & 23.5\% \\
-%           & Point.x & 3,296,476 & 18.8\% \\
-jack       & String.offset & 7,442,956 & 100.0\% \\
-           & Hashtable\$Enumerator.type & 5,288,364 & 100.0\% \\
+           & Statement.labels & 565k & 100.0\% \\
+mpegaudio  & Hashtable\$Entry.next & 7,335k & 49.3\% \\
+           & String.offset & 3k & 88.0\% \\
+%mtrt       & Point.z & 17,066k & 23.5\% \\
+%           & Point.x & 17,123k & 18.8\% \\
+jack       & String.offset & 7,269k & 100.0\% \\
+           & Hashtable\$Enumerator.type & 5,164k & 100.0\% \\
 \end{tabular}
-\caption{Representative ``mostly-zero'' fields found in SPEC benchmarks.}
+\caption{Representative ``mostly-zero'' fields found in SPEC
+           benchmarks.  Allocation numbers represent the number of
+           dynamically allocated bytes directly due to the specified field.}
 \label{tab:mostly-zero}
 \end{table}
 To inform the static specialization and field externalization
@@ -779,9 +780,8 @@ increment the
 definitely initialized.
 
 Table~\ref{tab:mostly-zero} presents some representative
-``mostly-zero'' fields in the SPEC benchmark identified by profiling
-to help the reader gain some intuition about where such fields can be
-found.
+``mostly-zero'' fields which our profiling technique identifies in the
+SPEC benchmarks.
 
 \subsection{Finding Subclass-Final Fields}
 \label{sec:subclass-final}
