@@ -11,11 +11,11 @@ import harpoon.ClassFile.Linker;
  * <code>HClass</code> objects for common classes into class scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCLibrary.java,v 1.1.2.8 2000-01-21 08:57:13 cananian Exp $
+ * @version $Id: HCLibrary.java,v 1.1.2.9 2000-01-30 04:58:38 cananian Exp $
  */
 abstract class HCLibrary implements java.io.Serializable {
     final HClass HCbyteA, HCcharA, HCclass, HCclassA, HCcloneable, HCdouble;
-    final HClass HCfloat, HCobject, HCruntime, HCsmanager, HCstring;
+    final HClass HCfloat, HCmath, HCobject, HCruntime, HCsmanager, HCstring;
     final HClass HCstringA, HCsystem, HCthrowable, HCfile, HCfiledesc;
     final HClass HCfistream, HCfostream, HCrafile, HCproperties;
     final HClass HCarraystoreE, HCarrayindexE, HCclassnotfoundE;
@@ -33,6 +33,7 @@ abstract class HCLibrary implements java.io.Serializable {
         HCcloneable = linker.forName("java.lang.Cloneable");
 	HCdouble = linker.forName("java.lang.Double");
 	HCfloat = linker.forName("java.lang.Float");
+	HCmath = linker.forName("java.lang.Math");
 	HCobject = linker.forName("java.lang.Object");
 	HCruntime = linker.forName("java.lang.Runtime");
 	HCsmanager = linker.forName("java.lang.SecurityManager");

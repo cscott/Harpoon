@@ -14,16 +14,33 @@ import harpoon.ClassFile.NoSuchClassException;
  * <code>java.lang.ClassLoader.NativeLibrary</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INClassLoader.java,v 1.1.2.2 2000-01-28 06:00:15 cananian Exp $
+ * @version $Id: INClassLoader.java,v 1.1.2.3 2000-01-30 04:58:39 cananian Exp $
  */
 public class INClassLoader {
     static final void register(StaticState ss) {
 	// JDK 1.2 only
+	try{ss.register(getCallerClassLoader(ss));}catch(NoSuchMethodError e){}
 	try { // the following are ClassLoader.NativeLibrary methods.
 	try { ss.register(NLload(ss)); } catch (NoSuchMethodError e) {}
 	try { ss.register(NLunload(ss)); } catch (NoSuchMethodError e) {}
 	} catch (NoSuchClassException e) { /* ignore */ }
     }
+    // Returns the caller's class loader
+    private static final NativeMethod getCallerClassLoader(StaticState ss0) {
+	final HClass hc = ss0.linker.forName("java.lang.ClassLoader");
+	final HMethod hm =
+	    hc.getMethod("getCallerClassLoader", new HClass[0] );
+	return new NativeMethod() {
+	    HMethod getMethod() { return hm; }
+	    Object invoke(StaticState ss, Object[] params) {
+		// always return null.
+		return null;
+	    }
+	};
+    }
+
+    // ------------ ClassLoader.NativeLibrary implementations ---------
+
     static long handle=0; // help make unique non-zero handles
     // Load the named native library.
     private static final NativeMethod NLload(StaticState ss0) {

@@ -12,7 +12,7 @@ import harpoon.ClassFile.NoSuchClassException;
  * <code>Support</code> provides some native method implementations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Support.java,v 1.1.2.10 2000-01-28 05:27:27 cananian Exp $
+ * @version $Id: Support.java,v 1.1.2.11 2000-01-30 04:58:39 cananian Exp $
  */
 final class Support {
     static final void registerNative(StaticState ss) {
@@ -20,6 +20,7 @@ final class Support {
 	INClass.register(ss);
 	INClassLoader.register(ss);
 	INFloatDouble.register(ss);
+	INMath.register(ss);
 	INObject.register(ss);
 	INRuntime.register(ss);
 	INString.register(ss);

@@ -15,7 +15,7 @@ import java.io.IOException;
  * methods in <code>java.io.FileInputStream</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileInputStream.java,v 1.1.2.7 2000-01-28 05:27:26 cananian Exp $
+ * @version $Id: INFileInputStream.java,v 1.1.2.8 2000-01-30 04:58:39 cananian Exp $
  */
 final class INFileInputStream {
     static final void register(StaticState ss) {
@@ -110,7 +110,9 @@ final class INFileInputStream {
 		    ((ObjectRef)obj.get(hf0)).update(hf1, new Integer(4));
 		    return null;
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
+		    obj = ss.makeThrowable
+			(ss.linker.forName("java.io.FileNotFoundException"),
+			 e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		} catch (SecurityException e) {
 		    obj = ss.makeThrowable(ss.HCsecurityE, e.getMessage());
