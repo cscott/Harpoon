@@ -16,20 +16,23 @@ import harpoon.ClassFile.Bytecode.InCti;
 import harpoon.ClassFile.Bytecode.InMerge;
 import harpoon.ClassFile.Bytecode.InSwitch;
 import harpoon.ClassFile.Bytecode.Code.ExceptionEntry;
+import harpoon.Util.Util;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.util.Hashtable;
+import java.util.Vector;
+
 /**
  * <code>Translate</code> is a utility class to implement the
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.11 1998-08-24 23:17:52 cananian Exp $
+ * @version $Id: Translate.java,v 1.12 1998-08-25 07:47:15 cananian Exp $
  */
 
 /*
  * To do: figure out interface for trans(State, ...)
- *        up to, but not including GETFIELD.
  */
 
 /* State holds state *after* execution of corresponding instr. */
@@ -43,54 +46,121 @@ class Translate  { // not public.
 	Temp lv[];
 	/** Current try/catch contexts */
 	ExceptionEntry tryBlock[];
+	/** Current monitor nesting level */
+	int monitorDepth;
+	/** Exit block for nested tries/monitors */
+	Quad exitBlock[];
+	/** Indexed continuation Instrs after close of try/monitor block. */
+	Vector continuation[];
 
-	private State(Temp stack[], Temp lv[], ExceptionEntry tryBlock[]) {
+	private State(Temp stack[], Temp lv[], ExceptionEntry tryBlock[],
+		      int monitorDepth, Quad exitBlock[], 
+		      Vector continuation[]) {
 	    this.stack = stack; this.lv = lv; this.tryBlock = tryBlock;
+	    this.monitorDepth = monitorDepth;
+	    this.exitBlock = exitBlock;
+	    Util.assert(exitBlock.length == monitorDepth + tryBlock.length);
+	    Util.assert(exitBlock.length == continuation.length);
 	}
 	/** Make new state by popping top of stack */
 	State pop() { return pop(1); }
 	/** Make new state by popping multiple entries off top of stack */
 	State pop(int n) {
-	    Temp stk[] = new Temp[this.stack.length-n];
-	    System.arraycopy(this.stack, n, stk, 0, stk.length);
-	    return new State(stk, lv, tryBlock);
+	    Temp stk[] = (Temp[]) shrink(this.stack, n);
+	    return new State(stk, lv, tryBlock, monitorDepth, 
+			     exitBlock, continuation);
 	}
 	/** Make new state by pushing temp onto top of stack */
 	State push(Temp t) {
-	    Temp stk[] = new Temp[this.stack.length+1];
-	    System.arraycopy(this.stack, 0, stk, 1, this.stack.length);
+	    Temp stk[] = (Temp[]) grow(this.stack);
 	    stk[0] = t;
-	    return new State(stk, lv, tryBlock);
+	    return new State(stk, lv, tryBlock, monitorDepth, 
+			     exitBlock, continuation);
 	}
 	/** Make new state by exiting innermost try/catch context. */
 	State exitTry() {
-	    ExceptionEntry tb[] = new ExceptionEntry[this.tryBlock.length-1];
-	    System.arraycopy(this.tryBlock, 1, tb, 0, tb.length);
-	    return new State(stack, lv, tb);
+	    ExceptionEntry tb[] = (ExceptionEntry[]) shrink(this.tryBlock);
+	    Quad eb[] = (Quad[]) shrink(this.exitBlock);
+	    Vector cv[] = (Vector[]) shrink(this.continuation);
+	    return new State(stack, lv, tb, monitorDepth, eb, cv);
 	}
 	/** Make new state by entering a new try/catch context. */
 	State enterTry(ExceptionEntry ee) {
-	    ExceptionEntry tb[] = new ExceptionEntry[this.tryBlock.length+1];
-	    System.arraycopy(this.tryBlock, 0, tb, 1, this.tryBlock.length);
+	    ExceptionEntry tb[] = (ExceptionEntry[]) grow(this.tryBlock);
+	    Quad eb[] = (Quad[]) grow(this.exitBlock);
+	    Vector cv[] = (Vector[]) grow(this.continuation);
 	    tb[0] = ee;
-	    return new State(stack, lv, tb);
+	    eb[0] = new NOP();
+	    cv[0] = new Vector();
+	    return new State(stack, lv, tb, monitorDepth, eb, cv);
+	}
+	/** Make new state by entering a monitor block. */
+	State enterMonitor() {
+	    Quad eb[] = (Quad[]) grow(this.exitBlock);
+	    Vector cv[] = (Vector[]) grow(this.continuation);
+	    eb[0] = new NOP();
+	    cv[0] = new Vector();
+	    return new State(stack, lv, tryBlock, monitorDepth+1, eb, cv);
+	}
+	/** Make new state by exiting a monitor block. */
+	State exitMonitor() {
+	    Util.assert(monitorDepth>0);
+	    Quad eb[] = (Quad[]) shrink(this.exitBlock);
+	    Vector cv[] = (Vector[]) shrink(this.continuation);
+	    return new State(stack, lv, tryBlock, monitorDepth-1, eb, cv);
 	}
 	/** Make new state by changing the temp corresponding to an lv. */
 	State assignLV(int lv_index, Temp t) {
 	    Temp nlv[] = (Temp[]) lv.clone();
 	    nlv[lv_index] = t;
-	    return new State(stack, nlv, tryBlock);
+	    return new State(stack, nlv, tryBlock, monitorDepth, exitBlock,
+			     continuation);
 	}
 	/** Initialize state with temps corresponding to parameters. */
 	State(Temp[] locals) {
-	    this(new Temp[0], locals, new ExceptionEntry[0]);
+	    this(new Temp[0], locals, new ExceptionEntry[0], 0, 
+		 new Quad[0], new Vector[0]);
 	}
 	/** Creates a new State object identical to this one. */
 	public Object clone() {
 	    return new State((Temp[]) stack.clone(), 
 			     (Temp[]) lv.clone(), 
-			     (ExceptionEntry[]) tryBlock.clone());
+			     (ExceptionEntry[]) tryBlock.clone(),
+			     monitorDepth,
+			     (Quad[]) exitBlock.clone(),
+			     (Vector[]) continuation.clone());
 	}
+	/** Check to see if a given Instr is in all of the current try blocks.
+	 */
+	public boolean inAllTry(Instr in) {
+	    for (int i=0; i<tryBlock.length; i++)
+		if (!tryBlock[i].inTry(in))
+		    return false;
+	    return true;
+	}
+
+	// Utility functions... ///////////////////////////////
+
+	/** Makes a new array by popping first 'n' elements off. */
+	static private Object[] shrink(Object[] src, int n) {
+	    Util.assert(src.length>0);
+	    Object[] dst = (Object[]) Array.newInstance(src.getClass()
+							.getComponentType(),
+							src.length-n);
+	    System.arraycopy(src, n, dst, 0, dst.length);
+	    return dst;
+	}
+	static private Object[] shrink(Object[] src) { return shrink(src,1); }
+
+	/** Make a new array by pushing on 'n' elements to front. */
+	static private Object[] grow(Object[] src, int n) {
+	    Object[] dst = (Object[]) Array.newInstance(src.getClass()
+							.getComponentType(),
+							src.length+n);
+	    System.arraycopy(src, 0, dst, n, src.length);
+	    return dst;
+	}
+	static private Object[] grow(Object[] src) { return grow(src,1); }
     }
 
     /** Associates State objects with Instrs. */
@@ -130,8 +200,59 @@ class Translate  { // not public.
 	// return result.
 	return quads;
     }
-    static final void trans(StateMap s) {
-	// FIXME do schtuff here.
+    static final Quad trans(State initialState, ExceptionEntry allTries[],
+			    Instr in, Quad header, int which_succ) {
+	State s = initialState;
+	// Are we entering a new TRY block?
+	if (countTry(in, allTries) > s.tryBlock.length) {
+	    // determine which try block we're entering
+	    ExceptionEntry newTry = null;
+	    for (int i=0; i<allTries.length; i++) {
+		if (allTries[i].inTry(in)) {
+		    int j;
+		    for (j=0; j<s.tryBlock.length; j++)
+			if (s.tryBlock[j]==allTries[i])
+			    break;
+		    if (j==s.tryBlock.length) { // try not in current state.
+			newTry = allTries[i];
+			break;
+		    }
+		}
+	    }
+	    Util.assert(newTry != null);
+	    // Make header nodes for new TRY.
+	    Quad tryBlock = new HEADER();
+	    Quad catchBlock = new HEADER();
+	    // Recursively generate tryBlock quads.
+	    State ns = s.enterTry(newTry);
+	    trans(ns, allTries, in, tryBlock, 0);
+	    // FIXME catchBlock, finallyBlock
+	    Quad q = new TRY(in, tryBlock, catchBlock, 
+			     newTry.caughtException());
+	    // Link everything together.
+	    Quad.addEdge(header, which_succ, q, 0);
+	    return q;
+	}
+	// Are we entering a new MONITOR block?
+	else if (in.getOpcode() == Op.MONITORENTER) {
+	}
+	// Are we exiting a TRY block?
+	else if (!s.tryBlock[0].inTry(in)) {
+	}
+	// Are we exiting a MONITOR block?
+	else if (in.getOpcode() == Op.MONITOREXIT) {
+	}
+	// None of the above.
+	else {
+	}
+	return null; // FIXME
+    }
+    private static int countTry(Instr in, ExceptionEntry[] tb) {
+	int n=0;
+	for (int i=0; i<tb.length; i++)
+	    if (tb[i].inTry(in))
+		n++;
+	return n;
     }
 
     static final Instr[] transBasicBlock(StateMap s, Instr in) {
@@ -731,4 +852,3 @@ class Translate  { // not public.
 	return false;
     }
 }
-

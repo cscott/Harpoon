@@ -13,7 +13,7 @@ import harpoon.Util.UniqueVector;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.3 1998-08-20 22:43:20 cananian Exp $
+ * @version $Id: Code.java,v 1.4 1998-08-25 07:47:14 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -92,9 +92,7 @@ public class Code extends HCode {
 	if (q instanceof TRY) {
 	    TRY t = (TRY) q;
 	    traverse(t.tryBlock, v);
-	    for (int i=0; i<t.catchBlocks.length; i++)
-		traverse(t.catchBlocks[i], v);
-	    traverse(t.finallyBlock, v);
+	    traverse(t.catchBlock, v);
 	}
 	// move on to successors.
 	Quad[] next = q.next();
