@@ -2,7 +2,7 @@
 MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
 SUBDIRS = jni java.io java.lang java.net java.util java.util.zip \
-	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) $(STATSDIR)
+	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) $(STATSDIR) $(CAMDIR)
 EXTRA_DIST = README
 
 # for precise gc, add gc to SUBDIRS
@@ -15,6 +15,13 @@ if CLUSTERED_HEAPS
 CLHEAPDIR=clheap
 CLHEAPLIB=clheap/libclheap.la
 endif
+
+# for camera support, build camera libraries.
+if CAMERA
+CAMDIR=cam
+CAMLIB=cam/libcam.la
+endif
+
 # for event-driven support, build nativeio libraries.
 if EVENT_DRIVEN
 NATIVEIODIR=nativeio # rename to eventdriven?
@@ -43,7 +50,7 @@ libflexc1_la_LIBADD = \
 	java.net/libjavanet.la \
 	java.util/libjavautil.la \
 	java.util.zip/libjavautilzip.la \
-	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) $(STATSLIB)
+	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) $(STATSLIB) $(CAMLIB)
 libflexc1_la_LDFLAGS = -version-info 0:0:0 -lbfd -liberty
 
 # backwards compatibility: a.out targets ####################
