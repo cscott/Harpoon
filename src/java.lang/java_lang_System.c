@@ -145,16 +145,20 @@ JNIEXPORT void JNICALL Java_java_lang_System_arraycopy
       }
       _src=(struct aarray*) FNI_UNWRAP(src);
       _dst=(struct aarray*) FNI_UNWRAP(dst);
-      memcpy(((char *)&(_dst->element_start))+(dstpos*size),
+      /* note: we use memmove to allow the areas to overlap. */
+      memmove(((char *)&(_dst->element_start))+(dstpos*size),
 	     ((char *)&(_src->element_start))+(srcpos*size),
 	     size*length);
       return;
     } else {
-      int i;
-      for (i=0; i<length; i++) {
+      /* check for overlap */
+      int backward = ( FNI_IsSameObject(env, src, dst) && srcpos < dstpos );
+      int i = backward ? (length-1) : 0;
+      while (backward ? (i >= 0) : (i < length)) {
 	jobject o = (*env)->GetObjectArrayElement(env, src, srcpos+i);
 	(*env)->SetObjectArrayElement(env, dst, dstpos+i, o);
 	if ((*env)->ExceptionOccurred(env)!=NULL) return;
+	if (backward) i--; else i++;
       }
       return;
     }
