@@ -56,7 +56,9 @@ public abstract class MemoryArea {
      */
 
     boolean constant;
-
+  
+    protected native void setupMemBlock(RealtimeThread rt)
+	throws IllegalAccessException;
     protected native void enterMemBlock(RealtimeThread rt, MemAreaStack mas);
     protected native void exitMemBlock(RealtimeThread rt);
     protected native Object newArray(RealtimeThread rt, 
@@ -174,6 +176,18 @@ public abstract class MemoryArea {
 	obj.memoryArea = this;
     }
     
+    private void addToRootSet() { 
+	// Make sure to add the following to the rootset!
+	(new Boolean(false)).booleanValue();
+	(new Byte((byte)0)).byteValue();
+	(new Character('0')).charValue();
+	(new Double(0.0)).doubleValue();
+	(new Float(0.0)).floatValue();
+	(new Integer(0)).intValue();
+	(new Long(0)).longValue();
+	(new Short((short)0)).shortValue();
+    }
+
     /** Create a new array, allocated out of this MemoryArea. 
      */
 
@@ -183,6 +197,13 @@ public abstract class MemoryArea {
 	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
 	MemoryArea rtMem = rt.getMemoryArea();
 	Object o; 
+	if (number<0) {
+	    throw new NegativeArraySizeException();
+	}
+	/* Something our compiler isn't smart enough to figure out. */
+	if (number<-10000) { 
+	    addToRootSet();
+	}
 	if (rtMem == this) {
 	    o = Array.newInstance(type, number);
 	} else {
@@ -191,7 +212,7 @@ public abstract class MemoryArea {
 	    rtMem.checkAccess(o);
 	    MemAreaStack mas = rt.memAreaStack.first(this);
 	    if (mas == null) {
-		newMemBlock(rt);
+		setupMemBlock(rt);
 		o = newArray(rt, type, number, rt);
 	    } else {
 		o = newArray(rt, type, number, mas);
@@ -211,15 +232,24 @@ public abstract class MemoryArea {
 	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
 	MemoryArea rtMem = rt.getMemoryArea();
 	Object o;
+	for (int i = 0; i<dimensions.length; i++) {
+	    if (dimensions[i]<0) {
+		throw new NegativeArraySizeException();
+	    }
+	}
+	/* Something our compiler isn't smart enough to figure out. */
+	if (dimensions.length<-10000) { 
+	    addToRootSet();
+	}
 	if (rtMem == this) {
-	    return Array.newInstance(type, dimensions);
+	    o = Array.newInstance(type, dimensions);
 	} else {
 	    o = new Object();
 	    o.memoryArea = this;
 	    rtMem.checkAccess(o);
 	    MemAreaStack mas = rt.memAreaStack.first(this);
 	    if (mas == null) {
-		newMemBlock(rt);
+		setupMemBlock(rt);
 		o = newArray(rt, type, dimensions, rt);
 	    } else {
 		o = newArray(rt, type, dimensions, mas);
@@ -248,6 +278,10 @@ public abstract class MemoryArea {
 	OutOfMemoryError {
 	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
 	Object o = new Object();
+	/* Something our compiler isn't smart enough to figure out. */
+	if (parameters.length<-10000) { 
+	    addToRootSet();
+	}
 	MemoryArea rtMem = rt.getMemoryArea();
 	o.memoryArea = this;
 	rtMem.checkAccess(o);
@@ -258,7 +292,7 @@ public abstract class MemoryArea {
 	    } else {
 		MemAreaStack mas = rt.memAreaStack.first(this);
 		if (mas == null) {
-		    newMemBlock(rt);
+		    setupMemBlock(rt);
 		    o = newInstance(rt, c, parameters, rt);
 		} else {
 		    o = newInstance(rt, c, parameters, mas);

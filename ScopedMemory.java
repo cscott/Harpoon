@@ -58,4 +58,13 @@ public abstract class ScopedMemory extends MemoryArea {
 	    }
 	}	    
     }
+
+    /** Cannot call this on a ScopedMemory (doesn't cleanup MemBlocks 
+     *  appropriately).  Should never need to, since that'll cause
+     *  an access violation according to the spec. 
+     */
+    protected void setupMemBlock(RealtimeThread rt) 
+	throws IllegalAccessException {
+	throw new IllegalAccessException();
+    }
 }
