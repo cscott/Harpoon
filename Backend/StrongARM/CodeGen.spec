@@ -60,8 +60,14 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.104 1999-11-11 22:11:19 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.105 1999-11-12 19:14:08 cananian Exp $
  */
+// NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
+// big-endian (45670123) order.  To keep things simple, the 'low' temp in
+// a two-word temp representing a double represents the MSB, and the 'high'
+// temp the LSB.  This makes sure that the parameter-passing order is
+// correct, even if we don't know whether a given two-word-temp is LONG or
+// double.  See the CONST rules for some more oddity related to this quirk.
 %%
 
 
@@ -948,12 +954,16 @@ CONST<l,d>(c) = i %{
 
     long val = (ROOT.type()==Type.LONG) ? ROOT.value.longValue()
 	: Double.doubleToLongBits(ROOT.value.doubleValue());
+    // DOUBLEs are stored "backwards" on StrongARM.  No, I have no clue
+    // why.  They just are.
+    String lomod = (ROOT.type()==Type.LONG) ? "l" : "h";
+    String himod = (ROOT.type()==Type.LONG) ? "h" : "l";
     emit(new Instr( instrFactory, ROOT,
-		    loadConst32("`d0l", (int)val, "lo("+ROOT.value+")"),
+		    loadConst32("`d0"+lomod, (int)val, "lo("+ROOT.value+")"),
 		    new Temp[]{ i }, null));
     val>>>=32;
     emit(new Instr( instrFactory, ROOT,
-		    loadConst32("`d0h", (int)val, "hi("+ROOT.value+")"),
+		    loadConst32("`d0"+himod, (int)val, "hi("+ROOT.value+")"),
 		    new Temp[]{ i }, null));
 }% 
 
@@ -982,12 +992,16 @@ MOVE(TEMP(dst), CONST<l,d>(c)) %{
     CONST cROOT = (CONST) ROOT.src;
     long val = (cROOT.type()==Type.LONG) ? cROOT.value.longValue()
 	: Double.doubleToLongBits(cROOT.value.doubleValue());
+    // DOUBLEs are stored "backwards" on StrongARM.  No, I have no clue
+    // why.  They just are.
+    String lomod = (ROOT.type()==Type.LONG) ? "l" : "h";
+    String himod = (ROOT.type()==Type.LONG) ? "h" : "l";
     emit(new Instr( instrFactory, ROOT,
-		    loadConst32("`d0l", (int)val, "lo("+cROOT.value+")"),
+		    loadConst32("`d0"+lomod, (int)val, "lo("+cROOT.value+")"),
 		    new Temp[]{ i }, null));
     val>>>=32;
     emit(new Instr( instrFactory, ROOT,
-		    loadConst32("`d0h", (int)val, "hi("+cROOT.value+")"),
+		    loadConst32("`d0"+himod, (int)val, "hi("+cROOT.value+")"),
 		    new Temp[]{ i }, null));
 }% 
 
@@ -1740,8 +1754,13 @@ DATA(CONST<l,d>(exp)) %{
 		: Double.doubleToLongBits(exp.doubleValue());
     String lo = "0x"+Integer.toHexString((int)l);
     String hi = "0x"+Integer.toHexString((int)(l>>32));
-    emitDIRECTIVE( ROOT, "\t.word "+lo+" @ lo("+exp+")");
+    // doubles are stored in reverse order on the StrongARM.  No, I don't
+    // know why.  I suspect the StrongARM library designers were on *crack*!
+    if (ROOT.data.type()==Type.LONG)
+	emitDIRECTIVE( ROOT, "\t.word "+lo+" @ lo("+exp+")");
     emitDIRECTIVE( ROOT, "\t.word "+hi+" @ hi("+exp+")");
+    if (ROOT.data.type()==Type.DOUBLE)
+	emitDIRECTIVE( ROOT, "\t.word "+lo+" @ lo("+exp+")");
 }%
 
 DATA(CONST<p>(exp)) %{
