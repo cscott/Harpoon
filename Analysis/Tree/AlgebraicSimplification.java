@@ -43,7 +43,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.20 2000-03-26 06:28:47 jwhaley Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.21 2000-12-06 00:11:06 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification extends Simplification { 
@@ -133,6 +133,38 @@ public abstract class AlgebraicSimplification extends Simplification {
 	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		BINOP b = (BINOP)e; 
 		return new BINOP(tf, b, b.optype, b.op, b.getRight(), b.getLeft()); 
+ 	    }
+	};
+
+
+	// const < exp --> exp > const
+	// const <=exp --> exp >=const
+	// const > exp --> exp < const
+	// const >=exp --> exp <=const
+	//
+	Rule commute2 = new Rule("commute2") { 
+	    public boolean match(Exp e) { 
+		if (_KIND(e) != _BINOP) { return false; } 
+		else { 
+		    BINOP b = (BINOP)e; 
+		    return 
+		    (b.op==Bop.CMPLT || b.op==Bop.CMPLE ||
+		     b.op==Bop.CMPGT || b.op==Bop.CMPGE) &&
+		    contains(_KIND(b.getLeft()), _CONST) &&
+		    !contains(_KIND(b.getRight()), _CONST);
+		}
+	    }
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
+		BINOP b = (BINOP)e; 
+		int op;
+		switch(b.op) {
+		case Bop.CMPLT: op=Bop.CMPGT; break;
+		case Bop.CMPLE: op=Bop.CMPGE; break;
+		case Bop.CMPGE: op=Bop.CMPLE; break;
+		case Bop.CMPGT: op=Bop.CMPLT; break;
+		default: throw new Error("impossible");
+		}
+		return new BINOP(tf, b, b.optype, op, b.getRight(), b.getLeft()); 
  	    }
 	};
 
@@ -345,6 +377,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	_DEFAULT_RULES.add(makeZero); // non-canonical
 	_DEFAULT_RULES.add(removeZero); 
 	_DEFAULT_RULES.add(commute); 
+	_DEFAULT_RULES.add(commute2); 
 	_DEFAULT_RULES.add(associate); 
 	_DEFAULT_RULES.add(createNot);
 	_DEFAULT_RULES.add(doubleNegative); 

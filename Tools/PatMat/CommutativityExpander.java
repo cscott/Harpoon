@@ -10,14 +10,58 @@ package harpoon.Tools.PatMat;
  * <code>Spec.ExpBinop</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CommutativityExpander.java,v 1.1.2.4 2000-02-23 22:38:35 cananian Exp $
+ * @version $Id: CommutativityExpander.java,v 1.1.2.5 2000-12-06 00:11:37 cananian Exp $
  */
 public abstract class CommutativityExpander  {
     //hide constructor.
     private CommutativityExpander() { }
+    // prefix for generated private members
+    private final static String prefix="__CommExp__";
+
+    // two functions needed both here and in the generated code.
+    private final static String isCommFunc =
+	"private static boolean "+prefix+"isCommutative(int op) {\n"+
+	"\tswitch(op) {\n"+
+	"\tcase harpoon.IR.Tree.Bop.CMPGT:\n"+
+	"\tcase harpoon.IR.Tree.Bop.CMPGE:\n"+
+	"\tcase harpoon.IR.Tree.Bop.CMPLE:\n"+
+	"\tcase harpoon.IR.Tree.Bop.CMPLT:  return true; \n"+
+	"\tdefault: return harpoon.IR.Tree.Bop.isCommutative(op);\n"+
+	"\t}\n"+
+	"}\n";
+    private static boolean isCommutative(int op) {
+	switch(op) {
+	case harpoon.IR.Tree.Bop.CMPGT:
+	case harpoon.IR.Tree.Bop.CMPGE:
+	case harpoon.IR.Tree.Bop.CMPLE:
+	case harpoon.IR.Tree.Bop.CMPLT:  return true;
+	default: return harpoon.IR.Tree.Bop.isCommutative(op);
+	}
+    }
+    private final static String swapCmpOpFunc =
+	"private static int "+prefix+"swapCmpOp(int op) {\n"+
+	"\tswitch(op) {\n"+
+	"\tcase harpoon.IR.Tree.Bop.CMPGT:return harpoon.IR.Tree.Bop.CMPLT;\n"+
+	"\tcase harpoon.IR.Tree.Bop.CMPGE:return harpoon.IR.Tree.Bop.CMPLE;\n"+
+	"\tcase harpoon.IR.Tree.Bop.CMPLE:return harpoon.IR.Tree.Bop.CMPGE;\n"+
+	"\tcase harpoon.IR.Tree.Bop.CMPLT:return harpoon.IR.Tree.Bop.CMPGT;\n"+
+	"\tdefault: return op;\n"+
+	"\t}\n"+
+	"}\n";
+    private static int swapCmpOp(int op) {
+	switch(op) {
+	case harpoon.IR.Tree.Bop.CMPGT:return harpoon.IR.Tree.Bop.CMPLT;
+	case harpoon.IR.Tree.Bop.CMPGE:return harpoon.IR.Tree.Bop.CMPLE;
+	case harpoon.IR.Tree.Bop.CMPLE:return harpoon.IR.Tree.Bop.CMPGE;
+	case harpoon.IR.Tree.Bop.CMPLT:return harpoon.IR.Tree.Bop.CMPGT;
+	default: return op;
+	}
+    }
     
+    // this is the actual expansion function.
     public static Spec expand(Spec s) {
-	return new Spec(s.global_stms, s.class_stms,
+	return new Spec(s.global_stms,
+			s.class_stms +"\n"+ isCommFunc + swapCmpOpFunc +"\n",
 			s.method_prologue_stms, s.method_epilogue_stms,
 			expand(s.rules));
     }
@@ -69,24 +113,31 @@ public abstract class CommutativityExpander  {
 	    && // also, if op is a leafop, it needs to be a commutative one.
 	    (exp.opcode instanceof Spec.LeafId ||
 	     (exp.opcode instanceof Spec.LeafOp &&
-	      harpoon.IR.Tree.Bop.isCommutative(((Spec.LeafOp) exp.opcode).op))
+	      isCommutative(((Spec.LeafOp) exp.opcode).op))
 	     )) {
-	    // check to see if an extra predicate is needed.
-	    String extrapred = (exp.opcode instanceof Spec.LeafOp) ? null :
-		"harpoon.IR.Tree.Bop.isCommutative(" +
-		                           ((Spec.LeafId)exp.opcode).id + ")";
-	    // okay, reverse kids and make some more combos.
-	    ExpListAndPred[] newcombos = new ExpListAndPred[combos.length * 2];
-	    for (int i=0; i<combos.length; i++) {
-		ExpListAndPred source = combos[i];
-		newcombos[2*i] = source;
-		Spec.ExpList nel =
-		    new Spec.ExpList(source.explist.tail.head,
-				new Spec.ExpList(source.explist.head, null));
-		newcombos[2*i+1] =
-		    new ExpListAndPred(nel, addPred(source.pred, extrapred));
+	    // check to see if an extra predicate/new leaf is needed.
+	    Spec.Leaf l = exp.opcode; String extrapred=null;
+	    if (exp.opcode instanceof Spec.LeafOp) {
+		l = new Spec.LeafOp(swapCmpOp(((Spec.LeafOp)exp.opcode).op));
+	    } else {
+		String id = ((Spec.LeafId) exp.opcode).id;
+		extrapred = prefix+"isCommutative("+
+		    id+"="+prefix+"swapCmpOp("+id+"))";
 	    }
-	    combos = newcombos;
+	    // okay, reverse kids and make some more combos.
+	    ExpAndPred[] result = new ExpAndPred[combos.length * 2];
+	    for (int i=0; i<combos.length; i++) {
+		result[2*i] = new ExpAndPred(exp.build(combos[i].explist),
+					     combos[i].pred);
+		// reverse args, swap op, add pred.
+		Spec.ExpBinop binop =
+		    new Spec.ExpBinop((Spec.TypeSet)exp.types.clone(), l,
+				      combos[i].explist.tail.head,
+				      combos[i].explist.head);
+		result[2*i+1] =
+		    new ExpAndPred(binop, addPred(extrapred, combos[i].pred));
+	    }
+	    return result;
 	}
 	// make exps from all the explists.
 	ExpAndPred[] result = new ExpAndPred[combos.length];
@@ -191,8 +242,8 @@ public abstract class CommutativityExpander  {
 	if (dl.head instanceof Spec.DetailPredicate) {
 	    Spec.DetailPredicate sdp = (Spec.DetailPredicate) dl.head;
 	    return new Spec.DetailList(new Spec.DetailPredicate
-				       (addPred(sdp.predicate_string,
-						pred)), dl.tail);
+				       (addPred(pred, sdp.predicate_string)),
+				       dl.tail);
 	}
 	else return new Spec.DetailList(dl.head, addPred(dl.tail, pred));
     }
