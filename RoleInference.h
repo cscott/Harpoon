@@ -203,4 +203,5 @@ void loadstatechange(struct heap_state *heap);
 int convertnumberingobjects(char *sig, int isStatic, int orignumber);
 void parseoptions(int argc, char **argv, struct heap_state *heap);
 void openoutputfiles(struct heap_state *heap);
+void checksafety(struct heap_object *src, struct heap_object *dst);
 #endif

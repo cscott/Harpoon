@@ -586,6 +586,23 @@ void doreturnmethodinference(struct heap_state *heap, long long uid, struct hash
   exitmethod(heap,ht,uid);
 }
 
+void checksafety(struct heap_object *src, struct heap_object *dst) {
+  while(src!=NULL&&((!(src->reachable&FIRSTREF))||
+		    (src->reachable&NOTCONTAINER))) {
+    if (src->reversefield!=NULL)
+      src=src->reversefield->src;
+    else if (src->reversearray!=NULL)
+      src=src->reversearray->src;
+    else break;
+    
+    if (src==dst) {
+      /* Bad news...cycle...need to break it*/
+      dst->reachable&=NOTCONTAINER;
+      break;
+    }
+  }
+}
+
 void doarrayassignment(struct heap_state *heap, struct heap_object * src, int index, struct heap_object *dst) {
   struct arraylist *arrptr=src->al;
   struct arraylist *al=(struct arraylist *)calloc(1, sizeof(struct arraylist));
@@ -599,7 +616,10 @@ void doarrayassignment(struct heap_state *heap, struct heap_object * src, int in
     if (heap->options&OPTION_FCONTAINERS) {
       if (dst->reachable&FIRSTREF)
 	dst->reachable|=NOTCONTAINER;
-      dst->reachable|=FIRSTREF;
+      else {
+	dst->reachable|=FIRSTREF;
+	checksafety(src,dst);
+      }
     } else if (heap->options&OPTION_UCONTAINERS) {
       if (contains(heap->containedobjects, dst->uid))
 	al->propagaterole=1;
@@ -820,7 +840,10 @@ void dofieldassignment(struct heap_state *hs, struct heap_object * src, struct f
     if (hs->options&OPTION_FCONTAINERS) {
       if (dst->reachable&FIRSTREF)
 	dst->reachable|=NOTCONTAINER;
-      dst->reachable|=FIRSTREF;
+      else {
+	dst->reachable|=FIRSTREF;
+	checksafety(src,dst);
+      }
     } else if (hs->options&OPTION_UCONTAINERS) {
       if (contains(hs->containedobjects, dst->uid))
 	newfld->propagaterole=1;
