@@ -29,7 +29,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.46 2001-03-13 16:25:57 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.47 2001-04-09 00:17:18 salcianu Exp $
  */
 public class ParIntGraph implements java.io.Serializable {
 
@@ -463,10 +463,14 @@ public class ParIntGraph implements java.io.Serializable {
 	    }
 	}
 	
+        ActionRepository _ar = PointerAnalysis.RECORD_ACTIONS ?
+	    ar.tSpecialize(map, run) : null;
+
+	EdgeOrdering _eo = PointerAnalysis.IGNORE_EO ?
+	    null : eo.specialize(map);
+
 	return
-	    new ParIntGraph(G.specialize(map), tau.specialize(map), 
-			    ar.tSpecialize(map, run), 
-			    PointerAnalysis.IGNORE_EO?null:eo.specialize(map));
+	    new ParIntGraph(G.specialize(map), tau.specialize(map), _ar, _eo);
     }
 
     // weak thread specialization
