@@ -7,12 +7,16 @@ import java.util.*;
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.4 1999-01-15 00:10:54 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.5 1999-01-15 02:09:39 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {
 
     private static final boolean DEBUG = false;
+
+    public SimpleGraphColorer(ColorFactory factory) {
+	super(factory);
+    }
     
     /** Simple Graph Colorer based on algorithm given in 6.035 lecture
 	( http://ceylon.lcs.mit.edu/6035/lecture18/sld064.htm ).
@@ -120,24 +124,14 @@ public class SimpleGraphColorer extends GraphColorer {
 		}
 		
 		try {
-		    node.setColor( color );
-		} catch (NodeAlreadyColoredException e) {
-		    // I honestly don't know if I guarded against this
-		    // eventuality.  I think I have, so I'm throwing a
-		    // RuntimeException, but the easy workaround is
-		    // written afterwards
-		    e.printStackTrace();
-		    throw new RuntimeException(e.getMessage());
-		    
-		    /* WORKAROUND CODE IF RUNTIME EXCEPTION IS INDEED THROWN
-		    try {
-			node.setColor(null);
-			node.setColor(color); 
-		    } catch (NodeAlreadyColoredException e) { 
-			// ensured that it can't be thrown here.
-			throw new RuntimeException(e.getMessage()); 
-		    }
-		    */
+		    // some nodes still have their colors set...not
+		    // sure if this implies an error in the code
+		    // above...assuming no...
+		    node.setColor(null);
+		    node.setColor(color); 
+		} catch (NodeAlreadyColoredException e) { 
+		    // ensured that it can't be thrown here.
+		    throw new RuntimeException(e.getMessage()); 
 		}
 		// now that it is colored, we can unhide it. 
 		graph.unhideNode( node );
