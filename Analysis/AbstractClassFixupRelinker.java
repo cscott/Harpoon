@@ -22,7 +22,7 @@ import java.util.*;
  * The <code>AbstractClassFixupRelinker</code> remedies the situation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractClassFixupRelinker.java,v 1.2 2002-07-10 18:02:35 cananian Exp $
+ * @version $Id: AbstractClassFixupRelinker.java,v 1.3 2002-07-10 18:11:03 cananian Exp $
  */
 public class AbstractClassFixupRelinker extends Relinker {
     
@@ -44,7 +44,7 @@ public class AbstractClassFixupRelinker extends Relinker {
 	// done!
 	return hc;
     }
-    private static Set done = new HashSet();
+    private static Set<HClass> done = new HashSet<HClass>();
     
     private void fixup(HClass hc) {
 	for (Iterator<HClass> it=collectInterfaces(hc).iterator();
