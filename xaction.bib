@@ -1,0 +1,2908 @@
+% -*- Mode: BibTex -*-
+
+% This is a LaTeX .bib (bibliography) file for transactional memory.
+% Copyright (C) 2002 Bradley C. Kuszmaul
+% Copyright (C) 2002 MIT
+%
+% This bib file uses cross references.  You probably want to invoke
+% bibtex with  --min-crossrefs=9999 to avoid automatically including the cross
+% references as separate entries.
+
+% Conventions:
+%  These entries are sorted according to the way they ought to be in the bibliography.
+%
+%  The label (e.g., the SaitoBe98 is organized as
+%     LastNameOfFirstAuthorXXYYZZNNx
+%      Where LastNameOfFirstAuthor is the last name of the first author
+%        (with dashes and spaces removed if the last name is more than one word.)
+%            XX are the first two letters of the last name of the second author
+%            YY                    ..  ...                        third   ...
+%            ZZ                    ..  ...                        fourth  ...
+%            nn is the year
+%            x  is an optional lower-case letter added to resolve an remaining amiguity
+%      
+%       as far as I know, the a is only needed, in practice, if the author list is the 
+%       same and the publiation in the same year.
+%
+%  The KEY field is used to tell how to sort the entries using a simple alphabetic
+%    string sort.   This means that the keys would be Traub88Pa, Traub88Ni, Traub89Ni for
+%                                                     TraubPa88, TraubNi88, TraubNi89
+%    respectively.  The keys sort into the right order where the biblabels would not.
+%
+%  The BIBSTATUS field is used to indicate whether the entry has been checked for accuracy.
+%
+%  the BIBLABEL field is used to tell xref what the bibliography label should be. 
+%    The year is not put on.  So for Thinking Machines, the biblabel uses is "TMC", 
+%    for example.
+%
+
+
+
+% Note: at-string records must appear *before* their use. 
+% but cross-referenced items should appear *after* their use.
+
+% I think all of these are page-level transactional memory.
+% Todo: Satyanarayanan Mashburn Kumar Steere Kistler, Lightweight Recoverable Virtual Mmeory TOCS 12(1):33-57 Feb 1994
+% Todo: Singhal Kakkad Wilson Texas: An Efficient, Portable Persistent Store, Proc 5th Workshop on Persistent Object Systems pp 11-33 Sept 1992
+%   Texas and RVM are single-user database systems (ACID without C)
+% Todo: Chew Silberschatz Toward Operating System Support for Recoverable-persistent Main Memory Database Systems TR CS-TR-92-05 Utexas Austin, Sept 1992.
+%    RPVM adds a system call to dictate the order of page eviction (to implement write-ahead logging)
+% Todo: Eppinger Mummert Spector Camelot and Avalon, Morgan Kaufmann, 1991
+%   Camelot uses the Mach external pager to implement WAL.
+% Todo: Shekita and Zwilling: Cricket: A Mapped Persistent Object Store, TR 956 UWisc 1990
+%   Also uses Mach
+% Todo: Lowell and Chen:  Free Transactions with Rio Vista ACM SOSP-16 1997 http://www.eecs.umich.edu/pmchen/
+%   Uses a non-volatile file buffer to make transactions orders-of-magnitude faster than disk logging
+% Todo: Chang and Mergen: 801 Sotrage: ARchitcture and Programming ACM TOCS 6(1):28-50 January 1988
+%   Page-level in the kernel
+% Redell Dalal Horsley ... Pilot an Operating System for a Personal Computer: CACM 23(2):81-92 Feb 1980
+%   Page-level in the kernel
+
+% CSA: Merged up to (not including) HEADING7 in my transact.bib.
+
+@PREAMBLE{ "\newcommand{\noopsort}[1]{} "
+         # "\newcommand{\singleletter}[1]{#1} " }
+
+@string{TOPLAS = "{ACM} Transactions on Programming Languages and Systems (TOPLAS)"}
+
+@InCollection{AbramsonKu73,
+  author =       "N. Abramson",
+  editor =       "N. Abramson and Frank Kuo",
+  title =        "The {A}loha system",
+  booktitle =    "Computer-Communication Networks",
+  pages =        "501--518",
+  publisher =    "Prentice-Hall",
+  address =      "Englewood Cliffs, New Jersey",
+  year =         "1973"
+}
+
+@Misc{AdkinsBaDa98
+  ,author =  {Dan Adkins and Reid Barton and Don Dailey and Matteo Frigo and Chris Joerg and Charles Leiserson and Harald Prokop and Martin Rinard}
+  ,title =   {{C}ilk {P}ousse}
+  ,note =    {Winner of the 1998 ICFP Programming Contest}
+  ,URL =     {http://supertech.lcs.mit.edu/~pousse}
+}
+
+@InProceedings{AfekDaTo95,
+ bibnote = {was 225271},
+ author = {Yehuda Afek and Dalia Dauber and Dan Touitou},
+ title = {Wait-Free Made Fast},
+ booktitle = {Proceedings of the 27th Annual {ACM} Symposium on Theory
+                  of Computing (STOC)},
+ month = may,
+ year = 1995,
+ isbn = {0-89791-718-9},
+ pages = {538--547},
+ location = {Las Vegas, Nevada},
+ doi = {http://doi.acm.org/10.1145/225058.225271},
+ publisher = {ACM Press},
+ local = {p538-afek.pdf},
+ summary = {Somewhat complicated improved wait-free universal method.},
+ }
+
+@InProceedings{AgarwalCh89
+  ,author = 	 {A. Agarwal and M. Cherian}
+  ,title = 	 {Adaptive Backoff Synchronization Techniques}
+  ,crossref =	 {ISCA89}
+  ,pages =	 {396--406}
+  ,doi= {http://doi.acm.org/10.1145/74925.74970}
+  ,abstract = {
+Shared-memory multiprocessors commonly use shared variables
+for synchronization. Our simulations of real parallel applications
+show that large-scale cache-coherent multiprocessors suffer
+significant amounts of invalidation traffic due to
+synchronization. Large multiprocessors that do not cache
+synchronization variables are often more severely impacted. If this
+synchronization traffic is not reduced or managed adequately,
+synchronization references can cause severe congestion in the
+network. We propose a class of adaptive back-off methods that do not
+use any extra hardware and can significantly reduce the memory traffic
+to synchronization variables. These methods use synchronization state
+to reduce polling of synchronization variables. Our simulations show
+that when the number of processors participating in a barrier
+synchronization is small compared to the time of arrival of the
+processors, reductions of 20 percent to over 95 percent in
+synchronization traffic can be achieved at no extra cost. In other
+situations adaptive backoff techniques result in a tradeoff between
+reduced network accesses and increased processor idle time.
+}
+}
+
+@Article{Aldous87
+  ,author = 	 {David J. Aldous}
+  ,title = 	 {Ultimate Instability of Exponential Back-Off Protocol for Acknowledgment-Based Transmission Control of Random Access Communication Channels}
+  ,journal = 	 {IEEE Transactions on Information Theory}
+  ,year = 	 1987
+  ,volume =	 {IT-33}
+  ,number =	 2
+  ,month =	 MAR
+  ,pages =       {219-223}
+}
+
+@InProceedings{AlemanyFe92,
+ bibnote = {was 135446},
+ author = {Juan Alemany and Edward W. Felten},
+ title = {Performance Issues in Non-blocking Synchronization on
+                  Shared-memory Multiprocessors},
+ booktitle = {Proceedings of the 11th Annual {ACM} Symposium on
+                  Principles of Distributed Computing (PODC)},
+ month = aug,
+ year = 1992,
+ isbn = {0-89791-495-3},
+ pages = {125--134},
+ location = {Vancouver, British Columbia, Canada},
+ doi = {http://doi.acm.org/10.1145/135419.135446},
+ publisher = {ACM Press},
+ local = {p125-alemany.pdf},
+ summary = {Two factors hindering the performance of lock-free
+                  algorithms: resources wasted by operations that
+                  fail, and the cost of data copying.  Proposes that
+                  short and infinite delays do not matter, and
+                  proposes OS-mediated solutions to the remaining
+                  (``long'') delays.  SOLO and SOLO-with-logging
+                  protocols.  Numbers for speed; not compared to
+                  traditional spin lock.},
+ }
+
+@article{AlonBaLiPe91,
+ bibnote = {was AlonBLP91 JCSS::AlonBLP1991},
+ author = {Noga Alon and Amotz Bar-Noy and Nathan Linial and David Peleg},
+ title =        "A Lower Bound for Radio Broadcast",
+ journal = {Journal of Computer and System Sciences},
+ volume = {43},
+ number = {2},
+ year = {1991},
+ pages = {290--298},
+ month =        oct
+ }
+
+@Unpublished{AminAdLe02
+ ,author =       {Nada Amin and Daniel Adkins and Charles E. Leiserson and Bin Song}
+ ,title =    {Libvtimer: {A} {L}inux High-Resolution Virtual-Timer Library}
+ ,note  =        {Unpublished manuscript, MIT Laboratory for Computer Science}
+ ,month =    OCT
+ ,year =     2002
+ ,bibstatus =    "unchecked"
+}
+
+@Article{ArvindSh99
+ ,author = 	 {Arvind and Xiaowei Shen}
+ ,title = 	 {Using Term Rewriting Systems to Design and Verify Processors}
+ ,journal = 	 {IEEE Micro}
+ ,year = 	 1999
+ ,key =		 {Arvind99}
+ ,volume =	 19
+ ,number =	 3
+ ,pages =	 {36--46}
+ ,URL =          {http://csg.lcs.mit.edu/pubs/memos/Memo-419/memo-419.pdf}
+ ,month =	 MAY # {--} # JUN
+ }
+
+@Article{BallLa94
+  ,author	= {Thomas Ball and James R. Larus}
+  ,title	= {Optimally Profiling and Tracing Programs}
+  ,journal      = {ACM Transactions on Programming Languages and Systems}
+  ,year		= 1994
+  ,volume       = 16
+  ,number       = 4
+  ,pages        = ""
+  ,bibstatus    = {Unchecked.  Page numbers missing.}
+}
+
+@InProceedings{Barnes93,
+ bibnote = {was 165265},
+ author = {Greg Barnes},
+ title = {A Method for Implementing Lock-Free Shared Data Structures},
+ booktitle = {Proceedings of the 5th Annual {ACM} Symposium on
+                  Parallel Algorithms and Architectures (SPAA)},
+ month = jun,
+ year = 1993,
+ isbn = {0-89791-599-2},
+ pages = {261--270},
+ location = {Velen, Germany},
+ doi = {http://doi.acm.org/10.1145/165231.165265},
+ publisher = {ACM Press},
+ local = {p261-barnes.pdf},
+ summary = {Lock-free synchronization without copying: instead of
+                  keeping old copies of state, we record our progress
+                  well so that other threads can pick up where we left
+                  off and complete our operation.  This is like
+                  priority inheritance in locking protocols.  Afek et
+                  al claim that Israeli and Rappoport simplify this
+                  method with n-CAS, but the connection is certainly
+                  not explicit in either work.},
+ }
+
+@Article{BayerSc77
+ ,bibstatus    = todo
+ ,author       = {R. Bayer and M. Schkolnick}
+ ,title	       = {Concurency of Operations on B-Trees}
+ ,journal      = {Acta Informatica}
+ ,year	       = 1977
+ ,volume       = 9
+ ,pages	       = {1--21}
+ }
+
+@Book{Beck99
+  ,author =	 {Kent Beck}
+  ,title = 	 {Extreme Programming Explained:  Embrace Change}
+  ,publisher = 	 {Addison-Wesley}
+  ,address =     {Reading, Massachusetts}
+  ,year = 	 1999
+}
+
+@MastersThesis{Berman00,
+  author =   {David B. Berman},
+  title =    {Efficient Parallel Binary Decision Diagram Construction Using {Cilk}},
+  school =   {MIT Department of Electrical Engineering and Computer Science},
+  year =     2000,
+  month =    MAY,
+}
+
+@Misc{Bernstein98
+  ,author =	 {D. J. Bernstein}
+  ,title =	 {qmail}
+  ,howpublished ={An email Message Transfer Agent (software), available from \url{http://cr.yp.to/qmail.html}}
+  ,month =	 {JUN}
+  ,year =	 1998
+}
+
+@InProceedings{BernsteinKu98
+ ,author       = {Michael J. Bernstein and Bradley C. Kuszmaul.}
+ ,title	       = {Communications-Efficient Multithreading on Limited-Bandwidth Networks}
+ ,crossref     = {SPAA98}
+ ,note	       = {Short abstract for SPAA Revue}
+ }
+
+@Article{BernsteinGo83,
+  author = 	 {Philip A. Bernstein and Nathan Goodman},
+  title = 	 {Multiversion Concurrency Control---Theory and Algorithms},
+  journal = 	 {ACM Transaction on Database Systems (TODS)},
+  year = 	 1983,
+  volume =	 8,
+  number =	 4,
+  pages =	 {465--483},
+  month =	 DEC
+}
+
+@Book{BernsteinHaGo87
+ ,author       = {Philip A. Bernstein and Vassos Hadzilacos and Nathan Goodman}
+ ,title	       = {Concurrency Control and Recovery in Database Systems}
+ ,publisher    = {Addison-Wesley}
+ ,year	       = 1987
+ ,key	       = {Bernstein87}
+ ,annote       = {Defines lock-coupling.  For lock-coupling, on Page~105 cites \cite{BayerSc77,KedemSi81,Samadi76,SilberschatzKe76,KungLe80,LehmanYa81,BuckleySi84,Ellis80,FordScJi84,GoodmanSh85,Kedem83,KwongWo82,ManberLa84} (note: cites `Ellis 82', but that is probably a typo for `Ellis 80'.)}
+ ,bibstatus    = {Bradley checked}
+ }
+
+@InProceedings{Binder75
+ ,author       = {R. Binder and N. Abramson and F. Kuo and A. Okinaka and D. Wax}
+ ,title	       = {{ALOHA} Packet Broadcasting:  A Retrospect}
+ ,booktitle    = {Proceedings of the APIPS National Computer Conference}
+ ,year	       = 1975
+ ,pages	       = {203--215}
+ }
+
+
+@article{BlellochLeMa98,
+    author = "Guy E. Blelloch and Charles E. Leiserson and Bruce M. Maggs and C. Greg Plaxton and Stephen J. Smith and M. Zagha",
+    title = "An Experimental Analysis of Parallel Sorting Algorithms",
+    journal = "Theory of Computing Systems",
+    volume = "31",
+    number = "2",
+    month = "/",
+    pages = "135--167",
+    year = "1998",
+    url = "citeseer.nj.nec.com/blelloch98experimental.html" }
+
+@Misc{Bluespec02
+  ,key = 	 {Bluespec}
+  ,author = 	 {{Sandburst Corporation}}
+  ,title = 	 {Bluespec}
+  ,howpublished = {Web page}
+  ,month = 	 OCT
+  ,year = 	 2002
+  ,URL =  {http://bluespec.org}
+}
+
+@PhdThesis{Blumofe95
+ ,author = 	 {Robert D. Blumofe}
+ ,title = 	 {Executing Multithreaded Programs Efficiently}
+ ,school = 	 {MIT Department of Electrical Engineering and Computer Science}
+ ,year = 	 1995
+ ,key =		 {Blumofe95}
+ ,address =	 {Cambridge, Massachusetts}
+ ,month =	 SEP
+ ,URL =          {ftp://theory.lcs.mit.edu/pub/cilk/rdb-phdthesis.ps.Z} 
+}
+
+@Article{BlumofeJoKu96
+  ,author	= {Robert D. Blumofe and Christopher F. Joerg
+		and Bradley C. Kuszmaul and Charles E. Leiserson and
+		 Keith H. Randall and Yuli Zhou}
+  ,key		= {Blumofe96}
+  ,title	= {{C}ilk: An Efficient Multithreaded Runtime System}
+  ,journal      = {Journal of Parallel and Distributed Computing}
+  ,year		= 1996
+  ,affiliation	= MITLCS
+  ,volume       = 37
+  ,number       = 1
+  ,pages        = {55--69}
+  ,month        = {August 25}
+  ,note		= {(An early version appeared in the 
+         {\em Proceedings of the Fifth ACM SIGPLAN 
+         Symposium on Principles and Practice of Parallel Programming 
+         (PPoPP~'95)}, pages~207--216, Santa Barbara, California, July 1995.)}
+  ,url	         = {ftp://theory.lcs.mit.edu/pub/cilk/cilkjpdc96.ps.gz}
+}
+
+@InProceedings{BlumofeFrJo96
+  ,author = 	 {Robert D. Blumofe and Matteo Frigo and Christopher F. Joerg and Charles E. Leiserson and Keith H. Randall}
+  ,title = 	 {Dag-Consistent Distributed Shared Memory}
+  ,booktitle =	 {10th International Parallel Processing Symposium (IPPS '96)}
+  ,pages =	 {132-141}
+  ,year =	 1996
+  ,address =	 {Honolulu, Hawaii}
+  ,month =	 APR # { 15--19}
+}
+
+@Article{BlumofeLe98
+  ,author = 	 {Robert D. Blumofe and Charles E. Leiserson}
+  ,title = 	 {Space-Efficient Scheduling of Multithreaded Computations}
+  ,journal = 	 {SIAM Journal on Computing}
+  ,year = 	 1998
+  ,volume =	 7
+  ,number =	 1
+  ,pages =	 {202--229}
+  ,month =	 FEB
+}
+
+@Article{BlumofeLe99
+  ,author = 	 {Robert D. Blumofe and Charles E. Leiserson}
+  ,title = 	 {Scheduling Multithreaded Computations by Work Stealing}
+  ,journal = 	 {Journal of the ACM}
+  ,year = 	 1999
+  ,volume =	 46
+  ,number =	 5
+  ,pages =	 {720--748}
+  ,month =	 SEP
+}
+
+@InProceedings{BuckleySi84
+ ,bibstatus    = Todo
+ ,author       = {G. N. Buckley and A. Silberschatz}
+ ,title	       = {Concurrency Control in Graph Protocols by Using Edge Locks}
+ ,booktitle    = {Proc. 3rd ACM SIGACT-SIGMOD Symp. on Principles of Database Systems}
+ ,year	       = 1984
+ ,address      = {Waterloo, Ontario}
+ ,month	       = APR
+ ,pages	       = {45--50}
+ }
+
+@Article{CensierFe78
+  ,author = 	 {L. M. Censier and P. Feautrier}
+  ,title = 	 {A New Solution to Cache Coherence Problems in Multicache Systems}
+  ,journal = 	 {IEEE Transactions on Computers}
+  ,year = 	 1978
+  ,pages =	 {1112--1118}
+  ,month =	 DEC
+}
+
+ MIT/LCS/TR-489, Sept 1990.
+
+
+@MastersThesis{Chaiken90
+  ,author = 	 {David Lars Chaiken}
+  ,title = 	 {Cache Coherence Protocols for Large-Scale Multiprocessors}
+  ,school = 	 {MIT Department of Electrical Engineering and Computer Science}
+  ,year = 	 1990
+  ,address =	 {Cambridge, Massachusetts}
+  ,month =	 SEP
+  ,note =	 {Also available as MIT/LCS Technical Report 489.}
+  ,URL =         {ftp://ftp.cag.lcs.mit.edu/pub/papers/pdf/chaiken-thesis.pdf}
+}
+
+@InProceedings{ChaikenKuAg91
+  ,author = 	 {David Chaiken and John Kubiatowicz and Anant Agarwal}
+  ,title = 	 {LimitLESS Directories:  A Scalable Cache Coherence Scheme}
+  ,crossref =	 {ASPLOS91}
+  ,pages =	 {224--234}
+  ,url =         {ftp://ftp.cag.lcs.mit.edu/pub/papers/pdf/asplos4.pdf}
+}
+
+@MastersThesis{Cheng98
+ ,author = 	 {Guang-Ien Cheng}
+ ,title = 	 {Algorithms for Data-Race Detection in Multithreaded Programs}
+ ,school = 	 {MIT Department of Electrical Engineering and Computer Science}
+ ,year = 	 1998
+ ,address =	 {Cambridge, Massachusetts}
+ ,month =	 JUN
+ ,URL =          {ftp://theory.lcs.mit.edu/pub/cilk/cheng-thesis.ps.gz}
+}
+
+@InProceedings{ChengFeLe98
+ ,author = 	 {Guang-Ien Cheng and Mingdong Feng and Charles E. Leiserson and Keith H. Randall and Andrew F. Stark}
+ ,title = 	 {Detecting Data Races in Cilk Programs that Use Locks}
+ ,crossref = 	 {SPAA98}
+ ,pages =	 {298--309}
+ ,URL =          {ftp://theory.lcs.mit.edu/pub/cilk/brelly.ps.gz}
+}
+
+@Manual{Cilk532ReferenceManual
+ ,title = 	 {Cilk 5.3.2 Reference Manual}
+ ,key =		 {Supercomputing}
+ ,organization = {Supercomputing Technologies Group, MIT Laboratory for Computer Science}
+ ,url =          {http://supertech.lcs.mit.edu/cilk/manual-5.3.2.pdf}
+ ,year =         2001
+ ,month =        NOV      
+}
+
+@Misc{Conway66,
+  author =	 {Lynn Conway},
+  title =	 {Dynamic Instruction Scheduling},
+  howpublished = {in Lynn Conway's Archive and Reference Materials Regardin gthe IBM ICS-1 Machine},
+  month =    FEB,
+  year =     1966,
+  URL =      {http://ai.eecs.umich.edu/~mirror/ACS/Lynns.ACSarchive.front.html}
+}
+
+
+
+@Book{CormenLeRi01,
+  author =   {Thomas H. Cormen and Charles E. Leiserson and Ronald L. Rivest and Clifford Stein},
+  title =    {Introduction to Algorithms},
+  publisher =    {The MIT Press and McGraw-Hill},
+  year =     {2001},
+  edition =      {Second}
+}
+
+@Book{CostalesAl02
+  ,author =	 {Bryan Costales and Eric Allman}
+  ,title = 	 {Sendmail}
+  ,publisher = 	 {O'Reilly}
+  ,year = 	 2002
+  ,edition =	 {Third}
+  ,month =	 DEC
+}
+
+@Article{DaileyLe02
+  ,author = 	 {Don Dailey and Charles E. Leiserson}
+  ,title = 	 {Using {C}ilk to Write Multiprocessor Chess Programs}
+  ,journal = 	 {The Journal of the International Computer Chess Association}
+  ,year = 	 {to appear}
+}
+
+@MastersThesis{DeBergalis00,
+  author = 	 {Matthew S. DeBergalis},
+  title = 	 {A Parallel File {I/O} {API} for {Cilk} },
+  school = 	 {MIT Department of Electrical Engineering and Computer Science},
+  year = 	 2000,
+  month =	 MAY,
+}
+
+@Article{DetlefsHeWi88,
+  bibnote =	 {was detlefs88:inherit},
+  author = 	 {David L. Detlefs and Maurice P. Herlihy and
+                  Jeannette M. Wing},
+  title = 	 {Inheritance of Synchronization and Recovery
+                  Properties in {A}valon/{C++}},
+  journal = 	 {IEEE Computer},
+  year = 	 1988,
+  pages =	 {57--69},
+  month =	 dec,
+  local = 	 {00016189.pdf}
+}
+
+@Manual{Digital96,
+  title = 	 {VAX MACRO and Instruction Set Reference Manual},
+  organization = {Digital Equipment Corporation},
+  address =	 {Maynard, Massachusetts},
+  month =	 NOV,
+  year =	 1996,
+  URL = 	 {http://www.openvms.compaq.com:8000/72final/4515/4515pro.html}
+}
+
+@Manual{Digital98,
+  title = 	 {{DIGITAL} {F}ortran 90---User Manual for {DIGITAL} {UNIX} Systems},
+  organization = {Digital Equipment Corporation},
+  address =	 {Maynard, Massachusetts},
+  month =	 MAR,
+  year =	 1998,
+  URL = 	 {http://www.helsinki.fi/atk/unix/dec_manuals/df90au52/dfum.htm}
+}
+
+
+@InProceedings{Dike00
+ ,author       = {Jeff Dike}
+ ,title	       = {A user-mode port of the {L}inux kernel}
+ ,booktitle    = {Proceedings of the 4th Annual Linux Showcase and Conference}
+ ,year	       = 2000
+ ,address      = {Atlanta, Georgia}
+ ,month	       = OCT # { 10-14}
+ ,note	       = {\url{http://www.linuxshowcase.org/2000/2000papers/papers/dike}}
+ ,abstract     = {The Linux kernel has been ported so that it runs on itself, in a set of Linux processes. The result is a user space virtual machine using simulated hardware constructed from services provided by the host kernel. A Linux virtual machine is capable of running nearly all of the applications and services available on the host architecture. This paper describes the capabilities of a user-mode virtual machine, the design and implementation of the port, some of the applications that it lends itself to, and some of the work that remains to be done.}
+}
+
+
+@inproceedings{DinningSc90,
+	author = "Anne Dinning and Edith Schonberg",
+	title = "An Empirical Comparison of Monitoring Algorithms for
+                 Access Anomaly Detection",
+	booktitle = "Proceedings of the Second ACM SIGPLAN Symposium on
+		  Principles \& Practice of Parallel Programming (PPoPP)",
+	year = 1990,
+	editor = "",
+	pages = "1-10",
+	organization ="",
+	publisher = "ACM Press",
+	address = "",
+	month = "",
+	note = "" }
+
+@inproceedings{DinningSc91,
+	author = "Anne Dinning and Edith Schonberg",
+	title = "Detecting Access Anomalies in Programs with Critical Sections",
+	booktitle = "Proceedings of the ACM/ONR Workshop on Parallel and
+                     Distributed Debugging",
+	year = 1991,
+	editor = "",
+	pages = "85-96",
+	organization ="",
+	publisher = "ACM Press",
+	address = "",
+	month = "May",
+	note = "" }
+
+%John Eliot Blakeslee Moss
+@TechReport{Moss81,
+  bibnote = {was eliot81:nested},
+  author = 	 {J. Eliot B. Moss},
+  title = 	 {Nested Transactions: An Approach to Reliable
+                  Distributed Computing},
+  institution =  {MIT Laboratory for Computer Science},
+  year = 	 1981,
+  number =	 {MIT/LCS/TR-260},
+  month =	 apr,
+  local = {nested-transact.pdf},
+}
+
+% is there an Ellis82 ?
+@Article{Ellis80
+ ,bibstatus    = Todo
+ ,author       = {C. S. Ellis}
+ ,title	       = {Concurrent Search and Inserts in 2-3 Trees}
+ ,journal      = {Acta Informatica}
+ ,year	       = 1980
+ ,volume       = 14
+ ,number       = 1
+ ,pages	       = {63--86}
+ }
+
+@inproceedings{EmrathGhPa89,
+author = "Perry A. Emrath and Sanjoy Ghosh and David A. Padua",
+title = "Event Synchronization Analysis for Debugging Parallel Programs",
+booktitle = "Supercomputing '91",
+year = 1991,
+month = nov,
+pages = "580-588"
+}
+
+@InProceedings{FengLe97
+ ,author = 	 {Mingdong Feng and Charles E. Leiserson}
+ ,title = 	 {Efficient Detection of Determinacy Races in Cilk Programs}
+ ,booktitle =	 {Proceedings of the Ninth Annual ACM Symposium on Parallel Algorithms and Architectures (SPAA '97)}
+ ,pages =	 {1--11}
+ ,year =	 1997
+ ,address =	 {Newport, Rhode Island}
+ ,month =	 JUN # { 22--25}
+ ,url =          {ftp://theory.lcs.mit.edu/pub/cilk/spbags.ps.gz}
+}
+
+@Article{FengLe99
+ ,author = 	 {Mingdong Feng and Charles E. Leiserson}
+ ,title = 	 {Efficient Detection of Determinacy Races in Cilk Programs}
+ ,journal = 	 {Theory of Computing Systems}
+ ,year = 	 199
+ ,volume =	 32
+ ,number =	 3
+ ,pages =	 {301--326}
+ ,note =	 {A preliminary version appeared as \cite{FengLe97}.}
+}
+
+@mastersthesis{Fenster98,
+author = "Yaacov Fenster",
+title = "Detecting Parallel Access Anomalies",
+school = "Hebrew University",
+year = 1998,
+month = mar
+}
+
+@misc{FieldingGeMo99
+ ,title	       = {Hypertext Transfer Protocol---HTTP/1.1}
+ ,author       = {R. Fielding and J. Gettys and J. Mogul and H. Frystyk and L. Masinter and P. Leach and T. Berners-Lee}
+ ,howpublished = {Interent RFC 2616}
+ ,year	       = 1999
+ ,month	       = JUN
+}
+
+@InProceedings{FlanaganQa03
+ ,author 	= {Cormac Flanagan and Shaz Qadeer}
+ ,title 	= {A Type and Effect System for Atomicity}
+ ,crossref 	= {SIGPLAN98}
+ ,pages 	= {338--349}
+ ,doi 		= {http://doi.acm.org/10.1145/781131.781169}
+ ,summary = {Race-freedom is not sufficient for concurrent correctness.}
+ }
+
+@InProceedings{FordScJi84
+ ,bibstatus    = Todo
+ ,author       = {R. Ford and R. Schultz and M. Jipping}
+ ,title	       = {Performance Evaluation of Distributed Concurrency Control Mechanisms}
+ ,booktitle    = {Proc. 4th Symp. on Reliability in Distributed Software and Database Systems}
+ ,year	       = 1984
+ ,publisher    = {IEEE}
+ ,address      = {Silver Spring, Maryland}
+ ,month	       = OCT
+ ,pages	       = {84--89}
+ }
+
+@MastersThesis{Frigo98,
+  author = 	 {Matteo Frigo},
+  title = 	 {The Weakest Reasonable Memory Model},
+  school = 	 {MIT Department of Electrical Engineering and Computer Science},
+  year = 	 1998,
+  month =	 JAN,
+  url = 	 {ftp://theory.lcs.mit.edu/pub/cilk/frigo-ms-thesis.ps.gz}
+}
+
+@InProceedings{FrigoJo98
+  ,author = 	 {M. Frigo and S. G. Johnson}
+  ,title = 	 {{FFTW}: {A}n Adaptive Software Architecture for the {FFT}}
+  ,booktitle =	 {ICASSP Conference Proceedings}
+  ,pages =	 {1381-1384}
+  ,year =	 1998
+  ,volume =	 3
+}
+
+@InProceedings{FrigoLeRa98
+ ,author       = {Matteo Frigo and Charles E. Leiserson and Keith H. Randall}
+ ,title	       = {The Implementation of the {C}ilk-5 Multithreaded Language}
+ ,crossref =	 {SIGPLAN98}
+ ,pages =	 {212-223}
+ ,URL =          {ftp://theory.lcs.mit.edu/pub/cilk/cilk5.ps.gz}
+ }
+
+@InProceedings{FrigoLu98,
+  author = 	 {Matteo Frigo and Victor Luchangco},
+  title = 	 {Computation-Centric Memory Models},
+  crossref =	 {SPAA98},
+  pages =	 {240--249},
+  URL = 	 {ftp://theory.lcs.mit.edu/pub/cilk/spaa98-memory.ps.gz}
+}
+
+@PhdThesis{Frigo99,
+  author = 	 {Matteo Frigo},
+  title = 	 {Portable High-Performance Programs},
+  school = 	 {MIT Department of Electrical Engineering and Computer Science},
+  year = 	 1999,
+  address =	 {Cambridge, Massachusetts},
+  month =	 JUN,
+  URL = 	 {ftp://theory.lcs.mit.edu/pub/cilk/frigo-phd-thesis.ps.gz}
+}
+
+@InProceedings{FrigoLePr99
+  ,author =      {Matteo Frigo and Charles E. Leiserson and Harald Prokop and Sridhar Ramachandran}
+  ,title =   {Cache-Oblivious Algorithms}
+  ,booktitle =   {40th Annual Symposium on Foundations of Computer Science}
+  ,pages =   {285--297}
+  ,year =    1999
+  ,address =     {New York, New York}
+  ,month =   OCT # { 17--19}
+}
+
+@InProceedings{Gereb-GrausTs92,
+  author =       "Mih\'aly Ger\'eb-Graus and Thanasis Tsantilas",
+  title =        "Efficient Optical Communication in Parallel
+                 Computers",
+  booktitle =    "Proceedings of the 4th Annual {ACM} Symposium on
+                 Parallel Algorithms and Architectures (SPAA)",
+  year =         "1992",
+  pages =        "41--48"
+}
+
+@InProceedings{GibbonsMaRa94
+  ,author =      {Phillip B. Gibbons and Yossi Matias and Vijaya Ramachandran}
+  ,title =   {The {QRQW PRAM}: {A}ccounting For Contention In Parallel Algorithms}
+  ,booktitle =   {Proceedings of the Fifth Annual ACM-SIAM Symposium on Discrete Algorithms}
+  ,pages =   {638--648}
+  ,year =    1994
+  ,address =     {Arlington, Virginia}
+  ,month =   JAN
+}
+
+@InProceedings{GoldbergJeLeRa93,
+  bibnote = {was GoldbergEtAl93},
+  author =       "Leslie Ann Goldberg and Mark Jerrum and Tom Leighton
+                 and Satish Rao",
+  title =        "A Doubly Logarithmic Communication Algorithm for the
+                 Completely Connected Optical Communication Parallel
+                 Computer",
+  booktitle =    "Proceedings of the 5th Annual {ACM} Symposium on
+                 Parallel Algorithms and Architectures (SPAA)",
+  year =         "1993",
+  pages =        "300--309"
+}
+
+@InProceedings{GoldbergMaRa94,
+  bibnote = {was GoldbergMatRao94 goldberg94optical},
+  author =       "Leslie Ann Goldberg and Yossi Matias and Satish Rao",
+  title =        "An Optical Simulation of Shared Memory",
+  booktitle =    "Proceedings of the 6th Annual {ACM} Symposium on
+                 Parallel Algorithms and Architectures (SPAA)",
+  year =         "1994",
+  pages =        "257--267"
+}
+
+@TechReport{GoldbergMa96a,
+        author = {L.A. Goldberg and P.D. MacKenzie},
+        title = {Analysis of Practical Backoff Protocols for Contention Resolution with Multiple Servers},
+        year = {1996},
+        type = {ALCOM-IT Technical Report},
+        number = {TR-074-96},
+        institution = {Warwick},
+        note = {\url{http://www.dcs.warwick.ac.uk/~leslie/alcompapers/contention.ps}}
+} 
+
+@InProceedings{GoldbergMa96,
+  bibnote =      {Was soda96*554},
+  author =       "Leslie Ann Goldberg and Philip D. MacKenzie",
+  title =        "Analysis of Practical Backoff Protocols for Contention Resolution with Multiple Servers",
+  pages =        "554--563",
+  booktitle =    "Proceedings of the Seventh Annual {ACM}-{SIAM} Symposium on Discrete Algorithms (SODA)",
+  year =         1996
+}
+
+@Article{GoldbergJeLeRa97
+ ,bibnote = {was SICOMP::GoldbergJLR1997, also Goldberg:1997:DLC}
+ ,title =        "Doubly Logarithmic Communication Algorithms for
+                  Optical-Communication Parallel Computers"
+ ,author =       "Leslie Ann Goldberg and Mark Jerrum and Tom Leighton
+                  and Satish Rao"
+ ,pages =        "1100--1119"
+ ,journal =      "SIAM Journal on Computing"
+ ,month =        aug
+ ,year =         "1997"
+ ,volume =       "26"
+ ,number =       "4"
+}
+
+@Article{GoldbergMaRa99
+ ,bibnote = {Was Goldberg:1999:OSS}
+ ,author =       "Leslie Ann Goldberg and Yossi Matias and Satish Rao"
+ ,title =        "An Optical Simulation of Shared Memory"
+ ,journal =      "SIAM Journal on Computing"
+ ,volume =       "28"
+ ,number =       "5"
+ ,pages =        "1829--1847"
+ ,month =        oct
+ ,year =         "1999"
+}
+
+@Misc{Goldberg00
+  ,bibnote = {Was Goldberg-notes-2000}
+  ,author =	 {Leslie Ann Goldberg}
+  ,title =	 {Notes on Contention Resolution}
+  ,howpublished ={\url{http://www.dcs.warwick.ac.uk/~leslie/contention.html}, viewed } # OCT # { 2003.}
+  ,month =	 OCT
+  ,year =	 200
+}
+
+@article{GoldbergMaPaSr00,
+ bibnote = {was GoldbergMPS-2000 Goldberg:2000:CRC},
+ author = {Leslie Ann Goldberg and Philip D. MacKenzie and Mike Paterson and Aravind Srinivasan},
+ title = {Contention resolution with constant expected delay},
+ journal = {Journal of the ACM (JACM)},
+ volume = {47},
+ number = {6},
+ year = {2000},
+ pages = {1048--1096},
+ month = NOV
+ }
+
+@InProceedings{Goodman83
+  ,author = 	 {James R. Goodman}
+  ,title = 	 {Using Cache Memory to Reduce Processor-Memory Traffic}
+  ,crossref =	 {ISCA83}
+  ,pages =	 {124--131}
+  ,URL =         {ftp://ftp.cs.wisc.edu/galileo/papers/retro-goodman.pdf}
+}
+
+@Article{GoodmanGrMaMa88
+  ,author = 	 {Jonathan Goodman and Albert G. Greenberg and Neal Madras and Peter March}
+  ,title = 	 {Stability of Binary Exponential Backoff}
+  ,journal = 	 {Journal of the ACM}
+  ,year = 	 1988
+  ,volume =	 35
+  ,number =	 3
+  ,pages =	 {579--602}
+  ,month =       JUL
+}
+
+@InProceedings{GoodmanSh85
+ ,bibstatus    = Todo
+ ,author       = {N. Goodman and D. Shasha}
+ ,title	       = {Semantically-Based Concurrency Control for Search Structures}
+ ,booktitle    = {Proc. 4th ACM SIGACT-SIGMOD Symp. on Principles of Database Systems}
+ ,year	       = 1985
+ ,address      = {Portland, Oregon}
+ ,month	       = MAR
+ }
+
+@Misc{gprof,
+  author =	 {Jay Fenlason},
+  title =	 {The gprof Profiler},
+  howpublished = {Part of the Gnu Software Binary Utilities Package},
+  URL = 	 {http://sourceware.cygnus.com/binutils}
+}
+
+@InProceedings{GrahamKeMc82,
+  author = 	 {Susan L. Graham and Peter B. Kessler and Marshall K. McKusick},
+  title = 	 {{gprof}: A Call Graph Execution Profiler},
+  booktitle =	 {Proceedings of the SIGPLAN '82 Symposium on Compiler Construction},
+  pages =	 {120--126},
+  year =	 1982,
+  month =	 JUN,
+  note =	 {SIGPLAN Notices, Vol. 17, No. 6},
+  URL =          {ftp://gatekeeper.dec.com/pub/BSD/NetBSD/misc/lite2-docs/psd/18.gprof.ps.gz}
+}
+
+@Article{GrahamKeMc83,
+  author = 	 {S. Graham and P. Kessler and M. McKusick},
+  title = 	 {An Execution Profiler for Modular Programs},
+  journal = 	 {Software---Practice and Experience},
+  year = 	 1983,
+  volume =	 13,
+  pages =	 {671--685}
+}
+
+@TechReport{Gray81a
+  ,author = 	 {Jim Gray}
+  ,title = 	 {The Transaction Concept: Virtues and Limitations}
+  ,institution = {Tandem Computers}
+  ,year = 	 1981
+  ,number =	 {81.3}
+  ,month =	 JUN
+  ,URL = 	 {http://www.hpl.hp.com/techreports/tandem/TR-81.3.html}
+}
+
+@InProceedings{Gray81b
+  ,author = 	 {Jim Gray}
+  ,title = 	 {The Transaction Concept:  Virtues and Limitations}
+  ,booktitle =	 {Seventh International Conference of Very Large Data Bases}
+  ,pages =	 {144-154}
+  ,year =	 1981
+  ,month =	 SEP
+  ,note =        {Also published as \cite{Gray81a}.}
+}
+
+@Book{GrayRe93
+ ,author       = {Jim Gray and Andreas Reuter}
+ ,title	       = {Transaction Processing: Concepts and Techniques}
+ ,publisher    = {Morgan Kaufmann}
+ ,year	       = 1993
+ }
+
+@Article{GreenbergFlLa87,
+  bibnote = {was JACM::GreenbergFL1987},
+  title =        "Estimating the Multiplicities of Conflicts to Speed
+                 Their Resolution in Multiple Access Channels",
+  author =       "Albert G. Greenberg and Philippe Flajolet and Richard E. Ladner",
+  area =         "Computer Systems",
+  pages =        "289--325",
+  journal =      "Journal of the ACM",
+  month =        apr,
+  year =         "1987",
+  volume =       "34",
+  number =       "2"
+}
+
+@inproceedings{GreenbergLe85,
+    bibnote = {Was Greenberg-Leiserson-1985},
+    author = "Ronald I. Greenberg and Charles E. Leiserson",
+    title = "Randomized Routing on Fat-Trees",
+    booktitle = "Proceedings of the 26th Annual Symposium on the Foundations of Computer Science",
+    pages = "241--249",
+    year = "1985"
+}
+
+@ARTICLE{GreenbergLe89,
+    bibnote = {Was GreenbergLeiserson-1989},
+    author = "Ronald I. Greenberg and Charles E. Leiserson",
+    title = "Randomized Routing on Fat-Trees",
+    journal =      "Advances in Computing Research",
+    year =         "1989",
+    volume =       "5",
+    pages =        "345-374"
+}
+
+@Article{GreenbergWi85,
+  bibnote = {was GreenbergWinograd-1985 and JACM::GreenbergW1985},
+  title =        "A Lower Bound on the Time Needed in the Worst Case to
+                 Resolve Conflicts Deterministically in Multiple Access
+                 Channels",
+  author =       "Albert G. Greenberg and Shmuel Winograd",
+  area =         "Computer Systems",
+  pages =        "589--596",
+  journal =      "Journal of the ACM",
+  month =        jul,
+  year =         1985,
+  volume =       32,
+  number =       3
+}
+
+@InProceedings{GreenwaldCh96,
+ bibnote = {was 238767},
+ author = {Michael Greenwald and David Cheriton},
+ title = {The Synergy Between Non-blocking Synchronization and
+                  Operating System Structure},
+ booktitle = {Proceedings of the 2nd {USENIX} Symposium on Operating
+                  Systems Design and Implementation (OSDI)},
+ month = oct,
+ year = 1996,
+ isbn = {1-880446-82-0},
+ pages = {123--136},
+ location = {Seattle, Washington, United States},
+ doi = {http://doi.acm.org/10.1145/238721.238767},
+ publisher = {ACM Press},
+ local = {osdi96.pdf},
+ summary = {Three reasons to use non-blocking synchronization in the
+                  Cache Kernel: 1) synchronous code can be executed in
+                  asynchronous signal handlers, as in OORPC; 2)
+                  minimizes interference between process scheduling
+                  and synchronization; 3) non-blocking synchronization
+                  provides greater insulation from failures.  Three
+                  synergies: 1) (asynchronous) signals are only
+                  kernel-supported notification; 2) tolerance of
+                  threads being terminated (fail-stopped) in the
+                  middle of ``system library'' code, such as handling a
+                  page fault, etc; 3) isolation of synchronization
+                  from scheduling and thread deletion allows modular
+                  and reliable system design.  Implementation uses:
+                  atomic DCAS, type-stable memory management, and
+                  contention-minimizing data structures.},
+ }
+
+@Article{HainesKiMoNeWi94,
+ bibnote = {was 197346},
+ author = {Nicholas Haines and Darrell Kindred and J. Gregory
+                  Morrisett and Scott M. Nettles and Jeannette
+                  M. Wing},
+ title = {Composing first-class transactions},
+ journal = TOPLAS,
+ volume = {16},
+ number = {6},
+ month = nov,
+ year = {1994},
+ issn = {0164-0925},
+ pages = {1719--1736},
+ doi = {http://doi.acm.org/10.1145/197320.197346},
+ publisher = {ACM Press},
+ local = {p1719-haines.pdf},
+ }
+
+@InProceedings{HarrisFr03,
+  author = 	 {Tim Harris and Keir Fraser},
+  title = 	 {Language Support for Lightweight Transactions},
+  crossref =	 {OOPSLA03},
+  pages =	 {388--402},
+  year =	 2003,
+  doi = 	 {http://doi.acm.org/10.1145/949305.949340},
+}
+
+@InProceedings{HastadLeRo87
+ ,bibnote = {Was stoc87*241, Hastad:1987:ABP, STOC::HastadLR1987}
+ ,key = {Hastad87}
+ ,author = {Johan Hastad and Tom Leighton and Brian Rogoff}
+ ,title = {Analysis of Backoff Protocols for Multiple Access Channels}
+ ,crossref = {STOC87}
+ ,pages = {241--253}
+ ,note = {Extended abstract}
+ ,file = {Hastad87}
+ ,affiliation = {MIT math department and LCS}
+}
+
+@inproceedings{HelmboldMcWa90,
+author = "David P. Helmbold and Charles E. McDowell and Jian-Zhong Wang",
+title = "Analyzing Traces with Anonymous Synchronization",
+booktitle = "Proceedings of the 1990 International Conference on Parallel Processing",
+year = 1990,
+month = aug,
+pages = "II70-II77"
+}
+
+@TechReport{HenryKu98a
+ ,author       = {Dana S. Henry and Bradley C. Kuszmaul}
+ ,title	       = {Cyclic Segmented Parallel Prefix}
+ ,institution  = {Yale University}
+ ,year	       = 1998
+ ,type	       = {Ultrascalar Memo}
+ ,number       = 1
+ ,address      = {51 Prospect Street, New Haven, CT 06525}
+ ,month	       = NOV
+ }
+@TechReport{HenryKu98b
+ ,author       = {Dana S. Henry and Bradley C. Kuszmaul}
+ ,title	       = {An Efficient, Prioritized Scheduler Using Cyclic Prefix}
+ ,institution  = {Yale University}
+ ,year	       = 1998
+ ,type	       = {Ultrascalar Memo}
+ ,number       = 2
+ ,address      = {51 Prospect Street, New Haven, CT 06525}
+ ,month	       = "23~" # NOV
+ }
+
+@InProceedings{HenryKuVi99
+ ,author       = {Dana S. Henry and Bradley C. Kuszmaul and Vinod Viswanath}
+ ,title	       = {The {U}ltrascalar Processor---An Asymptotically Scalable Superscalar Microarchitecture}
+ ,booktitle    = {The Twentieth Anniversary Conference on Advanced Research in VLSI (ARVLSI\linebreak[0]'99)}
+ ,year	       = 1999
+ ,address      = {Atlanta, GA}
+ ,month	       = {21--24~} # MAR
+ ,pages        = {256--273}
+ }
+
+@TechReport{HenryKuLoSaSiVi99
+ ,author       = {Dana S. Henry and Bradley C. Kuszmaul and Gabriel H. Loh and Rahul Sami and JiJon Sit and Vinod Viswanath}
+ ,title	       = {An 8-Issue Out-of-Order Processor Implemented in a 0.18$\mu$m Copper/Low-$k$ Process}
+ ,institution  = {Yale University}
+ ,year	       = 1999
+ ,type	       = {Ultrascalar Memo}
+ ,month	       = NOV
+ ,note	       = {Phase I submission for SRC/UMC/Novellus Copper Design Contest}
+ }
+
+@TechReport{HenryLoSaSiViKu00
+ ,author       = {Dana S. Henry and Gabriel Loh and Rahul Sami and Ji-Jon Sit and Vinod Viswanath and Bradley Kuszmaul}
+ ,title        = {The UltraC2K:  A Wire-Intensive 8-Issue Out-of-Order Processor}
+ ,month        = AUG
+ ,year         = 2000
+ ,institution  = {Yale University}
+ ,type         = {Ultrasscalar Memo}
+ ,note         = {Final Submission for SRC/UMC Novellus Copper Design Contest.  Our project was selected for fabrication in a 0.18$\mu$m copper/low-$k$ process.}
+ }
+
+
+@InProceedings{HenryKuLoSa00
+ ,author       = {Dana S. Henry and Bradley C. Kuszmaul and Gabriel H. Loh and Rahul Sami}
+ ,title	       = {Circuits for Wide-Window Superscalar Processors}
+ ,booktitle =    "Proceedings of the 27th Annual International Symposium
+                 on Computer Architecture"
+ ,address =      "Vancouver, British Columbia"
+ ,X-organization = "IEEE Computer Society and ACM SIGARCH"
+ ,month =        jun # " 12--14,"
+ ,year =         "2000"
+ ,pages =        "236--247"
+ }
+
+@InProceedings{Herlihy88,
+ bibnote = {was 62593},
+ author = {Maurice P. Herlihy},
+ title = {Impossibility and Universality Results for Wait-Free
+                  Synchronization},
+ booktitle = {Proceedings of the 7th Annual {ACM} Symposium on
+                  Principles of Distributed Computing (PODC)},
+ month = aug,
+ year = 1988,
+ isbn = {0-89791-277-2},
+ pages = {276--290},
+ location = {Toronto, Ontario, Canada},
+ doi = {http://doi.acm.org/10.1145/62546.62593},
+ publisher = {ACM Press},
+ local = {p276-herlihy.pdf},
+ summary = {Prove statements of the form, ``there is no wait-free
+                  implementation of X by Y'', and show a hierarchy of
+                  objects.  Show a simple universal construction of a
+                  wait-free implementation of any sequential object.},
+ }
+
+@Article{Herlihy91
+  ,bibnote =	 {was 102808}
+  ,author = 	 {Maurice Herlihy}
+  ,title = 	 {Wait-Free Synchronization}
+  ,journal = 	 {ACM Transactions on Programming Languages and Systems (TOPLAS)}
+  ,year = 	 1991
+  ,volume =	 13
+  ,number =	 1
+  ,pages =	 {124--149}
+  ,month =	 jan
+  ,issn =	 {0164-0925}
+  ,doi =	 {http://doi.acm.org/10.1145/114005.102808}
+  ,publisher =	 {ACM Press}
+  ,summary =	 {Expanded version of Herlihy88}
+}
+
+@TechReport{HerlihyMo92
+  ,author = 	 {Maurice P. Herlihy and J. Eliot B. Moss}
+  ,title = 	 {Transactional Support for Lock-Free Data Structures}
+  ,institution = {Digital Cambridge Research Lab}
+  ,year = 	 1992
+  ,number =	 {92/07}
+  ,address =	 {One Kendall Square, Cambridge, MA 02139}
+  ,month =	 DEC
+  ,url =         {ftp://ftp.cs.umass.edu/pub/osl/papers/crl-92-07.ps.Z}
+}
+
+@InProceedings{HerlihyMo93
+ ,author       = {Maurice Herlihy and J. Eliot B. Moss}
+ ,title	       = {Transactional Memory: Architectural Support for
+                Lock-Free Data Structures}
+ ,crossref     = {ISCA93}
+ ,pages	       = {289--300}
+ ,url          = {http://www.cs.brown.edu/people/mph/isca2.ps}
+ ,doi 	       = {http://doi.acm.org/10.1145/165123.165164}
+ ,local	       = {p289-herlihy.pdf}
+ ,summary={Not non-blocking!  A processor which does transactional reads holds
+          an irrevocable lock on those cache lines, and any processor which
+          attempts a write on those lines will block.}
+ }
+
+@Article{Herlihy93
+ ,bibnote =	 {was 161469}
+ ,author = 	 {Maurice Herlihy}
+ ,title = 	 {A Methodology for Implementing Highly Concurrent Data Objects}
+ ,journal = 	 {ACM Transactactions on Programming Languages and Systems}
+ ,year = 	 1993
+ ,volume =	 15
+ ,number =	 5
+ ,pages =	 {745--770}
+ ,month =	 NOV
+ ,issn =	 {0164-0925}
+ ,doi = 	 {http://doi.acm.org/10.1145/161468.161469}
+ ,publisher =	 {ACM Press}
+ ,local =	 {p745-herlihy.pdf}
+ ,annote =	 {Earliest(?) exponential backoff for lock conflicts.  See Herlihy93.ps here.}
+ ,URL          = {http://gatekeeper.dec.com/pub/DEC/CRL/research-reports/91.10.ps}
+ ,summary = {Defines ``wait-free'' and ``lock-free''.  Provides
+                  copy-modify-swap algorithm for making ``small
+                  objects'' lock-free or wait-free, and a blocking
+                  strategy for ``large objects'' so that they can be
+                  treated as small objects.  Shows performance gains
+                  over spin locks.  Regarding wait-free and lock-free
+                  algorithms, ``the probabilistic guarantee against
+                  starvation provided by exponential backoff
+                  [lock-free] appears preferable to the deterministic
+                  guarantee provided by operation combining [wait-free].''}
+ ,bibstatus    = {C.~Scott checked this.}
+}
+
+@InProceedings{HerlihyLuMo03
+ ,bibnote = {was HerlihyLuMo02a, HerlihyLM03}
+ ,author =   {Maurice P. Herlihy and Victor Luchangco and Mark Moir}
+ ,title =    {Obstruc\-tion-Free Synchronization:  Double-Ended Queues as an Example}
+ ,booktitle = {Proceedings of the 23rd IEEE International Conference on Distributed Computing Systems (ICDCS)}
+ ,address = {Providence, Rhode Island}
+ ,month = MAY
+ ,year = 2003
+ ,pages = {522-529}
+ ,url = {http://www.cs.brown.edu/people/mph/HerlihyLM03/main.pdf}
+ ,local = {HerlihyLM03.pdf}
+ ,summary = {Introduces ``obstruction-freedom'' as an alternative to
+                  lock-free and wait-free data structures.
+                  Obstruction-freedom only guarantees progress in the
+                  absence of conflicts; thus some external
+                  contention-reducing method (such as exponential
+                  backoff) must be utilized to guarantee progress for
+                  the system as a whole.  Cites the Cache Kernel
+                  synergy paper as, ``Locking has a number of
+                  disadvantages with respect to software engineering,
+                  fault-tolerance, and scalability.''}
+}
+
+@InProceedings{HerlihyLuMoSc03
+ ,bibnote	= {was 872048}
+ ,key		= {Herlihy03LuMoSc}
+ ,author 	= {Maurice Herlihy and Victor Luchangco and Mark Moir and William N. {Scherer, III}}
+ ,title 	= {Software transactional memory for dynamic-sized data structures}
+ ,crossref	= {PODC03}
+ ,pages 	= {92--101}
+ ,doi 		= {http://doi.acm.org/10.1145/872035.872048}
+ ,local = {p92-herlihy.pdf}
+ ,summary = {First \emph{dynamic} transactional memory, but copies
+                  entire object and so works for small objects only.
+                  Basically Herlihy's method.  You must explicitly
+                  \emph{open} every object accessed, at which time
+                  conflict-checking is done.}
+ }
+
+@Misc{HerlihyMo95
+ ,key	       = {Herlihy95Mo}
+ ,author       = {Maurice Herlihy and J. Eliot B. Moss}
+ ,title	       = {System for Achieving Atomic Non-Sequential
+                Multi-Word Operations in Shared Memory}
+ ,howpublished = {U.S. Patent 5,428,761}
+ ,year	       = 1995
+ ,month	       = JUN # { 27}
+ ,note	       = {Filed Mar. 12, 1992}
+ ,annote       = {(Bradley Thursday, October 3, 2002):  This is a
+                  patent matching closely to \cite{HerlihyMo93}.}
+}
+% Todo: Banatre et al Cache Management in a Tightly-Coupled Fault
+%        Tolerant Multiprcoessor FTCS 20 1998 pp. 89-96 (cited by HerlihyMo95)
+
+@InProceedings{HoeAr99
+  ,author = 	 {James C. Hoe and Arvind}
+  ,title = 	 {Hardware Synthesis from Term Rewriting Systems}
+  ,key =	 {Hoe99}
+  ,booktitle =	 {Proceedings of X IFIP International Confernce on VLSI (VLSI 99)}
+  ,year =	 1999
+  ,address =	 {Lisbon, Portugal}
+  ,month =	 DEC # { 1--4}
+  ,URL =         {http://www.ece.cmu.edu/~jhoe/distribution/csgmemo/memo-421a.ps}
+}
+
+@PhdThesis{Hoe00
+ ,author = 	 {James C. Hoe}
+ ,title = 	 {Operation-Centric Hardware Description and Synthesis}
+ ,school = 	 {MIT Department of Electrical Engineering and Computer Science}
+ ,year = 	 2000
+ ,key =		 {Hoe00a}
+ ,address =	 {Cambridge, Massachusetts}
+ ,month =	 JUN
+ ,URL =          {http://www.ece.cmu.edu/~jhoe/distribution/thesis.ps}
+}
+
+@InProceedings{HoeAr00
+ ,author = 	 {James C. Hoe and Arvind}
+ ,key =          {Hoe00b}
+ ,title = 	 {Synthesis of Operation-Centric Hardware Descriptions}
+ ,booktitle =	 {Proceedings of 2000 International Conference on Computer-Aided Design}
+ ,pages =	 {511--518}
+ ,year =	 2000
+ ,address =	 {San Jose, California}
+ ,month =	 NOV # { 5--9}
+ ,URL =          {http://www.ece.cmu.edu/~jhoe/distribution/csgmemo/memo-426a.ps}
+}
+
+@Book{IEEE-802.11-1999
+ ,author       = {{IEEE 802.11 Working Group}}
+ ,title	       = {ANSI/IEEE Std. 802.11:  Wireless {LAN} Medium Access Control {(MAC)} and Physical Layer {(PHY)} Specifications}
+ ,publisher    = {IEEE Computer Society}
+ ,year	       = 1999
+ }
+
+@TechReport{JensenHaBr87
+  ,author = 	 {E. H. Jensen and G. W. Hagensen and J. M. Broughton}
+  ,title = 	 {A New Approach to Exclusive Data Access in Shared Memory Multiprocessors}
+  ,institution = {Lawrence Livermore National Laboratory}
+  ,year = 	 1987
+  ,number =	 {UCRL-97663}
+  ,address =	 {Livermore, California}
+  ,month =	 NOV
+}
+
+@InProceedings{JoergKu94
+  ,key       = {Joerg94}
+  ,author    = {Christopher F. Joerg and Bradley C. Kuszmaul}
+  ,title     = {Massively Parallel Chess}
+  ,booktitle = {Parallel Algorithms: Third DIMACS Parallel Implementation Challenge}
+  ,year      = 1994
+  ,address   = {Rutgers University}
+  ,month     = OCT # { 17--19}
+  ,url       = {ftp://csg-ftp.lcs.mit.edu/pub/users/bradley/dimacs94.ps.Z}
+}
+
+
+@PhdThesis{Joerg96
+ ,author = 	 {Christopher F. Joerg}
+ ,title = 	 {The Cilk System for Parallel Multithreaded Computing}
+ ,school = 	 {MIT Department of Electrical Engineering and Computer Science}
+ ,year = 	 1996
+ ,address =	 {Cambridge, Massachusetts}
+ ,month =	 JAN
+ ,URL =          {ftp://theory.lcs.mit.edu/pub/cilk/joerg-phd-thesis.ps.gz}
+}
+
+@InProceedings{KarpLuhe92,
+  bibnote = {STOC::KarpLH1992},
+  title =        "Efficient {PRAM} Simulation on a Distributed Memory Machine",
+  author =       "Richard M. Karp and Michael Luby and Friedhelm {Meyer auf der Heide}",
+  pages =        "318--326",
+  booktitle =    "Proceedings of the Twenty-Fourth Annual {ACM} Symposium on the Theory of Computing (STOC)",
+  year =         "1992",
+  month =        MAY,
+  address =      {Victoria, British Columbia, Canada}
+}
+
+@TechReport{Katz89,
+  bibnote = 	 {was katz89:paratran},
+  author = 	 {Morry Katz},
+  title = 	 {{ParaTran}: A Transparent, Transaction-Based Runtime
+                  Mechanism for Parallel Execution of Scheme},
+  institution =  {MIT Laboratory for Computer Science},
+  year = 	 1989,
+  number =	 {MIT/LCS/TR-454},
+  month =	 jul,
+  local = {paratran.pdf},
+}
+
+@Article{KedemSi81
+ ,bibstatus    = todo
+ ,author       = {Z. M. Kedem and A. Silberschatz}
+ ,title	       = {A Characterization of Database Graphs Admitting a Simple Locking Protocl}
+ ,journal      = {Acta Informatica}
+ ,year	       = 1981
+ ,volume       = 16
+ ,pages	       = {1--13}
+ }
+
+@Article{Kedem83
+ ,bibstatus    = Todo
+ ,author       = {Z. M. Kedem}
+ ,title	       = {Locking Protocols:  From Exclusive to Shared Locks}
+ ,journal      = JACM
+ ,year	       = 1983
+ ,volume       = 30
+ ,number       = 4
+ ,month	       = OCT
+ ,pages	       = {787--804}
+ }
+
+@InProceedings{KumarMe84
+ ,author       = {P.R.S. Kumar and L. Merakos}
+ ,title	       = {Distributed Control of Broadcast Channels with Acknowledgement Feedback:  {S}tability and Performance}
+ ,booktitle    = {Proceedings IEEE Conference on Decision and Control}
+ ,bibnote      = {Many authors cite this as "IEEE Control and Decision Conference"}
+ ,year	       = 1984
+ ,address      = {Las Vegas, Nevada}
+ ,month	       = DEC
+ }
+
+@InProceedings{Knight86,
+ bibnote	= {was 319854},
+ author 	= {Tom Knight},
+ title 		= {An architecture for mostly functional languages},
+ crossref	= {LFP86},
+ pages 		= {105--112},
+ doi 		= {http://doi.acm.org/10.1145/319838.319854},
+}
+
+@Misc{Knight89,
+  author = "Thomas F. {Knight, Jr.}",
+  title = "System and Method for parallel processing with mostly functional languages",
+  howpublished = "United States Patent 4,825,360",
+  month = 	 "April 25",
+  year = 	 1989
+}
+
+@Article{KungLe80
+ ,bibstatus    = Todo
+ ,author       = {H. T. Kung and P. L. Lehman}
+ ,title	       = {Concurrent Manipulation of Binary Search Trees}
+ ,journal      = {ACM Trans. on Database Systems}
+ ,year	       = 1980
+ ,volume       = 5
+ ,number       = 3
+ ,pages	       = {339-353}
+ }
+
+@Article{Kuszmaul95
+  ,author	= {Bradley C. Kuszmaul}
+  ,title	= {The {S}tar{T}ech Massively Parallel Chess Program} 
+  ,journal	= {The Journal of the International Computer Chess Association}
+  ,year		= 1995
+  ,month	= MAR
+  ,volume	= 18
+  ,number	= 1
+  ,pages        = {3--20}
+  ,url   	= {ftp://theory.lcs.mit.edu/pub/bradley/startech.ps}
+}
+
+@TechReport{KuszmaulLi99b
+  ,author = {Bradley C. Kuszmaul and Dong-Qi Liu}
+  ,title = {YDFG High-Level Architectural Description}
+  ,institution = {Yale University Computer Engineering Group}
+  ,year = 1999
+  ,type = {Technical Memo}
+  ,number = 2
+  ,address = {New Haven, CT}
+  ,month = JAN
+  ,note  = {2nd Revision}
+}
+
+@InProceedings{KuszmaulHe01
+  ,author = 	 {Bradley C. Kuszmaul and Dana S. Henry}
+  ,title = 	 {Branch Prediction in a Speculative Dataflow Processor}
+  ,booktitle =	 {The Fifth Workshop on Multithreaded Execution,
+Architecture, and Compilation (MTEAC-5)}
+  ,year =	 2001
+  ,address =	 {Austin, Texas}
+  ,month =	 DEC
+  ,note =	 {Held in conjunction with {\em the 34th Annual International Symposium on Microarchitecture (MICRO-34)}}
+  ,URL =         {http://arch.cs.yale.edu/~bradley/mteac5.ps}
+}
+
+@Article{KuszmaulHeLo02
+ ,author    = {Bradley C. Kuszmaul and Dana S. Henry and Gabriel H. Loh}
+ ,title     = {A Comparison of Asymptotically Scalable Superscalar Processors}
+ ,journal   = {Theory of Computer Systems (TOCS)}
+ ,volume    = 35
+ ,pages     = {129-150}
+ ,note      = {An early version appeared in {\em The Eleventh ACM Symposium on Parallel Algorithms and Architectures (SPAA '99)}, pages 126--137, St. Malo, France, June, 1999}
+ ,year      = 2002
+ }
+
+@Article{KwongWo82
+ ,bibstatus    = todo
+ ,author       = {Y. S. Kwong and D. Wood}
+ ,title	       = {Method for Concurrency in B-Trees}
+ ,journal      = {IEEE Trans. on Software Engineering}
+ ,year	       = 1982
+ ,volume       = {SE-8}
+ ,number       = 3
+ ,pages        = {211-223}
+ }
+
+
+@Misc{Lam73
+ ,title	       = {Some Satellite Simulation Results}
+ ,author       = {Simon S. Lam}
+ ,howpublished = {ARPA Network Information Center, Stanford Research Institute, Arpa Satellite System (ASS) Note 48 (NIC 17655)}
+ ,address      = {Menlo Park, California}
+ ,year	       = 1973
+ ,month	       = AUG
+ }
+
+@PhdThesis{Lam74
+ ,author       = {Simon S. Lam}
+ ,title	       = {Packet Switching in a Multi-Access Broadcast Channel with Application to Satellite Communication in a Computer Network}
+ ,school       = {Computer Science Department, University of California at Los Angeles}
+ ,year	       = 1974
+ ,month	       = MAR
+ ,note	       = {Published as Technical Report UCLA-ENG-7429, April 1974, and as \url{http://www.cs.utexas.edu/users/lam/Vita/UCLA/}.}
+ }
+
+@InProceedings{LaMarca94,
+ bibnote = {was 197975},
+ author = {Anthony LaMarca},
+ title = {A Performance Evaluation of Lock-Free Synchronization Protocols},
+ booktitle = {Proceedings of the 13th Annual {ACM} Symposium on
+                  Principles of Distributed Computing (PODC)},
+ month = aug,
+ year = 1994,
+ isbn = {0-89791-654-9},
+ pages = {130--140},
+ location = {Los Angeles, CA},
+ doi = {http://doi.acm.org/10.1145/197917.197975},
+ publisher = {ACM Press},
+ local = {p130-lamarca.pdf},
+ summary = {Model of performance for lock-free protocols: local cached
+                  instruction = 0, memory operation = 1,
+                  synchronization operation = C, number of threads =
+                  N, size of object = S, number of non-overlapping
+                  reads and writes to the object = R and W,
+                  respectively.  Graphs showing how real performance
+                  matches up to the model; interestingly it shows
+                  herlihy's wait-free protocol scaling surprisingly
+                  well.},
+ }
+
+@Article{Lamport77
+  ,bibnote =	 {was 359878}
+  ,author = 	 {Leslie Lamport}
+  ,title = 	 {Concurrent Reading and Writing}
+  ,journal = 	 {Communications of the ACM}
+  ,year = 	 1977
+  ,volume =	 20
+  ,number =	 11
+  ,pages =	 {806-811}
+  ,issn =	 {0001-0782}
+  ,doi =	 {http://doi.acm.org/10.1145/359863.359878}
+  ,publisher =	 {ACM Press}
+  ,month =	 nov
+  ,local =	 {p806-lamport.pdf}
+  ,summary =	 {Original introduction of lock-free synchronization.}
+}
+
+@Article{Lamport79,
+  author =       "Leslie Lamport",
+  title =        "How to Make a Multiprocessor That Correctly Executes
+                 Multiprocess Programs",
+  journal =      "IEEE Transactions on Computers",
+  year =         1979,
+  month =        sep,
+  number =       9,
+  pages =        "690--691",
+  volume =       "C-28",
+  file = {Lamport79}
+}
+
+@Article{LehmanYa81
+ ,bibstatus    = Todo
+ ,author       = {P. L. Lehman and S. B. Yao}
+ ,title	       = {Efficient Locking for Concurrent Operations on B-Trees}
+ ,journal      = {ACM Trans. on Database Systems}
+ ,year	       = 1981
+ ,volume       = 6
+ ,number       = 4
+ ,month	       = DEC
+ ,pages	       = {650-670}
+ }
+
+@Article{LeisersonRa97,
+  author = 	 {Charles E. Leiserson and Keith H. Randall},
+  title = 	 {Parallel algorithms for the circuit value update problem},
+  journal = 	 {Theory of Computing Systems},
+  year = 	 1997,
+  volume = 	 30,
+  pages = 	 {583-597}
+}
+
+@InProceedings{LeisersonMeNe86
+  ,author = 	 {Charles E. Leiserson and Jill P. Mesirov and Lena Nekludova
+                  and Stephen M. Omohundro and John Reif}
+  ,title = 	 {Solving Sparse Linear Systems via Parallel Nested Dissection on the {C}onnection {M}achine}
+  ,booktitle =	 {SIAM 1986 National Meeting}
+  ,year =	 1986
+  ,address =	 {Boston, Massachusetts}
+  ,month =	 JUL
+}
+
+@InProceedings{Leiserson97
+  ,author = 	 {Charles E. Leiserson}
+  ,title = 	 {Programming Irregular Parallel Applications In {C}ilk}
+  ,booktitle =	 {Solving Irregularly Structured Problems in Parallel: 4th International Symposium (IRREGULAR'97)}
+  ,pages =	 {61--71}
+  ,year =	 1997
+  ,address =	 {Paderborn, Germany}
+  ,month =	 JUN
+  ,publisher =	 {Springer-Verlag}
+}
+
+@Article{LeisersonPl98
+  ,author = 	 {Charles E. Leiserson and Aske Plaat}
+  ,title = 	 {Programming Parallel Applications in {C}ilk}
+  ,journal = 	 {SIAM News}
+  ,year = 	 1998
+  ,volume =	 31
+  ,number =	 4
+  ,pages =	 {6--7}
+  ,month =	 MAY
+}
+
+% this one is on ACM, but doesn't have a doi
+@InProceedings{Lerner88,
+ bibnote = {was 62601},
+ author = {Richard Allen Lerner},
+ title = {Reliable Servers: Design and Implementation in {A}valon/{C++}},
+ booktitle = {Proceedings of the 1st International Symposium on
+                  Databases for Parallel and Distributed Systems (DPDS)},
+ month = dec,
+ year = 1988,
+ isbn = {0-8186-0893-5},
+ pages = {13--21},
+ location = {Austin, Texas, United States},
+ publisher = {IEEE Computer Society Press},
+ local={p13-lerner.pdf},
+ summary={Using {\tt recoverable}, {\tt atomic}, {\tt subatomic}
+                  annotations in Avalon language (really,
+                  preprocessor) *almost* evaluates some benchmarks.},
+ }
+
+@InProceedings{LinderSaSo02,
+  author = 	 {Hanna Linder and Dipankar Sarma and Maneesh Soni},
+  title = 	 {Scalability of the Directory Entry Cache},
+  booktitle =	 {Proceedings of the 2002 Ottawa Linux Symposium},
+  pages =	 {289--300},
+  year =	 2002,
+  address =	 {Ottawa, Canada},
+  month =	 jun,
+  note =	 {\url{http://www.linuxsymposium.org/2002/}},
+  annote =       {Also at \url{http://lse.sourceforge.net/locking/dcache/dcache_lock.html}}
+}
+
+@InProceedings{LiskovSc82,
+ bibnote = {was 582155},
+ author = {Barbara Liskov and Robert Scheifler},
+ title = {Guardians and Actions: Linguistic Support for Robust,
+                  Distributed Programs},
+ pages = {7--19},
+ crossref = {POPL82},
+ location = {Albuquerque, Mexico},
+ doi = {http://doi.acm.org/10.1145/582153.582155},
+ local = {p381-liskov.pdf},
+ summary = {ARGUS programming language and system. ``Our approach is to
+                  provide atomicity as a fundamental concept in the
+                  language.'' ``The main features are guardians, the
+                  logical unit of distribution in our system, and
+                  atomic actions.'' ``Our implementation of (mutable)
+                  built-in atomic objects is based on a fairly simple
+                  locking model. There are two kinds of locks: read
+                  locks and write locks.''  Nested actions: ``To keep
+                  the locking rules simple, we do not allow a parent
+                  action to run concurrently with its children.'' ``In
+                  addition to nesting subactions inside other actions,
+                  it is sometimes useful to start a new top action
+                  inside another action. Such a `nested' top action,
+                  unlike a subaction, has no special privileges
+                  relative to its parent; for example, it is not able
+                  to read an atomic object modified by its
+                  parent. Furthermore, the commit of a nested top
+                  action is not relative to its parent; its versions
+                  are written to stable storage, and its locks are
+                  released, just as for normal top actions. Nested top
+                  actions are useful for benevolent side effects.''},
+ }
+
+@InProceedings{LiskovCuJoSc87,
+ bibnote = {was 37514},
+ author = {Barbara Liskov and Dorothy Curtis and Paul Johnson and
+                  Robert Scheifler},
+ title = {Implementation of {A}rgus},
+ booktitle = SOSP87,
+ month = nov,
+ year = {1987},
+ isbn = {0-89791-242-X},
+ pages = {111--122},
+ location = {Austin, Texas, United States},
+ doi = {http://doi.acm.org/10.1145/41457.37514},
+ publisher = {ACM Press},
+ local = {p111-liskov.pdf},
+ summary = { ``We begin by providing a brief overview of Argus to
+                  provide a context
+                  for the discussion of the implementation. Then in
+                  Section 3 we discuss our implementation environment
+                  and some of the constraints it placed on us. Next,
+                  in Section 4 we discuss how guardians and
+                  communication are implemented. Section 5 describes
+                  the implementation of actions and the recovery
+                  system. We conclude with a brief discussion of what
+                  we have accomplished.'' },
+ }
+
+@Article{Liskov88,
+ bibnote = {was 42399},
+ author = {Barbara Liskov},
+ title = {Distributed programming in {A}rgus},
+ journal = {Communications of the ACM},
+ volume = 31,
+ number = 3,
+ month = mar,
+ year = 1988,
+ issn = {0001-0782},
+ pages = {300--312},
+ doi = {http://doi.acm.org/10.1145/42392.42399},
+ publisher = {ACM Press},
+ local = {p300-liskov.pdf},
+ summary = {See LiskovSc82.}
+ }
+
+@InProceedings{LiuAiBh93
+  ,author =      {Pangfeng Liu and William Aiello and Sandeep Bhatt}
+  ,title =   {An Atomic Model for Message-Passing}
+  ,booktitle =   {Proceedings of the Fifth Annual ACM Symposium on Parallel Algorithms and Architectures (SPAA '93)}
+  ,pages =   {154--163}
+  ,year =    1993
+  ,address =     {Velen, Germany}
+  ,month =   JUN # "~30--" # JUL # "~2"
+}
+
+@InProceedings{MacKenziePlRa94,
+  bibnote = {was STOC::MacKenziePR1994},
+  title =        "On Contention Resolution Protocols and Associated
+                 Probabilistic Phenomena",
+  author =       "P. D. MacKenzie and C. G. Plaxton and R. Rajaraman",
+  pages =        "153--162",
+  booktitle =    "Proceedings of the Twenty-Sixth Annual {ACM} Symposium
+                 on the Theory of Computing (STOC)",
+  year =         "1994"
+}
+
+@Article{MacKenziePlRa98,
+  bibnote = {was JACM::MackenziePR1998},
+  title =        "On Contention Resolution Protocols and Associated
+                 Probabilistic Phenomena",
+  author =       "P. D. MacKenzie and C. G. Plaxton and R. Rajaraman",
+  area =         "Parallel Computation",
+  journal =      "Journal of the ACM",
+  pages =        "324--378",
+  month =        mar,
+  year =         "1998",
+  volume =       "45",
+  number =       "2"
+}
+
+@TechReport{MaessenArSh00
+ ,author       = {Jan-Willem Maessen and Arvind and Xiaowei Shen}
+ ,title	       = {Improving the {J}ava Memory Model Using {CRF}}
+ ,institution  = {MIT Laboratory for Computer Science}
+ ,year	       = 2000
+ ,type	       = {Computation Structures Group Memo}
+ ,number       = 428
+ ,month	       = OCT # { 6}
+ ,URL          = {http://csg.lcs.mit.edu/pubs/memos/Memo-428/memo-428.pdf}
+ ,bibstatus    = {Bradley checked}
+ }
+
+
+@Book{Maguire93
+ ,author       = {Steve Maguire}
+ ,title	       = {Writing Solid Code:  Microsoft's Techniques for Developing Bug-Free C Programs}
+ ,publisher    = {Microsoft Press}
+ ,year	       = 1993
+ ,address      = {Redmond, WA}
+}
+
+@Article{ManberLa84
+ ,bibstatus    = Todo
+ ,author       = {U. Manber and R. E. Ladner}
+ ,title	       = {Concurrency Control in a Dynamic Search Structure}
+ ,journal      = {ACM Trans. on Database Systems}
+ ,year	       = 1984
+ ,volume       = 9
+ ,number       = 3
+ ,month	       = SEP
+ ,pages	       = {439-455}
+ }
+
+@InProceedings{MartelVa88
+  ,author = 	 {C. U. Martel and T. P. Vayda}
+  ,title = 	 {The Complexity of Selection Resolution, Conflict Resolution and Maximum Finding on Multiple Access Channels}
+  ,booktitle =	 {VLSI Algorithms and Architectures, 3rd Aegean Workshop on Computing (AWOC '88)}
+  ,pages =	 {401--410}
+  ,year =	 1988
+  ,editor =	 {John H. Reif}
+  ,volume =	 319
+  ,series =	 {Lecture Notes in Computer Science}
+  ,address =	 {Corfu, Greece}
+  ,month =	 JUN # "~28--" # JUL # "~1"
+  ,note =	 {Springer Lecture Notes in Computer Science}
+}
+
+@TechReport{MassalinPu91,
+  bibnote = 	 {was massalin91:lockfree},
+  author = 	 {Henry Massalin and Calton Pu},
+  title = 	 {A Lock-Free Multiprocessor {OS} Kernel},
+  institution =  {Columbia University},
+  year = 	 1991,
+  number =	 {CUCS-005-91},
+  address =	 {New York, NY 10027},
+  month =	 jun,
+  local =	 {massalin_lock-free_TR91.pdf},
+  summary =	 {Describes the implementation of Synthesis V.1 using
+                  DCAS to implement LIFO Stacks, FIFO Queues, and
+                  Linked Lists.  Thread, VM, and I/O implementations
+                  are described.  Hardware is the Quamachine and a
+                  dual-processor Sony NeWS.}
+}
+
+@inproceedings{MellorCrummey91,
+	author = "John Mellor-Crummey",
+	title = "On-the-fly Detection of Data Races for Programs with
+		  Nested Fork-Join Parallelism",
+	booktitle = "Proceedings of Supercomputing'91",
+	year = 1991,
+	editor = "",
+	pages = "24-33",
+	organization ="",
+	publisher = "IEEE Computer Society Press",
+	address = "",
+	month = "",
+	note = "" }
+
+@inproceedings{MillerCh88,
+author = "Barton P. Miller and Jong-Deok Choi",
+title = "A Mechanism for Efficient Debugging of Parallel Programs",
+booktitle = "Proceedings of the 1988 ACM SIGPLAN Conference on
+                  Programming Language Design and Implementation
+                  (PLDI)",
+year = 1988,
+month = jun,
+day = "22-24",
+address = "Atlanta, Georgia",
+pages = "135-144"
+}
+
+@inproceedings{MinCh91,
+        author = "Sang Lyul Min and Jong-Deok Choi",
+        title = "An Efficient Cache-based Access Anomaly Detection Scheme",
+        crossref = {ASPLOS91},
+        pages = "235-244"
+}
+
+@misc{NelsonLeSa96,
+author = "Greg Nelson and K. Rustan M. Leino and James B. Saxe and Raymie Stata",
+title = "Extended Static Checking Home Page",
+URL = "http://www.research.digital.com/SRC/esc/Esc.html",
+year = 1996
+}
+
+@InProceedings{NettlesWi92,
+  bibnote = 	 {was nettles92:put},
+  author = 	 {Scott M. Nettles and Jeannette M. Wing},
+  title = 	 {Persistence + Undoability = Transactions},
+  booktitle =	 {Proceedings of HICSS-25},
+  year =	 1992,
+  pages =        {832--843},
+  address =	 {Washington, DC},
+  publisher =	 {IEEE Computer Society Press},
+  note =	 {Also CMU-CS-91-173, Carnegie Mellon Univ.,
+                  Pittsburgh, Pa., August 1991.},
+  local = 	 {00183335.pdf}
+}
+
+@inproceedings{NetzerGh92,
+        author = "Robert H. B. Netzer and Sanjoy Ghosh",
+        title = "Efficient Race Condition Detection for Shared-Memory
+                 Programs with Post/Wait Synchronization",
+        booktitle = "Proceedings of the 1992 International Conference on
+                     Parallel Processing",
+        year = 1992,
+        month = "August",
+        address = "St. Charles, Illinois",
+        pages = ""
+}
+
+@Article{Ng89,
+ bibnote = {was 75106},
+ author = {Tony P. Ng},
+ title = {Using histories to implement atomic objects},
+ journal = {ACM Transactions on Computer Systems (TOCS)},
+ volume = 7,
+ number = 4,
+ month = nov,
+ year = 1989,
+ issn = {0734-2071},
+ pages = {360--393},
+ doi = {http://doi.acm.org/10.1145/75104.75106},
+ publisher = {ACM Press},
+ local={p360-ng.pdf},
+ summary={``In this paper we describe an approach to implementing
+                  atomicity.'' ``Our approach uses a history
+                  abstraction. The history captures the ordering
+                  relationship among concurrent computations. By
+                  determining what types of computations exist in the
+                  history and their parameters, a computation can
+                  determine whether it can proceed.''},
+ }
+
+@inproceedings{NudlerRu86,
+	author = "Itzhak Nudler and Larry Rudolph",
+	title = "Tools for the Efficient Development of Efficient
+		  Parallel Programs",
+	booktitle = "Proceedings of the First Israeli Conference on
+                     Computer Systems Engineering",
+	year = 1986,
+	editor = "",
+	pages = "",
+	organization ="",
+	publisher = "",
+	address = "",
+	month = "May",
+	note = "" }
+
+@Article(MetcalfeBo76
+  ,Author      = {Robert M. Metcalfe and David R. Boggs}
+  ,Title       = {Ethernet:  Distributed Packet Switching for Local Computer Networks}
+  ,Journal     = {Communications of the ACM}
+  ,Year        = 1976
+  ,Volume      = 19
+  ,Number      = 7
+  ,Pages       = {395--404}
+  ,Month       = jul
+  ,File        = {6.033 Notebook}
+  ,Affiliation = {Xerox PARC}
+  ,Annote      = {Randomized adaptive exponential backoff}
+  ,Key         = {Metcalfe76Boggs}
+  )
+
+@Misc{OpenMP97,
+  title =	 {{OpenMP}: A Proposed Industry Standard {API} for Shared Memory Programming},
+  key = 	 {OpenMP},
+  howpublished = {OpenMP white paper},
+  month =	 OCT,
+  year =	 1997,
+  URL = 	 {http://www.openmp.org/specs/mp-documents/paper/paper.ps}
+}
+
+@Misc{Oracle02,
+  title = 	 {Oracle9i Database Summary},
+  howpublished = {An Oracle White Paper},
+  month =	 MAY,
+  key = 	 {Oracle},
+  year =	 2002,
+  url = 	 {http://otn.oracle.com/products/oracle9i/pdf/Oracle9i_Database_summary.pdf}
+}
+
+@TechReport{PaiRaAd97
+ ,bibnote = {was RSIM}
+ ,author =       {Vijay Pai and Parthasarathy Ranganathan and Sarita Adve}
+ ,title = 	 {{RSIM} Reference Manual, version 1.0}
+ ,institution = {Rice University}
+ ,month = AUG
+ ,year =         1997
+ ,number =       {9705}
+ ,note =          {\url{http://www-ece.rice.edu/~rsim}}
+}
+
+@TechReport{PalacharlaJoSm96
+  ,type =         "Technical Report"
+  ,number =       "CS-TR-96-1328"
+  ,institution =  "University of Wisconsin, Madison"
+  ,title =        "Quantifying the Complexity of Superscalar Processors"
+  ,year =         1996
+  ,month =        nov # "~19"
+  ,author =       "Subbarao Palacharla and Norman P. Jouppi and James E. Smith"
+  ,url =          {ftp://ftp.cs.wisc.edu/sohi/complexity.report.ps.Z}
+  ,abstract =     "To characterize future performance limitations of
+                 superscalar processors, the delays of key pipeline
+                 structures in superscalar processors are studied.
+                 First, a generic superscalar pipeline is defined. Then
+                 the specific areas of register renaming, instruction
+                 window wakeup and selection logic, and operand
+                 bypassing are analyzed. Each is modeled and Spice
+                 simulated for feature sizes of 0.8um, 0.35um, and
+                 0.18um. Performance (delay) results and trends are
+                 expressed in terms of issue width and window size. This
+                 analysis indicates that window (wakeup and select)
+                 logic and operand bypass logic are likely to be the
+                 most critical in the future."
+  ,bibstatus    = {Bradley checked}
+}
+
+@InProceedings{PalacharlaJoSm97
+  ,author   = "Subbarao Palacharla and Norman P. Jouppi and J. E. Smith"
+  ,title    = "Complexity-Effective Superscalar Processors"
+  ,crossref = {ISCA97}
+  ,pages    = "206--218"
+  ,url      = {http://www.ece.wisc.edu/~jes/papers/isca.ss.ps}
+  }
+
+@inproceedings{PerkovicKe96,
+        author = "Dejan Perkovi\'{c} and Peter Keleher",
+        title = "Online Data-Race Detection via Coherency Guarantees",
+        booktitle = "Proceedings of the Second USENIX Symposium on Operating
+                     Systems Design and Implementation (OSDI)",
+        year = 1996,
+        month = "October",
+        address = "Seattle, Washington",
+        pages = ""
+}
+
+@Article{PittelliGa89
+  ,author = 	 {Frank M. Pittelli and Hector Garcia-Molina}
+  ,title = 	 {Reliable scheduling in a {TMR} database system}
+  ,journal = 	 {ACM Transactions on Computer Systems}
+  ,year = 	 1989
+  ,volume =	 7
+  ,number =	 1
+  ,pages =	 {25--60}
+  ,month =	 FEB
+}
+
+@Misc{PongRuNg02
+ ,key	       = {Pong02Ru}
+ ,author       = {Fong Pong and Lance Russel and Tung Nguyen}
+ ,title	       = {Transactional Memory for Distributed Shared Memory Multiprocessor Computer Systems}
+ ,howpublished = {U.S. Patent 6,360,231}
+ ,year	       = 2002
+ ,month	       = JUN # { 19}
+ ,note	       = {Filed Feb. 26, 1999}
+ ,annote       =
+   {(Bradley Thursday, October 3 2002): The idea of this invention is
+    that each memory module has a scratch buffer cache.  The processor
+    can write several items to the buffer, and the tell the memory
+    module to commit them.  To commit, the memory module takes the
+    items from the buffer and writes them to the memory.  To abort,
+    the memory module takes the old values from the buffer and writs
+    them to memory.  Even if the processor fails in the middle, the
+    memory will be consistent.
+
+    Some differences from our work: It is not clear how to make
+    transactions that involve memory locations in two different memory
+    modules.  Also, it is not clear how to make transactions that are
+    too big to fit in the scratch buffer.}
+ }
+
+@Misc{Posix96
+ ,key =		 {IEEE}
+ ,title =	 {Information Technology --- {P}ortable {O}perating {S}ystem {I}nterface ({POSIX}) --- Part 1: System Application Program Interface ({API}) [{C} Language]}
+ ,howpublished = {IEEE Std 1003.1, 1996 Edition}
+ ,author = {{Institute of Electrical and Electronic Engineers}}
+ ,annote = {Includes the pthreads standard.}
+}
+
+% Postel is listed as the editor, but misc doesn't have an editor field.
+@misc{Postel81
+ ,title	       = {Transmission Control Protocol}
+ ,author       = {Jon Postel}
+ ,howpublished = {Internet RFC 793}
+ ,year	       = 1981
+ ,month	       = SEP
+ }
+
+@Manual{PostgreSQL01,
+  title = 	 {PostgreSQL 7.2.1 Documentation},
+  url = 	 {http://www.postgresql.org/idocs/index.php},
+  author =	 {The {PostgreSQL Global Development Group}},
+  year =	 2001
+}
+
+@Manual{prof,
+  title = 	 {Unix Programmer's Manual,, prof command},
+  organization = {Bell Laboratories},
+  address =	 {Murray Hill, New Jersey},
+  month =	 JAN,
+  year =	 1979,
+  annote =	 {Section 1}
+}
+
+@MastersThesis{Prokop99
+  ,author =      {Harald Prokop}
+  ,title =   {Cache-Oblivious Algorithms}
+ ,school =   {MIT Department of Electrical Engineering and Computer Science}
+  ,year =    1999
+  ,month =   May
+}
+
+@InProceedings{RaghavanUp95,
+  bibnote = {was STOC::RaghavanU1995},
+  title =        "Stochastic Contention Resolution With Short Delays",
+  author =       "Prabhakar Raghavan and Eli Upfal",
+  pages =        "229--237",
+  booktitle =    "Proceedings of the Twenty-Seventh Annual {ACM}
+                 Symposium on the Theory of Computing (STOC)",
+  year =         "1995"
+}
+
+@Article{RaghavanUp99,
+  bibnote = {was Raghavan:1999:SCR},
+  author =       "Prabhakar Raghavan and Eli Upfal",
+  title =        "Stochastic Contention Resolution With Short Delays",
+  journal =      "SIAM Journal on Computing",
+  volume =       "28",
+  number =       "2",
+  pages =        "709--719",
+  month =        apr,
+  year =         "1999"
+}
+
+
+@InProceedings{RajwarGo01
+  ,author = 	 {Ravi Rajwar and James R. Goodman}
+  ,title = 	 {Speculative {L}ock {E}lision: Enabling Highly Concurrent Multithreaded Execution}
+  ,booktitle =	 {Proceedings of the 34th Annual {ACM/IEEE} International Symposium on Microarchitecture}
+  ,pages =	 {294--305}
+  ,year =	 2001
+  ,address =	 {Austin, Texas}
+  ,month =	 DEC
+  ,URL = 	 {http://www.cs.wisc.edu/~rajwar/papers/micro01.pdf}
+}
+
+@InProceedings{RajwarGo02
+ ,bibnote = 	 {was 605399}
+ ,key =		 {Rajwar}
+ ,author = 	 {Ravi Rajwar and James R. Goodman}
+ ,title = 	 {Transactional Lock-Free Execution of Lock-Based Programs}
+ ,crossref =	 {ASPLOS02}
+ ,pages =	 {5--17}
+ ,doi = 	 {http://doi.acm.org/10.1145/605397.605399}
+ ,URL =          {http://www.cs.wisc.edu/~rajwar/papers/asplos02.pdf}
+ ,local =	 {p5-rajwar.pdf}
+ ,annote =       {
+ Some keywords:
+   timestamp-based fair conflict resolution
+   lock-free optimistic transactions
+   transactional lock removal
+ }
+}
+
+@InProceedings(Ranade87
+  ,Author      = {Abhiram G. Ranade}
+  ,Title       = {How to Emulate Shared Memory}
+  ,Crossref    = {FOCS87}
+  ,Pages       = {185--194}
+  ,Affiliation = {Dept. Computer Science, Yale University, New Haven, CT 06520}
+  ,Abstract    = {A simple algorithm is presented for emulating an N-processor
+              concurrent-read-concurrent-write parallel random access machine
+              (PRAM) on an N-node butterfly. Each step of the PRAM is emulated
+              in time O(log N) with high probability, using first-in-first-out
+              queues of size O(1) at each node. The only use of randomization
+              is in selecting a hash function to distribute the shared address
+              space of the PRAM onto the nodes of the butterfly. The routing
+              itself is both deterministic and oblivious, and messages are
+              combined without the use of associative memories or explicit
+              sorting. Besides being optimal, the algorithm has the advantage
+              of extreme simplicity and is easy to use in practice.}
+  )
+
+@Article{Ranade91
+ ,author       = {A. G. Ranade}
+ ,title	       = {How to Emulate Shared Memory}
+ ,journal      = {Journal of Computer and Systems Sciences}
+ ,year	       = 1991
+ ,volume       = 42
+ ,number       = 3 
+ ,pages	       = {307--326}
+ }
+
+@InCollection{Ranade01
+  ,author = 	 {Abhiram G. Ranade}
+  ,title = 	 {The Delay Sequence Argument}
+  ,booktitle = 	 {Handbook of Randomized Algorithms}
+  ,publisher = 	 {Kluwer Academic Publishers}
+  ,year = 	 2001
+  ,chapter =	 1
+}
+
+@TechReport{Reed78,
+  bibnote =	 {was reed78:naming},
+  author = 	 {David Patrick Reed},
+  title = 	 {Naming and Synchronization in a Decentralized
+                  Computer System},
+  institution =  {MIT Laboratory for Computer Science},
+  year = 	 1978,
+  number =	 {MIT/LCS/TR-205},
+  month =	 sep,
+  local = {reed.pdf},
+  summary = {``We regard an object that is modifiable as a sequence of
+                  immutable versions.''},
+}
+
+@Article{RichardsonCaSc93,
+ bibnote = {was 174157},
+ author = {Joel E. Richardson and Michael J. Carey and Daniel T. Schuh},
+ title = {The design of the {E} programming language},
+ journal = TOPLAS,
+ volume = 15,
+ number = 3,
+ month = jul,
+ year = 1993,
+ issn = {0164-0925},
+ pages = {494--534},
+ doi = {http://doi.acm.org/10.1145/169683.174157},
+ publisher = {ACM Press},
+ local = {p494-richardson.pdf},
+ summary = {A persistent programming language based on C++, tied
+                  closely to an underlying database.  As such, has
+                  some limited support for transactions.},
+}
+
+@misc{Rivest92
+  ,author = "Ronald L. Rivest"
+  ,title = "The {MD5} Message Digest Algorithm"
+  ,howpublished = "Internet RFC 1321"
+  ,month = APR
+  ,year = 1992
+}
+
+@article{Robson71,
+author = "J. M. Robson",
+title = "An Estimate of the Store Size Necessary for Dynamic Storage Allocation",
+journal = "Journal of the ACM",
+year = 1971,
+month = jul,
+volume = 18,
+number = 3,
+pages = "416--423"
+}
+
+@InProceedings{RudysWa02,
+ author 	= {Algis Rudys and Dan S. Wallach},
+ title  	= {Transactional Rollback for Language-Based Systems},
+ booktitle 	= {Proceedings of the 2002 International Conference on
+                   Dependable Systems and Networks (DSN)},
+ month		= jun,
+ year   	= {2002},
+ isbn 		= {0-7695-1597-5},
+ pages 		= {439--448},
+ publisher 	= {IEEE Computer Society},
+ summary	= {Transactions used for security; 6x to 23x slowdown.},
+}
+
+@InProceedings{SaitoBe98
+ ,key          = Saito98Be
+ ,author       = {Yashushi Saito and Brian Bershad}
+ ,title	       = {A Transactional Memory Service in an Extensible Operating System}
+ ,url          = {http://www.usenix.org/publications/library/proceedings/usenix98/full_papers/saito/saito.pdf}
+ ,crossref     = {Usenix98}
+ ,key	       = Saito98Be
+ ,pages	       = {53--64}
+ ,annote       = {(Bradley Thursday, October 3 2002): Provide ACID properties on memory-mapped files.  Manages memory at page-level.}
+ ,bibstatus    = {Bradley checked}
+ }
+
+@Article{Samadi76
+ ,bibstatus    = todo
+ ,author       = {B. Samadi}
+ ,title	       = {B-Trees in a System with Multiple Users}
+ ,journal      = {Inform. Proc. Letters}
+ ,year	       = 1976
+ ,volume       = 5
+ ,number       = 4
+ ,pages	       = {107--112}
+ }
+
+@inproceedings{SavageBuNe97,
+author = "Stefan Savage and Michael Burrows and Greg Nelson and Patric Sobalvarro and Thomas Anderson",
+title = "Eraser: A Dynamic Race Detector for Multi-Threaded Programs",
+booktitle = "Proceedings of the Sixteenth ACM Symposium on Operating Systems Principles (SOSP)",
+year = 1997,
+month = oct
+}
+
+@InProceedings{ScalesGh97,
+ bibnote = {was 266673},
+ author = {Daniel J. Scales and Kourosh Gharachorloo},
+ title = {Towards transparent and efficient software distributed
+                  shared memory},
+ booktitle = SOSP97,
+ month = oct,
+ year = 1997,
+ isbn = {0-89791-916-5},
+ pages = {157--169},
+ location = {Saint Malo, France},
+ doi = {http://doi.acm.org/10.1145/268998.266673},
+ publisher = {ACM Press},
+ local = {p157-scales.pdf},
+}
+
+@Article{SchorrWa67,
+ bibnote = {was 363554},
+ author = {H. Schorr and W. M. Waite},
+ title = {An efficient machine-independent procedure for garbage
+                  collection in various list structures},
+ journal = {Communications of the ACM},
+ volume = 10,
+ number = 8,
+ month = aug,
+ year = 1967,
+ issn = {0001-0782},
+ pages = {501--506},
+ doi = {http://doi.acm.org/10.1145/363534.363554},
+ publisher = {ACM Press},
+ local = {destructive-tree.pdf},
+ summary = {Describes a destructive tree traversal algorithm, in the
+                  context of garbage collection.  Transactions may
+            make destructive traversals more robust to interruptions.},
+}
+
+% Todo: Nir Shavit, Software Transactional Memory, PDOC 1995 204-213
+%  Distributed Comptuing 10(2): 99--116 1997
+%  http://www.math.tau.ac.il/~shanir/publications/ST-stm.ps
+@InProceedings{ShavitTo95
+ ,bibnote      = {was 224987}
+ ,author       = "Nir Shavit and Dan Touitou"
+ ,title        = "Software Transactional Memory"
+ ,crossref     = {PODC95}
+ ,pages        = "204-213"
+ ,doi = {http://doi.acm.org/10.1145/224964.224987}
+ ,local        = {p204-shavit.pdf}
+ ,summary = {\emph{Static} transactional memory only; that is, input and
+                  output locations must be known in advance.}
+}
+
+@Article{ShavitTo97
+ ,key          = Shavit97To
+ ,author       = {Nir Shavit and Dan Touitou}
+ ,title	       = {Software Transactional Memory}
+ ,journal      = {Distributed Computing}
+ ,year	       = 1997
+ ,volume       = 10
+ ,pages	       = {99--116}
+ ,note	       = {A preliminary version appeared as \cite{ShavitTo95}.}
+ }
+
+@PhdThesis{Shen00
+ ,author = 	 {Xiaowei Shen}
+ ,title = 	 {Design and Verification of Adaptive Cache Coherence Protocols}
+ ,school = 	 {MIT Department of Electrical Engineering and Computer Science}
+ ,address =	 {Cambridge, Massachusetts}
+ ,year = 	 2000
+ ,key =		 {Shen00}
+ ,month =	 JAN
+}
+
+@Article{SilberschatzKe80
+ ,bibstatus    = todo
+ ,author       = {A. Silberschatz and Z. Kedem}
+ ,title	       = {Consistency in Hierarchical Database Systems}
+ ,journal      = JACM
+ ,year	       = 1980
+ ,key	       = Silberschatz80
+ ,volume       = 27
+ ,number       = 1
+ ,month	       = {72--80}
+ }
+
+@Misc{Sleepycat97
+  ,key =	 {Sleepycat}
+  ,title =	 {{T}he {B}erkeley {D}atabase Version 2}
+  ,howpublished ={Software available from \url{http://sleepycat.com}}
+  ,year =	 1997
+}
+
+@MastersThesis{Song98,
+  author = 	 {Bin Song},
+  title = 	 {Scheduling Adaptively Parallel Jobs},
+  school = 	 {MIT Department of Electrical Engineering and Computer Science},
+  year = 	 1998,
+  address = 	 {Cambridge, Massachusetts},
+  month = 	 jan
+}
+
+@Unpublished{Song99,
+  author = 	 {Bin Song},
+  title = 	 {A Fair and Efficient Scheduler for Adaptively Parallel Jobs},
+  note = 	 {Unpublished manuscript},
+  OPTkey = 	 {},
+  OPTmonth = 	 {},
+  year = 	 1999,
+  OPTannote = 	 {}
+}
+
+@Misc{Spec92,
+  key =		 {Spec92},
+  howpublished = {SPEC Newsletter, Volume 3,4},
+  year =	 1991
+}
+
+@MastersThesis{Stark98
+ ,author = 	 {Andrew F. Stark}
+ ,title = 	 {Debugging Multithreaded Programs that Incorporate User-Level Locking}
+ ,school = 	 {MIT Department of Electrical Engineering and Computer Science}
+ ,year = 	 1998
+ ,address =	 {Cambridge, Massachusetts}
+ ,month =	 MAY
+ ,URL =          {ftp://theory.lcs.mit.edu/pub/cilk/astark-thesis.ps.gz}
+}
+
+ 
+@InProceedings{StoyShAr01
+ ,author = 	 {Joseph Stoy and Xiaowei Shen and Arvind}
+ ,title = 	 {Proofs of Correctness of Cache-Coherence Protocols}
+ ,key =		 {Stoy01}
+ ,booktitle =	 {Proceedings of the Formal Methods for Increasing Software Productivity,
+International Symposium of Formal Methods Europe (FME 2001)}
+ ,pages =	 {43--71}
+ ,year =	 2001
+ ,editor =	 {J. N. Oliveira and Pamela Save}
+ ,volume =	 2021
+ ,series =	 {Lecture Notes in Computer Science}
+ ,address =	 {Berlin, Germany}
+ ,month =	 MAR # { 12--16}
+ ,publisher =	 {Springer-Verlag}
+ ,URL =         {http://csg.lcs.mit.edu/pubs/memos/Memo-432/memo-432.pdf}
+}
+
+@Misc{Sun88
+ ,author       = {Sun Microsystems}
+ ,title	       = {{RPC}: Remote Procedure Call Protocol Specification Version 2}
+ ,howpublished = {Internet RFC 1057}
+ ,year	       = 1988
+ ,month	       = JUN
+ }
+
+% Notes from ShavitTo97
+%       Massalin and Pu [24] compare and swap on two words.
+%       Anderson [2] parallel path compression on lists using splie operation
+%       Israeli and Rappoport's Heap [20] using three-word compare&swap
+%       Israeli and Rappoport's [21] show a non-blocking k-word compare-and swap using load-linked-store-conditional
+%       Herlihy and Moss is described as being {\em blocking} which is probably inaccurate
+%       Bershad [7]; Alemany and Felton [4]; and LaMarca [22] use OS support
+% Still reading...
+
+% Other Todo:
+% Todo: Enhancing Software Reliability with Speculative Threads Jeffrey Oplinger
+% Todo: A practical multi-word compare-and-swap operation Harris Fraser Pratt
+% Todo: Even better DCAS-Based Concurrend Deques - Detlefs, Floot, Garthwaite 2000
+% todo: Testing Shared Memories: Phillip Gibbons Ephraim 1997
+
+@InProceedings{TinkerKa88,
+ bibnote = {was 62682},
+ author = {Pete Tinker and Morry Katz},
+ title = {Parallel execution of sequential scheme with {ParaTran}},
+ crossref = {LFP88},
+ pages = {28--39},
+ doi = {http://doi.acm.org/10.1145/62678.62682},
+ local = {paratran2.pdf},
+}
+
+@misc{TJoensHuSc01
+ ,title	       = {{DHCP} Reconfiguration Extension}
+ ,author       = {Y. T'Joens and C. Hublet and P. {De Schrijver}}
+ ,hospublished = {Internet RFC 3203}
+ ,year	       = 2001
+ ,month	       = DEC
+ }
+
+@InProceedings{TolmachAp90,
+ bibnote = {was 91564},
+ author = {Andrew P. Tolmach and Andrew W. Appel},
+ title = {Debugging {S}tandard {ML} without reverse engineering},
+ crossref = {LFP90},
+ pages = {1--12},
+ doi = {http://doi.acm.org/10.1145/91556.91564},
+ local = {p1-tolmach.pdf},
+ summary = {Old version structures for mutable data.}
+ }
+
+@article{Tomasulo67
+ ,author = "Tomasulo, R.M."
+ ,title = "An Efficient Algorithm for Exploiting Multiple Arithmetic Units"
+ ,journal = "IBM Journal of Research and Development"
+ ,volume = 11
+ ,number = 1
+ ,year = 1967
+ ,month = JAN
+ ,pages = "25--33"
+ ,annote = "dynamic instruction scheduling, IBM 360/91, dataflow"
+}
+
+@Misc{Tridgell99
+ ,author       = {Andrew Tridgell}
+ ,title	       = {Emulating {N}etbench}
+ ,howpublished = {\url{http://samba.org/ftp/tridge/dbench/README}}
+ ,year	       = 1999
+ }
+
+@InProceedings{Valois95,
+ bibnote = {was 224988},
+ author = {John D. Valois},
+ title = {Lock-Free Linked Lists Using Compare-and-Swap},
+ crossref = {PODC95},
+ pages = {214--222},
+ doi = {http://doi.acm.org/10.1145/224964.224988},
+ local = {p214-valois.pdf},
+ summary = {Like the title says, a shared singly-linked list is
+                  implemented using only CAS.},
+ }
+
+@Article{WeihlLi85,
+ bibnote = {was 3319},
+ author = {William Weihl and Barbara Liskov},
+ title = {Implementation of resilient, atomic data types},
+ journal = TOPLAS,
+ volume = {7},
+ number = {2},
+ month = apr,
+ year = {1985},
+ issn = {0164-0925},
+ pages = {244--269},
+ doi = {http://doi.acm.org/10.1145/3318.3319},
+ publisher = {ACM Press},
+ local = {p244-weihl.pdf},
+ summary = {More Argus. ``A major issue in many applications is how to
+                  preserve the consistency of data in the presence of
+                  concurrency and hardware failures. We suggest
+                  addressing this problem by implementing applications
+                  in terms of abstract data types with two properties:
+                  Their objects are atomic (they provide serializa-
+                  bility and recoverability for activities using them)
+                  and resilient (they survive hardware failures with
+                  acceptably high probability). We define what it
+                  means for abstract data types to be atomic and
+                  resilient. We also discuss issues that arise in
+                  implementing such types, and describe a particular
+                  linguistic mechanism provided in the Argus
+                  programming language.''},
+ }
+
+@Article{Weihl90,
+ bibnote = {was 78944},
+ author = {William E. Weihl},
+ title = {Linguistic support for atomic data types},
+ journal = TOPLAS,
+ volume = 12,
+ number = 2,
+ month = apr,
+ year = 1990,
+ issn = {0164-0925},
+ pages = {178--202},
+ doi = {http://doi.acm.org/10.1145/78942.78944},
+ publisher = {ACM Press},
+ local = {p178-weihl.pdf},
+ summary = {``In this paper we analyze the expressive power of existing
+                  proposals for language features intended to support
+                  the implementation of atomic types. We illustrate
+                  several limitations of existing proposals and
+                  propose a new approach that avoids these problems.''
+                  Yet more ARGUS work.},
+ }
+
+@inproceedings{Willard84,
+ bibnote = {was Willard-84},
+ author = {Dan E. Willard},
+ crossref = {STOC84},
+ title = {Log-logarithmic protocols for resolving ethernet and semaphore conflicts},
+ pages = {512--521}
+ }
+
+@article{WilsonJoNeBo95,
+author = "Paul R. Wilson and Mark S. Johnstone and Michael Neely and David Boles",
+title = "Dynamic Storage Allocation: A Survey and Critical Review",
+journal = "1995 International Workshop on Memory Management",
+year = "1995",
+month = sep,
+publisher = "Springer Verlag"
+}
+
+@Misc{Wiseband02
+ ,key          = {Wiseband}
+ ,title	       = {Intelligent Amplifiers}
+ ,howpublished = {\url{http://www.wiseband.com/Intelligant_amplifiers.pdf} (viewed October 2003)}
+ ,year	       = 2002
+ ,month	       = SEP
+ }
+@Misc{Flex,
+  title =	 {The {FLEX} compiler project},
+  howpublished = {\texttt{http://\hspace{0pt}flex-compiler.lcs.mit.edu/}},
+}
+
+%% Cross-referenced items follow
+
+@Proceedings{ASPLOS91
+ ,booktitle    = {Proceedings of the 4th International Conference on
+                  Architectural Support for Programming Languages and
+                  Operating Systems (ASPLOS-IV)}
+ ,month =	 APR # {~8--11}
+ ,year =	 1991
+ ,address =	 {Santa Clara, California}
+ ,isbn =	 {0-89791-380-9}
+ ,publisher =	 {ACM Press}
+  ,note =        {Proceedings published as SIGARCH Computer Architecture News, Volume~19, Number~2, April 1991.
+		   SIGOPS Operating Systems Review, Volume~25, Special Issue, April 1991.
+		   SIGPLAN Sigplan Notices, Volume~26, Number~4, April 1991}  
+}
+
+@Proceedings{ASPLOS02
+ ,booktitle    = {Proceedings of the 10th International Conference on
+                  Architectural Support for Programming Languages and
+                  Operating Systems (ASPLOS-X)}
+ ,month        = OCT # { 5--9}
+ ,year	       = 2002
+ ,address      = {San Jose, California}
+ ,isbn 	       = {1-58113-574-2}
+ ,publisher    = {ACM Press}
+}
+
+@Conference(FOCS87
+  ,BookTitle = {Proceedings of the 28th Symposium on the Foundations of Computer Science}
+  ,Year      = 1987
+  ,Month     = oct
+  ,Day       = {12--14}
+  ,Address  = {Los Angeles, California}
+  )
+
+@Conference(ISCA83
+  ,BookTitle = {Conference Proceedings of the tenth International Symposium on Computer Architecture}
+  ,Year      = 1983
+  ,month     = JUN
+  ,address   = {Stockholm, Sweden}
+  )
+
+@Proceedings(ISCA89
+  ,BookTitle = {The 16th Annual International Symposium on Computer Architecture}
+  ,Year      = 1989
+  ,Note      = {ACM SIGARCH Computer Architecture News, Volume~17, Number~3, June 1989}
+  ,File      = {Shelves}
+  ,address   = {Jerusalem, Israel}
+  ,Month     = May
+  ,Date      = {May 28--June 1}
+  )
+@Proceedings{ISCA93
+ ,booktitle    = {Proceedings of the 20th Annual International
+                  Conference on Computer Architecture (ISCA).
+                (Also published as ACM SIGARCH Computer
+                Architecture News, Volume 21, Issue 2, May 1993.)}
+ ,month        = may
+ ,year	       = 1993
+ ,address      = {San Diego, California}
+ ,isbn 	       = {0-8186-3810-9}
+ ,publisher    = {ACM Press}
+ }
+
+@Proceedings{ISCA97
+ ,booktitle    = {Proceedings of the 24th Annual International Symposium
+                 on Computer Architecture (ISCA~'97)}
+ ,year	       = 1997
+ ,organization = {ACM SIGARCH and IEEE Computer Society TCCA}
+ ,address      = {Denver, Colorado}
+ ,month        = "2--4 " # jun
+ }
+
+@Proceedings{LFP86,
+ booktitle = {Proceedings of the 1986 {ACM} Conference on {LISP} and
+                  Functional Programming ({LFP})},
+ year 		= 1986,
+ isbn 		= {0-89791-200-4},
+ location 	= {Cambridge, Massachusetts, United States},
+ publisher 	= {ACM Press}
+ }
+
+@Proceedings{LFP88,
+ booktitle = {Proceedings of the 1988 {ACM} Conference on {LISP} and
+                  Functional Programming ({LFP})},
+ month = jul,
+ year = 1988,
+ isbn = {0-89791-273-X},
+ location = {Snowbird, Utah, United States},
+ publisher = {ACM Press},
+ }
+
+@Proceedings{LFP90,
+ booktitle = {Proceedings of the 1990 {ACM} Conference on {LISP} and
+                  Functional Programming ({LFP})},
+ month = jun,
+ year = 1990,
+ isbn = {0-89791-368-X},
+ location = {Nice, France},
+ publisher = {ACM Press},
+ }
+
+@Proceedings{OOPSLA03
+ ,booktitle    = {Proceedings of the 18th {ACM} {SIGPLAN} conference on
+                  Object-Oriented Programing, Systems, Languages, and
+                  Applications (OOPSLA)}
+ ,month	       = oct
+ ,year	       = 2003
+ ,address      = {Anaheim, California}
+ ,isbn         = {1-58113-712-5}
+ ,publisher    = {ACM Press}
+ }
+
+@Proceedings{PLDI03
+ ,booktitle    = {Proceedings of the {ACM} {SIGPLAN} '03 Conference on
+                  Programming Language Design and Implementation ({PLDI})}
+ ,month	       = jun
+ ,year	       = 2003
+ ,address      = {San Diego, California}
+ ,isbn         = {1-58113-662-5}
+ ,publisher    = {ACM Press}
+ }
+
+@Proceedings{PODC95
+ ,booktitle    = {Proceedings of the 14th Annual ACM Symposium on Principles of Distributed Computing (PODC '95)}
+ ,month        = aug
+ ,year	       = 1995
+ ,address      = {Ottawa, Ontario, Canada}
+ ,isbn 	       = {0-89791-710-3}
+ ,publisher    = {ACM Press}
+ }
+
+@Proceedings{PODC03
+ ,booktitle    = {Proceedings of the 22nd Annual ACM Symposium on Principles of Distributed Computing (PODC '03)}
+ ,month	       = jul
+ ,year	       = 2003
+ ,address      = {Boston, Massachusetts}
+ ,isbn         = {1-58113-708-7}
+ ,publisher    = {ACM Press}
+ }
+
+@Proceedings{SIGPLAN98
+ ,booktitle    = {Proceedings of the ACM SIGPLAN '98 Conference on Programming Language Design and Implementation}
+ ,note         = {Proceedings published ACM SIGPLAN Notices, Vol. 33, No. 5, May, 1998.}
+ ,address = 	 {Montreal, Quebec, Canada}
+ ,month = JUN 
+ ,year  = 1998
+ }
+
+@Proceedings{POPL82,
+  booktitle =	 {Proceedings of the 9th {ACM} {SIGPLAN-SIGACT} Symposium on
+                  Principles of Programming Languages ({POPL})},
+  address =	 {Albuquerque, New Mexico},
+  month = 	 jan,
+  year =	 1982,
+  isbn =	 {0-89791-065-6},
+  publisher =	 {ACM Press},
+}
+
+@Proceedings{SPAA98
+ ,booktitle =    {Proceedings of the Tenth Annual ACM Symposium on Parallel Algorithms and Architectures (SPAA '98)}
+ ,year =     1998
+ ,address =  {Puerto Vallarta, Mexico}
+ ,month =    JUN # {~28--} # JUL # {~2}
+}
+
+@conference{SPAA03
+  ,year = 	 {2003}
+  ,OPTbooktitle = {Proceedings of the Fifteenth Annual ACM Symposium on Parallelism in Algoirthms and Architectures}
+  ,OPTaddress =  {San Dieog, California}
+  ,OPTmonth = 	 JUN # {7-9}
+}
+
+@conference{STOC84
+ ,booktitle={Proceeedings of the Sixteenth Annual ACM Symposium on Theory of Computing}
+ ,year = 1984
+ ,address = {Washington, D.C.} 
+ ,month  = APR # { 30--} # MAY # { 2}
+ }
+
+@conference{STOC87
+ ,booktitle={Proceedings of the Ninteenth Annual ACM Symposium on Theory of Computing}
+ ,year     =1987
+ ,month    =MAY
+ ,day      ={25--27}
+ ,address ={New York, New York} 
+ }
+
+@Proceedings{Usenix98
+ ,booktitle    = {Proceedings of the USENIX Annual Technical Conference}
+ ,year	       = 1998
+ ,address      = {New Orleans, Louisiana}
+ ,month        = JUN # { 15--19}
+ }
+
+@article{LuSkiena00,
+    author = "Shiyong Lu and Steven Skiena",
+    title = "Filling a Penny Album",
+    journal = "Chance",
+    volume = "13",
+    number = "2",
+    pages = "25--28",
+    year = "2000"
+}
+
+@article{Schelling54,
+    author = "Hermann von Schelling",
+    title = "Coupon collecting for unequal probabilities",
+    journal = "American Mathematics Monthly",
+    volume = "61",
+    pages = "306--311",
+    year = "1954"
+}
+
+
+@InProceedings{GehrkeMRS99,
+  author =       "S. Muthukrishnan and R. Rajaraman and R. Shaheen and
+                  J. Gehrke",
+  title =        "Online Scheduling to Minimize Average Stretch",
+  booktitle =    "IEEE Symposium on Foundations of Computer
+                 Science (FOCS)",
+  pages = "433-442",
+  year =         "1999"
+}
+
+
+@Article{Ang-Val79,
+  author =       "D. Angluin and L. G. Valiant",
+  title =        "Fast Probabilistic Algorithms for {Hamiltonian}
+                 Circuits and Matching",
+  journal =      "Journal of Computer and System Sciences",
+  volume =       "18",
+  number =       "2",
+  year =         "1979",
+  pages =        "82--93"
+}
+
+@Article{Hoeffding:1963:PIS,
+  author =       "W. Hoeffding",
+  title =        "Probability inequalities for sums of bounded random
+                 variables",
+  journal =      "Journal of the American Statistical Association",
+  volume =       "58",
+  number =       "301",
+  pages =        "13--30",
+  month =        mar,
+  year =         "1963"
+}
+
+@Article{c-maethbs-52,
+  author =       "H. Chernoff",
+  title =        "A measure of asymptotic efficiency for tests of a
+                 hypothesis based on the sum of observations",
+  journal =      "Annals of Math. Stat.",
+  volume =       "23",
+  year =         "1952",
+  pages =        "493--509"
+}
+
+@misc{ mitzenmacher00power,
+  author = "M. Mitzenmacher and A. Richa and R. Sitaraman",
+  title = "The power of two random choices: A survey of the techniques and results",
+  text = "Mitzenmacher, M., Richa, A., and Sitaraman, R. The power of two random
+    choices: A survey of the techniques and results. In Handbook of Randomized
+    Computing, P. Pardalos, S. Rajasekaran, and J. Rolim, Eds. Kluwer, 2000.",
+  year = "2000",
+  url = "citeseer.nj.nec.com/article/mitzenmacher00power.html" }
+
+
+
+
+
+@Book{MotwaniRa95,
+  author =       "Rajeev Motwani and Prabhakar Raghavan",
+  title =        "Randomized Algorithms",
+  publisher =    "Cambridge University Press",
+  address =      "Cambridge, England",
+  month =        jun,
+  year =         "1995"
+}
+
+
+
+@article{ czumaj00contention,
+    author = "Artur Czumaj and Friedhelm Meyer auf der Heide and Volker Stemann",
+    title = "Contention Resolution in Hashing Based Shared Memory Simulations",
+    journal = "SIAM Journal on Computing",
+    volume = "29",
+    number = "5",
+    pages = "1703--1739",
+    year = "2000"
+}
+
+@article{BorodinKlRaSuWi-2001,
+ author = {Allan Borodin and Jon Kleinberg and Prabhakar Raghavan and Madhu Sudan and David P. Williamson},
+ title = {Adversarial queuing theory},
+ journal = {Journal of the ACM (JACM)},
+ volume = {48},
+ number = {1},
+ year = {2001},
+ pages = {13--38}
+ }
+
+@Book{Tanenbaum92,
+  author = 	 {Andrew S. Tanenbaum},
+  title = 	 {Modern Operating Systems},
+  publisher = 	 {Prentice Hall, Inc.},
+  year = 	 {1992},
+  address = 	 {Englewood Cliffs, New Jersey}
+}
+
+@article{Parnas72,
+ author = {D. L. Parnas},
+ title = {On the criteria to be used in decomposing systems into modules},
+ journal = {Communications of the ACM},
+ volume = {15},
+ number = {12},
+ year = {1972},
+ issn = {0001-0782},
+ pages = {1053--1058},
+ doi = {http://doi.acm.org/10.1145/361598.361623},
+ publisher = {ACM Press},
+ }
+
+@Book{LynchMeWe94,
+  author = 	 {Nancy Lynch and Michael Merritt and William Weihl and Alan Fekete},
+  title = 	 {Atomic Transactions},
+  publisher = 	 {Morgan Kaufmann},
+  year = 	 {1994},
+  address = 	 {San Mateo, California}
+}
+
+@TechReport{Zhang00
+  ,author =      {Lixin Zhang}
+  ,title =       {{URSIM} reference manual}
+  ,institution = {University of Utah}
+  ,year =        2000
+  ,number =      {UUCS-00-015}
+  ,month =       AUG
+}
+
+@Manual{MIPSR10K
+ ,title = 	 {{MIPS} {R10000} Microprocessor User's Manual, Version 2.0}
+ ,organization = {MIPS Technologies, Inc.}
+ ,address =	 {Mountain View, California}
+ ,year =         1996
+ ,month =        OCT
+}
+
