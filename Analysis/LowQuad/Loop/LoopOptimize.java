@@ -45,16 +45,17 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.28 2000-04-04 04:09:10 cananian Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.29 2000-04-07 05:43:25 bdemsky Exp $
  */
 public final class LoopOptimize {
-    
+
     AllInductionsMap aimap;
     BasicInductionsMap bimap;
     InvariantsMap invmap;
     LoopAnalysis loopanal;
     TempMap ssitossamap;
     UseDef ud;
+    boolean changed;
 
     /** Creates an <code>LoopOptimize</code>. */
     public LoopOptimize(AllInductionsMap aimap,BasicInductionsMap bimap,InvariantsMap invmap, LoopAnalysis loopanal, TempMap ssitossamap) {
@@ -64,6 +65,7 @@ public final class LoopOptimize {
 	this.loopanal=loopanal;
 	this.ssitossamap=ssitossamap;
 	ud=new UseDef();
+	changed=false;
     }
 
     /**<code>LoopOptimize</code> constructor.  Used internally by codeFactory.*/
@@ -111,6 +113,12 @@ public final class LoopOptimize {
 	Iterator iterate=kids.iterator();
 	while (iterate.hasNext())
 	    recursetree(hc, hcnew, (Loops)iterate.next(), new WorkSet());
+
+	if (changed) {
+	    //We've likely broken SSI invariants...EVIL SSI!
+	    //Lets fix them...
+	    //As soon as someone gives me something to do that...
+	}
 	
 	//After doing optimizations we need to clean up any deadcode...
 	DeadCode.optimize(hcnew, null/*throw away AllocationInformation*/);
@@ -175,6 +183,8 @@ public final class LoopOptimize {
 	    if (!usedinvariants.contains(q))
 		mover.consider((POPER)q);
 	}
+	if (mover.changed())
+	    changed=true;
     }
 
 
@@ -190,6 +200,7 @@ public final class LoopOptimize {
 	Loops lp;
 	HCode hc;
 	MyLowQuadSSI hcnew;
+	boolean changed;
 
 	//Create TestMover, and inform it of everything.
 	TestMover(Set newinductvars, Set loopinvars, Map allinductions, Quad header, TempMap ssitossamap, HCode hc, MyLowQuadSSI hcnew, Loops lp) {
@@ -202,6 +213,11 @@ public final class LoopOptimize {
 	    this.hc=hc;
 	    this.hcnew=hcnew;
 	    this.lp=lp;
+	    changed=false;
+	}
+
+	public boolean changed() {
+	    return changed;
 	}
 
 	//POPER visitor
@@ -217,6 +233,7 @@ public final class LoopOptimize {
 		    Quad qnew=hcnew.quadMap(q);
 		    Quad.addEdge(qnew.prev(0), qnew.prevEdge(0).which_succ(), replace,0);
 		    Quad.addEdge(replace, 0, qnew.next(0), qnew.nextEdge(0).which_pred());
+		    changed=true;
 		}
 		break;
 	    default:
@@ -547,6 +564,8 @@ public final class LoopOptimize {
 	    sources[flag]=initial;
 	    sources[1-flag]=indvar;
 	}
+	if (addquad.changed())
+	    changed=true;
 	return new POPER(((LowQuadFactory)header.getFactory()),header,opcode,q.dst(), sources);
     }
 
@@ -794,6 +813,7 @@ public final class LoopOptimize {
 		//Get the right quad
 		delquad=hcnew.quadMap(delquad);
 		Quad.addEdge(delquad.prev(0),delquad.prevEdge(0).which_succ(), delquad.next(0), delquad.nextEdge(0).which_pred());
+		changed=true;
 
 		//Now we need to add phi's
 		Temp addresult=new Temp(initial.tempFactory(), initial.name());
@@ -809,6 +829,8 @@ public final class LoopOptimize {
 		    hcnew.addType(addresult, 
 				  new Error("Cant type derived pointer: "+addresult));
 		hcnew.addDerivation(addresult, merged);
+		if (addquad.changed())
+		    changed=true;
 	    }
 	}
 	return complete;
@@ -820,16 +842,24 @@ public final class LoopOptimize {
 	int which_succ;
 	Quad successor;
 	int which_pred;
+	boolean changed;
+
 	QuadInserter(Quad loopcaller, int which_succ, Quad successor, int which_pred) {
 	    this.loopcaller=loopcaller;
 	    this.which_succ=which_succ;
 	    this.successor=successor;
 	    this.which_pred=which_pred;
+	    changed=false;
 	}
+	public boolean changed() {
+	    return changed;
+	}
+
 	void insert(Quad newquad) {
 	    Quad.addEdge(loopcaller, which_succ,newquad,0);
 	    loopcaller=newquad; which_succ=0;
 	    Quad.addEdge(loopcaller, which_succ, successor, which_pred);	
+	    changed=true;
 	}
     }
 
@@ -873,6 +903,7 @@ public final class LoopOptimize {
 	for (int k=0;k<phi.arity();k++) {
 	    Quad.addEdge(phin.prev(k),phin.prevEdge(k).which_succ(),newphi,k);
 	}
+	changed=true;
 	return newphi;
     }
 
@@ -903,6 +934,7 @@ public final class LoopOptimize {
 	Quad.addEdge(prev, which_succ,newquad,0);
 	which_succ=0;
 	Quad.addEdge(newquad, which_succ, successor, which_pred);
+	changed=true;
     }
 
 
@@ -910,7 +942,6 @@ public final class LoopOptimize {
 
 
     //**********************************
-
     /** <code>doLoopinv</code> hoists loop invariants out of the loop.*/
 
     void doLoopinv(HCode hc, MyLowQuadSSI hcnew, Loops lp,Quad oheader, WorkSet usedinvariants) {
@@ -965,9 +996,12 @@ public final class LoopOptimize {
 		    Quad.addEdge(newq.prev(0),newq.prevEdge(0).which_succ(), newq.next(0), newq.nextEdge(0).which_pred());
 		    usedinvariants.push(q);
 		    iterate.remove();
+		    changed=true;
 		}
 	    }
 	}
+	if (addquad.changed())
+	    changed=true;
     }
 
     private Derivation.DList negate(Derivation.DList dlist) {
