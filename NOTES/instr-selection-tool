@@ -1,13 +1,14 @@
-// this is my parser.
 //global scope
+//package declarations.
+//import statements.
 %% --> public class
 // inside the class
 %%
 MOVE(MEM(CONST(c)), e) %pred %( is13bits(c) )% %weight <speed, 1>
-{ 
+%{ 
 emit(new Instr("st `s0, ["+c+"]", new Temp[] { e }, new Temp[0]););
-}
-MOVE(MEM(CONST(c)), MOVE(c)) {
+}%
+MOVE(MEM(CONST(c)), MOVE(c)) %{ }%
 MOVE(
 
 // further work:
