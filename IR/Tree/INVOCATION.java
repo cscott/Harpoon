@@ -16,10 +16,12 @@ import java.util.Set;
  * procedure calls.  The return value of the <code>CALL</code> is 
  * stored in <code>retval</code>.  If the call throws an exception, 
  * the exception object will be placed in <code>retex</code>.
+ * The <code>retval</code> field will be <code>null</code> if the
+ * called procedure has void return type.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.12 1999-10-23 05:59:34 cananian Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.13 1999-10-23 14:19:52 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL

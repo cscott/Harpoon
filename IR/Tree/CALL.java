@@ -14,20 +14,22 @@ import java.util.Set;
  * <code>CALL</code> objects are statements which stand for 
  * java method invocations, using our runtime's calling convention.
  * <p>
- * The <code>retex</code> expression should typically be a
+ * The <code>handler</code> expression is a
  * <code>Tree.NAME</code> specifying the label to which we should return
- * from this call if an exception occurs.  It is possible that 
- * <code>retex</code> specify an arbitrary expression instead, but the
- * usefulness of this is questionable and so this is strongly
- * discouraged.
+ * from this call if an exception occurs.  If the called method throws
+ * an exception, the throwable object is placed in the <code>Temp</code>
+ * specified by <code>retex</code> and a control tranfer to the
+ * <code>Label</code> specified by <code>handler</code> occurs.
  * <p>
- * Upon an exception in the callee, execution is returned at the
- * location specified by <code>retex</code> with the exception object
- * thrown placed in the location specified by <code>retval</code>.
+ * If there is no exception thrown by the callee, then the return
+ * value is placed in the <code>Temp</code> specified by
+ * <code>retval</code> and execution continues normally.  Note that
+ * <code>retval</code> may be null if the called method has void return
+ * type.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.20 1999-10-23 05:59:34 cananian Exp $
+ * @version $Id: CALL.java,v 1.1.2.21 1999-10-23 14:19:52 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL

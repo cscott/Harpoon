@@ -13,13 +13,14 @@ import java.util.Set;
 /**
  * <code>NATIVECALL</code> objects are statements which stand for
  * function calls using standard C calling convention.  These are
- * typically used to implement java "native" method calls, although
- * they can also be used to implement part of the runtime system
- * (for example, to invoke the garbage collector).
+ * typically used to implement parts of the runtime system
+ * (for example, to invoke the garbage collector) and <i>not</i>
+ * for java native method calls (which must use the standard java
+ * method calling convention).
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.13 1999-10-23 05:59:34 cananian Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.14 1999-10-23 14:19:52 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
@@ -34,8 +35,11 @@ public class NATIVECALL extends INVOCATION {
     public boolean isNative() { return true; }
   
     public ExpList kids() { 
-        return new ExpList
-	    (retval, new ExpList(func, args));
+	ExpList result = new ExpList(func, args);
+	if (retval!=null)
+	    return new ExpList(retval, result);
+	else // make placeholder.
+	    return new ExpList(new CONST(tf, this), result);
     }
 
     public int kind() { return TreeKind.NATIVECALL; }
@@ -43,13 +47,17 @@ public class NATIVECALL extends INVOCATION {
     public Stm build(ExpList kids) { return build(tf, kids); } 
   
     public Stm build(TreeFactory tf, ExpList kids) {
-	Util.assert(tf == kids.head.tf && tf == kids.tail.head.tf);
-	for (ExpList e = kids.tail.tail; e!=null; e=e.tail)
+	TEMP kids_retval=null;
+	for (ExpList e = kids; e!=null; e=e.tail)
 	    Util.assert(tf == e.head.tf);
+	if (kids.head.kind()==TreeKind.TEMP) {
+	    kids_retval = (TEMP) kids.head;
+	    kids = kids.tail;
+	}
 	return new NATIVECALL(tf, this,
-			      (TEMP)kids.head, // retval
-			      kids.tail.head,  // func
-			      kids.tail.tail); // args
+			      kids_retval,// retval
+			      kids.head,  // func
+			      kids.tail); // args
     }
 
     /** Accept a visitor */
@@ -57,6 +65,7 @@ public class NATIVECALL extends INVOCATION {
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new NATIVECALL(tf, this, 
+			      (retval==null) ? null :
 			      (TEMP)retval.rename(tf, ctm),
 			      (Exp)func.rename(tf, ctm),
 			      ExpList.rename(args, tf, ctm));
@@ -65,7 +74,9 @@ public class NATIVECALL extends INVOCATION {
     public String toString() {
         StringBuffer s = new StringBuffer();
 
-        s.append("NATIVECALL(# "+retval.getID()+", #"+func.getID()+", {");
+        s.append("NATIVECALL(");
+	if (retval!=null) s.append(" # "+retval.getID()+",");
+	s.append(" #"+func.getID()+", {");
         for (ExpList list = args; list != null; list=list.tail) {
             s.append(" #" + list.head.getID());
             if (list.tail != null) s.append(",");
