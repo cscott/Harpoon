@@ -4,6 +4,7 @@
 package harpoon.Analysis.Transformation;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Backend.Maps.FinalMap;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.DuplicateMemberException;
 import harpoon.ClassFile.HClass;
@@ -38,7 +39,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.10 2000-10-20 18:56:10 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.11 2000-10-20 22:55:43 cananian Exp $
  */
 public abstract class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -51,6 +52,8 @@ public abstract class MethodSplitter {
      *  (Virtual methods have to be also split in all subclasses, in order
      *  for dynamic dispatch to work correctly.) */
     private final ClassHierarchy ch;
+    /** This is the FinalMap used in the implementation of isVirtual(). */
+    private final FinalMap fm;
 
     /** Creates a <code>MethodSplitter</code>, based on the method
      *  representations in the <code>parent</code> <code>HCodeFactory</code>.
@@ -73,6 +76,7 @@ public abstract class MethodSplitter {
 	    };
 	}, true/* save cache */);
 	this.ch = ch;
+	this.fm = new harpoon.Backend.Maps.DefaultFinalMap();
     }
     
     /** Maps split methods to <original method, token> pairs. */
@@ -92,7 +96,7 @@ public abstract class MethodSplitter {
 	HMethod splitM = (HMethod) versions.get(swpair);
 	if (splitM == null) {
 	    HClassMutator hcm = orig.getDeclaringClass().getMutator();
-	    Util.assert(hcm!=null, "You're using a linker, not a relinker.");
+	    Util.assert(hcm!=null, "You're using a linker, not a relinker: "+orig+" "+orig.getDeclaringClass().getLinker());
 	    String mname = orig.getName()+"$$"+which.suffix;
 	    String mdesc = mutateDescriptor(orig, which);
 	    try {
@@ -133,10 +137,11 @@ public abstract class MethodSplitter {
     }
     /** Utility method to determine whether a method is inheritable (and
      *  thus it's children should be split whenever it is). */
-    private static boolean isVirtual(HMethod m) {
+    protected boolean isVirtual(HMethod m) {
 	if (m.isStatic()) return false;
 	if (Modifier.isPrivate(m.getModifiers())) return false;
 	if (m instanceof HConstructor) return false;
+	if (fm.isFinal(m)) return false;
 	return true;
     }
 

@@ -47,7 +47,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.7 2000-10-20 18:56:48 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.8 2000-10-20 22:55:40 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -108,7 +108,13 @@ public class InitializerTransform
 	if (safetyCache.containsKey(hm))
 	    return ((Boolean) safetyCache.get(hm)).booleanValue();
 	safetyCache.put(hm, new Boolean(true));// deals with cycles.
+	boolean isSafe = _isSafe_(hm); // split to make caching more readable.
+	safetyCache.put(hm, new Boolean(isSafe));
+	return isSafe;
+    }
+    private boolean _isSafe_(HMethod hm) {
 	final HClass hc = hm.getDeclaringClass();
+	if (hc.isArray()) return true; // all array methods (clone()) are safe.
 	class BooleanVisitor extends QuadVisitor {
 	    boolean unsafe = false;
 	    public void visit(Quad q) { /* ignore */ }
@@ -128,7 +134,7 @@ public class InitializerTransform
 		check(q.hclass());
 	    }
 	    public void visit(CALL q) {
-		if (q.isStatic()) {
+		if ( !isVirtual(q) ) {
 		    check(q.method().getDeclaringClass());
 		    unsafe = unsafe || !isSafe(q.method());
 		} else unsafe = true; // virtual calls aren't safe.
@@ -144,7 +150,6 @@ public class InitializerTransform
 	for (Iterator it=code.getElementsI();
 	     (!bv.unsafe) && it.hasNext(); )
 	    ((Quad) it.next()).accept(bv);
-	safetyCache.put(hm, new Boolean(!bv.unsafe));
 	return !bv.unsafe;
     }
     /** Cache for safety tests. */
@@ -184,15 +189,16 @@ public class InitializerTransform
 	    public void visit(CALL q) {
 		if (q.isStatic())
 		    addCheckBefore(q, q.method().getDeclaringClass(), seenSet);
-		if (q.isVirtual() || !isSafe(q.method())) {
-		    // use a 'checking' version of this method.
-		    Quad ncall = new CALL
-			(q.getFactory(), q, select(q.method(), CHECKED),
-			 q.params(), q.retval(), q.retex(), q.isVirtual(),
-			 q.isTailCall(), q.dst(), q.src());
-		    Quad.replace(q, ncall);
-		    Quad.transferHandlers(q, ncall);
-		}
+		if ( (!isVirtual(q)) && isSafe(q.method()))
+		    return;
+
+		// use a 'checking' version of this method.
+		Quad ncall = new CALL
+		    (q.getFactory(), q, select(q.method(), CHECKED),
+		     q.params(), q.retval(), q.retex(), q.isVirtual(),
+		     q.isTailCall(), q.dst(), q.src());
+		Quad.replace(q, ncall);
+		Quad.transferHandlers(q, ncall);
 	    }
 	    public void visit(GET q) {
 		if (q.isStatic())
@@ -229,5 +235,8 @@ public class InitializerTransform
 	q0.addHandlers(q.handlers());
 	// done.
 	return;
+    }
+    private boolean isVirtual(CALL q) {
+	return q.isVirtual() && isVirtual(q.method());
     }
 }
