@@ -10,13 +10,31 @@ package imagerec.graph;
  */
 
 public class Pause extends Node {
-    
+
+    public static final int defaultPauseEvery = 1;
+    public static final double defaultLength = -1.0;
+    private double length;
+    private int pauseEvery;
+    private int count;
+
     /** Construct a {@link Pause} node that allows stepping through images.
      *
      *  @param out The node to send images to.
      */
     public Pause(Node out) {
 	super(out);
+	init(defaultLength, defaultPauseEvery);
+    }
+
+    public Pause(double length, int pauseEvery, Node out) {
+	super(out);
+	init(length, pauseEvery);
+    }
+
+    private void init(double length, int pauseEvery) {
+	this.length = length;
+	this.pauseEvery = pauseEvery;
+	this.count = 0;
     }
     
     /** <code>process</code> an image by sending it to the next node, then
@@ -24,16 +42,26 @@ public class Pause extends Node {
      *
      *  @param id The image to process.
      */
-    public void synchronized process(ImageData id) {
-	//Why pause afterwards? Not intuitive.
-	//I changed code so the pause comes
-	//before the image is sent on to other nodes
-	// -- Benji
-	//super.process(id);
-	try {
-	    System.in.read();
-	} catch (Exception e) {
-	    throw new Error(e);
+
+    public synchronized void process(ImageData id) {
+	this.count++;
+	if (count == pauseEvery) {
+	    count = 0;
+	    if (length < 0) {
+		try {
+		    System.out.println("Hit [ENTER] to continue...");
+		    System.in.read();
+		} catch (Exception e) {
+		    throw new Error(e);
+		}
+	    }
+	    else {
+		try {
+		    Thread.currentThread().sleep((int)(length*1000));
+		}
+		catch (InterruptedException e) {
+		}
+	    }
 	}
 	super.process(id);
 	
