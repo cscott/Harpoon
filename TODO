@@ -21,8 +21,8 @@ Test:
  }
 
 ---- Aug-21-98
-Implement INSTANCEOF in the IR (special method? special Quad?  subclass OPER?)
-Implement CHECKCAST
+X Implement INSTANCEOF in the IR (special method? special Quad? subclass OPER?)
+X Implement CHECKCAST
 O Make Temps into Leafs in Quad rep.
   [made Leafs into Temps...]
 
