@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.4 1999-07-12 16:42:44 bdemsky Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.5 1999-07-14 07:00:30 bdemsky Exp $
  */
 public class AllInductions {
     TempMap tm;
@@ -142,7 +142,7 @@ public class AllInductions {
 	    case Qop.IADD:
 		//Binary operators		
 		InstanceofCONSTVisitor visitor=new InstanceofCONSTVisitor();
-
+		good=true;
 		invar=0;
 		index=0;
 		for (int i=0;i<q.operandsLength();i++) {
@@ -151,9 +151,14 @@ public class AllInductions {
 			index=i;
 			invar++;
 		    }
+		    else
+			if (!invariants.contains(ud.defMap(hc,t)[0])) {
+			    good=false;
+			    break;
+			}
 		}
 		//Need one induction variable and constants
-		if (invar==1) {
+		if ((invar==1)&&(good)) {
 		    changed=true;
 		    //*****************
 		    Induction tmp=new Induction((Induction)inductions.get(tm.tempMap(q.operands(index))));
@@ -178,7 +183,7 @@ public class AllInductions {
 	    case Qop.IMUL:
 		//Binary operators		
 		visitor=new InstanceofCONSTVisitor();
-
+		good=true;
 	        invar=0;
 		index=0;
 		for (int i=0;i<q.operandsLength();i++) {
@@ -187,9 +192,14 @@ public class AllInductions {
 			index=i;
 			invar++;
 		    }
+		    else
+			if (!invariants.contains(ud.defMap(hc,t)[0])) {
+			    good=false;
+			    break;
+			}
 		}
 		//Need one induction variable and constants
-		if ((invar==1)) {
+		if ((invar==1)&&(good)) {
 		    changed=true;
 		    //*****************
 		    Induction tmp=new Induction((Induction)inductions.get(tm.tempMap(q.operands(index))));
