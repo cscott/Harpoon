@@ -1,13 +1,28 @@
 #!/bin/sh
-# grab flex options from from of command line.
+
+# find the root of the Harpoon tree file. If you plan to run this script from
+# a directory different from ~/Harpoon/Code please set HARPOON_DIR.
+if [ -z $HARPOON_DIR ]; then
+    FLEX_DIR=`pwd`
+    HARPOON_DIR="${FLEX_DIR}/.."
+    echo "Warning: HARPOON_DIR was not set; default settings:"
+    echo "   FLEX_DIR    = ${FLEX_DIR}"
+    echo "   HARPOON_DIR = ${HARPOON_DIR}"
+else
+    FLEX_DIR="${HARPOON_DIR}/Code"
+fi
+
+# grab flex options from the command line.
 while [ -n "$3" ]; do
     opts="$opts $1"
     shift
 done
+
 # at this point, there are only two items left on the command line.
 cls=$1
 name=`basename $2`
 dir=`dirname $2`/as$name
+
 # check java version
 optprefix=X
 if java -version 2>&1 | grep -q 'version "1.1'; then
@@ -15,6 +30,7 @@ if java -version 2>&1 | grep -q 'version "1.1'; then
   optprefix=""
 fi
 # ok.
+
 echo "Building $cls in $dir; result will be ${name}-Java.a" 1>&2
 if [ -d $dir ]; then
     /bin/rm -rf $dir
@@ -22,19 +38,35 @@ fi
 if [ ! -d $dir ]; then
     mkdir $dir
 fi
+
+# you can set OPT_FLEX_SUPPORT_FILES to add additional support files: .jar/.zip
+FLEX_SUPPORT_FILES="${OPT_FLEX_SUPPORT_FILES} ${FLEX_DIR}/Support/Lex.jar ${FLEX_DIR}/SupportNP/sunthunk.jar ${FLEX_DIR}/SupportNP/collections.jar ${FLEX_DIR}/SupportNP/classes.zip ${FLEX_DIR}/Support/realtime.jar"
+
+for supp_file in ${FLEX_SUPPORT_FILES}; do
+    if [ ! -f $supp_file ]; then
+	echo Support file ${supp_file} missing!;
+	exit -1;
+    else
+	SUPP_FILES_PATH="${SUPP_FILES_PATH}:${supp_file}";
+    fi;
+done
+
+# FLEXPATH is now deprecated; consider moving to OPT_FLEX_SUPPORT_FILES
 # you can set FLEXPATH to assign additional components to the harpoon classpath
-harpoonpath=${FLEXPATH}${FLEXPATH:+:}.:../Benchmarks:Support/Lex.jar:SupportNP/sunthunk.jar:SupportNP/collections.jar:SupportNP/classes.zip:Support/realtime.jar
+harpoonpath=${FLEXPATH}${FLEXPATH:+:}.${SUPP_FILES_PATH}
+
 if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
+
 ${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} -Dharpoon.class.path=$harpoonpath ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir && \
-if [ -d ../Runtime/include -a -f ../Runtime/config.status ] && \
-    grep -q "[-]-with-precise-c" ../Runtime/config.status ; then
-    make -C $dir CC="gcc -I../../Runtime/include -g -O9" && \
-    mv -f $dir/Java.a ../Runtime/${name}-Java.a && \
-    make -C ../Runtime run${name} && \
-    rm -f ../Runtime/${name}-Java.a && \
-    echo "EXECUTABLE left in ../Runtime/run${name}." 1>&2
+if [ -d ${HARPOON_DIR}/Runtime/include -a -f ${HARPOON_DIR}/Runtime/config.status ] && \
+    grep -q "[-]-with-precise-c" ${HARPOON_DIR}/Runtime/config.status ; then
+    make -C $dir CC="gcc -I${HARPOON_DIR}/Runtime/include -g -O9" && \
+    mv -f $dir/Java.a ${HARPOON_DIR}/Runtime/${name}-Java.a && \
+    make -C ${HARPOON_DIR}/Runtime run${name} && \
+    rm -f ${HARPOON_DIR}/Runtime/${name}-Java.a && \
+    echo "EXECUTABLE left in ${HARPOON_DIR}/Runtime/run${name}." 1>&2
 else
     echo "ASSEMBLY FILES left in $dir; see $dir/Makefile to build." 1>&2
 fi
