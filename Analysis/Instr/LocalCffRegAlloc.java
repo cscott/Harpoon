@@ -49,7 +49,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.27 1999-08-03 02:25:19 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.28 1999-08-03 03:38:37 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -98,7 +98,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	            <code>Instr</code>s.
 	<BR> <B>modifies:</B> <code>Instr</code>s in <code>bb</code>
 	<BR> <B>effects:</B> Analyzes the <code>Instr</code>s in
-	     <code>bb</code> and inserts LOAD and STORE 
+	     <code>bb</code> and inserts FSK-LOAD and FSK-STORE 
 	     <code>InstrMEM</code> objects at appropriate locations in
 	     <code>bb</code> to ensure that 
 	     <BR> 1. All <code>Temp</code>s in
@@ -146,9 +146,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 	// them at the end.
 	class InstrAdditionMap {
 	    
-	    // stacks[0]: Maps Instr 'i' -> Stack[Instr] to be added
+	    // stacks[0]: Maps Instr 'i' -> Stack[List[Instr]] to be added
 	    //            before 'i'
-	    // stacks[1]: Maps Instr 'i' -> Stack[Instr] to be added
+	    // stacks[1]: Maps Instr 'i' -> Stack[List[Instr]] to be added
 	    //            after 'i'
 	    private HashMap[] stacks = new HashMap[2];
 	    InstrAdditionMap() {
@@ -709,14 +709,14 @@ public class LocalCffRegAlloc extends RegAlloc {
 	// if 'REGISTER( i )' (which is stored in allRegs[ i ] ) is holding
 	// a value, vals[ i ] will have that value.  Else, vals[ i ]
 	// will be set to null.
-	Temp[] allRegs;
+	private Temp[] allRegs;
 
 	// genRegs is just a list of what the general registers are;
 	// the indices of the registers in genRegs do not necessarily
 	// map to indices of the corresponding registers in allRegs.
-	Temp[] genRegs;
-	Temp[] vals;
-	boolean[] dirty; // tracks dirty bit for regs
+	private Temp[] genRegs;
+	private Temp[] vals;
+	private boolean[] dirty; // tracks dirty bit for regs
 
 	// TODO: NO LONGER NECESSARY (uses are commented out)
 	// A place holder for unknown values (needed for Instrs that

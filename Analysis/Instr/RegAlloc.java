@@ -39,7 +39,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.12 1999-07-30 18:45:12 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.13 1999-08-03 03:38:37 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     protected Frame frame;
@@ -126,11 +126,18 @@ public abstract class RegAlloc  {
     }
 
     /** Transforms Temp references in 'in' into appropriate offsets
-	from the Stack Pointer in the Memory.    
+	from the Stack Pointer in the Memory. 
 	<BR> <B>requires:</B> All InstrMEMs in 'in' have only ONE Temp
-                              reference.
+	     reference.  
         <BR> <B>modifies:</B> in
-	<BR> <B>effects:</B> TODO: FILL IN
+	<BR> <B>effects:</B> Replaces the FSK-LOAD and FSK-STORE 
+	     <code>InstrMEM</code>s with memory instructions for the
+	     appropriate <code>Frame</code>.
+	<BR> TODO: make FSK-LOAD and FSK-STORE into actual classes
+	     (FskLoad, FskStore), and change the corresponding
+	     InstrMEM constructions in children of RegAlloc to use
+	     them to simplify this method and remove the stupid (and
+	     possibly insufficient) requires-clause above.
     */
     protected HCode resolveOutstandingTemps(HCode in) {
 	// This implementation is REALLY braindead.  Fix to do a
