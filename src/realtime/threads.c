@@ -188,8 +188,9 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
     }
 #ifdef WITH_NOHEAP_SUPPORT
     if((((ptroff_t)FNI_UNWRAP(threadq->jthread)) & HEAP_BIT_CHECK) ||
-       (!(*env)->IsInstanceOf(env, threadq->jthread, (*env)->FindClass(env,
-								       "javax/realtime/NoHeapRealtimeThread")))) {
+       (!(*env)->IsInstanceOf(env, threadq->jthread, 
+			      (*env)->FindClass(env,
+						"javax/realtime/NoHeapRealtimeThread")))) {
       //run garbage collector
       /* may need to stop for GC */
 #ifdef WITH_PRECISE_GC
@@ -197,10 +198,6 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
 	if (halt_for_GC_flag) {
 	  halt_for_GC();
 	}
-	//	  else {
-	//halt_for_GC_flag = 1;
-	//CheckQuanta(0, 0, 1);
-	//}
       }
 #endif
     }

@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     // call thread.getThreadGroup().uncaughtException(thread, exception)
     jclass thrGrpCls;
     jobject threadgroup;
-    jmethodID gettgID, uncaughtID, exitID;
+    jmethodID gettgID, uncaughtID;
     (*env)->ExceptionClear(env); /* clear the thread's exception */
     st=1; /* main() exit status will be non-zero. */
     // Thread.currentThread().getThreadGroup()...
