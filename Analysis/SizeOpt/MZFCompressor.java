@@ -49,10 +49,11 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.1.2.11 2001-11-14 08:31:53 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.1.2.12 2001-11-14 23:11:09 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
+    final Set callable = new HashSet();
     
     /** Creates a <code>MZFCompressor</code>, using the field profiling
      *  information found in the resource at <code>resourcePath</code>.
@@ -81,19 +82,26 @@ public class MZFCompressor {
 	// before we change any classes (in Field2Method, below)
 	// pull all callable constructors through the ConstructorClassifier
 	// to cache their results.
-	for (Iterator it=ch.callableMethods().iterator(); it.hasNext(); ) {
+	this.callable.addAll(ch.callableMethods());
+	for (Iterator it=callable.iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    if (isConstructor(hm)) cc.isGood(hm);
 	}
 	// make accessors for the 'good' fields.
 	Field2Method f2m = new Field2Method(hcf, flds);
 	hcf = new CachingCodeFactory(f2m.codeFactory());
-	// pull every method of each relevant class through the code factory.
+	// add getters and setters to 'callable' set.
+	callable.addAll(f2m.getter2field.keySet());
+	callable.addAll(f2m.setter2field.keySet());
+	// pull every callable method of each relevant class through hcf
 	for (Iterator it=listmap.keySet().iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
 	    for (Iterator it2=Arrays.asList(hc.getDeclaredMethods())
-		     .iterator(); it2.hasNext(); )
-		hcf.convert((HMethod) it2.next());
+		     .iterator(); it2.hasNext(); ) {
+		HMethod hm = (HMethod) it2.next();
+		if (callable.contains(hm))
+		    hcf.convert(hm);
+	    }
 	}
 	// okay.  foreach relevant class, split it.
 	Map field2class = new HashMap();
@@ -214,11 +222,14 @@ public class MZFCompressor {
 	     it.hasNext(); )
 	    newC.getMutator().addInterface((HClass)it.next());
 	oldC.getMutator().removeAllInterfaces();
-	// fetch representations for everything before we start messing
-	// with the fields.
+	// fetch representations for everything callable before we start
+	// messing with the fields.
 	for (Iterator it=Arrays.asList(oldC.getDeclaredMethods()).iterator();
-	     it.hasNext(); )
-	    hcf.convert((HMethod)it.next());
+	     it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    if (callable.contains(hm))
+		hcf.convert(hm);
+	}
 	// move all but the desired field to newC
 	// (also strip 'private' modifier)
 	HField[] allF = oldC.getDeclaredFields();
@@ -229,7 +240,7 @@ public class MZFCompressor {
 	    }
 	// move all non-constructor non-static methods of oldC to newC
 	// (move static initializers to newC, since it has the static fields)
-	// copy the constructors. make copies of the getter/setters to override
+	// copy the constructors.
 	HMethod[] allM = oldC.getDeclaredMethods();
 	HMethod getter = (HMethod) f2m.field2getter.get(hf);
 	HMethod setter = (HMethod) f2m.field2setter.get(hf);
@@ -246,6 +257,7 @@ public class MZFCompressor {
 		harpoon.IR.Quads.Code hcode =
 		    (harpoon.IR.Quads.Code) hcf.convert(allM[i]);
 		hcf.put(newcon, hcode.clone(newcon).hcode());
+		callable.add(newcon);
 	    } else relinker.move(allM[i], newC);
 	}	    
 	// getter and setter are now in newC.  copy implementation to oldC.
@@ -262,6 +274,9 @@ public class MZFCompressor {
 	// rewrite newC's getter and setter.
 	hcf.put(getter, makeGetter(hcf, getter, hf, val));
 	hcf.put(setter, makeSetter(hcf, setter, hf, val));
+	// add copied oldC getter/setter to callable set.
+	callable.add(fullgetter);
+	callable.add(fullsetter);
 	// done!
 	field2class.put(hf, newC);
 	return newC;
