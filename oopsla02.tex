@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.21 2002-03-23 07:51:18 cananian Exp $
+% $Id: oopsla02.tex,v 1.22 2002-03-23 08:05:34 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -33,7 +33,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.21 $ $}{$ $Revision: 1.21 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.22 $ $}{$ $Revision: 1.22 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -429,20 +429,14 @@ space at all for hash code or lock information.
 
 \section{Analysis Algorithms}
 
-% class hierarchy analysis & callgraph
-% bitwidth analysis for field reducer.
-% profiling implementation.
-% definite initialization. (does zero escape?)
-%  used in profiling (for non-zero N)
-%  used in bitwidth. (determines whether zero is a visible value)
-% constructor classifier in static spec. determines 'good' fields.
-%  uses MustParamOracle, ConstMap
+In this section we will present details of the analyses that enable
+our transformations.
 
-\subsection{Class Hierarchy Analysis and Call-Graph Construction}
+\subsection{Class Hierarchy Analysis}
 We start with a static class hierarchy analysis to collect the set of
 instantiated classes and callable methods.  This allows us to generate
 a conservative call graph for the program, using the known receiver
-type at the call-site and its instantiated subclasses in the
+type at the call-site and the its set of instantiated subclasses in the
 hierarchy.  Based on the class hierarchy, we can also tag all leaf
 classes as {\tt final}, regardless of whether the source code contained
 this modifier.  Methods which are not overridden, based on
@@ -453,11 +447,33 @@ graph-coloring algorithm.  The results of some class casts and {\tt
   instanceof} operations can also be determined statically using
 these results.
 
+Our analysis keeps separate the set of {\it mentioned} and
+{\it instantiated} classes.  Although type-checks can be made and methods
+invoked on abstract, interface, or otherwise uninstantiated classes,
+every object
+in the heap must belong to one of the instantiated class types.
+The size of the set of instantiated classes is quite small for a
+typical Java program, and all but two of the benchmarks in SPECjvm98
+have less than 256 instantiated class types.  We use this information
+to replace the {\tt claz} pointer in the object header, which
+identifies the type of the object, with a one-byte {\it index} into a
+small lookup table.  The {\tt \_202\_jess} and {\tt \_213\_javac}
+benchmarks require more than one byte of index, but a two byte index
+amply suffices in these two cases.
+
+Note that all of our benchmarks would require two-byte {\tt claz}
+index fields if we did not differentiate between actually-instantiated
+and other class types in our analysis.
+
+% Our implementation does claz numbering so that we can use the
+% claz index for a fast instanceof test, too!  But we don't
+% actually use it for that, yet, so I'm not going to describe it here.
+
 \subsection{Bitwidth Analysis}
 % this allows us to reduce fields and remove unused/const fields.
 We use a flow-sensitive interprocedural bitwidth analysis to
-find constants values, unused and constant fields, and to reduce
-field sizes where possible.  We use a dataflow framework with
+find constant values, unused and constant fields, and to reduce
+field sizes where possible.  Our dataflow framework uses
 Wegman and Zadeck's Sparse Conditional Constant (SCC) propagation
 algorithm \cite{wegman91:scc} as a basis.  We then extend their
 analysis interprocedurally, add coverage of Java language features,
@@ -470,7 +486,7 @@ bitwidth of each individually.
 
 \subsubsection{Value lattice}
 First consider extending the basic three level value lattice of Wegman and
-Zadeck (Figure~\ref{fig:wzlat} to allow the classification of
+Zadeck (Figure~\ref{fig:wzlat}) to allow the classification of
 negative, positive, or zero
 values, as illustrated in Figure~\ref{fig:scclat6}.
 A join on two negative numbers yields the entry \code{(M--)},
@@ -490,21 +506,23 @@ flat integer constant domain.}
 \label{fig:scclat6}
 \end{figure}
 
-Now substitute integers $M$ and $P$ into the tuples, to represent the
+Now substitute integers $m$ and $p$ into the tuples, to represent the
 widths of the absolute value of the negative and positive portion of
-the number.  Merging the constants $2$ and $4$ would result in the lattice
-value \code{(--3)},\footnote{Read this as \tuple{-,-,3} if you think
+the number.  Merging the constants $\mathbf{2}$ and $\mathbf{4}$ would
+result in the lattice
+value \code{(--3)},\footnote{Read this as the tuple \tuple{-,-,3} if you think
   ``double-negation'' when seeing two dashes in a row.}
-for example, and merging $-4$ with $4$ would result in
+for example, and merging $\mathbf{-4}$ with $\mathbf{4}$ would result in
 \code{(3-3)}.  Some combination rules for arithmetic operations are
 shown in Figure~\ref{fig:bitrules}.  The rules for simple arithmetic
-operators should be obvious upon examination (adding two $N$ bit
+operators should be self-evident upon examination (adding two $N$ bit
 integers yields at most an $N+1$-bit integer, for example) although
 care must be taken to ensure that combinations of negative and
 positive integers are handled correctly.  Our implementation contains
-in addition rules for common special cases, such as multiplication by
-a one-bit quantity, division by constants, or bitfield operations on
-two positive numbers.
+additional rules giving it greater precision for common special cases,
+such as multiplication by
+a one-bit quantity, division by a constant, or bitfield operations on
+positive numbers.
 \begin{figure}[tp]
 \begin{eqnarray*}
 -\tuple{M,P} &=& \tuple{P,M}\\
