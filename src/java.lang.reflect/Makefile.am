@@ -3,9 +3,9 @@ MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
 LIBS =
 
-noinst_LTLIBRARIES = libjavalangreflect.la
+noinst_LTLIBRARIES = libjavalangreflect-indep.la
 
-libjavalangreflect_la_SOURCES = \
+libjavalangreflect_indep_la_SOURCES = \
 	java_lang_reflect_Array.c java_lang_reflect_Array.h \
 	java_lang_reflect_Constructor.c java_lang_reflect_Constructor.h \
 	java_lang_reflect_Field.c java_lang_reflect_Field.h \
