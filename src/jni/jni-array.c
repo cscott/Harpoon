@@ -8,6 +8,9 @@
 #include "config.h"
 #ifdef WITH_DMALLOC
 #include "dmalloc.h"
+#define DMALLOC_PADDING 1 /* dmalloc doesn't like 0-byte allocations */
+#else
+#define DMALLOC_PADDING 0
 #endif
 
 JNIEXPORT jboolean JNICALL Java_java_lang_Class_isPrimitive(JNIEnv *, jobject);
@@ -174,7 +177,7 @@ type * FNI_Get##name##ArrayElements(JNIEnv *env,\
 				    type##Array array, jboolean *isCopy) {\
   struct aarray *a = (struct aarray *) FNI_UNWRAP(array);\
   jsize length = a->length;\
-  type * result = malloc(sizeof(type) * length);\
+  type * result = malloc(sizeof(type) * length + DMALLOC_PADDING);\
   FNI_Get##name##ArrayRegion(env,array,0,length,result);\
   if (isCopy!=NULL) *isCopy=JNI_TRUE;\
   return result;\
