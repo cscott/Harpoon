@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Quads;
 
+import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +20,7 @@ import harpoon.IR.Quads.CALL;
  * implementations of <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AbstrCallGraph.java,v 1.3 2002-09-01 07:34:39 cananian Exp $
+ * @version $Id: AbstrCallGraph.java,v 1.4 2002-11-29 20:30:20 salcianu Exp $
  */
 abstract class AbstrCallGraph implements CallGraph {
 
@@ -45,4 +46,8 @@ abstract class AbstrCallGraph implements CallGraph {
     }
     final private Map<HMethod,CALL[]> cache_cs = new HashMap<HMethod,CALL[]>();
     final private static CALL[] empty_array = new CALL[0];
+
+    public Set getRunMethods() {
+	throw new UnsupportedOperationException();
+    }
 }

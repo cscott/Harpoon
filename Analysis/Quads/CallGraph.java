@@ -12,7 +12,7 @@ import harpoon.IR.Quads.CALL;
  implemented by a call graph.
  * 
  * @author  Alexandru SALCIANU <salcianu@mit.edu>
- * @version $Id: CallGraph.java,v 1.3 2002-04-11 04:28:49 salcianu Exp $
+ * @version $Id: CallGraph.java,v 1.4 2002-11-29 20:30:20 salcianu Exp $
  */
 public interface CallGraph extends harpoon.Analysis.CallGraph {
     // XXX: to talk about a CALL quad, you really need to have the HCode
@@ -35,4 +35,10 @@ public interface CallGraph extends harpoon.Analysis.CallGraph {
     /** Returns the set of all the methods that can be called in the 
 	execution of the program. */
     public Set callableMethods();
+
+    /** @return set of all <code>run()</code> methods that may
+	be the bodies of a thread started by the program (optional operation).
+	@throws UnsupportedOperationException if <code>getRunMethods</code>
+	is not implemented by <code>this</code>. */
+    public Set getRunMethods();
 }

@@ -27,7 +27,7 @@ import java.util.Set;
  This is the most conservative implementation of <code>CallGraph</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl.java,v 1.9 2002-09-01 07:34:39 cananian Exp $
+ * @version $Id: CallGraphImpl.java,v 1.10 2002-11-29 20:30:20 salcianu Exp $
  */
 public class CallGraphImpl extends AbstrCallGraph  {
     final ClassHierarchy ch;
@@ -99,5 +99,4 @@ public class CallGraphImpl extends AbstrCallGraph  {
     public Set<HMethod> callableMethods(){
 	return ch.callableMethods();
     }
-
 }
