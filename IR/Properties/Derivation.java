@@ -6,6 +6,7 @@ package harpoon.IR.Properties;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 
 /**
  * <code>Derivation</code> provides a mean to access the derivation
@@ -14,7 +15,7 @@ import harpoon.Temp.Temp;
  * garbage collection of the derived pointer.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.3 1999-02-07 10:33:40 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.4 1999-02-08 17:20:49 duncan Exp $
  */
 public interface Derivation  {
 
@@ -47,5 +48,14 @@ public interface Derivation  {
 			 this.sign, 
 			 ((this.next==null)?null:this.next.clone(ctm)));
       }
+
+      /** Returns a new <code>DList</code> with the <code>Temp</code>s 
+       *  renamed by the supplied mapping */
+      public DList rename(TempMap tempMap)
+	{
+	  return new DList((this.base==null)?null:tempMap.tempMap(this.base),
+			   this.sign,
+			   (this.next==null)?null:this.next.rename(tempMap));
+	}
     }
 }
