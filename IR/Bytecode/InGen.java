@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * opcode in the raw bytecode array.
  *
  * @author  C. Scott Ananian
- * @version $Id: InGen.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: InGen.java,v 1.3 1998-10-11 23:36:49 cananian Exp $
  */
 public class InGen extends Instr {
   byte opcode;
@@ -161,6 +161,14 @@ public class InGen extends Instr {
     case Op.FCONST_2:
       operands = new Operand[] {
 	new OpConstant(new Float((float)(code[pc]-Op.FCONST_0)), HClass.Float)
+      };
+      break;
+      // Double constant.
+    case Op.DCONST_0:
+    case Op.DCONST_1:
+      operands = new Operand[] {
+	new OpConstant(new Double((double)(code[pc]-Op.DCONST_0)),
+		       HClass.Double)
       };
       break;
       // General constant.
