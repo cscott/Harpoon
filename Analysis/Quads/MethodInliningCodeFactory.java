@@ -17,7 +17,8 @@ import harpoon.IR.Quads.MOVE;
 import harpoon.IR.Quads.NOP;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.QuadSSI;
+import harpoon.IR.Quads.QuadRSSx;
+import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
@@ -47,7 +48,7 @@ import harpoon.ClassFile.HCodeElement;
  * facilities for specifying number of recursive inlinings.
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.7 2001-06-18 19:39:01 cananian Exp $ */
+ * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.8 2001-06-18 20:30:40 cananian Exp $ */
 public class MethodInliningCodeFactory implements HCodeFactory {
 
     HCodeFactory parent;
@@ -66,7 +67,7 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	                      "quad-ssi" code. 
     */
     public MethodInliningCodeFactory(HCodeFactory parentFactory) {
-        Util.assert(parentFactory.getCodeName().equals(QuadSSI.codename));
+        Util.assert(parentFactory.getCodeName().equals(QuadSSA.codename));
 	parent = parentFactory;
 	inlinedSites = new HashSet();
     }
@@ -77,7 +78,7 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	<code>this.convert(m).getName()</code> for every 
 	<code>HMethod m</code>. 
      */
-    public String getCodeName() { return QuadSSI.codename; }
+    public String getCodeName() { return MyRSSx.codename; }
 
     /** Removes representation of method <code>m</code> from all caches
 	in this factory and its parents.
@@ -97,13 +98,13 @@ public class MethodInliningCodeFactory implements HCodeFactory {
      */
     public HCode convert(HMethod m) {  
 	if (h.containsKey(m)) return (HCode) h.get(m); // even if get()==null.
-	QuadSSI newCode = (QuadSSI) parent.convert(m);
+	harpoon.IR.Quads.Code newCode = (QuadSSA) parent.convert(m);
 	if (newCode == null) { h.put(m, null); return null; }
 	
 	// The below was added in response to Scott's request that the
 	// HCode be cloned prior to being fuddled with by the Inliner
-	HCodeAndMaps hcam = newCode.clone( m );
-	newCode = (QuadSSI) hcam.hcode();
+	HCodeAndMaps hcam = MyRSSx.cloneToRSSx(newCode, m);
+	newCode = (MyRSSx) hcam.hcode();
 	Map aem = hcam.ancestorElementMap();
 
 	Quad[] ql = (Quad[]) newCode.getElements();
@@ -185,6 +186,14 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	// done!
 	h.put(m, newCode); // cache this puppy.
 	return newCode;
+    }
+    private static class MyRSSx extends QuadRSSx {
+	private MyRSSx(HMethod m) { super(m, null); }
+	public static HCodeAndMaps cloneToRSSx(harpoon.IR.Quads.Code c,
+					       HMethod m) {
+	    MyRSSx r = new MyRSSx(m);
+	    return r.cloneHelper(c, r);
+	}
     }
 
     /** Marks a call site to be inlined when code is generated.
