@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.80 1999-10-20 20:10:20 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.81 1999-10-20 20:20:53 cananian Exp $
  */
 %%
 
@@ -1408,6 +1408,7 @@ LABEL(id) %{
 }%
 
 MOVE<p,i,f>(TEMP(dst), src) %{
+    dst = makeTemp(dst);
     emitMOVE( ROOT, "mov `d0, `s0", dst, src );
 }%
 
