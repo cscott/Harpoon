@@ -59,11 +59,11 @@ wipe: clean
 	$(RM) *~ core
 
 backup:
-	$(RM) ../harpoon-backup.tgz
-	cd ..; tar czvf harpoon-backup.tgz CVSROOT
-	scp ../harpoon-backup.tgz \
+	$(RM) ../harpoon-backup.tar.gz
+	cd ..; tar czvf harpoon-backup.tar.gz CVSROOT
+	scp ../harpoon-backup.tar.gz \
 		$(HOST):public_html/Projects/Harpoon
-	$(RM) ../harpoon-backup.tgz
+	$(RM) ../harpoon-backup.tar.gz
 
 # Try to convince make to delete these sometimes.
 .INTERMEDIATE: %.aux %.log
