@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.171 2001-10-29 16:42:42 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.172 2001-10-29 17:00:07 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -403,7 +403,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    }                                           
 	    /* counter factory must be set up before field reducer,
 	     * or it will be optimized into nothingness. */
-	    if (Boolean.getBoolean("size.counters")) {
+	    if (Boolean.getBoolean("size.counters") ||
+		Boolean.getBoolean("mzf.counters")) {
  		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
 		hcf = harpoon.Analysis.Counters.CounterFactory
 		    .codeFactory(hcf, linker, mainM);
@@ -429,6 +430,18 @@ public class SAMain extends harpoon.IR.Registration {
 		    .codeFactory();
  		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 		// pull everything through the size counter factory
+		for (Iterator it=classHierarchy.callableMethods().iterator();
+		     it.hasNext(); )
+		    hcf.convert((HMethod)it.next());
+	    }
+	    /* -- find mostly-zero fields -- */
+	    if (Boolean.getBoolean("mzf.counters")) {
+		hcf = new harpoon.Analysis.SizeOpt.MostlyZeroFinder(hcf, frame)
+		    .codeFactory();
+ 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+		// pull everything through the 'mostly zero finder', to make
+		// sure that all relevant counter fields show up before
+		// we start emitting code.
 		for (Iterator it=classHierarchy.callableMethods().iterator();
 		     it.hasNext(); )
 		    hcf.convert((HMethod)it.next());
