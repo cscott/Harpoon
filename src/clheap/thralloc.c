@@ -29,6 +29,7 @@ struct oobj_with_clheap {
 
 #elif !defined(WITH_THREADS) && defined(WITH_EVENT_DRIVEN)
 /* Event-driven code.  No heavy-weight threading allowed. */
+extern struct oobj *Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread;
 # define FETCH_THIS_THREAD_UNWRAPPED() \
 	Flex_harpoon_Analysis_ContBuilder_Scheduler_currentThread
 # define FETCH_THIS_THREAD() FNI_WRAP(FETCH_THIS_THREAD_UNWRAPPED())
@@ -67,7 +68,7 @@ void *NTHR_malloc_other(size_t size, struct oobj *oobj) {
   clh = CLHEAP_FROM_OOBJ(oobj);
   result = clheap_alloc(clh, size);
   if (result!=NULL) return result;
-  printf("OVERFLOW FROM THREAD HEAP %p: %d bytes\n", clh, size);
+  //printf("OVERFLOW FROM THREAD HEAP %p: %d bytes\n", clh, size);
   return NGBL_malloc_noupdate(size);
 #else
   return NGBL_malloc_noupdate(size);
