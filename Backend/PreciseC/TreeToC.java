@@ -3,8 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.PreciseC;
 
+import harpoon.Analysis.Liveness;
+import harpoon.Analysis.Maps.Derivation;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HData;
+import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.BINOP;
 import harpoon.IR.Tree.Bop;
@@ -16,6 +20,7 @@ import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.EXPR;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.ExpList;
+import harpoon.IR.Tree.INVOCATION;
 import harpoon.IR.Tree.JUMP;
 import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.MEM;
@@ -30,6 +35,7 @@ import harpoon.IR.Tree.SEQ;
 import harpoon.IR.Tree.TEMP;
 import harpoon.IR.Tree.THROW;
 import harpoon.IR.Tree.Tree;
+import harpoon.IR.Tree.TreeDerivation;
 import harpoon.IR.Tree.TreeVisitor;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.Typed;
@@ -37,11 +43,13 @@ import harpoon.IR.Tree.UNOP;
 import harpoon.IR.Tree.Uop;
 import harpoon.Temp.Label;
 import harpoon.Temp.LabelList;
+import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -52,7 +60,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.14 2000-07-02 06:52:43 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.15 2000-07-12 00:12:18 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -62,7 +70,18 @@ public class TreeToC extends java.io.PrintWriter {
 	super(out);
 	this.tv = new TranslationVisitor();
     }
-    public void translate(HCode hc) { translate((Tree)hc.getRootElement()); }
+    public void translate(HCode hc) {
+	harpoon.IR.Tree.Code c = (harpoon.IR.Tree.Code) hc;
+	Tree root = (Tree)c.getRootElement();
+	tv.ud = c.getUseDefer();
+	tv.live = new harpoon.Analysis.DataFlow.LiveVars
+	    (c, c.getGrapher(), tv.ud, Collections.EMPTY_SET);
+	tv.tempv = new TempVisitor(root, c.getTreeDerivation());
+	translate(root);
+	tv.ud = null;
+	tv.live = null;
+	tv.tempv = null;
+    }
     public void translate(HData hd) { translate((Tree)hd.getRootElement()); }
     private void translate(Tree t) {
 	tv.switchto(tv.NONE);
@@ -77,6 +96,24 @@ public class TreeToC extends java.io.PrintWriter {
 	tv.emitOutput(this);
 	// okay, now (really) flush and close.
 	super.close();
+    }
+    /** TempVisitor collects the types of temps */
+    private static class TempVisitor extends TreeVisitor {
+	public final Map objectTemps = new HashMap();
+	private final TreeDerivation treederiv;
+	public TempVisitor(Tree t, TreeDerivation treederiv) {
+	    this.treederiv = treederiv;
+	    t.accept(this);
+	}
+	public void visit(Tree t) {
+	    for (Tree st=t.getFirstChild(); st!=null; st=st.getSibling())
+		st.accept(this);
+	}
+	public void visit(TEMP t) {
+	    HClass hc = treederiv.typeMap(t);
+	    if (hc==null || !hc.isPrimitive())
+		objectTemps.put(t.temp, treederiv.derivation(t));
+	}
     }
     /** LabelVisitor identifies the method-local labels. */
     private static class LabelVisitor extends TreeVisitor {
@@ -133,6 +170,11 @@ public class TreeToC extends java.io.PrintWriter {
 	    }
 	    pw = null;
 	}
+	// support liveness info for *precise* gc.
+	Liveness live = null;
+	UseDefer ud = null;
+	TempVisitor tempv = null;
+
 	// keep track of current alignment, section, method, etc.
 	ALIGN align = null;
 	SEGMENT segment = null;
@@ -325,6 +367,8 @@ public class TreeToC extends java.io.PrintWriter {
 	    pw.print(")");
 	}
 	public void visit(CALL e) {
+	    Set liveo = liveObjects(e);
+	    pw.print("\t"); emitPush(liveo); pw.print(";"); nl();
 	    boolean callv = (e.getRetval()==null);
 	    if (callv) {
 		pw.print("\tCALLV(");
@@ -350,7 +394,8 @@ public class TreeToC extends java.io.PrintWriter {
 	    }
 	    pw.print("), ");
 	    trans(e.getRetex());
-	    pw.print(", "+label(e.getHandler().label)+");");
+	    pw.print(", "+label(e.getHandler().label));
+	    pw.print(", "); emitPop(liveo); pw.print(");");
 	    nl();
 	}
 	public void visit(CJUMP e) {
@@ -529,6 +574,8 @@ public class TreeToC extends java.io.PrintWriter {
 	    if (take_address) pw.print(")");
 	}
 	public void visit(NATIVECALL e) {
+	    Set liveo = liveObjects(e);
+	    pw.print("\t"); emitPush(liveo); pw.print(";"); nl();
 	    pw.print("\t");
 	    if (e.getRetval()!=null) {
 		trans(e.getRetval()); pw.print(" = ");
@@ -557,6 +604,7 @@ public class TreeToC extends java.io.PrintWriter {
 		if (el.tail!=null) pw.print(", ");
 	    }
 	    pw.print(");"); nl();
+	    pw.print("\t"); emitPop(liveo); pw.print(";"); nl();
 	}
 	public void visit(RETURN e) {
 	    if (isVoidMethod)
@@ -609,6 +657,85 @@ public class TreeToC extends java.io.PrintWriter {
 	    default: throw new Error("unknown Uop: "+e);
 	    }
 	    trans(e.getOperand()); pw.print(")");
+	}
+
+	Map temp2K = new HashMap();
+	// emit an expression that saves the derivation of derived pointers.
+	private void emitHandleDerived(Set liveo, boolean isSave) {
+	    for (Iterator it=liveo.iterator(); it.hasNext(); ) {
+		Temp t = (Temp) it.next();
+		Derivation.DList dl=(Derivation.DList)tempv.objectTemps.get(t);
+		if (dl==null) continue; // not a derived temp.
+		// fetch name of temp in which to store derivation.
+		Temp K = (Temp) temp2K.get(t);
+		if (K==null) { // ooh, ooh, make new!
+		    K = new Temp(t);
+		    temp2K.put(t, K);
+		    // declare the temp.
+		    pwa[MD].println("\tregister jsize "+K+
+				    " __attribute__ ((unused));");
+		}
+		if (isSave) pw.print(K+" = "+t); else pw.print(t+" = "+K);
+		while (dl!=null) {
+		    pw.print((dl.sign^isSave)?"+":"-");
+		    pw.print(dl.base);
+		    dl=dl.next;
+		}
+		pw.print(",");
+	    }
+	    pw.print("0");
+	}
+	// emit an expression to push object pointers and save derived types.
+	private void emitPush(Set liveo) {
+	    pw.print("IFPRECISE(/*push*/(");
+	    // push base pointers
+	    for (Iterator it=liveo.iterator(); it.hasNext(); ) {
+		Temp t = (Temp) it.next();
+		Derivation.DList dl=(Derivation.DList)tempv.objectTemps.get(t);
+		if (dl!=null) continue; // only base pointers!
+		pw.print("PUSHOBJ("+t+"),");
+	    }
+	    // handle derived pointers.
+	    emitHandleDerived(liveo, true/* save */);
+	    pw.print("))");
+	}
+	// emit an expression to pop object pointers and restore derived types
+	private void emitPop(Set liveo) {
+	    pw.print("IFPRECISE(/*pop */(");
+	    // pop base pointers
+	    for (Iterator it=liveo.iterator(); it.hasNext(); ) {
+		Temp t = (Temp) it.next();
+		Derivation.DList dl =
+		    (Derivation.DList) tempv.objectTemps.get(t);
+		if (dl!=null) continue; // only base pointers!
+		pw.print(t+"=POPOBJ(),");
+	    }
+	    // handle derived pointers.
+	    emitHandleDerived(liveo, false/* restore */);
+	    pw.print("))");
+	}
+	// return the set of objects to be saved/restored at a given alloc site
+	private Set liveObjects(INVOCATION e) {
+	    if (live==null || tempv==null || ud==null)
+		return Collections.EMPTY_SET; // bail out if no liveness info.
+	    // SAVE: (liveOut(e)-e.defs()) intersected w/ objectTemps
+	    Set lo = new HashSet();
+	    for (Iterator it=live.getLiveOut(e).iterator(); it.hasNext(); ) {
+		Temp t = (Temp) it.next();
+		// filter out non-object temps.
+		if (!tempv.objectTemps.containsKey(t)) continue;
+		lo.add(t);
+		// derived temps are also uses of their bases.
+		Derivation.DList dl=(Derivation.DList)tempv.objectTemps.get(t);
+		while (dl!=null) {
+		    lo.add(dl.base);
+		    dl=dl.next;
+		}
+	    }
+	    // filter out temps def'ed by INVOCATION
+	    lo.removeAll(ud.defC(e));
+	    // done.
+	    return lo;
 	}
     }
 }
