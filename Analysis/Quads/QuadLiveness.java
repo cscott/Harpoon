@@ -24,7 +24,7 @@ import java.util.Set;
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.1.2.8 2000-02-11 02:12:28 kkz Exp $
+ * @version $Id: QuadLiveness.java,v 1.1.2.9 2000-02-13 04:39:59 bdemsky Exp $
  */
 public class QuadLiveness extends Liveness {
     final Hashtable livein;
@@ -53,7 +53,7 @@ public class QuadLiveness extends Liveness {
      *  no live-in variables.
      */
     public Set getLiveIn(HCodeElement hce) {
-	return (Set)this.livein.get((Quad)hce);
+	return new WorkSet((Set)livein.get((Quad)hce));
     }
     /** Same as getLiveIn, but returns array of <code>Temp</code>s.  This
 	array is guaranteed to have the Temp's in the same order for a given
@@ -76,7 +76,7 @@ public class QuadLiveness extends Liveness {
      *  no live-in variables.
      */
     public Set getLiveOut(HCodeElement hce) {
-	return (Set)this.liveout.get((Quad)hce);
+	return new WorkSet((Set)liveout.get((Quad)hce));
     }
 
     /** Same as getLiveOut, but returns array of <code>Temp</code>s.
@@ -149,24 +149,21 @@ public class QuadLiveness extends Liveness {
 	    for (int i=0;i<hce.nextLength();i++) {
 		Quad successor=hce.next(i);
 		if (in.containsKey(successor)) {
-		    for (Iterator j=((WorkSet)in.get(successor)).iterator(); 
-			 j.hasNext(); ) {
-			out_.add(j.next());
-		    }
 		    if (successor instanceof PHI) {
-			Quad[] next=((Quad)hce).next();
-			for (int ii=0;ii<next.length;ii++) {
-			    if (next[ii]==successor) {
-				int edge=((Quad)hce).nextEdge(ii).which_pred();
-				PHI phi=(PHI)successor;
-				for (int k=0;k<phi.arity();k++)
-				    if (k!=edge)
-					for (int j=0;j<phi.numPhis();j++)
-					    out_.remove(phi.src(j,k));
-				break;
-			    }
-			}
-		    }
+			WorkSet w=new WorkSet((Set)out.get(successor));
+			
+			//search for successor
+			int edge=hce.nextEdge(i).which_pred();
+			PHI phi=(PHI)successor;
+			
+			for (int j=0;j<phi.numPhis();j++)
+			    w.remove(phi.dst(j));
+			
+			for (int j=0;j<phi.numPhis();j++)
+			    w.add(phi.src(j,edge));
+			out_.addAll(w);
+		    } else
+			out_.addAll((WorkSet)in.get(successor));
 		}
 	    }
 
