@@ -56,7 +56,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.36 1999-09-02 15:53:12 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.37 1999-09-02 15:57:30 pnkfelix Exp $
  */
 %%
 
@@ -167,7 +167,7 @@ import java.util.Iterator;
     }
 
     /* InstrJUMP emit helper; automatically adds entry to
-       label->branches map. */
+       label->branches map. */ 
     private Instr emitJUMP( HCodeElement root, String assem, Label l ) {
 	Instr j = emit( new InstrJUMP( instrFactory, root, assem, l ));
 	return j;

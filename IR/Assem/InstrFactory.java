@@ -17,7 +17,7 @@ import java.util.Map;
  * generic <code>Assem.Instr</code>s used in code generation.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrFactory.java,v 1.1.2.15 1999-09-02 15:53:13 pnkfelix Exp $
+ * @version $Id: InstrFactory.java,v 1.1.2.16 1999-09-02 15:57:31 pnkfelix Exp $
  */
 public abstract class InstrFactory {
     /** Maintains a
@@ -38,7 +38,7 @@ public abstract class InstrFactory {
 	will never return <code>null</code>; it will just create new
 	empty sets as needed and return them instead. 
     */
-    public Map labelToBranches = new HashMap() {
+    Map labelToBranches = new HashMap() {
 	public Object get(final Object key) {
 	    Object v = super.get(key);
 	    if (v != null) {
