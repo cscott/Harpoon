@@ -738,6 +738,7 @@ sub cvs_make_rev_map {
         #  c) map this branch tag to the appropriate revision in $frm
         my $frmtag = &map_tag_to_revision($frmobj, $branchsym,
                                           $rcsobj->{TIMESTAMP}->{$r});
+        die "no such tag: $branchsym\n" if $frmtag eq '';
         #  d) now move back until we find a non-dead check-in
         while ($frmobj->{REVISION_STATE}->{$frmtag} eq "dead") {
             $frmtag = $frmobj->{PREV_REVISION}->{$frmtag};
@@ -785,6 +786,7 @@ sub cvs_make_rev_map {
             $rcsobj->{REVISION_LOG}->{$r} =~ m/[@]MERGE:\s*([^@]+)\s*[@]/) {
             my $from_rev = &map_tag_to_revision($rcsobj, $1,
                                                 $rcsobj->{TIMESTAMP}->{$r});
+            next if $from_rev eq ''; # no such revision!
             # find common point.
             my $com=$from_rev;
             while (!$seen{$com} ) {
