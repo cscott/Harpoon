@@ -40,48 +40,31 @@ int main(int argc, char **argv)
 {
   ptr=createdisk();
 
-  //calltool("After mount disk");
 
   for(int i=0;i<MAXFILES;i++)
     files[i].used=false;
+
   
+  int fd1 = openfile(ptr, "file1");
+
+  char buf[100];
+  sprintf(buf, "ONE");
+  writefile(ptr, fd1, buf, strlen(buf));
+
+  createlink(ptr, "file1", "link1");
+
+  closefile(ptr, fd1);
+
+  removefile("file1", ptr);
   
-  for(int i=0; i<NUMFILES; i++) 
-    {
-      char filename[10], linkname[10], buf[100], text[100];
-      sprintf(filename,"file_%d", i);      
-      int fd = openfile(ptr,filename);
+  int fd2 = openfile(ptr, "file2");
+  
+  sprintf(buf, "TWO");
+  writefile(ptr, fd1, buf, strlen(buf));
 
-      sprintf(text, "After openfile(%s)", filename);
-      //calltool(text);
-      
-      if (fd == -1)
-	printf("Error! - %s couldn't be open\n", filename);
+  createlink(ptr, "file2", "link2");
 
-      
-      if (i%2 == 0)	
-	sprintf(buf,"EVEN.\n");
-      else sprintf(buf,"ODD.\n");
-
-      writefile(ptr,fd,buf,strlen(buf));
-      sprintf(text, "After writefile(%s)", filename);
-      //calltool(text);
-	
-      closefile(ptr,fd);
-
-      sprintf(linkname, "link_%d", i);
-      createlink(ptr, filename, linkname);
-      sprintf(text, "After createlink(%s)", filename);
-      //calltool(text);
-
-      if (i%5 == 0) {
-	removefile(filename, ptr);
-	sprintf(text, "After removefile(%s)", filename);
-	//calltool(text);
-      }
-    }
-
-  printfile("link_98", ptr);
+  printfile("link1", ptr);
 }
 
 
@@ -181,7 +164,6 @@ int openfile(struct block *ptr, char *filename)
       return -1;
     }
   itb->entries[inode].filesize=0;
-  itb->entries[inode].referencecount=1;
   for (int i=0;i<12;i++)
     itb->entries[inode].Blockptr[i]=0;
   
@@ -266,7 +248,6 @@ void createlink(struct block *ptr, char *filename, char *linkname)
 
 void closefile(struct block *ptr, int fd) 
 {
-  struct InodeTable * itb=(struct InodeTable *) &ptr[itbptr];  
   files[fd].used=false;
 }
 
@@ -382,7 +363,6 @@ int getblock(struct block * ptr)
 
 
 
-// prints the contents of the file with filename "filename"
 void printfile(char *filename, struct block *ptr) 
 {
   printf("=== BEGIN of %s ===\n", filename);

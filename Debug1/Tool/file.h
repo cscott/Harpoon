@@ -5,7 +5,6 @@
 #define NUMBLOCK 1024
 #define LENGTH BLOCKSIZE*NUMBLOCK
 #define NUMINODES BLOCKSIZE/56
-#define NUMFILES 100
 
 struct block {
   char array[BLOCKSIZE];
