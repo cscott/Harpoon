@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: ecoop04.tex,v 1.2 2003-12-02 08:35:09 cananian Exp $
+% $Id: ecoop04.tex,v 1.3 2003-12-02 09:36:36 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[runningheads]{csallncs}
 %\usepackage{times}
@@ -36,7 +36,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.2 $ $}
+%\date{\today \\ $ $Revision: 1.3 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -79,36 +79,36 @@ Cambridge, MA 02139 \\
 %
 % abstract
 \begin{abstract}
-This paper proposes an efficient object-based implementation of
-non-blocking software transactions.  We integrate transactions into Java
-to provide race-safety for certain types of improperly synchronized
-code, to provide fault-tolerance and backtracking, and to express
-synchronization and optimistic concurrency.  We use ideas from
-distributed shared memory implementations to efficiently implement
-transactions with little overhead for non-transactional code.
-%  We also
+  This paper proposes an efficient object-based implementation of
+  non-blocking software transactions.  We integrate transactions into
+  Java to provide race-safety for certain types of improperly
+  synchronized code, to provide fault-tolerance and backtracking, and
+  to express synchronization and optimistic concurrency.  We use ideas
+  from software distributed shared memory to efficiently implement
+  transactions with little overhead for non-transactional code.
+
+%We also
 %show how functional arrays can be used to overcome object size
 %limitations for non-blocking synchronization based on Herlihy's
 %``small object'' scheme.
-\note{Also, transactions are exception-handling?}
-
-We present a detailed design of our proposal, justifying the choices
-we make with empirical performance results.  We describe compiler
-optimizations which greatly improve the common-case efficiency for
-typical Java benchmarks.  A model for the software transaction
-implementation is given in Promela, which has been mechanically
-verified for correctness using the SPIN model checker.
-We argue that our transaction mechanism
-makes some racy existing code safe, is easier to use for new code,
-and promises better scalability than the existing
-mutual-exclusion--based synchronization methods.
+%\note{Also, transactions are exception-handling?}
+  
+  A model for the software transaction implementation is given in
+  Promela, whose correctness has been mechanically verified using the
+  \textsc{Spin} model checker.  We present a detailed design of our
+  proposal, justifying the choices we make with empirical performance
+  results and describing compiler optimizations which greatly improve
+  the common-case efficiency for typical Java benchmarks.  We argue
+  that our transaction mechanism makes some racy existing code safe,
+  is easy to use for new code, and promises better scalability than
+  the existing mutual-exclusion--based synchronization methods.
 \end{abstract}
 
 %
 \secput{intro}{Introduction}
 A transaction can be thought of as a sequence of loads and stores
-performed as part of a program.  The intuition for transactions is
-that they either \defn{commit} or they \defn{abort}.  If a transaction
+performed as part of a program which either
+\defn{commits} or \defn{aborts}.  If a transaction
 commits, then all of the loads and stores appear to have run
 atomically with respect to other transactions.  That is, the
 transaction's operations are not interleaved with those of other
@@ -116,50 +116,42 @@ transactions.  If a transaction aborts, then none of its stores take
 effect and the transaction must be restarted, typically using a
 backoff algorithm to preclude live-lock.
 
-Although transactions can be implemented using mutual exclusion
-(locks), our algorithms will use non-blocking synchronization to
-exploit optimistic concurrency.
-Non-blocking synchronization offers a number of advantages over mutual
-exclusion within critical regions.  Foremost for the concerns of this paper is
-fault-tolerance:  a process which fails while holding a lock within a
-critical region can prevent all other non-failing processes from
-ever making progress.  In an operating system context, this means that
-thread termination must be done very carefully to avoid inadvertently
-killing a process within a critical region.  If a thread dies while
-holding a user-mode lock, all other threads in its address space may
-deadlock; if it dies while holding a kernel lock, the whole system may
-crash.  Although one can use external means to recognize orphaned
-locks and release them, it is in general not possible to restore the
-locked data structures to a consistent state after such a failure.
-\note{This is an important sentence.}
-Non-blocking synchronization offers a graceful means out of
-these troubles, as non-progress or failure of any one thread will not
-affect the progress or consistency of other threads or the system.
-These fault-tolerant properties are even more relevant in
-distributed systems where entire nodes may fail without warning.
+The transaction model is a natural means to express both desired
+atomicity and fault-tolerance properties.  In this paper we will also
+show how transactions can be used as a general exception-handling
+mechanism and to implement back-tracking.
 
-Non-blocking synchronization offers performance benefits as well.
+Although transactions can be implemented using mutual exclusion
+(locks), our algorithms will utilize non-blocking synchronization to
+exploit optimistic concurrency among transactions.
+Non-blocking synchronization offers a number of advantages; foremost
+for the concerns of this paper is fault-tolerance.
+A process which fails while holding a lock within a
+critical region can prevent all other non-failing processes from
+ever making progress.
+It is in general not possible to restore the
+locked data structures to a consistent state after such a failure.
+Non-blocking synchronization offers a graceful solution to this
+trouble, as non-progress or failure of any one thread will not
+affect the progress or consistency of other threads or the system.
+
+Implementing transactions using
+non-blocking synchronization offers performance benefits as well.
 Even in a failure-free system, page faults, cache misses, context
 switches, I/O, and other unpredictable events may result in delays to the
-entire system when mutual exclusion is used; non-blocking
+entire system when mutual exclusion is used to guarantee the atomicity
+of operation sequences; non-blocking
 synchronization allows undelayed processes or processors to continue
-to make progress.  In loosely coupled asynchronous systems such
-unexpected delays are the norm, rather than the exception.
-%On parallel systems critical regions may cause unexpected serialization.
+to make progress.
+Similarly, in real-time systems, the use of non-blocking
+synchronization can prevent \emph{priority inversion} in the system
+\cite{Jones97}.
 
-\note{Trim this down.}
-Real-time systems have other problems with mutual exclusion.
-A low-priority task which 
-acquires a lock and is then delayed may hold up higher-priority tasks
-which contain critical regions protected with the same lock.
-This situation is called
-\emph{priority inversion}, and is responsible for a number of
-high-profile system failures, including whole-system resets during the Mars
-Pathfinder mission \cite{Jones97}.  Non-blocking
-synchronization can guarantee that the high-priority task makes
-progress.
-
-\note{State the purpose of this paper.}
+We will show how to integrate non-blocking transactions into an
+object-oriented language, ``transactifying'' existing code to fix
+existing concurrency bugs and using transactions for fault-tolerance,
+backtracking, exception-handling, and concurrency control in new
+programs.
 
 \subsecput{contrib}{Contributions}
 The contributions of this paper include:
@@ -170,11 +162,11 @@ The contributions of this paper include:
 \item A concrete language design to integrate transactions into Java
   providing fault-tolerance, backtracking, and non-blocking
   synchronization.
-\note{This is \texttt{try \{\ldots\} else \{\ldots\}} syntax.}
-\note{Omitting ``optimistic concurrency'' from this list for now.}
+%\note{This is \texttt{try \{\ldots\} else \{\ldots\}} syntax.}
+%\note{Omitting ``optimistic concurrency'' from this list for now.}
 \item An efficient implementation of this design which extends
   race-protection to unsynchronized code.
-\item A mechanically-verified PROMELA model of the implementation.
+\item A mechanically-verified Promela model of the implementation.
 \item Empirical data to justify the design choices.
 \item Compiler optimizations to improve the speed of software
   transactions.
@@ -190,18 +182,18 @@ The contributions of this paper include:
 
 \secput{example}{Example and Motivation}
 We present three examples in this section, illustrating how
-transactions can be used to simplify locking, provide a more intuitive
-means for specifying thread-safety properties, and support
-fault-tolerance and back-tracking.  The first two examples, involving
-a network flow algorithm and the \texttt{java.lang.StringBuffer} class
-from the Java standard libraries, illustrate the problems involved in
-using Java's existing monitor synchronization methodology to
-synchronize concurrent modifications to multiple objects.  We give a
-solution using transactions to implement atomic regions which greatly
-simplifies the locking discipline required.
-The last example reformulates the transaction mechanism as
-exception-handling, illustrating this view with a destructive traversal
-algorithm. 
+transactions can support fault-tolerance and back-tracking,
+simplify locking, and provide a more intuitive
+means for specifying thread-safety properties, and 
+We will first examine destructive list traversal, showing how a
+transaction implementation can be treated as an exception-handling
+mechanism.   We then, using a network flow example, show how this
+transaction mechanism can be used to simplify
+the locking discipline required when synchronizing concurrent
+modifications to multiple objects
+Finally, we show an existing race in the Java standard libraries (in 
+the class \texttt{java.lang.StringBuffer}).  ``Transactification'' of
+the existing class corrects this race.
 
 \subsecput{destruct}{Destructive list traversal}
 \note{Put this example first?}
@@ -231,10 +223,10 @@ void traverse(List l) {
 }
 \end{verbatim}
 }
-This function traverses the list visiting nodes in order and then
+This function traverses the list, visiting nodes in order and then
 reversing the {\tt next} pointer.  When the end of the list is
-reached, the reversed links are traversed to restore the original
-state of the list.
+reached, the reversed links are traversed to restore the list's original
+state.
 
 Imagine that an exception or fault occurs inside the {\tt visit()} method
 at some point during the traversal: an assertion fires, an exception
@@ -243,18 +235,16 @@ leave the {\tt traverse()} method, but the data structure is left in
 shambles.  What is needed is some exception-handling procedure to
 restore the proper state of the list.  This can be manually coded with
 Java's existing {\tt try}/{\tt catch} construct, but the
-exception-handling code must be tightly-coupled to the traversal.
+exception-handling code must be tightly-coupled to the traversal if it
+is going to undo the list mutations.
 
+\note{Used to have a try/catch with explicit fail in here.}
 Instead, we can provide a non-deterministic choice operator,
 {\tt try}/{\tt else}, and write the recovery code at a higher-level as:
 \par {\footnotesize\samepage
 \begin{verbatim}
 try {
-  try {
-    traverse(list);
-  } catch (Throwable t) {
-    fail; // explicit xaction abort
-  }
+  traverse(list);
 } else { // try-else construct
   throw new Error();
 }
@@ -268,29 +258,6 @@ depending on whether the {\tt try} would succeed or not.
 We implement this with transactions, making the {\tt fail} statement
 an explicit transaction abort.  When the transaction aborts, all the
 heap side-effects of the {\tt try} block disappear.
-
-The {\tt try}/{\tt else} construct exposes transactions to the
-programmer as an exception-handling mechanism.  And in fact,
-the {\tt atomic} block above can be implemented using
-{\tt try}/{\tt else}:
- \par {\footnotesize\samepage
-\begin{verbatim}
-while(true) {
-  try {
-    // atomic actions
-  } else {
-    backOff();
-    continue;
-  }
-  break; // success!
-}
-\end{verbatim}
-}
-\note{How hard do we try to execute the {\tt try} block?}
-Transactions expressed an exception-handling mechanism can be used in this
-manner to provide fault-tolerance and backtracking to the language, as
-well as atomic regions for synchronization.\note{Weak conclusion}
-\note{nqueens example?}
 
 \subsecput{flow}{Network flow}
 
@@ -371,6 +338,29 @@ version of the code can scale better and execute faster than the locking version
 \cite{AnanianAsKuLeLi04,HarrisFr03,GreenwaldCh96,MassalinPu91,HerlihyMo93,ShavitTo95}.
 Further, we can eliminate the convoluted locking protocol, which must
 be observed rigorously everywhere if deadlock is to be avoided.
+
+The {\tt try}/{\tt else} construct exposes transactions to the
+programmer as an exception-handling mechanism.  And in fact,
+the {\tt atomic} block above can be implemented using
+{\tt try}/{\tt else}:
+ \par {\footnotesize\samepage
+\begin{verbatim}
+while(true) {
+  try {
+    // atomic actions
+  } else {
+    backOff();
+    continue;
+  }
+  break; // success!
+}
+\end{verbatim}
+}
+\note{How hard do we try to execute the {\tt try} block?}
+Transactions expressed an exception-handling mechanism can be used in this
+manner to provide fault-tolerance and backtracking to the language, as
+well as atomic regions for synchronization.\note{Weak conclusion}
+\note{nqueens example?}
 
 \subsecput{stringbuffer}{The \texttt{StringBuffer} class}
 Java's monitor synchronization methodology implicitly associates an
@@ -1987,4 +1977,4 @@ problem. [although starvation may still occur.]
 \end{document}
 
 % LocalWords:  csail mit edu AFRL LaMarca Alemany Felten Luchango Shavit JVM
-% LocalWords:  Touitou Okasaki Qadeer
+% LocalWords:  Touitou Okasaki Qadeer Promela backoff
