@@ -60,7 +60,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.3 2000-02-08 09:03:37 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.4 2000-02-08 09:10:48 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -845,7 +845,7 @@ public class CloningVisitor extends QuadVisitor {
 	    Temp[] src2=new Temp[q.numSigmas()+((nretval==null)?0:1)];
 	    Temp[][] dst2=new Temp[q.numSigmas()+((nretval==null)?0:1)][2];
 	    for (int i=0;i<q.numSigmas();i++) {
-		src2[i]=ndst[i][1];
+		src2[i]=ndst[i][0];
 		dst2[i][0]=ctmap.tempMap(q.dst(i,0));
 		dst2[i][1]=new Temp(tf);
 	    }
