@@ -660,15 +660,18 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       System.out.println ("Visiting CJMP");
     }
     try {
-      NLabel label = new NLabel ("Label" + labelCount++);
+      NLabel labela = new NLabel ("Label" + labelCount++);
       if (!labelTable.containsKey (q.next(1))){
 	method.addInsn (new NLabel ("; label for Quad " + q.next(1).getID() + " not there "));
-	labelTable.put (q.next(1), label);
+	labelTable.put (q.next(1), labela);
       } else {
-	label = (NLabel) labelTable.get (q.next(1));
+	labela = (NLabel) labelTable.get (q.next(1));
       }
+      NLabel labelb = new NLabel ("Label" + labelCount++);
       addLoad (method, map, quadform, q.test, indexTable);
-      method.addInsn(new NInsn ("ifne", label));
+      method.addInsn(new NInsn ("ifeq", labelb));
+      method.addInsn(new NInsn ("goto_w", labela));
+      method.addInsn(labelb);
     } catch (Exception e){
       e.printStackTrace();
     }
