@@ -36,10 +36,15 @@ doc/TIMESTAMP:	$(ALLSOURCE)
 		$(foreach dir, $(filter-out Test,$(ALLPKGS)), \
 			  harpoon.$(subst /,.,$(dir)))
 	$(RM) doc/harpoon
-	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
+	munge doc | \
+	  sed -e 's/<cananian@/\&lt;cananian@/g' \
+	      -e 's/princeton.edu>/princeton.edu\&gt;/g' \
+	      -e 's/<dd> "The,/<dd> /g' | \
+	unmunge
 	cd doc; ln -s $(JDOCIMAGES) images
 	cd doc; ln -s packages.html index.html
 	cd doc; ln -s index.html API_users_guide.html
+	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	chmod a+rx doc doc/*
 
 doc-install: doc/TIMESTAMP
