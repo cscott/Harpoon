@@ -11,6 +11,8 @@ import java.util.HashSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.HashMap;
 
 import java.lang.reflect.Modifier;
 
@@ -49,7 +51,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.51 2001-02-27 22:11:11 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.52 2001-03-04 17:00:42 salcianu Exp $
  */
 abstract class InterProcPA implements java.io.Serializable {
 
@@ -147,21 +149,22 @@ abstract class InterProcPA implements java.io.Serializable {
 	    HMethod hm = mms[i].getHMethod();
 
 	    if(Modifier.isNative(hm.getModifiers())) {
-		//if(DEBUG)
-		    System.out.println("NATIVE: " + hm);
-		if(isTotallyHarmful(hm)) {
-		    if(DEBUG)
-			System.out.print("NEED TO SKIP: " + Debug.code2str(q));
-		    return skip_call(pa, q, pig_before, hm);
-		}
-		else {
-		    pigs[nb_callees_with_pig] = null;
-		    mms[nb_callees_with_pig]  = mms[i];
-		    nb_callees_with_pig++;
-		    continue;
-		}
+	      if(DEBUG)
+		System.out.println("NATIVE: " + hm);
+	      if(isTotallyHarmful(hm)) {
+		if(DEBUG)
+		  System.out.print("NEED TO SKIP: " + Debug.code2str(q));
+		return skip_call(pa, q, pig_before, hm);
+	      }
+	      else {
+		ParIntGraph pig = model_native(hm);
+		pigs[nb_callees_with_pig] = pig;
+		mms[nb_callees_with_pig]  = mms[i];
+		nb_callees_with_pig++;
+		continue;
+	      }
 	    }
-
+	    
 	    if(!(PointerAnalysis.analyzable(hm))){
 		if(DEBUG)
 		    System.out.println("NEED TO SKIP: " + Debug.code2str(q));
@@ -823,7 +826,7 @@ abstract class InterProcPA implements java.io.Serializable {
 	   !callee.getDeclaringClass().getName().equals("java.lang.Object"))
 	    return null;
 
-	//if(DEBUG)
+	if(DEBUG)
 	    System.out.println("NATIVE (special): " + callee);
 
 	ParIntGraph pig_after0 = pig_before;
@@ -898,7 +901,7 @@ abstract class InterProcPA implements java.io.Serializable {
 	   !hm.getDeclaringClass().getName().equals("java.lang.System"))
 	    return null;
 
-	//if(DEBUG)
+	if(DEBUG)
 	    System.out.println("NATIVE (special): " + Debug.code2str(q));
 
 	// the conventional field name used for the array's entries
@@ -1000,7 +1003,14 @@ abstract class InterProcPA implements java.io.Serializable {
 	    {"java.net.PlainSocketImpl", "socketClose"},
 	    {"java.net.PlainSocketImpl", "socketAvailable"},
 
-	    {"java.lang.Object", "hashCode"}
+	    {"java.lang.Object", "hashCode"},
+
+	    // this one does a sync on its argument; that's why it
+	    // we also create a graph modelling its execution
+	    {"java.lang.Object", "wait"},
+
+	    {"java.lang.Thread", "isAlive"},
+	    {"java.lang.Object", "getClass"}
 	};
 
 	for(int i = 0; i < methods.length; i++)
@@ -1020,5 +1030,51 @@ abstract class InterProcPA implements java.io.Serializable {
 		retval.add(hms[i]);
 	return retval;
     }
+
+
+    private static ParIntGraph model_native(HMethod hm) {
+	ParIntGraph pig = (ParIntGraph) graphs_for_natives.get(hm); 
+	return pig;
+    }
+    
 	
+    private static Map graphs_for_natives = new HashMap();
+    static void build_graphs_for_natives(PointerAnalysis pa) {
+	// java_lang_Object_wait
+	HMethod hm = get_method(pa, "java.lang.Object", "wait", 0);
+	MetaMethod mm = new MetaMethod(hm, true);
+
+	NodeRepository nodes = pa.getNodeRepository();
+	nodes.addParamNodes(mm, 1);
+	PANode node = nodes.getParamNode(mm, 0);
+
+	ParIntGraph pig = new ParIntGraph();
+	if(PointerAnalysis.RECORD_ACTIONS)
+	    pig.ar.add_sync
+		(new PASync(node, ActionRepository.THIS_THREAD, null), null);
+	graphs_for_natives.put(hm, pig);
+
+	System.out.println("Graph for  java.lang.Object.wait() " + pig);
+    }
+
+    private static HMethod get_method(PointerAnalysis pa,
+				      String cls_name, String mthd_name,
+				      int nb_args) {
+	Set set = new HashSet();
+	HClass hclass = pa.getLinker().forName(cls_name);
+	Util.assert(hclass != null, cls_name + " was not found!");
+
+	HMethod[] hms = hclass.getMethods();
+	for(int i = 0; i < hms.length; i++)
+	    if(hms[i].getName().equals(mthd_name) &&
+	       (hms[i].getParameterTypes().length == nb_args))
+		set.add(hms[i]);
+
+	Util.assert(set.size() > 0, mthd_name + "(" + nb_args +
+		    ") not found in " + cls_name);
+	Util.assert(set.size() == 1, "Too many methods");
+
+	return (HMethod) set.iterator().next();
+    }
+
 }// end of the class

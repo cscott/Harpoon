@@ -22,6 +22,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.Linker;
 
 
 import harpoon.Analysis.Quads.CallGraph;
@@ -72,7 +73,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.80 2001-02-27 22:11:13 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.81 2001-03-04 17:00:43 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -101,7 +102,7 @@ public class PointerAnalysis implements java.io.Serializable {
     /** Turns on the printing of some timing info. */
     public static boolean TIMING = true;
     public static final boolean STATS = true;
-    public static boolean SHOW_NODES = true;
+    public static boolean SHOW_NODES = false;
     public static final boolean DETAILS2 = false;
 
 
@@ -161,12 +162,19 @@ public class PointerAnalysis implements java.io.Serializable {
 
     public static final boolean DO_INTRA_PROC_TRIMMING = false;
 
-    // The HCodeFactory providing the actual code of the analyzed methods
-    private final MetaCallGraph  mcg;
+    // meta call graph
+    private MetaCallGraph  mcg;
     public final MetaCallGraph getMetaCallGraph() { return mcg; }
-    private final MetaAllCallers mac;
+
+    // meta all callers
+    private MetaAllCallers mac;
     public final MetaAllCallers getMetaAllCallers() { return mac; }
     private final CachingSCCLBBFactory scc_lbb_factory;
+
+    // linker
+    public Linker linker;
+    public final Linker getLinker() { return linker; }
+
 
     private Map hash_proc_interact_int = new HashMap();
 
@@ -195,10 +203,14 @@ public class PointerAnalysis implements java.io.Serializable {
      *
      *</ul> */
     public PointerAnalysis(MetaCallGraph mcg, MetaAllCallers mac,
-			   LBBConverter lbbconv) {
+			   LBBConverter lbbconv, Linker linker) {
 	this.mcg  = mcg;
 	this.mac  = mac;
 	scc_lbb_factory = new CachingSCCLBBFactory(lbbconv);
+	this.linker = linker;
+	
+	InterProcPA.build_graphs_for_natives(this);
+
 	if(SAVE_MEMORY)
 	    aamm = new HashSet();
     }
@@ -219,10 +231,10 @@ public class PointerAnalysis implements java.io.Serializable {
 	    return pig;
 	}
 	else {
-	    ParIntGraph pig = (ParIntGraph)hash_proc_int.get(mm);
+	    ParIntGraph pig = (ParIntGraph) hash_proc_int.get(mm);
 	    if(pig == null) {
 		analyze(mm);
-		pig = (ParIntGraph)hash_proc_int.get(mm);
+		pig = (ParIntGraph) hash_proc_int.get(mm);
 	    }
 	    return pig;
 	}
@@ -326,6 +338,8 @@ public class PointerAnalysis implements java.io.Serializable {
     public ParIntGraph threadInteraction(MetaMethod mm){
 	System.out.println("threadInteraction for " + mm);
 	ParIntGraph pig = (ParIntGraph) getIntParIntGraph(mm);
+	if(pig == null)
+	    return null;
 	return InterThreadPA.resolve_threads(this, pig);
     }
 
@@ -333,23 +347,24 @@ public class PointerAnalysis implements java.io.Serializable {
 	System.out.println("threadExtInteraction for " + mm);
 
 	ParIntGraph pig = (ParIntGraph) getIntThreadInteraction(mm);
-            PANode[] nodes = getParamNodes(mm);
-            boolean is_main =
-                mm.getHMethod().getName().equals("main");
-
-            ParIntGraph shrinked_graph = pig.keepTheEssential(nodes,is_main);
-
-            // We try to correct some imprecisions in the analysis:
-            //  1. if the meta-method is not returning an Object, clear
-            // the return set of the shrinked_graph
-            HMethod hm = mm.getHMethod();
-            if(hm.getReturnType().isPrimitive())
-                shrinked_graph.G.r.clear();
-            //  2. if the meta-method doesn't throw any exception,
-            // clear the exception set of the shrinked_graph.
-            if(hm.getExceptionTypes().length == 0)
-                shrinked_graph.G.excp.clear();
-      return(shrinked_graph);
+	PANode[] nodes = getParamNodes(mm);
+	boolean is_main =
+	    mm.getHMethod().getName().equals("main");
+	
+	ParIntGraph shrinked_graph =
+	    pig.keepTheEssential(nodes, is_main);
+	
+	// We try to correct some imprecisions in the analysis:
+	//  1. if the meta-method is not returning an Object, clear
+	// the return set of the shrinked_graph
+	HMethod hm = mm.getHMethod();
+	if(hm.getReturnType().isPrimitive())
+	    shrinked_graph.G.r.clear();
+	//  2. if the meta-method doesn't throw any exception,
+	// clear the exception set of the shrinked_graph.
+	if(hm.getExceptionTypes().length == 0)
+	    shrinked_graph.G.excp.clear();
+	return(shrinked_graph);
     }
 
     public ParIntGraph getExtThreadInteraction(MetaMethod mm){
@@ -362,7 +377,7 @@ public class PointerAnalysis implements java.io.Serializable {
     }
 
     public ParIntGraph getIntThreadInteraction(MetaMethod mm){
-            ParIntGraph pig = (ParIntGraph)hash_proc_interact_int.get(mm);
+            ParIntGraph pig = (ParIntGraph) hash_proc_interact_int.get(mm);
             if(pig == null){
                 pig = threadInteraction(mm);
                 hash_proc_interact_int.put(mm, pig);
@@ -379,7 +394,7 @@ public class PointerAnalysis implements java.io.Serializable {
 
     // Repository for node management.
     NodeRepository nodes = new NodeRepository(); 
-    final NodeRepository getNodeRepository() { return nodes; }
+    public final NodeRepository getNodeRepository() { return nodes; }
 
 
     // Navigator for the mmethod SCC building phase. The code is complicated
@@ -636,10 +651,11 @@ public class PointerAnalysis implements java.io.Serializable {
 	clear_lbb2pig(lbbf); // <- annotation style
 	good_agets = null;
 
+	/*
 	System.out.println("\nAnalysis time: " + 
 			   (System.currentTimeMillis() - b_time) + " ms\t" +
 			   mm.getHMethod());
-
+	*/
     }
 
     // Intra-procedural analysis of a strongly connected component of
@@ -1203,7 +1219,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	    java.lang.reflect.Modifier.isStatic(hm.getModifiers());
 	// if the method is non-static, the first parameter is not metioned
 	// in HMethod - it's the implicit this parameter.
-	int skew = isStatic?0:1;
+	int skew = isStatic ? 0 : 1;
 	// number of object formal parameters = the number of param nodes
 	int count = skew;
 	for(int i = 0; i < types.length; i++)
@@ -1271,30 +1287,30 @@ public class PointerAnalysis implements java.io.Serializable {
 	}
     }
 
-    /** Returns the parallel interaction graph valid at the program point
-	right before <code>q</code>. <code>q</code> belongs to the light basic
-	block <code>lbb</code> of the <code>current_intra_mmethod</code>.
-	The analysis is re-executed from the beginning of <code>lbb</code>,
-	till we reach <code>q</code> when we stop it and return the 
-	parallel intercation graph valid at that moment. */
-    private ParIntGraph analyze_lbb_up_to_q(LightBasicBlock lbb, Quad q){
-	lbbpig = get_initial_bb_pig(lbb);
 
-	HCodeElement[] instrs = lbb.getElements();
-	for(int i = 0; i < instrs.length; i++){
-	    Quad q_curr = (Quad) instrs[i];
-	    if(q_curr.equals(q)) return lbbpig;
-	    q_curr.accept(pa_visitor);
-	}
-	Util.assert(false, q + " was not in " + lbb);
-	return null; // this should never happen
+    /** Returns the parallel interaction graph attached to the program point
+	right after <code>q</code> in the body of meta-method
+	<code>mm</code>. */
+    public final ParIntGraph getPIGAtQuad(MetaMethod mm, Quad q){
+	return getPigBeforeQuad(mm, q);
     }
     
-
+    /** Returns the parallel interaction graph attached to the program point
+	right after <code>q</code> in the body of meta-method
+	<code>mm</code>. */
+    public final ParIntGraph getPigAfterQuad(MetaMethod mm, Quad q) {
+	return getPigForQuad(mm, q, AFTER_QUAD);
+    }
+    
     /** Returns the parallel interaction graph attached to the program point
 	right before <code>q</code> in the body of meta-method
 	<code>mm</code>. */
-    public final ParIntGraph getPIGAtQuad(MetaMethod mm, Quad q){
+    public final ParIntGraph getPigBeforeQuad(MetaMethod mm, Quad q) {
+	return getPigForQuad(mm, q, BEFORE_QUAD);
+    }
+    
+
+    public final ParIntGraph getPigForQuad(MetaMethod mm, Quad q, int moment) {
 	Util.assert(mcg.getAllMetaMethods().contains(mm),
 		    "Uncalled/unknown meta-method!");
 	LBBConverter lbbconv = scc_lbb_factory.getLBBConverter();
@@ -1310,7 +1326,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	// for all the basic block of the concerned method; all we need
 	// is to redo the pointer analysis for that basic block, stopping
 	// when we meet q.
-	ParIntGraph retval = analyze_lbb_up_to_q(lbb, q);
+	ParIntGraph retval = analyze_lbb_for_q(lbb, q, moment);
 
 	// clear the LightBasicBlock -> ParIntGraph cache generated by
 	// analyze_intra_proc
@@ -1318,6 +1334,34 @@ public class PointerAnalysis implements java.io.Serializable {
 	clear_lbb2pig(lbbf); // annotation;
 
 	return retval;
+    }
+
+    // constants for analyze_lbb_for_q
+    private final static int BEFORE_QUAD = 0;
+    private final static int AFTER_QUAD  = 1;
+
+    /** Returns the parallel interaction graph valid at the program
+	point right before/after <code>q</code>. <code>q</code> belongs to
+	the light basic block <code>lbb</code> of the
+	<code>current_intra_mmethod</code>.  The analysis is
+	re-executed from the beginning of <code>lbb</code>, to the
+	point immediately before/after <code>q</code> when we stop it and
+	return the parallel intercation graph valid at that moment. */
+    private ParIntGraph analyze_lbb_for_q(LightBasicBlock lbb, Quad q,
+					  int moment) {
+	lbbpig = get_initial_bb_pig(lbb);
+
+	HCodeElement[] instrs = lbb.getElements();
+	for(int i = 0; i < instrs.length; i++){
+	    Quad q_curr = (Quad) instrs[i];
+	    if((moment == BEFORE_QUAD) && q_curr.equals(q))
+		return lbbpig;
+	    q_curr.accept(pa_visitor);
+	    if((moment == AFTER_QUAD) && q_curr.equals(q))
+		return lbbpig;
+	}
+	Util.assert(false, q + " was not in " + lbb);
+	return null; // this should never happen
     }
 
     // activates the GC
@@ -1339,12 +1383,15 @@ public class PointerAnalysis implements java.io.Serializable {
 	return pig.G.I.pointedNodes(l);
     }
 
-
-    /** TODO */
-    public final Set pointedNodes(Quad q, Temp l) {
-	Util.assert(false, "Not yet implemented");
-	return null;
+    // given a quad q, returns the method q is part of 
+    private final HMethod quad2method(Quad q) {
+	return q.getFactory().getMethod();
     }
+
+    public final Set pointedNodes(Quad q, Temp l) {
+	return pointedNodes(new MetaMethod(quad2method(q), true), q, l);
+    }
+    
 
     /*
     ////////// SPECIAL HANDLING FOR SOME NATIVE METHODS ////////////////////

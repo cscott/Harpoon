@@ -33,6 +33,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.Linker;
+import harpoon.ClassFile.Relinker;
 import harpoon.ClassFile.Loader;
 
 import harpoon.IR.Quads.Quad;
@@ -71,6 +72,11 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.WorkSet;
 import harpoon.Util.ParseUtil;
 
+import harpoon.Util.TypeInference.TypeInference;
+import harpoon.Util.TypeInference.ExactTemp;
+
+import harpoon.Util.Util;
+
 import harpoon.Analysis.PointerAnalysis.Debug;
 import harpoon.Analysis.MetaMethods.SmartCallGraph;
 
@@ -84,7 +90,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.91 2001-02-27 22:11:26 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.92 2001-03-04 17:01:23 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -111,21 +117,11 @@ public abstract class PAMain {
 
     // force the creation of the memory allocation info.
     private static boolean MA_MAPS = false;
-    // gen the stack allocation hints
-    private static boolean DO_STACK_ALLOCATION  = false;
-    // gen the thread allocation hints
-    private static boolean DO_THREAD_ALLOCATION = false;
-    // gen the "no sync" hints
-    private static boolean GEN_SYNC_FLAG        = false;
     // the name of the file into which the memory allocation policies
     // will be serialized
     private static String MA_MAPS_OUTPUT_FILE = null;
 
     private static boolean CHECK_NO_CALLEES = false;
-
-    // use the inter-thread stage of the analysis while determining the
-    // memory allocation policies
-    private static boolean USE_INTER_THREAD = true;
 
     // Displays some help messages.
     private static boolean DEBUG = false;
@@ -138,8 +134,8 @@ public abstract class PAMain {
 
     private static boolean DUMP_JAVA = false;
 
-    private static boolean ANALYZE_ALL_ROOTS = false;
-    private static boolean SYNC_ELIM_ALL_ROOTS = false;
+    //private static boolean ANALYZE_ALL_ROOTS = false;
+    //private static boolean SYNC_ELIM_ALL_ROOTS = false;
     
     private static boolean COMPILE = false;
     
@@ -159,6 +155,8 @@ public abstract class PAMain {
     // Save the preanalysis results into PRE_ANALYSIS_OUT_FILE
     private static boolean SAVE_ANALYSIS = false;
     private static String ANALYSIS_OUT_FILE = null;
+
+    private static boolean RTJ_REMOVE_CHECKS = false;
 
     // the name of the file that contains additional roots
     private static String rootSetFilename = null;
@@ -195,7 +193,7 @@ public abstract class PAMain {
     private static Method root_method = new Method();
 
 
-    private static Linker linker = Loader.systemLinker;
+    private static Linker linker = new Relinker(Loader.systemLinker);
     private static HCodeFactory hcf = null;
     private static MetaCallGraph  mcg = null;
     private static MetaAllCallers mac = null;
@@ -216,26 +214,26 @@ public abstract class PAMain {
     // The set of classes and methods that are instantiated/called by
     // the current implementation of the runtime.
     // private static Set runtime_callable = null;
-
     private static Set program_roots = null;
 
     // global variable used for timing measurements
     private static long g_tstart = 0L;
 
+    // options for the MAInfo module.
+    private static MAInfo.MAInfoOptions mainfo_opts = 
+	new MAInfo.MAInfoOptions();
+
     public static void main(String[] params) throws IOException {
 	int optind = get_options(params);
 	int nbargs = params.length - optind;
-	if(nbargs < 1){
+	if(nbargs < 1) {
 	    show_help();
 	    System.exit(1);
 	}
 	print_options();
 
-	//runtime_callable = new HashSet
-	// (harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
-
 	get_root_method(params[optind]);
-	if(hroot == null){
+	if(hroot == null) {
 	    System.out.println("Sorry, the root method was not found\n");
 	    System.exit(1);
 	}
@@ -251,7 +249,14 @@ public abstract class PAMain {
 		if(SAVE_PRE_ANALYSIS)
 		    save_pre_analysis();
 	    }
-	    pa = new PointerAnalysis(mcg, mac, lbbconv);
+	    pa = new PointerAnalysis(mcg, mac, lbbconv, linker);
+	}
+
+	if(RTJ_REMOVE_CHECKS) {
+	    System.out.println( can_remove_all_checks() ?
+				"can remove all checks!" :
+				"cannot remove all checks!" );
+	    return;
 	}
 
 	if(CHECK_NO_CALLEES)
@@ -262,14 +267,19 @@ public abstract class PAMain {
 	   System.exit(1);
 	*/
 
+	if(mainfo_opts.USE_INTER_THREAD)
+	    PointerAnalysis.RECORD_ACTIONS = true;
+
 	if(DO_ANALYSIS)
 	    do_analysis();
 
-        if (ANALYZE_ALL_ROOTS) 
-            analyze_all_roots();
-
-        if (SYNC_ELIM_ALL_ROOTS) 
-            sync_elim_all_roots();
+	/*
+	  if (ANALYZE_ALL_ROOTS) 
+	  analyze_all_roots();
+	  
+	  if (SYNC_ELIM_ALL_ROOTS) 
+	  sync_elim_all_roots();
+	*/
 
 	if(DO_INTERACTIVE_ANALYSIS)
 	    do_interactive_analysis();
@@ -277,20 +287,26 @@ public abstract class PAMain {
 	if(MA_MAPS)
 	    ma_maps();
 
+	/*
 	if(DO_SAT)
 	    do_sat();
+	*/
 
 	if(SHOW_DETAILS)
 	    pa.print_stats();
 
-        if (ELIM_SYNCOPS)
+	/*
+        if(ELIM_SYNCOPS)
             do_elim_syncops();
+	*/
 
-	if(SAVE_ANALYSIS) save_analysis();
+	if(SAVE_ANALYSIS)
+	    save_analysis();
 
-
+	/*
 	if(DUMP_JAVA)
 	    dump_java(get_classes(pa.getMetaCallGraph().getAllMetaMethods()));
+	*/
 
 	if(COMPILE) {
 	    System.out.println("\n\n\tCOMPILE!\n");
@@ -298,7 +314,6 @@ public abstract class PAMain {
 	    g_tstart = System.currentTimeMillis();
 	    // It seems that something is broken in the new strategy ...
 	    SAMain.USE_OLD_CLINIT_STRATEGY = true;
-	    // Let's use the hacked register allocator for now
 	    SAMain.linker = linker;
 	    SAMain.hcf = hcf;
 	    SAMain.className = root_method.declClass; // params[optind];
@@ -307,6 +322,8 @@ public abstract class PAMain {
 			       (time() - g_tstart) + "ms");
 	}
     }
+
+    private static final boolean USE_OLD_STYLE = true;
     
     // Constructs some data structures used by the analysis: the code factory
     // providing the code of the methods, the class hierarchy, call graph etc.
@@ -314,17 +331,25 @@ public abstract class PAMain {
 	g_tstart = System.currentTimeMillis();
 	//We might have loaded in a code factory w/o a preanalysis.
 	if (hcf==null) {
-	    hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
-	    // hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
+	    if(USE_OLD_STYLE) {
+		System.out.println("Use old style for class initializers!");
+		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
+		construct_class_hierarchy();
+	    }
+	    else {
+		System.out.println("Use new style for class initializers!");
 
-	    construct_class_hierarchy();
-
-	    String resource =
-		"harpoon/Backend/Runtime1/init-safe.properties";
-	    hcf = new harpoon.Analysis.Quads.InitializerTransform
-		(hcf, ch, linker, resource).codeFactory();
-	    
-	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+		hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
+		construct_class_hierarchy();
+		
+		String resource =
+		    "harpoon/Backend/Runtime1/init-safe.properties";
+		hcf = new harpoon.Analysis.Quads.InitializerTransform
+		    (hcf, ch, linker, resource).codeFactory();
+		
+		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+		construct_class_hierarchy();
+	    }
 	}
 	else
 	    construct_class_hierarchy();
@@ -536,17 +561,9 @@ public abstract class PAMain {
 
     // Finds the root method: the "main" method of "class".
     private static void get_root_method(String root_class) {
-/*
-        if (root_class.indexOf(".") > 0) { 
-          root_method.name = root_class.substring(root_class.indexOf(".")+1);
-          root_method.declClass = root_class.substring(0, root_class.indexOf("."));
-        } else { 
-*/
-	  root_method.name = "main";
-	  root_method.declClass = root_class;
-/*
-        }
-*/
+	root_method.name = "main";
+	root_method.declClass = root_class;
+
 	HClass hclass = linker.forName(root_method.declClass);
 	HMethod[] hm  = hclass.getDeclaredMethods();
 
@@ -580,8 +597,6 @@ public abstract class PAMain {
 				       + " ->\n META-METHOD " + mm);
 		    ParIntGraph int_pig = pa.getIntParIntGraph(mm);
 		    ParIntGraph ext_pig = pa.getExtParIntGraph(mm);
-		    ParIntGraph pig_inter_thread =
-			pa.getIntThreadInteraction(mm);
 		    PANode[] nodes = pa.getParamNodes(mm);
 		    System.out.println("META-METHOD " + mm);
 		    System.out.print("POINTER PARAMETERS: ");
@@ -593,9 +608,15 @@ public abstract class PAMain {
 		    System.out.println(int_pig);
 		    //System.out.print("EXT. GRAPH AT THE END OF THE METHOD:");
 		    //System.out.println(ext_pig);
-		    //System.out.print("INT. GRAPH AT THE END OF THE METHOD" +
-		    //		     " + INTER-THREAD ANALYSIS:");
-		    //System.out.println(pig_inter_thread);
+		    
+		    if(mainfo_opts.USE_INTER_THREAD) {
+			ParIntGraph pig_inter_thread =
+			    pa.getIntThreadInteraction(mm);
+			System.out.println("\n\n");
+			System.out.print("INT. GRAPH AT THE END OF THE METHOD"
+					 + " + INTER-THREAD ANALYSIS:");
+			System.out.println(pig_inter_thread);
+		    }
 
 		    if(INTERACTIVE_ANALYSIS_DETAILS) {
 			HCode hcode = hcf.convert(mm.getHMethod());
@@ -612,12 +633,14 @@ public abstract class PAMain {
 		}
 	    }
 
+	/*
 	if (INST_SYNCOPS)
 	    do_inst_syncops(hmethod);
 	
 	if (ELIM_SYNCOPS)
 	    do_elim_syncops(hmethod);
-    
+	*/
+
 	if(hmethod == null){
 	    System.out.println("Oops!" + method.declClass + "." +
 			       method.name + " not found");
@@ -661,8 +684,8 @@ public abstract class PAMain {
 	    new LongOpt("showsplit",     LongOpt.NO_ARGUMENT,       null, 10),
 	    new LongOpt("details",       LongOpt.NO_ARGUMENT,       null, 11),
 	    new LongOpt("mamaps",        LongOpt.REQUIRED_ARGUMENT, null, 14),
-	    new LongOpt("noit",          LongOpt.NO_ARGUMENT,       null, 15),
-	    new LongOpt("inline",        LongOpt.NO_ARGUMENT,       null, 16),
+	    new LongOpt("wit",           LongOpt.NO_ARGUMENT,       null, 15),
+	    new LongOpt("inline",        LongOpt.REQUIRED_ARGUMENT, null, 16),
 	    new LongOpt("sat",           LongOpt.REQUIRED_ARGUMENT, null, 17),
 	    new LongOpt("notg",          LongOpt.NO_ARGUMENT,       null, 18),
 	    new LongOpt("loadpre",       LongOpt.REQUIRED_ARGUMENT, null, 19),
@@ -679,7 +702,9 @@ public abstract class PAMain {
 	    new LongOpt("ns",            LongOpt.REQUIRED_ARGUMENT, null, 28),
 	    new LongOpt("check_nc",      LongOpt.NO_ARGUMENT,       null, 29),
 	    new LongOpt("loadpa",        LongOpt.REQUIRED_ARGUMENT, null, 30),
-	    new LongOpt("savepa",        LongOpt.REQUIRED_ARGUMENT, null, 31)
+	    new LongOpt("savepa",        LongOpt.REQUIRED_ARGUMENT, null, 31),
+	    new LongOpt("prealloc",      LongOpt.NO_ARGUMENT,       null, 32),
+	    new LongOpt("rtjchecks",     LongOpt.NO_ARGUMENT,       null, 33)
 	};
 
 	Getopt g = new Getopt("PAMain", argv, "mscor:a:iIN:P:", longopts);
@@ -778,23 +803,28 @@ public abstract class PAMain {
 	    case 14:
 		MA_MAPS = true;
 		MA_MAPS_OUTPUT_FILE = new String(g.getOptarg());
-		DO_STACK_ALLOCATION  = true;
-		DO_THREAD_ALLOCATION = true;
+		mainfo_opts.DO_STACK_ALLOCATION  = true;
+		mainfo_opts.DO_THREAD_ALLOCATION = true;
 		break;
 	    case 26:
-		DO_STACK_ALLOCATION  = (Integer.parseInt(g.getOptarg()) == 1);
+		mainfo_opts.DO_STACK_ALLOCATION =
+		    (Integer.parseInt(g.getOptarg()) == 1);
 		break;
 	    case 27:
-		DO_THREAD_ALLOCATION = (Integer.parseInt(g.getOptarg()) == 1);
+		mainfo_opts.DO_THREAD_ALLOCATION =
+		    (Integer.parseInt(g.getOptarg()) == 1);
 		break;
 	    case 28:
-		GEN_SYNC_FLAG = (Integer.parseInt(g.getOptarg()) == 1);
+		mainfo_opts.GEN_SYNC_FLAG =
+		    (Integer.parseInt(g.getOptarg()) == 1);
 		break;
 	    case 15:
-		USE_INTER_THREAD = false;
+		mainfo_opts.USE_INTER_THREAD   = true;
 		break;
 	    case 16:
-		MAInfo.DO_METHOD_INLINING = true;
+		mainfo_opts.DO_METHOD_INLINING = true;
+		mainfo_opts.MAX_INLINING_LEVEL =
+		    Integer.parseInt(g.getOptarg());
 		break;
 	    case 17:
 		DO_SAT = true;
@@ -822,12 +852,12 @@ public abstract class PAMain {
 	    case 21:
 		System.out.println("Old option syncelim -> fail");
 		System.exit(1);
-		ELIM_SYNCOPS = true;
+		//ELIM_SYNCOPS = true;
 		break;
 	    case 22:
 		System.out.println("Old option instsync -> fail");
 		System.exit(1);
-		INST_SYNCOPS = true;
+		//INST_SYNCOPS = true;
 		break;
 	    case 23:
 		DUMP_JAVA = true;
@@ -835,20 +865,20 @@ public abstract class PAMain {
 	    case 24:
 		System.out.println("Old option analyzeroots -> fail");
 		System.exit(1);
-		ANALYZE_ALL_ROOTS = true;
+		//ANALYZE_ALL_ROOTS = true;
 		break;
 	    case 25:
 		System.out.println("Old option syncelimroots -> fail");
 		System.exit(1);
-		SYNC_ELIM_ALL_ROOTS = true;
+		//SYNC_ELIM_ALL_ROOTS = true;
 		break;
 	    case 29:
 		CHECK_NO_CALLEES = true;
 		break;
 	    case 'o':
 		SAMain.ASSEM_DIR = new java.io.File(g.getOptarg());
-		harpoon.Util.Util.assert(SAMain.ASSEM_DIR.isDirectory(),
-			    "" + SAMain.ASSEM_DIR + " must be a directory");
+		Util.assert(SAMain.ASSEM_DIR.isDirectory(),
+			    SAMain.ASSEM_DIR + " must be a directory");
 		break;
 	    case 'b':
 		COMPILE = true;
@@ -865,6 +895,12 @@ public abstract class PAMain {
 		    SAMain.BACKEND = SAMain.PRECISEC_BACKEND;
 		    SAMain.HACKED_REG_ALLOC = false;
 		}
+		break;
+	    case 32:
+		mainfo_opts.DO_PREALLOCATION = true;
+		break;
+	    case 33:
+		RTJ_REMOVE_CHECKS = true;
 		break;
 	    }
 
@@ -948,24 +984,14 @@ public abstract class PAMain {
 
 	if(MA_MAPS){
 	    System.out.println("\tMA_MAPS in \"" + MA_MAPS_OUTPUT_FILE + "\"");
-	    if(MAInfo.DO_METHOD_INLINING)
-		System.out.println("\t\tDO_METHOD_INLINING");
-	    System.out.println("\t\tDO_STACK_ALLOCATION " +
-			       (DO_STACK_ALLOCATION ? "on" : "off"));
-	    System.out.println("\t\tDO_THREAD_ALLOCATION " +
-			       (DO_THREAD_ALLOCATION ? "on" : "off"));
-	    System.out.println("\t\tGEN_SYNC_FLAG " +
-			       (GEN_SYNC_FLAG ? "on" : "off"));
-	    if(USE_INTER_THREAD)
-		System.out.println("\t\tUSE_INTER_THREAD");
-	    else
-		System.out.println("\t\tJust inter procedural analysis");
+	    mainfo_opts.print("\t\t");
 	}
 
 
 	if(DO_SAT)
 	    System.out.println("\tDO_SAT (" + SAT_FILE + ")");
 
+	/*
 	if(ANALYZE_ALL_ROOTS)
 	    System.out.println("\tANALYZE_ALL_ROOTS");
 
@@ -980,12 +1006,16 @@ public abstract class PAMain {
 	
 	if(INST_SYNCOPS)
 	    System.out.println("\tINST_SYNCOPS");
+	*/
 	
 	if(MAInfo.NO_TG)
 	    System.out.println("\tNO_TG");
 
 	if(COMPILE)
 	    System.out.println("\tCOMPILE");
+
+	if(RTJ_REMOVE_CHECKS)
+	    System.out.println("\tRTJ_REMOVE_CHECKS");
 
 	System.out.println();
     }
@@ -994,6 +1024,8 @@ public abstract class PAMain {
     private static boolean analyzable(MetaMethod mm) {
 	HMethod hm = mm.getHMethod();
 	if(java.lang.reflect.Modifier.isNative(hm.getModifiers()))
+	    return false;
+	if(java.lang.reflect.Modifier.isAbstract(hm.getModifiers()))
 	    return false;
 	return true;
     }
@@ -1013,18 +1045,16 @@ public abstract class PAMain {
 	// the entire program. Doing it here, before any memory allocation
 	// optimization, allows us to time it accurately.
 	g_tstart = System.currentTimeMillis();
-	// TODO: uncomment the next line and comment the other one
-	//	for(Iterator it = allmms.iterator(); it.hasNext(); ) {
-	for(Iterator it = mroots.iterator(); it.hasNext(); ) {
-	    MetaMethod mm = new MetaMethod((HMethod) it.next(), true);
-            // MetaMethod mm = (MetaMethod) it.next();
+	for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+            MetaMethod mm = (MetaMethod) it.next();
             if(!analyzable(mm)) continue;
             pa.getIntParIntGraph(mm);
         }
         System.out.println("Intrathread Analysis time: " +
                            (time() - g_tstart) + "ms");
+	System.out.println("===================================\n");
 
-        if (USE_INTER_THREAD) {
+        if (mainfo_opts.USE_INTER_THREAD) {
           g_tstart = System.currentTimeMillis();
           for(Iterator it = allmms.iterator(); it.hasNext(); ) {
             MetaMethod mm = (MetaMethod) it.next();
@@ -1033,24 +1063,22 @@ public abstract class PAMain {
           }
           System.out.println("Interthread Analysis time: " +
                            (time() - g_tstart) + "ms");
+	  System.out.println("===================================\n");
         }
 
 
 	g_tstart = time();
 	MAInfo mainfo = 
-	    new MAInfo(pa, hcf, allmms,
-		       USE_INTER_THREAD,
-		       DO_STACK_ALLOCATION,
-		       DO_THREAD_ALLOCATION,
-		       GEN_SYNC_FLAG);
+	    new MAInfo(pa, hcf, linker, allmms, mainfo_opts);
 	System.out.println("GENERATION OF MA INFO TIME  : " +
 			   (time() - g_tstart) + "ms");
+	System.out.println("===================================\n");
 
-	if(SHOW_DETAILS) { // show the allocation policies	    
+	//	if(SHOW_DETAILS) { // show the allocation policies	    
 	    System.out.println();
 	    mainfo.print();
 	    System.out.println("===================================");
-	}
+	    //}
 
 	if(!COMPILE) {
 	    g_tstart = time();
@@ -1072,6 +1100,7 @@ public abstract class PAMain {
     }
 
 
+    /*
     // One of my new ideas: while doing the intra-procedural analysis of
     // method M, instead of keeping a graph in each basic block, let's
     // keep one just for "join" points or for BB that contain a CALL.
@@ -1118,7 +1147,7 @@ public abstract class PAMain {
 			       nb_calls + " Calls ");
 	}
     }
-
+    */
 
     // Analyzes the methods given with the "-a" flag.
     private static void do_analysis() {
@@ -1130,6 +1159,7 @@ public abstract class PAMain {
 	}
     }
 
+    /*
     private static void analyze_all_roots() {
 	MetaCallGraph mcg = pa.getMetaCallGraph();
 	Set allmms = mcg.getAllMetaMethods();
@@ -1158,7 +1188,9 @@ public abstract class PAMain {
                            (time() - g_tstart) + "ms");
         }
     }
+    */
 
+    /*
     private static void sync_elim_all_roots() {
 	SyncElimination se = new SyncElimination(pa);
 	for(Iterator mit = mroots.iterator(); mit.hasNext(); ) {
@@ -1226,6 +1258,7 @@ public abstract class PAMain {
             }
 	}
     }
+    */
 
     // Analyzes the methods given interactively by the user.
     private static void do_interactive_analysis() {
@@ -1254,6 +1287,7 @@ public abstract class PAMain {
 	}
     }
 
+    /*
     private static void do_sat() {
 	System.out.println(" Generating the \"start()\" and \"join()\" maps");
 	System.out.println(" DUMMY VERSION");
@@ -1316,6 +1350,7 @@ public abstract class PAMain {
 		}
 	    }
 	};
+    */
     
     // tests whether the method hm is the same thing as
     // class_name.method_name
@@ -1326,6 +1361,7 @@ public abstract class PAMain {
 	       hclass.getName().equals(class_name));
     }
 
+    /*
     private static void do_sat_analyze_mmethod(MetaMethod mm) {
 	HMethod hm = mm.getHMethod();
 	HCode hcode = hcf.convert(hm);
@@ -1335,7 +1371,9 @@ public abstract class PAMain {
 	    q.accept(sat_qv);
 	}
     }
+    */
 
+    /* 
     static void do_elim_syncops() {
 	MetaCallGraph mcg = pa.getMetaCallGraph();
 	MetaMethod mroot = new MetaMethod(hroot, true);
@@ -1419,7 +1457,9 @@ public abstract class PAMain {
 	//} catch (IOException x) {}
 
     }
-    
+    */
+
+    /*
     static HClass[] get_classes(Set allmm) {
 	HashSet ll = new HashSet();
 	Iterator it = allmm.iterator();
@@ -1469,6 +1509,7 @@ public abstract class PAMain {
 	    file.close();
 	}
     }
+    */
 
     private static String[] examples = {
 	"java -mx200M harpoon.Main.PAMain -a multiplyAdd --ccs=2 --wts" + 
@@ -1502,18 +1543,21 @@ public abstract class PAMain {
 	"--mamaps=file   Computes the allocation policy map and serializes",
 	"                 the CachingCodeFactory (and implicitly the",
 	"                 allocation map) and the linker to disk.",
-	"                 by default, it activates the stack and thread alloc",
-	"--sa 0|1        Turns on/off the stack allocation",
-	"--ta 0|1        Turns on/off the thread allocation",
-	"--ns 0|1        Turns on/off the generation of \"no sync\" hints",
+	"                 It turns on the stack and thread alloc.",
+	"--sa 0|1        Turns on/off the stack allocation.",
+	"--ta 0|1        Turns on/off the thread allocation.",
+	"--ns 0|1        Turns on/off the generation of \"no sync\" hints.",
+	"--prealloc      Activates the pre-allocation (default off).",
 	"-a method       Analyzes he given method. If the method is in the",
 	"                 same class as the main method, the name of the",
 	"                 class can be ommited. More than one \"-a\" flags",
 	"                 can be used on the same command line.",
 	"-i              Interactive analysis of methods.",
 	"-I              Interactive analysis of methods (more details).",
-	"--noit          Just interprocedural analysis, no interthread.",
-	"--inline        Use method inlining to enable more stack allocation",
+	"--wit           Use the inter-thread analysis while generating the",
+	"                 fancy memory allocation hints",
+	"--inline nb     Use method inlining to enable more stack allocation;",
+	"                 inlining chains of up to nb call sites",
 	"                 (makes sense only with --mamaps).",
 	"--sat=file      Generates dummy sets of calls to .start() and",
 	"                 .join() that must be changed (for the thread",
@@ -1734,5 +1778,213 @@ public abstract class PAMain {
 
     private static long time() {
 	return System.currentTimeMillis();
+    }
+
+
+    //////////////////////////////////////////////////////////////////////
+    ////////////////// REALTIME STUFF STARTS /////////////////////////////
+
+    private static boolean DEBUG_RT = true;
+
+    private static HClass java_lang_Runnable = null;
+
+    private static boolean can_remove_all_checks() {
+	java_lang_Runnable = linker.forName("java.lang.Runnable");
+	Util.assert(java_lang_Runnable != null,
+		    "java.lang.Runnable not found!");
+
+	Set runs = get_interesting_runs();
+
+	if(DEBUG_RT)
+	    print_set(runs, "Interesting runs");
+
+	for(Iterator it = runs.iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    if(!nothing_escapes(hm))
+		return false;
+	}
+
+	return true;
+    }
+
+
+    private static MetaMethod hm2mm(HMethod hm) {
+	return new MetaMethod(hm, true);
+    }
+
+    private static HMethod enter = null;
+
+    private static Set get_interesting_runs() {
+	Set result = new HashSet();
+	enter = get_enter_method();
+	MetaMethod[] callers = mac.getCallers(new MetaMethod(enter, true));
+	for(int i = 0; i < callers.length; i++)
+	    result.addAll(get_interesting_runs(callers[i].getHMethod()));
+	return result;
+    }
+
+
+    private static Set get_interesting_runs(HMethod hm) {
+	Set result = new HashSet();
+
+	if(DEBUG_RT)
+	    System.out.println("get_interesting_runs(" + hm + ")");
+
+	Set calls = get_interesting_calls(hm);
+	
+	if(DEBUG_RT)
+	    print_set(calls, "Interesting calls for " + hm);
+
+	TypeInference ti =
+	    new TypeInference(hm, hcf.convert(hm), get_ietemps(calls));
+
+	for(Iterator it = calls.iterator(); it.hasNext(); ) {
+	    CALL cs = (CALL) it.next();
+	    ExactTemp et = new ExactTemp(cs, cs.params(1));
+	    Set types = ti.getType(et);
+	    if(DEBUG_RT)
+		print_set(types, "Possible types for " + et);
+	    for(Iterator it_t = types.iterator(); it_t.hasNext(); ) {
+		HClass hclass = (HClass) it_t.next();		
+		Set children = new HashSet(ch.children(hclass));
+		children.add(hclass);
+		if(DEBUG_RT)
+		    print_set(children, "Children for " + hclass);
+		for(Iterator it_c = children.iterator(); it_c.hasNext(); ) {
+		    HClass child = (HClass) it_c.next();
+		    if(ch.instantiatedClasses().contains(child)) {
+			HMethod run = extract_run(child);
+			if(run != null)
+			    result.add(run);
+		    }
+		}
+	    }
+	}
+	return result;
+    }
+
+    private static HMethod extract_run(HClass hclass) {
+	if(DEBUG_RT)
+	    System.out.println("extract_run(" + hclass + ")");
+
+	HMethod result = null;
+	if(!hclass.isInstanceOf(java_lang_Runnable))
+	    return null;
+	HMethod[] hms = hclass.getMethods();
+	for(int i = 0; i < hms.length; i++)
+	    if(hms[i].getName().equals("run") &&
+	       (hms[i].getParameterTypes().length == 0)) {
+		if(DEBUG_RT)
+		    System.out.println("\t" + hms[i]);
+		if(result == null)
+		    result = hms[i];
+		else
+		    Util.assert(false, "too many run methods!");
+	    }
+	return result;
+    }
+
+    private static Set get_ietemps(Set calls) {
+	Set result = new HashSet();
+	for(Iterator it = calls.iterator(); it.hasNext(); ) {
+	    CALL cs = (CALL) it.next();
+	    result.add(new ExactTemp(cs, cs.params(1)));
+	}
+	return result;
+    }
+
+    private static Set get_interesting_calls(HMethod hm) {
+	if(DEBUG_RT)
+	    System.out.println("get_interesting_calls(" + hm + ")");
+	Set result = new HashSet();
+	HCode hcode = hcf.convert(hm);
+	for(Iterator it = hcode.getElementsI(); it.hasNext(); ) {
+	    Quad quad = (Quad) it.next();
+	    if(quad instanceof CALL) {
+		CALL cs = (CALL) quad;
+		MetaMethod[] callees =
+		    mcg.getCallees(hm2mm(hm), cs);
+		for(int i = 0; i < callees.length; i++)
+		    if(callees[i].getHMethod().equals(enter))
+			result.add(cs);
+	    }
+	}
+	return result;
+    }
+
+    private static HMethod get_enter_method() {
+	Set methods = get_methods("javax.realtime.CTMemory", "enter");
+	if(DEBUG_RT)
+	    print_set(methods, "enter methods");
+	for(Iterator it = methods.iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    if(hm.getParameterTypes().length != 1) {
+		if(DEBUG_RT)
+		    System.out.println("irrelevant method " + hm);
+		it.remove();
+	    }
+	}
+	if(DEBUG_RT)
+	    print_set(methods, "good enter methods");
+	Util.assert(methods.size() == 1, "Too many enter methods!");
+	return (HMethod) methods.iterator().next();
+    }
+
+    // Returns all the methods called mthd_name from class cls_name.
+    private static Set get_methods(String cls_name, String mthd_name) {
+	Set result = new HashSet();
+	HClass hclass = linker.forName(cls_name);
+	Util.assert(hclass != null, cls_name + " was not found!");
+
+	HMethod[] hms = hclass.getMethods();
+	for(int i = 0; i < hms.length; i++)
+	    if(hms[i].getName().equals(mthd_name))
+		result.add(hms[i]);
+
+	return result;
+    }
+
+
+    private static boolean nothing_escapes(HMethod hm) {
+	if(DEBUG_RT)
+	    System.out.println("nothing_escapes(" + hm + ")");
+
+	ParIntGraph pig = pa.threadInteraction(hm2mm(hm));
+	pig = (ParIntGraph) pig.clone();
+	// we don't care about the exceptions; if an exception is thrown
+	// out of the run method of a thread, the program is gone stop with
+	// an exception anyway.
+	pig.G.excp.clear();
+
+	//TODO: some of the native methods are not harmful:
+	//   java.lang.Object.getClass()
+	//   java.lang.Thread.isAlive() etc.
+	// make sure we clean the graph a bit before looking at it
+	// (there should be more info about this in MAInfo)
+
+	if(DEBUG_RT)
+	    System.out.println("threadExtInteraction = " + pig + "\n\n");
+	Set nodes = pig.allNodes();
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if((node.type() == PANode.INSIDE) &&
+	       !pig.G.captured(node)) {
+		System.out.println
+		    (node + " created at " + 
+		     Debug.code2str(pa.getNodeRepository().node2Code
+				    (node.getRoot())) +
+		     " escapes -> false");
+		return false;
+	    }
+	}
+	return true;
+    }
+
+
+    private static void print_set(Set set, String set_name) {
+	System.out.println(set_name + " {");
+	for(Iterator it = set.iterator(); it.hasNext(); )
+	    System.out.println("\t" + it.next());
+	System.out.println("}");
     }
 }

@@ -42,7 +42,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.25 2001-02-27 22:11:11 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.26 2001-03-04 17:00:42 salcianu Exp $
  */
 public class ActionRepository implements java.io.Serializable {
     
@@ -466,7 +466,7 @@ public class ActionRepository implements java.io.Serializable {
 	on it at the same time (i.e. they can simultaneously access it);
 	in this case, the synchonizations are really necessary and should
 	NOT be removed. */
-    public final boolean independent(PANode n){
+    public final boolean independent(PANode n) {
 	System.out.println("n   = " + n);
 	// Goes through all the threads nt2 that are synchronizing on n
 	Iterator it_sync = alpha_sync.getValues(n).iterator();

@@ -18,7 +18,7 @@ import harpoon.Util.DataStructs.Relation;
  * <code>PASync</code> models a <code>sync</code> action.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PASync.java,v 1.1.2.5 2001-02-27 22:11:12 salcianu Exp $
+ * @version $Id: PASync.java,v 1.1.2.6 2001-03-04 17:00:43 salcianu Exp $
  */
 public class PASync implements java.io.Serializable {
     /** The node on which the <code>sync</code> is performed on. */
@@ -172,8 +172,11 @@ public class PASync implements java.io.Serializable {
 	for(ListCell lc = call_path; lc != null; lc = lc.next)
 	    buffer.append(" <- " + (CALL) lc.info + " - ");
 
-	buffer.append(" {" + hce.getSourceFile() + ":" + hce.getLineNumber() +
-		      " " + hce + "}");
+	if(hce == null)
+	    buffer.append(" {(sync in native code)}");
+	else
+	    buffer.append(" {" + hce.getSourceFile() + ":" +
+			  hce.getLineNumber() + " " + hce + "}");
 
 	return buffer.toString();
     }

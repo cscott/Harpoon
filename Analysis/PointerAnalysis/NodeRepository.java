@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.30 2001-02-27 22:11:12 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.31 2001-03-04 17:00:43 salcianu Exp $
  */
 public class NodeRepository implements java.io.Serializable {
     
@@ -51,6 +51,9 @@ public class NodeRepository implements java.io.Serializable {
 	node2code    = new Hashtable();
     }
 
+    // debug flag: if it's set on, it shows how each node is created
+    private final static boolean SHOW_NODE_CREATION = false;
+
     /** Returns the static node associated with the class
      * <code>class_name</code>. The node is automatically created if it
      * doesn't exist yet. <code>class_name</code> MUST be the full
@@ -60,6 +63,10 @@ public class NodeRepository implements java.io.Serializable {
 	if(node == null) {
 	    node = getNewNode(PANode.STATIC, null); // TODO
 	    static_nodes.put(class_name, node);
+
+	    if(SHOW_NODE_CREATION)
+		System.out.println("CREATED NODE " + node +
+				   " for " + class_name);
 	}
 	return node;
     }
@@ -87,6 +94,13 @@ public class NodeRepository implements java.io.Serializable {
 	for(int i = 0; i < param_number; i++)
 	    nodes[i] = getNewNode(PANode.PARAM, new GenType[]{gts[i]});
 	param_nodes.put(mmethod,nodes);
+
+	if(SHOW_NODE_CREATION && (nodes.length > 0)) {
+	    System.out.print("\nCREATED NODES ");
+	    for(int i = 0; i < nodes.length; i++)
+		System.out.print(" " + nodes[i]);
+	    System.out.println("; parameters for " + mmethod.getHMethod());
+	}
     }
 
     /** Returns the parameter node associated with the <code>count</code>th
@@ -196,15 +210,14 @@ public class NodeRepository implements java.io.Serializable {
 	if(type == PANode.EXCEPT) return getExceptNode(hce);
 
 	PANode node = (PANode) code_nodes.get(hce);
-	if((node == null) && make){
+	if((node == null) && make) {
 	    node = getNewNode(type, new GenType[]{get_code_node_type(hce)});
 	    code_nodes.put(hce, node);
 	    node2code.put(node, hce);
 
-	    // debug
-	    System.out.println("CREATED NODE " + node + " for " +
-			       Debug.code2str(hce));
-
+	    if(SHOW_NODE_CREATION)
+		System.out.println("CREATED NODE " + node + " for " +
+				   Debug.code2str(hce));
 	}
 	return node;
     }

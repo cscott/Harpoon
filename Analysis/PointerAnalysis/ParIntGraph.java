@@ -29,7 +29,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.43 2001-02-27 22:11:12 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.44 2001-03-04 17:00:43 salcianu Exp $
  */
 public class ParIntGraph implements java.io.Serializable {
 
@@ -38,6 +38,9 @@ public class ParIntGraph implements java.io.Serializable {
 
     /** Debug for the aggressive shrinking. */
     public static boolean DEBUG_AS = false;
+
+    /** Generates some messages that show the gains due to AS. */
+    public static boolean MEASURE_AS = false;
 
     /** Activates the aggressive shrinking. Buggy for the moment ... */
     public static boolean AGGRESSIVE_SHRINKING = true;
@@ -92,7 +95,8 @@ public class ParIntGraph implements java.io.Serializable {
 
 
     /** Inserts the image of <code>pig2</code> parallel interaction graph
-	through the <code>mu</code> node mapping into <code>this</code> object.
+	through the <code>mu</code> node mapping into <code>this</code>
+	object.
 	This method is designed to be called at the end of the caller/callee
 	or starter/startee interaction. It is *not* manipulating the action
 	repository nor the edge ordering; those manipulations are too complex
@@ -312,10 +316,11 @@ public class ParIntGraph implements java.io.Serializable {
 	    }
 	}
 
-	System.out.println("as: " + nodes.size() + " -> " +
-			   useful_nodes.size() + " delta=" +
-			   (nodes.size() - useful_nodes.size()));
-
+	if(MEASURE_AS)
+	    System.out.println("as: " + nodes.size() + " -> " +
+			       useful_nodes.size() + " delta=" +
+			       (nodes.size() - useful_nodes.size()));
+	
 	// unuseful_nodes = nodes - useful_nodes
 	nodes.removeAll(useful_nodes);
 
@@ -547,7 +552,7 @@ public class ParIntGraph implements java.io.Serializable {
 	return
 	    "\nParIntGraph{\n" + G + " " + tau +
 	    (PointerAnalysis.RECORD_ACTIONS ? ar.toString() : "") + 
-	    (PointerAnalysis.IGNORE_EO ? "" : eo.toString()) + 
+	    (PointerAnalysis.IGNORE_EO ? "" : eo.toString())  + 
 	    "}";
     }
 

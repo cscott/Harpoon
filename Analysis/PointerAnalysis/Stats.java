@@ -26,7 +26,7 @@ import harpoon.Util.Graphs.SCComponent;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.14 2001-02-27 22:11:13 salcianu Exp $
+ * @version $Id: Stats.java,v 1.1.2.15 2001-03-04 17:00:43 salcianu Exp $
  */
 abstract class Stats implements java.io.Serializable {
 
@@ -211,6 +211,10 @@ abstract class Stats implements java.io.Serializable {
 	for(Iterator it = methods.iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    HCode hcode = bcf.convert(hm);
+	    if(hcode == null) {
+		System.out.println("WARNING: " + hm + " has no HCode");
+		continue;
+	    }
 	    int bsize = hcode.getElementsL().size();
 	    total += bsize;
 	    System.out.println(hm + " " + bsize + " bytecode instrs");

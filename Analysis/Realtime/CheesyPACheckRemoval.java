@@ -50,7 +50,7 @@ import harpoon.Util.Util;
  * <code>CheesyPACheckRemoval</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CheesyPACheckRemoval.java,v 1.1.2.3 2001-01-27 01:08:11 salcianu Exp $
+ * @version $Id: CheesyPACheckRemoval.java,v 1.1.2.4 2001-03-04 17:01:12 salcianu Exp $
  */
 public class CheesyPACheckRemoval implements CheckRemoval {
 
@@ -114,7 +114,7 @@ public class CheesyPACheckRemoval implements CheckRemoval {
 
 	System.out.println("PointerAnalysis ... ");
 	tstart = time();
-        pa = new PointerAnalysis(mcg, mac, lbbconv);
+        pa = new PointerAnalysis(mcg, mac, lbbconv, linker);
 	/*
 	// intrathread analysis of all the callable methods
 	for(Iterator it = mcg.getAllMetaMethods().iterator(); it.hasNext(); ) {

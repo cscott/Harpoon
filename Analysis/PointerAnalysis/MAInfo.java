@@ -26,9 +26,9 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Vector;
 
-
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
@@ -78,43 +78,152 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.47 2001-02-27 22:11:12 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.48 2001-03-04 17:00:43 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
+    /** Options for the <code>MAInfo</code> processing. */
+    public static class MAInfoOptions implements Cloneable {
+
+	/** Controls the generation of stack allocation hints.
+	    Default <code>false</code>. */
+	public boolean DO_STACK_ALLOCATION  = false;
+
+	/** Controls the generation of thread local heap allocation hints.
+	    Default <code>false</code>. */
+	public boolean DO_THREAD_ALLOCATION = false;
+
+	/** Enables the application of some method inlining to increase the
+	    effectiveness of the stack allocation. Only inlinings that
+	    increase the effectiveness of the stack allocation are done.
+	    For the time being, only 1-level inlining is done.
+	    Default <code>false</code>. */
+	public boolean DO_METHOD_INLINING   = false;
+
+	/** Enables the use of preallocation: if an object will be
+	    accessed only by a thread (<i>ie</i> it is created just to
+	    pass some parameters to a thread), it can be preallocated into
+	    the heap of that thread.  For the moment, it is potentially
+	    dangerous so it is deactivated by default.
+	    Default <code>false</code>. */
+	public boolean DO_PREALLOCATION    = false;
+
+	/** Controls the detection of the objects for whom there are
+            no concurrent synchronizations. This objects are marked with a
+	    special flag to reduce the cost of synchronization operations.
+	    Default <code>false</code>. */
+	public boolean GEN_SYNC_FLAG        = false;
+
+	/** Use the interthread analysis inside <code>MAInfo</code>.
+	    If this analysis is too buggy or time/memory expensive,
+	    you can disable it through this flag. <b>NOTE:</b> this
+	    will also disable some of the optimizations (<i>eg</i> the
+	    preallocation).
+	    Default <code>false</code>. */
+	public boolean USE_INTER_THREAD     = false;
+
+	/** The current implementation is able to inline call strings of
+	    length bigger than one.
+	    Default value is 2. */
+	public int MAX_INLINING_LEVEL   = 2;
+
+	/** The maximal size to which we can inflate the size of a method
+	    through inlining.
+	    Default is <code>600</code> quads. */
+	public int MAX_METHOD_SIZE      = 600;
+
+	/** Pretty printer. */
+	public void print(String prefix) {
+	    print_opt(prefix, "DO_STACK_ALLOCATION", DO_STACK_ALLOCATION);
+	    print_opt(prefix, "DO_THREAD_ALLOCATION", DO_THREAD_ALLOCATION);
+	    print_opt(prefix, "DO_PREALLOCATION", DO_PREALLOCATION);
+	    print_opt(prefix, "GEN_SYNC_FLAG", GEN_SYNC_FLAG);
+	    print_opt(prefix, "USE_INTER_THREAD", USE_INTER_THREAD);
+	    print_opt(prefix, "DO_METHOD_INLINING", DO_METHOD_INLINING);
+	    if(DO_METHOD_INLINING) {
+		System.out.println(prefix + "\tMAX_INLINING_LEVEL = " +
+				   MAX_INLINING_LEVEL);
+		System.out.println(prefix + "\tMAX_METHOD_SIZE = " +
+				   MAX_METHOD_SIZE);
+	    }
+	}
+	// Auxiliary method for the pretty printer.
+	private void print_opt(String prefix, String flag_name, boolean flag) {
+	    System.out.println(prefix + flag_name + " " +
+			       (flag ? "on" : "off"));
+	}
+
+	public Object clone() {
+	    try{
+		return super.clone();
+	    }
+	    catch (CloneNotSupportedException e) { 
+		throw new Error("Should never happen! " + e);
+	    }
+	}
+    };
+
+
+    
     private static boolean DEBUG = false;
-
-    /** Enabless the application of some method inlining to increase the
-	effectiveness of the stack allocation. Only inlinings that
-	increase the effectiveness of the stack allocation are done.
-	For the time being, only 1-level inlining is done. */
-    public static boolean DO_METHOD_INLINING = false;
-
-    /** The current implementation is able to inline call strings of
-	length bigger than one. The actual max length of such a call string
-	is actually MAX_INLINING_LEVEl + 1. */
-    public static int MAX_INLINING_LEVEL = 2;
-
-    /** Only methods that have less than <code>MAX_INLINING_SIZE</code>
-	instructions can be inlined. Just a simple way of preventing
-	the code bloat. */
-    public static int MAX_INLINING_SIZE = 50; 
-
-    /** Enables the use of preallocation: if an object will be accessed only
-	by a thread (<i>ie</i> it is created just to pass some parameters
-	to a thread), it can be preallocated into the heap of that thread.
-	For the moment, it is potentially dangerous so it is deactivated by
-	default. */
-    public static boolean DO_PREALLOCATION = false;
 
     /** Forces the allocation of ALL the threads on the stack. Of course,
 	dummy and unsafe. */
     public static boolean NO_TG = false;
 
-    private static Set good_holes = null;
-    static {
+    PointerAnalysis pa;
+    HCodeFactory    hcf;
+    Linker linker;
+    // the meta-method we are interested in (only those that could be
+    // started by the main or by one of the threads (transitively) started
+    // by the main thread.
+    Set             mms;
+    NodeRepository  node_rep;
+    MetaCallGraph   mcg;
+    MetaAllCallers  mac;
+
+    private MAInfoOptions opt = null;
+
+    /** Creates a <code>MAInfo</code>. */
+    public MAInfo(PointerAnalysis pa, HCodeFactory hcf, Linker linker, Set mms,
+		  final MAInfoOptions opt) {
+	Util.assert(hcf instanceof CachingCodeFactory,
+		    "hcf should be a CachingCodeFactory!");
+        this.pa  = pa;
+	this.mcg = pa.getMetaCallGraph();
+	this.mac = pa.getMetaAllCallers();
+	this.hcf = hcf;
+	this.linker = linker;
+	this.mms = mms;
+	this.node_rep = pa.getNodeRepository();
+
+	this.opt = (MAInfoOptions) opt.clone();
+	System.out.println("After cloning:\n" + opt);
+
+	java_lang_Thread    = linker.forName("java.lang.Thread");
+	java_lang_Throwable = linker.forName("java.lang.Throwable");
+	init_good_holes();
+
+	analyze();
+	// the nullify part was moved to prepareForSerialization
+    }
+
+    /** Nullifies some stuff to make the serialization possible. 
+	This method <b>MUST</b> be called before serializing <code>this</code>
+	object. */
+    public void prepareForSerialization() {
+	this.pa  = null;
+	this.hcf = null;
+	this.mms = null;
+	this.mcg = null;
+	this.mac = null;
+	this.node_rep = null;
+    }
+
+
+
+    private void init_good_holes() {
 	good_holes = new HashSet();
-	Linker linker = Loader.systemLinker;
 
 	// "java.lang.Thread.currentThread()" is not harmful with regard to
 	// the thread specific heaps stuff; add it to the set "good_holes"
@@ -128,56 +237,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    System.out.println("GOOD HOLES: " + good_holes);
     }
 
-    PointerAnalysis pa;
-    HCodeFactory    hcf;
-    // the meta-method we are interested in (only those that could be
-    // started by the main or by one of the threads (transitively) started
-    // by the main thread.
-    Set             mms;
-    NodeRepository  node_rep;
-    MetaCallGraph   mcg;
-    MetaAllCallers  mac;
+    private Set good_holes = null;
+    private HClass java_lang_Thread    = null;
+    private HClass java_lang_Throwable = null;
 
-    // use the inter-thread analysis
-    private boolean USE_INTER_THREAD     = false;
-    private boolean DO_STACK_ALLOCATION  = false;
-    private boolean DO_THREAD_ALLOCATION = false;
-    private boolean GEN_SYNC_FLAG        = false;
-
-
-    /** Creates a <code>MAInfo</code>. */
-    public MAInfo(PointerAnalysis pa, HCodeFactory hcf, Set mms,
-		  boolean USE_INTER_THREAD,
-		  boolean DO_STACK_ALLOCATION,
-		  boolean DO_THREAD_ALLOCATION,
-		  boolean GEN_SYNC_FLAG) {
-        this.pa  = pa;
-	this.mcg = pa.getMetaCallGraph();
-	this.mac = pa.getMetaAllCallers();
-	this.hcf = hcf;
-	this.mms = mms;
-	this.node_rep = pa.getNodeRepository();
-	this.USE_INTER_THREAD = USE_INTER_THREAD;
-        //this.DO_PREALLOCATION = USE_INTER_THREAD;
-	this.DO_PREALLOCATION     = false;
-	this.DO_STACK_ALLOCATION  = DO_STACK_ALLOCATION;
-	this.DO_THREAD_ALLOCATION = DO_THREAD_ALLOCATION;
-	this.GEN_SYNC_FLAG        = GEN_SYNC_FLAG;
-	analyze();
-	// the nullify part was moved to prepareForSerialization
-    }
-
-    /** Nullifies some stuff to make the serialization possible. 
-	This method <b>MUST</b> be called before serializing <code>this</code>
-	object. */
-    public void prepareForSerialization(){
-	this.pa  = null;
-	this.hcf = null;
-	this.mms = null;
-	this.mcg = null;
-	this.mac = null;
-	this.node_rep = null;
-    }
 
     // Map<NEW, AllocationProperties>
     private final Map aps = new HashMap();
@@ -219,7 +282,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
     // analyze all the methods
     public void analyze() {
-	if(DO_METHOD_INLINING)
+	if(opt.DO_METHOD_INLINING)
 	    ih = new HashMap();
 
 	set_hm2rang();
@@ -233,7 +296,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	//if(DEBUG)
 	display_inlining_chains();
 
-	if(DO_METHOD_INLINING) {
+	if(opt.DO_METHOD_INLINING) {
 	    //do_the_inlining(hcf, ih);
 	    process_inlining_chains();
 	    ih = null; // allow some GC
@@ -343,12 +406,12 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 	generate_aps(mm, pig, nodes);
 
-	if(DO_PREALLOCATION)
+	if(opt.DO_PREALLOCATION)
 	    try_prealloc(mm, hcode, pig);
 
 	handle_tg_stuff(pig);
 
-	if(DO_METHOD_INLINING) {
+	if(opt.DO_METHOD_INLINING) {
 	    //generate_inlining_hints(mm, pig);
 	    generate_inlining_chains(mm);
 	}
@@ -362,17 +425,17 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// we study only level 0 nodes (ie allocated in THIS method).
 	// Set nodes = getLevel0InsideNodes(pig);
 
-	if(DO_STACK_ALLOCATION) {
+	if(opt.DO_STACK_ALLOCATION) {
 	    if(DEBUG) System.out.println("Stack allocation");
 	    generate_aps_sa(mm, pig, nodes);
 	}
 
-	if(DO_THREAD_ALLOCATION) {
+	if(opt.DO_THREAD_ALLOCATION) {
 	    if(DEBUG) System.out.println("Thread allocation");
 	    generate_aps_ta(mm, pig, nodes);
 	}
 
-	if(GEN_SYNC_FLAG) {
+	if(opt.GEN_SYNC_FLAG) {
 	    if(DEBUG) System.out.println("Generating sync flag");
 	    generate_aps_ns(mm, pig, nodes);
 	}
@@ -781,13 +844,18 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// caller, so it must escape only into one/more thread(s).
 
 	// some conservative guards
-	if(!(USE_INTER_THREAD && PointerAnalysis.RECORD_ACTIONS))
+	if(!(opt.USE_INTER_THREAD && PointerAnalysis.RECORD_ACTIONS))
 	    return false;
-	ParIntGraph pig_t = pa.threadInteraction(mm);
+
+	System.out.println("CHKPT 1: " + node + " mm = " + mm);
+
+	// ParIntGraph pig_t = pa.threadInteraction(mm);
+	ParIntGraph pig_t = pa.getIntThreadInteraction(mm);
 	// if node is not captured in pig_t, we give up (it means that the
 	// thread that accesses might put it in some static, method hole etc.
 	if(!pig_t.G.captured(node))
 	    return false;
+
 	// otherwise, we see if there are any conflicting syncs on node
 	return noConcurrentSyncs(node, pig_t);
     }
@@ -837,12 +905,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// ... and nothing else
 	return true;
     }
-    private static HClass java_lang_Thread = null;
-    static {
-	Linker linker = Loader.systemLinker;
-	java_lang_Thread = linker.forName("java.lang.Thread");
-    }
-
 
     private boolean thread_on_stack(PANode node, Quad q) {
 	HClass hclass = getAllocatedType(q);
@@ -889,6 +951,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // try to apply some aggressive preallocation into the thread specific
     // heap.
     private void try_prealloc(MetaMethod mm, HCode hcode, ParIntGraph pig) {
+	System.out.println("try_prealloc(" + mm.getHMethod() + ")");
+
 	// not very clear if we really need to clone it but it's safer
 	PAThreadMap tau = (PAThreadMap) pig.tau.clone();
 
@@ -908,6 +972,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// (it seems quite a reasonable assumption)
 	NEW qnt = (NEW) node_rep.node2Code(nt);
 
+	
 	// compute the nodes pointed to by the thread node at the moment of 
 	// the "start()" call. Since we analyze only "good" programs (we
 	// have to produce a paper, don't we?) we know that the start() is
@@ -921,16 +986,19 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 	// retain in "pointed" only the nodes allocated in this method, 
 	// and which escaped only through the thread nt.
-	for(Iterator it = pointed.iterator(); it.hasNext(); ){
+	for(Iterator it = pointed.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    if( (node.type != PANode.INSIDE) ||
 		(node.getCallChainDepth() != 0) ||
-		!escapes_only_in_thread(node, nt, pig) ){
+		!escapes_only_in_thread(node, nt, pig) ) {
 		/// System.out.println(node + " escapes somewhere else too");
 		it.remove();
 	    }
  	}
 
+	Set to_prealloc = new HashSet(pointed);
+	to_prealloc.add(nt);
+	
 	////////
 	///if(DEBUG)
 	//System.out.println("Good Pointed = " + pointed);
@@ -938,18 +1006,20 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// grab into "news" the set of the NEW/ANEW quads allocating objects
 	// that should be put into the heap of "nt".
 	Set news = new HashSet();
-	for(Iterator it = pointed.iterator(); it.hasNext(); ){
+	for(Iterator it = pointed.iterator(); it.hasNext(); ) {
 	    PANode node = (PANode) it.next();
 	    news.add(node_rep.node2Code(node));
 	}
 	
-	if(news.isEmpty()){
+	if(news.isEmpty()) {
+	    System.out.println("preallocation: " + qnt);
+
 	    // specially treat this simple case:
 	    // just allocate the thread node nt on its own heap
 	    MyAP ap = getAPObj(qnt);
 	    ap.ta  = true; // allocate on thread specific heap
 	    ap.ns  = true; // SYNC
-	    ap.mh  = true;  // makeHeap
+	    ap.mh  = true; // makeHeap
 	    // ap.ah = qnt.dst(); // use own heap
 	    return;
 	}
@@ -976,9 +1046,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// thread specific heap.
 	MyAP newq_ap = getAPObj(newq);
 
-	newq_ap.ta = true;       // thread allocation
-	newq_ap.ns = true; // SYNC
-	newq_ap.mh = true;       // makeHeap for the thread object
+	newq_ap.ta = true;  // thread allocation
+	newq_ap.ns = true;  // SYNC
+	newq_ap.mh = true;  // makeHeap for the thread object
 	// newq_ap.ah = newq.dst(); // use own heap
 	HClass hclass = getAllocatedType(newq);
 	newq_ap.hip = 
@@ -994,9 +1064,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    cnewq_ap.ah = l2;
 	}
 
-	/* //B/ */
-	/*
-	if(DEBUG){
+	//	if(DEBUG){
 	    System.out.println("After the preallocation transformation:");
 	    hcode.print(new java.io.PrintWriter(System.out, true));
 	    System.out.println("Thread specific NEW:");
@@ -1006,8 +1074,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 				   new_site.getLineNumber() + " " + 
 				   new_site);
 	    }
-	}
-	*/
+	    //}
     }
 
     // checks whether "node" escapes only through the thread node "nt".
@@ -1048,6 +1115,13 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     /////////////////////////////////////////////////////////////////////
     //////////// INLINING STUFF START ///////////////////////////////////
 
+    //////////// A. SIMPLE (1 LEVEL) INLINING START /////////////////////
+    
+    /** Only methods that have less than <code>MAX_INLINING_SIZE</code>
+	instructions can be inlined. Just a simple way of preventing
+	the code bloat. */
+    private int MAX_INLINING_SIZE = 50; 
+
     private void generate_inlining_hints(MetaMethod mm, ParIntGraph pig) {
 	HMethod hm  = mm.getHMethod();
 	HCode hcode = hcf.convert(hm);
@@ -1070,34 +1144,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		    try_inlining(mcaller, cs, A);
 	    }
 	}
-    }
-
-    private Set getInterestingLevel0InsideNodes(ParIntGraph pig) {
-	Set level0 = getLevel0InsideNodes(pig);
-	Set A = new HashSet();
-	for(Iterator it = level0.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
-	    if(!pig.G.captured(node) && lostOnlyInCaller(node, pig)) {
-		// we are not interested in stack allocating the exceptions
-		// since they  don't appear in normal case and so, they
-		// are not critical for the memory management
-		HClass hclass = getAllocatedType(node_rep.node2Code(node));
-		if(!java_lang_Throwable.isSuperclassOf(hclass))
-		    A.add(node);
-	    }
-	}
-	return A;
-    }
-    private static HClass java_lang_Throwable = 
-	Loader.systemLinker.forName("java.lang.Throwable");
-
-
-
-    /* Normally, we should refuse to inline calls that are inside loops
-       because that + stack allocation might lead to stack overflow errors.
-       However, at this moment we don't test this condition. */
-    private boolean good_cs(CALL cs){
-	return true;
     }
 
     private void try_inlining(MetaMethod mcaller, CALL cs, Set A) {
@@ -1151,7 +1197,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    Object[] calls = scc.nodes();
 	    for(int i = 0; i < calls.length; i++) {
 		CALL cs = (CALL) calls[i];
-		Map old2new = inline_call_site(cs, hcf);
+		HMethod hcaller = quad2method(cs);
+		HMethod hcallee = extract_callee(cs);
+		Map old2new = inline_call_site(cs, hcaller, hcallee, hcf);
 		if(old2new != null) {
 		    Quad[] news = (Quad[]) ih.get(cs);
 		    extra_stack_allocation(news, old2new);
@@ -1195,34 +1243,51 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     }
 
 
+    //////////// B. AUXILIARY METHODS FOR INLINING START //////////////////
+
+    private Set getInterestingLevel0InsideNodes(ParIntGraph pig) {
+	Set level0 = getLevel0InsideNodes(pig);
+	Set A = new HashSet();
+	for(Iterator it = level0.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(!pig.G.captured(node) && lostOnlyInCaller(node, pig)) {
+		// we are not interested in stack allocating the exceptions
+		// since they  don't appear in normal case and so, they
+		// are not critical for the memory management
+		HClass hclass = getAllocatedType(node_rep.node2Code(node));
+		if(!java_lang_Throwable.isSuperclassOf(hclass))
+		    A.add(node);
+	    }
+	}
+	return A;
+    }
+
+    /* Normally, we should refuse to inline calls that are inside loops
+       because that + stack allocation might lead to stack overflow errors.
+       However, at this moment we don't test this condition. */
+    private boolean good_cs(CALL cs){
+	return true;
+    }
+
+
     // given a quad q, returns the method q is part of 
     private final HMethod quad2method(Quad q) {
 	return q.getFactory().getMethod();
     }
 
 
-    private Map inline_call_site(CALL cs, HCodeFactory hcf) {
-	return inline_call_site(cs, null, hcf);
-    }
-
-
-    private Map inline_call_site(CALL cs, HMethod callee,
+    private Map inline_call_site(CALL cs, HMethod hcaller, HMethod hcallee,
 				 HCodeFactory hcf) {
 	System.out.println("INLINING " + call2str(cs));
-
-	HMethod caller = quad2method(cs);
-
-	if(callee == null)
-	    callee = 
-		mcg.getCallees
-		(new MetaMethod(caller, true), cs)[0].getHMethod();
 
 	Map old2new = new HashMap();
 
 	HEADER header_new = null;
 	try {
-	    header_new = get_cloned_code(cs, caller, callee, old2new, hcf);
-	} catch(CloneNotSupportedException excp) { return null; }
+	    header_new = get_cloned_code(cs, hcaller, hcallee, old2new, hcf);
+	} catch(CloneNotSupportedException e) {
+	    throw new Error("Should never happen! " + e);
+	}
 
 	METHOD qm = (METHOD) (header_new.next(1));
 
@@ -1432,12 +1497,99 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    fill_the_map(next1[i], next2[i], map, seen);
     }
 
-    //////////// INLINING STUFF END /////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////
+    private boolean hcodeOf(final HCode hcode,
+			    final String cls_name, final String method_name) { 
+	HMethod hm = hcode.getMethod();
+	return isThisMethod(hm, cls_name, method_name);
+    }
 
-    /////////////////////////////////////////////////////////////////////
-    ////////////  ADVANCED INLINING STUFF ///////////////////////////////
+    private boolean isThisMethod(final HMethod hm, final String cls_name,
+				 final String method_name) {
+	HClass hc  = hm.getDeclaringClass();
 
+	return
+	    hm.getName().equals(method_name) &&
+	    hc.getName().equals(cls_name);
+    }
+
+
+
+    private String call2str(CALL cs) {
+	return
+	    Debug.code2str(cs) + "  [ " + quad2method(cs) + " ] ";
+    }
+
+
+    private void process_chain(InliningChain ic) {
+	if(ic.isDone()) return;
+	//	if(DEBUG)
+	    System.out.println("\n\nPROCESSING " + ic);
+
+	while(!ic.isDone()) {
+	    CALL cs = ic.getLastCall();
+	    HMethod hcaller = extract_caller(cs);
+	    System.out.println("hcaller = " + hcaller);
+
+	    HCode hcode = hcf.convert(hcaller);
+
+	    Set old_quads = null;
+	    if(isThisMethod(hcaller, "java.text.DecimalFormat", "<init>"))
+		old_quads = new HashSet(hcode.getElementsL());
+
+	    HMethod hcallee = ic.getLastCallee();
+	    Map old2new = inline_call_site(cs, hcaller, hcallee, hcf);
+
+	    if(isThisMethod(hcaller, "java.text.DecimalFormat", "<init>")) {
+		Set new_quads =
+		    new HashSet(hcf.convert(hcaller).getElementsL());
+		new_quads.removeAll(old_quads);
+		print_modified_hcode(hcaller, new_quads);
+	    }
+
+	    // update all the Inlining Chains
+	    for(Iterator it = chains.iterator(); it.hasNext(); )
+		((InliningChain) it.next()).update_ic(cs, old2new);
+	}
+    }
+
+
+    private void print_modified_hcode(HMethod hm,
+				      final Collection  new_quads) {
+	print_modified_hcode(hcf.convert(hm), new_quads);
+    }
+
+    private void print_modified_hcode(HCode hcode,
+				      final Collection new_quads) {
+	class MyCallBack extends HCode.PrintCallback {
+	    public void printBefore(PrintWriter pw, HCodeElement hce) {
+		if(new_quads.contains(hce))
+		    pw.print(" *** ");
+		else
+		    pw.print("     ");
+	    }
+	    public void printAfter(PrintWriter pw, HCodeElement hce) {}
+	};
+	
+	hcode.print(new PrintWriter(System.out, true), new MyCallBack());
+	System.out.println("========================================\n"); 
+    }
+
+    // Given a call instruction cs, return the method whose body contains cs.
+    private HMethod extract_caller(CALL cs) {
+	return quad2method(cs);
+    }
+
+    // Given a call instruction cs, return the method that is called by cs.
+    private HMethod extract_callee(CALL cs) {
+	MetaMethod mm_caller = new MetaMethod(extract_caller(cs), true);
+	MetaMethod[] mm_callees = mcg.getCallees(mm_caller, cs);
+	if(mm_callees.length == 0) return null;
+	Util.assert(mm_callees.length == 1, "More than one callee for " + cs);
+	return mm_callees[0].getHMethod();
+    }
+
+
+    //////////// C. ADVANCED INLINING STUFF START ///////////////////////
     
     // Given a (meta) method mm, generates inlining chains that will
     // make some object creation sites stack allocatable.
@@ -1473,20 +1625,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	return ((Integer) hm2rang.get(hm)).intValue();
     }
 
-    // Given a call instruction cs, return the method whose body contains cs.
-    private HMethod extract_caller(CALL cs) {
-	return quad2method(cs);
-    }
-
-    // Given a call instruction cs, return the method that is called by cs.
-    private HMethod extract_callee(CALL cs) {
-	MetaMethod mm_caller = new MetaMethod(extract_caller(cs), true);
-	MetaMethod[] mm_callees = mcg.getCallees(mm_caller, cs);
-	if(mm_callees.length == 0) return null;
-	Util.assert(mm_callees.length == 1, "More than one callee for " + cs);
-	return mm_callees[0].getHMethod();
-    }
-
     private boolean good_cs2(CALL cs) {
 	int rang_caller = get_rang(extract_caller(cs));
 	int rang_callee = get_rang(extract_callee(cs));
@@ -1502,7 +1640,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     //    at least level is necessary.
     private void discover_inlining_chains(MetaMethod mm, Set nodes,
 					  int level) {
-
 	// iterate through all the call sites where mm is called
 	MetaMethod[] callers = mac.getCallers(mm);
 	for(int i = 0; i < callers.length; i++) {
@@ -1521,7 +1658,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 		current_chain_cs.addLast(cs);
 		current_chain_callees.addLast(mm.getHMethod());
-		//System.out.println("+cs=" + Debug.code2str(cs));
 
 		// compute specializations of nodes for cs
 		Set specs = specializeNodes(nodes, cs);
@@ -1549,7 +1685,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		    }
 		}
 		
-		if(level < MAX_INLINING_LEVEL) {
+		// the length of current_chain_cs is level + 1
+		if(level + 1 < opt.MAX_INLINING_LEVEL) {
 		    // C = specs that escape only in caller 
 		    Set C = only_in_caller_subset(specs, pig_caller);
 		    
@@ -1559,7 +1696,6 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 		current_chain_cs.removeLast();
 		current_chain_callees.removeLast();
-		//System.out.println("-cs=" + Debug.code2str(cs));
 	    }
 	}
     }
@@ -1682,9 +1818,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		if(hm != null)
 		    size += get_method_size(hm);
 	    }
-	    return size < MAX_METHOD_SIZE;
+	    return size < opt.MAX_METHOD_SIZE;
 	}
-	private final static int MAX_METHOD_SIZE = 600;
+
 	private int get_method_size(HMethod hm) {
 	    HCode hcode = hcf.convert(hm);
 	    return hcode.getElementsL().size();
@@ -1828,82 +1964,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     }
 
 
-    private boolean hcodeOf(final HCode hcode,
-			    final String cls_name, final String method_name) { 
-	HMethod hm = hcode.getMethod();
-	return isThisMethod(hm, cls_name, method_name);
-    }
+    //////////// INLINING STUFF END /////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
 
-    private boolean isThisMethod(final HMethod hm, final String cls_name,
-				 final String method_name) {
-	HClass hc  = hm.getDeclaringClass();
-
-	return
-	    hm.getName().equals(method_name) &&
-	    hc.getName().equals(cls_name);
-    }
-
-
-
-    private String call2str(CALL cs) {
-	return
-	    Debug.code2str(cs) + "  [ " + quad2method(cs) + " ] ";
-    }
-
-
-    private void process_chain(InliningChain ic) {
-	if(ic.isDone()) return;
-	//	if(DEBUG)
-	    System.out.println("\n\nPROCESSING " + ic);
-
-	while(!ic.isDone()) {
-	    CALL cs = ic.getLastCall();
-	    HMethod hcaller = extract_caller(cs);
-	    System.out.println("hcaller = " + hcaller);
-
-	    HCode hcode = hcf.convert(hcaller);
-
-	    Set old_quads = null;
-	    if(isThisMethod(hcaller, "java.text.DecimalFormat", "<init>"))
-		old_quads = new HashSet(hcode.getElementsL());
-
-	    HMethod hcallee = ic.getLastCallee();
-	    Map old2new = inline_call_site(cs, hcallee, hcf);
-
-	    if(isThisMethod(hcaller, "java.text.DecimalFormat", "<init>")) {
-		Set new_quads =
-		    new HashSet(hcf.convert(hcaller).getElementsL());
-		new_quads.removeAll(old_quads);
-		print_modified_hcode(hcaller, new_quads);
-	    }
-
-	    // update all the Inlining Chains
-	    for(Iterator it = chains.iterator(); it.hasNext(); )
-		((InliningChain) it.next()).update_ic(cs, old2new);
-	}
-    }
-
-
-    private void print_modified_hcode(HMethod hm,
-				      final Collection  new_quads) {
-	print_modified_hcode(hcf.convert(hm), new_quads);
-    }
-
-    private void print_modified_hcode(HCode hcode,
-				      final Collection new_quads) {
-	class MyCallBack extends HCode.PrintCallback {
-	    public void printBefore(PrintWriter pw, HCodeElement hce) {
-		if(new_quads.contains(hce))
-		    pw.print(" *** ");
-		else
-		    pw.print("     ");
-	    }
-	    public void printAfter(PrintWriter pw, HCodeElement hce) {}
-	};
-	
-	hcode.print(new PrintWriter(System.out, true), new MyCallBack());
-	System.out.println("========================================\n"); 
-    }
 
 }
 
