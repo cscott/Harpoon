@@ -69,9 +69,10 @@ public class RangeFind extends Node {
     private void init(int colorChannel) {
 	this.colorChannel = colorChannel;
 	int count = 0;
-	for (double angle = Math.PI/2; angle > -Math.PI/2; angle -= angleEpsilon) {
+	double angle = Math.PI/2;
+	for (count = 0; count < angleDataCapacity; count++) {
 	    angleData[count] = new AngleStat(angle);
-	    count++;
+	    angle -= angleEpsilon;
 	}
     }
 
@@ -82,8 +83,9 @@ public class RangeFind extends Node {
     private static final double refAngleInit = 3.0; //bigger than any value that Math.atan would produce
     private int labelID;
     private AngleStat[] angleData = new AngleStat[angleDataCapacity];
-    private static final double angleEpsilon = Math.PI/12;
+    private static final double angleEpsilon = Math.PI/15;
     private static final int angleDataCapacity = (int)(Math.PI/angleEpsilon)+1;
+
 
     private void addAngleStat(double angle) {
 	int size = angleData.length;
@@ -102,6 +104,7 @@ public class RangeFind extends Node {
     }
 
     private void resetAngleData() {
+	//System.out.println("angleDataCap: "+angleDataCapacity);
 	for (int count = 0; count < angleData.length; count++) {
 	    angleData[count].count = 0;
 	}
@@ -127,6 +130,7 @@ public class RangeFind extends Node {
 	/* Calculate the correct vector from the location in the original image, */
 	/* the size of the target and image, the angle of the camera, etc. */
 
+	//System.out.println("");
 
 	//This code assumes that thinning has been run on a labeled image.
 	//This should ensure line thickness of 1.
@@ -141,7 +145,7 @@ public class RangeFind extends Node {
 
 	tracked = new byte[length];
 
-	shortRangeSamples = Math.max(width, height)/6;
+	shortRangeSamples = Math.max(width, height)/7;
 	//System.out.println("RangeFind: #ofshortrangesamples: "+shortRangeSamples);
 	double[] shortRangeAngles = new double[shortRangeSamples];
 	int[] shortRangeDXs = new int[shortRangeSamples];
@@ -156,12 +160,12 @@ public class RangeFind extends Node {
 	}
 	
 	AngleStat stat;
-	System.out.println("Angle data:");
+	//System.out.println("Angle data:");
 	for (int count = 0; count < angleData.length; count++) {
 	    stat = angleData[count];
-	    System.out.println(" "+count+": ("+stat.count+") "+stat.angle);
+	    //System.out.println(" "+count+": ("+stat.count+") "+stat.angle);
 	}
-	System.out.println("width: "+id.width+"   height: "+id.height);
+	//System.out.println("width: "+id.width+"   height: "+id.height);
 
 	//angleDataCapacity/2+1 is the maximum number of indexes this array will ever need to hold
 	int[] maxIndexes = new int[angleDataCapacity/2+1];
@@ -197,7 +201,7 @@ public class RangeFind extends Node {
 	    int idx = maxIndexes[index];
 	    int count = angleData[idx].count;
 	    double angle = angleData[idx].angle;
-	    System.out.println(""+index+": ("+count+") "+angle);
+	    //System.out.println(""+index+": ("+count+") "+angle);
 	}
 
 	/* Now, just the center of the image and 0. */
