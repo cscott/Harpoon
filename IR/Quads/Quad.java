@@ -24,7 +24,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.27 1999-09-21 01:55:22 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.28 1999-11-04 22:13:24 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -92,9 +92,9 @@ public abstract class Quad
     }
 
     // I want to get rid of these functions eventually.
-    /* @deprecated does not preserve immutability. */
+    /** @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) { }
-    /* @deprecated does not preserve immutability. */
+    /** @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) { }
 
     /*----------------------------------------------------------*/

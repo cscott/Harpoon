@@ -12,20 +12,20 @@ import java.util.Set;
 
 
 /**
- * <code>METHOD</code> objects encode method-specific information:
+ * <code>Tree.METHOD</code> objects encode method-specific information:
  * the mapping of method formals to temporary variables, and
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.1.2.5 1999-10-19 19:53:10 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.6 1999-11-04 22:13:41 cananian Exp $
  */
 public class METHOD extends Stm {
     /** The temporary variables used for method formals. */
     public TEMP[] params;
     
-    /** Creates a <code>METHOD</code> object. 
+    /** Creates a <code>Tree.METHOD</code> object. 
      * @param params   temporaries which map directly to the 
-     *                 parameters of this <code>METHOD</code>.
+     *                 parameters of this <code>Tree.METHOD</code>.
      *                 The first element should be a pointer to the 
      *                 exception-handling code for this method.  For 
      *                 non-static methods, the second parameter should be the 
@@ -80,7 +80,7 @@ public class METHOD extends Stm {
 
     protected Set useSet() { return Collections.EMPTY_SET; }
 
-    /** Returns human-readable representation of this <code>Quad</code>. */
+    /** Returns human-readable representation of this <code>Tree</code>. */
     public String toString() {
 	StringBuffer sb = new StringBuffer("METHOD(");
 	for (int i=0; i<params.length-1; i++) {

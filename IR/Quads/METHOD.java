@@ -9,17 +9,17 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
- * <code>METHOD</code> nodes encode method-specific information:
+ * <code>Quads.METHOD</code> nodes encode method-specific information:
  * the mapping of method formals to temporary variables, and
  * links to the exception handlers for the method. <p>
- * The 0-edge out of the <Code>METHOD</code> quad points to the
+ * The 0-edge out of the <code>Quads.METHOD</code> quad points to the
  * beginning of the executable code for the method.  Other
  * edges point to <code>HANDLER</code> quads defining execution
  * handlers.  The lowest-numbered <code>HANDLER</code> edge 
  * (ie, the 1-edge) is the innermost nested try-block.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHOD.java,v 1.1.2.8 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.9 1999-11-04 22:13:24 cananian Exp $
  * @see HEADER
  * @see HANDLER
  */
@@ -27,11 +27,11 @@ public class METHOD extends Quad {
     /** the temporary variables used for method formals. */
     protected Temp[] params;
     
-    /** Creates a <code>METHOD</code> quad. 
+    /** Creates a <code>Quads.METHOD</code> quad. 
      * @param params the <code>Temp</code>s in which the formal parameters
      *               of the method will be passed.
      * @param arity  the number of outgoing edges from this 
-     *               <code>METHOD</code>.  Always at least one.
+     *               <code>Quads.METHOD</code>.  Always at least one.
      *               The number of exception handlers for this method is
      *               <code>(arity-1)</code>.
      */
@@ -42,7 +42,7 @@ public class METHOD extends Quad {
 	Util.assert(params!=null);
 	this.params = params;
     }
-    /** Returns the arity of this <code>METHOD</code>. */
+    /** Returns the arity of this <code>Quads.METHOD</code>. */
     public int arity() { return next.length; }
     /** Returns the <code>params</code> array which associates
      *  <code>Temp</code>s with formal parameters of a method. */
@@ -53,7 +53,7 @@ public class METHOD extends Quad {
     /** Returns the length of the <code>params</code> array. */
     public int  paramsLength() { return params.length; }
 
-    /** Determines whether the parameters defined in this <code>METHOD</code>
+    /** Determines whether the parameters defined in this <code>Quads.METHOD</code>
      *  belong to a static method. */
     public boolean isStatic() { return qf.getMethod().isStatic(); }
     

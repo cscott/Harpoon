@@ -13,11 +13,11 @@ import harpoon.Util.Util;
  * quad graph.  They do not represent bytecode.<p>
  * The 0-edge out of the <code>HEADER</code> points to the 
  * <code>FOOTER</code> quad for the method.  The 1-edge out of the
- * <code>HEADER</code> points to the <code>METHOD</code> quad at
+ * <code>HEADER</code> points to the <code>Quads.METHOD</code> quad at
  * which to begin execution.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HEADER.java,v 1.1.2.7 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: HEADER.java,v 1.1.2.8 1999-11-04 22:13:24 cananian Exp $
  * @see METHOD
  * @see FOOTER
  */
@@ -31,7 +31,7 @@ public class HEADER extends Quad {
     /** Returns the <code>FOOTER</code> corresponding to this 
      *  <code>HEADER</code>. */
     public FOOTER footer() { return (FOOTER) next(0); }
-    /** Returns the <code>METHOD</code> following this <code>HEADER</code>. */
+    /** Returns the <code>Quads.METHOD</code> following this <code>HEADER</code>. */
     public METHOD method() { return (METHOD) next(1); }
 
     public int kind() { return QuadKind.HEADER; }
