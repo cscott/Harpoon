@@ -57,11 +57,13 @@ public class SetExpr extends Expr {
     }
 
     public void generate_inclusion(CodeWriter writer, VarDescriptor dest, VarDescriptor element) {
-        writer.outputline("int " + dest.getSafeSymbol() + " = SimpleHashcontainskey(" +sd.getSafeSymbol()+ "_hash, "+element.getSafeSymbol() + ");");
+        writer.addDeclaration("int", dest.getSafeSymbol());
+        writer.outputline(dest.getSafeSymbol() + " = SimpleHashcontainskey(" +sd.getSafeSymbol()+ "_hash, "+element.getSafeSymbol() + ");");
     }
 
     public void generate_size(CodeWriter writer, VarDescriptor dest) {
-        writer.outputline("int " + dest.getSafeSymbol() + " = SimpleHashcountset("+sd.getSafeSymbol()+"_hash);");
+        writer.addDeclaration("int", dest.getSafeSymbol());
+        writer.outputline(dest.getSafeSymbol() + " = SimpleHashcountset("+sd.getSafeSymbol()+"_hash);");
     }
 
     public void prettyPrint(PrettyPrinter pp) {

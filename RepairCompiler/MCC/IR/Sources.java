@@ -44,7 +44,8 @@ public class Sources {
 	cr.pushSymbolTable(state.stGlobals);
 	e.generate(cr, size);
 	cr.popSymbolTable();
-	cr.outputline(td.getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"=("+td.getGenerateType().getSafeSymbol()+") calloc(1,"+size.getSafeSymbol()+");");
+	cr.addDeclaration(td.getGenerateType().getSafeSymbol(), vd.getSafeSymbol());
+	cr.outputline(vd.getSafeSymbol()+"=("+td.getGenerateType().getSafeSymbol()+") calloc(1,"+size.getSafeSymbol()+");");
 	cr.outputline("alloc((void *) "+vd.getSafeSymbol()+","+size.getSafeSymbol()+");");
 	if (Compiler.ALLOCATECPLUSPLUS) {
 	    if (td instanceof StructureTypeDescriptor) {

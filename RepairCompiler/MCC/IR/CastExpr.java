@@ -73,7 +73,8 @@ public class CastExpr extends Expr {
     public void generate(CodeWriter writer, VarDescriptor dest) {
         VarDescriptor vd = VarDescriptor.makeNew("expr");
         expr.generate(writer, vd);
-        writer.outputline("int " + dest.getSafeSymbol() + " = (int) " + vd.getSafeSymbol() + ";");
+        writer.addDeclaration("int", dest.getSafeSymbol());
+        writer.outputline(dest.getSafeSymbol() + " = (int) " + vd.getSafeSymbol() + ";");
     }
 
     public void prettyPrint(PrettyPrinter pp) {

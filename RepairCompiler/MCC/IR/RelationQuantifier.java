@@ -33,25 +33,29 @@ public class RelationQuantifier extends Quantifier {
     }
 
     public void generate_open(CodeWriter writer) {
-	writer.outputline("struct SimpleIterator "+x.getSafeSymbol()+"_iterator;");
-        writer.outputline("for (SimpleHashiterator("+relation.getSafeSymbol()+"_hash, "+x.getSafeSymbol()+"_iterator); hasNext("+x.getSafeSymbol()+"_iterator); )");
+	writer.addDeclaration("struct SimpleIterator",x.getSafeSymbol()+"_iterator");
+        writer.outputline("for (SimpleHashiterator("+relation.getSafeSymbol()+"_hash, &"+x.getSafeSymbol()+"_iterator); hasNext(&"+x.getSafeSymbol()+"_iterator); )");
         writer.startblock();
-        writer.outputline(y.getType().getGenerateType() + " " + y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") next("+x.getSafeSymbol()+"_iterator);");
+        writer.addDeclaration(y.getType().getGenerateType().toString(), y.getSafeSymbol());        
+	writer.outputline(y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") next(&"+x.getSafeSymbol()+"_iterator);");
         // #ATTN#: key is called second because next() forwards ptr and key does not!
-        writer.outputline(x.getType().getGenerateType() + " " + x.getSafeSymbol() + " = (" + x.getType().getGenerateType() + ") key("+x.getSafeSymbol()+"_iterator);");
+        writer.addDeclaration(x.getType().getGenerateType().toString(), x.getSafeSymbol());        
+	writer.outputline(x.getSafeSymbol() + " = (" + x.getType().getGenerateType() + ") key(&"+x.getSafeSymbol()+"_iterator);");
     }
 
     public void generate_open(CodeWriter writer, String type,int number, String left,String right) {
 	VarDescriptor tmp=VarDescriptor.makeNew("flag");
-        writer.outputline("struct SimpleIterator * " + x.getSafeSymbol() + "_iterator = SimpleHashcreateiterator("+relation.getSafeSymbol()+"_hash);");
-	writer.outputline("int "+tmp.getSafeSymbol()+"=0;");
+        writer.addDeclaration("struct SimpleIterator", x.getSafeSymbol() + "_iterator");
+        writer.outputline("SimpleHashiterator("+relation.getSafeSymbol()+"_hash,& "+x.getSafeSymbol()+"_iterator);");
+	writer.addDeclaration("int",tmp.getSafeSymbol());
+	writer.outputline(tmp.getSafeSymbol()+"=0;");
 	writer.outputline("if ("+type+"=="+number+")");
 	writer.outputline(tmp.getSafeSymbol()+"=1;");
 
-	writer.outputline("while("+tmp.getSafeSymbol()+"||(("+type+"!="+number+")&& hasNext("+x.getSafeSymbol()+"_iterator)))");
+	writer.outputline("while("+tmp.getSafeSymbol()+"||(("+type+"!="+number+")&& hasNext(&"+x.getSafeSymbol()+"_iterator)))");
         writer.startblock();
-        writer.outputline(x.getType().getGenerateType() + " " + x.getSafeSymbol() + ";");
-        writer.outputline(y.getType().getGenerateType() + " " + y.getSafeSymbol() + ";");
+        writer.addDeclaration(x.getType().getGenerateType().toString(), x.getSafeSymbol());
+        writer.addDeclaration(y.getType().getGenerateType().toString(), y.getSafeSymbol());
 	writer.outputline("if ("+type+"=="+number+")");
 	writer.startblock();
 	writer.outputline(tmp.getSafeSymbol()+"=0;");
@@ -60,8 +64,8 @@ public class RelationQuantifier extends Quantifier {
 	writer.endblock();
 	writer.outputline("else");
 	writer.startblock();
-        writer.outputline(y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") next("+x.getSafeSymbol()+"_iterator);");
-        writer.outputline(x.getSafeSymbol() + " = (" + x.getType().getGenerateType() + ") key("+x.getSafeSymbol()+"_iterator);");
+        writer.outputline(y.getSafeSymbol() + " = (" + y.getType().getGenerateType() + ") next(&"+x.getSafeSymbol()+"_iterator);");
+        writer.outputline(x.getSafeSymbol() + " = (" + x.getType().getGenerateType() + ") key(&"+x.getSafeSymbol()+"_iterator);");
 	writer.endblock();
     }
 

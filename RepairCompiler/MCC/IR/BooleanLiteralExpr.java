@@ -35,7 +35,8 @@ public class BooleanLiteralExpr extends LiteralExpr {
     }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
-        writer.outputline("int " + dest.getSafeSymbol() + " = " + (value ? "1" : "0") + ";");
+        writer.addDeclaration("int", dest.getSafeSymbol());
+        writer.outputline(dest.getSafeSymbol() + " = " + (value ? "1" : "0") + ";");
     }
 
     public void prettyPrint(PrettyPrinter pp) {

@@ -103,7 +103,7 @@ public class LogicStatement {
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
 
-        writer.outputline("int " + dest.getSafeSymbol() + ";");
+        writer.addDeclaration("int", dest.getSafeSymbol());
 
         if (op == NOT) {
 
@@ -121,13 +121,15 @@ public class LogicStatement {
             VarDescriptor leftd = VarDescriptor.makeNew("leftboolean");
             String lm = (VarDescriptor.makeNew("leftmaybe")).getSafeSymbol();
             left.generate(writer, leftd);
-            writer.outputline("int " + lm + " = maybe;");
+            writer.addDeclaration("int", lm);
+            writer.outputline(lm + " = maybe;");
             writer.outputline("maybe=0;");
             VarDescriptor rightd = VarDescriptor.makeNew("rightboolean");
             String rm = (VarDescriptor.makeNew("rightmaybe")).getSafeSymbol();
             assert right != null;
             right.generate(writer, rightd);
-            writer.outputline("int " + rm + " = maybe;");
+            writer.addDeclaration("int", rm);
+            writer.outputline(rm + " = maybe;");
 
             String l = leftd.getSafeSymbol();
             String r = rightd.getSafeSymbol();

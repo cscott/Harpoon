@@ -57,7 +57,7 @@ public class StructureGenerator {
 		str+="};";
 		cr.outputline(str);
 	    } else
-		cr.outputline("int arnumelement"+ttd.getId()+"[0];");
+		cr.outputline("int arnumelement"+ttd.getId()+"[1];"); // c doesn't like 0 length arrays
 	}
 	String str="int* arnumelements["+String.valueOf(max)+"]={";
 	for(int i=0;i<max;i++) {
@@ -128,7 +128,7 @@ public class StructureGenerator {
 		str+="};";
 		cr.outputline(str);
 	    } else
-		cr.outputline("int argetfield"+ttd.getId()+"[0];");
+		cr.outputline("int argetfield"+ttd.getId()+"[1];"); //c doesn't like zero length arrays
 	}
 	int max=TypeDescriptor.counter;
 	String str="int* argetfield["+String.valueOf(max)+"]={";
@@ -186,7 +186,7 @@ public class StructureGenerator {
 		str+="};";
 		cr.outputline(str);
 	    } else
-		cr.outputline("int arisArray"+ttd.getId()+"[0];");
+		cr.outputline("int arisArray"+ttd.getId()+"[1];"); // c doesn't like 0 length arrays
 	}
 	int max=TypeDescriptor.counter;
 	String str="int* arisArray["+String.valueOf(max)+"]={";
@@ -222,7 +222,7 @@ public class StructureGenerator {
 		str+="};";
 		cr.outputline(str);
 	    } else
-		cr.outputline("int arisPtr"+ttd.getId()+"[0];");
+		cr.outputline("int arisPtr"+ttd.getId()+"[1];"); // c doesn't like 0 length arrays
 	}
 	int max=TypeDescriptor.counter;
 	String str="int* arisPtr["+String.valueOf(max)+"]={";

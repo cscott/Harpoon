@@ -75,7 +75,9 @@ public class TupleOfExpr extends Expr {
         VarDescriptor rd = VarDescriptor.makeNew();
         right.generate(writer, rd);
 
-        writer.outputline("int " + dest.getSafeSymbol() + " = SimpleHashcontainskeydata("
+        writer.addDeclaration("int", dest.getSafeSymbol());
+
+        writer.outputline(dest.getSafeSymbol() + " = SimpleHashcontainskeydata("
                           +relation.getSafeSymbol() +"_hash, "+
                           ld.getSafeSymbol() + ", " +
                           rd.getSafeSymbol() + ");");

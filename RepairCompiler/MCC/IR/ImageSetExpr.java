@@ -124,12 +124,14 @@ public class ImageSetExpr extends SetExpr {
     public void generate_inclusion(CodeWriter writer, VarDescriptor dest, VarDescriptor element) {
         String hash = inverse ? "_hashinv, " : "_hash, " ;
 	if (!isimageset) {
-	    writer.outputline("int " + dest.getSafeSymbol() + " = SimpleHashcontainskeydata(" + rd.getSafeSymbol() + hash + vd.getSafeSymbol() + ", " + element.getSafeSymbol() + ");");
+	    writer.addDeclaration("int", dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol() + " = SimpleHashcontainskeydata(" + rd.getSafeSymbol() + hash + vd.getSafeSymbol() + ", " + element.getSafeSymbol() + ");");
 	} else {
 	    VarDescriptor newset=VarDescriptor.makeNew("newset");
 	    generate_set(writer,newset);
-	    writer.outputline("int "+dest.getSafeSymbol()+"=SimpleHashcontainskey("+newset.getSafeSymbol()+","+element.getSafeSymbol()+");");
-	    writer.outputline("delete "+newset.getSafeSymbol()+";");
+	    writer.addDeclaration("int", dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol()+"=SimpleHashcontainskey("+newset.getSafeSymbol()+","+element.getSafeSymbol()+");");
+	    writer.outputline("freeSimpleHash("+newset.getSafeSymbol()+");");
 	}
     }
 
@@ -138,47 +140,54 @@ public class ImageSetExpr extends SetExpr {
         assert rd != null;
 	if (!isimageset) {
 	    String hash = inverse ? "_hashinv, " : "_hash, " ;
-	    writer.outputline("int " + dest.getSafeSymbol() + " = SimpleHashcount(" + rd.getSafeSymbol() + hash + vd.getSafeSymbol() + ");");
+	    writer.addDeclaration("int", dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol() + " = SimpleHashcount(" + rd.getSafeSymbol() + hash + vd.getSafeSymbol() + ");");
 	} else {
 	    VarDescriptor newset=VarDescriptor.makeNew("newset");
 	    generate_set(writer,newset);
-	    writer.outputline("int "+dest.getSafeSymbol()+"=SimpleHashcountset("+newset.getSafeSymbol()+");");
-	    writer.outputline("delete "+newset.getSafeSymbol()+";");
+	    writer.addDeclaration("int", dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol()+"=SimpleHashcountset("+newset.getSafeSymbol()+");");
+	    writer.outputline("freeSimpleHash("+newset.getSafeSymbol()+");");
 	}
     }
 
     public void generate_leftside(CodeWriter writer, VarDescriptor dest) {
 	if (!isimageset) {
-	    writer.outputline(vd.getType().getGenerateType()+" "+dest.getSafeSymbol()+" = "+vd.getSafeSymbol()+";");
+	    writer.addDeclaration(vd.getType().getGenerateType().toString(), dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol()+" = "+vd.getSafeSymbol()+";");
 	} else {
 	    VarDescriptor iseset=VarDescriptor.makeNew("set");
 	    ise.generate_set(writer,iseset);
-	    writer.outputline("int "+dest.getSafeSymbol()+" = SimpleHashfirstkey("+iseset.getSafeSymbol()+");");
-	    writer.outputline("delete "+iseset.getSafeSymbol()+";");
+	    writer.addDeclaration("int",dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol()+" = SimpleHashfirstkey("+iseset.getSafeSymbol()+");");
+	    writer.outputline("freeSimpleHash("+iseset.getSafeSymbol()+");");
 	}
     }
 
     public void generate_set(CodeWriter writer, VarDescriptor dest) {
 	if (!isimageset) {
 	    String hash = inverse ? "_hashinv, " : "_hash, " ;
-	    writer.outputline("struct SimpleHash * "+dest.getSafeSymbol()+"=SimpleHashimageSet("+rd.getSafeSymbol()+hash+vd.getSafeSymbol()+");");
+	    writer.addDeclaration("struct SimpleHash *",dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol()+"=SimpleHashimageSet("+rd.getSafeSymbol()+hash+vd.getSafeSymbol()+");");
 	} else {
 	    VarDescriptor iseset=VarDescriptor.makeNew("set");
 	    ise.generate_set(writer,iseset);
 
 	    VarDescriptor itvd=VarDescriptor.makeNew("iterator");
-	    writer.outputline("struct SimpleIterator "+itvd.getSafeSymbol()+";");
+	    writer.addDeclaration("struct SimpleIterator",itvd.getSafeSymbol());
 	    writer.outputline("SimpleHashiterator("+iseset.getSafeSymbol()+",&"+itvd.getSafeSymbol()+");");
-
-	    writer.outputline("struct SimpleHash *"+dest.getSafeSymbol()+"=allocateSimpleHash(10);");
+	    writer.addDeclaration("struct SimpleHash *", dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol()+"=allocateSimpleHash(10);");
 	    writer.outputline("while (hasNext(&"+itvd.getSafeSymbol()+")) {");
 
 	    VarDescriptor keyvd=VarDescriptor.makeNew("key");
 
-	    writer.outputline("int "+keyvd.getSafeSymbol()+"=next(&"+itvd.getSafeSymbol()+");");
+	    writer.addDeclaration("int",keyvd.getSafeSymbol());
+	    writer.outputline(keyvd.getSafeSymbol()+"=next(&"+itvd.getSafeSymbol()+");");
 	    String hash = inverse ? "_hashinv, " : "_hash, " ;
 	    VarDescriptor newset=VarDescriptor.makeNew("newset");
-	    writer.outputline("SimpleHash * "+newset.getSafeSymbol()+"=SimpleHashimageSet("+rd.getSafeSymbol()+hash+keyvd.getSafeSymbol()+");");
+	    writer.addDeclaration("struct SimpleHash *", newset.getSafeSymbol());
+	    writer.outputline(newset.getSafeSymbol()+"=SimpleHashimageSet("+rd.getSafeSymbol()+hash+keyvd.getSafeSymbol()+");");
 	    writer.outputline("SimpleHashaddAll("+dest.getSafeSymbol()+", "+ newset.getSafeSymbol()+");");
 	    writer.outputline("freeSimpleHash("+newset.getSafeSymbol()+");");
 	    writer.outputline("}");

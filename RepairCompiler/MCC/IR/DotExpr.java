@@ -167,8 +167,8 @@ public class DotExpr extends Expr {
 
 	if (writer.getInvariantValue()!=null&&
 	    writer.getInvariantValue().isInvariant(this)) {
-	    writer.outputline(getType().getGenerateType().getSafeSymbol()+
-			      " "+dest.getSafeSymbol()+"="+writer.getInvariantValue().getValue(this).getSafeSymbol()+";");
+	    writer.addDeclaration(getType().getGenerateType().getSafeSymbol().toString(), dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol()+"="+writer.getInvariantValue().getValue(this).getSafeSymbol()+";");
 	    writer.outputline("maybe="+writer.getInvariantValue().getMaybe(this).getSafeSymbol()+";");
 	    return;
 	}
@@ -200,7 +200,8 @@ public class DotExpr extends Expr {
 	boolean doboundscheck=true;
 	boolean performedboundscheck=false;
 
-	writer.outputline(getType().getGenerateType() + " " + dest.getSafeSymbol()+"=0;");
+	writer.addDeclaration(getType().getGenerateType().toString(),dest.getSafeSymbol());
+	writer.outputline(dest.getSafeSymbol()+"=0;");
 
         if (intindex != null) {
             if (intindex instanceof IntegerLiteralExpr && ((IntegerLiteralExpr) intindex).getValue() == 0) {
@@ -261,11 +262,13 @@ public class DotExpr extends Expr {
 
 	/* derive offset in bytes */
 	VarDescriptor offset = VarDescriptor.makeNew("offset");
-	writer.outputline("int " + offset.getSafeSymbol() + " = " + ob.getSafeSymbol() + " >> 3;");
+	writer.addDeclaration("int", offset.getSafeSymbol());
+	writer.outputline(offset.getSafeSymbol() + " = " + ob.getSafeSymbol() + " >> 3;");
 
 	if (fd.getType() instanceof ReservedTypeDescriptor && !fd.getPtr()) {
 	    VarDescriptor shift = VarDescriptor.makeNew("shift");
-	    writer.outputline("int " + shift.getSafeSymbol() + " = " + ob.getSafeSymbol() +
+	    writer.addDeclaration("int", shift.getSafeSymbol());
+	    writer.outputline(shift.getSafeSymbol() + " = " + ob.getSafeSymbol() +
 			      " - (" + offset.getSafeSymbol() + " << 3);");
 	    int mask = bitmask(((IntegerLiteralExpr)fd.getType().getSizeExpr()).getValue());
 
@@ -287,10 +290,12 @@ public class DotExpr extends Expr {
 		writer.startblock();
 		VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
 		if (DOMEMCHECKS&&(!DOTYPECHECKS)) {
-		    writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
+		    writer.addDeclaration("bool", typevar.getSafeSymbol());
+		    writer.outputline(typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
 		    dotypecheck = true;
 		} else if (DOTYPECHECKS) {
-		    writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
+		    writer.addDeclaration("bool", typevar.getSafeSymbol());
+		    writer.outputline(typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + this.td.getId() + ");");
 		}
 
 		if (DOTYPECHECKS||DOMEMCHECKS) {

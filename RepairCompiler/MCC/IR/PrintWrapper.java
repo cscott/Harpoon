@@ -3,16 +3,17 @@ import java.util.*;
 
 public class PrintWrapper {
   java.io.PrintWriter output;
-  String buffered="";
+  StringBuffer buffered=new StringBuffer("");
   boolean buffer=false;
   Hashtable vartable=new Hashtable();
+  public int indent=0;
 
   public PrintWrapper(java.io.PrintWriter output) {
     this.output=output;
   }
   void print(String s) {
     if (buffer)
-      buffered+=s;
+      buffered.append(s);
     else
       output.print(s);
   }
@@ -22,7 +23,7 @@ public class PrintWrapper {
   }
   void println(String s) {
     if (buffer)
-      buffered+=s+"\n";
+      buffered.append(s+"\n");
     else
       output.println(s);
   }
@@ -35,8 +36,8 @@ public class PrintWrapper {
       String var=(String)it.next();
       output.println(((String)vartable.get(var))+" "+var+";");
     }
-    output.print(buffered);
-    buffered="";
+    output.print(buffered.toString());
+    buffered=new StringBuffer("");
     vartable=new Hashtable();
     buffer=false;
   }
@@ -52,5 +53,11 @@ public class PrintWrapper {
       }
     } else
       output.println(type+" "+varname+";");
+  }
+  void addDeclaration(String f) {
+    if (buffer) {
+	buffered.insert(0,f+"\n");
+    } else
+      output.println(f);
   }
 }

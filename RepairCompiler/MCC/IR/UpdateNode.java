@@ -377,13 +377,16 @@ class UpdateNode {
 		break;
 	    case Updates.POSITION:
 	    case Updates.ACCESSPATH:
-		if (u.getRightPos()==0)
-		    cr.outputline("int "+right.getSafeSymbol()+"="+slot0+";");
-		else if (u.getRightPos()==1)
-		    cr.outputline("int "+right.getSafeSymbol()+"="+slot1+";");
-		else if (u.getRightPos()==2)
-		    cr.outputline("int "+right.getSafeSymbol()+"="+slot2+";");
-		else throw new Error("Error w/ Position");
+		if (u.getRightPos()==0) {
+		    cr.addDeclaration("int", right.getSafeSymbol());
+		    cr.outputline(right.getSafeSymbol()+"="+slot0+";");
+		} else if (u.getRightPos()==1) {
+		    cr.addDeclaration("int", right.getSafeSymbol());
+		    cr.outputline(right.getSafeSymbol()+"="+slot1+";");
+ 		} else if (u.getRightPos()==2) {
+		    cr.addDeclaration("int", right.getSafeSymbol());
+		    cr.outputline(right.getSafeSymbol()+"="+slot2+";");
+		} else throw new Error("Error w/ Position");
 		break;
 	    default:
 		throw new Error();
@@ -490,7 +493,8 @@ class UpdateNode {
 	ArrayAnalysis.AccessPath ap=u.getAccessPath();
 	VarDescriptor init=VarDescriptor.makeNew("init");
 	if (ap.isSet()) {
-	    cr.outputline("int "+init.getSafeSymbol()+"= SimpleHashfirstkey("+ap.getSet().getSafeSymbol()+"_hash);");
+	    cr.addDeclaration("int", init.getSafeSymbol());
+	    cr.outputline(init.getSafeSymbol()+"= SimpleHashfirstkey("+ap.getSet().getSafeSymbol()+"_hash);");
 	    init.td=ap.getSet().getType();
 	} else {
 	    init=ap.getVar();
@@ -540,7 +544,8 @@ class UpdateNode {
 
 	    if (b.getType()==Binding.SEARCH) {
 		VarDescriptor vd=b.getVar();
-		cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"=SimpleHashfirstkey("+b.getSet().getSafeSymbol()+"_hash);");
+		cr.addDeclaration(vd.getType().getGenerateType().getSafeSymbol(), vd.getSafeSymbol());
+		cr.outputline(vd.getSafeSymbol()+"=SimpleHashfirstkey("+b.getSet().getSafeSymbol()+"_hash);");
 	    } else if (b.getType()==Binding.CREATE) {
 		throw new Error("Creation not supported");
 		//		source.generateSourceAlloc(cr,vd,b.getSet());
@@ -548,10 +553,12 @@ class UpdateNode {
 		VarDescriptor vd=b.getVar();
 		switch(b.getPosition()) {
 		case 0:
-		    cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"="+slot0+";");
+		    cr.addDeclaration(vd.getType().getGenerateType().getSafeSymbol(), vd.getSafeSymbol());
+		    cr.outputline(vd.getSafeSymbol()+"="+slot0+";");
 		    break;
 		case 1:
-		    cr.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+"="+slot1+";");
+		    cr.addDeclaration(vd.getType().getGenerateType().getSafeSymbol(), vd.getSafeSymbol());
+		    cr.outputline(vd.getSafeSymbol()+"="+slot1+";");
 		    break;
 		default:
 		    throw new Error("Slot >1 doesn't exist.");

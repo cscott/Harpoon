@@ -39,8 +39,8 @@ public class ForQuantifier extends Quantifier {
         VarDescriptor ud = VarDescriptor.makeNew();
         lower.generate(writer, ld);
         upper.generate(writer, ud);
-        
-        writer.outputline("for (int " + var.getSafeSymbol() + " = " + ld.getSafeSymbol() + "; " + var.getSafeSymbol() + " <= " + ud.getSafeSymbol() + "; " + var.getSafeSymbol() + "++)");
+        writer.addDeclaration("int",var.getSafeSymbol());
+        writer.outputline("for (" + var.getSafeSymbol() + " = " + ld.getSafeSymbol() + "; " + var.getSafeSymbol() + " <= " + ud.getSafeSymbol() + "; " + var.getSafeSymbol() + "++)");
         writer.startblock();
     }
 
@@ -51,7 +51,8 @@ left,String right) {
 
     public int generate_worklistload(CodeWriter writer, int offset) {        
         String varname = var.getSafeSymbol();
-        writer.outputline("int " + varname + " = wi->word" + offset + ";"); 
+	writer.addDeclaration("int",varname);
+        writer.outputline(varname + " = wi->word" + offset + ";"); 
         return offset + 1;       
     }
 

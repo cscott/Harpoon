@@ -41,7 +41,8 @@ public class TokenLiteralExpr extends LiteralExpr {
     }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
-        writer.outputline("int " + dest.getSafeSymbol() + " = " + num.toString().toString() + ";");
+        writer.addDeclaration("int", dest.getSafeSymbol());
+        writer.outputline(dest.getSafeSymbol() + " = " + num.toString().toString() + ";");
     }
     
     public void prettyPrint(PrettyPrinter pp) {

@@ -351,7 +351,8 @@ public class OpExpr extends Expr {
 	/* Check for loop invariant hoisting. */
 	if (writer.getInvariantValue()!=null&&
 	    writer.getInvariantValue().isInvariant(this)) {
-	    writer.outputline("int "+dest.getSafeSymbol()+"="+writer.getInvariantValue().getValue(this).getSafeSymbol()+";");
+	    writer.addDeclaration("int",dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol()+"="+writer.getInvariantValue().getValue(this).getSafeSymbol()+";");
 	    writer.outputline("maybe="+writer.getInvariantValue().getMaybe(this).getSafeSymbol()+";");
 	    return;
 	}
@@ -364,7 +365,8 @@ public class OpExpr extends Expr {
         if (right != null) {
 	    if ((opcode==Opcode.OR)||
 		(opcode==Opcode.AND)) {
-		writer.outputline("int "+lm.getSafeSymbol()+"=maybe;");
+		writer.addDeclaration("int",lm.getSafeSymbol());
+		writer.outputline(lm.getSafeSymbol()+"=maybe;");
 		writer.outputline("maybe=0;");
 	    }
 
@@ -374,27 +376,35 @@ public class OpExpr extends Expr {
 
         String code;
 	if (opcode == Opcode.RND) {
-	    writer.outputline("int " +dest.getSafeSymbol() + " = (" +
+	    writer.addDeclaration("int",dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol() + " = (" +
 			      ld.getSafeSymbol() + ">>3)<<3; ");
 	    writer.outputline("if ("+ld.getSafeSymbol()+" % 8) "+dest.getSafeSymbol()+"+=8;");
 	} else if (opcode == Opcode.NOP) {
-	    writer.outputline("int " +dest.getSafeSymbol() + " = " +
+	    writer.addDeclaration("int", dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol() + " = " +
 			      ld.getSafeSymbol() +"; ");
         } else if (opcode == Opcode.AND) {
-	    writer.outputline("int "+rm.getSafeSymbol()+"=maybe;");
+	    writer.addDeclaration("int",rm.getSafeSymbol());
+	    writer.outputline(rm.getSafeSymbol()+"=maybe;");
 	    writer.outputline("maybe = (" + ld.getSafeSymbol() + " && " + rm.getSafeSymbol() + ") || (" + rd.getSafeSymbol() + " && " + lm.getSafeSymbol() + ") || (" + lm.getSafeSymbol() + " && " + rm.getSafeSymbol() + ");");
-	    writer.outputline("int "+dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " && " + rd.getSafeSymbol() + ";");
+	    writer.addDeclaration("int",dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " && " + rd.getSafeSymbol() + ";");
 	} else if (opcode == Opcode.OR) {
-	    writer.outputline("int "+rm.getSafeSymbol()+"=maybe;");
+	    writer.addDeclaration("int",rm.getSafeSymbol());
+	    writer.outputline(rm.getSafeSymbol()+"=maybe;");
 	    writer.outputline("maybe = (!" + ld.getSafeSymbol() + " && " + rm.getSafeSymbol() + ") || (!" + rd.getSafeSymbol() +
 			      " && " + lm.getSafeSymbol() + ") || (" + lm.getSafeSymbol() + " && " + rm.getSafeSymbol() + ");");
-	    writer.outputline("int "+dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " || " + rd.getSafeSymbol() + ";");
+	    writer.addDeclaration("int",dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " || " + rd.getSafeSymbol() + ";");
 	} else if (opcode != Opcode.NOT) { /* two operands */
             assert rd != null;
-	    writer.outputline("int " + dest.getSafeSymbol() + " = " +
+	    writer.addDeclaration("int", dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol() + " = " +
 			      ld.getSafeSymbol() + " " + opcode.toString() + " " + rd.getSafeSymbol() + ";");
         } else if (opcode == Opcode.NOT) {
-            writer.outputline("int " + dest.getSafeSymbol() + " = !" + ld.getSafeSymbol() + ";");
+            writer.addDeclaration("int", dest.getSafeSymbol());
+            writer.outputline(dest.getSafeSymbol() + " = !" + ld.getSafeSymbol() + ";");
         }
     }
 

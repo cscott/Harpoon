@@ -35,7 +35,8 @@ public class IntegerLiteralExpr extends LiteralExpr {
     }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
-        writer.outputline("int " + dest.getSafeSymbol() + " = " + value + ";");
+        writer.addDeclaration("int", dest.getSafeSymbol());
+        writer.outputline(dest.getSafeSymbol() + " = " + value + ";");
     }
 
     public void prettyPrint(PrettyPrinter pp) {

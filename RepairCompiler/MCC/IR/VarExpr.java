@@ -115,22 +115,26 @@ public class VarExpr extends Expr {
 
 	if (writer.getInvariantValue()!=null&&
 	    writer.getInvariantValue().isInvariant(this)) {
-	    writer.outputline(vd.getType().getGenerateType().getSafeSymbol()+
-			      " "+dest.getSafeSymbol()+"="+writer.getInvariantValue().getValue(this).getSafeSymbol()+";");
+	    writer.addDeclaration(vd.getType().getGenerateType().getSafeSymbol(),dest.getSafeSymbol());
+	    writer.outputline(dest.getSafeSymbol()+"="+writer.getInvariantValue().getValue(this).getSafeSymbol()+";");
 	    writer.outputline("maybe="+writer.getInvariantValue().getMaybe(this).getSafeSymbol()+";");
 	    return;
 	}
 
-        writer.outputline(vd.getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() +
+        writer.addDeclaration(vd.getType().getGenerateType().getSafeSymbol(),dest.getSafeSymbol());
+        writer.outputline(dest.getSafeSymbol() +
                           " = (" + vd.getType().getGenerateType().getSafeSymbol() + ") " + vd.getSafeSymbol() + "; /*varexpr*/");
 	if (vd.isGlobal() && (DOTYPECHECKS||DOMEMCHECKS) && (td instanceof StructureTypeDescriptor)) {
 	    VarDescriptor typevar=VarDescriptor.makeNew("typechecks");
 	    writer.outputline("if ("+dest.getSafeSymbol()+")");
 	    writer.startblock();
-	    if (DOTYPECHECKS)
-		writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + td.getId() + ");");
-	    else
-		writer.outputline("bool "+typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + td.getId() + ");");
+	    if (DOTYPECHECKS) {
+		writer.addDeclaration("bool",typevar.getSafeSymbol());
+		writer.outputline(typevar.getSafeSymbol()+"=assertvalidtype(" + dest.getSafeSymbol() + ", " + td.getId() + ");");
+	    } else {
+		writer.addDeclaration("bool",typevar.getSafeSymbol());
+		writer.outputline(typevar.getSafeSymbol()+"=assertvalidmemory(" + dest.getSafeSymbol() + ", " + td.getId() + ");");
+	    }
 	    writer.outputline("if (!"+typevar.getSafeSymbol()+")");
 	    writer.startblock();
 	    writer.outputline(dest.getSafeSymbol()+"=0;");

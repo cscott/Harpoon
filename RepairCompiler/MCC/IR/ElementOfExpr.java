@@ -55,7 +55,8 @@ public class ElementOfExpr extends Expr {
     public void generate(CodeWriter writer, VarDescriptor dest) {
         VarDescriptor ed = VarDescriptor.makeNew("element");
         element.generate(writer, ed);
-        writer.outputline("int " + dest.getSafeSymbol() + " = SimpleHashcontainskey("+set.getSafeSymbol() +"_hash ,"+ ed.getSafeSymbol() + ");");
+        writer.addDeclaration("int", dest.getSafeSymbol());
+        writer.outputline(dest.getSafeSymbol() + " = SimpleHashcontainskey("+set.getSafeSymbol() +"_hash ,"+ ed.getSafeSymbol() + ");");
     }
 
     public void prettyPrint(PrettyPrinter pp) {

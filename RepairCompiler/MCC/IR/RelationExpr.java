@@ -106,8 +106,9 @@ public class RelationExpr extends Expr {
         String strinverse = inverse ? "inv" : "";
         String found = (VarDescriptor.makeNew("found")).getSafeSymbol();
         expr.generate(writer, domain);
-        writer.outputline(relation.getRange().getType().getGenerateType().getSafeSymbol() + " " + dest.getSafeSymbol() + ";");
-	writer.outputline("int "+found+" = SimpleHashget(" +relation.getSafeSymbol()+"_hash"+strinverse+", "+ domain.getSafeSymbol() + ", & " + dest.getSafeSymbol() + ");");
+        writer.addDeclaration(relation.getRange().getType().getGenerateType().getSafeSymbol(), dest.getSafeSymbol());
+	writer.addDeclaration("int",found);
+	writer.outputline(found+" = SimpleHashget(" +relation.getSafeSymbol()+"_hash"+strinverse+", "+ domain.getSafeSymbol() + ", & " + dest.getSafeSymbol() + ");");
 	writer.outputline("if (!" + found + ") { maybe = 1; }");
     }
 

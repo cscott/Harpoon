@@ -49,7 +49,7 @@ public class RelationFunctionExpr extends Expr {
     public void generate(CodeWriter cr, VarDescriptor dest) {
 
         String destname = dest.getSafeSymbol();
-        cr.outputline("int " + destname + ";");
+        cr.addDeclaration("int", destname);
 
         // ok... destination is declared... we gotta expand this rule inplace... and instead of the inclusion we
         // set the destination in the guard ... otherwise maybe!
@@ -66,8 +66,10 @@ public class RelationFunctionExpr extends Expr {
             String tempvar = (VarDescriptor.makeNew("tempvar")).getSafeSymbol();
 
             // this is to be safe about name overlap because int t = t; sets t to 0!
-            cr.outputline("int " + tempvar + " = " + domain.getSafeSymbol() + ";");
-            cr.outputline("int " + rulebinding.getSafeSymbol() + " = " + tempvar + ";");
+            cr.addDeclaration("int", tempvar);
+            cr.outputline(tempvar + " = " + domain.getSafeSymbol() + ";");
+            cr.addDeclaration("int", rulebinding.getSafeSymbol());
+            cr.outputline(rulebinding.getSafeSymbol() + " = " + tempvar + ";");
 
             /* pretty print! */
             cr.outputline("/* about to inbed relational function*/");

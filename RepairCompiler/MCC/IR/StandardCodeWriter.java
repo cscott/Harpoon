@@ -2,15 +2,22 @@ package MCC.IR;
 
 import java.util.*;
 
-public class StandardCodeWriter implements CodeWriter { 
+public class StandardCodeWriter implements CodeWriter {
 
     boolean linestarted = false;
-    int indent = 0;
-    java.io.PrintWriter output;
+    PrintWrapper output;
     Stack symboltables = new Stack();
     InvariantValue ivalue;
 
-    public StandardCodeWriter(java.io.PrintWriter output) { this.output = output; }
+    public StandardCodeWriter(PrintWrapper output) { this.output = output; }
+    public StandardCodeWriter(java.io.PrintWriter output) { this.output = new PrintWrapper(output);}
+
+    public void startBuffer() {
+	output.startBuffer();
+    }
+    public void emptyBuffer() {
+	output.emptyBuffer();
+    }
 
     public void startblock() {
         indent();
@@ -21,22 +28,28 @@ public class StandardCodeWriter implements CodeWriter {
         outputline("}");
         unindent();
     }
-    
-    public void indent() { 
-        indent++; 
+    public void addDeclaration(String type, String varname) {
+	output.addDeclaration(type,varname);
+    }
+    public void addDeclaration(String f) {
+	output.addDeclaration(f);
     }
     
-    public void unindent() { 
-        indent--; 
+    public void indent() {
+        output.indent++;
     }
-    
+
+    public void unindent() {
+        output.indent--;
+    }
+
     private void doindent() {
-        for (int i = 0; i < indent; i++) { 
+        for (int i = 0; i < output.indent; i++) {
             output.print("  ");
         }
         linestarted = true;
     }
-    
+
     public void outputline(String s) {
         if (!linestarted) {
             doindent();
@@ -44,14 +57,14 @@ public class StandardCodeWriter implements CodeWriter {
         output.println(s);
         linestarted = false;
         output.flush();
-    }                 
-    
+    }
+
     public void output(String s) {
         if (!linestarted) {
             doindent();
         }
         output.print(s);
-        output.flush(); 
+        output.flush();
     }
 
     public void pushSymbolTable(SymbolTable st) {
@@ -62,9 +75,9 @@ public class StandardCodeWriter implements CodeWriter {
         return (SymbolTable) symboltables.pop();
     }
 
-    public SymbolTable getSymbolTable() { 
+    public SymbolTable getSymbolTable() {
         if (symboltables.empty()) {
-            throw new IRException(); 
+            throw new IRException();
         }
         return (SymbolTable) symboltables.peek();
     }

@@ -54,16 +54,19 @@ public class SumExpr extends Expr {
     }
 
     public void generate(CodeWriter writer, VarDescriptor dest) {
-        writer.outputline("int "+dest.getSafeSymbol()+"=0;");
+        writer.addDeclaration("int",dest.getSafeSymbol());
+        writer.outputline(dest.getSafeSymbol()+"=0;");
+
 
         VarDescriptor itvd=VarDescriptor.makeNew("iterator");
-        writer.outputline("struct SimpleIterator "+itvd.getSafeSymbol()+";");
+        writer.addDeclaration("struct SimpleIterator",itvd.getSafeSymbol());
         writer.outputline("SimpleHashiterator("+sd.getSafeSymbol()+"_hash , &"+itvd.getSafeSymbol()+");");
         writer.outputline("while (hasNext(&"+itvd.getSafeSymbol()+")) {");
         VarDescriptor keyvd=VarDescriptor.makeNew("key");
-        writer.outputline("int "+keyvd.getSafeSymbol()+"=next(&"+itvd.getSafeSymbol()+");");
+        writer.addDeclaration("int",keyvd.getSafeSymbol());
+        writer.outputline(keyvd.getSafeSymbol()+"=next(&"+itvd.getSafeSymbol()+");");
         VarDescriptor tmpvar=VarDescriptor.makeNew("tmp");
-        writer.outputline("int "+tmpvar.getSafeSymbol()+";");
+        writer.addDeclaration("int",tmpvar.getSafeSymbol());
         writer.outputline("SimpleHashget("+rd.getSafeSymbol()+"_hash, "+keyvd.getSafeSymbol()+", &"+tmpvar.getSafeSymbol()+");");
         writer.outputline(dest.getSafeSymbol()+"+="+tmpvar.getSafeSymbol()+";");
         writer.outputline("}");
