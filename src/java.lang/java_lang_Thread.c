@@ -19,9 +19,6 @@
 #ifdef WITH_CLUSTERED_HEAPS
 #include "../clheap/alloc.h" /* for NTHR_malloc_first/NTHR_free */
 #endif
-#ifdef WITH_REALTIME_JAVA
-#include "../realtime/MemBlock.h" /* for MemBlock_free */
-#endif
 #include "memstats.h"
 #ifdef WITH_PRECISE_GC
 #include "jni-gc.h"
@@ -577,11 +574,6 @@ static void * thread_startup_routine(void *closure) {
   /* give us a chance to deallocate the thread-clustered heap */
   NTHR_free(thread);
 #endif
-#ifdef WITH_REALTIME_JAVA
-  /* give the MemBlocks a chance to deallocate... */
-  MemBlock_free(getInflatedObject(env, thread)->memBlock);
-#endif
-  /* ta-da, done! */
 }
 
 #ifndef WITH_USER_THREADS

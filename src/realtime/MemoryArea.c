@@ -37,7 +37,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_exitMemBlock
 #endif
   memBlock = MemBlock_currentMemBlock();
   MemBlock_setCurrentMemBlock(env, realtimeThread, 
-			      MemBlock_prevMemBlock(memBlock));
+			      MemBlock_prevMemBlock(memBlock));  
   MemBlock_free(memBlock);
 }
 
