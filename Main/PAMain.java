@@ -93,7 +93,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.97 2001-04-09 21:49:59 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.98 2001-04-10 21:47:27 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -239,10 +239,10 @@ public abstract class PAMain {
 	if(mainfo_opts.USE_INTER_THREAD)
 	    PointerAnalysis.RECORD_ACTIONS = true;
 
+	get_root_method(params[optind]);
+
 	if(RTJ_SUPPORT)
 	    Realtime.setupObject(linker);
-
-	get_root_method(params[optind]);
 
 	if(LOAD_ANALYSIS) load_analysis();
 	else {
@@ -256,24 +256,6 @@ public abstract class PAMain {
 	    pa = new PointerAnalysis(mcg, mac, lbbconv, linker);
 	}
 
-	Set ch_methods = new HashSet(ch.callableMethods());
-
-	Set good_callables = null;
-	if(LOAD_CALLABLES) {
-	    good_callables = load_callables();
-	    if(!good_callables.equals(ch_methods)) {
-		System.out.println("Bad set of callable methods!");
-		Util.print_collection
-		    (Util.set_diff(good_callables, ch_methods),
-		     "Missing methods");
-		Util.print_collection
-		    (Util.set_diff(ch_methods, good_callables),
-		     "New methods");
-	    }
-	    else
-		System.out.println("Set of callable methods (I) is good!");
-	}
-
 	if(RTJ_REMOVE_CHECKS) {
 	    System.out.println( can_remove_all_checks() ?
 				"can remove all checks!" :
@@ -284,21 +266,8 @@ public abstract class PAMain {
 	if(CHECK_NO_CALLEES)
 	    check_no_callees();
 
-	/* JOIN STATS
-	   join_stats(lbbconv, mcg);
-	   System.exit(1);
-	*/
-
 	if(DO_ANALYSIS)
 	    do_analysis();
-
-	/*
-	  if (ANALYZE_ALL_ROOTS) 
-	  analyze_all_roots();
-	  
-	  if (SYNC_ELIM_ALL_ROOTS) 
-	  sync_elim_all_roots();
-	*/
 
 	if(DO_INTERACTIVE_ANALYSIS)
 	    do_interactive_analysis();
@@ -331,53 +300,27 @@ public abstract class PAMain {
 	    System.out.println("\n\n\tCOMPILE!\n");
 
 	    g_tstart = System.currentTimeMillis();
-	    // It seems that something is broken in the new strategy ...
-	    SAMain.USE_OLD_CLINIT_STRATEGY = true;
+	    // the transformation associated with the new strategy has
+	    // already been applied while performing the pre-analysis
+	    // (so that the analysis can see the modified/added code)
+	    SAMain.USE_OLD_CLINIT_STRATEGY = !USE_OLD_STYLE;
 	    SAMain.linker = linker;
 	    SAMain.hcf    = hcf;
 	    SAMain.className = root_method.declClass; // params[optind];
 	    SAMain.rootSetFilename = rootSetFilename;
 
-	    if(RTJ_SUPPORT)
-		SAMain.do_it_nortj();
-	    else {
-		System.out.println("CALLING NORMAL do_it()");
-		SAMain.do_it();
-	    }
+	    SAMain.do_it();
 
 	    System.out.println("Backend time: " +
 			       (time() - g_tstart) + "ms");
-	}
-
-	Set ch_methods2 = new HashSet(ch.callableMethods());
-	if(ch_methods.equals(ch_methods2))
-	    System.out.println("ch.callableMethods is OK");
-	else
-	    System.out.println("ch.callableMethods has CHANGED!");
-
-	if(SAVE_CALLABLES)
-	    save_callables(ch_methods2);
-
-	if(LOAD_CALLABLES) {
-	    if(!good_callables.equals(ch_methods2)) {
-		System.out.println("Bad set of callable methods (2)!");
-		Util.print_collection
-		    (Util.set_diff(good_callables, ch_methods2),
-		     "Missing methods 2");
-		Util.print_collection
-		    (Util.set_diff(ch_methods2, good_callables),
-		     "New methods 2");
-	    }
-	    else {
-		System.out.println("Set of callable methods (II) is good!");
-		Util.print_collection(good_callables, "Here it is");
-	    }
 	}
 
 	if(RTJ_SUPPORT)
 	    Realtime.printStats();
     }
 
+    // For debug purposes,
+    // we sometimes use the old static initializers strategy
     private static final boolean USE_OLD_STYLE = false;
     
     // Constructs some data structures used by the analysis: the code factory
@@ -385,52 +328,33 @@ public abstract class PAMain {
     private static void pre_analysis() {
 	g_tstart = System.currentTimeMillis();
 
-	if(RTJ_SUPPORT) {
-	    // produce the HCodeFactory that contains all the checks
-	    hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
-	    hcf = new CachingCodeFactory(hcf, true);
-	    hcf = new QuadCounter(hcf);
-
-	    // in SAMain.do_it() some Nonvirtualize stuff is called ...
-
-	    construct_class_hierarchy();
-
-	    hcf = Realtime.setupCode(linker, ch, hcf);
-	    ch  = new QuadClassHierarchy(linker, program_roots, hcf);
-	    hcf = Realtime.addChecks(linker, ch, hcf, program_roots);
-	    // convert to our favorite form, QuadNoSSA !
-	    // just to be on PointerAnalysis's taste :-)
-	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-	}
-	else {
-	    //We might have loaded in a code factory w/o a preanalysis.
-	    if (hcf==null) {
-		if(USE_OLD_STYLE) {
-		    System.out.println("Use old style class initializers!");
-		    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
-		    construct_class_hierarchy();
-		}
-		else {
-		    System.out.println("Use new style class initializers!");
-		    hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
-		    construct_class_hierarchy();
-		    
-		    String resource =
-			"harpoon/Backend/Runtime1/init-safe.properties";
-		    hcf = new harpoon.Analysis.Quads.InitializerTransform
-			(hcf, ch, linker, resource).codeFactory();
-
-		    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
-		    construct_class_hierarchy();
-		}
-	    }
-	    else
+	//We might have loaded in a code factory w/o a preanalysis.
+	if (hcf==null) {
+	    if(USE_OLD_STYLE) {
+		System.out.println("Use old style class initializers!");
+		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
 		construct_class_hierarchy();
+	    }
+	    else {
+		System.out.println("Use new style class initializers!");
+		hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
+		construct_class_hierarchy();
+		
+		String resource =
+		    "harpoon/Backend/Runtime1/init-safe.properties";
+		hcf = new harpoon.Analysis.Quads.InitializerTransform
+		    (hcf, ch, linker, resource).codeFactory();
+		
+		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+		construct_class_hierarchy();
+	    }
 	}
-
+	else
+	    construct_class_hierarchy();
+	
 	hcf = new CachingCodeFactory(hcf, true);
 	ir_generation();
-
+	
 	bbconv = new CachingBBConverter(hcf);
 	lbbconv = new CachingLBBConverter(bbconv);
 	lbb_generation();
@@ -629,43 +553,6 @@ public abstract class PAMain {
 	}
 
 	System.out.println((time() - start) + "ms");
-    }
-
-
-    static private boolean LOAD_CALLABLES = false;
-    static private boolean SAVE_CALLABLES = false;
-    static private String CALLABLE_OUT_FILE = "callables";
-    static private String CALLABLE_IN_FILE  = "callables";
-
-    private static void save_callables(Set callables) {
-	System.out.print("Saving the callables ... ");
-	try {
-	    ObjectOutputStream oos = new ObjectOutputStream
-		(new FileOutputStream(CALLABLE_OUT_FILE));
-	    oos.writeObject(callables);
-	    System.out.println("done");
-	} catch(Exception e) {
-	    System.err.println("\nError while saving the callable methods!");
-	    System.err.println(e);
-	    System.exit(1);
-	}
-    }
-
-    private static Set load_callables() {
-	System.out.print("Loading the callables ... ");
-	try {
-	    ObjectInputStream ois = new ObjectInputStream
-		(new FileInputStream(CALLABLE_IN_FILE));
-	    Set result = (Set) ois.readObject();
-	    System.out.println("done");
-	    return result;
-	} catch(Exception e) {
-	    System.err.println("Error while loading the callable methods!");
-	    System.err.println(e);
-	    System.exit(1);
-	    return null; // make the compiler happy
-	}
-	
     }
 
 

@@ -4,8 +4,8 @@
 
 package harpoon.Analysis.PointerAnalysis;
 
-
 import java.io.PrintWriter;
+import java.io.Serializable;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -72,12 +72,12 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.51 2001-04-09 21:49:29 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.52 2001-04-10 21:47:10 salcianu Exp $
  */
-public class MAInfo implements AllocationInformation, java.io.Serializable {
+public class MAInfo implements AllocationInformation, Serializable {
 
     /** Options for the <code>MAInfo</code> processing. */
-    public static class MAInfoOptions implements Cloneable {
+    public static class MAInfoOptions implements Cloneable, Serializable {
 
 	/** Controls the generation of stack allocation hints.
 	    Default <code>false</code>. */
@@ -129,7 +129,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	/** The maximal size to which we can inflate the size of a method
 	    through inlining.
 	    Default is <code>600</code> quads. */
-	public int MAX_METHOD_SIZE      = 600;
+	public int MAX_METHOD_SIZE      = 1000;
 
 	/** Pretty printer. */
 	public void print(String prefix) {
@@ -533,8 +533,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // Do some dummy things. Hopefully, this will be improved in the future.
     private void handle_tg_stuff(ParIntGraph pig) {
 	/// DUMMY CODE: we don't have NSTK_malloc_with_heap yet
-	if(!NO_TG)
-	    set_make_heap(pig.tau.activeThreadSet());
+	//if(!NO_TG)
+	set_make_heap(pig.tau.activeThreadSet());
 	
 	/// DUMMY CODE: Stack allocate ALL the threads
 	if(NO_TG) {
@@ -569,6 +569,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    NEW qnt = (NEW) node_rep.node2Code(nt);
 	    MyAP ap = getAPObj(qnt);
 	    ap.mh = true;
+	    System.out.println("set_make_heap: " + Debug.code2str(qnt));
 	}
     }
 
@@ -1346,11 +1347,34 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    setAPObj(q, ap);
 	}
     }
+
+
+    // Returns an HCodeElement that can be used as the provider of
+    // source file and line number for the creation of new Quads.
+    private HCodeElement get_inl_hce(final CALL cs) {
+	HCodeElement result = new HCodeElement() {
+		    public int getID() {
+			Util.assert(false, "Unimplemented");
+			// this should never happen
+			return 0;
+		    }
+		    public String getSourceFile() {
+			return
+			    "INL_" + cs.getSourceFile() + "_" +
+			    cs.getLineNumber();
+		    }
+		    public int getLineNumber() {
+			return 1;
+		    }
+		};
+	return result;
+    }
     
 
     private void add_entry_sequence(CALL cs, METHOD qm) {
-	// TODO: put something better than null in the 2nd argument
-	Quad replace_cs = new NOP(cs.getFactory(), null);
+	HCodeElement inl_hce = get_inl_hce(cs);
+
+	Quad replace_cs = new NOP(cs.getFactory(), inl_hce);
 
 	move_pred_edges(cs, replace_cs);
 
@@ -1364,7 +1388,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    Temp formal = qm.params(i);
 	    Temp actual = cs.params(i);
 	    // emulate the Java parameter passing semantics
-	    MOVE move = new MOVE(cs.getFactory(), null, formal, actual);
+	    MOVE move = new MOVE(cs.getFactory(), inl_hce, formal, actual);
 	    Quad.addEdge(previous, 0, move, 0);
 	    previous = move;
 	}
@@ -1376,6 +1400,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
     
     private void modify_return_and_throw(final CALL cs, final HEADER header) {
+	final HCodeElement inl_hce = get_inl_hce(cs);
+
 	class QVisitor extends  QuadVisitor {
 	    Set returnset;
 	    Set throwset;
@@ -1385,7 +1411,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    }
 
 	    public void finish() {
-		PHI returnphi = new PHI(cs.getFactory(), null, new Temp[0],
+		PHI returnphi = new PHI(cs.getFactory(), inl_hce, new Temp[0],
 					returnset.size());
 		int edge = 0;
 		for(Iterator returnit=returnset.iterator();returnit.hasNext();)
@@ -1394,7 +1420,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		Quad.addEdge(returnphi, 0, cs.next(0),
 			     cs.nextEdge(0).which_pred());
 
-		PHI throwphi = new PHI(cs.getFactory(), null, new Temp[0],
+		PHI throwphi = new PHI(cs.getFactory(), inl_hce, new Temp[0],
 				       throwset.size());
 		edge = 0;
 		for(Iterator throwit=throwset.iterator();throwit.hasNext();)
@@ -1409,12 +1435,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    public void visit(RETURN q) {
 		Temp retVal = cs.retval(); 
 		
-		Quad replace;
-		if(retVal != null)
-		replace = new MOVE
-		(cs.getFactory(), null, retVal, q.retval());
-		else
-		replace = new NOP(cs.getFactory(), null);
+		Quad replace = (retVal != null) ?
+		    ((Quad) new MOVE
+			(cs.getFactory(), inl_hce, retVal, q.retval())) :
+		    ((Quad) new NOP(cs.getFactory(),  inl_hce));
 		
 		// make the predecessors of q point to replace
 		move_pred_edges(q, replace);
@@ -1427,12 +1451,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    public void visit(THROW q) {
 		Temp retEx = cs.retex(); 
 		
-		Quad replace;
-		if(retEx != null)
-		replace = 
-		    new MOVE(cs.getFactory(), null, retEx, q.throwable());
-		else
-		replace = new NOP(cs.getFactory(), null);
+		Quad replace = (retEx != null) ?
+		    ((Quad) new MOVE
+			(cs.getFactory(), inl_hce, retEx, q.throwable())) :
+		    ((Quad) new NOP(cs.getFactory(),  inl_hce));
 		
 		// make the predecessors of q point to replace
 		move_pred_edges(q, replace);
@@ -1965,10 +1987,21 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 
     private void process_inlining_chains() {
-	if(DEBUG_IC) {
+      if(DEBUG_IC) {
 	    Util.print_collection(chains, "\n\nINLINING CHAINS");
 	    System.out.println("=======================");
+      }
+
+	// db debug
+      System.out.println("Chains that influence Main.run"); 
+	for(Iterator it = chains.iterator(); it.hasNext(); ) {
+	  InliningChain ic = (InliningChain) it.next();
+	  HMethod hm = ic.getLastCallee();
+	  if(hm.getName().equals("run") &&
+	     hm.getClass().getName().equals("Main"))
+	    System.out.println(ic);
 	}
+	System.out.println("============================");
 
 	sort_chains();
 

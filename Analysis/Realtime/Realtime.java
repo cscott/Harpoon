@@ -61,8 +61,15 @@ public class Realtime {
      *  Since primitive arrays inherit from <code>java.lang.Object</code>, 
      *  this catches them as well. 
      */
-    
+
     public static void setupObject(Linker linker) {
+	// special hack to make setupObject idempotent
+	// find something better
+	if(setupObject_WAS_CALLED) {
+	    System.out.println("Warning: setupObject called again -> ignored");
+	    return;
+	}
+	setupObject_WAS_CALLED = true;
 	Stats.realtimeBegin();
 	// Adds javax.realtime.MemoryArea java.lang.Object.memoryArea
 	linker.forName("java.lang.Object").getMutator()
@@ -70,6 +77,7 @@ public class Realtime {
 			      linker.forName("javax.realtime.MemoryArea"));
 	Stats.realtimeEnd();
     }
+    private static boolean setupObject_WAS_CALLED = false;
     
     /** Adds all methods required for RTJ in the rootset, including:
      *  <ul>
