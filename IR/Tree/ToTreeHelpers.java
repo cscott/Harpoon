@@ -10,7 +10,8 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.Temp.Temp;
-import harpoon.Util.BinomialMap;
+import harpoon.Util.Collections.BinaryHeap;
+import harpoon.Util.Collections.Heap;
 import harpoon.Util.Util;
 
 import java.util.Collections;
@@ -22,7 +23,7 @@ import java.util.Set;
  * <code>ToTreeHelpers</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTreeHelpers.java,v 1.1.2.1 2000-02-12 13:40:42 cananian Exp $
+ * @version $Id: ToTreeHelpers.java,v 1.1.2.2 2000-02-12 17:50:05 cananian Exp $
  */
 abstract class ToTreeHelpers {
     //------------ EdgeOracle IMPLEMENTATIONS ------------------
@@ -49,7 +50,6 @@ abstract class ToTreeHelpers {
      *
      * @author C. Scott Ananian <cananian@alumni.princeton.edu>
      */
-    // XXX THIS DOESN'T WORK YET, BECAUSE BINOMIALMAP IS BROKEN.
     static class MinMaxEdgeOracle implements ToTree.EdgeOracle {
 	final CFGrapher cfg;
 	/** Convenience constructor. */
@@ -62,14 +62,13 @@ abstract class ToTreeHelpers {
 	 *  enough to care about. */
 	MinMaxEdgeOracle(HCode hc, CFGrapher cfg) {
 	    this.cfg = cfg;
-	    System.err.println("[[START]]");
 	    // get the 'single-source', which is the unique FOOTER node.
 	    Util.assert(hc.getLeafElements().length==1);
 	    HCodeElement s = hc.getLeafElements()[0];
 	    // we're going to need a mapping from HCodeElements to Map.Entry's
 	    Map m = new HashMap();
 	    // make the priority queue, and initialize it.
-	    BinomialMap Q = new BinomialMap();
+	    Heap Q = new BinaryHeap();
 	    for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
 		HCodeElement hce = (HCodeElement) it.next();
 		// d[v] = infinity.
@@ -82,7 +81,6 @@ abstract class ToTreeHelpers {
 	    // now do Dijkstra's algorithm.
 	    while (!Q.isEmpty()) {
 		HCodeElement u = (HCodeElement) Q.extractMinimum().getValue();
-		System.err.println("["+d(u)+"] DONE WITH "+u);
 		for (Iterator it=cfg.predC(u).iterator(); it.hasNext(); ) {
 		    HCodeElement v = ((HCodeEdge) it.next()).from();
 		    // RELAX step.
@@ -91,7 +89,6 @@ abstract class ToTreeHelpers {
 		}
 	    }
 	    // Look, Ma!  d[v] is loaded & ready to go!
-	    System.err.println("[[STOP]]");
 	}
 	/** Path weights mapping. */
 	final Map d = new HashMap();
@@ -100,7 +97,7 @@ abstract class ToTreeHelpers {
 	    if (!d.containsKey(v)) return Integer.MAX_VALUE;
 	    return ((Integer)d.get(v)).intValue();
 	}
-	private void set_d(HCodeElement v, int k, BinomialMap Q, Map m) {
+	private void set_d(HCodeElement v, int k, Heap Q, Map m) {
 	    Util.assert(d(v) > k);
 	    Util.assert(((Map.Entry)m.get(v)).getKey()
 			.equals(new Integer(d(v))));
@@ -121,7 +118,6 @@ abstract class ToTreeHelpers {
 		    maxedge=i; maxscore=score;
 		}
 	    }
-	    if (maxedge!=0) System.err.println("NON-ZERO DEFAULT");
 	    return maxedge;
 	}
     }
