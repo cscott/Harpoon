@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.19 2000-07-13 15:48:29 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.20 2000-07-14 16:16:14 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -612,8 +612,20 @@ public class TreeToC extends java.io.PrintWriter {
 	    if (take_address) pw.print(")");
 	}
 	public void visit(NATIVECALL e) {
+	    // extract the name of the function to call, if known exactly.
+	    String funcname = e.getFunc() instanceof NAME ?
+		((NAME)e.getFunc()).label.name : null;
+	    // this is a hack: calls to localref thunk functions aren't
+	    // counted as gc points so that we don't screw up the localrefs
+	    // stack in the middle of setting it up.
+	    boolean nopush = "FNI_NewLocalRef".equals(funcname) ||
+		"FNI_DeleteLocalRef".equals(funcname) ||
+		"FNI_DeleteLocalRefsUpTo".equals(funcname);
+
 	    Set liveo = liveObjects(e);
-	    pw.print("\t"); emitPush(liveo); pw.print(";"); nl();
+	    if (!nopush) { // "special" functions known not to be gc-points.
+		pw.print("\t"); emitPush(liveo); pw.print(";"); nl();
+	    }
 	    pw.print("\t");
 	    if (e.getRetval()!=null) {
 		trans(e.getRetval()); pw.print(" = ");
@@ -642,7 +654,9 @@ public class TreeToC extends java.io.PrintWriter {
 		if (el.tail!=null) pw.print(", ");
 	    }
 	    pw.print(");"); nl();
-	    pw.print("\t"); emitPop(liveo); pw.print(";"); nl();
+	    if (!nopush) { // "special" functions known not to be gc-points.
+		pw.print("\t"); emitPop(liveo); pw.print(";"); nl();
+	    }
 	}
 	public void visit(RETURN e) {
 	    if (isVoidMethod)
