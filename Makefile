@@ -189,6 +189,19 @@ RTJ.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
 	@rm -rf $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
 
+ns.jar: $(ISOURCES) $(JSOURCES) $(RTJSOURCES)
+	@echo Generating $@ file...
+	@rm -rf $(JDIRS)
+	@$(IDLCC) -d . $(ISOURCES)
+	@$(IDLCC) -d . -I$(UAVDIST) $(BISOURCES)
+	@$(JCC) -d . -g $(JSOURCES) $(GJSOURCES)
+	@rm -rf $(GJSOURCES)
+	@$(JAR) xf contrib/jacorb.jar
+	@rm -rf META-INF
+	@$(JAR) cfm $@ src/manifest/$@.MF $(JDIRS)
+	@rm -rf $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
+
 jars: clean doc
 	@echo Generating imagerec.jar file...
 	@rm -rf $(JDIRS)
@@ -215,11 +228,15 @@ jars: clean doc
 	@echo Generating groundATR.jar file...
 	@$(JAR) cfm groundATR.jar src/manifest/groundATR.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > groundATR.jar.TIMESTAMP
+	@echo Generating ns.jar file...
+	@$(JAR) cfm ns.jar src/manifest/ns.jar.MF $(JDIRS)
+	@date '+%-d-%b-%Y at %r %Z.' > ns.jar.TIMESTAMP
 	@echo Generating RTJ.jar file...
 	@$(JAR) cfm RTJ.jar src/manifest/RTJ.jar.MF $(JDIRS)
 	@date '+%-d-%b-%Y at %r %Z.' > RTJ.jar.TIMESTAMP
 	@echo Generating GUI.jar file...
 	@$(JAR) xf movie/tank.jar
+	@rm -rf META-INF
 	@$(JAR) cfm GUI.jar src/manifest/GUI.jar.MF $(JDIRS) tank.gz.*
 	@date '+%-d-%b-%Y at %r %Z.' > GUI.jar.TIMESTAMP
 	@rm -rf tank.gz.*
