@@ -65,7 +65,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.51 1999-10-23 05:59:34 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.52 1999-11-01 03:52:58 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -254,96 +254,115 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
     }
 
     public void visit(harpoon.IR.Quads.ANEW q) {
-	Exp classPtr, hashcode, length;
-	HClass arrayClass;
-	int instructionsPerIter = 9;
-	Stm[] stms = new Stm[instructionsPerIter * q.dimsLength() + 1];
-
-	LABEL[] loopHeaders   = new LABEL[q.dimsLength()];
-	LABEL[] loopMid       = new LABEL[q.dimsLength()];
-	LABEL[] loopFooters   = new LABEL[q.dimsLength()];
-	Exp[]   arrayDims     = new Exp[q.dimsLength()+1];
-	TEMP[]  arrayRefs     = new TEMP[q.dimsLength()];
-	TEMP[]  inductionVars = new TEMP[q.dimsLength()];
-	for (int i=0; i<q.dimsLength(); i++) { 
-	    loopHeaders[i]   = new LABEL(m_tf, q, new Label(), false);
-	    loopMid[i]       = new LABEL(m_tf, q, new Label(), false);
-	    loopFooters[i]   = new LABEL(m_tf, q, new Label(), false);
-	    arrayDims[i+1]   = _TEMP(q.dims(i), q);
-	    arrayRefs[i]     = extra(q, Type.POINTER);
-	    inductionVars[i] = extra(q, Type.INT);
+	// create and zero fill a multi-dimensional array.
+	int dl = q.dimsLength();
+	Util.assert(dl>0);
+	// temps to hold each part of the array;
+	// arrayTemps[i] holds an (dl-i)-dimensional array.
+	// arrayClasses[i] is the type of arrayTemps[i]
+	Temp[] arrayTemps = new Temp[dl+1];
+	HClass[] arrayClasses = new HClass[dl+1];
+	arrayTemps[0] = m_ctm.tempMap(m_trm.tempMap(q.dst()));
+	arrayClasses[0] = q.hclass();
+	for (int i=1; i<=dl; i++) {
+	    arrayTemps[i] = new Temp(arrayTemps[i-1]);
+	    arrayClasses[i] = arrayClasses[i-1].getComponentType();
+	    Util.assert(arrayClasses[i]!=null);
 	}
-	arrayDims[0] = new CONST(m_tf, q, 1);
-	
-	for (int i=0; i<q.dimsLength(); i++) { 
-	    int base = i*9;
-	    int rear = (instructionsPerIter*q.dimsLength()) - (i*3) - 1;
-	    
-	    stms[base++] = 
-		new MOVE(m_tf, q, inductionVars[i], new CONST(m_tf, q, 0));
-		 
-	    stms[base++] = loopHeaders[i]; 
-
-	    stms[base++] = new CJUMP
-		(m_tf, q, 
-		 new BINOP
-		 (m_tf, q, Type.INT, Bop.CMPGE,
-		  inductionVars[i], 
-		  arrayDims[i]),
-		 loopFooters[i].label, 
-		 loopMid[i].label);
-
-	    stms[base++] = loopMid[i];
-		  
-	    // Step 1: allocate memory needed for the array. 
-	    length    = arrayDims[i+1];
-	    arrayClass = q.hclass();
-	    for (int n=0; n<i; n++) arrayClass = arrayClass.getComponentType();
-
-	    stms[base++] = new MOVE
-		(m_tf, q, arrayRefs[i], 
-		 m_rtb.arrayNew(m_tf, q, arrayClass,
-				new Translation.Ex(length)).unEx(m_tf));
-
-	    // Move the pointer to the new array into the appropriate 
-	    // memory location.	    
-	    
-	    if (i>0) { 
-		stms[base++] = new MOVE
-		    (m_tf, q, 
-		     new MEM
-		     (m_tf, q, Type.POINTER,
+	// temps standing for size of each dimension.
+	Temp[] dimTemps = new Temp[dl];
+	for (int i=0; i<dl; i++)
+	    dimTemps[i] = m_ctm.tempMap(m_trm.tempMap(q.dims(i)));
+	// temps used to index each dimension
+	Temp[] indexTemps = new Temp[dl];
+	for (int i=0; i<dl; i++)
+	    indexTemps[i] = new Temp(m_tf.tempFactory(), "idx");
+	// labels for loop top, test, and end.
+	Label[] testLabel = new Label[dl];
+	Label[] loopLabel = new Label[dl];
+	Label[] doneLabel = new Label[dl];
+	for (int i=0; i<dl; i++) {
+	    testLabel[i] = new Label();
+	    loopLabel[i] = new Label();
+	    doneLabel[i] = new Label();
+	}
+	// okay.  Now do the translation:
+	//  d1 = new array(ilen);
+	//  for (i=0; i<ilen; i++) {
+	//    d2 = d1[i] = new array(jlen);
+	//    for (j=0; j<jlen; j++) {
+	//      d2[i] = 0;
+	//    }
+	//  }
+	for (int i=0; i<=dl; i++) { // write the loop tops.
+	    Exp initializer;
+	    if (i==dl) // bottom out with elements set to zero/null.
+		initializer = constZero(q, arrayClasses[i]);
+	    else
+		initializer = m_rtb.arrayNew
+		    (m_tf, q, arrayClasses[i],
+		     new Translation.Ex
+		     (new TEMP(m_tf, q, Type.INT, dimTemps[i]))).unEx(m_tf);
+	    // output: d1[i] = d2 = initializer.
+	    Stm s1 = new MOVE // d2 = initializer
+		(m_tf, q,
+		 new TEMP
+		 (m_tf, q, initializer.type(), arrayTemps[i]),
+		 initializer);
+	    if (i>0) // suppress the "d1[i]" part for outermost
+		s1 = new MOVE
+		    (m_tf, q,
+		     makeMEM // d1[i] = ...
+		     (q, arrayClasses[i],
 		      new BINOP
-		      (m_tf, q, Type.POINTER, Bop.ADD, 
-		       arrayRefs[i-1],
-		       inductionVars[i])),
-		     arrayRefs[i]);
+		      (m_tf, q, Type.POINTER, Bop.ADD,
+		       m_rtb.arrayBase
+		       (m_tf, q,
+			new Translation.Ex
+			(new TEMP(m_tf, q, Type.POINTER, arrayTemps[i-1])))
+		       .unEx(m_tf),
+		       m_rtb.arrayOffset
+		       (m_tf, q, arrayClasses[i-1],
+			new Translation.Ex
+			(new TEMP(m_tf, q, Type.INT, indexTemps[i-1])))
+			.unEx(m_tf)
+			)),
+		     new ESEQ // ... (d2 = initializer)
+		     (m_tf, q, s1,
+		      new TEMP
+		      (m_tf, q, initializer.type(), arrayTemps[i])));
+	    addStmt(s1);
+	    // for (i=0; i<ilen; i++) ...
+	    if (i<dl) { // skip loop for innermost
+		addStmt(new MOVE // i=0.
+			(m_tf, q,
+			 new TEMP(m_tf, q, Type.INT, indexTemps[i]),
+			 new CONST(m_tf, q, 0)));
+		addStmt(new JUMP(m_tf, q, testLabel[i]));
+		addStmt(new LABEL(m_tf, q, loopLabel[i], false));
 	    }
-	    else { 
-		stms[base++] = new EXP(m_tf, q, new CONST(m_tf, q, 0));
-	    }
-	    
-	    // Increment the correct induction variable
-	    stms[rear-2] = new MOVE
-		(m_tf, q, 
-		 inductionVars[i], 
-		 new BINOP
-		 (m_tf, q, Type.INT, Bop.ADD, 
-		  inductionVars[i],
-		  new CONST(m_tf, q, 1)));
-	    
-	    stms[rear-1] = new JUMP(m_tf, q, loopHeaders[i].label);
-	    stms[rear]   = loopFooters[i];
 	}
-
-	// FIXME: ZERO FILL! (arrayNew doesn't initialize elements)
-	// only need to zero fill leaf arrays; all others are initialized.
-    
-	// Make a reference to the array we are going to create
-	//
-	stms[instructionsPerIter*q.dimsLength()] = 
-	    new MOVE(m_tf,q,_TEMP(q.dst(),q),arrayRefs[0]);
-	addStmt(Stm.toStm(Arrays.asList(stms)));
+	// okay, write the loop bottoms in reverse order.
+	for (int i=dl-1; i>=0; i--) {
+	    // increment the loop counter
+	    addStmt(new MOVE // i++
+		    (m_tf, q,
+		     new TEMP(m_tf, q, Type.INT, indexTemps[i]),
+		     new BINOP(m_tf, q, Type.INT, Bop.ADD,
+			       new TEMP(m_tf, q, Type.INT, indexTemps[i]),
+			       new CONST(m_tf, q, 1))));
+	    // loop test label
+	    addStmt(new LABEL(m_tf, q, testLabel[i], false));
+	    // test and branch: if i<ilen goto LOOP else goto DONE;
+	    addStmt(new CJUMP
+		    (m_tf, q,
+		     new BINOP(m_tf, q, Type.INT, Bop.CMPLT,
+			       new TEMP(m_tf, q, Type.INT, indexTemps[i]),
+			       new TEMP(m_tf, q, Type.INT, dimTemps[i])),
+		     loopLabel[i]/*iftrue*/, doneLabel[i]/*iffalse*/));
+	    addStmt(new LABEL(m_tf, q, doneLabel[i], false));
+	}
+	// ta-da!
     }
 
     public void visit(harpoon.IR.Quads.ARRAYINIT q) {
@@ -983,6 +1002,20 @@ static class TranslationVisitor extends LowQuadWithDerivationVisitor {
 	else 
 	    throw new Error("Bad type for CONST: " + type); 
 	return constant;
+    }
+    private CONST constZero(HCodeElement src, HClass type) {
+	if (type==HClass.Boolean || type==HClass.Byte ||
+	    type==HClass.Char || type==HClass.Short ||
+	    type==HClass.Int) 
+	    return new CONST(m_tf, src, (int)0);
+	else if (type==HClass.Long)
+	    return new CONST(m_tf, src, (long)0);
+	else if (type==HClass.Float)
+	    return new CONST(m_tf, src, (float)0);
+	else if (type==HClass.Double)
+	    return new CONST(m_tf, src, (double)0);
+	else
+	    return new CONST(m_tf, src); // null.
     }
 }
 
