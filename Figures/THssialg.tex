@@ -1,6 +1,6 @@
 % algorithm for phi/sigma placement.
 
-Place($G$:CFG) =
+Place($G$:~CFG) =
 \begin{myalgorithmic}
 \LET $r$ be the top-level region for $G$
 %  let r be the top-level region for G;
@@ -9,19 +9,19 @@ Place($G$:CFG) =
 \ENDFOR
 \end{myalgorithmic}
 ~\\
-PlaceOne($r$:region, $v$:variable):~boolean =
+PlaceOne($r$:~region, $v$:~variable):~boolean =
 \begin{myalgorithmic}
 \STATE \COMMENT{Post-order traversal}
-\STATE flag $\Leftarrow$ false
+\STATE flag $\gets$ false
 \FOREACH{child region $r'$}
   \IF{PlaceOne($r'$, $v$)}
-    \STATE flag $\Leftarrow$ true
+    \STATE flag $\gets$ true
    \ENDIF 
 \ENDFOR
                              \EMPTYLINE
 \FOREACH{node $n$ in region $r$ not contained in a child region}
   \IF{$n$ contains a use or definition of $v$}
-    \STATE flag $\Leftarrow$ true
+    \STATE flag $\gets$ true
   \ENDIF
 \ENDFOR
                              \EMPTYLINE
