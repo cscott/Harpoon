@@ -59,7 +59,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.6 2001-06-13 13:35:02 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.7 2001-06-14 16:49:18 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -146,11 +146,11 @@ public class CacheEquivalence {
 		//  2) known base & unknown offset, but object is smaller
 		//     than cache line size.
 		//  3) all others.
-		Dataflow.DefPoint dp = null; int offset=0;
+		Dataflow.DefPoint dp = null; long offset=0;
 		if (v.isBaseKnown()) {
 		    if (v.isOffsetKnown()) {
 			Dataflow.KnownOffset ko = (Dataflow.KnownOffset) v;
-			dp = ko.def; offset = offset; // case 1
+			dp = ko.def; offset = ko.offset; // case 1
 		    } else {
 			Dataflow.UnknownOffset uo = (Dataflow.UnknownOffset) v;
 			if (objSize(uo.def.type()) <= CACHE_LINE_SIZE
@@ -162,7 +162,7 @@ public class CacheEquivalence {
 		    }
 		}
 		if (dp!=null) { // cases 1 and 2
-		    int line = offset / CACHE_LINE_SIZE;
+		    int line = (int) (offset / CACHE_LINE_SIZE);
 		    List pair = Default.pair(dp, new Integer(line));
 		    CacheEquivSet ces = (CacheEquivSet) pre.get(pair);
 		    if (ces==null) ces = new CacheEquivSet(mem);
