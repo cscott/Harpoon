@@ -1,19 +1,35 @@
 #include "java_io_FileOutputStream.h"
-#include <fcntl.h>
 #include "config.h"
-
-int initialize_FOS_data(JNIEnv * env);
+#include <assert.h>	/* for assert */
+#include <errno.h>	/* for errno */
+#include <fcntl.h>	/* for open */
+#include <string.h>	/* for strerror */
+#include <unistd.h>	/* write, etc. */
 
 static jfieldID fdObjID = 0; /* The field ID of fd in class FileOutputStream */
 static jfieldID fdID    = 0; /* The field ID of fd in class FileDescriptor */
-static jclass IOExcCls;
+static jclass IOExcCls  = 0; /* The java/io/IOException class object. */
+static int inited = 0; /* whether the above variables have been initialized */
 
-#define IO_ERROR(env, str) do {                                     \
-    (JNIEnv *)env;  (const char *)str;  /* Check types */           \
-    IOExcCls = (*env)->FindClass(env, "java/io/IOException");       \
-    if (IOExcCls == NULL) return; /* give up */                     \
-    else (*env)->ThrowNew(env, IOExcCls, "Couldn't write to file"); \
-    } while (0)
+int initializeFOS(JNIEnv *env) {
+    jclass FOSCls, FDCls;
+
+    assert(!inited);
+    FOSCls  = (*env)->FindClass(env, "java/io/FileOutputStream");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    fdObjID = (*env)->GetFieldID(env, FOSCls, "fd", "java/io/FileDescriptor");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    FDCls   = (*env)->FindClass(env, "java/io/FileDescriptor");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    fdID    = (*env)->GetFieldID(env, FDCls, "fd", "I");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    IOExcCls = (*env)->FindClass(env, "java/io/IOException");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    /* make IOExcCls into a global reference for future use */
+    IOExcCls = (*env)->NewGlobalRef(env, IOExcCls);
+    inited = 1;
+    return 1;
+}
 
 /*
  * Class:     java_io_FileOutputStream
@@ -27,17 +43,17 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_open
     jobject      fdObj;	    /* File descriptor object */
 
     /* If static data has not been loaded, load it now */
-    if ((fdObjID && fdID) == 0) 
-      if (!initialize_FOS_data(env)) IO_ERROR(env, "Couldn't init native I/O");
+    if (!inited && !initializeFOS(env)) return; /* exception occurred; bail */
 
     cstr  = (*env)->GetStringUTFChars(env, jstr, 0);
-    fd    = open(cstr, O_WRONLY|O_CREAT|O_BINARY|O_TRUNC|O_NONBLOCK);
+    fd    = open(cstr, O_WRONLY|O_CREAT|O_BINARY|O_TRUNC);
     (*env)->ReleaseStringUTFChars(env, jstr, cstr);
     fdObj = (*env)->GetObjectField(env, obj, fdObjID);
     (*env)->SetIntField(env, fdObj, fdID, fd);
 
     /* Check for error condition */
-    if (fd==-1) IO_ERROR(env, "Couldn't open file");
+    if (fd==-1)
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
 }
 
 /*
@@ -52,17 +68,17 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_openAppend
     jobject      fdObj;    
 
     /* If static data has not been loaded, load it now */
-    if ((fdObjID && fdID) == 0) 
-      if (!initialize_FOS_data(env)) IO_ERROR(env, "Couldn't init native I/O");
+    if (!inited && !initializeFOS(env)) return; /* exception occurred; bail */
 
     cstr  = (*env)->GetStringUTFChars(env, jstr, 0);
-    fd    = open(cstr, O_WRONLY|O_CREAT|O_BINARY|O_APPEND|O_NONBLOCK);
+    fd    = open(cstr, O_WRONLY|O_CREAT|O_BINARY|O_APPEND);
     (*env)->ReleaseStringUTFChars(env, jstr, cstr);
     fdObj = (*env)->GetObjectField(env, obj, fdObjID);
     (*env)->SetIntField(env, fdObj, fdID, fd);
 
     /* Check for error condition */
-    if (fd==-1) IO_ERROR(env, "Couldn't open file");
+    if (fd==-1)
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
 }
     
 
@@ -73,15 +89,22 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_openAppend
  */
 JNIEXPORT void JNICALL Java_java_io_FileOutputStream_write
   (JNIEnv * env, jobject obj, jint i) { 
-    unsigned char  buf[1];
-    int            fd; 
+    int            fd, result;
     jobject        fdObj;
+    unsigned char  buf[1];
+
+    /* If static data has not been loaded, load it now */
+    if (!inited && !initializeFOS(env)) return; /* exception occurred; bail */
 
     fdObj    = (*env)->GetObjectField(env, obj, fdObjID);
     fd       = (*env)->GetIntField(env, fdObj, fdID);
     buf[0]   = (unsigned char)i;
 
-    if (write(fd, (void*)buf, 1) != 1) IO_ERROR(env, "Couldn't write to file");
+    result = write(fd, (void*)buf, 1);
+    if (result==0)
+	(*env)->ThrowNew(env, IOExcCls, "No bytes written");
+    if (result==-1)
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
 }
 
 /*
@@ -91,15 +114,30 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_write
  */
 JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
 (JNIEnv * env, jobject obj, jbyteArray buf, jint start, jint len) { 
-    jbyte *          nbuf;
-    int              fd; 
+    int              fd, result;
     jobject          fdObj;
+    jbyte *          nbuf;
+    int written = 0;
+
+    /* If static data has not been loaded, load it now */
+    if (!inited && !initializeFOS(env)) return; /* exception occurred; bail */
 
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
     fd     = (*env)->GetIntField(env, fdObj, fdID);
     (*env)->GetByteArrayRegion(env, buf, start, len, nbuf); 
 
-    if (write(fd,(void*)nbuf,len)!=len) IO_ERROR(env,"Couldn't write to file");
+    while (written < len) {
+	result = write(fd, (void*)(nbuf+written), len-written);
+	if (result==0) {
+	    (*env)->ThrowNew(env, IOExcCls, "No bytes written");
+	    return;
+	}
+	if (result==-1) {
+	    (*env)->ThrowNew(env, IOExcCls, strerror(errno));
+	    return;
+	}
+	written+=result;
+    }
 }
 
 /*
@@ -109,28 +147,18 @@ JNIEXPORT void JNICALL Java_java_io_FileOutputStream_writeBytes
  */
 JNIEXPORT void JNICALL Java_java_io_FileOutputStream_close
 (JNIEnv * env, jobject obj) { 
-    int      fd;
+    int      fd, result;
     jobject  fdObj;
+
+    /* If static data has not been loaded, load it now */
+    if (!inited && !initializeFOS(env)) return; /* exception occurred; bail */
 
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
     fd     = (*env)->GetIntField(env, fdObj, fdID);
-    close(fd);
+    result = close(fd);
     (*env)->SetIntField(env, fdObj, fdID, -1);
+
+    if (result==-1)
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
 }
-
-
-int initialize_FOS_data(JNIEnv * env) { 
-    jclass FOSCls, FDCls;
-
-    FOSCls  = (*env)->FindClass(env, "Ljava/io/FileOutputStream");
-    if (FOSCls == NULL) return 0;
-    fdObjID = (*env)->GetFieldID(env, FOSCls,"fd","Ljava/io/FileDescriptor");
-    FDCls   = (*env)->FindClass(env, "Ljava/io/FileDescriptor");
-    if (FDCls == NULL)  return 0;
-    fdID    = (*env)->GetFieldID(env, FDCls, "fd", "I");
-
-    return 1;  /* Success */
-}
-
-
 

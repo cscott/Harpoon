@@ -1,14 +1,24 @@
 #include "java_io_FileDescriptor.h"
+#include <errno.h>	/* for errno */
+#include <unistd.h>	/* for fsync */
+#include <string.h>	/* for strerror */
 
-#define IO_ERROR(env, str) do { \
-    (JNIEnv *)env;  (const char *)str;  /* Check types */             \
-    IOExcCls = (*env)->FindClass(env, "java/io/IOException");         \
-    if (IOExcCls == NULL) return; /* give up */                       \
-    else (*env)->ThrowNew(env, IOExcCls, "Couldn't write to file");   \
-    } while (0)
+static jfieldID fdID   = 0; /* The field ID of fd in class FileDescriptor */
+static jclass IOExcCls = 0; /* The java/io/IOException class object. */
+static int inited = 0;
 
-static jfieldID fdID = 0;
-static jclass IOExcCls;
+int initializeFD(JNIEnv *env) {
+    jclass FDCls = (*env)->FindClass(env, "java/io/FileDescriptor");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    fdID = (*env)->GetFieldID(env,FDCls,"fd","I");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    IOExcCls = (*env)->FindClass(env, "java/io/IOException");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    /* make IOExcCls into a global reference for future use */
+    IOExcCls = (*env)->NewGlobalRef(env, IOExcCls);
+    inited = 1;
+    return 1;
+}
 
 /*
  * Class:     java_io_FileDescriptor
@@ -16,9 +26,8 @@ static jclass IOExcCls;
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_java_io_FileDescriptor_valid
-(JNIEnv * env, jobject obj) { 
-    if (fdID==0) 
-	if (!initialize_FD_data(env)) IO_ERROR(env,"Couldn't init native I/O");
+  (JNIEnv * env, jobject obj) {
+    if (!inited && !initializeFD(env)) return 0; /* exception occurred; bail */
     
     return (*env)->GetIntField(env, obj, fdID) >= 0;
 }
@@ -33,17 +42,14 @@ JNIEXPORT void JNICALL Java_java_io_FileDescriptor_sync
     int    fd;
     jclass SFExcCls;  /* SyncFailedException class */
     
-    if (fdID==0) 
-	if (!initialize_FD_data(env)) IO_ERROR(env,"Couldn't init native I/O");
+    if (!inited && !initializeFD(env)) return; /* exception occurred; bail */
     
     fd = (*env)->GetIntField(env, obj, fdID);
     if (fsync(fd) < 0) { /* An error has occured */
 	SFExcCls = (*env)->FindClass(env, "java/io/SyncFailedException");
 	if (SFExcCls == NULL) { return; /* Give up */ }
-	(*env)->ThrowNew(env, SFExcCls, "Couldn't write to file");
+	(*env)->ThrowNew(env, SFExcCls, strerror(errno));
     }
-
-  /* Success! */
 }
 
 /*
@@ -53,17 +59,9 @@ JNIEXPORT void JNICALL Java_java_io_FileDescriptor_sync
  */
 JNIEXPORT jobject JNICALL Java_java_io_FileDescriptor_initSystemFD
   (JNIEnv * env, jclass lcs, jobject obj, jint fd) { 
-    if (fdID==0) 
-	if (!initialize_FD_data(env)) IO_ERROR(env,"Couldn't init native I/O");
+    if (!inited && !initializeFD(env)) return 0; /* exception occurred; bail */
     
     (*env)->SetIntField(env, obj, fdID, fd);
     return obj;
-}
-
-int initialize_FD_data(JNIEnv * env) { 
-    jclass FDCls = (*env)->FindClass(env, "java/io/FileDescriptor");
-    if (FDCls == NULL) return 0;
-    fdID = (*env)->GetFieldID(env,FDCls,"fd","I");
-    return 1;
 }
 

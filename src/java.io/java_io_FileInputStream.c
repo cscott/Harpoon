@@ -1,28 +1,43 @@
 #include "java_io_FileOutputStream.h"
 #include "config.h"
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
+#include <assert.h>	/* for assert */
+#include <errno.h>	/* for errno */
+#include <fcntl.h>	/* for open */
+#include <string.h>	/* for strerror */
+#include <unistd.h>	/* read, etc. */
+#include <sys/stat.h>	/* for open/stat */
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #if HAVE_SYS_TIME_H
-# include <sys/time.h>
+# include <sys/time.h>	/* for struct timeval */
 #else
 # include <time.h>
 #endif
 
-int initialize_FIS_data(JNIEnv * env);
-
-static jfieldID fdObjID = 0; /* The field ID of fd in class FileOutputStream */
+static jfieldID fdObjID = 0; /* The field ID of fd in class FileInputStream */
 static jfieldID fdID    = 0; /* The field ID of fd in class FileDescriptor */
-static jclass IOExcCls;
+static jclass IOExcCls  = 0; /* The java/io/IOException class object */
+static int inited = 0; /* whether the above variables have been initialized */
 
-#define IO_ERROR(env, str) do { \
-    (JNIEnv *)env;  (const char *)str;  /* Check types */             \
-    IOExcCls = (*env)->FindClass(env, "java/io/IOException");         \
-    if (IOExcCls == NULL) return; /* give up */                       \
-    else (*env)->ThrowNew(env, IOExcCls, "Couldn't write to file");   \
-    } while (0)
+int initializeFIS(JNIEnv *env) {
+    jclass FISCls, FDCls;
+
+    assert(!inited);
+    FISCls  = (*env)->FindClass(env, "java/io/FileInputStream");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    fdObjID = (*env)->GetFieldID(env, FISCls, "fd", "java/io/FileDescriptor");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    FDCls   = (*env)->FindClass(env, "java/io/FileDescriptor");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    fdID    = (*env)->GetFieldID(env, FDCls, "fd", "I");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    IOExcCls = (*env)->FindClass(env, "java/io/IOException");
+    if ((*env)->ExceptionOccurred(env)) return 0;
+    /* make IOExcCls into a global reference for future use */
+    IOExcCls = (*env)->NewGlobalRef(env, IOExcCls);
+    inited = 1;
+    return 1;
+}
 
 /*
  * Class:     java_io_FileInputStream
@@ -36,18 +51,17 @@ JNIEXPORT void JNICALL Java_java_io_FileInputStream_open
     jobject	 fdObj;	    /* File descriptor object */
 
     /* If static data has not been loaded, load it now */
-    if ((fdObjID && fdID) == 0) 
-	if (!initialize_FIS_data(env))
-	  IO_ERROR(env, "Couldn't init native I/O");
+    if (!inited && !initializeFIS(env)) return; /* exception occurred; bail */
 
     cstr  = (*env)->GetStringUTFChars(env, jstr, 0);
-    fd    = open(cstr, O_RDONLY|O_BINARY|O_NONBLOCK);
+    fd    = open(cstr, O_RDONLY|O_BINARY);
     (*env)->ReleaseStringUTFChars(env, jstr, cstr);
     fdObj = (*env)->GetObjectField(env, obj, fdObjID);
     (*env)->SetIntField(env, fdObj, fdID, fd);
 
     /* Check for error condition */
-    if (fd==-1) IO_ERROR(env, "Couldn't open file");
+    if (fd==-1)
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
 }
 
 
@@ -62,15 +76,21 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_read
     jobject        fdObj;
     unsigned char  buf[1];
 
-    /* NOTE: Assumes static data has been loaded */
+    /* If static data has not been loaded, load it now */
+    if (!inited && !initializeFIS(env)) return 0;/* exception occurred; bail */
+
     fdObj    = (*env)->GetObjectField(env, obj, fdObjID);
     fd       = (*env)->GetIntField(env, fdObj, fdID);
 
-    if ((result = read(fd, (void*)buf, 1)) == -1)
-        IO_ERROR(env, "Couldn't read from file"); 
+    result = read(fd, (void*)buf, 1);
 
-    /* Java language spec requires -1 at EOF, not 0 */ 
-    return (jint)(result ? buf[0] : -1);
+    if (result==-1) {
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
+	return -1; /* could return anything; value is ignored. */
+    }
+    if (result==0) return -1; /* Java sez -1 at EOF; C says 0 */
+    /* I guess everything worked fine then! */
+    return (jint) buf[0];
 }
 
 /*
@@ -80,21 +100,27 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_read
  */
 JNIEXPORT jint JNICALL Java_java_io_FileInputStream_readBytes
 (JNIEnv * env, jobject obj, jbyteArray buf, jint start, jint len) { 
-    int              fd; 
+    int              fd, result;
     jobject          fdObj;
     jbyte            nbuf[len];
 
-    /* NOTE: Assumes static data has been loaded (should be true) */
+    /* If static data has not been loaded, load it now */
+    if (!inited && !initializeFIS(env)) return 0;/* exception occurred; bail */
+
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
     fd     = (*env)->GetIntField(env, fdObj, fdID);
     
-    if ((len = read(fd,(void*)nbuf,len)) == -1)
-        IO_ERROR(env, "Couldn't read from file"); 
+    result = read(fd, (void*)buf, 1);
 
-    (*env)->SetByteArrayRegion(env, buf, start, len, nbuf); 
+    if (result==-1) {
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
+	return -1; /* could return anything; value is ignored. */
+    }
+
+    (*env)->SetByteArrayRegion(env, buf, start, result, nbuf); 
 
     /* Java language spec requires -1 at EOF, not 0 */ 
-    return (jint)(len ? len : -1);
+    return (jint)(result ? result : -1);
 }
 
 /*
@@ -104,13 +130,19 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_readBytes
  */
 JNIEXPORT void JNICALL Java_java_io_FileInputStream_close
 (JNIEnv * env, jobject obj) { 
-    int fd;
+    int fd, result;
     jclass fdObj;
+
+    /* If static data has not been loaded, load it now */
+    if (!inited && !initializeFIS(env)) return; /* exception occurred; bail */
 
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
     fd     = (*env)->GetIntField(env, fdObj, fdID);
-    close(fd);
+    result = close(fd);
     (*env)->SetIntField(env, fdObj, fdID, -1);
+
+    if (result==-1)
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
 }
 
 
@@ -125,13 +157,18 @@ JNIEXPORT jlong JNICALL Java_java_io_FileInputStream_skip
     off_t  result, orig;
     jclass fdObj;
 
+    /* If static data has not been loaded, load it now */
+    if (!inited && !initializeFIS(env)) return 0;/* exception occurred; bail */
+
     fdObj  = (*env)->GetObjectField(env, obj, fdObjID);
     fd     = (*env)->GetIntField(env, fdObj, fdID);
 
-    /* Get original offset */
-    if ((orig = lseek(fd,0,SEEK_SET)) == -1)   IO_ERROR(env, "Could not seek");
-    if ((result = lseek(fd,n,SEEK_CUR)) == -1) IO_ERROR(env, "Could not seek");
-
+    /* Get original offset, then reposition. */
+    if ((orig = lseek(fd,0,SEEK_CUR)) == -1 ||
+	(result = lseek(fd,n,SEEK_CUR)) == -1) {
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
+	return 0;
+    }
     return (jlong)(result - orig);
 }
     
@@ -148,11 +185,18 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_available
     off_t           orig;
     struct stat     fdStat;
     
+    /* If static data has not been loaded, load it now */
+    if (!inited && !initializeFIS(env)) return 0;/* exception occurred; bail */
+
     fdObj = (*env)->GetObjectField(env, obj, fdObjID);
     fd    = (*env)->GetIntField(env, fdObj, fdID);
 
-    if ((orig = lseek(fd, 0, SEEK_SET)) == -1) IO_ERROR(env, "Could not seek");
-
+    if ((orig = lseek(fd, 0, SEEK_CUR)) == -1) {
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
+	return -1; /* could return anything; value is ignored. */
+    }
+    /* XXX: THIS ISN'T ACTUALLY CORRECT -- we want the # of bytes readable
+     * _without blocking_ [CSA] */
     result = fstat(fd, &fdStat);
     if ((!result) && (S_ISREG(fdStat.st_mode))) { 
         retval = fdStat.st_size - orig;
@@ -160,32 +204,18 @@ JNIEXPORT jint JNICALL Java_java_io_FileInputStream_available
     else { 
         /* File is not regular, attempt to use FIONREAD ioctl() */
         /* NOTE: FIONREAD ioctl() reports 0 for some fd's */        
-        if ((ioctl(fd, FIONREAD, &result) >= 0) && result) { /* we're done */ }
+        if ((ioctl(fd, FIONREAD, &retval) >= 0) && retval) { /* we're done */ }
 	else { 
 	    /* The best we can do now is to use select to see if the fd is
 	       available.  Returns 1 if true, 0 otherwise. */
 	    struct timeval timeout = {0,0};
 	    FD_ZERO(&read_fds);
 	    FD_SET(fd, &read_fds);
-	    if (select(fd+1, &read_fds, NULL, NULL, &timeout) == -1)
-	        IO_ERROR(env, "Can't test availability of file descriptor");
-	    else { retval = (FD_ISSET(fd, &read_fds)) ? 1 : 0; }
+	    if (select(fd+1, &read_fds, NULL, NULL, &timeout) == -1) {
+		(*env)->ThrowNew(env, IOExcCls, strerror(errno));
+		return -1; /* could return anything; value is ignored. */
+	    } else { retval = (FD_ISSET(fd, &read_fds)) ? 1 : 0; }
 	}
     }
     return (jint)retval;
 }
-	  
-
-int initialize_FIS_data(JNIEnv * env) { 
-    jclass FOSCls, FDCls;
-
-    FOSCls  = (*env)->FindClass(env, "Ljava/io/FileOutputStream");
-    if (FOSCls == NULL) IO_ERROR(env, "Couldn't initialize native I/O");
-    fdObjID = (*env)->GetFieldID(env, FOSCls, "fd", "Ljava/io/FileDescriptor");
-    FDCls   = (*env)->FindClass(env, "Ljava/io/FileDescriptor");
-    if (FDCls == NULL)  IO_ERROR(env, "Couldn't initialize native I/O");
-    fdID    = (*env)->GetFieldID(env, FDCls, "fd", "I");
-    return 1;
-}
-
-
