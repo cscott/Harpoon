@@ -1,4 +1,4 @@
-// DefaultMultiMap.java, created Tue Nov  9 00:17:02 1999 by pnkfelix
+// GenericMultiMap.java, created Tue Nov  9 00:17:02 1999 by pnkfelix
 // Copyright (C) 1999 Felix S. Klock II <pnkfelix@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
@@ -19,12 +19,12 @@ import java.util.AbstractSet;
 import java.util.HashSet;
 
 /**
- * <code>DefaultMultiMap</code>
+ * <code>GenericMultiMap</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: DefaultMultiMap.java,v 1.1.2.2 2000-01-30 19:16:20 pnkfelix Exp $
+ * @version $Id: GenericMultiMap.java,v 1.1.2.1 2000-01-31 21:52:27 cananian Exp $
  */
-public class DefaultMultiMap implements MultiMap {
+public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
     private Map internMap;
@@ -39,31 +39,31 @@ public class DefaultMultiMap implements MultiMap {
 	<code>SetFactory</code> for its value collections.  
 	To gain more control over the specific factories used in
 	internal representation of <code>this</code>, use the more
-	specific {@link DefaultMultiMap#DefaultMultiMap(CollectionFactory,MapFactory) constructor }
+	specific {@link GenericMultiMap#GenericMultiMap(CollectionFactory,MapFactory) constructor }
 	that takes <code>CollectionFactory</code>s.
     */
-    public DefaultMultiMap() {
+    public GenericMultiMap() {
 	this(Factories.hashSetFactory(), Factories.hashMapFactory());
     }
 
     /** Creates a <code>MultiMap</code> from a
 	<code>CollectionFactory</code>.
     */
-    public DefaultMultiMap(CollectionFactory cf, MapFactory mf) {
+    public GenericMultiMap(CollectionFactory cf, MapFactory mf) {
 	this.internMap = mf.makeMap();
 	this.cf = cf;
 	this.mf = mf;
     }
 
-    /** Creates a <code>DefaultMultiMap</code> from another
-	<code>DefaultMultiMap</code>.
+    /** Creates a <code>GenericMultiMap</code> from another
+	<code>GenericMultiMap</code>.
 	
 	NOTE: I would make this ctor public, but I need to eliminate
 	any issues with the Collection-values being shared between
 	'this' and 'mm'.
 
     */
-    DefaultMultiMap(DefaultMultiMap mm) { 
+    GenericMultiMap(GenericMultiMap mm) { 
 	this.mf = mm.mf;
 	this.cf = mm.cf;
 	this.internMap = this.mf.makeMap(mm.internMap);
@@ -72,7 +72,7 @@ public class DefaultMultiMap implements MultiMap {
     /** Makes a new <code>MultiMap</code> initialized with all of the
 	<code>Map.Entry</code>s in <code>m</code>.
     */
-    public DefaultMultiMap(Map m) {
+    public GenericMultiMap(Map m) {
 	this();
 	Iterator entries = m.entrySet().iterator();
 	while(entries.hasNext()) {
@@ -227,7 +227,7 @@ public class DefaultMultiMap implements MultiMap {
 		return new CombineIterator(iterIter);
 	    }
 	    public int size() {
-		return DefaultMultiMap.this.size();
+		return GenericMultiMap.this.size();
 	    }
 	};
     }
