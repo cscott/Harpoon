@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.70 1999-10-12 20:04:37 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.71 1999-10-15 00:25:00 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -264,7 +264,9 @@ tar-install: tar
 		$(INSTALLMACHINE):$(INSTALLDIR)
 
 srcdoc/harpoon/%.html: %.java
-	mkdir -p $(dir $@); bin/source-markup.perl -u $(CVSWEBLINK) $< > $@
+	mkdir -p $(dir $@); bin/source-markup.perl \
+		`if [ -f $*.spec ]; then echo -j ; fi` \
+		-u $(CVSWEBLINK) $< > $@
 srcdoc/gnu/%.html: Contrib/%.java
 	mkdir -p $(dir $@); bin/source-markup.perl -u $(CVSWEBLINK) $< > $@
 srcdoc/silicon/%.html: %.java
