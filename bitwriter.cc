@@ -1,6 +1,7 @@
 // Interface for writing structures
 
 #include <assert.h>
+#include <stdio.h>
 #include "bitwriter.h"
 #include "bitreader.h"
 #include "element.h"
@@ -10,6 +11,7 @@
 #include "model.h"
 #include "processabstract.h"
 
+
 bitwriter::bitwriter(model *m, Hashtable *e) {
   globalmodel=m;
   bitread=new bitreader(m,e);
@@ -18,7 +20,20 @@ bitwriter::bitwriter(model *m, Hashtable *e) {
 
 void bitwriter::writefieldorarray(Element *element, Field * field, Element * index, Element *target) {
   assert(element->type()==ELEMENT_OBJECT);
-  
+  // DEBUG STATEMENT
+  /*
+    element->print();
+    printf(".");
+    field->print();
+    if (index!=NULL) {
+    printf("[");
+    index->print();
+    printf("]");
+    }
+    printf("=");
+    target->print();
+    printf("\n");
+  */
   //  Hashtable *env=new Hashtable((int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);;  
   structure *type=element->getstructure();
   //assert(type->getnumparams()==element->getnumparams());
@@ -82,6 +97,7 @@ void bitwriter::writefieldorarray(Element *element, Field * field, Element * ind
   case TTYPE_BIT:
     {
       char c=*((char *) addr);
+      char co=c;
       bool b=target->getboolvalue();
       char mask=0xFF^(1<<bitoffset);
       if (b)
@@ -89,6 +105,10 @@ void bitwriter::writefieldorarray(Element *element, Field * field, Element * ind
       else
 	c=c&mask;
       *((char *)addr)=c;
+      /*
+	if (co!=c)
+	printf("Change: %hhd %hhd\n",co,c);
+      */
       break;
     }
   case TTYPE_BYTE:

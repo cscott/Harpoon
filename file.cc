@@ -308,6 +308,7 @@ struct block * chmountdisk(char *filename) {
 
 
 void chunmountdisk(struct block *vptr) {
+  msync(vptr,LENGTH,MS_SYNC);
   int val=munmap(vptr,LENGTH);
   if (val!=0)
     printf("Error!\n");
@@ -350,6 +351,7 @@ void unmountdisk(struct block *vptr) {
   struct BlockBitmap *bbb=(struct BlockBitmap *) &vptr[bbbptr];
   for(int i=0;i<(NUMBLOCK/8+1);i++)
     bbb->blocks[i]=bb.blocks[i];
+  msync(vptr,LENGTH,MS_SYNC);
   int val=munmap(vptr,LENGTH);
   if (val!=0)
     printf("Error!\n");
@@ -645,7 +647,7 @@ void createdisk()
       itb->entries[0].Blockptr[i]=i+5;  // blocks 5 to 16 are RootDirectory entries
     itb->entries[0].referencecount=0;
   }
-
+  msync(vptr,LENGTH,MS_SYNC);
   int val=munmap(vptr,LENGTH);
   if (val!=0)
     printf("Error!\n");
