@@ -6,6 +6,7 @@ import harpoon.IR.QuadSSA.*;
 import harpoon.Temp.*;
 import harpoon.Util.Util;
 import harpoon.Util.UniqueFIFO;
+import harpoon.Util.HClassUtil;
 
 import java.util.Vector;
 import java.util.Hashtable;
@@ -13,7 +14,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.4 1998-09-11 13:12:50 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.5 1998-09-11 18:58:32 cananian Exp $
  */
 
 public class TypeInfo implements TypeMap {
@@ -42,10 +43,12 @@ public class TypeInfo implements TypeMap {
 	for (int i=0; i<ql.length; i++)
 	    worklist.push(ql[i]);
 	
+	TypeInfoVisitor tiv = new TypeInfoVisitor(method);
 	while(!worklist.empty()) {
 	    Quad q = (Quad) worklist.pull();
-	    boolean isChanged = analyze(method, q);
-	    if (isChanged) {
+	    tiv.modified = false;
+	    q.visit(tiv);
+	    if (tiv.modified) {
 		Temp[] d = q.def();
 		for (int i=0; i<d.length; i++) {
 		    Quad[] u = usedef.useSites(method, d[i]);
@@ -57,33 +60,80 @@ public class TypeInfo implements TypeMap {
 	}
     }
 
-    boolean analyze(HMethod m, Quad q) {
-	if (false) ;
-	else if (q instanceof AGET) return analyze((AGET)q, m);
-	else if (q instanceof ALENGTH) return analyze((ALENGTH)q, m);
-	else if (q instanceof ANEW) return analyze((ANEW)q, m);
-	//else if (q instanceof ASET) return analyze((ASET)q, m);
-	else if (q instanceof CALL) return analyze((CALL)q, m);
-	//else if (q instanceof CJMP) return analyze((CJMP)q, m);
-	else if (q instanceof COMPONENTOF) return analyze((COMPONENTOF)q, m);
-	else if (q instanceof CONST) return analyze((CONST)q, m);
-	//else if (q instanceof FOOTER) return analyze((FOOTER)q, m);
-	else if (q instanceof GET) return analyze((GET)q, m);
-	//else if (q instanceof HEADER) return analyze((HEADER)q, m);
-	else if (q instanceof INSTANCEOF) return analyze((INSTANCEOF)q, m);
-	else if (q instanceof METHODHEADER) return analyze((METHODHEADER)q, m);
-	else if (q instanceof MOVE) return analyze((MOVE)q, m);
-	else if (q instanceof NEW) return analyze((NEW)q, m);
-	//else if (q instanceof NOP) return analyze((NOP)q, m);
-	else if (q instanceof OPER) return analyze((OPER)q, m);
-	else if (q instanceof PHI) return analyze((PHI)q, m);
-	//else if (q instanceof RETURN) return analyze((RETURN)q, m);
-	//else if (q instanceof SET) return analyze((SET)q, m);
-	//else if (q instanceof SWITCH) return analyze((SWITCH)q, m);
-	//else if (q instanceof THROW) return analyze((THROW)q, m);
-	return false;
-    }
+    class TypeInfoVisitor extends QuadVisitor {
+	HMethod m;
+	boolean modified = false;
+	TypeInfoVisitor(HMethod m) { this.m = m; }
 
+	public void visit(Quad q) { modified = false; }
+
+	public void visit(AGET q) {
+	    HClass ty = typeMap(m, q.objectref);
+	    if (ty==null) {modified=false; return; }
+	    Util.assert(ty.isArray());
+	    modified = merge(m, q.dst, ty.getComponentType());
+	    return;
+	}
+	public void visit(ALENGTH q) {
+	    modified = merge(m, q.dst, HClass.Int);
+	}
+	public void visit(ANEW q) {
+	    modified = merge(m, q.dst, q.hclass);
+	}
+	public void visit(CALL q) {
+	    boolean r1 = (q.retval==null) ? false:
+		merge(m, q.retval, q.method.getReturnType());
+	    // XXX specify class of exception better.
+	    boolean r2 = merge(m, q.retex, HClass.forClass(Throwable.class));
+	    modified = r1 || r2;
+	}
+	public void visit(COMPONENTOF q) {
+	    modified = merge(m, q.dst, HClass.Boolean);
+	}
+	public void visit(CONST q) {
+	    modified = merge(m, q.dst, q.type);
+	}
+	public void visit(GET q) {
+	    modified = merge(m, q.dst, q.field.getType());
+	}
+	public void visit(INSTANCEOF q) {
+	    modified = merge(m, q.dst, HClass.Boolean);
+	}
+	public void visit(METHODHEADER q) {
+	    boolean r = false;
+	    HClass[] hc = m.getParameterTypes();
+	    int offset = m.isStatic()?0:1;
+	    for (int i=offset; i<q.params.length; i++)
+		if (merge(m, q.params[i], hc[i-offset])) 
+		    r = true;
+	    if (!m.isStatic())
+		r = merge(m, q.params[0], m.getDeclaringClass()) || r;
+	    modified = r;
+	}
+	public void visit(MOVE q) {
+	    HClass ty = typeMap(m, q.src);
+	    if (ty==null) { modified = false; return; }
+	    modified = merge(m, q.dst, ty);
+	}
+	public void visit(NEW q) {
+	    modified = merge(m, q.dst, q.hclass);
+	}
+	public void visit(OPER q) {
+	    modified = merge(m, q.dst, q.evalType());
+	}
+	public void visit(PHI q) {
+	    boolean r = false;
+	    for (int i=0; i<q.dst.length; i++)
+		for (int j=0; j<q.src[i].length; j++) {
+		    if (q.src[i][j]==null) continue;
+		    HClass ty = typeMap(m, q.src[i][j]);
+		    if (ty==null) continue;
+		    if (merge(m, q.dst[i], ty))
+			r = true;
+		}
+	    modified = r;
+	}
+    }
     boolean merge(HMethod m, Temp t, HClass newType) {
 	HClass oldType = typeMap(m, t);
 	if (oldType==null) { map.put(t, newType); return true; }
@@ -95,129 +145,24 @@ public class TypeInfo implements TypeMap {
 	    return false;
 	
 	// handle object types (possible arrays)
-	int olddims = dims(oldType);
-	int newdims = dims(newType);
+	int olddims = HClassUtil.dims(oldType);
+	int newdims = HClassUtil.dims(newType);
 	HClass merged;
 	if (olddims == newdims) { // if the dimensions are equal...
 	    // find the first common super class of the types.
-	    merged = commonSuper(baseClass(oldType),baseClass(newType));
+	    merged = HClassUtil.commonSuper(HClassUtil.baseClass(oldType),
+					    HClassUtil.baseClass(newType));
 	    // match the array dimensions.
-	    merged = arrayClass(merged, olddims);
+	    merged = HClassUtil.arrayClass(merged, olddims);
 	} else { // dimensions not equal.
 	    int dims = (olddims<newdims)?olddims:newdims;
 	    // make an object array of the smaller dimension.
-	    merged = arrayClass(HClass.forClass(Object.class), dims);
+	    merged = HClassUtil.arrayClass(HClass.forClass(Object.class), 
+					   dims);
 	}
 	// if the merged value is different from the old value, update...
 	if (merged==oldType) return false;
 	map.put(t, merged);
 	return true;
-    }
-
-    int dims(HClass hc) {
-	int i=0;
-	while (hc.isArray()) {
-	    hc = hc.getComponentType();
-	    i++;
-	}
-	return i;
-    }
-    HClass baseClass(HClass hc) {
-	while (hc.isArray())
-	    hc = hc.getComponentType();
-	return hc;
-    }
-    HClass arrayClass(HClass hc, int dims) {
-	StringBuffer sb = new StringBuffer();
-	for (int i=0; i<dims; i++)
-	    sb.append('[');
-	sb.append(hc.getDescriptor());
-	return HClass.forDescriptor(sb.toString());
-    }
-
-    HClass commonSuper(HClass a, HClass b) {
-	HClass[] aI = inheritance(a);
-	HClass[] bI = inheritance(b);
-	int i=1;
-	while (i<aI.length && i<bI.length && aI[i]==bI[i])
-	    i++;
-	return aI[i-1];
-    }
-
-    HClass[] inheritance(HClass hc) {
-	Vector v = new Vector();
-	while (hc != null) {
-	    v.addElement(hc);
-	    hc = hc.getSuperclass();
-	}
-	HClass[] r = new HClass[v.size()];
-	for (int i=0; i<r.length; i++) // reverse
-	    r[i] = (HClass) v.elementAt(r.length-i-1);
-	return r;
-    }
-
-    boolean analyze(AGET q, HMethod m) {
-	HClass ty = typeMap(m, q.objectref);
-	if (ty==null) return false;
-	Util.assert(ty.isArray());
-	return merge(m, q.dst, ty.getComponentType());
-    }
-    boolean analyze(ALENGTH q, HMethod m) {
-	return merge(m, q.dst, HClass.Int);
-    }
-    boolean analyze(ANEW q, HMethod m) {
-	return merge(m, q.dst, q.hclass);
-    }
-    boolean analyze(CALL q, HMethod m) {
-	boolean r1 = (q.retval==null) ? false:
-	    merge(m, q.retval, q.method.getReturnType());
-	boolean r2 = merge(m, q.retex, HClass.forClass(Throwable.class)); //XXX
-	return r1 || r2;
-    }
-    boolean analyze(COMPONENTOF q, HMethod m) {
-	return merge(m, q.dst, HClass.Boolean);
-    }
-    boolean analyze(CONST q, HMethod m) {
-	return merge(m, q.dst, q.type);
-    }
-    boolean analyze(GET q, HMethod m) {
-	return merge(m, q.dst, q.field.getType());
-    }
-    boolean analyze(INSTANCEOF q, HMethod m) {
-	return merge(m, q.dst, HClass.Boolean);
-    }
-    boolean analyze(METHODHEADER q, HMethod m) {
-	boolean r = false;
-	HClass[] hc = m.getParameterTypes();
-	int offset = m.isStatic()?0:1;
-	for (int i=offset; i<q.params.length; i++)
-	    if (merge(m, q.params[i], hc[i-offset])) 
-		r = true;
-	if (!m.isStatic())
-	    r = merge(m, q.params[0], m.getDeclaringClass()) || r;
-	return r;
-    }
-    boolean analyze(MOVE q, HMethod m) {
-	HClass ty = typeMap(m, q.src);
-	if (ty==null) return false;
-	return merge(m, q.dst, ty);
-    }
-    boolean analyze(NEW q, HMethod m) {
-	return merge(m, q.dst, q.hclass);
-    }
-    boolean analyze(OPER q, HMethod m) {
-	return merge(m, q.dst, q.evalType());
-    }
-    boolean analyze(PHI q, HMethod m) {
-	boolean r = false;
-	for (int i=0; i<q.dst.length; i++)
-	    for (int j=0; j<q.src[i].length; j++) {
-		if (q.src[i][j]==null) continue;
-		HClass ty = typeMap(m, q.src[i][j]);
-		if (ty==null) continue;
-		if (merge(m, q.dst[i], ty))
-		    r = true;
-	    }
-	return r;
     }
 }
