@@ -52,7 +52,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflectionMemberList.java,v 1.1.2.4 2001-02-27 21:20:47 cananian Exp $
+ * @version $Id: DataReflectionMemberList.java,v 1.1.2.5 2001-03-01 22:29:13 cananian Exp $
  */
 public class DataReflectionMemberList extends Data {
     final NameMap m_nm;
@@ -89,20 +89,9 @@ public class DataReflectionMemberList extends Data {
 	// change to object data segment.
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.REFLECTION_OBJECTS));
 	// build actual field objects
-	stmlist.add(buildMemberObjects(orderedFields, "Field"));
-	// split off the constructors.
-	List orderedConstructors = new ArrayList(orderedMethods.size());
-	for (Iterator it=orderedMethods.iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
-	    if (hm instanceof HConstructor) {
-		orderedConstructors.add(hm);
-		it.remove();
-	    }
-	}
-	// build constructor objects
-	stmlist.add(buildMemberObjects(orderedConstructors, "Constructor"));
-	// build method objects
-	stmlist.add(buildMemberObjects(orderedMethods, "Method"));
+	stmlist.add(buildMemberObjects(orderedFields));
+	// build actual constructor/method objects
+	stmlist.add(buildMemberObjects(orderedMethods));
 	// yay, done.
 	return (HDataElement) Stm.toStm(stmlist);
     }
@@ -133,13 +122,15 @@ public class DataReflectionMemberList extends Data {
 					(member+"2info_end")), true));
 	return Stm.toStm(stmlist);
     }
-    private Stm buildMemberObjects(List ordered, String objectClassName) {
+    private Stm buildMemberObjects(List ordered) {
 	List stmlist = new ArrayList(ordered.size());
 	final HClass HCclass = linker.forName("java.lang.Class");
-	final HClass type = linker.forName
-	    ("java.lang.reflect."+ objectClassName);
 	for (Iterator it=ordered.iterator(); it.hasNext(); ) {
 	    final HMember hm = (HMember) it.next();
+	    final HClass type = linker.forName
+		("java.lang.reflect." +
+		 (hm instanceof HField ? "Field" :
+		  hm instanceof HConstructor ? "Constructor" : "Method"));
 	    // make an ObjectInfo -- that doesn't actual provide any info.
 	    ObjectInfo info = new ObjectInfo() {
 		public HClass type() { return type; }

@@ -29,7 +29,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.36 2001-02-27 18:48:27 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.37 2001-03-01 22:29:13 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -152,6 +152,27 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 		.getConstructor(new HClass[0]),
 	    linker.forName("java.lang.reflect.Method")
 		.getConstructor(new HClass[0]),
+	    // reflection creates these (wrappers for primitive types)
+	    // *THESE SHOULD REALLY ONLY BE MARKED CALLABLE*
+	    //  when a call to Field.get() is found.  Eventually
+	    //  I'll update QuadClassHierarchy to handle these
+	    //  sorts of tricky dependencies.
+	    linker.forName("java.lang.Boolean")
+		.getConstructor(new HClass[] { HClass.Boolean }),
+	    linker.forName("java.lang.Byte")
+		.getConstructor(new HClass[] { HClass.Byte }),
+	    linker.forName("java.lang.Character")
+		.getConstructor(new HClass[] { HClass.Char }),
+	    linker.forName("java.lang.Short")
+		.getConstructor(new HClass[] { HClass.Short }),
+	    linker.forName("java.lang.Integer")
+		.getConstructor(new HClass[] { HClass.Int }),
+	    linker.forName("java.lang.Long")
+		.getConstructor(new HClass[] { HClass.Long }),
+	    linker.forName("java.lang.Float")
+		.getConstructor(new HClass[] { HClass.Float }),
+	    linker.forName("java.lang.Double")
+		.getConstructor(new HClass[] { HClass.Double }),
 	    // FNI_ExceptionDescribe uses this
 	    linker.forName("java.lang.Throwable")
 		.getMethod("toString", new HClass[0]),

@@ -35,11 +35,12 @@ import java.util.List;
  *  <LI>A pointer to a UTF-8 encoded string naming the class.
  *  <LI>A pointer to the claz structure containing the dispatch
  *      tables & etc. (See <code>DataClaz</code>.)
+ *  <LI>The java access modifiers of the class.
  *  <LI>A sorted map of member signatures to method and field offsets.
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.1.2.11 2001-02-27 02:07:40 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.1.2.12 2001-03-01 22:29:13 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -66,6 +67,8 @@ public class DataReflection2 extends Data {
 	stmlist.add(_DATUM(m_nm.label(hc)));
 	// next, a name string pointer.
 	stmlist.add(_DATUM(m_nm.label(hc, "namestr")));
+	// the java access modifiers for this class
+	stmlist.add(_DATUM(new CONST(tf, null, hc.getModifiers())));
 	// pointer to the end of the lookup table.
 	stmlist.add(_DATUM(m_nm.label(hc, "classinfo_end")));
 	// okay, now the sorted name, desc, offset table.
