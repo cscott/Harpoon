@@ -89,13 +89,13 @@ struct FNI_name2class {
   char *name;
   struct oobj * class_object;
 };
-extern struct FNI_name2class name2class_start, name2class_end;
+extern struct FNI_name2class name2class_start[], name2class_end[];
 
 struct FNI_class2info {
   struct oobj * class_object;
   struct FNI_classinfo *info;
 };
-extern struct FNI_class2info class2info_start, class2info_end;
+extern struct FNI_class2info class2info_start[], class2info_end[];
 
 /* --------------- wrapping and unwrapping objects. ------------ */
 /* an unwrapped jobject is a struct oobj *...*/
@@ -133,6 +133,25 @@ struct FNI_classinfo *FNI_GetClassInfo(jclass clazz);
 void *FNI_RawAlloc(JNIEnv *env, jsize length);
 /* allocate and zero memory for the specified object type */
 jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, jsize length);
+
+/* ----- miscellaneous information embedded in the compiler output ----- */
+
+/* name of the 'main' class. */
+extern char *FNI_javamain;
+/* null-terminated ordered list of static initializer names */
+extern char *FNI_static_inits[];
+
+/* starts and ends of various segments */
+extern int *gc_start, *gc_end;
+extern int *static_objects_start, *static_objects_end;
+extern int *string_constants_start, *string_constants_end;
+extern int *code_start, *code_end;
+
+struct _fixup_info {
+  void *return_address;
+  void *handler_target;
+};
+extern struct _fixup_info fixup_start[], fixup_end[];
 
 /* --------------- JNI function prototypes. ------------------ */
 

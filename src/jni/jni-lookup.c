@@ -14,8 +14,8 @@ jclass FNI_FindClass(JNIEnv *env, const char *name) {
   const struct FNI_name2class * result;
   assert(FNI_NO_EXCEPTIONS(env));
   result =
-    bsearch(name, &name2class_start, &name2class_end-&name2class_start,
-	    sizeof(name2class_start), name2class_compare);
+    bsearch(name, name2class_start, name2class_end-name2class_start,
+	    sizeof(*name2class_start), name2class_compare);
   if (result==NULL) {
     assert(strcmp(name, "java/lang/NoClassDefFoundError")!=0);
     FNI_ThrowNew(env, FNI_FindClass(env, "java/lang/NoClassDefFoundError"),
@@ -35,8 +35,8 @@ struct FNI_classinfo *FNI_GetClassInfo(jclass clazz) {
   assert(clazz!=NULL);
   result =
     bsearch(FNI_UNWRAP(clazz),
-	    &class2info_start, &class2info_end - &class2info_start,
-	    sizeof(class2info_start), class2info_compare);
+	    class2info_start, class2info_end - class2info_start,
+	    sizeof(*class2info_start), class2info_compare);
   return (result==NULL) ? NULL : result->info;
 }
 
