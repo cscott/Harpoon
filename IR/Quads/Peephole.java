@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>QuadNoSSA</code> forms.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1.2.9.2.1 1999-09-17 19:35:07 cananian Exp $
+ * @version $Id: Peephole.java,v 1.1.2.9.2.2 1999-09-19 13:44:23 cananian Exp $
  */
 
 final class Peephole  {
@@ -158,7 +158,7 @@ final class Peephole  {
 		    if (!(Qp instanceof MOVE)) pastNonMove=true; 
 		}
 		if ((allowFarMoves||!pquads.contains(Qnext)) &&
-		    (Qp instanceof SIGMA || moveit || deleteit)) {
+		    (Qp instanceof CJMP || Qp instanceof SWITCH || moveit || deleteit)) {
 		    TempMap tm = new OneToOneMap(q.dst(), q.src());
 		    Edge lstE;
 		    for (lstE=q.nextEdge(0); lstE.to() != Qp; ) {
