@@ -14,7 +14,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.2 1998-10-16 11:15:38 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.3 1998-10-19 04:00:33 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -92,6 +92,18 @@ public class HMethodSyn extends HMethod {
 
   public void setSynthetic(boolean isSynthetic) {
     this.isSynthetic = isSynthetic;
+  }
+
+  /** Add a new code representation for this method, or replace a
+   *  previously existing one.<p>
+   *  An abstract method does not have code; thus <code>putCode</code> 
+   *  resets the <code>abstract</code> modifier on this
+   *  <code>HMethodSyn</code>.
+   */
+  public void putCode(HCode codeobj) {
+    super.putCode(codeobj);
+    // if it's got code, it's not abstract.
+    this.modifiers &= ~Modifier.ABSTRACT;
   }
 }
 
