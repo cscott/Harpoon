@@ -63,7 +63,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.13 2000-11-21 21:04:33 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.14 2001-01-16 22:15:54 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -763,6 +763,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    if (q.keys(i).isInstanceOf(type)) // executable
 			raiseE(Ee, Eq, Wq, q.nextEdge(i) );
 		    if (type.isInstanceOf(q.keys(i))) {// catches all remaining
+			raiseE(Ee, Eq, Wq, q.nextEdge(i) );
 			catchAll = true;
 			break;
 		    }
