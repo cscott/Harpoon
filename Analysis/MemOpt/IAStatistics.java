@@ -30,8 +30,8 @@ import harpoon.ClassFile.SerializableCodeFactory;
 
 import harpoon.Backend.Generic.Frame;
 
-import harpoon.Util.Util;
 import harpoon.Util.Timer;
+import harpoon.Util.Util;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
@@ -39,7 +39,6 @@ import harpoon.Analysis.MetaMethods.SmartCallGraph;
 import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Instrumentation.AllocationStatistics.AllocationStatistics;
-import harpoon.Analysis.PointerAnalysis.Debug;
 
 import harpoon.Analysis.MemOpt.IncompatibilityAnalysis;
 
@@ -55,7 +54,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>IAStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: IAStatistics.java,v 1.8 2003-02-11 21:56:45 salcianu Exp $
+ * @version $Id: IAStatistics.java,v 1.9 2003-02-12 19:02:58 salcianu Exp $
  */
 public abstract class IAStatistics {
     
@@ -69,9 +68,9 @@ public abstract class IAStatistics {
 	    return
 		count[SITE][PREALLOC] + "\t" + count[SITE][HEAP] + "\t| " +
 		count[OBJECT][PREALLOC] + "\t" + count[OBJECT][HEAP] + "\t| " +
-		AllocationStatistics.memSizeFormat(count[SPACE][PREALLOC]) + 
+		Util.memSizeFormat(count[SPACE][PREALLOC]) + 
 		"\t" +
-		AllocationStatistics.memSizeFormat(count[SPACE][HEAP]) + 
+		Util.memSizeFormat(count[SPACE][HEAP]) + 
 		"\t|| " + (hclass != null ? hclass.toString() : "");
 	}
 
@@ -216,7 +215,7 @@ public abstract class IAStatistics {
 	long delta_sites = allocs.size() - initial_allocs.size();
 	
 	System.out.println
-	    (proportion(delta_sites, initial_allocs.size(), 5, 2) +  
+	    (Util.longProportion(delta_sites, initial_allocs.size(), 5, 2) +  
 	     " allocations introduced by QuadWithTry -> QuadNoSSA");
     }
 
@@ -224,16 +223,16 @@ public abstract class IAStatistics {
     private static void printTotal(String label, TypeStat total) {
 	System.out.println
 	    (label + " PREALLOCATED SITES:\t" +
-	     proportion(total.count[SITE][PREALLOC],
-			total.count[SITE][HEAP], 5, 2));
+	     Util.longProportion(total.count[SITE][PREALLOC],
+				 total.count[SITE][HEAP], 5, 2));
 	System.out.println
 	    (label + " PREALLOCATED OBJECTS:\t" +
-	     proportion(total.count[OBJECT][PREALLOC],
-			total.count[OBJECT][HEAP], 5, 2));
+	     Util.longProportion(total.count[OBJECT][PREALLOC],
+				 total.count[OBJECT][HEAP], 5, 2));
 	System.out.println
 	    (label + " PREALLOCATED SPACE:\t" +
-	     proportion(total.count[SPACE][PREALLOC],
-			total.count[SPACE][HEAP], 5, 2, true));
+	     Util.longProportion(total.count[SPACE][PREALLOC],
+				 total.count[SPACE][HEAP], 5, 2, true));
     }
 
 
@@ -248,31 +247,6 @@ public abstract class IAStatistics {
 	}
     }
 
-    static String proportion
-	(long a, long b, int digits, int decimals) {
-	return proportion(a, b, digits, decimals, false);
-    }
-
-    /** Pretty printer for a proportion: &quot; <tt>a</tt> out of
-        <tt>total</tt> = <tt>proportion</tt>&quot; (where
-        <tt>total=a+b</tt>). If <code>memSizeFormat<code> is true,
-        <tt>a</tt> and <tt>total</tt> are displayed as memory size
-        (i.e., 2048 is 2K). <code>digits</code> and
-        <code>decimals</code> indicates the formatting for the
-        proportion. */
-    public static String proportion
-	(long a, long b, int digits, int decimals, boolean memSizeFormat) {
-	long total = a + b;
-	double frac = (a * 100.0) / (total + 0.0);
-	return 
-	    (memSizeFormat ? AllocationStatistics.memSizeFormat(a) :
-	     (new Long(a)).toString()) + 
-	    "\tout of\t" + 
-	    (memSizeFormat ? AllocationStatistics.memSizeFormat(total) :
-	     (new Long(total)).toString()) +
-	     "\t = " +
-	    Debug.doubleRep(frac, digits, decimals) + "%";
-    }
 
     private static TypeStat get_type_stat(Map hclass2stat, HClass hclass) {
 	TypeStat result = (TypeStat) hclass2stat.get(hclass);
@@ -323,7 +297,7 @@ public abstract class IAStatistics {
 	else if(q instanceof ANEW)
 	    return ((ANEW) q).hclass();
 	else throw new IllegalArgumentException
-		 ("Not an allocation " + Debug.code2str(q));
+		 ("Not an allocation " + Util.code2str(q));
     }
 
     private static boolean selfIncompatible

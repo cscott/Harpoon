@@ -74,7 +74,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.5 2002-11-27 18:29:53 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.6 2003-02-12 19:03:34 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -533,7 +533,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 		if(DEBUG)
 		    System.out.println("STACK: " + node + 
 				       " was stack allocated " +
-				       Debug.getLine(q));
+				       Util.getLine(q));
 	    }
 	}
     }
@@ -555,7 +555,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 		    if(DEBUG)
 			System.out.println("THREAD: " + node +
 					   " was thread allocated " +
-					   Debug.getLine(q));
+					   Util.getLine(q));
 		}
 	    }
 	}
@@ -572,7 +572,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 		ap.ns = noConflictingSyncs(node, mm);
 		if(ap.ns) {
 		    System.out.println("BRAVO: " + node + " " +
-				       Debug.code2str(q));
+				       Util.code2str(q));
 		}
 	    }
 	}
@@ -637,7 +637,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    NEW qnt = (NEW) node_rep.node2Code(nt);
 	    MyAP ap = getAPObj(qnt);
 	    ap.mh = true;
-	    System.out.println("set_make_heap: " + Debug.code2str(qnt));
+	    System.out.println("set_make_heap: " + Util.code2str(qnt));
 	}
     }
 
@@ -855,7 +855,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    System.out.print("noConflictingSyncs \n" +
 			     "\tnode  = " + node +
 			     "\tcreated at " + 
-			     Debug.code2str
+			     Util.code2str
 			     (node_rep.node2Code
 			      (node != null ? node.getRoot() : null)) + "\n" +
 			     "\tmm    = " + mm + "\n" +
@@ -956,7 +956,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	System.out.print("noConcurrentSyncs \n" +
 			 "\tnode  = " + node +
 			 "\tcreated at " + 
-			 Debug.code2str
+			 Util.code2str
 			 (node_rep.node2Code
 			  (node != null ? node.getRoot() : null)) + "\n");
 	return pig.ar.independent(node);
@@ -986,7 +986,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	// if the appropriate options is turned on in opt,
 	// refuse to do stack allocation in a loop
 	if(opt.stack_allocate_not_in_loops() && in_a_loop(q)) {
-	    System.out.println("stack_alloc_extra_cond: " + Debug.code2str(q) +
+	    System.out.println("stack_alloc_extra_cond: " + Util.code2str(q) +
 			       " is in a LOOP -> don't sa");
 	    return false;
 	}
@@ -1047,7 +1047,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	HClass hclass = getAllocatedType(q);
 	if(java_lang_Thread.isSuperclassOf(hclass)) {
 	    // if(DEBUG)
-		System.out.println(Debug.code2str(q) + " Thread on Stack");
+		System.out.println(Util.code2str(q) + " Thread on Stack");
 	    return true;
 	}
 	return false;
@@ -1286,7 +1286,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	// refuse to stack allocate stuff in a loop
 	// TODO: this stuff can still be allocated in the thread local heap
 	if(opt.stack_allocate_not_in_loops() && in_a_loop(cs)) {
-	    System.out.println("try_inlining: " + Debug.code2str(cs) +
+	    System.out.println("try_inlining: " + Util.code2str(cs) +
 			       " is in a loop -> don't sa");
 	    return;
 	}
@@ -1314,7 +1314,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    if(!(opt.stack_allocate_not_in_loops() && in_a_loop(q)))
 		news.add(q);
 	    else
-		System.out.println("try_inlining: " + Debug.code2str(q) + 
+		System.out.println("try_inlining: " + Util.code2str(q) + 
 				   " is in a loop -> don't sa");
 	}
 
@@ -1325,10 +1325,10 @@ public class MAInfo implements AllocationInformation, Serializable {
 	ih.put(cs, news_array);
 
 	if(DEBUG) {
-	    System.out.println("\nINLINING HINT: " + Debug.code2str(cs));
+	    System.out.println("\nINLINING HINT: " + Util.code2str(cs));
 	    System.out.println("NEW STACK ALLOCATION SITES:");
 	    for(int i = 0; i < news_array.length; i++)
-		System.out.println(" " + Debug.code2str(news_array[i]));
+		System.out.println(" " + Util.code2str(news_array[i]));
 	}
     }
 
@@ -1341,7 +1341,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 		System.out.println("Processed SCC:{");
 		Object[] calls = scc.nodes();
 		for(int i = 0; i < calls.length; i++)
-		    System.out.println(" " + Debug.code2str((CALL) calls[i]));
+		    System.out.println(" " + Util.code2str((CALL) calls[i]));
 		System.out.println("}");
 	    }
 	    Object[] calls = scc.nodes();
@@ -1492,10 +1492,10 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    Quad q  = (Quad) old2new.get(news[i]);
 
 	    assert q != null : "Warning: no new Quad for " + 
-			Debug.code2str(news[i]) + " in [ " +
+			Util.code2str(news[i]) + " in [ " +
 			quad2method(news[i]) + " ]";
 
-	    System.out.println("STKALLOC " + Debug.code2str(q));
+	    System.out.println("STKALLOC " + Util.code2str(q));
 
 	    MyAP ap = getAPObj(q);
 	    // new MyAP(getAllocatedType(q));
@@ -1511,10 +1511,10 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    Quad q  = (Quad) old2new.get(news[i]);
 
 	    assert q != null : "Warning: no new Quad for " + 
-			Debug.code2str(news[i]) + " in [ " +
+			Util.code2str(news[i]) + " in [ " +
 			quad2method(news[i]) + " ]";
 
-	    System.out.println("THRALLOC " + Debug.code2str(q));
+	    System.out.println("THRALLOC " + Util.code2str(q));
 
 	    MyAP ap = getAPObj(q);
 	    // new MyAP(getAllocatedType(q));
@@ -1739,7 +1739,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 
     private String call2str(CALL cs) {
 	return
-	    Debug.code2str(cs) + "  [ " + quad2method(cs) + " ] ";
+	    Util.code2str(cs) + "  [ " + quad2method(cs) + " ] ";
     }
 
 
@@ -1838,7 +1838,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    PANode node = (PANode) it.next();
 	    Quad q = (Quad) node_rep.node2Code(node);
 	    if(opt.stack_allocate_not_in_loops() && in_a_loop(q)) {
-		System.out.println("split_nodes: " + Debug.code2str(q) + 
+		System.out.println("split_nodes: " + Util.code2str(q) + 
 				   " in a loop -> no sa, try to ta");
 		ta_nodes.add(node);
 	    }
@@ -1886,7 +1886,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 		// refuse to stack allocate stuff in a loop
 		if(opt.stack_allocate_not_in_loops() && in_a_loop(cs)) {
 		    System.out.println("discover_inlining_chains: " +
-				       Debug.code2str(cs) +
+				       Util.code2str(cs) +
 				       " is in a loop -> don't sa");
 		    ta_nodes = new HashSet(ta_nodes);
 		    for(Iterator itn = sa_nodes.iterator(); itn.hasNext(); ) {
@@ -2023,7 +2023,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	for(Iterator it = news.iterator(); it.hasNext(); ) {
 	    Quad q  = (Quad) it.next();
 
-	    System.out.println("STKALLOC " + Debug.code2str(q));
+	    System.out.println("STKALLOC " + Util.code2str(q));
 
 	    MyAP ap = getAPObj(q);
 	    // new MyAP(getAllocatedType(q));
@@ -2038,7 +2038,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	for(Iterator it = news.iterator(); it.hasNext(); ) {
 	    Quad q  = (Quad) it.next();
 
-	    System.out.println("THRALLOC " + Debug.code2str(q));
+	    System.out.println("THRALLOC " + Util.code2str(q));
 
 	    MyAP ap = getAPObj(q);
 	    // new MyAP(getAllocatedType(q));
@@ -2074,7 +2074,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    for(Iterator it = calls.iterator(); it.hasNext(); ) {
 		CALL cs = (CALL) it.next();
 		buff.append("  ");
-		buff.append(Debug.code2str(cs));
+		buff.append(Util.code2str(cs));
 		buff.append(" [ ");
 		buff.append(extract_caller(cs));
 		buff.append(" ]  { ");
@@ -2095,7 +2095,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 	    buff.append("\n");
 	    for(Iterator it = news.iterator(); it.hasNext(); ) {
 		buff.append("  ");
-		buff.append(Debug.code2str((Quad) it.next()));
+		buff.append(Util.code2str((Quad) it.next()));
 		buff.append("\n");
 	    }
 	}
@@ -2179,7 +2179,7 @@ public class MAInfo implements AllocationInformation, Serializable {
 		Quad old_quad = (Quad) it.next();
 		Quad new_quad = (Quad) old2new.get(old_quad);
 		assert new_quad != null : "Warning: no new Quad for " + 
-			    Debug.code2str(old_quad) + " in [ " +
+			    Util.code2str(old_quad) + " in [ " +
 			    quad2method(old_quad) + " ]";
 		result.add(new_quad);
 	    }

@@ -53,7 +53,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>ODPointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODInterProcPA.java,v 1.4 2002-04-10 03:00:42 cananian Exp $
+ * @version $Id: ODInterProcPA.java,v 1.5 2003-02-12 19:03:34 salcianu Exp $
  */
 abstract class ODInterProcPA {
 
@@ -146,7 +146,7 @@ abstract class ODInterProcPA {
 	MetaMethod[] mms = null;
 	if (hole==null){
 //  	    System.out.println("Hole is null for " + current_mmethod + " and call " +
-// 			       Debug.code2str(q));
+// 			       Util.code2str(q));
 	    mms = pa.getMetaCallGraph().getCallees(current_mmethod, q);
 //  	    System.out.println("Result is " + mms);
 //  	    System.out.println("Size is " + mms.length);
@@ -173,7 +173,7 @@ abstract class ODInterProcPA {
 	if(nb_callees == 0){
 	    if(WARNINGS){
 		System.out.println("Warning: CALL site with no callee! ");
-		System.out.println("Warning:  " + Debug.code2str(q));
+		System.out.println("Warning:  " + Util.code2str(q));
 	    }
  	    return new ODParIntGraphPair(pig_before, pig_before);
 	}
@@ -217,7 +217,7 @@ abstract class ODInterProcPA {
 		    System.out.println("NATIVE: " + hm);
 		if(isTotallyHarmful(hm)) {
 		    if(DEBUG)
-			System.out.print("NEED TO SKIP: " + Debug.code2str(q));
+			System.out.print("NEED TO SKIP: " + Util.code2str(q));
 		    // Classical skip_call as, even in ODA, we are not
 		    // going to try later on to analyze this method
 		    // hole.
@@ -233,7 +233,7 @@ abstract class ODInterProcPA {
 	    
 	    if(!(ODPointerAnalysis.analyzable(hm))){
 		if(DEBUG)
-		    System.out.println("NEED TO SKIP: " + Debug.code2str(q));
+		    System.out.println("NEED TO SKIP: " + Util.code2str(q));
 		// Classical skip_call as, even in ODA, we are not
 		// going to try later on to analyze this method hole.
 		return skip_call(pa, q, pig_before, hm);
@@ -2756,7 +2756,7 @@ abstract class ODInterProcPA {
 	    return null;
 
 	//if(DEBUG)
-	    System.out.println("NATIVE (special): " + Debug.code2str(q));
+	    System.out.println("NATIVE (special): " + Util.code2str(q));
 
 	// the conventional field name used for the array's entries
 	final String f = ODPointerAnalysis.ARRAY_CONTENT;

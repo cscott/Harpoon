@@ -13,6 +13,8 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.Code;
 import harpoon.Analysis.PointerAnalysis.Debug;
 
+import harpoon.Util.Util;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,7 +37,7 @@ import java.io.PrintWriter;
  * site from an instrumented program was executed.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.4 2003-02-11 21:56:50 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.5 2003-02-12 19:03:44 salcianu Exp $
  * @see InstrumentAllocs
  */
 public class AllocationStatistics {
@@ -190,10 +192,10 @@ public class AllocationStatistics {
 	    double frac = (count*100.0) / total_count;
 	    partial_count += count;
 	    System.out.println
-		(Debug.code2str(site) + "\n\t" + 
+		(Util.code2str(site) + "\n\t" + 
 		 count + " object(s)\n\t" +
 		 ss[i].memAmount + " byte(s)\n\t" +
-		 Debug.doubleRep(frac, 5, 2) + "% of all objects\n\t" +
+		 Util.doubleRep(frac, 5, 2) + "% of all objects\n\t" +
 		 site.getFactory().getMethod());
 	    if(visitor != null)
 		site.accept(visitor);
@@ -205,7 +207,7 @@ public class AllocationStatistics {
 	}
 	System.out.println
 	    (i + ((i==1) ? " site allocates " : " sites allocate ") +
-	     Debug.doubleRep((partial_count*100.0) / total_count, 5, 2) +
+	     Util.doubleRep((partial_count*100.0) / total_count, 5, 2) +
 	     "% of all objects");
 	System.out.println("Allocation Statistics END");
     }
@@ -267,20 +269,4 @@ public class AllocationStatistics {
 	}
 	return allocs;
     }
-
-    /** Nicely formats the memory size <code>size</code>. */
-    public static String memSizeFormat(long size) {
-	// special case: size < 1K
-	if(size < 1024)
-	    return (new Long(size)).toString();
-
-	double dsize = (double) size;
-	int index = 0;
-	while((dsize > 1024) && (index < msf_units.length)) {
-	    dsize = dsize / 1024;
-	    index++;
-	}
-	return Debug.doubleRep(dsize, 2) + msf_units[index];
-    }
-    private static String msf_units[] = {"", "K", "M", "G", "T"};
 }

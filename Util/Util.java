@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import harpoon.ClassFile.HCodeElement;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
@@ -18,7 +20,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.19 2002-04-11 18:50:40 salcianu Exp $
+ * @version $Id: Util.java,v 1.20 2003-02-12 19:04:38 salcianu Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -458,6 +460,118 @@ public abstract class Util {
     return (image == null) ? obj : image;
   }
 
+
+  // the powers of 10!!
+  private static double[] fact = 
+  {1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0};
+  
+
+  /** Returns the string representation of the double d, with a certain
+      number of decimals. Let me know if you know something better. */
+  public static String doubleRep(double d, int decimals) {
+    double dfloor = Math.floor(d); // (double) integer part of d
+    double dfrac = d - dfloor;     // fractional part of d
+    int ifloor = (int) dfloor;     // integer part of d
+    // the last d decimals
+    int fracint = (int) Math.ceil(dfrac * fact[decimals]); 
+    
+    StringBuffer fracstr = new StringBuffer(String.valueOf(fracint));
+    int missing_decs = decimals - fracstr.length();
+    for(int i = 0; i < missing_decs; i++)
+      fracstr.append("0");
+    
+    return String.valueOf(ifloor) + "." + fracstr.toString();
+  }
+  
+  /** Returns the string representation of the double d, with a certain
+      number of decimals. Let me know if you know something better. */
+  public static String doubleRep(double d, int digits, int decimals) {
+    StringBuffer buffer = new StringBuffer(doubleRep(d,decimals));
+    int desired_point = digits - decimals - 1;
+    int current_point = buffer.toString().indexOf(".");
+    int needed_spaces = desired_point - current_point;
+    if(needed_spaces == 0) return buffer.toString();
+    StringBuffer buffer2 = new StringBuffer();
+    for(int i = 0; i < needed_spaces; i++)
+      buffer2.append(" ");
+    return buffer2.toString() + buffer.toString();
+  }
+  
+  /** Returns a string representing the proportion a/total (in percents). */
+  public static String percentage(double a, double total) {
+    double perct = (100.0 * a) / total;
+    return doubleRep(perct, 5, 2) + "%";
+  }
+  
+  /** Returns the line of the instruction q in the format
+      <code>source_file:line_number</code>. */
+  public static String getLine(HCodeElement q) {
+    return
+      q.getSourceFile() + ":" + q.getLineNumber();
+  }
+  
+  /** Returns the string representation of the code instruction q
+      in the formay: <code>source_file:line_number instruction</code>. */
+  public static String code2str(HCodeElement q) {
+    if(q == null) return "(null)";
+    return
+      getLine(q)  + " " + q;
+  }
+  
+  /** Returns the string representation of the proportion a/b.  The
+      proportion is printed as a percentage, with 2 decimals.  Eg,
+      1/2 is presented as 50.00%. */
+  public static String proportion2str(long a, long b) {
+    double frac = (((double) 100) * ((double) a)) / ((double) b);
+    return doubleRep(frac, 5, 2) + "%";
+  }
+
+
+  /** Pretty printer for a proportion: &quot; <tt>a</tt> out of
+      <tt>total</tt> = <tt>proportion</tt>&quot; (where
+      <tt>total=a+b</tt>). If <code>memSizeFormat<code> is true,
+      <tt>a</tt> and <tt>total</tt> are displayed as memory size
+      (i.e., 2048 is 2K). <code>digits</code> and
+      <code>decimals</code> indicates the formatting for the
+      proportion. */
+  public static String longProportion
+    (long a, long b, int digits, int decimals, boolean memSizeFormat) {
+    long total = a + b;
+    double frac = (a * 100.0) / (total + 0.0);
+    return 
+      (memSizeFormat ? Util.memSizeFormat(a) : (new Long(a)).toString()) +
+      "\tout of\t" + 
+      (memSizeFormat ? Util.memSizeFormat(total) : 
+       (new Long(total)).toString()) +
+      "\t = " +
+      doubleRep(frac, digits, decimals) + "%";
+  }
+
+  /** Convenient version of <code>longProportion</code> that uses
+      <code>null</code> for the <code>memSizeFormat</code>. */
+  public static String longProportion
+    (long a, long b, int digits, int decimals) {
+    return longProportion(a, b, digits, decimals, false);
+  }
+  
+
+  /** Nicely formats the memory size <code>size</code>, using normal
+      units for memory size.  For example, 2048 is printed as 2.00K.
+      The biggest unit we support now is Tera.  */
+  public static String memSizeFormat(long size) {
+    // special case: size < 1K
+    if(size < 1024)
+      return (new Long(size)).toString();
+    
+    double dsize = (double) size;
+    int index = 0;
+    while((dsize > 1024) && (index < msf_units.length)) {
+      dsize = dsize / 1024;
+      index++;
+    }
+    return doubleRep(dsize, 2) + msf_units[index];
+  }
+  private static String msf_units[] = {"", "K", "M", "G", "T"};
 
 }
 

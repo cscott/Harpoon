@@ -74,7 +74,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointerAnalysis.java,v 1.7 2002-11-27 18:29:53 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.8 2003-02-12 19:03:34 salcianu Exp $
  */
 public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
@@ -1008,7 +1008,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	}
 
 	public void visit(CALL q){
-	    // System.out.println("CALL " + Debug.code2str(q));
+	    // System.out.println("CALL " + Util.code2str(q));
 
 	    // treat the thread start sites specially
 	    if(thread_start_site(q)){
@@ -1134,7 +1134,7 @@ public class PointerAnalysis implements java.io.Serializable {
 	    Quad q = (Quad) instrs[i];
 
 	    if(DEBUG2 || MEGA_DEBUG)
-		System.out.println("INSTR: " + Debug.code2str(q));
+		System.out.println("INSTR: " + Util.code2str(q));
 	    
 	    // update the Parallel Interaction Graph according
 	    // to the current instruction

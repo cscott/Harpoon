@@ -96,7 +96,7 @@ import harpoon.Util.DataStructs.LightMap;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPAMain.java,v 1.8 2003-02-03 23:23:31 salcianu Exp $
+ * @version $Id: ODPAMain.java,v 1.9 2003-02-12 19:03:52 salcianu Exp $
  */
 public abstract class ODPAMain {
 
@@ -1155,7 +1155,7 @@ public abstract class ODPAMain {
 	    System.out.println(method_name + " \t" +
 			       nb_lbbs  + " LBBs  " +
 			       nb_total + " Full (" +
-			       Debug.doubleRep(pct, 5, 2) + "%)  " +
+			       Util.doubleRep(pct, 5, 2) + "%)  " +
 			       nb_joins + " Joins " +
 			       nb_calls + " Calls ");
 	}
@@ -3014,12 +3014,12 @@ public abstract class ODPAMain {
 	    public void visit(CALL q) {
 		HMethod method = q.method();
 		if(isEqual(method, "java.lang.Thread", "start")) {
-		    System.out.println("START: " + Debug.code2str(q));
+		    System.out.println("START: " + Util.code2str(q));
 		    sat_starts.add(q);
 		}
 		if(isEqual(method, "java.lang.Thread", "join") &&
 		   (q.paramsLength() == 1)) {
-		    System.out.println("JOIN: " + Debug.code2str(q));
+		    System.out.println("JOIN: " + Util.code2str(q));
 		    sat_joins.add(q);
 		}
 	    }

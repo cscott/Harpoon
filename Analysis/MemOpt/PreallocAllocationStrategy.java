@@ -15,10 +15,8 @@ import harpoon.IR.Tree.TreeFactory;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.MEM;
 import harpoon.IR.Tree.Type;
-
 import harpoon.IR.Quads.Quad;
-
-import harpoon.Analysis.PointerAnalysis.Debug;
+import harpoon.Util.Util;
 
 /** <code>PreallocAllocationStrategy</code> is the allocation strategy
     for the Static Memory Preallocation Optimization (via Ovy's
@@ -38,7 +36,7 @@ import harpoon.Analysis.PointerAnalysis.Debug;
     </ul>
  
     @author  Alexandru Salcianu <salcianu@MIT.EDU>
-    @version $Id: PreallocAllocationStrategy.java,v 1.3 2003-01-07 15:05:02 salcianu Exp $ */
+    @version $Id: PreallocAllocationStrategy.java,v 1.4 2003-02-12 19:02:58 salcianu Exp $ */
 public class PreallocAllocationStrategy extends MallocAllocationStrategy {
     
     /** Creates a <code>PreallocAllocationStrategy</code>. */
@@ -58,7 +56,7 @@ public class PreallocAllocationStrategy extends MallocAllocationStrategy {
 	    /*
 	    System.out.println
 		("I was called for " + 
-		 harpoon.Analysis.PointerAnalysis.Debug.code2str(source));
+		 harpoon.Analysis.PointerAnalysis.Util.code2str(source));
 	    */
 	    return
 		DECLARE
@@ -86,7 +84,7 @@ public class PreallocAllocationStrategy extends MallocAllocationStrategy {
 	    boolean result = ! hdeclc.getName().equals("java.io.PrintStream");
 	    if(!result)
 		System.out.println
-		    ("\nPreallocAS: false for\t" + Debug.code2str(q) +
+		    ("\nPreallocAS: false for\t" + Util.code2str(q) +
 		     "\tin\t" + q.getFactory().getMethod());
 	    return result;
 	}

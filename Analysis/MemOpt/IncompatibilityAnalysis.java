@@ -20,8 +20,7 @@ import harpoon.Temp.Temp;
 
 import harpoon.Util.Collections.*;
 import harpoon.Util.Timer;
-
-import harpoon.Analysis.PointerAnalysis.Debug;
+import harpoon.Util.Util;
 
 import java.util.*;
 
@@ -491,7 +490,7 @@ public class IncompatibilityAnalysis {
                 //  and upgrade to assertion / downgrade to DEBUG stmnt
                 if (calledMethods.length == 0) {
                     System.out.println("*** Warning: no methods found for: "
-                                       + Debug.code2str(qCall));
+                                       + Util.code2str(qCall));
                 }
 
                 for (int i = 0; i<calledMethods.length; i++ ) {
@@ -792,7 +791,7 @@ public class IncompatibilityAnalysis {
             // sanity check
             assert  (reachNN || reachNE) && (reachEN || reachEE) :
                 "Must have a way of getting out of the method (at "
-                + Debug.code2str(qCall)+")";
+                + Util.code2str(qCall)+")";
 
             
             for (Iterator it2 = md.calls.getValues(qCall).iterator();
@@ -1116,7 +1115,7 @@ public class IncompatibilityAnalysis {
             // allocs for outgoing edges
             Set[] edgeAllocs = new Set[q.nextLength()];
 
-            // System.out.println("  Per node: " + Debug.code2str(q));            
+            // System.out.println("  Per node: " + Util.code2str(q));            
             if (q.kind() == QuadKind.NEW) {
                 allocs = edgeAllocs[0] = Collections.singleton( ((NEW) q).dst());
             } else {
@@ -1400,7 +1399,7 @@ public class IncompatibilityAnalysis {
 	     (SIZE_IN_BYTES ? "(bytes): " : "(fields): ") +
 	     usize + " (normal) / " +
 	     psize + " (sharing);\treduction = " +
-	     Debug.doubleRep
+	     Util.doubleRep
 	     ( (100 * ((double) usize - psize)) / ((double) usize), 5, 2) +
 	     "%");
 
@@ -1445,9 +1444,9 @@ public class IncompatibilityAnalysis {
 	    Quad to = (Quad) entry.getValue();
 
 	    if (from instanceof NEW) { 
-		System.out.println("  " +Debug.code2str(from) + " | " +
+		System.out.println("  " +Util.code2str(from) + " | " +
 				   from.hashCode() + " -> ");
-		System.out.println("  " +Debug.code2str(to) + " | " +
+		System.out.println("  " +Util.code2str(to) + " | " +
 				   to.hashCode());
 	    }
 	}
@@ -1550,7 +1549,7 @@ public class IncompatibilityAnalysis {
             if (I.getValues(alloc).isEmpty()) continue;
 
             System.out.println("   " + alloc + ": "
-                               + Debug.code2str((NEW) globalAllocMap.get(alloc)));
+                               + Util.code2str((NEW) globalAllocMap.get(alloc)));
         }
     }
     

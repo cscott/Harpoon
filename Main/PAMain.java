@@ -97,7 +97,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.16 2003-02-03 23:23:31 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.17 2003-02-12 19:03:53 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -477,7 +477,7 @@ public abstract class PAMain {
 		MetaMethod[] callees = mcg.getCallees(mm, call);
 		int nb_callees = callees.length;
 		if(callees.length == 0)
-		    System.out.println("EMPTY CALL " + Debug.code2str(call) +
+		    System.out.println("EMPTY CALL " + Util.code2str(call) +
 				       "\n  in " + mm);
 		nb_total_callees += nb_callees;
 		if(call.isVirtual()) {
@@ -495,15 +495,15 @@ public abstract class PAMain {
 	System.out.println("\nCALL SITES STATISTICS:\n");
 	System.out.println("Total calls       = " + nb_calls);
 	System.out.println("Non-virtual calls = " + nb_nvirtual_calls + "\t" +
-			   Debug.get_perct(nb_nvirtual_calls, nb_calls));
+			   Util.percentage(nb_nvirtual_calls, nb_calls));
 	System.out.println("Virtual calls     = " + nb_virtual_calls + "\t" +
-			   Debug.get_perct(nb_virtual_calls, nb_calls));
+			   Util.percentage(nb_virtual_calls, nb_calls));
 	for(int i = 0; i < MAX_CALLEES; i++)
 	    if(vcalls[i] > 0)
 		System.out.println("  " + i + " callee(s) = " + vcalls[i] +
-		      "\t" + Debug.get_perct(vcalls[i], nb_virtual_calls));
+		      "\t" + Util.percentage(vcalls[i], nb_virtual_calls));
 	System.out.println("Average callees/call site = " + 
-		Debug.doubleRep(((double) nb_total_callees) / nb_calls, 2));
+		Util.doubleRep(((double) nb_total_callees) / nb_calls, 2));
 	System.out.println("-----------------------------------------------");
     }
 
@@ -725,7 +725,7 @@ public abstract class PAMain {
 
 			    Quad q = (Quad) itq.next();
 			    System.out.println("Graph just before <<" + 
-					       Debug.code2str(q) + ">>: " +
+					       Util.code2str(q) + ">>: " +
 					       pa.getPIGAtQuad(mm, q));
 			}
 		    }
@@ -1372,7 +1372,7 @@ public abstract class PAMain {
 	    System.out.println(" " + node);
 	    System.out.println
 		("  CREATED IN: " + 
-		 Debug.code2str
+		 Util.code2str
 		 (pa.getNodeRepository().node2Code(node.getRoot())));
 	}
     }
@@ -1968,7 +1968,7 @@ public abstract class PAMain {
 	       !pig.G.captured(node)) {
 		System.out.println
 		    ("RTJ: " + node + " created at " + 
-		     Debug.code2str(pa.getNodeRepository().node2Code
+		     Util.code2str(pa.getNodeRepository().node2Code
 				    (node.getRoot())) +
 		     " escapes -> false");
 		return false;

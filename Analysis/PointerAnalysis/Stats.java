@@ -3,15 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
-
-import java.util.List;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Comparator;
-
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HClass;
@@ -22,11 +13,22 @@ import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Util.Graphs.SCComponent;
 
+import harpoon.Util.Util;
+
+import java.util.List;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Comparator;
+
+
 /**
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Stats.java,v 1.4 2002-05-11 02:54:02 salcianu Exp $
+ * @version $Id: Stats.java,v 1.5 2003-02-12 19:03:34 salcianu Exp $
  */
 abstract class Stats implements java.io.Serializable {
 
@@ -161,19 +163,19 @@ abstract class Stats implements java.io.Serializable {
 	System.out.println("--AVERAGES--------------------------------");
 	double appmm = (double)total_passes/(double)nb_mmethods;
 	System.out.println("Average Passes/Meta-Method      : " +
-			   Debug.doubleRep(appmm, 6, 2));
+			   Util.doubleRep(appmm, 6, 2));
 	double aipmm = (double)total_instrs/(double)nb_mmethods;
 	System.out.println("Average Instrs/Meta-Method      : " +
-			   Debug.doubleRep(aipmm, 6, 2));
+			   Util.doubleRep(aipmm, 6, 2));
 	double abbpscc = (double)total_bbs/(double)total_sccs;
 	System.out.println("Average BB(s)/SCC               : " + 
-			   Debug.doubleRep(abbpscc, 6, 2));
+			   Util.doubleRep(abbpscc, 6, 2));
 	double aipbb = (double)total_instrs/(double)total_bbs;
 	System.out.println("Average Instrs/BB               : " + 
-			   Debug.doubleRep(aipbb, 6, 2));
+			   Util.doubleRep(aipbb, 6, 2));
 	double aoppmm = (double)total_params/(double)nb_mmethods;
 	System.out.println("Average Obj. Params/Meta-Method : " + 
-			   Debug.doubleRep(aoppmm, 6, 2));
+			   Util.doubleRep(aoppmm, 6, 2));
 
 	System.out.println("--EXTREMES--------------------------------");
 	System.out.println("Biggest nb of obj. params : " + maxim_nb_params);

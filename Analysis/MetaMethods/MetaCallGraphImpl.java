@@ -80,7 +80,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.9 2002-11-30 06:33:41 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.10 2003-02-12 19:03:20 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -988,7 +988,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    System.out.println("ALARM!<\n" + "  mm = " + mm_work + 
 			       "\n  " +
 			       (poly ? "POLY" : "MONO") + 
-			       " cs = " + Debug.code2str(cs) +
+			       " cs = " + Util.code2str(cs) +
 			       "> 0 callees!");
 	    // display the SCC of exact temps and their types
 	    display_mm_data(mm_work);
@@ -1009,7 +1009,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 		ExactTemp et = (ExactTemp) it.next();
 		System.out.println("< " + et.t + ", " + 
 				   ((et.ud == ExactTemp.USE)?"USE":"DEF") +
-				   ", " + Debug.code2str(et.q) +
+				   ", " + Util.code2str(et.q) +
 				   " > has type(s) {");
 		for(Iterator it2 = et.getTypes(); it2.hasNext(); )
 		    System.out.println("\t" + ((GenType) it2.next()));
@@ -1140,7 +1140,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	}
 	catch(NoSuchMethodError nsme){
 	    System.out.println("treat_mono_base: " + 
-			       Debug.code2str(cs) + " " + nsme);
+			       Util.code2str(cs) + " " + nsme);
 	    implements_hm = false;
 	}
 
@@ -1311,7 +1311,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	String shortDescription(){
 	    return "<" + t.toString() + ", " +
 		((ud == ExactTemp.DEF) ? "DEF" : "USE") + ", " +
-		Debug.code2str(q) + ">";
+		Util.code2str(q) + ">";
 	}
 
 	public String toString(){
@@ -1396,7 +1396,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    /*
 	    System.out.println
 		("\n\ttypecast: " +
-		 harpoon.Analysis.PointerAnalysis.Debug.code2str(q) + "\n");
+		 harpoon.Analysis.PointerAnalysis.Util.code2str(q) + "\n");
 	    */
 
 	    if(CAUTION && !t.equals(q.objectref())) stop_no_def(q);
@@ -1820,7 +1820,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 			    hcomp != null :
 			    "\n" + q.objectref() +
 			    " could have the non-array type <" + c + "> in " +
-			    Debug.code2str(q);
+			    Util.code2str(q);
 			et.addType(new GenType(hcomp, GenType.POLY));
 		    }
 		}

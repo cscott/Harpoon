@@ -3,15 +3,15 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
+import harpoon.IR.Quads.CALL;
+import harpoon.Temp.Temp;
+import harpoon.Util.DataStructs.Relation;
+import harpoon.Util.DataStructs.RelationImpl;
+import harpoon.Util.Util;
+
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
-
-import harpoon.IR.Quads.CALL;
-import harpoon.Temp.Temp;
-
-import harpoon.Util.DataStructs.Relation;
-import harpoon.Util.DataStructs.RelationImpl;
 
 /**
    <code>ComputeMuClosure</code> is a [functional-programming style]
@@ -19,7 +19,7 @@ import harpoon.Util.DataStructs.RelationImpl;
    comments around that method for more info.
  
    @author  Alexandru Salcianu <salcianu@MIT.EDU>
-   @version $Id: ComputeInterProcMuClosure.java,v 1.1 2002-11-27 18:29:53 salcianu Exp $ */
+   @version $Id: ComputeInterProcMuClosure.java,v 1.2 2003-02-12 19:03:34 salcianu Exp $ */
 public class ComputeInterProcMuClosure {
 
     private static final boolean DEBUG = false;
@@ -41,7 +41,7 @@ public class ComputeInterProcMuClosure {
 	if(DEBUG) {
 	    System.out.println
 		("computeInterProcMu:\n" + 
-		 "call = " + Debug.code2str(call) + "\n" +
+		 "call = " + Util.code2str(call) + "\n" +
 		 "pig_caller = " + pig_caller + "\n" + 
 		 "pig_callee = " + pig_callee + "\n" +
 		 "callee_params = {");
@@ -132,7 +132,7 @@ public class ComputeInterProcMuClosure {
 	assert object_params_count == callee_params.length :
 	    "\tDifferent numbers of object formals (" + 
 	    callee_params.length + ") and object arguments (" +
-	    object_params_count + ") for \n\t" + Debug.code2str(call);
+	    object_params_count + ") for \n\t" + Util.code2str(call);
     }
 
 

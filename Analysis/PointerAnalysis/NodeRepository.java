@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.5 2002-11-27 18:29:53 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.6 2003-02-12 19:03:34 salcianu Exp $
  */
 public class NodeRepository implements java.io.Serializable {
 
@@ -218,7 +218,7 @@ public class NodeRepository implements java.io.Serializable {
 
 	    if(SHOW_NODE_CREATION)
 		System.out.println("CREATED NODE " + node + " for " +
-				   Debug.code2str(hce));
+				   Util.code2str(hce));
 	}
 	return node;
     }
@@ -289,7 +289,7 @@ public class NodeRepository implements java.io.Serializable {
 	PANode root = node.getRoot();
 	System.out.println("getInsideNodeType: " + root);
 	HCodeElement hce = node2Code(root);
-	System.out.println("getInsideNodeType: " + Debug.code2str(hce));
+	System.out.println("getInsideNodeType: " + Util.code2str(hce));
 	return getAllocatedType(hce);
     }
 

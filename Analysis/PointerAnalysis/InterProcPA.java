@@ -51,7 +51,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: InterProcPA.java,v 1.6 2002-11-27 18:29:53 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.7 2003-02-12 19:03:34 salcianu Exp $
  */
 public abstract class InterProcPA implements java.io.Serializable {
 
@@ -97,7 +97,7 @@ public abstract class InterProcPA implements java.io.Serializable {
 					       ParIntGraph pig_before) {
 	if(DEBUG || DEBUG_MU)
 	    System.out.println("\nInter-procedural analysis " +
-			       Debug.code2str(q));
+			       Util.code2str(q));
 
 	ParIntGraphPair pp_after = null;
 
@@ -115,7 +115,7 @@ public abstract class InterProcPA implements java.io.Serializable {
 	if(nb_callees == 0){
 	    if(WARNINGS){
 		System.out.println("Warning: CALL site with no callee! ");
-		System.out.println("Warning:  " + Debug.code2str(q));
+		System.out.println("Warning:  " + Util.code2str(q));
 	    }
  	    return new ParIntGraphPair(pig_before, pig_before);
 	}
@@ -156,7 +156,7 @@ public abstract class InterProcPA implements java.io.Serializable {
 		System.out.println("NATIVE: " + hm);
 	      if(isTotallyHarmful(hm)) {
 		if(DEBUG)
-		  System.out.print("NEED TO SKIP: " + Debug.code2str(q));
+		  System.out.print("NEED TO SKIP: " + Util.code2str(q));
 		return skip_call(pa, q, pig_before, hm);
 	      }
 	      else {
@@ -181,7 +181,7 @@ public abstract class InterProcPA implements java.io.Serializable {
 
 	    if(!(PointerAnalysis.analyzable(hm))){
 		if(DEBUG)
-		    System.out.println("NEED TO SKIP: " + Debug.code2str(q));
+		    System.out.println("NEED TO SKIP: " + Util.code2str(q));
 		return skip_call(pa, q, pig_before, hm);
 	    }
 	    
@@ -553,7 +553,7 @@ public abstract class InterProcPA implements java.io.Serializable {
 	assert object_params_count == callee_params.length :
 	    "\tDifferent numbers of object formals (" + 
 	    callee_params.length + ") and object arguments (" +
-	    object_params_count + ") for \n\t" + Debug.code2str(call);
+	    object_params_count + ") for \n\t" + Util.code2str(call);
     }
 
 
@@ -962,7 +962,7 @@ public abstract class InterProcPA implements java.io.Serializable {
 	    return null;
 
 	if(DEBUG)
-	    System.out.println("NATIVE (special): " + Debug.code2str(q));
+	    System.out.println("NATIVE (special): " + Util.code2str(q));
 
 	// the conventional field name used for the array's entries
 	final String f = PointerAnalysis.ARRAY_CONTENT;

@@ -26,7 +26,7 @@ import harpoon.Util.DataStructs.Relation;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.3 2003-01-07 15:05:25 salcianu Exp $
+ * @version $Id: Debug.java,v 1.4 2003-02-12 19:03:34 salcianu Exp $
  */
 public abstract class Debug implements java.io.Serializable {
 
@@ -128,63 +128,6 @@ public abstract class Debug implements java.io.Serializable {
 	}
     }
 
-    // the powers of 10!!
-    private static double[] fact = 
-             {1.0, 10.0, 100.0, 1000.0, 10000.0, 100000.0};
-
-
-    /** Returns the string representation of the double d, with a certain
-	number of decimals. Let me know if you know something better. */
-    public static String doubleRep(double d, int decimals){
-	double dfloor = Math.floor(d); // (double) integer part of d
-	double dfrac = d - dfloor;     // fractional part of d
-	int ifloor = (int) dfloor;     // integer part of d
-	// the last d decimals
-	int fracint = (int) Math.ceil(dfrac * fact[decimals]); 
-
-	StringBuffer fracstr = new StringBuffer(String.valueOf(fracint));
-	int missing_decs = decimals - fracstr.length();
-	for(int i = 0; i < missing_decs; i++)
-	    fracstr.append("0");
-
-	return String.valueOf(ifloor) + "." + fracstr.toString();
-    }
-
-    /** Returns the string representation of the double d, with a certain
-	number of decimals. Let me know if you know something better. */
-    public static String doubleRep(double d, int digits, int decimals){
-	StringBuffer buffer = new StringBuffer(Debug.doubleRep(d,decimals));
-	int desired_point = digits - decimals - 1;
-	int current_point = buffer.toString().indexOf(".");
-	int needed_spaces = desired_point - current_point;
-	if(needed_spaces == 0) return buffer.toString();
-	StringBuffer buffer2 = new StringBuffer();
-	for(int i = 0; i < needed_spaces; i++)
-	    buffer2.append(" ");
-	return buffer2.toString() + buffer.toString();
-    }
-
-
-    /** Returns a string representing the proportion a/total (in percents). */
-    public static String get_perct(double a, double total) {
-	double perct = (100.0 * a) / total;
-	return doubleRep(perct, 5, 2) + "%";
-    }
-
-    /** Returns the line of the instruction q in the format
-	<code>source_file:line_number</code>. */
-    public static String getLine(HCodeElement q) {
-	return
-	    q.getSourceFile() + ":" + q.getLineNumber();
-    }
-
-    /** Returns the string representation of the code instruction q
-	in the formay: <code>source_file:line_number instruction</code>. */
-    public static String code2str(HCodeElement q) {
-	if(q == null) return "(null)";
-	return
-	    getLine(q)  + " " + q;
-    }
 
     /** Checks whether the method <code>hm</code> is the method named
 	<code>mthd</code> from the class named <code>cls</code>. */
@@ -193,13 +136,4 @@ public abstract class Debug implements java.io.Serializable {
 	    hm.getName().equals(mthd) &&
 	    hm.getDeclaringClass().getName().equals(cls);
     }
-
-    /** Returns the string representation of the proportion a/b.  The
-	proportion is printed as a percentage, with 2 decimals.  Eg,
-	1/2 is presented as 50.00%. */
-    public static String proportion2str(long a, long b) {
-	double frac = (((double) 100) * ((double) a)) / ((double) b);
-	return doubleRep(frac, 5, 2) + "%";
-    }
-
 }

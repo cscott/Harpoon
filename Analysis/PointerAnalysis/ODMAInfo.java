@@ -69,7 +69,7 @@ import harpoon.Util.DataStructs.LightMap;
  * <code>ODMAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODMAInfo.java,v 1.4 2002-04-10 03:00:42 cananian Exp $
+ * @version $Id: ODMAInfo.java,v 1.5 2003-02-12 19:03:34 salcianu Exp $
  */
 public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -351,7 +351,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 // 			if(DEBUG)
 			    System.out.println("STACK: " +
 					       " was stack allocated " +
-					       Debug.getLine(q) + " " + node);
+					       Util.getLine(q) + " " + node);
 			status.onStack = true;
 		    }
 		}
@@ -381,7 +381,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 			//if(DEBUG)
                            {
 			       System.out.print("THREAD:  was thread allocated " +
-					       Debug.getLine(q) + " " + node);
+					       Util.getLine(q) + " " + node);
 			       if (pig.G.excp.contains(node))
 				   System.out.println(" (returned as exception)");
 			       else
@@ -391,7 +391,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		    }
 		    else{
 			Quad q = (Quad) node_rep.node2Code(node);
-			System.out.print("node escapes of Thread " + Debug.getLine(q) + ".");
+			System.out.print("node escapes of Thread " + Util.getLine(q) + ".");
 			if (pig.G.excp.contains(node))
 			    System.out.println(" (returned as exception)");
 			else
@@ -548,7 +548,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 // 			if(DEBUG)
 			    System.out.println("STACK: " + 
 					       " was stack allocated " +
-					       Debug.getLine(q)  +  " " + node );
+					       Util.getLine(q)  +  " " + node );
 			status.onStack = true;
 // 			ODMAInfo.Nodes2Status.put(node,new Integer(1));
 		    }
@@ -582,7 +582,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 			//if(DEBUG)
                            {
 			       System.out.print("THREAD: " + " was thread allocated " +
-					       Debug.getLine(q) + " " + node );
+					       Util.getLine(q) + " " + node );
 			       if (pig.G.excp.contains(node))
 				   System.out.println(" (returned as exception)");
 			       else
@@ -592,7 +592,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		    }
 		    else{
 			Quad q = (Quad) node_rep.node2Code(node);
-			System.out.print("node escapes of Thread " + Debug.getLine(q) 
+			System.out.print("node escapes of Thread " + Util.getLine(q) 
 					 + " " + node);
 			if (pig.G.excp.contains(node))
 			    System.out.println(" (returned as exception)");
@@ -732,7 +732,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		// 			if(DEBUG)
 		System.out.println("STACK: " + 
 				   " was stack allocated " +
-				   Debug.getLine(q)  +  " " + node );
+				   Util.getLine(q)  +  " " + node );
 		status.onStack = true;
 	    }
 	}
@@ -761,7 +761,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		if(DEBUG)
 		    {
 			System.out.print("THREAD: " + " was thread allocated " +
-					 Debug.getLine(q) + " " + node );
+					 Util.getLine(q) + " " + node );
 			if (pig.G.excp.contains(node))
 			    System.out.println(" (returned as exception)");
 			else
@@ -771,7 +771,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    }
 	    else{
 		Quad q = (Quad) node_rep.node2Code(node);
-		System.out.print("node escapes of Thread " + Debug.getLine(q) 
+		System.out.print("node escapes of Thread " + Util.getLine(q) 
 				 + " " + node);
 		if (pig.G.excp.contains(node))
 		    System.out.println(" (returned as exception)");
@@ -1335,7 +1335,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	HClass hclass = getAllocatedType(q);
 	if(java_lang_Thread.isSuperclassOf(hclass)) {
 	    // if(DEBUG)
-		System.out.println(Debug.code2str(q) + " Thread on Stack");
+		System.out.println(Util.code2str(q) + " Thread on Stack");
 	    return true;
 	}
 	return false;
@@ -1375,7 +1375,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    if(!(quad instanceof NEW)) continue;
 	    NEW qn = (NEW) quad;
 	    MyAP ap = (MyAP) ai.query(qn);
-	    System.out.println(Debug.code2str(qn) + "->" + ap);			       
+	    System.out.println(Util.code2str(qn) + "->" + ap);			       
 	}
 	System.out.println("--------------------");
     }
@@ -1602,11 +1602,11 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
 // 	if(DEBUG) 
 	{
-	    System.err.println("INLINING HINT: " + Debug.code2str(cs));
-	    System.out.println("\nINLINING HINT: " + Debug.code2str(cs));
+	    System.err.println("INLINING HINT: " + Util.code2str(cs));
+	    System.out.println("\nINLINING HINT: " + Util.code2str(cs));
 	    System.out.println("NEW STACK ALLOCATION SITES:");
 	    for(int i = 0; i < news_array.length; i++)
-		System.out.println(" " + Debug.code2str(news_array[i]));
+		System.out.println(" " + Util.code2str(news_array[i]));
 	}
     }
 
@@ -1622,7 +1622,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		System.out.println("Processed SCC:{");
 		Object[] nodes = scc.nodes();
 		for(int i = 0; i < nodes.length; i++)
-		    System.out.println(" " + Debug.code2str((CALL) nodes[i]));
+		    System.out.println(" " + Util.code2str((CALL) nodes[i]));
 		System.out.println("}");
 	    }
 	    Object[] nodes = scc.nodes();
@@ -1675,7 +1675,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
 
     private void inline_call_site(CALL cs, HCodeFactory hcf, Map ih) {
-	System.out.println("INLINING " + Debug.code2str(cs));
+	System.out.println("INLINING " + Util.code2str(cs));
 	HMethod caller = quad2method(cs);
 	System.out.println("caller = " + caller);
 
@@ -1721,7 +1721,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    assert q != null : "no new Quad for " + news[i];
 	    MyAP ap = new MyAP(getAllocatedType(q));
 
-	    System.out.println("New Stack Allocation " + Debug.code2str(q));
+	    System.out.println("New Stack Allocation " + Util.code2str(q));
 
  	    if (ODMAInfo.MEM_OPTIMIZATION)
 		ap.sa = true;
