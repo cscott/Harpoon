@@ -1,6 +1,10 @@
 #!/usr/bin/perl
 use English;
 
+# configuration:
+my $tabsize = 8;
+# end configuration
+
 my @lines; # line array
 my @markupBf; # markup array, by line (before)
 my @markupAf; # markup array, by line (after)
@@ -50,6 +54,32 @@ my $filename = $ARGV[0];
 open(INFILE, "<" . $filename) or die("Couldn't open $filename.\n");
 @lines=<INFILE>;
 close(INFILE);
+
+# markup up tabs and unicode characters (remember java pre-processes them)
+# leaving character positions correct.
+for ($i=0; $i<=$#lines; $i++) {
+    my $tabfixup=0;
+    while ($lines[$i] =~ m/(\t)|(\\u*[0-9a-fA-F]{4})/g) {
+	my $endloc = pos $lines[$i]; # pos is the place match *ended*
+	my $sloc = $endloc - (defined($1)?length($1):length($2));
+	my $l = $lines[$i]; # convenience
+	if (defined $1) { # found a tab
+	    my $nspaces = $tabsize-(($sloc-$tabfixup) % $tabsize);
+            $tabfixup = $endloc; # next char on a tab boundary now.
+            $lines[$i] = substr($l,0,$sloc)." ".substr($l,$endloc);#insert 1 sp
+            insertAfter($i,$sloc," ") while --$nspaces > 0;#insert nspaces-1 sp
+        }
+        if (defined $2) { # unicode character (joy, joy)
+	    # compress to a single char in our representation.
+	    my $strlen = $endloc-$sloc;
+	    $lines[$i] = substr($l,0,$sloc+1).substr($l,$endloc);
+            insertAfter($i,$sloc,substr($l,$sloc+1,$strlen-1));
+            $tabfixup-=$strlen-1;
+            $endloc=$sloc+1; # compress compress
+	}
+        pos($lines[$i]) = $endloc; # make things perfectly clear to perl
+    }
+}
 
 # go through and substitute for special characters
 for ($i=0; $i<=$#lines; $i++) {
