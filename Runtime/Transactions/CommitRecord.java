@@ -11,7 +11,7 @@ package harpoon.Runtime.Transactions;
  * records.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CommitRecord.java,v 1.2 2002-02-25 21:06:48 cananian Exp $
+ * @version $Id: CommitRecord.java,v 1.2.6.1 2003-07-16 01:12:52 cananian Exp $
  */
 public class CommitRecord {
     // enumerated constants
@@ -35,7 +35,8 @@ public class CommitRecord {
      */
     public final CommitRecord retryTransaction()
 	throws TransactionAbortException {
-	if (retry_count > 2) throw new TransactionAbortException(parent);
+	if (retry_count > 2 && parent!=null)
+	    throw new TransactionAbortException(parent);
 	try {
 	    Thread.sleep(retry_count); // sleep for a few milliseconds.
 	} catch (InterruptedException ex) { /* wake up */ }
