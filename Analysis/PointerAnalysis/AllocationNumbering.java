@@ -21,12 +21,13 @@ import java.util.Set;
  * <code>AllocationNumbering</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.1.2.4 2000-11-13 20:12:38 bdemsky Exp $
+ * @version $Id: AllocationNumbering.java,v 1.1.2.5 2000-12-11 23:09:07 vivien Exp $
  */
 public class AllocationNumbering implements java.io.Serializable {
     private final CachingCodeFactory hcf;
-    private final Map alloc2int = new HashMap();
-    private final Map call2int;
+    //tbu
+    public final Map alloc2int = new HashMap();
+    public final Map call2int;
     int n=0,c=0;
     
     /** Creates a <code>AllocationNumbering</code>. */
