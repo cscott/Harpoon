@@ -13,7 +13,7 @@ import java.util.Map;
  * an <code>UnsupportedOperationException</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractMapEntry.java,v 1.1.2.3 1999-04-06 14:57:40 cananian Exp $ */
+ * @version $Id: AbstractMapEntry.java,v 1.1.2.4 1999-06-17 17:18:00 cananian Exp $ */
 public abstract class AbstractMapEntry implements Map.Entry {
     /** Returns the key corresponding to this entry. */
     public abstract Object getKey();
@@ -42,9 +42,10 @@ public abstract class AbstractMapEntry implements Map.Entry {
      *  Returns <code>true</code> if the given object is also a map
      *  entry and the two entries represent the same mapping. */
     public boolean equals(Object o) {
-	if (!(o instanceof Map.Entry)) return false;
 	Map.Entry e1 = this;
-	Map.Entry e2 = (Map.Entry) o;
+	Map.Entry e2;
+	try { e2 = (Map.Entry) o; }
+	catch (ClassCastException e) { return false; }
 	return 
 	    (e1.getKey()==null ?
 	     e2.getKey()==null : e1.getKey().equals(e2.getKey())) &&

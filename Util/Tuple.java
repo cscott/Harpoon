@@ -12,7 +12,7 @@ import java.util.List;
  * properly in Hashtables & etc.  Tuples may have <code>null</code> elements.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tuple.java,v 1.2.2.3 1999-02-24 00:48:18 cananian Exp $
+ * @version $Id: Tuple.java,v 1.2.2.4 1999-06-17 17:18:00 cananian Exp $
  */
 public class Tuple  {
     Object elements[];
@@ -39,8 +39,8 @@ public class Tuple  {
     }
     /** Does an element-by-element comparison of two <code>Tuple</code>s. */
     public boolean equals(Object obj) {
-	if (!(obj instanceof Tuple)) return false;
-	Tuple t = (Tuple) obj;
+	Tuple t;
+	try { t = (Tuple) obj; } catch (ClassCastException e) { return false; }
 	if (this.elements.length != t.elements.length) return false;
 	for (int i=0; i<elements.length; i++)
 	    if (this.elements[i]==null) {
