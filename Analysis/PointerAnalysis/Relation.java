@@ -11,6 +11,8 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map;
 
+import java.util.Arrays;
+
 
 /**
  * <code>Relation</code> implements a generalized (i.e. one to many) relation.
@@ -19,7 +21,7 @@ import java.util.Map;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.9 2000-02-08 05:28:40 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.10 2000-02-11 06:12:07 salcianu Exp $
  */
 public class Relation{
     
@@ -55,14 +57,17 @@ public class Relation{
 	HashSet set = (HashSet)hash.get(key);
 	if(set==null) return;
 	set.remove(value);
+	if(set.isEmpty())
+	    hash.remove(key);
     }
     
     /** Removes all the relations starting from <code>key</code> i.e.
      *  all <code>key->value</code> pairs. */
     public void removeAll(Object key){
-	HashSet set = (HashSet)hash.get(key);
-	if(set==null) return;
-	set.clear();
+	hash.remove(key);
+	//HashSet set = (HashSet)hash.get(key);
+	//if(set==null) return;
+	//set.clear();
     }
 
     /** Checks the existence of the relation <code>key</code> ->
@@ -154,8 +159,7 @@ public class Relation{
     }
 
 
-
-    /** Creates a new, independent relation (i.e. the operation on 
+    /** Creates a new, independent relation (i.e. the operations on 
      *  the new relation won't affect the old one). */
     public Object clone(){
 	Hashtable new_hash = new Hashtable();
@@ -167,20 +171,48 @@ public class Relation{
 	return new Relation(new_hash);
     }
 
-    /** Pretty-print function for debug */
+    /** Pretty-print function for debug.
+	<code>rel1.equals(rel2) <==> rel1.toString().equals(rel2.toString())</code> */
     public String toString(){
 	StringBuffer buffer = new StringBuffer();
-	buffer.append("  {");
-	Enumeration enum = keys();
-	while(enum.hasMoreElements()){
-	    Object o = enum.nextElement();
-	    buffer.append("\n  ");
-	    buffer.append(o);
+
+	buffer.append("{");
+	
+	Set keyset = keySet();
+	Object[] keys = Debug.sortedSet(hash.keySet());
+	for(int i = 0 ; i < keys.length ; i++ ){
+	    Object key = keys[i];
+	    buffer.append("\n  ");		
+	    buffer.append(key);
 	    buffer.append(" -> ");
-	    buffer.append(getValuesSet(o));
+	    buffer.append(Debug.stringImg(getValuesSet(key)));
 	}
-	buffer.append("\n  }\n");
+	
+	buffer.append("\n }\n");
+	
 	return buffer.toString();
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

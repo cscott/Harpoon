@@ -12,7 +12,7 @@ import java.util.HashSet;
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.1.2.7 2000-02-08 05:23:31 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.8 2000-02-11 06:12:07 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -57,15 +57,18 @@ public class ParIntGraph {
 	ParIntGraph pig2 = (ParIntGraph)o;
 	// return G.equals(pig2.G) && tau.equals(pig2.tau);
 	if(!G.equals(pig2.G)){
-	    //System.out.println("The graphs are different");
+	    if(PointerAnalysis.DEBUG2)
+		System.out.println("The graphs are different");
 	    return false;
 	}
 	if(!tau.equals(pig2.tau)){
-	    //System.out.println("The tau's are different");
+	    if(PointerAnalysis.DEBUG2)
+		System.out.println("The tau's are different");
 	    return false;
 	}
 	if(!ar.equals(pig2.ar)){
-	    //System.out.println("The ar's are different");
+	    if(PointerAnalysis.DEBUG2)
+		System.out.println("The ar's are different");
 	    return false;
 	}
 	return true;
@@ -105,11 +108,21 @@ public class ParIntGraph {
     }
 
 
-    /** pretty-print function for debug purposes */
+    /** Pretty-print function for debug purposes. 
+	Two equal <code>ParIntGraph</code>s are guaranteed to have the same
+	string representation. */
     public String toString(){
 	return "\nParIntGraph{\n" + G + " " + tau + ar + "}"; 
     }
 
 }
+
+
+
+
+
+
+
+
 
 

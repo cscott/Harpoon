@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Iterator;
 import java.util.Set;
 
+import java.util.Arrays;
+
 import harpoon.Util.Util;
 
 /**
@@ -25,7 +27,7 @@ import harpoon.Util.Util;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.7 2000-02-10 00:43:58 salcianu Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.8 2000-02-11 06:12:07 salcianu Exp $
  */
 public class PAThreadMap{
 
@@ -142,7 +144,7 @@ public class PAThreadMap{
     }
 
     /** Produces a new <code>PAThreadMap</code> containing only the thread
-     * nodes that appear in <code>essential_nodes</code>, too */
+     * nodes that appear in <code>essential_nodes</code>. */
     public PAThreadMap keepTheEssential(Set essential_nodes){
 	Hashtable _hash = new Hashtable();
 	Iterator it = hash.entrySet().iterator();
@@ -183,16 +185,21 @@ public class PAThreadMap{
 	return true;
     }
 
-    /** Pretty print function for debug purposes. */
+    /** Pretty print function for debug purposes.
+     <code>tau1.equals(tau2) <==> tau1.toString().equals(tau2.toString()).</code> */
     public String toString(){
 	StringBuffer buffer = new StringBuffer("Parallel Thread Map:\n");
-	Iterator it = hash.entrySet().iterator();
-	while(it.hasNext()){
-	    Map.Entry e = (Map.Entry)it.next();
-	    buffer.append("  " + e.getKey().toString() + " -> " + 
-			  e.getValue().toString() + "\n");
+
+	Object[] active_threads = Debug.sortedSet(hash.keySet());
+	
+	for(int i = 0 ; i < active_threads.length ; i++){
+	    Object thread = active_threads[i];
+	    Object value  = hash.get(thread);
+	    buffer.append("  " + thread + " -> " + value + "\n");
 	}
-	return buffer.toString();
+	
+	return buffer.toString();    
     }
 
 }
+

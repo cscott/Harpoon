@@ -22,7 +22,7 @@ import java.util.Collections;
  * of the call graph for methods that fulfill a certain condition.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AllCallers.java,v 1.1.2.6 2000-01-27 06:19:05 salcianu Exp $
+ * @version $Id: AllCallers.java,v 1.1.2.7 2000-02-11 06:12:01 salcianu Exp $
  */
 
 public class AllCallers {
@@ -110,7 +110,7 @@ public class AllCallers {
     public HMethod[] directCallers(HMethod hm){
 	WorkSet wset = (WorkSet)g.get(hm);
 	if(wset==null) return new HMethod[0];
-	return (HMethod[]) (wset.toArray(new HMethod[0]));
+	return (HMethod[]) (wset.toArray(new HMethod[wset.size()]));
     }
 
     /** Returns all the direct callers of the <code>hm</code> method. */

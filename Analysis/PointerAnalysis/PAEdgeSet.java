@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Iterator;
 import java.util.Enumeration;
 
+import java.util.Arrays;
+
 import harpoon.Temp.Temp;
 
 /**
@@ -23,7 +25,7 @@ import harpoon.Temp.Temp;
  than the straightforward solution of a <code>HashSet</code> of edges.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdgeSet.java,v 1.1.2.8 2000-02-07 02:11:46 salcianu Exp $
+ * @version $Id: PAEdgeSet.java,v 1.1.2.9 2000-02-11 06:12:07 salcianu Exp $
  */
 public class PAEdgeSet {
 
@@ -327,27 +329,35 @@ public class PAEdgeSet {
 	return new PAEdgeSet(new_vars, map_nodes);
     }
 
-    /** Pretty-print function for debug purposes. */
+    /** Pretty-print function for debug purposes.
+	<code>edges1.equals(edges2) <==> edges1.toString().equals(edges2.toString()).</code> */
     public String toString(){
 	StringBuffer buffer = new StringBuffer();
 
 	buffer.append("{\n");
 	buffer.append(vars);
+	buffer.append("\n");
 
-	Iterator it = nodes.entrySet().iterator();
-
-	while(it.hasNext()){
-	    Map.Entry entry = (Map.Entry) it.next();
-	    buffer.append("  ");
-	    buffer.append((PANode)entry.getKey());
+	Object[] keys = Debug.sortedSet(nodes.keySet());	
+	for(int i = 0 ; i < keys.length ; i++){
+	    Object key = keys[i];
+	    Relation rel = (Relation) nodes.get(key);
+	    buffer.append(" ");
+	    buffer.append(key);
 	    buffer.append(" -> ");
-	    buffer.append((Relation)entry.getValue());
+	    buffer.append(rel);
 	}
-
-	buffer.append("}");
+	
+	buffer.append("}\n");
 	
 	return buffer.toString();
     }
 }
+
+
+
+
+
+
 
 

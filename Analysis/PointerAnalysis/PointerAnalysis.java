@@ -11,6 +11,8 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Date;
 import java.util.Collections;
+import java.util.Arrays;
+import java.util.Comparator;
 
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HClass;
@@ -53,12 +55,14 @@ import harpoon.IR.Quads.FOOTER;
  * computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.13 2000-02-09 05:23:42 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.14 2000-02-11 06:12:07 salcianu Exp $
  */
 public class PointerAnalysis {
 
     public static final boolean DEBUG = true;
-    public static final boolean EXTENDED_DEBUG = true;
+    public static final boolean DEBUG2 = true;
+    public static final boolean DETERMINISTIC = true;
+    public static final boolean TIMING = false;
 
     public static final String ARRAY_CONTENT = "array_elements";
 
@@ -135,7 +139,7 @@ public class PointerAnalysis {
     private PAWorkList  W_intra_proc = new PAWorkList();
 
     /** Repository for node management. */
-    // TODO: Must be private, it is public just for debug purposes
+    // TODO: Must be [package], it is public just for debug purposes
     public NodeRepository nodes = new NodeRepository(); 
     final NodeRepository getNodeRepository() { return nodes; }
 
@@ -146,10 +150,16 @@ public class PointerAnalysis {
 	SCComponent.Navigator navigator =
 	    new SCComponent.Navigator(){
 		    public Object[] next(Object node){
-			return cg.calls((HMethod)node);
+			HMethod[] hms = cg.calls((HMethod)node);
+			if(DETERMINISTIC)
+			    Arrays.sort(hms, UComp.uc);
+			return hms;
 		    }
 		    public Object[] prev(Object node){
-			return ac.directCallers((HMethod)node);
+			HMethod[] hms = ac.directCallers((HMethod)node);
+			if(DETERMINISTIC)
+			    Arrays.sort(hms, UComp.uc);
+			return hms;
 		    }
 		};
 
@@ -157,6 +167,8 @@ public class PointerAnalysis {
 	if(DEBUG)
 	  System.out.println("Creating the strongly connected components " +
 			     "of methods ...");
+
+	SCComponent.DETERMINISTIC = DETERMINISTIC;
 
 	// the topologically sorted graph of strongly connected components
 	// composed of mutually recursive methods (the edges model the
@@ -170,15 +182,26 @@ public class PointerAnalysis {
 	    int counter = 0;
 	    int methods = 0;
 	    SCComponent scc = method_sccs.getFirst();
+
+	    if(DEBUG2)
+		System.out.println("===== SCCs of methods =====");
+
 	    while(scc != null){
-		if(EXTENDED_DEBUG) System.out.print(scc.toString(cg));
+		if(DEBUG2){
+		    System.out.print(scc.toString(cg));
+		}
 		counter++;
 		methods += scc.nodeSet().size();
 		scc = scc.nextTopSort();
 	    }
-	    System.out.println(counter + " component(s); " +
-			       methods + " method(s); " +
-			       total_time + "ms processing time");
+
+	    if(DEBUG2)
+		System.out.println("===== END SCCs ============");
+
+	    if(TIMING)
+		System.out.println(counter + " component(s); " +
+				   methods + " method(s); " +
+				   total_time + "ms processing time");
 	}
 
 	SCComponent scc = method_sccs.getLast();
@@ -195,10 +218,17 @@ public class PointerAnalysis {
 	// of the methods from the actual group of mutually recursive
 	// methods. The others will be added later (because they are reachable
 	// in the AllCaller graph from this initial node). 
-	HMethod method = (HMethod)scc.nodes().next();
+
+	HMethod method = null;
+	if(DETERMINISTIC)
+	    method = (HMethod) scc.min();
+	else
+	    method = (HMethod) scc.nodes().next();
+
 	// if SCC composed of a native or abstract method, return immediately!
 	if(!analyzable(method)){
-	    System.out.println(scc.toString(cg) + " is unanalyzable");
+	    if(DEBUG)
+		System.out.println(scc.toString(cg) + " is unanalyzable");
 	    return;
 	}
 	W_inter_proc.add(method);
@@ -229,23 +259,33 @@ public class PointerAnalysis {
 
 		//yes! The callers of hm_work should be added to
 		// the inter-procedural worklist
-		Iterator it = ac.directCallerSet(hm_work).iterator();
-		while(it.hasNext()){
-		   HMethod hm_caller = (HMethod) it.next();
-		   if(methods.contains(hm_caller))
-		       W_inter_proc.add(hm_caller);
+		if(DETERMINISTIC){
+		    Object[] hms = ac.directCallers(hm_work);
+		    Arrays.sort(hms,UComp.uc);
+		    for(int i = 0; i < hms.length ; i++){
+			HMethod hm_caller = (HMethod) hms[i];
+			if(methods.contains(hm_caller))
+			    W_inter_proc.add(hm_caller);
+		    }
 		}
-		//System.out.println("-----");
+		else{
+		    Iterator it = ac.directCallerSet(hm_work).iterator();
+		    while(it.hasNext()){
+			HMethod hm_caller = (HMethod) it.next();
+			if(methods.contains(hm_caller))
+			    W_inter_proc.add(hm_caller);
+		    }
+		}
 	    }
 	}
 
 	scc_bb_factory.clear();
 
 	long total_time = new Date().getTime() - begin_time;
-	System.out.println("SCC" + scc.getId() + " analyzed in " + 
-			   total_time + " ms");
 
-	// System.out.println("SCC"+scc.getId() + " analysis finished.");
+	if(TIMING)
+	    System.out.println("SCC" + scc.getId() + " analyzed in " + 
+			       total_time + " ms");
     }
 
     // Mapping BB -> ParIntGraph.
@@ -256,7 +296,8 @@ public class PointerAnalysis {
 
     // Performs the intra-procedural pointer analysis.
     private void analyze_intra_proc(HMethod hm){
-	//System.out.println("Method: " + hm);
+	if(DEBUG2)
+	    System.out.println("Method: " + hm);
 
 	current_intra_method = hm;
 
@@ -281,8 +322,20 @@ public class PointerAnalysis {
     // Intra-procedural analysis of a strongly connected component of
     // basic blocks.
     private void analyze_intra_proc_scc(SCComponent scc){
+
+	if(DEBUG2)
+	    System.out.println("\nSCC" + scc.getId());
+
 	// add ALL the BB from this SCC to the worklist.
-	W_intra_proc.addAll(scc.nodeSet());
+
+	if(DETERMINISTIC){
+	    Object[] obj = Debug.sortedSet(scc.nodeSet());
+	    for(int i = 0 ; i < obj.length ; i++)
+		W_intra_proc.add(obj[i]);
+	}
+	else
+	    W_intra_proc.addAll(scc.nodeSet());
+
 	boolean must_check = scc.isLoop();
 
 	while(!W_intra_proc.isEmpty()){
@@ -299,15 +352,26 @@ public class PointerAnalysis {
 		
 		/// System.out.print("Neighbors of " + bb_work + ": ");
 
-		Enumeration enum = bb_work.next();
-		while(enum.hasMoreElements()){
-		    BasicBlock bb_next = (BasicBlock)enum.nextElement();
-		    /// System.out.print(bb_next + " ");
-		    // remain in the current strongly connected component
-		    if(scc.contains(bb_next))
-			W_intra_proc.add(bb_next);
+		if(DETERMINISTIC){
+		    Object[] bbs = Debug.sortedSet(bb_work.nextSet());
+		    for(int i = 0; i< bbs.length; i++){
+			BasicBlock bb_next = (BasicBlock) bbs[i];
+			/// System.out.print(bb_next + " ");
+			// remain in the current strongly connected component
+			if(scc.contains(bb_next))
+			    W_intra_proc.add(bb_next);
+		    }
 		}
-		
+		else{
+		    Enumeration enum = bb_work.next();
+		    while(enum.hasMoreElements()){
+			BasicBlock bb_next = (BasicBlock)enum.nextElement();
+			/// System.out.print(bb_next + " ");
+			// remain in the current strongly connected component
+			if(scc.contains(bb_next))
+			    W_intra_proc.add(bb_next);
+		    }
+		}
 		/// System.out.println();
 	    }
 	}
@@ -491,6 +555,10 @@ public class PointerAnalysis {
 		Set set = bbpig.G.I.pointedNodes(l);
 		bbpig.tau.incAll(set);
 
+		System.out.println("START: " + set);
+		System.out.println(bbpig.tau);
+		System.out.println("-----");
+
 		Iterator it_nt = set.iterator();
 		while(it_nt.hasNext()){
 		    PANode nt = (PANode) it_nt.next();
@@ -585,7 +653,14 @@ public class PointerAnalysis {
      *  in the original program). */
     private ParIntGraph analyze_basic_block(BasicBlock bb){
 
-	/// System.out.println("BEGIN: Analyze_basic_block " + bb);
+	if(DEBUG2){
+	    System.out.println("BEGIN: Analyze_basic_block " + bb);
+	    System.out.print("Prev BBs: ");
+	    Object[] prev_bbs = Debug.sortedSet(bb.prevSet());
+	    for(int i = 0 ; i < prev_bbs.length ; i++)
+		System.out.print((BasicBlock) prev_bbs[i] + " ");
+	    System.out.println();
+	}
 
 	PAVisitor visitor = new PAVisitor();	
 	Iterator instrs = bb.statements().iterator();
@@ -593,12 +668,18 @@ public class PointerAnalysis {
 	// updated till it become the graph at the bb* point
 	bbpig = get_initial_bb_pig(bb);
 
+	if(DEBUG2){
+	    System.out.println("Before:");
+	    System.out.println(bbpig);
+	}
+
 	// go through all the instructions of this basic block
 	while(instrs.hasNext()){
 	    
 	    Quad q = (Quad) instrs.next();
 
-	    /// System.out.println("Analyzing " + q);
+	    if(DEBUG2)
+		System.out.println("INSTR: " + q);
 	    
 	    // update the Parallel Interaction Graph according
 	    // to the current instruction
@@ -607,8 +688,16 @@ public class PointerAnalysis {
 
 	bb2pig.put(bb,bbpig);
 
-	/// System.out.println("END: Analyze_basic_block " + bb);
-
+	if(DEBUG2){
+	    System.out.println("After:");
+	    System.out.println(bbpig);
+	    System.out.print("Next BBs: ");
+	    Object[] next_bbs = Debug.sortedSet(bb.nextSet());
+	    for(int i = 0 ; i < next_bbs.length ; i++)
+		System.out.print((BasicBlock) next_bbs[i] + " ");
+	    System.out.println("\n");
+	}
+	    
 	return bbpig;
     }
     

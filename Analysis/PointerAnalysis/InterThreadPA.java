@@ -10,13 +10,17 @@ import java.util.Enumeration;
 
 import harpoon.Util.Util;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HClass;
 import harpoon.Temp.Temp;
+
+import harpoon.IR.Quads.NEW;
+
 
 /**
  * <code>InterThreadPA</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.3 2000-02-10 00:43:58 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.4 2000-02-11 06:12:07 salcianu Exp $
  */
 abstract class InterThreadPA {
     
@@ -29,8 +33,9 @@ abstract class InterThreadPA {
 	    if(nt==null) break;
 
 	    HMethod[] ops = get_run_methods(nt,pig,pa);
-	    
 	    analyzed_threads.add(nt);
+	    if((ops == null) || (ops.length==0)) continue;
+
 	    ParIntGraph old_pig = (ParIntGraph) pig.clone();
 	    ParIntGraph new_pig = interaction_nt(pig,nt,ops,pa);
 
@@ -47,7 +52,7 @@ abstract class InterThreadPA {
 	Enumeration enum = pig.tau.activeThreads();
 	while(enum.hasMoreElements()){
 	    PANode nt = (PANode) enum.nextElement();
-	    if(!analyzed_threads.contains(nt))
+	    if((nt.type == PANode.INSIDE) && !analyzed_threads.contains(nt))
 		return nt;
 	}
 	return null;
@@ -57,8 +62,23 @@ abstract class InterThreadPA {
     // the body of the threads abstracted by nt.
     private static HMethod[] get_run_methods(PANode nt, ParIntGraph pig,
 					     PointerAnalysis pa){
-	// TODO: Some decent implementation
-	return new HMethod[0];
+
+	NEW q = (NEW) pa.getNodeRepository().node2Code(nt);
+	HClass hclass = q.hclass();
+
+	HMethod[] hms = hclass.getMethods();
+	HMethod hm = null;
+
+	for(int i = 0 ; i < hms.length ; i++)
+	    if(hms[i].getName().equals("start") &&
+	       (hms[i].getParameterTypes().length == 0)){
+		hm = hms[i];
+		break;
+	    }
+
+	if(hm == null) return null;
+
+	return new HMethod[]{hm};
     }
 
 

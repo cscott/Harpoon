@@ -29,7 +29,7 @@ import java.util.Map;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.3 2000-02-10 00:43:58 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.4 2000-02-11 06:12:07 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -116,7 +116,18 @@ public class ActionRepository {
     public void add_sync(PANode n, PANode nt, Set active_threads){
 	alpha_sync.add(n,nt);
 	
-	if(active_threads == null) return;
+	if((active_threads == null) || active_threads.isEmpty()) return;
+
+	if(PointerAnalysis.DEBUG2){
+	    System.out.print("WONDERFUL: < sync , " + n + " , " + 
+			     nt + " > || [");
+	    
+	    Iterator it2 = active_threads.iterator();
+	    while(it2.hasNext())
+		System.out.print(it2.next() + " ");
+	    
+	    System.out.println("]");
+	}
 
 	Iterator it = active_threads.iterator();
 	while(it.hasNext()){
@@ -157,7 +168,7 @@ public class ActionRepository {
     /** Checks the equality of two <code>ActionRepository</code>s. */
     public boolean equals(Object o){
 	ActionRepository ar2 = (ActionRepository)o;
-	if (this == o) return true;
+	if (this == ar2) return true;
 	return
 	    alpha_ld.equals(ar2.alpha_ld) &&
 	    alpha_sync.equals(ar2.alpha_sync) &&
@@ -165,8 +176,8 @@ public class ActionRepository {
 	    pi_sync.equals(ar2.pi_sync);
     }
 
-    /** Does the union of <code>this</code> action repository with
-	another one.
+    /** Adds the information about actions and action-thread ordering from
+	<code>ar2</code> to <code>this</code> action repository.
 	This method is called in the control-flow join points. */
     public void join(ActionRepository ar2){
 	// these first three are really easy
@@ -174,11 +185,11 @@ public class ActionRepository {
 	pi_ld.union(ar2.pi_ld);
 	alpha_sync.union(ar2.alpha_sync);
 	// this one is a bit more difficult; we have to do it by hand
-	Iterator  it = pi_sync.entrySet().iterator();
+	Iterator  it = ar2.pi_sync.entrySet().iterator();
 	while(it.hasNext()){
 	    Map.Entry entry = (Map.Entry) it.next();
-	    PANode nt2 = (PANode) entry.getKey();
-	    Relation rel2 = (Relation) ar2.pi_sync.get(nt2);
+	    PANode    nt2 = (PANode)   entry.getKey();
+	    Relation rel2 = (Relation) entry.getValue();
 	    Relation rel1 = (Relation) pi_sync.get(nt2);
 	    if(rel1 == null)
 		pi_sync.put(nt2,(Relation) rel2.clone());
@@ -281,15 +292,15 @@ public class ActionRepository {
 	The new object is totally independent from the old one: you can
 	add/remove actions to/from it without affecting the original. */ 
     public Object clone(){
-	HashSet  new_alpha_ld = (HashSet) alpha_ld.clone();
-	Relation new_pi_ld    = (Relation) pi_ld.clone();
+	HashSet  new_alpha_ld   = (HashSet) alpha_ld.clone();
+	Relation new_pi_ld      = (Relation) pi_ld.clone();
 	Relation new_alpha_sync = (Relation) alpha_sync.clone();
 
 	Hashtable new_pi_sync   = new Hashtable();
 	Iterator  it = pi_sync.entrySet().iterator();
 	while(it.hasNext()){
 	    Map.Entry entry = (Map.Entry) it.next();
-	    PANode nt2 = (PANode) entry.getKey();
+	    PANode   nt2  = (PANode)   entry.getKey();
 	    Relation rel2 = (Relation) entry.getValue();
 	    new_pi_sync.put(nt2,(Relation) rel2.clone());
 	}
@@ -299,37 +310,49 @@ public class ActionRepository {
     }
 
 
-    /** Pretty-printer for debug purposes. */
+    /** Pretty-printer for debug purposes. 
+	<code>ar1.equals(ar2) <==> ar1.toString().equals(ar2.toString()).</code>*/
     public String toString(){
-	final StringBuffer buffer = new StringBuffer();
+	StringBuffer buffer = new StringBuffer();
+	final Set strings = new HashSet();
 
 	ActionVisitor act_visitor = new ActionVisitor(){
 		public void visit_ld(PALoad load){
-		    buffer.append(" " + load + "\n");
+		    strings.add("  " + load + "\n");
 		}
 		public void visit_sync(PANode n, PANode nt){
-		    buffer.append(" < sync , " + n + 
-				  (nt!=THIS_THREAD?(" , " + nt):"") +
-				  " >\n");
+		    strings.add("  < sync , " + n + 
+				(nt!=THIS_THREAD?(" , " + nt):"") +
+				" >\n");
 		}
 	    };
 
 	buffer.append(" Alpha:\n");
 	forAllActions(act_visitor);
 
+	Object[] strs = Debug.sortedSet(strings);
+	for(int i = 0 ; i < strs.length ; i++)
+	    buffer.append(strs[i]);
+
+	strings.clear();
+
 	ParActionVisitor par_act_visitor = new ParActionVisitor(){
 		public void visit_par_ld(PALoad load, PANode nt2){
-		    buffer.append(" " + load + " || " + nt2 + "\n");
+		    strings.add("  " + load + " || " + nt2 + "\n");
 		}
 		public void visit_par_sync(PANode n, PANode nt1, PANode nt2){
-		    buffer.append(" < sync , " + n + 
-				  (nt1!=THIS_THREAD?(" , " + nt1):"") +
-				  " > || " + nt2 + "\n");		    
+		    strings.add("  < sync , " + n + 
+				(nt1!=THIS_THREAD?(" , " + nt1):"") +
+				" > || " + nt2 + "\n");		    
 		}
 	    };
 
 	buffer.append(" Pi:\n");
 	forAllParActions(par_act_visitor);
+
+	strs = Debug.sortedSet(strings);
+	for(int i = 0 ; i < strs.length ; i++)
+	    buffer.append(strs[i]);
 
 	return buffer.toString();
     }

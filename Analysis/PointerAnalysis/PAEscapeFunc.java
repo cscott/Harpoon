@@ -17,7 +17,7 @@ import harpoon.ClassFile.HCodeElement;
  * <code>EscapeFunc</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.5 2000-02-07 02:11:46 salcianu Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.6 2000-02-11 06:12:07 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -160,32 +160,34 @@ public class PAEscapeFunc {
 			     (Relation)(rel_m.clone()));
     }
 
-    // Pretty-print debug function
+    /** Pretty-print debug function.
+	Two equal <code>PAEscapeFunc</code>s are guaranteed to have the same
+	string representation. */
     public String toString(){
-	StringBuffer buffer = new StringBuffer("Escape function: ");
+	StringBuffer buffer = new StringBuffer("Escape function:\n");
 
         HashSet set = new HashSet(rel_n.keySet());
         set.addAll(rel_m.keySet());
-        Iterator it = set.iterator();
 
-        while(it.hasNext()){
-            PANode n = (PANode)it.next();
-            buffer.append("\n  " + n + ":  ");
+	Object[] nodes = Debug.sortedSet(set);
+	for(int i = 0; i < nodes.length ; i++){
+	    PANode n = (PANode) nodes[i];
+	    buffer.append("  " + n + ":");
 	    
-	    Iterator it_n = nodeHoles(n);
-	    if(it_n != null){
-		while(it_n.hasNext())
-		    buffer.append((PANode)it_n.next() + " ");
+	    Object[] nholes = Debug.sortedSet(nodeHolesSet(n));
+	    for(int j = 0 ; j < nholes.length ; j++){
+		buffer.append(" ");
+		buffer.append((PANode)nholes[j]);
 	    }
-	    
-	    Iterator it_m = methodHoles(n);
-	    if(it_m != null){
-		while(it_m.hasNext()){
-		    HCodeElement hce = (HCodeElement) it_m.next();
-		    buffer.append("M" + hce.getSourceFile() + ":" + 
-				  hce.getLineNumber() + " ");
-		}
+
+	    Object[] mholes = Debug.sortedSet(methodHolesSet(n));
+	    for(int j = 0 ; j < mholes.length ; j++){
+		buffer.append(" ");
+		HCodeElement hce = (HCodeElement) mholes[j];
+		buffer.append("M" + hce.getSourceFile() + ":" +
+			      hce.getLineNumber());
 	    }
+	    buffer.append("\n");
 	}
 	
 	return buffer.toString();

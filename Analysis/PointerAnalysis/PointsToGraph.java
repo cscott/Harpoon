@@ -12,7 +12,7 @@ import java.util.Iterator;
  * <code>PointsToGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.7 2000-02-07 02:11:46 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.8 2000-02-11 06:12:07 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -96,23 +96,28 @@ public class PointsToGraph {
 	//  O.equals(G2.O) && I.equals(G2.I) &&
 	//  e.equals(G2.e) && r.equals(G2.r);
 	if(!O.equals(G2.O)){
-	    //System.out.println("different O's");
+	    if(PointerAnalysis.DEBUG2)
+		System.out.println("different O's");
 	    return false;
 	}
 	if(!I.equals(G2.I)){
-	    //System.out.println("different I's");
+	    if(PointerAnalysis.DEBUG2)
+		System.out.println("different I's");
 	    return false;
 	}
 	if(!e.equals(G2.e)){
-	    //System.out.println("different e's");
+	    if(PointerAnalysis.DEBUG2)
+		System.out.println("different e's");
 	    return false;
 	}
 	if(!r.equals(G2.r)){
-	    //System.out.println("different r's");
+	    if(PointerAnalysis.DEBUG2)
+		System.out.println("different r's");
 	    return false;
 	}
 	if(!excp.equals(G2.excp)){
-	    //System.out.println("different r's");
+	    if(PointerAnalysis.DEBUG2)
+		System.out.println("different excp's");
 	    return false;
 	}
 	return true;
@@ -214,14 +219,16 @@ public class PointsToGraph {
 	return new PointsToGraph(_O,_I,_e,_r,_excp);
     }
     
-
+    /** Pretty-print function for debug purposes.
+	Two equal <code>PointsToGraph</code>s are guaranteed to have the same
+	string representation. */
     public String toString(){
 	return 
-	    " Outside edges:" + O + "\n" +
-	    " Inside edges:" + I + "\n" +
-	    " " + e + "\n" + 
-	    " Return set:" + r + "\n" +
-	    " Exceptions:" + excp + "\n";
+	    " Outside edges:" + O +
+	    " Inside edges:" + I +
+	    e + 
+	    " Return set:" + Debug.stringImg(r) + "\n" +
+	    " Exceptions:" + Debug.stringImg(excp) + "\n";
     }
     
 }

@@ -29,7 +29,7 @@ import harpoon.Analysis.PointerAnalysis.PANode;
  * <code>PAMain</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.2 2000-01-27 06:19:10 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.3 2000-02-11 06:12:07 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -74,23 +74,31 @@ public abstract class PAMain {
 
 	System.out.print("Constructing CallGraph + AllCallers ... ");
 	long begin_time = new Date().getTime();
-	CallGraph  cg = new CallGraph(ch,hcf);
-	AllCallers ac = new AllCallers(ch,hcf);
+	CallGraph  cg   = new CallGraph(ch,hcf);
+	AllCallers ac   = new AllCallers(ch,hcf);
 	long total_time = new Date().getTime() - begin_time;
+
+	if(PointerAnalysis.DETERMINISTIC && !PointerAnalysis.TIMING)
+	    total_time = -1;
+
 	System.out.println(total_time + "ms");
 
 	System.out.println("Starting the Pointer Analysis ..."); 
 	begin_time = new Date().getTime();
 	pa = new PointerAnalysis(cg,ac,hcf,hroot);
 	total_time = new Date().getTime() - begin_time;
+
+	if(PointerAnalysis.DETERMINISTIC && !PointerAnalysis.TIMING)
+	    total_time = -1;
+
 	System.out.println("The entire Pointer Analysis done in " 
 			   + total_time + "ms");
 
-	//System.out.println("===== NODES ========================");
-
-	//System.out.println(pa.nodes);
-
-	//System.out.println("===== RESULTS ======================");
+	if(PointerAnalysis.DEBUG2){
+	    System.out.println("===== NODES ========================");
+	    System.out.println(pa.nodes);
+	    System.out.println("===== RESULTS ======================");
+	}
 
 	if(params.length>2){
 	    for(int i=2;i<params.length;i++)

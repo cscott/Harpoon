@@ -24,7 +24,7 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.7 2000-02-10 00:43:58 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.8 2000-02-11 06:12:07 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -57,11 +57,19 @@ abstract class InterProcPA {
 	if(nb_callees < 1){
 	    /// System.out.println("Callees: " + hms);
 	    /// System.out.println("nb_callees = " + nb_callees);
-	    /// System.out.println("Error: CALL site with no callee!");
-	    /// System.out.println(current_method);
-	    /// System.out.println(q);
+	    if(PointerAnalysis.DEBUG2){
+		System.out.print("Error: CALL site with no callee! ");
+		System.out.print(current_method);
+		System.out.println(" " + q);
+	    }
 	    //System.exit(1);
 	    return skip_call(q,pig_before,node_rep);
+	}
+
+	if(PointerAnalysis.DEBUG2){
+	    System.out.print("Normal: CALL site with callee(s)! ");
+	    System.out.print(current_method);
+	    System.out.println(" " + q);
 	}
 
 	ParIntGraph pigs[] = new ParIntGraph[nb_callees];

@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Iterator;
 import java.util.Hashtable;
+import java.util.Arrays;
 
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.ClassFile.HMethod;
@@ -28,9 +29,18 @@ import harpoon.ClassFile.HMethod;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCComponent.java,v 1.1.2.3 2000-02-08 05:28:40 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.1.2.4 2000-02-11 06:12:07 salcianu Exp $
  */
-public final class SCComponent {
+public final class SCComponent implements Comparable{
+
+    /** Makes sure the results will be exactly the same each time
+	<code>buildSCC</code> is used. Of course, the SCC of a graph are
+	uniquely defined; thsi flag will determine that even the order in 
+	which they are generated is the same so that the debug messages
+	remain the same between two executions.<br>
+	Be aware that if this flag is switched on, the performanced will be
+	much worse! */
+    static boolean DETERMINISTIC = false;
 
     /** The <code>Navigator</code> interface allows the algorithm to detect
      * (and use) the arcs from and to a certain node. This allows the
@@ -99,10 +109,16 @@ public final class SCComponent {
 	// "in reverse" navigator
 	nav = new Navigator(){
 		public Object[] next(Object node){
-		    return navigator.prev(node);
+		    Object[] obj = navigator.prev(node);
+		    if(DETERMINISTIC)
+			Arrays.sort(obj,UComp.uc);
+		    return obj;
 		}
 		public Object[] prev(Object node){
-		    return navigator.next(node);
+		    Object[] obj = navigator.next(node);
+		    if(DETERMINISTIC)
+			Arrays.sort(obj,UComp.uc);
+		    return obj;
 		}
 	    };
 
@@ -153,6 +169,7 @@ public final class SCComponent {
 	    comp.nodes = compInt.nodes;
 	    comp.next  = (SCComponent[]) compInt.next.toArray(
 			      new SCComponent[compInt.next.size()]);
+	    Arrays.sort(comp.next);
 	}
 
 	// Save the root SSC somewhere before activating the GCC.
@@ -215,6 +232,14 @@ public final class SCComponent {
 
     //The only way to produce SCCs is through SCComponent.buildSSC !
     SCComponent(){ id = count++;}
+
+    public int compareTo(Object o){
+	SCComponent scc2 = (SCComponent) o;
+	int id2 = scc2.id;
+	if(id  < id2) return -1;
+	if(id == id2) return 0;
+	return 1;
+    }
     
     /** Returns the number of successors. */
     public final int nextLength(){
@@ -236,6 +261,22 @@ public final class SCComponent {
     public final Set nodeSet(){
 	return nodes;
     }
+
+    /** Return the minimum element of this SCC 
+	(according to the default UComp.uc comparator). */
+    public final Object min(){
+	Iterator it = nodes.iterator();
+	if(!it.hasNext()) return null;
+	Object minim = it.next();
+	while(it.hasNext()){
+	    Object o = it.next();
+	    if(UComp.uc.compare(o,minim)<0)
+		minim = o;
+	}
+
+	return minim;
+    }
+
 
     /** Checks whether <code>node</code> belongs to <code>this</code> \
 	strongly connected component. */

@@ -5,6 +5,7 @@ package harpoon.Analysis.PointerAnalysis;
 
 
 import java.util.Hashtable;
+import java.util.Arrays;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.ClassFile.HMethod;
@@ -20,7 +21,7 @@ import harpoon.IR.Properties.CFGrapher;
  * to <code>BasicBlock</code>s.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCBBFactory.java,v 1.1.2.2 2000-02-01 14:03:02 pnkfelix Exp $
+ * @version $Id: SCCBBFactory.java,v 1.1.2.3 2000-02-11 06:12:07 salcianu Exp $
  */
 public class SCCBBFactory {
     
@@ -50,10 +51,14 @@ public class SCCBBFactory {
 	SCComponent.Navigator navigator = 
 	    new SCComponent.Navigator(){
 		    public Object[] next(Object node){
-			return ((BasicBlock)node).getNext();
+			Object[] obj = ((BasicBlock)node).getNext();
+			Arrays.sort(obj, UComp.uc);
+			return obj;
 		    }
 		    public Object[] prev(Object node){
-			return ((BasicBlock)node).getPrev();
+			Object[] obj =  ((BasicBlock)node).getPrev();
+			Arrays.sort(obj, UComp.uc);
+			return obj;
 		    }
 		};
 

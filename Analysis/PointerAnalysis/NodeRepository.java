@@ -14,13 +14,14 @@ import harpoon.IR.Quads.Quad;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.5 2000-01-24 03:11:11 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.6 2000-02-11 06:12:07 salcianu Exp $
  */
 public class NodeRepository {
     
     private Hashtable static_nodes;
     private Hashtable param_nodes;
     private Hashtable code_nodes;
+    private Hashtable node2code;
 
     /** Creates a <code>NodeRepository</code>. */
     public NodeRepository() {
@@ -85,35 +86,42 @@ public class NodeRepository {
      * <code>type</code> argument. */
     public final PANode getCodeNode(HCodeElement hce,int type){
 	PANode node = (PANode) code_nodes.get(hce);
-	if(node == null)
+	if(node == null){
 	    code_nodes.put(hce,node = new PANode(type));
+	    node2code.put(node,hce);
+	}
 	return node;
     }
 
-    /** Pretty-printer for debug purposes */
+    public final HCodeElement node2Code(PANode n){
+	if(n==null) return null;
+	return (HCodeElement) node2code.get(n);
+    }
+
+    /** Pretty-printer for debug purposes. */
     public final String toString(){
 	StringBuffer buffer = new StringBuffer();
 
 	buffer.append("PARAMETER NODES:\n");
-	Iterator it1 = param_nodes.keySet().iterator();
-	while(it1.hasNext()){
-	    HMethod method = (HMethod) it1.next();
+	Object[] methods = Debug.sortedSet(param_nodes.keySet());
+	for(int i = 0 ; i < methods.length ; i++){
+	    HMethod method = (HMethod) methods[i];
 	    buffer.append(method.getDeclaringClass().getName());
 	    buffer.append(".");
 	    buffer.append(method.getName());
 	    buffer.append(":\t");
 	    PANode[] nodes = getAllParams(method);
-	    for(int i=0;i<nodes.length;i++){
-		buffer.append(nodes[i]);
+	    for(int j = 0 ; j < nodes.length ; j++){
+		buffer.append(nodes[j]);
 		buffer.append(" ");
 	    }
 	    buffer.append("\n");
 	}
 
 	buffer.append("STATIC NODES:\n");
-	Iterator it2 = static_nodes.keySet().iterator();
-	while(it2.hasNext()){
-	    String class_name = (String) it2.next();
+	Object[] statics = Debug.sortedSet(static_nodes.keySet());
+	for(int i = 0; i < statics.length ; i++){
+	    String class_name = (String) statics[i];
 	    buffer.append(class_name);
 	    buffer.append(":\t");
 	    buffer.append(getStaticNode(class_name));
@@ -121,9 +129,9 @@ public class NodeRepository {
 	}
 
 	buffer.append("CODE NODES:\n");
-	Iterator it3 = code_nodes.keySet().iterator();
-	while(it3.hasNext()){
-	    HCodeElement hce = (HCodeElement) it3.next();
+	Object[] codes = Debug.sortedSet(code_nodes.keySet());
+	for(int i = 0 ; i < codes.length ; i++){
+	    HCodeElement hce = (HCodeElement) codes[i];
 	    Quad q = (Quad) hce;
 	    buffer.append((PANode)code_nodes.get(hce));
 	    buffer.append("\t");
