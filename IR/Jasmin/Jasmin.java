@@ -25,7 +25,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.17 1999-09-20 21:11:37 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.18 1999-10-13 18:38:19 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -328,6 +328,7 @@ public class Jasmin {
 	public void visit(COMPONENTOF q) {
 	    //kludge
 	    //fix me
+	    System.out.println("ERROR: "+q.toString());
 	    out.println(iflabel(q));
 	    TempInfo dest=(TempInfo)tempmap.get(q.objectref());	    
 	    if (dest.stack)
