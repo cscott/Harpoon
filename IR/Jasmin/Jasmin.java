@@ -60,7 +60,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.33 2000-01-16 06:53:08 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.34 2000-01-16 07:29:08 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -188,9 +188,10 @@ public class Jasmin {
 	start.accept(visitor);
 	//If we have a node after us, but we've already printed it
 	//we need to do a goto
-	if (start.next().length!=0)
-	    if (qm.contains(start.next(0)))
-		if(visitor.supGoto()==false)
+	boolean sup=visitor.supGoto();
+	if (sup==false)
+	    if (start.next().length!=0)
+		if (qm.contains(start.next(0)))
 		    out.println("    goto "+visitor.labeler(start.next(0)));
 	//add this node to the done list
 	qm.add(start);
