@@ -50,6 +50,7 @@ import harpoon.Temp.Temp;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -60,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.51 2001-07-16 18:23:21 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.52 2001-09-21 19:57:18 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -401,10 +402,12 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		     new TEMP(tf, source, Type.POINTER, Tarr))));
     }
 
-    public Translation.Exp componentOf(TreeFactory tf, HCodeElement source,
-				       DerivationGenerator dg,
-				       Translation.Exp arrayref,
-				       Translation.Exp componentref) {
+    public Translation.Exp componentOf(final TreeFactory tf,
+				       final HCodeElement source,
+				       final DerivationGenerator dg,
+				       final Translation.Exp arrayref,
+				       final Translation.Exp componentref) {
+	List stmlist = new ArrayList(5);
 	// component clazz pointer of arrayref
 	Exp e0 = DECLARE(dg, HClass.Void/*component claz ptr*/,
                  new MEM(tf, source, Type.POINTER,
@@ -413,14 +416,22 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 			  new CONST(tf, source, CLAZ_COMPONENT_OFF),
 			  // dereference object to claz structure.
 			  _claz_(tf, source, dg, arrayref))));
-	// class pointer of componentref
-	Exp e1 = _claz_(tf, source, dg, componentref);
 	// move claz pointer of arrayref component to a temporary variable.
-	Temp Tac = new Temp(tf.tempFactory(), "rt");
+	final Temp Tac = new Temp(tf.tempFactory(), "rt");
 	Stm s0 = new MOVE(tf, source,
 			  DECLARE(dg, HClass.Void/*component claz ptr*/, Tac,
 				  new TEMP(tf, source, Type.POINTER, Tac)),
 			  e0); // now use Tac instead of e0.
+	stmlist.add(s0);
+	// class pointer of componentref
+	Exp e1 = _claz_(tf, source, dg, componentref);
+	// move claz pointer of componentref to a temporary variable.
+	final Temp Tcc = new Temp(tf.tempFactory(), "rt");
+	Stm s1 = new MOVE(tf, source,
+			  DECLARE(dg, HClass.Void/*component claz ptr*/, Tcc,
+				  new TEMP(tf, source, Type.POINTER, Tcc)),
+			  e1); // now use Tcc instead of e1.
+	stmlist.add(s1);
 	// class depth of arrayref component type.
 	Exp e2 = new MEM(tf, source, Type.INT,
 			 new BINOP // offset to class depth.
@@ -428,10 +439,60 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 			  new CONST(tf, source, CLAZ_DEPTH_OFF),
 			  DECLARE(dg, HClass.Void/*component claz ptr*/, Tac,
 				  new TEMP(tf, source, Type.POINTER, Tac))));
+	// if arrayref is an array with an ultimately interface base type
+	// (after all the dims have been stripped away), we need to look
+	// through the interfacelist to implement instanceof, instead of
+	// relying on the class display table.  So we need to identify these
+	// cases. [we actually look at the component type of the arrayref]
+	// For arrays of interfaces and interfaces, e2==0 and MEM(e0+e2)!=e0
+	// MEM(e0+e2)==e0 for all others.  check e2==0 first to avoid an
+	// unnecessary memory reference (for everything except Object[]
+	// arrays).
+	final Temp Tcd = new Temp(tf.tempFactory(), "rt"); // class depth
+	Stm s2 = new MOVE(tf, source,
+			  new TEMP(tf, source, Type.INT, Tcd),
+			  e2); // now use Tcd instead of e2.
+	stmlist.add(s2);
+    	final Label Lisinterface = new Label();
+    	final Label Lmaybeinterface = new Label();
+    	final Label Lnotinterface = new Label();
+	stmlist.add
+	    (new CJUMP(tf, source,
+		       new BINOP(tf, source, Type.INT, Bop.CMPEQ,
+				 new TEMP(tf, source, Type.INT, Tcd),
+				 new CONST(tf, source, 0)),
+		       Lmaybeinterface, Lnotinterface));
+	stmlist.add
+	    (new LABEL(tf, source, Lmaybeinterface, false));
+	// now check whether MEM(e0+e2)==NULL (then this is interface type!)
+	stmlist.add
+	    (new CJUMP(tf, source,
+		       new BINOP
+		       (tf, source, Type.POINTER, Bop.CMPEQ,
+			DECLARE(dg, HClass.Void/*component claz ptr*/, Tac,
+			new TEMP(tf, source, Type.POINTER, Tac)),
+			DECLARE(dg, HClass.Void/*claz ptr in display*/,
+			new MEM
+			(tf, source, Type.POINTER,
+			 new BINOP
+			 (tf, source, Type.POINTER, Bop.ADD,
+			  new BINOP
+			  (tf, source, Type.INT, Bop.ADD,
+			   new CONST(tf, source, CLAZ_DISPLAY_OFF),
+			   new TEMP(tf, source, Type.INT, Tcd)),
+			  DECLARE(dg, HClass.Void/*component claz ptr*/, Tac,
+			  new TEMP(tf, source, Type.POINTER, Tac)))))),
+		       Lnotinterface, Lisinterface));
+
+	/* common initialization code (selects interface/non-interface case) */
+	final Stm initstm = Stm.toStm(stmlist);
+
+	// NON-INTERFACE CASE: ---------------------------
 	// we assert that MEM(e0+e2)==e0 by definition
 	// that is, element of class display at class_depth is the class itself
 	// so, the component-of check is just whether MEM(e1+e2)==e0
-	Exp e3 = new BINOP
+	final Translation.Exp case1exp = new Translation.Ex
+	   (new BINOP
 	    (tf, source, Type.POINTER, Bop.CMPEQ,
 	     DECLARE(dg, HClass.Void/*claz ptr in display*/,
 	     new MEM
@@ -441,12 +502,107 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	       new BINOP
 	       (tf, source, Type.INT, Bop.ADD,
 		new CONST(tf, source, CLAZ_DISPLAY_OFF),
-		e2),
-	       e1))),
-	     DECLARE(dg, HClass.Void/*component claz ptr*/, Tac,
-		     new TEMP(tf, source, Type.POINTER, Tac)));
+		new TEMP(tf, source, Type.INT, Tcd)),//e2
+	       DECLARE(dg, HClass.Void/*componentref claz ptr*/, Tcc,//e1
+	       new TEMP(tf, source, Type.POINTER, Tcc))))),
+	     DECLARE(dg, HClass.Void/*component claz ptr*/, Tac,//e0
+		     new TEMP(tf, source, Type.POINTER, Tac))));
 
-	return new Translation.Ex(new ESEQ(tf, source, s0, e3));
+	// INTERFACE CASE: ------------------------------
+	// interface type: linear search through interface list.
+	// compile as:
+	//    for (il=obj->claz->interfz; *il!=null; il++)
+	//       if (*il==classTypeLabel) return true;
+	//    return false;
+	// [classTypeLabel=e0 ; obj->claz = e1]
+
+	// make our iteration variable.
+	final Temp Til = new Temp(tf.tempFactory(), "rt"); // il
+	// three labels
+	final Label Ladv = new Label();
+	final Label Ltop = new Label();
+	final Label Ltst = new Label();
+	final Translation.Exp case2exp = new Translation.Cx() {
+	    public Stm unCxImpl(TreeFactory xxx, Label iftrue, Label iffalse) {
+		List _stmlist_ = new ArrayList(8);
+		// initialize Til.
+		_stmlist_.add
+		(new MOVE
+		 (tf, source,
+		  DECLARE(dg, HClass.Void/*interface list ptr*/,
+		  new TEMP(tf, source, Type.POINTER, Til)),
+		  // dereference claz structure for interface list ptr
+		  DECLARE(dg, HClass.Void/*interface list ptr*/,
+		  new MEM(tf, source, Type.POINTER,
+			  new BINOP // offset to get interface pointer
+			  (tf, source, Type.POINTER, Bop.ADD,
+			   DECLARE(dg, HClass.Void/*cmpntref claz ptr*/, Tcc,
+			   new TEMP(tf, source, Type.POINTER, Tcc))/*e1*/,
+			   new CONST(tf, source, CLAZ_INTERFZ_OFF))))));
+		// jmp Ltst
+		_stmlist_.add(new JUMP(tf, source, Ltst));
+		// loop body: test *il against Lclaz.
+		_stmlist_.add(new LABEL(tf, source, Ltop, false));
+		_stmlist_.add
+		(new CJUMP
+		 (tf, source,
+		  new BINOP
+		  (tf, source, Type.POINTER, Bop.CMPEQ,
+		   DECLARE(dg, HClass.Void/*claz ptr for interface*/,
+		   new MEM(tf, source, Type.POINTER,
+			   DECLARE(dg, HClass.Void/*intrfce lst ptr*/,
+			   new TEMP(tf, source, Type.POINTER, Til)))),
+		   DECLARE(dg, HClass.Void/*component claz ptr*/, Tac,
+		   new TEMP(tf, source, Type.POINTER, Tac))),
+		  iftrue, Ladv));
+		// advance il
+		_stmlist_.add(new LABEL(tf, source, Ladv, false));
+		_stmlist_.add
+		(new MOVE
+		 (tf, source,
+		  DECLARE(dg, HClass.Void/*intrfce lst ptr*/, Til,
+		  new TEMP(tf, source, Type.POINTER, Til)),
+		  new BINOP
+		  (tf, source, Type.POINTER, Bop.ADD,
+		   DECLARE(dg, HClass.Void/*intrfce lst ptr*/, Til,
+		   new TEMP(tf, source, Type.POINTER, Til)),
+		   new CONST(tf, source, POINTER_SIZE))));
+		// loop guard: test *il against null.
+		_stmlist_.add(new LABEL(tf, source, Ltst, false));
+		_stmlist_.add
+		(new CJUMP
+		 (tf, source,
+		  new BINOP
+		  (tf, source, Type.POINTER, Bop.CMPEQ,
+		   DECLARE(dg, HClass.Void/*claz ptr, maybe null*/,
+		   new MEM(tf, source, Type.POINTER,
+			   DECLARE(dg, HClass.Void/*in lst ptr*/, Til,
+			   new TEMP(tf, source, Type.POINTER, Til)))),
+		   new CONST(tf, source) /*null constant*/),
+		  iffalse, Ltop));
+
+		// okay, tie them together with SEQs.
+		return Stm.toStm(_stmlist_);
+	    }
+	};
+
+	// okay, put pieces together.
+
+	return new Translation.Cx() {
+	    public Stm unCxImpl(TreeFactory xxx, Label iftrue, Label iffalse) {
+		List _stmlist_ = new ArrayList(5);
+		// first comes init code
+		_stmlist_.add(initstm);
+		// then comes non-interface array case.
+		_stmlist_.add(new LABEL(tf, source, Lnotinterface, false));
+		_stmlist_.add(case1exp.unCx(tf, iftrue, iffalse));
+		// finally comes interface array case:
+		_stmlist_.add(new LABEL(tf, source, Lisinterface, false));
+		_stmlist_.add(case2exp.unCx(tf, iftrue, iffalse));
+		// done!
+		return Stm.toStm(_stmlist_);
+	    }
+	};
     }
 
     public Translation.Exp instanceOf(final TreeFactory tf,
