@@ -12,7 +12,7 @@ import harpoon.Util.ArrayFactory;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.14.2.1 1998-11-30 21:21:03 cananian Exp $
+ * @version $Id: Temp.java,v 1.14.2.2 1998-12-09 00:54:14 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
@@ -79,6 +79,11 @@ public class Temp {
     new ArrayFactory() {
       public Object[] newArray(int len) { return new Temp[len][]; }
     };
+
+  /** <code>Temp</code>s cannot be cloned. */
+  public Object clone() throws CloneNotSupportedException {
+    throw new CloneNotSupportedException("Temps cannot be cloned.");
+  }
 
   /** For debugging purposes: reset all temp variable counters to zero. */
   //public static void clear() { table.clear(); }

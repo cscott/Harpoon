@@ -23,7 +23,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.1.2.1 1998-12-01 12:36:43 cananian Exp $
+ * @version $Id: OPER.java,v 1.1.2.2 1998-12-09 00:54:03 cananian Exp $
  */
 
 public class OPER extends Quad {
@@ -48,7 +48,8 @@ public class OPER extends Quad {
     }
 
     /** Returns the Temps used by this OPER. */
-    public Temp[] use() { return (Temp[]) operands.clone(); }
+    public Temp[] use() 
+    { return (Temp[]) Util.safeCopy(Temp.arrayFactory, operands); }
     /** Returns the Temps defined by this OPER. */
     public Temp[] def() { return new Temp[] { dst }; }
 
