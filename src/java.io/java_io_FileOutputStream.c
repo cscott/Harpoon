@@ -17,7 +17,7 @@ int initializeFOS(JNIEnv *env) {
     assert(!inited);
     FOSCls  = (*env)->FindClass(env, "java/io/FileOutputStream");
     if ((*env)->ExceptionOccurred(env)) return 0;
-    fdObjID = (*env)->GetFieldID(env, FOSCls, "fd", "java/io/FileDescriptor");
+    fdObjID = (*env)->GetFieldID(env, FOSCls, "fd","Ljava/io/FileDescriptor;");
     if ((*env)->ExceptionOccurred(env)) return 0;
     FDCls   = (*env)->FindClass(env, "java/io/FileDescriptor");
     if ((*env)->ExceptionOccurred(env)) return 0;
