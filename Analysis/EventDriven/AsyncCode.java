@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.20 2000-01-07 20:37:49 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.21 2000-01-07 22:21:25 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -476,7 +476,7 @@ public class AsyncCode {
 		    ContBuilder.getPrefix(rettype);
 		HClass continuation = HClass.forName
 		    ("harpoon.Analysis.ContBuilder." + pref + "DoneContinuation");
-		HClass ret=rettype.isPrimitive()?rettype:HClass.forName("java.olang.Object");
+		HClass ret=rettype.isPrimitive()?rettype:HClass.forName("java.lang.Object");
 		HConstructor constructor=(ret!=HClass.Void)?continuation.getConstructor(new HClass[]{ret}):
 		    continuation.getConstructor(new HClass[0]);
 		Temp newt=new Temp(tf);
