@@ -1,3 +1,4 @@
+#define GC_I_HIDE_POINTERS /* we need HIDE_POINTER from gc.h */
 #include <jni.h>
 #include <jni-private.h>
 
@@ -85,6 +86,7 @@ JNIEXPORT void JNICALL Java_harpoon_Runtime_MZFExternalMap_longSET
 #undef REMOVE
 
 /* object hash table */
+#define MAKE_POINTER_VERSION
 #define TYPE void *
 #define TABLE ptr_table
 #define TABLE_ELEMENT ptr_table_element
@@ -118,6 +120,7 @@ JNIEXPORT void JNICALL Java_harpoon_Runtime_MZFExternalMap_ptrSET
       FNI_UNWRAP(new_value), FNI_UNWRAP(default_value));
 }
 
+#undef MAKE_POINTER_VERSION
 #undef TYPE
 #undef TABLE
 #undef TABLE_ELEMENT
