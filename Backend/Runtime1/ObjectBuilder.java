@@ -46,7 +46,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.9 2004-07-02 00:08:56 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.10 2004-07-02 01:05:01 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -122,13 +122,6 @@ public class ObjectBuilder
 	Stm s = makeFields(tf, info, l, startOffset, endOffset);
 	assert s!=null; // always the length!
 	stmlist.add(s);
-	// flag bits for the data
-	if (Boolean.getBoolean("harpoon.runtime1.arraybloat")) {
-	    int ptrbits = (pointersAreLong ? 64 : 32);
-	    for (int i=0; i<(info.length()+ptrbits-1)/ptrbits; i++)
-		stmlist.add(makeDatum(tf, pointersAreLong ? (Number)
-				      new Long(0) : new Integer(0)));
-	}
 	// data
 	for (int i=0; i<info.length(); i++)
 	    stmlist.add(makeDatum(tf, info.get(i)));

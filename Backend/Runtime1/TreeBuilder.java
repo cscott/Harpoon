@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.9 2004-07-02 00:08:56 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.10 2004-07-02 01:05:01 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -374,25 +374,6 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	      new CONST(tf, source, elementSize)),
 	     // and add WORD_SIZE (and more) for length field (and others)
 	     new CONST(tf, source, OBJ_AZERO_OFF - OBJ_FZERO_OFF));
-	if (Boolean.getBoolean("harpoon.runtime1.arraybloat")) {
-	    int ptrbits = POINTER_SIZE*8;
-	    // allocate additional one bit per element for transactions bloat.
-	    //  size += ((Tlen+ptrbits-1) & (~(ptrbits-1))) >> 3
-	    size = 
-		new BINOP
-		(tf, source, Type.INT, Bop.ADD,
-		 size,
-		 new BINOP
-		 (tf, source, Type.INT, Bop.USHR,
-		  new BINOP
-		  (tf, source, Type.INT, Bop.AND,
-		   new BINOP
-		   (tf, source, Type.INT, Bop.ADD,
-		    new TEMP(tf, source, Type.INT, Tlen),
-		    new CONST(tf, source, ptrbits-1)),
-		   new CONST(tf, source, ~(ptrbits-1))),
-		  new CONST(tf, source, 3)));
-	}
 	if (initialize) // save the 'size' value for re-use (if needed)
 	    size =
 		new ESEQ
