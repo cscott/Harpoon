@@ -49,7 +49,7 @@ realtime.jar: $(SOURCES)
 	@mkdir -p javax/realtime java/lang java/util/concurrent/atomic
 	@$(JAR) xf support/jacorb.jar
 	@$(IDLCC) -d . $(ISOURCES)
-	@$(JCC) -d . -g $^
+	@$(JCC) -d . -g $^ javax/realtime/*.java
 	@jar -cf $@ javax/realtime java/util/concurrent org
 	@rm -rf javax java org demo HTTPClient idl java_cup META-INF 
 	@date '+%-d-%b-%Y at %r %Z.' > $@.TIMESTAMP
