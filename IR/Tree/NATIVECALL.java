@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.14 1999-10-23 14:19:52 cananian Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.15 1999-10-25 22:15:17 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
@@ -50,10 +50,9 @@ public class NATIVECALL extends INVOCATION {
 	TEMP kids_retval=null;
 	for (ExpList e = kids; e!=null; e=e.tail)
 	    Util.assert(tf == e.head.tf);
-	if (kids.head.kind()==TreeKind.TEMP) {
+	if (kids.head.kind()==TreeKind.TEMP)
 	    kids_retval = (TEMP) kids.head;
-	    kids = kids.tail;
-	}
+	kids = kids.tail;
 	return new NATIVECALL(tf, this,
 			      kids_retval,// retval
 			      kids.head,  // func
