@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.72 2000-02-10 22:18:39 cananian Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.73 2000-02-28 22:14:45 cananian Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private final String assem; 
     private InstrFactory inf;
@@ -637,16 +637,16 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
     // ******************** UseDef Interface
 
     /** Returns the <code>Temp</code>s used by this <code>Instr</code>. */
-    public Temp[] use() { 
+    public final Temp[] use() { 
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, src); 
     }
 
     /** Returns the <code>Temp</code>s defined by this <code>Instr</code>. */
-    public Temp[] def() { 
+    public final Temp[] def() { 
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, dst);
     }
-    public Collection useC() { return Collections.unmodifiableList(Arrays.asList(use())); }
-    public Collection defC() { return Collections.unmodifiableList(Arrays.asList(def())); }
+    public final Collection useC() { return Collections.unmodifiableList(Arrays.asList(src)); }
+    public final Collection defC() { return Collections.unmodifiableList(Arrays.asList(dst)); }
 
     // ******************* HCodeElement interface
 
