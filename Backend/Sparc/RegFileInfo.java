@@ -36,7 +36,7 @@ import java.util.Set;
  * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.2 2002-02-25 21:02:37 cananian Exp $
+ * @version $Id: RegFileInfo.java,v 1.3 2002-02-26 22:44:45 cananian Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 
@@ -83,7 +83,7 @@ public class RegFileInfo
 
 	    public String getScope() { return scope; }
 	    public synchronized String getUniqueID(String suggestion) {
-		Util.assert(i < names.length, "Already created all of "+
+		Util.ASSERT(i < names.length, "Already created all of "+
 			    "the Register bound Temps!!!");
 		i++;
 		return names[i-1];
@@ -229,14 +229,14 @@ public class RegFileInfo
     private boolean makeLocationDataCalled = false;
 
     public Location allocateLocation(final int type) {
-	Util.assert(Type.isValid(type), "Invalid type");
-	Util.assert(type != Type.LONG && type != Type.DOUBLE,
+	Util.ASSERT(Type.isValid(type), "Invalid type");
+	Util.ASSERT(type != Type.LONG && type != Type.DOUBLE,
 		    "Doubleword global locations not implemented");
-	Util.assert(!makeLocationDataCalled,
+	Util.ASSERT(!makeLocationDataCalled,
 		    "Cannot allocate location - already ran makeLocationData");
 
 	// Currently just uses the %g registers - nothing fancy yet.
-	Util.assert(regtop > 0, "Sorry, can't do any more global locations");
+	Util.ASSERT(regtop > 0, "Sorry, can't do any more global locations");
     
 	final Temp allocreg = allRegs[regtop--];
 

@@ -61,7 +61,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.2 2002-02-25 21:00:32 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.3 2002-02-26 22:42:47 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -169,7 +169,7 @@ public class CacheEquivalence {
 			// length is not statically known.
 			&& !bao.def.type().isArray()) {
 			/* case 2 */
-			Util.assert(bao.offset instanceof Dataflow.Constant ?
+			Util.ASSERT(bao.offset instanceof Dataflow.Constant ?
 				    ((Dataflow.Constant)bao.offset)
 				    .number < CACHE_LINE_SIZE : true);
 			dp = bao.def; line = 0; // case 2
@@ -285,7 +285,7 @@ public class CacheEquivalence {
 		}
 	    }
 	    public void update(Temp t, Stm def, Value v) {
-		Util.assert(t!=null && def!=null && v!=null);
+		Util.ASSERT(t!=null && def!=null && v!=null);
 		List pair = Default.pair(t, def);
 		Value old = (Value) valueMap.put(pair, v);
 		if (old==null || !old.equals(v))
@@ -294,7 +294,7 @@ public class CacheEquivalence {
 			 it.hasNext(); )
 			ws.addLast((Stm)it.next());
 	    }
-	    public void visit(Tree e) { Util.assert(false); }
+	    public void visit(Tree e) { Util.ASSERT(false); }
 	    public void visit(Stm s) { /* no defs */ }
 	    public void visit(INVOCATION s) {
 		TEMP t = s.getRetval();
@@ -341,7 +341,7 @@ public class CacheEquivalence {
 		    ? Value.SOMEINT : Value.BOTTOM;
 		e.accept(this);
 	    }
-	    public void visit(Tree e) { Util.assert(false); }
+	    public void visit(Tree e) { Util.ASSERT(false); }
 	    public void visit(CONST c) {
 		if (c.type()==Type.INT || c.type()==Type.LONG)
 		    this.value = new Constant(c.value().longValue());
@@ -393,7 +393,7 @@ public class CacheEquivalence {
 		return fillKGroup(Collections.singleton(def), t);
 	    }
 	    Value unify(Value v) {
-		Util.assert(this!=NOINFO);
+		Util.ASSERT(this!=NOINFO);
 		if (v==NOINFO) return this;
 		return BOTTOM;
 	    }
@@ -428,7 +428,7 @@ public class CacheEquivalence {
 	static class IntegerValue extends Value {
 	    protected int specificity() { return 1; }
 	    IntegerValue() {
-		Util.assert(this instanceof ConstantModuloN ||
+		Util.ASSERT(this instanceof ConstantModuloN ||
 			    Value.SOMEINT==null);
 	    }
 	    Value unify(Value v) {
@@ -454,11 +454,11 @@ public class CacheEquivalence {
 	    final long number; final long modulus; final KGroup kgroup;
 	    ConstantModuloN(long number, long modulus, KGroup kgroup) {
 		this.number=number; this.modulus=modulus; this.kgroup=kgroup;
-		Util.assert(modulus>1);
-		Util.assert(kgroup!=null || (number>=0 && number<modulus));
+		Util.ASSERT(modulus>1);
+		Util.ASSERT(kgroup!=null || (number>=0 && number<modulus));
 	    }
 	    protected ConstantModuloN(long number) {
-		Util.assert(this instanceof Constant);
+		Util.ASSERT(this instanceof Constant);
 		this.number=number; this.modulus=0; this.kgroup=null;
 	    }
 	    boolean isOffsetKnown() { return true; }
@@ -479,7 +479,7 @@ public class CacheEquivalence {
 		} else {
 		    small=this; large=(ConstantModuloN)v;
 		}
-		Util.assert(large.modulus>0);
+		Util.ASSERT(large.modulus>0);
 		long off=0, mod=1;
 		if ((small.modulus==0 || small.modulus==large.modulus) &&
 		    mymod(small.number, large.modulus) ==
@@ -541,7 +541,7 @@ public class CacheEquivalence {
 		}
 		ConstantModuloN cmn = (ConstantModuloN) v;
 		// (a mod b) * (c mod d) = (ac) mod gdb(b, d)
-		Util.assert(cmn.modulus>1 && this.modulus>1);
+		Util.ASSERT(cmn.modulus>1 && this.modulus>1);
 		long mod = Util.gcd(this.modulus, cmn.modulus);
 		if (mod>1)
 		    return new ConstantModuloN
@@ -578,7 +578,7 @@ public class CacheEquivalence {
 		long small=Math.min(this.number, c.number);
 		long large=Math.max(this.number, c.number);
 		long mod=(large-small);
-		Util.assert(mymod(small, mod)==mymod(large, mod));
+		Util.ASSERT(mymod(small, mod)==mymod(large, mod));
 		if (mod>1)
 		    return new ConstantModuloN(mymod(small, mod), mod, null);
 		return Value.SOMEINT;
@@ -603,7 +603,7 @@ public class CacheEquivalence {
 						  cmn.kgroup);
 		    return (this.number>=0) ? r : r.negate();
 		}
-		Util.assert(cmn.modulus==0 && this.modulus==0);
+		Util.ASSERT(cmn.modulus==0 && this.modulus==0);
 		return new Constant(cmn.number * this.number);
 	    }
 	    Value negate() { return new Constant(-this.number); }
@@ -640,7 +640,7 @@ public class CacheEquivalence {
 		// must handle BOTTOM, SOMEINT, CMN, C, BAO
 		if (!(v instanceof IntegerValue)) return Value.BOTTOM;
 		Value cc = this.offset.add(v);
-		Util.assert(cc instanceof IntegerValue);
+		Util.ASSERT(cc instanceof IntegerValue);
 		return new BaseAndOffset(def, (IntegerValue) cc);
 	    }
 	    protected Value _mul(Value v) {
@@ -662,7 +662,7 @@ public class CacheEquivalence {
 	// utility function
 	/** returns the positive value of a mod b, even when a is negative. */
 	static long mymod(long a, long b) {
-	    Util.assert(b>0);
+	    Util.ASSERT(b>0);
 	    long r = a % b;
 	    return (r<0) ? (b+r) : r;
 	}

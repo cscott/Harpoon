@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.2 2002-02-25 21:06:11 cananian Exp $
+ * @version $Id: SAMain.java,v 1.3 2002-02-26 22:46:41 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -183,7 +183,7 @@ public class SAMain extends harpoon.IR.Registration {
 	PRECISEGC = System.getProperty("harpoon.alloc.strategy", 
 				       "malloc").equalsIgnoreCase("precise");
 	parseOpts(args);
-	Util.assert(className!= null, "must pass a class to be compiled");
+	Util.ASSERT(className!= null, "must pass a class to be compiled");
 
 	do_it();
     }
@@ -201,19 +201,19 @@ public class SAMain extends harpoon.IR.Registration {
 
 	// Check for compatibility of precise gc options.
 	if (PRECISEGC)
-	    Util.assert((BACKEND==PRECISEC_BACKEND),
+	    Util.ASSERT((BACKEND==PRECISEC_BACKEND),
 			"Precise gc is only implemented for "+
 			"the precise C backend.");
 	if (MULTITHREADED) {
-	    Util.assert(PRECISEGC || Realtime.REALTIME_JAVA,
+	    Util.ASSERT(PRECISEGC || Realtime.REALTIME_JAVA,
 			"Multi-threaded option is valid only "+
 			"for precise gc.");
-	    Util.assert(wbOptLevel != 0,
+	    Util.ASSERT(wbOptLevel != 0,
 			"Write barrier removal not supported "+
 			"for multi-threaded programs.");
 	}
 	if (WRITEBARRIERS)
-	    Util.assert(PRECISEGC,
+	    Util.ASSERT(PRECISEGC,
 			"Write barrier option is valid only "+
 			"for precise gc.");
 
@@ -233,11 +233,11 @@ public class SAMain extends harpoon.IR.Registration {
 		break;
 	    }
 	}
-	Util.assert(mainM.getDescriptor().equals("([Ljava/lang/String;)V"),
+	Util.ASSERT(mainM.getDescriptor().equals("([Ljava/lang/String;)V"),
 		    "main does not have the proper signature");
-	Util.assert(Modifier.isStatic(mainM.getModifiers()),
+	Util.ASSERT(Modifier.isStatic(mainM.getModifiers()),
 		    "main is not static");
-	Util.assert(mainM != null, "Class " + className + 
+	Util.ASSERT(mainM != null, "Class " + className + 
 		    " has no main method");
 
 	// create the target Frame way up here!
@@ -300,7 +300,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    // okay, we've got the roots, make a rough class hierarchy.
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    Util.assert(classHierarchy != null, "How the hell...");
+	    Util.ASSERT(classHierarchy != null, "How the hell...");
 	    
 	    // use the rough class hierarchy to devirtualize as many call sites
 	    // as possible.
@@ -910,7 +910,7 @@ public class SAMain extends harpoon.IR.Registration {
 		public int hashCode() { return data.hashCode(); }
 	    });
 	
-	Util.assert(instr != null, "no instrs generated; check that CodeGen.java was built from spec file");
+	Util.ASSERT(instr != null, "no instrs generated; check that CodeGen.java was built from spec file");
 	// messageln("First data instruction " + instr);
 
 
@@ -964,7 +964,7 @@ public class SAMain extends harpoon.IR.Registration {
 		if (arg != null) {
 		    try {
 			wbOptLevel = Integer.parseInt(arg);
-			Util.assert(wbOptLevel >= 0 && wbOptLevel <= 6);
+			Util.ASSERT(wbOptLevel >= 0 && wbOptLevel <= 6);
 		    } catch (Exception e) {
 			System.err.println(e);
 			System.exit(1);
@@ -1061,7 +1061,7 @@ public class SAMain extends harpoon.IR.Registration {
 		break;
 	    case 'o':
 		ASSEM_DIR = new File(g.getOptarg());
-		Util.assert(ASSEM_DIR.isDirectory(), ""+ASSEM_DIR+" must be a directory");
+		Util.ASSERT(ASSEM_DIR.isDirectory(), ""+ASSEM_DIR+" must be a directory");
 		break;
 	    case 'b': {
 		String backendName = g.getOptarg().toLowerCase().intern();

@@ -196,7 +196,7 @@ public class Profile {
       Quad.addEdge(c1,0,profiling_call,0);
 
       // splice new quad into CFG
-      Util.assert(q.next().length==1);
+      Util.ASSERT(q.next().length==1);
       splice(q.next(0), c1, profiling_call);
 
     }
@@ -217,7 +217,7 @@ public class Profile {
       Quad.addEdge(_null_CONST,0,_calling_method_name_CONST,0);
       Quad.addEdge(_calling_method_name_CONST,0,_calling_class_name_CONST,0);
 
-      Util.assert(q.next().length==1);
+      Util.ASSERT(q.next().length==1);
       splice(q.next(0), _null_CONST, _calling_class_name_CONST);
 
       // make sure _this is null for static methods

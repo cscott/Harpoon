@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>TempChain</code> needs to be documented.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TempChain.java,v 1.2 2002-02-25 21:05:13 cananian Exp $
+ * @version $Id: TempChain.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
  */
 public class TempChain extends harpoon.Temp.Temp {
     public HCodeElement def;
@@ -24,13 +24,13 @@ public class TempChain extends harpoon.Temp.Temp {
         super(tf, prefix);
 	this.def = null;
 	this.nextUse = this; // circular list
-	Util.assert(nextUse!=null);
+	Util.ASSERT(nextUse!=null);
     }
     public TempChain(TempChain tc) { // new use of name used/defined by tc
 	super(tc.tempFactory(), tc.name());
 	this.def = tc.def;
 	this.nextUse = tc.nextUse;
 	tc.nextUse = this;
-	Util.assert(nextUse!=null);
+	Util.ASSERT(nextUse!=null);
     }
 }

@@ -46,9 +46,9 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
     }
 
     protected Node makePrecolored(Temp t) {
-	Util.assert( rfi().isRegister(t) );
+	Util.ASSERT( rfi().isRegister(t) );
 	Node n = super.makePrecolored(t);
-	Util.assert( n.isPrecolored() );
+	Util.ASSERT( n.isPrecolored() );
 	webToNode.put(n.web, n );
 	return n;
     }
@@ -58,7 +58,7 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 	return a;
     }
     protected void makeInitial(Temp t)    { 
-	Util.assert( ! rfi().isRegister(t) );
+	Util.ASSERT( ! rfi().isRegister(t) );
 
 	int slots = rfi().occupancy( t );
 	for(Iterator webs=tempToWebs.getValues(t).iterator(); webs.hasNext();){
@@ -131,13 +131,13 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 	    adjSet.add(v,u);
 	    
 	    if( ! u.isPrecolored() ){
-		Util.assert(!rfi().isRegister(u.web.temp), u.web.temp);
+		Util.ASSERT(!rfi().isRegister(u.web.temp), u.web.temp);
 		u.neighbors.add(v);
 		u.degree += rfi().pressure( u.web.temp, v.web.temp );
 		checkNBRs(u);
 	    }
 	    if( ! v.isPrecolored() ){
-		Util.assert(!rfi().isRegister(v.web.temp), v.web.temp);
+		Util.ASSERT(!rfi().isRegister(v.web.temp), v.web.temp);
 		v.neighbors.add(u);
 		v.degree += rfi().pressure( v.web.temp, u.web.temp );
 		checkNBRs(v);
@@ -146,7 +146,7 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
     }
     void checkNBRs( Node n ) {
 	// this wont hold once we support 0-pressure situations
-	Util.assert(n.degree >= visible(n.neighbors), n); 
+	Util.ASSERT(n.degree >= visible(n.neighbors), n); 
     }
     int visible( NodeList nl ) {
 	int c = 0;
@@ -167,7 +167,7 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 
 	int d = m.degree;
 	m.degree -= rfi().pressure( m.web.temp, n.web.temp );
-	Util.assert(m.degree >= 0);
+	Util.ASSERT(m.degree >= 0);
 	if( m.degree < K
 	    
 // FSK: this clause isn't in the book, but it *is* in 
@@ -255,7 +255,7 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 		colored_nodes.add(n);
 		for(int i=0; i<n.color.length; i++) {
 		    Temp reg = (Temp) regL.get(i);
-		    Util.assert( ! rfi().illegal(n.web.temp).contains(reg) );
+		    Util.ASSERT( ! rfi().illegal(n.web.temp).contains(reg) );
 		    n.color[i] = colorFor( reg );
 		}
 	    }
@@ -292,7 +292,7 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 		    Web w = webFor(t, inst);
 		    Node n = (Node) webToNode.get(w);
 		    List regList = toRegList( n, regs );
-		    Util.assert( ! regList.isEmpty() );
+		    Util.ASSERT( ! regList.isEmpty() );
 		    code.assignRegister( inst, t, regList );
 		}
 	    }
@@ -313,14 +313,14 @@ public class AppelRegAllocFsk extends AppelRegAlloc {
 	returns a Move corresponding to Instr i. 
     */ 
     private Move moveFor(Instr i) { 
-	Util.assert( i.isMove() ); 
+	Util.ASSERT( i.isMove() ); 
  
 	if( instrToMove.containsKey(i) ) { 
 	    return (Move) instrToMove.get(i); 
 	} else { 
 	    // TODO: Fix to assign collections, not first elems! 
-	    Util.assert( defCN(i).size() == 1);
-	    Util.assert( useCN(i).size() == 1); 
+	    Util.ASSERT( defCN(i).size() == 1);
+	    Util.ASSERT( useCN(i).size() == 1); 
 	    Node dst = (Node) defCN(i).iterator().next(); 
 	    Node src = (Node) useCN(i).iterator().next(); 
 	    Move m = new Move(i, dst, src); 

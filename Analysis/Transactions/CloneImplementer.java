@@ -64,7 +64,7 @@ import java.util.Set;
  * <code>$clone$()</code> method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloneImplementer.java,v 1.2 2002-02-25 21:00:09 cananian Exp $
+ * @version $Id: CloneImplementer.java,v 1.3 2002-02-26 22:42:28 cananian Exp $
  * @see harpoon.IR.Quads.CloneSynthesizer */
 public class CloneImplementer implements HCodeFactory, java.io.Serializable {
     /** CONSTANTS */
@@ -89,7 +89,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
       *  given <code>HCodeFactory</code>, which must produce
       *  some QuadSSI form. */
     public CloneImplementer(HCodeFactory parent, Linker l, Set knownClasses) { 
-	Util.assert(parent.getCodeName().equals(QuadSSI.codename));
+	Util.ASSERT(parent.getCodeName().equals(QuadSSI.codename));
 	this.parent = parent;
 	HClass HCobject = l.forName("java.lang.Object");
 	HClass HCcloneable = l.forName("java.lang.Cloneable");
@@ -105,7 +105,7 @@ public class CloneImplementer implements HCodeFactory, java.io.Serializable {
 		hm.getMutator().setModifiers(CLONE_MODS);
 		hm.getMutator().setSynthetic(false);
 	    } catch(DuplicateMemberException dme) {
-		Util.assert(false, "Can't create "+CLONEX_NAME+" in "+hc);
+		Util.ASSERT(false, "Can't create "+CLONEX_NAME+" in "+hc);
 	    }
 	}
 	/* 'un-native-ify' standard clone() methods (incl prim arrays)  */

@@ -67,7 +67,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.2 2002-02-25 20:59:22 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.3 2002-02-26 22:41:41 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -156,7 +156,7 @@ public abstract class DeadCode  {
 	    // removing this statement could make its predecessor useless.
 	    if (q.prev(0) instanceof CJMP) W.push(q.prev(0));
 	    // unlink with vigor.
-	    Util.assert(q.next().length==1 && q.prev().length==1);
+	    Util.ASSERT(q.next().length==1 && q.prev().length==1);
 	    unlink(q);
 	}
 	public void visit(PHI q) {
@@ -393,7 +393,7 @@ public abstract class DeadCode  {
 	    markUseful(q);
 	}
 	public void visit(HANDLER q) { // ACK! never should find.
-	    Util.assert(false, "DeadCode doesn't work with HANDLERs.");
+	    Util.ASSERT(false, "DeadCode doesn't work with HANDLERs.");
 	}
 	public void visit(HEADER q) { // always useful.
 	    markUseful(q);

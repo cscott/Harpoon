@@ -11,7 +11,7 @@ import java.lang.reflect.Modifier;
  * a class initializer method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HInitializerSyn.java,v 1.2 2002-02-25 21:03:03 cananian Exp $
+ * @version $Id: HInitializerSyn.java,v 1.3 2002-02-26 22:45:05 cananian Exp $
  */
 class HInitializerSyn extends HMethodSyn implements HInitializer {
     
@@ -25,18 +25,18 @@ class HInitializerSyn extends HMethodSyn implements HInitializer {
     public int hashCode() { return HInitializerImpl.hashCode(this); }
 
     // can't really change any of the properties of a class initializer.
-    public void addModifiers(int m) { Util.assert(m==0); }
-    public void setModifiers(int m) { Util.assert(m==getModifiers()); }
-    public void removeModifiers(int m) { Util.assert((m&getModifiers())==0); }
+    public void addModifiers(int m) { Util.ASSERT(m==0); }
+    public void setModifiers(int m) { Util.ASSERT(m==getModifiers()); }
+    public void removeModifiers(int m) { Util.ASSERT((m&getModifiers())==0); }
     public void setReturnType(HClass returnType) {
-	Util.assert(returnType==HClass.Void);
+	Util.ASSERT(returnType==HClass.Void);
     }
-    public void addExceptionType(HClass exceptionType) { Util.assert(false); }
+    public void addExceptionType(HClass exceptionType) { Util.ASSERT(false); }
     public void setExceptionTypes(HClass[] exceptionTypes) {
-	Util.assert(exceptionTypes.length==0);
+	Util.ASSERT(exceptionTypes.length==0);
     }
-    public void removeExceptionType(HClass exceptionType) { Util.assert(false); }
+    public void removeExceptionType(HClass exceptionType) { Util.ASSERT(false); }
     public void setSynthetic(boolean isSynthetic) {
-	Util.assert(isSynthetic==isSynthetic());
+	Util.ASSERT(isSynthetic==isSynthetic());
     }
 }

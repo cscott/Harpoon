@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.2 2002-02-25 20:56:10 cananian Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.3 2002-02-26 22:39:08 cananian Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
 
@@ -146,12 +146,12 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	// report("Processing HCodeElement: "+hce+" Temp: "+t);
 	// find out which BasicBlock this HCodeElement is from
 	BasicBlock b = bbf.getBlock(hce);
-	//Util.assert(b != null, "no block" /* +" for "+hce */ );
+	//Util.ASSERT(b != null, "no block" /* +" for "+hce */ );
 	if(b == null) {
        if (true) return java.util.Collections.EMPTY_SET;
        System.out.println("\nSuccC " + cfger.succC(hce));
        System.out.println("PredC " + cfger.predC(hce));
-       Util.assert(false, "no block"+" for "+hce );
+       Util.ASSERT(false, "no block"+" for "+hce );
     }
 	// report("In BasicBlock: "+b.toString());
 
@@ -165,7 +165,7 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 		break;
 	    }
 	}
-	Util.assert(sawIt);
+	Util.ASSERT(sawIt);
 	
 	// broke out of loop, so now we need to see if exists a
 	// definition in remaining hces

@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: CJMP.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
  */
 public class CJMP extends SIGMA {
     protected Temp test;
@@ -35,7 +35,7 @@ public class CJMP extends SIGMA {
 		Temp test, Temp dst[][], Temp src[]) {
         super(qf, source, dst, src, 2 /* two branch targets */);
 	this.test = test;
-	Util.assert(test!=null);
+	Util.ASSERT(test!=null);
     }
     /** Creates a <code>CJMP</code> representing a conditional branch.
      *  Abbreviated form of the constructor uses an appropriately-sized

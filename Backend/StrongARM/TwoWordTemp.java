@@ -11,7 +11,7 @@ import harpoon.Temp.TempFactory;
  * <code>TwoWordTemp</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: TwoWordTemp.java,v 1.2 2002-02-25 21:02:50 cananian Exp $
+ * @version $Id: TwoWordTemp.java,v 1.3 2002-02-26 22:44:51 cananian Exp $
  */
 public class TwoWordTemp extends Temp {
     
@@ -27,8 +27,8 @@ public class TwoWordTemp extends Temp {
 
     public TwoWordTemp(TempFactory tf, Temp low, Temp high) {
 	super(tf);
-	Util.assert(low.tempFactory().equals(tf));
-	Util.assert(high.tempFactory().equals(tf));
+	Util.ASSERT(low.tempFactory().equals(tf));
+	Util.ASSERT(high.tempFactory().equals(tf));
 	this.low = low;
 	this.high = high;
     }

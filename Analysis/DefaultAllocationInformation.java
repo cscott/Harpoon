@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * that nothing can be stack or thread-locally allocated.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefaultAllocationInformation.java,v 1.2 2002-02-25 20:56:10 cananian Exp $
+ * @version $Id: DefaultAllocationInformation.java,v 1.3 2002-02-26 22:39:08 cananian Exp $
  */
 public class DefaultAllocationInformation
     implements AllocationInformation, java.io.Serializable {
@@ -42,7 +42,7 @@ public class DefaultAllocationInformation
 	if (allocationSite instanceof harpoon.IR.Quads.ANEW)
 	    return _hasInteriorPointers
 		(((harpoon.IR.Quads.ANEW)allocationSite).hclass());
-	Util.assert(false, "not a NEW or ANEW quad.");
+	Util.ASSERT(false, "not a NEW or ANEW quad.");
 	return null;
     }
     /** Return an AllocationProperties object matching the allocated object
@@ -59,7 +59,7 @@ public class DefaultAllocationInformation
     /** Return true iff the specified object type has no interior pointers;
      *  that is, iff all its fields are primitive. */
     public static boolean hasInteriorPointers(HClass cls) {
-	Util.assert(!cls.isInterface() && !cls.isPrimitive());
+	Util.ASSERT(!cls.isInterface() && !cls.isPrimitive());
 	if (cls.isArray()) return !cls.getComponentType().isPrimitive();
 	// okay, it's an object.  see if it has any non-primitive fields.
 	for (HClass sc=cls; sc!=null; sc=sc.getSuperclass()) {

@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@mit.edu>
- * @version $Id: CodeGen.spec,v 1.2 2002-02-25 21:01:47 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.3 2002-02-26 22:43:57 cananian Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -87,7 +87,7 @@ import java.util.Iterator;
        
        final class CallVisitor extends harpoon.IR.Tree.TreeVisitor {
           public void visit(harpoon.IR.Tree.Tree treee){
-             harpoon.Util.Util.assert(false, "Should never visit generic harpoon.IR.Tree.Treein CallVisitor");
+             harpoon.Util.Util.ASSERT(false, "Should never visit generic harpoon.IR.Tree.Treein CallVisitor");
           } // end visit(harpoon.IR.Tree.Tree)
           public void visit(harpoon.IR.Tree.Stm stm) {
              harpoon.IR.Tree.INVOCATION inv = null;
@@ -191,9 +191,9 @@ import java.util.Iterator;
        regToNum.put(regfile.reg[i], new Integer(i));
     regComp = new Comparator() {
           public int compare(Object o1, Object o2) {
-             Util.assert(regToNum.keySet().contains(o1),
+             Util.ASSERT(regToNum.keySet().contains(o1),
                          o1+" not in regToNum's keys");
-             Util.assert(regToNum.keySet().contains(o2),
+             Util.ASSERT(regToNum.keySet().contains(o2),
                          o2+" not in regToNum's keys");
              return ((Integer)regToNum.get(o1)).intValue() -
                 ((Integer)regToNum.get(o2)).intValue();
@@ -231,7 +231,7 @@ import java.util.Iterator;
                 suffix = "hu";
              break;
           default:
-             Util.assert(false, "Constant offset memory load wants to load bitwidth that is not 8, 16");       
+             Util.ASSERT(false, "Constant offset memory load wants to load bitwidth that is not 8, 16");       
           }
        } else {
           suffix = "w";
@@ -249,7 +249,7 @@ import java.util.Iterator;
              suffix = "h";
              break;
           default:
-             Util.assert(false, "Constant offset memory load wants to load bitwidth that is not 8, 16, or 32");       
+             Util.ASSERT(false, "Constant offset memory load wants to load bitwidth that is not 8, 16, or 32");       
           }
        } else {
           suffix = "w";
@@ -317,11 +317,11 @@ import java.util.Iterator;
    // allocated to the same registers 
     private Instr emitRegAllocDef( HCodeElement root, Temp t) {
        return null;
-       // Util.assert(t != null, t);
+       // Util.ASSERT(t != null, t);
        // return emitDUMMY( root, "# Reg alloc def " + t, new Temp[]{t}, null);
     }
     private Instr emitRegAllocUse( HCodeElement root, Temp t) {
-       Util.assert(t != null, t);
+       Util.ASSERT(t != null, t);
        return emitDUMMY( root, "# Reg alloc use " + t, null, new Temp[]{t});
     }
 
@@ -459,7 +459,7 @@ private String makeDAFlushBitmask() {
    for(Iterator it = usedda.iterator(); it.hasNext(); ) {
       int i = ((Integer)it.next()).intValue();
       bitmask |= 1 << i;
-      Util.assert(i < 31); // Don't overflow int
+      Util.ASSERT(i < 31); // Don't overflow int
    }
    // XXX Always set DA reg 0 because we use it on function
    // entry/return.  Even for leaf procedures currently.  If we get to
@@ -599,8 +599,8 @@ private String makeDAFlushBitmask() {
        declare( a1, HClass.Void );
        declare( a0, HClass.Void );
        // an emitMOVE is not legal with the l/h modifiers
-       Util.assert(j instanceof TwoWordTemp);
-       Util.assert(k instanceof TwoWordTemp);
+       Util.ASSERT(j instanceof TwoWordTemp);
+       Util.ASSERT(k instanceof TwoWordTemp);
        emit2( root, "move `d0, `s0h\n"
               + "move `d1, `s0l", new Temp[]{a0, a1}, new Temp[] {j});
        emitRegAllocUse( root, j );
@@ -610,7 +610,7 @@ private String makeDAFlushBitmask() {
        declareCALLDefFull();
        emit2(root, "jal "+nameMap.c_function_name(func_name),
              call_def_full, call_use);
-       Util.assert(i instanceof TwoWordTemp);
+       Util.ASSERT(i instanceof TwoWordTemp);
        emitRegAllocDef(root, i);
        emit( root, "move `d0h, `s0\n"
              + "move `d0l, `s1", i, v0, v1 ); 
@@ -625,17 +625,17 @@ private String makeDAFlushBitmask() {
        declare( a0, HClass.Void );
        declareCALLDefBuiltin();
        // an emitMOVE is not legal with the l/h modifiers
-       Util.assert(j instanceof TwoWordTemp);
+       Util.ASSERT(j instanceof TwoWordTemp);
        emit2( root, "move `d0, `s0h\n"
               + "move `d1, `s0l", new Temp[]{a0, a1}, new Temp[] {j});
        emitRegAllocUse( root, j );
-       Util.assert((k instanceof TwoWordTemp) == false);
+       Util.ASSERT((k instanceof TwoWordTemp) == false);
        emitMOVE( root, "move `d0, `s0", a2, k );
        declareCALLDefFull();
        emit2(root, "jal "+nameMap.c_function_name(func_name),
              // uses & stomps on these registers:
              call_def_full, call_use);
-       Util.assert(i instanceof TwoWordTemp);
+       Util.ASSERT(i instanceof TwoWordTemp);
        emitRegAllocDef(root, i);
        emit( root, "move `d0h, `s0\n"
              + "move `d0l, `s1", i, v0, v1 ); 
@@ -676,8 +676,8 @@ private String makeDAFlushBitmask() {
        declare( a1, HClass.Void );
        declare( a0, HClass.Void );
        // not certain an emitMOVE is legal with the l/h modifiers
-       Util.assert(j instanceof TwoWordTemp);
-       Util.assert(k instanceof TwoWordTemp);
+       Util.ASSERT(j instanceof TwoWordTemp);
+       Util.ASSERT(k instanceof TwoWordTemp);
        emit2( root, "move `d0, `s0h\n"
               + "move `d1, `s0l", new Temp[]{a0, a1}, new Temp[] {j});
        emitRegAllocUse( root, j );
@@ -756,7 +756,7 @@ private String makeDAFlushBitmask() {
                 Temp reg2 = stack.argSecondReg( ROOT, index); 
                 declare( reg1, HClass.Void);
                 declare( reg2, HClass.Void);
-                Util.assert(tl.head instanceof TwoWordTemp);
+                Util.ASSERT(tl.head instanceof TwoWordTemp);
                 emit2( ROOT, "move `d0, `s0h\n"
                        + "move `d1, `s0l", 
                        new Temp[]{reg1, reg2}, new Temp[] {tl.head});
@@ -770,7 +770,7 @@ private String makeDAFlushBitmask() {
           case StackInfo.STACK:
              if(isDoubleWord(elist.head)) {
                 declare (SP, HClass.Void);
-                Util.assert(tl.head instanceof TwoWordTemp);
+                Util.ASSERT(tl.head instanceof TwoWordTemp);
                 emit(new InstrMEM( instrFactory, ROOT,
                                    "sw `s0h, " 
                                    + stack.argOffset(ROOT, index) 
@@ -794,12 +794,12 @@ private String makeDAFlushBitmask() {
              }
              break;
           case StackInfo.REGSTACKSPLIT:
-             Util.assert(tl.head instanceof TwoWordTemp);
+             Util.ASSERT(tl.head instanceof TwoWordTemp);
              // gcc and cc (mipspro) on mips don't do this
-             Util.assert(false);
+             Util.ASSERT(false);
              break;
           default:
-             Util.assert(false);
+             Util.ASSERT(false);
           }
        }
 
@@ -853,7 +853,7 @@ private String makeDAFlushBitmask() {
                   ROOT.getRetval().type()==Type.DOUBLE) {
           // double retval passed in float registers.
           declare(retval, type); declare ( SP, HClass.Void );
-          Util.assert(retval instanceof TwoWordTemp);
+          Util.ASSERT(retval instanceof TwoWordTemp);
           //emit( ROOT, "move `d0h, `s0", retval, v0 );
           // emit( ROOT, "move `d0l, `s0", retval, v1 );
           // sdc1 is mips2
@@ -865,7 +865,7 @@ private String makeDAFlushBitmask() {
        } else if (ROOT.getRetval().isDoubleWord()) {
           // not certain an emitMOVE is legal with the l/h modifiers
           declare(retval, type);
-          Util.assert(retval instanceof TwoWordTemp);
+          Util.ASSERT(retval instanceof TwoWordTemp);
           emitRegAllocDef(ROOT, retval);
           emit( ROOT, "move `d0h, `s0\n"
                 + "move `d0l, `s1", retval, v0, v1 ); 
@@ -966,7 +966,7 @@ private String makeDAFlushBitmask() {
              entry_instr[en++] = 
                 new Instr(inf, il, "addu $30, $sp, "+ stack.frameSize() + "\t##RR_DO_NOT_ANNOTATE",
                           new Temp[]{FP}, new Temp[]{SP});
-             Util.assert(en == 10);
+             Util.ASSERT(en == 10);
              ////// Now create instrs to save non-trivial callee saved regs
              Instr[] callee_save = new Instr [nregs];
              if(nregs > 0) {
@@ -989,7 +989,7 @@ private String makeDAFlushBitmask() {
              /// Layout function entry
              LayoutInstr(il, entry_instr);
              if(nregs > 0) {
-                Util.assert(nregs == callee_save.length);
+                Util.ASSERT(nregs == callee_save.length);
                 // This puts all of the callee saving before the
                 // creation of the frame pointer which is the last
                 // instruction in entry_isntr.
@@ -1069,9 +1069,9 @@ private String makeDAFlushBitmask() {
              exit_instr[en++] = new Instr(inf, il, "j  $31  # return",
                                           null, new Temp[]{LR});
              if(enable_daregs) {
-                Util.assert(en == 5);
+                Util.ASSERT(en == 5);
              } else {
-                Util.assert(en == 4);
+                Util.ASSERT(en == 4);
              }
              if(nregs > 0) {
                 LayoutInstr(il, callee_restore);
@@ -1095,7 +1095,7 @@ private String makeDAFlushBitmask() {
                                          methodlabel.name + ", . - " +
                                          methodlabel.name);
           in1.layout(last, last.getNext());
-          Util.assert(mipspro_assem == false);
+          Util.ASSERT(mipspro_assem == false);
           in2.layout(last, in1);
           last=in2;
        }
@@ -1194,7 +1194,7 @@ BINOP<p,i>(ADD, j, CONST<p,i>(c)) = i
 
 BINOP<l>(ADD, j, k) = i %extra<i>{ extra }
 %{
-   Util.assert(i instanceof TwoWordTemp);
+   Util.ASSERT(i instanceof TwoWordTemp);
    emitLineDebugInfo(ROOT);
    emitRegAllocDef(ROOT, i);
    if(yellow_pekoe) {
@@ -1624,7 +1624,7 @@ CONST<i,f>(c) = i
 
 CONST<p>(c) = i %{
     // the only CONST of type Pointer we should see is NULL
-    Util.assert(c==null);
+    Util.ASSERT(c==null);
    emitLineDebugInfo(ROOT);
     emit( ROOT, "li `d0, 0   # null pointer", i);
 }%
@@ -1786,10 +1786,10 @@ MOVE<p,i,f>(dst, src) %{
 
 MOVE<d,l>(TEMP(dst), src) %{
    emitLineDebugInfo(ROOT);
-    Util.assert( dst instanceof TwoWordTemp, "why is dst: "+dst + 
+    Util.ASSERT( dst instanceof TwoWordTemp, "why is dst: "+dst + 
 		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
 
-    Util.assert(src instanceof TwoWordTemp, "why is src: "+src + 
+    Util.ASSERT(src instanceof TwoWordTemp, "why is src: "+src + 
 		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
 
     declare( dst, code.getTreeDerivation(),  ROOT.getSrc() );
@@ -1970,7 +1970,7 @@ CJUMP(BINOP(cmpop, j, CONST<i,p>(c)), iftrue, iffalse)
    %pred %( isCmpOp(cmpop) )%
 %{
    emitLineDebugInfo(ROOT);
-   Util.assert(((BINOP) ROOT.getTest()).operandType()!=Type.POINTER ||
+   Util.ASSERT(((BINOP) ROOT.getTest()).operandType()!=Type.POINTER ||
                c == null, "Can not compare a pointer to anything but null\n");
    if(((BINOP) ROOT.getTest()).operandType() == Type.POINTER &&
       c == null) { 
@@ -2087,7 +2087,7 @@ METHOD(params) %{
           }
           break;
        case StackInfo.REGSTACKSPLIT:
-          Util.assert(false);
+          Util.ASSERT(false);
        }
     }
     param_stack = null; // free

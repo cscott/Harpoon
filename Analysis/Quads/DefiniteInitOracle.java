@@ -45,7 +45,7 @@ import java.util.Set;
  * before its definite initialization point.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DefiniteInitOracle.java,v 1.2 2002-02-25 20:59:22 cananian Exp $
+ * @version $Id: DefiniteInitOracle.java,v 1.3 2002-02-26 22:41:41 cananian Exp $
  */
 public class DefiniteInitOracle {
     private static final boolean DEBUG=true;
@@ -108,7 +108,7 @@ public class DefiniteInitOracle {
 	if (!ndiCache.containsKey(hm)) {
 	    Set notDefinitelyInitialized = new HashSet();
 	    HCode hc = hcf.convert(hm);
-	    Util.assert(hc!=null, hm);
+	    Util.ASSERT(hc!=null, hm);
 	    // compute dominator tree.
 	    DomTree dt = new DomTree(hc, false);
 	    // compute MayReadOracle

@@ -17,7 +17,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.2 2002-02-25 21:05:41 cananian Exp $
+ * @version $Id: TEMP.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
  */
 public class TEMP extends Exp {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -28,9 +28,9 @@ public class TEMP extends Exp {
     public TEMP(TreeFactory tf, HCodeElement source, int type, Temp temp) {
 	super(tf, source, 0);
 	this.type=type; this.temp=temp;
-	Util.assert(Type.isValid(type));
-	Util.assert(temp!=null);
-	Util.assert((temp.tempFactory() == tf.tempFactory()) ||
+	Util.ASSERT(Type.isValid(type));
+	Util.ASSERT(temp!=null);
+	Util.ASSERT((temp.tempFactory() == tf.tempFactory()) ||
 		    (tf.getFrame().getRegFileInfo().isRegister(temp)),
 		    "Non-register temp with non-matching factory");
     }
@@ -38,8 +38,8 @@ public class TEMP extends Exp {
     public int kind() { return TreeKind.TEMP; }
 
     public Exp build(TreeFactory tf, ExpList kids) {
-	Util.assert(kids==null);
-	Util.assert(tf.tempFactory() == temp.tempFactory() ||
+	Util.ASSERT(kids==null);
+	Util.ASSERT(tf.tempFactory() == temp.tempFactory() ||
 		    tf.getFrame().getRegFileInfo().isRegister(temp));
 	return new TEMP(tf, this, type, temp); 
     }

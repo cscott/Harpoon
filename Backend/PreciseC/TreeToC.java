@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.2 2002-02-25 21:02:09 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.3 2002-02-26 22:44:26 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -219,7 +219,7 @@ public class TreeToC extends java.io.PrintWriter {
 		temps_seen.clear();
 		break;
 	    case CODETABLE: // flush to CODE.
-		Util.assert(mode==CODE);
+		Util.ASSERT(mode==CODE);
 		pwa[DI].println("};");
 		flushAndAppendTo(DD, MD);
 		flushAndAppendTo(DI, MD);
@@ -563,7 +563,7 @@ public class TreeToC extends java.io.PrintWriter {
 	    if (current_mode==CODE) {
 		if (lv.local_code_labels.contains(e.label)) {
 		    pw.print(label(e.label)+":"); nl();
-		} else Util.assert(lv.local_table_labels.contains(e.label));
+		} else Util.ASSERT(lv.local_table_labels.contains(e.label));
 	    } else if (!lv.method_labels.contains(e.label))
 		startData(DATA, e.label, e.exported);
 	    last_label=e.label;

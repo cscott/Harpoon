@@ -39,7 +39,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.2 2002-02-25 21:05:30 cananian Exp $
+ * @version $Id: Code.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The Tree Objects composing this code view. */
@@ -154,7 +154,7 @@ public abstract class Code extends HCode {
 	// a SEGMENT.
 	Tree first = (SEQ)this.tree;
 	while(first.kind()==TreeKind.SEQ) first = ((SEQ)first).getLeft(); 
-	Util.assert(first.kind()==TreeKind.SEGMENT); 
+	Util.ASSERT(first.kind()==TreeKind.SEGMENT); 
 	return this.tree; 
     }
 
@@ -227,9 +227,9 @@ public abstract class Code extends HCode {
      *   Removes <code>stm</code> from this tree.
      */
     public void remove(Stm stm) { 
-	Util.assert(stm.kind() != TreeKind.SEQ); 
-	Util.assert(stm.getFactory() == this.tf); 
-	Util.assert(this.tf.getParent() == this); 
+	Util.ASSERT(stm.kind() != TreeKind.SEQ); 
+	Util.ASSERT(stm.getFactory() == this.tf); 
+	Util.ASSERT(this.tf.getParent() == this); 
 	
 	// All predecessors in canonical tree form must be SEQs
 	SEQ pred = (SEQ)stm.getParent();
@@ -241,7 +241,7 @@ public abstract class Code extends HCode {
 
 	if (pred.getParent() == null) { 
 	    // Pred has no parents, it must be the root of the tree. 
-	    Util.assert(pred == this.tree); 
+	    Util.ASSERT(pred == this.tree); 
 	    this.tree         = newPred; 
 	    this.tree.unlink();
 	}

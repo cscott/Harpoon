@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Tree.Exp</code>s can be inferred from these.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationGenerator.java,v 1.2 2002-02-25 21:05:31 cananian Exp $
+ * @version $Id: DerivationGenerator.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
  */
 public class DerivationGenerator implements TreeDerivation {
     /** private partial type map */
@@ -46,7 +46,7 @@ public class DerivationGenerator implements TreeDerivation {
 	TypeAndDerivation(HClass type, Temp temp) { this(type, null, temp); }
 	/** private constructor */
 	private TypeAndDerivation(HClass type, DList derivation, Temp temp) {
-	    Util.assert(type!=null ^ derivation!=null);
+	    Util.ASSERT(type!=null ^ derivation!=null);
 	    this.type = type;
 	    this.derivation = derivation;
 	    this.temp = temp;
@@ -80,8 +80,8 @@ public class DerivationGenerator implements TreeDerivation {
      *  to the given <code>HClass</code> <code>type</code> to this
      *  <code>DerivationGenerator</code>. */
     public void putType(Exp exp, HClass type) {
-	Util.assert(exp!=null && type!=null);
-	Util.assert(!dtM.containsKey(exp));
+	Util.ASSERT(exp!=null && type!=null);
+	Util.ASSERT(!dtM.containsKey(exp));
 	dtM.put(exp, new TypeAndDerivation(type));
     }
     /** Add a mapping from the given <code>Tree.Exp</code> <code>exp</code>
@@ -89,16 +89,16 @@ public class DerivationGenerator implements TreeDerivation {
      *  <code>DerivationGenerator</code>, indicating that this value lives
      *  in <code>Temp</code> <code>temp</code>. */
     public void putTypeAndTemp(Exp exp, HClass type, Temp temp) {
-	Util.assert(exp!=null && type!=null && temp!=null);
-	Util.assert(!dtM.containsKey(exp));
+	Util.ASSERT(exp!=null && type!=null && temp!=null);
+	Util.ASSERT(!dtM.containsKey(exp));
 	dtM.put(exp, new TypeAndDerivation(type, temp));
     }
     /** Add a mapping from the given <code>Tree.Exp</code> <code>exp</code>
      *  to the given <code>Derivation.DList</code> <code>derivation</code>.
      */
     public void putDerivation(Exp exp, DList derivation) {
-	Util.assert(exp!=null && derivation!=null);
-	Util.assert(!dtM.containsKey(exp));
+	Util.ASSERT(exp!=null && derivation!=null);
+	Util.ASSERT(!dtM.containsKey(exp));
 	dtM.put(exp, new TypeAndDerivation(derivation));
     }
     /** Transfer typing from one exp to another. */
@@ -157,7 +157,7 @@ public class DerivationGenerator implements TreeDerivation {
     private class DTVisitor extends TreeVisitor {
 	public TypeAndDerivation tad;
 	DTVisitor(Exp exp) { exp.accept(this); }
-	public void visit(Tree e) { Util.assert(false, "Can't type: "+e); }
+	public void visit(Tree e) { Util.ASSERT(false, "Can't type: "+e); }
 	public void visit(CONST e) {
 	    // e.type()==Type.POINTER means null constant.
 	    this.tad = (e.type() != Type.POINTER) ? type2tad(e.type()) : Void;
@@ -166,7 +166,7 @@ public class DerivationGenerator implements TreeDerivation {
 	    this.tad = getDT(e.getExp());
 	}
 	public void visit(MEM e) {
-	    Util.assert(e.type() != Type.POINTER, 
+	    Util.ASSERT(e.type() != Type.POINTER, 
 			"Can't determine type for MEM.");
 	    this.tad = type2tad(e.type());
 	}
@@ -185,7 +185,7 @@ public class DerivationGenerator implements TreeDerivation {
 		this.tad = TADadd(getDT(e.getLeft()), getDT(e.getRight()));
 		break;
 	    default:
-		Util.assert(false, "Illegal pointer operation: "+e);
+		Util.ASSERT(false, "Illegal pointer operation: "+e);
 	    }
 	}
 	public void visit(UNOP e) {
@@ -196,11 +196,11 @@ public class DerivationGenerator implements TreeDerivation {
 		this.tad = TADnegate(getDT(e.getOperand()));
 		break;
 	    default:
-		Util.assert(false, "Illegal pointer operation: "+e);
+		Util.ASSERT(false, "Illegal pointer operation: "+e);
 	    }
 	}
 	public void visit(TEMP e) {
-	    Util.assert(e.type != Type.POINTER, 
+	    Util.ASSERT(e.type != Type.POINTER, 
 			"Can't determine type for TEMP "+e+".");
 	    this.tad = type2tad(e.type());
 	}
@@ -228,9 +228,9 @@ public class DerivationGenerator implements TreeDerivation {
     private static DList makeDL(TypeAndDerivation tad) {
 	if (tad.derivation != null) return tad.derivation;
 	// have to derive from base pointer.
-	Util.assert(tad.type != null);
-	Util.assert(tad.type == HClass.Void || !tad.type.isPrimitive());
-	Util.assert(tad.temp != null,
+	Util.ASSERT(tad.type != null);
+	Util.ASSERT(tad.type == HClass.Void || !tad.type.isPrimitive());
+	Util.ASSERT(tad.temp != null,
 		    "Can't derive type if we don't know temp.");
 	return new DList(tad.temp, true, null);
     }

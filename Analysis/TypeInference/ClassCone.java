@@ -18,7 +18,7 @@ import java.util.Iterator;
  * <code>ClassCone</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: ClassCone.java,v 1.2 2002-02-25 21:00:36 cananian Exp $
+ * @version $Id: ClassCone.java,v 1.3 2002-02-26 22:42:55 cananian Exp $
  */
 
 public class ClassCone  {
@@ -39,7 +39,7 @@ public class ClassCone  {
 	    wl.push(HClassUtil.baseClass(c));
 	    while (!wl.isEmpty()) {
 		HClass cl = (HClass)wl.pull();
-		Util.assert(!c.isPrimitive(), "CSA: c.getLinker() hack below"+
+		Util.ASSERT(!c.isPrimitive(), "CSA: c.getLinker() hack below"+
 			    " is not going to work if c can be primitive.");
 		s.add(HClassUtil.arrayClass(c.getLinker(), cl, dims));
 		for (Iterator it=ch.children(cl).iterator(); it.hasNext(); )

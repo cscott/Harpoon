@@ -34,7 +34,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.2 2002-02-25 21:05:13 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
  */
 public class ToNoSSA
 {
@@ -48,11 +48,11 @@ public class ToNoSSA
 
     private static class NullDerivation implements SerializableDerivation {
 	public DList derivation(HCodeElement hce, Temp t) { 
-	    Util.assert(hce!=null && t!=null);
+	    Util.ASSERT(hce!=null && t!=null);
 	    throw new TypeNotKnownException(hce, t);
 	}
 	public HClass typeMap(HCodeElement hce, Temp t) { 
-	    Util.assert(hce!=null && t!=null); 
+	    Util.ASSERT(hce!=null && t!=null); 
 	    throw new TypeNotKnownException(hce, t);
 	} 
     }
@@ -60,8 +60,8 @@ public class ToNoSSA
 	final Map dT;
 	MapDerivation(Map dT) { this.dT = dT; }
 	public DList derivation(HCodeElement hce, Temp t) {
-	    Util.assert(hce!=null && t!=null);
-	    Util.assert(t.tempFactory() ==
+	    Util.ASSERT(hce!=null && t!=null);
+	    Util.ASSERT(t.tempFactory() ==
 			((Quad)hce).getFactory().tempFactory());
 	    Object type = dT.get(Default.pair(hce, t));
 	    if (type instanceof HClass) return null;
@@ -69,8 +69,8 @@ public class ToNoSSA
 	    throw new TypeNotKnownException(hce, t);
 	}
 	public HClass typeMap(HCodeElement hce, Temp t) {
-	    Util.assert(hce!=null && t!=null);
-	    Util.assert(t.tempFactory() ==
+	    Util.ASSERT(hce!=null && t!=null);
+	    Util.ASSERT(t.tempFactory() ==
 			((Quad)hce).getFactory().tempFactory());
 	    Object type = dT.get(Default.pair(hce, t));
 	    if (type instanceof HClass) return (HClass)type;
@@ -102,7 +102,7 @@ public class ToNoSSA
     }
     private ToNoSSA(QuadFactory newQF, Code code, Derivation derivation,
 		    boolean validDerivation) {
-	Util.assert(code.getName().equals(harpoon.IR.Quads.QuadSSI.codename) ||
+	Util.ASSERT(code.getName().equals(harpoon.IR.Quads.QuadSSI.codename) ||
 		    code.getName().equals(harpoon.IR.LowQuad.LowQuadSSI.codename) ||
 		    code.getName().equals(harpoon.IR.Quads.QuadWithTry.codename));
     
@@ -359,7 +359,7 @@ static class PHIVisitor extends LowQuadVisitor // this is an inner class
 	    Object type = null;
 	    if (m_dT!=null) {
 		type = m_dT.remove(Default.pair(q, Tdst));
-		Util.assert(type!=null, "No type for "+Tdst+" in "+q);
+		Util.ASSERT(type!=null, "No type for "+Tdst+" in "+q);
 	    }
 	    Temp Tt = Tdst;
 	    if (hasConflicts) {
@@ -407,7 +407,7 @@ static class QuadMap // this is an inner class
       
     private void updateDTInfo(Quad qOld, Quad qNew)
     {
-	Util.assert(qOld!=null && qNew != null);
+	Util.ASSERT(qOld!=null && qNew != null);
 
 	Temp[] defs = qOld.def();
 	for (int i=0; i<defs.length; i++) {
@@ -418,7 +418,7 @@ static class QuadMap // this is an inner class
 		continue;
 	    } // else, is a derived pointer.
 	    DList dl = m_derivation.derivation(qOld, defs[i]);
-	    Util.assert(dl!=null, 
+	    Util.ASSERT(dl!=null, 
 			"No type information for "+defs[i]+" in "+qOld);
 	    m_dT.put(tuple, dl);
 	}
@@ -438,9 +438,9 @@ static class NameMap extends CloningTempMap {
 	return super.tempMap((Temp)mergeMap.find(t));
     }
     public void map(Temp Told, Temp Tnew) {
-	Util.assert(merging); // no merging is valid after we start tempMapping
-	Util.assert(Told.tempFactory()==old_tf);
-	Util.assert(Tnew.tempFactory()==old_tf);
+	Util.ASSERT(merging); // no merging is valid after we start tempMapping
+	Util.ASSERT(Told.tempFactory()==old_tf);
+	Util.ASSERT(Tnew.tempFactory()==old_tf);
 	mergeMap.union(Told, Tnew);
     }
 }

@@ -20,7 +20,7 @@ import java.util.Set;
  * and methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.2 2002-02-25 20:56:09 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.3 2002-02-26 22:39:08 cananian Exp $
  */
 public abstract class ClassHierarchy {
     // tree of callable classes
@@ -75,7 +75,7 @@ public abstract class ClassHierarchy {
 	if (isPrimArray) // c not prim.
 	    parents[n++] = c.getLinker().forName("java.lang.Object");
 	// okay, done.  Did we size the array correctly?
-	Util.assert(n==parents.length);
+	Util.ASSERT(n==parents.length);
 	// okay, return as Set.
 	return new ArraySet(parents);
     }

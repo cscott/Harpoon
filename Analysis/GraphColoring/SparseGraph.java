@@ -23,7 +23,7 @@ import java.util.Iterator;
  * references <code>SparseNode</code>s store internally.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.2 2002-02-25 20:57:17 cananian Exp $ 
+ * @version $Id: SparseGraph.java,v 1.3 2002-02-26 22:40:16 cananian Exp $ 
  */
 
 public class SparseGraph extends ColorableGraphImpl implements ColorableGraph {
@@ -389,7 +389,7 @@ public class SparseGraph extends ColorableGraphImpl implements ColorableGraph {
 	} catch (ClassCastException e) {
 	    throw new NsnEx(n);
 	} catch (NodeAlreadyColoredException e) {
-	    harpoon.Util.Util.assert(false);
+	    harpoon.Util.Util.ASSERT(false);
 	}
     }
 

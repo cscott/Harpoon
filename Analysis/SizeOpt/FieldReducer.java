@@ -52,7 +52,7 @@ import java.util.Set;
  * unused and constant fields from objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldReducer.java,v 1.2 2002-02-25 21:00:03 cananian Exp $
+ * @version $Id: FieldReducer.java,v 1.3 2002-02-26 22:42:23 cananian Exp $
  */
 public class FieldReducer extends MethodMutator {
     private static final boolean no_mutate =
@@ -112,7 +112,7 @@ public class FieldReducer extends MethodMutator {
 	    if (hc==HClass.Short  || (m<16 && p<=15)) nhc = HClass.Short;
 	    if (hc==HClass.Byte   || (m< 8 && p<= 7)) nhc = HClass.Byte;
 	    if (hc==HClass.Boolean|| (m==0 && p<= 1)) nhc = HClass.Boolean;
-	    Util.assert(nhc!=null); // one of these cases must have matched
+	    Util.ASSERT(nhc!=null); // one of these cases must have matched
 	    if (DEBUG && hc!=nhc) System.err.print("REDUCING "+hf);
 	    hf.getMutator().setType(nhc);
 	    if (DEBUG && hc!=nhc) System.err.println(" TO "+hf);
@@ -151,7 +151,7 @@ public class FieldReducer extends MethodMutator {
 	    if (quads[i] instanceof GET) {
 		GET q = (GET) quads[i];
 		// if this GET is not dead, then the field is read.
-		Util.assert(bwa.isRead(q.field()));
+		Util.ASSERT(bwa.isRead(q.field()));
 		if (bwa.isConst(q.field())) {
 		    // replace reads of constant fields with constant.
 		    Quad.replace(q, new CONST
@@ -180,9 +180,9 @@ public class FieldReducer extends MethodMutator {
 	FOOTER footer = (FOOTER) header.next(0);
 	METHOD method = (METHOD) header.next(1);
 	footer = footer.resize(1); //eliminate all non-HEADER edges into footer
-	Util.assert(footer.prevLength()==1);
-	Util.assert(footer.prev(0)==header);
-	Util.assert(method.nextLength()==1);
+	Util.ASSERT(footer.prevLength()==1);
+	Util.ASSERT(footer.prev(0)==header);
+	Util.ASSERT(method.nextLength()==1);
 	// create new 'throw new RuntimeException()' body.
 	HClass HCrex = linker.forName("java.lang.RuntimeException");
 	QuadFactory qf = header.getFactory();

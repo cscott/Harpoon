@@ -22,7 +22,7 @@ import java.util.Map;
  * Leiserson, and Rivest, on page 400 and following.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinomialHeap.java,v 1.2 2002-02-25 21:09:04 cananian Exp $
+ * @version $Id: BinomialHeap.java,v 1.3 2002-02-26 22:47:33 cananian Exp $
  */
 public class BinomialHeap extends AbstractHeap implements Cloneable {
     private static final boolean debug=false;
@@ -124,7 +124,7 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
      *  for <code>this</code>. After calling <code>union()</code>, the
      *  specified map will be empty. */
     public void union(BinomialHeap m) {
-	Util.assert(m.c.equals(this.c));
+	Util.ASSERT(m.c.equals(this.c));
 	union(m.head);
 	m.head = null; // empty out source map.
     }
@@ -186,7 +186,7 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
     }
     /** Remove a tree root from the binomial heap. O(lg n) time. */
     private void _removeRoot(Node x) {
-	Util.assert(x.parent==null); // x is a root node.
+	Util.ASSERT(x.parent==null); // x is a root node.
 	// remove from linked list of binomial tree roots.
 	if (this.head==x) this.head=x.sibling;
 	else for (Node y=this.head; y!=null; y=y.sibling)
@@ -368,10 +368,10 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
     /*-- debugging functions --*/
     private void checkHeap() { checkHeap(this.head, this.c); }
     private static void checkHeap(Node n, Comparator c) {
-	Util.assert(isHeapOrdered(n, c));
+	Util.ASSERT(isHeapOrdered(n, c));
     }
     private static boolean isTreeOrdered(Node n, Comparator c) {
-	Util.assert(debug);
+	Util.ASSERT(debug);
 	if (n.parent==null) // special rules for root.
 	    return 
 		(n.sibling==null || n.sibling.parent==null) &&
@@ -397,7 +397,7 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 	    :((n.child!=null) && (n.sibling!=null));
     }
     private static boolean isHeapOrdered(Node n, Comparator c) {
-	Util.assert(debug);
+	Util.ASSERT(debug);
 	if (n==null) return true;
 	return (n.parent==null) && // all top-level trees
 	    isTreeOrdered(n, c) && // each tree in set is well-formed
@@ -442,11 +442,11 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 
 	// print sorted using extractMinimum()
 	bm1.insert(new Integer(3), null); // duplicate key.
-	Util.assert(bm1.size()==27);
+	Util.ASSERT(bm1.size()==27);
 	while (bm1.size()>0)
 	    System.out.print(bm1.extractMinimum().getKey().toString()+" ");
 	System.out.println();
-	Util.assert(bm1.size()==0);
+	Util.ASSERT(bm1.size()==0);
 	System.out.println("----");
 	bm1 = (BinomialHeap) bm2.clone();
 
@@ -454,7 +454,7 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 	Iterator it=bm1.entries().iterator();
 	it.next(); it.next(); it.next();
 	bm1.delete((Map.Entry) it.next());
-	Util.assert(bm1.size()==25);
+	Util.ASSERT(bm1.size()==25);
 
 	while (!bm1.isEmpty()) {
 	    Map.Entry me = bm1.minimum();
@@ -478,47 +478,47 @@ public class BinomialHeap extends AbstractHeap implements Cloneable {
 		};
 	    }
 	}, ic);
-	Util.assert(bm1.size()==10 && !bm1.isEmpty());
-	Util.assert(bm1.minimum().getKey().equals(new Integer(-16)));
+	Util.ASSERT(bm1.size()==10 && !bm1.isEmpty());
+	Util.ASSERT(bm1.minimum().getKey().equals(new Integer(-16)));
 	System.out.println(bm1);
 	bm1.insert(new Integer(-15), new Integer(-15));
-	Util.assert(bm1.size()==11 && !bm1.isEmpty());
-	Util.assert(bm1.minimum().getKey().equals(new Integer(-16)));
+	Util.ASSERT(bm1.size()==11 && !bm1.isEmpty());
+	Util.ASSERT(bm1.minimum().getKey().equals(new Integer(-16)));
 	System.out.println(bm1);
 	// now verify that we'll get all the keys out in properly sorted order
-	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-16)));
-	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-15)));
-	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-14)));
-	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-10)));
-	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-9)));
-	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-8)));
-	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-7)));
-	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-4)));
-	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-3)));
-	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-2)));
-	Util.assert(bm1.extractMinimum().getKey().equals(new Integer(-1)));
-	Util.assert(bm1.isEmpty() && bm1.size()==0);
+	Util.ASSERT(bm1.extractMinimum().getKey().equals(new Integer(-16)));
+	Util.ASSERT(bm1.extractMinimum().getKey().equals(new Integer(-15)));
+	Util.ASSERT(bm1.extractMinimum().getKey().equals(new Integer(-14)));
+	Util.ASSERT(bm1.extractMinimum().getKey().equals(new Integer(-10)));
+	Util.ASSERT(bm1.extractMinimum().getKey().equals(new Integer(-9)));
+	Util.ASSERT(bm1.extractMinimum().getKey().equals(new Integer(-8)));
+	Util.ASSERT(bm1.extractMinimum().getKey().equals(new Integer(-7)));
+	Util.ASSERT(bm1.extractMinimum().getKey().equals(new Integer(-4)));
+	Util.ASSERT(bm1.extractMinimum().getKey().equals(new Integer(-3)));
+	Util.ASSERT(bm1.extractMinimum().getKey().equals(new Integer(-2)));
+	Util.ASSERT(bm1.extractMinimum().getKey().equals(new Integer(-1)));
+	Util.ASSERT(bm1.isEmpty() && bm1.size()==0);
 
 	// now test delete, decreaseKey, and updateKey
 	// (tests borrowed from BinaryHeap.java)
-	Heap h = new BinomialHeap(); Util.assert(h.isEmpty() && h.size()==0);
+	Heap h = new BinomialHeap(); Util.ASSERT(h.isEmpty() && h.size()==0);
 	Map.Entry me[] = {
 	    h.insert("C", "c1"), h.insert("S", "s1"), h.insert("A", "a"),
 	    h.insert("S", "s2"), h.insert("C", "c2"), h.insert("O", "o"),
 	    h.insert("T", "t1"), h.insert("T", "t2"), h.insert("Z", "z"),
 	    h.insert("M", "m"),
 	};
-	Util.assert(h.extractMinimum().getValue().equals("a"));
+	Util.ASSERT(h.extractMinimum().getValue().equals("a"));
 	System.out.println(h);
 	h.decreaseKey(me[3], "B"); // s2
-	Util.assert(h.extractMinimum().getValue().equals("s2"));
+	Util.ASSERT(h.extractMinimum().getValue().equals("s2"));
 	h.delete(me[4]); // c2
-	Util.assert(h.extractMinimum().getValue().equals("c1"));
+	Util.ASSERT(h.extractMinimum().getValue().equals("c1"));
 	System.out.println(h);
 	// finally, test updateKey
 	h.updateKey(me[9], "P"); // m
-	Util.assert(h.extractMinimum().getValue().equals("o"));
-	Util.assert(h.extractMinimum().getValue().equals("m"));
+	Util.ASSERT(h.extractMinimum().getValue().equals("o"));
+	Util.ASSERT(h.extractMinimum().getValue().equals("m"));
 	System.out.println(h);
 
 	// done!

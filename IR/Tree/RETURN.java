@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: RETURN.java,v 1.2 2002-02-25 21:05:41 cananian Exp $
+ * @version  $Id: RETURN.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
  */
 public class RETURN extends Stm implements Typed {
     /** Constructor.
@@ -22,9 +22,9 @@ public class RETURN extends Stm implements Typed {
     public RETURN(TreeFactory tf, HCodeElement source, 
 		  Exp retval) {
 	super(tf, source, 1);
-	Util.assert(retval!=null);
+	Util.ASSERT(retval!=null);
 	this.setRetval(retval);
-	Util.assert(tf == retval.tf, "This and Retval must have same tree factory");
+	Util.ASSERT(tf == retval.tf, "This and Retval must have same tree factory");
     }		
 
     /** Returns the value to return. */
@@ -35,8 +35,8 @@ public class RETURN extends Stm implements Typed {
     public int kind() { return TreeKind.RETURN; }
 
     public Stm build(TreeFactory tf, ExpList kids) {
-	Util.assert(kids!=null && kids.tail==null);
-	Util.assert(tf == kids.head.tf);
+	Util.ASSERT(kids!=null && kids.tail==null);
+	Util.ASSERT(tf == kids.head.tf);
 	return new RETURN(tf, this, kids.head);
     }
 

@@ -23,7 +23,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.2 2002-02-25 21:05:13 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
  */
 final class UnHandler {
     private static final boolean ARRAY_BOUNDS_CHECKS
@@ -67,7 +67,7 @@ final class UnHandler {
     private static final void visitAll(Visitor v, Quad start) {
 	start.accept(v);
 	final StaticState ss = v.ss;
-	Util.assert(ss.qm.contains(start));
+	Util.ASSERT(ss.qm.contains(start));
 	Quad[] ql = start.next();
 	for (int i=0; i<ql.length; i++) {
 	    if (ss.qm.contains(ql[i])) continue; // skip if already done.
@@ -205,7 +205,7 @@ final class UnHandler {
 	    AliasList s1 = s0.nextAlias;
 	    d0.nextAlias=s1; s1.prevAlias=d0;
 	    s0.nextAlias=d1; d1.prevAlias=s0;
-	    Util.assert(s0.box==d0.box && s1.box==d1.box);
+	    Util.ASSERT(s0.box==d0.box && s1.box==d1.box);
 	}
 	/** Clear all type information (ie at program merge points) */
 	public void clear() { h.clear(); }
@@ -298,7 +298,7 @@ final class UnHandler {
 	    for (Iterator e=Hhs.keySet().iterator(); e.hasNext(); ) {
 		HandlerSet hs = (HandlerSet)e.next();
 		List v = get(Hhs, hs);
-		Util.assert(v.size()>0); // should be!
+		Util.ASSERT(v.size()>0); // should be!
 		PHI phi = new PHI(qf, (Quad)v.get(0),
 				  new Temp[0], v.size() /*arity*/);
 		// link all to in of phi
@@ -339,7 +339,7 @@ final class UnHandler {
 			Quad.addEdge(ts, edge++, q0, 0);
 			register(q0);
 		    }
-		    Util.assert(edge==ts.arity());
+		    Util.ASSERT(edge==ts.arity());
 		}
 	    } // end 'for each handler set'
 
@@ -453,7 +453,7 @@ final class UnHandler {
 
 	/** By default, just clone and set all destinations to top. */
 	public void visit(Quad q) {
-	    Util.assert(!ss.qm.contains(q));
+	    Util.ASSERT(!ss.qm.contains(q));
 	    Quad nq = (Quad) q.clone(qf, ss.ctm);
 	    ss.qm.put(q, nq, nq);
 	    Temp d[] = q.def();
@@ -517,7 +517,7 @@ final class UnHandler {
 		ss.qm.put(q, nq, nq);
 	    } else { 
 		// not safe.  Break into components.
-		Util.assert(false); // FIXME
+		Util.ASSERT(false); // FIXME
 	    }
 	    ti.update(q.objectref(), alsoNonNull(Tobj));
 	}
@@ -544,7 +544,7 @@ final class UnHandler {
 	}
 	public void visit(CALL q) {
 	    Quad nq, head;
-	    Util.assert(q.retex()==null, "don't allow checked ex in qwt");
+	    Util.ASSERT(q.retex()==null, "don't allow checked ex in qwt");
 	    // if retex==null, add the proper checks.
 	    if (q.retex()!=null) nq=head=(Quad)q.clone(qf, ss.ctm);
 	    else {
@@ -885,9 +885,9 @@ final class UnHandler {
 	}
 	private Quad _boundsCheck_(Quad old, Quad head, Temp Tlen, Temp Ttst,
 				   Temp Textra1) {
-	    Util.assert(Tlen.tempFactory()==head.qf.tempFactory());
-	    Util.assert(Ttst.tempFactory()==head.qf.tempFactory());
-	    Util.assert(Textra1.tempFactory()==head.qf.tempFactory());
+	    Util.ASSERT(Tlen.tempFactory()==head.qf.tempFactory());
+	    Util.ASSERT(Ttst.tempFactory()==head.qf.tempFactory());
+	    Util.ASSERT(Textra1.tempFactory()==head.qf.tempFactory());
 	    QuadFactory qf = head.qf;
 	    Quad q0 = new OPER(qf, head, Qop.ICMPGT, Tlen,
 			       new Temp[] { Tlen, Ttst });

@@ -69,7 +69,7 @@ import harpoon.Util.DataStructs.LightMap;
  * <code>ODMAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODMAInfo.java,v 1.2 2002-02-25 20:58:40 cananian Exp $
+ * @version $Id: ODMAInfo.java,v 1.3 2002-02-26 22:41:20 cananian Exp $
  */
 public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -237,7 +237,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    return ((NEW) hce).hclass();
 	if(hce instanceof ANEW)
 	    return ((ANEW) hce).hclass();
-	Util.assert(false,"Not a NEW or ANEW: " + hce);
+	Util.ASSERT(false,"Not a NEW or ANEW: " + hce);
 	return null; // should never happen
     }
 
@@ -336,7 +336,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		    // captured nodes of depth 0 (ie allocated in this method,
 		    // not in a callee) are allocated on the stack.
 		    Quad q  = (Quad) node_rep.node2Code(node);
-		    Util.assert(q != null, "No quad for " + node);
+		    Util.ASSERT(q != null, "No quad for " + node);
 
 		    if(stack_alloc_extra_cond(node, q)) {
 			MyAP ap = getAPObj(q);
@@ -362,7 +362,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		    if(remainInThread(node, hm, "")) {
 			System.out.println("node remainInThread");
 			Quad q = (Quad) node_rep.node2Code(node);
-			Util.assert(q != null, "No quad for " + node);
+			Util.ASSERT(q != null, "No quad for " + node);
 
 			MyAP ap = getAPObj(q);
 			if (ODMAInfo.MEM_OPTIMIZATION)
@@ -529,7 +529,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		    // captured nodes of depth 0 (ie allocated in this method,
 		    // not in a callee) are allocated on the stack.
 		    Quad q  = (Quad) node_rep.node2Code(node);
-		    Util.assert(q != null, "No quad for " + node);
+		    Util.ASSERT(q != null, "No quad for " + node);
 
 		    if(stack_alloc_extra_cond(node, q)) {
 			MyAP ap = getAPObj(q);
@@ -560,7 +560,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 		    if(remainInThread(node, hm, "")) {
 			System.out.println("node remainInThread");
 			Quad q = (Quad) node_rep.node2Code(node);
-			Util.assert(q != null, "No quad for " + node);
+			Util.ASSERT(q != null, "No quad for " + node);
 
 			MyAP ap = getAPObj(q);
 			if (ODMAInfo.MEM_OPTIMIZATION){
@@ -689,7 +689,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    }
 	}
 
-	Util.assert(node.type == PANode.INSIDE, 
+	Util.ASSERT(node.type == PANode.INSIDE, 
 		    "This node should be an inside node" + node);
 
 	if (ODMAInfo.Nodes2Status.get(node)==null){
@@ -701,12 +701,12 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	ODNodeStatus status = (ODNodeStatus) Nodes2Status.get(node);
 
 	// we are interested in objects allocated in the current thread
-	Util.assert(node.isTSpec()==false,
+	Util.ASSERT(node.isTSpec()==false,
 		    "This node should not be a specialization " + node);
 	    
 	int depth = node.getCallChainDepth();
 	System.out.println("CallChainDepth = " + depth); 
-	Util.assert(depth==0,
+	Util.ASSERT(depth==0,
 		    "This node should have be created by the current MetaMethod!");
 
 	boolean iscaptured = captured(pig, mm, node);
@@ -716,7 +716,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    // captured nodes of depth 0 (ie allocated in this method,
 	    // not in a callee) are allocated on the stack.
 	    Quad q  = (Quad) node_rep.node2Code(node);
-	    Util.assert(q != null, "No quad for " + node);
+	    Util.ASSERT(q != null, "No quad for " + node);
 	    
 	    if(stack_alloc_extra_cond(node, q)) {
 		MyAP ap = getAPObj(q);
@@ -743,7 +743,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    if(remainInThread(node, hm, "")) {
 		System.out.println("node remainInThread");
 		Quad q = (Quad) node_rep.node2Code(node);
-		Util.assert(q != null, "No quad for " + node);
+		Util.ASSERT(q != null, "No quad for " + node);
 		
 		MyAP ap = getAPObj(q);
 		if (ODMAInfo.MEM_OPTIMIZATION){
@@ -1005,7 +1005,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
     }
 
     private void insert_newq(METHOD method, NEW newq){
-	Util.assert(method.nextLength() == 1,
+	Util.ASSERT(method.nextLength() == 1,
 		    "A METHOD quad should have exactly one successor!");
 	Edge nextedge = method.nextEdge(0);
 	Quad nextquad = method.next(0);
@@ -1198,7 +1198,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 			   node + "  hm = " + hm);
 // 	System.out.println(pig);
 
-	Util.assert(pig != null, "pig is null for hm = " + hm + " " + mm);
+	Util.ASSERT(pig != null, "pig is null for hm = " + hm + " " + mm);
 	
 	if (!(pig.allNodes().contains(node))){
 	    System.out.println("--escaping (does not belong to the graph)");
@@ -1596,7 +1596,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	for(Iterator it = B.iterator(); it.hasNext(); ) {
 	    PANode node = ((PANode) it.next()).getRoot();
 	    Quad q = (Quad) node_rep.node2Code(node);
-	    Util.assert((q != null) && 
+	    Util.ASSERT((q != null) && 
 			((q instanceof NEW) || (q instanceof ANEW)),
 			" Bad quad attached to " + node + " " + q);
 	    news.add(q);
@@ -1723,7 +1723,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	Quad[] news = (Quad[]) ih.get(cs);
 	for(int i = 0; i < news.length; i++) {
 	    Quad q  = (Quad) old2new.get(news[i]);
-	    Util.assert(q != null, "no new Quad for " + news[i]);
+	    Util.ASSERT(q != null, "no new Quad for " + news[i]);
 	    MyAP ap = new MyAP(getAllocatedType(q));
 
 	    System.out.println("New Stack Allocation " + Debug.code2str(q));
@@ -1747,7 +1747,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
 	move_pred_edges(cs, replace_cs);
 
-	Util.assert(cs.paramsLength() == qm.paramsLength(),
+	Util.ASSERT(cs.paramsLength() == qm.paramsLength(),
 		    " different nb. of parameters between CALL and METHOD");
 	
 	Quad previous = replace_cs;
@@ -1883,7 +1883,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
 	MetaMethod mcaller = new MetaMethod(caller, true);	
 	MetaMethod[] callees = mcg.getCallees(mcaller, cs);
-	Util.assert(callees.length == 1, "not exactly one callee in " + cs);
+	Util.ASSERT(callees.length == 1, "not exactly one callee in " + cs);
 	HMethod hm = callees[0].getHMethod();
 
 	HCode hcode_orig = hcf.convert(hm);
@@ -1916,7 +1916,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	Quad[] next1 = q1.next();
 	Quad[] next2 = q2.next();
 
-	Util.assert(next1.length == next2.length,
+	Util.ASSERT(next1.length == next2.length,
 		    " Possible error in HCode.clone()");
 
 	for(int i = 0; i < next1.length; i++)

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.2 2002-02-25 21:05:42 cananian Exp $
+ * @version $Id: UNOP.java,v 1.3 2002-02-26 22:46:11 cananian Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -23,13 +23,13 @@ public class UNOP extends OPER {
     public UNOP(TreeFactory tf, HCodeElement source,
 		int optype, int unop, Exp operand) {
 	super(tf, source, optype, unop, 1);
-	Util.assert(operand!=null);
+	Util.ASSERT(operand!=null);
 	this.setOperand(operand);
-	Util.assert(Uop.isValid(unop));
-	Util.assert(tf == operand.tf, "This and Operand must have same tree factory");
+	Util.ASSERT(Uop.isValid(unop));
+	Util.ASSERT(tf == operand.tf, "This and Operand must have same tree factory");
 	if (unop==Uop.I2B || unop==Uop.I2C || unop==Uop.I2S)
-	    Util.assert(optype == Type.INT);/* these are special conversions */
-	Util.assert(operand.type()==optype, "operand and optype don't match");
+	    Util.ASSERT(optype == Type.INT);/* these are special conversions */
+	Util.ASSERT(operand.type()==optype, "operand and optype don't match");
     }
 
     /** Returns the subexpression to be operated upon. */
@@ -162,8 +162,8 @@ public class UNOP extends OPER {
     public int kind() { return TreeKind.UNOP; }
 
     public Exp build(TreeFactory tf, ExpList kids) {
-	Util.assert(kids!=null && kids.tail==null);
-	Util.assert(tf == kids.head.tf);
+	Util.ASSERT(kids!=null && kids.tail==null);
+	Util.ASSERT(tf == kids.head.tf);
 	return new UNOP(tf, this, optype, op, kids.head);
     }
     /** Accept a visitor */

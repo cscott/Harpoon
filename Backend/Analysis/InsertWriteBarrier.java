@@ -37,7 +37,7 @@ import java.util.Set;
  * younger generations.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: InsertWriteBarrier.java,v 1.2 2002-02-25 21:00:47 cananian Exp $
+ * @version $Id: InsertWriteBarrier.java,v 1.3 2002-02-26 22:43:06 cananian Exp $
  */
 public abstract class InsertWriteBarrier extends 
     harpoon.Analysis.Tree.Simplification {
@@ -92,7 +92,7 @@ public abstract class InsertWriteBarrier extends
 			hc = _dg.typeMap(move.getSrc());
 			if (hc != null && hc.isPrimitive()) return false;
 		    }
-		    Util.assert(move.type() == Typed.POINTER);
+		    Util.ASSERT(move.type() == Typed.POINTER);
 		    return (contains(_KIND(mem.getExp()), _TEMP) &&
 			    !created.contains(move));
 		}
@@ -146,7 +146,7 @@ public abstract class InsertWriteBarrier extends
 				hc = _dg.typeMap(move.getSrc());
 			if (hc != null && hc.isPrimitive()) return false;
 		    }
-		    Util.assert(move.type() == Typed.POINTER);
+		    Util.ASSERT(move.type() == Typed.POINTER);
 		    return (!contains(_KIND(mem.getExp()), _TEMP) &&
 			    !created.contains(move));
 		}

@@ -38,7 +38,7 @@ import harpoon.Util.Util;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: CONST.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
  */
 
 public class CONST extends Quad {
@@ -66,8 +66,8 @@ public class CONST extends Quad {
 	this.value = value;
 	this.type = type;
 	// VERIFY legality of this CONST.
-	Util.assert(dst!=null && type!=null);
-	Util.assert(type.equals(HClass.Int)   || type.equals(HClass.Long)   ||
+	Util.ASSERT(dst!=null && type!=null);
+	Util.ASSERT(type.equals(HClass.Int)   || type.equals(HClass.Long)   ||
 		    type.equals(HClass.Float) || type.equals(HClass.Double) ||
 		    type.equals(HClass.Void)  || 
 		    type.getName().equals("java.lang.Class") ||
@@ -75,9 +75,9 @@ public class CONST extends Quad {
 		    type.getName().equals("java.lang.reflect.Method") ||
 		    type.getName().equals("java.lang.String"));
 	if (type.equals(HClass.Void))
-	    Util.assert(value==null);
+	    Util.ASSERT(value==null);
 	else
-	    Util.assert(value!=null);
+	    Util.ASSERT(value!=null);
     }
     // ACCESSOR METHODS:
     /** Returns the <code>Temp</code> which will contain the specified

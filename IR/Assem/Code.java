@@ -33,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.2 2002-02-25 21:04:05 cananian Exp $
+ * @version $Id: Code.java,v 1.3 2002-02-26 22:45:17 cananian Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -226,7 +226,7 @@ public abstract class Code extends HCode {
 			if (s!=null) str.append("\n");
 		    }
 		} catch (IOException e ) {
-		    Util.assert(false, "IOException " + e.toString() + 
+		    Util.ASSERT(false, "IOException " + e.toString() + 
 				" should not be thrown during assembly"+
 				" code processing.");
 		}
@@ -265,7 +265,7 @@ public abstract class Code extends HCode {
 			temp = instr.def()[n];
 			getReg = true;
 		    } else {
-			Util.assert(false, "index mismatch in "+assem + 
+			Util.ASSERT(false, "index mismatch in "+assem + 
 				    " " + Arrays.asList(instr.def()));
 			s.append("d?");
 		    }
@@ -277,7 +277,7 @@ public abstract class Code extends HCode {
 			temp = instr.use()[n];
 			getReg = true;
 		    } else {
-			Util.assert(false, "index mismatch in "+assem + 
+			Util.ASSERT(false, "index mismatch in "+assem + 
 				    " " + Arrays.asList(instr.use()));
 			s.append("s?");
 		    }
@@ -289,7 +289,7 @@ public abstract class Code extends HCode {
 			label = (Label) instr.getTargets().get(n);
 			s.append(label);
 		    } else {
-			Util.assert(false, "index mismatch in "+assem + 
+			Util.ASSERT(false, "index mismatch in "+assem + 
 				    " " + Arrays.asList(instr.use()));
 			s.append("L?");
 		    }
@@ -299,7 +299,7 @@ public abstract class Code extends HCode {
 		    s.append("`");
 		    break;
 		default:
-		    Util.assert(false, "error parsing "+assem);
+		    Util.ASSERT(false, "error parsing "+assem);
 		}
 		
 		if (getReg) {
@@ -316,7 +316,7 @@ public abstract class Code extends HCode {
 			}
 		    }
 		    /*
-		    Util.assert( ( ! mustGetRegs ) ||
+		    Util.ASSERT( ( ! mustGetRegs ) ||
 				 frame.getRegFileInfo().isRegister(temp) ||
 				 registerAssigned(instr, temp),
 				 "final assembly output for "+
@@ -376,7 +376,7 @@ public abstract class Code extends HCode {
 	    }
 	    return sb.toString();
 	} catch (IOException e) {
-	    Util.assert(false);
+	    Util.ASSERT(false);
 	    return "died";
 	}
     }

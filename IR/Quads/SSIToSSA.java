@@ -30,7 +30,7 @@ import java.util.Map;
  * in an SSI-form codeview, yielding an SSA codeview.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIToSSA.java,v 1.2 2002-02-25 21:05:13 cananian Exp $
+ * @version $Id: SSIToSSA.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
  */
 public class SSIToSSA {
     // Return values for the algorithm:
@@ -148,7 +148,7 @@ public class SSIToSSA {
 	// instances of sigma functions.
 	public void visit(SIGMA q) {
 	    // should be caught by specific case.
-	    Util.assert(false, "unknown sigma function: "+q); 
+	    Util.ASSERT(false, "unknown sigma function: "+q); 
 	}
 	public void visit(CALL q) {
 	    // create CALL with no sigma functions.

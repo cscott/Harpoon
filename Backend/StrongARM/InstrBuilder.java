@@ -19,7 +19,7 @@ import java.util.Arrays;
     StrongARM architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.2 2002-02-25 21:02:50 cananian Exp $
+    @version $Id: InstrBuilder.java,v 1.3 2002-02-26 22:44:51 cananian Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
@@ -56,12 +56,12 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
     // Loads, can actually increment the target-register so that 
 
     public List makeLoad(Temp r, int offset, Instr template) {
-	// Util.assert(offset < OFFSET_LIMIT, 
+	// Util.ASSERT(offset < OFFSET_LIMIT, 
 	// 	       "offset " + offset + " is too large");
 
 	if (offset < OFFSET_LIMIT) { // common case
 	    String[] strs = getLdrAssemStrs(r, offset);
-	    Util.assert(strs.length == 1 ||
+	    Util.ASSERT(strs.length == 1 ||
 			strs.length == 2 );
 
 	    if (strs.length == 2) {
@@ -134,15 +134,15 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
     }
 
     public List makeStore(Temp r, int offset, Instr template) {
-	// Util.assert(offset < OFFSET_LIMIT, 
+	// Util.ASSERT(offset < OFFSET_LIMIT, 
 	//             "offset " + offset + " is too large");
 
 	if (offset < OFFSET_LIMIT) { // common case
-	    // Util.assert(harpoon.Backend.StrongARM.
+	    // Util.ASSERT(harpoon.Backend.StrongARM.
 	    //             Code.isValidConst( 4*offset ),
 	    //		   "invalid offset: "+(4*offset));
 	    String[] strs = getStrAssemStrs(r, offset);
-	    Util.assert(strs.length == 1 || 
+	    Util.ASSERT(strs.length == 1 || 
 			strs.length == 2);
 	    
 	    if (strs.length == 2) {
@@ -159,8 +159,8 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 				 new Temp[]{ },
 				 new Temp[]{ r , FP() });
 		store2.layout(store1, null);
-		Util.assert(store1.getNext() == store2, "store1.next == store2");
-		Util.assert(store2.getPrev() == store1, "store2.prev == store1");
+		Util.ASSERT(store1.getNext() == store2, "store1.next == store2");
+		Util.ASSERT(store2.getPrev() == store1, "store2.prev == store1");
 		return Arrays.asList(new InstrMEM[]{ store1, store2 });
 	    } else {
 

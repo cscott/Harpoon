@@ -53,7 +53,7 @@ import java.util.Set;
  * This pass is invoked in <code>harpoon.Main.SAMain</code>.
  *
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: MakeGCThreadSafe.java,v 1.2 2002-02-25 21:00:47 cananian Exp $
+ * @version $Id: MakeGCThreadSafe.java,v 1.3 2002-02-26 22:43:06 cananian Exp $
  */
 public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
     // hide constructor
@@ -66,7 +66,7 @@ public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
      */ 
     public static HCodeFactory codeFactory(final HCodeFactory parent,
 					   final Frame f) {
-	Util.assert(parent.getCodeName().equals(CanonicalTreeCode.codename));
+	Util.ASSERT(parent.getCodeName().equals(CanonicalTreeCode.codename));
 	final Frame frame = f;
 	return new HCodeFactory() {
 	    public HCode convert(HMethod m) {
@@ -135,7 +135,7 @@ public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
 		}
 		public Stm apply(TreeFactory tf, Stm stm, 
 				 DerivationGenerator dg) {
-		    Util.assert(reachable.contains(stm));
+		    Util.ASSERT(reachable.contains(stm));
 		    final Label Ltrue  = new Label();
 		    final Label Lfalse = new Label();
 		    final METHOD orig = (METHOD)stm;
@@ -183,7 +183,7 @@ public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
 		}
 		public Stm apply(TreeFactory tf, Stm stm, 
 				 DerivationGenerator dg) {
-		    Util.assert(reachable.contains(stm));
+		    Util.ASSERT(reachable.contains(stm));
 		    final Label Ltrue  = new Label();
 		    final Label Lfalse = new Label();
 		    final CJUMP orig = (CJUMP)stm;

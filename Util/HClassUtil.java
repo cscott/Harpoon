@@ -11,7 +11,7 @@ import harpoon.ClassFile.Linker;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.7 2002-02-25 21:08:45 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.8 2002-02-26 22:47:24 cananian Exp $
  */
 public abstract class HClassUtil  {
     // Only static methods.
@@ -61,10 +61,10 @@ public abstract class HClassUtil  {
      *  and <code>b</code> must be primitive or simple object types.
      */
     public static final HClass commonSuper(HClass a, HClass b) {
-	Util.assert(!a.isInterface() && !b.isInterface());
-	Util.assert(!a.isArray() && !b.isArray());
+	Util.ASSERT(!a.isInterface() && !b.isInterface());
+	Util.ASSERT(!a.isArray() && !b.isArray());
 	if (a.isPrimitive() || b.isPrimitive()) {
-	    Util.assert(a==b, "Can't merge differing primitive types. "+
+	    Util.ASSERT(a==b, "Can't merge differing primitive types. "+
 			"("+a+" and "+b+")");
 	    return a;
 	}
@@ -72,7 +72,7 @@ public abstract class HClassUtil  {
 	HClass[] A = parents(a);
 	HClass[] B = parents(b);
 	// both A[0] and B[0] should be java.lang.Object.
-	Util.assert(A[0]==B[0], "Hierarchy roots differ: "+A[0]+"/"+B[0]);
+	Util.ASSERT(A[0]==B[0], "Hierarchy roots differ: "+A[0]+"/"+B[0]);
 	int i;
 	for(i=1; i<A.length && i<B.length; i++)
 	    if (A[i] != B[i]) break;
@@ -82,12 +82,12 @@ public abstract class HClassUtil  {
     /** Find and return the first common superinterface of a pair of
      *  interfaces. */
     public static final HClass commonInterface(HClass a, HClass b) {
-	Util.assert(a.isInterface() && b.isInterface());
-	Util.assert(!a.isArray() && !b.isArray());
+	Util.ASSERT(a.isInterface() && b.isInterface());
+	Util.ASSERT(!a.isArray() && !b.isArray());
 	// this is a quick hack.
 	if (a.isSuperinterfaceOf(b)) return a;
 	if (b.isSuperinterfaceOf(a)) return b;
-	Util.assert(!a.isPrimitive()); // getLinker() won't work in this case
+	Util.ASSERT(!a.isPrimitive()); // getLinker() won't work in this case
 	return a.getLinker().forName("java.lang.Object");
     }
     /** Find a class which is a common parent of both suppied classes.
@@ -97,7 +97,7 @@ public abstract class HClassUtil  {
 	if (a.isPrimitive() || b.isPrimitive()) return commonSuper(a, b);
 	// note that using getLinker() is safe because neither a nor b
 	// is primitive by this point.
-	Util.assert(a.getLinker()==b.getLinker());
+	Util.ASSERT(a.getLinker()==b.getLinker());
 	if (a.isArray() && b.isArray()) {
 	    Linker linker = a.getLinker();
 	    int ad = dims(a), bd = dims(b), d = (ad<bd)?ad:bd;

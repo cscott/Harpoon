@@ -52,7 +52,7 @@ import harpoon.Util.Util;
  * behave this way.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.2 2002-02-25 21:05:12 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.3 2002-02-26 22:45:56 cananian Exp $ 
  */
 public class CALL extends SIGMA {
     /** The method to invoke. */
@@ -124,7 +124,7 @@ public class CALL extends SIGMA {
 		boolean isVirtual, boolean isTailCall,
 		Temp[][] dst, Temp[] src) {
 	super(qf, source, dst, src, retex==null?1:2);
-	Util.assert(method!=null); // assert early, before call to isStatic()
+	Util.ASSERT(method!=null); // assert early, before call to isStatic()
 	this.method = method;
 	this.params = params;
 	this.retval = retval;
@@ -134,13 +134,13 @@ public class CALL extends SIGMA {
 	this.isTailCall = isTailCall;
 
 	// VERIFY legality of this CALL.
-	Util.assert(method!=null && params!=null);
+	Util.ASSERT(method!=null && params!=null);
 	/* if !isVirtual, then the method is either static, a constructor,
 	 * private, or a the declaring class of the method is a superclass
 	 * of the current method.   This is hard to check, so we do it
 	 * the other way round. */
 	if (this.isVirtual) 
-	    Util.assert(!method.isStatic() && 
+	    Util.ASSERT(!method.isStatic() && 
 			!(method instanceof HConstructor) &&
 			!Modifier.isPrivate(method.getModifiers()),
 			"meaning of final parameter to CALL constructor "+
@@ -149,15 +149,15 @@ public class CALL extends SIGMA {
 			"private, or declared in a superclass of the "+
 			"current method.");
 	// check params and retval against method.
-	Util.assert(method.getReturnType()==HClass.Void
+	Util.ASSERT(method.getReturnType()==HClass.Void
 		    ? retval==null : retval!=null,
 		    "retval not consistent with return type.");
-	Util.assert((method.getParameterTypes().length + (isStatic()?0:1)) ==
+	Util.ASSERT((method.getParameterTypes().length + (isStatic()?0:1)) ==
 		    params.length);
-	Util.assert(!isStatic() || isVirtual()==false,
+	Util.ASSERT(!isStatic() || isVirtual()==false,
 		    "method can't be both static and virtual");
 	// check that retval and retex are different if return val is primitive
-	Util.assert(!(retval==retex && retex!=null &&
+	Util.ASSERT(!(retval==retex && retex!=null &&
 		      method.getReturnType().isPrimitive()),
 		    "can't merge a primitive and a Throwable w/o violating "+
 		    "type safety.");

@@ -49,7 +49,7 @@ import java.util.Set;
  * It should be safe with respect to the revised Java memory model.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemoryOptimization.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: MemoryOptimization.java,v 1.3 2002-02-26 22:41:41 cananian Exp $
  */
 public final class MemoryOptimization
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -104,7 +104,7 @@ public final class MemoryOptimization
     }
     protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
 	// make SSA into RSSx.
-	Util.assert(hc.getName().equals(QuadSSA.codename));
+	Util.ASSERT(hc.getName().equals(QuadSSA.codename));
 	return MyRSSx.cloneToRSSx((harpoon.IR.Quads.Code)hc, newmethod);
     }
     private static class MyRSSx extends QuadRSSx {
@@ -116,7 +116,7 @@ public final class MemoryOptimization
 	}
     }
     protected String mutateCodeName(String codeName) {
-	Util.assert(codeName.equals(QuadSSA.codename));
+	Util.ASSERT(codeName.equals(QuadSSA.codename));
 	return MyRSSx.codename;
     }
 	/** helper routine to add a quad on an edge. */
@@ -290,7 +290,7 @@ public final class MemoryOptimization
 	    public void visit(MONITORENTER q) { visitMONITOR(q); }
 	    public void visit(MONITOREXIT q) { visitMONITOR(q); }
 	    public void visitMONITOR(Quad q) {
-		Util.assert(q instanceof MONITORENTER ||
+		Util.ASSERT(q instanceof MONITORENTER ||
 			    q instanceof MONITOREXIT);
 		for (Iterator it=map.keySet().iterator(); it.hasNext(); ) {
 		    Value v=(Value) it.next();

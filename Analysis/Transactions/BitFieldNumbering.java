@@ -16,7 +16,7 @@ import java.util.Map;
  * embed boolean flags describing object fields.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitFieldNumbering.java,v 1.2 2002-02-25 21:00:09 cananian Exp $
+ * @version $Id: BitFieldNumbering.java,v 1.3 2002-02-26 22:42:28 cananian Exp $
  */
 public class BitFieldNumbering {
     // note: for 64-bit archs, might be worthwhile to make fields 64 bits.
@@ -61,7 +61,7 @@ public class BitFieldNumbering {
 	return new BitFieldTuple(bff, n % BITS_IN_FIELD);
     }
     public HField arrayBitField(HClass hc) {
-	Util.assert(hc.isArray());
+	Util.ASSERT(hc.isArray());
 	/* okay, first 'field info' field is used for arrays. */
 	return getOrMake(HCobject, 0);
     }
@@ -83,16 +83,16 @@ public class BitFieldNumbering {
     final Map fieldNumbers = new HashMap();
     final Map classNumbers = new HashMap();
     private int fieldNumber(HField hf) {
-	Util.assert(!hf.isStatic());
-	Util.assert(!hf.getDeclaringClass().isInterface());
+	Util.ASSERT(!hf.isStatic());
+	Util.ASSERT(!hf.getDeclaringClass().isInterface());
 	if (!fieldNumbers.containsKey(hf))
 	    classNumber(hf.getDeclaringClass());
 	return ((Integer)fieldNumbers.get(hf)).intValue();
     }
     /* all fields in 'hc' are numbered *strictly less than* classNumber(hc) */
     private int classNumber(HClass hc) {
-	Util.assert(!hc.isArray());
-	Util.assert(!hc.isInterface());
+	Util.ASSERT(!hc.isArray());
+	Util.ASSERT(!hc.isInterface());
 	if (!classNumbers.containsKey(hc)) {
 	    HClass sc = hc.getSuperclass();
 	    int start = (sc==null) ? 0 : classNumber(sc);

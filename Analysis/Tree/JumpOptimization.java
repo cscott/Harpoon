@@ -35,7 +35,7 @@ import java.util.List;
  * and redundant labels.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JumpOptimization.java,v 1.2 2002-02-25 21:00:32 cananian Exp $
+ * @version $Id: JumpOptimization.java,v 1.3 2002-02-26 22:42:47 cananian Exp $
  */
 public abstract class JumpOptimization extends Simplification {
     // hide constructor
@@ -45,7 +45,7 @@ public abstract class JumpOptimization extends Simplification {
      *  canonical tree.  Clones the tree before doing
      *  optimization in-place. */
     public static HCodeFactory codeFactory(final HCodeFactory parent) {
-	Util.assert(parent.getCodeName().equals(CanonicalTreeCode.codename));
+	Util.ASSERT(parent.getCodeName().equals(CanonicalTreeCode.codename));
 	return new HCodeFactory() {
 	    public HCode convert(HMethod m) {
 		HCode hc = parent.convert(m);
@@ -80,13 +80,13 @@ public abstract class JumpOptimization extends Simplification {
 		if (succ.length==1 &&
 		    ((Tree)succ[0].to()).kind() == TreeKind.JUMP) {
 		    JUMP jump = (JUMP) succ[0].to();
-		    Util.assert(jump.targets!=null);
+		    Util.ASSERT(jump.targets!=null);
 		    // note that self-loops are not considered useless.
 		    if (jump.targets.tail==null && // only one target.
 			!label.label.equals(jump.targets.head)) {
 			Label _l = (Label) labelmap.find(jump.targets.head);
 			labelmap.union(label.label, jump.targets.head);
-			Util.assert(labelmap.find(label.label).equals(_l));
+			Util.ASSERT(labelmap.find(label.label).equals(_l));
 		    }
 		}
 	    }
@@ -176,7 +176,7 @@ public abstract class JumpOptimization extends Simplification {
 		    while (s.getSibling()==null)
 			s = (Stm) s.getParent();
 		    // assert that our parent is a SEQ here.
-		    Util.assert(s.getParent().kind()==TreeKind.SEQ);
+		    Util.ASSERT(s.getParent().kind()==TreeKind.SEQ);
 		    // step over to the right...
 		    s = (Stm) s.getSibling();
 		    // ...and zip down the left side of the subtree until

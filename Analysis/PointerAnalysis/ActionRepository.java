@@ -44,7 +44,7 @@ import harpoon.Util.Util;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ActionRepository.java,v 1.2 2002-02-25 20:58:38 cananian Exp $
+ * @version $Id: ActionRepository.java,v 1.3 2002-02-26 22:41:18 cananian Exp $
  */
 public class ActionRepository implements java.io.Serializable {
     
@@ -306,8 +306,8 @@ public class ActionRepository implements java.io.Serializable {
     public final void join(ActionRepository ar2){
 	// these first three are really easy
 
-	Util.assert(alpha_ld != null, "alpha_ld == null");
-	Util.assert(ar2 != null, "ar2 == null");
+	Util.ASSERT(alpha_ld != null, "alpha_ld == null");
+	Util.ASSERT(ar2 != null, "ar2 == null");
 
 	alpha_ld.addAll(ar2.alpha_ld);
 	pi_ld.union(ar2.pi_ld);

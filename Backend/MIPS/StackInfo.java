@@ -68,10 +68,10 @@ public class StackInfo {
       }
       public void setArg2Word(int arg, int word) {
          arg2word.add(new Integer(word));
-         Util.assert(arg == arg2word.size() - 1);
+         Util.ASSERT(arg == arg2word.size() - 1);
       }
       public int getArg2Word(int arg) {
-         Util.assert(arg >= 0 && arg < arg2word.size());
+         Util.ASSERT(arg >= 0 && arg < arg2word.size());
          Integer i = (Integer)arg2word.get(arg);
          return i.intValue();
       }
@@ -94,7 +94,7 @@ public class StackInfo {
 
       private ArrayList arg2word;
       private int word2StackWords(int w) {
-         Util.assert(w >= 0);
+         Util.ASSERT(w >= 0);
          if(w < NARGREGS) return 0;
          return w - NARGREGS;
       }
@@ -133,7 +133,7 @@ public class StackInfo {
          psout.print("alow" + arg_idx + " " 
                      + (REGSIZE*(ci.getArg2Word(arg_idx)+1)) + "(sp)");
       }
-      Util.assert(ci.getArg2Word(arg_idx) + 1 < ci.getArg2Word(arg_idx + 1));
+      Util.ASSERT(ci.getArg2Word(arg_idx) + 1 < ci.getArg2Word(arg_idx + 1));
       return REGSIZE * (ci.getArg2Word(arg_idx) + 1);
    }
    /**
@@ -148,7 +148,7 @@ public class StackInfo {
          if(inv instanceof INVOCATION) {
             print(psout, (INVOCATION)inv);
          } else {
-            Util.assert(inv instanceof METHOD);
+            Util.ASSERT(inv instanceof METHOD);
             print(psout, (METHOD)inv);
          }
          ci.print(psout);
@@ -174,7 +174,7 @@ public class StackInfo {
     * Return which argument register this argument goes in
     */
    public Temp argReg(Object inv, int arg_idx) {
-      Util.assert(argWhereInternal(inv, arg_idx) == REGISTER);
+      Util.ASSERT(argWhereInternal(inv, arg_idx) == REGISTER);
       CallInfo ci = (CallInfo)inv2info.get(inv);
       return idx2ArgReg(ci.getArg2Word(arg_idx));
    }
@@ -182,9 +182,9 @@ public class StackInfo {
     * Return the second argument register for a two word temporary.
     */
    public Temp argSecondReg(Object inv, int arg_idx) {
-      Util.assert(argWhereInternal(inv, arg_idx) == REGISTER);
+      Util.ASSERT(argWhereInternal(inv, arg_idx) == REGISTER);
       CallInfo ci = (CallInfo)inv2info.get(inv);
-      Util.assert(ci.getArg2Word(arg_idx) + 1 < ci.getArg2Word(arg_idx + 1));
+      Util.ASSERT(ci.getArg2Word(arg_idx) + 1 < ci.getArg2Word(arg_idx + 1));
       return idx2ArgReg(ci.getArg2Word(arg_idx) + 1);
    }
 
@@ -212,15 +212,15 @@ public class StackInfo {
     * Return how many callee saved registers there are for this frame
     */
    public int calleeSaveTotal() {
-      Util.assert(callee_done);
+      Util.ASSERT(callee_done);
       return callee_regs.size();
    }
    /**
     * Return the register for this callee saved register index
     */
    public Temp calleeReg(int callee_idx) {
-      Util.assert(callee_done);
-      Util.assert(callee_idx < callee_regs.size() && callee_idx >= 0, 
+      Util.ASSERT(callee_done);
+      Util.ASSERT(callee_idx < callee_regs.size() && callee_idx >= 0, 
                   "Callee idx=" + callee_idx + " Size=" + callee_regs.size());
       return (Temp)callee_regs.get(callee_idx);
    }
@@ -228,8 +228,8 @@ public class StackInfo {
     * Return the offset for a given callee saved register index.
     */
    public int calleeSaveOffset(int callee_idx) {
-      Util.assert(callee_done);
-      Util.assert(callee_idx < callee_regs.size() && callee_idx >= 0);
+      Util.ASSERT(callee_done);
+      Util.ASSERT(callee_idx < callee_regs.size() && callee_idx >= 0);
       return frameSize() + fp_off - (REGSIZE * (callee_idx + 1));
    }
    /**
@@ -246,8 +246,8 @@ public class StackInfo {
     * Return the offset for a given local index
     */
    public int localSaveOffset(int local_idx) {
-      Util.assert(callee_done && locals_done);
-      Util.assert(local_idx < local_words && local_idx >= 0);
+      Util.ASSERT(callee_done && locals_done);
+      Util.ASSERT(local_idx < local_words && local_idx >= 0);
       return frameSize() + fp_off - (REGSIZE * (callee_regs.size() + 1 + 
                                                 local_idx));
    }
@@ -258,7 +258,7 @@ public class StackInfo {
       return frameSize() + ra_off;
    }
    public int frameSize() {
-      Util.assert(locals_done && callee_done);
+      Util.ASSERT(locals_done && callee_done);
       int fs = REGSIZE * (max_arg_words 
                           + callee_regs.size()
                           + local_words
@@ -382,14 +382,14 @@ public class StackInfo {
    }
 
    private Temp idx2ArgReg(int idx) {
-      Util.assert(idx < NARGREGS);
+      Util.ASSERT(idx < NARGREGS);
       switch(idx) {
       case 0: return regfile.A0;
       case 1: return regfile.A1;
       case 2: return regfile.A2;
       case 3: return regfile.A3;
       }
-      Util.assert(false);
+      Util.ASSERT(false);
       return null;
    }
    private int  nWords(Typed ty) {

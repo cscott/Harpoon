@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * (ie, the 1-edge) is the innermost nested try-block.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHOD.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: METHOD.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
  * @see HEADER
  * @see HANDLER
  */
@@ -38,8 +38,8 @@ public class METHOD extends Quad {
     public METHOD(QuadFactory qf, HCodeElement source,
 		  Temp[] params, int arity) {
         super(qf, source, 1 /* predecessor is HEADER */, arity);
-	Util.assert(arity>=1);
-	Util.assert(params!=null);
+	Util.ASSERT(arity>=1);
+	Util.ASSERT(params!=null);
 	this.params = params;
     }
     /** Returns the arity of this <code>Quads.METHOD</code>. */

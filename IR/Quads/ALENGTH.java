@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>ALENGTH</code> represents an array length query.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ALENGTH.java,v 1.2 2002-02-25 21:05:11 cananian Exp $
+ * @version $Id: ALENGTH.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ASET
@@ -36,7 +36,7 @@ public class ALENGTH extends Quad {
 	this.dst = dst;
 	this.objectref = objectref;
 	// VERIFY legality of this ALENGTH
-	Util.assert(dst!=null && objectref!=null);
+	Util.ASSERT(dst!=null && objectref!=null);
     }
     /** Returns the destination <code>Temp</code>. */
     public Temp dst() { return dst; }

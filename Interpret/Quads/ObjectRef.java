@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.2 2002-02-25 21:05:46 cananian Exp $
+ * @version $Id: ObjectRef.java,v 1.3 2002-02-26 22:46:24 cananian Exp $
  */
 class ObjectRef extends Ref implements java.io.Serializable {
     /** Fields in this instance of the object. */
@@ -53,7 +53,7 @@ class ObjectRef extends Ref implements java.io.Serializable {
     void putClosure(Object cl) { closure = cl; }
 
     public Object clone() {
-       Util.assert(closure==null, "can't clone objects with closure info.");
+       Util.ASSERT(closure==null, "can't clone objects with closure info.");
        return new ObjectRef(ss, type, FieldValueList.clone(fields));
     }
    

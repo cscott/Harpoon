@@ -27,7 +27,7 @@ import harpoon.ClassFile.HField;
  algorithm and will generate a bigger number of <i>artificial</i> nodes.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ArtificialTempFactory.java,v 1.2 2002-02-25 20:58:39 cananian Exp $
+ * @version $Id: ArtificialTempFactory.java,v 1.3 2002-02-26 22:41:18 cananian Exp $
  */
 public abstract class ArtificialTempFactory implements java.io.Serializable {
 
@@ -52,7 +52,7 @@ public abstract class ArtificialTempFactory implements java.io.Serializable {
      *  class variable (a variable which will point to a static node) 
      *  for the static fields of the declaring class */
     public static final Temp getTempFor(HField hf){
-	Util.assert(hf.isStatic());
+	Util.ASSERT(hf.isStatic());
 	String classname = hf.getDeclaringClass().getName();
 	Temp temp = (Temp)cache.get(classname);
 	if(temp==null){

@@ -347,7 +347,7 @@ public class EdgesNCallees implements java.io.Serializable {
     {
 	if (second==null) return;
 	
-	Util.assert(strict==second.strict(),
+	Util.ASSERT(strict==second.strict(),
 		    "Attempt to join to EdgesNCallees "
 		    + "of different types"); 
 	
@@ -405,7 +405,7 @@ public class EdgesNCallees implements java.io.Serializable {
     {
 	if (second==null) return;
 	
-	Util.assert(strict==second.strict(),
+	Util.ASSERT(strict==second.strict(),
 		    "Attempt to join to EdgesNCallees "
 		    + "of different types"); 
 	
@@ -438,7 +438,7 @@ public class EdgesNCallees implements java.io.Serializable {
     {
 	if (second==null) return;
 	
-	Util.assert(strict==second.strict(),
+	Util.ASSERT(strict==second.strict(),
 		    "Attempt to join to EdgesNCallees "
 		    + "of different types"); 
 	
@@ -504,7 +504,7 @@ public class EdgesNCallees implements java.io.Serializable {
      */
     public Object clone()
     {
-	Util.assert(edges!=null,"Problem in EdgesNCallees.clone: null map");
+	Util.ASSERT(edges!=null,"Problem in EdgesNCallees.clone: null map");
 
 	EdgesNCallees new_enc = new EdgesNCallees(strict);
 
@@ -536,7 +536,7 @@ public class EdgesNCallees implements java.io.Serializable {
      */
     public EdgesNCallees clone(Map hole_conversion)
     {
-	Util.assert(edges!=null,"Problem in EdgesNCallees.clone: null map");
+	Util.ASSERT(edges!=null,"Problem in EdgesNCallees.clone: null map");
 
 	EdgesNCallees new_enc = new EdgesNCallees(strict);
 
@@ -586,7 +586,7 @@ public class EdgesNCallees implements java.io.Serializable {
 
     public EdgesNCallees clone(Map hole_conversion, Map node_conversion)
     {
-	Util.assert(edges!=null,"Problem in EdgesNCallees.clone: null map");
+	Util.ASSERT(edges!=null,"Problem in EdgesNCallees.clone: null map");
 
 	EdgesNCallees new_enc = new EdgesNCallees(strict);
 

@@ -20,7 +20,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.2 2002-02-25 21:05:46 cananian Exp $
+ * @version $Id: StaticState.java,v 1.3 2002-02-26 22:46:25 cananian Exp $
  */
 final class StaticState extends HCLibrary implements java.io.Serializable {
     /** which linker to use. */
@@ -63,7 +63,7 @@ final class StaticState extends HCLibrary implements java.io.Serializable {
     // PUBLIC:
     boolean isLoaded(HClass cls) { return classInfo.get(cls)!=null; }
     void load(HClass cls) throws InterpretedThrowable {
-	Util.assert(!isLoaded(cls));
+	Util.ASSERT(!isLoaded(cls));
 	HClass sc = cls.getSuperclass();
 	if (sc!=null && !isLoaded(sc)) load(sc); // load superclasses first.
 	if (TRACE)
@@ -76,17 +76,17 @@ final class StaticState extends HCLibrary implements java.io.Serializable {
 	// execute static initializer.
 	HMethod hm = cls.getClassInitializer();
 	if (hm!=null) Method.invoke(this, hm, new Object[0]);
-	Util.assert(isLoaded(cls));
+	Util.ASSERT(isLoaded(cls));
     }
 
     Object get(HField sf) {
-	Util.assert(sf.isStatic());
+	Util.ASSERT(sf.isStatic());
 	HClass cls = sf.getDeclaringClass();
 	if (!isLoaded(cls)) load(cls);
 	return FieldValueList.get(get(cls), sf);
     }
     void update(HField sf, Object value) {
-	Util.assert(sf.isStatic());
+	Util.ASSERT(sf.isStatic());
 	HClass cls = sf.getDeclaringClass();
 	if (!isLoaded(cls)) load(cls);
 	put(cls, FieldValueList.update(get(cls), sf, value));
@@ -188,14 +188,14 @@ final class StaticState extends HCLibrary implements java.io.Serializable {
     private Map nativeClosure = new HashMap();
     /** provide an implementation for a native method. */
     final void register(NativeMethod nm) {
-	Util.assert(Modifier.isNative(nm.getMethod().getModifiers()),
+	Util.ASSERT(Modifier.isNative(nm.getMethod().getModifiers()),
 		    "NativeMethod implementation for non-native "+
 		    nm.getMethod());
 	register0(nm);
     }
     /** override an implementation for a non-native method. */
     final void registerOverride(NativeMethod nm) {
-	Util.assert(!Modifier.isNative(nm.getMethod().getModifiers()),
+	Util.ASSERT(!Modifier.isNative(nm.getMethod().getModifiers()),
 		    "NativeMethod override for genuinely native "+
 		    nm.getMethod());
 	register0(nm);

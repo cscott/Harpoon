@@ -42,7 +42,7 @@ public class AppelRegAllocStd extends AppelRegAlloc {
 
     protected List/*Node*/ nodesFor( Web web ) {
 	if (CHECK_INV)
-	Util.assert( webToNodes.containsKey( web ),
+	Util.ASSERT( webToNodes.containsKey( web ),
 		     "! should have nodes for "+web);
 	return (List) webToNodes.get( web );
     }
@@ -88,7 +88,7 @@ public class AppelRegAllocStd extends AppelRegAlloc {
 	    Node u = ni.next();
 	    
 	    if (CHECK_INV)
-	    Util.assert( ! outerSeen.contains(u), " already saw " + u);
+	    Util.ASSERT( ! outerSeen.contains(u), " already saw " + u);
 
 	    outerSeen.add(u);
 
@@ -103,7 +103,7 @@ public class AppelRegAllocStd extends AppelRegAlloc {
 		    deg--;
 		}
 	    }
-	    Util.assert(deg == 0, "degree inv. violated");
+	    Util.ASSERT(deg == 0, "degree inv. violated");
 	}
     }
 
@@ -278,7 +278,7 @@ public class AppelRegAllocStd extends AppelRegAlloc {
 		    Web w = webFor(t, inst);
 		    List nodes = nodesFor( w );
 		    List regList = toRegList( nodes, regs );
-		    Util.assert( ! regList.isEmpty() );
+		    Util.ASSERT( ! regList.isEmpty() );
 		    code.assignRegister( inst, t, regList );
 		}
 	    }
@@ -292,14 +292,14 @@ public class AppelRegAllocStd extends AppelRegAlloc {
 	returns a Move corresponding to Instr i. 
     */ 
     private Move moveFor(Instr i) { 
-	Util.assert( i.isMove() ); 
+	Util.ASSERT( i.isMove() ); 
  
 	if( instrToMove.containsKey(i) ) { 
 	    return (Move) instrToMove.get(i); 
 	} else { 
 	    // TODO: Fix to assign collections, not first elems! 
-	    Util.assert( defCN(i).size() == 1);
-	    Util.assert( useCN(i).size() == 1); 
+	    Util.ASSERT( defCN(i).size() == 1);
+	    Util.ASSERT( useCN(i).size() == 1); 
 	    Node dst = (Node) defCN(i).iterator().next(); 
 	    Node src = (Node) useCN(i).iterator().next(); 
 	    Move m = new Move(i, dst, src); 
@@ -317,7 +317,7 @@ public class AppelRegAllocStd extends AppelRegAlloc {
 		// printAllColors();
 		System.out.println();
 		System.out.println("node:"+n+" history:"+n.nodeSet_history);
-		Util.assert(false,
+		Util.ASSERT(false,
 			    "node:"+n+" should have valid color, not:"+n.color[0]);
 	    }
 	    regs[i] = colorToReg[ n.color[0] ];

@@ -29,7 +29,7 @@ import harpoon.Util.DataStructs.Relation;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.2 2002-02-25 20:58:40 cananian Exp $
+ * @version $Id: PAThreadMap.java,v 1.3 2002-02-26 22:41:21 cananian Exp $
  */
 public class PAThreadMap implements java.io.Serializable {
 
@@ -97,7 +97,7 @@ public class PAThreadMap implements java.io.Serializable {
 
     /** Add a positive <code>delta</code> to the value attached to a node. */
     public void add(PANode n, int delta){
-	Util.assert(delta>0, "PAThreadMap.add: delta should be > 0");
+	Util.ASSERT(delta>0, "PAThreadMap.add: delta should be > 0");
 	int new_tau = getValue(n) + delta;
 	if( new_tau > 1 )
 	    hash.put(n,TWO);

@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * precise information about pointer locations.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: SPAllocationStrategy.java,v 1.2 2002-02-25 21:02:20 cananian Exp $
+ * @version $Id: SPAllocationStrategy.java,v 1.3 2002-02-26 22:44:31 cananian Exp $
  */
 public class SPAllocationStrategy extends MallocAllocationStrategy {
     /** Creates a <code>SPAllocationStrategy</code>. */
@@ -44,7 +44,7 @@ public class SPAllocationStrategy extends MallocAllocationStrategy {
 	String func;
 	if (ap.hasInteriorPointers()) {
 	    if (ap.actualClass().isArray()) { // array with interior pointers
-		Util.assert(!ap.actualClass().getComponentType().
+		Util.ASSERT(!ap.actualClass().getComponentType().
 			    isPrimitive());
 		func = "SP_malloc_array";
 	    } else { // non-array
@@ -52,7 +52,7 @@ public class SPAllocationStrategy extends MallocAllocationStrategy {
 	    }
 	} else {
 	    if (ap.actualClass().isArray()) // array with no interior pointers
-		Util.assert(ap.actualClass().getComponentType().
+		Util.ASSERT(ap.actualClass().getComponentType().
 			    isPrimitive());
 	    func = "SP_malloc_atomic";
 	}

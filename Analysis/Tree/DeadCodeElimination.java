@@ -37,7 +37,7 @@ import java.util.Set;
  * analysis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCodeElimination.java,v 1.2 2002-02-25 21:00:32 cananian Exp $
+ * @version $Id: DeadCodeElimination.java,v 1.3 2002-02-26 22:42:47 cananian Exp $
  */
 public abstract class DeadCodeElimination extends Simplification {
     // hide constructor
@@ -47,7 +47,7 @@ public abstract class DeadCodeElimination extends Simplification {
      *  canonical tree.  Clones the tree before doing
      *  DCE in-place. */
     public static HCodeFactory codeFactory(final HCodeFactory parent) {
-	Util.assert(parent.getCodeName().equals(CanonicalTreeCode.codename));
+	Util.ASSERT(parent.getCodeName().equals(CanonicalTreeCode.codename));
 	return new HCodeFactory() {
 	    public HCode convert(HMethod m) {
 		HCode hc = parent.convert(m);

@@ -28,7 +28,7 @@ import java.util.HashMap;
  * their own extensions of <code>CodeGen</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.2 2002-02-25 21:01:28 cananian Exp $ */
+ * @version $Id: MaxMunchCG.java,v 1.3 2002-02-26 22:43:45 cananian Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */
@@ -59,7 +59,7 @@ public abstract class MaxMunchCG extends CodeGen {
 	    Temp t = (Temp) defs.next();
 	    TypeAndDerivation td = 
 		(TypeAndDerivation) tempToType.get(t);
-	    Util.assert(td != null, 
+	    Util.ASSERT(td != null, 
 			"Uh oh forgot to declare "+t+" before "+i);
 	    ti2td.put(Default.pair(i, t), td);
 	}
@@ -70,13 +70,13 @@ public abstract class MaxMunchCG extends CodeGen {
     /** tempmap from tree temps to instr temps */
     protected Temp makeTemp(TEMP t, TempFactory tf) {
 	Temp treeTemp  = t.temp;
-	Util.assert(!frame.getRegFileInfo().isRegister(treeTemp));
+	Util.ASSERT(!frame.getRegFileInfo().isRegister(treeTemp));
 	Temp instrTemp = (Temp) tempmap.get(treeTemp);
 	if (instrTemp==null) {
 	    instrTemp = frame.getTempBuilder().makeTemp(t, tf);
 	    tempmap.put(treeTemp, instrTemp);
 	} 
-	Util.assert(instrTemp.tempFactory()==tf);
+	Util.ASSERT(instrTemp.tempFactory()==tf);
 	return instrTemp;
     }
     private Map tempmap = new HashMap();
@@ -94,7 +94,7 @@ public abstract class MaxMunchCG extends CodeGen {
 		return Derivation.DList.rename(tad.dlist, new TempMap() {
 		    public Temp tempMap(Temp t1) {
 			Temp tr = (Temp) tempmap.get(t1);
-			Util.assert(tr != null);
+			Util.ASSERT(tr != null);
 			return tr;
 		    }
 		});

@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NAME.java,v 1.2 2002-02-25 21:05:35 cananian Exp $
+ * @version $Id: NAME.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
  */
 public class NAME extends Exp implements harpoon.ClassFile.HDataElement {
     /** The label which this NAME refers to. */
@@ -25,13 +25,13 @@ public class NAME extends Exp implements harpoon.ClassFile.HDataElement {
 		Label label) {
 	super(tf, source, 0);
 	this.label=label;
-	Util.assert(label!=null);
+	Util.ASSERT(label!=null);
     }
     
     public int kind() { return TreeKind.NAME; }
 	
     public Exp build(TreeFactory tf, ExpList kids) { 
-	Util.assert(kids==null);
+	Util.ASSERT(kids==null);
 	return new NAME(tf, this, label); 
     }
 

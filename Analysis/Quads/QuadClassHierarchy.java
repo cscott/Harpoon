@@ -46,7 +46,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.3 2002-02-26 22:41:42 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -189,8 +189,8 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    // This method should be marked as usable.
 	    {
 		Set s = (Set) S.classMethodsUsed.get(m.getDeclaringClass());
-		Util.assert(s!=null);
-		Util.assert(s.contains(m));
+		Util.ASSERT(s!=null);
+		Util.ASSERT(s.contains(m));
 	    }
 	    // look at the hcode for the method.
 	    harpoon.IR.Quads.Code hc = (harpoon.IR.Quads.Code) hcf.convert(m);
@@ -273,11 +273,11 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     private void discoverClass(State S, HClass c) {
 	if (S.classKnownChildren.containsKey(c)) return; // not a new class.
 	// add to known-children lists.
-	Util.assert(!S.classKnownChildren.containsKey(c));
+	Util.ASSERT(!S.classKnownChildren.containsKey(c));
 	S.classKnownChildren.put(c, new HashSet());
-	Util.assert(!S.classMethodsUsed.containsKey(c));
+	Util.ASSERT(!S.classMethodsUsed.containsKey(c));
 	S.classMethodsUsed.put(c, new HashSet());
-	Util.assert(!S.classMethodsPending.containsKey(c));
+	Util.ASSERT(!S.classMethodsPending.containsKey(c));
 	S.classMethodsPending.put(c, new HashSet());
 	// add class initializer (if it exists) to "called" methods.
 	HMethod ci = c.getClassInitializer();
@@ -372,7 +372,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 		try {
 		    HMethod nm = c.getMethod(m.getName(),
 					     m.getDescriptor());
-		    Util.assert(isVirtual); // shouldn't be here otherwise.
+		    Util.ASSERT(isVirtual); // shouldn't be here otherwise.
 		    if (!S.done.contains(nm))
 			methodPush(S, nm);
 		    else if (!S.nonvirtual.contains(nm))
@@ -388,7 +388,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     }
 
     private void methodPush(State S, HMethod m) {
-	Util.assert(!S.done.contains(m));
+	Util.ASSERT(!S.done.contains(m));
 	if (S.W.contains(m)) return; // already on work list.
 	// Add to worklist
 	S.W.add(m);

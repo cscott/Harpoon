@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>ANEW</code> represents an array creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ANEW.java,v 1.2 2002-02-25 21:05:11 cananian Exp $
+ * @version $Id: ANEW.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
  * @see NEW
  * @see AGET
  * @see ASET
@@ -52,11 +52,11 @@ public class ANEW extends Quad {
 	this.hclass = hclass;
 	this.dims = dims;
 	// VERIFY legality of this ANEW.
-	Util.assert(dst!=null && hclass!=null && dims!=null);
-	Util.assert(hclass.isArray());
-	Util.assert(dims.length>0);
+	Util.ASSERT(dst!=null && hclass!=null && dims!=null);
+	Util.ASSERT(hclass.isArray());
+	Util.ASSERT(dims.length>0);
 	for (int i=0; i<dims.length; i++)
-	    Util.assert(dims[i]!=null);
+	    Util.ASSERT(dims[i]!=null);
     }
     // ACCESSOR FUNCTIONS:
     /** Returns the destination <code>Temp</code>. */

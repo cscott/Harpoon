@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>ASET</code> represents an array element assignment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ASET.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: ASET.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ALENGTH
@@ -49,7 +49,7 @@ public class ASET extends Quad {
 	this.type = type.isPrimitive() ? type :
 	    type.getLinker().forDescriptor("Ljava/lang/Object;");
 	// VERIFY legality of this ASET
-	Util.assert(objectref!=null && index!=null && src!=null);
+	Util.ASSERT(objectref!=null && index!=null && src!=null);
     }
     // ACCESSOR FUNCTIONS:
     /** Returns the <code>Temp</code> with the array reference. */

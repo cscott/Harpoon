@@ -21,7 +21,7 @@ import java.util.List;
  * speed becomes an issue. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BinHeapPriorityQueue.java,v 1.2 2002-02-25 21:08:44 cananian Exp $
+ * @version $Id: BinHeapPriorityQueue.java,v 1.3 2002-02-26 22:47:24 cananian Exp $
  */
 public class BinHeapPriorityQueue extends AbstractCollection implements MaxPriorityQueue {
 
@@ -69,7 +69,7 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
     }
 
     private void _heapify(int i) {
-	Util.assert(i < heap.size(),
+	Util.ASSERT(i < heap.size(),
 		    "heapify param "+i+" out of bounds "+heap.size());
 	int l = _left(i);
 	int r = _right(i);
@@ -117,7 +117,7 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
     }
 
     public Object deleteMax() {
-	Util.assert(heap.size() > 0, "Heap Underflow");
+	Util.ASSERT(heap.size() > 0, "Heap Underflow");
 	Object rtrn = heap.get(0);
 
 	Object mov = heap.remove(heap.size() - 1);
@@ -126,7 +126,7 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
 	if (heap.size() == 0) {
 	    // we just deleted last element
 	} else {
-	    Util.assert(heap.size() == priorities.size(),
+	    Util.ASSERT(heap.size() == priorities.size(),
 			"Why are the two Lists' sizes in the BinHeap unequal?");
 	    _set(0, mov, pri);
 	    _heapify(0);

@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MEM.java,v 1.2 2002-02-25 21:05:31 cananian Exp $
+ * @version $Id: MEM.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
  */
 public class MEM extends Exp implements PreciselyTyped {
     /** The type of this memory reference expression. */
@@ -32,8 +32,8 @@ public class MEM extends Exp implements PreciselyTyped {
 	       int type, Exp exp) {
 	super(tf, source, 1);
 	this.type=type; this.setExp(exp); this.isSmall=false;
-	Util.assert(Type.isValid(type) && exp!=null);
-	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
+	Util.ASSERT(Type.isValid(type) && exp!=null);
+	Util.ASSERT(tf == exp.tf, "This and Exp must have same tree factory");
     }
 
     /** Creates a MEM with a precisely defined type.  
@@ -45,22 +45,22 @@ public class MEM extends Exp implements PreciselyTyped {
     public MEM(TreeFactory tf, HCodeElement source, 
 	       int bitwidth, boolean signed, Exp exp) { 
 	super(tf, source, 1);
-	Util.assert(exp!=null);
+	Util.ASSERT(exp!=null);
 	this.type=INT; this.setExp(exp); this.isSmall=true;
 	this.bitwidth=bitwidth; this.signed=signed;
-	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
-	Util.assert((0<=bitwidth)&&(bitwidth<32), "Invalid bitwidth");
+	Util.ASSERT(tf == exp.tf, "This and Exp must have same tree factory");
+	Util.ASSERT((0<=bitwidth)&&(bitwidth<32), "Invalid bitwidth");
     }
     
     private MEM(TreeFactory tf, HCodeElement source, int type, Exp exp, 
 		boolean isSmall, int bitwidth, boolean signed) { 
 	super(tf, source, 1);
-	Util.assert(exp!=null);
+	Util.ASSERT(exp!=null);
 	this.type=type; this.setExp(exp); this.isSmall=isSmall;
 	this.bitwidth=bitwidth; this.signed=signed;
-	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
-	Util.assert(Type.isValid(type));
-	Util.assert(!isSmall || type==INT);
+	Util.ASSERT(tf == exp.tf, "This and Exp must have same tree factory");
+	Util.ASSERT(Type.isValid(type));
+	Util.ASSERT(!isSmall || type==INT);
     }
 
     /** Returns a subexpression evaluating to a memory reference location. */
@@ -72,23 +72,23 @@ public class MEM extends Exp implements PreciselyTyped {
     public int kind() { return TreeKind.MEM; }
 
     public Exp build(TreeFactory tf, ExpList kids) {
-	Util.assert(tf == kids.head.tf);
-	Util.assert(kids.tail==null);
+	Util.ASSERT(tf == kids.head.tf);
+	Util.ASSERT(kids.tail==null);
 	return new MEM(tf, this, type, kids.head, isSmall, bitwidth, signed);
     }
 
     // Typed interface:
-    public int type() { Util.assert(Type.isValid(type)); return type; }
+    public int type() { Util.ASSERT(Type.isValid(type)); return type; }
     
     // PreciselyTyped interface:
     /** Returns true if this is a sub-integer expression. */
     public boolean isSmall() { return isSmall; }
     /** Returns the size of the expression, in bits.
      *  Only valid if the <code>isSmall()==true</code>. */
-    public int bitwidth() { Util.assert(type==INT&&isSmall); return bitwidth; }
+    public int bitwidth() { Util.ASSERT(type==INT&&isSmall); return bitwidth; }
     /** Returns true if this is a signed expression, false otherwise.
      *  Only valid if the <code>isSmall()==true</code>. */
-    public boolean signed() { Util.assert(type==INT&&isSmall); return signed; }
+    public boolean signed() { Util.ASSERT(type==INT&&isSmall); return signed; }
 
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }

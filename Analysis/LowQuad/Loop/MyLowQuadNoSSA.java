@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>MyLowQuadNoSSA</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadNoSSA.java,v 1.2 2002-02-25 20:57:58 cananian Exp $
+ * @version $Id: MyLowQuadNoSSA.java,v 1.3 2002-02-26 22:40:41 cananian Exp $
  */
 
 public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
@@ -82,13 +82,13 @@ public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
     }
     
     public Derivation.DList derivation(HCodeElement hce, Temp t) {
-	Util.assert(hce!=null && t!=null);
+	Util.ASSERT(hce!=null && t!=null);
 	return (Derivation.DList)dT.get(t);
     }
     
 
     public HClass typeMap(HCodeElement hce, Temp t) {
-	Util.assert(t!=null);
+	Util.ASSERT(t!=null);
 	Object type = tT.get(t);
 	//	if (type==null)
 	//  System.out.println("TYPE UNKNOWN for :"+hce+","+t+"in MyLowQuadQNoSSA");

@@ -54,7 +54,7 @@ import java.util.Iterator;
  * the counters' actual name on output will be "foo_bar" and "foo_baz".
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CounterFactory.java,v 1.2 2002-02-25 20:56:22 cananian Exp $
+ * @version $Id: CounterFactory.java,v 1.3 2002-02-26 22:39:37 cananian Exp $
  */
 public final class CounterFactory {
     /** default status for all counters. */
@@ -190,8 +190,8 @@ public final class CounterFactory {
 	name = name.replace('-','_'); // likewise for '-'
 	try {
 	  HField hf = hc.getDeclaredField(name);
-	  Util.assert(hf.getDescriptor().equals(descriptor));
-	  Util.assert(hf.isStatic());
+	  Util.ASSERT(hf.getDescriptor().equals(descriptor));
+	  Util.ASSERT(hf.isStatic());
 	  return hf;
 	} catch (NoSuchFieldError e) {
 	  // okay, have to create this field ourselves.

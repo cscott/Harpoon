@@ -21,7 +21,7 @@ import java.util.Set;
  * A <code>HANDLER</code> quad marks an entry to an exception handler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HANDLER.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: HANDLER.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
  * @see METHOD
  */
 public class HANDLER extends Quad {
@@ -51,8 +51,8 @@ public class HANDLER extends Quad {
 	this.exceptionTemp = exceptionTemp;
 	this.caughtException = caughtException;
 	this.protectedSet = protectedSet;
-	Util.assert(exceptionTemp!=null && protectedSet!=null);
-	Util.assert(caughtException==null ||
+	Util.ASSERT(exceptionTemp!=null && protectedSet!=null);
+	Util.ASSERT(caughtException==null ||
 		    qf.getLinker().forName("java.lang.Throwable")
 		    .isSuperclassOf(caughtException));
     }

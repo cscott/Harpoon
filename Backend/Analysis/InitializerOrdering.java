@@ -28,7 +28,7 @@ import java.util.Set;
  * in that case.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerOrdering.java,v 1.2 2002-02-25 21:00:47 cananian Exp $
+ * @version $Id: InitializerOrdering.java,v 1.3 2002-02-26 22:43:06 cananian Exp $
  */
 public class InitializerOrdering {
     public final List sorted;
@@ -45,10 +45,10 @@ public class InitializerOrdering {
     }
     private void examineClass(ClassHierarchy ch, CallGraph cg, HClass c,
 			      Set touched, Set added, List _sorted) {
-	Util.assert(ch.classes().contains(c),
+	Util.ASSERT(ch.classes().contains(c),
 		    "Being examined, although it's not in hierarchy:"+c);
-	Util.assert(!added.contains(c));
-	Util.assert(!touched.contains(c));
+	Util.ASSERT(!added.contains(c));
+	Util.ASSERT(!touched.contains(c));
 	touched.add(c);
 	// first, all superclass initializers must be called.
 	for (HClass hcp=c.getSuperclass(); hcp!=null; hcp=hcp.getSuperclass())
@@ -67,9 +67,9 @@ public class InitializerOrdering {
     private void examineMethod(ClassHierarchy ch, CallGraph cg, 
 			       HClass initClass, HMethod m,
 			       Set touched, Set added, List _sorted) {
-	Util.assert(ch.callableMethods().contains(m),
+	Util.ASSERT(ch.callableMethods().contains(m),
 		    "Being examined, although it's not callable:"+m);
-	Util.assert(!touched.contains(m));
+	Util.ASSERT(!touched.contains(m));
 	touched.add(m);
 	// first check that the class containing this method has been init'ed.
 	// this class is *being* init'ed if m is an initializer, so skip then.

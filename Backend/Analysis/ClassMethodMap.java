@@ -26,7 +26,7 @@ import java.util.Set;
  * possible and caches results for efficiency.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassMethodMap.java,v 1.2 2002-02-25 21:00:47 cananian Exp $
+ * @version $Id: ClassMethodMap.java,v 1.3 2002-02-26 22:43:06 cananian Exp $
  */
 public class ClassMethodMap extends MethodMap {
     
@@ -37,8 +37,8 @@ public class ClassMethodMap extends MethodMap {
 	// method must be a virtual class method and thus
 	// 1) not an interface method
 	// 2) not static, not private, and not a constructor.
-	Util.assert(!hm.isInterfaceMethod());
-	Util.assert(isVirtual(hm));
+	Util.ASSERT(!hm.isInterfaceMethod());
+	Util.ASSERT(isVirtual(hm));
 	// check cache first.
 	if (cache.containsKey(hm)) return ((Integer)cache.get(hm)).intValue();
 	// we actually compute numbers for a whole class at a time.
@@ -81,7 +81,7 @@ public class ClassMethodMap extends MethodMap {
 	int num = prenonstatic;
 	for (Iterator it=remainder.iterator(); it.hasNext(); )
 	    cache.put(it.next(), new Integer(num++));
-	Util.assert(num==tobenonstatic, num + "!=" + tobenonstatic);
+	Util.ASSERT(num==tobenonstatic, num + "!=" + tobenonstatic);
 	// by this point the method should have a numbering in the cache.
 	return ((Integer)cache.get(hm)).intValue();
     }

@@ -108,7 +108,7 @@ public class RegAlloc implements TempMap {
       if (!quiet) System.err.print("C");
       color = new Color(flow, live, new TempMap() {
 	  public Temp tempMap(Temp t) {
-	      Util.assert(f.getRegFileInfo().isRegister(t));
+	      Util.ASSERT(f.getRegFileInfo().isRegister(t));
 	      return t;
 	  }
       }, registers);

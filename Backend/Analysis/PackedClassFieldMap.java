@@ -26,7 +26,7 @@ import java.util.Map;
  * space required by objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PackedClassFieldMap.java,v 1.2 2002-02-25 21:00:47 cananian Exp $
+ * @version $Id: PackedClassFieldMap.java,v 1.3 2002-02-26 22:43:06 cananian Exp $
  */
 public abstract class PackedClassFieldMap extends FieldMap {
     /** Creates a <code>PackedClassFieldMap</code>. */
@@ -34,9 +34,9 @@ public abstract class PackedClassFieldMap extends FieldMap {
     
     /** Return an offset to the given field. */
     public int fieldOffset(HField hf) {
-	Util.assert(!hf.isStatic());
+	Util.ASSERT(!hf.isStatic());
 	if (!fieldcache.containsKey(hf)) do_one(hf.getDeclaringClass());
-	Util.assert(fieldcache.containsKey(hf));
+	Util.ASSERT(fieldcache.containsKey(hf));
 	return ((Integer) fieldcache.get(hf)).intValue();
     }
     /** Return an unmodifiable List over all appropriate fields in the given
@@ -62,7 +62,7 @@ public abstract class PackedClassFieldMap extends FieldMap {
 	int last=-1;
 	for (Iterator it=l.iterator(); it.hasNext(); ) {
 	    int off=fieldOffset((HField)it.next());
-	    Util.assert(last<off, "Ill-formed field list");
+	    Util.ASSERT(last<off, "Ill-formed field list");
 	    last = off;
 	}
 	// done!
@@ -73,7 +73,7 @@ public abstract class PackedClassFieldMap extends FieldMap {
      *  using the assignments in hc's superclass and the list of free space
      *  in the superclass as starting points. */
     private void do_one(HClass hc) {
-	Util.assert(hc!=null);
+	Util.ASSERT(hc!=null);
 	// get the 'free space' structure of the parent.
 	List free=new LinkedList(Arrays.asList(freespace(hc.getSuperclass())));
 	// get all the fields of this class that we have to allocate.
@@ -109,7 +109,7 @@ public abstract class PackedClassFieldMap extends FieldMap {
 	// go through free list, looking for a place to put this.
 	for (ListIterator li = free.listIterator(); li.hasNext(); ) {
 	    Interval i = (Interval) li.next();
-	    Util.assert(i.low < i.high); // validity of interval.
+	    Util.ASSERT(i.low < i.high); // validity of interval.
 	    // l and h will be the boundaries of the field, if we put it
 	    // in this interval.
 	    int l = i.low;
@@ -145,7 +145,7 @@ public abstract class PackedClassFieldMap extends FieldMap {
 	if (hc==null)
 	    return new Interval[] { new Interval(0, Integer.MAX_VALUE) };
 	if (!freecache.containsKey(hc)) do_one(hc);
-	Util.assert(freecache.containsKey(hc));
+	Util.ASSERT(freecache.containsKey(hc));
 	return (Interval[]) freecache.get(hc);
     }
     /** maps classes to 'free space' lists. */

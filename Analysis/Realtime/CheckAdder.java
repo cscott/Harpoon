@@ -44,7 +44,7 @@ import harpoon.Util.Util;
  * <code>CheckRemoval</code> indicates that the check cannot be removed.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: CheckAdder.java,v 1.2 2002-02-25 20:59:43 cananian Exp $
+ * @version $Id: CheckAdder.java,v 1.3 2002-02-26 22:41:57 cananian Exp $
  */
 
 // Fix to be non-static...
@@ -139,7 +139,7 @@ abstract class CheckAdder extends MethodMutator {
 	} else if (codeName.equals(QuadWithTry.codename)) {
 	    return (new CheckAdderWithTry(cr, nhcr, parent)).codeFactory();
 	} else {
-	    Util.assert(false, "Quads type: " + codeName + " not a supported CheckAdder");
+	    Util.ASSERT(false, "Quads type: " + codeName + " not a supported CheckAdder");
 	    return null;
 	}
     }

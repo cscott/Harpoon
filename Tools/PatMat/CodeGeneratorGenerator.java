@@ -17,7 +17,7 @@ import java.io.PrintWriter;
  * 
  * @see harpoon.Backend.Generic.CodeGen
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.2 2002-02-25 21:08:30 cananian Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.3 2002-02-26 22:47:11 cananian Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -159,14 +159,14 @@ public abstract class CodeGeneratorGenerator {
 
     protected String returnCodeStatements() {
 	return 
-	    "\tUtil.assert(first != null, \""+
+	    "\tUtil.ASSERT(first != null, \""+
 	    "Should always generate some instrs\");\n"+
 	    "\treturn harpoon.Util.Default.pair(first, getDerivation());";
     }
 
     protected String returnDataStatements() {
 	return 
-	    "\tUtil.assert(first != null, \""+
+	    "\tUtil.ASSERT(first != null, \""+
 	    "Should always generate some instrs\");\n"+
 	    "\treturn first;";
     }

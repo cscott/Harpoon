@@ -46,7 +46,7 @@ import java.util.Map;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.3 2002-02-26 22:41:42 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
@@ -75,7 +75,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
     public TypeInfo(harpoon.IR.Quads.Code hc, UseDefMap usedef, boolean vBehavior) { 
 	this.usedef = usedef; 
 	this.verifierBehavior=vBehavior;
-	Util.assert(hc.getName().equals(harpoon.IR.Quads.QuadSSI.codename));
+	Util.ASSERT(hc.getName().equals(harpoon.IR.Quads.QuadSSI.codename));
 	analyze(hc);
     }
 
@@ -154,7 +154,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
 	    HClass ty = typeMap(q, q.objectref());
 	    if (ty==HClass.Void) { modified=false; return; }
 	    if (!verifierBehavior) {
-		Util.assert(ty.isArray());
+		Util.ASSERT(ty.isArray());
 		modified = merge(q, q.dst(),
 				 inexact(toInternal(ty.getComponentType())));
 	    }

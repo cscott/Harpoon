@@ -22,7 +22,7 @@ import java.util.Set;
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.2 2002-02-25 21:05:31 cananian Exp $
+ * @version $Id: METHOD.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
  */
 public class METHOD extends Stm {
     private final int paramsLength;
@@ -45,10 +45,10 @@ public class METHOD extends Stm {
     public METHOD(TreeFactory tf, HCodeElement source,
 		  Label method, int retType, TEMP[] params) { 
         super(tf, source, params.length);
-	Util.assert(method!=null);
-	Util.assert(retType==-1 || Type.isValid(retType));
-	Util.assert(params!=null); Util.assert(params.length>0);
-	for (int i=0; i<params.length; i++) Util.assert(params[i].tf == tf);
+	Util.ASSERT(method!=null);
+	Util.ASSERT(retType==-1 || Type.isValid(retType));
+	Util.ASSERT(params!=null); Util.ASSERT(params.length>0);
+	for (int i=0; i<params.length; i++) Util.ASSERT(params[i].tf == tf);
 	this.method = method;
 	this.retType = retType;
 	this.paramsLength = params.length;
@@ -71,7 +71,7 @@ public class METHOD extends Stm {
     }
     /** Set the temporary variables used for method formals. */
     public void setParams(TEMP[] params) { 
-	Util.assert(paramsLength == params.length,
+	Util.ASSERT(paramsLength == params.length,
 		    "Can't change number of parameters to METHOD");
 	for (int i=0; i<paramsLength; i++)
 	    setChild(i, params[i]);
@@ -85,8 +85,8 @@ public class METHOD extends Stm {
 
     public ExpList kids() { return null; /* definitions not considered kids */}
     public Stm build(TreeFactory tf, ExpList kids) { 
-	Util.assert(kids==null);
-	Util.assert(tf==this.tf, "cloning Params not yet implemented");
+	Util.ASSERT(kids==null);
+	Util.ASSERT(tf==this.tf, "cloning Params not yet implemented");
 	return new METHOD(tf, this, method, retType, getParams());
     }
 

@@ -7,7 +7,7 @@ package harpoon.Analysis.DataFlow;
  * ReversePostOrderEnumerator
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: ReversePostOrderEnumerator.java,v 1.2 2002-02-25 20:56:42 cananian Exp $
+ * @version $Id: ReversePostOrderEnumerator.java,v 1.3 2002-02-26 22:39:45 cananian Exp $
  */
 
 import java.util.Enumeration;
@@ -33,7 +33,7 @@ public class ReversePostOrderEnumerator implements Enumeration {
     Set done = new HashSet();
     done.add(start); bb_stack.push(start); enum_stack.push(start.next());
     while (!bb_stack.isEmpty()) {
-      Util.assert(bb_stack.size() == enum_stack.size());
+      Util.ASSERT(bb_stack.size() == enum_stack.size());
       for (Enumeration e = (Enumeration)enum_stack.pop();
 	   e.hasMoreElements(); ) {
 	BasicBlock bb2 = (BasicBlock) e.nextElement();
@@ -59,7 +59,7 @@ public class ReversePostOrderEnumerator implements Enumeration {
     done.add(start); bb_stack.push(start);
     enum_stack.push(new ArrayEnumerator(start.next()));
     while (!bb_stack.isEmpty()) {
-      Util.assert(bb_stack.size() == enum_stack.size());
+      Util.ASSERT(bb_stack.size() == enum_stack.size());
       for (Enumeration e = (Enumeration)enum_stack.pop();
 	   e.hasMoreElements(); ) {
 	Quad bb2 = (Quad) e.nextElement();

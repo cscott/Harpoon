@@ -105,6 +105,6 @@ public class Check {
 	bbf.dumpCFG();
 	System.out.println();
 	code.printPreallocatedCode();
-	Util.assert( false, message );
+	Util.ASSERT( false, message );
     }
 }

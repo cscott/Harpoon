@@ -43,7 +43,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.2 2002-02-25 21:00:32 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.3 2002-02-26 22:42:47 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
 public abstract class AlgebraicSimplification extends Simplification { 
@@ -104,7 +104,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 
 		switch (b.type()) { 
 		    case Type.POINTER:
-		    Util.assert(k1.type()==Type.INT && k2.type()==Type.INT);
+		    Util.ASSERT(k1.type()==Type.INT && k2.type()==Type.INT);
 		    case Type.INT: 
 		        return new CONST(tf,b,((Integer)k1pk2).intValue());
 		    case Type.LONG: 
@@ -284,7 +284,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	    } 
 	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) {  
 		BINOP b = (BINOP) e;
-		Util.assert(b.op == Bop.XOR);
+		Util.ASSERT(b.op == Bop.XOR);
 		return new UNOP(tf, e, b.optype, Uop.NOT, b.getLeft());
 	    } 
 	};
@@ -309,7 +309,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) {  
 		UNOP u1 = (UNOP)e;  
 		UNOP u2 = (UNOP)u1.getOperand();  
-		Util.assert(u1.op == u2.op);  
+		Util.ASSERT(u1.op == u2.op);  
 		return u2.getOperand();  
 	    } 
 	}; 
@@ -328,7 +328,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	    }
 	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		UNOP u = (UNOP)e; 
-		Util.assert(contains(_KIND(u.getOperand()), _CONST0));
+		Util.ASSERT(contains(_KIND(u.getOperand()), _CONST0));
 		return u.getOperand(); 
 	    } 
 	}; 
@@ -373,7 +373,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	    }
 	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		BINOP b = (BINOP)e; 
-		Util.assert(b.op == Bop.DIV); 
+		Util.ASSERT(b.op == Bop.DIV); 
 		return div2mul(b.getLeft(),
 			       ((CONST)b.getRight()).value.intValue()); 
 	    }
@@ -432,7 +432,7 @@ public abstract class AlgebraicSimplification extends Simplification {
     // input is positive now.
     private static Exp div2mul_positive(Exp n, int dAbs) { 
 	final int N=32;
-	Util.assert(dAbs >= 0);
+	Util.ASSERT(dAbs >= 0);
 
 	// Get a TreeFactory to use in creating new tree objects
 	TreeFactory tf = n.getFactory(); 
@@ -452,7 +452,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	    return new BINOP(tf, n, Type.INT, Bop.SHR, n, new CONST(tf, n, l));
 	}
 	else { 
-	    Util.assert(m < (1L<<N));
+	    Util.ASSERT(m < (1L<<N));
 	    // we need to reuse n.
 	    Temp t = new Temp(tf.tempFactory(), "dm");
 	    MOVE move = new MOVE(tf, n, new TEMP(tf, n, Type.INT, t), n);
@@ -498,8 +498,8 @@ public abstract class AlgebraicSimplification extends Simplification {
     }
     private static MultiplierTuple CHOOSE_MULTIPLIER(int d, int prec) {
 	final int N=32; // size of int.
-	Util.assert(1<=d);
-	Util.assert(1<=prec && prec<=N);
+	Util.ASSERT(1<=d);
+	Util.ASSERT(1<=prec && prec<=N);
 	// Finds m, sh_post, l such that:
 	//     2^(l-1) < d <= 2^l
 	//     0 <= sh_post <= l.  If sh_post>0, then N+sh_post <= l+prec
@@ -516,7 +516,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 	// as above, m_high = 2^N + (m_high-2^N) to avoid overflow.
 	long m_high= (1L<<N) + 
 	    ((((1L<<(l+prec))+(1L<<l)-(((long)d)<<prec))<<(N-prec))/d); 
-	Util.assert(m_low < m_high);
+	Util.ASSERT(m_low < m_high);
 	while ((m_low/2) < (m_high/2) && sh_post > 0) {
 	    m_low/=2; m_high/=2; sh_post--;
 	} /* reduce to lowest terms */

@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: THROW.java,v 1.2 2002-02-25 21:05:41 cananian Exp $
+ * @version  $Id: THROW.java,v 1.3 2002-02-26 22:46:11 cananian Exp $
  */
 public class THROW extends Stm implements Typed {
     /** Constructor 
@@ -25,10 +25,10 @@ public class THROW extends Stm implements Typed {
 	this.setRetex(retex);
 	this.setHandler(handler);
 
-	Util.assert(retex.type()==POINTER); 
-	Util.assert(handler.type()==POINTER);
-	Util.assert(tf == retex.tf, "This and Retex must have same tree factory");
-	Util.assert(tf == handler.tf, "This and Handler must have the same tree factory");
+	Util.ASSERT(retex.type()==POINTER); 
+	Util.ASSERT(handler.type()==POINTER);
+	Util.ASSERT(tf == retex.tf, "This and Retex must have same tree factory");
+	Util.ASSERT(tf == handler.tf, "This and Handler must have the same tree factory");
     }		
     
     /** The exceptional value to return */
@@ -44,9 +44,9 @@ public class THROW extends Stm implements Typed {
     public int kind() { return TreeKind.THROW; }
 
     public Stm build(TreeFactory tf, ExpList kids) { 
-	Util.assert(kids!=null && kids.tail!=null && kids.tail.tail==null);
-	Util.assert(tf == kids.head.tf);
-	Util.assert(tf == kids.tail.head.tf);
+	Util.ASSERT(kids!=null && kids.tail!=null && kids.tail.tail==null);
+	Util.ASSERT(tf == kids.head.tf);
+	Util.ASSERT(tf == kids.tail.head.tf);
 	return new THROW(tf, this, kids.head, kids.tail.head);
     }
 

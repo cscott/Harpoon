@@ -15,7 +15,7 @@ import java.util.Iterator;
  * <p>Conforms to the JDK 1.2 Collections API.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: WorkSet.java,v 1.2 2002-02-25 21:09:15 cananian Exp $
+ * @version $Id: WorkSet.java,v 1.3 2002-02-26 22:47:38 cananian Exp $
  */
 public class WorkSet extends java.util.AbstractSet implements Worklist{
     private /*final*/ HashMap hm;
@@ -57,7 +57,7 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	listhead.add(nel);
 	hm.put(o, nel);
 	// verify list/set correspondence.
-	if (debug) Util.assert(EntryList.equals(listhead, hm.keySet()));
+	if (debug) Util.ASSERT(EntryList.equals(listhead, hm.keySet()));
 	return true;
     }
     /** Adds an element to the end of the (ordered) set and returns true,
@@ -71,7 +71,7 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	listfoot.prev.add(nel);
 	hm.put(o, nel);
 	// verify list/set correspondence.
-	if (debug) Util.assert(EntryList.equals(listhead, hm.keySet()));
+	if (debug) Util.ASSERT(EntryList.equals(listhead, hm.keySet()));
 	return true;
     }
     /** Returns the first element in the ordered set. */
@@ -180,7 +180,7 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 		hm.remove(elp.o);
 		(elp = elp.prev).next.remove();
 		// verify list/set correspondence.
-		if (debug) Util.assert(EntryList.equals(listhead, hm.keySet()));
+		if (debug) Util.ASSERT(EntryList.equals(listhead, hm.keySet()));
 	    }
 	};
     }
@@ -191,7 +191,7 @@ public class WorkSet extends java.util.AbstractSet implements Worklist{
 	// remove from linked list.
 	elp.remove();
 	// verify list/set correspondence.
-	if (debug) Util.assert(EntryList.equals(listhead, hm.keySet()));
+	if (debug) Util.ASSERT(EntryList.equals(listhead, hm.keySet()));
 	return true;
     }
     public int size() { return hm.size(); }

@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * See the JVM spec for details.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MONITORENTER.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: MONITORENTER.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
  */
 public class MONITORENTER extends Quad {
     /** The object containing the monitor to be locked. */
@@ -33,7 +33,7 @@ public class MONITORENTER extends Quad {
     public MONITORENTER(QuadFactory qf, HCodeElement source, Temp lock) {
         super(qf, source);
 	this.lock = lock;
-	Util.assert(lock!=null);
+	Util.ASSERT(lock!=null);
     }
     // ACCESSOR METHODS:
     /** Returns the <code>Temp</code> specifying the object to be locked. */

@@ -34,7 +34,7 @@ import java.util.Set;
  * field and method signatures.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFWidenType.java,v 1.2 2002-02-25 21:00:05 cananian Exp $
+ * @version $Id: MZFWidenType.java,v 1.3 2002-02-26 22:42:23 cananian Exp $
  */
 class MZFWidenType extends MethodMutator {
     /** the linker to use */
@@ -112,7 +112,7 @@ class MZFWidenType extends MethodMutator {
 	List lastpair = (List) sortedFields.get(sortedFields.size()-1);
 	HField lastF = (HField) lastpair.get(0);
 	HClass broadest = (HClass) field2class.get(lastF);
-	Util.assert(broadest!=null);
+	Util.ASSERT(broadest!=null);
 	return broadest;
     }
 }

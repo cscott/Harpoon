@@ -18,7 +18,7 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.2 2002-02-25 21:01:21 cananian Exp $
+ * @version $Id: Code.java,v 1.3 2002-02-26 22:43:41 cananian Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
 
@@ -54,8 +54,8 @@ public abstract class Code extends harpoon.IR.Assem.Code {
 	            genCode(treeCode, this.inf);
 	this.instrs = (Instr) pair.get(0);
 	this.derivation = (Derivation) pair.get(1);
-	Util.assert(instrs != null);
-	Util.assert(derivation != null);
+	Util.ASSERT(instrs != null);
+	Util.ASSERT(derivation != null);
     }
 
     public Derivation getDerivation() {
@@ -74,8 +74,8 @@ public abstract class Code extends harpoon.IR.Assem.Code {
 	if (instr.isMove()) { 
 	    
 	    // Eliminate MOVEs where [src] = [dst]
-	    Util.assert(instr.use().length == 1, "moves have single use!");
-	    Util.assert(instr.def().length == 1, "moves have single def!");
+	    Util.ASSERT(instr.use().length == 1, "moves have single use!");
+	    Util.ASSERT(instr.def().length == 1, "moves have single def!");
 	    if (getRegisters(instr, instr.use()[0]). equals (getRegisters(instr, instr.def()[0]))) {
 		return true;
 	    }
@@ -84,8 +84,8 @@ public abstract class Code extends harpoon.IR.Assem.Code {
 	} else if (instr.isJump()) { 
 	    
 	    // Eliminate JUMPs to immediate successor in layout
-	    Util.assert(!instr.canFallThrough);
-	    Util.assert(instr.getTargets().size() == 1);
+	    Util.ASSERT(!instr.canFallThrough);
+	    Util.ASSERT(instr.getTargets().size() == 1);
 	    Label l = (Label) instr.getTargets().get(0);
 	    if (instr.getInstrFor(l).equals( instr.getNext() )) {
 		return true;
@@ -182,7 +182,7 @@ public abstract class Code extends harpoon.IR.Assem.Code {
     public abstract boolean registerAssigned(Instr i, Temp pseudoReg);
 
     public void removeAssignment(Instr i, Temp pseudoReg) {
-	Util.assert(false, "override and implement Code.removeAssignment"+
+	Util.ASSERT(false, "override and implement Code.removeAssignment"+
 		    " (which should be abstract but since its an "+
 		    "experimental method I don't want have add it "+
 		    "to all the other code yet)");

@@ -29,7 +29,7 @@ import java.util.Set;
  * operation directly correspond to constructor parameters.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MustParamOracle.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: MustParamOracle.java,v 1.3 2002-02-26 22:41:42 cananian Exp $
  */
 public class MustParamOracle {
     // could make this an invertibleMap if you want sets.
@@ -60,7 +60,7 @@ public class MustParamOracle {
 	    Integer paramNum = new Integer(i);
 	    for (Iterator it=ov.paramvars.iterator(); it.hasNext(); ) {
 		Object old = results.put((Temp)it.next(), paramNum);
-		Util.assert(old==null, "temp can't be multiple params!");
+		Util.ASSERT(old==null, "temp can't be multiple params!");
 	    }
 	    // and do next.
 	}

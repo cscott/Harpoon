@@ -29,7 +29,7 @@ package harpoon.Util;
  * and is defined independently of implementation.
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: BitString.java,v 1.2 2002-02-25 21:08:45 cananian Exp $
+ * @version $Id: BitString.java,v 1.3 2002-02-26 22:47:24 cananian Exp $
  */
 
 public final class BitString implements Cloneable, java.io.Serializable {
@@ -417,28 +417,28 @@ public final class BitString implements Cloneable, java.io.Serializable {
   public static void main(String argv[]) {
     // NOT COMPLETE: just checking firstSet() and lastSet() for now.
     BitString bs = new BitString(100);
-    Util.assert(bs.length()==0 && bs.firstSet()==-1 && bs.lastSet()==-1);
-    Util.assert(bs.firstSet(100)==-1 && bs.firstSet(-100)==-1);
-    Util.assert(bs.lastSet(100)==-1 && bs.lastSet(-100)==-1);
-    Util.assert(bs.size()>=bs.length());
+    Util.ASSERT(bs.length()==0 && bs.firstSet()==-1 && bs.lastSet()==-1);
+    Util.ASSERT(bs.firstSet(100)==-1 && bs.firstSet(-100)==-1);
+    Util.ASSERT(bs.lastSet(100)==-1 && bs.lastSet(-100)==-1);
+    Util.ASSERT(bs.size()>=bs.length());
     bs.set(52); bs.set(53); bs.set(76); bs.set(77);
     // test get()
-    Util.assert( bs.get(52) && bs.get(53) && bs.get(76) && bs.get(77));
-    Util.assert(!bs.get(51) &&!bs.get(54) &&!bs.get(75) &&!bs.get(78));
+    Util.ASSERT( bs.get(52) && bs.get(53) && bs.get(76) && bs.get(77));
+    Util.ASSERT(!bs.get(51) &&!bs.get(54) &&!bs.get(75) &&!bs.get(78));
     // test length()
-    Util.assert(bs.length()==78 && bs.size()>=bs.length());
+    Util.ASSERT(bs.length()==78 && bs.size()>=bs.length());
     // test firstSet()
-    Util.assert(bs.firstSet()==bs.firstSet(-100));
-    Util.assert(bs.firstSet(-1)==52 && bs.firstSet(52)==53);
-    Util.assert(bs.firstSet(53)==76 && bs.firstSet(76)==77);
-    Util.assert(bs.firstSet(77)==-1 && bs.firstSet(1000)==-1);
+    Util.ASSERT(bs.firstSet()==bs.firstSet(-100));
+    Util.ASSERT(bs.firstSet(-1)==52 && bs.firstSet(52)==53);
+    Util.ASSERT(bs.firstSet(53)==76 && bs.firstSet(76)==77);
+    Util.ASSERT(bs.firstSet(77)==-1 && bs.firstSet(1000)==-1);
     // test lastSet()
-    Util.assert(bs.lastSet()==bs.lastSet(99));
-    Util.assert(bs.lastSet(99)==77 && bs.lastSet(77)==76);
-    Util.assert(bs.lastSet(76)==53 && bs.lastSet(53)==52);
-    Util.assert(bs.lastSet(52)==-1 && bs.lastSet(-100)==-1);
+    Util.ASSERT(bs.lastSet()==bs.lastSet(99));
+    Util.ASSERT(bs.lastSet(99)==77 && bs.lastSet(77)==76);
+    Util.ASSERT(bs.lastSet(76)==53 && bs.lastSet(53)==52);
+    Util.ASSERT(bs.lastSet(52)==-1 && bs.lastSet(-100)==-1);
     // test toString()
-    Util.assert(bs.toString().equals("{52, 53, 76, 77}"));
+    Util.ASSERT(bs.toString().equals("{52, 53, 76, 77}"));
     // communicate success.
     System.out.println("TESTS PASSED");
   }

@@ -49,7 +49,7 @@ import harpoon.Util.Util;
  * implementation of the <codE>CheckRemoval</code> interface.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PACheckRemoval.java,v 1.2 2002-02-25 20:59:46 cananian Exp $ */
+ * @version $Id: PACheckRemoval.java,v 1.3 2002-02-26 22:41:58 cananian Exp $ */
 public class PACheckRemoval implements CheckRemoval {
 
     PointerAnalysis pa = null;
@@ -60,7 +60,7 @@ public class PACheckRemoval implements CheckRemoval {
     public PACheckRemoval(Linker linker, ClassHierarchy ch,
 			  HCodeFactory hcf, Set mroots) {
 
-	Util.assert(hcf.getCodeName().equals(QuadNoSSA.codename),
+	Util.ASSERT(hcf.getCodeName().equals(QuadNoSSA.codename),
 		    "Not a QuadNoSSA code factory");
 	// we really need a caching code factory; raise an error otherwise
 	CachingCodeFactory ccf = (CachingCodeFactory) hcf;
@@ -129,7 +129,7 @@ public class PACheckRemoval implements CheckRemoval {
 		}
 		
 		public void visit(Quad q) {
-		    Util.assert(false, "Not a SET or an ASET quad!");
+		    Util.ASSERT(false, "Not a SET or an ASET quad!");
 		}
 	    };
 	CRQuadVisitor qv = new CRQuadVisitor();

@@ -29,7 +29,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.2 2002-02-25 21:05:41 cananian Exp $
+ * @version $Id: Tree.java,v 1.3 2002-02-26 22:46:11 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement
@@ -45,7 +45,7 @@ public abstract class Tree
     protected final Tree[] child;
 
     protected Tree(TreeFactory tf, HCodeElement source, int arity) { 
-        Util.assert(tf!=null);
+        Util.ASSERT(tf!=null);
 	this.source_file = (source!=null)?source.getSourceFile():"unknown";
 	this.source_line = (source!=null)?source.getLineNumber(): 0;
 	this.id = tf.getUniqueID();
@@ -79,8 +79,8 @@ public abstract class Tree
      * siblings to the right of this node. 
      */ 
     public final Tree getSibling() {
-	Util.assert(parent!=null); // don't call getSibling() on the root!
-	Util.assert(this==parent.child[which_child_of_parent]);
+	Util.ASSERT(parent!=null); // don't call getSibling() on the root!
+	Util.ASSERT(this==parent.child[which_child_of_parent]);
 	int c = which_child_of_parent + 1;
 	return parent.child.length > c ? parent.child[c] : null;
     } 
@@ -100,8 +100,8 @@ public abstract class Tree
      * provide named accessors to the public (ie, setDst(), setLeft() ).
      */
     protected final void setChild(int which, Tree newChild) {
-	Util.assert(newChild!=null, "you can't set a tree child to null");
-	Util.assert(newChild.tf==this.tf, "tree factories must match");
+	Util.ASSERT(newChild!=null, "you can't set a tree child to null");
+	Util.ASSERT(newChild.tf==this.tf, "tree factories must match");
 	if (child[which]!=null) child[which].unlink();
 	child[which] = newChild;
 	newChild.parent = this;

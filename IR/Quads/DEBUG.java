@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * <code>DEBUG</code> prints a debugging string to standard error.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DEBUG.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: DEBUG.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
  */
 public class DEBUG extends Quad {
     /** The debugging string. */
@@ -27,7 +27,7 @@ public class DEBUG extends Quad {
         super(qf, source);
 	this.str = str;
 	// VERIFY legality of this DEBUG
-	Util.assert(str!=null);
+	Util.ASSERT(str!=null);
     }
     // ACCESSOR METHODS:
     /** Returns the debugging string printed by this quad. */

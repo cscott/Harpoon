@@ -34,7 +34,7 @@ import java.util.Set;
  * runtime system.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.2 2002-02-25 21:01:28 cananian Exp $
+ * @version $Id: Runtime.java,v 1.3 2002-02-26 22:43:45 cananian Exp $
  */
 public abstract class Runtime {
     protected Runtime() { }
@@ -91,7 +91,7 @@ public abstract class Runtime {
      *  not be canonicalized or optimized.
      */
     public HCodeFactory nativeTreeCodeFactory(HCodeFactory hcf) {
-	Util.assert(hcf!=null && hcf.getCodeName().endsWith("tree"));
+	Util.ASSERT(hcf!=null && hcf.getCodeName().endsWith("tree"));
 	return hcf;
     }
     /** Return a <code>Set</code> of <code>HMethod</code>s 

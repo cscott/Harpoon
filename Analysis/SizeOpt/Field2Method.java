@@ -44,7 +44,7 @@ import java.util.Set;
  * to accessor getter/setter methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Field2Method.java,v 1.2 2002-02-25 21:00:02 cananian Exp $
+ * @version $Id: Field2Method.java,v 1.3 2002-02-26 22:42:23 cananian Exp $
  */
 public class Field2Method {
     // xxx declarations below *should* be 'invertibleMap' but the
@@ -133,7 +133,7 @@ public class Field2Method {
 		    public void visit(Quad q) {/* do nothing for most quads */}
 		    public void visit(GET q) {
 			if (!field2getter.containsKey(q.field())) return;
-			Util.assert(!q.field().isStatic());
+			Util.ASSERT(!q.field().isStatic());
 			Temp retex = new Temp(q.getFactory().tempFactory());
 			CALL call = new CALL(q.getFactory(), q, (HMethod)
 					     field2getter.get(q.field()),
@@ -146,7 +146,7 @@ public class Field2Method {
 		    }
 		    public void visit(SET q) {
 			if (!field2setter.containsKey(q.field())) return;
-			Util.assert(!q.field().isStatic());
+			Util.ASSERT(!q.field().isStatic());
 			Temp retex = new Temp(q.getFactory().tempFactory());
 			CALL call = new CALL(q.getFactory(), q, (HMethod)
 					     field2setter.get(q.field()),
@@ -159,7 +159,7 @@ public class Field2Method {
 		    }
 		    /** replace q with CALL, make THROW, add to fixup list. */
 		    private void replace(Quad q, CALL call) {
-			Util.assert(q.prevLength()==1 && q.nextLength()==1);
+			Util.ASSERT(q.prevLength()==1 && q.nextLength()==1);
 			Edge in = q.prevEdge(0), out = q.nextEdge(0);
 			Quad.addEdge((Quad)in.from(), in.which_succ(), call,0);
 			Quad.addEdge(call,0, (Quad)out.to(), out.which_pred());

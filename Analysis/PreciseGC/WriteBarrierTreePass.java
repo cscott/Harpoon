@@ -59,7 +59,7 @@ import java.util.Map;
  * 
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierTreePass.java,v 1.2 2002-02-25 20:58:54 cananian Exp $
+ * @version $Id: WriteBarrierTreePass.java,v 1.3 2002-02-26 22:41:32 cananian Exp $
  */
 public abstract class WriteBarrierTreePass extends 
     harpoon.Analysis.Tree.Simplification {
@@ -75,7 +75,7 @@ public abstract class WriteBarrierTreePass extends
 				    final ClassHierarchy ch,
 				    final HMethod arrayHM,
 				    final HMethod fieldHM) {
-	Util.assert(parent.getCodeName().equals(CanonicalTreeCode.codename));
+	Util.ASSERT(parent.getCodeName().equals(CanonicalTreeCode.codename));
 	return Canonicalize.codeFactory(new HCodeFactory() {
 	    public HCode convert(HMethod m) {
 		HCode hc = parent.convert(m);
@@ -143,11 +143,11 @@ public abstract class WriteBarrierTreePass extends
 		    // ignore last 2 arguments
 		    explist = explist.tail.tail;
 		    // no more arguments
-		    Util.assert(explist.tail == null);
+		    Util.ASSERT(explist.tail == null);
 		    // get array type from derivation
-		    Util.assert(dg != null);
+		    Util.ASSERT(dg != null);
 		    HClass arrayType = dg.typeMap(objectref);
-		    Util.assert(arrayType != null);
+		    Util.ASSERT(arrayType != null);
 		    return new NATIVECALL
 			(tf, stm, null, func, new ExpList
 			 (new BINOP
@@ -187,10 +187,10 @@ public abstract class WriteBarrierTreePass extends
 		    // ignore last 2 arguments
 		    explist = explist.tail.tail;
 		    // no more arguments
-		    Util.assert(explist.tail == null);
+		    Util.ASSERT(explist.tail == null);
 		    // get HField from fieldMap
 		    HField field = (HField) fieldMap.get(name.label);
-		    Util.assert(field != null);
+		    Util.ASSERT(field != null);
 		    return new NATIVECALL
 			(tf, stm, null, func, new ExpList
 			 (new BINOP

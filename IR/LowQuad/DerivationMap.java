@@ -21,7 +21,7 @@ import java.util.Map;
  * common <code>Derivation</code> functionality.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationMap.java,v 1.2 2002-02-25 21:04:37 cananian Exp $
+ * @version $Id: DerivationMap.java,v 1.3 2002-02-26 22:45:45 cananian Exp $
  * @see harpoon.IR.Tree.DerivationGenerator
  */
 public class DerivationMap implements Derivation {
@@ -42,7 +42,7 @@ public class DerivationMap implements Derivation {
 	TypeAndDerivation(DList deriv) { this(null, deriv); }
 	/** private constructor */
 	private TypeAndDerivation(HClass type, DList derivation) {
-	    Util.assert(type!=null ^ derivation!=null);
+	    Util.ASSERT(type!=null ^ derivation!=null);
 	    this.type = type;
 	    this.derivation = derivation;
 	}
@@ -69,7 +69,7 @@ public class DerivationMap implements Derivation {
      *  to the given <code>HClass</code> <code>type</code> to this
      *  <code>DerivationMap</code>. */
     public void putType(HCodeElement hce, Temp t, HClass type) {
-	Util.assert(hce!=null && t!=null && type!=null);
+	Util.ASSERT(hce!=null && t!=null && type!=null);
 	putDT(hce, t, new TypeAndDerivation(type));
     }
     /** Add a mapping from the given <code>Temp</code> <code>t</code>
@@ -77,7 +77,7 @@ public class DerivationMap implements Derivation {
      *  to the given <code>Derivation.DList</code> <code>derivation</code>
      *  to this <code>DerivationMap</code>. */
     public void putDerivation(HCodeElement hce, Temp t, DList derivation) {
-	Util.assert(hce!=null && t!=null && derivation!=null);
+	Util.ASSERT(hce!=null && t!=null && derivation!=null);
 	putDT(hce, t, new TypeAndDerivation(derivation));
     }
     /** Transfer typing from one place to another. */
@@ -108,7 +108,7 @@ public class DerivationMap implements Derivation {
      *  <code>Temp</code> defined at the given <code>HCodeElement</code>.
      *  Used for memory management purposes. */
     public void remove(HCodeElement hce, Temp t) {
-	Util.assert(hce!=null && t!=null);
+	Util.ASSERT(hce!=null && t!=null);
 	removeDT(hce, t);
     }
 
@@ -122,8 +122,8 @@ public class DerivationMap implements Derivation {
     }
     private void putDT(HCodeElement hce, Temp t, TypeAndDerivation tad) {
 	List pair = Default.pair(hce, t);
-	Util.assert(!dtM.containsKey(pair));
-	Util.assert(tad!=null);
+	Util.ASSERT(!dtM.containsKey(pair));
+	Util.ASSERT(tad!=null);
 	dtM.put(pair, tad);
     }
     private void removeDT(HCodeElement hce, Temp t) {

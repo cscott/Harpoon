@@ -13,7 +13,7 @@ import java.util.Map;
  * to code/data/object descriptions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Linker.java,v 1.2 2002-02-25 21:03:04 cananian Exp $
+ * @version $Id: Linker.java,v 1.3 2002-02-26 22:45:06 cananian Exp $
  */
 public abstract class Linker implements ReferenceUnique {
   protected Linker() { }
@@ -30,8 +30,8 @@ public abstract class Linker implements ReferenceUnique {
    * @see uniqueName
    */
   void register(HClass hc) {
-    Util.assert(hc.getLinker()==this);
-    Util.assert(!descCache.containsKey(hc.getDescriptor()));
+    Util.ASSERT(hc.getLinker()==this);
+    Util.ASSERT(!descCache.containsKey(hc.getDescriptor()));
     descCache.put(hc.getDescriptor(), hc);
   }
   
@@ -60,7 +60,7 @@ public abstract class Linker implements ReferenceUnique {
    */
   public final HClass forDescriptor(String descriptor)
     throws NoSuchClassException {
-    Util.assert(descriptor.indexOf('.')==-1); // should be desc, not name.
+    Util.ASSERT(descriptor.indexOf('.')==-1); // should be desc, not name.
     // Trim descriptor.
     int i;
     for (i=0; i<descriptor.length(); i++) {
@@ -75,8 +75,8 @@ public abstract class Linker implements ReferenceUnique {
     HClass cls = (HClass) descCache.get(descriptor);
     if (cls==null) {    // not in the cache.
       cls = _forDescriptor_(descriptor); // do actual descriptor resolution.
-      Util.assert(!descCache.containsKey(descriptor));
-      Util.assert(descriptor.equals(cls.getDescriptor()), 
+      Util.ASSERT(!descCache.containsKey(descriptor));
+      Util.ASSERT(descriptor.equals(cls.getDescriptor()), 
                   "The given class name does not match the class' idea of its name\n"
                   + "Try giving the full name to -c"
                   + "\nDescriptor " + descriptor + "\ncls " + cls
@@ -101,7 +101,7 @@ public abstract class Linker implements ReferenceUnique {
 	HClass basetype = forDescriptor(descriptor.substring(d));
 	// make it.
 	HClass arraytype = makeArray(basetype, d);
-	Util.assert(arraytype.getDescriptor().equals(descriptor));
+	Util.ASSERT(arraytype.getDescriptor().equals(descriptor));
 	return arraytype;
       }
     case 'L': // object type.
@@ -149,11 +149,11 @@ public abstract class Linker implements ReferenceUnique {
    */
   public final HClass forName(String className) throws NoSuchClassException {
     if (className.charAt(0)=='[') {
-      Util.assert(className.indexOf('.')==-1,
+      Util.ASSERT(className.indexOf('.')==-1,
                   "Class name " + className); // should be desc, not name.
       return forDescriptor(className);
     } else {
-      Util.assert(className.indexOf('/')==-1); // should be name, not desc.
+      Util.ASSERT(className.indexOf('/')==-1); // should be name, not desc.
       return forDescriptor("L"+className.replace('.','/')+";");
     }
   }
@@ -197,7 +197,7 @@ public abstract class Linker implements ReferenceUnique {
    */
   public HClass createMutableClass(String name, HClass template)
     throws DuplicateClassException {
-    Util.assert(template.getLinker()==this);
+    Util.ASSERT(template.getLinker()==this);
     try {
       forName(name);
       throw new DuplicateClassException(name);

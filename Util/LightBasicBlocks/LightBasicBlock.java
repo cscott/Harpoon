@@ -61,7 +61,7 @@ import harpoon.Util.Util;
 
  * 
  * @author  Alexandru SALCIANU <salcianu@mit.edu>
- * @version $Id: LightBasicBlock.java,v 1.2 2002-02-25 21:09:33 cananian Exp $ */
+ * @version $Id: LightBasicBlock.java,v 1.3 2002-02-26 22:47:47 cananian Exp $ */
 public class LightBasicBlock implements java.io.Serializable {
 
     /** The user can place its annotations here.
@@ -299,7 +299,7 @@ public class LightBasicBlock implements java.io.Serializable {
 		}
 		
 		public void visit(BasicBlockInterf bb) {
-		    Util.assert(false, "Unknown BasicBlockInterf!");
+		    Util.ASSERT(false, "Unknown BasicBlockInterf!");
 		}
 	    };
 	    
@@ -354,7 +354,7 @@ public class LightBasicBlock implements java.io.Serializable {
 		}
 		
 		public void visit(BasicBlockInterf bb) {
-		    Util.assert(false, "Unknown BasicBlockInterf!");
+		    Util.ASSERT(false, "Unknown BasicBlockInterf!");
 		}
 	    };
 	    

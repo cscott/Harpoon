@@ -40,7 +40,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.2 2002-02-25 21:02:50 cananian Exp $
+ * @version $Id: RegFileInfo.java,v 1.3 2002-02-26 22:44:51 cananian Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -101,7 +101,7 @@ public class RegFileInfo
 	    
             public String getScope() { return scope; }
             protected synchronized String getUniqueID(String suggestion) {
-                Util.assert(i < names.length, "Don't use the "+
+                Util.ASSERT(i < names.length, "Don't use the "+
 			    "TempFactory of Register Temps");
 		i++;
                 return names[i-1];
@@ -278,11 +278,11 @@ public class RegFileInfo
      *              of the register.
      */
     public Location allocateLocation(final int type) {
-	Util.assert(Type.isValid(type), "invalid type");
-	Util.assert(!makeLocationDataCalled,
+	Util.ASSERT(Type.isValid(type), "invalid type");
+	Util.ASSERT(!makeLocationDataCalled,
 		    "allocateLocation() may not be called after "+
 		    "makeLocationData() has been called.");
-	Util.assert(type!=Type.LONG && type!=Type.DOUBLE,
+	Util.ASSERT(type!=Type.LONG && type!=Type.DOUBLE,
 		    "doubleword locations not implemented by this "+
 		    "LocationFactory");
 	// all other types of locations need a single register.
@@ -290,7 +290,7 @@ public class RegFileInfo
 	// FSK: in theory, we could support arbitrary numbers of 
 	// allocations by switching to mem locations.  But I don't
 	// want to try to implement that yet.  
-	Util.assert(regtop > 4, "allocated WAY too many locations, something's wrong");
+	Util.ASSERT(regtop > 4, "allocated WAY too many locations, something's wrong");
 
 	final Temp allocreg = reg[regtop--];
 

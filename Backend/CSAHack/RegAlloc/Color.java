@@ -196,7 +196,7 @@ class Color implements TempMap {
   }
   void FreezeMoves(Node u) {
     for (NodeList m = NodeMoves(u); m!=null; m=m.tail) {
-      Util.assert(moves.active.contains(m.head));
+      Util.ASSERT(moves.active.contains(m.head));
       moves.active.remove(m.head);
       moves.frozen.add(m.head);
       
@@ -218,7 +218,7 @@ class Color implements TempMap {
        *  so opt out of the test instead. [CSA] */
       if (!sets.precolored.contains(v) &&
 	  (NodeMoves(v)==null) && (Degree(v) < K) ) {
-	Util.assert(sets.worklist.freeze.contains(v));
+	Util.ASSERT(sets.worklist.freeze.contains(v));
 	sets.worklist.freeze.remove(v);
 	sets.worklist.simplify.add(v);
       }
@@ -245,7 +245,7 @@ class Color implements TempMap {
     color = new Hashtable();
 
     /* Color precolored nodes. */
-    Util.assert(reg.size()==K);
+    Util.ASSERT(reg.size()==K);
     for (int i=0; i<reg.size(); i++)
 	color.put(reg.elementAt(i), new Integer(i));
     
@@ -253,7 +253,7 @@ class Color implements TempMap {
       Node n = (Node) sets.selectStack.pop();
       int k;
       // node should be previously uncolored.
-      Util.assert(!color.containsKey(ig.gtemp(n)));
+      Util.ASSERT(!color.containsKey(ig.gtemp(n)));
       boolean okColors[] = new boolean[K];
       for (k=0; k<K; k++)
 	okColors[k]=true;
@@ -273,7 +273,7 @@ class Color implements TempMap {
     }
     for (NodeList nl = sets.coalesced.nodes(); nl!=null; nl=nl.tail) {
       // node should be previously uncolored.
-      Util.assert(!color.containsKey(ig.gtemp(nl.head)));
+      Util.ASSERT(!color.containsKey(ig.gtemp(nl.head)));
       color.put(ig.gtemp(nl.head), 
 		new Integer(getColor(ig.gtemp(GetAlias(nl.head)))));
     }
@@ -284,12 +284,12 @@ class Color implements TempMap {
 //    }
   }
   int getColor(Temp w) {
-    Util.assert(color.get(w)!=null, "No color for "+w);
+    Util.ASSERT(color.get(w)!=null, "No color for "+w);
     return ((Integer)color.get(w)).intValue();
   }
 
   public Temp tempMap(Temp t) {
-    Util.assert(!reg.contains(t) || // registers should map to themselves
+    Util.ASSERT(!reg.contains(t) || // registers should map to themselves
 		(reg.elementAt(getColor(t))==t));
     return initial.tempMap((Temp)reg.elementAt(getColor(t)));
   }
@@ -307,7 +307,7 @@ class Color implements TempMap {
 
   NodeList Adjacent(Node n) {
     /* We don't maintain adjacency lists for precolored nodes */
-    Util.assert(!sets.precolored.contains(n));
+    Util.ASSERT(!sets.precolored.contains(n));
     NodeList r=null;
     for (NodeList nl=union(n.succ(),n.pred()); nl!=null; nl=nl.tail)
       if (!sets.coalesced.contains(nl.head) &&
@@ -380,7 +380,7 @@ class Color implements TempMap {
 
   int Degree(Node m) {
     /* We don't keep accurate degree information for precolored nodes. */
-    Util.assert(!sets.precolored.contains(m));
+    Util.ASSERT(!sets.precolored.contains(m));
     return ((Integer)degree.get(m)).intValue();
   }
   void DecrementDegree(Node m) {
@@ -488,11 +488,11 @@ if (sets.worklist.spill.contains(m)) {
       check(ig.nodes());
       // check invariants
       for (NodeList nl=sets.worklist.simplify.nodes(); nl!=null; nl=nl.tail)
-	Util.assert(/*(Degree(nl.head) < K) &&*/(NodeMoves(nl.head)==null));
+	Util.ASSERT(/*(Degree(nl.head) < K) &&*/(NodeMoves(nl.head)==null));
       for (NodeList nl=sets.worklist.freeze.nodes(); nl!=null; nl=nl.tail)
-	Util.assert((Degree(nl.head) < K) && (NodeMoves(nl.head)!=null));
+	Util.ASSERT((Degree(nl.head) < K) && (NodeMoves(nl.head)!=null));
       for (NodeList nl=sets.worklist.spill.nodes(); nl!=null; nl=nl.tail)
-	Util.assert(Degree(nl.head) >= K);
+	Util.ASSERT(Degree(nl.head) >= K);
     }
   }
 }

@@ -23,7 +23,7 @@ import java.util.Set;
     instructions are coherent.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Verify.java,v 1.2 2002-02-25 20:57:31 cananian Exp $
+    @version $Id: Verify.java,v 1.3 2002-02-26 22:40:22 cananian Exp $
 */
 class Verify extends harpoon.IR.Assem.InstrVisitor {
     LocalCffRegAlloc lra;
@@ -69,7 +69,7 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	    }
 	}
 	*/
-	Util.assert
+	Util.ASSERT
 	    (regs != null, 
 	     lra.lazyInfo("no reg assignment"+regfile,block,curr,use,false));
 	return regs;
@@ -107,14 +107,14 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	    List fileRegs = getAssignment(use);
 	    
 	    { // ASSERTION CODE
-		Util.assert(codeRegs != null, "codeRegs!=null {"+i.toString()+"} use:"+use);
-		Util.assert(!fileRegs.contains(null), "no null allowed in fileRegs");
-		Util.assert(!codeRegs.contains(null), "no null allowed in codeRegs");
-		Util.assert(codeRegs.containsAll(fileRegs),
+		Util.ASSERT(codeRegs != null, "codeRegs!=null {"+i.toString()+"} use:"+use);
+		Util.ASSERT(!fileRegs.contains(null), "no null allowed in fileRegs");
+		Util.ASSERT(!codeRegs.contains(null), "no null allowed in codeRegs");
+		Util.ASSERT(codeRegs.containsAll(fileRegs),
 			    lra.lazyInfo("codeRegs incorrect; "+
 				     "c:"+codeRegs+" f:"+fileRegs+" regfile:"+regfile,
 				     block,i,use,false));
-		Util.assert(fileRegs.containsAll(codeRegs),
+		Util.ASSERT(fileRegs.containsAll(codeRegs),
 			    "fileRegs incomplete: "+"c: "+codeRegs+" f: "+fileRegs);
 	    } // END ASSERTION CODE
 	}
@@ -124,7 +124,7 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	    final Temp def = (Temp) defs.next();
 	    // def = tempSets.getRep(def);
 	    Collection codeRegs = lra.getRegs(i, def);
-	    Util.assert(codeRegs != null, "getRegs null for "+def+" in "+i);
+	    Util.ASSERT(codeRegs != null, "getRegs null for "+def+" in "+i);
 	    
 	    
 	    if (false) {
@@ -132,7 +132,7 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 		Iterator redefs = codeRegs.iterator();
 		while(redefs.hasNext()) {
 		    final Temp r = (Temp) redefs.next();
-		    Util.assert(regfile.isEmpty(r), 
+		    Util.ASSERT(regfile.isEmpty(r), 
 				lra.lazyInfo("reg:"+r+" is not empty prior"+
 					     " to assignment",block,i,def));
 		}
@@ -150,7 +150,7 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 	    // regs <- temp
 	    spillUsesV.add(i.use()[0]);
 	    
-	    Util.assert(!regfile.hasAssignment(i.use()[0]), 
+	    Util.ASSERT(!regfile.hasAssignment(i.use()[0]), 
 			lra.lazyInfo("if we're loading, why in regfile?",
 				 block, i,i.use()[0],regfile,false));
 	    assign(i.use()[0], ((RegAlloc.SpillLoad)i).defC());
@@ -166,13 +166,13 @@ class Verify extends harpoon.IR.Assem.InstrVisitor {
 		final Temp def = i.def()[0];
 		List fileRegs = regfile.getAssignment(def);
 		Collection storeRegs = i.useC();
-		Util.assert(fileRegs != null, 
+		Util.ASSERT(fileRegs != null, 
 			    lra.lazyInfo("fileRegs!=null",block,i,def));
-		Util.assert(!fileRegs.contains(null),
+		Util.ASSERT(!fileRegs.contains(null),
 			    "no null allowed in fileRegs");
-		Util.assert(storeRegs.containsAll(fileRegs),
+		Util.ASSERT(storeRegs.containsAll(fileRegs),
 			    "storeRegs incomplete");
-		Util.assert(fileRegs.containsAll(storeRegs),
+		Util.ASSERT(fileRegs.containsAll(storeRegs),
 			    "fileRegs incomplete");
 	    }
 	} else {

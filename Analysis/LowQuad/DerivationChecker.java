@@ -18,7 +18,7 @@ import java.util.Iterator;
  * derivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationChecker.java,v 1.2 2002-02-25 20:57:47 cananian Exp $
+ * @version $Id: DerivationChecker.java,v 1.3 2002-02-26 22:40:33 cananian Exp $
  */
 public class DerivationChecker {
     
@@ -61,7 +61,7 @@ public class DerivationChecker {
     }
     /** Simple assertion facility -- this is not intended to be
      *  "compiled away" or turned off for speed like the standard
-     *  harpoon.Util.Util assertion facility. */
+     *  harpoon.Util.Util.ASSERTion facility. */
     private static void ASSERT(boolean cond, Object errmsg) {
 	if (!cond) throw new Error(errmsg.toString());
     }

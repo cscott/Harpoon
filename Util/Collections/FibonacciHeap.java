@@ -23,7 +23,7 @@ import java.util.Map;
  * Algorithms</i> by Cormen, Leiserson, and Riverst, in Chapter 21.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FibonacciHeap.java,v 1.2 2002-02-25 21:09:04 cananian Exp $
+ * @version $Id: FibonacciHeap.java,v 1.3 2002-02-26 22:47:36 cananian Exp $
  */
 public class FibonacciHeap extends AbstractHeap {
     private static final boolean debug = false;
@@ -108,10 +108,10 @@ public class FibonacciHeap extends AbstractHeap {
 	Node zRight = z.right;
 	_removeFromList(z);
 	if (z==zRight) { // z was the only node on the root list
-	    Util.assert(n==1);
+	    Util.ASSERT(n==1);
 	    min = null;
 	} else {
-	    Util.assert(n>1);
+	    Util.ASSERT(n>1);
 	    min = zRight;
 	    _consolidate();
 	}
@@ -147,8 +147,8 @@ public class FibonacciHeap extends AbstractHeap {
 	for (int i=0; i < A.length; i++) {
 	    if (A[i] != null) {
 		// add A[i] to the root list of H (it already has no siblings)
-		Util.assert(A[i].parent == null); // it is a root.
-		Util.assert(A[i].left == A[i] && A[i].right == A[i]);
+		Util.ASSERT(A[i].parent == null); // it is a root.
+		Util.ASSERT(A[i].left == A[i] && A[i].right == A[i]);
 		_concatenateListsContaining(min, A[i]);
 		if (min==null ||
 		    c.compare(A[i].entry, min.entry) < 0)
@@ -158,9 +158,9 @@ public class FibonacciHeap extends AbstractHeap {
     }
     private void _link(Node y, Node x) {
 	// both x and y are roots.
-	Util.assert(x.parent==null && y.parent==null);
+	Util.ASSERT(x.parent==null && y.parent==null);
 	// y should already have been removed from root list.
-	Util.assert(y.left == y && y.right == y);
+	Util.ASSERT(y.left == y && y.right == y);
 	x.addChild(y);
 	y.mark = false;
     }
@@ -228,11 +228,11 @@ public class FibonacciHeap extends AbstractHeap {
     /** Return the next node after the specified node in the iteration order.
      *  O(1) time. */
     private Node successor(Node n) {
-	Util.assert(n!=null);
+	Util.ASSERT(n!=null);
 	if (n.child!=null) return n.child;
 	do {
 	Node first = (n.parent==null) ? this.min : n.parent.child;
-	Util.assert(first!=null && n.right!=null);
+	Util.ASSERT(first!=null && n.right!=null);
 	if (n.right != first) return n.right;
 	n=n.parent;
 	} while (n!=null);
@@ -267,14 +267,14 @@ public class FibonacciHeap extends AbstractHeap {
 	    this.mark = false;
 	}
 	void addChild(Node c) {
-	    Util.assert(c.left == c && c.right == c);
+	    Util.ASSERT(c.left == c && c.right == c);
 	    if (this.child==null) this.child = c;
 	    else _concatenateListsContaining(this.child, c);
 	    c.parent = this;
 	    degree++;
 	}
 	void removeChild(Node c) {
-	    Util.assert(c.parent == this);
+	    Util.ASSERT(c.parent == this);
 	    if (this.child==c) this.child=c.right;
 	    _removeFromList(c);
 	    c.parent = null;
@@ -315,7 +315,7 @@ public class FibonacciHeap extends AbstractHeap {
     /** Self-test method. */
     public static void main(String[] args) {
 	Heap h = new FibonacciHeap();
-	Util.assert(h.size()==0 && h.isEmpty());
+	Util.ASSERT(h.size()==0 && h.isEmpty());
 	// example from CLR, page 146/151
 	h = new FibonacciHeap(new AbstractCollection() {
 	    int el[] = { -4, -1, -3, -2, -16, -9, -10, -14, -8, -7 };
@@ -331,50 +331,50 @@ public class FibonacciHeap extends AbstractHeap {
 		};
 	    }
 	}, null/* default comparator */);
-	Util.assert(h.size()==10 && !h.isEmpty());
-	Util.assert(h.minimum().getKey().equals(new Integer(-16)));
+	Util.ASSERT(h.size()==10 && !h.isEmpty());
+	Util.ASSERT(h.minimum().getKey().equals(new Integer(-16)));
 	System.out.println(h);
 	h.insert(new Integer(-15), new Integer(-15));
-	Util.assert(h.size()==11 && !h.isEmpty());
-	Util.assert(h.minimum().getKey().equals(new Integer(-16)));
+	Util.ASSERT(h.size()==11 && !h.isEmpty());
+	Util.ASSERT(h.minimum().getKey().equals(new Integer(-16)));
 	System.out.println(h);
 	// now verify that we'll get all the keys out in properly sorted order
 	System.out.println(h.size());
-	Util.assert(h.extractMinimum().getKey().equals(new Integer(-16)));
+	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-16)));
 	System.out.println(h.size());
 	System.out.println(h);
-	Util.assert(h.extractMinimum().getKey().equals(new Integer(-15)));
-	Util.assert(h.extractMinimum().getKey().equals(new Integer(-14)));
-	Util.assert(h.extractMinimum().getKey().equals(new Integer(-10)));
-	Util.assert(h.extractMinimum().getKey().equals(new Integer(-9)));
-	Util.assert(h.extractMinimum().getKey().equals(new Integer(-8)));
-	Util.assert(h.extractMinimum().getKey().equals(new Integer(-7)));
-	Util.assert(h.extractMinimum().getKey().equals(new Integer(-4)));
-	Util.assert(h.extractMinimum().getKey().equals(new Integer(-3)));
-	Util.assert(h.extractMinimum().getKey().equals(new Integer(-2)));
-	Util.assert(h.extractMinimum().getKey().equals(new Integer(-1)));
-	Util.assert(h.isEmpty() && h.size()==0);
+	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-15)));
+	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-14)));
+	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-10)));
+	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-9)));
+	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-8)));
+	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-7)));
+	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-4)));
+	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-3)));
+	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-2)));
+	Util.ASSERT(h.extractMinimum().getKey().equals(new Integer(-1)));
+	Util.ASSERT(h.isEmpty() && h.size()==0);
 	// okay, test delete and decreaseKey now.
-	h.clear(); Util.assert(h.isEmpty() && h.size()==0);
+	h.clear(); Util.ASSERT(h.isEmpty() && h.size()==0);
 	Map.Entry me[] = {
 	    h.insert("C", "c1"), h.insert("S", "s1"), h.insert("A", "a"),
 	    h.insert("S", "s2"), h.insert("C", "c2"), h.insert("O", "o"),
 	    h.insert("T", "t1"), h.insert("T", "t2"), h.insert("Z", "z"),
 	    h.insert("M", "m"),
 	};
-	Util.assert(h.extractMinimum().getValue().equals("a"));
+	Util.ASSERT(h.extractMinimum().getValue().equals("a"));
 	System.out.println("1: "+h);
 	h.decreaseKey(me[3], "B"); // s2
 	System.out.println("2: "+h);
-	Util.assert(h.extractMinimum().getValue().equals("s2"));
+	Util.ASSERT(h.extractMinimum().getValue().equals("s2"));
 	h.delete(me[4]); // c2
 	System.out.println("3: "+h);
-	Util.assert(h.extractMinimum().getValue().equals("c1"));
+	Util.ASSERT(h.extractMinimum().getValue().equals("c1"));
 	System.out.println("4: "+h);
 	// finally, test updateKey
 	h.updateKey(me[9], "P"); // m
-	Util.assert(h.extractMinimum().getValue().equals("o"));
-	Util.assert(h.extractMinimum().getValue().equals("m"));
+	Util.ASSERT(h.extractMinimum().getValue().equals("o"));
+	Util.ASSERT(h.extractMinimum().getValue().equals("m"));
 	System.out.println("5: "+h);
 	// DONE.
 	System.out.println("PASSED.");

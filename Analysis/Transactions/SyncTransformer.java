@@ -77,7 +77,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.2 2002-02-25 21:00:11 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.3 2002-02-26 22:42:28 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -183,9 +183,9 @@ public class SyncTransformer
 	// hcf should be SSI. our input is SSA...
         super(harpoon.IR.Quads.QuadSSA.codeFactory(hcf), ch, false);
 	// and output is NoSSA
-	Util.assert(hcf.getCodeName()
+	Util.ASSERT(hcf.getCodeName()
 		    .equals(harpoon.IR.Quads.QuadSSI.codename));
-	Util.assert(super.codeFactory().getCodeName()
+	Util.ASSERT(super.codeFactory().getCodeName()
 		    .equals(harpoon.IR.Quads.QuadRSSx.codename));
 	this.safeMethods = safeMethods;
 	this.HCclass = l.forName("java.lang.Class");
@@ -264,7 +264,7 @@ public class SyncTransformer
 
 	// fixup code factory for 'known safe' methods.
 	final HCodeFactory superfactory = super.codeFactory();
-	Util.assert(superfactory.getCodeName().equals(QuadRSSx.codename));
+	Util.ASSERT(superfactory.getCodeName().equals(QuadRSSx.codename));
 	this.hcf = new CachingCodeFactory(new SerializableCodeFactory() {
 	    public String getCodeName() { return superfactory.getCodeName(); }
 	    public void clear(HMethod m) { superfactory.clear(m); }
@@ -291,7 +291,7 @@ public class SyncTransformer
     }
     protected HCodeAndMaps cloneHCode(HCode hc, HMethod newmethod) {
 	// make SSA into RSSx.
-	Util.assert(hc.getName().equals(QuadSSA.codename));
+	Util.ASSERT(hc.getName().equals(QuadSSA.codename));
 	return MyRSSx.cloneToRSSx((harpoon.IR.Quads.Code)hc, newmethod);
     }
     private static class MyRSSx extends QuadRSSx {
@@ -303,7 +303,7 @@ public class SyncTransformer
 	}
     }
     protected String mutateCodeName(String codeName) {
-	Util.assert(codeName.equals(QuadSSA.codename));
+	Util.ASSERT(codeName.equals(QuadSSA.codename));
 	return MyRSSx.codename;
     }
     protected HCode mutateHCode(HCodeAndMaps input, Token which) {
@@ -543,7 +543,7 @@ public class SyncTransformer
 	    fixupmap.put(q5, handlers.head);
 	}
 	public void visit(MONITOREXIT q) {
-	    Util.assert(handlers!=null, "MONITOREXIT not dominated by "+
+	    Util.ASSERT(handlers!=null, "MONITOREXIT not dominated by "+
 			"MONITORENTER in "+q.getFactory().getParent());
 	    addChecks(q);
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
@@ -756,7 +756,7 @@ public class SyncTransformer
 	    addChecks(q);
 	    if (noFieldModification || noArrayModification) return;
 	    // XXX: we don't handle ARRAYINIT yet.
-	    Util.assert(false, "ARRAYINIT transformation unimplemented.");
+	    Util.ASSERT(false, "ARRAYINIT transformation unimplemented.");
 	}
 	// add a type check to edge e so that TypeInfo later knows the
 	// component type of this array access.
@@ -781,12 +781,12 @@ public class SyncTransformer
 	    if (noFieldModification) return;
 	    // only deal with quads where "just before" makes sense.
 	    if (q.prevLength()!=1) {
-		Util.assert(co.createReadVersions(q).size()==0);
-		Util.assert(co.createWriteVersions(q).size()==0);
-		Util.assert(co.checkFieldReads(q).size()==0);
-		Util.assert(co.checkFieldWrites(q).size()==0);
-		Util.assert(co.checkArrayElementReads(q).size()==0);
-		Util.assert(co.checkArrayElementWrites(q).size()==0);
+		Util.ASSERT(co.createReadVersions(q).size()==0);
+		Util.ASSERT(co.createWriteVersions(q).size()==0);
+		Util.ASSERT(co.checkFieldReads(q).size()==0);
+		Util.ASSERT(co.checkFieldWrites(q).size()==0);
+		Util.ASSERT(co.checkArrayElementReads(q).size()==0);
+		Util.ASSERT(co.checkArrayElementWrites(q).size()==0);
 		return;
 	    }
 	    Edge in = q.prevEdge(0);

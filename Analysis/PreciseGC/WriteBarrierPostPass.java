@@ -32,7 +32,7 @@ import java.util.List;
  * <code>WriteBarrierPrePass.treeCodeFactory()</code>.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierPostPass.java,v 1.2 2002-02-25 20:58:54 cananian Exp $
+ * @version $Id: WriteBarrierPostPass.java,v 1.3 2002-02-26 22:41:32 cananian Exp $
  */
 public class WriteBarrierPostPass extends 
     harpoon.Analysis.Tree.Simplification {
@@ -58,7 +58,7 @@ public class WriteBarrierPostPass extends
 				       ("generational_write_barrier")));
 		if (dg != null) dg.putType(func, HClass.Void);
 		ExpList explist = ((CALL) stm).getArgs();
-		Util.assert(explist.tail == null);
+		Util.ASSERT(explist.tail == null);
 		return new NATIVECALL(tf, stm, null, func, explist);
 	    }
 	});

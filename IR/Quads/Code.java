@@ -30,7 +30,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: Code.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
  */
 public abstract class Code extends HCode implements java.io.Serializable {
     /** The method that this code view represents. */
@@ -165,7 +165,7 @@ public abstract class Code extends HCode implements java.io.Serializable {
 		for (int i= forwards ? 0 : (q.nextLength()-1);
 		     forwards ? (i<q.nextLength()) : (i>=0);
 		     i = forwards ? (i+1) : (i-1)) {
-		    Util.assert(q.nextEdge(i)!=null, q);
+		    Util.ASSERT(q.nextEdge(i)!=null, q);
 		    if (!visited.contains(q.next(i))) {
 			s.push(q.next(i));
 			visited.add(q.next(i));
@@ -173,7 +173,7 @@ public abstract class Code extends HCode implements java.io.Serializable {
 		}
 		// let's validate q quickly here.
 		for (int i=q.prevLength()-1; i>=0; i--)
-		    Util.assert(q.prevEdge(i)!=null, q);
+		    Util.ASSERT(q.prevEdge(i)!=null, q);
 		// okay.
 		return q;
 	    }

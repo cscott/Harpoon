@@ -40,7 +40,7 @@ import java.util.Map;
  * statistics-gathering purposes.
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: InstrumentSyncOps.java,v 1.2 2002-02-25 20:58:39 cananian Exp $
+ * @version $Id: InstrumentSyncOps.java,v 1.3 2002-02-26 22:41:18 cananian Exp $
  */
 
 public class InstrumentSyncOps implements java.io.Serializable {
@@ -233,7 +233,7 @@ public class InstrumentSyncOps implements java.io.Serializable {
         // create a new call quad.
         CALL ca = new CALL(qf, null, method, params, null, null, false, false, new Temp[0]);
         // add the quads AFTER the NEW quad.
-	Util.assert(q.nextLength() == 1);
+	Util.ASSERT(q.nextLength() == 1);
 	Edge ne = q.nextEdge(0);
 	Quad.addEdge(q, 0, co, 0);
 	Quad.addEdge(co, 0, co2, 0);

@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.2 2002-02-25 21:05:30 cananian Exp $
+ * @version $Id: CONST.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
  */
 public class CONST extends Exp implements PreciselyTyped, HDataElement {
     /** The constant value of this <code>CONST</code> expression. */
@@ -68,7 +68,7 @@ public class CONST extends Exp implements PreciselyTyped, HDataElement {
     public CONST(TreeFactory tf, HCodeElement source, 
 		 int bitwidth, boolean signed, int val) { 
 	super(tf, source, 0);
-	Util.assert((0<=bitwidth)&&(bitwidth<32), "Invalid bitwidth");
+	Util.ASSERT((0<=bitwidth)&&(bitwidth<32), "Invalid bitwidth");
 	this.type     = INT;
 	this.bitwidth = bitwidth;
 	this.signed   = signed;
@@ -82,8 +82,8 @@ public class CONST extends Exp implements PreciselyTyped, HDataElement {
         super(tf, source, 0);
 	this.type = type; this.value = value; this.isSmall = isSmall;
 	this.bitwidth = bitwidth; this.signed = signed;
-	Util.assert(Type.isValid(type));
-	Util.assert(!isSmall || type==INT);
+	Util.ASSERT(Type.isValid(type));
+	Util.ASSERT(!isSmall || type==INT);
     }
     
     /** Return the constant value of this <code>CONST</code> expression. */
@@ -92,22 +92,22 @@ public class CONST extends Exp implements PreciselyTyped, HDataElement {
     public int kind() { return TreeKind.CONST; }
 
     public Exp build(TreeFactory tf, ExpList kids) {
-	Util.assert(kids==null);
+	Util.ASSERT(kids==null);
 	return new CONST(tf, this, type, value, isSmall, bitwidth, signed);
     }
 
     // Typed interface.
-    public int type() { Util.assert(Type.isValid(type)); return type; }
+    public int type() { Util.ASSERT(Type.isValid(type)); return type; }
 
     // PreciselyTyped interface.
     /** Returns true if this is a sub-integer expression. */
     public boolean isSmall() { return isSmall; }
     /** Returns the size of the expression, in bits.
      *  Only valid if the <code>isSmall()==true</code>. */
-    public int bitwidth() { Util.assert(type==INT&&isSmall); return bitwidth; }
+    public int bitwidth() { Util.ASSERT(type==INT&&isSmall); return bitwidth; }
     /** Returns true if this is a signed expression, false otherwise.
      *  Only valid if the <code>isSmall()==true</code>. */
-    public boolean signed() { Util.assert(type==INT&&isSmall); return signed; }
+    public boolean signed() { Util.ASSERT(type==INT&&isSmall); return signed; }
     
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }

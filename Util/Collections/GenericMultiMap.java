@@ -31,7 +31,7 @@ import java.util.HashSet;
  *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.2 2002-02-25 21:09:04 cananian Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.3 2002-02-26 22:47:36 cananian Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -425,7 +425,7 @@ public class GenericMultiMap implements MultiMap {
 	protected CollectionView(int type) {
 	    this.type = type;
 	    if (type==ENTRY)
-		Util.assert(this instanceof Set);
+		Util.ASSERT(this instanceof Set);
 	}
 	public int size() { return GenericMultiMap.this.size(); }
 	public Iterator iterator() {

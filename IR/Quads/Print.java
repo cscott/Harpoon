@@ -19,7 +19,7 @@ import java.util.Map;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: Print.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
@@ -119,7 +119,7 @@ abstract class Print  {
 		SIGMA Q = (SIGMA) ql[i];
 		// reformat stuff after 'exceptions'
 		int j = s.indexOf(" exceptions ");
-		Util.assert(j>=0,"(P)CALL.toString() changed, oops.");
+		Util.ASSERT(j>=0,"(P)CALL.toString() changed, oops.");
 		indent(pw, Q, l, s.substring(0, j));
 		Temp retex = (Q instanceof CALL)
 		    ? ((CALL)Q).retex() : ((PCALL)Q).retex();

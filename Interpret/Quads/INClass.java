@@ -16,7 +16,7 @@ import java.util.Hashtable;
  * <code>java.lang.Class</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INClass.java,v 1.2 2002-02-25 21:05:45 cananian Exp $
+ * @version $Id: INClass.java,v 1.3 2002-02-26 22:46:24 cananian Exp $
  */
 public class INClass {
     static final void register(StaticState ss) {
@@ -88,9 +88,9 @@ public class INClass {
 		String name = ss.ref2str((ObjectRef) params[0]);
 		boolean initialize = ((Boolean) params[1]).booleanValue();
 		ObjectRef loader = (ObjectRef) params[2];
-		Util.assert(loader==null, "Haven't implemented class loading "+
+		Util.ASSERT(loader==null, "Haven't implemented class loading "+
 			    "from a ClassLoader object.");
-		Util.assert(initialize, "Haven't implemented uninitialized "+
+		Util.ASSERT(initialize, "Haven't implemented uninitialized "+
 			    "class loading.");
 		try {
 		    return forClass(ss, ss.linker.forName(name));

@@ -57,7 +57,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.2 2002-02-25 21:00:47 cananian Exp $
+ * @version $Id: BasicGCInfo.java,v 1.3 2002-02-26 22:43:06 cananian Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -101,7 +101,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 	List l = (List)orderedMethods.get(hm.getDeclaringClass());
 	if (l != null) {
 	    // hm should not yet be in the List
-	    Util.assert(!l.contains(hm));
+	    Util.ASSERT(!l.contains(hm));
 	} else {
 	    // the HClass is not yet in the map; make a new List
 	    l = new ArrayList();
@@ -167,7 +167,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    Instr i = (Instr)instrs.next();
 		    InstrLABEL label = (InstrLABEL)hce2label.get(i);
 		    // instr should only have one successor
-		    Util.assert(cfger.succ(i).length == 1);
+		    Util.ASSERT(cfger.succ(i).length == 1);
 		    // insert label
 		    label.layout(i, i.getNext());
 		}
@@ -209,11 +209,11 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    HCodeEdge edge = (HCodeEdge)toProcess.pull();
 		    Integer from = (Integer)ordering.get(edge.from());
 		    Integer to = (Integer)ordering.get(edge.to());
-		    Util.assert(from != null && to != null);
+		    Util.ASSERT(from != null && to != null);
 		    if (from.intValue() > to.intValue())
 			results.add(edge.from());
 		    else {
-			Util.assert(from.intValue() != to.intValue());
+			Util.ASSERT(from.intValue() != to.intValue());
 			// add to work list the successor edges
 			for (Iterator edges = cfger.succC(edge.to()).
 				 iterator(); edges.hasNext(); )
@@ -257,7 +257,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 				     UseDefer ud) {
 		    this.hm = hm;
 		    this.hc = hc;
-		    Util.assert(results != null && results.isEmpty());
+		    Util.ASSERT(results != null && results.isEmpty());
 		    this.results = results;
 		    this.lt = lt;
 		    this.rd = rd;
@@ -270,7 +270,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    // all InstrCALLs are GC points
 		    if (c.getTargets().size() == 0) {
 			// native calls fall through
-			Util.assert
+			Util.ASSERT
 			    (c.canFallThrough, 
 			     "InstrCALL with no targets must fall through.");
 			updateGCInfo(c, null);
@@ -278,7 +278,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 			List targets = c.getTargets();
 			// non-native calls have a return
 			// address and an exception address
-			Util.assert
+			Util.ASSERT
 			    (targets.size() == 2,
 			     "InstrCALL with targets must have regular"+
 			     " and exceptional return addresses.");
@@ -290,7 +290,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    // they come before a backward edge
 		    if (!s.contains(j)) return;
 		    List targets = j.getTargets();
-		    Util.assert(targets.size() == 1,
+		    Util.ASSERT(targets.size() == 1,
 				"Multiple targets for InstrJUMP.");
 		    updateGCInfo(j, (Label)targets.get(0));
 		}
@@ -300,12 +300,12 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    // they come before a backward edge,
 		    // in which case they must have a
 		    // conditional target
-		    Util.assert
+		    Util.ASSERT
 			(i.canFallThrough,
 			 "Cannot fall through non-jump,"+
 			 " non-call Instr before a backward edge.");
 		    List targets = i.getTargets();
-		    Util.assert
+		    Util.ASSERT
 			(targets.size() == 1,
 			 "No target for Instr before a backward edge.");
 		    updateGCInfo(i, (Label)targets.get(0));
@@ -331,17 +331,17 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    while(!live.isEmpty()) {
 			Temp t = (Temp)live.pull();
 			//System.out.println(t.toString()+" is live.");
-			Util.assert(i != null, 
+			Util.ASSERT(i != null, 
 				    "Cannot pass null instruction"+
 				    " to reaching definitions analysis");
-			Util.assert(t != null, 
+			Util.ASSERT(t != null, 
 				    "Cannot pass null temporary"+
 				    " to reaching definitions analysis");
 			Iterator defPtsit = 
 			    rd.reachingDefs(i, t).iterator();
 			// there must be at least one defintion 
 			// that reaches i
-			Util.assert(defPtsit.hasNext(), "Cannot find"+
+			Util.ASSERT(defPtsit.hasNext(), "Cannot find"+
 				    " definition of "+t.toString()+" at "+
 				    i.toString());
 			Instr defPt = (Instr)defPtsit.next();
@@ -359,7 +359,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 				    bd.calleeSaveRegister(defPt, t);
 				Set locationSet = tl.locate(t, defPt);
 				// the following may be a bad assumption
-				Util.assert(locationSet.size() == 1);
+				Util.ASSERT(locationSet.size() == 1);
 				for (Iterator it=locationSet.iterator();
 				     it.hasNext(); ) {
 				    calleeSaved.put(reg, (CommonLoc)it.next());
@@ -388,13 +388,13 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 			//		   " instr:"+instr+
 			//		   " base:"+base);
 			Collection c1 = rd.reachingDefs(instr, base);
-			Util.assert(c1 != null);
-			Util.assert(c1.size() >0);
+			Util.ASSERT(c1 != null);
+			Util.ASSERT(c1.size() >0);
 			Instr[] defPts = (Instr[]) 
 			    c1.toArray(new Instr[c1.size()]);
 			// any of the definition points should work
 			Collection c2 = tl.locate(base, defPts[0]);
-			Util.assert(c2 != null && c2.size() > 0);
+			Util.ASSERT(c2 != null && c2.size() > 0);
 			CommonLoc[] locs = (CommonLoc[])
 			    c2.toArray(new CommonLoc[c2.size()]);
 			// any of the CommonLocs should work
@@ -411,11 +411,11 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 			    regLocs.add(wmrl);
 			    regSigns.add(new Boolean(ddl.sign));
 			    break;
-			default: Util.assert(false);
+			default: Util.ASSERT(false);
 			}
 			ddl = ddl.next; // FSK moved this outside switch
 		    }
-		    Util.assert(regLocs.size() == regSigns.size());
+		    Util.ASSERT(regLocs.size() == regSigns.size());
 		    WrappedMachineRegLoc[] regArray = 
 			(WrappedMachineRegLoc[])regLocs.toArray
 			(new WrappedMachineRegLoc[0]);
@@ -424,7 +424,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    for(Iterator it=regSigns.iterator(); it.hasNext(); )
 			regSignArray[i++] = 
 			    ((Boolean)it.next()).booleanValue();
-		    Util.assert(stackLocs.size() == stackSigns.size());
+		    Util.ASSERT(stackLocs.size() == stackSigns.size());
 		    WrappedStackOffsetLoc[] stackArray =
 			(WrappedStackOffsetLoc[])stackLocs.toArray
 			(new WrappedStackOffsetLoc[0]);

@@ -60,7 +60,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.3 2002-02-26 22:41:41 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -113,7 +113,7 @@ public class InitializerTransform
 	super(QuadWithTry.codeFactory(parent), ch, true/*doesn't matter*/);
 	this.dependentMethods = dependentMethods;
 	final HCodeFactory superfactory = super.codeFactory();
-	Util.assert(superfactory.getCodeName().equals(QuadWithTry.codename));
+	Util.ASSERT(superfactory.getCodeName().equals(QuadWithTry.codename));
 	this.hcf = new CachingCodeFactory(new SerializableCodeFactory() {
 	    public String getCodeName() { return superfactory.getCodeName(); }
 	    public void clear(HMethod m) { superfactory.clear(m); }
@@ -157,7 +157,7 @@ public class InitializerTransform
     /** Add idempotency to initializer and add checks. */
     private Code mutateInitializer(Code hc) {
 	HMethod hm = hc.getMethod();
-	Util.assert(hm.getReturnType()==HClass.Void);
+	Util.ASSERT(hm.getReturnType()==HClass.Void);
 	// add checks.
 	hc = addChecks(hc);
 	// make idempotent.
@@ -195,7 +195,7 @@ public class InitializerTransform
 	return isSafe;
     }
     private boolean _isSafe_(HMethod hm) {
-	Util.assert(!(hm instanceof HInitializer), hm);
+	Util.ASSERT(!(hm instanceof HInitializer), hm);
 	final HClass hc = hm.getDeclaringClass();
 	if (hc.isArray()) return true; // all array methods (clone()) are safe.
 	// native methods are safe if they don't depend on anything.
@@ -336,7 +336,7 @@ public class InitializerTransform
 	else seenSet.put(class2check, class2check); // don't double check.
 	HMethod clinit = class2check.getClassInitializer();
 	if (clinit==null) return; // no class initializer for this class.
-	Util.assert(q.prevLength()==1); // otherwise don't know where to link
+	Util.ASSERT(q.prevLength()==1); // otherwise don't know where to link
 	Quad q0 = new CALL(qf, q, clinit, new Temp[0], null, null, false,
 			   false, new Temp[0]);
 	// insert the new call on an edge

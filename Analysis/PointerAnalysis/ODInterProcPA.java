@@ -53,7 +53,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>ODPointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODInterProcPA.java,v 1.2 2002-02-25 20:58:39 cananian Exp $
+ * @version $Id: ODInterProcPA.java,v 1.3 2002-02-26 22:41:19 cananian Exp $
  */
 abstract class ODInterProcPA {
 
@@ -2122,7 +2122,7 @@ abstract class ODInterProcPA {
 	else{
 	    PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
 		    public void visit(Temp var, PANode node){
-			Util.assert(false," var2node edge in O: " + 
+			Util.ASSERT(false," var2node edge in O: " + 
 				    var + "->" + node);
 		    }
 		    public void visit(PANode node1,String f, PANode node2){
@@ -2506,7 +2506,7 @@ abstract class ODInterProcPA {
 	else{
 	    PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
 		    public void visit(Temp var, PANode node){
-			Util.assert(false," var2node edge in O: " + 
+			Util.ASSERT(false," var2node edge in O: " + 
 				    var + "->" + node);
 		    }
 		    public void visit(PANode node1,String f, PANode node2){

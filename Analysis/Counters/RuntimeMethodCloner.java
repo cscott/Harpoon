@@ -44,7 +44,7 @@ import java.util.Set;
  * statistics as we're attempting to report them.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RuntimeMethodCloner.java,v 1.2 2002-02-25 20:56:26 cananian Exp $
+ * @version $Id: RuntimeMethodCloner.java,v 1.3 2002-02-26 22:39:37 cananian Exp $
  */
 public class RuntimeMethodCloner extends MethodMutator {
     private static final String classname = "harpoon.Runtime.Counters";
@@ -126,7 +126,7 @@ public class RuntimeMethodCloner extends MethodMutator {
 	// 'this' pointer is non-null.  Insert an explicit test to
 	// inform these methods what's what.
 	if (needsNullCheck.contains(hc.getMethod())) {
-	    Util.assert(!hc.getName().equals(QuadSSI.codename));
+	    Util.ASSERT(!hc.getName().equals(QuadSSI.codename));
 	    HEADER header = (HEADER) hc.getRootElement();
 	    METHOD method = header.method();
 	    QuadFactory qf = method.getFactory();

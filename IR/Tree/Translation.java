@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * this sort of conditional context-sensitive expression resolution.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translation.java,v 1.2 2002-02-25 21:05:41 cananian Exp $
+ * @version $Id: Translation.java,v 1.3 2002-02-26 22:46:11 cananian Exp $
  */
 public abstract class Translation {
     /** The <code>Translation.Exp</code> class represents an expression
@@ -30,20 +30,20 @@ public abstract class Translation {
     public static abstract class Exp {
 	private boolean once=false;
 	public final harpoon.IR.Tree.Exp unEx(TreeFactory tf) {
-	    Util.assert(!once); once=true;
+	    Util.ASSERT(!once); once=true;
 	    return unExImpl(tf);
 	}
 	protected abstract harpoon.IR.Tree.Exp unExImpl(TreeFactory tf);
 	
 	public final harpoon.IR.Tree.Stm unNx(TreeFactory tf) {
-	    Util.assert(!once); once=true;
+	    Util.ASSERT(!once); once=true;
 	    return unNxImpl(tf);
 	}
 	protected abstract harpoon.IR.Tree.Stm unNxImpl(TreeFactory tf);
 	public final harpoon.IR.Tree.Stm unCx(TreeFactory tf,
 					      Label iftrue, 
 					      Label iffalse) {
-	    Util.assert(!once); once=true;
+	    Util.ASSERT(!once); once=true;
 	    return unCxImpl(tf, iftrue, iffalse);
 	}
 	protected abstract harpoon.IR.Tree.Stm unCxImpl(TreeFactory tf,

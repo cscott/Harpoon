@@ -261,7 +261,7 @@ public class BinaryTree {
 	From CLR, pg 251.
     */
     protected void insertNode(Node z) {
-	Util.assert(z != NIL);
+	Util.ASSERT(z != NIL);
 	Node y = NIL;
 	Node x = root;
 	while (x != NIL) {

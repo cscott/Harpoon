@@ -65,7 +65,7 @@ public class ClassReplacer extends MethodMutator {
 	ignorePackages = new HashSet();
 	ignoreClasses = new HashSet();
 	codeName = parent.getCodeName();
-	Util.assert(codeName.equals(QuadWithTry.codename)||
+	Util.ASSERT(codeName.equals(QuadWithTry.codename)||
 		    codeName.equals(QuadNoSSA.codename), 
 		    "currently only QuadWithTry and QuadNoSSA are supported: " +
 		    codeName + " cannot be used as a parent for a ClassReplacer");
@@ -95,13 +95,13 @@ public class ClassReplacer extends MethodMutator {
      */
 
     public void map(HMethod from, HMethod to) {
-	Util.assert(from.getReturnType() == to.getReturnType());
+	Util.ASSERT(from.getReturnType() == to.getReturnType());
 
 	HClass[] types = from.getParameterTypes();
 	HClass[] types2 = to.getParameterTypes();
 
 	for (int i=0; i<types.length; i++) {
-	    Util.assert(types[i].equals(types2[i]));
+	    Util.ASSERT(types[i].equals(types2[i]));
 	}
 
 	methodMap.put(from, to);

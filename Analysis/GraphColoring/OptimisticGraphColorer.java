@@ -28,7 +28,7 @@ import harpoon.Util.Collections.LinearSet;
  * second stage, but this is parameterizable.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: OptimisticGraphColorer.java,v 1.2 2002-02-25 20:57:17 cananian Exp $
+ * @version $Id: OptimisticGraphColorer.java,v 1.3 2002-02-26 22:40:14 cananian Exp $
  */
 public class OptimisticGraphColorer extends GraphColorer {
 
@@ -76,7 +76,7 @@ public class OptimisticGraphColorer extends GraphColorer {
 	}
 	public Object chooseNodeForRemoval(ColorableGraph g) {
 	    Object o = chooseNode(g);
-	    Util.assert(o != null);
+	    Util.ASSERT(o != null);
 	    return o;
 	}
 	public Object chooseNodeForHiding(ColorableGraph g) {
@@ -168,7 +168,7 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    
 	    if (graph.getColor(n) != null) {
 		// precolored, die
-		Util.assert(false);
+		Util.ASSERT(false);
 	    }
 	    
 	    Collection nborsC = graph.neighborsOf(n);

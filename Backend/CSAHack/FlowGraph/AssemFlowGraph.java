@@ -37,7 +37,7 @@ public class AssemFlowGraph extends FlowGraph {
   public AssemFlowGraph(Instr root, UseDefer ud, boolean twoWord) {
     this.ud = ud;
     this.twoWord = twoWord;
-    Util.assert(root.getPrev()==null);
+    Util.ASSERT(root.getPrev()==null);
     Hashtable instr2node;
     Hashtable label2node;
 
@@ -97,7 +97,7 @@ public class AssemFlowGraph extends FlowGraph {
     TempList tl = null;
     for (int i=d.length-1; i>=0; i--)
       if (twoWord && d[i] instanceof TwoWordTemp) {
-	harpoon.Util.Util.assert(instr(n).getAssem().indexOf("`d"+i)!=-1);
+	harpoon.Util.Util.ASSERT(instr(n).getAssem().indexOf("`d"+i)!=-1);
 	if (instr(n).getAssem().indexOf("`d"+i+"l")!=-1)
 	  tl = new TempList(((TwoWordTemp)d[i]).getLow(), tl);
 	if (instr(n).getAssem().indexOf("`d"+i+"h")!=-1)
@@ -116,7 +116,7 @@ public class AssemFlowGraph extends FlowGraph {
     TempList tl = null;
     for (int i=u.length-1; i>=0; i--)
       if (twoWord && u[i] instanceof TwoWordTemp) {
-	harpoon.Util.Util.assert(instr(n).getAssem().indexOf("`s"+i)!=-1);
+	harpoon.Util.Util.ASSERT(instr(n).getAssem().indexOf("`s"+i)!=-1);
 	if (instr(n).getAssem().indexOf("`s"+i+"l")!=-1)
 	  tl = new TempList(((TwoWordTemp)u[i]).getLow(), tl);
 	if (instr(n).getAssem().indexOf("`s"+i+"h")!=-1)

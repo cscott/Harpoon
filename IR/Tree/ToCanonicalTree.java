@@ -25,7 +25,7 @@ import java.util.HashSet;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.2 2002-02-25 21:05:41 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.3 2002-02-26 22:46:11 cananian Exp $
  */
 public class ToCanonicalTree {
     private Tree m_tree;
@@ -38,8 +38,8 @@ public class ToCanonicalTree {
      * @param code  The <code>TreeCode</code> which we wish to translate
      */
     public ToCanonicalTree(final TreeFactory tf, TreeCode code) { 
-	Util.assert(tf instanceof Code.TreeFactory);
-	Util.assert(((Code.TreeFactory)tf).getParent().getName().equals("canonical-tree"));
+	Util.ASSERT(tf instanceof Code.TreeFactory);
+	Util.ASSERT(((Code.TreeFactory)tf).getParent().getName().equals("canonical-tree"));
 
 	m_tree = translate(tf, code);
     }
@@ -104,7 +104,7 @@ public class ToCanonicalTree {
 
 	    //s.getSrc().accept(this);
 	    if (s.getDst().kind()==TreeKind.ESEQ) {
-		Util.assert(false, "Dangerous use of ESEQ");
+		Util.ASSERT(false, "Dangerous use of ESEQ");
 		ESEQ eseq = (ESEQ)s.getDst();
 		eseq.getExp().accept(this);
 		eseq.getStm().accept(this);
@@ -207,14 +207,14 @@ public class ToCanonicalTree {
 	    if (m.getDst().kind() == TreeKind.TEMP) { 
 		TEMP tNew = _MAP((TEMP)m.getDst());
 		StmExpList x = reorder(m.kids());
-		Util.assert(x.exps.tail==null);
+		Util.ASSERT(x.exps.tail==null);
 		return seq(x.stm, new MOVE(tf, m, tNew, x.exps.head));
 	    }
 	    else {
-		Util.assert(m.getDst().kind() == TreeKind.MEM);
+		Util.ASSERT(m.getDst().kind() == TreeKind.MEM);
 		StmExpList d = reorder(new ExpList(m.kids().head, null));
 		StmExpList s = reorder(m.kids().tail);
-		Util.assert(d.exps.tail==null && s.exps.tail==null);
+		Util.ASSERT(d.exps.tail==null && s.exps.tail==null);
 		MOVE nm = new MOVE(tf, m,
 				   m.getDst().build(tf, d.exps),
 				   s.exps.head);

@@ -14,7 +14,7 @@ import java.util.Iterator;
  * <code>Induction</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Induction.java,v 1.2 2002-02-25 20:57:58 cananian Exp $
+ * @version $Id: Induction.java,v 1.3 2002-02-26 22:40:40 cananian Exp $
  * This class allows us to store information on Basic/Derived Induction variables.
  */
 
@@ -189,12 +189,12 @@ public class Induction {
     }
 
     public int intmultiplier() {
-	Util.assert(this.constant());
+	Util.ASSERT(this.constant());
 	return integers.intmultiplier();
     }
 
     public int offset() {
-	Util.assert(this.constant());
+	Util.ASSERT(this.constant());
 	return integers.offset();
     }
 

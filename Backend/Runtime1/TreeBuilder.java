@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.2 2002-02-25 21:02:20 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.3 2002-02-26 22:44:31 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -302,7 +302,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 				    AllocationProperties ap,
 				    HClass arrayType, Translation.Exp length,
 				    boolean initialize) {
-	Util.assert(arrayType.isArray());
+	Util.ASSERT(arrayType.isArray());
 	// temporary storage for created array.
 	Temp Tarr = new Temp(tf.tempFactory(), "rt");
 	// temporary storage for supplied length
@@ -781,8 +781,8 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 				     DerivationGenerator dg,
 				     AllocationProperties ap,
 				     HClass classType, boolean initialize) {
-	Util.assert(!classType.isArray());
-	Util.assert(!classType.isPrimitive());
+	Util.ASSERT(!classType.isArray());
+	Util.ASSERT(!classType.isPrimitive());
 	int length = objectSize(classType);
 	Exp object = objAlloc(tf, source, dg, ap, classType,
 			      new CONST(tf, source, length));
@@ -880,7 +880,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 				       DerivationGenerator dg,
 				       HClass arrayType, Translation.Exp index)
     {
-	Util.assert(arrayType.isArray());
+	Util.ASSERT(arrayType.isArray());
 	HClass compType = arrayType.getComponentType();
 	int elementsize = POINTER_SIZE;
 	if (compType.isPrimitive())
@@ -910,7 +910,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp fieldOffset(TreeFactory tf, HCodeElement source,
 					DerivationGenerator dg,
 				       HField field) {
-	Util.assert(!field.isStatic());
+	Util.ASSERT(!field.isStatic());
 	return new Translation.Ex
 	    (new CONST(tf, source, cfm.fieldOffset(field)));
     }
@@ -947,7 +947,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     public Translation.Exp methodOffset(TreeFactory tf, HCodeElement source,
 					DerivationGenerator dg,
 					HMethod method) {
-	Util.assert(!method.isStatic());
+	Util.ASSERT(!method.isStatic());
 	method = remap(method);//handle interface methods inherited from Object
 	if (method.isInterfaceMethod()) {
 	    // use interface method map.

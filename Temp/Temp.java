@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.15 2002-02-25 21:07:05 cananian Exp $
+ * @version $Id: Temp.java,v 1.16 2002-02-26 22:46:56 cananian Exp $
  * @see harpoon.Analysis.Maps.TypeMap
  * @see harpoon.Analysis.Maps.ConstMap
  * @see TempList
@@ -57,7 +57,7 @@ public class Temp implements Cloneable, Comparable, ReferenceUnique, java.io.Ser
    *                  <code>prefix</code> may not be null.
    */
   public Temp(final TempFactory tf, final String prefix) {
-    Util.assert(tf != null, "TempFactory cannot be null");
+    Util.ASSERT(tf != null, "TempFactory cannot be null");
     this.tf = tf;
     this.name = tf.getUniqueID(prefix!=null?prefix:default_name);
     this.hashcode = tf.getScope().hashCode() ^ name.hashCode();

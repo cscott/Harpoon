@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.2 2002-02-25 21:05:36 cananian Exp $
+ * @version $Id: NATIVECALL.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
@@ -38,8 +38,8 @@ public class NATIVECALL extends INVOCATION {
 
     public Stm build(TreeFactory tf, ExpList kids) {
 	for (ExpList e = kids; e!=null; e=e.tail)
-	    Util.assert(tf == e.head.tf);
-	Util.assert(tf==this.tf, "cloning retval not yet implemented");
+	    Util.ASSERT(tf == e.head.tf);
+	Util.ASSERT(tf==this.tf, "cloning retval not yet implemented");
 	return new NATIVECALL(tf, this, getRetval()/*XXX needs to clone*/,
 			      kids.head,  // func
 			      kids.tail); // args

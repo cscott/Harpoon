@@ -39,7 +39,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Simplification.java,v 1.2 2002-02-25 21:00:32 cananian Exp $
+ * @version $Id: Simplification.java,v 1.3 2002-02-26 22:42:47 cananian Exp $
  */
 public abstract class Simplification { 
     private static final boolean debug = false;
@@ -52,7 +52,7 @@ public abstract class Simplification {
      */
     public static HCodeFactory codeFactory(final HCodeFactory parent,
 					   final List rules) {
-	Util.assert(parent.getCodeName().equals(CanonicalTreeCode.codename));
+	Util.ASSERT(parent.getCodeName().equals(CanonicalTreeCode.codename));
 	return new HCodeFactory() {
 	    public HCode convert(HMethod m) {
 		HCode hc = parent.convert(m);
@@ -145,7 +145,7 @@ public abstract class Simplification {
     public static void simplify(Tree root, DerivationGenerator dg, List rules)
     {
 	// Shouldn't pass a null ptr. 
-	Util.assert(root != null && rules != null); 
+	Util.ASSERT(root != null && rules != null); 
 
 	// Perform the simplification. 
 	while (new SimplificationVisitor(root, dg, rules).changed())

@@ -29,7 +29,7 @@ import harpoon.Util.Util;
  * proven non-null.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.2 2002-02-25 21:05:12 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.3 2002-02-26 22:45:56 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */
@@ -72,7 +72,7 @@ public class COMPONENTOF extends Quad {
 	this.dst = dst;
 	this.arrayref = arrayref;
 	this.objectref = objectref;
-	Util.assert(dst!=null && arrayref!=null && objectref!=null);
+	Util.ASSERT(dst!=null && arrayref!=null && objectref!=null);
     }
     // ACCESSOR METHODS:
     /** Returns the <code>Temp</code> in which to store the result of the

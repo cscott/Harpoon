@@ -10,7 +10,7 @@ import harpoon.Util.Util;
  * single constructor for a class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HConstructorSyn.java,v 1.3 2002-02-25 21:03:03 cananian Exp $
+ * @version $Id: HConstructorSyn.java,v 1.4 2002-02-26 22:45:05 cananian Exp $
  */
 class HConstructorSyn extends HMethodSyn implements HConstructor {
 
@@ -19,7 +19,7 @@ class HConstructorSyn extends HMethodSyn implements HConstructor {
    */
   HConstructorSyn(HClassSyn parent, HConstructor template) {
     super(parent, "<init>", template);
-    Util.assert(this.returnType.actual()==HClass.Void);
+    Util.ASSERT(this.returnType.actual()==HClass.Void);
   }
 
   /** Create a new empty constructor for the specified class
@@ -29,7 +29,7 @@ class HConstructorSyn extends HMethodSyn implements HConstructor {
    */
   HConstructorSyn(HClassSyn parent, String descriptor) {
     super(parent, "<init>", descriptor);
-    Util.assert(this.returnType.actual()==HClass.Void);
+    Util.ASSERT(this.returnType.actual()==HClass.Void);
   }
   /** Create a new empty constructor in the specified class
    *  with the specified parameter and return types
@@ -37,11 +37,11 @@ class HConstructorSyn extends HMethodSyn implements HConstructor {
    */
   HConstructorSyn(HClassSyn parent, HClass[] paramTypes) {
     super(parent, "<init>", paramTypes, HClass.Void);
-    Util.assert(this.returnType.actual()==HClass.Void);
+    Util.ASSERT(this.returnType.actual()==HClass.Void);
   }
 
   public void setReturnType(HClass returnType) {
-    Util.assert(returnType==HClass.Void);
+    Util.ASSERT(returnType==HClass.Void);
   }
   public int hashCode() { return HConstructorImpl.hashCode(this); }
   public String toString() { return HConstructorImpl.toString(this); }

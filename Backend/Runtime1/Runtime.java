@@ -31,7 +31,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.2 2002-02-25 21:02:20 cananian Exp $
+ * @version $Id: Runtime.java,v 1.3 2002-02-26 22:44:31 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -96,7 +96,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	final HMethod HMobjAclone =
 	    frame.getLinker().forDescriptor("[Ljava/lang/Object;")
 	    .getMethod("clone", new HClass[0]);
-	Util.assert(hcf.getCodeName().endsWith("tree"));
+	Util.ASSERT(hcf.getCodeName().endsWith("tree"));
 	return new HCodeFactory() {
 	    public String getCodeName() { return hcf.getCodeName(); }
 	    public void clear(HMethod m) { hcf.clear(m); }

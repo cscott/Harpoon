@@ -50,7 +50,7 @@ import java.util.Set;
  * about the number of times the write-barrier is called.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierQuadPass.java,v 1.2 2002-02-25 20:58:54 cananian Exp $
+ * @version $Id: WriteBarrierQuadPass.java,v 1.3 2002-02-26 22:41:32 cananian Exp $
  */
 public class WriteBarrierQuadPass extends 
     harpoon.Analysis.Transformation.MethodMutator {
@@ -94,7 +94,7 @@ public class WriteBarrierQuadPass extends
 	Code hc = (Code)input.hcode();
 	String cls_str = hc.getMethod().getDeclaringClass().getName();
 	// we should not have to update derivation information
-	Util.assert(hc.getDerivation() == null);
+	Util.ASSERT(hc.getDerivation() == null);
 	// create a set of SETs and ASETs that can be ignored
 	Set ignore = new HashSet();
 	if (optimize) {
@@ -185,7 +185,7 @@ public class WriteBarrierQuadPass extends
      */
     public Data getData(HClass hc, Frame f) {
 	// must have run statsCodeFactory first
-	Util.assert(wbs != null);
+	Util.ASSERT(wbs != null);
 	return new WriteBarrierData(hc, f, wbs.getCount());
     }
 

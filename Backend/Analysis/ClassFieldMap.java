@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
  * Results are cached for efficiency.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFieldMap.java,v 1.2 2002-02-25 21:00:47 cananian Exp $
+ * @version $Id: ClassFieldMap.java,v 1.3 2002-02-26 22:43:06 cananian Exp $
  */
 public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
     /** Creates a <code>ClassFieldMap</code>. */
@@ -31,23 +31,23 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
 
     // caching version of method inherited from superclass.
     public int fieldOffset(HField hf) {
-	Util.assert(hf!=null && !hf.isStatic());
+	Util.ASSERT(hf!=null && !hf.isStatic());
 	if (!cache.containsKey(hf)) {
 	    int offset=0;
 	    for (Iterator it=fieldList(hf.getDeclaringClass()).iterator();
 		 it.hasNext(); ) {
 		HField nexthf = (HField) it.next();
 		int align = fieldAlignment(nexthf);
-		Util.assert(align>0);
+		Util.ASSERT(align>0);
 		if ((offset % align) != 0)
 		    offset += align - (offset%align);
-		Util.assert((offset % align) == 0);
+		Util.ASSERT((offset % align) == 0);
 		if (!cache.containsKey(nexthf))
 		    cache.put(nexthf, new Integer(offset));
 		offset+=fieldSize(nexthf);
 	    }
 	}
-	Util.assert(cache.containsKey(hf), hf+" not in fieldList()");
+	Util.ASSERT(cache.containsKey(hf), hf+" not in fieldList()");
 	return ((Integer)cache.get(hf)).intValue();
     }
     private final Map cache = new HashMap();
@@ -55,7 +55,7 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
     // the meat of this class: return non-static fields in order, from
     // top-most superclass down.
     public List fieldList(final HClass hc) {
-	Util.assert(hc!=null);
+	Util.ASSERT(hc!=null);
 	// first calculate size of list.
 	int n=0;
 	for (HClass hcp=hc; hcp!=null; hcp=hcp.getSuperclass()) {

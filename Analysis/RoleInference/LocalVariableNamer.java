@@ -16,7 +16,7 @@ import java.io.InputStream;
  * <code>LocalVariableNamer</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LocalVariableNamer.java,v 1.2 2002-02-25 20:59:51 cananian Exp $
+ * @version $Id: LocalVariableNamer.java,v 1.3 2002-02-26 22:42:09 cananian Exp $
  */
 public class LocalVariableNamer {
 
@@ -43,13 +43,13 @@ public class LocalVariableNamer {
             if (raw.methods[i].name().equals(methodname) &&
                 raw.methods[i].descriptor().equals(hm.getDescriptor()))
                 mi = raw.methods[i];
-        Util.assert(mi!=null);
+        Util.ASSERT(mi!=null);
         /* find the Code attribute of the MethodInfo */
 
         for (int i=0; i<mi.attributes.length; i++)
             if (mi.attributes[i] instanceof AttributeCode)
                 ac = (AttributeCode) mi.attributes[i];
-        Util.assert(ac!=null); /* or else this is an abstract method */	
+        Util.ASSERT(ac!=null); /* or else this is an abstract method */	
 
         for (int i=0; i<ac.attributes.length; i++)
             if (ac.attributes[i] instanceof AttributeLineNumberTable)
@@ -67,7 +67,7 @@ public class LocalVariableNamer {
     public String lv_name(int lv_index, int line_number) {
         /* if we don't have both alnt and avnt we don't know the name */
         if (alnt==null || alvt==null) return null;
-        Util.assert(lv_index < ac.max_locals); /* or invalid lv_index */
+        Util.ASSERT(lv_index < ac.max_locals); /* or invalid lv_index */
         /* now find the local variable and line number table attributes */
         /* otherwise, return the first appropriate name */
         for (int i=0; i<alnt.line_number_table.length; i++) {

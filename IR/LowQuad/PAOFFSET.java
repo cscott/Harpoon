@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * needed to access a given array element.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PAOFFSET.java,v 1.2 2002-02-25 21:04:40 cananian Exp $
+ * @version $Id: PAOFFSET.java,v 1.3 2002-02-26 22:45:51 cananian Exp $
  */
 public class PAOFFSET extends PCONST {
     /** The array type. */
@@ -36,9 +36,9 @@ public class PAOFFSET extends PCONST {
 	super(qf, source, dst);
 	this.arrayType = arrayType;
 	this.index = index;
-	Util.assert(arrayType!=null && arrayType.isArray(),
+	Util.ASSERT(arrayType!=null && arrayType.isArray(),
 		    "arrayType ("+arrayType+") is not valid.");
-	Util.assert(index!=null);
+	Util.ASSERT(index!=null);
     }
     /** Returns the array type. */
     public HClass arrayType() { return arrayType; }

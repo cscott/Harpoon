@@ -76,7 +76,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.2 2002-02-25 21:05:41 cananian Exp $
+ * @version $Id: ToTree.java,v 1.3 2002-02-26 22:46:11 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -114,7 +114,7 @@ class ToTree {
     public ToTree(final TreeFactory tf, harpoon.IR.LowQuad.Code code,
 		  AllocationInformation ai,
 		  EdgeOracle eo, FoldNanny fn, ReachingDefs rd) {
-	Util.assert(((Code.TreeFactory)tf).getParent()
+	Util.ASSERT(((Code.TreeFactory)tf).getParent()
 		    .getName().equals("tree"));
 	if (ai==null)
 	    ai = harpoon.Analysis.DefaultAllocationInformation.SINGLETON;
@@ -252,11 +252,11 @@ static class TranslationVisitor extends LowQuadVisitor {
 	}
     };
     public Label label(Quad q) {
-	Util.assert(q instanceof harpoon.IR.Quads.PHI);
+	Util.ASSERT(q instanceof harpoon.IR.Quads.PHI);
 	return (Label) labelMap.get(q);
     }
     public Label label(Edge e) {
-	Util.assert(e.from() instanceof harpoon.IR.Quads.SIGMA);
+	Util.ASSERT(e.from() instanceof harpoon.IR.Quads.SIGMA);
 	return (Label) labelMap.get(e);
     }
     // end label maker --------------
@@ -303,7 +303,7 @@ static class TranslationVisitor extends LowQuadVisitor {
     }
     // end labels and phis and sigmas, oh my! --------
 
-    public void visit(Quad q) { Util.assert(false); /* not handled! */ }
+    public void visit(Quad q) { Util.ASSERT(false); /* not handled! */ }
 
     public void visit(harpoon.IR.Quads.ALENGTH q) {
 	addMove
@@ -316,7 +316,7 @@ static class TranslationVisitor extends LowQuadVisitor {
     public void visit(harpoon.IR.Quads.ANEW q) {
 	// create and zero fill a multi-dimensional array.
 	int dl = q.dimsLength();
-	Util.assert(dl>0);
+	Util.ASSERT(dl>0);
 	// temps to hold each part of the array;
 	// arrayTemps[i] holds an (dl-i)-dimensional array.
 	// arrayClasses[i] is the type of arrayTemps[i]
@@ -327,7 +327,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	for (int i=1; i<=dl; i++) {
 	    arrayTemps[i] = new Temp(arrayTemps[i-1]);
 	    arrayClasses[i] = arrayClasses[i-1].getComponentType();
-	    Util.assert(arrayClasses[i]!=null);
+	    Util.ASSERT(arrayClasses[i]!=null);
 	}
 	// temps standing for size of each dimension.
 	Temp[] dimTemps = new Temp[dl];
@@ -540,7 +540,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    // okay, now output constant data table.
 	    addStmt(new ALIGN(m_tf, q, sizeof(q.type())));
 	    addStmt(new LABEL(m_tf, q, constTblStart, false));
-	    Util.assert(qvalue.length>0);
+	    Util.ASSERT(qvalue.length>0);
 	    for (int i=0; i<qvalue.length; i++) {
 		if (i==qvalue.length-1)
 		    addStmt(new LABEL(m_tf, q, constTblEnd, false));
@@ -599,7 +599,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	for (int i=0; i<paramsT.length; i++) { 
 	    mParams[i+1] = _TEMP(q, paramType[i], paramsT[i]);
 	}
-	Util.assert(m_handler==null);
+	Util.ASSERT(m_handler==null);
 	m_handler = new Temp(m_tf.tempFactory(), "handler");
 	mParams[0] = _TEMP(q, HClass.Void, m_handler);
 	int rettype = (hm.getReturnType()==HClass.Void) ? -1 :
@@ -661,7 +661,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	final SortedMap cases = new TreeMap();
 	for (int i=0; i<q.keysLength(); i++) {
 	    Object chk=cases.put(new Integer(q.keys(i)), label(q.nextEdge(i)));
-	    Util.assert(chk==null, "duplicate key in switch statement!");
+	    Util.ASSERT(chk==null, "duplicate key in switch statement!");
 	}
 	final Label deflabel = label(q.nextEdge(q.keysLength()));
 	// bail out of zero-key case.
@@ -804,7 +804,7 @@ static class TranslationVisitor extends LowQuadVisitor {
     }
   
     public void visit(harpoon.IR.Quads.THROW q) { 
-	Util.assert(m_handler!=null);
+	Util.ASSERT(m_handler!=null);
 	addStmt(new THROW(m_tf, q,
 			  _TEMP(q.throwable(), q),
 			  _TEMP(q, HClass.Void, m_handler)));
@@ -847,7 +847,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	TEMP retvalT, retexT; // TEMP expressions for the above.
 	Exp func, ptr;
 
-	Util.assert(q.retex()!=null && q.ptr()!=null);
+	Util.ASSERT(q.retex()!=null && q.ptr()!=null);
 
 	// If q.retval() is null, the 'retval' in Tree.CALL is also null.
 	if (q.retval()==null) {
@@ -857,14 +857,14 @@ static class TranslationVisitor extends LowQuadVisitor {
 	else {
 	    retval = m_ctm.tempMap(q.retval()); // a tree temp.
 	    // (return value should never have a derived type)
-	    Util.assert(quadDeriv.typeMap(q, q.retval())!=null);
+	    Util.ASSERT(quadDeriv.typeMap(q, q.retval())!=null);
 	    retvalT = _TEMP(q, quadDeriv.typeMap(q, q.retval()), retval);
 	}
       
 	// clone & type retex.
 	retex = m_ctm.tempMap(q.retex());
 	// (exception value should never have a derived type)
-	Util.assert(quadDeriv.typeMap(q, q.retex())!=null);
+	Util.ASSERT(quadDeriv.typeMap(q, q.retex())!=null);
 	retexT= _TEMP(q, quadDeriv.typeMap(q, q.retex()), retex);
 
 	// deal with function pointer.
@@ -1140,7 +1140,7 @@ static class TranslationVisitor extends LowQuadVisitor {
     // foldable _TEMP
     private Translation.Exp _TEMPte(Temp quadTemp, Quad useSite) {
 	// this constructor takes quad temps.
-	Util.assert(quadTemp.tempFactory()!=m_tf.tempFactory(),
+	Util.ASSERT(quadTemp.tempFactory()!=m_tf.tempFactory(),
 		    "Temp should be from LowQuad factory, not Tree factory.");
 	// use reachingDefs to find definition sites.
 	Set defSites = reachingDefs.reachingDefs(useSite, quadTemp);
@@ -1148,7 +1148,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    HCodeElement hce = (HCodeElement) defSites.iterator().next();
 	    if (foldNanny.canFold(hce, quadTemp)) {
 		// fold this use!
-		Util.assert(foldMap.containsKey(Default.pair(hce,quadTemp)));
+		Util.ASSERT(foldMap.containsKey(Default.pair(hce,quadTemp)));
 		return (Translation.Exp)
 		    foldMap.remove(Default.pair(hce,quadTemp));
 	    }
@@ -1168,7 +1168,7 @@ static class TranslationVisitor extends LowQuadVisitor {
     }
     private TEMP _TEMP(HCodeElement src, HClass type, Temp treeTemp) {
 	// this constructor takes TreeTemps.
-	Util.assert(treeTemp.tempFactory()==m_tf.tempFactory(),
+	Util.ASSERT(treeTemp.tempFactory()==m_tf.tempFactory(),
 		    "Temp should be from Tree factory.");
 	TEMP result = new TEMP(m_tf, src, TYPE(type), treeTemp);
 	treeDeriv.putTypeAndTemp(result, type, treeTemp);
@@ -1176,7 +1176,7 @@ static class TranslationVisitor extends LowQuadVisitor {
     }
     private TEMP _TEMP(HCodeElement src, DList deriv, Temp treeTemp) {
 	// this constructor takes TreeTemps.
-	Util.assert(treeTemp.tempFactory()==m_tf.tempFactory(),
+	Util.ASSERT(treeTemp.tempFactory()==m_tf.tempFactory(),
 		    "Temp should be from Tree factory.");
 	TEMP result = new TEMP(m_tf, src, Type.POINTER, treeTemp);
 	treeDeriv.putDerivation(result, deriv);
@@ -1185,10 +1185,10 @@ static class TranslationVisitor extends LowQuadVisitor {
     // make a move.  unless, of course, the expression should be folded.
     private void addMove(Quad defSite, Temp quadTemp, Translation.Exp value) {
 	// this constructor takes quad temps.
-	Util.assert(quadTemp.tempFactory()!=m_tf.tempFactory(),
+	Util.ASSERT(quadTemp.tempFactory()!=m_tf.tempFactory(),
 		    "Temp should be from LowQuad factory, not Tree factory.");
 	if (foldNanny.canFold(defSite, quadTemp)) {
-	    Util.assert(!foldMap.containsKey(Default.pair(defSite, quadTemp)));
+	    Util.ASSERT(!foldMap.containsKey(Default.pair(defSite, quadTemp)));
 	    foldMap.put(Default.pair(defSite, quadTemp), value);
 	    return;
 	}
@@ -1212,7 +1212,7 @@ static class TranslationVisitor extends LowQuadVisitor {
     private final Map foldMap = new HashMap();
 
     private TypeBundle mergeTypes(Temp t, Set defSites) {
-	Util.assert(defSites.size() > 0);
+	Util.ASSERT(defSites.size() > 0);
 	
 	TypeBundle tb = null;
 	for (Iterator it=defSites.iterator(); it.hasNext(); ) {
@@ -1247,16 +1247,16 @@ static class TranslationVisitor extends LowQuadVisitor {
 	if (type1==type2) return type1;
 	else { 
 	    if (type1==Type.DOUBLE || type2==Type.DOUBLE) { 
-		Util.assert(type1!=Type.POINTER && type2!=Type.POINTER);
+		Util.ASSERT(type1!=Type.POINTER && type2!=Type.POINTER);
 		return Type.DOUBLE;
 	    }
 	    else if (type1==Type.FLOAT || type2==Type.FLOAT) { 
-		Util.assert(type1!=Type.POINTER && type2!=Type.POINTER);
+		Util.ASSERT(type1!=Type.POINTER && type2!=Type.POINTER);
 		return Type.FLOAT;
 	    }
 	    else if (type1==Type.LONG || type2==Type.LONG) { 
 		if (type1==Type.POINTER || type2==Type.POINTER) { 
-		    Util.assert(longptrs); return Type.POINTER;
+		    Util.ASSERT(longptrs); return Type.POINTER;
 		}
 		return Type.LONG;
 	    }
@@ -1405,10 +1405,10 @@ static class TranslationVisitor extends LowQuadVisitor {
 	}
 	TypeBundle merge(TypeBundle tb) {
 	    if (this.derivation!=null) {
-		Util.assert(this.equals(tb));
+		Util.ASSERT(this.equals(tb));
 		return this;
 	    }
-	    Util.assert(false);return null;
+	    Util.ASSERT(false);return null;
 	}
 	public boolean equals(Object o) {
 	    if (!(o instanceof TypeBundle)) return false;
@@ -1416,7 +1416,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	    if (this.simpleType != tb.simpleType) return false;
 	    if (this.classType != null)
 		return (this.classType == tb.classType);
-	    Util.assert(this.derivation != null);
+	    Util.ASSERT(this.derivation != null);
 	    if (tb.derivation == null) return false;
 	    return this.derivation.equals(tb.derivation);
 	}

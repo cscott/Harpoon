@@ -30,7 +30,7 @@ import java.util.Stack;
  * <code>CFGrapher</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.9 2002-02-25 20:56:10 cananian Exp $
+ * @version $Id: DomTree.java,v 1.10 2002-02-26 22:39:08 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {
@@ -165,8 +165,8 @@ public class DomTree /*implements Graph*/ {
 		    }
 		    b = (HCodeElement) best.get(v); // recursive return
 		}
-		Util.assert(v == vOrig);
-		Util.assert(b == best.get(v));
+		Util.ASSERT(v == vOrig);
+		Util.ASSERT(b == best.get(v));
 		return b;
 	    }
 	}

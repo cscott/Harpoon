@@ -32,7 +32,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.2 2002-02-25 20:57:58 cananian Exp $
+ * @version $Id: AllInductions.java,v 1.3 2002-02-26 22:40:40 cananian Exp $
  */
 public class AllInductions {
     TempMap tm;
@@ -202,7 +202,7 @@ public class AllInductions {
 		changed=true;
 
 		Induction tmp=(Induction)inductions.get(tm.tempMap(q.index()));
-		Util.assert(tmp.pointerindex==false);
+		Util.ASSERT(tmp.pointerindex==false);
 
 		//*********
 		inductions.put(q.dst(), new Induction(tmp,q.arrayType()));

@@ -16,7 +16,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.7 2002-02-25 21:03:04 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.8 2002-02-26 22:45:05 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -42,11 +42,11 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     this.exceptionTypes = template.getExceptionTypes();
     this.isSynthetic = template.isSynthetic();
     // ensure linker information is consistent.
-    Util.assert(checkLinker((HClass)this.returnType));
+    Util.ASSERT(checkLinker((HClass)this.returnType));
     for(int i=0; i<this.parameterTypes.length; i++)
-      Util.assert(checkLinker((HClass)this.parameterTypes[i]));
+      Util.ASSERT(checkLinker((HClass)this.parameterTypes[i]));
     for(int i=0; i<this.exceptionTypes.length; i++)
-      Util.assert(checkLinker((HClass)this.exceptionTypes[i]));
+      Util.ASSERT(checkLinker((HClass)this.exceptionTypes[i]));
   }
 
   /** Create a new empty method in the specified class
@@ -109,7 +109,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   }
 
   public void setReturnType(HClass returnType) {
-    Util.assert(checkLinker(returnType));
+    Util.ASSERT(checkLinker(returnType));
     if (this.returnType != returnType) parent.hasBeenModified = true;
     this.returnType = returnType;
   }
@@ -117,7 +117,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   /** Warning: use can cause method name conflicts in class. */
   public void setParameterTypes(HClass[] parameterTypes) {
     for (int i=0; i<parameterTypes.length; i++)
-      Util.assert(checkLinker(parameterTypes[i]));
+      Util.ASSERT(checkLinker(parameterTypes[i]));
     if (this.parameterTypes.length != parameterTypes.length)
       parent.hasBeenModified = true;
     else for (int i=0;
@@ -128,7 +128,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   }
   /** Warning: use can cause method name conflicts in class. */
   public void setParameterType(int which, HClass type) {
-    Util.assert(checkLinker(type));
+    Util.ASSERT(checkLinker(type));
     if (this.parameterTypes[which] != type)
       parent.hasBeenModified = true;
     this.parameterTypes[which] = type;
@@ -142,7 +142,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   }
 
   public void addExceptionType(HClass exceptionType) {
-    Util.assert(checkLinker(exceptionType));
+    Util.ASSERT(checkLinker(exceptionType));
     for (int i=0; i<exceptionTypes.length; i++)
       if (exceptionTypes[i]==exceptionType)
 	return;
@@ -153,7 +153,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
   }
   public void setExceptionTypes(HClass[] exceptionTypes) {
     for (int i=0; i<exceptionTypes.length; i++)
-      Util.assert(checkLinker(exceptionTypes[i]));
+      Util.ASSERT(checkLinker(exceptionTypes[i]));
     if (this.exceptionTypes.length != exceptionTypes.length)
       parent.hasBeenModified = true;
     else for (int i=0;
@@ -163,7 +163,7 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     this.exceptionTypes = exceptionTypes;
   }
   public void removeExceptionType(HClass exceptionType) {
-    Util.assert(checkLinker(exceptionType));
+    Util.ASSERT(checkLinker(exceptionType));
     for (int i=0; i<exceptionTypes.length; i++)
       if (exceptionTypes[i].actual().equals(exceptionType)) {
 	exceptionTypes = (HPointer[]) Util.shrink(HPointer.arrayFactory,

@@ -97,7 +97,7 @@ action code {:
       this.packageN=p; this.classN=c; this.innerN=i;
     }
     QualName(HClass hc) {
-      Util.assert(hc!=null && !hc.isPrimitive() && !hc.isArray());
+      Util.ASSERT(hc!=null && !hc.isPrimitive() && !hc.isArray());
       String pkg=hc.getPackage(), simple=hc.getName(), inner=null;
       if (pkg.length()==0) pkg=null;
       else simple=simple.substring(1+pkg.length());

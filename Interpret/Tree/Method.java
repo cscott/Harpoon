@@ -63,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.2 2002-02-25 21:06:01 cananian Exp $
+ * @version $Id: Method.java,v 1.3 2002-02-26 22:46:30 cananian Exp $
  */
 public final class Method extends Debug {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -81,8 +81,8 @@ public final class Method extends Debug {
 	Linker linker = cls.getLinker();
 	method=cls.getMethod("main", new HClass[] { linker.forDescriptor("[Ljava/lang/String;") });
 	
-	Util.assert(method.isStatic());
-	Util.assert(hcf.getCodeName().equals("canonical-tree") ||
+	Util.ASSERT(method.isStatic());
+	Util.ASSERT(hcf.getCodeName().equals("canonical-tree") ||
 		    hcf.getCodeName().equals("optimized-tree"),
 		    "Bad factory codename: " + hcf.getCodeName());
 	
@@ -137,7 +137,7 @@ public final class Method extends Debug {
 	catch (ClassCastException e) { 
 	    // obj is not a pointer type.  In that case, we _must_ have
 	    // specified its type through the "type" parameter.
-	    Util.assert(type!=null);
+	    Util.ASSERT(type!=null);
 	    if (type == HClass.Byte)
 		retval = new Byte((byte)((Integer)obj).intValue());
 	    else if (type == HClass.Short)
@@ -147,7 +147,7 @@ public final class Method extends Debug {
 	    else if (type == HClass.Boolean)
 		retval = new Boolean(((Integer)obj).intValue()!=0);
  	    else if (!type.isPrimitive())  {
-		Util.assert(((Integer)obj).intValue()==0);
+		Util.ASSERT(((Integer)obj).intValue()==0);
 		retval = null;
 	    }
 	    else 
@@ -182,7 +182,7 @@ public final class Method extends Debug {
      *  non-native format. 
      */
     static final Object toNonNativeFormat(Object obj) { 
-	Util.assert(!(obj instanceof UndefinedRef));
+	Util.ASSERT(!(obj instanceof UndefinedRef));
 
 	Object result;
 
@@ -212,7 +212,7 @@ public final class Method extends Debug {
     /** invoke the specified method.  void methods return null. */
     static final Object invoke(StaticState ss, HMethod method, Object[] params)
 	throws InterpretedThrowable {
-        Util.assert(params.length == numParams(method));
+        Util.ASSERT(params.length == numParams(method));
 
 	if (DEBUG) db("Invoking method: " + method);
 
@@ -362,7 +362,7 @@ public final class Method extends Debug {
 		else if (e.op==Bop.CMPGT) { 
 		    if (left instanceof Pointer) { 
 			Pointer leftPtr = (Pointer)left, rightPtr = (Pointer)right;
-			Util.assert(leftPtr.getBase()==rightPtr.getBase());
+			Util.ASSERT(leftPtr.getBase()==rightPtr.getBase());
 			sf.update(e, 
 				  (leftPtr.getOffset()>rightPtr.getOffset())?
 				  new Integer(1):
@@ -377,7 +377,7 @@ public final class Method extends Debug {
 
 		    if (left instanceof Pointer) {
 			// Both of them cannot be base pointers
-			Util.assert(!(right instanceof Pointer));
+			Util.ASSERT(!(right instanceof Pointer));
 			ptr = (Pointer)left;
 			offset = right;
 		    }
@@ -426,7 +426,7 @@ public final class Method extends Debug {
 	}
 
 	public void visit(NATIVECALL s) { 
-	    Util.assert(isAllocation(s));  // Only native call we know about
+	    Util.ASSERT(isAllocation(s));  // Only native call we know about
 
 	    // Can't resolve ptr type yet
 	    UndefinedPointer ptr=new UndefinedPointer(new UndefinedRef(ss), 0);
@@ -440,9 +440,9 @@ public final class Method extends Debug {
 	    if (DEBUG) db("Visiting: " + s);
 
 	    // FIXME: may want to allow other expressions than TEMPs
-	    Util.assert(s.getRetval().kind()==TreeKind.TEMP);
-	    Util.assert(s.getRetex().kind()==TreeKind.TEMP);
-	    Util.assert(s.getHandler().kind()==TreeKind.NAME);
+	    Util.ASSERT(s.getRetval().kind()==TreeKind.TEMP);
+	    Util.ASSERT(s.getRetex().kind()==TreeKind.TEMP);
+	    Util.ASSERT(s.getHandler().kind()==TreeKind.NAME);
 
 	    s.getFunc().accept(this);
 
@@ -490,7 +490,7 @@ public final class Method extends Debug {
 
 	public void visit(JUMP e) { 
 	    if (DEBUG) db("Visiting: " + e);
-	    Util.assert(e.getExp() instanceof NAME);
+	    Util.ASSERT(e.getExp() instanceof NAME);
 	    advance(0);
 	}
 	  

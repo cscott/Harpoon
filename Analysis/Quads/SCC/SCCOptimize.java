@@ -43,7 +43,7 @@ import java.util.Set;
  *  <code>CALL</code> non-executable.)
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.2 2002-02-25 20:59:34 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.3 2002-02-26 22:41:52 cananian Exp $
  */
 public final class SCCOptimize implements ExecMap {
     TypeMap  ti;
@@ -109,7 +109,7 @@ public final class SCCOptimize implements ExecMap {
 		    return;
 
 		// ok.  Replace with a series of CONSTs.
-		Util.assert(q.next().length==1 && q.prev().length==1);
+		Util.ASSERT(q.next().length==1 && q.prev().length==1);
 		Quad header = q.prev(0);
 		int which_succ = q.prevEdge(0).which_succ();
 		Quad successor = q.next(0);
@@ -131,7 +131,7 @@ public final class SCCOptimize implements ExecMap {
 	    public void visit(CONST q) { /* do nothing. */ }
 	    public void visit(METHOD q) {
 		// can't optimize if entire method is not executable.
-		Util.assert(execMap(q) && execMap(q.nextEdge(0)));
+		Util.ASSERT(execMap(q) && execMap(q.nextEdge(0)));
 		/* do nothing. */
 	    }
 	    public void visit(FOOTER q) {
@@ -204,7 +204,7 @@ public final class SCCOptimize implements ExecMap {
 		// if default edge isn't executable, remove last key to make
 		// new default edge.
 		if (!hasDefault) keylist.remove(keylist.size()-1);
-		Util.assert(keylist.size()+1 == edgelist.size());
+		Util.ASSERT(keylist.size()+1 == edgelist.size());
 		// make new keys and edge array.
 		int[] nkeys = new int[keylist.size()];
 		for (int i=0; i<nkeys.length; i++)
@@ -256,13 +256,13 @@ public final class SCCOptimize implements ExecMap {
 		int i; for (i=0; i < next.length; i++)
 		    if (execMap(next[i]))
 			break;
-		Util.assert(i!=next.length, q/*NO EDGES EXECUTABLE!*/);
+		Util.ASSERT(i!=next.length, q/*NO EDGES EXECUTABLE!*/);
 		if (i==next.length-1 || !execMap(next[i+1])) {
 		    for (int j=i+1; j<next.length; j++)
-			Util.assert(!execMap(next[j]));
+			Util.ASSERT(!execMap(next[j]));
 		    // only one edge is executable.
 		    int liveEdge = i;
-		    Util.assert(!(q instanceof CALL));
+		    Util.ASSERT(!(q instanceof CALL));
 
 		    // Grab the link information from the original CJMP/SWITCH.
 		    Quad header = q.prev(0);

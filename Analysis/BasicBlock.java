@@ -63,7 +63,7 @@ import java.util.Collection;
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BasicBlock.java,v 1.2 2002-02-25 20:56:05 cananian Exp $ */
+ * @version $Id: BasicBlock.java,v 1.3 2002-02-26 22:39:08 cananian Exp $ */
 public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
     
     static final boolean DEBUG = false;
@@ -193,7 +193,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	// FSK: this is dumb; why not just return an empty list in
 	// this case?  I suspect this is an attempt to fail-fast, but
 	// still... 
-	Util.assert(size > 0, "BasicBlock class breaks on empty BBs");
+	Util.ASSERT(size > 0, "BasicBlock class breaks on empty BBs");
 
 	return new java.util.AbstractSequentialList() {
 	    public int size() { return size; }
@@ -247,15 +247,15 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 
 		    // checks rep of `this' (for debugging)
 		    private void repOK(String s) {
-			Util.assert(0 <= ind, s+" (0 <= ind), ind:"+ind);
-			Util.assert(ind <= size, s+" (ind <= size), ind:"+ind+", size:"+size);
-			Util.assert( (ind==0)?next==first:true,
+			Util.ASSERT(0 <= ind, s+" (0 <= ind), ind:"+ind);
+			Util.ASSERT(ind <= size, s+" (ind <= size), ind:"+ind+", size:"+size);
+			Util.ASSERT( (ind==0)?next==first:true,
 				     s+" (ind==0 => next==first), next:"+next+", first:"+first);
 
-			Util.assert( (ind==(size-1))?next==last:true,
+			Util.ASSERT( (ind==(size-1))?next==last:true,
 				     s+" (ind==(size-1) => next==last), next:"+next+", last:"+last);
 
-			Util.assert( (ind==size)?next==last:true,
+			Util.ASSERT( (ind==size)?next==last:true,
 				     s+" (ind==size => next==last), next:"+next+", last:"+last);
 		    }
 
@@ -272,7 +272,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 			Object ret = next;
 			if (ind != size) {
 			    Collection succs = factory.grapher.succC(next);
-			    Util.assert(succs.size() == 1,
+			    Util.ASSERT(succs.size() == 1,
 					(true)?" wrong succs:":
 					next+" has wrong succs:" + succs
 					+" (ind:"+ind+", size:"+size+")" );
@@ -330,7 +330,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	element.  Meant to be used only during construction.
     */
     protected BasicBlock(HCodeElement h, Factory f) {
-	Util.assert(h!=null);
+	Util.ASSERT(h!=null);
 	first = h; 
 	last = null; // note that this MUST be updated by 'f'
 	pred_bb = new HashSet(); succ_bb = new HashSet();
@@ -450,7 +450,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	    bbs.addLast(start);
 	    iters.addLast(start.nextSet().iterator());
 	    while(!bbs.isEmpty()) {
-		Util.assert(bbs.size() == iters.size());
+		Util.ASSERT(bbs.size() == iters.size());
 		for (Iterator i=(Iterator)iters.removeLast();
 		     i.hasNext(); ) {
 		    BasicBlock bb2 = (BasicBlock)i.next();
@@ -484,7 +484,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	    bbs.addLast(start);
 	    iters.addLast(start.nextSet().iterator());
 	    while(!bbs.isEmpty()) {
-		Util.assert(bbs.size() == iters.size());
+		Util.ASSERT(bbs.size() == iters.size());
 		for (Iterator i=(Iterator)iters.removeLast();
 		     i.hasNext(); ) {
 		    BasicBlock bb2 = (BasicBlock)i.next();
@@ -605,7 +605,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 			foundEnd = true;
 			
 		    } else { // one successor
-			Util.assert(n == 1, "must have one successor");
+			Util.ASSERT(n == 1, "must have one successor");
 			HCodeElement next = grapher.succ(last)[0].to();
 			int m = grapher.predC(next).size();
 			if (m > 1) { // control flow join
@@ -636,7 +636,7 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 
 		final HCodeElement flast = last;
 		final BasicBlock fcurr = current;
-		Util.assert( grapher.succC(last).size() != 1 ||
+		Util.ASSERT( grapher.succC(last).size() != 1 ||
 			     grapher.predC(grapher.succ(last)[0].
 				      to()).size() > 1,
 			     "succC invariant broken");
@@ -707,19 +707,19 @@ public class BasicBlock implements BasicBlockInterf, java.io.Serializable {
 	    while(iter.hasNext()) {
 		HCodeElement h = (HCodeElement) iter.next();
 		if (curr == null) {
-		    Util.assert(h == block.first);
+		    Util.ASSERT(h == block.first);
 
 		    curr = h;
 		} else {
-		    Util.assert(grapher.succC(curr).size() == 1);
-		    Util.assert(grapher.succ(curr)[0].to() == h);
+		    Util.ASSERT(grapher.succC(curr).size() == 1);
+		    Util.ASSERT(grapher.succ(curr)[0].to() == h);
 
 		    curr = h;
 		}
 		sz--;
 	    }
-	    Util.assert(curr == block.last);
-	    Util.assert(sz == 0);
+	    Util.ASSERT(curr == block.last);
+	    Util.ASSERT(sz == 0);
 	}
 	public void dumpCFG() { dumpCFG(root); }
 	

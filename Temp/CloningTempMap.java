@@ -14,7 +14,7 @@ import java.util.Map;
  * creating new <code>Temp</code>s as necessary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloningTempMap.java,v 1.2 2002-02-25 21:07:05 cananian Exp $
+ * @version $Id: CloningTempMap.java,v 1.3 2002-02-26 22:46:56 cananian Exp $
  */
 public class CloningTempMap implements TempMap {
     private final Map h = new HashMap();
@@ -26,8 +26,8 @@ public class CloningTempMap implements TempMap {
      */
     public CloningTempMap(TempFactory old_tf, TempFactory new_tf) {
 	this.old_tf = old_tf; this.new_tf = new_tf;
-        Util.assert(old_tf != null, "old temp factory is null");
-        Util.assert(new_tf != null, "new temp factory is null");
+        Util.ASSERT(old_tf != null, "old temp factory is null");
+        Util.ASSERT(new_tf != null, "new temp factory is null");
     }
 
     /** Return a <code>Temp</code> from the <code>new_tf</code>
@@ -35,13 +35,13 @@ public class CloningTempMap implements TempMap {
      *  <code>Temp</code> <code>t</code> from the <code>old_tf</code>
      *  <code>TempFactory</code>, creating it if necessary. */
     public Temp tempMap(Temp t) {
-	Util.assert(t.tempFactory() == old_tf, "TempFactories should match");
+	Util.ASSERT(t.tempFactory() == old_tf, "TempFactories should match");
 	Temp r = (Temp) h.get(t);
 	if (r==null) {
 	    r = t.clone(new_tf);
 	    h.put(t, r);
 	}
-	Util.assert(r.tempFactory() == new_tf);
+	Util.ASSERT(r.tempFactory() == new_tf);
 	return r;
     }
 

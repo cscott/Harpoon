@@ -44,7 +44,7 @@ import harpoon.Util.Util;
  * It takes QuadsWithTry form code as input. 
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: CheckAdderWithTry.java,v 1.2 2002-02-25 20:59:46 cananian Exp $
+ * @version $Id: CheckAdderWithTry.java,v 1.3 2002-02-26 22:41:57 cananian Exp $
  */
 
 // Fix to be non-static...
@@ -64,7 +64,7 @@ class CheckAdderWithTry extends CheckAdder {
 		      NoHeapCheckRemoval nhcr, 
 		      HCodeFactory parent) {
 	super(cr, nhcr, parent);
-	Util.assert(parent.getCodeName().equals(QuadWithTry.codename),
+	Util.ASSERT(parent.getCodeName().equals(QuadWithTry.codename),
 		    "CheckAdderWithTry takes a QuadWithTry HCodeFactory not a " +
 		    parent.getCodeName() + " HCodeFactory.");
     }
@@ -78,7 +78,7 @@ class CheckAdderWithTry extends CheckAdder {
 	    .getDeclaringClass().getLinker();
 	return mutateHCode(input, new QuadVisitor() {
 		public void visit(ARRAYINIT q) {
-		    Util.assert(false, "ArrayInitRemover has not been run.");
+		    Util.ASSERT(false, "ArrayInitRemover has not been run.");
 		}
 
 		public void visit(ASET q) {

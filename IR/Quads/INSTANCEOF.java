@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * <code>INSTANCEOF</code> if the value cannot be proven non-null.)
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSTANCEOF.java,v 1.2 2002-02-25 21:05:12 cananian Exp $ 
+ * @version $Id: INSTANCEOF.java,v 1.3 2002-02-26 22:45:56 cananian Exp $ 
  */
 public class INSTANCEOF extends Quad {
     /** The <code>Temp</code> in which to store the result of the test. */
@@ -49,7 +49,7 @@ public class INSTANCEOF extends Quad {
 	this.src = src;
 	this.hclass = hclass;
 	// VERIFY legality of INSTANCEOF
-	Util.assert(dst!=null && src!=null && hclass!=null);
+	Util.ASSERT(dst!=null && src!=null && hclass!=null);
     }
     // ACCESSOR METHODS:
     /** Returns the <code>Temp</code> in which to store the result of the

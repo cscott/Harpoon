@@ -78,7 +78,7 @@ import harpoon.Util.Collections.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDXMain.java,v 1.2 2002-02-25 21:06:05 cananian Exp $
+ * @version $Id: EDXMain.java,v 1.3 2002-02-26 22:46:40 cananian Exp $
  */
 public class EDXMain extends harpoon.IR.Registration {
  
@@ -127,7 +127,7 @@ public class EDXMain extends harpoon.IR.Registration {
 	Stage1(Linker linker) {
 	    this.linker = linker; this.mo = mo;
 
-	    Util.assert(className!= null, "must pass a class to be compiled");
+	    Util.ASSERT(className!= null, "must pass a class to be compiled");
 
 	    HClass cls = linker.forName(className);
 	    HMethod hm[] = cls.getDeclaredMethods();
@@ -296,7 +296,7 @@ public class EDXMain extends harpoon.IR.Registration {
 	HMethod[] hm = hcl.getDeclaredMethods();
 	HMethod mainM = stage4.mconverted;
 
-	Util.assert(mainM != null, "Class " + className + 
+	Util.ASSERT(mainM != null, "Class " + className + 
 		    " has no main method");
 
 	if (classHierarchy == null) {
@@ -312,7 +312,7 @@ public class EDXMain extends harpoon.IR.Registration {
 	    // and our main method is a root, too...
 	    roots.add(mainM);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-	    Util.assert(classHierarchy != null, "How the hell...");
+	    Util.ASSERT(classHierarchy != null, "How the hell...");
 	}
 	callGraph = new CallGraphImpl(classHierarchy, hcf);
 	switch(BACKEND) {
@@ -597,7 +597,7 @@ public class EDXMain extends harpoon.IR.Registration {
 		public int hashCode() { return data.hashCode(); }
 	    });
 	
-	Util.assert(instr != null, "what the hell...");
+	Util.ASSERT(instr != null, "what the hell...");
 	// messageln("First data instruction " + instr);
 
 
@@ -687,7 +687,7 @@ public class EDXMain extends harpoon.IR.Registration {
 		break;
 	    case 'o':
 		ASSEM_DIR = new File(g.getOptarg());
-		Util.assert(ASSEM_DIR.isDirectory(), ""+ASSEM_DIR+" must be a directory");
+		Util.ASSERT(ASSEM_DIR.isDirectory(), ""+ASSEM_DIR+" must be a directory");
 		break;
 	    case 'b': {
                 String backendName = g.getOptarg().toLowerCase().intern();

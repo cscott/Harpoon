@@ -46,14 +46,14 @@ import java.io.PrintWriter;
 
 /**
  * @author  Bryan Fink <wingman@mit.edu>
- * @version $Id: QuantaChecker.java,v 1.2 2002-02-25 20:59:46 cananian Exp $
+ * @version $Id: QuantaChecker.java,v 1.3 2002-02-26 22:41:58 cananian Exp $
  */
 public class QuantaChecker extends MethodMutator
 {
     public QuantaChecker(HCodeFactory hcf)
     {
 	super(hcf);
-	Util.assert(hcf.getCodeName().equals(TreeCode.codename),
+	Util.ASSERT(hcf.getCodeName().equals(TreeCode.codename),
 		    "QuantaChecker only works on Tree form");
     }
     

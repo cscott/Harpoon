@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.2 2002-02-25 21:05:31 cananian Exp $
+ * @version $Id: INVOCATION.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL
@@ -41,13 +41,13 @@ public abstract class INVOCATION extends Stm {
     protected INVOCATION(TreeFactory tf, HCodeElement source,
 			 TEMP retval, Exp func, ExpList args, int addlArgs) {
 	super(tf, source, 1+ExpList.size(args)+(retval==null?0:1)+addlArgs); 
-	Util.assert(func!=null);
+	Util.ASSERT(func!=null);
 	this.isVoid = (retval==null);
 	this.kidsStart = (isVoid?0:1)+addlArgs;
 	this.argsLength = ExpList.size(args);
 	setRetval(retval); setFunc(func); setArgs(args);
-	Util.assert(tf==func.tf, "This and Func must have same tree factory");
-	Util.assert(retval==null || tf == retval.tf,
+	Util.ASSERT(tf==func.tf, "This and Func must have same tree factory");
+	Util.ASSERT(retval==null || tf == retval.tf,
 		    "This and Retval must have same tree factory");
     }
 
@@ -75,9 +75,9 @@ public abstract class INVOCATION extends Stm {
      */
     public void setRetval(TEMP retval) {
 	if (isVoid) {
-	    Util.assert(retval==null, "Can't make a void function non-void");
+	    Util.ASSERT(retval==null, "Can't make a void function non-void");
 	} else {
-	    Util.assert(retval!=null, "Can't make a non-void function void");
+	    Util.ASSERT(retval!=null, "Can't make a non-void function void");
 	    setChild(kidsStart-1, retval);
 	}
     }
@@ -85,7 +85,7 @@ public abstract class INVOCATION extends Stm {
     public void setFunc(Exp func) { setChild(kidsStart, func); }
     /** Sets the function argument list. */
     public void setArgs(ExpList args) {
-	Util.assert(argsLength==ExpList.size(args),
+	Util.ASSERT(argsLength==ExpList.size(args),
 		    "Can't change the number of arguments to the function");
 	int i=kidsStart+1;
 	for (ExpList ep = args; ep!=null; ep=ep.tail)

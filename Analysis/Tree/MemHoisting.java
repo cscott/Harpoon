@@ -39,7 +39,7 @@ import java.util.Set;
  * the transformation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemHoisting.java,v 1.2 2002-02-25 21:00:32 cananian Exp $
+ * @version $Id: MemHoisting.java,v 1.3 2002-02-26 22:42:47 cananian Exp $
  */
 public abstract class MemHoisting extends Simplification {
     // hide constructor
@@ -48,7 +48,7 @@ public abstract class MemHoisting extends Simplification {
      *  canonical tree.  Clones the tree before doing
      *  transformation in-place. */
     public static HCodeFactory codeFactory(final HCodeFactory parent) {
-	Util.assert(parent.getCodeName().equals(CanonicalTreeCode.codename));
+	Util.ASSERT(parent.getCodeName().equals(CanonicalTreeCode.codename));
 	return Canonicalize.codeFactory(new HCodeFactory() {
 	    public HCode convert(HMethod m) {
 		HCode hc = parent.convert(m);
@@ -115,7 +115,7 @@ public abstract class MemHoisting extends Simplification {
 		    if (e.getParent()!=null &&
 			e.getParent().kind() == TreeKind.MOVE) {
 			MOVE m = (MOVE) e.getParent();
-			Util.assert(m.getSrc().kind()==TreeKind.MEM &&
+			Util.ASSERT(m.getSrc().kind()==TreeKind.MEM &&
 				    m.getDst().kind()==TreeKind.MEM &&
 				    e == m.getSrc());
 		    }

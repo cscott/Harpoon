@@ -72,7 +72,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopAnalysis.java,v 1.2 2002-02-25 20:57:58 cananian Exp $
+ * @version $Id: LoopAnalysis.java,v 1.3 2002-02-26 22:40:40 cananian Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -123,7 +123,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
     
     Temp initialTemp(HCode hc, Temp t, Loops lp) {
 	Set loopelements=lp.loopIncElements();
-	Util.assert(lp.loopEntrances().size()==1,"Loop must have one entrance");
+	Util.ASSERT(lp.loopEntrances().size()==1,"Loop must have one entrance");
 	PHI q=(PHI)(lp.loopEntrances()).toArray()[0];
 
 	int j=0;
@@ -131,11 +131,11 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    if (q.dst(j)==t) break;
 	}
 	Temp[] uses=q.src(j);
-	Util.assert(uses.length==2);
+	Util.ASSERT(uses.length==2);
 	Temp initial=null;
 	for(int i=0;i<uses.length;i++) {
 	    HCodeElement[] sources=ud.defMap(hc,tm.tempMap(uses[i]));
-	    Util.assert(sources.length==1);
+	    Util.ASSERT(sources.length==1);
 	    if (!loopelements.contains(sources[0])) {
 		initial=uses[i];
 		break;
@@ -149,18 +149,18 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 
     Temp findIncrement(HCode hc, Temp t, Loops lp) {
 	Set loopelements=lp.loopIncElements();
-	Util.assert(lp.loopEntrances().size()==1,"Loop must have one entrance");
+	Util.ASSERT(lp.loopEntrances().size()==1,"Loop must have one entrance");
 	PHI oheader=(PHI)(lp.loopEntrances()).toArray()[0];
 	Quad q=addQuad(hc, oheader, t,loopelements);
 	HCodeElement []source=ud.defMap(hc,tm.tempMap(t));
-	Util.assert(source.length==1);
+	Util.ASSERT(source.length==1);
 	PHI qq=(PHI)source[0];
 	Temp[] uses=q.use();
 	Temp result=null;
 
 	for (int i=0;i<uses.length;i++) {
 	    HCodeElement []sources=ud.defMap(hc,tm.tempMap(uses[i]));
-	    Util.assert(sources.length==1);
+	    Util.ASSERT(sources.length==1);
 	    if (sources[0]!=qq) {
 		result=uses[i];
 		break;
@@ -178,18 +178,18 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    if (q.dst(j)==t) break;
 	}
 	Temp[] uses=q.src(j);
-	Util.assert(uses.length==2);
+	Util.ASSERT(uses.length==2);
 	Temp initial=null;
 	for(int i=0;i<uses.length;i++) {
 	    HCodeElement[] sources=ud.defMap(hc,tm.tempMap(uses[i]));
-	    Util.assert(sources.length==1);
+	    Util.ASSERT(sources.length==1);
 	    if (loopelements.contains(sources[0])) {
 		initial=uses[i];
 		break;
 	    }
 	}
 	HCodeElement[] sources=ud.defMap(hc,tm.tempMap(initial));
-	Util.assert(sources.length==1);
+	Util.ASSERT(sources.length==1);
 	return (Quad)sources[0];
     }
 
@@ -219,7 +219,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	}
 
 	/* throw assertion if loop has no entrance (root loop) */
-        Util.assert(!lp.loopEntrances().isEmpty());
+        Util.ASSERT(!lp.loopEntrances().isEmpty());
 
 
 	//Find loop invariants
@@ -371,7 +371,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	/**<code>lookat</code> examines a test condition.*/
 	boolean lookat(OPER q) {
 	    Temp[] operands=q.operands();
-	    Util.assert (operands.length==2);
+	    Util.ASSERT (operands.length==2);
 	    boolean good=true;
 	    int flag=-1;
 	    POPER newpoper=null;
@@ -390,7 +390,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 		}
 		else {
 		    HCodeElement[] sources=ud.defMap(hc,ssitossamap.tempMap(operands[i]));
-		    Util.assert(sources.length==1);
+		    Util.ASSERT(sources.length==1);
                     /* good only if defined in invariant or outside the loop */
 		    if (!loopinvars.contains(sources[0]) &&
                         loopIncElements.contains(sources[0]))
@@ -407,7 +407,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 
     public ForLoopInfo forloop(HCode hc, Loops lp) {
 	analyze(hc);
-	Util.assert(lp.loopEntrances().size()==1,"Loop must have one entrance");	
+	Util.ASSERT(lp.loopEntrances().size()==1,"Loop must have one entrance");	
 	Quad header=(Quad)(lp.loopEntrances()).toArray()[0];;
 	Set testsopers=doLooptest(hc,lp);
 	ForLoopVisitor flv=new ForLoopVisitor(testsopers, hc, ud, lp, tm);
@@ -629,7 +629,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    //is this a test condition?
 	    Temp test=q.test();
 	    Quad[] defs=(Quad[])ud.defMap(hc, test);
-	    Util.assert(defs.length==1, "We work only with SSA/SSI");
+	    Util.ASSERT(defs.length==1, "We work only with SSA/SSI");
 	    Temp binvar=null;
 	    if (testsopers.contains(defs[0])) {
 		//Need to see if it:

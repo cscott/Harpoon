@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CJUMP.java,v 1.2 2002-02-25 21:05:30 cananian Exp $
+ * @version $Id: CJUMP.java,v 1.3 2002-02-26 22:46:10 cananian Exp $
  */
 public class CJUMP extends Stm {
     /** The label to jump to if <code>test</code> is <code>true</code>. */
@@ -26,9 +26,9 @@ public class CJUMP extends Stm {
     public CJUMP(TreeFactory tf, HCodeElement source,
 		 Exp test, Label iftrue, Label iffalse) {
 	super(tf, source, 1);
-	Util.assert(test!=null && iftrue!=null && iffalse!=null);
+	Util.ASSERT(test!=null && iftrue!=null && iffalse!=null);
 	this.setTest(test); this.iftrue = iftrue; this.iffalse = iffalse;
-	Util.assert(tf == test.tf, "This and Test must have same tree factory");
+	Util.ASSERT(tf == test.tf, "This and Test must have same tree factory");
     }
 
     /** Returns the test condition for this <code>CJUMP</code>.
@@ -42,8 +42,8 @@ public class CJUMP extends Stm {
     public int kind() { return TreeKind.CJUMP; }
 
     public Stm build(TreeFactory tf, ExpList kids) {
-	Util.assert(kids!=null && kids.tail==null);
-	Util.assert(tf == kids.head.tf);
+	Util.ASSERT(kids!=null && kids.tail==null);
+	Util.ASSERT(tf == kids.head.tf);
 	return new CJUMP(tf, this, kids.head, iftrue, iffalse);
     }
     /** Accept a visitor */

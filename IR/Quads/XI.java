@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * function.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: XI.java,v 1.2 2002-02-25 21:05:13 cananian Exp $
+ * @version $Id: XI.java,v 1.3 2002-02-26 22:45:57 cananian Exp $
  */
 class XI extends PHI {
     protected Temp invariantDst[];
@@ -46,10 +46,10 @@ class XI extends PHI {
 	this.backedgeDst  = backedgeDst;
 	this.backedgeSrc  = backedgeSrc;
 	// VERIFY legality of XI function.
-	Util.assert(invariantDst!=null && invariantSrc!=null);
-	Util.assert(backedgeDst !=null && backedgeSrc !=null);
-	Util.assert(invariantDst.length == invariantSrc.length);
-	Util.assert(backedgeDst.length  == backedgeSrc.length);
+	Util.ASSERT(invariantDst!=null && invariantSrc!=null);
+	Util.ASSERT(backedgeDst !=null && backedgeSrc !=null);
+	Util.ASSERT(invariantDst.length == invariantSrc.length);
+	Util.ASSERT(backedgeDst.length  == backedgeSrc.length);
     }
     public Temp[] invariantDst()
     { return (Temp[]) Util.safeCopy(Temp.arrayFactory, invariantDst); }
@@ -96,8 +96,8 @@ class XI extends PHI {
 		      map(defMap,/*phi*/dst),   map(useMap,/*phi*/src),
 		      arity());
     }
-    void renameUses(TempMap tm) { Util.assert(false); }
-    void renameDefs(TempMap tm) { Util.assert(false); }
+    void renameUses(TempMap tm) { Util.ASSERT(false); }
+    void renameDefs(TempMap tm) { Util.ASSERT(false); }
 
     public void accept(QuadVisitor v) { v.visit(this); }
 

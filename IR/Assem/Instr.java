@@ -43,7 +43,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.2 2002-02-25 21:04:07 cananian Exp $ */
+ * @version $Id: Instr.java,v 1.3 2002-02-26 22:45:18 cananian Exp $ */
 public class Instr implements HCodeElement, UseDefable, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -69,7 +69,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	    associated with any group.
     */
     public void setGroup(InstrGroup seq) {
-	Util.assert(groupList == null || groupList == seq,
+	Util.ASSERT(groupList == null || groupList == seq,
 		    " current group: "+groupList+
 		    " setGroup( "+seq+" )"
 		    );
@@ -253,11 +253,11 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
     public Instr(InstrFactory inf, HCodeElement source, 
 		 String assem, Temp[] dst, Temp[] src,
 		 boolean canFallThrough, List targets) {
-	Util.assert(!assem.trim().equals("FSK-LD `d0, `s0 `d0, `s0"));
+	Util.ASSERT(!assem.trim().equals("FSK-LD `d0, `s0 `d0, `s0"));
 
-        Util.assert(inf != null);
-        Util.assert(assem != null);
-	// Util.assert(dst!=null && src!=null, "DST and SRC should not = null");
+        Util.ASSERT(inf != null);
+        Util.ASSERT(assem != null);
+	// Util.ASSERT(dst!=null && src!=null, "DST and SRC should not = null");
 	if (src == null) src = new Temp[0];
 	if (dst == null) dst = new Temp[0];
 	
@@ -286,7 +286,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
     private void checkForNull(Temp[] ts) {
 	for(int i=0; i<ts.length; i++) {
-	    Util.assert(ts[i] != null, 
+	    Util.ASSERT(ts[i] != null, 
 			"Temp index "+i+" is null in "+ this);
 	}
     }
@@ -343,14 +343,14 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
     */
     public static void replaceInstrList(final Instr oldi, final List newis) {
 	// System.out.println("("+oldi.prev+") "+oldi+" ("+oldi.next+")" + " -> " + newis); 
-	Util.assert(oldi != null && newis != null, "Null Arguments are bad");
-	Util.assert(oldi.canFallThrough &&
+	Util.ASSERT(oldi != null && newis != null, "Null Arguments are bad");
+	Util.ASSERT(oldi.canFallThrough &&
 		    oldi.getTargets().isEmpty(), 
 		    "oldi must be a nonbranching instruction.");
 
 	// There's something wrong, either with my code or with the
 	// jikes compiler, but it does CRAZY shit if i leave this in...
-	//Util.assert(isLinear(newis), "newis must be a basic block: "+pprint(newis));
+	//Util.ASSERT(isLinear(newis), "newis must be a basic block: "+pprint(newis));
 	
 	Instr last = oldi.prev;
 	Iterator iter = newis.iterator();
@@ -393,15 +393,15 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	while(iter.hasNext()) {
 	    Instr iterInstr = (Instr) iter.next();
 	    
-	    Util.assert(iterInstr == i, "list "+instrs+" is nonlinear");
+	    Util.ASSERT(iterInstr == i, "list "+instrs+" is nonlinear");
 
 	    int size = i.succC().size();
-	    Util.assert(size >= 0, "size should always be >= 0");
+	    Util.ASSERT(size >= 0, "size should always be >= 0");
 	    if (size == 0) {
 		// reached the end (I hope)
-		Util.assert(i.next == null, "last should have next == null");
-		Util.assert(i.targets == null, "last should have targets == null");
-		Util.assert(!iter.hasNext(), 
+		Util.ASSERT(i.next == null, "last should have next == null");
+		Util.ASSERT(i.targets == null, "last should have targets == null");
+		Util.ASSERT(!iter.hasNext(), 
 			    new Object() {
 		    public String toString() {
 			return ("last should have nothing left in iter "+
@@ -414,7 +414,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	    if (i.next != n ||
 		size > 1) {
 		linear = false;
-		//Util.assert(false,"Instr " + i + " is nonlinear");
+		//Util.ASSERT(false,"Instr " + i + " is nonlinear");
 		break;
 	    }
 	}
@@ -424,7 +424,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
     
     /** Not implemented yet. */
     public static void insertInstrsAt(CFGEdge edge, List instrs) {
-	Util.assert(false);
+	Util.ASSERT(false);
     }
 
     /** Inserts <code>this</code> at <code>edge</code>.  The purpose 
@@ -467,30 +467,30 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
         @see Instr#remove
     */
     public void insertAt(CFGEdge edge) {
-	Util.assert(this.next == null &&
+	Util.ASSERT(this.next == null &&
 		    this.prev == null, 
 		    "next and prev fields should be null");
-	Util.assert(this.getTargets().isEmpty() &&
+	Util.ASSERT(this.getTargets().isEmpty() &&
 		    this.canFallThrough,
 		    "this should be nonbranching");
-	Util.assert(edge.to() != null ||
+	Util.ASSERT(edge.to() != null ||
 		    edge.from() != null, 
 		    "edge shouldn't have null for both to and from");
 
 	Instr from = null, to = null;
 	if (edge.from() != null) {
 	    from = (Instr) edge.from();
-	    Util.assert(from.targets==null || 
+	    Util.ASSERT(from.targets==null || 
 			from.hasModifiableTargets(), 
 			"from: "+from+", if it branches, should have mutable target list");
-	    Util.assert( edge.to() == null || 
+	    Util.ASSERT( edge.to() == null || 
 			 from.edgeC().contains(edge),
 			 "edge: "+edge+" should be in <from>.edges(): " + 
 			 Util.print(from.edgeC()));
 	}
 	if (edge.to() != null) {
 	    to = (Instr) edge.to();
-	    Util.assert( edge.from() == null || 
+	    Util.ASSERT( edge.from() == null || 
 			 to.edgeC().contains(edge),
 			 "edge should be in <to>.edges()");
 	}
@@ -504,16 +504,16 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	//          newBranch -> edge.to()
 	if (from != null &&
 	    from.next != edge.to()) {
-	    Util.assert(this.inf != null, "InstrFactory should never be null");
+	    Util.ASSERT(this.inf != null, "InstrFactory should never be null");
 	    Instr last = this.inf.getTail();
-	    Util.assert(last != null, "cachedTail should not be null");
-	    Util.assert(last.next == null, "last Instr: "+last+" should really be LAST, "+
+	    Util.ASSERT(last != null, "cachedTail should not be null");
+	    Util.ASSERT(last.next == null, "last Instr: "+last+" should really be LAST, "+
 			"but it has next: " + last.next);
 	    
 	    // Oh shit.  How should we design a way to insert
 	    // arbitrary code with a method in the *ARCHITECTURE
 	    // INDEPENDANT* Instr class? 
-	    Util.assert(false);
+	    Util.ASSERT(false);
 	} else { // edge.from() falls through to edge.to() 
 	    layout(from, to);
 	}
@@ -541,9 +541,9 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	@see Instr#layout
     */    
     public void remove() {
-	Util.assert( ! this.hasMultiplePredecessors());
+	Util.ASSERT( ! this.hasMultiplePredecessors());
 
-	Util.assert(((harpoon.Backend.Generic.Code)
+	Util.ASSERT(((harpoon.Backend.Generic.Code)
 		     inf.getParent()).getRootElement() != this,
 		    "Do not remove root element.");
 
@@ -551,8 +551,8 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
 	for(Iterator groups=getGroups().iterator(); groups.hasNext();){
 	    InstrGroup group = (InstrGroup) groups.next();
-	    Util.assert( group.entry != this, "Can't handle group component removes yet (entry)");
-	    Util.assert( group.exit != this,  "Can't handle group component removes yet (exit)");
+	    Util.ASSERT( group.entry != this, "Can't handle group component removes yet (entry)");
+	    Util.ASSERT( group.exit != this,  "Can't handle group component removes yet (exit)");
 	}
 
 
@@ -603,7 +603,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	     Instruction stream.
     */
     public void layout(Instr from, Instr to) { 
-	Util.assert(this.next == null &&
+	Util.ASSERT(this.next == null &&
 		    this.prev == null, 
 		    "next and prev fields should be null");
 	
@@ -611,7 +611,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
 	if (to != null &&
 	    from != null) {
-	    Util.assert(to.prev == from &&
+	    Util.ASSERT(to.prev == from &&
 			from.next == to,
 			"to should follow from in the instruction layout "+
 			"if they already exist");
@@ -655,8 +655,8 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
     /* Replaces <code>inOld</code> with <code>inNew</code> in the
      * instruction layout. */
     public static void replace(Instr inOld, Instr inNew) {
-	Util.assert(inNew.next==null && inNew.prev==null, "newI has a spot");
-	Util.assert(inOld.next!=null || inOld.prev!=null, "oldI has no loc");
+	Util.ASSERT(inNew.next==null && inNew.prev==null, "newI has a spot");
+	Util.ASSERT(inOld.next!=null || inOld.prev!=null, "oldI has no loc");
 
 	if (PRINT_REPLACES) System.out.println("replacing Instr:"+inOld+" with Instr:"+inNew);
 
@@ -852,7 +852,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	layout. 
     */
     public Collection predC() {
-	Util.assert(!this.hasMultiplePredecessors(),
+	Util.ASSERT(!this.hasMultiplePredecessors(),
 		    "should not call Instr.predC() if instr"+
 		    "has multiple predecessors...override method");
 	return new AbstractCollection(){

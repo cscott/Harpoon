@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * and compilation of RTJ extensions.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Stats.java,v 1.2 2002-02-25 20:59:47 cananian Exp $
+ * @version $Id: Stats.java,v 1.3 2002-02-26 22:41:58 cananian Exp $
  */
 
 class Stats {
@@ -112,9 +112,9 @@ class Stats {
     /** Prints out statistics for addition of RTJ extensions. */
 
     static void print() {
-	Util.assert(!analysisTimer.running(), 
+	Util.ASSERT(!analysisTimer.running(), 
 		    "AnalysisTimer is still running!");
-	Util.assert(!realtimeTimer.running(),
+	Util.ASSERT(!realtimeTimer.running(),
 		    "RealtimeTimer is still running!");
 	System.out.println("-----------------------------------" +
 			   "------------------");

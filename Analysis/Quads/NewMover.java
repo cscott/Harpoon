@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>NewMover</code> works best on <code>QuadWithTry</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NewMover.java,v 1.2 2002-02-25 20:59:23 cananian Exp $
+ * @version $Id: NewMover.java,v 1.3 2002-02-26 22:41:42 cananian Exp $
  */
 public class NewMover extends MethodMutator {
     /** If true, then the NewMover will attempt to move NEWs across SIGMAs.
@@ -86,7 +86,7 @@ public class NewMover extends MethodMutator {
 		mv.state = (i<stopper.nextLength()-1) ? new State(s) : s;
 		traverseBlock(mv, stopper.nextEdge(i));
 	    }
-	} else Util.assert(stopper instanceof PHI);
+	} else Util.ASSERT(stopper instanceof PHI);
     }
     static class State {
 	/** Set of NEWs we are moving, maintained as a map from dst->NEW. */
@@ -119,21 +119,21 @@ public class NewMover extends MethodMutator {
 	    // if this quad uses any NEWs which are in 'moving',
 	    // (or any temps which are in aliases.values())
 	    // drop them before here. (MOVEs to aliases follow NEWs)
-	    Util.assert(q.prevLength()==1);
+	    Util.ASSERT(q.prevLength()==1);
 	    Edge e = q.prevEdge(0);
 	    for (Iterator it=q.useC().iterator(); it.hasNext(); ) {
 		Temp t = (Temp) it.next();
 		if (!state.aliases.values().contains(t)) continue; //boring.
 		// unmap alias to canonical temp (defined by NEW)
 		Temp src = (Temp) state.aliases.invert().get(t);
-		Util.assert(state.aliases.invert().getValues(t).size()==1);
+		Util.ASSERT(state.aliases.invert().getValues(t).size()==1);
 		// dump it!
 		e = dumpOne(e, src);
 		state.moving.remove(src);
 		state.aliases.remove(src);
 	    }
 	    // done.
-	    Util.assert(q.nextLength()==1);
+	    Util.ASSERT(q.nextLength()==1);
 	    from = q.nextEdge(0);
 	}
 	public void visit(NEW q) {
@@ -158,12 +158,12 @@ public class NewMover extends MethodMutator {
 	    } else visit((Quad) q); // fallback to boring.
 	}
 	Edge dumpOne(Edge e, Temp t) {
-	    Util.assert(state.moving.containsKey(t));
+	    Util.ASSERT(state.moving.containsKey(t));
 	    // first dump the NEW
 	    NEW qN = (NEW) state.moving.get(t);
 	    e = addAt(e, qN);
 	    // then dump all associated MOVEs.
-	    Temp src = qN.dst(); Util.assert(t.equals(src));
+	    Temp src = qN.dst(); Util.ASSERT(t.equals(src));
 	    for (Iterator it=state.aliases.getValues(src).iterator();
 		 it.hasNext(); ) {
 		Temp dst = (Temp) it.next();
@@ -202,7 +202,7 @@ public class NewMover extends MethodMutator {
 		    if (!state.aliases.values().contains(t)) continue;//boring.
 		    // unmap alias to canonical temp (defined by NEW)
 		    Temp src = (Temp) state.aliases.invert().get(t);
-		    Util.assert(state.aliases.invert().getValues(t).size()==1);
+		    Util.ASSERT(state.aliases.invert().getValues(t).size()==1);
 		    // dump it!
 		    e = dumpOne(e, src);
 		    state.moving.remove(src);
