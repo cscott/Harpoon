@@ -54,7 +54,7 @@ import harpoon.Analysis.MetaMethods.SmartCallGraph;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.16 2000-03-23 06:38:12 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.17 2000-03-23 07:10:26 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -66,6 +66,11 @@ public abstract class PAMain {
     private static boolean SHOW_CH = false;
     // stop after printing the class hierarchy debug info 
     private static boolean SHOW_CH_ONLY = false;
+
+    // show the call graph
+    private static boolean SHOW_CG = false;
+    // show the split relation HMethod -> MetaMethods
+    private static boolean SHOW_SPLIT = false;
 
     private static String[] examples = {
 	"java harpoon.Main.PAMain harpoon.Test.PA.Test1.complex multiplyAdd",
@@ -82,11 +87,13 @@ public abstract class PAMain {
 	"-d, --dumb     uses the simplest CallGraph (default)",
 	"-c, --showch   shows debug info about ClassHierrachy",
 	"-o, --onlych   shows debug info about ClassHierarchy and stop",
+	"--showcg       shows the (meta) call graph",
+	"--showsplit    shows the split relation",
 	"--ccs=depth    activate call context sensitivity with a maximum",
 	"              call chain depth of depth",
 	"--ts           activates full thread sensitivity",
 	"--wts          activates weak thread sensitivity",
-	"--ls           activates loop sensitivity",
+	"--ls           activates loop sensitivity"
     };
 
     static PointerAnalysis pa = null;
@@ -247,15 +254,16 @@ public abstract class PAMain {
 	split_rel = mcg.getSplitRelation();
 	tstop  = System.currentTimeMillis();
 	System.out.println((tstop - tstart) + "ms");
-	    
-	//System.out.println("MetaCallGraph:");
-	//mcg.print(new java.io.PrintWriter(System.out, true), true);
 
-	//System.out.println("   ");
+	if(SHOW_CG){
+	    System.out.println("MetaCallGraph:");
+	    mcg.print(new java.io.PrintWriter(System.out, true), true);
+	}
 
-	//System.out.println("Split relation:");
-	//Debug.show_split(mcg.getSplitRelation());
-	//System.exit(1);
+	if(SHOW_SPLIT){
+	    System.out.println("Split relation:");
+	    Debug.show_split(mcg.getSplitRelation());
+	}
 
 	pa = new PointerAnalysis(mcg, mac, bbconv);
 
@@ -353,7 +361,7 @@ public abstract class PAMain {
     private static int get_options(String[] argv){
 	int c, c2;
 	String arg;
-	LongOpt[] longopts = new LongOpt[8];
+	LongOpt[] longopts = new LongOpt[10];
 	longopts[0] = new LongOpt("meta", LongOpt.NO_ARGUMENT, null, 'm');
 	longopts[1] = new LongOpt("smartcg", LongOpt.NO_ARGUMENT, null, 's');
 	longopts[2] = new LongOpt("showch", LongOpt.NO_ARGUMENT, null, 'c');
@@ -362,6 +370,8 @@ public abstract class PAMain {
 	longopts[5] = new LongOpt("ts", LongOpt.NO_ARGUMENT, null, 6);
 	longopts[6] = new LongOpt("wts", LongOpt.NO_ARGUMENT, null, 7);
 	longopts[7] = new LongOpt("ls", LongOpt.NO_ARGUMENT, null, 8);
+	longopts[8] = new LongOpt("showcg", LongOpt.NO_ARGUMENT, null, 9);
+	longopts[9] = new LongOpt("showsplit", LongOpt.NO_ARGUMENT, null, 10);
 
 
 	Getopt g = new Getopt("PAMain", argv, "msco", longopts);
@@ -398,6 +408,12 @@ public abstract class PAMain {
 		break;
 	    case 8:
 		PointerAnalysis.LOOP_SENSITIVE = true;
+		break;
+	    case 9:
+		SHOW_CG = true;
+		break;
+	    case 10:
+		SHOW_SPLIT = true;
 		break;
 	    }
 
