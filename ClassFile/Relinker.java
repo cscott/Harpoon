@@ -4,13 +4,16 @@
 package harpoon.ClassFile;
 
 import harpoon.Util.Util;
+
+import java.util.HashMap;
+import java.util.Map;
 /**
  * A <code>Relinker</code> object is a <code>Linker</code> where one
  * can globally replace references to a certain class with references
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.2.2 2000-01-11 12:33:45 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.2.3 2000-01-11 15:31:41 cananian Exp $
  */
 public class Relinker extends Linker {
     protected final Linker linker;
@@ -20,7 +23,7 @@ public class Relinker extends Linker {
 	this.linker = linker;
     }
     protected HClass forDescriptor0(String descriptor) {
-	return linker.forDescriptor(descriptor);
+	return new HClassProxy(this, linker.forDescriptor(descriptor));
     }
     
     /** Creates a mutable class with the given name which is based on
@@ -54,13 +57,92 @@ public class Relinker extends Linker {
      *  by <code>HClass.hasBeenModified()</code> will not reflect changes
      *  due to the global replacement of <code>oldClass</code> with
      *  <code>newClass</code> done by this <code>relink()</code>.</p>
-     *  @exception RelinkError if there are outstanding references to
-     *             fields or methods of <code>oldClass</code> which
-     *             do not exist in <code>newClass</code>.
      */
     public void relink(HClass oldClass, HClass newClass) {
 	Util.assert(oldClass.getLinker()==this);
 	Util.assert(newClass.getLinker()==this);
-	/* FIXME: not implemented. */
+	// we're going to leave the old mapping in, so that classes
+	// loaded in the future still get the new class.  uncomment
+	// out the next line if we decide to delete the old descriptor
+	// mapping when we relink.
+	//descCache.remove(oldClass.getDescriptor());
+	((HClassProxy)oldClass).relink(newClass);
+	descCache.put(oldClass.getDescriptor(), oldClass);
+    }
+
+    // WRAP/UNWRAP CODE
+    Map memberMap = new HashMap();
+
+    HClass wrap(HClass hc) {
+	return forDescriptor(hc.getDescriptor());
+    }
+    HClass unwrap(HClass hc) {
+	if (hc==null || hc.isPrimitive()) return hc;
+	return ((HClassProxy)hc).proxy;
+    }
+    HField wrap(HField hf) {
+	HField result = (HFieldProxy) memberMap.get(hf);
+	if (result==null) {
+	    result = new HFieldProxy(this, hf);
+	    memberMap.put(hf, result);
+	}
+	return result;
+    }
+    HMethod wrap(HMethod hm) {
+	if (hm instanceof HInitializer) return wrap((HInitializer)hm);
+	if (hm instanceof HConstructor) return wrap((HConstructor)hm);
+	HMethod result = (HMethodProxy) memberMap.get(hm);
+	if (result==null) {
+	    result = new HMethodProxy(this, hm);
+	    memberMap.put(hm, result);
+	}
+	return result;
+    }
+    HConstructor wrap(HConstructor hc) {
+	HConstructor result = (HConstructorProxy) memberMap.get(hc);
+	if (result==null) {
+	    result = new HConstructorProxy(this, hc);
+	    memberMap.put(hc, result);
+	}
+	return result;
+    }
+    HInitializer wrap(HInitializer hi) {
+	HInitializer result = (HInitializerProxy) memberMap.get(hi);
+	if (result==null) {
+	    result = new HInitializerProxy(this, hi);
+	    memberMap.put(hi, result);
+	}
+	return result;
+    }    
+    // array wrap/unwrap
+    HClass[] wrap(HClass hc[]) {
+	HClass[] result = new HClass[hc.length];
+	for (int i=0; i<result.length; i++)
+	    result[i] = wrap(hc[i]);
+	return result;
+    }
+    HClass[] unwrap(HClass[] hc) {
+	HClass[] result = new HClass[hc.length];
+	for (int i=0; i<result.length; i++)
+	    result[i] = unwrap(hc[i]);
+	return result;
+    }
+    HField[] wrap(HField hf[]) {
+	HField[] result = new HField[hf.length];
+	for (int i=0; i<result.length; i++)
+	    result[i] = wrap(hf[i]);
+	return result;
+    }
+    HMethod[] wrap(HMethod hm[]) {
+	HMethod[] result = new HMethod[hm.length];
+	for (int i=0; i<result.length; i++)
+	    result[i] = wrap(hm[i]);
+	return result;
+    }
+    HConstructor[] wrap(HConstructor hc[]) {
+	HConstructor[] result = new HConstructor[hc.length];
+	for (int i=0; i<result.length; i++)
+	    result[i] = wrap(hc[i]);
+	return result;
     }
 }
