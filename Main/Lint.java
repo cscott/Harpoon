@@ -32,23 +32,49 @@ import java.util.List;
  * flagged as possibly incorrect.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Lint.java,v 1.1.2.3 1999-09-13 00:30:15 cananian Exp $
+ * @version $Id: Lint.java,v 1.1.2.4 1999-09-16 20:06:32 cananian Exp $
  */
 public abstract class Lint extends harpoon.IR.Registration {
+    public static void usage(String errmsg) {
+	System.err.println(errmsg);
+	System.err.println("Usage: java "+Lint.class.getName()+" "+
+			   "{-use sourcepath} {-e} {-v} {-l} "+
+			   "[packages] ...");
+	System.err.println("     -e\tShow possibly-incorrect object comparisons using ==");
+	System.err.println("     -v\tShow possibly-incorrect QuadVisitor.visit(CALL) methods");
+	System.err.println("     -l\tShow uses of (deprecated) Label.toString()");
+	System.exit(1);
+    }
     public static void main(String[] args) {
+	boolean check_visit=false,check_labels=false,check_equals=false;
 	// Command-line should have list of packages, & opt. sourcepath
-	int s=0;
-	if (args.length>s && args[s].equals("-use")) { s++;
-	    if (args.length>s) SourceLineReader.sourcepath=args[s++];
+	int s;
+	for (s=0; args.length>s && args[s].charAt(0)=='-'; s++) {
+	    if (args[s].startsWith("-use") && args.length>s+1)
+	        SourceLineReader.sourcepath=args[++s];
+	    else if (args[s].startsWith("-v"))
+		check_visit=true;
+	    else if (args[s].startsWith("-l"))
+		check_labels=true;
+	    else if (args[s].startsWith("-e"))
+		check_equals=true;
+	    else
+		usage("Unrecognized option: "+args[s]);
 	}
-	if (!(args.length>s)) {
-	    System.err.println("Usage: java "+Lint.class.getName()+" "+
-			       "{-use sourcepath} [package] {packages} ...");
-	    System.exit(1);
-	}
-	HCodeFactory hcf = harpoon.IR.Quads.QuadSSI.codeFactory();
-	hcf = new CheckLabels(hcf); // check uses of Label.toString()
-	hcf = new CheckEquals(hcf); // check usage of == for objects.
+	if (!(args.length>s))
+	    usage("No packages specified.");
+
+	HCodeFactory hcf = harpoon.IR.Bytecode.Code.codeFactory();
+	// rule-checkers using any IR at all.
+	if (check_visit) // check implementations of visit(CALL)
+	    hcf = new CheckVisitCALL(hcf);
+	// rule-checkers using quad-no-ssa
+	if (check_labels) // check uses of Label.toString()
+	    hcf = new CheckLabels(hcf);
+	// rule-checkers using quad-ssi
+	if (check_equals) // check usage of == for objects.
+	    hcf = new CheckEquals(hcf);
+
 	for (int i=s; i<args.length; i++) {
 	    System.err.println("CHECKING PACKAGE "+args[i]);
 	    for (Iterator it=Loader.listClasses(args[i]); it.hasNext(); ) {
@@ -108,10 +134,38 @@ public abstract class Lint extends harpoon.IR.Registration {
 
     /////////// RULE-CHECKING CODE FACTORIES:
 
+    /** Find all methods overriding QuadVisitor.visit(CALL q). */
+    static class CheckVisitCALL implements HCodeFactory {
+	final HCodeFactory hcf;
+	CheckVisitCALL(HCodeFactory hcf) { this.hcf = hcf; }
+	public void clear(HMethod hm) { hcf.clear(hm); }
+	public String getCodeName() { return hcf.getCodeName(); }
+	public HCode convert(HMethod hm) {
+	    HCode c = hcf.convert(hm);
+	    if (c==null) return c;
+	    if (hm.getDeclaringClass().isInstanceOf(HCqv) &&
+		hm.getName().equals(HMvC.getName()) &&
+		hm.getDescriptor().equals(HMvC.getDescriptor()))
+		Lint.printError("Possibly incorrect implementation of "+
+				"QuadVisitor.visit(CALL q)",
+				hm, c.getRootElement());
+	    return c;
+	}
+	private static final HClass HCqv =
+	    HClass.forName("harpoon.IR.Quads.QuadVisitor");
+        private static final HMethod HMvC =
+	    HCqv.getMethod("visit", new HClass[]
+			   { HClass.forName("harpoon.IR.Quads.CALL") } );
+    }
+
     /** Find all places where Label.toString() is called. */
     static class CheckLabels implements HCodeFactory {
 	final HCodeFactory hcf;
-	CheckLabels(HCodeFactory hcf) { this.hcf = hcf; }
+	CheckLabels(HCodeFactory hcf) {
+	    if (!hcf.getCodeName().equals(harpoon.IR.Quads.QuadNoSSA.codename))
+		hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	    this.hcf = hcf;
+	}
 	public void clear(HMethod hm) { hcf.clear(hm); }
 	public String getCodeName() { return hcf.getCodeName(); }
 	public HCode convert(HMethod hm) {
@@ -134,7 +188,11 @@ public abstract class Lint extends harpoon.IR.Registration {
      *  where we're not comparing something against null. */
     static class CheckEquals implements HCodeFactory {
 	final HCodeFactory hcf;
-	CheckEquals(HCodeFactory hcf) { this.hcf = hcf; }
+	CheckEquals(HCodeFactory hcf) {
+	    if (!hcf.getCodeName().equals(harpoon.IR.Quads.QuadSSI.codename))
+		hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
+	    this.hcf = hcf;
+	}
 	public void clear(HMethod hm) { hcf.clear(hm); }
 	public String getCodeName() { return hcf.getCodeName(); }
 	public HCode convert(HMethod hm) {
