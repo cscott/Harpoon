@@ -6,7 +6,7 @@ import java.net.*; // to be used.
  * @author David W. Baker 
  * @version 1.1 
  */ 
-public class QuoteClient { 
+public class QuoteClient extends Thread { 
     // The Stock Quote server listens at this port. 
     private static final int SERVER_PORT = 1701; 
     private String serverName; 
@@ -25,26 +25,47 @@ public class QuoteClient {
     public static void main(String[] args) { 
 	if (args.length < 2) { 
 	    System.out.println( 
-			       "Usage: QuoteClient <server> <stock ids>"); 
+			       "Usage: QuoteClient <server> <number of clients> <number of cycles> <stock ids>"); 
 	    System.exit(1); 
-	} 
-	QuoteClient client = new QuoteClient(args); 
+	}
+	int numclients=Integer.parseInt(args[1]);
+	QuoteClient[] carray=new QuoteClient[numclients];
+	for (int i=0;i<numclients;i++) {
+	    carray[i]=new QuoteClient(args);
+	    carray[i].start();
+	}
+	try {
+	    for (int i=0;i<numclients;i++) {
+		carray[i].join();
+	    }
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    System.out.println(e);
+	}
 	System.exit(0); 
     } 
     /** 
      * This constructor manages the retrieval of the 
      * stock information. 
      */ 
+
+    String args[];
+
     public QuoteClient(String[] args) { 
-	String serverInfo; 
+	this.args=args;
+
+    }
+
+    public void run() {
+       	String serverInfo; 
 	// Server name is the first argument. 
 	serverName = args[0]; 
 	// Create arrays as long as arguments - 1. 
-	stockIDs = new String[args.length-1]; 
-	stockInfo = new String[args.length-1]; 
+	stockIDs = new String[args.length-3]; 
+	stockInfo = new String[args.length-3]; 
 	// Copy in the arguments into are stockIDs[] array. 
-	for (int index = 1; index < args.length; index++) { 
-	    stockIDs[index-1] = args[index]; 
+	for (int index = 3; index < args.length; index++) { 
+	    stockIDs[index-3] = args[index]; 
 	} 
 	// Contact the server and return the HELLO message. 
 	serverInfo = contactServer(); 
@@ -54,12 +75,12 @@ public class QuoteClient {
 					       serverInfo.indexOf(" ")+1); 
 	}
  
-	while (true) {
+        for(int i=0;i<Integer.parseInt(args[2]);i++) {
 	    getQuotes(); // Go get the quotes. 
 	    this.printQuotes(System.out); 
 	}
-	//	quitServer(); // Close the communication. 
-    } 
+	quitServer(); // Close the communication.
+    }
     /** 
      * Open the initial connection to the server. 
      * @return The initial connection response. 
