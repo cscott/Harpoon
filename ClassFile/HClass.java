@@ -30,7 +30,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.11 1999-06-21 04:54:27 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.12 1999-06-22 19:49:10 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  */
 public abstract class HClass extends HPointer {
@@ -335,9 +335,10 @@ public abstract class HClass extends HPointer {
       if (Modifier.isPrivate(m))
 	continue; // skip this field.
       // default access is invisible if packages not identical.
+      /** DISABLED: see notes in getMethods() [CSA 6-22-99] */
       if (!Modifier.isPublic(m) && !Modifier.isProtected(m))
 	if (!supf[i].getDeclaringClass().getPackage().equals(frmPackage))
-	  continue;
+	  /*continue*/;
       // all's good. Add this one.
       v.addElement(supf[i]);
     }
@@ -529,9 +530,17 @@ public abstract class HClass extends HPointer {
       if (Modifier.isPrivate(m))
 	continue; // skip this method.
       // default access is invisible if packages not identical
+      /** SKIPPING this test, because the interpreter doesn't like it.
+       **  For example, harpoon.IR.Quads.OPER invokes
+       **  OperVisitor.dispatch() in method visit().  But dispatch() has
+       **  package visibility and thus doesn't show up in
+       **  SCCAnalysis...operVisitor, and a virtual dispatch to visit()
+       **  on an object of type SCCAnalysis...operVisitor fails.  Current
+       **  solution is to move this check into the interpreter; see
+       **  harpoon.Interpret.Quads.Method. [CSA, 6-22-99] */
       if (!Modifier.isPublic(m) && !Modifier.isProtected(m))
 	if (!supm[i].getDeclaringClass().getPackage().equals(frmPackage))
-	  continue; // skip this (inaccessible) method.
+	  /*continue*/; // skip this (inaccessible) method.
       // skip superclass constructors.
       if (supm[i] instanceof HConstructor)
 	  continue;
