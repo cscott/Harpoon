@@ -1,8 +1,7 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.20 2003-06-07 03:42:11 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.21 2003-06-07 04:51:12 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%  - Write ``english language overview'' slides for intra/inter analysis.
 %  - Prettify the ``field packing'' slide.
 %  - Helvetica font on title slide
 %  - ``We'd love to do embedded benchmarks''
@@ -133,7 +132,21 @@ opportunities and applying transformations to effect the reduction.
 }
 
 \begin{talknotes}
-XXX: write me.
+Why are we trying to optimize the space consumption of programs?
+@ Let's consider embedded systems first. @ Existing devices have a
+fixed amount of memory.  We'd like to push more aggressive
+applications into these devices. @ We'd also like to reduce the memory
+sizes, thus costs, for devices embodying new applications.
+
+@ But, perhaps surprisingly, space optimizations are also likely to be
+crucial for performance as well.  @ The disparity between processor
+speed and memory speed is getting larger, and @ space optimizations
+increase the effective cache size of a system, by packing more of the
+data you are interested in into the cache.  @  Furthermore, the extra
+ALU operations for packing and unpacking data into space-efficient
+forms are getting cheaper and cheaper.
+
+So let's look at how space usage can be optimized.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -312,17 +325,45 @@ compression?
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\begin{slide}{English overview}
-WRITE ME
-
-Dataflow analysis, blah blah
-
-Gives us the bitwidth of each value in the program, yadda yadda
-
+\overlays{5}{
+\begin{slide}{Intraprocedural overview}
+\begin{itemize}
+\FromSlide{2}
+\item Combined {\yellow Sparse Predicated Typed Constant} and {\yellow Bitwidth} analysis
+\FromSlide{3}
+\item Forward (sparse) dataflow algorithm
+\FromSlide{4}
+\item Discovers:
+\begin{itemize}
+\item Executability of each control-flow edge \hfill{\small (SPTC)}
+\item Program constants \hfill{\small (SPTC)}
+\item \bp{\yellow Bitwidth specifications} for all abstract values
+\FromSlide{5}
+\begin{itemize}
+\item Number of bits in {\yellow smallest negative} number
+\item Number of bits in {\yellow largest positive} number
+\end{itemize}
+\end{itemize}
+\end{itemize}
 \end{slide}
+}
 
 \begin{talknotes}
-\ldots And here is how we formalize this: @
+We'll start by describing the intraprocedural analysis.  
+@ We are going to show the combined SPTC and Bitwidth analysis used
+for field compression.  The SPTC analysis will be a little bit
+simplified in this presentation.  @ This is a forward dataflow
+algorithm which will primarily discover @ a bitwidth specification
+for every value used by an executable statement in the program --- and
+in the process discover and trim constants and dead code,
+corresponding to unused functionality in the program or libraries.
+
+@ Our bitwidth specification will tell us the number of bits required to
+store all the possible values at a program point.  Because Java has
+signed integer types, we will separate our specifications, so that the
+bitwidth of negative and positive ranges are tracked separately.
+
+And here is how we formalize this: @
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -351,7 +392,7 @@ Gives us the bitwidth of each value in the program, yadda yadda
 \end{slide}
 
 \begin{talknotes}
-Let's first establish some domains we need for the bitwidth analysis.
+These are the domains we need for the analysis.
 Our abstract lattice domain $\mathcal{L}$ will include integer constants,
 represented by the domain $\mathcal{C}$ as well a domain $\mathcal{T}$
 of tuples of non-negative integers.  The $\mathcal{T}$ domain
@@ -363,6 +404,12 @@ will represent the bitwidth of positive values.
 Our lattice of abstract values for the bitwidth analysis will range
 over the raised sum of $\mathcal{C}$ and $\mathcal{T}$.
 
+The concretization function gives the full set of concrete values
+which can be represented by a lattice value.  Constants represent a
+singleton set containing themselves, of course.  Notice that all
+bitwidth tuples represent a range including zero, and, as we've
+mentioned, the $m$ component summarizes the negative portions of the
+range, and the $p$ component the positive.
 ~%
 \end{talknotes}
 
@@ -399,15 +446,17 @@ c\latleq\tuple{m,p}&\text{ iff }&\func{bw}(c)\latleq\tuple{{\onlySlide*{5}{\yell
 }
 
 \begin{talknotes}
-Now we will define the ordering relationship on $\mathcal{L}$.  The
+The lattice ordering is implicitly given by the concretization
+function, but we'll define it explicitly.  The
 $\bot$ value will represent ``no information'' and is less than all
 members of $\mathcal{C}$ and $\mathcal{T}$ in the lattice.  Members of
 $\mathcal{T}$ are compared component-wise; a bitwidth is lesser only
 if both its components are lesser.  Finally, a constant $c$ is lesser
 only if the function $\func{bw}$ of $c$ is less-than-or-equal,
 @ where $\func{bw}(c)$ computes the number of bits needed to
-represent the signed constant $c$.  @ For values in twos complement
-notation, @ the $p$ component of the result represents the location of
+represent the signed constant $c$.  @ To give more intuition,
+for values in twos complement
+notation @ the $p$ component of the result represents the location of
 the first one in the number, and the @ $m$ component constrains the
 location of the first zero.
 \end{talknotes}
@@ -497,8 +546,8 @@ is in the paper and you can check it at your leisure.
 \end{slide}
 
 \begin{talknotes}
-The result of our intraprocedural bitwidth analysis gives a set $e$ of
-executable edges, and a mapping from all variables to a lattice
+Formally, the result of our intraprocedural bitwidth analysis is a set $e$ of
+executable edges and a mapping from all variables to a lattice
 element constraining their values in all possible program executions.
 \end{talknotes}
 
@@ -525,26 +574,48 @@ $\func{val}(\text{\tt i}_2)\latleq\langle 0,\underbrace{6}_{1+\lfloor\ln 50\rflo
 }
 
 \begin{talknotes}
-The SSI form is a variant of SSA form which @ allows us to distinguish
+It's worth noting here that our analysis is performed on the program
+in SSI form.
+SSI is a variant of SSA form which @ allows us to distinguish
 the values produced in the two different assignments to {\tt i} at the
 start of this example, as well as distinguish the possible values of
 {\tt i} at point {\it A} ($\tuple{0,6}$) and at point {\it B}.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\begin{slide}{English overview}
-WRITE ME
-
-Extend to Interprocedural, field-based, blah blah.
-
-Gives us the bitwidth of each value {\it and field} in the program, yadda yadda
-
-Context-sensitivity.
-
+\overlays{4}{
+\begin{slide}{Interprocedural overview}
+\begin{itemize}
+\item \bp{\yellow Field-based} extension from intra- to
+  interprocedural analysis.
+\FromSlide{2}
+\begin{itemize}
+\item Ignore the left-hand side of expression {\tt o.f}
+\item Single analysis value for each declared field
+\end{itemize}
+\FromSlide{3}
+\item \bp{\yellow Context-sensitive} implementation.
+\begin{itemize}
+\item Discriminate between variables (but not fields) in distinct calling contexts.
+\end{itemize}
+\FromSlide{4}
+\item All results in this work use zero-length context
+  ({\yellow context-insensitive}).
+\end{itemize}
 \end{slide}
+}
 
 \begin{talknotes}
-\ldots And here is how we formalize this: @
+We extend our intraprocedural analysis to a field-based
+interprocedural analysis. @ This means we ignore the left-hand size of
+an expression {\tt o.f} and determine a single analysis value for each
+declared field in the program.  @ Our implementation of the analysis
+is context-sensitive, but we found that using context didn't
+improve the accuracy of the analysis commensurate with the large
+increase in analysis time.  @  Thus all results presented in this talk
+will use a zero-length context.
+
+And, formally: @
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -560,7 +631,7 @@ We use a {\yellow field-based} interprocedural analysis.
 \end{itemize}
 \item The interprocedural analysis discovers:
 \begin{itemize}
-\item a set $\func{e}:2^\mathcal{E}$ of executable edges
+\item a set $\func{e}:2^{\mathcal{E}\times\mathcal{M}^*}$ of executable edges
 \item a map $\func{val}:\left(\left(\mathcal{V}\times\mathcal{M}^*\right)+\mathcal{F}\right)\to\mathcal{L}$
  giving abstract values valid for all possible executions
 \item a set $\func{Read}:2^\mathcal{F}$ of readable fields
@@ -568,14 +639,16 @@ We use a {\yellow field-based} interprocedural analysis.
 \end{itemize}
 \end{slide}
 \begin{talknotes}
-We extend our intraprocedural analysis interprocedurally using a
-field-based scheme.  The domain $\mathcal{F}$ represents the declared
-fields of the program, and our value map $\func{val}$ now maps not
+%We extend our intraprocedural analysis interprocedurally using a
+%field-based scheme.  
+The domain $\mathcal{F}$ represents the declared fields of the
+program, and the domain $\mathcal{M}$ represents call sites.
+Both the executability of an edge and the value of a variable depend
+on an execution context, $\mathcal{M}^*$.  In the field-based analysis
+our value map $\func{val}$ maps not
 only variables but also fields to lattice values.  We also collect a
 set $\func{Read}$ of fields read by executable statements in the
 program to allow us to eliminate unread fields.
-
-XXX mention context-sensitivity.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
