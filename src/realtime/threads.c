@@ -16,6 +16,8 @@ void CheckTimeSwitch();
 #include "../user/threads.h"
 #include "MemBlock.h"
 #include "../java.lang/threadlist.h" /* for add_running_thread */
+#include <sys/types.h>
+#include <unistd.h>
 
 #ifdef WITH_PRECISE_GC
 #include "jni-gc.h"
@@ -82,12 +84,13 @@ void context_switch() {
   sigset_t old_set;
 #ifdef RTJ_DEBUG_THREADS
   printf("\n    context_switch()");
+  fflush(NULL);
 #endif
   sigemptyset(&empty_mask);
   sigprocmask(SIG_BLOCK, &empty_mask, &old_set);
   /* Lock/thread end during atomic section => deadlock */
   assert(!sigismember(&old_set, SIGALRM)); 
-  raise(SIGALRM);
+  kill(getpid(), SIGALRM);
 }
 
 int IsSwitching() {
@@ -103,7 +106,10 @@ inline void StartSwitching()
 {
   sigset_t alarm_mask;
 #ifdef RTJ_DEBUG_THREADS
-  if (!IsSwitching()) printf("\n    StartSwitching()");
+  if (!IsSwitching()) {
+    printf("\n    StartSwitching()");
+    fflush(NULL);
+  }
 #endif
   sigemptyset(&alarm_mask);
   sigaddset(&alarm_mask, SIGALRM);
@@ -116,7 +122,10 @@ inline int StopSwitching()
   sigset_t old_set;
   sigset_t alarm_mask;
 #ifdef RTJ_DEBUG_THREADS
-  if (IsSwitching()) printf("\n    StopSwitching()");
+  if (IsSwitching()) {
+    printf("\n    StopSwitching()");
+    fflush(NULL);
+  }
 #endif
   sigemptyset(&alarm_mask);
   sigaddset(&alarm_mask, SIGALRM);
@@ -128,7 +137,10 @@ inline int StopSwitching()
 inline void RestoreSwitching(int state)
 {
 #ifdef RTJ_DEBUG_THREADS
-  if (IsSwitching()!=state) printf("\n    RestoreSwitching(%d)", state);
+  if (IsSwitching()!=state) {
+    printf("\n    RestoreSwitching(%d)", state);
+    fflush(NULL);
+  }
 #endif
   if (state) {
     StartSwitching();
@@ -143,6 +155,7 @@ inline int BeginNoHeap(JNIEnv* env) {
   int noheap = ((struct FNI_Thread_State*)env)->noheap;
 #ifdef RTJ_DEBUG_THREADS
   printf("\n    BeginNoHeap(%p)", env);
+  fflush(NULL);
 #endif
   ((struct FNI_Thread_State*)env)->noheap = 1;
   return noheap;
@@ -151,6 +164,7 @@ inline int BeginNoHeap(JNIEnv* env) {
 inline void EndNoHeap(JNIEnv* env, int state) {
 #ifdef RTJ_DEBUG_THREADS
   printf("\n    EndNoHeap(%p, %d)", env, state);
+  fflush(NULL);
 #endif
   ((struct FNI_Thread_State*)env)->noheap = state;
 }
@@ -159,11 +173,16 @@ inline void EndNoHeap(JNIEnv* env, int state) {
 void setQuanta(jlong microsecs) {
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  setQuanta(%lld)", (long long)microsecs);
+  fflush(NULL);
 #endif
   memset(&quanta, 0, sizeof(struct itimerval));
   quanta.it_value.tv_sec  = microsecs/1000000;
   quanta.it_value.tv_usec = microsecs%1000000;
 }
+
+#ifdef RTJ_DEBUG_THREADS
+int context_switch_happened;
+#endif
 
 /* check the time and possibly check for a needed thread switch */
 void CheckQuanta(int signal)
@@ -178,6 +197,9 @@ void CheckQuanta(int signal)
 #ifdef WITH_NOHEAP_SUPPORT
   int noheap;
 #endif
+#ifdef RTJ_DEBUG_THREADS
+  context_switch_happened = 1;
+#endif
   gettimeofday(&time, NULL);
 #ifdef WITH_REALTIME_THREADS_MEASURE_JITTER
   printf("\nJitter = %lld\n", 
@@ -190,6 +212,7 @@ void CheckQuanta(int signal)
   if (sigismember(&pending, SIGALRM)) return; /* Make sure CheckQuanta is top before switching */
 #ifdef RTJ_DEBUG_THREADS  
   printf("\nCheckQuanta()");
+  fflush(NULL);
 #endif
   
   env = (JNIEnv*)FNI_GetJNIEnv(); //get JNI environment
@@ -206,6 +229,7 @@ void CheckQuanta(int signal)
     FNI_DeleteLocalRefsUpTo(env, ref_marker);
 #ifdef RTJ_DEBUG_THREADS
     printf("\n  No scheduler: returning");
+    fflush(NULL);
 #endif
 #ifdef WITH_NOHEAP_SUPPORT
     EndNoHeap(env, noheap);
@@ -221,6 +245,7 @@ void CheckQuanta(int signal)
   printf("\n  %d = ChooseThread(%p, %p, (%lld s, %lld us))", 
 	 (int)threadID, env, FNI_UNWRAP_MASKED(scheduler), 
 	 (long long int)time.tv_sec, (long long int)time.tv_usec);
+  fflush(NULL);
 #endif
   if((*env)->ExceptionOccurred(env))
     (*env)->ExceptionDescribe(env);
@@ -251,6 +276,7 @@ void settimer() {
   long long int microsecs;
 #elif defined(RTJ_DEBUG_THREADS)
   printf("\n  settimer()");
+  fflush(NULL);
 #endif
   timer.sa_handler=&CheckQuanta;
   sigemptyset(&timer.sa_mask);
@@ -276,6 +302,7 @@ void settimer() {
 	 (long long int)quanta.it_value.tv_usec,
 	 (long long int)compareSwitch.tv_sec, 
 	 (long long int)compareSwitch.tv_usec);
+  fflush(NULL);
 #endif
 #endif
 }
@@ -284,11 +311,14 @@ void print_queue(struct thread_queue_struct* q, char* message) {
 #ifdef RTJ_DEBUG_THREADS
   struct thread_queue_struct* t = q;
   printf("\n  %s: (", message);
+  fflush(NULL);
   while (t) {
     printf("%lld,", (long long int)t->threadID);
+    fflush(NULL);
     t = t->next;
   }
   printf(")");
+  fflush(NULL);
 #endif
   printScheduler();
 }
@@ -298,6 +328,7 @@ void cleanupThreadQueue(JNIEnv* env) {
 
 #ifdef RTJ_DEBUG_THREADS
   printf("\ncleanupThreadQueue(%p)", env);
+  fflush(NULL);
 #endif
   while(thread_queue != NULL) {
     nextPiece = thread_queue->next;
@@ -316,6 +347,7 @@ void addThreadInC(JNIEnv* env, jobject thread, jlong threadID) {
   
 #ifdef RTJ_DEBUG_THREADS
   printf("\naddThreadInC(%lld)", (long long int)threadID);
+  fflush(NULL);
 #endif
 
   print_queue(thread_queue, "BEG addThreadInC queue");
@@ -327,6 +359,7 @@ void addThreadInC(JNIEnv* env, jobject thread, jlong threadID) {
 #ifdef RTJ_DEBUG_THREADS
   if(open_spot->mthread->start_argument == NULL) {
     printf("\n!!!!mthread (%lld) is null in ADD!!!!", (long long int)threadID);
+    fflush(NULL);
   }
 #endif
 
@@ -389,6 +422,7 @@ void DisableThread(struct thread_queue_struct* queue)
 #endif
 #ifdef RTJ_DEBUG_THREADS
   printf("\nDisableThread %lld", (long long int)queue->threadID);
+  fflush(NULL);
 #endif
   print_queue(thread_queue, "BEG disableThread queue");
   (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_jDisableThread, 
@@ -399,8 +433,17 @@ void DisableThread(struct thread_queue_struct* queue)
 #ifdef WITH_NOHEAP_SUPPORT
   EndNoHeap(env, noheap);
 #endif
+  setQuanta(0);
+  settimer();
   RestoreSwitching(switching_state);
+#ifdef RTJ_DEBUG_THREADS
+  context_switch_happened = 0;
+#endif
   context_switch(); /* Switch away, since this thread is now blocked. */
+#ifdef RTJ_DEBUG_THREADS
+  /* Make sure the context switch really happened! */
+  assert(context_switch_happened);
+#endif
 }
 
 void EnableThread(struct thread_queue_struct* queue)
@@ -413,13 +456,17 @@ void EnableThread(struct thread_queue_struct* queue)
 #endif
 #ifdef RTJ_DEBUG_THREADS
   printf("\nEnableThread %lld", (long long int)queue->threadID);
-#endif
+  fflush(NULL);
   print_queue(thread_queue, "BEG enableThread queue");
+  fflush(NULL);
+#endif
   if(queue == NULL || queue->threadID == 0) return;
   (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_jEnableThread, 
 			       queue->jthread, queue->threadID);
+#ifdef RTJ_DEBUG_THREADS
   assert(!((*env)->ExceptionOccurred(env)));
   print_queue(thread_queue, "END enableThread queue");
+#endif
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
 #ifdef WITH_NOHEAP_SUPPORT
   EndNoHeap(env, noheap);
@@ -448,9 +495,12 @@ jlong realtime_num_threads(JNIEnv* env) {
 #endif
 #ifdef RTJ_DEBUG_THREADS
   printf("\nrealtime_num_threads(%p)", env);
+  fflush(NULL);
 #endif
   nThreads = (*env)->CallStaticLongMethod(env, SchedulerClaz, Scheduler_jNumThreads, NULL);
+#ifdef RTJ_DEBUG_THREADS
   assert(!((*env)->ExceptionOccurred(env)));
+#endif
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
 #ifdef WITH_NOHEAP_SUPPORT
   EndNoHeap(env, noheap);
@@ -481,13 +531,13 @@ void FNI_java_lang_Thread_mainThreadSetup
   /* get the inflated object for mainThr */
   infObj = (struct inflated_oobj*)getInflatedObject(env, mainThr);
 
-  /* get the threads priority */
-  pri = (*env)->GetIntField(env, mainThr, priorityID);
-  assert(!((*env)->ExceptionOccurred(env)));
-
   stackptr = __machdep_stack_alloc(STACKSIZE); //create the stack
 
   __machdep_stack_set(&(infObj->mthread), stackptr); //set the thread's stack
+
+  /* get the threads priority */
+  pri = (*env)->GetIntField(env, mainThr, priorityID);
+  assert(!((*env)->ExceptionOccurred(env)));
 
 #ifdef WITH_PRECISE_GC
   /* may need to stop for GC */
@@ -537,6 +587,7 @@ void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args,
 #ifdef RTJ_DEBUG_THREADS
   printf("\nstart_realtime_threads(%p, %p, %p, %p)", env, 
 	 FNI_UNWRAP_MASKED(mainthread), args, thrCls);
+  fflush(NULL);
 #endif
 
   setQuanta(0);
@@ -552,11 +603,13 @@ void start_realtime_threads(JNIEnv *env, jobject mainthread, jobject args,
   
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  Running main thread...");
+  fflush(NULL);
 #endif
   pthread_mutex_lock(&runMainThread_mutex);
   pthread_mutex_destroy(&runMainThread_mutex);
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  ...and we're back!");
+  fflush(NULL);
 #endif
 
   /* And we're back - the main Java thread has exited */
@@ -594,11 +647,21 @@ void* startMain(void* mclosure) {
   
   JNIEnv* env = FNI_CreateJNIEnv(); //create a JNI Environment
   int switching_state;
+#ifdef RTJ_DEBUG_THREADS
   assert(mainStarted==0); //let me know if this fails - WSB
   mainStarted = 1;
+#endif
   ((struct FNI_Thread_State *)env)->stack_top = &top_of_stack;
   /* This thread is alive! */
   ((struct FNI_Thread_State *)env)->is_alive = JNI_TRUE;
+
+#ifdef WITH_REALTIME_THREADS
+  /* This is so that the scheduler gets the right thread for the
+   * blocking thread on the pthread_mutex_lock, but don't inform
+   * the garbage collector yet, since everything may not be set up. - WSB
+   */
+  ((struct FNI_Thread_State *)env)->thread = mcls->thread;
+#endif
   
   /* make sure creating thread is in cond_wait before proceeding. */
   pthread_mutex_lock(&(mcls->parampass_mutex));
@@ -654,6 +717,7 @@ void* startMain(void* mclosure) {
 
 #ifdef RTJ_DEBUG_THREADS
   printf("\nWait for all of the other threads to finish!\n");
+  fflush(NULL);
 #endif
   while (realtime_num_threads(env)>1) {
     settimer();
@@ -695,11 +759,15 @@ void realtime_schedule_thread(JNIEnv *env, jobject thread) {
   int switching_state = StopSwitching();
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  realtime_schedule_thread(%p, %p)", env, thread);
-#endif
+  fflush(NULL);
   printScheduler();
+  fflush(NULL);
+#endif
   (*env)->CallVoidMethod(env, thread, RealtimeThread_schedule, NULL);
+#ifdef RTJ_DEBUG_THREADS
   assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
+#endif
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
   RestoreSwitching(switching_state);
 }
@@ -710,11 +778,15 @@ void realtime_unschedule_thread(JNIEnv *env, jobject thread) {
   int switching_state = StopSwitching();
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  realtime_unschedule_thread(%p, %p)", env, thread);
-#endif
+  fflush(NULL);
   printScheduler();
+  fflush(NULL);
+#endif
   (*env)->CallVoidMethod(env, thread, RealtimeThread_unschedule, NULL);
+#ifdef RTJ_DEBUG_THREADS
   assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
+#endif
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
   RestoreSwitching(switching_state);
 }
@@ -724,11 +796,15 @@ void realtime_schedule_ID(JNIEnv *env, jlong ID) {
   int switching_state = StopSwitching();
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  realtime_schedule_ID(%p, %lld)", env, (long long int)ID);
-#endif
+  fflush(NULL);
   printScheduler();
+  fflush(NULL);
+#endif
   (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_jAddCThread, ID);
+#ifdef RTJ_DEBUG_THREADS
   assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
+#endif
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
   RestoreSwitching(switching_state);
 }
@@ -737,12 +813,16 @@ void realtime_unschedule_ID(JNIEnv *env, jlong ID) {
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
   int switching_state = StopSwitching();
 #ifdef RTJ_DEBUG_THREADS
-  printf("\n  realtime_schedule_ID(%p, %lld)", env, (long long int)ID);
-#endif
+  printf("\n  realtime_schedule_ID(%p, %lld)", env, (long long int)ID); 
+  fflush(NULL);
   printScheduler();
+  fflush(NULL);
+#endif
   (*env)->CallStaticVoidMethod(env, SchedulerClaz, Scheduler_jRemoveCThread, ID);
+#ifdef RTJ_DEBUG_THREADS
   assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
+#endif
   FNI_DeleteLocalRefsUpTo(env, ref_marker);  
   RestoreSwitching(switching_state);
 }
@@ -752,6 +832,7 @@ void realtime_destroy_thread(JNIEnv *env, jobject thread, void *cls) {
   int switching_state = StopSwitching();
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  realtime_destroy_thread(%p, %p, %p)", env, thread, cls);
+  fflush(NULL);
 #endif
   oldthread = currentThread;
   FNI_DeleteGlobalRef(env, thread); //remove the global ref to the thread
@@ -764,10 +845,13 @@ void initScheduler(JNIEnv *env, jobject thread) {
   jobject ref_marker = ((struct FNI_Thread_State*)env)->localrefs_next;
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  initScheduler(%p, %p)", env, thread);
+  fflush(NULL);
 #endif
   (*env)->CallVoidMethod(env, thread, RealtimeThread_initScheduler, NULL);
+#ifdef RTJ_DEBUG_THREADS
   assert(!((*env)->ExceptionOccurred(env)));
   printScheduler();
+#endif
   RealtimeThread_setHandlerMask(env, thread);
   FNI_DeleteLocalRefsUpTo(env, ref_marker);
 }
