@@ -50,7 +50,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.15 1999-02-24 22:53:23 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.16 1999-02-25 19:00:55 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -1796,15 +1796,21 @@ final class Translate { // not public.
 	HandlerSet hs = s.handlers(in);
 	List v = new ArrayList(); // array initializers.
 	int offset = 0;
-	// BASTORE takes integer args, stores in byte/boolean array.
-	if (type==HClass.Byte || type==HClass.Boolean) type=HClass.Int;
+	boolean integerify = false;
+	// BASTORE takes integer/byte args, stores in byte/boolean array.
+	// SASTORE takes integer/byte/short args, stores in short array.
+	// CASTORE takes integer/byte/short args, stores in character array.
+	if (type==HClass.Boolean || type==HClass.Byte ||
+	    type==HClass.Short   || type==HClass.Char)
+	    integerify = true;
 
 	do { // iterate over initialization instructions.
 	    if (in.getOpcode() != Op.DUP) break; // in should be dup.
 	    Instr in1 = in.next(0); // iconst, bipush, sipush, or ldc
 	    if (extractConstType(in1) != HClass.Int) break;
 	    Instr in2 = in1.next(0); // constant value of array init.
-	    if (extractConstType(in2) != type) break;
+	    if ( integerify && extractConstType(in2) != HClass.Int) break;
+	    if (!integerify && extractConstType(in2) != type)       break;
 	    Instr in3 = in2.next(0); // ?astore
 	    if (!isXASTORE(in3)) break;
 	    // finally, check that all handlers are the same.
@@ -1823,11 +1829,24 @@ final class Translate { // not public.
 	if (v.size()==0) return ts;
 	// else...
 	Object[] oa = v.toArray();
+	if (integerify) unintegerify(oa, type);
 	Quad q=new ARRAYINIT(ts.initialState.qf(), ts.in,
 			     ts.initialState.stack(0), offset, type, oa);
 	Quad.addEdge(ts.header, ts.which_succ, q, 0);
 	s.recordHandler(ts.in, q, q); // record the proper hanlder.
 	return new TransState(ts.initialState, in, q, 0);
+    }
+    private static final void unintegerify(Object[] oa, HClass type) {
+	for (int i=0; i<oa.length; i++) {
+	    if (type==HClass.Boolean)
+		oa[i] = new Boolean(0!=((Number)oa[i]).intValue());
+	    if (type==HClass.Byte)
+		oa[i] = new Byte(((Number)oa[i]).byteValue());
+	    if (type==HClass.Short)
+		oa[i] = new Short(((Number)oa[i]).shortValue());
+	    if (type==HClass.Char)
+		oa[i] = new Character((char)((Number)oa[i]).intValue());
+	}
     }
     private static final boolean isXASTORE(Instr in) {
 	byte opcode = in.getOpcode();

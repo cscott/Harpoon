@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>ARRAYINIT</code> represents an array initialization operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ARRAYINIT.java,v 1.1.2.8 1999-01-22 23:05:58 cananian Exp $
+ * @version $Id: ARRAYINIT.java,v 1.1.2.9 1999-02-25 19:00:53 cananian Exp $
  */
 public class ARRAYINIT extends Quad {
     /** The array reference to initialize. */
@@ -22,7 +22,8 @@ public class ARRAYINIT extends Quad {
     protected HClass type;
     /** The starting index for the initializers. */
     protected int offset;
-    /** The array initializers. */
+    /** The array initializers. Elements must be instances of the type
+     *  wrapper. */
     protected Object[] value;
 
     /** Creates a <code>ARRAYINIT</code> representing an array initializer.
@@ -88,8 +89,10 @@ public class ARRAYINIT extends Quad {
 	sb.append(type.getName());
 	sb.append(") { ");
 	for (int i=0; i<value.length; i++) {
-	    if (type.equals(HClass.forClass(String.class)))
+	    if (type.equals(HCString))
 		sb.append("\""+Util.escape(value[i].toString())+"\"");
+	    else if (type.equals(HClass.Char))
+		sb.append("\'"+Util.escape(value[i].toString())+"\'");
 	    else
 		sb.append(value[i].toString());
 	    if (i < value.length-1)
@@ -98,4 +101,6 @@ public class ARRAYINIT extends Quad {
 	sb.append(" }");
 	return sb.toString();
     }
+
+    private static final HClass HCString = HClass.forName("java.lang.String");
 }
