@@ -57,7 +57,7 @@ import java.util.Set;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.17 2000-01-17 11:10:16 cananian Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.18 2000-10-11 01:53:03 cananian Exp $
  */
 
 public class IntraProc {
@@ -382,6 +382,9 @@ public class IntraProc {
 	/* ??? additional precision could be gained
 	   public void visit(CJMP q) {
 	   modified = false;
+	    }
+	    public void visit(TYPESWITCH q) {
+	    modified = false;
 	    }
 	*/
 	public void visit(RETURN q) {

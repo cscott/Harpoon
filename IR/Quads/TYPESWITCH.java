@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * the class type of the argument.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TYPESWITCH.java,v 1.1.2.3 2000-10-10 18:07:41 cananian Exp $
+ * @version $Id: TYPESWITCH.java,v 1.1.2.4 2000-10-11 01:53:23 cananian Exp $
  */
 public class TYPESWITCH extends SIGMA {
     /** The discriminant, of <code>Object</code> type, whose class is
@@ -54,7 +54,7 @@ public class TYPESWITCH extends SIGMA {
 	super(qf, source, dst, src, keys.length+1 /*multiple targets*/);
 	this.index = index;
 	this.keys = keys;
-	// VERIFY legality of SWITCH.
+	// VERIFY legality of TYPESWITCH.
 	Util.assert(index!=null && keys!=null);
 	Util.assert(keys.length+1==arity());
 	for (int i=0; i<keys.length; i++)

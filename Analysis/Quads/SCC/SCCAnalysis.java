@@ -44,6 +44,7 @@ import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
@@ -61,7 +62,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.9 2000-01-17 11:10:14 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.10 2000-10-11 01:52:59 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -732,6 +733,51 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    }
 	}
 	public void visit(THROW q) { /* do nothing. */ }
+	public void visit(TYPESWITCH q) {
+	    LatticeVal v = get( q.index() );
+	    if (v instanceof xClass) {
+		HClass type = ((xClass)v).type();
+		boolean catchAll = false;
+		for (int i=0; i<q.keysLength(); i++) {
+		    if (q.keys(i).isInstanceOf(type)) // executable
+			raiseE(Ee, Eq, Wq, q.nextEdge(i) );
+		    if (type.isInstanceOf(q.keys(i))) {// catches all remaining
+			catchAll = true;
+			break;
+		    }
+		}
+		if (catchAll && v instanceof xClassNonNull)
+		    /* default edge never taken */;
+		else // make the default case executable.
+		    raiseE(Ee, Eq, Wq, q.nextEdge(q.keysLength()));
+
+		// handle sigmas.
+		for (int i=0; i < q.arity(); i++) {
+		    if (!Ee.contains(q.nextEdge(i))) continue;//only raise exec
+		    for (int j=0; j < q.numSigmas(); j++) {
+			if (q.src(j)==q.index() && i<q.keysLength())
+			    raiseV(V, Wv, q.dst(j,i),
+				   new xClassNonNull(q.keys(i)));
+			else {
+			    LatticeVal v2 = get( q.src(j) );
+			    if (v2 != null)
+				raiseV(V, Wv, q.dst(j,i), v2);
+			}
+		    }
+		}
+	    }
+	    else if (v != null) {
+		// mark all edges executable & propagate to all sigmas.
+		for (int i=0; i < q.nextEdge().length; i++)
+		    raiseE(Ee, Eq, Wq, q.nextEdge(i) );
+		for (int i=0; i < q.numSigmas(); i++) {
+		    LatticeVal v2 = get( q.src(i) );
+		    if (v2 != null)
+			for (int j=0; j < q.arity(); j++)
+			    raiseV(V, Wv, q.dst(i,j), v2);
+		}
+	    }
+	}
 
 	/*------------------------------------------------------------*/
 	// VISITOR CLASS FOR OPER (ugh.  lots of cases)

@@ -73,7 +73,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.20 1999-11-30 05:24:49 cananian Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.21 2000-10-11 01:51:20 cananian Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -665,7 +665,8 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 				if (niuses[i]!=header) {
 				    int kind=((Quad)niuses[i]).kind();
 				    if ((kind==QuadKind.CJMP)||
-					(kind==QuadKind.SWITCH)) {
+					(kind==QuadKind.SWITCH)||
+					(kind==QuadKind.TYPESWITCH)) {
 					SIGMA sigma=(SIGMA)niuses[i];
 					for(int j=0;j<sigma.numSigmas();j++)
 					    if(sigma.src(j)==tuse) {

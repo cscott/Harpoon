@@ -32,6 +32,7 @@ import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
@@ -45,7 +46,7 @@ import java.util.Map;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.9 2000-08-24 23:43:40 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.10 2000-10-11 01:52:45 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
@@ -242,6 +243,22 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
 		for (int j=0; j<q.arity(); j++)
 		    if (merge(q, q.dst(i,j), ty))
 			r = true;
+	    }
+	    modified = r;
+	}
+	/* TYPESWITCH: we know the type of the index exactly */
+	public void visit(TYPESWITCH q) {
+	    boolean r = false;
+	    for (int i=0; i<q.numSigmas(); i++) {
+		if (q.src(i)==null) continue;
+		if (!hasType(q, q.src(i))) continue;
+		ExactType ty = exactType(q, q.src(i));
+		for (int j=0; j<q.arity(); j++)
+		    if (q.src(i) == q.index() && j<q.keysLength())
+			// we know narrower type.
+			r= merge(q, q.dst(i, j),inexact(q.keys(j))) || r;
+		    else
+			r= merge(q, q.dst(i,j), ty) || r;
 	    }
 	    modified = r;
 	}

@@ -78,7 +78,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.87 2000-09-11 21:33:47 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.88 2000-10-11 01:53:34 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -609,7 +609,6 @@ static class TranslationVisitor extends LowQuadVisitor {
 	addStmt(s0);
     }
 
-    // Naive implementation
     public void visit(final harpoon.IR.Quads.SWITCH q) { 
 	// move (possibly folded) discriminant into Temp, since we'll be
 	// evaluating it multiple times.
@@ -772,6 +771,11 @@ static class TranslationVisitor extends LowQuadVisitor {
 
     public void visit(harpoon.IR.Quads.TYPECAST q) {
 	throw new Error("Use INSTANCEOF instead of TYPECAST");
+    }
+
+    public void visit(harpoon.IR.Quads.TYPESWITCH q) {
+	throw new Error("Direct translation of TYPESWITCH is unimplemented."+
+			" Use TypeSwitchRemover class.");
     }
 
     /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*

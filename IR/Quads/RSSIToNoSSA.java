@@ -27,7 +27,7 @@ import java.util.Map;
  * <code>RSSIToNoSSA</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: RSSIToNoSSA.java,v 1.1.2.6 2000-05-31 22:42:19 cananian Exp $
+ * @version $Id: RSSIToNoSSA.java,v 1.1.2.7 2000-10-11 01:53:23 cananian Exp $
  */
 public class RSSIToNoSSA {
     QuadFactory newQF;
@@ -175,6 +175,14 @@ public class RSSIToNoSSA {
 	    Quad.addEdge(q.prev(0),q.prevEdge(0).which_succ(),
 			 ns,0);
 	    done.add(ns);
+	}
+
+	public void visit(TYPESWITCH q) {
+	    fixsigma(q);
+	    TYPESWITCH nts = new TYPESWITCH(q.getFactory(), q, q.index(),
+					    q.keys(), new Temp[0]);
+	    Quad.replace(q, nts);
+	    done.add(nts);
 	}
 
 	public void visit(LABEL q) {

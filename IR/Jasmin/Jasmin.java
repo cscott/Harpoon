@@ -35,6 +35,7 @@ import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPECAST;
+import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -60,7 +61,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.34 2000-01-16 07:29:08 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.35 2000-10-11 01:53:14 cananian Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -685,6 +686,10 @@ public class Jasmin {
 		out.println("    "+q.keys(i)+" : "+labeler(q.next(i)));
 	    out.println("    default : "+labeler(q.next(q.keysLength())));
 	    out.println(iflabel2(q));
+	}
+	public void visit(TYPESWITCH q) {
+	    throw new Error("TYPESWITCH quads should be removed before "+
+			    "running this pass!  Use TypeSwitchRemover.");
 	}
 
 	public void visit(TYPECAST q) {

@@ -7,7 +7,7 @@ package harpoon.IR.Quads;
  * <code>QuadVisitor</code> is a Design Pattern, courtesy of Martin.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadVisitor.java,v 1.1.2.9 1999-09-19 16:17:34 cananian Exp $
+ * @version $Id: QuadVisitor.java,v 1.1.2.10 2000-10-11 01:53:22 cananian Exp $
  */
 public abstract class QuadVisitor  {
     protected QuadVisitor() { }
@@ -44,5 +44,6 @@ public abstract class QuadVisitor  {
     public void visit(SWITCH q)		{ visit((SIGMA)q); }
     public void visit(THROW q)		{ visit((Quad)q); }
     public void visit(TYPECAST q)       { visit((NOP)q); }
+    public void visit(TYPESWITCH q) 	{ visit((SIGMA)q); }
     public void visit(XI q)		{ visit((PHI)q); }
 }

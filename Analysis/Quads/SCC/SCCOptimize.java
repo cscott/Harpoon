@@ -23,10 +23,13 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.SIGMA;
+import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 /**
  * <code>SCCOptimize</code> optimizes the code after <code>SCCAnalysis</code>.
@@ -34,7 +37,7 @@ import java.util.Set;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.1.2.6 2000-04-04 04:10:49 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.1.2.7 2000-10-11 01:53:00 cananian Exp $
  */
 public final class SCCOptimize {
     TypeMap  ti;
@@ -130,6 +133,47 @@ public final class SCCOptimize {
 		// add new executable edges to set.
 		for (int i=0; i<newF.prevLength(); i++)
 		    Ee.add(newF.prevEdge(i));
+	    }
+	    public void visit(TYPESWITCH q) {
+		/* multiple edges of this SIGMA may be executable */
+		List keylist = new ArrayList(q.arity());
+		List edgelist = new ArrayList(q.arity());
+		// collect executable edges.
+		for (int i=0; i < q.arity(); i++)
+		    if (execMap(q.nextEdge(i))) {
+			if (i<q.keysLength())
+			    keylist.add(q.keys(i));
+			edgelist.add(q.nextEdge(i));
+		    }
+		// make new default, if default is not executable.
+		if (keylist.size() == edgelist.size())
+		    keylist.remove(keylist.size()-1);
+		// make new keys and edge array.
+		HClass[] nkeys =
+		    (HClass[]) keylist.toArray(new HClass[keylist.size()]);
+		Edge[] edges =
+		    (Edge[]) edgelist.toArray(new Edge[edgelist.size()]);
+		// make new dst[][] array for sigmas
+		Temp[][] ndst = new Temp[q.numSigmas()][edgelist.size()];
+		for (int i=0; i < q.numSigmas(); i++)
+		    for (int j=0; j < edges.length; j++)
+			ndst[i][j] = q.dst(i, edges[j].which_succ());
+		// make new TYPESWITCH
+		TYPESWITCH nts = new TYPESWITCH(q.getFactory(), q, q.index(),
+						nkeys, ndst, q.src());
+		// and link the new TYPESWITCH.
+		Edge pedge = q.prevEdge(0);
+		Quad.addEdge((Quad)pedge.from(), pedge.which_succ(), nts, 0);
+		Ee.add(nts.prevEdge(0));
+		for (int i=0; i < edges.length; i++) {
+		    Quad.addEdge(nts, i,
+				 (Quad) edges[i].to(), edges[i].which_pred());
+		    Ee.add(nts.nextEdge(i));
+		}
+		// visit(SIGMA) to trim out TYPESWITCH iff only one edge is
+		// executable
+		visit((SIGMA)nts);
+		// ta-da!
 	    }
 	    public void visit(SIGMA q) {
 		// if the condition is constant, link this sigma (cjmp/switch)

@@ -30,7 +30,7 @@ import java.util.Map;
  * in an SSI-form codeview, yielding an SSA codeview.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIToSSA.java,v 1.1.2.1 2000-06-01 00:15:58 cananian Exp $
+ * @version $Id: SSIToSSA.java,v 1.1.2.2 2000-10-11 01:53:23 cananian Exp $
  */
 public class SSIToSSA {
     // Return values for the algorithm:
@@ -183,6 +183,11 @@ public class SSIToSSA {
 	public void visit(SWITCH q) {
 	    SWITCH nq = new SWITCH(nqf, q, map(q.index()), q.keys(),
 				   new Temp[0]);
+	    record(q, nq, false);
+	}
+	public void visit(TYPESWITCH q) {
+	    TYPESWITCH nq = new TYPESWITCH(nqf, q, map(q.index()), q.keys(),
+					   new Temp[0]);
 	    record(q, nq, false);
 	}
 	// convenience mapping functions.

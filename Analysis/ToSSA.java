@@ -23,6 +23,7 @@ import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.SWITCH;
+import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.LowQuad.PCALL;
@@ -32,7 +33,7 @@ import harpoon.IR.LowQuad.PCALL;
  * Converts SSI to SSA.  Should work on LowQuads and Quads. 
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ToSSA.java,v 1.1.2.11 2000-10-06 21:18:14 cananian Exp $
+ * @version $Id: ToSSA.java,v 1.1.2.12 2000-10-11 01:50:44 cananian Exp $
  */
 
 public final class ToSSA {
@@ -155,6 +156,20 @@ public final class ToSSA {
 	    int arity=q.arity();
 	    Temp[] nothing=new Temp[0];
 	    SWITCH newsigma=new SWITCH(q.getFactory(), q,ssitossamap.tempMap(q.index()), q.keys(),nothing);
+	    Quad []prev=q.prev();
+	    Quad []next=q.next();
+	    for(int i=0;i<prev.length;i++) {
+		Quad.addEdge(prev[i],q.prevEdge(i).which_succ(),newsigma,i);
+	    }
+      	    for(int j=0;j<next.length;j++) {
+		Quad.addEdge(newsigma,j,next[j],q.nextEdge(j).which_pred());
+	    }
+	}
+
+	public void visit(TYPESWITCH q) {
+	    int arity=q.arity();
+	    Temp[] nothing=new Temp[0];
+	    TYPESWITCH newsigma=new TYPESWITCH(q.getFactory(), q,ssitossamap.tempMap(q.index()), q.keys(),nothing);
 	    Quad []prev=q.prev();
 	    Quad []next=q.next();
 	    for(int i=0;i<prev.length;i++) {

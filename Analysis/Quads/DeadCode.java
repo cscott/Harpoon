@@ -38,6 +38,7 @@ import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.SWITCH;
 import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.LowQuad.PCALL;
 import harpoon.IR.LowQuad.PSET;
@@ -63,7 +64,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.1.2.6 2000-05-31 22:42:11 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.1.2.7 2000-10-11 01:52:45 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -421,6 +422,13 @@ public abstract class DeadCode  {
 	}
 	public void visit(SWITCH q) {
 	    // I'm too lazy to see if the switch actually does anything, so assume
+	    // it's always useful.
+	    useful.add(q);
+	    markUseful(q.index());
+	    visit((SIGMA)q);
+	}
+	public void visit(TYPESWITCH q) {
+	    // I'm too lazy to see if the typeswitch actually does anything, so assume
 	    // it's always useful.
 	    useful.add(q);
 	    markUseful(q.index());

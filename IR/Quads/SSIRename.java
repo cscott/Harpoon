@@ -40,7 +40,7 @@ import java.util.Stack;
  * XXX: DERIVATION INFORMATION FOR PHI/SIGMAS IS CURRENTLY LOST. [CSA]
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.13 2000-07-15 20:33:21 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.14 2000-10-11 01:53:23 cananian Exp $
  */
 public class SSIRename {
     private static final boolean DEBUG = false;
@@ -254,6 +254,8 @@ public class SSIRename {
 			arg.put(q, varmap.get(((CJMP)q).test()));
 		    else if (q instanceof SWITCH)
 			arg.put(q, varmap.get(((SWITCH)q).index()));
+		    else if (q instanceof TYPESWITCH)
+			arg.put(q, varmap.get(((TYPESWITCH)q).index()));
 		    else if (q instanceof CALL) {
 			CALL Q = (CALL) q;
 			Temp[] args = new Temp[Q.paramsLength()];
@@ -307,6 +309,9 @@ public class SSIRename {
 		    else if (q instanceof SWITCH)
 			nq = new SWITCH(nqf, q, (Temp) arg.get(q),
 					((SWITCH)q).keys(), l, r);
+		    else if (q instanceof TYPESWITCH)
+			nq = new TYPESWITCH(nqf, q, (Temp) arg.get(q),
+					    ((TYPESWITCH)q).keys(), l, r);
 		    else if (q instanceof CALL) {
 			CALL Q = (CALL) q;
 			Temp[] defs = (Temp[]) sdf.get(q);
