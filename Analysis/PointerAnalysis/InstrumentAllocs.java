@@ -31,7 +31,7 @@ import java.util.Map;
  * <code>InstrumentAllocs</code> adds counters to each allocation site.
  * 
  * @author  root <root@BDEMSKY.MIT.EDU>
- * @version $Id: InstrumentAllocs.java,v 1.1.2.4 2000-11-09 20:07:40 bdemsky Exp $
+ * @version $Id: InstrumentAllocs.java,v 1.1.2.5 2000-11-09 20:38:30 bdemsky Exp $
  */
 public class InstrumentAllocs extends MethodMutator implements java.io.Serializable {
     int count;
@@ -105,8 +105,8 @@ public class InstrumentAllocs extends MethodMutator implements java.io.Serializa
 			    Quad.addEdge(qcall,0,qphi,0);
 			    Quad.addEdge(qcall,1,qphi,1);
 			    Quad qq=(q instanceof NEW)?q.next(0):q;
-			    Quad.addEdge(qq.prev(0),qq.prevEdge(0).which_succ(),qconst,0);
-			    Quad.addEdge(qphi,0,qq,0);
+			    Quad.addEdge(qphi, 0,qq.next(0),qq.nextEdge(0).which_pred());
+			    Quad.addEdge(qq,0,qcall,0);
 			}
 		    } catch (Error e) {
 			//Ignore, means that its code called only by our instrumenting
