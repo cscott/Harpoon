@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.42 1999-06-04 17:58:24 cananian Exp $
+% $Id: harpoon.bib,v 1.43 1999-06-10 00:16:40 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -39,6 +39,8 @@
                   of Programming Languages ({POPL})"}
 @string{POPL98 = "Proceedings of the 25th {ACM} Symposium on Principles
                   of Programming Languages ({POPL})"}
+@string{PPOPP99 = "Proceedings of the 7th {ACM} {SIGPLAN} symposium on
+                   Principles and practice of parallel programming ({PPoPP})"}
 @string{TOPLAS = "{ACM} Transactions on Programming Languages and Systems"}
 @string{ASIAN97 = "Advances in Computing Science --- {ASIAN} '97.  Third
                   Asian Computing Conference.  Proceedings"}
@@ -245,7 +247,7 @@
   title =        "A Simple Graph-Based Intermediate Representation",
   booktitle =    "The First {ACM} {SIGPLAN} Workshop on Intermediate
                  Representations",
-  address =      "San Francisco, California",
+  address =      {San Francisco, California},
   month =        jan,
   year =         "1995",
   url =          {http://www.cs.rice.edu/~mpal/IR95.ps},
@@ -890,6 +892,33 @@
   url =          {http://www.acm.org/pubs/citations/proceedings/micro/266800/p92-august/}
 }
 
+@InProceedings{lee99:parssa,
+  author = 	 {Jaejin Lee and David A. Padua and Samuel P. Midkiff},
+  title = 	 {Basic Compiler Algorithms for Parallel Programs},
+  booktitle = 	 PPOPP99,
+  pages =	 {1-12},
+  year =	 1999,
+  address =	 {Atlanta, Georgia},
+  month =	 may,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/ppopp/301104/p1-lee/},
+  annote =	 {SSA form for explicitly parallel programs.}
+}
+
+
+@InProceedings{liao99:issa,
+  author = 	 {Shih-Wei Liao and Amer Diwan and Robert P. Bosch
+                  Jr. and Anwar Ghuloum and Monica S. Lam},
+  title = 	 {{SUIF} Explorer: An Interactive and Interprocedural
+                  Parallelizer},
+  booktitle = 	 PPOPP99,
+  pages =	 {37-48},
+  year =	 1999,
+  address =	 {Atlanta, Georgia},
+  month =	 may,
+  url =		 {http://www.acm.org/pubs/citations/proceedings/ppopp/301104/p37-liao/},
+  annote =	 {Interprocedural SSA form.}
+}
+
 %%%%%%%%%%%%%%%%% DERIVED WORKS %%%%%%%%%%%%%%%%%%%%%%%
 % (Referenced in some source paper)
 
@@ -1040,7 +1069,7 @@
   booktitle = 	 POPL88,
   pages =	 {1-11},
   year =	 1988,
-  address =	 {San Diego, CA},
+  address =	 {San Diego, California},
   month =	 jan,
   annote =	 {Earliest SSA reference?},
   url =		 {http://www.acm.org/pubs/citations/proceedings/plan/73560/p1-alpern/}
@@ -1052,7 +1081,7 @@
   booktitle = 	 POPL88,
   pages =	 {12-27},
   year =	 1988,
-  address =	 {San Diego, CA},
+  address =	 {San Diego, California},
   month =	 jan,
   url =		 {http://www.acm.org/pubs/citations/proceedings/plan/73560/p12-rosen/}
 }
@@ -1101,7 +1130,7 @@
   booktitle = 	 PLDI90,
   pages =	 {257-271},
   year =	 1990,
-  address =	 {White Plains, NY},
+  address =	 {White Plains, New York},
   month =	 jun,
   annote =	 {PDW canonical reference.},
   url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/93542/p257-ottenstein/}
@@ -1113,7 +1142,7 @@
   booktitle = 	 PLDI95,
   pages =	 {47-55},
   year =	 1995,
-  address =	 {La Jolla, CA},
+  address =	 {La Jolla, California},
   month =	 jun,
   annote =	 {Efficiently constructing GSSA form.},
   url = 	 {http://www.acm.org/pubs/citations/proceedings/pldi/207110/p47-tu/}
