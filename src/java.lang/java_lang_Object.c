@@ -64,14 +64,16 @@ PRIMITIVEARRAYCLONE(Long, jlong, J);
 PRIMITIVEARRAYCLONE(Float, jfloat, F);
 PRIMITIVEARRAYCLONE(Double, jdouble, D);
 
-#if 0
+#if WITH_HEAVY_THREADS
 /*
  * Class:     java_lang_Object
  * Method:    notify
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_notify
-  (JNIEnv *, jobject);
+  (JNIEnv *env, jobject _this) {
+  assert(0/*unimplemented*/);
+}
 
 /*
  * Class:     java_lang_Object
@@ -79,14 +81,17 @@ JNIEXPORT void JNICALL Java_java_lang_Object_notify
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_notifyAll
-  (JNIEnv *, jobject);
-
+  (JNIEnv *env, jobject _this) {
+  assert(0/*unimplemented*/);
+}
 /*
  * Class:     java_lang_Object
  * Method:    wait
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_wait
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *env, jobject _this, jlong val) {
+  assert(0/*unimplemented*/);
+}
 
-#endif
+#endif /* WITH_HEAVY_THREADS */
