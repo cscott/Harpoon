@@ -235,7 +235,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     include/private/gcconfig.h include/private/gc_pmark.h \
     include/gc_inl.h include/gc_inline.h include/gc_mark.h \
     threadlibs.c if_mach.c if_not_there.c gc_cpp.cc include/gc_cpp.h \
-    include/weakpointer.h include/private/gc_locks.h \
+    gcname.c include/weakpointer.h include/private/gc_locks.h \
     gcc_support.c mips_ultrix_mach_dep.s include/gc_alloc.h \
     include/new_gc_alloc.h include/javaxfc.h sparc_sunos4_mach_dep.s \
     sparc_netbsd_mach_dep.s \
@@ -247,24 +247,35 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     include/gc_pthread_redirects.h $(CORD_SRCS)
 
 DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
-	doc/README.amiga doc/README.cords doc/README.debugging \
+	doc/README.amiga doc/README.cords doc/debugging.html \
 	doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
 	doc/README.sgi doc/README.solaris2 doc/README.uts \
 	doc/README.win32 doc/barrett_diagram doc/README \
         doc/README.contributors doc/README.changes doc/gc.man \
-	doc/README.environment
+	doc/README.environment doc/tree.html doc/gcdescr.html \
+	doc/README.autoconf
 
 TESTS= tests/test.c tests/test_cpp.cc tests/trace_test.c \
 	tests/leak_test.c tests/thread_leak_test.c
-OTHER_FILES= Makefile PCR-Makefile OS2_MAKEFILE NT_MAKEFILE BCC_MAKEFILE \
-           setjmp_t.c SMakefile.amiga configure.in Makefile.am \
-           callprocs pc_excludes \
-           MacProjects.sit.hqx MacOS.c EMX_MAKEFILE \
+
+GNU_BUILD_FILES= configure.in Makefile.am configure acinclude.m4 \
+		 libtool.m4 install-sh configure.host Makefile.in \
+		 aclocal.m4 config.sub config.guess ltconfig \
+		 ltmain.sh mkinstalldirs
+
+OTHER_MAKEFILES= OS2_MAKEFILE NT_MAKEFILE NT_THREADS_MAKEFILE gc.mak \
+		 BCC_MAKEFILE EMX_MAKEFILE WCC_MAKEFILE Makefile.dj \
+		 PCR-Makefile SMakefile.amiga Makefile.DLLs \
+		 digimars.mak Makefile.direct
+#	Makefile and Makefile.direct are copies of each other.
+
+OTHER_FILES= Makefile setjmp_t.c callprocs pc_excludes \
+           MacProjects.sit.hqx MacOS.c \
            Mac_files/datastart.c Mac_files/dataend.c \
            Mac_files/MacOS_config.h Mac_files/MacOS_Test_config.h \
-           add_gc_prefix.c gc_cpp.cpp \
-	   win32_threads.c NT_THREADS_MAKEFILE gc.mak Makefile.dj \
-	   version.h Makefile.DLLs WCC_MAKEFILE AmigaOS.c $(TESTS)
+           add_gc_prefix.c gc_cpp.cpp win32_threads.c \
+	   version.h AmigaOS.c \
+	   $(TESTS) $(GNU_BUILD_FILES) $(OTHER_MAKEFILES)
 
 CORD_INCLUDE_FILES= $(srcdir)/include/gc.h $(srcdir)/include/cord.h \
 	$(srcdir)/include/ec.h $(srcdir)/include/private/cord_pos.h
@@ -508,12 +519,22 @@ KandRtest: setjmp_test gctest
 	./setjmp_test
 	./gctest
 
-add_gc_prefix: add_gc_prefix.c
+add_gc_prefix: $(srcdir)/add_gc_prefix.c
 	$(CC) -o add_gc_prefix $(srcdir)/add_gc_prefix.c
 
-gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix
+gcname: $(srcdir)/gcname.c $(srcdir)/version.h
+	$(CC) -o gcname $(srcdir)/gcname.c
+
+gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
+	cp Makefile Makefile.old
+	cp Makefile.direct Makefile
+	rm -f `./gcname`
+	ln -s . `./gcname`
 	./add_gc_prefix $(SRCS) $(DOC_FILES) $(OTHER_FILES) > /tmp/gc.tar-files
 	tar cvfh gc.tar `cat /tmp/gc.tar-files`
+	cp gc.tar `./gcname`.tar
+	gzip `./gcname`.tar
+	rm `./gcname`
 
 pc_gc.tar: $(SRCS) $(OTHER_FILES)
 	tar cvfX pc_gc.tar pc_excludes $(SRCS) $(OTHER_FILES)

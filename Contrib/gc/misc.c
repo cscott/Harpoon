@@ -73,6 +73,10 @@
 #   endif
 # endif
 
+#ifdef ECOS
+#undef STACKBASE
+#endif
+
 GC_FAR struct _GC_arrays GC_arrays /* = { 0 } */;
 
 
@@ -439,6 +443,15 @@ void GC_init()
     UNLOCK();
     ENABLE_SIGNALS();
 
+#   if defined(PARALLEL_MARK) || defined(THREAD_LOCAL_ALLOC)
+	/* Make sure marker threads and started and thread local */
+	/* allocation is initialized, in case we didn't get 	 */
+	/* called from GC_init_parallel();			 */
+        {
+	  extern void GC_init_parallel(void);
+	  GC_init_parallel();
+	}
+#   endif /* PARALLEL_MARK || THREAD_LOCAL_ALLOC */
 }
 
 #if defined(MSWIN32) || defined(MSWINCE)
@@ -733,7 +746,7 @@ int GC_tmp;  /* Should really be local ... */
 #if !defined(MSWIN32) && !defined(MSWINCE) && !defined(OS2) && !defined(MACOS)
 int GC_write(fd, buf, len)
 int fd;
-char *buf;
+GC_CONST char *buf;
 size_t len;
 {
      register int bytes_written = 0;
@@ -752,6 +765,15 @@ size_t len;
     return(bytes_written);
 }
 #endif /* UN*X */
+
+#if defined(ECOS)
+int GC_write(fd, buf, len)
+{
+  _Jv_diag_write (buf, len);
+  return len;
+}
+#endif
+
 
 #if defined(MSWIN32) || defined(MSWINCE)
 #   define WRITE(f, buf, len) GC_write(buf, len)
@@ -856,7 +878,7 @@ GC_CONST char * msg;
 	    /* It's arguably nicer to sleep, but that makes it harder	*/
 	    /* to look at the thread if the debugger doesn't know much	*/
 	    /* about threads.						*/
-	    for(;;);
+	    for(;;) {}
     }
 #   ifdef MSWIN32
 	DebugBreak();

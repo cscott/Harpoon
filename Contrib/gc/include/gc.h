@@ -96,8 +96,9 @@
 # endif
 #endif
 
-#if defined(_MSC_VER) && (defined(_DLL) && !defined(NOT_GC_DLL) \
-	                  || defined(GC_DLL))
+#if (defined(__DMC__) || defined(_MSC_VER)) \
+		&& (defined(_DLL) && !defined(NOT_GC_DLL) \
+	            || defined(GC_DLL))
 # ifdef GC_BUILD
 #   define GC_API extern __declspec(dllexport)
 # else
@@ -705,7 +706,7 @@ GC_API GC_warn_proc GC_set_warn_proc GC_PROTO((GC_warn_proc p));
     /* Returns old warning procedure.	*/
 	
 /* The following is intended to be used by a higher level	*/
-/* (e.g. cedar-like) finalization facility.  It is expected	*/
+/* (e.g. Java-like) finalization facility.  It is expected	*/
 /* that finalization code will arrange for hidden pointers to	*/
 /* disappear.  Otherwise objects can be accessed after they	*/
 /* have been collected.						*/

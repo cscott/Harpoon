@@ -174,7 +174,7 @@
 #    define IA64
 #    define mach_type_known
 # endif
-# if defined(LINUX) && defined(powerpc)
+# if defined(LINUX) && (defined(powerpc) || defined(__powerpc__))
 #    define POWERPC
 #    define mach_type_known
 # endif
@@ -1596,6 +1596,12 @@
 --> inconsistent configuration
 # endif
 # if defined(HPUX_THREADS) && !defined(HPUX)
+--> inconsistent configuration
+# endif
+# if defined(WIN32_THREADS) && !defined(MSWIN32)
+    /* Ideally CYGWIN32 should work, in addition to MSWIN32.  I suspect the necessary code	*/
+    /* is mostly there, but nobody has actually made sure the right combination of pieces is	*/
+    /* compiled in, etc.									*/
 --> inconsistent configuration
 # endif
 # if defined(PCR) || defined(SRC_M3) || \

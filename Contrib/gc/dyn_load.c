@@ -514,6 +514,10 @@ void GC_register_dynamic_libraries()
 #include <fcntl.h>
 #include <elf.h>
 #include <errno.h>
+#include <signal.h>  /* Only for the following test. */
+#ifndef _sigargs
+# define IRIX6
+#endif
 
 extern void * GC_roots_present();
 	/* The type is a lie, since the real type doesn't make sense here, */
@@ -575,7 +579,8 @@ void GC_register_dynamic_libraries()
         if ((flags & (MA_BREAK | MA_STACK | MA_PHYS)) != 0) goto irrelevant;
         if ((flags & (MA_READ | MA_WRITE)) != (MA_READ | MA_WRITE))
             goto irrelevant;
-          /* The latter test is empirically useless.  Other than the	*/
+          /* The latter test is empirically useless in very old Irix	*/
+	  /* versions.  Other than the					*/
           /* main data and stack segments, everything appears to be	*/
           /* mapped readable, writable, executable, and shared(!!).	*/
           /* This makes no sense to me.	- HB				*/
@@ -588,7 +593,11 @@ void GC_register_dynamic_libraries()
 #	endif /* MMAP_STACKS */
 
         limit = start + addr_map[i].pr_size;
-	if (addr_map[i].pr_off == 0 && strncmp(start, ELFMAG, 4) == 0) {
+	/* The following seemed to be necessary for very old versions 	*/
+	/* of Irix, but it has been reported to discard relevant	*/
+	/* segments under Irix 6.5.  					*/
+#	ifndef IRIX6
+	  if (addr_map[i].pr_off == 0 && strncmp(start, ELFMAG, 4) == 0) {
 	    /* Discard text segments, i.e. 0-offset mappings against	*/
 	    /* executable files which appear to have ELF headers.	*/
 	    caddr_t arg;
@@ -615,7 +624,8 @@ void GC_register_dynamic_libraries()
 	            goto irrelevant;
 	        }
 	    }
-	}
+	  }
+#	endif /* !IRIX6 */
         GC_add_roots_inner(start, limit, TRUE);
       irrelevant: ;
     }

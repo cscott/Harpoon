@@ -185,6 +185,39 @@
   }
 #endif
 
+# ifdef ECOS
+
+# ifndef ECOS_GC_MEMORY_SIZE
+# define ECOS_GC_MEMORY_SIZE (448 * 1024)
+# endif /* ECOS_GC_MEMORY_SIZE */
+
+// setjmp() function, as described in ANSI para 7.6.1.1
+#define setjmp( __env__ )  hal_setjmp( __env__ )
+
+// FIXME: This is a simple way of allocating memory which is
+// compatible with ECOS early releases.  Later releases use a more
+// sophisticated means of allocating memory than this simple static
+// allocator, but this method is at least bound to work.
+static char memory[ECOS_GC_MEMORY_SIZE];
+static char *brk = memory;
+
+static void *tiny_sbrk(ptrdiff_t increment)
+{
+  void *p = brk;
+
+  brk += increment;
+
+  if (brk >  memory + sizeof memory)
+    {
+      brk -= increment;
+      return NULL;
+    }
+
+  return p;
+}
+#define sbrk tiny_sbrk
+# endif /* ECOS */
+
 #if defined(NETBSD) && defined(__ELF__)
   ptr_t GC_data_start;
 
@@ -378,7 +411,7 @@ void GC_enable_signals()
 # endif /*!OS/2 */
 
 /* Ivan Demakov: simplest way (to me) */
-#ifdef DOS4GW
+#if defined (DOS4GW)
   void GC_disable_signals() { }
   void GC_enable_signals() { }
 #endif
@@ -510,6 +543,7 @@ ptr_t GC_get_stack_base()
       handler h;
 #   endif
     {
+# ifndef ECOS
 #	if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1)
 	  struct sigaction	act;
 
@@ -543,6 +577,7 @@ ptr_t GC_get_stack_base()
 	    old_bus_handler = signal(SIGBUS, h);
 #	  endif
 #	endif
+# endif /* ECOS */
     }
 # endif /* NEED_FIND_LIMIT || UNIX_LIKE */
 
@@ -565,6 +600,7 @@ ptr_t GC_get_stack_base()
     
     void GC_reset_fault_handler()
     {
+# ifndef ECOS
 #       if defined(SUNOS5SIGS) || defined(IRIX5) || defined(OSF1)
 	  (void) sigaction(SIGSEGV, &old_segv_act, 0);
 #	  if defined(IRIX5) && defined(_sigargs) /* Irix 5.x, not 6.x */ \
@@ -577,6 +613,7 @@ ptr_t GC_get_stack_base()
 	    (void) signal(SIGBUS, old_bus_handler);
 #	  endif
 #       endif
+# endif /* ECOS */
     }
 
     /* Return the first nonaddressible location > p (up) or 	*/
@@ -585,6 +622,7 @@ ptr_t GC_get_stack_base()
     ptr_t p;
     GC_bool up;
     {
+# ifndef ECOS
         static VOLATILE ptr_t result;
     		/* Needs to be static, since otherwise it may not be	*/
     		/* preserved across the longjmp.  Can safely be 	*/
@@ -610,8 +648,13 @@ ptr_t GC_get_stack_base()
 	    result += MIN_PAGE_SIZE;
  	}
 	return(result);
+# else /* ECOS */
+	abort();
+# endif /* ECOS */
     }
 # endif
+
+# ifndef ECOS
 
 #ifdef LINUX_STACKBOTTOM
 
@@ -764,6 +807,7 @@ ptr_t GC_get_stack_base()
     	return(result);
 #   endif /* STACKBOTTOM */
 }
+# endif /* ECOS */
 
 # endif /* ! AMIGA, !OS 2, ! MS Windows, !BEOS */
 
@@ -2223,13 +2267,24 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #		endif
             }
         }
+        UNPROTECT(h, GC_page_size);
+	/* We need to make sure that no collection occurs between	*/
+	/* the UNPROTECT and the setting of the dirty bit.  Otherwise	*/
+	/* a write by a third thread might go unnoticed.  Reversing	*/
+	/* the order is just as bad, since we would end up unprotecting	*/
+	/* a page in a GC cycle during which it's not marked.		*/
+	/* Currently we do this by disabling the thread stopping	*/
+	/* signals while this handler is running.  An alternative might	*/
+	/* be to record the fact that we're about to unprotect, or	*/
+	/* have just unprotected a page in the GC's thread structure,	*/
+	/* and then to have the thread stopping code set the dirty	*/
+	/* flag, if necessary.						*/
         for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
             register int index = PHT_HASH(h+i);
             
             async_set_pht_entry_from_index(GC_dirty_pages, index);
         }
-        UNPROTECT(h, GC_page_size);
-#	if defined(OSF1) || defined(LINUX)
+#	if defined(OSF1)
 	    /* These reset the signal handler each time by default. */
 	    signal(SIGSEGV, (SIG_PF) GC_write_fault_handler);
 #	endif
@@ -2278,9 +2333,11 @@ struct hblk *h;
 
 void GC_dirty_init()
 {
-#   if defined(SUNOS5SIGS) || defined(IRIX5) /* || defined(OSF1) */
+#   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(LINUX) || defined(OSF1)
       struct sigaction	act, oldact;
-#     ifdef IRIX5
+      /* We should probably specify SA_SIGINFO for Linux, and handle 	*/
+      /* the different architectures more uniformly.			*/
+#     if defined(IRIX5) || defined(LINUX) || defined(OSF1)
     	act.sa_flags	= SA_RESTART;
         act.sa_handler  = GC_write_fault_handler;
 #     else
@@ -2288,6 +2345,12 @@ void GC_dirty_init()
         act.sa_sigaction = GC_write_fault_handler;
 #     endif
       (void)sigemptyset(&act.sa_mask);
+#     ifdef SIG_SUSPEND
+        /* Arrange to postpone SIG_SUSPEND while we're in a write fault	*/
+        /* handler.  This effectively makes the handler atomic w.r.t.	*/
+        /* stopping the world for GC.					*/
+        (void)sigaddset(&act.sa_mask, SIG_SUSPEND);
+#     endif /* SIG_SUSPEND */
 #    endif
 #   if defined(MACOSX)
       struct sigaction act, oldact;
@@ -2316,7 +2379,7 @@ void GC_dirty_init()
 #	endif
       }
 #   endif
-#   if defined(OSF1) || defined(SUNOS4) || defined(LINUX)
+#   if defined(SUNOS4)
       GC_old_segv_handler = signal(SIGSEGV, (SIG_PF)GC_write_fault_handler);
       if (GC_old_segv_handler == SIG_IGN) {
         GC_err_printf0("Previously ignored segmentation violation!?");
@@ -2328,7 +2391,8 @@ void GC_dirty_init()
 #	endif
       }
 #   endif
-#   if defined(SUNOS5SIGS) || defined(IRIX5)
+#   if defined(SUNOS5SIGS) || defined(IRIX5) || defined(LINUX) || defined(OSF1)
+      /* SUNOS5SIGS includes HPUX */
 #     if defined(IRIX_THREADS)
       	sigaction(SIGSEGV, 0, &oldact);
       	sigaction(SIGSEGV, &act, 0);
@@ -2339,7 +2403,7 @@ void GC_dirty_init()
 	/* This is Irix 5.x, not 6.x.  Irix 5.x does not have	*/
 	/* sa_sigaction.					*/
 	GC_old_segv_handler = oldact.sa_handler;
-#     else /* Irix 6.x or SUNOS5SIGS */
+#     else /* Irix 6.x or SUNOS5SIGS or LINUX */
         if (oldact.sa_flags & SA_SIGINFO) {
           GC_old_segv_handler = (SIG_PF)(oldact.sa_sigaction);
         } else {
@@ -2356,7 +2420,7 @@ void GC_dirty_init()
 #       endif
       }
 #   endif
-#   if defined(MACOSX) || defined(HPUX)
+#   if defined(MACOSX) || defined(HPUX) || defined(LINUX)
       sigaction(SIGBUS, &act, &oldact);
       GC_old_bus_handler = oldact.sa_handler;
       if (GC_old_bus_handler == SIG_IGN) {
@@ -2368,7 +2432,7 @@ void GC_dirty_init()
 	  GC_err_printf0("Replaced other SIGBUS handler\n");
 #       endif
       }
-#   endif /* MACOS || HPUX */
+#   endif /* MACOS || HPUX || LINUX */
 #   if defined(MSWIN32)
       GC_old_segv_handler = SetUnhandledExceptionFilter(GC_write_fault_handler);
       if (GC_old_segv_handler != NULL) {
@@ -2962,9 +3026,11 @@ struct callinfo info[NFRAMES];
       register int i;
       
       info[nframes].ci_pc = fp->FR_SAVPC;
-      for (i = 0; i < NARGS; i++) {
-	info[nframes].ci_arg[i] = ~(fp->fr_arg[i]);
-      }
+#     if NARGS > 0
+        for (i = 0; i < NARGS; i++) {
+	  info[nframes].ci_arg[i] = ~(fp->fr_arg[i]);
+        }
+#     endif /* NARGS > 0 */
   }
   if (nframes < NFRAMES) info[nframes].ci_pc = 0;
 }
