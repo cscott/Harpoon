@@ -48,7 +48,7 @@ import java.util.Set;
  * This pass is invoked by <code>SyncTransformer.treeCodeFactory()</code>.
  * 
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreePostPass.java,v 1.6 2003-10-31 03:52:20 cananian Exp $
+ * @version $Id: TreePostPass.java,v 1.6.2.1 2003-11-14 18:02:31 cananian Exp $
  */
 class TreePostPass extends harpoon.Analysis.Tree.Simplification {
     private final List<Rule> RULES = new ArrayList<Rule>(); 
@@ -212,15 +212,13 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 				  DerivationGenerator dg,
 				  HMethod hm, ExpList javaArgs) {
 		HClass objType = hm.getParameterTypes()[0];
-		// args are <obj, index, flag field, ...>
+		// args are <obj, index, flag offset, ...>
 		// we need to calculate offset from index.
 		Exp indexE = extract(javaArgs, 1);
-		HField flagF = findField(extract(javaArgs, 2)); 
 		Exp offsetE = tb.arrayOffset
 		    (tf, source, dg, objType, new Translation.Ex(indexE))
 		    .unEx(tf);
-		Exp flagE = tb.fieldOffset(tf, source, dg, flagF).unEx(tf);
-		return subst(subst(javaArgs, offsetE, 1), flagE, 2);
+		return subst(javaArgs, offsetE, 1);
 	    }
 	};
     final Transformer limitedFieldTransformer = new Transformer() {
@@ -294,7 +292,7 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 		}
 	    });
 	// VALUETYPE TA(EXACT_readNT)(struct oobj *obj, int offset,
-	//			      int flag_offset, int flag_bit);
+	//			      int flag_offset, ptroff_t flag_bit);
 	methodTransformer.put("readNT", fieldTransformer);
 	methodTransformer.put("readNT_Array", arrayTransformer);
 	// void TA(EXACT_writeT)(struct oobj *obj, int offset,
@@ -333,7 +331,7 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 	    });
 	// void TA(EXACT_writeNT)(struct oobj *obj, int offset,
 	//			  VALUETYPE value,
-	//			  int flag_offset, int flag_bit);
+	//			  int flag_offset, ptroff_t flag_bit);
 	methodTransformer.put("writeNT", new Transformer() {
 		HClass functionSuffix(HMethod hm, ExpList javaArgs) {
 		    return hm.getParameterTypes()[2];
@@ -358,15 +356,13 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 				      DerivationGenerator dg,
 				      HMethod hm, ExpList javaArgs) {
 		    HClass objType = hm.getParameterTypes()[0];
-		    // args are <obj, index, value, flag field, flag bit>
+		    // args are <obj, index, value, flag offset, flag bit>
 		    // we need to calculate offset from index.
 		    Exp indexE = extract(javaArgs, 1);
-		    HField flagF = findField(extract(javaArgs, 3)); 
 		    Exp offsetE = tb.arrayOffset
 			(tf, source, dg, objType, new Translation.Ex(indexE))
 			.unEx(tf);
-		    Exp flagE = tb.fieldOffset(tf, source, dg, flagF).unEx(tf);
-		    return subst(subst(javaArgs, offsetE, 1), flagE, 3);
+		    return subst(javaArgs, offsetE, 1);
 		}
 	    });
 	// void EXACT_ensureReader(struct oobj *obj,
@@ -376,13 +372,14 @@ class TreePostPass extends harpoon.Analysis.Tree.Simplification {
 	methodTransformer.put("ensureReader", nullTransformer);
 	methodTransformer.put("ensureWriter", nullTransformer);
 	// struct vinfo *TA(EXACT_setReadFlags)(struct oobj *obj, int offset,
-	//				        int flag_offset, int flag_bit,
+	//				        int flag_offset,
+	//                                      ptroff_t flag_bit,
 	//				        struct vinfo *version,
 	//				        struct commitrec *cr);
 	methodTransformer.put("setReadFlags", fieldTransformer);
 	methodTransformer.put("setReadFlags_Array", arrayTransformer);
 	// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset,
-	//                              int flag_offset, int flag_bit,
+	//                              int flag_offset, ptroff_t flag_bit,
 	//                              struct vinfo *version);
 	methodTransformer.put("setWriteFlags", fieldTransformer);
 	methodTransformer.put("setWriteFlags_Array", arrayTransformer);

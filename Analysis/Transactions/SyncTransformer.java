@@ -88,7 +88,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.11 2003-11-05 21:29:05 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.11.2.1 2003-11-14 18:02:31 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -187,26 +187,28 @@ public class SyncTransformer
     private final HCodeFactory hcf;
 
     private final Linker linker;
+    private final boolean pointersAreLong;
     private final MethodGenerator gen;
     private final Set<HField> transFields = new HashSet<HField>();
 
     /** Creates a <code>SyncTransformer</code> with no transaction root
      *  methods. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
-			   HMethod mainM, Set roots) {
-	this(hcf, ch, l, mainM, roots, Collections.EMPTY_SET);
+			   boolean pointersAreLong, HMethod mainM, Set roots) {
+	this(hcf, ch, l, pointersAreLong, mainM, roots, Collections.EMPTY_SET);
     }
     /** Creates a <code>SyncTransformer</code> with a transaction root method
      *  set loaded from the specified resource name. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
-			   HMethod mainM, Set roots,
+			   boolean pointersAreLong, HMethod mainM, Set roots,
 			   String resourceName) {
-	this(hcf, ch, l, mainM, roots, parseResource(l, resourceName));
+	this(hcf, ch, l, pointersAreLong, mainM, roots,
+	     parseResource(l, resourceName));
     }
     /** Creates a <code>SyncTransformer</code> with the specified transaction
      *  root method set. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
-			   HMethod mainM, Set roots,
+			   boolean pointersAreLong, HMethod mainM, Set roots,
 			   Set<HMethod> transRoots) {
 	// our input is SSI.  We'll convert it to SSA in the 'clone' method.
         super(hcf, ch, false);
@@ -216,6 +218,7 @@ public class SyncTransformer
 	assert super.codeFactory().getCodeName()
 		    .equals(harpoon.IR.Quads.QuadRSSx.codename);
 	this.linker = l;
+	this.pointersAreLong = pointersAreLong;
 	this.HCclass = l.forName("java.lang.Class");
 	this.HCfield = l.forName("java.lang.reflect.Field");
 	String pkg = "harpoon.Runtime.Transactions.";
@@ -269,13 +272,7 @@ public class SyncTransformer
 	// set up our BitFieldNumbering (and create array-check fields in
 	// all array classes)
 	if (noFieldModification) this.bfn = null;
-	else {
-	  this.bfn = new BitFieldNumbering(l);
-	  for (Iterator<HClass> it=ch.classes().iterator(); it.hasNext(); ) {
-	    HClass hc = it.next();
-	    if (hc.isArray()) bfn.arrayBitField(hc);
-	  }
-	}
+	else this.bfn = new BitFieldNumbering(l, pointersAreLong);
 
 	// fixup code factory for 'known safe' methods.
 	final HCodeFactory superfactory = super.codeFactory();
@@ -427,6 +424,7 @@ public class SyncTransformer
 	final TempSplitter ts=new TempSplitter();
 	final ExactTypeMap<Quad> etm;
 	final AllocationInformationMap aim;
+	final int PTRBITS = pointersAreLong ? 64 : 32;
 	// mutable.
 	FOOTER footer; // we attach new stuff to the footer.
 	ListList<THROW> handlers = null; // points to current abort handler
@@ -750,23 +748,35 @@ public class SyncTransformer
 	    Quad q1;
 	    if (handlers==null) { // non-transactional read
 		// VALUETYPE TA(EXACT_readNT)(struct oobj *obj, int offset,
-		//                            int flag_offset, int flag_bit)
+		//                          int flag_offset, ptroff_t flag_bit)
 		Temp t2 = new Temp(tf, "flag_field");
 		Temp t3 = new Temp(tf, "flag_bit");
 		Temp t4 = new Temp(tf, "index_mod32");
-		HField arrayCheckField = bfn.arrayBitField(arrType);
-		in = addAt(in, new CONST(qf, q, t2, arrayCheckField, HCfield));
-		in = addAt(in, new CONST(qf, q, t4, new Integer(31),
+
+		// t2=(index/PTRBITS)*(PTRBITS/8)=(index & (~PTRBITS-1)) >>> 3
+		in = addAt(in, new CONST(qf, q, t2, new Integer(~(PTRBITS-1)),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.IAND, t2,
+					new Temp[] { q.index(), t2 }));
+		in = addAt(in, new CONST(qf, q, t4, new Integer(3),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.IUSHR, t2,
+					new Temp[] { t2, t4 }));
+		// t3 = 1 << (index&PTRBITS-1)
+		in = addAt(in, new CONST(qf, q, t4, new Integer(PTRBITS-1),
 					 HClass.Int));
 		in = addAt(in, new OPER(qf, q, Qop.IAND, t4,
 					new Temp[] { q.index(), t4 }));
-		in = addAt(in, new CONST(qf, q, t3, new Integer(1),
-					 HClass.Int));
+		in = addAt(in, new CONST(qf, q, t3, pointersAreLong ?
+					 (Number) new Long(1) : new Integer(1),
+					 pointersAreLong ?
+					 HClass.Long : HClass.Int));
 		in = addAt(in, new OPER(qf, q, Qop.ISHL, t3,
 					new Temp[] { t3, t4 }));
 		q1 = new CALL(qf, q, gen.lookupMethod
 			      ("readNT_Array", new HClass[]
-				  { arrType, HClass.Int, HCfield, HClass.Int },
+				  { arrType, HClass.Int, HClass.Int,
+				    pointersAreLong? HClass.Long : HClass.Int},
 			       compType),
 			      new Temp[] { q.objectref(), q.index(), t2, t3 },
 			      q.dst(), t1, false, false, new Temp[0]);
@@ -923,24 +933,37 @@ public class SyncTransformer
 	    if (handlers==null) { // non-transactional write
 		// void TA(EXACT_writeNT)(struct oobj *obj, int offset,
 		//                        VALUETYPE value,
-		//	                  int flag_offset, int flag_bit);
+		//	                  int flag_offset, ptroff_t flag_bit);
 		Temp t2 = new Temp(tf, "flag_field");
 		Temp t3 = new Temp(tf, "flag_bit");
 		Temp t4 = new Temp(tf, "index_mod32");
-		HField arrayCheckField = bfn.arrayBitField(arrType);
-		in = addAt(in, new CONST(qf, q, t2, arrayCheckField, HCfield));
-		in = addAt(in, new CONST(qf, q, t4, new Integer(31),
+
+		// t2=(index/PTRBITS)*(PTRBITS/8)=(index & (~PTRBITS-1)) >>> 3
+		in = addAt(in, new CONST(qf, q, t2, new Integer(~(PTRBITS-1)),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.IAND, t2,
+					new Temp[] { q.index(), t2 }));
+		in = addAt(in, new CONST(qf, q, t4, new Integer(3),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.IUSHR, t2,
+					new Temp[] { t2, t4 }));
+		// t3 = 1 << (index&PTRBITS-1)
+		in = addAt(in, new CONST(qf, q, t4, new Integer(PTRBITS-1),
 					 HClass.Int));
 		in = addAt(in, new OPER(qf, q, Qop.IAND, t4,
 					new Temp[] { q.index(), t4 }));
-		in = addAt(in, new CONST(qf, q, t3, new Integer(1),
-					 HClass.Int));
+		in = addAt(in, new CONST(qf, q, t3, pointersAreLong ?
+					 (Number) new Long(1) : new Integer(1),
+					 pointersAreLong ?
+					 HClass.Long : HClass.Int));
 		in = addAt(in, new OPER(qf, q, Qop.ISHL, t3,
 					new Temp[] { t3, t4 }));
+
+
 		q1 = new CALL(qf, q, gen.lookupMethod
 			      ("writeNT_Array", new HClass[]
-				  { arrType, HClass.Int, compType,
-				    HCfield, HClass.Int },
+				  { arrType, HClass.Int, compType, HClass.Int,
+				    pointersAreLong? HClass.Long : HClass.Int},
 			       HClass.Void),
 			      new Temp[]{ q.objectref(), q.index(), q.src(),
 					  t2, t3 },
@@ -1246,29 +1269,40 @@ public class SyncTransformer
 		CheckOracle.RefAndIndexAndType rit = it.next();
 		HClass arrayClass =
 		    HClassUtil.arrayClass(qf.getLinker(), rit.type, 1);
-		HField arrayCheckField = bfn.arrayBitField(arrayClass);
 		// struct vinfo *TA(EXACT_setReadFlags)
 		//      (struct oobj *obj, int offset,
-		//       int flag_offset, int flag_bit,
+		//       int flag_offset, ptroff_t flag_bit,
 		//       struct vinfo *version,
 		//       struct commitrec*cr/*this trans*/);
 		HMethod hm = gen.lookupMethod
 		    ("setReadFlags_Array", new HClass[]
-			{ arrayClass, HClass.Int, HCfield, HClass.Int,
+			{ arrayClass, HClass.Int, HClass.Int,
+			  pointersAreLong ? HClass.Long : HClass.Int,
 			  HCvinfo, HCcommitrec }, HCvinfo);
 
 		Temp t0 = new Temp(tf, "arrayreadcheck");
 		Temp t1 = new Temp(tf, "arrayreadcheck_flag_field");
 		Temp t2 = new Temp(tf, "arrayreadcheck_flag_bit");
-		in = addAt(in, new CONST(qf, q, t0, new Integer(31),
+		// t1=(index/PTRBITS)*(PTRBITS/8)=(index & (~PTRBITS-1)) >>> 3
+		in = addAt(in, new CONST(qf, q, t1, new Integer(~(PTRBITS-1)),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.IAND, t1,
+					new Temp[] { rit.index, t1 }));
+		in = addAt(in, new CONST(qf, q, t0, new Integer(3),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.IUSHR, t1,
+					new Temp[] { t1, t0 }));
+		// t3 = 1 << (index&PTRBITS-1)
+		in = addAt(in, new CONST(qf, q, t0, new Integer(PTRBITS-1),
 					 HClass.Int));
 		in = addAt(in, new OPER(qf, q, Qop.IAND, t0,
 				   new Temp[]{ rit.index, t0 }));
-		in = addAt(in, new CONST(qf, q, t2, new Integer(1),
-					 HClass.Int));
+		in = addAt(in, new CONST(qf, q, t2, pointersAreLong ?
+					 (Number) new Long(1) : new Integer(1),
+					 pointersAreLong ?
+					 HClass.Long : HClass.Int));
 		in = addAt(in, new OPER(qf, q, Qop.ISHL, t2,
 					new Temp[]{t2, t0}));
-		in = addAt(in, new CONST(qf, q, t1, arrayCheckField, HCfield));
 		CALL q0= new CALL(qf, q, hm,
 				  new Temp[] { rit.objref, rit.index, t1, t2,
 					       ts.versioned(rit.objref),
@@ -1294,26 +1328,37 @@ public class SyncTransformer
 		CheckOracle.RefAndIndexAndType rit = it.next();
 		HClass arrayClass =
 		    HClassUtil.arrayClass(qf.getLinker(), rit.type, 1);
-		HField arrayCheckField = bfn.arrayBitField(arrayClass);
 		// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset,
-		//                              int flag_offset, int flag_bit)
+		//                           int flag_offset,ptroff_t flag_bit)
 		HMethod hm = gen.lookupMethod
 		    ("setWriteFlags_Array", new HClass[]
-			{ arrayClass, HClass.Int, HCfield, HClass.Int },
+			{ arrayClass, HClass.Int, HClass.Int,
+			  pointersAreLong ? HClass.Long : HClass.Int },
 		     HClass.Void);
 
 		Temp t0 = new Temp(tf, "arraywritecheck");
 		Temp t1 = new Temp(tf, "arraywritecheck_flag_field");
 		Temp t2 = new Temp(tf, "arraywritecheck_flag_bit");
-		in = addAt(in, new CONST(qf, q, t0, new Integer(31),
+		// t1=(index/PTRBITS)*(PTRBITS/8)=(index & (~PTRBITS-1)) >>> 3
+		in = addAt(in, new CONST(qf, q, t1, new Integer(~(PTRBITS-1)),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.IAND, t1,
+					new Temp[] { rit.index, t1 }));
+		in = addAt(in, new CONST(qf, q, t0, new Integer(3),
+					 HClass.Int));
+		in = addAt(in, new OPER(qf, q, Qop.IUSHR, t1,
+					new Temp[] { t1, t0 }));
+		// t3 = 1 << (index&PTRBITS-1)
+		in = addAt(in, new CONST(qf, q, t0, new Integer(PTRBITS-1),
 					 HClass.Int));
 		in = addAt(in, new OPER(qf, q, Qop.IAND, t0,
 				   new Temp[]{ rit.index, t0 }));
-		in = addAt(in, new CONST(qf, q, t2, new Integer(1),
-					 HClass.Int));
+		in = addAt(in, new CONST(qf, q, t2, pointersAreLong ?
+					 (Number) new Long(1) : new Integer(1),
+					 pointersAreLong ?
+					 HClass.Long : HClass.Int));
 		in = addAt(in, new OPER(qf, q, Qop.ISHL, t2,
 					new Temp[]{t2, t0}));
-		in = addAt(in, new CONST(qf, q, t1, arrayCheckField, HCfield));
 		CALL q0= new CALL(qf, q, hm,
 				  new Temp[] { rit.objref, rit.index, t1, t2 },
 				  null, retex, false, false, new Temp[0]);
