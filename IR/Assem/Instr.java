@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.53 1999-09-11 06:12:46 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.54 1999-09-11 06:19:05 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -570,7 +570,10 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
                 }
 		break;
 	    case '\n':
-		s.append("\\n ");
+		// the below should still be valid, but its causing problems for global labels.
+		// so I'm putting back the original, hard-to-read toString format.
+		//s.append("\\n ");
+		s.append("\n");
 		break;
 	    default:
 		s.append(assem.charAt(i));
