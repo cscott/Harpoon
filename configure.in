@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.54 $)dnl
+AC_REVISION($Revision: 1.55 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -150,7 +150,7 @@ heavy)  AC_MSG_RESULT([heavy-weight threads])
 	# the BDW garbage collector needs to know which particular pthreads
 	# implementation we're using.  I don't know how to test this at the
 	# moment ... we'll just assume LinuxThreads.
-	CFLAGS="-DLINUX_THREADS -D_REENTRANT $CFLAGS"
+	CFLAGS="-DLINUX_THREADS $CFLAGS"
 	BDWFLAGS="-DLINUX_THREADS -D_REENTRANT"
 	;;
 pth)	AC_MSG_RESULT([GNU pth])
