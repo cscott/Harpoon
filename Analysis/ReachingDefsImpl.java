@@ -25,7 +25,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.2 2000-02-10 17:08:13 kkz Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.3 2000-02-10 17:09:44 kkz Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -213,7 +213,7 @@ public class ReachingDefsImpl extends ReachingDefs {
 	}
     }
     // debugging utility
-    private final boolean DEBUG = true;
+    private final boolean DEBUG = false;
     private void report(String str) {
 	if (DEBUG) System.out.println(str);
     }
