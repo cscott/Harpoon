@@ -488,8 +488,6 @@ public class RealtimeThread extends Thread implements Schedulable {
 	mem = getMemoryArea();
 	super.start();// When the run method is called, 
 	addToFeasibility();
-	// RealtimeThread points to the current scope.
-	// Note that there is no exit()... this is actually legal.
     }
 
     /** Used by threads that have a reference to a <code>ReleaseParameters</code>
