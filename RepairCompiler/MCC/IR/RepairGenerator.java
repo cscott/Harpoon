@@ -387,6 +387,9 @@ public class RepairGenerator {
 	crhead.outputline("~"+name+"();");
         craux.outputline("#include \""+headername+"\"");
         craux.outputline("#include \"size.h\"");
+	if (Compiler.TIME) {
+	    craux.outputline("#include <sys/time.h>");
+	}
 	if (Compiler.ALLOCATECPLUSPLUS) {
 	    for(Iterator it=state.stTypes.descriptors();it.hasNext();) {
 		TypeDescriptor td=(TypeDescriptor)it.next();
@@ -528,7 +531,7 @@ public class RepairGenerator {
 	cr.endblock();
 	if (Compiler.TIME) {
 	    cr.outputline("gettimeofday(&_end_time,NULL);");
-	    cr.outputline("printf(\"time=%ld uS\\n\",(_end_time.tv_sec-_begin_time.tv_sec)*1000000+_end_time.tv_usec-_begin_time.tv_usec)");
+	    cr.outputline("printf(\"time=%ld uS\\n\",(_end_time.tv_sec-_begin_time.tv_sec)*1000000+_end_time.tv_usec-_begin_time.tv_usec);");
 	}
 
 	if (Compiler.GENERATEINSTRUMENT) {
