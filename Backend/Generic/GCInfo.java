@@ -28,7 +28,7 @@ import java.util.Set;
  * the instruction stream.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: GCInfo.java,v 1.1.2.5 2000-02-10 23:54:02 kkz Exp $
+ * @version $Id: GCInfo.java,v 1.1.2.6 2000-02-18 21:28:58 kkz Exp $
  */
 public abstract class GCInfo {
     /** Creates an <code>IntermediateCodeFactory</code> that
@@ -76,7 +76,8 @@ public abstract class GCInfo {
     public static class GCPoint {
 	protected Instr gcPoint;
 	protected Label label;
-	protected Map liveDerivations; // maps Temps to Derivation.DList 
+	protected Map regDerivations;
+	protected Map stackDerivations;
 	protected Set liveStackOffsetLocs;
 	protected Set liveMachineRegLocs;
 	/** Creates a <code>GCPoint</code> object 
@@ -84,7 +85,7 @@ public abstract class GCInfo {
 	           the <code>Label</code> identifying
 		   the <code>gcPoint</code>
 	    @param liveDerivations
-	           a <code>Map</code> of derived pointer locations as
+	           a <code>Map</code> of pointer locations as
 		   <code>Set</code>s of <code>CommonLoc</code>s to 
 		   the corresponding derivation information as 
 		   <code>DLoc</code>s
@@ -96,8 +97,29 @@ public abstract class GCInfo {
 		       Set locations) {
 	    this.gcPoint = gcPoint;
 	    this.label = label;
-	    this.liveDerivations = liveDerivations;
+	    filter(liveDerivations);
 	    filter(locations);
+	}
+	// Sorts derivations by location type of derived pointer
+	private void filter(Map derivations) {
+	    regDerivations = new HashMap();
+	    stackDerivations = new HashMap();
+	    for(Iterator keys=derivations.keySet().iterator(); 
+		keys.hasNext(); ) {
+		Set key = (Set)keys.next();
+		DLoc derivation = (DLoc)derivations.get(key);
+		for(Iterator it=key.iterator(); it.hasNext(); ) {
+		    CommonLoc loc = (CommonLoc)it.next();
+		    switch(loc.kind()) {
+		    case StackOffsetLoc.KIND:
+			stackDerivations.put(loc, derivation); break;
+		    case MachineRegLoc.KIND:
+			regDerivations.put(loc, derivation); break;
+		    default:
+			Util.assert(false);		    
+		    }
+		}
+	    }
 	}
 	// Sorts the various locations by type
 	private void filter(Set locations) {
@@ -113,16 +135,21 @@ public abstract class GCInfo {
 		}
 	    }
 	}
-	/** Returns the <code>Label</code> created at that GC point */
+	/** Returns the <code>Label</code> identifying the GC point */
 	public Label label() { return label; }
-	/** Returns the <code>Map</code> of live Temps to 
-	    <code>Derivation</code>s at that GC point */
-	public Map liveDerivations() { return liveDerivations; }
-	/** Returns the <code>Set</code> of live
-	    <code>StackOffsetLoc</code>s at that GC point */
+	/** Returns the <code>Map</code> of live derived pointers in
+	    <code>MachineRegLoc</code>s to the derivation information
+	    in the form of <code>DLoc</code>s for that GC point */
+	public Map regDerivations() { return regDerivations; }
+	/** Returns the <code>Map</code> of live derived pointers in
+	    <code>StackOffsetLoc</code>s to the derivation information
+	    in the form of <code>DLoc</code>s for that GC point */
+	public Map stackDerivations() { return stackDerivations; }
+	/** Returns the <code>Set</code> of live, non-derived pointers
+	    in <code>StackOffsetLoc</code>s at that GC point */
 	public Set liveStackOffsetLocs() { return liveStackOffsetLocs; }
-	/** Returns the <code>Set</code> of live
-	    <code>MachineRegLoc</code>s at that GC point */
+	/** Returns the <code>Set</code> of live, non-derived pointers
+	    in <code>MachineRegLoc</code>s at that GC point */
 	public Set liveMachineRegLocs() { return liveMachineRegLocs; }
     }
     /** 
@@ -145,3 +172,4 @@ public abstract class GCInfo {
 	}
     }
 }
+

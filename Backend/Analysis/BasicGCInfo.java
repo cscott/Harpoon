@@ -48,7 +48,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.9 2000-02-18 20:20:53 pnkfelix Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.10 2000-02-18 21:28:59 kkz Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -201,6 +201,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		parent.clear(hm);
 		m.remove(hm); // remove from map
 	    }
+	    /** returns <code>TempLocator</code> */
 	    public harpoon.Backend.Generic.RegFileInfo.TempLocator
 		getTempLocator() { 
 		return ((IntermediateCodeFactory)
@@ -212,7 +213,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		protected final LiveTemps lt;
 		protected final ReachingDefs rd;
 		protected final Set s;
-		protected final TempLocator tl = null; // for now
+		protected final TempLocator tl = getTempLocator();
 		protected final harpoon.Analysis.Maps.Derivation d;
 		protected final HMethod hm; 
 		protected int index = 0;
@@ -261,8 +262,8 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    live.addAll(lt.getLiveBefore(i));
 		    live.addAll(lt.getLiveAfter(i));
 		    // filter out non-pointers and derived pointers
-		    Map derivedPtrs = new HashMap();
 		    Set liveLocs = new HashSet();
+		    Map derivedPtrs = new HashMap();
 		    while(!live.isEmpty()) {
 			Temp t = (Temp)live.pull();
 			Instr[] defPts = 
@@ -276,7 +277,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 			    // locations where it can be found
 			    liveLocs.addAll(tl.locate(t, defPts[0]));
 			else if (ddl != null)
-			    // a derived pointer: add to derived pointer map
+			    // a derived pointer: add to set of derived ptrs
 			    derivedPtrs.put(tl.locate(t, defPts[0]), 
 					    unroll(ddl, i));
 		    }
