@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.48 1999-06-28 07:40:08 cananian Exp $
+% $Id: thesis.tex,v 1.49 1999-06-28 08:04:06 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -15,10 +15,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.48 $ $}
+\date{\today \\ $ $Revision: 1.49 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.48 $ $}{$ $Revision: 1.48 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.49 $ $}{$ $Revision: 1.49 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -540,10 +540,37 @@ of figure~\ref{fig:SSIalg}.
 \end{myfigure}
 
 \begin{lemma}
-My algorithm is correct.
+If a \phifunction{} (\sigfunction{}) for a variable $v$ is needed in
+an SESE region, there is at least one definition (use) of $v$ within
+the SESE.
 \end{lemma}
 \begin{proof}
-Foo.
+By definition X a \phifunction{} for $v$ is needed at some node $Z$
+iff there exist paths $X \pathplus Z$ and $Y \pathplus Z$ having no
+nodes but $Z$ in common where $X$ and $Y$ contain definitions for $v$
+(where a \phisigfunction[or] for $v$ is also considered a definition).
+Choose any such paths.  Let us assume that both $X$ and $Y$ are
+outside the SESE containing $Z$.  As there is only one entrance edge
+into the SESE, the paths $X \pathplus Z$ and $Y \pathplus Z$ must
+contain some node in common other than $Z$.  But this contradicts our
+choice of $X$ and $Y$.  Therefore at least one of $X$ and $Y$ must be
+inside the SESE.
+
+Likewise, by definition Y a \sigfunction{} for $v$ is needed at some
+node $Z$ iff there exist paths $Z \pathplus X$ and $Z \pathplus Y$
+having no nodes but $Z$ in commong where $X$ and $Y$ contain uses of
+$v$ (where a \phisigfunction[or] for $v$ is also considered a use).
+By argument paralleling the above, at least one of $X$ and $Y$ must be
+in the SESE containing $Z$ because there is only one exit edge.
+\end{proof}
+
+More stuff here.
+
+\begin{theorem}
+The algorithm in figure~\ref{fig:SSIalg} is correct.
+\end{theorem}
+\begin{proof}
+Direct from the preceding lemmas.
 \end{proof}
 
 My algorithm is correct.\fixme{Prove this.}
