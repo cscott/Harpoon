@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.6 1998-11-25 10:50:16 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.7 1998-11-25 11:04:09 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -27,7 +27,7 @@ ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 		$(patsubst %,egrep -v % |,$(BUILD_IGNORE)) \
 		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
 		sed -e "s|^[.]/*||")
-ALLSOURCE := $(filter-out .%.java, \
+ALLSOURCE := $(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java)))
 TARSOURCE := $(filter-out JavaChip%, \
 	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile
