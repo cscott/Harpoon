@@ -74,6 +74,7 @@ Analysis/Companions/DataFlowSolver.java
 Analysis/Companions/SingularFinder.java
 Analysis/Companions/SingularOracle.java
 Analysis/Companions/StaticValue.java
+Analysis/Companions/QuadFlowGraph.java
 Analysis/Context.java
 Analysis/Counters/EpilogMutator.java
 Analysis/Counters/RuntimeMethodCloner.java
