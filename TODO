@@ -1,11 +1,15 @@
+---- Oct-21-98
+Implement clone() method for IR.Bytecode.Code so that we don't die if we
+clone a method before doing getCode("quad-ssa") on it.
 ---- Oct-13-98
-Add gnu.getopt and gnu.bytecode to the Harpoon package.
-Rewrite Bytecode IR and Nate's stuff to use the gnu.bytecode package.
+X Add gnu.getopt and gnu.bytecode to the Harpoon package.
+O Rewrite Bytecode IR and Nate's stuff to use the gnu.bytecode package.
+  -- Not at all certain this is a good idea.
 Add gnu.getopt to make a friendly command-line interface to Main.Graph, etc.
 Make a decent dependency system: JavaDep doesn't cut it, as it takes 35s
  just to regenerate all the dependencies (which it does en-masse).
 ---- Oct-09-98
-Write copy-quadssa method.
+X Write copy-quadssa method. [called clone]
 ---- Oct-04-98
 Target AIRE for backend.
 Write 'UndoRecursion' analysis/optimization pass.
@@ -18,7 +22,8 @@ Undo peephole optimization and replace with a rule in SCCAnalysis that
 Make LCMP/FCMP/DCMP smarter.  We currently two twice as many tests as is
 necessary at times.
 ---- Sep-24-98
-figure out what to do about related variables/induction variables in bitwidth.
+Xfigure out what to do about related variables/induction variables in bitwidth.
+find induction variables and use this info in bitwidth.
 ---- Sep-23-98, cont
 X Fix optimization bug exhibited by harpoon.Test.f!
 X Merge improvements to harpoon.Test.Graph over to std harpoon.Main.Graph class
