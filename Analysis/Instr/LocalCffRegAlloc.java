@@ -52,7 +52,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.46 1999-11-16 21:13:34 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.47 1999-11-16 21:22:25 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -100,8 +100,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 	Instr instr = null;
 	while(instrs.hasNext()) {
 	    instr = (Instr) instrs.next();
-
-	    regfile.debug = 0; //FSK: reset debug var
 
 	    // skip any Spill Instructions
 	    if (instr instanceof FskLoad ||
@@ -480,13 +478,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    return Collections.unmodifiableSet(super.entrySet()); 
 	}
 
-	int debug = 0;
-
-
 	/** Removes all entries that have 'val' as a value in rMap. */
 	private void removeMappingsTo(Object val) {
-
-	    Util.assert(++debug < 100, "Shouldn't loop so much...");
 
 	    Iterator entries = new ArrayList(rMap.entrySet()).iterator();
 	    while(entries.hasNext()) {
@@ -500,7 +493,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    rMap.removeAll
 			(entry.getKey(), Collections.singleton(val));
 
-		    System.out.println("rMap: Removing entry " + entry);
+		    //System.out.println("rMap: Removing entry " + entry);
 		}
 
 
