@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.32 1998-10-12 01:38:02 cananian Exp $
+ * @version $Id: HClass.java,v 1.33 1998-10-14 20:03:25 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -180,6 +180,7 @@ public class HClass {
     // Add to hashtables.
     dsc2cls.put(getDescriptor(), this);
   }
+  protected HClass() { } // hack
 
   /**
    * If this class represents an array type, returns the <code>HClass</code>
@@ -223,7 +224,7 @@ public class HClass {
    */
   public String getPackage() {
     if (isPrimitive() || isArray()) return null;
-    String fullname = classfile.this_class().name().replace('/','.');
+    String fullname = getName();
     int lastdot = fullname.lastIndexOf('.');
     if (lastdot<0) return ""; // no package.
     else return fullname.substring(0, lastdot);
@@ -256,7 +257,7 @@ public class HClass {
       result.append('V');
     else { // it's an object, not a primitive type
       result.append('L');
-      result.append(classfile.this_class().name().replace('.','/'));
+      result.append(getName().replace('.','/'));
       result.append(';');
     }
     return result.toString();
@@ -888,7 +889,7 @@ public class HClass {
    *         <code>false</code> otherwise.
    */
   public boolean isInterface() {
-    return !isPrimitive() && classfile.access_flags.isInterface();
+    return !isPrimitive() && Modifier.isInterface(getModifiers());
   }
 
   /**
