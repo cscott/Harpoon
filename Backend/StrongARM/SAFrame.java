@@ -5,9 +5,9 @@ package harpoon.Backend.StrongARM;
 
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Backend.Allocation.AllocationInfo;
 import harpoon.Backend.Allocation.AllocationStrategy;
 import harpoon.Backend.Allocation.DefaultAllocationStrategy;
-import harpoon.Backend.Allocation.DefaultAllocationInfo;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
@@ -42,18 +42,18 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.14 1999-07-28 18:27:10 duncan Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.15 1999-07-28 20:09:35 duncan Exp $
  */
-public class SAFrame extends Frame implements DefaultAllocationInfo {
-     static Temp[] reg = new Temp[16];
+public class SAFrame extends Frame implements AllocationInfo {
+    static Temp[] reg = new Temp[16];
     private static Temp[] regLiveOnExit = new Temp[5];
     private static Temp[] regGeneral = new Temp[11];
     private static TempFactory regtf;
     private TempFactory tf;
     private AllocationStrategy mas;
     private static OffsetMap offmap;
-    private static int nextPtr;
 
+    private static final Temp nextPtr;
     static final Temp FP;
     static final Temp IP;
     static final Temp SP;
@@ -103,10 +103,7 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
         regLiveOnExit[3] = SP;
         regLiveOnExit[4] = PC;
         offmap = new OffsetMap32(null);
-        nextPtr = 0x0fff0000; // arbitrary value
-
-
-
+        nextPtr = new Temp(regtf);
     }
 
     public SAFrame() { 
@@ -144,10 +141,7 @@ public class SAFrame extends Frame implements DefaultAllocationInfo {
         return new CONST(tf, src, 4000000);
     }
 
-    public MEM getNextPtr(TreeFactory tf, HCodeElement src) { 
-        return new MEM(tf, src, Type.INT,
-                       new CONST(tf, src, nextPtr));
-    }
+    public Temp getNextPtr() { return nextPtr; }
 
     public Stm exitOutOfMemory(TreeFactory tf, HCodeElement src) { 
         return new CALL(tf, src,

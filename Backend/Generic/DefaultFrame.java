@@ -1,8 +1,8 @@
 package harpoon.Backend.Generic;
 
+import harpoon.Backend.Allocation.AllocationInfo;
 import harpoon.Backend.Allocation.AllocationStrategy;
 import harpoon.Backend.Allocation.DefaultAllocationStrategy;
-import harpoon.Backend.Allocation.DefaultAllocationInfo;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
@@ -36,12 +36,12 @@ import java.util.Map;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.14 1999-07-28 18:22:09 duncan Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.15 1999-07-28 20:09:43 duncan Exp $
  */
-public class DefaultFrame extends Frame implements DefaultAllocationInfo {
+public class DefaultFrame extends Frame implements AllocationInfo {
 
     private AllocationStrategy  m_allocator;
-    private int                 m_nextPtr;
+    private Temp                m_nextPtr;
     private OffsetMap           m_offsetMap;
     private Temp[]              m_registers;
     private TempFactory         m_tempFactory;
@@ -55,8 +55,9 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
     }
 	
     public DefaultFrame(OffsetMap map, AllocationStrategy st) {
-	m_allocator = st==null?new DefaultAllocationStrategy(this):st;
-	m_nextPtr   = 0;
+	m_allocator   = st==null?new DefaultAllocationStrategy(this):st;
+	m_tempFactory = Temp.tempFactory("");
+	m_nextPtr     = new Temp(m_tempFactory);
 	if (map==null) throw new Error("Must specify OffsetMap");
 	else m_offsetMap = map;
     }
@@ -65,6 +66,7 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
         DefaultFrame fr = new DefaultFrame(m_offsetMap, m_allocator);
         fr.m_registers = new Temp[16];
         fr.m_tempFactory = Temp.tempFactory(scope);
+	fr.m_nextPtr     = new Temp(fr.m_tempFactory);
         for (int i = 0; i < 16; i++)
             fr.m_registers[i] = new Temp(fr.m_tempFactory, "register_");
         return fr;
@@ -165,10 +167,7 @@ public class DefaultFrame extends Frame implements DefaultAllocationInfo {
         return new CONST(tf, src, 4000000);  // again, completely arbitrary
     }
   
-    public MEM getNextPtr(TreeFactory tf, HCodeElement src) { 
-	 return new MEM(tf, src, Type.INT,
-			new CONST(tf, src, m_nextPtr)); 
-    }
+    public Temp getNextPtr() { return m_nextPtr; }
     
     public Stm exitOutOfMemory(TreeFactory tf, HCodeElement src) {
         return new CALL(tf, src, 
