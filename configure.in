@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.145 $)dnl
+AC_REVISION($Revision: 1.146 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -831,6 +831,7 @@ sparc) archdir=sparc32 ;;
 sparc64) archdir=sparc64 ;;
 i?86) archdir=ix86 ;;
 mips) archdir=mips ;;
+powerpc) archdir=ppc32 ;;
 *)    AC_MSG_ERROR([no port for $target_cpu]) ;;
 esac
 AM_CONDITIONAL(ARM32, test "$archdir" = arm32)
@@ -893,7 +894,7 @@ fi
 AC_LINK_FILES(arch/${archdir}, include/asm)
 AC_OUTPUT(Makefile arch/Makefile
 	  arch/arm32/Makefile arch/sparc32/Makefile arch/sparc64/Makefile
-	  arch/ix86/Makefile arch/mips/Makefile
+	  arch/ix86/Makefile arch/mips/Makefile arch/ppc32/Makefile
 	  Contrib/Makefile
 	  src/Makefile src/jni/Makefile src/cam/Makefile
 	  src/java.lang/Makefile src/java.lang.reflect/Makefile
