@@ -68,7 +68,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.67 2000-02-12 17:47:58 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.68 2000-02-13 18:27:15 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -85,7 +85,7 @@ class ToTree {
     public ToTree(final TreeFactory tf, final LowQuadSSA code) {
 	this(tf, code,
 	     new ToTreeHelpers.MinMaxEdgeOracle(code),
-	     new ToTreeHelpers.DefaultFoldNanny(),
+	     new ToTreeHelpers.SSISimpleFoldNanny(code),
 	     new ToTreeHelpers.SSIReachingDefs(code));
     }
     /** Class constructor. */
@@ -438,12 +438,22 @@ static class TranslationVisitor extends LowQuadVisitor {
 
     public void visit(harpoon.IR.Quads.METHOD q) {
 	METHOD method; SEGMENT segment;
-	Temp   params[]  = q.params(); 
-	TEMP   mParams[] = new TEMP[params.length+1];
+	Temp   paramsQ[]  = q.params(); // quad temps
+	Temp   paramsT[] = new Temp[paramsQ.length]; // tree temps
+	TEMP   mParams[] = new TEMP[paramsQ.length+1];
 	
+	// compute types of TEMPs
+	HMethod hm = q.getFactory().getMethod();
+	List types = new ArrayList(Arrays.asList(hm.getParameterTypes()));
+	if (!q.isStatic()) types.add(0, hm.getDeclaringClass());
+	HClass paramType[] = (HClass[])types.toArray(new HClass[types.size()]);
+	// make tree temps for quad temps
+	for (int i=0; i<paramsQ.length; i++)
+	    paramsT[i] = m_ctm.tempMap(paramsQ[i]);
+
 	segment = new SEGMENT(m_tf, q, SEGMENT.CODE);
-	for (int i=0; i<params.length; i++) { 
-	    mParams[i+1] = (TEMP) _TEMP(params[i], q);
+	for (int i=0; i<paramsT.length; i++) { 
+	    mParams[i+1] = _TEMP(q, paramType[i], paramsT[i]);
 	}
 	Util.assert(m_handler==null);
 	m_handler = new Temp(m_tf.tempFactory(), "handler");
@@ -451,6 +461,9 @@ static class TranslationVisitor extends LowQuadVisitor {
 	method    = new METHOD(m_tf, q, mParams);
 	addStmt(segment);
 	addStmt(method);
+	// deal with possible folding
+	for (int i=0; i<paramsQ.length; i++)
+	    addMove(q, paramsQ[i], _TEMP(q, paramType[i], paramsT[i]));
     }
 
     public void visit(harpoon.IR.Quads.MONITORENTER q) {
@@ -784,10 +797,12 @@ static class TranslationVisitor extends LowQuadVisitor {
 	Set defSites = reachingDefs.reachingDefs(useSite, quadTemp);
 	if (defSites.size()==1) {
 	    HCodeElement hce = (HCodeElement) defSites.iterator().next();
-	    if (foldNanny.canFold(hce, quadTemp))
+	    if (foldNanny.canFold(hce, quadTemp)) {
 		// fold this use!
+		Util.assert(foldMap.containsKey(Default.pair(hce,quadTemp)));
 		return (Translation.Exp)
 		    foldMap.remove(Default.pair(hce,quadTemp));
+	    }
 	}
 	TypeBundle tb = mergeTypes(quadTemp, defSites);
 	Temp treeTemp = m_ctm.tempMap(quadTemp);
@@ -824,6 +839,7 @@ static class TranslationVisitor extends LowQuadVisitor {
 	Util.assert(quadTemp.tempFactory()!=m_tf.tempFactory(),
 		    "Temp should be from LowQuad factory, not Tree factory.");
 	if (foldNanny.canFold(defSite, quadTemp)) {
+	    Util.assert(!foldMap.containsKey(Default.pair(defSite, quadTemp)));
 	    foldMap.put(Default.pair(defSite, quadTemp), value);
 	    return;
 	}
