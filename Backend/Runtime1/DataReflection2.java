@@ -40,7 +40,7 @@ import java.util.List;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection2.java,v 1.2 2002-02-25 21:02:20 cananian Exp $
+ * @version $Id: DataReflection2.java,v 1.3 2003-07-04 03:41:54 cananian Exp $
  */
 public class DataReflection2 extends Data {
     final TreeBuilder m_tb;
@@ -93,6 +93,10 @@ public class DataReflection2 extends Data {
 	// ok, mark the end of the table.
 	stmlist.add(new LABEL(tf, null,
 			      m_nm.label(hc, "classinfo_end"), false));
+	// We need to put something after the label to keep gcc from
+	// moving classinfo_end into the .bss section when compiling with
+	// the PreciseC backend.
+	stmlist.add(_DATUM(m_nm.label(hc, "classinfo_end")));
 	// now make the actual string data bits.
 	// (only for members we actually declare)
 	for (Iterator it=members.iterator(); it.hasNext(); ) {

@@ -46,7 +46,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflection1.java,v 1.3 2002-09-08 22:51:59 cananian Exp $
+ * @version $Id: DataReflection1.java,v 1.4 2003-07-04 03:41:54 cananian Exp $
  */
 public class DataReflection1 extends Data {
     final NameMap m_nm;
@@ -100,37 +100,49 @@ public class DataReflection1 extends Data {
 	return (HDataElement) Stm.toStm(stmlist);
     }
     private Stm buildStr2Class(List sorted) {
+	Label ls, le;
 	List stmlist = new ArrayList(3+2*sorted.size());
 	// make a sorted table mapping name strings to class objects.
-	stmlist.add(new ALIGN(tf, null, 4)); // align table to word boundary
+	stmlist.add(new ALIGN(tf, null, 8)); // align table to double-word boundary
 	stmlist.add(new LABEL(tf, null,
-			      new Label(m_nm.c_function_name
-					("name2class_start")), true));
+			      ls = new Label(m_nm.c_function_name
+					     ("name2class_start")), true));
 	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
 	    stmlist.add(_DATUM(m_nm.label(hc, "namestr")));
 	    stmlist.add(_DATUM(m_nm.label(hc, "classobj")));
 	}
 	stmlist.add(new LABEL(tf, null,
-			      new Label(m_nm.c_function_name
-					("name2class_end")), true));
+			      le = new Label(m_nm.c_function_name
+					     ("name2class_end")), true));
+	// add two bogus words to keep gcc from putting class2info_end into
+	// the BSS segment when compiling with PreciseC and NO_SECTION_SUPPORT
+	stmlist.add(_DATUM(ls));
+	stmlist.add(_DATUM(le));
+	// okay, done now.
 	return Stm.toStm(stmlist);
     }
     private Stm buildClass2Info(List sorted) {
+	Label ls, le;
 	List stmlist = new ArrayList(3+2*sorted.size());
 	// make a sorted table mapping class objects to class info structures.
 	stmlist.add(new ALIGN(tf, null, 4)); // align table to word boundary
 	stmlist.add(new LABEL(tf, null,
-			      new Label(m_nm.c_function_name
-					("class2info_start")), true));
+			      ls = new Label(m_nm.c_function_name
+					     ("class2info_start")), true));
 	for (Iterator it=sorted.iterator(); it.hasNext(); ) {
 	    HClass hc = (HClass) it.next();
 	    stmlist.add(_DATUM(m_nm.label(hc, "classobj")));
 	    stmlist.add(_DATUM(m_nm.label(hc, "classinfo")));
 	}
 	stmlist.add(new LABEL(tf, null,
-			      new Label(m_nm.c_function_name
-					("class2info_end")), true));
+			      le = new Label(m_nm.c_function_name
+					     ("class2info_end")), true));
+	// add two bogus words to keep gcc from putting class2info_end into
+	// the BSS segment when compiling with PreciseC and NO_SECTION_SUPPORT
+	stmlist.add(_DATUM(ls));
+	stmlist.add(_DATUM(le));
+	// okay, done now.
 	return Stm.toStm(stmlist);
     }
     private Stm buildStrings(List sorted) {

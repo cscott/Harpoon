@@ -52,7 +52,7 @@ import java.util.List;
  * </OL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataReflectionMemberList.java,v 1.2 2002-02-25 21:02:20 cananian Exp $
+ * @version $Id: DataReflectionMemberList.java,v 1.3 2003-07-04 03:41:54 cananian Exp $
  */
 public class DataReflectionMemberList extends Data {
     final NameMap m_nm;
@@ -120,6 +120,12 @@ public class DataReflectionMemberList extends Data {
 	stmlist.add(new LABEL(tf, null,
 			      new Label(m_nm.c_function_name
 					(member+"2info_end")), true));
+	// We need to put something after the label to keep gcc from
+	// moving <xxx>2info_end into the .bss section when compiling with
+	// the PreciseC backend.
+	stmlist.add(_DATUM(new Label(m_nm.c_function_name
+				     (member+"2info_end"))));
+	// okay, done.
 	return Stm.toStm(stmlist);
     }
     private Stm buildMemberObjects(List ordered) {
