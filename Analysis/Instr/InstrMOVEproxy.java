@@ -14,16 +14,16 @@ import java.util.List;
  * <code>InstrMOVEproxy</code>
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: InstrMOVEproxy.java,v 1.1.2.2 2000-08-27 09:34:11 pnkfelix Exp $
+ * @version $Id: InstrMOVEproxy.java,v 1.1.2.3 2000-08-30 20:12:02 pnkfelix Exp $
  */
 class InstrMOVEproxy extends Instr {
     
     /** Creates a <code>InstrMOVEproxy</code>. */
     public InstrMOVEproxy(Instr src) {
 	super(src.getFactory(), src, 
-	      // "", 
+	      "", 
 	      // " @proxy "+src.defC()+" <- "+src.useC(),
-	      " @proxy "+src.getAssem(),
+	      // " @proxy "+src.getAssem(),
 	      (Temp[])src.def().clone(), 
 	      (Temp[])src.use().clone());
     }
