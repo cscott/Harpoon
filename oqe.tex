@@ -1,0 +1,81 @@
+% CVSId: $Id: oqe.tex,v 1.1 2002-04-17 23:59:14 cananian Exp $
+\documentclass[%
+pdf,
+colorBG,
+slideColor,
+%nocolorBG,
+%slideBW,
+%%%%%%%%%%%%%%%%%%%%%
+%draft,
+oqe
+%frames
+%azure
+%contemporain
+%nuancegris
+%troispoints
+%lignesbleues
+%darkblue
+%alienglow
+%autumn
+]{prosper}
+\usepackage{amsmath}
+\hypersetup{pdfpagemode=FullScreen}
+
+\title{Size Optimizations for Java Programs}
+%\author{\href{http://cscott.net}{C.~Scott~Ananian}}
+\author{C.~Scott~Ananian}
+\institution{%
+Laboratory for Computer Science\\
+Massachusetts Institute of Technology\\
+cananian@lcs.mit.edu}
+
+\begin{document}
+\maketitle
+
+%---------------------------------------------------------------------- SLIDE -
+% \begin{slide}{The quest for $\pi$}
+% \begin{itemize}
+% \item The following formula computes $8$ correct digits per iteration 
+%   (Ramanujan):
+% \end{itemize}
+%   \begin{small}
+%   \begin{equation*}
+%     \frac{1}{\pi}=\sum_{n=0}^\infty \frac{(\frac{1}{4})_n(\frac{2}{4})_n(\frac{3}{4})_n}{n!^3}\bigl(2\sqrt{2}(1103+26390n)\bigr)\frac{1}{(99^2)^{2n+1}}
+%   \end{equation*}
+%   \end{small}
+% \end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Our Goal}
+\begin{center}
+Reduce the memory consumption of object-oriented programs
+
+\vspace{0.5cm}
+\fontTitle{By}
+\vspace{0.5cm}
+
+Using program analysis to identify opportunities to reduce the space
+required to store objects,
+
+\vspace{0.5cm}
+\fontTitle{Then}
+\vspace{0.5cm}
+
+Applying transformations to reduce the memory consumption of the program.
+\end{center}
+\end{slide}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Structure of a Java Object}
+\begin{itemize}
+\item Typical of many O-O languages.
+\end{itemize}
+figure goes here.
+\end{slide}
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
