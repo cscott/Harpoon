@@ -10,7 +10,7 @@ import java.util.Comparator;
 /** A <code>RedBlackTree</code> is a <code>BinaryTree</code> that uses
     red-black properties to maintain a balanced form.
     
-    @see "CLR section 14, (page 263).  
+    @see "CLR section 14, (page 263)."
 */
 public class RedBlackTree extends BinaryTree {  
     // red black properties
@@ -159,7 +159,7 @@ public class RedBlackTree extends BinaryTree {
     }
     
     /** Post delete fixup routine.  
-	@see CLR, pg. 274
+	@see "CLR, pg. 274"
     */
     protected void rbDeleteFixup(Node x) {
 	while(x != root() && color(x) == BLACK) {

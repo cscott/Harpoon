@@ -65,9 +65,9 @@ import java.util.Iterator;
 /**
  * <code>MIPS.CodeGen</code> is a code-generator for the MIPS II architecture.
  * 
- * @see Kane, <U>MIPS Risc Architecture </U>
+ * @see "Kane, <U>MIPS Risc Architecture</U>"
  * @author  Emmett Witchel <witchel@mit.edu>
- * @version $Id: CodeGen.spec,v 1.4 2002-04-10 03:02:50 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.5 2003-04-23 01:33:13 cananian Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.

@@ -99,7 +99,7 @@ public class IntervalTree extends RedBlackTree {
 	<code>i</code>, or <code>null</code> if no such interval
 	exists.  
 	<p> This operation is named "Interval-Search" in CLR
-	@see CLR, pg 291
+	@see "CLR, pg 291"
     */
     public Interval searchOverlapping(Interval i) {
 	return searchOverlapping(root(),i);

@@ -23,7 +23,7 @@ import java.util.Comparator;
     with a Tree, instead of abstract it into a Set or what-have-you.
     Have to think about adding that.
     
-    @see "CLR section 13, (page 244).  
+    @see "CLR section 13, (page 244)."
 */
 public class BinaryTree {
     

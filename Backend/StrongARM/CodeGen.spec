@@ -62,9 +62,9 @@ import java.util.Iterator;
 /**
  * <code>StrongARM.CodeGen</code> is a code-generator for the ARM architecture.
  * 
- * @see Jaggar, <U>ARM Architecture Reference Manual</U>
+ * @see "Jaggar, <U>ARM Architecture Reference Manual</U>"
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.4 2002-04-10 03:04:01 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.5 2003-04-23 01:33:16 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
