@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.85 1999-08-22 18:59:40 cananian Exp $
+% $Id: thesis.tex,v 1.86 1999-08-27 11:16:24 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.85 $ $}
+\date{\today \\ $ $Revision: 1.86 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.85 $ $}{$ $Revision: 1.85 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.86 $ $}{$ $Revision: 1.86 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -202,7 +202,8 @@ algorithm as $O(N^2 V)$.
 Our algorithms do not require the construction of a dominance
 frontier---building on recent work on efficient SSA construction in
 this regard---and run in so-called ``linear'' time: $O(EV)$.  A more
-detailed analysis will be given later, but suffice for now to say that
+detailed analysis will be given in section \ref{sec:ssi_complexity},
+but suffice for now to say that
 close attention has been paid to the run-time of our construction and
 analysis algorithms.\footnote{Dhamdhere \cite{dhamdhere92:large} quite
 correctly states that Cytron's original algorithm has a worst-case
@@ -274,9 +275,19 @@ section~\ref{sec:ssa}) of a program.  When it is necessary to
 explicitly denote a metric on the untransformed program, a zero
 subscript will be used; for example, $V_0$.
 
+Graphs will be directed unless specified otherwise.  If $X$ and $Y$
+are nodes in some graph $G$, an edge from $X$ to $Y$ is written
+$X \path Y$. A path \mbox{$X=s_0\path s_1\path \ldots \path s_n=Y$} is
+written $X \pathplus Y$.  A \newterm{simple} path is one in which all
+the nodes $s_i$ in it are distinct.
+
 Control-flow graphs are assumed to be connected, and to contain unique
 \code{START} and \code{END} nodes marking procedure entry and exit
-points, respectively.
+points, respectively.  To ensure connectedness of graphs representing
+infinite loops, an edge will typically exist between \code{START} and
+\code{END}.  The presence of unique \code{START} and \code{END} nodes
+ensures that both the dominance and post-dominance relation define
+trees rooted at \code{START} and \code{END}, respectively.
 
 The symbol $\meet$ will be used for the dataflow ``meet'' operator.
 The operator $\latleq$ is the %reflexive, transitive, and anti-symmetric
@@ -303,12 +314,12 @@ name) and each use is renamed to match its reaching definition.
 Special \newterm{\phifunction{s}} must be inserted at join points to
 preserve the single-assignment property.  These \phifunction{s} have
 the form $v_0\gets\phi(v_1,v_2)$ and perform an assignment
-according to the path by which control flow reached the \phifunction.
+according to the path by which control flow reaches the \phifunction.
 Figure~\vref{fig:tossa} shows a simple program and its SSA form; the
 \phifunction $Y_3\gets\phi(Y_1,Y_2)$ in the SSA version on the
 right assigns $Y_3$ the value of $Y_1$ if control flow reaches it
-along the false branch of the \code{if}.  If the true branch is taken,
-$Y_3$ will get the value of $Y_2$ at the \phifunction.
+along the false branch of the \code{if} statement.  If the true branch
+is taken, $Y_3$ will get the value of $Y_2$ at the \phifunction.
 
 \begin{myfigure}
 \begin{center}
@@ -327,7 +338,7 @@ conditions hold:
 converge at a node $Z$, and nodes $X$ and $Y$ contain assignments to
 [a variable] $V$ (in the original program), then a trivial
 \phifunction{} $V \leftarrow \phi(V, \ldots, V)$ has been inserted at
-$Z$ (in the new program). \label{criteria1}
+$Z$ (in the new program).
 \item Each mention of $V$ in the original program or in an inserted
 \phifunction{} has been replaced by a mention of a new variable $V_i$,
 leaving the new program in SSA form.
@@ -350,12 +361,13 @@ The SSA form in the previous example (figure~\vref{fig:tossa}) is minimal.
 A variation
 on minimal SSA form, called \newterm{pruned form},
 avoids placing \phifunction{s} which define variables which are never used.
-The \phifunction{s} in pruned form are a subset of those in minimal form.
+The \phifunction{s} in pruned form are a subset of those in minimal
+form, and as such note that pruned form does not strictly satisfy the
+given SSA criteria.
 In most cases, the more regular properties of minimal SSA form
 outweigh the pruned form's slight increase in space efficiency.
 Choi, Cytron, and Ferrante \cite{ferrante91:pruned} give a formal
 definition and construction algorithm for pruned SSA.
-\fixme{Pruned form does not satisfy the given SSA criteria.}
 
 Figure~\vref{fig:prunedssa} compares minimal and pruned SSA form for
 our example program.
@@ -377,7 +389,7 @@ points.  This provides us with a one-to-one mapping between variable
 names and information about those variables which is independent of
 control-flow graph context.  Analyses can then associate information
 with variable names and propagate this information efficiently and
-directly both with and against the dataflow direction.
+directly both with and against the control-flow direction.
 
 \subsection{Definition of SSI form}
 Building SSI form involves adding pseudo-assignments for a variable $V$:
@@ -409,49 +421,109 @@ exist having only the node $Z$ where they converge in common,
 and nodes $X$ and $Y$ contain either assignments to a variable $V$ in the
 original program or a \phisigfunction[or] for $V$ in the new program,
 then a \phifunction{} for $V$ has been inserted at $Z$ in the new program.
-[Placement of \phifunction{s}.]
+[Placement of \phifunction{s}.] \label{crit_phiplace}
+
 \item If two nonnull paths $Z \pathplus X$ and $Z \pathplus Y$
 exist having only the node $Z$ where they diverge in common,
 and nodes $X$ and $Y$ contain either uses of a variable $V$ in the
 original program or a \phisigfunction[or] for $V$ in the new program,
 then a \sigfunction{} for $V$ has been inserted at $Z$ in the new program.
-[Placement of \sigfunction{s}.]
-\item There is exactly one reaching definition of $V$ at every
-non-$\phi$ use of $V$ in the new program.
-[Naming after \phifunction{s}.]
+[Placement of \sigfunction{s}.] \label{crit_sigplace}
+
+\item For every node $X$ containing a definition of a variable $V$ in
+the new program and node $Y$ containing a use of that variable, there
+exists at least one path $X \pathplus Y$ and no such path contains a
+definition of $V$ other than at $X$. % awkward.
+[Naming after \phifunction{s}.] \label{crit_phiname}
+
 \item For every pair of nodes $X$ and $Y$ containing uses of a
 variable $V$ defined at node $Z$ in the new program, either every path
 $Z \pathplus X$ must contain $Y$ or every path $Z \pathplus Y$ must
 contain $X$.
-[Naming after \sigfunction{s}.]
+[Naming after \sigfunction{s}.] \label{crit_signame}
+
 \item For the purposes of this definition, the \code{START} node
 is assumed to contain a definition and the \code{END} node a use for every
-variable in the original program.  Every path $X \pathplus E$
-from a node $X$ containing a definition of a variable to the \code{END}
-node must contain every node $Y$ which is a use of that variable.
-[Boundary conditions.]
+variable in the original program.
+[Boundary conditions.] \label{crit_boundary}
 \fixme{It would be nice to have a second set of eyes look over these
 criteria to ensure they are necessary and sufficient.}
 \end{enumerate}
+
 As with the SSA conditions, this definition does not prohibit
-``extra'' \phisigfunction[or]{s} not required by conditions 1 and 2.
+``extra'' \phisigfunction[or]{s} not required by conditions
+\ref{crit_phiplace} and \ref{crit_sigplace}.
+
+\begin{lemma}
+There exists exactly one reaching definition of $V$ at every use of
+$V$ in the new program.
+\end{lemma}
+\begin{proof}
+Offner \cite{offner95} defines a reaching definition as follows:
+\begin{quote}
+A definition of a variable $v$ \newterm{reaches} the point $P$ in the
+program iff there is a path from the definition to $P$ on which\ldots
+there is no other definition of $v$\ldots.
+\end{quote}
+From this definition and condition \ref{crit_phiname} we directly
+obtain the lemma.
+\end{proof}
+
+Note that condition \ref{crit_phiname} and this lemma do not require
+there to be exactly one definition of any variable $V$, just that at
+every use only a single definition is relevant.  The renaming
+algorithm we will present enforces the stricter single-definition
+constraint.
+
+\begin{lemma}
+Every path $S \pathplus Y$ from the \code{START} node to a node $Y$
+containing a use of a variable must contain exactly one node $X$
+defining that variable.  Likewise, every path $X \pathplus E$ from a
+node $X$ containing a definition of a variable to the \code{END} node
+must contain every node $Y$ which is a use of that variable.
+\end{lemma}
+\begin{proof}
+The first statement is direct from conditions \ref{crit_phiname} and
+\ref{crit_boundary}; the second statement follows from conditions
+\ref{crit_signame} and \ref{crit_boundary}.
+\end{proof}
+
+\begin{lemma}
+Every definition of a variable $V$ dominates all uses of $V$, and
+every use of $V$ post-dominates the reaching definition of $V$.
+\end{lemma}
+\begin{proof}
+The dominance relation is defined in Offner \cite{offner95} as:
+\begin{quote}
+If $x$ and $y$ are two elements in a flow graph $G$, then $x$
+\newterm{dominates} $y$ ($x$ is a \newterm{dominator} of $y$) iff
+every path from $s$ [\code{START}] to $y$ includes $x$.
+\end{quote}
+Post-dominance is the dual on a flow graph with edges reversed: $x$
+post-dominates $y$ iff every path from \code{END} to $y$ includes $x$.
+With these terms defined, this lemma follows immediately from the
+previous one.
+\end{proof}
 
 \subsection{Minimal and pruned SSI forms}
 \emph{Minimal} and \emph{pruned} SSI forms can be defined which
-parallel their SSA counterparts.  \emph{Minimal} SSI form would have the
-smallest number of \phisigfunction{s} such that the above
-conditions are satisfied.
-A \emph{pruned} SSI form would be the minimal form without any unused
-definitions, that is, \phisigfunction[or]{s} after which there are no
-subsequent uses of any of the variables defined on the left-hand side,
-except in other \phisigfunction[or]{s}.\footnote{An even more
-compact SSI form may be produced by removing \sigfunction{s} for which
-there are uses for \emph{exactly one} of the variables on the
-left-hand side, but by doing so one loses the ability to perform
-renaming at control-flow splits which generate additional value
-information.}
-\fixme{As with pruned SSA form, pruned SSI does not satisfy the
-definition conditions.}
+parallel their SSA counterparts.  \emph{Minimal} SSI form would have
+the smallest number of \phisigfunction{s} such that the above
+conditions are satisfied.  \emph{Pruned} SSI form is the minimal form
+with any unused \phisigfunction{s} deleted; that is, it contains no
+\phisigfunction[or]{s} after which there are no subsequent
+non-\phisigfunction[or]{} uses of any of the variables defined on the
+left-hand side.\footnote{An even more compact SSI form may be produced
+by removing \sigfunction{s} for which there are uses for \emph{exactly
+one} of the variables on the left-hand side, but by doing so one loses
+the ability to perform renaming at control-flow splits which generate
+additional value information.}  Note that, as in SSA form, pruned SSI
+does not strictly satisfy SSI constraints \ref{crit_phiplace} and
+\ref{crit_sigplace} of the previous section; however it is easily seen
+that the \phisigfunction{s} of pruned form are the smallest subset of
+those in minimal form which still allow satisfaction of SSI conditions
+\ref{crit_phiname} and \ref{crit_signame}, if a loosening of condition
+\ref{crit_boundary} is allowed.
 
 Figure~\vref{fig:prunedssi} compares minimal and pruned SSI form for
 our example program.
@@ -833,7 +905,7 @@ don't exist for the pessimistic algorithm?}
 \label{fig:evil}
 \end{myfigure}
 
-\subsection{Space complexity of SSI form}
+\subsection{Time and space complexity of SSI form}\label{sec:ssi_complexity}
 \begin{myfigure}%[t]
 \input{Figures/phisig}
 \caption{Statistical analysis to determine typical values for $V_{SSI}$.}
