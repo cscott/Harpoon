@@ -7,3 +7,7 @@ config.status
 config.log
 libtool
 configure.done
+run*
+*-Java.a
+INSTALL
+COPYING
