@@ -3,11 +3,18 @@
 #include "java_lang_String.h"
 
 #include <assert.h>
+#include "config.h"
+#ifdef WITH_HEAVY_THREADS
+#include <pthread.h>
+#endif
 
 static jobject internTable = 0; /* Table mapping strings to interned strings */
 static jmethodID getID = 0; /* method ID of get() in class Hashtable */
 static jmethodID putID = 0; /* method ID of put() in class Hashtable */
 static int inited = 0; /* whether the above variables have been initialized */
+#ifdef WITH_HEAVY_THREADS
+static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 int initializeJLS(JNIEnv *env) {
   jclass cls;
@@ -16,7 +23,11 @@ int initializeJLS(JNIEnv *env) {
   char *p;
   int strsize;
 
-  assert(!inited);
+#ifdef WITH_HEAVY_THREADS
+  pthread_mutex_lock(&init_mutex);
+  // other thread may win race to lock and init before we do.
+  if (inited) goto done;
+#endif
 
   /* Create global hashtable. */
   cls = (*env)->FindClass(env, "java/util/Hashtable");
@@ -56,6 +67,10 @@ int initializeJLS(JNIEnv *env) {
 
   /* done. */
   inited = 1;
+ done:
+#ifdef WITH_HEAVY_THREADS
+  pthread_mutex_unlock(&init_mutex);
+#endif
   return 1;
 }
   

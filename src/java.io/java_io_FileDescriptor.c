@@ -2,12 +2,23 @@
 #include <errno.h>	/* for errno */
 #include <unistd.h>	/* for fsync */
 #include <string.h>	/* for strerror */
+#ifdef WITH_HEAVY_THREADS
+#include <pthread.h>    /* for mutex ops */
+#endif
 
 static jfieldID fdID   = 0; /* The field ID of fd in class FileDescriptor */
 static jclass IOExcCls = 0; /* The java/io/IOException class object. */
 static int inited = 0;
+#ifdef WITH_HEAVY_THREADS
+static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 int initializeFD(JNIEnv *env) {
+#ifdef WITH_HEAVY_THREADS
+    pthread_mutex_lock(&init_mutex);
+    // other thread may win race to lock and init before we do.
+    if (inited) goto done;
+#endif
     jclass FDCls = (*env)->FindClass(env, "java/io/FileDescriptor");
     if ((*env)->ExceptionOccurred(env)) return 0;
     fdID = (*env)->GetFieldID(env,FDCls,"fd","I");
@@ -16,7 +27,12 @@ int initializeFD(JNIEnv *env) {
     if ((*env)->ExceptionOccurred(env)) return 0;
     /* make IOExcCls into a global reference for future use */
     IOExcCls = (*env)->NewGlobalRef(env, IOExcCls);
+    /* done. */
     inited = 1;
+ done:
+#ifdef WITH_HEAVY_THREADS
+    pthread_mutex_unlock(&init_mutex);
+#endif
     return 1;
 }
 

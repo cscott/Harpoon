@@ -1,24 +1,35 @@
 #include <jni.h>
 #include "java_io_RandomAccessFile.h"
-#include <config.h>
 
 #include <sys/types.h>
 
 #include <assert.h>
+#include "config.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
+#ifdef WITH_HEAVY_THREADS
+#include <pthread.h>
+#endif
 
 static jfieldID fdObjID = 0; /* The field ID of fd in class RandomAccessFile */
 static jfieldID fdID    = 0; /* The field ID of fd in class FileDescriptor */
 static jclass IOExcCls  = 0; /* The java/io/IOException class object */
 static int inited = 0; /* whether the above variables have been initialized */
+#ifdef WITH_HEAVY_THREADS
+static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 int initializeRAF(JNIEnv *env) {
     jclass RAFCls, FDCls;
 
-    assert(!inited);
+#ifdef WITH_HEAVY_THREADS
+    pthread_mutex_lock(&init_mutex);
+    // other thread may win race to lock and init before we do.
+    if (inited) goto done;
+#endif
+
     RAFCls  = (*env)->FindClass(env, "java/io/RandomAccessFile");
     if ((*env)->ExceptionOccurred(env)) return 0;
     fdObjID = (*env)->GetFieldID(env, RAFCls, "fd","Ljava/io/FileDescriptor;");
@@ -32,6 +43,10 @@ int initializeRAF(JNIEnv *env) {
     /* make IOExcCls into a global reference for future use */
     IOExcCls = (*env)->NewGlobalRef(env, IOExcCls);
     inited = 1;
+ done:
+#ifdef WITH_HEAVY_THREADS
+    pthread_mutex_unlock(&init_mutex);
+#endif
     return 1;
 }
 
