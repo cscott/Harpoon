@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.35 2001-03-30 20:10:56 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.36 2001-06-12 03:56:54 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -186,7 +186,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	     (tf, source,
 	      new MOVE // allocate memory; put pointer in Tobj.
 	      (tf, source,
-	       DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
+	       DECLARE(dg, objectType/*not an obj yet*/, Tobj,
 	       new TEMP(tf, source, Type.POINTER, Tobj)),
 	       as.memAlloc
 	       (tf, source, dg, ap,
@@ -203,12 +203,12 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		(tf, source, Type.POINTER, /* hashcode is pointer size */
 		 new BINOP
 		 (tf, source, Type.POINTER, Bop.ADD,
-		  DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
+		  DECLARE(dg, objectType/*not an obj yet*/, Tobj,
 		  new TEMP(tf, source, Type.POINTER, Tobj)),
 		  new CONST(tf, source, OBJ_HASH_OFF)))),
 		new BINOP // set the low bit to indicate an uninflated object.
 		(tf, source, Type.POINTER, Bop.ADD,
-		 DECLARE(dg, HClass.Void/*not an obj yet*/, Tobj,
+		 DECLARE(dg, objectType/*not an obj yet*/, Tobj,
 		 new TEMP(tf, source, Type.POINTER, Tobj)),
 		 new CONST(tf, source, 1))),
 	       new MOVE // assign the new object a class pointer.
@@ -219,7 +219,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		 (tf, source, Type.POINTER,
 		  new BINOP
 		  (tf, source, Type.POINTER, Bop.ADD,
-		   DECLARE(dg, HClass.Void/*still not an obj*/, Tobj,
+		   DECLARE(dg, objectType/*still not an obj*/, Tobj,
 			   new TEMP(tf, source, Type.POINTER, Tobj)),
 		   new CONST(tf, source, OBJ_CLAZ_OFF)))),
 		new NAME(tf, source, runtime.nameMap.label(objectType))))),
@@ -270,7 +270,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		length.unEx(tf)),
 	       new MOVE // save result in Tarr
 	       (tf, source,
-		DECLARE(dg, HClass.Void/* not an obj yet*/, Tarr,
+		DECLARE(dg, arrayType/* not an obj yet*/, Tarr,
 			new TEMP(tf, source, Type.POINTER, Tarr)),
 		objAlloc // allocate array data
 		(tf, source, dg, ap, arrayType,
@@ -290,7 +290,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	       (tf, source, Type.INT, // length field is of type INT.
 		new BINOP // offset array base to get location of length field
 		(tf, source, Type.POINTER, Bop.ADD,
-		 DECLARE(dg, HClass.Void/*not an obj yet*/, Tarr,
+		 DECLARE(dg, arrayType/*not an obj yet*/, Tarr,
 			 new TEMP(tf, source, Type.POINTER, Tarr)),
 		 new CONST(tf, source, OBJ_ALENGTH_OFF))),
 	       new TEMP(tf, source, Type.INT, Tlen))), // length from Tlen
