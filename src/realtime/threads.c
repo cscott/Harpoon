@@ -240,7 +240,8 @@ void CheckQuanta(int signal)
   /* Choose the next thread */
   threadq = NULL;
   threadID = (*env)->CallLongMethod(env, scheduler, Scheduler_jChooseThread,
-				    time.tv_sec*1000000 + time.tv_usec);
+				    (((long long int)time.tv_sec)*1000) + 
+				    (((long long int)time.tv_usec)/1000));
 #ifdef RTJ_DEBUG_THREADS
   printf("\n  %d = ChooseThread(%p, %p, (%lld s, %lld us))", 
 	 (int)threadID, env, FNI_UNWRAP_MASKED(scheduler), 
