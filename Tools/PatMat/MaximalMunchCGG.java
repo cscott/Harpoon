@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.14 1999-07-17 11:59:25 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.15 1999-07-22 22:38:28 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -162,7 +162,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree++;
 	    
 	    append(exp, "// check statement type");
-	    append(exp, "&& " + stmPrefix + " instanceof "+TREE_CJUMP+")");
+	    append(exp, "&& (" + stmPrefix + " instanceof "+TREE_CJUMP+")");
 	    
 	    // look at test
 	    TypeExpRecurse r = new
@@ -175,12 +175,12 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	    // code to initialize the target label identifiers so
 	    // that they can be referred to.
-	    append(initStms, TEMP_Label + s.f_label + 
-			    " = (("+TREE_JUMP+")"+stmPrefix+
-			    ").iffalse"); 
-	    append(initStms, TEMP_Label + s.t_label +  
-			    " = (("+TREE_JUMP+")"+stmPrefix+
-			    ").iftrue");
+	    append(initStms, TEMP_Label +" "+ s.f_label + 
+			    " = (("+TREE_CJUMP+")"+stmPrefix+
+			    ").iffalse;"); 
+	    append(initStms, TEMP_Label +" "+ s.t_label +  
+			    " = (("+TREE_CJUMP+")"+stmPrefix+
+			    ").iftrue;");
 
 	}
 
@@ -225,8 +225,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	    // code to initialize the target label identifiers so that
 	    // they can be referred to.
-	    append(initStms, s.name + 
-			    " = (("+TEMP_Label+")"+stmPrefix+
+	    append(initStms, "String " + s.name + 
+			    " = (("+TREE_LABEL+")"+stmPrefix+
 			    ").label.toString();\n");
 	}
 
@@ -287,7 +287,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    initStms.append(r.initStms.toString());
 	    
 	    // initialize arg list
-	    append(initStms, TREE_ExpList + s.arglist + 
+	    append(initStms, TREE_ExpList +" "+ s.arglist + 
 		   " = (("+TREE_NATIVECALL+")"+stmPrefix+").args;");
 	}
 
@@ -305,7 +305,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    allowLong = s.types.contains(Type.LONG);
 	    allowPointer = s.types.contains(Type.POINTER);
 
-	    String checkPrefix = "\t(("+TREE_RETURN+")" + stmPrefix + ").retval.type()) ==";
+	    String checkPrefix = "\t(("+TREE_RETURN+")" + stmPrefix + ").retval.type() ==";
 	    append(exp, "&& ( ");
 	    if(allowDouble) append(exp, checkPrefix + " Type.DOUBLE ||");
 	    if(allowFloat) append(exp, checkPrefix + " Type.FLOAT ||");
@@ -561,7 +561,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree++;
 
 	    append(exp, "// check expression type");
-	    append(exp, "&& " + expPrefix + "instanceof " + TREE_NAME + " ");
+	    append(exp, "&& " + expPrefix + " instanceof " + TREE_NAME + " ");
 	    
 	    append(initStms, TEMP_Label +" "+ e.name + " = ((" +TREE_NAME + ")"+
 		   expPrefix + ").label;");
@@ -571,7 +571,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    degree++;
 
 	    append(exp, "// check expression type");
-	    append(exp, "&& " + expPrefix + "instanceof " + TREE_TEMP +" ");
+	    append(exp, "&& " + expPrefix + " instanceof " + TREE_TEMP +" ");
 	    
 	    append(exp, "// check operand type");
 	    boolean allowInt, allowLong, allowFloat, allowDouble, allowPointer;
@@ -591,7 +591,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    append(exp, "\tfalse )");
 	    append(exp, "// end check operand types");
 
-	    append(initStms, TEMP_Temp + e.name + " = ((" +TREE_TEMP + ")"+
+	    append(initStms, TEMP_Temp +" "+ e.name + " = ((" +TREE_TEMP + ")"+
 		   expPrefix + ").temp;");
 	}
 	public void visit(Spec.ExpUnop e) { 

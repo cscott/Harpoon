@@ -10,12 +10,12 @@ package harpoon.IR.Tree;
  * <p>
  * See <code>Bop</code> for basic rationale.  We provide full set of
  * conversion operations and both negation and bitwise-not.  Some of
- * these <code>Uop</code>s are not in <code>harpoon.IR.Quad.Qop</code>
+ * these <code>Uop</code>s are not in <code>harpoon.IR.Quads.Qop</code>
  * and thus will require pattern-matching during translation for
  * proper generation.  This could also be done in a peephole optimization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Uop.java,v 1.1.2.3 1999-07-22 18:19:16 pnkfelix Exp $
+ * @version $Id: Uop.java,v 1.1.2.4 1999-07-22 22:38:27 pnkfelix Exp $
  */
 public class Uop  {
 

@@ -8,6 +8,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrMEM;
+import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.Uop;
@@ -17,13 +18,33 @@ import harpoon.Backend.Generic.DefaultFrame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Util.Util;
 import harpoon.Temp.Temp;
+import harpoon.Temp.LabelList;
+
+import harpoon.IR.Tree.BINOP;
+import harpoon.IR.Tree.CALL;
+import harpoon.IR.Tree.CJUMP;
+import harpoon.IR.Tree.CONST;
+import harpoon.IR.Tree.EXP;
+import harpoon.IR.Tree.JUMP;
+import harpoon.IR.Tree.LABEL;
+import harpoon.IR.Tree.MEM;
+import harpoon.IR.Tree.MOVE;
+import harpoon.IR.Tree.NAME;
+import harpoon.IR.Tree.NATIVECALL;
+import harpoon.IR.Tree.OPER;
+import harpoon.IR.Tree.RETURN;
+import harpoon.IR.Tree.TEMP;
+import harpoon.IR.Tree.UNOP;
+
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * <code>CodeGen</code> is a code-generator for the ARM architecture.
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.4 1999-07-22 18:18:45 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.5 1999-07-22 22:38:20 pnkfelix Exp $
  */
 %%
 
@@ -38,6 +59,17 @@ import harpoon.Temp.Temp;
     // Frame for instructions to access to get platform specific variables (Register Temps, etc) 
     private SAFrame frame;
 
+    Map blMap;
+    Map liMap;
+
+    public CodeGen(SACode code) {
+	last = null;
+	this.frame = (SAFrame) code.getFrame();
+	inf = code.getInstrFactory();
+	blMap = new HashMap();
+	liMap = new HashMap();
+    }
+
     private void emit(Instr i) {
 	if (last == null) {
 	    last = i;
@@ -47,25 +79,27 @@ import harpoon.Temp.Temp;
 	}
     }
 
-    
-
-    public CodeGen(SACode code) {
-	last = null;
-	this.frame = (SAFrame) code.getFrame();
-	inf = code.getInstrFactory();
+    private Temp newTemp() {
+	    return new Temp(frame.tempFactory());
     }
-    
+
+    private TwoWordTemp newTwoWordTemp() {
+	    return new TwoWordTemp(frame.tempFactory());
+    }
+
 %%
     /* this comment will be eaten by the .spec processor (unlike comments above) */
 	
 /* EXPRESSIONS */ 
-BINOP<p,i>(ADD, j, k) = i %{
+BINOP<p,i>(ADD, j, k) = i %{		
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "add `d0, `s0, `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP<l>(ADD, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 	           "adds `d0l, `s0l, `s1l\n"+
 		   "adc  `d0h, `s0h, `s1h",
@@ -74,6 +108,7 @@ BINOP<l>(ADD, j, k) = i %{
 
 BINOP<f>(ADD, j, k) = i %{
     /* call auxillary fp routines */
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -87,6 +122,7 @@ BINOP<f>(ADD, j, k) = i %{
 
 BINOP<d>(ADD, j, k) = i %{
     /* call auxillary fp routines */
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -106,12 +142,14 @@ BINOP<d>(ADD, j, k) = i %{
 }%
 
 BINOP<p,i>(AND, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "and `d0, `s0, `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP<l>(AND, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 	           "and `d0l, `s0l, `s1l\n"+
 		   "and `d0h, `s0h, `s1h",
@@ -119,6 +157,7 @@ BINOP<l>(AND, j, k) = i %{
 }%
 
 BINOP<p,i>(CMPEQ, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+
 		   "moveq `d0, #1\n"+
@@ -127,6 +166,7 @@ BINOP<p,i>(CMPEQ, j, k) = i %{
 }%
 
 BINOP<l>(CMPEQ, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0l, `s1l\n"+
 		   "cmpeq `s0h, `s1h\n"+
@@ -136,12 +176,13 @@ BINOP<l>(CMPEQ, j, k) = i %{
 }%
   
 BINOP<f>(CMPEQ, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
 		   "bl ___eqsf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n+
+		   "moveq `d3, #1\n"+
 		   "movne `d3, #0",
 		   new Temp[]{ frame.getAllRegisters()[0],
 			       frame.getAllRegisters()[1], i },
@@ -149,6 +190,7 @@ BINOP<f>(CMPEQ, j, k) = i %{
 }%
 
 BINOP<d>(CMPEQ, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -156,7 +198,7 @@ BINOP<d>(CMPEQ, j, k) = i %{
 		   "mov `d1, `s0h\n"+
 		   "bl ___eqdf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n+
+		   "moveq `d3, #1\n"+
 		   "movne `d3, #0",
 		   new Temp[]{ frame.getAllRegisters()[0],
 			       frame.getAllRegisters()[1], i },
@@ -164,6 +206,7 @@ BINOP<d>(CMPEQ, j, k) = i %{
 }%
 
 BINOP<p,i>(CMPGT, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+	
 		   "movgt `d0, #1\n"+	
@@ -172,6 +215,7 @@ BINOP<p,i>(CMPGT, j, k) = i %{
 }%
 
 BINOP<l>(CMPGT, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "cmp `s0h, `s1h\n"+
 	           "cmpeq `s0l, `s1l\n"+
@@ -179,13 +223,15 @@ BINOP<l>(CMPGT, j, k) = i %{
 		   "movle `d0, #0",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
+
 BINOP<f>(CMPGT, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
 		   "bl ___gtsf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n+
+		   "moveq `d3, #1\n"+
 		   "movne `d3, #0",
 		   new Temp[]{ frame.getAllRegisters()[0],
 			       frame.getAllRegisters()[1], i },
@@ -193,6 +239,7 @@ BINOP<f>(CMPGT, j, k) = i %{
 }%
 
 BINOP<d>(CMPGT, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -200,7 +247,7 @@ BINOP<d>(CMPGT, j, k) = i %{
 		   "mov `d1, `s0h\n"+
 		   "bl ___gtdf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n+
+		   "moveq `d3, #1\n"+
 		   "movne `d3, #0",
 		   new Temp[]{ frame.getAllRegisters()[0],
 			       frame.getAllRegisters()[1], i },
@@ -209,6 +256,7 @@ BINOP<d>(CMPGT, j, k) = i %{
 
 
 BINOP<p,i>(CMPGE, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+
 		   "movge `d0, #1\n"+
@@ -217,6 +265,7 @@ BINOP<p,i>(CMPGE, j, k) = i %{
 }%
 
 BINOP<l>(CMPGE, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0h, `s1h\n"+
 	           "cmpeq `s0l, `s1l\n"+
@@ -226,12 +275,13 @@ BINOP<l>(CMPGE, j, k) = i %{
 }%
 
 BINOP<f>(CMPGE, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
 		   "bl ___gesf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n+
+		   "moveq `d3, #1\n"+
 		   "movne `d3, #0",
 		   new Temp[]{ frame.getAllRegisters()[0],
 			       frame.getAllRegisters()[1], i },
@@ -239,6 +289,7 @@ BINOP<f>(CMPGE, j, k) = i %{
 }%
 
 BINOP<d>(CMPGE, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -246,7 +297,7 @@ BINOP<d>(CMPGE, j, k) = i %{
 		   "mov `d1, `s0h\n"+
 		   "bl ___gedf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n+
+		   "moveq `d3, #1\n"+
 		   "movne `d3, #0",
 		   new Temp[]{ frame.getAllRegisters()[0],
 			       frame.getAllRegisters()[1], i },
@@ -255,6 +306,7 @@ BINOP<d>(CMPGE, j, k) = i %{
 
 
 BINOP<p,i>(CMPLE, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+
 		   "movle `d0, #1\n"+
@@ -263,6 +315,7 @@ BINOP<p,i>(CMPLE, j, k) = i %{
 }%
 
 BINOP<l>(CMPLE, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0h, `s1h\n"+
 	           "cmpeq `s0l, `s1l\n"+
@@ -272,12 +325,13 @@ BINOP<l>(CMPLE, j, k) = i %{
 }%
 
 BINOP<f>(CMPLE, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
 		   "bl ___lesf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n+
+		   "moveq `d3, #1\n"+
 		   "movne `d3, #0",
 		   new Temp[]{ frame.getAllRegisters()[0],
 			       frame.getAllRegisters()[1], i },
@@ -285,6 +339,7 @@ BINOP<f>(CMPLE, j, k) = i %{
 }%
 
 BINOP<d>(CMPLE, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -292,7 +347,7 @@ BINOP<d>(CMPLE, j, k) = i %{
 		   "mov `d1, `s0h\n"+
 		   "bl ___ledf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n+
+		   "moveq `d3, #1\n"+
 		   "movne `d3, #0",
 		   new Temp[]{ frame.getAllRegisters()[0],
 			       frame.getAllRegisters()[1], i },
@@ -300,6 +355,7 @@ BINOP<d>(CMPLE, j, k) = i %{
 }%
 
 BINOP<p,i>(CMPLT, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0, `s1\n"+
 		   "movlt `d0, #1\n"+
@@ -308,6 +364,7 @@ BINOP<p,i>(CMPLT, j, k) = i %{
 }%
 
 BINOP<l>(CMPLT, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 	           "cmp `s0h, `s1h\n"+
 	           "cmpeq `s0l, `s1l\n"+
@@ -317,12 +374,13 @@ BINOP<l>(CMPLT, j, k) = i %{
 }%
 
 BINOP<f>(CMPLT, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
 		   "bl ___ltsf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n+
+		   "moveq `d3, #1\n"+
 		   "movne `d3, #0",
 		   new Temp[]{ frame.getAllRegisters()[0],
 			       frame.getAllRegisters()[1], i },
@@ -330,6 +388,7 @@ BINOP<f>(CMPLT, j, k) = i %{
 }%
 
 BINOP<d>(CMPLT, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -337,7 +396,7 @@ BINOP<d>(CMPLT, j, k) = i %{
 		   "mov `d1, `s0h\n"+
 		   "bl ___ltdf2\n"+
 		   "cmp `s2, #0\n"+
-		   "moveq `d3, #1\n+
+		   "moveq `d3, #1\n"+
 		   "movne `d3, #0",
 		   new Temp[]{ frame.getAllRegisters()[0],
 			       frame.getAllRegisters()[1], i },
@@ -345,48 +404,56 @@ BINOP<d>(CMPLT, j, k) = i %{
 }%
 
 BINOP(OR, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "orr `d0, `s0, `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP<p,i>(SHL, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "mov `d0, `s0 lsl `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP<p,i>(SHR, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "mov `d0, `s0 lsr `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP<p,i>(USHR, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "mov `d0, `s0 asr `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 BINOP<p,i>(XOR, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "eor `d0, `s0, `s1",
 		   new Temp[]{ i }, new Temp[]{ j, k }));
 }%
 
 CONST<i>(c) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "mov `d0, #"+((CONST)ROOT).value.intValue(),
 		   new Temp[]{ i }, null));
 }%
 
 BINOP<p,i>(MUL, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 		   "mul `d0, `s0, `s1",
 		   new Temp[] { i }, new Temp[] { j , k }));	   
 }%
 
 BINOP<l>(MUL, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -405,6 +472,7 @@ BINOP<l>(MUL, j, k) = i %{
 }%
 
 BINOP<f>(MUL, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -416,6 +484,7 @@ BINOP<f>(MUL, j, k) = i %{
 }%
 
 BINOP<d>(MUL, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -434,6 +503,7 @@ BINOP<d>(MUL, j, k) = i %{
 }%
 
 BINOP<p,i>(DIV, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -445,6 +515,7 @@ BINOP<p,i>(DIV, j, k) = i %{
 }%
 
 BINOP<l>(DIV, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -463,6 +534,7 @@ BINOP<l>(DIV, j, k) = i %{
 }%
 
 BINOP<f>(DIV, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -474,6 +546,7 @@ BINOP<f>(DIV, j, k) = i %{
 }%
 
 BINOP<d>(DIV, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -492,6 +565,7 @@ BINOP<d>(DIV, j, k) = i %{
 }%
 
 BINOP<p,i>(REM, j, k) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d1, `s1\n"+
 		   "mov `d0, `s0\n"+
@@ -504,6 +578,7 @@ BINOP<p,i>(REM, j, k) = i %{
 }%
 
 BINOP<l>(REM, j, k) = i %{
+    Temp i = newTwoWordTemp();		
     emit(new Instr(inf, ROOT,
 		   "mov `d2, `s1l\n"+
 		   "mov `d3, `s1h\n"+
@@ -522,48 +597,59 @@ BINOP<l>(REM, j, k) = i %{
 }%
 
 MEM<p,i,f>(e) = i %{
+    Temp i = newTemp();		
     emit(new InstrMEM(inf, ROOT,
-	           "ldr `d0, `s0",
-		   new Temp[]{ i }, new Temp[]{ e }));
+	             "ldr `d0, `s0",
+		     new Temp[]{ i }, new Temp[]{ e }));
 }%
 
 NAME(id) = i %{
+    Temp i = newTemp();		
 
 }%
 
 TEMP(id) = i %{
+    Temp i = newTemp();		
 
 }%
 
 UNOP(_2B, arg) = i %{
-
+    Temp i = newTemp();		
+    
 }%
 
 UNOP(_2C, arg) = i %{
+    Temp i = newTemp();		
 
 }%
 
 UNOP(_2D, arg) = i %{
+    Temp i = newTemp();		
 
 }%
 
 UNOP(_2F, arg) = i %{
+    Temp i = newTemp();		
 
 }%
 
 UNOP(_2I, arg) = i %{
+    Temp i = newTemp();		
 
 }%
 
 UNOP(_2L, arg) = i %{
+    Temp i = newTemp();		
 
 }%
 
 UNOP(_2S, arg) = i %{
+    Temp i = newTemp();		
 
 }%
 
 UNOP<p,i>(NEG, arg) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT,
 	           "mov `d0, #0\n"+
 		   "sub `d0, `d0, `s0",
@@ -571,6 +657,7 @@ UNOP<p,i>(NEG, arg) = i %{
 }% 
 
 UNOP<p,i>(NOT, arg) = i %{
+    Temp i = newTemp();		
     emit(new Instr(inf, ROOT, 
 	           "mvn `d0, `s0",
 		   new Temp[]{ i }, new Temp[]{ arg }));
@@ -584,8 +671,8 @@ CJUMP(test, iftrue, iffalse) %{
 			"b " + iftrue,
 			null, new Temp[]{ test });
     emit(i);
-    blMap.put(i, s.iffalse);
-    blMap.put(i, s.iftrue);
+    blMap.put(i, iffalse);
+    blMap.put(i, iftrue);
 }%
 
 EXP(e) %{
@@ -608,7 +695,7 @@ LABEL(id) %{
     LABEL l = (LABEL) ROOT;
     Instr i = new InstrLABEL(inf, l, l.label + ":", l.label);
     emit(i);
-    liMap.pit(l.label, i);
+    liMap.put(l.label, i);
 }%
 
 MOVE<p,i,f>(dst, src) %{
@@ -662,7 +749,7 @@ MOVE<i>(MEM(d), CONST(s)) %extra { t } %{
 RETURN(val) %{
     // FSK: leaving OUT exception handling by passing excep-val in r1
 
-    emit(new InstrMEM(inf, s, 
+    emit(new InstrMEM(inf, ROOT, 
 			   "mov `d0, `s0\n"+
 			   "ldmea `s1, { `d1, `d2, `d3 }",
 			   new Temp[]{ frame.getAllRegisters()[0],
