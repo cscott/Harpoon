@@ -11,12 +11,12 @@ import harpoon.Temp.Label;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.1 1999-02-17 21:32:40 andyb Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.2 1999-03-08 09:08:07 andyb Exp $
  */
 public class InstrLABEL extends Instr {
     public Label label;
 
-    InstrLABEL(InstrFactory inf, HCodeElement src, String a, Label l) {
+    public InstrLABEL(InstrFactory inf, HCodeElement src, String a, Label l) {
         super(inf, src, a, null, null);
         label = l;
     } 
