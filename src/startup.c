@@ -1,8 +1,7 @@
 #include <signal.h> /* for signal(), to ignore SIGPIPE */
 #include <jni.h>
 #include <jni-private.h>
-// XXX this is a dependency on the SunJDK implementation of java.lang.Thread
-#include "sunjdk/java.lang/java_lang_Thread.h"
+#include "java.lang/thread.h"
 #include "flexthread.h"
 #include <assert.h>
 #ifdef WITH_PRECISE_GC
@@ -17,11 +16,6 @@
 #ifdef WITH_REALTIME_THREADS
 # include "realtime/threads.h"
 #endif
-
-/* these functions are defined in src/java.lang/java_lang_Thread.c but only
- * used here. */
-void FNI_java_lang_Thread_setupMain(JNIEnv *env);
-void FNI_java_lang_Thread_finishMain(JNIEnv *env);
 
 #define CHECK_EXCEPTIONS(env) \
 if ((*env)->ExceptionOccurred(env)){ (*env)->ExceptionDescribe(env); exit(1); }
@@ -109,7 +103,7 @@ int main(int argc, char *argv[]) {
   thrCls  = (*env)->FindClass(env, "java/lang/Thread");
   CHECK_EXCEPTIONS(env);
 
-  mainthread = Java_java_lang_Thread_currentThread(env, thrCls);
+  mainthread = fni_thread_currentThread(env);
   CHECK_EXCEPTIONS(env);
 #endif
 

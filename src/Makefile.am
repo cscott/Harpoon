@@ -98,6 +98,7 @@ libflexc0_la_LDFLAGS = -version-info 0:0:0
 libflexc1_la_SOURCES = config_checker.c
 libflexc1_la_LIBADD = \
 	../arch/@ARCHDIR@/libfooter.la \
+	java.lang/libjavalang-indep.la \
 	java.lang.reflect/libjavalangreflect.la \
 	$(NATIVELIB) \
 	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) stats/libstats.la cam/libcam.la servo/libservo.la $(USERLIB) \

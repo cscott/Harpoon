@@ -2,6 +2,7 @@
 #define REALTIME_THREAD_H_INCLUDED
 
 # include <setjmp.h> //for setjmp and longjmp
+# include "../java.lang/threadlist.h" /* for add_running_thread */
 
 jmp_buf main_return_jump; //a jump point for when the main thread exits
 
@@ -63,7 +64,6 @@ void realtime_schedule_thread(JNIEnv *env, jobject thread);
 void realtime_unschedule_thread(JNIEnv *env, jobject thread);
 void realtime_schedule_ID(JNIEnv *env, jlong threadID);
 void realtime_unschedule_ID(JNIEnv *env, jlong threadID);
-void add_running_thread(JNIEnv *env);
 
 void* startMain(void* mclosure);
 

@@ -7,6 +7,7 @@
 #include "threads.h"
 #include "../user/threads.h"
 #include "MemBlock.h"
+#include "../java.lang/threadlist.h" /* for add_running_thread */
 
 #ifdef WITH_PRECISE_GC
 #include "jni-gc.h"

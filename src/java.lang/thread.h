@@ -61,6 +61,11 @@ extern jint MIN_PRIORITY, NORM_PRIORITY, MAX_PRIORITY;
 extern int sched_min_priority, sched_norm_priority, sched_max_priority;
 #endif
 
+/* these functions defined in src/java.lang/thread.c and only
+ * used in src/startup.c. */
+void FNI_java_lang_Thread_setupMain(JNIEnv *env);
+void FNI_java_lang_Thread_finishMain(JNIEnv *env);
+
 #ifdef WITH_HEAVY_THREADS
 /* scale priority levels from java values to sched.h values */
 static inline
