@@ -60,10 +60,6 @@ if type -t cygpath > /dev/null ; then
     harpoonpath=`cygpath -wp "$harpoonpath"`
 fi
 
-echo
-echo harpoonpath=$harpoonpath
-echo
-
 ${JAVA:=java} -${optprefix}mx${FLEXMEM:=768m} -Dharpoon.class.path=$harpoonpath ${flexc_options:="-Dharpoon.alloc.strategy=bdw"} -Dharpoon.precisec.emit_line_directives=true -Dharpoon.precisec.emit_fake_line_directives=true harpoon.Main.SAMain $opts -bprecisec -c $cls -o $dir && \
 if [ -d ${RUNTIME_DIR}/include -a -f ${RUNTIME_DIR}/config.status ] && \
     grep -q "[-]-with-precise-c" ${RUNTIME_DIR}/config.status ; then
