@@ -16,7 +16,7 @@ import java.util.Set;
  *  stored in the specified section.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: SEGMENT.java,v 1.1.2.17 2000-02-08 01:13:02 kkz Exp $
+ * @version $Id: SEGMENT.java,v 1.1.2.18 2000-02-14 21:49:34 cananian Exp $
  */
 public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
     /** R/O storage for static class data (display, vmtable, etc) */
@@ -77,19 +77,16 @@ public class SEGMENT extends Stm implements harpoon.ClassFile.HDataElement {
      *  <code>segtype</code> must be one the segments types specified
      *  in this class. */
     public SEGMENT(TreeFactory tf, HCodeElement source, int segtype) { 
-	super(tf, source); 
+	super(tf, source, 0); 
 	this.segtype = segtype;
 	Util.assert(segtype>=0 && segtype<12);
     }
     
-    public Tree getFirstChild() { return null; } 
-
     protected Set defSet() { return Collections.EMPTY_SET; }
     protected Set useSet() { return Collections.EMPTY_SET; }
     
     public int     kind()  { return TreeKind.SEGMENT; }
 
-    public Stm build(ExpList kids) { return build(tf, kids); } 
     public Stm build(TreeFactory tf, ExpList kids) { 
 	return new SEGMENT(tf, this, segtype); 
     } 

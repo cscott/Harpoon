@@ -22,11 +22,9 @@ import harpoon.Util.Util;
  * </PRE>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DATUM.java,v 1.1.2.1 2000-01-10 05:08:41 cananian Exp $
+ * @version $Id: DATUM.java,v 1.1.2.2 2000-02-14 21:49:33 cananian Exp $
  */
 public class DATUM extends Stm implements harpoon.ClassFile.HDataElement { 
-    /** The expression to write to memory.  Never null. */
-    private Exp data;
     /** If false, the memory is not initialized; instead it is reserved
      *  with an unspecified value. */
     public final boolean initialized;
@@ -39,7 +37,8 @@ public class DATUM extends Stm implements harpoon.ClassFile.HDataElement {
      *  location of this <code>DATUM</code> without assigning it a value.
      */
     public DATUM(TreeFactory tf, HCodeElement source, Exp data) {
-	super(tf, source);
+	super(tf, source, 1);
+	Util.assert(data!=null);
 	this.setData(data);
 	this.initialized = true;
 	Util.assert(data.kind()==TreeKind.CONST || 
@@ -53,7 +52,7 @@ public class DATUM extends Stm implements harpoon.ClassFile.HDataElement {
      *  of the size of the specified type without assigning it a value. 
      */
     public DATUM(TreeFactory tf, HCodeElement source, int type) { 
-	super(tf, source);
+	super(tf, source, 1);
 	Util.assert(Type.isValid(type));
 	if (type==Type.INT)
 	    this.setData(new CONST(tf, source, (int)0));
@@ -75,14 +74,14 @@ public class DATUM extends Stm implements harpoon.ClassFile.HDataElement {
      */
     public DATUM(TreeFactory tf, HCodeElement source,
 		int bitwidth, boolean signed) { 
-	super(tf, source);
+	super(tf, source, 1);
 	this.setData(new CONST(tf, source, bitwidth, signed, 0));
 	this.initialized = false;
     }
 
     private DATUM(TreeFactory tf, HCodeElement source,
 		 Exp data, boolean initialized) {
-	super(tf, source);
+	super(tf, source, 1);
 	this.setData(data);
 	this.initialized = initialized;
 	Util.assert(data.kind()==TreeKind.CONST || 
@@ -91,20 +90,16 @@ public class DATUM extends Stm implements harpoon.ClassFile.HDataElement {
 		    "Dest and Src must have same tree factory");
     }
 
-    public Exp getData() { return this.data; } 
-    public Tree getFirstChild() { return this.data; } 
+    /** Returns the expression to write to memory.  Never null. */
+    public Exp getData() { return (Exp) getChild(0); }
     
-    public void setData(Exp data) { 
-	this.data = data;
-	this.data.parent = this;
-	this.data.sibling = null;
-    }
+    /** Sets the expression to write to memory.  Never null. */
+    public void setData(Exp data) { setChild(0, data); }
 
     public int kind() { return TreeKind.DATUM; } 
 
-    public Stm build(ExpList kids) { return build(tf, kids); }
-
     public Stm build(TreeFactory tf, ExpList kids) { 
+	Util.assert(kids!=null && kids.tail==null);
 	Util.assert(kids.head == null || tf == kids.head.tf);
 	return new DATUM(tf, this, kids.head, initialized);
     }
@@ -113,14 +108,14 @@ public class DATUM extends Stm implements harpoon.ClassFile.HDataElement {
     public void accept(TreeVisitor v) { v.visit(this); } 
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) { 
-	return new DATUM(tf, this, (Exp)data.rename(tf, ctm), initialized);
+	return new DATUM(tf, this, (Exp)getData().rename(tf, ctm),initialized);
     }    
 
     public String toString() { 
 	StringBuffer sb = new StringBuffer("DATUM<");
-	sb.append(data instanceof PreciselyTyped ?
-		  Type.toString((PreciselyTyped)data) :
-		  Type.toString(data.type()));
+	sb.append(getData() instanceof PreciselyTyped ?
+		  Type.toString((PreciselyTyped)getData()) :
+		  Type.toString(getData().type()));
 	sb.append(">(#"); sb.append(getID()); sb.append(")");
 	return sb.toString();
     }

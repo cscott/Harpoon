@@ -12,7 +12,7 @@ import java.util.Set;
 
 /**
  * <code>ESEQ</code> objects are expressions which chain a statement and
- * an expressions together.  The statement is evaluated for side effects, the
+ * an expression together.  The statement is evaluated for side effects, then
  * the expression is evaluated.  The value of the expression is the value of
  * the <code>ESEQ</code>.<p>
  * <code>ESEQ</code>s are <code>PreciselyTyped</code> because the enclosed
@@ -22,40 +22,31 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ESEQ.java,v 1.1.2.18 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: ESEQ.java,v 1.1.2.19 2000-02-14 21:49:33 cananian Exp $
  */
 public class ESEQ extends Exp implements PreciselyTyped {
-    /** The statement to evaluate for side-effects. */
-    private Stm stm;
-    /** The expression whose value is the the value of the <code>ESEQ</code>.*/
-    private Exp exp;
     /** Constructor. */
     public ESEQ(TreeFactory tf, HCodeElement source,
 		Stm stm, Exp exp) {
-	super(tf, source);
-	this.exp = exp; this.stm = stm; 
-	this.setExp(exp); this.setStm(stm); 
+	super(tf, source, 2);
 	Util.assert(stm!=null && exp!=null);
 	Util.assert(tf == exp.tf);
 	Util.assert(tf == stm.tf); 
+	setStm(stm); setExp(exp);
     }
 
-    public Tree getFirstChild() { return this.exp; } 
-    public Exp getExp() { return this.exp; } 
-    public Stm getStm() { return this.stm; } 
+    /** Returns the statement to evaluate for side-effects. */
+    public Stm getStm() { return (Stm) getChild(0); } 
+    /** Returns the expression whose value is the the value of
+     *  the <code>ESEQ</code>.*/
+    public Exp getExp() { return (Exp) getChild(1); } 
 
-    public void setExp(Exp exp) { 
-	this.exp         = exp; 
-	this.exp.parent  = this;
-	this.exp.sibling = stm; 
-    }
+    /** Sets the statement to evaluate for side-effects. */
+    public void setStm(Stm stm) { setChild(0, stm); }
+    /** Sets the expression whose value is the the value of
+     *  the <code>ESEQ</code>.*/
+    public void setExp(Exp exp) { setChild(1, exp); }
 
-    public void setStm(Stm stm) { 
-	this.stm         = stm; 
-	stm.parent       = this; 
-	stm.sibling      = null;
-	this.exp.sibling = stm; 
-    }
 	
     protected Set defSet() { 
 	throw new Error
@@ -71,8 +62,6 @@ public class ESEQ extends Exp implements PreciselyTyped {
 
     public int kind() { return TreeKind.ESEQ; }
 
-    public Exp build(ExpList kids) {throw new Error("build() not applicable to ESEQ");}
-    
     public Exp build(TreeFactory tf, ExpList kids) {throw new Error("build() not applicable to ESEQ");}
 
     /** Accept a visitor */
@@ -80,21 +69,21 @@ public class ESEQ extends Exp implements PreciselyTyped {
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new ESEQ(tf, this, 
-			(Stm)stm.rename(tf, ctm), 
-			(Exp)exp.rename(tf, ctm));
+			(Stm)getStm().rename(tf, ctm), 
+			(Exp)getExp().rename(tf, ctm));
     }
 
-    public int type() { return exp.type(); }
+    public int type() { return getExp().type(); }
     public boolean isSmall() { 
-	return (exp instanceof PreciselyTyped)
-	    ? ((PreciselyTyped)exp).isSmall()
+	return (getExp() instanceof PreciselyTyped)
+	    ? ((PreciselyTyped)getExp()).isSmall()
 	    : false;
     }
-    public int bitwidth() { return ((PreciselyTyped)exp).bitwidth(); }
-    public boolean signed() { return ((PreciselyTyped)exp).signed(); }
+    public int bitwidth() { return ((PreciselyTyped)getExp()).bitwidth(); }
+    public boolean signed() { return ((PreciselyTyped)getExp()).signed(); }
 
     public String toString() {
-        return "ESEQ(#" + stm.getID() + ", #" + exp.getID() + ")";
+        return "ESEQ(#" + getStm().getID() + ", #" + getExp().getID() + ")";
     }
 }
 

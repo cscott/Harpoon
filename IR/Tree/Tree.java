@@ -28,27 +28,29 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.25 2000-01-17 23:41:30 cananian Exp $
+ * @version $Id: Tree.java,v 1.1.2.26 2000-02-14 21:49:34 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
 	       harpoon.IR.Properties.UseDef
 {
-    /*final*/ TreeFactory tf; // JDK 1.1 has problems with final fields.
-    /*final*/ String source_file;
-    /*final*/ int source_line;
-    /*final*/ int id;
-    /*final*/ private int hashCode;
+    final TreeFactory tf;
+    final String source_file;
+    final int source_line;
+    final int id;
+    final private int hashCode;
 
-    protected Tree parent = null; 
-    protected Tree sibling = null; 
+    private Tree parent = null; 
+    private int which_child_of_parent;
+    protected final Tree[] child;
 
-    protected Tree(TreeFactory tf, HCodeElement source) { 
+    protected Tree(TreeFactory tf, HCodeElement source, int arity) { 
         Util.assert(tf!=null);
 	this.source_file = (source!=null)?source.getSourceFile():"unknown";
 	this.source_line = (source!=null)?source.getLineNumber(): 0;
 	this.id = tf.getUniqueID();
 	this.tf = tf;
+	this.child = new Tree[arity];
 	// cache hashcode for efficiency.
 	this.hashCode = this.id ^ tf.hashCode();
     }
@@ -80,11 +82,11 @@ public abstract class Tree
     abstract protected Set defSet();
     abstract protected Set useSet();   
 
-    public int hashCode() { return hashCode; }
+    public final int hashCode() { return hashCode; }
 
     /** Returns the <code>TreeFactory</code> that generated this
      *  <code>Tree</code>. */
-    public TreeFactory getFactory() { return tf; }
+    public final TreeFactory getFactory() { return tf; }
 
     //
     // FIXME:  add more documentation 
@@ -92,30 +94,59 @@ public abstract class Tree
     //
 
     /**
-     * Returns the leftmost child of thsi tree. 
+     * Returns the leftmost child of this tree, or null if this
+     * node has no children.
      */ 
-    abstract public Tree getFirstChild(); 
+    public final Tree getFirstChild() {
+	return child.length > 0 ? child[0] : null;
+    }
 
     /**
      * Returns the right sibling of this tree, null if there are no
      * siblings to the right of this node. 
      */ 
-    public Tree getSibling() { return this.sibling; } 
+    public final Tree getSibling() {
+	Util.assert(this==parent.child[which_child_of_parent]);
+	int c = which_child_of_parent + 1;
+	return parent.child.length > c ? parent.child[c] : null;
+    } 
 
     /**
      * Returns the parent of this tree.  If this tree is the
      * root node, then returns <code>null</code>. 
      */ 
-    public Tree getParent() { return this.parent; } 
+    public final Tree getParent() { return this.parent; } 
+
+    /** Fetch from the child array -- for subclass use only.  The subclass
+     *  will provide named accessors to the public (ie, getDst(), getLeft()).
+     */
+    protected final Tree getChild(int which) { return child[which]; }
+    /**
+     * Modify the child array -- for subclass use only.  The subclass will
+     * provide named accessors to the public (ie, setDst(), setLeft() ).
+     */
+    protected final void setChild(int which, Tree newChild) {
+	if (child[which]!=null) child[which].unlink();
+	child[which] = newChild;
+	newChild.parent = this;
+	newChild.which_child_of_parent = which;
+    }
+    /** Replace the tree rooted at <code>this</code> with a new tree. */
+    public final void replace(Tree newTree) {
+	parent.setChild(which_child_of_parent, newTree);
+    }
+    /** Make <code>this</code> a root-level tree, unlinking it from
+     *  its parent. */
+    final void unlink() { this.parent=null; this.which_child_of_parent=0; }
 
     /** Returns the original source file name that this <code>Tree</code> is
      *  derived from. */
-    public String getSourceFile() { return source_file; }
+    public final String getSourceFile() { return source_file; }
     /** Returns the line in the original source file that this
      *  <code>Tree</code> is derived from. */
-    public int getLineNumber() { return source_line; }
+    public final int getLineNumber() { return source_line; }
     /** Returns a unique numeric identifier for this <code>Tree</code>. */
-    public int getID() { return id; }
+    public final int getID() { return id; }
 
     /** Return an integer enumeration of the kind of this 
      *  <code>Tree</code>.  The enumerated values are defined in
@@ -159,21 +190,11 @@ public abstract class Tree
     }
 
     /** Return a list of subexpressions of this <code>Tree</code>. */
-    public ExpList kids() { 
-	List list = new LinkedList(); 
-	HashSet seen = new HashSet();
-
-	for (Exp child = (Exp)this.getFirstChild(); 
-	     child != null; 
-	     child = (Exp)child.sibling) { 
-	    harpoon.Util.Util.assert(seen.add(child),
-				     "already seen "+child +
-				     " in " + this);
-	    list.add(child); 
-
-	}
-
-	return ExpList.toExpList(list); 
+    public ExpList kids() { // by default, make kids list from all children.
+	ExpList r=null;
+	for (int i=child.length-1; i>=0; i--)
+	    r = new ExpList((Exp)child[i], r);
+	return r;
     }
 }
 

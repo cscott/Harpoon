@@ -16,44 +16,32 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.16 2000-01-29 01:27:28 pnkfelix Exp $
+ * @version $Id: SEQ.java,v 1.1.2.17 2000-02-14 21:49:34 cananian Exp $
  */
 public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
-    /** The statement to evaluate first. */
-    private Stm left;
-    /** The statement to evaluate last. */
-    private Stm right;
     /** Constructor. */
     public SEQ(TreeFactory tf, HCodeElement source,
 	       Stm left, Stm right) {
-	super(tf, source); // No edges in or out of SEQ
-	this.left=left; this.right=right;
+	super(tf, source, 2);
 	Util.assert(left!=null && right!=null);
 	Util.assert(left.tf == right.tf, "Left and Right must have same tree factory");
 	Util.assert(tf == right.tf, "This and Right must have same tree factory");
-
+	setLeft(left); setRight(right);
 
 	// FSK: debugging hack
 	// this.accept(TreeVerifyingVisitor.norepeats());
 
     }
     
-    public Tree getFirstChild() { return this.left; } 
-    public Stm getLeft() { return this.left; }
-    public Stm getRight() { return this.right; } 
+    /** Returns the statement to evaluate first. */
+    public Stm getLeft() { return (Stm) getChild(0); }
+    /** Returns the statement to evaluate last. */
+    public Stm getRight() { return (Stm) getChild(1); } 
 
-    public void setLeft(Stm left) { 
-	this.left = left; 
-	this.left.parent = this;
-	this.left.sibling = null;
-    }
-
-    public void setRight(Stm right) { 
-	this.right = right; 
-	right.parent = this;
-	right.sibling = null; 
-	this.left.sibling = right; 
-    }
+    /** Sets the statement to evaluate first. */
+    public void setLeft(Stm left) { setChild(0, left); }
+    /** Sets the statement to evaluate last. */
+    public void setRight(Stm right) { setChild(1, right); }
 
     protected Set defSet() { return Collections.EMPTY_SET; }
 
@@ -62,19 +50,18 @@ public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     public ExpList kids() {throw new Error("kids() not applicable to SEQ");}
     public int kind() { return TreeKind.SEQ; }
 
-    public Stm build(ExpList kids) {throw new Error("build() not applicable to SEQ");}
     public Stm build(TreeFactory tf, ExpList kids) {throw new Error("build() not applicable to SEQ");}
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new SEQ(tf, this, 
-		       (Stm)left.rename(tf, ctm),
-		       (Stm)right.rename(tf, ctm));
+		       (Stm)getLeft().rename(tf, ctm),
+		       (Stm)getRight().rename(tf, ctm));
     }
 
     public String toString() {
-        return "SEQ(#"+left.getID()+", #"+right.getID()+")";
+        return "SEQ(#"+getLeft().getID()+", #"+getRight().getID()+")";
     }
 }
 

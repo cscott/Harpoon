@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 
 import java.util.Collections;
@@ -14,11 +15,11 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Exp.java,v 1.1.2.11 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: Exp.java,v 1.1.2.12 2000-02-14 21:49:33 cananian Exp $
  */
 abstract public class Exp extends Tree implements Typed {
-    protected Exp(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
-	super(tf, source);
+    protected Exp(TreeFactory tf, HCodeElement source, int arity) {
+	super(tf, source, arity);
     }
   
     // Only ESEQs can define anything, and they are not permitted in 
@@ -31,7 +32,7 @@ abstract public class Exp extends Tree implements Typed {
 
     /** Build an <code>Exp</code> of this type from the given list of
      *  subexpressions. */
-    abstract public Exp build(ExpList kids);
+    public final Exp build(ExpList kids) { return build(this.tf, kids); }
     abstract public Exp build(TreeFactory tf, ExpList kids);
 
     public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);

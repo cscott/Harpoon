@@ -12,24 +12,18 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: THROW.java,v 1.1.2.13 2000-01-09 01:04:41 duncan Exp $
+ * @version  $Id: THROW.java,v 1.1.2.14 2000-02-14 21:49:34 cananian Exp $
  */
 public class THROW extends Stm implements Typed {
-    /** The exceptional value to return */
-    private Exp retex;
-    /** The location of the exception-handling code */
-    private Exp handler;
-
     /** Constructor 
      *  @param retex   the exceptional value to return 
      *  @param handler the location of the exception-handling code to branch to
      */
     public THROW(TreeFactory tf, HCodeElement source, 
 		 Exp retex, Exp handler) {
-	super(tf, source);
-	// Set elements in reverse order to avoid null pointer exception. 
-	this.setHandler(handler);
+	super(tf, source, 2);
 	this.setRetex(retex);
+	this.setHandler(handler);
 
 	Util.assert(retex.type()==POINTER); 
 	Util.assert(handler.type()==POINTER);
@@ -37,26 +31,20 @@ public class THROW extends Stm implements Typed {
 	Util.assert(tf == handler.tf, "This and Handler must have the same tree factory");
     }		
     
-    public Tree getFirstChild() { return this.retex; } 
-    public Exp getRetex() { return this.retex; } 
-    public Exp getHandler() { return this.handler; } 
+    /** The exceptional value to return */
+    public Exp getRetex() { return (Exp) getChild(0); }
+    /** The location of the exception-handling code */
+    public Exp getHandler() { return (Exp) getChild(1); } 
 
-    public void setRetex(Exp retex) { 
-	this.retex = retex; 
-	this.retex.parent = this; 
-	this.retex.sibling = handler; 
-    }
-
-    public void setHandler(Exp handler) { 
-	this.handler = handler; 
-	this.handler.parent = this;
-	this.handler.sibling = null;
-    }
+    /** Set the exceptional value to return */
+    public void setRetex(Exp retex) { setChild(0, retex); }
+    /** Set the location of the exception-handling code */
+    public void setHandler(Exp handler) { setChild(1, handler); }
   
     public int kind() { return TreeKind.THROW; }
 
-    public Stm build(ExpList kids) { return build(tf, kids); } 
     public Stm build(TreeFactory tf, ExpList kids) { 
+	Util.assert(kids!=null && kids.tail!=null && kids.tail.tail==null);
 	Util.assert(tf == kids.head.tf);
 	Util.assert(tf == kids.tail.head.tf);
 	return new THROW(tf, this, kids.head, kids.tail.head);
@@ -66,8 +54,9 @@ public class THROW extends Stm implements Typed {
     public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-	return new THROW
-	    (tf,this,(Exp)retex.rename(tf,ctm),(Exp)handler.rename(tf,ctm));
+	return new THROW(tf,this,
+			 (Exp)getRetex().rename(tf,ctm),
+			 (Exp)getHandler().rename(tf,ctm));
     }
 
     /** @return <code>Type.POINTER</code> */
@@ -76,6 +65,6 @@ public class THROW extends Stm implements Typed {
     public boolean isFloatingPoint() { return false; }
     
     public String toString() {
-	return "THROW(#"+retex.getID()+", "+handler.getID()+")";
+	return "THROW(#"+getRetex().getID()+", "+getHandler().getID()+")";
     }
 }

@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: OPER.java,v 1.1.2.10 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: OPER.java,v 1.1.2.11 2000-02-14 21:49:34 cananian Exp $
  */
 public abstract class OPER extends Exp {
     /** An enumerated type encoding the operator.
@@ -25,8 +25,8 @@ public abstract class OPER extends Exp {
     public final int optype;
 
     public OPER(TreeFactory tf, HCodeElement source,
-		int optype, int op) {
-	super(tf, source);
+		int optype, int op, int arity) {
+	super(tf, source, arity);
 	Util.assert(Type.isValid(optype));
 	// subclass must verify validity of op.
 	this.op = op; this.optype = optype;
@@ -34,14 +34,10 @@ public abstract class OPER extends Exp {
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); }
 
-    public abstract Tree getFirstChild(); 
-
     // <code>Typed</code> interface.
 
     /** Return result type. */
     public abstract int type();
     /** Return type of operands (not necessarily the result type). */
     public int operandType() { return optype; }
-
-    public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);
 }

@@ -13,31 +13,27 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.19 2000-01-09 01:04:41 duncan Exp $
+ * @version $Id: UNOP.java,v 1.1.2.20 2000-02-14 21:49:34 cananian Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
-    /** The subexpression to be operated upon. */
-    private Exp operand;
     /** Constructor.
      * @param unop Enumerated operation type, from <code>Uop</code>.
      */
     public UNOP(TreeFactory tf, HCodeElement source,
 		int optype, int unop, Exp operand) {
-	super(tf, source, optype, unop);
+	super(tf, source, optype, unop, 1);
+	Util.assert(operand!=null);
 	this.setOperand(operand);
 	Util.assert(Uop.isValid(unop));
 	Util.assert(tf == operand.tf, "This and Operand must have same tree factory");
     }
 
-    public Tree getFirstChild() { return this.operand; } 
-    public Exp getOperand() { return this.operand; } 
+    /** Returns the subexpression to be operated upon. */
+    public Exp getOperand() { return (Exp) getChild(0); }
 
-    public void setOperand(Exp operand) { 
-	this.operand = operand; 
-	this.operand.parent = this;
-	this.operand.sibling = null;
-    }
+    /** Sets the subexpression to be operated upon. */
+    public void setOperand(Exp operand) { setChild(0, operand); }
 
     /** Returns an <code>int</code> identifying the TYPE that this
 	unary operation returns.
@@ -171,8 +167,8 @@ public class UNOP extends OPER {
 
     public int kind() { return TreeKind.UNOP; }
 
-    public Exp build(ExpList kids) { return build(tf, kids); } 
     public Exp build(TreeFactory tf, ExpList kids) {
+	Util.assert(kids!=null && kids.tail==null);
 	Util.assert(tf == kids.head.tf);
 	return new UNOP(tf, this, optype, op, kids.head);
     }
@@ -180,12 +176,13 @@ public class UNOP extends OPER {
     public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new UNOP(tf, this, optype, op, (Exp)operand.rename(tf, ctm));
+        return new UNOP(tf, this, optype, op,
+			(Exp)getOperand().rename(tf, ctm));
     }
 
     public String toString() {
         return "UNOP<" + Type.toString(optype) + ">(" + Uop.toString(op) +
-                ", #" + operand.getID() + ")";
+                ", #" + getOperand().getID() + ")";
     }
 }
 

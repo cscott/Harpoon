@@ -21,60 +21,92 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.15 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.16 2000-02-14 21:49:33 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL
  */
 public abstract class INVOCATION extends Stm {
-    /** A subexpression which evaluates to the function reference to invoke.*/
-    private Exp func;
-    /** Subexpressions for the arguments to the function. */
-    private ExpList args;
-    /** Expression indicating the destination of the return value.
-     *  The <code>retval</code> is <code>null</code> for <code>void</code>
-     *  functions. */
-    private TEMP retval;
+    private final int argsLength;
+    private final int kidsStart;
+    private final boolean isVoid;
 
-    /** Constructor. */
+    /** Constructor.
+     * @param retval Expression indicating the destination of the return
+     *  value. The <code>retval</code> is <code>null</code> for 
+     *  <code>void</code> functions.
+     * @param func A subexpression which evaluates to the function
+     *  reference to invoke.
+     * @param args Subexpressions for the arguments to the function.
+     */
     protected INVOCATION(TreeFactory tf, HCodeElement source,
-			 TEMP retval, Exp func, ExpList args) {
-	super(tf, source); 
-	this.args = args; this.func = func; this.retval = retval; 
+			 TEMP retval, Exp func, ExpList args, int addlArgs) {
+	super(tf, source, 1+ExpList.size(args)+(retval==null?0:1)+addlArgs); 
 	Util.assert(func!=null);
+	this.isVoid = (retval==null);
+	this.kidsStart = (isVoid?0:1)+addlArgs;
+	this.argsLength = ExpList.size(args);
+	setRetval(retval); setFunc(func); setArgs(args);
 	Util.assert(tf==func.tf, "This and Func must have same tree factory");
 	Util.assert(retval==null || tf == retval.tf,
 		    "This and Retval must have same tree factory");
     }
 
-    public TEMP getRetval() { return this.retval; }
-    public Exp getFunc() { return this.func; }
-    public ExpList getArgs() { return this.args; } 
+    /** Returns the expression indicating the destination of the return value.
+     *  Returns <code>null</code> for <code>void</code>
+     *  functions. */
+    public TEMP getRetval() {
+	return (isVoid) ? null : (TEMP) getChild(kidsStart-1);
+    }
+    /** Returns an expression for the function reference to invoke.*/
+    public Exp getFunc() { return (Exp) getChild(kidsStart); }
+    /** Returns a list of subexpressions for the function arguments. */
+    public ExpList getArgs() { return kids().tail; } 
+
+    // kids start with func expression and go from there.
+    public ExpList kids() { return _kids(getFunc()); }
+    private ExpList _kids(Exp e) {
+	if (e==null) return null;
+	else return new ExpList(e, _kids((Exp)e.getSibling()));
+    }
+
+    /** Sets the expression indicating the destination of the return value.
+     * @param retval <code>null</code> for <code>void</code> functions,
+     *        non-<code>null</code> otherwise.
+     */
+    public void setRetval(TEMP retval) {
+	if (isVoid) {
+	    Util.assert(retval==null, "Can't make a void function non-void");
+	} else {
+	    Util.assert(retval!=null, "Can't make a non-void function void");
+	    setChild(kidsStart-1, retval);
+	}
+    }
+    /** Sets the function reference expression. */
+    public void setFunc(Exp func) { setChild(kidsStart, func); }
+    /** Sets the function argument list. */
+    public void setArgs(ExpList args) {
+	Util.assert(argsLength==ExpList.size(args),
+		    "Can't change the number of arguments to the function");
+	int i=kidsStart+1;
+	for (ExpList ep = args; ep!=null; ep=ep.tail)
+	    setChild(i++, ep.head);
+    }
 
     protected Set defSet() { 
 	Set def = new HashSet();
-	if (retval != null && retval.kind() == TreeKind.TEMP) 
-	    { def.add(((TEMP)retval).temp); }
+	if (!isVoid) def.add(getRetval().temp);
 	return def;
     }
 
     protected Set useSet() {
 	Set uses = new HashSet();
-	uses.addAll(ExpList.useSet(args));
-	uses.addAll(func.useSet());
-	if (retval != null && !(retval.kind()==TreeKind.TEMP))
-	    { uses.addAll(retval.useSet()); } 
+	uses.addAll(ExpList.useSet(kids()));
  	return uses;
     }
     
     abstract public boolean isNative();
-    abstract public Stm build(ExpList kids);
     abstract public void accept(TreeVisitor v);
     abstract public Tree rename(TreeFactory tf, CloningTempMap ctm);
-    abstract public Tree getFirstChild();
-
-    public void setArgs(ExpList args) { this.args = args; }
-    public void setFunc(Exp func) { this.func = func; }
-    public void setRetval(TEMP retval) { this.retval = retval; }
 }
  

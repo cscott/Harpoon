@@ -14,39 +14,35 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CJUMP.java,v 1.1.2.15 2000-01-09 01:04:41 duncan Exp $
+ * @version $Id: CJUMP.java,v 1.1.2.16 2000-02-14 21:49:33 cananian Exp $
  */
 public class CJUMP extends Stm {
-    /** An expression that evaluates into a boolean result. */
-    private Exp test;
     /** The label to jump to if <code>test</code> is <code>true</code>. */
-    public Label iftrue;
+    public final Label iftrue;
     /** The label to jump to if <code>test</code> is <code>false</code>. */
-    public Label iffalse;
+    public final Label iffalse;
     
     /** Constructor. */
     public CJUMP(TreeFactory tf, HCodeElement source,
 		 Exp test, Label iftrue, Label iffalse) {
-	super(tf, source);
-	this.setTest(test); this.iftrue = iftrue; this.iffalse = iffalse;
+	super(tf, source, 1);
 	Util.assert(test!=null && iftrue!=null && iffalse!=null);
+	this.setTest(test); this.iftrue = iftrue; this.iffalse = iffalse;
 	Util.assert(tf == test.tf, "This and Test must have same tree factory");
     }
 
-    public Tree getFirstChild() { return this.test; } 
-    public Exp getTest() { return this.test; } 
+    /** Returns the test condition for this <code>CJUMP</code>.
+     *  The expression should evaluate into a boolean result. */
+    public Exp getTest() { return (Exp) getChild(0); } 
 
-    public void setTest(Exp test) { 
-	this.test = test; 
-	this.test.parent = this;
-	this.test.sibling = null;
-    }
+    /** Returns the test condition for this <code>CJUMP</code>.
+     *  The given expression should evaluate into a boolean result. */
+    public void setTest(Exp test) { setChild(0, test); }
     
     public int kind() { return TreeKind.CJUMP; }
 
-    public Stm build(ExpList kids) { return build(tf, kids); }
-
     public Stm build(TreeFactory tf, ExpList kids) {
+	Util.assert(kids!=null && kids.tail==null);
 	Util.assert(tf == kids.head.tf);
 	return new CJUMP(tf, this, kids.head, iftrue, iffalse);
     }
@@ -54,11 +50,12 @@ public class CJUMP extends Stm {
     public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new CJUMP(tf, this, (Exp)test.rename(tf, ctm), iftrue, iffalse);
+        return new CJUMP(tf, this, (Exp)getTest().rename(tf, ctm),
+			 iftrue, iffalse);
     }
 
     public String toString() {
-        return "CJUMP(#"+test.getID()+", "+iftrue+", "+iffalse+")";
+        return "CJUMP(#"+getTest().getID()+", "+iftrue+", "+iffalse+")";
     }
 }
 

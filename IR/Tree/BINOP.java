@@ -13,21 +13,17 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.23 2000-01-29 01:27:27 pnkfelix Exp $
+ * @version $Id: BINOP.java,v 1.1.2.24 2000-02-14 21:49:33 cananian Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
-    /** The subexpression of the left-hand side of the operator. */
-    private Exp left;
-    /** The subexpression of the right-hand side of the operator. */
-    private Exp right;
     /** Constructor.
      * @param binop Enumerated operation type, from <code>Bop</code>.
      */
     public BINOP(TreeFactory tf, HCodeElement source,
 		 int optype, int binop, Exp left, Exp right) {
-	super(tf, source, optype, binop);
-	this.left = left; this.right = right; 
+	super(tf, source, optype, binop, 2);
+	Util.assert(left != null && right != null);
 	this.setLeft(left); this.setRight(right); 
 	Util.assert(Bop.isValid(binop));
 	Util.assert(tf==right.tf,"Left and Right must have same tree factory");
@@ -48,29 +44,20 @@ public class BINOP extends OPER {
 	}
     }
     
-    public Tree getFirstChild() { return left; } 
-    
-    public Exp getLeft() { return this.left; } 
-    public Exp getRight() { return this.right; } 
+    /** Returns the subexpression of the left-hand side of the operator. */
+    public Exp getLeft() { return (Exp) getChild(0); } 
+    /** Returns the subexpression of the right-hand side of the operator. */
+    public Exp getRight() { return (Exp) getChild(1); } 
 
-    public void setLeft(Exp left) { 
-	this.left         = left; 
-	this.left.parent  = this; 
-	this.left.sibling = right; 
-    }
-
-    public void setRight(Exp right) { 
-	this.right         = right;
-	this.right.parent  = this;
-	this.right.sibling = null;
-	this.left.sibling  = this.right; 
-    }
+    /** Sets the subexpression of the left-hand side of the operator. */
+    public void setLeft(Exp left) {  setChild(0, left); }
+    /** Sets the subexpression of the right-hand side of the operator. */
+    public void setRight(Exp right) { setChild(1, right); }
     
     public int kind() { return TreeKind.BINOP; }
     
-    public Exp build(ExpList kids) { return build(tf, kids); }
-
     public Exp build(TreeFactory tf, ExpList kids) {
+	Util.assert(kids!=null && kids.tail!=null && kids.tail.tail==null);
 	Util.assert(tf == kids.head.tf && tf == kids.tail.head.tf);
 	return new BINOP(tf, this, optype, op, kids.head, kids.tail.head);
     }
@@ -79,8 +66,8 @@ public class BINOP extends OPER {
   
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new BINOP(tf, this, optype, op, 
-			 (Exp)left.rename(tf, ctm), 
-			 (Exp)right.rename(tf, ctm));
+			 (Exp)getLeft().rename(tf, ctm), 
+			 (Exp)getRight().rename(tf, ctm));
     }
 
     /** Evaluates a constant value for the result of a <code>BINOP</code>, 
@@ -257,7 +244,7 @@ public class BINOP extends OPER {
 
     public String toString() {
         return "BINOP<"+Type.toString(optype)+">("+Bop.toString(op)+
-               ", #" + left.getID() + ", #" + right.getID() + ")";
+               ", #" + getLeft().getID() + ", #" + getRight().getID() + ")";
     }
 }
 

@@ -15,19 +15,17 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: JUMP.java,v 1.1.2.12 2000-01-09 01:04:41 duncan Exp $
+ * @version $Id: JUMP.java,v 1.1.2.13 2000-02-14 21:49:33 cananian Exp $
  */
 public class JUMP extends Stm {
-    /** An expression giving the address to jump to. */
-    private Exp exp;
     /** A list of possible branch targets. */
-    public LabelList targets;
+    public final LabelList targets;
     /** Full constructor. */
     public JUMP(TreeFactory tf, HCodeElement source,
 		Exp exp, LabelList targets) {
-	super(tf, source);
-	this.setExp(exp); this.targets=targets;
+	super(tf, source, 1);
 	Util.assert(exp!=null && targets!=null);
+	this.setExp(exp); this.targets=targets;
 	Util.assert(tf == exp.tf, "This and Exp must have same tree factory");
 
     }
@@ -38,20 +36,15 @@ public class JUMP extends Stm {
 	     new NAME(tf, source, target), new LabelList(target,null));
     }
 
-    public Tree getFirstChild() { return this.exp; }     
-    public Exp getExp() { return this.exp; } 
-
-    public void setExp(Exp exp) { 
-	this.exp = exp;
-	this.exp.parent = this;
-	this.exp.sibling = null;
-    }
+    /** Returns an expression giving the address to jump to. */
+    public Exp getExp() { return (Exp) getChild(0); }
+    /** Set the expression giving the address to jump to. */
+    public void setExp(Exp exp) { setChild(0, exp); }
     
     public int kind() { return TreeKind.JUMP; }
 
-    public Stm build(ExpList kids) { return build(tf, kids); } 
-
     public Stm build(TreeFactory tf, ExpList kids) {
+	Util.assert(kids!=null && kids.tail==null);
 	Util.assert(tf == kids.head.tf);
 	return new JUMP(tf, this, kids.head,targets);
     }
@@ -59,14 +52,14 @@ public class JUMP extends Stm {
     public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-        return new JUMP(tf, this, (Exp)exp.rename(tf, ctm), this.targets);
+        return new JUMP(tf, this, (Exp)getExp().rename(tf, ctm), this.targets);
     }  
 
     public String toString() {
         LabelList list = targets;
         StringBuffer s = new StringBuffer();
         
-        s.append("JUMP(#" + exp.getID() + ", {");
+        s.append("JUMP(#" + getExp().getID() + ", {");
         while (list != null) {
             s.append(" "+list.head);
             if (list.tail != null) 

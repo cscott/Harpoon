@@ -22,13 +22,9 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.20 2000-01-29 01:27:28 pnkfelix Exp $
+ * @version $Id: MOVE.java,v 1.1.2.21 2000-02-14 21:49:34 cananian Exp $
  */
 public class MOVE extends Stm implements Typed {
-    /** The expression giving the destination for the computed value. */
-    private Exp dst;
-    /** The expression for the computed value. */
-    private Exp src;
     /** Constructor. 
      * <p>The type of the <code>src</code> expression and of the
      * <code>dst</code> expression must be identical.  (Use
@@ -36,9 +32,7 @@ public class MOVE extends Stm implements Typed {
      */
     public MOVE(TreeFactory tf, HCodeElement source,
 		Exp dst, Exp src) {
-	super(tf, source);
-	this.dst = dst; this.src = src; 
-	this.setDst(dst); this.setSrc(src); 
+	super(tf, source, 2);
 	Util.assert(dst != src, "dst and src cannot be same");
 	Util.assert(dst!=null && src!=null, "Dest and Source cannot be null");
 	Util.assert(dst.type()==src.type(), 
@@ -47,66 +41,72 @@ public class MOVE extends Stm implements Typed {
 		    ") must have same type");
 	Util.assert(dst.tf == src.tf, "Dest and Src must have same tree factory");
 	Util.assert(tf == src.tf, "This and Src must have same tree factory");
+	this.setDst(dst); this.setSrc(src); 
 
 	// FSK: debugging hack
 	// this.accept(TreeVerifyingVisitor.norepeats());
     }
   
-    public Tree getFirstChild() { return this.dst; } 
-    public Exp getDst() { return this.dst; } 
-    public Exp getSrc() { return this.src; } 
+    /** Returns the expression giving the destination for the
+     *  computed value. */
+    public Exp getDst() { return (Exp) getChild(0); }
+    /** Returns the expression for the computed value. */
+    public Exp getSrc() { return (Exp) getChild(1); } 
 
-    public void setDst(Exp dst) { 
-	this.dst = dst; 
-	this.dst.parent = this;
-	this.dst.sibling = src; 
-    }
-
-    public void setSrc(Exp src) { 
-	this.src = src; 
-	this.src.parent = this;
-	this.src.sibling = null;
-	this.dst.sibling = this.src;
-    }
+    /** Sets the expression giving the destination for the
+     *  computed value. */
+    public void setDst(Exp dst) { setChild(0, dst); }
+    /** Sets the expression for the computed value. */
+    public void setSrc(Exp src) { setChild(1, src); }
 
     protected Set defSet() { 
 	Set def = new HashSet();
-	if (dst.kind()==TreeKind.TEMP) def.add(((TEMP)dst).temp);
+	if (getDst().kind()==TreeKind.TEMP) def.add(((TEMP)getDst()).temp);
 	return def;
     }
 	
     protected Set useSet() { 
 	Set uses = new HashSet();
-	uses.addAll(src.useSet());
-	if (!(dst.kind()==TreeKind.TEMP)) uses.addAll(dst.useSet());
+	uses.addAll(getSrc().useSet());
+	if (!(getDst().kind()==TreeKind.TEMP)) uses.addAll(getDst().useSet());
 
 	return uses;
     }
 
     public int kind() { return TreeKind.MOVE; }
 
-    public Stm build(ExpList kids) { return build(tf, kids); } 
+    public ExpList kids() {
+	ExpList commontail = new ExpList(getSrc(), null);
+	if (getDst().kind()==TreeKind.MEM)
+	    return new ExpList(getDst().kids().head, commontail);
+	else return commontail;
+    }
     public Stm build(TreeFactory tf, ExpList kids) {
 	Util.assert(tf == kids.head.tf);
 	Util.assert(tf == kids.tail.head.tf);
-	return new MOVE(tf, this, kids.head, kids.tail.head);
+	Util.assert(tf == this.tf, "cloning src not yet implemented");
+	if (getDst().kind()==TreeKind.MEM)
+	    return new MOVE(tf, this, 
+			    getDst().build(tf, new ExpList(kids.head, null)),
+			    kids.tail.head);
+	else return new MOVE(tf, this, getDst(), kids.head);
     }
     /** Accept a visitor */
     public void accept(TreeVisitor v) { v.visit(this); } 
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new MOVE(tf, this,
-			(Exp)dst.rename(tf, ctm),
-			(Exp)src.rename(tf, ctm));
+			(Exp)getDst().rename(tf, ctm),
+			(Exp)getSrc().rename(tf, ctm));
     }
 
     /** @return the type of <code>dst</code> expression. */
-    public int type() { return dst.type(); }
-    public boolean isDoubleWord() { return dst.isDoubleWord(); }
-    public boolean isFloatingPoint() { return dst.isFloatingPoint(); }
+    public int type() { return getDst().type(); }
+    public boolean isDoubleWord() { return getDst().isDoubleWord(); }
+    public boolean isFloatingPoint() { return getDst().isFloatingPoint(); }
 
     public String toString() {
-        return "MOVE(#"+dst.getID()+", #"+src.getID()+")";
+        return "MOVE(#"+getDst().getID()+", #"+getSrc().getID()+")";
     }
 }
 

@@ -13,35 +13,29 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: RETURN.java,v 1.1.2.12 2000-01-09 01:04:41 duncan Exp $
+ * @version  $Id: RETURN.java,v 1.1.2.13 2000-02-14 21:49:34 cananian Exp $
  */
 public class RETURN extends Stm implements Typed {
-    /** The value to return */
-    private Exp retval;
-  
     /** Constructor.
-     *  @param retval  the value to return
+     *  @param retval  the value to return.  Never null.
      */
     public RETURN(TreeFactory tf, HCodeElement source, 
 		  Exp retval) {
-	super(tf, source);
+	super(tf, source, 1);
+	Util.assert(retval!=null);
 	this.setRetval(retval);
 	Util.assert(tf == retval.tf, "This and Retval must have same tree factory");
     }		
 
-    public Tree getFirstChild() { return this.retval; } 
-    public Exp getRetval() { return this.retval; } 
-
-    public void setRetval(Exp retval) { 
-	this.retval = retval; 
-	this.retval.parent = this;
-	this.retval.sibling = null;
-    }
+    /** Returns the value to return. */
+    public Exp getRetval() { return (Exp) getChild(0); }
+    /** Sets the value to return. */
+    public void setRetval(Exp retval) { setChild(0, retval); }
 
     public int kind() { return TreeKind.RETURN; }
 
-    public Stm build(ExpList kids) { return build(tf, kids); } 
     public Stm build(TreeFactory tf, ExpList kids) {
+	Util.assert(kids!=null && kids.tail==null);
 	Util.assert(tf == kids.head.tf);
 	return new RETURN(tf, this, kids.head);
     }
@@ -50,16 +44,16 @@ public class RETURN extends Stm implements Typed {
     public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
-	return new RETURN(tf, this, (Exp)retval.rename(tf, ctm));
+	return new RETURN(tf, this, (Exp)getRetval().rename(tf, ctm));
     }
 
     /** @return the type of the return value expression */
-    public int type() { return retval.type(); }
-    public boolean isDoubleWord() { return retval.isDoubleWord(); }
-    public boolean isFloatingPoint() { return retval.isFloatingPoint(); }
+    public int type() { return getRetval().type(); }
+    public boolean isDoubleWord() { return getRetval().isDoubleWord(); }
+    public boolean isFloatingPoint() { return getRetval().isFloatingPoint(); }
     
     public String toString() {
-	return "RETURN(#"+retval.getID()+")";
+	return "RETURN(#"+getRetval().getID()+")";
     }
 
 }

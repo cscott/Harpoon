@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
@@ -19,16 +20,16 @@ import java.util.Stack;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Stm.java,v 1.1.2.14 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: Stm.java,v 1.1.2.15 2000-02-14 21:49:34 cananian Exp $
  */
 abstract public class Stm extends Tree {
-    protected Stm(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
-	super(tf, source);
+    protected Stm(TreeFactory tf, HCodeElement source, int arity) {
+	super(tf, source, arity);
     }
 
     /** Build an <code>Stm</code> of this type from the given list of
      *  subexpressions. */
-    abstract public Stm build(ExpList kids);
+    public final Stm build(ExpList kids) { return build(this.tf, kids); }
     abstract public Stm build(TreeFactory tf, ExpList kids);
     
     // Overridden by MOVE and INVOCATION

@@ -8,6 +8,7 @@ import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -20,12 +21,10 @@ import java.util.Set;
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.1.2.10 2000-01-17 23:41:30 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.11 2000-02-14 21:49:33 cananian Exp $
  */
 public class METHOD extends Stm {
-    /** The temporary variables used for method formals. */
-    public TEMP[] params;
-    
+    private final int paramsLength;
     /** Creates a <code>Tree.METHOD</code> object. 
      * @param params   temporaries which map directly to the 
      *                 parameters of this <code>Tree.METHOD</code>.
@@ -37,46 +36,44 @@ public class METHOD extends Stm {
      *                 of the method, in the order which they are declared. 
      */
     public METHOD(TreeFactory tf, HCodeElement source, TEMP[] params) { 
-        super(tf, source);
+        super(tf, source, params.length);
 	Util.assert(params!=null); Util.assert(params.length>0);
 	for (int i=0; i<params.length; i++) Util.assert(params[i].tf == tf);
+	this.paramsLength = params.length;
 	this.setParams(params);
     }
 
-    public Tree getFirstChild() { 
-	// Ok, b/c params.length MUST be greater than 0. 
-	return this.params[0];
+    /** Return the temporary variables used for method formals. */
+    public TEMP[] getParams() {
+	TEMP[] result = new TEMP[paramsLength];
+	int i=0;
+	for (Tree t=getFirstChild(); t!=null; t=t.getSibling())
+	    result[i++] = (TEMP) t;
+	return result;
     }
-
-    public TEMP[] getParams() { return this.params; }
-    
+    /** Set the temporary variables used for method formals. */
     public void setParams(TEMP[] params) { 
-	this.params = params; 
-
-	Tree sibling = null; 
-	for (int i=params.length-1; i>=0; i--) { 
-	    TEMP param = params[i]; 
-	    param.parent = this; 
-	    param.sibling = sibling; 
-	    sibling = param; 
-	}
+	Util.assert(paramsLength == params.length,
+		    "Can't change number of parameters to METHOD");
+	for (int i=0; i<paramsLength; i++)
+	    setChild(i, params[i]);
     }
+
+    // convenience/efficiency methods.
+    public int getParamsLength() { return paramsLength; }
+    public TEMP getParams(int i) { return (TEMP) getChild(i); }
 
     public int kind() { return TreeKind.METHOD; }
 
-    public Stm build(ExpList kids) { return build(tf, kids); } 
-
+    public ExpList kids() { return null; /* definitions not considered kids */}
     public Stm build(TreeFactory tf, ExpList kids) { 
-	List sParams = new ArrayList();
-	for (ExpList e=kids; e!=null; e=e.tail) {
-	    Util.assert(e.head.tf == tf);
-	    sParams.add(e.head);
-	}
-	TEMP[] tParams = (TEMP[])sParams.toArray(new TEMP[0]);
-	return new METHOD(tf, this, tParams);
+	Util.assert(kids==null);
+	Util.assert(tf==this.tf, "cloning Params not yet implemented");
+	return new METHOD(tf, this, getParams());
     }
 
-    public Tree rename(TreeFactory tf, CloningTempMap ctm) { 
+    public Tree rename(TreeFactory tf, CloningTempMap ctm) {
+	TEMP[] params  = getParams();
 	TEMP[] newTmps = new TEMP[params.length];
 	for (int i=0; i<params.length; i++) 
 	    newTmps[i] = (TEMP)params[i].rename(tf, ctm);
@@ -88,8 +85,7 @@ public class METHOD extends Stm {
 
     protected Set defSet() { 
 	Set def = new HashSet();
-	for (int i=0; i<params.length; i++)
-	    def.add(params[i].temp);
+	def.addAll(Arrays.asList(getParams()));
 	return def;
     }
 
@@ -98,6 +94,7 @@ public class METHOD extends Stm {
     /** Returns human-readable representation of this <code>Tree</code>. */
     public String toString() {
 	StringBuffer sb = new StringBuffer("METHOD(");
+	TEMP[] params = getParams();
 	for (int i=0; i<params.length-1; i++) {
 	    sb.append(params[i].toString());
 	    sb.append(", ");

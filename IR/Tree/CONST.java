@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.23 2000-01-09 01:04:41 duncan Exp $
+ * @version $Id: CONST.java,v 1.1.2.24 2000-02-14 21:49:33 cananian Exp $
  */
 public class CONST extends Exp implements PreciselyTyped, HDataElement {
     /** The constant value of this <code>CONST</code> expression. */
@@ -31,25 +31,25 @@ public class CONST extends Exp implements PreciselyTyped, HDataElement {
     private boolean signed = true;
 
     public CONST(TreeFactory tf, HCodeElement source, int ival) {
-	super(tf, source);
+	super(tf, source, 0);
 	this.type = INT; this.value = new Integer(ival); this.isSmall=false;
     }
     public CONST(TreeFactory tf, HCodeElement source, long lval) {
-	super(tf, source);
+	super(tf, source, 0);
 	this.type = LONG; this.value = new Long(lval); this.isSmall=false;
     }
     public CONST(TreeFactory tf, HCodeElement source, float fval) {
-	super(tf, source);
+	super(tf, source, 0);
 	this.type = FLOAT; this.value = new Float(fval); this.isSmall=false;
     }
     public CONST(TreeFactory tf, HCodeElement source, double dval) {
-	super(tf, source);
+	super(tf, source, 0);
 	this.type = DOUBLE; this.value = new Double(dval); this.isSmall=false;
     }
     /** Creates a <code>CONST</code> representing the constant 
      * <code>null</code>. */
     public CONST(TreeFactory tf, HCodeElement source) { 
-	super(tf, source);
+	super(tf, source, 0);
 	this.type  = POINTER; this.value = null; this.isSmall=false;
     }
 
@@ -67,7 +67,7 @@ public class CONST extends Exp implements PreciselyTyped, HDataElement {
      */
     public CONST(TreeFactory tf, HCodeElement source, 
 		 int bitwidth, boolean signed, int val) { 
-	super(tf, source);
+	super(tf, source, 0);
 	Util.assert((0<=bitwidth)&&(bitwidth<32), "Invalid bitwidth");
 	this.type     = INT;
 	this.bitwidth = bitwidth;
@@ -79,23 +79,20 @@ public class CONST extends Exp implements PreciselyTyped, HDataElement {
     private CONST(TreeFactory tf, HCodeElement source, 
 		  int type, Number value,
 		  boolean isSmall, int bitwidth, boolean signed) {
-        super(tf, source);
+        super(tf, source, 0);
 	this.type = type; this.value = value; this.isSmall = isSmall;
 	this.bitwidth = bitwidth; this.signed = signed;
 	Util.assert(Type.isValid(type));
 	Util.assert(!isSmall || type==INT);
     }
     
-    public Tree getFirstChild() { return null; } 
-
     /** Return the constant value of this <code>CONST</code> expression. */
     public Number value() { return value; }
 
     public int kind() { return TreeKind.CONST; }
 
-    public Exp build(ExpList kids) { return build(tf, kids); }
-
     public Exp build(TreeFactory tf, ExpList kids) {
+	Util.assert(kids==null);
 	return new CONST(tf, this, type, value, isSmall, bitwidth, signed);
     }
 

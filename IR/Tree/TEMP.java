@@ -17,7 +17,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.22 2000-01-09 01:04:41 duncan Exp $
+ * @version $Id: TEMP.java,v 1.1.2.23 2000-02-14 21:49:34 cananian Exp $
  */
 public class TEMP extends Exp {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -26,7 +26,7 @@ public class TEMP extends Exp {
     public final int type;
     /** Constructor. */
     public TEMP(TreeFactory tf, HCodeElement source, int type, Temp temp) {
-	super(tf, source);
+	super(tf, source, 0);
 	this.type=type; this.temp=temp;
 	Util.assert(Type.isValid(type));
 	Util.assert(temp!=null);
@@ -36,8 +36,6 @@ public class TEMP extends Exp {
 		    "Non-register factory") + " is not equal");
     }
 
-    public Tree getFirstChild() { return null; } 
-    
     public Set useSet() {
 	Set set = new HashSet();
 	set.add(temp);
@@ -46,8 +44,8 @@ public class TEMP extends Exp {
   
     public int kind() { return TreeKind.TEMP; }
 
-    public Exp build(ExpList kids) { return build(tf, kids); } 
     public Exp build(TreeFactory tf, ExpList kids) {
+	Util.assert(kids==null);
 	Util.assert(tf.tempFactory() == temp.tempFactory() ||
 		    tf.getFrame().getRegFileInfo().regTempFactory() == temp.tempFactory());
 	return new TEMP(tf, this, type, temp); 

@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: LABEL.java,v 1.1.2.13 2000-01-09 01:04:41 duncan Exp $
+ * @version $Id: LABEL.java,v 1.1.2.14 2000-02-14 21:49:33 cananian Exp $
  */
 public class LABEL extends Stm implements harpoon.ClassFile.HDataElement { 
     /** The symbolic name to define. */
@@ -29,19 +29,16 @@ public class LABEL extends Stm implements harpoon.ClassFile.HDataElement {
     /** Constructor. */
     public LABEL(TreeFactory tf, HCodeElement source,
 		 Label label, boolean exported) {
-	super(tf, source);
+	super(tf, source, 0);
 	this.label=label;
 	this.exported=exported;
 	Util.assert(label!=null);
     }
 
-    public Tree getFirstChild() { return null; } 
-
     public int kind() { return TreeKind.LABEL; }
 
-    public Stm build(ExpList kids) { return build(tf, kids); } 
-
     public Stm build(TreeFactory tf, ExpList kids) {
+	Util.assert(kids==null);
 	return new LABEL(tf, this, label, exported);
     }
     /** Accept a visitor */
