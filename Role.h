@@ -13,6 +13,7 @@ struct role {
   struct rolefieldlist * nonnullfields;
   struct rolearraylist * nonnullarrays;
   int * methodscalled;
+  char contained;
 };
 
 struct rolereferencelist {

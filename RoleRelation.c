@@ -36,21 +36,77 @@ void addrolerelation(struct heap_state *heap, struct heap_object *src, struct fi
 
 void addentry(struct hashtable *h, int origrole, int newrole) {
   if (!contains(h,origrole)) {
-    int *nr=(int *)malloc(sizeof (int));
-    *nr=newrole;
+    struct intlist *nr=(struct intlist *)calloc(1,sizeof (struct intlist));
+    nr->element=newrole;
     puttable(h, origrole, nr);
+  } else {
+    struct intlist *nr=(struct intlist *)gettable(h, origrole);
+    struct intlist *nrlast=NULL;
+    while(nr!=NULL) {
+      if (nr->element==newrole)
+	return;
+      nrlast=nr;
+      nr=nr->next;
+    }
+    nr=(struct intlist *)calloc(1,sizeof (struct intlist));
+    nr->element=newrole;
+    nrlast->next=nr;
   }
 }
 
-int remap(struct hashtable *h, int origrole) {
-  while(contains(h,origrole)) {
-    origrole=*((int *) gettable(h, origrole));
+struct intlist * remap(struct hashtable *h, int origrole) {
+  struct intlist *retval=NULL;
+  struct intlist *todo=NULL;
+  struct intlist *tmp=(struct intlist *) gettable(h,origrole);
+
+  while(tmp!=NULL) {
+    struct intlist *nl=(struct intlist *)calloc(1,sizeof(struct intlist));
+    nl->element=tmp->element;
+    nl->next=todo;
+    todo=nl;
+    tmp=tmp->next;
   }
-  return origrole;
+
+  while(todo!=NULL) {
+    struct intlist *todoold=todo;
+    todo=todo->next;
+    if (contains(h, todo->element)) {
+      struct intlist *tmp=(struct intlist *) gettable(h,origrole);
+      while(tmp!=NULL) {
+	struct intlist *searchptr=todo;
+	while(searchptr!=NULL) {
+	  if(searchptr->element==tmp->element)
+	    break;
+	}
+	if (searchptr==NULL) {
+	  struct intlist *nl=(struct intlist *)calloc(1,sizeof(struct intlist));
+	  nl->element=tmp->element;
+	  nl->next=todo;
+	  todo=nl;
+	}
+	tmp=tmp->next;
+      }
+    } else {
+      struct intlist *searchptr=retval;
+      while(searchptr!=NULL) {
+	if(searchptr->element==tmp->element)
+	  break;
+      }
+      if(searchptr==NULL) {
+	struct intlist *nl=(struct intlist *)calloc(1,sizeof(struct intlist));
+	nl->element=tmp->element;
+	nl->next=retval;
+	retval=nl;
+      }
+    }
+    free(todoold);
+  }
+  return retval;
 }
 
 void outputrolerelations(struct heap_state *heap) {
   struct geniterator *it=gengetiterator(heap->rolereferencetable);
+  /* FREEME*/
   struct hashtable *roletable=allocatehashtable();
   struct genhashtable *rrtable=genallocatehashtable((int (*)(void *)) &rolerelationhashcode, (int (*)(void *,void *)) &equivalentrolerelations);
 
@@ -103,16 +159,34 @@ void outputrolerelations(struct heap_state *heap) {
 	rfl=rfl->next;
       }
       if (rfl==NULL) {
-	int src=remap(roletable, rr->srcrole);
-	int dst=remap(roletable, rr->dstrole);
-	struct rolerelation trr={src,rr->field,dst};
-	if (!gencontains(rrtable,&trr)) {
-	  struct rolerelation *nrr=(struct rolerelation *) calloc(1,sizeof(struct rolerelation));
-	  nrr->srcrole=src;
-	  nrr->dstrole=dst;
-	  nrr->field=rr->field;
-	  genputtable(rrtable, nrr,nrr);
-	  fprintf(heap->rolediagramfilemerge,"R%d -> R%d [label=\"%s\"]\n",src, dst,rr->field->fieldname);
+	struct intlist * isrc=remap(roletable, rr->srcrole);
+	struct intlist * idst=remap(roletable, rr->dstrole);
+	while (isrc!=NULL) {
+	  struct intlist * idst2=idst;
+	  while (idst2!=NULL) {
+	    int src=isrc->element;
+	    int dst=idst2->element;
+	    struct rolerelation trr={src,rr->field,dst};
+	    if (!gencontains(rrtable,&trr)) {
+	      struct rolerelation *nrr=(struct rolerelation *) calloc(1,sizeof(struct rolerelation));
+	      nrr->srcrole=src;
+	      nrr->dstrole=dst;
+	      nrr->field=rr->field;
+	      genputtable(rrtable, nrr,nrr);
+	      fprintf(heap->rolediagramfilemerge,"R%d -> R%d [label=\"%s\"]\n",src, dst,rr->field->fieldname);
+	    }
+	    idst2=idst2->next;
+   	  }
+	  {
+	    struct intlist *oldsrc=isrc;
+	    isrc=isrc->next;
+	    free(oldsrc);
+	  }
+	}
+	while(idst!=NULL) {
+	    struct intlist *olddst=idst;
+	    idst=idst->next;
+	    free(olddst);
 	}
       }
     }
@@ -120,6 +194,6 @@ void outputrolerelations(struct heap_state *heap) {
   fprintf(heap->rolediagramfilemerge,"}\n");
   genfreeiterator(it);
   genfreekeyhashtable(rrtable);
-  freedatahashtable(roletable, &free);
+
 }
 

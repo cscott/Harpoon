@@ -20,6 +20,8 @@ void printrole(struct heap_state *heap,struct role *r, char * rolename) {
   struct rolereferencelist *dominators=r->dominatingroots;
   fprintf(heap->rolefile,"Role %s {\n",rolename);
   fprintf(heap->rolefile," Class: %s\n", r->class->classname);
+  if (r->contained)
+    fprintf(heap->rolefile," Contained\n");
   fprintf(heap->rolefile," Dominated by:\n");
   while(dominators!=NULL) {
     if (dominators->methodname!=NULL) {
@@ -209,6 +211,9 @@ int equivalentroles(struct role *role1, struct role *role2) {
     return 0;
   if (role1->class!=role2->class)
     return 0;
+  
+  if (role1->contained!=role2->contained)
+    return 0;
 
   if(role1->methodscalled!=NULL&&role2->methodscalled!=NULL) {
     int i;
@@ -351,6 +356,8 @@ void assignhashcode(struct role * role) {
     for(i=0;i<hshash->statechangesize;i++)
       hashcode^=role->methodscalled[i];
   }
+
+  hashcode^=role->contained;
 
   while(dr!=NULL) {
     hashcode^=hashptr(dr->globalname);
@@ -525,7 +532,11 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
       methodscalled[i]=ho->methodscalled[i];
     }
   }
-  
+
+  if (heap->options&OPTION_UCONTAINERS) {
+    if (contains(heap->containedobjects, ho->uid))
+      objrole->contained=1;
+  }
 
   while(dominators!=NULL) {
     struct referencelist *tmp=dominators->next;
