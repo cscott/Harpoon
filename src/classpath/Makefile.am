@@ -1,6 +1,6 @@
 # used by automake to generate Makefile.in
 
-SUBDIRS = gnu java
+SUBDIRS = gnu.vm.stack java.lang
 
 cpvm.jar:
 	jikes-classpath -d cpvm -g `find . -name "*.java"`

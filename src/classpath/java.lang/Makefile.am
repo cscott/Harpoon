@@ -1,7 +1,5 @@
 # used by automake to generate Makefile.in
 
-SUBDIRS = reflect
-
 EXTRA_DIST = \
 Class.java \
 Runtime.java \
