@@ -15,6 +15,12 @@ else
 if MARKSWEEP_GC
 libgc_la_SOURCES = \
 	precise_gc.c marksweep.c gc-data.c
+else
+if GENERATIONAL_GC
+libgc_la_SOURCES = \
+	precise_gc.c generational.c gc-data.c free_list.c cp_heap.c ms_heap.c \
+	deflate_objs.c
+endif
 endif
 endif
 endif
