@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.21 1999-06-11 11:09:55 cananian Exp $
+% $Id: thesis.tex,v 1.22 1999-06-11 16:27:05 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.21 $ $}
+\date{\today \\ $ $Revision: 1.22 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.21 $ $}{$ $Revision: 1.21 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.22 $ $}{$ $Revision: 1.22 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -33,7 +33,7 @@ which the IR influences the structure of the compiler.  Similarly, the
 theorist will derive proofs based upon intermediate representations
 (and languages) that are amenable to mathematical methods, without
 regard to current implementation practices.%
-\footnote{This paragraph will be revised to be less offensive, eventually.}
+\fixme{This paragraph will be revised to be less offensive, eventually.}
 
 This paper introduces yet another intermediate
 representation to the literature:  Static Single Information (SSI) form.
@@ -65,7 +65,7 @@ integration of practical implementation and mathematical elegance.
 
 \section{Intermediate Representations}
 The first paper directly addressing an IR as a separate feature of a
-compiler was Foo and Bar in \cite{foobar}.\footnote{FIXME}
+compiler was Foo and Bar in \cite{foobar}.\fixme{Find real references.}
 The Static Single Assignment (SSA) form was introduced by 
 Alpern, Rosen, Wegman and Zadeck
 as a tool for efficient optimization in a pair of POPL
@@ -139,7 +139,7 @@ representation of program meaning as a set of simultaneous equations,
 without resort to graph information.
 
 \textbf{It is simple.}  A bestiary of new $\phi$-like functions have
-been introduced in recent\footnote{Not really.} papers, including
+been introduced in recent\fixme{Not really.  Some as early as 1990.} papers, including
 $\mu$-, $\gamma$-, and $\eta$-functions in \cite{ballance90:pdw,tu95:gssa},
 $\psi$- and $\pi$-functions in \cite{lee99:parssa},
 interprocedural \phifunction{s} in \cite{liao99:issa},
@@ -159,25 +159,27 @@ represent the ``interesting'' properties of the compiled program.
 
 \textbf{It is efficient.}  Construction of SSI form should be fast,
 and space requirements should be reasonable.  The original SSA
-algorithms required\ldots\ \textbf{FINISH ME (find that silly reference).}
+algorithms required $O(n^3)$ time\ldots
+\fixme{Finish this.  The original time bound for SSA is given in
+       \cite{dhamdhere92:large}.}
 %Construction should be fast, and
 %space should be reasonable.\footnote{Replace with actual numbers.}
 
 \textbf{All explicit control dependencies are eliminated.}  Many IRs
 require explicit control flow edges that serialize computation more
-than is strictly necessary.\footnote{Explain better.}
+than is strictly necessary.\fixme{Explain better.}
 
 \textbf{It is efficient for both forward and backward dataflow analyses.}
-Foo.  Bar.  Foobar.\footnote{FIXME.}
+\fixme{Explain this: we can do backwards analyses.}
 
 \textbf{Transition goes here: we are going to describe SSA form for
-background on SSI form.}
+background on SSI form.}\fixme{Write this.}
 
 \subsection{Static Single Assignment Form}\label{sec:ssa}
 Static Single Assignment (SSA) form, introduced by Cytron in
 \cite{cytron89:ssa}\ldots
 
-\textbf{Define SSA form here.}
+\textbf{Define SSA form here.}\fixme{Write this.}
 
 Figure \ref{fig:tossa} illustrates the conversion to SSA form.
 \begin{myfigure}
@@ -219,7 +221,7 @@ avoids placing \phifunction{s} which define variables which are never used.
 In most cases, the more regular properties of minimal SSA form
 outweigh the pruned form's slight increase in space efficiency.
 Figure \ref{fig:prunedssa} compares minimal and pruned SSA form for
-our example program.\footnote{Mention \cite{ferrante91:pruned}, which
+our example program.\fixme{Mention \cite{ferrante91:pruned}, which
 contains definition and algorithm for pruned SSA.}
 \begin{myfigure}
 \begin{center}
@@ -301,17 +303,43 @@ our example program.
 \end{myfigure}
 
 \subsection{Fast construction of SSI form}
-Our construction algorithm begins with a tree of single-entry
-single-exit (SESE) regions, constructed as described by Johnson,
-Pearson, and Pingali.  We will review these algorithms, as their
-published descriptions \cite{johnson93:sese} contain a number of
-errors.
+Our construction algorithm begins with a program structure tree of
+single-entry single-exit (SESE) regions, constructed as described by
+Johnson, Pearson, and Pingali \cite{johnson94:pst}.  We will review
+the algorithms involved, as their published descriptions
+\cite{johnson93:sese} contain a number of errors.
+
+We begin with a few definitions from \cite{johnson94:pst}.
+\begin{definition}
+Edges $a$ and $b$ are said to be \term{edge cycle-equivalent} in a
+graph iff every cycle containing $a$ contains $b$, and vice-versa.
+Similarly, two nodes are said to be \term{node cycle-equivalent} iff
+every cycle containing one of the nodes also contains the other.
+\end{definition}
+\begin{definition}
+A \term{SESE region} in a graph $G$ is an ordered edge pair
+$\tuple{a,b}$ of distinct control flow edges $a$ and $b$ where
+\begin{tightenum}
+\item $a$ dominates $b$,
+\item $b$ postdominates $a$, and
+\item every cycle containing $a$ also contains $b$ and vice-versa.
+\end{tightenum}
+Edges $a$ and $b$ are called the \term{entry} and \term{exit} edges,
+respectively.
+\end{definition}
+\begin{definition}
+A SESE region $\tuple{a,b}$ is \term{canonical} provided
+\begin{tightenum}
+\item $b$ dominates $b'$ for any SESE region $\tuple{a,b'}$, and
+\item $a$ postdominates $a'$ for any SESE region $\tuple{a',b}$.
+\end{tightenum}
+\end{definition}
 
 \subsubsection{Cycle Equivalency}
 The identification of SESE regions begins by computing the cycle
-equivalency of the nodes in the program control flow graph.  The cycle
+equivalency of the edges in the program control flow graph.  The cycle
 equivalency algorithm works on undirected graphs, so we prepare the
-control flow graph $G$ as follows:
+directed control flow graph $G$ as follows:
 \begin{enumerate}
 \item \textbf{Add an edge from END to START in $\mathbf{G}$.} It is common
 practice to add an edge from START to END in order to root the control
@@ -350,7 +378,10 @@ indicated in the figure with a vertical bar in the left margin.
 The datatype \texttt{BracketList} and the node and edge properties
 used in the algorithm are defined in figure \ref{fig:CQtypes}.
 The interested reader is encouraged to consult \cite{johnson93:sese}
-for additional detail on data structures and representations.
+for additional detail on data structures and representations.%
+\fixme{Um, change to compute \emph{edge} equivalency as well as
+\emph{node} equivalency.  Merge algorithms from \cite{johnson93:sese}
+and \cite{johnson94:pst}.}
 
 \begin{myfigure}
 \begin{center}
@@ -393,6 +424,8 @@ Operations on nodes:
 
 Operations on edges:
 \begin{tightdesc}
+\item[Class(e:node):~integer]
+:	Cycle-equivalency class of edge
 \item[RecentSize(e:edge):~integer]
 :	Size of bracket set when \textbf{e} was most recently the
 	topmost bracket for a representative node
@@ -468,7 +501,8 @@ the variable is used or defined inside the PST block, and the variable
 is live.}
 
 \subsection{Uses and applications}
-\textbf{Discuss predicated analysis, anticipatibility, PRE, etc.}
+\textbf{Discuss predicated analysis, anticipatibility, PRE, etc.}%
+\fixme{Write this.}
 
 \section{An executable representation}\label{sec:ssiplus}
 The Static Single Information (SSI) form, as presented in the first
@@ -516,19 +550,21 @@ interpretation may be applied to the original SSI form using
 information extracted from the control flow graph, as in \cite{foo}
 and \cite{bar}, an executable SSI form allows more concise (and thus,
 more easily derived and verified) interpretation
-algorithms.\footnote{i'm still working on understanding abstract
-interpretation techniques.  it may be that we can do stuff with
+algorithms.\fixme{I'm still working on understanding abstract
+interpretation techniques.  It may be that we can do stuff with
 \ssiplus\ that is plain impossible with \ssizero\ (instead of merely
-more difficult); if so, i'll mention that here, of course.}
+more difficult); if so, I'll mention that here, of course.
+\textbf{ADDENDUM:} seems we might be able to \emph{prove} properties
+of \ssiplus\ more easily than \ssizero; still working on this.}
 
 The modifications outlined here will extend SSI form in order to
 provide a useful and descriptive operational semantics.  We will call
 the extended form \ssiplus.  For clarity, SSI form as originally
 presented we will call \ssizero.  We will describe algorithms to
-contruct \ssiplus{} efficiently,\footnote{i will make this more precise
+contruct \ssiplus{} efficiently,\fixme{I will make this more precise
 as soon as I get the math done; construction should be $O(N)$, and space
 $O(N^2)$, but $\Theta(N)$.} and illustrate analyses and
-optimizations using the form.\footnote{maybe something here like: we
+optimizations using the form.\fixme{maybe something here like: we
 will also show how to apply the techniques of abstract interpretation
 to \ssiplus?}
 
@@ -631,7 +667,7 @@ t=\phi(t_1,\ldots,t_n):
 %	 \hfill \\ \: % line-break
          \rho_\emptyset &
                 [t_1 \mapsto \rho[t_1]]\ldots[t_n \mapsto \rho[t_n]]
-		\hfill \\ & \quad % line-break % FIXME: remove space.
+		\hfill \\ & \quad % line-break
                 [t_{n+1} \mapsto \rho[t'_{n+1}]]\ldots[t_m \mapsto \rho[t'_m]]
 		} } \\
 \end{transitions}
@@ -653,7 +689,7 @@ identical to $\rho$ except for name $t$ which is mapped to $c$.
 $\bot_\domainsm{V}$.
 \item A \emph{configuration} consists of an environment.  The initial
 configuration is $\rho_\emptyset$, that is, all names in $\domain{N}$
-are mapped to $\bot_\domainsm{V}$. \textbf{FIXME: START CONDITION.}
+are mapped to $\bot_\domainsm{V}$.\fixme{START CONDITION.}
 \end{enumerate}
 \end{definition}
 
@@ -742,7 +778,7 @@ $\tuple{\{\}_{\domainsm{Evt}},
         []_{\domainsm{Xif} \to \domainsm{Evt}^*}}$
 that is, it consists of an empty event set and
 an empty mapping for the invariant store.%
-\footnote{FIXME: start condition.}
+\fixme{start condition.}
 \end{enumerate}
 \end{definition}
 
