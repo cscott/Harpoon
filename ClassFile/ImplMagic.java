@@ -18,7 +18,7 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.2 1998-12-11 06:54:52 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.3 1999-01-17 04:36:11 cananian Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
@@ -33,6 +33,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	 *  <code>harpoon.ClassFile.Raw.ClassFile</code>. */
 	MagicClass(harpoon.ClassFile.Raw.ClassFile classfile) {
 	    this.name = classfile.this_class().name().replace('/','.');
+	    this.hashcode = super.hashCode();
 	    this.register();
 	    this.superclass = (classfile.super_class == 0)?null:
 		new ClassPointer("L"+classfile.super_class().name()+";");
@@ -61,6 +62,9 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 		    break;
 		}
 	} 
+	// optimize hashcode.
+	private final int hashcode;
+	public int hashCode() { return hashcode; }
     } // END MagicClass
     
     // utility function to initialize HMethod/HConstructor/HInitializer.
@@ -165,6 +169,12 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 		    harpoon.ClassFile.Raw.MethodInfo methodinfo) {
 	    initMethod(this, parent, methodinfo);
 	}
+	// optimize hashcode.
+	private int hashcode=0;
+	public int hashCode() {
+	    if (hashcode==0) hashcode = super.hashCode();
+	    return hashcode;
+	}
     } // END MagicMethod
 
     static class MagicConstructor extends HConstructor {
@@ -174,6 +184,12 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 			 harpoon.ClassFile.Raw.MethodInfo methodinfo) {
 	    initMethod(this, parent, methodinfo);
 	}
+	// optimize hashcode.
+	private int hashcode=0;
+	public int hashCode() {
+	    if (hashcode==0) hashcode = super.hashCode();
+	    return hashcode;
+	}
     } // END MagicConstructor
 
     static class MagicInitializer extends HInitializer {
@@ -182,6 +198,12 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	MagicInitializer(HClass parent,
 			 harpoon.ClassFile.Raw.MethodInfo methodinfo) {
 	    initMethod(this, parent, methodinfo);
+	}
+	// optimize hashcode.
+	private int hashcode=0;
+	public int hashCode() {
+	    if (hashcode==0) hashcode = super.hashCode();
+	    return hashcode;
 	}
     } // END MagicInitializer
 
@@ -210,6 +232,10 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    for (int i=0; i<fieldinfo.attributes.length; i++)
 		if (fieldinfo.attributes[i] instanceof AttributeSynthetic)
 		    this.isSynthetic=true;
+	    hashcode = super.hashCode();
 	}
+	// optimize hashcode.
+	private final int hashcode;
+	public int hashCode() { return hashcode; }
     } // END MagicField
 }

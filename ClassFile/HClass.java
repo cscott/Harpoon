@@ -29,7 +29,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.5 1999-01-03 03:01:41 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.6 1999-01-17 04:36:11 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public abstract class HClass extends HPointer {
@@ -793,13 +793,6 @@ public abstract class HClass extends HPointer {
 	return hc.isSuperclassOf(this);
     }
   }
-
-  /** 
-   * Returns a hashcode value for this HClass.
-   * The hashcode is identical to the hashcode for the class descriptor
-   * string. 
-   */
-  public int hashCode() { return getDescriptor().hashCode(); }
 
   /**
    * Converts the object to a string.  The string representation is the

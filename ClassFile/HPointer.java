@@ -7,11 +7,17 @@ package harpoon.ClassFile;
  * to demand-load class files, instead of doing them all at once).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HPointer.java,v 1.1.2.1 1998-12-11 06:54:52 cananian Exp $
+ * @version $Id: HPointer.java,v 1.1.2.2 1999-01-17 04:36:11 cananian Exp $
  */
 abstract class HPointer  {
     /** Returns a genuine HClass from the (possible) pointer. */
     abstract HClass actual();
     abstract String getName();
     abstract String getDescriptor();
+    /** 
+     * Returns a hashcode value for this HClass.
+     * The hashcode is identical to the hashcode for the class descriptor
+     * string. 
+     */
+    public int hashCode() { return getDescriptor().hashCode(); }
 }
