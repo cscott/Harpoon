@@ -27,7 +27,7 @@ import java.lang.reflect.Modifier;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.30 2000-01-13 23:47:43 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.31 2000-01-15 00:49:05 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -339,7 +339,18 @@ public abstract class HClass extends HPointer
    * Calling <code>getWrapper</code> with a non-primitive <code>HClass</code>
    * will return the value <code>null</code>.
    */
-  public abstract HClass getWrapper();
+  public final HClass getWrapper() {
+    if (this==this.Boolean) return _linker.forName("java.lang.Boolean");
+    if (this==this.Byte)    return _linker.forName("java.lang.Byte");
+    if (this==this.Char)    return _linker.forName("java.lang.Character");
+    if (this==this.Double)  return _linker.forName("java.lang.Double");
+    if (this==this.Float)   return _linker.forName("java.lang.Float");
+    if (this==this.Int)     return _linker.forName("java.lang.Integer");
+    if (this==this.Long)    return _linker.forName("java.lang.Long");
+    if (this==this.Short)   return _linker.forName("java.lang.Short");
+    if (this==this.Void)    return _linker.forName("java.lang.Void");
+    return null; // not a primitive type;
+  }
 
   /**
    * If this <code>HClass</code> object represents an array type, 
@@ -380,7 +391,40 @@ public abstract class HClass extends HPointer
    * @exception NullPointerException
    *            if the specified <code>HClass</code> parameter is null.
    */
-  public abstract boolean isAssignableFrom(HClass cls);
+  public final boolean isAssignableFrom(HClass cls) {
+    Util.assert(_linker == cls._linker);
+    if (cls==null) throw new NullPointerException();
+    // test identity conversion.
+    if (cls==this) return true;
+    // widening reference conversions...
+    if (this.isPrimitive()) return false;
+    // widening reference conversions from the null type:
+    if (cls==HClass.Void) return true;
+    if (cls.isPrimitive()) return false;
+    // widening reference conversions from an array:
+    if (cls.isArray()) {
+      if (this == _linker.forName("java.lang.Object")) return true;
+      if (this == _linker.forName("java.lang.Cloneable")) return true;
+      // see http://java.sun.com/docs/books/jls/clarify.html
+      if (this == _linker.forName("java.io.Serializable")) return true;
+      if (isArray() &&
+	  !getComponentType().isPrimitive() &&
+	  !cls.getComponentType().isPrimitive() &&
+	  getComponentType().isAssignableFrom(cls.getComponentType()))
+	return true;
+      return false;
+    }
+    // widening reference conversions from an interface type.
+    if (cls.isInterface()) {
+      if (this.isInterface() && this.isSuperinterfaceOf(cls)) return true;
+      if (this == _linker.forName("java.lang.Object")) return true;
+      return false;
+    }
+    // widening reference conversions from a class type:
+    if (!this.isInterface() && this.isSuperclassOf(cls)) return true;
+    if (this.isInterface() && this.isSuperinterfaceOf(cls)) return true;
+    return false;
+  }
 
   /**
    * Determines if this <code>HClass</code> is a superclass of a given
@@ -389,7 +433,13 @@ public abstract class HClass extends HPointer
    * @return <code>true</code> if <code>this</code> is a superclass of
    *         <code>hc</code>, <code>false</code> otherwise.
    */
-  public abstract boolean isSuperclassOf(HClass hc);
+  public final boolean isSuperclassOf(HClass hc) {
+    Util.assert(_linker == hc._linker);
+    Util.assert(!this.isInterface());
+    for ( ; hc!=null; hc = hc.getSuperclass())
+      if (this == hc) return true;
+    return false;
+  }
 
   /**
    * Determines if this <code>HClass</code> is a superinterface of a given
@@ -398,13 +448,49 @@ public abstract class HClass extends HPointer
    * @return <code>true</code> if <code>this</code> is a superinterface of
    *         <code>hc</code>, <code>false</code> otherwise.
    */
-  public abstract boolean isSuperinterfaceOf(HClass hc);
+  public final boolean isSuperinterfaceOf(HClass hc) {
+    Util.assert(_linker == hc._linker);
+    Util.assert(this.isInterface());
+    UniqueVector uv = new UniqueVector();//unique in case of circularity 
+    for ( ; hc!=null; hc = hc.getSuperclass())
+      uv.addElement(hc);
+
+    for (int i=0; i<uv.size(); i++)
+      if (uv.elementAt(i) == this) return true;
+      else {
+	HClass in[] = ((HClass)uv.elementAt(i)).getInterfaces();
+	for (int j=0; j<in.length; j++)
+	  uv.addElement(in[j]);
+      }
+    // ran out of possibilities.
+    return false;
+  }
 
   /**
    * Determines if this <code>HClass</code> is an instance of the given
    * <code>HClass</code> <code>hc</code>.
    */
-  public abstract boolean isInstanceOf(HClass hc);
+  public final boolean isInstanceOf(HClass hc) {
+    Util.assert(_linker == hc._linker);
+    if (this.isArray()) {
+      if (!hc.isArray()) 
+	// see http://java.sun.com/docs/books/jls/clarify.html
+	return (hc==_linker.forName("java.lang.Cloneable") ||
+		hc==_linker.forName("java.io.Serializable") ||
+		hc==_linker.forName("java.lang.Object"));
+      HClass SC = this.getComponentType();
+      HClass TC = hc.getComponentType();
+      return ((SC.isPrimitive() && TC.isPrimitive() && SC==TC) ||
+	      (!SC.isPrimitive()&&!TC.isPrimitive() && SC.isInstanceOf(TC)));
+    } else { // not array.
+      if (hc.isInterface())
+	return hc.isSuperinterfaceOf(this);
+      else // hc is class.
+	if (this.isInterface()) // in recursive eval of array instanceof.
+	  return (hc==_linker.forName("java.lang.Object"));
+	else return hc.isSuperclassOf(this);
+    }
+  }
 
   /**
    * Converts the object to a string.  The string representation is the
@@ -414,7 +500,9 @@ public abstract class HClass extends HPointer
    * returns the name of the primitive type.
    * @return a string representation of this class object.
    */
-  public abstract String toString();
+  public final String toString() {
+    return (isPrimitive()?"":isInterface()?"interface ":"class ")+getName();
+  }
 
   /**
    * Prints a formatted representation of this class.

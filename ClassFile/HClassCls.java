@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1.2.7 2000-01-13 23:47:45 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.1.2.8 2000-01-15 00:49:06 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 abstract class HClassCls extends HClassImpl {
@@ -231,18 +231,6 @@ abstract class HClassCls extends HClassImpl {
    */
   public boolean isInterface() { 
     return Modifier.isInterface(getModifiers()); 
-  }
-
-  /**
-   * Converts the object to a string.  The string representation is the
-   * string <code>"class"</code> or <code>"interface"</code> followed by
-   * a space and then the fully qualified name of the class.  If this
-   * <code>HClass</code> object represents a primitive type,
-   * returns the name of the primitive type.
-   * @return a string representation of this class object.
-   */
-  public String toString() { 
-    return ((isInterface())?"interface ":"class ")+getName();
   }
 
   // CACHING CODE:

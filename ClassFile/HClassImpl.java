@@ -23,7 +23,7 @@ import java.util.Vector;
  * <code>Linker</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassImpl.java,v 1.1.4.2 2000-01-14 19:21:52 cananian Exp $
+ * @version $Id: HClassImpl.java,v 1.1.4.3 2000-01-15 00:49:06 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */
@@ -507,27 +507,6 @@ abstract class HClassImpl extends HClass
   public String getSourceFile() { return ""; }
 
   /**
-   * If this <code>HClass</code> is a primitive type, return the
-   * wrapper class for values of this type.  For example:<p>
-   * <DL><DD><CODE>HClass.forDescriptor("I").getWrapper()</CODE></DL><p>
-   * will return <code>HClass.forName("java.lang.Integer")</code>.
-   * Calling <code>getWrapper</code> with a non-primitive <code>HClass</code>
-   * will return the value <code>null</code>.
-   */
-  public HClass getWrapper() {
-    if (this==this.Boolean) return getLinker().forName("java.lang.Boolean");
-    if (this==this.Byte)    return getLinker().forName("java.lang.Byte");
-    if (this==this.Char)    return getLinker().forName("java.lang.Character");
-    if (this==this.Double)  return getLinker().forName("java.lang.Double");
-    if (this==this.Float)   return getLinker().forName("java.lang.Float");
-    if (this==this.Int)     return getLinker().forName("java.lang.Integer");
-    if (this==this.Long)    return getLinker().forName("java.lang.Long");
-    if (this==this.Short)   return getLinker().forName("java.lang.Short");
-    if (this==this.Void)    return getLinker().forName("java.lang.Void");
-    return null; // not a primitive type;
-  }
-
-  /**
    * If this <code>HClass</code> object represents an array type, 
    * returns <code>true</code>, otherwise returns <code>false</code>.
    */
@@ -547,139 +526,6 @@ abstract class HClassImpl extends HClass
    * the eight primitive Java types and void.
    */
   public boolean isPrimitive() { return false; }
-
-  /**
-   * Determines if the class or interface represented by this 
-   * <code>HClass</code> object is either the same as, or is a superclass
-   * or superinterface of, the class or interface represented by the 
-   * specified <code>HClass</code> parameter.  It returns
-   * <code>true</code> if so, <code>false</code> otherwise.  If this
-   * <code>HClass</code> object represents a primitive type, returns
-   * <code>true</code> if the specified <code>HClass</code> parameter is
-   * exactly this <code>HClass</code> object, <code>false</code>
-   * otherwise.
-   * <p> Specifically, this method tests whether the type represented
-   * by the specified <code>HClass</code> parameter can be converted
-   * to the type represented by this <code>HClass</code> object via an
-   * identity conversion or via a widening reference conversion.
-   * @see "The Java Language Specification, sections 5.1.1 and 5.1.4"
-   * @exception NullPointerException
-   *            if the specified <code>HClass</code> parameter is null.
-   */
-  public boolean isAssignableFrom(HClass cls) {
-    if (cls==null) throw new NullPointerException();
-    // proxies make it dangerous to test against 'this'.
-    HClass _this = getLinker().forDescriptor(getDescriptor());
-    // test identity conversion.
-    if (cls==_this) return true;
-    // widening reference conversions...
-    if (this.isPrimitive()) return false;
-    // widening reference conversions from the null type:
-    if (cls==HClass.Void) return true;
-    if (cls.isPrimitive()) return false;
-    // widening reference conversions from an array:
-    if (cls.isArray()) {
-      if (_this == getLinker().forName("java.lang.Object")) return true;
-      if (_this == getLinker().forName("java.lang.Cloneable")) return true;
-      // see http://java.sun.com/docs/books/jls/clarify.html
-      if (_this == getLinker().forName("java.io.Serializable")) return true;
-      if (isArray() &&
-	  !getComponentType().isPrimitive() &&
-	  !cls.getComponentType().isPrimitive() &&
-	  getComponentType().isAssignableFrom(cls.getComponentType()))
-	return true;
-      return false;
-    }
-    // widening reference conversions from an interface type.
-    if (cls.isInterface()) {
-      if (this.isInterface() && this.isSuperinterfaceOf(cls)) return true;
-      if (_this == getLinker().forName("java.lang.Object")) return true;
-      return false;
-    }
-    // widening reference conversions from a class type:
-    if (!this.isInterface() && this.isSuperclassOf(cls)) return true;
-    if (this.isInterface() && this.isSuperinterfaceOf(cls)) return true;
-    return false;
-  }
-
-  /**
-   * Determines if this <code>HClass</code> is a superclass of a given
-   * <code>HClass</code> <code>hc</code>. 
-   * [Does not look at interface information.]
-   * @return <code>true</code> if <code>this</code> is a superclass of
-   *         <code>hc</code>, <code>false</code> otherwise.
-   */
-  public boolean isSuperclassOf(HClass hc) {
-    // proxies make it dangerous to test against 'this'.
-    HClass _this = getLinker().forDescriptor(getDescriptor());
-    Util.assert(!this.isInterface());
-    for ( ; hc!=null; hc = hc.getSuperclass())
-      if (_this == hc) return true;
-    return false;
-  }
-
-  /**
-   * Determines if this <code>HClass</code> is a superinterface of a given
-   * <code>HClass</code> <code>hc</code>. 
-   * [does not look at superclass information]
-   * @return <code>true</code> if <code>this</code> is a superinterface of
-   *         <code>hc</code>, <code>false</code> otherwise.
-   */
-  public boolean isSuperinterfaceOf(HClass hc) {
-    // proxies make it dangerous to test against 'this'.
-    HClass _this = getLinker().forDescriptor(getDescriptor());
-    Util.assert(this.isInterface());
-    UniqueVector uv = new UniqueVector();//unique in case of circularity 
-    for ( ; hc!=null; hc = hc.getSuperclass())
-      uv.addElement(hc);
-
-    for (int i=0; i<uv.size(); i++)
-      if (uv.elementAt(i) == _this) return true;
-      else {
-	HClass in[] = ((HClass)uv.elementAt(i)).getInterfaces();
-	for (int j=0; j<in.length; j++)
-	  uv.addElement(in[j]);
-      }
-    // ran out of possibilities.
-    return false;
-  }
-
-  /**
-   * Determines if this <code>HClass</code> is an instance of the given
-   * <code>HClass</code> <code>hc</code>.
-   */
-  public boolean isInstanceOf(HClass hc) {
-    // proxies make it dangerous to test against 'this'.
-    HClass _this = getLinker().forDescriptor(getDescriptor());
-    if (this.isArray()) {
-      if (!hc.isArray()) 
-	// see http://java.sun.com/docs/books/jls/clarify.html
-	return (hc==getLinker().forName("java.lang.Cloneable") ||
-		hc==getLinker().forName("java.io.Serializable") ||
-		hc==getLinker().forName("java.lang.Object"));
-      HClass SC = this.getComponentType();
-      HClass TC = hc.getComponentType();
-      return ((SC.isPrimitive() && TC.isPrimitive() && SC==TC) ||
-	      (!SC.isPrimitive()&&!TC.isPrimitive() && SC.isInstanceOf(TC)));
-    } else { // not array.
-      if (hc.isInterface())
-	return hc.isSuperinterfaceOf(_this);
-      else // hc is class.
-	if (this.isInterface()) // in recursive eval of array instanceof.
-	  return (hc==getLinker().forName("java.lang.Object"));
-	else return hc.isSuperclassOf(_this);
-    }
-  }
-
-  /**
-   * Converts the object to a string.  The string representation is the
-   * string <code>"class"</code> or <code>"interface"</code> followed by
-   * a space and then the fully qualified name of the class.  If this
-   * <code>HClass</code> object represents a primitive type,
-   * returns the name of the primitive type.
-   * @return a string representation of this class object.
-   */
-  public abstract String toString();
 
   /** Serializable interface. Override if implementation has information
    *  which the linker cannot reconstruct. */

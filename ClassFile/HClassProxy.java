@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * "redefined" after creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassProxy.java,v 1.1.4.1 2000-01-13 23:47:46 cananian Exp $
+ * @version $Id: HClassProxy.java,v 1.1.4.2 2000-01-15 00:49:06 cananian Exp $
  */
 class HClassProxy extends HClass implements HClassMutator {
   Relinker relinker;
@@ -85,7 +85,6 @@ class HClassProxy extends HClass implements HClassMutator {
   public boolean isArray() { return proxy.isArray(); }
   public boolean isInterface() { return proxy.isInterface(); }
   public boolean isPrimitive() { return proxy.isPrimitive(); }
-  public String toString() { return proxy.toString(); }
 
   // the following methods require use to unwrap the parameters and
   // wrap up the return values.
@@ -138,21 +137,6 @@ class HClassProxy extends HClass implements HClassMutator {
   }
   public HClass[] getInterfaces() {
     return wrap(proxy.getInterfaces());
-  }
-  public HClass getWrapper() {
-    return wrap(proxy.getWrapper());
-  }
-  public boolean isAssignableFrom(HClass cls) {
-    return proxy.isAssignableFrom(unwrap(cls));
-  }
-  public boolean isSuperclassOf(HClass hc) {
-    return proxy.isSuperclassOf(unwrap(hc));
-  }
-  public boolean isSuperinterfaceOf(HClass hc) {
-    return proxy.isSuperinterfaceOf(unwrap(hc));
-  }
-  public boolean isInstanceOf(HClass hc) {
-    return proxy.isInstanceOf(unwrap(hc));
   }
   // HClassMutator interface
   public HField addDeclaredField(String name, HClass type)

@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * implementation to represent primitive types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassPrimitive.java,v 1.1.4.1 2000-01-13 23:47:46 cananian Exp $
+ * @version $Id: HClassPrimitive.java,v 1.1.4.2 2000-01-15 00:49:06 cananian Exp $
  */
 class HClassPrimitive extends HClassImpl {
   final String name, descriptor;
@@ -27,7 +27,6 @@ class HClassPrimitive extends HClassImpl {
   public HClass getSuperclass() { return null; }
   public HClass[] getInterfaces() { return new HClass[0]; }
   public boolean isPrimitive() { return true; }
-  public String toString() { return getName(); }
 }
 // set emacs indentation style.
 // Local Variables:

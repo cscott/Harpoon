@@ -11,7 +11,7 @@ import java.lang.reflect.Modifier;
  * representing array types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassArray.java,v 1.1.4.1 2000-01-13 23:47:44 cananian Exp $
+ * @version $Id: HClassArray.java,v 1.1.4.2 2000-01-15 00:49:06 cananian Exp $
  */
 class HClassArray extends HClassImpl {
   HClass baseType;
@@ -52,7 +52,6 @@ class HClassArray extends HClassImpl {
     return new HClass[] { HCcloneable, HCserializable };
   }
   public boolean isArray() { return true; }
-  public String toString() { return "class "+getName(); }
 
   // cache class constants.
   private final HClass HCobject   =getLinker().forName("java.lang.Object");
