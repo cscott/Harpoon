@@ -39,11 +39,13 @@ public final class Stats {
     private static long NEW_ARRAY_HEAP = 0;
     private static long NEW_ARRAY_SCOPE = 0;
     private static long NEW_ARRAY_IMMORTAL = 0;
+    private static boolean touched = false;
 
     /** */
 
     public final static void addCheck(MemoryArea from,
 				      MemoryArea to) {
+	touched = true;
 	if (from.heap) {
 	    if (to.heap) {
 		HEAP_TO_HEAP++;
@@ -75,6 +77,7 @@ public final class Stats {
     /** */
 
     public final static void addNewObject(MemoryArea to) {
+	touched = true;
 	if (to.heap) {
 	    NEW_HEAP++;
 	} else if (to.scoped) {
@@ -88,6 +91,7 @@ public final class Stats {
     /** */
 
     public final static void addNewArrayObject(MemoryArea to) {
+	touched = true;
 	if (to.heap) {
 	    NEW_ARRAY_HEAP++;
 	} else if (to.scoped) {
@@ -101,34 +105,39 @@ public final class Stats {
     /** */
 
     public final static void print() {
-	System.err.println("-------------------------------------");
-	System.err.println("Dynamic statistics for Realtime Java:");
-	System.err.println("Number of access checks: " + accessChecks);
-	System.err.println("Number of objects created: " + newObjects);
-	System.err.println("Number of array objects created: " + 
-			   newArrayObjects);
-	System.err.println("-------------------------------------");
-	
-	System.err.println("Checks:");
-	System.err.println("  Heap     -> Heap:    " + HEAP_TO_HEAP);	
-	System.err.println("  Heap     -> Scope:   " + HEAP_TO_SCOPE);
-	System.err.println("  Heap     -> Immortal:" + HEAP_TO_IMMORTAL);
-	System.err.println("  Scope    -> Heap:    " + SCOPE_TO_HEAP);
-	System.err.println("  Scope    -> Scope:   " + SCOPE_TO_SCOPE);
-	System.err.println("  Scope    -> Immortal:" + SCOPE_TO_IMMORTAL);
-	System.err.println("  Immortal -> Heap:    " + IMMORTAL_TO_HEAP);
-	System.err.println("  Immortal -> Scope:   " + IMMORTAL_TO_SCOPE);
-	System.err.println("  Immortal -> Immortal:" + IMMORTAL_TO_IMMORTAL);
-	System.err.println();
-	System.err.println("New objects: ");
-	System.err.println("  in heap:    " + NEW_HEAP);
-	System.err.println("  in scope:   " + NEW_SCOPE);
-	System.err.println("  in immortal:" + NEW_IMMORTAL);
-	System.err.println();
-	System.err.println("New arrays: ");
-	System.err.println("  in heap:    " + NEW_ARRAY_HEAP);
-	System.err.println("  in scope:   " + NEW_ARRAY_SCOPE);
-	System.err.println("  in immortal:" + NEW_ARRAY_IMMORTAL);
-	System.err.println("-------------------------------------");
+	if (touched) {
+	    System.err.println("-------------------------------------");
+	    System.err.println("Dynamic statistics for Realtime Java:");
+	    System.err.println("Number of access checks: " + accessChecks);
+	    System.err.println("Number of objects created: " + newObjects);
+	    System.err.println("Number of array objects created: " + 
+			       newArrayObjects);
+	    System.err.println("-------------------------------------");
+	    
+	    System.err.println("Checks:");
+	    System.err.println("  Heap     -> Heap:    " + HEAP_TO_HEAP);	
+	    System.err.println("  Heap     -> Scope:   " + HEAP_TO_SCOPE);
+	    System.err.println("  Heap     -> Immortal:" + HEAP_TO_IMMORTAL);
+	    System.err.println("  Scope    -> Heap:    " + SCOPE_TO_HEAP);
+	    System.err.println("  Scope    -> Scope:   " + SCOPE_TO_SCOPE);
+	    System.err.println("  Scope    -> Immortal:" + SCOPE_TO_IMMORTAL);
+	    System.err.println("  Immortal -> Heap:    " + IMMORTAL_TO_HEAP);
+	    System.err.println("  Immortal -> Scope:   " + IMMORTAL_TO_SCOPE);
+	    System.err.println("  Immortal -> Immortal:" + IMMORTAL_TO_IMMORTAL);
+	    System.err.println();
+	    System.err.println("New objects: ");
+	    System.err.println("  in heap:    " + NEW_HEAP);
+	    System.err.println("  in scope:   " + NEW_SCOPE);
+	    System.err.println("  in immortal:" + NEW_IMMORTAL);
+	    System.err.println();
+	    System.err.println("New arrays: ");
+	    System.err.println("  in heap:    " + NEW_ARRAY_HEAP);
+	    System.err.println("  in scope:   " + NEW_ARRAY_SCOPE);
+	    System.err.println("  in immortal:" + NEW_ARRAY_IMMORTAL);
+	    System.err.println("-------------------------------------");
+	} else {
+	    System.err.println();
+	    System.err.println("Did you forget to compile with the -t STATS option?");
+	}
     }
 }
