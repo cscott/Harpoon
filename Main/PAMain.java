@@ -97,7 +97,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.15 2003-02-03 16:20:53 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.16 2003-02-03 23:23:31 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -834,9 +834,11 @@ public abstract class PAMain {
 		try {
 		    ObjectInputStream ois =
 			new ObjectInputStream(new FileInputStream(arg));
-		    an=(AllocationNumbering)ois.readObject();
-		    hcf=an.codeFactory();
-		    linker=(Linker)ois.readObject();
+		    hcf    = (HCodeFactory) ois.readObject();
+		    linker = (Linker)ois.readObject();
+		    ois.readObject(); // skip roots
+		    ois.readObject(); // skip mainM
+		    an  = (AllocationNumbering) ois.readObject();
 		    ois.close();
 		} catch (Exception e) {
 		    System.out.println(e + " was thrown");

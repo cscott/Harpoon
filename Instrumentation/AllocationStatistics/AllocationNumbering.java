@@ -33,32 +33,27 @@ import java.io.IOException;
  * (e.g. <code>InstrumentAllocs</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.1 2003-02-03 16:20:31 salcianu Exp $ */
+ * @version $Id: AllocationNumbering.java,v 1.2 2003-02-03 23:23:19 salcianu Exp $ */
 public class AllocationNumbering implements java.io.Serializable {
-    private final CachingCodeFactory ccf;
     public  final Map alloc2int;
     public  final Map call2int;
     
     /** Creates an <code>AllocationNumbering</code> object.
 
-	@param hcf <code>CodeFactory</code> giving the code to instrument
+	@param ccf <code>CachingCodeFactory</code> giving the code
+	that will later be instrumented
 	@param ch  <code>ClassHierarchy</code> for the code from hcf
 	@param callSites if true, instrument the call sites too  */
-    public AllocationNumbering(HCodeFactory hcf, ClassHierarchy ch,
+    public AllocationNumbering(CachingCodeFactory ccf, ClassHierarchy ch,
 			       boolean callSites) {
 	this.alloc2int = new HashMap();
 	this.call2int  = callSites ? new HashMap() : null;
-        this.ccf       = new CachingCodeFactory(hcf, true);
 	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); )
-	    number(this.ccf.convert((HMethod) it.next()), callSites);
+	    number(ccf.convert((HMethod) it.next()), callSites);
 
 	System.out.println("alloc_count = " + alloc_count +
 			   "\tcall_count = " + call_count);
     }
-
-    /** Return the (caching) code factory this numbering was created on. */
-    public HCodeFactory codeFactory() { return ccf; }
-    
 
     /** Return an integer identifying the allocation site <code>q</code>. */
     public int allocID(Quad q) {

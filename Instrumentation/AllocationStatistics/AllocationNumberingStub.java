@@ -35,7 +35,7 @@ import harpoon.IR.Quads.Code;
  * <i>textualized</i> to/from an ASCII file.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: AllocationNumberingStub.java,v 1.1 2003-02-03 16:20:31 salcianu Exp $
+ * @version $Id: AllocationNumberingStub.java,v 1.2 2003-02-03 23:23:19 salcianu Exp $
  */
 public class AllocationNumberingStub implements AllocationNumberingInterf {
 
@@ -156,10 +156,16 @@ public class AllocationNumberingStub implements AllocationNumberingInterf {
 	constructor.
 
 	@param an <code>AllocationNumbering</code> to textualize
+
 	@param filename Name of the file to write the textualization into.
-    */
-    public static void writeToFile(AllocationNumbering an, String filename)
-	throws IOException {
+
+	@param linker Linker used to load the classes of the compiled
+	program.  If non-null, it will be used to parse the file back
+	into an <code>AllocationNumberingStub</code> and verify that
+	the unique IDs for the allocation sites did not change.  If
+	null, no verification will be performed.  */
+    public static void writeToFile(AllocationNumbering an, String filename,
+				   Linker linker) throws IOException {
 	PrintWriter pw =
 	    new PrintWriter(new BufferedWriter(new FileWriter(filename)));
 	Relation method2allocs = getMethod2Allocs(an);
@@ -170,6 +176,17 @@ public class AllocationNumberingStub implements AllocationNumberingInterf {
 	    writeAllocs(an, pw, method2allocs.getValues(hm));
 	}
 	pw.close();
+	
+	if(linker != null) {
+	    AllocationNumberingStub ans = 
+		new AllocationNumberingStub(linker, filename);
+	    for(Iterator it = an.getAllocs().iterator(); it.hasNext(); ) {
+		Quad quad = (Quad) it.next();
+		assert 
+		    an.allocID(quad) == ans.allocID(quad) :
+		    "Textualization error";
+	    }
+	}
     }
 
     // produce a relation method m -> allocations sites inside m

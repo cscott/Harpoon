@@ -35,20 +35,55 @@ import java.io.PrintWriter;
  * site from an instrumented program was executed.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.1 2003-02-03 16:20:31 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.2 2003-02-03 23:23:19 salcianu Exp $
  * @see InstrumentAllocs
  */
 public class AllocationStatistics {
-    
-    /** Creates a <code>AllocationStatistics</code>. */
+
+    /** Create an <code>AllocationStatistics</code> object.
+
+	@param ani <code>AllocationNumberingInterf</code> object that
+	provides the mapping between allocation sites and globally
+	unique integer IDs.
+
+	@param instrumentationResultFileName name of the file that
+	holds the result of the instrumentation: for each unique ID,
+	the number of times the associated allocation site was
+	executed. */
+    public AllocationStatistics(AllocationNumberingInterf ani,
+				String instrumentationResultsFileName) {
+	try {
+	    this.ani = ani;
+	    this.allocID2count = 
+		parseInstrumentationResults(instrumentationResultsFileName);
+	}
+	catch(IOException e) {
+	    System.err.println("Cannot create AllocStatistics: " + e);
+	    System.exit(1);
+	}
+    }
+
+
+    /** Create a <code>AllocationStatistics</code>.
+
+     @param linker <code>Linker</code> used to load the classes.
+
+     @param allocNumberingFileName name of the file that stores the
+     textualized form of the <code>AllocationNumberingStub</code>
+     (that associates to each allocation site a unique integer ID).
+
+     @param instrumentationResultFileName name of the file that
+     holds the result of the instrumentation: for each unique ID,
+     the number of times the associated allocation site was
+     executed. */
     public AllocationStatistics(Linker linker,
 				String allocNumberingFileName,
 				String instrumentationResultsFileName) {
 	try { 
-	    this.ans = 
+	    this.ani = 
 		new AllocationNumberingStub(linker, allocNumberingFileName);
 	    this.allocID2count = 
-		readInstrumentationResults(instrumentationResultsFileName);
+		parseInstrumentationResults(instrumentationResultsFileName);
 	}
 	catch(IOException e) {
 	    System.err.println("Cannot create AllocStatistics: " + e);
@@ -57,9 +92,9 @@ public class AllocationStatistics {
     }
 
     // provides the map quad -> allocID (an integer)
-    private AllocationNumberingStub ans;
+    private AllocationNumberingInterf ani;
     // map allocID -> count
-    private Map allocID2count;
+    private Map/*<Integer,Integer>*/ allocID2count;
 
 
     /** Return the number of times the allocation <code>alloc</code>
@@ -70,27 +105,8 @@ public class AllocationStatistics {
 	@return number of times <code>alloc</code> was executed */
     public int getCount(Quad alloc) {
 	Integer count = 
-	    (Integer) allocID2count.get(new Integer(ans.allocID(alloc)));
+	    (Integer) allocID2count.get(new Integer(ani.allocID(alloc)));
 	return (count == null) ? 0 : count.intValue();
-    }
-
-
-    private static Map readInstrumentationResults
-	(String instrumentationResultsFileName) throws IOException {
-	BufferedReader br = 
-	    new BufferedReader(new FileReader(instrumentationResultsFileName));
-	Map allocID2count = new HashMap();
-	int size = readInt(br);
-	for(int i = 0; i < size; i++) {
-	    int count = readInt(br);
-	    allocID2count.put(new Integer(i), new Integer(count));
-	}
-	return allocID2count;
-    }
-
-
-    private static int readInt(BufferedReader br) throws IOException {
-	return new Integer(br.readLine()).intValue();
     }
 
 
@@ -100,8 +116,7 @@ public class AllocationStatistics {
 	can customize the displayed statistics).  The allocation sites
 	are listed/visited in the decreasing order of the number of
 	objects allocated there.  Sites that allocate too few objects
-	(less than 1% of the total objects) are not considered.
-     */
+	(less than 1% of the total objects) are not considered. */
     public void printStatistics(Collection allocs, QuadVisitor visitor) {
 
 	class SiteStat implements Comparable {
@@ -169,6 +184,33 @@ public class AllocationStatistics {
     public void printStatistics(Collection allocs) {
 	printStatistics(allocs, null);
     }
+
+
+    /** Parse the text file produced by an instrumented program.
+
+	@param instrumentationResultsFileName name of the file holding the
+	instrumentation results
+	
+	@return map that attach to each unique ID the number of times the
+	corresponding allocation site was executed. */
+    public static Map/*<Integer,Integer>*/ parseInstrumentationResults
+	(String instrumentationResultsFileName) throws IOException {
+	BufferedReader br = 
+	    new BufferedReader(new FileReader(instrumentationResultsFileName));
+	Map/*<Integer, Integer>*/ allocID2count = new HashMap();
+	int size = readInt(br);
+	for(int i = 0; i < size; i++) {
+	    int count = readInt(br);
+	    allocID2count.put(new Integer(i), new Integer(count));
+	}
+	return allocID2count;
+    }
+
+
+    private static int readInt(BufferedReader br) throws IOException {
+	return new Integer(br.readLine()).intValue();
+    }
+
 
     /** Return a collection of all the allocation sites (quads) from
 	the methods from the set <code>methods</code>.

@@ -96,7 +96,7 @@ import harpoon.Util.DataStructs.LightMap;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPAMain.java,v 1.7 2003-02-03 16:20:50 salcianu Exp $
+ * @version $Id: ODPAMain.java,v 1.8 2003-02-03 23:23:31 salcianu Exp $
  */
 public abstract class ODPAMain {
 
@@ -731,10 +731,12 @@ public abstract class ODPAMain {
 		    ObjectInputStream ois =
 			new ObjectInputStream(new FileInputStream(arg));
 		    System.err.println("OPENED!");
-		    an=(AllocationNumbering)ois.readObject();
+		    hcf = (HCodeFactory) ois.readObject();
+		    linker = (Linker) ois.readObject();
+		    ois.readObject(); // skip roots
+		    ois.readObject(); // skip mainM
+		    an = (AllocationNumbering) ois.readObject();
 		    System.err.println("SUCCEEDED!");
-		    hcf=an.codeFactory();
-		    linker=(Linker)ois.readObject();
 		    LOADED_LINKER=true;
 		    ois.close();
 		} catch (Exception e) {
@@ -892,10 +894,9 @@ public abstract class ODPAMain {
 	Set allTheQuads = new HashSet();
 	for(Iterator quad_it= allTheQuads.iterator(); quad_it.hasNext(); ){
 	    Quad quad = (Quad) quad_it.next();
-	    QuadFactory qf = quad.getFactory();
-	    HMethod hm = qf.getMethod();
-	    HCodeFactory myhcf=an.codeFactory();
-	    HCode hc = myhcf.convert(hm);
+	    HMethod hm =  quad.getFactory().getMethod();
+	    //	    HCodeFactory hcf = an.codeFactory();
+	    HCode hc = hcf.convert(hm);
 	    boolean found = false;
 	    for(Iterator q_it=hc.getElementsI(); (q_it.hasNext())&&(!found); ){
 		Quad q = (Quad) q_it.next();

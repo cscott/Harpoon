@@ -19,6 +19,7 @@ import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Tree.Data;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrFactory;
+import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Analysis.DataFlow.LiveTemps;
@@ -101,7 +102,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.30 2003-02-03 16:20:54 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.31 2003-02-03 23:23:31 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -127,7 +128,6 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean INSTRUMENT_CALLS = false;
     static boolean INSTRUMENT_ALLOCS_STUB = false;
     static String IFILE=null;
-    static InstrumentAllocs insta = null;
     static boolean ROLE_INFER= false;
     static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
     static String  singleClassStr = null; 
@@ -326,53 +326,42 @@ public class SAMain extends harpoon.IR.Registration {
 	
 
 	if (INSTRUMENT_ALLOCS || INSTRUMENT_ALLOCS_STUB) {
-	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	    hcf = QuadNoSSA.codeFactory(hcf);
+	    hcf = new CachingCodeFactory(hcf, true);
+	    // create the allocation numbering
 	    AllocationNumbering an =
-		new AllocationNumbering(hcf, classHierarchy, INSTRUMENT_CALLS);
+		new AllocationNumbering
+		((CachingCodeFactory) hcf, classHierarchy, INSTRUMENT_CALLS);
 	    try {
 		if(INSTRUMENT_ALLOCS_STUB) { // "textualize" only a stub
-		    System.out.println("Writing AllocationNumbering into " +
-				       IFILE);
-		    AllocationNumberingStub.writeToFile(an, IFILE);
-		    System.out.println("Reading AllocationNumberingStub");
-		    AllocationNumberingStub ans = new AllocationNumberingStub
-			(linker, IFILE);
-		    System.out.print("Verification ... ");
-		    for(Iterator it = an.getAllocs().iterator();
-			it.hasNext(); ) {
-			Quad quad = (Quad) it.next();
-			assert an.allocID(quad) == ans.allocID(quad) :
-			//if(an.allocID(quad) == ans.allocID(quad))
-			//    System.out.println(
-			    "different allocID's for " + Debug.code2str(quad)
-			    //	 )
-			    ;
-		    }
-		    System.out.println("OK");
+		    System.out.println
+			("Writing AllocationNumbering into " + IFILE);
+		    AllocationNumberingStub.writeToFile(an, IFILE, linker);
 		}
 		else { // classic INSTRUMENT_ALLOCS: serialize serious stuff
 		    ObjectOutputStream oos =
 			new ObjectOutputStream(new FileOutputStream(IFILE));
-		    oos.writeObject(an);
+		    oos.writeObject(hcf);
 		    oos.writeObject(linker);
 		    oos.writeObject(roots);
 		    oos.writeObject(mainM);
+		    oos.writeObject(an);
 		    oos.close();
 		}
 	    } catch (java.io.IOException e) {
 		System.out.println(e + " was thrown:");
 		e.printStackTrace(System.out);
+		System.exit(1);
 	    }
-	    hcf = an.codeFactory();
-	    insta = 
-		new InstrumentAllocs(hcf, mainM, linker, an,
-				     INSTRUMENT_SYNCS, INSTRUMENT_CALLS);
-	    hcf = insta.codeFactory();
+	    hcf = 
+		(new InstrumentAllocs(hcf, mainM, linker, an,
+				      INSTRUMENT_SYNCS, INSTRUMENT_CALLS)).
+		codeFactory();
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	}
 	else if(READ_ALLOC_STATS) {
-	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	    hcf = QuadNoSSA.codeFactory(hcf);
 	    as = new AllocationStatistics(linker,
 					  allocNumberingFileName,
 					  instrumentationResultsFileName);
