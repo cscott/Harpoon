@@ -51,7 +51,7 @@ import java.util.HashMap;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.25 1999-08-10 18:13:53 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.26 1999-08-11 00:27:57 pnkfelix Exp $
  */
 %%
 
@@ -1095,7 +1095,8 @@ CALL(retval, NAME(retex), func, arglist) %{
     // this '1f' and '1:' business is taking advantage of a GNU
     // Assembly feature to avoid polluting the global name space with
     // local labels
-    emit( ROOT, "bl " + func );
+    //    emit( ROOT, "bl " + func );
+    emit(new Instr( instrFactory, ROOT, "bl `s0", null, new Temp[]{ func }));
     emitDIRECTIVE( ROOT, ".section fixup");
     emitDIRECTIVE( ROOT, "\t.word 1f, "+retex+"; (retaddr, handler)");
     emitDIRECTIVE( ROOT, ".section code");
@@ -1185,7 +1186,8 @@ NATIVECALL(retval, func, arglist) %{
     // this '1f' and '1:' business is taking advantage of a GNU
     // Assembly feature to avoid polluting the global name space with
     // local labels
-    emit( ROOT, "bl " + func );
+    //    emit( ROOT, "bl " + func );
+    emit(new Instr( instrFactory, ROOT, "bl `s0", null, new Temp[]{ func }));
 
     // this will break if stackOffset > 255 (ie >63 args)
     emit( ROOT, "add `d0, `s0, #" + stackOffset );
@@ -1198,7 +1200,7 @@ NATIVECALL(retval, func, arglist) %{
     }  
 }%
 
-DATA(exp) %{
+DATA(CONST(exp)) %{
     emitDIRECTIVE( ROOT, ".data "+exp);
 }%
  
