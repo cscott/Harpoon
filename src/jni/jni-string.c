@@ -19,11 +19,15 @@ static jsize fromUTF8(const char *src, jchar *dst);
  * Returns a Java string object, or NULL if the string cannot be constructed.
  */
 jstring FNI_NewString(JNIEnv *env, const jchar *unicodeChars, jsize len) {
+  jstring result;
   jclass strcls = (*env)->FindClass(env, "java/lang/String");
   jmethodID cid = (*env)->GetMethodID(env, strcls, "<init>", "([C)V");
   jcharArray ca = (*env)->NewCharArray(env, len);
   (*env)->SetCharArrayRegion(env, ca, 0, len, unicodeChars);
-  return (jstring) (*env)->NewObject(env, strcls, cid, ca);
+  result = (jstring) (*env)->NewObject(env, strcls, cid, ca);
+  (*env)->DeleteLocalRef(env, ca);
+  (*env)->DeleteLocalRef(env, strcls);
+  return result;
 }
 
 /* Returns the length (the count of Unicode characters) of a Java string.
@@ -31,6 +35,7 @@ jstring FNI_NewString(JNIEnv *env, const jchar *unicodeChars, jsize len) {
 jsize FNI_GetStringLength(JNIEnv *env, jstring string) {
   jclass strcls = (*env)->FindClass(env, "java/lang/String");
   jmethodID mid = (*env)->GetMethodID(env, strcls, "length", "()I");
+  (*env)->DeleteLocalRef(env, strcls);
   return (*env)->CallIntMethod(env, string, mid);
 }
 
@@ -51,6 +56,8 @@ const jchar * FNI_GetStringChars(JNIEnv *env, jstring string, jboolean *isCopy)
   jchar *result = malloc(len * sizeof(jchar));
   (*env)->GetCharArrayRegion(env, ca, 0, len, result);
   if (isCopy!=NULL) *isCopy=JNI_TRUE;
+  (*env)->DeleteLocalRef(env, strcls);
+  (*env)->DeleteLocalRef(env, ca);
   return result;
 }
 
@@ -66,6 +73,7 @@ void FNI_ReleaseStringChars(JNIEnv *env, jstring string, const jchar *chars) {
  * Returns a Java string object, or NULL if the string cannot be constructed.
  */
 jstring FNI_NewStringUTF(JNIEnv *env, const char *bytes) {
+  jstring result;
   jclass strcls = (*env)->FindClass(env, "java/lang/String");
   jmethodID cid = (*env)->GetMethodID(env, strcls, "<init>", "([C)V");
   int       len = strlen(bytes);
@@ -78,7 +86,10 @@ jstring FNI_NewStringUTF(JNIEnv *env, const char *bytes) {
   jcharArray ca = (*env)->NewCharArray(env, newlen);
   (*env)->SetCharArrayRegion(env, ca, 0, newlen, buf);
   free(buf);
-  return (jstring) (*env)->NewObject(env, strcls, cid, ca);
+  result = (jstring) (*env)->NewObject(env, strcls, cid, ca);
+  (*env)->DeleteLocalRef(env, strcls);
+  (*env)->DeleteLocalRef(env, ca);
+  return result;
 }
 
 /* Returns the UTF-8 length in bytes of a string. 
@@ -91,6 +102,8 @@ jsize FNI_GetStringUTFLength(JNIEnv *env, jstring string) {
   jchar    *buf = (*env)->GetCharArrayElements(env, ca, NULL);
   jsize  result = utf8length(buf, len);
   (*env)->ReleaseCharArrayElements(env, ca, buf, 0);
+  (*env)->DeleteLocalRef(env, strcls);
+  (*env)->DeleteLocalRef(env, ca);
   return result;
 }
 
@@ -114,6 +127,8 @@ const char* FNI_GetStringUTFChars(JNIEnv *env, jstring string,
   result[newlen]='\0';
   (*env)->ReleaseCharArrayElements(env, ca, buf, 0);
   if (isCopy!=NULL) *isCopy=JNI_TRUE;
+  (*env)->DeleteLocalRef(env, strcls);
+  (*env)->DeleteLocalRef(env, ca);
   return result;
 }
 

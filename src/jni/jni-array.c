@@ -46,7 +46,8 @@ jarray FNI_NewObjectArray(JNIEnv *env, jsize length,
     }
     arrayclazz = FNI_FindClass(env, arraydesc);
     if (arrayclazz==NULL) return NULL; /* bail on exception */
-    info = FNI_GetClassInfo(FNI_FindClass(env, arraydesc));
+    info = FNI_GetClassInfo(arrayclazz);
+    FNI_DeleteLocalRef(env, arrayclazz);
   }
   result = FNI_Alloc(env, info,
 		     sizeof(struct aarray_offset) + sizeof(ptroff_t)*length);
@@ -74,6 +75,7 @@ type##Array FNI_New##name##Array(JNIEnv *env, jsize length) {\
   arrayclazz = FNI_FindClass(env, sig);\
   if (arrayclazz==NULL) return NULL; /* bail on error */\
   info = FNI_GetClassInfo(arrayclazz);\
+  FNI_DeleteLocalRef(env, arrayclazz);\
   result = FNI_Alloc(env, info,\
 		     sizeof(struct aarray_offset) + sizeof(type)*length);\
   if (result==NULL) return NULL; /* bail on error */\
