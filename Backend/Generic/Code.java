@@ -31,7 +31,7 @@ import java.io.StringReader;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.10 1999-08-04 00:29:49 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.11 1999-08-04 01:16:40 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -205,7 +205,16 @@ public abstract class Code extends HCode {
     /** Returns an assembly code identifier for the register that
 	<code>val</code> will be stored into.
      */
-    protected abstract String getRegisterName(Temp val, String suffix,
-					      Map valToRegMap);
+    protected abstract String getRegisterName(Instr i, Temp val, String suffix);
+
+    
+    /** Assigns a register to a <code>Temp</code> in <code>i</code>.
+	<BR> <B>modifies:</B> <code>i</code> (FSK: potentially at least)
+	<BR> <B>effects:</B> creates a mapping 
+	<BR> NOTE: This is only an experimental method; only FSK
+	should be using it until he makes sure that it implies no
+	design flaws. 
+     */
+    public abstract void assignRegister(Instr i, Temp pseudoReg, List regs);
 
 }

@@ -4,19 +4,22 @@
 package harpoon.Backend.StrongARM;
 
 import harpoon.IR.Tree.CanonicalTreeCode;
+import harpoon.IR.Assem.Instr;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 import harpoon.Temp.Temp;
 
+
+import java.util.List;
 import java.util.Map;
 
 /**
  * <code>SACode</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SACode.java,v 1.1.2.11 1999-08-04 00:29:49 pnkfelix Exp $
+ * @version $Id: SACode.java,v 1.1.2.12 1999-08-04 01:16:41 pnkfelix Exp $
  */
 public class SACode extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -61,10 +64,16 @@ public class SACode extends harpoon.Backend.Generic.Code {
 	return codeFactory(CanonicalTreeCode.codeFactory( new SAFrame() ));
     }
     
-    protected String getRegisterName(Temp val, 
-				     String suffix, 
-				     Map valToRegMap) {
+    protected String getRegisterName(Instr i,
+				     Temp val, 
+				     String suffix) {
 	Util.assert(false, "SACode.getRegisterName() not implemented yet");
 	return null;
+    }
+
+    public void assignRegister(Instr i, 
+			       Temp pseudoReg,
+			       List regs) {
+	Util.assert(false, "SACode.assignRegister() not implemented yet");
     }
 }
