@@ -59,7 +59,7 @@ import java.util.Set;
  * for MEM operations in a Tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CacheEquivalence.java,v 1.1.2.11 2001-06-14 20:57:50 cananian Exp $
+ * @version $Id: CacheEquivalence.java,v 1.1.2.12 2001-06-14 21:10:12 cananian Exp $
  */
 public class CacheEquivalence {
     private static final boolean DEBUG=false;
@@ -149,18 +149,19 @@ public class CacheEquivalence {
 		Dataflow.DefPoint dp = null, kgroup = null;
 		long offset=0; long modulus=0;
 		if (v.isBaseKnown()) {
-		    if (v.isOffsetKnown()) {
-			Dataflow.KnownOffset ko = (Dataflow.KnownOffset) v;
-			if (ko.offset.modulus==0) {
-			    dp = ko.def; offset = ko.offset.offset; // case 1
-			}
+		    Dataflow.BaseAndOffset bao = (Dataflow.BaseAndOffset) v;
+		    if (bao.offset instanceof Dataflow.Constant) { // case 1
+			dp = bao.def;
+			offset = ((Dataflow.Constant)bao.offset).number;
+		    } else if (false &&
+			       bao.offset instanceof Dataflow.ConstantModuloN){
+			// this case isn't safe yet.
 		    } else {
-			Dataflow.UnknownOffset uo = (Dataflow.UnknownOffset) v;
-			if (objSize(uo.def.type()) <= CACHE_LINE_SIZE
+			if (objSize(bao.def.type()) <= CACHE_LINE_SIZE
 			    // arrays can't count as small because
 			    // length is not statically known.
-			    && !uo.def.type().isArray()) {
-			    dp = uo.def; offset = 0; // case 2;
+			    && !bao.def.type().isArray()) {
+			    dp = bao.def; offset = 0; // case 2;
 			}
 		    }
 		}
@@ -251,19 +252,19 @@ public class CacheEquivalence {
 		TEMP t = s.getRetval();
 		if (t!=null)
 		    update(t.temp, s,
-			   new KnownOffset(new TempDefPoint(t, s), 0));
+			   new BaseAndOffset(new TempDefPoint(t, s), 0));
 	    }
 	    public void visit(CALL s) {
 		visit((INVOCATION)s);
 		TEMP t = s.getRetex();
 		update(t.temp, s,
-		       new KnownOffset(new TempDefPoint(t, s), 0));
+		       new BaseAndOffset(new TempDefPoint(t, s), 0));
 	    }
 	    public void visit(METHOD s) {
 		for (int i=0; i<s.getParamsLength(); i++) {
 		    TEMP t = s.getParams(i);
 		    update(t.temp, s,
-			   new KnownOffset(new TempDefPoint(t, s), 0));
+			   new BaseAndOffset(new TempDefPoint(t, s), 0));
 		}
 	    }
 	    public void visit(MOVE s) {
@@ -272,19 +273,24 @@ public class CacheEquivalence {
 		    Value v = valueOf(s.getSrc(), s);
 		    if (s.getDst().type()!=Type.POINTER ||
 			(v.isBaseKnown() &&
-			 ((UnknownOffset)v).def.isWellTyped()))
+			 ((BaseAndOffset)v).def.isWellTyped()))
 			update(t.temp, s, v);
 		    else
 			update(t.temp, s,
-			       new KnownOffset(new TempDefPoint(t, s),0));
+			       new BaseAndOffset(new TempDefPoint(t, s),0));
 		}
 	    }
 	}
 	/** visitor class to compute Values of expression trees. */
 	private class ValueVisitor extends TreeVisitor {
 	    final Stm root;
-	    Value value = Value.BOTTOM;
-	    ValueVisitor(Exp e, Stm root) { this.root=root; e.accept(this); }
+	    Value value;
+	    ValueVisitor(Exp e, Stm root) {
+		this.root=root;
+		this.value= (e.type()==Type.INT || e.type()==Type.LONG)
+		    ? Value.SOMEINT : Value.BOTTOM;
+		e.accept(this);
+	    }
 	    public void visit(Tree e) { Util.assert(false); }
 	    public void visit(CONST c) {
 		if (c.type()==Type.INT || c.type()==Type.LONG)
@@ -295,7 +301,7 @@ public class CacheEquivalence {
 	    }
 	    public void visit(MEM e) { /* bottom */ }
 	    public void visit(NAME e) {
-		this.value = new KnownOffset(new NameDefPoint(e), 0);
+		this.value = new BaseAndOffset(new NameDefPoint(e), 0);
 	    }
 	    public void visit(BINOP e) {
 		if (e.op==Bop.ADD) {
@@ -310,8 +316,8 @@ public class CacheEquivalence {
 		    Value left = valueOf(e.getLeft(), root);
 		    Value right= valueOf(e.getRight(), root);
 		    Value mult = (right instanceof Constant) ?
-			new Constant(1<<((Constant)right).offset) :
-			Value.UNKNOWN;
+			new Constant(1<<((Constant)right).number) :
+			Value.SOMEINT;
 		    this.value = left.mul(mult);
 		}
 	    }
@@ -355,9 +361,9 @@ public class CacheEquivalence {
 		Value negate() { return BOTTOM; }
 		public String toString() { return "BOTTOM"; }
 	    };
-	    static final Value UNKNOWN = new UnknownConstant();
+	    static final Value SOMEINT = new IntegerValue();
 	    static final Value NOINFO = new Value() {
-		protected int specificity() { return 6; }
+		protected int specificity() { return 5; }
 		Value unify(Value v) { return v; }
 		protected Value _add(Value v) { return NOINFO; }
 		protected Value _mul(Value v) { return NOINFO; }
@@ -365,41 +371,41 @@ public class CacheEquivalence {
 		public String toString() { return "NO INFO"; }
 	    };
 	}
-	static class UnknownConstant extends Value {
+	static class IntegerValue extends Value {
 	    protected int specificity() { return 1; }
-	    UnknownConstant() {
+	    IntegerValue() {
 		Util.assert(this instanceof ConstantModuloN ||
-			    Value.UNKNOWN==null);
+			    Value.SOMEINT==null);
 	    }
 	    Value unify(Value v) {
-		if (!(v instanceof UnknownConstant)) return super.unify(v);
-		// UnknownConstant is common superclass of this and v.
-		return Value.UNKNOWN;
+		if (!(v instanceof IntegerValue)) return super.unify(v);
+		// IntegerValue is common superclass of this and v.
+		return Value.SOMEINT;
 	    }
 	    protected Value _add(Value v) {
-		// must handle v=BOTTOM, v=UNKNOWN
-		if (v instanceof UnknownConstant) return Value.UNKNOWN;
+		// must handle v=BOTTOM, v=SOMEINT
+		if (v instanceof IntegerValue) return Value.SOMEINT;
 		return Value.BOTTOM;
 	    }
 	    protected Value _mul(Value v) {
-		// must handle v=BOTTOM, v=UNKNOWN
-		if (v instanceof UnknownConstant) return Value.UNKNOWN;
+		// must handle v=BOTTOM, v=SOMEINT
+		if (v instanceof IntegerValue) return Value.SOMEINT;
 		return Value.BOTTOM;
 	    }
 	    Value negate() { return this; }
 	    public String toString() { return "X"; }
 	}
-	static class ConstantModuloN extends UnknownConstant {
+	static class ConstantModuloN extends IntegerValue {
 	    protected int specificity() { return 2; }
-	    final long offset; final long modulus;
-	    ConstantModuloN(long offset, long modulus) {
-		this.offset=offset; this.modulus=modulus;
-		Util.assert(modulus>1 && offset>=0);
-		Util.assert(offset < modulus);
+	    final long number; final long modulus;
+	    ConstantModuloN(long number, long modulus) {
+		this.number=number; this.modulus=modulus;
+		Util.assert(modulus>1 && number>=0);
+		Util.assert(number < modulus);
 	    }
-	    protected ConstantModuloN(long offset) {
+	    protected ConstantModuloN(long number) {
 		Util.assert(this instanceof Constant);
-		this.offset=offset; this.modulus=0;
+		this.number=number; this.modulus=0;
 	    }
 	    boolean isOffsetKnown() { return true; }
 	    Value unify(Value v) {
@@ -408,11 +414,11 @@ public class CacheEquivalence {
 		ConstantModuloN cmn = (ConstantModuloN) v;
 		long smallM, smallN, largeM, largeN;
 		if (this.modulus > cmn.modulus) {
-		    largeM=this.modulus; largeN=this.offset;
-		    smallM=cmn.modulus;  smallN=cmn.offset;
+		    largeM=this.modulus; largeN=this.number;
+		    smallM=cmn.modulus;  smallN=cmn.number;
 		} else {
-		    smallM=this.modulus; smallN=this.offset;
-		    largeM=cmn.modulus;  largeN=cmn.offset;
+		    smallM=this.modulus; smallN=this.number;
+		    largeM=cmn.modulus;  largeN=cmn.number;
 		}
 		Util.assert(largeM>0);
 		long off=0, mod=1;
@@ -426,20 +432,20 @@ public class CacheEquivalence {
 		} // others?
 		if (mod>1) return new ConstantModuloN(off, mod);
 		// can't unify the constants.
-		return Value.UNKNOWN;
+		return Value.SOMEINT;
 	    }
 	    protected Value _add(Value v) {
-		// must handle v=BOTTOM, UNKNOWN, CONSTANTMODULON, CONSTANT
+		// must handle v=BOTTOM, SOMEINT, CONSTANTMODULON, CONSTANT
 		if (v==Value.BOTTOM) return v;
-		if (v==Value.UNKNOWN) return Value.UNKNOWN;
+		if (v==Value.SOMEINT) return Value.SOMEINT;
 		ConstantModuloN cmn = (ConstantModuloN) v;
 		long smallM, smallN, largeM, largeN;
 		if (this.modulus > cmn.modulus) {
-		    largeM=this.modulus; largeN=this.offset;
-		    smallM=cmn.modulus;  smallN=cmn.offset;
+		    largeM=this.modulus; largeN=this.number;
+		    smallM=cmn.modulus;  smallN=cmn.number;
 		} else {
-		    smallM=this.modulus; smallN=this.offset;
-		    largeM=cmn.modulus;  largeN=cmn.offset;
+		    smallM=this.modulus; smallN=this.number;
+		    largeM=cmn.modulus;  largeN=cmn.number;
 		}
 		if (smallM>0) {
 		    if ((largeM % smallM)==0)
@@ -451,20 +457,20 @@ public class CacheEquivalence {
 						   largeM);
 		    else return new Constant(largeN+smallN);
 		}
-		return Value.UNKNOWN;
+		return Value.SOMEINT;
 	    }
 	    protected Value _mul(Value v) {
-		// handles v=BOTTOM, v=UNKNOWN, v=CONSTANTMODULON
+		// handles v=BOTTOM, v=SOMEINT, v=CONSTANTMODULON
 		if (v==Value.BOTTOM) return v;
-		if (v==Value.UNKNOWN) {
-		    // UNKNOWN*(0 mod b) = 0 mod b
-		    // UNKNOWN*(a mod b) = 0 mod gcd(a,b)
-		    if (this.offset==0)
+		if (v==Value.SOMEINT) {
+		    // SOMEINT*(0 mod b) = 0 mod b
+		    // SOMEINT*(a mod b) = 0 mod gcd(a,b)
+		    if (this.number==0)
 			return new ConstantModuloN(0, this.modulus);
-		    long mod = Util.gcd(this.offset, this.modulus);
+		    long mod = Util.gcd(this.number, this.modulus);
 		    if (mod>1)
 			return new ConstantModuloN(0, mod);
-		    return Value.UNKNOWN;
+		    return Value.SOMEINT;
 		}
 		ConstantModuloN cmn = (ConstantModuloN) v;
 		// (a mod b) * (c mod d) = (ac) mod gdb(b, d)
@@ -472,135 +478,109 @@ public class CacheEquivalence {
 		long mod = Util.gcd(this.modulus, cmn.modulus);
 		if (mod>1)
 		    return new ConstantModuloN
-			((this.offset*cmn.offset) % mod, mod);
-		else return Value.UNKNOWN;
+			((this.number*cmn.number) % mod, mod);
+		else return Value.SOMEINT;
 	    }
 	    Value negate() {
-		return new ConstantModuloN(modulus-offset, modulus);
+		return new ConstantModuloN(modulus-number, modulus);
 	    }
 	    public boolean equals(Object o) {
 		try {
 		    ConstantModuloN cmn = (ConstantModuloN) o;
-		    return this.offset == cmn.offset &&
+		    return this.number == cmn.number &&
 			this.modulus == cmn.modulus;
 		} catch (ClassCastException cce) { return false; }
 	    }
-	    public int hashCode() { return (int)offset + 7*(int)modulus; }
+	    public int hashCode() { return (int)number + 7*(int)modulus; }
 	    public String toString() {
-		return offset+((modulus==0)?"":(" mod "+modulus));
+		return number+((modulus==0)?"":(" mod "+modulus));
 	    }
 	}
 	static class Constant extends ConstantModuloN {
 	    protected int specificity() { return 3; }
-	    Constant(long offset) { super(offset); }
+	    Constant(long number) { super(number); }
 	    Value unify(Value v) {
 		if (!(v instanceof Constant)) return super.unify(v);
 		// Constant is common superclass of this and v.
 		Constant c = (Constant) v;
-		if (this.offset==c.offset)
-		    return new Constant(this.offset);
-		long small=Math.min(this.offset, c.offset);
-		long large=Math.max(this.offset, c.offset);
+		if (this.number==c.number)
+		    return new Constant(this.number);
+		long small=Math.min(this.number, c.number);
+		long large=Math.max(this.number, c.number);
 		long mod=(large-small);
-		Util.assert(mymod(small, mod)==mymod(large, mod));
+		Util.assert(mymod(small, mod)==mymod(large, mod),
+			    "S:"+small+"; L:"+large+"; M:"+mod);
 		if (mod>1) return new ConstantModuloN(mymod(small, mod), mod);
-		return Value.UNKNOWN;
+		return Value.SOMEINT;
 	    }
 	    protected Value _mul(Value v) {
-		// must handle BOTTOM, UNKNOWN, CONSTANTMODULON, CONSTANT
+		// must handle BOTTOM, SOMEINT, CONSTANTMODULON, CONSTANT
 		if (v==Value.BOTTOM) return v;
-		if (v==Value.UNKNOWN) {
-		    // UNKNOWN * c = 0 mod c
-		    if (this.offset>0)
-			return new ConstantModuloN(0, this.offset);
-		    if (this.offset<0)
-			return new ConstantModuloN(0, -this.offset).negate();
-		    return Value.UNKNOWN;
+		if (v==Value.SOMEINT) {
+		    // SOMEINT * c = 0 mod c
+		    if (this.number>0)
+			return new ConstantModuloN(0, this.number);
+		    if (this.number<0)
+			return new ConstantModuloN(0, -this.number).negate();
+		    return Value.SOMEINT;
 		}
 		ConstantModuloN cmn = (ConstantModuloN) v;
 		if (cmn.modulus>1) {
-		    long mult = Math.abs(this.offset);
-		    Value r = new ConstantModuloN(cmn.offset*mult,
+		    long mult = Math.abs(this.number);
+		    Value r = new ConstantModuloN(cmn.number*mult,
 						  cmn.modulus*mult);
-		    return (this.offset>=0) ? r : r.negate();
+		    return (this.number>=0) ? r : r.negate();
 		}
 		Util.assert(cmn.modulus==0 && this.modulus==0);
-		return new Constant(cmn.offset * this.offset);
+		return new Constant(cmn.number * this.number);
 	    }
-	    Value negate() { return new Constant(-this.offset); }
-	}	
-	static class UnknownOffset extends Value {
+	    Value negate() { return new Constant(-this.number); }
+	}
+	static class BaseAndOffset extends Value {
 	    protected int specificity() { return 4; }
 	    final DefPoint def;
-	    UnknownOffset(DefPoint def) { this.def=def; }
-	    boolean isBaseKnown() { return true; }
-	    Value unify(Value v) {
-		if (!(v instanceof UnknownOffset)) return super.unify(v);
-		// UnknownOffset is common superclass of this and v
-		UnknownOffset uo = (UnknownOffset) v;
-		if (this.def.equals(uo.def))
-		    return new UnknownOffset(def);
-		else return Value.BOTTOM;
+	    final IntegerValue offset;
+	    BaseAndOffset(DefPoint def, IntegerValue offset) {
+		this.def = def; this.offset = offset;
 	    }
-	    protected Value _add(Value v) {
-		// must handle BOTTOM, UNKNOWN, CMN, C, UO.
-		if (v instanceof UnknownConstant) return this;
+	    // special case:
+	    BaseAndOffset(DefPoint def, long offset) {
+		this(def, new Constant(offset));
+	    }
+	    boolean isBaseKnown() { return true; }
+	    boolean isOffsetKnown() { return offset.isOffsetKnown(); }
+	    Value unify(Value v) {
+		if (!(v instanceof BaseAndOffset)) return super.unify(v);
+		// BaseAndOffset is common superclass of this and v
+		BaseAndOffset ko = (BaseAndOffset) v;
+		if (this.def.equals(ko.def)) {
+		    Value cc = this.offset.unify(ko.offset);
+		    if (cc instanceof IntegerValue)
+			return new BaseAndOffset(def, (IntegerValue) cc);
+		}
 		return Value.BOTTOM;
 	    }
+	    protected Value _add(Value v) {
+		// must handle BOTTOM, SOMEINT, CMN, C, BAO
+		if (!(v instanceof IntegerValue)) return Value.BOTTOM;
+		Value cc = this.offset.add(v);
+		Util.assert(cc instanceof IntegerValue);
+		return new BaseAndOffset(def, (IntegerValue) cc);
+	    }
 	    protected Value _mul(Value v) {
-		// must handle BOTTOM, UNKNOWN, CMN, C, UO.
+		// must handle BOTTOM, SOMEINT, CMN, C, BAO.
 		return Value.BOTTOM;
 	    }
 	    Value negate() { return Value.BOTTOM; }
-
 	    public boolean equals(Object o) {
 		try {
-		    UnknownOffset uo = (UnknownOffset) o;
-		    return this.def.equals(uo.def);
-		} catch (ClassCastException cce) { return false; }
-	    }
-	    public int hashCode() { return def.hashCode(); }
-	    public String toString() { return def+"+X"; }
-	}
-	static class KnownOffset extends UnknownOffset {
-	    protected int specificity() { return 5; }
-	    final ConstantModuloN offset;
-	    KnownOffset(DefPoint def, long offset) {
-		// special case
-		this(def, new Constant(offset));
-	    }
-	    KnownOffset(DefPoint def, ConstantModuloN offset) {
-		super(def); this.offset = offset;
-	    }
-	    boolean isOffsetKnown() { return true; }
-	    Value unify(Value v) {
-		if (!(v instanceof KnownOffset)) return super.unify(v);
-		// KnownOffset is common superclass of this and v
-		KnownOffset ko = (KnownOffset) v;
-		if (this.def.equals(ko.def)) {
-		    Value cc = this.offset.unify(ko.offset);
-		    if (cc instanceof ConstantModuloN)
-			return new KnownOffset(def, (ConstantModuloN) cc);
-		    else return new UnknownOffset(def);
-		}
-		return Value.BOTTOM;
-	    }
-	    protected Value _add(Value v) {
-		// must handle BOTTOM, UNKNOWN, CMN, C, UO, KO
-		if (!(v instanceof UnknownConstant)) return Value.BOTTOM;
-		Value cc = this.offset.add(v);
-		if (cc instanceof ConstantModuloN)
-		    return new KnownOffset(def, (ConstantModuloN) cc);
-		else return new UnknownOffset(def);
-	    }
-	    public boolean equals(Object o) {
-		try {
-		    KnownOffset ko = (KnownOffset) o;
-		    return super.equals(ko) && this.offset.equals(ko.offset);
+		    BaseAndOffset bao = (BaseAndOffset) o;
+		    return this.def.equals(bao.def) &&
+			this.offset.equals(bao.offset);
 		} catch (ClassCastException cce) { return false; }
 	    }
 	    public int hashCode() {
-		return super.hashCode()+7*offset.hashCode();
+		return def.hashCode()+7*offset.hashCode();
 	    }
 	    public String toString() { return def+"+"+offset; }
 	}
