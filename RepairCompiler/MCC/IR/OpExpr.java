@@ -335,7 +335,7 @@ public class OpExpr extends Expr {
 	    if ((opcode==Opcode.OR)||
 		(opcode==Opcode.AND)) {
 		writer.outputline("int "+lm.getSafeSymbol()+"=maybe;");
-		writer.outputline("int maybe=0;");
+		writer.outputline("maybe=0;");
 	    }
 
             rd = VarDescriptor.makeNew("rightop");
@@ -353,12 +353,12 @@ public class OpExpr extends Expr {
         } else if (opcode == Opcode.AND) {
 	    writer.outputline("int "+rm.getSafeSymbol()+"=maybe;");
 	    writer.outputline("maybe = (" + ld.getSafeSymbol() + " && " + rm.getSafeSymbol() + ") || (" + rd.getSafeSymbol() + " && " + lm.getSafeSymbol() + ") || (" + lm.getSafeSymbol() + " && " + rm.getSafeSymbol() + ");");
-	    writer.outputline(dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " && " + rd.getSafeSymbol() + ";");
+	    writer.outputline("int "+dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " && " + rd.getSafeSymbol() + ";");
 	} else if (opcode == Opcode.OR) {
 	    writer.outputline("int "+rm.getSafeSymbol()+"=maybe;");
 	    writer.outputline("maybe = (!" + ld.getSafeSymbol() + " && " + rm.getSafeSymbol() + ") || (!" + rd.getSafeSymbol() +
 			      " && " + lm.getSafeSymbol() + ") || (" + lm.getSafeSymbol() + " && " + rm.getSafeSymbol() + ");");
-	    writer.outputline(dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " || " + rd.getSafeSymbol() +
+	    writer.outputline("int "+dest.getSafeSymbol() + " = " + ld.getSafeSymbol() + " || " + rd.getSafeSymbol() +
 			      ";");
 	} else if (opcode != Opcode.NOT) { /* two operands */
             assert rd != null;
