@@ -1,15 +1,92 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: transact.tex,v 1.1 2000-09-25 21:44:28 cananian Exp $
-\documentclass[11pt,notitlepage,twocolumn]{article}
+% $Id: transact.tex,v 1.2 2000-09-25 22:15:35 cananian Exp $
+\documentclass[11pt,notitlepage]{article}
+\usepackage{alltt}
 \usepackage{pdffonts} % PDF-friendly fonts
 \author{C.~Scott~Ananian}
 \title{Software Atomic Transactions}
-\date{\today \\ $ $Revision: 1.1 $ $}
+\date{\today \\ $ $Revision: 1.2 $ $}
 
 \begin{document}
 %\bibliographystyle{abbrv}
 \maketitle
-\section{Blah}
-blah
+\section{Data Structures}
+
+Transaction support uses the same ``inflated object'' extension
+mechanism which is used for thread synchronization, clustered heaps,
+JNI data, and finalization for certain garbage collectors.
+The basic object data structure, as shown in figure \ref{fig:oobj}, is
+unchanged, although fields containing the specified
+\texttt{FLAG\_VALUE} have different semantics.  The flag value is used
+to indicate that the field value is ``not here''; that is, the code
+must consult the transaction information to find the field's current
+value.  This happens very rarely even when no transaction is
+associated with the object; Shasta \cite{shasta} has shown that the
+overhead entailed by such ``false'' transactions is expected to be
+extremely low.
+
+The ``inflated object'' data structure, shown in figure
+\ref{fig:infl}, has a simple ``object versions'' array associated with
+it.  Each entry conceptually stores information about a different,
+possibly-uncommitted, version of the object.  One of these versions is
+guaranteed to be ``most recent committed'', and it is guaranteed that
+the ``most recent committed'' version will be the first committed
+version in the list.
+
+\begin{figure}
+\begin{alltt}\small
+/* the oobj structure tells you what's inside the object layout. */
+struct oobj \{
+  struct claz *claz;
+  /* if low bit is one, then this is a fair-dinkum hashcode. else, it's a
+   * pointer to a struct inflated_oobj. this pointer needs to be freed
+   * when the object is garbage collected, which is done w/ a finalizer. */
+  union \{ ptroff_t hashcode; struct inflated_oobj *inflated; \} hashunion;
+\textbf{#ifdef WITH_TRANSACTIONS
+#define FLAG_VALUE 0xCACACACA
+  /* consult transaction to determine value of any field with FLAG_VALUE */
+#endif}
+  /* fields below this point */
+  char field_start[0];
+\};
+\end{alltt}
+\caption{The object structure in the FLEX runtime.}
+\label{fig:oobj}
+\end{figure}
+\begin{figure}
+\begin{alltt}\small
+/* the inflated_oobj structure has various bits of information that we
+ * want to associate with *some* (not all) objects. */
+struct inflated_oobj \{
+  ptroff_t hashcode; /* the real hashcode, since we've booted it */
+  void *jni_data; /* information associated with this object by the JNI */
+  void (*jni_cleanup_func)(void *jni_data);
+\textbf{  /* TRANSACTION SUPPORT */
+#if WITH_TRANSACTIONS
+  struct vinfo *versions[NESTED_TRANS_MAX];
+#endif}
+  /* locking information */
+#if WITH_HEAVY_THREADS || WITH_PTH_THREADS
+  pthread_t tid; /* can be zero, if no one has this lock */
+  jint nesting_depth; /* recursive lock nesting depth */
+  pthread_mutex_t mutex; /* simple (not recursive) lock */
+  pthread_cond_t  cond; /* condition variable */
+  pthread_rwlock_t jni_data_lock; /*read/write lock for jni_data field, above*/
+#endif
+#ifdef WITH_CLUSTERED_HEAPS
+  struct clustered_heap * heap;
+  void (*heap_release)(struct clustered_heap *);
+#endif
+#ifdef BDW_CONSERVATIVE_GC
+  /* for cleanup via finalization */
+  GC_finalization_proc old_finalizer;
+  GC_PTR old_client_data;
+#endif
+\};
+\end{alltt}
+\caption{The ``inflated object'' structure in the FLEX runtime.}
+\label{fig:infl}
+\end{figure}
+
 %\bibliography{harpoon}
 \end{document}
