@@ -5,15 +5,15 @@ package imagerec.graph;
 
 import imagerec.util.ImageDataManip;
 
-import java.awt.Frame;
-import java.awt.BorderLayout;
-import java.awt.Button;
-import java.awt.Dimension;
+//import java.awt.Frame;
+//import java.awt.BorderLayout;
+//import java.awt.Button;
+//import java.awt.Dimension;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.ActionEvent;
+//import java.awt.event.WindowAdapter;
+//import java.awt.event.ActionListener;
+//import java.awt.event.WindowEvent;
+//import java.awt.event.ActionEvent;
 
 /**
  * THIS CLASS MAKES THE ASSUMPTION THAT IT CAN PROCESS
@@ -23,13 +23,14 @@ import java.awt.event.ActionEvent;
  */
 public class CarController extends Node {
 
-    private boolean enabled = false;
+    //private boolean enabled = false;
+    private boolean enabled = true;
 
     private static final float idealX = 160;
     private static final float idealY = 120;
 
     private InterruptTimer timer;
-    private EnableFrame frame;
+    //private EnableFrame frame;
 
     public CarController() {
 	super(null);
@@ -38,7 +39,7 @@ public class CarController extends Node {
     
     private void init() {
 	timer = new InterruptTimer();
-	frame = new EnableFrame();
+	//frame = new EnableFrame();
     }
 
     public void setEnabled(boolean b) {
@@ -188,6 +189,7 @@ public class CarController extends Node {
 	}
     }
 
+    /*
     private class EnableFrame extends Frame
 	implements ActionListener {
 	Button enableDisableButton;
@@ -219,4 +221,5 @@ public class CarController extends Node {
 	    }
 	}
     }
+    */
 }
