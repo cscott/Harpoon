@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.78 1999-08-22 02:52:38 cananian Exp $
+% $Id: thesis.tex,v 1.79 1999-08-22 03:01:38 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.78 $ $}
+\date{\today \\ $ $Revision: 1.79 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.78 $ $}{$ $Revision: 1.78 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.79 $ $}{$ $Revision: 1.79 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -277,6 +277,10 @@ subscript will be used; for example, $V_0$.
 Control-flow graphs are assumed to be connected, and to contain unique
 \code{START} and \code{END} nodes marking procedure entry and exit
 points, respectively.
+
+The symbol $\meet$ will be used for the dataflow ``meet'' operator.
+The operator $\latleq$ is the %reflexive, transitive, and anti-symmetric
+partial ordering relation for a lattice.
 
 \section{Static Single Assignment form}\label{sec:ssa}
 Static Single Information (SSI) form derives many features from Static
