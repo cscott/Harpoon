@@ -1,5 +1,6 @@
 /* Stack allocation function. */
 
+#include "config.h"
 /* we use alloca directly when compiling w/ precisec */
 #if !defined(WITH_PRECISE_C_BACKEND)
 

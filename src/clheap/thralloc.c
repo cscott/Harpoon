@@ -21,7 +21,7 @@ struct oobj_with_clheap {
 
 #ifdef REALLY_DO_THR_ALLOC
 
-#if defined(WITH_THREADS) && !defined(WITH_EVENT_DRIVEN)
+#if !defined(WITH_EVENT_DRIVEN)
 /* Heavy-weight threads.  Not the thing to use if you've got an
  * event-driven transformation going on w/ your code. */
 # define FETCH_THIS_THREAD() \
