@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.7 2002-09-21 04:46:46 cananian Exp $
+ * @version $Id: Translate.java,v 1.8 2003-07-10 02:22:22 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {
@@ -627,6 +627,8 @@ final class Translate { // not public.
 	    for (int i=1; i < qM.nextLength(); i++)
 		if (qM.next(i)!=exithand)
 		    s.recordHandler(exithand, qM.next(i), s.footer());
+	    // don't forget to protect against failures in MONITOREXIT
+	    exithand.protectedSet.insert(Qm);
 	    // now insert MONITOREXIT for all RETURN predecessors of FOOTER
 	    for (int i=1; i < s.footer().arity(); i++) { // skip HEADER edge
 		if (!(s.footer().prev(i) instanceof RETURN)) continue;
@@ -637,6 +639,7 @@ final class Translate { // not public.
 		Edge e = Qexit.prevEdge(0);
 		Quad.addEdge((Quad)e.from(), e.which_succ(), Qm, 0);
 		Quad.addEdge(Qm, 0, (Quad)e.to(), e.which_pred());
+		exithand.protectedSet.insert(Qm); // protect MONITOREXIT, too.
 	    }
 	}
 
