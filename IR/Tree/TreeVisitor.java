@@ -24,8 +24,6 @@ public abstract class TreeVisitor
   public void visit(EXP e)            { visit((Stm)e); }
   public void visit(JUMP e)           { visit((Stm)e); }
   public void visit(LABEL e)          { visit((Stm)e); }
-  public void visit(LMEM e)           { visit((Exp)e); }
-  public void visit(LTEMP e)          { visit((Exp)e); }
   public void visit(MEM e)            { visit((Exp)e); }
   public void visit(MEMA e)           { visit((MEM)e); }
   public void visit(MEMD e)           { visit((MEM)e); }
