@@ -1,6 +1,7 @@
-# $Revision: 1.38 $
+# $Revision: 1.39 $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
+JIKES=jikes
 JCC=javac
 JDOC=javadoc
 JAR=jar
@@ -21,6 +22,9 @@ TARSOURCE = $(filter-out JavaChip%, \
 	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile
 all:	java
 
+list:
+	@echo $(filter-out GNUmakefile,$(TARSOURCE))
+
 java:	$(ALLSOURCE)
 	if [ ! -d harpoon ]; then \
 	  $(MAKE) first; \
@@ -28,6 +32,11 @@ java:	$(ALLSOURCE)
 	${JCC} ${JFLAGS} ${JFLAGSVERB} $(ALLSOURCE) | \
 		egrep -v '^\[[lc]'
 	touch java
+
+jikes: 	
+	if [ ! -d harpoon ]; then $(MAKE) first; fi
+	@${JIKES} ${JFLAGS} ${ALLSOURCE}
+
 first:
 	@echo Please wait...
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
