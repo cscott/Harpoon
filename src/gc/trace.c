@@ -1,4 +1,6 @@
 /* trace takes a pointer to an object and traces the pointers w/in it */
+#include "precise_gc.h"
+
 #define START_BIT 2
 
 #ifndef WITH_GENERATIONAL_GC

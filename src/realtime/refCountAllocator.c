@@ -242,7 +242,7 @@ inline void RefCountAllocator_register_finalizer(void* obj,
 #define handleFunc(obj) RefCountAllocator_oobj_handle_reference(rc, obj)
 #define func_proto traceFunc
 #define handle_ref handleFunc
-#include "trace.c"
+#include "../gc/trace.c"
 #undef func_proto
 #undef handle_ref
 #undef traceFunc
