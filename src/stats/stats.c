@@ -33,6 +33,12 @@ DECLARE_STATS_LOCAL(transact_versions_arr_num_alloc)
 DECLARE_STATS_LOCAL(transact_versions_obj_bytes_alloc)
 DECLARE_STATS_LOCAL(transact_versions_arr_bytes_alloc)
 #endif /* WITH_TRANSACTIONS */
+#ifdef WITH_LIVE_HEAP_STATISTICS
+DECLARE_STATS_LOCAL(heap_current_live_bytes)
+DECLARE_STATS_LOCAL(heap_max_live_bytes)
+DECLARE_STATS_LOCAL(heap_total_alloc_bytes)
+DECLARE_STATS_LOCAL(heap_total_alloc_count)
+#endif /* WITH_LIVE_HEAP_STATISTICS */
 
 #undef EXTRA_STATS
 #ifdef EXTRA_STATS
@@ -110,6 +116,17 @@ void print_statistics(void) {
 	 FS(transact_versions_arr_bytes_alloc),
 	 FS(transact_versions_arr_num_alloc));
 #endif /* WITH_TRANSACTIONS */
+#ifdef WITH_LIVE_HEAP_STATISTICS
+  GC_gcollect();
+  printf("Total heap allocations:   %8llu allocations\n"
+	 "Total heap bytes alloc'd: %8llu bytes\n"
+	 "Live bytes at this point: %8llu bytes\n"
+	 "Maximum live bytes:       %8llu bytes\n",
+	 FS(heap_total_alloc_count),
+	 FS(heap_total_alloc_bytes),
+	 FS(heap_current_live_bytes),
+	 FS(heap_max_live_bytes));
+#endif /* WITH_LIVE_HEAP_STATISTICS */
   fflush(stdout);
   
 

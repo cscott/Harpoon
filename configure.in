@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.109 $)dnl
+AC_REVISION($Revision: 1.110 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -550,7 +550,19 @@ AC_ARG_WITH(memory-statistics,
 with_memory_statistics=yes, with_memory_statistics=no)
 AC_MSG_RESULT($with_memory_statistics)
 
+dnl select whether to collect and print live-heap-size statistics
+AC_MSG_CHECKING([whether to collect and print live-heap-size statistics])
+AC_ARG_WITH(live-heap-statistics,
+[  --with-live-heap-statistics collect and print live-heap-size statistics],
+with_live_heap_statistics=yes, with_live_heap_statistics=no)
+AC_MSG_RESULT($with_live_heap_statistics)
+
 dnl set #defines and AM_CONDITIONALs for various statistics.
+if test x$with_live_heap_statistics = xyes; then
+	with_statistics=yes # live-heap statistics imply regular statistics.
+	AC_DEFINE(WITH_LIVE_HEAP_STATISTICS, 1,
+    	[Define if you want to collect and print live-heap-size statistics])
+fi
 if test x$with_memory_statistics = xyes; then
 	with_statistics=yes # memory statistics imply regular statistics.
 	AC_DEFINE(WITH_MEMORY_STATISTICS, 1,
