@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.54 1999-07-31 00:07:43 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.55 1999-08-02 15:18:07 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -32,12 +32,14 @@ JDOCFLAGS += \
 
 SUPPORT := Support/Lex.jar Support/CUP.jar Support/collections.jar
 # filter out collections.jar if we don't need it.
+ifeq (0, ${MAKELEVEL})
 SUPPORTC:= $(filter-out \
    $(shell chmod u+x bin/test-collections;\
            if bin/test-collections; then echo Support/collections.jar; fi),\
    $(SUPPORT))
 CLASSPATH:=$(subst $(space),:,$(addprefix $(CURDIR)/,$(SUPPORTC))):$(CLASSPATH)
 CLASSPATH:=.:$(CLASSPATH)
+endif
 export CLASSPATH
 
 CVS_TAG=$(firstword $(shell cvs status GNUmakefile | grep -v "(none)" | \
@@ -46,6 +48,8 @@ CVS_BRANCH=$(firstword $(shell cvs status GNUmakefile | grep -v "(none)" |\
 			awk '/Sticky Tag/{print $$5}' | sed -e 's/[^0-9.]//g'))
 CVS_REVISION=$(patsubst %,-r %,$(CVS_TAG))
 
+# skip these definitions if we invoke make recursively; use parent's defs.
+ifeq (0, ${MAKELEVEL})
 BUILD_IGNORE := $(strip $(shell if [ -f .ignore ]; then cat .ignore; fi))
 
 ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
@@ -80,8 +84,13 @@ PKGDESC:=$(wildcard overview.html) $(wildcard README) \
 NONEMPTYPKGS := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | \
 		sed -e 's|/*[A-Za-z0-9_]*\.[A-Za-z0-9_]*$$||' | sort -u)
 
-PKGSWITHJAVASRC := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | grep ".java" |\
-		   sed -e 's|/*[A-Za-z0-9_]*\.[A-Za-z0-9_]*$$||' | sort -u)	
+PKGSWITHJAVASRC := $(shell ls  $(filter-out GNUmakefile,$(TARSOURCE))  | \
+		   sed -ne 's|/*[A-Za-z0-9_]*\.java$$||p' | sort -u)	
+endif
+# list all the definitions in the above block for export to children.
+export BUILD_IGNORE ALLPKGS MACHINE_SRC MACHINE_GEN CGSPECS CGJAVA
+export ALLSOURCE TARSOURCE JARPKGS PROPERTIES PKGDESC
+export NONEMPTYPKGS PKGSWITHJAVASRC
 
 all:	java
 
