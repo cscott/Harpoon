@@ -19,7 +19,7 @@ import harpoon.ClassFile.HClass;
  * steps to be deemed worthwhile.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.10 1999-02-05 12:19:17 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.11 1999-07-17 09:58:36 cananian Exp $
  */
 public abstract class Qop  {
     /** Compares references for equality. */
@@ -159,21 +159,22 @@ public abstract class Qop  {
     /** Computes the remainder of two long values. */
     public final static int LREM = 58;
     /** Computes the value of the first long value shifted left by the
-     *  number of bits specified in the low six bits of the second long value.
+     *  number of bits specified in the low six bits of the second 
+     *  <b>int</b> value.
      *  That is, <code>(1 << 66) == 4</code>.
      *  Also, <code>(x << -1) == (x << 63)</code>.
      */
     public final static int LSHL = 59;
     /** Computes the value of the first long value shifted right with
      *  sign extension by the number of bits specified in the low six bits
-     *  of the second long value.
+     *  of the second <b>int</b> value.
      *  That is, <code>(-4 >> 65) == -2</code>.
      *  Also, <code>(x >> -1) == (x >> 63)</code>.
      */
     public final static int LSHR = 60;
     /** Computes the value of the first long value shifted right without
      *  sign extension by the number of bits specified in the low six bits
-     *  of the second long value.
+     *  of the second <b>int</b> value.
      *  That is, <code>(-4 >>> 62) == 3</code>.
      *  Also, <code>(x >>> -1) == (x >>> 63)</code>.
      */
