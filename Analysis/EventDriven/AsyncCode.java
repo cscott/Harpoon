@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.16 2000-01-06 21:10:30 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.17 2000-01-06 21:36:11 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -624,6 +624,7 @@ public class AsyncCode {
 		}
 		CALL callenv=new CALL(hcode.getFactory(), q, env.getConstructors()[0],
 				      params, null, retex, false, false, new Temp[0]);
+		Quad.addEdge(envq,0,callenv,0);
 		Quad.addEdge(callenv,1,phi,1);
 		
 		Temp tcont=new Temp(tf);
