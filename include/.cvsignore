@@ -1,5 +1,5 @@
-stamp-h
-stamp-h.in
+stamp-h*
+stamp-h*.in
 config.h
 config.h.in
 gc.h
