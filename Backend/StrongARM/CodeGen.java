@@ -5,7 +5,7 @@ package harpoon.Backend.StrongARM;
 
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrFactory;
-import harpoon.IR.Assem.LABEL;
+import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.OPER;
@@ -32,7 +32,7 @@ import harpoon.Temp.Temp;
  * selection of <code>Instr</code>s from an input <code>Tree</code>.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.4 1999-02-17 03:29:44 andyb Exp $
+ * @version $Id: CodeGen.java,v 1.1.2.5 1999-02-17 21:32:40 andyb Exp $
  */
 final class CodeGen {
 

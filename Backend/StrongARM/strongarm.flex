@@ -97,7 +97,7 @@ emit(new Instr("mov r15, `s0",
 
 LABEL(l) %weight <numinstr, 0>
 %{
-emit(new LABEL(l.toString() + ":", l));
+emit(new InstrLABEL(l.toString() + ":", l));
 }%
 
 CONST<i,a>(c)=t %weight <numinstr, 1>
