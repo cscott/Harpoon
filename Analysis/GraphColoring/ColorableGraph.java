@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
  * graph colorers defined in this package.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraph.java,v 1.1.2.7 1999-02-01 19:13:42 pnkfelix Exp $ */
+ * @version $Id: ColorableGraph.java,v 1.1.2.8 1999-02-18 21:31:44 cananian Exp $ */
 
 public abstract class ColorableGraph extends Graph {
 
@@ -129,7 +129,7 @@ public abstract class ColorableGraph extends Graph {
     }
 
     /** Wrapper class for Enumeration that filters out hidden nodes. */
-    protected class HiddenFilteringEnum implements Enumeration {
+    protected static class HiddenFilteringEnum implements Enumeration {
 	Enumeration nodes;
 	ColorableNode next = null;
 
