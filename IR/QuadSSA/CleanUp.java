@@ -20,13 +20,13 @@ import harpoon.Util.UniqueFIFO;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CleanUp.java,v 1.1 1998-09-13 23:57:22 cananian Exp $
+ * @version $Id: CleanUp.java,v 1.2 1998-09-15 11:15:48 cananian Exp $
  * @see Translate
  */
 
 class CleanUp  {
     static void cleanup(HCode c) {
-	cleanup((Quad[]) c.getElements());
+	//cleanup((Quad[]) c.getElements());
     }
     private static void cleanup(Quad[] ql) {
 	// collect all the temps that are used somewhere reachable.
