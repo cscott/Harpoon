@@ -1,3 +1,5 @@
+---- Sep-11-98
+Optimize INSTANCEOF and COMPONENTOF in SCC.
 ---- Sep-10-98
 Change PHI implementation to not make phi function entries for
 local variables that have not yet been defined.  Change State initialization
