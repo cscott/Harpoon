@@ -244,11 +244,41 @@ public abstract class Code extends HCode
 		    addEdge(s, (Stm)labels.get(s.iffalse));
 		    break;
 		case ALLOC_EDGE_ARRAYS:
-		    visit((Stm)s);
-		    return;
+		    s.prev = predecessors.containsKey(s)?
+			new Edge[((Set)predecessors.get(s)).size()]:
+			    new Edge[0];
+		    Util.assert(successors.containsKey(s));
+		    s.next = new Edge[2];
+		    break;
 		case ASSIGN_EDGE_DATA:
-		    visit((Stm)s);
-		    return;
+		    Util.assert(successors.containsKey(s));
+		    Stm next; Set nextPred;
+		    
+		    if (s.iftrue.equals(s.iffalse)) { 
+			next = (Stm)labels.get(s.iftrue);
+			nextPred = (Set)predecessors.get(next);
+			Edge[] oldNextPrev = next.prev;
+			next.prev = new Edge[next.prev.length+1];
+			System.arraycopy(oldNextPrev, 0, 
+					 next.prev, 1, oldNextPrev.length);
+			Tree.addEdge(s, 0, next, nextPred.size()-1);
+			Tree.addEdge(s, 1, next, nextPred.size()-2);
+			nextPred.remove(s);
+		    }
+		    else { 
+			// Add true branch
+			next         = (Stm)labels.get(s.iftrue);
+			nextPred     = (Set)predecessors.get(next);
+			Tree.addEdge(s, 0, next, nextPred.size()-1);
+			nextPred.remove(s);
+			    
+			// Add false branch
+			next         = (Stm)labels.get(s.iffalse);
+			nextPred     = (Set)predecessors.get(next);
+			Tree.addEdge(s, 1, next, nextPred.size()-1);
+			nextPred.remove(s);
+		    }
+		    break;
 		default:
 		    throw new Error("Bad state");
 		}
@@ -304,7 +334,6 @@ public abstract class Code extends HCode
 		    int i=0;
 		    if (successors.containsKey(s)) { 
 			Set succ = (Set)successors.get(s);
-			s.next = new Edge[succ.size()];
 			for (Enumeration e = succ.elements(); 
 			     e.hasMoreElements();) { 
 			    Stm next     = (Stm)e.nextElement();
@@ -315,21 +344,6 @@ public abstract class Code extends HCode
 			succ.clear(); 
 			i=0;
 		    }
-		    else { s.next = new Edge[0]; } 
-		    
-		    if (predecessors.containsKey(s)) { 
-			Set pred = (Set)predecessors.get(s);
-			s.prev = new Edge[pred.size()];
-			for (Enumeration e = pred.elements(); 
-			     e.hasMoreElements();) { 
-			    Stm prev     = (Stm)e.nextElement();
-			    Set prevSucc = (Set)successors.get(prev);
-			    Tree.addEdge(prev, prevSucc.size()-1, s, i++);
-			    prevSucc.remove(s);
-			}
-			pred.clear();
-		    }
-		    else { s.prev = new Edge[0]; } 
 		    break;
 		default:
 		    throw new Error("Bad state: " + state);
@@ -373,17 +387,3 @@ public abstract class Code extends HCode
 	}
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
