@@ -26,11 +26,10 @@ public class CarController extends Node {
     //private boolean enabled = false;
     private boolean enabled = true;
 
-    private static final float idealX = 160;
-    private static final float idealY = 120;
-
     private InterruptTimer timer;
     //private EnableFrame frame;
+
+    private long commandLength = 100;
 
     public CarController() {
 	super(null);
@@ -42,83 +41,121 @@ public class CarController extends Node {
 	//frame = new EnableFrame();
     }
 
+    public void setCommandLength(long t) {
+	commandLength = t;
+    }
+
+    public void setInterruptTime(long t) {
+	timer.setInterruptTime(t);
+    }
+
     public void setEnabled(boolean b) {
 	this.enabled = b;
 	if (!b)
 	    this.timer.stop();
     }
 
+    //image is rotated 180 degrees
     public void process(ImageData id) {
+	System.out.println("CarController.process()");
 	//id should have c1, c2, c3 set
 	//either can come after RangeFind or
 	//be the result of an alert call
 	float x = id.c1;//pixel x location of target
         float y = id.c2;//pixel x location of target
 	float z = id.c3;//distance to target in inches
-
-        final float epsilon = 10;
+	int width = id.origWidth;
+	int height = id.origHeight;
+	double idealX = width/2.;
+	double idealY = height/2.;
+        double epsilonX = width/15.;
+	double epsilonY = height/20.;
 	
 	ImageData moveCommand = null;
 	ImageData dirCommand = null;
 	if (enabled) {
 	    //if too far, then always move foward
-	    if (y < idealY-epsilon) {
+	    if (y > idealY+epsilonY) {
+		System.out.println(" --Tank is too close.");
 		moveCommand =
-		    ImageDataManip.create(Command.SERVO_FORWARD_CONTINUE, 0);
+		    ImageDataManip.create(Command.SERVO_BACKWARD_CONTINUE, 0);
+		    //ImageDataManip.create(Command.SERVO_BACKWARD, commandLength);
 		//if too much to left, turn wheels left 
-		if (x < idealX-epsilon) {
-		    System.out.println("CarController: moving forward and left");
+		if (x > idealX+epsilonX) {
+		    System.out.println(" --Tank is too far right");
+		    System.out.println("CarController: moving backward and left");
 		    dirCommand =
 			ImageDataManip.create(Command.SERVO_LEFT_CONTINUE, 0);
 		}
 		//else turn wheels right
-		else if (x > idealX+epsilon){
+		else if (x < idealX-epsilonX){
+		    System.out.println(" -- Tank is too far left.");
+		    System.out.println("CarController: moving backward and right");
+		    dirCommand =
+			ImageDataManip.create(Command.SERVO_RIGHT_CONTINUE, 0);
+		}
+		else {
+		    System.out.println(" --Tank is not too far right or left");
+		    System.out.println("CarController: moving backward");
+		    dirCommand =
+			ImageDataManip.create(Command.SERVO_STOP_TURN, 0);
+		}
+	    }
+	    //else if tank is too close move backwards
+	    else if (y < idealY-epsilonY){
+		System.out.println(" --Tank is too far.");
+		moveCommand =
+		    ImageDataManip.create(Command.SERVO_FORWARD_CONTINUE, 0);
+		    //ImageDataManip.create(Command.SERVO_FORWARD, commandLength);
+		//if too much to left, turn wheels right 
+		if (x > idealX+epsilonX) {
+		    System.out.println(" --Tank is too far right");
 		    System.out.println("CarController: moving forward and right");
 		    dirCommand =
 			ImageDataManip.create(Command.SERVO_RIGHT_CONTINUE, 0);
 		}
-		else {
-		}
-	    }
-	    //else if tank is too close move backwards
-	    else if (y > idealY+epsilon){
-		moveCommand =
-		    ImageDataManip.create(Command.SERVO_BACKWARD_CONTINUE, 0);
-		//if too much to left, turn wheels right 
-		if (x < idealX-epsilon) {
-		    System.out.println("CarController: moving backward and left");
-		    dirCommand =
-			ImageDataManip.create(Command.SERVO_RIGHT_CONTINUE, 0);
-		}
 		//else turn wheels left
-		else if (x > idealX+epsilon) {
-		    System.out.println("CarController: moving backward and right");
+		else if (x < idealX-epsilonX) {
+		    System.out.println(" -- Tank is too far left.");
+		    System.out.println("CarController: moving forward and left");
 		    dirCommand =
 			ImageDataManip.create(Command.SERVO_LEFT_CONTINUE, 0);
+		}
+		else {
+		    System.out.println(" --Tank is not too far right or left");
+		    System.out.println("CarController: moving forwards");
+		    dirCommand =
+			ImageDataManip.create(Command.SERVO_STOP_TURN, 0);
 		}
 	    }
 	    //else [tank is at just the right distance]
 	    else {
+		System.out.println(" --Tank is just the right distance.");
 		//if tank is too far left, turn wheels right,
 		//and move backwards
-		if (x < idealX-epsilon) {
-		    System.out.println("CarController: moving backward and right");
-		    moveCommand =
-			ImageDataManip.create(Command.SERVO_BACKWARD_CONTINUE, 0);
-		    dirCommand =
-			ImageDataManip.create(Command.SERVO_RIGHT_CONTINUE, 0);		
-		}
-		//else if tank is too far right, turn wheels left
-		//and move backwards
-		else if (x > idealX+epsilon) {
+		if (x > idealX+epsilonX) {
+		    System.out.println(" --Tank is too far right.");
 		    System.out.println("CarController: moving backward and left");
 		    moveCommand =
 			ImageDataManip.create(Command.SERVO_BACKWARD_CONTINUE, 0);
+			//ImageDataManip.create(Command.SERVO_BACKWARD, commandLength);
 		    dirCommand =
 			ImageDataManip.create(Command.SERVO_LEFT_CONTINUE, 0);		
 		}
+		//else if tank is too far right, turn wheels left
+		//and move backwards
+		else if (x < idealX-epsilonX) {
+		    System.out.println(" --Tank is too far left.");
+		    System.out.println("CarController: moving backward and right");
+		    moveCommand =
+			ImageDataManip.create(Command.SERVO_BACKWARD_CONTINUE, 0);
+			//ImageDataManip.create(Command.SERVO_BACKWARD, commandLength);
+		    dirCommand =
+			ImageDataManip.create(Command.SERVO_RIGHT_CONTINUE, 0);		
+		}
 		//else [tank is centered, stop wheels]
 		else {
+		    System.out.println(" --Tank is perfect.");
 		    System.out.println("CarController: stopping and centering");
 		    moveCommand =
 			ImageDataManip.create(Command.SERVO_STOP_MOVING, 0);
@@ -138,8 +175,18 @@ public class CarController extends Node {
 	    dirCommand =
 		ImageDataManip.create(Command.SERVO_STOP_TURN, 0);
 	}
+
+	//System.out.println("["+System.currentTimeMillis()+"]CarController: about to execute commands");
+	if (moveCommand == null) {
+	    System.out.println("moveCommand is null");
+	}
+	if (dirCommand == null) {
+	    System.out.println("dirCommand is null");
+	}
 	super.process(dirCommand);
 	super.process(moveCommand);
+	//System.out.println("["+System.currentTimeMillis()+"]CarController: done executing commands");
+
     }
 
     private class InterruptTimer implements Runnable {
@@ -148,15 +195,20 @@ public class CarController extends Node {
 	private boolean started = false;
 
 	//delay could be as long as "timeUntilInterrupt+sleepTime" milliseconds
-	private static final long sleepTime = 200;
-	private static final long timeUntilInterrupt = 2000;
+	private static final long sleepTime = 150;
+	private long timeUntilInterrupt = 750;
 
 	InterruptTimer() {
 	    Thread t = new Thread(this);
 	    t.start();
 	}
 
+	public void setInterruptTime(long t) {
+	    timeUntilInterrupt = t;
+	}
+
 	public void reset() {
+	    System.out.println("["+System.currentTimeMillis()+"]InterruptTimer: resetCalled");
 	    lastCommandTime = System.currentTimeMillis();
 	    if (!started)
 		started = true;
@@ -176,13 +228,14 @@ public class CarController extends Node {
 		}
 		if (started &&
 		    (System.currentTimeMillis()-lastCommandTime > timeUntilInterrupt)) {
+		    System.out.println("["+System.currentTimeMillis()+"]InterruptTimer: interrupting");
 		    ImageData servoCommand;
 		    servoCommand =
 			ImageDataManip.create(Command.SERVO_STOP_MOVING, 0);
 		    CarController.super.process(servoCommand);
-		    servoCommand =
-			ImageDataManip.create(Command.SERVO_STOP_TURN, 0);
-		    CarController.super.process(servoCommand);
+		    //servoCommand =
+		    //ImageDataManip.create(Command.SERVO_STOP_TURN, 0);
+		    //CarController.super.process(servoCommand);
 		    stop();
 		}
 	    }
