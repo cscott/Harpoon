@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.158 $)dnl
+AC_REVISION($Revision: 1.159 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -211,7 +211,7 @@ no|yes)  ;;
 # is configured without gtk support as well).  -- CSA 23-Sep-2003
 #     AC_CHECK_LIB(gdk, gdk_image_get)
 #     AC_CHECK_LIB(gtk, gtk_object_newv)
-     AC_CHECK_LIB(gtkpeer, Java_gnu_java_awt_peer_gtk_GtkWindowPeer_create)
+##     AC_CHECK_LIB(gtkpeer, Java_gnu_java_awt_peer_gtk_GtkWindowPeer_create)
 # (note that AC_CHECK_LIB will *not* find libgtkpeer on systems without
 #  gtk support, and will gracefully fail to add -lgtkpeer to LIBS on
 #  these platforms)
