@@ -19,7 +19,7 @@ __ll_lshift:
     .set noreorder
     .cpload $25
     .set reorder
-    .frame $sp, 0, $31
+    .frame sp, 0, $31
     sll  t0, a2, 32-6
     bgez t0, 1f
     sll  v1, a0, a2
@@ -43,7 +43,7 @@ __ull_rshift:
     .set noreorder
     .cpload $25
     .set reorder
-    .frame $sp, 0, $31
+    .frame sp, 0, $31
     sll  t0, a2, 32-6
     bgez t0, 1f
     srl  v0, a1, a2
@@ -67,7 +67,7 @@ __ll_rshift:
     .set noreorder
     .cpload $25
     .set reorder
-    .frame $sp, 0, $31
+    .frame sp, 0, $31
     sll  t0, a2, 32-6
     bgez t0, 1f
     sra  v0, a1, a2
@@ -81,7 +81,7 @@ __ll_rshift:
 2:  sra  v1, a1, a2
 3:
     j    $31
-.end _ll_rshift
+.end __ll_rshift
 
     /* V1:V0 = A1:A0 * A3:A2  12 inst, 42 cycles */
 .globl __ll_mul
@@ -90,7 +90,7 @@ __ll_mul:
     .set noreorder
     .cpload $25
     .set reorder
-    .frame $sp, 0, $31
+    .frame sp, 0, $31
     multu  a0, a2
     mflo   v0
     mfhi   v1
@@ -119,9 +119,9 @@ sub Call_SoftFp {
   print '.set noreorder', "\n";
   print '.cpload $25', "\n";
   print '.set reorder', "\n";
-  print '.frame $sp, 0, $31', "\n";
-  print 'subu   $sp, 32', "\n";
-  print 'sw     $31, 24($sp)', "\n";
+  print '.frame sp, 32, $31', "\n";
+  print 'subu   sp, 32', "\n";
+  print 'sw     $31, 24(sp)', "\n";
 
   my $reg    = 4;
   my $preg   = 4;
@@ -165,8 +165,8 @@ sub Call_SoftFp {
     print "not    v0, v0 \n";
   }
 print<<'ENDEPILOG'
-lw     $31, 24($sp)
-addu   $sp, 32
+lw     $31, 24(sp)
+addu   sp, 32
 j      $31
 ENDEPILOG
 }
