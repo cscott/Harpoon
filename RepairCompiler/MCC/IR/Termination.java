@@ -67,20 +67,26 @@ public class Termination {
 	generateconjunctionnodes();
 	constraintdependence=new ConstraintDependence(state,this);
 
+        debugmsg("Generating scope nodes");
 	generatescopenodes();
+        debugmsg("Generating repair nodes");
 	generaterepairnodes();
+        debugmsg("Generating data structure nodes");
 	generatedatastructureupdatenodes();
+        debugmsg("Generating compensation nodes");
 	generatecompensationnodes();
-
+        debugmsg("Generating abstract edges");
 	generateabstractedges();
+        debugmsg("Generating scope edges");
 	generatescopeedges();
+        debugmsg("Generating update edges");
 	generateupdateedges();
 
 
 	HashSet superset=new HashSet();
 	superset.addAll(conjunctions);
 	HashSet closureset=new HashSet();
-
+        debugmsg("Computing closure");
 	GraphNode.computeclosure(superset,closureset);
 	try {
 	    GraphNode.DOTVisitor.visit(new FileOutputStream("graph.dot"),superset);
@@ -287,11 +293,11 @@ public class Termination {
                 } else {
                     for(int i=0;i<conj.size();i++) {
                         DNFPredicate dp=conj.get(i);
-                        if (getConstraint(gn)!=null&&
-                            abstractinterferes.interferemodifies(ar,getConstraint(gn),dp,cons))
-                            continue;
 
-                        if (abstractinterferes.interfereswithpredicate(ar,dp)) {
+                        if (!abstractinterferes.interfereswithpredicate(ar,dp))
+                            continue;
+                        if (getConstraint(gn)==null||
+                            !abstractinterferes.interferemodifies(ar,getConstraint(gn),dp,cons)) {
                             GraphNode.Edge e=new GraphNode.Edge("interferes",gn2);
                             gn.addEdge(e);
                             break;

@@ -134,9 +134,24 @@ class AbstractInterferes {
             if (!leftside.equals(mapping,e2))
                 return false;
         }
+
+
         /* Prune precondition using any ar's in the same conjunction */
         adjustcondition(precondition, ar);
         Conjunction conj=findConjunction(repair_c.getDNFConstraint(),ar.getPredicate());
+
+        /* We don't interfere with the same constraint, if there
+            aren't any shared state problems between different
+            bindings (which we've already checked for), and its a
+            different conjunction.  Because we wouldn't have repair it
+            if it wasn't already broken.  Doesn't appear to be needed,
+            the cycle algorithm will just eliminate one of the nodes.
+
+            if (repair_c==interfere_c) {
+            if (conj!=findConjunction(interfere_c.getDNFConstraint(),interfere_pred))
+            return true;
+            }*/
+
         for(int i=0;i<conj.size();i++) {
             DNFPredicate dp=conj.get(i);
             Set s=(Set)termination.predtoabstractmap.get(dp);
