@@ -66,7 +66,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.99 2000-07-13 01:53:25 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.100 2000-07-13 02:17:13 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -92,6 +92,28 @@ public class LocalCffRegAlloc extends RegAlloc {
     // maps Instr:n -> Instr:b where `n' is backed by `b' with respect
     // to Derivation information.
     private Map backedInstrs;
+
+    private void back(Instr i, Instr back) {
+	if (backedInstrs.keySet().contains(back)) {
+	    backedInstrs.put(i, backedInstrs.get(back));
+	} else {
+	    backedInstrs.put(i, back);
+	}
+    }
+
+    private Instr getBack(Instr i) {
+	// unforutnately, back(..) alone can't keep transitive
+	// relations (A -> B -> C) out of backedInstrs on its own,
+	// because A -> B could be added first and then followed by 
+	// B -> C.  Am thinking that maintaining the A -> C mapping
+	// all the time is too expensive...
+	
+	Instr b = (Instr) backedInstrs.get(i);
+	while(backedInstrs.keySet().contains(b)) {
+	    b = (Instr) backedInstrs.get(b);
+	}
+	return b;
+    }
 
     // Used for supporting Derivation information
     private ReachingDefs reachingDefs;
@@ -123,7 +145,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	return new BackendDerivation() {
 	    private HCodeElement orig(HCodeElement h){
 		if (backedInstrs.containsKey(h)) {
-		    HCodeElement h2 = (HCodeElement) backedInstrs.get(h);
+		    HCodeElement h2 = getBack((Instr)h);
 		    // System.out.println(h+" is backed by "+h2);
 		    return h2;
 		} else {
@@ -267,11 +289,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    Instr pre = (Instr) replace.next();
 	    Instr post = (Instr) replace.next();
 	    Instr.replace(pre, post);
-	    if (backedInstrs.keySet().contains(pre)) {
-		backedInstrs.put(post, backedInstrs.get(pre));
-	    } else {
-		backedInstrs.put(post, pre);
-	    }
+	    back(post, pre);
 	}
    }
 
@@ -805,7 +823,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			// System.out.println("adding "+load+" to "+regfile);
 			spillLoads.add(load);
 			spillLoads.add(iloc);
-			backedInstrs.put(load, i);
+			back(load, i);
 			instrToHTempMap.put(load, coalescedTemps);
 		    }
 
@@ -1390,7 +1408,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 	    spillStores.add(spillInstr);
 	    spillStores.add(loc);
-	    backedInstrs.put(spillInstr, src);
+	    back(spillInstr, src);
 	    instrToHTempMap.put(spillInstr, coalescedTemps);
 	}
 
