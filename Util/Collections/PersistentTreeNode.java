@@ -9,7 +9,7 @@ import java.util.Comparator;
  * search tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentTreeNode.java,v 1.4 2003-04-19 01:15:22 salcianu Exp $
+ * @version $Id: PersistentTreeNode.java,v 1.5 2003-05-15 22:16:05 cananian Exp $
  */
 class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V> 
     implements java.io.Serializable {
@@ -58,11 +58,7 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
      * @return 0 if <code>n==null</code>, else 1+size(n.left)+size(n.right)
      */
     static <K,V> int size(PersistentTreeNode<K,V> n) {
-	return (n==null) ? 0 : (1 + size2(n.left) + size2(n.right));
-    }
-    // XXX BUG IN JAVAC!  inference on recursive methods seems to be broken.
-    private static <K,V> int size2(PersistentTreeNode<K,V> n) {
-	return size(n);
+	return (n==null) ? 0 : (1 + size(n.left) + size(n.right));
     }
     /** Returns the <code>PersistentTreeNode</code> matching <code>key</code>
      *  if any, else <code>null</code>. */
@@ -73,13 +69,7 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
 	int r = c.compare(key, n.key);
 	return
 	    (r ==0) ? n :
-	    (r < 0) ? get2(n.left, c, key) : get2(n.right, c, key);
-    }
-    // XXX BUG IN JAVAC!  inference on recursive methods seems to be broken.
-    private static <K,V>
-	PersistentTreeNode<K,V> get2(PersistentTreeNode<K,V> n,
-				     Comparator<K> c, K key) {
-	return get(n,c,key);
+	    (r < 0) ? get(n.left, c, key) : get(n.right, c, key);
     }
 
     /** Returns a node rooting a tree containing all the mappings in
