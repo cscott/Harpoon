@@ -9,10 +9,10 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 
 /**
- * <code>THROW</code> represents a <Code>throw<code> statement.
+ * <code>THROW</code> represents a <Code>throw</code> statement.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: THROW.java,v 1.1.2.4 1998-12-17 21:38:37 cananian Exp $
+ * @version $Id: THROW.java,v 1.1.2.5 1998-12-21 02:10:28 cananian Exp $
  */
 public class THROW extends Quad {
     /* The exception object to throw. */

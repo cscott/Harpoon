@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * the <code>harpoon.IR.Properties.Edges</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.6.2.1 1998-12-01 10:22:46 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.6.2.2 1998-12-21 02:10:20 cananian Exp $
  */
 
 public class DomFrontier  {
@@ -48,7 +48,7 @@ public class DomFrontier  {
 
     /** Return an array of <code>HCodeElement</code>s in the (post)dominance
      *  frontier of <code>n</code>.
-     *  @param hc the <code>HCode</code> containing <code>n</code.
+     *  @param hc the <code>HCode</code> containing <code>n</code>.
      */
     public HCodeElement[] df(HCode hc, HCodeElement n) {
 	analyze(hc); 
@@ -60,7 +60,7 @@ public class DomFrontier  {
     }
     /** Return an Enumeration of <code>HCodeElement</code>s in the 
      *  (post)dominance frontier of <code>n</code>.
-     *  @param hc the <code>HCode</code> containing <code>n</code.
+     *  @param hc the <code>HCode</code> containing <code>n</code>.
      */
     public Enumeration dfE(HCode hc, HCodeElement n) {
 	analyze(hc);

@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * to a compiler temporary.<p>
  * The <code>type</code> field of a <code>CONST</code> must be one of:
  * <code>String</code>, <code>int</code>, <code>long</code>,
- * <code>float</code>, <code>double</code> or <code>void</code.
+ * <code>float</code>, <code>double</code> or <code>void</code>.
  * A <code>void</code> type corresponds to a <code>null</code> literal
  * constant, and in this case the <code>value</code> field will be
  * <code>null</code>.  In all other cases, <code>value</code> will contain
@@ -29,7 +29,7 @@ import harpoon.Util.Util;
  * </UL>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.1.2.4 1998-12-17 21:38:36 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.5 1998-12-21 02:10:28 cananian Exp $
  */
 
 public class CONST extends Quad {
