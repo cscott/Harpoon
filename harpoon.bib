@@ -1,5 +1,5 @@
 % -*-bibtex-*- This is a BibTeX document.
-% $Id: harpoon.bib,v 1.52 1999-07-08 00:55:00 cananian Exp $
+% $Id: harpoon.bib,v 1.53 1999-07-08 21:40:25 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Various journal and conference string definitions:
 @string{CACM = {Communications of the ACM}}
@@ -42,6 +42,10 @@
 @string{PPOPP99 = "Proceedings of the 7th {ACM} {SIGPLAN} symposium on
                    Principles and practice of parallel programming ({PPoPP})"}
 @string{TOPLAS = "{ACM} Transactions on Programming Languages and Systems"}
+@string{CC96 = "Proceedings of the Sixth International Conference on
+                  Compiler Construction"}
+@string{CC98 = "Proceedings of the Seventh International Conference on
+                  Compiler Construction"}
 @string{ASIAN97 = "Advances in Computing Science --- {ASIAN} '97.  Third
                   Asian Computing Conference.  Proceedings"}
 @string{TACAS97 = "Tools and Algorithms for the Construction and
@@ -1170,8 +1174,7 @@
                   Raymond Lo and Mark Streich},
   title = 	 {Effective representation of aliases and indirect
                   memory operations in {SSA} form},
-  booktitle = 	 {Proceedings of the Sixth International Conference on
-                  Compiler Construction},
+  booktitle = 	 CC96,
   pages =	 {253-267},
   year =	 1996,
   month =	 apr,
@@ -1233,6 +1236,18 @@
   month =	 jun,
   url =		 {http://www.acm.org/pubs/citations/proceedings/pldi/277650/p26-lo/},
   annote =	 {Lambda functions and SSU form.  Load/store duality.}
+}
+
+@InProceedings{kennedy98:strength,
+  author = 	 {Robert Kennedy and Fred Chow and Peter Dahl and
+                  Shin-Ming Liu and Raymond Lo and Mark Streich},
+  title = 	 {Strength Reduction via {SSAPRE}},
+  booktitle = 	 CC98,
+  pages =	 {144-158},
+  year =	 1998,
+  address =	 {Lisbon, Portugal},
+  month =	 apr,
+  annote =	 {Use of SSAPRE to do loop-invariant removal, etc.}
 }
 
 %%%% Misc.
