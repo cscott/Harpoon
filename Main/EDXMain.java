@@ -78,7 +78,7 @@ import harpoon.Util.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDXMain.java,v 1.1.2.5 2000-07-03 20:01:31 bdemsky Exp $
+ * @version $Id: EDXMain.java,v 1.1.2.6 2000-07-05 01:27:31 bdemsky Exp $
  */
 public class EDXMain extends harpoon.IR.Registration {
  
@@ -343,7 +343,8 @@ public class EDXMain extends harpoon.IR.Registration {
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     
 	HCodeFactory sahcf = frame.getCodeFactory(hcf);
-	sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
+	if (sahcf!=null)
+	    sahcf = new harpoon.ClassFile.CachingCodeFactory(sahcf);
 
 	if (classHierarchyFilename != null) {
 	    try {
