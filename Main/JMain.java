@@ -29,7 +29,7 @@ import harpoon.Util.WorkSet;
  * <code>JMain</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JMain.java,v 1.1.2.5 1999-11-15 19:28:21 bdemsky Exp $
+ * @version $Id: JMain.java,v 1.1.2.6 1999-11-17 15:34:56 bdemsky Exp $
  */
 public abstract class JMain extends harpoon.IR.Registration {
 
@@ -81,12 +81,15 @@ public abstract class JMain extends harpoon.IR.Registration {
 	ClassHierarchy ch2=new QuadClassHierarchy(todor,hcf1);
 	Set cm1=ch1.callableMethods();
 	Set cm2=ch2.callableMethods();
-	Iterator iterate=cm1.iterator();
+	Set cmx=ch1.classes();
+	Iterator iterate=cmx.iterator();
+
 	WorkSet classes=new WorkSet();
 	while(iterate.hasNext()) {
-	    HClass cl=((HMethod)iterate.next()).getDeclaringClass();
-	    if ((!cl.isArray())&&(!cl.isPrimitive()))
+	    HClass cl=(HClass)iterate.next();
+	    if ((!cl.isPrimitive())&&(!cl.isArray())) {
 		classes.add(cl);
+	    }
 	}
 	HClass interfaceClasses[] = new HClass[classes.size()];
 	iterate=classes.iterator();
@@ -101,9 +104,11 @@ public abstract class JMain extends harpoon.IR.Registration {
 	for (int i=0; i<interfaceClasses.length; i++) {
 	    HMethod hm1[] = interfaceClasses[i].getDeclaredMethods();
 	    WorkSet hmo=new WorkSet();
+	    System.out.println(interfaceClasses[i]+":");
 	    for (int ind=0;ind<hm1.length;ind++) {
-		if (cm1.contains(hm1[ind])||cm2.contains(hm1[ind]))
+		//		if (cm1.contains(hm1[ind])||cm2.contains(hm1[ind])) {
 		    hmo.add(hm1[ind]);
+		    //}
 	    }
 	    HMethod hm[] = new HMethod[hmo.size()];
 	    Iterator hmiter=hmo.iterator();
