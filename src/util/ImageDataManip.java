@@ -277,6 +277,46 @@ public class ImageDataManip {
 	return create(id, rvals, gvals, bvals, x, y, width, height);
     }
 
+    /**
+       Draws a red arrow from the center of the specified box outwards at the specified angle.
+       The arrow streches from the center of the box to the edge of an ellipse that encompasses the box.
+       This "arrow" is actually a line with a circle drawn around the tip.
+
+       @param id The {@link ImageData} onto which the arrow will be drawn.
+       @param x The left most <code>x</code> position of the box that defines the arrow.
+       @param y The upper most <code>y</code> position of the box that defines the arrow.
+       @param width The width of the box that defines the arrow.
+       @param height The height of the box that defines the arrow.
+       @param angle The angle (in radians) at which the arrow will be drawn. Since pixel coordinates are on an "upside-down"
+       cartesian plane, an angle of 0 is straight to the right, an angle of PI/2 is straight down, and an angle of
+       -PI/2 is straight up.
+    */
+    public static void drawArrow(ImageData id, int x, int y, int width, int height, double angle) {
+
+	int centerX = width/2+x;
+	int centerY = height/2+y;
+
+	int tipX = (int)(width*Math.cos(angle)/2+centerX);
+	int tipY = (int)(height*Math.sin(angle)/2+centerY);
+	
+	int steps = Math.max(Math.abs(tipX-centerX), Math.abs(tipY-centerY));
+		double incX = (tipX-centerX)/(double)steps;
+	double incY = (tipY-centerY)/(double)steps;
+	double x2 = centerX;
+	double y2 = centerY;
+	
+	for (int count = 0; count < steps; count++) {
+		id.rvals[(int)(x2+id.width*(int)y2)] = (byte)255;
+		id.gvals[(int)(x2+id.width*(int)y2)] = (byte)0;
+		id.bvals[(int)(x2+id.width*(int)y2)] = (byte)0;
+		x2 += incX;
+		y2 += incY;
+	}
+
+	int diameter = Math.min(id.width, id.height)/24;
+	ellipse(id, tipX-diameter/2, tipY-diameter/2, diameter, diameter, false);
+    }
+
     /** Draw a red ellipse around the object at <code>(x,y)-(x+width,y+height)</code>.
      *  Draws outside the bounding box.
      *
