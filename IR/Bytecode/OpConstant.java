@@ -4,7 +4,13 @@
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
-import harpoon.ClassFile.Raw.Constant.*;
+import harpoon.IR.RawClass.Constant;
+import harpoon.IR.RawClass.ConstantValue;
+import harpoon.IR.RawClass.ConstantDouble;
+import harpoon.IR.RawClass.ConstantFloat;
+import harpoon.IR.RawClass.ConstantInteger;
+import harpoon.IR.RawClass.ConstantLong;
+import harpoon.IR.RawClass.ConstantString;
 import harpoon.Util.Util;
 
 /**
@@ -17,14 +23,14 @@ import harpoon.Util.Util;
  * and <code>CONSTANT_String</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpConstant.java,v 1.2.2.1 1998-12-21 21:21:28 cananian Exp $
+ * @version $Id: OpConstant.java,v 1.2.2.2 1999-01-19 03:44:33 cananian Exp $
  * @see Operand
  * @see Instr
- * @see harpoon.ClassFile.Raw.Constant.ConstantDouble
- * @see harpoon.ClassFile.Raw.Constant.ConstantFloat
- * @see harpoon.ClassFile.Raw.Constant.ConstantInteger
- * @see harpoon.ClassFile.Raw.Constant.ConstantLong
- * @see harpoon.ClassFile.Raw.Constant.ConstantString
+ * @see harpoon.IR.RawClass.ConstantDouble
+ * @see harpoon.IR.RawClass.ConstantFloat
+ * @see harpoon.IR.RawClass.ConstantInteger
+ * @see harpoon.IR.RawClass.ConstantLong
+ * @see harpoon.IR.RawClass.ConstantString
  */
 public final class OpConstant extends Operand {
   final Object value;

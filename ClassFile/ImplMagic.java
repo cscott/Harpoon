@@ -3,8 +3,13 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
-import harpoon.ClassFile.Raw.Attribute.*;
-import harpoon.ClassFile.Raw.Constant.*;
+import harpoon.IR.RawClass.AttributeCode;
+import harpoon.IR.RawClass.AttributeConstantValue;
+import harpoon.IR.RawClass.AttributeExceptions;
+import harpoon.IR.RawClass.AttributeSourceFile;
+import harpoon.IR.RawClass.AttributeSynthetic;
+import harpoon.IR.RawClass.ConstantClass;
+import harpoon.IR.RawClass.ConstantValue;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -14,24 +19,24 @@ import java.util.Vector;
 /**
  * <code>ImplMagic</code> provides concrete implementation for
  * <code>HClass</code>, <code>HMethod</code>, <code>HConstructor</code>,
- * and <code>HField</code> using the <code>harpoon.ClassFile.Raw</code>
+ * and <code>HField</code> using the <code>harpoon.IR.RawClass</code>
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5.2.4 1999-01-17 04:38:03 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.2.5 1999-01-19 03:44:27 cananian Exp $
  */
 abstract class ImplMagic  { // wrapper for the Real McCoy.
 
     static HClass forStream(java.io.InputStream is) throws java.io.IOException{
-	harpoon.ClassFile.Raw.ClassFile raw =
-	    new harpoon.ClassFile.Raw.ClassFile(is);
+	harpoon.IR.RawClass.ClassFile raw =
+	    new harpoon.IR.RawClass.ClassFile(is);
 	return new MagicClass(raw);
     }
 
     static class MagicClass extends HClassCls {
 	/** Creates a <code>MagicClass</code> from a 
-	 *  <code>harpoon.ClassFile.Raw.ClassFile</code>. */
-	MagicClass(harpoon.ClassFile.Raw.ClassFile classfile) {
+	 *  <code>harpoon.IR.RawClass.ClassFile</code>. */
+	MagicClass(harpoon.IR.RawClass.ClassFile classfile) {
 	    this.name = classfile.this_class().name().replace('/','.');
 	    this.hashcode = super.hashCode();
 	    this.register();
@@ -69,7 +74,7 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
     
     // utility function to initialize HMethod/HConstructor/HInitializer.
     static private final void initMethod(HMethod _this, HClass parent,
-		      harpoon.ClassFile.Raw.MethodInfo methodinfo) {
+		      harpoon.IR.RawClass.MethodInfo methodinfo) {
 	_this.parent = parent;
 	_this.name = methodinfo.name();
 	_this.modifiers = methodinfo.access_flags.access_flags;
@@ -153,8 +158,8 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    { return harpoon.IR.Bytecode.Code.codename; }
 	    public HCode convert(HMethod m)
 	    {
-		harpoon.ClassFile.Raw.MethodInfo methodinfo =
-		    (harpoon.ClassFile.Raw.MethodInfo) repository.get(m);
+		harpoon.IR.RawClass.MethodInfo methodinfo =
+		    (harpoon.IR.RawClass.MethodInfo) repository.get(m);
 		if (methodinfo==null) return null;
 		else repository.remove(m); // make methodinfo garbage.
 		return new harpoon.IR.Bytecode.Code(m, methodinfo);
@@ -164,9 +169,9 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 
     static class MagicMethod extends HMethod {
 	/** Creates a <code>MagicMethod</code> from a 
-	 *  <code>harpoon.ClassFile.Raw.MethodInfo</code>. */
+	 *  <code>harpoon.IR.RawClass.MethodInfo</code>. */
 	MagicMethod(HClass parent, 
-		    harpoon.ClassFile.Raw.MethodInfo methodinfo) {
+		    harpoon.IR.RawClass.MethodInfo methodinfo) {
 	    initMethod(this, parent, methodinfo);
 	}
 	// optimize hashcode.
@@ -179,9 +184,9 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 
     static class MagicConstructor extends HConstructor {
 	/** Creates a <code>MagicConstructor</code> from a 
-	 *  <code>harpoon.ClassFile.Raw.MethodInfo</code>. */
+	 *  <code>harpoon.IR.RawClass.MethodInfo</code>. */
 	MagicConstructor(HClass parent,
-			 harpoon.ClassFile.Raw.MethodInfo methodinfo) {
+			 harpoon.IR.RawClass.MethodInfo methodinfo) {
 	    initMethod(this, parent, methodinfo);
 	}
 	// optimize hashcode.
@@ -194,9 +199,9 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 
     static class MagicInitializer extends HInitializer {
 	/** Creates a <code>MagicInitializer</code> from a
-	 *  <code>harpoon.ClassFile.Raw.MethodInfo</code>. */
+	 *  <code>harpoon.IR.RawClass.MethodInfo</code>. */
 	MagicInitializer(HClass parent,
-			 harpoon.ClassFile.Raw.MethodInfo methodinfo) {
+			 harpoon.IR.RawClass.MethodInfo methodinfo) {
 	    initMethod(this, parent, methodinfo);
 	}
 	// optimize hashcode.
@@ -209,9 +214,9 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 
     static class MagicField extends HField {
 	/** Creates a <code>MagicField</code> from a 
-	 *  <code>harpoon.ClassFile.Raw.FieldInfo</code>. */
+	 *  <code>harpoon.IR.RawClass.FieldInfo</code>. */
 	MagicField(HClass parent, 
-		   harpoon.ClassFile.Raw.FieldInfo fieldinfo) {
+		   harpoon.IR.RawClass.FieldInfo fieldinfo) {
 	    this.parent = parent;
 	    this.type = new ClassPointer(fieldinfo.descriptor());
 	    this.name = fieldinfo.name();

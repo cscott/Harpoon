@@ -4,7 +4,11 @@
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
-import harpoon.ClassFile.Raw.Constant.*;
+import harpoon.IR.RawClass.Constant;
+import harpoon.IR.RawClass.ConstantClass;
+import harpoon.IR.RawClass.ConstantNameAndType;
+import harpoon.IR.RawClass.ConstantMethodref;
+import harpoon.IR.RawClass.ConstantInterfaceMethodref;
 
 /**
  * <code>OpMethod</code> represents a method reference operand of a
@@ -13,9 +17,9 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>CONSTANT_InterfaceMethodref</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpMethod.java,v 1.2.2.1 1998-12-21 21:21:29 cananian Exp $
- * @see harpoon.ClassFile.Raw.Constant.ConstantMethodref
- * @see harpoon.ClassFile.Raw.Constant.ConstantInterfaceMethodref
+ * @version $Id: OpMethod.java,v 1.2.2.2 1999-01-19 03:44:33 cananian Exp $
+ * @see harpoon.IR.RawClass.ConstantMethodref
+ * @see harpoon.IR.RawClass.ConstantInterfaceMethodref
  */
 public final class OpMethod extends Operand {
   final boolean isInterfaceMethod;

@@ -4,11 +4,11 @@
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
-import harpoon.ClassFile.Raw.MethodInfo;
-import harpoon.ClassFile.Raw.Attribute.AttributeCode;
-import harpoon.ClassFile.Raw.Attribute.AttributeLineNumberTable;
-import harpoon.ClassFile.Raw.Attribute.LineNumberTable;
-import harpoon.ClassFile.Raw.Constant.Constant;
+import harpoon.IR.RawClass.MethodInfo;
+import harpoon.IR.RawClass.AttributeCode;
+import harpoon.IR.RawClass.AttributeLineNumberTable;
+import harpoon.IR.RawClass.LineNumberTable;
+import harpoon.IR.RawClass.Constant;
 import harpoon.Util.ArrayEnumerator;
 import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
@@ -21,7 +21,7 @@ import java.util.Enumeration;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.4 1998-12-23 22:09:54 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.5 1999-01-19 03:44:33 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -145,7 +145,7 @@ public class Code extends HCode {
 	}
       }
       // Make tryBlocks table.
-      harpoon.ClassFile.Raw.Attribute.ExceptionTable et[] =
+      harpoon.IR.RawClass.ExceptionTable et[] =
 	getCode().exception_table;
       tryBlocks = new ExceptionEntry[et.length];
       for (int i=0; i<tryBlocks.length; i++) { // for each table entry...

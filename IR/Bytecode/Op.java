@@ -18,8 +18,8 @@ package harpoon.IR.Bytecode;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.3 1998-10-11 03:01:16 cananian Exp $
- * @see     harpoon.ClassFile.Raw.Attribute.AttributeCode
+ * @version $Id: Op.java,v 1.3.2.1 1999-01-19 03:44:33 cananian Exp $
+ * @see     harpoon.IR.RawClass.AttributeCode
  * @see     harpoon.IR.Bytecode.Instr
  * @see     harpoon.IR.Bytecode.Code
  */

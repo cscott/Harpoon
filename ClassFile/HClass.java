@@ -29,8 +29,8 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.6 1999-01-17 04:36:11 cananian Exp $
- * @see harpoon.ClassFile.Raw.ClassFile
+ * @version $Id: HClass.java,v 1.41.2.7 1999-01-19 03:44:26 cananian Exp $
+ * @see harpoon.IR.RawClass.ClassFile
  */
 public abstract class HClass extends HPointer {
   static Hashtable dsc2cls = new Hashtable();
@@ -639,7 +639,7 @@ public abstract class HClass extends HPointer {
   /**
    * Return the name of the source file for this class, or a
    * zero-length string if the information is not available.
-   * @see harpoon.ClassFile.Raw.Attribute.AttributeSourceFile
+   * @see harpoon.IR.RawClass.AttributeSourceFile
    */
   public String getSourceFile() { return ""; }
 

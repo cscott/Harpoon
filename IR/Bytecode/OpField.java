@@ -4,7 +4,8 @@
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
-import harpoon.ClassFile.Raw.Constant.*;
+import harpoon.IR.RawClass.Constant;
+import harpoon.IR.RawClass.ConstantFieldref;
 
 /**
  * <code>OpField</code> represents a field reference operand of a
@@ -12,8 +13,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>CONSTANT_Fieldref</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpField.java,v 1.2.2.1 1998-12-21 21:21:29 cananian Exp $
- * @see harpoon.ClassFile.Raw.Constant.ConstantFieldref
+ * @version $Id: OpField.java,v 1.2.2.2 1999-01-19 03:44:33 cananian Exp $
+ * @see harpoon.IR.RawClass.ConstantFieldref
  */
 public final class OpField extends Operand {
   final HField hfield;

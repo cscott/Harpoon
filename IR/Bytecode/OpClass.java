@@ -4,7 +4,8 @@
 package harpoon.IR.Bytecode;
 
 import harpoon.ClassFile.*;
-import harpoon.ClassFile.Raw.Constant.*;
+import harpoon.IR.RawClass.Constant;
+import harpoon.IR.RawClass.ConstantClass;
 
 /**
  * <code>OpClass</code> represents a class reference operand of a
@@ -12,8 +13,8 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>CONSTANT_Class</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpClass.java,v 1.2.2.1 1998-12-21 21:21:28 cananian Exp $
- * @see harpoon.ClassFile.Raw.Constant.ConstantClass
+ * @version $Id: OpClass.java,v 1.2.2.2 1999-01-19 03:44:33 cananian Exp $
+ * @see harpoon.IR.RawClass.ConstantClass
  */
 public final class OpClass extends Operand {
   final HClass hclass;
