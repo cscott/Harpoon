@@ -1,0 +1,32 @@
+<HTML>
+<BODY>
+A high-level quadruple-based IR.
+<p>
+Quad form is used for most analysis and transformation in the
+compiler.  It maintains strong typing, and tries to be minimal.
+There are three main variants:<UL>
+
+<LI><code>QuadWithTry</code>, which contains <code>HANDLER</code>
+quads to handle thrown exceptions, and does implicit safety-checking.
+
+<LI><code>QuadNoSSA</code> which handles all exceptions explicitly.
+
+<LI><code>QuadSSA</code> which is the same as the above, except it is
+in SSI form.
+
+</UL>
+<p>
+These varieties are somewhat misnamed; hopefully this will be fixed
+soon.
+For lower-level transformations involving explicit pointer arithmetic,
+<code>LowQuad</code> form must be used.
+
+<h2>Related Documentation</h2>
+For further information, see:
+<ul>
+ <li><A HREF="http://www.flex-compiler.lcs.mit.edu/Harpoon/quads/"
+     >Tutorial on FLEX compiler intermediate representation</A>
+</ul>
+
+</BODY>
+</HTML>
