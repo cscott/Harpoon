@@ -33,9 +33,10 @@ receiverStub.jar - Sends images to the ATR.
 RTJ.jar          - The version of the single ATR which uses Real-Time Java 
 
 imagerec.jar     - The current development head for experimenting with new pipelines.
-
+Buffer.jar	 - An ATR with a buffer at the front of it.
+Watermark.jar	 - A test pipeline for the watermarking node.
 ATR.jar, GUI.jar, ns.jar, trackerStub.jar, receiverStub.jar, 
-embeddedATR.jar, groundATR.jar  are the
+embeddedATR.jar, groundATR.jar, Buffer.jar and Watermark.jar  are the
 currently working jars as of this release.
 RTJ.jar is under development.
 
