@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * <code>null</code> source object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSTANCEOF.java,v 1.1.2.4 1998-12-17 21:38:36 cananian Exp $ 
+ * @version $Id: INSTANCEOF.java,v 1.1.2.5 1998-12-24 03:23:09 cananian Exp $ 
  */
 public class INSTANCEOF extends Quad {
     /** The <code>Temp</code> in which to store the result of the test. */
@@ -66,14 +66,17 @@ public class INSTANCEOF extends Quad {
 
     public int kind() { return QuadKind.INSTANCEOF; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new INSTANCEOF(qqf, this, map(tm,dst), map(tm,src), hclass);
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new INSTANCEOF(qqf, this,
+			      map(defMap,dst), map(useMap,src), hclass);
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	src = tm.tempMap(src);
     }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
     }

@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * which to begin execution.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HEADER.java,v 1.1.2.4 1998-12-17 21:38:36 cananian Exp $
+ * @version $Id: HEADER.java,v 1.1.2.5 1998-12-24 03:23:09 cananian Exp $
  * @see METHOD
  * @see FOOTER
  */
@@ -36,12 +36,14 @@ public class HEADER extends Quad {
 
     public int kind() { return QuadKind.HEADER; }
     
-    public Quad rename(QuadFactory qqf, TempMap tm) {
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
 	return new HEADER(qqf, this);
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) { }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) { }
 
     public void visit(QuadVisitor v) { v.visit(this); }

@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>ALENGTH</code> represents an array length query.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ALENGTH.java,v 1.1.2.5 1998-12-21 04:41:33 cananian Exp $
+ * @version $Id: ALENGTH.java,v 1.1.2.6 1998-12-24 03:23:08 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ASET
@@ -52,15 +52,17 @@ public class ALENGTH extends Quad {
 
     public int kind() { return QuadKind.ALENGTH; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
 	return new ALENGTH(qqf, this,
-			   map(tm,dst), map(tm,objectref));
+			   map(defMap,dst), map(useMap,objectref));
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	objectref = tm.tempMap(objectref);
     }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
     }

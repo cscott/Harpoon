@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * The <code>objectref</code> is null if the field is static.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.1.2.4 1998-12-17 21:38:36 cananian Exp $
+ * @version $Id: GET.java,v 1.1.2.5 1998-12-24 03:23:09 cananian Exp $
  */
 public class GET extends Quad {
     /** <code>Temp</code> in which to store the fetched field contents. */
@@ -70,15 +70,18 @@ public class GET extends Quad {
 
     public int kind() { return QuadKind.GET; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new GET(qqf, this, map(tm,dst), field, map(tm,objectref));
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new GET(qqf, this,
+		       map(defMap,dst), field, map(useMap,objectref));
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	if (objectref!=null)
 	    objectref = tm.tempMap(objectref);
     }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
     }

@@ -5,13 +5,13 @@ package harpoon.IR.Quads;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.TempMap;
+
 /**
  * <code>NOP</code> nodes do nothing.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: NOP.java,v 1.1.2.3 1998-12-17 21:38:37 cananian Exp $
+ * @version $Id: NOP.java,v 1.1.2.4 1998-12-24 03:23:10 cananian Exp $
  */
-
 public class NOP extends Quad {
     
     /** Creates a <code>NOP</code>. */
@@ -21,12 +21,14 @@ public class NOP extends Quad {
 
     public int kind() { return QuadKind.NOP; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
 	return new NOP(qqf, this);
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) { }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) { }
 
     public void visit(QuadVisitor v) { v.visit(this); }

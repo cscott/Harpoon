@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * array, or boolean <code>false</code> otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.1.2.4 1998-12-17 21:38:36 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.1.2.5 1998-12-24 03:23:09 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */
@@ -71,16 +71,18 @@ public class COMPONENTOF extends Quad {
 
     public int kind() { return QuadKind.COMPONENTOF; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new COMPONENTOF(qqf, this, map(tm,dst), 
-			       map(tm,arrayref), map(tm,objectref));
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new COMPONENTOF(qqf, this, map(defMap,dst), 
+			       map(useMap,arrayref), map(useMap,objectref));
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	arrayref = tm.tempMap(arrayref);
 	objectref = tm.tempMap(objectref);
     }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
     }

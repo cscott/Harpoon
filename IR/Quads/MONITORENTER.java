@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * See the JVM spec for details.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MONITORENTER.java,v 1.1.2.4 1998-12-17 21:38:36 cananian Exp $
+ * @version $Id: MONITORENTER.java,v 1.1.2.5 1998-12-24 03:23:09 cananian Exp $
  */
 public class MONITORENTER extends Quad {
     /** The object containing the monitor to be locked. */
@@ -45,10 +45,11 @@ public class MONITORENTER extends Quad {
 
     public int kind() { return QuadKind.MONITORENTER; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new MONITORENTER(qqf, this, map(tm, lock));
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new MONITORENTER(qqf, this, map(useMap, lock));
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	lock = tm.tempMap(lock);
     }

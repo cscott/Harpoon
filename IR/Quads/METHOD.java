@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * (ie, the 1-edge) is the innermost nested try-block.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHOD.java,v 1.1.2.1 1998-12-17 21:38:36 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.2 1998-12-24 03:23:09 cananian Exp $
  * @see HEADER
  * @see HANDLER
  */
@@ -60,10 +60,11 @@ public class METHOD extends Quad {
 
     public int kind() { return QuadKind.METHOD; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new METHOD(qqf, this, map(tm, params), arity());
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new METHOD(qqf, this, map(defMap, params), arity());
     }
-    /** Rename all defined variables in this <code>Quad</code>. */
+    /** Rename all defined variables in this <code>Quad</code>.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	for (int i=0; i<params.length; i++)
 	    params[i] = tm.tempMap(params[i]);

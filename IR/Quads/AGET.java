@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>AGET</code> represents an element fetch from an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AGET.java,v 1.1.2.5 1998-12-21 04:41:33 cananian Exp $
+ * @version $Id: AGET.java,v 1.1.2.6 1998-12-24 03:23:08 cananian Exp $
  * @see ANEW
  * @see ASET
  * @see ALENGTH
@@ -60,18 +60,20 @@ public class AGET extends Quad {
 
     public int kind() { return QuadKind.AGET; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new AGET(qqf, this,
-			map(tm,dst), map(tm,objectref), map(tm,index));
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new AGET(qqf, this, map(defMap,dst),
+			map(useMap,objectref), map(useMap,index));
     }
     /** Rename all used variables in this <code>Quad</code> according
-     *  to a mapping. */
+     *  to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	objectref = tm.tempMap(objectref);
 	index = tm.tempMap(index);
     }
     /** Rename all defined variables in this <code>Quad</code> according
-     *  to a mapping. */
+     *  to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
     }

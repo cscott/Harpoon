@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * They have the form: <code>&lt;t1, t2, ..., tn&gt; = sigma(t0)</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SIGMA.java,v 1.1.2.5 1998-12-17 21:38:37 cananian Exp $
+ * @version $Id: SIGMA.java,v 1.1.2.6 1998-12-24 03:23:10 cananian Exp $
  */
 public abstract class SIGMA extends Quad {
     /** dst[i][j] is the j'th element of the tuple on the left-hand side
@@ -100,11 +100,13 @@ public abstract class SIGMA extends Quad {
 	return d;
     }
 
+    /* @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	for (int i=0; i<src.length; i++) {
 	    src[i] = tm.tempMap(src[i]);
 	}
     }
+    /* @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	for (int i=0; i<dst.length; i++) {
 	    for (int j=0; j<dst[i].length; j++)

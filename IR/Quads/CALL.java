@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * is the first parameter in the <code>params</code> array.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.5 1998-12-20 07:11:59 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.6 1998-12-24 03:23:09 cananian Exp $ 
  */
 public class CALL extends Quad {
     /** The method to invoke. */
@@ -151,16 +151,18 @@ public class CALL extends Quad {
 
     public int kind() { return QuadKind.CALL; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new CALL(qqf, this, method, map(tm, params), map(tm,retval),
-			map(tm, retex), isVirtual);
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new CALL(qqf, this, method, map(useMap, params),
+			map(defMap,retval),map(defMap, retex), isVirtual);
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	for (int i=0; i<params.length; i++)
 	    params[i] = tm.tempMap(params[i]);
     }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	if (retval!=null)
 	    retval = tm.tempMap(retval);

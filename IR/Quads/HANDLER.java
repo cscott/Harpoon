@@ -14,7 +14,7 @@ import java.util.Enumeration;
  * A <code>HANDLER</code> quad marks an entry to an exception handler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HANDLER.java,v 1.1.2.3 1998-12-23 22:15:59 cananian Exp $
+ * @version $Id: HANDLER.java,v 1.1.2.4 1998-12-24 03:23:09 cananian Exp $
  * @see METHOD
  */
 public class HANDLER extends Quad {
@@ -74,10 +74,12 @@ public class HANDLER extends Quad {
 
     public int kind() { return QuadKind.HANDLER; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new HANDLER(qqf, this, map(tm, exceptionTemp),
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new HANDLER(qqf, this, map(defMap, exceptionTemp),
 			   caughtException, protectedSet);
     }
+    /* Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	exceptionTemp = tm.tempMap(exceptionTemp);
     }

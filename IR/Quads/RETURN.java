@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * optional return value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RETURN.java,v 1.1.2.4 1998-12-17 21:38:37 cananian Exp $
+ * @version $Id: RETURN.java,v 1.1.2.5 1998-12-24 03:23:10 cananian Exp $
  */
 public class RETURN extends Quad {
     /** Return value. <code>null</code> if there is no return value. */
@@ -42,15 +42,17 @@ public class RETURN extends Quad {
 
     public int kind() { return QuadKind.RETURN; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new RETURN(qqf, this, map(tm,retval));
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new RETURN(qqf, this, map(useMap,retval));
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	if (retval!=null)
 	    retval = tm.tempMap(retval);
     }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
     }
 

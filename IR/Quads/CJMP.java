@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  *                         the operand is not equal to zero.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CJMP.java,v 1.1.2.6 1998-12-21 04:41:33 cananian Exp $
+ * @version $Id: CJMP.java,v 1.1.2.7 1998-12-24 03:23:09 cananian Exp $
  */
 public class CJMP extends SIGMA {
     protected Temp test;
@@ -62,15 +62,18 @@ public class CJMP extends SIGMA {
 
     public int kind() { return QuadKind.CJMP; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new CJMP(qqf, this, map(tm, test), map(tm, dst), map(tm, src));
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new CJMP(qqf, this, map(useMap, test), map(defMap, dst),
+			map(useMap, src));
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	super.renameUses(tm);
 	test = tm.tempMap(test);
     }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	super.renameDefs(tm);
     }

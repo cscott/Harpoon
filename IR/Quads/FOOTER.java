@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.1.2.6 1998-12-23 22:16:49 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.1.2.7 1998-12-24 03:23:09 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW
@@ -48,7 +48,7 @@ public class FOOTER extends Quad {
 
     public int kind() { return QuadKind.FOOTER; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
 	return new FOOTER(qqf, this, prev.length);
     }
 

@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.5 1998-12-23 22:17:57 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.6 1998-12-24 03:23:10 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -79,17 +79,19 @@ public abstract class Quad
      *  The new <code>Quad</code> will come from the specified
      *  <code>QuadFactory</code>.
      */
-    public abstract Quad rename(QuadFactory qf, TempMap tm);
+    public abstract Quad rename(QuadFactory qf, TempMap defMap,TempMap useMap);
     /** Create a new <code>Quad</code> identical to the receiver, but 
      *  with all <code>Temp</code>s renamed according to a mapping.
      *  The new <code>Quad</code> will have no edges.<p>
      *  The new <code>Quad</code> will come from the same 
      *  <code>QuadFactory</code> as the receiver.
      */
-    public final Quad rename(TempMap tm) { return rename(qf, tm); }
+    public final Quad rename(TempMap tm) { return rename(qf, tm, tm); }
 
     // I want to get rid of these functions eventually.
+    /* @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) { }
+    /* @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) { }
 
     /*----------------------------------------------------------*/
@@ -171,7 +173,7 @@ public abstract class Quad
 	    Util.assert(to instanceof HANDLER);
 	//  [ONLY HEADER, THROW and RETURN connects to FOOTER]
 	if (to instanceof FOOTER)
-	    Util.assert((from instanceof HEADER && to_index==0) ||
+	    Util.assert((from instanceoxff HEADER && to_index==0) ||
 			(from instanceof THROW  && to_index >0) ||
 			(from instanceof RETURN && to_index >0) );
 	// OK, add the edge.
@@ -253,16 +255,16 @@ public abstract class Quad
     }
     // ----------------------------------------------------
     // Useful for temp renaming.  Not exported.
-    Temp map(TempMap tm, Temp t) {
-	return (t==null)?null:tm.tempMap(t);
+    final static Temp map(TempMap tm, Temp t) {
+	return (t==null)?null:(tm==null)?t:tm.tempMap(t);
     }
-    Temp[] map(TempMap tm, Temp[] ta) {
+    final static Temp[] map(TempMap tm, Temp[] ta) {
 	Temp[] r = new Temp[ta.length];
 	for (int i=0; i<r.length; i++)
 	    r[i] = map(tm, ta[i]);
 	return r;
     }
-    Temp[][] map(TempMap tm, Temp[][] taa) {
+    final static Temp[][] map(TempMap tm, Temp[][] taa) {
 	Temp[][] r = new Temp[taa.length][];
 	for (int i=0; i<r.length; i++)
 	    r[i] = map(tm, taa[i]);

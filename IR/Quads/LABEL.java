@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>LABEL</code> marks a basic-block entrance.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LABEL.java,v 1.1.2.4 1998-12-21 04:41:33 cananian Exp $
+ * @version $Id: LABEL.java,v 1.1.2.5 1998-12-24 03:23:09 cananian Exp $
  */
 public class LABEL extends PHI {
     /** the (optional) name of this label. <p>
@@ -46,8 +46,9 @@ public class LABEL extends PHI {
     
     public int kind() { return QuadKind.LABEL; }
     
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new LABEL(qqf, this, label, map(tm,dst), map(tm,src), arity());
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new LABEL(qqf, this,
+			 label, map(defMap,dst), map(useMap,src), arity());
     }
 
     public void visit(QuadVisitor v) { v.visit(this); }

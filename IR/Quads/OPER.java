@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * rewritten as an explicit test and throw in the Quad IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OPER.java,v 1.1.2.5 1998-12-17 21:38:37 cananian Exp $
+ * @version $Id: OPER.java,v 1.1.2.6 1998-12-24 03:23:10 cananian Exp $
  */
 public class OPER extends Quad {
     /** The <code>Temp</code> in which to store the result of the operation. */
@@ -70,15 +70,18 @@ public class OPER extends Quad {
 
     public int kind() { return QuadKind.OPER; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new OPER(qqf, this, opcode, map(tm,dst), map(tm,operands));
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new OPER(qqf, this,
+			opcode, map(defMap,dst), map(useMap,operands));
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	for (int i=0; i<operands.length; i++)
 	    operands[i] = tm.tempMap(operands[i]);
     }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
     }

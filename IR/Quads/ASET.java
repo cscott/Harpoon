@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>ASET</code> represents an array element assignment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ASET.java,v 1.1.2.4 1998-12-17 21:38:35 cananian Exp $
+ * @version $Id: ASET.java,v 1.1.2.5 1998-12-24 03:23:09 cananian Exp $
  * @see ANEW
  * @see AGET
  * @see ALENGTH
@@ -61,17 +61,19 @@ public class ASET extends Quad {
 
     public int kind() { return QuadKind.ASET; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
-	return new ASET(qqf, this,
-			map(tm,objectref), map(tm,index), map(tm,src));
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
+	return new ASET(qqf, this, map(useMap,objectref),
+			map(useMap,index), map(useMap,src));
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	objectref = tm.tempMap(objectref);
 	index = tm.tempMap(index);
 	src = tm.tempMap(src);
     }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) { }
 
     public void visit(QuadVisitor v) { v.visit(this); }

@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * <code>ANEW</code> represents an array creation operation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ANEW.java,v 1.1.2.4 1998-12-17 21:38:35 cananian Exp $
+ * @version $Id: ANEW.java,v 1.1.2.5 1998-12-24 03:23:08 cananian Exp $
  * @see NEW
  * @see AGET
  * @see ASET
@@ -81,16 +81,18 @@ public class ANEW extends Quad {
 
     public int kind() { return QuadKind.ANEW; }
 
-    public Quad rename(QuadFactory qqf, TempMap tm) {
+    public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
 	return new ANEW(qqf, this,
-			map(tm,dst), hclass, map(tm, dims));
+			map(defMap,dst), hclass, map(useMap, dims));
     }
-    /** Rename all used variables in this Quad according to a mapping. */
+    /** Rename all used variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameUses(TempMap tm) {
 	for (int i=0; i<dims.length; i++)
 	    dims[i] = tm.tempMap(dims[i]);
     }
-    /** Rename all defined variables in this Quad according to a mapping. */
+    /** Rename all defined variables in this Quad according to a mapping.
+     * @deprecated does not preserve immutability. */
     void renameDefs(TempMap tm) {
 	dst = tm.tempMap(dst);
     }
