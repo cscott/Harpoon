@@ -1,0 +1,73 @@
+#!/bin/sh
+CC=${CC:-gcc}
+TMPDIR=${TMPDIR:-/tmp}
+tmpoutfile=$TMPDIR/gen-link-script-test
+tmpinfile=${tmpoutfile}.c
+
+tmpscript=$TMPDIR/gen-link-script-output
+tmpsed=$TMPDIR/gen-link-script-sed
+
+# output default link script.  has lots of other garbage, too =(
+echo "int main() { return 0; }" > $tmpinfile
+${CC} -Wl,--verbose -o $tmpoutfile $tmpinfile 2>$tmpscript || exit $?
+rm -f $tmpinfile $tmpoutfile
+
+# filter out other garbage from output of CC.
+cat > $tmpsed <<-__EOF__
+	/^==================================================/{
+	:L
+	n
+	/^==================================================/q
+	p
+	b L
+	}
+__EOF__
+sed -nf $tmpsed < $tmpscript > ${tmpscript}2
+rm -f $tmpscript $tmpsed
+
+# now add FLEX-specific bits to the link script.
+cat > $tmpsed <<-__EOF__
+	/^[ ]*[*]([.]text)$/{
+	  i\\
+	    text_start = .
+	  n
+	  /^[ ]*[*]([.]text[.][*])$/p
+	  i\\
+	    text_end = .
+	  /^[ ]*[*]([.]text[.][*])$/!p
+	  c\\
+	    /* BEGIN FLEX ADDITIONS */\\
+	    code_start = . ; *(.flex.code) code_end = . ;\\
+	    . = ALIGN(8) ; fixup_start = . ; *(.flex.fixup) fixup_end = . ;\\
+	    /* END FLEX ADDITIONS */
+	}
+	/^[ ]*[*]([.]data)$/{
+	  n
+	  /^[ ]*[*]([.]data[.][*])$/n
+	  i\\
+	    /* BEGIN FLEX ADDITIONS */\\
+	    /* unmarked segments */\\
+	    . = ALIGN(4) ; *(.flex.class)\\
+	    . = ALIGN(4) ; *(.flex.init_data)\\
+	    . = ALIGN(4) ; *(.flex.static_primitives)\\
+	    . = ALIGN(4) ; *(.flex.string_data)\\
+	    . = ALIGN(4) ; *(.flex.reflection_objects)\\
+	    . = ALIGN(4) ; *(.flex.reflection_data)\\
+	    /* marked segments */\\
+	    . = ALIGN(4) ; gc_index_start = . ; *(.flex.gc_index) gc_index_end = . ;\\
+	    . = ALIGN(4) ; gc_start = . ; *(.flex.gc) gc_end = . ;\\
+	    . = ALIGN(4) ; static_objects_start = . ; *(.flex.static_objects) static_objects_end = . ;\\
+	    . = ALIGN(4) ; string_constants_start = . ; *(.flex.string_constants) string_constants_end = . ;\\
+	    /* END FLEX ADDITIONS */
+	}
+	/^[ ]*[*]([.]bss)$/{
+	  n
+	  /^[ ]*[*]([.]bss[.][*])$/n
+	  i\\
+	    /* BEGIN FLEX ADDITIONS */\\
+	    . = ALIGN(4) ; *(.flex.zero)\\
+	    /* END FLEX ADDITIONS */
+	}
+__EOF__
+sed -f $tmpsed < ${tmpscript}2
+rm -f $tmpsed ${tmpscript}2
