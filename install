@@ -48,15 +48,15 @@ while [ x$inst = x ]; do
 	export version='-A';
 	export RTJ=N;
 	export BENCHMARKS=;
-	export IMAGEREC=;;
-        export dep=;
+	export IMAGEREC=;
+        export dep=;;
      2) export arm=;
 	export GUI=;
 	export version=;
 	export RTJ=;
 	export BENCHMARKS=none;
-	export IMAGEREC=none;;
-        export dep=;
+	export IMAGEREC=none;
+        export dep=;;
      *) export inst=;;
   esac;
 done
