@@ -39,7 +39,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.21 2000-07-14 22:18:11 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.22 2000-07-24 20:38:41 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -62,10 +62,15 @@ public class RegFileInfo
     final Temp LR;  // Link register
     final Temp PC;  // Program counter
 
-    // max index is 10 right?  We don't want to include the registers
-    // holding runtime information, i think... clarify spec in
-    // Generic.RegFileInfo
-    public int maxRegIndex() { return 10; }
+    /** maxRegIndex returns an upper bound on the indexes that will be
+	returned by the <code>MachineRegLoc</code>s for this backend.
+	The indexes will fall in the range 
+	0 &lt;= index &lt; maxRegIndex().
+	This implementation returns 16, which includes system specific
+	registers such as PC and SP; this may be an over-conservative
+	value in need of revision!
+     */
+    public int maxRegIndex() { return 16; }
 
     /** Creates a <code>RegFileInfo</code>. 
      */
