@@ -9,13 +9,19 @@ import harpoon.IR.Quads.*;
 import harpoon.IR.LowQuad.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Set;
-import harpoon.Util.HashSet;
-import harpoon.Util.Util;
+import harpoon.Util.Default;
+import harpoon.Util.WorkSet;
 import harpoon.Util.Worklist;
+import harpoon.Util.Util;
 
+import java.util.Comparator;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 /**
  * <code>DeadCode</code> removes dead code 
  * (unused definitions/useless jmps/one-argument phi functions/all moves) from
@@ -23,7 +29,7 @@ import java.util.Hashtable;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.11.2.10 1999-07-02 21:24:18 bdemsky Exp $
+ * @version $Id: DeadCode.java,v 1.11.2.11 1999-08-28 18:48:24 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -34,12 +40,12 @@ public abstract class DeadCode  {
 	// make a renaming table
 	NameMap nm = new NameMap();
 	// keep track of defs.
-	Hashtable defMap = new Hashtable();
+	Map defMap = new HashMap();
 	// we'll have a coupla visitors
 	QuadVisitor v;
 	
 	// make a worklist (which everything's on, at the beginning)
-	Worklist W = new HashSet();
+	Worklist W = new WorkSet();
 	Quad[] ql = (Quad[]) hc.getElements();
 	for (int i=0; i<ql.length; i++) {
 	    W.push(ql[i]);
@@ -148,8 +154,32 @@ public abstract class DeadCode  {
 		    // decrement i so we're at the right place still;
 		    i--;
 		}
+		// check for phis whose sources are identical
+		// and coalesce them.
+		phidup.clear();
+		for (int i=0; i < q.numPhis(); i++) {
+		    Temp[] src = q.src(i);
+		    if (phidup.containsKey(src)) { // delete it!
+			int prev = ((Integer) phidup.get(src)).intValue();
+			nm.map(q.dst(i), q.dst(prev));
+			q.removePhi(i--);
+		    } else phidup.put(src, new Integer(i));
+		}
 	    }
 	}
+	private final SortedMap phidup = new TreeMap(new Comparator() {
+	    public int compare(Object o1, Object o2) {
+		Temp[] ta1 = (Temp[])o1, ta2 = (Temp[])o2;
+		if (ta1.length!=ta2.length) return ta1.length-ta2.length;
+		for (int i=0; i<ta1.length; i++) {
+		    int c = Default.comparator.compare(nm.tempMap(ta1[i]),
+						       nm.tempMap(ta2[i]));
+		    if (c!=0) return c;
+		}
+		return 0;
+	    }
+	});
+
 	public void visit(SIGMA q) {
 	    // check for unused function in the sigma
 	L1:
@@ -163,7 +193,26 @@ public abstract class DeadCode  {
 		// decrement index to keep us steady.
 		i--;
 	    }
+	    // find SIGMAs whose sources are identical, and coalesce them.
+	    sigdup.clear();
+	    for (int i=0; i < q.numSigmas(); i++) {
+		Temp src = nm.tempMap(q.src(i));
+		if (sigdup.containsKey(src)) { // delete it!
+		    int prev = ((Integer) sigdup.get(src)).intValue();
+		    for (int j=0; j<q.arity(); j++)
+			nm.map(q.dst(i,j), q.dst(prev,j));
+		    q.removeSigma(i--);
+		} else sigdup.put(src, new Integer(i));
+	    }
 	}
+	private final SortedMap sigdup = new TreeMap(new Comparator() {
+	    public int compare(Object o1, Object o2) {
+		Temp t1 = (Temp)o1, t2 = (Temp)o2;
+		return Default.comparator.compare(nm.tempMap(t1),
+						  nm.tempMap(t2));
+	    }
+	});
+
 	public void visit(CJMP q) {
 	    if (q.next(0)==q.next(1) && !matchPS(q, (PHI)q.next(0))) {
 		// Mu-ha-ha-ha! KILL THE CJMP!
@@ -188,10 +237,10 @@ public abstract class DeadCode  {
 	// Determine if (useful) cjmp and phi args match.
 	boolean matchPS(CJMP cj, PHI ph) {
 	    // a hashtable makes this easier.
-	    Hashtable h = new Hashtable();
+	    PSdup.clear();
 	    for (int i=0; i<cj.numSigmas(); i++)
 		for (int j=0; j<cj.arity(); j++)
-		    h.put(nm.tempMap(cj.dst(i,j)),
+		    PSdup.put(nm.tempMap(cj.dst(i,j)),
 			  nm.tempMap(cj.src(i)));
 
 	    int which_pred0 = cj.nextEdge(0).which_pred();
@@ -199,16 +248,17 @@ public abstract class DeadCode  {
 	    for (int i=0; i<ph.numPhis(); i++) {
 		if (!useful.contains(nm.tempMap(ph.dst(i))))
 		    continue; // not useful, skip.
-		if (h.get(nm.tempMap(ph.src(i,which_pred0))) !=
-		    h.get(nm.tempMap(ph.src(i,which_pred1))) )
+		if (PSdup.get(nm.tempMap(ph.src(i,which_pred0))) !=
+		    PSdup.get(nm.tempMap(ph.src(i,which_pred1))) )
 		    return true; // cjmp matters, either in sig or phi.
 	    }
 	    return false; // not useful!
 	}
+	private final Map PSdup = new HashMap();
     }
 
     static class NameMap implements TempMap {
-	Hashtable h = new Hashtable();
+	Map h = new HashMap();
 	public Temp tempMap(Temp t) {
 	    while (h.containsKey(t))
 		t = (Temp) h.get(t);
@@ -221,14 +271,14 @@ public abstract class DeadCode  {
     static class UsefulVisitor extends LowQuadVisitor {
 	Worklist W;
 	Set useful;
-	Hashtable defMap;
+	Map defMap;
 	NameMap nm;
 	// maps cjmp targets past useless cjmps/phis
-	Hashtable jmpMap = new Hashtable();
+	Map jmpMap = new HashMap();
 	// maps phi sources past useless cjmps/phis
-	Hashtable phiMap = new Hashtable();
+	Map phiMap = new HashMap();
 
-	UsefulVisitor(Worklist W, Set useful, Hashtable defMap, NameMap nm) {
+	UsefulVisitor(Worklist W, Set useful, Map defMap, NameMap nm) {
 	    this.W = W;
 	    this.useful = useful;
 	    this.defMap = defMap;
@@ -236,7 +286,7 @@ public abstract class DeadCode  {
 	}
 	void markUseful(Quad q) {
 	    if (useful.contains(q)) return; // no change.
-	    useful.union(q);
+	    useful.add(q);
 	    // all variables used by a useful quad are useful.
 	    Temp u[] = q.use();
 	    for (int i=0; i<u.length; i++)
@@ -244,7 +294,7 @@ public abstract class DeadCode  {
 	}
 	void markUseful(Temp t) {
 	    if (useful.contains(t)) return; // no change.
-	    useful.union(t);
+	    useful.add(t);
 	    // the quad defining this temp is now useful, too.
 	    if (defMap.containsKey(t)) // undefined vars possible.
 		W.push(defMap.get(t));
@@ -300,7 +350,7 @@ public abstract class DeadCode  {
 
 	public void visit(CJMP q) {
 	    // assume all CJMPs are useful (we'll remove useless ones later)
-	    useful.union(q);
+	    useful.add(q);
 	    // if this is useful, the condition is useful
 	    markUseful(q.test());
 	    // process sigmas normally.
@@ -334,7 +384,7 @@ public abstract class DeadCode  {
 	}
 	public void visit(PHI q) {
 	    // Assume all phis are useful (will remove arity-1 phis later)
-	    useful.union(q);
+	    useful.add(q);
 	    // check the individual phi functions for usefulness.
 	    for (int i=0; i < q.numPhis(); i++)
 		if (useful.contains(q.dst(i)))
@@ -359,7 +409,7 @@ public abstract class DeadCode  {
 	public void visit(SWITCH q) {
 	    // I'm too lazy to see if the switch actually does anything, so assume
 	    // it's always useful.
-	    useful.union(q);
+	    useful.add(q);
 	    markUseful(q.index());
 	    visit((SIGMA)q);
 	}
