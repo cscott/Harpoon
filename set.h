@@ -16,8 +16,9 @@ class WorkSet {
   void *firstelement();
   void * getnextelement(void *src);
   int size();
-  void * getelement(int i);
+  void * getelement(int i);  
   bool isEmpty();
+  void print();
   ~WorkSet();
 
  private:

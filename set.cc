@@ -66,6 +66,20 @@ bool WorkSet::isEmpty() {
   return (size()==0);
 }
 
+void WorkSet::print() 
+{
+  printf("{");
+  for (int i=0; i<size(); i++)
+    {
+      Element *elem = (Element *) getelement(i);      
+      elem->print();
+      if (i != size()-1)
+	printf(" ");
+    }  
+  printf("}");
+}
+
+
 WorkSet::~WorkSet() {
   genfreehashtable(ght);
 }

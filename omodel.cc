@@ -7,6 +7,7 @@
 #include "Hashtable.h"
 #include "dmodel.h"
 #include "element.h"
+#include "set.h"
 #include "Relation.h"
 
 
@@ -48,7 +49,7 @@ char * Literal::token() {
 }
 
 void Literal::print() {
-  printf("LIT(%s)",str);
+  printf("%s",str);
 }
 
 
@@ -67,7 +68,7 @@ char * Setlabel::getname() {
 }
   
 void Setlabel::print() {
-  printf("SL(%s)",str);
+  printf("%s",str);
 }
 
 
@@ -227,6 +228,133 @@ void Setexpr::print() {
   }
 }
 
+
+void Setexpr::print_size(Hashtable *stateenv, model *m) 
+{
+  switch(type) {
+  case SETEXPR_LABEL:{
+    printf("   sizeof(");
+    setlabel->print();
+    printf(") = ");  
+
+    DomainRelation *dr = m->getdomainrelation();
+    Hashtable *env = m->gethashtable();
+    DomainSet *dset = dr->getset(setlabel->getname());
+    WorkSet *ws = dset->getset();
+
+    printf("%d\n", ws->size());
+    break;
+  }
+
+  case SETEXPR_REL:{
+    printf("   sizeof(");
+    label->print();
+    printf(".");
+    relation->print();
+    printf(") = ");  
+
+    Element *key = (Element *) stateenv->get(label->label());
+
+    DomainRelation *dr = m->getdomainrelation();
+    Hashtable *env = m->gethashtable();
+    DRelation *rel = dr->getrelation(relation->getname());
+    WorkRelation *wr = rel->getrelation();
+   
+    WorkSet *ws = wr->getset(key);
+
+    printf("%d\n", ws->size());
+    break;
+  }
+
+  case SETEXPR_INVREL:{
+    printf("   sizeof(");
+    label->print();
+    printf(".~");
+    relation->print();
+    printf(") = ");  
+
+    Element *key = (Element *) stateenv->get(label->label());
+
+    DomainRelation *dr = m->getdomainrelation();
+
+    Hashtable *env = m->gethashtable();
+    DRelation *rel = dr->getrelation(relation->getname());
+    WorkRelation *wr = rel->getrelation();
+   
+    WorkSet *ws = wr->invgetset(key);
+
+    printf("%d\n", ws->size());
+    break;
+  }
+  }
+}
+
+
+void Setexpr::print_value(Hashtable *stateenv, model *m) 
+{
+  switch(type) {
+  case SETEXPR_LABEL:{
+    printf("   ");
+    setlabel->print();
+    printf(" = ");  
+
+    DomainRelation *dr = m->getdomainrelation();
+    Hashtable *env = m->gethashtable();
+    DomainSet *dset = dr->getset(setlabel->getname());
+
+    WorkSet *ws = dset->getset();
+    ws->print();
+    break;
+  }
+
+  case SETEXPR_REL:{
+    /*
+    printf("   sizeof(");
+    label->print();
+    printf(".");
+    relation->print();
+    printf(") = ");  
+
+    Element *key = (Element *) stateenv->get(label->label());
+
+    DomainRelation *dr = m->getdomainrelation();
+    Hashtable *env = m->gethashtable();
+    DRelation *rel = dr->getrelation(relation->getname());
+    WorkRelation *wr = rel->getrelation();
+   
+    WorkSet *ws = wr->getset(key);
+
+    printf("%d\n", ws->size());
+    */
+    break;
+  }
+
+  case SETEXPR_INVREL:{
+    /*
+    printf("   sizeof(");
+    label->print();
+    printf(".~");
+    relation->print();
+    printf(") = ");  
+
+    Element *key = (Element *) stateenv->get(label->label());
+
+    DomainRelation *dr = m->getdomainrelation();
+
+    Hashtable *env = m->gethashtable();
+    DRelation *rel = dr->getrelation(relation->getname());
+    WorkRelation *wr = rel->getrelation();
+   
+    WorkSet *ws = wr->invgetset(key);
+
+    printf("%d\n", ws->size());
+    */
+    break;
+  }
+  }
+}
+
+
 Setlabel * Setexpr::getsetlabel() {
   return setlabel;
 }
@@ -268,7 +396,7 @@ void Valueexpr::print() {
 }
 
 void Valueexpr::print_value(Hashtable *stateenv, model *m) {
-  printf("   ");
+  printf("  ");
   label->print();
   printf(".");
   relation->print();
@@ -385,11 +513,42 @@ void Elementexpr::print() {
 }
 
 
-
+void Elementexpr::print_value(Hashtable *stateenv, model *m) {
+  switch(type) {
+  case ELEMENTEXPR_SUB:
+  case ELEMENTEXPR_ADD:
+  case ELEMENTEXPR_MULT:
+    left->print_value(stateenv, m);
+    right->print_value(stateenv, m);
+    break;
+  case ELEMENTEXPR_SETSIZE:
+    setexpr->print_size(stateenv, m);
+    break;
+  case ELEMENTEXPR_RELATION:
+    /*
+    left->print();
+    printf(".");
+    relation->print();
+    */
+    break;
+  }  
+}
 
 
 
 // class Predicate 
+
+Predicate::Predicate(Valueexpr *ve, int t, Elementexpr *ee) {
+  valueexpr=ve;
+  type=t;
+  elementexpr=ee;
+}
+
+Predicate::Predicate(Label *l,Setexpr *se) {
+  label=l;
+  setexpr=se;
+  type=PREDICATE_SET;
+}
 
 Predicate::Predicate(bool greaterthan, Setexpr *se) {
   if (greaterthan)
@@ -398,7 +557,6 @@ Predicate::Predicate(bool greaterthan, Setexpr *se) {
     type=PREDICATE_EQ1;
   setexpr=se;
 }
-
 
 Valueexpr * Predicate::getvalueexpr() {
   return valueexpr;
@@ -418,18 +576,6 @@ Setexpr * Predicate::getsetexpr() {
 
 int Predicate::gettype() {
   return type;
-}
-
-Predicate::Predicate(Label *l,Setexpr *se) {
-  label=l;
-  setexpr=se;
-  type=PREDICATE_SET;
-}
-
-Predicate::Predicate(Valueexpr *ve, int t, Elementexpr *ee) {
-  valueexpr=ve;
-  type=t;
-  elementexpr=ee;
 }
 
 void Predicate::print() {
@@ -480,46 +626,20 @@ void Predicate::print() {
 void Predicate::print_sets(Hashtable *stateenv, model *m) {
   switch(type) {
   case PREDICATE_LT:
-    valueexpr->print_value(stateenv, m);
-    //printf("<");
-    //elementexpr->print();
-    break;
   case PREDICATE_LTE:
-    valueexpr->print_value(stateenv, m);
-    //printf("<=");
-    //elementexpr->print();
-    break;
   case PREDICATE_EQUALS:
-    valueexpr->print_value(stateenv, m);
-    //printf("=");
-    //elementexpr->print();
-    break;
   case PREDICATE_GTE:
-    valueexpr->print_value(stateenv, m);
-    //printf(">=");
-    //elementexpr->print();
-    break;
   case PREDICATE_GT:
     valueexpr->print_value(stateenv, m);
-    //printf(">");
-    //elementexpr->print();
+    elementexpr->print_value(stateenv, m);
     break;
-    /*
-  case PREDICATE_SET:
-    label->print();
-    printf(" in ");
-    setexpr->print();
+  case PREDICATE_SET:    
+    setexpr->print_value(stateenv, m);
     break;
   case PREDICATE_EQ1:
   case PREDICATE_GTE1:
-    printf("sizeof(");
-    setexpr->print();
-    if (type==PREDICATE_EQ1)
-      printf(")=1");
-    if (type==PREDICATE_GTE1)
-      printf(")>=1");
-    break;
-    */
+    setexpr->print_size(stateenv, m); 
+    break; 
   }
 }
 

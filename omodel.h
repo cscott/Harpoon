@@ -122,6 +122,8 @@ class Setexpr {
   Setexpr(Setlabel *sl);
   Setexpr(Label *l, bool invert, Relation *r);
   void print();
+  void print_size(Hashtable *stateenv, model *m);
+  void print_value(Hashtable *stateenv, model *m);
   Setlabel * getsetlabel();
   Relation * getrelation();
   Label * getlabel();
@@ -174,6 +176,8 @@ class Elementexpr {
   Elementexpr(Label *lab);
   Elementexpr(Elementexpr *l,Relation *r);
   void print();
+  void print_value(Hashtable *stateenv, model *m);
+
   int gettype();
   Label * getlabel();
   Elementexpr *getleft();
@@ -206,8 +210,8 @@ class Elementexpr {
 
 class Predicate {
  public:
-  Predicate(Label *l,Setexpr *se);
   Predicate(Valueexpr *ve, int t, Elementexpr *ee);
+  Predicate(Label *l,Setexpr *se);
   Predicate(bool greaterthan, Setexpr *se);
   void print();
   void print_sets(Hashtable *stateenv, model *m);
