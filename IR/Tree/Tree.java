@@ -29,7 +29,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.5 2002-08-31 00:24:58 cananian Exp $
+ * @version $Id: Tree.java,v 1.6 2002-11-29 20:50:45 salcianu Exp $
  */
 public abstract class Tree 
     implements HCodeElement
@@ -79,7 +79,7 @@ public abstract class Tree
      * siblings to the right of this node. 
      */ 
     public final Tree getSibling() {
-	assert parent!=null; // don't call getSibling() on the root!
+	assert parent!=null : "don't call getSibling() on the root!";
 	assert this==parent.child[which_child_of_parent];
 	int c = which_child_of_parent + 1;
 	return parent.child.length > c ? parent.child[c] : null;
@@ -102,6 +102,8 @@ public abstract class Tree
     protected final void setChild(int which, Tree newChild) {
 	assert newChild!=null : "you can't set a tree child to null";
 	assert newChild.tf==this.tf : "tree factories must match";
+	// if we enable this assertion, Canonicalize crashes
+	//assert newChild.parent==null : "only one parent per node"; // [AS]
 	if (child[which]!=null) child[which].unlink();
 	child[which] = newChild;
 	newChild.parent = this;
@@ -115,11 +117,18 @@ public abstract class Tree
     }
     /** Make <code>this</code> a root-level tree, unlinking it from
      *  its parent. */
-    final void unlink() {
+    public final void unlink() {
 	// increment parent's modification count (for fail-fast iterator)
 	tf.incModCount();
 	// do unlink.
-	this.parent=null; this.which_child_of_parent=0;
+	// unlinking = any link between parent and child disappears [AS]
+	if(parent != null) {
+	    // parent -> child link removed [AS]
+	    parent.child[which_child_of_parent] = null;
+	    // child -> parent link removed [AS]
+	    parent=null;
+	    which_child_of_parent=0;
+	}
     }
 
     /** Returns the original source file name that this <code>Tree</code> is
