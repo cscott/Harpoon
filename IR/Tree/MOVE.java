@@ -20,19 +20,24 @@ import java.util.Enumeration;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.8 1999-06-28 18:49:16 duncan Exp $
+ * @version $Id: MOVE.java,v 1.1.2.9 1999-06-29 07:34:53 cananian Exp $
  */
-public class MOVE extends Stm {
+public class MOVE extends Stm implements Typed {
     /** The expression giving the destination for the computed value. */
     public Exp dst;
     /** The expression for the computed value. */
     public Exp src;
-    /** Constructor. */
+    /** Constructor. 
+     * <p>The type of the <code>src</code> expression and of the
+     * <code>dst</code> expression must be identical.  (Use
+     * a <code>UNOP</code> to convert, if they are necessary.)
+     */
     public MOVE(TreeFactory tf, HCodeElement source,
 		Exp dst, Exp src) {
 	super(tf, source);
 	this.dst=dst; this.src=src;
 	Util.assert(dst!=null && src!=null);
+	Util.assert(dst.type()==src.type());
     }
   
     protected Set defSet() { 
@@ -80,6 +85,11 @@ public class MOVE extends Stm {
 			(Exp)dst.rename(tf, ctm),
 			(Exp)src.rename(tf, ctm));
     }
+
+    /** @return the type of <code>dst</code> expression. */
+    public int type() { return dst.type(); }
+    public boolean isDoubleWord() { return dst.isDoubleWord(); }
+    public boolean isFloatingPoint() { return dst.isFloatingPoint(); }
 
     public String toString() {
         return "MOVE(#"+dst.getID()+", #"+src.getID()+")";
