@@ -5,11 +5,11 @@
 #include "RTJfinalize.h"
 
 inline void RTJ_register_finalizer(jobject wrapped_obj,
-			    void (*finalizer)(void* obj,
-					      void* client_data)) {
+				   void (*finalizer)(void* obj,
+						     void* client_data)) {
   /* All RTJ finalizable objects must first be inflated. */
   assert(FNI_IS_INFLATED(wrapped_obj));
   
   /* The finalizer must handle deflating the object. */
-  FNI_UNWRAP_MASKED(wrapped_obj)->hashunion.inflated->RTJ_finalizer = finalizer; 
+  FNI_UNWRAP_MASKED(wrapped_obj)->hashunion.inflated->RTJ_finalizer = finalizer;
 }

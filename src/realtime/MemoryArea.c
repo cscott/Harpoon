@@ -4,30 +4,12 @@
 
 #include "MemoryArea.h"
 
-/*
- * Class:     javax_realtime_MemoryArea
- * Method:    setupMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_setupMemBlock
-(JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
-  // This is called on newInstance and newArray -> please do ref. counting
-  // appropriately, this cannot be called on a ScopedMemory, but you
-  // should never need to do that anyway... because that would mean a violation
-  // of the access restrictions.  
-#ifdef RTJ_DEBUG
-  checkException();
-  printf("MemoryArea.setupMemBlock(0x%08x, 0x%08x, 0x%08x)\n",
-	 env, memoryArea, realtimeThread);
-#endif
-  MemBlock_DECREF(getInflatedObject(env, realtimeThread)->temp = 
-		  MemBlock_new(env, memoryArea, realtimeThread, NULL));
-}
+static jfieldID MemAreaStack_next = NULL;
 
 /*
  * Class:     MemoryArea
  * Method:    enterMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
+ * Signature: (Ljavax/realtime/RealtimeThread;Ljavax/realtime/MemAreaStack;)V
  */
 JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_enterMemBlock
 (JNIEnv* env, jobject memoryArea, jobject realtimeThread, jobject memAreaStack) {
@@ -37,29 +19,50 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_enterMemBlock
   printf("MemoryArea.enterMemBlock(0x%08x, 0x%08x, 0x%08x, 0x%08x)\n", 
 	 env, memoryArea, realtimeThread, memAreaStack);
 #endif
-  getInflatedObject(env, memAreaStack)->temp = 
-    (memBlock = MemBlock_currentMemBlock());
-  MemBlock_setCurrentMemBlock(env, realtimeThread,
-			      MemBlock_new(env, memoryArea, 
-					   realtimeThread, memBlock));
+  if (!MemAreaStack_next) {
+    jclass memAreaStackClaz = (*env)->GetObjectClass(env, memAreaStack);
+    MemAreaStack_next = (*env)->GetFieldID(env, memAreaStackClaz, "next", 
+					   "Ljavax/realtime/MemAreaStack;");
+  }
+  getInflatedObject(env, memAreaStack)->memBlock = MemBlock_currentMemBlock();
+  if (memAreaStack) {
+    MemBlock_INCREF(getInflatedObject(env, memAreaStack)->memBlock);
+  }
+  if (!((memBlock = getInflatedObject(env, memoryArea)->memBlock)->refCount)) {
+    pthread_mutex_lock(&(memBlock->finalize_lock));
+    while ((!memBlock->refCount)&&(memBlock->memoryArea)) {
+      pthread_cond_wait(&(memBlock->finalize_cond), &(memBlock->finalize_lock));
+    }
+    if (!memBlock->memoryArea) {
+      memBlock->memoryArea = (*env)->NewGlobalRef(env, memoryArea);
+    }
+    MemBlock_INCREF(memBlock);
+    pthread_mutex_unlock(&(memBlock->finalize_lock));
+    pthread_cond_signal(&(memBlock->finalize_cond));
+  } else {
+    MemBlock_INCREF(memBlock);
+  }
+  MemBlock_setCurrentMemBlock(env, realtimeThread, memBlock);
 }
 
 /*
  * Class:     MemoryArea
  * Method:    exitMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
+ * Signature: (Ljavax/realtime/RealtimeThread;Ljavax/realtime/MemAreaStack;)V
  */
 JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_exitMemBlock
-(JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
-  struct MemBlock* memBlock;
+(JNIEnv* env, jobject memoryArea, jobject realtimeThread, jobject memAreaStack) {
+  struct MemBlock *memBlock, *newMemBlock;
 #ifdef RTJ_DEBUG
   printf("MemoryArea.exitMemBlock(0x%08x, 0x%08x, 0x%08x)\n",
 	 env, memoryArea, realtimeThread);
 #endif
   memBlock = MemBlock_currentMemBlock();
-  MemBlock_setCurrentMemBlock(env, realtimeThread, 
-			      MemBlock_prevMemBlock(memBlock));
-  MemBlock_free(memBlock);
+  MemBlock_setCurrentMemBlock(env, realtimeThread, newMemBlock = 
+			      getInflatedObject(env, memAreaStack)->memBlock);
+  if (MemBlock_free(memBlock)) {
+    MemBlock_free(newMemBlock);
+  }
 }
 
 /* RTJ version of the FNI_NewObjectArray -> only difference is that it calls 
@@ -109,24 +112,24 @@ jarray RTJ_NewObjectArray(JNIEnv *env, jsize length,
 /*
  * Class:     javax_realtime_MemoryArea
  * Method:    newArray
- * Signature: (Ljavax/realtime/RealtimeThread;Ljava/lang/Class;ILjava/lang/Object;)Ljava/lang/Object;
+ * Signature: (Ljavax/realtime/RealtimeThread;Ljava/lang/Class;I)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2ILjava_lang_Object_2
+JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2I
 (JNIEnv *env, jobject memoryArea, jobject realtimeThread, 
- jclass componentClass, jint length, jobject memBlockObj) {
-  struct MemBlock* oldMemBlock;
+ jclass componentClass, jint length) {
+  struct MemBlock *oldMemBlock, *newMemBlock;
   jobject result;
   jarray (*oldNewObjectArray) (JNIEnv *env, jsize length,
 			       jclass elementClass, jobject initialElement);
 #ifdef RTJ_DEBUG
   checkException();
-  printf("MemoryArea.newArray(0x%08x, 0x%08x, 0x%08x, 0x%08x, %d, 0x%08x)\n",
-	 env, memoryArea, realtimeThread, componentClass, length, memBlockObj);
+  printf("MemoryArea.newArray(0x%08x, 0x%08x, 0x%08x, 0x%08x, %d)\n",
+	 env, memoryArea, realtimeThread, componentClass, length);
 #endif  
   oldMemBlock = MemBlock_currentMemBlock();
   oldNewObjectArray = (*env)->NewObjectArray;
   MemBlock_setCurrentMemBlock(env, realtimeThread, 
-			      getInflatedObject(env, memBlockObj)->temp);
+			      getInflatedObject(env, memoryArea)->memBlock);
   ((struct JNINativeInterface*)(*env))->NewObjectArray = RTJ_NewObjectArray;
   result = Java_java_lang_reflect_Array_newArray(env, NULL, componentClass, length);
   ((struct JNINativeInterface*)(*env))->NewObjectArray = oldNewObjectArray;
@@ -137,24 +140,24 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realti
 /*
  * Class:     javax_realtime_MemoryArea
  * Method:    newArray
- * Signature: (Ljavax/realtime/RealtimeThread;Ljava/lang/Class;[ILjava/lang/Object;)Ljava/lang/Object;
+ * Signature: (Ljavax/realtime/RealtimeThread;Ljava/lang/Class;[I)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2_3ILjava_lang_Object_2
+JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realtime_RealtimeThread_2Ljava_lang_Class_2_3I
 (JNIEnv *env, jobject memoryArea, jobject realtimeThread, 
- jclass componentClass, jintArray dims, jobject memBlockObj) {
-  struct MemBlock* oldMemBlock;
+ jclass componentClass, jintArray dims) {
+  struct MemBlock *oldMemBlock, *newMemBlock;
   jobject result;
   jarray (*oldNewObjectArray) (JNIEnv *env, jsize length,
 			       jclass elementClass, jobject initialElement);
 #ifdef RTJ_DEBUG
   checkException();
-  printf("MemoryArea.newArray(0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x)\n",
-	 env, memoryArea, realtimeThread, componentClass, dims, memBlockObj);
+  printf("MemoryArea.newArray(0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x)\n",
+	 env, memoryArea, realtimeThread, componentClass, dims);
 #endif
   oldNewObjectArray = (*env)->NewObjectArray;
   oldMemBlock = MemBlock_currentMemBlock();
-  MemBlock_setCurrentMemBlock(env, realtimeThread,
-			      getInflatedObject(env, memBlockObj)->temp);
+  MemBlock_setCurrentMemBlock(env, realtimeThread, 
+			      getInflatedObject(env, memoryArea)->memBlock);
   ((struct JNINativeInterface*)(*env))->NewObjectArray = RTJ_NewObjectArray;
   result = Java_java_lang_reflect_Array_multiNewArray(env, NULL, componentClass, dims);
   ((struct JNINativeInterface*)(*env))->NewObjectArray = oldNewObjectArray;
@@ -165,19 +168,19 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realti
 /*
  * Class:     javax_realtime_MemoryArea
  * Method:    newInstance
- * Signature: (Ljavax/realtime/RealtimeThread;Ljava/lang/reflect/Constructor;[Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+ * Signature: (Ljavax/realtime/RealtimeThread;Ljava/lang/reflect/Constructor;[Ljava/lang/Object)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newInstance
 (JNIEnv *env, jobject memoryArea, jobject realtimeThread, 
- jobject constructor, jobjectArray parameters, jobject memBlockObj) {
+ jobject constructor, jobjectArray parameters) {
   struct MemBlock* oldMemBlock; 
   struct FNI_method2info *method; /* method information */
   jclass methodclazz; /* declaring class of method */
   jobject result;
 #ifdef RTJ_DEBUG
   checkException();
-  printf("MemoryArea.newInstance(0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x)\n",
-	 env, memoryArea, realtimeThread, constructor, parameters, memBlockObj);
+  printf("MemoryArea.newInstance(0x%08x, 0x%08x, 0x%08x, 0x%08x, 0x%08x)\n",
+	 env, memoryArea, realtimeThread, constructor, parameters);
 #endif
   oldMemBlock = MemBlock_currentMemBlock();
   
@@ -201,8 +204,8 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newInstance
     return NULL;
   }
   /* create zero-filled-object instance. */
-  MemBlock_setCurrentMemBlock(env, realtimeThread,
-			      getInflatedObject(env, memBlockObj)->temp);
+  MemBlock_setCurrentMemBlock(env, realtimeThread, 
+			      getInflatedObject(env, memoryArea)->memBlock);
   result = FNI_AllocObject_using(env, methodclazz, RTJ_jmalloc);
   MemBlock_setCurrentMemBlock(env, realtimeThread, oldMemBlock);
   if ((*env)->ExceptionOccurred(env)) return NULL; /* bail */
@@ -226,7 +229,7 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_throwIllegalAssignmentErro
   printf("From a %s to a %s\n", className(fromMA), className(toMA));
   printf("illegal access to ");
 #ifdef RTJ_DEBUG_REF
-  printPointerInfo(toObj, 1);
+  printPointerInfo(FNI_UNWRAP_MASKED(toObj), 1);
 #else
   printf("location 0x%08x of type %s\n", toObj, className(toObj));
 #endif
@@ -239,4 +242,104 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_throwIllegalAssignmentErro
 #endif
 }
 
+void* allocfunc(jsize length) {
+  return RTJ_MALLOC_UNCOLLECTABLE(length);
+}
+
+/*
+ * Class:     javax_realtime_MemoryArea
+ * Method:    shadow
+ * Signature: ()Ljavax/realtime/MemoryArea;
+ */
+JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_shadow
+(JNIEnv* env, jobject memoryArea) {
+  u_int32_t size;
+  jobject clone = memoryArea;
+#ifdef WITH_NOHEAP_SUPPORT
+  if (((ptroff_t)FNI_UNWRAP(memoryArea))&1) {
+      size = FNI_UNWRAP_MASKED(memoryArea)->claz->size;
+      clone = FNI_Alloc(env, NULL, FNI_UNWRAP_MASKED(memoryArea)->claz, allocfunc, size);
+      memcpy(FNI_UNWRAP_MASKED(clone)->field_start,
+	     FNI_UNWRAP_MASKED(memoryArea)->field_start,
+	     size - sizeof(struct oobj));
+      getInflatedObject(env, clone)->memBlock = 
+	  getInflatedObject(env, memoryArea)->memBlock;
+  }
+#endif
+  return clone;
+}
+
+static jfieldID MemoryArea_shadow = NULL;
+static void (*deflate_object)(void* obj, void* client_data) = NULL;
+
+void MemoryArea_finalize(void* obj, void* client_data) {
+  JNIEnv* env = FNI_GetJNIEnv();
+  struct _jobject memoryArea;
+  jobject shadow;
+#ifndef WITH_PRECISE_GC
+  struct MemBlock* memBlock;
+#endif
+  memoryArea.obj = obj+((ptroff_t)client_data);
+#ifdef RTJ_DEBUG
+  checkException();
+  printf("%s.finalNative(0x%08x, 0x%08x)\n", classNameUnwrap(PTRMASK(obj)), 
+	 obj, client_data);
+  assert(!getInflatedObject(env, &memoryArea)->memBlock->refCount);
+#endif
+  if (!MemoryArea_shadow) {
+    MemoryArea_shadow = (*env)->GetFieldID(env, (*env)->GetObjectClass(env, &memoryArea), 
+					   "shadow", "Ljavax/realtime/MemoryArea;");
+  }
+  shadow = (*env)->GetObjectField(env, &memoryArea, MemoryArea_shadow);
+  if (FNI_UNWRAP(shadow) != memoryArea.obj) {
+    struct oobj* shadow_unwrapped = FNI_UNWRAP(shadow);
+#ifdef RTJ_DEBUG
+    printf("  freeing shadow = 0x%08x\n", shadow_unwrapped);
+#endif
+    (*env)->DeleteLocalRef(env, shadow);
+    RTJ_FREE(shadow_unwrapped);
+  }
+#ifdef WITH_PRECISE_GC
+  RefCountAllocator_DECREF(gc_info, getInflatedObject(env, &memoryArea)->memBlock);
+#else
+  MemBlock_finalize(NULL, memBlock = getInflatedObject(env, &memoryArea)->memBlock);
+  RTJ_FREE(memBlock);
+#endif
+#ifdef RTJ_DEBUG
+  printf("  calling deflate_object...");
+#endif
+  deflate_object(obj, client_data);
+#ifdef RTJ_DEBUG
+  printf("done!\n");
+#endif
+}
+/*
+ * Class:     javax_realtime_MemoryArea
+ * Method:    registerFinal
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_registerFinal
+(JNIEnv* env, jobject memoryArea) {
+  struct inflated_oobj* infl = getInflatedObject(env, memoryArea);
+  struct oobj* obj = FNI_UNWRAP_MASKED(memoryArea);
+  if (!deflate_object) {
+    deflate_object = infl->RTJ_finalizer;
+  }
+#ifdef RTJ_DEBUG
+  checkException();
+  printf("MemoryArea.registerFinal(0x%08x, 0x%08x)\n", env, memoryArea);
+#endif
+#ifdef WITH_PRECISE_GC 
+  infl->precise_deflate_obj = ((void*)MemoryArea_finalize);
+#elif defined(BDW_CONSERVATIVE_GC)
+    /* register finalizer to deallocate inflated_oobj on gc */
+  if (GC_base(obj)!=NULL) {// skip if this is not a heap-allocated object
+    GC_register_finalizer(GC_base(obj), MemoryArea_finalize,
+			  (GC_PTR) ((void*)obj-(void*)GC_base(obj)),
+			  &(infl->old_finalizer),
+			  &(infl->old_client_data));
+  } 
+#endif
+  RTJ_register_finalizer(memoryArea, MemoryArea_finalize); 
+}
 

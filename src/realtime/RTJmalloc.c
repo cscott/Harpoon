@@ -54,10 +54,9 @@ inline void* RTJ_malloc(size_t size) {
     newInfo->size = size;
     newInfo->ptr = newPtr;
     
-    flex_mutex_lock(&memBlock->ptr_info_lock);
-    newInfo->next = memBlock->ptr_info;
-    memBlock->ptr_info = newInfo;
-    flex_mutex_unlock(&memBlock->ptr_info_lock);
+    while (!compare_and_swap((long int*)(&(memBlock->ptr_info)),
+			     (long int)(newInfo->next = memBlock->ptr_info), 
+			     (long int)newInfo)) {}
   } else {
     printf("No memBlock yet, PTR info is lost\n");
   }
@@ -90,13 +89,14 @@ inline void MemBlock_setCurrentMemBlock(JNIEnv* env,
 int RTJ_init_in_progress;
 
 #ifdef WITH_MEMORYAREA_TAGS
-jfieldID memoryAreaID;
-jobject heapMem;
+static jfieldID memoryAreaID = NULL; 
+static jobject heapMem = NULL;
 #endif
 
 inline void RTJ_preinit() {
   JNIEnv *env = FNI_GetJNIEnv();
   jclass clazz = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
+  jclass memAreaStackClaz = (*env)->FindClass(env, "javax/realtime/MemAreaStack");
 #ifdef WITH_MEMORYAREA_TAGS
   jclass heapClaz;
   jmethodID methodID;
@@ -120,10 +120,6 @@ inline void RTJ_preinit() {
   printf("RTJ_preinit()\n");
   checkException();
 #endif
-#ifdef RTJ_DEBUG_REF
-  flex_mutex_init(&ptr_info_lock);
-#endif
-  HeapMemory_init();
 }
 
 inline void RTJ_init() {
@@ -133,16 +129,9 @@ inline void RTJ_init() {
   printf("RTJ_init()\n");
   checkException();
 #endif
-#ifdef RTJ_DEBUG_REF
-  flex_mutex_init(&ptr_info_lock);
-#endif
-  BlockAllocator_init();
-#ifdef RTJ_DEBUG
-  checkException();
-#endif
   MemBlock_setCurrentMemBlock(env,
 			      ((struct FNI_Thread_State *)env)->thread,
-			      HeapMemory_RThread_MemBlock_new());
+			      Heap_MemBlock_new(env, heapMem));
 #ifdef RTJ_DEBUG
   checkException();
 #endif
@@ -159,9 +148,9 @@ void RTJ_tagObject(JNIEnv* env, jobject obj) {
 #ifdef RTJ_DEBUG
   printf("RTJ_tagObject(0x%08x, 0x%08x)\n", env, obj);
 #endif
-  memoryArea = RTJ_init_in_progress?NULL:
-    (MemBlock_currentMemBlock()->block_info->memoryArea);
-  (*env)->SetObjectField(env, obj, memoryAreaID, 
-			 (memoryArea==NULL)?heapMem:memoryArea);
+  memoryArea = 
+    RTJ_init_in_progress?NULL:(MemBlock_currentMemBlock()->memoryArea);
+  FNI_SetObjectField(env, obj, memoryAreaID, 
+		     (memoryArea==NULL)?heapMem:memoryArea);
 }
 #endif

@@ -15,14 +15,6 @@ extern "C" {
 #endif
 /*
  * Class:     javax_realtime_MemoryArea
- * Method:    setupMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_setupMemBlock
-(JNIEnv *, jobject, jobject);
-
-/*
- * Class:     javax_realtime_MemoryArea
  * Method:    enterMemBlock
  * Signature: (Ljavax/realtime/RealtimeThread;Ljavax/realtime/MemAreaStack;)V
  */
@@ -32,10 +24,10 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_enterMemBlock
 /*
  * Class:     javax_realtime_MemoryArea
  * Method:    exitMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
+ * Signature: (Ljavax/realtime/RealtimeThread;Ljavax/realtime/MemAreaStack;)V
  */
 JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_exitMemBlock
-(JNIEnv *, jobject, jobject);
+(JNIEnv *, jobject, jobject, jobject);
 
 /*
  * Class:     javax_realtime_MemoryArea
@@ -56,10 +48,34 @@ JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newArray__Ljavax_realti
 /*
  * Class:     javax_realtime_MemoryArea
  * Method:    newInstance
- * Signature: (Ljavax/realtime/RealtimeThread;Ljava/lang/reflect/Constructor;[Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+ * Signature: (Ljavax/realtime/RealtimeThread;Ljava/lang/reflect/Constructor;[Ljava/lang/Object)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_newInstance
-  (JNIEnv *, jobject, jobject, jobject, jobjectArray, jobject);
+  (JNIEnv *, jobject, jobject, jobject, jobjectArray);
+
+/*
+ * Class:     javax_realtime_MemoryArea
+ * Method:    throwIllegalAssignmentError
+ * Signature: (Ljava/lang/Object;Ljavax/realtime/MemoryArea;)V
+ */
+JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_throwIllegalAssignmentError
+  (JNIEnv *, jobject, jobject, jobject);
+
+/*
+ * Class:     javax_realtime_MemoryArea
+ * Method:    shadow
+ * Signature: ()Ljavax/realtime/MemoryArea;
+ */
+JNIEXPORT jobject JNICALL Java_javax_realtime_MemoryArea_shadow
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     javax_realtime_MemoryArea
+ * Method:    registerFinal
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_registerFinal
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }

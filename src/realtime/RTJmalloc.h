@@ -27,8 +27,8 @@ inline void MemBlock_setCurrentMemBlock(JNIEnv* env,
 					 jobject realtimeThread,
 					struct MemBlock* memBlock);
 #ifdef WITH_MEMORYAREA_TAGS
-jfieldID memoryAreaID;
-jobject heapMem;
+static jfieldID memoryAreaID;
+static jobject heapMem;
 void RTJ_tagObject(JNIEnv* env, jobject obj);
 #endif
 

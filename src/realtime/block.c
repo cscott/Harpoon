@@ -4,8 +4,9 @@
 
 #include "block.h"
 
-inline struct Block* Block_new(void* superBlockTag, 
-			       size_t size) {
+static int fd = -1;
+
+inline struct Block* Block_new(size_t size) {
   struct Block* bl;
 #ifdef RTJ_TIMER
   struct timeval begin;
@@ -14,71 +15,111 @@ inline struct Block* Block_new(void* superBlockTag,
 #endif 
   bl = (struct Block*)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct Block));
 #ifdef RTJ_DEBUG
-  printf("Block_new(0x%08x, %d)\n", superBlockTag, size);
+  printf("Block_new(%d)\n", size);
 #endif
-#ifdef WITH_NOHEAP_SUPPORT
-  (bl->oldBegin) = 
-#endif    
-    (bl->free) = (bl->begin) = (void*)RTJ_MALLOC_UNCOLLECTABLE(size);
+#ifdef BDW_CONSERVATIVE_GC
+  bl->begin = (void*)RTJ_CALLOC_UNCOLLECTABLE(size, 1);
+#else
+  if (size > START_MMAP) {
+    if (fd < 0) fd = open("/dev/zero", O_RDONLY);
+    bl->begin = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+  } else {
+    bl->begin = (void*)RTJ_CALLOC_UNCOLLECTABLE(size, 1);
+  }
+#endif
+#ifdef RTJ_DEBUG
+  printf("  block: 0x%08x, block->begin: 0x%08x\n", bl, bl->begin);
+#endif
+  (bl->end) = (bl->begin) + size;
+  bl->free = (void*)RTJ_ALIGN((bl->begin)+sizeof(void*));
 #ifdef RTJ_TIMER
   gettimeofday(&end, NULL);
   printf("Block_new: %ds %dus\n", 
 	 end.tv_sec-begin.tv_sec, 
 	 end.tv_usec-begin.tv_usec);
 #endif
-#ifdef RTJ_DEBUG
-  printf("  block: 0x%08x, block->begin: 0x%08x\n", bl, bl->begin);
-#endif
-  (bl->end) = (bl->begin) + size;
-  (bl->superBlockTag) = superBlockTag;
-  (bl->next) = (bl->prev) = NULL;
-#ifdef WITH_NOHEAP_SUPPORT
-  (bl->free) = (bl->begin) = (void*)RTJ_ALIGN((((char*)(bl->begin))+1));
-#ifdef RTJ_DEBUG
-  printf("  adjusted begin for NoHeapRealtimeThread support: 0x%08x\n", 
-	 bl->begin);
-#endif
-#endif
   return bl;
 }
 
-#ifdef WITH_NOHEAP_SUPPORT
-inline void* Block_alloc(struct Block* block, size_t size, int noheap) {
-#else
 inline void* Block_alloc(struct Block* block, size_t size) {
-#endif
   void* ptr;
+  ptroff_t objSize = RTJ_ALIGN(size+sizeof(void*));
 #ifdef RTJ_DEBUG
-  printf("Block_alloc(0x%08x, %d)\n", block, size
-#ifdef WITH_NOHEAP_SUPPORT
-	 +1
-#endif	 
-	 );
+  printf("Block_alloc(0x%08x, %d)\n", block, size);
 #endif
-  if ((ptr = (void*)exchange_and_add((void*)(&(block->free)), 
-#ifdef WITH_NOHEAP_SUPPORT
-				     RTJ_ALIGN(size+1)
-#else
-				     RTJ_ALIGN(size)
-#endif
-				     ))
-      > block->end) {
-    printf("Ran out of space in MemoryArea: %d is not enough space.\n",
-	   (block->end)-(block->begin));
-    printf("Try increasing your MemoryArea size.\n");
+  if ((ptr = (void*)exchange_and_add((void*)(&(block->free)), objSize)) 
+      >= block->end) {
     return NULL;
   } else {
-#ifdef WITH_NOHEAP_SUPPORT
-    *(((char*)ptr)-1) = (char)noheap;
-#endif
+    *((void**)(ptr-sizeof(void*))) = ptr+objSize;
     return ptr;
   }
-  /* Returns NULL in case the allocation failed - all subsequent
-     allocations will fail as well..., and block->free will be
-     trashed. */
+}
+
+#ifdef WITH_PRECISE_GC
+inline void Block_scan(struct Block* block) {
+  struct oobj* oobj_ptr;
+#ifdef RTJ_DEBUG
+  printf("Block_scan(0x%08x)\n  ", block);
+#endif
+  for(oobj_ptr = (struct oobj*)RTJ_ALIGN(block->begin+sizeof(void*)); 
+      oobj_ptr; oobj_ptr = *(((struct oobj**)oobj_ptr)-1)) {
+    if (oobj_ptr->claz) {
+#ifdef RTJ_DEBUG
+      printf("0x%08x ", oobj_ptr);
+#endif
+      trace(oobj_ptr);
+    }
+  }
+#ifdef RTJ_DEBUG
+  printf("\n");
+#endif
+}
+#endif
+
+#ifdef WITH_GC_STATS
+extern struct timespec total_finalize_time;
+struct timespec total_finalize_time;
+#endif
+
+inline void Block_finalize(struct Block* block) {
+  struct oobj* obj;
+#ifdef WITH_GC_STATS
+  struct timespec begin, end, elapsed;
+  clock_gettime(CLOCK_REALTIME, &begin);
+#endif
+#ifdef RTJ_DEBUG
+  printf("Block_finalize(0x%08x)\n  ", block);
+#endif
+  for(obj = (struct oobj*)RTJ_ALIGN(block->begin+sizeof(void*)); obj; 
+      obj = *(((struct oobj**)obj)-1)) {
+#ifdef RTJ_DEBUG
+    if ((obj->claz)&&(RTJ_should_finalize(obj))) {
+      printf("0x%08x ", obj);
+    }
+#endif
+    if (obj->claz) {
+      RTJ_finalize(obj);
+    }
+  }
+#ifdef RTJ_DEBUG
+  printf("\n");
+#endif
+#ifdef WITH_GC_STATS
+  clock_gettime(CLOCK_REALTIME, &end);
+  elapsed.tv_sec = (end.tv_sec-begin.tv_sec)+
+    ((end.tv_nsec<begin.tv_nsec)?(-1):0); 
+  elapsed.tv_nsec = (end.tv_nsec-begin.tv_nsec)+
+    ((end.tv_nsec<begin.tv_nsec)?1000000000:0); 
+  total_finalize_time.tv_sec += elapsed.tv_sec + 
+    (total_finalize_time.tv_nsec + elapsed.tv_nsec)/1000000000; 
+  total_finalize_time.tv_nsec = 
+    (total_finalize_time.tv_nsec + elapsed.tv_nsec)%1000000000;
+#endif
 }
 
 inline void Block_free(struct Block* block) {
+  size_t size = (size_t)((block->end)-(block->begin));
 #ifdef RTJ_TIMER
   struct timeval begin, end;
   gettimeofday(&begin, NULL);
@@ -87,10 +128,14 @@ inline void Block_free(struct Block* block) {
   printf("Block_free(0x%08x)\n", block);
 #endif
   Block_finalize(block);
-#ifdef WITH_NOHEAP_SUPPORT
-  RTJ_FREE(block->oldBegin);
-#else
+#ifdef BDW_CONSERVATIVE_GC
   RTJ_FREE(block->begin);
+#else
+  if (size > START_MMAP) {
+    munmap(block->begin, size);
+  } else {
+    RTJ_FREE(block->begin);
+  }
 #endif
   RTJ_FREE(block);
 #ifdef RTJ_TIMER
@@ -104,81 +149,7 @@ inline void Block_reset(struct Block* block) {
   printf("Block_reset(0x%08x)\n", block);
 #endif
   Block_finalize(block);
-  block->free = block->begin;
+  memset(block->begin, 0, (size_t)((block->free)-(block->begin)));
+  block->free = (void*)RTJ_ALIGN((block->begin)+sizeof(void*));
 }
 
-#ifdef WITH_PRECISE_GC
-inline void Block_scan(struct Block* block) {
-#ifdef RTJ_DEBUG
-  struct oobj* oobj_ptr_tmp;
-#endif
-  struct oobj* oobj_ptr;
-#ifdef RTJ_TIMER
-  struct timeval begin, end;
-  gettimeofday(&begin, NULL);
-#endif
-#ifdef RTJ_DEBUG
-  printf("Block_scan(0x%08x)\n  ", block);
-#endif
-  for(oobj_ptr = block->begin; ((void*)oobj_ptr) < block->free;
-      ((void*)oobj_ptr) += 
-#ifdef WITH_NOHEAP_SUPPORT
-	RTJ_ALIGN(((char*)FNI_ObjectSize(oobj_ptr))+1)
-#else
-	RTJ_ALIGN(FNI_ObjectSize(oobj_ptr))
-#endif
-      ) {
-#ifdef RTJ_DEBUG
-    printf("0x%08x ", oobj_ptr_tmp = oobj_ptr);
-#endif
-#ifdef WITH_NOHEAP_SUPPORT
-    if (*(((char*)oobj_ptr)-1)) {
-#ifdef RTJ_DEBUG
-      printf("(skipped) ");
-#endif
-    } else {
-#endif
-      trace((struct oobj*)(oobj_ptr));
-#ifdef RTJ_DEBUG
-      if (oobj_ptr_tmp != oobj_ptr) {
-	assert("add_to_root_set moved pointer in RTJ block!\n");
-      }
-#endif
-#ifdef WITH_NOHEAP_SUPPORT
-    }
-#endif
-  }
-#ifdef RTJ_DEBUG
-  printf("\n");
-#endif
-#ifdef RTJ_TIMER
-  gettimeofday(&end, NULL);
-  printf("Block_scan: %ds %dus\n", end.tv_sec-begin.tv_sec, end.tv_usec-begin.tv_usec);
-#endif
-}
-#endif
-
-inline void Block_finalize(struct Block* block) {
-  struct oobj* obj;
-#ifdef RTJ_DEBUG
-  printf("Block_finalize(0x%08x)\n  ", block);
-#endif
-  for (obj = block->begin; ((void*)obj) < block->free;
-       ((void*)obj) +=
-#ifdef WITH_NOHEAP_SUPPORT
-	 RTJ_ALIGN(((char*)FNI_ObjectSize(obj))+1)
-#else
-	 RTJ_ALIGN(FNI_ObjectSize(obj))
-#endif
-       ) {
-#ifdef RTJ_DEBUG
-    if (RTJ_should_finalize(obj)) {
-      printf("0x%08x ", obj);
-    }
-#endif
-    RTJ_finalize(obj);
-  }
-#ifdef RTJ_DEBUG
-  printf("\n");
-#endif
-}

@@ -59,7 +59,7 @@ struct claz {
     GC_bitmap ptr;	        /* pointer to larger gc bitmap. */
 	/* The least significant bit of the first word is one if	*/
 	/* the first word in the object may be a pointer.		*/
-#elif WITH_PRECISE_GC
+#elif defined(WITH_PRECISE_GC) || defined(WITH_REALTIME_JAVA)
     ptroff_t bitmap;		/* garbage collection field bitmap, or */
     ptroff_t *ptr;	        /* pointer to larger gc bitmap. */
 	/* The least significant bit of the first word is one if	*/

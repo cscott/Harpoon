@@ -4,16 +4,24 @@
 
 #ifndef __LINKED_LIST_ALLOCATOR_H__
 #define __LINKED_LIST_ALLOCATOR_H__
-#include "MemBlock.h"
 #include "RTJfinalize.h"
+#include "RTJconfig.h"
+#include "asm/atomicity.h"
 
 struct cons {
   struct oobj* car;
   struct cons* cdr;
 };
 
-typedef struct cons** LListAllocator; 
+struct linkedListAllocator {
+  struct cons* data;
+  long int used;
+  long int size;
+};
 
+typedef struct linkedListAllocator* LListAllocator; 
+
+inline LListAllocator LListAllocator_new(size_t size);
 inline void* LListAllocator_alloc(LListAllocator ls, size_t size);
 inline void  LListAllocator_free(LListAllocator ls);
 

@@ -302,6 +302,9 @@ static jmethodID runID; /* Thread.run() method. */
 static jmethodID gettgID; /* Thread.getThreadGroup() method. */
 static jmethodID exitID; /* Thread.exit() method. */
 static jmethodID uncaughtID; /* ThreadGroup.uncaughtException() method. */
+#ifdef WITH_REALTIME_JAVA
+static jmethodID cleanupID; /* RealtimeThread.cleanup() method. */
+#endif
 
 /* information about priority values -- both w/in java and runtime system */
 static jint MIN_PRIORITY, NORM_PRIORITY, MAX_PRIORITY;
@@ -421,6 +424,10 @@ void FNI_java_lang_Thread_setupMain(JNIEnv *env) {
   uncaughtID = (*env)->GetMethodID(env, thrGrpCls, "uncaughtException",
 				"(Ljava/lang/Thread;Ljava/lang/Throwable;)V");
   assert(!((*env)->ExceptionOccurred(env)));
+#ifdef WITH_REALTIME_JAVA
+  cleanupID = (*env)->GetMethodID(env, thrCls, "cleanup", "()V");
+  assert(!((*env)->ExceptionOccurred(env)));
+#endif
   /* delete all local refs except for mainThr. */
   (*env)->DeleteLocalRef(env, mainStr);
   (*env)->DeleteLocalRef(env, thrGrpCls);
@@ -614,6 +621,9 @@ static void * thread_startup_routine(void *closure) {
   /* this thread is dead now.  give it a chance to clean up. */
   /* (this also removes the thread from the ThreadGroup) */
   /* (see also Thread.EDexit() -- keep these in sync) */
+#ifdef WITH_REALTIME_JAVA
+  (*env)->CallVoidMethod(env, thread, cleanupID);
+#endif
   (*env)->CallNonvirtualVoidMethod(env, thread, thrCls, exitID);
   assert(!((*env)->ExceptionOccurred(env)));
   /* This thread is dead now. */

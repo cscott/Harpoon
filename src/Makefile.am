@@ -63,7 +63,7 @@ endif
 
 # see run% rule in top-level makefile to see how to generate a binary
 # executable from the Java.a file and these two libraries.
-lib_LTLIBRARIES = libflexc0.la libflexc1.la $(AOUTLIBRARY)
+lib_LTLIBRARIES = libflexc0.la libflexc1.la $(AOUTLIBRARY) 
 
 libflexc0_la_SOURCES = startup.c
 libflexc0_la_LIBADD = \

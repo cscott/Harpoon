@@ -20,12 +20,12 @@
 /* lock for inflating locks */
 FLEX_MUTEX_DECLARE_STATIC(global_inflate_mutex);
 
-#if defined(BDW_CONSERVATIVE_GC)
+#ifdef WITH_REALTIME_JAVA
+static void deflate_object(void* obj, void* client_data);
+#elif defined(BDW_CONSERVATIVE_GC)
 static void deflate_object(GC_PTR obj, GC_PTR client_data);
 #elif defined(WITH_PRECISE_GC)
 static void deflate_object(struct oobj *obj, ptroff_t client_data);
-#elif defined(WITH_REALTIME_JAVA)
-static void deflate_object(void* obj, void* client_data);
 #endif
 
 void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
@@ -68,7 +68,13 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     obj->hashunion.inflated = infl;
     assert(FNI_IS_INFLATED(wrapped_obj));
 #ifdef WITH_PRECISE_GC 
-    precise_register_inflated_obj(obj, deflate_object);
+#if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
+    /* Can't inflate a heap reference in a NoHeapRealtimeThread */
+    assert((!(((ptroff_t)FNI_UNWRAP(wrapped_obj))&1))||
+	   (!((struct FNI_Thread_State*)env)->noheap));
+    if (((ptroff_t)FNI_UNWRAP(wrapped_obj))&1)  /* register only if in heap */
+#endif
+      precise_register_inflated_obj(obj, deflate_object);
 #elif defined(BDW_CONSERVATIVE_GC)
     /* register finalizer to deallocate inflated_oobj on gc */
     if (GC_base(obj)!=NULL) {// skip if this is not a heap-allocated object
@@ -79,10 +85,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     } 
 #endif
 #ifdef WITH_REALTIME_JAVA
-#if defined(WITH_PRECISE_GC) || defined(BDW_CONSERVATIVE_GC)
-    else 
-#endif
-      RTJ_register_finalizer(wrapped_obj, deflate_object);    
+    RTJ_register_finalizer(wrapped_obj, deflate_object); 
 #endif
   }
   FLEX_MUTEX_UNLOCK(&global_inflate_mutex);
@@ -94,12 +97,12 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
  * (call the java finalizer and register a new (second-stage) finalizer;
  *  when the second-stage finalizer is invoked, the object is *really*
  *  dead).  we're punting on the potential problem for now. */
-#ifdef BDW_CONSERVATIVE_GC 
+#ifdef WITH_REALTIME_JAVA
+static void deflate_object(void* obj, void* client_data) {
+#elif defined(BDW_CONSERVATIVE_GC) 
 static void deflate_object(GC_PTR obj, GC_PTR client_data) {
 #elif defined(WITH_PRECISE_GC)
 static void deflate_object(struct oobj *obj, ptroff_t client_data) {
-#elif defined(WITH_REALTIME_JAVA)
-static void deflate_object(void* obj, void* client_data) {
 #endif
 #if defined(BDW_CONSERVATIVE_GC) || defined(WITH_PRECISE_GC) || defined(WITH_REALTIME_JAVA)
     struct oobj *oobj = (struct oobj *) ((void*)obj+(ptroff_t)client_data);
@@ -108,9 +111,9 @@ static void deflate_object(void* obj, void* client_data) {
     /* okay, first invoke java finalizer.  afterwards this object
      * *should* be dead, but the java finalizer might resurrect it.
      * we don't behave well in this case. */
-#ifdef BDW_CONSERVATIVE_GC
-    if (infl->old_finalizer)
-	(infl->old_finalizer)(obj, infl->old_client_data);
+#if defined(BDW_CONSERVATIVE_GC) && !defined(WITH_REALTIME_JAVA)
+        if (infl->old_finalizer)
+	 (infl->old_finalizer)(obj, infl->old_client_data);
 #endif
     /* okay, java finalization's taken care of.  Let's clean up the
      * JNI data */

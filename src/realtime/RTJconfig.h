@@ -39,6 +39,7 @@
 #include "dmalloc.h"
 /* To prevent MACRO conflicts */
 #define RTJ_MALLOC(size) _malloc_leap(__FILE__, __LINE__, size)
+#define RTJ_CALLOC_UNCOLLECTABLE(ele_n, size) _calloc_leap(__FILE__, __LINE__, ele_n, size)
 #define RTJ_MALLOC_UNCOLLECTABLE(size) _malloc_leap(__FILE__, __LINE__, size)
 #define RTJ_FREE(ptr) _free_leap(__FILE__, __LINE__, ptr)
 #endif
@@ -46,10 +47,12 @@
 #ifdef BDW_CONSERVATIVE_GC 
 #ifdef WITH_GC_STATS 
 #define RTJ_MALLOC(size) GC_malloc_stats(size)
+#define RTJ_CALLOC_UNCOLLECTABLE(ele_n, size) GC_malloc_uncollectable_stats((ele_n)*(size))
 #define RTJ_MALLOC_UNCOLLECTABLE(size) GC_malloc_uncollectable_stats(size)
 #define RTJ_FREE(ptr) GC_free_stats(ptr)
 #else 
 #define RTJ_MALLOC(size) GC_malloc(size)
+#define RTJ_CALLOC_UNCOLLECTABLE(ele_n, size) GC_malloc_uncollectable((ele_n)*(size))
 #define RTJ_MALLOC_UNCOLLECTABLE(size) GC_malloc_uncollectable(size)
 #define RTJ_FREE(ptr) GC_free(ptr)
 #endif 
@@ -57,24 +60,36 @@
 #ifdef WITH_PRECISE_GC
 #ifdef WITH_GC_STATS
 #define RTJ_MALLOC(size) precise_malloc_stats(size)
+#define RTJ_CALLOC_UNCOLLECTABLE(ele_n, size) calloc_stats(ele_n, size)
 #define RTJ_MALLOC_UNCOLLECTABLE(size) malloc_stats(size)
 #define RTJ_FREE(ptr) free_stats(ptr)
 #else
 #define RTJ_MALLOC(size) precise_malloc(size)
+#define RTJ_CALLOC_UNCOLLECTABLE(ele_n, size) calloc(ele_n, size)
 #define RTJ_MALLOC_UNCOLLECTABLE(size) malloc(size)
 #define RTJ_FREE(ptr) free(ptr)
 #endif
 #else
 #ifdef WITH_GC_STATS
 #define RTJ_MALLOC(size) malloc_stats(size)
+#define RTJ_CALLOC_UNCOLLECTABLE(ele_n, size) calloc_stats(ele_n, size)
 #define RTJ_MALLOC_UNCOLLECTABLE(size) malloc_stats(size)
 #define RTJ_FREE(ptr) free_stats(ptr)
 #else
 #define RTJ_MALLOC(size) malloc(size)
+#define RTJ_CALLOC_UNCOLLECTABLE(ele_n, size) calloc(ele_n, size)
 #define RTJ_MALLOC_UNCOLLECTABLE(size) malloc(size)
 #define RTJ_FREE(ptr) free(ptr) 
 #endif
 #endif
 #endif
 #endif
+
+#ifdef WITH_SINGLE_WORD_ALIGN
+# define RTJ_ALIGN_TO  4 /* bytes */
+#else
+# define RTJ_ALIGN_TO  8 /* bytes */
+#endif
+#define RTJ_ALIGNMENT (RTJ_ALIGN_TO-1)
+#define RTJ_ALIGN(ptr) ((((int)(ptr))+RTJ_ALIGNMENT)&(~RTJ_ALIGNMENT))
 

@@ -11,104 +11,47 @@
  */
 JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_initNative
 (JNIEnv* env, jobject memoryArea, jlong size) {
+  struct MemBlock* mb       = MemBlock_new(env, memoryArea);
+  mb->alloc_union.lls       = LListAllocator_new(size);
+  mb->alloc                 = VTScope_MemBlock_alloc;
+  mb->free                  = VTScope_MemBlock_free;
+  mb->finalize              = VTScope_MemBlock_finalize;
+#ifdef WITH_PRECISE_GC
+  mb->gc                    = VTScope_MemBlock_gc; /* must be the last set */
+#endif
 }
 
-/*
- * Class:     VTMemory
- * Method:    newMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_newMemBlock
-(JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
-  struct MemBlock* mb = getInflatedObject(env, realtimeThread)->temp;
-  struct BlockInfo* bi = mb->block_info;
+void* VTScope_MemBlock_alloc(struct MemBlock* mem, size_t size) {
 #ifdef RTJ_DEBUG
-  printf("VTMemory.newMemBlock(0x%08x, 0x%08x, 0x%08x)\n", env, 
-	 memoryArea, realtimeThread);
   checkException();
+  printf("VTScope_MemBlock_alloc(0x%08x, %d)\n", mem, (int)size);
 #endif
-#ifdef WITH_NOHEAP_SUPPORT
-  if (IsNoHeapRealtimeThread(env, realtimeThread)) {
-    bi->alloc     = VTScope_NoHeapRThread_MemBlock_alloc;
-    bi->free      = VTScope_NoHeapRThread_MemBlock_free;
-    bi->allocator = NULL;
-#ifdef WITH_PRECISE_GC
-    bi->gc        = NULL;
-#endif
-  } else {
-#endif
-    bi->alloc     = VTScope_RThread_MemBlock_alloc;
-    bi->free      = VTScope_RThread_MemBlock_free;
-    bi->allocator = NULL;
-#ifdef WITH_PRECISE_GC
-    bi->gc        = VTScope_RThread_MemBlock_gc;
-    add_MemBlock_to_roots(mb);
-#endif
-#ifdef WITH_NOHEAP_SUPPORT
-  }
-#endif
-  mb->ref_info = RefInfo_new(0);
+  return LListAllocator_alloc(mem->alloc_union.lls, size);
 }
 
-void* VTScope_RThread_MemBlock_alloc(struct MemBlock* mem, 
-				     size_t size) {
+void  VTScope_MemBlock_free(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("VTScope_RThread_MemBlock_alloc(0x%08x, %d)\n", mem, (int)size);
+  printf("VTScope_MemBlock_free(0x%08x)\n", mem);
 #endif
-  return LListAllocator_alloc((LListAllocator)(&(mem->block_info->allocator)), 
-			      size);
-}
-
-void  VTScope_RThread_MemBlock_free(struct MemBlock* mem) {
-  JNIEnv* env = FNI_GetJNIEnv();
-#ifdef RTJ_DEBUG
-  checkException();
-  printf("VTScope_RThread_MemBlock_free(0x%08x)\n", mem);
-#endif
-#ifdef WITH_PRECISE_GC
-  remove_MemBlock_from_roots(mem);
-#endif
-  LListAllocator_free((LListAllocator)(&(mem->block_info->allocator)));
-#ifdef RTJ_DEBUG
-  printf("  free(0x%08x)\n", mem);
-#endif
-  (*env)->DeleteGlobalRef(env, mem->block_info->memoryArea);
-  (*env)->DeleteGlobalRef(env, mem->block_info->realtimeThread);
-  RTJ_FREE(mem->block_info);
-  RTJ_FREE(mem); 
+  LListAllocator_free(mem->alloc_union.lls);
 }
 
 #ifdef WITH_PRECISE_GC
-void  VTScope_RThread_MemBlock_gc(struct MemBlock* mem) {
+void  VTScope_MemBlock_gc(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("VTScope_RThread_MemBlock_gc(0x%08x)\n", mem);
+  printf("VTScope_MemBlock_gc(0x%08x)\n", mem);
 #endif
-  LListAllocator_gc((LListAllocator)(&(mem->block_info->allocator)));
+  LListAllocator_gc(mem->alloc_union.lls);
 }
 #endif
 
-#ifdef WITH_NOHEAP_SUPPORT
-void* VTScope_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, 
-					   size_t size) {
+void  VTScope_MemBlock_finalize(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("VTScope_NoHeapRThread_MemBlock_alloc(0x%08x, %d)\n", mem, size);
+  printf("VTScope_MemBlock_finalize(0x%08x)\n", mem);
 #endif
-  return LListAllocator_alloc((LListAllocator)(&(mem->block_info->allocator)),
-			      size);
+  RTJ_FREE(mem->alloc_union.lls);
+  mem->alloc_union.lls = NULL;
 }
-
-void  VTScope_NoHeapRThread_MemBlock_free(struct MemBlock* mem) {
-#ifdef RTJ_DEBUG
-  checkException();
-  printf("VTScope_NoHeapRThread_MemBlock_free(0x%08x)\n", mem);
-#endif
-  LListAllocator_free((LListAllocator)(&(mem->block_info->allocator)));
-#ifdef RTJ_DEBUG
-  printf("  free(0x%08x)\n", mem);
-#endif
-  RTJ_FREE(mem);
-}
-#endif

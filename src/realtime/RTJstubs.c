@@ -117,37 +117,12 @@ JNIEXPORT void JNICALL Java_javax_realtime_HeapMemory_initNative
 #endif
 }
 
-/*
- * Class:     HeapMemory
- * Method:    newMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_HeapMemory_newMemBlock
-(JNIEnv* env, jobject heapMemory, jobject realtimeThread) {
-#ifndef WITH_FAKE_SCOPES
-  printf("Did you forget to compile --with-realtime-java?\n");
-#endif
-}
-
-/*
- * Class:     CTMemory
+/* Class:     CTMemory
  * Method:    initNative
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_initNative
 (JNIEnv* env, jobject CTMemory, jlong size) {
-#ifndef WITH_FAKE_SCOPES
-  printf("Did you forget to compile --with-realtime-java?\n");
-#endif
-}
-
-/*
- * Class:     CTMemory
- * Method:    newMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_newMemBlock
-(JNIEnv* env, jobject CTMemory, jobject realtimeThread) {
 #ifndef WITH_FAKE_SCOPES
   printf("Did you forget to compile --with-realtime-java?\n");
 #endif
@@ -178,36 +153,12 @@ JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_initNative
 }
 
 /*
- * Class:     VTMemory
- * Method:    newMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_VTMemory_newMemBlock
-(JNIEnv* env, jobject VTMemory, jobject realtimeThread) {
-#ifndef WITH_FAKE_SCOPES
-  printf("Did you forget to compile --with-realtime-java?\n");
-#endif
-}
-
-/*
  * Class:     ImmortalMemory
  * Method:    initNative
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_javax_realtime_ImmortalMemory_initNative
 (JNIEnv* env, jobject ImmortalMemory, jlong size) {
-#ifndef WITH_FAKE_SCOPES
-  printf("Did you forget to compile --with-realtime-java?\n");
-#endif
-}
-
-/*
- * Class:     ImmortalMemory
- * Method:    newMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_ImmortalMemory_newMemBlock
-(JNIEnv* env, jobject ImmortalMemory, jobject realtimeThread) {
 #ifndef WITH_FAKE_SCOPES
   printf("Did you forget to compile --with-realtime-java?\n");
 #endif
@@ -226,36 +177,12 @@ JNIEXPORT void JNICALL Java_javax_realtime_ImmortalPhysicalMemory_initNative
 }
 
 /*
- * Class:     ImmortalPhysicalMemory
- * Method:    newMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_ImmortalPhysicalMemory_newMemBlock
-(JNIEnv* env, jobject ImmortalPhysicalMemory, jobject realtimeThread) {
-#ifndef WITH_FAKE_SCOPES
-  printf("Did you forget to compile --with-realtime-java?\n");
-#endif
-}
-
-/*
  * Class:     LTMemory
  * Method:    initNative
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_javax_realtime_LTMemory_initNative
 (JNIEnv* env, jobject LTMemory, jlong size) {
-#ifndef WITH_FAKE_SCOPES
-  printf("Did you forget to compile --with-realtime-java?\n");
-#endif
-}
-
-/*
- * Class:     LTMemory
- * Method:    newMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_LTMemory_newMemBlock
-(JNIEnv* env, jobject LTMemory, jobject realtimeThread) {
 #ifndef WITH_FAKE_SCOPES
   printf("Did you forget to compile --with-realtime-java?\n");
 #endif
@@ -274,36 +201,12 @@ JNIEXPORT void JNICALL Java_javax_realtime_NullMemoryArea_initNative
 }
 
 /*
- * Class:     NullMemoryArea
- * Method:    newMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_NullMemoryArea_newMemBlock
-(JNIEnv* env, jobject NullMemoryArea, jobject realtimeThread) {
-#ifndef WITH_FAKE_SCOPES
-  printf("Did you forget to compile --with-realtime-java?\n");
-#endif
-}
-
-/*
  * Class:     ScopedPhysicalMemory
  * Method:    initNative
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_javax_realtime_ScopedPhysicalMemory_initNative
 (JNIEnv* env, jobject ScopedPhysicalMemory, jlong size) {
-#ifndef WITH_FAKE_SCOPES
-  printf("Did you forget to compile --with-realtime-java?\n");
-#endif
-}
-
-/*
- * Class:     ScopedPhysicalMemory
- * Method:    newMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_ScopedPhysicalMemory_newMemBlock
-(JNIEnv* env, jobject ScopedPhysicalMemory, jobject realtimeThread) {
 #ifndef WITH_FAKE_SCOPES
   printf("Did you forget to compile --with-realtime-java?\n");
 #endif
@@ -328,4 +231,45 @@ JNIEXPORT void JNICALL Java_javax_realtime_MemoryArea_throwIllegalAssignmentErro
 #else
   printf("Did you forget to compile --with-realtime-java?\n");
 #endif
+}
+
+/*
+ * Class:     javax_realtime_MemAreaStack
+ * Method:    PUSH
+ * Signature: ()Ljavax/realtime/MemAreaStack;
+ */
+JNIEXPORT jobject JNICALL Java_javax_realtime_MemAreaStack_PUSH__
+(JNIEnv* env, jclass claz) {
+  if (!MemAreaStack_next) {
+    MemAreaStack_next = (*env)->GetFieldID(env, memAreaStackClaz, "next", 
+					   "Ljavax/realtime/MemAreaStack;");
+    MemAreaStack_entry = (*env)->GetFieldID(env, memAreaStackClaz, "entry",
+					    "Ljavax/realtime/MemoryArea;");
+    MemAreaStack_refcount = (*env)->GetFieldID(env, memAreaStackClaz, "refcount", "J");
+    MemAreaStack_init = (*env)->GetMethodID(env, memAreaStackClaz, "<init>", "()V");
+    MemAreaStack_initMem = (*env)->GetMethodID(env, memAreaStackClaz, "<init>", 
+					       "(Ljavax/realtime/MemoryArea;"
+					       "Ljavax/realtime/MemAreaStack;)V");
+  }
+  return (*env)->NewObject(env, claz, MemAreaStack_init);
+}
+
+/*
+ * Class:     javax_realtime_MemAreaStack
+ * Method:    PUSH
+ * Signature: (Ljavax/realtime/MemoryArea;Ljavax/realtime/MemAreaStack;)Ljavax/realtime/MemAreaStack;
+ */
+JNIEXPORT jobject JNICALL Java_javax_realtime_MemAreaStack_PUSH__Ljavax_realtime_MemoryArea_2Ljavax_realtime_MemAreaStack_2
+(JNIEnv* env, jclass claz, jobject memoryArea, jobject memAreaStack) {
+  return (*env)->NewObject(env, claz, MemAreaStack_initMem, memoryArea, memAreaStack);
+}
+
+/*
+ * Class:     javax_realtime_MemAreaStack
+ * Method:    POP
+ * Signature: (Ljavax/realtime/MemAreaStack;)Ljavax/realtime/MemAreaStack;
+ */
+JNIEXPORT jobject JNICALL Java_javax_realtime_MemAreaStack_POP
+(JNIEnv* env, jclass claz, jobject memAreaStack) {
+  return (*env)->GetObjectField(env, memAreaStack, MemAreaStack_next);
 }

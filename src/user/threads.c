@@ -190,7 +190,8 @@ void exitthread() {
 
 void inituser(int *bottom) {
   void * stack;
-  struct thread_list * tl=malloc(sizeof(struct thread_list));
+  struct thread_list * tl=(struct thread_list*)
+    malloc(sizeof(struct thread_list));
   INCREMENT_MEM_STATS(sizeof(struct thread_list));
   /*build stack and stash it*/
   __machdep_pthread_create(&(tl->mthread), NULL, NULL,STACKSIZE, 0,0);

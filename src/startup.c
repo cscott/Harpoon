@@ -6,6 +6,9 @@
 #ifdef WITH_PRECISE_GC
 #include "jni-gc.h"
 #endif
+#ifdef WITH_GC_STATS
+#include "realtime/GCstats.h"
+#endif
 
 /* these functions are defined in src/java.lang/java_lang_Thread.c but only
  * used here. */
@@ -58,6 +61,9 @@ int main(int argc, char *argv[]) {
 #endif
   /* initialize Realtime Java extensions */
   /* setup main thread info. */
+#ifdef WITH_GC_STATS
+  setup_GC_stats();
+#endif
 #if defined(WITH_REALTIME_JAVA) || defined(WITH_FAKE_SCOPES)
   RTJ_preinit();
 #endif
@@ -139,6 +145,10 @@ int main(int argc, char *argv[]) {
 #ifdef WITH_REALTIME_THREADS
   //stop quantathread
   Stop_QuantaThread(env);
+#endif
+
+#ifdef WITH_GC_STATS
+  print_GC_stats();
 #endif
 
   // handle uncaught exception in main thread. (see also thread_startup)

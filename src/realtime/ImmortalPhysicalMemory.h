@@ -19,14 +19,6 @@ extern "C" {
 JNIEXPORT void JNICALL Java_javax_realtime_ImmortalPhysicalMemory_initNative
   (JNIEnv *, jobject, jlong);
 
-/*
- * Class:     ImmortalPhysicalMemory
- * Method:    newMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_ImmortalPhysicalMemory_newMemBlock
-  (JNIEnv *, jobject, jobject);
-
 #ifdef __cplusplus
 }
 #endif

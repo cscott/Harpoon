@@ -10,103 +10,27 @@
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_initNative
-(JNIEnv* env, jobject memoryArea, jlong size, jboolean reuse) {
-  struct MemBlock* mb = (struct MemBlock*)
-      RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct MemBlock));
+(JNIEnv* env, jobject memoryArea, jlong minimum, jlong maximum) {
+  struct MemBlock* mb = MemBlock_new(env, memoryArea);
 #ifdef RTJ_DEBUG
   printf("CTMemory.initNative(0x%08x, 0x%08x, %d, %d)\n", 
-	 env, memoryArea, (size_t)size, reuse);
+	 env, memoryArea, minimum, maximum);
   checkException();
 #endif
-  getInflatedObject(env, memoryArea)->memBlock = mb;
-  mb->block = Block_new(memoryArea, (size_t)size);
-  mb->ref_info = RefInfo_new(reuse == JNI_TRUE);
-  mb->next = NULL;
-  flex_mutex_init(&(mb->list_lock));
-#ifdef WITH_PRECISE_GC
-  add_MemBlock_to_roots(mb);
-#endif
+  mb->block = Block_new(minimum);
+  if (minimum != maximum) {
+    mb->alloc_union.lls = LListAllocator_new(maximum-minimum);
+  }
 #ifdef RTJ_DEBUG
   checkException();
   printf("  storing MemBlock in 0x%08x\n", mb->block); 
 #endif
-}
-
-/*
- * Class:     CTMemory
- * Method:    newMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_newMemBlock
-(JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
-  struct MemBlock* rtmb = getInflatedObject(env, realtimeThread)->temp;
-  struct MemBlock* mamb = getInflatedObject(env, memoryArea)->memBlock;
-  struct BlockInfo* bi = rtmb->block_info;
-#ifdef RTJ_DEBUG
-  struct MemBlock* current;
-  checkException();
-  printf("CTMemory.newMemBlock(0x%08x, 0x%08x, 0x%08x)\n", env, memoryArea, 
-	 realtimeThread);
-#endif
-#ifdef WITH_NOHEAP_SUPPORT
-  if (IsNoHeapRealtimeThread(env, realtimeThread)) {
-    bi->alloc     = CTScope_NoHeapRThread_MemBlock_alloc;
-    bi->free      = CTScope_NoHeapRThread_MemBlock_free;
-    bi->allocator = (void*)mamb;
+  mb->alloc =    CTScope_MemBlock_alloc;
+  mb->free =     CTScope_MemBlock_free;
+  mb->finalize = CTScope_MemBlock_finalize;
 #ifdef WITH_PRECISE_GC
-    bi->gc        = NULL;
+  mb->gc =       CTScope_MemBlock_gc; /* must be the last set */
 #endif
-  } else {
-#endif
-    bi->alloc     = CTScope_RThread_MemBlock_alloc;
-    bi->free      = CTScope_RThread_MemBlock_free;
-    bi->allocator = (void*)mamb;
-#ifdef WITH_PRECISE_GC
-    bi->gc        = CTScope_RThread_MemBlock_gc;
-#endif
-#ifdef WITH_NOHEAP_SUPPORT
-  }
-#endif
-  rtmb->block = mamb->block;
-  rtmb->ref_info = mamb->ref_info;
-#ifdef RTJ_DEBUG
-  checkException();
-  printf("  retrieving memBlock from 0x%08x\n", mamb->block);
-#endif
-  flex_mutex_lock(&(mamb->list_lock));
-  rtmb->next = mamb->next;
-  mamb->next = rtmb;
-#ifdef RTJ_DEBUG
-  current = mamb;
-  printf("  MemBlock list for current CTMemory: ");
-  while (current != NULL) {
-    printf("0x%08x, ", current);
-    current = current->next;
-  }
-  printf("\n");
-#endif
-  flex_mutex_unlock(&(mamb->list_lock));
-}
-
-void CTScope_freeAll(struct MemBlock* topmem) {
-  struct MemBlock* current;
-  JNIEnv* env = FNI_GetJNIEnv();
-#ifdef WITH_PRECISE_GC
-  remove_MemBlock_from_roots(topmem);
-#endif      
-  current = topmem->next;
-  while (current != NULL) {
-    struct MemBlock* next = current->next;
-    (*env)->DeleteGlobalRef(env, current->block_info->memoryArea);
-    (*env)->DeleteGlobalRef(env, current->block_info->realtimeThread);
-    RTJ_FREE(current->block_info);
-    RTJ_FREE(current);
-    current = next;
-  }
-  flex_mutex_destroy(&(topmem->list_lock));
-  Block_free(topmem->block);
-  RTJ_FREE(topmem->ref_info);
-  RTJ_FREE(topmem);
 }
 
 /*
@@ -121,123 +45,87 @@ JNIEXPORT void JNICALL Java_javax_realtime_CTMemory_doneNative
   checkException();
   printf("CTMemory.doneNative(0x%08x, 0x%08x)\n", env, memoryArea);
 #endif
-  if (mb->ref_info->reuse) {
-    mb->ref_info->reuse = 0;
-    if (!mb->ref_info->refCount) {
-      CTScope_freeAll(mb);
-    } 
+  if (!mb->refCount) {
+    Block_free(mb->block);
+    RTJ_FREE(mb);
+  } 
 #ifdef RTJ_DEBUG
-    else {
-      printf("  Not freeing memory now because refCount = %d\n", mb->ref_info->refCount);
-    }
-#endif
+  else {
+    printf("  Not freeing memory now because refCount = %d\n", mb->refCount);
   }
+#endif
 }
 
-void* CTScope_RThread_MemBlock_alloc(struct MemBlock* mem, 
-				     size_t size) {
-#ifdef RTJ_DEBUG
+void* CTScope_MemBlock_alloc_alternative(struct MemBlock* mem, size_t size) {
   void* ptr;
+  struct Block* bl = mem->block;
+#ifdef RTJ_DEBUG
   checkException();
-  printf("CTScope_RThread_MemBlock_alloc(0x%08x, %d)\n", mem, size);
-  printf("  current usage: %d of %d\n", 
-	 (size_t)((mem->block->free)-(mem->block->begin)),
-	 (size_t)((mem->block->end)-(mem->block->begin)));
-  printf("  begin: 0x%08x, free: 0x%08x, end: 0x%08x\n", 
-	 mem->block->begin, mem->block->free, mem->block->end);
-  printf("  retrieving memBlock from 0x%08x\n", mem->block);
-#ifdef WITH_NOHEAP_SUPPORT
-  ptr = Block_alloc(mem->block, size, 0);
-#else
-  ptr = Block_alloc(mem->block, size);
+  printf("CTScope_MemBlock_alloc_alternative(0x%08x, %d)\n", mem, size);
 #endif
-  printf("  begin: 0x%08x, free: 0x%08x, end: 0x%08x\n", 
-	 mem->block->begin, mem->block->free, mem->block->end);
+  if (!(ptr = Block_alloc(bl, size))) {
+    ptr = LListAllocator_alloc(mem->alloc_union.lls, size);
+  }
+  if (!ptr) {
+    printf("Ran out of space in MemoryArea: %d is not enough space.\n",
+	   ((bl->end)-(bl->begin))+(mem->alloc_union.lls->size));
+    printf("Try increasing your MemoryArea size.\n");
+  }
+  return ptr;
+}
+
+void* CTScope_MemBlock_alloc(struct MemBlock* mem, size_t size) {
+  void* ptr;
+  struct Block* bl = mem->block;
+#ifdef RTJ_DEBUG
+  checkException();
+  printf("CTScope_MemBlock_alloc(0x%08x, %d)\n", mem, size);
+  printf("  current usage: %d of %d\n", (size_t)((bl->free)-(bl->begin)), 
+	 (size_t)((bl->end)-(bl->begin)));
+  printf("  begin: 0x%08x, free: 0x%08x, end: 0x%08x\n", bl->begin, bl->free, bl->end);
+  printf("  retrieving memBlock from 0x%08x\n", mem->block);
+#endif
+  ptr = Block_alloc(bl, size);
+  if (!ptr) {
+    if (mem->alloc_union.lls) {
+      return (mem->alloc = CTScope_MemBlock_alloc_alternative)(mem, size);
+    } else {
+      printf("Ran out of space in MemoryArea: %d is not enough space.\n",
+	     (bl->end)-(bl->begin));
+      printf("Try increasing your MemoryArea size.\n");
+    }
+  }
+#ifdef RTJ_DEBUG
+  printf("  begin: 0x%08x, free: 0x%08x, end: 0x%08x\n", bl->begin, bl->free, bl->end);
   if (!ptr) {
     assert("Out of memory!!!");
     checkException();
   }
+#endif
   return ptr;
-#else
-#ifdef WITH_NOHEAP_SUPPORT
-  return Block_alloc(mem->block, size, 0);
-#else
-  return Block_alloc(mem->block, size);
-#endif
-#endif
 }
 
-void  CTScope_RThread_MemBlock_free(struct MemBlock* mem) {
-  struct MemBlock *topmem, *current;
+void  CTScope_MemBlock_free(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
-  printf("CTScope_RThread_MemBlock_free(0x%08x)\n", mem);
+  printf("CTScope_MemBlock_free(0x%08x)\n", mem);
 #endif
-
-  if (mem->ref_info->reuse) {
-#ifdef RTJ_DEBUG
-    printf("  resetting block... \n");
-#endif
-    Block_reset(mem->block);
-  } else {
-#ifdef RTJ_DEBUG
-    printf("  freeing block... \n");
-#endif
-    CTScope_freeAll((struct MemBlock*)(mem->block_info->allocator));
-  }
+  Block_reset(mem->block);
 }
 
 #ifdef WITH_PRECISE_GC
-void  CTScope_RThread_MemBlock_gc(struct MemBlock* mem) {
+void  CTScope_MemBlock_gc(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("CTScope_RThread_MemBlock_gc(0x%08x)\n", mem);
+  printf("CTScope_MemBlock_gc(0x%08x)\n", mem);
 #endif
   Block_scan(mem->block);
 }
 #endif
 
-#ifdef WITH_NOHEAP_SUPPORT
-void* CTScope_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, 
-					   size_t size) {
+void  CTScope_MemBlock_finalize(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
-  void* ptr;
   checkException();
-  printf("CTScope_NoHeapRThread_MemBlock_alloc(0x%08x, %d)\n", mem, size);
-  printf("  current usage: %d of %d\n",
-	 (size_t)((mem->block->free)-(mem->block->begin)),
-	 (size_t)((mem->block->end)-(mem->block->begin)));
-  printf("  begin: 0x%08x, free: 0x%08x, end: 0x%08x\n",
-	 mem->block->begin, mem->block->free, mem->block->end);
-  printf("  retreiving memBlock from 0x%08x\n", mem->block);
-  ptr = Block_alloc(mem->block, size, 1);
-  printf("  begin: 0x%08x, free: 0x%08x, end: 0x%08x\n",
-	 mem->block->begin, mem->block->free, mem->block->end);
-  if (!ptr) {
-    assert("Out of memory!!!");
-    checkException();
-  }
-  return ptr; 
-#else
-  return Block_alloc(mem->block, size, 1);
+  printf("CTScope_MemBlock_finalize(0x%08x)\n", mem);
 #endif
+  Block_free(mem->block);
 }
-
-void  CTScope_NoHeapRThread_MemBlock_free(struct MemBlock* mem) {
-  struct MemBlock *topmem, *current;
-#ifdef RTJ_DEBUG
-  printf("CTScope_NoHeapRThread_MemBlock_free()\n");
-#endif
-
-  if (mem->ref_info->reuse) {
-#ifdef RTJ_DEBUG
-    printf("  resetting block... \n");
-#endif
-    Block_reset(mem->block);
-  } else {
-#ifdef RTJ_DEBUG
-    printf("  freeing block... \n");
-#endif
-    CTScope_freeAll((struct MemBlock*)(mem->block_info->allocator));
-  }
-}
-#endif

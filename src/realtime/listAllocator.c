@@ -18,9 +18,10 @@ inline void ListAllocator_init(struct ListAllocator* ls, int noHeap) {
 
 inline void* ListAllocator_alloc(struct ListAllocator* ls, 
 				 size_t size) {
-  void* obj = (void*)RTJ_MALLOC_UNCOLLECTABLE(size);
+  struct oobj* obj = (struct oobj*)RTJ_MALLOC_UNCOLLECTABLE(size);
+  obj->claz = NULL;
   ObjectList_insert(ls->objects, obj);
-  return obj;
+  return (void*)obj;
 }
 
 inline void ListAllocator_free(struct ListAllocator* ls) {

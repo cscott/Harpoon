@@ -11,76 +11,44 @@
  */
 JNIEXPORT void JNICALL Java_javax_realtime_ImmortalMemory_initNative
 (JNIEnv* env, jobject memoryArea, jlong size) {
+  struct MemBlock* mb = MemBlock_new(env, memoryArea);
 #ifdef RTJ_DEBUG
   printf("ImmortalMemory.initNative(0x%08x, 0x%08x, %d)\n",
 	 env, memoryArea, (size_t)size);
   checkException();
 #endif
+  mb->alloc_union.lls       = LListAllocator_new(0);
+  mb->alloc                 = Immortal_MemBlock_alloc;
+  mb->finalize              = Immortal_MemBlock_finalize;
+  MemBlock_INCREF(mb);
+  mb->memoryArea            = (*env)->NewGlobalRef(env, memoryArea);
+#ifdef WITH_PRECISE_GC
+  mb->gc                    = Immortal_MemBlock_gc; /* must be the last set */
+#endif
 }
 
-/*
- * Class:     ImmortalMemory
- * Method:    newMemBlock
- * Signature: (Ljavax/realtime/RealtimeThread;)V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_ImmortalMemory_newMemBlock
-(JNIEnv* env, jobject memoryArea, jobject realtimeThread) {
-  struct MemBlock* rtmb = getInflatedObject(env, realtimeThread)->temp;
-  struct BlockInfo* bi = rtmb->block_info;
+void* Immortal_MemBlock_alloc(struct MemBlock* mem, size_t size) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("ImmortalMemory.newMemBlock(0x%08x, 0x%08x, 0x%08x)\n", env, memoryArea,
-	 realtimeThread);
+  printf("Immortal_MemBlock_alloc(0x%08x, %d)\n", mem, size);
 #endif
-#ifdef WITH_NOHEAP_SUPPORT
-  if (IsNoHeapRealtimeThread(env, realtimeThread)) {
-    bi->alloc     = Immortal_NoHeapRThread_MemBlock_alloc;
-    bi->free      = NULL;
-    bi->allocator = NULL;
-#ifdef WITH_PRECISE_GC
-    bi->gc        = NULL;
-#endif
-  } else {
-#endif
-    bi->alloc     = Immortal_RThread_MemBlock_alloc;
-    bi->free      = NULL;
-    bi->allocator = NULL;
-#ifdef WITH_PRECISE_GC
-    bi->gc        = NULL;
-#endif
-#ifdef WITH_NOHEAP_SUPPORT
-  }
-#endif
-  rtmb->ref_info = RefInfo_new(0);
-  MemBlock_INCREF(rtmb);
+  return LListAllocator_alloc(mem->alloc_union.lls, size);
 }
 
-void* Immortal_RThread_MemBlock_alloc(struct MemBlock* mem, 
-				      size_t size) {
-  void* result;
 #ifdef WITH_PRECISE_GC
-  JNIEnv* env = FNI_GetJNIEnv();
-  struct _jobject obj;
-#endif
+void Immortal_MemBlock_gc(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("Immortal_RThread_MemBlock_alloc(%d)\n", size);
+  printf("Immortal_MemBlock_gc(0x%08x)\n", mem);
 #endif
-  result = (void*)RTJ_MALLOC_UNCOLLECTABLE(size);
-#ifdef WITH_PRECISE_GC
-  obj.obj = (struct oobj*)result;
-  FNI_NewGlobalRef(env, &obj);
-#endif
-  return result;
+  LListAllocator_gc(mem->alloc_union.lls);
 }
+#endif
 
-#ifdef WITH_NOHEAP_SUPPORT
-void* Immortal_NoHeapRThread_MemBlock_alloc(struct MemBlock* mem, 
-					    size_t size) {
+void Immortal_MemBlock_finalize(struct MemBlock* mem) {
 #ifdef RTJ_DEBUG
   checkException();
-  printf("Immortal_NoHeapRThread_MemBlock_alloc(%d)\n", size);
+  printf("Immortal_MemBlock_finalize(0x%08x)\n", mem);
 #endif
-  return (void*)RTJ_MALLOC_UNCOLLECTABLE(size);
+  LListAllocator_free(mem->alloc_union.lls);
 }
-#endif
