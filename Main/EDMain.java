@@ -79,7 +79,7 @@ import harpoon.Util.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDMain.java,v 1.1.2.5 2000-03-30 00:45:57 cananian Exp $
+ * @version $Id: EDMain.java,v 1.1.2.6 2000-03-30 09:47:50 cananian Exp $
  */
 public class EDMain extends harpoon.IR.Registration {
  
@@ -148,9 +148,11 @@ public class EDMain extends harpoon.IR.Registration {
 	Linker linker;
 	HCodeFactory hco;
 	MetaCallGraph mcg;
+	ClassHierarchy chx;
 	Stage2(Stage1 stage1) {
 	    linker = stage1.linker;
 	    hco = stage1.hco;
+	    chx = stage1.chx;//carry forward
 	    mo = stage1.mo;
 	    CachingBBConverter bbconv=new CachingBBConverter(stage1.hco);
 
@@ -169,14 +171,16 @@ public class EDMain extends harpoon.IR.Registration {
     static class Stage3 implements Serializable {
 	HMethod mo;
 	Linker linker;
-	HCodeFactory hcf;
-	HMethod mconverted;
+	HCodeFactory hcfe;
+	ClassHierarchy ch;
+	MetaCallGraph mcg;
 	Stage3(Stage2 stage2) {
 	    linker = stage2.linker;
+	    mcg = stage2.mcg;
 	    mo = stage2.mo;
 	    HCodeFactory ccf=harpoon.IR.Quads.QuadSSI.codeFactory(stage2.hco);
 	    System.out.println("Doing CachingCodeFactory");
-	    CachingCodeFactory hcfe = new CachingCodeFactory(ccf, true);
+	    hcfe = new CachingCodeFactory(ccf, true);
 
 	    Collection c = new WorkSet();
 	    c.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods
@@ -185,7 +189,8 @@ public class EDMain extends harpoon.IR.Registration {
 	    System.out.println("Getting ClassHierarchy");
 
 
-	    ClassHierarchy ch = new QuadClassHierarchy(linker, c, hcfe);
+	    ch = new QuadClassHierarchy(linker, c, hcfe);
+	    ch = stage2.chx; // discard new ch, use old ch.
 
 	    //	System.out.println("CALLABLE METHODS");
 	    //	Iterator iterator=ch.callableMethods().iterator();
@@ -200,13 +205,23 @@ public class EDMain extends harpoon.IR.Registration {
 	    //while (iterator.hasNext())
 	    //    System.out.println(iterator.next());
 	    //System.out.println("------------------------------------------");
-
+	}
+    }
+    static class Stage4 implements Serializable {
+	HMethod mo;
+	Linker linker;
+	HCodeFactory hcf;
+	HMethod mconverted;
+	Stage4(Stage3 stage3) {
+	    linker = stage3.linker;
+	    mo = stage3.mo;
+	    CachingCodeFactory hcfe = (CachingCodeFactory) stage3.hcfe;
 	    HCode hc = hcfe.convert(mo);
 	    System.out.println("Starting ED");
 
 	    harpoon.Analysis.EventDriven.EventDriven ed = 
-		new harpoon.Analysis.EventDriven.EventDriven(hcfe, hc, ch, linker,optimistic,recycle);
-	    this.mconverted=ed.convert(stage2.mcg);
+		new harpoon.Analysis.EventDriven.EventDriven(hcfe, hc, stage3.ch, linker,optimistic,recycle);
+	    this.mconverted=ed.convert(stage3.mcg);
 
 	    this.hcf=hcfe;
 
@@ -237,30 +252,37 @@ public class EDMain extends harpoon.IR.Registration {
 	Linker linker;
 	parseOpts(args);
 
-	File stage3file = new File("stage-3");
-	Stage3 stage3 = null;
-	if (stage3file.exists()) stage3=(Stage3)load(stage3file);
-	if (stage3==null) {
-	    File stage2file = new File("stage-2");
-	    Stage2 stage2 = null;
-	    if (stage2file.exists()) stage2=(Stage2)load(stage2file);
-	    if (stage2==null) {
-		File stage1file = new File("stage-1");
-		Stage1 stage1 = null;
-		if (stage1file.exists()) stage1=(Stage1)load(stage1file);
-		if (stage1==null) {
-		    linker = new Relinker(Loader.systemLinker);
-		    stage1 = new Stage1(linker); save(stage1file, stage1);
+	File stage4file = new File("stage-4");
+	Stage4 stage4 = null;
+	if (stage4file.exists()) stage4=(Stage4)load(stage4file);
+	if (stage4==null) {
+	    File stage3file = new File("stage-3");
+	    Stage3 stage3 = null;
+	    if (stage3file.exists()) stage3=(Stage3)load(stage3file);
+	    if (stage3==null) {
+		File stage2file = new File("stage-2");
+		Stage2 stage2 = null;
+		if (stage2file.exists()) stage2=(Stage2)load(stage2file);
+		if (stage2==null) {
+		    File stage1file = new File("stage-1");
+		    Stage1 stage1 = null;
+		    if (stage1file.exists()) stage1=(Stage1)load(stage1file);
+		    if (stage1==null) {
+			linker = new Relinker(Loader.systemLinker);
+			stage1 = new Stage1(linker); save(stage1file, stage1);
+		    }
+		    // done with stage 1.
+		    stage2 = new Stage2(stage1); save(stage2file, stage2);
 		}
-		// done with stage 1.
-		stage2 = new Stage2(stage1); save(stage2file, stage2);
+		// done with stage 2.
+		stage3 = new Stage3(stage2); save(stage3file, stage3);
 	    }
-	    // done with stage 2.
-	    stage3 = new Stage3(stage2); save(stage3file, stage3);
+	    // done with stage 3.
+	    stage4 = new Stage4(stage3); save(stage4file, stage4);
 	}
-	// done with stage 3.
-	linker = stage3.linker;
-	HCodeFactory hcf = stage3.hcf;
+	// done with stage 4.
+	linker = stage4.linker;
+	HCodeFactory hcf = stage4.hcf;
 
 	if (OPTIMIZE) {
 	    hcf = harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
@@ -269,7 +291,7 @@ public class EDMain extends harpoon.IR.Registration {
 
 	HClass hcl = linker.forName(className);
 	HMethod[] hm = hcl.getDeclaredMethods();
-	HMethod mainM = stage3.mconverted;
+	HMethod mainM = stage4.mconverted;
 
 	Util.assert(mainM != null, "Class " + className + 
 		    " has no main method");
