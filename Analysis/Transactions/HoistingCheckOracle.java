@@ -5,7 +5,9 @@ package harpoon.Analysis.Transactions;
 
 import harpoon.Analysis.DomTree;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.MONITORENTER;
 import harpoon.Temp.Temp;
@@ -31,33 +33,63 @@ import java.util.Set;
  * process is repeated until no checks can be moved higher.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HoistingCheckOracle.java,v 1.1.2.5 2001-01-26 22:31:25 cananian Exp $
+ * @version $Id: HoistingCheckOracle.java,v 1.1.2.6 2001-01-27 00:00:03 cananian Exp $
  */
 class HoistingCheckOracle extends AnalysisCheckOracle {
     /** Creates a <code>HoistingCheckOracle</code> for the given
      *  <code>HCode</code> which refines the checks placed by
      *  <code>CheckOracle</code> <code>co</code>. */
-    public HoistingCheckOracle(HCode hc, UseDefer udr, CheckOracle co) {
-	this(hc, udr, new DomTree(hc, false), co);
+    public HoistingCheckOracle(HCode hc, CFGrapher cfgr, UseDefer udr,
+			       CheckOracle co) {
+	this(hc, cfgr, udr, new DomTree(hc, cfgr, false), co);
     }
     // separate constructor to let us reuse an existing domtree.
-    HoistingCheckOracle(HCode hc, UseDefer udr, DomTree dt, CheckOracle co) {
+    HoistingCheckOracle(HCode hc, CFGrapher cfgr, UseDefer udr,
+			DomTree dt, CheckOracle co) {
 	/* compute the proper check locations (post-order down dt) */
 	DomTree pdt = new DomTree(hc, true);
 	for (Iterator it=new ArrayIterator(dt.roots()); it.hasNext(); )
-	    hoister((HCodeElement)it.next(), co, udr, dt, pdt,
+	    hoister((HCodeElement)it.next(), co, cfgr, udr, dt, pdt,
 		    false/*can't hoist above root*/);
 	/* done! */
     }
 
     /* Returns checks which can be hoisted to immediate dominator */
-    CheckSet hoister(HCodeElement hce, CheckOracle co, UseDefer udr,
+    CheckSet hoister(HCodeElement hce, CheckOracle co,
+		     CFGrapher cfgr, UseDefer udr,
 		     DomTree dt, DomTree pdt, boolean canHoist)
     {
 	/* collect checks from dominated children and from check oracle */
 	CheckSet checks = new CheckSet(co, hce);
 	for (Iterator it=new ArrayIterator(dt.children(hce)); it.hasNext(); )
-	    checks.addAll(hoister((HCodeElement)it.next(),co,udr,dt,pdt,true));
+	    checks.addAll(hoister((HCodeElement)it.next(),
+				  co, cfgr, udr, dt, pdt, true));
+	/** find common checks in successors. */
+	HCodeEdge[] succ = cfgr.succ(hce);
+	CheckSet common = null; // will contain intersection of all succ. chks
+	for (int i=0; i<succ.length; i++) {
+	    CheckSet scs = (CheckSet) results.get(succ[i].to());
+	    if (scs==null) { common=null; break; /* bail out */}
+	    if (common==null) common=new CheckSet(scs);
+	    else {
+		scs = new CheckSet(scs);
+		scs.readVersions.addAll(scs.writeVersions);
+		common.retainAll(scs);
+	    }
+	    common.readVersions.addAll(common.writeVersions);
+	}
+	/** filter common checks */
+	if (hce instanceof MONITORENTER) common=null;
+	if (common!=null) common.removeAll(udr.defC(hce));
+	/** steal filtered common checks from successors */
+	if (common!=null && !common.isEmpty()) {
+	    System.err.println("HOISTING: "+common+" "+hce.getSourceFile());
+	    for (int i=0; i<succ.length; i++) {
+		CheckSet scs = (CheckSet) results.get(succ[i].to());
+		scs.removeAll(common);
+	    }
+	    checks.addAll(common);
+	}
 	/** optimize: write versions are read versions */
 	checks.readVersions.removeAll(checks.writeVersions);
 	/** copy set of all checks. */

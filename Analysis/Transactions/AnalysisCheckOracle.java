@@ -19,7 +19,7 @@ import java.util.Set;
  * do some analysis and store the results of the check oracle.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AnalysisCheckOracle.java,v 1.1.2.4 2001-01-26 22:31:25 cananian Exp $
+ * @version $Id: AnalysisCheckOracle.java,v 1.1.2.5 2001-01-27 00:00:03 cananian Exp $
  */
 abstract class AnalysisCheckOracle extends CheckOracle {
     final Map results = new HashMap();
@@ -84,11 +84,21 @@ abstract class AnalysisCheckOracle extends CheckOracle {
 		    it.remove();
 	    }
 	}
+	void retainAll(CheckSet cs) {
+	    this.readVersions.retainAll(cs.readVersions);
+	    this.writeVersions.retainAll(cs.writeVersions);
+	    this.fields.retainAll(cs.fields);
+	    this.elements.retainAll(cs.elements);
+	}
 	void removeAll(CheckSet cs) {
 	    this.readVersions.removeAll(cs.readVersions);
 	    this.writeVersions.removeAll(cs.writeVersions);
 	    this.fields.removeAll(cs.fields);
 	    this.elements.removeAll(cs.elements);
+	}
+	boolean isEmpty() {
+	    return readVersions.isEmpty() && writeVersions.isEmpty()
+		&& fields.isEmpty() && elements.isEmpty();
 	}
 	void clear() {
 	    this.readVersions.clear();

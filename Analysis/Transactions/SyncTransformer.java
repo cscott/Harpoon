@@ -19,6 +19,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HMethodMutator;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.SerializableCodeFactory;
+import harpoon.IR.Properties.CFGrapher;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.AGET;
 import harpoon.IR.Quads.ARRAYINIT;
@@ -72,7 +73,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.11 2001-01-26 00:06:35 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.12 2001-01-27 00:00:03 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -275,7 +276,8 @@ public class SyncTransformer
 	    if (useSmartCheckOracle) {
 		DomTree dt = new DomTree(hc, false);
 		co = new DominatingCheckOracle(dt, co);
-		co = new HoistingCheckOracle(hc, UseDefer.DEFAULT, dt, co);
+		co = new HoistingCheckOracle
+		    (hc, CFGrapher.DEFAULT, UseDefer.DEFAULT, dt, co);
 	    }
 	    Tweaker tw = new Tweaker(co, qF, (which==WITH_TRANSACTION));
 	    tweak(new DomTree(hc, false), qM, tw);
