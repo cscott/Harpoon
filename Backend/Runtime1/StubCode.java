@@ -51,7 +51,7 @@ import java.util.List;
  * <code>StubCode</code> makes.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StubCode.java,v 1.1.2.13 2000-03-27 20:37:34 cananian Exp $
+ * @version $Id: StubCode.java,v 1.1.2.14 2000-06-06 05:04:02 cananian Exp $
  */
 public class StubCode extends harpoon.IR.Tree.TreeCode {
     final HMethod otherNames[];
@@ -186,6 +186,10 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 					       "classobj")),
 			   null))));
 	}
+	// if this method is synchronized, lock the object.
+	Temp lockT = (classT != null) ? classT : paramTemps[1];
+	HClass lockC = (classT != null) ? HCcls : paramTypes[0];
+	emitMonitorLockUnlock(stmlist, envT, lockT, lockC, true/*lock*/);
 	// make the native call's parameters, in reverse order
 	ExpList jniParams = null;
 	for (int i=paramTypes.length-1; i>=0; i--)
@@ -248,6 +252,7 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 					   ));
 	    retexp = _TEMP(tf, null, rettype, retT);
 	}
+	emitMonitorLockUnlock(stmlist, envT, lockT, lockC, false/*unlock*/);
 	emitFreeLocals(stmlist, envT, refT);
 	stmlist.add(new RETURN(tf, null, retexp));
 	// an exception occurred.  unwrap exception value and throw it.
@@ -271,12 +276,31 @@ public class StubCode extends harpoon.IR.Tree.TreeCode {
 				   (_TEMP(tf, null, HClass.Void, excT),
 				    null)
 				   ));
+	emitMonitorLockUnlock(stmlist, envT, lockT, lockC, false/*unlock*/);
 	emitFreeLocals(stmlist, envT, refT);
 	stmlist.add(new THROW(tf, null,
 			      _TEMP(tf, null, HCthw, excT),
 			      _TEMP(tf, null, HClass.Void, paramTemps[0])
 			      ));
 	return Stm.toStm(stmlist);
+    }
+    private void emitMonitorLockUnlock(List stmlist, Temp envT,
+				       Temp lockT, HClass lockC,
+				       boolean isLock) {
+	// if this method is not synchronized, skip this.
+	if (!Modifier.isSynchronized(getMethod().getModifiers())) return;
+	// okay, emit native call to FNI_MonitorEnter/Exit().
+	Temp discardT = new Temp(tf.tempFactory(), "discard");
+	stmlist.add(new NATIVECALL
+		    (tf, null,
+		     _TEMP(tf, null, HClass.Int, discardT)/* retval*/,
+		     _NAME(tf, null, HClass.Void,
+			   new Label(m_nm.c_function_name
+				     (isLock ?
+				      "FNI_MonitorEnter":"FNI_MonitorExit"))),
+		     new ExpList(_TEMP(tf, null, HClass.Void, envT),
+				 new ExpList(_TEMP(tf, null, lockC, lockT),
+					     null))));
     }
     private void emitFreeLocals(List stmlist, Temp envT, Temp refT) {
     	stmlist.add(new NATIVECALL
