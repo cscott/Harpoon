@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.20 2002-07-24 18:28:26 cananian Exp $
+% $Id: ptran.tex,v 1.21 2002-07-24 18:31:41 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.20 $ $}
+\date{\today \\ $ $Revision: 1.21 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -258,6 +258,12 @@ In this case
 P = \left(\bigcup_{v_1\in\text{use}(s_1)} \text{CondParam}(v_1,s_1)\right)
          \cup
     \left(\bigcup_{v_2\in\text{use}(s_2)} \text{CondParam}(v_2,s_2)\right)
+\end{displaymath}
+
+Similarly, a set of statements $S$ is mutually-conditionally-singular on $P$
+if every pair in $S$ is pairwise-singular and
+\begin{displaymath}
+P = \bigcup_{s\in S} \bigcup_{v\in\text{use}(s)} \text{CondParam}(v,s)
 \end{displaymath}
 
 Now we can resolve conditional singularity at a callsite by
