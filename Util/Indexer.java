@@ -14,9 +14,9 @@ package harpoon.Util;
  * Factory or Object type.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Indexer.java,v 1.1.2.4 2000-02-02 00:30:45 pnkfelix Exp $
+ * @version $Id: Indexer.java,v 1.1.2.5 2000-02-02 00:57:19 pnkfelix Exp $
  */
-public interface Indexer {
+public abstract class Indexer {
     
     /** Checks if <code>o</code> is indexed by <code>this</code>.
 	<BR> <B>effects:</B> If <code>o</code> is a member of the set
@@ -24,7 +24,7 @@ public interface Indexer {
 	     <code>True</code>. 
 	     Else returns <code>False</code>.
     */
-    boolean hasIndex(Object o);
+    public abstract boolean hasIndex(Object o);
 
     /** Returns the "small" integer uniquely associated with
 	<code>o</code> in <code>this</code>.
@@ -35,6 +35,6 @@ public interface Indexer {
 	     <code>o</code> from a densely-packed, non-negative 
 	     set of integers whose smallest element is close to zero. 
     */
-    int getID(Object o); 
+    public abstract int getID(Object o); 
     
 }
