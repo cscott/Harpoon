@@ -15,7 +15,7 @@ import java.util.Map;
  * <code>GenericContextFactory</code>'s constructor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GenericContextFactory.java,v 1.1 2002-02-26 10:08:03 cananian Exp $
+ * @version $Id: GenericContextFactory.java,v 1.2 2002-02-26 10:30:18 cananian Exp $
  * @see Context
  */
 public class GenericContextFactory {
@@ -45,7 +45,8 @@ public class GenericContextFactory {
 	    if (nitems.length>0)
 		nitems[nitems.length-1] = o;
 	    if (nitems.length>1)
-		System.arraycopy(items, 1, nitems, 0, nitems.length-1);
+		System.arraycopy(items, items.length-(nitems.length-1),
+				 nitems, 0, nitems.length-1);
 	    Context nc = new ContextImpl(nitems);
 	    // maybe cache.
 	    if (cache!=null)
