@@ -24,7 +24,7 @@ import java.util.Hashtable;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.8 1998-08-24 22:48:21 cananian Exp $
+ * @version $Id: Translate.java,v 1.9 1998-08-24 22:56:36 cananian Exp $
  */
 
 /*
@@ -151,6 +151,7 @@ class Translate  { // not public.
     static final HClass fltArray = HClass.forClass(float[].class);
     static final HClass intArray = HClass.forClass(int[].class);
     static final HClass longArray= HClass.forClass(long[].class);
+    static final HClass shrtArray = HClass.forClass(short[].class);
 
     static HMethod objArrayGet,  objArrayPut;
     static HMethod byteArrayGet, byteArrayPut;
@@ -159,6 +160,7 @@ class Translate  { // not public.
     static HMethod fltArrayGet,  fltArrayPut;
     static HMethod intArrayGet,  intArrayPut;
     static HMethod longArrayGet, longArrayPut;
+    static HMethod shrtArrayGet, shrtArrayPut;
 
     static {
 	objArrayGet = objArray.getMethod("get", new HClass[] {HClass.Int});
@@ -182,6 +184,9 @@ class Translate  { // not public.
 	longArrayGet= longArray.getMethod("get", new HClass[] {HClass.Int});
 	longArrayPut= longArray.getMethod("put", 
 		      new HClass[] {HClass.Int, HClass.forClass(long.class)});
+	shrtArrayGet= shrtArray.getMethod("get", new HClass[] {HClass.Int});
+	shrtArrayPut= shrtArray.getMethod("put", 
+		      new HClass[] {HClass.Int, HClass.forClass(short.class)});
     }
 
     static final Quad transInstr(StateMap sm, InGen in) {
@@ -259,6 +264,7 @@ class Translate  { // not public.
 			 new Temp[] {s.stack[1], s.stack[0]});
 	    break;
 	case Op.BIPUSH:
+	case Op.SIPUSH:
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
 		int val = ((Byte)opd.getValue()).intValue();
@@ -658,7 +664,21 @@ class Translate  { // not public.
 	    }
 	    break;
 	    }
-	    
+	case Op.SALOAD:
+	    ns = s.pop(2).push(null).push(new Temp());
+	    q = new CALL(in, shrtArrayGet, s.stack[1],
+			 new Temp[] {s.stack[0]}, ns.stack[0]);
+	    break;
+	case Op.SASTORE:
+	    ns = s.pop(4);
+	    q = new CALL(in, shrtArrayPut, s.stack[3],
+			 new Temp[] {s.stack[2], s.stack[0]});
+	    break;
+	case Op.SWAP:
+	    ns = s.pop(2).push(s.stack[0]).push(s.stack[1]);
+	    q = null;
+	    break;
+
 	default:
 	    throw new Error("Unknown InGen opcode.");
 	}
@@ -669,6 +689,7 @@ class Translate  { // not public.
 	/*
 	if (in instanceof InSwitch) {
 	// LOOKUPSWITCH
+	// TABLESWITCH
 	} else {
 	    switch(in.getOpcode()) {
 	    case Op.ARETURN:
@@ -676,6 +697,7 @@ class Translate  { // not public.
 	    case Op.FRETURN:
 	    case Op.IRETURN:
 	    case Op.LRETURN:
+	    case Op.RETURN:
 	    throw new Error("Unimplemented");
 	    case Op.ATHROW:
 		ns = s.pop();
@@ -687,9 +709,10 @@ class Translate  { // not public.
 	    q = new JMP(in);
 	    break;
 	    default:
-case Op.JSR:
-case Op.JSR_W:
-throw new Error("Unmitigated evilness.");
+	case Op.JSR:
+	case Op.JSR_W:
+	case Op.RET:
+	    throw new Error("Unmitigated evilness.");
 	    }
 	}
 	*/
