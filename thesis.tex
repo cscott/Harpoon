@@ -1,15 +1,16 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.51 1999-07-08 00:58:03 cananian Exp $
+% $Id: thesis.tex,v 1.52 1999-07-08 21:43:40 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[12pt,notitlepage]{article}
+\documentclass[12pt,titlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
 % fonts
 %\usepackage{beton}
 %\usepackage{euler}
 % useful stuff
-\usepackage{amsthm}
-\usepackage{amstext}
-\usepackage{varioref}\vrefwarning
+\usepackage{algorithm} % algorithm environment, \listofalgorithms
+\usepackage{amsthm} % proof environment
+\usepackage{amstext} % the \text command for math mode (replaces \mbox)
+\usepackage{varioref}\vrefwarning % \vref command
 % common definitions
 \usepackage{comdef}
 
@@ -23,13 +24,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.51 $ $}
+\date{\today \\ $ $Revision: 1.52 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.51 $ $}{$ $Revision: 1.51 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.52 $ $}{$ $Revision: 1.52 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
+\tableofcontents\listoffigures\listofalgorithms\newpage
 
 \mysection{Introduction}
 The selection of a compiler internal respresentation from the many
@@ -73,7 +75,7 @@ represents a clean and simple unification of many extant ideas, and
 our hope is that it will allow the FLEX compiler to achieve a similar
 integration of practical implementation and mathematical elegance.
 
-\mysection{Intermediate Representations}
+\mysection{Context and goals}
 %The first paper directly addressing an IR as a separate feature of a
 %compiler was Foo and Bar in \cite{foobar}.\fixme{Find real references.}
 The Static Single Assignment (SSA) form was introduced by 
@@ -110,8 +112,9 @@ our Static Single Information form may be summarized as follows:
 SSI form is used as an IR for the FLEX compiler for the Java
 programming language, which informs some of these design decisions.
 The FLEX compiler does deep analysis and will support
-hardware/software co-design.  SSI addresses these needs.  We will
-address each design point in turn.
+hardware/software co-design.  SSI addresses these needs, concentrating
+on analysis rather than optimization.  We will address each design
+point in turn.
 
 \textbf{It names information units.}  SSA form (which we will describe
 further in \ref{sec:ssa}) assigns unique names to unique \emph{static
@@ -209,20 +212,30 @@ computation more than strictly necessary.  Figure~\vref{fig:ctrldep},
 for example, contains two parallel loops which would be serialized by
 the explicit control dependency between them.  Prior work often
 focused on fine-grain intra-loop parallelism and ignored this coarser
-inter-loop parallelism.\footnote{See for example \cite{traub86:ttda}
-on tagged-token dataflow machines, and\ldots}% FORTRAN compilers?
-\fixme{cite arvind's
-compiler, and others.  Free your mind: delete control-dependence!}
+inter-loop parallelism.\footnote{We discuss the dataflow-architecture
+work of Traub \cite{traub86:ttda} in particular in section
+\ref{sec:ssiplus}.} Our objective in this work is to fully utilize
+coarse parallelism by removing source-language control-dependency artifacts.
 
 \textbf{It is efficient for both forward and backward dataflow analyses.}
-\fixme{Explain this: we can do backwards analyses.}
+It is often observed that traditional SSA form cannot handle backward
+dataflow analysis.  Johnson and Pingali note this, and suggest
+\emph{anticipatability} as an example of a backwards dataflow analysis
+where their dependence flow graph representation betters SSA form
+\cite{johnson93:dfg}. Lo et al.\ suggest the use of an ``SSU'' form to
+address much the same issue \cite{lo98:ssu}.  There are in fact many
+analyses where both use and definition information is utilized, and
+where dataflow in both forward and reverse directions occurs.  SSI
+form is able to handle both of these cases, as we demonstrate in
+section \ref{sec:bidirectional}.
 
-\textbf{Transition goes here: we are going to describe SSA form for
-background on SSI form.}\fixme{Write this.}
+\mysection{Static Single Assignment form}\label{sec:ssa}
+Static Single Information (SSI) form derives many features from Static
+Single Assignment (SSA) form, as described by Cytron in
+\cite{cytron89:ssa}.  We will review SSA form to provide context for
+our definition of SSI form in section \ref{sec:ssi}.
 
-\subsection{Static Single Assignment form}\label{sec:ssa}
-Static Single Assignment (SSA) form, introduced by Cytron in
-\cite{cytron89:ssa}\ldots
+\subsection{Definition of SSA form}
 
 \textbf{Define SSA form here.}\fixme{Write this.}
 
@@ -231,9 +244,10 @@ Figure~\vref{fig:tossa} illustrates the conversion to SSA form.
 \begin{center}
 \input{Figures/THex1base} \vline\ \input{Figures/THex1ssa}
 \end{center}
-\caption{\phifunction{s} are added to the program on the left to
-produce the SSA-form IR on the right.}
-\label{fig:tossa}
+\caption
+[A simple program and its single assignment version.]
+{A simple program (left) and its single assignment version (right).
+\label{fig:tossa}}
 \end{myfigure}
 
 \subsection{Minimal and pruned SSA forms}
@@ -272,11 +286,12 @@ contains definition and algorithm for pruned SSA.}
 \begin{center}
 \input{Figures/THex1ssa} \vline\ \input{Figures/THex1ssaPr}
 \end{center}
-\caption{Minimal SSA form on the left; pruned SSA form on the right.}
+\caption[Minimal and pruned SSA forms.]
+{Minimal (left) and pruned (right) SSA forms.}
 \label{fig:prunedssa}
 \end{myfigure}
 
-\mysection{Static Single Information form}
+\mysection{Static Single Information form}\label{sec:ssi}
 
 SSI form extends SSA form to achieve symmetry for both forward and
 reverse dataflow.   SSI form recognizes that information about
@@ -303,7 +318,8 @@ Figure~\vref{fig:tossi} compares the SSA and SSI forms for our example program.
 \begin{center}
 \input{Figures/THex1ssa} \vline\ \input{Figures/THex1ssi}
 \end{center}
-\caption{SSA form on the left; SSI form on the right.}
+\caption[A comparison of SSA and SSI forms.]
+{A comparison of SSA (left) and SSI (right) forms.}
 \label{fig:tossi}
 \end{myfigure}
 
@@ -343,7 +359,8 @@ our example program.
 \begin{center}
 \input{Figures/THex1ssi} \vline\ \input{Figures/THex1ssiPr}
 \end{center}
-\caption{Minimal SSI form on the left; pruned SSI form on the right.}
+\caption[Minimal and pruned SSI forms.]
+{Minimal (left) and pruned (right) SSI forms.}
 \label{fig:prunedssi}
 \end{myfigure}
 
@@ -438,7 +455,7 @@ DFS spanning tree.
 \end{enumerate}
 
 \begin{myfigure}\small\input{Figures/THcqdata}
-\caption{Datatypes and operations used in the cycle-equivalency algorithm.}
+\caption{Datatypes and operations for the cycle-equivalency algorithm.}
 \label{fig:CQdata}\end{myfigure}
 
 \begin{myfigure}\small\linespread{0.75}\input{Figures/THcqalg}
@@ -707,7 +724,10 @@ don't exist for the optimistic algorithm?}
 \subsection{Uses and applications}
 \textbf{Discuss predicated analysis, anticipatibility, PRE, etc.
 	Also bitwidth analysis.}%
-\fixme{Write this.}
+\fixme{Write this.
+Use the techniques of \cite{kennedy98:strength} to do loop-invariant
+code motion, strength reduction, and partial-redundancy-elimination
+using SSI form?}
 
 \mysection{An executable representation}\label{sec:ssiplus}
 The Static Single Information (SSI) form, as presented in the first
@@ -937,7 +957,8 @@ t=\phi(t_1,\ldots,t_n):
 %   \mbox{where }S[K]=\left\{\tuple{t_1,v_1},\ldots,\tuple{t_n,v_n}\right\}\\
   } }
 \end{transitions}
-\caption{Event-driven transition rules for \ssiplus.  Note the
+\caption[Event-driven transition rules for \ssiplus.]
+{Event-driven transition rules for \ssiplus.  Note the
 unfortunate synchronization in the last rule. $K$ is a
 statement-identifier constant which is unique for each source \xifunction.}
 \label{fig:eventsemantics}
