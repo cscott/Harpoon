@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.28 2000-11-10 19:54:49 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.29 2000-12-01 19:43:10 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -846,6 +846,8 @@ import java.util.Iterator;
        stack.regAllocLocalWords(stackspace);
        int nregs = stack.calleeSaveTotal();
 
+       //  Signifies a tag unchecked load or store if we have them.
+       String ntag = yellow_pekoe ? ".u" : "";
        // find method entry/exit stubs
        Instr last=instr;
        for (Instr il = instr; il!=null; il=il.getNext()) {
@@ -864,7 +866,7 @@ import java.util.Iterator;
                           new Temp[] {SP}, new Temp[] {SP}),
                 new Instr(inf, il, "sw $31, " + stack.getRAOffset() +"($sp)", 
                           null, new Temp[] { LR, SP }),
-                new Instr(inf, il, "sw $30, " + stack.getFPOffset() +"($sp)", 
+                new Instr(inf, il, "sw" + ntag + " $30, " + stack.getFPOffset() +"($sp)", 
                           null, new Temp[] { FP, SP }),
                 new Instr(inf, il, "addu $30, $sp, "+ stack.frameSize(),
                           new Temp[]{FP}, new Temp[]{SP} ),
@@ -876,8 +878,12 @@ import java.util.Iterator;
                 // gotta save.
                 int j = 0;
                 for (int i=0; i < stack.calleeSaveTotal(); i++) {
+                   String usuffix = ntag;
+                   if(i!= 0 && (i % 6 == 0)) {
+                      usuffix = "";
+                   }
                    callee_save[j++] = 
-                      new Instr(inf, il, "sw " 
+                      new Instr(inf, il, "sw" + usuffix + " "
                                 + stack.calleeReg(i) + ", "
                                 + stack.calleeSaveOffset(i)
                                 + "($sp)        # callee save", 
@@ -900,23 +906,17 @@ import java.util.Iterator;
 
           }
           if (il instanceof InstrEXIT) { // exit stub
-             Instr[] exit_instr = {
-                new Instr(inf, il, "lw $30, " + stack.getFPOffset() + "($sp)",
-                          new Temp[] {FP}, new Temp[] {SP}),
-                new Instr(inf, il, "lw $31, " + stack.getRAOffset() + "($sp)",
-                          new Temp[] {LR}, new Temp[] {SP}),
-                new Instr(inf, il, "addu $sp, " + stack.frameSize(),
-                          new Temp[] {SP}, new Temp[] {SP}),
-                new Instr(inf, il, "j  $31  # return",
-                          null, new Temp[]{LR}),
-             };
              Instr[] callee_restore = new Instr [nregs];
              if(stack.calleeSaveTotal() > 0) {
                 // restore the regs we saved on entry
                 int j = 0;
-                for (int i=0; i < stack.calleeSaveTotal(); i++) {
+                for (int i = nregs - 1; i >= 0; --i) {
+                   String usuffix = ntag;
+                   if(j % 8 == 0) {
+                      usuffix = "";
+                   }
                    callee_restore[j++] = 
-                      new Instr(inf, il, "lw " 
+                      new Instr(inf, il, "lw" + usuffix + " "
                                 + stack.calleeReg(i) + ", "
                                 + stack.calleeSaveOffset(i) 
                                 + "($sp)        # callee restore", 
@@ -924,7 +924,32 @@ import java.util.Iterator;
                                 new Temp[]{SP});
                 }
              }
-
+             String fplw = "";
+             String ralw = "";
+             switch(nregs % 8) {
+             case 0:
+                fplw = "lw";
+                ralw = "lw" + ntag;
+                break;
+             case 7:
+                fplw = "lw" + ntag;
+                ralw = "lw";
+                break;
+             default:
+                fplw = "lw" + ntag;
+                ralw = "lw" + ntag;
+                break;
+             }
+             Instr[] exit_instr = {
+                new Instr(inf, il, fplw + " $30, " + stack.getFPOffset() + "($sp)",
+                          new Temp[] {FP}, new Temp[] {SP}),
+                new Instr(inf, il, ralw + " $31, " + stack.getRAOffset() + "($sp)",
+                          new Temp[] {LR}, new Temp[] {SP}),
+                new Instr(inf, il, "addu $sp, " + stack.frameSize(),
+                          new Temp[] {SP}, new Temp[] {SP}),
+                new Instr(inf, il, "j  $31  # return",
+                          null, new Temp[]{LR}),
+             };
              if(nregs > 0) {
                 LayoutInstr(il, callee_restore);
              }
@@ -1481,26 +1506,38 @@ CONST<p>(c) = i %{
 
 MEM<s:8,u:8,s:16,u:16,i,p,f>(e) = i %{ 
    String suffix = GetLdSuffix(ROOT);
+   String usuffix = "";
    emitLineDebugInfo(ROOT);
+   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT)) {
+      usuffix = ".u";
+   }
    emit(new InstrMEM(instrFactory, ROOT,
-                     "l"+suffix+" `d0, 0(`s0)",
+                     "l"+suffix+usuffix+" `d0, 0(`s0)",
                      new Temp[]{ i }, new Temp[]{ e }));   
 }%
 
 MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))) = i
 %{
    String suffix = GetLdSuffix(ROOT);
+   String usuffix = "";
    emitLineDebugInfo(ROOT);
+   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT)) {
+      usuffix = ".u";
+   }
    emit(new InstrMEM(instrFactory, ROOT,
-                     "l"+suffix+" `d0, " + c + "(`s0)",
+                     "l"+suffix+usuffix+" `d0, " + c + "(`s0)",
                      new Temp[]{ i }, new Temp[]{ j }));
 }%
 MEM<l,d>(e) = i %{
+   String usuffix = "";
    emitLineDebugInfo(ROOT);
    emitRegAllocDef(ROOT, i);
+   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT)) {
+      usuffix = ".u";
+   }
    emit(new InstrMEM(instrFactory, ROOT,
-                     "lw `d0l, 4(`s0)\n"
-                     + "lw `d0h, 0(`s0)",
+                     "lw" + usuffix+ " `d0l, 4(`s0)\n"
+                     + "lw" + usuffix + " `d0h, 0(`s0)",
                      new Temp[]{ i }, new Temp[]{ e }));
    emitRegAllocUse(ROOT, e);
 }%
@@ -1508,17 +1545,25 @@ MEM<l,d>(e) = i %{
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), src)
 %{
    String suffix = GetStSuffix(ROOT);
+   String usuffix = "";
    emitLineDebugInfo(ROOT);
-   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, 0(`s1)",
+   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
+      usuffix = ".u";
+   }
+   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix + usuffix+" `s0, 0(`s1)",
                      null, new Temp[] {src, dst}));
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), src)
 %{ 
    String suffix = GetStSuffix(ROOT);
+   String usuffix = "";
    emitLineDebugInfo(ROOT);
+   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
+      usuffix = ".u";
+   }
    emit(new InstrMEM(instrFactory, ROOT,
-		      "s"+suffix+" `s0, "+c+"(`s1)",
+		      "s"+suffix+usuffix+" `s0, "+c+"(`s1)",
 		      null, new Temp[]{ src, j }));   
 }%
 
@@ -1526,12 +1571,16 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), NAME(src))
    %extra<p>{ extra } /*void*/
 %{ 
    String suffix = GetStSuffix(ROOT);
-   declare( extra, HClass.Void );
+   String usuffix = "";
    emitLineDebugInfo(ROOT);
+   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
+      usuffix = ".u";
+   }
+   declare( extra, HClass.Void );
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + src,
                    new Temp[]{ extra }, null ));
-   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, "
+   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +usuffix+" `s0, "
                      + c + "(`s1)        # tmp + c <= NAME(src) ",
                      null, new Temp[]{ extra, j }));
 }%
@@ -1539,12 +1588,16 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), NAME(src))
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), NAME(src)) %extra<p>{ extra }/*void*/
 %{ 
    String suffix = GetStSuffix(ROOT);
-   declare( extra, HClass.Void );
+   String usuffix = "";
    emitLineDebugInfo(ROOT);
+   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
+      usuffix = ".u";
+   }
+   declare( extra, HClass.Void );
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + src,
                    new Temp[]{ extra }, null ));
-   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix 
+   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix + usuffix
                      +" `s0, (`s1)        # dst <= NAME(src)",
                      null, new Temp[] {extra, dst}));
 }%
@@ -1585,7 +1638,7 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), CONST<i,p>(c))
       emit(ROOT, "li `d0, " + c, extra0);
    }
    emit(ROOT, "la `d0, " + dst, extra1);
-   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, (`s1)",
+   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, (`s1)  # NAME(dst) <= CONST",
                      null, new Temp[] { extra0, extra1 }));
 }%
 
@@ -1593,9 +1646,13 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), CONST<i,p>(c))
 // longs as always are big endian
 MOVE(MEM<l,d>(dst), src) %{
    emitLineDebugInfo(ROOT);
-   emit(new InstrMEM(instrFactory, ROOT, "sw `s0l, 4(`s1)",
+   String suffix = "";
+   if(((harpoon.Backend.MIPS.Frame)frame).memAccessNoTagCheck(ROOT.getDst())) {
+      suffix = ".u";
+   }
+   emit(new InstrMEM(instrFactory, ROOT, "sw" + suffix + " `s0l, 4(`s1)",
                      null, new Temp[]{ src, dst }));   
-   emit(new InstrMEM(instrFactory, ROOT, "sw `s0h, 0(`s1)",
+   emit(new InstrMEM(instrFactory, ROOT, "sw" + suffix + " `s0h, 0(`s1)",
                      null, new Temp[]{ src, dst }));   
 }%
 
