@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>AllInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: AllInductions.java,v 1.1.2.6 1999-09-09 21:42:54 cananian Exp $
+ * @version $Id: AllInductions.java,v 1.1.2.7 1999-09-22 06:05:21 bdemsky Exp $
  */
 public class AllInductions {
     TempMap tm;
@@ -86,9 +86,119 @@ public class AllInductions {
 	    //Do nothing
 	}
 
+	/* All of these redefined to avoid error messages!*/
+	public void visit(harpoon.IR.Quads.AGET q)    {}
+	
+	public void visit(harpoon.IR.Quads.ASET q)    {}
+
+	public void visit(harpoon.IR.Quads.CALL q)    {}
+
+	public void visit(harpoon.IR.Quads.GET q)     {}
+
+	public void visit(harpoon.IR.Quads.HANDLER q) {}
+
+	public void visit(harpoon.IR.Quads.OPER q)    {}
+
+	public void visit(harpoon.IR.Quads.SET q)     {}
+
+
 	public void visit(OPER q) {
-	    System.out.println("OPER found in LowQuad form.  Something is weird!");
+	    switch (q.opcode()) {
+	    case Qop.IADD:
+		//Binary operators		
+		InstanceofCONSTVisitor visitor=new InstanceofCONSTVisitor();
+		good=true;
+		invar=0;
+		index=0;
+		for (int i=0;i<q.operandsLength();i++) {
+		    Temp t=tm.tempMap(q.operands(i));
+		    if (inductions.containsKey(t)) {
+			index=i;
+			invar++;
+		    }
+		    else
+			if (!invariants.contains(ud.defMap(hc,t)[0])) {
+			    good=false;
+			    break;
+			}
+		}
+		//Need one induction variable and constants
+		if ((invar==1)&&(good)) {
+		    changed=true;
+		    //*****************
+		    Induction tmp=new Induction((Induction)inductions.get(tm.tempMap(q.operands(index))));
+		    for (int i=0;i<q.operandsLength();i++)
+			if (i!=index) {
+			    Temp t=tm.tempMap(q.operands(i));
+			    visitor.reset();
+			    ((Quad)ud.defMap(hc,t)[0]).accept(visitor);
+			    if (visitor.resetstatus())
+				tmp=tmp.add
+				    (((Integer)(((CONST)ud.defMap(hc,t)[0]).value())).intValue());
+			    else
+				tmp=tmp.add(tm.tempMap(q.operands(i)));
+			}
+		    inductions.put(q.dst(),tmp);
+		} else
+		    changed=false;
+		break;
+
+
+
+	    case Qop.IMUL:
+		//Binary operators		
+		visitor=new InstanceofCONSTVisitor();
+		good=true;
+	        invar=0;
+		index=0;
+		for (int i=0;i<q.operandsLength();i++) {
+		    Temp t=tm.tempMap(q.operands(i));
+		    if (inductions.containsKey(t)) {
+			index=i;
+			invar++;
+		    }
+		    else
+			if (!invariants.contains(ud.defMap(hc,t)[0])) {
+			    good=false;
+			    break;
+			}
+		}
+		//Need one induction variable and constants
+		if ((invar==1)&&(good)) {
+		    changed=true;
+		    //*****************
+		    Induction tmp=new Induction((Induction)inductions.get(tm.tempMap(q.operands(index))));
+		    for (int i=0;i<q.operandsLength();i++)
+			if (i!=index) {
+			    Temp t=tm.tempMap(q.operands(i));
+			    visitor.reset();
+			    ((Quad)ud.defMap(hc,t)[0]).accept(visitor);
+			    if (visitor.resetstatus())
+				tmp=tmp.multiply(
+						 ((Integer)((CONST)ud.defMap(hc,t)[0]).value()).intValue());
+			    else
+				tmp=tmp.multiply(tm.tempMap(q.operands(i)));
+			}
+		    inductions.put(q.dst(),tmp);
+		} else
+		    changed=false;
+		break;
+
+	    case Qop.INEG:
+		//Unary operators
+		
+		if (inductions.containsKey(tm.tempMap(q.operands(0)))) {
+		    changed=true;
+		    //****************
+		    Induction tmp=((Induction)inductions.get(tm.tempMap(q.operands(0)))).negate();
+		    inductions.put(q.dst(),tmp);
+		} else
+		    changed=false;
+		break;
+	    default:
+	    }
 	}
+	
 	
 	public void visit(PAOFFSET q) {
 	    //Find if induction variable
