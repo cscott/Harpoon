@@ -58,21 +58,20 @@ import java.util.Date;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.35 2000-10-24 02:43:48 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.36 2000-10-31 01:41:26 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
-    
+
+    // Information output control flags
     private static final boolean TIME = false;
-
     private static final boolean RESULTS = false;
-
     private static final boolean SPILL_INFO = false;
-
     private static final boolean STATS = false;
-
     private static final boolean COALESCE_STATS = false;
-
     private static final boolean SCARY_OUTPUT = false;
+
+    // Code output control flags
+    private static final boolean COALESCE_MOVES = true;
 
     static RegAlloc.Factory AGGRESSIVE_FACTORY = 
 	new RegAlloc.Factory() {
@@ -295,6 +294,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	for(Iterator ks=replToOrig.keySet().iterator();ks.hasNext();){
 	    Instr repl = (Instr) ks.next();
 	    Instr orig = (Instr) replToOrig.get(repl);   
+	    // System.out.println("UNDO: replacing "+repl+" w/ "+orig);
+	    // System.out.println("==:"+(repl==orig)+" equls:"+repl.equals(orig));
 	    Instr.replace(repl, orig);
 	}
 	replToOrig.clear();
@@ -393,7 +394,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	boolean success, coalesced;
 	AdjMtx adjMtx = null;
 	
-	boolean doCoalescing = true; // HACK
+	boolean doCoalescing = COALESCE_MOVES; // HACK
 	
 	if (TIME) System.out.println();
 
@@ -1164,6 +1165,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Temp t = wr.temp();
 	    for(Iterator ds=wr.defs.iterator(); ds.hasNext(); ) {
 		Instr i = (Instr) ds.next();
+
+		if (i.isDummy()) 
+		    continue;
+
 		Instr n = i.getNext();
 		Util.assert(i.canFallThrough &&
 			    i.getTargets().isEmpty(),
@@ -1173,6 +1178,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	    for(Iterator us=wr.uses.iterator(); us.hasNext(); ) {
 		Instr i = (Instr) us.next();
+
+		if (i.isDummy()) 
+		    continue;
+
 		Instr p = i.getPrev();
 		Util.assert(p.canFallThrough &&
 			    p.getTargets().isEmpty() &&

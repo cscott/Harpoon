@@ -50,10 +50,10 @@ import java.util.StringTokenizer;
  * <code>RegAlloc.Factory</code>s
  * 
  * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAllocOpts.java,v 1.1.2.1 2000-10-20 08:44:44 pnkfelix Exp $
+ * @version $Id: RegAllocOpts.java,v 1.1.2.2 2000-10-31 01:41:26 pnkfelix Exp $
  */
 public class RegAllocOpts {
-    
+    public static final boolean INFO = false;
     HashSet forceLocal;
     HashSet forceGlobal;
     HashSet forceCoalesce;
@@ -82,14 +82,16 @@ public class RegAllocOpts {
 		String name = nameFor(c).trim();
 		
 		if (forceLocal.contains(name)) {
-		    // System.out.println(" * USING FL FOR "+name);
+		    if (INFO) System.out.println(" * USING FL FOR "+name);
 		    return RegAlloc.LOCAL.makeRegAlloc(c);
 		} else if (forceGlobal.contains(name)) {
+		    if (INFO) System.out.println(" * USING FG FOR "+name);
 		    return RegAlloc.GLOBAL.makeRegAlloc(c);
 		} else if (forceCoalesce.contains(name)) {
-		    // System.out.println(" * USING FC FOR "+name);
+		    if (INFO) System.out.println(" * USING FC FOR "+name);
 		    return GraphColoringRegAlloc.AGGRESSIVE_FACTORY.makeRegAlloc(c);
 		} else {
+		    if (INFO) System.out.println(" * USING NM FOR "+name);
 		    return hc.makeRegAlloc(c);
 		}
 	    }
