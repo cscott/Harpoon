@@ -21,13 +21,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.Stack;
 
 /**
  * <code>CycleEq</code> computes cycle equivalence classes for edges in
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.18 1999-06-18 07:19:14 sportbilly Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.19 1999-08-18 20:55:44 cananian Exp $
  */
 
 public class CycleEq  {
@@ -47,18 +48,29 @@ public class CycleEq  {
 	// throw away all temp info now.
     }
     private void dfs(Graph g, HCodeElement hce, Set mark) {
-	mark.add(hce);
-	for (Iterator i=((HasEdges)hce).succC().iterator(); i.hasNext(); ) {
-	    HCodeEdge e = (HCodeEdge)i.next();
-	    Object cq = g.edge(e).CQclass;
-	    List l = (List) equiv.get(cq);
-	    if (l==null) { l = new LinkedList(); equiv.put(cq, l); }
-	    l.add(e); // append edge to end of list.
-	    elements.add(e);
-	    // recurse
-	    if (!mark.contains(e.to()))
-		dfs(g, e.to(), mark);
-	}
+	Stack s = new Stack();
+    newnode: // this is an obvious hack to allow a 'goto' statement
+	do { // despite java's "prohibition".
+	    mark.add(hce);
+	    s.push(((HasEdges)hce).succC().iterator());
+	    
+	    while (!s.isEmpty()) {
+		for (Iterator i = (Iterator) s.pop(); i.hasNext(); ) {
+		    HCodeEdge e = (HCodeEdge)i.next();
+		    Object cq = g.edge(e).CQclass;
+		    List l = (List) equiv.get(cq);
+		    if (l==null) { l = new LinkedList(); equiv.put(cq, l); }
+		    l.add(e); // append edge to end of list.
+		    elements.add(e);
+		    // recurse
+		    if (!mark.contains(e.to())) {
+			s.push(i);
+			hce = e.to();
+			continue newnode; // recurse to top of procedure.
+		    }
+		}
+	    }
+	} while(false); // not really a loop.  Just a block.
     }
     /** Return <code>Collection</code> of cycle-equivalency
      *	<code>List</code>s. */
