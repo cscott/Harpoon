@@ -27,7 +27,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.16 2000-01-13 23:47:40 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.17 2000-02-10 23:54:03 kkz Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -129,6 +129,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	tb.stringSet.clear();
 
 	return Arrays.asList(new Data[] {
+	    new DataGC(frame, hc),
 	    new DataClaz(frame, hc, ch),
 	    new DataInterfaceList(frame, hc, ch),
 	    new DataStaticFields(frame, hc),

@@ -39,7 +39,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.12 2000-01-29 11:05:53 cananian Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.13 2000-02-10 23:54:03 kkz Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -96,8 +96,8 @@ public class DataClaz extends Data {
 
     /** Make gc bitmap or pointer to bitmap. */
     private Stm gc(Frame f, ClassHierarchy ch) {
-	List stmlist = new ArrayList();
 	if (hc.isArray()) { // arrays are special
+	    List stmlist = new ArrayList();
 	    long bitmap = hc.getComponentType().isPrimitive() ? 0 : 1;
 	    if (f.pointersAreLong())
 		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
@@ -106,9 +106,10 @@ public class DataClaz extends Data {
 	    return Stm.toStm(stmlist);
 	}
 	final int MAX_SIZE = 8 * m_tb.WORD_SIZE * m_tb.POINTER_SIZE;
-	final List fields = m_tb.cfm.fieldList(hc);
 	// in-line bitmap for small objects
 	if (m_tb.objectSize(hc) <= MAX_SIZE) { // use compact encoding
+	    List stmlist = new ArrayList();
+	    final List fields = m_tb.cfm.fieldList(hc);
 	    long bitmap = 0;
 	    for (Iterator it=fields.iterator(); it.hasNext(); ) {
 		HField hf = (HField)it.next();
@@ -129,23 +130,28 @@ public class DataClaz extends Data {
 		stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
 	    return Stm.toStm(stmlist);
 	}
+	// auxiliary table for large objects
+	return gcaux(f, ch);
+    }
+    // Make auxiliary gc bitmap
+    private Stm gcaux(Frame f, ClassHierarchy ch) {
+	List stmlist = new ArrayList();
 	// large object, encoded in auxiliary table
-	stmlist.add(_DATUM(m_nm.label(hc, "auxgc")));
+	stmlist.add(_DATUM(m_nm.label(hc, "gc_aux")));
 	// switch to GC segment
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.GC));
 	// align things on word boundary.
 	stmlist.add(new ALIGN(tf, null, 4));
-	stmlist.add(new LABEL(tf, null, m_nm.label(hc, "auxgc"), true));
-	long bitmap = 0;
+	stmlist.add(new LABEL(tf, null, m_nm.label(hc, "gc_aux"), true));
+	List fields = m_tb.cfm.fieldList(hc);
+	int bitmap = 0;
 	int begin = 0; // first offset represented in the current bitmap
+	final int ENTRY_SIZE = 8 * m_tb.WORD_SIZE * m_tb.WORD_SIZE; 
 	for (Iterator it = fields.iterator(); it.hasNext(); ) {
 	    HField hf = (HField)it.next();
-	    if (m_tb.cfm.fieldOffset(hf) >= begin + MAX_SIZE) {
-		if (f.pointersAreLong())
-		    stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
-		else
-		    stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
-		begin += MAX_SIZE;
+	    if (m_tb.cfm.fieldOffset(hf) >= begin + ENTRY_SIZE) {
+		stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
+		begin += ENTRY_SIZE;
 		bitmap = 0;
 	    }
 	    HClass type = hf.getType();
@@ -159,10 +165,7 @@ public class DataClaz extends Data {
 		bitmap |= (1 << (8 * m_tb.POINTER_SIZE - i - 1));
 	    }
 	}
-	if (f.pointersAreLong())
-	    stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
-	else
-	    stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
+	stmlist.add(_DATUM(new CONST(tf, null, bitmap)));
 	// switch back to CLASS segment
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
 	return Stm.toStm(stmlist);

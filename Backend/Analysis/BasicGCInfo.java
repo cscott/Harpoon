@@ -7,8 +7,18 @@ import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.Instr.RegAlloc.IntermediateCodeFactory;
 import harpoon.Analysis.Liveness;
+import harpoon.Analysis.Maps.Derivation;
+import harpoon.Analysis.Maps.Derivation.DList;
+import harpoon.Analysis.ReachingDefs;
+import harpoon.Analysis.ReachingDefsImpl;
 import harpoon.Backend.Generic.Frame;
+import harpoon.Backend.Generic.GCInfo.DLoc;
 import harpoon.Backend.Generic.GCInfo.GCPoint;
+import harpoon.Backend.Generic.RegFileInfo.CommonLoc;
+import harpoon.Backend.Generic.RegFileInfo.MachineRegLoc;
+import harpoon.Backend.Generic.RegFileInfo.StackOffsetLoc;
+import harpoon.Backend.Generic.RegFileInfo.TempLocator;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
@@ -38,16 +48,67 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.5 2000-02-02 04:17:27 pnkfelix Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.6 2000-02-10 23:54:01 kkz Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
-    
+    // Maps methods to gc points
+    final private Map m = new HashMap();
+    // Maps classes to methods that have been processed
+    final private Map orderedMethods = new HashMap();
+    /** Returns an ordered <code>List</code> of the
+	<code>GCPoint</code>s in a given <code>HMethod</code>.
+	Returns <code>null</code> if the <code>HMethod</code>
+	has not been evaluated for garbage collection purposes.
+	Returns an empty <code>List</code> if the 
+	<code>HMethod</code> has been evaluated and has been
+	found to not contain any GC points.
+    */    
+    public List gcPoints(HMethod hm) {
+	return (List)m.get(hm);
+    }
+    /** Returns a <code>List</code> of <code>HMethod</code>s
+	with the following properties:
+	- The declaring class of the <code>HMethod</code> is
+	<code>HClass</code>.
+	- The <code>convert</code> method of the 
+	<code>IntermediateCodeFactory</code> has been invoked
+	on all the <code>HMethod</code>s in the <code>List</code>. 
+	The <code>IntermediateCodeFactory</code> referred
+	to here is the one returned by the <code>codeFactory</code>
+	method of <code>this</code>. Returns null if the given 
+	<code>HClass</code> does not declare any methods on which 
+	<code>convert</code> has been invoked.
+	- The <code>HMethod</code>s are ordered according to the
+	order in which the <code>convert</code> method was invoked.
+    */
+    public List getOrderedMethods(HClass hc) {
+	return (List)orderedMethods.get(hc);
+    }
+    // adds a given method to the orderedMethod map
+    // used to maintain the orderedMethod map
+    private void addToOrderedMethods(HMethod hm) {
+	List l = (List)orderedMethods.get(hm.getDeclaringClass());
+	if (l != null) {
+	    // hm should not yet be in the List
+	    Util.assert(!l.contains(hm));
+	    // good, add to List
+	    l.add(hm);
+	} else {
+	    // the HClass is not yet in the map
+	    // make a new List
+	    l = new ArrayList();
+	    // add to List
+	    l.add(hm);
+	    // add new entry to map
+	    orderedMethods.put(hm.getDeclaringClass(), l);
+	}
+    }
     /** Returns an IntermediateCodeFactory that inserts
 	<code>InstrLABEL</code>s at garbage collection points
 	and stores the information needed by the garbage
-	collector in the <code>BasicGCInfo</code> object.
+	collector in <code>this</code>.
 	<BR> <B>requires:</B> The <code>parentFactory</code>
-	     in <code>Instr</code> form. 
+	     in <code>Instr</code> form.
     */
     public IntermediateCodeFactory 
 	codeFactory(final IntermediateCodeFactory parentFactory, 
@@ -58,17 +119,28 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 	    protected final Frame f = frame;
 	    protected final CFGrapher cfger = CFGrapher.DEFAULT;
 	    public HCode convert(HMethod hm) {
-		HCode hc = parent.convert(hm);
-		if (hc == null) return null;
-		// pass 1: liveness analysis
+		// preserve ordering information
+		addToOrderedMethods(hm);
+		harpoon.IR.Assem.Code hc = 
+		    (harpoon.IR.Assem.Code)parent.convert(hm);
+		if (hc == null) {
+		    // need to map method to empty List
+		    // of GC points to indicate that the 
+		    // method has been processed, but no
+		    // GC points were found
+		    m.put(hm, new ArrayList());
+		    return null;
+		}
+		// pass 1: liveness and reaching definitions analyses
 		LiveTemps ltAnalysis = analyzeLiveness(hc);
+		ReachingDefs rdAnalysis = new ReachingDefsImpl(hc, cfger);
 		// pass 2: identify backward branches
-		Set instrsBeforeBackEdges = identifyBackwardBranches(hc);
+		Set backEdgeGCPts = identifyBackwardBranches(hc);
 		// pass 3: identify GC points
 		List gcps = new ArrayList();
-		GCPointFinder gcpf = new GCPointFinder(hm, gcps, ltAnalysis, 
-						       instrsBeforeBackEdges,
-						       getDerivation());
+		GCPointFinder gcpf = 
+		    new GCPointFinder(hm, gcps, ltAnalysis, rdAnalysis, 
+				      backEdgeGCPts, hc.getDerivation());
 		for(Iterator instrs = hc.getElementsL().iterator();
 		    instrs.hasNext(); )
 		    ((Instr)instrs.next()).accept(gcpf);
@@ -130,13 +202,20 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		parent.clear(hm);
 		m.remove(hm); // remove from map
 	    }
+	    /** This method should go away soon. The correct way to get 
+		Derivation information is not from the 
+		IntermediateCodeFactory, but from the <code>HCode</code> 
+		object.
+	     */
 	    public harpoon.Analysis.Maps.Derivation getDerivation() {
 		return ((IntermediateCodeFactory)parent).getDerivation();
 	    }
 	    class GCPointFinder extends InstrVisitor {
 		protected final List results;
 		protected final LiveTemps lt;
+		protected final ReachingDefs rd;
 		protected final Set s;
+		protected final TempLocator tl = null; // for now
 		protected final harpoon.Analysis.Maps.Derivation d;
 		protected final HMethod hm; 
 		protected int index = 0;
@@ -151,19 +230,23 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 			   that occur before a backward branch
 		*/
 		public GCPointFinder(HMethod hm, List results, LiveTemps lt, 
-				     Set s, 
+				     ReachingDefs rd, Set s, 
 				     harpoon.Analysis.Maps.Derivation d) {
 		    this.hm = hm;
 		    Util.assert(results != null && results.isEmpty());
 		    this.results = results;
 		    this.lt = lt;
+		    this.rd = rd;
 		    this.s = s;
 		    this.d = d;
 		}
 		public void visit(InstrCALL c) {
+		    // all InstrCALLs are GC points
 		    updateGCInfo(c);
 		}
 		public void visit(Instr i) {
+		    // other Instrs are GC points only
+		    // if they come before a backward edge
 		    if (!s.contains(i)) return;
 		    updateGCInfo(i);
 		}
@@ -177,28 +260,86 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    Util.assert(cfger.pred(i).length == 1);
 		    label.insertAt(new InstrEdge(i.getPrev(), i));
 		    // conservatively take union of live in and out
-		    Set live = new HashSet();
-		    Map derivedPtrs = new HashMap();
+		    WorkSet live = new WorkSet();
 		    live.addAll(lt.getLiveBefore(i));
 		    live.addAll(lt.getLiveAfter(i));
-		    // KKZ note to self: here's another good
-		    // place to filter out non-pointers...
-		    // filter out derived pointers
-		    Worklist toProcess = new WorkSet(live);
-		    while(!toProcess.isEmpty()) {
-			Temp t = (Temp)toProcess.pull();
-			harpoon.Analysis.Maps.Derivation.DList ddl = 
-			    d.derivation(i, t);
-			if (ddl == null) continue;
-			Util.assert(live.remove(t));
-			derivedPtrs.put(t, ddl);
+		    // filter out non-pointers and derived pointers
+		    Map derivedPtrs = new HashMap();
+		    Set liveLocs = new HashSet();
+		    while(!live.isEmpty()) {
+			Temp t = (Temp)live.pull();
+			Instr[] defPts = 
+			    (Instr[])rd.reachingDefs(i, t).toArray();
+			// there must be at least one defintion that reaches i
+			Util.assert(defPts != null && defPts.length > 0);
+			// all of the above defPts should work
+			DList ddl = d.derivation(defPts[0], t);
+			if (ddl == null && d.typeMap(i,t).isPrimitive())
+			    // a non-derived pointer: add all 
+			    // locations where it can be found
+			    liveLocs.addAll(tl.locate(t, defPts[0]));
+			else if (ddl != null)
+			    // a derived pointer: add to derived pointer map
+			    derivedPtrs.put(tl.locate(t, defPts[0]), 
+					    unroll(ddl, i));
 		    }
 		    GCPoint gcp = new GCPoint(i, l, derivedPtrs, live);
 		    results.add(gcp);
+		}
+		private DLoc unroll(DList ddl, Instr instr) {
+		    List regLocs = new ArrayList();
+		    List regSigns = new ArrayList();
+		    List stackLocs = new ArrayList();
+		    List stackSigns = new ArrayList();
+		    while(ddl != null) {
+			Temp base = ddl.base;
+			Instr[] defPts = 
+			    (Instr[])rd.reachingDefs(instr, base).toArray();
+			Util.assert(defPts != null && defPts.length > 0);
+			// any of the definition points should work
+			CommonLoc[] locs = 
+			    (CommonLoc[])tl.locate(base, defPts[0]).toArray();
+			Util.assert(locs != null && locs.length > 0);
+			// any of the CommonLocs should work
+			switch(locs[0].kind()) {
+			case StackOffsetLoc.KIND:
+			    stackLocs.add(locs[0]); 
+			    stackSigns.add(new Boolean(ddl.sign));
+			    break;
+			case MachineRegLoc.KIND:
+			    regLocs.add(locs[0]);
+			    regSigns.add(new Boolean(ddl.sign));
+			    break;
+			default: Util.assert(false);
+			ddl = ddl.next;
+			}
+		    }
+		    Util.assert(regLocs.size() == regSigns.size());
+		    MachineRegLoc[] regArray = 
+			(MachineRegLoc[])regLocs.toArray(new MachineRegLoc[0]);
+		    boolean[] regSignArray = new boolean[regSigns.size()];
+		    int i=0;
+		    for(Iterator it=regSigns.iterator(); it.hasNext(); )
+			regSignArray[i++] = 
+			    ((Boolean)it.next()).booleanValue();
+
+		    Util.assert(stackLocs.size() == stackSigns.size());
+		    StackOffsetLoc[] stackArray =
+			(StackOffsetLoc[])stackLocs.toArray(new
+							    StackOffsetLoc[0]);
+		    boolean[] stackSignArray = new boolean[stackSigns.size()];
+		    int j=0;
+		    for(Iterator it=stackSigns.iterator(); it.hasNext(); )
+			stackSignArray[j++] = 
+			    ((Boolean)it.next()).booleanValue();
+		
+		    return new DLoc(regArray, stackArray, 
+				    regSignArray, stackSignArray); 
 		}
 	    }
 	};
     } // codeFactory
 } // class
+
 
 

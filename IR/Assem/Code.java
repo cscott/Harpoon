@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Assem;
 
+import harpoon.Analysis.Maps.Derivation;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
@@ -32,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.5 2000-01-31 21:54:02 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.6 2000-02-10 23:54:03 kkz Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -320,6 +321,12 @@ public abstract class Code extends HCode {
 
         return s.toString();
     }
+
+    /** Returns the <code>Derivation</code> associated with
+	<code>this</code>. Returns <code>null</code> if
+	<code>Derivation</code> information is not available.
+    */
+    public Derivation getDerivation() { return null; }
 
     /** Returns an assembly code identifier for the register that
 	<code>val</code> will be stored into.
