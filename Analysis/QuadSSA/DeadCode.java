@@ -18,7 +18,7 @@ import java.util.Hashtable;
  * unused and seeks to prove otherwise.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.8 1998-10-08 10:11:36 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.9 1998-10-10 03:13:03 cananian Exp $
  */
 
 public class DeadCode  {
@@ -179,6 +179,7 @@ public class DeadCode  {
 	    return t;
 	}
 	public void map(Temp Told, Temp Tnew) { h.put(Told, Tnew); }
+	public String toString() { return h.toString(); }
     }
 
     static class UsefulVisitor extends QuadVisitor {
