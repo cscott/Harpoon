@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.17 2000-09-18 17:01:39 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.18 2000-09-25 19:36:38 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -451,17 +451,6 @@ import java.util.Iterator;
 	default: throw new Error("Illegal compare operation");
 	}
     }
-    // helper for operand2 immediates
-    private boolean isZero(int val) {
-	return (val == 0);
-    }
-    private boolean isZero(Number n) {
-	if (!(n instanceof Integer)) return false;
-	else return isZero(n.intValue());
-    }
-    private int negate(Number n) {
-	return -((Integer)n).intValue();
-    }
 
     /** simple tuple class to wrap some bits of info about the call prologue */
     private class CallState {
@@ -543,6 +532,7 @@ import java.util.Iterator;
        Util.assert(j instanceof TwoWordTemp);
        emit( root, "move `d0, `s0h", a0, j );
        emit( root, "move `d0, `s0l", a1, j );
+       Util.assert((k instanceof TwoWordTemp) == false);
        emitMOVE( root, "move `d0, `s0", a2, k );
        declareCALLDefFull();
        emit2(root, "jal "+nameMap.c_function_name(func_name),
@@ -740,23 +730,26 @@ import java.util.Iterator;
                   ROOT.getRetval().type()==Type.FLOAT) {
           // float retval passed in float registers.
           declare(retval, type); declare ( SP, HClass.Void );
-          emitMOVE( ROOT, "move `d0, `s0", retval, v0 );
-          //emit( ROOT, "s.s $f0, -4($sp)", SP, SP);
+          //emitMOVE( ROOT, "move `d0, `s0", retval, v0 );
+          emit( ROOT, "swc1 $f0, 0($sp)");
+          emit2( ROOT, "lw   `d0, 0(`s0)", 
+                 new Temp[]{retval,SP},new Temp[]{SP});
           //emit2(ROOT, "lw `d0, 4($sp)",new Temp[]{retval,SP},new Temp[]{SP});
        } else if (isNative && (!soft_float) &&
                   ROOT.getRetval().type()==Type.DOUBLE) {
           // double retval passed in float registers.
           declare(retval, type); declare ( SP, HClass.Void );
-	  Util.assert(retval instanceof TwoWordTemp);
-          emit( ROOT, "move `d0h, `s0", retval, v0 );
-          emit( ROOT, "move `d0l, `s0", retval, v1 );
-          //emit( ROOT, "s.d $f0, -8($sp)", SP, SP);
-          //emit2(ROOT, "lw `d0l, 4($sp)",new Temp[]{retval,SP},new Temp[]{SP});
-          //emit2(ROOT, "lw `d0h, 4($sp)",new Temp[]{retval,SP},new Temp[]{SP});
+          Util.assert(retval instanceof TwoWordTemp);
+          //emit( ROOT, "move `d0h, `s0", retval, v0 );
+          // emit( ROOT, "move `d0l, `s0", retval, v1 );
+          // sdc1 is mips2
+          emit( ROOT, "sdc1 $f0, 0($sp)", SP, SP);
+          emit2(ROOT, "lw `d0l, 4($sp)",new Temp[]{retval,SP},new Temp[]{SP});
+          emit2(ROOT, "lw `d0h, 0($sp)",new Temp[]{retval,SP},new Temp[]{SP});
        } else if (ROOT.getRetval().isDoubleWord()) {
           // not certain an emitMOVE is legal with the l/h modifiers
           declare(retval, type);
-	  Util.assert(retval instanceof TwoWordTemp);
+          Util.assert(retval instanceof TwoWordTemp);
           emit( ROOT, "move `d0h, `s0", retval, v0 );
           emit( ROOT, "move `d0l, `s0", retval, v1 );
        } else {
@@ -1041,12 +1034,12 @@ BINOP<d>(ADD, j, UNOP<d>(NEG, k)) = i %{
 
 BINOP<p,i>(MUL, j, k) = i %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "mul `d0, `s0, `s1", i, j, k );
+   emit( ROOT, "mul `d0, `s0, `s1", i, j, k );
 }%
 
 BINOP<p,i>(MUL, j, CONST<p,i>(c)) = i %{
    emitLineDebugInfo(ROOT);
-    emit( ROOT, "mult `d0, `s0, "+c, i, j );
+    emit( ROOT, "mul `d0, `s0, "+c, i, j );
 }%
 
 BINOP<l>(MUL, j, k) = i %{
@@ -1128,10 +1121,10 @@ UNOP<d>(NEG, arg) = i
 UNOP<l>(NEG, arg) = i %extra<i>{ extra }
 %{
    emitLineDebugInfo(ROOT);
-   emit( ROOT, "seq `d0, `s0l, 0", extra, arg );
-   emit( ROOT, "negu `d0l, `s0l", i, arg );
-   emit( ROOT, "not `d0h, `s0h", i, arg );
-   emit( ROOT, "addu `d0h, `s0h, `s1", i, i, extra );
+   emit( ROOT, "subu `d0l, $0, `s0l", i, arg);
+   emit( ROOT, "subu `d0h, $0, `s0h", i, arg);
+   emit( ROOT, "sltu `d0, $0, `s0l", extra, arg );
+   emit( ROOT, "subu `d0h, `s0h, `s1", i, i, extra);
 }% 
 
 /***********************************************************/
@@ -1339,9 +1332,8 @@ CONST<l,d>(c) = i
    : Double.doubleToLongBits(ROOT.value.doubleValue());
 
    emitLineDebugInfo(ROOT);
+   emit( ROOT, "li `d0h, " + (int)(val>>>32) + " # hi long const", i);
    emit( ROOT, "li `d0l, " + (int)val + " # lo long const", i);
-   val>>>=32;
-   emit( ROOT, "li `d0h, " + (int)val + " # hi long const", i);
 }% 
 
 CONST<i,f>(c) = i 
@@ -1356,6 +1348,7 @@ CONST<i,f>(c) = i
     }
     emit(ROOT, "li `d0, " + val + comment, i);
 }%
+
 
 CONST<p>(c) = i %{
     // the only CONST of type Pointer we should see is NULL
@@ -1891,13 +1884,9 @@ DATUM(CONST<l,d>(exp)) %{
       : Double.doubleToLongBits(exp.doubleValue());
    String lo = "0x"+Integer.toHexString((int)l);
    String hi = "0x"+Integer.toHexString((int)(l>>32));
-   // doubles are stored in reverse order on the StrongARM.  No, I don't
-   // know why.  
-   if (ROOT.getData().type()==Type.LONG)
-      emitDIRECTIVE( ROOT, "\t.word "+lo+" # lo("+exp+")");
+   // Store doubles and longs big endian
    emitDIRECTIVE( ROOT, "\t.word "+hi+" # hi("+exp+")");
-   if (ROOT.getData().type()==Type.DOUBLE)
-      emitDIRECTIVE( ROOT, "\t.word "+lo+" # lo("+exp+")");
+   emitDIRECTIVE( ROOT, "\t.word "+lo+" # lo("+exp+")");
 }%
 
 DATUM(CONST<p>(exp)) %{
