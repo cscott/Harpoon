@@ -45,6 +45,7 @@ always:
 	if egrep -q '^[^%]*\\bibliography' $< ; then bibtex $(basename $<); fi
 	if egrep -q 'Rerun to get cross-r' $*.log; then latex $*; fi
 	if egrep -q 'Rerun to get cross-r' $*.log; then latex $*; fi
+	if egrep -q 'undefined references' $*.log; then grep undefined $*.log; fi
 
 # Make annotation-visible versions of bibtex files.
 %_.bib : %.bib
