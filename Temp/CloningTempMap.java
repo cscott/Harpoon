@@ -14,10 +14,10 @@ import java.util.Map;
  * creating new <code>Temp</code>s as necessary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CloningTempMap.java,v 1.4 2002-04-10 03:06:37 cananian Exp $
+ * @version $Id: CloningTempMap.java,v 1.5 2002-09-01 07:39:25 cananian Exp $
  */
 public class CloningTempMap implements TempMap {
-    private final Map h = new HashMap();
+    private final Map<Temp,Temp> h = new HashMap<Temp,Temp>();
     private final TempFactory old_tf;
     private final TempFactory new_tf;
     
@@ -36,7 +36,7 @@ public class CloningTempMap implements TempMap {
      *  <code>TempFactory</code>, creating it if necessary. */
     public Temp tempMap(Temp t) {
 	assert t.tempFactory() == old_tf : "TempFactories should match";
-	Temp r = (Temp) h.get(t);
+	Temp r = h.get(t);
 	if (r==null) {
 	    r = t.clone(new_tf);
 	    h.put(t, r);
@@ -49,10 +49,10 @@ public class CloningTempMap implements TempMap {
      *  <code>TempMap</code. */
     public TempMap unmodifiable() {
 	return new TempMap() {
-	    public Temp tempMap(Temp t) { return (Temp) h.get(t); }
+	    public Temp tempMap(Temp t) { return h.get(t); }
 	};
     }
     /** Provide access to an unmodifiable version of this
      *  <code>Temp</code> mapping, as a <code>java.util.Map</code>. */
-    public Map asMap() { return Collections.unmodifiableMap(h); }
+    public Map<Temp,Temp> asMap() { return Collections.unmodifiableMap(h); }
 }

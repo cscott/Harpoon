@@ -155,6 +155,7 @@ IR/Tree/TreeGrapher.java
 IR/Tree/TreeUseDefer.java
 IR/Tree/Print.java
 IR/Tree/Stm.java
+Temp/CloningTempMap.java
 Temp/Temp.java
 
 # not GJ-ized, but we need to co-compile these to satisfy dependencies.
