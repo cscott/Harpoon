@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.16 1998-09-16 06:32:49 cananian Exp $
+ * @version $Id: PHI.java,v 1.17 1998-09-21 04:45:34 cananian Exp $
  */
 
 public class PHI extends Quad {
@@ -31,10 +31,8 @@ public class PHI extends Quad {
 		this.src[i][j] = null;
     }
 
-    /** Remove a predecessor from this phi.  <p>
-     *  prev[which_pred] should be null. */
+    /** Remove a predecessor from this phi. */
     public void remove(int which_pred) {
-	Util.assert(prev[which_pred]==null);
 	prev = (Edge[]) Util.shrink(prev, which_pred);
 	for (int i=0; i<dst.length; i++)
 	    src[i] = (Temp[]) Util.shrink(src[i], which_pred);
@@ -89,7 +87,7 @@ public class PHI extends Quad {
 
     /** Returns a human-readable representation of this Quad. */
     public String toString() {
-	StringBuffer sb = new StringBuffer("PHI("+prev().length+"): ");
+	StringBuffer sb = new StringBuffer("PHI("+prev.length+"): ");
 	for (int i=0; i<dst.length; i++) {
 	    sb.append(dst[i].toString() + "=(");
 	    for (int j=0; j<src[i].length; j++) {

@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * <code>FOOTER</code> node as their only successor.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FOOTER.java,v 1.8 1998-09-16 06:32:47 cananian Exp $
+ * @version $Id: FOOTER.java,v 1.9 1998-09-21 04:45:34 cananian Exp $
  * @see HEADER
  * @see RETURN
  * @see THROW
@@ -35,6 +35,10 @@ public class FOOTER extends Quad {
     public void attach(Quad q, int which_succ) {
 	grow(); 
 	addEdge(q, which_succ, this, prev.length-1);
+    }
+    /** Remove an attachment from this FOOTER. */
+    public void remove(int which_pred) {
+	prev = (Edge[]) Util.shrink(prev, which_pred);
     }
 
     /** Rename all used variables in this Quad according to a mapping. */

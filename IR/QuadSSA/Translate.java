@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.77 1998-09-20 04:41:43 cananian Exp $
+ * @version $Id: Translate.java,v 1.78 1998-09-21 04:45:34 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -940,11 +940,10 @@ class Translate  { // not public.
 		Temp constant = s.extra(0);
 		ns = s;
 		q = new CONST(in, constant, opd1.getValue(), opd1.getType());
-		Quad.addEdge(q,
+		Quad.addEdge(q, 0,
 			     new OPER(in, "iadd", ns.lv[opd0.getIndex()],
 				      new Temp[] { s.lv[opd0.getIndex()], 
-						       constant})
-			     );
+						       constant}), 0);
 		last = q.next(0);
 		break;
 	    }

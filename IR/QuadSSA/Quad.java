@@ -9,7 +9,7 @@ import harpoon.Temp.TempMap;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.21 1998-09-18 21:37:15 cananian Exp $
+ * @version $Id: Quad.java,v 1.22 1998-09-21 04:45:34 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -35,6 +35,9 @@ public abstract class Quad
     static int next_id = 0;
     static final Object lock = new Object();
 
+    /** Returns the <code>HCodeElement</code> that this <code>Quad</code>
+     *  is derived from. */
+    public HCodeElement getSourceElement() { return source; }
     /** Returns the original source file name that this <code>Quad</code>
      *  is derived from. */
     public String getSourceFile() { return source.getSourceFile(); }
@@ -111,20 +114,13 @@ public abstract class Quad
 
     /** Adds an edge between two Quads.  The <code>from_index</code>ed
      *  outgoing edge of <code>from</code> is connected to the 
-     *  <code>to_index</code>ed incoming edge of <code>to</code>. */
-    public static void addEdge(Quad from, int from_index,
+     *  <code>to_index</code>ed incoming edge of <code>to</code>. 
+     *  @return the added <code>Edge</code>.*/
+    public static Edge addEdge(Quad from, int from_index,
 			       Quad to, int to_index) {
 	Edge e = new Edge(from, from_index, to, to_index);
 	from.next[from_index] = e;
 	to.prev[to_index] = e;
-    }
-    /** Adds an edge between two Quads.  <code>from</code> must have
-     *  exactly one successor, and <code>to</code> must require exactly
-     *  one predecessor. Equivalent to <code>addEdge(from, 0, to, 0)</code>.
-     */
-    public static void addEdge(Quad from, Quad to) {
-	Util.assert(from.next.length==1);
-	Util.assert(to.prev.length==1);
-	addEdge(from, 0, to, 0);
+	return e;
     }
 }
