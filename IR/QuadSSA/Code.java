@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.17 1998-09-16 17:43:43 cananian Exp $
+ * @version $Id: Code.java,v 1.18 1998-09-16 19:47:39 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -37,7 +37,7 @@ public class Code extends HCode {
 	this.quads = Translate.trans(bytecode);
 	CleanUp.cleanup1(this); // cleanup null predecessors of phis.
 	FixupFunc.fixup(this);
-	CleanUp.cleanup2(this); // cleanup unused phi/lambdas.
+	//CleanUp.cleanup2(this); // cleanup unused phi/lambdas.
     }
     /**
      * Return the <code>HMethod</code> this codeview
