@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGEdge; 
 import harpoon.Temp.CloningTempMap;
@@ -24,7 +25,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.38 2000-10-06 21:20:33 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.39 2000-10-06 23:02:39 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -296,17 +297,11 @@ public abstract class Quad
     }
     /** Create a new copy of a string of <code>Quad</code>s starting
      * at the given header using the specified
-     * <code>QuadFactory</code>, and returns a pair of mappings as a
-     * two-element array.  The first element contains a 
-     * mapping from old quads to the newly cloned
-     * quads, and the last element contains a mapping from old temps to
-     * newly cloned temps.<p>
-     * The cloned quads will be rooted at
-     *  <code>((Map)cloneMaps(qf, header)[0]).get(header)</code>.
-     * The <code>TempMap</code> is
-     *  <code>((TempMap)cloneMaps(qf, header)[1])</code>.
+     * <code>QuadFactory</code>, and returns a set
+     * of mappings.  The cloned quads will be rooted at
+     *  <code>elementMap().get(header)</code>.
      */
-    public static Object[] cloneMaps(QuadFactory qf, Quad header)
+    static HCodeAndMaps cloneWithMaps(QuadFactory qf, Quad header)
     {
 	Util.assert(header instanceof HEADER, 
 		    "Argument to Quad.clone() should be a HEADER.");
@@ -314,34 +309,27 @@ public abstract class Quad
 	CloningTempMap ctm = new CloningTempMap(header.qf.tempFactory(),
 						qf.tempFactory());
 	copyone(qf, header, qm, ctm);
-	Map quadMap = Collections.unmodifiableMap(qm);
-	TempMap tempMap = ctm.unmodifiable();
-	return new Object[] { quadMap, tempMap };
-    }
-
-    public static Map cloneUnified(QuadFactory qf, Quad header)
-    {
-	Util.assert(header instanceof HEADER, 
-		    "Argument to Quad.clone() should be a HEADER.");
-	Map qm = new HashMap();
-	CloningTempMap ctm = new CloningTempMap(header.qf.tempFactory(),
-						qf.tempFactory());
-	copyone(qf, header, qm, ctm);
-	// add all mappings to one map.
-	Map result = new HashMap();
+	// make new-to-old mappings from old-to-new mappings.
+	final Map n2oQuad = new HashMap(), n2oTemp = new HashMap();
 	for (Iterator it=qm.entrySet().iterator(); it.hasNext(); ) {
 	    Map.Entry me = (Map.Entry) it.next();
-	    Quad qO = (Quad) me.getKey();
-	    Quad qN = (Quad) me.getValue();
-	    result.put(qO, qN); result.put(qN, qO);
+	    Quad qO = (Quad) me.getKey(), qN = (Quad) me.getValue();
+	    n2oQuad.put(qN, qO);
 	}
 	for (Iterator it=ctm.asMap().entrySet().iterator(); it.hasNext(); ) {
 	    Map.Entry me = (Map.Entry) it.next();
-	    Temp tO = (Temp) me.getKey();
-	    Temp tN = (Temp) me.getValue();
-	    result.put(tO, tN); result.put(tN, tO);
+	    Temp tO = (Temp) me.getKey(), tN = (Temp) me.getValue();
+	    n2oTemp.put(tN, tO);
 	}
-	return Collections.unmodifiableMap(result);
+	// make type-safe tuple of immutable maps to return.
+	return new HCodeAndMaps(null,
+				Collections.unmodifiableMap(qm),
+				ctm.unmodifiable(),
+				null,
+				Collections.unmodifiableMap(n2oQuad),
+				new TempMap() {
+	    public Temp tempMap(Temp t) { return (Temp) n2oTemp.get(t); }
+	});
     }
     private static Quad copyone(QuadFactory qf, Quad q, Map old2new,
 				CloningTempMap ctm)

@@ -32,7 +32,7 @@ import java.util.Set;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.14 2000-10-06 21:20:15 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.15 2000-10-06 23:02:30 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -53,14 +53,7 @@ public class Code extends HCode {
    *  bytecode graph. */
   public HCodeAndMaps clone(HMethod newMethod) {
     final HCode cloned = new Code(newMethod, methodinfo);
-    return new HCodeAndMaps() {
-      public HCode hcode() { return cloned; }
-      public HCode ancestorHCode() { return Code.this; }
-      public Map elementMap() { return null; }
-      public Map ancestorElementMap() { return null; }
-      public TempMap tempMap() { return null; }
-      public TempMap ancestorTempMap() { return null; }
-    };
+    return new HCodeAndMaps(cloned, null, null, this, null, null);
   }
 
   /**

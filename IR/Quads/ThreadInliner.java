@@ -8,10 +8,12 @@ import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.AllocationInformationMap;
 
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.Temp.TempMap;
+import harpoon.Util.Util;
 import java.util.Map;
 import java.util.Set;
 import java.util.Iterator;
@@ -21,7 +23,7 @@ import java.util.Iterator;
  * <code>ThreadInliner</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: ThreadInliner.java,v 1.1.2.2 2000-06-13 19:20:22 bdemsky Exp $
+ * @version $Id: ThreadInliner.java,v 1.1.2.3 2000-10-06 23:02:40 cananian Exp $
  */
 public class ThreadInliner {
     /** Creates a <code>ThreadInliner</code>. */
@@ -42,11 +44,14 @@ public class ThreadInliner {
     }
     
     public static HCode makeswaps(HCode hc,final Set startset,final Set joinset) {
-	QuadNoSSA qns = new QuadNoSSA(hc.getMethod(), null);
-	Object[]  maps= Quad.cloneMaps(qns.qf, (Quad) hc.getRootElement());
-	Map quadMap=(Map) maps[0];
-	TempMap tempMap=(TempMap) maps[1];
-	qns.quads=(Quad)quadMap.get(hc.getRootElement());
+	HCodeAndMaps hcam = null;
+	try /* I hate having to explicitly check this exception */
+	    { hcam = hc.clone(hc.getMethod()); }
+	catch (CloneNotSupportedException ex) { Util.assert(false, ex); }
+	QuadNoSSA qns = (QuadNoSSA) hcam.hcode();
+	Map quadMap = hcam.elementMap();
+	TempMap tempMap = hcam.tempMap();
+
 	AllocationInformation old=((Code)hc).getAllocationInformation();
 	AllocationInformationMap newai=new AllocationInformationMap();
 	if (old!=null)

@@ -16,25 +16,40 @@ import java.util.Map;
  * straight-forward to write.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCodeAndMaps.java,v 1.1.2.1 2000-10-06 21:20:00 cananian Exp $
+ * @version $Id: HCodeAndMaps.java,v 1.1.2.2 2000-10-06 23:02:24 cananian Exp $
  */
-public abstract class HCodeAndMaps {
+public final class HCodeAndMaps {
+    private final HCode hcode, ancestorHCode;
+    private final Map elementMap, ancestorElementMap;
+    private final TempMap tempMap, ancestorTempMap;
+    /** constructor. */
+    public HCodeAndMaps(HCode hcode, Map elementMap, TempMap tempMap,
+			HCode ancestorHCode, Map ancestorElementMap,
+			TempMap ancestorTempMap) {
+	this.hcode=hcode;
+	this.elementMap=elementMap;
+	this.tempMap=tempMap;
+	this.ancestorHCode=ancestorHCode;
+	this.ancestorElementMap=ancestorElementMap;
+	this.ancestorTempMap=ancestorTempMap;
+    }
+
     /** Returns the newly-cloned <code>HCode</code>. */
-    public abstract HCode hcode();
+    public HCode hcode() { return hcode; }
     /** An immutable mapping from ancestor <code>HCodeElement</code>s
      *  to newly-cloned <code>HCodeElement</code>s. */
-    public abstract Map elementMap();
+    public Map elementMap() { return elementMap; }
     /** An immutable mapping from ancestor <code>Temp</code>s to
      *  newly-cloned <code>Temp</code>s. */
-    public abstract TempMap tempMap();
+    public TempMap tempMap() { return tempMap; }
 
     /** Returns the original <code>HCode</code> that the clone returned
      *  by the <code>hcode()</code> method was copied from. */
-    public abstract HCode ancestorHCode();
+    public HCode ancestorHCode() { return ancestorHCode; }
     /** An immutable mapping from newly-cloned <code>HCodeElement</code>s
      *  to ancestor <code>HCodeElement</code>s. */
-    public abstract Map ancestorElementMap();
+    public Map ancestorElementMap() { return ancestorElementMap; }
     /** An immutable mapping from newly-cloned <code>Temp</code>s to
      *  ancestor <code>Temp</code>s. */
-    public abstract TempMap ancestorTempMap();
+    public TempMap ancestorTempMap() { return ancestorTempMap; }
 }

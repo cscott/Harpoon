@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>MyLowQuadSSI</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadSSI.java,v 1.1.2.11 2000-10-06 21:18:57 cananian Exp $
+ * @version $Id: MyLowQuadSSI.java,v 1.1.2.12 2000-10-06 23:01:08 cananian Exp $
  */
 
 public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI
@@ -42,10 +42,11 @@ public class MyLowQuadSSI extends harpoon.IR.LowQuad.LowQuadSSI
     MyLowQuadSSI(final LowQuadSSI code) {
 	super(code.getMethod(),null);
 	parentDerivation=code.getDerivation();
-	Object[] Maps=Quad.cloneMaps(qf, (Quad)code.getRootElement());
-	quadmap=(Map)Maps[0];
-	tempMap=(TempMap)Maps[1];
-	quads=(Quad) quadmap.get(code.getRootElement());
+
+	HCodeAndMaps hcam = cloneHelper(code, this);
+	quadmap=hcam.elementMap();
+	tempMap=hcam.tempMap();
+
 	dT=new HashMap();
 	tT=new HashMap();
 	quadmapchanges=new HashMap();

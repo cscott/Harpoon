@@ -29,7 +29,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.18 2000-10-06 21:20:32 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.19 2000-10-06 23:02:39 cananian Exp $
  */
 public abstract class Code extends HCode implements java.io.Serializable {
     /** The method that this code view represents. */
@@ -66,19 +66,16 @@ public abstract class Code extends HCode implements java.io.Serializable {
     public abstract HCodeAndMaps clone(HMethod newMethod);
     /** Helper for clone */
     protected final HCodeAndMaps cloneHelper(final Code qc) {
-	final Map m = Quad.cloneUnified(qc.qf, this.quads);
-	final TempMap tm = new TempMap() {
-	    public Temp tempMap(Temp t) { return (Temp) m.get(t); }
-	};
-	qc.quads = (HEADER) m.get(quads);
-	return new HCodeAndMaps() {
-	    public HCode hcode() { return qc; }
-	    public Map elementMap() { return m; }
-	    public TempMap tempMap() { return tm; }
-	    public HCode ancestorHCode() { return Code.this; }
-	    public Map ancestorElementMap() { return m; }
-	    public TempMap ancestorTempMap() { return tm; }
-	};
+	return cloneHelper(this, qc);
+    }
+    /** Helper for clone */
+    protected static final HCodeAndMaps cloneHelper(final Code _this,
+						    final Code qc) {
+	final HCodeAndMaps hcam = Quad.cloneWithMaps(qc.qf, _this.quads);
+	qc.quads = (HEADER) hcam.elementMap().get(_this.quads);
+	return new HCodeAndMaps(qc, hcam.elementMap(), hcam.tempMap(),
+				_this, hcam.ancestorElementMap(),
+				hcam.ancestorTempMap());
     }
 	
     /**

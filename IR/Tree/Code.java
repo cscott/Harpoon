@@ -39,7 +39,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.51 2000-10-06 21:20:43 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.52 2000-10-06 23:02:50 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The Tree Objects composing this code view. */
@@ -107,22 +107,16 @@ public abstract class Code extends HCode {
 		return n;
 	    }
 	});
-	final Map o2nTreeIM = Collections.unmodifiableMap(o2nTree);
-	final Map n2oTreeIM = Collections.unmodifiableMap(n2oTree);
-	final TempMap o2nTempIM = new TempMap() {
-	    public Temp tempMap(Temp t) { return (Temp) o2nTemp.get(t); }
-	};
-	final TempMap n2oTempIM = new TempMap() {
-	    public Temp tempMap(Temp t) { return (Temp) n2oTemp.get(t); }
-	};
-	return new HCodeAndMaps() {
-	    public HCode hcode() { return tc; }
-	    public Map elementMap() { return o2nTreeIM; }
-	    public TempMap tempMap() { return o2nTempIM; }
-	    public HCode ancestorHCode() { return Code.this; }
-	    public Map ancestorElementMap() { return n2oTreeIM; }
-	    public TempMap ancestorTempMap() { return n2oTempIM; }
-	};
+	class MapTempMap implements TempMap {
+	    private final Map m; MapTempMap(Map m) { this.m = m; }
+	    public Temp tempMap(Temp t) { return (Temp) m.get(t); }
+	}
+	return new HCodeAndMaps(tc,
+				Collections.unmodifiableMap(o2nTree),
+				new MapTempMap(o2nTemp),
+				this,
+				Collections.unmodifiableMap(n2oTree),
+				new MapTempMap(n2oTemp));
     }
     /** Clone this code representation. The clone has its own copy
      *  of the Tree */
