@@ -9,6 +9,8 @@ public class Termination {
     Hashtable conjunctionmap;
 
     HashSet abstractrepair;
+    HashSet abstractrepairadd;
+
     HashSet updatenodes;
     HashSet consequencenodes;
 
@@ -29,6 +31,7 @@ public class Termination {
 	conjunctions=new HashSet();
 	conjunctionmap=new Hashtable();
 	abstractrepair=new HashSet();
+	abstractrepairadd=new HashSet();
 	scopenodes=new HashSet();
 	scopesatisfy=new Hashtable();
 	scopefalsify=new Hashtable();
@@ -293,6 +296,7 @@ public class Termination {
 		predtoabstractmap.put(tp,new HashSet());
 	    ((Set)predtoabstractmap.get(tp)).add(gn);
 	    abstractrepair.add(gn);
+	    abstractrepairadd.add(gn);
 	    abstractadd.put(sd,gn);
 	    
 	    DNFPredicate tp2=new DNFPredicate(true,ip);
@@ -303,6 +307,7 @@ public class Termination {
 		predtoabstractmap.put(tp2,new HashSet());
 	    ((Set)predtoabstractmap.get(tp2)).add(gn2);
 	    abstractrepair.add(gn2);
+	    abstractrepairadd.add(gn2);
 	    abstractremove.put(sd,gn2);
 	}
 
@@ -324,6 +329,7 @@ public class Termination {
 		predtoabstractmap.put(tp,new HashSet());
 	    ((Set)predtoabstractmap.get(tp)).add(gn);
 	    abstractrepair.add(gn);
+	    abstractrepairadd.add(gn);
 	    abstractadd.put(rd,gn);
 	    
 	    DNFPredicate tp2=new DNFPredicate(true,ip);
@@ -334,6 +340,7 @@ public class Termination {
 		predtoabstractmap.put(tp2,new HashSet());
 	    ((Set)predtoabstractmap.get(tp2)).add(gn2);
 	    abstractrepair.add(gn2);
+	    abstractrepairadd.add(gn2);
 	    abstractremove.put(rd,gn2);
 	}
 	
@@ -577,8 +584,11 @@ public class Termination {
 		}
 		RelationInclusion ri=(RelationInclusion)r.getInclusion();
 		if (!(ri.getLeftExpr() instanceof VarExpr)) {
-		    Updates up=new Updates(ri.getLeftExpr(),leftindex);
-		    un.addUpdate(up);
+		    if (ri.getLeftExpr().isValue()) {
+			Updates up=new Updates(ri.getLeftExpr(),leftindex);
+			un.addUpdate(up);
+		    } else
+			goodflag=false;
 		} else {
 		    VarDescriptor vd=((VarExpr)ri.getLeftExpr()).getVar();
 		    if (vd.isGlobal()) {
@@ -588,8 +598,11 @@ public class Termination {
 			goodflag=false;
 		}
 		if (!(ri.getRightExpr() instanceof VarExpr)) {
-		    Updates up=new Updates(ri.getRightExpr(),rightindex);
-		    un.addUpdate(up);
+		    if (ri.getRightExpr().isValue()) {
+			Updates up=new Updates(ri.getRightExpr(),rightindex);
+			un.addUpdate(up);
+		    } else
+			goodflag=false;
 		} else {
 		    VarDescriptor vd=((VarExpr)ri.getRightExpr()).getVar();
 		    if (vd.isGlobal()) {
@@ -741,11 +754,14 @@ public class Termination {
 		    if(inc instanceof SetInclusion) {
 			SetInclusion si=(SetInclusion)inc;
 			if (!(si.elementexpr instanceof VarExpr)) {
-			    Updates up=new Updates(si.elementexpr,0);
-			    un.addUpdate(up);
+			    if (si.elementexpr.isValue()) {
+				Updates up=new Updates(si.elementexpr,0);
+				un.addUpdate(up);
+			    } else
+				continue;
 			} else {
 			    VarDescriptor vd=((VarExpr)si.elementexpr).getVar();
-			    if (un.getBinding(vd)==null) {
+			    if (vd.isGlobal()) {
 				Updates up=new Updates(si.elementexpr,0);
 				un.addUpdate(up);
 			    }
@@ -753,21 +769,27 @@ public class Termination {
 		    } else if (inc instanceof RelationInclusion) {
 			RelationInclusion ri=(RelationInclusion)inc;
 			if (!(ri.getLeftExpr() instanceof VarExpr)) {
-			    Updates up=new Updates(ri.getLeftExpr(),0);
-			    un.addUpdate(up);
+			    if (ri.getLeftExpr().isValue()) {
+				Updates up=new Updates(ri.getLeftExpr(),0);
+				un.addUpdate(up);
+			    } else
+				continue;
 			} else {
 			    VarDescriptor vd=((VarExpr)ri.getLeftExpr()).getVar();
-			    if (un.getBinding(vd)==null) {
+			    if (vd.isGlobal()) {
 				Updates up=new Updates(ri.getLeftExpr(),0);
 				un.addUpdate(up);
 			    }
      			}
 			if (!(ri.getRightExpr() instanceof VarExpr)) {
-			    Updates up=new Updates(ri.getRightExpr(),1);
-			    un.addUpdate(up);
+			    if (ri.getRightExpr().isValue()) {
+				Updates up=new Updates(ri.getRightExpr(),1);
+				un.addUpdate(up);
+			    } else
+				continue;
 			} else {
 			    VarDescriptor vd=((VarExpr)ri.getRightExpr()).getVar();
-			    if (un.getBinding(vd)==null) {
+			    if (vd.isGlobal()) {
 				Updates up=new Updates(ri.getRightExpr(),1);
 				un.addUpdate(up);
 			    }

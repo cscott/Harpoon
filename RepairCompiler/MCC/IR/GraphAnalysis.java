@@ -1,5 +1,6 @@
 package MCC.IR;
 import java.util.*;
+import java.io.*;
 import MCC.State;
 
 public class GraphAnalysis {
@@ -49,7 +50,6 @@ public class GraphAnalysis {
 	    couldremove.addAll(optionalabstractrepair);
 	    couldremove.retainAll(cycles);
 
-
 	    /* Look for constraints which can only be satisfied one way */
 	    
 	    Vector constraints=termination.state.vConstraints;
@@ -68,7 +68,7 @@ public class GraphAnalysis {
 	    }
 
 	    /* Search through conjunction which must be satisfied, and attempt
-	       to generate appropriate repair actions
+	       to generate appropriate repair actions.
 	     */
 	    HashSet newset=new HashSet();
 	    for(Iterator cit=cantremove.iterator();cit.hasNext();) {
@@ -170,8 +170,41 @@ public class GraphAnalysis {
 		if (termination.conjunctions.contains(gn))
 		    return null; // Out of luck
 	    }
-	    
-	    
+
+	    /* Search through abstract repair actions & correspond data structure updates */
+	    for(Iterator it=termination.abstractrepairadd.iterator();it.hasNext();) {
+		GraphNode gn=(GraphNode)it.next();
+		TermNode tn=(TermNode)gn.getOwner();
+
+		for (Iterator edgeit=gn.edges();edgeit.hasNext();) {
+		    GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
+		    GraphNode gn2=e.getTarget();
+		    TermNode tn2=(TermNode)gn2.getOwner();
+		    if (tn2.getType()!=TermNode.UPDATE)
+			continue;
+
+		    boolean containsgn=cantremove.contains(gn);
+		    boolean containsgn2=cantremove.contains(gn2);
+
+		    cantremove.add(gn);
+		    cantremove.add(gn2);
+
+		    Set cycle=GraphNode.findcycles(cantremove);
+		    if (cycle.contains(gn2)) {
+			if (!mustremove.contains(gn2)) {
+			    change=true;
+			    mustremove.add(gn2);
+			}
+		    }
+
+		    if (!containsgn)
+			cantremove.remove(gn);
+		    if (!containsgn2)
+			cantremove.remove(gn2);
+		}
+	    }
+
+	    /* Searches individual conjunctions + abstract action +updates for cycles */
 	    for(Iterator it=termination.conjunctions.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode)it.next();
 		boolean foundnocycle=false;
@@ -189,8 +222,10 @@ public class GraphAnalysis {
 			if (tn3.getType()!=TermNode.UPDATE)
 			    continue;
 			boolean containsgn=cantremove.contains(gn);
+			boolean containsgn2=cantremove.contains(gn2);
 			boolean containsgn3=cantremove.contains(gn3);
 			cantremove.add(gn);
+			cantremove.add(gn2);
 			cantremove.add(gn3);
 			Set cycle=GraphNode.findcycles(cantremove);
 			if (cycle.contains(gn3)) {
@@ -204,6 +239,8 @@ public class GraphAnalysis {
 			}
 			if (!containsgn)
 			    cantremove.remove(gn);
+			if (!containsgn2)
+			    cantremove.remove(gn2);
 			if (!containsgn3)
 			    cantremove.remove(gn3);
 		    }
@@ -212,6 +249,53 @@ public class GraphAnalysis {
 		    if (!mustremove.contains(gn)) {
 			change=true;
 			mustremove.add(gn);
+		    }
+		}
+	    }
+
+	    /* Searches scope nodes + compensation nodes */
+	    for(Iterator it=termination.scopenodes.iterator();it.hasNext();) {
+		GraphNode gn=(GraphNode)it.next();
+		boolean foundcompensation=false;
+		if (nodes.contains(gn)) {
+    		    for (Iterator edgeit=gn.edges();edgeit.hasNext();) {
+			GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
+			GraphNode gn2=e.getTarget();
+			TermNode tn2=(TermNode)gn2.getOwner();
+			
+			if (tn2.getType()!=TermNode.UPDATE)
+			    continue;
+			/* We have a compensation node */
+			boolean containsgn=cantremove.contains(gn);
+			boolean containsgn2=cantremove.contains(gn2);
+			cantremove.add(gn);
+			cantremove.add(gn2);
+			
+			Set cycle=GraphNode.findcycles(cantremove);
+			if (cycle.contains(gn2)) {
+			    if (!mustremove.contains(gn2)) {
+				change=true;
+				mustremove.add(gn2);
+			    }
+			} else {
+			    if (!mustremove.contains(gn2))
+				foundcompensation=true;
+			}
+			if (!containsgn)
+			    cantremove.remove(gn);
+			if (!containsgn2)
+			    cantremove.remove(gn2);
+		    }
+		}
+		if (!foundcompensation) {
+		    for (Iterator edgeit=gn.edges();edgeit.hasNext();) {
+			GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
+			GraphNode gn2=e.getTarget();
+			TermNode tn2=(TermNode)gn2.getOwner();
+			if (tn2.getType()==TermNode.UPDATE) {
+			    cantremove.add(gn2);
+			    break;
+			}
 		    }
 		}
 	    }
@@ -224,6 +308,13 @@ public class GraphAnalysis {
 	    if(change)
 		continue; //recalculate
 
+	    try {
+		GraphNode.DOTVisitor.visit(new FileOutputStream("graphsearch.dot"),nodes);
+	    } catch (Exception e) {
+		e.printStackTrace();
+		System.exit(-1);
+	    }
+	    
 	    System.out.println("Searching set of "+couldremove.size()+" nodes.");
 	    System.out.println("Eliminated must "+mustremove.size()+" nodes");
 	    System.out.println("Eliminated cant "+cantremove.size()+" nodes");

@@ -319,7 +319,14 @@ class ConcreteInterferes {
 		    leftdescriptor=((VarExpr)lexpr2).getVar();
 		else if (lexpr2 instanceof DotExpr) {
 		    Expr e=lexpr2;
-		    for(;e instanceof DotExpr;e=((DotExpr)e).getExpr()) ;
+		    do {
+			for(;e instanceof DotExpr;e=((DotExpr)e).getExpr()) ;
+			if (e instanceof VarExpr)
+			    break;
+			if (e instanceof CastExpr)
+			    e=((CastExpr)e).getExpr();
+			else throw new Error("Bad Expr Type:"+e.name());
+		    } while (true);
 		    leftdescriptor=((VarExpr)e).getVar();
 		} else throw new Error("Bad Expr");
 		

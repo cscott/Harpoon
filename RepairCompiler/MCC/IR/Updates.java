@@ -57,7 +57,14 @@ class Updates {
 	    return ((VarExpr)leftexpr).getVar();
 	} else if (isField()) {
 	    Expr e=leftexpr;
-	    for(;e instanceof DotExpr;e=((DotExpr)e).getExpr()) ;
+	    do {
+		for(;e instanceof DotExpr;e=((DotExpr)e).getExpr()) ;
+		if (e instanceof VarExpr)
+		    break;
+		if (e instanceof CastExpr)
+		    e=((CastExpr)e).getExpr();
+		else throw new Error("Unrecognized Expr:"+e.name());
+	    } while(true);
 	    return ((VarExpr)e).getVar();
 	} else {
 	    System.out.println(toString());

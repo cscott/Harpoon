@@ -11,6 +11,10 @@ public class CastExpr extends Expr {
 	return expr.freeVars();
     }
 
+    public Expr getExpr() {
+	return expr;
+    }
+
     public void findmatch(Descriptor d, Set s) {
 	expr.findmatch(d,s);
     }
