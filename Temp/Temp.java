@@ -1,37 +1,35 @@
 package harpoon.Temp;
 
-import harpoon.ClassFile.*;
 import java.util.Hashtable;
 
 /** 
- * The <code>Temp</code> class represents a (strongly-typed) temporary
+ * The <code>Temp</code> class represents a temporary
  * variable.  This class maintains static state to allow us to allocate
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.5 1998-08-05 12:14:10 cananian Exp $
+ * @version $Id: Temp.java,v 1.6 1998-08-19 05:09:06 cananian Exp $
+ * @see TypeMap
  * @see TempList
  */
 public class Temp {
   private static Hashtable table = new Hashtable();
 
   private String name;
-  private HClass type;
   private static final String prefix = "t";
 
-  /** Creates a unique temporary with the specified type.
-   *  @param type the type.
+  /** Creates a unique temporary variable.
    */
-  public Temp(HClass type) { 
-    this(null, type);
+  public Temp() { 
+    this(null);
   }
-  /** Creates a unique temporary with a suggested name and specified type.
-   *  Trailing underscores will be stripped from the suggested name.
+  /** Creates a unique temporary with a suggested name.
+   *  Trailing underscores will be stripped from the suggested name,
+   *  and a digit string will be appended to make the name unique.
    *  @param m_prefix the name prefix.
-   *                  If m_prefix is null, "t" will be used.
-   *  @param type     the type.
+   *                  If m_prefix is null, a default prefix ("t") will be used.
    */
-  public Temp(String m_prefix, HClass type) {
+  public Temp(String m_prefix) {
     // if prefix is null, use default prefix
     if (m_prefix==null) m_prefix = this.prefix;
     // Strip trailing underscores.
@@ -44,16 +42,15 @@ public class Temp {
     this.name = m_prefix + "_" + i.toString();
     // update the table.
     table.put(m_prefix, new Integer(i.intValue()+1));
-
-    this.type = type;
   }
 
   /** Returns the name of this temporary */
   public String name() { return name; }
-  /** Returns the datatype of this temporary. */
-  public HClass   type() { return type; }
 
   /** Returns a string representation of this temporary. */
   public String toString() { return name(); }
 }
-
+// set emacs indentation style.
+// Local Variables:
+// c-basic-offset:2
+// End:
