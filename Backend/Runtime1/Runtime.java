@@ -28,7 +28,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.30 2000-10-20 23:41:31 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.31 2000-10-22 08:16:08 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -48,6 +48,13 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	this.ob = new harpoon.Backend.Runtime1.ObjectBuilder(this);
 	this.staticInitializers =
 	    new harpoon.Backend.Analysis.InitializerOrdering(ch, cg).sorted;
+	/* // when using InitializerTransform, can order randomly:
+	    new java.util.ArrayList();
+	for (Iterator it=ch.classes().iterator(); it.hasNext(); ) {
+	    HMethod hm = ((HClass)it.next()).getClassInitializer();
+	    if (hm!=null) staticInitializers.add(hm);
+	}
+	*/
     }
     // protected initialization methods.
     protected NameMap initNameMap(Object closure) {
