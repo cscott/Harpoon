@@ -19,7 +19,7 @@ import java.util.*;
  * to effect the specialization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.3 2000-10-06 21:19:14 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.4 2000-10-06 23:49:40 cananian Exp $
  */
 public class MethodSplitter {
     /** The <code>ORIGINAL</code> token represents the original pre-split
@@ -54,11 +54,14 @@ public class MethodSplitter {
 	    Util.assert(hcm!=null, "You're using a linker, not a relinker.");
 	    String mname = orig.getName()+"$$"+which.suffix;
 	    String mdesc = mutateDescriptor(orig, which);
-	    for (int cnt=1; splitM==null; cnt++) {
-		try {
-		    splitM = hcm.addDeclaredMethod
-			((cnt<2) ? mname : mname + cnt, mdesc);
-		} catch (DuplicateMemberException dme) { /* try try again */ }
+	    try {
+		splitM = hcm.addDeclaredMethod(mname, mdesc);
+	    } catch (DuplicateMemberException dme) {
+		// we can't rename the method, because then inheritance
+		// would not work correctly.
+		Util.assert(false, "Can't create method "+mname+mdesc+" in "+
+			    orig.getDeclaringClass()+" because it already "+
+			    "exists");
 	    }
 	    /* now add this to known versions */
 	    versions.put(Default.pair(source, which), splitM);
