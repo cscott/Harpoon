@@ -21,7 +21,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.23 2000-11-06 17:50:12 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.24 2000-11-06 22:13:13 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -138,7 +138,7 @@ final public class PANode {
     /** Returns an array of <code>GenType</code>s describing all
 	the possible types (ie <code>HClass</code>es) this node can have.
 	If we were unable to determine these types, <code>null</code> is
-	returned instead; it stands for <i>any</i> type.
+	returned instead; it stands for <i>any</i> type. */
     public final GenType[] getPossibleClasses() {
 	return node_class;
     }
