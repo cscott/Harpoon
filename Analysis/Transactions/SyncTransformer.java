@@ -3,9 +3,12 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Transactions;
 
+import harpoon.Analysis.AllocationInformationMap;
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.Analysis.DefaultAllocationInformation;
 import harpoon.Analysis.DomTree;
 import harpoon.Analysis.Counters.CounterFactory;
+import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.ExactTypeMap;
 import harpoon.Analysis.Maps.ExactTypeMapProxy;
 import harpoon.Analysis.Quads.TypeInfo;
@@ -85,7 +88,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.6 2003-07-21 21:21:49 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.7 2003-07-22 22:58:32 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -337,7 +340,7 @@ public class SyncTransformer
     }
     protected HCode mutateHCode(HCodeAndMaps input, Token which) {
 	MyHCodeAndMaps hcam = (MyHCodeAndMaps) input;
-	HCode<Quad> hc = hcam.hcode();
+	MyRSSx hc = (MyRSSx) hcam.hcode();
 	ExactTypeMap<Quad> etm = hcam.typeMap;
 	HEADER qH = (HEADER) hc.getRootElement();
 	FOOTER qF = qH.footer();
@@ -364,7 +367,10 @@ public class SyncTransformer
 		co = new HoistingCheckOracle
 		    (hc, CFGrapher.DEFAULT, UseDefer.DEFAULT, dt, co);
 	    }
-	    Tweaker tw = new Tweaker(co, qF, (which==WITH_TRANSACTION), etm);
+	    AllocationInformationMap aim = (AllocationInformationMap)//heh heh
+		hc.getAllocationInformation();
+	    Tweaker tw = new Tweaker(co, qF, (which==WITH_TRANSACTION),
+				     etm, aim);
 	    tweak(new DomTree(hc, false), qM, tw);
 	    tw.fixup();
 	}
@@ -402,17 +408,19 @@ public class SyncTransformer
 	final FieldOracle fo;
 	final TempSplitter ts=new TempSplitter();
 	final ExactTypeMap<Quad> etm;
+	final AllocationInformationMap aim;
 	// mutable.
 	FOOTER footer; // we attach new stuff to the footer.
 	ListList<THROW> handlers = null; // points to current abort handler
 	Tweaker(CheckOracle co, FOOTER qF, boolean with_transaction,
-		ExactTypeMap<Quad> etm) {
+		ExactTypeMap<Quad> etm, AllocationInformationMap aim) {
 	    this.co = co;
 	    this.fo = fieldOracle; // cache in this object.
 	    this.footer = qF;
 	    this.qf = qF.getFactory();
 	    this.tf = this.qf.tempFactory();
 	    this.etm = etm;
+	    this.aim = aim;
 	    // indicate that we're inside transaction context, but
 	    // that we need to rethrow TransactionAbortExceptions
 	    if (with_transaction)
@@ -452,6 +460,10 @@ public class SyncTransformer
 		footer = footer.attach(q2, 0); // really throw abort exception
 	    CounterFactory.spliceIncrement(qf, q2.prevEdge(0),
 					   "synctrans.aborts");
+	    // create appropriate allocation information for this NEW.
+	    if (aim!=null)
+		aim.associate
+		    (q0, DefaultAllocationInformation.SINGLETON.query(q0));
 	    // done!
 	}
 	/** Fix up PHIs leading to abort handler after we're all done. */
