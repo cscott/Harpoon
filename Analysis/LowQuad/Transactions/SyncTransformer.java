@@ -31,6 +31,7 @@ import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.MONITORENTER;
 import harpoon.IR.Quads.MONITOREXIT;
 import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NOP;
 import harpoon.IR.Quads.OPER;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Qop;
@@ -41,13 +42,16 @@ import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +61,7 @@ import java.util.Set;
  * atomic transactions.  Works on <code>LowQuadNoSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.13 2000-11-15 23:48:37 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.14 2000-11-16 05:31:42 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -205,6 +209,7 @@ public class SyncTransformer
 	final Temp retex;
 	final Temp currtrans; // current transaction.
 	private final Map fixupmap = new HashMap();
+	private final Set typecheckset = new HashSet();
 	final CheckOracle co=new SimpleCheckOracle(); //XXX
 	final FieldOracle fo=new SimpleFieldOracle(); //XXX
 	final TempSplitter ts=new TempSplitter();
@@ -264,6 +269,17 @@ public class SyncTransformer
 		    // list.
 		}
 	    }
+	    // fixup the dangling array type check edges
+	    if (typecheckset.size()==0) return;
+	    PHI phi = new PHI(qf, footer, new Temp[0], typecheckset.size()+1);
+	    int i=0;
+	    for (Iterator it=typecheckset.iterator(); it.hasNext(); ) {
+		Edge in = ((NOP) it.next()).prevEdge(0);
+		Quad.addEdge((Quad)in.from(), in.which_succ(), phi, i++);
+	    }
+	    // this is a hack: create an infinite loop.
+	    // this path should never be executed.
+	    Quad.addEdge(phi, 0, phi, i);
 	}
 
 	public void visit(Quad q) { addChecks(q); }
@@ -395,13 +411,16 @@ public class SyncTransformer
 	    if (handlers==null) { // non-transactional read
 		Edge e = readNonTrans(q.nextEdge(0), q,
 				      q.dst(), q.objectref(), q.type());
+		e = addTypeCheck(e, q, ts.versioned(q.objectref()), q.type());
 		addAt(e, new AGET(qf, q, q.dst(),
 				  ts.versioned(q.objectref()),
 				  q.index(), q.type()));
 	    } else { // transactional read
-		Quad.replace(q, new AGET(qf, q, q.dst(),
-					ts.versioned(q.objectref()),
-					 q.index(), q.type()));
+		AGET q0 = new AGET(qf, q, q.dst(),
+				   ts.versioned(q.objectref()),
+				   q.index(), q.type());
+		Quad.replace(q, q0);
+		addTypeCheck(q0.prevEdge(0), q0, q0.objectref(), q0.type());
 	    }
 	}
 	public void visit(GET q) {
@@ -473,9 +492,10 @@ public class SyncTransformer
 		writeNonTrans(in, q, q.objectref(), t0, q.src(), q.type());
 	    }
 	    // both transactional and non-transactional write.
-	    Quad.replace(q, new ASET(qf, q, ts.versioned(q.objectref()),
-				     q.index(), q.src(),
-				     q.type()));
+	    ASET q0 = new ASET(qf, q, ts.versioned(q.objectref()),
+			       q.index(), q.src(), q.type());
+	    Quad.replace(q, q0);
+	    addTypeCheck(q0.prevEdge(0), q0, q0.objectref(), q0.type());
 	}
 	public void visit(SET q) {
 	    addChecks(q);
@@ -499,6 +519,17 @@ public class SyncTransformer
 	    Quad.replace(q, new SET(qf, q, q.field(),
 				    ts.versioned(q.objectref()),
 				    q.src()));
+	}
+	// add a type check to edge e so that TypeInfo later knows the
+	// component type of this array access.
+	Edge addTypeCheck(Edge e, HCodeElement src, Temp t, HClass type) {
+	    HClass arraytype = HClassUtil.arrayClass(qf.getLinker(), type, 1);
+	    Quad q0 = new TYPESWITCH(qf, src, t, new HClass[] { arraytype },
+				     new Temp[0], true);
+	    Quad q1 = new NOP(qf, src);
+	    Quad.addEdge(q0, 1, q1, 0);
+	    typecheckset.add(q1);
+	    return addAt(e, 0, q0, 0);
 	}
 
 	void addChecks(Quad q) {
