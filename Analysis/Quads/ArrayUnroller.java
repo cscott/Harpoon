@@ -31,7 +31,7 @@ import java.util.Stack;
  * <code>CacheEquivalence</code> can make larger equivalence sets.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayUnroller.java,v 1.1.2.2 2001-06-15 14:32:06 cananian Exp $
+ * @version $Id: ArrayUnroller.java,v 1.1.2.3 2001-06-15 15:15:34 cananian Exp $
  */
 public final class ArrayUnroller
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -43,11 +43,13 @@ public final class ArrayUnroller
 	super(harpoon.IR.Quads.QuadNoSSA.codeFactory(parent));
     }
     protected HCode mutateHCode(HCodeAndMaps input) {
+	HCode ahc = input.ancestorHCode();
 	HCode hc = input.hcode();
 	// find loops;
         // only interested in leaf loops (with no nested loops)
-	for (Iterator it=loopIterator(new LoopFinder(hc)); it.hasNext(); ) {
+	for (Iterator it=loopIterator(new LoopFinder(ahc)); it.hasNext(); ) {
 	    Loops loop = (Loops) it.next();
+	    if (loop.parentLoop()==null) continue; // skip top-level pseudoloop
 	    if (loop.nestedLoops().size()>0) continue; // skip
 	    // this is a leaf loop.  look for array refs.
 	    boolean seen=false; int width=0;
@@ -61,7 +63,7 @@ public final class ArrayUnroller
 		}
 	    }
 	    if (!seen) continue; // no array references in this loop.
-	    unrollOne(loop, CACHE_LINE_SIZE/width);
+	    unrollOne(input, loop, CACHE_LINE_SIZE/width);
 	}
 	harpoon.Analysis.Quads.Unreachable.prune(hc);
 	return hc;
@@ -92,13 +94,13 @@ public final class ArrayUnroller
 	};
     }
     // the real mccoy:
-    private void unrollOne(Loops loop, int ntimes) {
+    private void unrollOne(HCodeAndMaps input, Loops loop, int ntimes) {
 	// step 1: copy the nodes to make a loop L' with header h'
 	//         and back edges si'->h'
 	Map copies[] = new Map[ntimes];
-	copies[0] = one2one(loop);
+	copies[0] = input.elementMap();
 	for (int i=1; i<ntimes; i++)
-	    copies[i] = copy(loop);
+	    copies[i] = copy(input, loop);
 	// step 2: change all the back edges in L from si->h to si->h'
 	// step 3: change all the back edges in L' from si'->h' to si'->h
 	for (int i=0; i<ntimes; i++) {
@@ -113,9 +115,9 @@ public final class ArrayUnroller
 	// make PHIs for the exit edges.
 	for (Iterator it=loop.loopExitEdges().iterator(); it.hasNext(); ) {
 	    Edge e = (Edge) it.next();
-	    QuadFactory qf = ((Quad)e.from()).getFactory();
+	    QuadFactory qf = ((Quad)copies[0].get(e.from())).getFactory();
 	    PHI phi = new PHI(qf, e.from(), new Temp[0], ntimes);
-	    Quad.addEdge(phi, 0, (Quad) e.to(), e.which_pred());
+	    Quad.addEdge(phi, 0, (Quad) copies[0].get(e.to()), e.which_pred());
 	    for (int i=0; i<ntimes; i++)
 		Quad.addEdge((Quad)copies[i].get(e.from()), e.which_succ(),
 			     phi, i);
@@ -123,7 +125,7 @@ public final class ArrayUnroller
 	// make stub PHIs for unused entrance edges
 	for (Iterator it=loop.loopEntranceEdges().iterator(); it.hasNext(); ) {
 	    Edge e = (Edge) it.next();
-	    QuadFactory qf = ((Quad)e.to()).getFactory();
+	    QuadFactory qf = ((Quad)copies[0].get(e.to())).getFactory();
 	    for (int i=1; i<ntimes; i++) {
 		PHI phi = new PHI(qf, e.to(), new Temp[0], 0);
 		Quad.addEdge(phi, 0,
@@ -135,21 +137,14 @@ public final class ArrayUnroller
 	Util.assert(loop.loopEntrances().size()==1);
 	// done.
     }
-    Map one2one(Loops l) {
-	Map m = new HashMap();
-	for (Iterator it=l.loopIncElements().iterator(); it.hasNext(); ) {
-	    Quad q = (Quad) it.next();
-	    m.put(q, q);
-	}
-	return m;
-    }
-    Map copy(Loops l) {
+    Map copy(HCodeAndMaps input, Loops l) {
 	Map m = new HashMap();
 	// clone all elements.
 	for (Iterator it=l.loopIncElements().iterator(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
-	    Quad nq = (Quad) q.clone();
-	    m.put(q, nq);
+	    Quad qq = (Quad) input.elementMap().get(q);
+	    Quad nq = (Quad) qq.clone();
+	    m.put(q, nq); // ancestor quad to newly cloned quad.
 	}
 	// clone all interior edges.
 	for (Iterator it=l.loopIncElements().iterator(); it.hasNext(); ) {
