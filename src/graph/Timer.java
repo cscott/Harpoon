@@ -6,7 +6,8 @@ package imagerec.graph;
 /**
  * Time the latency of an image passing through the image recognition pipeline
  * by stamping it with a time and then later reading that time.
- * Can also keep track of average latency between two points in the pipeline.
+ * Can also keep track of minimum, maximum, and average, and
+ * standard deviation of latencies between two points in the pipeline.
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
@@ -19,9 +20,11 @@ public class Timer extends Node {
     private long frames = 0;
     private long max = 0;
     private long min = Long.MAX_VALUE;
+    private String header;
 
     /** Create a new {@link Timer} node which can either stamp or read out 
-     *  the difference between the current time and the time stamp.
+     *  the difference between the current time and the time stamp and
+     *  print useful statistics.
      *
      *  @param start Whether to start or stop the timer at this {@link Node}.
      *  @param announce Whether to print to the screen the latency.
@@ -29,11 +32,33 @@ public class Timer extends Node {
      */
     public Timer(boolean start, boolean announce, Node out) {
 	super(out);
-	this.start = start;
-	this.announce = announce;
+	init(start, announce, null);
     }
 
-    
+    /** Create a new {@link Timer} node which can either stamp or read out
+     *  the difference between the current time and the time stamp and
+     *  print useful statistics.
+     *
+     *  @param start Whether to start or stop the timer at this {@link Node}.
+     *  @param announce Whether to print to the screen the latency.
+     *  @param header The string that will precede each line of statistics printed. Useful if you have more than one set of timers
+     *  printing to the same output stream.
+     *  @param out The node to send images to.
+     */
+    public Timer(boolean start, boolean announce, String header, Node out) {
+	super(out);
+	init(start, announce, header);
+    }
+   
+    /**
+     * Method that should be called by all constructors to ensure that object fields get
+     * initialized correctly.
+     */
+    private void init(boolean start, boolean announce, String header) {
+	this.start = start;
+	this.announce = announce;
+	this.header = header;
+    }
 
     /** Either stamp, or read out the latency of the processing of 
      *  an image by the pipeline.
@@ -55,6 +80,9 @@ public class Timer extends Node {
 	    if (diff < min)
 		min = diff;
 	    if (announce) {
+		if (header != null) {
+		    System.out.print(header+": ");
+		}
 		System.out.print("Time (ms): "+diff);
 		//line below added by Benji 
 		System.out.print(" ** Avg(ms):"+(int)(getLatency()*1000));
@@ -63,11 +91,6 @@ public class Timer extends Node {
 		System.out.println(" ** StdDev:"+getStdDev());
 	    }
 	}
-	//if (id.lastImage) {
-	//    System.out.println("Timer: Max = "+max);
-	//    System.out.println("Timer: Min = "+min);
-	//    System.out.println("Timer: Avg = "+(int)(getLatency()*1000));
-	//}
 	
 	super.process(id);
     }
