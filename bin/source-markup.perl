@@ -1,9 +1,31 @@
 #!/usr/bin/perl
 use English;
+use Getopt::Std;
 
 # configuration:
 my $tabsize = 8;
+# uncomment out the next line if cvsblame.pl is not in the same directory
+# as this script. [CSA]
+#my $cvsblame="cvsblame.pl"; # path to cvsblame script.
+
 # end configuration
+
+$progname = $0; # name of this script.
+($cvsblame=$0) =~ s/([^\/]+)$/cvsblame.pl/ unless defined $cvsblame;
+
+sub usage {
+    die
+"$progname: usage: [options] filename\n",
+"   Options:\n",
+"      -c       Don't try to annotate with CVS information\n",
+"      -j       Don't try to syntax-color Java files\n",
+"      -h       Print help (this message)\n\n"
+    ;
+}
+
+&usage if (!&getopts('cjh'));
+&usage if $opt_h; # help option
+&usage if $#ARGV!=0; # too few or too many options.
 
 my @lines; # line array
 my @markupBf; # markup array, by line (before)
@@ -55,6 +77,8 @@ open(INFILE, "<" . $filename) or die("Couldn't open $filename.\n");
 @lines=<INFILE>;
 close(INFILE);
 
+my $isjava = ($filename=~m/\.java$/i);
+
 # markup up tabs and unicode characters (remember java pre-processes them)
 # leaving character positions correct.
 for ($i=0; $i<=$#lines; $i++) {
@@ -69,7 +93,7 @@ for ($i=0; $i<=$#lines; $i++) {
             $lines[$i] = substr($l,0,$sloc)." ".substr($l,$endloc);#insert 1 sp
             insertAfter($i,$sloc," ") while --$nspaces > 0;#insert nspaces-1 sp
         }
-        if (defined $2) { # unicode character (joy, joy)
+        if (defined $2 && $isjava) { # unicode character (joy, joy)
 	    # compress to a single char in our representation.
 	    my $strlen = $endloc-$sloc;
 	    $lines[$i] = substr($l,0,$sloc+1).substr($l,$endloc);
@@ -94,15 +118,17 @@ for ($i=0; $i<=$#lines; $i++) {
 }
 
 # do syntax highlighting.
-open(MARKUP, "java harpoon.Tools.Annotation.Main $filename |")
-    or die("Couldn't do syntax markup on $filename.\n");
-my @markdata=<MARKUP>;
-close(MARKUP);
-chomp(@markdata); # remove \n from each line.
-for ($i=0; $i<=$#markdata; $i+=3) {
-    my($rline,$rpos,$lline,$lpos)=split(/\s+/, $markdata[$i], 4);
-    &insertBefore($rline-1,$rpos, $markdata[$i+1]);
-    &insertAfter($lline-1,$lpos, $markdata[$i+2]);
+if ($isjava && !$opt_j) {
+    open(MARKUP, "java harpoon.Tools.Annotation.Main $filename |")
+	or die("Couldn't do syntax markup on $filename.\n");
+    my @markdata=<MARKUP>;
+    close(MARKUP);
+    chomp(@markdata); # remove \n from each line.
+    for ($i=0; $i<=$#markdata; $i+=3) {
+	my($rline,$rpos,$lline,$lpos)=split(/\s+/, $markdata[$i], 4);
+        &insertBefore($rline-1,$rpos, $markdata[$i+1]);
+        &insertAfter($lline-1,$lpos, $markdata[$i+2]);
+    }
 }
 
 # some URL and email address hackery
@@ -117,10 +143,35 @@ for ($i=0; $i<=$#lines; $i++) {
     }
 }
 
+# cvsblame annotation (unless user doesn't want it)
+if (!$opt_c) {
+    open(CVSBLAME, "$cvsblame -qav $filename |")
+	or die("Couldn't start cvsblame.\n");
+    my @a; my @r; my $alen=0; my $rlen=0;
+    while (<CVSBLAME>) {
+	my ($author, $rev) = m/(\S+)\s+(\S+)/;
+	push(@a,$author); push(@r,$rev);
+	$alen=length $author if $alen < length $author; 
+	$rlen=length $rev    if $rlen < length $rev;
+    }
+    close(CVSBLAME);
+    die "Invalid cvsblame information.\n" unless $#lines==$#a && $#a==$#r;
+    my $laststr; my $color=1;
+    for ($i=0; $i<=$#lines; $i++) {
+	my $annstr=sprintf("%-*s %-*s",$alen,$a[$i],$rlen,$r[$i]);
+        if ($i==0 || $annstr ne $laststr) {
+	    $laststr=$annstr; $color=!$color;
+	}
+        my $colorstr=$color?"darkorange":"darkorchid";
+        &insertBefore($i,0, "<FONT COLOR=$colorstr SIZE=-1><i>$annstr</i></FONT> ");
+    }
+}
+
 # insert line numbers
 for ($i=0; $i<=$#lines; $i++) {
-    my $numstr = 1+$i; while(length($numstr)<3) { $numstr=" $numstr"; }
-    &insertBefore($i,0,"<A NAME=\"$i\"><FONT color=purple>$numstr</FONT></A> ");
+    my $numstr = 1+$i;
+    while(length($numstr)<length(1+$#lines)) { $numstr=" $numstr"; }
+    &insertBefore($i,0,"<A NAME=\"$i\"><FONT color=saddlebrown SIZE=-1>$numstr</FONT></A> ");
 }
 
 # insert header and footer
