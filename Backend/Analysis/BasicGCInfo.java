@@ -5,6 +5,7 @@ package harpoon.Backend.Analysis;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.DataFlow.LiveTemps;
+import harpoon.Analysis.Instr.IgnoreSpillUseDefer;
 import harpoon.Analysis.Instr.RegAlloc.IntermediateCode;
 import harpoon.Analysis.Instr.RegAlloc.IntermediateCodeFactory;
 import harpoon.Analysis.Liveness;
@@ -35,6 +36,7 @@ import harpoon.IR.Assem.InstrJUMP;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrVisitor;
 import harpoon.IR.Properties.CFGrapher;
+import harpoon.IR.Properties.UseDefer;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
@@ -55,7 +57,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.15 2000-07-06 20:55:21 pnkfelix Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.16 2000-07-06 21:15:51 kkz Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -124,9 +126,7 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 	    protected final Frame f = frame;
 	    protected final CFGrapher cfger = CFGrapher.DEFAULT;
 	    protected final Map hce2label = new HashMap();
-	    private boolean print = true;
 	    public HCode convert(HMethod hm) {
-		//System.out.println("converting"+hm.toString());
 		// preserve ordering information
 		addToOrderedMethods(hm);
 		harpoon.IR.Assem.Code hc = 
@@ -140,22 +140,23 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    return null;
 		}
 		List hceList = hc.getElementsL();
-		//System.out.println("-------------------------------");
-		//for(Iterator it = hceList.iterator(); it.hasNext(); )
-		//    System.out.println(it.next());
-		//System.out.println("-------------------------------");
+		UseDefer ud = new IgnoreSpillUseDefer();
 		// pass 1: liveness and reaching definitions analyses
-		LiveTemps ltAnalysis = analyzeLiveness(hc);
-		ReachingDefs rdAnalysis = new ReachingDefsImpl(hc, cfger);
+		LiveTemps ltAnalysis = analyzeLiveness(hc, ud);
+		ReachingDefs rdAnalysis = new ReachingDefsImpl(hc, cfger, ud);
 		// pass 2: identify backward branches
 		Set backEdgeGCPts = identifyBackwardBranches(hc);
 		// pass 3: identify GC points
 		List gcps = new ArrayList();
 		// clear map before going into GCPointFinder
 		hce2label.clear();
+		// GCPointFinder gcpf = new GCPointFinder
+		// (hm, hc, gcps, ltAnalysis, rdAnalysis, backEdgeGCPts, 
+		// hc.getDerivation());
+		// For now, ignoring back edges.
 		GCPointFinder gcpf = 
 		    new GCPointFinder(hm, hc, gcps, ltAnalysis, rdAnalysis, 
-				      backEdgeGCPts, hc.getDerivation());
+				      new HashSet(), hc.getDerivation());
 		for(Iterator instrs = hc.getElementsL().iterator();
 		    instrs.hasNext(); )
 		    ((Instr)instrs.next()).accept(gcpf);
@@ -166,43 +167,36 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    InstrLABEL label = (InstrLABEL)hce2label.get(i);
 		    // instr should only have one successor
 		    Util.assert(cfger.succ(i).length == 1);
-		    //for(Iterator succs = cfger.succC(i).iterator();
-		    //	succs.hasNext(); )
-		    //	System.out.println(succs.next().toString());
+		    // insert label
 		    label.layout(i, i.getNext());
-		    //label.insertAt(new InstrEdge(i, i.getNext());
-		    //System.out.println("Inserted "+label.toString());
 		}
-		//for(Iterator it = hceList.iterator(); it.hasNext(); )
-		//    System.out.println(it.next());
 		m.put(hm, gcps);  // add to map
-		// force parent codeFactory to rebuild (is this necessary?)
-		//parent.clear(hm);
-		//HCode result = parent.convert(hm);
-		print = false;
 		return hc;
 	    }
 	    // do liveness analysis and return analysis
-	    private LiveTemps analyzeLiveness(HCode intermediateCode) {
+	    private LiveTemps analyzeLiveness(HCode intermediateCode,
+					      UseDefer ud) {
 		// use CFGrapher.DEFAULT for now at Felix's bequest
 		// Instrs should graduate to having their own CFGrapher
 		BasicBlock.Factory bbFact =
 		    new BasicBlock.Factory(intermediateCode, cfger);
 		Set liveOnExit = f.getRegFileInfo().liveOnExit();
-		LiveTemps ltAnalysis = new LiveTemps(bbFact, liveOnExit);
+		LiveTemps ltAnalysis = new LiveTemps(bbFact, liveOnExit, ud);
 		// get an iterator for the solver
 		Iterator it = bbFact.blockSet().iterator();
 		harpoon.Analysis.DataFlow.Solver.worklistSolve(it, ltAnalysis);
-		// ltAnalysis should now contain the liveness results we want
+		// ltAnalysis should now contain the liveness 
+		// results we want
 		return ltAnalysis;
 	    }
-	    // identify and return Instrs that come before backward branches 
+	    // identify and return Instrs that come before 
+	    // backward branches 
 	    private Set identifyBackwardBranches(HCode intermediateCode) {
 		// pass 1: number Instrs
 		Map ordering = new HashMap();
 		int index = 0;
-		for(Iterator instrs=intermediateCode.getElementsL().iterator();
-		    instrs.hasNext(); )
+		for(Iterator instrs = intermediateCode.getElementsL().
+			iterator(); instrs.hasNext(); )
 		    ordering.put(instrs.next(), new Integer(index++));
 		// pass 2: identify backward branches
 		Set results = new HashSet();
@@ -220,13 +214,11 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    else {
 			Util.assert(from.intValue() != to.intValue());
 			// add to work list the successor edges
-			for (Iterator edges=cfger.succC(edge.to()).iterator();
-			     edges.hasNext(); )
+			for (Iterator edges = cfger.succC(edge.to()).
+				 iterator(); edges.hasNext(); )
 			    toProcess.push(edges.next());
 		    }
 		}
-		//System.out.println("Number of backward branches: "+
-		// results.size());
 		return results;
 	    }
 	    public String getCodeName() {
@@ -236,7 +228,6 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		parent.clear(hm);
 		m.remove(hm); // remove from map
 	    }
-
 	    class GCPointFinder extends InstrVisitor {
 		protected final List results;
 		protected final LiveTemps lt;
@@ -249,13 +240,13 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		protected int index = 0;
 		/** Creates a <code>GCPointFinder</code> object.
 		    @param results
-		           an empty <code>List</code> for storing
-			   the resulting <code>GCPoint</code> objects
+		    an empty <code>List</code> for storing
+		    the resulting <code>GCPoint</code> objects
 		    @param lt
-		           the completed <code>LiveTemps</code> analysis
+		    the completed <code>LiveTemps</code> analysis
 		    @param s
-		           the <code>Set</code> of <code>Instr</code>s
-			   that occur before a backward branch
+		    the <code>Set</code> of <code>Instr</code>s
+		    that occur before a backward branch
 		*/
 		public GCPointFinder(HMethod hm, HCode hc, List results, 
 				     LiveTemps lt, 
@@ -318,7 +309,6 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    // updateGCInfo(i, null);
 		}
 		private void updateGCInfo(Instr i, Label l) {
-		    //System.out.println("Doing updateGCInfo for: "+i);
 		    // add label if one is not already provided
 		    if (l == null) {
 			String str = 
@@ -334,16 +324,19 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    Set liveLocs = new HashSet();
 		    Map derivedPtrs = new HashMap();
 		    Map calleeSaved = new HashMap();
-		    /*
 		    while(!live.isEmpty()) {
 			Temp t = (Temp)live.pull();
 			System.out.println(t.toString()+" is live.");
-			Util.assert(i != null, "Cannot pass null instruction"+
+			Util.assert(i != null, 
+				    "Cannot pass null instruction"+
 				    " to reaching definitions analysis");
-			Util.assert(t != null, "Cannot pass null temporary"+
+			Util.assert(t != null, 
+				    "Cannot pass null temporary"+
 				    " to reaching definitions analysis");
-			Iterator defPtsit = rd.reachingDefs(i, t).iterator();
-			// there must be at least one defintion that reaches i
+			Iterator defPtsit = 
+			    rd.reachingDefs(i, t).iterator();
+			// there must be at least one defintion 
+			// that reaches i
 			Util.assert(defPtsit.hasNext(), "Cannot find"+
 				    " definition of "+t.toString()+" at "+
 				    i.toString());
@@ -376,7 +369,6 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 			    derivedPtrs.put(tl.locate(t, defPt), 
 					    unroll(ddl, i));
 		    }
-		    */
 		    GCPoint gcp = 
 			new GCPoint(i, l, derivedPtrs, liveLocs, calleeSaved);
 		    results.add(gcp);
@@ -439,6 +431,8 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 	};
     } // codeFactory
 } // class
+
+
 
 
 
