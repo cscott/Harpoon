@@ -23,7 +23,7 @@ import java.util.NoSuchElementException;
  * Results are cached for efficiency.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassFieldMap.java,v 1.1.4.2 1999-11-01 06:20:18 cananian Exp $
+ * @version $Id: ClassFieldMap.java,v 1.1.4.3 2001-07-11 17:00:38 cananian Exp $
  */
 public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
     /** Creates a <code>ClassFieldMap</code>. */
@@ -63,7 +63,7 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
 	// first calculate size of list.
 	int n=0;
 	for (HClass hcp=hc; hcp!=null; hcp=hcp.getSuperclass()) {
-	    HField[] fields = hcp.getDeclaredFields();
+	    HField[] fields = declaredFields(hcp);
 	    for (int i=0; i<fields.length; i++)
 		if (!fields[i].isStatic()) n++;
 	}
@@ -81,13 +81,13 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
 			// depending on which is closer.
 			if (index < size/2) { // count from beginning.
 			    pindex=0;
-			    fields = parents[pindex].getDeclaredFields();
+			    fields = declaredFields(parents[pindex]);
 			    findex=-1; forwards=true;
 			    for (xindex=-1; xindex < index; xindex++)
 				advance();
 			} else { // count from end.
 			    pindex = parents.length-1;
-			    fields = parents[pindex].getDeclaredFields();
+			    fields = declaredFields(parents[pindex]);
 			    findex=fields.length; forwards=true;
 			    for (xindex=size; xindex > index; xindex--)
 				retreat();
@@ -120,7 +120,7 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
 			    for (findex++; findex < fields.length; findex++)
 				if (!fields[findex].isStatic()) return;
 			    if (++pindex >= parents.length) break;
-			    fields = parents[pindex].getDeclaredFields();
+			    fields = declaredFields(parents[pindex]);
 			    findex = -1;
 			}
 			--pindex; done=true;
@@ -131,7 +131,7 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
 			    for (findex--; findex >= 0; findex--)
 				if (!fields[findex].isStatic()) return;
 			    if (--pindex < 0) break;
-			    fields = parents[pindex].getDeclaredFields();
+			    fields = declaredFields(parents[pindex]);
 			    findex = fields.length;
 			}
 			++pindex; done=true;
@@ -143,5 +143,14 @@ public abstract class ClassFieldMap extends harpoon.Backend.Maps.FieldMap {
 		};
 	    }
 	};
+    }
+    /** Return the declared fields of the specified class in the
+     *  order in which they should be allocated.  This implementation
+     *  just returns the result of <code>hc.getDeclaredFields()</code>,
+     *  but you can override this to use a more intelligent sorting
+     *  routine to save space. You do not have to filter static methods
+     *  out of the returned array, but you may if you like. */
+    protected HField[] declaredFields(HClass hc) {
+	return hc.getDeclaredFields();
     }
 }
