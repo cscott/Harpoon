@@ -40,12 +40,16 @@ public class BypassLatchSchedule {
       Set lb = lt.getLiveBefore(instr);
       Set la = lt.getLiveAfter(instr);
       Temp[] tmp_use = instr.use();
+      String assem = instr.getAssem();
+      // XXX omit compound instructions for now
+      if(assem.indexOf('\n') < 0) return null;
+
       // Omit branches, calls, and remnants of move coalescing
       if(instr.getTargets().isEmpty() 
          && tmp_use.length > 0
          && tmp_use.length <= 2
          && instr.def().length <= 1 /* excludes jal _lookup_handler */
-         && instr.getAssem().length() > 0
+         && assem.length() > 0
          ) {
          Util.assert(tmp_use.length <= 2, " tmp_use.len=" + tmp_use.length 
                      + " tmp_use=" + tmp_use + " isntr=" + instr);
@@ -54,20 +58,14 @@ public class BypassLatchSchedule {
          boolean oneLast = false;
          if(tmp_use.length > 0) {
             reg_use0 = code.getRegisters(instr, tmp_use[0]);
-            // XXX Exclude longs for the time being
-            if(reg_use0.size() == 1) {
-               oneLast = lb.containsAll(reg_use0) 
-                  && la.containsAll(reg_use0) == false;
-            }
+            oneLast = lb.containsAll(reg_use0) 
+               && la.containsAll(reg_use0) == false;
          }
          boolean twoLast = false;
          if(tmp_use.length > 1) {
             reg_use1 = code.getRegisters(instr, tmp_use[1]);
-            // XXX Exclude longs for the time being
-            if(reg_use1.size() == 1) {
-               twoLast = lb.containsAll(reg_use1) 
-                  && la.containsAll(reg_use1) == false;
-            }
+            twoLast = lb.containsAll(reg_use1) 
+               && la.containsAll(reg_use1) == false;
          }
          if(trace) {
             System.out.println(instr + "\n\tlb=" + lb + "\n\tla=" + la);
@@ -83,7 +81,6 @@ public class BypassLatchSchedule {
             }
          }
          if( oneLast || twoLast ) {
-            String assem = instr.getAssem();
             int space = assem.indexOf(' ');
             String opcode = assem.substring(0, space);
             boolean reverse = false;
