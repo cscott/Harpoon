@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldSyn.java,v 1.3.2.3 2000-01-13 23:47:46 cananian Exp $
+ * @version $Id: HFieldSyn.java,v 1.3.2.4 2000-01-25 23:23:31 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -22,7 +22,8 @@ class HFieldSyn extends HFieldImpl implements HFieldMutator {
    *  but in class <code>parent</code> and named <code>name</code>. */
   public HFieldSyn(HClassSyn parent, String name, HField template) {
     this.parent = parent;
-    this.type = template.getType();
+    this.type = parent.getLinker().forDescriptor
+      (template.getType().getDescriptor());
     this.name = name;
     this.modifiers = template.getModifiers();
     this.constValue = template.getConstant();

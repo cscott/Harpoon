@@ -16,7 +16,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6.2.6 2000-01-13 23:47:47 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6.2.7 2000-01-25 23:23:31 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -29,10 +29,10 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     this.parent = parent;
     this.name = name;
     this.modifiers = template.getModifiers();
-    this.returnType = template.getReturnType();
-    this.parameterTypes = template.getParameterTypes();
+    this.returnType = relink(template.getReturnType());
+    this.parameterTypes = relink(template.getParameterTypes());
     this.parameterNames = template.getParameterNames();
-    this.exceptionTypes = template.getExceptionTypes();
+    this.exceptionTypes = relink(template.getExceptionTypes());
     this.isSynthetic = template.isSynthetic();
   }
 
@@ -159,6 +159,17 @@ class HMethodSyn extends HMethodImpl implements HMethodMutator {
     return  sb.toString();
   }
 
+  // helper functions to get an appropriate class object consistent
+  // with our parent's linker.
+  private HClass relink(HClass hc) {
+    return parent.getLinker().forDescriptor(hc.getDescriptor());
+  }
+  private HClass[] relink(HClass[] hc) {
+    HClass[] r = new HClass[hc.length];
+    for (int i=0; i<r.length; i++)
+      r[i] = relink(hc[i]);
+    return r;
+  }
   //----------------------------------------------------------
 
   /** Serializable interface. */
