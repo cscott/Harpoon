@@ -678,6 +678,8 @@ public class IncompatibilityAnalysis {
 
     // Fixed-point set computation for the 5 sets we need
     private void computeInitialSets() {
+
+        System.out.print("Fixed point set (Ax, Rx, E)");
         WorkSet workset = new WorkSet();
 
         workset.addAll(allMethods);
@@ -692,10 +694,11 @@ public class IncompatibilityAnalysis {
                 }
             }
         }
+        System.out.println();
     }
 
     private boolean recomputeInitialSets(HMethod method) {
-        System.out.println("Recomputing: " + method);
+        System.out.print(".");
         MethodData md = (MethodData) mdCache.get(method);
         assert !md.isNative;
 
@@ -758,7 +761,7 @@ public class IncompatibilityAnalysis {
             // if we do deltas, we should re-computePointsTo here, or use
             //    just deltas if aliases haven't changed
             // but we do pointsTo anyway (for now; inefficient)
-            System.out.println("Rebuilding aliases... ");
+            System.out.print("o");
         }
 
         propagateExternalDeltas(md, externalPointsTo);
@@ -961,6 +964,8 @@ public class IncompatibilityAnalysis {
     private void computeI() {
 
         I = new GenericMultiMap();
+
+        System.out.print("Computing initial Is");
         
         for (Iterator it = allMethods.iterator(); it.hasNext(); ) {
             HMethod method = (HMethod) it.next();
@@ -975,6 +980,9 @@ public class IncompatibilityAnalysis {
 
         workset.addAll(allMethods);
 
+        System.out.println();
+        System.out.print("Fixed point set (I)");
+
         while (!workset.isEmpty()) {
             HMethod method = (HMethod) workset.removeFirst();
 
@@ -988,11 +996,12 @@ public class IncompatibilityAnalysis {
 
         // finally, make sure I is symmetric
         MultiMapUtils.ensureSymmetric(I);
+        System.out.println();
         
     }
 
     private void computeInitialI(HMethod method) {
-        System.out.println("Computing initial I for: " + method);
+        System.out.print(".");
         MethodData md = (MethodData) mdCache.get(method);
         if (md == null || md.isNative) return;
 
@@ -1157,7 +1166,7 @@ public class IncompatibilityAnalysis {
 
 
     public boolean recomputeI(HMethod method) {
-        System.out.println("Recomputing I for: " + method);
+        System.out.print(".");
         MethodData md = (MethodData) mdCache.get(method);
         assert !md.isNative;
 
@@ -1291,6 +1300,10 @@ public class IncompatibilityAnalysis {
             nclass++;
 
             System.out.println(" *Class " + nclass);
+
+            assert
+                MultiMapUtils.intersect(thisClass, selfIncompatible).isEmpty();
+
             printTypeStatistics(thisClass);
         }
 
@@ -1298,7 +1311,6 @@ public class IncompatibilityAnalysis {
         System.out.println("Self-incompatible type statistics: ");
         printTypeStatistics(selfIncompatible);
 
-       
 
         System.out.println("Statistics: ");
         System.out.println("   " + globalAllocMap.keySet().size() + " allocations");

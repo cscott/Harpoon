@@ -22,7 +22,7 @@ import java.util.NoSuchElementException;
  * speed becomes an issue. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BinHeapPriorityQueue.java,v 1.5 2002-04-23 22:29:05 ovy Exp $
+ * @version $Id: BinHeapPriorityQueue.java,v 1.6 2002-04-25 00:39:51 ovy Exp $
  */
 public class BinHeapPriorityQueue extends AbstractCollection implements MaxPriorityQueue {
     private HashMap item2entry;
@@ -149,15 +149,27 @@ public class BinHeapPriorityQueue extends AbstractCollection implements MaxPrior
         return size;
     }
 
+    public String toString() {
+        StringBuffer sb = new StringBuffer("[");
+        
+        for (int i = 0; i<size; i++) {
+            sb.append(" (").append(heap[i].item).append(", ")
+                .append(heap[i].priority).append(")");
+        }
+
+        return sb.append(" ]").toString();
+    }
+
     private void removeEntry(Entry entry) {
         Entry last = heap[size - 1];
         
         swap(entry, last);
-        priorityChanged(last, last.priority - entry.priority);
-        
+
         heap[size - 1] = null;
         size--;
 
+        priorityChanged(last, last.priority - entry.priority);
+        
         item2entry.remove(entry.item);
     }
 
