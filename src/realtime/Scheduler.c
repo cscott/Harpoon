@@ -1,3 +1,4 @@
+#include <time.h>
 #include <assert.h>
 #include "Scheduler.h"
 #include "SchedulerData.h"
@@ -105,6 +106,14 @@ JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_addThreadInC
 JNIEXPORT jlong JNICALL Java_javax_realtime_Scheduler_removeThreadInC
 (JNIEnv* env, jobject _this, jobject thread) {
   return removeThreadInC(env, thread);
+}
+
+JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_sleep
+(JNIEnv* env, jobject _this, jlong microsecs) {
+  struct timespec req;
+  req.tv_sec = ((long long int)microsecs)/1000000;
+  req.tv_nsec = ((long long int)microsecs)*1000;
+  nanosleep(&req, NULL);
 }
 
 #endif

@@ -47,14 +47,6 @@ JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_setQuanta
 
 /*
  * Class:     javax_realtime_Scheduler
- * Method:    contextSwitch
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_contextSwitch
-  (JNIEnv *, jobject);
-
-/*
- * Class:     javax_realtime_Scheduler
  * Method:    setTimer
  * Signature: (Z)V
  */
@@ -76,6 +68,14 @@ JNIEXPORT jboolean JNICALL Java_javax_realtime_Scheduler_reserveCPU
  */
 JNIEXPORT jboolean JNICALL Java_javax_realtime_Scheduler_reserveNET
   (JNIEnv *, jobject, jlong, jlong, jlong, jlong);
+
+/*
+ * Class:     javax_realtime_Scheduler
+ * Method:    sleep
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_sleep
+  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     javax_realtime_Scheduler
