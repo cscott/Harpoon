@@ -36,6 +36,7 @@ import harpoon.Util.LinearSet;
 import harpoon.Util.ListFactory;
 
 import java.util.Set;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +49,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.36 1999-08-31 01:20:27 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.37 1999-08-31 01:40:53 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -334,5 +335,15 @@ public class SAFrame extends Frame implements AllocationInfo {
      */
     public GenericCodeGen codegen() { 
 	return codegen;
+    }
+
+    /** Returns the live registers on exit from a method for the
+	strong-arm. 
+    */ 
+    public Set liveOnExit() {
+	HashSet hs = new HashSet();
+	hs.addAll(Arrays.asList(new Temp[]{ reg[0], TP, HP, FP,
+						IP, SP, LR, PC }));
+	return hs;
     }
 }

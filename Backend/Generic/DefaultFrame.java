@@ -33,6 +33,7 @@ import harpoon.Util.Util;
 import java.util.List;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  *  The DefaultFrame class implements the abstract methods of the 
@@ -40,7 +41,7 @@ import java.util.Map;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.24 1999-08-28 01:08:22 pnkfelix Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.25 1999-08-31 01:40:50 pnkfelix Exp $
  */
 public class DefaultFrame extends Frame implements AllocationInfo {
 
@@ -211,7 +212,13 @@ public class DefaultFrame extends Frame implements AllocationInfo {
 	return null;
     }
 
+    /** Not implemented. */
+    public Set liveOnExit() {
+	Util.assert(false, "DefaultFrame.liveOnExit() Not implemented");
+	return null;
+    }
 }
+
 
 
 
