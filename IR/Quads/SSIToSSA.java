@@ -30,29 +30,29 @@ import java.util.Map;
  * in an SSI-form codeview, yielding an SSA codeview.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIToSSA.java,v 1.4 2002-04-10 03:05:17 cananian Exp $
+ * @version $Id: SSIToSSA.java,v 1.5 2003-03-11 18:23:04 cananian Exp $
  */
 public class SSIToSSA {
     // Return values for the algorithm:
 
     /** New root element (of the SSA-form graph) */
-    public final Quad rootQuad;
+    public final HEADER rootQuad;
     /** Map from old ssi temps to new ssa temps. */
     public final TempMap tempMap;
     /** Map from old ssi quads to new ssa quads. */
-    public final Map quadMap;
+    public final Map<Quad,Quad> quadMap;
     /** <code>AllocationInformation</code> for the new quads, or
      *  <code>null</code> if no allocation information for the old
      *  quads was supplied. */
-    public final AllocationInformation allocInfo;
+    public final AllocationInformation<Quad> allocInfo;
     /** <code>Derivation</code> for the new quads, or <code>null</code>
      *  if no <code>Derivation</code> for the old quads was supplied. */
-    public final Derivation derivation;
+    public final Derivation<Quad> derivation;
 
     /** Converts the given code (in SSI form) to a graph graph in
      *  SSA form created using the given code factory <code>nqf</code>. */
     public SSIToSSA(final Code c, final QuadFactory nqf) {
-	Quad oldhead = (HEADER) c.getRootElement();
+	HEADER oldhead = c.getRootElement();
 	// first, zip through quads, renaming sigma dests to sources.
 	Scanner scanner = new Scanner(c, oldhead.getFactory().tempFactory(),
 				      nqf.tempFactory());
@@ -74,22 +74,22 @@ public class SSIToSSA {
     // create map of sigmas dsts to sources.
     // use this to implement cloningtempmap with appropriate merges.
     static class Scanner extends LowQuadVisitor implements TempMap {
-	final DisjointSet map = new DisjointSet();
+	final DisjointSet<Temp> map = new DisjointSet<Temp>();
 	final CloningTempMap ctm;
 	Scanner(Code c, TempFactory oldtf, TempFactory newtf) {
 	    super(c instanceof harpoon.IR.LowQuad.Code);// strictness.
 	    this.ctm = new CloningTempMap(oldtf, newtf);
 	    // visit all elements.
-	    for (Iterator it=c.getElementsI(); it.hasNext(); )
-		((Quad)it.next()).accept(this);
+	    for (Iterator<Quad> it=c.getElementsI(); it.hasNext(); )
+		it.next().accept(this);
 	}
 	// implement TempMap via CloningTempMap.
-	public Temp tempMap(Temp t) { return ctm.tempMap((Temp)map.find(t)); }
+	public Temp tempMap(Temp t) { return ctm.tempMap(map.find(t)); }
 	public TempMap unmodifiable() {
 	    final TempMap uctm = ctm.unmodifiable();
 	    return new TempMap() {
 		public Temp tempMap(Temp t) {
-		    return uctm.tempMap((Temp)map.find(t));
+		    return uctm.tempMap(map.find(t));
 		}
 	    };
 	}
@@ -107,22 +107,22 @@ public class SSIToSSA {
     // create map of old quads to new quads.
     static class Cloner extends LowQuadVisitor {
 	/** Maps SSI quads to SSA quads. */
-	final Map old2new = new HashMap();
+	final Map<Quad,Quad> old2new = new HashMap<Quad,Quad>();
 	/** Maps old temps to new temps. */
 	final TempMap tm;
 	/** QuadFactory to use for new Quads. */
 	final QuadFactory nqf;
 	/** AllocationInformation for old Quads */
-	final AllocationInformation oaim;
+	final AllocationInformation<Quad> oaim;
 	/** AllocationInformationMap for new Quads */
-	final AllocationInformationMap naim;
+	final AllocationInformationMap<Quad> naim;
 	/** Derivation for old Quads */
-	final Derivation oderiv;
+	final Derivation<Quad> oderiv;
 	/** Derivation map for new Quads */
-	final DerivationMap nderiv;
+	final DerivationMap<Quad> nderiv;
 
 	Cloner(Code c, QuadFactory nqf, TempMap tm,
-	       Derivation oderiv, AllocationInformation oaim) {
+	       Derivation<Quad> oderiv, AllocationInformation<Quad> oaim) {
 	    super(c instanceof harpoon.IR.LowQuad.Code);// strictness.
 	    // setup cloner fields.
 	    this.nqf = nqf; this.tm = tm;
@@ -131,8 +131,8 @@ public class SSIToSSA {
 	    this.oderiv= oderiv;
 	    this.nderiv= (oderiv==null) ? null : new DerivationMap();
 	    // visit all elements.
-	    for (Iterator it=c.getElementsI(); it.hasNext(); )
-		((Quad)it.next()).accept(this);
+	    for (Iterator<Quad> it=c.getElementsI(); it.hasNext(); )
+		it.next().accept(this);
 	}
 	private void record(Quad oldq, Quad newq, boolean transferDeriv) {
 	    old2new.put(oldq, newq);
@@ -201,15 +201,15 @@ public class SSIToSSA {
     }
     // link quads together.
     static class Linker {
-	Linker(Code c, Map old2new) {
+	Linker(Code c, Map<Quad,Quad> old2new) {
 	    // visit all elements, linking together.
-	    for (Iterator it=c.getElementsI(); it.hasNext(); ) {
-		Quad q = (Quad) it.next();
+	    for (Iterator<Quad> it=c.getElementsI(); it.hasNext(); ) {
+		Quad q = it.next();
 		int n = q.nextLength();
 		for (int i=0; i<n; i++) {
 		    Edge e = q.nextEdge(i);
-		    Quad nfrm = (Quad) old2new.get(e.from());
-		    Quad nto  = (Quad) old2new.get(e.to());
+		    Quad nfrm = old2new.get(e.from());
+		    Quad nto  = old2new.get(e.to());
 		    Quad.addEdge(nfrm, e.which_succ(), nto, e.which_pred());
 		}
 	    }

@@ -72,10 +72,13 @@ Analysis/Counters/RuntimeMethodCloner.java
 Analysis/DefaultAllocationInformation.java
 Analysis/DefaultAllocationInformationMap.java
 Analysis/DomTree.java
+Analysis/EnvBuilder/EnvCode.java
+Analysis/EventDriven/EventDrivenCode.java
 Analysis/Instr/RegAlloc.java
 Analysis/InterferenceGraph.java
 Analysis/Liveness.java
 Analysis/LowQuad/DerivationChecker.java
+Analysis/LowQuad/Loop/MyLowQuadSSI.java
 Analysis/Maps/AllocationInformation.java
 Analysis/Maps/ConstMap.java
 Analysis/Maps/ConstMapProxy.java
@@ -194,6 +197,7 @@ IR/Quads/QuadSSI.java
 IR/Quads/QuadWithTry.java
 IR/Quads/QuadValueVisitor.java
 IR/Quads/ResilientNoSSA.java
+IR/Quads/SSIToSSA.java
 IR/Tree/CanonicalTreeCode.java
 IR/Tree/Code.java
 IR/Tree/Data.java
@@ -272,7 +276,6 @@ IR/Quads/RETURN.java
 IR/Quads/RSSxToNoSSA.java
 IR/Quads/SET.java
 IR/Quads/SIGMA.java
-IR/Quads/SSIToSSA.java
 IR/Quads/SWITCH.java
 IR/Quads/TESTER.java
 IR/Quads/THROW.java
