@@ -66,8 +66,21 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.3 2001-01-11 23:59:22 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.4 2001-01-14 08:28:52 cananian Exp $
  */
+//XXX: we currently have this issue with the code:
+// original input which looks like
+//     t1 = AGET(t0, ...)
+//     t2 = AGET(t1, ...)
+// doesn't type check in the conversion to LowQuad form because t0
+// is cast to Object[] type when it is created by getReadCommittedVersion().
+// It "should" be Object[][] type.  Thus in the second AGET when it is
+// deferenced t1 is of Object type when it should be of Object[] type.
+// We *could* do a typeinfo pass before we enter SyncTransformer to
+// generate "correct" types but this doesn't always get the properly
+// precise type when run in *SSA form. We currently work around the problem by
+// adding an extra type cast before the AGET.  This *should* be
+// optimized out in most cases.
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
     static final Token WITH_TRANSACTION = new Token("withtrans") {
@@ -442,6 +455,8 @@ public class SyncTransformer
 		addAt(e, new AGET(qf, q, q.dst(),
 				  ts.versioned(q.objectref()),
 				  q.index(), q.type()));
+		// workaround for multi-dim arrays. yucky.
+		addTypeCheck(q.prevEdge(0), q, q.objectref(), q.type());
 	    } else { // transactional read
 		AGET q0 = new AGET(qf, q, q.dst(),
 				   ts.versioned(q.objectref()),
@@ -516,6 +531,7 @@ public class SyncTransformer
 	    if (handlers==null) { // non-transactional write
 		Temp t0 = new Temp(tf, "oldval");
 		Edge in = q.prevEdge(0);
+		in = addTypeCheck(in, q, q.objectref(), q.type());//workaround
 		in = addAt(in, new AGET(qf, q, t0, q.objectref(),
 					q.index(), q.type()));
 		writeNonTrans(in, q, q.objectref(), t0, q.src(), q.type());
