@@ -10,7 +10,7 @@ import harpoon.ClassFile.HClass;
  * HClasses that do not seem to belong with the standard HClass methods.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassUtil.java,v 1.6.2.7 1999-09-09 02:54:21 cananian Exp $
+ * @version $Id: HClassUtil.java,v 1.6.2.7.6.1 2000-01-11 09:18:01 cananian Exp $
  */
 public abstract class HClassUtil  {
     // Only static methods.
@@ -39,8 +39,8 @@ public abstract class HClassUtil  {
      *  to add. */
     public static final HClass arrayClass(HClass hc, int dims) {
 	StringBuffer sb = new StringBuffer();
-	return HClass.forDescriptor(Util.repeatString("[",dims)+
-				    hc.getDescriptor());
+	return hc.getLinker().forDescriptor(Util.repeatString("[",dims)+
+					    hc.getDescriptor());
     }
     /** Create an array describing the inheritance of class hc.
      * @return an array, where element 0 is the HClass for java.lang.Object,
@@ -82,10 +82,12 @@ public abstract class HClassUtil  {
 	// this is a quick hack.
 	if (a.isSuperinterfaceOf(b)) return a;
 	if (b.isSuperinterfaceOf(a)) return b;
-	return HClass.forName("java.lang.Object");
+	return a.getLinker().forName("java.lang.Object");
     }
     /** Find a class which is a common parent of both suppied classes. */
     public static final HClass commonParent(HClass a, HClass b) {
+	if (a.isPrimitive() || b.isPrimitive()) return commonSuper(a, b);
+	Util.assert(a.getLinker()==b.getLinker());
 	if (a.isArray() && b.isArray()) {
 	    int ad = dims(a), bd = dims(b), d = (ad<bd)?ad:bd;
 	    for (int i=0; i<d; i++)
@@ -96,14 +98,14 @@ public abstract class HClassUtil  {
 	    return commonInterface(a, b);
 	if (b.isArray()) return commonParent(b,a);
 	if (a.isArray()) // b is interface or object, not array.
-	    if (b==HClass.forName("java.lang.Cloneable") ||
-		b==HClass.forName("java.io.Serializable"))
+	    if (b==b.getLinker().forName("java.lang.Cloneable") ||
+		b==b.getLinker().forName("java.io.Serializable"))
 		return b;
-	    else return HClass.forName("java.lang.Object");
+	    else return b.getLinker().forName("java.lang.Object");
 	if (b.isInterface()) return commonParent(b,a);
 	if (a.isInterface()) // b is object
 	    if (a.isSuperinterfaceOf(b)) return a;
-	    else return HClass.forName("java.lang.Object");
+	    else return a.getLinker().forName("java.lang.Object");
 	// both a and b are object.
 	return commonSuper(a,b);
     }
