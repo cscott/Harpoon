@@ -9,7 +9,7 @@ import java.util.Comparator;
  * search tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PersistentTreeNode.java,v 1.6 2003-05-16 00:37:44 cananian Exp $
+ * @version $Id: PersistentTreeNode.java,v 1.7 2003-05-29 21:41:23 cananian Exp $
  */
 class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V> 
     implements java.io.Serializable {
@@ -34,12 +34,16 @@ class PersistentTreeNode<K,V> extends AbstractMapEntry<K,V>
      */
     public boolean isSame(PersistentTreeNode n) {
 	if (this==n) return true; // quick common case
+	if (null==n) return false; // protect us from evil; this!=null
 	return
 	    isSame(key,  n.key)  && isSame(value, n.value) &&
 	    isSame(left, n.left) && isSame(right, n.right);
     }
     private static boolean isSame(Object o1, Object o2) {
-	return ((o1==null) && (o2==null)) || (o1!=null && o1.equals(o2));
+	return (o1==null)?(o2==null):(o1.equals(o2));
+    }
+    private static boolean isSame(PersistentTreeNode n1,PersistentTreeNode n2){
+	return (n1==null)?(n2==null):(n1.isSame(n2));
     }
 
     // TREE UTILITY FUNCTIONS.
