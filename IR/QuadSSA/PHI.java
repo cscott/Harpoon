@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.7 1998-09-04 01:39:21 cananian Exp $
+ * @version $Id: PHI.java,v 1.8 1998-09-04 09:15:55 cananian Exp $
  */
 
 public class PHI extends Quad {
@@ -70,7 +70,10 @@ public class PHI extends Quad {
 	for (int i=0; i<dst.length; i++) {
 	    sb.append(dst[i].toString() + "=(");
 	    for (int j=0; j<src[i].length; j++) {
-		sb.append(src[i][j].toString());
+		if (src[i][j]==null)
+		    sb.append("null");
+		else
+		    sb.append(src[i][j].toString());
 		if (j < src[i].length-1)
 		    sb.append(",");
 	    }

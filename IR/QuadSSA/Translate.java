@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.50 1998-09-04 08:51:36 cananian Exp $
+ * @version $Id: Translate.java,v 1.51 1998-09-04 09:15:55 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -362,7 +362,7 @@ class Translate  { // not public.
 	    // None of the above.
 	    else {
 		TransState nts[] = transInstr(ts, mm, handlers, Tzero, Tnull);
-		for (int i=0; i<nts.length; i++)
+		for (int i=nts.length-1; i>=0; i--)
 		    todo.push(nts[i]);
 		continue;
 	    }
