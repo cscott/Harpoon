@@ -1949,7 +1949,7 @@ class barnes {
   public static int RTJ_alloc_method;
   public static int numThreads;
   public static javax.realtime.CTMemory[] ct = null;
-  public static final boolean RTJ_support = false;
+  public static final boolean RTJ_support = true;
 
   public static void run(Runnable r, int i) {
     if (RTJ_support) {
@@ -1959,15 +1959,11 @@ class barnes {
 	break;
       }
       case CT_MEMORY: {
-	if (ct != null) {
-	  ct[i].enter(r);
-	} else {
-	  (new javax.realtime.CTMemory(ctsize)).enter(r);
-	}
+	ct[i].enter(r);
 	break;
       }
       case VT_MEMORY: {
-	(new javax.realtime.VTMemory(1000, 1000)).enter(r);
+	(new javax.realtime.VTMemory()).enter(r);
 	break;
       } 
       default: {
@@ -1997,7 +1993,7 @@ class barnes {
       ctsize = Long.parseLong(args[4]);
       ct = new javax.realtime.CTMemory[numThreads+1];
       for (int i = 0; i<numThreads+1; i++) {
-	ct[i] = new javax.realtime.CTMemory(ctsize, true);
+	ct[i] = new javax.realtime.CTMemory(ctsize);
       }
     } else if (args[2].equalsIgnoreCase("VT")) {
       RTJ_alloc_method = VT_MEMORY;
@@ -2020,12 +2016,6 @@ class barnes {
       Nbody.dump();
     }
     
-    if (ct != null) {
-      for (int i = 0; i<numThreads+1; i++) {
-	ct[i].done();
-      }
-    }
-
     if ((RTJ_alloc_method != NO_RTJ) &&
 	(args[3].equalsIgnoreCase("stats"))) {
       javax.realtime.Stats.print();

@@ -1860,10 +1860,8 @@ class potengThreadNoHeap extends javax.realtime.NoHeapRealtimeThread {
 
   potengThreadNoHeap(ensemble e, int i, int j, int memNum) {
     super((water.RTJ_alloc_method==water.CT_MEMORY)?
-	  ((water.ct==null)?
-	   ((javax.realtime.MemoryArea)(new javax.realtime.CTMemory(water.ctsize))):
-	   ((javax.realtime.MemoryArea)water.ct[4])):
-	  ((javax.realtime.MemoryArea)(new javax.realtime.VTMemory(1000, 1000))));
+	  ((javax.realtime.MemoryArea)water.ct[4]):
+	  ((javax.realtime.MemoryArea)(new javax.realtime.VTMemory())));
     en = e;
     this.i = i;
     this.j = j;    this.memNum = memNum;
@@ -1912,10 +1910,8 @@ class interfThreadNoHeap extends javax.realtime.NoHeapRealtimeThread {
 
   interfThreadNoHeap(ensemble e, int i, int j, int memNum) {
     super((water.RTJ_alloc_method==water.CT_MEMORY)?
-	  ((water.ct==null)?
-	   ((javax.realtime.MemoryArea)(new javax.realtime.CTMemory(water.ctsize))):
-	   ((javax.realtime.MemoryArea)water.ct[5])):
-	  ((javax.realtime.MemoryArea)(new javax.realtime.VTMemory(1000, 1000))));
+	  ((javax.realtime.MemoryArea)water.ct[5]):
+	  ((javax.realtime.MemoryArea)(new javax.realtime.VTMemory())));
     en = e;
     this.i = i;
     this.j = j;
@@ -2071,15 +2067,11 @@ class water {
       break;
     } 
     case CT_MEMORY: {
-      if (ct == null) {
-	(new javax.realtime.CTMemory(ctsize)).enter(r);
-      } else {
-	ct[i].enter(r);
-      }
+      ct[i].enter(r);
       break;
     }
     case VT_MEMORY: {
-      (new javax.realtime.VTMemory(1000, 1000)).enter(r);
+      (new javax.realtime.VTMemory()).enter(r);
       break;
     } 
     default: {
@@ -2099,7 +2091,7 @@ class water {
     start_time = System.currentTimeMillis();
     
     if (args.length < 3) { 
-      System.out.print("usage: java water <input filename> <numThreads> <noRTJ | CT | VT> [stats | nostats] [ctsize] [reuse] [noheap]\n");
+      System.out.print("usage: java water <input filename> <numThreads> <noRTJ | CT | VT> [stats | nostats] [ctsize] [noheap]\n");
       return;
     }
     
@@ -2108,23 +2100,21 @@ class water {
     if (args[2].equalsIgnoreCase("noRTJ")) {
       RTJ_alloc_method = NO_RTJ;
     } else if (args[2].equalsIgnoreCase("CT")) {
-      noheap = (args.length>6)&&(args[6].equalsIgnoreCase("noheap"));
+      noheap = (args.length>5)&&(args[5].equalsIgnoreCase("noheap"));
       RTJ_alloc_method = CT_MEMORY;
       ctsize = Long.parseLong(args[4]);
-      if ((args.length>5)&&(args[5].equalsIgnoreCase("reuse"))) {
-	Runnable r = new Runnable() {
-	    public void run() {
-	      ct = new javax.realtime.CTMemory[6];
-	      for (int j = 0; j < 6; j++) {
-		water.ct[j] = new javax.realtime.CTMemory(ctsize, true);
-	      }
+      Runnable r = new Runnable() {
+	  public void run() {
+	    ct = new javax.realtime.CTMemory[6];
+	    for (int j = 0; j < 6; j++) {
+	      water.ct[j] = new javax.realtime.CTMemory(ctsize);
 	    }
-	  };
-	if (noheap) {
+	  }
+	};
+      if (noheap) {
 	  javax.realtime.ImmortalMemory.instance().enter(r);
-	} else {
+      } else {
 	  r.run();
-	}
       }
     } else if (args[2].equalsIgnoreCase("VT")) {
       noheap = (args.length>4)&&(args[4].equalsIgnoreCase("noheap"));
@@ -2177,12 +2167,6 @@ class water {
     System.out.print("\nTotal Time = ");
     System.out.print(((stop_time-start_time)/dticks));
     System.out.print("\n");
-    
-    if (ct != null) {
-      for (i = 0; i < 6; i++) {
-	ct[i].done();
-      }
-    }
     
     if ((RTJ_alloc_method != NO_RTJ) &&
 	(args[3].equalsIgnoreCase("stats"))) {

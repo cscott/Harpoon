@@ -14,8 +14,8 @@ class ToyTree {
 		    ma = new javax.realtime.CTMemory(Long.parseLong(args[4]));
 		    mb = new javax.realtime.CTMemory(Long.parseLong(args[4]));
 		} else if (args[2].equalsIgnoreCase("VT")) {
-		    ma = new javax.realtime.VTMemory(1000, 1000);
-		    mb = new javax.realtime.VTMemory(1000, 1000);
+		    ma = new javax.realtime.VTMemory();
+		    mb = new javax.realtime.VTMemory();
 		} else {
 		    throw new Exception();
 		}

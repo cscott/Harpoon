@@ -31,17 +31,13 @@ class ToyArray {
 		    if (noheap) {
 			javax.realtime.ImmortalMemory im =
 			    javax.realtime.ImmortalMemory.instance();
-			Class[] params = new Class[] { long.class, long.class };
-			Object[] vals = new Object[] { new Long(1000), 
-						       new Long(1000) };
-			Class cls = javax.realtime.VTMemory.class;
 			ma = (javax.realtime.MemoryArea)
-			    im.newInstance(cls, params, vals);
+			    im.newInstance(javax.realtime.VTMemory.class);
 			mb = (javax.realtime.MemoryArea)
-			    im.newInstance(cls, params, vals);
+			    im.newInstance(javax.realtime.VTMemory.class);
 		    } else {
-			ma = new javax.realtime.VTMemory(1000, 1000);
-			mb = new javax.realtime.VTMemory(1000, 1000);
+			ma = new javax.realtime.VTMemory();
+			mb = new javax.realtime.VTMemory();
 		    }
 		} else {
 		    throw new Exception();

@@ -1883,7 +1883,7 @@ class barnes {
   public static long ctsize = 0;
   public static int RTJ_alloc_method;
 
-  public static void run(Runnable r, int i) {
+  public static void run(Runnable r) {
     switch (RTJ_alloc_method) {
     case NO_RTJ: {
       r.run();
@@ -1894,7 +1894,7 @@ class barnes {
       break;
     }
     case VT_MEMORY: {
-      (new javax.realtime.VTMemory(1000, 1000)).enter(r);
+      (new javax.realtime.VTMemory()).enter(r);
       break;
     } 
     default: {

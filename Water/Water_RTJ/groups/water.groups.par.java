@@ -1864,7 +1864,7 @@ class water {
   public static long ctsize;
   public static int RTJ_alloc_method;
   private static javax.realtime.CTMemory[] ct;
-  public static final boolean allowRTJ = false;
+  public static final boolean allowRTJ = true;
   
   public static void run(Runnable r, int i) {
     if (allowRTJ) {
@@ -1874,15 +1874,11 @@ class water {
 	break;
       } 
       case CT_MEMORY: {
-	if (ct == null) {
-	  (new javax.realtime.CTMemory(ctsize)).enter(r);
-	} else {
-	  ct[i].enter(r);
-	}
+	ct[i].enter(r);
 	break;
       }
       case VT_MEMORY: {
-	(new javax.realtime.VTMemory(1000, 1000)).enter(r);
+	(new javax.realtime.VTMemory()).enter(r);
 	break;
       } 
       default: {
@@ -1913,7 +1909,7 @@ class water {
     
     parms = new simparm();
     if (args.length < 3) { 
-      System.out.print("usage: java water <input filename> <numThreads> <noRTJ | CT | VT> [stats | nostats] [ctsize] [reuse]\n");
+      System.out.print("usage: java water <input filename> <numThreads> <noRTJ | CT | VT> [stats | nostats] [ctsize]\n");
       return;
     }
     
@@ -1923,11 +1919,9 @@ class water {
     } else if (args[2].equalsIgnoreCase("CT")) {
       RTJ_alloc_method = CT_MEMORY;
       ctsize = Long.parseLong(args[4]);
-      if ((args.length>4)&&(args[5].equalsIgnoreCase("reuse"))) {
-	ct = new javax.realtime.CTMemory[4];
-	for (i = 0; i < 4; i++) {
-	  ct[i] = new javax.realtime.CTMemory(ctsize, true);
-	}
+      ct = new javax.realtime.CTMemory[4];
+      for (i = 0; i < 4; i++) {
+	ct[i] = new javax.realtime.CTMemory(ctsize);
       }
     } else if (args[2].equalsIgnoreCase("VT")) {
       RTJ_alloc_method = VT_MEMORY;
@@ -1969,12 +1963,6 @@ class water {
     System.out.print("\nTotal Time = ");
     System.out.print(((stop_time-start_time)/dticks));
     System.out.print("\n");
-    
-    if (ct != null) {
-      for (i = 0; i < 4; i++) {
-	ct[i].done();
-      }
-    }
     
     if ((args.length>3) &&
 	(args[3].equalsIgnoreCase("stats"))) {

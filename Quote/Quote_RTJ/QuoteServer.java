@@ -182,7 +182,7 @@ public class QuoteServer {
 	    break;
 	}
 	case VT_MEMORY: {
-	    (new NewHandlerRealtimeThread(new javax.realtime.VTMemory(1000, 1000), 
+	    (new NewHandlerRealtimeThread(new javax.realtime.VTMemory(), 
 					  newHandler)).start();
 	    break;
 	}

@@ -36,7 +36,7 @@ public class JhttpServer {
 			    Integer.parseInt(args[1])==1)).start();
 	stats = args[3].equalsIgnoreCase("stats");
       } else if (args[2].equalsIgnoreCase("VT")) {
-	(new JhttpServerRTJ(new javax.realtime.VTMemory(1000, 1000),
+	(new JhttpServerRTJ(new javax.realtime.VTMemory(),
 			    Integer.parseInt(args[0]),
 			    Integer.parseInt(args[1])==1)).start();
 	stats = args[3].equalsIgnoreCase("stats");
