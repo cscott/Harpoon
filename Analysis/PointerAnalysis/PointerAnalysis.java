@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.51 2000-04-03 22:36:14 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.52 2000-05-14 04:49:17 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -1155,7 +1155,12 @@ public class PointerAnalysis {
 	Stats.print_stats();
 	nodes.print_stats();
 	System.out.println("==========================================");
-	if(SHOW_NODES) nodes.show_specializations();
+	if(SHOW_NODES){
+	    System.out.println("BASIC NODES");
+	    System.out.println(nodes);
+	    System.out.println("NODE SPECIALIZATIONS:");
+	    nodes.show_specializations();
+	}
     }
 
     /** Returns the parallel interaction graph valid at the program point

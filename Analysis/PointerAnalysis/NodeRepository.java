@@ -19,13 +19,14 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.19 2000-04-03 10:49:27 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.20 2000-05-14 04:49:17 salcianu Exp $
  */
 public class NodeRepository {
     
     private Hashtable static_nodes;
     private Hashtable param_nodes;
     private Hashtable code_nodes;
+    private Hashtable cf_nodes;
     private Hashtable except_nodes;
     private Hashtable node2code;
 
@@ -34,6 +35,7 @@ public class NodeRepository {
 	static_nodes = new Hashtable();
 	param_nodes  = new Hashtable();
 	code_nodes   = new Hashtable();
+	cf_nodes     = new Hashtable();
 	except_nodes = new Hashtable();
 	node2code    = new Hashtable();
     }
@@ -94,6 +96,47 @@ public class NodeRepository {
 	}
 	return node;	
     }
+
+    // Auxiliary class: the key type for the "cf_nodes" hashtable.
+    private static class CFPair{
+	HCodeElement hce;
+	String f;
+	CFPair(HCodeElement hce, String f){
+	    this.hce = hce;
+	    this.f   = f;
+	}
+
+	int hash = 0; // small caching hack
+	public int hashCode(){
+	    if(hash == 0)
+		hash = hce.hashCode() + f.hashCode();
+	    return hash;
+	}
+
+	public boolean equals(Object obj){
+	    CFPair hf2 = (CFPair) obj;
+	    return (hf2.hce.equals(hce) && hf2.f.equals(f));
+	}
+
+	public String toString(){
+	    return hce.toString() + f.toString();
+	}
+    }
+
+    /** Special function for load instructions that read multiple fields
+	in the same time (the motivating example is that of "clone()")
+	For such an instruction, a load node is generated for each field
+	that is read (<code>f</code> in the parameter list). */
+    public final PANode getLoadNodeSpecial(HCodeElement hce, String f){
+	CFPair key = new CFPair(hce, f); 
+	PANode retval = (PANode) cf_nodes.get(key);
+	if(retval == null){
+	    retval = new PANode(PANode.LOAD);
+	    cf_nodes.put(key, retval);
+	}
+	return retval;
+    }
+
 
     /** Returns a <i>code</i>: a node associated with the
      * instruction <code>hce</code>: a load node 
@@ -193,6 +236,15 @@ public class NodeRepository {
 	    buffer.append(" ");
 	    buffer.append(hce);
 	    buffer.append("\n");
+	}
+
+	Object cfs[] = Debug.sortedSet(cf_nodes.keySet());
+	for(int i = 0; i < cfs.length; i++){
+	    CFPair cfp = (CFPair) cfs[i];
+	    HCodeElement hce = cfp.hce;
+	    buffer.append((PANode) cf_nodes.get(cfp) + "\t" + 
+			  hce.getSourceFile() + ":" + hce.getLineNumber() +
+			  " " + cfp.hce + "\n");
 	}
 
 	return buffer.toString();

@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collections;
 
 import java.lang.reflect.Modifier;
 
@@ -14,10 +15,17 @@ import harpoon.IR.Quads.CALL;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Temp.Temp;
 
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HField;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
+
+import harpoon.Util.TypeInference.ExactTemp;
+import harpoon.Util.TypeInference.TypeInference;
+import harpoon.IR.Quads.QuadFactory;
 
 import harpoon.Util.Util;
 
@@ -29,7 +37,7 @@ import harpoon.Util.Util;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.32 2000-05-12 19:20:04 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.33 2000-05-14 04:49:17 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -437,7 +445,7 @@ abstract class InterProcPA {
     }
 
 
-    // specially treat unharmful native methods.
+    // Specially treat unharmful native methods.
     private static ParIntGraphPair treatUnharmfulNative(ParIntGraph pig_before,
 							MetaMethod mm,
 							CALL q){
@@ -457,7 +465,7 @@ abstract class InterProcPA {
 	    pig0.G.I.addEdge(l_R, n_R);
 	    //////// we suppose that escaping into an unharmful method is
 	    //////// no big deal, so we comment next line
-	    //////// pig0.G.e.addMethodHole(n_R);
+	    pig0.G.e.addMethodHole(n_R);
 	    //////// TODO: THINK & FIX
 	}
 
@@ -469,7 +477,7 @@ abstract class InterProcPA {
 	    pig1.G.I.addEdge(l_E, n_E);
 	    //////// we suppose that escaping into an unharmful method is
 	    //////// no big deal, so we comment next line
-	    //////// pig1.G.e.addMethodHole(n_E);
+	    pig1.G.e.addMethodHole(n_E);
 	    //////// TODO: THINK & FIX
 	}
 
@@ -844,18 +852,134 @@ abstract class InterProcPA {
 	return null;
     }
 
-    
+
+    // Aux method for treat_clone. It returns the set of possible types
+    // (Set<HClass>) of the argument of clone(). Ugly code: I think we should
+    // have a Quad form with types.
+    private static Set aux_clone_get_types(CALL q){
+	// The quad factory that generated this CALL quad
+	QuadFactory qf = q.getFactory();
+	// the method into which it appears.
+	HMethod     hm = qf.getMethod();
+	// and the HCode containing the code of that method.
+	HCode    hcode = (HCode) qf.getParent();
+	// et = Temp q.params(0) used in Quad q
+	ExactTemp   et = new ExactTemp(q, q.params(0));
+
+	TypeInference ti = 
+	    new TypeInference(hm, hcode, Collections.singleton(et));
+
+	return ti.getType(et);
+    }
+
+    // Aux method for "treat_clone". Returns the set of all the fields
+    // appearing in the types from the set "types".
+    private static Set aux_clone_get_obj_fields(Set types){
+	Set retval = new HashSet();
+	for(Iterator it = types.iterator();it.hasNext(); ){
+	    HClass hclass = (HClass) it.next();
+	    if(hclass.isArray())
+		System.out.println("CLONE: might be called for an array");
+	    HField[] hfields = hclass.getFields();
+	    for(int i = 0; i < hfields.length; i++)
+		if(!hfields[i].getType().isPrimitive())
+		    retval.add(hfields[i].getName());
+	}
+	return retval;
+    }
+ 
+
+    // Treat the sequence "ld t = n_src.f; store n_R.f = t;". For a clone()
+    // call, this is done for all fields f of the cloned object.
+    private static void aux_clone_treat_pseudo_ldst(CALL q, String f,
+       PANode n_R, PANode n_src, ParIntGraph pig, NodeRepository node_rep){
+
+	// f_set contains all the nodes pointed to by <n_src, f>
+	Set f_set = new HashSet(pig.G.I.pointedNodes(n_src, f));
+
+	if(pig.G.escaped(n_src)){
+	    PANode n_L = node_rep.getLoadNodeSpecial(q, f);
+	    pig.G.O.addEdge(n_src, f, n_L);
+	    pig.ar.add_ld(n_src, f, n_L, ActionRepository.THIS_THREAD,
+			  pig.tau.activeThreadSet());
+	    // TODO: edge ordering relation (if we want to maintain it)
+	    f_set.add(n_L);
+	}
+
+	for(Iterator it = f_set.iterator(); it.hasNext();)
+	    pig.G.I.addEdge(n_R, f, (PANode) it.next());
+    }
+
+
     // Specially treats 
     //    "protected native java.lang.Object java.lang.Object.clone()"
     private static ParIntGraphPair treat_clone(PointerAnalysis pa, CALL q,
 					       ParIntGraph pig_before){
-	HMethod hm = q.method();
-	if(!hm.getName().equals("clone") ||
-	   !hm.getDeclaringClass().getName().equals("java.lang.Object"))
+	HMethod callee = q.method();
+	if(!callee.getName().equals("clone") ||
+	   !callee.getDeclaringClass().getName().equals("java.lang.Object"))
 	    return null;
 
-	// TODO
-	return null;
+	ParIntGraph pig_after0 = pig_before;
+	ParIntGraph pig_after1 = (ParIntGraph) pig_before.clone();
+
+	// do the actions of the "clone()" method: create a new object (n_R),
+	// copy the fields from the objects passed as params to clone to n_R
+	NodeRepository node_rep = pa.getNodeRepository(); 
+	PANode n_R = node_rep.getCodeNode(q, PANode.RETURN);
+
+	Set lo_types = aux_clone_get_types(q);
+	// if(DEBUG)
+	    System.out.println("CLONE: POSSIBLE TYPES:" + lo_types);
+
+	Set flags = aux_clone_get_obj_fields(lo_types);
+	// if(DEBUG)
+	    System.out.println("CLONE: POSSIBLE FLAGS:" + flags);
+
+	int nb_flags = flags.size();
+
+	Temp lo  = q.params(0);
+	Set srcs = pig_before.G.I.pointedNodes(lo);
+
+	Iterator it = flags.iterator();
+	for(int i = 0; i < nb_flags; i++){
+	    String f = (String) it.next();
+	    for(Iterator it_src = srcs.iterator(); it_src.hasNext();){
+		PANode n_src = (PANode) it_src.next();
+		aux_clone_treat_pseudo_ldst(q, f, n_R, n_src, pig_after0,
+					    node_rep);
+	    }
+	}
+
+	// set the link l_R to the RETURN node
+	Temp l_R = q.retval();
+	if(l_R != null)
+	    pig_after0.G.I.addEdge(l_R, n_R);
+
+	aux_native_treat_excp(q, pig_after1, node_rep);
+
+	return new ParIntGraphPair(pig_after0, pig_after1);
+    }
+
+    
+    // Aux method for all the special treatments of native methods. If the
+    // called native method can return an exception, and there is a Temp l_E
+    // to receive (a pointer to) it, a PANode.EXCEPT node associated with this
+    // CALL is created (if it doesn't exist yet) and the proper link is set
+    // from l_E to n_E, in the parallel interaction graph "pig".
+    private static void aux_native_treat_excp(CALL q, ParIntGraph pig,
+					      NodeRepository node_rep){
+	Temp l_E = q.retex();
+	HMethod hm = q.method();
+
+	if((l_E == null) || (hm.getExceptionTypes().length == 0)) return;
+
+	pig.G.I.removeEdges(l_E);
+	PANode n_E = node_rep.getCodeNode(q, PANode.EXCEPT);
+	pig.G.I.addEdge(l_E, n_E);
+	pig.G.e.addMethodHole(n_E);
+	// no pig.G.propagate is necessary since n_E cannot point to anything
+	// that is not escaped into that native method.
     }
 
     // treat specially "public static native void java.lang.System.arraycopy
