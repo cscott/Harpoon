@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.Map;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -21,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.FileReader;
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
@@ -80,7 +82,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.76 2000-07-17 17:01:33 rinard Exp $
+ * @version $Id: PAMain.java,v 1.1.2.77 2000-11-08 20:06:15 bdemsky Exp $
  */
 public abstract class PAMain {
 
@@ -140,6 +142,10 @@ public abstract class PAMain {
     // the main method
     private static HMethod hroot = null;
 
+    private static Map toint=null;
+    private static Map toalloc=null;
+    private static long[] profile=null;
+
     // list to maintain the methods to be analyzed
     private static List mm_to_analyze = new LinkedList();
     
@@ -166,7 +172,7 @@ public abstract class PAMain {
 
 
     private static Linker linker = Loader.systemLinker;
-    private static CachingCodeFactory hcf = null;
+    private static HCodeFactory hcf = null;
     private static MetaCallGraph  mcg = null;
     private static MetaAllCallers mac = null;
     private static Relation split_rel = null;
@@ -262,9 +268,10 @@ public abstract class PAMain {
     // providing the code of the methods, the class hierarchy, call graph etc.
     private static void pre_analysis() {
 	g_tstart = System.currentTimeMillis();
-	
-	hcf = new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory(),
-				     true);
+	//We might have loaded in a code factory w/o a preanalysis.
+	if (hcf==null)
+	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
+	hcf = new CachingCodeFactory(hcf, true);
 	bbconv = new CachingBBConverter(hcf);
 	lbbconv = new CachingLBBConverter(bbconv);
 	
@@ -479,10 +486,45 @@ public abstract class PAMain {
 	    new LongOpt("output",    LongOpt.REQUIRED_ARGUMENT, null, 'o'),
 	};
 
-	Getopt g = new Getopt("PAMain", argv, "mscoa:i", longopts);
+	Getopt g = new Getopt("PAMain", argv, "mscoa:iN:P:", longopts);
 
 	while((c = g.getopt()) != -1)
 	    switch(c){
+	    case 'P':
+		System.out.println("loading Profile");
+		arg=g.getOptarg();
+		try {
+		    BufferedReader br =
+			new BufferedReader(new FileReader(arg));
+		    String in=br.readLine();
+		    int size=Integer.parseInt(in);
+		    profile=new long[size];
+		    for(int i=0;i<size;i++) {
+			in=br.readLine();
+			profile[i]=Long.parseLong(in);
+		    }
+		    br.close();
+		} catch (Exception e) {
+		    System.out.println(e + " was thrown");
+		    System.exit(1);
+		}
+                break;
+	    case 'N':
+		arg=g.getOptarg();
+		System.out.println("loading "+arg);
+		try {
+		    ObjectInputStream ois =
+			new ObjectInputStream(new FileInputStream(arg));
+		    hcf=(HCodeFactory)ois.readObject();
+		    toint=(Map)ois.readObject();
+		    toalloc=(Map)ois.readObject();
+		    linker=(Linker)ois.readObject();
+		    ois.close();
+		} catch (Exception e) {
+		    System.out.println(e + " was thrown");
+		    System.exit(1);
+		}
+                break;
 	    case 'm':
 		SMART_CALL_GRAPH = false;
 		METAMETHODS = true;
@@ -1233,7 +1275,9 @@ public abstract class PAMain {
 	"                 inlining). Don't try to use it seriously!",
 	"--notg          No thread group facility is necessary. In the",
 	"                 future, this will be automatically detected by",
-	"                 the analysis."
+	"                 the analysis.",
+	"-N filename     Read in Instrumentation code factory",
+	"-P filename     Read in profile information"
     };
 
 
