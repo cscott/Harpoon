@@ -12,10 +12,13 @@ import harpoon.Util.Util;
 import java.util.HashMap;
 import java.util.Map;
 /**
- * <code>AllocationInformationMap</code>
+ * An <code>AllocationInformationMap</code> makes it easy to create a
+ * map-based <code>AllocationInformation</code> structure.  It also
+ * contains methods to facilitate transferring allocation information
+ * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.1.2.1 2000-04-03 23:42:51 cananian Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.1.2.2 2000-04-03 23:45:25 cananian Exp $
  */
 public class AllocationInformationMap implements AllocationInformation {
     private final Map map = new HashMap();
