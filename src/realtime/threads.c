@@ -232,11 +232,11 @@ void CheckQuanta(int notimecheck, int force, int actually_transfer)
     RestoreSwitching(switching_state); //restore switching
     FNI_DeleteLocalRefsUpTo(env, ref_marker);
     //      printf("Switching (%s, %d)...\n", actually_transfer?"yes":"no", threadID);
-    if(threadq->mthread->start_argument == NULL)
-      printf("!!!!mthread (%d) is NULL in CheckQuanta!!!!\n", threadID);
+    // if(threadq->mthread->start_argument == NULL)
+    //   printf("!!!!mthread (%d) is NULL in CheckQuanta!!!!\n", threadID);
 
     gettimeofday(&lastCheckTime, NULL);
-    printf("%06d\n", lastCheckTime.tv_usec);
+    //    printf("%06d\n", lastCheckTime.tv_usec);
     if(actually_transfer)
       transfer(threadq); //transfer to the new thread
     else
