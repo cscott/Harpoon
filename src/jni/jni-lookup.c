@@ -60,15 +60,17 @@ union _jmemberID *FNI_GetMemberID(jclass clazz,
 	    sizeof(union _jmemberID), name2member_compare);
 }
 
-#define GETID(name, rtype, extype) \
-rtype FNI_Get##name##ID(JNIEnv *env, jclass clazz, \
+#define GETID(_name, rtype, extype) \
+rtype FNI_Get##_name##ID(JNIEnv *env, jclass clazz, \
 			const char *name, const char *sig) { \
   rtype result; \
   assert(FNI_NO_EXCEPTIONS(env)); \
   result = (rtype) FNI_GetMemberID(clazz, name, sig); \
   if (result==NULL) { \
-    char msg[strlen(name)+strlen(sig)+2]; \
-    strcpy(msg, name); strcat(msg, " "), strcat(msg, sig); \
+    struct FNI_classinfo *info = FNI_GetClassInfo(clazz); \
+    char msg[strlen(info->name)+strlen(name)+strlen(sig)+3]; \
+    strcpy(msg, info->name); strcat(msg, "."); \
+    strcat(msg, name); strcat(msg, " "), strcat(msg, sig); \
     FNI_ThrowNew(env, FNI_FindClass(env, extype), msg); \
     return NULL; \
   } \
