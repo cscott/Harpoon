@@ -7,8 +7,8 @@
 #include "engine-i386-linux-1.0.h"
 #endif
 
-#ifdef WITH_REALTIME_THREADS
 #include <jni.h>
+#ifdef WITH_REALTIME_THREADS
 #include "../realtime/threads.h"
 #endif
 

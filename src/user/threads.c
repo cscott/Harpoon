@@ -66,6 +66,7 @@ void transfer(struct thread_queue_struct * mthread)
   printf("\nTransfer from %p to %p", currentThread, mthread);
 #endif
   if(mthread == currentThread) {
+    settimer();
     return;
   }
 
@@ -144,8 +145,8 @@ void startnext() {
 #endif
     if (gtl!=NULL)
       restorethread();
-#endif
   }
+#endif
 }
 
 #ifdef WITH_EVENT_DRIVEN
@@ -294,7 +295,7 @@ void exitthread() {
 void inituser(int *bottom) {
 #ifdef WITH_REALTIME_JAVA
   struct thread_list * tl = 
-    (struct thread_list *)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct thread_list));
+    (struct thread_list *)RTJ_CALLOC_UNCOLLECTABLE(sizeof(struct thread_list), 1);
 #else
   struct thread_list * tl =
     (struct thread_list *)malloc(sizeof(struct thread_list));
@@ -308,10 +309,10 @@ void inituser(int *bottom) {
 #else
   /*build stack and stash it*/
   currentThread = 
-    (struct thread_queue_struct *)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct));
+    (struct thread_queue_struct *)RTJ_CALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct),1);
   INCREMENT_MEM_STATS(sizeof(struct thread_queue_struct));
   currentThread->mthread =
-    (struct machdep_pthread*)RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct machdep_pthread));
+    (struct machdep_pthread*)RTJ_CALLOC_UNCOLLECTABLE(sizeof(struct machdep_pthread),1);
   __machdep_pthread_create(currentThread->mthread, NULL, NULL,STACKSIZE, 0,0);
   /*stash hiptr*/
   currentThread->mthread->hiptr=bottom;
@@ -345,7 +346,7 @@ void addwaitthread(user_mutex_t *x) {
   transfer();
 #else
   if(currentThread->threadID != 0) {
-    struct thread_queue_struct* q = RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct));
+    struct thread_queue_struct* q = RTJ_CALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct),1);
     print_queue(thread_queue, "addwaitthread queue");
     print_queue(x->queue, "BEG mutex");
 
@@ -461,7 +462,7 @@ void addcontthread(user_cond_t *x) {
   transfer();
 #else
   if(currentThread->threadID != 0) {
-    struct thread_queue_struct* q = RTJ_MALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct));
+    struct thread_queue_struct* q = RTJ_CALLOC_UNCOLLECTABLE(sizeof(struct thread_queue_struct),1);
     print_queue(thread_queue, "addcontthread queue");
     print_queue(x->queue, "BEG cond");
 
