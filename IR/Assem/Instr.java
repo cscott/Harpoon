@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.54 1999-09-11 06:19:05 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.55 1999-10-20 20:28:02 cananian Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -594,8 +594,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     public Temp[] def() { 
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, dst);
     }
-    public Collection useC() { return Arrays.asList(use()); }
-    public Collection defC() { return Arrays.asList(def()); }
+    public Collection useC() { return Collections.unmodifiableList(Arrays.asList(use())); }
+    public Collection defC() { return Collections.unmodifiableList(Arrays.asList(def())); }
 
     // ******************* HCodeElement interface
 
