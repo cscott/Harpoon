@@ -3,6 +3,8 @@
 export HOME=/home/rtest
 cd ~
 source ~/.bashrc
+cd ~/Harpoon/Tests
+sudo -u rtest cvs update > /dev/null
 cd ~/Harpoon/Tests/Regression/Driver
 sudo -u rtest ./start-server
 export HOME=/root
