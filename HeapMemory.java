@@ -21,7 +21,7 @@ public final class HeapMemory extends MemoryArea {
 
 	heap = true;
     }
-   
+
     /** */
     
     protected native void initNative(long sizeInBytes);

@@ -4,8 +4,10 @@
 package javax.realtime;
 
 /** <code>MemAreaStack</code> can be used to create a tree of MemoryArea
- *  references to determine whether a ScopedMemory check fails.
- *
+ *  references to determine whether a ScopedMemory check fails.  This is
+ *  the same cactus stack that is used to determine which MemoryArea x 
+ *  RealtimeThread MemBlock to enter for the constructor of a .newArray'ed
+ *  or a newInstance'd object.
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 

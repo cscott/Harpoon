@@ -10,9 +10,9 @@ package javax.realtime;
 
 public class RealtimeThread extends Thread {
 
-    /** Contains all of the previous memoryAreas... */
+    /** Contains the cactus stack of previous memoryAreas... */
 
-    private MemAreaStack memAreaStack;
+    MemAreaStack memAreaStack;
 
     /** Contains the memoryArea associated with this mem. */
 
@@ -182,9 +182,9 @@ public class RealtimeThread extends Thread {
 	
 	MemoryArea newMem = previousThread.getMemoryArea();
 	if (mem == null) {
-	    enter(newMem, false);
+	    enter(newMem);
 	} else {
-	    enter(mem, newMem.scoped && (mem != newMem));
+	    enter(mem);
 	}
 	mem = getMemoryArea();
 	super.start();// When the run method is called, 
@@ -203,28 +203,22 @@ public class RealtimeThread extends Thread {
 
     /** */
    
-    void enterFromMemArea(MemoryArea mem, boolean checkStack) {
+    void enterFromMemArea(MemoryArea mem) {
 	previousThread = this;
-	enter(mem, checkStack);
+	enter(mem);
     }
 
     /** */
 
-    private void enter(MemoryArea mem, boolean checkStack) {
-	memAreaStack = 
-	    new MemAreaStack(previousThread.getMemoryArea(), memAreaStack);
-	if (checkStack && (memAreaStack.first(mem) != null)) {
-	    throw new MemoryScopeError("Re-entry of previous scope.");
-	}
-	this.mem = mem;
-	mem.enterMemBlock(this);
+    private void enter(MemoryArea mem) {
+	memAreaStack = new MemAreaStack(this.mem, memAreaStack);
+	(this.mem = mem).enterMemBlock(this, memAreaStack);
     }
 
     /** */
 
     void exit() {
 	mem.exitMemBlock(this);
-	this.mem = memAreaStack.entry;
 	memAreaStack = memAreaStack.next;
     }
     

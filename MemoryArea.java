@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 /** <code>MemoryArea</code>
@@ -40,21 +41,19 @@ public abstract class MemoryArea {
 
     private static int num = 0;
 
-    /* Number of bugs in Sun's libraries...
-     * Use a gdb script to watch this with a hardware watchpoint to list all of the
-     * methods that are broken.
-     */
-
-    protected static int java_lang_Brokenness = 0;  
-
     /** Indicates whether this memoryArea refers to a constant or not. 
      *  This is set by the compiler.
      */
 
     boolean constant;
 
-    native void enterMemBlock(RealtimeThread rt);
+    native void enterMemBlock(RealtimeThread rt, MemAreaStack mas);
     native void exitMemBlock(RealtimeThread rt);
+    native Object newArray(RealtimeThread rt, Class type, int number, Object memBlock);
+    native Object newArray(RealtimeThread rt, Class type, int[] dimensions, Object memBlock);
+    native Object newInstance(RealtimeThread rt, Constructor constructor, Object[] parameters, 
+			      Object memBlock)
+	throws InvocationTargetException;
 
     protected MemoryArea(long sizeInBytes) {
 	size = sizeInBytes;
@@ -77,14 +76,8 @@ public abstract class MemoryArea {
     /** */
 
     public void enter(Runnable logic) {
-	enter(logic, false);
-    }
-
-    /** */
-
-    void enter(Runnable logic, boolean checkReentry) {
 	RealtimeThread current = RealtimeThread.currentRealtimeThread();
-	current.enterFromMemArea(this, checkReentry);
+	current.enterFromMemArea(this);
 	logic.run();
 	current.exit();
     }
@@ -128,119 +121,111 @@ public abstract class MemoryArea {
     
     /** */
 
-    private long checkMem(java.lang.Class type, int number) {
-	long size = 4 * number;
-	if ((memoryConsumed + size) > this.size) {
-	    throw new OutOfMemoryError();
-	}
-	return size;
-    }
-
-    /** */
-
-    private long checkMem(java.lang.Class type, int[] dimensions) {
-	long size = 4;
-	for (int i = 0; i < dimensions.length; i++) {
-	    size *= dimensions[i];
-	}
-	if ((memoryConsumed + size) > this.size) {
-	    throw new OutOfMemoryError();
-	}
-	return size;
-    }
-    
-    /** */
-
-    private java.lang.Object update(java.lang.Object obj, long size) {
-	memoryConsumed += size;
+    public void bless(java.lang.Object obj) { 
 	obj.memoryArea = this;
-	return obj;
     }
     
     /** */
 
-    public synchronized void bless(java.lang.Object obj) { 
-	long size;
-	try {
-	    size = checkMem(obj.getClass(), 1);
-	} catch (OutOfMemoryError e) {
-	    obj = null;
-	    throw e;
-	}
-	update(obj, size);
-    }
-    
-    /** */
-
-    public synchronized void bless(java.lang.Object obj, int[] dimensions) { 
-	long size;
-	try {
-	    size = checkMem(obj.getClass(), dimensions);
-	} catch (OutOfMemoryError e) {
-	    obj = null;
-	    throw e;
-	}
-	update(obj, size);
-    }
-
-    /** */
-
-    public synchronized Object newArray(final Class type, final int number) 
+    public Object newArray(final Class type, final int number) 
 	throws IllegalAccessException, InstantiationException, OutOfMemoryError
     {
-	long size = checkMem(type, number);
-	RealtimeThread.currentRealtimeThread().getMemoryArea()
-	    .checkAccess(this);
-	return update(Array.newInstance(type, number), size);
+	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
+	MemoryArea rtMem = rt.getMemoryArea();
+	Object o; 
+	if (rtMem == this) {
+	    o = Array.newInstance(type, number);
+	} else {
+	    o = new Object();
+	    o.memoryArea = this;
+	    rtMem.checkAccess(o);
+	    MemAreaStack mas = rt.memAreaStack.first(this);
+	    if (mas == null) {
+		newMemBlock(rt);
+		o = newArray(rt, type, number, rt);
+	    } else {
+		o = newArray(rt, type, number, mas);
+	    }
+	}
+	o.memoryArea = this;
+	return o;
     }
-    
-    /** */
 
-    public synchronized Object newArray(final Class type,
-					final int[] dimensions) 
+    /** */
+    
+    public Object newArray(final Class type,
+			   final int[] dimensions) 
 	throws IllegalAccessException, OutOfMemoryError
     {
-	long size = checkMem(type, dimensions);
-	RealtimeThread.currentRealtimeThread().getMemoryArea()
-	    .checkAccess(this);
-	return update(Array.newInstance(type,dimensions), size);
+	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
+	MemoryArea rtMem = rt.getMemoryArea();
+	Object o;
+	if (rtMem == this) {
+	    return Array.newInstance(type, dimensions);
+	} else {
+	    o = new Object();
+	    o.memoryArea = this;
+	    rtMem.checkAccess(o);
+	    MemAreaStack mas = rt.memAreaStack.first(this);
+	    if (mas == null) {
+		newMemBlock(rt);
+		o = newArray(rt, type, dimensions, rt);
+	    } else {
+		o = newArray(rt, type, dimensions, mas);
+	    }
+	}
+	o.memoryArea = this;
+	return o;
     }
 
     /** */
     
-    public synchronized Object newInstance(Class type)
+    public Object newInstance(Class type)
 	throws IllegalAccessException, InstantiationException,
-	       OutOfMemoryError {
+	OutOfMemoryError {
 	return newInstance(type, new Class[0], new Object[0]);
     }
     
     /** */
-
-    public synchronized Object newInstance(final Class type,
-					   final Class[] parameterTypes,
-					   final Object[] parameters) 
+    
+    public Object newInstance(final Class type,
+			      final Class[] parameterTypes,
+			      final Object[] parameters) 
 	throws IllegalAccessException, InstantiationException,
-	       OutOfMemoryError {
-	long size = checkMem(type, 1);
-	RealtimeThread.currentRealtimeThread().getMemoryArea().checkAccess(this);
+	OutOfMemoryError {
+	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
+	Object o = new Object();
+	MemoryArea rtMem = rt.getMemoryArea();
+	o.memoryArea = this;
+	rtMem.checkAccess(o);
 	try {
-	    return update(type.getConstructor(parameterTypes)
-			  .newInstance(parameters), size);
+	    Constructor c = type.getConstructor(parameterTypes);
+	    if (rtMem == this) {
+		o = c.newInstance(parameters);
+	    } else {
+		MemAreaStack mas = rt.memAreaStack.first(this);
+		if (mas == null) {
+		    newMemBlock(rt);
+		    o = newInstance(rt, c, parameters, rt);
+		} else {
+		    o = newInstance(rt, c, parameters, mas);
+		}
+	    }
 	} catch (NoSuchMethodException e) {
 	    throw new InstantiationException(e.getMessage());
 	} catch (InvocationTargetException e) {
 	    throw new InstantiationException(e.getMessage());
-	}	
+	}
+	o.memoryArea = this;
+	return o;
     }
     
     /** */
-
+    
     public void checkAccess(Object obj) {
 	if ((obj != null) && (obj.memoryArea != null) && 
 	    obj.memoryArea.scoped) {
-	    // Sun's libraries are broken - just annotate that this is the problem area...
 	    throw new IllegalAssignmentError();
-	    //	    java_lang_Brokenness++; 
 	}
     }
     

@@ -21,12 +21,6 @@ public abstract class ScopedMemory extends MemoryArea {
     
     /** */
 
-    public void enter(Runnable logic) {
-	enter(logic, true);
-    }
-    
-    /** */
-
     public long getMaximumSize() { 
 	return size;
     }
