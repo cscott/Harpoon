@@ -4,53 +4,50 @@
 package harpoon.Analysis.Transactions;
 
 import harpoon.ClassFile.HCodeElement;
-import harpoon.Util.Collections.AggregateSetFactory;
-import harpoon.Util.Collections.GenericMultiMap;
-import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Collections.SetFactory;
+import harpoon.Util.Collections.*;
 
-import java.util.Set;
+import java.util.*;
+
 /**
  * An <code>AnalysisCheckOracle</code> is used when one wants to
  * do some analysis and store the results of the check oracle.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AnalysisCheckOracle.java,v 1.1.2.2 2001-01-16 19:31:33 cananian Exp $
+ * @version $Id: AnalysisCheckOracle.java,v 1.1.2.3 2001-01-26 21:37:49 cananian Exp $
  */
 abstract class AnalysisCheckOracle extends CheckOracle {
-    final MultiMap readVMap, writeVMap, checkFMap, checkEMap;
+    final Map results = new HashMap();
     public Set createReadVersions(HCodeElement hce) {
-	return (Set) readVMap.getValues(hce);
+	return ((CheckSet) results.get(hce)).readVersions;
     }
     public Set createWriteVersions(HCodeElement hce) {
-	return (Set) writeVMap.getValues(hce);
+	return ((CheckSet) results.get(hce)).writeVersions;
     }
     public Set checkField(HCodeElement hce) {
-	return (Set) checkFMap.getValues(hce);
+	return ((CheckSet) results.get(hce)).fields;
     }
     public Set checkArrayElement(HCodeElement hce) {
-	return (Set) checkEMap.getValues(hce);
+	return ((CheckSet) results.get(hce)).elements;
     }
     
     /** Creates a <code>AnalysisCheckOracle</code>. */
-    AnalysisCheckOracle() {
-	/* Initialize backing data stores */
-	SetFactory sf = new AggregateSetFactory();
-	readVMap = new GenericMultiMap(sf);
-	writeVMap = new GenericMultiMap(sf);
-	checkFMap = new GenericMultiMap(sf);
-	checkEMap = new GenericMultiMap(sf);
-    }
+    AnalysisCheckOracle() { /* nothing */ }
 
-    static class CheckSet {
-	private static final SetFactory sf = new AggregateSetFactory();
+    private final SetFactory sf = new AggregateSetFactory();
 
+    class CheckSet {
 	final Set/*<Temp>*/ readVersions = sf.makeSet();
 	final Set/*<Temp>*/ writeVersions = sf.makeSet();
 	final Set/*<RefAndField>*/ fields = sf.makeSet();
 	final Set/*<RefAndIndexAndType>*/ elements = sf.makeSet();
 	
 	CheckSet() { /* new empty set */ }
+	CheckSet(CheckSet cs) { // new set w/ contents of given set.
+	    this.readVersions.addAll(cs.readVersions);
+	    this.writeVersions.addAll(cs.writeVersions);
+	    this.fields.addAll(cs.fields);
+	    this.elements.addAll(cs.elements);
+	}
 	CheckSet(CheckOracle co, HCodeElement hce) {
 	    this.readVersions.addAll(co.createReadVersions(hce));
 	    this.writeVersions.addAll(co.createWriteVersions(hce));
@@ -75,6 +72,7 @@ abstract class AnalysisCheckOracle extends CheckOracle {
 	    this.fields.clear();
 	    this.elements.clear();
 	}
+	public Object clone() { return new CheckSet(this); }
 	public String toString() {
 	    return "Rd: "+readVersions+" / Wr: "+writeVersions+" / "+
 		"Fld: "+fields+" / Ele: "+elements;

@@ -19,7 +19,7 @@ import java.util.Set;
  * on the results of a client <code>CheckOracle</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DominatingCheckOracle.java,v 1.1.2.1 2001-01-16 19:32:48 cananian Exp $
+ * @version $Id: DominatingCheckOracle.java,v 1.1.2.2 2001-01-26 21:37:49 cananian Exp $
  */
 class DominatingCheckOracle extends AnalysisCheckOracle {
     /** Creates a <code>DominatingCheckOracle</code>. */
@@ -39,10 +39,7 @@ class DominatingCheckOracle extends AnalysisCheckOracle {
 	checks.removeAll(cs);
 	checks.readVersions.removeAll(cs.writeVersions);
 	/* update our data struct with those left */
-	readVMap.addAll(hce, checks.readVersions);
-	writeVMap.addAll(hce, checks.writeVersions);
-	checkFMap.addAll(hce, checks.fields);
-	checkEMap.addAll(hce, checks.elements);
+	results.put(hce, checks.clone());
 	/* create new 'dominated checks' set */
 	checks.addAll(cs);
 	/* nothing passes MONITORENTER or MONITOREXIT */

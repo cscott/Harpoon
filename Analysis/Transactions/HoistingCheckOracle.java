@@ -31,7 +31,7 @@ import java.util.Set;
  * process is repeated until no checks can be moved higher.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HoistingCheckOracle.java,v 1.1.2.3 2001-01-16 18:42:11 cananian Exp $
+ * @version $Id: HoistingCheckOracle.java,v 1.1.2.4 2001-01-26 21:37:49 cananian Exp $
  */
 class HoistingCheckOracle extends AnalysisCheckOracle {
     /** Creates a <code>HoistingCheckOracle</code> for the given
@@ -67,6 +67,7 @@ class HoistingCheckOracle extends AnalysisCheckOracle {
 	canHoist = canHoist && !(dt.idom(hce) instanceof MONITORENTER);
 	
 	/** checks which we can't hoist we leave here. */
+	CheckSet nohoist = new CheckSet();
 	
 	/* fetch the set of temps defined in our idom */
 	Collection idomDef = (dt.idom(hce)==null) ? Collections.EMPTY_SET :
@@ -75,20 +76,20 @@ class HoistingCheckOracle extends AnalysisCheckOracle {
 	for (Iterator it=checks.readVersions.iterator(); it.hasNext(); ) {
 	    Temp t = (Temp) it.next(); // read version for t.
 	    if (!canHoist || idomDef.contains(t)) {
-		it.remove(); readVMap.add(hce, t);
+		it.remove(); nohoist.readVersions.add(t);
 	    }
 	}
 	for (Iterator it=checks.writeVersions.iterator(); it.hasNext(); ) {
 	    Temp t = (Temp) it.next(); // write version for t.
 	    if (!canHoist || idomDef.contains(t)) {
-		it.remove(); writeVMap.add(hce, t);
+		it.remove(); nohoist.writeVersions.add(t);
 	    }
 	}
 	/* field checks can't be hoisted above the objref def */
 	for (Iterator it=checks.fields.iterator(); it.hasNext(); ) {
 	    RefAndField raf = (RefAndField) it.next(); // field check.
 	    if (!canHoist || idomDef.contains(raf.objref)) {
-		it.remove(); checkFMap.add(hce, raf);
+		it.remove(); nohoist.fields.add(raf);
 	    }
 	}
 	/* element checks can't be hoisted above either the objref or
@@ -97,9 +98,11 @@ class HoistingCheckOracle extends AnalysisCheckOracle {
 	    RefAndIndexAndType rit=(RefAndIndexAndType) it.next(); // el check.
 	    if (!canHoist ||
 		idomDef.contains(rit.objref) || idomDef.contains(rit.index)) {
-		it.remove(); checkEMap.add(hce, rit);
+		it.remove(); nohoist.elements.add(rit);
 	    }
 	}
+	/* unhoisted checks stay here */
+	results.put(hce, nohoist);
 
 	/** give all of the rest of the checks to the idom */
 	return checks;
