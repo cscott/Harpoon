@@ -10,7 +10,7 @@ package harpoon.Tools.PatMat;
 %class Lexer
 %function nextToken
 %type java_cup.runtime.Symbol
-%state CLASS_SCOPE RULES BRACED STRING COMMENT1 COMMENT2 TYPES
+%state CLASS_SCOPE RULES BRACED PARENED STRING COMMENT1 COMMENT2 TYPES
 
 %{
 private void newline() { errorMsg.newline(yychar); }
@@ -39,7 +39,7 @@ Lexer(java.io.Reader r, ErrorMsg e) {
 private StringBuffer strText=new StringBuffer(); // Space to build up a string.
 private int strStart=0;	      // Starting location of the string.
 
-private int braceCount;
+private int prevState;
 %}
 
 %eofval{
@@ -53,7 +53,7 @@ private int braceCount;
 
 ALPHA=[A-Za-z]
 DIGIT=[0-9]
-ID={ALPHA}[A-Za-z0-9_\$]*
+ID=[A-Za-z_][A-Za-z0-9_\$]*
 HEXDIGIT=[0-9A-Fa-f]
 WS=[\ \t\012\b]
 NL=([\r]|[\r]?[\n])
@@ -75,26 +75,30 @@ NL=([\r]|[\r]?[\n])
 <YYINITIAL,CLASS_SCOPE>	{NL}	{ newline(); strText.append('\n'); }
 <YYINITIAL,CLASS_SCOPE>	.	{ strText.append(yytext()); }
 
-<RULES>		"{"		{ yybegin(BRACED);
-				  strText = new StringBuffer(yytext());
+<RULES>		"%{"		{ yybegin(BRACED);
+				  strText = new StringBuffer();
 				  strStart = yychar;
-				  braceCount = 0;
 				}
-<BRACED>	"{"		{ strText.append(yytext());
-				  braceCount++;
+<BRACED>	"}%"		{ yybegin(RULES);
+				  return tok(Sym.BRACED,
+					     strStart, yychar,
+					     strText.toString());
 				}
-<BRACED>	"}"		{ strText.append(yytext());
-				  if (braceCount-- == 0) {
-				    yybegin(RULES);
-				    return tok(Sym.BRACED,
-					       strStart, yychar,
-					       strText.toString());
-				  }
+<RULES>		"%("		{ yybegin(PARENED);
+				  strText = new StringBuffer();
+				  strStart = yychar;
 				}
-<BRACED>	[\"]		{ /* enter string context. */
+<PARENED>	")%"		{ yybegin(RULES);
+				  return tok(Sym.PARENED,
+					     strStart, yychar,
+					     strText.toString());
+				}
+<BRACED,PARENED> [\"]		{ /* enter string context. */
 				  strText.append(yytext());
+				  prevState = yy_lexical_state;
 				  yybegin(STRING);
 				}
+<BRACED,PARENED> {NL}		{ strText.append(yytext()); newline(); }
 <STRING>	\\[0-3][0-7][0-7] { /* octal escape in string */
 				  strText.append(yytext());
 				}
@@ -111,10 +115,9 @@ NL=([\r]|[\r]?[\n])
 				}
 <STRING>	[\"]		{ /* saw closing quote. */
 				  strText.append(yytext());
-				  yybegin(BRACED);
+				  yybegin(prevState);
 				}
-<BRACED>	{NL}		{ strText.append(yytext()); newline(); }
-<BRACED,STRING>	.		{ strText.append(yytext()); }
+<BRACED,PARENED,STRING>	.	{ strText.append(yytext()); }
 
 <RULES>		"//"		{ yybegin(COMMENT1); }
 <COMMENT1>	[^\n\r]+	{ /* eat up comments. */ }
@@ -146,25 +149,46 @@ NL=([\r]|[\r]?[\n])
 <RULES>		THROW		{ return tok(Sym.THROW); }
 <RULES>		UNOP		{ return tok(Sym.UNOP); }
 
-<RULES>		{ID}		{ return tok(Sym.ID, yytext()); }
+<RULES>		ADD		{ return tok(Sym.ADD); }
+<RULES>		AND		{ return tok(Sym.AND); }
+<RULES>		CMPEQ		{ return tok(Sym.CMPEQ); }
+<RULES>		CMPGE		{ return tok(Sym.CMPGE); }
+<RULES>		CMPGT		{ return tok(Sym.CMPGT); }
+<RULES>		CMPLE		{ return tok(Sym.CMPLE); }
+<RULES>		CMPLT		{ return tok(Sym.CMPLT); }
+<RULES>		DIV		{ return tok(Sym.DIV); }
+<RULES>		MUL		{ return tok(Sym.MUL); }
+<RULES>		OR		{ return tok(Sym.OR); }
+<RULES>		REM		{ return tok(Sym.REM); }
+<RULES>		SHL		{ return tok(Sym.SHL); }
+<RULES>		SHR		{ return tok(Sym.SHR); }
+<RULES>		USHR		{ return tok(Sym.USHR); }
+<RULES>		XOR		{ return tok(Sym.XOR); }
 
+<RULES>		_2B		{ return tok(Sym._2B); }
+<RULES>		_2C		{ return tok(Sym._2C); }
+<RULES>		_2D		{ return tok(Sym._2D); }
+<RULES>		_2F		{ return tok(Sym._2F); }
+<RULES>		_2I		{ return tok(Sym._2I); }
+<RULES>		_2L		{ return tok(Sym._2L); }
+<RULES>		_2S		{ return tok(Sym._2S); }
+<RULES>		NEG		{ return tok(Sym.NEG); }
+<RULES>		NOT		{ return tok(Sym.NOT); }
+
+<RULES>		{ID}		{ return tok(Sym.ID, yytext()); }
+<RULES>		{DIGIT}+	{ return tok(Sym.NUMBER,
+				             new Integer(yytext())); }
+
+<RULES>		"{"		{ return tok(Sym.LBRACE); }
+<RULES>		"}"		{ return tok(Sym.RBRACE); }
 <RULES>		"("		{ return tok(Sym.LPAREN); }
 <RULES>		")"		{ return tok(Sym.RPAREN); }
 <RULES>		"["		{ return tok(Sym.LBRACK); }
 <RULES>		"]"		{ return tok(Sym.RBRACK); }
+<RULES>		"<"		{ return tok(Sym.LANGLE); }
+<RULES>		">"		{ return tok(Sym.RANGLE); }
 <RULES>		","		{ return tok(Sym.COMMA); }
 <RULES>		"="		{ return tok(Sym.EQUALS); }
-
-<RULES>		"<"		{ yybegin(TYPES);
-				  return tok(Sym.LANGLE); }
-<TYPES>		[aA]		{ return tok(Sym.TYPE_A); }
-<TYPES>		[iI]		{ return tok(Sym.TYPE_I); }
-<TYPES>		[lL]		{ return tok(Sym.TYPE_L); }
-<TYPES>		[fF]		{ return tok(Sym.TYPE_F); }
-<TYPES>		[dD]		{ return tok(Sym.TYPE_D); }
-<TYPES>		[,]		{ /* eat commas */ }
-<TYPES>		">"		{ yybegin(RULES);
-				  return tok(Sym.RANGLE); }
 
 <RULES,TYPES>	{NL}            { newline(); }
 <RULES,TYPES>	{WS}		{/*eat whitespace*/}

@@ -27,7 +27,8 @@ parser code {:
 
 scan with {: return lexer.nextToken(); :};
 
-terminal String ID, GLOBAL_STATEMENTS, CLASS_STATEMENTS, BRACED;
+terminal String ID, GLOBAL_STATEMENTS, CLASS_STATEMENTS, BRACED, PARENED;
+terminal Integer NUMBER;
 // %keys
 terminal KEY_EXTRA, KEY_WEIGHT, KEY_PRED;
 // tree nodes
@@ -35,42 +36,103 @@ terminal BINOP, CALL, CJUMP, CONST, ESEQ, EXP, JUMP, LABEL;
 terminal MEM, MOVE, NAME, NATIVECALL, RETURN, SEQ, TEMP, THROW;
 terminal UNOP;
 // punctuation & brackets
-terminal LPAREN, RPAREN, LBRACK, RBRACK, LANGLE, RANGLE;
+terminal LPAREN, RPAREN, LBRACK, RBRACK, LBRACE, RBRACE, LANGLE, RANGLE;
 terminal COMMA, EQUALS;
-// types
-terminal TYPE_A, TYPE_I, TYPE_L, TYPE_F, TYPE_D;
+// binops
+terminal ADD, AND, CMPEQ, CMPGE, CMPGT, CMPLE, CMPLT, DIV, MUL, OR;
+terminal REM, SHL, SHR, USHR, XOR;
+// unops
+terminal _2B, _2C, _2D, _2F, _2I, _2L, _2S, NEG, NOT;
 
 non terminal program, ruleSeq, rule;
-non terminal exp, detailSeq, detail, idList, types;
+non terminal exp, stm, detailSeq, detail, idList, types;
 non terminal opt_idList, opt_types;
+non terminal binops, unops;
 
 start with program;
 
-program ::= GLOBAL_STATEMENTS CLASS_STATEMENTS ruleSeq
+program	::=	GLOBAL_STATEMENTS CLASS_STATEMENTS ruleSeq
 	;
 
-ruleSeq ::= /* empty */ | rule ruleSeq ;
-
-rule ::= exp detailSeq BRACED ;
-
-detailSeq ::= /* empty */ | detail detailSeq ;
-
-detail ::= KEY_EXTRA LPAREN opt_idList RPAREN
-	| KEY_PRED BRACED
-	| KEY_WEIGHT LPAREN ID COMMA /*NUMBER*/ RPAREN
+ruleSeq	::=	/* empty */
+	|	rule ruleSeq
 	;
 
-opt_idList ::= /* empty */ | idList ;
-
-idList ::= ID
-	|  idList COMMA ID
-	;
-exp	::= ID /* | NUMBER */
-	| MOVE LPAREN exp COMMA exp RPAREN
-	| MEM opt_types LPAREN exp RPAREN
-	| CONST opt_types LPAREN exp RPAREN
+rule	::=	exp EQUALS ID detailSeq BRACED
+	|	stm detailSeq BRACED
 	;
 
-opt_types ::= /* nothing */ | types ;
+detailSeq ::=	/* empty */
+	|	detail detailSeq
+	;
 
-types ::= RANGLE opt_idList LANGLE ;
+detail	::=	KEY_EXTRA LBRACE opt_idList RBRACE
+	|	KEY_PRED PARENED
+	|	KEY_WEIGHT LANGLE ID COMMA NUMBER RANGLE
+	;
+
+opt_idList ::=	/* empty */
+	|	idList
+	;
+
+idList	::=	ID
+	|	idList COMMA ID
+	;
+
+exp	::=	ID
+	|	NUMBER | binops | unops
+	|	BINOP opt_types LPAREN exp COMMA exp COMMA exp RPAREN
+	|	CONST opt_types LPAREN exp RPAREN
+	|	ESEQ LPAREN stm COMMA exp RPAREN
+	|	MEM opt_types LPAREN exp RPAREN
+	|	NAME LPAREN ID RPAREN
+	|	TEMP opt_types LPAREN ID RPAREN
+	|	UNOP opt_types LPAREN exp COMMA exp RPAREN
+	;
+
+stm	::=	CALL LPAREN exp COMMA exp COMMA exp COMMA ID RPAREN
+	|	CJUMP LPAREN exp COMMA ID COMMA ID RPAREN
+	|	EXP LPAREN exp RPAREN
+	|	JUMP LPAREN exp RPAREN
+	|	LABEL LPAREN ID RPAREN
+	|	MOVE LPAREN exp COMMA exp RPAREN
+	|	NATIVECALL LPAREN exp COMMA exp COMMA exp COMMA ID RPAREN
+	|	RETURN opt_types LPAREN exp RPAREN
+	|	SEQ LPAREN stm COMMA stm RPAREN
+	|	THROW LPAREN exp RPAREN
+	;
+
+opt_types ::=	/* nothing */
+	|	types
+	;
+
+types	::=	LANGLE opt_idList RANGLE
+	;
+
+binops	::=	ADD
+	|	AND
+	|	CMPEQ
+	|	CMPGE
+	|	CMPGT
+	|	CMPLE
+	|	CMPLT
+	|	DIV
+	|	MUL
+	|	OR
+	|	REM
+	|	SHL
+	|	SHR
+	|	USHR
+	|	XOR
+	;
+
+unops	::=	_2B
+	|	_2C
+	|	_2D
+	|	_2F
+	|	_2I
+	|	_2L
+	|	_2S
+	|	NEG
+	|	NOT
+	;
