@@ -33,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.10 2000-06-29 01:31:49 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.11 2000-07-11 19:19:19 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -156,6 +156,14 @@ public abstract class Code extends HCode {
      *  @param  pw      A PrintWriter to send the formatted output to.
      */
     public void print(java.io.PrintWriter pw) {
+	myPrint(pw, true);
+    }
+
+    public void printNoAssem(java.io.PrintWriter pw) {
+	myPrint(pw, false);
+    }
+
+    private void myPrint(java.io.PrintWriter pw, boolean assem) {
 	final boolean DEBUG = false;
 	final HashSet outputLabels = new HashSet();
 	final MultiMap labelsNeeded = new GenericMultiMap();
@@ -175,7 +183,9 @@ public abstract class Code extends HCode {
             } else {
 		try {
 		    BufferedReader reader = 
-			new BufferedReader(new StringReader(toAssem(instr)));
+			new BufferedReader
+			(new StringReader
+			 (assem?toAssem(instr):instr.toString()));
 		    String s = reader.readLine();
 		    while (s != null) {
 			str.append("\t"+ s);

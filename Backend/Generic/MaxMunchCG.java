@@ -8,6 +8,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Tree.TEMP;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Temp.TempFactory;
 import harpoon.Analysis.Maps.Derivation;
 
@@ -26,7 +27,7 @@ import java.util.HashMap;
  * their own extensions of <code>CodeGen</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.1.2.9 2000-02-28 20:50:36 cananian Exp $ */
+ * @version $Id: MaxMunchCG.java,v 1.1.2.10 2000-07-11 19:19:04 pnkfelix Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */
@@ -73,11 +74,17 @@ public abstract class MaxMunchCG extends CodeGen {
 	if (instrTemp==null) {
 	    instrTemp = frame.getTempBuilder().makeTemp(t, tf);
 	    tempmap.put(treeTemp, instrTemp);
+	    System.out.println("Constructed new iTemp:"+instrTemp+
+			       " for tTemp:"+treeTemp);
+	} else {
+	    System.out.println("Found old iTemp:"+instrTemp+
+			       " for tTemp:"+treeTemp);
 	}
 	Util.assert(instrTemp.tempFactory()==tf);
 	return instrTemp;
     }
     private Map tempmap = new HashMap();
+
 
     public Derivation getDerivation() {
 	final Map ti2td = this.ti2td; // keep own copy of this map.
@@ -87,7 +94,14 @@ public abstract class MaxMunchCG extends CodeGen {
 		TypeAndDerivation tad = 
 		    (TypeAndDerivation) ti2td.get( Default.pair(hce, t) );
 		if (tad==null) throw new TypeNotKnownException(hce, t);
-		return tad.dlist;
+
+		return Derivation.DList.rename(tad.dlist, new TempMap() {
+		    public Temp tempMap(Temp t1) {
+			Temp tr = (Temp) tempmap.get(t1);
+			Util.assert(tr != null);
+			return tr;
+		    }
+		});
 	    }
 	    
 	    public HClass typeMap(HCodeElement hce, Temp t) 
