@@ -17,7 +17,8 @@ import java.util.List;
  * compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Spec.java,v 1.1.2.8 1999-06-28 06:47:27 cananian Exp $
+ * @author  Felix S. Klock II <pnkfelix@mit.edu>
+ * @version $Id: Spec.java,v 1.1.2.9 1999-06-28 09:16:54 pnkfelix Exp $
  */
 public class Spec  {
 
@@ -45,7 +46,22 @@ public class Spec  {
 	return global_stms+"\n%%\n"+class_stms+"\n%%\n"+rules;
     }
 
+
     // *** inner classes ***
+
+    /** Visitor class for traversing a set of <code>Spec.Rule</code>s
+	and performing some action depending on the type of
+	<code>Spec.Rule</code> visited.  Subclasses should implement a
+	<code>visit</code> method for generic <code>Rule</code>s and
+	also override the <code>visit</code> method for subclasses of
+	<code>Rule</code> that the subclass cares about.
+	@see <U>Design Patterns</U> pgs. 331-344
+    */
+    public static abstract class RuleVisitor {
+	public abstract void visit(Rule r);
+	public void visit(RuleExp r) { visit((Rule)r); }
+	public void visit(RuleStm r) { visit((Rule)r); }
+    }
 
     /** Abstract immutable representation of an Instruction Pattern.
 	Contains a <code>Spec.DetailList</code> and a series of Java
@@ -81,6 +97,15 @@ public class Spec  {
 	public Rule(DetailList details, String action_str) {
 	    this.details = details; this.action_str = action_str;
 	}
+
+	/** Applies <code>v</code>'s <code>visit</code> method to
+	    <code>this</code>.  This is effectively a gludge to
+	    emulate <B>multiple dispatch</B>.  Must be reimplemented
+	    by all subclasses of <code>Spec.Rule</code>.
+	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
+	    @see <U>Design Patterns</U> pgs. 331-344
+	*/
+	public void accept(RuleVisitor v) { v.visit(this); }
 
 	public String toString() {
 	    String s = " %{" + action_str + "}%";
@@ -135,6 +160,7 @@ public class Spec  {
 	    super(details, action_str);
 	    this.exp = exp; this.result_id = result_id;
 	}
+	public void accept(RuleVisitor v) { v.visit(this); }
 	public String toString() {
 	    return exp + "=" + result_id +" " + super.toString();
 	}
@@ -170,16 +196,47 @@ public class Spec  {
 	    super(details, action_str);
 	    this.stm = stm;
 	}
+	public void accept(RuleVisitor v) { v.visit(this); }
 	public String toString() {
 	    return stm + " " + super.toString();
 	}
+    }
+
+    /** Visitor class for traversing a set of <code>Spec.Exp</code>s
+	and performing some action depending on the type of
+	<code>Spec.Exp</code> visited.  Subclasses should implement a
+	<code>visit</code> method for generic <code>Exp</code>s and
+	also override the <code>visit</code> method for subclasses of
+	<code>Exp</code> that the subclass cares about.
+	@see <U>Design Patterns</U> pgs. 331-344
+    */
+    public static abstract class ExpVisitor {
+	public abstract void visit(Exp e);
+	public void visit(ExpBinop e) { visit((Exp)e); }
+	public void visit(ExpConst e) { visit((Exp)e); }
+	public void visit(ExpId e) { visit((Exp)e); }
+	public void visit(ExpMem e) { visit((Exp)e); }
+	public void visit(ExpName e) { visit((Exp)e); }
+	public void visit(ExpTemp e) { visit((Exp)e); }
+	public void visit(ExpUnop e) { visit((Exp)e); }
     }
 
     /** Abstract immutable representation of an Expression in an
 	Instruction Pattern. 
 	@see IR.Tree.Exp
     */
-    public static abstract class Exp { }
+    public static abstract class Exp { 
+	
+	/** Applies <code>v</code>'s <code>visit</code> method to
+	    <code>this</code>.  This is effectively a gludge to
+	    emulate <B>multiple dispatch</B>.  Must be reimplemented
+	    by all subclasses of <code>Spec.Exp</code>.
+	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
+	    @see <U>Design Patterns</U> pgs. 331-344
+	*/
+	public void accept(ExpVisitor v) { v.visit(this); }
+	
+    }
     
     /** Extension of <code>Spec.Exp</code> that represents an
 	Identifier in the code.  Essentially a wrapper around a
@@ -195,6 +252,7 @@ public class Spec  {
 	              represents. 
 	*/
 	public ExpId(String id) { this.id = id; }
+	public void accept(ExpVisitor v) { v.visit(this); }
 	public String toString() { return id; }
     }
 
@@ -234,6 +292,7 @@ public class Spec  {
 	    this.types = types; this.opcode = opcode;
 	    this.left = left;   this.right = right;
 	}
+	public void accept(ExpVisitor v) { v.visit(this); }
 	public String toString() {
 	    return "BINOP"+types+"("+opcode.toBop().toUpperCase()+","
 		+left+","+right+")";
@@ -259,6 +318,7 @@ public class Spec  {
 	public ExpConst(TypeSet types, Leaf value) {
 	    this.types = types; this.value = value;
 	}
+	public void accept(ExpVisitor v) { v.visit(this); }
 	public String toString() { return "CONST"+types+"("+value+")"; }
     }
 
@@ -284,6 +344,7 @@ public class Spec  {
 	public ExpMem(TypeSet types, Exp addr) {
 	    this.types = types; this.addr = addr;
 	}
+	public void accept(ExpVisitor v) { v.visit(this); }
 	public String toString() { return "MEM"+types+"("+addr+")"; }
     }
 
@@ -322,6 +383,7 @@ public class Spec  {
 	public ExpTemp(TypeSet types, String name) {
 	    this.types = types; this.name = name;
 	}
+	public void accept(ExpVisitor v) { v.visit(this); }
 	public String toString() { return "TEMP"+types+"("+name+")"; }
     }
 
@@ -344,16 +406,49 @@ public class Spec  {
 	public ExpUnop(TypeSet types, Leaf opcode, Exp exp) {
 	    this.types = types; this.opcode = opcode; this.exp = exp;
 	}
+	public void accept(ExpVisitor v) { v.visit(this); }
 	public String toString() {
 	    return "UNOP"+types+"("+opcode.toUop().toUpperCase()+","+exp+")";
 	}
+    }
+
+    /** Visitor class for traversing a set of <code>Spec.Stm</code>s
+	and performing some action depending on the type of
+	<code>Spec.Stm</code> visited.  Subclasses should implement a
+	<code>visit</code> method for generic <code>Stm</code>s and
+	also override the <code>visit</code> method for subclasses of
+	<code>Stm</code> that the subclass cares about.
+	@see <U>Design Patterns</U> pgs. 331-344
+    */
+    public static abstract class StmVisitor {
+	public abstract void visit(Stm s);
+	public void visit(StmCall s) { visit((Stm)s); }
+	public void visit(StmCjump s) { visit((Stm)s); }
+	public void visit(StmExp s) { visit((Stm)s); }
+	public void visit(StmJump s) { visit((Stm)s); }
+	public void visit(StmLabel s) { visit((Stm)s); }
+	public void visit(StmMove s) { visit((Stm)s); }
+	public void visit(StmNativeCall s) { visit((Stm)s); }
+	public void visit(StmReturn s) { visit((Stm)s); }
+	public void visit(StmSeq s) { visit((Stm)s); }
+	public void visit(StmThrow s) { visit((Stm)s); }
     }
 
     /** Abstract immutable representation of a Statement in an
 	Instruction Pattern.
 	@see IR.Tree.Stm
     */
-    public static abstract class Stm { }
+    public static abstract class Stm { 
+
+	/** Applies <code>v</code>'s <code>visit</code> method to
+	    <code>this</code>.  This is effectively a gludge to
+	    emulate <B>multiple dispatch</B>.  Must be reimplemented
+	    by all subclasses of <code>Spec.Stm</code>.
+	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
+	    @see <U>Design Patterns</U> pgs. 331-344
+	*/
+	public void accept(StmVisitor v) { v.visit(this); }
+    }
 
     /** Extension of <code>Spec.Stm</code> that represents a call to a
 	procedure. 
@@ -378,6 +473,7 @@ public class Spec  {
 	    this.retval = retval; this.retex = retex; this.func = func;
 	    this.arglist = arglist;
 	}
+	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() {
 	    return "CALL("+retval+","+retex+","+func+","+arglist+")";
 	}
@@ -403,6 +499,7 @@ public class Spec  {
 	public StmCjump(Exp test, String t_label, String f_label) {
 	    this.test = test; this.t_label = t_label; this.f_label = f_label;
 	}
+	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() {
 	    return "CJUMP("+test+","+t_label+","+f_label+")";
 	}
@@ -420,6 +517,7 @@ public class Spec  {
 	    @param exp Expression to be evaluated.
 	*/
 	public StmExp(Exp exp) { this.exp = exp; }
+	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "EXP("+exp+")"; }
     }
     
@@ -434,6 +532,7 @@ public class Spec  {
 	    @param exp Jump target.
 	*/
 	public StmJump(Exp exp) { this.exp = exp; }
+	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "JUMP("+exp+")"; }
     }
     /** Extension of <code>Spec.Stm</code> representing a label which
@@ -447,6 +546,7 @@ public class Spec  {
 	    @param name Label.
 	*/
 	public StmLabel(String name) { this.name = name; }
+	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "LABEL("+name+")"; }
     }
     /** Extension of <code>Spec.Stm</code> representing an expression
@@ -463,6 +563,7 @@ public class Spec  {
 	    @param src Source expression.
 	*/
 	public StmMove(Exp dst, Exp src) { this.dst = dst; this.src = src; }
+	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "MOVE("+dst+","+src+")"; }
     }
     /** Extension of <code>Spec.Stm</code> representing an expression
@@ -489,6 +590,7 @@ public class Spec  {
 	    this.retval = retval; this.retex = retex; this.func = func;
 	    this.arglist = arglist;
 	}
+	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() {
 	    return "NATIVECALL("+retval+","+retex+","+func+","+arglist+")";
 	}
@@ -510,6 +612,7 @@ public class Spec  {
 	public StmReturn(TypeSet types, Exp retval) {
 	    this.types = types; this.retval = retval;
 	}
+	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "RETURN"+types+"("+retval+")"; }
     }
     /** Extension of <code>Spec.Stm</code> representing a sequence of
@@ -526,6 +629,7 @@ public class Spec  {
 	    @param s2 Second statement
 	*/
 	public StmSeq(Stm s1, Stm s2) { this.s1 = s1; this.s2 = s2; }
+	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "SEQ("+s1+","+s2+")"; }
     }
 
@@ -540,6 +644,7 @@ public class Spec  {
 	    @param exp The exceptional value expression.
 	*/
 	public StmThrow(Exp exp) { this.exp = exp; }
+	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() { return "THROW("+exp+")"; }
     }
 
@@ -591,11 +696,37 @@ public class Spec  {
 	public String toString() { return number.toString(); }
     }
 
+
+    /** Visitor class for traversing a set of <code>Spec.Detail</code>s
+	and performing some action depending on the type of
+	<code>Spec.Detail</code> visited.  Subclasses should implement a
+	<code>visit</code> method for generic <code>Detail</code>s and
+	also override the <code>visit</code> method for subclasses of
+	<code>Detail</code> that the subclass cares about.
+	@see <U>Design Patterns</U> pgs. 331-344
+    */
+    public static abstract class DetailVisitor {
+	public abstract void visit(Detail d);
+	public void visit(DetailExtra d) { visit((Detail)d); }
+	public void visit(DetailPredicate d) { visit((Detail)d); }
+	public void visit(DetailWeight d) { visit((Detail)d); }
+    }
+
     /** A detail is an abstract representation for a piece of data
 	about the Instruction Pattern or <code>Rule</code>.  Details
 	include predicates, speed-costs, size-costs...
     */
-    public static abstract class Detail { }
+    public static abstract class Detail { 
+
+	/** Applies <code>v</code>'s <code>visit</code> method to
+	    <code>this</code>.  This is effectively a gludge to
+	    emulate <B>multiple dispatch</B>.  Must be reimplemented
+	    by all subclasses of <code>Spec.Detail</code>.
+	    <BR> <B>effects:</B> Calls <code>v.visit(this)</code>. 
+	    @see <U>Design Patterns</U> pgs. 331-344
+	*/
+	public void accept(DetailVisitor v) { v.visit(this); }
+    }
 
     /** Extension of <code>Spec.Detail</code> that requests an extra
      *  temporary register for the use of the action clause.  For example,
@@ -610,6 +741,7 @@ public class Spec  {
 	public DetailExtra(IdList extras) {
 	    this.extras = extras;
 	}
+	public void accept(DetailVisitor v) { v.visit(this); }
 	public String toString() {
 	    return "%extra{"+((extras==null)?"":extras.toString())+"}";
 	}
@@ -631,6 +763,7 @@ public class Spec  {
 	public DetailPredicate(String predicate_string) {
 	    this.predicate_string = predicate_string;
 	}
+	public void accept(DetailVisitor v) { v.visit(this); }
 	public String toString() { return "%pred %("+predicate_string+")%"; }
     }
 
@@ -652,6 +785,7 @@ public class Spec  {
 	public DetailWeight(String name, double value) {
 	    this.name = name; this.value = value;
 	}
+	public void accept(DetailVisitor v) { v.visit(this); }
 	public String toString() { return "%weight<"+name+","+value+">"; }
     }
 

@@ -12,11 +12,13 @@ import java.io.IOException;
 /* Main entry point for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Main.java,v 1.1.2.4 1999-06-25 11:17:30 pnkfelix Exp $
+ * @version $Id: Main.java,v 1.1.2.5 1999-06-28 09:16:54 pnkfelix Exp $
  */
 public class Main {
     private static boolean DEBUG_parser = false;
-    private static boolean DEBUG_production = true;
+    private static boolean DEBUG_production = false;
+    private static boolean DEBUG_maxMunch = true;
+
 
     public static void main(String args[]) throws Exception {
 	Reader r = new BufferedReader(new FileReader(args[0]));
@@ -30,6 +32,10 @@ public class Main {
 	    PrintWriter pw = new PrintWriter(System.out);
 	    TestCGG t = new TestCGG(s);
 	    t.outputJavaFile(pw);
+	} else if (DEBUG_maxMunch) {
+	    PrintWriter pw = new PrintWriter(System.out);
+	    MaximalMunchCGG t = new MaximalMunchCGG(s, "TestMaxMunchClass");
+	    t.outputJavaFile(pw); 
 	}
     }
 
