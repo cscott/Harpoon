@@ -13,7 +13,7 @@ public class InGen extends Instr {
   HClass  operandTypes[];
 
   // doubly-linked list.
-  public InGen prev, next;
+  public Instr prev, next;
 
   /** Full constructor. */
   public InGen(String sourcefile, int linenumber, HClass resultType,
@@ -21,10 +21,8 @@ public class InGen extends Instr {
     super(sourcefile, linenumber);
     this.resultType = resultType;
     this.opcode = opcode;
-    this.operands = operands;
-    this.operandTypes = operandTypes;
-    if (this.operands==null) this.operands=new Operand[0];
-    if (this.operandTypes==null) this.operandTypes=new HClass[0];
+    this.operands = (Operand[]) Util.copy(operands);
+    this.operandTypes = (HClass[]) Util.copy(operandTypes);
   }
   /** Constructor for no-operand instructions that don't push anything
    *  onto the Stack. */
