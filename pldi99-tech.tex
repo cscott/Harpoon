@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi99-tech.tex,v 1.1 1998-10-07 04:50:38 cananian Exp $
+% $Id: pldi99-tech.tex,v 1.2 1998-10-07 22:21:17 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Technical Content} % RENAME ME!
 % Technical Contents (definitions, algorithms, etc)
@@ -12,7 +12,7 @@
 
 \subsection{Definition of SSI Form}
 SSI form is an extension of the SSA form introduced in \cite{cytron89:ssa}.
-Building SSA form involves adding pseudo-assignments for a variable $V$:
+Building SSI form involves adding pseudo-assignments for a variable $V$:
 \begin{enumerate}
 \item[$(\phi)$] at a control-flow merge when disjoint paths from a
 conditional branch come together and at least one of the paths
@@ -26,8 +26,8 @@ To minimize the number of \sigfunction{s}, there should be a
 \sigfunction{} for variable $a$ at node $z$ of the flowgraph exactly
 when:
 \begin{enumerate}
-\item block $x$ contains a use of $a$,
-\item block $y$ contains a use of $a$,
+\item node $x$ contains a use of $a$,
+\item node $y$ contains a use of $a$,
 \item there is a nonempty path $P_{zx}$ of edges from $z$ to $x$,
 \item there is a nonempty path $P_{zy}$ of edges from $z$ to $y$, and
 \item paths $P_{zx}$ and $P_{zy}$ do not have any node in common
@@ -50,7 +50,7 @@ definitions and \phifunction{s} are variable uses, the set of
 equations defined by the respective criteria must be iterated together 
 in order to find the necessary function sets.  The total number of
 $\phi$- and \sigfunction{s} remains linear, however: we can only place 
-a single $\phi$- and/or \sigfunction{s} per variable at any given
+a single $\phi$- and/or \sigfunction{} per variable at any given
 flowgraph node, so the total number of added functions is limited to 
 $2 \cdot N \cdot V$.
 
