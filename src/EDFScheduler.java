@@ -23,8 +23,10 @@ public class EDFScheduler extends Scheduler {
     private long currentThreadID; /* What thread was running */
     private long lastTime; /* When I last chose to start it */
 
-    private static final boolean WALLCLOCK_WORK = false; 
-    /* Use the wall clock to estimate work. */
+    private static final boolean WALLCLOCK_WORK = false; /* Use the wall clock to estimate work. */
+    private static final boolean COUNT_MISSED_DEADLINES = true; 
+
+    private long deadlinesMissed = 0;
 
     protected EDFScheduler() {
 	super();
@@ -93,6 +95,13 @@ public class EDFScheduler extends Scheduler {
 		// Period past, update startPeriod to start of current period.
 		// Reset work done to zero.
 		startPeriod[threadID] = currentTime - ((currentTime - startPeriod[threadID])%p);
+
+		if (COUNT_MISSED_DEADLINES && (work[threadID]<cost[threadID])) {
+		    deadlinesMissed++;
+		    NoHeapRealtimeThread.print("Missed deadline #");
+		    NoHeapRealtimeThread.print(deadlinesMissed);
+		    NoHeapRealtimeThread.print("\n");
+		}
  		work[threadID] = 0;
  	    }
  	}
@@ -125,7 +134,7 @@ public class EDFScheduler extends Scheduler {
 	    minPeriod *= 1000;
 	}
 	
-	long clock = WALLCLOCK_WORK?currentTime:(long)clock();
+	long clock = WALLCLOCK_WORK?currentTime:(long)(clock()/1000);
 
 	if (currentThreadID != 0) {
 	    int threadID = (int)(currentThreadID+OFFSET);

@@ -24,6 +24,9 @@ public class RMAScheduler extends Scheduler {
     private long lastTime; /* When I last chose to start it */
 
     private static final boolean WALLCLOCK_WORK = false; /* Use the wall clock to estimate work. */
+    private static final boolean COUNT_MISSED_DEADLINES = true;
+
+    private long deadlinesMissed = 0;
 
     protected RMAScheduler() {
 	super();
@@ -92,6 +95,13 @@ public class RMAScheduler extends Scheduler {
 		// Period past, update startPeriod to start of current period.
 		// Reset work done to zero.
 		startPeriod[threadID] = currentTime - ((currentTime - startPeriod[threadID])%p);
+
+		if (COUNT_MISSED_DEADLINES && (work[threadID]<cost[threadID])) {
+		    deadlinesMissed++;
+		    NoHeapRealtimeThread.print("Missed deadline #");
+		    NoHeapRealtimeThread.print(deadlinesMissed);
+		    NoHeapRealtimeThread.print("\n");
+		}
  		work[threadID] = 0;
  	    }
  	}
@@ -123,7 +133,7 @@ public class RMAScheduler extends Scheduler {
 		lastTime = startPeriod[threadID];
 	    }
 	    
-	    long clock = WALLCLOCK_WORK?currentTime:(long)clock();
+	    long clock = WALLCLOCK_WORK?currentTime:(long)(clock()/1000);
 	    work[threadID]+= clock - lastTime; // I've done some work...
 	    lastTime = clock;
 
@@ -138,7 +148,7 @@ public class RMAScheduler extends Scheduler {
 		return currentThreadID=chooseThread2(minPeriod);
 	    }
 	} else { // Choose the first to run
-	    lastTime = WALLCLOCK_WORK?currentTime:(long)clock();
+	    lastTime = WALLCLOCK_WORK?currentTime:(long)(clock()/1000);
 	    return currentThreadID=chooseThread2(minPeriod);
 	}
     }
