@@ -43,6 +43,11 @@ void * (*) argtypes
 { void * __r = (funcref) args;\
   if (__r) { exv = __r; goto handler; }\
 }
+/* no-handler case is same as handler case */
+#define CALL_NH(rettype, retval, funcref, args, exv, handler)\
+CALL(rettype, retval, funcref, args, exv, handler)
+#define CALLV_NH(funcref, args, exv, handler)\
+CALLV(funcref, args, exv, handler)
 
 /* <foo> and exception pairs */
 typedef struct {
@@ -104,13 +109,19 @@ void (*) argtypes
 #define RESTORE_HANDLER\
   memcpy(fts->handler, _jb_, sizeof(_jb_));\
 }
+/* no-handler versions of calls */
+#define CALL_NH(rettype, retval, funcref, args, exv, handler)\
+retval = (funcref) args;
+#define CALLV_NH(funcref, args, exv, handler)\
+(funcref) args
+
 #define CALL(rettype, retval, funcref, args, exv, handler)\
 SETUP_HANDLER(exv, handler)\
-retval = (funcref) args;\
+CALL_NH(rettype, retval, funcref, args, exv, handler);\
 RESTORE_HANDLER
 #define CALLV(funcref, args, exv, handler)\
 SETUP_HANDLER(exv, handler)\
-(funcref) args;\
+CALLV_NH(funcref, args, exv, handler);\
 RESTORE_HANDLER
 
 #endif /* USE_GLOBAL_SETJMP ----------------------------------------- */
