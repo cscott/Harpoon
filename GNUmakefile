@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.10 1998-12-01 12:26:51 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.11 1998-12-09 02:48:17 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -58,6 +58,7 @@ jikes:
 	@${JIKES} ${JFLAGS} ${ALLSOURCE}
 	@echo done.
 	@$(MAKE) --no-print-directory properties
+	@touch java
 
 properties:
 	@echo -n Updating properties... ""
@@ -85,8 +86,9 @@ VERSIONS: $(TARSOURCE) # collect all the RCS version ID tags.
 	@grep -Fh ' $$I''d: ' $(TARSOURCE) > VERSIONS
 	@echo done.
 
-ChangeLog: $(TARSOURCE)
-	rcs2log $(TARSOURCE) > ChangeLog
+ChangeLog: $(TARSOURCE) # not strictly accurate anymore.
+	-$(RM) ChangeLog
+	rcs2log > ChangeLog # used to include TARSOURCE on cmdline
 
 cvs-add: needs-cvs
 	-for dir in $(filter-out Test,$(ALLPKGS)); do \
