@@ -1,4 +1,4 @@
-// SparcMain.java, created by andyb
+// SparcMain.java, created Tue Nov 23  4:35:08 1999 by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Main;
@@ -65,7 +65,7 @@ import java.io.PrintWriter;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparcMain.java,v 1.1.2.7 2000-01-17 12:29:52 cananian Exp $
+ * @version $Id: SparcMain.java,v 1.1.2.8 2000-01-17 23:41:31 cananian Exp $
  */
 public class SparcMain extends harpoon.IR.Registration {
  

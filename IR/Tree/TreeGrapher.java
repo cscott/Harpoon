@@ -1,3 +1,6 @@
+// TreeGrapher.java, created Mon Dec 20  3:54:16 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeEdge; 
@@ -21,7 +24,7 @@ import java.util.Stack;
  * control-flow graph information with elements of an canonical tree. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeGrapher.java,v 1.1.2.4 2000-01-14 02:42:45 cananian Exp $
+ * @version $Id: TreeGrapher.java,v 1.1.2.5 2000-01-17 23:41:30 cananian Exp $
  */
 class TreeGrapher extends CFGrapher { 
     private Map predecessors = new HashMap(); 

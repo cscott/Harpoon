@@ -1,4 +1,4 @@
-// TempBuilder.java, created by andyb
+// TempBuilder.java, created Tue Nov  2  2:07:04 1999 by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details
 package harpoon.Backend.Sparc;
@@ -19,7 +19,7 @@ import java.util.HashMap;
  * two words of storage or use floating point registers.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: TempBuilder.java,v 1.1.2.3 1999-11-04 01:27:02 andyb Exp $
+ * @version $Id: TempBuilder.java,v 1.1.2.4 2000-01-17 23:41:28 cananian Exp $
  */
 public class TempBuilder extends harpoon.Backend.Generic.TempBuilder {
     private Set twoWordTemps; 

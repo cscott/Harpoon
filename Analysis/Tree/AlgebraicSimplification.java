@@ -1,3 +1,6 @@
+// AlgebraicSimplification.java, created Sat Dec 18 17:42:19 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Tree; 
 
 import harpoon.IR.Tree.BINOP; 
@@ -30,7 +33,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.6 2000-01-16 01:19:19 duncan Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.7 2000-01-17 23:41:26 cananian Exp $
  */
 public abstract class AlgebraicSimplification { 
     // Define new operator constants that can be masked together. 

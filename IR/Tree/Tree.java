@@ -1,4 +1,4 @@
-
+// Tree.java, created Fri Feb  5  6:48:54 1999 by cananian
 // Tree.java, created Fri Feb  5 05:53:33 1999 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
@@ -28,7 +28,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.24 2000-01-11 18:34:15 pnkfelix Exp $
+ * @version $Id: Tree.java,v 1.1.2.25 2000-01-17 23:41:30 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 

@@ -1,4 +1,4 @@
-// RegFileInfo.java, created by andyb
+// RegFileInfo.java, created Tue Nov  2  2:07:04 1999 by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Sparc;
@@ -34,7 +34,7 @@ import java.util.Set;
  * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.6 1999-12-01 05:19:24 andyb Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.7 2000-01-17 23:41:28 cananian Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 

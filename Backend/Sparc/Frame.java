@@ -1,4 +1,4 @@
-// Frame.java, created by andyb
+// Frame.java, created Tue Nov  2  2:07:04 1999 by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Sparc;
@@ -13,7 +13,7 @@ import harpoon.ClassFile.Linker;
  * for the Sparc Backend.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.4 2000-01-13 23:47:41 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.5 2000-01-17 23:41:28 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame
 {

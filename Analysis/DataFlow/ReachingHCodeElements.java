@@ -1,3 +1,6 @@
+// ReachingHCodeElements.java, created Fri Dec  3  1:47:33 1999 by duncan
+// Copyright (C) 1998 Felix S. Klock II <pnkfelix@mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock; 
@@ -21,7 +24,7 @@ import java.util.Set;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: ReachingHCodeElements.java,v 1.1.2.3 1999-12-20 09:25:33 duncan Exp $ 
+ * @version $Id: ReachingHCodeElements.java,v 1.1.2.4 2000-01-17 23:41:25 cananian Exp $ 
  */
 public class ReachingHCodeElements extends ReachingDefs { 
     private Map hceToBB;

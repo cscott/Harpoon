@@ -1,3 +1,6 @@
+// CFGEdge.java, created Tue Jan  4 22:52:37 2000 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Properties;
 
 import harpoon.ClassFile.HCodeElement;
@@ -7,7 +10,7 @@ import harpoon.ClassFile.HCodeElement;
  * in a graph structure.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: CFGEdge.java,v 1.1.2.1 2000-01-05 03:52:37 duncan Exp $
+ * @version $Id: CFGEdge.java,v 1.1.2.2 2000-01-17 23:41:29 cananian Exp $
  * @see CFGraphable
  */
 public abstract class CFGEdge implements harpoon.ClassFile.HCodeEdge {

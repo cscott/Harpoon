@@ -1,4 +1,4 @@
-// InstrBuilder.java, created by andyb
+// InstrBuilder.java, created Tue Nov  2  2:07:04 1999 by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Sparc;
@@ -17,7 +17,7 @@ import java.util.List;
  * <code>Generic.InstrBuilder</code> - for the Sparc architecture.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrBuilder.java,v 1.1.2.6 1999-12-01 05:38:27 andyb Exp $
+ * @version $Id: InstrBuilder.java,v 1.1.2.7 2000-01-17 23:41:28 cananian Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
     private final RegFileInfo regFileInfo;

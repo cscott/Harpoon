@@ -1,4 +1,4 @@
-// Code.java, created by andyb
+// Code.java, created Tue Nov  2  2:07:03 1999 by andyb
 // Copyright (C) 1999 Andrew Berkheimer <andyb@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Sparc;
@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Code</code> is a code-view for SPARC assembly.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.6 1999-11-29 09:31:52 andyb Exp $
+ * @version $Id: Code.java,v 1.1.2.7 2000-01-17 23:41:28 cananian Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "sparc";

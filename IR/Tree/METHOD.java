@@ -1,3 +1,6 @@
+// METHOD.java, created Thu Aug  5  3:54:47 1999 by duncan
+// Copyright (C) 1998 Duncan Bryce <duncan@lcs.mit.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
 import harpoon.ClassFile.HCodeElement;
@@ -17,7 +20,7 @@ import java.util.Set;
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.1.2.9 2000-01-09 02:12:05 duncan Exp $
+ * @version $Id: METHOD.java,v 1.1.2.10 2000-01-17 23:41:30 cananian Exp $
  */
 public class METHOD extends Stm {
     /** The temporary variables used for method formals. */

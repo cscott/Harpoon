@@ -1,4 +1,4 @@
-
+// ExpList.java, created Thu Jan 14  0:54:59 1999 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 
@@ -19,7 +19,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ExpList.java,v 1.1.2.14 2000-01-16 01:17:36 duncan Exp $
+ * @version $Id: ExpList.java,v 1.1.2.15 2000-01-17 23:41:30 cananian Exp $
  */
 public final class ExpList {
     /** The expression at this list entry. */

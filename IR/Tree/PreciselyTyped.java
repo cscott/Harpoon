@@ -1,3 +1,6 @@
+// PreciselyTyped.java, created Wed Aug 11 16:03:47 1999 by duncan
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
 /**
@@ -10,7 +13,7 @@ package harpoon.IR.Tree;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Duncan Bryce     <duncan@lcs.mit.edu>
- * @version $Id: PreciselyTyped.java,v 1.1.2.3 1999-09-09 15:02:28 cananian Exp $
+ * @version $Id: PreciselyTyped.java,v 1.1.2.4 2000-01-17 23:41:30 cananian Exp $
  */
 public interface PreciselyTyped extends Typed  {
     /** Returns <code>true</code> if this expression is a small type,
