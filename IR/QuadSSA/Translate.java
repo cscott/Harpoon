@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.27 1998-09-03 00:02:17 cananian Exp $
+ * @version $Id: Translate.java,v 1.28 1998-09-03 00:29:28 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -59,6 +59,7 @@ class Translate  { // not public.
 	    static final int TRY = 0;
 	    static final int CATCH = 1;
 	    static final int MONITOR = 2;
+	    static final int JSR = 3;
 	/** Constructor */
 	    BlockContext(Quad eb, Temp et, Vector c, int ty) {
 		exitBlock = eb; exitTemp = et; continuation = c; type = ty;
@@ -151,6 +152,15 @@ class Translate  { // not public.
 	    BlockContext ns[] = (BlockContext[]) shrink(this.nest);
 	    return new State(stack, lv, tryBlock, monitorDepth-1, ns);
 	}
+	/** Make new state, as when entering a JSR/RET block. */
+	State enterJSR() {
+	    BlockContext ns[] = (BlockContext[]) grow(this.nest);
+	    ns[0] = new BlockContext(BlockContext.JSR);
+	    return new State(stack, lv, tryBlock, monitorDepth+1, ns);
+	}
+	/** Make new state, as when exiting a JSR/RET block. */
+	State exitJSR() { return exitMonitor(); }
+
 	/** Initialize state with temps corresponding to parameters. */
 	State(Temp[] locals) {
 	    this(new Temp[0], locals, new ExceptionEntry[0], 0, 
@@ -286,12 +296,29 @@ class Translate  { // not public.
 	    // convenience abbreviations of TransState fields.
 	    State s = ts.initialState;
 
-	    // Are we entering a new TRY or MONITOR block?
+	    // Are we entering a new TRY, MONITOR or JSR/RET block?
 	    if ((countTry(ts.in, allTries) > s.tryBlock.length) ||
-		(ts.in.getOpcode() == Op.MONITORENTER)) {
+		(ts.in.getOpcode() == Op.MONITORENTER) ||
+		(ts.in.getOpcode() == Op.JSR) ||
+		(ts.in.getOpcode() == Op.JSR_W)) {
 		boolean isMonitor = (ts.in.getOpcode() == Op.MONITORENTER);
+		boolean isJSR = (ts.in.getOpcode() == Op.JSR ||
+				 ts.in.getOpcode() == Op.JSR_W);
 		Quad q; State ns;
-		if (!isMonitor) { // TRY
+		if (isJSR) { // JSR/RET
+		    q = null;
+		    ns = s.enterJSR();
+		    trans(ns, allTries, ts.in.next()[0], 
+			  ts.header, ts.which_succ);
+		} else if (isMonitor) { // MONITOR
+		    // Make header nodes for block.
+		    Quad monitorBlock = new HEADER();
+		    // Recursively generate monitor quads.
+		    ns = s.enterMonitor().pop();
+		    trans(ns, allTries, ts.in, monitorBlock, 0);
+		    // Make and link MONITOR
+		    q = new MONITOR(ts.in, s.stack[0], monitorBlock);
+		} else { // TRY
 		    // determine which try block we're entering
 		    ExceptionEntry newTry = whichTry(ts.in, s, allTries);
 		    Util.assert(newTry != null);
@@ -307,22 +334,17 @@ class Translate  { // not public.
 		    // make quad.
 		    q = new TRY(ts.in, tryBlock, catchBlock, 
 				newTry.caughtException(), ns.stack[0]);
-		} else { // MONITOR
-		    // Make header nodes for block.
-		    Quad monitorBlock = new HEADER();
-		    // Recursively generate monitor quads.
-		    ns = s.enterMonitor().pop();
-		    trans(ns, allTries, ts.in, monitorBlock, 0);
-		    // Make and link MONITOR
-		    q = new MONITOR(ts.in, s.stack[0], monitorBlock);
 		}
-		// Link new TRY/MONITOR quad.
-		Quad.addEdge(ts.header, ts.which_succ, q, 0);
-
-		// make PHI at exit of TRY/MONITOR
+		// make PHI at exit of TRY/MONITOR/JSR
 		ns.nest[0].exitBlock = 
 		    new PHI(ts.in, new Temp[] { ns.nest[0].exitTemp },
 		            ns.nest[0].continuation.size());
+		// Link new TRY/MONITOR/JSR quad, if necessary.
+		if (q==null)
+		    q = ns.nest[0].exitBlock;
+		else
+		    Quad.addEdge(ts.header, ts.which_succ, q, 0);
+		
 		// make post-block quads.
 		int i;
 		for (i=0; i<ns.nest[0].continuation.size(); i++) {
@@ -350,35 +372,35 @@ class Translate  { // not public.
 		    Quad.addEdge(q, 0, q0, 0);
 		    Quad.addEdge(q0,0, q1, 0);
 		    Quad.addEdge(q1,0, q2, 0);
-		    TransState nts;
-		    if (isMonitor)
-			nts = new TransState(tsi.initialState.exitMonitor(),
-					     tsi.in, q2, 1);
+		    if (isJSR)
+			ns = tsi.initialState.exitJSR();
+		    else if (isMonitor)
+			ns = tsi.initialState.exitMonitor();
 		    else
-			nts = new TransState(tsi.initialState.exitTry(),
-					     tsi.in, q2, 1);
-		    todo.push(nts);
+			ns = tsi.initialState.exitTry();
+		    todo.push(new TransState(ns, tsi.in, q2, 1));
 		    q = q2;
 		}
 		// default branch.
 		TransState tsi = 
 		    (TransState) ns.nest[0].continuation.elementAt(i);
-		TransState nts;
-		if (isMonitor)
-		    nts = new TransState(tsi.initialState.exitMonitor(),
-					 tsi.in, q, 0);
+		if (isJSR)
+		    ns = tsi.initialState.exitJSR();
+		else if (isMonitor)
+		    ns = tsi.initialState.exitMonitor();
 		else
-		    nts = new TransState(tsi.initialState.exitTry(),
-					 tsi.in, q, 0);
-		todo.push(nts);
+		    ns = tsi.initialState.exitTry();
+		todo.push(new TransState(ns, tsi.in, q, 0));
 		continue;
 	    }
-	    // Are we exiting a TRY or MONITOR block?
+	    // Are we exiting a TRY, MONITOR or JSR block?
 	    else if ((s.nest.length > 0) && 
 		     (((s.nest[0].type == State.BlockContext.TRY) &&
 		       (!s.tryBlock[0].inTry(ts.in))) ||
 		      ((s.nest[0].type == State.BlockContext.MONITOR) &&
-		       (ts.in.getOpcode() == Op.MONITOREXIT)))) {
+		       (ts.in.getOpcode() == Op.MONITOREXIT)) ||
+		      ((s.nest[0].type == State.BlockContext.JSR) &&
+		       (ts.in.getOpcode() == Op.RET)))) {
 		s.nest[0].continuation.addElement(ts);
 		// we'll fix up the dangling end later.
 		continue;
@@ -563,7 +585,7 @@ class Translate  { // not public.
 	    break;
 	case Op.CHECKCAST:
 	    // translate as:
-	    //  if (!(obj instanceof class))
+	    //  if (obj!=null && !(obj instanceof class))
 	    //     throw new ClassCastException();
 	    {
 		// FIXME
@@ -919,7 +941,7 @@ class Translate  { // not public.
 	    break;
 	case Op.MONITORENTER:
 	case Op.MONITOREXIT:
-	    throw new Error("Currently unimplemented.");
+	    Util.assert(false); // should be caught at higher level.
 	case Op.MULTIANEWARRAY:
 	case Op.NEWARRAY:
 	    throw new Error("I'm a lazy bum.");
@@ -1068,11 +1090,12 @@ class Translate  { // not public.
 	    r = new TransState[] { new TransState(s, in.next()[0], 
 						  ts.header, ts.which_succ) };
 	    break;
-	default:
 	case Op.JSR:
 	case Op.JSR_W:
 	case Op.RET:
-	    throw new Error("Unmitigated evilness.");
+	    Util.assert(false); // should be caught at higher level.
+	default:
+	    throw new Error("Unknown InCti: "+in.toString());
 	}
 	if (q!=null)
 	    Quad.addEdge(ts.header, ts.which_succ, q, 0);
