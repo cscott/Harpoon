@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.22 2000-09-11 21:33:39 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.23 2000-10-17 00:59:08 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -360,15 +360,31 @@ public class TreeToC extends java.io.PrintWriter {
 	    this.align = e;
 	}
 	public void visit(BINOP e) {
+	    boolean macro=false, funccall=false;
 	    pw.print("(");
-	    if (e.type()==Type.LONG && (e.op==Bop.SHR || e.op==Bop.USHR))
-		pw.print("L"); // macro prefix for long ops.
-	    if (e.op==Bop.SHR) pw.print("SHR("); // use macro
-	    if (e.op==Bop.USHR) pw.print("USHR("); // use macro
-	    if (e.op==Bop.SHR||e.op==Bop.USHR) suppress_directives++;
+		
+	    if (e.op==Bop.SHR || e.op==Bop.USHR) {
+		macro=funccall=true;
+		if (e.type()==Type.LONG)
+		    pw.print("L"); // macro prefix for long ops.
+		if (e.op==Bop.SHR) pw.print("SHR("); // use macro
+		if (e.op==Bop.USHR) pw.print("USHR("); // use macro
+	    }
+	    if (e.op==Bop.REM && e.type()==Type.FLOAT) {
+		funccall=true;
+		pw.print("fmodf("); // double remainder == c-lib frem()
+		sym2decl.put(new Label("fmodf"),"float fmodf(float, float);");
+	    }
+	    if (e.op==Bop.REM && e.type()==Type.DOUBLE) {
+		funccall=true;
+		pw.print("fmod("); // double remainder == c-lib frem()
+		sym2decl.put(new Label("fmod"),"double fmod(double, double);");
+	    }
+	    if (macro) suppress_directives++;
 	    //if (e.type()==e.POINTER) pw.print("(void*)");
 	    trans(e.getLeft());
-	    switch(e.op) {
+	    if (funccall) pw.print(", ");
+	    else switch(e.op) {
 	    case Bop.CMPLT: pw.print("<"); break;
 	    case Bop.CMPLE: pw.print("<="); break;
 	    case Bop.CMPEQ: pw.print("=="); break;
@@ -380,7 +396,6 @@ public class TreeToC extends java.io.PrintWriter {
 	    case Bop.DIV: pw.print("/"); break;
 	    case Bop.REM: pw.print("%/*rem*/"); break;
 	    case Bop.SHL: pw.print("<<"); break;
-	    case Bop.SHR: case Bop.USHR: pw.print(", "); break; // using macro
 	    case Bop.AND: pw.print("&"); break;
 	    case Bop.OR: pw.print("|"); break;
 	    case Bop.XOR: pw.print("^"); break;
@@ -388,8 +403,8 @@ public class TreeToC extends java.io.PrintWriter {
 	    }
 	    //if (e.type()==e.POINTER) pw.print("(void*)");
 	    trans(e.getRight());
-	    if (e.op==Bop.SHR||e.op==Bop.USHR) pw.print(")"); // close macro
-	    if (e.op==Bop.SHR||e.op==Bop.USHR) suppress_directives--;
+	    if (funccall) pw.print(")"); // close macro/call
+	    if (macro) suppress_directives--;
 	    pw.print(")");
 	}
 	public void visit(CALL e) {
