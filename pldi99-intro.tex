@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi99-intro.tex,v 1.5 1999-11-11 23:51:56 cananian Exp $
+% $Id: pldi99-intro.tex,v 1.6 1999-11-13 05:56:07 rinard Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 
@@ -33,7 +33,7 @@ and dataflow information also produces an efficiency
 problem. Instead of propagating information
 directly from definitions to uses, the analysis
 must propagate the information through all 
-program points, whether the program point uses
+program points, whether the program point uses 
 the information or not. 
 
 Inspired by this observation, we have developed
@@ -48,7 +48,7 @@ for variables at splits in the control flow.
 The analysis can then associate information
 with variable names, and propagate
 the information efficiently and directly from 
-definitions to uses. 
+information definition points to uses. 
 
 In addition to these practical properties, 
 SSI form has several appealing 
@@ -68,10 +68,9 @@ a more uniform and powerful analysis framework.
 
 We have implemented a compiler infrastructure for Java,
 the MIT Flex system, that uses SSI form \cite{flexweb}.
-We have used 
-this compiler infrastructure to implement several 
+We have used this compiler infrastructure to implement several 
 predicate-based analyses, including an analysis that
-detects redundant null reference checks, an
+detects redundant array bounds and null reference checks, an
 analysis that determines the number of bits
 required to represent values in different variables,
 and a conditional constant propagation analysis.
