@@ -1838,21 +1838,11 @@ class water {
       break;
     } 
     case CT_MEMORY: {
-      try {
-	ct[i].enter(r);
-      } catch (javax.realtime.ScopedCycleException e) {
-	System.out.println(e);
-	System.exit(1);
-      }
+      ct[i].enter(r);
       break;
     }
     case VT_MEMORY: {
-      try {
-	(new javax.realtime.VTMemory()).enter(r);
-      } catch (javax.realtime.ScopedCycleException e) {
-	System.out.println(e);
-	System.exit(1);
-      }
+      (new javax.realtime.VTMemory()).enter(r);
       break;
     } 
     default: {

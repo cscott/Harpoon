@@ -1890,21 +1890,11 @@ class barnes {
       break;
     }
     case CT_MEMORY: {
-      try {
-	(new javax.realtime.CTMemory(ctsize)).enter(r);
-      } catch (javax.realtime.ScopedCycleException e) {
-	System.out.println(e);
-	System.exit(1);
-      }
+      (new javax.realtime.CTMemory(ctsize)).enter(r);
       break;
     }
     case VT_MEMORY: {
-      try {
-	(new javax.realtime.VTMemory()).enter(r);
-      } catch (javax.realtime.ScopedCycleException e) {
-	System.out.println(e);
-	System.exit(1);
-      }
+      (new javax.realtime.VTMemory()).enter(r);
       break;
     } 
     default: {
