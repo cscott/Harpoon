@@ -20,7 +20,7 @@ public class RoundRobinScheduler extends Scheduler {
 
     protected RoundRobinScheduler() {
 	super();
-	setQuanta(10000); // Start switching after 10 milliseconds
+	setQuanta(1000); // Start switching after 10 milliseconds
     }
 
     /** Return an instance of a RoundRobinScheduler */
@@ -77,16 +77,11 @@ public class RoundRobinScheduler extends Scheduler {
     }
 
     protected long chooseThread(long currentTime) {
-	setQuanta(10000); // Switch every 10 milliseconds
+	setQuanta(100000); // Switch every 100 milliseconds
 	try {
 	    return ((Long)iterator.next()).longValue();
 	} catch (NoSuchElementException e) {
-	    print();
-	    if (disabledThreads.isEmpty()) {
-		return 0; // End of the program... or the beginning...
-	    } else {
-		throw new RuntimeException("Deadlock detected!");
-	    }
+	    return 0; // End of the program... or the beginning... 
 	}
     }
 
@@ -104,16 +99,12 @@ public class RoundRobinScheduler extends Scheduler {
     }
 
     protected void enableThread(long threadID) {
-	disabledThreads.remove(threadID);
 	threadList.add(threadID);
+	disabledThreads.remove(threadID);
     }
 
     protected boolean noThreads() {
-	boolean isEmpty = threadList.isEmpty();
-	if (isEmpty && (!disabledThreads.isEmpty())) {
-	    throw new RuntimeException("Deadlock detected!");
-	}
-	return isEmpty;
+	return threadList.isEmpty();
     }
     
     /** RoundRobinScheduler is too dumb to deal w/periods. */
