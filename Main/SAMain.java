@@ -26,7 +26,7 @@ import java.util.Iterator;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.2 1999-08-03 23:53:20 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.3 1999-08-04 00:29:49 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -51,25 +51,35 @@ public class SAMain extends harpoon.IR.Registration {
 	// Do something intelligent with these classes. XXX
 	for (int i=0; i<interfaceClasses.length; i++) {
 	    HMethod hm[] = interfaceClasses[i].getDeclaredMethods();
-	    for (int j=0; j<hm.length; j++) {
-		HCode hc = hcf.convert(hm[j]);
-		
-		if (PRINT_ORIG) {
+
+	    if (PRINT_ORIG) {
+		for (int j=0; j<hm.length; j++) {
+		    HCode hc = hcf.convert(hm[j]);
+
 		    out.println("\t--- TREE FORM ---");
 		    if (hc!=null) hc.print(out);
 		    out.println();
 		}
 		
-		hcf = SACode.codeFactory(hcf);
-		hc = hcf.convert(hm[j]);
+	    }
+	    if (PRE_REG_ALLOC) {
+		for (int j=0; j<hm.length; j++) {
+		    HCode hc = hcf.convert(hm[j]);
+		    HCodeFactory sahcf = SACode.codeFactory(hcf);
+		    hc = sahcf.convert(hm[j]);
 		
-		if (PRE_REG_ALLOC) {
 		    out.println("\t--- INSTR FORM (no register allocation)  ---");
 		    if (hc!= null) hc.print(out);
 		    out.println();
 		}
+	    }
 
-		if (LIVENESS_TEST) {
+	    if (LIVENESS_TEST) {
+		for (int j=0; j<hm.length; j++) {
+		    HCode hc = hcf.convert(hm[j]);
+		    HCodeFactory sahcf = SACode.codeFactory(hcf);
+		    hc = sahcf.convert(hm[j]);
+
 		    out.println("\t--- INSTR FORM (basic block check)  ---");
 		    HCodeElement root = hc.getRootElement();
 		    BasicBlock block = 
@@ -81,15 +91,19 @@ public class SAMain extends harpoon.IR.Registration {
 		    out.println(livevars.dump());
 		}
 
-		if (REG_ALLOC &&
-		    hcf.getCodeName().equals("strongarm")) {
-		    out.println("\t--- INSTR FORM (register allocation)  ---");
-		    HCodeFactory regAllocCF = RegAlloc.codeFactory(hcf, new SAFrame());
-		    HCode rhc = regAllocCF.convert(hm[j]);
-		    if (rhc != null) rhc.print(out);
-		    out.println();
+		if (REG_ALLOC) {
+		    for (int j=0; j<hm.length; j++) {
+			HCode hc = hcf.convert(hm[j]);
+			HCodeFactory sahcf = SACode.codeFactory(hcf);
+			hc = sahcf.convert(hm[j]);
+			
+			out.println("\t--- INSTR FORM (register allocation)  ---");
+			HCodeFactory regAllocCF = RegAlloc.codeFactory(sahcf, new SAFrame());
+			HCode rhc = regAllocCF.convert(hm[j]);
+			if (rhc != null) rhc.print(out);
+			out.println();
+		    }
 		}
-
 		
 		out.flush();
  

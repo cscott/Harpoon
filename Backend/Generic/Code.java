@@ -31,7 +31,7 @@ import java.io.StringReader;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.9 1999-08-03 23:53:18 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.10 1999-08-04 00:29:49 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -135,6 +135,9 @@ public abstract class Code extends HCode {
      *  @param  pw      A PrintWriter to send the formatted output to.
      */
     public void print(java.io.PrintWriter pw) {
+	
+	pw.print("Codeview \""+getName()+"\" for "+getMethod()+":");
+	
         pw.println();
 	Instr[] instrarr = (Instr[]) getElements();
         for (int i = 0; i < instrarr.length; i++) {

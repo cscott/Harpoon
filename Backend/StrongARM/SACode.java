@@ -16,7 +16,7 @@ import java.util.Map;
  * <code>SACode</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SACode.java,v 1.1.2.10 1999-08-03 23:53:19 pnkfelix Exp $
+ * @version $Id: SACode.java,v 1.1.2.11 1999-08-04 00:29:49 pnkfelix Exp $
  */
 public class SACode extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -42,18 +42,19 @@ public class SACode extends harpoon.Backend.Generic.Code {
     }
     
     public static HCodeFactory codeFactory(final HCodeFactory hcf) {
-	Util.assert(hcf.getCodeName().equals("canonical-tree"),
-		    "Cannot make an code factory for SACode without "+
-		    "a code factory for canonical tree form");
-	return new HCodeFactory() {
-	    public HCode convert(HMethod m) {
-		harpoon.IR.Tree.Code tc = 
-		    (harpoon.IR.Tree.Code) hcf.convert(m);
-		return (tc == null) ? null : new SACode(tc);
-	    }
-	    public void clear(HMethod m) { hcf.clear(m); }
-	    public String getCodeName() { return codename; }
-	};
+	if(hcf.getCodeName().equals("canonical-tree")) {
+	    return new HCodeFactory() {
+		public HCode convert(HMethod m) {
+		    harpoon.IR.Tree.Code tc = 
+			(harpoon.IR.Tree.Code) hcf.convert(m);
+		    return (tc == null) ? null : new SACode(tc);
+		}
+		public void clear(HMethod m) { hcf.clear(m); }
+		public String getCodeName() { return codename; }
+	    };
+	} else {
+	    return codeFactory(CanonicalTreeCode.codeFactory(hcf, new SAFrame()));
+	}
     }
     
     public static HCodeFactory codeFactory() {
