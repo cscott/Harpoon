@@ -12,7 +12,7 @@ import java.util.Map;
  * to code/data/object descriptions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Linker.java,v 1.1.2.3 2000-01-11 12:33:45 cananian Exp $
+ * @version $Id: Linker.java,v 1.1.2.4 2000-01-13 02:55:07 cananian Exp $
  */
 public abstract class Linker {
   protected Linker() { }
@@ -184,6 +184,7 @@ public abstract class Linker {
    */
   public HClass createMutableClass(String name, HClass template)
     throws DuplicateClassException {
+    Util.assert(template.getLinker()==this);
     try {
       forName(name);
       throw new DuplicateClassException(name);

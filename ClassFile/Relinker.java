@@ -13,7 +13,7 @@ import java.util.Map;
  * to another, different, class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Relinker.java,v 1.1.2.7 2000-01-12 20:34:42 cananian Exp $
+ * @version $Id: Relinker.java,v 1.1.2.8 2000-01-13 02:55:07 cananian Exp $
  */
 public class Relinker extends Linker {
     protected final Linker linker;
@@ -32,8 +32,9 @@ public class Relinker extends Linker {
      *  to the existing class are changed to point to the new mutable
      *  class returned by this method. */
     public HClass createMutableClass(String name, HClass template) {
+	Util.assert(template.getLinker()==this);
 	try {
-	    linker.createMutableClass(name, template);
+	    linker.createMutableClass(name, unwrap(template));
 	    return forName(name); // wrap w/ proxy class.
 	} catch (DuplicateClassException e) {
 	    HClass newClass = new HClassSyn(this, name, template);
