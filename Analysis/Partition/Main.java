@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Sun Oct 25 12:37:16 1998> 
-// Time-stamp: <1998-11-16 23:49:39 mfoltz> 
+// Time-stamp: <1998-11-20 14:42:17 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.Partition;
@@ -60,15 +60,38 @@ public class Main  {
 
     try {
 
-      FileReader fr = new FileReader(args[0]);
-      WeightedGraph g = parseProfile(new BufferedReader(fr));
+      FileReader fr;
+      BufferedReader br;
+      int i;
+      WeightedGraph g = new WeightedGraph();
       WeightedGraph pt[] = new WeightedGraph[2];
+      WGNode pseudo_nodes[] = new WGNode[2];
       Properties p = new Properties();
       
       p.load(new FileInputStream("/home/mfoltz/Harpoon/Code/Analysis/Partition/properties"));
- 
+
+      // add pseudo-nodes that allow bindings of object creation sites to nodes
+      for (i = 0; i < 2; i++) {
+	pseudo_nodes[i] = new WGNode("Machine_"+i,null);
+	pseudo_nodes[i]._dummy = true;
+      }
+
+      for (i = 0; i < args.length; i++) {
+	fr = new FileReader(args[i]);
+	br = new BufferedReader(fr);
+	parseProfile(g,br,pseudo_nodes);
+	br.close();
+	fr.close();
+      }
+
       g.addDummies(g.size());
+
       Partition.initialPartition(g, 2, pt);
+
+      // add pseudo-nodes that allow bindings of object creation sites to nodes
+      for (i = 0; i < 2; i++) 
+	pt[i].addNode(pseudo_nodes[i]);
+
       System.err.println("Edge sum:  "+Partition.computeEdgeSum(pt[0], pt[1]));
       Callback cb = new Callback(pt);
       if (p.getProperty("viewerstyle").equals("ONE_CIRCLE")) {
@@ -111,19 +134,18 @@ public class Main  {
     }
   }
 
-  public static WeightedGraph parseProfile(BufferedReader in) {
+  public static WeightedGraph parseProfile(WeightedGraph g, BufferedReader in, WGNode[] pseudo_nodes) {
 
     Hashtable creation_sites = new Hashtable();
     long creator, created;
-    int site_id;
+    int site_id, machine_no;
     StringTokenizer st;
-    WeightedGraph g = new WeightedGraph();
     NEW creation_site;
     WGNode node, source, target;
 
     try {
 
-      String line = in.readLine(), token, creator_method, creator_class, created_class;
+      String line = in.readLine(), token, creator_method, creator_class, created_class, node_name;
 
       while (line != null) {
 	st = new StringTokenizer(line," ");
@@ -135,10 +157,14 @@ public class Main  {
 	  created = Long.parseLong(st.nextToken());
 	  created_class = st.nextToken();
 	  site_id = Integer.parseInt(st.nextToken());
-	  creation_site = new NEW(creator, creator_method, creator_class, created, created_class, site_id);
-	  node = new WGNode(creator_class+":"+creator_method+":"+site_id,creation_site);
+	  node_name = creator_class+":"+creator_method+":"+site_id;
+	  node = g.getNode(node_name);
+	  if (node == null) {
+	    creation_site = new NEW(creator, creator_method, creator_class, created, created_class, site_id);
+	    node = new WGNode(node_name,creation_site);
+	    g.addNode(node);
+	  }
 	  creation_sites.put(new Long(created), node);
-	  g.addNode(node);
 	} else if (token.startsWith("CALL")) {
 	  source = (WGNode) creation_sites.get(new Long(Long.parseLong(st.nextToken())));
 	  st.nextToken();
@@ -147,6 +173,20 @@ public class Main  {
 	    System.err.println("IGNORING: "+line);
 	  } else {
 	    WeightedGraph.addToEdge(source,target,1);
+	  }
+	} else if (token.startsWith("MAYCALL")) {
+	  // do nothing
+	} else if (token.startsWith("BIND")) {
+	  node_name = st.nextToken();
+	  machine_no = Integer.parseInt(st.nextToken());
+	  if (machine_no < 0 || machine_no >= pseudo_nodes.length)
+	    source = null;
+	  else source = pseudo_nodes[machine_no];
+	  target = g.getNode(node_name);
+	  if (source == null || target == null || source == target) {
+	    System.err.println("IGNORING: "+line);
+	  } else {
+	    WeightedGraph.setEdge(source,target,g._infinity);
 	  }
 	}
 	line = in.readLine();
