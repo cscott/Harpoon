@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.79 1999-10-19 19:57:45 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.80 1999-10-20 20:10:20 cananian Exp $
  */
 %%
 
@@ -76,13 +76,14 @@ import java.util.Iterator;
     // Frame for instructions to access to get platform specific variables (Register Temps, etc) 
     private Frame frame;
 
-    private Temp r0, r1, r2, r3, r4, r5, r6, PC, SP, FP, LR;
+    final RegFileInfo regfile;
+    private Temp r0, r1, r2, r3, r4, r5, r6, FP, IP, SP, LR, PC;
 
 
     public CodeGen(Frame frame) {
 	last = null;
 	this.frame = frame;
-	RegFileInfo regfile = (RegFileInfo) frame.getRegFileInfo();
+	this.regfile = (RegFileInfo) frame.getRegFileInfo();
 	r0 = regfile.reg[0];
 	r1 = regfile.reg[1];
 	r2 = regfile.reg[2];
@@ -90,10 +91,11 @@ import java.util.Iterator;
 	r4 = regfile.reg[4];
 	r5 = regfile.reg[5];
 	r6 = regfile.reg[6];
-	PC = regfile.PC;
-	SP = regfile.SP;
-	FP = regfile.FP;
-	LR = regfile.LR;
+	FP = regfile.FP; // reg 11
+	IP = regfile.reg[12];
+	SP = regfile.SP; // reg 13
+	LR = regfile.LR; // reg 14
+	PC = regfile.PC; // reg 15
     }
 
     /** Emits <code>i</code> as the next instruction in the
@@ -358,10 +360,71 @@ import java.util.Iterator;
 	emitMOVE( ROOT, "mov `d0, `s0", retval, r0 );
       }  
     }
+
+    // Mandated by CodeGen generic class: perform entry/exit
+    public Instr procFixup(HMethod hm, Instr instr,
+			   int stackspace, Set usedRegisters) {
+	InstrFactory inf = instrFactory; // convenient abbreviation.
+	Label methodlabel = frame.getRuntime().nameMap.label(hm);
+	// make list of callee-save registers we gotta save.
+	StringBuffer reglist = new StringBuffer(); int nreg=0;
+	for (Iterator it=usedRegisters.iterator(); it.hasNext(); ) {
+	    Temp rX = (Temp) it.next();
+	    Util.assert(regfile.isRegister(rX));
+	    if (rX.equals(r0)||rX.equals(r1)||rX.equals(r2)||rX.equals(r3))
+		continue; // caller save registers.
+	    if (rX.equals(LR)||rX.equals(PC)||rX.equals(FP)||rX.equals(SP)||
+		rX.equals(IP)) continue; // always saved.
+	    reglist.append(", "); reglist.append(rX.toString()); nreg++;
+	}
+	// find method entry/exit stubs
+	for (Instr il = instr; il!=null; il=il.getNext()) {
+	    if (il instanceof InstrENTRY) { // entry stub.
+		Instr in1 = new InstrDIRECTIVE(inf, il, ".align 4");
+		Instr in2 = new InstrDIRECTIVE(inf, il, ".global " +
+					       methodlabel.name);
+		Instr in3 = new InstrLABEL(inf, il, methodlabel.name+":",
+					   methodlabel);
+		Instr in4 = new Instr(inf, il, "mov ip, sp", null, null);
+		Instr in5 = new Instr(inf, il,
+				      "stmfd sp!, {pc, lr, ip, fp"+reglist+"}",
+				      null, null);
+		Instr in6 = new Instr(inf, il, "sub fp, ip, #4", null, null);
+		Instr in7 = new Instr(inf, il, "sub sp, sp, #"+(stackspace*4),
+				      null, null);
+		in7.layout(il, il.getNext());
+		in6.layout(il, in7);
+		in5.layout(il, in6);
+		in4.layout(il, in5);
+		in3.layout(il, in4);
+		in2.layout(il, in3);
+		in1.layout(il, in2);
+		if (il==instr) instr=in1; // fixup root if necessary.
+		il.remove(); il=in1;
+	    }
+	    if (il instanceof InstrEXIT) { // exit stub
+		Instr in1 = new Instr(inf, il,
+				"ldmea fp, {pc, sp, fp"+reglist+"}",
+				 null, null);
+		in1.layout(il.getPrev(), il);
+		il.remove(); il=in1;
+	    }
+	}
+	return instr;
+    }
+    // now define our little InstrENTRY and InstrEXIT sub-types.
+    private static class InstrENTRY extends InstrDIRECTIVE {
+	public InstrENTRY(InstrFactory inf, HCodeElement src) {
+	    super(inf, src, "--method entry point--");
+	}
+    }
+    private static class InstrEXIT extends Instr {
+	public InstrEXIT(InstrFactory inf, HCodeElement src) {
+	    super(inf, src, "--method exit point--", null, null, false, null);
+	}
+    }
 %%
 %start with %{
-       // *** METHOD PROLOGUE *** 
-
        // initialize state variables each time gen() is called
        first = null; last = null;
        origTempToNewTemp = new HashMap();
@@ -1272,8 +1335,39 @@ UNOP(NOT, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
 /* STATEMENTS */
 METHOD(params) %{
-
-
+    // mark entry point.
+    emit(new InstrENTRY( instrFactory, ROOT ));
+    // move arguments to temporaries.
+    int loc=0;
+    // skip param[0], which is the explicit 'exceptional return address'
+    for (int i=1; i<params.length; i++) {
+	if (params[i] instanceof TwoWordTemp) {
+	    if (loc<=2) { // both halves in registers
+		emitMOVE( ROOT, "mov `d0l, `s0", params[i],regfile.reg[loc++]);
+		emitMOVE( ROOT, "mov `d0h, `s0", params[i],regfile.reg[loc++]);
+	    } else if (loc==3) { // one half in register, one on stack
+		emitMOVE( ROOT, "mov `d0l, `s0", params[i],regfile.reg[loc++]);
+		emit(new InstrMEM( instrFactory, ROOT,
+				   "ldr `d0h, [`s0, #"+(4*(loc++)-12)+"]",
+				   new Temp[] {params[i]}, new Temp[] {FP}));
+	    } else { // both halves on stack.
+		emit(new InstrMEM( instrFactory, ROOT,
+				   "ldr `d0l, [`s0, #"+(4*(loc++)-12)+"]",
+				   new Temp[] {params[i]}, new Temp[] {FP}));
+		emit(new InstrMEM( instrFactory, ROOT,
+				   "ldr `d0h, [`s0, #"+(4*(loc++)-12)+"]",
+				   new Temp[] {params[i]}, new Temp[] {FP}));
+	    }
+	} else { // single word.
+	    if (i<4) { // in register
+		emitMOVE( ROOT, "mov `d0, `s0", params[i], regfile.reg[loc++]);
+	    } else { // on stack
+		emit(new InstrMEM( instrFactory, ROOT,
+				   "ldr `d0, [`s0, #"+(4*(loc++)-12)+"]",
+				   new Temp[] {params[i]}, new Temp[] {FP}));
+	    }
+	}
+    }
 }%
 
 CJUMP(test, iftrue, iffalse) %{
@@ -1392,24 +1486,19 @@ MOVE(MEM<l,d>(dst), src) %{
 
 RETURN(val) %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
-    emit(new InstrMEM( instrFactory, ROOT, 
-		       "ldmea `s0, { `d0, `d1, `d2 } @ RETURN",
-		       new Temp[]{ FP, SP, PC },
-		       new Temp[]{ FP },
-		       false, null));
+    // mark exit point.
+    emit(new InstrEXIT( instrFactory, ROOT ));
 }%
 
 
 THROW(val, handler) %{
+    // ignore handler, as our runtime does clever things instead.
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
     emit( ROOT, "bl _lookup @ (only r0 & fp are preserved during lookup)",
 	         new Temp[] { r1, r2, r3, r4, r5, r6, LR }, // clobbers
 		 new Temp[] { FP }, true, null); 
-    emit(new InstrMEM( instrFactory, ROOT, 
-		       "ldmea `s0, { `d0, `d1, `d2 } @ THROW",
-		       new Temp[]{ FP, SP, PC },
-		       new Temp[]{ FP },
-		       false, null));
+    // mark exit point.
+    emit(new InstrEXIT( instrFactory, ROOT ));
 }%
 
   // slow version when we don't know exactly which method we're calling.
@@ -1417,8 +1506,9 @@ CALL(TEMP(retval), NAME(retex), func, arglist) %{
     int stackOffset = emitCallPrologue(ROOT, arglist);
     // next two instructions are *not* InstrMOVEs, as they have side-effects
     emit( ROOT, "mov `d0, `s0", LR, PC );
-    emit( ROOT, "mov `d0, `s0", new Temp[]{ PC }, new Temp[]{ func }, 
-	        new Label[] { retex } );
+    // note that r0-r3, LR and IP are clobbered by the call.
+    emit( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
+                new Temp[]{ func }, new Label[] { retex } );
     // okay, clean up from call.
     emitCallFixup(ROOT, retex);
     emitCallEpilogue(ROOT, retval, stackOffset);
@@ -1427,7 +1517,8 @@ CALL(TEMP(retval), NAME(retex), func, arglist) %{
 CALL(TEMP(retval), NAME(retex), NAME(funcLabel), arglist) %{
     int stackOffset = emitCallPrologue(ROOT, arglist);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
-    emit( ROOT, "bl "+funcLabel, new Temp[] { LR }, new Temp[0],
+    // note that r0-r3, LR and IP are clobbered by the call.
+    emit( ROOT, "bl "+funcLabel, new Temp[] { r0,r1,r2,r3,IP,LR }, new Temp[0],
                 new Label[] { retex } );
     // okay, clean up from call.
     emitCallFixup(ROOT, retex);
@@ -1438,7 +1529,9 @@ NATIVECALL(TEMP(retval), func, arglist) %{
     int stackOffset = emitCallPrologue(ROOT, arglist);
     // next two instructions are *not* InstrMOVEs, as they have side-effects
     emit( ROOT, "mov `d0, `s0", LR, PC );
-    emit( ROOT, "mov `d0, `s0", PC, func );
+    // note that r0-r3, LR and IP are clobbered by the call.
+    emit( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
+                new Temp[]{ func }, null);
     // clean up.
     emitCallEpilogue(ROOT, retval, stackOffset);
 }%
@@ -1446,7 +1539,9 @@ NATIVECALL(TEMP(retval), func, arglist) %{
 NATIVECALL(TEMP(retval), NAME(funcLabel), arglist) %{
     int stackOffset = emitCallPrologue(ROOT, arglist);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
-    emit( ROOT, "bl "+funcLabel, new Temp[] { LR }, new Temp[0], true, null );
+    // note that r0-r3, LR and IP are clobbered by the call.
+    emit( ROOT, "bl "+funcLabel, new Temp[] { r0,r1,r2,r3,IP,LR }, new Temp[0],
+          true, null );
     // clean up.
     emitCallEpilogue(ROOT, retval, stackOffset);
 }%
