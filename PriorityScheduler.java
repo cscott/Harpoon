@@ -71,7 +71,7 @@ public class PriorityScheduler extends Scheduler {
     
     // Start maintaining this thread (called by the runtime system during
     // execution of the thread.start() method).
-    protected boolean addToFeasibility(Schedulable schedulable) {
+    protected boolean addToFeasibility(final Schedulable schedulable) {
 	allThreads.add(schedulable);
 	thread[nThreads] = new ThreadConstraints();
 	thread[nThreads].threadID = ++nextThreadID;
@@ -130,6 +130,8 @@ public class PriorityScheduler extends Scheduler {
     
     public static PriorityScheduler instance() {
 	// TODO
+
+	return null;
     }
 
     // This one's a bit twisted, but it's much more
@@ -169,7 +171,7 @@ public class PriorityScheduler extends Scheduler {
 		}
 		else if (rp instanceof SporadicParameters) {
 		    load += (double)((SporadicParameters)rp).getCost().getMilliseconds()/
-			((SporadicParameters)rp).getMinInterarrival().getMilliseconds();
+			((SporadicParameters)rp).getMinimumInterarrival().getMilliseconds();
 		}
 	    // We must look up the period in the ProcessingGroupParameters
 	    // of the thread.
@@ -329,7 +331,7 @@ public class PriorityScheduler extends Scheduler {
 	    thread[earliest].beginPeriod.set(now);
 	    thread[earliest].beginPeriod
 		.add(((SporadicParameters)thread[earliest].schedulable.
-		      getReleaseParameters()).getMinInterarrival(),
+		      getReleaseParameters()).getMinimumInterarrival(),
 		     thread[earliest].endPeriod);
 	}
 	

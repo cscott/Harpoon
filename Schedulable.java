@@ -25,7 +25,7 @@ public interface Schedulable extends java.lang.Runnable {
     public boolean setReleaseParametersIfFeasible(ReleaseParameters release);
     public void setSchedulingParameters(SchedulingParameters scheduling);
     public boolean setSchedulingParametersIfFeasible(SchedulingParameters scheduling);
-    public void setScheduler(PriorityScheduler scheduler)
+    public void setScheduler(Scheduler scheduler)
 	throws IllegalThreadStateException;
     public void setScheduler(Scheduler scheduler,
 			     SchedulingParameters scheduling,

@@ -13,6 +13,29 @@ package javax.realtime;
 
 public class NoHeapRealtimeThread extends RealtimeThread {
 
+    public NoHeapRealtimeThread(SchedulingParameters sp, MemoryArea ma)
+	throws IllegalArgumentException {
+	schedulingParameters = sp;
+	memoryArea = ma;
+    }
+
+    public NoHeapRealtimeThread(SchedulingParameters sp, ReleaseParameters rp,
+			       MemoryArea ma) throws IllegalArgumentException {
+	this(sp, ma);
+	releaseParameters = rp;
+    }
+
+    public NoHeapRealtimeThread(SchedulingParameters sp, ReleaseParameters rp,
+				MemoryParameters mp, MemoryArea ma,
+				ProcessingGroupParameters group, Runnable logic)
+	throws IllegalArgumentException {
+	super(sp, rp, mp, ma, group, logic);
+    }
+    
+    // ----------------------------------
+    // Constructors not included in specs
+    // ----------------------------------
+
     /** Construct a <code>NoHeapRealtimeThread</code> which will execute in the
      *  given <code>MemoryArea</code>
      */
@@ -22,7 +45,7 @@ public class NoHeapRealtimeThread extends RealtimeThread {
 	super(area);
 	setup(area);
     }
-
+    
     /** Construct a <code>NoHeapRealtimeThread</code> which will execute 
      *  <code>logic</code> in the given <code>MemoryArea</code> 
      */
@@ -32,7 +55,7 @@ public class NoHeapRealtimeThread extends RealtimeThread {
 	super(area, logic);
 	setup(area);
     }
-
+    
     /** Setup some state for the constructors */
     private void setup(MemoryArea area) throws IllegalArgumentException {
 	if ((area == null) || area.heap) {
@@ -42,7 +65,7 @@ public class NoHeapRealtimeThread extends RealtimeThread {
 	}
 	noHeap = true;
     }
-
+    
     /** Construct a new <code>NoHeapRealtimeThread</code> that will inherit
      *  the properties described in <code>MemoryParameters</code> and will
      *  run <code>logic</code>.
@@ -50,13 +73,30 @@ public class NoHeapRealtimeThread extends RealtimeThread {
     public NoHeapRealtimeThread(MemoryParameters mp, Runnable logic) {
 	this(mp.getMemoryArea(), logic);
     }
-
+    
     /** Check to see if a write is possible to the given object. 
      *  Warning: this method can only be used when we're not really running
      *  <code>NoHeapRealtimeThreads</code> for real, because you can't access
      *  the object at all in a real <code>NoHeapRealtimeThread</code>. 
      */
     
+    public NoHeapRealtimeThread(SchedulingParameters scheduling,
+				ReleaseParameters release) {
+	super(scheduling, release);
+    }
+    
+    // ------------------
+    // methods from specs
+    // ------------------
+
+    public void start() {
+	// TODO
+    }
+
+    // -----------------------------
+    // methods not included in specs
+    // -----------------------------
+
     public void checkNoHeapWrite(Object obj) {
 	if ((obj != null) && (obj.memoryArea != null) && obj.memoryArea.heap) {
 	    throw new IllegalAssignmentError("Cannot assign " +
@@ -64,13 +104,13 @@ public class NoHeapRealtimeThread extends RealtimeThread {
 					     " from " + toString());
 	}
     }
-
+    
     /** Check to see if a read is possible from the given object.
      *  Warning: this method can only be used when we're not really running
      *  <code>NoHeapRealtimeThreads</code> for real, because you can't access
      *  the object at all in a real <code>NoHeapRealtimeThread</code>.
      */
-
+    
     public void checkNoHeapRead(Object obj) {
 	if ((obj != null) && (obj.memoryArea != null) && obj.memoryArea.heap) {
 	    throw new MemoryAccessError("Cannot read " + 
@@ -78,14 +118,14 @@ public class NoHeapRealtimeThread extends RealtimeThread {
 					" from " + toString());
 	}
     }
-
+    
     /** Return a String describing this thread.
      */
-
+    
     public String toString() {
 	return "NoHeapRealtimeThread";
     }
-
+    
     /** A print method that's safe to call from a NoHeapRealtimeThread.
      */
     public native static void print(String s);

@@ -47,7 +47,7 @@ public class ProcessingGroupParameters {
     }
     
     public HighResolutionTime getStart() {
-	return new HighResolutionTime(start);
+	return start;
     }
     
     public void setCost(RelativeTime cost) {

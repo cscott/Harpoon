@@ -56,7 +56,7 @@ public abstract class SporadicParameters extends AperiodicParameters {
 	minInterarrival.set(minInterarrival);
     }
 
-    public setMitViolationBehavior(String behavior) {
+    public void setMitViolationBehavior(String behavior) {
 	mitViolationBehavior = new String(behavior);
     }
 

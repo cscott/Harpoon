@@ -8,27 +8,32 @@ package javax.realtime;
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
-public class RealtimeThread extends Thread {
+public class RealtimeThread extends Thread implements Schedulable {
 
-    /** Contains the cactus stack of previous memoryAreas... 
-     */
+    public static Scheduler currentScheduler = null;
+
+    /** Contains the cactus stack of previous memoryAreas... */
 
     MemAreaStack memAreaStack;
 
     /** The top of the stack for this RealtimeThread 
      */
+    int heapMemCount;
 
     MemAreaStack topStack;
 
-    /** Contains the memoryArea associated with this mem. 
-     */
+    /** Specifies whether this RealtimeThread has access to the heap. */
+    boolean noHeap;
+
+    /** Contains the memoryArea associated with this mem. */
 
     MemoryArea mem, original;
 
-    /** Specifies whether this RealtimeThread has access to the heap.
-     */
-
-    boolean noHeap;
+    /** Realtime parameters for this thread */
+    ReleaseParameters releaseParameters = null;
+    MemoryParameters memoryParameters = null;
+    SchedulingParameters schedulingParameters = null;
+    ProcessingGroupParameters processingGroupParameters = null;
 
     /** Specifies whether the initialization code has finished setting up RTJ. 
      */
@@ -40,8 +45,8 @@ public class RealtimeThread extends Thread {
     private Runnable target;
 
     static void checkInit() {
-        if (RTJ_init_in_progress) {
-	    System.out.println("Cannot use any MemoryArea except heap until"+
+	if (RTJ_init_in_progress) {
+	    System.out.println("Cannot use any MemoryArea except heap until" +
 			       "RTJ initialization has completed!");
 	    System.exit(-1);
 	}
@@ -51,8 +56,33 @@ public class RealtimeThread extends Thread {
 	this((MemoryArea)null);
     }
 
-    /** */
-    
+    public RealtimeThread(SchedulingParameters scheduling) {
+	this();
+	schedulingParameters = scheduling;
+    }
+
+    public RealtimeThread(SchedulingParameters scheduling,
+			  ReleaseParameters release) {
+	this();
+	schedulingParameters = scheduling;
+	releaseParameters = release;
+    }
+
+    public RealtimeThread(SchedulingParameters scheduling,
+			  ReleaseParameters release, MemoryParameters memory,
+			  MemoryArea area, ProcessingGroupParameters group,
+			  Runnable logic) {
+	this(area, logic);
+	schedulingParameters = scheduling;
+	releaseParameters = release;
+	memoryParameters = memory;
+	processingGroupParameters = group;
+    }
+
+    // -------------------------------
+    // Other constructors not in specs
+    // -------------------------------
+
     public RealtimeThread(MemoryArea memory) {
 	super();
 	target = null;
@@ -60,38 +90,26 @@ public class RealtimeThread extends Thread {
 	setup();
     }
     
-    /** */
-
     public RealtimeThread(MemoryParameters mp, Runnable target) {
 	this(mp.getMemoryArea(), target);
     }
-
-    /** */
 
     public RealtimeThread(Runnable target) {
 	this((MemoryArea)null, target);
     }
     
-    /** */
-
     public RealtimeThread(String name) {
 	this((Runnable)null, name);
     }
     
-    /** */
-
     public RealtimeThread(ThreadGroup group, Runnable target, String name) {
 	this(group, target, name, null);
     }
 
-    /** */
-    
     public RealtimeThread(ThreadGroup group, String name) {
 	this(group, null, name);
     }
     
-    /** */
-
     public RealtimeThread(Runnable target, String name) {
 	super(name);
 	this.target = target;
@@ -99,16 +117,160 @@ public class RealtimeThread extends Thread {
 	setup();
     }
     
-    /** */
-
     public RealtimeThread(MemoryArea memory, Runnable target) {
-	super();
+	super(target);
+	mem = memory;
+	setup();
+    }
+
+// 	public RealtimeThread(ThreadGroup group, Runnable target) {
+// 		super(group, target);
+// 		mem = null;
+// 		setup();
+// 	}
+    
+    public RealtimeThread(ThreadGroup group, Runnable target,
+			  String name, MemoryArea memory) {
+	super(group, target, name);
 	this.target = target;
 	mem = ((original=memory)==null)?null:(memory.shadow);
 	setup();
     }
 
-    /** */
+    /** This sets up the unspecified local variables for the constructor. */
+    
+    private void setup() {
+	memAreaStack = null;
+	noHeap = false;
+	heapMemCount = 0;
+	topStack = null;
+    }
+
+    // ------------------
+    // methods from specs
+    // ------------------
+
+    public boolean addIfFeasible() {
+	// TODO
+	if (currentScheduler == null) return false;
+	currentScheduler.addToFeasibility(this);
+	if (currentScheduler.isFeasible()) return true;
+	else {
+	    currentScheduler.removeFromFeasibility(this);
+	    return false;
+	}
+    }
+
+    public boolean addToFeasibility() {
+	if(currentScheduler != null)
+	    currentScheduler.addToFeasibility(this);
+
+	// TODO -- return type changed from 'void' to 'boolean'
+	return false;
+    }
+    
+    public static RealtimeThread currentRealtimeThread() throws ClassCastException {
+	return (RealtimeThread)currentThread();
+    }
+    
+    public void deschedulePeriodic() {
+	// TODO
+    }
+
+    public MemoryArea getCurrentMemoryArea() {
+	return mem;
+    }
+
+    public static int getInitialMemoryAreaIndex() {
+	// TODO
+
+	return 0;
+    }
+
+    public static int getMemoryAreaStackDepth() {
+	// TODO
+
+	return 0;
+    }
+
+    public MemoryParameters getMemoryParameters() {
+	return memoryParameters;
+    }
+    
+    public static MemoryArea getOuterMemoryArea(int index) {
+	// TODO
+
+	return null;
+    }
+
+    public ProcessingGroupParameters getProcessingGroupParameters() {
+	return processingGroupParameters;
+    }
+    
+    public ReleaseParameters getReleaseParameters() {
+	return releaseParameters;
+    }
+    
+    public Scheduler getScheduler() {
+	return currentScheduler;
+    }
+    
+    public SchedulingParameters getSchedulingParameters() {
+	return schedulingParameters;
+    }
+    
+    public void interrupt() {
+	// TODO
+    }
+
+    public void removeFromFeasibility() {
+	if (currentScheduler != null)
+	    currentScheduler.removeFromFeasibility(this);
+    }
+    
+    public void schedulePeriodic() {
+	// TODO
+    }
+
+    public boolean setIfFeasible(ReleaseParameters release, MemoryParameters memory) {
+	return setIfFeasible(release, memory, processingGroupParameters);
+    }
+
+    public boolean setIfFeasible(ReleaseParameters release, MemoryParameters memory,
+				 ProcessingGroupParameters group) {
+	if (currentScheduler == null) return false;
+	ReleaseParameters oldReleaseParameters = releaseParameters;
+	MemoryParameters oldMemoryParameters = memoryParameters;
+	ProcessingGroupParameters oldProcessingGroupParameters = processingGroupParameters;
+
+	setReleaseParameters(release);
+	setMemoryParameters(memory);
+	setProcessingGroupParameters(group);
+	if (currentScheduler.isFeasible()) return true;
+	else {
+	    setReleaseParameters(oldReleaseParameters);
+	    setMemoryParameters(oldMemoryParameters);
+	    setProcessingGroupParameters(oldProcessingGroupParameters);
+	    return false;
+	}
+    }
+
+    public boolean setIfFeasible(ReleaseParameters release, ProcessingGroupParameters group) {
+	return setIfFeasible(release, memoryParameters, group);
+    }
+
+    public void setMemoryParameters(MemoryParameters parameters)
+	throws IllegalThreadStateException {
+	this.memoryParameters = memoryParameters;
+    }
+    
+    public boolean setMemoryParametersIfFeasible(MemoryParameters memParam) {
+	return setIfFeasible(releaseParameters, memParam, processingGroupParameters);
+    }
+
+    public void setProcessingGroupParameters(ProcessingGroupParameters parameters) {
+	this.processingGroupParameters = parameters;
+    }
 
     public RealtimeThread(ThreadGroup group, Runnable target) {
 	super(group, (Runnable)null);
@@ -117,36 +279,95 @@ public class RealtimeThread extends Thread {
 	setup();
     }
     
-    /** */
-
-    public RealtimeThread(ThreadGroup group, Runnable target, String name,
-			  MemoryArea mem) {
-	super(group, name);
-	this.target = target;
-	this.mem = ((original=mem)==null)?null:(mem.shadow);
-	setup();
+    public boolean setProcessingGroupParametersIfFeasible(ProcessingGroupParameters groupParameters) {
+	return setIfFeasible(releaseParameters, memoryParameters, groupParameters);
     }
 
-    /** This sets up the unspecified local variables for the constructor. */
-
-    private void setup() {
-	topStack = memAreaStack = null;
-	noHeap = false;
+    public void setReleaseParameters(ReleaseParameters parameters)
+	throws IllegalThreadStateException {
+	this.releaseParameters = releaseParameters;
     }
-
-    /** */
-
-    public static final int MIN_PRIORITY = Thread.MIN_PRIORITY;
-
-    /** */
-
-    public static final int NORM_PRIORITY = Thread.NORM_PRIORITY;
-
-    /** */
-
-    public static final int MAX_PRIORITY = Thread.MAX_PRIORITY;
     
-    /** */
+    public boolean setReleaseParametersIfFeasible(ReleaseParameters release) {
+	return setIfFeasible(release, memoryParameters, processingGroupParameters);
+    }
+
+    public void setScheduler(Scheduler scheduler)
+	throws IllegalThreadStateException {
+	currentScheduler = scheduler;
+    }
+    
+    public void setScheduler(Scheduler scheduler,
+			     SchedulingParameters scheduling,
+			     ReleaseParameters release,
+			     MemoryParameters memParameters,
+			     ProcessingGroupParameters processingGroup)
+	throws IllegalThreadStateException {
+
+	currentScheduler = scheduler;
+	schedulingParameters = scheduling;
+	releaseParameters = release;
+	memoryParameters = memParameters;
+	processingGroupParameters = processingGroup;
+    }
+
+    public void setSchedulingParameters(SchedulingParameters scheduling)
+	throws IllegalThreadStateException {
+	this.schedulingParameters = scheduling;
+    }
+    
+    public boolean setSchedulingParametersIfFeasible(SchedulingParameters scheduling) {
+	if (currentScheduler == null) return false;
+	SchedulingParameters oldSchedulingParameters = schedulingParameters;
+	schedulingParameters = scheduling;
+	if (currentScheduler.isFeasible()) return true;
+	else {
+	    schedulingParameters = oldSchedulingParameters;
+	    return false;
+	}
+    }
+
+    public static void sleep(Clock clock, HighResolutionTime time)
+	throws InterruptedException {
+	// TODO
+	// method exists, but with different specs
+    }
+
+    public static void sleep(HighResolutionTime time)
+	throws InterruptedException {
+	// TODO
+	// method exists, but with different specs
+    }
+
+    public void start() {
+	if ((mem != null)&&(!mem.heap)) {
+	    checkInit();
+	}
+	RealtimeThread previousThread = currentRealtimeThread();
+	memAreaStack = previousThread.memAreaStack;
+	MemoryArea newMem = previousThread.getMemoryArea();
+	if (mem == null) {
+	    enter(newMem, previousThread.getMemoryArea());
+	} else {
+	    enter(mem, original);
+	}
+	mem = getMemoryArea();
+	super.start();// When the run method is called, 
+	addToFeasibility();
+	// RealtimeThread points to the current scope.
+	// Note that there is no exit()... this is actually legal.
+    }
+
+    public boolean waitForNextPeriod() throws IllegalThreadStateException {
+        PriorityScheduler.getScheduler().waitForNextPeriod(this);
+
+	// TODO -- return type changed from 'void' to 'boolean'
+	return false;
+    }
+    
+    // --------------------
+    // Methods not in specs
+    // --------------------
 
     public static int activeCount() {
 	return Thread.activeCount();
@@ -165,7 +386,7 @@ public class RealtimeThread extends Thread {
     }
     
     /** */
-
+    
     public static boolean interrupted() {
 	return Thread.interrupted();
     }
@@ -192,37 +413,12 @@ public class RealtimeThread extends Thread {
     /** */
 
     public static void dumpStack() {
-	System.out.println("MemoryArea stack:");
+	//		System.out.println("MemoryArea stack:");
 	System.out.println(currentRealtimeThread().memAreaStack.toString());
 	Thread.dumpStack();
     }
     
     // The following methods are part of the RTJ spec.
-
-    /** */
-    
-    public static RealtimeThread currentRealtimeThread() {
-	return (RealtimeThread)Thread.currentThread();
-    }
-    
-    public void start() {
-	if ((mem != null)&&(!mem.heap)) {
-	    checkInit();
-	}
-	RealtimeThread previousThread = currentRealtimeThread();
-	topStack = memAreaStack = previousThread.memAreaStack;
-	
-	MemoryArea newMem = previousThread.memoryArea();
-	if (mem == null) {
-	    enter(newMem, previousThread.getMemoryArea());
-	} else {
-	    enter(mem, original);
-	}
-	mem = memoryArea();
-	original = getMemoryArea();
-	super.start();// When the run method is called, 
-	// RealtimeThread points to the current scope.
-    }
 
     /** Override the Thread.run() method, because Thread.run() doesn't work. */
     public void run() {
@@ -276,7 +472,7 @@ public class RealtimeThread extends Thread {
     /** Get the outerScope of a given MemoryArea for the current 
      *  RealtimeThread. 
      */
-
+    
     MemoryArea outerScope(MemoryArea child) {
 	MemAreaStack current = memAreaStack.first(child.shadow);
 	if (current != null) {
@@ -291,30 +487,20 @@ public class RealtimeThread extends Thread {
 	    return current.original;
 	}
     }
-
+    
     /** */
-
+    
     boolean checkAccess(MemoryArea source, MemoryArea target) {
 	MemAreaStack sourceStack = (source == memoryArea()) ? 
 	    memAreaStack : memAreaStack.first(source);
 	return (sourceStack != null) && (sourceStack.first(target) != null);
     }
-
-    /** */
     
     public void checkNoHeapWrite(Object obj) {}
-
-    /** */
-
+    
     public void checkNoHeapRead(Object obj) {}
-
-    /** */
-
+    
     public String toString() {
 	return "RealtimeThread";
     }
-
 }
-
-
-

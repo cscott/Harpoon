@@ -12,23 +12,19 @@ public abstract class Scheduler {
     
     protected Scheduler() {}
 
-    protected abstract boolean addtoFeasibility(Schedulable schedulable) {
-	return false;
-    }
+    protected abstract boolean addToFeasibility(Schedulable schedulable);
 
     public abstract void fireSchedulable(Schedulable schedulable);
 
-    public static Scheduler getDefaultScheduler() {}
+    public static Scheduler getDefaultScheduler() {
+	return defaultScheduler;
+    }
     
     public abstract String getPolicyName();
 
-    public abstract boolean isFeasible() {
-	return false;
-    }
+    public abstract boolean isFeasible();
 
-    protected abstract boolean removeFromFeasibility(Schedulable schedulable) {
-	return false;
-    }
+    protected abstract boolean removeFromFeasibility(Schedulable schedulable);
 
     public static void setDefaultScheduler(Scheduler scheduler) {
 	// should we do this?
