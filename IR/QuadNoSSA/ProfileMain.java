@@ -26,8 +26,7 @@ import harpoon.IR.QuadNoSSA.*;
     // hide away constructor.
 //private Main() { }
 //=======
-public abstract class ProfileMain extends harpoon.IR.Registration {
-    //>>>>>>> 1.7
+public  class ProfileMain extends harpoon.IR.Registration {
 
     /** The compiler should be invoked with the names of classes
      *  extending <code>java.lang.Thread</code>.  These classes
@@ -35,10 +34,13 @@ public abstract class ProfileMain extends harpoon.IR.Registration {
     public static void main(String args[]) {
 	java.io.PrintWriter out;
 	String title;
+	boolean profile = false;
 
-	HClass interfaceClasses[] = new HClass[args.length];
-	for (int i=0; i<args.length; i++)
-	    interfaceClasses[i] = HClass.forName(args[i]);
+	if (args[0].equals("1")) profile = true;
+
+	HClass interfaceClasses[] = new HClass[args.length-1];
+	for (int i=1; i<args.length; i++)
+	    interfaceClasses[i-1] = HClass.forName(args[i]);
 	// Do something intelligent with these classes. XXX
 	for (int i=0; i<interfaceClasses.length; i++) {
 	    NClass nclass = new NClass(interfaceClasses[i]);
@@ -53,32 +55,35 @@ public abstract class ProfileMain extends harpoon.IR.Registration {
 		
 		if (hc1 == null) {
 		  System.out.println ("Yep.. this is Null!");
+		} else {
+		  try {
+		    if (profile) {
+		      //insert profiling stuff -- mfoltz
+		      System.out.println("Profiling "+hm[j].getName());
+		      harpoon.Analysis.QuadSSA.Profile.optimize(hc1);
+		    }
+		  } catch (Exception e){
+		    e.printStackTrace();
+		  }
 		}
-		//sco.optimize(hc1);
-		try {
-		//insert profiling stuff -- mfoltz
-		harpoon.Analysis.QuadSSA.Profile.optimize(hc1);
 		title = interfaceClasses[i].getName()+":"+hm[j].getName();
-		out = new PrintWriter( 
-				      new FileOutputStream 
-				      (interfaceClasses[i].getName().replace('.','/')+":"+hm[j].getName()+".vcg"));
-		harpoon.Util.Graph.printCFG(hc1,out,title);
-		out.close();
+		// out = new PrintWriter( 
+		// new FileOutputStream 
+		//	      (interfaceClasses[i].getName().replace('.','/')+":"+hm[j].getName()+".vcg"));
+		// harpoon.Util.Graph.printCFG(hc1,out,title);
+		// out.close();
+		
 		
 		harpoon.IR.QuadNoSSA.Code hc = new harpoon.IR.QuadNoSSA.Code((harpoon.IR.QuadSSA.Code)hc1);
-		//		System.out.println ("Right before calling create Java on: " +
-		//				    hm[j].getName());
+		System.out.println ("Right before calling create Java on: " +hm[j].getName());
 
-		  //NMethod method = hc.createJavaByte (scc, hm[j].getCode("quad-ssa"));
-		  NMethod method = hc.createJavaByte (new TypeInfo(), hm[j].getCode("quad-ssa"));
-		  nclass.addMethod (method);
-		} catch (Exception e){
-		  e.printStackTrace();
-		}
+		//NMethod method = hc.createJavaByte (scc, hm[j].getCode("quad-ssa"));
+		NMethod method = hc.createJavaByte (new TypeInfo(), hm[j].getCode("quad-ssa"));
+		nclass.addMethod (method);
 	      }
-	      
 	    }
 	    try {
+	      System.out.println("Dumping assembly for class "+interfaceClasses[i].getName());
 	      PrintWriter c_out = new PrintWriter (new FileOutputStream (interfaceClasses[i].getName().replace('.','/')+".j"));
 	      nclass.writeClass (c_out);
 	      c_out.close();
