@@ -29,7 +29,7 @@ all:    clean doc realtime.jar # realtime.tgz
 
 clean:
 	@echo Cleaning up docs and realtime.jar.
-	@rm -rf doc java javax
+	@rm -rf doc java javax org demo HTTPClient idl  java_cup META-INF
 	@rm -f realtime.jar realtime.jar.TIMESTAMP
 	@rm -f realtime.tgz realtime.tgz.TIMESTAMP
 	@rm -f *.class src/*.class
