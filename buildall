@@ -3,15 +3,27 @@
 echo "TODO: Write a more elegant version of me!"
 
 
-#./buildone RTWater/Water
+
+# Building the RealTime Java benchmarks
 OLD_CLASSPATH=$CLASSPATH
 export CLASSPATH=/home/salcianu/Harpoon/Code/Support/realtime.jar:$CLASSPATH
 
-./buildone Fib
-./buildone RTWater/Water
+./buildone FibPaper
+
+./buildone Water/Water_RTJ
+
+./buildone Barnes/Barnes_RTJ
+
+./buildone HTTP/HTTP_RTJ
+
+./buildone Quote/Quote_RTJ
+
+./buildone Toy_RTJ
 
 export CLASSPATH=${OLD_CLASSPATH}
 
+
+exit 1;
 
 ./buildone ETruc
 

@@ -4,11 +4,12 @@ SCR_DIR=`dirname $0`
 
 source ${SCR_DIR}/elim_common
 
-HARPOON_OPTIONS=" -mx512m -oss100m \
-		  -Dharpoon.runtime=2 \
+HARPOON_OPTIONS=" -mx128m -oss100m \
     	          -Dharpoon.alloc.strategy=bdw \
-    	          -Dharpoon.target.elf=yes \
                   -Dharpoon.class.path=$stdPath:$dir"
+
+#		  -Dharpoon.runtime=2 \
+#    	          -Dharpoon.target.elf=yes \
 
 BUILD_OUT_DIR=${CALL_DIR}/none/${name}.none
 
@@ -26,6 +27,7 @@ echo "HARPOON_OPTIONS="${HARPOON_OPTIONS}
 java -mx128m -oss100m \
     ${HARPOON_OPTIONS} \
 harpoon.Main.SAMain \
+    -t SIMPLE \
     ${SAMAIN_OPTIONS} \
     -c $cls -bprecisec -o ${BUILD_OUT_DIR}
 

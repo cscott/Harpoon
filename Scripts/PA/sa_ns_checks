@@ -19,7 +19,4 @@ harpoon.Main.PAMain ${PREANALYSIS_OPT} \
     --output ${BUILD_OUT_DIR} --backend precisec --rtj simple \
 $cls
 
-#    --inline \
-#    --details \
-
 exit $?

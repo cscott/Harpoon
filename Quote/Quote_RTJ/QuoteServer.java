@@ -143,8 +143,9 @@ public class QuoteServer {
 	StockQuoteHandler newHandler = new 
 	    StockQuoteHandler(clientSocket,stockInfo);
 	
-	RealtimeThread newHandlerThread = new RealtimeThread(new CTMemory(100000), 
-							     newHandler); 
+	RealtimeThread newHandlerThread = 
+	    new RealtimeThread(new CTMemory(100000), newHandler); 
+
 	newHandlerThread.start(); 
     }
 

@@ -24,13 +24,9 @@ else
      PREANALYSIS_OPT=--savepre=$PRE_FILE
 fi
 
+FLEX_DIR=${HARPOON_DIR}/Code
 
-
-# the class path with NewThread.jar
-stdPath=${HARPOON_DIR}/Code/Support/AbstractList.jar:${HARPOON_DIR}/Code/Support/NewThread.jar:${HARPOON_DIR}/Code/Support/sunthunk.jar:${HARPOON_DIR}/Code/Support/reflect-thunk.jar:${HARPOON_DIR}/Code/Support/collections.jar:${HARPOON_DIR}/Code/classes.zip:${HARPOON_DIR}/Code/Support/realtime.jar:.
-
-# the class path without NewThread.jar
-#stdPath=${HARPOON_DIR}/Code/Support/AbstractList.jar:${HARPOON_DIR}/Code/Support/sunthunk.jar:${HARPOON_DIR}/Code/Support/reflect-thunk.jar:${HARPOON_DIR}/Code/Support/collections.jar:${HARPOON_DIR}/Code/classes.zip:${HARPOON_DIR}/Code/Support/realtime.jar:.
+stdPath=${FLEX_DIR}/Support/NewThread.jar:${FLEX_DIR}/Support/reflect-thunk.jar:${FLEX_DIR}/SupportNP/sunthunk.jar:${FLEX_DIR}/SupportNP/collections.jar:${FLEX_DIR}/SupportNP/classes.zip:${FLEX_DIR}/Support/realtime.jar
 
 echo "harpoon.class.path = \""${dir}:${stdPath}"\""
 
