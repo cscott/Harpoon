@@ -4,7 +4,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.4 1998-08-08 02:11:13 cananian Exp $
+ * @version $Id: Util.java,v 1.5 1998-09-11 15:16:33 cananian Exp $
  */
 public final class Util {
   // Disable constructor.  Only static methods here.
@@ -35,6 +35,30 @@ public final class Util {
     }
     return sb.toString();
   }
+  /** Repeat a given string a certain number of times.
+   *  @return a string consisting of <code>s</code> repeated <code>n</code>
+   *          times. */
+  public static final String repeatString(String s, int n) {
+    if (n==0) return "";
+    if (n==1) return s;
+    if ((n & 1) == 1)  // n is odd
+      return repeatString(s, n-1) + s;
+    else {
+      String half = repeatString(s, n/2);
+      return half + half;
+    }
+  }
+  // another way of doing the same thing.
+  private static final String repeatString2(String s, int n) {
+    StringBuffer sb = new StringBuffer();
+    for (int bit=30; bit>=0; bit--) {
+      sb = sb.append(sb.toString());
+      if ( (n & (1<<bit)) == 1)
+	sb = sb.append(s);
+    }
+    return sb.toString();
+  }
+
   /** Hacked assertion facility */
   public static final void assert(boolean val) {
     if (!val)
