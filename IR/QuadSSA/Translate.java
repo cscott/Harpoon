@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.15 1998-08-26 22:07:32 cananian Exp $
+ * @version $Id: Translate.java,v 1.16 1998-08-31 23:42:54 cananian Exp $
  */
 
 /*
@@ -203,12 +203,13 @@ class Translate  { // not public.
 	return quads;
     }
     static final Quad trans(State initialState, ExceptionEntry allTries[],
-			    Instr in, Quad header, int which_succ) {
-	Stack todo = new Stack(); todo.push(in);
-	State s = initialState;
+			    Instr blockTop, Quad header, int which_succ) {
+	Stack todo = new Stack(); todo.push(blockTop);
+	State s = initialState; // abbreviation, for convenience.
 	StateMap sm = new StateMap();
 
-	//while (!todo. // FIXME
+	while (!todo.empty()) {
+	    in = todo.pop();
 	// Are we entering a new TRY block?
 	if (countTry(in, allTries) > s.tryBlock.length) {
 	    // determine which try block we're entering
