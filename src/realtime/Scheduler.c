@@ -111,6 +111,10 @@ JNIEXPORT jlong JNICALL Java_javax_realtime_Scheduler_removeThreadInC
 JNIEXPORT void JNICALL Java_javax_realtime_Scheduler_sleep
 (JNIEnv* env, jobject _this, jlong microsecs) {
   struct timespec req;
+#ifdef RTJ_DEBUG_THREADS
+  printf("\n  Scheduler.sleep(%p, %p, %lld)", env, _this,
+	 (long long)microsecs);
+#endif
   req.tv_sec = ((long long int)microsecs)/1000000;
   req.tv_nsec = ((long long int)microsecs)*1000;
   nanosleep(&req, NULL);
