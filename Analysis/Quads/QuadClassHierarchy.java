@@ -10,6 +10,8 @@ import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 
+import java.lang.reflect.Modifier;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,7 +29,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.11 1999-10-28 04:45:31 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.12 1999-11-02 01:27:39 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -301,7 +303,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    calledMethods.addAll((Set)cmp.get(s));
 	    for (Iterator it = calledMethods.iterator(); it.hasNext(); ) {
 		HMethod m = (HMethod) it.next();
-		if (m.isStatic()) continue; // not inheritable.
+		if (!isVirtual(m)) continue; // not inheritable.
 		try {
 		    HMethod nm = c.getMethod(m.getName(),
 					     m.getDescriptor());
@@ -368,6 +370,14 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	// and no longer pending.
 	Set s2 = (Set) cmp.get(m.getDeclaringClass());
 	s2.remove(m);
+    }
+
+    // useful utility method
+    private static boolean isVirtual(HMethod m) {
+	if (m.isStatic()) return false;
+	if (Modifier.isPrivate(m.getModifiers())) return false;
+	if (m instanceof HConstructor) return false;
+	return true;
     }
 
     /* ALGORITHM:
