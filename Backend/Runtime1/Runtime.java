@@ -33,7 +33,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.3.2.3 2002-03-10 23:16:34 cananian Exp $
+ * @version $Id: Runtime.java,v 1.3.2.4 2002-03-11 04:40:35 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -90,6 +90,9 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	// config-checking --- this property shouldn't change!
 	if (align!=0)
 	    configurationSet.add("check_with_masked_pointers_needed");
+	// more config-checking -- using this tree builder means no
+	// claz compression support.
+	configurationSet.add("check_with_claz_shrink_not_needed");
 	return new harpoon.Backend.Runtime1.TreeBuilder
 	    (this, frame.getLinker(), as, frame.pointersAreLong(), align);
     }

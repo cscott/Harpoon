@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.3.2.2 2002-03-10 08:06:26 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.3.2.3 2002-03-11 04:40:35 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -77,8 +77,8 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     private static final boolean singleWordAlign =
 	Boolean.getBoolean("harpoon.runtime1.single-word-align");
 
-    // allocation strategy to use.
-    final AllocationStrategy as;
+    /** allocation strategy to use. */
+    protected final AllocationStrategy as;
 
     // integer constant sizes:
     protected final int WORD_SIZE;
@@ -914,7 +914,9 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	return new Translation.Ex
 	    (new CONST(tf, source, cfm.fieldOffset(field)));
     }
-    private Exp _claz_(TreeFactory tf, HCodeElement source,
+    /** Returns a pointer to the claz structure associated with the
+     *  given objectref. */
+    protected Exp _claz_(TreeFactory tf, HCodeElement source,
 		       DerivationGenerator dg,
 		       Translation.Exp objectref) {
 	return DECLARE(dg, HClass.Void/*claz pointer*/,
