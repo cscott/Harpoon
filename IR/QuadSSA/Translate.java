@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.43 1998-09-04 07:09:27 cananian Exp $
+ * @version $Id: Translate.java,v 1.44 1998-09-04 07:17:20 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -402,11 +402,17 @@ class Translate  { // not public.
 	case Op.AALOAD:
 	case Op.BALOAD:
 	case Op.CALOAD:
+	case Op.DALOAD:
 	case Op.FALOAD:
 	case Op.IALOAD:
+	case Op.LALOAD:
 	case Op.SALOAD:
 	    {
-	    ns = s.pop(2).push(new Temp());
+	    if (in.getOpcode()==Op.DALOAD ||
+		in.getOpcode()==Op.LALOAD)
+		ns = s.pop(2).push(null).push(new Temp()); // 64-bit val.
+	    else
+		ns = s.pop(2).push(new Temp()); // 32-bit val
 
 	    Temp Tobj  = s.stack[1];
 	    Temp Tindex= s.stack[0];
@@ -421,18 +427,28 @@ class Translate  { // not public.
 	    // done.
 	    break;
 	    }
-	case Op.AASTORE: // FIXME - also throws ArrayStoreException.
+	case Op.AASTORE: // FIXME - AASTORE also throws ArrayStoreException.
 	case Op.BASTORE:
 	case Op.CASTORE:
+	case Op.DASTORE:
 	case Op.FASTORE:
 	case Op.IASTORE:
+	case Op.LASTORE:
 	case Op.SASTORE:
 	    {
-	    ns = s.pop(3);
-
-	    Temp Tobj  = s.stack[2];
-	    Temp Tindex= s.stack[1];
-	    Temp Tsrc  = s.stack[0];
+	    Temp Tobj, Tindex, Tsrc;
+	    if (in.getOpcode()==Op.DASTORE ||
+		in.getOpcode()==Op.LASTORE) { // 64-bit val.
+		ns = s.pop(4);
+		Tobj   = s.stack[3];
+		Tindex = s.stack[2];
+		Tsrc   = s.stack[0];
+	    } else { // 32-bit val.
+		ns = s.pop(3);
+		Tobj   = s.stack[2];
+		Tindex = s.stack[1];
+		Tsrc   = s.stack[0];
+	    }
 
 	    // the actual operation.
 	    Quad q0= new ASET(in, Tobj, Tindex, Tsrc);
@@ -597,16 +613,6 @@ class Translate  { // not public.
 	    ns = s.pop(4).push(null).push(new Temp());
 	    q = new OPER(in, Op.toString(in.getOpcode()), // dadd, ddiv or dmul
 			 ns.stack[0], new Temp[] { s.stack[2], s.stack[0] });
-	    break;
-	case Op.DALOAD:
-	case Op.LALOAD:
-	    ns = s.pop(2).push(null).push(new Temp());
-	    q = new AGET(in, ns.stack[0], s.stack[1], s.stack[0]);
-	    break;
-	case Op.DASTORE:
-	case Op.LASTORE:
-	    ns = s.pop(4);
-	    q = new ASET(in, s.stack[3], s.stack[2], s.stack[0]);
 	    break;
 	case Op.DCMPG:
 	case Op.DCMPL:
