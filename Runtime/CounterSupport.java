@@ -10,7 +10,7 @@ import java.io.PrintStream;
  * using counters identified by integers.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: CounterSupport.java,v 1.4 2003-02-09 18:31:23 salcianu Exp $ */
+ * @version $Id: CounterSupport.java,v 1.5 2003-02-11 21:56:59 salcianu Exp $ */
 public class CounterSupport {
     static int sizesync;
     static int numbins, bincap;
@@ -94,7 +94,7 @@ public class CounterSupport {
 	    mem_amount = new_mem_amount;
 	    mem_amount_length = allocID * 2;
 	}
-	mem_amount[allocID]++;
+	mem_amount[allocID] += length;
     }
     
 
@@ -270,7 +270,7 @@ public class CounterSupport {
 	for(int i = 0; i < obj_count_length; i++)
 	    if (obj_count[i] != 0)
 		System.out.println
-		    (i + "  " + obj_count[i] +
+		    (i + "  " + obj_count[i] + " " + 
 		     ((i < mem_amount_length) ? mem_amount[i] : 0));
 	System.out.println("Allocation array END");
 

@@ -55,7 +55,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>IAStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: IAStatistics.java,v 1.7 2003-02-09 21:26:56 salcianu Exp $
+ * @version $Id: IAStatistics.java,v 1.8 2003-02-11 21:56:45 salcianu Exp $
  */
 public abstract class IAStatistics {
     
@@ -69,7 +69,9 @@ public abstract class IAStatistics {
 	    return
 		count[SITE][PREALLOC] + "\t" + count[SITE][HEAP] + "\t| " +
 		count[OBJECT][PREALLOC] + "\t" + count[OBJECT][HEAP] + "\t| " +
-		count[SPACE][PREALLOC] + "\t" + count[SPACE][HEAP] + 
+		AllocationStatistics.memSizeFormat(count[SPACE][PREALLOC]) + 
+		"\t" +
+		AllocationStatistics.memSizeFormat(count[SPACE][HEAP]) + 
 		"\t|| " + (hclass != null ? hclass.toString() : "");
 	}
 
@@ -175,8 +177,10 @@ public abstract class IAStatistics {
 	TypeStat total_throwables = new TypeStat(null);
 	TypeStat total_program = new TypeStat(null);
 
-	System.out.println("SITES\t\t|OBJECTS\t||");
-	System.out.println("PREALLOC HEAP\t|PREALLOC HEAP\t||CLASS");
+	System.out.println
+	    ("SITES\t\t|OBJECTS\t|SPACE\t\t||");
+	System.out.println
+	    ("PREALLOC HEAP\t|PREALLOC HEAP\t|PREALLOC HEAP\t||CLASS");
 	System.out.println
 	    ("------------------------------------------------------------");
 	for(int index_ts = 0; index_ts < tss.length; index_ts++) {
@@ -229,7 +233,7 @@ public abstract class IAStatistics {
 	System.out.println
 	    (label + " PREALLOCATED SPACE:\t" +
 	     proportion(total.count[SPACE][PREALLOC],
-			total.count[SPACE][HEAP], 5, 2));
+			total.count[SPACE][HEAP], 5, 2, true));
     }
 
 
@@ -246,10 +250,27 @@ public abstract class IAStatistics {
 
     static String proportion
 	(long a, long b, int digits, int decimals) {
+	return proportion(a, b, digits, decimals, false);
+    }
+
+    /** Pretty printer for a proportion: &quot; <tt>a</tt> out of
+        <tt>total</tt> = <tt>proportion</tt>&quot; (where
+        <tt>total=a+b</tt>). If <code>memSizeFormat<code> is true,
+        <tt>a</tt> and <tt>total</tt> are displayed as memory size
+        (i.e., 2048 is 2K). <code>digits</code> and
+        <code>decimals</code> indicates the formatting for the
+        proportion. */
+    public static String proportion
+	(long a, long b, int digits, int decimals, boolean memSizeFormat) {
 	long total = a + b;
 	double frac = (a * 100.0) / (total + 0.0);
 	return 
-	    a + "\tout of\t" + total + "\t = " +
+	    (memSizeFormat ? AllocationStatistics.memSizeFormat(a) :
+	     (new Long(a)).toString()) + 
+	    "\tout of\t" + 
+	    (memSizeFormat ? AllocationStatistics.memSizeFormat(total) :
+	     (new Long(total)).toString()) +
+	     "\t = " +
 	    Debug.doubleRep(frac, digits, decimals) + "%";
     }
 
@@ -279,15 +300,13 @@ public abstract class IAStatistics {
 	    */
 
 	    TypeStat ts = get_type_stat(hclass2stat, allocatedClass(q));
-	    if(selfIncompatible(q, ia) ||
-	       !PreallocAllocationStrategy.extraCond(q, allocatedClass(q))) {
-		ts.count[OBJECT][HEAP] += as.getCount(q);
-		ts.count[SITE][HEAP]++;
-	    }
-	    else {
-		ts.count[OBJECT][PREALLOC] += as.getCount(q);
-		ts.count[SITE][PREALLOC]++;
-	    }
+	    int place = 
+		(selfIncompatible(q, ia) ||
+		 !PreallocAllocationStrategy.extraCond(q, allocatedClass(q))) ?
+		HEAP : PREALLOC;
+	    ts.count[OBJECT][place] += as.getCount(q);
+	    ts.count[SITE][place]++;
+	    ts.count[SPACE][place] += as.getMemAmount(q);
 	}
 
 	Collection tss_coll = hclass2stat.values();

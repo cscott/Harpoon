@@ -35,7 +35,7 @@ import java.io.PrintWriter;
  * site from an instrumented program was executed.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.3 2003-02-09 18:31:00 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.4 2003-02-11 21:56:50 salcianu Exp $
  * @see InstrumentAllocs
  */
 public class AllocationStatistics {
@@ -267,4 +267,20 @@ public class AllocationStatistics {
 	}
 	return allocs;
     }
+
+    /** Nicely formats the memory size <code>size</code>. */
+    public static String memSizeFormat(long size) {
+	// special case: size < 1K
+	if(size < 1024)
+	    return (new Long(size)).toString();
+
+	double dsize = (double) size;
+	int index = 0;
+	while((dsize > 1024) && (index < msf_units.length)) {
+	    dsize = dsize / 1024;
+	    index++;
+	}
+	return Debug.doubleRep(dsize, 2) + msf_units[index];
+    }
+    private static String msf_units[] = {"", "K", "M", "G", "T"};
 }
