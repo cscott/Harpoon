@@ -20,7 +20,7 @@ import java.util.Map;
  * from a different <code>AllocationInformation</code> object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformationMap.java,v 1.4 2002-04-10 02:58:48 cananian Exp $
+ * @version $Id: AllocationInformationMap.java,v 1.5 2002-06-25 18:09:28 kkz Exp $
  */
 public class AllocationInformationMap
     implements AllocationInformation, java.io.Serializable {
@@ -59,13 +59,15 @@ public class AllocationInformationMap
 	final boolean noSynchronization;
 	final Temp allocationHeap;
 	final HClass actualClass;
+	final boolean setDynamicWBFlag;
 	public AllocationPropertiesImpl(boolean hasInteriorPointers,
 					boolean canBeStackAllocated,
 					boolean canBeThreadAllocated,
 					boolean makeHeap,
 					boolean noSynchronization,
 					Temp allocationHeap,
-					HClass actualClass) {
+					HClass actualClass,
+					boolean setDynamicWBFlag) {
 	    assert !(allocationHeap!=null && !canBeThreadAllocated);
 	    assert !(allocationHeap!=null && makeHeap);
 	    this.hasInteriorPointers  = hasInteriorPointers;
@@ -75,6 +77,7 @@ public class AllocationInformationMap
 	    this.noSynchronization    = noSynchronization;
 	    this.allocationHeap       = allocationHeap;
 	    this.actualClass          = actualClass;
+	    this.setDynamicWBFlag     = setDynamicWBFlag;
 	}
 	public AllocationPropertiesImpl(AllocationProperties ap, 
 					TempMap tm) {
@@ -85,7 +88,8 @@ public class AllocationInformationMap
 		 ap.noSync(),
 		 ap.allocationHeap() != null ?
 		 tm.tempMap(ap.allocationHeap()) : null,
-		 ap.actualClass());
+		 ap.actualClass(),
+		 ap.setDynamicWBFlag());
 	}
 	public boolean hasInteriorPointers() { return hasInteriorPointers; }
 	public boolean canBeStackAllocated() { return canBeStackAllocated; }
@@ -94,5 +98,6 @@ public class AllocationInformationMap
 	public boolean noSync()              { return noSynchronization; } 
 	public Temp allocationHeap()         { return allocationHeap; }
 	public HClass actualClass()          { return actualClass; }
+	public boolean setDynamicWBFlag()    { return setDynamicWBFlag; }
     }
 }

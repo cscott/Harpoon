@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  <code>AllocationProperties</code>. 
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MyAP.java,v 1.2 2002-02-25 20:58:39 cananian Exp $
+ * @version $Id: MyAP.java,v 1.3 2002-06-25 18:09:49 kkz Exp $
  */
 public class MyAP implements AllocationInformation.AllocationProperties,
 			     java.io.Serializable,
@@ -77,6 +77,9 @@ public class MyAP implements AllocationInformation.AllocationProperties,
 	return actualClass;
     }
 
+    public boolean setDynamicWBFlag() {
+	return false;
+    }
 
     public Object clone() {
 	try{

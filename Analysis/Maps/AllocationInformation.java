@@ -11,7 +11,7 @@ import harpoon.Temp.Temp;
  * to information about the allocation done at that site.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationInformation.java,v 1.2 2002-02-25 20:58:08 cananian Exp $
+ * @version $Id: AllocationInformation.java,v 1.3 2002-06-25 18:09:39 kkz Exp $
  */
 public interface AllocationInformation  {
     
@@ -66,6 +66,12 @@ public interface AllocationInformation  {
 
 	/* Each sync on this object consists of NOTHING. */
 	public boolean noSync();
+	/** @return <code>true</code> if the dynamic write barrier 
+	 *  flag needs to be set when the object is allocated--this 
+	 *  typically means that one or more write barriers associated 
+	 *  with stores into the object created at this allocation site
+	 *  have been optimistically removed. */
+	public boolean setDynamicWBFlag();
     }
 
     /** Query the properties of the allocation at the specified site. */

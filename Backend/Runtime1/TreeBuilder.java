@@ -61,7 +61,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.4 2002-04-10 03:03:20 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.5 2002-06-25 18:09:59 kkz Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -273,7 +273,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		(tf, source, Type.POINTER, Bop.ADD,
 		 DECLARE(dg, maskedDL,
 		 new TEMP(tf, source, Type.POINTER, Tmasked)),
-		 new CONST(tf, source, 1))),
+		 new CONST(tf, source, (ap.setDynamicWBFlag()?3:1)))),
 	       new MOVE // assign the new object a class pointer.
 	       (tf, source,
 		DECLARE

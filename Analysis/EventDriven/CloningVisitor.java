@@ -69,7 +69,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: CloningVisitor.java,v 1.5 2002-06-10 20:20:50 cananian Exp $
+ * @version $Id: CloningVisitor.java,v 1.6 2002-06-25 18:09:34 kkz Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -267,7 +267,8 @@ public class CloningVisitor extends QuadVisitor {
 											 aiprop.makeHeap(),
 											 false, // DEFAULT
 											 (aiprop.allocationHeap()!=null)?ctmap.tempMap(aiprop.allocationHeap()) : null,
-											 ((NEW)qc).hclass()));
+											 ((NEW)qc).hclass(),
+											 false));
 	    }
     }
 
@@ -287,7 +288,8 @@ public class CloningVisitor extends QuadVisitor {
 											 aiprop.makeHeap(),
 											 false, // DEFAULT
 											 (aiprop.allocationHeap()!=null)?ctmap.tempMap(aiprop.allocationHeap()) : null,
-											 ((ANEW)qc).hclass()));
+											 ((ANEW)qc).hclass(),
+											 false));
 	    }
     }
     
@@ -507,7 +509,8 @@ public class CloningVisitor extends QuadVisitor {
 		newai.associate(nquad, new AllocationInformationMap.AllocationPropertiesImpl(true,
 											     false, false,false,
 											     false, // DEFAULT
-											     null, nquad.hclass()));
+											     null, nquad.hclass(),
+											     false));
 	    Temp t1ex=new Temp(tf),t2=new Temp(tf);
 	    CALL call=new CALL(qf, first, HCex.getConstructor(new HClass[0]),
 			       new Temp[]{tex}, null, tex2, false, false,
@@ -693,7 +696,8 @@ public class CloningVisitor extends QuadVisitor {
 	if (newai!=null)
 	    newai.associate(newq, new AllocationInformationMap.AllocationPropertiesImpl(true, false, true, false,
 											false, // DEFAULT
-											null, newq.hclass()));
+											null, newq.hclass(),
+											false));
 	
 	//---------------------------------------------------------------------
 	//Build CALL to DoneContinuation constructor
@@ -1077,7 +1081,8 @@ public class CloningVisitor extends QuadVisitor {
 		    if (newai!=null)
 			newai.associate(nquad, new AllocationInformationMap.AllocationPropertiesImpl(true, false, false, false,
 												     false, // DEFAULT
-												     null, nquad.hclass()));
+												     null, nquad.hclass(),
+												     false));
 		    Temp t1ex=new Temp(tf),t2=new Temp(tf);
 		    CALL calla=new CALL(qf, q, HCex.getConstructor(new HClass[0]),
 				       new Temp[]{tex}, null, tex2, false, false,
@@ -1160,7 +1165,8 @@ public class CloningVisitor extends QuadVisitor {
 	    if (newai!=null)
 		newai.associate(envq, new AllocationInformationMap.AllocationPropertiesImpl(true, false, true, false,
 											    false, // DEFAULT
-											    null, envq.hclass()));
+											    null, envq.hclass(),
+											    false));
 	    Quad.addEdge(cnext,0,envq,0);
 	    Temp t1=new Temp(tf),t2=new Temp(tf),t21=new Temp(tf),t22=new Temp(tf);
 	    CALL callenv=new CALL(qf, q, env.getConstructors()[0],
@@ -1181,7 +1187,8 @@ public class CloningVisitor extends QuadVisitor {
 	    if (newai!=null)
 		newai.associate(newc, new AllocationInformationMap.AllocationPropertiesImpl(true, false, true,false,
 											    false, // DEFAULT
-											    null, newc.hclass()));
+											    null, newc.hclass(),
+											    false));
 	    Quad.addEdge(callenv,0,newc,0);
 	    //	HClass environment=linker.forName("harpoon.Analysis.EnvBuilder.Environment");
 	    HConstructor call2const=contclass.getConstructor(new HClass[]{
