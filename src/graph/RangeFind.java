@@ -130,8 +130,13 @@ public class RangeFind extends Node {
 	/* Calculate the correct vector from the location in the original image, */
 	/* the size of the target and image, the angle of the camera, etc. */
 
-	//System.out.println("");
-/*
+	//System.out.println("RangeFinding");
+	//System.out.println("RangeFind: x:"+id.x);
+	//System.out.println("RangeFind: y:"+id.x);
+	//System.out.println("RangeFind: width:"+id.width);
+	//System.out.println("RangeFind: height:"+id.height);
+
+
 	//This code assumes that thinning has been run on a labeled image.
 	//This should ensure line thickness of 1.
 	int width = id.width;
@@ -197,20 +202,26 @@ public class RangeFind extends Node {
 	    }		
 	}
 
+	maxCount = 0;
+	double maxAngle = 0;
 	for (int index = 0; index < curIndex; index++) {
 	    int idx = maxIndexes[index];
 	    int count = angleData[idx].count;
 	    double angle = angleData[idx].angle;
+	    if (count > maxCount) {
+		maxCount = count;
+		maxAngle = angle;
+	    }
 	    //System.out.println(""+index+": ("+count+") "+angle);
 	}
+	//System.out.println("maxAngle: "+maxAngle+" ("+maxCount+")");
 
-*/
-
-	/* Now, just the center of the image and 0. */
+	// Now, just the center of the image and 0.
 
 	id.c1 = id.x+(id.width/2); 
 	id.c2 = id.y+(id.height/2); 
 	id.c3 = 0;
+	id.angle = (float)maxAngle;
 	super.process(id);
     }
 
