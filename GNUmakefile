@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.32 1999-06-08 01:19:17 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.33 1999-06-09 18:47:23 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -151,8 +151,7 @@ cvs-commit: needs-cvs cvs-add
 commit: cvs-commit # convenient abbreviation
 update: needs-cvs
 	cvs -q update -Pd $(CVS_REVISION)
-	@echo ""
-	@-$(FORTUNE)
+	@-if [ -x $(FORTUNE) ]; then echo ""; $(FORTUNE); fi
 
 # JLex
 %.java : %.jlex
