@@ -4,6 +4,7 @@
 package harpoon.Analysis.Instr;
 
 import harpoon.Analysis.Instr.AppelRegAllocClasses.Web;
+import harpoon.Analysis.Instr.SpillHeuristics.SpillHeuristic;
 
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrEdge;
@@ -21,9 +22,6 @@ import harpoon.Analysis.ReachingDefsAltImpl;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.DataFlow.SpaceHeavyLiveTemps;
 import harpoon.Analysis.DataFlow.Solver;
-
-import harpoon.Analysis.Loops.Loops;
-import harpoon.Analysis.Loops.LoopFinder;
 
 import harpoon.Util.Util;
 import harpoon.Util.Default;
@@ -54,19 +52,16 @@ import java.util.Iterator;
  * <code>AppelRegAlloc</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: AppelRegAlloc.java,v 1.1.2.12 2001-07-07 19:12:20 pnkfelix Exp $
+ * @version $Id: AppelRegAlloc.java,v 1.1.2.13 2001-07-08 20:15:32 pnkfelix Exp $
  */
-public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
-    // FSK: super class really SHOULD be RegAlloc, but am doing this
-    // for now to inherit fields from ARAClasses (refactoring)
-    
+public abstract class AppelRegAlloc extends AppelRegAllocClasses {
     public static final boolean PRINT_DEPTH_TO_SPILL_INFO = true;
-    public static final boolean PRINT_HEURISTIC_INFO = false;
-    public static final boolean PRINT_CLEANING_INFO = false;
+    public static final boolean PRINT_HEURISTIC_INFO = true;
+    public static final boolean PRINT_CLEANING_INFO = true;
 
 
     private static final int NUM_CLEANINGS_TO_TRY = 2;
-    private boolean try_to_clean = true; 
+    private boolean try_to_clean = false; // FSK: turning off cleaning during FORCE_FELIX Experimentation
     // activates an extension to cleaning that doesn't spill defs that
     // are dead at the BasicBlock's end.
     private static final boolean CLEAN_BB_LOCAL_DEFS = false; // trackdown _213_javac
@@ -75,10 +70,9 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     private static final boolean TRIVIAL_MOVE_COALESCE = true;
     static RegAlloc.Factory FACTORY = new RegAlloc.Factory() {
 	    public RegAlloc makeRegAlloc(Code c) {
-		return new AppelRegAlloc(c);
+		return new AppelRegAllocStd(c);
 	    }
 	};
-
 
     // FSK todo: shouldn't use instanceof here, because a prepass
     // could have inserted spill code ahead of time and we want to
@@ -96,15 +90,16 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	// such.
 	for(Iterator instrs=code.getElementsI(); instrs.hasNext();){
 	    Instr i = (Instr) instrs.next();
-	    if (i instanceof RestoreProxy ||
-		i instanceof SpillProxy) {
+	    if (insertedSpillCode.contains(i)) {
 		i.remove();
 	    }
 	}
+	insertedSpillCode.clear();
 	dontSpillTheseDefs.clear();
 	depthToNumSpills = new int[SPILL_STAT_DEPTH];
 	try_to_clean = false;
     }
+    HashSet insertedSpillCode = new HashSet();
 
     int K; // size of register set
     
@@ -114,10 +109,17 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     CFGrapher grapher;
     UseDefer  usedefer;
 
+    SpillHeuristics sh = new SpillHeuristics(this);
+
+    // Temp t -> Webs for t (rather than going through a Temp renaming
+    // process on the whole method)
+    GenericMultiMap tempToWebs;
+
+    
     static final int SPILL_STAT_DEPTH = 20;
     int[] depthToNumSpills;
     static int[] globalDepthToNumSpills = new int[SPILL_STAT_DEPTH];
-    private String spillStats(int[] stats){
+    protected String spillStats(int[] stats){
 	StringBuffer sb = new StringBuffer();
 	for(int i=0; i<stats.length; i++) {
 	    if (stats[i] != 0)
@@ -129,7 +131,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     }
     
 
-    public AppelRegAlloc(Code code) { 
+    protected AppelRegAlloc(Code code) { 
 	super(code); 
 	K = rfi().getGeneralRegistersC().size();
 	grapher= code.getInstrFactory().getGrapherFor ( InstrGroup.AGGREGATE );
@@ -230,7 +232,6 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     }
 
     void buildWebToNodes() { 
-	webToNodes.clear();
 	for(Iterator regs=rfi().getAllRegistersC().iterator();regs.hasNext();){
 	    Temp reg = (Temp) regs.next();
 	    makePrecolored(reg);
@@ -243,66 +244,8 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	}
     }
     
-    // wrapper for dealing with union'ing a large bitset with a small
-    // appendage set.
-    class ExtremityCollection extends AbstractCollection {
-	ArrayList appendage;
-	Collection body;
-	// shares state with big, but not with small.  I bet remove()
-	// is pretty sketch...
-	ExtremityCollection(Collection big, Collection small) {
-	    appendage = new ArrayList(small.size());
-	    for(Iterator iter=small.iterator(); iter.hasNext();){
-		Object s = iter.next();
-		if (!big.contains(s)) {
-		    appendage.add(s);
-		}
-	    }
-	    body = big;
-	}
-	public Iterator iterator() { 
-	    return new CombineIterator(body.iterator(), appendage.iterator());
-	}
-	public int size() { return body.size() + appendage.size(); }
-    }
     
-    Collection liveAt(Instr i) {
-	// live-at(i) should be live-in(i) U defs(i), according to scott
-	Collection liveTempC = liveTemps.getLiveBefore(i);
-	return new ExtremityCollection( liveTempC, i.defC() );
-    }
 
-    void buildNodeToLiveAt() {
-	nodeToLiveAt.clear();
-	for(Iterator instrs = instrs(); instrs.hasNext(); ){
-	    Instr i = (Instr) instrs.next();
-	    Collection liveAt = liveAt(i);
-	    for(Iterator temps = liveAt.iterator(); temps.hasNext();) {
-		Temp t = (Temp) temps.next();
-		Collection rdefC = rdefs.reachingDefs(i, t);
-		Collection webC = tempToWebs.getValues( t );
-		for(Iterator webs=webC.iterator(); webs.hasNext(); ){
-		    Web w = (Web) webs.next();
-		    boolean intersect = false;
-		    for(Iterator rti = rdefC.iterator(); rti.hasNext(); ){
-			Instr def = (Instr) rti.next();
-			if(w.defs.contains( def )){
-			    intersect = true;
-			    break;
-			}
-		    }
-		    if ( intersect ) {
-			// w has a def that reaches i, thus w is live-at i
-			Collection nodeC = (Collection) webToNodes.get(w);
-			for(Iterator nodes=nodeC.iterator();nodes.hasNext();){
-			    Node n = (Node) nodes.next();
-			    nodeToLiveAt.add( n, i );
-			}
-		    }
-		}
-	    }
-	}
-    }
 
     public Derivation getDerivation() { return null; }
 
@@ -357,44 +300,19 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    }
 	}
     }
+    
+    /** Checks degree invariant documented in Tiger book; 
+	abstract because a variant of the algorithm breaks
+	it on purpose.
+	The invariant, as given in the Tiger book, is:
+	<pre>
+	 u isIn (simplifyWorklist \/ freezeWorklist \/ spillWorklist ) ==>
+	   degree(u) = | adjList(u) /\ ( precolored \/ simplifyWorklist \/ 
+	                                 freezeWorklist \/ spillWorklist ) |
+        </pre>
+    */
+    protected abstract void checkDegreeInv();
 
-    public void checkDegreeInv() {
-	// u isIn (simplifyWorklist \/ freezeWorklist \/ spillWorklist ) ==>
-	//   degree(u) = | adjList(u) /\ ( precolored \/ simplifyWorklist \/ 
-	//                                 freezeWorklist \/ spillWorklist ) |
-	// ( tranlates to )
-	// foreach u in (simplify U freeze U spill )
-	//    degree(u) = | {n | n isIn adjList(u) && 
-	//                       n isIn precolored \/ simplify \/ 
-	//                              freeze \/ spill } |
-
-	HashSet outerSeen = new HashSet();
-
-	NodeIter ni=combine(new NodeIter[]{simplify_worklist.iter(),
-					   freeze_worklist.iter(),
-					   spill_worklist.iter()});
-	while( ni.hasNext() ) {
-	    Node u = ni.next();
-	    
-	    if (CHECK_INV)
-	    Util.assert( ! outerSeen.contains(u), " already saw " + u);
-
-	    outerSeen.add(u);
-
-	    int deg = u.degree;
-	    for(NodeIter adj=adjacent(u); adj.hasNext();) {
-		Node a = adj.next();
-
-		if( a.isPrecolored() || 
-		    a.isSimplifyWorkL() || 
-		    a.isFreezeWorkL() ||
-		    a.isSpillWorkL() ) {
-		    deg--;
-		}
-	    }
-	    Util.assert(deg == 0, "degree inv. violated");
-	}
-    }
     public void checkSimplifyWorklistInv() {
 	// u isIn simplifyWorklist ==>
 	//   degree(u) < K && 
@@ -508,40 +426,74 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     
     void time(String note) { //System.out.println("TIME "+note+" "+new java.util.Date()); 
     }
+    
+    /** Finds the minimum cost heuristic in <code>h</code>.
+	<BR> <B>requires:</B> all h' in h have been run.
+	@return the h' in h with minimum actualCost.
+    */
+    protected SpillHeuristic minimum(SpillHeuristic[] h) {
+	SpillHeuristic h_min = h[0];
+	int minIndex = -1; // negative represents "any will do"
+	
+	for(int i=1; i < h.length; i++) {
+	    // if (h[i].accumExpCost < h_min.accumExpCost) {
+	    if (h[i].actualCost < h_min.actualCost) {
+		h_min = h[i];
+		minIndex = i;
+	    } else if (minIndex == -1 && 
+		       h_min.actualCost < h[i].actualCost) {
+		// need this special case so that our data
+		// properly states when using h[0] *is*
+		// significant.
+		minIndex = 0;
+	    }
+	}
+	if (minIndex == -1 && (h_min.actualCost < 0.001)) {
+	    minIndex = -2; // -2 means "any will do && no spilling"
+	} 
+	
+	if( PRINT_HEURISTIC_INFO 
+	    // (leave -2 results out of output when not incremental)
+	    && (minIndex != -2) ) {
+	    
+	    for(int i=0;i<h.length;i++)
+		System.out.print("\nAPPLY SPILL HEURISTIC "+i+" \t=> "+h[i]);
+	    System.out.println
+		("\nCHOOSING SPILL HEURISTIC "+minIndex+" \t=> "+h_min);
+	}
+	return h_min;
+    }
 
     public void generateRegAssignment() { 
-	time("A");
 	trivialMoveCoalesce();
 
 	while (true) {
 	    // System.out.println("post spill coloring");
-	    time("B");	
-	    initializeSets();     	    time("C");	
-	    preAnalysis();             	    time("D");	
-	    buildTempToWebs();         	    time("E");	
-	    buildWebToNodes();         	    time("F");	
+	    initializeSets();
+	    preAnalysis();
+	    buildTempToWebs();
+	    buildWebToNodes();
 	    
 	    // Appel's real code begins here
-	    buildInterferenceGraph();     	    time("G");	
+	    buildInterferenceGraph();
 	    
-	    checkInv();     	    time("H");	
-	    checkpointState();     	    time("I");	
+	    checkInv();
+	    checkpointState();
 	    final boolean USE_CHAITIN_ALONE = false;
-	    final boolean INCREMENTAL_OUTPUT = false;
 	    try {
 		SpillHeuristic h_min = null;
-		SpillHeuristic[] h = spillHeuristics();     	    time("J");	
+		SpillHeuristic[] h = sh.spillHeuristics();
 		if ( ! USE_CHAITIN_ALONE ) {
 		    for(int i = 0; i < h.length; i++) {
 			// FSK: look into breaking out of this loop if
 			// we color without any spilling at all.
-			appelLoopBody( h[i] );     	    time("K");	
+			appelLoopBody( h[i] );
 			
-			checkMoveSets();     	    time("L");	
+			checkMoveSets();
 			
-			assignColors();     	    time("M");	
+			assignColors();
 			
-			checkInv();     	    time("N");	
+			checkInv();
 			
 			if (h[i].maxExpSpills == 0)
 			    Util.assert( spilled_nodes.isEmpty() );
@@ -549,7 +501,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 			if ( spilled_nodes.isEmpty() ) {
 			    h_min = h[i];
 			    
-			    // FSK: break here later for better speed
+			    // FSK: break here for better speed
 			    // (no spills ==> don't need reiteration of heuristics) 
 			    // ((may want disable later if i gather
 			    //   data measuring benefit of alt spill
@@ -559,65 +511,24 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 			    h[i].reallySpill(spilled_nodes.iter());
 			}
 			
-			resetState();     	    time("O");	
-			
-			if (INCREMENTAL_OUTPUT && PRINT_HEURISTIC_INFO ) 
-			    System.out.print
-				    ("\nAPPLY SPILL HEURISTIC "+i+" \t=> "+h[i]);
+			resetState();
 		    }
 		    
+		    if (h_min == null)
+			h_min = minimum(h);
 		    
-		    h_min = h[0];
-		    int minIndex = -1; // negative represents "any will do"
-		    
-		    
-		    for(int i=1; i < h.length; i++) {
-			// if (h[i].accumExpCost < h_min.accumExpCost) {
-			if (h[i].actualCost < h_min.actualCost) {
-			    h_min = h[i];
-			    minIndex = i;
-			} else if (minIndex == -1 && 
-				   h_min.actualCost < h[i].actualCost) {
-			    // need this special case so that our data
-			    // properly states when using h[0] *is*
-			    // significant.
-			    minIndex = 0;
-			}
-		    }
-		    if (minIndex == -1 && (h_min.actualCost < 0.001)) {
-			minIndex = -2; // -2 means "any will do && no spilling"
-		    } 
-
-		    time("P");	
-		    
-		    if( PRINT_HEURISTIC_INFO 
-			
-			// (leave -2 results out of output when not incremental)
-			&& (INCREMENTAL_OUTPUT || minIndex != -2) 
-			
-			) {
-
-			if(!INCREMENTAL_OUTPUT)
-			    for(int i=0;i<h.length;i++)
-				System.out.print
-				    ("\nAPPLY SPILL HEURISTIC "+i+" \t=> "+h[i]);
-			
-			
-			System.out.println
-			    ("\nCHOOSING SPILL HEURISTIC "+minIndex+" \t=> "+h_min);
-		    }
 		    h_min.reset();
-		    appelLoopBody( h_min );		    time("Q");	
+		    appelLoopBody( h_min );
 		    
 		} else {
 		    appelLoopBody( h[2] );
 		}
-				    time("R");	
-		assignColors(); 		    time("S");	
+
+		assignColors();
 		// h_min.reallySpill(spilled_nodes.iter());
 		// System.out.println("\nFINAL SPILL HEURISTIC   \t=> "+h_min);
 		
-		checkInv();		    time("T");	
+		checkInv();
 		
 		if( ! spilled_nodes.isEmpty()) {
 		    System.out.print(" R"+rewriteCalledNumTimes+", S!"+spilled_nodes.asSet().size());
@@ -627,68 +538,22 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		    break;
 		}
 	    } catch (CouldntFindSpillExn e) {
-		if (PRINT_CLEANING_INFO)
-		    System.out.println
-			("COULDN'T FIND A SPILL!  TURNING OFF CLEANING!");
-		stopTryingToClean();
+		if (try_to_clean) {
+		    if (PRINT_CLEANING_INFO)
+			System.out.println
+			    ("COULDN'T FIND A SPILL!  TURNING OFF CLEANING!");
+		    stopTryingToClean();
+		} else {
+		    String s = "[ ";
+		    for(NodeIter ni = spill_worklist.iter(); ni.hasNext();){
+			s += ni.next().web+ (ni.hasNext() ? ", " : " ]");
+		    }
+		    Util.assert(false, s);
+		}
 		bbFact = computeBasicBlocks();
 	    }
 	}
 	
-	// introduce Flex-style assignments here
-
-	// set up color (int) -> register mapping
-	Temp[] regs = new Temp[ precolored.size ];
-	for(NodeIter ri=precolored.iter(); ri.hasNext();) {
-	    Node r = ri.next();
-	    regs[r.color] = r.web.temp;
-	}
-	
-
-	// look into simplifying this interface extremely (and
-	// allowing for outside cloning of the code?) by just passing
-	// a (Temp,Instr)->List<Temp> mapping into 'code'
-
-	for(Iterator instrs=code.getElementsI(); instrs.hasNext();){
-	    Instr inst = (Instr) instrs.next();
-
-
-	    // FSK: we're looking at the real deal here, not the
-	    // abstract InstrGroupings
-	    Iterator refs = new CombineIterator
-		// ( useCT(inst).iterator(), defCT(inst).iterator() );
-		( inst.useC().iterator(), inst.defC().iterator() );
-
-
-	    while( refs.hasNext() ){
-		Temp t = (Temp) refs.next();
-		if (isRegister(t)) continue;
-		if (null == bbFact.getBlock
-		    (inst.getEntry( InstrGroup.AGGREGATE ))){
-		    System.err.println
-			("WARNING: code believed to be unreachable emitted");
-		    code.assignRegister
-			(inst,t,(List)rfi().getRegAssignments(t).iterator().next());
-		} else {
-		    Web w = webFor(t, inst);
-		    List nodes = nodesFor( w );
-		    List regList = toRegList( nodes, regs );
-		    Util.assert( ! regList.isEmpty() );
-		    code.assignRegister( inst, t, regList );
-		}
-	    }
-	}
-
-	
-	// debugging output
-	if (false) {
-	    liveTemps.dumpElems(); System.out.println();
-	    bbFact.dumpCFG();      System.out.println();
-	    code.printPreallocatedCode();
-	}
-
-	fixupSpillCode();
-
 	// copy spill stats
 	String local_stats = spillStats( depthToNumSpills );
 	if (local_stats.length() > 0) {
@@ -702,52 +567,38 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		System.out.println();
 	    }
 	}
+
+	// introduce Flex-style assignments here
+	performFinalAssignment(colorToReg());
+
     }
 
-    List toRegList(List nodes, Temp[] colorToReg) {
-	Temp[] regs = new Temp[nodes.size()];
-	for(int i=0; i<regs.length; i++) {
-	    Node n = (Node)nodes.get(i);
-	    if (! (0 <= n.color && n.color < colorToReg.length) ) {
-		code.printPreallocatedCode();
-		printAllColors();
-		System.out.println();
-		System.out.println("node:"+n+" history:"+n.nodeSet_history);
-		Util.assert(false,
-			    "node:"+n+" should have valid color, not:"+n.color);
-	    }
-	    regs[i] = colorToReg[ n.color ];
+    protected Temp[] colorToReg() {
+	// set up color (int) -> register mapping
+	Temp[] regs = new Temp[ precolored.size ];
+	for(NodeIter ri=precolored.iter(); ri.hasNext();) {
+	    Node r = ri.next();
+	    // this is legal; node in precolored has exactly one color.
+	    regs[r.color[0]] = r.web.temp; 
 	}
-	return Arrays.asList( regs );
+	return regs;
     }
-    private void printAllColors() {
-	for(Iterator wIter = webToNodes.keySet().iterator(); wIter.hasNext(); ){
-	    Web w = (Web) wIter.next();
-	    String accum = 
-		"Temp:"+w.temp+
-		" defs:"+instrIDs(w.defs)+
-		" uses:"+instrIDs(w.uses)+
-		" colors:[";
-	    for(Iterator nI=((List)webToNodes.get(w)).iterator();nI.hasNext();) { 
-		Node node = (Node) nI.next();
-		accum += node.color;
-		if (nI.hasNext()) {
-		    accum += ", ";
-		}
-	    }
-	    accum += "]";
-	    System.out.println(accum);
-	}
+
+    // FSK: placeholder for future method that should allow me to 
+    // push more code from subclasses up into here.
+    protected List/*Reg*/ webToRegAssignment( Web w ){
+	return null;
     }
-    private Collection instrIDs(final Collection instrs) {
-	return new AbstractCollection() { 
-		public int size() { return instrs.size(); }
-		public Iterator iterator() 
-		{ return new FilterIterator
-		    (instrs.iterator(), new FilterIterator.Filter() 
-			{ public Object map(Object o)
-			    { return new Integer(((Instr)o).getID()); }}); }};
-    }
+    
+    /** Gives each Instr in the code a register assignment. 
+	This is the last step in generateRegAssignment; it 
+	is abstract because different variants have different
+	node to color mappings and so they extract the 
+	assignments in different ways.
+	@param regs (regs[i] == n.web.temp) ==> (n in precolored && n.color = i).
+    */
+    protected abstract void performFinalAssignment(Temp[] regs);
+
     
     private void preAnalysis() { 
 	rdefs = new ReachingDefsAltImpl(code,grapher,usedefer);
@@ -770,177 +621,58 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 				      " completed successfully ");
 
 	
-	resetNestedLoopDepth();
-
-
     } 
 
-    int depth(Instr i){ return((Integer)nestedLoopDepth().get(i)).intValue(); }
-    int width(Instr i){ return liveAt(i).size(); }
 
 
-    /** Instr -> Integer, val is loop nesting depth for the key (0 for
-	non-looped code).  Constructed on demand; access through method
-	call only. */
-    Map nestedLoopDepth() {
-	if (__nestedLoopDepth == null)
-	    __nestedLoopDepth = buildNestedLoopDepth();
-	return __nestedLoopDepth;
-    }
-    /** Marks nestedLoopDepth() for reconstruction. */
-    void resetNestedLoopDepth() { __nestedLoopDepth = null; }
 
-    private Map __nestedLoopDepth;
-    private Map buildNestedLoopDepth() { 
-	// builds the nestedLoopDepth map, doing a breadth-first
-	// traversal of the loop tree.
-	HashMap depthMap = new HashMap();
-	LoopFinder root = new LoopFinder(code);
-	
-	// List<Loops> where index of vector is the looping depth
-	// (thus the 0th elem is the root itself)
-	ArrayList level = new ArrayList();
-	level.add(root);
-	int depth = 0; // tracks the current level in the tree
-	while( ! level.isEmpty()) {
-	    Iterator levelIter = level.iterator();
-	    level = new ArrayList();
-	    Integer currDepth = new Integer( depth );
-	    while( levelIter.hasNext() ){
-		Loops curr = (Loops) levelIter.next();
-		level.addAll( curr.nestedLoops() );
-		
-		Iterator instrs=curr.loopExcElements().iterator(); 
-		while( instrs.hasNext() ){
-		    Instr i = (Instr) instrs.next();
-		    Util.assert( ! depthMap.keySet().contains( i ));
-		    depthMap.put( i , currDepth );
-		}
-	    }
-	    depth++;
-	}
+    /** Builds the interference graph for the code.
+	Abstract because Moves need to be treated specially 
+	by this routine, and variants of the algorithm 
+	have different ways of dealing with Moves.
+	The algorithm as given in the Tiger book is: 
+	<pre>
+	forall b : blocks in program
+	    let live = liveOut(b)
+	    forall I : instructions(b) in reverse order
+	       if isMoveInstruction(I) then
+	          live <- live \ use(I)
+	          forall n : def(I) \/ use(I)
+	             moveList[n] <- moveList[n] \/ I
+	          worklistMoves <- worklistMoves \/ { I }
+	       live <- live \/ def(I)
+	       forall d : def(I)
+	          forall l : live
+	             AddEdge(l, d)
+	       live <- use(I) \/ ( live \ def(I) )
+        </pre>
+     */
+    protected abstract void buildInterferenceGraph();
 
-	// consistency check: make sure that every instr is mapped to
-	// some loop depth.
-	if (CHECK_INV) 
-	    for(Iterator iter = code.getElementsI(); iter.hasNext(); ) {
-		Instr i = (Instr) iter.next();
-		Util.assert( bbFact.getBlock(i) == null ||
-			     depthMap.keySet().contains(i), 
-			     "reachable instrs should have loop depth"); 
-	    }
-
-	return depthMap;
-    }
-    
-    public void buildInterferenceGraph() {  
-	// forall b : blocks in program
-	//    let live = liveOut(b)
-	//    forall I : instructions(b) in reverse order
-	//       if isMoveInstruction(I) then
-	//          live <- live \ use(I)
-	//          forall n : def(I) \/ use(I)
-	//             moveList[n] <- moveList[n] \/ I
-	//          worklistMoves <- worklistMoves \/ { I }
-	//       live <- live \/ def(I)
-	//       forall d : def(I)
-	//          forall l : live
-	//             AddEdge(l, d)
-	//       live <- use(I) \/ ( live \ def(I) )
-
-	for(Iterator bbs=bbFact.blocksIterator(); bbs.hasNext();) {
-	    BasicBlock bb = (BasicBlock) bbs.next();
-	    Set/*Node*/ live = liveOut(bb);
-	    
-	    for(Instr i = lastStm(bb); !i.equals( firstStm(bb) ); i = pred(i)){
-		if( i.isMove() ){
-		    live.removeAll( useCN( i ) );
-		    for( NodeIter ni = usedef(i); ni.hasNext(); ){
-			Node n = ni.next();
-			n.moves.add( moveFor(i) );
-		    }
-		    worklist_moves.add( moveFor(i) );
-		}
-		
-		live.addAll( defCN(i) );
-		for( NodeIter di = def(i); di.hasNext(); ){
-		    Node d = di.next();
-		    for( Iterator li=live.iterator(); li.hasNext(); ){
-			Node n = (Node) li.next();
-			addEdge( n, d );
-		    }
-		}
-		live.removeAll( defCN(i) );
-		live.   addAll( useCN(i) );
-	    }
-	    
-	}
-
-    }
-
-    // RETURN a Set of Node or a NodeSet ???
-    private Set liveOut(BasicBlock b) {
-	Instr last = lastStm( b );
-	Set s = liveTemps.getLiveAfter( last );
-
-	// TODO: check that 'last' is the right thing to pass in here... 
-	return tempCtoNodes( s, last );
-    }
-    private Instr lastStm(BasicBlock b) {
+    protected Instr lastStm(BasicBlock b) {
 	List stms = b.statements();
 	return (Instr) stms.get( stms.size() - 1 );
     }
-    private Instr firstStm(BasicBlock b) { 
+    protected Instr firstStm(BasicBlock b) { 
 	return (Instr) b.statements().get(0); 
     }
-    private Instr pred(Instr i) {
+    protected Instr pred(Instr i) {
 	Instr i_r = (Instr) grapher.predElemC(i).iterator().next();
 	Util.assert(i != i_r);
 	return i_r;
     }
 
-    private Collection/*Node*/ useCN(Instr i) { 
-	Collection nodeC = tempCtoNodes( useCT( i ), i );
-	return nodeC;
-    }
-    
-    private Collection/*Node*/ defCN(Instr i) { 
-	Collection nodeC = tempCtoNodes( defCT( i ), i);
-	return nodeC;
-    }
+    protected Collection useCT( Instr i ) { return usedefer.useC( i ); }
+    protected Collection defCT( Instr i ) { return usedefer.defC( i ); }
 
-    private Set/*Node*/ tempCtoNodes( Collection temps, Instr i ) {
-	HashSet set = new HashSet();
-	for(Iterator ts=temps.iterator(); ts.hasNext(); ) {
-	    Temp t = (Temp) ts.next();
-	    Web web = webFor( t, i );
-	    set.addAll( nodesFor( web ));
-	}
-	return set; 
-    }
-
-
-    private NodeIter usedef(Instr i) { 
-	HashSet s = new HashSet();
-	s.addAll( useCN( i ));
-	s.addAll( defCN( i ));
-	return nodesIter( s.iterator() );
-    }
-
-    private NodeIter def(Instr i) { 
-	return nodesIter( defCN( i ).iterator() );
-    }
-    private Collection useCT( Instr i ) { return usedefer.useC( i ); }
-    private Collection defCT( Instr i ) { return usedefer.defC( i ); }
-
-    private NodeIter nodesIter(final Iterator i) {
+    protected NodeIter nodesIter(final Iterator i) {
 	return new NodeIter() {
 		public boolean hasNext() { return i.hasNext(); }
 		public Node next() { return (Node) i.next(); }
 	    };
     }
 
-    private Iterator instrs() {
+    Iterator instrs() {
 	final Iterator bbs = bbFact.blocksIterator();
 	return new UnmodifiableIterator() {
 		Iterator currStms;
@@ -959,29 +691,15 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		}
 	    };
     }
-
-    private void addEdge( Node u, Node v ) {
-	// FSK: (6/27/01) adding because having these edges is dumb.  
-	// Shouldn't break anything.  And yet...
-	if (u.isPrecolored() && v.isPrecolored()) {
-	    return;
-	}
-
-	if( ! adjSet.contains(u,v) && ! u.equals(v) ){
-	    adjSet.add(u,v);
-	    adjSet.add(v,u);
-	    
-	    if( ! u.isPrecolored() ){
-		u.neighbors.add(v);
-		u.degree++;
-	    }
-	    if( ! v.isPrecolored() ){
-		v.neighbors.add(u);
-		v.degree++;
-	    }
-	}
-    }
-
+    
+    /** Introduces an edge between u and v in both the
+	interference graph and in the neighbor lists for 
+	u and v. 
+	Abstract because variants of the algorithm have 
+	different ways of handling the incrementing of 
+	the degrees and of mutating the neighbor lists. 
+    */
+    protected abstract void addEdge( Node u, Node v );
 
     /** Moves Nodes from initial to appropriate set in 
 	{ spill, freeze, simplify }_worklist.  
@@ -1051,55 +769,28 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 		continue;
 	    }
 
-	    decrementDegree(m);
+	    decrementDegree(m,n);
 	}
     }
 
-    /** modifies: m, active_moves, worklist_moves, spill_worklist, 
+    /** Updates m to account for n being removed from the interference 
+	graph.
+	Abstract because variants of the algorithm have different 
+	ways to represent the interferences between the nodes.
+	modifies: m, active_moves, worklist_moves, spill_worklist, 
 	          freeze_worklist, simplify_worklist
         effects: m in Precolored ==> no changes
 	         else decrements degree of m, moving it (and associated moves)  
                  into the appropriate lists if it has crossed the threshold 
 		 from K to K-1.
     */
-    private void decrementDegree( Node m ) {
-	if (m.isPrecolored())
-	    return;
+    protected abstract void decrementDegree( Node m, Node n );
 
-	int d = m.degree;
-	m.degree--;
-	if( d == K 
-	    
-// FSK: this clause isn't in the book, but it *is* in 
-// FSK: CSAHack.RegAlloc.Color.  Appel assumes that m is 
-// FSK: in spillWorklist, but its possible for a node to 
-// FSK: be in Freeze (and Simplify?), have its degree 
-// FSK: incremented to K in Combine(u,v), and then this 
-// FSK: method is called.  So we explicitly check if m is 
-// FSK: in spillWorklist first.
-// TODO: verify that this is the right behavior (intuitively, it should be...)
-	    && m.isSpillWorkL() 
-	    
-
-	    ) {
-	    
-	    enableMoves(m);
-	    enableMoves( adjacent(m) );
-	    
-	    spill_worklist.remove(m);
-	    if( moveRelated( m )) {
-		freeze_worklist.add( m );
-	    } else {
-		simplify_worklist.add( m );
-	    }
-	}
-    }
-
-    private void enableMoves( NodeIter nodes ) {
+    protected void enableMoves( NodeIter nodes ) {
 	while( nodes.hasNext() )
 	    enableMoves( nodes.next() );
     }
-    private void enableMoves( Node node) {
+    protected void enableMoves( Node node) {
 	for( Iterator moves=node.moves.iterator(); moves.hasNext(); ) {
 	    Move m = (Move) moves.next();
 	    if( m.isActive() ) {
@@ -1143,6 +834,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	// ( possibly adding new cases here?!!? )
 
 	if (u.equals(v)) {
+	    // seems silly until you notice the getAlias(..)'s above
 
 	    coalesced_moves.add(m);
 	    addWorkList(u);
@@ -1157,8 +849,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	} else if((   u.isPrecolored() && 
 		      forall_t_in_adj_of_v__OK_t_u(v, u))
 		  ||
-		  ( ! u.isPrecolored() && 
-		    conservative(adjacent(u), adjacent(v))) ) {
+		  ( ! u.isPrecolored() && conservative(u, v)) ) {
 	    // System.out.println( "ugly case, u:"+u+" v:"+v );
 
 	    coalesced_moves.add(m);
@@ -1200,37 +891,14 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    || t.isPrecolored() 
 	    || adjSet.contains(t, r);
     }
+    /** conservative coalescing heuristic due to Preston Briggs.
+	Abstracting out because in the prescence of multi-slotted 
+	nodes, this changes. 
+     */
+    protected abstract boolean conservative(Node u, Node v);
 
-    // returns conservative( ni1 \/ ni2 )
-    // conservative coalescing heuristic due to Preston Briggs
-    private boolean conservative(NodeIter ni1, NodeIter ni2) {
-	NodeIter union; 
-	// [ FIXED, but am seeing signs that "conservation" is being broken.
-	//   could just be inherent heuristical effects though ]
-	// FSK combine(...) is not a strict union.
-	// union = combine( new NodeIter[]{ ni1, ni2 } );
-	union = union(ni1, ni2);
-	
-	return conservative( union );
-    }
-    private NodeIter union(NodeIter n1, NodeIter n2) {
-	HashSet s = new HashSet();
-	while(n1.hasNext()){ s.add(n1.next()); }
-	while(n2.hasNext()){ s.add(n2.next()); }
-	return nodesIter( s.iterator() );
-    }
 
-    private boolean conservative(NodeIter nodes) { 
-	int k = 0;
-	while( nodes.hasNext() ){
-	    Node n = nodes.next();
-	    if (n.degree >= K)
-		k++;
-	}
-	return k < K;
-    }
-
-    private Node getAlias(Node n) { // FSK: umm... bound on this runtime? 
+    protected Node getAlias(Node n) { // FSK: umm... bound on this runtime? 
 	while( n.isCoalesced() ) {
 	    n = n.alias;
 	}
@@ -1249,20 +917,13 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	coalesced_nodes.add(v);
 	v.alias = u;
 
-
-	enableMoves(v); // does this belong here or after the succeeding line? 
+	enableMoves(v); 
 	u.moves.append(v.moves);
 	
 	for( NodeIter adj=adjacent(v); adj.hasNext(); ) {
 	    Node t = adj.next();
 	    addEdge(t,u);
-	    
-	    if (false) { // tracks a break in Appel's defined invariant
-		if (t.degree == K && !t.isSpillWorkL())
-		    System.out.println(t+" degree inc'd to K, but not in spills");
-	    }
-
-	    decrementDegree(t);
+	    decrementDegree(t,v);
 	}
 	
 	if( u.degree >= K && u.isFreezeWorkL() ) {
@@ -1306,131 +967,22 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	}
     }
 
-    // See "Spill code minimization techniques for optimizing
-    // compilers", Bernstein et. al
-    private abstract class SpillHeuristic {
-	public String toString() { 
-	    return "SpillHeuristic<"
-		+"accumExpCost:"+accumExpCost 
-		+" maxExpSpills:"+maxExpSpills
-		+" actualCost:"+actualCost
-		+" actualSpills:"+actualSpills
-		+">";
-	}
-
-	double accumExpCost = 0.0;
-	int maxExpSpills = 0;
-
-	double actualCost = 0.0;
-	int actualSpills = 0;
-
-	HashMap instrToAreaCache = new HashMap();
-	HashMap nodeToAreaCache = new HashMap();    
-
-	private void reset() { 
-	    accumExpCost = 0.0; 
-	    maxExpSpills = 0;
-	    actualCost = 0.0; 
-	    actualSpills = 0; 
-	    instrToAreaCache.clear();
-	    nodeToAreaCache.clear();
-	}
-	void expectSpill( Node m ) { 
-	    // IMPORTANT: don't confuse "accumExpCost" here (which is called
-	    // "h_i" in the paper) with "cost" in the paper (which is
-	    // called chaitinCost here)
-	    accumExpCost += chaitinCost( m ); 
-	    maxExpSpills++;
-	}
-
-	
-	/** called when spill code is added for n . */
-	void reallySpill( NodeIter ni ){
-	    while(ni.hasNext()) 
-		reallySpill(ni.next());
-	}
-	void reallySpill( Node n ){
-	    actualCost += chaitinCost(n);
-	    actualSpills++;
-	}
-
-	abstract double cost( Node m );
-	
-	double chaitinCost( Node m ) {
-	    double sum = 0.0;
-	    for(Iterator ds = m.web.defs.iterator(); ds.hasNext(); ){
-		Instr i = (Instr) ds.next();
-		sum += Math.pow( 10.0, depth(i));
-	    }
-	    for(Iterator us = m.web.uses.iterator(); us.hasNext(); ){
-		Instr i = (Instr) us.next();
-		sum += Math.pow( 10.0, depth(i));
-	    }
-	    return sum;
-	}
-	double area( Node m ) {
-	    if (nodeToLiveAt == null) {
-		nodeToLiveAt = new GenericMultiMap();
-		buildNodeToLiveAt();
-	    }
-
-	    if (nodeToAreaCache.containsKey(m)) {
-		return ((Double)nodeToAreaCache.get(m)).doubleValue();
-	    } else {
-		double sum = 0.0;
-		Collection instrC = nodeToLiveAt.getValues( m );
-		for(Iterator instrs = instrC.iterator(); instrs.hasNext(); ){
-		    Instr i = (Instr) instrs.next();
-		    
-		    if (instrToAreaCache.containsKey(i)) {
-			sum += ((Double)instrToAreaCache.get(i)).doubleValue();
-		    } else {
-			double val = (Math.pow(5.0, depth(i)) * width(i));
-			sum += val;
-			instrToAreaCache.put(i, new Double(val) );
-		    }
-		}
-		nodeToAreaCache.put(m, new Double(sum));
-		return sum;
+    private boolean spillable( Web w ) {
+	for(Iterator di = w.defs.iterator(); di.hasNext(); ) {
+	    Instr d = (Instr) di.next();
+	    if (d instanceof RestoreProxy ||
+		dontSpillTheseDefs.contains(d)) {
+		return false;
 	    }
 	}
-
+	for(Iterator ui = w.uses.iterator(); ui.hasNext(); ){
+	    if (ui.next() instanceof SpillProxy) {
+		return false;
+	    }
+	}
+	return true;
     }
 
-
-    private SpillHeuristic[] spillHeuristics() {
-	SpillHeuristic[] hs = new SpillHeuristic[] { 
-
-	    // ** SCOTT'S SPILL HEURISTIC
-	    new SpillHeuristic() { double cost(Node m) {
-		return (1000*(m.web.defs.size()+m.web.uses.size() ) ) / m.degree;  }}
-	    ,
-
-	    // ** CHAITIN'S SPILL HEURISTIC **
-	    new SpillHeuristic() { double cost( Node m ) {  
-		return chaitinCost(m) / m.degree; }}
-
-	    // FSK: new experiments show that the reason results were
-	    // worse is that the expected-costs predicted by the
-	    // alternate heuristics have much greater error (when
-	    // compared to the actual cost after optimistically
-	    // coloring) than the original Chaitin heuristic's error.
-	    // I am leaving this in for now, but it may be worthwhile
-	    // to just use the standard Chaitin heurstic in general.
-	    , 
-	    new SpillHeuristic() { double cost( Node m ) {  
-		return chaitinCost(m) / (m.degree * m.degree); }} 
-	    , 
-	    new SpillHeuristic() { double cost( Node m ) { 
-		return chaitinCost(m) / ( area(m) * m.degree ); }} 
-	    , 
-	    new SpillHeuristic() { double cost( Node m ) { 
-		return chaitinCost(m) / ( area(m) * m.degree * m.degree ); }}, 
-	    
-	};
-	
-	return hs;
-    }
     static class CouldntFindSpillExn extends Exception {}
     private void selectSpill(SpillHeuristic sh) throws CouldntFindSpillExn {
 	// Note: avoid choosing nodes that are tiny live ranges 
@@ -1444,7 +996,8 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    
 	    Util.assert( ! isRegister(n.web.temp) );
 	   
-	    if (!n.web.isSpillable())
+	    // if (!n.web.isSpillable()) 
+	    if ( ! spillable(n.web) ) 
 		continue nextNode;
 
 	    double cost = sh.cost( n );
@@ -1465,32 +1018,11 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	freezeMoves( minNode );
     }
 
-    public void assignColors() { 
-	while( !select_stack.isEmpty() ){
-	    Node n = select_stack.pop();
-	    ColorSet okColors = new ColorSet(K);
-	    for( NodeIter adj=n.neighbors.iter(); adj.hasNext(); ) {
-		Node w = adj.next(); w = getAlias(w);
-		if( w.isColored() || 
-		    w.isPrecolored() ){
-		    okColors.remove( w.color );
-		}
-	    }
-	    // TODO: Add code here to handle assigning a color to more
-	    // than one node at once, ala Brigg's multigraphs... 
-	    if( okColors.isEmpty() ){
-		spilled_nodes.add(n);
-	    } else {
-		colored_nodes.add(n);
-		n.color = okColors.available();
-	    }
-	}
-
-	for( NodeIter ni=coalesced_nodes.iter(); ni.hasNext(); ){
-	    Node n = ni.next();
-	    n.color = getAlias(n).color;
-	}
-    }
+    /** Gives the nodes a legal color assignment.
+	Abstract because different variants have different 
+	ways of mapping nodes to colors.
+     */
+    protected abstract void assignColors(); 
 
     int rewriteCalledNumTimes = 0;
     public void rewriteProgram() {
@@ -1530,6 +1062,8 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    if( seenWebs.add(w) ){
 		Collection   spillCode = addDefs(w);
 		Collection restoreCode = addUses(w);
+		insertedSpillCode.addAll(spillCode);
+		insertedSpillCode.addAll(restoreCode);
 	    }
 	}
 
@@ -1607,7 +1141,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	    Util.assert( d.canFallThrough &&
 			 d.getTargets().isEmpty() );
 
-	    depthToNumSpills[((Integer)nestedLoopDepth().get(d)).intValue()]++;
+	    depthToNumSpills[sh.depth(d)]++;
 
 	    SpillProxy sp = new SpillProxy(d, w.temp);
 	    spills.add(sp);
@@ -1668,7 +1202,7 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 			 p.getTargets().isEmpty() &&
 			 u.predC().size() == 1 );
 
-	    depthToNumSpills[((Integer)nestedLoopDepth().get(u)).intValue()]++;
+	    depthToNumSpills[sh.depth(u)]++;
 
 	    RestoreProxy rp = new RestoreProxy(u, w.temp);
 	    spills.add(rp);
@@ -1678,53 +1212,82 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
     }
 
     int precolor;
-    public void makePrecolored(Temp reg) { 
+    protected Node makePrecolored(Temp reg) { 
 	Web w = addWeb(reg, Collections.EMPTY_SET, Collections.EMPTY_SET);
 	Node n = new Node(precolored, w); 
-	webToNodes.put(w, Arrays.asList( new Node[]{ n } ));
-	n.color = precolor;
-
-	// FSK added 5/10/01 to handle >= K comparisons
+	n.color[0] = precolor;
 	n.degree = Integer.MAX_VALUE;
-
 	precolor++;
+	return n;
     }
 
-    public void makeInitial(Temp t)    { 
-	Set assns = rfi().getRegAssignments(t);
-	List assn = (List) assns.iterator().next();
+    /** Creates node(s) for <code>t</code> in the interference graph.
+	Abstract because variants of the algorithm map <code>Temps</code>
+	to nodes differently.
+    */
+    protected abstract void makeInitial(Temp t);    
 
-	for(Iterator webs=tempToWebs.getValues(t).iterator(); webs.hasNext();){
-	    Web web = (Web) webs.next();
-	    Node[] nodes = new Node[ assn.size() ];
-	    for(int i=0; i < nodes.length; i++) {
-		Node n = new Node(initial, web); 
-		nodes[i] = n;
-	    }
-	    webToNodes.put( web, Arrays.asList( nodes ));
-	}
-    }
-    
     // resets the state in preparation for a coloring attempt
-    private void initializeSets() {
+    protected void initializeSets() {
 	precolor = 0;
-	nextId = 0;
-	instrToMove = new HashMap();
+	nextId = 0;	
 	initializeNodeSets();
 	initializeMoveSets();
 	adjSet = new NodePairSet();
-
-	// FSK: Lazily building this mapping...
-	nodeToLiveAt = null;
+	sh.reset();
     }
 
+    protected NodeIter def(Instr i) { 
+	return nodesIter( defCN( i ).iterator() );
+    }
+    protected NodeIter usedef(Instr i) { 
+	HashSet s = new HashSet();
+	s.addAll( useCN( i ));
+	s.addAll( defCN( i ));
+	return nodesIter( s.iterator() );
+    }
+
+    protected Collection/*Node*/ useCN(Instr i) { 
+	Collection nodeC = tempCtoNodes( useCT( i ), i );
+	return nodeC;
+    }
     
+    protected Collection/*Node*/ defCN(Instr i) { 
+	Collection nodeC = tempCtoNodes( defCT( i ), i);
+	return nodeC;
+    }
+
+    protected Set/*Node*/ tempCtoNodes( Collection temps, Instr i ) {
+	HashSet set = new HashSet();
+	for(Iterator ts=temps.iterator(); ts.hasNext(); ) {
+	    Temp t = (Temp) ts.next();
+	    Web web = webFor( t, i );
+	    set.addAll( nodesFor( web ));
+	}
+	return set; 
+    }
+    // RETURN a Set of Node or a NodeSet ???
+    protected Set liveOut(BasicBlock b) {
+	Instr last = lastStm( b );
+	Set s = liveTemps.getLiveAfter( last );
+
+	// TODO: check that 'last' is the right thing to pass in here... 
+	return tempCtoNodes( s, last );
+    }
+
+
+    /** Returns a List of Node mapped to by <code>w</code>. 
+	Abstract because variants of the algorithm map Webs to Nodes 
+	in different ways.
+     */
+    protected abstract List nodesFor( Web w ); 
+
 
     private boolean haveWebFor(Temp t, Instr i) {
 	// TODO: implement method or eliminate calls to it
 	return false;
     }
-    private Web webFor(Temp t, Instr i) {
+    protected Web webFor(Temp t, Instr i) {
 	if ( isRegister(t) ) { return (Web) tempToWebs.get(t); }
 
 	// TODO: Find reasoning justifying this line! (webFor works on
@@ -1770,46 +1333,4 @@ public class AppelRegAlloc extends /*RegAlloc*/AppelRegAllocClasses {
 	return web;
     }
     
-    private List/*Node*/ nodesFor( Web web ) {
-	if (CHECK_INV)
-	Util.assert( webToNodes.containsKey( web ),
-		     "! should have nodes for "+web);
-	return (List) webToNodes.get( web );
-    }
-    
-    // Temp t -> Webs for t (rather than going through a Temp renaming
-    // process on the whole method)
-    GenericMultiMap tempToWebs;
-
-    // Web w -> Listof Node
-    HashMap webToNodes = new HashMap();
-
-    // Node n -> Set of Instr i, s.t. n is alive at i
-    GenericMultiMap nodeToLiveAt = new GenericMultiMap();
-    
-    // Instr i -> Move m such m.instr = i
-    HashMap instrToMove;
-    
-
-    /** REQUIRES: i.isMove() 
-	returns a Move corresponding to Instr i. 
-    */ 
-    Move moveFor(Instr i) { 
-	Util.assert( i.isMove() ); 
- 
-	if( instrToMove.containsKey(i) ) { 
-	    return (Move) instrToMove.get(i); 
-	} else { 
-	    // TODO: Fix to assign collections, not first elems! 
-	    Util.assert( defCN(i).size() == 1);
-	    Util.assert( useCN(i).size() == 1); 
-	    Node dst = (Node) defCN(i).iterator().next(); 
-	    Node src = (Node) useCN(i).iterator().next(); 
-	    Move m = new Move(i, dst, src); 
-	    instrToMove.put(i, m);
-	    return m;
-	}
-    }
-
-
 }

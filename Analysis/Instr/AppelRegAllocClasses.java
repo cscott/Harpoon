@@ -23,7 +23,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.10 2001-07-06 17:42:11 pnkfelix Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.11 2001-07-08 20:15:34 pnkfelix Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
@@ -74,7 +74,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	// System.out.println(stateString());
     }
 
-    private String stateString() {
+    protected String stateString() {
 	// FSK: should probably sort lists on index number to ensure
 	// determinism on sets.
 	String igraphString = interferenceGraphString();
@@ -222,13 +222,13 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    final NodeList origNeighbors; 
 	    final Node origAlias;
 	    final MoveList origMoves; // List<Move>
-	    final int origColor;
+	    final int[] origColor;
 
 	    BackupNodeInfo( Node save ){
 		origNode = save;
 		origDegree = save.degree;
 		origAlias = save.alias;
-		origColor = save.color;
+		origColor = (int[]) save.color.clone();
 		origMoves = new MoveList(save.moves.toList());
 		origNeighbors = new NodeList( save.neighbors.toList() );
 	    }
@@ -236,7 +236,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	    void restore() {
 		origNode.degree = origDegree;
 		origNode.alias = origAlias;
-		origNode.color = origColor;
+		origNode.color = (int[]) origColor.clone();
 		origNode.moves = new MoveList( origMoves.toList() );
 		origNode.neighbors = new NodeList( origNeighbors.toList() );
 	    }
@@ -571,8 +571,10 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	// list of moves this node is associated with
 	MoveList moves = new MoveList();
 
-	// color of this, ( 0 <= color < K when assigned )
-	int color =  -1 ;
+	// color of this, ( forall c in color, 0 <= c < K when assigned )
+	// [ an array because some allocators associate multiple colors 
+	//   with a node ]
+	int[] color = new int[]{ -1 };
 
 	// Web for this (null if this is dummy header element)
 	final Web web; 
@@ -597,7 +599,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	// machine registers, preassigned a color
 	public boolean isPrecolored()      { 
 	    boolean r = s_rep == precolored;        
-	    if (r) Util.assert(color != -1);
+	    if (r) Util.assert(color.length == 1 && color[0] != -1);
 	    return r;
 	}
 
@@ -624,7 +626,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	// nodes successfully colored
 	public boolean isColored() { 
 	    boolean r = s_rep == colored_nodes;     
-	    if (r) Util.assert(color != -1); 
+	    if (r) for(int i=0; i<color.length; i++) Util.assert(color[i] != -1); 
 	    return r;
 	}
 
@@ -640,36 +642,6 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 		// ", history:"+nodeSet_history+
 		">";
 	}
-    }
-
-    static class ColorSet {
-	boolean[] colors;
-	int size;
-	public ColorSet(int numColors) {
-	    size = numColors;
-	    colors = new boolean[numColors];
-	    for(int i=0; i < colors.length; i++) {
-		colors[i] = true;
-	    }
-	}
-	/** requires: ! this.isEmpty() */
-	public int available() {
-	    for(int i=0; i<colors.length; i++) {
-		if (colors[i]) 
-		    return i;
-	    }
-	    throw new RuntimeException();
-	}
-	public void remove(int color) {
-	    if (color < colors.length) {
-		if ( colors[ color ] )
-		    size--;
-		colors[ color ] = false;
-	    } else {
-		// removing an unused register-only color; NOP
-	    }
-	}
-	public boolean isEmpty() { return size == 0; }
     }
 
 

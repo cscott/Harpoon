@@ -53,6 +53,10 @@ import java.util.StringTokenizer;
  * <br> "FORCE_APPEL <em>method name</em> ..." forces the register
  * allocator to use Appel-style register allocation on <em>method
  * name</em>, rather than whatever default strategy is in place.
+ * <br> "FORCE_FELIX <em>method name</em> ..." forces the register
+ * allocator to use Appel-style register allocation on <em>method
+ * name</em> (with modifications for architectural indepedence),
+ * rather than whatever default strategy is in place.
  * <br> "# <em>comment</em>" is a comment line (not strictly an
  * option, since this line is ignored by this, but too useful to omit) 
  * <p>
@@ -68,13 +72,14 @@ import java.util.StringTokenizer;
  * <code>RegAlloc.Factory</code>s
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAllocOpts.java,v 1.1.2.7 2001-06-20 17:44:02 pnkfelix Exp $ */
+ * @version $Id: RegAllocOpts.java,v 1.1.2.8 2001-07-08 20:15:34 pnkfelix Exp $ */
 public class RegAllocOpts {
     public static final boolean INFO = false;
     Filter disableReachingDefs;
     Filter forceLocal;
     Filter forceGlobal;
     Filter forceAppel;
+    Filter forceFelix;
     Filter forceCoalesce;
     Filter disableCoalesce;
 
@@ -85,6 +90,7 @@ public class RegAllocOpts {
 	forceGlobal = new Filter();
 	forceCoalesce = new Filter();
 	forceAppel = new Filter();
+	forceFelix = new Filter();
 	disableCoalesce = new Filter();
 
         if (filename != null) {
@@ -121,6 +127,9 @@ public class RegAllocOpts {
 		} else if (forceAppel.contains(name)) {
 		    if (INFO) System.out.println(" * USING Appel FOR "+name);
 		    return AppelRegAlloc.FACTORY.makeRegAlloc(c);
+		} else if (forceFelix.contains(name)) {
+		    if (INFO) System.out.println(" * USING Felix FOR "+name);
+		    return AppelRegAllocFsk.FACTORY.makeRegAlloc(c);
 		} else if (disableCoalesce.contains(name)) {
 		    if (INFO) System.out.println(" * USING DC FOR "+name);
 		    return GraphColoringRegAlloc.BRAINDEAD_FACTORY.makeRegAlloc(c);
@@ -159,10 +168,12 @@ public class RegAllocOpts {
 		addToSet = forceCoalesce;
 	    } else if (s.toUpperCase().equals("FORCE_APPEL")) {
 		addToSet = forceAppel;
+	    } else if (s.toUpperCase().equals("FORCE_FELIX")) {
+		addToSet = forceFelix;
 	    } else if (s.toUpperCase().equals("DISABLE_COALESCE")) {
 		addToSet = disableCoalesce;
 	    } else {
-		System.out.println("unknown RegAlloc option: "+s+
+		System.err.println("unknown RegAlloc option: "+s+
 				   " line: "+r.getLineNumber());
 		continue;
 	    }

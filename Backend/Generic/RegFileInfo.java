@@ -49,7 +49,7 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.36 2001-07-07 18:24:10 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.37 2001-07-08 20:15:24 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -162,8 +162,10 @@ public abstract class RegFileInfo {
 	<p> The default implementation returns 1; subclasses should
 	override to account for how their respective architectures
 	handle multi-register temps (such as longs or doubles).  
+	In any case, should always return an integer greater than 
+	zero. 
     */
-    public int occupies(Temp t) { return 1; }
+    public int occupancy(Temp t) { return 1; }
     
     /** Returns the degree of conflict that <code>b</code> inflicts
 	upon <code>a</code> if the two <code>Temp</code>s interfere.
@@ -194,8 +196,11 @@ public abstract class RegFileInfo {
         than one register.   
 	Thus the length of the returned List should equal 
 	<code>this.occupies(needy)</code>.
+	
+	<p> Returns null if no assignment is available in the situation
+	where all registers in <code>occupied</code> are in use.
     */
-    List assignment(Temp needy, Collection occupied) {
+    public List assignment(Temp needy, Collection occupied) {
 	Util.assert(false, "abstract and implement in subclasses");
 	return null;
     }
@@ -204,12 +209,15 @@ public abstract class RegFileInfo {
 	
 	<p> This method is used to increase the degree of
 	<code>Temps</code> which have limited assignments in the
-	register file.
+	register file.  For example, if t is a <code>Temp</code> that
+	can only be assigned to a certain register bank, this method
+	will return a <code>Collection</code> containing all of the
+	registers in the other register banks.
     */
-    Collection illegal(Temp t) { return null; }
+    public Collection illegal(Temp t) { return null; }
     
     /** Returns all of the available registers on this architecture. */
-    Collection allRegs() { return getAllRegistersC(); }
+    public Collection allRegs() { return getAllRegistersC(); }
 
     /** Produces a mutable <code>Set</code> of register assignments
 	that can hold <code>t</code>.  FSK: experimental method.

@@ -40,7 +40,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.29 2001-07-07 18:34:49 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.30 2001-07-08 20:15:28 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -332,4 +332,38 @@ public class RegFileInfo
 	};
     }
     private boolean makeLocationDataCalled=false;
+
+    public int occupancy(Temp t) {
+	if (t instanceof TwoWordTemp) {
+	    return 2;
+	} else {
+	    return 1;
+	}
+    }
+
+    public int pressure(Temp a, Temp b) {
+	if (b instanceof TwoWordTemp ) { // FSK unconstrained ==> ASYMMETRIC!
+	    return 2;
+	} else {
+	    return 1;
+	}
+    }
+    
+    public List assignment(Temp needy, Collection occupied) {
+	Set s = new HashSet( allRegs() );
+	s.removeAll( occupied );
+	Iterator t = s.iterator();
+	if (needy instanceof TwoWordTemp) {
+	    if (s.size() < 2) return null;
+	    return Arrays.asList( new Temp[] { (Temp) t.next(),
+					       (Temp) t.next() });
+	} else {
+	    if (s.size() < 1) return null;
+	    return Arrays.asList( new Temp[] { (Temp) t.next() } );
+	}
+    }
+    
+    public Collection illegal(Temp t) {
+	return Collections.EMPTY_SET;
+    }
 }
