@@ -15,6 +15,7 @@ bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
 # lots of dependencies for the pldi paper
 pldi99.dvi: harpoon.bib pldi99-intro.tex pldi99-abstract.tex pldi99-tech.tex
+pldi99.dvi: Figures/evil.tex
 # thesis figure dependencies
 thesis.dvi: harpoon.bib Figures/THex1base.tex \
 	Figures/THex1ssa.tex Figures/THex1ssaPr.tex \

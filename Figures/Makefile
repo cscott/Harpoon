@@ -28,5 +28,8 @@ THex1base.tex: $(EX1FIG) Makefile
 	fig2dev -L latex $(EX1SCALE) $(EX1FIG) \
 	| sed -e 's/STMT[3789]//' $(SEDCMD) -e 's/\([PXYZ]\)_[01234]/\1/g'> $@
 
+evil.tex: evil.fig
+	fig2dev -L latex -m 0.25 $< $@
+
 clean:
-	$(RM) THex1*.tex *.fig.bak *~
+	$(RM) THex1*.tex *.fig.bak evil.tex *~
