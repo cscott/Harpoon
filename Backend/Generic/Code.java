@@ -33,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.30 1999-12-04 18:36:46 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.31 1999-12-04 23:54:38 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -154,6 +154,11 @@ public abstract class Code extends HCode {
 		instr instanceof InstrDIRECTIVE) {
                 str = instr.toString();
             } else {
+		Util.assert
+		    (harpoon.Analysis.Instr.RegAlloc.ALLOC_SET.contains(instr),
+		     "uh oh, trying to print unallocated Instr: "+instr +
+		     " / " + toAssemRegsNotNeeded(instr));
+
 		try {
 		    BufferedReader reader = 
 			new BufferedReader(new StringReader(toAssem(instr)));
@@ -278,6 +283,7 @@ public abstract class Code extends HCode {
 			}
 		    }
 		    Util.assert( ( ! mustGetRegs ) ||
+				 frame.getRegFileInfo().isRegister(temp) ||
 				 registerAssigned(instr, temp),
 				 "final assembly output for "+
 				 "Instr: "+instr+" must have "+

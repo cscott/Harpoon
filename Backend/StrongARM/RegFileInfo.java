@@ -35,7 +35,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.10 1999-12-03 23:52:08 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.11 1999-12-04 23:54:43 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -197,6 +197,7 @@ public class RegFileInfo
 	if (suggests.isEmpty()) {
 	    throw new harpoon.Backend.Generic.RegFileInfo.SpillException() {
 		public Iterator getPotentialSpills() {
+		    // System.out.println("RFI: Spills.size() "+spills.size());
 		    return spills.iterator();
 		}
 	    };

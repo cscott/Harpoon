@@ -55,11 +55,14 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.53 1999-12-04 18:36:44 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.54 1999-12-04 23:54:26 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
     public static final boolean DEBUG = true;
+    
+    // Set of Instrs, strictly for debugging purposes (FSK use only)
+    public static final Set ALLOC_SET = new HashSet();
 
     protected Frame frame;
     protected Code code;
@@ -439,12 +442,13 @@ public abstract class RegAlloc  {
 		// add a comment saying which temp is being stored
 		Instr first = (Instr) instrs.get(0);
 		Instr.replaceInstrList(m, instrs);		
-		Instr newi = new Instr(first.getFactory(),
-				       first,
-				       "\t@storing " + m.def()[0],
-				       null, null);
-		newi.insertAt(new InstrEdge(first.getPrev(), first));
-		
+		//Instr newi = 
+		//  new Instr(first.getFactory(), first,
+		//	      "\t@storing " + m.def()[0], null, null);
+		//newi.insertAt(new InstrEdge(first.getPrev(), first));
+
+
+		ALLOC_SET.addAll(instrs);
 	    }
 	    
 	    public void visitLoad(FskLoad m) {
@@ -457,6 +461,8 @@ public abstract class RegAlloc  {
 		// add a comment saying which temp is being loaded
 		Instr first = (Instr) instrs.get(0);
 		Instr.replaceInstrList(m, instrs);
+
+		ALLOC_SET.addAll(instrs);
 
 		// Instr newi = new Instr(first.getFactory(), first,
 		//		       "\t@loading " + m.use()[0], null, null);
