@@ -7,9 +7,18 @@ import harpoon.ClassFile.HClass;
 /**
  * <code>Qop</code> is an enumerated type for the various kinds of
  * <code>OPER</code> opcodes.
+ * <p>
+ * Note that (x - y) is uniformly expressed as (x + (-y)), and that
+ * (~x) is typically expressed (compiler-dependant) as (x ^ (-1)).
+ * There is also a minimal set of comparison operations; all other
+ * comparisons can be synthesized from the ones present.  Note that
+ * floating-point (float/double) comparisons have special behaviors
+ * when NaN is an operand.  Note also that one each of IAND/IOR and
+ * LAND/LOR could be removed, but the translation involved too many
+ * steps to be deemed worthwhile.
  * 
  * @author  C. Scott Ananian <cananian@lesser-magoo.lcs.mit.edu>
- * @version $Id: Qop.java,v 1.1.2.7 1999-02-05 08:26:33 cananian Exp $
+ * @version $Id: Qop.java,v 1.1.2.8 1999-02-05 09:07:42 cananian Exp $
  */
 public abstract class Qop  {
     /** Compares references for equality. */
@@ -101,16 +110,24 @@ public abstract class Qop  {
     /** Computes the remainder of two int values. */
     public final static int IREM = 40;
     /** Computes the value of the first int value shifted left by the number
-     *  of bits specified in the second int value mod 32. That is, 
-     *  <code>( 1 << 34 ) == 4</code>. */
+     *  of bits specified in the low five bits of the second int value.
+     *  That is, <code>( 1 << 34 ) == 4</code>. 
+     *  Also, <code>(x << -1) == (x << 31)</code>.
+     */
     public final static int ISHL = 41;
-    /** Computes the value of the first int value shifted right by the number
-     *  of bits specified in the second int value mod 32, with sign extension.
-     *  That is, <code>( -4 >> 33 ) == -2</code>. */
+    /** Computes the value of the first int value shifted right with 
+     *  sign extension by the number of bits specified in the low five bits
+     *  of the second int value.
+     *  That is, <code>( -4 >> 33 ) == -2</code>.
+     *  Also, <code>(x >> -1) == (x >> 31)</code>.
+     */
     public final static int ISHR = 42;
-    /** Computes the value of the first int value shifted right by the number
-     *  of bits specified in the second int value mod 32, without sign
-     *  extension.  That is, <code>( -4 >>> 63) == 1</code>. */
+    /** Computes the value of the first int value shifted right without
+     *  sign extension by the number of bits specified in the low five bits
+     *  of the second int value.
+     *  That is, <code>( -4 >>> 30) == 3</code>.
+     *  Also, <code>(x >>> -1) == (x >>> 31)</code>.
+     */
     public final static int IUSHR = 44;
     /** Computes the binary-XOR of two int values. */
     public final static int IXOR = 45;
@@ -141,15 +158,24 @@ public abstract class Qop  {
     /** Computes the remainder of two long values. */
     public final static int LREM = 58;
     /** Computes the value of the first long value shifted left by the
-     *  number of bits specified in the second long value mod 64. */
+     *  number of bits specified in the low six bits of the second long value.
+     *  That is, <code>(1 << 66) == 4</code>.
+     *  Also, <code>(x << -1) == (x << 63)</code>.
+     */
     public final static int LSHL = 59;
-    /** Computes the value of the first long value shifted right by the
-     *  number of bits specified in the second long value mod 64, with
-     *  sign extension. */
+    /** Computes the value of the first long value shifted right with
+     *  sign extension by the number of bits specified in the low six bits
+     *  of the second long value.
+     *  That is, <code>(-4 >> 65) == -2</code>.
+     *  Also, <code>(x >> -1) == (x >> 63)</code>.
+     */
     public final static int LSHR = 60;
-    /** Computes the value of the first long value shifted right by the
-     *  number of bits specified in the second long value mod 64, without
-     *  sign extension. */
+    /** Computes the value of the first long value shifted right without
+     *  sign extension by the number of bits specified in the low six bits
+     *  of the second long value.
+     *  That is, <code>(-4 >>> 62) == 3</code>.
+     *  Also, <code>(x >>> -1) == (x >>> 63)</code>.
+     */
     public final static int LUSHR = 62;
     /** Computes the binary-XOR of two long values. */
     public final static int LXOR = 63;
