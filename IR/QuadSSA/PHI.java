@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.17 1998-09-21 04:45:34 cananian Exp $
+ * @version $Id: PHI.java,v 1.18 1998-09-25 17:50:01 cananian Exp $
  */
 
 public class PHI extends Quad {
@@ -36,6 +36,12 @@ public class PHI extends Quad {
 	prev = (Edge[]) Util.shrink(prev, which_pred);
 	for (int i=0; i<dst.length; i++)
 	    src[i] = (Temp[]) Util.shrink(src[i], which_pred);
+	// fixup edges.
+	for (int i=which_pred; i<prev.length; i++)
+	    prev[i].to_index--;
+	// double-check this.
+	for (int i=0; i<prev.length; i++)
+	    Util.assert(prev[i].to_index == i);
     }
 
     /** Grow the arity of a PHI by one. */

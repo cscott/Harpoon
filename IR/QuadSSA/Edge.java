@@ -10,7 +10,7 @@ import harpoon.ClassFile.*;
  * data with control-flow edges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Edge.java,v 1.3 1998-09-24 21:10:50 cananian Exp $
+ * @version $Id: Edge.java,v 1.4 1998-09-25 17:50:01 cananian Exp $
  */
 
 public class Edge implements HCodeEdge {
@@ -48,7 +48,11 @@ public class Edge implements HCodeEdge {
     }
     /** Returns a hash code value for this object. */
     public int hashCode() {
-	return (from.hashCode() ^ to.hashCode()) + from_index + to_index;
+	// hashcode is independent of to_index so we
+	// can remove inputs to phis without screwing up an edge mapping.
+	// exit branches usually carry meaning, thus from_index *is*
+	// included in the hashcode.
+	return (from.hashCode() ^ to.hashCode()) + from_index;
     }
 
     /** Returns a human-readable representation of the Edge. */
