@@ -106,10 +106,7 @@ struct SimpleHash {
     int tailindex;
 };
 
-inline int SimpleHashcountset(struct SimpleHash * thisvar) {
-    return thisvar->numelements;
-}
-
+inline int SimpleHashcountset(struct SimpleHash * thisvar);
 
 /* SimpleHashExcepion  *************************************************/
 
@@ -135,46 +132,19 @@ struct SimpleIterator {
   int index,tailindex;
 };
 
-inline struct SimpleIterator * noargallocateSimpleIterator() {
-    return (struct SimpleIterator*)malloc(sizeof(struct SimpleIterator));
-}
+inline struct SimpleIterator * noargallocateSimpleIterator();
 
-inline struct SimpleIterator * allocateSimpleIterator(struct ArraySimple *start, struct ArraySimple *tl, int tlindex) {
-    struct SimpleIterator *thisvar=(struct SimpleIterator*)malloc(sizeof(struct SimpleIterator));
-    thisvar->cur = start;
-    thisvar->index=0;
-    thisvar->tailindex=tlindex;
-    thisvar->tail=tl;
-    return thisvar;
-}
+inline struct SimpleIterator * allocateSimpleIterator(struct ArraySimple *start, struct ArraySimple *tl, int tlindex);
 
-inline int hasNext(struct SimpleIterator *thisvar) {
-    if (thisvar->cur==thisvar->tail &&
-	thisvar->index==thisvar->tailindex)
-        return 0;
-    while((thisvar->index==ARRAYSIZE)||!thisvar->cur->nodes[thisvar->index].inuse) {
-        if (thisvar->index==ARRAYSIZE) {
-            thisvar->index=0;
-            thisvar->cur=thisvar->cur->nextarray;
-        } else
-            thisvar->index++;
-    }
-    if (thisvar->cur->nodes[thisvar->index].inuse)
-        return 1;
-    else
-        return 0;
-}
+inline int hasNext(struct SimpleIterator *thisvar);
 
-inline int next(struct SimpleIterator *thisvar) {
-    return thisvar->cur->nodes[thisvar->index++].data;
-}
+inline int next(struct SimpleIterator *thisvar);
 
-inline int key(struct SimpleIterator *thisvar) {
-    return thisvar->cur->nodes[thisvar->index].key;
-}
-
+inline int key(struct SimpleIterator *thisvar);
 
 struct RepairHashNode * allocateRepairHashNode(int setrelation, int rule, int lvalue, int rvalue, int data, int data2,int ismodify);
+
+
 
 struct RepairHashNode {
     struct RepairHashNode *next;

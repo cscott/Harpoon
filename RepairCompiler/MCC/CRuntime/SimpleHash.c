@@ -196,6 +196,10 @@ void freeSimpleHash(struct SimpleHash *thisvar) {
     free(thisvar);
 }
 
+inline int SimpleHashcountset(struct SimpleHash * thisvar) {
+    return thisvar->numelements;
+}
+
 int SimpleHashfirstkey(struct SimpleHash *thisvar) {
   struct ArraySimple *ptr=thisvar->listhead;
   int index=0;
@@ -591,4 +595,42 @@ int RepairHashgetrelation(struct RepairHash *thisvar, int relation, int rule, in
         ptr = &((*ptr)->next);
     }
     return 0;
+}
+
+inline struct SimpleIterator * noargallocateSimpleIterator() {
+    return (struct SimpleIterator*)malloc(sizeof(struct SimpleIterator));
+}
+
+inline struct SimpleIterator * allocateSimpleIterator(struct ArraySimple *start, struct ArraySimple *tl, int tlindex) {
+    struct SimpleIterator *thisvar=(struct SimpleIterator*)malloc(sizeof(struct SimpleIterator));
+    thisvar->cur = start;
+    thisvar->index=0;
+    thisvar->tailindex=tlindex;
+    thisvar->tail=tl;
+    return thisvar;
+}
+
+inline int hasNext(struct SimpleIterator *thisvar) {
+    if (thisvar->cur==thisvar->tail &&
+	thisvar->index==thisvar->tailindex)
+        return 0;
+    while((thisvar->index==ARRAYSIZE)||!thisvar->cur->nodes[thisvar->index].inuse) {
+        if (thisvar->index==ARRAYSIZE) {
+            thisvar->index=0;
+            thisvar->cur=thisvar->cur->nextarray;
+        } else
+            thisvar->index++;
+    }
+    if (thisvar->cur->nodes[thisvar->index].inuse)
+        return 1;
+    else
+        return 0;
+}
+
+inline int next(struct SimpleIterator *thisvar) {
+    return thisvar->cur->nodes[thisvar->index++].data;
+}
+
+inline int key(struct SimpleIterator *thisvar) {
+    return thisvar->cur->nodes[thisvar->index].key;
 }

@@ -303,6 +303,7 @@ public class RepairGenerator {
 
     private void generate_stateobject() {
         CodeWriter crhead = new StandardCodeWriter(outputhead);
+        CodeWriter craux = new StandardCodeWriter(outputaux);
 	crhead.outputline("struct "+name+"_state {");
 	Iterator globals=state.stGlobals.descriptors();
 	while (globals.hasNext()) {
@@ -310,6 +311,18 @@ public class RepairGenerator {
 	    crhead.outputline(vd.getType().getGenerateType().getSafeSymbol()+" "+vd.getSafeSymbol()+";");
 	}
         crhead.outputline("};");
+	crhead.outputline("struct "+name+"_state * allocate"+name+"_state();");
+	craux.outputline("struct "+name+"_state * allocate"+name+"_state()");
+	craux.startblock();
+	craux.outputline("return (struct "+name+"_state *) malloc(sizeof(struct "+name+"_state));");
+	craux.endblock();
+
+	crhead.outputline("void free"+name+"_state(struct "+name+"_state *);");
+	craux.outputline("void free"+name+"_state(struct "+name+"_state * thisvar)");
+	craux.startblock();
+	craux.outputline("free(thisvar);");
+	craux.endblock();
+
 	crhead.outputline("void "+name+"_statecomputesizes(struct "+name+"_state * ,int *,int **);");
 	crhead.outputline("void "+name+"_staterecomputesizes(struct "+name+"_state *);");
     }
@@ -435,7 +448,7 @@ public class RepairGenerator {
 		}
 	    }
 	}
-        craux.outputline("struct "+ name+"* "+name+"()");
+        craux.outputline("struct "+ name+"* allocate"+name+"()");
 	craux.startblock();
         craux.outputline("/* creating hashtables */");
 
