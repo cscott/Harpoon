@@ -91,7 +91,7 @@ update:
 clean:
 	$(RM) *.aux *.bbl *.blg *.dvi *.glo *.gls *.idx *.ilg *.ind *.lis \
 	      *.loa *.lof *.log *.lot *.toc
-	$(RM) $(foreach doc,$(ALLDOCS),$(doc).ps $(doc).pdf)
+	$(RM) $(foreach doc,$(ALLDOCS),$(doc).ps $(doc).pdf $(doc).gif $(doc).stats)
 	$(RM) harpoon_.bib unread_.bib
 	$(RM) -r html
 	$(MAKE) -C Figures clean
