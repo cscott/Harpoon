@@ -9,12 +9,8 @@ package harpoon.Runtime.PreallocOpt;
  * be added by FLEX itself, during code generation.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocatedMemory.java,v 1.2 2003-02-22 04:42:49 salcianu Exp $ */
+ * @version $Id: PreallocatedMemory.java,v 1.3 2003-03-03 23:38:29 salcianu Exp $ */
 public abstract class PreallocatedMemory {
-    // static fields: FLEX will add one static field for each
-    // pre-allocated chunk of memory
-    public static Object field_pattern;
-
     // FLEX will fill in the code of this method such that it
     // pre-allocates memory and initializes the static fields of this
     // class; don't add any Java code to it
