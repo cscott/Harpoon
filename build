@@ -1,0 +1,15 @@
+HERE=`pwd`
+CLASSPATH=`pwd`:$CLASSPATH
+FLEXPATH=`pwd`:$FLEXPATH
+cd ..
+rm Runtime
+ln -s Runtime-normal Runtime
+cd $HERE
+source ./sourceme
+cd ../Code
+rm -rf as*
+JAVA="java -server" PRECISEC_CFLAGS="-O9" bin/build-precisec -F -Dharpoon.inline.arraycopy=true $@
+cd ../Runtime
+strip run*
+mv run* $HERE
+

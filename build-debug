@@ -1,0 +1,14 @@
+HERE=`pwd`
+CLASSPATH=`pwd`:$CLASSPATH
+FLEXPATH=`pwd`:$FLEXPATH
+cd ..
+rm Runtime
+ln -s Runtime-debug Runtime
+cd $HERE
+source ./sourceme
+cd ../Code
+rm -rf as*
+JAVA="java -server" PRECISEC_CFLAGS="-g" bin/build-precisec $@
+cd ../Runtime
+mv run* $HERE
+
