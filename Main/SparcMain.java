@@ -65,7 +65,7 @@ import java.io.PrintWriter;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparcMain.java,v 1.1.2.12 2000-02-13 02:41:12 pnkfelix Exp $
+ * @version $Id: SparcMain.java,v 1.1.2.13 2000-02-14 20:02:57 andyb Exp $
  */
 public class SparcMain extends harpoon.IR.Registration {
  
@@ -144,11 +144,13 @@ public class SparcMain extends harpoon.IR.Registration {
 	}
 	callGraph = new CallGraph(classHierarchy, hcf);
 	frame = new Frame(startM, classHierarchy, callGraph);
-	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
-	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
-	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
-	//hcf = harpoon.IR.Tree.OptimizedTreeCode.codeFactory(hcf, frame);
-	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+
+        hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
+        hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
+        hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
+        hcf = harpoon.Analysis.Tree.AlgebraicSimplification.codeFactory(hcf);
+        //hcf = harpoon.IR.Tree.OptimizedTreeCode.codeFactory(hcf, frame);
+        hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     
 	HCodeFactory sparchcf = Code.codeFactory(hcf, frame);
 	sparchcf = new harpoon.ClassFile.CachingCodeFactory(sparchcf);
