@@ -215,13 +215,11 @@ public class InstrumentSyncOps {
         CALL ca = new CALL(qf, null, method, params, null, null, false, false, new Temp[0]);
         // add the quads AFTER the NEW quad.
 	Util.assert(q.nextLength() == 1);
-	Quad nq = q.next(0);
-	int ind = nq.prev(q);
-	Util.assert(ind != -1);
+	Edge ne = q.nextEdge(0);
 	Quad.addEdge(q, 0, co, 0);
 	Quad.addEdge(co, 0, co2, 0);
 	Quad.addEdge(co2, 0, ca, 0);
-	Quad.addEdge(ca, 0, nq, ind);
+	Quad.addEdge(ca, 0, (Quad)ne.to(), ne.which_pred());
     }
     
     static class QuadMap {
