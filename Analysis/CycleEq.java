@@ -16,7 +16,7 @@ import java.util.Vector;
  * control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <>
- * @version $Id: CycleEq.java,v 1.1 1998-10-16 06:20:23 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.2 1998-10-16 12:00:49 cananian Exp $
  */
 
 public class CycleEq  {
@@ -27,7 +27,6 @@ public class CycleEq  {
 	for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
 	    HCodeElement hce = (HCodeElement)e.nextElement();
 	    Node n = g.code2node(hce);
-	    if (n.cd_class==null) System.out.println("No CDCLASS for "+n);
 	    Set s = (Set) equiv.get(n.cd_class);
 	    if (s==null) { s = new Set(); equiv.put(n.cd_class, s); }
 	    s.union(hce);
@@ -53,28 +52,24 @@ public class CycleEq  {
 	    }
 
 	    int hi1 = g.size(); // how high through children.
-	    Node hi_child = null;
 	    for (Enumeration ee=n.children(); ee.hasMoreElements(); ) {
 		Node c = (Node) ee.nextElement();
 		if (c.hi < hi1) {
 		    hi1 = c.hi;
-		    hi_child = c;
 		}
 	    }
 
-	    int hi2 = g.size(); // second highest through children
+	    // find min(hi) through children.
+	    int hi2 = 0; // lowest hi through children
 	    for (Enumeration ee=n.children(); ee.hasMoreElements(); ) {
 		Node c = (Node) ee.nextElement();
-		if (c == hi_child) continue; // rules of the game.
-		if (c.hi < hi2) {
+		if (c.hi > hi2) {
 		    hi2 = c.hi;
 		}
 	    }
 
 	    // set Hi(n)
 	    n.hi = Math.min(hi0, hi1);
-	    //System.out.println("Highest vertex reachable from "+n+" is "+n.hi);
-	    //System.out.println("2nd highest from "+n+" is "+hi2);
 
 	    // Compute BList(n)
 	    n.blist = new BracketList();
@@ -93,6 +88,11 @@ public class CycleEq  {
 		if (d.dfs_num < n.dfs_num) continue; // not a descendant.
 		n.blist.delete(new Bracket(d, n));
 	    }
+	    //  Also capping backedges:
+	    for (Enumeration ee=n.capping.elements(); ee.hasMoreElements(); ){
+		Node d = (Node) ee.nextElement();
+		n.blist.delete(new Bracket(d, n));
+	    }
 	    //  for each backedge e from n to an ancestor of n, do
 	    for (Enumeration ee=n.backedges(); ee.hasMoreElements(); ){
 		Node a = (Node) ee.nextElement();
@@ -107,18 +107,15 @@ public class CycleEq  {
 		Bracket b = new Bracket(n,g.byNum(hi2)); //capping backedge
 		n.blist.push(b);
 		recentSize.put(b, new Integer(-1));
-		System.out.println("adding capping backedge "+b+" to "+n);
+		// add edge to node.
+		b.ancestor.capping.union(n);
 	    }
-
-	    //System.out.println(n.toString()+": "+n.blist);
 
 	    // Compute Class(n)
 	    //  if n is a representative node
 	    if (n instanceof NodePrime) {
-		System.out.println(n.toString()+": "+n.blist);
 		Bracket tbn = n.blist.top();
 		int  sbn = n.blist.size();
-		//System.out.println(n.toString()+": <"+tbn+","+sbn+">");
 		if (sbn != ((Integer)recentSize.get(tbn)).intValue()) {
 		    // start a new equivalence class.
 		    recentSize.put(tbn, new Integer(sbn));
@@ -160,29 +157,6 @@ public class CycleEq  {
 
 	// DFS ORDERING.
 	private void dfs_number() {
-	    /*
-	    Stack s = new Stack(); // use stack to get DFS order.
-	    Set visited = new Set();
-	    s.push(this.start);
-	    for (int i = 0; !s.isEmpty(); i++) {
-		Node n = (Node) s.pop(); // pre-order.
-		if (visited.contains(n)) continue; // already marked.
-		visited.union(n); // kilroy was here.
-		// Number this node.
-		n.dfs_num = i;
-		dfs_order.addElement(n);
-		System.out.println("Numbering "+n.source+" as "+i);
-		// Now depth-first traverse, keeping track of
-		// any backedges we discover.
-		n.backedge = new Set();
-		Node[] adj = n.adj();
-		for (int j=adj.length-1; j>=0; j--)
-		    if (visited.contains(adj[j]))
-			n.backedge.union(adj[j]);
-		    else
-			s.push(adj[j]);
-	    }
-	    */
 	    dfs_number(this.start, new Set());
 	}
 	private void dfs_number(Node n, Set visited) {
@@ -198,21 +172,6 @@ public class CycleEq  {
 		    dfs_number(m, visited);
 		}
 	    }
-	    System.out.print("Edges for "+n+": { ");
-	    for (Enumeration e = n.adjE(); e.hasMoreElements(); ) {
-		System.out.print(e.nextElement().toString());
-		if (e.hasMoreElements()) System.out.print(", ");
-	    } System.out.println(" }");
-	    System.out.print("Children for "+n+": { ");
-	    for (Enumeration e = n.children(); e.hasMoreElements(); ) {
-		System.out.print(e.nextElement().toString());
-		if (e.hasMoreElements()) System.out.print(", ");
-	    } System.out.println(" }");
-	    System.out.print("Backedges for "+n+": { ");
-	    for (Enumeration e = n.backedges(); e.hasMoreElements(); ) {
-		System.out.print(e.nextElement().toString());
-		if (e.hasMoreElements()) System.out.print(", ");
-	    } System.out.println(" }");
 	}
 	private final Vector dfs_order = new Vector();
 
@@ -236,6 +195,7 @@ public class CycleEq  {
 	public Object cd_class;
 	public BracketList blist;
 	public int hi;
+	public Set capping = new Set();
 	Node(Graph g, HCodeElement source) {
 	    this.g = g; this.source = source;
 	}
@@ -398,10 +358,6 @@ public class CycleEq  {
 	public Bracket top() { return first.b; }
 	public void delete(Bracket e) {
 	    ListCell lc = (ListCell) e.descendant.be2lc.get(e.ancestor);
-	    if (lc==null) {
-		System.err.println("Bracket "+e+" not found in "+this);
-		return;
-	    }
 	    if (first==lc) first=lc.next;
 	    else lc.prev.next = lc.next;
 	    if (last==lc) last = lc.prev;
