@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.MemOpt;
 
-import harpoon.Backend.Runtime1.MallocAllocationStrategy;
+import harpoon.Backend.Runtime1.BDWAllocationStrategy;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
@@ -34,17 +34,18 @@ import java.util.Map;
     variable that points to the pre-allocated chunk of memory.
 
     <li> Otherwise, use the standard allocation from
-    <code>MallocAllocatonStrategy</code>.
+    <code>BDWAllocationStrategy</code> (yes, the preallocation
+    optimization currently works only with BDW).
 
     </ul>
  
     @author  Alexandru Salcianu <salcianu@MIT.EDU>
-    @version $Id: PreallocAllocationStrategy.java,v 1.6 2003-03-03 23:28:58 salcianu Exp $ */
-public class PreallocAllocationStrategy extends MallocAllocationStrategy {
+    @version $Id: PreallocAllocationStrategy.java,v 1.7 2003-03-07 20:57:20 salcianu Exp $ */
+public class PreallocAllocationStrategy extends BDWAllocationStrategy {
     
     /** Creates a <code>PreallocAllocationStrategy</code>. */
     public PreallocAllocationStrategy(Frame f) { 
-	super(f, "GC_malloc");
+	super(f);
     }
 
     public Exp memAlloc(TreeFactory tf, HCodeElement source,

@@ -55,7 +55,7 @@ import harpoon.Util.Util;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.16 2003-03-03 23:28:58 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.17 2003-03-07 20:57:20 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -99,7 +99,7 @@ public abstract class PreallocOpt {
 
     /** Name of the wrapper class for the static fields pointing to
 	pre-allocated memory chunks. */
-    private static final String PREALLOC_MEM_CLASS_NAME =
+    public static final String PREALLOC_MEM_CLASS_NAME =
 	"harpoon.Runtime.PreallocOpt.PreallocatedMemory";
 
     /** Root for the names of the labels corresponding to locations
@@ -117,6 +117,9 @@ public abstract class PreallocOpt {
 	@param roots set of roots
 	@param linker linker used to get classes */
     public static void updateRoots(Set roots, Linker linker) {
+
+	System.out.println("\n\nUPDATE ROOTS CALLED!\n");
+
 	roots.add(getInitMethod(linker));
     }
 
@@ -288,7 +291,10 @@ public abstract class PreallocOpt {
 
 		if(RANGE_DEBUG) {
 		    int id = as.allocID(siteNoSSA);
-		    if((id < lowBound) || (id > highBound)) continue;
+		    if((id < lowBound) || (id > highBound)) {
+			System.out.println("Skipping prealloc for " + id);
+			continue;
+		    }
 		    System.out.println
 			("\nPREALLOCATE: " + id + " \"" + label + "\" " + 
 			 Util.code2str(site));
