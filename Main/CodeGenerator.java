@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * <code>CodeGenerator</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CodeGenerator.java,v 1.5 2003-04-17 15:24:27 salcianu Exp $
+ * @version $Id: CodeGenerator.java,v 1.6 2003-04-18 16:20:51 salcianu Exp $
  */
 public class CodeGenerator extends CompilerStage {
     
@@ -144,7 +144,7 @@ public class CodeGenerator extends CompilerStage {
 	    }
 	});
 	
-	opts.add(new Option("A", "Same as -OPR") {
+	opts.add(new Option("A", "Same as -O -P -R") {
 	    public void action() {
 		OUTPUT_INFO = PRE_REG_ALLOC = true;
 		PRINT_ORIG = REG_ALLOC = true;
