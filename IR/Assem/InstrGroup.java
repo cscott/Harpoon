@@ -27,7 +27,7 @@ import java.util.Arrays;
  * single-entry single-exit region.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrGroup.java,v 1.1.2.4 2001-06-17 22:33:12 cananian Exp $ */
+ * @version $Id: InstrGroup.java,v 1.1.2.5 2001-06-19 16:22:27 pnkfelix Exp $ */
 public class InstrGroup {
     Type type;
     Instr entry, exit;
@@ -112,7 +112,7 @@ public class InstrGroup {
 		for(int i=0; i<hces.length; i++) {
 		    InstrGroup ig = (InstrGroup) i2g.get(hces[i]);
 		    if (ig != null)
-			hces[i] = ig.entry;
+			hces[i] = ig.exit;
 		}
 	    }
 	    return hces;
@@ -122,17 +122,18 @@ public class InstrGroup {
 	}
 
 	public Collection predC(HCodeElement hc) { 
-	    // get list of low-level preds
-	    CFGEdge[] preds = ((Instr) hc).pred();
-	    
-	    // map low-level preds to starts of associated Groups
-	    for(int i=0; i<preds.length; i++) {
-		if (i2g.containsKey(preds[i].fromCFG())) {
-		    InstrGroup ig = (InstrGroup) i2g.get(preds[i].fromCFG());
-		    preds[i] = new InstrEdge(ig.entry,(Instr)preds[i].toCFG());
+	    Instr i = (Instr) hc;
+	    if (!i2g.containsKey(i)){
+		return i.predC();
+	    } else {
+		InstrGroup ig = ((InstrGroup)i2g.get(i));
+		if (i == ig.exit) {
+		    return Collections.singleton(new InstrEdge(ig.entry, ig.exit));
+		} else {
+		    Util.assert(i == ig.entry);
+		    return i.predC();
 		}
 	    }
-	    return Arrays.asList(preds);
 	}
 
 	public Collection succC(HCodeElement hc) { 
@@ -140,14 +141,13 @@ public class InstrGroup {
 	    if (!i2g.containsKey(i)) {
 		return i.succC();
 	    } else {
-		// get list of succs from exit of this group
-		final CFGEdge[] succs = ((InstrGroup)i2g.get(i)).exit.succ();
-
-		// remap to have group entry as start
-		for(int j=0; j<succs.length; j++) {
-		    succs[j] = new InstrEdge(i, (Instr) succs[j].toCFG());
+		InstrGroup ig = ((InstrGroup)i2g.get(i));
+		if (i == ig.entry) {
+		    return Collections.singleton(new InstrEdge(ig.entry, ig.exit));
+		} else {
+		    Util.assert(i == ig.exit);
+		    return i.succC();
 		}
-		return Arrays.asList(succs); 
 	    }
 	}
     }
@@ -188,8 +188,7 @@ public class InstrGroup {
 	    Instr i=(Instr)hce;
 
 	    if (!i2g.containsKey(i)) {
-		// FSK: PUT BACK AFTER INSTR IS COMMITTED
-		// Util.assert(!i.partOf(t));
+		Util.assert(!i.partOf(t), "instr:"+i+" grp type:"+t);
 		return i.useC();
 	    } else {
 		InstrGroup ig = ((InstrGroup)i2g.get(i));
@@ -202,6 +201,7 @@ public class InstrGroup {
 		Instr curr = ig.exit;
 		Collection set = new HashSet();
 		do {
+		    Util.assert( curr.getGroups().contains(ig) );
 		    set.addAll(curr.useC());
 		    Util.assert(curr.predC().size() == 1);
 		    curr = (Instr) curr.pred()[0].from();
@@ -214,8 +214,7 @@ public class InstrGroup {
 	public Collection defC(HCodeElement hce) { 
 	    Instr i = (Instr) hce;
 	    if (!i2g.containsKey(i)) {
-		// FSK: PUT BACK AFTER INSTR IS COMMITTED
-		// Util.assert(i.partOf(t));
+		Util.assert(!i.partOf(t));
 		return i.defC();
 	    } else {
 		InstrGroup ig = (InstrGroup)i2g.get(i);
@@ -228,6 +227,7 @@ public class InstrGroup {
 		Collection set = new HashSet();
 
 		do {
+		    Util.assert( curr.getGroups().contains(ig) );
 		    Util.assert(curr.predC().size() == 1);
 		    curr = (Instr) curr.pred()[0].from();
 		    set.addAll(curr.defC());
