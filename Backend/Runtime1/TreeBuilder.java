@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.44 2001-07-06 21:21:01 wbeebee Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.45 2001-07-09 21:23:36 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -217,6 +217,9 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 			AllocationProperties ap,
 			HClass objectType, Exp length) {
 	Temp Tobj = new Temp(tf.tempFactory(), "rt");
+	// masked version of object pointer.
+	Temp Tmasked = new Temp(tf.tempFactory(), "rt");
+	Derivation.DList maskedDL = new Derivation.DList(Tobj, true, null);
 	return new ESEQ
 	    (tf, source,
 	     new SEQ
@@ -233,6 +236,15 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		 new CONST(tf, source, OBJECT_HEADER_SIZE)))),
 	      new SEQ
 	      (tf, source,
+	       new MOVE // save a masked version of the pointer.
+	       (tf, source,
+		DECLARE(dg, maskedDL,
+		new TEMP(tf, source, Type.POINTER, Tmasked)),
+		PTRMASK(tf, source, dg,
+		DECLARE(dg, objectType/*not an obj yet*/, Tobj,
+		new TEMP(tf, source, Type.POINTER, Tobj)))),
+	      new SEQ
+	      (tf, source,
 	       new MOVE // assign the new object a hashcode.
 	       (tf, source,
 		DECLARE(dg, HClass.Void/*hashcode, not an object*/,
@@ -240,14 +252,13 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		(tf, source, Type.POINTER, /* hashcode is pointer size */
 		 new BINOP
 		 (tf, source, Type.POINTER, Bop.ADD,
-		  DECLARE(dg, objectType/*not an obj yet*/, Tobj,
-		  new TEMP(tf, source, Type.POINTER, Tobj)),
+		  DECLARE(dg, maskedDL,
+		  new TEMP(tf, source, Type.POINTER, Tmasked)),
 		  new CONST(tf, source, OBJ_HASH_OFF)))),
 		new BINOP // set the low bit to indicate an uninflated object.
 		(tf, source, Type.POINTER, Bop.ADD,
-		 PTRMASK(tf, source, dg,
-		 DECLARE(dg, objectType/*not an obj yet*/, Tobj,
-		 new TEMP(tf, source, Type.POINTER, Tobj))),
+		 DECLARE(dg, maskedDL,
+		 new TEMP(tf, source, Type.POINTER, Tmasked)),
 		 new CONST(tf, source, 1))),
 	       new MOVE // assign the new object a class pointer.
 	       (tf, source,
@@ -257,10 +268,10 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		 (tf, source, Type.POINTER,
 		  new BINOP
 		  (tf, source, Type.POINTER, Bop.ADD,
-		   DECLARE(dg, objectType/*still not an obj*/, Tobj,
-			   new TEMP(tf, source, Type.POINTER, Tobj)),
+		   DECLARE(dg, maskedDL,
+			   new TEMP(tf, source, Type.POINTER, Tmasked)),
 		   new CONST(tf, source, OBJ_CLAZ_OFF)))),
-		new NAME(tf, source, runtime.nameMap.label(objectType))))),
+		new NAME(tf, source, runtime.nameMap.label(objectType)))))),
 	     // result of ESEQ is new object pointer
 	     DECLARE(dg, objectType/*finally an obj*/, Tobj,
 	     new TEMP(tf, source, Type.POINTER, Tobj)));
@@ -274,9 +285,10 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	    (tf, source, Type.INT, // The "length" field is of type INT
 	     new BINOP
 	     (tf, source, Type.POINTER, Bop.ADD,
-	      arrayRef.unEx(tf),
+	      fieldBase(tf, source, dg, arrayRef).unEx(tf),
 	      new CONST
-	      (tf, source, OBJ_ALENGTH_OFF)))); // offset from array base ptr.
+	      // offset from array base ptr.
+	      (tf, source, OBJ_ALENGTH_OFF-OBJ_FZERO_OFF))));
     }
     public Translation.Exp arrayNew(TreeFactory tf, HCodeElement source,
 				    DerivationGenerator dg,
@@ -326,9 +338,11 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	       (tf, source, Type.INT, // length field is of type INT.
 		new BINOP // offset array base to get location of length field
 		(tf, source, Type.POINTER, Bop.ADD,
-		 DECLARE(dg, arrayType/*not an obj yet*/, Tarr,
-			 new TEMP(tf, source, Type.POINTER, Tarr)),
-		 new CONST(tf, source, OBJ_ALENGTH_OFF))),
+		fieldBase(tf, source, dg, new Translation.Ex
+			  (DECLARE(dg, arrayType/*not an obj yet*/, Tarr,
+			   new TEMP(tf, source, Type.POINTER, Tarr))))
+		.unEx(tf),
+		 new CONST(tf, source, OBJ_ALENGTH_OFF-OBJ_FZERO_OFF))),
 	       new TEMP(tf, source, Type.INT, Tlen))); // length from Tlen
         /* now, if there are fields of java.lang.Object that need to be
          * initialized, zero fill them. */
@@ -341,11 +355,10 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
                   new NAME(tf, source, new Label
                            (runtime.nameMap.c_function_name("memset")))),
                   new ExpList
-                  (new BINOP
-                   (tf, source, Type.POINTER, Bop.ADD,
-                    DECLARE(dg, arrayType/*not an obj yet*/, Tarr,
-                    new TEMP(tf, source, Type.POINTER, Tarr)),
-                    new CONST(tf, source, OBJ_FZERO_OFF)),
+                  (fieldBase(tf, source, dg, new Translation.Ex
+			     (DECLARE(dg, arrayType/*not an obj yet*/, Tarr,
+			      new TEMP(tf, source, Type.POINTER, Tarr))))
+		   .unEx(tf),
                    new ExpList
                    (new CONST(tf, source, 0),
                     new ExpList
@@ -371,19 +384,9 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 			 (tf, source, Type.POINTER, Bop.ADD,
 			  new CONST(tf, source, CLAZ_COMPONENT_OFF),
 			  // dereference object to claz structure.
-			  DECLARE(dg, HClass.Void/*claz ptr*/,
-			  new MEM(tf, source, Type.POINTER,
-				  new BINOP // offset to get claz pointer
-				  (tf, source, Type.POINTER, Bop.ADD,
-				   arrayref.unEx(tf),
-				   new CONST(tf, source, OBJ_CLAZ_OFF)))))));
+			  _claz_(tf, source, dg, arrayref))));
 	// class pointer of componentref
-	Exp e1 = DECLARE(dg, HClass.Void/*claz ptr*/,
-                 new MEM(tf, source, Type.POINTER,
-			 new BINOP // offset to get claz pointer
-			 (tf, source, Type.POINTER, Bop.ADD,
-			  componentref.unEx(tf),
-			  new CONST(tf, source, OBJ_CLAZ_OFF))));
+	Exp e1 = _claz_(tf, source, dg, componentref);
 	// move claz pointer of arrayref component to a temporary variable.
 	Temp Tac = new Temp(tf.tempFactory(), "rt");
 	Stm s0 = new MOVE(tf, source,
@@ -453,13 +456,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 				 new BINOP // offset to get interface pointer
 				 (tf, source, Type.POINTER, Bop.ADD,
 				  // dereference object to claz structure.
-				  DECLARE(dg, HClass.Void/*claz ptr*/,
-				  new MEM(tf, source, Type.POINTER,
-					  new BINOP // offset to get claz ptr
-					  (tf, source, Type.POINTER, Bop.ADD,
-					   objref.unEx(tf),
-					   new CONST
-					   (tf, source, OBJ_CLAZ_OFF)))),
+				  _claz_(tf, source, dg, objref),
 				  new CONST(tf, source, CLAZ_INTERFZ_OFF)))));
 		    // loop body: test *il against Lclaz.
 		    Stm s1 = new CJUMP
@@ -536,12 +533,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 			  (tf, source, Type.POINTER, Bop.ADD,
 			   new CONST(tf, source,CLAZ_DISPLAY_OFF+class_offset),
 			   // dereference object to claz structure.
-			   DECLARE(dg, HClass.Void/*claz ptr*/,
-			   new MEM(tf, source, Type.POINTER,
-				   new BINOP // offset to get claz pointer
-				   (tf, source, Type.POINTER, Bop.ADD,
-				    objref.unEx(tf),
-				    new CONST(tf, source, OBJ_CLAZ_OFF)))))))
+			   _claz_(tf, source, dg, objref))))
 		  ));
 	}
     }
@@ -778,19 +770,24 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	return new Translation.Ex
 	    (new CONST(tf, source, cfm.fieldOffset(field)));
     }
+    private Exp _claz_(TreeFactory tf, HCodeElement source,
+		       DerivationGenerator dg,
+		       Translation.Exp objectref) {
+	return DECLARE(dg, HClass.Void/*claz pointer*/,
+	      new MEM
+	      (tf, source, Type.POINTER,
+	       new BINOP
+	       (tf, source, Type.POINTER, Bop.ADD,
+		PTRMASK(tf, source, dg, objectref.unEx(tf)),
+		new CONST(tf, source, OBJ_CLAZ_OFF))));
+    }
     public Translation.Exp methodBase(TreeFactory tf, HCodeElement source,
 					DerivationGenerator dg,
 				      Translation.Exp objectref) {
 	return new Translation.Ex
 	    (new BINOP
 	     (tf, source, Type.POINTER, Bop.ADD,
-	      DECLARE(dg, HClass.Void/*claz pointer*/,
-	      new MEM
-	      (tf, source, Type.POINTER,
-	       new BINOP
-	       (tf, source, Type.POINTER, Bop.ADD,
-		PTRMASK(tf, source, dg, objectref.unEx(tf)),
-		new CONST(tf, source, OBJ_CLAZ_OFF)))),
+	      _claz_(tf, source, dg, objectref),
 	      new CONST(tf, source, CLAZ_METHODS_OFF)));
     }
     public Translation.Exp methodOffset(TreeFactory tf, HCodeElement source,
