@@ -20,9 +20,10 @@
 # -c    - check for things like "$Id" near head of file, no "$Log", etc.
 #---------------------------------------------------------------------
 Benchmarks $CVSROOT/CVSROOT/commit_prep -u -r
+BuildScripts	$CVSROOT/CVSROOT/commit_prep -u -r
+Classpath $CVSROOT/CVSROOT/commit_prep -u -r
 # we're going to forbid any more commits on the magic-2-0 branch of Code.
 #Code	$CVSROOT/CVSROOT/commit_prep -u -r
-Classpath $CVSROOT/CVSROOT/commit_prep -u -r
 Code	$CVSROOT/CVSROOT/stop_magic
 EventDriven $CVSROOT/CVSROOT/commit_prep -u -r
 ImageRec $CVSROOT/CVSROOT/commit_prep -u -r
@@ -34,6 +35,5 @@ Runtime	$CVSROOT/CVSROOT/commit_prep -u -r
 #SupportNP	$CVSROOT/CVSROOT/commit_prep -u -r
 SupportNP	$CVSROOT/CVSROOT/stop_magic
 Tests	$CVSROOT/CVSROOT/commit_prep -u -r
-BuildScripts	$CVSROOT/CVSROOT/commit_prep -u -r
 # everything else, check against access lists. (commit_prep invokes this too)
 DEFAULT	$CVSROOT/CVSROOT/cvs_acls

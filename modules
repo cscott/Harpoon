@@ -37,6 +37,7 @@ taginfo 	CVSROOT taginfo
 
 # Version controlled sources:
 Benchmarks Benchmarks
+BuildScripts BuildScripts
 Classpath Classpath
 Code	Code
 Design	Design
@@ -50,7 +51,6 @@ RoleInference RoleInference
 Runtime Runtime
 SupportNP SupportNP
 Tests	Tests
-BuildScripts BuildScripts
 FLEX    -a Code Runtime
 
 # pldi '99 paper (defunct)
