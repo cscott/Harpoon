@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.12 1999-06-18 01:48:03 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.13 1999-08-05 15:04:01 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -230,9 +230,9 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		// check if this is the CJMP condition.
 		if (q.test() == q.src(i)) {
 		    raiseV(V, Wv, q.dst(i,0), 
-			   new xIntConstant(HClass.Boolean, 0));
+			   new xIntConstant(toInternal(HClass.Boolean), 0));
 		    raiseV(V, Wv, q.dst(i,1),
-			   new xIntConstant(HClass.Boolean, 1));
+			   new xIntConstant(toInternal(HClass.Boolean), 1));
 		    continue; // go on.
 		}
 
@@ -322,7 +322,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    LatticeVal v = get( q.objectref() );
 	    if (v instanceof xClass)
 		raiseV(V, Wv, q.dst(), 
-		       new xClass( ((xClass)v).type().getComponentType() ) );
+		       new xClass( toInternal( ((xClass)v).type().getComponentType() ) ) );
 	}
 	public void visit(ALENGTH q) {
 	    LatticeVal v = get( q.objectref() );
@@ -350,19 +350,21 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    if (q.retval() != null) {
 		// in the bytecode world, everything's an int.
 		HClass ty = q.method().getReturnType();
-		LatticeVal v = new xClass(ty);
+		LatticeVal v = new xClass(toInternal(ty));
 		if (ty==HClass.Byte)
-		    v = new xBitWidth(HClass.Int,  8,  7);
+		    v = new xBitWidth(toInternal(HClass.Byte),  8,  7);
 		else if (ty==HClass.Short)
-		    v = new xBitWidth(HClass.Int, 16, 15);
+		    v = new xBitWidth(toInternal(HClass.Short), 16, 15);
 		else if (ty==HClass.Char)
-		    v = new xBitWidth(HClass.Int,  0, 16);
+		    v = new xBitWidth(toInternal(HClass.Char),  0, 16);
+		else if (ty==HClass.Boolean)
+		    v = new xBitWidth(toInternal(HClass.Boolean),0, 1);
 		else if (ty.isPrimitive())
-		    v = new xClassNonNull(ty);
+		    v = new xClassNonNull(toInternal(ty));
 		raiseV(V, Wv, q.retval(), v);
 	    }
 	    raiseV(V, Wv, q.retex(), 
-		   new xClass( HClass.forClass(Throwable.class) ) );
+		   new xClass( HClass.forName("java.lang.Throwable") ) );
 	}
 	public void visit(CJMP q) {
 	    // is test constant?
@@ -397,9 +399,9 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 			// is this the CJMP condition?
 			if (q.src(i) == q.test()) {
 			    raiseV(V, Wv, q.dst(i,0), 
-				   new xIntConstant(HClass.Boolean, 0));
+				   new xIntConstant(toInternal(HClass.Boolean), 0));
 			    raiseV(V, Wv, q.dst(i,1),
-				   new xIntConstant(HClass.Boolean, 1));
+				   new xIntConstant(toInternal(HClass.Boolean), 1));
 			} else {
 			    LatticeVal v2 = get ( q.src(i) );
 			    if (v2 != null) {
@@ -417,21 +419,22 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    if (vA instanceof xClass && vO instanceof xClass) {
 		HClass hcA = ((xClass) vA).type().getComponentType() ;
 		HClass hcO = ((xClass) vO).type();
+		hcA = toInternal(hcA); // normalize external types.
 		// special case when q.objectref is null
 		if (hcO == HClass.Void) // always true.
-		    raiseV(V, Wv, q.dst(), new xIntConstant(HClass.Boolean,1));
+		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),1));
 		else if (hcO.isInstanceOf(hcA)) // always true
-		    raiseV(V, Wv, q.dst(), new xIntConstant(HClass.Boolean,1));
+		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),1));
 		else if (hcA.isInstanceOf(hcO)) // unknowable.
-		    raiseV(V, Wv, q.dst(), new xBitWidth(HClass.Boolean,1,0));
+		    raiseV(V, Wv, q.dst(), new xBitWidth(toInternal(HClass.Boolean),0,1));
 		else // always false.
-		    raiseV(V, Wv, q.dst(), new xIntConstant(HClass.Boolean,0));
+		    raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0));
 	    }
 	}
 	public void visit(CONST q) {
 	    if (q.type() == HClass.Void) // null constant
 		raiseV(V,Wv, q.dst(), new xNullConstant() );
-	    else if (q.type()==HClass.forClass(String.class))// string constant
+	    else if (q.type()==HClass.forName("java.lang.String"))// string constant
 		raiseV(V,Wv, q.dst(), new xStringConstant(q.type(),q.value()));
 	    else if (q.type()==HClass.Float || q.type()==HClass.Double) // f-p
 		raiseV(V,Wv, q.dst(), new xFloatConstant(q.type(),q.value()) );
@@ -443,10 +446,10 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	}
 	public void visit(FOOTER q) { /* do nothing. */ }
 	public void visit(GET q) {
-	    HClass type = q.field().getType();
+	    HClass type = toInternal(q.field().getType());
 	    if (q.field().isConstant()) {
 		Object val = q.field().getConstant();
-		if (type == HClass.forClass(String.class))
+		if (type == HClass.forName("java.lang.String"))
 		    raiseV(V, Wv, q.dst(), new xStringConstant(type, val) );
 		else if (type == HClass.Float || type == HClass.Double )
 		    raiseV(V, Wv, q.dst(), new xFloatConstant(type, val) );
@@ -465,23 +468,23 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    // no guarantee that src is not null.
 	    LatticeVal v = get( q.src() );
 	    if (v instanceof xNullConstant) // always true.
-		raiseV(V, Wv, q.dst(), new xIntConstant(HClass.Boolean,1) );
+		raiseV(V, Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),1) );
 	    else if (v instanceof xClassNonNull) { // analyzable
 		HClass hcO = ((xClassNonNull)v).type();
 		if (hcO.isInstanceOf(q.hclass())) // always true
-		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean,1) );
+		    raiseV(V,Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),1) );
 		else if (q.hclass().isInstanceOf(hcO)) // unknowable.
-		    raiseV(V,Wv, q.dst(), new xBitWidth(HClass.Boolean,1,0) );
+		    raiseV(V,Wv, q.dst(), new xBitWidth(toInternal(HClass.Boolean),0,1) );
 		else // always false.
-		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean,0) );
+		    raiseV(V,Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0) );
 	    }
 	    else if (v instanceof xClass) { // could be null.
 		HClass hcO = ((xClass)v).type();
 		if (q.hclass().isInstanceOf(hcO) || 
 		    hcO.isInstanceOf(q.hclass()) ) // unknowable.
-		    raiseV(V,Wv, q.dst(), new xBitWidth(HClass.Boolean,1,0) );
+		    raiseV(V,Wv, q.dst(), new xBitWidth(toInternal(HClass.Boolean),0,1) );
 		else // always false (even if src==null)
-		    raiseV(V,Wv, q.dst(), new xIntConstant(HClass.Boolean,0) );
+		    raiseV(V,Wv, q.dst(), new xIntConstant(toInternal(HClass.Boolean),0) );
 	    }
 	}
 	public void visit(METHOD q) {
@@ -493,7 +496,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		       new xClassNonNull( m.getDeclaringClass() ) );
 	    for (int k=0; k < pt.length; j++, k++)
 		if (pt[k].isPrimitive())
-		    raiseV(V, Wv, q.params(j), new xClassNonNull( pt[k] ) );
+		    raiseV(V, Wv, q.params(j), new xClassNonNull( toInternal(pt[k]) ) );
 		else
 		    raiseV(V, Wv, q.params(j), new xClass( pt[k] ) );
 	}
@@ -530,7 +533,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		Object o = q.evalValue(op);
 		if (ty == HClass.Boolean)
 		    raiseV(V, Wv, q.dst(),
-			   new xIntConstant(ty, 
+			   new xIntConstant(toInternal(ty), 
 					    ((Boolean)o).booleanValue()?1:0));
 		else if (ty == HClass.Int || ty == HClass.Long)
 		    raiseV(V, Wv, q.dst(), 
@@ -551,12 +554,12 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		     (get( q.operands(0) ) instanceof xClassNonNull &&
 		      get( q.operands(1) ) instanceof xNullConstant) ) )
 		    raiseV(V, Wv, q.dst(), // always false.
-			   new xIntConstant(HClass.Boolean, 0));
+			   new xIntConstant(toInternal(HClass.Boolean), 0));
 		else {
 		    // RULE 4:
 		    HClass ty = q.evalType();
 		    if (ty.isPrimitive())
-			raiseV(V, Wv, q.dst(), new xClassNonNull( ty ) );
+			raiseV(V, Wv, q.dst(), new xClassNonNull( toInternal(ty) ) );
 		    else
 			raiseV(V, Wv, q.dst(), new xClass( ty ) );
 		}
@@ -614,7 +617,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 		    LatticeVal v;
 		    if (constValue == null)
 			v = new xNullConstant();
-		    else if (mergedType == HClass.forClass(String.class))
+		    else if (mergedType == HClass.forName("java.lang.String"))
 			v = new xStringConstant(mergedType, constValue);
 		    else if (mergedType == HClass.Float || 
 			     mergedType == HClass.Double)
@@ -678,7 +681,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    public void visit_default(OPER q) {
 		HClass ty = q.evalType();
 		if (ty.isPrimitive())
-		    raiseV(V, Wv, q.dst(), new xClassNonNull( ty ) );
+		    raiseV(V, Wv, q.dst(), new xClassNonNull( toInternal(ty) ) );
 		else
 		    raiseV(V, Wv, q.dst(), new xClass( ty ) );
 	    }
@@ -856,9 +859,19 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	return new xBitWidth(xc.type(), 1000, 1000);
     }
 
+    // Deal with the fact that external Byte/Short/Char/Boolean classes
+    // are represented internally as ints.
+
+    static HClass toInternal(HClass c) {
+	if (c.equals(HClass.Byte) || c.equals(HClass.Short) ||
+	    c.equals(HClass.Char) || c.equals(HClass.Boolean))
+	    return HClass.Int;
+	return c;
+    }
+
     // Class merge functino.
 
-    HClass merge(HClass a, HClass b) {
+    static HClass merge(HClass a, HClass b) {
 	Util.assert(a!=null && b!=null);
 	if (a==b) return a; // take care of primitive types.
 
@@ -880,7 +893,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	} else { // dimensions not equal.
 	    int mindims = (Adims<Bdims)?Adims:Bdims;
 	    // make an Object array of the smaller dimension.
-	    return HClassUtil.arrayClass(HClass.forClass(Object.class), 
+	    return HClassUtil.arrayClass(HClass.forName("java.lang.Object"), 
 					 mindims);
 	}
     }
@@ -897,7 +910,12 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
     /** A typed temp. */
     static class xClass extends LatticeVal {
 	protected HClass type;
-	public xClass(HClass type) { this.type = type; }
+	public xClass(HClass type) {
+	    Util.assert(type!=HClass.Boolean && type!=HClass.Byte &&
+			type!=HClass.Short && type!=HClass.Char,
+			"Not an internal type ("+type+")");
+	    this.type = type;
+	}
 	public HClass type() { return type; }
 	public String toString() { 
 	    return "xClass: " + type;
@@ -963,7 +981,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	protected int minusWidth;
 	/** Constructor. */
 	public xBitWidth(HClass type, int minusWidth, int plusWidth) {
-	    super(type);
+	    super(toInternal(type));
 	    // limit.
 	    if (type == HClass.Long) {
 		this.minusWidth = Math.min(64, minusWidth);
@@ -971,17 +989,17 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	    } else if (type == HClass.Int) {
 		this.minusWidth = Math.min(32, minusWidth);
 		this.plusWidth  = Math.min(31, plusWidth);
-	    } else if (type == HClass.Boolean) {
+	    } else // NON-CANONICAL TYPES: CAREFUL! (this.type fixed by above)
+		if (type == HClass.Boolean) {
 		this.minusWidth = Math.min( 0, minusWidth);
 		this.plusWidth  = Math.min( 1, plusWidth);
-	    } else // NON-CANONICAL TYPES: CAREFUL!
-		if (type == HClass.Short) { this.type = HClass.Int;
+	    } else if (type == HClass.Short) {
 		this.minusWidth = Math.min(16, minusWidth);
 		this.plusWidth  = Math.min(15, plusWidth);
-	    } else if (type == HClass.Byte) { this.type = HClass.Int;
+	    } else if (type == HClass.Byte) {
 		this.minusWidth = Math.min( 8, minusWidth);
 		this.plusWidth  = Math.min( 7, plusWidth);
-	    } else if (type == HClass.Char) { this.type = HClass.Int;
+	    } else if (type == HClass.Char) {
 		this.minusWidth = Math.min( 0, minusWidth);
 		this.plusWidth  = Math.min(16, plusWidth);
 	    } else throw new Error("Unknown type for xBitWidth: "+type);
@@ -1017,7 +1035,7 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 	public Object constValue() { 
 	    if (type==HClass.Int) return new Integer((int)value);
 	    if (type==HClass.Long) return new Long((long)value);
-	    if (type==HClass.Boolean) return new Integer(value!=0?1:0);
+	    //if (type==HClass.Boolean) return new Integer(value!=0?1:0);
 	    throw new Error("Unknown integer constant type.");
 	}
 	public String toString() {
