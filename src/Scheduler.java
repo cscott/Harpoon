@@ -3,7 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 
 package javax.realtime;
-import java.util.HashSet;
 import java.lang.reflect.Method;
 
 /** An instance of <code>Scheduler</code> manages the execution of 
