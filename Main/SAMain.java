@@ -25,7 +25,7 @@ import harpoon.Analysis.Instr.RegAlloc;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.Quads.CallGraph;
+import harpoon.Analysis.CallGraph;
 import harpoon.Analysis.Quads.CallGraphImpl;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Backend.Maps.NameMap;
@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.91 2000-08-23 06:33:46 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.92 2000-08-24 23:51:23 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -185,6 +185,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    break;
 	default: throw new Error("Unknown Backend: "+BACKEND);
 	}
+	callGraph=null;// memory management.
  
 	if (LOOPOPTIMIZE) {
 	    hcf=harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
@@ -264,7 +265,7 @@ public class SAMain extends harpoon.IR.Registration {
 		} catch (IOException e) {
 		    System.err.println("Error outputting class "+
 				       hclass.getName());
-		    System.exit(-1);
+		    System.exit(1);
 		}
 	    }
 	    // put a proper makefile in the directory.
@@ -290,7 +291,7 @@ public class SAMain extends harpoon.IR.Registration {
 		in.close(); out.close();
 	    } catch (IOException e) {
 		System.err.println("Error writing "+makefile+".");
-		System.exit(-1);
+		System.exit(1);
 	    }
 	}
     }
@@ -499,7 +500,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    ois.close();
 		} catch (Exception e) {
 		    System.out.println(e + " was thrown");
-		    System.exit(-1);
+		    System.exit(1);
 		}
 		break;
 	    case 'i':
@@ -513,7 +514,7 @@ public class SAMain extends harpoon.IR.Registration {
 		    ois.close();
 		} catch (Exception e) {
 		    System.out.println(e + " was thrown");
-		    System.exit(-1);
+		    System.exit(1);
 		}
 		break;
 	    case 'l':
@@ -586,13 +587,13 @@ public class SAMain extends harpoon.IR.Registration {
 		System.out.println(usage);
 		System.out.println();
 		printHelp();
-		System.exit(-1);
+		System.exit(1);
 	    default: 
 		System.out.println("getopt() returned " + c);
 		System.out.println(usage);
 		System.out.println();
 		printHelp();
-		System.exit(-1);
+		System.exit(1);
 	    }
 	}
     }
