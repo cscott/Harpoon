@@ -13,6 +13,11 @@ First, check it out.
 % cvs -d :pserver:cvsguest@lm.lcs.mit.edu:/home/cananian/Harpoon/CVSROOT \
     checkout Runtime
 
+[Ed note 23-Jan-01, if you want write access to the Runtime repository
+ and have an account on lesser-magoo, you should use
+   -d :ext:<username>@lm.lcs.mit.edu:/home/cananian/Harpoon/CVSROOT
+ instead.  Make sure CVS_RSH=ssh ]
+
 Note that there's no -r flag, as there is when you check out the Code
 module.  This is because we haven't had to branch the Runtime yet.
 Hopefully never will.  Hopefully the Code branch will eventually merge,
