@@ -1,3 +1,10 @@
+---- Sep-11-98, cont 2
+Move TypeMap, ConstMap to harpoon.Analysis
+Make ExecMap with two methods: isExec(Edge e) and isExec(Quad q).
+  this can be made to work whether the internal rep is Quads or Edges.
+Make Optimization class that works given a ConstMap and an ExecMap.
+[make dummy execmap and constmap classes that return 'not a const' and
+ 'is executable' for everything.]
 ---- Sep-11-98, cont
 Add SWITCH nodes to CJMP, SWITCH:
  call them lamba-functions.  <t1, t2, ...> = lambda(t0)
