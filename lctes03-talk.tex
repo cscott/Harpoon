@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.14 2003-06-02 03:55:11 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.15 2003-06-02 16:00:07 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -10,9 +10,7 @@
 %    works/how fields are treated.  A graphic here?
 %  - Prettify the ``field packing'' slide.
 %  - Use solid colors on results slides.
-%  - Try memory wall slide at start.
 %  - Helvetica font on title slide
-%  - Don't enumerate conclusions
 %  - ``We'd love to do embedded benchmarks''
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[%
@@ -324,7 +322,7 @@ powerful bitwidth analysis.
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Bitwidth analysis domains}
 \begin{itemize}
-\item $\mathcal{C}:\mathbb{Z}$, incomparable integers
+\item $\mathcal{C}:\mathbb{Z}$, integer constants
 \begin{itemize}\yellow
 \item $c\in\mathcal{C}$
 \end{itemize}
@@ -347,23 +345,23 @@ powerful bitwidth analysis.
 \begin{eqnarray*}%
 \bot\latleq c &\text{ and }& \bot\latleq\tuple{m,p}\\
 \tuple{m_1,p_1}\latleq\tuple{m_2,p_2}&\text{ iff }&m_1\leq m_2 \wedge p_1\leq p_2\\
-c\latleq\tuple{m,p}&\text{ iff }&\func{bw}(c)\latleq\tuple{{\onlySlide{5}{\yellow}m},{\onlySlide{4}{\yellow}p}}
+c\latleq\tuple{m,p}&\text{ iff }&\func{bw}(c)\latleq\tuple{{\onlySlide*{5}{\yellow}m},{\onlySlide*{4}{\yellow}p}}
 \end{eqnarray*}%
 \FromSlide{2}%
 \begin{flushleft}\onlySlide*{2}{\yellow}where:\end{flushleft}
 \begin{displaymath}%
 \func{bw}(c):\mathcal{C}\to\mathcal{T}=\begin{cases}
 \tuple{0,0} & c=0 \\
-\tuple{0,{\onlySlide{4}{\yellow}1+\left\lfloor\ln\left|c\right|\right\rfloor}} & c>0 \\
-\tuple{{\onlySlide{5}{\yellow}1+\left\lfloor\ln\left|c\right|\right\rfloor},0} & c<0 \\
+\tuple{0,{\onlySlide*{4}{\yellow}1+\left\lfloor\ln\left|c\right|\right\rfloor}} & c>0 \\
+\tuple{{\onlySlide*{5}{\yellow}1+\left\lfloor\ln\left|c\right|\right\rfloor},0} & c<0 \\
 \end{cases}%
 \end{displaymath}%
 \FromSlide{3}%
 \begin{displaymath}%
 \begin{array}{ccc}
-\text{\tt 0\ldots 0}\overbrace{\text{\tt 1X\ldots XXX}}^{1+\left\lfloor\ln\left|c\right|\right\rfloor\fromSlide*{4}{\onlySlide{4}{\yellow}=p}}
+\text{\tt 0\ldots 0}\overbrace{\text{\tt 1X\ldots XXX}}^{1+\left\lfloor\ln\left|c\right|\right\rfloor\fromSlide{4}{\onlySlide*{4}{\yellow}=p}}
 &\quad&
-\text{\tt 1\ldots 1}\overbrace{\text{\tt 0X\ldots XXXX}}^{1+\left\lfloor\ln\left(\left|c\right|-1\right)\right\rfloor\fromSlide*{5}{\onlySlide{5}{\yellow}\leq m}}
+\text{\tt 1\ldots 1}\overbrace{\text{\tt 0X\ldots XXXX}}^{1+\left\lfloor\ln\left(\left|c\right|-1\right)\right\rfloor\fromSlide{5}{\onlySlide*{5}{\yellow}\leq m}}
 \\
 \text{\small Positive} && \text{\small Negative}
 \end{array}
@@ -435,12 +433,16 @@ shows through in our rules for logical-AND; let's look at this more closely.
 %---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Intraprocedural bitwidth analysis}
 \begin{itemize}
+\item Given domains:
+\begin{itemize}
 \item $\mathcal{E}$, CFG edges
 \item $\mathcal{V}$, (SSI form) variables
-\item Analysis discovers:
+\end{itemize}
+\item The intraprocedural analysis discovers:
 \begin{itemize}
-\item $e:\mathcal{E}\to\text{bool}$
-\item $\func{val}:\mathcal{V}\to\mathcal{L}$
+\item a set $e:2^\mathcal{E}$ of executable edges
+\item a map $\func{val}:\mathcal{V}\to\mathcal{L}$ giving abstract
+  values valid for all possible executions
 \end{itemize}
 \end{itemize}
 \end{slide}
@@ -454,9 +456,9 @@ Allows us to discover facts about \texttt{i} at points \textit{A} and
 \textit{B}:
 \begin{mysamplecode}
 if (i<50) \{\\
-\>\ldots \it// A\\
+\>\it// A\\
 \} else \{\\
-\>\ldots \it// B\\
+\>\it// B\\
 \}\\
 \end{mysamplecode}
 \end{slide}
@@ -468,434 +470,23 @@ if (i<50) \{\\
 \begin{slide}{Interprocedural analysis}
 We use a field-based interprocedural analysis.
 \begin{itemize}
+\item Given domains:
+\begin{itemize}
 \item $\mathcal{E}$, CFG edges
 \item $\mathcal{V}$, (SSI form) variables
 \item $\mathcal{F}$, fields in the program
-\item Analysis discovers:
+\end{itemize}
+\item The interprocedural analysis discovers:
 \begin{itemize}
-\item $e:\mathcal{E}\to\text{bool}$
-\item $\func{val}:(\mathcal{V}+\mathcal{F})\to\mathcal{L}$
-\item $\func{Read}:2^\mathcal{F}$
+\item a set $e:2^\mathcal{E}$ of executable edges
+\item a map $\func{val}:(\mathcal{V}+\mathcal{F})\to\mathcal{L}$
+ giving abstract values valid for all possible executions
+\item a set $\func{Read}:2^\mathcal{F}$ of readable fields
 \end{itemize}
 \end{itemize}
 \end{slide}
 
 \begin{talknotes}
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\overlays{7}{
-\begin{slide}{Intraprocedural Analysis}
-\begin{center}%
-\parbox[c]{2in}{%
-\begin{mysamplecode}%
-int foo() \{\\
-\>if (\ldots)\\
-\>\>\betweenSlide{4}{5}{\yellow}i=1;\\
-\>else\\
-\>\>\betweenSlide{4}{5}{\yellow}i=2;\\
-\>\onlySlide{7}{\yellow}if (i>0)\\
-\>\>$\vdots$\\
-\}\\
-\end{mysamplecode}%
-}%
-\parbox[c]{2.6in}{%
-\fromSlide{2}{%
-\begin{center}
-\renewcommand{\figscale}{0.6}%
-\newcommand{\color}[2][rgb]{}%ignore color commands
-\input{Figures/THlat1b}
-\end{center}
-}}
-
-\fromSlide*{3}{\framebox{$\text{\tt\bfseries i} =
-    \bot \fromSlide*{5}{\onlySlide{5}{\yellow}\meet 1\meet 2}\fromSlide*{6}{\onlySlide{6}{\yellow}=\top}%
-    $}}
-
-\vspace{.5cm}
-\fromSlide*{6}{[Because $1 \latleq \top$ and $2 \latleq \top$]}
-\end{center}
-\end{slide}
-}
-
-\begin{talknotes}
-Let's look at a quick example of how the Sparse Predicated Typed
-Constant analysis is done. @ We have this simple program, which
-assigns values to an integer variable {\tt i} and then tests the
-result.  @ When we perform the dataflow analysis, we will abstract the
-value domain of the program using this lattice of integer
-constants.  The $\bot$ value indicates that nothing is known about the
-value of a variable. We start {\tt i} at $\bot$ and find @
-that the two assignments to {\tt i} are executable, @ so we compute
-$1 \meet 2$, @ which yields the $\top$ element in the lattice.
-The $\top$ element usually means, ``I give up, I can't constrain
-this value any more, it could be anything.''  This example illustrates
-the limitations of the simplified SPTC lattice shown here, because @
-when we now look at the final if statement, the analysis can't tell
-that, one way or another, {\tt i} will always be positive and thus
-this comparison will always be true.  The $\top$ element means that
-\emph{any} value is possible for {\tt i}, which is a very conservative
-approximation.
-
-~% um, weird hack to force paragraph to be packed.
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\overlays{4}{
-\begin{slide}{A signed integer lattice}
-\begin{center}
-\renewcommand{\figscale}{0.6}%
-\newcommand{\color}[2][rgb]{}%ignore color commands
-\input{Figures/THlat6c2}
-\end{center}
-
-\small
-An integer lattice for signed integers. A classification into
-negative (M), positive (P), or zero (Z) is grafted onto the standard
-flat integer constant domain.
-\end{slide}
-}
-
-\begin{talknotes}
-So let's see how we'd extend the lattice to make the analysis
-stronger.  Here we have a lattice that allows us to classify
-values as positive or negative, even if we don't know what the
-actual value will be. @ Here if we perform meet on $1$ and $2$ we get the
-element {\tt (\_\_P)}, which indicates ``any positive number''.
-If we then do a meet with a negative number, say, $-2$, @ we'll
-get {\tt (M\_P)}, or ``a non-zero number''.  If we later discover
-an assignment of zero, @ we finally get the $\top$ element.
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\overlays{5}{
-\begin{slide}{Example, redux}
-\begin{center}%
-\parbox[c]{2in}{%
-\begin{mysamplecode}%
-int foo() \{\\
-\>if (\ldots)\\
-\>\>\betweenSlide{2}{3}{\yellow}i=1;\\
-\>else\\
-\>\>\betweenSlide{2}{3}{\yellow}i=2;\\
-\>\onlySlide{5}{\yellow}if (i>0)\\
-\>\>$\vdots$\\
-\}\\
-\end{mysamplecode}%
-}%
-\parbox[c]{2.6in}{%
-\begin{center}
-\renewcommand{\figscale}{0.5}%
-\newcommand{\color}[2][rgb]{}%ignore color commands
-\input{Figures/THlat6c}
-\end{center}
-}
-
-\framebox{$\text{\tt\bfseries i} =
-    \untilSlide*{2}{\bot}%
-    \fromSlide*{3}{\bot\onlySlide{3}{\yellow}\meet 1\meet 2\fromSlide*{4}{\onlySlide{4}{\yellow}=\text{\tt\bfseries (\_\_P)}}}%
-    $}
-
-\end{center}
-\end{slide}
-}
-
-\begin{talknotes}
-With the new lattice, we start at $\bot$ as before. @ Looking at {\tt
-  i=1} and {\tt i=2}, we @ do the meet and now we get @
-{\tt (\_\_P)}, or ``a positive
-  integer.'' @ This time, when we get to the comparison, we can tell
-that {\tt i>0} will always be true.
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\overlays{3}{
-\begin{slide}{Extending the lattice}
-Replace {\tt\bfseries M} and {\tt\bfseries P} in previous lattice
-entries with positive integers $m$ and $p$.  Encode zero as $m=p=0$.
-
-\FromSlide{2}
-\begin{displaymath}
-\begin{array}{c}
-\text{\tt\bfseries (\_\_P)} \Rightarrow \tuple{0,p} \\
-\text{\tt\bfseries (M\_\_)} \Rightarrow \tuple{m,0} \\
-\text{\tt\bfseries (\_Z\_)} \Rightarrow \tuple{0,0} \\
-\end{array}
-\end{displaymath}
-
-\FromSlide{3}
-\renewcommand{\arraystretch}{1.7}
-In lattice context: $
-\begin{array}{ccc}
-            &&\Rnode{tup5}{\tuple{0,31}}\\
-\pnode{old3}&&\Rnode{tup4}{\vdots}      \\
-\Rnode{old2}{\text{\tt\bfseries (\_\_P)}}&\Rightarrow&\Rnode{tup3}{\tuple{0,3}}\\
-\pnode{old1}&&\Rnode{tup2}{\tuple{0,2}} \\
-            &&\Rnode{tup1}{\tuple{0,1}} \\
-\end{array}
-$
-\ifDVItoPS\else\psset{linecolor=white}\fi
-\psset{nodesep=2pt}
-\ncline{old3}{old2}\ncline{old2}{old1}
-\ncline{tup1}{tup2}\ncline{tup2}{tup3}\ncline{tup3}{tup4}\ncline{tup4}{tup5}
-
-\end{slide}
-}
-
-\begin{talknotes}
-To perform bitwidth analysis, we need only extend this signed integer
-value lattice a little further.  We replace all the letters $M$ and
-$P$ in the previous lattice entries with positive integers $m$ and $p$
-indicating the \emph{bitwidths} of the negative and positive portions
-of the possible values.  @ We now represent these lattice entries as
-tuples \tuple{m,p}, and use the \tuple{0,0} tuple to represent zero ---
-what our previous lattice would have called {\tt (\_Z\_)}.  @ We can
-imagine expanding each node in our previous lattice with distinct
-tuples, with the ordering relations shown.
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\begin{slide}{Bitwidth lattice detail}
-\begin{displaymath}
-\begin{array}{cccccc}
-\Rnode{t4}{\tuple{0,31}}\\ \\
-\Rnode{t3}{\vdots}\\ \\
-\Rnode{t2}{\tuple{0,2}}\\ \\
-\Rnode{t1}{\tuple{0,1}}\\ \\
-\Rnode{t0}{\begin{array}{c} 0 \\ \tuple{0,0} \end{array}} &
-\Rnode{n1}{1} &
-\Rnode{n2}{2} &
-\Rnode{n3}{3} &
-\Rnode{n4}{\cdots} &
-\Rnode{n5}{2^{32}-1} \\ \\
-\Rnode{bot}{\bot} \\
-\end{array}
-\end{displaymath}
-\ifDVItoPS\else\psset{linecolor=white}\fi
-\psset{nodesep=2pt}
-\ncline{t0}{t1}\ncline{t1}{t2}\ncline{t2}{t3}\ncline{t3}{t4}
-\psset{armA=0,armB=0,angleA=90,angleB=-90}
-\ncdiag{bot}{t0}
-\ncdiag{bot}{n1}\ncdiag{bot}{n2}\ncdiag{bot}{n3}\ncdiag{bot}{n5}
-\ncdiag{n1}{t1}\ncdiag{n2}{t2}\ncdiag{n3}{t2}\ncdiag{n5}{t4}
-
-\end{slide}
-
-\begin{talknotes}
-The picture is actually a little more complicated.  Here we see
-a small piece of the new expanded lattice.  We see that performing a
-meet of any two positive integers will result in a tuple which
-accurately reflects the minimum bitwidth needed to represent both
-numbers.
-% Performing this expansion has actually only increased the
-% depth of the lattice 32-fold, since an ordering relation holds everywhere.
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\overlays{5}{
-\begin{slide}{Example redux, redux}
-\begin{center}%
-\parbox[c]{2in}{%
-\begin{mysamplecode}%
-int foo() \{\\
-\>if (\ldots)\\
-\>\>\betweenSlide{2}{3}{\yellow}i=1;\\
-\>else\\
-\>\>\betweenSlide{2}{3}{\yellow}i=2;\\
-\>\onlySlide{5}{\yellow}if (i>0)\\
-\>\>$\vdots$\\
-\}\\
-\end{mysamplecode}%
-}%
-\parbox[c]{2.6in}{%
-\begin{center}
-\renewcommand{\figscale}{0.5}%
-\newcommand{\color}[2][rgb]{}%ignore color commands
-\input{Figures/THlat6c}
-\end{center}
-}
-
-\framebox{$\text{\tt\bfseries i} =
-    \untilSlide*{2}{\bot}%
-    \onlySlide*{3}{\bot\yellow\meet 1\meet 2}%
-    \fromSlide*{4}{\bot\meet 1\meet 2\onlySlide{4}{\yellow}=\tuple{0,2}}%
-    $}
-
-\end{center}
-\end{slide}
-}
-
-\begin{talknotes}
-Revisiting our example: we still start with $\text{\tt i}=\bot$.
-@ Looking at {\tt i=1} and {\tt i=2}, we @ perform the meet, and @
-now we get the tuple \tuple{0,2}, indicating that {\tt i} can not be
-negative and that we only need two bits to store the positive portion.
-%Note that we \emph{don't} recenter the range; we \emph{could} use only
-%one bit if we offset the values stored.  
-@ We can still tell at the
-comparison point that {\tt i>0} will always be true, but the real
-value of this analysis will be the space reductions we obtain when we
-apply it to fields.
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\overlays{5}{
-\begin{slide}{Bitwidth combination rules}
-\begin{eqnarray*}
-\onlySlide{2}{\yellow}\fromSlide{2}{
-\text{\tt -}\tuple{m,p}
- }&\onlySlide{2}{\yellow}\fromSlide{2}{=}&\onlySlide{2}{\yellow}\fromSlide{2}{
- \tuple{p,m}
- }\\
-\onlySlide{3}{\yellow}\fromSlide{3}{
-\tuple{m_l,p_l} \text{\tt+} \tuple{m_r,p_r}
- }&\onlySlide{3}{\yellow}\fromSlide{3}{=}&\onlySlide{3}{\yellow}\fromSlide{3}{
- \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}
- }\\
-\onlySlide{4}{\yellow}\fromSlide{4}{
-\tuple{m_l,p_l} \text{\tt *} \tuple{m_r,p_r}
- }&\onlySlide{4}{\yellow}\fromSlide{4}{=}&\onlySlide{4}{\yellow}\fromSlide{4}{
-\tuple{\begin{array}{l}\max(m_l+p_r,p_l+m_r),\\
-                       \max(m_l+m_r,p_l+p_r)\end{array}}
- }\\
-\onlySlide{5}{\yellow}\fromSlide{5}{
-\tuple{0,p_l} \text{\tt\&} \tuple{0,p_r}
- }&\onlySlide{5}{\yellow}\fromSlide{5}{=}&\onlySlide{5}{\yellow}\fromSlide{5}{
- \tuple{0,\min(p_l,p_r)}
- }\\
-\onlySlide{5}{\yellow}\fromSlide{5}{
-\tuple{m_l,p_l}\text{\tt\&} \tuple{m_r,p_r}
- }&\onlySlide{5}{\yellow}\fromSlide{5}{=}&\onlySlide{5}{\yellow}\fromSlide{5}{
- \tuple{\max(m_l,m_r),\max(p_l,p_r)}
- }\\
-\end{eqnarray*}
-\end{slide}
-}
-
-\begin{talknotes}
-Here are some of the combination rules we use to
-perform abstract evaluation of unary and binary operations using
-our bitwidth value domain.
-
-@ The first entry simply says that negation
-exchanges the positive and negative bitwidths.
-Note that we're tracking the bitwidth of the
-\textit{absolute value} of the number, so the rule for negation is
-simply interchanging the positive and negative portions of the tuple.
-
-@ The second entry gives
-the rules for addition: we have to add one to the width to allow for
-carry out.
-
-@ The rule for multiplication should remind you that we're
-operating in the log-domain.  
-
-@ The underlying numeric representation
-shows through in our rules for logical-AND; let's look at this more closely.
-
-~%force rejust.
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\overlays{5}{
-\begin{slide}{Bitwise-AND, continued}
-\begin{displaymath}
-\func{bw}(n)=\begin{cases}
-\tuple{0,0} & n=0 \\
-\tuple{0,{\onlySlide{3}{\yellow}1+\left\lfloor\ln\left|n\right|\right\rfloor}} & n>0 \\
-\tuple{{\onlySlide{4}{\yellow}1+\left\lfloor\ln\left|n\right|\right\rfloor},0} & n<0 \\
-\end{cases}
-\end{displaymath}
-\FromSlide{2}%
-\begin{displaymath}
-\begin{array}{ccc}
-\text{\tt 0\ldots 0}\overbrace{\text{\tt 1X\ldots XXX}}^{1+\left\lfloor\ln\left|n\right|\right\rfloor\fromSlide*{3}{\onlySlide{3}{\yellow}=p}}
-&\quad&
-\text{\tt 1\ldots 1}\overbrace{\text{\tt 0X\ldots XXXX}}^{1+\left\lfloor\ln\left(\left|n\right|-1\right)\right\rfloor\fromSlide*{4}{\onlySlide{4}{\yellow}\leq m}}
-\\
-\text{Positive} && \text{Negative} \\
-\end{array}
-\end{displaymath}
-\FromSlide{5}
-\begin{eqnarray*}
-\tuple{0,p_l} \text{\tt\&} \tuple{0,p_r} &=& \tuple{0,\min(p_l,p_r)} \\
-\tuple{m_l,p_l}\text{\tt\&} \tuple{m_r,p_r} &=& \tuple{\max(m_l,m_r),\max(p_l,p_r)}
-\end{eqnarray*}
-\end{slide}
-}
-
-\begin{talknotes}
-Let's review the precise definition of our bitwidth tuples.  Both the
-negative and positive portions of the tuple are equal to this
-expression.  @ The structure of two's complement numbers is as shown.
-Note that the location of the first one in a positive number is
-@ given by the $p$ portion of the tuple, and similarly, the
-location of the first zero in a negative number is @ given by $m$.
-
-@ Now let's look again at our bitwise-AND rules.
-When ANDing two positive
-integers, the resulting bitwidth will match the smaller of the two
-inputs, since leading zeros will force zeros on the output.  But
-if negative numbers are possible, we must use a far more conservative
-rule to account for the leading ones in the twos-complement
-representation of negative numbers.  The $m$-component of the tuple
-identifies the leftmost \emph{zero}, so clearly the largest
-$m$ will dictate where the leftmost zero can be in the result.
-The $p$ component identifies the leftmost \emph{one}, and since
-the all-ones value $-1$ is included in all negative ranges, the
-largest positive value input could emerge unchanged.  We cannot create
-a larger positive value because the AND operation cannot create ones
-anywhere there is a zero in the input.
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
-\overlays{3}{
-\begin{slide}{Interprocedural analysis}
-\newcommand{\myi}{\onlySlide*{1}{i}\fromSlide*{2}{this.f}}
-\newcommand{\myia}{\onlySlide*{1}{i}\fromSlide*{2}{a.f}}
-\newcommand{\myib}{\onlySlide*{1}{i}\fromSlide*{2}{b.f}}
-\newcommand{\myic}{\onlySlide*{1}{i}\fromSlide*{2}{c.f}}
-\begin{center}%
-\parbox[c]{2.3in}{%
-\begin{mysamplecode}%
-int foo() \{\\
-\>if (\ldots)\\
-\>\>\myia =1;\\
-\>else\\
-\>\>\myib =2;\\
-\>if (\myic >0)\\
-\>\>$\vdots$\\
-\}\\
-\end{mysamplecode}%
-}%
-\parbox[c]{2.3in}{\fromSlide{3}{%
-\begin{mysamplecode}
-int foo() \{\\
-\>\myi =1;\\
-\}\\
-int bar() \{\\
-\>\myi =2;\\
-\}\\
-int bar() \{\\
-\>if (\myi >0)\\
-\>\>\ldots\\
-\}\\ 
-\end{mysamplecode}
-}}
-\end{center}
-\end{slide}
-}
-
-\begin{talknotes}
-Our examples have all been intraprocedural.  We use a
-\emph{field-based} technique to perform the analysis
-interprocedurally, maintaining a single analysis value for
-each distinct object field.  @  Instead of maintaining a value
-for {\tt i}, we maintain a value for field {\tt f}.
-Note that even though the object on the left changes, we're still
-going to treat these as the same abstract location.
-@ This
-works even when the various accesses take place in different methods.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1738,7 +1329,7 @@ So how well does all this work?
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{7}{
+\overlays{8}{
 \begin{slide}{Experimental setup}
 \begin{itemize}
 \FromSlide{2}
@@ -1759,6 +1350,10 @@ So how well does all this work?
 \FromSlide{7}
 \item Benchmarks run on dual-processor 900 MHz
   Pentium III running Debian Linux.
+\FromSlide{8}
+\begin{itemize}\yellow
+\item C backend, GCC 2.95, -O9
+\end{itemize}
 \end{itemize}
 \end{slide}
 }
@@ -2042,29 +1637,21 @@ the beginning of this talk.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{7}{
 \begin{slide}{Conclusions}
 \begin{itemize}
- \FromSlide{2}
  \item We identified a variety of opportunities for space reductions in
  object-oriented programs.
- \FromSlide{3}
  \item We described analyses and transformations to exploit these
  opportunities. 
- \FromSlide{4}
  \item We achieved substantial space savings on typical
    object-oriented applications.
- \FromSlide{5}
  \begin{itemize}
   \item In one case, over 40\% reduction in total live data.
  \end{itemize}
- \FromSlide{6}
  \item Even more space reduction is possible!
- \FromSlide{7}
  \item Performance impact was acceptable and tunable.
 \end{itemize}
 \end{slide}
-}
 
 \begin{talknotes}
 Read this slide.
@@ -2181,6 +1768,421 @@ void foo() \{\\
 
 \begin{talknotes}
 Why specify widths manually when the compiler can do it?
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{7}{
+\begin{slide}{Intraprocedural Analysis}
+\begin{center}%
+\parbox[c]{2in}{%
+\begin{mysamplecode}%
+int foo() \{\\
+\>if (\ldots)\\
+\>\>\betweenSlide{4}{5}{\yellow}i=1;\\
+\>else\\
+\>\>\betweenSlide{4}{5}{\yellow}i=2;\\
+\>\onlySlide{7}{\yellow}if (i>0)\\
+\>\>$\vdots$\\
+\}\\
+\end{mysamplecode}%
+}%
+\parbox[c]{2.6in}{%
+\fromSlide{2}{%
+\begin{center}
+\renewcommand{\figscale}{0.6}%
+\newcommand{\color}[2][rgb]{}%ignore color commands
+\input{Figures/THlat1b}
+\end{center}
+}}
+
+\fromSlide*{3}{\framebox{$\text{\tt\bfseries i} =
+    \bot \fromSlide*{5}{\onlySlide{5}{\yellow}\meet 1\meet 2}\fromSlide*{6}{\onlySlide{6}{\yellow}=\top}%
+    $}}
+
+\vspace{.5cm}
+\fromSlide*{6}{[Because $1 \latleq \top$ and $2 \latleq \top$]}
+\end{center}
+\end{slide}
+}
+
+\begin{talknotes}
+Let's look at a quick example of how the Sparse Predicated Typed
+Constant analysis is done. @ We have this simple program, which
+assigns values to an integer variable {\tt i} and then tests the
+result.  @ When we perform the dataflow analysis, we will abstract the
+value domain of the program using this lattice of integer
+constants.  The $\bot$ value indicates that nothing is known about the
+value of a variable. We start {\tt i} at $\bot$ and find @
+that the two assignments to {\tt i} are executable, @ so we compute
+$1 \meet 2$, @ which yields the $\top$ element in the lattice.
+The $\top$ element usually means, ``I give up, I can't constrain
+this value any more, it could be anything.''  This example illustrates
+the limitations of the simplified SPTC lattice shown here, because @
+when we now look at the final if statement, the analysis can't tell
+that, one way or another, {\tt i} will always be positive and thus
+this comparison will always be true.  The $\top$ element means that
+\emph{any} value is possible for {\tt i}, which is a very conservative
+approximation.
+
+~% um, weird hack to force paragraph to be packed.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{4}{
+\begin{slide}{A signed integer lattice}
+\begin{center}
+\renewcommand{\figscale}{0.6}%
+\newcommand{\color}[2][rgb]{}%ignore color commands
+\input{Figures/THlat6c2}
+\end{center}
+
+\small
+An integer lattice for signed integers. A classification into
+negative (M), positive (P), or zero (Z) is grafted onto the standard
+flat integer constant domain.
+\end{slide}
+}
+
+\begin{talknotes}
+So let's see how we'd extend the lattice to make the analysis
+stronger.  Here we have a lattice that allows us to classify
+values as positive or negative, even if we don't know what the
+actual value will be. @ Here if we perform meet on $1$ and $2$ we get the
+element {\tt (\_\_P)}, which indicates ``any positive number''.
+If we then do a meet with a negative number, say, $-2$, @ we'll
+get {\tt (M\_P)}, or ``a non-zero number''.  If we later discover
+an assignment of zero, @ we finally get the $\top$ element.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{5}{
+\begin{slide}{Example, redux}
+\begin{center}%
+\parbox[c]{2in}{%
+\begin{mysamplecode}%
+int foo() \{\\
+\>if (\ldots)\\
+\>\>\betweenSlide{2}{3}{\yellow}i=1;\\
+\>else\\
+\>\>\betweenSlide{2}{3}{\yellow}i=2;\\
+\>\onlySlide{5}{\yellow}if (i>0)\\
+\>\>$\vdots$\\
+\}\\
+\end{mysamplecode}%
+}%
+\parbox[c]{2.6in}{%
+\begin{center}
+\renewcommand{\figscale}{0.5}%
+\newcommand{\color}[2][rgb]{}%ignore color commands
+\input{Figures/THlat6c}
+\end{center}
+}
+
+\framebox{$\text{\tt\bfseries i} =
+    \untilSlide*{2}{\bot}%
+    \fromSlide*{3}{\bot\onlySlide{3}{\yellow}\meet 1\meet 2\fromSlide*{4}{\onlySlide{4}{\yellow}=\text{\tt\bfseries (\_\_P)}}}%
+    $}
+
+\end{center}
+\end{slide}
+}
+
+\begin{talknotes}
+With the new lattice, we start at $\bot$ as before. @ Looking at {\tt
+  i=1} and {\tt i=2}, we @ do the meet and now we get @
+{\tt (\_\_P)}, or ``a positive
+  integer.'' @ This time, when we get to the comparison, we can tell
+that {\tt i>0} will always be true.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Extending the lattice}
+Replace {\tt\bfseries M} and {\tt\bfseries P} in previous lattice
+entries with positive integers $m$ and $p$.  Encode zero as $m=p=0$.
+
+\FromSlide{2}
+\begin{displaymath}
+\begin{array}{c}
+\text{\tt\bfseries (\_\_P)} \Rightarrow \tuple{0,p} \\
+\text{\tt\bfseries (M\_\_)} \Rightarrow \tuple{m,0} \\
+\text{\tt\bfseries (\_Z\_)} \Rightarrow \tuple{0,0} \\
+\end{array}
+\end{displaymath}
+
+\FromSlide{3}
+\renewcommand{\arraystretch}{1.7}
+In lattice context: $
+\begin{array}{ccc}
+            &&\Rnode{tup5}{\tuple{0,31}}\\
+\pnode{old3}&&\Rnode{tup4}{\vdots}      \\
+\Rnode{old2}{\text{\tt\bfseries (\_\_P)}}&\Rightarrow&\Rnode{tup3}{\tuple{0,3}}\\
+\pnode{old1}&&\Rnode{tup2}{\tuple{0,2}} \\
+            &&\Rnode{tup1}{\tuple{0,1}} \\
+\end{array}
+$
+\ifDVItoPS\else\psset{linecolor=white}\fi
+\psset{nodesep=2pt}
+\ncline{old3}{old2}\ncline{old2}{old1}
+\ncline{tup1}{tup2}\ncline{tup2}{tup3}\ncline{tup3}{tup4}\ncline{tup4}{tup5}
+
+\end{slide}
+}
+
+\begin{talknotes}
+To perform bitwidth analysis, we need only extend this signed integer
+value lattice a little further.  We replace all the letters $M$ and
+$P$ in the previous lattice entries with positive integers $m$ and $p$
+indicating the \emph{bitwidths} of the negative and positive portions
+of the possible values.  @ We now represent these lattice entries as
+tuples \tuple{m,p}, and use the \tuple{0,0} tuple to represent zero ---
+what our previous lattice would have called {\tt (\_Z\_)}.  @ We can
+imagine expanding each node in our previous lattice with distinct
+tuples, with the ordering relations shown.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{Bitwidth lattice detail}
+\begin{displaymath}
+\begin{array}{cccccc}
+\Rnode{t4}{\tuple{0,31}}\\ \\
+\Rnode{t3}{\vdots}\\ \\
+\Rnode{t2}{\tuple{0,2}}\\ \\
+\Rnode{t1}{\tuple{0,1}}\\ \\
+\Rnode{t0}{\begin{array}{c} 0 \\ \tuple{0,0} \end{array}} &
+\Rnode{n1}{1} &
+\Rnode{n2}{2} &
+\Rnode{n3}{3} &
+\Rnode{n4}{\cdots} &
+\Rnode{n5}{2^{32}-1} \\ \\
+\Rnode{bot}{\bot} \\
+\end{array}
+\end{displaymath}
+\ifDVItoPS\else\psset{linecolor=white}\fi
+\psset{nodesep=2pt}
+\ncline{t0}{t1}\ncline{t1}{t2}\ncline{t2}{t3}\ncline{t3}{t4}
+\psset{armA=0,armB=0,angleA=90,angleB=-90}
+\ncdiag{bot}{t0}
+\ncdiag{bot}{n1}\ncdiag{bot}{n2}\ncdiag{bot}{n3}\ncdiag{bot}{n5}
+\ncdiag{n1}{t1}\ncdiag{n2}{t2}\ncdiag{n3}{t2}\ncdiag{n5}{t4}
+
+\end{slide}
+
+\begin{talknotes}
+The picture is actually a little more complicated.  Here we see
+a small piece of the new expanded lattice.  We see that performing a
+meet of any two positive integers will result in a tuple which
+accurately reflects the minimum bitwidth needed to represent both
+numbers.
+% Performing this expansion has actually only increased the
+% depth of the lattice 32-fold, since an ordering relation holds everywhere.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{5}{
+\begin{slide}{Example redux, redux}
+\begin{center}%
+\parbox[c]{2in}{%
+\begin{mysamplecode}%
+int foo() \{\\
+\>if (\ldots)\\
+\>\>\betweenSlide{2}{3}{\yellow}i=1;\\
+\>else\\
+\>\>\betweenSlide{2}{3}{\yellow}i=2;\\
+\>\onlySlide{5}{\yellow}if (i>0)\\
+\>\>$\vdots$\\
+\}\\
+\end{mysamplecode}%
+}%
+\parbox[c]{2.6in}{%
+\begin{center}
+\renewcommand{\figscale}{0.5}%
+\newcommand{\color}[2][rgb]{}%ignore color commands
+\input{Figures/THlat6c}
+\end{center}
+}
+
+\framebox{$\text{\tt\bfseries i} =
+    \untilSlide*{2}{\bot}%
+    \onlySlide*{3}{\bot\yellow\meet 1\meet 2}%
+    \fromSlide*{4}{\bot\meet 1\meet 2\onlySlide{4}{\yellow}=\tuple{0,2}}%
+    $}
+
+\end{center}
+\end{slide}
+}
+
+\begin{talknotes}
+Revisiting our example: we still start with $\text{\tt i}=\bot$.
+@ Looking at {\tt i=1} and {\tt i=2}, we @ perform the meet, and @
+now we get the tuple \tuple{0,2}, indicating that {\tt i} can not be
+negative and that we only need two bits to store the positive portion.
+%Note that we \emph{don't} recenter the range; we \emph{could} use only
+%one bit if we offset the values stored.  
+@ We can still tell at the
+comparison point that {\tt i>0} will always be true, but the real
+value of this analysis will be the space reductions we obtain when we
+apply it to fields.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{5}{
+\begin{slide}{Bitwidth combination rules}
+\begin{eqnarray*}
+\onlySlide*{2}{\yellow}\fromSlide{2}{
+\text{\tt -}\tuple{m,p}
+ }&\onlySlide*{2}{\yellow}\fromSlide{2}{=}&\onlySlide*{2}{\yellow}\fromSlide{2}{
+ \tuple{p,m}
+ }\\
+\onlySlide*{3}{\yellow}\fromSlide{3}{
+\tuple{m_l,p_l} \text{\tt+} \tuple{m_r,p_r}
+ }&\onlySlide*{3}{\yellow}\fromSlide{3}{=}&\onlySlide*{3}{\yellow}\fromSlide{3}{
+ \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}
+ }\\
+\onlySlide*{4}{\yellow}\fromSlide{4}{
+\tuple{m_l,p_l} \text{\tt *} \tuple{m_r,p_r}
+ }&\onlySlide*{4}{\yellow}\fromSlide{4}{=}&\onlySlide*{4}{\yellow}\fromSlide{4}{
+\tuple{\begin{array}{l}\max(m_l+p_r,p_l+m_r),\\
+                       \max(m_l+m_r,p_l+p_r)\end{array}}
+ }\\
+\onlySlide*{5}{\yellow}\fromSlide{5}{
+\tuple{0,p_l} \text{\tt\&} \tuple{0,p_r}
+ }&\onlySlide*{5}{\yellow}\fromSlide{5}{=}&\onlySlide*{5}{\yellow}\fromSlide{5}{
+ \tuple{0,\min(p_l,p_r)}
+ }\\
+\onlySlide*{5}{\yellow}\fromSlide{5}{
+\tuple{m_l,p_l}\text{\tt\&} \tuple{m_r,p_r}
+ }&\onlySlide*{5}{\yellow}\fromSlide{5}{=}&\onlySlide*{5}{\yellow}\fromSlide{5}{
+ \tuple{\max(m_l,m_r),\max(p_l,p_r)}
+ }\\
+\end{eqnarray*}
+\end{slide}
+}
+
+\begin{talknotes}
+Here are some of the combination rules we use to
+perform abstract evaluation of unary and binary operations using
+our bitwidth value domain.
+
+@ The first entry simply says that negation
+exchanges the positive and negative bitwidths.
+Note that we're tracking the bitwidth of the
+\textit{absolute value} of the number, so the rule for negation is
+simply interchanging the positive and negative portions of the tuple.
+
+@ The second entry gives
+the rules for addition: we have to add one to the width to allow for
+carry out.
+
+@ The rule for multiplication should remind you that we're
+operating in the log-domain.  
+
+@ The underlying numeric representation
+shows through in our rules for logical-AND; let's look at this more closely.
+
+~%force rejust.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{5}{
+\begin{slide}{Bitwise-AND, continued}
+\begin{displaymath}
+\func{bw}(n)=\begin{cases}
+\tuple{0,0} & n=0 \\
+\tuple{0,{\onlySlide*{3}{\yellow}1+\left\lfloor\ln\left|n\right|\right\rfloor}} & n>0 \\
+\tuple{{\onlySlide*{4}{\yellow}1+\left\lfloor\ln\left|n\right|\right\rfloor},0} & n<0 \\
+\end{cases}
+\end{displaymath}
+\FromSlide{2}%
+\begin{displaymath}
+\begin{array}{ccc}
+\text{\tt 0\ldots 0}\overbrace{\text{\tt 1X\ldots XXX}}^{1+\left\lfloor\ln\left|n\right|\right\rfloor\fromSlide*{3}{\onlySlide*{3}{\yellow}=p}}
+&\quad&
+\text{\tt 1\ldots 1}\overbrace{\text{\tt 0X\ldots XXXX}}^{1+\left\lfloor\ln\left(\left|n\right|-1\right)\right\rfloor\fromSlide*{4}{\onlySlide*{4}{\yellow}\leq m}}
+\\
+\text{Positive} && \text{Negative} \\
+\end{array}
+\end{displaymath}
+\FromSlide{5}
+\begin{eqnarray*}
+\tuple{0,p_l} \text{\tt\&} \tuple{0,p_r} &=& \tuple{0,\min(p_l,p_r)} \\
+\tuple{m_l,p_l}\text{\tt\&} \tuple{m_r,p_r} &=& \tuple{\max(m_l,m_r),\max(p_l,p_r)}
+\end{eqnarray*}
+\end{slide}
+}
+
+\begin{talknotes}
+Let's review the precise definition of our bitwidth tuples.  Both the
+negative and positive portions of the tuple are equal to this
+expression.  @ The structure of two's complement numbers is as shown.
+Note that the location of the first one in a positive number is
+@ given by the $p$ portion of the tuple, and similarly, the
+location of the first zero in a negative number is @ given by $m$.
+
+@ Now let's look again at our bitwise-AND rules.
+When ANDing two positive
+integers, the resulting bitwidth will match the smaller of the two
+inputs, since leading zeros will force zeros on the output.  But
+if negative numbers are possible, we must use a far more conservative
+rule to account for the leading ones in the twos-complement
+representation of negative numbers.  The $m$-component of the tuple
+identifies the leftmost \emph{zero}, so clearly the largest
+$m$ will dictate where the leftmost zero can be in the result.
+The $p$ component identifies the leftmost \emph{one}, and since
+the all-ones value $-1$ is included in all negative ranges, the
+largest positive value input could emerge unchanged.  We cannot create
+a larger positive value because the AND operation cannot create ones
+anywhere there is a zero in the input.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Interprocedural analysis}
+\newcommand{\myi}{\onlySlide*{1}{i}\fromSlide*{2}{this.f}}
+\newcommand{\myia}{\onlySlide*{1}{i}\fromSlide*{2}{a.f}}
+\newcommand{\myib}{\onlySlide*{1}{i}\fromSlide*{2}{b.f}}
+\newcommand{\myic}{\onlySlide*{1}{i}\fromSlide*{2}{c.f}}
+\begin{center}%
+\parbox[c]{2.3in}{%
+\begin{mysamplecode}%
+int foo() \{\\
+\>if (\ldots)\\
+\>\>\myia =1;\\
+\>else\\
+\>\>\myib =2;\\
+\>if (\myic >0)\\
+\>\>$\vdots$\\
+\}\\
+\end{mysamplecode}%
+}%
+\parbox[c]{2.3in}{\fromSlide{3}{%
+\begin{mysamplecode}
+int foo() \{\\
+\>\myi =1;\\
+\}\\
+int bar() \{\\
+\>\myi =2;\\
+\}\\
+int bar() \{\\
+\>if (\myi >0)\\
+\>\>\ldots\\
+\}\\ 
+\end{mysamplecode}
+}}
+\end{center}
+\end{slide}
+}
+
+\begin{talknotes}
+Our examples have all been intraprocedural.  We use a
+\emph{field-based} technique to perform the analysis
+interprocedurally, maintaining a single analysis value for
+each distinct object field.  @  Instead of maintaining a value
+for {\tt i}, we maintain a value for field {\tt f}.
+Note that even though the object on the left changes, we're still
+going to treat these as the same abstract location.
+@ This
+works even when the various accesses take place in different methods.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
