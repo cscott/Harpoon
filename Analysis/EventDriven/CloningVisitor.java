@@ -71,7 +71,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.27 2000-04-06 20:41:18 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.28 2000-05-15 01:46:59 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -394,9 +394,7 @@ public class CloningVisitor extends QuadVisitor {
 	//-----------------------------------------------------------------
 	//Build METHOD quad
 	//
-	
-	    
-
+		    
 	METHOD method=new METHOD(qf,first,params,1);
 	Quad.addEdge(header,1,method,0);
 	Temp tenv=new Temp(tf);
@@ -411,7 +409,6 @@ public class CloningVisitor extends QuadVisitor {
 		    method.params(0));
 	Quad.addEdge(method,0,get,0);
 	    
-
 	//-----------------------------------------------------------------
 	//GET Temp's out of environment
 	//
@@ -439,10 +436,8 @@ public class CloningVisitor extends QuadVisitor {
 	Quad prev = get;
 	HField[] envfields=getEnv(q).getDeclaredFields();
 
-	
 	//Build string of CONST's and GET's.
 	    
-
 	for (Iterator ii=livein.iterator();ii.hasNext();) {
 	    Temp t=(Temp)ii.next();
 	    if (suppress == null || !suppress.equals(t)) {
@@ -853,6 +848,7 @@ public class CloningVisitor extends QuadVisitor {
     }
 
     private void buildNativeWrapper(HMethod hm) {
+	System.out.println("Building native wrapper for "+hm);
 	HMethod newhm=(HMethod)old2new.get(hm);
 	ContCodeSSI wrappercode=new ContCodeSSI(newhm);
 	QuadFactory qf=wrappercode.getFactory();
@@ -886,9 +882,9 @@ public class CloningVisitor extends QuadVisitor {
 	    Temp retval1=new Temp(tf),retval2=new Temp(tf);
 
 	    NEW qnew=new NEW(qf, null, tnew, contClass);
-	    CALL call2=new CALL(qf, null, contClass.getConstructor(new HClass[]{hm.getReturnType()}), isVoid?new Temp[] {tnew}:new Temp[] {tnew, retval},
-	    null, retex2, false, false,new Temp[][]{{retval1},{retval2}} ,new Temp[]{tnew});
-	    PHI phi=new PHI(qf, null, new Temp[] {retex3},new Temp[][] {{retex},{retex2}}, 2);
+	    CALL call2=new CALL(qf, null, contClass.getConstructor(isVoid?new HClass[0]:new HClass[]{hm.getReturnType()}), isVoid?new Temp[] {tnew}:new Temp[] {tnew, retval},
+	    null, retex2, false, false,new Temp[][]{{retval1,retval2}} ,new Temp[]{tnew});
+	    PHI phi=new PHI(qf, null, new Temp[] {retex3},new Temp[][] {{retex,retex2}}, 2);
 	    THROW qthrow=new THROW(qf, null, retex3);
 	    RETURN qreturn=new RETURN(qf, null, retval1);
 	    Quad.addEdge(call, 0, qnew,0);
@@ -910,18 +906,18 @@ public class CloningVisitor extends QuadVisitor {
 	    Temp finret=new Temp(tf), finex=new Temp(tf);
 	    //Non Exception edge
 	    NEW qnew1=new NEW(qf, null, tnew1, contClass);
-	    CALL call21=new CALL(qf, null, contClass.getConstructor(new HClass[]{hm.getReturnType()}), isVoid?new Temp[] {tnew1}:new Temp[] {tnew1, retval},
-	    null, retexa, false, false,new Temp[][]{{retval1},{retval2}} ,new Temp[]{tnew1});
+	    CALL call21=new CALL(qf, null, contClass.getConstructor(isVoid?new HClass[0]:new HClass[]{hm.getReturnType()}), isVoid?new Temp[] {tnew1}:new Temp[] {tnew1, retval},
+	    null, retexa, false, false,new Temp[][]{{retval1,retval2}} ,new Temp[]{tnew1});
 
 	    //Exception edge
 	    NEW qnew2=new NEW(qf, null, tnew2, contClass);
 	    CALL call22=new CALL(qf, null, contClass.getConstructor(new HClass[]{linker.forName("java.lang.Throwable")}), new Temp[] {tnew2, retex},
-	    null, retexb, false, false,new Temp[][]{{retex1},{retex2}} ,new Temp[]{tnew2});
+	    null, retexb, false, false,new Temp[][]{{retex1,retex2}} ,new Temp[]{tnew2});
 
 
-	    PHI phix=new PHI(qf, null, new Temp[] {finex},new Temp[][] {{retexa},{retexb}}, 2);
+	    PHI phix=new PHI(qf, null, new Temp[] {finex},new Temp[][] {{retexa,retexb}}, 2);
 
-	    PHI phir=new PHI(qf, null, new Temp[] {finret},new Temp[][] {{retval1},{retex1}}, 2);
+	    PHI phir=new PHI(qf, null, new Temp[] {finret},new Temp[][] {{retval1,retex1}}, 2);
 	    THROW qthrow=new THROW(qf, null, finex);
 	    RETURN qreturn=new RETURN(qf, null, finret);
 
@@ -938,7 +934,9 @@ public class CloningVisitor extends QuadVisitor {
 	    Quad.addEdge(qreturn,0, footer,1);
 	    Quad.addEdge(qthrow,0,footer,2);
 	}
+	System.out.println("Adding "+newhm);
 	ucf.put(newhm, wrappercode);
+	wrappercode.print(new java.io.PrintWriter(System.out, true));
     }
 
 
