@@ -16,7 +16,7 @@ import java.util.Hashtable;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.15 1999-02-05 11:42:31 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.16 1999-02-12 21:43:51 pnkfelix Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -158,7 +158,7 @@ public abstract class Quad
     public static Edge addEdge(Quad from, int from_index,
 			       Quad to, int to_index) {
 	// assert validity
-	Util.assert(from.qf == to.qf); // quadfactories should always be same.
+	Util.assert(from.qf == to.qf, "QuadFactories should always be same");
 	//  [HEADERs connect only to FOOTER and METHOD]
 	if (from instanceof HEADER)
 	    Util.assert((to instanceof FOOTER && from_index==0) || 
@@ -225,7 +225,7 @@ public abstract class Quad
 	for (int j=0; j<2; j++) {
 	    Temp[] ta = (j==0)?qc.use():qc.def();
 	    for (int i=0; i<ta.length; i++)
-		Util.assert(ta[i].tempFactory()==qf.tempFactory());
+		Util.assert(ta[i].tempFactory()==qf.tempFactory(), "TempFactories should be same");
 	}
 	return qc;
     }
