@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.74 2000-05-23 17:25:49 pnkfelix Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.75 2000-06-09 23:21:28 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -183,6 +183,8 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
     public Instr(InstrFactory inf, HCodeElement source, 
 		 String assem, Temp[] dst, Temp[] src,
 		 boolean canFallThrough, List targets) {
+	Util.assert(!assem.trim().equals("FSK-LD `d0, `s0 `d0, `s0"));
+
         Util.assert(inf != null);
         Util.assert(assem != null);
 	// Util.assert(dst!=null && src!=null, "DST and SRC should not = null");
@@ -594,7 +596,7 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	returned will match the executable assembly code for the
 	<code>Instr</code>, this is not guaranteed.  To produce
 	executable assembly in all cases, use
-	<code>Backend.Generic.Code.toAssem(Instr i)</code>.
+	<code>IR.Assem.Code.toAssem(Instr i)</code>.
     */
     public String toString() {
         StringBuffer s = new StringBuffer();

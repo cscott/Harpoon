@@ -67,7 +67,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.76 2000-06-07 03:29:32 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.1.2.77 2000-06-09 23:21:32 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -75,6 +75,7 @@ public class SAMain extends harpoon.IR.Registration {
     private static boolean PRINT_DATA = false;
     private static boolean PRE_REG_ALLOC = false;
     private static boolean REG_ALLOC = false;
+    private static boolean ABSTRACT_REG_ALLOC = false;
     private static boolean HACKED_REG_ALLOC = false;
     private static boolean LIVENESS_TEST = false;
     private static boolean OUTPUT_INFO = false;
@@ -320,6 +321,24 @@ public class SAMain extends harpoon.IR.Registration {
 	    out.flush();
 	}
 	
+	if (ABSTRACT_REG_ALLOC) {
+	    HCode hc = sahcf.convert(hmethod);
+	    
+	    info("\t--- INSTR FORM (register allocation)  ---");
+	    HCodeFactory regAllocCF = RegAlloc.abstractSpillFactory(sahcf, frame);
+	    HCode rhc = regAllocCF.convert(hmethod);
+	    if (rhc != null) {
+		info("Codeview \""+rhc.getName()+"\" for "+
+		     rhc.getMethod()+":");
+		rhc.print(out);
+	    } else {
+		info("null returned for " + hmethod);
+	    }
+	    info("\t--- end INSTR FORM (register allocation)  ---");
+	    out.println();
+	    out.flush();
+	}
+
 	if (REG_ALLOC) {
 	    HCode hc = sahcf.convert(hmethod);
 	    
@@ -421,7 +440,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     private static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "m:i:c:o:DOPFHRLlAhq1::C:");
+	Getopt g = new Getopt("SAMain", args, "m:i:c:o:DOPFHRLlABhq1::C:");
 	
 	int c;
 	String arg;
@@ -476,6 +495,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'H':
 		HACKED_REG_ALLOC = true;
 		break;
+	    case 'B':
+		OUTPUT_INFO = ABSTRACT_REG_ALLOC = true;
+		break;
 	    case 'R':
 		REG_ALLOC = true;
 		break;
@@ -529,7 +551,7 @@ public class SAMain extends harpoon.IR.Registration {
 
     static final String usage = 
 	"usage is: [-m <mapfile>] -c <class>"+
-	" [-DOPRLAhq] [-o <assembly output directory>]";
+	" [-DOPRLABhq] [-o <assembly output directory>]";
 
     private static void printHelp() {
 	out.println("-c <class> (required)");
@@ -553,6 +575,9 @@ public class SAMain extends harpoon.IR.Registration {
 
 	out.println("-P");
 	out.println("\tOutputs Pre-Register Allocated Instr IR for <class>");
+
+	out.println("-B");
+	out.println("\tOutputs Abstract Register Allocated Instr IR for <class>");
 
 	out.println("-L");
 	out.println("\tOutputs Liveness info for BasicBlocks of Instr IR");

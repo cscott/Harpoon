@@ -24,7 +24,7 @@ import java.util.ArrayList;
     
     @see harpoon.Analysis.Instr
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.6 2000-05-23 17:25:45 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.7 2000-06-09 23:21:25 pnkfelix Exp $
  */
 public abstract class InstrBuilder {
     
@@ -44,7 +44,8 @@ public abstract class InstrBuilder {
 	@param <code>regs</code> The target register <code>Temp</code>s
 	       to hold the values that will be loaded from
 	       <code>startingOffset</code> in memory.
-	@param <code>startingOffset</code> The stack offset.  This is
+	@param <code>startingOffset</code> The stack offset
+	       (zero-indexed).  This is 
 	       an ordinal number, it is NOT meant to be a multiple of
 	       some byte size.  Note that this method will load values
 	       starting at <code>startingOffset</code> and go up to
@@ -88,7 +89,8 @@ public abstract class InstrBuilder {
 	@param <code>regs</code> The register <code>Temp</code>s
 	       holding the values that will be stored starting at
 	       <code>startingOffset</code> in memory.
-	@param <code>startingOffset</code> The stack offset.  This is
+	@param <code>startingOffset</code> The stack offset
+	       (zero-indexed).  This is 
 	       an ordinal number, it is NOT meant to be a multiple of
 	       some byte size.  Note that this method will store values
 	       starting at <code>startingOffset</code> and go up to
@@ -132,7 +134,8 @@ public abstract class InstrBuilder {
 	@param <code>reg</code> The target register <code>Temp</code>
 	       to hold the value that will be loaded from
 	       <code>offset</code> in memory. 
-	@param <code>offset</code> The stack offset.  This is an
+	@param <code>offset</code> The stack offset (zero-indexed).
+	       This is an 
 	       ordinal number, it is NOT meant to be a multiple of
 	       some byte size.  This frame should perform the
 	       necessary magic to turn the number into an appropriate
@@ -151,7 +154,8 @@ public abstract class InstrBuilder {
 	@param <code>reg</code> The register <code>Temp</code> holding
 	       the value that will be stored at <code>offset</code> in
 	       memory. 
-	@param <code>offset</code> The stack offset.  This is an
+	@param <code>offset</code> The stack offset (zero-indexed).
+	       This is an 
 	       abstract number, it is NOT necessarily a multiple of
 	       some byte size.  This frame should perform the
 	       necessary magic to turn the number into an appropriate

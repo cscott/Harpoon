@@ -64,7 +64,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.80 2000-06-08 06:25:01 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.81 2000-06-09 23:21:07 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -871,7 +871,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    regfile.assign(getLoc(t), regList);
 		    
 		    if (i.useC().contains(t)) {
-			InstrMEM load = new SpillLoad(i, "FSK-LD", regList, getLoc(t));
+			InstrMEM load = SpillLoad.makeLD(i, "FSK-LD", regList, getLoc(t));
 			spillLoads.add(load);
 			spillLoads.add(i);
 		    }
@@ -1194,7 +1194,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 		if (isTempRegister(locval)) {
 		    // don't spill register only values
 
-		} else if (false && regfile.isClean(locval)) {
+		} else if (regfile.isClean(locval)) {
+		    // FSK: weirdness in SpillCodePlacement occurs if
+		    // I (conservatively) leave this case out, which
+		    // is a sign that something's wrong.  Experiement
+		    // further... 
+
 		    // don't spill clean values. 
 		    if (SPILL_INFO) 
 			System.out.println("not spilling "+locval+
@@ -1375,7 +1380,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    Util.assert(!regs.isEmpty(), 
 			lazyInfo("must map to non-empty set of registers",val,regfile));
 
-	    InstrMEM spillInstr = new SpillStore(loc, "FSK-ST", getLoc(val), regs);
+	    InstrMEM spillInstr = SpillStore.makeST(loc, "FSK-ST", getLoc(val), regs);
 
 	    spillStores.add(spillInstr);
 	    spillStores.add(loc);

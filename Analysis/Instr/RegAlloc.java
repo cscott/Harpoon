@@ -74,7 +74,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.86 2000-06-08 06:25:01 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.87 2000-06-09 23:21:07 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -109,9 +109,22 @@ public abstract class RegAlloc  {
 
 	REP INVARIANT: SpillLoads have only one src Temp.	
     */
-    public class SpillLoad extends InstrMEM {
-	SpillLoad(InstrFactory inf, Instr i, String assem, Temp dst, Temp src) {
-	    super(inf, i, assem + " `d0, `s0", 
+    public static class SpillLoad extends InstrMEM {
+	static SpillLoad makeLD(Instr i, String prefix, 
+			 Temp dst, Temp src) {
+	    return new SpillLoad(i,prefix+" `d0, `s0",dst,src); 
+	}
+
+	static SpillLoad makeLD(Instr i, String prefix,
+			 Collection dsts, Temp src) {
+	    return new SpillLoad(i,prefix+" " + 
+				 getDstStr(dsts.size())+
+				 ", `s0", dsts, src);
+	}
+
+	SpillLoad(InstrFactory inf, Instr i, String assem, 
+		  Temp dst, Temp src) {
+	    super(inf, i, assem,
 		  new Temp[]{dst}, new Temp[]{src});
 	}
 	SpillLoad(Instr i, String assem, Temp dst, Temp src) {
@@ -121,9 +134,8 @@ public abstract class RegAlloc  {
 	// Note that the order that 'dsts' will appear in is the order
 	// that its iterator returns the Temps in.
 	SpillLoad(InstrFactory inf, Instr i, String assem, Collection dsts, Temp src) {
-	    super(inf, i, assem + " " + 
-		  getDstStr(dsts.size()) + ", `s0", 
-		  (Temp[])dsts.toArray(new Temp[dsts.size()]), 
+	    super(inf, i, assem,
+		  (Temp[])dsts.toArray(new Temp[dsts.size()]),
 		  new Temp[]{src});
 	}
 	SpillLoad(Instr i, String assem, Collection dsts, Temp src) {
@@ -140,24 +152,33 @@ public abstract class RegAlloc  {
 	REP INVARIANT: SpillStores have only one dst Temp.	
 
     */
-    public class SpillStore extends InstrMEM {
+    public static class SpillStore extends InstrMEM {
+	static SpillStore makeST(Instr i, String prefix, 
+				 Temp dst, Temp src) {
+	    return new SpillStore(i,prefix+" `d0, `s0",dst,src);
+	}
+	
+	static SpillStore makeST(Instr i, String prefix, 
+				 Temp dst, Collection srcs) {
+	    return new SpillStore(i, prefix+" `d0, "+
+				  getSrcStr(srcs.size()),
+				  dst, srcs);
+	}
+
 	SpillStore(Instr i, String assem, Temp dst, Temp src) {
 	    this(i.getFactory(), i, assem, dst, src);
 	}
 
 	SpillStore(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, Temp src) {
-	    super(inf, hce, assem, 
-		  new Temp[]{dst}, new Temp[]{src});
+	    super(inf, hce, assem,new Temp[]{dst},new Temp[]{src}); 
 	}
 
 	// Note that the order that 'dsts' will appear in is the order
 	// that its iterator returns the Temps in.
 	SpillStore(InstrFactory inf, HCodeElement hce,
 		 String assem, Temp dst, Collection srcs) {
-	    super(inf, hce, assem + " `d0, " +
-		  getSrcStr(srcs.size()),
-		  new Temp[]{dst}, 
+	    super(inf, hce, assem,new Temp[]{dst}, 
 		  (Temp[])srcs.toArray(new Temp[srcs.size()]));
 	}
 
@@ -408,6 +429,12 @@ public abstract class RegAlloc  {
 	    return RegFileInfo.StackOffsetLoc.KIND; 
 	}
 	public int stackOffset() { return offset; }
+
+	
+	public String name() { 
+	    return "StkTmp"+offset+
+		"("+wrappedTemp.toString()+")";
+	}
     }
 
     /** Transforms Temp references for <code>this</code> into appropriate offsets
@@ -427,7 +454,7 @@ public abstract class RegAlloc  {
 
 	class TempFinder extends InstrVisitor {
 	    HashMap tempsToOffsets = new HashMap();
-	    int nextOffset = 1;
+	    int nextOffset = 0;
 
 	    private void visitLoad(SpillLoad m) {
 		// look for non-Register Temps in use, adding
@@ -516,7 +543,7 @@ public abstract class RegAlloc  {
 
 	Instr instr = (Instr) in.getRootElement();
 
-	final int locals = tf.nextOffset - 1; 
+	final int locals = tf.nextOffset; 
 
 	instr = frame.getCodeGen().
 	    procFixup(in.getMethod(), instr, locals, 

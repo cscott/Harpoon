@@ -19,7 +19,7 @@ import java.util.Arrays;
     StrongARM architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.9 2000-03-23 23:33:03 kkz Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.10 2000-06-09 23:21:27 pnkfelix Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
@@ -28,8 +28,8 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
     RegFileInfo rfInfo;
 
     /* helper macro. */
-    private final Temp SP() { 
-	return rfInfo.SP;
+    private final Temp FP() { 
+	return rfInfo.FP;
     }
     
     InstrBuilder(RegFileInfo rfInfo) {
@@ -50,7 +50,7 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
     // note to self; add code to generate multi-instruction code for
     // loading Temps that cross the OFFSET_LIMIT; instead of using a
-    // Constant Offset, just manually increment and decrement SP (for
+    // Constant Offset, just manually increment and decrement FP (for
     // Loads, can actually increment the target-register so that 
 
     public List makeLoad(Temp r, int offset, Instr template) {
@@ -67,12 +67,12 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 		    new InstrMEM(template.getFactory(), template,
 				 strs[0],
 				 new Temp[]{ r },
-				 new Temp[]{ SP()  });
+				 new Temp[]{ FP()  });
 		InstrMEM load2 = 
 		    new InstrMEM(template.getFactory(), template,
 				 strs[1],
 				 new Temp[]{ r },
-				 new Temp[]{ SP()  });
+				 new Temp[]{ FP()  });
 		load2.layout(load1, null);
 		return Arrays.asList(new InstrMEM[] { load1, load2 });
 	    } else {
@@ -80,13 +80,13 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 		    new InstrMEM(template.getFactory(), template,
 				 strs[0],
 				 new Temp[]{ r },
-				 new Temp[]{ SP()  });
+				 new Temp[]{ FP()  });
 		return Arrays.asList(new InstrMEM[] { load });
 	    }
 	} else {
 	    // System.out.println("Offset exceeded!");
 
-	    // need to wrap load with instructions to shift SP down
+	    // need to wrap load with instructions to shift FP down
 	    // and up again, and need to make it *ONE* Instr so that
 	    // they do not get seperated.  Also, note that this is
 	    // safe since StrongARM does not seem to have normal
@@ -105,27 +105,29 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 		 { new InstrMEM(template.getFactory(), template,
 				assem, 
 				new Temp[]{ r }, 
-				new Temp[]{ SP() }) });
+				new Temp[]{ FP() }) });
 	}
     }
 
     private String[] getLdrAssemStrs(Temp r, int offset) {
 	if (r instanceof TwoWordTemp) {
 	    return new String[] {
-		"ldr `d0l, [`s0, #" +(4*offset) + "] " ,
-		    "ldr `d0h, [`s0, #" +(4*(offset+1)) + "] " };
+		"ldr `d0l, [`s0, #.fpoffset-" +(4*offset) + "] " ,
+		    "ldr `d0h, [`s0, #.fpoffset-" +(4*(offset+1)) + "] " };
 	} else {
-	    return new String[] { "ldr `d0, [`s0, #" +(4*offset) + "] " };
+	    return new String[] { "ldr `d0, [`s0, #.fpoffset-" 
+				      +(4*offset) + "] @ spill" };
 	}
     }
 
     private String[] getStrAssemStrs(Temp r, int offset) {
 	if (r instanceof TwoWordTemp) {
 	    return new String[] {
-		"str `s0l, [`s1, #" +(4*offset) + "] " ,
-		    "str `s0h, [`s1, #" +(4*(offset+1)) + "] " };
+		"str `s0l, [`s1, #.fpoffset-" +(4*offset) + "] " ,
+		    "str `s0h, [`s1, #.fpoffset-" +(4*(offset+1)) + "] " };
 	} else {
-	    return new String[] { "str `s0, [`s1, #" +(4*offset) + "] " };
+	    return new String[] { "str `s0, [`s1, #.fpoffset-" 
+				      +(4*offset) + "] @ spill" };
 	}
     }
 
@@ -148,12 +150,12 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 		    new InstrMEM(template.getFactory(), template,
 				 strs[0],
 				 new Temp[]{ },
-				 new Temp[]{ r , SP() });
+				 new Temp[]{ r , FP() });
 		InstrMEM store2 = 
 		    new InstrMEM(template.getFactory(), template,
 				 strs[1],
 				 new Temp[]{ },
-				 new Temp[]{ r , SP() });
+				 new Temp[]{ r , FP() });
 		store2.layout(store1, null);
 		Util.assert(store1.getNext() == store2, "store1.next == store2");
 		Util.assert(store2.getPrev() == store1, "store2.prev == store1");
@@ -164,11 +166,11 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 		    new InstrMEM(template.getFactory(), template,
 				 strs[0],
 				 new Temp[]{ },
-				 new Temp[]{ r , SP() });
+				 new Temp[]{ r , FP() });
 		return Arrays.asList(new InstrMEM[] { store });
 	    }
 	} else {
-	    // need to wrap store with instructions to shift SP down
+	    // need to wrap store with instructions to shift FP down
 	    // and up again, and need to make it *ONE* Instr
 	    
 	    int newOffset = offset;
@@ -184,7 +186,7 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 		 { new InstrMEM(template.getFactory(), template,
 				assem,
 				new Temp[] {},
-				new Temp[] { r, SP() }) });
+				new Temp[] { r, FP() }) });
 	}
     }
 
