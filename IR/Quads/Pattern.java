@@ -16,7 +16,7 @@ import java.util.Stack;
  * <code>Pattern</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.4 1999-09-08 17:41:26 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.5 1999-09-08 19:23:00 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -117,15 +117,21 @@ public class Pattern {
 	Map map=pv.map();
 	iterate=map.keySet().iterator();
         ArrayList handlers=new ArrayList();
+	WorkSet done=new WorkSet();
 	while(iterate.hasNext()) {
 	    Quad q=(Quad)iterate.next();
-	    HInfo hi=(HInfo)map.get(q);
-	    Quad.addEdge(hi.to().prev(0), hi.to().prevEdge(0).which_succ(), q, 0);
-	    while (hi.needHandler()) {
-		Object[] handler=hi.pophandler();
-		HANDLER h=new HANDLER(q.getFactory(), q, new Temp(q.getFactory().tempFactory()), (HClass) handler[2] , new ReProtection(q));
-		handlers.add(h);
-		Quad.addEdge(h,0,(Quad)handler[0],((Integer)handler[1]).intValue());
+	    if (!done.contains(q)) {
+		HInfo hi=(HInfo)map.get(q);
+		//no pattern matching allowed on cutout regions
+		for (Quad ptr=q; ptr!=hi.to().prev(0); ptr=ptr.prev(0))
+		    done.add(ptr);
+		Quad.addEdge(hi.to().prev(0), hi.to().prevEdge(0).which_succ(), q, 0);
+		while (hi.needHandler()) {
+		    Object[] handler=hi.pophandler();
+		    HANDLER h=new HANDLER(q.getFactory(), q, new Temp(q.getFactory().tempFactory()), (HClass) handler[2] , new ReProtection(q));
+		    handlers.add(h);
+		    Quad.addEdge(h,0,(Quad)handler[0],((Integer)handler[1]).intValue());
+		}
 	    }
 	}
 	//need to add handlers in now
@@ -255,6 +261,18 @@ class PatternVisitor extends QuadVisitor {
 
     public void visit(ASET q) {
 	Quad qd=q;
+	Object[] n1=Pattern.componentCheck(qd.prev(0), q.src(), q.objectref());
+	if (n1!=null) {
+	    qd=(Quad)n1[0];
+	    HClass hclass=Pattern.exceptionCheck((Quad)((Object[])n1[1])[0]);
+	    if (hclass==HClass.forName("java.lang.ArrayStoreException")) {
+		addmap(q,qd);
+	    } else {
+		addmap(q,qd, (Quad)((Object[])n1[1])[0],
+		       (Integer)((Object[])n1[1])[1],
+		       HClass.forName("java.lang.ArrayStoreException"));
+	    }
+	}
 	Object[] n2=Pattern.boundCheck(qd.prev(0), q.objectref(), q.index());
 	if (n2!=null) {
 	    qd=(Quad)n2[0];
@@ -278,19 +296,6 @@ class PatternVisitor extends QuadVisitor {
 		addmap(q,qd, (Quad)((Object[])nq[1])[0],
 		       (Integer)((Object[])nq[1])[1],
 		       HClass.forName("java.lang.NullPointerException"));
-	    }
-	}
-
-	Object[] n1=Pattern.componentCheck(qd.prev(0), q.src(), q.objectref());
-	if (n1!=null) {
-	    qd=(Quad)n1[0];
-	    HClass hclass=Pattern.exceptionCheck((Quad)((Object[])n1[1])[0]);
-	    if (hclass==HClass.forName("java.lang.ArrayStoreException")) {
-		addmap(q,qd);
-	    } else {
-		addmap(q,qd, (Quad)((Object[])n1[1])[0],
-		       (Integer)((Object[])n1[1])[1],
-		       HClass.forName("java.lang.ArrayStoreException"));
 	    }
 	}
     }
@@ -585,8 +590,10 @@ class HighBoundVisitor extends QuadVisitor {
     public void visit(CJMP q) {
 	if (status==0) {
 	    test=q.test();
-	    exchandler=q.next(1);
-	    excedge=q.nextEdge(1).which_pred();
+	    //on this pattern
+	    //the exception actually occurs on the 0 edge
+	    exchandler=q.next(0);
+	    excedge=q.nextEdge(0).which_pred();
 	    status=1;
 	}
 	else 
@@ -781,8 +788,8 @@ class CompVisitor extends QuadVisitor {
     public void visit(CJMP q) {
 	if (status==0) {
 	    test=q.test();
-	    exchandler=q.next(1);
-	    excedge=q.nextEdge(1).which_pred();
+	    exchandler=q.next(0);
+	    excedge=q.nextEdge(0).which_pred();
 	    status=1;
 	}
 	else 
