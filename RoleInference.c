@@ -1324,6 +1324,6 @@ void openoutputfiles(struct heap_state *heap) {
   heap->dotfile=fopen(filename,"w");
   snprintf(filename, 256,"%s-diagram.dot",prefix);
   heap->rolediagramfile=fopen(filename,"w");
-  snprintf(filename, 256,"%s-diagram-meged.dot",prefix);
+  snprintf(filename, 256,"%s-diagram-merged.dot",prefix);
   heap->rolediagramfilemerge=fopen(filename,"w");
 }

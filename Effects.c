@@ -384,32 +384,34 @@ struct regexprlist * mergeregexprlist(struct regexprlist * rel1, struct regexprl
 	      tmp->expr=merge;
 	      tmp->nextlist=newlistptr;
 	      newlistptr=tmp;
-	      tmp=allregexpr->nextlist;
 	      if (indexptr==allregexpr) {
 		/* Adjacent nodes...*/
 		tmp=indexptr->nextlist->nextlist;
 		free(indexptr->nextlist);
 		free(allregexpr);
 		allregexpr=tmp;
+		indexptr=NULL;
 		break;
 	      } else {
 		/* Free the merged expr list*/
+		tmp=allregexpr->nextlist;
 		free(allregexpr);
 		allregexpr=tmp;
+
 		tmp=indexptr->nextlist;
 		indexptr->nextlist=tmp->nextlist;
 		free(tmp);
+		indexptr=NULL;
 		break;
 	      }
 	    }
 	    indexptr=indexptr->nextlist;
 	  }
-	  if (indexptr->nextlist==NULL) {
+	  if (indexptr!=NULL&&indexptr->nextlist==NULL) {
 	      struct listofregexprlist *tmp=(struct listofregexprlist *) calloc(1, sizeof(struct listofregexprlist));
 	      tmp->expr=mergeregexprlist(allregexpr->expr,allregexpr->expr);
 	      if (tmp->expr==NULL) {
 		printf("ERRORXXXX\n");
-		tmp->expr=mergeregexprlist(allregexpr->expr,allregexpr->expr);
 	      }
 	      tmp->nextlist=newlistptr;
 	      newlistptr=tmp;
@@ -417,9 +419,6 @@ struct regexprlist * mergeregexprlist(struct regexprlist * rel1, struct regexprl
 	      free(allregexpr);
 	      allregexpr=tmp;
 	  }
-	  /*allregexpr could be equal to NULL because of merging...*/
-	  if (allregexpr!=NULL)
-	    allregexpr=allregexpr->nextlist;
 	}
 	copy->subtree=newlistptr;
       }
@@ -467,8 +466,10 @@ void freeregexprlist(struct regexprlist *tofree) {
       rfl=tmpfldptr;
     }
     while(lrel!=NULL) {
+      struct listofregexprlist *lrelnew=lrel->nextlist;
       freeregexprlist(lrel->expr);
-      lrel=lrel->nextlist;
+      free(lrel);
+      lrel=lrelnew;
     }
     free(tofree);
     tofree=tmpptr;
@@ -598,7 +599,7 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
 		    struct listofregexprlist * loel2=(struct listofregexprlist *) calloc(1, sizeof(struct listofregexprlist));
 		    loel1->expr=list1;
 		    loel2->expr=list2;
-		    loel1->nextlist=loel1;
+		    loel1->nextlist=loel2;
 		    relloop->subtree=loel1;
 		  } else {
 		    struct listofregexprlist * loel=(struct listofregexprlist *) calloc(1, sizeof(struct listofregexprlist));

@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include "RoleRelation.h"
 #include "Role.h"
+#ifdef MDEBUG
+#include <dmalloc.h>
+#endif
 
 int rolerelationhashcode(struct rolerelation *rr) {
   int hashcode=rr->srcrole;
