@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.74 1999-08-21 06:49:51 cananian Exp $
+% $Id: thesis.tex,v 1.75 1999-08-21 17:50:55 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.74 $ $}
+\date{\today \\ $ $Revision: 1.75 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.74 $ $}{$ $Revision: 1.74 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.75 $ $}{$ $Revision: 1.75 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -1023,6 +1023,11 @@ should ever raise a lattice value above ``Typed'' to $\top$.  The
 otherwise-unnecessary $\top$ element is retained to indicate error
 conditions.
 
+This variant of the constant-propagation algorithm allows us to
+eliminate unnecessary \code{instanceof} checks due to type-casting or
+type-safety checks.  Section~\ref{sec:sptc_results} will provide
+experimental validation of its utility.
+
 Finally, note that the ability to represent \code{null} as the
 \code{void} type in the lattice begins to allow us to address
 null-pointer checks, although because $\code{null} \meet x =x$ for
@@ -1096,8 +1101,13 @@ identify constant-length arrays, and that our integrated approach
 allows one-pass optimization of the program in figure \ref{fig:combined}.
 
 Note that the variable renaming performed by the SSI form at
-control-flow splits is essential in allowing SPTC to do array-bounds
-and null-pointer check elimination.  Some quantitative measure of the
+control-flow splits is essential in allowing SPTC to do 
+null-pointer check elimination.
+
+\subsubsection{Better techniques for array-bounds checks}
+
+\subsubsection{Experimental results}\label{sec:sptc_results}
+Some quantitative measure of the
 utility of SPTC is given as table \ref{tab:sptc_numbers}.
 
 \subsection{Bit-width analysis}\label{sec:bitwidth}
@@ -1106,6 +1116,9 @@ utility of SPTC is given as table \ref{tab:sptc_numbers}.
 \caption{Lattice for constant/type/bitwidth analysis.}
 \label{fig:lattice}
 \end{myfigure}
+The algorithm of the previous section\fixme{refer to precise section}
+can also be extended to allow bitwidth analysis of the program data.%
+\fixme{Finish this.}
 
 \section{An executable representation}\label{sec:ssiplus}
 The Static Single Information (SSI) form, as presented in the first
