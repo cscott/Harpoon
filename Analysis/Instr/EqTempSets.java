@@ -21,15 +21,15 @@ import java.util.HashSet;
  * <code>EqTempSets</code> tracks a set of disjoint set of temps, and
  * potentially associates each set with a favored register temp (which
  * itself is not part of the set)
- * 
- *  Overview: an EqTempSets is a pair <S,M>, where 
- *         S is a set of disjoint sets of temps
- *         M is a mapping from disjoint sets to register temps.
- *  each element of S is represented by one of its members,
+ * <p>
+ *  Overview: an EqTempSets is a pair &lt;S,M&gt;, where <ul>
+ *  <li>   S is a set of disjoint sets of temps
+ *  <li>   M is a mapping from disjoint sets to register temps. </ul>
+ *  Each element of S is represented by one of its members,
  *  called the Representative (or Rep for short).
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: EqTempSets.java,v 1.1.2.7 2000-08-22 01:08:42 pnkfelix Exp $
+ * @version $Id: EqTempSets.java,v 1.1.2.8 2000-10-20 19:42:17 cananian Exp $
  */
 public abstract class EqTempSets implements harpoon.Temp.TempMap {
     
