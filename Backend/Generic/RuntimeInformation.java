@@ -5,6 +5,7 @@ package harpoon.Backend.Generic;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
+import java.util.HashSet;
 import java.util.Set;
 /**
  * <code>RuntimeInformation</code> is an abstract encapsulation of
@@ -36,7 +37,7 @@ import java.util.Set;
  * be kept <b>completely abstract</b>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RuntimeInformation.java,v 1.1.2.3 2000-01-18 05:30:42 cananian Exp $
+ * @version $Id: RuntimeInformation.java,v 1.1.2.4 2000-01-29 11:36:32 cananian Exp $
  * @see JDK11RuntimeImplementation
  * @see JDK12RuntimeImplementation
  */
@@ -86,4 +87,26 @@ public abstract class RuntimeInformation {
      * @return a <code>Set</code> of <code>HClass</code>es.
      */
     public abstract Set baseClasses();
+
+    /** Convenience method to union two sets, either or both of which
+     *  may be unmodifiable.  If either set is modifiable, it adds
+     *  the contents of the other to it and returns the modified set.
+     *  If neither is modifiable, it creates a new modifiable set and
+     *  adds both sets to it before returning it. */
+    protected final Set union(Set s1, Set s2) {
+	// first try to add elements to s1
+	try {
+	    s1.addAll(s2); return s1;
+	} catch (UnsupportedOperationException e) { /* ignore */ }
+	// then try to add elements to s2
+	try {
+	    s2.addAll(s1); return s2;
+	} catch (UnsupportedOperationException e) { /* ignore */ }
+	// okay, then make a new set.
+	if (s1.size() > s2.size()) {
+	    Set s3 = new HashSet(s1); s3.addAll(s2); return s3;
+	} else {
+	    Set s4 = new HashSet(s2); s4.addAll(s1); return s4;
+	}
+    }
 }
