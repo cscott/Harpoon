@@ -1,13 +1,15 @@
 // GET.java, created Wed Aug  5 07:05:59 1998 by cananian
 package harpoon.IR.QuadSSA;
 
+import java.lang.reflect.Modifier;
+
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
 /**
  * <code>GET</code> represent field access (get) operations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GET.java,v 1.5 1998-08-24 19:30:01 cananian Exp $
+ * @version $Id: GET.java,v 1.6 1998-08-24 22:37:11 cananian Exp $
  */
 
 public class GET extends Quad {
@@ -30,5 +32,9 @@ public class GET extends Quad {
 	return "GET " + 
 	    field.getDeclaringClass().getName() + "." +
 	    field.getName() + " of " + src + " into " + dst;
+    }
+    /** Determines whether the GET is of a static field. */
+    public boolean isStatic() { 
+	return Modifier.isStatic(field.getModifiers());
     }
 }
