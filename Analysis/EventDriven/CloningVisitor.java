@@ -65,7 +65,7 @@ import java.lang.reflect.Modifier;
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.17 2000-03-24 07:07:12 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.18 2000-03-24 19:14:17 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
@@ -429,7 +429,7 @@ public class CloningVisitor extends QuadVisitor {
 
 	if (!((CALL)q).method().getReturnType().isPrimitive()&&
 	    !((CALL)q).method().getReturnType()
-	    .equals(linker.forName("java.lang.Object"))) {
+	    .equals(linker.forName("java.lang.Object"))&&(resumeexception==0)) {
 	    Temp tresult=new Temp(tf), tnull=new Temp(tf), tresultn=new Temp(tf);
 	   
 	    CONST cn = new CONST(qf, first, tnull,null, HClass.Void);
@@ -590,7 +590,8 @@ public class CloningVisitor extends QuadVisitor {
 	//Build THROW and RETURN quads
 	
 	Quad.addEdge(nq,0,call,0);
-	Temp retex=isReturn?retex1:new Temp(tf);
+	Temp retex=(isReturn||(!needsCheck()))?retex1:new Temp(tf);
+	//Temp retex=retex1;
 	THROW qthrow=new THROW(qf,q,retex);
 	RETURN qreturn=new RETURN(qf,q,null);
 	if (isReturn)
