@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.34 1998-09-03 04:42:12 cananian Exp $
+ * @version $Id: Translate.java,v 1.35 1998-09-03 04:47:13 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -763,8 +763,9 @@ class Translate  { // not public.
 	    }
 	case Op.FNEG:
 	case Op.INEG:
-	    ns = s.pop(2).push(new Temp());
-	    q = new OPER(in, "fneg", ns.stack[0], new Temp[] {s.stack[0]});
+	    ns = s.pop().push(new Temp());
+	    q = new OPER(in, Op.toString(in.getOpcode()), 
+			 ns.stack[0], new Temp[] {s.stack[0]});
 	    break;
 	case Op.FSTORE:
 	case Op.FSTORE_0:
