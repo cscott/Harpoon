@@ -89,14 +89,14 @@ X  Standard interface for registration object.  Static method in HCode
 X  to return instance of registration object.
 ---- Sep-11-98
 Optimize INSTANCEOF and COMPONENTOF in SCC.
-Update xClass to hold 'canbeNull' boolean.
+X Update xClass to hold 'canbeNull' boolean.
 Update OPER(acmpeq) to check canbeNull boolean.
 Write optimization pass based on SCC analysis.
-Rewrite SCC to use *edges* instead of *blocks* for executable analysis.
-  ql is then set of all edge *targets*.  Doesn't have to be unique, but
-  it'd be nice.
-Rewrite SCC to use Visitor pattern.
-Rewrite SCC to use *sets* of classes?
+X Rewrite SCC to use *edges* instead of *blocks* for executable analysis.
+X   ql is then set of all edge *targets*.  Doesn't have to be unique, but
+X   it'd be nice.
+X Rewrite SCC to use Visitor pattern.
+O Rewrite SCC to use *sets* of classes?
 ---- Sep-10-98
 O Change PHI implementation to not make phi function entries for
 O  local variables that have not yet been defined.  Change State initialization
