@@ -17,8 +17,15 @@
 #endif
 #include "fni-stats.h" /* for stats-related macros */
 
-/* XXX allow GC_FREQUENCY to be modified by debugger or an env. variable */
 static int GC_FREQUENCY=100;
+/* allow GC_FREQUENCY to be modified by an env. variable.  You can also
+ * reset GC_FREQUENCY in a debugger. */
+static void init_gc_frequency(void) __attribute__ ((constructor));
+static void init_gc_frequency(void) {
+  char *freq = getenv("GC_FREQUENCY");
+  if (freq!=NULL) GC_FREQUENCY=atoi(freq);
+  if (GC_FREQUENCY<=0) GC_FREQUENCY=1;
+}
 
 DECLARE_STATS_EXTERN(heap_current_live_bytes)
 DECLARE_STATS_EXTERN(heap_max_live_bytes)
