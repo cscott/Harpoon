@@ -60,7 +60,7 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.18 2000-05-25 22:33:03 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.19 2000-06-27 04:36:10 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
@@ -173,9 +173,8 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
     private int mm_count = 0;
 
     private void analyze(MetaMethod root_mm){
-
 	if(COUNTER)
-	    System.out.println(root_mm);
+	    System.out.println("\n" + root_mm);
 
 	analyzed_mm = new HashSet();
 	WMM = new PAWorkList();
@@ -186,7 +185,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	    if(COUNTER){
 		mm_count++;
 		if(mm_count % 100 == 0)
-		    System.out.println(mm_count + " analyzed meta-methods");
+		    System.out.println(mm_count + " analyzed meta-method(s)");
 	    }
 
 	    analyzed_mm.add(mm_work);

@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.62 2000-06-07 03:29:16 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.63 2000-06-27 04:36:17 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -233,7 +233,7 @@ public class PointerAnalysis {
 
     // internal method doing the job
     ParIntGraph getExtParIntGraph(MetaMethod mm, boolean compute_it){
-	ParIntGraph pig = (ParIntGraph)hash_proc_ext.get(mm);
+	ParIntGraph pig = (ParIntGraph) hash_proc_ext.get(mm);
 	if((pig == null) && compute_it){
 	    analyze(mm);
 	    pig = (ParIntGraph)hash_proc_ext.get(mm);
