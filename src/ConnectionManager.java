@@ -50,7 +50,11 @@ public class ConnectionManager {
     /** How many clients can connect maximum to this server SOCKET */
     private static final int MAX_CLIENTS = 50;
 
-    private String schedulerName;
+    String schedulerName;
+    Scheduler scheduler;
+    Object destination;
+    long messageID;
+    byte[] data;
 
     private RealtimeThread serverThread;
     private RealtimeThread clientThread;
@@ -79,28 +83,11 @@ public class ConnectionManager {
 	}
 	}
 	
-	serverThread = new RealtimeThread() {
-		
-
-	    };
-	    
-	clientThread = new RealtimeThread() {
-
-	    };
-    }
-
-    /** Bind the current scheduler to <code>name</code> in the CORBA name service
-     *  or start a server to listen at the socket for this scheduler.
-     *
-     *  @param name the name to bind
-     *  @return thread id of thread which handles network calls.
-     */
-    public long bind(final String name, final Scheduler scheduler) {
-	RealtimeThread rt;
 	if (implementation == SOCKETS) {
-	    rt = new RealtimeThread() {
-		    public void run() {
-			int port = Integer.parseInt(name);
+	    serverThread = new RealtimeThread() {
+		    public synchronized void run() {
+			wait();
+			int port = Integer.parseInt(ConnectionManager.this.schedulerName);
 			ServerSocket listenSocket = null;
 			DataInputStream is = null;
 			try {
@@ -133,20 +120,53 @@ public class ConnectionManager {
 			}
 		    }
 		};
+
+	    clientThread = new RealtimeThread() {
+		    public synchronized void run() {
+			while (true) {
+			    wait();
+			    String name = (String)ConnectionManager.this.destination;
+			    int idx = name.indexOf(':');
+			    String host = name.substring(0, idx);
+			    int port = Integer.parseInt(name.substring(idx+1));
+			    DataOutputStream d = null;
+			    try {
+				Socket clientSocket = new Socket(host, port);
+				d = new DataOutputStream(clientSocket.getOutputStream());
+				d.writeUTF(ConnectionManager.this.schedulerName);
+				d.writeLong(ConnectionManager.this.messageID);
+				d.writeInt(ConnectionManager.this.data.length);
+				d.write(ConnectionManager.this.data, 0, ConnectionManager.this.data.length);
+				d.flush();
+			    } catch (UnknownHostException e) {
+				NoHeapRealtimeThread.print("Unknown host: ");
+				NoHeapRealtimeThread.print(e.toString());
+				System.exit(-1);
+			    } catch (IOException e) {
+				NoHeapRealtimeThread.print("Difficulty connecting to ");
+				NoHeapRealtimeThread.print(host);
+				NoHeapRealtimeThread.print(": ");
+				NoHeapRealtimeThread.print(e.toString());
+				System.exit(-1);
+			    }
+			}
+		    }
+		};
 	} else {
-	    rt = new RealtimeThread() {
-		    public void run() {
+	    serverThread = new RealtimeThread() {
+		    public synchronized void run() {
 			try {
+			    wait();
 			    ORB orb = ORB.init(ConnectionManager.this.args, null);
 			    POA poa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
 			    poa.the_POAManager().activate();
 			    NamingContextExt namingContext = 
 				NamingContextExtHelper.narrow(orb.resolve_initial_references("NameService"));
-			    namingContext.rebind(namingContext.to_name(schedulerName = name),
+			    namingContext.rebind(namingContext.to_name(ConnectionManager.this.schedulerName),
 						 poa.servant_to_reference(new SchedulerCommPOA() {
 							 public void handleDistributedEvent(String name, 
 											    long messageID, byte[] data) {
-							     scheduler.handleDistributedEvent(name, messageID, data);
+							     ConnectionManager.this.scheduler.handleDistributedEvent(name, messageID, data);
 							 }				
 						     }));
 			    orb.run();
@@ -156,10 +176,35 @@ public class ConnectionManager {
 			}
 		    }
 		};
+
+	    clientThread = new RealtimeThread() {
+		    public synchronized void run() {
+			wait();
+			((SchedulerComm)destination).handleDistributedEvent(ConnectionManager.this.schedulerName, 
+									    ConnectionManager.this.messageID, 
+									    ConnectionManager.this.data);
+		    }
+		};
 	}
-	long id = rt.getUID();
-	rt.start();
-	return id;
+    }
+
+    /** Start the server/client threads. */
+    public void start() {
+	serverThread.start();
+	clientThread.start();
+    }
+
+    /** Bind the current scheduler to <code>name</code> in the CORBA name service
+     *  or start a server to listen at the socket for this scheduler.
+     *
+     *  @param name the name to bind
+     *  @return thread id of thread which handles network calls.
+     */
+    public long bind(String name, Scheduler scheduler) {
+	this.scheduler = scheduler;
+	this.schedulerName = name;
+	serverThread.notify();
+	return serverThread.getUID();
     }
 
     /** Resolve the <code>name</code> in the name service to a 
@@ -201,48 +246,13 @@ public class ConnectionManager {
      * 
      *  @return The thread which is handling the event.
      */
-    public long generateDistributedEvent(final Object destination,
-					 final long messageID, final byte[] data) {
-	RealtimeThread rt;
-	if (implementation == SOCKETS) {
-	    rt = new RealtimeThread() {
-		    public void run() {
-			String name = (String)destination;
-			int idx = name.indexOf(':');
-			String host = name.substring(0, idx);
-			int port = Integer.parseInt(name.substring(idx+1));
-			DataOutputStream d = null;
-			try {
-			    Socket clientSocket = new Socket(host, port);
-			    d = new DataOutputStream(clientSocket.getOutputStream());
-			    d.writeUTF(schedulerName);
-			    d.writeLong(messageID);
-			    d.writeInt(data.length);
-			    d.write(data, 0, data.length);
-			    d.flush();
-			} catch (UnknownHostException e) {
-			    NoHeapRealtimeThread.print("Unknown host: ");
-			    NoHeapRealtimeThread.print(e.toString());
-			    System.exit(-1);
-			} catch (IOException e) {
-			    NoHeapRealtimeThread.print("Difficulty connecting to ");
-			    NoHeapRealtimeThread.print(host);
-			    NoHeapRealtimeThread.print(": ");
-			    NoHeapRealtimeThread.print(e.toString());
-			    System.exit(-1);
-			}
-		    }
-		};
-	} else {
-	    rt = new RealtimeThread() {
-		    public void run() {
-			((SchedulerComm)destination).handleDistributedEvent(schedulerName, messageID, data);
-		    }
-		};
-	}
-	long id = rt.getUID();
-	rt.start();
-	return id;
+    public long generateDistributedEvent(Object destination,
+					 long messageID, byte[] data) {
+	this.destination = destination;
+	this.messageID = messageID;
+	this.data = data;
+	clientThread.notify();
+	return clientThread.getUID();
     }
 }
 
