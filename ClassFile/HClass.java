@@ -25,7 +25,7 @@ import harpoon.Util.UniqueVector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.16 1998-08-02 09:39:12 cananian Exp $
+ * @version $Id: HClass.java,v 1.17 1998-08-03 00:49:33 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public class HClass {
@@ -772,6 +772,8 @@ public class HClass {
    */
   public boolean isPrimitive() {
     if (isArray()) return false;
+    if (this instanceof Primitive) return true;
+    /*
     if (this==HClass.Boolean) return true;
     if (this==HClass.Byte) return true;
     if (this==HClass.Short) return true;
@@ -781,6 +783,7 @@ public class HClass {
     if (this==HClass.Double) return true;
     if (this==HClass.Char) return true;
     if (this==HClass.Void) return true;
+    */
     return false;
   }
 
@@ -912,24 +915,27 @@ public class HClass {
   // which shouldn't be accessible any other way.  Hee-hee! I love it!
 
   /** The <code>HClass</code> object representing the primitive type boolean.*/
-  public static final HClass Boolean=forClass((new Object() { }).getClass());
+  public static final HClass Boolean=forClass((new Primitive() {}).getClass());
   /** The <code>HClass</code> object representing the primitive type byte.*/
-  public static final HClass Byte=forClass((new Object() { }).getClass());
+  public static final HClass Byte=forClass((new Primitive() { }).getClass());
   /** The <code>HClass</code> object representing the primitive type short.*/
-  public static final HClass Short=forClass((new Object() { }).getClass());
+  public static final HClass Short=forClass((new Primitive() { }).getClass());
   /** The <code>HClass</code> object representing the primitive type int.*/
-  public static final HClass Int=forClass((new Object() { }).getClass());
+  public static final HClass Int=forClass((new Primitive() { }).getClass());
   /** The <code>HClass</code> object representing the primitive type long.*/
-  public static final HClass Long=forClass((new Object() { }).getClass());
+  public static final HClass Long=forClass((new Primitive() { }).getClass());
   /** The <code>HClass</code> object representing the primitive type float.*/
-  public static final HClass Float=forClass((new Object() { }).getClass());
+  public static final HClass Float=forClass((new Primitive() { }).getClass());
   /** The <code>HClass</code> object representing the primitive type double.*/
-  public static final HClass Double=forClass((new Object() { }).getClass());
+  public static final HClass Double=forClass((new Primitive() { }).getClass());
   /** The <code>HClass</code> object representing the primitive type char.*/
-  public static final HClass Char=forClass((new Object() { }).getClass());
+  public static final HClass Char=forClass((new Primitive() { }).getClass());
   /** The <code>HClass</code> object representing the primitive type void.*/
-  public static final HClass Void=forClass((new Object() { }).getClass());
+  public static final HClass Void=forClass((new Primitive() { }).getClass());
+  /** Gratuitous inner interface */
+  interface Primitive { }
   // Dig *that*, Ken Arnold!
+
 
   static HClass[] copy(HClass[] src) {
     if (src.length==0) return src;
