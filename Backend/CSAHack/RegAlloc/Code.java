@@ -22,15 +22,15 @@ import java.util.Set;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.3 1999-11-16 22:08:48 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.4 2000-01-26 06:06:45 cananian Exp $
  */
-public class Code extends harpoon.Backend.Generic.Code {
+public class Code extends harpoon.IR.Assem.Code {
     TempMap tm;
     
     /** Creates a <code>Code</code>. */
     public Code(final HMethod parent, final Instr instrs, final Frame frame)
     {
-        super(parent, null, frame);
+        super(parent, frame);
 	// XXX: should clone instrs here.
 	RegAlloc ra = new RegAlloc(frame, this, instrs);
 	this.tm = ra;

@@ -14,7 +14,7 @@ import harpoon.IR.Tree.Print;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.6 1999-12-20 12:42:37 pnkfelix Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.7 2000-01-26 06:06:53 cananian Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -50,13 +50,13 @@ public abstract class CodeGen {
 
     // Helper methods to avoid package visibility problems in
     // Generic.Code
-
+    // CSA: I DON'T LIKE THIS!
     protected Instr getInstrs(harpoon.Backend.Generic.Code code) {
-	return code.instrs;
+	return code.getInstrs();
     }
     protected void setInstrs(harpoon.Backend.Generic.Code code,
 			     Instr instrs) {
-	code.instrs = instrs;
+	code.setInstrs(instrs);
     }
 
     /** Creates a <code>Instr</code> list from the

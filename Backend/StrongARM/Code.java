@@ -26,7 +26,7 @@ import java.util.HashSet;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.18 2000-01-26 04:38:42 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.19 2000-01-26 06:06:55 cananian Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -182,7 +182,7 @@ public class Code extends harpoon.Backend.Generic.Code {
 
     // overriding superclass implementation to add
     // architecture-dependant assertions (in an effort to fail-fast)
-    protected String toAssem(Instr instr, boolean mustGetRegs) {
+    public String toAssem(Instr instr) {
 	if (DEBUG) {
 	    // these constraint checks may be flawed; I'm getting
 	    // assertion failures on good code, i think...
@@ -218,7 +218,7 @@ public class Code extends harpoon.Backend.Generic.Code {
 	    }
 	} // end if(DEBUG)
 
-	return super.toAssem(instr, mustGetRegs);
+	return super.toAssem(instr);
     }
 
     public static boolean isValidConst(final int val) {
