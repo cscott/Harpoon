@@ -457,4 +457,8 @@ public class PriorityScheduler extends Scheduler {
 
     public void removeThread(RealtimeThread rt) {
     }   
+
+    public String toString() {
+	return "";
+    }
 }

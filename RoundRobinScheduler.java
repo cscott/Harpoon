@@ -122,4 +122,7 @@ public class RoundRobinScheduler extends Scheduler {
     protected void waitForNextPeriod(RealtimeThread rt) {
     }
 
+    public String toString() {
+	return "["+threadList+","+disabledThreads+"]";
+    }
 }

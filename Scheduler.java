@@ -174,7 +174,16 @@ public abstract class Scheduler {
     /** Switch every <code>microsecs</code> microseconds */
     protected final native void setQuanta(long microsecs);
 
-    /** Run the runnable in an atomic section */
+    /** Print out the status of the scheduler */
+    public final static void print() {
+	Scheduler sched = RealtimeThread.currentRealtimeThread().getScheduler();
+	if (sched == null) {
+	    sched = Scheduler.getDefaultScheduler();
+	}
+	NoHeapRealtimeThread.print("\n"+sched.getPolicyName()+": "+sched);
+    }
+
+   /** Run the runnable in an atomic section */
     public final static void atomic(Runnable run) {
 	int state = beginAtomic();
 	run.run();
@@ -185,12 +194,13 @@ public abstract class Scheduler {
 	if (Math.sqrt(4)==0) {
 	    chooseThread(0);
 	    noThreads();
-	    disableThread(0);
-	    enableThread(0);
+	    jDisableThread(null, 0);
+	    jEnableThread(null, 0);
 	    (new RealtimeThread()).schedule();
 	    (new RealtimeThread()).unschedule();
 	    new NoSuchMethodException();
 	    new NoSuchMethodException("");
+	    print();
 	}
     }
 
@@ -200,7 +210,7 @@ public abstract class Scheduler {
 		addToFeasibility(thread);
 		ImmortalMemory.instance().enter(new Runnable() {
 		    public void run() {
-			addThreadInC(thread, thread.threadID);
+			addThreadInC(thread, thread.getUID());
 		    }
 		});
 		addThread(thread);

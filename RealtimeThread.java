@@ -56,8 +56,8 @@ public class RealtimeThread extends Thread implements Schedulable {
     
     private Runnable target;
 
-    private static long nextThreadID = 0;
-    long threadID = ++nextThreadID;
+    private static long nextThreadID;
+    private long threadID; 
 
     public long getUID() {
 	return threadID;
@@ -74,7 +74,6 @@ public class RealtimeThread extends Thread implements Schedulable {
     /** Create a real-time thread. All parameter values are null. */
     public RealtimeThread() {
 	this((MemoryArea)null);
-	setup();
     }
 
     /** Create a real-time thread with the given <code>SchedulingParameters</code>.
@@ -197,6 +196,7 @@ public class RealtimeThread extends Thread implements Schedulable {
 	heapMemCount = 0;
 	topStack = null;
 	initScheduler();
+	threadID = ++nextThreadID;
     }
 
     void initScheduler() {

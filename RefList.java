@@ -13,6 +13,7 @@ import java.util.NoSuchElementException;
  */
 class RefList {
     final RefCountArea ref = RefCountArea.refInstance();
+
     class Elt {
 	Object obj;
 	Elt next;
@@ -24,65 +25,77 @@ class RefList {
 	 */
 
         Elt(Object obj, Elt next) {
-	    RefCountArea ref = RefList.this.ref;
-	    if (obj.memoryArea != ref) {
-		throw new RuntimeException("Invalid memoryArea for RefList object");
-	    }
-	    if (next != null) ref.INCREF(next); 
+	    if (next != null) RefList.this.ref.INCREF(next); 
+	    this.obj = obj;
+	    this.next = next;
 	}
     }
     
     Elt elt = null;
-    
+
     public RefList() {
     }
 
-    public void add(Object o) {
-	try {
-	    elt = (Elt)ref.newInstance(Elt.class, 
-				       new Class[] {Object.class, Elt.class},
-				       new Object[] {o, elt});
-	} catch (IllegalAccessException e) {
-	    throw new RuntimeException(e+" This can't happen!");
-	} catch (InstantiationException e) {
-	    throw new RuntimeException(e+" This can't happen!");
-	}
+    public void add(final Object o) {
+	ref.enter(new Runnable() { // These Runnables cause a memory leak...
+	    public void run() {
+		elt = new Elt(o, elt);
+	    }
+	});
     }
 
     public void add(final long l) {
-	RefList.this.ref.enter(new Runnable() {
+	ref.enter(new Runnable() {
 	    public void run() {
-		add(new Long(l));
+		elt = new Elt(new Long(l), elt);
 	    }
 	});
     }
 
     public void remove(final Object o) {
-	(new VTMemory()).enter(new Runnable() {
-	    public void run() {
-		Iterator it = iterator();
-		try {
-		    while (true) {
-			Object obj = it.next();
-			if (o.equals(obj)) {
-			    it.remove();
-			    break;
-			}
-		    }
-		} catch (NoSuchElementException e) {
-		    return;
+	Elt prev = elt;
+	for (Elt e = elt; e != null; prev = e, e = e.next) {
+	    if (o.equals(e.obj)) {
+		if (prev == elt) {
+		    elt = elt.next;
+		    ref.DECREF(prev);
+		} else {
+		    prev.next = elt.next;
+		    ref.DECREF(elt);
+		    ref.DECREF(elt);
 		}
+		break;
 	    }
-	});
+	}
     }
     
     public void remove(final long lo) {
-	(new VTMemory()).enter(new Runnable() {
-	    public void run() {
-		Long l = new Long(lo);
-		remove(l);
+	Elt prev = elt;
+	for (Elt e = elt; e != null; prev = e, e = e.next) {
+	    if ((e.obj instanceof Long)&&(((Long)e.obj).longValue()==lo)) {
+		if (prev == elt) {
+		    elt = elt.next;
+		    ref.DECREF(prev);
+		} else {
+		    prev.next = elt.next;
+		    ref.DECREF(elt);
+		    ref.DECREF(elt);
+		}
+		break;
 	    }
-	});
+	}
+    }
+
+    public boolean contains(final Object o) {
+	for (Elt e = elt; e != null; e = e.next)
+	    if (o.equals(e.obj)) return true;
+	return false;
+    }
+
+    public boolean contains(final long lo) {
+	for (Elt e = elt; e != null; e = e.next)
+	    if ((e.obj instanceof Long)&&(((Long)e.obj).longValue()==lo)) return true;
+	return false;
     }
 
     public boolean isEmpty() {
@@ -96,7 +109,7 @@ class RefList {
 	    
 	    public RefListIterator() {
 		if ((prev = curr = elt) != null) {
-		    RefList.this.ref.INCREF(curr);
+		    ref.INCREF(curr);
 		}
 	    }
 
@@ -130,26 +143,20 @@ class RefList {
 	    }
 
 	    public void remove() {
-		if (curr == null) {
-		    throw new NoSuchElementException();
-		}
-		curr.beingRemoved = true;
-		if (prev == curr) {
-		    if (elt != prev) {
-			throw new RuntimeException("Inconsistent state!");
-		    }
-		    curr = elt = elt.next;
-		    ref.DECREF(prev);
-		    prev = curr;
-		} else {
-		    prev.next = curr.next;
-		    ref.DECREF(curr);
-		    ref.DECREF(curr);
-		    curr = prev.next;
-		}		
+		throw new UnsupportedOperationException("Not implemented!");
 	    }
 	}
 	return new RefListIterator();
+    }
+
+    public String toString() {
+	String s = "[";
+	try {
+	    Iterator it = iterator();
+	    while (true) s += it.next();
+	} catch (NoSuchElementException e) {
+	    return s+"]";
+	}
     }
 }
 

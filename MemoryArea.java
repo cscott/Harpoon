@@ -299,7 +299,7 @@ public abstract class MemoryArea {
 	try {
 	    RealtimeThread.checkInit();
 	    RealtimeThread rt = RealtimeThread.currentRealtimeThread();
-	    Object o = new Object();
+	    Object o = new Object(); // This causes a memory leak
 	    o.memoryArea = shadow;
 	    rt.memoryArea().checkAccess(o);
 	    try {
