@@ -5,9 +5,12 @@ package harpoon.Backend.PreciseC;
 
 import harpoon.Analysis.Liveness;
 import harpoon.Analysis.Maps.Derivation;
+import harpoon.Analysis.Reachable;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HData;
+import harpoon.ClassFile.HDataElement;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Tree.ALIGN;
 import harpoon.IR.Tree.BINOP;
@@ -64,7 +67,7 @@ import java.util.TreeSet;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.19 2003-10-27 17:39:59 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.20 2003-11-14 08:24:52 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     // Support losing platforms (like, say, AIX) where multiple segments
@@ -88,16 +91,6 @@ public class TreeToC extends java.io.PrintWriter {
     // type with every temp, but that's too much work for me at the
     // moment.  Remember: laziness is one of a good programmer's
     // cardinal virtues. --CSA 9-jul-2001
-
-    // XXX: another buglet here:  the ToTree transformation can
-    // create dead code by converting CJUMP(0, iffalse, iftrue) to
-    // JUMP(iffalse) (similarly with non-zero constants).  If this
-    // happens, then eventually we'll try to translate the dead
-    // code.  If there is a CALL in the dead code, then we'll ask
-    // the LiveVars about it, and the LiveVars will assert because
-    // the CALL is not found in its basic block set.  We should
-    // probably attempt to skip translation of executable (ie non-data)
-    // Trees which are not live. --CSA 13-mar-2003
     public void translate(HCode hc) {
 	harpoon.IR.Tree.Code c = (harpoon.IR.Tree.Code) hc;
 	Tree root = (Tree)c.getRootElement();
@@ -106,11 +99,13 @@ public class TreeToC extends java.io.PrintWriter {
 	    (c, c.getGrapher(), tv.ud, Collections.EMPTY_SET);
 	tv.tempv = new TempVisitor(root, c.getTreeDerivation());
 	tv.inh = new IdentifyNoHandler(c);
+	tv.re = new Reachable(c, c.getGrapher());
 	translate(root);
 	tv.ud = null;
 	tv.live = null;
 	tv.tempv = null;
 	tv.inh = null;
+	tv.re = null;
     }
     public void translate(HData hd) { translate((Tree)hd.getRootElement()); }
     private void translate(Tree t) {
@@ -215,6 +210,8 @@ public class TreeToC extends java.io.PrintWriter {
 	TempVisitor tempv = null;
 	// support no-handler optimization
 	IdentifyNoHandler inh = null;
+	// note reachability, to work around unreachable code.
+	Reachable re = null;
 
 	// keep track of current alignment, section, method, etc.
 	ALIGN align = null;
@@ -376,7 +373,14 @@ public class TreeToC extends java.io.PrintWriter {
 	    else
 		pw.print(" ");
 	}
-	private void trans(Tree e) { updateLine(e); e.accept(this); }
+	private void trans(Tree e) {
+	    if (current_mode==CODE && e instanceof harpoon.IR.Tree.Stm &&
+		!(e instanceof HDataElement) && !re.isReachable(e)) {
+		//System.err.println("SKIPPING "+e+" in "+e.getFactory());
+		return; // skip unreachable *code*.
+	    }
+	    updateLine(e); e.accept(this);
+	}
 	private static int sizeof(Typed t) {
 	    if (t instanceof PreciselyTyped) {
 		PreciselyTyped pt = (PreciselyTyped) t;
