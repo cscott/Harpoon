@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.51 1998-10-11 19:41:44 cananian Exp $
+# $Id: GNUmakefile,v 1.52 1998-10-11 21:40:50 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -59,7 +59,7 @@ jar-install: jar
 
 VERSIONS: $(TARSOURCE) # collect all the RCS version ID tags.
 	@echo -n Compiling VERSIONS... ""
-	@grep -Fh ' $$Id: GNUmakefile,v 1.51 1998-10-11 19:41:44 cananian Exp $(TARSOURCE) > VERSIONS
+	@grep -Fh ' $$I''d: ' $(TARSOURCE) > VERSIONS
 	@echo done.
 
 cvs-add: needs-cvs
