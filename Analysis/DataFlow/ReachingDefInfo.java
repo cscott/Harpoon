@@ -5,6 +5,7 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Util.*;
 import harpoon.Temp.Temp;
+import harpoon.Analysis.BasicBlock;
 import harpoon.IR.Properties.UseDef;
 import harpoon.ClassFile.HCodeElement;
 import java.util.Enumeration;
@@ -15,7 +16,7 @@ import java.util.Map;
     <code>BasicBlock</code> in Reaching Definitions Analysis.
  * @author John Whaley
  * @author Felix Klock (pnkfelix@mit.edu)
- * @version $Id: ReachingDefInfo.java,v 1.1.2.7 1999-08-04 06:30:45 cananian Exp $
+ * @version $Id: ReachingDefInfo.java,v 1.1.2.8 1999-09-20 16:06:23 pnkfelix Exp $
 */ 
 class ReachingDefInfo {
 

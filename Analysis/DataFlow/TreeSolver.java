@@ -15,6 +15,7 @@ import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
 import harpoon.Analysis.EdgesIterator;
+import harpoon.Analysis.BasicBlock;
 
 /** 
  * A blatant rip-off of Whaley's <code>QuadSolver</code> class, used to 
@@ -24,7 +25,7 @@ import harpoon.Analysis.EdgesIterator;
  * <code>BasicBlockSolver</code> class. 
  * 
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeSolver.java,v 1.1.2.5 1999-08-05 05:12:40 duncan Exp $
+ * @version $Id: TreeSolver.java,v 1.1.2.6 1999-09-20 16:06:23 pnkfelix Exp $
  */
 public abstract class TreeSolver {
 

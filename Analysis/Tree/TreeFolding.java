@@ -4,7 +4,7 @@
 package harpoon.Analysis.Tree;
 
 import harpoon.Analysis.DataFlow.TreeSolver;
-import harpoon.Analysis.DataFlow.BasicBlock;
+import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.DataFlow.ForwardDataFlowBasicBlockVisitor;
 import harpoon.Analysis.DataFlow.ReversePostOrderIterator;
 import harpoon.Analysis.EdgesIterator;
@@ -71,7 +71,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.1.2.7 1999-09-08 21:33:00 cananian Exp $ 
+ * @version $Id: TreeFolding.java,v 1.1.2.8 1999-09-20 16:06:24 pnkfelix Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {

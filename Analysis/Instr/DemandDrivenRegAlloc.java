@@ -9,7 +9,7 @@ import harpoon.IR.Properties.UseDef;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Analysis.UseMap;
-import harpoon.Analysis.DataFlow.BasicBlock;
+import harpoon.Analysis.BasicBlock;
 
 import java.util.Hashtable;
 import java.util.Set;
@@ -25,7 +25,7 @@ import java.util.HashMap;
     <code>Instr</code>s in a <code>Code</code>.
 
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.7 1999-09-11 16:43:40 cananian Exp $ 
+    @version $Id: DemandDrivenRegAlloc.java,v 1.1.2.8 1999-09-20 16:06:23 pnkfelix Exp $ 
 */
 public class DemandDrivenRegAlloc extends RegAlloc {
 

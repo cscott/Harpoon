@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
+import harpoon.Analysis.BasicBlock;
 import harpoon.Util.WorkSet;
 
 import java.util.Set;
@@ -12,7 +13,7 @@ import java.util.Collections;
  * <code>InstrSolver</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InstrSolver.java,v 1.1.2.4 1999-06-24 02:02:39 pnkfelix Exp $
+ * @version $Id: InstrSolver.java,v 1.1.2.5 1999-09-20 16:06:23 pnkfelix Exp $
  */
 public final class InstrSolver  {
     

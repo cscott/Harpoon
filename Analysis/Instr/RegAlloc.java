@@ -17,7 +17,7 @@ import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.Backend.Generic.RegFileInfo.SpillException;
 import harpoon.Backend.Generic.InstrBuilder;
 import harpoon.Analysis.UseMap;
-import harpoon.Analysis.DataFlow.BasicBlock;
+import harpoon.Analysis.BasicBlock;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
@@ -47,7 +47,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.38 1999-09-14 23:46:28 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.39 1999-09-20 16:06:23 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = true;

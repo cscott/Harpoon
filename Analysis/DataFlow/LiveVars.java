@@ -5,6 +5,7 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.IR.Properties.UseDef;
 import harpoon.Temp.Temp;
+import harpoon.Analysis.BasicBlock;
 
 import java.util.Set;
 import java.util.Map;
@@ -17,11 +18,12 @@ import java.util.Iterator;
  * in the BasicBlocks passed to it.
  *
  * <BR> <B>NOTE:</B> This implementation is <B>very</B> inefficient and
- * space-heavy.  Look into using <code>BitString</code> as an internal
- * rep instead of <code>Set</code>s of <code>Temp</code>s.
+ * space-heavy.  Look into making a new type of <code>Set</code> that
+ * uses <code>BitString</code> as an internal rep instead of
+ * <code>HashSet</code>s of <code>Temp</code>s. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.1.2.8 1999-08-25 23:48:09 pnkfelix Exp $
+ * @version $Id: LiveVars.java,v 1.1.2.9 1999-09-20 16:06:23 pnkfelix Exp $
  */
 public class LiveVars extends BackwardDataFlowBasicBlockVisitor {
 

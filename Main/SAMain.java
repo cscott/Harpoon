@@ -19,11 +19,10 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Analysis.DataFlow.LiveVars;
 import harpoon.Analysis.DataFlow.InstrSolver;
-import harpoon.Analysis.DataFlow.BasicBlock;
+import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.Instr.RegAlloc;
-import harpoon.Backend.Generic.Frame;
-import harpoon.Backend.StrongARM.SAFrame;
-import harpoon.Backend.StrongARM.SACode;
+import harpoon.Backend.StrongARM.Frame;
+import harpoon.Backend.StrongARM.Code;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Backend.Maps.OffsetMap;
@@ -63,7 +62,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.32 1999-09-13 08:35:42 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.33 1999-09-20 16:06:25 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -114,11 +113,11 @@ public class SAMain extends harpoon.IR.Registration {
 	    classHierarchy = new QuadClassHierarchy(mainM, hcf);
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
-	frame = new SAFrame(classHierarchy);
+	frame = new Frame(classHierarchy);
 	offmap = frame.getOffsetMap();
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
     
-	HCodeFactory sahcf = SACode.codeFactory(hcf, frame);
+	HCodeFactory sahcf = Code.codeFactory(hcf, frame);
 
 	if (classHierarchyFilename != null) {
 	    try {
@@ -279,7 +278,7 @@ public class SAMain extends harpoon.IR.Registration {
 		private int id = 0;
 		public TempFactory tempFactory() { return null; }
 		public HCode getParent() { return null/*data*/; }// FIXME!
-		public Frame getFrame() { return frame; }
+		public harpoon.Backend.Generic.Frame getFrame() { return frame; }
 		public synchronized int getUniqueID() { return id++; }
 		public HMethod getMethod() { return null; }
 		public int hashCode() { return data.hashCode(); }

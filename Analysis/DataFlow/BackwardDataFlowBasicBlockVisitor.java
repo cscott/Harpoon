@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
+import harpoon.Analysis.BasicBlock;
 import java.util.Enumeration;
 import harpoon.Util.Worklist;
 
@@ -10,7 +11,7 @@ import harpoon.Util.Worklist;
  * <code>BackwardDataFlowBasicBlockVisitor</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.1.2.2 1999-06-18 18:27:25 pnkfelix Exp $
+ * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.1.2.3 1999-09-20 16:06:23 pnkfelix Exp $
  */
 public abstract class BackwardDataFlowBasicBlockVisitor 
     extends DataFlowBasicBlockVisitor {

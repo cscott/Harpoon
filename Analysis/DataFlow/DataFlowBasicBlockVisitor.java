@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
+import harpoon.Analysis.BasicBlock;
 import java.util.Enumeration;
 import harpoon.Util.Worklist;
 import harpoon.IR.Quads.*;
@@ -14,7 +15,7 @@ import harpoon.IR.Quads.*;
  * @author John Whaley 
  */
 
-public abstract class DataFlowBasicBlockVisitor extends BasicBlockVisitor {
+public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBlockVisitor {
 
     private static boolean DEBUG = false;
     public static void db(String s) { System.out.println(s); }

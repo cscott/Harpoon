@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
+import harpoon.Analysis.BasicBlock;
 import java.util.Enumeration;
 import harpoon.Util.Worklist;
 

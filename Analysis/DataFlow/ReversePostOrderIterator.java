@@ -9,6 +9,7 @@ package harpoon.Analysis.DataFlow;
  * @author  John Whaley
  */
 
+import harpoon.Analysis.BasicBlock;
 import harpoon.Util.EnumerationIterator;
 import harpoon.Util.Util;
 

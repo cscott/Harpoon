@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.50 1999-09-20 15:29:40 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.51 1999-09-20 16:06:25 pnkfelix Exp $
  */
 %%
 

@@ -11,6 +11,7 @@ package harpoon.Analysis.DataFlow;
 
 import java.util.Enumeration;
 import java.util.Stack;
+import harpoon.Analysis.BasicBlock;
 import harpoon.Util.*;
 import harpoon.IR.Quads.*;
 
@@ -21,7 +22,7 @@ public class ReversePostOrderEnumerator implements Enumeration {
 
   Stack order;
 
-  ReversePostOrderEnumerator(BasicBlock start) {
+  public ReversePostOrderEnumerator(BasicBlock start) {
     Stack enum_stack = new Stack();
     Stack bb_stack = new Stack();
     order = new Stack();
@@ -46,7 +47,7 @@ public class ReversePostOrderEnumerator implements Enumeration {
     }
   }
 
-  ReversePostOrderEnumerator(Quad start) {
+  public ReversePostOrderEnumerator(Quad start) {
     Stack enum_stack = new Stack();
     Stack bb_stack = new Stack();
     order = new Stack();

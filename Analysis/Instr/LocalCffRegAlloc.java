@@ -6,7 +6,7 @@ package harpoon.Analysis.Instr;
 import harpoon.Backend.Generic.Code;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.RegFileInfo.SpillException;
-import harpoon.Analysis.DataFlow.BasicBlock;
+import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.Instr.TempInstrPair;
 import harpoon.Analysis.Instr.RegAlloc.FskLoad;
 import harpoon.Analysis.Instr.RegAlloc.FskStore;
@@ -42,7 +42,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.42 1999-09-11 16:43:40 cananian Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.43 1999-09-20 16:06:23 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     

@@ -22,6 +22,7 @@ import harpoon.Util.HashSet;
 import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
 import harpoon.Analysis.EdgesIterator;
+import harpoon.Analysis.Quads.BasicBlock;
 
 public abstract class QuadSolver {
 

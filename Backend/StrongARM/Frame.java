@@ -48,7 +48,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.4 1999-09-20 15:29:40 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.5 1999-09-20 16:06:25 pnkfelix Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame implements AllocationInfo {
     private AllocationStrategy mas;
@@ -76,8 +76,8 @@ public class Frame extends harpoon.Backend.Generic.Frame implements AllocationIn
 
     public Label exitOutOfMemory() { return new Label("_EXIT_OOM"); }
     public Label GC()              { return new Label("_RUNTIME_GC"); }
-    public Temp  getMemLimit()     { return SARegFileInfo.TP; } 
-    public Temp  getNextPtr()      { return SARegFileInfo.HP; }
+    public Temp  getMemLimit()     { return RegFileInfo.TP; } 
+    public Temp  getNextPtr()      { return RegFileInfo.HP; }
     public Exp memAlloc(Exp size) { return mas.memAlloc(size); }
     public OffsetMap getOffsetMap() { return offmap; }
     public harpoon.Backend.Generic.Runtime getRuntime() { return runtime; }
@@ -90,7 +90,7 @@ public class Frame extends harpoon.Backend.Generic.Frame implements AllocationIn
         for (i = 0; i < paramdsts.length && i < 4; i++) {
             move = new MOVE(tf, src,
                             new TEMP(tf, src, paramtypes[i], paramdsts[i]),
-                            new TEMP(tf, src, paramtypes[i], SARegFileInfo.reg[i]));
+                            new TEMP(tf, src, paramtypes[i], RegFileInfo.reg[i]));
             if (prologue == null) {
                 prologue = move;
             } else {
