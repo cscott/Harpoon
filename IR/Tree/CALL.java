@@ -14,7 +14,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.14 1999-08-03 22:20:37 duncan Exp $
+ * @version $Id: CALL.java,v 1.1.2.15 1999-08-03 22:32:27 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -26,6 +26,7 @@ public class CALL extends INVOCATION {
     public CALL(TreeFactory tf, HCodeElement source,
 		Exp retval, Exp retex, Exp func, ExpList args) {
 	super(tf, source, retval, func, args);
+	this.retex = retex;
     }
   
     public boolean isNative() { return false; }
