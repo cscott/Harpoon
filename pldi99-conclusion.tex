@@ -1,0 +1,25 @@
+\section{Conclusion}
+
+This paper presents a new intermediate format, 
+Static Single Information (SSI) form. In addition
+to traditional variable definition points, SSI
+form provides new names for each variable at
+each point where the analysis may obtain
+information about the value in the variable. 
+The form provides excellent support for predicated analyses,
+which use the information present in conditional
+branches, because it enables the analyses to propagate
+information directly from information definition sites
+to information use sites.
+
+We have implemented a Java compiler that uses SSI
+form as its primary intermediate representation, and
+implemented a variety of analyses using the form.
+These analyses include redundant array bounds and null pointer check analyses, a 
+conditional constant
+propagation analysis, and a bit-width analysis. Our experimental
+results show that the analyses execute efficiently and extract
+information that can be used to significantly optimize the
+program. Furthermore, we believe that SSI form significantly
+simplified the efficient implementation of these analyses.
+

@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi99.tex,v 1.12 1999-11-11 23:51:56 cananian Exp $
+% $Id: pldi99.tex,v 1.13 1999-11-13 05:55:11 rinard Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -21,6 +21,7 @@
 \newcommand{\latleq}{\ensuremath{\sqsubseteq}}
 % what to use for executable semantics
 \newcommand{\sgt}{\sqsupset}%{\succ}
+\newcommand{\mycomment}[1]{}
 
 \title{\bf Static Single Information Form}
 
@@ -32,18 +33,19 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.12 $ $}{$ $Revision: 1.12 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.13 $ $}{$ $Revision: 1.13 $ $}
 \bibliographystyle{plain}
 
 \maketitle
 
 \input{pldi99-abstract}
 \input{pldi99-intro}
-\input{pldi99-example}
 \input{pldi99-tech}
 \input{pldi99-results}
+\input{pldi99-conclusion}
 
 \bibliography{harpoon}
 
 \appendix
+\input{pldi99-appendix}
 \end{document}
