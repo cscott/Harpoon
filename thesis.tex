@@ -1,7 +1,7 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.16 1999-06-10 14:46:17 cananian Exp $
+% $Id: thesis.tex,v 1.17 1999-06-10 15:39:35 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[12pt,notitlepage,twoside]{article}
+\documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
 \usepackage{comdef}
 
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.16 $ $}
+\date{\today \\ $ $Revision: 1.17 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.16 $ $}{$ $Revision: 1.16 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.17 $ $}{$ $Revision: 1.17 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -303,10 +303,61 @@ cycle-equivalancy algorithm described in \cite{johnson93:sese}.
 However, since the published algorithm is incorrect in a number of
 points, we will re-present it briefly here.
 
-\begin{myfigure}
+\begin{myfigure}\small\linespread{0.75}
 \begin{verbatim}
 Procedure cycle_equiv (G: CFG)
 {
+  /* Preprocessing */
+  Add edge from END to START in G;
+  Expand each node and undirect edges as described in section FOO;
+  Perform depth-first search of undirected graph as described in
+    section BAR, assigning preorder number to each node (low numbers
+    are closest to START, hence 'highest');
+
+  /* Compute CD equivalence classes */
+  for each node n, in reverse depth-first order, do {
+    /* Compute Hi(n) */
+    /*  hi0 is highest using backedges only */
+    hi0 := min{ Number(t) | (t,n) is a backedge };
+    /*  hi1 is highest through children */
+    hi1 := min{ Hi(c) | c is a child of n };
+|   /*  hi2 is lowest through children */
+|   hi2 := max{ Hi(c) | c is a child of n };
+
+    Hi(n) := min{ hi0, hi1 };
+
+    /* Compute BList(n) */
+    BList(n) := create ();
+
+    for each child c of n, do
+      BList(n) := concat (BList(n), BList(c));
+
+    for each backedge <d, n> from a descendant d of n to n, do
+      BList(n) := delete (BList(n), <d, n>);
+|   for each capping backedge <d, n> of n, do
+|     BList(n) := delete (BList(n), <d, n>);
+
+    for each backedge <n, a> from n to an ancestor a of n, do {
+      BList(n) := push (BList(n), <n, a>)
+      RecentSize(<n, a>) := -1; /* not a representative node */
+    }
+
+    if n has more than one child, then {
+      BList(n) := push (BList(n), <n, hi2>); /* capping backedge */
+|     RecentSize(<n, hi2>) := -1;
+|     add <n, hi2> to capping backedges list of hi2;
+    }
+
+    /* Compute Class (n) */
+    if n is a representative node, then {
+      if RecentSize (top (BList(n))) != size (BList(n)), then {
+        /* start a new equivalence class */
+        RecentSize (top (BList(n))) := size (BList(n));
+        RecentClass (top (BList(n))) := new-class-name();
+      }
+      Class (n) := RecentClass (top (Blist(n)));
+    }
+  } /* for each node */
 }
 \end{verbatim}
 \caption{The cycle-equivalency algorithm.}
