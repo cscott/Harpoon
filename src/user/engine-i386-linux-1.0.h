@@ -1,7 +1,7 @@
 /* ==== machdep.h ============================================================
  * Copyright (c) 1993 Chris Provenzano, proven@athena.mit.edu
  *
- * $Id: engine-i386-linux-1.0.h,v 1.1 2000-12-01 07:17:47 bdemsky Exp $
+ * $Id: engine-i386-linux-1.0.h,v 1.2 2000-12-04 19:16:47 bdemsky Exp $
  */
 #ifndef MACHDEP
 #define MACHDEP
@@ -24,7 +24,7 @@ volatile long temp = SEMAPHORE_SET;     \
 										\
 __asm__("xchgl %0,(%2)"                 \
         :"=r" (temp)                    \
-        :"0" (temp),"r" (lock));        \
+        :"0" (temp),"r" (lock):"memory");        \
 temp;                                   \
 })
 

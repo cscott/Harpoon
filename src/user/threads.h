@@ -1,6 +1,11 @@
 #ifndef U_THREADS
 #define U_THREADS
+
+#ifdef __arm
+#include "engine-arm32-linux-1.0.h"
+#else
 #include "engine-i386-linux-1.0.h"
+#endif
 
 struct thread_list {
   struct thread_list *prev;

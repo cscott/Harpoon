@@ -87,7 +87,13 @@ struct inflated_oobj {
 #endif
   /* locking information */
 #if WITH_HEAVY_THREADS || WITH_PTH_THREADS || WITH_USER_THREADS
+#if WITH_HEAVY_THREAD || WITH_PTH_THREADS
   pthread_t tid; /* can be zero, if no one has this lock */
+#endif
+#if WITH_USER_THREADS
+  struct thread_list * tid; /* can be zero, if no one has this lock */
+#endif
+
   jint nesting_depth; /* recursive lock nesting depth */
   pthread_mutex_t mutex; /* simple (not recursive) lock */
   pthread_cond_t  cond; /* condition variable */

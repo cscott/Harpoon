@@ -98,7 +98,6 @@ JNIEnv *FNI_GetJNIEnv(void) {
 
 #if WITH_USER_THREADS
 /** threaded implementation: JNIEnv is stored in per-thread memory. */
-static pthread_key_t FNI_JNIEnv_key;
 void FNI_InitJNIEnv(void) {
 }
 

@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.70 $)dnl
+AC_REVISION($Revision: 1.71 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -363,6 +363,8 @@ i?86) archdir=ix86 ;;
 mips) archdir=mips ;;
 *)    AC_MSG_ERROR([no port for $target_cpu]) ;;
 esac
+AM_CONDITIONAL(ARM32, test $archdir = arm32)
+AM_CONDITIONAL(I386, test $archdir = ix86)
 AC_SUBST(ARCHDIR) ARCHDIR=${archdir}
 
 dnl check to see if we have stack tracing code for this architecture

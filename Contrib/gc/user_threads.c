@@ -60,6 +60,9 @@
 #   undef pthread_join
 #endif
 
+#ifdef ARM32
+#define JB_SP __JMP_BUF_SP
+#endif
 
 void GC_thr_init();
 /*

@@ -1,6 +1,5 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
-#include "../user/engine-i386-linux-1.0.h"
 #include "threads.h"
 #include <errno.h>
 
