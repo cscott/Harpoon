@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.48 1999-07-17 11:55:50 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.49 1999-07-23 06:51:46 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -85,6 +85,8 @@ all:	java
 
 list:
 	@echo $(filter-out GNUmakefile,$(TARSOURCE))
+list-source:
+	@echo $(ALLSOURCE)
 list-packages:
 	@echo $(filter-out Test,$(ALLPKGS))
 list-nonempty-packages:
