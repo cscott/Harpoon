@@ -3,8 +3,6 @@ package harpoon.Analysis.DataFlow;
 /**
  * ReachingDefs
  *
- * Note: this is only an example.  You should never actually do reaching defs
- * for SSA form like this.
  *
  * Things that I want:
  * - Mapping from Quads to stuff (preferably unique, small integers)
@@ -20,32 +18,47 @@ import java.util.Iterator;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.HashMap;
+import harpoon.Analysis.EdgesIterator;
 import harpoon.Util.*;
 import harpoon.IR.Quads.*;
+import harpoon.IR.Properties.Edges;
+import harpoon.IR.Properties.UseDef;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 
+/** Performs Reaching Definitions analysis on any IR that implements
+    HCodeElement, Edges, and UseDef.
+*/
 public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
 
   Map bbToSets;
   Map tempsToPrsvs;
   int maxQuadID;
 
-  public ReachingDefs(HEADER q) {
-    bbToSets = new Hashtable();
-    this.maxQuadID = Solver.getMaxID(q);
-    initTempsToPrsvs(q);
-  }
-
+    /** ReachingDefs constructor.
+	<BR> <B>requires:</B> <code>q</code> implements
+	<code>HCodeElement</code> and <code>UseDef</code>.
+    */
+    public ReachingDefs(Edges q) {
+	bbToSets = new Hashtable();
+	this.maxQuadID = Solver.getMaxID((HCodeElement) q);
+	initTempsToPrsvs(q);
+    }
+    
   /**
    * Initializes the map between temps and their preserve sets.  The
    * preserve sets contain all quads that do NOT define the given
    * temp.
+
+   <BR> <B>requires:</B> <code>root</code> implements
+   <code>HCodeElement</code> and <code>UseDef</code>.
+   <BR> <B>effects:</B> TODO: fill in.
    */
-  void initTempsToPrsvs(Quad root) {
+  void initTempsToPrsvs(Edges root) {
     tempsToPrsvs = new HashMap();
-    QuadEnumerator q_en = new QuadEnumerator(root);
+    Enumeration q_en = new IteratorEnumerator(new EdgesIterator(root));
     while (q_en.hasMoreElements()) {
-      Quad q = (Quad)q_en.nextElement();
+      UseDef q = (UseDef)q_en.nextElement();
       Temp[] defs = q.def();
       for (int i=0, n=defs.length; i<n; ++i) {
 	Temp t = defs[i];
@@ -54,7 +67,7 @@ public class ReachingDefs extends ForwardDataFlowBasicBlockVisitor {
 	  tempsToPrsvs.put(t, bs = new BitString(maxQuadID));
 	  bs.setUpTo(maxQuadID);
 	}
-	bs.clear(q.getID());
+	bs.clear( ((HCodeElement)q).getID());
       }
     }
   }

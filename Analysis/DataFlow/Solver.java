@@ -11,10 +11,14 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.ListIterator;
 import harpoon.IR.Quads.*;
+import harpoon.IR.Properties.Edges;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Worklist;
 import harpoon.Util.Set;
 import harpoon.Util.HashSet;
 import harpoon.Util.Util;
+import harpoon.Util.IteratorEnumerator;
+import harpoon.Analysis.EdgesIterator;
 
 public abstract class Solver {
 
@@ -94,13 +98,20 @@ public abstract class Solver {
     }
 
   }
-
-  public static int getMaxID(Quad root) {
-    // this is utterly bogus.
+    
+    /** Function that finds the maximum ID for a set of HCodeElements.
+	<BR> <B>requires:</B> <code>root</code> and all
+	<code>HCodeElement</code>s reachable from <code>root</code>
+	implement <code>Edges</code>. 
+	<BR> <B>effects:</B> returns the largest ID of all the
+	<code>HCodeElement</code>s reachable from <code>root</code>.
+     */
+    public static int getMaxID(HCodeElement root) {
+    // this is utterly bogus. <-- Whaley, not FSK
     int max = 0;
-    QuadEnumerator q_en = new QuadEnumerator(root);
+    Enumeration q_en = new IteratorEnumerator(new EdgesIterator((Edges)root));
     while (q_en.hasMoreElements()) {
-      int id = ((Quad)(q_en.nextElement())).getID();
+      int id = ((HCodeElement)(q_en.nextElement())).getID();
       Util.assert(id >= 0);
       max = (id > max) ? id : max;
     }
