@@ -35,7 +35,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.16 2000-02-08 08:40:10 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.17 2000-02-13 04:39:35 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -81,6 +81,7 @@ public class ToAsync {
 		selone=(QuadSSI) async_todo.pop();
 	    final QuadLiveness ql = new QuadLiveness(selone);
 	    final TypeMap typemap=new TypeInfo(selone);
+
 	    System.out.println("ToAsync is running AsyncCode on "+selone);
 	    AsyncCode.buildCode(selone, old2new, async_todo,
 				ql,blockingcalls,ucf,  bm, hc.getMethod(), 

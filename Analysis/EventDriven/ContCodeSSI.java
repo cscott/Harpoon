@@ -1,4 +1,4 @@
-// ContCode.java, created Wed Nov  3 21:43:30 1999 by kkz
+// ContCodeSSI.java, created Wed Nov  3 21:43:30 1999 by kkz
 // Copyright (C) 1999 Karen K. Zee <kkzee@alum.mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.EventDriven;
@@ -9,31 +9,36 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
 
+
 import java.util.Iterator;
 import java.util.Map;
 
 /**
- * <code>ContCode</code> builds the code for a <code>Continuation</code>
+ * <code>ContCodeSSI</code> builds the code for a <code>Continuation</code>
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContCode.java,v 1.1.2.3 2000-02-13 04:39:35 bdemsky Exp $
+ * @version $Id: ContCodeSSI.java,v 1.1.2.1 2000-02-13 04:39:35 bdemsky Exp $
  */
-public class ContCode extends harpoon.IR.Quads.QuadRSSI {
+public class ContCodeSSI extends harpoon.IR.Quads.QuadSSI  {
 
-    /** Creates a <code>ContCode</code> for an <code>HMethod</code> using
+    /** Creates a <code>ContCodeSSI</code> for an <code>HMethod</code> using
      *  the <code>HCode</code> from which we want to build the continuation
      *  and the <code>CALL</code> at which we want the continuation built.
      *  The <code>HCode</code> must be <code>quad-no-ssa</code>.
      *
      */
-    public ContCode(HMethod parent) {
+    public ContCodeSSI(HMethod parent) {
         super(parent, null);
+    }
+    public ContCodeSSI(QuadNoSSA qns) {
+	super((QuadNoSSA)qns);
     }
 
     /**
@@ -41,7 +46,7 @@ public class ContCode extends harpoon.IR.Quads.QuadRSSI {
      * @return the name of the <code>parent</code>'s code view.
      */
     public String getName() {
-	return harpoon.IR.Quads.QuadRSSI.codename;
+	return harpoon.IR.Quads.QuadSSI.codename;
     }
 
     public void quadSet(Quad q) {

@@ -38,8 +38,10 @@ import harpoon.IR.Quads.OPER;
 import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadFactory;
 import harpoon.IR.Quads.QuadSSI;
+import harpoon.IR.Quads.QuadRSSI;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
 import harpoon.IR.Quads.TYPECAST;
@@ -60,7 +62,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.52 2000-02-08 08:40:09 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.53 2000-02-13 04:39:35 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -166,6 +168,13 @@ public class AsyncCode {
 					       typemap);
 	}
 
+	void addCode(HMethod hm, HCode hc) {
+	    if (clonevisit.needsRepair()) {
+		ucf.put(hm,hc);
+	    } else
+		ucf.put(hm,new ContCodeSSI(new ContCodeNoSSA((QuadSSI)hc)));
+	}
+
 	public void visit(Quad q) {
 	    System.out.println("ERROR: "+q+" in ContVisitory!!!");
 	}
@@ -182,7 +191,7 @@ public class AsyncCode {
 	    System.out.println("Reset clone visitor");
 	    copy(q,-1);
 	    System.out.println("Finished copying");
-	    ucf.put(nhm, clonevisit.getCode());
+	    addCode(nhm, clonevisit.getCode());
 	}
 
 	public void visit(CALL q) {
@@ -205,13 +214,13 @@ public class AsyncCode {
 	    copy(q,0);
 	    System.out.println("Finished resume copying");
 	    //addEdges should add appropriate headers
-	    ucf.put(resume, clonevisit.getCode());
+	    addCode(resume, clonevisit.getCode());
 	    //Exception method
 	    clonevisit.reset(exception, q.getFactory().tempFactory(), true);
 	    copy(q,1);
 	    System.out.println("Finished exception copying");
 	    //addEdges should add appropriate headers
-	    ucf.put(exception, clonevisit.getCode());
+	    addCode(exception, clonevisit.getCode());
 	}
 
 	//copies the necessary quads from the original HCode

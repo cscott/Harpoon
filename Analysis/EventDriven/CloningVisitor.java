@@ -55,19 +55,21 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.Arrays;
+import java.util.Collections;
 import java.lang.reflect.Modifier;
 /**
  * <code>CloningVisitor</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.4 2000-02-08 09:10:48 bdemsky Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.5 2000-02-13 04:39:35 bdemsky Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;
     CachingCodeFactory ucf;
     ClassHierarchy ch;
     CloningTempMap ctmap;
-    ContCode hcode;
+    harpoon.IR.Quads.Code hcode;
     HashMap quadmap;
     HCode hc;
     HMethod mroot;
@@ -80,6 +82,8 @@ public class CloningVisitor extends QuadVisitor {
     QuadLiveness liveness;
     WorkSet linkFooters;
     TypeMap typemap;
+    QuadFactory qf;
+    boolean stillokay;
 
     public CloningVisitor(Set blockingcalls, Set cont_todo,
 			  Map cont_map, Map env_map, 
@@ -111,13 +115,15 @@ public class CloningVisitor extends QuadVisitor {
 
     public void reset(HMethod nhm, TempFactory otf, boolean isCont) {
 	followchildren=true;
-	hcode=new ContCode(nhm);
-	ctmap=new CloningTempMap(otf,hcode.getFactory().tempFactory());
+	hcode=new ContCodeSSI(nhm);
+	qf=((ContCodeSSI)hcode).getFactory();
+	stillokay=methodstatus;
+	ctmap=new CloningTempMap(otf,qf.tempFactory());
 	quadmap=new HashMap();
 	this.isCont=isCont;
 	this.linkFooters=new WorkSet();
 	if (isCont)
-	    tthis=new Temp(hcode.getFactory().tempFactory());
+	    tthis=new Temp(qf.tempFactory());
 	else
 	    tthis=null;
 	phiset=new WorkSet();
@@ -132,11 +138,11 @@ public class CloningVisitor extends QuadVisitor {
 	return followchildren;
     }
     
-    HClass getEnv(Quad q) {
+    HClass getEnv(CALL q) {
 	if (env_map.containsKey(q))
 	    return (HClass) env_map.get(q);
 	HClass nhclass=(new EnvBuilder(ucf, hc, 
-				       q, liveness.getLiveInandOutArray(q),linker,
+				       q, getEnvTemps(q),linker,
 				       typemap)).makeEnv();
 	env_map.put(q, nhclass);
 	return nhclass;
@@ -145,7 +151,6 @@ public class CloningVisitor extends QuadVisitor {
     
     //Adds edges between quads and environment loading code
     public void addEdges(Quad q, int resumeexception, Set dontfollow) {
-	QuadFactory qf=hcode.getFactory();
 	FOOTER footer=new FOOTER(qf, q, linkFooters.size()+1);
 	Iterator fiterator=linkFooters.iterator();
 	int count=1;
@@ -157,10 +162,11 @@ public class CloningVisitor extends QuadVisitor {
 	    //Need to load environment object and result codes
 	    
 	    addEdges(q.next(resumeexception),dontfollow);
-	    HEADER header=buildEnvironmentExtracter(q, resumeexception,footer);
+	    HEADER header=buildEnvironmentExtracter((CALL)q, resumeexception,footer);
 	    
 	    fixphis();
-	    hcode.quadSet(header);
+	    ((ContCodeSSI)hcode).quadSet(header);
+
 	} else {
 	    //Doing addEdges for HEADER
 	    Quad.addEdge((Quad)quadmap.get(q),1,
@@ -169,14 +175,16 @@ public class CloningVisitor extends QuadVisitor {
 	    //add in new footer
 	    Quad.addEdge((Quad) quadmap.get(q),0, footer,0);
 	    fixphis();
-	    hcode.quadSet((Quad)quadmap.get(q));
+	   
+	    ((ContCodeSSI)hcode).quadSet((Quad)quadmap.get(q));
+	   
 	}
     }
 
     public void visit(RETURN q) {
 	if (methodstatus) {
 	    //We are just doing swaps on this method, so just clone
-	    Object nq=q.clone(hcode.getFactory(), ctmap);
+	    Object nq=q.clone(qf, ctmap);
 	    quadmap.put(q, nq);
 	    linkFooters.add(nq);
 	} else if (isCont)
@@ -187,10 +195,10 @@ public class CloningVisitor extends QuadVisitor {
     }
 	
     public void visit(THROW q) {
-	TempFactory tf=hcode.getFactory().tempFactory();
+	TempFactory tf=qf.tempFactory();
 	if (methodstatus) {
 	    //We are just doing swaps on this method, so just clone
-	    Object nq=q.clone(hcode.getFactory(), ctmap);
+	    Object nq=q.clone(qf, ctmap);
 	    quadmap.put(q, nq);
 	    linkFooters.add(nq);
 	} else if (isCont)
@@ -202,12 +210,12 @@ public class CloningVisitor extends QuadVisitor {
     
     public void visit(Quad q) {
 	followchildren=true;
-	quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
+	quadmap.put(q, q.clone(qf, ctmap));
     }
     
     public void visit(PHI q) {
 	followchildren=true;
-	Object qc=q.clone(hcode.getFactory(), ctmap);
+	Object qc=q.clone(qf, ctmap);
 	quadmap.put(q, qc);
 	phiset.add(qc);
     }
@@ -248,8 +256,8 @@ public class CloningVisitor extends QuadVisitor {
 		if (!done.contains(next[0]))
 		    todo.push(next[0]);
 		Quad cn=(Quad)quadmap.get(next[0]);
-		//add the edge in
-		Quad cnq2=cnq.next(0);
+		//add the edge in [phi node]
+		Quad cnq2=cnq.next(0).next(0);
 		Quad.addEdge(cnq2,0,cn,nq.nextEdge(0).which_pred());
 		
 		//1 edge is as normal
@@ -270,8 +278,7 @@ public class CloningVisitor extends QuadVisitor {
 	}
     }
 
-    private HEADER buildEnvironmentExtracter(Quad q, int resumeexception, Quad footer){
-	QuadFactory qf=hcode.getFactory();
+    private HEADER buildEnvironmentExtracter(CALL q, int resumeexception, Quad footer){
 	TempFactory tf=qf.tempFactory();
 	//-----------------------------------------------------------------
 	//Build HEADER
@@ -320,26 +327,57 @@ public class CloningVisitor extends QuadVisitor {
 	Temp suppress =
 	    (resumeexception == 0) ?
 	    ((CALL)q).retval() : ((CALL)q).retex();
-	Temp[] liveout=liveness.getLiveInandOutArray(q);
-	
+	Quad qnext=q.next(resumeexception);
+	Set livein;
+	if (qnext.prevLength()!=1) {
+	    PHI phi=(PHI)qnext;
+	    livein=liveness.getLiveOut(qnext);
+	    int edge=q.nextEdge(resumeexception).which_pred();
+	    for (int j=0;j<phi.numPhis();j++) {
+		livein.remove(phi.dst(j));
+	    }
+	    for (int j=0;j<phi.numPhis();j++) {
+		livein.add(phi.src(j,edge));
+	    }
+	} else
+	    livein=liveness.getLiveIn(qnext);
+	Temp[] liveenv=getEnvTemps(q);
 	Quad prev = get;
 	HField[] envfields=getEnv(q).getDeclaredFields();
 
 	
 	//Build string of CONST's and GET's.
 	    
-	for(int i=0,j=0; i<liveout.length; i++) {
-	    if (suppress == null || !suppress.equals(liveout[i])) {
-		Quad ng =(typemap.typeMap(q, liveout[i])!=HClass.Void)? 
-		    ((Quad)new GET(qf, first, ctmap.tempMap(liveout[i]),
-				   envfields[j], tenv)):
-		    ((Quad)new CONST(qf, first, ctmap.tempMap(liveout[i]),
-				     null, HClass.Void));
+
+	for (Iterator ii=livein.iterator();ii.hasNext();) {
+	    Temp t=(Temp)ii.next();
+	    if (suppress == null || !suppress.equals(t)) {
+		Quad ng;
+		Temp ts=t;
+		if (typemap.typeMap(q, t)!=HClass.Void) {
+		    for (int k=0;k<q.numSigmas();k++)
+			if (q.dst(k,resumeexception)==ts) {
+			    ts=q.src(k);
+			    break;
+			}
+		    int index=-1;
+		    for (int j=0;j<liveenv.length;j++)
+			if (liveenv[j]==ts) {
+			    index=j;
+			    break;
+			}
+		    if (index==-1)
+			hc.print(new java.io.PrintWriter(System.out, true));
+		    Util.assert(index!=-1, "Couldn't find "+ts+ " of "+q+" in "+liveenv);
+		    ng=new GET(qf, first, ctmap.tempMap(t),
+			       envfields[index], tenv);
+		} else {
+		    ng=new CONST(qf, first, ctmap.tempMap(t),
+				 null, HClass.Void);
+		}
 		Quad.addEdge(prev, 0, ng, 0);
 		prev = ng;
 	    }
-	    if (typemap.typeMap(q,liveout[i])!=HClass.Void)
-		j++;
 	}
 	//-----------------------------------------------------------------
 	// Typecast the argument to resume if necessary
@@ -349,7 +387,7 @@ public class CloningVisitor extends QuadVisitor {
 	if (!((CALL)q).method().getReturnType().isPrimitive()) {
 	    TYPECAST tc = 
 		new TYPECAST(qf, first, 
-			     ((CALL)q).retval(),
+			     ctmap.tempMap(((CALL)q).retval()),
 			     ((CALL)q).method().getReturnType());
 	    Quad.addEdge(prev, 0, tc, 0);
 	    prev = tc;
@@ -393,13 +431,13 @@ public class CloningVisitor extends QuadVisitor {
     }
 
     private void buildReturnContinuation(Quad q, Temp retthrowtemp, boolean isReturn) {
-	TempFactory tf=hcode.getFactory().tempFactory();
+	TempFactory tf=qf.tempFactory();
 	//--------------------------------------------------------------------
 	//build GET next Quad
 	HClass hclass=hcode.getMethod().getDeclaringClass();
 	HField hfield=hclass.getField("next");
 	Temp tnext=new Temp(tf);
-	GET get=new GET(hcode.getFactory(),q,
+	GET get=new GET(qf,q,
 			tnext, hfield, tthis);
 	
 	//---------------------------------------------------------------------
@@ -408,25 +446,27 @@ public class CloningVisitor extends QuadVisitor {
 	//of calling resume
 	Temp t21=null,t22=null;
 	Quad nq=get;
+	Temp retthrow=(retthrowtemp==null)?null:ctmap.tempMap(retthrowtemp);
 	if (needsCheck()) {
 	    Temp tnull=new Temp(tf);
 	    CONST qconst=
-		new CONST(hcode.getFactory(), q, tnull, null, HClass.Void);
+		new CONST(qf, q, tnull, null, HClass.Void);
 	    Quad.addEdge(nq,0,qconst,0);
 	    Temp tcomp=new Temp(tf);
 	    OPER qoper=
-		new OPER(hcode.getFactory(),q,Qop.ACMPEQ,tcomp, 
+		new OPER(qf,q,Qop.ACMPEQ,tcomp, 
 			 new Temp[] {tnext, tnull});
 	    Quad.addEdge(qconst, 0, qoper, 0);
 	    //Build temps for SSI sigma function
 	    Temp t1=new Temp(tf),t2=new Temp(tf);
 	    CJMP cjmp=(isReturn&&hc.getMethod().getReturnType()==HClass.Void)?
-		new CJMP(hcode.getFactory(), q, tcomp, new Temp[][]{{t1,t2}},
+		new CJMP(qf, q, tcomp, new Temp[][]{{t1,t2}},
 		new Temp[]{tnext}):
-		new CJMP(hcode.getFactory(), q, tcomp, new Temp[][]{{t1,t2},{t21=new Temp(tf),t22=new Temp(tf)}},
-		new Temp[]{tnext,ctmap.tempMap(retthrowtemp)});
+		new CJMP(qf, q, tcomp, new Temp[][]{{t1,t2},{t21=new Temp(tf),t22=new Temp(tf)}},
+		new Temp[]{tnext,retthrow});
 	    //Note SSI renaming
 	    tnext=t1;
+	    retthrow=t21;
 	    Quad.addEdge(qoper, 0, cjmp, 0);
 	    nq=cjmp;
 	}
@@ -440,8 +480,8 @@ public class CloningVisitor extends QuadVisitor {
 	    HClass throwable=linker.forName("java.lang.Throwable");
 	    HMethod resume=hfield.getType().getMethod("exception",
 						      new HClass[] {throwable});
-	    call=new CALL(hcode.getFactory(), q, resume,
-			  new Temp[] {tnext,t21},null,retex1,
+	    call=new CALL(qf, q, resume,
+			  new Temp[] {tnext,retthrow},null,retex1,
 			  true,false,new Temp[0]);
 	} else if (hc.getMethod().getReturnType()!=HClass.Void) {
 	    HMethod resume=(hc.getMethod().getReturnType().isPrimitive())?
@@ -450,13 +490,13 @@ public class CloningVisitor extends QuadVisitor {
 		hfield.getType().getMethod("resume",
 					   new HClass[] {linker.forName("java.lang.Object")});
 	    //***** Tailcall eventually
-	    call=new CALL(hcode.getFactory(), q, resume,
-			  new Temp[] {tnext,t21},null,retex1,
+	    call=new CALL(qf, q, resume,
+			  new Temp[] {tnext,retthrow},null,retex1,
 			  true,false,new Temp[0]);
 	} else {
 	    HMethod resume=hfield.getType().getMethod("resume", new HClass[0]);
 	    //***** Tailcall eventually
-	    call=new CALL(hcode.getFactory(), q, resume,
+	    call=new CALL(qf, q, resume,
 			  new Temp[] {tnext}, null, retex1,
 			  true, false, new Temp[0]);
 	}
@@ -466,8 +506,8 @@ public class CloningVisitor extends QuadVisitor {
 	
 	Quad.addEdge(nq,0,call,0);
 	Temp retex=isReturn?retex1:new Temp(tf);
-	THROW qthrow=new THROW(hcode.getFactory(),q,retex);
-	RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
+	THROW qthrow=new THROW(qf,q,retex);
+	RETURN qreturn=new RETURN(qf,q,null);
 	if (isReturn)
 	    Quad.addEdge(call,1,qthrow,0);
 	else
@@ -480,8 +520,8 @@ public class CloningVisitor extends QuadVisitor {
 	//otherwise just link in 0 edge of the call to resume
 	    
 	if (needsCheck()) {
-	    PHI phi=isReturn?new PHI(hcode.getFactory(), q, new Temp[0], 2):
-		new PHI(hcode.getFactory(),q, new Temp[] {retex}, new Temp[][]{{t22,retex1}},2);
+	    PHI phi=isReturn?new PHI(qf, q, new Temp[0], 2):
+		new PHI(qf,q, new Temp[] {retex}, new Temp[][]{{t22,retex1}},2);
 	    Quad.addEdge(nq, 1, phi, 0);
 	    if (isReturn) {
 		Quad.addEdge(call,0,phi,1);
@@ -499,7 +539,7 @@ public class CloningVisitor extends QuadVisitor {
     }
     
     private void buildDoneContinuation(Quad q, Temp retthrowtemp, boolean isReturn) {
-	TempFactory tf=hcode.getFactory().tempFactory();
+	TempFactory tf=qf.tempFactory();
 	//---------------------------------------------------------------------
 	//Build NEW temp for DoneContinuation
 	
@@ -509,7 +549,7 @@ public class CloningVisitor extends QuadVisitor {
 	HClass continuation = linker.forName
 	    ("harpoon.Analysis.ContBuilder." + pref + "DoneContinuation");
 	Temp newt=new Temp(tf);
-	NEW newq=new NEW(hcode.getFactory(),q,newt, continuation);
+	NEW newq=new NEW(qf,q,newt, continuation);
 	
 	
 	//---------------------------------------------------------------------
@@ -526,12 +566,12 @@ public class CloningVisitor extends QuadVisitor {
 	if (retthrowtemp!=null) {
 	    //***** Tailcall eventually
 	    Temp nretval=ctmap.tempMap(retthrowtemp);
-	    call=new CALL(hcode.getFactory(), q, constructor,
+	    call=new CALL(qf, q, constructor,
 			  new Temp[] {newt,nretval}, null,retex,
 			  false,false,new Temp[][]{{t1,t2}},new Temp[]{newt});
 	} else {
 	    //***** Tailcall eventually
-	    call=new CALL(hcode.getFactory(), q, constructor,
+	    call=new CALL(qf, q, constructor,
 			  new Temp[] {newt}, null, retex,
 			  false, false, new Temp[][]{{t1,t2}},new Temp[]{newt});
 	}
@@ -540,10 +580,10 @@ public class CloningVisitor extends QuadVisitor {
 	//Add return and throw quads
 	    
 	Quad.addEdge(newq,0,call,0);
-	THROW qthrow=new THROW(hcode.getFactory(),q,retex);
+	THROW qthrow=new THROW(qf,q,retex);
 	
 	Quad.addEdge(call,1,qthrow,0);
-	RETURN qreturn=new RETURN(hcode.getFactory(),q,t1);
+	RETURN qreturn=new RETURN(qf,q,t1);
 	Quad.addEdge(call,0,qreturn,0);
 	linkFooters.add(qthrow);
 	linkFooters.add(qreturn);
@@ -645,13 +685,13 @@ public class CloningVisitor extends QuadVisitor {
     //---------------------------------------------------------
     //Need to ->SSI
     private void handleBlocking(CALL q) {
-	TempFactory tf=hcode.getFactory().tempFactory();
+	TempFactory tf=qf.tempFactory();
 	//---------------------------------------------------------------------
 	//Build array of temps to pass into Enviroment's constructor
 	//We need it to determine what temps we will need
 	//Then build dst array for sigma function
 
-	Temp src[]=getEnvTemps(q);
+	Temp src[]=map(ctmap,getEnvTemps(q));
 	Temp dst[][]=new Temp[src.length][2];
 	for (int i=0;i<src.length;i++) {
 	    dst[i][0]=new Temp(tf);
@@ -670,14 +710,14 @@ public class CloningVisitor extends QuadVisitor {
 	Temp retcont=new Temp(tf);
 	HMethod calleemethod=(HMethod)old2new.get(q.method());
 
-	CALL call=new CALL(hcode.getFactory(),q,
+	CALL call=new CALL(qf,q,
 			   calleemethod, newt,
 			   retcont,retex[0], q.isVirtual(), q.isTailCall(),
 			   dst,src);
 	
 	//---------------------------------------------------------------------
 	//Build phi node for exception handler
-	PHI phi=new PHI(hcode.getFactory(), q, new Temp[]{pretex}, 
+	PHI phi=new PHI(qf, q, new Temp[]{pretex}, 
 	new Temp[][]{retex}, isCont?5:4);
 	Quad.addEdge(call,1,phi,0);
 		
@@ -693,10 +733,10 @@ public class CloningVisitor extends QuadVisitor {
 	//---------------------------------------------------------------------
 	//Build Environment NEW & CALL to init
 	HClass env=getEnv(q);
-	NEW envq=new NEW(hcode.getFactory(), q, tenv, env);
+	NEW envq=new NEW(qf, q, tenv, env);
 	Quad.addEdge(call,0,envq,0);
 	Temp t1=new Temp(tf),t2=new Temp(tf),t21=new Temp(tf),t22=new Temp(tf);
-	CALL callenv=new CALL(hcode.getFactory(), q, env.getConstructors()[0],
+	CALL callenv=new CALL(qf, q, env.getConstructors()[0],
 			      params, null, retex[1], false, false, 
 			      new Temp[][]{{t1,t2},{t21,t22}},
 			      new Temp[] {tenv,retcont});
@@ -709,13 +749,13 @@ public class CloningVisitor extends QuadVisitor {
 	
 	Temp tcont=new Temp(tf);
 	HClass contclass=(HClass)cont_map.get(q);
-	NEW newc=new NEW(hcode.getFactory(), q, tcont, contclass);
+	NEW newc=new NEW(qf, q, tcont, contclass);
 	Quad.addEdge(callenv,0,newc,0);
 	HClass environment=linker.forName("harpoon.Analysis.EnvBuilder.Environment");
 	HConstructor call2const=contclass.getConstructor(new HClass[]{
 	    environment});
 	Temp nt1=new Temp(tf),nt2=new Temp(tf),nt21=new Temp(tf),nt22=new Temp(tf);
-	CALL call2=new CALL(hcode.getFactory(),q,
+	CALL call2=new CALL(qf,q,
 			    call2const,
 			    new Temp[] {tcont, tenv}, null, retex[2], 
 			    false, false, new Temp[][]{{nt1,nt2},{nt21,nt22}},
@@ -734,7 +774,7 @@ public class CloningVisitor extends QuadVisitor {
 	    calleemethod.getReturnType().getMethod("setNext",nextarray);
 	Util.assert(setnextmethod!=null,"no setNext method found");
 	Temp nnt1=new Temp(tf),nnt2=new Temp(tf);
-	CALL call3=new CALL(hcode.getFactory(), q,
+	CALL call3=new CALL(qf, q,
 			    setnextmethod, new Temp[] {retcont, tcont},
 			    null, retex[3], true, false, 
 			    new Temp[][]{{nnt1,nnt2}},new Temp[]{tcont});
@@ -752,7 +792,7 @@ public class CloningVisitor extends QuadVisitor {
 	    Temp tnext=new Temp(tf);
 	    HClass hclass=hcode.getMethod().getDeclaringClass();
 	    HField hfield=hclass.getField("next");
-	    GET get=new GET(hcode.getFactory(),q,
+	    GET get=new GET(qf,q,
 			    tnext, hfield, tthis);
 	    Quad.addEdge(call3,0,get,0);
 	    String pref2 =
@@ -761,50 +801,64 @@ public class CloningVisitor extends QuadVisitor {
 		contclass.getMethod("setNext",
 				    new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref2+"ResultContinuation")});
 	    Util.assert(setnextmethod2!=null,"no setNext method found");
-	    CALL call4=new CALL(hcode.getFactory(), q,
+	    CALL call4=new CALL(qf, q,
 				setnextmethod2, new Temp[] {tcont, tnext},
 				null, retex[4], true, false, new Temp[0]);
 	    Quad.addEdge(get,0,call4,0);
 	    Quad.addEdge(call4,1,phi,4);
-	    RETURN returnq=new RETURN(hcode.getFactory(), q, null);
+	    RETURN returnq=new RETURN(qf, q, null);
 	    Quad.addEdge(call4,0,returnq,0);
 	    linkFooters.add(returnq);
 	} else {
-	    RETURN returnq=new RETURN(hcode.getFactory(),q,tcont);
+	    RETURN returnq=new RETURN(qf,q,tcont);
 	    Quad.addEdge(call3, 0, returnq,0);
 	    linkFooters.add(returnq);
 	}
 	//---------------------------------------------------------------
 	//Do THROW of exceptions from phi node
 	
-	THROW throwq=new THROW(hcode.getFactory(),q,pretex);    
+	THROW throwq=new THROW(qf,q,pretex);    
 	Quad.addEdge(phi,0,throwq,0);
 	linkFooters.add(throwq);
 	quadmap.put(q,call);
 	followchildren=false;
     }
-
-    private Temp[] getEnvTemps(Quad q) {
-	Temp[] liveoutx = liveness.getLiveInandOutArray(q);
-	int count=0;
-	for (int ii=0;ii<liveoutx.length;ii++)
-	    if (typemap.typeMap(q,liveoutx[ii])!=HClass.Void)
-		count++;
-	Temp [] params = new Temp[count];
-	for (int j=0,i=0;j<liveoutx.length;j++) {
-	    if (typemap.typeMap(q,liveoutx[j])!=HClass.Void)
-		params[i++]=ctmap.tempMap(liveoutx[j]); 
+    //Knows about SSI
+    private Temp[] getEnvTemps(CALL q) {
+	Set liveoutx = liveness.getLiveOut(q);
+	Set livein = liveness.getLiveIn(q);
+	WorkSet env=new WorkSet();
+	for (Iterator ii=liveoutx.iterator();ii.hasNext();) {
+	    boolean search=true;
+	    Temp t=(Temp)ii.next();
+	    for (int i=0;(i<q.arity())&&search;i++)
+		for (int j=0;j<q.numSigmas();j++) {
+		    if (q.dst(j,i)==t) {
+			if (typemap.typeMap(q,t)!=HClass.Void) {
+			    env.add(q.src(j));
+			}
+			search=false;
+			break;
+		    }
+		}
+	    if (search)
+		if (livein.contains(t)) {
+		    env.add(t);
+		}
 	}
+
+	Temp [] params = (Temp[]) env.toArray(new Temp[0]);
+	Collections.sort(Arrays.asList(params));
 	return params;
     }
     
     private void handleNonBlocking(CALL q) {
 	followchildren=true;
-	TempFactory tf=hcode.getFactory().tempFactory();
+	TempFactory tf=qf.tempFactory();
 	//need to check if swop necessary
 	if (swapTo(q.method())!=null) {
 	    //need to swop this method for replacement
-	    quadmap.put(q,new CALL(hcode.getFactory(), q, swapTo(q.method()),
+	    quadmap.put(q,new CALL(qf, q, swapTo(q.method()),
 				   map(ctmap, q.params()),
 				   (q.retval()==null)?null:ctmap.tempMap(q.retval()),
 				   (q.retex()==null)?null:ctmap.tempMap(q.retex()), q.isVirtual(),
@@ -812,61 +866,34 @@ public class CloningVisitor extends QuadVisitor {
 				   map(ctmap, q.src())));
 	} else if (swapAdd(q.method())!=null) {
 	    //need to add an additional call [for makeAsync's, etc]
-	    Temp nretval=(q.retval()==null)?null:new Temp(tf);
-	    //build half
-	    int xx=-1;
-	    for(int j=0;j<q.numSigmas();j++)
-		if (q.src(j)==q.params(0)) {
-		    xx=j;
-		    break;
-		}
-	    Temp[][] ndst=new Temp[q.numSigmas()+((xx==-1)?1:0)][2];
-	    Temp[] nsrc=new Temp[q.numSigmas()+((xx==-1)?1:0)];
-	    for (int i=0;i<q.numSigmas();i++) {
-		//rename all 0 edge temps
-		ndst[i][0]=new Temp(tf);
-		ndst[i][1]=ctmap.tempMap(q.dst(i,1));
-		nsrc[i]=ctmap.tempMap(q.src(i));
-	    }
-	    if (xx==-1) {
-		xx=q.numSigmas();
-		ndst[xx][0]=new Temp(tf);		
-		ndst[xx][1]=new Temp(tf);
-		nsrc[xx]=ctmap.tempMap(q.params(0));
-	    }
 
-	    CALL cq=new CALL(hcode.getFactory(), q, q.method(),
-			     map(ctmap, q.params()), nretval,
-			     ctmap.tempMap(q.retex()),q.isVirtual(),
-			     q.isTailCall(), ndst, nsrc);
-
-	    quadmap.put(q, cq);
+	    CALL cq=(CALL)q.clone(qf, ctmap);
+	    int index=-1;
+	    for (int i=0;i<q.numSigmas();i++)
+		if (q.src(i)==q.params(0))
+		    index=i;
 	    Temp retex=new Temp(tf);
-	    Temp[] src2=new Temp[q.numSigmas()+((nretval==null)?0:1)];
-	    Temp[][] dst2=new Temp[q.numSigmas()+((nretval==null)?0:1)][2];
-	    for (int i=0;i<q.numSigmas();i++) {
-		src2[i]=ndst[i][0];
-		dst2[i][0]=ctmap.tempMap(q.dst(i,0));
-		dst2[i][1]=new Temp(tf);
-	    }
-	    if (nretval!=null) {
-		src2[q.numSigmas()]=nretval;
-		dst2[q.numSigmas()][0]=ctmap.tempMap(q.retval());
-		dst2[q.numSigmas()][1]=new Temp(tf);
-	    }
-
-	    CALL nc=new CALL(hcode.getFactory(), q,
+	    if (index==-1)
+		stillokay=false;
+	    Temp t=(index==-1)?ctmap.tempMap(q.params(0)):ctmap.tempMap(q.dst(index,0));
+	    CALL nc=new CALL(qf, q,
 			     swapAdd(q.method()), 
-			     new Temp[] {ndst[xx][0]},
-			     null, retex, true, false, dst2, src2);
+			     new Temp[]{t},
+			     null, retex, true, false, new Temp[0]);
 	    Quad.addEdge(cq,0,nc, 0);
-	    THROW nt=new THROW(hcode.getFactory(), q,
-				   retex);
-	    Quad.addEdge(nc,1,nt,0);
+
+	    PHI phi=new PHI(qf,q,new Temp[0],2);
+
+	    Quad.addEdge(nc,0,phi,0);
+	    Quad.addEdge(nc,1,phi,1);
 	    addedCall.add(cq);
-	    linkFooters.add(nt);
+	    quadmap.put(q, cq);
 	} else
-	    quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
+	    quadmap.put(q, q.clone(qf, ctmap));
+    }
+
+    public boolean needsRepair() {
+	return stillokay;
     }
 
     protected final static Temp[] map(TempMap tm, Temp[] ta) {
