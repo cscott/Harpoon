@@ -59,7 +59,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.25 2000-04-04 00:38:15 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.26 2000-06-06 16:38:40 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -125,7 +125,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	LONG_WORD_SIZE = 8; // at least 64 bits.
 	POINTER_SIZE = pointersAreLong ? LONG_WORD_SIZE : WORD_SIZE;
 
-	OBJECT_HEADER_SIZE = WORD_SIZE + 1 * POINTER_SIZE;
+	OBJECT_HEADER_SIZE = 2 * POINTER_SIZE;
 	// layout of oobj
 	// (note that the hashcode is actually pointer size, because it is
 	//  used to point to an inflated_oobj structure after inflation)
