@@ -12,7 +12,7 @@ public class QuoteServer {
     // The port on which the server should listen. 
     int numStocks = 40; 
 
-    private static final int SERVER_PORT = 1701; 
+    private static int SERVER_PORT = 1701; 
     // Queue length of incoming connections. 
     private static final int MAX_CLIENTS = 50; 
     // File that contains the stock data of format: 
@@ -31,6 +31,7 @@ public class QuoteServer {
      */ 
     public static void main(String[] args) { 
 	QuoteServer server = new QuoteServer(); 
+	int SERVER_PORT=Integer.parseInt(args[0]);
 	server.serveQuotes(); 
     } 
     /** 

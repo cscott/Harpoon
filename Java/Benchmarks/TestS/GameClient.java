@@ -3,7 +3,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-public class NetsClient extends Thread {
+public class GameClient extends Thread {
 
     static boolean debug;
     public static void main(String argv[]) {
@@ -11,24 +11,24 @@ public class NetsClient extends Thread {
 	int numberofclients=0;
 	int numberofmessages=0;
 	int port=4321;
-	NetsClient.debug=false;
+	GameClient.debug=false;
 	try {
 	    host=argv[0];
 	    port=Integer.parseInt(argv[1]);
 	    numberofclients=Integer.parseInt(argv[2]);
 	    numberofmessages=Integer.parseInt(argv[3]);
 	} catch (Exception e) {
-	    System.out.println("NetsClient host port numberofclients numberofmessages debugflag");
+	    System.out.println("GameClient host port numberofclients numberofmessages debugflag");
 	}
 	try {
-	    NetsClient.debug=(Integer.parseInt(argv[4])==1);
+	    GameClient.debug=(Integer.parseInt(argv[4])==1);
 	} catch (Exception e) {
 	}
 
 
-	NetsClient[] tarray=new NetsClient[numberofclients];
+	GameClient[] tarray=new GameClient[numberofclients];
 	for (int i=0;i<numberofclients;i++) {
-	    tarray[i]=new NetsClient(i,host,port,numberofmessages,numberofclients);
+	    tarray[i]=new GameClient(i,host,port,numberofmessages,numberofclients);
 	    if (debug)
 		System.out.println("Attempting to start "+i);
 	    tarray[i].start();
@@ -43,15 +43,15 @@ public class NetsClient extends Thread {
 	}
     }
 
-    public NetsClient(int clientnumber, String host,int port,int nom, int noc) {
+    public GameClient(int clientnumber, String host,int port,int nom, int noc) {
 	this.port=port;
 	this.clientnumber=clientnumber;
 	this.host=host;
 	this.nom=nom;
 	this.noc=noc;
     }
-
-    int nom, noc,clientnumber,port;
+    int port;
+    int nom, noc,clientnumber;
     String host;
     DataInputStream dis;
     Socket sock;
@@ -76,16 +76,12 @@ public class NetsClient extends Thread {
             pout = new PrintStream(out);
             din = new DataInputStream(in);
 
-	    for(int nr=0;nr<noc*nom;) {
-		if (ns<nom) {
-		    ns++;
-		    pout.println("0|"+clientnumber+"|hello"+ns+"**");
-		}
-		String request = din.readLine();
-		if (request.indexOf('-')!=-1)
-		    nr++;
+	    for(int nr=0;nr<nom;) {
+		String received=din.readLine();
+		pout.println("message: "+clientnumber+" "+nr);
+
 		if (debug)
-		    System.out.println(request+nr);
+		    System.out.println(received+":"+nr);
             }
 	    pout.flush();
 

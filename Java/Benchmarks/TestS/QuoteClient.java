@@ -8,7 +8,7 @@ import java.net.*; // to be used.
  */ 
 public class QuoteClient extends Thread { 
     // The Stock Quote server listens at this port. 
-    private static final int SERVER_PORT = 1701; 
+    private static int SERVER_PORT = 1701; 
     private String serverName; 
     private Socket quoteSocket = null; 
     private DataInputStream quoteReceive = null; 
@@ -25,10 +25,11 @@ public class QuoteClient extends Thread {
     public static void main(String[] args) { 
 	if (args.length < 2) { 
 	    System.out.println( 
-			       "Usage: QuoteClient <server> <number of clients> <number of cycles> <stock ids>"); 
+			       "Usage: QuoteClient <server> <port> <number of clients> <number of cycles> <stock ids>"); 
 	    System.exit(1); 
 	}
-	int numclients=Integer.parseInt(args[1]);
+	int SERVER_PORT=Integer.parseInt(args[1]);
+	int numclients=Integer.parseInt(args[2]);
 	QuoteClient[] carray=new QuoteClient[numclients];
 	for (int i=0;i<numclients;i++) {
 	    carray[i]=new QuoteClient(args);
@@ -61,11 +62,11 @@ public class QuoteClient extends Thread {
 	// Server name is the first argument. 
 	serverName = args[0]; 
 	// Create arrays as long as arguments - 1. 
-	stockIDs = new String[args.length-3]; 
-	stockInfo = new String[args.length-3]; 
+	stockIDs = new String[args.length-4]; 
+	stockInfo = new String[args.length-4]; 
 	// Copy in the arguments into are stockIDs[] array. 
-	for (int index = 3; index < args.length; index++) { 
-	    stockIDs[index-3] = args[index]; 
+	for (int index = 4; index < args.length; index++) { 
+	    stockIDs[index-4] = args[index]; 
 	} 
 	// Contact the server and return the HELLO message. 
 	serverInfo = contactServer(); 
@@ -75,7 +76,7 @@ public class QuoteClient extends Thread {
 					       serverInfo.indexOf(" ")+1); 
 	}
  
-        for(int i=0;i<Integer.parseInt(args[2]);i++) {
+        for(int i=0;i<Integer.parseInt(args[3]);i++) {
 	    getQuotes(); // Go get the quotes. 
 	    this.printQuotes(System.out); 
 	}

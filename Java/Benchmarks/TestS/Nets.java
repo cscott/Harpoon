@@ -7,7 +7,7 @@ public class Nets {
 
     public static void main(String argv[]) {
 
-        kickOff kickoffObject = new kickOff();
+        kickOff kickoffObject = new kickOff(Integer.parseInt(argv[0]));
     }
 
 
@@ -19,13 +19,15 @@ class kickOff extends Thread {
     int i = 0;
     int x = 0;
     String name;
-    
-    kickOff() {
+    int port;
+
+    kickOff(int port) {
+	this.port=port;
 	run();
     }
 
     public void run() {
-        server serverObject = new server();
+        server serverObject = new server(port);
     }
 
     void pause (int time) {
@@ -45,8 +47,10 @@ class server extends Thread {
     ServerSocket listen;
     static int i = 0;
     static Vector v = new Vector();
+    int port;
 
-    server() {
+    server(int port) {
+	this.port=port;
         run();
     }
 
@@ -61,7 +65,7 @@ class server extends Thread {
 	
         try {
 
-	    listen = new ServerSocket(4321);
+	    listen = new ServerSocket(port);
 	    //     listen = new ServerSocket(8090);
 
 	    while(true) {
