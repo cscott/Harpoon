@@ -34,10 +34,14 @@ DECLARE_STATS_LOCAL(transact_versions_obj_bytes_alloc)
 DECLARE_STATS_LOCAL(transact_versions_arr_bytes_alloc)
 #endif /* WITH_TRANSACTIONS */
 #ifdef WITH_LIVE_HEAP_STATISTICS
-DECLARE_STATS_LOCAL(heap_current_live_bytes)
-DECLARE_STATS_LOCAL(heap_max_live_bytes)
-DECLARE_STATS_LOCAL(heap_total_alloc_bytes)
-DECLARE_STATS_LOCAL(heap_total_alloc_count)
+DECLARE_STATS_LOCAL(heap_current_live_arr_bytes)
+DECLARE_STATS_LOCAL(heap_max_live_arr_bytes)
+DECLARE_STATS_LOCAL(heap_total_alloc_arr_bytes)
+DECLARE_STATS_LOCAL(heap_total_alloc_arr_count)
+DECLARE_STATS_LOCAL(heap_current_live_obj_bytes)
+DECLARE_STATS_LOCAL(heap_max_live_obj_bytes)
+DECLARE_STATS_LOCAL(heap_total_alloc_obj_bytes)
+DECLARE_STATS_LOCAL(heap_total_alloc_obj_count)
 #endif /* WITH_LIVE_HEAP_STATISTICS */
 
 #undef EXTRA_STATS
@@ -118,14 +122,14 @@ void print_statistics(void) {
 #endif /* WITH_TRANSACTIONS */
 #ifdef WITH_LIVE_HEAP_STATISTICS
   GC_gcollect();
-  printf("Total heap allocations:   %8llu allocations\n"
-	 "Total heap bytes alloc'd: %8llu bytes\n"
-	 "Live bytes at this point: %8llu bytes\n"
-	 "Maximum live bytes:       %8llu bytes\n",
-	 FS(heap_total_alloc_count),
-	 FS(heap_total_alloc_bytes),
-	 FS(heap_current_live_bytes),
-	 FS(heap_max_live_bytes));
+  printf("Total heap allocations:   %8llu object calls, %8llu array calls\n"
+	 "Total heap bytes alloc'd: %8llu object bytes, %8llu array bytes\n"
+	 "Live bytes at this point: %8llu object bytes, %8llu array bytes\n"
+	 "Maximum live bytes:       %8llu object bytes, %8llu array bytes\n",
+	 FS(heap_total_alloc_obj_count), FS(heap_total_alloc_arr_count),
+	 FS(heap_total_alloc_obj_bytes), FS(heap_total_alloc_arr_bytes),
+	 FS(heap_current_live_obj_bytes),FS(heap_current_live_arr_bytes),
+	 FS(heap_max_live_obj_bytes),    FS(heap_max_live_arr_bytes));
 #endif /* WITH_LIVE_HEAP_STATISTICS */
   fflush(stdout);
   
