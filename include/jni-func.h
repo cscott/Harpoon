@@ -4,7 +4,7 @@
 #ifndef INCLUDED_JNI_FUNC_H
 #define INCLUDED_JNI_FUNC_H
 
-#include <varargs.h>
+#include <stdarg.h>
 
 /* convenience macros. */
 #define FORPRIMITIVETYPES(what) \
@@ -67,6 +67,7 @@ struct JNINativeInterface {
   jobject (*NewObject##suffix) (JNIEnv *env, jclass clazz, \
 				jmethodID methodID, argtype);
   FORALLVARARGS(NEWOBJECTPROTO);
+# undef NEWOBJECTPROTO
   jclass (*GetObjectClass) (JNIEnv *env, jobject obj);
   jboolean (*IsInstanceOf) (JNIEnv *env, jobject obj, jclass clazz);
 
@@ -92,6 +93,8 @@ struct JNINativeInterface {
 					 jvalue *args);
   FORALLTYPES(CALLMETHODPROTO);
   FORALLTYPES(CALLNONVIRTUALPROTO);
+# undef CALLMETHODPROTO
+# undef CALLNONVIRTUALPROTO
 
   /* Accessing fields of objects */
   jfieldID (*GetFieldID) (JNIEnv *env, jclass clazz,
@@ -103,6 +106,8 @@ struct JNINativeInterface {
 			    type value);
   FORNONVOIDTYPES(GETFIELDPROTO);
   FORNONVOIDTYPES(SETFIELDPROTO);
+# undef GETFIELDPROTO
+# undef SETFIELDPROTO
 
   /* Calling static methods */
   jmethodID (*GetStaticMethodID) (JNIEnv *env, jclass clazz,
@@ -115,6 +120,7 @@ struct JNINativeInterface {
   type (*CallStatic##name##MethodA) (JNIEnv *env, jclass clazz, \
 				     jmethodID methodID, jvalue *args);
   FORALLTYPES(CALLSTATICPROTO);
+# undef CALLSTATICPROTO
 
   /* Accessing static fields */
   jfieldID (*GetStaticFieldID) (JNIEnv *env, jclass clazz,
@@ -127,6 +133,8 @@ struct JNINativeInterface {
 				  jfieldID fieldID, type value);
   FORNONVOIDTYPES(GETSTATICFIELDPROTO);
   FORNONVOIDTYPES(SETSTATICFIELDPROTO);
+# undef GETSTATICFIELDPROTO
+# undef SETSTATICFIELDPROTO
 
   /* String operations */
   jstring (*NewString) (JNIEnv *env, const jchar *unicodeChars, jsize len);
@@ -167,6 +175,11 @@ struct JNINativeInterface {
   FORPRIMITIVETYPES(RELEASEARRAYELEMENTSPROTO);
   FORPRIMITIVETYPES(GETARRAYREGIONPROTO);
   FORPRIMITIVETYPES(SETARRAYREGIONPROTO);
+# undef NEWARRAYPROTO
+# undef GETARRAYELEMENTSPROTO
+# undef RELEASEARRAYELEMENTSPROTO
+# undef GETARRAYREGIONPROTO
+# undef SETARRAYREGIONPROTO
 
   /* Registering Native Methods */
   jint (*RegisterNatives) (JNIEnv *env, jclass clazz,
