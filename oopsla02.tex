@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.24 2002-03-23 08:54:31 cananian Exp $
+% $Id: oopsla02.tex,v 1.25 2002-03-23 09:23:21 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -33,7 +33,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.24 $ $}{$ $Revision: 1.24 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.25 $ $}{$ $Revision: 1.25 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -734,19 +734,42 @@ fields are added to the set of non-subclass-final fields.
 
 \subsection{Constructor Classification}
 % includes MustParamOracle and ConstMap
-As a final step to enable the static specialization transformation, we
-must identify constructors which blah blah blah.
+The final requirement to enable static specialization is to identify
+constructors which always initialize certain fields in a given way.
+In particular, we wish to find constructors which always give fields
+statically-known constant values, as well as constructors which
+initialize fields with simple functions of their input parameters.
+The first case enables us to unconditionally replace an instantiated
+class with a smaller split version; the second case allows us to wrap
+the constructor in an appropriate conditional to enable the creation
+of the small version when possible.
 
-in constructor:
-  merge all SET ops on fields of this: is must param?  const? (use bw)
-  treat 'this' constructor as inlined.
-  all other calls: we know that there are no bad writes in non-constr,
-   because field is subclass-final.
+This analysis is simple, because it builds upon our previous results.
+In a single pass over the constructor, we merge the values written
+to a selected subclass-final field using the flat value lattice
+of Figure~\ref{fig:cclat}.  All constants have already been discovered
+by the bitwidth analysis.  We treat any call to a {\tt this()}
+constructor as if it were inlined.  We know that all writes to the
+field are to the {\tt this} object and that there are no bad writes to
+the field outside of the constructor, by the properties of
+subclass-final fields. If the merged value at the end of the pass 
+is a {\tt Param} value or a constant equal to the desired ``default''
+value of the selected field,
+then we can statically specialize on the field at this constructor
+site.  Further, we rule out specialization on any otherwise-suitable
+fields for which there is not at least one callable constructor
+amenable to static specialization.
 
-if merged value at end is param or constant, then this constructor
-can be specialized on that field.  we split all subclass-final fields
-which are 'good' for at least one callable constructor.  order of
-splitting is by magnitude of expected gain, from profiling.
+\begin{figure}
+\centering\renewcommand{\figscale}{0.6}\input{Figures/oopsla-lat}
+\caption{Lattice for Constructor Classification.}
+\label{fig:cclat}
+\end{figure}
+
+We note briefly here that, although we use profiling to select desirable
+fields for static specialization, it is entirely possible that an
+``opportunity''-based heuristic based only on the constructor
+classification step could yield good results.
 
 \section{Implementation Issues}
 
