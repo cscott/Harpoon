@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.41 1999-08-31 01:20:38 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.42 1999-09-02 15:40:42 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -191,7 +191,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	    Iterator titer = targets.iterator();
 	    while(titer.hasNext()) {
 		Label l = (Label) titer.next();
-		((Set)inf.labelToBranchingInstrSetMap.
+		((Set)inf.labelToBranches.
 		 get(l)).add(this);
 	    }
 	}

@@ -19,7 +19,7 @@ import java.util.Set;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.10 1999-08-31 01:20:38 pnkfelix Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.11 1999-09-02 15:40:42 pnkfelix Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
@@ -56,7 +56,7 @@ public class InstrLABEL extends Instr {
 		    total++;
 		}
 
-		Set s = (Set) getFactory().labelToBranchingInstrSetMap.get(label);
+		Set s = (Set) getFactory().labelToBranches.get(label);
 		total += s.size();
 
 		return total;
@@ -74,7 +74,7 @@ public class InstrLABEL extends Instr {
 			// second iterator: branches to this?
 			new UnmodifiableIterator() {
 			    Iterator instrs = 
-				((Set) (getFactory().labelToBranchingInstrSetMap.get
+				((Set) (getFactory().labelToBranches.get
 					(label))).iterator();
 			    public boolean hasNext() { return instrs.hasNext(); }
 			    public Object next() { 

@@ -56,7 +56,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.34 1999-09-02 15:35:46 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.35 1999-09-02 15:40:41 pnkfelix Exp $
  */
 %%
 
@@ -170,7 +170,7 @@ import java.util.Iterator;
        label->branches map. */
     private Instr emitJUMP( HCodeElement root, String assem, Label l ) {
 	Instr j = emit( new InstrJUMP( instrFactory, root, assem, l ));
-	((Set)instrFactory.labelToBranchingInstrSetMap.get(l)).add(j);
+	((Set)instrFactory.labelToBranches.get(l)).add(j);
 	return j;
     }
 
@@ -989,7 +989,7 @@ CJUMP(test, iftrue, iffalse) %{
 			   "beq `L0", 
 			   null, new Temp[]{ test },
 			   new Label[]{ iffalse });
-    ((Set)instrFactory.labelToBranchingInstrSetMap.get(iffalse)).add(j1);
+    ((Set)instrFactory.labelToBranches.get(iffalse)).add(j1);
     Instr j2 = emitJUMP( ROOT, "b `L0", iftrue );
 }%
 
@@ -1014,7 +1014,7 @@ JUMP(e) %{
     Iterator liter = labelList.iterator();
     while(liter.hasNext()) {
 	 Label label = (Label) liter.next();
-	 ((Set)instrFactory.labelToBranchingInstrSetMap.get(label)).add(j);
+	 ((Set)instrFactory.labelToBranches.get(label)).add(j);
     }
 }%
 
