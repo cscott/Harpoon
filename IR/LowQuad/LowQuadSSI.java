@@ -31,7 +31,7 @@ import java.util.Map;
  * representation in SSI form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSI.java,v 1.1.2.11 2000-10-17 03:28:45 cananian Exp $
+ * @version $Id: LowQuadSSI.java,v 1.1.2.12 2001-11-12 01:46:24 cananian Exp $
  */
 public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     /** The name of this code view. */
@@ -39,8 +39,9 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
 
     /** Creates a <code>LowQuadSSI</code> object from a <code>QuadSSI</code>
      *  object. */
-    LowQuadSSI(final QuadSSI code) {
+    LowQuadSSI(final harpoon.IR.Quads.Code code) {
 	super(code.getMethod(), null);
+	Util.assert(code.getName().equals(QuadSSI.codename));
 	final Map dT = new HashMap();
 	final Map tT = new HashMap();
 	final TypeMap tym = new harpoon.Analysis.Quads.TypeInfo(code);
@@ -119,8 +120,9 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
 	if (hcf.getCodeName().equals(QuadSSI.codename)) {
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
-		    HCode c = hcf.convert(m);
-		    return (c==null) ? null : new LowQuadSSI((QuadSSI)c);
+		    harpoon.IR.Quads.Code c = (harpoon.IR.Quads.Code)
+			hcf.convert(m);
+		    return (c==null) ? null : new LowQuadSSI(c);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }

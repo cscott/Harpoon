@@ -46,7 +46,7 @@ import java.util.Map;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.11 2001-11-08 00:22:52 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.12 2001-11-12 01:45:56 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
@@ -56,14 +56,14 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
     Map map = new HashMap();
 
     /** Creates a <code>TypeInfo</code> analyzer for the specified
-     *  <code>HCode</code>.
+     *  <code>HCode</code>, which must be in quad-ssi form.
      */
-    public TypeInfo(harpoon.IR.Quads.QuadSSI hc, UseDefMap usedef) { 
+    public TypeInfo(harpoon.IR.Quads.Code hc, UseDefMap usedef) { 
 	this(hc, usedef, false);
     }
 
     /** Creates a <code>TypeInfo</code> analyzer for the specified
-     *  <code>HCode</code>.
+     *  <code>HCode</code>, which must be in quad-ssi form.
      *  If <code>vBehavior</code> is true, the TypeInfo pass's IQ drops
      *  to the same level as a typical bytecode verifier; i.e. it gathers
      *  no information from instanceof's and such.  Because of the IQ
@@ -72,16 +72,17 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
      *  the <code>TypeInfo</code> handles this case gracefully, rather than
      *  failing an assertion.
      */
-    public TypeInfo(harpoon.IR.Quads.QuadSSI hc, UseDefMap usedef, boolean vBehavior) { 
+    public TypeInfo(harpoon.IR.Quads.Code hc, UseDefMap usedef, boolean vBehavior) { 
 	this.usedef = usedef; 
 	this.verifierBehavior=vBehavior;
+	Util.assert(hc.getName().equals(harpoon.IR.Quads.QuadSSI.codename));
 	analyze(hc);
     }
 
     /** Creates a <code>TypeInfo</code> analyzer for the specified
-     *  <code>HCode</code>. 
+     *  <code>HCode</code>, which must be in quad-ssi form.
      */
-    public TypeInfo(harpoon.IR.Quads.QuadSSI hc) { this(hc, new UseDef()); }
+    public TypeInfo(harpoon.IR.Quads.Code hc) { this(hc, new UseDef()); }
     
     public HClass typeMap(HCodeElement hce, Temp t)
 	throws TypeNotKnownException { return exactType(hce, t).type; }
@@ -97,7 +98,7 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
 	return map.containsKey(t);
     }
 
-    private void analyze(harpoon.IR.Quads.QuadSSI hc) {
+    private void analyze(harpoon.IR.Quads.Code hc) {
 	Quad ql[] = (Quad[]) hc.getElements();
 	
 	WorkSet worklist = new WorkSet(); // use as FIFO
@@ -131,14 +132,14 @@ public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {
     }
 
     class TypeInfoVisitor extends QuadVisitor {
-	harpoon.IR.Quads.QuadSSI hc;
+	harpoon.IR.Quads.Code hc;
 	boolean modified = false;
 	Map checkcast;
 	HClass hclassObj;
 	boolean verifierBehavior;
 	Linker linker;
 
-	TypeInfoVisitor(harpoon.IR.Quads.QuadSSI hc, Map checkcast, boolean verifierBehavior) { 
+	TypeInfoVisitor(harpoon.IR.Quads.Code hc, Map checkcast, boolean verifierBehavior) { 
 	    this.hc = hc; this.checkcast = checkcast;
 	    this.verifierBehavior=verifierBehavior;
 	    this.linker = hc.getMethod().getDeclaringClass().getLinker();
