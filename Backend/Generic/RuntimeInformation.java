@@ -17,7 +17,7 @@ import java.util.Set;
  * Note that there may be additional behaviors introduced by the
  * particular <code>Generic.Runtime</code> the code is executed
  * by: native code executed via the
- * <A HREF="http://www.java.sun.com/products/jdk/1.2/docs/guide/jni/index.html">Java Native Interface</code>
+ * <A HREF="http://www.java.sun.com/products/jdk/1.2/docs/guide/jni/index.html">Java Native Interface</A>
  * may have additional behaviors due to the particular implementation
  * of the JNI being used.  JNI implementations are typically tied to
  * a particular JVM; for example Sun's JDKs,
@@ -36,7 +36,7 @@ import java.util.Set;
  * be kept <b>completely abstract</b>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RuntimeInformation.java,v 1.1.2.2 2000-01-17 23:49:05 cananian Exp $
+ * @version $Id: RuntimeInformation.java,v 1.1.2.3 2000-01-18 05:30:42 cananian Exp $
  * @see JDK11RuntimeImplementation
  * @see JDK12RuntimeImplementation
  */
