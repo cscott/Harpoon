@@ -63,7 +63,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.37 1999-09-08 21:33:09 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.38 1999-09-09 03:47:09 cananian Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -1434,7 +1434,8 @@ abstract class LowQuadWithDerivationVisitor
 
     protected void addDT(Temp tmp, HCodeElement hNew, DList dl, HClass hc) {
 	Util.assert(tmp != null && hNew != null);
-	Util.assert(dl==null ^ hc==null);
+	Util.assert(dl==null ^ hc==null,
+		    "Temp "+tmp+" has derivation "+dl+" and type "+hc);
 	
 	if (dl!=null) { // If tmp is a derived ptr, update deriv info.
 	    dT.put(new Tuple(new Object[] {hNew, tmp}), dl);
