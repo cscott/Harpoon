@@ -51,7 +51,7 @@ import harpoon.IR.Quads.CONST;
  extensions for the other quads).
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: TypeInference.java,v 1.1.2.8 2001-06-17 22:37:20 cananian Exp $
+ * @version $Id: TypeInference.java,v 1.1.2.9 2001-07-04 18:29:11 bdemsky Exp $
  */
 public class TypeInference implements java.io.Serializable {
     // switch on the debug messages
@@ -345,7 +345,7 @@ public class TypeInference implements java.io.Serializable {
 			HClass hclass = (HClass) it.next();
 			HClass hcomp = hclass.getComponentType();
 			if(hcomp != null)
-			    if(types.add(wrapper2.et2, hclass))
+			    if(types.add(wrapper2.et2, hcomp))
 				modified = true;
 		    }
 
