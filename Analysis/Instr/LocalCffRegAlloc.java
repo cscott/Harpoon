@@ -53,7 +53,7 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.60 2000-01-18 15:35:21 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.61 2000-01-24 00:51:23 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -71,10 +71,15 @@ public class LocalCffRegAlloc extends RegAlloc {
 	while(blocks.hasNext()) {
 	    BasicBlock b = (BasicBlock) blocks.next();
 	    Set liveOnExit = liveTemps.getLiveOnExit(b);
-	    new LocalAllocator(b, liveOnExit).alloc();
+	    alloc(b, liveOnExit);
 	}
 	
 	return code;
+    }
+
+
+    private void alloc(BasicBlock block, Set liveOnExit) {
+	(new LocalAllocator(block, liveOnExit)).alloc();
     }
     
     // can add 1 to weight later, so store MAX_VALUE - 1 at most. 
@@ -233,29 +238,55 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	    
 	    public void visit(InstrMOVE i) {
+		if (true) {
+		    visit((Instr)i);
+		    return;
+		}
+		
 		// very simple move coalescing: if this is the last use of
 		// a temp, just replace the mapping in the abstract
 		// regfile instead of actually doing the move.
 		Temp src = i.use()[0];
 		Temp dst = i.def()[0];
 		
-		// System.out.println("Encountering : " + i );
-		
 		List regs = null;
 		
 		if (isTempRegister(src) &&
 		    !isTempRegister(dst) &&
-		    !nextRef.containsKey(new TempInstrPair(i, src))) {
+		    !regfile.hasAssignment(dst)
+
+		    // FSK: removing this clause, but its abscence may
+		    // break output 
+		    // && !nextRef.containsKey(new TempInstrPair(i, src))
+					 ) {
 		    // remove the RegFileInfo.PreassignTemp
 		    regfile.remove((Temp)regfile.getRegToTemp().get(src));
-		    regs = java.util.Arrays.asList(new Temp[]{ src });
+
+		    regs = harpoon.Util.ListFactory.singleton(src);
 		    regfile.assign(dst, regs);
+		    // System.out.println(" removing "+i+" : (Td<-Rs)"
+		    //                    /* + " && !futureRef(Rs)"*/ );
 		} else if (!isTempRegister(src) &&
+			   !isTempRegister(dst) &&
 			   regfile.hasAssignment(src) &&
-			   nextRef.get(new TempInstrPair(i, src)) == null &&
-			   !isTempRegister(dst)) {
+			   nextRef.get(new TempInstrPair(i, src)) == null) {
 		    regs = regfile.getAssignment(src);
 		    regfile.remove(src);
+		    // System.out.println(" removing "+i+" : (Td<-Ts) && !futureRef(Ts)");
+		} else if (isTempRegister(dst) &&
+			   !isTempRegister(src) &&
+			   nextRef.get(new TempInstrPair(i, src)) == null &&
+			   regfile.hasAssignment(src) &&
+			   regfile.getAssignment(src).equals
+			        (harpoon.Util.ListFactory.singleton(dst))) {
+		    regfile.remove(src);
+		    regs = harpoon.Util.ListFactory.singleton(dst);
+		    // FSK: reassigning dst to better reflect
+		    // regfile's state (may not be correct approach however)
+		    dst = new RegFileInfo.PreassignTemp(dst); 
+		    // System.out.println(" removing "+i+" : (Rd<-Ts) && !futureRef(Ts) && reg(Ts)==Rd");
+		} else {
+		    // System.out.println(" not removing "+i);
 		}
 		
 		if(regs != null) {
@@ -542,6 +573,8 @@ public class LocalCffRegAlloc extends RegAlloc {
     */
     private void spillValue(Temp val, InstrEdge loc, RegFile regfile) {
 	if (regfile.isDirty(val)) {
+	    Util.assert(! (val instanceof RegFileInfo.PreassignTemp),
+			"cannot spill Preassigned Temps");
 	    addSpillInstr(val, loc, regfile);
 	}
 	regfile.remove(val);

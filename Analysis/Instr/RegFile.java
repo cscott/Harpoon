@@ -20,7 +20,7 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.1.2.4 2000-01-13 17:54:17 pnkfelix Exp $
+ * @version $Id: RegFile.java,v 1.1.2.5 2000-01-24 00:51:23 pnkfelix Exp $
  */
 class RegFile {
     
@@ -47,6 +47,12 @@ class RegFile {
     public void writeTo(Temp preg) {
 	Util.assert(hasAssignment(preg),
 		    "temp: "+preg+" should have an assignment in "+this);
+
+	// FSK: this assertion is too strict, but it might only be
+	// because of a hack in the spec-file.  Find out whether we
+	// can make multiple writes illegal
+	// Util.assert(!dirtyTemps.contains(preg), 
+	//             "should only write to "+preg+" once");
 	dirtyTemps.add(preg);
     }
 
