@@ -28,7 +28,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.44 2000-11-07 20:20:39 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.45 2000-11-11 16:11:44 bdemsky Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -349,7 +349,7 @@ public abstract class Quad
 	return new HCodeAndMaps(null,
 				Collections.unmodifiableMap(qm),
 				ctm.unmodifiable(),
-				null,
+				header.getFactory().getParent(),
 				Collections.unmodifiableMap(n2oQuad),
 				new TempMap() {
 	    public Temp tempMap(Temp t) { return (Temp) n2oTemp.get(t); }
