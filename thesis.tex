@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.41 1999-06-14 05:42:55 cananian Exp $
+% $Id: thesis.tex,v 1.42 1999-06-14 05:58:25 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage]{article}
 %\documentclass[12pt,notitlepage,twocolumn,twoside]{article}
@@ -13,10 +13,10 @@
 
 \title{Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.41 $ $}
+\date{\today \\ $ $Revision: 1.42 $ $}
 
 \begin{document}
-\pagestyle{myheadings}\markboth{$ $Revision: 1.41 $ $}{$ $Revision: 1.41 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.42 $ $}{$ $Revision: 1.42 $ $}
 \bibliographystyle{abbrv}
 
 \maketitle
@@ -392,6 +392,15 @@ nodes are closest to START and we will call them ``highest'' in the
 DFS spanning tree.
 \end{enumerate}
 
+\begin{myfigure}\small\input{Figures/THcqdata}
+\caption{Datatypes and operations used in the cycle-equivalency algorithm.}
+\label{fig:CQdata}\end{myfigure}
+
+\begin{myfigure}\small\linespread{0.75}\input{Figures/THcqalg}
+\caption{The cycle-equivalency algorithm
+	 (corrected from \cite{johnson93:sese}).}
+\label{fig:CQalg}\end{myfigure}
+
 The above steps form an undirected graph $G'$ from the control-flow
 graph $G$.  The remainder of the cycle-equivalency algorithm is
 presented in figure~\ref{fig:CQalg}, with the above procedure
@@ -415,26 +424,7 @@ $\tuple{a,b}\cyceq\tuple{c,d}$ to indicate that the CFG edge from node
 $a$ to node $b$ is edge cycle-equivalent to the edge from node $c$ to
 node $d$.
 
-Calculating cycle-equivalent regions is based on a single reverse
-depth-first traversal of $G$, so as long as all datatype operations in
-figure~\ref{fig:CQdata} can be completed in constant time (and
-\cite{johnson93:sese} shows how to do so), this computation is $O(E)$.
-
-\begin{myfigure}\small
-\input{Figures/THcqdata}
-\caption{Datatypes and operations used in the cycle-equivalency algorithm.}
-\label{fig:CQdata}
-\end{myfigure}
-
-\begin{myfigure}\small\linespread{0.75}
-\input{Figures/THcqalg}
-\caption{The cycle-equivalency algorithm
-	 (corrected from \cite{johnson93:sese}).}
-\label{fig:CQalg}
-\end{myfigure}
-
-\begin{myfigure}
-\centering
+\begin{myfigure}\centering
 \vertcenter{\input{Figures/THcqex}}
 $\begin{array}[c]{cc}
 \tuple{\mbox{START},1}\cyceq\tuple{16,\mbox{END}}\\
@@ -446,8 +436,12 @@ $\begin{array}[c]{cc}
 \tuple{10,11}\cyceq\tuple{11,13}\\
 \end{array}$
 \caption{Control flow graph and cycle-equivalent edges.}
-\label{fig:CQex}
-\end{myfigure}
+\label{fig:CQex}\end{myfigure}
+
+Calculating cycle-equivalent regions is based on a single reverse
+depth-first traversal of $G$, so as long as all datatype operations in
+figure~\ref{fig:CQdata} can be completed in constant time (and
+\cite{johnson93:sese} shows how to do so), this computation is $O(E)$.
 
 \subsubsection{SESE regions and the program structure tree}
 Johnson, Pearson, and Pingali show how to construct a tree structure
@@ -466,6 +460,21 @@ the right for the example of figure~\ref{fig:CQex}.%
 \footnote{In addition, the regions ${c,d,e}$ and ${f,g}$ are
 \emph{sequentially composed} \cite{johnson94:pst}.  Does this matter?}
 
+\begin{myfigure}\small\input{Figures/THsesedata}
+\caption{Datatypes and operations used in construction of the PST.}
+\label{fig:SESEdata}\end{myfigure}
+
+\begin{myfigure}\small\linespread{0.75}\input{Figures/THsesealg}
+\caption{Computing nested SESE regions and the PST.}
+\label{fig:SESEalg}\end{myfigure}
+
+\begin{myfigure}\centering
+\vertcenter{\input{Figures/THseseex}}\hspace{1cm}
+\vertcenter{\input{Figures/THpst}}
+\caption{SESE regions and PST for the CFG of
+         figure~\ref{fig:CQex} (from \cite{johnson94:pst}).}
+\label{fig:SESEex}\end{myfigure}
+
 The time complexity for constructing the PST is easily seen to be
 $O(E)$. The algorithm presented in figure \ref{fig:SESEalg} begins
 with a depth first traversal of $G$ to construct an ordered edge list
@@ -477,28 +486,6 @@ this step is $O(E)$.  Finally, we do a final $O(E)$ depth-first
 traversal of $G$, performing the constant-time operations {\tt append}
 and {\tt LinkRegion}.  All steps are $O(E)$ and their sequential
 composition is also $O(E)$.
-
-\begin{myfigure}\small
-\input{Figures/THsesedata}
-\caption{Datatypes and operations used in construction of the PST.}
-\label{fig:SESEdata}
-\end{myfigure}
-
-\begin{myfigure}\small\linespread{0.75}
-\input{Figures/THsesealg}
-\caption{Computing nested SESE regions and the PST.}
-\label{fig:SESEalg}
-\end{myfigure}
-
-\begin{myfigure}
-\centering
-\vertcenter{\input{Figures/THseseex}}
-\hspace{1cm}
-\vertcenter{\input{Figures/THpst}}
-\caption{SESE regions and PST for the CFG of
-         figure~\ref{fig:CQex} (from \cite{johnson94:pst}).}
-\label{fig:SESEex}
-\end{myfigure}
 
 \subsubsection{Placing \phisigfunction{s}}
 As with the presentation of SSA form in \cite{cytron91:ssa}, we split
@@ -521,10 +508,9 @@ however, which motivates our choice of approach.}  The remainder of
 this section will be devoted to a correctness proof of the algorithm
 of figure~\ref{fig:SSIalg}.
 
-\begin{myfigure}\small\linespread{0.75}
+\begin{myfigure}\small%\linespread{0.75}
 \input{Figures/THssialg}
-\caption{Algorithm for placing \phisigfunction{s}.}
-\label{fig:SSIalg}
+\caption{Algorithm for placing \phisigfunction{s}.}\label{fig:SSIalg}
 \end{myfigure}
 
 My algorithm is correct.\fixme{Prove this.}
@@ -536,6 +522,16 @@ We get this for free in our compiler framework.  There's also an
 $O(E+N^2)$ algorithm.  I hope to do better using the properties of the
 PST.  I want an $O(E V_0)$ algorithm, which means solving the
 one-variable case in $O(E)$.  Argh.
+\fixme{Either do this or punt it.  Our infrastructure actually gives
+us liveness straight from the stack state during translation, so we
+don't need a fast liveness algorithm; we get what we need `for free'.}
+
+\subsubsection{Variable renaming}
+Um, my current (SSA-inspired) algorithm requires dominance
+information, which we've done away with in general.  Need to rewrite
+to use the PST structure instead, which I'm pretty sure I can do.
+I have to prove that the results are correct, though, which may be harder.
+\fixme{Do this.}
 
 \subsubsection{Pruning SSI form}\label{sec:unusedcode}
 The SSI algorithm can be run using any conservative approximation to
