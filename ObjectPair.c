@@ -3,7 +3,7 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include "ObjectPair.h"
-//#include <dmalloc.h>
+/*#include <dmalloc.h>*/
 
 struct objectpair * createobjectpair() {
   return (struct objectpair *) calloc(1,sizeof(struct objectpair));

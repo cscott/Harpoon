@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Role.h"
+/*#include <dmalloc.h>*/
 
 static long int rolenumber=0;
 
@@ -14,7 +15,7 @@ void printrole(struct role *r, char * rolename) {
   printf(" Dominated by:\n");
   while(dominators!=NULL) {
     if (dominators->methodname!=NULL) {
-      printf("  By local variable: (%s) %s in %s %s %s\n",dominators->lvname, dominators->sourcename, dominators->classname, dominators->methodname, dominators->signature);
+      printf("  By local variable: (%s) %s in %s.%s%s:%d\n",dominators->lvname, dominators->sourcename, dominators->classname, dominators->methodname, dominators->signature,dominators->linenumber);
     } else {
       printf("  By global variable: %s.%s\n",dominators->classname, dominators->globalname);
     }
@@ -327,6 +328,7 @@ struct role * calculaterole(struct genhashtable * dommapping,struct heap_object 
       domroots->signature=copystr(dominators->lv->m->signature);
       domroots->lvname=copystr(dominators->lv->name);
       domroots->sourcename=copystr(dominators->lv->sourcename);
+      domroots->linenumber=dominators->lv->linenumber;
     } else {
       domroots->classname=copystr(dominators->gl->classname);
       domroots->globalname=copystr(dominators->gl->fieldname);

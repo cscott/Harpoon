@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include "CalculateDominators.h"
+/*#include <dmalloc.h>*/
 
 #define NOBORINGDOM 1
 

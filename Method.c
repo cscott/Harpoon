@@ -5,6 +5,7 @@
 #include <string.h>
 #include "Method.h"
 #include "Role.h"
+/*#include <dmalloc.h>*/
 
 int methodhashcode(struct rolemethod * method) {
   return method->hashcode;

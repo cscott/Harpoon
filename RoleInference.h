@@ -139,6 +139,8 @@ int lvnumber(char *lv);
 int matchlist(struct referencelist *list1, struct referencelist *list2);
 void removereversearrayreference(struct arraylist * al);
 void removereversefieldreference(struct fieldlist * al);
+void removeforwardarrayreference(struct arraylist * al);
+void removeforwardfieldreference(struct fieldlist * al);
 void freemethodlist(struct heap_state *hs);
 void calculatenumobjects(struct method * m);
 void doreturnmethodinference(struct heap_state *heap, long long uid, struct hashtable *ht);

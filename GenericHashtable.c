@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include "GenericHashtable.h"
-//#include <dmalloc.h>
+/*#include <dmalloc.h>*/
 
 int genputtable(struct genhashtable *ht, void * key, void * object) {
   int bin=genhashfunction(ht,key);

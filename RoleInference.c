@@ -6,13 +6,15 @@
 #include <string.h>
 #include <unistd.h>
 #include "RoleInference.h"
-//#include <dmalloc.h>
 #include "CalculateDominators.h"
 #include "Role.h"
 #include "Method.h"
+/*#include <dmalloc.h>*/
+
 
 static int programfd;
 #define bufsize 1000
+#undef DEBUG
 long long pointerage=0;
 
 
@@ -47,12 +49,16 @@ void doanalysis() {
   while(1) {
     char *line=getline();
 
+#ifdef DEBUG
     printf("------------------------------------------------------\n");
+#endif
 
     if (line==0) {
       break;
     }
+#ifdef DEBUG
     printf("[%s]\n",line);
+#endif
     switch(line[0]) {
     case 'N':
       {
@@ -121,7 +127,9 @@ void doanalysis() {
 	    rolem->numobjectargs=heap.methodlist->numobjectargs;
 	    rolem->isStatic=heap.methodlist->isStatic;
 	    
+#ifdef DEBUG
 	    printf("Calling Context for method %s.%s%s:\n", heap.methodlist->classname, heap.methodlist->methodname, heap.methodlist->signature);
+#endif
 	    for(;i<heap.methodlist->numobjectargs;i++) {
 	      if (heap.methodlist->params[i]!=NULL) {
 		rolem->paramroles[i]=findrolestring(&heap, dommap, heap.methodlist->params[i]);
@@ -152,15 +160,20 @@ void doanalysis() {
 	rolem->classname=copystr(heap.methodlist->classname);
 	rolem->methodname=copystr(heap.methodlist->methodname);
 	rolem->signature=copystr(heap.methodlist->signature);
-	rolem->paramroles=(char **)calloc(heap.methodlist->numobjectargs, sizeof(char *));
+	if (heap.methodlist->numobjectargs!=0)
+	  rolem->paramroles=(char **)calloc(heap.methodlist->numobjectargs, sizeof(char *));
 	rolem->numobjectargs=heap.methodlist->numobjectargs;
 	rolem->isStatic=heap.methodlist->isStatic;
 	methodassignhashcode(rolem);
 	rolem=methodaddtable(&heap,rolem);
 	heap.methodlist->rm=rolem;
+#ifdef DEBUG
 	printf("Calling Context for method %s.%s%s:\n", heap.methodlist->classname, heap.methodlist->methodname, heap.methodlist->signature);
+#endif
       }
+#ifdef DEBUG
       showmethodstack(&heap);
+#endif
       break;
     case 'R':
       /* Return from method */
@@ -175,7 +188,9 @@ void doanalysis() {
 	/* Don't want to mess up callers parameter count.  They've all been processed by now.  No method could possibly have 10,000 parameters, so we're using this as a flag value.*/
 	
       }
+#ifdef DEBUG
       showmethodstack(&heap);
+#endif
       break;
     case 'F':
       /* Field Assignment */
@@ -274,9 +289,11 @@ void doreturnmethodinference(struct heap_state *heap, long long uid, struct hash
     int i=0;
     struct genhashtable * dommap=builddominatormappings(heap,1);
     struct rolereturnstate *rrs=(struct rolereturnstate *)calloc(1, sizeof(struct rolereturnstate));
-    rrs->paramroles=(char **)calloc(heap->methodlist->numobjectargs, sizeof(char *));
-
+    if (heap->methodlist->numobjectargs!=0)
+      rrs->paramroles=(char **)calloc(heap->methodlist->numobjectargs, sizeof(char *));
+#ifdef DEBUG
     printf("Returning Context for method %s.%s%s:\n", heap->methodlist->classname, heap->methodlist->methodname, heap->methodlist->signature);
+#endif
     for(;i<heap->methodlist->numobjectargs;i++) {
       if (heap->methodlist->params[i]!=NULL) {
 	rrs->paramroles[i]=findrolestring(heap, dommap, heap->methodlist->params[i]);
@@ -355,6 +372,36 @@ void doarrayassignment(struct heap_state *heap, struct heap_object * src, int in
     free(al);
 }
 
+void removeforwardarrayreference(struct arraylist * al) {
+  struct heap_object * dst=al->src;
+  struct arraylist * dal=dst->al;
+
+  if(dal==al) {
+    dst->al=dal->next;
+    return;
+  }
+  
+  while(dal->next!=al)
+    dal=dal->next;
+
+  dal->next=al->next;
+}
+
+void removeforwardfieldreference(struct fieldlist * al) {
+  struct heap_object * dst=al->src;
+  struct fieldlist * dal=dst->fl;
+
+  if(dal==al) {
+    dst->fl=dal->next;
+    return;
+  }
+  
+  while(dal->next!=al)
+    dal=dal->next;
+
+  dal->next=al->next;
+}
+
 void removereversearrayreference(struct arraylist * al) {
   struct heap_object * dst=al->object;
   struct arraylist * dal=dst->reversearray;
@@ -386,7 +433,9 @@ void removereversefieldreference(struct fieldlist * al) {
 }
 
 void doincrementalreachability(struct heap_state *hs, struct hashtable *ht) {
-  struct objectset * changedset=dokills(hs);
+  struct objectset * changedset;
+
+  changedset=dokills(hs);
   donews(hs, changedset);
 
   {
@@ -414,8 +463,28 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht) {
       break;
     if ((possiblegarbage->rl==NULL)&&(possiblegarbage->reachable==0)) {
       /*We've got real garbage!!!*/
-      struct fieldlist *fl=possiblegarbage->fl;
-      struct arraylist *al=possiblegarbage->al;
+      struct fieldlist *fl;
+      struct arraylist *al;
+      /* Have to remove references to ourself first*/
+      fl=possiblegarbage->reversefield;
+      al=possiblegarbage->reversearray;
+      while(fl!=NULL) {
+	struct fieldlist *tmp=fl->dstnext;
+	removeforwardfieldreference(fl);
+	free(fl);
+	fl=tmp;
+      }
+      while(al!=NULL) {
+	struct arraylist *tmp=al->dstnext;
+	removeforwardarrayreference(al);
+	free(al);
+	al=tmp;
+      }
+
+
+      /* Now remove references we own*/
+      fl=possiblegarbage->fl;
+      al=possiblegarbage->al;
       while(fl!=NULL) {
 	struct fieldlist *tmp=fl->next;
 	removereversefieldreference(fl);
@@ -429,10 +498,12 @@ void doincrementalreachability(struct heap_state *hs, struct hashtable *ht) {
 	al=tmp;
       }
       free(possiblegarbage->class);
+      /*      printf("Freeing Key %lld\n",possiblegarbage->uid);*/
       freekey(ht,possiblegarbage->uid);
       free(possiblegarbage);
     }
   }
+
 
   freeobjectset(changedset);
 }
@@ -488,11 +559,15 @@ struct objectset * dokills(struct heap_state *hs) {
 	kptr=ktpl;
 	/*loop through src*/
 	while(rtmp!=NULL) {
-	  struct referencelist *rkl=(struct referencelist *) calloc(1,sizeof(struct referencelist));
-	  rkl->gl=rtmp->gl;
-	  rkl->lv=rtmp->lv;
-	  rkl->next=ktpl->rl;
-	  ktpl->rl=rkl;
+	  if (((rtmp->lv!=NULL)&&(rtmp->lv->invalid==0)&&(rtmp->lv->object==dst))||((rtmp->gl!=NULL)&&(rtmp->gl->invalid==0)&&(rtmp->gl->object==dst))) {
+	    /*Don't propagate kills to object being pointed to by live localpointer*/
+	  } else {
+	    struct referencelist *rkl=(struct referencelist *) calloc(1,sizeof(struct referencelist));
+	    rkl->gl=rtmp->gl;
+	    rkl->lv=rtmp->lv;
+	    rkl->next=ktpl->rl;
+	    ktpl->rl=rkl;
+	  }
 	  rtmp=rtmp->next;
 	}
       }
@@ -522,11 +597,15 @@ struct objectset * dokills(struct heap_state *hs) {
 	  kptr=ktpl;
 	  /*loop through src*/
 	  while(rtmp!=NULL) {
-	    struct referencelist *rkl=(struct referencelist *) calloc(1,sizeof(struct referencelist));
-	    rkl->gl=rtmp->gl;
-	    rkl->lv=rtmp->lv;
-	    rkl->next=ktpl->rl;
-	    ktpl->rl=rkl;
+	    if (((rtmp->lv!=NULL)&&(rtmp->lv->invalid==0)&&(rtmp->lv->object==fl->object))||((rtmp->gl!=NULL)&&(rtmp->gl->invalid==0)&&(rtmp->gl->object==fl->object))) {
+	    /*Don't propagate kills to object being pointed to by live localpointer*/
+	    } else {
+	      struct referencelist *rkl=(struct referencelist *) calloc(1,sizeof(struct referencelist));
+	      rkl->gl=rtmp->gl;
+	      rkl->lv=rtmp->lv;
+	      rkl->next=ktpl->rl;
+	      ktpl->rl=rkl;
+	    }
 	    rtmp=rtmp->next;
 	  }
 	} else printf("WEIRDNESS\n");
@@ -548,11 +627,15 @@ struct objectset * dokills(struct heap_state *hs) {
 	    ktpl->reachable=tuple->reachable;
 	  /*loop through src*/
 	  while(rtmp!=NULL) {
-	    struct referencelist *rkl=(struct referencelist *) calloc(1,sizeof(struct referencelist));
-	    rkl->gl=rtmp->gl;
-	    rkl->lv=rtmp->lv;
-	    rkl->next=ktpl->rl;
-	    ktpl->rl=rkl;
+	    if (((rtmp->lv!=NULL)&&(rtmp->lv->invalid==0)&&(rtmp->lv->object==al->object))||((rtmp->gl!=NULL)&&(rtmp->gl->invalid==0)&&(rtmp->gl->object==al->object))) {
+	      /*Don't propagate kills to object being pointed to by live localpointer*/
+	    } else {
+	      struct referencelist *rkl=(struct referencelist *) calloc(1,sizeof(struct referencelist));
+	      rkl->gl=rtmp->gl;
+	      rkl->lv=rtmp->lv;
+	      rkl->next=ktpl->rl;
+	      ktpl->rl=rkl;
+	    }
 	    rtmp=rtmp->next;
 	  }
 	} else printf("WEIRDNESS\n");
@@ -1070,7 +1153,8 @@ void calculatenumobjects(struct method * m) {
       break;
     case ')':
       m->numobjectargs=numobjects;
-      m->params=(struct heap_object **) calloc(numobjects, sizeof(struct heap_object *));
+      if (numobjects!=0)
+	m->params=(struct heap_object **) calloc(numobjects, sizeof(struct heap_object *));
       return;
     default:
     }

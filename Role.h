@@ -21,6 +21,7 @@ struct rolereferencelist {
   char * signature;
   char * lvname;
   char * sourcename;
+  int linenumber;
   struct rolereferencelist *next;
 };
 
