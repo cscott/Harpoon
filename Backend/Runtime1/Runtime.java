@@ -26,7 +26,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.12 1999-10-28 02:41:16 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.13 1999-11-04 00:48:01 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -73,14 +73,15 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	};
     }
 
-    /** Return a <code>Set</code> of <code>HMethod</code>s which are
+    /** Return a <code>Set</code> of <code>HMethod</code>s 
+     *  and <code>HClass</code>es which are referenced /
      *  callable by code in the runtime implementation (and should
      *  therefore be included in every class hierarchy). */
     public static Collection runtimeCallableMethods() {
 	HClass HCsystem = HClass.forName("java.lang.System");
 	HClass HCstring = HClass.forName("java.lang.String");
 	HClass HCcharA  = HClass.forDescriptor("[C");
-	return Arrays.asList(new HMethod[] {
+	return Arrays.asList(new Object[] {
 	    // implicitly called during startup
 	    HCsystem.getMethod("initializeSystemClass", "()V"),
 	    // jni implementation uses these:
@@ -100,6 +101,10 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 		.getConstructor(new HClass[] { HCstring }),
 	    HClass.forName("java.util.Properties")
 		.getMethod("setProperty", new HClass[] { HCstring, HCstring }),
+	    // referenced by name in static initializers for primitive type
+	    // wrappers (java.lang.Integer, java.lang.Character, etc)
+	    HClass.Boolean, HClass.Byte, HClass.Short, HClass.Int,
+	    HClass.Long, HClass.Float, HClass.Double, HClass.Char,
 	});
     }
 

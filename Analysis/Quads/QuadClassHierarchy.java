@@ -29,7 +29,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.12 1999-11-02 01:27:39 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.13 1999-11-04 00:48:15 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -108,7 +108,15 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	this(Collections.singleton(root), hcf);
     }
     /** Creates a <code>ClassHierarchy</code> of all classes
-     *  reachable/usable from method <code>root</code>.  <code>hcf</code>
+     *  reachable/usable from <code>HMethod</code>s in the <code>roots</code>
+     *  <code>Collection</code>.  <code>HClass</code>es included in
+     *  <code>roots</code> are guaranteed to be included in the
+     *  <code>classes()</code> set of this class hierarchy, but they may
+     *  not be included in the <code>instantiatedClasses</code> set
+     *  (if an instantiation instruction is not found for them).  To
+     *  explicitly include an instantiated class in the hierarchy, add
+     *  a constructor or non-static method of that class to the
+     *  <code>roots</code> <code>Collection</code>.<p> <code>hcf</code>
      *  must be a code factory that generates quad form. */
     public QuadClassHierarchy(Collection roots, HCodeFactory hcf) {
 	// state.
@@ -122,20 +130,36 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	// keeps track of which methods we've done already.
 	Set done = new HashSet();
 
-	// worklist algorithm.
 	WorkSet W = new WorkSet();
+	// make initial worklist from roots collection.
 	for (Iterator it=roots.iterator(); it.hasNext(); ) {
-	    HMethod root = (HMethod) it.next();
-	    if (root.isStatic())
-		discoverClass(root.getDeclaringClass(), W, done,
-			      classKnownChildren, classMethodsUsed,
-			      classMethodsPending);
-	    else // let's assume non-static roots have objects to go with 'em.
-		discoverInstantiatedClass(root.getDeclaringClass(), W, done,
+	    HClass rootC; HMethod rootM; boolean instantiated;
+	    // deal with the different types of objects in the roots collection
+	    Object o = it.next();
+	    if (o instanceof HMethod) {
+		rootM = (HMethod) o;
+		rootC = rootM.getDeclaringClass();
+		// let's assume non-static roots have objects to go with 'em.
+		instantiated = !rootM.isStatic();
+	    } else { // only HMethods and HClasses in roots, so must be HClass
+		rootM = null;
+		rootC = (HClass) o;
+		instantiated = false;
+	    }
+	    if (instantiated)
+		discoverInstantiatedClass(rootC, W, done,
 					  classKnownChildren, classMethodsUsed,
 					  classMethodsPending);
-	    methodPush(root, W, done, classMethodsUsed, classMethodsPending);
+	    else
+		discoverClass(rootC, W, done,
+			      classKnownChildren, classMethodsUsed,
+			      classMethodsPending);
+	    if (rootM!=null)
+		methodPush(rootM, W, done,
+			   classMethodsUsed, classMethodsPending);
 	}
+
+	// worklist algorithm.
 	while (!W.isEmpty()) {
 	    HMethod m = (HMethod) W.pull();
 	    done.add(m); // mark us done with this method.
