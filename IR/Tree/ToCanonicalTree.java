@@ -3,9 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
-import harpoon.Analysis.Maps.Derivation;
-import harpoon.Analysis.Maps.Derivation.DList;
-import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -26,11 +23,11 @@ import java.util.HashSet;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.23 2000-01-31 22:16:14 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.24 2000-02-08 23:31:02 cananian Exp $
  */
-public class ToCanonicalTree implements Derivation, TypeMap {
+public class ToCanonicalTree {
     private Tree m_tree;
-    private Derivation m_derivation;
+    private DerivationGenerator m_dg = new DerivationGenerator();
 
     /** Class constructor. 
      *
@@ -42,58 +39,26 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	Util.assert(tf instanceof Code.TreeFactory);
 	Util.assert(((Code.TreeFactory)tf).getParent().getName().equals("canonical-tree"));
 
-    	final Map dT = new HashMap();
-	final Map tT = new HashMap();
-
-	m_tree = translate(tf, code, dT, tT);
-	m_derivation = new Derivation() {
-	    public DList derivation(HCodeElement hce, Temp t) {
-		Util.assert(hce!=null && t!=null);
-		Tuple tuple = new Tuple(new Object[] { hce, t });
-		if (dT.get(tuple)==null && tT.get(tuple)==null)
-		    throw new TypeNotKnownException(hce, t);
-		return (DList)dT.get(tuple);
-	    }
-	    public HClass typeMap(HCodeElement hce, Temp t) {
-		Util.assert(hce!=null && t!=null);
-		Tuple tuple = new Tuple(new Object[] { hce, t });
-		if (dT.get(tuple)==null && tT.get(tuple)==null)
-		    throw new TypeNotKnownException(hce, t);
-		return (HClass) tT.get(tuple);
-	    }
-	};
-
+	m_tree = translate(tf, code);
     }
     
-    /** Returns the updated derivation information for the 
-     *  specified <code>Temp</code>.  The <code>HCodeElement</code>
-     *  parameter must be a <code>Tree</code> object in which the 
-     *  <code>Temp</code> is found.
-     */
-    public DList derivation(HCodeElement hce, Temp t) {
-	return m_derivation.derivation(hce, t);
-    }
+    /** Returns a <code>TreeDerivation</code> object for the
+     *  generated <code>Tree</code> form. */
+    public TreeDerivation getTreeDerivation() { return m_dg; }
 
     /** Returns the root of the generated tree code */
     public Tree getTree() {
 	return m_tree;
     }
 
-    /** Returns the updated type information for the specified
-     *  <code>Temp</code>.  The <code>HCode</code> paramter is
-     *  ignored. */
-    public HClass typeMap(HCodeElement hce, Temp t) {
-	return m_derivation.typeMap(hce, t);
-    }
-
     // translate to canonical form
-    private Tree translate(TreeFactory tf, TreeCode code, Map dT, Map tT) {
+    private Tree translate(TreeFactory tf, TreeCode code) {
 	CanonicalizingVisitor cv;    // Translates the TreeCode
 	Stm                   root;  // The root of "code"
 	TreeMap               tm;    // maps old trees to translated trees
 
 	tm   = new TreeMap();
-	cv   = new CanonicalizingVisitor(tf, tm, code, dT, tT);
+	cv   = new CanonicalizingVisitor(tf, tm, code);
 	root = (Stm)code.getRootElement();
 
 	// This visitor recursively visits all relevant nodes on its own
@@ -106,22 +71,18 @@ public class ToCanonicalTree implements Derivation, TypeMap {
     // Visitor class to translate to canonical form
     class CanonicalizingVisitor extends TreeVisitor {
 	private CloningTempMap ctm; 
-	private Derivation  derivation;
 	private TreeCode    code;
 	private TreeFactory tf; 
 	private TreeMap     treeMap;
-	private TypeMap     typeMap;
-	private Map         dT, tT;
+	private TreeDerivation oldDeriv;
 	private java.util.Set visited = new java.util.HashSet();
 
 	public CanonicalizingVisitor(TreeFactory tf, TreeMap tm, 
-				     TreeCode code, Map dT, Map tT) {
+				     TreeCode code) {
 	    this.code       = code;
-	    this.derivation = code;
 	    this.treeMap    = tm;
-	    this.dT         = dT;
-	    this.tT         = tT;
 	    this.tf         = tf;
+	    this.oldDeriv   = code.getTreeDerivation();
 	    this.ctm        = new CloningTempMap
 		(((Stm)code.getRootElement()).getFactory().tempFactory(), 
 		 tf.tempFactory());
@@ -265,19 +226,15 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	    }
 	}
 	
-	protected void updateDT(TEMP tOld, TEMP tNew) {
-	    Tuple hceT = new Tuple(new Object[] { tNew, tNew.temp });
-	    if (this.derivation.derivation(tOld, tOld.temp) != null) {
-		dT.put
-		    (hceT, 
-		     DList.clone(this.derivation.derivation(tOld, tOld.temp)));
-	    }
-	    else {
-		if (this.derivation.typeMap(tOld, tOld.temp) != null) {
-		    tT.put
-			(hceT,
-			 this.derivation.typeMap(tNew, tOld.temp));
-		}
+	protected void updateDT(Exp eOld, Exp eNew) {
+	    HClass hc = oldDeriv.typeMap(eOld);
+	    if (hc!=null) {
+		if (eNew instanceof TEMP)
+		    m_dg.putTypeAndTemp(eNew, hc, ((TEMP)eNew).temp);
+		else
+		    m_dg.putType(eNew, hc);
+	    } else {
+		m_dg.putDerivation(eNew, oldDeriv.derivation(eOld));
 	    }
 	}
 

@@ -27,12 +27,12 @@ import harpoon.Util.Util;
  * The tree form is based around Andrew Appel's tree form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: TreeCode.java,v 1.1.2.23 2000-01-31 22:16:14 cananian Exp $
+ * @version $Id: TreeCode.java,v 1.1.2.24 2000-02-08 23:31:02 cananian Exp $
  * 
  */
 public class TreeCode extends Code {
     public  static   final   String     codename = "tree";
-    private        /*final*/ Derivation derivation;
+    private          TreeDerivation     treeDerivation;
   
     /** Create a new <code>TreeCode</code> from a
      *  <code>LowQuadNoSSA</code> object, and a <code>Frame</code>.
@@ -44,12 +44,14 @@ public class TreeCode extends Code {
 
 	translator = new ToTree(this.tf, code);
 	tree       = translator.getTree();
-	derivation = translator;
+	treeDerivation = translator.getTreeDerivation();
     }
 
     protected TreeCode(HMethod newMethod, Tree tree, Frame topframe) {
 	super(newMethod, tree, topframe);
     }
+
+    public TreeDerivation getTreeDerivation() { return treeDerivation; }
 
     /** 
      * Clone this code representation. The clone has its own
@@ -61,16 +63,7 @@ public class TreeCode extends Code {
 	    (this.tf.tempFactory(), tc.tf.tempFactory());
 
 	tc.tree = (Tree)(Tree.clone(tc.tf, ctm, tree));
-	tc.derivation = new Derivation() { 
-	    public DList derivation(HCodeElement hce, Temp t) { 
-		Util.assert(hce!=null && t!=null);
-		return this.derivation(hce, ctm.tempMap(t));
-	    }
-	    public HClass typeMap(HCodeElement hce, Temp t) { 
-		Util.assert(hce!=null && t!=null);
-		return this.typeMap(hce, ctm.tempMap(t));
-	    }
-	};
+	tc.treeDerivation = null; // XXX THIS IS BROKEN.
 
 	return tc;
     }
@@ -129,19 +122,5 @@ public class TreeCode extends Code {
      */
     public static HCodeFactory codeFactory(final Frame frame) {  
 	return codeFactory(LowQuadNoSSA.codeFactory(), frame);
-    }
-
-    /**
-     * Implementation of the <code>Derivation</code> interface.
-     */
-    public DList derivation(HCodeElement hce, Temp t) {
-	return derivation.derivation(hce, t);
-    }
-
-    /**
-     * Implementation of the <code>TypeMap</code> interface.
-     */
-    public HClass typeMap(HCodeElement hce, Temp t) {
-	return derivation.typeMap(hce, t);
     }
 }

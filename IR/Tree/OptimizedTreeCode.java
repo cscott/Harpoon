@@ -3,10 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
-//import harpoon.Analysis.Tree.TreeFolding;
-import harpoon.Analysis.Maps.Derivation;
-import harpoon.Analysis.Maps.Derivation.DList;
-import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -26,7 +22,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.17 2000-01-31 22:16:14 cananian Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.18 2000-02-08 23:31:02 cananian Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = CanonicalTreeCode.codename;
@@ -40,8 +36,7 @@ public class OptimizedTreeCode extends Code {
 	    }
 	    }*/ 
     };
-
-    private /*final*/ Derivation       derivation;
+    private TreeDerivation treeDerivation = null;
   
     /** Create a new <code>OptimizedTreeCode</code> from a
      *  <code>CanonicalTreeCode</code> object, a <code>Frame</code>,
@@ -57,7 +52,7 @@ public class OptimizedTreeCode extends Code {
 	}
 	final CanonicalTreeCode optimizedCode = code;
 
-	this.derivation = optimizedCode;
+	this.treeDerivation = optimizedCode.getTreeDerivation();
 	this.tree       = (Stm)optimizedCode.getRootElement();
 
     }
@@ -71,16 +66,7 @@ public class OptimizedTreeCode extends Code {
 	    (CanonicalTreeCode)((Code.TreeFactory)tree.getFactory()).getParent();
 	this.tree = (Tree)Tree.clone(this.tf, ctm, tree);
 	
-	this.derivation = new Derivation() { 
-	    public DList derivation(HCodeElement hce, Temp t) { 
-		Util.assert(hce!=null && t!=null);
-		return code.derivation(hce, ctm.tempMap(t));
-	    }
-	    public HClass typeMap(HCodeElement hce, Temp t) { 
-		Util.assert(hce!=null && t!=null);
-		return code.typeMap(hce, ctm.tempMap(t));
-	    }
-	};
+	this.treeDerivation = null; // FIXME
     }
 
     /** 
@@ -145,19 +131,7 @@ public class OptimizedTreeCode extends Code {
 	return codeFactory(CanonicalTreeCode.codeFactory(frame), frame);
     }
 
-    /**
-     * Implementation of the <code>Derivation</code> interface.
-     */
-    public DList derivation(HCodeElement hce, Temp t){
-	return derivation.derivation(hce, t);
-    }
-
-    /**
-     * Implementation of the <code>Typemap<code> interface.
-     */
-    public HClass typeMap(HCodeElement hce, Temp t) {
-	return derivation.typeMap(hce, t);
-    }
+    public TreeDerivation getTreeDerivation() { return treeDerivation; }
 
     public interface TreeOptimizer { 
 	public CanonicalTreeCode optimize(CanonicalTreeCode code); 

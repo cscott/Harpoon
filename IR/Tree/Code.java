@@ -34,10 +34,9 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.41 2000-01-31 22:16:14 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.42 2000-02-08 23:31:02 cananian Exp $
  */
-public abstract class Code extends HCode 
-    implements Derivation, TypeMap {
+public abstract class Code extends HCode {
     /** The Tree Objects composing this code view. */
     protected Tree tree;
 
@@ -100,6 +99,8 @@ public abstract class Code extends HCode
     public HMethod getMethod() { return this.parent; }
 
     public Frame getFrame() { return this.frame; }
+
+    public abstract TreeDerivation getTreeDerivation();
 
     /** Returns the root of the Tree */
     public HCodeElement getRootElement() { 
@@ -228,17 +229,6 @@ public abstract class Code extends HCode
      * Returns true if this codeview is a canonical representation
      */
     public abstract boolean isCanonical();
-
-
-    /**
-     * Implementation of the <code>Derivation</code> interface.
-     */
-    public abstract DList derivation(HCodeElement hce, Temp t);
-    
-    /**
-     * Implementation of the <code>TypeMap</code> interface.
-     */
-    public abstract HClass typeMap(HCodeElement hc, Temp t);
 
     /** 
      * Removes the specified <code>Stm</code> from the tree in which it 

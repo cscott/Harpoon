@@ -3,9 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
-import harpoon.Analysis.Maps.Derivation;
-import harpoon.Analysis.Maps.Derivation.DList;
-import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
@@ -27,12 +24,12 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.20 2000-01-31 22:16:14 cananian Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.21 2000-02-08 23:31:02 cananian Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
     public  static   final String           codename = "canonical-tree";
-    private          final Derivation       derivation;
+    private          final TreeDerivation   treeDerivation;
 
     /** Create a new <code>CanonicalTreeCode</code> from a
      *  <code>TreeCode</code> object, and a <code>Frame</code>.
@@ -44,7 +41,7 @@ public class CanonicalTreeCode extends Code {
 
 	translator   = new ToCanonicalTree(this.tf, code);
 	tree         = translator.getTree();
-	derivation   = translator;
+	treeDerivation = translator.getTreeDerivation();
     }
 
     /* Copy constructor, should only be called by the clone() method. */
@@ -57,18 +54,12 @@ public class CanonicalTreeCode extends Code {
 	    (CanonicalTreeCode)((Code.TreeFactory)tree.getFactory()).getParent();
 	this.tree = (Tree)Tree.clone(this.tf, ctm, tree);
 
-	this.derivation = new Derivation() { 
-	    public DList derivation(HCodeElement hce, Temp t) { 
-		Util.assert(hce!=null && t!=null);
-		return code.derivation(hce, ctm.tempMap(t));
-	    }
-	    public HClass typeMap(HCodeElement hce, Temp t) { 
-		Util.assert(hce!=null && t!=null);
-		return code.typeMap(hce, ctm.tempMap(t));
-	    }
-	};
-	
+	this.treeDerivation = null; // FIXME
     }
+
+    /** Returns a <code>TreeDerivation</code> object for the
+     *  generated <code>Tree</code> form. */
+    public TreeDerivation getTreeDerivation() { return treeDerivation; }
 
     /** 
      * Clone this code representation. The clone has its own
@@ -124,20 +115,6 @@ public class CanonicalTreeCode extends Code {
      */
     public static HCodeFactory codeFactory(final Frame frame) {  
 	return codeFactory(TreeCode.codeFactory(frame), frame);
-    }
-
-    /**
-     * Implementation of the <code>Derivation</code> interface.
-     */
-    public DList derivation(HCodeElement hce, Temp t){
-	return derivation.derivation(hce, t);
-    }
-
-    /**
-     * Implementation of the <code>Typemap<code> interface.
-     */
-    public HClass typeMap(HCodeElement hce, Temp t) {
-	return derivation.typeMap(hce, t);
     }
 }
 
