@@ -14,6 +14,12 @@ class Keyword extends Token {
   }
   public String toString() { return "Keyword <"+keyword+">"; }
 
+  void annotate(LinePos left, LinePos right) {
+    System.out.println(left.line+" "+left.pos+"\t"+right.line+" "+right.pos);
+    System.out.println("<font color=green>");
+    System.out.println("</font>");
+  }
+
   static private final Hashtable key_table = new Hashtable();
   static {
     key_table.put("abstract", new Integer(Sym.ABSTRACT));

@@ -41,10 +41,13 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
     do {
       startpos = lineL.head + line_pos;
       ie = getInputElement();
+      // annotate this input element
+      ie.annotate(linepos(startpos), linepos(lineL.head+line_pos-1));
+      // set 'last comment' field, if appropriate.
       if (ie instanceof DocumentationComment)
 	comment = ((Comment)ie).getComment();
     } while (!(ie instanceof Token));
-    endpos = lineL.head + line_pos;
+    endpos = lineL.head + line_pos - 1;
 
     //System.out.println(ie.toString()); // uncomment to debug lexer.
     java_cup.runtime.Symbol sym = ((Token)ie).token();
@@ -449,10 +452,14 @@ public class Lexer implements harpoon.Tools.Annotation.Lexer {
 
   // Deal with error messages.
   public void errorMsg(String msg, java_cup.runtime.Symbol info) {
-    int n=line_num, c=info.left-lineL.head;
+    LinePos lp = linepos(info.left);
+    System.err.println(msg+" at line "+lp.line);
+  }
+  public LinePos linepos(int character_offset) {
+    int n=line_num, c=character_offset-lineL.head;
     for (LineList p = lineL; p!=null; p=p.tail, n--)
-	if (p.head<info.left) { c=info.left-p.head; break; }
-    System.err.println(msg+" at line "+n);
+      if (p.head<=character_offset) { c=character_offset-p.head; break; }
+    return new LinePos(n, c);
   }
   
   class LineList {

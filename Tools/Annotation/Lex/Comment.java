@@ -3,6 +3,12 @@ package harpoon.Tools.Annotation.Lex;
 abstract class Comment extends InputElement {
   private StringBuffer comment = new StringBuffer();
 
+  void annotate(LinePos left, LinePos right) {
+    System.out.println(left.line+" "+left.pos+"\t"+right.line+" "+right.pos);
+    System.out.println("<font color=red>");
+    System.out.println("</font>");
+  }
+
   String getComment() { return comment.toString(); }
 
   void appendLine(String more) { // 'more' is '\n' terminated.

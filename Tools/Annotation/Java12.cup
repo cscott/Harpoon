@@ -1,5 +1,7 @@
 package harpoon.Tools.Annotation;
 
+import harpoon.Tools.Annotation.Lex.LinePos;
+
 import java_cup.runtime.*;
 
 /* Java 1.2 parser for CUP.  
@@ -20,12 +22,53 @@ JDK 1.2 Features added:
 */
 
 /* THIS COPY MODIFIED EXTENSIVELY FOR ANNOTATION BY CSA [9-12-99]. */
+action code {:
+  // ANNOTATION FUNCTIONS:
+  public void annotateURL(int left, int right, String link) {
+    LinePos lp = parser.lexer.linepos(left), rp = parser.lexer.linepos(right);
+    System.out.println(lp.line+" "+lp.pos+"\t"+rp.line+" "+rp.pos);
+    System.out.println("<A HREF=\""+link+"\">");
+    System.out.println("</A>");
+  }
+  public String packageURL(String pkg) {
+    if (parser.jdk11) return "Package-"+pkg+".html";
+    else return pkg_offset(pkg)+"package-summary.html";
+  }
+  public String classURL(String cls) {
+    if (parser.jdk11) return cls+".html";
+    String pkg = (cls.indexOf('.')<0)?"":cls.substring(0,cls.lastIndexOf('.'));
+    String scl = (pkg.length()>0)?cls.substring(pkg.length()+1):cls;
+    return pkg_offset(pkg)+scl+".html";
+  }
+  private String pkg_offset(String pkg) {
+    StringBuffer path = new StringBuffer();
+    // chew up identical portions of pkg and this_package
+    String s = this_package;
+    do {
+     String f1 = (s  .indexOf('.')<0)?s  :s  .substring(0,s  .indexOf('.')+1);
+     String f2 = (pkg.indexOf('.')<0)?pkg:pkg.substring(0,pkg.indexOf('.')+1);
+     if (!f1.equals(f2)) break;
+     s  = s  .substring(f1.length());
+     pkg= pkg.substring(f2.length());
+    } while (s.length()>0 && pkg.length()>0);
+    if (s.length()>0)
+      for (s+="." ; s.indexOf('.')>=0; s=s.substring(s.indexOf('.')+1))
+        path.append("../");
+    path.append(pkg.replace('.','/'));
+    if (pkg.length()>0) path.append('/');
+    return path.toString();
+  }
+  public String this_package=null;
+:};
+
 parser code  {: 
   Lexer lexer;
+  boolean jdk11;
 
-  public Java12(Lexer l) {
+  public Java12(Lexer l, boolean isJDK11) {
     this();
     lexer=l;
+    jdk11=isJDK11;
   }
 
   public void syntax_error(java_cup.runtime.Symbol current) {
@@ -42,7 +85,7 @@ terminal BOOLEAN; // primitive_type
 terminal BYTE, SHORT, INT, LONG, CHAR; // integral_type
 terminal FLOAT, DOUBLE; // floating_point_type
 terminal LBRACK, RBRACK; // array_type
-terminal IDENTIFIER; // name
+terminal String IDENTIFIER; // name
 terminal DOT; // qualified_name
 terminal SEMICOLON, MULT, COMMA, LBRACE, RBRACE, EQ, LPAREN, RPAREN, COLON;
 terminal PACKAGE; // package_declaration
@@ -111,7 +154,7 @@ non terminal class_or_interface_type;
 non terminal class_type, interface_type;
 non terminal array_type;
 // 19.5) Names
-non terminal name, simple_name, qualified_name;
+non terminal String name, simple_name, qualified_name;
 // 19.6) Packages
 non terminal compilation_unit;
 non terminal package_declaration_opt, package_declaration;
@@ -256,13 +299,17 @@ array_type ::=	primitive_type dims
 	;
 
 // 19.5) Names
-name	::=	simple_name
-	|	qualified_name
+name	::=	simple_name:n
+		{: RESULT=n; :}
+	|	qualified_name:n
+		{: RESULT=n; :}
 	;
-simple_name ::=	IDENTIFIER
+simple_name ::=	IDENTIFIER:id
+		{: RESULT=id; :}
 	;
 qualified_name ::=
-		name DOT IDENTIFIER
+		name:n DOT IDENTIFIER:id
+		{: RESULT=n+"."+id; :}
 	;
 
 // 19.6) Packages
@@ -284,17 +331,22 @@ type_declarations ::=
 	|	type_declarations type_declaration
 	;
 package_declaration ::= 
-		PACKAGE name SEMICOLON
+		PACKAGE name:n SEMICOLON
+		{: this_package=n;
+		   annotateURL(nleft, nright, packageURL(n));
+		:}
 	;
 import_declaration ::= 
 		single_type_import_declaration
 	|	type_import_on_demand_declaration
 	;
 single_type_import_declaration ::= 
-		IMPORT name SEMICOLON
+		IMPORT name:n SEMICOLON
+		{: annotateURL(nleft, nright, classURL(n)); :}
 	;
 type_import_on_demand_declaration ::=
-		IMPORT name DOT MULT SEMICOLON
+		IMPORT name:n DOT MULT SEMICOLON
+		{: annotateURL(nleft, nright, packageURL(n)); :}
 	;
 type_declaration ::=
 		class_declaration
