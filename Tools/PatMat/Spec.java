@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.12 1999-06-30 04:52:42 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.13 1999-06-30 06:48:56 pnkfelix Exp $
  */
 public class Spec  {
 
@@ -363,6 +363,7 @@ public class Spec  {
 	/** Constructs a new <code>Spec.ExpName</code> representing
 	    <code>name</code>. */
 	public ExpName(String name) { this.name = name; }
+	public void accept(ExpVisitor v) { v.visit(this); }
 	public String toString() { return "NAME("+name+")"; }
     }
 

@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.11 1999-06-30 06:32:17 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.12 1999-06-30 06:48:56 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -121,7 +121,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 	
 	public void visit(Spec.Stm s) {
-	    Util.assert(false, "StmRecurse should never visit Stm");
+	    Util.assert(false, "StmRecurse should never visit Stm: " + s + 
+			" Class:" + s.getClass());
 	}
 	
 	public void visit(Spec.StmCall s) {
@@ -406,7 +407,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 	
 	public void visit(Spec.Exp e) {
-	    Util.assert(false, "ExpRecurse should never visit Exp");
+	    Util.assert(false, "ExpRecurse should never visit Exp: "+e + 
+			" Class: " + e.getClass());
 	}
 	public void visit(final Spec.ExpBinop e) { 
 	    degree++;
