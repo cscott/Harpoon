@@ -21,7 +21,7 @@ public class TeeMain {
      */
     public static void main(String args[]) {
 	if (args.length<4) {
-	    System.out.println("Usage: java -jar TeeMain.jar");
+	    System.out.println("Usage: java -jar tee.jar");
 	    System.out.println("       <CORBA name for server>");
 	    System.out.println("       <CORBA name for client1>");
 	    System.out.println("       <CORBA name for client2>");
