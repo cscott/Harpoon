@@ -54,7 +54,7 @@ import java.util.Iterator;
  * the counters' actual name on output will be "foo_bar" and "foo_baz".
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CounterFactory.java,v 1.1.2.9 2001-11-02 04:53:59 cananian Exp $
+ * @version $Id: CounterFactory.java,v 1.1.2.10 2001-11-03 19:15:13 cananian Exp $
  */
 public final class CounterFactory {
     /** default status for all counters. */
@@ -79,6 +79,12 @@ public final class CounterFactory {
 	if (idx>=0) return isEnabled(counter_name.substring(0, idx));
 	// okay, can't find any guidance at all.  Use "default".
 	return ENABLED;
+    }
+    public static boolean inCounters(Edge e) {
+	Quad q = (Quad) e.from();
+	HMethod hm = q.getFactory().getMethod();
+	return hm.getDeclaringClass().getName().equals
+	    ("harpoon.Runtime.Counters");
     }
     
     /** <code>HCodeFactory</code> that will add calls to the counter-printing
@@ -113,6 +119,7 @@ public final class CounterFactory {
 				       Edge e, String counter_name,
 				       long value) {
 	if (!isEnabled(counter_name)) return e;
+	if (inCounters(e)) return e;
 	Temp t = new Temp(qf.tempFactory());
 	return spliceIncrement(qf,
 			       addAt(e, new CONST(qf, null, t, new Long(value),
@@ -128,6 +135,7 @@ public final class CounterFactory {
 				       Temp Tvalue, boolean isLong) {
 	Quad CJMP1, CJMP2, PHI1, PHI2;
 	if (!isEnabled(counter_name)) return e;
+	if (inCounters(e)) return e;
 	if (!isLong) {
 	    Temp t = new Temp(qf.tempFactory());
 	    e = addAt(e, new OPER(qf, null, Qop.I2L, t, new Temp[]{ Tvalue }));
