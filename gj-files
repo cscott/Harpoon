@@ -13,6 +13,7 @@ Util/Indexer.java
 Util/IteratorEnumerator.java
 Util/Util.java
 Util/Worklist.java
+Util/Collections/AbstractGraph.java
 Util/Collections/AbstractHeap.java
 Util/Collections/AbstractMapEntry.java
 Util/Collections/AggregateMapFactory.java
@@ -29,6 +30,7 @@ Util/Collections/FibonacciHeap.java
 Util/Collections/GenericInvertibleMap.java
 Util/Collections/GenericInvertibleMultiMap.java
 Util/Collections/GenericMultiMap.java
+Util/Collections/Graph.java
 Util/Collections/HashEnvironment.java
 Util/Collections/Heap.java
 Util/Collections/InvertibleMap.java
@@ -43,6 +45,7 @@ Util/Collections/MapWrapper.java
 Util/Collections/MultiMap.java
 Util/Collections/MultiMapFactory.java
 Util/Collections/MultiMapSet.java
+Util/Collections/MutableGraph.java
 Util/Collections/PairMapEntry.java
 Util/Collections/PersistentEnvironment.java
 Util/Collections/PersistentMap.java
@@ -67,10 +70,7 @@ Analysis/BasicBlock.java
 Analysis/BasicBlockFactoryInterf.java
 Analysis/BasicBlockInterf.java
 Analysis/ClassHierarchy.java
-Analysis/Companions/AbstractGraph.java
 Analysis/Companions/DataFlowSolver.java
-Analysis/Companions/Graph.java
-Analysis/Companions/MutableGraph.java
 Analysis/Companions/SingularFinder.java
 Analysis/Companions/SingularOracle.java
 Analysis/Companions/StaticValue.java
