@@ -34,7 +34,7 @@ import java.util.Set;
  * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.3 1999-11-04 01:27:02 andyb Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.4 1999-11-04 09:04:25 andyb Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 
@@ -95,16 +95,26 @@ public class RegFileInfo
 	SP = reg[14];
 	FP = reg[30];
  
-	/* AAA - still need to do liveOnExit, callerSave, and calleeSave
-	 * for real here */
+	// live on exit: %fp, %sp, %i0: return value, %i7: return address
+	//		 %g0: zero, always live
+	liveOnExitRegs = new LinearSet(5);  
+	liveOnExitRegs.add(FP);
+	liveOnExitRegs.add(SP);
+	liveOnExitRegs.add(reg[0]);
+	liveOnExitRegs.add(reg[24]);
+	liveOnExitRegs.add(reg[31]);
+ 
+	// caller saved: clobbered by callee
+	// %g0-%g7, %o0-%o5, %o7 
+	callerSaveRegs = new LinearSet(15);
+	for (int i = 0; i < 16; i++)
+	    if (i != 14)  /* i = 14 -> reg[14] -> %sp */
+		callerSaveRegs.add(reg[i]);
 
-	callerSaveRegs = new LinearSet(2);
-	calleeSaveRegs = new LinearSet(2);
-	liveOnExitRegs = new LinearSet(2);
-
-	// liveOnExitRegs.add(reg[i]);
-	// callerSaveRegs.add(reg[i]);
-	// calleeSaveRegs.add(reg[i]);
+	// callee needs to save these itself
+	// none - all callee saving is done by the magic save
+	// instruction, go sparc go woohoo
+	calleeSaveRegs = new LinearSet(0);
     }
 
     // Sparc backend specific helpers...
