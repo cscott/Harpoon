@@ -39,7 +39,7 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Simplification.java,v 1.1.2.9 2000-10-06 21:19:24 cananian Exp $
+ * @version $Id: Simplification.java,v 1.1.2.10 2001-06-11 17:30:02 cananian Exp $
  */
 public abstract class Simplification { 
     private static final boolean debug = false;
@@ -187,7 +187,8 @@ public abstract class Simplification {
 	}
 
 	public void visit(Exp e) { 
-	RESTART: do {
+	    boolean done = false;
+	RESTART: while (!done) {
 	    for (int i=0; i<rules.length; i++) {
 		Rule rule = rules[i];
 		if (rule.match(e)) {
@@ -195,18 +196,20 @@ public abstract class Simplification {
 		    if (debug)
 			System.out.println("Replacing: " + e + " with " +
 					   simpleE + " by rule " + rule);
-		    e.replace(simpleE);
+		    e.replace(simpleE);// XXX: simpleE cannot contain e
 		    e = simpleE;
 		    changed = true;
 		    // revisit this.
 		    continue RESTART;
 		}
 	    }
-	} while (false); // okay, so this is just a hacked-together 'goto'
+	    done = true; // okay, so this is just a hacked-together 'goto'
+	}
 	}
 
 	public void visit(Stm s) { 
-	RESTART: do {
+	    boolean done = false;
+	RESTART: while (!done) {
 	    for (int i=0; i<rules.length; i++) {
 		Rule rule = rules[i];
 		if (rule.match(s)) {
@@ -214,14 +217,15 @@ public abstract class Simplification {
 		    if (debug)
 			System.out.println("Replacing: " + s + " with " +
 					   simpleS + " by rule " + rule);
-		    s.replace(simpleS);
+		    s.replace(simpleS);// XXX: simpleS cannot contain e
 		    s = simpleS;
 		    changed = true;
 		    // revisit this.
 		    continue RESTART;
 		}
 	    }
-	} while (false); // okay, so this is just a hacked-together 'goto'
+	    done = true; // okay, so this is just a hacked-together 'goto'
+	}
 	}
     }
 
@@ -245,6 +249,9 @@ public abstract class Simplification {
 	 *  <code>apply()</code> should always succeed when
 	 *  <code>match()</code> returns <code>true</code>.  Otherwise, 
 	 *  the behavior of <code>apply</code> is undefined. 
+	 *  The returned <code>Exp</code> cannot contain the parameter
+	 *  <code>exp</code>, although it can contain its children.
+	 *  (use exp.build(tf, exp.kids()) to workaround this limitation.)
 	 */ 
 	public Exp apply(TreeFactory tf, Exp exp, DerivationGenerator dg) {
 	    throw new Error("unimplemented");
@@ -256,6 +263,9 @@ public abstract class Simplification {
 	 *  <code>apply()</code> should always succeed when
 	 *  <code>match()</code> returns <code>true</code>.  Otherwise, 
 	 *  the behavior of <code>apply</code> is undefined. 
+	 *  The returned <code>Stm</code> cannot contain the parameter
+	 *  <code>stm</code>, although it can contain its children.
+	 *  (use stm.build(tf, stm.kids()) to workaround this limitation.)
 	 */ 
 	public Stm apply(TreeFactory tf, Stm stm, DerivationGenerator dg) {
 	    throw new Error("unimplemented");
