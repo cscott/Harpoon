@@ -1,5 +1,11 @@
 package harpoon.IR.Tree;
 
+/**
+ * <code>TreeVisitor</code> is a Design Pattern, courtesy of Martin.
+ * 
+ * @author  Duncan Bryce  <duncan@lcs.mit.edu>
+ * @version 1.1.2.1 
+ */
 public abstract class TreeVisitor
 {
   protected TreeVisitor() { } 
@@ -21,6 +27,11 @@ public abstract class TreeVisitor
   public void visit(LMEM e)           { visit((Exp)e); }
   public void visit(LTEMP e)          { visit((Exp)e); }
   public void visit(MEM e)            { visit((Exp)e); }
+  public void visit(MEMA e)           { visit((MEM)e); }
+  public void visit(MEMD e)           { visit((MEM)e); }
+  public void visit(MEMF e)           { visit((MEM)e); }
+  public void visit(MEMI e)           { visit((MEM)e); }
+  public void visit(MEML e)           { visit((MEM)e); }
   public void visit(MOVE e)           { visit((Stm)e); }
   public void visit(NAME e)           { visit((Exp)e); }
   public void visit(OPER e)           { visit((Exp)e); }
