@@ -16,7 +16,7 @@ import java.util.Stack;
  * <code>Pattern</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Pattern.java,v 1.1.2.5 1999-09-08 19:23:00 bdemsky Exp $
+ * @version $Id: Pattern.java,v 1.1.2.6 1999-09-08 21:43:04 bdemsky Exp $
  */
 public class Pattern {
     public static HClass exceptionCheck(Quad q) {
@@ -232,7 +232,7 @@ class PatternVisitor extends QuadVisitor {
 	    Object[] nq=Pattern.minusCheck(qd.prev(0), q.dims(i));
 	    if (nq!=null) {
 		//nq[1] is the exception thrown quad...
-		if (i==0) {
+		if (i==(q.dimsLength()-1)) {
 		    hclass=Pattern.exceptionCheck((Quad)((Object[])nq[1])[0]);
 		    if (hclass!=HClass.forName("java.lang.NegativeArraySizeException")) {
 			handler=(Quad)((Object[])nq[1])[0];
