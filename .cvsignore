@@ -15,3 +15,5 @@ VERSIONS
 ChangeLog
 jdb
 .ignore
+*.class
+as*
