@@ -1,4 +1,4 @@
-// Frame.java, created Wed Jun 28 22:25:27 2000 by cananian
+_// Frame.java, created Wed Jun 28 22:25:27 2000 by cananian
 // Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.PreciseC;
@@ -43,7 +43,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.10 2001-02-13 21:54:34 kkz Exp $
+ * @version $Id: Frame.java,v 1.1.2.11 2001-03-23 15:27:34 wbeebee Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -60,8 +60,13 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) { 
 	super();
 	linker = main.getDeclaringClass().getLinker();
-	System.out.println("AllocationStrategy: "+alloc_strategy);
+	System.out.println("AllocationStrategy: "+
+			   ((Realtime.REAL_SCOPES&&Realtime.REALTIME_JAVA)? 
+			    "RTJ":alloc_strategy));
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
+	    (Realtime.REAL_SCOPES&&Realtime.REALTIME_JAVA) ?
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new harpoon.Analysis.Realtime.RealtimeAllocationStrategy(this) :
 	    alloc_strategy.equalsIgnoreCase("nifty") ?
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new PGCNiftyAllocationStrategy(this) :

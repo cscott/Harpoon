@@ -12,6 +12,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 
@@ -24,14 +25,14 @@ import harpoon.IR.Quads.QuadWithTry;
 import harpoon.Util.Util;
 
 /**
- * <code>ThreadToRealtimeThread</code> is a <code>MethodMutator</code> which
+ * <code>ThreadToRealtimeThread</code> is a <code>ClassReplacer</code> which
  * replaces <code>java.lang.Thread</code> with 
  * <code>javax.realtime.RealtimeThread</code>.
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
-class ThreadToRealtimeThread extends MethodMutator {
+class ThreadToRealtimeThread extends ClassReplacer {
     
     /** Creates a new <code>ThreadToRealtimeThread</code> using code from the
      *  <code>HCodeFactory</code>.  Use 
@@ -39,11 +40,35 @@ class ThreadToRealtimeThread extends MethodMutator {
      *  chain of </code>HCodeFactory</code>s.
      */
     
-    ThreadToRealtimeThread(HCodeFactory parent) {
-	super(parent);
-	Util.assert(parent.getCodeName().equals(QuadWithTry.codename),
-		    "ThreadToRealtimeThread takes a QuadWithTry HCodeFactory"
-		    +" not a "+ parent.getCodeName() +" HCodeFactory.");
+    ThreadToRealtimeThread(HCodeFactory parent, Linker linker) {
+	super(parent, 
+	      linker.forName("java.lang.Thread"), 
+	      linker.forName("javax.realtime.RealtimeThread"));
+	addIgnorePackage("javax.realtime");
+
+	HConstructor[] threadConstructors = 
+	    linker.forName("java.lang.Thread").getConstructors();
+	HConstructor[] realtimeThreadConstructors = 
+	    linker.forName("javax.realtime.RealtimeThread").getConstructors();
+	for (int i=0; i<threadConstructors.length; i++) {
+	    for (int j=0; j<realtimeThreadConstructors.length; j++) {
+		HClass[] types = threadConstructors[i].getParameterTypes();
+		HClass[] types2 = realtimeThreadConstructors[i].getParameterTypes();
+		if (types.length == types2.length) {
+		    boolean mapMethod = true;
+		    for (int k=0; k<types.length; k++) {
+			if (!types[k].equals(types2[k])) {
+			    mapMethod = false;
+			    break;
+			}
+		    }
+		    if (mapMethod) {
+			map(threadConstructors[i],
+			    realtimeThreadConstructors[j]);
+		    }
+		}
+	    }
+	}
     }
     
     /** Updates the <code>ClassHierarchy</code> so that all classes that
@@ -62,64 +87,5 @@ class ThreadToRealtimeThread extends MethodMutator {
 		child.getMutator().setSuperclass(realtimeThread);
 	    }
 	}
-    }
-    
-    /** Replaces new java.lang.Thread() with new 
-     *  javax.realtime.RealtimeThread(). 
-     */
-
-    protected HCode mutateHCode(HCodeAndMaps input) {
-	Stats.realtimeBegin();
-	HCode hc = input.hcode();
-	HClass hclass = hc.getMethod().getDeclaringClass();
-	if ((hc == null)||      // Prevent infinite recursion.
-	    (hclass.getName().startsWith("javax.realtime."))) {
-	    Stats.realtimeEnd();
-	    return hc;
-	}    
-	final Linker linker = hclass.getLinker();
-	final HClass realtimeThread = 
-	    linker.forName("javax.realtime.RealtimeThread");
-	final HClass thread = linker.forName("java.lang.Thread");
-
-	QuadVisitor visitor = new QuadVisitor() {
-		public void visit(CALL q) {
-		    HMethod method = q.method();
-		    if ((method.getDeclaringClass() != thread) ||
-			(method != thread.getConstructor(new HClass[] {})))
-			return;
-		    CALL newCALL = 
-			new CALL(q.getFactory(), q, 
-				 realtimeThread
-				 .getConstructor(method.getParameterTypes()),
-				 q.params(), q.retval(), q.retex(), 
-				 q.isVirtual(), q.isTailCall(), 
-				 q.dst(), q.src());
-		    Quad.replace(q, newCALL);
-		    Quad.transferHandlers(q, newCALL);
-		}
-
-		public void visit(NEW q) {
-		    if (q.hclass() == thread) {
-			NEW newNEW = new NEW(q.getFactory(), 
-					      q, q.dst(), realtimeThread);
-			Quad.replace(q, newNEW);
-			Quad.transferHandlers(q, newNEW);
-		    }
-		}
-
-		public void visit(Quad q) {}
-	    };
-	
-	// System.out.println("Before ThreadToRealtimeThread:");
-	// hc.print(new PrintWriter(System.out));
-	Quad[] ql = (Quad[]) hc.getElements();
-	for (int i=0; i<ql.length; i++) {
-	    ql[i].accept(visitor);
-	}      
-	// System.out.println("After ThreadToRealtimeThread:");
-	// hc.print(new PrintWriter(System.out));
-	Stats.realtimeEnd();
-	return hc;
     }
 }

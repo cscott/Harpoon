@@ -35,6 +35,9 @@ public class Realtime {
     /** Is Realtime JAVA support turned on? */
     public static boolean REALTIME_JAVA = false;
     
+    /** Are we going to actually allocate objects in the appropriate scopes? */
+    public static boolean REAL_SCOPES = true;
+
     /** Determine which analysis method to use. */
     public static int ANALYSIS_METHOD = 0;
     /** Very conservative analysis method - keep all checks */
@@ -49,7 +52,7 @@ public class Realtime {
      */
     public static final int ALL = 3;
 
-    public static final boolean COLLECT_RUNTIME_STATS = false;
+    public static final boolean COLLECT_RUNTIME_STATS = true;
 
     /** Creates a field memoryArea on <code>java.lang.Object</code>.
      *  Since primitive arrays inherit from <code>java.lang.Object</code>, 
@@ -124,6 +127,42 @@ public class Realtime {
 				      new HClass[] { memoryArea }));
 	}
 
+	if (REAL_SCOPES) {
+	    roots.add(linker.forName("javax.realtime.CTMemory")
+		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
+	    roots.add(linker.forName("javax.realtime.CTMemory")
+		      .getMethod("checkAccess", new HClass[] { object }));
+	    roots.add(linker.forName("javax.realtime.HeapMemory")
+		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
+	    roots.add(linker.forName("javax.realtime.HeapMemory")
+		      .getMethod("checkAccess", new HClass[] { object }));
+	    roots.add(linker.forName("javax.realtime.ImmortalMemory")
+		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
+	    roots.add(linker.forName("javax.realtime.ImmortalMemory")
+		      .getMethod("checkAccess", new HClass[] { object }));
+	    roots.add(linker.forName("javax.realtime.ImmortalPhysicalMemory")
+		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
+	    roots.add(linker.forName("javax.realtime.ImmortalPhysicalMemory")
+		      .getMethod("checkAccess", new HClass[] { object }));
+	    roots.add(linker.forName("javax.realtime.LTMemory")
+		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
+	    roots.add(linker.forName("javax.realtime.LTMemory")
+		      .getMethod("checkAccess", new HClass[] { object }));
+	    roots.add(linker.forName("javax.realtime.NullMemoryArea")
+		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
+	    roots.add(linker.forName("javax.realtime.NullMemoryArea")
+		      .getMethod("checkAccess", new HClass[] { object }));
+	    roots.add(linker.forName("javax.realtime.ScopedPhysicalMemory")
+		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
+	    roots.add(linker.forName("javax.realtime.ScopedPhysicalMemory")
+		      .getMethod("checkAccess", new HClass[] { object }));
+	    roots.add(linker.forName("javax.realtime.VTMemory")
+		      .getMethod("newMemBlock", new HClass[] { realtimeThread }));
+	    roots.add(linker.forName("javax.realtime.VTMemory")
+		      .getMethod("checkAccess", new HClass[] { object }));
+	    roots.add(linker.forName("javax.realtime.NoHeapRealtimeThread"));
+	}
+
 //  	roots.add(linker.forName("java.lang.Class")
 //  		  .getMethod("getConstructor", 
 //  			     new HClass[] { 
@@ -161,7 +200,7 @@ public class Realtime {
 	Stats.realtimeBegin();
 	HCodeFactory hcf = Stats.trackQuadsIn(parent);
 	ThreadToRealtimeThread.updateClassHierarchy(linker, ch);
-	hcf = (new ThreadToRealtimeThread(hcf)).codeFactory();
+	hcf = (new ThreadToRealtimeThread(hcf, linker)).codeFactory();
 	hcf = new ArrayInitRemover(hcf).codeFactory();
 	hcf = new CachingCodeFactory(hcf);
 	Stats.realtimeEnd();
@@ -211,8 +250,8 @@ public class Realtime {
 	}
 	}
 	Stats.analysisEnd();
-	HCodeFactory hcf = (new CheckAdder(cr, new AllCheckRemoval(), 
-					   parent)).codeFactory();
+	HCodeFactory hcf = (new CheckAdderWithTry(cr, new AllCheckRemoval(), 
+						  parent)).codeFactory();
 	hcf = Stats.trackQuadsOut(hcf);
 	Stats.realtimeEnd();
 	return hcf;

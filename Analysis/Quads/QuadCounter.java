@@ -35,9 +35,6 @@ public class QuadCounter implements HCodeFactory, java.io.Serializable {
      *  returned. 
      */
     public HCode convert(HMethod m) {
-
-	System.out.println("CONVERT " + m);
-
 	HCode hc = parent.convert(m);
 	if (hc != null) {
 	    numQuads += hc.getElements().length;

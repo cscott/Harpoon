@@ -45,14 +45,15 @@ import harpoon.Util.Util;
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
 
-class CheckAdder extends MethodMutator {
-    private static CheckRemoval checkRemoval;
-    private static NoHeapCheckRemoval noHeapCheckRemoval;
-    private static final boolean fastNew = true;
-    private static final boolean smartMemAreaLoads = false;
+// Fix to be non-static...
 
-    private static METHOD currentMethod;  // For smartMemAreaLoads
-    private static Temp currentMemArea;
+abstract class CheckAdder extends MethodMutator {
+    protected CheckRemoval checkRemoval;
+    protected NoHeapCheckRemoval noHeapCheckRemoval;
+
+    public static boolean fastNew = true;
+    public static boolean smartMemAreaLoads = false;
+    public static boolean debugOutput = false;
 
     /** Creates a new <code>CheckAdder</code>, adding only the checks that
      *  can't be removed as specified by <code>CheckRemoval</code> and 
@@ -65,17 +66,14 @@ class CheckAdder extends MethodMutator {
 	super(parent);
 	checkRemoval = cr;
 
-	System.out.println("checkRemoval = " + checkRemoval);
-
 	noHeapCheckRemoval = nhcr;
-	Util.assert(parent.getCodeName().equals(QuadWithTry.codename),
-		    "CheckAdder takes a QuadWithTry HCodeFactory not a " +
-		    parent.getCodeName() + " HCodeFactory.");
     }
 
     /** Adds the checks to the code <code>input</code>. */
 
-    protected HCode mutateHCode(HCodeAndMaps input) {
+    abstract protected HCode mutateHCode(HCodeAndMaps input);
+
+    protected HCode mutateHCode(HCodeAndMaps input, QuadVisitor visitor) {
 	Stats.realtimeBegin();
 	HCode hc = input.hcode();
 	if (hc == null) {
@@ -89,366 +87,28 @@ class CheckAdder extends MethodMutator {
 	}
 	final Linker linker = hclass.getLinker();
 	
-	QuadVisitor visitor = new QuadVisitor() {
-		public void visit(ARRAYINIT q) {
-		    Util.assert(false, "ArrayInitRemover has not been run.");
-		}
+	if (debugOutput) {
+	    System.out.println("Before:");
+	    hc.print(new PrintWriter(System.out));
+	}
 
-		public void visit(ASET q) {
-		    if (!q.type().isPrimitive()) {
-			CheckAdder.checkAccess(linker, q, 
-				    q.objectref(), q.src());
-		    }
-		}
-		
-		public void visit(ANEW q) {
-		    if (fastNew) {
-			CheckAdder.newArrayObjectFast(linker, q, q.dst(),
-						      q.hclass(), q.dims());
-		    } else {
-			CheckAdder.newArrayObject(linker, q, q.dst(), 
-						  q.hclass(), q.dims());
-		    }
-		}
-		
-		public void visit(SET q) {
-		    if (!q.field().getType().isPrimitive()) {
-			CheckAdder.checkAccess(linker, q, 
-					     q.objectref(), q.src());
-		    }
-		}
-		
-		public void visit(METHOD q) {
-		    currentMethod = q;
-		}
-
-		public void visit(NEW q) {
-		    if (fastNew) {
-			CheckAdder.newObjectFast(linker, q, q.dst(), q.hclass());
-		    } else {
-			CheckAdder.newObject(linker, q, q.dst(), q.hclass());
-		    }
-		}
-		
-		public void visit(Quad q) {}
-	    };
-
-	currentMethod = null;
-	currentMemArea = null;
-//  	System.out.println("Before:");
-//  	hc.print(new PrintWriter(System.out));
 	Quad[] ql = (Quad[]) hc.getElements();
 	for (int i=0; i<ql.length; i++) 
 	    ql[i].accept(visitor);
-//  	System.out.println("After:");
-//  	hc.print(new PrintWriter(System.out));
+
+	if (debugOutput) {
+	    System.out.println("After:");
+	    hc.print(new PrintWriter(System.out));
+	}
 
 	Stats.realtimeEnd();
 	return hc;
     }
 
-    /** Attaches the current memory area to a new instance of an object.
-     * <p>
-     * <p>obj = new foo() becomes:
-     * <p>t = RealtimeThread.currentRealtimeThread().getMemoryArea();
-     * <p>obj = new foo();
-     * <p>obj.memoryArea = t;
-     * <p>
-     */
-
-    private static void newObjectFast(Linker linker, Quad inst,
-				      Temp dst, HClass hclass) {
-	Stats.addNewObject();
-	QuadFactory qf = inst.getFactory();
-	HMethod hm = qf.getMethod();
-	Temp memArea = addGetCurrentMemArea(linker, qf, hm, inst);
-	Quad next = inst.next(0);
-	Quad q0 = new SET(qf, inst, 
-			  linker.forName("java.lang.Object")
-			  .getDeclaredField("memoryArea"), 
-			  dst, memArea);
-	Edge splitEdge = next.prevEdge(0);
-	Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
-	if (Realtime.COLLECT_RUNTIME_STATS) {
-	    Quad q1 = 
-		new CALL(qf, inst, 
-			 linker.forName("javax.realtime.Stats")
-			 .getMethod("addNewObject",
-				    new HClass[] {
-					linker
-					.forName("javax.realtime.MemoryArea")
-				    }),
-			 new Temp[] { memArea },
-			 null, null, true, false, new Temp[0]);
-	    Quad.addEdge(q0, 0, q1, 0);
-	    Quad.addEdge(q1, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
-	    q1.addHandlers(inst.handlers());
-	} else {
-	    Quad.addEdge(q0, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
-	}
-	q0.addHandlers(inst.handlers());
-	
-    }
-
-
-    /** Attaches the current memory area to a new instance of an object.
-     * <p>
-     * <p>obj = new foo() becomes:
-     * <p>t = RealtimeThread.currentRealtimeThread().getMemoryArea();
-     * <p>obj = new foo();
-     * <p>t.bless(obj);
-     * <p>
-     */
-
-    private static void newObject(Linker linker, Quad inst, 
-				  Temp dst, HClass hclass) {
-	Stats.addNewObject();
-	QuadFactory qf = inst.getFactory();
-	HMethod hm = qf.getMethod();
-	Temp memArea = addGetCurrentMemArea(linker, qf, hm, inst);
-	Quad next = inst.next(0);
-	Quad q0 = new CALL(qf, inst, 
-			   linker.forName("javax.realtime.MemoryArea")
-			   .getMethod("bless", 
-				      new HClass[] { 
-					  linker.forName("java.lang.Object") 
-				      }),
-			   new Temp[] { memArea, dst },
-			   null, null, true, false, new Temp[0]);
-	Edge splitEdge = next.prevEdge(0);
-	Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
-	Quad.addEdge(q0, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
-	q0.addHandlers(inst.handlers());
-    }
-    
-
-    /** Attaches the current memory area to a new instance of an object.
-     * <p>
-     * <p>obj = new foo()[1][2][3] becomes:
-     * <p>t = RealtimeThread.currentRealtimeThread().getMemoryArea();
-     * <p>obj = new foo()[1][2][3]
-     * <p>obj.memoryArea = t;
-     * <p>
-     */
-
-    private static void newArrayObjectFast(Linker linker, Quad inst,
-					   Temp dst, HClass hclass, 
-					   Temp[] dims) {
-	Stats.addNewArrayObject();
-	QuadFactory qf = inst.getFactory();
-	HMethod hm = qf.getMethod();
-	Temp memArea = addGetCurrentMemArea(linker, qf, hm, inst);
-	Quad next = inst.next(0);
-	Quad q0 = new SET(qf, inst,
-			  linker.forName("java.lang.Object")
-			  .getDeclaredField("memoryArea"),
-			  dst, memArea);
-	Edge splitEdge = next.prevEdge(0);
-	Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
-	if (Realtime.COLLECT_RUNTIME_STATS) {
-	    Quad q1 = 
-		new CALL(qf, inst,
-			 linker.forName("javax.realtime.Stats")
-			 .getMethod("addNewArrayObject",
-				    new HClass[] {
-					linker
-					.forName("javax.realtime.MemoryArea")
-				    }),
-			 new Temp[] { memArea },
-			 null, null, true, false, new Temp[0]);
-	    Quad.addEdge(q0, 0, q1, 0);
-	    Quad.addEdge(q1, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
-	    q1.addHandlers(inst.handlers());
-	} else {
-	    Quad.addEdge(q0, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
-	}
-	q0.addHandlers(inst.handlers());
-    }
-
-    /** Attaches the current memory area to a new instance of an object.
-     * <p>
-     * <p>obj = new foo()[1][2][3] becomes:
-     * <p>t = RealtimeThread.currentRealtimeThread().getMemoryArea();
-     * <p>obj = new foo()[1][2][3]
-     * <p>t.bless(obj, {1, 2, 3});
-     * <p>
-     */
-
-    private static void newArrayObject(final Linker linker, Quad inst, 
-				       Temp dst, HClass hclass, Temp[] dims) {
-	Stats.addNewArrayObject();
-	QuadFactory qf = inst.getFactory();
-	TempFactory tf = qf.tempFactory();
-	HMethod hm = qf.getMethod();
-	Temp memArea = addGetCurrentMemArea(linker, qf, hm, inst);
-	Quad next = inst.next(0);
-	Temp dimsArray = new Temp(tf, "dimsArray");
-	Temp numDims = new Temp(tf, "numDims");
-	Temp newDst = new Temp(tf, "newArray");
-	Quad newQuad = new ANEW(qf, inst, newDst, hclass, dims);
-	Quad q0 = new CONST(qf, inst, numDims, 
-			    new Integer(dims.length), HClass.Int);
-	HClass intArray = 
-	    HClassUtil.arrayClass(linker, HClass.Int, dims.length);
-	Quad q1 = new ANEW(qf, inst, dimsArray, intArray, 
-			   new Temp[] { numDims }); 
-	Quad[] q2 = new Quad[2*dims.length];
-	for (int i=0; i<dims.length; i++) {
-	    Temp t1 = new Temp(tf, "uniq");
-	    q2[2*i] = new CONST(qf, inst, t1, new Integer(i), HClass.Int);
-	    q2[2*i+1] = new ASET(qf, inst, dimsArray, t1, dims[i], HClass.Int);
-	    q2[2*i].addHandlers(inst.handlers());
-	    q2[2*i+1].addHandlers(inst.handlers());
-	}
-	Quad q3 = new CALL(qf, inst,
-			   linker.forName("javax.realtime.MemoryArea")
-			   .getMethod("bless", 
-				      new HClass[] { 
-					  linker.forName("java.lang.Object"), 
-					  intArray}),
-			   new Temp[] { memArea, newDst, dimsArray }, 
-			   null, null, true, false, new Temp[0]);
-	Quad q4 = new MOVE(qf, inst, dst, newDst);
-	Edge splitEdge = next.prevEdge(0);
-	Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
-	Quad.addEdges(new Quad[] {q0, q1, q2[0]});
-	Quad.addEdges(q2);
-	Quad.addEdges(new Quad[] {q2[q2.length-1], q3, q4});
-	Quad.addEdge(q4, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
-	Quad.replace(inst, newQuad);
-	q0.addHandlers(inst.handlers());
-	q1.addHandlers(inst.handlers());
-	q3.addHandlers(inst.handlers());
-	q4.addHandlers(inst.handlers());
-    }
-    
-    /** Adds a check around: a.foo = b; or a[foo]=b;
-     *  a must be able to access b.
-     */
-       
-    private static void checkAccess(Linker linker, Quad inst, 
-				    Temp object, Temp src) {
-	if (needsCheck(inst)) {
-	    QuadFactory qf = inst.getFactory();
-	    TempFactory tf = qf.tempFactory();
-	    HMethod hm = qf.getMethod();
-	    Temp objArea = new Temp(tf, "objMemArea");
-	    Quad q0 = null;
-	    HClass memoryArea = linker.forName("javax.realtime.MemoryArea");
-	    if (object != null) {
-		q0 = new CALL(qf, inst, memoryArea
-			      .getMethod("getMemoryArea", new HClass[] {
-				  linker.forName("java.lang.Object")}), 
-			      new Temp[] { object }, objArea, null, 
-			      false, false, new Temp[0]);
-	    } else {
-		q0 = new CALL(qf, inst,
-			      linker.forName("javax.realtime.HeapMemory")
-			      .getMethod("instance", new HClass[0]),
-			      new Temp[0], objArea, null, 
-			      false, false, new Temp[0]);
-	    }
-	    Quad q1 = new CALL(qf, inst, memoryArea
-			       .getMethod("checkAccess", new HClass[] { 
-				   linker.forName("java.lang.Object")}),
-			       new Temp[] { objArea, src },
-			       null, null, true, false, new Temp[0]);
-	    Edge splitEdge = inst.prevEdge(0);
-	    Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), 
-			 q0, 0);
-	    if (Realtime.COLLECT_RUNTIME_STATS) {
-		Temp srcArea = new Temp(tf, "srcMemArea");
-		Quad q2 = new CALL(qf, inst, memoryArea
-				   .getMethod("getMemoryArea", new HClass[] {
-				       linker.forName("java.lang.Object")}),
-				   new Temp[] { src }, srcArea, null,
-				   false, false, new Temp[0]);
-		Quad q3 = 
-		    new CALL(qf, inst, 
-			     linker.forName("javax.realtime.Stats")
-			     .getMethod("addCheck",
-					new HClass[] {
-					    memoryArea, 
-					    memoryArea
-					}),
-			     new Temp[] { objArea, srcArea },
-			     null, null, true, false, new Temp[0]);
-		Quad.addEdges(new Quad[] {q0, q1, q2, q3});
-		Quad.addEdge(q3, 0, (Quad)splitEdge.to(),
-			     splitEdge.which_pred());
-		q2.addHandlers(inst.handlers());
-		q3.addHandlers(inst.handlers());
-	    } else {
-		Quad.addEdges(new Quad[] {q0, q1});
-		Quad.addEdge(q1, 0, (Quad)splitEdge.to(), 
-			     splitEdge.which_pred());
-	    }	    
-	    q0.addHandlers(inst.handlers());
-	    q1.addHandlers(inst.handlers());
-	}
-    }
-    
-    /** */
-
-//      private static void checkNoHeapWrite(Linker linker, Quad inst,
-//  					 Temp object, Temp src) {
-//  	if (needsNoHeapWriteCheck(inst)) {
-	    
-
-//  	}
-//      }
-
-    /** */
-
-    private static void checkNoHeapRead(Linker linker) {
-
-
-    }
-
-    private static Temp addGetCurrentMemArea(Linker linker,
-					     QuadFactory qf, HMethod hm,
-					     Quad inst) {
-	if (!smartMemAreaLoads) {
-	    return realAddGetCurrentMemArea(linker, qf, hm, inst);
-	} else if (currentMemArea == null) {
-	    currentMemArea = 
-		realAddGetCurrentMemArea(linker, qf, hm, currentMethod.next(0));
-	} 
-	return currentMemArea;
-    }
-
-    /** Adds t = RealtimeThread.currentRealtimeThread().getMemoryArea() */
-
-    private static Temp realAddGetCurrentMemArea(Linker linker, 
-						 QuadFactory qf, HMethod hm, 
-						 Quad inst) {
-	TempFactory tf = qf.tempFactory();
-	Stats.addMemAreaLoad();
-	Temp t1 = new Temp(tf, "realtimeThread");
-	Temp currentMemArea = new Temp(tf, "memoryArea");
-	HClass realtimeThread = 
-	    linker.forName("javax.realtime.RealtimeThread");
-	Quad q0 = new CALL(qf, inst, realtimeThread
-			   .getMethod("currentRealtimeThread", new HClass[0]), 
-			   new Temp[0], t1, null, false, false, new Temp[0]);
-	Quad q1 = new CALL(qf, inst, realtimeThread
-			   .getMethod("getMemoryArea", new HClass[0]), 
-			   new Temp[] { t1 }, currentMemArea, null, false, 
-			   false, new Temp[0]);
-	Edge splitEdge = inst.prevEdge(0);
-	Quad.addEdge((Quad)splitEdge.from(), splitEdge.which_succ(), q0, 0);
-	Quad.addEdges(new Quad[] {q0, q1});
-	Quad.addEdge(q1, 0, (Quad)splitEdge.to(), splitEdge.which_pred());
-	q0.addHandlers(inst.handlers());
-	q1.addHandlers(inst.handlers());
-	return currentMemArea;
-    }
-    
-
     /** Indicates if the given instruction needs an access check wrapped 
      *  around it. */
     
-    private static boolean needsCheck(Quad inst) {
+    protected boolean needsCheck(Quad inst) {
 	Stats.analysisBegin();
 	boolean removeCheck = checkRemoval.shouldRemoveCheck(inst);
 	Stats.analysisEnd();
