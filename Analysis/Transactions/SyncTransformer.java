@@ -74,7 +74,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.15 2001-02-23 06:29:40 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.16 2001-02-25 23:13:21 cananian Exp $
  */
 //XXX: we currently have this issue with the code:
 // original input which looks like
@@ -109,11 +109,6 @@ public class SyncTransformer
 	!Boolean.getBoolean("harpoon.synctrans.nofieldoracle");
     private final boolean useSmartCheckOracle = // dumb down check oracle
 	!Boolean.getBoolean("harpoon.synctrans.nocheckoracle");
-    // en/disable counters by default.
-    static {
-	if (System.getProperty("harpoon.counters.enabled.synctrans")==null)
-	    System.setProperty("harpoon.counters.enabled.synctrans","true");
-    }
 
     // FieldOracle to use.
     final FieldOracle fieldOracle;
@@ -432,6 +427,10 @@ public class SyncTransformer
 	    Quad.replace(q, ncall);
 	    // now check for abort case.
 	    checkForAbort(ncall.nextEdge(1), ncall, ncall.retex());
+	    // work around for object info loss if receiver came from transact.
+	    if (!ncall.isStatic())
+		addTypeCheck(ncall.prevEdge(0), ncall, ncall.params(0),
+			     ncall.method().getDeclaringClass());
 	    // done.
 	}
 	public void visit(MONITORENTER q) {
