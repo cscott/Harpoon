@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Code</code> is a code-view for StrongARM assembly.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Code.java,v 1.1.2.9 1999-11-15 07:49:04 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.10 1999-11-16 22:08:50 pnkfelix Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "strongarm";
@@ -179,6 +179,25 @@ public class Code extends harpoon.Backend.Generic.Code {
 	} else {
 	    tempInstrPairToRegisterMap.put
 		(new TempInstrPair(instr, pseudoReg), regs.get(0));
+	}
+    }
+
+    public boolean registerAssigned(Instr instr, Temp pr) {
+	if (pr instanceof TwoWordTemp) {
+	    TwoWordTemp t = (TwoWordTemp) pr;
+	    return 
+		(tempInstrPairToRegisterMap.
+		 keySet().contains
+		 (new TempInstrPair(instr, t.getLow()))
+		 &&
+		 tempInstrPairToRegisterMap.
+		 keySet().contains
+		 (new TempInstrPair(instr, t.getHigh())));
+	} else {
+	    return 
+		(tempInstrPairToRegisterMap.
+		 keySet().contains
+		 (new TempInstrPair(instr, pr)));
 	}
     }
 }

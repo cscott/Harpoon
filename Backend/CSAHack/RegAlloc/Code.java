@@ -22,7 +22,7 @@ import java.util.Set;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.2 1999-11-06 00:36:19 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.3 1999-11-16 22:08:48 pnkfelix Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     TempMap tm;
@@ -63,6 +63,9 @@ public class Code extends harpoon.Backend.Generic.Code {
 	return tm.tempMap(val).toString();
     }
     public void assignRegister(Instr i, Temp pr, List regs) {
+	throw new Error("unimplemented");
+    }
+    public boolean registerAssigned(Instr i, Temp pr) {
 	throw new Error("unimplemented");
     }
 

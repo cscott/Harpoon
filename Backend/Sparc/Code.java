@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Code</code> is a code-view for SPARC assembly.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.3 1999-11-04 01:27:02 andyb Exp $
+ * @version $Id: Code.java,v 1.1.2.4 1999-11-16 22:08:49 pnkfelix Exp $
  */
 public class Code extends harpoon.Backend.Generic.Code {
     public static final String codename = "sparc";
@@ -116,4 +116,9 @@ public class Code extends harpoon.Backend.Generic.Code {
 		regs.get(0));
 	}
     }
+    public boolean registerAssigned(Instr i, Temp pr) {
+	throw new Error("unimplemented");
+    }
+
+
 }

@@ -33,7 +33,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.27 1999-11-15 09:39:00 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.28 1999-11-16 22:08:49 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -299,6 +299,10 @@ public abstract class Code extends HCode {
 	flexibility of having different registers for a's def and use
 	will buy us anything...
      */
-    public abstract void assignRegister(Instr i, Temp pseudoReg, List regs);
+    public abstract void assignRegister(Instr i, 
+					Temp pseudoReg, 
+					List regs);
+
+    public abstract boolean registerAssigned(Instr i, Temp pseudoReg);
 
 }

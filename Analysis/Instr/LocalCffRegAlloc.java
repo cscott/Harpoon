@@ -52,7 +52,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.47 1999-11-16 21:22:25 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.48 1999-11-16 22:08:48 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -108,12 +108,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 
 	    Iterator refs = getRefs(instr);
+	    // Iterator uses = instr.useC().iterator();
 	    while(refs.hasNext()) {
 		Temp ref = (Temp) refs.next();
 
 		if (isTempRegister(ref)) continue;
 
-		if (!regfile.inverseMap().getValues(ref).isEmpty()) {
+		if (code.registerAssigned(instr, ref)) {
 		    // ref already has register assigned to it
 		    continue;
 		}
