@@ -28,7 +28,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.28 2000-08-24 23:44:42 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.29 2000-10-16 16:53:34 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -151,6 +151,8 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    linker.forName("java.lang.ArrayIndexOutOfBoundsException")
 		.getConstructor(new HClass[] { HCstring }),
 	    linker.forName("java.lang.ArrayStoreException")
+		.getConstructor(new HClass[] { HCstring }),
+	    linker.forName("java.lang.ClassNotFoundException")
 		.getConstructor(new HClass[] { HCstring }),
 	    linker.forName("java.lang.InstantiationException") // by Class
 		.getConstructor(new HClass[] { HCstring }), // .newInstance()
