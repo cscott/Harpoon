@@ -59,6 +59,8 @@ public class RealtimeThread extends Thread implements Schedulable {
     private static long nextThreadID;
     private long threadID; 
 
+    long checkDepth = 0;
+
     public long getUID() {
 	return threadID;
     }
@@ -815,7 +817,9 @@ public class RealtimeThread extends Thread implements Schedulable {
     
     /** */
     void cleanup() {
+	NoHeapRealtimeThread.print("MemAreaStack: "+memAreaStack+", topStack: "+topStack+"\n");
         while (memAreaStack != topStack) {
+	    NoHeapRealtimeThread.print("Exiting mem: "+mem+"\n");
 	    exitMem();
 	}
     }

@@ -21,7 +21,7 @@ public class RoundRobinScheduler extends Scheduler {
 
     protected RoundRobinScheduler() {
 	super();
-	setQuanta(1000); // Start switching after 10 milliseconds
+	setQuanta(1); // Start switching after 1 milliseconds
     }
 
     /** Return an instance of a RoundRobinScheduler */
@@ -78,7 +78,7 @@ public class RoundRobinScheduler extends Scheduler {
     }
 
     protected long chooseThread(long currentTime) {
-	setQuanta(100000); // Switch every 100 milliseconds
+	setQuanta(1); // Switch every 100 milliseconds
 	try {
 	    return ((Long)iterator.next()).longValue();
 	} catch (NoSuchElementException e) {
@@ -158,10 +158,6 @@ public class RoundRobinScheduler extends Scheduler {
 	disabledThreads.remove(threadID);
     }
 
-    protected boolean noThreads() {
-	return threadList.isEmpty();
-    }
-    
     /** RoundRobinScheduler is too dumb to deal w/periods. */
     protected void waitForNextPeriod(RealtimeThread rt) {
     }

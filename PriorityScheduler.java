@@ -434,10 +434,6 @@ public class PriorityScheduler extends Scheduler {
 	return runningThread = 0;
     }
     
-    protected boolean noThreads() {
-	return nThreads == 0;
-    }
-    
     protected void disableThread(long threadID) {
 	disabledThreads.add(new Long(threadID));
     }	

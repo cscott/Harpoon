@@ -78,7 +78,7 @@ class MemAreaStack {
 	if (next != null) {
 	    return entry.toString()+"\n"+next.toString();
 	} else {
-	    return "";
+	    return entry.toString();
 	}
     }
 }

@@ -102,6 +102,12 @@ class RefList {
 	return elt == null;
     }
 
+    public long length() {
+	int i = 0;
+	for (Elt e = elt; e != null; e = e.next) i++;
+	return i;
+    }
+
     public Iterator iterator() {
 	class RefListIterator implements Iterator {
 	    private Elt prev;

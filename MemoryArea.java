@@ -350,11 +350,18 @@ public abstract class MemoryArea {
 
     /** Explicitly unsafe way to get by without polluting the previous scope with a Runnable */
     static void startMem(MemoryArea mem) {
-	RealtimeThread.currentRealtimeThread().enter(mem.shadow, mem);
+	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
+	rt.checkDepth++;
+	rt.enter(mem.shadow, mem);
     }
 
     static void stopMem() {
-	RealtimeThread.currentRealtimeThread().exitMem();
+	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
+	if ((--rt.checkDepth)<0) {
+	    NoHeapRealtimeThread.print("Error: stopMem>startMem\n");
+	    System.exit(-1);
+	}
+	rt.exitMem();
     }
 
 

@@ -8,7 +8,7 @@ import java.util.HashSet;
 /** An instance of <code>Scheduler</code> manages the execution of 
  *  schedulable objects and may implement a feasibility algorithm. The
  *  feasibility algorithm may determine if the known set of schedulable
- *  objects, given their particular execution ordering (or priority
+ *  objects, given their particular exection ordering (or priority
  *  assignment), is a feasible schedule. Subclasses of <code>Scheduler</code>
  *  are used for alternative scheduling policies and should define an
  *  <code>instance()</code> class method to return the default
@@ -171,9 +171,6 @@ public abstract class Scheduler {
      */
     protected abstract void removeThread(long threadID);
 
-    /** Any threads running? */
-    protected abstract boolean noThreads();
-
     /** Stop running <code>threadID</code> until enableThread - 
      *  used in the lock implementation to wait on a lock.
      */
@@ -208,12 +205,12 @@ public abstract class Scheduler {
 
     private final void addToRootSet() {
 	if (Math.sqrt(4)==0) {
-	    noThreads();
 	    jDisableThread(null, 0);
 	    jEnableThread(null, 0);
 	    jChooseThread(0);
 	    jRemoveCThread(0);
 	    jAddCThread(0);
+	    jNumThreads();
 	    (new RealtimeThread()).schedule();
 	    (new RealtimeThread()).unschedule();
 	    new NoSuchMethodException();
@@ -223,6 +220,7 @@ public abstract class Scheduler {
     }
 
     final void addThreadToLists(final RealtimeThread thread) {
+	totalThreads++;
 	MemoryArea.startMem(vt);
 	int state = beginAtomic();
 	addToFeasibility(thread);
@@ -233,6 +231,7 @@ public abstract class Scheduler {
     }
 
     final void removeThreadFromLists(final RealtimeThread thread) {
+	totalThreads--;
 	MemoryArea.startMem(vt);
 	int state = beginAtomic();
 	removeThread(thread);
@@ -250,6 +249,7 @@ public abstract class Scheduler {
     final static void jDisableThread(final RealtimeThread rt, 
 				     final long threadID) {
 	NoHeapRealtimeThread.print("\njDisableThread("+threadID+")");
+	disabledThreads++;
 	MemoryArea.startMem(vt);
 	Scheduler sched;
 	if (rt != null) { 
@@ -268,6 +268,7 @@ public abstract class Scheduler {
     final static void jEnableThread(final RealtimeThread rt, 
 				    final long threadID) {
 	NoHeapRealtimeThread.print("\njEnableThread("+threadID+")");
+	disabledThreads--;
 	MemoryArea.startMem(vt);
 	Scheduler sched;
 	if (rt != null) { 
@@ -284,11 +285,22 @@ public abstract class Scheduler {
     }
 
     final static void jAddCThread(final long threadID) {
+	totalThreads++;
 	getDefaultScheduler().addThread(threadID);
     }
 
     final static void jRemoveCThread(final long threadID) {
+	totalThreads--;
 	getDefaultScheduler().removeThread(threadID);
+    }
+
+    private static long totalThreads = 0;
+    private static long disabledThreads = 0;
+
+    /** Return the total number of active threads in the system. */
+    final static long jNumThreads() { 
+        NoHeapRealtimeThread.print("\nActive threads: "+(totalThreads-disabledThreads));
+	return totalThreads-disabledThreads;
     }
 
     final protected long jChooseThread(final long currentTime) {
