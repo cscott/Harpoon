@@ -12,7 +12,6 @@ import harpoon.Analysis.BasicBlock;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
-import harpoon.IR.Properties.CFGrapher;
 
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
@@ -25,7 +24,7 @@ import harpoon.Util.UComp;
  * to <code>BasicBlock</code>s.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCBBFactory.java,v 1.1.2.1 2000-03-23 21:29:08 salcianu Exp $
+ * @version $Id: SCCBBFactory.java,v 1.1.2.2 2000-03-24 01:05:02 salcianu Exp $
  */
 public class SCCBBFactory {
 

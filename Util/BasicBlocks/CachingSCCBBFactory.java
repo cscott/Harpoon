@@ -3,9 +3,9 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.BasicBlocks;
 
-import java.util.Hashtable;
+import java.util.Map;
+import java.util.HashMap;
 import harpoon.ClassFile.HMethod;
-import harpoon.ClassFile.HCodeFactory;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 
 
@@ -14,24 +14,24 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  <code>SCCBBFactory</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CachingSCCBBFactory.java,v 1.1.2.1 2000-03-23 21:29:08 salcianu Exp $
+ * @version $Id: CachingSCCBBFactory.java,v 1.1.2.2 2000-03-24 01:05:02 salcianu Exp $
  */
 public class CachingSCCBBFactory extends SCCBBFactory{
 
     // The cache of previously computed results; mapping
     //  HMethod -> SCCTopSortedGraph
-    private Hashtable cache;
+    private Map cache;
 
     /** Creates a <code>CachingSCCBBFactory</code>. */
     public CachingSCCBBFactory(BBConverter bbconv){
 	super(bbconv);
-	cache = new Hashtable();
+	cache = new HashMap();
     }
     
-    /** Computes the topologically sort graph of all the basic blocks from 
+    /** Computes the topologically sorted graph of all the basic blocks from 
 	the <code>hm</code> method. All the results are cached so that the
 	computation occurs only once for each method (of course, unless 
-	<code>clear</code> is called. */
+	<code>clear</code> is called). */
     public SCCTopSortedGraph computeSCCBB(HMethod hm){
 	if(cache.containsKey(hm))
 	    return (SCCTopSortedGraph) cache.get(hm);
