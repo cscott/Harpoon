@@ -29,6 +29,7 @@ extern int num_promoted;
 
 #ifndef JOLDEN_WRITE_BARRIER
 FLEX_MUTEX_DECLARE_STATIC(intergenerational_roots_mutex);
+FLEX_MUTEX_DECLARE_STATIC(intergen_mutex);
 #endif
 FLEX_MUTEX_DECLARE_STATIC(generational_gc_mutex);
 

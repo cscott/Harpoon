@@ -9,6 +9,10 @@
 
 #ifdef JOLDEN_WRITE_BARRIER
 
+#ifdef WITH_THREADS
+extern flex_mutex_t intergen_mutex;
+#endif
+
 FLEX_MUTEX_DECLARE_STATIC(intergen_mutex);
 
 #ifdef WITH_GENERATION_CHECK
