@@ -60,7 +60,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.38 2000-01-15 01:12:31 cananian Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.39 2000-01-15 08:48:20 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -680,14 +680,22 @@ public class AsyncCode {
 				    HClass child=(HClass)childit.next();
 				    hm=child.getDeclaredMethod(parent.getName(),
 								  parent.getParameterTypes());
+				    if (old2new.containsKey(hm)) {
+					hm=null;
+					continue;
+				    }
 				}
 				if (bm.swop(hm)!=null) {
 				//handle actual blocking call swapping
 				    old2new.put(hm, bm.swop(hm));
 				} else {
-				    async_todo.add(ucf.convert(hm));
-				    HMethod temp=makeAsync(old2new, hm,
-							   ucf,linker);
+				    if (hm.getName().compareTo("<init>")!=0) {
+					async_todo.add(ucf.convert(hm));
+					HMethod temp=makeAsync(old2new, hm,
+							       ucf,linker);
+				    } else {
+					System.out.println("ERROR "+hm+" is blocking!");
+				    }
 				}
 			    } catch (NoSuchMethodError e) {
 			    }
@@ -843,6 +851,10 @@ public class AsyncCode {
 				    HClass child=(HClass)childit.next();
 				    hmrun=child.getDeclaredMethod(parent.getName(),
 								  parent.getParameterTypes());
+				    if (old2new.containsKey(hmrun)) {
+					hmrun=null;
+					continue;
+				    }
 				}
 				if (bm.swop(hmrun)!=null) {
 				//handle actual blocking call swapping
@@ -958,6 +970,7 @@ public class AsyncCode {
 	// find a unique name for the replacement HMethod
 	String methodNamePrefix = original.getName() + "_Async";
 	String newMethodName = methodNamePrefix;
+	boolean threadrun=false;
 	if (linker.forName("java.lang.Runnable").
 	    isSuperinterfaceOf(originalClass)&&
 	    originalClass.getMethod("run",new HClass[0]).equals(original)) {
@@ -965,11 +978,12 @@ public class AsyncCode {
 		newMethodName = methodNamePrefix;
 		originalClass.getDeclaredMethod(newMethodName, 
 					   original.getParameterTypes());
-		throw new RuntimeException("Name collision with run_Async method");
+		if (originalClass.getName().compareTo("java.lang.Thread")!=0)
+		    throw new RuntimeException("Name collision with run_Async method");
+		else
+		    threadrun=true;
 	    } catch (NoSuchMethodError e) {
 	    }
-	} else if (original.getName().compareTo("<init>")==0) {
-	    newMethodName = "<init>";
 	} else {
 	    try {
 		newMethodName = methodNamePrefix + "$$$"; 
@@ -981,7 +995,7 @@ public class AsyncCode {
 	}
 	// create replacement method
 	HMethod replacement=null;
-	if (original.getName().compareTo("<init>")!=0) {
+	if (!threadrun) {
 	    replacement=originalMutator.addDeclaredMethod(newMethodName, 
 							  original.getParameterTypes(),
 							  newReturnType);
@@ -990,9 +1004,9 @@ public class AsyncCode {
 	    rmutator.setModifiers(original.getModifiers());
 	    rmutator.setParameterNames(original.getParameterNames());
 	    rmutator.setSynthetic(original.isSynthetic());
-	}
-	else {
-	    replacement=original;
+	} else {
+	    replacement=originalClass.getDeclaredMethod(newMethodName,
+							original.getParameterTypes());
 	    HMethodMutator rmutator=replacement.getMutator();
 	    rmutator.setReturnType(newReturnType);
 	}
