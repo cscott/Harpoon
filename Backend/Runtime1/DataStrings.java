@@ -20,11 +20,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import harpoon.Analysis.Realtime.Realtime;
 /**
  * <code>DataStrings</code> lays out string constant objects.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataStrings.java,v 1.1.4.2 2000-01-13 23:47:40 cananian Exp $
+ * @version $Id: DataStrings.java,v 1.1.4.3 2001-01-21 04:39:26 wbeebee Exp $
  */
 public class DataStrings extends Data {
     final NameMap m_nm;
@@ -59,6 +60,10 @@ public class DataStrings extends Data {
 		if (HFval.equals(hf)) return charArray;
 		if (HFoff.equals(hf)) return new Integer(0);
 		if (HFcnt.equals(hf)) return new Integer(str.length());
+		if ((Realtime.REALTIME_JAVA)&&
+                   (linker.forName("java.lang.Object").getField("memoryArea").equals(hf))) { 
+                     return null; // Will be initialized when first Quads.SET/Quads.ASET
+		}
 		throw new Error("Unknown field "+hf+" of string object.");
 	    }
 	    final HClass HCstr = linker.forName("java.lang.String");

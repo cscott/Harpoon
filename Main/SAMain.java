@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.130 2001-01-18 22:59:34 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.131 2001-01-21 04:39:29 wbeebee Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -166,7 +166,10 @@ public class SAMain extends harpoon.IR.Registration {
 
     public static void do_it() {
 
-      Realtime.setupObjects(linker);
+      if (Realtime.REALTIME_JAVA) { 
+        Realtime.setupObject(linker); 
+      }
+
       MetaCallGraph mcg=null;
 
 	if (SAMain.startset!=null)
@@ -201,6 +204,15 @@ public class SAMain extends harpoon.IR.Registration {
 		roots.add(linker.forName("harpoon.Analysis.ContBuilder.Scheduler").getMethod("loop",new HClass[0]));
 	    }
 	    roots.add(mainM);
+	    if (Realtime.REALTIME_JAVA) {
+		roots.add(linker.forName("realtime.RealtimeThread")
+			  .getConstructor(new HClass[] {
+			      linker.forName("java.lang.ThreadGroup"),
+			      linker.forName("java.lang.Runnable"),
+			      linker.forName("java.lang.String")}));
+		roots.add(linker.forName("java.lang.Thread").getMethod("setPriority", 
+								       new HClass[] { HClass.Int }));
+	    }
 	    if (rootSetFilename!=null) try {
 		addToRootSet(roots, rootSetFilename);
 	    } catch (IOException ex) {
@@ -280,6 +292,12 @@ public class SAMain extends harpoon.IR.Registration {
 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
+
+	    if (Realtime.REALTIME_JAVA) {
+		hcf = Realtime.setupCode(linker, classHierarchy, hcf);
+		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    }                                           
 	} // don't need the root set anymore.
 
 
@@ -431,6 +449,10 @@ public class SAMain extends harpoon.IR.Registration {
 				       hclass.getName());
 		    System.exit(1);
 		}
+	    }
+
+	    if (Realtime.REALTIME_JAVA) {
+		Realtime.printStats();
 	    }
 
 	    // put a proper makefile in the directory.
