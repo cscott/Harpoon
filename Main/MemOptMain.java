@@ -13,12 +13,13 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.BufferedReader;
 
-import harpoon.ClassFile.*;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.CachingCodeFactory;
+import harpoon.ClassFile.SerializableCodeFactory;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
@@ -30,7 +31,6 @@ import harpoon.Analysis.PointerAnalysis.Debug;
 
 import harpoon.Analysis.MemOpt.IncompatibilityAnalysis;
 
-import harpoon.IR.Quads.*;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadSSI;
@@ -41,7 +41,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>MemTestMain</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: MemOptMain.java,v 1.5 2002-06-05 23:23:57 ovy Exp $
+ * @version $Id: MemOptMain.java,v 1.6 2002-10-04 19:56:07 salcianu Exp $
  */
 public abstract class MemOptMain {
     
@@ -306,33 +306,5 @@ public abstract class MemOptMain {
 	    System.out.println(entry.getValue());
 	}
     }
-
 }
 
-
-/*
-class UnmodCachingCodeFactory extends CachingCodeFactory {
-    private final CachingCodeFactory ccf;
-
-    public UnmodCachingCodeFactory(CachingCodeFactory ccf) {
-	this.ccf = ccf;
-    }
-
-    public void clear(HMethod hm) {
-	// ignored!
-    }
-
-    public void put(HMethod m, HCode hc) {
-	// ignored!
-    }
-
-    public HCode convert(HMethod hm) {
-	return ccf.convert(hm);
-    }
-    
-    public String getCodeName() {
-	return ccf.getCodeName();
-    }
-
-}
-*/
