@@ -18,7 +18,7 @@ import harpoon.ClassFile.HCodeEdge;
  * the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.7 1999-04-05 16:22:23 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.8 1999-04-05 21:36:36 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, Edges {
     protected String assem;
@@ -119,4 +119,11 @@ public class Instr implements HCodeElement, UseDef, Edges {
     public HCodeEdge[] edges() { return edges; }
     public HCodeEdge[] pred() { return pred; }
     public HCodeEdge[] succ() { return succ; }
+
+    /** Accept a visitor. 
+	<BR> <B>NOTE:</B> for VISITOR pattern to work, all subclasses
+	                  must override this method with the body:
+			  { v.visit(this); }
+     */
+    public void visit(InstrVisitor v) { v.visit(this); }
 }
