@@ -18,4 +18,5 @@
 # For example:
 #DEFAULT		(echo ""; who am i; echo %s; date; cat) >> $CVSROOT/CVSROOT/commitlog
 ALL	chgrp -R -f java-dev $CVSROOT/.
+ALL	chmod -R g+r $CVSROOT/.
 ALL	mail -s %s java-dev
