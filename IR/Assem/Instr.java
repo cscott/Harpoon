@@ -22,7 +22,7 @@ import java.util.*;
  * assembly-level instructions used in the Backend.* packages.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.26 1999-08-25 23:48:17 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.27 1999-08-25 23:55:53 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -130,7 +130,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	<code>assem</code> and the lists of destinations and sources
 	in <code>dst</code> and <code>src</code>. */   
     public Instr(InstrFactory inf, HCodeElement source, 
-          String assem, Temp[] dst, Temp[] src) {
+		 String assem, Temp[] dst, Temp[] src) {
 	this(inf, source, assem, dst, src, true, null);
     }
 
@@ -138,7 +138,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
      *  and the list of sources in src. The list of destinations is
      *  empty. */
     public Instr(InstrFactory inf, HCodeElement source,
-          String assem, Temp[] src) {
+		 String assem, Temp[] src) {
         this(inf, source, assem, null, src);
     }
 
@@ -251,14 +251,24 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	}
     }
 
-    /** Inserts <code>newi</code> as an Instr after <code>pre</code>, such
-     *  that <code>pre</code>'s successors become <code>newi</code>'s
-     *  successors, and <code>pre</code>'s only successor is <code>newi</code>.
+    /** Inserts <code>newi</code> as an Instr after <code>pre</code>,
+	such that <code>pre</code>'s successors become
+	<code>newi</code>'s successors, and <code>pre</code>'s only
+	successor is <code>newi</code>. 
+     
+        NOTE: Must review this method SEVERELY...it is easy to
+	maintain it if it is merely inserting into the linear list of
+	instrs, but if it is meant to modify the internal
+	representation of control flow, we need to fix it and any code
+	that uses it to do something else. 
      */
     public static void insertInstrAfter(Instr pre, Instr newi) {
 	Util.assert(pre != null);
         Util.assert(newi != null);
-
+ 
+	newi.next = pre.next;
+	pre.next = newi;
+	
         HCodeEdge[] oldsucc = pre.succ();
 	for (int i = 0; i < oldsucc.length; i++) {
 	    removeEdge(pre, (Instr)oldsucc[i].to());
@@ -268,10 +278,17 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	addEdge(pre, newi);
     }
 
-    /** Inserts <code>newi</code> as an Instr before <code>post</code>, such
-     *  that <code>post</code>'s predecessors become <code>newi</code>'s
-     *  predecessors, and <code>post</code>'s only predecessor is
-     *  <code>newi</code>. */
+    /** Inserts <code>newi</code> as an Instr before
+	<code>post</code>, such that <code>post</code>'s predecessors
+	become <code>newi</code>'s predecessors, and
+	<code>post</code>'s only predecessor is <code>newi</code>.  
+
+        NOTE: Must review this method SEVERELY...it is easy to
+	maintain it if it is merely inserting into the linear list of
+	instrs, but if it is meant to modify the internal
+	representation of control flow, we need to fix it and any code
+	that uses it to do something else. 
+    */
     public static void insertInstrBefore(Instr post, Instr newi) {
         Util.assert(post != null);
         Util.assert(newi != null);
