@@ -19,7 +19,7 @@ import java.util.Vector;
  * in the Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FixupFunc.java,v 1.6 1998-09-16 14:45:03 cananian Exp $
+ * @version $Id: FixupFunc.java,v 1.7 1998-09-16 15:57:53 cananian Exp $
  * @see Translate
  */
 
@@ -112,7 +112,7 @@ public class FixupFunc  {
 			    Temp a = Sl.dst[k][j];
 			    int I = Count.inc(a);
 			    // replace the jth dest of the lambda with ai
-			    Temp ai = Stack.index(a, I);
+			    Temp ai = Stack.push(a, I);
 			    Sl.dst[k][j] = ai;
 			}
 		    }
@@ -130,6 +130,9 @@ public class FixupFunc  {
 			    Yp.src[k][j] = ai;
 			}
 		    }
+		    // clean up the stack for lambda functions.
+		    for (TempList al = L; al != null; al = al.tail)
+			Stack.pop(al.head);
 		}
 		// for each dominator tree child X of S
 		HCodeElement[] Xl = dt.children(c, S);
