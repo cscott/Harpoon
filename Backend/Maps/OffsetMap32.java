@@ -20,7 +20,7 @@ import java.util.StringTokenizer;
  * specializing them for 32-bit architectures.
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.16 1999-08-10 20:35:24 duncan Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.17 1999-08-11 03:51:48 cananian Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -33,9 +33,10 @@ public class OffsetMap32 extends OffsetMap
     private HClassInfo          m_hci;
     private InterfaceMethodMap  m_imm; 
     private MethodMap           m_cmm;
+    private NameMap             m_nm;
 
     /** Class constructor */
-    public OffsetMap32(ClassHierarchy ch) {
+    public OffsetMap32(ClassHierarchy ch, NameMap nm) {
 	// Util.assert(ch!=null);
     
 	m_cmm     = new MethodMap() {
@@ -56,8 +57,13 @@ public class OffsetMap32 extends OffsetMap
 	m_labels  = new Hashtable();
 	m_hci     = new HClassInfo();
 	// m_imm     = new InterfaceMethodMap(ch.classes());
+	m_nm      = nm;
     }
-
+    /** Create an <code>OffsetMap32</code> using a
+     *  <code>DefaultNameMap</code>. */
+    public OffsetMap32(ClassHierarchy ch) {
+	this(ch, new DefaultNameMap());
+    }
 
     /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
      *                                                           *
@@ -82,7 +88,7 @@ public class OffsetMap32 extends OffsetMap
     /** Returns the label corresponding to the specified HClass */
     public Label label(HClass hc) { 
 	if (!m_labels.containsKey(hc)) {
-	    m_labels.put(hc, new Label("_CLASS_" + hc.getName()));
+	    m_labels.put(hc, new Label(m_nm.mangle(hc)));
 	}
 	return (Label)m_labels.get(hc);
     }
@@ -91,7 +97,7 @@ public class OffsetMap32 extends OffsetMap
     public Label label(HField hf) { 
 	Util.assert(hf.isStatic());
 	if (!m_labels.containsKey(hf)) {
-	    m_labels.put(hf, new Label("_SFIELD_" + getFieldSignature(hf)));
+	    m_labels.put(hf, new Label(m_nm.mangle(hf)));
 	}
 	return (Label)m_labels.get(hf);
     }
@@ -100,7 +106,7 @@ public class OffsetMap32 extends OffsetMap
      *  method is not necessarily static */
     public Label label(HMethod hm) { 
 	if (!m_labels.containsKey(hm)) {
-	    m_labels.put(hm, new Label(NameMap.munge(hm))); 
+	    m_labels.put(hm, new Label(m_nm.mangle(hm))); 
 	}
 	return (Label)m_labels.get(hm);
     }
@@ -108,8 +114,8 @@ public class OffsetMap32 extends OffsetMap
     /** Returns the label corresponding to the specified String constant */
     public Label label(String stringConstant) { 
 	if (!m_labels.containsKey(stringConstant)) {
-	    m_labels.put(stringConstant, 
-			 new Label("_STRING_CONST_" + stringConstant));
+	    m_labels.put(stringConstant,
+			 new Label(m_nm.mangle(stringConstant)));
 	}
 	return (Label)m_labels.get(stringConstant);
     }
@@ -261,42 +267,4 @@ public class OffsetMap32 extends OffsetMap
     public int tagOffset(HClass hc) { 
 	return -2;
     }
-
-
-    /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-     *                                                           *
-     *                    Utility methods                        *
-     *                                                           *
-     *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-
-
-    private String getFieldSignature(HField hf)
-	{
-	    String token = null;
-	    for (StringTokenizer st = new StringTokenizer(hf.toString());
-		 st.hasMoreTokens();)
-		{
-		    token = st.nextToken();
-		}
-	    return hf.getDeclaringClass() + "_" + token;
-	}
-
-    private String getMethodSignature(HMethod hm)
-	{
-	    HClass[] paramTypes;
-	    StringBuffer sb = new StringBuffer("");
-      
-	    paramTypes = hm.getParameterTypes();
-	    for (int i = 0; i < paramTypes.length; i++)
-		{
-		    sb.append(paramTypes[i].toString());
-		    sb.append("_");
-		}
-	    sb.append(hm.getDeclaringClass().getName());
-	    sb.append("_");
-	    sb.append(hm.getName());
-      
-	    return sb.toString().replace(' ', '_');
-
-	}
 }

@@ -15,7 +15,7 @@ import harpoon.Temp.Label;
  * total size of an <code>HClass</code> object.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: OffsetMap.java,v 1.1.2.12 1999-08-04 06:30:55 cananian Exp $
+ * @version $Id: OffsetMap.java,v 1.1.2.13 1999-08-11 03:51:48 cananian Exp $
  */
 public abstract class OffsetMap { // use an abstract class, if we can.
 
@@ -77,7 +77,7 @@ public abstract class OffsetMap { // use an abstract class, if we can.
      *  <code>Label</code> we can use to take advantage of this information. */
     public abstract Label label(HMethod hf);
 
-    /** Maps a <code>String</code> constant to a <code>Label</code> */
+    /** Maps a <code>String</code> constant to a <code>Label</code>. */
     public abstract Label label(String stringConstant);
 
     /** Maps an <code>HClass</code> to an offset (in bytes).  
