@@ -54,14 +54,16 @@ public class Timer extends Node {
 	    if (announce) {
 		System.out.print("Time (ms): "+diff);
 		//line below added by Benji 
-		System.out.println(" ** Avg (ms) : "+(int)(getLatency()*1000));
+		System.out.print(" ** Avg (ms) : "+(int)(getLatency()*1000));
+		System.out.print(" ** Min (ms) : "+min);
+		System.out.println(" ** Max (ms) : "+max);
 	    }
 	}
-	if (id.lastImage) {
-	    System.out.println("Timer: Max = "+max);
-	    System.out.println("Timer: Min = "+min);
-	    System.out.println("Timer: Avg = "+(int)(getLatency()*1000));
-	}
+	//if (id.lastImage) {
+	//    System.out.println("Timer: Max = "+max);
+	//    System.out.println("Timer: Min = "+min);
+	//    System.out.println("Timer: Avg = "+(int)(getLatency()*1000));
+	//}
 	
 	super.process(id);
     }
