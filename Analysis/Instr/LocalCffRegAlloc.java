@@ -10,8 +10,8 @@ import harpoon.Backend.Generic.RegFileInfo.SpillException;
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.DataFlow.LiveTemps;
 import harpoon.Analysis.Instr.TempInstrPair;
-import harpoon.Analysis.Instr.RegAlloc.FskLoad;
-import harpoon.Analysis.Instr.RegAlloc.FskStore;
+import harpoon.Analysis.Instr.RegAlloc.SpillLoad;
+import harpoon.Analysis.Instr.RegAlloc.SpillStore;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrMOVE;
 import harpoon.IR.Assem.InstrEdge;
@@ -53,7 +53,7 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.65 2000-01-27 15:22:38 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.66 2000-01-27 20:23:35 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -66,13 +66,13 @@ public class LocalCffRegAlloc extends RegAlloc {
     }
 
     private static String toAssem(Instr i, Code code) {
-	// FskLoads and FskStores do not put the appropriate
+	// SpillLoads and SpillStores do not put the appropriate
 	// suffixes on Temps (because they are just
 	// placeholders for actual load and store
 	// instructions) so we don't attempt to convert them
 	// to assembly form
-	if (i instanceof FskLoad ||
-	    i instanceof FskStore) {
+	if (i instanceof SpillLoad ||
+	    i instanceof SpillStore) {
 	    return i.toString();
 	} else {
 	    return code.toAssem(i);
@@ -123,7 +123,7 @@ public class LocalCffRegAlloc extends RegAlloc {
     }
     
     private void verify(final BasicBlock block, final Set liveOnExit) {
-	// includes FskLoads and FskStores...
+	// includes SpillLoads and SpillStores...
 	Iterator instrs = block.iterator();
 	final RegFile regfile = new RegFile();
 	
@@ -177,10 +177,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    }
 	    
 	    public void visit(InstrMEM i) {
-		if (i instanceof FskLoad) {
+		if (i instanceof SpillLoad) {
 		    // regs <- temp
 		    assign(i.use()[0], i.defC());
-		} else if (i instanceof FskStore) {
+		} else if (i instanceof SpillStore) {
 		    // temp <- regs
 		    Temp def = i.def()[0];
 		    List fileRegs = regfile.getAssignment(def);
@@ -255,8 +255,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 		 new FilterIterator.Filter() {
 		     public boolean isElement(Object o) {
 			 final Instr j = (Instr) o;
-			 return !(j instanceof FskLoad ||
-				  j instanceof FskStore);
+			 return !(j instanceof SpillLoad ||
+				  j instanceof SpillStore);
 		     }
 		 });
 	    
@@ -327,7 +327,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			
 			if (i.useC().contains(t)) {
 			    InstrMEM load = 
-				new FskLoad
+				new SpillLoad
 				(i, "FSK-LOAD", regList, t);
 			    load.insertAt(new InstrEdge(i.getPrev(), i));
 			}
@@ -767,7 +767,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			val + " must map to SOME registers" +
 			"\n regfile:" + regfile);
 	    
-	    InstrMEM spillInstr = new FskStore(loc.to, "FSK-STORE", val, regs);
+	    InstrMEM spillInstr = new SpillStore(loc.to, "FSK-STORE", val, regs);
 	    spillInstr.insertAt(loc);
 	}
     }

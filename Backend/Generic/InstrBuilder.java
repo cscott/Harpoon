@@ -6,6 +6,7 @@ package harpoon.Backend.Generic;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.Temp.Temp;
+import harpoon.Temp.Label;
 import harpoon.Util.ListFactory;
 
 import java.util.List;
@@ -23,7 +24,7 @@ import java.util.ArrayList;
     
     @see harpoon.Analysis.Instr
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.4 1999-12-20 17:22:22 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.5 2000-01-27 20:23:40 pnkfelix Exp $
  */
 public abstract class InstrBuilder {
     
@@ -197,7 +198,8 @@ public abstract class InstrBuilder {
 			instruction stream that the returned
 			<code>InstrLABEL</code> is intended for. 
     */
-    public abstract InstrLABEL makeLabel(Instr template);
-
-
+    public InstrLABEL makeLabel(Label l, Instr template) {
+	harpoon.Util.Util.assert(false, "abstract method");
+	return null;
+    }
 }

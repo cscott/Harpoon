@@ -11,6 +11,7 @@ import harpoon.IR.Assem.InstrMEM;
 import harpoon.IR.Assem.InstrVisitor;
 import harpoon.IR.Properties.UseDef;
 import harpoon.IR.Properties.CFGrapher;
+import harpoon.IR.Properties.Derivation;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Code;
 import harpoon.Backend.Generic.RegFileInfo;
@@ -55,8 +56,19 @@ import java.util.HashMap;
  * <code>Instr</code>s will be <code>InstrMEM</code> instructions to
  * move values from the register file to data memory and vice-versa.
  * 
+ * <BR> <B>DESIGN NOTE:</B> This method relies on the subclasses of
+ * <code>RegAlloc</code> to perform actual allocation.  This causes a
+ * cycle in our module dependency graph, which, while not strictly
+ * illegal, tends to be a sign of a design flaw. Consider moving the
+ * code factory generator out of the <code>RegAlloc</code> class into
+ * a seperate class to get rid of the cycle.  In the meantime, any new
+ * <code>RegAlloc</code> subclasses can be incorporated into this
+ * method to be used in the compiler.  Perhaps should also design a
+ * way to parameterize which <code>RegAlloc</code> subclasses will be
+ * used.
+ * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.63 2000-01-26 21:06:19 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.64 2000-01-27 20:23:35 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
@@ -87,26 +99,26 @@ public abstract class RegAlloc  {
 	"appropriate" `d# and `s# operands.
 	
 
-	REP INVARIANT: FskLoads have only one src Temp.	
-     */
-    /* protected (jdk1.1-is-stupid)*/ public class FskLoad extends InstrMEM {
-	FskLoad(InstrFactory inf, Instr i, String assem, Temp dst, Temp src) {
+	REP INVARIANT: SpillLoads have only one src Temp.	
+p     */
+    /* protected (jdk1.1-is-stupid)*/ public class SpillLoad extends InstrMEM {
+	SpillLoad(InstrFactory inf, Instr i, String assem, Temp dst, Temp src) {
 	    super(inf, i, assem + " `d0, `s0", 
 		  new Temp[]{dst}, new Temp[]{src});
 	}
-	FskLoad(Instr i, String assem, Temp dst, Temp src) {
+	SpillLoad(Instr i, String assem, Temp dst, Temp src) {
 	    this(i.getFactory(), i, assem, dst, src);
 	}
 
 	// Note that the order that 'dsts' will appear in is the order
 	// that its iterator returns the Temps in.
-	FskLoad(InstrFactory inf, Instr i, String assem, Collection dsts, Temp src) {
+	SpillLoad(InstrFactory inf, Instr i, String assem, Collection dsts, Temp src) {
 	    super(inf, i, assem + " " + 
 		  getDstStr(dsts.size()) + ", `s0", 
 		  (Temp[])dsts.toArray(new Temp[dsts.size()]), 
 		  new Temp[]{src});
 	}
-	FskLoad(Instr i, String assem, Collection dsts, Temp src) {
+	SpillLoad(Instr i, String assem, Collection dsts, Temp src) {
 	    this(i.getFactory(), i, assem, dsts, src);
 	}
 
@@ -117,15 +129,15 @@ public abstract class RegAlloc  {
 	Note that the constructors automagically put in the
 	"appropriate" `d# and `s# operands.
 
-	REP INVARIANT: FskStores have only one dst Temp.	
+	REP INVARIANT: SpillStores have only one dst Temp.	
 
     */
-    /* protected (jdk1.1-is-stupid)*/ public class FskStore extends InstrMEM {
-	FskStore(Instr i, String assem, Temp dst, Temp src) {
+    public class SpillStore extends InstrMEM {
+	SpillStore(Instr i, String assem, Temp dst, Temp src) {
 	    this(i.getFactory(), i, assem, dst, src);
 	}
 
-	FskStore(InstrFactory inf, HCodeElement hce, 
+	SpillStore(InstrFactory inf, HCodeElement hce, 
 		String assem, Temp dst, Temp src) {
 	    super(inf, hce, assem, 
 		  new Temp[]{dst}, new Temp[]{src});
@@ -133,7 +145,7 @@ public abstract class RegAlloc  {
 
 	// Note that the order that 'dsts' will appear in is the order
 	// that its iterator returns the Temps in.
-	FskStore(InstrFactory inf, HCodeElement hce,
+	SpillStore(InstrFactory inf, HCodeElement hce,
 		 String assem, Temp dst, Collection srcs) {
 	    super(inf, hce, assem + " `d0, " +
 		  getSrcStr(srcs.size()),
@@ -141,7 +153,7 @@ public abstract class RegAlloc  {
 		  (Temp[])srcs.toArray(new Temp[srcs.size()]));
 	}
 
-	FskStore(Instr i, String assem, Temp dst, Collection srcs) {
+	SpillStore(Instr i, String assem, Temp dst, Collection srcs) {
 	    this(i.getFactory(), i, assem, dst, srcs);
 	}
     }
@@ -170,8 +182,8 @@ public abstract class RegAlloc  {
 	     any live value will be stored before its assigned
 	     register is overwritten.  
 	     <BR> Loads and Stores in general
-	     are added in the form of <code>FskLoad</code>s and
-	     <code>FskStore</code>s; the main <code>RegAlloc</code>
+	     are added in the form of <code>SpillLoad</code>s and
+	     <code>SpillStore</code>s; the main <code>RegAlloc</code>
 	     class will use <code>resolveOutstandingTemps(HCode</code> 
 	     to replace these "fake" loads and stores with frame
 	     specified Memory instructions.
@@ -197,18 +209,6 @@ public abstract class RegAlloc  {
 	     which allocates registers in the code produced by
 	     <code>parentFactory</code> using the machine properties
 	     specified in <code>frame</code>.
-
-	     <BR> <B>DESIGN NOTE:</B> This method relies on the subclasses
-	     of <code>RegAlloc</code> to perform actual allocation.
-	     This causes a cycle in our module dependency graph,
-	     which, while not strictly illegal, tends to be a sign of
-	     a design flaw. Consider moving the code factory generator
-	     out of the <code>RegAlloc</code> class into a seperate
-	     class to get rid of the cycle.  In the meantime, any new
-	     <code>RegAlloc</code> subclasses can be incorporated into
-	     this method to be used in the compiler.  Perhaps should
-	     also design a way to parameterize which
-	     <code>RegAlloc</code> subclasses will be used. 
      */
     public static HCodeFactory codeFactory(final HCodeFactory parentFactory, 
 					   final Frame frame) {
@@ -266,15 +266,50 @@ public abstract class RegAlloc  {
     }
 
     static interface IntermediateCodeFactory extends HCodeFactory {
-	harpoon.IR.Properties.Derivation getDerivation();
+	Derivation getDerivation();
     }
     
+    /** Produces an <code>IntermediateCodeFactory</code> which can be
+	used to extract Derivation information about code it
+	generates.
+	<BR> <B>requires:</B> <code>parentFactory</code> produces code
+	     in a derivative of "instr" form.
+	<BR> <B>effects:</B> Produces an
+	     <code>IntermediateCodeFactory</code> which allocates
+	     registers in the code produced by
+	     <code>parentFactory</code> using the machine properties
+	     specified in <code>frame</code>.  Spilled temporarys are
+	     assigned a stack offset but the actual code does not have
+	     the concrete load and store instructions necessary for the
+	     spilling; the <code>IntermediateCodeFactory</code>
+	     returned should be passed to
+	     <code>concreteSpillFactory()</code> to produce a code
+	     factory suitable for generating runnable assembly code. 
+    */
     public static 
-	IntermediateCodeFactory abstractSpillFactory(HCodeFactory parent,
-						     Frame frame) {
-	return (IntermediateCodeFactory) parent;
+	IntermediateCodeFactory abstractSpillFactory(final HCodeFactory parent,
+						     final Frame frame) {
+	return new IntermediateCodeFactory() {
+	    HCodeFactory p = parent;
+	    public HCode convert(HMethod m) { return p.convert(m); }
+	    public String getCodeName() { return p.getCodeName(); }
+	    public void clear(HMethod m) { p.clear(m); }
+	    public Derivation getDerivation() {
+		return new Derivation() {
+		    public Derivation.DList derivation(HCodeElement hce, Temp t) { 
+			return null;
+		    }
+		};
+	    }
+	};
     }
     
+    /** Produces an <code>HCodeFactory</code> which will transform the
+	abstract spills into concrete spills.
+	<BR> <B>effects:</B> Produces an <code>HCodeFactory</code>
+	     which takes the codes produced by <code>parent</code>,
+	     find the 
+    */
     public static HCodeFactory concreteSpillFactory(IntermediateCodeFactory parent, 
 						    Frame frame) { 
 	return parent;
@@ -286,8 +321,8 @@ public abstract class RegAlloc  {
     /** Transforms Temp references in 'in' into appropriate offsets
 	from the Stack Pointer in the Memory. 
         <BR> <B>modifies:</B> inHc
-	<BR> <B>effects:</B> Replaces the <code>FskLoad</code> and
-	     <code>FskStore</code>s with memory instructions for the
+	<BR> <B>effects:</B> Replaces the <code>SpillLoad</code> and
+	     <code>SpillStore</code>s with memory instructions for the
 	     appropriate <code>Frame</code>.
     */
     protected final HCode resolveOutstandingTemps(HCode in) {
@@ -300,7 +335,7 @@ public abstract class RegAlloc  {
 	    HashMap tempsToOffsets = new HashMap();
 	    int nextOffset = 1;
 
-	    public void visitLoad(FskLoad m) {
+	    public void visitLoad(SpillLoad m) {
 		// look for non-Register Temps in use, adding
 		// them to internal map
 		Iterator uses = m.useC().iterator();
@@ -313,7 +348,7 @@ public abstract class RegAlloc  {
 		    }
 		}
 	    } 
-	    public void visitStore(FskStore m) {
+	    public void visitStore(SpillStore m) {
 		// look for non-Register Temps in def, adding
 		// them to internal map
 		Iterator defs = m.defC().iterator();
@@ -330,10 +365,10 @@ public abstract class RegAlloc  {
 
 
 	    public void visit(Instr m) {
-		if (m instanceof FskStore)
-		    visitStore((FskStore) m); 
-		else if (m instanceof FskLoad) {
-		    visitLoad((FskLoad) m); 
+		if (m instanceof SpillStore)
+		    visitStore((SpillStore) m); 
+		else if (m instanceof SpillLoad) {
+		    visitLoad((SpillLoad) m); 
 		}
 	    }
 	}
@@ -354,7 +389,7 @@ public abstract class RegAlloc  {
 	    // this, but I think TempFinder above relies on some parts
 	    // of it, at least when assigning offsets.  Check over
 	    // this. 
-	    public void visitStore(FskStore m) {
+	    public void visitStore(SpillStore m) {
 		// System.out.println("Visiting Store: " + m);
 
 		// replace all non-Register Temps with appropriate
@@ -371,20 +406,20 @@ public abstract class RegAlloc  {
 		if (instrs.size() > 1) { // linearity check
 		    Iterator iter = instrs.iterator();
 		    Instr i1 = (Instr) iter.next();
-		    Util.assert(!(i1 instanceof FskStore), "No FskStores Allowed");
+		    Util.assert(!(i1 instanceof SpillStore), "No SpillStores Allowed");
 		    while(iter.hasNext()) {
 			Instr i2 = (Instr) iter.next();
 			Util.assert(i1.getNext() == i2, "i1.next != i2:( "+i1+" , "+i2+")");
 			Util.assert(i2.getPrev() == i1, "i2.prev != i1:( "+i1+" , "+i2+")");
 			i1 = i2;
-			Util.assert(!(i1 instanceof FskStore), "No FskStores Allowed");
+			Util.assert(!(i1 instanceof SpillStore), "No SpillStores Allowed");
 		    }
 		}
 
 		Instr.replaceInstrList(m, instrs);		
 	    }
 	    
-	    public void visitLoad(FskLoad m) {
+	    public void visitLoad(SpillLoad m) {
 		// replace all non-Register Temps with appropriate
 		// stack offset locations
 		Integer i = (Integer) tempsToOffsets.get(m.use()[0]);
@@ -401,9 +436,9 @@ public abstract class RegAlloc  {
 
 	    public void visit(InstrMEM i) {
 		Util.assert(i != null, "InstrMEM should not be null");
-		try { visitStore((FskStore) i); return; 
+		try { visitStore((SpillStore) i); return; 
 		} catch(ClassCastException e) { }
-		try { visitLoad((FskLoad) i); return;
+		try { visitLoad((SpillLoad) i); return;
 		} catch(ClassCastException e) { }
 		    //Do nothing
 	    }
@@ -428,9 +463,9 @@ public abstract class RegAlloc  {
 	instrs = in.getElementsI(); // debug check
 	while(instrs.hasNext()) {
 	    Instr i = (Instr) instrs.next();
-	    Util.assert(!(i instanceof FskLoad), "FskLoad in i-list!");
-	    Util.assert(!(i instanceof FskStore), 
-			"FskStore in i-list! "+
+	    Util.assert(!(i instanceof SpillLoad), "SpillLoad in i-list!");
+	    Util.assert(!(i instanceof SpillStore), 
+			"SpillStore in i-list! "+
 			i.getPrev() + " " +
 			i + " " + i.getNext());
 	}
@@ -455,7 +490,7 @@ public abstract class RegAlloc  {
     private Set computeUsedRegs(Instr instrs) {
 	Set s = new HashSet();
 	for (Instr il = instrs; il!=null; il=il.getNext()) {
-	    if (il instanceof FskStore) continue;
+	    if (il instanceof SpillStore) continue;
 	    Temp[] d = il.def();
 	    for (int i=0; i<d.length; i++) {
 		if (isTempRegister(d[i])) {
@@ -563,7 +598,7 @@ class BrainDeadLocalAlloc extends RegAlloc {
 			    frame.getRegFileInfo().suggestRegAssignment(preg, regFile); 
 			List regList = (List) iter.next();
 			InstrMEM loadSrcs = 
-			    new FskLoad(inf, null, "FSK-LOAD", regList, preg); 
+			    new SpillLoad(inf, null, "FSK-LOAD", regList, preg); 
 			loadSrcs.insertAt(new InstrEdge(instr.getPrev(), instr));
 			code.assignRegister(instr, preg, regList);
 			Iterator regIter = regList.iterator();
@@ -581,7 +616,7 @@ class BrainDeadLocalAlloc extends RegAlloc {
 			    frame.getRegFileInfo().suggestRegAssignment(preg, regFile); 
 			List regList = (List) iter.next();
 			InstrMEM storeDsts = 
-			    new FskStore(inf, null, "FSK-STORE",
+			    new SpillStore(inf, null, "FSK-STORE",
 					 preg, regList);
 
 			// NOTE: if this assertion fails, we can write
@@ -647,7 +682,7 @@ class BrainDeadLocalAlloc extends RegAlloc {
 }
 
 /** Visits <code>BasicBlock</code>s of <code>Instr</code>s and
-    uses the <code>FskLoad</code> and <code>FskStore</code>
+    uses the <code>SpillLoad</code> and <code>SpillStore</code>
     instructions to construct <code>Web</code>s for this method,
     These webs will need to be run through a merging dataflow
     analysis pass.  This is effectively ReachingDefs, but I
@@ -705,7 +740,7 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	}
 
 	
-	void foundLoad(RegAlloc.FskLoad instr) {
+	void foundLoad(RegAlloc.SpillLoad instr) {
 	    Iterator uses = instr.useC().iterator();
 	    while(uses.hasNext()) {
 		Temp t = (Temp) uses.next();
@@ -724,7 +759,7 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    }
 	}
 		
-	void foundStore(RegAlloc.FskStore instr) {
+	void foundStore(RegAlloc.SpillStore instr) {
 	    Iterator defs = instr.defC().iterator();
 	    while(defs.hasNext()) {
 		Temp t = (Temp) defs.next();
@@ -760,12 +795,12 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	    ListIterator instrs = bb.listIterator();
 	    while(instrs.hasNext()) {
 		Instr instr = (Instr) instrs.next();
-		if (instr instanceof RegAlloc.FskLoad) {
+		if (instr instanceof RegAlloc.SpillLoad) {
 		    // LOAD FROM MEM
-		    info.foundLoad((RegAlloc.FskLoad) instr);
-		} else if (instr instanceof RegAlloc.FskStore) { 
+		    info.foundLoad((RegAlloc.SpillLoad) instr);
+		} else if (instr instanceof RegAlloc.SpillStore) { 
 		    // STORE TO MEM
-		    info.foundStore((RegAlloc.FskStore) instr);
+		    info.foundStore((RegAlloc.SpillStore) instr);
 		}
 	    }		
 	}
