@@ -196,21 +196,24 @@ public abstract class Scheduler {
     protected final native void setTimer(boolean state);
 
     /** This is the list of handlers that can be registered with a new scheduler to
-	intercept events. */
+	intercept events.  When these run out, register multiplexer events and send messages. */
     public static final long HANDLE_MUTEX_INIT = 1;
-    public static final long HANDLE_MUTEX_LOCK = 2;
-    public static final long HANDLE_MUTEX_UNLOCK = 4;
-    public static final long HANDLE_MUTEX_DESTROY = 8;
-    public static final long HANDLE_COND_INIT = 16;
-    public static final long HANDLE_COND_BROADCAST = 32;
-    public static final long HANDLE_COND_SIGNAL = 64;
-    public static final long HANDLE_COND_TIMEDWAIT = 128;
-    public static final long HANDLE_COND_DESTROY = 256;
-    public static final long HANDLE_ALL = 511;
+    public static final long HANDLE_MUTEX_DESTROY = 2;
+    public static final long HANDLE_MUTEX_TRYLOCK = 4;
+    public static final long HANDLE_MUTEX_LOCK = 8;
+    public static final long HANDLE_MUTEX_UNLOCK = 16;
+    public static final long HANDLE_COND_INIT = 32;
+    public static final long HANDLE_COND_DESTROY = 64;
+    public static final long HANDLE_COND_BROADCAST = 128;
+    public static final long HANDLE_COND_SIGNAL = 256;
+    public static final long HANDLE_COND_TIMEDWAIT = 512;
+    public static final long HANDLE_COND_WAIT = 1024;
+    public static final long HANDLE_ALL = 2047;
 
-    private static final String[] s = new String[] { /* This must match the order above */
-	"handle_mutex_init", "handle_mutex_lock", "handle_mutex_unlock", "handle_mutex_destroy",
-	"handle_cond_init", "handle_cond_broadcast", "handle_cond_signal", "handle_cond_timedwait", "handle_cond_destroy"
+    private static final String[] handlerNames = new String[] { /* This must match the order above */
+	"handle_mutex_init", "handle_mutex_destroy", "handle_mutex_trylock", "handle_mutex_lock", "handle_mutex_unlock",
+	"handle_cond_init", "handle_cond_destroy", "handle_cond_broadcast", "handle_cond_signal", "handle_cond_timedwait", 
+	"handle_cond_wait"
     };
 
     private long handlerMask = -1;
@@ -225,9 +228,9 @@ public abstract class Scheduler {
 	    Method[] m = getClass().getMethods();
 	    long mask = HANDLE_ALL;
 	    for (int i=0; i<m.length; i++) {
-		for (int j=0; j<s.length; j++) {
+		for (int j=0; j<handlerNames.length; j++) {
 		    if ((m[i].getDeclaringClass()==Scheduler.class)&&
-			(m[i].getName().equals(s[j]))) {
+			(m[i].getName().equals(handlerNames[j]))) {
 			mask-=(int)Math.pow(2.0, (double)j);
 		    }
 		}
@@ -237,17 +240,25 @@ public abstract class Scheduler {
     }
 
     public void handle_mutex_init() { throw new Error("Should never be called!"); }
+    public void handle_mutex_destroy() { throw new Error("Should never be called!"); }
+    public void handle_mutex_trylock() { throw new Error("Should never be called!"); }
     public void handle_mutex_lock() { throw new Error("Should never be called!"); } 
     public void handle_mutex_unlock() { throw new Error("Should never be called!"); }
-    public void handle_mutex_destroy() { throw new Error("Should never be called!"); }
     public void handle_cond_init() { throw new Error("Should never be called!"); }
+    public void handle_cond_destroy() { throw new Error("Should never be called!"); }
     public void handle_cond_broadcast() { throw new Error("Should never be called!"); }
     public void handle_cond_signal() { throw new Error("Should never be called!"); }
     public void handle_cond_timedwait() { throw new Error("Should never be called!"); }
-    public void handle_cond_destroy() { throw new Error("Should never be called!"); }
+    public void handle_cond_wait() { throw new Error("Should never be called!"); }
 
     public static void jhandle_mutex_init() { 
 	getScheduler().handle_mutex_init(); 
+    }
+    public static void jhandle_mutex_destroy() { 
+	getScheduler().handle_mutex_destroy(); 
+    }
+    public static void jhandle_mutex_trylock() {
+	getScheduler().handle_mutex_trylock();
     }
     public static void jhandle_mutex_lock() { 
 	getScheduler().handle_mutex_lock(); 
@@ -255,11 +266,11 @@ public abstract class Scheduler {
     public static void jhandle_mutex_unlock() { 
 	getScheduler().handle_mutex_unlock(); 
     }
-    public static void jhandle_mutex_destroy() { 
-	getScheduler().handle_mutex_destroy(); 
-    }
     public static void jhandle_cond_init() { 
 	getScheduler().handle_cond_init();
+    }
+    public static void jhandle_cond_destroy() {
+	getScheduler().handle_cond_destroy();
     }
     public static void jhandle_cond_broadcast() {
 	getScheduler().handle_cond_broadcast();
@@ -270,12 +281,18 @@ public abstract class Scheduler {
     public static void jhandle_cond_timedwait() {
 	getScheduler().handle_cond_timedwait();
     }
-    public static void jhandle_cond_destroy() {
-	getScheduler().handle_cond_destroy();
+    public static void jhandle_cond_wait() {
+	getScheduler().handle_cond_wait();
     }
 
-    private static Scheduler getScheduler() {
-	Scheduler sched = RealtimeThread.currentRealtimeThread().getScheduler();
+    public static Scheduler getScheduler() {
+	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
+	Scheduler sched;
+	if (rt == null) {
+	    sched = Scheduler.getDefaultScheduler();
+	} else {
+	    sched = rt.getScheduler();
+	}
 	if (sched == null) {
 	    sched = Scheduler.getDefaultScheduler();
 	}
@@ -301,15 +318,17 @@ public abstract class Scheduler {
     private final void addToRootSet() {
 	if (Math.sqrt(4)==0) {
 	    jhandle_mutex_init();
+	    jhandle_mutex_destroy();
+	    jhandle_mutex_trylock();
 	    jhandle_mutex_lock();
 	    jhandle_mutex_unlock();
-	    jhandle_mutex_destroy();
 	    jhandle_cond_init();
+	    jhandle_cond_destroy();
 	    jhandle_cond_broadcast();
 	    jhandle_cond_signal();
 	    jhandle_cond_timedwait();
-	    jhandle_cond_destroy();
-	    handler_mask()
+	    jhandle_cond_wait();
+	    handler_mask();
 	    jDisableThread(null, 0);
 	    jEnableThread(null, 0);
 	    jChooseThread(0);

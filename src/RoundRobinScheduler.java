@@ -76,7 +76,7 @@ public class RoundRobinScheduler extends Scheduler {
     }
 
     protected long chooseThread(long currentTime) {
-	setQuanta(10); // Switch again after a specified number of microseconds.
+	setQuanta(1000); // Switch again after a specified number of microseconds.
 	try {
 	    return ((Long)iterator.next()).longValue();
 	} catch (NoSuchElementException e) {

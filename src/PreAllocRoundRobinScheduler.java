@@ -14,8 +14,10 @@ import java.util.Iterator;
 public class PreAllocRoundRobinScheduler extends Scheduler {
     static PreAllocRoundRobinScheduler instance = null;
 
-    public static final long MAX_THREADS = 1000;
+    public static final int MAX_THREADS = 1000;
     private long[] threadList = new long[MAX_THREADS];
+    private int currentIndex = 0;
+    private int maxIndex = 1;
 
     protected PreAllocRoundRobinScheduler() {
 	super();
@@ -77,7 +79,13 @@ public class PreAllocRoundRobinScheduler extends Scheduler {
 
     protected long chooseThread(long currentTime) {
 	setQuanta(1000); // Switch again after a specified number of microseconds.
-	return 0;
+	for (int newIndex = (currentIndex+1)%maxIndex; newIndex != currentIndex; 
+	     newIndex=(newIndex+1)%maxIndex) {
+	    if (threadList[newIndex]!=0) {
+		return threadList[currentIndex = newIndex];
+	    }
+	}
+	return threadList[currentIndex];
     }
 
     protected void addThread(RealtimeThread thread) {
@@ -89,17 +97,21 @@ public class PreAllocRoundRobinScheduler extends Scheduler {
     }
 
     protected void addThread(long threadID) {
-	for (int i=0; i<MAX_THREADS; i++) {
+	for (int i=0; i<maxIndex; i++) {
 	    if (threadList[i]==0) {
 		threadList[i] = threadID;
 		return;
 	    }
 	}
-	throw new Error("Too many threads!");
+	if ((++maxIndex)>MAX_THREADS) {
+	    throw new Error("Too many threads!");
+	} else {
+	    threadList[maxIndex-1] = threadID;
+	}
     }
 
     protected void removeThread(long threadID) {
-	for (int i=0; i<MAX_THREADS; i++) {
+	for (int i=0; i<maxIndex; i++) {
 	    if (threadList[i]==threadID) {
 		threadList[i] = 0;
 		return;
@@ -127,11 +139,11 @@ public class PreAllocRoundRobinScheduler extends Scheduler {
     public void printNoAlloc() {
 	boolean first = true;
 	NoHeapRealtimeThread.print("[");
-	for (int i=0; i<MAX_THREADS; i++) {
+	for (int i=0; i<maxIndex; i++) {
 	    if (threadList[i]!=0) {
 		if (first) {
 		    first = false;
-		}
+		} else {
 		    NoHeapRealtimeThread.print(" ");
 		}
 		NoHeapRealtimeThread.print(threadList[i]);
