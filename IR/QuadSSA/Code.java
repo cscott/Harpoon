@@ -18,7 +18,7 @@ import java.util.Stack;
  * and <code>PHI</code> functions are used where control flow merges.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.25 1998-09-24 21:14:16 cananian Exp $
+ * @version $Id: Code.java,v 1.26 1998-09-25 16:50:00 cananian Exp $
  */
 
 public class Code extends HCode {
@@ -40,6 +40,7 @@ public class Code extends HCode {
 	//harpoon.Temp.Temp.clear(); /* debug */
 	this.quads = Translate.trans(bytecode);
 	CleanUp.cleanup(this); // cleanup null predecessors of phis.
+	Peephole.optimize(this); // peephole optimizations.
 	FixupFunc.fixup(this); // add phi/sigma functions.
 	DeadCode.optimize(this); // get rid of unused phi/sigmas.
     }
