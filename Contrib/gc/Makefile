@@ -1,3 +1,4 @@
+# Generated automatically from Makefile.in by configure.
 # Primary targets:
 # gc.a - builds basic library
 # libgc.a - builds library for use with g++ "-fgc-keyword" extension
@@ -17,8 +18,8 @@ AS=as $(ABI_FLAG)
 #  Under Irix 6, you will have to specify the ABI (-o32, -n32, or -64)
 #  if you use something other than the default ABI on your machine.
 
-CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS -DSILENT \
-	-DGC_GCJ_SUPPORT -g 
+CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INTERIOR_POINTERS \
+	-DGC_GCJ_SUPPORT -g -DGC_USER_THREADS -D_REENTRANT -I../../src/user/
 # -DTHREAD_LOCAL_ALLOC -DPARALLEL_MARK -DGC_LINUX_THREADS
 
 # For dynamic library builds, it may be necessary to add flags to generate
@@ -174,7 +175,7 @@ CFLAGS= -O -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DALL_INT
 #
 
 
-LIBGC_CFLAGS= -O -DNO_SIGNALS -DSILENT \
+LIBGC_CFLAGS= -O -DNO_SIGNALS \
     -DREDIRECT_MALLOC=GC_malloc_uncollectable \
     -DDONT_ADD_BYTE_AT_END -DALL_INTERIOR_POINTERS
 #   Flags for building libgc.a -- the last two are required.
@@ -188,11 +189,10 @@ RANLIB= ranlib
 # to be generated in different directories.  In this case, the destination directory
 # should contain a copy of the original include directory.
 srcdir = .
-VPATH = $(srcdir)
 
-OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o hpux_irix_threads.o linux_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o gcj_mlc.o specific.o
+OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o hpux_irix_threads.o linux_threads.o user_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o gcj_mlc.o specific.o
 
-CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c hpux_irix_threads.c linux_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c gcj_mlc.c specific.c
+CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c hpux_irix_threads.c linux_threads.c user_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c gcj_mlc.c specific.c
 
 CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c cord/cord.h cord/ec.h cord/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC cord/SCOPTIONS.amiga cord/SMakefile.amiga
 
@@ -258,7 +258,7 @@ $(OBJS) test.o dyn_load.o dyn_load_sunos53.o: $(srcdir)/gc_priv.h $(srcdir)/gc_h
 
 mark.o typd_mlc.o finalize.o: $(srcdir)/gc_mark.h
 
-specific.o linux_threads.o: specific.h
+specific.o linux_threads.o user_threads.o: specific.h
 
 base_lib gc.a: $(OBJS) dyn_load.o $(UTILS)
 	echo > base_lib
