@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.97 1999-08-30 17:35:30 cananian Exp $
+% $Id: thesis.tex,v 1.98 1999-08-31 07:20:21 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -37,14 +37,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.97 $ $}
+\date{\today \\ $ $Revision: 1.98 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.97 $ $}{$ $Revision: 1.97 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.98 $ $}{$ $Revision: 1.98 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -61,7 +61,7 @@ which the IR influences the structure of the compiler.  Similarly, the
 theorist will derive proofs based upon intermediate representations
 (and languages) that are amenable to mathematical methods, without
 regard to current implementation practices.%
-\fixme{This paragraph will be revised to be less offensive, eventually.}
+\dontfixme{This paragraph will be revised to be less offensive, eventually.}
 
 This paper introduces yet another intermediate
 representation to the literature:  Static Single Information (SSI) form.
@@ -923,10 +923,10 @@ where $v$ is not dead, but may return \code{true} at nodes where $v$
 is dead without harming the correctness of the \phisigfunction{}
 placement.
 \end{proof}
-%\fixme{It would be nice to be able to show a means of using the
-%algorithm and the conditions in \ref{lem:ssi_dom} to produce exactly
-%minimal form or exactly pruned form.  It doesn't hurt our time bounds
-%to do fixup later, though.}
+\dontfixme{It would be nice to be able to show a means of using the
+algorithm and the conditions in \ref{lem:ssi_dom} to produce exactly
+minimal form or exactly pruned form.  It doesn't hurt our time bounds
+to do fixup later, though.}
 
 \subsubsection{Computing liveness}
 Incorporating liveness information into the creation of pruned SSI
@@ -1202,8 +1202,8 @@ nodes tagged in the previous pass.  Starting with the circled node, the
 \phisigfunction{s} spread one node left on each pass. On the other hand,
 an pessimistic algorithm assumes the correct answer at the start, fails
 to show that any \phisigfunction[or]{s} can be removed, and
-terminates in one pass.%\fixme{Are we \emph{sure} similar worst cases
-%don't exist for the pessimistic algorithm?}
+terminates in one pass.\dontfixme{Are we \emph{sure} similar worst cases
+don't exist for the pessimistic algorithm?}
 
 \begin{myfigure}[t]
 \centering\renewcommand*{\figscale}{0.25}\input{Figures/evil}
@@ -1212,11 +1212,51 @@ terminates in one pass.%\fixme{Are we \emph{sure} similar worst cases
 \end{myfigure}
 
 \subsection{Time and space complexity of SSI form}\label{sec:ssi_complexity}
+%\begin{myfigure}%[t]
+%\input{Figures/phisig}
+%\caption{Number of \phisigfunction{s} added versus procedure length.}
+%\label{fig:phisigdata}
+%\end{myfigure}
 \begin{myfigure}%[t]
-\input{Figures/phisig}
-\caption{Statistical analysis to determine typical values for $V_{SSI}$.}
-\label{fig:phisigdata}
+\input{Figures/THussi}
+\caption{Number of uses in SSI form as a function of
+procedure~length.}
+\label{fig:ussidata}
 \end{myfigure}
+\begin{myfigure}%[t]
+\input{Figures/THv0}
+\caption{Number of original variables as a function of
+procedure~length.}
+\label{fig:v0data}
+\end{myfigure}
+Discussions of time and space complexity for sparse evaluation
+frameworks in the literature are often misleadingly called ``linear''
+regardless of what the $O$-notation runtime bounds are.  A canonical
+example is \cite{sreedhar95:lintime}, which claims guilelessly that
+for SSA form, ``the number of $\phi$-nodes needed remains linear.''
+Typically Cytron \cite{cytron91:ssa} is cited; however, that reference
+actually states:
+\begin{quote}
+For the programs we tested, the plot in Figure 21 shows that the
+number of \phifunction{s} is also linear in the size of the original
+program.
+\end{quote}
+It is important to note that Cytron's claim is based not on
+algorithmic worst-bounds complexity, but on empirical evidence.  This
+reasoning is not unjustified; Knuth \cite{knuth74:fortran} showed in
+1974 that ``human-generated'' programs almost without exception show
+properties favorable to analysis; in particular shallow maximum loop
+nesting depth.  Wegman and Zadeck \cite{wegman91:scc} clearly make
+this distinction by noting that:
+\begin{quote}
+In theory the size [of the SSA form representation] can be $O(EV)$,
+but empirical evidence indicates that the work required to compute the
+SSA graph is linear in the program size.
+\end{quote}
+Our worst-case space complexity bounds for SSI form are identical to
+SSA form --- $O(EV)$ --- but in this section we will endeavour to show
+that typical complexities are likewise ``linear in the program size.''
+
 The total runtime for SSI
 placement and subsequent pruning, including the time to construct the
 PST, is $O(E + N V_0 + U_{SSI})$.

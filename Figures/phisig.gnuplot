@@ -13,6 +13,6 @@ set mytics 10
 a = 1#.13147572158139
 b = 0.280604907987985
 f(x)=exp(a*log(x)+b)
-fit [0:3000] f(x) 'phisig.data-sorted' using 1:4 via a#,b
+fit [0:3000] f(x) 'phisig.data-sorted' using 1:4 via b #a,b
 plot [5:10000] [5:] f(x) notitle with lines, "phisig.data-sorted" using 1:4 notitle with dots
 

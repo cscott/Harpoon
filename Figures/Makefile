@@ -53,6 +53,8 @@ THcqex2.tex: THcqex.fig
 
 # extra dependencies for data files of gnuplots
 phisig.tex: phisig.data-sorted
+THussi.tex: Data/ussi.data
+THv0.tex: Data/v0.data
 
 # graphing helpers
 %.stats: %
