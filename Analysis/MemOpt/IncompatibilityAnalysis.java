@@ -1,157 +1,65 @@
 package harpoon.Analysis.MemOpt;
 
 
-import harpoon.ClassFile.*;
-import java.util.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
+
+// no I'm not gonna enumerate those :)
 import harpoon.IR.Quads.*;
-import harpoon.IR.Properties.*;
-import harpoon.Analysis.*;
-import harpoon.Analysis.Quads.*;
 
-import harpoon.Analysis.Maps.ExactTypeMap;
-import harpoon.Analysis.Quads.SCC.SCCAnalysis;
-
-// alex's metacallgraph
-import harpoon.Analysis.MetaMethods.MetaCallGraph;
-import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
-import harpoon.Analysis.MetaMethods.SmartCallGraph;
 import harpoon.Analysis.Quads.CallGraph;
 
-import harpoon.Analysis.LowQuad.Loop.*;
+import harpoon.Temp.Temp;
 
-import harpoon.Temp.*;
-
-import harpoon.Util.Util;
 import harpoon.Util.Collections.*;
-import harpoon.Util.Grapher;
+import harpoon.Util.Timer;
 
 import harpoon.Analysis.PointerAnalysis.Debug;
 
+import java.util.*;
 
+/**
+ * Describe class <code>IncompatibilityAnalysis</code> here.
+ *
+ * @author <a href="mailto:Ovidiu Gheorghioiu <ovy@mit.edu>">ovy</a>
+ * @version 1.0
+ */
 public class IncompatibilityAnalysis {
 
-    // hacks
+    /**
+     * If true, the analysis will not descend into classes other than
+     * the class of the entry method. Useful for debugging.
+     * 
+     */
     public static final boolean STAY_IN_DECLARING_CLASS = false;
-    public static final boolean TO_STRING_ESCAPES_NOTHING = false;
-    public static final boolean REMOVE_RE_HACK = false;
-    public static final boolean TO_STRING_SUCKS = false;
-    public static final boolean AN_EQUALS_AE_HACK = false;
+    
+    /**
+     * If true, the analysis will show progress dots and other progress.
+     * indicators.
+     *
+     */
+    public static final boolean SHOW_PROGRESS = true;
 
-    // static objects used for statistics only
-    private static HClass exception;
-    private static HClass iterator;
+    
+    /**
+     * If true, the analysis will show some statistics when it finishes.
+     *
+     */
+    public static final boolean SHOW_STATISTICS = true;
+    
+    /**
+     * If true, the analysis will show timings for all of its stages.
+     *
+     */
+    public static final boolean SHOW_TIMINGS = true;
 
-    // test case
-    public static void main(String args[]) {
-        String defaultClassName = "MemTest";
-        String defaultMethodName = "main";
+    // add this many fields as estimated overhead. only used in statistics
+    //   for now
+    private static final int ADD_FIELDS = 2;
 
-        String className, methodName;
-
-        // check args;
-
-        if (args.length > 2) {
-            System.out.println("Usage: java IncompatibilityAnalysis [className] [methodName]");
-            System.exit(1);
-        }
-        
-        if (args.length == 0) {
-            System.out.println("No class specified, using default: "
-                               + defaultClassName);
-            className = defaultClassName;
-        } else className = args[0];
-
-        if (args.length <= 1) {
-            System.out.println("No method specified, using default: "
-                               + defaultMethodName);
-            methodName = defaultMethodName;
-        } else methodName = args[1];
-        
-        Linker linker = Loader.systemLinker;
-        exception = linker.forName("java.lang.Exception");
-        iterator = linker.forName("java.util.Iterator");
-
- 	HClass hclass = linker.forName(className);
-
-        HMethod[] methods = hclass.getDeclaredMethods();
-        HMethod entry = null;
-
-        for (int i = 0; i < methods.length; i++) {
-            if (methods[i].getName ().equals(methodName)){
-                entry = methods[i];
-                break;
-            }
-        }
-
-        if (entry == null) {
-            System.out.println("Give me a method called " + methodName +
-			       " please");
-            return;
-        }
-        
-
-
-        // call graph building code
-        System.out.println("Building call graph...");
-
-        HCodeFactory hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
-        // caching is IMPORTANT
-        hcf = new CachingCodeFactory(hcf, true);
-
-        Set mroots = createRoots(entry);
-
-        ClassHierarchy ch = new QuadClassHierarchy(linker,
-                                                  mroots,
-                                                  hcf);
-
-        // now add static initializers;
-        for(Iterator it = ch.classes().iterator(); it.hasNext(); ) {
-            HClass hcl = (HClass) it.next();
-            HMethod hm = hcl.getClassInitializer();
-            if (hm != null)
-                mroots.add(hm);
-        }
-
-        
-
-        // final call graph
-        CallGraph cg =
-	    new SmartCallGraph((CachingCodeFactory) hcf, linker, ch, mroots);
-
-        System.out.println("Done building.");
-
-        HCodeFactory hcf_ssi = new CachingCodeFactory(harpoon.IR.Quads.QuadSSI.codeFactory(hcf));
-        // HCodeFactory hcf_ssi = hcf;
-
-        QuadSSI.KEEP_QUAD_MAP_HACK = true;
-        IncompatibilityAnalysis analysis = new IncompatibilityAnalysis(entry, hcf_ssi,
-                                                           cg);
-
-        analysis.printSomething();
-        
-   }
-
-    private static Set createRoots(HMethod entry) {
-        // for thorough example see SAMain.java
-        Set roots = new HashSet();
-        // ask the runtime which roots it requires.
-        harpoon.Backend.Generic.Frame frame = 
-	    new harpoon.Backend.StrongARM.Frame(entry);
-
-        roots.addAll(frame.getRuntime().runtimeCallableMethods());
-
-        roots.add(entry);
-
-        // filter out things that are not hmethods
-        for (Iterator it = roots.iterator(); it.hasNext(); ) {
-            Object atom = it.next();
-            if (!(atom instanceof HMethod)) it.remove();
-        }
-        
-        // should perhaps add tests/includes for other infrastructure hacks
-        
-        return roots;
-    }
 
     private Map mdCache; // cache of method data objects
 
@@ -161,8 +69,7 @@ public class IncompatibilityAnalysis {
     private HCodeFactory codeFactory;
     private CallGraph callGraph;
 
-    // FIXME: change to private
-    public LinkedList allMethods;
+    private LinkedList allMethods;
 
     // globally maps temps to the allocations defining them
     private Map globalAllocMap;
@@ -183,38 +90,151 @@ public class IncompatibilityAnalysis {
     // our targets
     private MultiMap I;
     private Collection classes;
-    private Set selfIncompatible;
+    private Set selfIncompatible, selfCompatible;
+
+    private boolean callGraphNeedsSSA;
 
     // interface to the outside world
 
+    /**
+     * Convenience form for the other constructor, calls it with
+     * <code>callGraphNeedsSSA</code> set to true.
+     */
     public IncompatibilityAnalysis(HMethod entry, HCodeFactory codeFactory,
 				   CallGraph callGraph) {
+        this(entry, codeFactory, callGraph, true);
+    }
 
+    /**
+     * Creates a new <code>IncompatibilityAnalysis</code> instance.
+     *
+     * @param entry the entry method
+     * @param codeFactory a <code>HCodeFactory</code>. This needs to be caching
+     *   and in SSI form.
+     * @param callGraph the <code>CallGraph</code> the analysis should use.
+     * @param callGraphNeedsSSA hack that enables us to use Alex's
+     * <code>SmartCallGraph</code>, which only operates on NoSSA form. If
+     * you set to true, make sure you have set
+     * <code>QuadSSI.KEEP_QUAD_MAP_HACK</code> to true. This is sucky, I
+     * know, but there is no fast remedy.
+     * 
+     */
+    public IncompatibilityAnalysis(HMethod entry, HCodeFactory codeFactory,
+				   CallGraph callGraph,
+                                   boolean callGraphNeedsSSA) {
         // init
-
         this.entry = entry;
         this.codeFactory = codeFactory;
         this.callGraph = callGraph;
+        this.callGraphNeedsSSA = callGraphNeedsSSA;
 
         globalAllocMap = new HashMap();
 
+        Timer timer, big_timer;
+
+        if (SHOW_TIMINGS) {
+            big_timer = new Timer();
+            big_timer.start();
+        }
+        
         // stage 0: static analysis of methods for internal liveness & rest
+        if (SHOW_TIMINGS) {
+            timer = new Timer();
+            timer.start();
+        }
+        
         intraproceduralAnalysis();
         
+        if (SHOW_TIMINGS) {
+            timer.stop();
+            System.out.println("IA interproc: " + timer);
+        }
+        
         // stage 1: compute An, Ae, Rn, Re, Esc
+        if (SHOW_TIMINGS) {
+            timer = new Timer();
+            timer.start();
+        }
+        
         computeInitialSets();
+        
+        if (SHOW_TIMINGS) {
+            timer.stop();
+            System.out.println("IA points-to: " + timer);
+        }
 
         // stage 2: compute I
+        if (SHOW_TIMINGS) {
+            timer = new Timer();
+            timer.start();
+        }
+        
         computeI();
+        
+        if (SHOW_TIMINGS) {
+            timer.stop();
+            System.out.println("IA incompat: " + timer);
+        }
 
         // stage 3: do compatible classes
+        if (SHOW_TIMINGS) {
+            timer = new Timer();
+            timer.start();
+        }
+        
         computeClasses();
 
-        // FIXME: destroy unneeded data here (mainly mdCache)
+        if (SHOW_TIMINGS) {
+            timer.stop();
+            System.out.println("IA classes: " + timer);
+        }
+
+        if (SHOW_STATISTICS) printStatistics();
+
+        // Cleanup: destroy unneeded data
+        mdCache = null;
+        callees = null;
+
+        if (SHOW_TIMINGS) {           
+            big_timer.stop();
+            System.out.println("IA total: "+ big_timer);
+        }
     }
 
-    // returns true if the given SSI NEW quad is self-incompatible
-    //    i.e. it cannot be statically allocated
+
+    /**
+     * Returns all allocation sites encountered by this analysis.
+     *
+     * @return a <code>Collection</code> of all the <code>NEW</code> quads processed.
+     */
+    public Collection allAllocationSites() {
+        return Collections.unmodifiableCollection(globalAllocMap.values());
+    }
+
+    /**
+     * Returns all the methods encountered by this analysis
+     *
+     * @return a <code>List</code> of all methods processed (as
+     * <code>HMethod</code>s.)
+     */
+    public List allMethods() {
+        return Collections.unmodifiableList(allMethods);
+    }
+
+    /**
+     * Returns true if the given site shound be dynamic 
+     * to the best of our knowledge, i.e. if we haven't seen this site
+     *   for some reason (e.g. it's not reachable from the entry method), or
+     *   if we have been unable to prove it can be allocated statically.
+     *   Requires that the site is a <code>NEW</code> quad in SSI form.
+     *   This takes the more general 
+     *
+     * @param e the allocation site. Right now, it must be a
+     * <code>NEW</code> quad in SSI form. This parameter has the more general 
+     * <code>HCodeElement</code> because in the future we might want to support
+     * other forms and/or <code>ANEW</code> quads.
+     * @return true if the allocation site should not be made static.
+     */
     public boolean isSelfIncompatible(HCodeElement e) {
         assert e instanceof NEW : "allocations are NEW quads";
 
@@ -224,7 +244,18 @@ public class IncompatibilityAnalysis {
         return I.contains(alloc, alloc) || !globalAllocMap.containsKey(alloc);
     }
 
-    // returns true if the given SSI NEW quads are incompatible
+    /**
+     * Returns true if the given allocation sites cannot use the same
+     * memory to the best of our knowledge, i.e. we have not encountered
+     * one or both of them, or we have unable to prove thay can safely use
+     * the same memory. You should also call
+     * <code>isSelfIncompatible()</code> to check whether the sites can be
+     * allocated statically at all.
+     *
+     * @param e1,e2 the allocation sites. Right now, they must be
+     *    <code>NEW</code> quads in SSI-form.
+     * @return true if the sites should not use the same memory.
+     */
     public boolean isIncompatible(HCodeElement e1, HCodeElement e2) {
         assert e1 instanceof NEW && e2 instanceof NEW :
             "allocations are NEW quads";
@@ -240,6 +271,15 @@ public class IncompatibilityAnalysis {
     // all NEW quads in the methods analyzed are in one of these collections,
     //    unless they are self-incompatible
     // these are all in SSI form
+    /**
+     * Returns a <code>Collection</code> whose members are disjunct
+     * <code>Collection</code> of mutually compatible allocation sites
+     * (<code>NEW</code> quads in SSI form). Every allocation site we have
+     * encountered that can be made static is in one of these classes.
+     *
+     * @return a <code>Collection</code> of compatible static allocation
+     * classes.
+     */
     public Collection getCompatibleClasses() {
         LinkedList allocClasses = new LinkedList();
         for (Iterator it = classes.iterator(); it.hasNext(); ) {
@@ -256,26 +296,79 @@ public class IncompatibilityAnalysis {
         return allocClasses;
     }
 
-    // takes a Quad in QuadNoSSA, returns the equivalent quad in QuadSSI
-    //   or null if one doesn't exist
-    // the result is compatible with the quads the method above
-    //   operate on, provided that the CodeFactory we were passed is caching
-    // this will only work if the SSI CodeFactory we were passed is based
-    //   on the caching QuadNoSSA factory which generated this code, otherwise
-    //   it will almost always return null
+    // like the above, but only computes classes for a subset of the allocated
+    //   objects
+    // needs classes recomputation
+    /**
+     * Similar to the above, except it operates on a specified set of
+     * allocation sites.
+     *
+     * @param allocs a <code>Collection</code> of allocation sites to be
+     * divided into compatible classes.
+     * @return a <code>Collection</code> of compatible classes. Every
+     * allocation site in <code>alloc</code> that can be safely made static
+     * is in one of these classes.
+     */
+    public Collection getCompatibleClasses(Collection allocs) {
+        Set allocVars = new HashSet();
+
+        for (Iterator it = allocs.iterator(); it.hasNext(); ) {
+            Quad q = (Quad) it.next();
+            if (!(q instanceof NEW)) continue;
+
+            Temp temp = ((NEW) q).dst();
+            if (globalAllocMap.containsKey(temp)) {
+                allocVars.add(temp);
+            }
+        }
+
+        allocVars.removeAll(selfIncompatible);
+
+        Collection classes = MyGraphColorer.colorGraph(allocVars, I);
+        
+        LinkedList allocClasses = new LinkedList();
+        for (Iterator it = classes.iterator(); it.hasNext(); ) {
+            Collection thisClass = (Collection) it.next();
+            Collection newClass = new LinkedList();
+            
+            for (Iterator it2 = thisClass.iterator(); it2.hasNext(); ) {
+                newClass.add(globalAllocMap.get(it2.next()));
+            }
+            
+            allocClasses.add(newClass);
+        }
+        
+        return allocClasses;
+       
+    }
+
+    /**
+     * Takes a Quad in NoSSA form, and returns the corresponding quad in
+     * SSI form, generated by the <code>HCodeFactory</code> used to create
+     * this <code>IncompatibilityAnalysis</code> instance. For this to work
+     * correctly, our SSI factory *must* be a caching SSI view of a caching
+     * SSA view.  I wish I had any other way to do this kind of "bridging", but
+     * there apparently is none. 
+     *
+     * @param q a <code>Quad</code> in NoSSA form/
+     * @return the corresponding <code>Quad</code> in SSI form, or null if
+     * we couldn't find one (check the caching-SSI-of-caching-SSA requirement)
+     */
     public Quad getSSIQuad(Quad q) {
         HMethod method  = q.getFactory().getMethod();
         QuadSSI quadssi = (QuadSSI) codeFactory.convert(method);
 
         Quad retval = (Quad) quadssi.getQuadMap().get(q);
 
-        // debug, remove me pls
-        assert retval != null : "didn't find a quad ssi for " + q;
-
         return retval;
     }
     
+    // implementation
 
+    // **** Step 0: analyze each method and gather everything we need for
+    //      the analysis. This is the only pass that analyzes each element.
+
+    // iterate through all of the methods and analyze them.
     private void intraproceduralAnalysis() {
         WorkSet workset = new WorkSet();
         mdCache = new HashMap();
@@ -320,37 +413,38 @@ public class IncompatibilityAnalysis {
     }
 
     private MethodData createInitialMethodData(HMethod method) {
-        System.out.println("Analyzing " + method);
+        if (SHOW_PROGRESS) System.out.println("Analyzing " + method);
         
         // what we need
         HCode hcode = codeFactory.convert(method);
-        if (hcode == null ||
-            TO_STRING_SUCKS && method.getName().equals("toString")) {
-            System.out.println("    native... ignoring");
+        if (hcode == null) {
+            if (SHOW_PROGRESS) System.out.println("    native... ignoring");
             MethodData md = new MethodData();
             // return fake md
             md.isNative = true;
             return md;
         }
 
-         // get ssi2nossa quadmap
-         Map quadSSI2NoSSA = new LinearMap(hcode.getElementsL().size());
-
-
-         Map quadMap = ((QuadSSI) hcode).getQuadMap();
-         // invert quadmap from ssiRename
-         for (Iterator it = quadMap.entrySet().iterator();
-              it.hasNext(); ) {
-             Map.Entry entry = (Map.Entry) it.next();
-             quadSSI2NoSSA.put(entry.getValue(), entry.getKey());
-         }
+        // construct ssi2nossa quadmap if needed
+        Map quadSSI2NoSSA = null;
+        if (callGraphNeedsSSA) {
+            quadSSI2NoSSA = new HashMap(hcode.getElementsL().size());
+            
+            
+            Map quadMap = ((QuadSSI) hcode).getQuadMap();
+            // invert quadmap from ssiRename
+            for (Iterator it = quadMap.entrySet().iterator();
+                 it.hasNext(); ) {
+                Map.Entry entry = (Map.Entry) it.next();
+                quadSSI2NoSSA.put(entry.getValue(), entry.getKey());
+            }
+        }
         
         // ExactTypeMap typeMap = new SCCAnalysis(hcode);
         // ReachingDefs rd= new SSxReachingDefsImpl(hcode);
 
-        // will construct these
-        // I can certainly do with less objects, but dev time is the constraint
-        //   now. Will optimize if needed, I promise.
+        // We can probably do with less objects, but dev time is the constraint
+        //   now. 
         Collection allocations = new ArrayList();
         Collection allocationSites = new ArrayList();
         Collection escapeSites = new ArrayList();
@@ -367,8 +461,6 @@ public class IncompatibilityAnalysis {
         
         Collection escapes = new ArrayList();
 
-        // Map defMap = new HashMap();
-
         MultiMap param2calls = new GenericMultiMap(new AggregateSetFactory());
         
         METHOD header = null;
@@ -383,13 +475,11 @@ public class IncompatibilityAnalysis {
         // direct assignments: which temps get assigned to this temp
         MultiMap assignMap = new GenericMultiMap(new AggregateSetFactory());
 
-        // traverse the graph. I should really implement this thru a Visitor...
+        // traverse the graph. Reimplement this using a Visitor if it threatens
+        //    to become unmaintainable.
+        // The thing is, IMHO, code that uses visitors is pretty ugly too.
         for (Iterator it = hcode.getElementsI(); it.hasNext(); ) {
             Quad q = (Quad) it.next();
-
-            // for (Iterator it2 = q.defC().iterator(); it2.hasNext(); ) {
-            //    defMap.put(it2.next(), q);
-            // }
 
             // allocation?
             if (q.kind() == QuadKind.NEW) {
@@ -409,18 +499,26 @@ public class IncompatibilityAnalysis {
             // call site?
             else if (q.kind() == QuadKind.CALL) {
                 CALL qCall = (CALL) q;
+                CALL qCallToPass = qCall;
 
-		CALL qCallNoSSA = (CALL) quadSSI2NoSSA.get(qCall);
-		assert qCallNoSSA != null;
+                if (callGraphNeedsSSA) {
+                    qCallToPass = (CALL) quadSSI2NoSSA.get(qCall);
+                    assert qCallToPass != null : "SSI->SSA mapping failed";
+                }
+                    
+                HMethod[] calledMethods = callGraph.calls(method, qCallToPass);
 
-                HMethod[] calledMethods = callGraph.calls(method, qCallNoSSA);
-
+                // FIXME: figure out how important this is
+                //  and upgrade to assertion / downgrade to DEBUG stmnt
                 if (calledMethods.length == 0) {
                     System.out.println("*** Warning: no methods found for: "
                                        + Debug.code2str(qCall));
                 }
 
-                calls.addAll(qCall, Arrays.asList(calledMethods));
+                for (int i = 0; i<calledMethods.length; i++ ) {
+                    HMethod called = calledMethods[i];
+                    calls.add(qCall, called);
+                }
 
                 callParams.addAll(Arrays.asList(qCall.params()));
                 
@@ -481,9 +579,7 @@ public class IncompatibilityAnalysis {
                 escapeSites.add(qASet);
             }
             
-            
-           
-            // SIGMA stuff
+            // SIGMA stuff. Note that this might overlap w/above
             // handle typeswitch sigmas differently
             if (q instanceof SIGMA) {
                 SIGMA qSigma = (SIGMA) q;
@@ -518,14 +614,15 @@ public class IncompatibilityAnalysis {
         internals.add(ESCAPE);
 
         // form interestingTemps collection. We don't need a fast contains()
-        //   here
+        //   here, so use ArrayList.
         Collection interestingTemps = new ArrayList(externals.size()
                                                     + internals.size());
         interestingTemps.addAll(internals);
         interestingTemps.addAll(externals);
 
         // we are only interested in variables that get assigned the above,
-        //    minus call params and escapes
+        //    minus call params and escapes (e.g. a call param is not
+        //    inherently interesting, only if it can hold an object)
         Set interestingRoots = new HashSet(allocations);
         interestingRoots.addAll(Arrays.asList(header.params()));
         interestingRoots.addAll(callReturns);
@@ -538,16 +635,16 @@ public class IncompatibilityAnalysis {
         //   but: do *NOT* allow propagation over conditionals
         //   *THAT* propagation is assigned-object-dependent
 
-        // System.out.println("assignMap before closure: " + assignMap);
         assignMap = MultiMapUtils.multiMapClosure(assignMap, interestingRoots,
                                                   conditions.keySet());
-        // System.out.println("assignMap after closure: " + assignMap);
-
         
         // compute reverse mapping of vars to possible values
-        MultiMap valuesMap = MultiMapUtils.multiMapInvert(assignMap, interestingRoots);
+        MultiMap valuesMap = MultiMapUtils.multiMapInvert(assignMap,
+                                                          interestingRoots);
 
-        
+        // we don't need assignMap anymore, free it
+        assignMap = null;
+
         SSILiveness ssiLiveness = new SSILiveness(hcode);
 
         // retain the liveness info we need
@@ -586,7 +683,8 @@ public class IncompatibilityAnalysis {
         Set reachNormal = canReach(retNormalSites, true);
         Set reachEx = canReach(retExSites, true);
         
-        // Keep interesting nodes, ie, nodes after calls
+        // Only keep reachability info for interesting nodes, ie, nodes
+        //     after calls.
         md.reachNormal = new HashSet();
         md.reachEx = new HashSet();
 
@@ -599,18 +697,25 @@ public class IncompatibilityAnalysis {
         }
         
         // initial values of dynamic sets
-        MultiMap aliasedValues = MultiMapUtils.multiMapFilter(valuesMap, interestingTemps, interestingTemps);
+
+        // aliases: only keep between interesting temps
+        MultiMap aliasedValues =
+            MultiMapUtils.multiMapFilter(valuesMap,
+                                         interestingTemps,
+                                         interestingTemps);
     
         md.aliasedValues = aliasedValues;
-        md.aliasedAssigns = MultiMapUtils.multiMapInvert(aliasedValues, interestingTemps);
+        md.aliasedAssigns =
+            MultiMapUtils.multiMapInvert(aliasedValues, interestingTemps);
 
         // sanity check. take this out when sure the code works right
+        //   (and put it back when it doesn't :)
         // assert MultiMapUtils.intersect(md.aliasedValues.keySet(,
         //                                     externals) == null);
 
-        
+        // An, Ae: use reachability on allocs in this method
         md.An = new HashSet();
-        md.Ae = AN_EQUALS_AE_HACK ? md.An : new HashSet();
+        md.Ae = new HashSet();
 
         for (Iterator it = allocationSites.iterator(); it.hasNext(); ) {
             NEW qNew = (NEW) it.next();
@@ -628,32 +733,16 @@ public class IncompatibilityAnalysis {
 
         // propagate pointsTo by simulating deltas
         propagateExternalDeltas(md, pointsTo);
-        
+
+        // initial values of Rn, Re, E: use fake variables
         md.Rn = new HashSet(pointsTo.getValues(RETVAL));
         md.Re = new HashSet(pointsTo.getValues(RETEX));
-        if (REMOVE_RE_HACK) {
-            md.An.removeAll(md.Re);
-        }
-
-            
         md.E = new HashSet(pointsTo.getValues(ESCAPE));
-
-        if (TO_STRING_ESCAPES_NOTHING &&
-            method.getName().equals("toString")) {
-            md.E.clear();
-            System.out.println("  Clearing toString escapes...");
-        }
 
         // done, hopefully
         return md;
-        
-        
     }
 
-
-    private CALL callMapHeuristic(CALL call, Map quadMap) {
-        return call;
-    }
 
     // computes all quads from which the given sites are reachable
     // takes O(Nacc), where Nacc is the number of edges that can reach "sites"
@@ -676,10 +765,13 @@ public class IncompatibilityAnalysis {
         return canreach;
     }
 
-    // Fixed-point set computation for the 5 sets we need
-    private void computeInitialSets() {
+    // **** Stage 1: Fixed-point set computation for the 5 sets we need
+    //      (An, Ae, Rn, Re, E)
 
-        System.out.print("Fixed point set (Ax, Rx, E)");
+    // Fixed point lodic
+    private void computeInitialSets() {
+        if (SHOW_PROGRESS) System.out.print("Fixed point set (Ax, Rx, E)");
+        
         WorkSet workset = new WorkSet();
 
         workset.addAll(allMethods);
@@ -694,11 +786,14 @@ public class IncompatibilityAnalysis {
                 }
             }
         }
-        System.out.println();
+
+        if (SHOW_PROGRESS) System.out.println();
     }
 
+    // Do the actual work for each method
     private boolean recomputeInitialSets(HMethod method) {
-        System.out.print(".");
+        if (SHOW_PROGRESS) System.out.print(".");
+
         MethodData md = (MethodData) mdCache.get(method);
         assert !md.isNative;
 
@@ -708,7 +803,6 @@ public class IncompatibilityAnalysis {
 
         // This is terribly, terribly inefficient
         // Should really be using deltas...
-
         for (Iterator it = md.calls.keySet().iterator(); it.hasNext(); ) {
             CALL qCall = (CALL) it.next();
             boolean reachNN = md.reachNormal.contains(qCall.nextEdge(0).to());
@@ -718,10 +812,12 @@ public class IncompatibilityAnalysis {
 
             // sanity check
             assert  (reachNN || reachNE) && (reachEN || reachEE) :
-                         "Must have a way of getting out of the method (at " + Debug.code2str(qCall)+")";
+                "Must have a way of getting out of the method (at "
+                + Debug.code2str(qCall)+")";
 
             
-            for (Iterator it2 = md.calls.getValues(qCall).iterator(); it2.hasNext(); ) {
+            for (Iterator it2 = md.calls.getValues(qCall).iterator();
+                 it2.hasNext(); ) {
                 HMethod called = (HMethod) it2.next();
                 MethodData mdCalled = (MethodData) mdCache.get(called);
 
@@ -733,8 +829,6 @@ public class IncompatibilityAnalysis {
                 if (reachEN) md.An.addAll(mdCalled.Ae);
                 if (reachEE) md.Ae.addAll(mdCalled.Ae);
 
-                // System.out.println("  after adding " + called + ": An = " + md.An + "; Ae = "+md.Ae + " (called An: " + mdCalled.An + "; called Ae: " + mdCalled.Ae+"; reachEE is " + reachEE+")");
-                
             }
         }
 
@@ -754,14 +848,12 @@ public class IncompatibilityAnalysis {
 
             md.aliasedAssigns.addAll(MultiMapUtils.multiMapInvert(internalPointsTo, null));
             
-            // md.aliasedValues = MultiMapUtils.multiMapClosure(md.aliasedValues,
-            //                                                 md.aliasedValues.keySet());
-            // md.aliasedReturns = MultiMapUtils.multiMapInvert(md.aliasedValues,
-            //                                               md.aliasedValues.keySet());
-            // if we do deltas, we should re-computePointsTo here, or use
-            //    just deltas if aliases haven't changed
-            // but we do pointsTo anyway (for now; inefficient)
-            System.out.print("o");
+            // if we implement deltas, we should re-computePointsTo here,
+            // or use just deltas if aliases haven't changed; but we do
+            // pointsTo anyway (for now; inefficient)
+            
+            // the "o" indicates an alias recomputation is needed
+            if (SHOW_PROGRESS) System.out.print("o");
         }
 
         propagateExternalDeltas(md, externalPointsTo);
@@ -771,32 +863,8 @@ public class IncompatibilityAnalysis {
         // finally, add any deltas to final variables to the final sets
         md.Rn.addAll(externalPointsTo.getValues(RETVAL));
         md.Re.addAll(externalPointsTo.getValues(RETEX));
-        if (REMOVE_RE_HACK) {
-            md.An.removeAll(md.Re);
-        }
         md.E.addAll(externalPointsTo.getValues(ESCAPE));
-
-        if (TO_STRING_ESCAPES_NOTHING &&
-            method.getName().equals("toString")) {
-            md.E.clear();
-        }
-
-
-        for (Iterator it = externalPointsTo.getValues(ESCAPE).iterator();
-             it.hasNext(); ) {
-
-             Object atom = it.next();
-
-             NEW def = (NEW) globalAllocMap.get(atom);
-             if (isA(atom, iterator)) {
-                 System.out.println("Iterator escaped: ");
-                 System.out.println("    Debug.code2str(def)");
-                 System.out.println("    in "+method);
-             }
-            
-        }
-             
-        
+       
         return anSize != md.An.size() || aeSize != md.Ae.size()
             || rnSize != md.Rn.size() || reSize != md.Re.size()
             || eSize != md.E.size();
@@ -909,6 +977,7 @@ public class IncompatibilityAnalysis {
             Collection thisDelta = deltas.getValues(var);
 
             // var has a delta, ie new possible values
+            
             // for all variables that get assigned var
             for (Iterator it = md.aliasedAssigns.getValues(var).iterator();
                  it.hasNext(); ) {
@@ -918,30 +987,31 @@ public class IncompatibilityAnalysis {
 
                 // if this variable has a condition associated with it...
                 if (md.conditions.containsKey(assign)) {
-                    Condition condition = (Condition) md.conditions.get(assign);
+                    Condition condition =
+                        (Condition) md.conditions.get(assign);
 
                     // filter deltas through the condition
-                    for (Iterator it2 = thisDelta.iterator(); it2.hasNext(); ) {
-                        Temp temp = (Temp) it2.next();
-                        if (condition.isSatisfiedFor(temp)) {
+                    for (Iterator it2 = thisDelta.iterator();
+                         it2.hasNext(); ) {
+                        
+                        Temp temp = (Temp) it2.next(); 
+                        if (condition.isSatisfiedFor(temp)) 
                             changed = deltas.add(assign, temp) || changed;
-                        } else {
-
-                        }
+                        else ; // print some debug stuff if you needto
                     }
                 } else {
                     // otherwise, add the whole delta
                     changed = deltas.addAll(assign, thisDelta) || changed;
                 }
 
-                // System.out.println("  propagate: adding: " + assign);
                 if (changed) workset.addLast(assign);
             }
         }
-        // System.out.println("Done propagate");
-        
     }
 
+    // **** Stage 2: Compute incompatibilities
+
+    // Fixed-point logic
     private void computeI() {
 
         I = new GenericMultiMap();
@@ -961,8 +1031,7 @@ public class IncompatibilityAnalysis {
 
         workset.addAll(allMethods);
 
-        System.out.println();
-        System.out.print("Fixed point set (I)");
+        if (SHOW_PROGRESS) System.out.print("\nFixed point set (I)");
 
         while (!workset.isEmpty()) {
             HMethod method = (HMethod) workset.removeFirst();
@@ -977,8 +1046,7 @@ public class IncompatibilityAnalysis {
 
         // finally, make sure I is symmetric
         MultiMapUtils.ensureSymmetric(I);
-        System.out.println();
-        
+        if (SHOW_PROGRESS) System.out.println();
     }
 
     private void computeInitialI(HMethod method) {
@@ -997,12 +1065,16 @@ public class IncompatibilityAnalysis {
         computePointsTo(md, pointsTo, null);
         propagateExternalDeltas(md, pointsTo);
 
-        // compute "meta allocation nodes" 
-        Collection interestingNodes = new ArrayList(md.allocationSites.size() + md.calls.keySet().size());
+        // compute "meta allocation nodes", i.e. nodes that directly or
+        // indirectly cause allocations
+        Collection interestingNodes =
+            new ArrayList(md.allocationSites.size() + md.calls.keySet().size());
         interestingNodes.addAll(md.allocationSites);
         interestingNodes.addAll(md.calls.keySet());
         
         // compute mappings from escape sites to things that escape there
+
+        // first, simple escapes
         MultiMap escapes = new GenericMultiMap();
         for (Iterator it = md.escapeSites.iterator(); it.hasNext(); ) {
             Quad q = (Quad) it.next();
@@ -1015,6 +1087,7 @@ public class IncompatibilityAnalysis {
             }
         }
 
+        // escapes from calls
         for (Iterator it = md.calls.keySet().iterator(); it.hasNext(); ) {
             CALL qCall = (CALL) it.next();
             Temp[] actParams = qCall.params();
@@ -1026,8 +1099,9 @@ public class IncompatibilityAnalysis {
 
                 if (mdCalled == null || mdCalled.isNative) continue;
 
-                Temp[] declParams = mdCalled.header.params();
 
+                Temp[] declParams = mdCalled.header.params();
+                
                 escapes.addAll(qCall, mdCalled.E);
 
                 // do param replacement; add pointsTo for params
@@ -1042,7 +1116,7 @@ public class IncompatibilityAnalysis {
         }
                     
 
-        // for each meta alloc edge:
+        // for each meta alloc node
         for (Iterator it = interestingNodes.iterator(); it.hasNext(); ) {
             Quad q = (Quad) it.next();
 
@@ -1082,7 +1156,6 @@ public class IncompatibilityAnalysis {
 
             Set canReachQ = canReach(Collections.singleton(q), false);
 
-            // System.out.println("   canreachq: " + Debug.code2str(q) + " : " + canReachQ);
             
             for (Iterator it2 = escapes.keySet().iterator(); it2.hasNext(); ) {
                 Quad qEscape = (Quad) it2.next();
@@ -1093,22 +1166,12 @@ public class IncompatibilityAnalysis {
                     for (Iterator it3 = escapes.getValues(qEscape).iterator(); it3.hasNext(); ) {
                         Temp escaped = (Temp) it3.next();
 
-                        // System.out.println("escape incompat: " + escaped + " with " + allocs + " in method " + method);
 
                         if (params.contains(escaped)) {
                             md.Ip.addAll(escaped, allocs);
                         } else {
                             assert globalAllocMap.containsKey(escaped);
                             I.addAll(escaped, allocs);
-
-                            // debugging code
-                            if (isA(escaped, iterator) &&
-                                allocs.contains(escaped)) {
-                                
-                                System.out.println("Iterator self-incompat due to escapes: ");
-                                System.out.println("   "+Debug.code2str((NEW) globalAllocMap.get(escaped)));
-                                System.out.println("   at " + Debug.code2str(q));
-                            }
                         }
                     }
                 }
@@ -1118,7 +1181,6 @@ public class IncompatibilityAnalysis {
             Set liveInObjects = MultiMapUtils.multiMapUnion(pointsTo,
                                                             liveInInternal);
                                                             
-
             // add incompatibilities from liveness
             // for each outgoing edge
             for (int i = 0; i<q.nextLength(); i++) {
@@ -1131,7 +1193,8 @@ public class IncompatibilityAnalysis {
                 Set liveObjects = MultiMapUtils.multiMapUnion(pointsTo,
                                                               liveInternal);
 
-                Set liveOverObjects = MultiMapUtils.intersect(liveInObjects, liveObjects);
+                Set liveOverObjects = MultiMapUtils.intersect(liveInObjects,
+                                                              liveObjects);
 
 
                 // all live objects become incompatible with allocs here
@@ -1142,19 +1205,9 @@ public class IncompatibilityAnalysis {
                     if (params.contains(live)) {
                         md.Ip.addAll(live, edgeAllocs[i]);
                     } else {
-                        // System.out.println("     adding to I..."); 
                         assert globalAllocMap.containsKey(live);
 
                         I.addAll(live, edgeAllocs[i]);
-                        // debugging code
-                        if (isA(live, iterator) &&
-                            edgeAllocs[i].contains(live)) {
-                            
-                            
-                            System.out.println("Iterator self-incompat due to liveness: ");
-                            System.out.println("   "+Debug.code2str((NEW) globalAllocMap.get(live)));
-                            System.out.println("   at " + Debug.code2str(q));
-                        }
                     }
                 }
             }
@@ -1164,8 +1217,8 @@ public class IncompatibilityAnalysis {
     }
 
 
-    public boolean recomputeI(HMethod method) {
-        System.out.print(".");
+    private boolean recomputeI(HMethod method) {
+        if (SHOW_PROGRESS) System.out.print(".");
         MethodData md = (MethodData) mdCache.get(method);
         assert !md.isNative;
 
@@ -1205,20 +1258,8 @@ public class IncompatibilityAnalysis {
                                              mdCalled.Ip.getValues(declParams[i]));
                             }
                             else {
-
-                                
                                 I.addAll(temp,
                                          mdCalled.Ip.getValues(declParams[i]));
-                                // some debugging code
-                                if (isA(temp, iterator) &&
-                                    mdCalled.Ip.getValues(declParams[i])
-                                    .contains(temp)) {
-
-                                    System.out.println("Iterator self-incompat due to Ip: ");
-                                    System.out.println("   "+Debug.code2str((NEW) globalAllocMap.get(temp)));
-                                    System.out.println("   at " + Debug.code2str(qCall));
-                                }
-                                    
                             }
                             
                         }
@@ -1231,9 +1272,11 @@ public class IncompatibilityAnalysis {
         return ipSize != md.Ip.size();
     }
         
+    // **** Stage 3: classes computation
 
+    // FIXME: try alternate heuristics that take sizes into account
     private void computeClasses() {
-        Set selfCompatible = new HashSet();
+        selfCompatible = new HashSet();
         selfIncompatible = new HashSet();
 
         // compute self-compatibles and self-incompatibles
@@ -1248,41 +1291,40 @@ public class IncompatibilityAnalysis {
 
         }
 
-        // MultiMap Itmp = MultiMapUtils.multiMapFilter(I, selfCompatible, selfCompatible);
-
-        // classes = MultiMapUtils.computeCompatibleClasses(Itmp);
-
         classes = MyGraphColorer.colorGraph(selfCompatible, I);
 
-        // System.out.println("Coloring via alt method: ");
-        // Collection classesAlt = MultiMapUtils.computeCompatibleClassesAlt(Itmp);
      }
-        
-    public void printSomething() {
+
+
+
+    // *** Lots and lots of debugging code
+
+    // This prints the statistics. Comment in/out what you want
+    private void printStatistics() {
         // show off some end-results
         MethodData md = (MethodData) mdCache.get(entry);
 
-        System.out.println("An for entry: " + md.An);        
-        System.out.println("Ae for entry: " + md.Ae);
+        //  System.out.println("An for entry: " + md.An);        
+        // System.out.println("Ae for entry: " + md.Ae);
 
         HashSet allocs = new HashSet(md.An);
         allocs.add(md.Ae);
 
-        System.out.println("Rn for entry: " + md.Rn);        
-        System.out.println("Re for entry: " + md.Re);
+        // System.out.println("Rn for entry: " + md.Rn);        
+        // System.out.println("Re for entry: " + md.Re);
         
-        System.out.println("E for entry: " + md.E);
+        // System.out.println("E for entry: " + md.E);
 
         // System.out.println("Liveness for entry: " + md.liveness);
-        System.out.println("aliases for entry: " + md.aliasedValues);
+        // System.out.println("aliases for entry: " + md.aliasedValues);
 
         // System.out.println("Incompatibility: " + I);
 
 
-        System.out.println("Classes: ");
-        System.out.println(classes);
+        // System.out.println("Classes: ");
+        // System.out.println(classes);
 
-        System.out.println("selfIncompatible: " + selfIncompatible);
+        // System.out.println("selfIncompatible: " + selfIncompatible);
 
         // System.out.println("Legend: ");
         // printTempCollection(I.keySet());
@@ -1318,15 +1360,89 @@ public class IncompatibilityAnalysis {
 
         
         System.out.println("Self-incompatible type statistics: ");
-        printTypeStatistics(selfIncompatible);
+        printTypeStatistics(selfIncompatible, globalAllocMap.keySet());
+
+        System.out.println("Statics type statics: ");
+        printTypeStatistics(selfCompatible, globalAllocMap.keySet());
 
 
         System.out.println("Statistics: ");
+        System.out.println("   "+allMethods.size() + " methods analyzed;" +
+                           sizeStatistics(allMethods, codeFactory) + " SSI; " +
+                           sizeStatistics(allMethods, harpoon.IR.Bytecode.Code.codeFactory()) + " bytecodes");
         System.out.println("   " + globalAllocMap.keySet().size() + " allocations");
         System.out.println("   " + I.size() + " incompatible pairs");
         System.out.println("   " + classes.size() + " classes ("
                            + (100 - (classes.size()*100/(globalAllocMap.keySet().size() - selfIncompatible.size()))) +"% reduction)");
         System.out.println("   " + selfIncompatible.size() + " self-incompatible vars ("+(selfIncompatible.size()*100/globalAllocMap.keySet().size())+"%)");
+
+
+        Set statics = new HashSet();
+        int usize = 0;
+        int psize = 0;
+
+        Collection allocClasses = getCompatibleClasses();
+
+        // this is dumb but i'll remove it anyways
+        for (Iterator it = allocClasses.iterator(); it.hasNext(); ) {
+            Collection thisClass = (Collection) it.next();
+            
+            statics.addAll(thisClass);
+
+            psize += maxClassFields(thisClass);
+        }
+
+        for (Iterator it = statics.iterator(); it.hasNext();) {
+            usize +=  ((harpoon.IR.Quads.NEW) it.next()).hclass().getFields(true).length + ADD_FIELDS;
+        }
+        
+        System.out.println("Sizes before packing: " + statics.size() + " slots;  " + usize + " fields");
+        System.out.println("Sizes after packing: " + allocClasses.size() + " slots;  " + psize + " fields");
+
+//         System.out.print("Exceptions: "); 
+//         printSubTypeStatistics(exception);
+
+//         System.out.print("StringBuffers: ");
+//         printSubTypeStatistics(stringbuffer);
+
+//         System.out.println("Iterators: ");
+//         printSubTypeStatistics(iterator);
+        
+    }
+
+    private void printSubTypeStatistics(HClass hclass) {
+        int total = countTempIsA(globalAllocMap.keySet(), hclass);
+        int stat = countTempIsA(selfCompatible, hclass);
+
+        System.out.println(stat + " of " + total + ", " +stat*100/Math.max(total, 1)+"%");
+    }
+
+    private  int countTempIsA(Collection temps, HClass hclass) {
+        int count = 0;
+
+        for (Iterator it = temps.iterator(); it.hasNext(); ) {
+            Temp temp = (Temp) it.next();
+
+            if (tempIsA(temp, hclass)) count ++;
+        }
+
+        return count;
+    }
+
+    private static int maxClassFields(Collection cls) {
+        int max = 0;
+        int sum = 0;
+        
+        for (Iterator it = cls.iterator(); it.hasNext(); ) {
+            int fields =((harpoon.IR.Quads.NEW) it.next()).hclass().getFields(true).length + ADD_FIELDS;
+            sum += fields;
+            max = Math.max(max, fields);
+        }
+        // System.out.println("classmax: " + max);
+        // System.out.println("classSize: " + cls.size());
+        // System.out.println("classAvgFields: " + ((double) sum)/cls.size());
+        // System.out.println();
+        return max;
     }
 
     private void printmap(Map map) {
@@ -1343,9 +1459,10 @@ public class IncompatibilityAnalysis {
 	    }
 	}
     }
+          
 
-    private void printTypeStatistics(Collection temps) {
-        final Map count = new HashMap();
+    private Map getTypeCountMap(Collection temps) {
+        Map count = new HashMap();
 
         for (Iterator it = temps.iterator(); it.hasNext(); ) {
             Temp temp = (Temp) it.next();
@@ -1359,7 +1476,18 @@ public class IncompatibilityAnalysis {
             }
         }
 
+        return count;
+    }
 
+    private void printTypeStatistics(Collection temps) {
+        printTypeStatistics(temps, null);
+    }
+
+    private void printTypeStatistics(Collection temps, Collection correl) {
+        final Map count = getTypeCountMap(temps);
+        Map count_correl = correl != null ?
+            getTypeCountMap(correl) : null;
+        
         // sort
         Object[] types = count.keySet().toArray();
 
@@ -1373,20 +1501,54 @@ public class IncompatibilityAnalysis {
 
         int total = 0;
         for (int i = 0; i<types.length; i++) {
-            System.out.println("   " + types[i] + ": " + count.get(types[i]));
-            total+= ((Integer) count.get(types[i])).intValue();
+            int c_this = ((Integer) count.get(types[i])).intValue();
+            System.out.print("   " + types[i] + ": " + c_this);
+            
+            if (correl != null) {
+                int c_correl =
+                    ((Integer) count_correl.get(types[i])).intValue();
+                System.out.println("  (of " + c_correl + ", " +
+                                   c_this*100/c_correl + "%)");
+            } else System.out.println();
+            
+            total+= c_this;
         }
         System.out.println("   total: " + total);
 
     }
 
+    private static long sizeStatistics(Collection methods, HCodeFactory factory) {
+        long nElements = 0;
+        for (Iterator it = methods.iterator(); it.hasNext(); ) {
+            HMethod method = (HMethod) it.next();
+            HCode hc = factory.convert(method);
+
+            if (hc!=null)
+                nElements+= hc.getElementsL().size();
+        }
+
+        return nElements;
+    }
+
     // some helper methods for debugging
     
-    private boolean isA(Object temp, HClass hclass) {
+    private boolean tempIsA(Object temp, HClass hclass) {
         if (globalAllocMap.containsKey(temp)) {
-            return hclass.isSuperclassOf(((NEW) globalAllocMap.get(temp)).hclass());
+            return isA(((NEW) globalAllocMap.get(temp)).hclass(), hclass);
         } else return false;
     }
+
+    // i would think hclass would have something like this...
+    private static boolean isA(HClass hclass, HClass what) {
+        if (what == null) return false;
+        
+        if (what.isInterface())
+            return what.isSuperinterfaceOf(hclass);
+        else 
+            return what.isSuperclassOf(hclass);
+    }
+
+
 
     private void printTempCollection(Collection temps) {
         for (Iterator it = temps.iterator(); it.hasNext(); ) {
@@ -1445,14 +1607,6 @@ public class IncompatibilityAnalysis {
 
         }
         
-        // i would think hclass would have something like this...
-        private boolean isA(HClass hclass, HClass what) {
-            if (what.isInterface())
-                return what.isSuperinterfaceOf(hclass);
-            else 
-                return what.isSuperclassOf(hclass);
-        }
-
         public String toString() {
             return "{branch " + branch + " of " + typeswitch + "}";
         }
@@ -1463,8 +1617,7 @@ public class IncompatibilityAnalysis {
 class MethodData {
     // This is the data we keep for each method
 
-    // initial (static) data
-
+    // **** initial (static) data
 
     // if this is set, everything else should be ignored
     boolean isNative = false;
@@ -1480,8 +1633,9 @@ class MethodData {
     MultiMap calls;
 
     // these are vars that are internal and should not appear in returns
-    Set externals;
     Set internals;
+    // guess what these are
+    Set externals;
 
     // maps internals to the condition, if any, under which an object
     //    is assigned to an internal (think TYPESWITCH)
@@ -1495,7 +1649,7 @@ class MethodData {
     // the header of this method
     METHOD header;
 
-    // this is data that will be constructed through fixed-point
+    // **** data that will be constructed through fixed-point
 
     // helper information: pointsTo information for internals
     // maps internal variables to possible values
@@ -1510,6 +1664,7 @@ class MethodData {
 }
 
 // FIXME: move this outside
+//   ... or maybe not. Does anybody else need it?
 interface Condition {
     public boolean isSatisfiedFor(Object object);
 }
