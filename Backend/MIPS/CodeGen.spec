@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.24 2000-10-17 22:28:22 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.25 2000-10-20 02:44:08 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -122,7 +122,7 @@ import java.util.Iterator;
 
     /*final*/ RegFileInfo regfile;
     private Temp  v0, v1, a0, a1, a2, a3, t0, t1, t2, 
-       t3, t4, t5, t6, t7, t8, t9, FP, SP, LR;
+       t3, t4, t5, t6, t7, t8, t9, GP, SP, FP, LR;
     Comparator regComp;
     private /*final*/ Temp call_use[];
     /* The maximum def set for a call */
@@ -171,15 +171,16 @@ import java.util.Iterator;
     t7 = regfile.T7;
     t8 = regfile.T8;
     t9 = regfile.T9;
-	FP = regfile.FP; // s8, but C on IRIX/MIPS doesn't use an fp
+	GP = regfile.GP; // reg 28
 	SP = regfile.SP; // reg 29
+	FP = regfile.FP; // s8
 	LR = regfile.LR; // reg 31
     call_use = new Temp[] {a0, a1, a2, a3, SP, FP};
     call_def_full = new Temp[] {v0, v1, a0, a1, a2, a3, t0, t1, 
                                 t2, t3, t4, t5, t6, t7, t8, t9, 
-                                LR};
+                                GP, LR};
     call_def_builtin = new Temp[] {v0, v1, a0, a1, a2, a3, t0, t1, t2,
-                                   LR};
+                                   GP, LR};
 
 
     // allow sorting of registers so that stm and ldm work correctly.
@@ -311,10 +312,14 @@ import java.util.Iterator;
     // This is called before a compound instr that defines a long temp 
     // It is intended to fool the global register allocator into not
 // believing that the destination long and a source long can be
-// allocated to the same registers
+// allocated to the same registers 
     private Instr emitRegAllocDef( HCodeElement root, Temp t) {
        Util.assert(t != null, t);
        return emit2( root, "# Reg alloc def " + t, new Temp[]{t}, null);
+    }
+    private Instr emitRegAllocUse( HCodeElement root, Temp t) {
+       Util.assert(t != null, t);
+       return emit2( root, "# Reg alloc use " + t, null, new Temp[]{t});
     }
 
     /* Branching instruction emit helper. 
@@ -511,6 +516,7 @@ import java.util.Iterator;
        declare(t7, HClass.Void);
        declare(t8, HClass.Void);
        declare(t9, HClass.Void);
+       declare(GP, HClass.Void);
        declare(LR, HClass.Void);
     }
     private void declareCALLDefBuiltin() {
@@ -523,6 +529,7 @@ import java.util.Iterator;
        declare(t0, HClass.Void);
        declare(t1, HClass.Void);
        declare(t2, HClass.Void);
+       declare(GP, HClass.Void);
        declare(LR, HClass.Void);
     }
     private void DoLLCall(HCodeElement root,
@@ -1034,6 +1041,8 @@ BINOP<l>(ADD, j, k) = i %extra<i>{ extra }
              + "addu `d0h, `s2h, `s1h",
              new Temp[] {i, extra}, new Temp[] {j, k, i, extra} );
    }
+   emitRegAllocUse(ROOT, j);
+   emitRegAllocUse(ROOT, k);
 }%
 
 BINOP<f>(ADD, j, k) = i %{
@@ -1080,6 +1089,8 @@ BINOP<l>(ADD, j, UNOP<l>(NEG, k)) = i %extra<i>{ extra }
              + "subu `d0h, `s2h, `s3",
              new Temp[]{i,extra}, new Temp[] {j, k, i, extra} );
    }
+   emitRegAllocUse(ROOT, j);
+   emitRegAllocUse(ROOT, k);
 }%
 
 BINOP<f>(ADD, j, UNOP<f>(NEG, k)) = i %{
@@ -1199,6 +1210,7 @@ UNOP<l>(NEG, arg) = i %extra<i>{ extra }
              + "subu `d0h, `s1h, `s2",
              new Temp[] {i,extra}, new Temp[] {arg, i, extra} );
    }
+   emitRegAllocUse(ROOT, arg);
 }% 
 
 /***********************************************************/
@@ -1219,6 +1231,8 @@ BINOP<l>(AND, j, k) = i %{
    emitRegAllocDef(ROOT, i);
    emit( ROOT, "and `d0l, `s0l, `s1l\n"
          + "and `d0h, `s0h, `s1h", i, j, k);
+   emitRegAllocUse(ROOT, j);
+   emitRegAllocUse(ROOT, k);
 }%
 
 BINOP<p,i>(OR, j, k) = i
@@ -1237,6 +1251,8 @@ BINOP<l>(OR, j, k) = i %{
    emitRegAllocDef(ROOT, i);
    emit( ROOT, "or `d0l, `s0l, `s1l\n"
          + "or `d0h, `s0h, `s1h", i, j, k );
+   emitRegAllocUse(ROOT, j);
+   emitRegAllocUse(ROOT, k);
 }%
 
 BINOP<p,i>(XOR, j, k) = i
@@ -1254,6 +1270,8 @@ BINOP<l>(XOR, j, k) = i %{
    emitRegAllocDef(ROOT, i);
    emit( ROOT, "xor `d0l, `s0l, `s1l\n"
          + "xor `d0h, `s0h, `s1h", i, j, k );
+   emitRegAllocUse(ROOT, j);
+   emitRegAllocUse(ROOT, k);
 }%
 
 UNOP<i,p>(NOT, arg) = i
@@ -1268,6 +1286,7 @@ UNOP<l>(NOT, arg) = i
    emitRegAllocDef(ROOT, i);
    emit( ROOT, "not `d0l, `s0l\n"
          + "not `d0h, `s0h", i, arg );
+   emitRegAllocUse(ROOT, arg);
 }% 
 
 /***********************************************************/
@@ -1463,6 +1482,7 @@ MEM<l,d>(e) = i %{
                      "lw `d0l, 4(`s0)\n"
                      + "lw `d0h, 0(`s0)",
                      new Temp[]{ i }, new Temp[]{ e }));
+   emitRegAllocUse(ROOT, e);
 }%
 
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), src)
@@ -1574,10 +1594,11 @@ MOVE<d,l>(TEMP(dst), src) %{
 		 " a normal Temp? " + harpoon.IR.Tree.Print.print(ROOT));
 
     declare( dst, code.getTreeDerivation(),  ROOT.getSrc() );
-    // not certain an emitMOVE is legal with the l/h modifiers
+
     emitRegAllocDef( ROOT, dst );
     emit( ROOT, "move `d0l, `s0l\n"
           + "move `d0h, `s0h", dst, src );
+    emitRegAllocUse(ROOT, src);
 }%
 
 
@@ -1598,12 +1619,10 @@ MEM<f,i,p>(NAME(id)) = i %{
 }%
 MEM<d,l>(NAME(id)) = i %{
    emitLineDebugInfo(ROOT);
-    emit(new Instr( instrFactory, ROOT,
-		    "lw `d0h, " + id, 
-		    new Temp[]{ i }, null ));
-    emit(new Instr( instrFactory, ROOT,
-		    "lw `d0l, " + id + "+4", 
-		    new Temp[]{ i }, null ));
+   emit(new InstrMEM( instrFactory, ROOT,
+                      "lw `d0l, " + id + " +4\n"
+                      + "lw `d0h, " + id,
+                      new Temp[]{i}, new Temp[]{i}) );
 }%
 
 
@@ -1644,6 +1663,7 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType() == Type.INT )%
    emitRegAllocDef(ROOT, i);
    emit( ROOT, "move `d0l, `s0\n"
          + "sra `d0h, `s0, 31", i, arg );
+   emitRegAllocUse(ROOT, arg);
 }%
 /* Trivial pointer to integer */
 UNOP<p>(_2I, arg) = i %pred %( ROOT.operandType() == Type.POINTER )%
@@ -1813,6 +1833,8 @@ METHOD(params) %{
                     new Temp[] {params[i]},
                     new Temp[] { param_stack.argReg(ROOT, i-1),
                                  param_stack.argSecondReg(ROOT, i-1) } );
+             emitRegAllocUse(ROOT, param_stack.argReg(ROOT, i-1));
+             emitRegAllocUse(ROOT, param_stack.argSecondReg(ROOT, i-1));
           } else {
              emitMOVE( ROOT, "move `d0, `s0", params[i],
                        param_stack.argReg(ROOT, i-1));
@@ -1821,6 +1843,7 @@ METHOD(params) %{
        case StackInfo.STACK:
           if(ROOT.getParams(i).isDoubleWord()) {
              declare (SP, HClass.Void);
+             emitRegAllocDef(ROOT, params[i]);
              emit(new InstrMEM( instrFactory, ROOT,
                                 "lw `d0h, " 
                                 + param_stack.argOffset(ROOT, i-1)
