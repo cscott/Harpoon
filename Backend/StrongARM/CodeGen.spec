@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.128 2000-02-13 20:59:07 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.129 2000-02-14 00:54:51 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -619,6 +619,10 @@ BINOP<p,i>(ADD, CONST<i,p>(c), j) = i %pred %( isOpd2Imm(c) )% %{
 
     emit( ROOT, "add `d0, `s0, #"+c, i, j);
 }%
+BINOP<p,i>(ADD, j, BINOP<p,i>(SHL, k, CONST<i,p>(c))) = i
+%pred %( is5BitShift(c) )% %{
+    emit( ROOT, "add `d0, `s0, `s1, lsl #"+c, i, j, k);
+}%
 
 BINOP<l>(ADD, j, k) = i %{
 
@@ -673,12 +677,12 @@ BINOP<l>(AND, j, k) = i %{
 
 BINOP(CMPEQ, j, CONST<i,p>(c)) = i
 %pred %( (ROOT.operandType()==Type.POINTER || ROOT.operandType()==Type.INT)
-	 && isOpd2Imm(c) )%
+	 && (c==null || isOpd2Imm(c)) )%
 %{
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit( ROOT, "cmp `s0, #"+c+"\n"+
+    emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n"+
 		"moveq `d0, #1\n"+
 		"movne `d0, #0", i, j );
 }%
@@ -1637,9 +1641,9 @@ METHOD(params) %{
 }%
 
 CJUMP(BINOP(CMPEQ, j, CONST<i,p>(c)), iftrue, iffalse)
-%pred %( isOpd2Imm(c) )%
+%pred %( c==null || isOpd2Imm(c) )%
 %{  // this is a frequent special case.
-    emit( ROOT, "cmp `s0, #"+c+"\n" +
+    emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n" +
 	         "beq `L0",
 	  null, new Temp[] { j }, new Label[] { iftrue });
     emitJUMP( ROOT, "b `L0", iffalse );
