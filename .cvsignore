@@ -2,6 +2,9 @@
 *.blg
 *.bbl
 *.log
+*.toc
+*.lof
+*.loa
 *.aux
 *.dvi
 harpoon_.bib
