@@ -217,11 +217,13 @@ public class RealtimeThread extends Thread {
 	    throw new MemoryScopeError("Re-entry of previous scope.");
 	}
 	this.mem = mem;
+	mem.enterMemBlock(this);
     }
 
     /** */
 
     void exit() {
+	mem.exitMemBlock(this);
 	this.mem = memAreaStack.entry;
 	memAreaStack = memAreaStack.next;
     }

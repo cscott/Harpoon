@@ -18,6 +18,14 @@ public class NullMemoryArea extends MemoryArea {
 
     /** */
 
+    protected native void initNative(long sizeInBytes);
+
+    /** */
+
+    protected native void newMemBlock(RealtimeThread rt);
+
+    /** */
+
     public static NullMemoryArea instance() {
 	if (nullMemory == null) {
 	    nullMemory = new NullMemoryArea();

@@ -21,4 +21,12 @@ public class CTMemory extends ScopedMemory {
     public String toString() {
 	return "CTMemory: " + super.toString();
     }
+
+    /** */
+
+    protected native void initNative(long sizeInBytes);
+
+    /** */
+    
+    protected native void newMemBlock(RealtimeThread rt);
 }

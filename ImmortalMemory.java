@@ -17,13 +17,21 @@ public class ImmortalMemory extends MemoryArea {
 
     /** */
 
+    protected native void initNative(long sizeInBytes);
+    
+    /** */
+
+    protected native void newMemBlock(RealtimeThread rt);
+
+    /** */
+
     public static ImmortalMemory instance() {
 	if (immortalMemory == null) {
 	    immortalMemory = new ImmortalMemory();
 	}
 	return immortalMemory;
     }
-    
+
     /** */
 
     public String toString() {

@@ -22,11 +22,11 @@ public abstract class MemoryArea {
 
     /** */
 
-    protected boolean scoped;
+    boolean scoped;
 
     /** */
 
-    protected boolean heap;
+    boolean heap;
 
     /** */
     
@@ -53,6 +53,9 @@ public abstract class MemoryArea {
 
     boolean constant;
 
+    native void enterMemBlock(RealtimeThread rt);
+    native void exitMemBlock(RealtimeThread rt);
+
     protected MemoryArea(long sizeInBytes) {
 	size = sizeInBytes;
 	scoped = false; // To avoid the dreaded instanceof
@@ -60,7 +63,16 @@ public abstract class MemoryArea {
 	id = num++;
 	constant = false;
 	nullMem = false;
+	initNative(sizeInBytes);
     }
+    
+    /** */
+
+    protected abstract void initNative(long sizeInBytes);
+
+    /** */
+
+    protected abstract void newMemBlock(RealtimeThread rt);
     
     /** */
 
@@ -80,6 +92,9 @@ public abstract class MemoryArea {
     /** */
     
     public static MemoryArea getMemoryArea(Object object) {
+	if (object == null) {
+	    return ImmortalMemory.instance();
+	}
 	MemoryArea mem = object.memoryArea;
 	// I'm completely punting this for now...
   	if (mem == null) { // Native methods return objects 
@@ -176,15 +191,7 @@ public abstract class MemoryArea {
 	long size = checkMem(type, number);
 	RealtimeThread.currentRealtimeThread().getMemoryArea()
 	    .checkAccess(this);
-	class NewArray implements Runnable {
-	    public Object newObj;
-	    public void run() {
-		newObj = Array.newInstance(type, number);
-	    }
-	}
-	NewArray newArray = new NewArray();
-	newArray.run();
-	return update(newArray.newObj, size);
+	return update(Array.newInstance(type, number), size);
     }
     
     /** */
@@ -196,15 +203,7 @@ public abstract class MemoryArea {
 	long size = checkMem(type, dimensions);
 	RealtimeThread.currentRealtimeThread().getMemoryArea()
 	    .checkAccess(this);
-	class NewArray implements Runnable {
-	    public Object newObj;
-	    public void run() {
-		newObj = Array.newInstance(type, dimensions);
-	    }
-	}
-	NewArray newArray = new NewArray();
-	newArray.run();
-	return update(newArray.newObj, size);
+	return update(Array.newInstance(type,dimensions), size);
     }
 
     /** */
@@ -223,47 +222,15 @@ public abstract class MemoryArea {
 	throws IllegalAccessException, InstantiationException,
 	       OutOfMemoryError {
 	long size = checkMem(type, 1);
-	RealtimeThread.currentRealtimeThread().getMemoryArea()
-	    .checkAccess(this);
-	class NewObject implements Runnable {
-	    public Object newObj;
-	    InstantiationException instantiationException;
-	    IllegalAccessException illegalAccessException;
-	    public NewObject() {
-		newObj = null;
-		instantiationException = null;
-		illegalAccessException = null;
-	    }
-	    
-	    public void run() {
-		try {
-		    newObj = type.getConstructor(parameterTypes)
-			.newInstance(parameters);
-		} catch (NoSuchMethodException e) {
-		    instantiationException = 
-			new InstantiationException(e.getMessage());
-		} catch (InvocationTargetException e) {
-		    instantiationException = 
-			new InstantiationException(e.getMessage());
-		} catch (IllegalAccessException e) {
-		    illegalAccessException = e;
-		} catch (InstantiationException e) {
-		    instantiationException = e;
-		}
-	    }
-	}
-	NewObject newObject = new NewObject();
-	newObject.run();
-	if (newObject.newObj == null) {
-	    if (newObject.instantiationException != null) {
-		throw newObject.instantiationException;
-	    } else if (newObject.illegalAccessException != null) {
-		throw newObject.illegalAccessException;
-	    } else {
-		throw new InstantiationException("Returned object is null.");
-	    }
-	}
-	return update(newObject.newObj, size);
+	RealtimeThread.currentRealtimeThread().getMemoryArea().checkAccess(this);
+	try {
+	    return update(type.getConstructor(parameterTypes)
+			  .newInstance(parameters), size);
+	} catch (NoSuchMethodException e) {
+	    throw new InstantiationException(e.getMessage());
+	} catch (InvocationTargetException e) {
+	    throw new InstantiationException(e.getMessage());
+	}	
     }
     
     /** */
@@ -271,12 +238,12 @@ public abstract class MemoryArea {
     public void checkAccess(Object obj) {
 	if ((obj != null) && (obj.memoryArea != null) && 
 	    obj.memoryArea.scoped) {
-// Sun's libraries are broken - just annotate that this is the problem area...
-  	  throw new IllegalAssignmentError();
-//	    java_lang_Brokenness++; 
+	    // Sun's libraries are broken - just annotate that this is the problem area...
+	    throw new IllegalAssignmentError();
+	    //	    java_lang_Brokenness++; 
 	}
     }
-
+    
     /** */
 
     public MemoryArea getOuterScope() {

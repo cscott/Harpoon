@@ -23,6 +23,14 @@ public final class HeapMemory extends MemoryArea {
     }
    
     /** */
+    
+    protected native void initNative(long sizeInBytes);
+
+    /** */
+
+    protected native void newMemBlock(RealtimeThread rt);
+
+    /** */
  
     public static HeapMemory instance() {
 	if (theHeap == null) { // Bypass static initializer problem.

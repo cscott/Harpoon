@@ -17,6 +17,14 @@ public class LTMemory extends ScopedMemory {
 
     /** */
 
+    protected native void initNative(long sizeInBytes);
+
+    /** */
+    
+    protected native void newMemBlock(RealtimeThread rt);
+
+    /** */
+
     public String toString() {
 	return "LTMemory: " + super.toString();
     }

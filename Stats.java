@@ -24,40 +24,77 @@ public final class Stats {
     
     /** */
 
-    private static MemAreaStack checkFroms = new MemAreaStack();
-
-    /** */
-
-    private static MemAreaStack checkTos = new MemAreaStack();
-
-    /** */
-
-    private static MemAreaStack newObjectAreas = new MemAreaStack();
-
-    /** */
-
-    private static MemAreaStack newArrayObjectAreas = new MemAreaStack();
+    private static long HEAP_TO_HEAP = 0;
+    private static long HEAP_TO_SCOPE = 0;
+    private static long HEAP_TO_IMMORTAL = 0;
+    private static long SCOPE_TO_HEAP = 0;
+    private static long SCOPE_TO_SCOPE = 0;
+    private static long SCOPE_TO_IMMORTAL = 0;
+    private static long IMMORTAL_TO_HEAP = 0;
+    private static long IMMORTAL_TO_SCOPE = 0;
+    private static long IMMORTAL_TO_IMMORTAL = 0;
+    private static long NEW_HEAP = 0;
+    private static long NEW_SCOPE = 0;
+    private static long NEW_IMMORTAL = 0;
+    private static long NEW_ARRAY_HEAP = 0;
+    private static long NEW_ARRAY_SCOPE = 0;
+    private static long NEW_ARRAY_IMMORTAL = 0;
 
     /** */
 
     public final static void addCheck(MemoryArea from,
 				      MemoryArea to) {
-	checkFroms = new MemAreaStack(from, checkFroms);
-	checkTos = new MemAreaStack(to, checkTos);
+	if (from.heap) {
+	    if (to.heap) {
+		HEAP_TO_HEAP++;
+	    } else if (to.scoped) {
+		HEAP_TO_SCOPE++;
+	    } else {
+		HEAP_TO_IMMORTAL++;
+	    }
+	} else if (from.scoped) {
+	    if (to.heap) {
+		SCOPE_TO_HEAP++;
+	    } else if (to.scoped) {
+		SCOPE_TO_SCOPE++;
+	    } else {
+		SCOPE_TO_IMMORTAL++;
+	    }
+	} else {
+	    if (to.heap) {
+		IMMORTAL_TO_HEAP++;
+	    } else if (to.scoped) {
+		IMMORTAL_TO_SCOPE++;
+	    } else {
+		IMMORTAL_TO_IMMORTAL++;
+	    }
+	}
 	accessChecks++;	
     }
 
     /** */
 
     public final static void addNewObject(MemoryArea to) {
-	newObjectAreas = new MemAreaStack(to, newObjectAreas);
+	if (to.heap) {
+	    NEW_HEAP++;
+	} else if (to.scoped) {
+	    NEW_SCOPE++;
+	} else {
+	    NEW_IMMORTAL++;
+	}
 	newObjects++;
     }
     
     /** */
 
     public final static void addNewArrayObject(MemoryArea to) {
-	newArrayObjectAreas = new MemAreaStack(to, newArrayObjectAreas);
+	if (to.heap) {
+	    NEW_ARRAY_HEAP++;
+	} else if (to.scoped) {
+	    NEW_ARRAY_SCOPE++;
+	} else {
+	    NEW_ARRAY_IMMORTAL++;
+	}
 	newArrayObjects++;
     }
     
@@ -67,32 +104,31 @@ public final class Stats {
 	System.err.println("-------------------------------------");
 	System.err.println("Dynamic statistics for Realtime Java:");
 	System.err.println("Number of access checks: " + accessChecks);
-	System.err.println("Number of objects blessed: " + newObjects);
-	System.err.println("Number of array objects blessed: " + 
+	System.err.println("Number of objects created: " + newObjects);
+	System.err.println("Number of array objects created: " + 
 			   newArrayObjects);
 	System.err.println("-------------------------------------");
-
-	MemAreaStack froms = checkFroms;
-	MemAreaStack tos = checkTos;
-	while (froms.next != null) {
-	    System.err.println("Check from: " + froms.entry.toString() +
-			       "to: " + tos.entry.toString());
-	    froms = froms.next;
-	    tos = tos.next;
-	}
-
-	froms = newObjectAreas;
-	while (froms.next != null) {
-	    System.err.println("New object from: " + 
-			       froms.entry.toString());
-	    froms = froms.next;
-	}
-
-	froms = newArrayObjectAreas;
-	while (froms.next != null) {
-	    System.err.println("New array object from: " + 
-			       froms.entry.toString());
-	    froms = froms.next;
-	}
+	
+	System.err.println("Checks:");
+	System.err.println("  Heap     -> Heap:    " + HEAP_TO_HEAP);	
+	System.err.println("  Heap     -> Scope:   " + HEAP_TO_SCOPE);
+	System.err.println("  Heap     -> Immortal:" + HEAP_TO_IMMORTAL);
+	System.err.println("  Scope    -> Heap:    " + SCOPE_TO_HEAP);
+	System.err.println("  Scope    -> Scope:   " + SCOPE_TO_SCOPE);
+	System.err.println("  Scope    -> Immortal:" + SCOPE_TO_IMMORTAL);
+	System.err.println("  Immortal -> Heap:    " + IMMORTAL_TO_HEAP);
+	System.err.println("  Immortal -> Scope:   " + IMMORTAL_TO_SCOPE);
+	System.err.println("  Immortal -> Immortal:" + IMMORTAL_TO_IMMORTAL);
+	System.err.println();
+	System.err.println("New objects: ");
+	System.err.println("  in heap:    " + NEW_HEAP);
+	System.err.println("  in scope:   " + NEW_SCOPE);
+	System.err.println("  in immortal:" + NEW_IMMORTAL);
+	System.err.println();
+	System.err.println("New arrays: ");
+	System.err.println("  in heap:    " + NEW_ARRAY_HEAP);
+	System.err.println("  in scope:   " + NEW_ARRAY_SCOPE);
+	System.err.println("  in immortal:" + NEW_ARRAY_IMMORTAL);
+	System.err.println("-------------------------------------");
     }
 }

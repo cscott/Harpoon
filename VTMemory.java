@@ -18,6 +18,14 @@ public class VTMemory extends ScopedMemory {
 
     /** */
 
+    protected native void initNative(long sizeInBytes);
+
+    /** */
+
+    protected native void newMemBlock(RealtimeThread rt);
+
+    /** */
+
     public String toString() {
 	return "VTMemory: " + super.toString();
     }

@@ -18,4 +18,14 @@ public class ImmortalPhysicalMemory extends MemoryArea {
 	this.base = base;
 	this.size = size;
     }
+
+    /** */
+
+    protected native void initNative(long sizeInBytes);
+
+    /** */
+
+    protected native void newMemBlock(RealtimeThread rt);
+
+
 }
