@@ -43,7 +43,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.5 2002-08-30 22:39:11 cananian Exp $ */
+ * @version $Id: Instr.java,v 1.6 2002-08-31 00:24:32 cananian Exp $ */
 public class Instr implements HCodeElement, UseDefable, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -348,6 +348,9 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	// jikes compiler, but it does CRAZY shit if i leave this in...
 	//assert isLinear(newis) : "newis must be a basic block: "+pprint(newis);
 	
+	// increment parent's modification count (for fail-fast iterator)
+	oldi.inf.getParent().modCount++;
+
 	Instr last = oldi.prev;
 	Iterator iter = newis.iterator();
 	while(iter.hasNext()) { 
@@ -505,6 +508,9 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	} else { // edge.from() falls through to edge.to() 
 	    layout(from, to);
 	}
+
+	// increment parent's modification count (for fail-fast iterator)
+	this.inf.getParent().modCount++;
     }
 
     /** Removes <code>this</code> from its current place in the
@@ -563,6 +569,8 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	    }
 	}
 
+	// increment parent's modification count (for fail-fast iterator)
+	this.inf.getParent().modCount++;
     }
 
     /** Places <code>this</code> in the instruction layout between
@@ -635,6 +643,9 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	    // which case we shouldn't assign a group to the new
 	    // instruction at all.
 	}
+
+	// increment parent's modification count (for fail-fast iterator)
+	this.inf.getParent().modCount++;
     }
 
     /* Replaces <code>inOld</code> with <code>inNew</code> in the
@@ -655,6 +666,8 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 
 	inNew.layout(inOld, inOld.getNext());
 	inOld.remove();
+
+	// call to layout() above increments modCount of parent for us.
     }
 
     /** Create a new <code>Instr</code> identical to the receiver, but
@@ -837,6 +850,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
+    // XXX make fail-fast?
     public Collection<InstrEdge> predC() {
 	assert !this.hasMultiplePredecessors() : "should not call Instr.predC() if instr"+
 		    "has multiple predecessors...override method";
@@ -876,6 +890,7 @@ public class Instr implements HCodeElement, UseDefable, CFGraphable {
 	and <code>getPrev()</code> for information on instruction
 	layout. 
     */
+    // XXX make fail-fast?
     public Collection<InstrEdge> succC() {
 	return new AbstractCollection<InstrEdge>() {
 	    public int size() {

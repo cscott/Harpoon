@@ -29,7 +29,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.4 2002-04-10 03:05:46 cananian Exp $
+ * @version $Id: Tree.java,v 1.5 2002-08-31 00:24:58 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement
@@ -106,6 +106,8 @@ public abstract class Tree
 	child[which] = newChild;
 	newChild.parent = this;
 	newChild.which_child_of_parent = which;
+	// increment parent's modification count (for fail-fast iterator)
+	tf.incModCount();
     }
     /** Replace the tree rooted at <code>this</code> with a new tree. */
     public final void replace(Tree newTree) {
@@ -113,7 +115,12 @@ public abstract class Tree
     }
     /** Make <code>this</code> a root-level tree, unlinking it from
      *  its parent. */
-    final void unlink() { this.parent=null; this.which_child_of_parent=0; }
+    final void unlink() {
+	// increment parent's modification count (for fail-fast iterator)
+	tf.incModCount();
+	// do unlink.
+	this.parent=null; this.which_child_of_parent=0;
+    }
 
     /** Returns the original source file name that this <code>Tree</code> is
      *  derived from. */

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -33,7 +34,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.5 2002-08-30 22:39:11 cananian Exp $
+ * @version $Id: Code.java,v 1.6 2002-08-31 00:24:32 cananian Exp $
  */
 public abstract class Code extends HCode<Instr> {
     private static boolean DEBUG = true;
@@ -46,7 +47,9 @@ public abstract class Code extends HCode<Instr> {
     protected final InstrFactory inf;
     /** The Frame associated with this codeview. */
     protected final Frame frame;
-
+    /** Keep track of modifications to this <code>Code</code> so that the
+     *  <code>getElementsI()</code> <code>Iterator</code> can fail-fast. */
+    int modCount=0;
 
     private InstrFactory newINF(final HMethod parent) {
 	return newINF(parent, getName());
@@ -101,9 +104,14 @@ public abstract class Code extends HCode<Instr> {
      *                  the first element in the iteration. */
     public Iterator<Instr> getElementsI() { 
 	return new UnmodifiableIterator<Instr>() {
+	    // record # of modifications to enable fail-fast.
+	    int modCount = Code.this.modCount;
+	    // setup starting point.
 	    Instr instr = getRootElement();
 	    public boolean hasNext() { return (instr != null); }
 	    public Instr next() {
+		if (modCount != Code.this.modCount)
+		    throw new ConcurrentModificationException();
 		if (instr == null) throw new NoSuchElementException();
 		Instr r = instr;
 		instr = r.getNext();

@@ -17,6 +17,7 @@ import harpoon.Util.ArrayFactory;
 import harpoon.Util.Collections.UnmodifiableIterator;
 import harpoon.Util.Util;
 
+import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -33,7 +34,7 @@ import java.util.ArrayList;
  * shared methods for the various codeviews using <code>Quad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.6 2002-08-30 22:39:33 cananian Exp $
+ * @version $Id: Code.java,v 1.7 2002-08-31 00:24:48 cananian Exp $
  */
 public abstract class Code extends HCode<Quad>
     implements java.io.Serializable {
@@ -45,6 +46,9 @@ public abstract class Code extends HCode<Quad>
     protected final QuadFactory qf;
     /** <code>AllocationInformation</code> for this <code>HCode</code>. */
     protected AllocationInformation ai = null;
+    /** Keep track of modifications to this <code>Code</code> so that the
+     *  <code>getElementsI()</code> <code>Iterator</code> can fail-fast. */
+    int modCount=0;
 
     /** Create a proper QuadFactory. */
     protected QuadFactory newQF(final HMethod parent) {
@@ -151,6 +155,9 @@ public abstract class Code extends HCode<Quad>
      *  in the iteration. */
     public Iterator<Quad> getElementsI() {
 	return new UnmodifiableIterator<Quad>() {
+	    // record # of modifications to enable fail-fast.
+	    int modCount = Code.this.modCount;
+	    // set up visited set and to-do stack.
 	    Set<Quad> visited = new HashSet<Quad>();
 	    Stack<Quad> s = new Stack<Quad>();
 	    { // initialize stack/set.
@@ -159,6 +166,8 @@ public abstract class Code extends HCode<Quad>
 	    } 
 	    public boolean hasNext() { return !s.isEmpty(); }
 	    public Quad next() {
+		if (modCount != Code.this.modCount)
+		    throw new ConcurrentModificationException();
 		if (s.empty()) throw new NoSuchElementException();
 		Quad q = s.pop();
 		boolean forwards = false;

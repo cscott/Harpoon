@@ -16,7 +16,7 @@ import harpoon.Temp.TempFactory;
  * <code>harpoon.Backend.Generic.Frame</code>, etc.).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeFactory.java,v 1.2 2002-02-25 21:05:42 cananian Exp $
+ * @version $Id: TreeFactory.java,v 1.3 2002-08-31 00:25:00 cananian Exp $
  */
 public abstract class TreeFactory implements harpoon.Util.ReferenceUnique {
     /** Returns the <code>TempFactory</code> to use for <code>Temp</code>
@@ -27,6 +27,9 @@ public abstract class TreeFactory implements harpoon.Util.ReferenceUnique {
     /** Returns the <code>Frame</code> to be used to resolve
      *  machine-dependent issues for this <code>TreeFactory</code>. */
     public abstract Frame getFrame();
+    /** Indicate that the parent has changed, so that its
+     *  fail-fast iterators will work correctly. */
+    abstract void incModCount();
     /** Returns a unique number for an <code>Exp</code> or <code>Stm</code>
      *  within this <code>TreeFactory</code>. */
     abstract int getUniqueID();
