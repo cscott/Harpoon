@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.73 1999-10-15 02:40:53 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.74 1999-10-15 03:49:26 cananian Exp $
  */
 %%
 
@@ -1386,15 +1386,14 @@ CALL(retval, NAME(retex), func, arglist) %{
 	list = list.tail;    	
     }
 
+    // next two instructions are *not* InstrMOVEs, as they have side-effects
+    emit( ROOT, "mov `d0, `s0", LR, PC );
+    emit( ROOT, "mov `d0, `s0", new Temp[]{ PC }, new Temp[]{ func }, 
+	        new Label[] { retex } );
+
     // this '1f' and '1:' business is taking advantage of a GNU
     // Assembly feature to avoid polluting the global name space with
     // local labels
-    // emit(new Instr( instrFactory, ROOT, "bl `s0", null, new Temp[]{ func }));
-    emit(new InstrMOVE( instrFactory, ROOT, "mov `d0, `s0", 
-		    new Temp[]{ LR }, new Temp[]{ PC }));
-    emit(new InstrMOVE( instrFactory, ROOT, "mov `d0, `s0",
-		    new Temp[]{ PC }, new Temp[]{ func }));
-
     // these may need to be included in the previous instr to preserve
     // ordering semantics, but for now this way they indent properly
     emitDIRECTIVE( ROOT, ".text 10\t@.section fixup");
@@ -1480,12 +1479,9 @@ NATIVECALL(retval, func, arglist) %{
     }
 
 
-    emit(new InstrMOVE( instrFactory, ROOT, "mov `d0, `s0", 
-		    new Temp[]{ LR }, new Temp[]{ PC }));
-    emit(new InstrMOVE( instrFactory, ROOT, "mov `d0, `s0",
-		    new Temp[]{ PC }, new Temp[]{ func }));
-    
-
+    // next two instructions are *not* InstrMOVEs, as they have side-effects
+    emit( ROOT, "mov `d0, `s0", LR, PC );
+    emit( ROOT, "mov `d0, `s0", PC, func );
 
     // this will break if stackOffset > 255 (ie >63 args)
     emit( ROOT, "add `d0, `s0, #" + stackOffset, SP, SP );
