@@ -11,7 +11,7 @@ import java.util.Enumeration;
  * <code>Tester</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Tester.java,v 1.1.2.1 1999-01-14 23:18:59 pnkfelix Exp $
+ * @version $Id: Tester.java,v 1.1.2.2 1999-01-15 00:12:03 pnkfelix Exp $
  */
 
 public class Tester  {
@@ -52,6 +52,12 @@ public class Tester  {
     }
     
     public static void main(String[] args) {
+	SimpleGraphColorer sgc = new SimpleGraphColorer();
+	test( sgc );
+    }
+
+    public static void test( GraphColorer colorer ) {
+	
 	class TestColorFactory extends ColorFactory {
 	    int number = 0;
 	    
@@ -70,7 +76,6 @@ public class Tester  {
 		return tc;
 	    }
 	}
-
 	SparseGraph graphA = new SparseGraph();
 
 	try {
@@ -86,7 +91,7 @@ public class Tester  {
 	    graphA.addNode(nodeC);
 	    graphA.addNode(nodeD);
 	    
-	    SimpleGraphColorer.findColoring( graphA, new TestColorFactory());
+	    colorer.findColoring( graphA, new TestColorFactory());
 	    
 	    printNodes(graphA.getNodes());
 
@@ -97,7 +102,7 @@ public class Tester  {
 	    graphA.addEdge(nodeA, nodeB);
 	    graphA.addEdge(nodeC, nodeD);
 
-	    SimpleGraphColorer.findColoring( graphA, new TestColorFactory());
+	    colorer.findColoring( graphA, new TestColorFactory());
 	    
 	    printNodes(graphA.getNodes());
 
@@ -107,7 +112,7 @@ public class Tester  {
 	    
 	    graphA.addEdge(nodeA, nodeD);
 
-	    SimpleGraphColorer.findColoring( graphA, new TestColorFactory());
+	    colorer.findColoring( graphA, new TestColorFactory());
 	    
 	    printNodes(graphA.getNodes());
 
@@ -117,7 +122,7 @@ public class Tester  {
 	    
 	    graphA.addEdge(nodeB, nodeD);
 
-	    SimpleGraphColorer.findColoring( graphA, new TestColorFactory());
+	    colorer.findColoring( graphA, new TestColorFactory());
 	    
 	    printNodes(graphA.getNodes());
 
@@ -169,7 +174,7 @@ public class Tester  {
 
 	    graphB.addEdge(nK, nL);
 
-	    SimpleGraphColorer.findColoring( graphB, new TestColorFactory());
+	    colorer.findColoring( graphB, new TestColorFactory());
 	    
 	    printNodes(graphB.getNodes());
 
