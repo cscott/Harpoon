@@ -286,6 +286,7 @@ void MemoryArea_finalize(void* obj, void* client_data) {
 	 obj, client_data);
   assert(!getInflatedObject(env, &memoryArea)->memBlock->refCount);
 #endif
+#ifdef WITH_NOHEAP_SUPPORT
   if (!MemoryArea_shadow) {
     MemoryArea_shadow = (*env)->GetFieldID(env, (*env)->GetObjectClass(env, &memoryArea), 
 					   "shadow", "Ljavax/realtime/MemoryArea;");
@@ -299,6 +300,7 @@ void MemoryArea_finalize(void* obj, void* client_data) {
     (*env)->DeleteLocalRef(env, shadow);
     RTJ_FREE(shadow_unwrapped);
   }
+#endif
 #ifdef WITH_PRECISE_GC
   RefCountAllocator_DECREF(gc_info, getInflatedObject(env, &memoryArea)->memBlock);
 #else
