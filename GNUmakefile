@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.77 2000-01-14 19:31:06 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.78 2000-01-14 19:39:25 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -350,7 +350,7 @@ mark-executable:
 find-no-copyright:
 	@find . -name "*.java" \( ! -exec grep -q "GNU GPL" "{}" ";" \) -print
 find-import-star:
-	@grep -l "import.*\*;" $(filter-out GNUmakefile,$(TARSOURCE))
+	@grep -l "import.*\*;" $(filter-out GNUmakefile,$(TARSOURCE)) || true
 
 wc:
 	@echo Top Five:
