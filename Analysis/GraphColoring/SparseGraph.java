@@ -23,7 +23,7 @@ import java.util.Iterator;
  * references <code>SparseNode</code>s store internally.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.1.2.11 2000-07-21 23:58:12 pnkfelix Exp $ 
+ * @version $Id: SparseGraph.java,v 1.1.2.12 2000-07-22 01:09:04 pnkfelix Exp $ 
  */
 
 public class SparseGraph extends ColorableGraphImpl { // implements ColorableGraph {
@@ -321,7 +321,15 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
     
 
           /***** ColorableGraph Support methods *****/
-    
+
+    private class NsnEx extends IllegalArgumentException {
+	NsnEx(Object n) { super(n+"not SparseNode"); }
+    }    
+
+    private class NmEx extends UnsupportedOperationException {
+	NmEx() { super("not modifiable"); }
+    }
+
     /** Wrapper method that calls <code>super.addNode(n)</code>.
 	Needed to resolve ambiguity in method resolution at
 	compile-time. 
@@ -349,7 +357,15 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 		node-set for this graph.
     */
     public boolean addNode( Object node ) {
-	throw new UnsupportedOperationException();
+	try {
+	    if (!nodes.contains(node)) {
+		addNode( (SparseNode) node );
+		return true;
+	    } else {
+		return false;
+	    }
+	} catch (ClassCastException e) { throw new NsnEx(node); 
+	} catch (ObjectNotModifiableException e) { throw new NmEx(); }
     }
 
     /** Returns all nodes in graph to their original state.
@@ -379,9 +395,15 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 	     <code>n</code> has already been colored.
     */
     public void setColor(Object n, Color c) {
-	throw new IllegalArgumentException();
-    }
+	try {
+	    SparseNode sn = (SparseNode) n;
 
+	    // hack to get around poor spec of SparseNode
+	    sn.setColor(null);
+
+	    sn.setColor(c);
+	} catch (ClassCastException e) { throw new NsnEx(n); }
+    }
 
     /** Returns the color of <code>node</code>.
 	<BR> <B>effects:</B> Returns the color associated with
@@ -392,7 +414,10 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 	     present in the node set for <code>this</code>.
     */
     public Color getColor(Object node) {
-	throw new IllegalArgumentException();
+	try {
+	    SparseNode sn = (SparseNode) node;
+	    return sn.getColor();
+	} catch (ClassCastException e) { throw new NsnEx(node); }
     }
 
     /** Temporarily removes <code>node</code> from graph.
@@ -407,9 +432,12 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 	     present in the node set for <code>this</code>.
     */
     public void hide( Object node ) {
-	throw new IllegalArgumentException();
+	try {
+	    SparseNode sn = (SparseNode) node;
+	    hideNode(sn);
+	} catch (ClassCastException e) { throw new NsnEx(node); }
     }
-    
+
     /** Replaces the last hidden node</code> into the graph.
 	<BR> <B>modifies:</B> <code>this</code>
 	<BR> <B>effects:</B> 
@@ -423,7 +451,9 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 		  Returns n. 
     */
     public Object replace() {
-	return null;
+	ColorableNode n = (ColorableNode) hiddenNodes.peek();
+	unhideNode(n);
+	return n;
     }
 
     /** Replaces all hidden nodes in graph.
@@ -437,7 +467,7 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 		  replaced. 
     */
     public void replaceAll() {
-	
+	unhideAllNodes();
     }
 
     /** Wrapper implementation of <code>super.addEdge(m,n)</code>.
@@ -461,7 +491,19 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 	     by this graph.
     */
     public boolean addEdge( Object m, Object n ) {
-	throw new UnsupportedOperationException();
+	SparseNode sm, sn;
+	try { sm = (SparseNode) m;
+	} catch (ClassCastException e) { throw new NsnEx(m); }
+	try { sn = (SparseNode) n; 
+	} catch (ClassCastException e) { throw new NsnEx(n); }
+	if (sm.unifiedNodes.contains(sn) ||
+	    sn.unifiedNodes.contains(sm)) {
+	    return false;
+	} else {
+	    if (!this.isModifiable()) { throw new NmEx(); }
+	    addEdge(sm, sn);
+	    return true;
+	}
     }
 
     /** Returns the degree of <code>node</code>.
@@ -472,7 +514,11 @@ public class SparseGraph extends ColorableGraphImpl { // implements ColorableGra
 	     present in the node set for <code>this</code>.
     */
     public int getDegree( Object node ) {
-	throw new IllegalArgumentException();
+	SparseNode n;
+	try {
+	    n = (SparseNode) node;
+	    return n.getDegree();
+	} catch (ClassCastException e) { throw new NsnEx(node); }
     }
 
     /** Returns a set view of the nodes in <code>this</code>.

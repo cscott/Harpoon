@@ -11,7 +11,7 @@ import java.util.Enumeration;
  * use with the SparseGraph object.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseNode.java,v 1.1.2.7 1999-08-04 05:52:21 cananian Exp $ 
+ * @version $Id: SparseNode.java,v 1.1.2.8 2000-07-22 01:09:04 pnkfelix Exp $ 
  */
 
 public abstract class SparseNode extends ColorableNode {
@@ -21,7 +21,7 @@ public abstract class SparseNode extends ColorableNode {
 
     // unifiedNodes tracks the union of the TO and FROM set, to
     // simplify the getDegree() method
-    private UniqueVector unifiedNodes;
+    UniqueVector unifiedNodes;
 
     /** Creates a <code>SparseNode</code>. */
     public SparseNode() {
@@ -32,8 +32,9 @@ public abstract class SparseNode extends ColorableNode {
     }
 
     /** Adds an edge from <code>this</code> to <code>to</code>
-	<BR> <B>requires:</B> <code>this</code> is allowed to be
-	                      modified. 
+	<BR> <B>requires:</B> 
+	     1. <code>this</code> is allowed to be modified. 
+	     2. <code>this</code> does not have an edge to <code>to</code>
 	<BR> <B>modifies:</B> this
         <BR> <B>effects:</B> Adds an edge from <code>this</code> to
 	                     <code>to</code>  
@@ -55,11 +56,13 @@ public abstract class SparseNode extends ColorableNode {
     }
 
     /** Adds an edge from <code>from</code> to <code>this</code>.
-	<BR> <B>requires:</B> <code>this</code> is allowed to be modified.
+	<BR> <B>requires:</B> 
+	     1. <code>this</code> is allowed to be modified
+	     2. <code>this</code> does not have an edge from <code>from</code>
 	<BR> <B>modifies:</B> <code>this</code>
         <BR> <B>effects:</B> Adds an edge from <code>from</code> to <code>this</code>
      */ 
-    void addEdgeFrom( SparseNode from ) {
+    void addEdgeFrom( SparseNode from ) throws IllegalEdgeException {
         // modifies: this.fromNodes, this.unifiedNodes
 	if (fromNodes.contains( from )) {
 	    throw new IllegalEdgeException
