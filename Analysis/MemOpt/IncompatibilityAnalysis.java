@@ -115,8 +115,8 @@ public class IncompatibilityAnalysis {
         
 
         // final call graph
-        CallGraph cg = new SmartCallGraph((CachingCodeFactory) hcf, ch,
-                                          mroots);
+        CallGraph cg =
+	    new SmartCallGraph((CachingCodeFactory) hcf, linker, ch, mroots);
 
         System.out.println("Done building.");
 
