@@ -52,7 +52,7 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc3.java,v 1.1.2.6 2000-01-14 15:39:16 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc3.java,v 1.1.2.7 2000-01-14 22:29:56 pnkfelix Exp $
  */
 public class LocalCffRegAlloc3 extends RegAlloc {
     
@@ -145,7 +145,8 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 		    regfile.remove((Temp)regfile.getRegToTemp().get(src));
 		    regs = java.util.Arrays.asList(new Temp[]{ src });
 		    regfile.assign(dst, regs);
-		} else if (regfile.hasAssignment(src) &&
+		} else if (!isTempRegister(src) &&
+			   regfile.hasAssignment(src) &&
 			   nextRef.get(new TempInstrPair(i, src)) == null &&
 			   !isTempRegister(dst)) {
 		    regs = regfile.getAssignment(src);
