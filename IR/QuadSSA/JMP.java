@@ -7,13 +7,13 @@ import harpoon.ClassFile.*;
  * No explicit target needed; the only successor will be the target.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JMP.java,v 1.4 1998-08-24 19:30:01 cananian Exp $
+ * @version $Id: JMP.java,v 1.5 1998-09-03 01:21:56 cananian Exp $
  */
 
 public class JMP extends Quad {
     /** Creates a <code>JMP</code>. */
     public JMP(String sourcefile, int linenumber) {
-        super(sourcefile, linenumber);
+        super(sourcefile, linenumber, 1, 1 /* one branch target */);
     }
     JMP(HCodeElement hce) { 
 	this(hce.getSourceFile(), hce.getLineNumber());

@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.4 1998-08-26 22:01:40 cananian Exp $
+ * @version $Id: PHI.java,v 1.5 1998-09-03 01:21:57 cananian Exp $
  */
 
 public class PHI extends Quad {
@@ -15,21 +15,21 @@ public class PHI extends Quad {
     public Temp src[][];
     /** Creates a <code>PHI</code> object. */
     public PHI(String sourcefile, int linenumber,
-	       Temp dst[], Temp src[][]) {
-        super(sourcefile,linenumber);
+	       Temp dst[], Temp src[][], int arity) {
+        super(sourcefile,linenumber, arity, 1);
 	this.dst = dst;
 	this.src = src;
     }
     /** Creates a <code>PHI</code> object with the specified arity. */
     public PHI(String sourcefile, int linenumber,
 	       Temp dst[], int arity) {
-	this(sourcefile,linenumber, dst, new Temp[dst.length][arity]);
+	this(sourcefile,linenumber, dst, new Temp[dst.length][arity], arity);
 	for (int i=0; i<dst.length; i++)
 	    for (int j=0; j<arity; j++)
 		this.src[i][j] = null;
     }
-    PHI(HCodeElement hce, Temp dst[], Temp src[][]) {
-	this(hce.getSourceFile(), hce.getLineNumber(), dst, src);
+    PHI(HCodeElement hce, Temp dst[], Temp src[][], int arity) {
+	this(hce.getSourceFile(), hce.getLineNumber(), dst, src, arity);
     }
     PHI(HCodeElement hce, Temp dst[], int arity) {
 	this(hce.getSourceFile(), hce.getLineNumber(), dst, arity);

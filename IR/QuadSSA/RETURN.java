@@ -8,7 +8,7 @@ import harpoon.Temp.Temp;
  * optional return value.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: RETURN.java,v 1.5 1998-08-26 22:01:40 cananian Exp $
+ * @version $Id: RETURN.java,v 1.6 1998-09-03 01:21:57 cananian Exp $
  */
 
 public class RETURN extends Quad {
@@ -16,7 +16,7 @@ public class RETURN extends Quad {
     public Temp retval;
     /** Creates a <code>RETURN</code>. */
     public RETURN(String sourcefile, int linenumber, Temp retval) {
-	super(sourcefile, linenumber);
+	super(sourcefile, linenumber, 1, 0 /* no successors */);
 	this.retval = retval;
     }
     /** Creates a <code>RETURN</code> with does not return a value. */
