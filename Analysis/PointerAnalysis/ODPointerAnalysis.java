@@ -83,7 +83,7 @@ import harpoon.Util.DataStructs.LightMap;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPointerAnalysis.java,v 1.8 2004-03-04 22:32:19 salcianu Exp $
+ * @version $Id: ODPointerAnalysis.java,v 1.9 2004-03-05 15:38:08 salcianu Exp $
  */
 public class ODPointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -601,7 +601,7 @@ public class ODPointerAnalysis {
 	// the topologically sorted graph of strongly connected components
 	// composed of mutually recursive methods (the edges model the
 	// caller-callee interaction).
-	TopSortedCompDiGraph mmethod_sccs = 
+	TopSortedCompDiGraph<MetaMethod> mmethod_sccs = 
 	    new TopSortedCompDiGraph(Collections.singleton(mm),
 				     mm_navigator);
 
@@ -609,8 +609,7 @@ public class ODPointerAnalysis {
 	    Debug.display_mm_sccs(mmethod_sccs, mcg,
 				  System.currentTimeMillis() - begin_time);
 
-	for(Object scc0 : mmethod_sccs.incrOrder()) {
-	    SCComponent scc = (SCComponent) scc0;
+	for(SCComponent scc : mmethod_sccs.incrOrder()) {
 	    analyze_inter_proc_scc(scc);
 
 	    if(SAVE_MEMORY) {
@@ -744,9 +743,8 @@ public class ODPointerAnalysis {
 	current_intra_mmethod = mm;
 
 	// cut the method into SCCs of basic blocks
-	TopSortedCompDiGraph ts_lbbs = 
+	TopSortedCompDiGraph<LightBasicBlock> ts_lbbs = 
 	    scc_lbb_factory.computeSCCLBB(mm.getHMethod());
-	SCComponent scc = (SCComponent) ts_lbbs.decrOrder().iterator().next();
 
 	if(DEBUG2){
 	    System.out.println("THE CODE FOR :" + mm.getHMethod());
@@ -756,7 +754,8 @@ public class ODPointerAnalysis {
 	if(STATS) Stats.record_mmethod(mm, ts_lbbs);
 
 	// construct the ODParIntGraph at the beginning of the method 
-	LightBasicBlock first_bb = (LightBasicBlock) scc.nodes()[0];
+	LightBasicBlock first_bb = 
+	    (LightBasicBlock) ts_lbbs.decrOrder().get(0).nodes()[0];
 	HEADER first_hce = (HEADER) first_bb.getElements()[0];
 	METHOD m  = (METHOD) first_hce.next(1);
 	initial_pig = get_mmethod_initial_pig(mm,m);
@@ -765,8 +764,8 @@ public class ODPointerAnalysis {
 
 	
 	// analyze the SCCs in decreasing topological order
-	for(Object scc0 : ts_lbbs.decrOrder())
-	    analyze_intra_proc_scc((SCComponent) scc);
+	for(SCComponent scc : ts_lbbs.decrOrder())
+	    analyze_intra_proc_scc(scc);
 
 	good_agets = null;
 	long end_time = System.currentTimeMillis();

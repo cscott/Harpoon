@@ -8,17 +8,24 @@ package harpoon.Util.Constraints;
     easier.
 
     @author  Alexandru SALCIANU <salcianu@MIT.EDU>
-    @version $Id: Var.java,v 1.1 2002-04-11 04:25:19 salcianu Exp $ */
-public class Var {
+    @version $Id: Var.java,v 1.2 2004-03-05 15:38:10 salcianu Exp $ */
+public class Var implements Comparable<Var> {
     // counter used to generate unique ids (for debug)
     private static int counter;
     // thread-safe way of getting a unique id!
     private static synchronized int get_id() { return counter++; }
-    
+
+    // due to this unique id, a Var is equal only to itself
     private int id = get_id();
     
     /** String representation of <code>this</code> variable:
 	\quot;V<i>id</i>&quot; where <i>id</i> is a unique integer
 	id. */
     public String toString() { return "V" + id; }
+
+    public int compareTo(Var v) {
+	if(id < v.id) return -1;
+	if(id > v.id) return 1;
+	return 0;
+    }
 }

@@ -76,7 +76,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.20 2004-03-04 22:32:18 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.21 2004-03-05 15:38:08 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -377,8 +377,8 @@ public class MAInfo implements AllocationInformation, Serializable {
 	Map/*<HMethod,Integer>*/hm2rang = new HashMap/*<HMethod,Integer>*/();
 	int counter = 0;
 
-	for(Object scc0 : (new TopSortedCompDiGraph(mcg)).incrOrder()) {
-	    SCComponent scc = (SCComponent) scc0;
+	for(SCComponent scc : 
+		(new TopSortedCompDiGraph<MetaMethod>(mcg)).incrOrder()) {
 	    Object[] mms = scc.nodes();
 	    for(int i = 0; i < mms.length; i++) {
 		HMethod hm = ((MetaMethod) mms[i]).getHMethod();
@@ -1064,10 +1064,8 @@ public class MAInfo implements AllocationInformation, Serializable {
     }
 
     private void extend_quad2scc(HMethod hm) {
-	TopSortedCompDiGraph graph = 
-	    caching_scc_lbb_factory.computeSCCLBB(hm);
-	for(Object scc0 : graph.decrOrder()) {
-	    SCComponent scc = (SCComponent) scc0;
+	for(SCComponent scc : 
+		caching_scc_lbb_factory.computeSCCLBB(hm).decrOrder()) {
 	    Object nodes[] = scc.nodes();
 	    for(int i = 0; i < nodes.length; i++) {
 		LightBasicBlock lbb = (LightBasicBlock) nodes[i];

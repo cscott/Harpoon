@@ -28,7 +28,7 @@ import harpoon.Util.Util;
  * <code>ConstraintSolver</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ConstraintSolver.java,v 1.3 2004-03-04 22:32:24 salcianu Exp $
+ * @version $Id: ConstraintSolver.java,v 1.4 2004-03-05 15:38:10 salcianu Exp $
  */
 public class ConstraintSolver {
 
@@ -71,8 +71,8 @@ public class ConstraintSolver {
     // solve the system of constraints
     public Map solve(Set relevant_vars) {
 	// initialize v->solution and v->delta(solution) maps
-	mv2sol = new HashMap();
-	mv2delta = new HashMap();
+	mv2sol      = new HashMap();
+	mv2delta    = new HashMap();
 	master_vars = new HashSet();
 
 	// 1. use simple inclusion constraints to compute sets of
@@ -86,14 +86,14 @@ public class ConstraintSolver {
 
 	// 2. compute SCCs of master vars according to the dependencies from
 	// all the constraints (simple + general)
-	TopSortedCompDiGraph/*<Var>*/ ts_scc_vars = construct_sccs(key_vars);
+	TopSortedCompDiGraph<Var> ts_scc_vars = construct_sccs(key_vars);
 
 	// 3. process the SCC in topological order
 	// 3. 0 create data structs used by the fixed point
 	w_intra_scc = new PAWorkList();
 	// 3. 1 fixed point over each SCC
-	for(Object scc0 : ts_scc_vars.incrOrder())
-	    solve_scc((SCComponent) scc0);
+	for(SCComponent scc : ts_scc_vars.incrOrder())
+	    solve_scc(scc);
 
 	// 4. compute final solution
 	Map retval = compute_final_solution(relevant_vars);
@@ -172,9 +172,8 @@ public class ConstraintSolver {
 	    // 2. find its equivalence classes;
 	    getComponentDiGraph().
 	    forAllVertices
-	    (new DiGraph.VertexVisitor/*<SCComponent<Var>>*/() {
-		public void visit(Object/*SCComponent<Var>*/ scc0) {
-		    SCComponent scc = (SCComponent/*<Var>*/) scc0;
+	    (new DiGraph.VertexVisitor<SCComponent/*<Var>*/>() {
+		public void visit(SCComponent/*<Var>*/ scc) {
 		    Object nodes[] = scc.nodes();
 		    // 3. pick one "master" variable from each class
 		    Var master_v = (Var) nodes[0];
@@ -192,9 +191,6 @@ public class ConstraintSolver {
 	// initialize (partial) solution
 	for(Object vO : master_vars) {
 	    Var v = (Var) vO;
-
-	    //System.out.println("Master var: " + v);
-
 	    // initialize the solution for the master var. to empty
 	    mv2sol.put(v, new HashSet());
 	    // delta sol. is also empty
@@ -213,9 +209,6 @@ public class ConstraintSolver {
 		    return null;
 		}
 		public void updateSet(Var v, Set delta) {
-
-		  //System.out.println("updateSet(" + v + ", " + delta + ")");
-
 		    ((Set) mv2sol.get(v)).addAll(delta);
 		    ((Set) mv2delta.get(v)).addAll(delta);
 		}

@@ -29,7 +29,7 @@ import java.util.Comparator;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@mit.edu>
- * @version $Id: Stats.java,v 1.7 2004-03-04 22:32:19 salcianu Exp $
+ * @version $Id: Stats.java,v 1.8 2004-03-05 15:38:09 salcianu Exp $
  */
 abstract class Stats implements java.io.Serializable {
 
@@ -53,7 +53,7 @@ abstract class Stats implements java.io.Serializable {
     }
 
     public static void record_mmethod
-	(MetaMethod mm, TopSortedCompDiGraph/*<LBB>*/ ts_sccs) {
+	(MetaMethod mm, TopSortedCompDiGraph<LightBasicBlock> ts_sccs) {
 
 	MetaMethodInfo mmi = getMetaMethodInfo(mm);
 
@@ -62,8 +62,7 @@ abstract class Stats implements java.io.Serializable {
 	int nb_bbs  = 0;
 	int nb_instrs = 0;
 
-	for(Object scc0 : ts_sccs.decrOrder()) {
-	    SCComponent scc = (SCComponent) scc0;
+	for(SCComponent scc : ts_sccs.decrOrder()) {
 	    nb_sccs++;
 	    nb_bbs += scc.nodeSet().size();
 	    for(Object bbkO : scc.nodeSet()){

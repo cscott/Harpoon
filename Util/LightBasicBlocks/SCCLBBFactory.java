@@ -17,7 +17,7 @@ import harpoon.Util.Graphs.TopSortedCompDiGraph;
  graph of the light basic blocks containing the code of a method.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCCLBBFactory.java,v 1.4 2004-03-04 22:32:31 salcianu Exp $
+ * @version $Id: SCCLBBFactory.java,v 1.5 2004-03-05 15:38:16 salcianu Exp $
  */
 public class SCCLBBFactory implements java.io.Serializable {
 
@@ -37,13 +37,13 @@ public class SCCLBBFactory implements java.io.Serializable {
         return lbbconv;
     }
 
-    private static final Navigator navigator = 
-	new Navigator() {
-		public Object[] next(Object node) {
-		    return ((LightBasicBlock) node).getNextLBBs();
+    private static final Navigator<LightBasicBlock> navigator = 
+	new Navigator<LightBasicBlock>() {
+		public LightBasicBlock[] next(LightBasicBlock node) {
+		    return node.getNextLBBs();
 		}
-		public Object[] prev(Object node) {
-		    return ((LightBasicBlock) node).getPrevLBBs();
+		public LightBasicBlock[] prev(LightBasicBlock node) {
+		    return node.getPrevLBBs();
 		}
 	    };
 
@@ -54,10 +54,10 @@ public class SCCLBBFactory implements java.io.Serializable {
 	<code>LightBasicBlock</code>s), build the strongly connected componnets
 	of <code>LightBasicBlock</code>s and sort them topologically.
 	Returns the sorted graph. */
-    public TopSortedCompDiGraph computeSCCLBB(HMethod hm) {
+    public TopSortedCompDiGraph<LightBasicBlock> computeSCCLBB(HMethod hm) {
         LightBasicBlock rootLBB = lbbconv.convert2lbb(hm).getRoot();
 	return 
-	    new TopSortedCompDiGraph
+	    new TopSortedCompDiGraph<LightBasicBlock>
 	    (Collections.singleton(rootLBB), navigator);
     }
 

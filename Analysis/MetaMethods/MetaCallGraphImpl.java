@@ -82,7 +82,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MetaCallGraphImpl.java,v 1.13 2004-03-04 22:32:15 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.14 2004-03-05 15:38:05 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
@@ -406,8 +406,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	// they can be shared by many meta-methods derived from the same
 	// HMethod. Of course, I don't want the next analyzed meta-method
 	// to use the types computed for this one.
-	for(Object scc0 : md.sccs) {
-	    SCComponent scc = (SCComponent) scc0;
+	for(SCComponent scc : md.sccs) {
 	    Object[] ets = scc.nodes();
 	    for(int i = 0; i < ets.length; i++)
 		((ExactTemp) ets[i]).clearTypeSet();
@@ -1005,8 +1004,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	System.out.println("\n\nDATA FOR " + mm_work + ":");
 	System.out.println(md);
 	System.out.println("\nCOMPUTED TYPES:");
-	for(Object scc0 : md.sccs) {
-	    SCComponent scc = (SCComponent) scc0;
+	for(SCComponent scc : md.sccs) {
 	    for(Object etO : scc.nodeSet()) {
 		ExactTemp et = (ExactTemp) etO;
 		System.out.println("< " + et.t + ", " + 
@@ -1178,13 +1176,13 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // Data attached to a method
     private class MethodData {
 	// The SCCs (in decreasing topological order)
-	List/*<SCComponent<??>>*/ sccs;
+	List<SCComponent/*<??>*/> sccs;
 	// The ets2et map for this method (see the comments around ets2et)
 	Map ets2et;
 	// The set of CALL quads occuring in the code of the method
 	Collection calls;
 
-	MethodData(List/*<SCComponent<>>*/ sccs,
+	MethodData(List<SCComponent/*<>*/> sccs,
 		   Map ets2et, Collection calls) {
 	    this.sccs     = sccs;
 	    this.ets2et   = ets2et;
@@ -1194,8 +1192,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	public String toString() {
 	    StringBuffer buff = new StringBuffer();
 	    buff.append("SCC(s):\n" );
-	    for(Object scc0 : sccs) {
-		SCComponent scc = (SCComponent) scc0;
+	    for(SCComponent scc : sccs) {
 		buff.append(scc.toString());
 	    }
 	    buff.append("CALL(s):");
@@ -1224,8 +1221,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 	    // initialize the ets2et map (see the comments near its definition)
 	    ets2et = new HashMap();
 	    ReachingDefs rdef = getReachingDefsImpl(hcode);
-	    List scc = compute_scc(get_initial_set(rdef, calls), rdef);
-	    md = new MethodData(scc, ets2et, calls);
+	    md = new MethodData(compute_sccs(get_initial_set(rdef, calls),
+					     rdef),
+				ets2et, calls);
 	    mh2md.put(hm, md);
 	}
 	return md;
@@ -1693,7 +1691,7 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
     // components containing the definitions of the "interesting" temps.
     // The edges between this nodes models the relation
     // "the type of ExactType x influences the type of the ExactType y"
-    private List/*<SCComponent>*/ compute_scc
+    private List<SCComponent> compute_sccs
 	(Set initial_set, ReachingDefs rdef) {
 	// 1. Compute the graph: ExactTemps, successors and predecessors.
 	// predecessors are put into the prev field of the ExactTemps;
@@ -1766,10 +1764,10 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr {
 
     // computes the types of the interesting ExactTemps, starting 
     // with those in the strongly connected component "scc".
-    private void compute_types(List/*<SCComponent>*/ sccs) {
+    private void compute_types(List<SCComponent> sccs) {
 	try {
-	    for(Object scc0 : sccs)
-		process_scc((SCComponent) scc0);
+	    for(SCComponent scc : sccs)
+		process_scc(scc);
 	}
 	catch(AssertionError e) {
 	    display_mm_data(mm_work);

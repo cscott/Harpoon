@@ -68,7 +68,7 @@ import harpoon.Util.DataStructs.LightMap;
  * <code>ODMAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODMAInfo.java,v 1.10 2004-03-04 22:32:18 salcianu Exp $
+ * @version $Id: ODMAInfo.java,v 1.11 2004-03-05 15:38:08 salcianu Exp $
  */
 public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -1615,8 +1615,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
     private void do_the_inlining(HCodeFactory hcf, Map ih){
 	Set toPrune = new WorkSet();
 
-	for(Object scc0 : reverse_top_sort_of_cs(ih).incrOrder()) {
-	    SCComponent scc = (SCComponent) scc0;
+	for(SCComponent scc : reverse_top_sort_of_cs(ih).incrOrder()) {
 	    if(DEBUG) {
 		System.out.println("Processed SCC:{");
 		Object[] nodes = scc.nodes();
@@ -1636,7 +1635,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
     }
 
 
-    private TopSortedCompDiGraph reverse_top_sort_of_cs(Map ih) {
+    private TopSortedCompDiGraph<Quad> reverse_top_sort_of_cs(Map ih) {
 	final Relation m2csINm = new LightRelation();
 	final Relation m2csTOm = new LightRelation();
 	for(Object csO : ih.keySet()) {
@@ -1657,7 +1656,7 @@ public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 	    };
 
 	return
-	    new TopSortedCompDiGraph(ih.keySet(), nav);
+	    new TopSortedCompDiGraph<Quad>(ih.keySet(), nav);
     }
 
 

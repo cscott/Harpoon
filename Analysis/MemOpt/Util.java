@@ -31,7 +31,7 @@ import harpoon.Util.Graphs.Navigator;
  * <code>Util</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: Util.java,v 1.11 2004-03-04 22:32:10 salcianu Exp $
+ * @version $Id: Util.java,v 1.12 2004-03-05 15:37:40 salcianu Exp $
  */
 public abstract class Util {
 
@@ -84,15 +84,14 @@ public abstract class Util {
 	// composed of mutually recursive methods (the edges model the
 	// caller-callee interaction).
 
-	TopSortedCompDiGraph ts_hms = 
+	TopSortedCompDiGraph<HMethod> ts_hms = 
 	    new TopSortedCompDiGraph
 	    (DiGraph.diGraph(Collections.singleton(entry), nav));
 	
 	if(DEBUG) {
 	    System.out.println("SETS OF MUTUALLY RECURSIVE METHODS");
 	    int count = 0;
-	    for(Object scc0 : ts_hms.decrOrder()) {
-		SCComponent scc = (SCComponent) scc0;
+	    for(SCComponent/*<HMethod>*/ scc : ts_hms.decrOrder()) {
 		count++;
 		harpoon.Util.Util.print_collection
 		    (scc.nodeSet(), "SCC " + count);
@@ -102,8 +101,7 @@ public abstract class Util {
 
 	Set reached_from_rec = new HashSet();
 
-	for(Object scc0 : ts_hms.decrOrder()) {
-	    SCComponent scc = (SCComponent) scc0;
+	for(SCComponent/*<HMethod>*/ scc : ts_hms.decrOrder()) {
 	    if(scc.isLoop() || (scc.nodeSet().size() > 1)) {
 		// if the SCC corresponds to a set of mutually
 		// recursive methods, add all the methods transitively

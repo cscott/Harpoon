@@ -16,15 +16,15 @@ import harpoon.Util.DataStructs.ReverseListView;
  * <code>TopSortedCompDiGraph</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: TopSortedCompDiGraph.java,v 1.1 2004-03-04 22:32:29 salcianu Exp $
+ * @version $Id: TopSortedCompDiGraph.java,v 1.2 2004-03-05 15:38:14 salcianu Exp $
  */
-public class TopSortedCompDiGraph/*<Vertex>*/ 
-    extends DiGraph/*<SCComponent<Vertex>>*/ {
+public class TopSortedCompDiGraph<Vertex> 
+    extends DiGraph<SCComponent/*<Vertex>*/> {
 
     /** Constructs the topologically sorted component digraph of
         <code>digraph</code>. */
     public TopSortedCompDiGraph(DiGraph graph) {
-	DiGraph/*<SCComponent<Vertex>>*/ sccGraph = 
+	DiGraph<SCComponent/*<Vertex>*/> sccGraph = 
 	    graph.getComponentDiGraph();
 	sccRoots = sccGraph.getRoots();
 	// build list of topologically sorted SCCs
@@ -32,8 +32,8 @@ public class TopSortedCompDiGraph/*<Vertex>*/
 	sccGraph.dfs
 	    (null, // no action on node entry
 	     // on dfs termination, add scc to front of sccSortedList
-	     new VertexVisitor/*<SCComponent<Vertex>>*/() {
-		public void visit(Object/*SCComponent<Vertex>*/ scc) {
+	     new VertexVisitor<SCComponent/*<Vertex>*/>() {
+		public void visit(SCComponent/*<Vertex>*/ scc) {
 		    sccSortedList.addFirst(scc);
 		}
 	    });
@@ -46,30 +46,30 @@ public class TopSortedCompDiGraph/*<Vertex>*/
 
     // set of top-level SCCs (no incoming edges + all SCCs are
     // reachable from here)
-    private final Set/*<SCComponent<Vertex>>*/ sccRoots;
+    private final Set<SCComponent/*<Vertex>*/> sccRoots;
     // list of all SCCs, in decreasing topologic order
-    private final LinkedList/*<SCComponent<Vertex>>*/ sccSortedList;
+    private final LinkedList<SCComponent/*<Vertex>*/> sccSortedList;
 
-    public Set/*<SCComponent<Vertex>>*/ getRoots() {
+    public Set<SCComponent/*<Vertex>*/> getRoots() {
 	return sccRoots;
     }
 
-    public Navigator/*<SCComponent<Vertex>>*/ getNavigator() {
+    public Navigator<SCComponent/*<Vertex>*/> getNavigator() {
 	return SCComponent.SCC_NAVIGATOR;
     }
 
     /** @return list of the strongly connected components of the
         underlying digraph, in <b>decreasing</b> topologic order,
         i.e., starting with the SCCs with no incoming edges. */
-    public List/*<SCComponent<Vertex>>*/ decrOrder() {
+    public List<SCComponent/*<Vertex>*/> decrOrder() {
 	return sccSortedList;
     }
     
     /** @return list of the strongly connected components of the
         underlying digraph, in <b>increasing</b> topologic order,
         i.e., starting with the SCCs with no outgoing edges. */
-    public List/*<SCComponent<Vertex>>*/ incrOrder() {
-	return new ReverseListView/*<SCComponent<Vertex>>*/(sccSortedList);
+    public List<SCComponent/*<Vertex>*/> incrOrder() {
+	return new ReverseListView<SCComponent/*<Vertex>*/>(sccSortedList);
     }
     
 }

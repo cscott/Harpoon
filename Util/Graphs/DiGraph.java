@@ -46,7 +46,7 @@ import harpoon.Util.DataStructs.RelationImpl;
  * Created: Sun May  4 20:56:57 2003
  *
  * @author Alexandru Salcianu <salcianu@mit.edu>
- * @version $Id: DiGraph.java,v 1.8 2004-03-04 22:32:29 salcianu Exp $ 
+ * @version $Id: DiGraph.java,v 1.9 2004-03-05 15:38:14 salcianu Exp $ 
  */
 public abstract class DiGraph<Vertex extends Object> {
     
@@ -257,8 +257,8 @@ public abstract class DiGraph<Vertex extends Object> {
 
     private static class ClosureDFS<Vertex> {
 	private Set visited;
-	private VertexVisitor<Vertex>     onEntry;
-	private VertexVisitor<Vertex>     onExit;
+	private VertexVisitor<Vertex>    onEntry;
+	private VertexVisitor<Vertex>    onExit;
 	private ForwardNavigator<Vertex> fnav;
 	
 	public void doIt(Collection<Vertex> roots,
@@ -277,14 +277,14 @@ public abstract class DiGraph<Vertex extends Object> {
 
 	private void dfs_visit(Vertex v) {
 	    // skip already visited nodes
-	    if(visited.add(v)) return;
+	    if(!visited.add(v)) return;
 
 	    if(onEntry != null)
 		onEntry.visit(v);
 
 	    Vertex[] next = fnav.next(v);
 	    int nb_next = next.length;
-	    for(int i = 0; i < nb_next; ) {
+	    for(int i = 0; i < nb_next; i++) {
 		dfs_visit(next[i]);
 	    }
 
@@ -373,5 +373,9 @@ public abstract class DiGraph<Vertex extends Object> {
 	    // the default implementation of
 	    // getForwardNavigator() is precisely what we want.
 	};
+    }
+
+    public String toString() {
+	return getRoots().toString();
     }
 }

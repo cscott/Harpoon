@@ -41,9 +41,10 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@lcs.mit.edu>
- * @version $Id: SCComponent.java,v 1.12 2004-03-04 22:32:29 salcianu Exp $
+ * @version $Id: SCComponent.java,v 1.13 2004-03-05 15:38:14 salcianu Exp $
  */
-public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<Vertex>*/>, Serializable {
+public final class SCComponent/*<Vertex>*/
+    implements Comparable<SCComponent/*<Vertex>*/>, Serializable {
 
     /** Default navigator through a component graph (a dag of strongly
         connected components).  */
@@ -76,55 +77,20 @@ public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<V
     /** Convenient version of
         <code>buildSCC(Object[],Navigator)</code>
 
-	@param roots set of nodes that has the property that if we
-	start at these nodes and (transitively) navigate on the
-	outgoing edges, we explore the entire graph.
+	@param roots collection of nodes such that if we start from
+	these nodes and (transitively) navigate on the outgoing edges,
+	we explore the entire graph.
 
 	@param navigator navigator for exploring the graph
 
 	@return set of strongly connected components of the graph
 	defined by <code>roots</code> and <code>navigator</code> */
     public static final /*<Vertex>*/ Set<SCComponent/*<Vertex>*/>
-	buildSCC(final Set/*<Vertex>*/ roots,
+	buildSCC(final Collection/*<Vertex>*/ roots,
 		 final Navigator/*<Vertex>*/ navigator) {
 	return 
-	    buildSCC(/*(Vertex[])*/
-		     roots.toArray(new Object[roots.size()]), navigator);
+	    (new BuildSCCClosure/*<Vertex>*/()).doIt(roots, navigator);
     }
-
-    /** Convenient version for the single root case (see the other
-	<code>buildSCC</code> for details).  Returns the single
-	element of the set of top level SCCs. */
-    public static final /*<Vertex>*/ SCComponent/*<Vertex>*/ buildSCC
-	(final Object/*Vertex*/ root, final Navigator/*<Vertex>*/ navigator) {
-	Set<SCComponent/*<Vertex>*/> set = 
-	    buildSCC(/*(Vertex[])*/new Object[]{root}, navigator);
-	if((set == null) || set.isEmpty()) return null;
-	assert 
-	    set.size() != 1 : 
-	    "More than one root SCComponent in a call with a a single root";
-	// return the single element of the set of root SCComponents.
-	return set.iterator().next();
-    }
-
-
-    /** Constructs the strongly connected components of the directed
-	graph containing all the nodes reachable on paths that
-	originate in nodes from <code>roots</code>.
-
-	@param roots     roots of the digraph
-	
-	@param navigator navigator that gives the edges of the digraph
-
-	@return set of the root <code>SCComponent</code>s, the
-	components that are not pointed to by any other
-	component.  */
-    public static final /*<Vertex>*/ Set<SCComponent/*<Vertex>*/> buildSCC
-	(final Object[]/*Vertex[]*/ roots,
-	 final Navigator/*<Vertex>*/ navigator) {
-	return (new BuildSCCClosure/*<Vertex>*/()).doIt(roots, navigator);
-    }
-
 
     // OO programming is great, especially when one encodes functional
     // programming into it :)
@@ -146,22 +112,19 @@ public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<V
 	private SCComponent current_scc = null;
 	// the navigator used in the DFS algorithm
 	private Navigator/*<Vertex>*/ nav = null;
-	// array of root vertices
-	private Object[]/*Vertex[]*/ roots;
 
 	// does the real work behind SCComponent.buildSCC
 	public final /*<Vertex>*/ Set<SCComponent/*<Vertex>*/> doIt
-	    (final Object[]/*Vertex[]*/ roots,
+	    (final Collection/*<Vertex>*/ roots,
 	     final Navigator/*<Vertex>*/ navigator) {
 	    scc_vector     = new Vector();
 	    visited_nodes  = new HashSet();
 	    nodes_vector   = new Vector();
 	    v2scc          = new HashMap();
-	    this.roots     = roots;
 
 	    // STEP 1: DFS exploration; add all reached nodes in
 	    // "nodes_vector", in the order of their "finished" time.
-	    direct_dfs(navigator);
+	    direct_dfs(roots, navigator);
 
 	    // STEP 2. build the SCCs by doing a DFS in the reverse graph.
 	    reverse_dfs(navigator);
@@ -169,15 +132,15 @@ public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<V
 	    // produce the final formal SCCs
 	    build_final_sccs(navigator);
 	    
-	    return get_root_sccs();
+	    return get_root_sccs(roots);
 	}
 
 
-	private final void direct_dfs(Navigator/*<Vertex>*/ navigator) {
+	private final void direct_dfs
+	    (Collection/*<Vertex>*/ roots, Navigator/*<Vertex>*/ navigator) {
 	    nav = navigator;
-	    for(int i = 0; i < roots.length; i++) {
-		DFS_first(roots[i]);
-	    }
+	    for(Object vertex : roots) 
+		DFS_first(vertex);
 	}
 
 	// DFS for the first step: the "forward" navigation
@@ -312,10 +275,11 @@ public final class SCComponent/*<Vertex>*/ implements Comparable<SCComponent/*<V
 	}
 
 	// Compute set of root SCCs.
-	private final Set<SCComponent/*<Vertex>*/> get_root_sccs() {
+	private final Set<SCComponent/*<Vertex>*/> 
+	    get_root_sccs(Collection/*<Vertex>*/ roots) {
 	    Set<SCComponent/*<Vertex>*/> root_sccs = new HashSet();
-	    for(int i = 0; i < roots.length; i++) {
-		SCComponent scc = (SCComponent) v2scc.get(roots[i]);
+	    for(Object root_vertex : roots) {
+		SCComponent scc = (SCComponent) v2scc.get(root_vertex);
 		if(scc.prevLength() == 0)
 		    root_sccs.add(scc);
 	    }
