@@ -3,16 +3,18 @@ following:
 
  % cd ~/Harpoon/Runtime
  % make clean
- % make CC="gcc -pg"
+ % make CC="gcc -pg -g"
 
 Compile your (precisec) application like this:
  % cd ~/Harpoon/Code
  % make -C as<foodir> CC="gcc -I${HARPOON_DIR}/Runtime/include -g -O9 -pg"
  % mv as<foodir>/Java.a ~/Harpoon/Runtime/<foodir>-Java.a
 
+NOTE THAT THE -g OPTION ABOVE IS IMPORTANT!
+
 And build the final executable like so (don't forget the -pg at this step!):
  % cd ~/Harpoon/Runtime
- % make CC="gcc -pg" run<foodir>
+ % make CC="gcc -pg -g" run<foodir>
 
 Ta-da!  Now run your executable.  Your will get a gmon.out file in the
 current directory when it finishes execution.  (If you don't, the
@@ -22,5 +24,8 @@ step, immediate above.)  Use
  % gprof run<foodir>
 
 to see the profile.
+(If your profiling information shows up with no time information, the
+most likely cause is that you forgot to build some parts with the -g option.)
 
-  --s, 26-jan-2001
+   --s, 26-jan-2001
+updated 27-mar-2001
