@@ -1,7 +1,7 @@
-package Trans;
+package harpoon.ClassFile.Bytecode;
 
 /**
- * The <code>Instr</code> class contains constants and tables that we are
+ * The <code>Opcode</code> class contains constants and tables that we are
  * likely to find useful when grokking a java bytecode stream.
  * <p>
  * Included are: <UL>
@@ -13,12 +13,13 @@ package Trans;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Opcode.java,v 1.1 1998-08-03 01:49:43 cananian Exp $
- * @see     ClassFile.AttributeCode
- * @see     Translate
+ * @version $Id: Opcode.java,v 1.2 1998-08-03 02:54:27 cananian Exp $
+ * @see     harpoon.ClassFile.Raw.Attribute.AttributeCode
+ * @see     harpoon.ClassFile.Bytecode.Instr
+ * @see     harpoon.ClassFile.Bytecode.Code
  */
 
-public class Instr {
+public final class Opcode {
   // Set up table of opcodes.
   public final static byte 
     NOP		= (byte) 0x00,
@@ -273,7 +274,7 @@ public class Instr {
    *             located.
    * @return the length of the opcode and operands.
    */
-  public final static int instructionSize(int pc, byte[] code) {
+  public final static int instrSize(int pc, byte[] code) {
     byte opcode = code[pc];
     switch(opcode) {
     case LOOKUPSWITCH:
@@ -420,6 +421,4 @@ public class Instr {
   private static int ub2i(byte b) {
     return ((int) b) & 0xFF;
   }
-
 }
-
