@@ -16,7 +16,7 @@ import java.io.PrintWriter;
  * <code>TreeCode</code>.  In short, a CGG generates a Code Generator.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.6 1999-06-30 04:52:42 pnkfelix Exp $ */
+ * @version $Id: CodeGeneratorGenerator.java,v 1.1.2.7 1999-06-30 20:43:32 pnkfelix Exp $ */
 public abstract class CodeGeneratorGenerator {
 
     private static final String TREE_TreeCode = "harpoon.IR.Tree.TreeCode";
@@ -65,15 +65,13 @@ public abstract class CodeGeneratorGenerator {
 	     <BR>All of the output file is parameterized by
 	     <code>this.spec</code>, with the exception of  
 	     <OL> 
-	     <LI>class name 
-	         (defined by <code>this.className</code>)
-	     <LI>class signature 
-	         ( hardcoded as 
-		 <code>public class <u>this.className</u></code> )
-	     <LI>codegen method signature 
-	         ( hardcoded as 
-		 <code>public final void codegen(harpoon.IR.Tree.TreeCode tree)</code>
-		 )
+	     <LI>class name.
+	         This is already defined by <code>this.className</code>.
+	     <LI>class signature.
+	         This is already hardcoded as 
+		 <code>public class <u>this.className</u></code>.
+	     <LI>codegen method signature.  This is already hardcoded as 
+		 <code>public final void codegen(harpoon.IR.Tree.TreeCode tree)</code>.
 	     </OL>
 	@param out Target output device for the Java source code.
     */
@@ -116,7 +114,13 @@ public abstract class CodeGeneratorGenerator {
 	     <code>this.spec</code>, define variables for the action
 	     statements in the pattern to refer to.  These variables
 	     are:<OL>
-	     <LI>The <code>Spec.ExpId</code>objects defined in the pattern
+	     <LI>The <code>Spec.ExpId</code>objects defined in the
+  	         pattern.  Note that this does not include the
+		 <code>Spec.RuleExp.result_id</code> of the whole
+		 Pattern; it is the responsibility of the action code
+		 of the Rule to properly initialize and assign a
+		 <code>Temp</code> to the name given in
+		 <code>Spec.RuleExp.result_id</code>. 
 	     <LI>The <code>HCodeElement</code> <code>ROOT</code>.  
 	         ( This should be defined as the <code>IR.Tree.Tree</code> 
 		   element being analyzed.) 

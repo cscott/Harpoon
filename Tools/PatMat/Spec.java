@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.13 1999-06-30 06:48:56 pnkfelix Exp $
+ * @version $Id: Spec.java,v 1.1.2.14 1999-06-30 20:43:33 pnkfelix Exp $
  */
 public class Spec  {
 
@@ -33,6 +33,7 @@ public class Spec  {
     public /*final*/ String class_stms;
 
     /** List of Instruction Patterns for this machine specification.
+	<code>null</code> is a legal value.
      */
     public /*final*/ RuleList rules;
     
@@ -61,6 +62,12 @@ public class Spec  {
 	public abstract void visit(Rule r);
 	public void visit(RuleExp r) { visit((Rule)r); }
 	public void visit(RuleStm r) { visit((Rule)r); }
+	/** Visits elements of <code>l</code>.
+	    If (l!=null) visits l.head then l.tail.  Else does nothing.
+	*/
+	public void visit(RuleList l) {
+	    if(l!=null){l.head.accept(this); visit(l.tail);}
+	}
     }
 
     /** Abstract immutable representation of an Instruction Pattern.
@@ -71,6 +78,7 @@ public class Spec  {
 
 	/** List of the extra details associated with
 	    <code>this</code> (speed-cost, size-cost, predicates, etc.).
+	    <code>null</code> is a legal value.
 	*/
 	public final DetailList details;
 
@@ -794,6 +802,12 @@ public class Spec  {
 	public void visit(DetailExtra d) { visit((Detail)d); }
 	public void visit(DetailPredicate d) { visit((Detail)d); }
 	public void visit(DetailWeight d) { visit((Detail)d); }
+	/** Visits elements of <code>l</code>.
+	    If (l!=null) visits l.head then l.tail.  Else does nothing.
+	*/
+	public void visit(DetailList l) { 
+	    if(l!=null){l.head.accept(this); visit(l.tail);}
+	}
     }
 
     /** A detail is an abstract representation for a piece of data
@@ -825,6 +839,7 @@ public class Spec  {
 	public DetailExtra(IdList extras) {
 	    this.extras = extras;
 	}
+	/** Applies <code>v</code>'s <code>visit</code> method to <code>this</code>. */
 	public void accept(DetailVisitor v) { v.visit(this); }
 	public String toString() {
 	    return "%extra{"+((extras==null)?"":extras.toString())+"}";
@@ -933,6 +948,8 @@ public class Spec  {
 	    if (tail==null) return head.toString();
 	    else return head.toString() + "\n" + tail.toString();
 	}
+	/** Applies <code>v</code>'s <code>visit</code> method to <code>this</code>. */
+	public void accept(RuleVisitor v) { v.visit(this); }
     }
 
     /** Linked list representation for representing the series of
@@ -948,6 +965,7 @@ public class Spec  {
 	    if (tail==null) return head.toString();
 	    else return head.toString() + " " + tail.toString();
 	}
+	public void accept(DetailVisitor v) { v.visit(this); }
     }
 
     /** Linked list representation for representing a series of

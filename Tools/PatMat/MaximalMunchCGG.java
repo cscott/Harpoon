@@ -28,7 +28,7 @@ import java.util.Collections;
  * file to reference the full name
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.12 1999-06-30 06:48:56 pnkfelix Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.13 1999-06-30 20:43:33 pnkfelix Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -668,6 +668,14 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	final String stmArg = "stmArg";
 	final String indent = "\t\t\t";
 
+	class PredicateBuilder extends Spec.DetailVisitor {
+	    StringBuffer predicate = new StringBuffer("true");
+	    public void visit(Spec.Detail d) { /* do nothing */ }
+	    public void visit(Spec.DetailPredicate d) { 
+		predicate.append("&& ("+d.predicate_string+")");
+	    }
+	}
+
 	Spec.RuleVisitor srv = new Spec.RuleVisitor() {
 	    public void visit(Spec.Rule r) {
 		Util.assert(false, "SpecRuleVisitor should never visit Rule");
@@ -680,10 +688,12 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		String typeCheck = recurse.exp.toString();
 		int munchFactor = recurse.degree;
 
-		// TODO: add PREDICATE CHECK to end of matchStm
+		PredicateBuilder makePred = new PredicateBuilder();
+	        if (r.details!=null) r.details.accept(makePred);
+
 		String matchStm = (indent + "if (" + typeCheck + indent + "){\n"+
 				   recurse.initStms.toString() +
-				   indent + "\t_matched_ = true;\n" +
+				   indent + "\t_matched_ = " + makePred.predicate.toString()+";\n" +
 				   indent + TREE_Tree + " ROOT = " + stmArg + ";\n");
 
 		//String matchStm = indent + "_matched_ = (" + typeCheck + indent + ");";
@@ -699,13 +709,14 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 		String typeCheck = recurse.exp.toString();
 		int munchFactor = recurse.degree;
-
 		
+		PredicateBuilder makePred = new PredicateBuilder();
+		if (r.details!=null) r.details.accept(makePred);
 		
 		// TODO: add PREDICATE CHECK to end of matchStm
 		String matchStm = (indent + "if ("+typeCheck+indent+"){\n" +
 				   recurse.initStms.toString() +
-				   indent + "\t_matched_ = true;\n" +
+				   indent + "\t_matched_ = "+makePred.predicate.toString()+";\n" +
 				   indent + TREE_Tree + " ROOT = " + expArg + ";\n");
 		//String matchStm = indent + "_matched_ =  (" + typeCheck + indent + ");";
 		expMatchActionPairs.add( new RuleTuple
