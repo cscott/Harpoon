@@ -46,6 +46,9 @@ import harpoon.Util.Util;
 
 import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
 import harpoon.Analysis.PointerAnalysis.InstrumentAllocs;
+import harpoon.Analysis.PreciseGC.WriteBarrierPrePass;
+import harpoon.Analysis.PreciseGC.WriteBarrierQuadPass;
+import harpoon.Analysis.PreciseGC.WriteBarrierTreePass;
 import harpoon.Analysis.Realtime.Realtime;
 
 import harpoon.Analysis.Transactions.SyncTransformer;
@@ -86,7 +89,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.162 2001-08-22 12:13:52 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.1.2.163 2001-08-30 23:09:26 kkz Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -154,7 +157,11 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean DO_TRANSACTIONS = false;
     static SyncTransformer syncTransformer = null;
 
+    // Support for precise garbage collection
+    static boolean PRECISEGC = false;
     static boolean MULTITHREADED = false;
+    static boolean WRITEBARRIERS = false;
+    static WriteBarrierQuadPass writeBarrier = null;
 
     public static void main(String[] args) {
 	hcf = // default code factory.
@@ -162,6 +169,8 @@ public class SAMain extends harpoon.IR.Registration {
 	    harpoon.IR.Quads.QuadWithTry.codeFactory()
 	    );
 
+	PRECISEGC = System.getProperty("harpoon.alloc.strategy", 
+				       "malloc").equalsIgnoreCase("precise");
 	parseOpts(args);
 	Util.assert(className!= null, "must pass a class to be compiled");
 
@@ -224,9 +233,11 @@ public class SAMain extends harpoon.IR.Registration {
 	default: throw new Error("Unknown Backend: "+BACKEND);
 	}
 
+	// needed for creating the class hierarchy
+	Set roots;
 	{
 	    // ask the runtime which roots it requires.
-	    Set roots = new java.util.HashSet
+	    roots = new java.util.HashSet
 		(frame.getRuntime().runtimeCallableMethods());
 	    // and our main method is a root, too...
 	    roots.add(mainM);
@@ -380,12 +391,12 @@ public class SAMain extends harpoon.IR.Registration {
 	    mainM=ed.convert(mcg);
 	    mcg=null; /*Memory management*/
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    Set roots = new java.util.HashSet
+	    Set eroots = new java.util.HashSet
 		(frame.getRuntime().runtimeCallableMethods());
 	    // and our main method is a root, too...
-	    roots.add(mainM);
+	    eroots.add(mainM);
 	    hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
-	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, eroots, hcf);
 	    callGraph=new CallGraphImpl2(classHierarchy, hcf);
 	} else if (true) {
 	    hcf = harpoon.IR.Quads.QuadSSI.codeFactory(hcf);
@@ -393,6 +404,14 @@ public class SAMain extends harpoon.IR.Registration {
 	    callGraph = new CallGraphImpl2(classHierarchy, hcf);
 	} else {
 	    callGraph = new CallGraphImpl(classHierarchy, hcf);//less precise
+	}
+
+	if (WRITEBARRIERS) {
+	    Util.assert(BACKEND == PRECISEC_BACKEND && PRECISEGC);
+	    writeBarrier = new WriteBarrierQuadPass(hcf, linker);
+	    hcf = writeBarrier.codeFactory();
+	    // re-generate class hierarchy to handle added calls
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	}
 
 	// now we can finally set the (final?) classHierarchy and callGraph
@@ -413,14 +432,28 @@ public class SAMain extends harpoon.IR.Registration {
 	    hcf=harpoon.Analysis.LowQuad.Loop.LoopOptimize.codeFactory(hcf);
 	    hcf=harpoon.Analysis.LowQuad.DerivationChecker.codeFactory(hcf);
 	}
+
 	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
+
 	// XXX: ToTree doesn't handle TYPESWITCHes right now.
 	hcf = new harpoon.Analysis.Quads.TypeSwitchRemover(hcf).codeFactory();
 	hcf = harpoon.IR.Tree.TreeCode.codeFactory(hcf, frame);
 	hcf = frame.getRuntime().nativeTreeCodeFactory(hcf);
+
 	hcf = harpoon.IR.Tree.CanonicalTreeCode.codeFactory(hcf, frame);
 	hcf = harpoon.Analysis.Tree.DerivationChecker.codeFactory(hcf);
 //  	hcf = (new harpoon.Backend.Analysis.GCTraceStore()).codeFactory(hcf);
+
+	if (WRITEBARRIERS) {
+	    // run constant propagation
+	    hcf = new harpoon.Analysis.Tree.ConstantPropagation(hcf).
+		codeFactory();
+	    // remove write barriers for assignment to constants
+	    hcf = writeBarrier.ceCodeFactory(frame, hcf);
+	    hcf = writeBarrier.statsCodeFactory(frame, hcf, classHierarchy);
+	    //hcf = writeBarrier.treeCodeFactory(frame, hcf, classHierarchy);
+	}
+
 	if(Realtime.REALTIME_JAVA && !alexhack)
 	{
 	    hcf = Realtime.addNoHeapChecks(hcf);
@@ -433,14 +466,16 @@ public class SAMain extends harpoon.IR.Registration {
 	if (DO_TRANSACTIONS) {
 	    hcf = syncTransformer.treeCodeFactory(frame, hcf);
 	}
-	if (BACKEND == PRECISEC_BACKEND && MULTITHREADED && 
-	    (System.getProperty
-	     ("harpoon.alloc.strategy", "malloc").equalsIgnoreCase("precise")||
-	     Realtime.REALTIME_JAVA)) {
+
+	if (MULTITHREADED) {
 	    /* pass to insert GC polling calls */
+	    Util.assert(BACKEND == PRECISEC_BACKEND && 
+			(PRECISEGC || Realtime.REALTIME_JAVA));
+	    System.out.println("Make GC thread-safe");
 	    hcf = harpoon.Backend.Analysis.MakeGCThreadSafe.
 		codeFactory(hcf, frame);
 	}
+
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     if(BACKEND == MIPSDA_BACKEND || BACKEND == MIPSYP_BACKEND) {
        hcf = harpoon.Analysis.Tree.MemHoisting.codeFactory(hcf);
@@ -680,6 +715,11 @@ public class SAMain extends harpoon.IR.Registration {
 	  HData data=frame.getLocationFactory().makeLocationData(frame);
 	  it=new CombineIterator(new Iterator[]
 				 { it, Default.singletonIterator(data) });
+	  if (WRITEBARRIERS) {
+	      HData wbData = writeBarrier.getData(hclass, frame);
+	      it=new CombineIterator
+		  (new Iterator[] { it, Default.singletonIterator(wbData) });
+	  }
       }
       while (it.hasNext() ) {
 	final Data data = (Data) it.next();
@@ -734,7 +774,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     protected static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Tm");
+	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Tmw");
 	
 	int c;
 	String arg;
@@ -755,6 +795,8 @@ public class SAMain extends harpoon.IR.Registration {
 		break;
 	    case 'm': // Multi-threaded (KKZ)
 		MULTITHREADED = true; break;
+	    case 'w': // Add write barriers (KKZ)
+		WRITEBARRIERS = true; break;
 	    case 't': // Realtime Java extensions (WSB)
 		linker = new Relinker(Loader.systemLinker);
 		Realtime.configure(g.getOptarg());
