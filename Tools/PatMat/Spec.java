@@ -10,12 +10,12 @@ import java.util.List;
  * <code>Spec</code> represents the parsed specification.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Spec.java,v 1.1.2.1 1999-02-18 11:38:59 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.2 1999-02-18 22:02:57 cananian Exp $
  */
 public class Spec  {
-    public final String global_stms;
-    public final String class_stms;
-    public final RuleList rules;
+    public /*final*/ String global_stms;
+    public /*final*/ String class_stms;
+    public /*final*/ RuleList rules;
     
     /** Creates a <code>Spec</code>. */
     public Spec(String global_stms, String class_stms, RuleList rules) {
@@ -28,7 +28,7 @@ public class Spec  {
     }
 
     // inner classes
-    static abstract class Rule {
+    public static abstract class Rule {
 	public final DetailList details;
 	public final String action_str;
 	public Rule(DetailList details, String action_str) {
@@ -38,7 +38,7 @@ public class Spec  {
 	    return details + " %{" + action_str + "}%";
 	}
     }
-    static class RuleExp extends Rule {
+    public static class RuleExp extends Rule {
 	public final Exp exp;
 	public final String result_id;
 	public RuleExp(Exp exp, String result_id,
@@ -50,7 +50,7 @@ public class Spec  {
 	    return exp + "=" + result_id +" " + super.toString();
 	}
     }
-    static class RuleStm extends Rule {
+    public static class RuleStm extends Rule {
 	public final Stm stm;
 	public RuleStm(Stm stm, DetailList details, String action_str) {
 	    super(details, action_str);
@@ -61,13 +61,13 @@ public class Spec  {
 	}
     }
 
-    static abstract class Exp { }
-    static class ExpId extends Exp {
+    public static abstract class Exp { }
+    public static class ExpId extends Exp {
 	public final String id;
 	public ExpId(String id) { this.id = id; }
 	public String toString() { return id; }
     }
-    static class ExpBinop extends Exp {
+    public static class ExpBinop extends Exp {
 	public final TypeSet types;
 	public final Leaf opcode;
 	public final Exp left, right;
@@ -80,7 +80,7 @@ public class Spec  {
 		+left+","+right+")";
 	}
     }
-    static class ExpConst extends Exp {
+    public static class ExpConst extends Exp {
 	public final TypeSet types;
 	public final Leaf value;
 	public ExpConst(TypeSet types, Leaf value) {
@@ -88,13 +88,13 @@ public class Spec  {
 	}
 	public String toString() { return "CONST"+types+"("+value+")"; }
     }
-    static class ExpEseq extends Exp {
+    public static class ExpEseq extends Exp {
 	public final Stm stm;
 	public final Exp exp;
 	public ExpEseq(Stm stm, Exp exp) { this.stm = stm; this.exp = exp; }
 	public String toString() { return "ESEQ("+stm+","+exp+")"; }
     }
-    static class ExpMem extends Exp {
+    public static class ExpMem extends Exp {
 	public final TypeSet types;
 	public final Exp addr;
 	public ExpMem(TypeSet types, Exp addr) {
@@ -102,12 +102,12 @@ public class Spec  {
 	}
 	public String toString() { return "MEM"+types+"("+addr+")"; }
     }
-    static class ExpName extends Exp {
+    public static class ExpName extends Exp {
 	public final String name;
 	public ExpName(String name) { this.name = name; }
 	public String toString() { return "NAME("+name+")"; }
     }
-    static class ExpTemp extends Exp {
+    public static class ExpTemp extends Exp {
 	public final TypeSet types;
 	public final String name;
 	public ExpTemp(TypeSet types, String name) {
@@ -115,7 +115,7 @@ public class Spec  {
 	}
 	public String toString() { return "TEMP"+types+"("+name+")"; }
     }
-    static class ExpUnop extends Exp {
+    public static class ExpUnop extends Exp {
 	public final TypeSet types;
 	public final Leaf opcode;
 	public final Exp exp;
@@ -127,8 +127,8 @@ public class Spec  {
 	}
     }
 
-    static abstract class Stm { }
-    static class StmCall extends Stm {
+    public static abstract class Stm { }
+    public static class StmCall extends Stm {
 	public final Exp retval, retex, func;
 	public final String arglist;
 	public StmCall(Exp retval, Exp retex, Exp func, String arglist) {
@@ -139,7 +139,7 @@ public class Spec  {
 	    return "CALL("+retval+","+retex+","+func+","+arglist+")";
 	}
     }
-    static class StmCjump extends Stm {
+    public static class StmCjump extends Stm {
 	public final Exp test;
 	public final String t_label, f_label;
 	public StmCjump(Exp test, String t_label, String f_label) {
@@ -149,27 +149,27 @@ public class Spec  {
 	    return "CJUMP("+test+","+t_label+","+f_label+")";
 	}
     }
-    static class StmExp extends Stm {
+    public static class StmExp extends Stm {
 	public final Exp exp;
 	public StmExp(Exp exp) { this.exp = exp; }
 	public String toString() { return "EXP("+exp+")"; }
     }
-    static class StmJump extends Stm {
+    public static class StmJump extends Stm {
 	public final Exp exp;
 	public StmJump(Exp exp) { this.exp = exp; }
 	public String toString() { return "JUMP("+exp+")"; }
     }
-    static class StmLabel extends Stm {
+    public static class StmLabel extends Stm {
 	public final String name;
 	public StmLabel(String name) { this.name = name; }
 	public String toString() { return "LABEL("+name+")"; }
     }
-    static class StmMove extends Stm {
+    public static class StmMove extends Stm {
 	public final Exp dst, src;
 	public StmMove(Exp dst, Exp src) { this.dst = dst; this.src = src; }
 	public String toString() { return "MOVE("+dst+","+src+")"; }
     }
-    static class StmNativeCall extends Stm {
+    public static class StmNativeCall extends Stm {
 	public final Exp retval, retex, func;
 	public final String arglist;
 	public StmNativeCall(Exp retval, Exp retex, Exp func, String arglist) {
@@ -180,7 +180,7 @@ public class Spec  {
 	    return "NATIVECALL("+retval+","+retex+","+func+","+arglist+")";
 	}
     }
-    static class StmReturn extends Stm {
+    public static class StmReturn extends Stm {
 	public final TypeSet types;
 	public final Exp retval;
 	public StmReturn(TypeSet types, Exp retval) {
@@ -188,29 +188,29 @@ public class Spec  {
 	}
 	public String toString() { return "RETURN"+types+"("+retval+")"; }
     }
-    static class StmSeq extends Stm {
+    public static class StmSeq extends Stm {
 	public final Stm s1, s2;
 	public StmSeq(Stm s1, Stm s2) { this.s1 = s1; this.s2 = s2; }
 	public String toString() { return "SEQ("+s1+","+s2+")"; }
     }
-    static class StmThrow extends Stm {
+    public static class StmThrow extends Stm {
 	public final Exp exp;
 	public StmThrow(Exp exp) { this.exp = exp; }
 	public String toString() { return "THROW("+exp+")"; }
     }
 
-    static abstract class Leaf {
+    public static abstract class Leaf {
 	public String toBop() { return this.toString(); }
 	public String toUop() { return this.toString(); }
     }
-    static class LeafId extends Leaf {
+    public static class LeafId extends Leaf {
 	public final String id;
 	public LeafId(String id) {
 	    this.id = id;
 	}
 	public String toString() { return id; }
     }
-    static class LeafNumber extends Leaf {
+    public static class LeafNumber extends Leaf {
 	public final int number;
 	public LeafNumber(int number) {
 	    this.number = number;
@@ -220,8 +220,8 @@ public class Spec  {
 	public String toUop() { return harpoon.IR.Tree.Uop.toString(number); }
     }
 
-    static abstract class Detail { }
-    static class DetailExtra extends Detail {
+    public static abstract class Detail { }
+    public static class DetailExtra extends Detail {
 	public final IdList extras;
 	public DetailExtra(IdList extras) {
 	    this.extras = extras;
@@ -230,14 +230,14 @@ public class Spec  {
 	    return "%extra{"+((extras==null)?"":extras.toString())+"}";
 	}
     }
-    static class DetailPredicate extends Detail {
+    public static class DetailPredicate extends Detail {
 	public final String predicate_string;
 	public DetailPredicate(String predicate_string) {
 	    this.predicate_string = predicate_string;
 	}
 	public String toString() { return "%pred %("+predicate_string+")%"; }
     }
-    static class DetailWeight extends Detail {
+    public static class DetailWeight extends Detail {
 	public final String name;
 	public final float value;
 	public DetailWeight(String name, float value) {
@@ -246,7 +246,7 @@ public class Spec  {
 	public String toString() { return "%weight<"+name+","+value+">"; }
     }
 
-    static class TypeSet {
+    public static class TypeSet {
 	final BitSet bs = new BitSet();
 	public TypeSet() { }
 	public boolean contains(int type) {
@@ -274,7 +274,7 @@ public class Spec  {
 	    return sb.toString();
 	}
     }
-    static class RuleList {
+    public static class RuleList {
 	public final Rule head;
 	public final RuleList tail;
 	public RuleList(Rule head, RuleList tail) {
@@ -285,7 +285,7 @@ public class Spec  {
 	    else return head.toString() + "\n" + tail.toString();
 	}
     }
-    static class DetailList {
+    public static class DetailList {
 	public final Detail head;
 	public final DetailList tail;
 	public DetailList(Detail head, DetailList tail) {
@@ -296,7 +296,7 @@ public class Spec  {
 	    else return head.toString() + " " + tail.toString();
 	}
     }
-    static class IdList {
+    public static class IdList {
 	public final String head;
 	public final IdList tail;
 	public IdList(String head, IdList tail) {

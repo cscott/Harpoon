@@ -18,10 +18,10 @@ import harpoon.Util.Util;
 import java.util.Hashtable;
 
 /**
- *
+ * <blink><b>FILL ME IN</b></blink>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.10 1999-02-18 19:37:38 duncan Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.11 1999-02-18 22:02:56 cananian Exp $
  */
 public class LowQuadSSA extends Code
 {
@@ -46,9 +46,11 @@ public class LowQuadSSA extends Code
 	  return ((hce==null)||(t==null))?null:(DList)dT.get(t);
 	}
       };
+      final LowQuadFactory lqf =  // javac bug workaround to let qf be
+	  (LowQuadFactory) qf;    // visible in anonymous TypeMap below.
       m_typeMap = new TypeMap() { 
 	public HClass typeMap(HCode hc, Temp t) { 
-	  Util.assert(qf.tempFactory()==t.tempFactory());
+	  Util.assert(lqf.tempFactory()==t.tempFactory());
 	  Object type = tT.get(t);   // Ignores hc parameter
 	  if (type instanceof Error) 
 	    throw (Error)((Error)type).fillInStackTrace();

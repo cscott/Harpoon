@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.16 1999-02-17 10:58:00 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.17 1999-02-18 22:02:56 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes +$$
@@ -52,7 +52,8 @@ java:	$(ALLSOURCE) $(PROPERTIES)
 	if [ ! -d harpoon ]; then \
 	  $(MAKE) first; \
 	fi
-	${JCC} ${JFLAGS} ${JFLAGSVERB} $(ALLSOURCE) | \
+#	javac goes nuts unless Tree.java is first. <grumble>
+	${JCC} ${JFLAGS} ${JFLAGSVERB} IR/Tree/Tree.java $(filter-out IR/Tree/Tree.java, $(ALLSOURCE)) | \
 		egrep -v '^\[[lc]'
 	@$(MAKE) --no-print-directory properties
 	touch java
