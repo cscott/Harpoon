@@ -88,7 +88,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.11.2.1 2003-11-14 18:02:31 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.11.2.2 2003-11-14 20:50:53 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -258,6 +258,10 @@ public class SyncTransformer
 	HMsetTrans = HCimplHelper.getMethod
 	    ("setJNITransaction", new HClass[] { HCcommitrec });
 
+	// add fields for versions list and readers list.
+	HField vlistF = objM.addDeclaredField("versionsList", HCvinfo);
+	HField rlistF = objM.addDeclaredField("readerList", HCobj);
+
 	// set up our field oracle.
 	if (!useSmartFieldOracle) {
 	    this.fieldOracle = new SimpleFieldOracle();
@@ -272,7 +276,11 @@ public class SyncTransformer
 	// set up our BitFieldNumbering (and create array-check fields in
 	// all array classes)
 	if (noFieldModification) this.bfn = null;
-	else this.bfn = new BitFieldNumbering(l, pointersAreLong);
+	else {
+	    this.bfn = new BitFieldNumbering(l, pointersAreLong);
+	    this.bfn.ignoredFields.add(vlistF);
+	    this.bfn.ignoredFields.add(rlistF);
+	}
 
 	// fixup code factory for 'known safe' methods.
 	final HCodeFactory superfactory = super.codeFactory();

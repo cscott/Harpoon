@@ -19,7 +19,7 @@ import java.util.Set;
  * embed boolean flags describing object fields.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitFieldNumbering.java,v 1.5.2.1 2003-11-14 18:02:31 cananian Exp $
+ * @version $Id: BitFieldNumbering.java,v 1.5.2.2 2003-11-14 20:50:53 cananian Exp $
  */
 public class BitFieldNumbering {
     // field is 'pointer size': i.e. Int of 32-bit arch, Long on 64-bit arch.
@@ -36,6 +36,8 @@ public class BitFieldNumbering {
      *  by <code>bfLoc</code> or <code>arrayBitField</code>. */
     public final Set<HField> bitfields =
 	Collections.unmodifiableSet(_bitfields);
+    /** Mutable set of fields you want to ignore. */
+    public final Set<HField> ignoredFields = new HashSet<HField>();
 
     /** Creates a <code>BitFieldNumbering</code>. */
     public BitFieldNumbering(Linker l, boolean pointersAreLong) {
@@ -90,6 +92,7 @@ public class BitFieldNumbering {
     private int fieldNumber(HField hf) {
 	assert !hf.isStatic();
 	assert !hf.getDeclaringClass().isInterface();
+	assert !ignoredFields.contains(hf);
 	if (!fieldNumbers.containsKey(hf))
 	    classNumber(hf.getDeclaringClass());
 	assert fieldNumbers.containsKey(hf) : hf + " / "+fieldNumbers;
@@ -104,7 +107,7 @@ public class BitFieldNumbering {
 	    int start = (sc==null) ? 0 : classNumber(sc);
 	    HField[] hfa = hc.getDeclaredFields();
 	    for (int i=0; i<hfa.length; i++)
-		if (!hfa[i].isStatic())
+		if (! (hfa[i].isStatic() || ignoredFields.contains(hfa[i])))
 		    fieldNumbers.put(hfa[i], new Integer(start++));
 	    classNumbers.put(hc, new Integer(start));
 	}
