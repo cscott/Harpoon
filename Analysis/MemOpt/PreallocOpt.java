@@ -65,7 +65,7 @@ import harpoon.Util.Options.Option;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.23 2003-04-22 00:09:53 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.24 2003-10-29 03:51:56 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -556,6 +556,7 @@ public abstract class PreallocOpt {
 	public boolean enabled() { return _enabled(); }
 
 	protected void real_action() {
+	    hcf = PreallocOpt.addMemoryPreallocation(linker, hcf, frame);
 	}
     };
 
