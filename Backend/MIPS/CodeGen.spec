@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.30 2000-12-03 20:14:22 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.31 2001-04-23 23:02:43 rhlee Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -869,13 +869,13 @@ import java.util.Iterator;
                 new InstrLABEL(inf, il, methodlabel.name+":", methodlabel),
                 new InstrDIRECTIVE(inf, il, ".frame $sp," +
                                    stack.frameSize() + ", $31"),
-                new Instr(inf, il, "subu $sp, "+ stack.frameSize(), 
+                new Instr(inf, il, yellow_pekoe ? "subu $sp, "+ stack.frameSize() : "subu.chkpt $sp, " + stack.frameSize(), 
                           new Temp[] {SP}, new Temp[] {SP}),
                 new Instr(inf, il, "sw $31, " + stack.getRAOffset() +"($sp)", 
                           null, new Temp[] { LR, SP }),
                 new Instr(inf, il, "sw" + ntag + " $30, " + stack.getFPOffset() +"($sp)", 
                           null, new Temp[] { FP, SP }),
-                new Instr(inf, il, "addu $30, $sp, "+ stack.frameSize(),
+                new Instr(inf, il, yellow_pekoe ? "addu $30, $sp, "+ stack.frameSize() : "addu.chkpt $30, $sp, " + stack.frameSize(),
                           new Temp[]{FP}, new Temp[]{SP} ),
              };
              ////// Now create instrs to save non-trivial callee saved regs
@@ -952,7 +952,7 @@ import java.util.Iterator;
                           new Temp[] {FP}, new Temp[] {SP}),
                 new Instr(inf, il, ralw + " $31, " + stack.getRAOffset() + "($sp)",
                           new Temp[] {LR}, new Temp[] {SP}),
-                new Instr(inf, il, "addu $sp, " + stack.frameSize(),
+                new Instr(inf, il, yellow_pekoe ? "addu $sp, " + stack.frameSize() : "addu.chkpt $sp, " + stack.frameSize(),
                           new Temp[] {SP}, new Temp[] {SP}),
                 new Instr(inf, il, "j  $31  # return",
                           null, new Temp[]{LR}),
