@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.40 2002-07-31 21:57:30 cananian Exp $
+% $Id: ptran.tex,v 1.41 2002-07-31 22:18:45 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.40 $ $}
+\date{\today \\ $ $Revision: 1.41 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -402,6 +402,8 @@ inside edges.  This allows us to detect possible companion edges.
 \item $r \subseteq N$ is a return set representing the set of objects
 that may be returned by the currently analyzed method.
 \end{itemize}
+\textbf{XXX: note that nothing can point \emph{to} a variable node.}
+
 We define:
 \begin{eqnarray*}
 \func{unanalyzed}_\text{direct}(\tuple{O,I,\func{e},\func{c},r}, n) &=&
@@ -590,6 +592,9 @@ Given method $m$ with formals $p_0,\ldots,p_k$:
 {n\in r}
 \end{displaymath}
 
+\subsection{Trimming a graph}
+\textbf{XXX: show how we get rid of cruft before composing this method.}
+
 \subsection{Skipping a call-site}
 The inference rules for a skipped call-site are simple:
 \begin{displaymath}
@@ -614,17 +619,29 @@ and continue to treat them as if they could become definite
 companions; that is, treat them as if we knew that the unanalyzed code
 doesn't spoil the companion.
 
-\subsection{Evaluating a call-site monomorphically}
-
-present rules.  don't need to say how we choose to eval
-monomorphically yet.  Just keep the companion edges accurate.
-
 \subsection{Evaluating a call-site polymorphically}
 
 present rules.  don't need to say how we choose to eval
 polymorphically yet.  Just keep the companion edges accurate,
 keep updating mutual-singularity of field gets,
 and rename internal nodes by call-site.
+
+\subsection{Evaluating a call-site monomorphically}
+
+First time: eval polymorphically, keeping unique nodes for
+parameters.  Thereafter, just add new edges from parameter nodes and
+to return value node and rerun inference rules to propagate implications.
+XXX: what do we need to do to keep companion edges accurate?
+
+\section{Random thoughts}
+It might be better to deal with analysis in two phases.  Phase 1,
+create a compositional points-to fragment for each method.  Phase 2,
+compose these (making decisions about polymorphism etc on the way).
+The result of Phase 1 would be trimmed, and must represent call-sites
+explicitly so that we don't have to refer back to the program
+representation in order to do the composition.  Split all processes
+into `` build'' and ``close'' phases.  As per million-lines-of-code,
+we close iteratively, and only for ``interesting'' variables.
 
 \section{Allocating Polymorphism}
 
