@@ -1,4 +1,4 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.23 2003-06-11 03:13:27 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.24 2003-06-12 07:24:35 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -36,9 +36,9 @@ oqe
 
 \slideCaption{Ananian/Rinard, LCTES'03}
 \title{Size Optimizations for Java Programs}
-\author{\large\href{http://cscott.net}{C.~Scott~Ananian} and \href{http://www.cag.lcs.mit.edu/~rinard}{Martin~Rinard}}
-\email{\{\href{mailto:cananian@lcs.mit.edu}{cananian},\href{mailto:rinard@lcs.mit.edu}{rinard}\}@lcs.mit.edu}
-\institution{%
+\author{\large\bfseries\href{http://cscott.net}{C.~Scott~Ananian} and \href{http://www.cag.lcs.mit.edu/~rinard}{Martin~Rinard}}
+\email{\bfseries\{\href{mailto:cananian@lcs.mit.edu}{cananian},\href{mailto:rinard@lcs.mit.edu}{rinard}\}@lcs.mit.edu}
+\institution{\bfseries%
 Laboratory for Computer Science\\
 Massachusetts Institute of Technology
 \\
@@ -470,28 +470,32 @@ location of the first zero.
 \overlays{1}{
 \begin{slide}{Some abstract evaluation rules}
 \begin{align*}
-\onlySlide*{2}{\yellow}%
+\lefteqn{\text{\small\yellow ~Negation:}}\\
+&&\onlySlide*{2}{\yellow}%
 \text{\tt -}\tuple{m,p}
  &\onlySlide*{2}{\yellow}=%&\onlySlide*{2}{\yellow}%
  \tuple{p,m}
  \\
-\onlySlide*{3}{\yellow}%
+\lefteqn{\text{\small\yellow ~Addition:}}\\
+&&\onlySlide*{3}{\yellow}%
 \tuple{m_l,p_l} \text{\tt+} \tuple{m_r,p_r}
  &\onlySlide*{3}{\yellow}=%&\onlySlide*{3}{\yellow}%
  \tuple{1+\max(m_l,m_r),1+\max(p_l,p_r)}
  \\
-\onlySlide*{4}{\yellow}%
+\lefteqn{\text{\small\yellow ~Multiplication:}}\\
+&&\onlySlide*{4}{\yellow}%
 \tuple{m_l,p_l} \text{\tt *} \tuple{m_r,p_r}
  &\onlySlide*{4}{\yellow}=%&\onlySlide*{4}{\yellow}%
 \tuple{\begin{array}{l}\max(m_l+p_r,p_l+m_r),\\
                        \max(m_l+m_r,p_l+p_r)\end{array}}
  \\
-\onlySlide*{5}{\yellow}%
+\lefteqn{\text{\small\yellow ~Bitwise-AND:}}\\
+&&\onlySlide*{5}{\yellow}%
 \tuple{0,p_l} \text{\tt\&} \tuple{0,p_r}
  &\onlySlide*{5}{\yellow}=%&\onlySlide*{5}{\yellow}%
  \tuple{0,\min(p_l,p_r)}
  \\
-\onlySlide*{6}{\yellow}
+&&\onlySlide*{6}{\yellow}
 \tuple{m_l,p_l}\text{\tt\&} \tuple{m_r,p_r}
  &\onlySlide*{6}{\yellow}=%&\onlySlide*{6}{\yellow}%
  \tuple{\max(m_l,m_r),\max(p_l,p_r)}
@@ -645,9 +649,7 @@ We use a {\yellow field-based} interprocedural analysis.
 \end{itemize}
 \end{slide}
 \begin{talknotes}
-\ldots we have this description of the interprocedural analysis.
-%We extend our intraprocedural analysis interprocedurally using a
-%field-based scheme.  
+\ldots this describes the interprocedural analysis.
 The domain $\mathcal{F}$ represents the declared fields of the
 program, and the domain $\mathcal{M}$ represents call sites.
 Both the executability of an edge and the value of a variable depend
@@ -1151,7 +1153,8 @@ We have two constraints: @ the fields must be
 of the constructor.
 Our implementation actually allows subclasses to modify the fields;
 because they extend the ``big'' version of the class, such mutation is
-safe.
+safe.  We don't rely on fields being explicitly marked {\tt final} by
+the programmer.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1551,6 +1554,9 @@ being used.  In practice, you can see it doesn't have much effect.
 {\tt db} is a simple database, {\tt javac} is the Sun java compiler,
 {\tt mpegaudio} is an MP3 decoder, and {\tt jack} is a parser
 generator.
+
+The {\tt mpegaudio} benchmark gets the most benefit here from static
+specialization, and {\tt jess} and {\tt jack} from field compression.
 
 %But if you're paying attention, you'll realize that these aren't
 %actually the \emph{really} interesting numbers.  
