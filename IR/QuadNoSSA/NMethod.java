@@ -43,8 +43,49 @@ public class NMethod {
   void writeMethod (PrintWriter out) throws IOException{
     
     out.print (".method ");
-    out.print (java.lang.reflect.Modifier.toString (myMethod.getModifiers())
-	       + " " + myMethod.getName() + myMethod.getDescriptor() + "\n");
+    //add the abstract keyword to classes which have no code... this is mainly for 
+    //interfaces since the verifier seems to want the abstract keyword to be there 
+    // even though the JVM spec claims it's optional for interfaces...
+    if (instructions.size() == 0){
+	String modifiers = java.lang.reflect.Modifier.toString (myMethod.getModifiers());
+	int index = modifiers.lastIndexOf ("native");
+	System.out.println ("***********************************************************");
+	System.out.println ("***********************************************************");
+	System.out.println ("The method has no code: " + myMethod.toString());
+	if (index >= 0){
+	    System.out.println ("And it's native too!!!");
+	} else {
+	    System.out.println ("HOwever... it's not native");
+	}
+	/*if (index >= 0){
+	  if (index+6 < modifiers.length()){
+	  if (index == 0){
+	  modifiers = modifiers.substring (index+6);
+	  } else {
+	  modifiers = modifiers.substring (0, index-1) + modifiers.substring (index+6);
+	  }
+	  } else {
+	  if (index == 0){
+	  modifiers = "";
+	  } else {
+	  modifiers = modifiers.substring (0, index-1);
+	  }
+	  }
+	  }*/
+	if (index >= 0){
+	    if (java.lang.reflect.Modifier.isInterface(myMethod.getDeclaringClass().getModifiers())){
+		out.print (modifiers + " abstract " + myMethod.getName() + myMethod.getDescriptor() + "\n");
+	    } else {
+		out.print (modifiers + " " + myMethod.getName() + myMethod.getDescriptor() + "\n");
+	    }
+	} else {
+	    out.print (modifiers + " abstract " + myMethod.getName() + myMethod.getDescriptor() + "\n");
+	}
+    } else {
+	out.print (java.lang.reflect.Modifier.toString (myMethod.getModifiers())
+		   + " " + myMethod.getName() + myMethod.getDescriptor() + "\n");
+    }
+
     HClass exceptions[] = myMethod.getExceptionTypes();
     for (int i = 0; i < exceptions.length; i++){
       out.print (".throws " + exceptions[i].getName().replace ('.', '/') + "\n");
@@ -68,12 +109,10 @@ public class NMethod {
     
     //print out all the instructions
     for (int i = 0; i < instructions.size(); i++){
-	out.println (";before printing instruction");
 	if (instructions.elementAt(i) instanceof LookupswitchInsn){
 	    out.println (";I actually thing this is a switch");
 	}
 	((NInsn)instructions.elementAt(i)).writeInsn (out, myIndexTable);
-	out.println (";after printing instruction");
     }
 
     out.print (".end method\n");

@@ -15,7 +15,9 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   private static final int L = 3;
   private static final int A = 4;
   private static final boolean printTypes = false;
-  private static final boolean writeTypes = true;
+  private static final boolean writeTypes = false;
+  private static final boolean printLongTypes = false;
+  private static final boolean writeLongTypes = true;
 
   NMethod method;
   TypeMap map;
@@ -31,7 +33,11 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   
   ByteCodeQuadVisitor(NMethod myMethod, TypeMap myMap, HCode myQuadform, 
 		      Hashtable myLabelTable, Hashtable myPhiTable, Hashtable myIndexTable){
-    
+    //inserted just so that it will be able to find the class
+    MultiarrayInsn nate = new MultiarrayInsn (myMethod.myMethod.getDeclaringClass(), 3);
+
+    LookupswitchInsn greg =  new LookupswitchInsn (null, null, null);
+
     method = myMethod;
     map = myMap;
     quadform = myQuadform;
@@ -49,7 +55,14 @@ class ByteCodeQuadVisitor extends QuadVisitor{
     putIndex (obj, indexTable);
     HClass tempClass = map.typeMap(quadform, obj);
     if (tempClass == null){
+	System.out.println ("Well here's your problem dumbass:addLoad");
+	System.out.println ("********************************");
+	System.out.println ("Temp type is null: " + obj.name() + ":" + obj.toString());
+	System.out.println ("********************************");
+	return;
     }
+    harpoon.Util.Util.assert (tempClass != null);
+
     if (tempClass.isPrimitive()){
       if (tempClass == HClass.Boolean){
 	method.addInsn(new NInsn ("iload", obj));
@@ -126,6 +139,13 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 		       Hashtable indexTable) {
     putIndex (obj, indexTable);
     HClass tempClass = map.typeMap(quadform, obj);
+    if (tempClass == null){
+	System.out.println ("Well here's your problem dumbass:addstore");
+	System.out.println ("********************************");
+	System.out.println ("Temp type is null: " + obj.name() + ":" + obj.toString());
+	System.out.println ("********************************");
+	return;
+    }
     if (tempClass.isPrimitive()){
       if (tempClass == HClass.Boolean){
 	method.addInsn(new NInsn ("istore", obj));
@@ -277,6 +297,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   public void visit (Quad q) {}
   //**AGET
   public void visit (AGET q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("AGET" + labelCount++));
     }
@@ -288,6 +314,13 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 						  indexTable)));
       method.addInsn(new NInsn ("iload", putIndex(q.index, indexTable)));
       HClass tempClass = map.typeMap(quadform, q.objectref);
+    if (tempClass == null){
+	System.out.println ("Well here's your problem dumbass:aget");
+	System.out.println ("********************************");
+	System.out.println ("Temp type is null: " + q.objectref.name());
+	System.out.println ("********************************");
+	return;
+    }
       if (tempClass.isPrimitive()){
 	if (tempClass == HClass.Boolean){
 	  method.addInsn(new NInsn ("i2b"));
@@ -320,6 +353,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   }
   //**ALENGTH
   public void visit (ALENGTH q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("ALENGTH" + labelCount++));
     }
@@ -337,6 +376,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   }
   //**ANEW
   public void visit (ANEW q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("ANEW" + labelCount++));
     }
@@ -357,6 +402,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   //**ASET
   //store into the array in addition to converting it to stort char or byte if neccessary.
   public void visit (ASET q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("ASET" + labelCount++));
     }
@@ -370,6 +421,13 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       method.addInsn(new NInsn ("iload", putIndex(q.index, indexTable)));
       addLoad (method, map, quadform, q.src, indexTable);
       HClass tempClass = map.typeMap(quadform, q.objectref);
+    if (tempClass == null){
+	System.out.println ("Well here's your problem dumbass:aset");
+	System.out.println ("********************************");
+	System.out.println ("Temp type is null: " + q.objectref.name());
+	System.out.println ("********************************");
+	return;
+    }
       if (tempClass.isPrimitive()){
 	if (tempClass == HClass.Boolean){
 	  method.addInsn(new NInsn ("i2b"));
@@ -401,6 +459,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   }
   //**CALL
   public void visit (CALL q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel (";CALL exceptions go in " + q.retex.name()));
     }
@@ -424,6 +488,13 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       //and the one for normal returns if there is a return value
       if (q.retval != null){
 	HClass tempClass = map.typeMap(quadform, q.retval);
+    if (tempClass == null){
+	System.out.println ("Well here's your problem dumbass:call");
+	System.out.println ("********************************");
+	System.out.println ("Temp type is null: " + q.retval.name());
+	System.out.println ("********************************");
+	return;
+    }
 	if (tempClass.isPrimitive()){
 	  if (tempClass == HClass.Boolean){
 	    method.addInsn(new NInsn ("iconst_0"));
@@ -456,13 +527,16 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       }
       //put the object ref and all the arguments onto the stack
       if (!q.isStatic()){
-	  method.addInsn(new NInsn ("aload", putIndex(q.objectref, 
-						      indexTable)));
-	  if (!q.method.getDeclaringClass().getName().replace('.', '/').startsWith("java/lang/Object")
-	      && !q.method.getName().equals ("<init>")){
-	      //System.out.println ("The method name is:" + q.method.getDeclaringClass().getName().replace('.', '/') + ":end");
-	      method.addInsn(new NInsn ("checkcast", q.method.getDeclaringClass()));
-	  }
+	if (q.objectref == null){
+	  System.out.println ("Well this is a problem I think");
+	}
+	method.addInsn(new NInsn ("aload", putIndex(q.objectref, 
+						    indexTable)));
+	if (!q.method.getDeclaringClass().getName().replace('.', '/').startsWith("java/lang/Object")
+	    && !q.method.getName().equals ("<init>")){
+	  //System.out.println ("The method name is:" + q.method.getDeclaringClass().getName().replace('.', '/') + ":end");
+	  method.addInsn(new NInsn ("checkcast", q.method.getDeclaringClass()));
+	}
       }
       for (int i = 0; i < q.params.length; i++){
 	addLoad (method, map, quadform, q.params[i], indexTable);
@@ -501,21 +575,24 @@ class ByteCodeQuadVisitor extends QuadVisitor{
       addStore (method, map, quadform, q.retex, indexTable);
       
       method.addInsn(continueLabel);
-      if (!(q.method instanceof HConstructor)){
-	  if (q.method.getName() == "<init>"){
-	      System.out.println ("opps, somebody fucked up");
-	  } else {
-	      method.addInsn (new NLabel (";The proc is called: " + q.method.getName()));
-	      method.addCatch (start, end, handler, "all");
-	  }
+      if (!(q.method instanceof HConstructor) && !(q.method.getName() == "<init>")){
+	method.addInsn (new NLabel (";The proc is called: " + q.method.getName()));
+	method.addCatch (start, end, handler, "all");
       } else {
       }
     } catch (Exception e){
+      System.out.println ("****************WE seem to have gotten and exception in the call********");
       e.printStackTrace();
     }
   }
   //**CJMP
   public void visit (CJMP q) {  
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("CJMP" + labelCount++));
     }
@@ -538,6 +615,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   }
   //**COMPONENTOF
   public void visit (COMPONENTOF q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("COMPONENTOF" + labelCount++));
     }
@@ -556,6 +639,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**CONST
   public void visit (CONST q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("CONST" + labelCount++));
     }
@@ -587,6 +676,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   }
   //**FOOTER
   public void visit (FOOTER q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("FOOTER" + labelCount++));
     }
@@ -602,6 +697,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**GET
   public void visit (GET q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("GET" + labelCount++));
     }
@@ -626,6 +727,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   
   //**HEADER
   public void visit (HEADER q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("HEADER" + labelCount++));
     }
@@ -637,6 +744,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**INSTANCEOF
   public void visit (INSTANCEOF q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("INSTANCEOF" + labelCount++));
     }
@@ -655,6 +768,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**METHODHEADER
   public void visit (METHODHEADER q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("METHODHEADER" + labelCount++));
     }
@@ -671,6 +790,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   
   ///**MONITOR ENTER
     public void visit (MONITORENTER q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("MONITORENTER" + labelCount++));
     }
@@ -686,6 +811,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
     }
   //**MONITOR EXIT
   public void visit (MONITOREXIT q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("GET" + labelCount++));
     }
@@ -702,6 +833,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**MOVE
   public void visit (MOVE q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("MOVE" + labelCount++));
     }
@@ -718,6 +855,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**NEW
   public void visit (NEW q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("NEW" + labelCount++));
     }
@@ -736,6 +879,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**NOP  
   public void visit (NOP q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("NOP" + labelCount++));
     }
@@ -752,6 +901,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**OPER**
   public void visit (OPER q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("OPER" + labelCount++));
     }
@@ -836,6 +991,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
   }
   //**RETURN
   public void visit (RETURN q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("RETURN" + labelCount++));
     }
@@ -847,6 +1008,13 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 	method.addInsn(new NInsn ("return"));
       } else {
 	HClass tempClass = map.typeMap(quadform, q.retval);
+	if (tempClass == null){
+	  System.out.println ("Well here's your problem dumbass:return");
+	  System.out.println ("********************************");
+	  System.out.println ("Temp type is null: " + q.retval.name());
+	  System.out.println ("********************************");
+	  return;
+	}
 	if (tempClass.isPrimitive()){
 	  if (tempClass == HClass.Boolean){
 	    addiload (method, q.retval, indexTable);
@@ -896,6 +1064,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**SET**
   public void visit (SET q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("SET" + labelCount++));
     }
@@ -924,6 +1098,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**SWITCH 
   public void visit (SWITCH q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("SWITCH" + labelCount++));
     }
@@ -961,6 +1141,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**THROW
   public void visit (THROW q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("THROW" + labelCount++));
     }
@@ -977,6 +1163,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**PHI
   public void visit (PHI q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("PHI" + labelCount++));
     }
@@ -995,6 +1187,12 @@ class ByteCodeQuadVisitor extends QuadVisitor{
 
   //**SIGMA
   public void visit (SIGMA q) {
+    if (writeLongTypes){
+      method.addInsn (new NLabel (";" + q.toString()));
+    }
+    if (printLongTypes){
+      System.out.println ("Visiting: " + q.toString());
+    }
     if (writeTypes){
       method.addInsn (new NLabel ("SIGMA" + labelCount++));
     }
@@ -1004,4 +1202,9 @@ class ByteCodeQuadVisitor extends QuadVisitor{
     //there shouldn't be any of these
     //they should all be taken care of by CJMP and SWITCH
   }
-    }
+}
+
+// set emacs indentation style.
+// Local Variables:
+// c-basic-offset:2
+// End:

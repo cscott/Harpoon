@@ -28,7 +28,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41 1998-11-18 20:48:49 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.4.1 1998-11-22 03:32:37 nkushman Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public abstract class HClass {
@@ -38,22 +38,44 @@ public abstract class HClass {
   static String uniqueName(String suggestion) {
     if (suggestion==null || suggestion.equals("")) suggestion="MAGICc";
     // remove trailing dollar-signs.
-    while (suggestion.charAt(suggestion.length()-1)=='$')
+    while (suggestion.charAt(suggestion.length()-1)=='_')
       suggestion = suggestion.substring(0, suggestion.length()-1);
     // remove anything after a double dollar sign.
-    if (suggestion.indexOf("$$")!=-1)
-      suggestion = suggestion.substring(0, suggestion.lastIndexOf("$$"));
+    if (suggestion.indexOf("__")!=-1)
+      suggestion = suggestion.substring(0, suggestion.lastIndexOf("__"));
     // find lowest unique number for class.
     for (int i=-1; true; i++) {
-      String className = (i<0)?suggestion:(suggestion + "$$" + i);
+      //<<<<<<< HClass.java
+      //String className = (i<0)?suggestion:(suggestion + "__" + i);
+      //if (dsc2cls.containsKey("L"+className+";")) continue;
+      //if (Loader.getResourceAsStream
+      //(Loader.classToResource(className.replace('.','/')))!=null)
+      //=======
+      String className = (i<0)?suggestion:(suggestion + "__" + i);
       if (dsc2cls.containsKey("L"+className.replace('.','/')+";")) continue;
       InputStream is = Loader.getResourceAsStream
 	(Loader.classToResource(className));
       if (is != null) {
 	try{ is.close(); } catch(java.io.IOException e) { }
+	//>>>>>>> 1.41
 	continue; // named file on disk.
+	// found a valid name.
+	//XXXhack to make sure that we don't get two things with the same name...
       }
-      // found a valid name.
+      //this should never accect things but it does..
+      //try {
+      //HClass bogusClass = HClass.forName(className);
+      //if (bogusClass != null){
+      //System.out.println ("Well, I seem to be able to find a class for: " + className);
+      //continue;
+      //}
+      //} catch (Error e){
+	// just means the sugestion does not exist, so we can continue and return it
+      //}
+      
+      if (className == suggestion){
+	System.out.println ("Well it looks like I think the file doesn't already exist...");
+      }
       return className;
     }
   }
@@ -72,10 +94,32 @@ public abstract class HClass {
   public static HClass forName(String className) {
     if (className.charAt(0)=='[') {
       Util.assert(className.indexOf('.')==-1); // should be desc, not name.
-      return forDescriptor(className);
+      HClass hclass = forDescriptor(className);
+      if (false){
+	HMethod declaredMethods[] = hclass.getDeclaredMethods();
+	for (int j = 0;  j < declaredMethods.length; j++){
+	  HCode quadForm = (HCode) declaredMethods[j].getCode("quad-ssa");
+	  if (quadForm != null){
+	    declaredMethods[j].putCode (quadForm);
+	  }
+	}
+      }
+      
+      return hclass;
     } else {
       Util.assert(className.indexOf('/')==-1); // should be name, not desc.
-      return forDescriptor("L"+className.replace('.','/')+";");
+      HClass hclass = forDescriptor("L"+className.replace('.','/')+";");
+      if (false) {
+	HMethod declaredMethods[] = hclass.getDeclaredMethods();
+	for (int j = 0;  j < declaredMethods.length; j++){
+	  HCode quadForm = (HCode) declaredMethods[j].getCode("quad-ssa");
+	  if (quadForm != null){
+	    declaredMethods[j].putCode (quadForm);
+	  }
+	}
+      }
+      
+      return hclass;
     }
   }
   
@@ -139,10 +183,23 @@ public abstract class HClass {
 	className = className.replace('/','.'); // make proper class name.
 	InputStream is = 
 	  Loader.getResourceAsStream(Loader.classToResource(className));
-	if (is == null) throw new NoClassDefFoundError(className);
+	if (is == null){
+	  throw new NoClassDefFoundError(className);
+	}
 	// OK, go ahead and load this.
 	try {
-	  return /*ImplGNU*/ImplMagic.forStream(new BufferedInputStream(is));
+	  HClass theClass =  /*ImplGNU*/ImplMagic.forStream(new BufferedInputStream(is));
+	  if (false){
+	    HMethod declaredMethods[] = theClass.getDeclaredMethods();
+	    for (int j = 0;  j < declaredMethods.length; j++){
+	      HCode quadForm = (HCode) declaredMethods[j].getCode("quad-ssa");
+	      if (quadForm != null){
+		declaredMethods[j].putCode (quadForm);
+	      }
+	    }
+	  }
+
+	  return theClass;
 	} catch (java.io.IOException e) {
 	  throw new NoClassDefFoundError(className);
 	} finally {
@@ -442,7 +499,8 @@ public abstract class HClass {
     HMethod[] methods=getMethods();
     // look for method name in master method list.
     // look backwards to be sure we find local methods first (scoping).
-    for (int i=methods.length-1; i>=0; i--)
+    for (int i=methods.length-1; i>=0; i--){
+      //System.out.println ("Looking at method: " + methods[i].getName());
       if (methods[i].getName().equals(name)) {
 	HClass[] methodParamTypes = methods[i].getParameterTypes();
 	if (methodParamTypes.length == parameterTypes.length) {
@@ -453,8 +511,19 @@ public abstract class HClass {
 	    return methods[i];
 	}
       }
+    }
     // didn't find a match. Oh, well.
-    throw new NoSuchMethodError(name);
+    String methodSig = "Method: " + this.getName() + "." + name + " Parameters: ";
+    if (parameterTypes.length == 0) {
+      methodSig = methodSig + "no Parameters";
+      System.out.println ("There are no Parameters..");
+    }
+    for (int i = 0; i < parameterTypes.length; i++){
+      methodSig = methodSig + parameterTypes[i].getName() + "::";
+      System.out.println ("Param" + i + ": " + parameterTypes[i].getName());
+    }
+    
+    throw new NoSuchMethodError(methodSig);
   }
   /**
    * Returns an <code>HMethod</code> object that reflects the specified
@@ -480,8 +549,14 @@ public abstract class HClass {
       if (methods[i].getName().equals(name) &&
 	  methods[i].getDescriptor().equals(descriptor))
 	return methods[i];
+
+    for (int i=methods.length-1; i>=0; i--)
+      if (methods[i].getName().equals(name) &&
+	  methods[i].getDescriptor().equals(descriptor))
+	return methods[i];
+
     // didn't find a match.
-    throw new NoSuchMethodError(name);
+    throw new NoSuchMethodError("Name: " + name + ", " + "Descriptor: " + descriptor);
   }
 	
   /**

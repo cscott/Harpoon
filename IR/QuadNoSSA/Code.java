@@ -9,24 +9,26 @@ import harpoon.Util.Set;
 import harpoon.Util.UniqueVector;
 import harpoon.Util.Util;
 import harpoon.Analysis.Maps.TypeMap;
+import harpoon.Analysis.TypeInfo;
 import harpoon.IR.QuadSSA.SIGMA.*;
 import harpoon.IR.QuadSSA.*;
 
 //import jas.*;
 
+import java.io.*;
 import java.util.*;
 /**
  * <code>QuadNoSSA.Code</code> is <blink><b>fill me in</b></blink>.
  * 
  * @author  Nate Kushman <nkushman@lcs.mit.edu>
- * @version $Id: Code.java,v 1.2 1998-10-16 12:09:59 cananian Exp $
+ * @version $Id: Code.java,v 1.2.4.1 1998-11-22 03:32:39 nkushman Exp $
  */
 
 public class Code extends HCode{
   /** The name of this code view. */
   private static final String codename = "quad-nossa";
-
-
+  
+  
   /** The method that this code view represents. */
   HMethod parent;
   /** The quadruples composing this code view. */
@@ -37,7 +39,11 @@ public class Code extends HCode{
   {
     this.parent = ssa.getMethod();
     //harpoon.Temp.Temp.clear(); /* debug */
-    this.quads = (Quad) ssa.getRootElement();
+    try {
+      this.quads = Quad.clone((Quad) ssa.getRootElement());
+    } catch (Exception e){
+      e.printStackTrace();
+    }
 
     removeMagic();
     //CleanUp.cleanup(this); // cleanup null predecessors of phis.
@@ -66,10 +72,10 @@ public class Code extends HCode{
 	}
       }
       public void visit (SIGMA q) {
-	  //System.out.println ("Sigma thing: " + q.toString());
+	//System.out.println ("Sigma thing: " + q.toString());
 	for (int i = 0; i < q.dst.length; i++){
 	  for (int j = 0; j < q.dst[i].length; j++){
-	      //System.out.println ("Moving " + q.src[i].name() + " to " + q.dst[i][j].name());
+	    //System.out.println ("Moving " + q.src[i].name() + " to " + q.dst[i][j].name());
 	    MOVE newMove = new MOVE (q.getSourceElement(), 
 				     q.dst[i][j], q.src[i]);
 	    Edge nextEdge = q.nextEdge(j);
@@ -109,12 +115,12 @@ public class Code extends HCode{
     //visit the current quad
     //if ((q instanceof RETURN) || (q instanceof CALL) || (q instanceof METHODHEADER) ||
     //(q instanceof MOVE)){
-      method.addInsn (new NLabel ("; ID#: " + q.getID()));
-      if (q instanceof SWITCH){
-	  System.out.println ("Found the switch");
-      }
-      q.visit(v);
-      //}
+    method.addInsn (new NLabel ("; ID#: " + q.getID()));
+    if (q instanceof SWITCH){
+      System.out.println ("Found the switch");
+    }
+    q.visit(v);
+    //}
     Quad next[] = q.next();
 
     //add the quads for all the paths other than the main path
@@ -157,17 +163,17 @@ public class Code extends HCode{
   public String getName() { return codename; }
   
   public static void register() {
-      HCodeFactory f = new HCodeFactory() {
-	  public HCode convert(HMethod m) {
-	      HCode c = m.getCode("quad-ssa");
-	      return (c==null)?null:new Code((harpoon.IR.QuadSSA.Code) c);
-	  }
-	  public String getCodeName() {
-	      return codename;
-	  }
-      };
-      HMethod.register(f);
-    }
+    HCodeFactory f = new HCodeFactory() {
+      public HCode convert(HMethod m) {
+	HCode c = m.getCode("quad-ssa");
+	return (c==null)?null:new Code((harpoon.IR.QuadSSA.Code) c);
+      }
+      public String getCodeName() {
+	return codename;
+      }
+    };
+    HMethod.register(f);
+  }
   
   /** Returns the root of the control flow graph. */
   public HCodeElement getRootElement() { return quads; }
@@ -221,4 +227,94 @@ public class Code extends HCode{
       }
     };
   }
+
+  public static void touch(){
+    return;
+  }
+    
+  public static void write (HClass hclass){
+    System.out.println ("Inside the write procl");
+    if (hclass == null){
+      System.out.println ("Well inside the proc it's null at least");
+    }
+    // Do something intelligent with these classes. XXX
+    System.out.println ("Before creating the ByteCodeClass");
+    ByteCodeClass byteCodeClass = new ByteCodeClass(hclass);
+    System.out.println ("After creating the ByteCodeClass");
+    HMethod hm[] = hclass.getDeclaredMethods();
+    for (int j=0; j<hm.length; j++) {
+      //SCCAnalysis scc = new SCCAnalysis (new UseDef());
+      //SCCOptimize sco = new SCCOptimize (scc,scc,scc);
+      if (hm[j].isInterfaceMethod()){
+	System.out.println ("I seem to think it's an Interface Method");
+	byteCodeClass.addMethod (new NMethod(hm[j], new java.util.Hashtable()));
+	//} else if (java.lang.reflect.Modifier.isNative(hm[j].getModifiers())){
+	//XXX what the hell do I do if the method is native??
+	//System.out.println ("I seem to think it's a Native Method");
+	//byteCodeClass.addMethod (new NMethod(hm[j], new java.util.Hashtable()));
+      } else if (java.lang.reflect.Modifier.isAbstract(hm[j].getModifiers())) {
+	System.out.println ("I seem to think it's an abstract Method");
+	byteCodeClass.addMethod (new NMethod(hm[j], new java.util.Hashtable()));
+      }else {
+	HCode hc1 =  hm[j].getCode("quad-ssa");
+		
+	if (hc1 == null) {
+	  System.out.println ("Yep.. this is Null!");
+	  System.out.println ("Class is: " + hm[j].getDeclaringClass().getName());
+	  System.out.println ("Method is: " + hm[j].getName());
+	  byteCodeClass.addMethod (new NMethod(hm[j], new java.util.Hashtable()));
+	} else {
+	  //part of the scc optimization stuff
+	  //sco.optimize (hc1);
+	  //try {
+	  //String graphFileName = hclass.getName().replace ('.', '_') + "__" + hm[j].getName() + ".vcg";
+	  //PrintWriter graphOut = new PrintWriter (new FileOutputStream (graphFileName));
+	  //harpoon.Util.Graph.printCFG(hc1, graphOut, graphFileName);
+	  //graphOut.close();
+	  //} catch (Exception e) {
+	  //e.printStackTrace();
+	  //}
+	    
+	  System.out.println ("Class is: " + hm[j].getDeclaringClass().getName());
+	  System.out.println ("Method is: " + hm[j].getName());
+	  
+	  System.out.println ("Modifiers is: " + hm[j].getModifiers());
+	  System.out.println ("Interface is: " + java.lang.reflect.Modifier.INTERFACE);
+	  harpoon.IR.QuadNoSSA.Code hc = new harpoon.IR.QuadNoSSA.Code((harpoon.IR.QuadSSA.Code)hc1);
+	  System.out.println ("Right before calling create Java on: " +
+			      hm[j].getName());
+	  try {
+	    //NMethod method = hc.createJavaByte (scc, hm[j].getCode("quad-ssa"));
+	    NMethod method = hc.createJavaByte (new TypeInfo(), hc1);
+	    System.out.println ("Well... it looks like create Java actually worked");
+	    byteCodeClass.addMethod (method);
+	  } catch (Exception e){
+	    e.printStackTrace();
+	  }
+	}
+      }
+      
+    }
+    String assemblyFileName = hclass.getName().replace ('.', '_') + ".j";
+    try {
+      PrintWriter out = new PrintWriter (new FileOutputStream (assemblyFileName));
+      byteCodeClass.writeClass (out);
+      out.close();
+    } catch (Exception e){
+      e.printStackTrace();
+    }
+    try {
+      Runtime.getRuntime().exec ("jasmin " + assemblyFileName.replace ('/', '.')).waitFor();
+    } catch (Exception exception){
+      exception.printStackTrace();
+    }
+  }
+    
+    
+
 }
+
+// set emacs indentation style.
+// Local Variables:
+// c-basic-offset:2
+// End:

@@ -20,7 +20,7 @@ import java.util.Enumeration;
  * another one if you make modifications to the IR.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UseDef.java,v 1.10 1998-10-11 02:36:59 cananian Exp $
+ * @version $Id: UseDef.java,v 1.10.4.1 1998-11-22 03:32:37 nkushman Exp $
  */
 
 public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
@@ -125,6 +125,9 @@ public class UseDef implements harpoon.Analysis.Maps.UseDefMap {
     /** Enumerate the HCodeElements which use a given Temp. */
     public Enumeration useMapE(HCode hc, Temp t) {
 	analyze(hc);
+	if (useMap == null){
+	    System.out.println ("useMap is null for some reason");
+	}
 	return arrayEnumerator( (HCodeElement[]) useMap.get(t) );
     }
     /** Return an array of all Temps defined in a given HCode. */

@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.1 1998-11-22 02:10:08 cananian Exp $
+# $Id: GNUmakefile,v 1.60.2.1 1998-11-22 03:32:31 nkushman Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -15,7 +15,7 @@ FORTUNE=/usr/games/fortune
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 
-ALLPKGS = $(shell find . -type d | grep -v CVS | grep -v AIRE | \
+ALLPKGS = $(shell find . -name crap -prune -o -type d -print | grep -v CVS | grep -v AIRE | \
 		egrep -v "^[.]/(harpoon|silicon|gnu|doc|NOTES|bin|jdb)" | \
 		sed -e "s|^[.]/*||")
 ALLSOURCE = $(filter-out .%.java, \
@@ -119,7 +119,8 @@ doc/TIMESTAMP:	$(ALLSOURCE) ChangeLog mark-executable
 		grep -v "^@see warning:"
 	$(RM) doc/harpoon doc/silicon
 	$(MUNGE) doc | \
-	  sed -e 's/<\([a-z]\+\)@\([a-z.]\+\).edu>/\&lt;\1@\2.edu\&gt;/g' \
+	  sed -e 's/<cananian@/\&lt;cananian@/g' \
+	      -e 's/princeton.edu>/princeton.edu\&gt;/g' \
 	      -e 's/<dd> "The,/<dd> /g' | \
 		$(UNMUNGE)
 	cd doc; ln -s $(JDOCIMAGES) images
@@ -148,7 +149,7 @@ wc:
 	@wc -l $(ALLSOURCE) | sort -n | tail -6 | head -5
 
 clean:
-	-${RM} -r harpoon silicon gnu Harpoon.jar* harpoon.tgz* VERSIONS
+	-${RM} -r harpoon silicon Harpoon.jar* harpoon.tgz* VERSIONS
 	-${RM} java `find . -name "*.class"`
 
 polish: clean

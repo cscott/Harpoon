@@ -15,12 +15,13 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6 1998-10-21 21:50:24 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.4.1 1998-11-22 03:32:38 nkushman Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
   /** Create an <code>HClassSyn</code> from an <code>HClass</code>. */
   public HClassSyn(HClass template) {
+    System.out.println ("Creating a new version of class: " + template.getName());
     Util.assert(!template.isArray());
     Util.assert(!template.isPrimitive());
     this.name = uniqueName(template.getName()); register();
@@ -43,11 +44,46 @@ public class HClassSyn extends HClassCls {
     }
     Util.assert(methods.length == declaredMethods.length);
   }
+  public HClassSyn(HClass template, boolean uniqueName) {
+    System.out.println ("Creating a new version of class: " + template.getName());
+    Util.assert(!template.isArray());
+    Util.assert(!template.isPrimitive());
+    if (uniqueName){
+      this.name = uniqueName(template.getName()); 
+    } else {
+      this.name = template.getName();
+    }
+    this.superclass = template.getSuperclass();
+    this.interfaces = template.getInterfaces();
+    this.modifiers  = template.getModifiers();
+    this.sourcefile = template.getSourceFile();
+
+    this.declaredFields = new HFieldSyn[0];
+    HField fields[] = template.getDeclaredFields();
+    for (int i=0; i < fields.length; i++) {
+      new HFieldSyn(this, fields[i], false);
+    }
+    Util.assert(fields.length == declaredFields.length);
+    
+    this.declaredMethods= new HMethodSyn[0];
+    HMethod methods[] = template.getDeclaredMethods();
+    for (int i = 0; i < methods.length; i++){
+      new HMethodSyn(this, methods[i], false);
+    }
+    Util.assert(methods.length == declaredMethods.length);
+    register();
+  }
+
   /** Create a new, empty <code>HClassSyn</code>. 
    *  Default is to create an Interface.
    */
   public HClassSyn(String name, String sourcefile) {
-    this.name = uniqueName(name); register();
+    this.name = uniqueName(name); 
+    if (this.name == name){
+      System.out.println ("WHAT THE FUCK!!!!, THE NAMES ARE THE SAME and they are: " +
+			  name);
+    }
+    register();
     this.superclass = forClass(Object.class);
     this.interfaces = new HClass[0];
     this.modifiers = Modifier.INTERFACE | 0x0020; // ACC_SUPER
@@ -55,6 +91,22 @@ public class HClassSyn extends HClassCls {
     this.declaredMethods = new HMethod[0];
     this.sourcefile = sourcefile;
   }
+
+  public HClassSyn(String name, String sourcefile, boolean uniquename) {
+    if (uniquename){
+    this.name = uniqueName(name);
+    } else {
+      this.name = name;
+    }
+    register();
+    this.superclass = forClass(Object.class);
+    this.interfaces = new HClass[0];
+    this.modifiers = Modifier.INTERFACE | 0x0020; // ACC_SUPER
+    this.declaredFields = new HField[0];
+    this.declaredMethods = new HMethod[0];
+    this.sourcefile = sourcefile;
+  }
+
 
   /**
    * Adds the given <code>HField</code> to the class represented by
@@ -77,6 +129,11 @@ public class HClassSyn extends HClassCls {
   }
 
   public void addDeclaredMethod(HMethod m) {
+    if (name.startsWith("remoteODS")){
+      System.out.println ("*****************************************************************");
+      System.out.println ("Adding the method named: " + m.getName());
+      System.out.println ("*****************************************************************");
+    }
     declaredMethods = 
       (HMethod[]) Util.grow(declaredMethods, m, declaredMethods.length);
     methods=null; // invalidate cache.
@@ -98,7 +155,7 @@ public class HClassSyn extends HClassCls {
     // are we changing an interface to a class?
     if ( Modifier.isInterface(modifiers) && !Modifier.isInterface(m)) {
       // make sure there are no superclasses or superinterfaces.
-      Util.assert(superclass==null); // should be true for interfaces.
+      Util.assert(superclass==HClass.forName ("java.lang.Object")); // should be true for interfaces.
       if (interfaces.length!=0)
 	throw new Error("Can't change a subinterface to a class. "+
 			"Remove the inheritance first. ("+this+")");
@@ -140,6 +197,14 @@ public class HClassSyn extends HClassCls {
 		      "  Please mail me at cananian@alumni.princeton.edu and "+
 		      "tell me why you think it's a good idea.");
     // XXX more sanity checks?
+    if (name.startsWith ("java.lang.Throwable") && !sc.getName().equals ("java.lang.Throwable") &&
+	!java.lang.reflect.Modifier.isInterface (this.getModifiers())){
+      throw new Error ("Setting the superclass of a copy of throwable to be something other than throwable");
+    }
+    if (name.equals (sc.getName())){
+      throw new Error ("Trying to set a classes Superclass to be itself");
+    }
+    methods = null;
     superclass = sc;
   }
 

@@ -9,7 +9,7 @@ import java.util.Enumeration;
  * <code>Set</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Set.java,v 1.3 1998-10-11 02:37:59 cananian Exp $
+ * @version $Id: Set.java,v 1.3.4.1 1998-11-22 03:32:42 nkushman Exp $
  */
 
 public class Set implements Worklist {
@@ -23,6 +23,9 @@ public class Set implements Worklist {
     }
     public void union(Object o) {
 	h.put(o, o);
+    }
+    public Object get(Object o){
+	return h.get(o);
     }
     public Object push(Object o) {
 	return h.put(o, o);

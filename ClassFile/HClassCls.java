@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
+import gnu.bytecode.*;
 import java.lang.reflect.Modifier;
 
 /**
@@ -13,7 +14,7 @@ import java.lang.reflect.Modifier;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1.2.1 1998-11-22 02:35:34 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.1.4.1 1998-11-22 03:32:38 nkushman Exp $
  * @see harpoon.ClassFile.HClass
  */
 abstract class HClassCls extends HClass {
@@ -99,8 +100,11 @@ abstract class HClassCls extends HClass {
    */
   public HMethod getDeclaredMethod(String name, HClass parameterTypes[])
     throws NoSuchMethodError {
+    if (name.equals ("bob")){
+      System.out.println ("Well here's bob");
+    }
     // look for method name/type in master list.
-    for (int i=0; i<declaredMethods.length; i++)
+    for (int i=0; i<declaredMethods.length; i++){
       if (declaredMethods[i].getName().equals(name)) {
 	HClass[] methodParamTypes = declaredMethods[i].getParameterTypes();
 	if (methodParamTypes.length == parameterTypes.length) {
@@ -111,6 +115,7 @@ abstract class HClassCls extends HClass {
 	    return declaredMethods[i];
 	}
       }
+    }
     // didn't find a match.  Oh, well.
     throw new NoSuchMethodError(name);
   }

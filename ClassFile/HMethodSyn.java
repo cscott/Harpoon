@@ -15,7 +15,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.6 1998-10-21 21:50:24 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.6.4.1 1998-11-22 03:32:38 nkushman Exp $
  * @see HMember
  * @see HClass
  */
@@ -45,15 +45,76 @@ public class HMethodSyn extends HMethod {
     parent.addDeclaredMethod(this);
 
     // clone all code representations.
-    for (Enumeration e = template.codetable.keys(); e.hasMoreElements(); ) {
-      HCode oldCode = (HCode) template.getCode((String)e.nextElement());
+    if (false){
+      for (Enumeration e = template.codetable.keys(); e.hasMoreElements(); ) {
+	String s = (String) e.nextElement();
+	HCode oldCode = (HCode) template.getCode(s);
+	try {
+	  this.putCode(oldCode.clone(this));
+	} catch (CloneNotSupportedException cnse) {
+	  /* ignore this HCode; it can't be cloned. */
+	}
+      }
+    }
+    //explicitly putting in the quad-ssa
+    HCode oldCode = (HCode) template.getCode("quad-ssa");
+    if (oldCode == null){
+      //System.out.println ("For some reason I can't get the quad-ssa for this proc");
+    } else {
       try {
 	this.putCode(oldCode.clone(this));
       } catch (CloneNotSupportedException cnse) {
+	System.out.println ("Won't let me Clone Quad-ssa for some reason");
 	/* ignore this HCode; it can't be cloned. */
       }
     }
   }
+
+
+
+  public HMethodSyn(HClassSyn parent, HMethod template, boolean uniqueName) {
+    this.parent = parent; 
+    if (uniqueName){
+      this.name = uniqueName(parent, template.getName(), 
+			     template.getDescriptor());
+    } else {
+      this.name = template.getName();
+    }
+    this.modifiers = template.getModifiers();
+    this.returnType = template.getReturnType();
+    this.parameterTypes = template.getParameterTypes();
+    this.parameterNames = template.getParameterNames();
+    this.exceptionTypes = template.getExceptionTypes();
+    this.isSynthetic = template.isSynthetic();
+    parent.addDeclaredMethod(this);
+
+    // clone all code representations.
+    if (false){
+      for (Enumeration e = template.codetable.keys(); e.hasMoreElements(); ) {
+	String s = (String) e.nextElement();
+	HCode oldCode = (HCode) template.getCode(s);
+	try {
+	  this.putCode(oldCode.clone(this));
+	} catch (CloneNotSupportedException cnse) {
+	  /* ignore this HCode; it can't be cloned. */
+	}
+      }
+    }
+    //explicitly putting in the quad-ssa
+    /*HCode oldCode = (HCode) template.getCode("quad-ssa");
+      if (oldCode == null){
+      //System.out.println ("For some reason I can't get the quad-ssa for this proc");
+      } else {
+      try {
+      this.putCode(oldCode.clone(this));
+      } catch (CloneNotSupportedException cnse) {
+      System.out.println ("Won't let me Clone Quad-ssa for some reason");
+      }
+      }
+    */
+  }
+
+
 
   /** Create a new empty abstract method in the specified class
    *  with the specified parameter and return types
@@ -95,7 +156,15 @@ public class HMethodSyn extends HMethod {
     parent.addDeclaredMethod(this);
   }
 
-  public void setModifiers(int m) { this.modifiers = m; }
+  public void setModifiers(int m) { 
+    if (java.lang.reflect.Modifier.isAbstract(m)){
+      System.out.println ("***********************");
+      System.out.println ("Setting the modifiers for: " + this.getDeclaringClass().getName() + 
+			  "." + this.getName());
+      System.out.println ("***********************");
+    }
+    this.modifiers = m;
+  }
 
   public void setReturnType(HClass returnType) { this.returnType = returnType;}
 

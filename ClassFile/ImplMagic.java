@@ -16,7 +16,7 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.5 1998-10-16 12:09:31 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5.4.1 1998-11-22 03:32:38 nkushman Exp $
  */
 
 abstract class ImplMagic  { // wrapper for the Real McCoy.
@@ -44,11 +44,12 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    for (int i=0; i<declaredFields.length; i++)
 		declaredFields[i] = new MagicField(this, classfile.fields[i]);
 	    this.declaredMethods = new HMethod[classfile.methods.length];
-	    for (int i=0; i<declaredMethods.length; i++)
+	    for (int i=0; i<declaredMethods.length; i++){
 		declaredMethods[i] = // constructors are different.
 		    (classfile.methods[i].name().equals("<init>"))
 		    ?(HMethod)new MagicConstructor(this, classfile.methods[i]) 
 		    :(HMethod)new MagicMethod(this, classfile.methods[i]);
+	    }
 	    this.sourcefile = "";
 	    for (int i=0; i<classfile.attributes.length; i++)
 		if (classfile.attributes[i] instanceof AttributeSourceFile) {
@@ -136,10 +137,12 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 
 	// Add the default code representation, if method is not native.
 	if (!Modifier.isNative(_this.getModifiers()) &&
-	    !Modifier.isAbstract(_this.getModifiers()))
-	    _this.putCode(new harpoon.IR.Bytecode.Code(_this, methodinfo));
+	    !Modifier.isAbstract(_this.getModifiers())){
+	  _this.putCode(new harpoon.IR.Bytecode.Code(_this, methodinfo));
+	}
+	
     }
-
+    
     static class MagicMethod extends HMethod {
 	/** Creates a <code>MagicMethod</code> from a 
 	 *  <code>harpoon.ClassFile.Raw.MethodInfo</code>. */

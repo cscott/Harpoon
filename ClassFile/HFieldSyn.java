@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldSyn.java,v 1.3 1998-10-21 21:50:24 cananian Exp $
+ * @version $Id: HFieldSyn.java,v 1.3.4.1 1998-11-22 03:32:38 nkushman Exp $
  * @see HMember
  * @see HClass
  */
@@ -35,6 +35,21 @@ public class HFieldSyn extends HField {
     this.isSynthetic = template.isSynthetic();
     parent.addDeclaredField(this);
   }
+
+  public HFieldSyn(HClassSyn parent, HField template, boolean uniqueName) {
+    this.parent = parent;
+    this.type = template.getType();
+    if (uniqueName){
+      this.name = uniqueName(parent, template.getName());
+    } else {
+      this.name = template.getName();
+    }
+    this.modifiers = template.getModifiers();
+    this.constValue = template.getConstant();
+    this.isSynthetic = template.isSynthetic();
+    parent.addDeclaredField(this);
+  }
+
   /** Create a new field with the specified name, class and descriptor. */
   public HFieldSyn(HClassSyn parent, String name, String descriptor) {
     this(parent, name, HClass.forDescriptor(descriptor));

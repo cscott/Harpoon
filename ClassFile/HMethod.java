@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30 1998-11-10 00:44:38 cananian Exp $
+ * @version $Id: HMethod.java,v 1.29.2.1 1998-11-22 03:32:38 nkushman Exp $
  * @see HMember
  * @see HClass
  */
@@ -34,15 +34,15 @@ public abstract class HMethod implements HMember {
   {
     if (suggestion==null || suggestion.equals("")) suggestion="MAGICm";
     // remove trailing dollar-signs.
-    while (suggestion.charAt(suggestion.length()-1)=='$')
+    while (suggestion.charAt(suggestion.length()-1)=='_')
       suggestion = suggestion.substring(0, suggestion.length()-1);
     // remove anything after a double dollar sign.
-    if (suggestion.indexOf("$$")!=-1)
-      suggestion = suggestion.substring(0, suggestion.lastIndexOf("$$"));
+    if (suggestion.indexOf("__")!=-1)
+      suggestion = suggestion.substring(0, suggestion.lastIndexOf("__"));
     // find lowest unique number for method.
   L1:
     for (int i=-1; true; i++) {
-      String methodname = (i<0)?suggestion:(suggestion+"$$"+i);
+      String methodname = (i<0)?suggestion:(suggestion+"__"+i);
       // search class for existing method.
       HMethod[] hm = parent.getDeclaredMethods();
       for (int j=0; j<hm.length; j++)
@@ -78,16 +78,33 @@ public abstract class HMethod implements HMember {
    * @see putCode
    */
   public HCode getCode(String codetype) {
+    //    System.out.println ("Factories.length is: " + factories.size());
+    if (codetype.equals ("bytecode")){
+      //System.out.println ("We have a bytecode call");
+    }
     // Check the cache.
     HCode hc = (HCode) codetable.get(codetype);
-    if (hc != null) return hc;
+    if (hc != null){
+      if (codetype.equals ("bytecode")){
+	//System.out.println ("Finding the bytecode in the codetable dammit!!!");
+      }
+      return hc;
+    }
     // not cached. Make from scratch
     HCodeFactory f = (HCodeFactory) factories.get(codetype);
-    if (f == null) return null; // oops! Can't find factory!
+    if (f == null) { 
+      //System.out.println ("Couldn't find code Factory");
+      //System.out.println ("Factory name is: " + codetype);
+      return null; 
+    }// oops! Can't find factory!
     // convert, cache, and return.
     hc = f.convert(this);
-    if (hc != null)
+    if (hc != null){
+      if (codetype.equals ("bytecode")){
+	//System.out.println ("And we actually found that bytecode");
+      }
       putCode(hc); // cache if conversion was successful.
+    }
     return hc;
   }
   /**
@@ -225,11 +242,10 @@ public abstract class HMethod implements HMember {
   /**
    * Returns a hashcode for thie <code>HMethod</code>.  The hashcode
    * is computed as the exclusive-or of the hashcodes for the
-   * underlying method's declaring class, the method's name,
-   * and the method's descriptor string.
+   * underlying method's declaring class name and the method's name.
    */
   public int hashCode() {
-    return parent.hashCode()^getName().hashCode()^getDescriptor().hashCode();
+    return parent.getName().hashCode() ^ getName().hashCode();
   }
 
   /**

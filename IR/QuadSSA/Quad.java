@@ -14,7 +14,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.29 1998-11-10 03:34:11 cananian Exp $
+ * @version $Id: Quad.java,v 1.29.4.1 1998-11-22 03:32:39 nkushman Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -162,17 +162,28 @@ public abstract class Quad
 		    "Argument to Quad.clone() should be a HEADER.");
 	return copyone(header, new Hashtable());
     }
+    
+
     private static Quad copyone(Quad q, Hashtable old2new)
     {
 	Quad r = (Quad) old2new.get(q);
 	// if we've already done this one, return previous clone.
-	if (r!=null) return r;
+	if (r!=null) { 
+	    return r;
+	}
 	// clone the fields, add to hashtable.
 	r = (Quad) q.clone();
+	
+	 
 	old2new.put(q, r);
 	// fixup the footer for HEADER quads.
+	//<<<<<<< Quad.java
+	//if (r instanceof HEADER) {
+	//((HEADER)r).footer = (FOOTER) copyone(((HEADER)q).footer, old2new);
+	//=======
 	if (q instanceof HEADER) {
 	    ((HEADER)r).footer = (FOOTER) copyone(((HEADER)q).footer, old2new);
+	    //>>>>>>> 1.27
 	}
 	// fixup the edges.
 	for (int i=0; i<q.next.length; i++) {

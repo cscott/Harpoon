@@ -13,7 +13,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * <code>CONSTANT_InterfaceMethodref</code> constant pool entry.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: OpMethod.java,v 1.2 1998-10-11 03:01:16 cananian Exp $
+ * @version $Id: OpMethod.java,v 1.2.4.1 1998-11-22 03:32:39 nkushman Exp $
  * @see harpoon.ClassFile.Raw.Constant.ConstantMethodref
  * @see harpoon.ClassFile.Raw.Constant.ConstantInterfaceMethodref
  */
@@ -39,7 +39,7 @@ public class OpMethod extends Operand {
       isInterfaceMethod=true;
     } else 
       throw new Error("OpMethod not given Methodref or InterfaceMethodref");
-
+    System.out.println ("Looking at the methods for: " + cc.name());
     HClass cls = HClass.forName(cc.name().replace('/','.'));
     this.hmethod = cls.getMethod(cnt.name(), cnt.descriptor());
   }
