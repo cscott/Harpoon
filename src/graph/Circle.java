@@ -42,9 +42,11 @@ public class Circle extends Node {
     /** <code>process</code> an image of a target by querying a {@link Cache},
      *  circling the target, and send the image onto the <code>out</code> node.
      */
-    public synchronized void process(ImageData id) {
+    //public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	switch (Command.read(id)) {
 	case Command.RETRIEVED_IMAGE: {
+	    //System.out.println("Circle: RETRIEVED_IMAGE, circling");
 	    WorkList last = work;
 	    for (WorkList w = work; w != null; w = (last = w).next) {
 		if (w.id.id == id.id) {
@@ -66,6 +68,7 @@ public class Circle extends Node {
 	    break;
 	}
 	case Command.NONE: {
+	    //System.out.println("Circle: Unmarked image, adding to work list");
 	    //add node to front of WorkList linked list
 	    work = new WorkList(id, work);
 	    getRight().process(id);
