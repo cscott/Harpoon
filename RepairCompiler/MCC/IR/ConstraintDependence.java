@@ -217,6 +217,10 @@ public class ConstraintDependence {
     }
  
     static private Set providesfunction(State state, Function f) {
+	return providesfunction(state,f,false);
+    }
+
+    static private Set providesfunction(State state, Function f, boolean isPartial) {
 	HashSet set=new HashSet();
 	for(int i=0;i<state.vConstraints.size();i++) {
 	    Constraint c=(Constraint)state.vConstraints.get(i);
@@ -233,7 +237,7 @@ public class ConstraintDependence {
 			ExprPredicate ep=(ExprPredicate)dpred.getPredicate();
 			if (ep.isRightInt()&&
 			    ep.rightSize()==1&&
-			    ep.getOp()==Opcode.EQ&&
+			    (ep.getOp()==Opcode.EQ||(ep.getOp()==Opcode.LE&&isPartial))&&
 			    ep.inverted()==f.isInverse()&&
 			    ep.getDescriptor()==f.getRelation()) {
 			    ImageSetExpr se=(ImageSetExpr) ((SizeofExpr) ((OpExpr)ep.expr).left).getSetExpr();
@@ -279,8 +283,8 @@ public class ConstraintDependence {
      * evaluated on the domain sd is either a function (if
      * isPartial=false) or a partial function (if isPartial=true). */
 
-    static public boolean constraintsensurefunction(State state,RelationDescriptor r, SetDescriptor sd,boolean inverse) {
-	Set constraints=providesfunction(state, new Function(r,sd,inverse,null));
+    static public boolean constraintsensurefunction(State state,RelationDescriptor r, SetDescriptor sd,boolean inverse,boolean isPartial) {
+	Set constraints=providesfunction(state, new Function(r,sd,inverse,null),isPartial);
 	return (!constraints.isEmpty());
     }
 

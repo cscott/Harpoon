@@ -99,6 +99,77 @@ class AbstractInterferes {
 	return false;
     }
 
+    /** This method checks whether a modify relation abstract repair
+     * to satisfy ar may violate dp.  It returns true if there is no
+     * interference. */
+
+    private boolean interferemodifies(DNFPredicate ar,DNFPredicate dp) {
+	boolean neg1=ar.isNegated();
+	Opcode op1=((ExprPredicate)ar.getPredicate()).getOp();
+	Expr rexpr1=((OpExpr)((ExprPredicate)ar.getPredicate()).expr).right;	
+	Expr lexpr1=((OpExpr)((ExprPredicate)ar.getPredicate()).expr).left;
+	RelationDescriptor updated_des=(RelationDescriptor)((ExprPredicate)ar.getPredicate()).getDescriptor();
+	
+	boolean neg2=dp.isNegated();
+	Opcode op2=((ExprPredicate)dp.getPredicate()).getOp();
+	Expr rexpr2=((OpExpr)((ExprPredicate)dp.getPredicate()).expr).right;
+	Expr lexpr2=((OpExpr)((ExprPredicate)dp.getPredicate()).expr).left;
+	
+	/* Translate the opcodes */
+	op1=Opcode.translateOpcode(neg1,op1);
+	op2=Opcode.translateOpcode(neg2,op2);
+	
+	if (((op1==Opcode.EQ)||(op1==Opcode.GE)||(op1==Opcode.LE))&&
+	    ((op2==Opcode.EQ)||(op2==Opcode.GE)||(op2==Opcode.LE))&&
+	    !rexpr2.usesDescriptor(updated_des)) {
+	    Hashtable varmap=new Hashtable();
+	    Expr l1=lexpr1;
+	    Expr l2=lexpr2;
+
+	    boolean initialrelation=true;
+	    boolean onetoone=true;
+	    while(true) {
+		if ((l1 instanceof VarExpr)&&
+		    (l2 instanceof VarExpr)) {
+		    VarDescriptor vd1=((VarExpr)l1).getVar();
+		    VarDescriptor vd2=((VarExpr)l2).getVar();
+		    varmap.put(vd1,vd2);
+		    break;
+		} else if ((l1 instanceof RelationExpr)&&
+			   (l2 instanceof RelationExpr)) {
+		    RelationExpr re1=(RelationExpr)l1;
+		    RelationExpr re2=(RelationExpr)l2;
+		    if (re1.getRelation()!=re2.getRelation()||
+			re1.inverted()!=re2.inverted())
+			return false;
+
+		    if (!initialrelation) {
+			if (!(
+			      ConstraintDependence.rulesensurefunction(termination.state, re1.getRelation(),re1.getExpr().getSet(),!re1.inverted(),true)||
+			      ConstraintDependence.constraintsensurefunction(termination.state, re1.getRelation(),re1.getExpr().getSet(),!re1.inverted(),true)))
+			    onetoone=false;
+			//need check one-to-one property here
+		    } else initialrelation=false;
+		    l1=re1.getExpr();
+		    l2=re2.getExpr();
+		} else return false; // bad match
+	    }
+	    Set freevars=rexpr1.freeVars();
+	    for(Iterator it=freevars.iterator();it.hasNext();) {
+		VarDescriptor vd=(VarDescriptor)it.next();
+		if (vd.isGlobal())
+		    continue; //globals are fine
+		else if (varmap.containsKey(vd)&&onetoone) //the mapped variable is fine if we have a 1-1 mapping
+		    continue;
+		else if (termination.maxsize.getsize(vd.getSet())==1)
+		    continue;
+		return false;
+	    }
+	    return rexpr1.equals(varmap,rexpr2);
+	}
+	return false;
+    }
+
     /** Does performing the AbstractRepair ar falsify the predicate dp */
 
     public boolean interfereswithpredicate(AbstractRepair ar, DNFPredicate dp) {
@@ -210,13 +281,10 @@ class AbstractInterferes {
 		((op2==Opcode.LT)||
 		 (op2==Opcode.LE)))
 		return false;
-	    // FIXME
-	    if (((op1==Opcode.EQ)||(op1==Opcode.GE)||(op1==Opcode.LE))&&
-		((op2==Opcode.EQ)||(op2==Opcode.GE)||(op2==Opcode.LE))&&
-		expr1.equals(null,expr2)) {
-		// Need to check free variables...
+
+	    if (interferemodifies(ar.getPredicate(),dp))
 		return false;
-	    }
+
 	    if (isInt1&&isInt2) {
 		if (((op1==Opcode.EQ)||(op1==Opcode.GE)||(op1==Opcode.LE))&&
 		    ((op2==Opcode.EQ)||(op2==Opcode.GE)||(op2==Opcode.LE))&&

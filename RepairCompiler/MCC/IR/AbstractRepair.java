@@ -170,7 +170,7 @@ class AbstractRepair {
 	SetDescriptor sd=getPredicate().getPredicate().inverted()?getRangeSet():getDomainSet();	
 	if (ConstraintDependence.rulesensurefunction(state,(RelationDescriptor)getDescriptor(), sd, getPredicate().getPredicate().inverted(), false))
 	    return false;
-	if (ConstraintDependence.constraintsensurefunction(state,(RelationDescriptor)getDescriptor(), sd, getPredicate().getPredicate().inverted()))
+	if (ConstraintDependence.constraintsensurefunction(state,(RelationDescriptor)getDescriptor(), sd, getPredicate().getPredicate().inverted(),false))
 	    return false;
 	return true;
     }
