@@ -14,7 +14,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.18 2001-03-08 21:40:14 salcianu Exp $
+ * @version $Id: Util.java,v 1.12.2.19 2001-06-13 20:12:09 cananian Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -340,6 +340,40 @@ public abstract class Util {
   public static final int popcount(long v) {
     return 64-zerocount(v);
   }
+  // Use the 'binary Euclidean algorithm' to compute gcd.
+  /** Returns the greatest common divisor of a pair of numbers. */
+  public static final long gcd(long u, long v) { // long version.
+    Util.assert(u>0 && v>0);
+    int u2s = ffs(u)-1, v2s = ffs(v)-1;
+    u>>=u2s; v>>=v2s; // cast out twos.
+    // binary gcd algorithm; u and v must be odd at this point.
+    while (u != v) {
+      while (u<v) {
+	v-=u;
+	v>>=(ffs(v)-1);
+      }
+      long t=u; u=v; v=t;
+    }
+    // u,v have gcd
+    return u << Math.min(u2s,v2s); // restore cast out twos.
+  }
+  /** Returns the greatest common divisor of a pair of numbers. */
+  public static final int gcd(int u, int v) { // integer version.
+    Util.assert(u>0 && v>0);
+    int u2s = ffs(u)-1, v2s = ffs(v)-1;
+    u>>=u2s; v>>=v2s; // cast out twos.
+    // binary gcd algorithm; u and v must be odd at this point.
+    while (u != v) {
+      while (u<v) {
+	v-=u;
+	v>>=(ffs(v)-1);
+      }
+      int t=u; u=v; v=t;
+    }
+    // u,v have gcd
+    return u << Math.min(u2s,v2s); // restore cast out twos.
+  }
+
   /** Return a <code>String</code> representing the elements of
       <code>collection</code> in a human readable format.  
       <BR> <B>effects:</B> Iterates over <code>collection</code>,
