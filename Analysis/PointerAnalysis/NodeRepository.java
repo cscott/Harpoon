@@ -31,7 +31,7 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.8 2003-06-04 18:44:32 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.9 2003-10-26 17:18:33 salcianu Exp $
  */
 public class NodeRepository implements java.io.Serializable {
 
@@ -251,7 +251,7 @@ public class NodeRepository implements java.io.Serializable {
     public final PANode getCodeNode(HCodeElement hce, int type, GenType[] gts,
 				    boolean make) {
 
-	if((type == PANode.RETURN || (type == PANode.EXCEPT)) &&
+	if(((type == PANode.RETURN) || (type == PANode.EXCEPT)) &&
 	   PointerAnalysis.COMPRESS_LOST_NODES)
 	    return LOST_SUMMARY;
 
@@ -339,8 +339,22 @@ public class NodeRepository implements java.io.Serializable {
     // all the nodes are produced by this method. So, if we want them
     // to have a common characteristic, here is THE place to add things.
     static final PANode getNewNode(int type, GenType[] node_class) {
-	return new PANode(type, node_class);
+	PANode node = new PANode(type, node_class);
+
+	if(number2node == null)
+	    number2node = new Hashtable();
+	number2node.put(new Integer(node.number), node);
+
+	return node;
     } 
+
+    private static Hashtable/*<Integer,PANode>*/ number2node;
+    static PANode nodeForNumber(int number) {
+	if(number2node == null)
+	    return null;
+	return (PANode) number2node.get(new Integer(number));
+    }
+
 
     // default parameter for the node_class array.
     static final PANode getNewNode(int type) {
