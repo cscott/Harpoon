@@ -4,6 +4,7 @@
 package harpoon.Analysis;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HInitializer;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Relinker;
@@ -22,7 +23,7 @@ import java.util.*;
  * The <code>AbstractClassFixupRelinker</code> remedies the situation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AbstractClassFixupRelinker.java,v 1.3 2002-07-10 18:11:03 cananian Exp $
+ * @version $Id: AbstractClassFixupRelinker.java,v 1.4 2002-07-11 11:07:00 cananian Exp $
  */
 public class AbstractClassFixupRelinker extends Relinker {
     
@@ -58,6 +59,9 @@ public class AbstractClassFixupRelinker extends Relinker {
 	for (Iterator<HMethod> it=new ArrayIterator<HMethod>
 		 (anInterface.getDeclaredMethods()); it.hasNext(); ) {
 	    HMethod hm = it.next();
+	    // could be a static initializer of the interface.
+	    if (hm instanceof HInitializer) continue;
+	    // otherwise this should be an interface method.
 	    assert hm.isInterfaceMethod();
 	    // okay, look this up as a method of hc.  if it doesn't exist,
 	    // create it as a public abstract method.
