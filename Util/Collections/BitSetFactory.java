@@ -28,10 +28,10 @@ import java.util.HashMap;
     The addition operations (<code>Set.add(Object)</code> and its
     cousins) are only defined for objects that are part of the
     universe of values given to the constructor; other Objects will
-    cause an assertion failure.
+    cause <code>IllegalArgumentException</code> to be thrown.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.16 2000-07-14 22:18:13 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.17 2000-07-18 22:40:19 pnkfelix Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -140,10 +140,12 @@ public class BitSetFactory extends SetFactory {
 	}
 
 	public boolean add(Object o) {
-	    Util.assert(fact.universe.contains(o),
-			"Attempted to add an object: "+o+
-			"that was not part of the "+
-			"original universe of values.");
+	    if (!fact.universe.contains(o)) 
+		throw new IllegalArgumentException
+		    ("Attempted to add an object: "+o+
+		     "that was not part of the "+
+		     "original universe of values.");
+	    
 	    int ind = fact.indexer.getID(o);
 	    boolean alreadySet = this.bs.get(ind);
 	    if (alreadySet) {

@@ -16,7 +16,7 @@ import java.util.Set;
     operate on or return <code>CollectionFactory</code>s. 
  
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: Factories.java,v 1.1.2.8 2000-07-15 20:04:58 cananian Exp $
+    @version $Id: Factories.java,v 1.1.2.9 2000-07-18 22:40:19 pnkfelix Exp $
  */
 public final class Factories {
     
@@ -56,8 +56,13 @@ public final class Factories {
 	<code>LinearSet</code>s backed by <code>ArrayList</code>s. */
     public static final SetFactory linearSetFactory = new SerialSetFactory() {
 	public java.util.Set makeSet(java.util.Collection c) {
-	    Set ls = new LinearSet();
-	    ls.addAll(c);
+	    Set ls;
+	    if (c instanceof Set) {
+		ls = new LinearSet((Set)c);
+	    } else {
+		ls = new LinearSet(c.size());
+		ls.addAll(c);
+	    }
 	    return ls;
 	}
 	public Set makeSet(int i) {

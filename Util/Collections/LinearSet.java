@@ -5,7 +5,9 @@ package harpoon.Util.Collections;
 
 import java.util.AbstractSet;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -15,7 +17,7 @@ import java.util.Iterator;
  * small.  It is backed by a <code>List</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LinearSet.java,v 1.1.2.7 2000-07-15 15:07:19 pnkfelix Exp $
+ * @version $Id: LinearSet.java,v 1.1.2.8 2000-07-18 22:40:19 pnkfelix Exp $
  */
 public class LinearSet extends AbstractSet implements Cloneable,
 						      java.io.Serializable {
@@ -85,6 +87,14 @@ public class LinearSet extends AbstractSet implements Cloneable,
 	    list.add(o);
 	    return true;
 	}
+    }
+
+    public boolean addAll(Collection c) {
+	HashSet s = new HashSet(this.size() + c.size());
+	s.addAll(this);
+	boolean r = s.addAll(c);
+	this.list = lf.makeList(s);
+	return r;
     }
 
     public boolean remove(Object o) {
