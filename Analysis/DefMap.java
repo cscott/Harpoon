@@ -24,7 +24,7 @@ import java.util.Vector;
  * with it. 
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: DefMap.java,v 1.1.2.2 1999-02-01 17:24:01 pnkfelix Exp $
+ * @version $Id: DefMap.java,v 1.1.2.3 1999-02-01 19:13:36 pnkfelix Exp $
  */
 public class DefMap extends TempToHceArrayMap {
 
@@ -75,7 +75,7 @@ public class DefMap extends TempToHceArrayMap {
  	    storeTempMapping(def, (Set) tmpDef.get(def));
 	    defs.addElement(def);
 	}
-	allDefs = Temp.arrayFactory.newArray(defs.size()); 
+	allDefs = (Temp[]) Temp.arrayFactory.newArray(defs.size()); 
 	defs.copyInto( allDefs );
     }
     

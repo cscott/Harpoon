@@ -11,7 +11,7 @@ import java.util.Enumeration;
  * references <code>SparseNode</code>s store internally.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SparseGraph.java,v 1.1.2.5 1999-02-01 17:24:11 pnkfelix Exp $ 
+ * @version $Id: SparseGraph.java,v 1.1.2.6 1999-02-01 19:13:44 pnkfelix Exp $ 
  */
 
 public class SparseGraph extends ColorableGraph {
@@ -122,8 +122,7 @@ public class SparseGraph extends ColorableGraph {
 	SparseNode snode = (SparseNode) node;
 	
 	ColorableGraph.HiddenFilteringEnum filter = 
-	    new ColorableGraph.HiddenFilteringEnum();
-	filter.setEnumeration( snode.getToNodes() );
+	    new ColorableGraph.HiddenFilteringEnum(snode.getToNodes());
 	return filter;
     }
 
@@ -143,8 +142,7 @@ public class SparseGraph extends ColorableGraph {
 	SparseNode snode = (SparseNode) node;
 
 	ColorableGraph.HiddenFilteringEnum filter = 
-	    new ColorableGraph.HiddenFilteringEnum();
-	filter.setEnumeration( snode.getFromNodes() );
+	    new ColorableGraph.HiddenFilteringEnum( snode.getFromNodes() );
 	return filter;
     }
 
@@ -166,8 +164,7 @@ public class SparseGraph extends ColorableGraph {
 	SparseNode snode = (SparseNode) node;
 
 	ColorableGraph.HiddenFilteringEnum filter = 
-	    new ColorableGraph.HiddenFilteringEnum();
-	filter.setEnumeration( snode.getNeighboringNodes() );
+	    new ColorableGraph.HiddenFilteringEnum( snode.getNeighboringNodes());
 	return filter;
     }
 

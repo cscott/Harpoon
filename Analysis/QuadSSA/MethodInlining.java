@@ -14,14 +14,14 @@ import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
 // This should be replaced by a MethodInliningCodeFactory (or
-// SOMETHING) that fits in the new framework for code generation for
+// SOMETHING) that fits in the new framework of code generation for
 // methods.
 
 /**
  * <code>MethodInlining</code> inlines method bodys at particular call sites.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInlining.java,v 1.1.2.2 1999-02-01 17:24:37 pnkfelix Exp $
+ * @version $Id: MethodInlining.java,v 1.1.2.3 1999-02-01 19:13:47 pnkfelix Exp $
  */
 public abstract class MethodInlining {
 
