@@ -82,6 +82,11 @@ int main(int argc, char *argv[]) {
   }
   (*env)->DeleteLocalRef(env, cls);
 
+#ifdef WITH_CLUSTERED_HEAPS
+  /* print out allocation statistics */
+  { void print_statistics(void); print_statistics(); }
+#endif
+
   /* Execute main() method. */
   cls = (*env)->FindClass(env, FNI_javamain);
   CHECK_EXCEPTIONS(env);
