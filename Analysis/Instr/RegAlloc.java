@@ -55,7 +55,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.51 1999-11-30 05:24:45 cananian Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.52 1999-12-01 17:12:36 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = false;
@@ -240,7 +240,7 @@ public abstract class RegAlloc  {
 		    
 		}
 
-		return resolveOutstandingTemps
+		return globalCode.resolveOutstandingTemps
 		    ( globalCode.generateRegAssignment() );
 
 	    }
@@ -253,16 +253,14 @@ public abstract class RegAlloc  {
 	};
     }
 
-
     /** Transforms Temp references in 'in' into appropriate offsets
 	from the Stack Pointer in the Memory. 
-        <BR> <B>modifies:</B> inHc
+        <BR> <B>modifies:</B> in
 	<BR> <B>effects:</B> Replaces the <code>FskLoad</code> and
 	     <code>FskStore</code>s with memory instructions for the
 	     appropriate <code>Frame</code>.
     */
-    protected static HCode resolveOutstandingTemps(final HCode inHc) {
-	final Code in = (Code) inHc;
+    protected static final HCode resolveOutstandingTemps_old2(final HCode in) {
 	CFGraphable first = (CFGraphable) in.getRootElement();
 	BasicBlock block = BasicBlock.computeBasicBlocks(first);
 	
@@ -271,86 +269,101 @@ public abstract class RegAlloc  {
 	InstrSolver.worklistSolver(BasicBlock.basicBlockIterator(block), makeWebs);
 	
 
-	class Debug {
-	    private int indent;
-	    Debug(int indent) {
-		this.indent = indent;
-	    }
-
-	    void indent() {
-		for(int i=0; i<indent; i++)
-		    System.out.print(" ");
-	    }
-
-	    void print(BasicBlock bb, MakeWebsDumb mW) {
-		System.out.println();
-		MakeWebsDumb.WebInfo webInfo = 
-		    (MakeWebsDumb.WebInfo) mW.bbInfoMap.get(bb);
-		/* focusing on IN/OUT info now...
-		indent(); System.out.println("--"+ bb + " USE Map[Temp, Set[Instr]] start");  
-		printEntries(webInfo.use);
-		indent(); System.out.println("--"+ bb + " USE Map[Temp, Set[Instr]] end");  
-		
-		indent(); System.out.println("--"+ bb + " DEF Map[Temp, Set[Instr]] start");  
-		printEntries(webInfo.def);
-		indent(); System.out.println("--"+ bb + " DEF Map[Temp, Set[Instr]] end");  
-		*/
-
-		indent(); System.out.println("--"+ bb + " IN Map[Temp, Web] start");
-		printEntries(webInfo.in);
-		indent(); System.out.println("--"+ bb + " IN Map[Temp, Web] end");
-		
-		printInstrs(bb);
-		
-		indent(); System.out.println("--"+ bb + " OUT Map[Temp, Web] start");
-		printEntries(webInfo.out);
-		indent(); System.out.println("--"+ bb + " OUT Map[Temp, Web] end");
-	    }
-
-	    void printEntries(Map map) {
-		Iterator entries = map.entrySet().iterator();
-		while(entries.hasNext()) {
-		    Map.Entry entry = (Map.Entry) entries.next();
-		    indent(); indent(); System.out.println("[ "+ entry.getKey() + ", " + entry.getValue() + " ]");
-		}
-	    }
-	    void printInstrs(BasicBlock bb) {
-		Iterator instrs = bb.listIterator();
-		while(instrs.hasNext()) {
-		    Instr instr = (Instr) instrs.next();
-		    if (! (instr instanceof FskLoad || 
-			   instr instanceof FskStore)) {
-			System.out.println("(" + instr.getID() +
-					   ")\t"+ in.toAssem(instr));
-		    } else {
-			System.out.println("(" + instr.getID() +
-					   ")\t"+ instr.toString());
-		    }
-		}
-	    }
-	    
-	}
-
 	Iterator bbIter = BasicBlock.basicBlockIterator(block);
 	while(bbIter.hasNext()) {
 	    BasicBlock bb = (BasicBlock) bbIter.next();
-	    (new Debug(10)).print(bb, makeWebs);
+	    (new Debug((Code)in, 10)).print(bb, makeWebs);
 
 	    System.out.println();
 	    
 	}
-    
-	    
+
 	return in;
+
     }
 
-/*    protected HCode resolveOutstandingTemps(HCode in) {
+    private static class Debug {
+	private int indent;
+	private Code in;
+	Debug(Code in, int indent) {
+	    this.in = in;
+	    this.indent = indent;
+	}
+	
+	void indent() {
+	    for(int i=0; i<indent; i++)
+		System.out.print(" ");
+	}
+	
+	void print(BasicBlock bb, MakeWebsDumb mW) {
+	    System.out.println();
+	    MakeWebsDumb.WebInfo webInfo = 
+		(MakeWebsDumb.WebInfo) mW.bbInfoMap.get(bb);
+	    /* focusing on IN/OUT info now...
+	       indent(); System.out.println("--"+ bb + " USE Map[Temp, Set[Instr]] start");  
+	       printEntries(webInfo.use);
+	       indent(); System.out.println("--"+ bb + " USE Map[Temp, Set[Instr]] end");  
+	       
+	       indent(); System.out.println("--"+ bb + " DEF Map[Temp, Set[Instr]] start");  
+	       printEntries(webInfo.def);
+	       indent(); System.out.println("--"+ bb + " DEF Map[Temp, Set[Instr]] end");  
+	    */
+	    
+	    indent(); System.out.println("--"+ bb + " IN Map[Temp, Web] start");
+	    printEntries(webInfo.in);
+	    indent(); System.out.println("--"+ bb + " IN Map[Temp, Web] end");
+	    
+	    printInstrs(bb);
+	    
+	    indent(); System.out.println("--"+ bb + " OUT Map[Temp, Web] start");
+	    printEntries(webInfo.out);
+	    indent(); System.out.println("--"+ bb + " OUT Map[Temp, Web] end");
+	}
+	
+	void printEntries(Map map) {
+	    Iterator entries = map.entrySet().iterator();
+	    while(entries.hasNext()) {
+		Map.Entry entry = (Map.Entry) entries.next();
+		indent(); indent(); System.out.println("[ "+ entry.getKey() + ", " + entry.getValue() + " ]");
+	    }
+	}
+	void printInstrs(BasicBlock bb) {
+	    Iterator instrs = bb.listIterator();
+	    while(instrs.hasNext()) {
+		Instr instr = (Instr) instrs.next();
+		if (! (instr instanceof FskLoad || 
+		       instr instanceof FskStore)) {
+		    System.out.println("(" + instr.getID() +
+				       ")\t"+ indentCR("\t", in.toAssem(instr)));
+		} else {
+		    System.out.println("(" + instr.getID() +
+				       ")\t"+ indentCR("\t", instr.toString()));
+		}
+	    }
+	}
+	
+	private static String indentCR(String pref, String s) {
+	    StringBuffer sb = new StringBuffer(s.length());
+	    for(int i=0; i<s.length(); i++) {
+		sb.append(s.charAt(i));
+		if (s.charAt(i) == '\n') sb.append(pref); 
+	    }
+	    return sb.toString();
+	}
+	
+    }
+    
+
+    /** Transforms Temp references in 'in' into appropriate offsets
+	from the Stack Pointer in the Memory. 
+        <BR> <B>modifies:</B> inHc
+	<BR> <B>effects:</B> Replaces the <code>FskLoad</code> and
+	     <code>FskStore</code>s with memory instructions for the
+	     appropriate <code>Frame</code>.
+    */
+    protected final HCode resolveOutstandingTemps(HCode in) {
 	// This implementation is REALLY braindead.  Fix to do a
 	// smarter Graph-Coloring stack offset allocator
-
-	// Its also broken because it doesn't use getSize in
-	// InstrBuilder.  I need to look into incorporating that into
-	// this implementation.
 
 	Util.assert(in != null, "Don't try to resolve Temps for null HCodes");
 
@@ -367,7 +380,7 @@ public abstract class RegAlloc  {
 		    if(!isTempRegister(use) &&
 		       tempsToOffsets.get(use)==null){
 			tempsToOffsets.put(use, new Integer(nextOffset));
-			nextOffset++;
+			nextOffset += frame.getInstrBuilder().getSize(use);
 		    }
 		}
 	    } 
@@ -380,7 +393,8 @@ public abstract class RegAlloc  {
 		    if(!isTempRegister(def) &&
 		       tempsToOffsets.get(def)==null){
 			tempsToOffsets.put(def, new Integer(nextOffset)); 
-			nextOffset++;
+			nextOffset +=
+			    frame.getInstrBuilder().getSize(def);
 		    }
 		}
 	    } 
@@ -443,11 +457,10 @@ public abstract class RegAlloc  {
 		// add a comment saying which temp is being loaded
 		Instr first = (Instr) instrs.get(0);
 		Instr.replaceInstrList(m, instrs);
-		Instr newi = new Instr(first.getFactory(),
-				       first,
-				       "\t@loading " + m.use()[0],
-				       null, null);
-		newi.insertAt(new InstrEdge(first.getPrev(), first));
+
+		// Instr newi = new Instr(first.getFactory(), first,
+		//		       "\t@loading " + m.use()[0], null, null);
+		// newi.insertAt(new InstrEdge(first.getPrev(), first));
 	    }
 	    
 	    public void visit(Instr i) {
@@ -485,7 +498,7 @@ public abstract class RegAlloc  {
 
 	return in;
     }
-*/    
+    
 
     /** Checks if <code>t</code> is a register (Helper method).
 	<BR> <B>effects:</B> If <code>t</code> is a register for the

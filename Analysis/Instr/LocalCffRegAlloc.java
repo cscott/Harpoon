@@ -52,7 +52,7 @@ import java.util.AbstractSet;
     for the algorithm it uses to allocate and assign registers.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.50 1999-11-29 16:19:17 pnkfelix Exp $
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.51 1999-12-01 17:12:36 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -134,12 +134,20 @@ public class LocalCffRegAlloc extends RegAlloc {
 			     liveOnExit.contains(ref));
 			regfile.putAll(precolor);
 			
-			
+			Collection prevAssignment = regfile.inverseMap().getValues(ref);
+			if (!prevAssignment.isEmpty()) {
+			    // FSK: this is inelegant.  I shouldn't
+			    // have to manually remove these
+			    // mappings.  Look into an alternate
+			    // solution.
+			    removeMapping(ref, regfile);
+			}
+
 			CloneableIterator suggestions = 
 			    new CloneableIterator
 			    (frame.getRegFileInfo().suggestRegAssignment
 			     (ref, Collections.unmodifiableMap(regfile)));
-
+			
 			Util.assert(workOnRef < 3, 
 				    "Should not need to work "+
 				    "on ref " + ref + " in Instr " + 
@@ -148,12 +156,14 @@ public class LocalCffRegAlloc extends RegAlloc {
 				    "Suggestions: [" + 
 				    printIter((Iterator)suggestions.clone()) + 
 				    "]");
-
+			
 			// TODO (to improve alloc): add code here
 			// eventually to scan forward and choose a
 			// suggestion based on future MOVEs to/from
-			// registers.  
-			List regs = (List) suggestions.next();
+			// preassigned registers.  
+			
+			// FSK: dumb chooser (just takes first suggestion)
+			List regs = (List) suggestions.next(); 
 			code.assignRegister(instr, ref, regs);
 			
 			if (instr.useC().contains(ref)) {
@@ -162,17 +172,18 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    loadInstr.insertAt
 				(new InstrEdge(instr.getPrev(), instr));
 			}
-
+			
 			Iterator regIter = regs.iterator();
 			while(regIter.hasNext()) {
 			    Temp reg = (Temp) regIter.next();
-
+			    
 			    Util.assert(regfile.get(reg) == null,
-					"reg must be empty");
-
+					"reg " + reg + " must be empty");
+			    
 			    regfile.put(reg, ref);
 			}
-
+			
+		    
 			Iterator futureInstrs = 
 			    (Iterator) instrs.clone();
 			while(futureInstrs.hasNext()) {
@@ -181,9 +192,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    if (finstr.useC().contains(ref)) {
 				code.assignRegister(finstr,ref,regs);
 			    } else if (finstr.defC().contains(ref)) {
-				// redefined 'ref' -- break and allow
-				// for a different register to be
-				// assigned to it.
+				// redefined 'ref' (without a use)
+				// --> break and allow for a different
+				// register to be assigned to it.
 				break;
 			    }
 			}
@@ -266,7 +277,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	// register file.  Note that after the loop finishes, 'instr'
 	// is the last instruction in the series.
 	
-	System.out.println("live on exit from " + b + " :\n" + liveOnExit);
+	// System.out.println("live on exit from " + b + " :\n" + liveOnExit);
 	
 	// use a HashSet here because we don't want to repeat values
 	// (regfile.values() returns a Collection-view)
@@ -275,7 +286,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	while(vals.hasNext()) {
 	    Temp val = (Temp) vals.next();
 
-	    System.out.println("dealing with " + val + " at end of " + b);
+	    // System.out.println("dealing with " + val + " at end of " + b);
 	    
 	    // don't spill dead values.
 	    if (!liveOnExit.contains(val)) continue;
@@ -291,14 +302,14 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    if (!instr.defC().contains(val)) {
 		loc = new InstrEdge(instr.getPrev(), instr);
 
-		System.out.println("end spill: " + val + " " + loc);
+		// System.out.println("end spill: " + val + " " + loc);
 
 		spillValue(val, loc, regfile);
 	    } else {
 		if (instr.canFallThrough) {
 		    loc = new InstrEdge(instr, instr.getNext());
 
-		    System.out.println("end spill: " + val + " " + loc);
+		    // System.out.println("end spill: " + val + " " + loc);
 		    
 		    // This sequence of code is a little tricky; since
 		    // we need to add spills for the same variable at
@@ -319,7 +330,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    targets.hasNext();) {
 		    Label l = (Label) targets.next();
 		    loc = new InstrEdge(instr, instr.getInstrFor(l));
-		    System.out.println("end spill: " + val + " " + loc);
+		    // System.out.println("end spill: " + val + " " + loc);
 		    addSpillInstr(val, loc, regfile);
 		}
 		removeMapping(val, regfile);
@@ -348,7 +359,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    val + " must map to SOME registers" +
 		    "\n regfile:" + regfile);
 
-	if (regs.size() > 1) { 
+	if (false && regs.size() > 1) { // debugging stuff
 	    System.out.println("\n Val: " + val + 
 			       " is held in " + regs);
 	}

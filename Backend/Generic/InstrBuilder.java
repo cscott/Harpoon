@@ -23,7 +23,7 @@ import java.util.ArrayList;
     
     @see harpoon.Analysis.Instr
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.2 1999-09-14 23:46:28 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.3 1999-12-01 17:12:39 pnkfelix Exp $
  */
 public abstract class InstrBuilder {
     
@@ -31,7 +31,7 @@ public abstract class InstrBuilder {
     public InstrBuilder() {
         
     }
-    
+
     /** Generates a new set of <code>Instr</code>s for memory traffic
 	from RAM to multiple registers in the register file.  This
 	method's default implementation simply calls
@@ -158,8 +158,13 @@ public abstract class InstrBuilder {
 	<BR> When constructing loads and stores, the register allocator
 	    should ensure that live values do not overlap on the
 	    stack.  Thus, given two temps <code>t1</code> and
-	    <code>t2</code>, <code>offset(t2)</code> should be at
-	    least <code>offset(t1) + getSize(t1)</code>
+	    <code>t2</code>, either 
+	    ( <code>offset(t2)</code> is greater than or equal to
+	    <code>offset(t1) + getSize(t1)</code> )
+	    OR
+	    ( <code>offset(t1)</code> is greater than or equal to
+	    <code>offset(t2) + getSize(t2)</code> ).
+
 	<BR> The default implementation simply returns 1; subclasses
 	     should override this and check for double word temps, etc.
         @see InstrBuilder#makeLoad
