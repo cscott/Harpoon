@@ -50,10 +50,15 @@ static clheap_t next_clheap() {
 #ifdef MAKE_STATS
   threads_created++;
 #endif /* MAKE_STATS */
-  if (pool_pos==0 || last_pool==NULL)
-    last_pool = clheap_create();
+  if (pool_pos==0 || last_pool==NULL) {
+    /* we create heaps with one attachment, which we detach before moving
+     * to the next pool.  This guarantees that the heap won't be freed
+     * before we've finished stuffing threads into it. */
+    if (last_pool!=NULL) clheap_detach(last_pool); /* free last_pool */
+    last_pool = clheap_create(); /* created with one use */
+  }
   pool_pos = (pool_pos+1)%POOLSIZE;
-  result = last_pool;
+  clheap_attach(result = last_pool); /* increment use count for the clheap */
   FLEX_MUTEX_UNLOCK(&pool_mutex);
   return result;
 }

@@ -10,7 +10,10 @@
 
 /* undefine to disable statistics logging */
 #define MAKE_STATS
+/* undefine to replace all the fancy allocation types with simple malloc */
 #define REALLY_DO_ALLOC
+/* undefine to explicitly malloc() and free() each thread heap */
+#define RECYCLE_HEAPS
 
 /* do allocation without updating statistics: this is used
  * by various allocators when REALLY_DO_ALLOC is not defined. */
