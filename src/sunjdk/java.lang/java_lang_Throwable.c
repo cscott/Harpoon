@@ -13,7 +13,6 @@ extern char *name_of_binary;
 void jprintln(JNIEnv *env, jobject sobj, char *format, ...) {
     jstring str; const jchar *ca; jcharArray chararr; jmethodID mid; jsize len;
     char buf[256];
-    jcharArray jca;
     va_list ap;
     va_start(ap, format);
     vsnprintf(buf, sizeof(buf), format, ap);
