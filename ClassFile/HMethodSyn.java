@@ -14,7 +14,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethodSyn.java,v 1.1 1998-10-16 06:21:03 cananian Exp $
+ * @version $Id: HMethodSyn.java,v 1.2 1998-10-16 11:15:38 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -23,44 +23,55 @@ public class HMethodSyn extends HMethod {
   /** Create a new method based on a template. */
   public HMethodSyn(HMethod template) {
     this.parent = template.getDeclaringClass();
-    this.name = template.getName();
-    // XXX ensure uniqueness.
+    this.name = uniqueName(parent, template.getName(),
+			   template.getDescriptor());
     this.modifiers = template.getModifiers();
     this.returnType = template.getReturnType();
     this.parameterTypes = template.getParameterTypes();
     this.parameterNames = template.getParameterNames();
     this.exceptionTypes = template.getExceptionTypes();
     this.isSynthetic = template.isSynthetic();
+    ((HClassSyn)parent).addDeclaredMethod(this);
   }
-  /** Create a new empty abstract method, that takes no parameters, returns
-   *  <code>void</code>, and throws no checked exceptions.
+  /** Create a new empty abstract method in the specified class
+   *  with the specified descriptor
+   *  that throws no checked exceptions.
    *  Adding code to the method will make it non-abstract.
    */
-  public HMethodSyn(HClass parent, String name) {
+  public HMethodSyn(HClass parent, String name, String descriptor) {
     this.parent = parent;
-    this.name = name;
-    // XXX ensure uniqueness.
+    this.name = uniqueName(parent, name, descriptor);
     this.modifiers = Modifier.ABSTRACT;
-    this.returnType = HClass.Void;
-    this.parameterTypes = new HClass[0];
-    this.parameterNames = new String[0];
+    { // parse descriptor for return type.
+      String desc = descriptor.substring(descriptor.lastIndexOf(')')+1);
+      this.returnType = HClass.forDescriptor(desc);
+    }
+    { // parse descriptor for parameter types.
+      String desc = descriptor.substring(1, descriptor.lastIndexOf(')'));
+      Vector v = new Vector();
+      for (int i=0; i<desc.length(); i++) {
+	v.addElement(HClass.forDescriptor(desc.substring(i)));
+	while (desc.charAt(i)=='[') i++;
+	if (desc.charAt(i)=='L') i=desc.indexOf(';', i);
+      }
+      this.parameterTypes = new HClass[v.size()];
+      v.copyInto(this.parameterTypes);
+    }
+    this.parameterNames = new String[this.parameterTypes.length];
     this.exceptionTypes = new HClass[0];
     this.isSynthetic = false;
+    ((HClassSyn)parent).addDeclaredMethod(this);
   }
-
-  /* IMMUTABLE.
-  public void setDeclaringClass(HClass parent) { this.parent = parent; }
-
-  public void setName(String name) { this.name = name; }
-  */
 
   public void setModifiers(int m) { this.modifiers = m; }
 
   public void setReturnType(HClass returnType) { this.returnType = returnType;}
 
+  /** Warning: use can cause method name conflicts in class. */
   public void setParameterTypes(HClass[] parameterTypes) {
     this.parameterTypes = parameterTypes;
   }
+  /** Warning: use can cause method name conflicts in class. */
   public void setParameterType(int which, HClass type) {
     this.parameterTypes[which] = type;
   }

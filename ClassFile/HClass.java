@@ -28,11 +28,32 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.36 1998-10-16 10:09:24 cananian Exp $
+ * @version $Id: HClass.java,v 1.37 1998-10-16 11:15:38 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public abstract class HClass {
   static Hashtable dsc2cls = new Hashtable();
+
+  /** Make a unique class name from a given suggestion. */
+  protected static String uniqueName(String suggestion) {
+    if (suggestion==null || suggestion.equals("")) suggestion="MAGICc";
+    // remove trailing dollar-signs.
+    while (suggestion.charAt(suggestion.length()-1)=='$')
+      suggestion = suggestion.substring(0, suggestion.length()-1);
+    // remove anything after a double dollar sign.
+    if (suggestion.indexOf("$$")!=-1)
+      suggestion = suggestion.substring(0, suggestion.lastIndexOf("$$"));
+    // find lowest unique number for class.
+    for (int i=-1; true; i++) {
+      String className = (i<0)?suggestion:(suggestion + "$$" + i);
+      if (dsc2cls.containsKey("L"+className+";")) continue;
+      if (Loader.getResourceAsStream
+	  (Loader.classToResource(className.replace('.','/')))!=null)
+	continue; // named file on disk.
+      // found a valid name.
+      return className;
+    }
+  }
   /** 
    * Returns the <code>HClass</code> object associated with the class with
    * the given string name.  Given the fully-qualified name for a class or

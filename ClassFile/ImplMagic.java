@@ -14,7 +14,7 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.3 1998-10-16 10:09:25 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.4 1998-10-16 11:15:39 cananian Exp $
  */
 
 abstract class ImplMagic  { // wrapper for the Real McCoy.
@@ -86,7 +86,6 @@ abstract class ImplMagic  { // wrapper for the Real McCoy.
 	    v.copyInto(_this.parameterTypes);
 	}
 	// Make sure our parsing/construction is correct.
-	//System.out.println(_this.getDescriptor()+" vs "+methodinfo.descriptor());
 	Util.assert(_this.getDescriptor().equals(methodinfo.descriptor()));
 	
 	AttributeCode code = null;

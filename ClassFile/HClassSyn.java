@@ -15,13 +15,13 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.2 1998-10-16 06:21:03 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.3 1998-10-16 11:15:38 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 public class HClassSyn extends HClassCls {
-  /** Create an <code>HClassSync</code> from an <code>HClass</code>. */
+  /** Create an <code>HClassSyn</code> from an <code>HClass</code>. */
   public HClassSyn(HClass template) {
-    this.name = template.getName(); // FIXME: rename.
+    this.name = uniqueName(template.getName()); register();
     this.superclass = template.getSuperclass();
     this.interfaces = template.getInterfaces();
     this.modifiers  = template.getModifiers();
@@ -29,11 +29,18 @@ public class HClassSyn extends HClassCls {
     this.declaredMethods= template.getDeclaredMethods();
     this.sourcefile = template.getSourceFile();
   }
-
-  /**
-   * Sets the fully-qualified name of this class to <code>name</code>.
+  /** Create a new, empty <code>HClassSyn</code>. 
+   *  Default is to create an Interface.
    */
-  public void setName(String name) { this.name = name; }
+  public HClassSyn(String name, String sourcefile) {
+    this.name = uniqueName(name); register();
+    this.superclass = forClass(Object.class);
+    this.interfaces = new HClass[0];
+    this.modifiers = Modifier.INTERFACE | 0x0020; // ACC_SUPER
+    this.declaredFields = new HField[0];
+    this.declaredMethods = new HMethod[0];
+    this.sourcefile = sourcefile;
+  }
 
   /**
    * Adds the given <code>HField</code> to the class represented by

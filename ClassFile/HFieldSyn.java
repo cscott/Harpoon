@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldSyn.java,v 1.1 1998-10-16 06:21:03 cananian Exp $
+ * @version $Id: HFieldSyn.java,v 1.2 1998-10-16 11:15:38 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -20,14 +20,23 @@ public class HFieldSyn extends HField {
   public HFieldSyn(HField template) {
     this.parent = template.getDeclaringClass();
     this.type = template.getType();
-    this.name = template.getName();
+    this.name = uniqueName(parent, template.getName());
     this.modifiers = template.getModifiers();
     this.constValue = template.getConstant();
     this.isSynthetic = template.isSynthetic();
+    ((HClassSyn)parent).addDeclaredField(this);
+  }
+  /** Create a new field of the specified name, class, and type. */
+  public HFieldSyn(HClass parent, HClass type, String name) {
+    this.parent = parent;
+    this.type = type;
+    this.name = uniqueName(parent, name);
+    this.modifiers = 0;
+    this.constValue = null;
+    this.isSynthetic = false;
+    ((HClassSyn)parent).addDeclaredField(this);
   }
 
-  public void setDeclaringClass(HClass parent) { this.parent = parent; }
-  public void setName(String name) { this.name = name; }
   public void setModifiers(int m) { this.modifiers = m; }
   public void setType(HClass type) { this.type = type; }
   public void setConstant(Object co) { this.constValue=co; }

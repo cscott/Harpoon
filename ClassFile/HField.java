@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.12 1998-10-16 06:21:03 cananian Exp $
+ * @version $Id: HField.java,v 1.13 1998-10-16 11:15:38 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -26,6 +26,29 @@ public abstract class HField implements HMember {
 
   /** Subclass must provide implementation. */
   protected HField() { /* no implementation */ }
+
+  /** Make a unique field name from a given suggestion. */
+  protected static String uniqueName(HClass parent, String suggestion)
+  {
+    if (suggestion==null || suggestion.equals("")) suggestion="MAGICf";
+    // remove trailing dollar-signs.
+    while (suggestion.charAt(suggestion.length()-1)=='$')
+      suggestion=suggestion.substring(0, suggestion.length()-1);
+    // remove anything after a double dollar sign.
+    if (suggestion.indexOf("$$")!=-1)
+      suggestion=suggestion.substring(0, suggestion.lastIndexOf("$$"));
+    // find lowest number for method.
+  L1:
+    for (int i=-1; true; i++) {
+      String fieldname = (i<0)?suggestion:(suggestion+"$$"+i);
+      // search class for existing field.
+      HField[] hf = parent.getDeclaredFields();
+      for (int j=0; j<hf.length; j++)
+	if (hf[j].getName().equals(fieldname)) continue L1;
+      // found a valid name.
+      return fieldname;
+    }
+  }
 
   /** 
    * Returns the <code>HClass</code> object representing the class or

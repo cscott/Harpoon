@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.26 1998-10-16 10:09:25 cananian Exp $
+ * @version $Id: HMethod.java,v 1.27 1998-10-16 11:15:38 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -31,6 +31,32 @@ public abstract class HMethod implements HMember {
   /** Subclass must provide implementation. */
   protected HMethod() { /* no implementation */ }
   
+  /** Make a unique method name from a given suggestion. */
+  protected static String uniqueName(HClass parent, 
+				     String suggestion, String descriptor) 
+  {
+    if (suggestion==null || suggestion.equals("")) suggestion="MAGICm";
+    // remove trailing dollar-signs.
+    while (suggestion.charAt(suggestion.length()-1)=='$')
+      suggestion = suggestion.substring(0, suggestion.length()-1);
+    // remove anything after a double dollar sign.
+    if (suggestion.indexOf("$$")!=-1)
+      suggestion = suggestion.substring(0, suggestion.lastIndexOf("$$"));
+    // find lowest unique number for method.
+  L1:
+    for (int i=-1; true; i++) {
+      String methodname = (i<0)?suggestion:(suggestion+"$$"+i);
+      // search class for existing method.
+      HMethod[] hm = parent.getDeclaredMethods();
+      for (int j=0; j<hm.length; j++)
+	if (hm[j].getName().equals(methodname) &&
+	    hm[j].getDescriptor().equals(descriptor))
+	  continue L1;
+      // found a valid name.
+      return methodname;
+    }
+  }
+
   /** Register an <code>HCodeFactory</code> to be used by the
    *  <code>getCode</code> method. */
   public static void register(HCodeFactory f) {
