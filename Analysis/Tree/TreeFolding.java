@@ -5,6 +5,7 @@ package harpoon.Analysis.Tree;
 
 import harpoon.Analysis.DataFlow.TreeSolver;
 import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.BasicBlockInterf;
 import harpoon.Analysis.DataFlow.ForwardDataFlowBasicBlockVisitor;
 import harpoon.Analysis.DataFlow.ReversePostOrderIterator;
 import harpoon.Analysis.EdgesIterator;
@@ -72,7 +73,7 @@ import java.util.Set;
  * either in time or in space.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeFolding.java,v 1.3 2002-02-26 22:42:47 cananian Exp $ 
+ * @version $Id: TreeFolding.java,v 1.4 2002-04-02 23:44:52 salcianu Exp $ 
  * 
  */
 public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
@@ -192,7 +193,7 @@ public class TreeFolding extends ForwardDataFlowBasicBlockVisitor {
      * appropriate "change" would be a variable being added to the
      * IN-set of 'to' during Forward Dataflow Analysis
      */
-    public boolean merge(BasicBlock from, BasicBlock to) { 
+    public boolean merge(BasicBlockInterf from, BasicBlockInterf to) { 
 	BitString        fOUT, fOUT_mem, tIN, tIN_mem;
 	TreeFoldingInfo  fInfo, tInfo;
 	boolean          result;
