@@ -1178,10 +1178,10 @@ class ensemble {
 	public void run() { 
 	  int j = 0;
 	  potengThread t[] = new potengThread[numThreads+1];
-	  for (int i = 0; i < num; i+=(int)(num/numThreads)) { 
+	  for (int i = 0; i <= num; i+=(int)(num/numThreads)) { 
 	    t[j] = new potengThread(en, first+i, 
-				    ((i+numThreads)<num)?
-				    (first+i+numThreads):(first+num),
+				    ((i+(int)(num/numThreads))<=num)?
+				    (first+i+(int)(num/numThreads)):(first+num+1),
 				    0);
 	    t[j++].start();
 	  }
@@ -1715,14 +1715,15 @@ class ensemble {
   void interfOuterSplit(final int first, final int num) {
     final ensemble en=this;
     final int numThreads = this.numThreads;
+    final int numMol = num+1;
     water.run(new Runnable() { 
 	public void run() {
 	  int j = 0;
 	  interfThread t[] = new interfThread[numThreads+1];
-	  for (int i = 0; i < num; i+=(int)(num/numThreads)) {
+	  for (int i = 0; i < numMol; i+=(int)(numMol/numThreads)) {
 	    t[j] = new interfThread(en, first+i,
-				    ((i+numThreads)<num)?
-				    (first+i+numThreads):(first+num),
+				    ((i+(int)(numMol/numThreads))<numMol)?
+				    (first+i+(int)(numMol/numThreads)):(first+numMol),
 				    0);
 	    t[j++].start();
 	  }

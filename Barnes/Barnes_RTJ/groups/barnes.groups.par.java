@@ -1552,8 +1552,8 @@ class NBodySystem {
 	  maketreeThread t[] = new maketreeThread[numThreads+1];
 	  for (int i = 0; i < num; i+=(int)(num/numThreads)) {
 	    t[j] = new maketreeThread(nb, first+i,
-				      ((i+numThreads)<num)?
-				      (first+i+numThreads):(first+num));
+				      ((i+(int)(num/numThreads))<num)?
+				      (first+i+(int)(num/numThreads)):(first+num));
 	    t[j++].start();
 	  }
 	  for (int i = 0; i < j; i++) {
@@ -1601,8 +1601,8 @@ class NBodySystem {
 	  AdvanceThread t[] = new AdvanceThread[numThreads+1];
 	  for (int i = 0; i < num; i+=(int)(num/numThreads)) {
 	    t[j] = new AdvanceThread(nb, hts, ts, first+i,
-				     ((i+numThreads)<num)?
-				     (first+i+numThreads):(first+num));
+				     ((i+(int)(num/numThreads))<num)?
+				     (first+i+(int)(num/numThreads)):(first+num));
 	    t[j++].start();
 	  }
 	  for (int i = 0; i < j; i++) {
@@ -1650,8 +1650,8 @@ class NBodySystem {
 	  SwapAccsThread t[] = new SwapAccsThread[numThreads+1];
 	  for (int i = 0; i < num; i+=(int)(num/numThreads)) {
 	    t[j] = new SwapAccsThread(nb, first+i,
-				      ((i+numThreads)<num)?
-				      (first+i+numThreads):(first+num));
+				      ((i+(int)(num/numThreads))<num)?
+				      (first+i+(int)(num/numThreads)):(first+num));
 	    t[j++].start();
 	  }
 	  for (int i = 0; i < j; i++) {
@@ -1699,8 +1699,8 @@ class NBodySystem {
 	  ComputeAccelsThread t[] = new ComputeAccelsThread[numThreads+1];
 	  for (int i = 0; i < num; i+=(int)(num/numThreads)) {
 	    t[j] = new ComputeAccelsThread(nb, tol, eps, first+i,
-					   ((i+numThreads)<num)?
-					   (first+i+numThreads):(first+num));
+					   ((i+(int)(num/numThreads))<num)?
+					   (first+i+(int)(num/numThreads)):(first+num));
 	    t[j++].start();
 	  }
 	  for (int i = 0; i < j; i++) {
@@ -1748,8 +1748,8 @@ class NBodySystem {
 	  StartVelsThread t[] = new StartVelsThread[numThreads+1];
 	  for (int i = 0; i < num; i+=(int)(num/numThreads)) {
 	    t[j] = new StartVelsThread(nb, hts, first+i,
-				       ((i+numThreads)<num)?
-				       (first+i+numThreads):(first+num));
+				       ((i+(int)(num/numThreads))<num)?
+				       (first+i+(int)(num/numThreads)):(first+num));
 	    t[j++].start();
 	  }
 	  for (int i = 0; i < j; i++) {
@@ -1947,10 +1947,10 @@ class barnes {
     }
     if (args[2].equalsIgnoreCase("noRTJ")) {
       RTJ_alloc_method = NO_RTJ;
-    } else if (args[1].equalsIgnoreCase("CT")) {
+    } else if (args[2].equalsIgnoreCase("CT")) {
       RTJ_alloc_method = CT_MEMORY;
       ctsize = Long.parseLong(args[4]);
-    } else if (args[1].equalsIgnoreCase("VT")) {
+    } else if (args[2].equalsIgnoreCase("VT")) {
       RTJ_alloc_method = VT_MEMORY;
     } else {
       System.out.println("Invalid memory area type argument");
