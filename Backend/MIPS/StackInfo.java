@@ -116,6 +116,10 @@ public class StackInfo {
     */
    public int argOffset(Object inv, int arg_idx) {
       CallInfo ci = (CallInfo)inv2info.get(inv);
+      if(trace >= TRACE_FUNCTION) {
+         psout.print("a" + arg_idx + " " 
+                     + (REGSIZE*ci.getArg2Word(arg_idx)) + "(sp)");
+      }
       return REGSIZE * ci.getArg2Word(arg_idx);
    }
    /**
@@ -124,6 +128,10 @@ public class StackInfo {
     */
    public int argSecondOffset(Object inv, int arg_idx) {
       CallInfo ci = (CallInfo)inv2info.get(inv);
+      if(trace >= TRACE_FUNCTION) {
+         psout.print("alow" + arg_idx + " " 
+                     + (REGSIZE*(ci.getArg2Word(arg_idx)+1)) + "(sp)");
+      }
       Util.assert(ci.getArg2Word(arg_idx) + 1 < ci.getArg2Word(arg_idx + 1));
       return REGSIZE * (ci.getArg2Word(arg_idx) + 1);
    }
@@ -134,7 +142,8 @@ public class StackInfo {
     */
    public int argWhere(Object inv, int arg_idx) {
       CallInfo ci = (CallInfo)inv2info.get(inv);
-      if(trace) {
+      if(trace >= TRACE_FUNCTION) {
+         psout.print("WHERE ");
          if(inv instanceof INVOCATION) {
             print(psout, (INVOCATION)inv);
          } else {
@@ -145,18 +154,26 @@ public class StackInfo {
          psout.print("a" + arg_idx);
       }
       if(ci.getArg2Word(arg_idx) < NARGREGS) {
-         if(trace) psout.println(" REG");
+         if(trace >= TRACE_FUNCTION) psout.println(" REG");
          return REGISTER;
       }
-      if(trace) psout.println(" STK");
+      if(trace >= TRACE_FUNCTION) psout.println(" STK");
       return STACK;
+   }
+   private int argWhereInternal(Object inv, int arg_idx) {
+      int old_trace = trace;
+      int ret;
+      trace = TRACE_NONE;
+      ret = argWhere(inv, arg_idx);
+      trace = old_trace;
+      return ret;
    }
 
    /**
     * Return which argument register this argument goes in
     */
    public Temp argReg(Object inv, int arg_idx) {
-      Util.assert(argWhere(inv, arg_idx) == REGISTER);
+      Util.assert(argWhereInternal(inv, arg_idx) == REGISTER);
       CallInfo ci = (CallInfo)inv2info.get(inv);
       return idx2ArgReg(ci.getArg2Word(arg_idx));
    }
@@ -164,7 +181,7 @@ public class StackInfo {
     * Return the second argument register for a two word temporary.
     */
    public Temp argSecondReg(Object inv, int arg_idx) {
-      Util.assert(argWhere(inv, arg_idx) == REGISTER);
+      Util.assert(argWhereInternal(inv, arg_idx) == REGISTER);
       CallInfo ci = (CallInfo)inv2info.get(inv);
       Util.assert(ci.getArg2Word(arg_idx) + 1 < ci.getArg2Word(arg_idx + 1));
       return idx2ArgReg(ci.getArg2Word(arg_idx) + 1);
@@ -262,7 +279,7 @@ public class StackInfo {
       int words = 0;
       CallInfo ci = new CallInfo();
       int narg = 0;
-      if(trace) {
+      if(trace >= TRACE_INTERNAL_CALLS) {
          print(psout, inv);
       }
       for(; elist != null; ++narg, elist = elist.tail) {
@@ -272,19 +289,20 @@ public class StackInfo {
             words ++;
          }
          ci.setArg2Word(narg, words);
-         if(trace) {
+         if(trace >= TRACE_INTERNAL_CALLS) {
             psout.print(" a" + narg + "=" + words);
          }
          words += nWords(elist.head);
       }
       // Set the value after the last entry so we know the total number
       ci.setArg2Word(narg, words);
-      if(trace) {
+      if(trace >= TRACE_INTERNAL_CALLS) {
          psout.print(" a" + narg + "=" + words);
          psout.println(" END");
       }
       // XXX is this right? If we need any params, leave at least 16 bytes.
-      if(words > max_arg_words) 
+      // If this is the largest call we have seen, then increase max_arg_words
+      if(words > max_arg_words)
          if(words < 4)
             max_arg_words = 4;
          else
@@ -302,7 +320,7 @@ public class StackInfo {
       // METHOD 
       CallInfo ci = new CallInfo();
       int words = 0;
-      if(trace) {
+      if(trace >= TRACE_INTERNAL_CALLS) {
          print(psout, meth);
       }
       // skip param[0], which is the explicit 'exceptional return
@@ -317,7 +335,7 @@ public class StackInfo {
             words ++;
          }
          ci.setArg2Word(narg, words);
-         if(trace) {
+         if(trace >= TRACE_INTERNAL_CALLS) {
             psout.print(" Ma" + narg + "=" + words);
          }
          words += nWords(meth.getParams(param_narg));
@@ -325,7 +343,7 @@ public class StackInfo {
       }
       // Set the value after the last entry so we know the total number
       ci.setArg2Word(narg, words);
-      if(trace) {
+      if(trace >= TRACE_INTERNAL_CALLS) {
          psout.print(" Ma" + narg + "=" + words);
          psout.println(" MEND");
       }
@@ -344,7 +362,10 @@ public class StackInfo {
    private boolean locals_done;
    private int local_words;
    private boolean callee_done;
-   private final boolean trace = false;
+   private final int TRACE_NONE           = 0;
+   private final int TRACE_FUNCTION       = 1;
+   private final int TRACE_INTERNAL_CALLS = 2;
+   private int trace = TRACE_NONE;
    private final PrintStream psout = System.out;
    private ArrayList callee_regs;
    private int fixed_words;
