@@ -54,6 +54,7 @@ Util/Collections/UnmodifiableIterator.java
 Util/Collections/UnmodifiableListIterator.java
 Util/Collections/SetFactory.java
 Util/Collections/SetWrapper.java
+Util/Collections/SnapshotIterator.java
 Util/Collections/UniqueStack.java
 Util/Collections/UniqueVector.java
 Util/Collections/UnmodifiableMultiMap.java
