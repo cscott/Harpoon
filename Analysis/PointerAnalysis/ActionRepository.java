@@ -42,7 +42,7 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.23 2000-11-09 01:05:04 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.24 2000-12-11 23:11:15 vivien Exp $
  */
 public class ActionRepository {
     
@@ -220,6 +220,33 @@ public class ActionRepository {
 	Iterator it_nt = set_nt.iterator();
 	while(it_nt.hasNext()){
 	    PANode nt = (PANode) it_nt.next();
+	    add_ld(set_n1,f,n2,nt,active_threads);
+	}
+    }
+
+
+    /** Convenient function used by the inter-procedural and
+	inter-thread analysis (when a load node can be mapped to
+	a set of nodes).
+	It iterates over <code>set_n2</code>, repeatedly calling
+	<code>add_ld(set_n1,f,n2,set_nt,active_threads)</code> for each
+	<code>n2</code> in <code>set_n2</code>. */
+    public final void add_ld(Set set_n1, String f, Set set_n2, Set set_nt,
+			Set active_threads){
+	if(set_n2.isEmpty()) return;
+	Iterator it_n2 = set_n2.iterator();
+	while(it_n2.hasNext()){
+	    PANode n2 = (PANode) it_n2.next();
+	    add_ld(set_n1,f,n2,set_nt,active_threads);
+	}
+    }
+
+    public final void add_ld(Set set_n1, String f, Set set_n2, PANode nt,
+			     Set active_threads){
+	if(set_n2.isEmpty()) return;
+	Iterator it_n2 = set_n2.iterator();
+	while(it_n2.hasNext()){
+	    PANode n2 = (PANode) it_n2.next();
 	    add_ld(set_n1,f,n2,nt,active_threads);
 	}
     }
