@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.6 2002-07-23 23:48:51 cananian Exp $
+% $Id: ptran.tex,v 1.7 2002-07-24 02:24:57 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -7,7 +7,7 @@
 \usepackage{stmaryrd} % for \rrbracket and \llbracket
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.6 $ $}
+\date{\today \\ $ $Revision: 1.7 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -45,8 +45,9 @@ the move, and
 \item every non-trivial path from $s$ to $s$ redefines $v$.
 \end{itemize}
 
-We define \newterm{generation sites} for singular values
-$v$ used at $s$ as:
+Let $\text{rd}(s,v)$ be the set of reaching definitions of $v$ at $s$.
+We define the set of \newterm{generation sites} for a variable $v$ singular at
+use $s$ as:
 \begin{displaymath}
 \text{GenSite}(s,v) %\text{ where } v\in\text{use}(s)
  =
@@ -54,7 +55,7 @@ $v$ used at $s$ as:
 \text{ where }
 g(d) = \left\{ \begin{array}{cl}
                 \text{GenSite}(d,x) &\text{when } d \text{ is } v=x \\
-		d&\text{when } d \text{ is } v=\text{new } T(\ldots)
+		\{d\}&\text{when } d \text{ is } v=\text{new } T(\ldots)
                 \end{array}\right.
 \end{displaymath}
 
@@ -66,6 +67,38 @@ An infeasible path analysis \cite{267921} could be used to refine
 the path criterion.
 
 \subsection{Intraprocedural singular value analysis}
+
+An intraprocedural analysis to compute $\text{GenSite}(s, v)$ and the
+singularity of individual variables can be built using the standard
+dataflow framework:
+\begin{eqnarray*}
+\text{Out}(n)&=&\left(\text{In}(n)-\text{Kill}(n)\right)\cup\text{Gen}(n) \\
+\text{In}(n)&=&\bigcup_{p\in\text{pred}(n)} \text{Out}(p)\\
+\end{eqnarray*}
+
+We let $\text{In}$ and $\text{Out}$ operate on tuples 
+\tuple{\text{Rd},\text{Ns},\text{Ru},\text{Gs}} where $\text{Rd}(v)$ is the set
+of reaching definitions of $v$ at $n$, $\text{Ns}(v)$ is a boolean
+which is true iff $v$ is \textbf{non-}singular at $n$, $\text{Ru}(v)$
+is a set of reaching \textbf{uses} of $v$ at $n$, and $\text{Gs}(v)$
+is $\text{GenSite}(n, v)$, the set of generation sites of $v$ at $n$.
+These relations are represented as sets of pairs \tuple{v, X} where
+$\mathcal{R}(v)=X$ iff $\tuple{v,X} \in R$.  Each set is initialized
+to the empty set, and grows monotonically as the analysis
+progresses.  For clarity, we will separate out the Gen and Kill
+functions for each component in the tuple, so that:
+\begin{eqnarray*}
+\text{Gen}(n) &=& \tuple{\text{Gen}_\text{Rd}(n),
+                       \text{Gen}_\text{Ns}(n),
+                       \text{Gen}_\text{Ru}(n),
+                       \text{Gen}_\text{Gs}(n)} \\
+\text{Kill}(n) &=& \tuple{\text{Kill}_\text{Rd}(n),
+                       \text{Kill}_\text{Ns}(n),
+                       \text{Kill}_\text{Ru}(n),
+                       \text{Kill}_\text{Gs}(n)} \\
+\end{eqnarray*}
+
+
 \subsection{Interprocedural singular value analysis}
 
 \section{Compositional Pointer Analysis}
