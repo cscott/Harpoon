@@ -39,7 +39,7 @@ import java.util.List;
  * for debugging purposes when Realtime.DEBUG_REF is turned on.
  * 
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: RealtimeRuntime.java,v 1.5 2002-08-12 12:02:22 wbeebee Exp $
+ * @version $Id: RealtimeRuntime.java,v 1.6 2002-10-04 19:50:31 salcianu Exp $
  */
 
 public class RealtimeRuntime extends harpoon.Backend.Runtime1.Runtime {
@@ -170,7 +170,7 @@ public class RealtimeRuntime extends harpoon.Backend.Runtime1.Runtime {
     }
 
     public String resourcePath(String basename) {
-	if (basename.equals("init-safe.properties")&&
+	if (basename.equals("init-safe.properties") &&
 	    Realtime.RTJ_PERF) {
 	    return "harpoon/Analysis/Realtime/"+basename;
 	} else {

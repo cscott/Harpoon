@@ -34,7 +34,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.10 2002-09-06 16:12:16 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.11 2002-10-04 19:50:31 salcianu Exp $
  */
 
 public class Realtime {
@@ -47,7 +47,7 @@ public class Realtime {
 	/** Add support for realtime threads */
 	public static boolean REALTIME_THREADS = false;
 
-    /** Add support for CheckQuanta */
+        /** Add support for CheckQuanta */
 	public static boolean QUANTA_CHECKER = false;
 
 	/** Add support for RTJPerf */
