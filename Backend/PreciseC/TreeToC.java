@@ -58,12 +58,13 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 /**
  * <code>TreeToC</code> converts Tree form to C code (used as a
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.8 2002-07-26 21:10:36 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.9 2002-07-26 21:26:44 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -839,7 +840,7 @@ public class TreeToC extends java.io.PrintWriter {
 	    if (live==null || tempv==null || ud==null)
 		return Collections.EMPTY_SET; // bail out if no liveness info.
 	    // SAVE: (liveOut(e)-e.defs()) intersected w/ objectTemps
-	    Set lo = new HashSet();
+	    Set lo = new TreeSet();//HashSet();
 	    for (Iterator it=live.getLiveOut(e).iterator(); it.hasNext(); ) {
 		Temp t = (Temp) it.next();
 		// filter out non-object temps.
