@@ -58,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.75 1999-10-15 19:14:24 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.76 1999-10-16 18:31:56 cananian Exp $
  */
 %%
 
@@ -76,9 +76,7 @@ import java.util.Iterator;
     // Frame for instructions to access to get platform specific variables (Register Temps, etc) 
     private Frame frame;
 
-    private Temp r0, r1, r2, r3, PC, SP, FP, LR;
-
-    private TEMP param0;
+    private Temp r0, r1, r2, r3, r4, r5, r6, PC, SP, FP, LR;
 
 
     public CodeGen(Frame frame) {
@@ -89,6 +87,9 @@ import java.util.Iterator;
 	r1 = regfile.reg[1];
 	r2 = regfile.reg[2];
 	r3 = regfile.reg[3];
+	r4 = regfile.reg[4];
+	r5 = regfile.reg[5];
+	r6 = regfile.reg[6];
 	PC = regfile.PC;
 	SP = regfile.SP;
 	FP = regfile.FP;
@@ -263,6 +264,100 @@ import java.util.Iterator;
 	   v &= ~(0xFF << ((Util.ffs(v)-1) & ~1));
 	return r;
     }
+
+    /** Helper for setting up registers/memory with the strongARM standard
+     *  calling convention.  Returns the stack offset necessary. */
+    private int emitCallPrologue(INVOCATION ROOT, TempList list) {
+      int stackOffset = 0;
+
+      for (int index=0; list != null; index++) { 
+	Temp temp = list.head;
+	if (temp instanceof TwoWordTemp) {
+	  // arg takes up two words
+	  switch(index) {
+	  case 0: case 1: case 2: // put in registers 
+	    // not certain an emitMOVE is legal with the l/h modifiers
+	    emit( ROOT, "mov `d0, `s0l",
+		  frame.getRegFileInfo().getRegister(index) ,
+		  temp );
+	    index++;			     
+	    emit( ROOT, "mov `d0, `s0h",
+		  frame.getRegFileInfo().getRegister(index),
+		  temp );
+	    break;			     
+	  case 3: // spread between regs and stack
+	    // not certain an emitMOVE is legal with the l/h modifiers
+	    emit( ROOT, "mov `d0, `s0l",
+		  frame.getRegFileInfo().getRegister(index),
+		  temp );
+	    index++;
+	    stackOffset += 4;
+	    emit(new InstrMEM( instrFactory, ROOT,
+			       "str `s0h, [`s1, #-4]!",
+			       new Temp[]{ SP }, // SP *implicitly* modified
+			       new Temp[]{ temp, SP })); 
+	    break;
+	  default: // start putting args in memory
+	    emit(new InstrMEM( instrFactory, ROOT,
+			       "str `s0l, [`s1, #-4]!", 
+			       new Temp[] { SP }, // SP *implicitly* modified 
+			       new Temp[]{ SP, temp }));
+	    index++;
+	    stackOffset += 4;
+	    emit(new InstrMEM( instrFactory, ROOT,
+			       "str `s0h, [`s1, #-4]!",
+			       new Temp[]{ SP }, // SP *implicitly* modified
+			       new Temp[]{ temp, SP })); 
+	    stackOffset += 4;
+	    break;
+	  }
+	} else {
+	  // arg is one word
+	  if (index < 4) {
+	    emitMOVE( ROOT, "mov `d0, `s0", 
+		      frame.getRegFileInfo().getRegister(index), temp);
+	  } else {
+	    emit(new InstrMEM(
+			      instrFactory, ROOT,
+			      "str `s0, [`s1, #-4]!",
+			      new Temp[]{ SP }, // SP *implicitly* modified
+			      new Temp[]{ temp, SP }));
+	    stackOffset += 4;
+	  }
+	}
+	list = list.tail;    	
+      }
+      return stackOffset;
+    }
+    /** Emit a fixup table entry */
+    private void emitCallFixup(INVOCATION ROOT, Label retex) {
+      // this '1f' and '1:' business is taking advantage of a GNU
+      // Assembly feature to avoid polluting the global name space with
+      // local labels
+      // these may need to be included in the previous instr to preserve
+      // ordering semantics, but for now this way they indent properly
+      emitDIRECTIVE( ROOT, ".text 10\t@.section fixup");
+      emitDIRECTIVE( ROOT, "\t.word 1f, "+retex+" @ (retaddr, handler)");
+      emitDIRECTIVE( ROOT, ".text 0 \t@.section code");
+      emitLABEL( ROOT, "1:", new Label("1")); 
+    }
+    /** Finish up a CALL or NATIVECALL. */
+    private void emitCallEpilogue(INVOCATION ROOT,
+				  Temp retval, int stackOffset) {
+      // this will break if stackOffset > 255 (ie >63 args)
+      Util.assert( stackOffset < 256, 
+		   "Update the spec file to handle large SP offsets");
+      emit( ROOT, "add `d0, `s0, #" + stackOffset, SP , SP );
+      if (ROOT.retval.isDoubleWord()) {
+	retval = makeTwoWordTemp(retval);
+	// not certain an emitMOVE is legal with the l/h modifiers
+	emit( ROOT, "mov `d0l, `s0", retval, r0 );
+	emit( ROOT, "mov `d0h, `s0", retval, r1 );
+      } else {
+	retval = makeTemp(retval);
+	emitMOVE( ROOT, "mov `d0, `s0", retval, r0 );
+      }  
+    }
 %%
 %start with %{
        // *** METHOD PROLOGUE *** 
@@ -297,7 +392,7 @@ BINOP<f>(ADD, j, k) = i %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit2( ROOT, "bl ___addsf", new Temp[] { r0, r1 }, new Temp[] { r0, r1 } );
+    emit2( ROOT, "bl ___addsf", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -310,7 +405,7 @@ BINOP<d>(ADD, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit2(ROOT, "bl ___adddf3", // uses & stomps on these registers
-	 new Temp[]{r0,r1,r2,r3}, new Temp[] {r0,r1,r2,r3});
+	 new Temp[]{r0,r1,r2,r3,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -361,7 +456,7 @@ BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 		    "cmp `s2, #0\n"+
 		    "moveq `d2, #1\n"+
 		    "movne `d2, #0", 
-		   new Temp[]{ r0, r1, i },
+		   new Temp[]{ r0, r1, i, LR },
 		   new Temp[]{ j, k, r0 }));
 }%
 
@@ -385,7 +480,7 @@ BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 		   "cmp `s2, #0\n"+
 		   "moveq `d4, #1\n"+
 		   "movne `d4, #0",
-		   new Temp[]{ r0, r1, r2, r3, i },
+		   new Temp[]{ r0, r1, r2, r3, i, LR },
 		   new Temp[]{ j, k, r0 }));
 }%
 
@@ -424,7 +519,7 @@ BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 		   "cmp `s2, #0\n"+
 		   "moveq `d2, #1\n"+
 		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i },
+		   new Temp[]{ r0, r1, i, LR },
 		   new Temp[]{ j, k, r0 }));
 }%
 
@@ -442,7 +537,7 @@ BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 		   "cmp `s2, #0\n"+
 		   "moveq `d2, #1\n"+
 		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i },
+		   new Temp[]{ r0, r1, i, LR },
 		   new Temp[]{ j, k, r0 }));
 }%
 
@@ -482,7 +577,7 @@ BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 		   "cmp `s2, #0\n"+
 		   "moveq `d2, #1\n"+
 		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i },
+		   new Temp[]{ r0, r1, i, LR },
 		   new Temp[]{ j, k, r0 }));
 }%
 
@@ -500,7 +595,7 @@ BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 		   "cmp `s2, #0\n"+
 		   "moveq `d2, #1\n"+
 		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i },
+		   new Temp[]{ r0, r1, i, LR },
 		   new Temp[]{ j, k, r0 }));
 }%
 
@@ -540,7 +635,7 @@ BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 		   "cmp `s2, #0\n"+
 		   "moveq `d2, #1\n"+
 		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i },
+		   new Temp[]{ r0, r1, i, LR },
 		   new Temp[]{ j, k, r0 }));
 }%
 
@@ -558,7 +653,7 @@ BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 		   "cmp `s2, #0\n"+
 		   "moveq `d2, #1\n"+
 		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i },
+		   new Temp[]{ r0, r1, i, LR },
 		   new Temp[]{ j, k, r0 }));
 }%
 
@@ -597,7 +692,7 @@ BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 		   "cmp `s2, #0\n"+
 		   "moveq `d2, #1\n"+
 		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i },
+		   new Temp[]{ r0, r1, i, LR },
 		   new Temp[]{ j, k, r0 }));
 }%
 
@@ -615,7 +710,7 @@ BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 		   "cmp `s2, #0\n"+
 		   "moveq `d2, #1\n"+
 		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i },
+		   new Temp[]{ r0, r1, i, LR },
 		   new Temp[]{ j, k, r0 }));
 }%
 
@@ -640,7 +735,7 @@ BINOP<l>(SHL, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit( ROOT, "mov `d0, `s0 ", r2, k );
-    emit2(ROOT, "bl ___ashldi3", new Temp[]{r0,r1,r2}, new Temp[]{r0,r1,r2});
+    emit2(ROOT, "bl ___ashldi3", new Temp[]{r0,r1,r2,LR},new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -654,7 +749,7 @@ BINOP<l>(SHR, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit( ROOT, "mov `d0, `s0 ", r2, k );
-    emit2(ROOT, "bl ___ashrdi3", new Temp[]{r0,r1,r2}, new Temp[] {r0,r1,r2});
+    emit2(ROOT, "bl ___ashrdi3", new Temp[]{r0,r1,r2,LR},new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -669,7 +764,7 @@ BINOP<l>(USHR, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit( ROOT, "mov `d0, `s0 ", r2, k );
-    emit2(ROOT, "bl ___lshrdi3", new Temp[]{r0,r1,r2}, new Temp[] {r0,r1,r2});
+    emit2(ROOT, "bl ___lshrdi3", new Temp[]{r0,r1,r2,LR},new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -763,7 +858,7 @@ BINOP<l>(MUL, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r1, j );
     emit( ROOT, "mov `d0, `s0h", r0, j );
     emit2(ROOT, "bl ___muldi3", // uses & stomps on these registers
-	 new Temp[]{r0,r1,r2,r3}, new Temp[]{r0,r1,r2,r3});
+	 new Temp[]{r0,r1,r2,r3,LR}, new Temp[]{r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -772,7 +867,7 @@ BINOP<f>(MUL, j, k) = i %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit2(    ROOT, "bl ___mulsf3", new Temp[] {r0,r1}, new Temp[] {r0,r1});
+    emit2(    ROOT, "bl ___mulsf3", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -783,7 +878,7 @@ BINOP<d>(MUL, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit2(ROOT, "bl ___muldf3", // uses & stomps on these registers
-	 new Temp[] {r0,r1,r2,r3}, new Temp[] {r0,r1,r2,r3});
+	 new Temp[] {r0,r1,r2,r3,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -792,7 +887,7 @@ BINOP<p,i>(DIV, j, k) = i %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit2(    ROOT, "bl ___divsi3", new Temp[] {r0,r1}, new Temp[] {r0,r1});
+    emit2(    ROOT, "bl ___divsi3", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -803,7 +898,7 @@ BINOP<l>(DIV, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit2(ROOT, "bl ___divdi3",	// uses and stomps on these registers
-	 new Temp[] {r0,r1,r2,r3}, new Temp[] {r0,r1,r2,r3});
+	 new Temp[] {r0,r1,r2,r3,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -812,7 +907,7 @@ BINOP<f>(DIV, j, k) = i %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit2(    ROOT, "bl ___divsf3", new Temp[] {r0,r1}, new Temp[] {r0,r1});
+    emit2(    ROOT, "bl ___divsf3", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -823,7 +918,7 @@ BINOP<d>(DIV, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit2(ROOT, "bl ___divdf3",
-	 new Temp[] {r0,r1,r2,r3}, new Temp[] {r0,r1,r2,r3});
+	 new Temp[] {r0,r1,r2,r3,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -832,7 +927,7 @@ BINOP<p,i>(REM, j, k) = i %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit2(    ROOT, "bl ___modsi3", new Temp[] {r0,r1}, new Temp[] {r0,r1});
+    emit2(    ROOT, "bl ___modsi3", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -843,7 +938,7 @@ BINOP<l>(REM, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit2(ROOT, "bl ___moddi3",
-	 new Temp[] {r0,r1,r2,r3}, new Temp[] {r0,r1,r2,r3});
+	 new Temp[] {r0,r1,r2,r3,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -967,23 +1062,11 @@ MEM<d,l>(NAME(id)) = i %{
 
 TEMP<p,i,f>(id) = i %{
     Temp i = makeTemp( ROOT.temp );
-    if (ROOT != param0) {
-	emitMOVE( ROOT, "mov `d0, `s0", i, ROOT.temp);
-    } else {
-	emit( ROOT, /* "\t.global _lookup\n"+ */ // not necessary
-		    "bl _lookup\n"+
-		    "mov `d0, `s0", i, r2 );
-    }
-
 }%
 TEMP<l,d>(id) = i %{
-    // Will need to modify these to do something like mapping from
-    // TEMP's Temp to the necessary TwoWordTemp
     TwoWordTemp i = makeTwoWordTemp( ROOT.temp );		
-    // Temp i = ROOT.temp;
-    
-
 }%
+
 
 UNOP(_2B, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     Temp i = makeTemp();		
@@ -1044,21 +1127,21 @@ UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     TwoWordTemp i = makeTwoWordTemp();
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit2(ROOT, "bl ___floatdidf", new Temp[] {r0,r1}, new Temp[] {r0,r1} );
+    emit2(ROOT, "bl ___floatdidf", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     TwoWordTemp i = makeTwoWordTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit2(ROOT, "bl ___floatsidf", new Temp[] {r0,r1}, new Temp[] {r0} );
+    emit2(ROOT, "bl ___floatsidf", new Temp[] {r0,r1,LR}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTwoWordTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit2(ROOT, "bl ___extendsfdf2", new Temp[] {r0,r1}, new Temp[] {r0} );
+    emit2(ROOT, "bl ___extendsfdf2", new Temp[] {r0,r1,LR}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 
@@ -1076,13 +1159,13 @@ UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit2(ROOT, "bl ___floatdisf", new Temp[] {r0,r1}, new Temp[] {r0,r1} );
+    emit2(ROOT, "bl ___floatdisf", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit2(    ROOT, "bl ___floatsisf", new Temp[] {r0}, new Temp[] {r0} );   
+    emit2(    ROOT, "bl ___floatsisf", new Temp[] {r0,LR},new Temp[] {r0} );   
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 /* useless.  should never really be in tree form.
@@ -1095,7 +1178,7 @@ UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit2(ROOT, "bl ___truncdfsf2", new Temp[] {r0,r1}, new Temp[] {r0,r1} );
+    emit2(ROOT, "bl ___truncdfsf2", new Temp[] {r0,r1,LR},new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -1110,14 +1193,14 @@ UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.POINTER )% %{
 UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit2(    ROOT, "bl ___fixsfsi", new Temp[] {r0}, new Temp[] {r0} );
+    emit2(    ROOT, "bl ___fixsfsi", new Temp[] {r0,LR}, new Temp[] {r0} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     Temp i = makeTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit2(ROOT, "bl ___fixdfsi", new Temp[] {r0,r1}, new Temp[] {r0,r1} );
+    emit2(ROOT, "bl ___fixdfsi", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -1136,7 +1219,7 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
 UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTwoWordTemp();	
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit2(ROOT, "bl ___fixsfdi", new Temp[] {r0,r1}, new Temp[] {r0} );
+    emit2(ROOT, "bl ___fixsfdi", new Temp[] {r0,r1,LR}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -1144,7 +1227,7 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
     Temp i = makeTwoWordTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit2(ROOT, "bl ___fixdfdi", new Temp[] {r0,r1}, new Temp[] {r0,r1} );
+    emit2(ROOT, "bl ___fixdfdi", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );	 
 }%
@@ -1164,7 +1247,7 @@ UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
     Temp i = makeTemp();		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit2(    ROOT, "bl ___negsf2", new Temp[] {r0}, new Temp[] {r0} );
+    emit2(    ROOT, "bl ___negsf2", new Temp[] {r0,LR}, new Temp[] {r0} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )%
@@ -1172,7 +1255,7 @@ UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )%
     Temp i = makeTwoWordTemp();		
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit2(ROOT, "bl ___negdf2", new Temp[] {r0,r1}, new Temp[] {r0,r1} );
+    emit2(ROOT, "bl ___negdf2", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );	 
 }%
@@ -1190,7 +1273,6 @@ UNOP(NOT, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 /* STATEMENTS */
 METHOD(params) %{
 
-    param0 = params[0];
 
 }%
 
@@ -1309,196 +1391,64 @@ MOVE(MEM<l,d>(dst), src) %{
 }%
 
 RETURN(val) %{
-    // FSK: leaving OUT exception handling by passing excep-val in r1
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
     emit(new InstrMEM( instrFactory, ROOT, 
 		       "ldmea `s0, { `d0, `d1, `d2 } @ RETURN",
 		       new Temp[]{ FP, SP, PC },
 		       new Temp[]{ FP },
 		       false, null));
-			
 }%
 
 
 THROW(val, handler) %{
     emitMOVE( ROOT, "mov `d0, `s0", r0, val );
-    emit( ROOT, /*"\t.global _lookup \t @ THROW\n"+*/ // not necessary
-		"bl _lookup @ THROW (only r0, lr (& ip?) "+
-		"need to be preserved during lookup)" ); 
-    emit( ROOT, "b stdexit", null, null, false, null);
+    emit( ROOT, "bl _lookup @ (only r0 & fp are preserved during lookup)",
+	         new Temp[] { r1, r2, r3, r4, r5, r6, LR }, // clobbers
+		 new Temp[] { FP }, true, null); 
+    emit(new InstrMEM( instrFactory, ROOT, 
+		       "ldmea `s0, { `d0, `d1, `d2 } @ THROW",
+		       new Temp[]{ FP, SP, PC },
+		       new Temp[]{ FP },
+		       false, null));
 }%
 
-
-CALL(retval, NAME(retex), func, arglist) %{
-    TempList list = arglist;
-    
-    int stackOffset = 0;
-
-    for (int index=0; list != null; index++) { 
-	Temp temp = list.head;
-	if (temp instanceof TwoWordTemp) {
-	   // arg takes up two words
-	   switch(index) {
-	   case 0: case 1: case 2: // put in registers 
-        // not certain an emitMOVE is legal with the l/h modifiers
-	      emit( ROOT, "mov `d0, `s0l",
-		    frame.getRegFileInfo().getRegister(index) ,
-		    temp );
-	      index++;			     
-        // not certain an emitMOVE is legal with the l/h modifiers
-	      emit( ROOT, "mov `d0, `s0h",
-		    frame.getRegFileInfo().getRegister(index),
-		    temp );
-	      break;			     
-	   case 3: // spread between regs and stack
-        // not certain an emitMOVE is legal with the l/h modifiers
-	     emit( ROOT, "mov `d0, `s0l",
-			      frame.getRegFileInfo().getRegister(index),
-			      temp );
-	     index++;
-	     stackOffset += 4;
-	     emit(new InstrMEM( instrFactory, ROOT,
-		      "str `s0h, [`s1, #-4]!",
-		      new Temp[]{ SP }, // SP *implicitly* modified
-		      new Temp[]{ temp, SP })); 
-	     break;
-	   default: // start putting args in memory
-	     emit(new InstrMEM( instrFactory, ROOT,
-				"str `s0l, [`s1, #-4]!", 
-			     new Temp[]{ SP }, //sp implicitly mod 
-			     new Temp[]{ temp, SP }));
-	     index++;
-	     stackOffset += 4;
-	     emit(new InstrMEM( instrFactory, ROOT,
-		      "str `s0h, [`s1, #-4]!",
-		      new Temp[]{ SP }, // SP *implicitly* modified
-		      new Temp[]{ temp, SP })); 
-	     stackOffset += 4;
-	     break;
-	   }
-	} else {
-	  // arg is one word
-	  if (index < 4) {
-	     emitMOVE( ROOT, "mov `d0, `s0", 
-		   frame.getRegFileInfo().getRegister(index), temp);
-	  } else {
-	     emit(new InstrMEM(
-		      instrFactory, ROOT,
-		      "str `s0, [`s1, #-4]!",
-		      new Temp[]{ SP }, // SP *implicitly* modified
-		      new Temp[]{ temp, SP }));
-	     stackOffset += 4;
-	  }
-	}	     
-	list = list.tail;    	
-    }
-
+  // slow version when we don't know exactly which method we're calling.
+CALL(TEMP(retval), NAME(retex), func, arglist) %{
+    int stackOffset = emitCallPrologue(ROOT, arglist);
     // next two instructions are *not* InstrMOVEs, as they have side-effects
     emit( ROOT, "mov `d0, `s0", LR, PC );
     emit( ROOT, "mov `d0, `s0", new Temp[]{ PC }, new Temp[]{ func }, 
 	        new Label[] { retex } );
-
-    // this '1f' and '1:' business is taking advantage of a GNU
-    // Assembly feature to avoid polluting the global name space with
-    // local labels
-    // these may need to be included in the previous instr to preserve
-    // ordering semantics, but for now this way they indent properly
-    emitDIRECTIVE( ROOT, ".text 10\t@.section fixup");
-    emitDIRECTIVE( ROOT, "\t.word 1f, "+retex+" @ (retaddr, handler)");
-    emitDIRECTIVE( ROOT, ".text 0 \t@.section code");
-    emitLABEL( ROOT, "1:", new Label("1")); 
-    
-
-    // this will break if stackOffset > 255 (ie >63 args)
-    Util.assert( stackOffset < 256, 
-		 "Update the spec file to handle large SP offsets");
-    emit( ROOT, "add `d0, `s0, #" + stackOffset, SP , SP );
-    if (((INVOCATION) ROOT).retval.isDoubleWord()) {
-        // not certain an emitMOVE is legal with the l/h modifiers
-        emit( ROOT, "mov `d0l, `s0", retval, r0 );
-        emit( ROOT, "mov `d0h, `s0", retval, r1 );
-    } else {
-        emitMOVE( ROOT, "mov `d0, `s0", retval, r0 );
-    }  
+    // okay, clean up from call.
+    emitCallFixup(ROOT, retex);
+    emitCallEpilogue(ROOT, retval, stackOffset);
 }%
-
-NATIVECALL(retval, func, arglist) %{
-    TempList list = arglist;
-    
-    int stackOffset = 0;
-
-    for (int index=0; list != null; index++) { 
-	Temp temp = list.head;
-	if (temp instanceof TwoWordTemp) {
-	   // arg takes up two words
-	   switch(index) {
-	   case 0: case 1: case 2: // put in registers 
-        // not certain an emitMOVE is legal with the l/h modifiers
-	      emit( ROOT, "mov `d0, `s0l",
-		    frame.getRegFileInfo().getRegister(index) ,
-		    temp );
-	      index++;			     
-	      emit( ROOT, "mov `d0, `s0h",
-		    frame.getRegFileInfo().getRegister(index),
-		    temp );
-	      break;			     
-	   case 3: // spread between regs and stack
-        // not certain an emitMOVE is legal with the l/h modifiers
-	     emit( ROOT, "mov `d0, `s0l",
-		       frame.getRegFileInfo().getRegister(index),
-		       temp );
-	     index++;
-	     stackOffset += 4;
-	     emit(new InstrMEM( instrFactory, ROOT,
-		      "str `s0h, [`s1, #-4]!",
-		      new Temp[]{ SP }, // SP *implicitly* modified
-		      new Temp[]{ temp, SP })); 
-	     break;
-	   default: // start putting args in memory
-	     emit(new InstrMEM( instrFactory, ROOT,
-				"str `s0l, [`s1, #-4]!", 
-				null, 
-			     new Temp[]{ SP, temp }));
-	     index++;
-	     stackOffset += 4;
-	     emit(new InstrMEM( instrFactory, ROOT,
-		      "str `s0h, [`s1, #-4]!",
-		      new Temp[]{ SP }, // SP *implicitly* modified
-		      new Temp[]{ temp, SP })); 
-	     stackOffset += 4;
-	     break;
-	   }
-	} else {
-	  // arg is one word
-	  if (index < 4) {
-	     emitMOVE( ROOT, "mov `d0, `s0", 
-		   frame.getRegFileInfo().getRegister(index), temp);
-	  } else {
-	     emit(new InstrMEM(
-		      instrFactory, ROOT,
-		      "str `s0, [`s1, #-4]!",
-		      new Temp[]{ SP }, // SP *implicitly* modified
-		      new Temp[]{ temp, SP }));
-	     stackOffset += 4;
-	  }
-	}
-	list = list.tail;    	
-    }
-
-
+  // optimized version when we know exactly which method we're calling.
+CALL(TEMP(retval), NAME(retex), NAME(funcLabel), arglist) %{
+    int stackOffset = emitCallPrologue(ROOT, arglist);
+    // do the call.  bl has a 24-bit offset field, which should be plenty.
+    emit( ROOT, "bl "+funcLabel, new Temp[] { LR }, new Temp[0],
+                new Label[] { retex } );
+    // okay, clean up from call.
+    emitCallFixup(ROOT, retex);
+    emitCallEpilogue(ROOT, retval, stackOffset);
+}%
+  // slow version when we don't know exactly which method we're calling.
+NATIVECALL(TEMP(retval), func, arglist) %{
+    int stackOffset = emitCallPrologue(ROOT, arglist);
     // next two instructions are *not* InstrMOVEs, as they have side-effects
     emit( ROOT, "mov `d0, `s0", LR, PC );
     emit( ROOT, "mov `d0, `s0", PC, func );
-
-    // this will break if stackOffset > 255 (ie >63 args)
-    emit( ROOT, "add `d0, `s0, #" + stackOffset, SP, SP );
-    if (((INVOCATION) ROOT).retval.isDoubleWord()) {
-        // not certain an emitMOVE is legal with the l/h modifiers
-        emit( ROOT, "mov `d0l, `s0", retval, r0 );
-        emit( ROOT, "mov `d0h, `s0", retval, r1 );
-    } else {
-        emitMOVE( ROOT, "mov `d0, `s0", retval, r0 );
-    }  
+    // clean up.
+    emitCallEpilogue(ROOT, retval, stackOffset);
+}%
+  // optimized version when we know exactly which method we're calling.
+NATIVECALL(TEMP(retval), NAME(funcLabel), arglist) %{
+    int stackOffset = emitCallPrologue(ROOT, arglist);
+    // do the call.  bl has a 24-bit offset field, which should be plenty.
+    emit( ROOT, "bl "+funcLabel, new Temp[] { LR }, new Temp[0], true, null );
+    // clean up.
+    emitCallEpilogue(ROOT, retval, stackOffset);
 }%
 
 DATA(CONST<i,f>(exp)) %{
@@ -1580,3 +1530,6 @@ SEGMENT(ZERO_DATA) %{
    // for the variables to be initialized to zero
    // emitDIRECTIVE( ROOT, ".bss   \t@.section zero");
 }%
+// Local Variables:
+// mode:java
+// End:
