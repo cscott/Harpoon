@@ -28,11 +28,15 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.METHOD;
 import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.COMPONENTOF;
 import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.OPER;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.AGET;
 import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.ALENGTH;
 import harpoon.IR.Quads.TYPECAST;
 import harpoon.IR.Quads.CONST;
 
@@ -47,7 +51,7 @@ import harpoon.IR.Quads.CONST;
  extensions for the other quads).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: TypeInference.java,v 1.1.2.6 2001-02-27 22:11:51 salcianu Exp $
+ * @version $Id: TypeInference.java,v 1.1.2.7 2001-06-06 15:29:34 bdemsky Exp $
  */
 public class TypeInference implements java.io.Serializable {
     // switch on the debug messages
@@ -182,12 +186,27 @@ public class TypeInference implements java.io.Serializable {
 
 	// quad visitor for detecting the dependencies between ExactTemp types
 	final QuadVisitor dep_detector = new QuadVisitor(){
-		public void visit(MOVE q){
+		public void visit(MOVE q) {
 		    put_deps(q, q.src());
 		}
 		
-		public void visit(AGET q){
+		public void visit(AGET q) {
 		    put_deps(q, q.objectref());
+		}
+
+		public void visit(ALENGTH q) {
+		    types.add(wrapper.et, HClass.Int);
+		    W.add(wrapper.et);
+		}
+
+		public void visit(COMPONENTOF q) {
+		    types.add(wrapper.et, HClass.Boolean);
+		    W.add(wrapper.et);
+		}
+
+		public void visit(INSTANCEOF q) {
+		    types.add(wrapper.et, HClass.Boolean);
+		    W.add(wrapper.et);
 		}
 	    
 		public void visit(CALL q){
@@ -200,6 +219,11 @@ public class TypeInference implements java.io.Serializable {
 		    W.add(wrapper.et);
 		}
 		
+		public void visit(OPER q) {
+		    types.add(wrapper.et, q.evalType());
+		    W.add(wrapper.et);
+		}
+
 		public void visit(ANEW q){
 		    types.add(wrapper.et, q.hclass());
 		    W.add(wrapper.et);
