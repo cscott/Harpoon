@@ -60,10 +60,8 @@
 
 % CSA: Merged up to (not including) HEADING8 in my transact.bib.
 
-@PREAMBLE{ "\newcommand{\noopsort}[1]{} "
-         # "\newcommand{\singleletter}[1]{#1} " }
-
-@string{TOPLAS = "{ACM} Transactions on Programming Languages and Systems (TOPLAS)"}
+%@string{TOPLAS-verbose = "{ACM} Transactions on Programming Languages and Systems (TOPLAS)"}
+%@string{TOPLAS = "ACM TOPLAS"}
 
 @InCollection{AbramsonKu73,
   author =       "N. Abramson",
@@ -168,7 +166,7 @@ reduced network accesses and increased processor idle time.
  bibnote = {was AlonBLP91 JCSS::AlonBLP1991},
  author = {Noga Alon and Amotz Bar-Noy and Nathan Linial and David Peleg},
  title =        "A Lower Bound for Radio Broadcast",
- journal = {Journal of Computer and System Sciences},
+ journal = {JCSS},
  volume = {43},
  number = {2},
  year = {1991},
@@ -244,7 +242,7 @@ reduced network accesses and increased processor idle time.
 @Article{BallLa94
   ,author	= {Thomas Ball and James R. Larus}
   ,title	= {Optimally Profiling and Tracing Programs}
-  ,journal      = {ACM Transactions on Programming Languages and Systems}
+  ,journal      = TOPLAS
   ,year		= 1994
   ,volume       = 16
   ,number       = 4
@@ -294,10 +292,22 @@ reduced network accesses and increased processor idle time.
   ,year = 	 1999
 }
 
+@Article{BensoussanClDa72
+  ,author = 	 {A. Bensoussan and C.T. Clingen and R.C. Daley}
+  ,title = 	 {The {M}ultics Virtual Memory:  Concepts and Design}
+  ,journal = 	 {CACM}
+  ,year = 	 1972
+  ,volume =	 15
+  ,number =	 5
+  ,pages =	 {308--318}
+  ,month =	 MAY
+}
+
 @MastersThesis{Berman00,
   author =   {David B. Berman},
   title =    {Efficient Parallel Binary Decision Diagram Construction Using {Cilk}},
-  school =   {MIT Department of Electrical Engineering and Computer Science},
+  school-verbose =   {MIT Department of Electrical Engineering and Computer Science},
+  school =   {MIT EECS},
   year =     2000,
   month =    MAY,
 }
@@ -437,7 +447,8 @@ reduced network accesses and increased processor idle time.
 @PhdThesis{Blumofe95
  ,author = 	 {Robert D. Blumofe}
  ,title = 	 {Executing Multithreaded Programs Efficiently}
- ,school = 	 {MIT Department of Electrical Engineering and Computer Science}
+ ,school-verbose = 	 {MIT Department of Electrical Engineering and Computer Science}
+ ,school = 	 {MIT EECS}
  ,year = 	 1995
  ,key =		 {Blumofe95}
  ,address =	 {Cambridge, Massachusetts}
@@ -451,7 +462,7 @@ reduced network accesses and increased processor idle time.
 		 Keith H. Randall and Yuli Zhou}
   ,key		= {Blumofe96}
   ,title	= {{C}ilk: An Efficient Multithreaded Runtime System}
-  ,journal      = {Journal of Parallel and Distributed Computing}
+  ,journal      = {JPDC}
   ,year		= 1996
   ,affiliation	= MITLCS
   ,volume       = 37
@@ -489,13 +500,23 @@ reduced network accesses and increased processor idle time.
 @Article{BlumofeLe99
   ,author = 	 {Robert D. Blumofe and Charles E. Leiserson}
   ,title = 	 {Scheduling Multithreaded Computations by Work Stealing}
-  ,journal = 	 {Journal of the ACM}
+  ,journal = 	 {JACM}
   ,year = 	 1999
   ,volume =	 46
   ,number =	 5
   ,pages =	 {720--748}
   ,month =	 SEP
 }
+
+@article{BorodinKlRaSuWi-2001,
+ author = {Allan Borodin and Jon Kleinberg and Prabhakar Raghavan and Madhu Sudan and David P. Williamson},
+ title = {Adversarial queuing theory},
+ journal = {JACM},
+ volume = {48},
+ number = {1},
+ year = {2001},
+ pages = {13--38}
+ }
 
 @InProceedings{BuckleySi84
  ,bibstatus    = Todo
@@ -566,6 +587,12 @@ reduced network accesses and increased processor idle time.
  ,month =        NOV      
 }
 
+@Misc{Classpath,
+  key =          {GNU Classpath},
+  title =	 {The {GNU} {C}lasspath project},
+  howpublished = {\url{http://classpath.org/}},
+}
+
 @InProceedings{Cohen84,
   bibnote = 	 {cohen84:multi},
   author = 	 {Shimon Cohen},
@@ -583,7 +610,7 @@ reduced network accesses and increased processor idle time.
 @Misc{Conway66,
   author =	 {Lynn Conway},
   title =	 {Dynamic Instruction Scheduling},
-  howpublished = {in Lynn Conway's Archive and Reference Materials Regardin gthe IBM ICS-1 Machine},
+  howpublished = {in Lynn Conway's Archive and Reference Materials Regarding the IBM ICS-1 Machine},
   month =    FEB,
   year =     1966,
   URL =      {http://ai.eecs.umich.edu/~mirror/ACS/Lynns.ACSarchive.front.html}
@@ -650,10 +677,10 @@ reduced network accesses and increased processor idle time.
 @Manual{Digital96,
   title = 	 {VAX MACRO and Instruction Set Reference Manual},
   organization = {Digital Equipment Corporation},
-  address =	 {Maynard, Massachusetts},
+  address-verbose =	 {Maynard, Massachusetts},
   month =	 NOV,
   year =	 1996,
-  URL = 	 {http://www.openvms.compaq.com:8000/72final/4515/4515pro.html}
+  verbose-URL = 	 {http://www.openvms.compaq.com:8000/72final/4515/4515pro.html}
 }
 
 @Manual{Digital98,
@@ -673,7 +700,7 @@ reduced network accesses and increased processor idle time.
  ,year	       = 2000
  ,address      = {Atlanta, Georgia}
  ,month	       = OCT # { 10-14}
- ,note	       = {\url{http://www.linuxshowcase.org/2000/2000papers/papers/dike}}
+ ,note-verbose	       = {\url{http://www.linuxshowcase.org/2000/2000papers/papers/dike}}
  ,abstract     = {The Linux kernel has been ported so that it runs on itself, in a set of Linux processes. The result is a user space virtual machine using simulated hardware constructed from services provided by the host kernel. A Linux virtual machine is capable of running nearly all of the applications and services available on the host architecture. This paper describes the capabilities of a user-mode virtual machine, the design and implementation of the port, some of the applications that it lends itself to, and some of the work that remains to be done.}
 }
 
@@ -776,6 +803,12 @@ month = mar
  ,summary = {Race-freedom is not sufficient for concurrent correctness.}
  }
 
+@Misc{Flex,
+  author = 	 {C. Scott Ananian},
+  title =	 {The {FLEX} compiler project},
+  howpublished = {\url{http://flex-compiler.csail.mit.edu/}},
+}
+
 @InProceedings{FordScJi84
  ,bibstatus    = Todo
  ,author       = {R. Ford and R. Schultz and M. Jipping}
@@ -791,7 +824,8 @@ month = mar
 @MastersThesis{Frigo98,
   author = 	 {Matteo Frigo},
   title = 	 {The Weakest Reasonable Memory Model},
-  school = 	 {MIT Department of Electrical Engineering and Computer Science},
+  school-verbose = 	 {MIT Department of Electrical Engineering and Computer Science},
+  school = 	 {MIT EECS},
   year = 	 1998,
   month =	 JAN,
   url = 	 {ftp://theory.lcs.mit.edu/pub/cilk/frigo-ms-thesis.ps.gz}
@@ -943,7 +977,7 @@ month = mar
  bibnote = {was GoldbergMPS-2000 Goldberg:2000:CRC},
  author = {Leslie Ann Goldberg and Philip D. MacKenzie and Mike Paterson and Aravind Srinivasan},
  title = {Contention resolution with constant expected delay},
- journal = {Journal of the ACM (JACM)},
+ journal = {JACM},
  volume = {47},
  number = {6},
  year = {2000},
@@ -962,7 +996,7 @@ month = mar
 @Article{GoodmanGrMaMa88
   ,author = 	 {Jonathan Goodman and Albert G. Greenberg and Neal Madras and Peter March}
   ,title = 	 {Stability of Binary Exponential Backoff}
-  ,journal = 	 {Journal of the ACM}
+  ,journal = 	 {JACM}
   ,year = 	 1988
   ,volume =	 35
   ,number =	 3
@@ -1017,7 +1051,7 @@ month = mar
   ,URL = 	 {http://www.hpl.hp.com/techreports/tandem/TR-81.3.html}
 }
 
-@InProceedings{Gray81b
+@InProceedings{Gray81b-verbose
   ,author = 	 {Jim Gray}
   ,title = 	 {The Transaction Concept:  Virtues and Limitations}
   ,booktitle =	 {Seventh International Conference of Very Large Data Bases}
@@ -1025,6 +1059,15 @@ month = mar
   ,year =	 1981
   ,month =	 SEP
   ,note =        {Also published as \cite{Gray81a}.}
+}
+
+@InProceedings{Gray81b
+  ,author = 	 {Jim Gray}
+  ,title = 	 {The Transaction Concept:  Virtues and Limitations}
+  ,booktitle =	 {VLDB}
+  ,pages =	 {144-154}
+  ,year =	 1981
+  ,month =	 SEP
 }
 
 @Book{GrayRe93
@@ -1041,7 +1084,7 @@ month = mar
   author =       "Albert G. Greenberg and Philippe Flajolet and Richard E. Ladner",
   area =         "Computer Systems",
   pages =        "289--325",
-  journal =      "Journal of the ACM",
+  journal =      "JACM",
   month =        apr,
   year =         "1987",
   volume =       "34",
@@ -1075,14 +1118,14 @@ month = mar
   author =       "Albert G. Greenberg and Shmuel Winograd",
   area =         "Computer Systems",
   pages =        "589--596",
-  journal =      "Journal of the ACM",
+  journal =      "JACM",
   month =        jul,
   year =         1985,
   volume =       32,
   number =       3
 }
 
-@InProceedings{GreenwaldCh96,
+@InProceedings{GreenwaldCh96-verbose,
  bibnote = {was 238767},
  author = {Michael Greenwald and David Cheriton},
  title = {The Synergy Between Non-blocking Synchronization and
@@ -1096,6 +1139,36 @@ month = mar
  location = {Seattle, Washington, United States},
  doi = {http://doi.acm.org/10.1145/238721.238767},
  publisher = {ACM Press},
+ local = {osdi96.pdf},
+ summary = {Three reasons to use non-blocking synchronization in the
+                  Cache Kernel: 1) synchronous code can be executed in
+                  asynchronous signal handlers, as in OORPC; 2)
+                  minimizes interference between process scheduling
+                  and synchronization; 3) non-blocking synchronization
+                  provides greater insulation from failures.  Three
+                  synergies: 1) (asynchronous) signals are only
+                  kernel-supported notification; 2) tolerance of
+                  threads being terminated (fail-stopped) in the
+                  middle of ``system library'' code, such as handling a
+                  page fault, etc; 3) isolation of synchronization
+                  from scheduling and thread deletion allows modular
+                  and reliable system design.  Implementation uses:
+                  atomic DCAS, type-stable memory management, and
+                  contention-minimizing data structures.},
+ }
+
+@InProceedings{GreenwaldCh96,
+ bibnote = {was 238767},
+ author = {Michael Greenwald and David Cheriton},
+ title = {The Synergy Between Non-blocking Synchronization and
+                  Operating System Structure},
+ booktitle = {USENIX OSDI '96},
+ month = oct,
+ year = 1996,
+ isbn = {1-880446-82-0},
+ pages = {123--136},
+ location = {Seattle, Washington, United States},
+ doi = {http://doi.acm.org/10.1145/238721.238767},
  local = {osdi96.pdf},
  summary = {Three reasons to use non-blocking synchronization in the
                   Cache Kernel: 1) synchronous code can be executed in
@@ -1131,6 +1204,14 @@ month = mar
  publisher = {ACM Press},
  local = {p1719-haines.pdf},
  }
+
+
+@InProceedings{HammondWoCh04,
+  author = 	 {Lance Hammond and Vicky Wong and Mike Chen and  Brian D. Carlstrom and  John D. Davis and  Ben Hertzberg and  Manohar K. Prabhu and  Honggo Wijaya and Christos Kozyrakis and  Kunle Olukotun},
+  title = 	 {Transactional Memory Coherence and Consistency},
+  crossref =	 {ISCA04},
+  pages =	 {102--113}
+}
 
 @InProceedings{HarrisFr03,
   author = 	 {Tim Harris and Keir Fraser},
@@ -1231,15 +1312,9 @@ pages = "II70-II77"
  author = {Maurice P. Herlihy},
  title = {Impossibility and Universality Results for Wait-Free
                   Synchronization},
- booktitle = {Proceedings of the 7th Annual {ACM} Symposium on
-                  Principles of Distributed Computing (PODC)},
- month = aug,
- year = 1988,
- isbn = {0-89791-277-2},
+ crossref = {PODC88},
  pages = {276--290},
- location = {Toronto, Ontario, Canada},
  doi = {http://doi.acm.org/10.1145/62546.62593},
- publisher = {ACM Press},
  local = {p276-herlihy.pdf},
  summary = {Prove statements of the form, ``there is no wait-free
                   implementation of X by Y'', and show a hierarchy of
@@ -1251,11 +1326,11 @@ pages = "II70-II77"
   ,bibnote =	 {was 102808}
   ,author = 	 {Maurice Herlihy}
   ,title = 	 {Wait-Free Synchronization}
-  ,journal = 	 {ACM Transactions on Programming Languages and Systems (TOPLAS)}
+  ,journal = 	 TOPLAS
   ,year = 	 1991
   ,volume =	 13
   ,number =	 1
-  ,pages =	 {124--149}
+  ,pages =	 {\linebreak[0]124--149}
   ,month =	 jan
   ,issn =	 {0164-0925}
   ,doi =	 {http://doi.acm.org/10.1145/114005.102808}
@@ -1269,9 +1344,9 @@ pages = "II70-II77"
   ,institution = {Digital Cambridge Research Lab}
   ,year = 	 1992
   ,number =	 {92/07}
-  ,address =	 {One Kendall Square, Cambridge, MA 02139}
+  ,address-verbose =	 {One Kendall Square, Cambridge, MA 02139}
   ,month =	 DEC
-  ,url =         {ftp://ftp.cs.umass.edu/pub/osl/papers/crl-92-07.ps.Z}
+  ,url-verbose =         {ftp://ftp.cs.umass.edu/pub/osl/papers/crl-92-07.ps.Z}
 }
 
 @InProceedings{HerlihyMo93
@@ -1293,7 +1368,7 @@ pages = "II70-II77"
  ,bibnote =	 {was 161469}
  ,author = 	 {Maurice Herlihy}
  ,title = 	 {A Methodology for Implementing Highly Concurrent Data Objects}
- ,journal = 	 {ACM Transactactions on Programming Languages and Systems}
+ ,journal = 	 TOPLAS
  ,year = 	 1993
  ,volume =	 15
  ,number =	 5
@@ -1304,7 +1379,7 @@ pages = "II70-II77"
  ,publisher =	 {ACM Press}
  ,local =	 {p745-herlihy.pdf}
  ,annote =	 {Earliest(?) exponential backoff for lock conflicts.  See Herlihy93.ps here.}
- ,URL          = {http://gatekeeper.dec.com/pub/DEC/CRL/research-reports/91.10.ps}
+ ,verbose-URL          = {http://gatekeeper.dec.com/pub/DEC/CRL/research-reports/91.10.ps}
  ,summary = {Defines ``wait-free'' and ``lock-free''.  Provides
                   copy-modify-swap algorithm for making ``small
                   objects'' lock-free or wait-free, and a blocking
@@ -1322,7 +1397,8 @@ pages = "II70-II77"
  ,bibnote = {was HerlihyLuMo02a, HerlihyLM03}
  ,author =   {Maurice P. Herlihy and Victor Luchangco and Mark Moir}
  ,title =    {Obstruc\-tion-Free Synchronization:  Double-Ended Queues as an Example}
- ,booktitle = {Proceedings of the 23rd IEEE International Conference on Distributed Computing Systems (ICDCS)}
+ ,booktitle = {ICDCS}
+ ,booktitle-verbose = {Proceedings of the 23rd IEEE International Conference on Distributed Computing Systems (ICDCS)}
  ,address = {Providence, Rhode Island}
  ,month = MAY
  ,year = 2003
@@ -1423,7 +1499,8 @@ pages = "II70-II77"
 @TechReport{JensenHaBr87
   ,author = 	 {E. H. Jensen and G. W. Hagensen and J. M. Broughton}
   ,title = 	 {A New Approach to Exclusive Data Access in Shared Memory Multiprocessors}
-  ,institution = {Lawrence Livermore National Laboratory}
+  ,institution = {LLNL}
+  ,longinstitution = {Lawrence Livermore National Laboratory}
   ,year = 	 1987
   ,number =	 {UCRL-97663}
   ,address =	 {Livermore, California}
@@ -1564,7 +1641,7 @@ pages = "II70-II77"
 @Misc{Knight89,
   author = "Thomas F. {Knight, Jr.}",
   title = "System and Method for parallel processing with mostly functional languages",
-  howpublished = "United States Patent 4,825,360",
+  howpublished = "U.S. Patent 4,825,360",
   month = 	 "April 25",
   year = 	 1989
 }
@@ -1579,6 +1656,19 @@ pages = "II70-II77"
  ,number       = 3
  ,pages	       = {339-353}
  }
+
+@article{
+    Kung81,
+    key = "Kung, H.T.",
+    author = "Kung, H.T. and Robinson, John T.",
+    title = "On Optimistic Methods for Concurrency Control",
+    journal = "ACM Trans. on Database Systems",
+    volume = 6,
+    number = 2,
+    year = 1981,
+    month = "June",
+    pages = "213-226"
+}
 
 @Article{Kuszmaul95
   ,author	= {Bradley C. Kuszmaul}
@@ -1685,7 +1775,7 @@ Architecture, and Compilation (MTEAC-5)}
   ,bibnote =	 {was 359878}
   ,author = 	 {Leslie Lamport}
   ,title = 	 {Concurrent Reading and Writing}
-  ,journal = 	 {Communications of the ACM}
+  ,journal = 	 {CACM}
   ,year = 	 1977
   ,volume =	 20
   ,number =	 11
@@ -1709,6 +1799,18 @@ Architecture, and Compilation (MTEAC-5)}
   pages =        "690--691",
   volume =       "C-28",
   file = {Lamport79}
+}
+
+@Article{Lee89
+  ,author = 	 {Ruby B. Lee}
+  ,title = 	 {Precision Architecture}
+  ,journal = 	 {IEEE Computer}
+  ,year = 	 1989
+  ,volume =	 22
+  ,number =	 1
+  ,pages =	 {78--91}
+  ,month =	 JAN
+  ,annote =      {Precision uses global virtual addressing}
 }
 
 @Article{LehmanYa81
@@ -1791,7 +1893,7 @@ Architecture, and Compilation (MTEAC-5)}
   year =	 2002,
   address =	 {Ottawa, Canada},
   month =	 jun,
-  note =	 {\url{http://www.linuxsymposium.org/2002/}},
+  note-verbose =	 {\url{http://www.linuxsymposium.org/2002/}},
   annote =       {Also at \url{http://lse.sourceforge.net/locking/dcache/dcache_lock.html}}
 }
 
@@ -1833,7 +1935,7 @@ Architecture, and Compilation (MTEAC-5)}
  author = {Barbara Liskov and Dorothy Curtis and Paul Johnson and
                   Robert Scheifler},
  title = {Implementation of {A}rgus},
- booktitle = SOSP87,
+booktitle = "Proceedings of the Eleventh ACM Symposium on Operating Systems Principles (SOSP)",
  month = nov,
  year = {1987},
  isbn = {0-89791-242-X},
@@ -1858,7 +1960,7 @@ Architecture, and Compilation (MTEAC-5)}
  bibnote = {was 42399},
  author = {Barbara Liskov},
  title = {Distributed programming in {A}rgus},
- journal = {Communications of the ACM},
+ journal = {CACM},
  volume = 31,
  number = 3,
  month = mar,
@@ -1881,6 +1983,14 @@ Architecture, and Compilation (MTEAC-5)}
   ,month =   JUN # "~30--" # JUL # "~2"
 }
 
+@Book{LynchMeWe94,
+  author = 	 {Nancy Lynch and Michael Merritt and William Weihl and Alan Fekete},
+  title = 	 {Atomic Transactions},
+  publisher = 	 {Morgan Kaufmann},
+  year = 	 {1994},
+  address = 	 {San Mateo, California}
+}
+
 @InProceedings{MacKenziePlRa94,
   bibnote = {was STOC::MacKenziePR1994},
   title =        "On Contention Resolution Protocols and Associated
@@ -1898,7 +2008,7 @@ Architecture, and Compilation (MTEAC-5)}
                  Probabilistic Phenomena",
   author =       "P. D. MacKenzie and C. G. Plaxton and R. Rajaraman",
   area =         "Parallel Computation",
-  journal =      "Journal of the ACM",
+  journal =      "JACM",
   pages =        "324--378",
   month =        mar,
   year =         "1998",
@@ -1953,6 +2063,14 @@ Architecture, and Compilation (MTEAC-5)}
   ,note =	 {Springer Lecture Notes in Computer Science}
 }
 
+@inproceedings{MartinezTo02,
+ author = {J. F. Martinez and J. Torrellas},
+ title = {Speculative synchronization: applying thread-level
+                  speculation to explicitly parallel applications}, 
+ crossref = {ASPLOS02}, 
+ pages = {18--29},
+ }
+
 @TechReport{MansonPu02,
   author = 	 {Jeremy Manson and William Pugh},
   title = 	 {Semantics of multithreaded {J}ava},
@@ -1997,7 +2115,7 @@ Architecture, and Compilation (MTEAC-5)}
 @Article(MetcalfeBo76
   ,Author      = {Robert M. Metcalfe and David R. Boggs}
   ,Title       = {Ethernet:  Distributed Packet Switching for Local Computer Networks}
-  ,Journal     = {Communications of the ACM}
+  ,Journal     = {CACM}
   ,Year        = 1976
   ,Volume      = 19
   ,Number      = 7
@@ -2008,6 +2126,15 @@ Architecture, and Compilation (MTEAC-5)}
   ,Annote      = {Randomized adaptive exponential backoff}
   ,Key         = {Metcalfe76Boggs}
   )
+
+@InProceedings{MichaelSc96
+ ,author       = {Maged M. Michael and Michael L. Scott}
+ ,title	       = {Simple, Fast, and Practical Non-Blocking and Blocking Concurrent Queue Algorithms}
+ ,crossref     = {PODC96}
+ ,pages	       = {267--276}
+ ,annote       = {Earliest known (to Bradley) definition of the ABA problem.}
+ }
+
 
 @inproceedings{MillerCh88,
 author = "Barton P. Miller and Jong-Deok Choi",
@@ -2022,11 +2149,31 @@ address = "Atlanta, Georgia",
 pages = "135-144"
 }
 
+@MastersThesis{Miller95,
+  author = 	 {Robert C. Miller},
+  title = 	 {A Type-checking Preprocessor for {C}ilk 2, a
+                  Multithreaded {C} Language},
+  school-verbose = 	 {MIT Department of Electrical Engineering and
+                  Computer Science},
+  school = 	 {MIT EECS},
+  year = 	 1995,
+  month =	 may,
+  summary = 	 {Describes c2c.}
+}
+
 @inproceedings{MinCh91,
         author = "Sang Lyul Min and Jong-Deok Choi",
         title = "An Efficient Cache-based Access Anomaly Detection Scheme",
         crossref = {ASPLOS91},
         pages = "235-244"
+}
+
+@Manual{MIPSR10K
+ ,title = 	 {{MIPS} {R10000} Microprocessor User's Manual, Version 2.0}
+ ,organization = {MIPS Technologies, Inc.}
+ ,address =	 {Mountain View, California}
+ ,year =         1996
+ ,month =        OCT
 }
 
 %John Eliot Blakeslee Moss
@@ -2199,7 +2346,7 @@ year = 1996
  ,month = AUG
  ,year =         1997
  ,number =       {9705}
- ,note =          {\url{http://www-ece.rice.edu/~rsim}}
+ ,note-verbose =          {\url{http://www-ece.rice.edu/~rsim}}
 }
 
 @TechReport{PalacharlaJoSm96
@@ -2234,6 +2381,19 @@ year = 1996
   ,pages    = "206--218"
   ,url      = {http://www.ece.wisc.edu/~jes/papers/isca.ss.ps}
   }
+
+@article{Parnas72,
+ author = {D. L. Parnas},
+ title = {On the criteria to be used in decomposing systems into modules},
+ journal = {CACM},
+ volume = {15},
+ number = {12},
+ year = {1972},
+ issn = {0001-0782},
+ pages = {1053--1058},
+ doi = {http://doi.acm.org/10.1145/361598.361623},
+ publisher = {ACM Press},
+ }
 
 @inproceedings{PerkovicKe96,
         author = "Dejan Perkovi\'{c} and Peter Keleher",
@@ -2347,13 +2507,14 @@ year = 1996
 
 @InProceedings{RajwarGo01
   ,author = 	 {Ravi Rajwar and James R. Goodman}
-  ,title = 	 {Speculative {L}ock {E}lision: Enabling Highly Concurrent Multithreaded Execution}
-  ,booktitle =	 {Proceedings of the 34th Annual {ACM/IEEE} International Symposium on Microarchitecture}
-  ,pages =	 {294--305}
-  ,year =	 2001
-  ,address =	 {Austin, Texas}
-  ,month =	 DEC
-  ,URL = 	 {http://www.cs.wisc.edu/~rajwar/papers/micro01.pdf}
+  ,title = 	 {Speculative Lock Elision: Enabling Highly Concurrent Multithreaded Execution}
+  ,booktitle-verbose = {Proceedings of the 34th Annual {ACM/IEEE} International Symposium on Microarchitecture}
+  ,booktitle =	{MICRO-34}
+  ,pages =	{294--305}
+  ,year =	2001
+  ,address =	{Austin, Texas}
+  ,month =	DEC
+  ,URL = 	{http://www.cs.wisc.edu/~rajwar/papers/micro01.pdf}
 }
 
 @InProceedings{RajwarGo02
@@ -2396,7 +2557,7 @@ year = 1996
 @Article{Ranade91
  ,author       = {A. G. Ranade}
  ,title	       = {How to Emulate Shared Memory}
- ,journal      = {Journal of Computer and Systems Sciences}
+ ,journal      = {JCSS}
  ,year	       = 1991
  ,volume       = 42
  ,number       = 3 
@@ -2456,7 +2617,7 @@ year = 1996
 @article{Robson71,
 author = "J. M. Robson",
 title = "An Estimate of the Store Size Necessary for Dynamic Storage Allocation",
-journal = "Journal of the ACM",
+journal = "JACM",
 year = 1971,
 month = jul,
 volume = 18,
@@ -2466,7 +2627,7 @@ pages = "416--423"
 
 @InProceedings{RudysWa02,
  author 	= {Algis Rudys and Dan S. Wallach},
- title  	= {Transactional Rollback for Language-Based Systems},
+ title  	= {Transactional Rollback for Lan\-guage-Based Systems},
  booktitle 	= {Proceedings of the 2002 International Conference on
                    Dependable Systems and Networks (DSN)},
  month		= jun,
@@ -2529,7 +2690,7 @@ booktitle = "Proceedings of the Sixteenth ACM Symposium on Operating Systems Pri
  author = {H. Schorr and W. M. Waite},
  title = {An efficient machine-independent procedure for garbage
                   collection in various list structures},
- journal = {Communications of the ACM},
+ journal = {CACM},
  volume = 10,
  number = 8,
  month = aug,
@@ -2620,6 +2781,13 @@ booktitle = "Proceedings of the Sixteenth ACM Symposium on Operating Systems Pri
   ,year =	 1997
 }
 
+@InProceedings{SohiVa87
+ ,author       = {Gurindar S. Sohi and Sriram Vajapeyam}
+ ,title	       = {Instruction Issue Logic for High-Perforamnce Interruptable Pipelined Processors}
+ ,crossref     = {ISCA87}
+ ,OPTpages     = {27-34}
+}
+
 @MastersThesis{Song98,
   author = 	 {Bin Song},
   title = 	 {Scheduling Adaptively Parallel Jobs},
@@ -2666,6 +2834,15 @@ booktitle = "Proceedings of the Sixteenth ACM Symposium on Operating Systems Pri
   year =	 1991
 }
 
+@Misc{SPECjvm98,
+  key =          {SPECjvm98},
+  title-verbose ={The {S}tandard {P}erformance {E}valuation {C}orporation
+                  ({SPEC}) {JVM} {C}lient 98 ({SPECjvm98})},
+  title =        {{SPEC} {JVM} {C}lient 98 ({SPECjvm98})},
+  howpublished = {\url{http://www.spec.org/jvm98/}},
+  year =	 1998
+}
+
 @MastersThesis{Stark98
  ,author = 	 {Andrew F. Stark}
  ,title = 	 {Debugging Multithreaded Programs that Incorporate User-Level Locking}
@@ -2701,6 +2878,16 @@ International Symposium of Formal Methods Europe (FME 2001)}
  ,year	       = 1988
  ,month	       = JUN
  }
+
+
+@Book{Tanenbaum92,
+  author = 	 {Andrew S. Tanenbaum},
+  title = 	 {Modern Operating Systems},
+  verbose-publisher = 	 {Prentice Hall, Inc.},
+  publisher = 	 {Prentice Hall},
+  year = 	 {1992},
+  address = 	 {Englewood Cliffs, NJ}
+}
 
 % Notes from ShavitTo97
 %       Massalin and Pu [24] compare and swap on two words.
@@ -2764,6 +2951,13 @@ International Symposium of Formal Methods Europe (FME 2001)}
  ,title	       = {Emulating {N}etbench}
  ,howpublished = {\url{http://samba.org/ftp/tridge/dbench/README}}
  ,year	       = 1999
+ }
+
+@Proceedings{Usenix98
+ ,booktitle    = {Proceedings of the USENIX Annual Technical Conference}
+ ,year	       = 1998
+ ,address      = {New Orleans, Louisiana}
+ ,month        = JUN # { 15--19}
  }
 
 @InProceedings{Valois95,
@@ -2854,10 +3048,25 @@ publisher = "Springer Verlag"
  ,year	       = 2002
  ,month	       = SEP
  }
-@Misc{Flex,
-  author = 	 {C. Scott Ananian},
-  title =	 {The {FLEX} compiler project},
-  howpublished = {\texttt{http://\hspace{0pt}flex-compiler.lcs.mit.edu/}},
+
+@TechReport{Zhang00
+  ,author =      {Lixin Zhang}
+  ,title =       {{URSIM} reference manual}
+  ,institution = {University of Utah}
+  ,year =        2000
+  ,number =      {UUCS-00-015}
+  ,month =       AUG
+}
+
+
+@TechReport{Zhang03
+  ,author =      {Lixin Zhang}
+  ,title =       {{UVSIM} reference manual}
+  ,institution = {University of Utah}
+  ,year =        2003
+  ,number =      {UUCS-03-011}
+  ,month =       MAR
+  ,verbose-url = {http://www.cs.utah.edu/techreports/2003/pdf/UUCS-03-011.pdf}
 }
 
 %% Cross-referenced items follow
@@ -2876,7 +3085,7 @@ publisher = "Springer Verlag"
 		   SIGPLAN Sigplan Notices, Volume~26, Number~4, April 1991}  
 }
 
-@Proceedings{ASPLOS02
+@Proceedings{ASPLOS02-verbose
  ,booktitle    = {Proceedings of the 10th International Conference on
                   Architectural Support for Programming Languages and
                   Operating Systems (ASPLOS-X)}
@@ -2887,6 +3096,15 @@ publisher = "Springer Verlag"
  ,publisher    = {ACM Press}
 }
 
+@Proceedings{ASPLOS02
+ ,booktitle    = {ASPLOS-X}
+ ,month        = OCT # { 5--9}
+ ,year	       = 2002
+ ,address      = {San Jose, California}
+ ,doi = {http://doi.acm.org/10.1145/605397.605400}
+ ,isbn 	       = {1-58113-574-2}
+}
+
 @Conference(FOCS87
   ,BookTitle = {Proceedings of the 28th Symposium on the Foundations of Computer Science}
   ,Year      = 1987
@@ -2895,11 +3113,27 @@ publisher = "Springer Verlag"
   ,Address  = {Los Angeles, California}
   )
 
-@Conference(ISCA83
+@Conference(ISCA83-verbose
   ,BookTitle = {Conference Proceedings of the tenth International Symposium on Computer Architecture}
   ,Year      = 1983
   ,month     = JUN
   ,address   = {Stockholm, Sweden}
+  )
+
+@Conference(ISCA83
+  ,BookTitle = {ISCA 10}
+  ,Year      = 1983
+  ,month     = JUN
+  ,address   = {Stockholm, Sweden}
+  )
+
+
+@Proceedings(ISCA87
+  ,booktitle  = {ISCA 14}
+  ,longBookTitle = {The 14th Annual International Symposium on Computer Architecture (ISCA)}
+  ,Year      = 1987
+  ,longNote      = {ACM SIGARCH Computer Architecture News, Volume~17, Number~3, June 1989}
+  ,address   = {Pittsburgh, PA}
   )
 
 @Proceedings(ISCA89
@@ -2911,7 +3145,8 @@ publisher = "Springer Verlag"
   ,Month     = May
   ,Date      = {May 28--June 1}
   )
-@Proceedings{ISCA93
+
+@Proceedings{ISCA93-verbose
  ,booktitle    = {Proceedings of the 20th Annual International
                   Conference on Computer Architecture (ISCA).
                 (Also published as ACM SIGARCH Computer
@@ -2923,6 +3158,15 @@ publisher = "Springer Verlag"
  ,publisher    = {ACM Press}
  }
 
+@Proceedings{ISCA93
+ ,booktitle    = {ISCA 20}
+ ,month        = may
+ ,year	       = 1993
+ ,address      = {San Diego, California}
+ ,isbn 	       = {0-8186-3810-9}
+ }
+
+
 @Proceedings{ISCA97
  ,booktitle    = {Proceedings of the 24th Annual International Symposium
                  on Computer Architecture (ISCA~'97)}
@@ -2932,9 +3176,16 @@ publisher = "Springer Verlag"
  ,month        = "2--4 " # jun
  }
 
+
+@Proceedings{ISCA04,
+  booktitle = 	 {ISCA 31},
+  year = 	 2004,
+  address =	 {M\"{u}nchen, Germany},
+  month =	 JUN
+}
+
 @Proceedings{LFP86,
- booktitle = {Proceedings of the 1986 {ACM} Conference on {LISP} and
-                  Functional Programming ({LFP})},
+ booktitle = {LFP},
  year 		= 1986,
  isbn 		= {0-89791-200-4},
  location 	= {Cambridge, Massachusetts, United States},
@@ -2952,8 +3203,7 @@ publisher = "Springer Verlag"
  }
 
 @Proceedings{LFP90,
- booktitle = {Proceedings of the 1990 {ACM} Conference on {LISP} and
-                  Functional Programming ({LFP})},
+ booktitle = {LFP},
  month = jun,
  year = 1990,
  isbn = {0-89791-368-X},
@@ -2971,7 +3221,7 @@ publisher = "Springer Verlag"
  publisher = {ACM Press},
  }
 
-@Proceedings{OOPSLA03
+@Proceedings{OOPSLA03-verbose
  ,booktitle    = {Proceedings of the 18th {ACM} {SIGPLAN} conference on
                   Object-Oriented Programing, Systems, Languages, and
                   Applications (OOPSLA)}
@@ -2982,9 +3232,16 @@ publisher = "Springer Verlag"
  ,publisher    = {ACM Press}
  }
 
+@Proceedings{OOPSLA03
+ ,booktitle    = {OOPSLA}
+ ,month	       = oct
+ ,year	       = 2003
+ ,address      = {Anaheim, California}
+ ,isbn         = {1-58113-712-5}
+ }
+
 @Proceedings{PLDI03
- ,booktitle    = {Proceedings of the {ACM} {SIGPLAN} '03 Conference on
-                  Programming Language Design and Implementation ({PLDI})}
+ ,booktitle    = {PLDI}
  ,month	       = jun
  ,year	       = 2003
  ,address      = {San Diego, California}
@@ -2992,7 +3249,27 @@ publisher = "Springer Verlag"
  ,publisher    = {ACM Press}
  }
 
-@Proceedings{PODC95
+
+
+@Proceedings{PODC88-verbose
+  ,booktitle = {Proceedings of the 7th Annual {ACM} Symposium on
+                  Principles of Distributed Computing (PODC)}
+  ,year = 	 1988
+  ,address =	 {Toronto, Ontario, Canada}
+  ,month =	 AUG
+  ,isbn = {0-89791-277-2}
+  ,publisher = {ACM Press}
+}
+
+@Proceedings{PODC88
+  ,booktitle = 	 {PODC '88}
+  ,year = 	 1988
+  ,address =	 {Toronto, Ontario, Canada}
+  ,month =	 AUG
+  ,isbn = {0-89791-277-2}
+}
+
+@Proceedings{PODC95-verbose
  ,booktitle    = {Proceedings of the 14th Annual ACM Symposium on Principles of Distributed Computing (PODC '95)}
  ,month        = aug
  ,year	       = 1995
@@ -3001,7 +3278,32 @@ publisher = "Springer Verlag"
  ,publisher    = {ACM Press}
  }
 
-@Proceedings{PODC03
+@Proceedings{PODC95
+ ,booktitle    = {PODC '95}
+ ,month        = aug
+ ,year	       = 1995
+ ,address      = {Ottawa, Ontario, Canada}
+ ,isbn 	       = {0-89791-710-3}
+ }
+
+@Proceedings{PODC96-verbose
+ ,booktitle    = {Proceedings of the Fifteenth Annual ACM Symposium on Principles of Distributed Computing (PODC '96)}
+ ,month	       = {23--26 } # MAY
+ ,year	       = 1996
+ ,address      = {Philadelphia, PA}
+ ,isbn 	       = {0-89791-710-3}
+ }
+
+@Proceedings{PODC96
+ ,booktitle    = {PODC '96}
+ ,month        = MAY
+ ,year	       = 1996
+ ,address      = {Philadelphia, PA}
+ ,isbn 	       = {0-89791-710-3}
+ }
+
+
+@Proceedings{PODC03-verbose
  ,booktitle    = {Proceedings of the 22nd Annual ACM Symposium on Principles of Distributed Computing (PODC '03)}
  ,month	       = jul
  ,year	       = 2003
@@ -3010,9 +3312,24 @@ publisher = "Springer Verlag"
  ,publisher    = {ACM Press}
  }
 
-@Proceedings{SIGPLAN98
+@Proceedings{PODC03
+ ,booktitle    = {PODC '03}
+ ,month	       = jul
+ ,year	       = 2003
+ ,address      = {Boston, Massachusetts}
+ ,isbn         = {1-58113-708-7}
+ }
+
+@Proceedings{SIGPLAN98-verbose
  ,booktitle    = {Proceedings of the ACM SIGPLAN '98 Conference on Programming Language Design and Implementation}
  ,note         = {Proceedings published ACM SIGPLAN Notices, Vol. 33, No. 5, May, 1998.}
+ ,address = 	 {Montreal, Quebec, Canada}
+ ,month = JUN 
+ ,year  = 1998
+ }
+
+@Proceedings{SIGPLAN98
+ ,booktitle    = {PLDI '98}
  ,address = 	 {Montreal, Quebec, Canada}
  ,month = JUN 
  ,year  = 1998
@@ -3057,164 +3374,25 @@ publisher = "Springer Verlag"
  ,address ={New York, New York} 
  }
 
-@Proceedings{Usenix98
- ,booktitle    = {Proceedings of the USENIX Annual Technical Conference}
- ,year	       = 1998
- ,address      = {New Orleans, Louisiana}
- ,month        = JUN # { 15--19}
+
+
+% added MartinezTo02 above (because it uses crossref, and thus must appear before the referenced conference)
+% added HammondWoCh04 above also
+
+@Book{SiewiorekBeNe82,
+  author = 	 {D.P. Siewiorek and Gordon Bell and Allen Newell},
+  title = 	 {Computer Structures: Principles and Examples},
+  publisher = 	 {McGraw-Hill},
+  year = 	 {1982}
+}
+@Article{StoneStHe93
+ ,author       = {Janice M. Stone and Harold S. Stone and Philip Heidelberg and John Turek}
+ ,title	       = {Multiple Reservations and the Oklahoma Update}
+ ,journal      = {IEEE Parallel and Distributed Technology}
+ ,year	       = 1993
+ ,volume       = 1
+ ,number       = 4
+ ,month	       = NOV
+ ,pages	       = {58--71}
  }
-
-@article{LuSkiena00,
-    author = "Shiyong Lu and Steven Skiena",
-    title = "Filling a Penny Album",
-    journal = "Chance",
-    volume = "13",
-    number = "2",
-    pages = "25--28",
-    year = "2000"
-}
-
-@article{Schelling54,
-    author = "Hermann von Schelling",
-    title = "Coupon collecting for unequal probabilities",
-    journal = "American Mathematics Monthly",
-    volume = "61",
-    pages = "306--311",
-    year = "1954"
-}
-
-
-@InProceedings{GehrkeMRS99,
-  author =       "S. Muthukrishnan and R. Rajaraman and R. Shaheen and
-                  J. Gehrke",
-  title =        "Online Scheduling to Minimize Average Stretch",
-  booktitle =    "IEEE Symposium on Foundations of Computer
-                 Science (FOCS)",
-  pages = "433-442",
-  year =         "1999"
-}
-
-
-@Article{Ang-Val79,
-  author =       "D. Angluin and L. G. Valiant",
-  title =        "Fast Probabilistic Algorithms for {Hamiltonian}
-                 Circuits and Matching",
-  journal =      "Journal of Computer and System Sciences",
-  volume =       "18",
-  number =       "2",
-  year =         "1979",
-  pages =        "82--93"
-}
-
-@Article{Hoeffding:1963:PIS,
-  author =       "W. Hoeffding",
-  title =        "Probability inequalities for sums of bounded random
-                 variables",
-  journal =      "Journal of the American Statistical Association",
-  volume =       "58",
-  number =       "301",
-  pages =        "13--30",
-  month =        mar,
-  year =         "1963"
-}
-
-@Article{c-maethbs-52,
-  author =       "H. Chernoff",
-  title =        "A measure of asymptotic efficiency for tests of a
-                 hypothesis based on the sum of observations",
-  journal =      "Annals of Math. Stat.",
-  volume =       "23",
-  year =         "1952",
-  pages =        "493--509"
-}
-
-@misc{ mitzenmacher00power,
-  author = "M. Mitzenmacher and A. Richa and R. Sitaraman",
-  title = "The power of two random choices: A survey of the techniques and results",
-  text = "Mitzenmacher, M., Richa, A., and Sitaraman, R. The power of two random
-    choices: A survey of the techniques and results. In Handbook of Randomized
-    Computing, P. Pardalos, S. Rajasekaran, and J. Rolim, Eds. Kluwer, 2000.",
-  year = "2000",
-  url = "citeseer.nj.nec.com/article/mitzenmacher00power.html" }
-
-
-
-
-
-@Book{MotwaniRa95,
-  author =       "Rajeev Motwani and Prabhakar Raghavan",
-  title =        "Randomized Algorithms",
-  publisher =    "Cambridge University Press",
-  address =      "Cambridge, England",
-  month =        jun,
-  year =         "1995"
-}
-
-
-
-@article{ czumaj00contention,
-    author = "Artur Czumaj and Friedhelm Meyer auf der Heide and Volker Stemann",
-    title = "Contention Resolution in Hashing Based Shared Memory Simulations",
-    journal = "SIAM Journal on Computing",
-    volume = "29",
-    number = "5",
-    pages = "1703--1739",
-    year = "2000"
-}
-
-@article{BorodinKlRaSuWi-2001,
- author = {Allan Borodin and Jon Kleinberg and Prabhakar Raghavan and Madhu Sudan and David P. Williamson},
- title = {Adversarial queuing theory},
- journal = {Journal of the ACM (JACM)},
- volume = {48},
- number = {1},
- year = {2001},
- pages = {13--38}
- }
-
-@Book{Tanenbaum92,
-  author = 	 {Andrew S. Tanenbaum},
-  title = 	 {Modern Operating Systems},
-  publisher = 	 {Prentice Hall, Inc.},
-  year = 	 {1992},
-  address = 	 {Englewood Cliffs, New Jersey}
-}
-
-@article{Parnas72,
- author = {D. L. Parnas},
- title = {On the criteria to be used in decomposing systems into modules},
- journal = {Communications of the ACM},
- volume = {15},
- number = {12},
- year = {1972},
- issn = {0001-0782},
- pages = {1053--1058},
- doi = {http://doi.acm.org/10.1145/361598.361623},
- publisher = {ACM Press},
- }
-
-@Book{LynchMeWe94,
-  author = 	 {Nancy Lynch and Michael Merritt and William Weihl and Alan Fekete},
-  title = 	 {Atomic Transactions},
-  publisher = 	 {Morgan Kaufmann},
-  year = 	 {1994},
-  address = 	 {San Mateo, California}
-}
-
-@TechReport{Zhang00
-  ,author =      {Lixin Zhang}
-  ,title =       {{URSIM} reference manual}
-  ,institution = {University of Utah}
-  ,year =        2000
-  ,number =      {UUCS-00-015}
-  ,month =       AUG
-}
-
-@Manual{MIPSR10K
- ,title = 	 {{MIPS} {R10000} Microprocessor User's Manual, Version 2.0}
- ,organization = {MIPS Technologies, Inc.}
- ,address =	 {Mountain View, California}
- ,year =         1996
- ,month =        OCT
-}
 
