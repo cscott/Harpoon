@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.37 1999-10-13 19:49:24 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.38 1999-10-14 04:15:09 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -120,6 +120,9 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	/** Indentation. */
 	String indentPrefix;
 	
+	/** Type of root. */
+	String rootType;
+
 	public void append(StringBuffer buf, String s) {
 	    buf.append(indentPrefix + s + "\n");
 	}
@@ -139,6 +142,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	public void visit(Spec.StmMethod s) {
+	    if (rootType==null) rootType=TREE_METHOD;
 	    degree++;
 
 	    append(exp, "// check statement type");
@@ -149,6 +153,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 	
 	public void visit(Spec.StmCall s) {
+	    if (rootType==null) rootType=TREE_CALL;
 	    degree++;
 	    
 	    append(exp, "// check statement type");
@@ -194,6 +199,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	public void visit(Spec.StmCjump s) {
+	    if (rootType==null) rootType=TREE_CJUMP;
 	    degree++;
 	    
 	    append(exp, "// check statement type");
@@ -220,6 +226,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	public void visit(Spec.StmData s) {
+	    if (rootType==null) rootType=TREE_DATA;
 	    degree++;
 
 	    append(exp, "// check statement type");
@@ -236,6 +243,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	public void visit(Spec.StmSegment s) {
+	    if (rootType==null) rootType=TREE_SEGMENT;
 	    degree++;
 
 	    append(exp, "// check statement type");
@@ -258,6 +266,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	public void visit(Spec.StmExp s) {
+	    if (rootType==null) rootType=TREE_EXP;
 	    degree++;
 	    
 	    append(exp, "// check statement type");
@@ -274,6 +283,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	public void visit(Spec.StmJump s) {
+	    if (rootType==null) rootType=TREE_JUMP;
 	    degree++;
 
 	    append(exp, "// check statement type");
@@ -291,6 +301,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	public void visit(Spec.StmLabel s) {
+	    if (rootType==null) rootType=TREE_LABEL;
 	    degree++;
 	    
 	    append(exp, "// check statement type");
@@ -304,6 +315,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	public void visit(Spec.StmMove s) {
+	    if (rootType==null) rootType=TREE_MOVE;
 	    degree++;
 
 	    append(exp, "// check statement type");
@@ -331,6 +343,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	public void visit(Spec.StmNativeCall s) {
+	    if (rootType==null) rootType=TREE_NATIVECALL;
 	    degree++;
 
 	    append(exp, "// check statement type");
@@ -377,6 +390,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 
 	public void visit(Spec.StmReturn s) {
+	    if (rootType==null) rootType=TREE_RETURN;
 	    degree++;
 
 	    append(exp, "// check expression type");
@@ -397,6 +411,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
 	public void visit(Spec.StmThrow s) {
+	    if (rootType==null) rootType=TREE_THROW;
 	    degree++;
 	    
 	    append(exp, "// check expression type");
@@ -448,6 +463,9 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	/** Indentation. */
 	String indentPrefix;
 
+	/** Type of root. */
+	String rootType;
+
 	/** Helper function to prettify resulting code. */
 	public void append(StringBuffer buf, String s) {
 	    buf.append(indentPrefix + s +"\n");
@@ -468,6 +486,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 			" Class: " + e.getClass());
 	}
 	public void visit(final Spec.ExpBinop e) { 
+	    if (rootType==null) rootType=TREE_BINOP;
 	    degree++;
 
 	    append(exp, "// check expression type");
@@ -511,6 +530,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	}
 	
 	public void visit(Spec.ExpConst e) {
+	    if (rootType==null) rootType=TREE_CONST;
 	    degree++;
 
 	    append(exp, "// check expression type");
@@ -547,6 +567,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    return;
 	}
 	public void visit(Spec.ExpMem e) { 
+	    if (rootType==null) rootType=TREE_MEM;
 	    degree++;
 
 	    append(exp, "// check expression type");
@@ -570,6 +591,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	}
 	public void visit(Spec.ExpName e) { 
+	    if (rootType==null) rootType=TREE_NAME;
 	    degree++;
 
 	    append(exp, "// check expression type");
@@ -580,6 +602,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    
 	}
 	public void visit(Spec.ExpTemp e) { 
+	    if (rootType==null) rootType=TREE_TEMP;
 	    degree++;
 
 	    append(exp, "// check expression type");
@@ -591,6 +614,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		   expPrefix + ").temp;");
 	}
 	public void visit(Spec.ExpUnop e) { 
+	    if (rootType==null) rootType=TREE_UNOP;
 	    degree++;
 
 	    append(exp, "// check expression type");
@@ -719,7 +743,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		String matchStm = (indent + "if (" + typeCheck + indent + "){\n"+
 				   recurse.initStms.toString() +
 				   indent + "\t_matched_ = " + makePred.predicate.toString()+";\n" +
-				   indent + TREE_Tree + " ROOT = " + stmArg + ";\n");
+				   indent + recurse.rootType + " ROOT = (" + recurse.rootType + ") " + stmArg + ";\n");
 
 		//String matchStm = indent + "_matched_ = (" + typeCheck + indent + ");";
 		stmMatchActionPairs.add( new RuleTuple
@@ -745,7 +769,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		String matchStm = (indent + "if ("+typeCheck+indent+"){\n" +
 				   recurse.initStms.toString() +
 				   indent + "\t_matched_ = "+makePred.predicate.toString()+";\n" +
-				   indent + TREE_Tree + " ROOT = " + expArg + ";\n");
+				   indent + recurse.rootType + " ROOT = (" + recurse.rootType + ") " + expArg + ";\n");
 		//String matchStm = indent + "_matched_ =  (" + typeCheck + indent + ");";
 		expMatchActionPairs.add( new RuleTuple
 					 ( r.exp.toString(),
