@@ -31,7 +31,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.89 1998-11-11 05:06:24 cananian Exp $
+ * @version $Id: Translate.java,v 1.90 1998-11-18 23:39:00 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -74,21 +74,21 @@ class Translate  { // not public.
 	StackElement stack;
 	/** Current size of the stack. */
 	int stackSize;
-	/** Current temps used for local variables */
+	/** Current temps used for local variables. */
 	Temp lv[];
-	/** Stack of continuation TransStates at ret from jsr block. */
-	Vector continuation[];
+	/** Current stack of JSRs being processed. */
+	JSRState jsrStack[];
 
 	/** special secret store of temps for the stack. */
 	private Temp[] stackNames;
 
 	/** Constructor. */
 	private State(StackElement stack, int stackSize,
-		      Temp lv[], Vector continuation[], Temp[] stackNames) {
+		      Temp lv[], JSRState jsrStack[], Temp[] stackNames) {
 	    this.stack = stack; 
 	    this.stackSize = stackSize;
 	    this.lv = lv;
-	    this.continuation = continuation;
+	    this.jsrStack = jsrStack;
 	    this.stackNames = stackNames;
 	}
 	/** Make new state by popping top of stack */
@@ -98,12 +98,12 @@ class Translate  { // not public.
 	    StackElement s = stack;
 	    for (int i=0; i < n; i++)
 		s = s.next;
-	    return new State(s, stackSize-n, lv, continuation, stackNames);
+	    return new State(s, stackSize-n, lv, jsrStack, stackNames);
 	}
 	/** Make new state by pushing temp onto top of stack. */
 	State push(Temp t) {
 	    StackElement s = new StackElement(t, stack);
-	    return new State(s, stackSize+1, lv, continuation, stackNames);
+	    return new State(s, stackSize+1, lv, jsrStack, stackNames);
 	}
 	/** Make new stack by pushing some temp onto top of stack. */
 	State push() { 
@@ -124,37 +124,37 @@ class Translate  { // not public.
 	/** Make new state by clearing all but the top entry of the stack. */
 	State enterCatch() {
 	    StackElement s = new StackElement(stack.t, null);
-	    return new State(s, 1, lv, continuation, stackNames);
+	    return new State(s, 1, lv, jsrStack, stackNames);
 	}
 	/** Make new state by entering a JSR/RET block. The "return address"
 	 *  <code>t</code> gets pushed on top of the stack. */
-	State enterJSR(Temp t) {
-	    Vector c[] = (Vector[]) grow(this.continuation);
-	    c[0] = new Vector();
-	    return new State(stack, stackSize, lv, c, stackNames).push(t);
+	State enterJSR(Temp t, Instr in, Quad header, int which_succ) {
+	    JSRState js[] = (JSRState[]) grow(this.jsrStack);
+	    js[0] = new JSRState(in, header, which_succ);
+	    return new State(stack, stackSize, lv, js, stackNames).push(t);
 	}
 	/** Make new state, as when exiting a JSR/RET block. */
 	State exitJSR() {
-	    Vector c[] = (Vector[]) shrink(this.continuation);
-	    return new State(stack, stackSize, lv, c, stackNames);
+	    JSRState js[] = (JSRState[]) shrink(this.jsrStack);
+	    return new State(stack, stackSize, lv, jsrStack, stackNames);
 	}
 	/** Scrub state prior to entering PHI (use canonical names). */
 	State scrub() {
 	    StackElement nstk = null;
 	    for (int i=stackSize-1; i >= 0; i--)
 		nstk = new StackElement(stackNames[i], nstk);
-	    return new State(nstk, stackSize, lv, continuation, stackNames);
+	    return new State(nstk, stackSize, lv, jsrStack, stackNames);
 	}
 
 	/** Initialize state with temps corresponding to parameters. */
 	State(Temp[] locals, Temp[] stackNames) {
-	    this(null, 0, locals, new Vector[0], stackNames);
+	    this(null, 0, locals, new JSRState[0], stackNames);
 	}
 	/** Creates a new State object identical to this one. */
 	public Object clone() {
 	    return new State(stack, stackSize,
 			     (Temp[]) lv.clone(), 
-			     (Vector[]) continuation.clone(),
+			     (JSRState[]) jsrStack.clone(),
 			     stackNames);
 	}
 
@@ -185,7 +185,25 @@ class Translate  { // not public.
 	private static final Object[] grow(Object[] src) 
 	{ return grow(src,1); }
     }
-
+    /** Extended JSR state. */
+    static class JSRState {
+	/** The original JSR bytecode. */
+	Instr in;
+	/** Header node for handler quads. */
+	Quad header;
+	/** Which exit edge of <code>header</code> to use. */
+	int which_succ;
+	/** Stack of continuation TransStates at ret from jsr block. */
+	Vector continuation;
+	/** Constructor. */
+	JSRState(Instr in, Quad header, int which_succ) {
+	    this.in = in;
+	    this.header = header;
+	    this.which_succ = which_succ;
+	    this.continuation = new Vector();
+	    Util.assert(in.getOpcode()==Op.JSR || in.getOpcode()==Op.JSR_W);
+	}
+    }
     /** Extended state to keep track of translation process. */
     static class TransState {
 	/** State to use when translating <code>Instr</code> <Code>in</code> */
@@ -372,6 +390,7 @@ class Translate  { // not public.
 	MergeMap mm = new MergeMap();
 	MergeMap handlers = new MergeMap();
 
+    worklist:
 	while (!todo.empty()) {
 	    TransState ts = (TransState) todo.pop();
 	    // convenient abbreviations of TransState fields.
@@ -380,29 +399,48 @@ class Translate  { // not public.
 	    // Are we entering a JSR/RET block?
 	    if ((ts.in.getOpcode() == Op.JSR) ||
 		(ts.in.getOpcode() == Op.JSR_W)) {
+		// Special case evil JSRs that never return.
+		for (int i=0; i<s.jsrStack.length; i++)
+		    if (ts.in == s.jsrStack[i].in) {
+			// aha! a handler loop! <evil evil>
+			/*---- BEWARE: EVILNESS ENSUES ----*/ 
+			PHI  p = new PHI(ts.in, new Temp[0], 2);
+			Quad.addEdge(ts.header, ts.which_succ, p, 0);
+			Edge e = s.jsrStack[i].header
+			    .nextEdge(s.jsrStack[i].which_succ);
+			Quad.addEdge((Quad)e.from(), e.which_succ(), p, 1);
+			Quad.addEdge(p, 0, (Quad)e.to(), e.which_pred());
+			/* NO MORE PROCESSING OF THIS JSR NEEDED. */
+			continue worklist;
+		    }
 
-		State ns = s.enterJSR(SS.Tnull);
+		// okay, continue with your normal lives, folks.
 		Instr in = ts.in.next()[1];
 		if (in instanceof InMerge) in = in.next()[0];
+		State ns = s.enterJSR(SS.Tnull,ts.in,ts.header,ts.which_succ);
 		trans(SS, new TransState(ns, in, ts.header, ts.which_succ));
+		
+		// sometimes, JSRs never return.
+		if (ns.jsrStack[0].continuation.size() == 0)
+		    continue worklist; // just bail.
 
 		// make PHI after RET
 		TransState tsi = 
-		    (TransState) ns.continuation[0].elementAt(0);
+		    (TransState) ns.jsrStack[0].continuation.elementAt(0);
 		tsi = new TransState(tsi.initialState.exitJSR(), 
 				     ts.in.next()[0] /* after JSR */,
 				     tsi.header, tsi.which_succ);
 		PHI phi = null;
 		State phiState = tsi.initialState;
-		for (int i=1; i < ns.continuation[0].size(); i++) {
+		for (int i=1; i < ns.jsrStack[0].continuation.size(); i++) {
 		    if (i==1) { // make
 			phi = new PHI(tsi.in, new Temp[0],
-				      ns.continuation[0].size());
+				      ns.jsrStack[0].continuation.size());
 			Quad.addEdge(tsi.header, tsi.which_succ, phi, 0);
 			tsi = new TransState(phiState, tsi.in, phi, 0);
 		    }
 		    TransState c = 
-			(TransState) ns.continuation[0].elementAt(i); 
+			(TransState) ns.jsrStack[0].continuation.elementAt(i); 
 		    for (int j=0; j<phiState.stackSize; j++) {
 			if (phiState.stack(j)==null) continue;
 			Quad q2 = new MOVE(c.in, 
@@ -418,8 +456,8 @@ class Translate  { // not public.
 		continue;
 	    }
 	    // Are we exiting a JSR block?
-	    else if (s.continuation.length>0 && ts.in.getOpcode() == Op.RET) {
-		s.continuation[0].addElement(ts);
+	    else if (s.jsrStack.length>0 && ts.in.getOpcode() == Op.RET) {
+		s.jsrStack[0].continuation.addElement(ts);
 		// we'll fix up the dangling end later.
 		continue;
 	    }
