@@ -21,7 +21,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PANode.java,v 1.5 2002-11-27 18:29:53 salcianu Exp $
+ * @version $Id: PANode.java,v 1.6 2003-05-06 15:25:46 salcianu Exp $
  */
 final public class PANode implements java.io.Serializable {
     // activates some safety tests
@@ -207,8 +207,13 @@ final public class PANode implements java.io.Serializable {
 
 	assert call_site != null : "call_site == null";
 
+	if(!PointerAnalysis.CALL_CONTEXT_SENSITIVE)
+	    return this;
+
+	/* // TODO: get rid of the following lines
 	if(CAUTION)
-	    assert PointerAnalysis.CALL_CONTEXT_SENSITIVE : "Turn on CALL_CONTEXT_SENSITIVE!";
+	    assert PointerAnalysis.CALL_CONTEXT_SENSITIVE : 
+	    "Turn on CALL_CONTEXT_SENSITIVE!"; */
 
 	// a node with a maximal call_chain_depth doesn't have precise
 	// info about the call path which produced it; so it's not worth
@@ -394,8 +399,9 @@ final public class PANode implements java.io.Serializable {
 	case EXCEPT: str="E"; break;
 	case STATIC: str="S"; break;
 	case NULL:   str="NULL"; break;
+	case CONST:  str="CONST"; break;
 	}
-	if(type != NULL)
+	if((type != NULL) && (type != CONST))
 	    str = str + number;
 	if(isBottom()) str += "B";
 	return str;
