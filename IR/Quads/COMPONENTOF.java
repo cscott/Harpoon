@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * type of a certain array, or boolean <code>false</code> otherwise.<p>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: COMPONENTOF.java,v 1.1.2.8 1999-09-09 21:43:02 cananian Exp $
+ * @version $Id: COMPONENTOF.java,v 1.1.2.9 1999-09-27 06:28:51 cananian Exp $
  * @see ASET
  * @see "The Java Virtual Machine Specification"
  */
@@ -25,7 +25,7 @@ public class COMPONENTOF extends Quad {
     protected Temp dst;
     /** The array object to test. */
     protected Temp arrayref;
-    /** The compoment object to test. */
+    /** The component object to test. */
     protected Temp objectref;
 
     /** Creates a <code>COMPONENTOF</code> representing a typecheck test.
