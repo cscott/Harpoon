@@ -34,8 +34,10 @@ RTJ.jar          - The version of the single ATR which uses Real-Time Java
 
 imagerec.jar     - The current development head for experimenting with new pipelines.
 
-ATR.jar, GUI.jar, ns.jar, trackerStub.jar, receiverStub.jar are the
-currently working jars as of this release.  The others are under development.
+ATR.jar, GUI.jar, ns.jar, trackerStub.jar, receiverStub.jar, 
+embeddedATR.jar, groundATR.jar  are the
+currently working jars as of this release.
+RTJ.jar is under development.
 
 See src/Main.java for many other MUCH more sophisticated pipelines
 involving line recognition, template matching based on outlines, 
@@ -76,11 +78,36 @@ Start the ATR:
   java -jar ATR.jar timer 3 "LMCO ATR" "ATR Alert" -ORBInitRef NameService=file://users/wbeebee/.jacorb
  
 Send images to the ATR:
-  java -jar receiverStub.jar GUI.jar tank.gz 533 "LMCO ATR" -ORBInitRef NameService=file://users/wbeebee/.jacorb
-
+  java -jar receiverStub.jar GUI.jar tank.gz 533 1 "LMCO ATR" "placeholder" -ORBInitRef NameService=file://users/wbeebee/.jacorb
 
 Note: Use the CORBA names "LMCO ATR" and "ATR Alert" only for drop-in compatibility 
 with the existing Lockheed-Martin ATR.
+
+
+Example #3 (with CORBA, using multiple ATR stages):
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Edit the .jacorb_properties file in your home directory to point to
+your name service.
+
+Start the JacORB NameService:
+   java -jar ns.jar /users/wbeebee/.jacorb
+
+Start the ALERT server:
+   java -jar trackerStub.jar "ATR Alert" -ORBInitRef NameService=file://users/wbeebee/.jacorb
+
+Start the ReceiverClient:
+   java -jar receiverStub.jar GUI.jar tank.gz 533 2 "LMCO ATR" "ATR Feedback" -ORBInitRef NameService=file://users/wbeebee/.jacorb
+
+Start the Embedded ATR:
+   java -jar embeddedATR.jar notimer nopause headless 1 "LMCO ATR" "embedToGround" "groundToEmbed" "ATR Alert" "ATR Feedback" -ORBInitRef NameService=file://users/wbeebee/.jacorb
+
+Start the Ground ATR:
+  java -jar groundATR.jar notimer headless 1 "embedToGround" "groundToEmbed" -ORBInitRef NameService=file://users/wbeebee/.jacorb
+
+Note: Use the CORBA names "LMCO ATR" and "ATR Alert" only for drop-in compatibility 
+with the existing Lockheed-Martin ATR.
+
 
 For main development, develop in src/Main.java and use 'make' and 'make run' 
 
