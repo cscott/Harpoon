@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: quads.tex,v 1.4 1998-09-08 14:33:05 cananian Exp $
+% $Id: quads.tex,v 1.5 1998-09-08 14:33:26 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[11pt,notitlepage,twocolumn,twoside]{article}
 
@@ -9,7 +9,7 @@
 
 \author{C.~Scott~Ananian}
 \title{\Harpoon\ Project Compiler Intermediate Representation}
-\date{\today \\ $ $Revision: 1.4 $ $}
+\date{\today \\ $ $Revision: 1.5 $ $}
 
 % PDF-friendly fonts:
 \renewcommand{\rmdefault}{ptm}
@@ -245,13 +245,13 @@ temporary variables at the start of method code.
 \newcommand{\cls}[1]{\item[\normalfont #1]}
 \newcommand{\expn}[1]{{\normalfont\it #1}}
 \begin{figure*}
-\texttt{%
+\texttt{\small%
 \begin{description}
 \setlength{\parskip}{0em}
 \setlength{\itemsep}{0em}
 \setlength{\labelsep}{0em}
 \item[] package harpoon.IR.QuadSSA;
-\item[] import harpoon.ClassFile.*;
+%\item[] import harpoon.ClassFile.*;
 \item[]
 \item[] \expn{Quadruple statements}
 \item[] abstract class Quad implements HCodeElement
@@ -282,12 +282,21 @@ params[], Temp retval, Temp retex) \expn{// objectref, retval may be null}
 \cls{THROW}(HCodeElement from, Temp throwable)
 \item[]
 \item[] \expn{String constants for} opcode \expn{field of} OPER
-\item[] \{  \}
+\item[] \{  "acmpeq", "d2f", "d2i", "d2l", "dadd", "dcmpg",
+"dcmpl", "ddiv", "dmul", "dneg", "drem", "dsub", "f2d", "f2i", "f2l",
+"fadd", "fcmpg", "fcmpl", "fdiv", "fmul", "fneg", "frem", "fsub",
+"i2b", "i2c", "i2d", "i2f", "i2l", "i2s", "iadd", "iand", "icmpeq",
+"icmpge", "icmpgt", "idiv", "imul", "ineg", "ior", "irem", "ishl",
+"ishr", "isub", "iushr", "ixor", "l2d", "l2f", "l2i", "ladd", "land",
+"lcmpeq", "lcmpge", "lcmpgt", "ldiv", "lmul", "lneg", "lor", "lrem",
+"lshl", "lshr", "lsub", "lushr", "lxor"
+\item[] \}
 \end{description}
 }
+
 Only the constructors are shown; the object field variables correspond
 exactly to the names of the constructor arguments.
-\caption{caption}
+\caption{Classes comprising the QuadSSA intermediate representation}
 \label{fig:classes}
 \end{figure*}
 
