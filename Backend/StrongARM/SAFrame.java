@@ -45,7 +45,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.27 1999-08-06 19:11:13 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.28 1999-08-06 19:39:57 pnkfelix Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -209,23 +209,51 @@ public class SAFrame extends Frame implements AllocationInfo {
 
     /** Stub added by FSK */
     public List makeLoad(Temp r, int offset, Instr template) {
-	InstrMEM load = 
-	    new InstrMEM(template.getFactory(), template,
-			 "ldr `d0, [`s0, #" +(-4*offset) + "] \t; " + template,
-			 new Temp[]{ r },
-			 new Temp[]{ SP  });
-	return Arrays.asList(new Object[] { load });
+	if (r instanceof TwoWordTemp) {
+	    InstrMEM load1 = 
+		new InstrMEM(template.getFactory(), template,
+			     "ldr `d0l, [`s0, #" +(-4*offset) + "] " ,
+			     new Temp[]{ r },
+			     new Temp[]{ SP  });
+	    InstrMEM load2 = 
+		new InstrMEM(template.getFactory(), template,
+			     "ldr `d0h, [`s0, #" +(-4*(offset+1)) + "] ",
+			     new Temp[]{ r },
+			     new Temp[]{ SP  });
+	    return Arrays.asList(new InstrMEM[] { load1, load2 });
+	} else {
+	    InstrMEM load = 
+		new InstrMEM(template.getFactory(), template,
+			     "ldr `d0, [`s0, #" +(-4*offset) + "] ",
+			     new Temp[]{ r },
+			     new Temp[]{ SP  });
+	    return Arrays.asList(new InstrMEM[] { load });
+	}
 				     
     }
 
     /** Stub added by FSK */
     public List makeStore(Temp r, int offset, Instr template) {
-	InstrMEM store = 
-	    new InstrMEM(template.getFactory(), template,
-			 "str `s0, [`s1, #" +(-4*offset) + "] \t; " + template,
-			 new Temp[]{ },
-			 new Temp[]{ r , SP });
-	return Arrays.asList(new Object[] { store });
+	if (r instanceof TwoWordTemp ) {
+	    InstrMEM store1 = 
+		new InstrMEM(template.getFactory(), template,
+			     "str `s0l, [`s1, #" +(-4*offset) + "] ",
+			     new Temp[]{ },
+			     new Temp[]{ r , SP });
+	    InstrMEM store2 = 
+		new InstrMEM(template.getFactory(), template,
+			     "str `s0h, [`s1, #" +(-4*(offset+1)) + "] ",
+			     new Temp[]{ },
+			     new Temp[]{ r , SP });
+	    return Arrays.asList(new InstrMEM[]{ store1, store2 });
+	} else {
+	    InstrMEM store = 
+		new InstrMEM(template.getFactory(), template,
+			     "str `s0, [`s1, #" +(-4*offset) + "] ",
+			     new Temp[]{ },
+			     new Temp[]{ r , SP });
+	    return Arrays.asList(new InstrMEM[] { store });
+	}
     }
 
     /** Stub added by FSK */
