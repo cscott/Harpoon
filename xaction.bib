@@ -58,7 +58,7 @@
 % Redell Dalal Horsley ... Pilot an Operating System for a Personal Computer: CACM 23(2):81-92 Feb 1980
 %   Page-level in the kernel
 
-% CSA: Merged up to (not including) HEADING7 in my transact.bib.
+% CSA: Merged up to (not including) HEADING8 in my transact.bib.
 
 @PREAMBLE{ "\newcommand{\noopsort}[1]{} "
          # "\newcommand{\singleletter}[1]{#1} " }
@@ -196,6 +196,42 @@ reduced network accesses and increased processor idle time.
  ,pages =	 {36--46}
  ,URL =          {http://csg.lcs.mit.edu/pubs/memos/Memo-419/memo-419.pdf}
  ,month =	 MAY # {--} # JUN
+ }
+
+@Article{Baker78,
+ bibnote = {359566},
+ author = {Henry G. {Baker, Jr.}},
+ title = {Shallow binding in {L}isp 1.5},
+ journal = {Communications of the {ACM}},
+ volume = 21,
+ number = 7,
+ month = jul,
+ year = 1978,
+ issn = {0001-0782},
+ pages = {565--569},
+ doi = {http://doi.acm.org/10.1145/359545.359566},
+ publisher = {ACM Press},
+ summary = {Describes essential "rerooting" technique for shallow binding.},
+ }
+
+@Article{Baker91,
+ bibnote = {was 122614},
+ author = {Henry G. Baker},
+ title = {Shallow binding makes functional arrays fast},
+ journal = {ACM SIGPLAN Notices},
+ volume = 26,
+ number = 8,
+ month = aug,
+ year = 1991,
+ issn = {0362-1340},
+ pages = {145--147},
+ doi = {http://doi.acm.org/10.1145/122598.122614},
+ publisher = {ACM Press},
+ summary = {Clarifies the relationship between functional array
+                  implementations and variable lookup strategies:
+                  shallow binding, deep binding, and acquiantance
+                  vectors.  Each is $O(1)$ for two operations and $O(n)$
+                  for the other.},
  }
 
 @Article{BallLa94
@@ -457,6 +493,20 @@ reduced network accesses and increased processor idle time.
  ,month =        NOV      
 }
 
+@InProceedings{Cohen84,
+  bibnote = 	 {cohen84:multi},
+  author = 	 {Shimon Cohen},
+  title = 	 {Multi-version structures in {P}rolog},
+  booktitle =	 {Proceedings of the International Conference on Fifth
+                  Generation Computer Systems},
+  pages =	 {265--274},
+  year =	 1984,
+  month =	 nov,
+  summary = { Presents a "fat element" scheme for functional arrays.
+                  Stores a list of versions at every element in the
+                  master array. },
+}
+
 @Misc{Conway66,
   author =	 {Lynn Conway},
   title =	 {Dynamic Instruction Scheduling},
@@ -484,6 +534,17 @@ reduced network accesses and increased processor idle time.
   ,edition =	 {Third}
   ,month =	 DEC
 }
+
+@InProceedings{Chuang94,
+ bibnote = {was 156779},
+ author = {Tyng-Ruey Chuang},
+ title = {A randomized implementation of multiple functional arrays},
+ crossref = {LFP94},
+ pages = {173--184},
+ doi = {http://doi.acm.org/10.1145/182409.156779},
+ local = {p173-chuang.pdf},
+ summary = {To copy or not to copy? Let's toss a coin and see!},
+ }
 
 @Article{DaileyLe02
   ,author = 	 {Don Dailey and Charles E. Leiserson}
@@ -1822,6 +1883,21 @@ Architecture, and Compilation (MTEAC-5)}
 	month = "",
 	note = "" }
 
+@Article(MetcalfeBo76
+  ,Author      = {Robert M. Metcalfe and David R. Boggs}
+  ,Title       = {Ethernet:  Distributed Packet Switching for Local Computer Networks}
+  ,Journal     = {Communications of the ACM}
+  ,Year        = 1976
+  ,Volume      = 19
+  ,Number      = 7
+  ,Pages       = {395--404}
+  ,Month       = jul
+  ,File        = {6.033 Notebook}
+  ,Affiliation = {Xerox PARC}
+  ,Annote      = {Randomized adaptive exponential backoff}
+  ,Key         = {Metcalfe76Boggs}
+  )
+
 @inproceedings{MillerCh88,
 author = "Barton P. Miller and Jong-Deok Choi",
 title = "A Mechanism for Efficient Debugging of Parallel Programs",
@@ -1913,20 +1989,65 @@ year = 1996
 	month = "May",
 	note = "" }
 
-@Article(MetcalfeBo76
-  ,Author      = {Robert M. Metcalfe and David R. Boggs}
-  ,Title       = {Ethernet:  Distributed Packet Switching for Local Computer Networks}
-  ,Journal     = {Communications of the ACM}
-  ,Year        = 1976
-  ,Volume      = 19
-  ,Number      = 7
-  ,Pages       = {395--404}
-  ,Month       = jul
-  ,File        = {6.033 Notebook}
-  ,Affiliation = {Xerox PARC}
-  ,Annote      = {Randomized adaptive exponential backoff}
-  ,Key         = {Metcalfe76Boggs}
-  )
+@InProceedings{Okasaki95,
+ bibnote = {was 224187},
+ author = {Chris Okasaki},
+ title = {Purely functional random-access lists},
+ booktitle = {Proceedings of the 7th International Conference on
+                  Functional Programming Languages and Computer
+                  Architecture ({FPCA})},
+ month = jun,
+ year = 1995,
+ isbn = {0-89791-719-7},
+ pages = {86--95},
+ location = {La Jolla, California, United States},
+ doi = {http://doi.acm.org/10.1145/224164.224187},
+ publisher = {ACM Press},
+ local={p86-okasaki.pdf},
+ summary={We present a new data structure, called a random-access
+          list, that supports non-single-threaded array lookup and update 
+          operations in O(log n) time, while simultaneously
+          providing O(1) time list operations (cons, head,
+          tail). A closer analysis of the array operations
+          improves the bound to O(min{i, log n}) in the worst
+          case and O(log i) in the expected case, where i is
+          the index of the desired element. Empirical evidence
+          suggests that this data structure should be quite
+          efficient in practice.},
+ }
+
+@Article{ONeillBu97,
+  bibnote =	 {was o'neill97:new},
+  author = 	 {Melissa E. O'Neill and F. Warren Burton},
+  title = 	 {A New Method for Functional Arrays},
+  journal = 	 {Journal of Functional Programming},
+  year = 	 1997,
+  volume =	 7,
+  number =	 5,
+  pages =	 {487--514},
+  month =	 sep,
+  url =		 {http://citeseer.nj.nec.com/328736.html},
+  local =	 {a-new-method-for.ps.bz2},
+  summary = {An efficient method to implement functional arrays is
+                  proposed, with $O(1)$ performance for single-threaded
+                  access and $O(1)$ amortized cost for fully persistent
+                  array use, provided that accesses are uniform.  At
+                  worst array reads or updates take $O(\log n)$ amortized
+                  time.  Algorithm seems best suited when one
+                  ``version'' of the array can take multiple updates
+                  (i.e. when partially destructive or provable
+                  non-overlapping updates).  Basic idea is just a
+                  binary tree of versions \emph{at each element}:
+                  obviously there will be lots of overhead inherent in
+                  the scheme.  Splay tree at each element is
+                  sufficient to achieve $O(1)$ performance for
+                  single-threaded access; we need only split the array
+                  after every $n$ updates/versions to limit the size
+                  of the element trees to at worst $O(n)$, or $O(1)$
+                  given uniformity of access, which then trivially
+                  gives our time bounds.  Splitting is likely to be
+                  very difficult to do in a lock-free manner.},
+}
 
 @Misc{OpenMP97,
   title =	 {{OpenMP}: A Proposed Industry Standard {API} for Shared Memory Programming},
@@ -2669,6 +2790,16 @@ publisher = "Springer Verlag"
  year = 1990,
  isbn = {0-89791-368-X},
  location = {Nice, France},
+ publisher = {ACM Press},
+ }
+
+@Proceedings{LFP94,
+ booktitle = {Proceedings of the 1994 {ACM} Conference on {LISP} and
+                  Functional Programming ({LFP})},
+ month = jun,
+ year = 1994,
+ isbn = {0-89791-643-3},
+ location = {Orlando, Florida},
  publisher = {ACM Press},
  }
 
