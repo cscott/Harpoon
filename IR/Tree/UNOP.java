@@ -1,6 +1,7 @@
 // UNOP.java, created Wed Jan 13 21:14:57 1999 by cananian
 package harpoon.IR.Tree;
 
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Util;
 
 /**
@@ -9,15 +10,17 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.3 1999-02-05 10:40:46 cananian Exp $
+ * @version $Id: UNOP.java,v 1.1.2.4 1999-02-05 11:48:57 cananian Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
     /** The subexpression to be operated upon. */
     public Exp operand;
     /** Constructor. */
-    public UNOP(int type, int unop, Exp operand) {
-	super(type, unop); this.operand = operand;
+    public UNOP(TreeFactory tf, HCodeElement source,
+		int type, int unop, Exp operand) {
+	super(tf, source, type, unop);
+	this.operand = operand;
 	Util.assert(Uop.isValid(unop));
     }
     // Unops defined in harpoon.IR.Tree.Uop
@@ -38,7 +41,7 @@ public class UNOP extends OPER {
 
     public ExpList kids() { return new ExpList(operand, null); }
     public Exp build(ExpList kids) {
-	return new UNOP(op, type, kids.head);
+	return new UNOP(tf, this, type, op, kids.head);
     }
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }

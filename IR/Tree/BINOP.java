@@ -1,6 +1,7 @@
 // BINOP.java, created Wed Jan 13 21:14:57 1999 by cananian
 package harpoon.IR.Tree;
 
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Util;
 
 /**
@@ -9,7 +10,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: BINOP.java,v 1.1.2.3 1999-02-05 10:40:41 cananian Exp $
+ * @version $Id: BINOP.java,v 1.1.2.4 1999-02-05 11:48:44 cananian Exp $
  * @see Bop
  */
 public class BINOP extends OPER {
@@ -18,8 +19,10 @@ public class BINOP extends OPER {
     /** The subexpression of the right-hand side of the operator. */
     public Exp right;
     /** Constructor. */
-    public BINOP(int type, int binop, Exp left, Exp right) {
-	super(type, binop); this.left=left; this.right=right;
+    public BINOP(TreeFactory tf, HCodeElement source,
+		 int type, int binop, Exp left, Exp right) {
+	super(tf, source, type, binop);
+	this.left=left; this.right=right;
 	Util.assert(Bop.isValid(binop));
     }
     // binops defined in harpoon.IR.Tree.Bop.
@@ -35,7 +38,7 @@ public class BINOP extends OPER {
 
     public ExpList kids() {return new ExpList(left, new ExpList(right,null));}
     public Exp build(ExpList kids) {
-	return new BINOP(op, type, kids.head, kids.tail.head);
+	return new BINOP(tf, this, type, op, kids.head, kids.tail.head);
     }
     /** Accept a visitor */
     public void visit(TreeVisitor v) { v.visit(this); }

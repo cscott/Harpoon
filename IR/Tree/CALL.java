@@ -1,6 +1,9 @@
 // CALL.java, created Wed Jan 13 21:14:57 1999 by cananian
 package harpoon.IR.Tree;
 
+import harpoon.ClassFile.HCodeElement;
+import harpoon.Util.Util;
+
 /**
  * <code>CALL</code> objects are statements which stand for procedure calls.
  * The return value of the <code>CALL</code> is stored in <code>retval</code>.
@@ -9,7 +12,7 @@ package harpoon.IR.Tree;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.3 1999-01-15 17:56:39 duncan Exp $
+ * @version $Id: CALL.java,v 1.1.2.4 1999-02-05 11:48:45 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  */
 public class CALL extends Stm {
@@ -17,17 +20,23 @@ public class CALL extends Stm {
     public Exp func;
     /** Subexpressions for the arguments to the function. */
     public ExpList args;
-    /** Expression indicating the destination of the return value. */
+    /** Expression indicating the destination of the return value.
+     *  Always non-null, even for <code>void</code> functions. */
     public Exp retval;
     /** Expression indicating the destination of the exception value. */
     public Exp retex;
     /** Constructor. */
-    public CALL(Exp retval, Exp retex, Exp func, ExpList args)
-    { this.retval=retval; this.retex=retex; this.func=func; this.args=args; }
+    public CALL(TreeFactory tf, HCodeElement source,
+		Exp retval, Exp retex, Exp func, ExpList args) {
+	super(tf, source);
+	this.retval=retval; this.retex=retex; this.func=func; this.args=args;
+	Util.assert(retval!=null && retex!=null && func!=null);
+    }
     public ExpList kids()
     {return new ExpList(retval, new ExpList(retex, new ExpList(func, args))); }
     public Stm build(ExpList kids) {
-	return new CALL(kids.head, // retval
+	return new CALL(tf, this,
+			kids.head, // retval
 			kids.tail.head, // retex
 			kids.tail.tail.head, // func
 			kids.tail.tail.tail); // args

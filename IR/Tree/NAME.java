@@ -1,7 +1,9 @@
 // NAME.java, created Wed Jan 13 21:14:57 1999 by cananian
 package harpoon.IR.Tree;
 
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Label;
+import harpoon.Util.Util;
 
 /**
  * <code>NAME</code> objects are expressions which stand for symbolic
@@ -9,13 +11,18 @@ import harpoon.Temp.Label;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NAME.java,v 1.1.2.2 1999-01-15 17:56:40 duncan Exp $
+ * @version $Id: NAME.java,v 1.1.2.3 1999-02-05 11:48:50 cananian Exp $
  */
 public class NAME extends Exp {
     /** The label which this NAME refers to. */
     public final Label label;
     /** Constructor. */
-    public NAME(Label label) { this.label=label; }
+    public NAME(TreeFactory tf, HCodeElement source,
+		Label label) {
+	super(tf, source);
+	this.label=label;
+	Util.assert(label!=null);
+    }
     public ExpList kids() { return null; }
     public Exp build(ExpList kids) { return this; }
     /** Accept a visitor */

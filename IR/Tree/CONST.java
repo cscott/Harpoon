@@ -1,6 +1,7 @@
 // CONST.java, created Wed Jan 13 21:14:57 1999 by cananian
 package harpoon.IR.Tree;
 
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Util;
 
 /**
@@ -9,7 +10,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.4 1999-02-05 10:40:42 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.5 1999-02-05 11:48:46 cananian Exp $
  */
 public class CONST extends Exp implements Typed {
     /** The constant value of this <code>CONST</code> expression. */
@@ -17,16 +18,20 @@ public class CONST extends Exp implements Typed {
     /** The type of this <code>CONST</code> expression. */
     public final int type;
 
-    public CONST(int ival) {
+    public CONST(TreeFactory tf, HCodeElement source, int ival) {
+	super(tf, source);
 	this.type = INT; this.value = new Integer(ival);
     }
-    public CONST(long lval) {
+    public CONST(TreeFactory tf, HCodeElement source, long lval) {
+	super(tf, source);
 	this.type = LONG; this.value = new Long(lval);
     }
-    public CONST(float fval) {
+    public CONST(TreeFactory tf, HCodeElement source, float fval) {
+	super(tf, source);
 	this.type = FLOAT; this.value = new Float(fval);
     }
-    public CONST(double dval) {
+    public CONST(TreeFactory tf, HCodeElement source, double dval) {
+	super(tf, source);
 	this.type = DOUBLE; this.value = new Double(dval);
     }
 

@@ -7,7 +7,7 @@ package harpoon.IR.Tree;
  * <code>Type</code> enumerates the possible Tree expression types.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Type.java,v 1.1.2.1 1999-02-05 10:50:57 cananian Exp $
+ * @version $Id: Type.java,v 1.1.2.2 1999-02-05 11:48:56 cananian Exp $
  */
 public abstract class Type {
     // enumerated constants.
@@ -23,14 +23,24 @@ public abstract class Type {
     public final static int POINTER = 4;
 
     // Query functions.
-    public final static boolean isDoubleWord(int type) {
-	return type==LONG || type==DOUBLE;// FIXME: handle POINTER
+    public final static boolean isDoubleWord(TreeFactory tf, int type) {
+	if (type==POINTER) return tf.getFrame().pointersAreLong();
+	else return type==LONG || type==DOUBLE;
     }
     public final static boolean isFloatingPoint(int type) {
 	return type==FLOAT || type==DOUBLE;
     }
     public final static boolean isPointer(int type) {
 	return type==POINTER;
+    }
+
+    public final static boolean isValid(int type) {
+	switch(type) {
+	case INT: case LONG: case FLOAT: case DOUBLE: case POINTER:
+	    return true;
+	default:
+	    return false;
+	}
     }
 
     // human-readability.
