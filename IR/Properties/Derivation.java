@@ -9,13 +9,13 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 
 /**
- * <code>Derivation</code> provides a mean to access the derivation
+ * <code>Derivation</code> provides a means to access the derivation
  * of a particular derived pointer.  Given a compiler temporary, it
  * will enumerate the base pointers and signs needed to allow proper
  * garbage collection of the derived pointer.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.6 1999-02-21 22:02:32 duncan Exp $
+ * @version $Id: Derivation.java,v 1.1.2.7 1999-06-24 01:04:41 cananian Exp $
  */
 public interface Derivation  {
 
@@ -42,8 +42,9 @@ public interface Derivation  {
 	    this.base = base; this.sign = sign; this.next = next;
 	}
       
-      /* Like Quad.clone(), does not clone Temps when not supplied with
-       * a TempMap */
+      /* Like <code>Quad.clone()</code>, does not clone
+       * <code>Temp</code>s when not supplied with a
+       * <code>TempMap</code>. */
       public static DList clone(DList dlist) {
 	if (dlist==null) return null;
 	else return new DList(dlist.base, dlist.sign, clone(dlist.next));

@@ -19,10 +19,12 @@ import harpoon.Temp.TempFactory;
 
 import java.util.Hashtable;
 /**
- * <code>Code</code>
+ * <code>LowQuad.Code</code> is an abstract superclass of codeviews
+ * using the components in <code>IR.LowQuad</code>.  It implements
+ * shared methods for the various codeviews using <code>LowQuad</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.9 1999-02-16 21:20:06 duncan Exp $
+ * @version $Id: Code.java,v 1.1.2.10 1999-06-24 01:04:35 cananian Exp $
  */
 public abstract class Code extends harpoon.IR.Quads.Code 
     implements Derivation, TypeMap

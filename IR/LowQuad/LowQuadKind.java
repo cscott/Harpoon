@@ -4,10 +4,12 @@
 package harpoon.IR.LowQuad;
 
 /**
- * <code>LowQuadKind</code>
+ * <code>LowQuadKind</code> is an enumerated type for the various kinds of
+ * <code>LowQuad</code>s. It extends <code>QuadKind</code>, so it enumerates
+ * all the <code>Quad</code> types, too.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LowQuadKind.java,v 1.1.2.3 1999-01-21 06:37:23 cananian Exp $
+ * @version $Id: LowQuadKind.java,v 1.1.2.4 1999-06-24 01:04:35 cananian Exp $
  */
 public abstract class LowQuadKind extends harpoon.IR.Quads.QuadKind {
     private static int n = min();

@@ -18,9 +18,10 @@ import java.util.Enumeration;
 import java.util.Hashtable;
     
 /**
+ * <blink><b>FILL ME IN</b></blink>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.9 1999-02-16 21:20:06 duncan Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.10 1999-06-24 01:04:35 cananian Exp $
  */
 public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 {
