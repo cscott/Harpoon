@@ -7,14 +7,14 @@ package imagerec;
 public class CarDemoIPAQMain {
     public static void main(String args[]) {
 
+	System.out.println("**** Running the Tracker ***");
 	(new Thread() {
 		public void run() {
 		    String args[] = {"1", "ATR Alert",
-				     "-ORBInitRef",
-				     "NameService=file://root/.jacorb"};
+				     "-ORBInitRef"};
 		    CarDemoTrackerStubMain.main(args);
 		}
-	    }).run();
+	    }).start();
 
 	try {
 	    Thread.currentThread().sleep(2000);
@@ -23,31 +23,31 @@ public class CarDemoIPAQMain {
 	}
 
 
+	System.out.println("**** Running the Receiver ***");
 	(new Thread() {
 		public void run() {
 		    String args[] = {"camera", "1",
 				     "LMCO ATR", "ATR Feedback",
-				     "-ORBInitRef",
-				     "NameService=file://root/.jacorb"};
+				     "-ORBInitRef"};
 		    CarDemoReceiverStubMain.main(args);
 		}
-	    }).run();
+	    }).start();
 
 	try {
 	    Thread.currentThread().sleep(2000);
 	}
 	catch (InterruptedException e) {
 	}
-
+	
+	System.out.println("***** Running the Embedded ATR *****");
 	(new Thread() {
 		public void run() {
 		    String args[] = {"1", "nocompress",
 				     "LMCO ATR", "embedToGround",
 				     "groundToEmbed", "ATR Alert",
-				     "ATR Feedback", "-ORBInitRef",
-				     "NameService=file://root/.jacorb"};
+				     "ATR Feedback", "-ORBInitRef"};
 		    CarDemoEmbeddedMain.main(args);
 		}
-	    }).run();
+	    }).start();
     }
 }
