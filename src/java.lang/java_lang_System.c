@@ -175,8 +175,13 @@ JNIEXPORT jobject JNICALL Java_java_lang_System_initProperties
       NULL, NULL
     };
     jclass propcls = (*env)->FindClass(env, "java/util/Properties");
+#if 0 /* JDK 1.2 and up only */
     jmethodID methodID = (*env)->GetMethodID(env, propcls, "setProperty",
 		   "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;");
+#else /* JDK 1.1 and up */
+    jmethodID methodID = (*env)->GetMethodID(env, propcls, "put",
+		   "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+#endif
     struct utsname buf;
     char *ckey, *cvalue;
     int i;
