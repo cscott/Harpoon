@@ -19,6 +19,8 @@ struct heap_object {
   struct fieldlist *reversefield;/* Objects pointing at us*/
   struct arraylist *reversearray;
 
+  struct rolechange *rc;
+
   short reachable;/* low order bit=reachable*/
   /* next bit=root*/
 };
@@ -107,12 +109,24 @@ struct heap_state {
 
   struct genhashtable *roletable;
   struct genhashtable *methodtable;
+
+  long long currentmethodcount;
+  struct hashtable *dynamiccallchain;
+  struct genhashtable *rolechangetable;
+  struct genhashtable *atomicmethodtable;
 };
 
 struct identity_relation {
   char * fieldname1;
   char * fieldname2;
   struct identity_relation * next;
+};
+
+struct dynamiccallmethod {
+  char *classname;
+  char *methodname;
+  char *signature;
+  char status; /* 0=entry, 1=exit */
 };
 
 void doincrementalreachability(struct heap_state *hs, struct hashtable *ht);
@@ -150,4 +164,10 @@ void removeforwardfieldreference(struct fieldlist * al);
 void freemethodlist(struct heap_state *hs);
 void calculatenumobjects(struct method * m);
 void doreturnmethodinference(struct heap_state *heap, long long uid, struct hashtable *ht);
+void recordentry(struct heap_state *heap, char *classname, char*methodname, char*signature);
+void recordexit(struct heap_state *heap);
+int atomic(struct heap_state *heap);
+void loadatomics(struct heap_state *heap);
+int atomicmethod(struct heap_state *hs, struct method *m);
+void atomiceval(struct heap_state *heap);
 #endif

@@ -64,6 +64,66 @@ void printrole(struct role *r, char * rolename) {
   printf("}\n\n");
 }
 
+struct heap_state *hshash;
+
+void setheapstate(struct heap_state *hs) {
+  hshash=hs;
+}
+
+int rchashcode(struct rolechange *rc) {
+  int hashcode=0;
+  struct hashtable *ht=hshash->dynamiccallchain;
+  long long start=rc->origmethod;
+  long long end=rc->newmethod;
+  long long index;
+  for(index=start-1;index<end;index++) {
+    struct dynamiccallmethod *dcm=(struct dynamiccallmethod *)gettable(ht, index);
+    hashcode^=hashstring(dcm->classname);
+    hashcode^=hashstring(dcm->methodname);
+    hashcode^=hashstring(dcm->signature);
+    hashcode^=dcm->status;
+  }
+  return hashcode;
+}
+
+int equivalentrc(struct rolechange *rc1, struct rolechange *rc2) {
+  struct hashtable *ht=hshash->dynamiccallchain;
+  long long start=rc1->origmethod;
+  long long end=rc1->newmethod;
+  long long index;
+  if (!equivalentstrings(rc1->origrole, rc2->origrole)||
+      !equivalentstrings(rc1->newrole, rc2->newrole))
+    return 0;
+
+  for(index=start-1;index<end;index++) {
+    struct dynamiccallmethod *dcm1=(struct dynamiccallmethod *)gettable(ht, index);
+    struct dynamiccallmethod *dcm2=(struct dynamiccallmethod *)gettable(ht, index);
+    if (!equivalentstrings(dcm1->classname,dcm2->classname)||
+	!equivalentstrings(dcm1->methodname,dcm2->methodname)||
+	!equivalentstrings(dcm1->signature,dcm2->signature)||
+	dcm1->status!=dcm2->status)
+      return 0;
+  }
+  return 1;
+}
+
+void printrolechange(struct heap_state * hs, struct rolechange *rc) {
+  long long index;
+  printf("Role Change: %s -> %s\n",rc->origrole, rc->newrole);
+  for(index=rc->origmethod-1;index<rc->newmethod;index++) {
+    struct dynamiccallmethod *dcm=(struct dynamiccallmethod *)gettable(hs->dynamiccallchain, index);
+    if (dcm->status)
+      printf("EXIT: ");
+    else
+      printf("ENTER: ");
+    printf("%s.%s%s\n",dcm->classname,dcm->methodname,dcm->signature);
+    if ((index-rc->origmethod)>6) {
+      printf("TRUNCATED\n");
+      break;
+    }
+  }
+}
+
 int equivalentstrings(char *str1, char *str2) {
   if ((str1!=NULL)&&(str2!=NULL)) {
     if (strcmp(str1,str2)!=0)
@@ -73,6 +133,44 @@ int equivalentstrings(char *str1, char *str2) {
   } else if ((str1==NULL)&&(str2==NULL))
     return 1;
   else return 0;
+}
+
+void rolechange(struct heap_state *hs, struct heap_object *ho, char *newrole) {
+  struct rolechange *rc=ho->rc;
+  if (rc!=NULL) {
+    int depth;
+    long long i;
+    struct dynamiccallmethod *dcm=(struct dynamiccallmethod *) gettable(hs->dynamiccallchain, rc->origmethod-1); 
+    rc->newrole=copystr(newrole);
+    rc->newmethod=hs->currentmethodcount;
+    /*rc is filled in now...*/
+    /*We should store it...*/
+    if (dcm->status==0)
+      depth=1;
+    
+    for(i=rc->origmethod;i<hs->currentmethodcount;i++) {
+      struct dynamiccallmethod * dcm=(struct dynamiccallmethod *) gettable(hs->dynamiccallchain, i);
+      if (dcm->status==0)
+	depth++;
+      else
+	depth--;
+    }
+    if (depth!=0&&
+	!equivalentstrings(rc->origrole, rc->newrole)&&
+	!gencontains(hs->rolechangetable, rc)) {
+      /*Maybe store it*/
+      genputtable(hs->rolechangetable, rc, NULL);
+    } else {
+      /*Forget it*/
+      free(rc->origrole);
+      free(rc->newrole);
+      free(rc);
+    }
+  }
+  rc=(struct rolechange *) calloc(1,sizeof(struct rolechange));
+  rc->origrole=copystr(newrole);
+  rc->origmethod=hs->currentmethodcount;
+  ho->rc=rc;
 }
 
 int equivalentroles(struct role *role1, struct role *role2) {
@@ -299,6 +397,7 @@ char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping
     /* Already seen role */
     char *str=copystr((char *)gengettable(heap->roletable,r));
     freerole(r);
+    rolechange(heap, ho, str);
     return str;
   } else {
     /* Synthesize string */
@@ -317,6 +416,7 @@ char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping
     buf[index]='R';
     genputtable(heap->roletable, r, copystr(&buf[index]));
 
+    rolechange(heap, ho, &buf[index]);
     return copystr(&buf[index]);
   }
 }

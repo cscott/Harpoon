@@ -47,7 +47,12 @@ void doanalysis() {
   heap.freemethodlist=NULL;
   heap.roletable=genallocatehashtable((int (*)(void *)) &rolehashcode, (int (*)(void *,void *)) &equivalentroles);
   heap.methodtable=genallocatehashtable((int (*)(void *)) &methodhashcode, (int (*)(void *,void *)) &comparerolemethods);
-
+  heap.currentmethodcount=0;
+  heap.dynamiccallchain=allocatehashtable();
+  heap.rolechangetable=genallocatehashtable((int (*)(void *)) &rchashcode, (int (*)(void *,void *)) &equivalentrc);
+  heap.atomicmethodtable=genallocatehashtable((int (*)(void *)) &hashstring, (int (*)(void *,void *)) &equivalentstrings);
+  setheapstate(&heap);
+  loadatomics(&heap);
 
   while(1) {
     char *line=getline();
@@ -245,7 +250,8 @@ void doanalysis() {
 #endif
 	  }
 	  currentparam++;
-	  if(currentparam==heap.methodlist->numobjectargs) {
+	  if(!atomic(&heap)&&
+	     currentparam==heap.methodlist->numobjectargs) {
 	    //Lets show the roles!!!!
 	    doincrementalreachability(&heap,ht);
 	    {
@@ -288,12 +294,16 @@ void doanalysis() {
 	calculatenumobjects(newmethod);
 	newmethod->caller=heap.methodlist;
 	heap.methodlist=newmethod;
+	atomiceval(&heap);
+	if (!atomic(&heap))
+	  recordentry(&heap,newmethod->classname, newmethod->methodname, newmethod->signature);
 #ifdef EFFECTS
 	initializepaths(&heap);
 #endif
 	currentparam=0;
       }
-      if (currentparam==heap.methodlist->numobjectargs) {
+      if (!atomic(&heap)&&
+	  currentparam==heap.methodlist->numobjectargs) {
 	struct rolemethod * rolem=(struct rolemethod *) calloc(1, sizeof(struct rolemethod));
 	
 	rolem->classname=copystr(heap.methodlist->classname);
@@ -320,7 +330,11 @@ void doanalysis() {
 	long long uid;
 	struct method* ptr=heap.methodlist;
 	sscanf(line,"RM: %lld",&uid);
-	doreturnmethodinference(&heap, uid, ht);
+	atomiceval(&heap);
+	if (!atomic(&heap)) {
+	  recordexit(&heap);
+	  doreturnmethodinference(&heap, uid, ht);
+	}
 	heap.methodlist=ptr->caller;
 	freemethod(&heap, ptr);
 	currentparam=10000;
@@ -387,6 +401,14 @@ void doanalysis() {
       printrolemethod(method);
     }
     genfreeiterator(it);
+    it=gengetiterator(heap.rolechangetable);
+    while(1) {
+      struct rolechange *rc=(struct rolechange *) gennext(it);
+      if (rc==NULL)
+	break;
+      printrolechange(&heap, rc);
+    }
+    genfreeiterator(it);
     it=gengetiterator(heap.roletable);
     while(1) {
       struct role *role=(struct role *) gennext(it);
@@ -396,7 +418,26 @@ void doanalysis() {
       rolename=gengettable(heap.roletable, role);
       printrole(role, rolename);
     }
+    genfreeiterator(it);
   }
+}
+
+void recordentry(struct heap_state *heap, char *classname, char*methodname, char*signature) {
+  struct dynamiccallmethod * m=(struct dynamiccallmethod *) calloc(1, sizeof(struct dynamiccallmethod));
+  m->classname=copystr(classname);
+  m->methodname=copystr(methodname);
+  m->signature=copystr(signature);
+  m->status=0;
+  puttable(heap->dynamiccallchain, heap->currentmethodcount++, m);
+}
+
+void recordexit(struct heap_state *heap) {
+  struct dynamiccallmethod * m=(struct dynamiccallmethod *) calloc(1, sizeof(struct dynamiccallmethod));
+  m->classname=copystr(heap->methodlist->classname);
+  m->methodname=copystr(heap->methodlist->methodname);
+  m->signature=copystr(heap->methodlist->signature);
+  m->status=1;
+  puttable(heap->dynamiccallchain, heap->currentmethodcount++, m);
 }
 
 void doreturnmethodinference(struct heap_state *heap, long long uid, struct hashtable *ht) {
@@ -406,10 +447,8 @@ void doreturnmethodinference(struct heap_state *heap, long long uid, struct hash
   m->lv=NULL;
   while(lvptr!=NULL) {
     lvptrn=lvptr->next;
-    
     dodellvfield(heap, lvptr, lvptr->object);
     freelv(heap,lvptr);
-    
     lvptr=lvptrn;
   }
 
@@ -450,7 +489,6 @@ void doreturnmethodinference(struct heap_state *heap, long long uid, struct hash
       rrs->returnrole=findrolestring(heap, dommap, gettable(ht,uid));
     }
     addrolereturn(heap->methodlist->rm,rrs);
-
     genfreekeyhashtable(dommap);
   }
 }
@@ -1312,5 +1350,58 @@ void calculatenumobjects(struct method * m) {
       return;
     default:
     }
+  }
+}
+
+int atomicflag=0;
+
+int atomic(struct heap_state *heap) {
+  /* Return 1 if atomic method is on methodstack*/
+  return atomicflag;
+}
+
+void atomiceval(struct heap_state *heap) {
+  if(atomicflag==1) {
+    /*Check entire stack*/
+    struct method *m=heap->methodlist;
+    m=m->caller;
+    while(m!=NULL) {
+      if (atomicmethod(heap,m)) {
+	atomicflag=1;
+	return;
+      }
+      m=m->caller;
+    }
+    atomicflag=0;
+    return;
+  } else {
+    /*Just need to check second to top*/
+    if (heap->methodlist->caller!=NULL&&
+	atomicmethod(heap, heap->methodlist->caller))
+      atomicflag=1;
+  }
+}
+
+int atomicmethod(struct heap_state *hs, struct method *m) {
+  char buf[700];
+  sprintf(buf, "%s.%s%s",m->classname,m->methodname,m->signature);
+  if (gencontains(hs->atomicmethodtable, buf))
+    return 1;
+  else
+    return 0;
+}
+
+void loadatomics(struct heap_state *heap) {
+  FILE *file=fopen("atomic","r");
+  char buf[200];
+  if (file==NULL)
+    return;
+  while(1) {
+    char *ptr;
+    int flag=fscanf(file, "%s\n", buf);
+    if (flag<=0)
+      break;
+    ptr=copystr(buf);
+    genputtable(heap->atomicmethodtable, ptr, NULL);
   }
 }

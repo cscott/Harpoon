@@ -31,6 +31,13 @@ struct rolearraylist {
   struct rolearraylist * next;
 };
 
+struct rolechange {
+  long long origmethod;
+  char *origrole;
+  long long newmethod;
+  char *newrole;
+};
+
 struct rolefieldlist {
   char * class;
   char * field;
@@ -59,4 +66,9 @@ int rolehashcode(struct role *role);
 int hashstring(char *strptr);
 char * findrolestring(struct heap_state * heap, struct genhashtable * dommapping,struct heap_object *ho);
 int equivalentstrings(char *str1, char *str2);
+void setheapstate(struct heap_state *hs);
+int rchashcode(struct rolechange *rc);
+int equivalentrc(struct rolechange *rc1, struct rolechange *rc2);
+void rolechange(struct heap_state *hs, struct heap_object *ho, char *newrole);
+void printrolechange(struct heap_state * hs, struct rolechange *rc);
 #endif

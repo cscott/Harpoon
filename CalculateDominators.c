@@ -9,6 +9,7 @@
 #endif
 
 #define NOBORINGDOM 1
+#define NOLVDOM 1
 
 struct referencelist * calculatedominators(struct genhashtable * dommapping,struct heap_object *ho) {
   struct referencelist *rl=ho->rl;
@@ -65,7 +66,7 @@ int * minimaldominatorset(struct localvars * lv, struct globallist *gl, struct h
   struct referencelist *rl2=ho->rl;
   int * in=(int *) malloc(sizeof(int));
 
-#ifdef NOBORINGDOM
+#if (defined(NOBORINGDOM)||defined(NOLVDOM))
   if (lv!=NULL&&isboring(lv)) {
     *in=0;
     return in;
@@ -87,6 +88,9 @@ int * minimaldominatorset(struct localvars * lv, struct globallist *gl, struct h
 }
 
 int isboring(struct localvars *lv) {
+#ifdef NOLVDOM
+  return 1;
+#endif
   if ((lv->name[0]=='s') &&(lv->name[1]=='t')&&(lv->name[2]=='k'))
     return 1;
   else
@@ -97,7 +101,7 @@ int dominates(struct localvars *lv1, struct globallist *gl1, struct localvars *l
   struct heap_object * destobj,* srcobj;
   int age1,age2;
 
-#ifdef NOBORINGDOM
+#if (defined(NOBORINGDOM)||defined(NOLVDOM))
   if(lv1!=NULL&&isboring(lv1))
     return 0;
 #endif
