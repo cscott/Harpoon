@@ -1,7 +1,7 @@
-# $Id: GNUmakefile,v 1.61.2.14 1999-02-07 11:03:41 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.15 1999-02-17 03:27:03 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
-JIKES=jikes
+JIKES=jikes +$$
 JCC=javac -J-mx64m
 JDOC=javadoc
 JAR=jar
