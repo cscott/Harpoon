@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.4 2001-11-15 09:43:17 cananian Exp $
+% $Id: pldi02.tex,v 1.5 2001-11-15 19:21:35 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -26,7 +26,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.4 $ $}{$ $Revision: 1.4 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.5 $ $}{$ $Revision: 1.5 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -253,7 +253,7 @@ Table {\bf XXX} shows the allocation reductions due to our bitwidth
 analysis under each of the above scenarios.  We can see that {\bf blah
   blah blah.  ``bit'' does best, of course.}
 
-\subsection{Pointer compression}
+\subsection{Pointer compression}\label{sec:ptrcmp}
 % sub-topic: pointer compression.
 %  present numbers: how your memory stacks up.
 The bitwidth analysis only produces results for fields of integer type.
@@ -280,9 +280,118 @@ advantage of these potential savings.
 %   ``external fields''
 %    profiling/analyses required.
 %    implementation of external hashtable.
-\subsection{Dynamic specialization of final fields}
+
+Mostly-zero field analysis attempts to take advantage of commonly
+recurring field values to reduce the space consumption of an object.
+For example, the {\tt java.lang.String} class in the Java standard
+library (see figure {\bf XX}) uses {\tt offset} and {\tt count} fields
+to index into a character array, allowing the implementation of the
+substring operation in constant time (without copying data from the
+{\tt String}'s underlying character array into a new array).  However,
+all of {\tt String}'s public constructors initialize the {\tt offset}
+field to zero.  The single private constructor which does otherwise is
+used only in the implementation of the {\tt substring()} method.  So
+we can reasonably expect the vast majority of the {\tt String} objects
+created in a typical program to have a zero {\tt offset} field.
+We use dynamic selection of statically specialized classes to
+eliminate the field when its value is the ``common'' one.
+Where this transformation is inappropriate, we can use an external
+storage technique to only store ``uncommon'' values of the field.
+
+\subsection{Static specialization of near-final fields}
+For fields which are effectively {\tt final}---i.e. not modified after
+assignment in the constructor---we can split the class containing the
+field into a ``small'' version without the field and a ``large''
+subclass containing the field.  Without loss of generality, assume
+that all field accesses have been transformed into calls to setter and
+getter methods.  The ``small'' class will have a getter method
+which will simply return the constant common value.  The ``large''
+subclass will actually consult the field (which is only present in the
+``large'' version of the class) and return or set its value (in the
+getter and setter, respectively).  Figure {\bf XXX} illustrates this
+conversion for a illustrative fragment of a {\tt java.lang.String}
+implementation.
+
+This transformation is only correct for fields which are immutable
+after their initialization.  However, since we will make subclasses of the
+original class inherit from the ``large'' version of the class,
+subclasses are allowed to mutate these fields.  We will say that
+a class is {\it subclass-final} if the only writes to the field
+are contained in constructors of its type and methods of its
+subclasses.  Writes to the field within constructors must occur only on
+the {\it this} object.%
+\footnote{{\bf XXX} Note that if we are considering a non-zero N, then
+  we must also prove that a write to the field occurs on every
+  non-exceptional path through the constructor, to prevent the default
+  'zero' value from leaking out.}
+
+Some class constructors will always yield objects with zero values for
+the field in question.  We can replace these instantiation expressions
+with instantiations of the new ``small'' class.  Many constructors,
+however, initialize certain fields with simple functions of their
+parameters.  To handle these cases, we also allow {\it dynamic
+  selection} of the instantiated class.  In particular, if we can
+prove that a field is zero iff a certain constructor parameter is
+zero, then we can insert a test at the instantiation site to select
+small class if the parameter is zero, or else use the large class.
+An example of this approach on code which might constitute an
+implementation of {\tt String.substring()} is shown in figure {\bf XX}.
+
+{\bf MORE INFO HERE? Maybe numbers on how many call sites use constant
+  versus parameter-dependent tests?  Details on the analysis used?}
+
 \subsection{Creating external fields}
+It is often the case that promising mostly-zero fields do not satisfy
+the requirements for the static specialization transformation
+described above.  The compiler may not be able to prove that mutation
+of the field is impossible, or the value of the field may not be
+easily predictable at the instantiation site.
+{\bf For example, in jess\ldots } % XXX FIX ME.
+
+In these cases, we can represent only the fields which have non-zero
+values in an external map.\footnote{Note that this is roughly parallel
+  to hashtable-based externalization of the putative ``lock'' field
+  required in every object by the Java language specification; Bacon
+  et al. give a brief description of this common
+  practice in \cite{bacon98}.}
+% indeed there is a deep symmetry between object fields and maps.
+The savings are tempered by the requirement of storing a key along
+with the value in the table, and for constructing a ``sufficiently
+large'' hashtable that searches will be efficient.  Typically this
+approach is only worthwhile if more than 75\% of the allocated fields
+are zero-valued.
+
 \subsubsection{External hashtable implementation}
+Close attention to the implementation of this external map is
+necessary to realize the gains possible in theory.  In order to
+maximize space savings, it is necessary to utilize as little space
+per field stored in the table as possible.  The overhead of
+dynamically allocated buckets and the required {\it next} pointers
+makes separate chaining impractical as an implementation technique
+for all but fields with very few non-zero entries.  Open-addressing
+implementations are preferable: in addition to the value being stored,
+all that is necessary is a key value and the empty space required to
+limit the load-factor.  A load factor of two-thirds and one-word keys
+and values yield an average space consumption of three words per
+field.  This implementation breaks even when the mostly-zero fields
+identified are zero over 66\% of the time.
+
+Key reduction is an important implementation issue: a naive approach
+would combine a one-word reference to the virtual-container object and a
+one-word field identifier for a two-word key.  We can offset the
+object reference (up to the limit of its size) by small integers
+discriminating the externalized fields of the object to yield a
+single-word key, subject to object-size-dependent limits on the number
+of class fields which may be externalized.  The pointer compression
+techniques of section \ref{sec:ptrcmp} may also be applied.
+
+\subsection{Mostly-$N$ analysis}
+Although this section has concentrated on zero-valued fields for
+clarity, we need not limit ourselves to these.  Our implementation of
+these ideas actually collects profiling data on ``mostly-$N$'' values
+with $N$ an integer in the range $[-5,5]$.
+
+{\bf MORE HERE.}
 
 \section{Results}
 % results/discussion.
