@@ -76,7 +76,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: MAInfo.java,v 1.10 2003-04-30 21:26:16 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.11 2003-05-01 20:13:15 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, Serializable {
 
@@ -2105,7 +2105,6 @@ public class MAInfo implements AllocationInformation, Serializable {
 	void update_ic(CALL cs, Map old2new) {
 	    if(isDone()) return;
 	    if(!calls.contains(cs)) return;
-
 
 	    if(DEBUG_IC)
 		System.out.println("update_ic(" + cs + ") for " + this);

@@ -67,13 +67,12 @@ import java.io.PrintStream;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.54 2003-04-30 20:04:40 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.55 2003-05-01 20:13:17 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
     static boolean OPTIMIZE = false;
     static boolean LOOPOPTIMIZE = false;
-    static boolean USE_OLD_CLINIT_STRATEGY = false;
     static boolean QUIET = false;
 
     /** Backend kind.  Has to be one of the constants defined in
@@ -285,11 +284,6 @@ public class SAMain extends harpoon.IR.Registration {
 	    }
 	});
 
-	opts.add(new Option("I",
-			    "Old class initialization strategy (deprecated)") {
-	    public void action() { USE_OLD_CLINIT_STRATEGY = true; }
-	});
-
 	opts.add(new Option("F", "Enable standard optimizations") {
 	    public void action() { OPTIMIZE = true; }
 	});
@@ -355,13 +349,10 @@ public class SAMain extends harpoon.IR.Registration {
 	
 	protected void real_action() { 
 	    // create an initial compiler state
-	    linker = Loader.systemLinker;
-	    if (!USE_OLD_CLINIT_STRATEGY || 
-		EventDrivenTransformation.EVENTDRIVEN)
-		linker = new AbstractClassFixupRelinker(linker);
-	    mainM = getMainMethod(linker);          // main method
-	    frame = construct_frame(mainM);         // target frame
-	    roots = getRoots(linker, mainM, frame); // set of roots
+	    linker = new AbstractClassFixupRelinker(Loader.systemLinker);
+	    mainM  = getMainMethod(linker);          // main method
+	    frame  = construct_frame(mainM);         // target frame
+	    roots  = getRoots(linker, mainM, frame); // set of roots
 	}
 
 	// returns the main method of the program to compile
@@ -566,21 +557,17 @@ public class SAMain extends harpoon.IR.Registration {
 	// when the main method is called, all the relevant classes have
 	// been initialized.
 	private void handle_class_initializers() {
-	    if (!USE_OLD_CLINIT_STRATEGY) {
-		// transform the class initializers using the class hierarchy.
-		String resource = frame.getRuntime().resourcePath
-		    ("init-safe.properties");
-		hcf = new harpoon.Analysis.Quads.InitializerTransform
-		    (hcf, classHierarchy, linker, resource).codeFactory();
-		// recompute the hierarchy after transformation.
-		hcf = new CachingCodeFactory(hcf);
-		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
-		// config checking
-		frame.getRuntime().configurationSet.add
-		    ("check_with_init_check_needed");
-	    } else // old and buggy class initialization strategy
-		frame.getRuntime().configurationSet.add
-		    ("check_with_init_check_not_needed");
+	    // transform the class initializers using the class hierarchy.
+	    String resource = frame.getRuntime().resourcePath
+		("init-safe.properties");
+	    hcf = new harpoon.Analysis.Quads.InitializerTransform
+		(hcf, classHierarchy, linker, resource).codeFactory();
+	    // recompute the hierarchy after transformation.
+	    hcf = new CachingCodeFactory(hcf);
+	    classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    // config checking
+	    frame.getRuntime().configurationSet.add
+		("check_with_init_check_needed");
 	}
     }
 
@@ -594,14 +581,6 @@ public class SAMain extends harpoon.IR.Registration {
 	    // for vtable numbering)
 	    frame.setClassHierarchy(classHierarchy);
 
-	    if (USE_OLD_CLINIT_STRATEGY) {
-		// construct a call graph and send it to the frame
-		hcf = new CachingCodeFactory(QuadSSI.codeFactory(hcf));
-		frame.setCallGraph(new CallGraphImpl2(classHierarchy, hcf));
-		System.getProperties().put
-		    ("harpoon.runtime1.order-initializers", "true");
-	    }
-	    
 	    // virtualize any uncallable methods using the final classhierarchy
 	    // (this keeps us from later getting link errors)
 	    hcf = new harpoon.Analysis.Quads.Virtualize(hcf, classHierarchy)
