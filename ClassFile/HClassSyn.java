@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassSyn.java,v 1.6.2.9.2.5 2000-01-11 17:23:20 cananian Exp $
+ * @version $Id: HClassSyn.java,v 1.6.2.9.2.6 2000-01-13 06:17:44 bdemsky Exp $
  * @see harpoon.ClassFile.HClass
  */
 class HClassSyn extends HClassCls implements HClassMutator {
@@ -206,6 +206,9 @@ class HClassSyn extends HClassCls implements HClassMutator {
     // XXX more sanity checks?
     if (superclass != sc) hasBeenModified=true; // flag the modification
     superclass = sc;
+    constructors=null;
+    fields = null;
+    methods = null;
   }
 
   public void addInterface(HClass in) {
