@@ -96,7 +96,7 @@ JNIEXPORT jboolean JNICALL Java_java_io_File_isFile0(JNIEnv * env, jobject this)
   r = stat(cstr, &buf);	
   (*env)->ReleaseStringUTFChars(env,jstr,cstr);
 	
-  if ((r == 0) && S_ISDIR(buf.st_mode))
+  if ((r == 0) && S_ISREG(buf.st_mode))
     return ((jboolean)1);
   else
     return ((jboolean)0);
@@ -121,7 +121,7 @@ JNIEXPORT jboolean JNICALL Java_java_io_File_isDirectory0(JNIEnv *env, jobject t
   r = stat(cstr, &buf);	
   (*env)->ReleaseStringUTFChars(env,jstr,cstr);
 	
-  if ((r == 0) && S_ISREG(buf.st_mode))
+  if ((r == 0) && S_ISDIR(buf.st_mode))
     return ((jboolean)1);
   else
     return ((jboolean)0);
