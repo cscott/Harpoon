@@ -3,29 +3,99 @@
 #include "java_net_PlainDatagramSocketImpl.h"
 
 #include <assert.h>
-#include <errno.h>
+#include <errno.h> /* for errno */
+#include <netinet/in.h> /* for AF_INET, SOCK_DGRAM, etc */
+#include <sys/socket.h> /* for socket(2), send(2) */
+#include <string.h> /* for strerror(3) */
+#include <unistd.h> /* for close(2) */
 
-#if 0
-/*
- * Class:     java_net_PlainDatagramSocketImpl
- * Method:    bind
- * Signature: (ILjava/net/InetAddress;)V
- */
-/* binds a datagram socket to a local port */
-JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_bind
-  (JNIEnv *env, jobject _this, jint lport, jobject laddr/*InetAddress*/) {
-  assert(0/*unimplemented*/);
+#include "flexthread.h" /* for mutex ops */
+#include "../java.io/javaio.h" /* for getfd/setfd */
+
+static jfieldID DSI_fdObjID = 0; /* The field ID of DatagramSocketImpl.fd */
+static jfieldID DSI_localPortID = 0; /* The field ID of DSocketImpl.localPort*/
+static jfieldID DP_bufID = 0; /* The field ID of DatagramPacket.buf */
+static jfieldID DP_offsetID = 0; /* The field ID of DatagramPacket.offset */
+static jfieldID DP_lengthID = 0; /* The field ID of DatagramPacket.length */
+static jfieldID DP_addressID = 0; /* The field ID of DatagramPacket.address */
+static jfieldID DP_portID = 0; /* The field ID of DatagramPacket.port */
+static jfieldID IA_addrID  = 0; /* The field ID of InetAddress.address */
+static jfieldID IA_familyID= 0; /* The field ID of InetAddress.family */
+static jclass IOExcCls  = 0; /* The java/io/IOException class object */
+static jint jSO_BINDADDR, jSO_REUSEADDR, jSO_LINGER, jSO_TIMEOUT;
+static jint jTCP_NODELAY, jIP_MULTICAST_IF;
+static int inited = 0; /* whether the above variables have been initialized */
+FLEX_MUTEX_DECLARE_STATIC(init_mutex);
+
+static int initializePDSI(JNIEnv *env) {
+    jclass PDSICls, DPCls, IACls;
+
+    FLEX_MUTEX_LOCK(&init_mutex);
+    // other thread may win race to lock and init before we do.
+    if (inited) goto done;
+
+    PDSICls  = (*env)->FindClass(env, "java/net/PlainDatagramSocketImpl");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    DSI_fdObjID = (*env)->GetFieldID(env, PDSICls,
+				     "fd","Ljava/io/FileDescriptor;");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    DSI_localPortID  = (*env)->GetFieldID(env, PDSICls, "localPort", "I");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    DPCls = (*env)->FindClass(env, "java/net/DatagramPacket");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    DP_bufID = (*env)->GetFieldID(env, DPCls, "buf", "[B");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    DP_offsetID = (*env)->GetFieldID(env, DPCls, "offset", "I");
+    if ((*env)->ExceptionOccurred(env)) {
+	/* this field not present before JDK1.2! */
+	DP_offsetID=0;
+	(*env)->ExceptionClear(env);
+    }
+    DP_lengthID = (*env)->GetFieldID(env, DPCls, "length", "I");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    DP_addressID = (*env)->GetFieldID(env, DPCls, "address",
+				      "Ljava/net/InetAddress;");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    DP_portID = (*env)->GetFieldID(env, DPCls, "port", "I");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    IACls   = (*env)->FindClass(env, "java/net/InetAddress");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    IA_addrID  = (*env)->GetFieldID(env, IACls, "address", "I");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    IA_familyID= (*env)->GetFieldID(env, IACls, "family", "I");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    IOExcCls = (*env)->FindClass(env, "java/io/IOException");
+    if ((*env)->ExceptionOccurred(env)) goto done;
+    /* make IOExcCls into a global reference for future use */
+    IOExcCls = (*env)->NewGlobalRef(env, IOExcCls);
+    /* initialize socket option values.  copied from source file at
+     * at the moment; will work on being able to read these from the binary.*/
+    jTCP_NODELAY=0x0001; jIP_MULTICAST_IF=0x10;
+    jSO_BINDADDR=0x000F; jSO_REUSEADDR=0x04;
+    jSO_LINGER=0x0080; jSO_TIMEOUT=0x1006;
+
+    /* done. */
+    inited = 1;
+ done:
+    FLEX_MUTEX_UNLOCK(&init_mutex);
+    return inited;
+}
+
+static void throwSE(JNIEnv *env, const char * msg) {
+    jclass exc = (*env)->FindClass(env, "java/net/SocketException");
+    if (!(*env)->ExceptionOccurred(env))
+	(*env)->ThrowNew(env, exc, msg);
 }
 
 /*
  * Class:     java_net_PlainDatagramSocketImpl
- * Method:    datagramSocketClose
+ * Method:    init
  * Signature: ()V
  */
-/* close the socket */
-JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_datagramSocketClose
-  (JNIEnv *env, jobject _this) {
-  assert(0/*unimplemented*/);
+/* perform class load-time initialization */
+JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_init
+  (JNIEnv *env, jclass _plaindatagramsocketimpl) {
+    /* do nothing */
 }
 
 /*
@@ -36,9 +106,70 @@ JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_datagramSocketClose
 /* creates a datagram socket */
 JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate
   (JNIEnv *env, jobject _this) {
-  assert(0/*unimplemented*/);
+    jobject fdObj;
+    int fd;
+
+    /* If static data has not been loaded, load it now */
+    if (!inited && !initializePDSI(env)) return; /* exception occurred; bail */
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    fdObj = (*env)->GetObjectField(env, _this, DSI_fdObjID);
+    Java_java_io_FileDescriptor_setfd(env, fdObj, fd);
+
+    /* Check for error condition */
+    if (fd==-1)
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
 }
 
+/*
+ * Class:     java_net_PlainDatagramSocketImpl
+ * Method:    datagramSocketClose
+ * Signature: ()V
+ */
+/* close the socket */
+JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_datagramSocketClose
+  (JNIEnv *env, jobject _this) {
+    int fd, rc;
+    jobject fdObj;
+
+    assert(inited && _this);
+    fdObj = (*env)->GetObjectField(env, _this, DSI_fdObjID);
+    fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
+
+    rc = close(fd);
+    if (rc<0)
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
+}
+
+/*
+ * Class:     java_net_PlainDatagramSocketImpl
+ * Method:    bind
+ * Signature: (ILjava/net/InetAddress;)V
+ */
+/* binds a datagram socket to a local port */
+JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_bind
+  (JNIEnv *env, jobject _this, jint lport, jobject laddr/*InetAddress*/) {
+    struct sockaddr_in sa;
+    jobject fdObj;
+    int fd, rc;
+
+    assert(inited && _this && laddr);
+    memset(&sa, 0, sizeof(sa));
+    sa.sin_family      = (*env)->GetIntField(env, laddr, IA_familyID);
+    sa.sin_addr.s_addr = htonl((*env)->GetIntField(env, laddr, IA_addrID));
+    sa.sin_port        = htons(lport);
+
+    fdObj = (*env)->GetObjectField(env, _this, DSI_fdObjID);
+    fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
+
+    rc = bind(fd, (struct sockaddr *) &sa, sizeof(sa));
+
+    /* Check for error condition */
+    if (rc<0)
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
+}
+
+#if 0
 /*
  * Class:     java_net_PlainDatagramSocketImpl
  * Method:    getTTL
@@ -47,7 +178,9 @@ JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_datagramSocketCreat
 /* get the TTL (time-to-live) option */
 JNIEXPORT jbyte JNICALL Java_java_net_PlainDatagramSocketImpl_getTTL
   (JNIEnv *env, jobject _this) {
-  assert(0/*unimplemented*/);
+    assert(inited && _this);
+
+    assert(0/*unimplemented*/);
 }
 
 /*
@@ -58,18 +191,9 @@ JNIEXPORT jbyte JNICALL Java_java_net_PlainDatagramSocketImpl_getTTL
 /* get the TTL (time-to-live) option */
 JNIEXPORT jint JNICALL Java_java_net_PlainDatagramSocketImpl_getTimeToLive
   (JNIEnv *env, jobject _this) {
-  assert(0/*unimplemented*/);
-}
+    assert(inited && _this);
 
-/*
- * Class:     java_net_PlainDatagramSocketImpl
- * Method:    init
- * Signature: ()V
- */
-/* perform class load-time initialization */
-JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_init
-  (JNIEnv *env, jclass cls) {
-  assert(0/*unimplemented*/);
+    assert(0/*unimplemented*/);
 }
 
 /*
@@ -80,7 +204,9 @@ JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_init
 /* join the multicast group */
 JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_join
   (JNIEnv *env, jobject _this, jobject inetaddr /*InetAddress*/) {
-  assert(0/*unimplemented*/);
+    assert(inited && _this);
+
+    assert(0/*unimplemented*/);
 }
 
 /*
@@ -115,6 +241,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_receive
   (JNIEnv *env, jobject _this, jobject p /*DatagramPacket*/) {
   assert(0/*unimplemented*/);
 }
+#endif
 
 /*
  * Class:     java_net_PlainDatagramSocketImpl
@@ -125,9 +252,39 @@ JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_receive
  * destination address to send the packet to. */
 JNIEXPORT void JNICALL Java_java_net_PlainDatagramSocketImpl_send
   (JNIEnv *env, jobject _this, jobject p/*DatagramPacket*/) {
-  assert(0/*unimplemented*/);
+    struct sockaddr_in sa;
+    jobject fdObj, addrObj, bufObj;
+    jbyte *bufp;
+    jint len, off;
+    int fd, rc;
+
+    assert(inited && _this && p);
+    /* get file descriptor */
+    fdObj = (*env)->GetObjectField(env, _this, DSI_fdObjID);
+    fd = Java_java_io_FileDescriptor_getfd(env, fdObj);
+    /* get inetaddress and port from datagrampacket */
+    addrObj = (*env)->GetObjectField(env, p, DP_addressID);
+    memset(&sa, 0, sizeof(sa));
+    sa.sin_family      = (*env)->GetIntField(env, addrObj, IA_familyID);
+    sa.sin_addr.s_addr = htonl((*env)->GetIntField(env, addrObj, IA_addrID));
+    sa.sin_port        = htons((*env)->GetIntField(env, p, DP_portID));
+    /* get message buffer */
+    bufObj = (*env)->GetObjectField(env, p, DP_bufID);
+    bufp = (*env)->GetByteArrayElements(env, (jbyteArray) bufObj, NULL);
+    off = DP_offsetID ? (*env)->GetIntField(env, p, DP_offsetID) : 0;
+    len = (*env)->GetIntField(env, p, DP_lengthID);
+    /* actually send data gram */
+    printf("SENDING %d bytes to fd %d...", len, fd); // XXX!
+    rc = sendto(fd, bufp+off, len, 0/*no flags*/, &sa, sizeof(sa));
+    printf("%d sent.\n", rc);
+    /* free buffers */
+    (*env)->ReleaseByteArrayElements(env, (jbyteArray)bufObj, bufp, JNI_ABORT);
+				     
+    if (rc<0)
+	(*env)->ThrowNew(env, IOExcCls, strerror(errno));
 }
 
+#if 0
 /*
  * Class:     java_net_PlainDatagramSocketImpl
  * Method:    setTTL
