@@ -31,7 +31,7 @@ import java.util.Stack;
  * <code>CacheEquivalence</code> can make larger equivalence sets.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayUnroller.java,v 1.1.2.1 2001-06-15 08:07:45 cananian Exp $
+ * @version $Id: ArrayUnroller.java,v 1.1.2.2 2001-06-15 14:32:06 cananian Exp $
  */
 public final class ArrayUnroller
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -51,7 +51,7 @@ public final class ArrayUnroller
 	    if (loop.nestedLoops().size()>0) continue; // skip
 	    // this is a leaf loop.  look for array refs.
 	    boolean seen=false; int width=0;
-	    for (Iterator it2=loop.loopIncelements().iterator();
+	    for (Iterator it2=loop.loopIncElements().iterator();
 		 it2.hasNext(); ) {
 		Quad q = (Quad) it2.next();
 		if (q instanceof AGET) {
@@ -63,6 +63,7 @@ public final class ArrayUnroller
 	    if (!seen) continue; // no array references in this loop.
 	    unrollOne(loop, CACHE_LINE_SIZE/width);
 	}
+	harpoon.Analysis.Quads.Unreachable.prune(hc);
 	return hc;
     }
     /** find the minimum array component width */
@@ -101,7 +102,7 @@ public final class ArrayUnroller
 	// step 2: change all the back edges in L from si->h to si->h'
 	// step 3: change all the back edges in L' from si'->h' to si'->h
 	for (int i=0; i<ntimes; i++) {
-	    for (Iterator it=loop.loopBackedges().iterator(); it.hasNext(); ) {
+	    for (Iterator it=loop.loopBackEdges().iterator(); it.hasNext(); ) {
 		Edge e = (Edge) it.next();
 		Quad.addEdge((Quad)copies[i].get(e.from()),
 			     e.which_succ(),
@@ -110,7 +111,7 @@ public final class ArrayUnroller
 	    }
 	}
 	// make PHIs for the exit edges.
-	for (Iterator it=loop.loopExits().iterator(); it.hasNext(); ) {
+	for (Iterator it=loop.loopExitEdges().iterator(); it.hasNext(); ) {
 	    Edge e = (Edge) it.next();
 	    QuadFactory qf = ((Quad)e.from()).getFactory();
 	    PHI phi = new PHI(qf, e.from(), new Temp[0], ntimes);
@@ -119,13 +120,24 @@ public final class ArrayUnroller
 		Quad.addEdge((Quad)copies[i].get(e.from()), e.which_succ(),
 			     phi, i);
 	}
+	// make stub PHIs for unused entrance edges
+	for (Iterator it=loop.loopEntranceEdges().iterator(); it.hasNext(); ) {
+	    Edge e = (Edge) it.next();
+	    QuadFactory qf = ((Quad)e.to()).getFactory();
+	    for (int i=1; i<ntimes; i++) {
+		PHI phi = new PHI(qf, e.to(), new Temp[0], 0);
+		Quad.addEdge(phi, 0,
+			     (Quad)copies[i].get(e.to()),
+			     e.which_pred());
+	    }
+	}
 	// we may have unconnected entrances if more than one header.
 	Util.assert(loop.loopEntrances().size()==1);
 	// done.
     }
     Map one2one(Loops l) {
 	Map m = new HashMap();
-	for (Iterator it=l.loopIncelements().iterator(); it.hasNext(); ) {
+	for (Iterator it=l.loopIncElements().iterator(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
 	    m.put(q, q);
 	}
@@ -134,13 +146,13 @@ public final class ArrayUnroller
     Map copy(Loops l) {
 	Map m = new HashMap();
 	// clone all elements.
-	for (Iterator it=l.loopIncelements().iterator(); it.hasNext(); ) {
+	for (Iterator it=l.loopIncElements().iterator(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
 	    Quad nq = (Quad) q.clone();
 	    m.put(q, nq);
 	}
 	// clone all interior edges.
-	for (Iterator it=l.loopIncelements().iterator(); it.hasNext(); ) {
+	for (Iterator it=l.loopIncElements().iterator(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
 	    for (int i=0; i<q.nextLength(); i++) {
 		Edge e = q.nextEdge(i);
