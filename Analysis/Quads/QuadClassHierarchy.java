@@ -20,6 +20,7 @@ import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.TYPECAST;
 import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Util.ArraySet;
 import harpoon.Util.HClassUtil;
@@ -45,7 +46,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.32 2001-06-11 01:46:11 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.33 2001-09-20 01:43:43 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -231,6 +232,9 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 		    // make sure we have the class we're testing against
 		    // handy.
 		    public void visit(INSTANCEOF q) {
+			discoverClass(S, q.hclass());
+		    }
+		    public void visit(TYPECAST q) {
 			discoverClass(S, q.hclass());
 		    }
 		    public void visit(TYPESWITCH q) {
