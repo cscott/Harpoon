@@ -120,6 +120,7 @@ jint getFDsSEL(JNIEnv *env, jint blockMode, jintArray result)
     int nFD=(readStruct.maxFD>writeStruct.maxFD)?
       readStruct.maxFD:writeStruct.maxFD;
 
+    /** buffer has jints inside it; safe to use malloc instead of GC_malloc */
     buf=(jint*)malloc(sizeof(jint)*(3+readStruct.maxFD+writeStruct.maxFD));
     select(nFD+1, &newReadSet, &newWriteSet, NULL, blockMode? NULL: &timeout);
     for (j=0; j<=readStruct.maxFD; j++)
