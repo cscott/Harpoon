@@ -17,7 +17,7 @@ import java.util.StringTokenizer;
  * specializing them for 32-bit architectures.
  *
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: OffsetMap32.java,v 1.1.2.3 1999-02-12 08:07:37 duncan Exp $
+ * @version  $Id: OffsetMap32.java,v 1.1.2.4 1999-02-16 21:25:22 duncan Exp $
  */
 public class OffsetMap32 extends OffsetMap
 {
@@ -43,7 +43,71 @@ public class OffsetMap32 extends OffsetMap
     };
     m_fields  = new Hashtable();
     m_hci     = new HClassInfo();
-    m_imm     = new InterfaceMethodMap(ch.classes());
+    m_imm = null; //m_imm     = new InterfaceMethodMap(ch.classes());
+  }
+
+  public int classOffset(HClass hc) {
+    Util.assert(!hc.isPrimitive());
+    return 0;
+  }
+
+  public int displayOffset(HClass hc) {
+   Util.assert(!hc.isPrimitive());
+   return 0;  // Is this right?
+  }
+
+  public int elementsOffset(HClass hc) {
+    Util.assert(hc.isArray());
+    return 2 * WORDSIZE;
+  }
+  
+  public int fieldsOffset(HClass hc) {
+    Util.assert((!hc.isPrimitive()) && (!hc.isArray()));
+    return 2 * WORDSIZE;
+  }
+
+  public int hashCodeOffset(HClass hc) {
+    Util.assert(!hc.isPrimitive());
+    return 1 * WORDSIZE;
+  }
+
+  public Label label(HClass hc) {
+    StringBuffer sb = new StringBuffer("");
+    sb.append("CLASS_"); sb.append(hc.getName());
+    return new Label(sb.toString());
+  }
+
+  public Label label(HField hf) {
+    Util.assert(hf.isStatic());
+
+    StringBuffer sb = new StringBuffer("");
+    sb.append("S_FIELD_");
+    sb.append(getFieldSignature(hf));
+    return new Label(sb.toString());
+  }
+
+  public Label label(HMethod hm) {
+    StringBuffer sb = new StringBuffer("");
+    sb.append("METHOD_");
+    sb.append(getMethodSignature(hm));
+    return new Label(sb.toString());
+  }
+
+  public Label label(String stringConstant) {
+    StringBuffer sb = new StringBuffer("");
+    sb.append("STRING_CONST_");
+    sb.append(stringConstant);
+    return new Label(sb.toString());
+  }
+
+  public int lengthOffset(HClass hc) {
+    Util.assert(hc.isArray());
+    return -1 * WORDSIZE;
+  }
+
+  public int methodsOffset(HClass hc) {
+    Util.assert(!hc.isPrimitive());
+    return displayOffset(hc) + m_cdm.classDepth(hc)*WORDSIZE;
   }
 
   public int offset(HField hf) {
@@ -83,33 +147,22 @@ public class OffsetMap32 extends OffsetMap
 		(m_cmm.methodOrder(hm)*WORDSIZE));
     return offset;
   }
-
-  public Label label(HField hf) {
-    Util.assert(hf.isStatic());
-
-    StringBuffer sb = new StringBuffer("");
-    sb.append("S_FIELD_");
-    sb.append(getFieldSignature(hf));
-    return new Label(sb.toString());
-  }
-
-  public Label label(HMethod hm) {
-    Util.assert(hm.isStatic());
-
-    StringBuffer sb = new StringBuffer("");
-    sb.append("METHOD_");
-    sb.append(getMethodSignature(hm));
-    return new Label(sb.toString());
-  }
-
+  
   public int size(HClass hc) {
     return size(hc, true);
   }
     
   private int size(HClass hc, boolean inline) {
-    int size;    
+    int size;  
+  
     if (hc.isPrimitive()) {
       if (hc==HClass.Double || hc==HClass.Long) { size = 2*WORDSIZE; }
+      else { size = WORDSIZE; }
+    }
+    else if (hc.isArray()) {
+      if (inline) {
+	throw new Error("Can't determine size of array type without dims!");
+      }
       else { size = WORDSIZE; }
     }
     else {
@@ -125,40 +178,6 @@ public class OffsetMap32 extends OffsetMap
     return size;
   }
 
-  public int classOffset(HClass hc) {
-    Util.assert(!hc.isPrimitive());
-    return 0;
-  }
-
-  public int displayOffset(HClass hc) {
-    return 0;  // Is this right?
-  }
-
-  public int elementsOffset(HClass hc) {
-    Util.assert(hc.isArray());
-    return 2 * WORDSIZE;
-  }
-  
-  public int fieldsOffset(HClass hc) {
-    Util.assert((!hc.isPrimitive()) && (!hc.isArray()));
-    return 2 * WORDSIZE;
-  }
-
-  public int hashCodeOffset(HClass hc) {
-    Util.assert(!hc.isPrimitive());
-    return 1 * WORDSIZE;
-  }
-
-  public int lengthOffset(HClass hc) {
-    Util.assert(hc.isArray());
-    return -1 * WORDSIZE;
-  }
-
-  public int methodsOffset(HClass hc) {
-    return displayOffset(hc) + m_cdm.classDepth(hc)*WORDSIZE;
-  }
-
-
   private String getFieldSignature(HField hf)
     {
       String token = null;
@@ -167,24 +186,25 @@ public class OffsetMap32 extends OffsetMap
 	{
 	  token = st.nextToken();
 	}
-      return token;
+      return hf.getDeclaringClass() + "_" + token;
     }
 
   private String getMethodSignature(HMethod hm)
     {
       HClass[] paramTypes;
-      StringBuffer sb;
+      StringBuffer sb = new StringBuffer("");
       
-      sb = new StringBuffer("");
-      sb.append(hm.getName());
       paramTypes = hm.getParameterTypes();
       for (int i = 0; i < paramTypes.length; i++)
 	{
 	  sb.append(paramTypes[i].toString());
 	  sb.append("_");
 	}
+      sb.append(hm.getDeclaringClass().getName());
+      sb.append("_");
+      sb.append(hm.getName());
       
-      return sb.toString();
+      return sb.toString().replace(' ', '_');
 
     }
 

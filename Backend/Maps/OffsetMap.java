@@ -12,38 +12,12 @@ import harpoon.Temp.Label;
  * total size of an <code>HClass</code> object.
  * 
  * @author  Duncan Bryce  <duncan@lcs.mit.edu>
- * @version $Id: OffsetMap.java,v 1.1.2.8 1999-01-28 18:56:10 duncan Exp $
+ * @version $Id: OffsetMap.java,v 1.1.2.9 1999-02-16 21:25:22 duncan Exp $
  */
 public abstract class OffsetMap // use an abstract class, if we can.
 {
-  /** Maps a non-static <code>HField</code> to an offset (in bytes).
-   *  If the field is inlined using type 1 inlining (which preserves
-   *  the class pointer) then the specified offset points just after the
-   *  class descriptor, in the same place a normal object pointer points.
-   *  If the field in inlined using type 2 inlining (which omits the
-   *  class pointer) then the specified offset points to the first field
-   *  of the object. */
-  public abstract int offset(HField hf);
-
-  /** Maps a non-static <code>HMethod</code> to an offset (in bytes).
-   *  This method must work for interface methods as well as class methods. */
-  public abstract int offset(HMethod hm);
-
-  /** Maps a static <code>HField</code> to a <code>Label</code>. */
-  public abstract Label label(HField hf);
-
-  /** Maps an <code>HMethod</code> to a <code>Label</code>. Note that
-   *  the method does not have to be static or final; in many cases we
-   *  can determine the identity of a virtual function exactly using 
-   *  type information, and <code>label()</code> should return a
-   *  <code>Label</code> we can use to take advantage of this information. */
-  public abstract Label label(HMethod hf);
-
-  /** Maps an <code>HClass</code> to a size (in bytes). */
-  public abstract int size(HClass hc);
-
   /** Maps an <code>HClass</code> to an offset (in bytes).  
-   *  Returns the offset of the class pointer
+   *  Returns the offset from an object reference of the class pointer */
   public abstract int classOffset(HClass hc);
 
   /** Maps an <code>HClass</code> to an offset (in bytes).
@@ -57,10 +31,48 @@ public abstract class OffsetMap // use an abstract class, if we can.
    *  array's 0th element. */
   public abstract int elementsOffset(HClass hc);
 
+  /** Maps an <code>HClass</code> to an offset (in bytes).
+   *  Returns the offset from an object reference at which the hashcode
+   *  is stored. */
+  public abstract int hashCodeOffset(HClass hc);
+
+  /** Maps an <code>HClass</code> to a <code>Label</code> representing the 
+   *  location of its class pointer  */
+  public abstract Label label(HClass hc);
+
+  /** Maps a static <code>HField</code> to a <code>Label</code>. */
+  public abstract Label label(HField hf);
+
+  /** Maps an <code>HMethod</code> to a <code>Label</code>. Note that
+   *  the method does not have to be static or final; in many cases we
+   *  can determine the identity of a virtual function exactly using 
+   *  type information, and <code>label()</code> should return a
+   *  <code>Label</code> we can use to take advantage of this information. */
+  public abstract Label label(HMethod hf);
+
+  /** Maps a <code>String</code> constant to a <code>Label</code> */
+  public abstract Label label(String stringConstant);
+
   /** Maps an <code>HClass</code> to an offset (in bytes).  
-   *  If <code>hc</code> is an array type, returns the offset of the
-   *  array's length field. */
+   *  If <code>hc</code> is an array type, returns the offset from 
+   *  an object reference of the array's length field. */
   public abstract int lengthOffset(HClass hc); 
+
+  /** Maps a non-static <code>HField</code> to an offset (in bytes).
+   *  If the field is inlined using type 1 inlining (which preserves
+   *  the class pointer) then the specified offset points just after the
+   *  class descriptor, in the same place a normal object pointer points.
+   *  If the field in inlined using type 2 inlining (which omits the
+   *  class pointer) then the specified offset points to the first field
+   *  of the object. */
+  public abstract int offset(HField hf);
+
+  /** Maps a non-static <code>HMethod</code> to an offset (in bytes).
+   *  This method must work for interface methods as well as class methods. */
+  public abstract int offset(HMethod hm);
+
+  /** Maps an <code>HClass</code> to a size (in bytes). */
+  public abstract int size(HClass hc);
 
 }
 
