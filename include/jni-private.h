@@ -76,6 +76,7 @@ struct inflated_oobj {
   jint nesting_depth; /* recursive lock nesting depth */
   pthread_mutex_t mutex; /* simple (not recursive) lock */
   pthread_cond_t  cond; /* condition variable */
+  pthread_rwlock_t jni_data_lock; /*read/write lock for jni_data field, above*/
 #endif
 #ifdef BDW_CONSERVATIVE_GC
   /* for cleanup via finalization */
@@ -175,6 +176,11 @@ jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, jsize length);
 /* inflation routine/macro */
 #define FNI_IS_INFLATED(obj) ((FNI_UNWRAP(obj)->hashunion.hashcode & 1) == 0)
 void FNI_InflateObject(JNIEnv *env, jobject obj);
+
+/* JNI-local object data storage. */
+void * FNI_GetJNIData(JNIEnv *env, jobject obj);
+void FNI_SetJNIData(JNIEnv *env, jobject obj, // frees old data if present.
+		    void *jni_data, void (*cleanup_func)(void *jni_data));
 
 /* auxilliary thread synchronization operations */
 void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime);

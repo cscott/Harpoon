@@ -38,6 +38,7 @@ void FNI_InflateObject(JNIEnv *env, jobject wrapped_obj) {
     infl->nesting_depth = 0;
     pthread_mutex_init(&(infl->mutex), NULL);
     pthread_cond_init(&(infl->cond), NULL);
+    pthread_rwlock_init(&(infl->jni_data_lock), NULL);
 #endif
     obj->hashunion.inflated = infl;
     assert(FNI_IS_INFLATED(wrapped_obj));
