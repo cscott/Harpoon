@@ -28,7 +28,7 @@ import java.util.Set;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.9.2.9 1999-02-23 05:55:21 cananian Exp $
+ * @version $Id: Code.java,v 1.9.2.10 1999-02-24 22:51:22 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -180,7 +180,7 @@ public class Code extends HCode {
 	else
 	  ex = null; // to indicate 'catch any'.
 	// and make the official exception entry.
-	tryBlocks[i] = new ExceptionEntry(uv, ex, sparse[et[i].handler_pc]);
+	tryBlocks[i] = new ExceptionEntry(i, uv, ex, sparse[et[i].handler_pc]);
       }
       // Okay.  Just trim our list and we're ready to rumble.
       ((ArrayList)v).trimToSize();
@@ -240,12 +240,14 @@ public class Code extends HCode {
   public ExceptionEntry[] getTryBlocks() { getElements(); return tryBlocks; }
 
   /** Represents exception handlers in this code view. */
-  public static class ExceptionEntry {
+  public static class ExceptionEntry implements Comparable {
+    int order; // smaller numbers have precedence over higher numbers.
     Set tryBlock;
     HClass caughtException;
     Instr handler;
-    ExceptionEntry(Set tryBlock, HClass caughtException,
-		   Instr handler) {
+    ExceptionEntry(int order,
+		   Set tryBlock, HClass caughtException, Instr handler) {
+      this.order = order;
       this.tryBlock = tryBlock;
       this.caughtException = caughtException;
       this.handler = handler;
@@ -253,6 +255,16 @@ public class Code extends HCode {
     public boolean inTry(Instr i) { return tryBlock.contains(i); }
     public HClass  caughtException() { return caughtException; }
     public Instr   handler() { return handler; }
+
+    public int compareTo(Object o) {
+      int cmp = this.order - ((ExceptionEntry)o).order;
+      if (cmp==0 && !this.equals(o)) // check consistency.
+	throw new ClassCastException("Comparing uncomparable objects");
+      return cmp;
+    }
+    public String toString() {
+      return "Exception Entry #"+order+" for "+caughtException;
+    }
   }
 
   // Utility functions.
