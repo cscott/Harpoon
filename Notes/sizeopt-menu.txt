@@ -86,3 +86,6 @@ Also: binary trees: MAJORITY of right/left tree links are null
 for null left, null right, and null right+left links.  Easy if
 Nodes are immutable (like in our PersistentMap structure); hard
 if the nodes are mutable.
+
+Fix open-addressed hashtable in accordance with algorithm R in Knuth
+6.4 vol 3 (page 533 in second edition).
