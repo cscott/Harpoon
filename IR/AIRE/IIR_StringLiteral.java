@@ -7,7 +7,7 @@ import java.util.Hashtable;
  * of zero or more character literals defined by ISO Std. 8859-1.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IIR_StringLiteral.java,v 1.4 1998-10-11 00:51:18 cananian Exp $
+ * @version $Id: IIR_StringLiteral.java,v 1.5 1998-10-11 00:53:31 cananian Exp $
  */
 
 //-----------------------------------------------------------
@@ -24,14 +24,7 @@ public class IIR_StringLiteral extends IIR_TextLiteral
     public static IIR_StringLiteral get_value( String value, int length)
     { return get_value(value); }
     public static IIR_StringLiteral get_value( String value )
-    {
-	IIR_StringLiteral retval = (IIR_StringLiteral) _h.get(value);
-	if (retval==null) {
-	    retval = new IIR_StringLiteral(value);
-	    _h.put(value, retval);
-	}
-	return retval;
-    }
+    { return new IIR_StringLiteral(value); }
  
     public String get_text()
     { return _value.toString(); }
@@ -52,6 +45,5 @@ public class IIR_StringLiteral extends IIR_TextLiteral
     IIR_StringLiteral(String value) {
 	_value = new StringBuffer(value);
     }
-    private static Hashtable _h = new Hashtable();
 } // END class
 
