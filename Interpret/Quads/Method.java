@@ -52,10 +52,10 @@ import java.lang.reflect.Modifier;
 import java.io.PrintWriter;
 import java.util.Enumeration;
 /**
- * <code>Method</code> interprets method code given a static state.
+ * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.9 1999-06-22 20:01:32 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.10 1999-06-24 01:57:04 cananian Exp $
  */
 public final class Method extends HCLibrary {
 
