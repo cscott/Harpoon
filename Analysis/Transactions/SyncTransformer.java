@@ -83,7 +83,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.5.2.1 2003-07-11 09:47:35 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5.2.2 2003-07-12 03:31:07 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -167,7 +167,9 @@ public class SyncTransformer
     /** Our version of the codefactory. */
     private final HCodeFactory hcf;
 
+    private final Linker linker;
     private final MethodGenerator gen;
+    private final Set<HField> transFields = new HashSet<HField>();
 
     /** Creates a <code>SyncTransformer</code> with no safe methods. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l,
@@ -193,6 +195,7 @@ public class SyncTransformer
 		    .equals(harpoon.IR.Quads.QuadSSI.codename);
 	assert super.codeFactory().getCodeName()
 		    .equals(harpoon.IR.Quads.QuadRSSx.codename);
+	this.linker = l;
 	this.safeMethods = safeMethods;
 	this.HCclass = l.forName("java.lang.Class");
 	this.HCfield = l.forName("java.lang.reflect.Field");
@@ -611,20 +614,22 @@ public class SyncTransformer
 		(qf, q.prevEdge(0),(handlers==null) ?
 		 "synctrans.read_nt_array" : "synctrans.read_t_array");
 
+	    HClass compType = etm.typeMap(q, q.dst());
+	    HClass arrType = HClassUtil.arrayClass(linker, compType, 1);
 	    Temp t1 = new Temp(tf, "retex");
 	    Quad q1;
 	    if (handlers==null) { // non-transactional read
 		q1 = new CALL(qf, q, gen.lookupMethod
 			      ("arrayReadNT",
-			       new HClass[] { HCobj, HClass.Int },
-			       etm.typeMap(q, q.dst())),
+			       new HClass[] { arrType, HClass.Int },
+			       compType),
 			      new Temp[] { q.objectref(), q.index() },
 			      q.dst(), t1, false, false, new Temp[0]);
 	    } else { // transactional read
 		q1 = new CALL(qf, q, gen.lookupMethod
 			      ("arrayReadT",
-			       new HClass[] { HCobj, HClass.Int, HCobj },
-			       etm.typeMap(q, q.dst())),
+			       new HClass[] { arrType, HClass.Int, HCobj },
+			       compType),
 			      new Temp[] { q.objectref(), q.index(),
 					   ts.versioned(q.objectref()) },
 			      q.dst(), t1, false, false, new Temp[0]);
@@ -661,6 +666,7 @@ public class SyncTransformer
 		(qf, q.prevEdge(0),(handlers==null) ?
 		 "synctrans.read_nt_object" : "synctrans.read_t_object");
 
+	    transFields.add(q.field());
 	    Temp t0 = new Temp(tf, "read_field");
 	    Temp t1 = new Temp(tf, "retex");
 	    Quad q0 = new CONST(qf, q, t0, q.field(), HCfield);
@@ -1144,7 +1150,8 @@ public class SyncTransformer
      *  tree form of the transformed code by performing some optimizations
      *  which can't be represented in quad form. */
     public HCodeFactory treeCodeFactory(Frame f, HCodeFactory hcf) {
-	return new TreePostPass(f, FLAG_VALUE, HFflagvalue).codeFactory(hcf);
+	return new TreePostPass(f, FLAG_VALUE, HFflagvalue, gen, transFields)
+	    .codeFactory(hcf);
     }
     /** Create a redirection method for native methods we "know" are safe. */
     // parts borrowed from InitializerTransform.java

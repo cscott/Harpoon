@@ -8,14 +8,16 @@ import harpoon.ClassFile.HClassMutator;
 import harpoon.ClassFile.HMethod;
 
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 /**
  * A <code>MethodGenerator</code> creates methods with base names and
  * parameters/return types you specify.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodGenerator.java,v 1.1 2003-07-11 09:39:59 cananian Exp $
+ * @version $Id: MethodGenerator.java,v 1.1.2.1 2003-07-12 03:31:07 cananian Exp $
  */
 class MethodGenerator {
     private final HClassMutator classMutator;
@@ -26,13 +28,18 @@ class MethodGenerator {
     public MethodGenerator(HClass baseClass) {
 	this.classMutator = baseClass.getMutator();
     }
+
+    /** Return the <code>Set</code> of all <code>HMethod</code>s generated
+     *  by this <code>MethodGenerator</code>. */
+    public Set<HMethod> generatedMethodSet() {
+	return Collections.unmodifiableSet(descriptors.keySet());
+    }
+
     /** Return the 'name' originally given to lookupMethod (which will
      *  differ from the name reported by the method via getName()). */
-    public static String baseName(HMethod hm) {
-	String name = hm.getName();
-	int idx = name.indexOf(separator);
-	assert idx >= 0;
-	return name.substring(0, idx);
+    public String baseName(HMethod hm) {
+	assert generatedMethodSet().contains(hm);
+	return descriptors.get(hm).namePrefix;
     }
     public HMethod lookupMethod(String name, HClass[] argTypes, HClass retType)
     {
@@ -45,10 +52,13 @@ class MethodGenerator {
 	hm.getMutator().addModifiers(Modifier.FINAL | Modifier.NATIVE |
 				     Modifier.STATIC | Modifier.PUBLIC);
 	methods.put(md, hm);
+	descriptors.put(hm, md);
 	return hm;
     }
     private final Map<MethodDescriptor,HMethod> methods =
 	new HashMap<MethodDescriptor,HMethod>();
+    private final Map<HMethod,MethodDescriptor> descriptors =
+	new HashMap<HMethod,MethodDescriptor>();
     int counter = 0;
 
     /** The <code>MethodDescriptor</code> is a handy tuple type to serve
