@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 /**
@@ -50,19 +52,19 @@ import java.util.StringTokenizer;
  * <code>RegAlloc.Factory</code>s
  * 
  * @author  Felix S Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAllocOpts.java,v 1.1.2.2 2000-10-31 01:41:26 pnkfelix Exp $
+ * @version $Id: RegAllocOpts.java,v 1.1.2.3 2000-11-08 23:43:09 pnkfelix Exp $
  */
 public class RegAllocOpts {
     public static final boolean INFO = false;
-    HashSet forceLocal;
-    HashSet forceGlobal;
-    HashSet forceCoalesce;
+    Filter forceLocal;
+    Filter forceGlobal;
+    Filter forceCoalesce;
 
     /** Creates a <code>RegAllocOpts</code>. */
     public RegAllocOpts(String filename) {
-	forceLocal = new HashSet(5);
-	forceGlobal = new HashSet(5);
-	forceCoalesce = new HashSet(5);
+	forceLocal = new Filter();
+	forceGlobal = new Filter();
+	forceCoalesce = new Filter();
 
         if (filename != null) {
 	    try {
@@ -114,7 +116,7 @@ public class RegAllocOpts {
 	    
 	    StringTokenizer st = new StringTokenizer(line);
 	    String s = st.nextToken();
-	    HashSet addToSet = null;
+	    Filter addToSet = null;
 	    if (s.toUpperCase().equals("FORCE_LOCAL")) {
 		addToSet = forceLocal;
 	    } else if (s.toUpperCase().equals("FORCE_GLOBAL")) {
@@ -136,6 +138,39 @@ public class RegAllocOpts {
 
 	r.close();
 	
+    }
+
+    /** Filter is a set of strings. */
+    class Filter {
+	// AF(c) = { s | s in c.names OR exists p in prefixMatches
+	//               such that s begins-with p }
+	HashSet names = new HashSet(5); 
+	ArrayList prefixMatches = new ArrayList(5);
+
+	public boolean contains(String name) {
+	    if (names.contains(name)) 
+		return true;
+	    
+	    for(Iterator pfs=prefixMatches.iterator();pfs.hasNext();){
+		String s = (String) pfs.next();
+		if (s.startsWith(name))
+		    return true;
+	    }
+
+	    return false;
+	}
+	
+	public void add(String str) {
+	    if (!str.endsWith("*")) {
+		addName(str);
+	    } else {
+		addPrefix(str.substring(0,str.length()-1));
+	    }
+	}
+	public void addName(String str) { names.add(str); }
+	public void addPrefix(String prefix) { prefixMatches.add(prefix); }
+
+	public void clear() { names.clear(); prefixMatches.clear(); }
     }
     
 }

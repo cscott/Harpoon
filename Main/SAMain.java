@@ -73,7 +73,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.102 2000-11-08 15:42:11 bdemsky Exp $
+ * @version $Id: SAMain.java,v 1.1.2.103 2000-11-08 23:43:23 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -95,6 +95,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 
     static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
+    static String  singleClassStr = null; 
     static HClass  singleClass = null; // for testing single classes
     static final int STRONGARM_BACKEND = 0;
     static final int MIPS_BACKEND = 1;
@@ -193,8 +194,12 @@ public class SAMain extends harpoon.IR.Registration {
 		    // XXX: same chicken-and-egg problem as before.  We really
 		    // want to get the safe-set from the Runtime (in the Frame)
 		    // but the Frame hasn't been constructed yet.[CSA 2-Nov-00]
-		    p.load(new java.io.FileInputStream
-			   ("Support/init-safe-set"));
+
+		    // FSK: switched from hackish hardcoded
+		    // relative-directory path to
+		    // slightly-less-hackish hardcoded class-based path 
+		    p.load(ClassLoader.getSystemResourceAsStream("harpoon/Backend/Runtime1/init-safe-set"));
+		    // p.load(new java.io.FileInputStream("Support/init-safe-set"));
 		} catch (java.io.IOException ex) { System.err.println(ex); }
 		hcf=new harpoon.Analysis.Quads.InitializerTransform
 		    (hcf, classHierarchy, linker, p).codeFactory();
@@ -280,8 +285,10 @@ public class SAMain extends harpoon.IR.Registration {
 
 	String filesuffix = (BACKEND==PRECISEC_BACKEND) ? ".c" : ".s";
 	if (ONLY_COMPILE_MAIN) classes=Default.singletonIterator(hcl);
-	if (singleClass!=null) classes=Default.singletonIterator(singleClass);
-
+	if (singleClassStr!=null) {
+	    singleClass = linker.forName(singleClassStr);
+	    classes=Default.singletonIterator(singleClass);
+	}
 	if (true) { // this is only here because i don't want to re-indent
 	            // all the code below this point.
 	    while(classes.hasNext()) {
@@ -683,7 +690,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    case '1':  
 		String optclassname = g.getOptarg();
 		if (optclassname!=null) {
-		    singleClass = linker.forName(optclassname);
+		    singleClassStr = optclassname;
 		} else {
 		    ONLY_COMPILE_MAIN = true;
 		}
