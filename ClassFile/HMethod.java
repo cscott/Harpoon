@@ -17,7 +17,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.10 1998-08-03 01:37:15 cananian Exp $
+ * @version $Id: HMethod.java,v 1.11 1998-08-03 10:34:53 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -47,9 +47,8 @@ public class HMethod implements HMember {
       else if (methodinfo.attributes[i] instanceof AttributeSynthetic)
 	this.synthetic = (AttributeSynthetic) methodinfo.attributes[i];
     }
-    // Add the default code representation. FIXME
-    if (this.code != null) // interface methods don't have code attributes.
-      putCode(new harpoon.ClassFile.Bytecode.Code(this, this.methodinfo));
+    // Add the default code representation.
+    putCode(new harpoon.ClassFile.Bytecode.Code(this, this.methodinfo));
   }
 
   /**
