@@ -13,6 +13,8 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.Util;
+import harpoon.Util.Default;
+import harpoon.Util.UnmodifiableIterator;
 
 import java.util.Vector;
 import java.util.List;
@@ -37,7 +39,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.36 1999-08-30 20:30:15 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.37 1999-08-30 20:35:59 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -483,6 +485,9 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	layout. 
     */
     public Collection predC() {
+	Util.assert(!this.hasMultiplePredecessors(),
+		    "should not call Instr.predC() if instr"+
+		    "has multiple predecessors...override method");
 	return new AbstractCollection(){
 	    public int size() {
 		if ((prev != null) && prev.canFallThrough) {
@@ -494,7 +499,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	    public Iterator iterator() {
 		if ((prev != null) && prev.canFallThrough) {
 		    return Default.singletonIterator
-			(new HCodeEdge(prev, Instr.this));
+			(new InstrEdge(prev, Instr.this));
 		} else {
 		    return Default.nullIterator;
 		}
@@ -529,6 +534,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 		if (targets!=null) {
 		    total += targets.size();
 		}
+		return total;
 	    }
 	    public Iterator iterator() {
 		return new CombineIterator
@@ -536,7 +542,8 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 
 			// first iterator: fall to next?
 			(((next!=null)&&canFallThrough)?
-			 Default.singletonIterator(new HCodeEdge(this,next)):
+			 Default.singletonIterator
+			  (new InstrEdge(Instr.this,next)):
 			 Default.nullIterator),
 
 			// second iterator: branch to targets?
@@ -547,10 +554,10 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 				return titer.hasNext();
 			    }
 			    public Object next() {
-				return new HCodeEdge
-				    (this, 
-				     inf.labelToInstrLABELmap.get
-				     (tier.next())); 
+				return new InstrEdge
+				    (Instr.this, 
+				     (Instr) inf.labelToInstrLABELmap.get
+				     (titer.next())); 
 			    }
 			}:Default.nullIterator)
 
