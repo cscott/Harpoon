@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.12 2000-01-24 17:27:40 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.13 2000-01-27 06:28:38 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -135,10 +135,17 @@ public class ToAsync {
 	    final HClass is = linker.forName("java.io.InputStream");
 	    final HClass ss = linker.forName("java.net.ServerSocket");
 	    final HClass b = HClass.Byte;
+	    final HClass HCthrd = linker.forName("java.lang.Thread");
 
 	    HMethod retval = (HMethod)cache.get(m);
 	    if (retval == null) {
-		if (is.equals(m.getDeclaringClass())) {
+		if (m.equals(HCthrd.getMethod("join",
+						new HClass[0]))) {
+			retval=HCthrd.getMethod("join_Async",
+					    new HClass[0]);
+
+		    cache.put(m, retval);
+		} else if (is.equals(m.getDeclaringClass())) {
 		    if (m.getName().equals("read")) {
 			final HMethod bm1 = 
 			    is.getDeclaredMethod("read", new HClass[0]);
