@@ -13,10 +13,8 @@ public abstract class MonitorControl {
     }
 
     /** Return the monitor control policy for the given object. */
-    public static MonitorControl getMonitorControl(Object Monitor) {
-	// TODO
-
-	return null;
+    public static MonitorControl getMonitorControl(Object monitor) {
+	return ((MonitorControl)monitor).getMonitorControl();
     }
 
     /** Control the default monitor behavior for object monitors used
@@ -34,6 +32,6 @@ public abstract class MonitorControl {
      */
     public static void setMonitorControl(Object monitor,
 					 MonitorControl monCtl) {
-	// TODO
+	((MonitorControl)monitor).setMonitorControl(monCtl);
     }
 }
