@@ -2,11 +2,13 @@
 
 export NAME_SERVICE=corbaloc::TaoServices.lmdistributed.pces.emulab.net:50010/NameService
 
+export CLASSPATH=$CLASSPATH:`pwd`/../contrib
+
 cd ..
 
-xterm -hold -title "ATR" -e java -DORBInitRef.NameService=$NAME_SERVICE -server -jar ATR.jar timer 4 "LMCO ATR" contactService contactService -ORBInitRef NameService=$NAME_SERVICE &
+xterm -hold -title "ATR" -e java -Djava.compiler=none -DORBInitRef.NameService=$NAME_SERVICE -server -jar ATR.jar timer 4 "LMCO ATR" contactService contactService -ORBInitRef NameService=$NAME_SERVICE &
 sleep 5
 
-xterm -hold -title "Sending to ATR" -e java -DORBInitRef.NameService=$NAME_SERVICE -server -jar receiverStub.jar GUI.jar tank.gz 533 1 "LMCO ATR" -ORBInitRef NameService=$NAME_SERVICE &
+xterm -hold -title "Sending to ATR" -e java -Djava.compiler=none -DORBInitRef.NameService=$NAME_SERVICE -server -jar receiverStub.jar GUI.jar tank.gz 533 1 "LMCO ATR" -ORBInitRef NameService=$NAME_SERVICE &
 
 cd script
