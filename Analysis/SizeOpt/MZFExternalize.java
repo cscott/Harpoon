@@ -18,9 +18,12 @@ import harpoon.IR.Quads.FOOTER;
 import harpoon.IR.Quads.GET;
 import harpoon.IR.Quads.HEADER;
 import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadFactory;
-import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.QuadRSSx;
 import harpoon.IR.Quads.SET;
 import harpoon.IR.Quads.THROW;
 import harpoon.Temp.Temp;
@@ -41,7 +44,7 @@ import java.util.Set;
  * really *are* mostly-zero, then the net will be a space savings.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFExternalize.java,v 1.1.2.1 2001-11-14 08:31:53 cananian Exp $
+ * @version $Id: MZFExternalize.java,v 1.1.2.2 2001-11-14 20:53:48 cananian Exp $
  */
 class MZFExternalize {
     public static final double THRESHOLD=75;
@@ -132,6 +135,7 @@ class MZFExternalize {
 	// xxx cheat: get old getter and replace GET with our cruft.
 	// would be better to make this from scratch.
 	HCode hc = hcf.convert(getter);
+	Util.assert(hc.getName().equals(QuadRSSx.codename), hc);
 	Quad[] qa = (Quad[]) hc.getElements();
 	for (int i=0; i<qa.length; i++) {
 	    if (qa[i] instanceof GET) {
@@ -167,16 +171,25 @@ class MZFExternalize {
 		f=f.attach(q3, 0);
 		// insert type check for non-primitive types.
 		if (!ty.isPrimitive()) {
+		    // INSTANCEOF can't be given null, so do a null-check 1st.
+		    // if (q!=null && !(q instanceof xxx)) assert(0);
+		    Temp nullT = new Temp(qf.tempFactory(), "null");
 		    Temp tstT = new Temp(qf.tempFactory(), "test");
-		    Quad q4 = new INSTANCEOF(qf, q, tstT, q.dst(), ty);
-		    Quad q5 = new CJMP(qf, q, tstT, new Temp[0]);
+		    Quad q4 = new CONST(qf, q, nullT, null, HClass.Void);
+		    Quad q5 = new OPER(qf, q, Qop.ACMPEQ, tstT,
+				       new Temp[] { q.dst(), nullT });
+		    Quad q6 = new CJMP(qf, q, tstT, new Temp[0]);
+		    Quad q7 = new INSTANCEOF(qf, q, tstT, q.dst(), ty);
+		    Quad q8 = new CJMP(qf, q, tstT, new Temp[0]);
+		    Quad q9 = new PHI(qf, q, new Temp[0], 2);//nrm
 		    // what do i do if not valid?  i'm too lazy to create
-		    // an exception to throw.  how 'bout I return null?
-		    Quad q6 = new CONST(qf, q, q.dst(), null, HClass.Void);
-		    Quad q7 = new RETURN(qf, q, q.dst());
-		    Quad.addEdges(new Quad[] { q2, q4, q5, q6, q7 });
-		    Quad.addEdge(q5, 1, (Quad)out.to(), out.which_pred());
-		    f = f.attach(q7, 0);
+		    // an exception to throw.  let's infinite-loop.
+		    Quad q10= new PHI(qf, q, new Temp[0], 2);//ex
+		    Quad.addEdges(new Quad[] { q2, q4, q5, q6, q7, q8, q10 });
+		    Quad.addEdge(q6, 1, q9, 0);
+		    Quad.addEdge(q8, 1, q9, 1);
+		    Quad.addEdge(q9, 0, (Quad)out.to(), out.which_pred());
+		    Quad.addEdge(q10, 0, q10, 1);
 		}
 	    }
 	}
@@ -188,6 +201,7 @@ class MZFExternalize {
 	// xxx cheat: get old setter and replace SET with our cruft.
 	// would be better to make this from scratch.
 	HCode hc = hcf.convert(setter);
+	Util.assert(hc.getName().equals(QuadRSSx.codename), hc);
 	Quad[] qa = (Quad[]) hc.getElements();
 	for (int i=0; i<qa.length; i++) {
 	    if (qa[i] instanceof SET) {
