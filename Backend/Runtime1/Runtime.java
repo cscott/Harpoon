@@ -35,7 +35,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.6 2002-08-06 21:21:38 cananian Exp $
+ * @version $Id: Runtime.java,v 1.7 2002-08-08 15:50:33 wbeebee Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -134,10 +134,9 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
     /** @deprecated Use frame.getRuntime().runtimeCallableMethods() instead */
     public static Collection runtimeCallableMethods(final Linker linker) {
 	// yuck!
-	String root = "harpoon/Backend/Runtime1/";
 	return runtimeCallableMethods(linker,
-				      root+"method-root.properties",
-				      root+"class-root.properties");
+				      resourcePath("method-root.properties"),
+				      resourcePath("class-root.properties"));
     }
     // yuck yuck yuck yuck.  have to declare it this way because of how much
     // evil old code uses the original (and now deprecated)
