@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.AbstractCollection;
+import java.util.ArrayList;
 
 /**
  * <code>Instr</code> is the primary class for representing
@@ -42,7 +43,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.56 1999-10-31 19:54:29 cananian Exp $
+ * @version $Id: Instr.java,v 1.1.2.57 1999-11-05 01:10:29 cananian Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -194,15 +195,6 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 
 	this.canFallThrough = canFallThrough;
 	this.targets = targets;
-	if (targets != null) {
-	    // add this to inf.labelToBranchingInstrSetMap
-	    Iterator titer = targets.iterator();
-	    while(titer.hasNext()) {
-		Label l = (Label) titer.next();
-		((Set)inf.labelToBranches.
-		 get(l)).add(this);
-	    }
-	}
     }
 
     /** Creates an <code>Instr</code> consisting of the
@@ -342,7 +334,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     
     /** Not implemented yet. */
     public static void insertInstrsAt(HCodeEdge edge, List instrs) {
-	
+	Util.assert(false);
     }
 
     /** Inserts <code>this</code> at <code>edge</code>.  The purpose 
@@ -469,6 +461,12 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	}
 	this.next = null;
 	this.prev = null;
+	/* remove mappings in inf.labelToBranchingInstrsSetMap */
+	if (this.targets!=null)
+	    for (Iterator it=this.targets.iterator(); it.hasNext(); ) {
+		Label l = (Label) it.next();
+		((Set)inf.labelToBranches.get(l)).remove(this);
+	    }
     }
 
     /** Places <code>this</code> in the instruction layout between
@@ -509,6 +507,36 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 	this.prev = from;
 	this.next = to;
 	if(to!=null)to.prev = this;
+
+	/* add this to inf.labelToBranchingInstrSetMap */
+ 	if (this.targets != null) {
+	    Iterator titer = this.targets.iterator();
+	    while(titer.hasNext()) {
+		Label l = (Label) titer.next();
+		((Set)inf.labelToBranches.
+		 get(l)).add(this);
+	    }
+	}
+    }
+
+    /* Replaces <code>inOld</code> with <code>inNew</code> in the
+     * instruction layout. */
+    public static void replace(Instr inOld, Instr inNew) {
+	Util.assert(inNew.next==null && inNew.prev==null);
+	Util.assert(inOld.next!=null || inOld.prev!=null);
+	inNew.layout(inOld, inOld.getNext());
+	inOld.remove();
+    }
+
+    /** Create a new <code>Instr</code> identical to the receiver, but
+     *  with all <code>Temp</code>s renamed according to the given
+     *  mappings.   The new <code>Instr</code> will have no edges, and
+     *  will come from the specified <code>InstrFactory</code>. */
+    public Instr rename(InstrFactory inf, TempMap defMap, TempMap useMap) {
+	return new Instr(inf, this, getAssem(),
+			 map(defMap,dst), map(useMap,src),
+			 this.canFallThrough, 
+			 new ArrayList(this.targets));
     }
 
     /** Accept a visitor. */
@@ -608,7 +636,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 
     // ******************** HasEdges interface
 
-    /** Returns the control flow edges of <code>this</code>.
+    /** Returns the <I>control flow</I> edges of <code>this</code>.
 	Note that this returns edges according to <I>control flow</I>, not in
 	terms of instruction layout.  Look at <code>getNext()</code>
 	and <code>getPrev()</code> for information on instruction
@@ -802,5 +830,23 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     */
     protected boolean hasMultiplePredecessors() {
 	return false;
+    }
+
+    // ----------------------------------------------------
+    // Useful for temp renaming.  Exported only to subclasses.
+    protected final static Temp map(TempMap tm, Temp t) {
+	return (t==null)?null:(tm==null)?t:tm.tempMap(t);
+    }
+    protected final static Temp[] map(TempMap tm, Temp[] ta) {
+	Temp[] r = new Temp[ta.length];
+	for (int i=0; i<r.length; i++)
+	    r[i] = map(tm, ta[i]);
+	return r;
+    }
+    protected final static Temp[][] map(TempMap tm, Temp[][] taa) {
+	Temp[][] r = new Temp[taa.length][];
+	for (int i=0; i<r.length; i++)
+	    r[i] = map(tm, taa[i]);
+	return r;
     }
 }

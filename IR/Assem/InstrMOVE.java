@@ -5,6 +5,7 @@ package harpoon.IR.Assem;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 
 /**
  * <code>InstrMOVE</code> represents a copying of a set of source
@@ -24,7 +25,7 @@ import harpoon.Temp.Temp;
  * <code>InstrMEM</code>.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrMOVE.java,v 1.1.2.2 1999-09-10 22:26:05 pnkfelix Exp $ 
+ * @version $Id: InstrMOVE.java,v 1.1.2.3 1999-11-05 01:10:30 cananian Exp $ 
  */
 public class InstrMOVE extends Instr {
     
@@ -36,4 +37,9 @@ public class InstrMOVE extends Instr {
     
     /** Accept a visitor */
     public void accept(InstrVisitor v) { v.visit(this); }
+
+    public Instr rename(InstrFactory inf, TempMap defMap, TempMap useMap) {
+	return new InstrMOVE(inf, this, getAssem(),
+			     map(defMap,def()), map(useMap,use()));
+    }
 }

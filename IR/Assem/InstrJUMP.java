@@ -5,6 +5,7 @@ package harpoon.IR.Assem;
   
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Label;
+import harpoon.Temp.TempMap;
 
 import java.util.Arrays;
 
@@ -21,7 +22,7 @@ import java.util.Arrays;
     without the JUMP in place.
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrJUMP.java,v 1.1.2.3 1999-10-21 23:06:12 pnkfelix Exp $ */
+    @version $Id: InstrJUMP.java,v 1.1.2.4 1999-11-05 01:10:30 cananian Exp $ */
 public class InstrJUMP extends Instr {
     
     /** Creates a <code>InstrJUMP</code>. */
@@ -31,5 +32,9 @@ public class InstrJUMP extends Instr {
 	      Arrays.asList(new Label[]{ target }));
     }
 
+    public Instr rename(InstrFactory inf, TempMap defMap, TempMap useMap) {
+	return new InstrJUMP(inf, this, getAssem(),
+			     (Label)getTargets().get(0));
+    }
     public void accept(InstrVisitor v) { v.visit(this); }
 }

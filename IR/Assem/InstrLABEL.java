@@ -5,6 +5,7 @@ package harpoon.IR.Assem;
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Label;
+import harpoon.Temp.TempMap;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.UnmodifiableIterator;
 import harpoon.Util.Default;
@@ -19,7 +20,7 @@ import java.util.Set;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.12 1999-09-10 22:26:05 pnkfelix Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.13 1999-11-05 01:10:30 cananian Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
@@ -38,6 +39,10 @@ public class InstrLABEL extends Instr {
     public Label getLabel() { return label; }
     // should clone label!!!!!!!
 
+    public Instr rename(InstrFactory inf, TempMap defMap, TempMap useMap) {
+	// should clone label or something.
+	return new InstrLABEL(inf, this, getAssem(), label);
+    }
     /** Accept a visitor. */
     public void accept(InstrVisitor v) { v.visit(this); }
 
