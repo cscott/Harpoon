@@ -1,5 +1,5 @@
 // ActionRepository.java, created Mon Feb  7 15:03:29 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -14,8 +14,8 @@ import java.util.Map;
 /**
  * <code>ActionRepository</code>
  * 
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ActionRepository.java,v 1.1.2.1 2000-02-08 05:20:04 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
+ * @version $Id: ActionRepository.java,v 1.1.2.2 2000-02-09 05:23:42 salcianu Exp $
  */
 public class ActionRepository {
     
@@ -119,6 +119,11 @@ public class ActionRepository {
     }
 
     private void add_sync(Set set_n, Set set_nt, Set active_threads){
+
+	//System.out.println("set_n  = " + set_n);
+	//System.out.println("set_nt = " + set_nt);
+	//System.out.println("active_threads = " + active_threads);
+
 	Iterator it_n = set_n.iterator();
 	while(it_n.hasNext()){
 	    PANode n = (PANode) it_n.next();
@@ -166,7 +171,10 @@ public class ActionRepository {
 	into <code>ar2</code> according to the node map <code>mu</code>. */
     public void translateTheActions(ActionRepository ar2, Relation mu,
 				    Set active_threads){
+	// Add this "common-sense" rule to the mapping.
 	mu.add(THIS_THREAD,THIS_THREAD);
+
+	// Add the "ld" actions to ar2.
 	Iterator it_alpha_ld = alpha_ld.iterator();
 	while(it_alpha_ld.hasNext()){
 	    PALoad load = (PALoad) it_alpha_ld.next();
@@ -175,6 +183,8 @@ public class ActionRepository {
 			   mu.getValuesSet(load.nt), active_threads);
 	}
 
+
+	// Add the "sync" actions to ar2.
 	Enumeration enum_n = alpha_sync.keys();
 	while(enum_n.hasMoreElements()){
 	    PANode n = (PANode) enum_n.nextElement();
@@ -189,8 +199,42 @@ public class ActionRepository {
 	    ar2.add_sync(mu.getValuesSet(n),set_nt,active_threads);
 	}
 
-	//TODO (PRIORITY 0): map PI too
+	// Map the ordering info for the "ld" actions.
+	Enumeration enum_nt2 = pi_ld.keys();
+	while(enum_nt2.hasMoreElements()){
+	    PANode nt2  = (PANode) enum_nt2.nextElement();
+	    Set set_nt2 = mu.getValuesSet(nt2);
+	    Iterator it_load = pi_ld.getValues(nt2);
+	    while(it_load.hasNext()){
+		PALoad load = (PALoad) it_load.next();
+		ar2.add_ld(mu.getValuesSet(load.n1),
+			   load.f,
+			   load.n2,
+			   mu.getValuesSet(load.nt),
+			   set_nt2);
+	    }
+	}
 
+	// Map the ordering info for the "sync" actions.
+	// For each <sync,n,nt1> || nt2 in this action repository,
+	// add <sync,mu(n),mu(nt1)> || mu(nt2) to ar2.
+	enum_nt2 = pi_sync.keys();
+	while(enum_nt2.hasMoreElements()){
+	    PANode nt2 = (PANode) enum_nt2.nextElement();
+	    Set set_nt2 = mu.getValuesSet(nt2);
+	    Relation rel = (Relation) pi_sync.get(nt2);
+	    enum_n = rel.keys();
+	    while(enum_n.hasMoreElements()){
+		PANode n = (PANode) enum_n.nextElement();
+		Set set_n = mu.getValuesSet(n);
+		Iterator it_nt1 = rel.getValues(n);
+		while(it_nt1.hasNext()){
+		    PANode nt1 = (PANode) it_nt1.next();
+		    Set set_nt1 = mu.getValuesSet(nt1);
+		    ar2.add_sync(set_n,set_nt1,set_nt2);
+		}
+	    }
+	}
     }
 
     /** Private constructor for <code>clone</code>. */
@@ -256,7 +300,7 @@ public class ActionRepository {
 	    it_load = pi_ld.getValues(nt2);
 	    while(it_load.hasNext()){
 		PALoad load = (PALoad) it_load.next();
-		buffer.append(load + " || " + nt2 + "\n");
+		buffer.append(" " + load + " || " + nt2 + "\n");
 	    }
 	}
 

@@ -53,12 +53,12 @@ import harpoon.IR.Quads.FOOTER;
  * computed results from the caches.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.12 2000-02-08 05:26:53 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.13 2000-02-09 05:23:42 salcianu Exp $
  */
 public class PointerAnalysis {
 
     public static final boolean DEBUG = true;
-    public static final boolean EXTENDED_DEBUG = false;
+    public static final boolean EXTENDED_DEBUG = true;
 
     public static final String ARRAY_CONTENT = "array_elements";
 
@@ -152,7 +152,6 @@ public class PointerAnalysis {
 			return ac.directCallers((HMethod)node);
 		    }
 		};
-
 
 	long begin_time = new Date().getTime();
 	if(DEBUG)
@@ -478,6 +477,8 @@ public class PointerAnalysis {
 	
 
 	public void visit(CALL q){
+
+	    //System.out.println(q);
 
 	    /// System.out.println("Before CALL");
 	    /// System.out.println(bbpig);

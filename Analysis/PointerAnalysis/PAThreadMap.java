@@ -23,7 +23,7 @@ import java.util.Set;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.5 2000-02-07 02:11:46 salcianu Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.6 2000-02-09 05:23:42 salcianu Exp $
  */
 public class PAThreadMap{
 
@@ -107,11 +107,11 @@ public class PAThreadMap{
 	Enumeration e = tau2.activeThreads();
 	while(e.hasMoreElements()){
 	    PANode n = (PANode) e.nextElement();
-	    int count1 = getValue(n);
-	    int count2 = tau2.getValue(n);
-	    if(count2 > count1)
-		if(count2 == 1) hash.put(n,ONE);
-		else hash.put(n,TWO);
+	    int count = tau2.getValue(n);
+	    if(count == 2)
+		hash.put(n,TWO);
+	    else
+		inc(n);
 	}
     }
 

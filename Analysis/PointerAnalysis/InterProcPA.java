@@ -24,7 +24,7 @@ import harpoon.Temp.Temp;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.5 2000-02-08 05:21:29 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.6 2000-02-09 05:23:42 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -181,6 +181,8 @@ abstract class InterProcPA {
 
 	// translate edges from pig_callee to pig_caller
 	bring_edges(mu,pig_caller,pig_callee,roots);
+
+	// TODO: (Priority 0) map the thread map too!
 
 	// translate the actions too
 	pig_callee.ar.translateTheActions(pig_caller.ar, mu,
