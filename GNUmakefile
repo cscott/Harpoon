@@ -2,6 +2,7 @@ JFLAGS=-g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JCC=javac -d .
 JDOC=javadoc
+JAR=jar
 JDOCFLAGS=-version -author # -package
 JDOCIMAGES=/usr/local/jdk/docs/api/images
 SSH=ssh
@@ -21,6 +22,9 @@ java:	$(ALLSOURCE)
 	${JCC} ${JFLAGS} ${JFLAGSVERB} $(ALLSOURCE) | \
 		egrep -v '^\[[lc]'
 	touch java
+Harpoon.jar:	java
+	${JAR} c0f Harpoon.jar harpoon silicon
+jar:	Harpoon.jar
 
 cvs-add:
 	-for dir in $(filter-out Test,$(ALLPKGS)); do \
