@@ -27,23 +27,23 @@ rm -f $tmpscript $tmpsed
 
 # now add FLEX-specific bits to the link script.
 cat > $tmpsed <<-__EOF__
-	/^[ ]*[*]([.]text)$/{
+	/^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]text\( [ ]*[.][a-z.*]*\)*)$/{
 	  i\\
 	    text_start = . ;
 	  n
-	  /^[ ]*[*]([.]text[.][*])$/p
+	  /^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]text[.][*]\( [ ]*[.][a-z.*]*\)*)$/p
 	  i\\
 	    text_end = . ;
-	  /^[ ]*[*]([.]text[.][*])$/!p
+	  /^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]text[.][*]\( [ ]*[.][a-z.*]*\)*)$/!p
 	  c\\
 	    /* BEGIN FLEX ADDITIONS */\\
 	    code_start = . ; *(.flex.code .flex.code.rw) code_end = . ;\\
 	    . = ALIGN(8) ; fixup_start = . ; *(.flex.fixup) fixup_end = . ;\\
 	    /* END FLEX ADDITIONS */
 	}
-	/^[ ]*[*]([.]data)$/{
+	/^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]data\( [ ]*[.][a-z.*]*\)*)$/{
 	  n
-	  /^[ ]*[*]([.]data[.][*])$/n
+	  /^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]data[.][*]\( [ ]*[.][a-z.*]*\)*)$/n
 	  i\\
 	    /* BEGIN FLEX ADDITIONS */\\
 	    /* unmarked segments */\\
@@ -60,9 +60,9 @@ cat > $tmpsed <<-__EOF__
 	    . = ALIGN(4) ; string_constants_start = . ; *(.flex.string_constants) string_constants_end = . ;\\
 	    /* END FLEX ADDITIONS */
 	}
-	/^[ ]*[*]([.]bss)$/{
+	/^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]bss\( [ ]*[.][a-z.*]*\)*)$/{
 	  n
-	  /^[ ]*[*]([.]bss[.][*])$/n
+	  /^[ ]*[*](\([.][a-z.*]* [ ]*\)*[.]bss[.][*]\( [ ]*[.][a-z.*]*\)*)$/n
 	  i\\
 	    /* BEGIN FLEX ADDITIONS */\\
 	    . = ALIGN(4) ; *(.flex.zero)\\
