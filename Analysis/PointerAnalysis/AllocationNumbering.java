@@ -17,31 +17,31 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
 /**
- * <code>AllocationNumbering</code>
+ * An <code>AllocationNumbering</code> object assigns unique numbers
+ * to each allocations site from a program and (possibly) to each call
+ * sites.  Later, these numbers can be used in the instrumenting code
+ * (e.g. <code>InstrumentAllocs</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.3 2002-04-24 01:21:39 salcianu Exp $
- */
+ * @version $Id: AllocationNumbering.java,v 1.4 2002-10-04 19:53:51 salcianu Exp $ */
 public class AllocationNumbering implements java.io.Serializable {
     private final CachingCodeFactory hcf;
-    //tbu
-    public final Map alloc2int = new HashMap();
+    public final Map alloc2int;
     public final Map call2int;
-    int n=0,c=0;
     
-    /** Creates a <code>AllocationNumbering</code>. */
+    /** Creates an <code>AllocationNumbering</code> object.
+	@param hcf <code>CodeFactory</code> giving the code to instrument
+	@param ch  <code>ClassHierarchy</code> for the code from hcf
+	@param callSites if true, instrument the call sites too  */
     public AllocationNumbering(HCodeFactory hcf, ClassHierarchy ch,
 			       boolean callSites) {
-	if (callSites)
-	    call2int=new HashMap();
-	else call2int=null;
-        this.hcf = new CachingCodeFactory(hcf, true);
-	int n = 0, c=0;
-	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
-	    HMethod hm = (HMethod) it.next();
-	    number(this.hcf.convert(hm), callSites);
-	}
+	this.alloc2int = new HashMap();
+	this.call2int  = callSites ? new HashMap() : null;
+        this.hcf       = new CachingCodeFactory(hcf, true);
+	for (Iterator it = ch.callableMethods().iterator(); it.hasNext(); )
+	    number(this.hcf.convert((HMethod) it.next()), callSites);
     }
 
 
@@ -75,13 +75,16 @@ public class AllocationNumbering implements java.io.Serializable {
 
     /* hard part: the numbering */
     private void number(HCode hc, boolean callSites) {
-	if (hc!=null)
-	    for (Iterator it=hc.getElementsI(); it.hasNext(); ) {
+	if (hc != null)
+	    for (Iterator it = hc.getElementsI(); it.hasNext(); ) {
 		Quad q = (Quad) it.next();
-		if (q instanceof ANEW || q instanceof NEW)
-		    alloc2int.put(q, new Integer(n++));
-		else if (callSites&&(q instanceof CALL))
-		    call2int.put(q, new Integer(c++));
+		if ((q instanceof ANEW) || (q instanceof NEW))
+		    alloc2int.put(q, new Integer(alloc_count++));
+		else if (callSites && (q instanceof CALL))
+		    call2int.put(q, new Integer(call_count++));
 	    }
     }
+
+    private int alloc_count = 0;
+    private int call_count  = 0;
 }

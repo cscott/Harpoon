@@ -31,23 +31,44 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * <code>InstrumentAllocs</code> adds counters to each allocation site.
+ * <code>InstrumentAllocs</code> adds calls to instrumenting code to
+ * each allocation site and, if explicitly requested, to each
+ * synchronization instruction.  If call chain sensitivity is
+ * requested, instrumentation is added around method calls to.  The
+ * produced code prints the instrumentation statistics at the end of
+ * the program.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: InstrumentAllocs.java,v 1.3 2002-04-24 01:21:39 salcianu Exp $
- */
+ * @version $Id: InstrumentAllocs.java,v 1.4 2002-10-04 19:53:51 salcianu Exp $ */
 public class InstrumentAllocs extends MethodMutator
     implements java.io.Serializable {
-    //    int count;
-    HMethod main;
-    Linker linker;
-    HCodeFactory parenthcf;
-    AllocationNumbering an;
 
-    boolean syncs;
-    boolean callchains;
+    private final HMethod main;
+    private final Linker linker;
+    private final HCodeFactory parenthcf;
+    private final AllocationNumbering an;
 
-    /** Creates a <code>InstrumentAllocs</code>. */
+    private final boolean syncs;
+    private final boolean callchains;
+
+    /** Creates a <code>InstrumentAllocs</code>.
+
+	@param parent <code>HCodeFactory</code> that provides the code
+	to instrument
+
+	@param main main method of the instrumented program
+
+	@param linker linker for the code to instrument
+
+	@param an <code>AllocationNumbering</code> for the
+	allocation/call sites
+
+	@param syncs if true, then the synchronization operations are
+	instrumented too.
+
+	@param callchains if true, the instrumented code will record
+	the call chains for ecah execution of the instrumented
+	instructions. */
     public InstrumentAllocs(HCodeFactory parent, HMethod main,
 			    Linker linker, AllocationNumbering an,
 			    boolean syncs, boolean callchains) {
@@ -58,7 +79,7 @@ public class InstrumentAllocs extends MethodMutator
 	    "InstrumentAllocs works only with QuadNoSSA";
 
 	parenthcf = parent;
-	// count = 0;
+
 	this.main   = main;
 	this.linker = linker;
 	this.an     = an;
@@ -118,7 +139,7 @@ public class InstrumentAllocs extends MethodMutator
 
     private HMethod hm_count_alloc;
     private HMethod hm_count_sync;
-    // what's this? TODO: find mode appropriate name
+    // what's this? TODO: find more appropriate name
     private HMethod method3;
     private HMethod hm_call_enter;
     private HMethod hm_call_exit;
@@ -313,10 +334,9 @@ public class InstrumentAllocs extends MethodMutator
     }
     
 
-    // make sure that any normal / exceptional return from main
-    // (which equivaletes to the program termination)
-    // outputs the computed allocated map by calling
-    // harpoon.Runtime.CounterSupport.exit();
+    // make sure that any normal / exceptional return from main (which
+    // is equivalent to the program termination) outputs the computed
+    // allocated map by calling harpoon.Runtime.CounterSupport.exit();
     private void treat_main_method(HCode hc) {
 	WorkSet exitset = new WorkSet();
 	
