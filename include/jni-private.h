@@ -29,6 +29,17 @@
 struct clustered_heap; /* defined in src/clheap/clheap.h */
 #endif
 
+#ifndef WITH_SEMI_PRECISE_GC
+typedef GC_word * GC_bitmap;
+	/* The least significant bit of the first word is one if	*/
+	/* the first word in the object may be a pointer.		*/
+#endif
+
+#ifndef BDW_CONSERVATIVE_GC
+typedef unsigned long GC_word;
+#endif
+
+
 /* --------------------- data structure internals --------------------- */
 
 struct _jmethodID {
