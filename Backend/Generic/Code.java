@@ -11,6 +11,8 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.ArrayFactory;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrLABEL;
+import harpoon.IR.Assem.InstrDIRECTIVE;
 import harpoon.IR.Assem.InstrFactory;
 import harpoon.Backend.Generic.Frame;
 
@@ -21,7 +23,7 @@ import java.util.*;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.3 1999-04-05 05:21:00 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.4 1999-05-17 19:56:03 andyb Exp $
  */
 public abstract class Code extends HCode {
     /** The method that this code view represents. */
@@ -100,6 +102,10 @@ public abstract class Code extends HCode {
     public InstrFactory getInstrFactory() {
         return inf;
     }
+
+    public Frame getFrame() {
+        return frame;
+    }
     
     /** Displays the assembly instructions of this codeview. Attempts
      *  to do so in a well-formatted, easy to read way. <BR>
@@ -108,6 +114,13 @@ public abstract class Code extends HCode {
      *  @param  pw      A PrintWriter to send the formatted output to.
      */
     public void print(java.io.PrintWriter pw) {
-        super.print(pw);
+        pw.println();
+        for (int i = 0; i < instrs.length; i++) {
+            if (instrs[i] instanceof InstrLABEL) {
+                pw.println(instrs[i]);
+            } else {
+                pw.println("\t"+instrs[i]);
+            }
+        }
     }
 }
