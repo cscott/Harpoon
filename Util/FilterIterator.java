@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import harpoon.Util.Collections.UnmodifiableIterator;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -19,7 +21,7 @@ import java.util.NoSuchElementException;
  * Filters which remain consistent throughout the iteration be used. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FilterIterator.java,v 1.3 2002-04-10 03:07:04 cananian Exp $
+ * @version $Id: FilterIterator.java,v 1.4 2002-08-30 22:57:26 cananian Exp $
  */
 public class FilterIterator<A,B> extends UnmodifiableIterator<B> {
     final Iterator<A> i;

@@ -6,6 +6,7 @@ package harpoon.Util;
 import harpoon.Util.Collections.AbstractMapEntry;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Collections.MultiMapSet;
+import harpoon.Util.Collections.UnmodifiableIterator;
 
 import java.util.AbstractCollection;
 import java.util.AbstractList;
@@ -28,7 +29,7 @@ import java.util.SortedSet;
  * <code>Collection</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.3 2002-04-10 03:07:04 cananian Exp $
+ * @version $Id: Default.java,v 1.4 2002-08-30 22:57:23 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 

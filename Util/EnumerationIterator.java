@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import harpoon.Util.Collections.UnmodifiableIterator;
+
 import java.util.Enumeration;
 import java.util.Iterator;
 /**
@@ -10,7 +12,7 @@ import java.util.Iterator;
  * into an <code>Iterator</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: EnumerationIterator.java,v 1.3 2002-04-10 03:07:04 cananian Exp $
+ * @version $Id: EnumerationIterator.java,v 1.4 2002-08-30 22:57:26 cananian Exp $
  */
 public class EnumerationIterator<E> extends UnmodifiableIterator<E> implements Iterator<E> {
     private final Enumeration<E> e;

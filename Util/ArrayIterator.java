@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import harpoon.Util.Collections.UnmodifiableIterator;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 /**
@@ -10,7 +12,7 @@ import java.util.NoSuchElementException;
  * <p>The <code>remove()</code> method is <b>not</b> implemented.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayIterator.java,v 1.4 2002-04-10 03:07:03 cananian Exp $
+ * @version $Id: ArrayIterator.java,v 1.5 2002-08-30 22:57:23 cananian Exp $
  */
 
 public class ArrayIterator<E> extends UnmodifiableIterator<E>
