@@ -43,7 +43,7 @@ import java.util.Set;
  * <code>RoleInference</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: RoleInference.java,v 1.1.2.8 2001-07-04 19:03:16 bdemsky Exp $
+ * @version $Id: RoleInference.java,v 1.1.2.9 2001-07-04 19:22:47 bdemsky Exp $
  */
 public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator {
     final Linker linker;
@@ -305,16 +305,11 @@ public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator
 		Temp t=q.dst();
 		Temp t2=new Temp(q.getFactory().tempFactory());
 
-		if (q.dst()!=null) {
-		    MOVE move=new MOVE(q.getFactory(),q,
-				   t2, q.dst());
-		    Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), move,0);
-		    Quad.addEdge(move,0,q,0);
-		} else {
-		    CONST qconst=new CONST(q.getFactory(), q, t2, null, HClass.Void);
-		    Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), qconst,0);
-		    Quad.addEdge(qconst,0,q,0);
-		}
+		MOVE move=new MOVE(q.getFactory(),q,
+				   t2, q.objectref());
+		Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(), move,0);
+		Quad.addEdge(move,0,q,0);
+		
 		Temp tname=new Temp(q.getFactory().tempFactory());
 		String name=buildname(q,t);
 		Temp tfield=new Temp(q.getFactory().tempFactory());
