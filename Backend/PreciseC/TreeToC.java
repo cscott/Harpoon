@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.26 2001-04-19 17:16:50 salcianu Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.27 2001-06-28 20:49:54 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -379,7 +379,7 @@ public class TreeToC extends java.io.PrintWriter {
 	    this.align = e;
 	}
 	public void visit(BINOP e) {
-	    boolean macro=false, funccall=false;
+	    boolean macro=false, funccall=false, intargs=false;
 	    pw.print("(");
 		
 	    if (e.op==Bop.SHR || e.op==Bop.USHR) {
@@ -399,8 +399,12 @@ public class TreeToC extends java.io.PrintWriter {
 		pw.print("fmod("); // double remainder == c-lib frem()
 		sym2decl.put(new Label("fmod"),"double fmod(double, double);");
 	    }
+	    if (e.op==Bop.AND && e.type()==e.POINTER) {
+		funccall=true; intargs=true;
+		pw.print("(void *)(");
+	    }
 	    if (macro) suppress_directives++;
-	    //if (e.type()==e.POINTER) pw.print("(void*)");
+	    if (intargs) pw.print("(ptroff_t)");
 	    trans(e.getLeft());
 	    if (funccall) pw.print(", ");
 	    else switch(e.op) {
@@ -420,7 +424,7 @@ public class TreeToC extends java.io.PrintWriter {
 	    case Bop.XOR: pw.print("^"); break;
 	    default: throw new Error("unknown Bop: "+e);
 	    }
-	    //if (e.type()==e.POINTER) pw.print("(void*)");
+	    if (intargs) pw.print("(ptroff_t)");
 	    trans(e.getRight());
 	    if (funccall) pw.print(")"); // close macro/call
 	    if (macro) suppress_directives--;
