@@ -29,7 +29,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.23 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: CALL.java,v 1.1.2.24 2000-01-09 01:04:41 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -73,14 +73,22 @@ public class CALL extends INVOCATION {
 	this.retex    = retex; 
 	retex.parent  = this; 
 	retex.sibling = this.getFunc(); 
-	this.getRetval().sibling = retex; 
+	TEMP retval = (TEMP)this.getRetval();
+	if (retval != null) { retval.sibling = retex; }
     }
 
     public void setFunc(Exp func) { 
 	super.setFunc(func); 
 	func.parent  = this;
-	func.sibling = this.getArgs().head; 
+	func.sibling = this.handler; 
 	this.retex.sibling = func; 
+    }
+
+    public void setHandler(NAME handler) { 
+	this.handler = handler; 
+	handler.parent = this;
+	handler.sibling = null; 
+	this.getFunc().sibling = handler; 
     }
 
     public void setArgs(ExpList args) { 
@@ -91,17 +99,8 @@ public class CALL extends INVOCATION {
 	    e.head.sibling = e.tail.head; 
 	}
 	e.head.parent  = this;
-	e.head.sibling = handler; 
-	this.getFunc().sibling = args.head; 
-    }
-
-    public void setHandler(NAME handler) { 
-	this.handler = handler; 
-	handler.parent = this;
-	handler.sibling = null; 
-	ExpList e; 
-	for (e = this.getArgs(); e.tail != null; e=e.tail); 
-	e.head.sibling = handler; 
+	e.head.sibling = null; 
+	this.handler.sibling = args.head; 
     }
 
     public boolean isNative() { return false; }
@@ -111,18 +110,14 @@ public class CALL extends INVOCATION {
     public Stm build(ExpList kids) { return build(tf, kids); }
 
     public Stm build(TreeFactory tf, ExpList kids) {
-	TEMP kids_retval = null;
 	for (ExpList e = kids; e!=null; e=e.tail)
-	    Util.assert(tf == e.head.tf);
-	if (kids.tail.head.kind()==TreeKind.TEMP) { // non-null retval!
-	    kids_retval = (TEMP) kids.head;
-	    kids = kids.tail;
-	}
-	return new CALL(tf, this, kids_retval,
-			(TEMP)kids.head, // retex
-			kids.tail.tail.head,  // func
-			kids.tail.tail.tail,  // args
-			(NAME)kids.tail.head, // handler
+	    Util.assert(e.head == null || tf == e.head.tf);
+	return new CALL(tf, this, 
+			(TEMP)kids.head,                // retval
+			(TEMP)kids.tail.head,           // retex
+			kids.tail.tail.head,            // func
+			kids.tail.tail.tail.tail,       // args
+			(NAME)kids.tail.tail.tail.head, // handler
 			isTailCall); 
     }
 

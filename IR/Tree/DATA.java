@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * </PRE>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DATA.java,v 1.1.2.12 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: DATA.java,v 1.1.2.13 2000-01-09 01:04:41 duncan Exp $
  */
 public class DATA extends Stm implements harpoon.ClassFile.HDataElement { 
     /** The expression to write to memory.  Never null. */
@@ -100,8 +100,6 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
 	this.data.sibling = null;
     }
 
-    public ExpList kids() { return new ExpList(data, null); } 
-    
     public int kind() { return TreeKind.DATA; } 
 
     public Stm build(ExpList kids) { return build(tf, kids); }

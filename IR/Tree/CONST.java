@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.22 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: CONST.java,v 1.1.2.23 2000-01-09 01:04:41 duncan Exp $
  */
 public class CONST extends Exp implements PreciselyTyped, HDataElement {
     /** The constant value of this <code>CONST</code> expression. */
@@ -90,8 +90,6 @@ public class CONST extends Exp implements PreciselyTyped, HDataElement {
 
     /** Return the constant value of this <code>CONST</code> expression. */
     public Number value() { return value; }
-
-    public ExpList kids() {return null;}
 
     public int kind() { return TreeKind.CONST; }
 

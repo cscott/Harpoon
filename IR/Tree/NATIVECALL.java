@@ -20,7 +20,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.17 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.18 2000-01-09 01:04:41 duncan Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
@@ -37,6 +37,7 @@ public class NATIVECALL extends INVOCATION {
 
     public boolean isNative() { return true; }
 
+    // FIXME:  this is an ugly hack which should be cleaned up. 
     public ExpList kids() { 
 	ExpList result = new ExpList(this.getFunc(), this.getArgs()); 
 	if (this.getRetval() == null) { 

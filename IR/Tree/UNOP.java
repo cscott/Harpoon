@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.18 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: UNOP.java,v 1.1.2.19 2000-01-09 01:04:41 duncan Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -169,7 +169,6 @@ public class UNOP extends OPER {
     private static float  _f(Object o) { return ((Float)o)  .floatValue(); }
     private static double _d(Object o) { return ((Double)o) .doubleValue(); }
 
-    public ExpList kids() { return new ExpList(operand, null); }
     public int kind() { return TreeKind.UNOP; }
 
     public Exp build(ExpList kids) { return build(tf, kids); } 

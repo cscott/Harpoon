@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MEM.java,v 1.1.2.20 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: MEM.java,v 1.1.2.21 2000-01-09 01:04:41 duncan Exp $
  */
 public class MEM extends Exp implements PreciselyTyped {
     /** A subexpression evaluating to a memory reference. */
@@ -73,8 +73,6 @@ public class MEM extends Exp implements PreciselyTyped {
 	this.exp.parent = this; 
 	this.exp.sibling = null;
     }
-
-    public ExpList kids() {return new ExpList(exp,null);}
 
     public int kind() { return TreeKind.MEM; }
 

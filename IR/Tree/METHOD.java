@@ -17,7 +17,7 @@ import java.util.Set;
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.1.2.7 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: METHOD.java,v 1.1.2.8 2000-01-09 01:04:41 duncan Exp $
  */
 public class METHOD extends Stm {
     /** The temporary variables used for method formals. */
@@ -57,13 +57,6 @@ public class METHOD extends Stm {
 		param.parent = this; param.sibling = params[i+1]; 
 	    }
 	}
-    }
-
-    public ExpList kids() {
-	ExpList retval = new ExpList(params[params.length-1], null);
-	for (int i=params.length-2; i>=0; i--)
-	    retval = new ExpList(params[i], retval);
-	return retval;
     }
 
     public int kind() { return TreeKind.METHOD; }

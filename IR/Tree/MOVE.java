@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.16 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: MOVE.java,v 1.1.2.17 2000-01-09 01:04:41 duncan Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** The expression giving the destination for the computed value. */
@@ -77,10 +77,6 @@ public class MOVE extends Stm implements Typed {
 	if (!(dst.kind()==TreeKind.TEMP)) uses.addAll(dst.useSet());
 
 	return uses;
-    }
-
-    public ExpList kids() {
-	return new ExpList(dst, new ExpList(src, null));
     }
 
     public int kind() { return TreeKind.MOVE; }

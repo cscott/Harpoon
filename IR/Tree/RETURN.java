@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: RETURN.java,v 1.1.2.11 2000-01-09 00:21:56 duncan Exp $
+ * @version  $Id: RETURN.java,v 1.1.2.12 2000-01-09 01:04:41 duncan Exp $
  */
 public class RETURN extends Stm implements Typed {
     /** The value to return */
@@ -38,7 +38,6 @@ public class RETURN extends Stm implements Typed {
 	this.retval.sibling = null;
     }
 
-    public ExpList kids() { return new ExpList(retval, null); }
     public int kind() { return TreeKind.RETURN; }
 
     public Stm build(ExpList kids) { return build(tf, kids); } 

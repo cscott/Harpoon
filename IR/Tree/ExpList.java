@@ -17,7 +17,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: ExpList.java,v 1.1.2.9 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: ExpList.java,v 1.1.2.10 2000-01-09 01:04:41 duncan Exp $
  */
 public final class ExpList {
     /** The expression at this list entry. */
@@ -26,12 +26,12 @@ public final class ExpList {
     public final ExpList tail;
     /** List constructor. */
     public ExpList(Exp head, ExpList tail) { this.head=head; this.tail=tail; }
-    
-    public ExpList(List list) { 
+
+    public static ExpList toExpList(List list) { 
 	ExpList THIS; 
 
 	if (list.isEmpty()) { 
-	    THIS = new ExpList(null, null); 
+	    THIS = null; 
 	}
 	else { 
 	    THIS = new ExpList((Exp)list.get(list.size()-1), null); 
@@ -40,9 +40,7 @@ public final class ExpList {
 		THIS = new ExpList((Exp)i.next(), THIS); 
 	    }
 	}
-
-	this.head = THIS.head; 
-	this.tail = THIS.tail; 
+	return THIS; 
     }
 
     public static ExpList replace(ExpList e, Exp eOld, Exp eNew) { 

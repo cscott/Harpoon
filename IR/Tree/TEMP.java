@@ -17,7 +17,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.21 2000-01-09 00:21:56 duncan Exp $
+ * @version $Id: TEMP.java,v 1.1.2.22 2000-01-09 01:04:41 duncan Exp $
  */
 public class TEMP extends Exp {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -44,7 +44,6 @@ public class TEMP extends Exp {
 	return set;
     }
   
-    public ExpList kids() {return null;}
     public int kind() { return TreeKind.TEMP; }
 
     public Exp build(ExpList kids) { return build(tf, kids); } 
