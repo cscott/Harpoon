@@ -65,7 +65,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.18 2001-01-25 02:16:13 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.19 2001-01-25 02:49:16 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -1417,7 +1417,11 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	implements xConstant {
 	protected Object value;
 	public xStringConstant(HClass type, Object value) {
-	    super(type); this.value = value;
+	    super(type);
+	    // note that the string constant objects are intern()ed.
+	    // doing this here ensures that evaluating ACMPEQ with constant
+	    // args works correctly.
+	    this.value = ((String)value).intern();
 	}
 	public Object constValue() { return value; }
 	public String toString() {
