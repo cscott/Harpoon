@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.42 2002-08-01 04:04:41 cananian Exp $
+% $Id: ptran.tex,v 1.43 2002-08-01 16:49:07 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.42 $ $}
+\date{\today \\ $ $Revision: 1.43 $ $}
 
 \newcommand{\bigvar}[1]{\ensuremath{\text{\it #1}}}
 % boldface was kinda nice here:
@@ -403,12 +403,16 @@ edges.  Inside edges represent references created inside the current
 analysis scope.
 \item $\func{e}:N\to 2^S$ is an escape function that records the set of
 unanalyzed method invocation sites that a node escapes down into.
-\item $\func{c}_\text{from}:I\to 2^{V\times S}$ collects static values
+\item $\func{c}_\text{from}:I\to 2^{V\times S}_\bot$ collects static values
 used on the left-hand side of store statements associated with
 inside edges.  This allows us to detect possible from-companion edges.
-\item $\func{c}_\text{to}:I\to 2^{V\times S}$ collects static values
+The bottom value $\bot$ designates that this edge cannot possibly be
+a from-companion.
+\item $\func{c}_\text{to}:I\to 2^{V\times S}_\bot$ collects static values
 used on the right-hand size of store statements associated with
 inside edges.  This allows us to detect possible to-companion edges.
+The bottom value $\bot$ designates that this edge cannot possibly be
+a to-companion.
 \item $r \subseteq N$ is a return set representing the set of objects
 that may be returned by the currently analyzed method.
 \end{itemize}
@@ -456,8 +460,10 @@ and then recursively:
 
 We define the following auxilliary functions:
 \begin{eqnarray*}
-\func{condsing}(\bigvar{SV}):2^{V\times S}\to 2^P_\bot &=& \begin{cases}
-P&\text{such that }\bigvar{SV}\text{ are mutually-singular conditional on }P \\
+\func{condsing}(\bigvar{SV}):2^{V\times S}_\bot\to 2^P_\bot &=& \begin{cases}
+\bot & \text{if }\bigvar{SV}=\bot\text{, else}\\
+P&\text{such that }\bigvar{SV}\text{ are mutually-singular conditional
+                                     on }P\text{, else} \\
 \bot & \text{if no such }P\text{ exists.}
 \end{cases}
 \end{eqnarray*}
