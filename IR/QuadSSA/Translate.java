@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.61 1998-09-10 01:38:23 cananian Exp $
+ * @version $Id: Translate.java,v 1.62 1998-09-10 03:58:57 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -233,23 +233,29 @@ class Translate  { // not public.
      *  <code>bytecode</code>. */
     static final Quad trans(harpoon.ClassFile.Bytecode.Code bytecode) {
 	// set up initial state.
+	HClass[] paramTypes = bytecode.getMethod().getParameterTypes();
 	String[] paramNames = bytecode.getMethod().getParameterNames();
 	Temp[] params = new Temp[paramNames.length];
 	for (int i=0; i<params.length; i++)
 	    params[i]= new Temp((paramNames[i]==null)?"param"+i:paramNames[i]);
 
 	Temp[] locals = new Temp[bytecode.getMaxLocals()];
-	if (!Modifier.isStatic(bytecode.getMethod().getModifiers())) {
-	    locals[0] = new Temp("$this");
-	    System.arraycopy(params, 0, locals, 1, params.length);
-	    for (int i=params.length+1; i<locals.length; i++)
-		locals[i] = new Temp("lv$"+i);
-	} else {
-	    System.arraycopy(params, 0, locals, 0, params.length);
-	    for (int i=params.length; i<locals.length; i++)
-		locals[i] = new Temp("lv$"+i);
-	}
 
+	int offset = 0;
+	// handle non-static methods.
+	if (!Modifier.isStatic(bytecode.getMethod().getModifiers()))
+	    locals[offset++] = new Temp("$this");
+	// copy parameter Temps into locals.
+	for (int i=0; i<params.length; i++, offset++) {
+	    locals[offset] = params[i];
+	    if (isLongDouble(paramTypes[i])) {
+		locals[++offset] = null;
+	    }
+	}
+	// use generic names for the rest of the locals.
+	for (int i=offset; i<locals.length; i++)
+	    locals[i] = new Temp("lv$"+i);
+	
 	// deterimine if this is a synchronized method.
 	boolean isSynchronized = Modifier.isSynchronized(bytecode.getMethod()
 							 .getModifiers());
