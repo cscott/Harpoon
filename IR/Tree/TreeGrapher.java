@@ -21,7 +21,7 @@ import java.util.Stack;
  * control-flow graph information with elements of an canonical tree. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeGrapher.java,v 1.1.2.1 1999-12-20 08:54:16 duncan Exp $
+ * @version $Id: TreeGrapher.java,v 1.1.2.2 2000-01-05 04:06:35 duncan Exp $
  */
 public class TreeGrapher extends CFGrapher { 
     private Map predecessors = new HashMap(); 
@@ -86,7 +86,7 @@ public class TreeGrapher extends CFGrapher {
     public Collection succC(HCodeElement hc) { 
 	return (Collection)this.successors.get(hc); 
     }
-
+	
 
     /* Only for canonical views, a class to initialize
      *  the edges representing the CFG of this Tree form

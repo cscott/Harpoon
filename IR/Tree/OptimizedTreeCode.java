@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.12 1999-11-30 05:25:06 cananian Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.13 2000-01-05 04:06:35 duncan Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = CanonicalTreeCode.codename;
@@ -42,7 +42,6 @@ public class OptimizedTreeCode extends Code {
     };
 
     private /*final*/ Derivation       derivation;
-    private /*final*/ EdgeInitializer  edgeInitializer;
     private /*final*/ TypeMap          typeMap;
   
     /** Create a new <code>OptimizedTreeCode</code> from a
@@ -63,8 +62,6 @@ public class OptimizedTreeCode extends Code {
 	this.typeMap    = optimizedCode;
 	this.tree       = (Stm)optimizedCode.getRootElement();
 
-	this.edgeInitializer = new EdgeInitializer();
-	this.edgeInitializer.computeEdges();
     }
 
     private OptimizedTreeCode(HMethod newMethod, Tree tree, Frame frame) {
@@ -75,7 +72,6 @@ public class OptimizedTreeCode extends Code {
 	final CanonicalTreeCode code = 
 	    (CanonicalTreeCode)((Code.TreeFactory)tree.getFactory()).getParent();
 	this.tree = (Tree)Tree.clone(this.tf, ctm, tree);
-	(this.edgeInitializer = new EdgeInitializer()).computeEdges();
 	
 	this.derivation = new Derivation() { 
 	    public DList derivation(HCodeElement hce, Temp t) { 
@@ -108,14 +104,6 @@ public class OptimizedTreeCode extends Code {
 
     /** @return true */
     public boolean isCanonical() { return true; } 
-
-    /** 
-     * Recomputes the control-flow graph exposed through this codeview
-     * by the <code>CFGraphable</code> interface of its elements.  
-     * This method should be called whenever the tree structure of this
-     * codeview is modified. 
-     */
-    public void recomputeEdges() { edgeInitializer.computeEdges(); }
 
 
     /**

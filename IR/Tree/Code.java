@@ -11,6 +11,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
+import harpoon.IR.Properties.CFGrapher; 
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.Util;
 import harpoon.Temp.LabelList;
@@ -33,7 +34,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.37 1999-12-11 23:31:17 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.38 2000-01-05 04:06:35 duncan Exp $
  */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {
@@ -83,7 +84,14 @@ public abstract class Code extends HCode
     /** Clone this code representation. The clone has its own copy
      *  of the Tree */
     public abstract HCode  clone(HMethod newMethod, Frame frame);
-    
+
+    /** Returns a means to externally associate control flow with this
+     *  tree code.  If this tree code is modified subsequent to a call
+     *  to <code>getGrapher()</code>, the grapher is invalid, this method
+     *  should be re-invoked to acquire a new grapher.  
+     */ 
+    public CFGrapher getGrapher() { return new TreeGrapher(this); }
+
     /** Return the name of this code view. */
     public abstract String getName();
     
@@ -221,19 +229,6 @@ public abstract class Code extends HCode
      */
     public abstract boolean isCanonical();
 
-    /** 
-     * Recomputes the control-flow graph exposed through this codeview
-     * by the <code>CFGraphable</code> interface of its elements.  
-     * This method should be called whenever the tree structure of this
-     * codeview is modified.  This is an optional operation, which should
-     * be implemented by all canonical codeviews.  
-     *
-     * @exception UnsupportedOperationException if this operation is not
-     *      implemented. 
-     *
-     */
-    public abstract void recomputeEdges();
-
 
     /**
      * Implementation of the <code>Derivation</code> interface.
@@ -245,268 +240,5 @@ public abstract class Code extends HCode
      */
     public abstract HClass typeMap(HCodeElement hc, Temp t);
 
-    /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*
-     *                                                           *
-     *                EDGE INITIALIZATION CODE                   *
-     *                                                           *
-     *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-
-    /** JDK1.1 work-around for odd restrictions on static members of inner
-     *  classes.  This interface declares the state constants for the
-     *  Visitor class below. [CSA] */
-    private interface VisitorStates {
-	static final int COMPUTE_EDGE_SETS = 0;
-	static final int ALLOC_EDGE_ARRAYS = 1;
-	static final int ASSIGN_EDGE_DATA  = 2;
-    }
-
-    /* Only for canonical views, a class to initialize
-     *  the edges representing the CFG of this Tree form
-     */
-    class EdgeInitializer extends TreeVisitor implements VisitorStates { 
-	private Map    labels        = new HashMap();
-	private Map    successors    = new HashMap();
-	private Map    predecessors  = new HashMap();
-	private Stack  nodes         = new Stack();
-	private Stm    nextNode;
-	private int    state;
-
-	EdgeInitializer() { 
-	    Util.assert(isCanonical());
-	    mapLabels(); 
-	}
-	
-	void computeEdges() { 
-	    for (state=0; state<3; state++) { 
-		nextNode = (Stm)getRootElement();
-		while (nextNode!=null) { 
-		    nextNode.accept(this); 
-		}
-	    }
-	}
-
-	public void visit(Tree t) { throw new Error("No defaults here."); }
-	public void visit(Exp e)  { /* Do nothing for Exps */ } 
-
-	public void visit(final CALL s) { 
-	    switch (state) { 
-	    case COMPUTE_EDGE_SETS:
-		nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
-
-		Util.assert(labels.containsKey(s.handler.label),
-			    "labels should contain Label:" + 
-			    s.handler.label);
-		Util.assert(nextNode!=null, 
-			    "nextNode shouldn't be null");
-		Util.assert(RS(nextNode)!=(Stm)labels.get(s.handler.label),
-			    new Util.LazyString() {
-				public String eval() {
-				    return "both normal and exceptional"+
-				    " return should not target same location"+
-				    " for "+Print.print(s);}});
-
-		addEdge(s, RS(nextNode)); 
-		addEdge(s, (Stm)labels.get(s.handler.label));
-		break;
-	    case ALLOC_EDGE_ARRAYS:
-		visit((Stm)s); return;
-	    case ASSIGN_EDGE_DATA:
-		nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
-		if (successors.containsKey(s)) { 
-		    Stm ex   = (Stm)labels.get(s.handler.label);
-		    final Set succ = (Set)successors.get(s);
-		    Util.assert(succ.size()==2, 
-				new Util.LazyString() {
-				    public String eval() {
-					return 
-					"number of successors ("+succ.size()+
-					") should equal 2 for " + 
-					Print.print(s) + " " +
-					Print.print(nextNode);}});
-		    for (Iterator i = succ.iterator(); i.hasNext();) { 
-			Stm next     = (Stm)i.next();
-			Set nextPred = (Set)predecessors.get(next);
-			Tree.addEdge(s, next==ex?1:0, next, nextPred.size()-1);
-			nextPred.remove(s);
-		    }
-		    successors.remove(s);
-		}
-		break;
-	    default: throw new Error("Bad state: " + state);
-	    }
-	}
-
-	public void visit(CJUMP s) { 
-	    switch(state) { 
-	    case COMPUTE_EDGE_SETS:
-		Util.assert(labels.containsKey(s.iftrue));
-		Util.assert(labels.containsKey(s.iffalse));
-		addEdge(s, (Stm)labels.get(s.iftrue));
-		addEdge(s, (Stm)labels.get(s.iffalse));
-		break;
-	    case ALLOC_EDGE_ARRAYS:
-		if (s.prev==null) 
-		    s.prev = predecessors.containsKey(s)?
-			new Edge[((Set)predecessors.get(s)).size()]:
-			    new Edge[0];
-		break;
-	    case ASSIGN_EDGE_DATA:
-		Util.assert(successors.containsKey(s));
-		Stm next; Set nextPred;
-		
-		if (s.iftrue.equals(s.iffalse)) { 
-		    next = (Stm)labels.get(s.iftrue);
-		    nextPred = (Set)predecessors.get(next);
-		    Edge[] oldNextPrev = next.prev;
-		    next.prev = new Edge[next.prev.length+1];
-		    System.arraycopy(oldNextPrev, 0, 
-				     next.prev, 1, oldNextPrev.length);
-		    Tree.addEdge(s, 0, next, nextPred.size()-1);
-		    Tree.addEdge(s, 1, next, nextPred.size()-2);
-		    nextPred.remove(s);
-		}
-		else { 
-		    // Add true branch
-		    next         = (Stm)labels.get(s.iftrue);
-		    nextPred     = (Set)predecessors.get(next);
-		    Tree.addEdge(s, 0, next, nextPred.size()-1);
-		    nextPred.remove(s);
-		    
-		    // Add false branch
-		    next         = (Stm)labels.get(s.iffalse);
-		    nextPred     = (Set)predecessors.get(next);
-		    Tree.addEdge(s, 1, next, nextPred.size()-1);
-		    nextPred.remove(s);
-		}
-		break;
-	    default:
-		throw new Error("Bad state");
-	    }
-	    
-	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
-	}
-	
-	public void visit(JUMP s) { 
-	    switch (state) { 
-	    case COMPUTE_EDGE_SETS:
-		for (LabelList l = s.targets; l!=null; l=l.tail) { 
-		    Util.assert(labels.containsKey(l.head));
-		    addEdge(s, (Stm)labels.get(l.head));
-		}
-		break;
-	    case ALLOC_EDGE_ARRAYS:
-		visit((Stm)s);
-		return;
-	    case ASSIGN_EDGE_DATA:
-		visit((Stm)s);
-		return;
-	    default:
-		throw new Error("Bad state");
-	    }
-	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
-	}
-	
-	public void visit(SEQ s) { 
-	    // Same for all states
-	    Util.assert(s.left!=null && s.right!=null);
-	    nodes.push(s.right);
-	    nextNode = s.left;
-	}
-
-	public void visit(RETURN s) { 
-	    switch (state) {
-	    case COMPUTE_EDGE_SETS: 
-		break;
-	    case ALLOC_EDGE_ARRAYS: 
-	    case ASSIGN_EDGE_DATA:  
-		visit((Stm)s); 
-		return;
-	    default:
-		throw new Error("Bad state");
-	    }
-	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
-	}
-
-	public void visit(THROW s) { 
-	    switch (state) {
-	    case COMPUTE_EDGE_SETS: 
-		break;
-	    case ALLOC_EDGE_ARRAYS: 
-	    case ASSIGN_EDGE_DATA:  
-		visit((Stm)s); 
-		return;
-	    default:
-		throw new Error("Bad state");
-	    }
-	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
-	}
-
-	public void visit(Stm s) { 
-	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
-	    switch (state) 
-		{ 
-		case COMPUTE_EDGE_SETS:
-		    if (nextNode!=null) addEdge(s, RS(nextNode)); 
-		    break;
-		case ALLOC_EDGE_ARRAYS:
-		    if (s.prev==null) 
-			s.prev = predecessors.containsKey(s)?
-			    new Edge[((Set)predecessors.get(s)).size()]:
-				new Edge[0];
-		    break;
-		case ASSIGN_EDGE_DATA:
-		    int n=0;
-		    if (successors.containsKey(s)) { 
-			Set succ = (Set)successors.get(s);
-			for (Iterator i = succ.iterator(); i.hasNext();) { 
-			    Stm next     = (Stm)i.next();
-			    Set nextPred = (Set)predecessors.get(next);
-			    Tree.addEdge(s, n++, next, nextPred.size()-1);
-			    nextPred.remove(s);
-			}
-			succ.clear(); 
-		    }
-		    break;
-		default:
-		    throw new Error("Bad state: " + state);
-		}
-	}
-
-	private void mapLabels() {
-	    for (Iterator i = getElementsI(); i.hasNext();) {
-		Object next = i.next();
-		try {  
-		    SEQ seq = (SEQ)next;
-		    if (seq.left.kind()==TreeKind.LABEL) 
-			labels.put(((LABEL)seq.left).label, seq.left);
-		    if (seq.right.kind()==TreeKind.LABEL) 
-			labels.put(((LABEL)seq.right).label, seq.right);
-		}
-		catch (ClassCastException ex) { } 
-	    }
-	}
-	
-	private void addEdge(Stm from, Stm to) { 
-	    Set pred, succ;
-	    if (predecessors.containsKey(to))
-		pred = (Set)predecessors.get(to);
-	    else {
-		pred = new HashSet();
-		predecessors.put(to, pred);
-	    }
-	    if (successors.containsKey(from)) 
-		succ = (Set)successors.get(from);
-	    else { 
-		succ = new HashSet();
-		successors.put(from, succ);
-	    }
-	    pred.add(from);
-	    succ.add(to);
-	}	    
-
-	private Stm RS(Stm seq) { 
-	    while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).left;  
-	    return seq;
-	}
-    }
 }
+

@@ -27,13 +27,12 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.16 1999-11-30 05:25:06 cananian Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.17 2000-01-05 04:06:35 duncan Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
     public  static   final String           codename = "canonical-tree";
     private          final Derivation       derivation;
-    private          final EdgeInitializer  edgeInitializer;
     private          final TypeMap          typeMap;
 
     /** Create a new <code>CanonicalTreeCode</code> from a
@@ -48,9 +47,6 @@ public class CanonicalTreeCode extends Code {
 	tree         = translator.getTree();
 	derivation   = translator;
 	typeMap      = translator;
-
-	// Compute edges for the Trees in this codeview
-	(edgeInitializer = new EdgeInitializer()).computeEdges();
     }
 
     /* Copy constructor, should only be called by the clone() method. */
@@ -62,7 +58,6 @@ public class CanonicalTreeCode extends Code {
 	final CanonicalTreeCode code = 
 	    (CanonicalTreeCode)((Code.TreeFactory)tree.getFactory()).getParent();
 	this.tree = (Tree)Tree.clone(this.tf, ctm, tree);
-	(this.edgeInitializer = new EdgeInitializer()).computeEdges();
 
 	this.derivation = new Derivation() { 
 	    public DList derivation(HCodeElement hce, Temp t) { 
@@ -96,14 +91,6 @@ public class CanonicalTreeCode extends Code {
 
     /** @return true */
     public boolean isCanonical() { return true; } 
-
-    /** 
-     * Recomputes the control-flow graph exposed through this codeview
-     * by the <code>CFGraphable</code> interface of its elements.  
-     * This method should be called whenever the tree structure of this
-     * codeview is modified. 
-     */
-    public void recomputeEdges() { edgeInitializer.computeEdges(); }
 
     /**
      * Return a code factory for <code>CanonicalTreeCode</code>, given a 

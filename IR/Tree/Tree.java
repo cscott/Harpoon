@@ -25,12 +25,11 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.18 1999-12-20 09:02:12 duncan Exp $
+ * @version $Id: Tree.java,v 1.1.2.19 2000-01-05 04:06:35 duncan Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
-	       harpoon.IR.Properties.UseDef,
-	       harpoon.IR.Properties.CFGraphable
+	       harpoon.IR.Properties.UseDef
 {
     /*final*/ TreeFactory tf; // JDK 1.1 has problems with final fields.
     /*final*/ String source_file;
