@@ -1,8 +1,3 @@
-/* machine-specific segment info */
-#ifndef arm32
-# error Wrong segment information included.
-#endif
-
 /* the aoutelf selects *either* an aout-format section declaration
  * (ugh, backwards compatibility) or an elf-format section declaration (yay!)
  */

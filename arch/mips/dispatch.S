@@ -10,15 +10,24 @@ CODE_SEGMENT
 .globl	FNI_Dispatch_##type \
     FNI_Dispatch_##type:	
 
-DECLARE_FNI_Dispatch(Void)
-DECLARE_FNI_Dispatch(Object)
-DECLARE_FNI_Dispatch(Boolean)
-DECLARE_FNI_Dispatch(Byte)
-DECLARE_FNI_Dispatch(Char)
-DECLARE_FNI_Dispatch(Short)
-DECLARE_FNI_Dispatch(Int)
-DECLARE_FNI_Dispatch(Long)
-DECLARE_FNI_Dispatch(Float)
-DECLARE_FNI_Dispatch(Double)
-.entry: 
+    .globl FNI_Dispatch_Void
+FNI_Dispatch_Void:
+    .globl FNI_Dispatch_Object
+FNI_Dispatch_Object:    
+    .globl FNI_Dispatch_Boolean
+FNI_Dispatch_Boolean:
+    .globl FNI_Dispatch_Byte
+FNI_Dispatch_Byte:  
+    .globl FNI_Dispatch_Char
+FNI_Dispatch_Char:  
+    .globl FNI_Dispatch_Short
+FNI_Dispatch_Short: 
+    .globl FNI_Dispatch_Int
+FNI_Dispatch_Int:   
+    .globl FNI_Dispatch_Long
+FNI_Dispatch_Long:  
+    .globl FNI_Dispatch_Float
+FNI_Dispatch_Float:
+    .globl FNI_Dispatch_Double
+FNI_Dispatch_Double:    
      lw $0, 1($0)    

@@ -15,6 +15,7 @@ CODE_SEGMENT
 	.word fixup_end - 8	    # last entry in fixup table
 
 	.globl _lookup_handler
+   	.ent _lookup_handler
 _lookup_handler:    
 	lw  t0, -4(fp)	# key (== return address of caller)
 	lw  t1, 1b		# left
@@ -22,7 +23,7 @@ _lookup_handler:
 2:	blt t2, t1, 3f  # while (r >= l) ...
 	add t4, t1, t2	# x = (l + r) / 2
     div t4, 2
-	ldr t5, 0(t4)   # load x->label
+	lw  t5, 0(t4)   # load x->label
 	beq t0, t5, 4f		# compare key with x->label
     blt t0, t5, 5f      # if (key < x->label) r = x-1;
     add t1, t4, 8       # else l = x+1;
