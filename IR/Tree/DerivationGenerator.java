@@ -22,7 +22,7 @@ import java.util.Map;
  * <code>Tree.Exp</code>s can be inferred from these.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationGenerator.java,v 1.1.2.1 2000-02-01 09:40:54 cananian Exp $
+ * @version $Id: DerivationGenerator.java,v 1.1.2.2 2000-02-05 22:32:05 cananian Exp $
  */
 class DerivationGenerator implements TreeDerivation {
     /** private partial type map */
@@ -179,28 +179,13 @@ class DerivationGenerator implements TreeDerivation {
 	    else // we're adding a constant to a base or derived pointer.
 		return new TypeAndDerivation(makeDL(lefttad));
 	// okay, at this point we have two derived pointers to add.
-	// deal with possible cancellations
-	Map tempfactors = new HashMap();
-	updateTempFactors(makeDL(lefttad), tempfactors);
-	updateTempFactors(makeDL(righttad), tempfactors);
-	DList result = null;
-	for (Iterator it = tempfactors.entrySet().iterator(); it.hasNext(); ) {
-	    Map.Entry entry = (Map.Entry) it.next();
-	    Temp base = (Temp) entry.getKey();
-	    int factor = ((Integer)entry.getValue()).intValue();
-	    Util.assert(factor==1 || factor==-1,"can't do non-unity factors!");
-	    result = new DList(base, factor>0, result);
-	}
+	// deal with possible cancellations by adding them the simple
+	// way and then canonicalizing.
+	DList result = makeDL(lefttad);
+	for (DList dl=makeDL(righttad); dl!=null; dl=dl.next)
+	    result = new DList(dl.base, dl.sign, result);
+	result = result.canonicalize();
 	return (result==null) ? Void : new TypeAndDerivation(result);
-    }
-    private static void updateTempFactors(DList dl, Map tempfactors) {
-	for ( ; dl!=null; dl=dl.next) {
-	    int factor = dl.sign ? 1 : -1;
-	    factor += tempfactors.containsKey(dl.base) ? 
-		((Integer) tempfactors.get(dl.base)).intValue() : 0;
-	    if (factor==0) tempfactors.remove(dl.base);
-	    else tempfactors.put(dl.base, new Integer(factor));
-	}
     }
     private static TypeAndDerivation TADnegate(TypeAndDerivation tad) {
 	return new TypeAndDerivation(DLnegate(makeDL(tad)));
