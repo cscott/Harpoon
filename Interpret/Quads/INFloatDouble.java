@@ -1,15 +1,16 @@
 // INFloatDouble.java, created Fri Jan  1 11:29:34 1999 by cananian
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HMethod;
+
 /**
  * <code>INFloatDouble</code> provides implementations of the native methods
  * in <code>java.lang.Float</code> and <code>java.lang.Double</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFloatDouble.java,v 1.1.2.1 1999-01-03 03:01:43 cananian Exp $
+ * @version $Id: INFloatDouble.java,v 1.1.2.2 1999-01-22 23:53:19 cananian Exp $
  */
-
 public class INFloatDouble extends HCLibrary {
     static final void register(StaticState ss) {
 	ss.register(intBitsToFloat());

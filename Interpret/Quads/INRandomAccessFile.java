@@ -1,7 +1,9 @@
 // INRandomAccessFile.java, created Tue Dec 29 01:30:33 1998 by cananian
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
 
 import java.io.RandomAccessFile;
 import java.io.IOException;
@@ -10,15 +12,15 @@ import java.io.IOException;
  * methods in <code>java.io.RandomAccessFile</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INRandomAccessFile.java,v 1.1.2.2 1999-01-03 03:01:43 cananian Exp $
+ * @version $Id: INRandomAccessFile.java,v 1.1.2.3 1999-01-22 23:53:19 cananian Exp $
  */
 final class INRandomAccessFile extends HCLibrary {
     static final void register(StaticState ss) {
 	ss.register(open());
 	ss.register(read());
 	ss.register(readBytes());
-	//ss.register(write());
-	//ss.register(writeBytes());
+	ss.register(write());
+	ss.register(writeBytes());
 	ss.register(getFilePointer());
 	ss.register(seek());
 	ss.register(length());

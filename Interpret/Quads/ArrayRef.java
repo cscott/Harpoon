@@ -1,14 +1,14 @@
 // ArrayRef.java, created Mon Dec 28 03:02:39 1998 by cananian
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
 import harpoon.Util.Util;
 
 /**
  * <code>ArrayRef</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ArrayRef.java,v 1.1.2.2 1999-01-03 03:01:43 cananian Exp $
+ * @version $Id: ArrayRef.java,v 1.1.2.3 1999-01-22 23:53:18 cananian Exp $
  */
 final class ArrayRef extends ObjectRef {
     final Object[] elements;

@@ -1,13 +1,13 @@
 // FieldValueList.java, created Mon Dec 28 00:24:15 1998 by cananian
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HField;
 
 /**
  * <code>FieldValueList</code> holds field values.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: FieldValueList.java,v 1.1.2.2 1999-01-03 03:01:43 cananian Exp $
+ * @version $Id: FieldValueList.java,v 1.1.2.3 1999-01-22 23:53:18 cananian Exp $
  */
 final class FieldValueList {
     /** which field this value is for. */

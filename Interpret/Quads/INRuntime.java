@@ -1,14 +1,16 @@
 // INRuntime.java, created Fri Jan  1 12:17:30 1999 by cananian
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
 
 /**
  * <code>INRuntime</code> provides implementations of the native methods in
  * <code>java.lang.Runtime</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INRuntime.java,v 1.1.2.1 1999-01-03 03:01:44 cananian Exp $
+ * @version $Id: INRuntime.java,v 1.1.2.2 1999-01-22 23:53:19 cananian Exp $
  */
 public class INRuntime extends HCLibrary {
     static final void register(StaticState ss) {

@@ -1,14 +1,14 @@
 // HCLibrary.java, created Mon Dec 28 21:01:12 1998 by cananian
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
 
 /**
  * <code>HCLibrary</code> is a simple superclass designed to bring the
  * <code>HClass</code> objects for common classes into class scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCLibrary.java,v 1.1.2.2 1999-01-03 03:01:43 cananian Exp $
+ * @version $Id: HCLibrary.java,v 1.1.2.3 1999-01-22 23:53:18 cananian Exp $
  */
 class HCLibrary  {
     static final HClass 

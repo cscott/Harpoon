@@ -1,7 +1,9 @@
 // INSystem.java, created Mon Dec 28 20:25:36 1998 by cananian
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
 
 import java.util.Enumeration;
 import java.util.Properties;
@@ -10,7 +12,7 @@ import java.util.Properties;
  * <code>java.lang.System</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSystem.java,v 1.1.2.2 1999-01-03 03:01:44 cananian Exp $
+ * @version $Id: INSystem.java,v 1.1.2.3 1999-01-22 23:53:19 cananian Exp $
  */
 final class INSystem extends HCLibrary {
     static final void register(StaticState ss) {

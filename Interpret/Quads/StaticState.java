@@ -1,7 +1,10 @@
 // StaticState.java, created Mon Dec 28 00:36:44 1998 by cananian
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
 import harpoon.Util.Util;
 
@@ -12,7 +15,7 @@ import java.util.Stack;
  * <code>StaticState</code> contains the (static) execution context.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: StaticState.java,v 1.1.2.3 1999-01-03 03:01:44 cananian Exp $
+ * @version $Id: StaticState.java,v 1.1.2.4 1999-01-22 23:53:19 cananian Exp $
  */
 final class StaticState extends HCLibrary {
     /** which code representation to use. */

@@ -1,8 +1,48 @@
 // Method.java, created Mon Dec 28 01:31:03 1998 by cananian
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
-import harpoon.IR.Quads.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory;
+import harpoon.ClassFile.HMethod;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadSSA;
+import harpoon.IR.Quads.QuadNoSSA;
+import harpoon.IR.Quads.QuadWithTry;
+import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.ALENGTH;
+import harpoon.IR.Quads.ARRAYINIT;
+import harpoon.IR.Quads.ASET;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.CJMP;
+import harpoon.IR.Quads.COMPONENTOF;
+import harpoon.IR.Quads.CONST;
+import harpoon.IR.Quads.DEBUG;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.FOOTER;
+import harpoon.IR.Quads.HANDLER;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.INSTANCEOF;
+import harpoon.IR.Quads.LABEL;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.MONITORENTER;
+import harpoon.IR.Quads.MONITOREXIT;
+import harpoon.IR.Quads.MOVE;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.NOP;
+import harpoon.IR.Quads.OPER;
+import harpoon.IR.Quads.PHI;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.SET;
+import harpoon.IR.Quads.SIGMA;
+import harpoon.IR.Quads.SWITCH;
+import harpoon.IR.Quads.THROW;
+import harpoon.IR.Quads.TYPECAST;
+import harpoon.IR.Quads.Edge;
+import harpoon.IR.Quads.HandlerSet;
+import harpoon.IR.Quads.Qop;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
@@ -13,7 +53,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code given a static state.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.4 1999-01-06 22:31:42 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.5 1999-01-22 23:53:19 cananian Exp $
  */
 public final class Method extends HCLibrary {
 

@@ -1,7 +1,8 @@
 // INClass.java, created Mon Dec 28 21:24:34 1998 by cananian
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HMethod;
 
 import java.lang.reflect.Modifier;
 import java.util.Hashtable;
@@ -10,7 +11,7 @@ import java.util.Hashtable;
  * <code>java.lang.Class</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INClass.java,v 1.1.2.1 1998-12-30 04:39:39 cananian Exp $
+ * @version $Id: INClass.java,v 1.1.2.2 1999-01-22 23:53:18 cananian Exp $
  */
 public class INClass extends HCLibrary {
     static final void register(StaticState ss) {

@@ -1,14 +1,16 @@
 // ObjectRef.java, created Mon Dec 28 00:29:30 1998 by cananian
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 
 /**
  * <code>ObjectRef</code> is an object reference in the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectRef.java,v 1.1.2.4 1999-01-09 19:53:14 cananian Exp $
+ * @version $Id: ObjectRef.java,v 1.1.2.5 1999-01-22 23:53:19 cananian Exp $
  */
 class ObjectRef implements Cloneable {
     /** The type of the object. */

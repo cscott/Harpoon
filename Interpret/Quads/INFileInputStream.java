@@ -1,7 +1,9 @@
 // INFileInputStream.java, created Wed Dec 30 02:01:00 1998 by cananian
 package harpoon.Interpret.Quads;
 
-import harpoon.ClassFile.*;
+import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HField;
+import harpoon.ClassFile.HMethod;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -11,7 +13,7 @@ import java.io.IOException;
  * methods in <code>java.io.FileInputStream</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFileInputStream.java,v 1.1.2.1 1999-01-03 03:01:43 cananian Exp $
+ * @version $Id: INFileInputStream.java,v 1.1.2.2 1999-01-22 23:53:19 cananian Exp $
  */
 final class INFileInputStream extends HCLibrary {
     static final void register(StaticState ss) {
