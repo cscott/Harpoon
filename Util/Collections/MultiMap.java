@@ -70,7 +70,7 @@ import java.util.AbstractSet;
     map to more than one value.
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.3 1999-10-20 07:19:07 pnkfelix Exp $
+    @version $Id: MultiMap.java,v 1.1.2.4 1999-10-26 16:03:24 pnkfelix Exp $
  */
 public class MultiMap implements Map {
     
@@ -83,6 +83,16 @@ public class MultiMap implements Map {
     // used by identity constructor
     private MapFactory mf;
     
+    /** Creates a <code>MultiMap</code> using a
+	<code>SetFactory</code> for its value collections.  
+	To gain more control over the specific factories used in
+	internal representation of <code>this</code>, use the more
+	specific {@link MultiMap#MultiMap(CollectionFactory, MapFactory) constructor }.
+    */
+    public MultiMap() {
+	this(Factories.hashSetFactory(), Factories.hashMapFactory());
+    }
+
     /** Creates a <code>MultiMap</code> from a
 	<code>CollectionFactory</code>.
     */

@@ -24,6 +24,9 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 import harpoon.Util.LinearMap;
+import harpoon.Util.Collections.MultiMap;
+
+
 
 import harpoon.Analysis.DataFlow.ReachingDefs;
 import harpoon.Analysis.DataFlow.ForwardDataFlowBasicBlockVisitor;
@@ -50,7 +53,7 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.43 1999-10-21 23:06:10 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.44 1999-10-26 16:03:23 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
     private static final boolean BRAIN_DEAD = true;
@@ -727,27 +730,42 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
     class WebInfo {
 	HashMap in  = new HashMap();  // Map[Temp, Web]
 	HashMap out = new HashMap();  // Map[Temp, Web]
-	HashMap use = new ToSetMap(); // Map[Temp, Set[Instr] ] 
-	HashMap def = new ToSetMap(); // Map[Temp, Set[Instr] ]
+	// HashMap use = new ToSetMap(); // Map[Temp, Set[Instr] ] 
+	MultiMap use = new MultiMap(new MySetFactory(), 
+				    harpoon.Util.Collections.Factories.hashMapFactory());
+	// HashMap def = new ToSetMap(); // Map[Temp, Set[Instr] ]
+	MultiMap def = new MultiMap(new MySetFactory(), 
+				    harpoon.Util.Collections.Factories.hashMapFactory());
+
+	class MySetFactory extends harpoon.Util.Collections.SetFactory {
+	    public Set makeSet(java.util.Collection c) {
+		return new java.util.HashSet(c) {
+		    /** temporarily overriding this.toString() to
+			give dense description of Set's contents. */  
+		    public String toString() {
+			StringBuffer str = new StringBuffer("{ ");
+			Iterator iter = iterator();
+			while(iter.hasNext()) {
+			    Instr i = (Instr) iter.next();
+			    str.append( i.getID() );
+			    if (iter.hasNext()) str.append(", ");
+			}
+			str.append(" }");
+			return str.toString();
+		    }		    
+		};
+	    }
+	}
+
 	
+	/** Delete implementation of ToSetMap after I make sure that
+	    MultiMap works here. */ 
 	class ToSetMap extends HashMap {
 	    public Object get(Object key) {
 		Object s = super.get(key);
 		if (s == null) {
 		    HashSet set = new HashSet() {
-			/** temporarily overriding this.toString() to
-			    give dense description of Set's contents. */  
-			public String toString() {
-			    StringBuffer str = new StringBuffer("{ ");
-			    Iterator iter = iterator();
-			    while(iter.hasNext()) {
-				Instr i = (Instr) iter.next();
-				str.append( i.getID() );
-				if (iter.hasNext()) str.append(", ");
-			    }
-			    str.append(" }");
-			    return str.toString();
-			}
+
 		    };
 		    super.put(key, set);
 		    return set;

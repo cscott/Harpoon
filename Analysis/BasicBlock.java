@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Hashtable;
 import java.util.Enumeration;
 import java.util.ListIterator;
+import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Iterator;
 import java.util.Set;
@@ -41,7 +42,7 @@ import java.util.Collections;
  *
  * @author  John Whaley
  * @author  Felix Klock <pnkfelix@mit.edu> 
- * @version $Id: BasicBlock.java,v 1.1.2.2 1999-10-21 23:06:09 pnkfelix Exp $
+ * @version $Id: BasicBlock.java,v 1.1.2.3 1999-10-26 16:03:21 pnkfelix Exp $
 */
 public class BasicBlock {
     
@@ -80,24 +81,30 @@ public class BasicBlock {
 	each <code>BasicBlock</code> no more than once.
     */
     public static Iterator basicBlockIterator(BasicBlock block) { 
-	HashSet set = new HashSet();
+	ArrayList lst = new ArrayList();
 	WorkSet todo = new WorkSet();
-	set.add(block);
+	lst.add(block);
 	todo.push(block);
 	while( !todo.isEmpty() ) {
 	    BasicBlock doing = (BasicBlock) todo.pull(); 
 	    Enumeration enum = doing.next(); 
 	    while(enum.hasMoreElements()) { 
 		BasicBlock b = (BasicBlock) enum.nextElement(); 
-		if (set.add(b)) todo.push(b); 
+		if (!lst.contains(b)) {
+		    lst.add(b);
+		    todo.push(b);
+		}
 	    } 
 	    enum = doing.prev();  
 	    while(enum.hasMoreElements()) {
 		BasicBlock b = (BasicBlock) enum.nextElement(); 
-		if (set.add(b)) todo.push(b); 
+		if (!lst.contains(b)) {
+		    lst.add(b);
+		    todo.push(b); 
+		}
 	    } 
 	}
-	return set.iterator();
+	return lst.iterator();
     }
 
     

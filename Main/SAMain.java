@@ -69,7 +69,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.44 1999-10-25 22:18:10 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.45 1999-10-26 16:03:24 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -291,6 +291,7 @@ public class SAMain extends harpoon.IR.Registration {
 	    out.println();
 	    out.flush();
 	}
+
 	if (HACKED_REG_ALLOC) {
 	    HCode hc = sahcf.convert(hmethod);
 	    info("\t--- INSTR FORM (hacked register allocation)  ---");
