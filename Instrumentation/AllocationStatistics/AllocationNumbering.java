@@ -35,10 +35,12 @@ import java.io.IOException;
  * (e.g. <code>InstrumentAllocs</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.5 2003-02-12 19:03:44 salcianu Exp $ */
-public class AllocationNumbering implements java.io.Serializable {
-    public  final Map alloc2int;
-    public  final Map call2int;
+ * @version $Id: AllocationNumbering.java,v 1.6 2003-06-04 18:46:09 salcianu Exp $ */
+public class AllocationNumbering 
+    implements AllocationNumberingInterf, java.io.Serializable {
+
+    public final Map alloc2int;
+    public final Map call2int;
     
     /** Creates an <code>AllocationNumbering</code> object.
 

@@ -25,7 +25,7 @@ import java.io.FileOutputStream;
  * <code>AllocationInstrCompStage</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationInstrCompStage.java,v 1.2 2003-04-22 00:09:56 salcianu Exp $
+ * @version $Id: AllocationInstrCompStage.java,v 1.3 2003-06-04 18:46:09 salcianu Exp $
  */
 public class AllocationInstrCompStage extends CompilerStage {
 
@@ -137,14 +137,14 @@ public class AllocationInstrCompStage extends CompilerStage {
 	}
 	
 	switch(INSTRUMENT_ALLOCS_TYPE) {
-	case 1:
+	case 1: // Brian's instr.
 	    cs = cs.changeCodeFactory
 		((new InstrumentAllocs(cs.getCodeFactory(), cs.getMain(),
 				       cs.getLinker(), an,
 				       INSTRUMENT_SYNCS,
 				       INSTRUMENT_CALLS)).codeFactory());
 	    break;
-	case 2:
+	case 2: // Alex's instr. (no support for counting syncs)
 	    cs = cs.changeCodeFactory
 		((new InstrumentAllocs2(cs.getCodeFactory(), cs.getMain(),
 					cs.getLinker(), an)).codeFactory());
