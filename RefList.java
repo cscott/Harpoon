@@ -58,11 +58,11 @@ class RefList {
 	    if (o.equals(e.obj)) {
 		if (prev == elt) {
 		    elt = elt.next;
-		    ref.DECREF(prev);
+//		    ref.DECREF(prev);
 		} else {
 		    prev.next = elt.next;
-		    ref.DECREF(elt);
-		    ref.DECREF(elt);
+//		    ref.DECREF(elt);
+//		    ref.DECREF(elt);
 		}
 		break;
 	    }
@@ -73,13 +73,13 @@ class RefList {
 	Elt prev = elt;
 	for (Elt e = elt; e != null; prev = e, e = e.next) {
 	    if ((e.obj instanceof Long)&&(((Long)e.obj).longValue()==lo)) {
-		if (prev == elt) {
+		if (e == elt) {
 		    elt = elt.next;
-		    ref.DECREF(prev);
+//		    ref.DECREF(prev);
 		} else {
-		    prev.next = elt.next;
-		    ref.DECREF(elt);
-		    ref.DECREF(elt);
+		    prev.next = e.next;
+//		    ref.DECREF(elt);
+//		    ref.DECREF(elt);
 		}
 		break;
 	    }
@@ -128,7 +128,7 @@ class RefList {
 		    if (newElt != null) { 
 			ref.INCREF(newElt);
 		    }
-		    ref.DECREF(curr);
+//		    ref.DECREF(curr);
 		    curr = newElt;
 		    return next();
 		}
@@ -137,7 +137,7 @@ class RefList {
 		    ref.INCREF(newElt);
 		}
 		Object obj = curr.obj;
-		ref.DECREF(prev = curr);
+//		ref.DECREF(prev = curr);
 		curr = newElt;
 		return obj;
 	    }
@@ -181,7 +181,7 @@ class RefList {
 		    if (newElt != null) { 
 			ref.INCREF(newElt);
 		    }
-		    ref.DECREF(curr);
+//		    ref.DECREF(curr);
 		    curr = newElt;
 		    return next();
 		}
@@ -190,7 +190,7 @@ class RefList {
 		    ref.INCREF(newElt);
 		}
 		Object obj = curr.obj;
-		ref.DECREF(prev = curr);
+//		ref.DECREF(prev = curr);
 		curr = newElt;
 		return obj;
 	    }

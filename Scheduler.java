@@ -161,6 +161,16 @@ public abstract class Scheduler {
     /** Removes a thread from the thread list */
     protected abstract void removeThread(RealtimeThread thread);
 
+    /** Used for adding a C thread that doesn't have any Java counterpart.
+     *  The convention is that the threadID for C threads is negative.
+     */
+    protected abstract void addThread(long threadID);
+
+    /** Used for removing a C thread that doesn't have any Java counterpart. 
+     *  The convention is that the threadID for C threads is negative.
+     */
+    protected abstract void removeThread(long threadID);
+
     /** Any threads running? */
     protected abstract boolean noThreads();
 
@@ -198,11 +208,12 @@ public abstract class Scheduler {
 
     private final void addToRootSet() {
 	if (Math.sqrt(4)==0) {
-	    chooseThread(0);
 	    noThreads();
 	    jDisableThread(null, 0);
 	    jEnableThread(null, 0);
 	    jChooseThread(0);
+	    jRemoveCThread(0);
+	    jAddCThread(0);
 	    (new RealtimeThread()).schedule();
 	    (new RealtimeThread()).unschedule();
 	    new NoSuchMethodException();
@@ -238,36 +249,46 @@ public abstract class Scheduler {
 
     final static void jDisableThread(final RealtimeThread rt, 
 				     final long threadID) {
+	NoHeapRealtimeThread.print("\njDisableThread("+threadID+")");
 	MemoryArea.startMem(vt);
-	int state = beginAtomic();
 	Scheduler sched;
-	if (rt != null) { // Is this really necessary?
+	if (rt != null) { 
 	    sched = rt.getScheduler();
 	} else {
 	    sched = getDefaultScheduler();
 	}
 	if (sched != null) {
 	    sched.disableThread(threadID);
-	} 
-	endAtomic(state);
+	} else {
+	    throw new RuntimeException("\nNo scheduler!!!");
+	}
 	MemoryArea.stopMem();
     }
     
     final static void jEnableThread(final RealtimeThread rt, 
 				    final long threadID) {
+	NoHeapRealtimeThread.print("\njEnableThread("+threadID+")");
 	MemoryArea.startMem(vt);
-	int state = beginAtomic();
 	Scheduler sched;
-	if (rt != null) { // Is this really necessary?
+	if (rt != null) { 
 	    sched = rt.getScheduler();
 	} else {
 	    sched = getDefaultScheduler();
 	}
 	if (sched != null) {
 	    sched.enableThread(threadID);
+	} else {
+	    throw new RuntimeException("\nNo scheduler!!!");
 	}
-	endAtomic(state);
 	MemoryArea.stopMem();
+    }
+
+    final static void jAddCThread(final long threadID) {
+	getDefaultScheduler().addThread(threadID);
+    }
+
+    final static void jRemoveCThread(final long threadID) {
+	getDefaultScheduler().removeThread(threadID);
     }
 
     final protected long jChooseThread(final long currentTime) {
@@ -276,4 +297,5 @@ public abstract class Scheduler {
 	MemoryArea.stopMem();
 	return temp;
     }
+  
 }

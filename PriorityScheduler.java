@@ -455,8 +455,14 @@ public class PriorityScheduler extends Scheduler {
     public void addThread(RealtimeThread rt) {
     }
 
+    public void addThread(long threadID) {
+    }
+
     public void removeThread(RealtimeThread rt) {
-    }   
+    }
+
+    public void removeThread(long threadID) {
+    }
 
     public String toString() {
 	return "";
