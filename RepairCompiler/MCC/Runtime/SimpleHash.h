@@ -119,22 +119,24 @@ struct ArraySimple {
 class SimpleIterator {
  public:
 
-  struct ArraySimple *cur;
-  int index;
-  SimpleHash * table;
+  struct ArraySimple *cur, *tail;
+  int index,tailindex;
+  //  SimpleHash * table;
   inline SimpleIterator() {}
 
-  inline SimpleIterator(struct ArraySimple *start, SimpleHash *t) {
+  inline SimpleIterator(struct ArraySimple *start, struct ArraySimple *tl, int tlindex/*, SimpleHash *t*/) {
     cur = start;
-    table=t;
+    //    table=t;
     index=0;
+    tailindex=tlindex;
+    tail=tl;
   }
 
   inline int hasNext() {
+    if (cur==tail &&
+	index==tailindex)
+      return 0;
     while((index==ARRAYSIZE)||!cur->nodes[index].inuse) {
-      if (cur->nextarray==0 &&
-	  index==table->tailindex)
-	return 0;
       if (index==ARRAYSIZE) {
 	index=0;
 	cur=cur->nextarray;

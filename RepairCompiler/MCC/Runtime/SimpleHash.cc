@@ -137,13 +137,15 @@ void WorkList::add(int id,int type, int lvalue, int rvalue) {
 
 /* SIMPLE HASH ********************************************************/
 SimpleIterator* SimpleHash::iterator() {
-  return new SimpleIterator(listhead,this);
+  return new SimpleIterator(listhead,listtail,tailindex/*,this*/);
 }
 
 void SimpleHash::iterator(SimpleIterator & it) {
-  it.table=this;
+  //  it.table=this;
   it.cur=listhead;
   it.index=0;
+  it.tailindex=tailindex;
+  it.tail=listtail;
 }
 
 SimpleHash::SimpleHash(int size) {
