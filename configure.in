@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.134 $)dnl
+AC_REVISION($Revision: 1.135 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -356,6 +356,21 @@ yes)	AC_MSG_RESULT([yes])
 	;;
 esac
 AM_CONDITIONAL(RTJ_PERF, test $with_rtj_perf = yes) 
+
+dnl set up Ovy's memory preallocation optimization
+AC_MSG_CHECKING([enable memory preallocation optimization])
+AC_ARG_WITH(prealloc-opt,
+[  --with-prealloc-opt	  enable memory preallocation optimization],
+with_prealloc_opt="$withval", with_prealloc_opt="no")
+case "$with_prealloc_opt" in
+yes)	AC_MSG_RESULT([yes])
+	AC_DEFINE(WITH_PREALLOC_OPT, 1, [enable memory preallocation optimization])
+	;;
+*)	AC_MSG_RESULT([no])
+	;;
+esac
+AM_CONDITIONAL(PREALLOC_OPT, test $with_prealloc_opt = yes) 
+
 
 dnl process option to select full stack trace on exceptions.
 AC_MSG_CHECKING([stack trace verbosity])

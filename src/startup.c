@@ -46,6 +46,11 @@ int main(int argc, char *argv[]) {
   char **namep;
   int st=0;
   int i;
+
+#ifdef WITH_PREALLOC_OPT
+  jclass    preallocMemCls;
+  jmethodID preallocMemInitFields;
+#endif
   
 #ifdef WITH_REALTIME_THREADS
   jmethodID getCurrentThreadMethod;
@@ -82,6 +87,17 @@ int main(int argc, char *argv[]) {
   /* setup main thread info. */
 #ifdef WITH_GC_STATS
   setup_GC_stats();
+#endif
+#ifdef WITH_PREALLOC_OPT
+  preallocMemCls  = 
+      (*env)->FindClass(env, "harpoon/Runtime/PreallocOpt/PreallocatedMemory");
+  CHECK_EXCEPTIONS(env);
+  preallocMemInitFields = 
+      (*env)->GetStaticMethodID(env, preallocMemCls, "initFields", "()V");
+  CHECK_EXCEPTIONS(env);
+  (*env)->CallStaticVoidMethod
+      (env, preallocMemCls, preallocMemInitFields);
+  CHECK_EXCEPTIONS(env);
 #endif
 #if defined(WITH_REALTIME_JAVA) || defined(WITH_FAKE_SCOPES) 
   RTJ_preinit();
