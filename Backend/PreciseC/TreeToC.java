@@ -60,7 +60,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.15 2000-07-12 00:12:18 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.16 2000-07-12 01:32:54 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -322,10 +322,13 @@ public class TreeToC extends java.io.PrintWriter {
 	    String r = l.toString();
 	    return r.startsWith(".")?r.substring(1):r;
 	}
-	private static String sectionname(SEGMENT s) {
+	private String sectionname(SEGMENT s) {
 	    switch (s.segtype) {
 	    case SEGMENT.TEXT: return ".text";
 	    case SEGMENT.ZERO_DATA: return ".flex.zero";
+	    case SEGMENT.CODE: // gcc is picky about data in code segment.
+		if (current_mode==CODETABLE) return ".flex.code.rw";
+		// else fall through:
 	    default:
 		return ".flex."+s.decode(s.segtype).toLowerCase();
 	    }
