@@ -62,7 +62,7 @@ JNIEXPORT jint JNICALL Java_java_net_SocketInputStream_socketRead
     jbyte            buf[len];
 
     /* If static data has not been loaded, load it now */
-    if (!inited && !initializeFIS(env)) return 0;/* exception occurred; bail */
+    if (!inited && !initializeSIS(env)) return 0;/* exception occurred; bail */
 
     if (len==0) return 0; /* don't even try to read anything. */
 
