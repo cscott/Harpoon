@@ -16,7 +16,7 @@ import java.util.Set;
  * a <code>HashMap</code> as the backing store.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HashEnvironment.java,v 1.1.2.1 1999-08-29 04:23:07 cananian Exp $
+ * @version $Id: HashEnvironment.java,v 1.1.2.2 2000-10-19 21:35:32 cananian Exp $
  */
 public class HashEnvironment extends AbstractMap
     implements Environment {
@@ -86,6 +86,7 @@ public class HashEnvironment extends AbstractMap
 	    pop(scope.get(scope.size()-1));
 	    scope.remove(scope.size()-1);
 	}
+	Util.assert(scope.size()==m.i, "undoToMark not repeatable!");
     }
 
     // --- EVIL EVIL SET VIEW

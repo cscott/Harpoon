@@ -9,7 +9,7 @@ package harpoon.Util;
  * since a mark.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Environment.java,v 1.1.2.2 1999-09-13 08:35:42 cananian Exp $
+ * @version $Id: Environment.java,v 1.1.2.3 2000-10-19 21:35:32 cananian Exp $
  */
 public interface Environment extends java.util.Map {
     /** A abstract property for marks into an environment. */
@@ -19,6 +19,7 @@ public interface Environment extends java.util.Map {
      *  this environment. */
     Mark getMark();
     /** Undo all changes since the supplied mark, restoring the map to
-     *  its state at the time the mark was taken. */
+     *  its state at the time the mark was taken.  The undoToMark()
+     *  operation must be repeatable. */
     void undoToMark(Mark m);
 }
