@@ -44,7 +44,7 @@ public abstract class Expr {
 	return false;
     }
 
-    public int[] getRepairs(boolean negated) {
+    public int[] getRepairs(boolean negated, Termination t) {
 	System.out.println(this.getClass().getName());
 	throw new Error("Unrecognized EXPR");
     }

@@ -178,7 +178,7 @@ public class OpExpr extends Expr {
     }
     
 
-    public int[] getRepairs(boolean negated) {
+    public int[] getRepairs(boolean negated, Termination t) {
 	if (left instanceof RelationExpr)
 	    return new int[] {AbstractRepair.MODIFYRELATION};
 	if (left instanceof SizeofExpr) {
@@ -199,35 +199,51 @@ public class OpExpr extends Expr {
 		    op=Opcode.GT;
 	    }
 
+	    int maxsize=t.maxsize.getsize(getDescriptor());
+	    int size=getInt(right);
 
 
 	    boolean isRelation=((SizeofExpr)left).setexpr instanceof ImageSetExpr;
 	    if (isRelation) {
 		if (op==Opcode.EQ) {
-		    if (((IntegerLiteralExpr)right).getValue()==0)
+		    if (size==0)
 			return new int[] {AbstractRepair.REMOVEFROMRELATION};
-		    else
+		    else {
+			if ((maxsize!=-1)&&maxsize<=size)
+			    return new int[] {AbstractRepair.ADDTORELATION};
 			return new int[] {AbstractRepair.ADDTORELATION,
 					  AbstractRepair.REMOVEFROMRELATION};
+		    }
 		} else if (op==Opcode.GE||op==Opcode.GT) {
 		    return new int[]{AbstractRepair.ADDTORELATION}; 
 		} else if (op==Opcode.LE||op==Opcode.LT) {
+		    if ((op==Opcode.LT&&maxsize!=-1&&maxsize<size)||(op==Opcode.LE&&maxsize!=-1&&maxsize<=size))
+			return new int[0];
 		    return new int[]{AbstractRepair.REMOVEFROMRELATION};
 		} else if (op==Opcode.NE) {
+		    if (maxsize<size&&maxsize!=-1)
+			return new int[0];
 		    return new int[]{AbstractRepair.ADDTORELATION};
 		} else throw new Error();
 	    } else {
 		if (op==Opcode.EQ) {
-		    if (((IntegerLiteralExpr)right).getValue()==0)
+		    if (size==0)
 			return new int[] {AbstractRepair.REMOVEFROMSET};			
-		    else
+		    else {
+			if (maxsize<=size&&maxsize!=-1)
+			    return new int[] {AbstractRepair.ADDTOSET};
 			return new int[] {AbstractRepair.ADDTOSET,
 					      AbstractRepair.REMOVEFROMSET};
+		    }
 		} else if (op==Opcode.GE||op==Opcode.GT) {
 		    return new int[] {AbstractRepair.ADDTOSET}; 
 		} else if (op==Opcode.LE||op==Opcode.LT) {
+		    if ((op==Opcode.LT&&maxsize<size&&maxsize!=-1)||(op==Opcode.LE&&maxsize<=size&&maxsize!=-1))
+			return new int[0];
 		    return new int[] {AbstractRepair.REMOVEFROMSET};
 		} else if (op==Opcode.NE) {
+		    if (maxsize<size&&maxsize!=-1)
+			return new int[0];
 		    return new int[] {AbstractRepair.ADDTOSET};
 		} else throw new Error();
 	    }

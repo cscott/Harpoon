@@ -23,7 +23,7 @@ public class Termination {
     Hashtable conjtonodemap;
     Hashtable predtoabstractmap;
     Set removedset;
-
+    ComputeMaxSize maxsize;
     State state;
 
     public Termination(State state) {
@@ -44,6 +44,14 @@ public class Termination {
 	predtoabstractmap=new Hashtable();
 	if (!Compiler.REPAIR)
 	    return;
+
+	for(int i=0;i<state.vRules.size();i++)
+	    System.out.println(state.vRules.get(i));
+	for(int i=0;i<state.vConstraints.size();i++)
+	    System.out.println(state.vConstraints.get(i));
+
+
+	maxsize=new ComputeMaxSize(state);
 
 	generateconjunctionnodes();
 	generatescopenodes();
@@ -264,7 +272,7 @@ public class Termination {
 	    Conjunction conj=tn.getConjunction();
 	    for(int i=0;i<conj.size();i++) {
 		DNFPredicate dp=conj.get(i);
-		int[] array=dp.getPredicate().getRepairs(dp.isNegated());
+		int[] array=dp.getPredicate().getRepairs(dp.isNegated(),this);
 		Descriptor d=dp.getPredicate().getDescriptor();
 		for(int j=0;j<array.length;j++) {
 		    AbstractRepair ar=new AbstractRepair(dp,array[j],d);

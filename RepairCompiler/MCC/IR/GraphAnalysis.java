@@ -114,6 +114,13 @@ public class GraphAnalysis {
 	    for(Iterator it=cycles2.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode)it.next();
 		if (termination.conjunctions.contains(gn)) {
+		    try {
+			GraphNode.DOTVisitor.visit(new FileOutputStream("graphdebug.dot"),cantremove);
+		    } catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
+		    }
+
 		    System.out.println("Cycle through conjunction "+gn.getTextLabel() +" which can't be removed.");
 		    return null; // Out of luck
 		}
@@ -230,13 +237,18 @@ public class GraphAnalysis {
 	    /* Searches scope nodes + compensation nodes */
 	    for(Iterator it=termination.scopenodes.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode)it.next();
-		boolean foundcompensation=false;
+		int count=0;
 		if (nodes.contains(gn)) {
     		    for (Iterator edgeit=gn.edges();edgeit.hasNext();) {
 			GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
 			GraphNode gn2=e.getTarget();
 			TermNode tn2=(TermNode)gn2.getOwner();
 			
+			if ((tn2.getType()==TermNode.CONSEQUENCE)&&
+			    !mustremove.contains(gn2))
+			    count++;
+			    
+
 			if (tn2.getType()!=TermNode.UPDATE)
 			    continue;
 			/* We have a compensation node */
@@ -253,22 +265,26 @@ public class GraphAnalysis {
 			    }
 			} else {
 			    if (!mustremove.contains(gn2))
-				foundcompensation=true;
+				count++;
 			}
 			if (!containsgn)
 			    cantremove.remove(gn);
 			if (!containsgn2)
 			    cantremove.remove(gn2);
 		    }
-		}
-		if (!foundcompensation) {
-		    for (Iterator edgeit=gn.edges();edgeit.hasNext();) {
-			GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
-			GraphNode gn2=e.getTarget();
-			TermNode tn2=(TermNode)gn2.getOwner();
-			if (tn2.getType()==TermNode.UPDATE) {
-			    cantremove.add(gn2);
-			    break;
+		
+		    if (count==1) {
+			for (Iterator edgeit=gn.edges();edgeit.hasNext();) {
+			    GraphNode.Edge e=(GraphNode.Edge)edgeit.next();
+			    GraphNode gn2=e.getTarget();
+			    TermNode tn2=(TermNode)gn2.getOwner();
+			    if ((tn2.getType()==TermNode.UPDATE||tn2.getType()==TermNode.CONSEQUENCE)&&
+				!mustremove.contains(gn2)) {
+				if (!cantremove.contains(gn2)) {
+				    cantremove.add(gn2);
+				    change=true;
+				}
+			    }
 			}
 		    }
 		}
@@ -294,6 +310,16 @@ public class GraphAnalysis {
 	    System.out.println("Eliminated cant "+cantremove.size()+" nodes");
 	    System.out.println("Searching following set:");
 	    for(Iterator it=couldremove.iterator();it.hasNext();) {
+		GraphNode gn=(GraphNode)it.next();
+		System.out.println(gn.getTextLabel());
+	    }
+	    System.out.println("Must remove set:");
+	    for(Iterator it=mustremove.iterator();it.hasNext();) {
+		GraphNode gn=(GraphNode)it.next();
+		System.out.println(gn.getTextLabel());
+	    }
+	    System.out.println("Cant remove set:");
+	    for(Iterator it=cantremove.iterator();it.hasNext();) {
 		GraphNode gn=(GraphNode)it.next();
 		System.out.println(gn.getTextLabel());
 	    }

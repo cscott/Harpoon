@@ -45,8 +45,8 @@ public class ExprPredicate extends Predicate {
         return expr.getInversedRelations();
     }
 
-    public int[] getRepairs(boolean negated) {
-	return expr.getRepairs(negated);
+    public int[] getRepairs(boolean negated, Termination t) {
+	return expr.getRepairs(negated,t);
     }
 
     public Descriptor getDescriptor() {

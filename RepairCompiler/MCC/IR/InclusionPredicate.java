@@ -56,7 +56,7 @@ public class InclusionPredicate extends Predicate {
 	    return setexpr.sd;
     }
 
-    public int[] getRepairs(boolean negated) {
+    public int[] getRepairs(boolean negated, Termination t) {
 	if (setexpr instanceof ImageSetExpr) {
 	    if (negated)
 		return new int[] {AbstractRepair.REMOVEFROMRELATION};

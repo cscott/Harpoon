@@ -1547,7 +1547,6 @@ public class RepairGenerator {
 		}
 	    }
 	}
-
 	cr.endblock();
 	cr.endblock();
     }
