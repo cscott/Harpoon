@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.75 $)dnl
+AC_REVISION($Revision: 1.76 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -332,6 +332,9 @@ AM_CONDITIONAL(STATISTICS, test $with_statistics = yes)
 dnl Find out how to set time zone.  This is way down here because we
 dnl want to make sure it's tested *after* we set _XOPEN_SOURCE or
 dnl _GNU_SOURCE or what-have-you.
+dnl ** Never cache these results (because they are dependent on the setting
+dnl    of _XOPEN_SOURCE, _GNU_SOURCE, etc, above) **
+unset ac_cv_struct_tm ac_cv_struct_tm_zone ac_cv_var_tzname
 AC_STRUCT_TIMEZONE
 
 dnl set up dmalloc.  Last because gcc-based tests won't work after we add
