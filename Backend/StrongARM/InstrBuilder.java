@@ -19,7 +19,7 @@ import java.util.Arrays;
     StrongARM architecture.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.10 2000-06-09 23:21:27 pnkfelix Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.11 2000-10-11 04:38:53 pnkfelix Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
@@ -113,10 +113,10 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	if (r instanceof TwoWordTemp) {
 	    return new String[] {
 		"ldr `d0l, [`s0, #.fpoffset-" +(4*offset) + "] " ,
-		    "ldr `d0h, [`s0, #.fpoffset-" +(4*(offset+1)) + "] " };
+		    "ldr `d0h, [`s0, #.fpoffset-" +(4*(offset+1)) + "] @ restore2" };
 	} else {
 	    return new String[] { "ldr `d0, [`s0, #.fpoffset-" 
-				      +(4*offset) + "] @ spill" };
+				      +(4*offset) + "] @ restore" };
 	}
     }
 
@@ -124,7 +124,7 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 	if (r instanceof TwoWordTemp) {
 	    return new String[] {
 		"str `s0l, [`s1, #.fpoffset-" +(4*offset) + "] " ,
-		    "str `s0h, [`s1, #.fpoffset-" +(4*(offset+1)) + "] " };
+		    "str `s0h, [`s1, #.fpoffset-" +(4*(offset+1)) + "] @ spill2" };
 	} else {
 	    return new String[] { "str `s0, [`s1, #.fpoffset-" 
 				      +(4*offset) + "] @ spill" };
