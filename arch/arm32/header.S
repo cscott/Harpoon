@@ -14,6 +14,7 @@ _static_objects_start:
 _string_constants_start:
 	
 	FIXUP_SEGMENT
+	.align 8 @ makes the math work out nicer.
 .global _fixup_start
 _fixup_start:
 

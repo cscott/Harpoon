@@ -44,5 +44,4 @@ void *Java_java_lang_Integer__0003cclinit_0003e__;
 void *Java_java_lang_Integer_toHexString__I;
 
 /* runtime symbols */
-void *lookup;
 asm(".global stdexit\nstdexit:");
