@@ -17,6 +17,7 @@ import harpoon.Util.Util;
 import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Util.UnmodifiableIterator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +35,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.43 2000-02-14 21:56:45 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.44 2000-02-15 05:44:42 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The Tree Objects composing this code view. */
@@ -113,47 +114,9 @@ public abstract class Code extends HCode {
     }
 
     /** Returns the leaves of the Tree */
-    public HCodeElement[] getLeafElements() { 
-	Stack nodes  = new Stack();
-	List  leaves = new ArrayList();
-
-	nodes.push(getRootElement());
-	while (!nodes.isEmpty()) {
-	    Tree t = (Tree)nodes.pop();
-	    if (t.kind()==TreeKind.SEQ) {
-		SEQ seq = (SEQ)t;
-		if (seq.getLeft()==null) {
-		    if (seq.getRight()==null) { leaves.add(seq); }
-		    else                 { nodes.push(seq.getRight());  }
-		}
-		else {
-		    nodes.push(seq.getLeft());
-		    if (seq.getRight()!=null) nodes.push(seq.getRight());
-		}
-	    }
-	    else if (t.kind()==TreeKind.ESEQ) {
-		ESEQ eseq = (ESEQ)t;
-		if (eseq.getExp()==null) {
-		    if (eseq.getStm()==null) { leaves.add(eseq); }
-		    else                { nodes.push(eseq.getStm());    }
-		}
-		else {
-		    nodes.push(eseq.getExp());
-		    if (eseq.getStm()!=null) nodes.push(eseq.getStm());
-		}
-	    }
-	    else {
-		ExpList explist = t.kids();
-		if (explist==null) leaves.add(t);
-		else {
-		    while (explist!=null) {
-			if (explist.head!=null) nodes.push(explist.head);
-			explist = explist.tail;
-		    }
-		}
-	    }
-	}
-	return (HCodeElement[])leaves.toArray(new HCodeElement[0]);
+    public HCodeElement[] getLeafElements() {
+	// what exactly does 'leaf elements' *mean* in this context?
+	return new Tree[0];
     }
   
     /**
@@ -171,49 +134,27 @@ public abstract class Code extends HCode {
      * of the Iterator. 
      */
     public Iterator getElementsI() { 
-	return new Iterator() {
-	    Set h = new HashSet();
+	return new UnmodifiableIterator() {
+	    Set visited = new HashSet();
 	    Stack stack = new Stack(); 
-	    { visitElement(getRootElement()); }
-	    public boolean hasNext() { 
-		if (stack.isEmpty()) {
-		    h = null; // free up some memory
-		    return false;
-		}
-		else return true;
+	    {   // initialize stack/set
+		stack.push(getRootElement()); visited.add(stack.peek());
 	    }
+	    public boolean hasNext() { return !stack.isEmpty(); }
 	    public Object next() {
-		Tree t;
 		if (stack.isEmpty()) throw new NoSuchElementException();
-		else {
-		    t = (Tree)stack.pop();
-		    // Push successors on stack
-		    switch (t.kind()) { 
-		    case TreeKind.SEQ: 
-			SEQ seq = (SEQ)t;
-			if (seq.getLeft()!=null)  visitElement(seq.getLeft());
-			if (seq.getRight()!=null) visitElement(seq.getRight());
-			break;
-		    case TreeKind.ESEQ: 
-			ESEQ eseq = (ESEQ)t;
-			if (eseq.getExp()!=null) visitElement(eseq.getExp());
-			if (eseq.getStm()!=null) visitElement(eseq.getStm());
-			break;
-		    default:
-			ExpList explist = t.kids();
-			while (explist!=null) {
-			    if (explist.head!=null) visitElement(explist.head);
-			    explist = explist.tail;
-			}
+		Tree t = (Tree) stack.pop();
+		// Push successors on stack before returning
+		// (reverse the order twice to get things right)
+		Stack aux = new Stack();
+		for (Tree tp = t.getFirstChild(); tp!=null; tp=tp.getSibling())
+		    if (!visited.contains(tp)) {
+			aux.push(tp);
+			visited.add(tp);
 		    }
-		}
+		while (!aux.isEmpty())
+		    stack.push(aux.pop()); //LIFO twice.
 		return t;
-	    }
-	    public void remove() { 
-		throw new UnsupportedOperationException();
-	    }
-	    private void visitElement(Object elem) {
-		if (h.add(elem)) stack.push(elem);
 	    }
 	};
     }
@@ -264,180 +205,7 @@ public abstract class Code extends HCode {
 	    this.tree.unlink();
 	}
 	else { 
-	    this.replace(pred, newPred); 
-	}
-    }
-    
-    /**
-     * Modifies this codeview directly by replacing
-     * <code>tOld</code> with <code>tNew</code>.  
-     * 
-     * <br><b>Requires:</b>
-     * <ol>
-     *   <li><code>tNew</code>'s type is compatible with its
-     *       position in the tree.  For instance, if <code>tOld</code>
-     *       is a pointer to the exception handling code of some
-     *       <code>CALL</code> object, then <code>tOld</code> must 
-     *       be of type <code>NAME</code>. 
-     *   <li><code>tOld</code> is an element of this codeview. 
-     *   <li><code>tNew</code> was created with this Code's
-     *       <code>TreeFactory</code>. 
-     * </ol>
-     * <br><b>Effects:</b>
-     *   Makes the necessary modifications to replace <code>tOld</code>
-     *   with <code>tNew</code> in this tree structure. 
-     * 
-     */ 
-    public void replace(Tree tOld, Tree tNew) { 
-	Util.assert(tOld.getFactory() == this.tf); 
-	Util.assert(tNew.getFactory() == this.tf); 
-	Util.assert(this.tf.getParent() == this); 
-
-	if (tOld == this.tree) { // tOld is the root node
-	    this.tree = tNew; 
-	}
-	else { // tOld is not the root.  Use the Replacer visitor. 
-	    new Replacer(tOld, tNew); 
-	}
-    }
-
-    /**
-     * Visitor class to implement direct replacement of
-     * on Tree with another.  
-     */ 
-    private static class Replacer extends TreeVisitor { 
-	private Tree tOld, tNew; 
-
-	/**
-	 * Class constructor. 
-	 * @param tOld  the Tree object to be replaced. 
-	 * @param tNew  the Tree object to replace tOld with. 
-	 */ 
-	public Replacer(Tree tOld, Tree tNew) { 
-	    this.tOld = tOld;
-	    this.tNew = tNew; 
-
-	    Tree parent = tOld.getParent(); 
-	    Util.assert(parent != null); 
-	    // Update the parent's references. 
-	    parent.accept(this); 
-	}
-
-	public void visit(BINOP e) { 
-	    if      (e.getLeft() == this.tOld)  { e.setLeft((Exp)this.tNew); } 
-	    else if (e.getRight() == this.tOld) { e.setRight((Exp)this.tNew); }
-	    else { this.errCorrupt(); } 
-	} 
-
-	public void visit(CALL e) { 
-	    if      (e.getRetex() == this.tOld) { e.setRetex((TEMP)this.tNew); }
- 	    else if (e.getHandler() == this.tOld) { e.setHandler((NAME)this.tNew); } 
-	    else { this.visit((INVOCATION)e); } 
-	}
-
-	public void visit(CJUMP e) { 
-	    if (e.getTest() == this.tOld) { e.setTest((Exp)this.tNew); } 
-	    else { this.errCorrupt(); } 
-	}
-
-	/** A CONST cannot be the parent of another node. */ 
-	public void visit(CONST e) { this.errLeaf(e); }
-
-	public void visit(ESEQ e) {
-	    if      (e.getStm() == this.tOld) { e.setStm((Stm)this.tOld); } 
-	    else if (e.getExp() == this.tOld) { e.setExp((Exp)this.tOld); } 
-	    else { this.errCorrupt(); } 
-	}
-
-	public void visit(INVOCATION e) { 
-	    if (e.getFunc() == this.tOld) { e.setFunc((Exp)this.tNew); } 
-	    else if (e.getRetval() == this.tOld) { e.setRetval((TEMP)this.tNew); } 
-	    else { 
-		ExpList newArgs = 
-		    ExpList.replace(e.getArgs(), (Exp)this.tOld, (Exp)this.tNew); 
-		e.setArgs(newArgs); 
-	    }
-	}
-
-	public void visit(JUMP e) { 
-	    if (e.getExp() == this.tOld) { e.setExp((Exp)this.tNew); } 
-	    else { this.errCorrupt(); } 
-	}
-
-	/** A LABEL cannot be the parent of another node. */ 
-	public void visit(LABEL e) { this.errLeaf(e); } 
-
-	public void visit(MEM e) { 
-	    if (e.getExp() == this.tOld) { e.setExp((Exp)this.tNew); } 
-	    else { this.errCorrupt(); } 
-	}
-
-	public void visit(METHOD e) {
-	    // tOld must be one of the METHOD parameters. 
-	    TEMP[] params = e.getParams(); 
-	    TEMP[] newParams = new TEMP[params.length]; 
-	    System.arraycopy(params, 0, newParams, 0, params.length); 
-
-	    for (int i=0; i<params.length; i++) { 
-		if (params[i] == this.tOld) { 
-		    newParams[i] = (TEMP)this.tNew; 
-		    e.setParams(newParams); 
-		    return; 
-		}
-	    }
-	    this.errCorrupt(); 
-	}
-
-	public void visit(MOVE e) { 
-	    if      (e.getSrc() == this.tOld) { e.setSrc((Exp)this.tNew); } 
-	    else if (e.getDst() == this.tOld) { e.setDst((Exp)this.tNew); } 
-	    else { this.errCorrupt(); } 
-	}
-
-	/** A NAME cannot be the parent of another node. */ 
-	public void visit(NAME e) { this.errLeaf(e); } 
-
-	public void visit(RETURN e) {
-	    if (e.getRetval() == this.tOld) { e.setRetval((Exp)this.tNew); } 
-	    else { this.errCorrupt(); } 
-	}
-
-	/** A SEGMENT cannot be the parent of another node. */ 
-	public void visit(SEGMENT e) { this.errLeaf(e); }
-
-	public void visit(SEQ e) {
-	    if      (e.getLeft() == this.tOld)  { e.setLeft((Stm)this.tNew); } 
-	    else if (e.getRight() == this.tOld) { e.setRight((Stm)this.tNew); }
-	    else { this.errCorrupt(); } 
-	}
-
-	/** A TEMP cannot be the parent of another node. */
-	public void visit(TEMP e) { this.errLeaf(e); } 
-
-	public void visit(THROW e) {
-	    if      (e.getRetex() == this.tOld)   { e.setRetex((Exp)this.tNew); } 
-	    else if (e.getHandler() == this.tOld) { e.setHandler((Exp)this.tNew); } 
-	    else { this.errCorrupt(); } 
-	}
-
-	public void visit(Tree t) { throw new Error("No defaults here!"); }
-
-	public void visit(UNOP e) {
-	    if (e.getOperand() == this.tOld) { e.setOperand((Exp)this.tNew); } 
-	    else { this.errCorrupt(); } 
-	}
-
-	// Utility method:  called when the Tree structure has been
-	// corrupted. 
-	private void errCorrupt() { 
-	    throw new Error("The tree structure has been corrupted."); 
-	}
-
-	// Utility method:  called when a leaf node is being treated
-	// as a non-leaf node. 
-	private void errLeaf(Tree t) { 
-	    throw new Error
-		("Attempted to treat: " + t + " as a non-leaf node."); 
+	    pred.replace(newPred); 
 	}
     }
 }
