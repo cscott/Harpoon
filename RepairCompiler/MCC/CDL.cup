@@ -213,7 +213,8 @@ nonterminal	ParseNode		setexpr;
 
 nonterminal	ParseNode		compare;
 nonterminal	ParseNode		expr;
-nonterminal	ParseNode		operator;
+nonterminal	ParseNode		addsuboperator;
+nonterminal	ParseNode		multdivoperator;
 
 
 
@@ -530,7 +531,7 @@ expr ::=
      	RESULT = relation.getRoot();
      	:}
 	     
-	| expr:expr1 operator:operator expr:expr2
+	| expr:expr1 addsuboperator:operator expr:expr2
 	{:
 	debugMessage(PRODSTRING);
 	ParseNode op = (new ParseNode("expr", parser.curLine(3))).addChild("operator");
@@ -539,7 +540,17 @@ expr ::=
 	op.addChild("right", parser.curLine(1)).addChild(expr2);
 	RESULT = op.getRoot();
 	:}
-
+	%prec ADD
+	| expr:expr1 multdivoperator:operator expr:expr2
+	{:
+	debugMessage(PRODSTRING);
+	ParseNode op = (new ParseNode("expr", parser.curLine(3))).addChild("operator");
+	op.addChild("op").addChild(operator);
+	op.addChild("left", parser.curLine(3)).addChild(expr1);
+	op.addChild("right", parser.curLine(1)).addChild(expr2);
+	RESULT = op.getRoot();
+	:}
+	%prec MULT
 	| SIZEOF OPENPAREN setexpr:setexpr CLOSEPAREN
 	{:
 	ParseNode sizeof = (new ParseNode("expr", parser.curLine(4))).addChild("sizeof");
@@ -548,7 +559,7 @@ expr ::=
 	:}
 	;
 
-operator ::=
+addsuboperator ::=
 	  
 	ADD 
 	{:
@@ -561,13 +572,13 @@ operator ::=
 	debugMessage(PRODSTRING);
 	RESULT = new ParseNode("sub", parser.curLine(1));
 	:}
-	  
-	| MULT
+	;
+multdivoperator ::=
+	MULT
 	{:
 	debugMessage(PRODSTRING);
 	RESULT = new ParseNode("mult", parser.curLine(1));
 	:}
-	  
 	| DIV
 	{:
 	debugMessage(PRODSTRING);

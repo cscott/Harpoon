@@ -72,7 +72,7 @@ public class SumExpr extends Expr {
 
             VarDescriptor newset=VarDescriptor.makeNew("newset");
             writer.addDeclaration("struct SimpleHash *",newset.getSafeSymbol());
-            writer.outputline(newset.getSafeSymbol()+"=SimpleHashimageSet("+rd.getSafeSymbol()+"_hash, "+keyvd.getSafeSymbol()+", &"+tmpvar.getSafeSymbol()+");");
+            writer.outputline(newset.getSafeSymbol()+"=SimpleHashimageSet("+rd.getSafeSymbol()+"_hash, "+keyvd.getSafeSymbol()+");");
 
             VarDescriptor itvd2=VarDescriptor.makeNew("iterator");
             writer.addDeclaration("struct SimpleIterator",itvd2.getSafeSymbol());
