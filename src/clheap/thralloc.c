@@ -25,26 +25,40 @@ struct oobj_with_clheap {
 #endif
 
 void *NTHR_malloc(size_t size) {
+#ifdef REALLY_DO_ALLOC
   return NTHR_malloc_other(size, FNI_UNWRAP(FETCH_THIS_THREAD()));
+#else
+  UPDATE_STATS(thr, size);
+  return GC_malloc(size);
+#endif
 }
 void *NTHR_malloc_first(size_t size) {
   clheap_t clh;
   struct oobj_with_clheap *result;
   UPDATE_STATS(thr, size);
+#ifdef REALLY_DO_ALLOC
   clh = clheap_create();
   // the above line might be changed to pool clheaps.
   result = clheap_alloc(clh, size+sizeof(clheap_t));
   result->clheap = clh;
   return &(result->oobj);
+#else
+  return GC_malloc(size);
+#endif
 }
 void *NTHR_malloc_other(size_t size, struct oobj *oobj) {
   clheap_t clh;
   UPDATE_STATS(thr, size);
+#ifdef REALLY_DO_ALLOC
   clh = CLHEAP_FROM_OOBJ(oobj);
   return clheap_alloc(clh, size);
+#else
+  return GC_malloc(size);
+#endif
 }
 /* release a thread-clustered heap */
 void NTHR_free(jobject obj) {
+#ifdef REALLY_DO_ALLOC
   /* warning -- don't gc in here! We're going to unwrap the obj... */
   struct oobj *oobj = FNI_UNWRAP(obj);
   /* see if this might be a thread w/ a clustered heap */
@@ -55,5 +69,6 @@ void NTHR_free(jobject obj) {
     clheap_detach(CLHEAP_FROM_OOBJ(oobj));
 #else
 # error Um, I dunno how you can tell whether this thread has an attached heap.
+#endif
 #endif
 }

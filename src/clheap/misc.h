@@ -9,5 +9,6 @@
 
 /* undefine to disable statistics logging */
 #define MAKE_STATS
+/* #define REALLY_DO_ALLOC */
 
 #endif /* INCLUDED_NIFTY_MISC_H */

@@ -9,7 +9,11 @@
 void *NSTK_malloc(size_t size) {
   register char *result;
   UPDATE_STATS(stk, size);
+#ifdef REALLY_DO_ALLOC
   result = get_stackptr()-ALIGN(size);
   set_stackptr(result);
   return result; /* stack pointer points to last full location */
+#else
+  return GC_malloc(size);
+#endif
 }
