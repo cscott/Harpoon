@@ -18,27 +18,27 @@ JNIEXPORT void JNICALL Java_java_lang_Object_assignUID
  * Method:    arrayassign
  */
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_arrayassign
-  (JNIEnv *, jobject, jint, jobject);
+  (JNIEnv *, jclass, jobject, jint, jobject);
 
 /*
  * Class:     java_lang_RoleInference
  * Method:    fieldassign
  */
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_fieldassign
-  (JNIEnv *, jobject, jobject, jobject);
+  (JNIEnv *, jclass, jobject, jobject, jobject);
 
 /*
  * Class:     java_lang_RoleInference
  * Method:    marklocal
  */
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_marklocal
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *, jclass, jstring, jobject);
 
 JNIEXPORT void JNICALL Java_java_lang_RoleInference_returnmethod
-  (JNIEnv *);
+  (JNIEnv *, jclass);
 
-JNIEXPORT void JNICALL Java_java_lang_RoleInference_entermethod
-  (JNIEnv *, jobject);
+JNIEXPORT void JNICALL Java_java_lang_RoleInference_invokemethod
+  (JNIEnv *, jclass, jobject);
 
 
 #ifdef __cplusplus
