@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.1 2003-11-09 20:03:47 cananian Exp $
+% $Id: pldi04.tex,v 1.2 2003-11-09 20:21:11 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass{acmconf}
 %\usepackage[section,plain]{algorithm}
@@ -21,7 +21,7 @@
 \renewcommand{\floatpagefraction}{0.8}
 \renewcommand{\topfraction}{0.25}
 
-\title{Data Size Optimizations for Java Programs}
+\title{Efficient Software Transactions for Object-Oriented Languages}
 
 \author{C.~Scott~Ananian and Martin~Rinard \\
 Computer Science and Artificial Intelligence Laboratory\\
@@ -29,6 +29,30 @@ Massachusetts Institute of Technology\\
 Cambridge, MA 02139 \\
 {\tt \{cananian, rinard\}@csail.mit.edu}
 }
+
+%% Paper title: an efficient implementation of software transactions for
+%% o-o lang.
+
+%% Step-by-step justify our efficiency claims:
+
+%% start: scales dsm paper.
+%%   show that adding a check does not affect runtime too much, and
+%%   that false hits are low.
+%%     (possibly restructure all sub-word accesses as word-accesses at
+%%      a high level to reduce false hits with sub-word data?
+%%      do this only if these benchmarks show it is worthwhile)
+%%   show that reading much more frequent than writing, so not alloc'ing
+%%   extra memory for reads is a good idea.
+
+%%   show that expanding object with transaction info is not too
+%%   expensive.
+
+%%   show that transaction mechanism, when invoked, is cheap.
+
+%%   large objects?
+%% ---------
+%% concurrent updates?  we support concurrent *reads*.
+
 
 %\renewcommand{\baselinestretch}{0.97}
 \begin{document}
@@ -59,8 +83,10 @@ Cambridge, MA 02139 \\
 \section{Conclusions}
 
 \renewcommand{\baselinestretch}{1}
-\bibliography{harpoon}
+\bibliography{xaction}
 
 %\appendix
 %\input{pldi02-appendix}
 \end{document}
+
+% LocalWords:  csail mit edu AFRL
