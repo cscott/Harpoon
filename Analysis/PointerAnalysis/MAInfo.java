@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.40 2000-11-11 16:14:56 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.41 2000-11-13 20:55:24 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -142,7 +142,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	this.mms = mms;
 	this.node_rep = pa.getNodeRepository();
 	this.USE_INTER_THREAD = USE_INTER_THREAD;
-        this.DO_PREALLOCATION = USE_INTER_THREAD;
+        //this.DO_PREALLOCATION = USE_INTER_THREAD;
+	this.DO_PREALLOCATION     = false;
 	this.DO_STACK_ALLOCATION  = DO_STACK_ALLOCATION;
 	this.DO_THREAD_ALLOCATION = DO_THREAD_ALLOCATION;
 	this.GEN_SYNC_FLAG        = GEN_SYNC_FLAG;
@@ -766,7 +767,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 
     /** Pretty printer for debug. */
-    public void print(){
+    public void print() {
 	System.out.println("ALLOCATION POLLICIES:");
 	for(Iterator it = aps.keySet().iterator(); it.hasNext(); ){
 	    Quad newq = (Quad) it.next();

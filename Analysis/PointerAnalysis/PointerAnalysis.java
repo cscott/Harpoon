@@ -72,12 +72,13 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.69 2000-11-11 16:14:56 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.70 2000-11-13 20:55:24 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
     public static final boolean DEBUG2    = false;
     public static final boolean DEBUG_SCC = true;
+    public static final boolean DEBUG_INTRA = true;
 
     /** Turns on the save memory mode. In this mode, some of the speed is
 	sacrified for the sake of the memory consumption. More specifically,
@@ -91,7 +92,7 @@ public class PointerAnalysis {
 	in which they iterate over their elements. */
     public static final boolean DETERMINISTIC = true;
 
-    /** Turns on the priniting of some timing info. */
+    /** Turns on the printing of some timing info. */
     public static boolean TIMING = true;
     public static final boolean STATS = true;
     public static boolean SHOW_NODES = true;
@@ -607,7 +608,7 @@ public class PointerAnalysis {
 
     // Performs the intra-procedural pointer analysis.
     private void analyze_intra_proc(MetaMethod mm){
-	//if(DEBUG)
+	if(DEBUG_INTRA)
 	    System.out.println("META METHOD: " + mm);
 
 	if(STATS) Stats.record_mmethod_pass(mm);

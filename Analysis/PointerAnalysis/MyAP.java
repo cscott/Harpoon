@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  <code>AllocationProperties</code>. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MyAP.java,v 1.1.2.10 2000-11-05 00:39:48 salcianu Exp $
+ * @version $Id: MyAP.java,v 1.1.2.11 2000-11-13 20:55:24 salcianu Exp $
  */
 public class MyAP implements AllocationInformation.AllocationProperties,
 			     java.io.Serializable,
@@ -66,7 +66,7 @@ public class MyAP implements AllocationInformation.AllocationProperties,
     }
 
     public boolean noSync() {
-	return ns;
+	return sa || ta || ns;
     }
 
     public Temp allocationHeap(){
@@ -92,6 +92,9 @@ public class MyAP implements AllocationInformation.AllocationProperties,
     public String toString(){
 	String hipstr = 
 	    hasInteriorPointers() ? "interior ptrs; " : "no interior ptrs; ";
+
+	if(noSync())
+	    hipstr += " nosync ";
 
 	if(makeHeap()) hipstr = hipstr + " [make heap] ";
 

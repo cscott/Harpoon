@@ -83,7 +83,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.83 2000-11-13 20:24:25 bdemsky Exp $
+ * @version $Id: PAMain.java,v 1.1.2.84 2000-11-13 20:55:41 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -267,7 +267,7 @@ public abstract class PAMain {
 	    dump_java(get_classes(pa.getMetaCallGraph().getAllMetaMethods()));
 
 	if(COMPILE) {
-	    SAMain.HACKED_REG_ALLOC = true;
+	    // SAMain.HACKED_REG_ALLOC = true;
 	    // It seems that something is broken in the new strategy ...
 	    SAMain.USE_OLD_CLINIT_STRATEGY = true;
 	    // Let's use the hacked register allocator for noe
