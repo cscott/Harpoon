@@ -43,7 +43,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.58 1999-11-05 05:09:27 cananian Exp $
+ * @version $Id: Instr.java,v 1.1.2.59 1999-11-05 07:00:50 cananian Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -567,7 +567,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
         for (int i = 0; i < len; i++) {
 	    switch(assem.charAt(i)) {
             case '`':
-                switch (assem.charAt(++i)) {
+		if (i<len-1) switch (assem.charAt(++i)) {
 		case 'd': { 
 		    int n = Character.digit(assem.charAt(++i), 10);
 		    if (n < dst.length) 
