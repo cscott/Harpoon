@@ -9,7 +9,11 @@ import imagerec.util.ImageDataManip;
  * {@link Cache} is a {@link Node} that caches the last n images which 
  * passed through it.  To retrieve an image, send a <code>GET_IMAGE</code> 
  * {@link Command} to the {@link Cache}, and it will send the appropriate 
- * image along the <code>retrieve</code> node.
+ * image along the <code>retrieve</code> node.<br><br>
+ *
+ * By default, this object stores references to the images that pass through it.
+ * However, you may opt for this object to clone the ImageData and store a reference to that instead.
+ * Do this by calling <code><i>ImageDataNode</i>.saveCopies(true)</code>.<br><br>
  *
  * Use with {@link Command} to tag the retrieved image as retrieved.
  *
@@ -20,6 +24,8 @@ public class Cache extends Node {
     private ImageData[] ids;
     private int lastID=0;
 
+    private boolean saveCopies = false;
+
     /** Construct a {@link Cache} node which caches the last n images which
      *  are sent to it.  Send an <code>GET_IMAGE</code> {@link Command}
      *  to retrieve an image. 
@@ -28,7 +34,8 @@ public class Cache extends Node {
      *  @param retrieve The node retrieved images go to.
      */
     public Cache(int numIds, Node retrieve) {
-	this(numIds, null, retrieve);
+	super(null, retrieve);
+	init(numIds);
     }
 
     /** Construct a {@link Cache} node which caches the last n images which
@@ -41,7 +48,25 @@ public class Cache extends Node {
      */
     public Cache(int numIds, Node out, Node retrieve) {
 	super(out, retrieve);
+	init(numIds);
+    }
+
+    /** 
+     *  Method should be called by all constructors to initialize object fields.
+     */    
+    private void init(int numIds) {
 	ids = new ImageData[numIds];
+	
+    }
+
+    /**
+     * Instructs this {@link Cache} node to save clones of the {@link ImageData}s
+     * that pass through it instead of just saving references.
+     * @param value If <code>true</code> then {@link Cache} node will save clones.
+     *              If <code>false</code> then {@link Cache} node will save only references.
+     */
+    public void saveCopies(boolean value) {
+	this.saveCopies = value;
     }
 
     /** <code>process</code> an {@link ImageData}.  If the {@link ImageData}
@@ -53,7 +78,8 @@ public class Cache extends Node {
      *  @param id The {@link ImageData} which is either a request for an image from
      *            the cache, or an image to be added to the cache.
      */
-    public synchronized void process(ImageData id) {
+    //public synchronized void process(ImageData id) {
+    public void process(ImageData id) {
 	switch (Command.read(id)) {
 	case Command.GET_CROPPED_IMAGE:
 	    //no break, so continues onto next case
@@ -66,6 +92,11 @@ public class Cache extends Node {
 			if (Command.read(id)==Command.GET_CROPPED_IMAGE) {
 			    retID = ImageDataManip.crop(retID, id.x, id.y, id.width, id.height);
 			}
+			
+			retID.c1 = id.c1;
+			retID.c2 = id.c2;
+			retID.c3 = id.c3;
+			
 			right.process(retID);
 			break;
 		    }
@@ -75,7 +106,12 @@ public class Cache extends Node {
 	}
 	case Command.NONE: {
 	    if (id!=null) {
-		ids[lastID=(lastID+1)%ids.length] = id;
+		if (saveCopies) {
+		    ids[lastID=(lastID+1)%ids.length] = ImageDataManip.clone(id);
+		}
+		else {
+		    ids[lastID=(lastID+1)%ids.length] = id;
+		}
 	    }
 	}
 	default: {
