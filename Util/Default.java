@@ -3,11 +3,14 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * <code>Default</code> contains one-off or 'standard, no-frills'
@@ -15,7 +18,7 @@ import java.util.NoSuchElementException;
  * <code>Enumeration</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.1.2.6 1999-09-08 17:35:27 cananian Exp $
+ * @version $Id: Default.java,v 1.1.2.7 1999-10-10 06:05:24 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -52,4 +55,29 @@ public abstract class Default  {
 	    public Object next() { return i.next(); }
 	};
     }
+    /** An empty map. Missing from <code>java.util.Collections</code>.*/
+    public static final Map EMPTY_MAP = new Map() {
+	public void clear() { }
+	public boolean containsKey(Object key) { return false; }
+	public boolean containsValue(Object value) { return false; }
+	public Set entrySet() { return Collections.EMPTY_SET; }
+	public boolean equals(Object o) {
+	    if (!(o instanceof Map)) return false;
+	    return ((Map)o).size()==0;
+	}
+	public Object get(Object key) { return null; }
+	public int hashCode() { return 0; }
+	public boolean isEmpty() { return true; }
+	public Set keySet() { return Collections.EMPTY_SET; }
+	public Object put(Object key, Object value) {
+	    throw new UnsupportedOperationException();
+	}
+	public void putAll(Map t) {
+	    if (t.size()==0) return;
+	    throw new UnsupportedOperationException();
+	}
+	public Object remove(Object key) { return null; }
+	public int size() { return 0; }
+	public Collection values() { return Collections.EMPTY_SET; }
+    };
 }
