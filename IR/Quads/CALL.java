@@ -44,7 +44,7 @@ import harpoon.Util.Util;
  * is so.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.1.2.12.2.2 1999-09-16 19:23:36 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.1.2.12.2.3 1999-09-17 06:51:53 cananian Exp $ 
  */
 public class CALL extends SIGMA {
     /** The method to invoke. */
@@ -146,7 +146,7 @@ public class CALL extends SIGMA {
     }
     // convenience constructor.
     /** Creates a <code>CALL</code> with an empty <code>dst</code> array
-     *  of the proper size.  Arguments as above. */
+     *  of the proper size.  Other arguments as above. */
     public CALL(QuadFactory qf, HCodeElement source,
 		HMethod method, Temp[] params, Temp retval, Temp retex,
 		boolean isVirtual, Temp[] src) {
