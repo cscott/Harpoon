@@ -6,3 +6,7 @@ aclocal
 autoheader
 automake --add-missing
 autoconf
+set +x
+if test -f config.status; then
+    sh config.status
+fi
