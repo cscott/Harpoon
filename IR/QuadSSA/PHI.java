@@ -3,11 +3,12 @@ package harpoon.IR.QuadSSA;
 
 import harpoon.ClassFile.*;
 import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 /**
  * <code>PHI</code> objects represent blocks of PHI functions.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: PHI.java,v 1.13 1998-09-11 18:28:23 cananian Exp $
+ * @version $Id: PHI.java,v 1.14 1998-09-11 20:45:11 cananian Exp $
  */
 
 public class PHI extends Quad {
@@ -27,6 +28,15 @@ public class PHI extends Quad {
 	for (int i=0; i<dst.length; i++)
 	    for (int j=0; j<arity; j++)
 		this.src[i][j] = null;
+    }
+
+    /** Remove a predecessor from this phi.  <p>
+     *  prev[which_pred] should be null. */
+    public void remove(int which_pred) {
+	Util.assert(prev[which_pred]==null);
+	prev = (Edge[]) Util.shrink(prev, which_pred);
+	for (int i=0; i<dst.length; i++)
+	    src[i] = (Temp[]) Util.shrink(src[i], which_pred);
     }
 
     /** Grow the arity of a PHI by one. */

@@ -4,7 +4,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.6 1998-09-11 17:01:03 cananian Exp $
+ * @version $Id: Util.java,v 1.7 1998-09-11 20:45:11 cananian Exp $
  */
 public final class Util {
   // Disable constructor.  Only static methods here.
@@ -20,6 +20,30 @@ public final class Util {
     System.arraycopy(src,0,dst,0,src.length);
     return dst;
   }
+  /** Remove element 'n' from array 'src'. */
+  public static final Object[] shrink(Object[] src, int n) {
+    Util.assert(src.length>0);
+    Util.assert(n<src.length);
+    Object[] dst = 
+      (Object[]) Array.newInstance(src.getClass().getComponentType(),
+				   src.length-1);
+    System.arraycopy(src,   0, dst, 0, n);
+    System.arraycopy(src, n+1, dst, n, src.length-(n+1));
+    return dst;
+  }
+  /** Insert element <code>o</code> before <code>src[n]</code>. <p>
+   *  After return, <code>src[n]==o</code>.  */
+  public static final Object[] grow(Object[] src, Object o, int n) {
+    Util.assert(n>=0);
+    Object[] dst = 
+      (Object[]) Array.newInstance(src.getClass().getComponentType(),
+				   src.length+1);
+    System.arraycopy(src, 0, dst, 0, n);
+    System.arraycopy(src, n, dst, n+1, src.length-n);
+    dst[n] = o;
+    return dst;
+  }
+
   /** Escape the contents of a String so they are safe to print. */
   public static final String escape(String str) {
     StringBuffer sb = new StringBuffer();
