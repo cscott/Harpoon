@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi99-tech.tex,v 1.8 1999-11-11 19:56:13 cananian Exp $
+% $Id: pldi99-tech.tex,v 1.9 1999-11-11 23:51:56 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{The Static Single Information form}
 In this section we will provide a formal specification of SSI form and
@@ -44,10 +44,10 @@ implicit use of every variable.
 
 Note that this criterion is very similar to the path-con\-ver\-gence
 criterion for inserting \phifunction{s} described in
-\cite{appel:modern,cytron91:ssa}.  And, just in the \phifunction{}
+\cite{appel:modern,cytron91:ssa}.  And, just as in the \phifunction{}
 case, the above criterion is open-ended: since the \sigfunction{}
-itself counts as a use of $a$, we must iterate the above to determine
-the final set of \sigfunction{s}.
+itself counts as a use of $a$, we must iterate the above definition
+to determine the final set of \sigfunction{s}.
 
 Upon examination, we see that the path-con\-ver\-gence criteria for $\phi$- and
 \sigfunction{s} interact.  Since \sigfunction{s} are variable
@@ -98,7 +98,7 @@ The path need not be cycle-free.
 \subsection{Minimal and pruned SSI forms}
 
 \emph{Minimal} and \emph{pruned} SSI forms can be defined which
-parallel their SSA counterparts.  \emph{Minimal} SSI form would have
+parallel their SSA counterparts.  \emph{Minimal} SSI has
 the smallest number of \phisigfunction{s} such that the above
 conditions are satisfied.  \emph{Pruned} SSI form is the minimal form
 with any unused \phisigfunction{s} deleted; that is, it contains no
@@ -109,7 +109,7 @@ by removing \sigfunction{s} for which there are uses for \emph{exactly
 one} of the variables on the left-hand side, but by doing so one loses
 the ability to perform renaming at control-flow splits which generate
 additional value information.}  Figure~\vref{fig:prunedssi} compares 
-minimal and pruned SSI form for our example program.
+minimal and pruned SSI form for an example program.
 \begin{myfigure*}
 \begin{center}
 \input{Figures/THex1ssi} \vline\ \input{Figures/THex1ssiPr}

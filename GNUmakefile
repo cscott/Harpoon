@@ -20,6 +20,7 @@ readnote.dvi: unread_.bib
 
 # lots of dependencies for the pldi paper
 pldi99.dvi: pldi99-intro.tex pldi99-abstract.tex pldi99-tech.tex
+pldi99.dvi: pldi99-example.tex pldi99-results.tex
 pldi99.dvi: Figures/THussi.tex Figures/THv0.tex Figures/THscccomp.eps
 
 

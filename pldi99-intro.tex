@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi99-intro.tex,v 1.4 1999-11-09 21:22:45 cananian Exp $
+% $Id: pldi99-intro.tex,v 1.5 1999-11-11 23:51:56 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 
@@ -25,14 +25,14 @@ original problem that SSA eliminated (the need to
 extract information for each variable at each
 program point) returns. Variable names do not
 change at the conditional branch, even though
-the information along the two control-flow
-paths is different.
+the compiler has different information along the
+two control-flow paths.
 
 The resulting mismatch between variable names
 and dataflow information also produces an efficiency
 problem. Instead of propagating information
-directly from the definition to uses, the analysis
-must propagate the information directly through all 
+directly from definitions to uses, the analysis
+must propagate the information through all 
 program points, whether the program point uses
 the information or not. 
 
@@ -67,7 +67,8 @@ constraint resolution rules. The result is
 a more uniform and powerful analysis framework.
 
 We have implemented a compiler infrastructure for Java,
-the MIT Flex system, that uses SSI form. We have used 
+the MIT Flex system, that uses SSI form \cite{flexweb}.
+We have used 
 this compiler infrastructure to implement several 
 predicate-based analyses, including an analysis that
 detects redundant null reference checks, an
