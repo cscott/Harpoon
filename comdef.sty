@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.29 2000-09-28 22:17:15 cananian Exp $
+% $Id: comdef.sty,v 1.30 2000-09-28 22:46:01 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -160,6 +160,7 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
  \newcommand{\ENDMATCHING}{\end{ALC@matching}\ALC@it\algorithmicendmatching}
  % make starred forms of ending commands.
  \renewcommand{\ENDLOOP}{\end{ALC@loop}\@ifstar{\ALC@it\algorithmicendloop}{\ifthenelse{\boolean{ALC@noend}}{}{\ALC@it\algorithmicendloop}}}
+ \renewcommand{\ENDIF}{\end{ALC@if}\@ifstar{\ALC@it\algorithmicendif}{\ifthenelse{\boolean{ALC@noend}}{}{\ALC@it\algorithmicendif}}}
  % Internal magic to allow references to specific algorithm lines
  \let\oldALCitem\item%
  \renewcommand{\item}{\addtocounter{ALC@line}{-1}\refstepcounter{ALC@line}%
