@@ -35,6 +35,8 @@ import harpoon.IR.Quads.QuadWithTry;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
+import harpoon.Util.Collections.SnapshotIterator;
+
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
@@ -45,7 +47,7 @@ import harpoon.Util.Util;
  * <code>CheckRemoval</code> indicates that the check cannot be removed.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: CheckAdder.java,v 1.5 2002-08-14 20:51:45 wbeebee Exp $
+ * @version $Id: CheckAdder.java,v 1.6 2002-08-31 00:31:12 cananian Exp $
  */
 
 // Fix to be non-static...
@@ -95,7 +97,10 @@ abstract class CheckAdder extends MethodMutator {
 	    hc.print(new PrintWriter(System.out));
 	}
 
-	Iterator qi = hc.getElementsI();
+	// note that we use a SnapshotIterator so that qi is 'static';
+	// i.e. the underlying list of elements to iterate over does not
+	// change as the visitor mutates the hcode.
+	Iterator qi = new SnapshotIterator(hc.getElementsI());
 	while (qi.hasNext()) ((Quad)(qi.next())).accept(visitor);
 
 	if (debugOutput) {

@@ -28,6 +28,8 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.QuadWithTry;
 import harpoon.IR.Quads.QuadNoSSA;
 
+import harpoon.Util.Collections.SnapshotIterator;
+
 import harpoon.Util.Util;
 
 /** 
@@ -221,7 +223,10 @@ public class ClassReplacer extends MethodMutator {
  	    hc.print(new PrintWriter(System.out));
 	}
 
-	Iterator qi = hc.getElementsI();
+	// note that we use a SnapshotIterator so that qi is 'static';
+	// i.e. the underlying list of elements to iterate over does not
+	// change as the visitor mutates the hcode.
+	Iterator qi = new SnapshotIterator(hc.getElementsI());
 	while (qi.hasNext()) ((Quad)(qi.next())).accept(visitor);
 
 	if (debugOutput) {

@@ -40,6 +40,8 @@ import harpoon.IR.Tree.Type;
 import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 
+import harpoon.Util.Collections.SnapshotIterator;
+
 import harpoon.Util.Util;
 
 import java.util.Iterator;
@@ -49,7 +51,7 @@ import java.io.PrintWriter;
 
 /**
  * @author  Bryan Fink <wingman@mit.edu>
- * @version $Id: QuantaChecker.java,v 1.7 2002-08-14 20:51:45 wbeebee Exp $
+ * @version $Id: QuantaChecker.java,v 1.8 2002-08-31 00:31:12 cananian Exp $
  */
 public class QuantaChecker extends MethodMutator
 {
@@ -89,7 +91,10 @@ public class QuantaChecker extends MethodMutator
 		{}
 	    };
 
-	Iterator ti = hc.getElementsI();
+	// note that we use a SnapshotIterator so that ti is 'static';
+	// i.e. the underlying list of elements to iterate over does not
+	// change as the visitor mutates the hcode.
+	Iterator ti = new SnapshotIterator(hc.getElementsI());
 	while (ti.hasNext()) ((Tree)(ti.next())).accept(visitor);
 
 	return hc;
