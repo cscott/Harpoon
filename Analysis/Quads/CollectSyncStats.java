@@ -29,7 +29,7 @@ import java.lang.reflect.Member;
  * instruments code to add calls to methods in this class.)
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: CollectSyncStats.java,v 1.3 2004-02-08 03:20:10 cananian Exp $
+ * @version $Id: CollectSyncStats.java,v 1.4 2004-07-01 22:24:02 cananian Exp $
  */
 
 public abstract class CollectSyncStats {
@@ -85,7 +85,7 @@ public abstract class CollectSyncStats {
 		public void checkPackageAccess(String pkg) { }
 		public void checkPackageDefinition(String pkg) { }
 		public void checkSetFactory() { }
-		public void checkMemberAccess(Class clazz, int which) { }
+		public void checkMemberAccess(Class<?> clazz, int which) { }
 		public void checkSecurityAccess(String provider) { }
 	        });
 	    enabled = true;

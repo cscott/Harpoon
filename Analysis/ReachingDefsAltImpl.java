@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.6 2004-02-08 03:19:12 cananian Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.7 2004-07-01 22:24:31 cananian Exp $
  */
 public class ReachingDefsAltImpl<HCE extends HCodeElement>
     extends ReachingDefs<HCE> {
@@ -406,7 +406,7 @@ public class ReachingDefsAltImpl<HCE extends HCodeElement>
 	if (DEBUG) System.out.println(str+" "+new java.util.Date());
     }
 
-    class AugSetFactory extends SetFactory {
+    static class AugSetFactory extends SetFactory {
 	AugSetFactory(Set universe) { 
 
 	    // universe = new net.cscott.jutil.LinearSet(universe);

@@ -15,7 +15,7 @@ import net.cscott.jutil.Default;
  * entry-by-entry (treating the map as a sorted pair list).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SortedMapComparator.java,v 1.3 2004-02-08 01:56:15 cananian Exp $
+ * @version $Id: SortedMapComparator.java,v 1.4 2004-07-01 22:24:26 cananian Exp $
  */
 public class SortedMapComparator<K,V> implements Comparator<SortedMap<K,V>> {
     final Comparator<? super K> keyComparator;
@@ -38,10 +38,20 @@ public class SortedMapComparator<K,V> implements Comparator<SortedMap<K,V>> {
      */
     public SortedMapComparator(Comparator<? super K> keyComparator,
 			       Comparator<? super V> valueComparator) {
+	/* XXX: JAVAC
 	this.keyComparator = (keyComparator==null) ?
 	    Default.<K>comparator() : keyComparator;
 	this.valueComparator = (valueComparator==null) ?
 	    Default.<V>comparator() : valueComparator;
+	*/
+	if (keyComparator==null)
+	    this.keyComparator = Default.<K>comparator();
+	else
+	    this.keyComparator = keyComparator;
+	if (valueComparator==null)
+	    this.valueComparator = Default.<V>comparator();
+	else
+	    this.valueComparator = valueComparator;
     }
 
     public int compare(SortedMap<K,V> sm1, SortedMap<K,V> sm2) {
