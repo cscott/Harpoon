@@ -75,7 +75,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.94 2000-07-05 21:06:26 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.95 2000-07-06 14:30:44 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -373,7 +373,7 @@ public abstract class RegAlloc  {
 	    // of it, at least when assigning offsets.  Check over
 	    // this. 
 	    private void visitStore(SpillStore m) {
-		StackOffsetTemp def = (StackOffsetTemp) m.def()[0];
+		StackOffsetTemp def = m.stackOffset;
 		List regs = Arrays.asList(m.use());
 		Util.assert(allRegs(regs));
 		List instrs = frame.getInstrBuilder().
@@ -382,7 +382,7 @@ public abstract class RegAlloc  {
 	    }
 	    
 	    private void visitLoad(SpillLoad m) {
-		StackOffsetTemp use = (StackOffsetTemp) m.use()[0];
+		StackOffsetTemp use = m.stackOffset;
 		List regs = Arrays.asList(m.def());
 		Util.assert(allRegs(regs));
 		List instrs = frame.getInstrBuilder().
