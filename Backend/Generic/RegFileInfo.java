@@ -15,7 +15,7 @@ import java.util.Iterator;
     about the target machine's register file. 
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.11 1999-12-11 23:31:12 pnkfelix Exp $
+    @version $Id: RegFileInfo.java,v 1.1.2.12 2000-01-17 09:01:58 cananian Exp $
  */
 public abstract class RegFileInfo {
     
@@ -28,6 +28,8 @@ public abstract class RegFileInfo {
 	}
     };
 
+    /** <code>PreassignTemp</code> represents <code>Temp</code>s
+     *  which have been pre-assigned to machine registers. */
     public static class PreassignTemp extends Temp {
 	private Temp reg;
 	public PreassignTemp(Temp reg) {

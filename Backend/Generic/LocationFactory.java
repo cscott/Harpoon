@@ -24,10 +24,11 @@ import harpoon.IR.Tree.Type;
  * return an empty <code>HData</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: LocationFactory.java,v 1.1.2.2 1999-10-13 16:04:29 cananian Exp $
+ * @version $Id: LocationFactory.java,v 1.1.2.3 2000-01-17 09:01:58 cananian Exp $
  */
 public interface LocationFactory {
-    /* The <code>Location</code>s returned by the allocation function
+    /** The <code>Location</code>s returned by the 
+     * <code>LocationFactory</code> allocation function
      * are opaque data structures that permit only the creation of
      * an accessor fragment in Tree form.
      */
