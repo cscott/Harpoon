@@ -41,23 +41,15 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCComponent.java,v 1.3 2002-02-26 22:47:42 cananian Exp $
+ * @version $Id: SCComponent.java,v 1.4 2002-04-02 23:48:44 salcianu Exp $
  */
 public final class SCComponent implements Comparable, Serializable {
 
     // THE FIRST PART CONTAINS JUST SOME STATIC METHODS & FIELDS
 
-    /** The <code>Navigator</code> interface allows the algorithm to
-      detect (and use) the arcs from and to a certain node. This
-      allows the construction of Strongly Connected Components even
-      for very general graphs where the arcs model only a subtle
-      semantic relation (e.g. caller-callee) which is not directly
-      stored in the structure of the nodes. */
-    public static interface Navigator {
-	/** Returns the predecessors of <code>node</code>. */
-	public Object[] next(Object node);
-	/** Returns the successors of <code>node</code>. */
-	public Object[] prev(Object node);
+    /** Indentical to <code>harpoon.Util.Graphs.Navigator</code>. Kept
+        here just for compatibility with old code. */
+    public static interface Navigator extends harpoon.Util.Graphs.Navigator {
     }
 
     // The internal version of a SCC: basically the same as the external
@@ -99,7 +91,7 @@ public final class SCComponent implements Comparable, Serializable {
 	<code>buildSCC</code> for details). Returns the single element of
 	the set of top level SCCs. */
     public static final SCComponent buildSCC(final Object root,
-					     final Navigator navigator){
+					     final Navigator navigator) {
 	Set set = buildSCC(new Object[]{root}, navigator);
 	if((set == null) || set.isEmpty()) return null;
 	Util.ASSERT(set.size() <= 1, "More than one root SCComponent " +
@@ -110,7 +102,7 @@ public final class SCComponent implements Comparable, Serializable {
 
 
     /** Constructs the strongly connected components of the graph containing
-	all the nodes reachable on paths which originate in nodes from
+	all the nodes reachable on paths that originate in nodes from
 	<code>roots</code>. The edges are indicated by <code>navigator</code>.
 	Returns the set of the root <code>SCComponent</code>s, the components
 	that are not pointed by any other component. This constraint is
