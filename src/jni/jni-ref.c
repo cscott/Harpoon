@@ -4,6 +4,10 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include "config.h"
+#ifdef WITH_DMALLOC
+#include "dmalloc.h"
+#endif
 
 jobject FNI_NewLocalRef(JNIEnv *env, jobject_unwrapped obj) {
   struct FNI_Thread_State *fts = (struct FNI_Thread_State *) env;
@@ -41,9 +45,9 @@ void FNI_DeleteLocalRef(JNIEnv *env, jobject localRef) {
     if (prev->next == localRef) break;
   if (prev->next == localRef) {
     /* only free and unlink if we've really found localRef */
+    prev->next = localRef->next;
     free(localRef);
-    prev->next = prev->next->next;
-  }
+  } else assert(0); /* can't find local ref */
 }
 
 jobject FNI_NewGlobalRef(JNIEnv * env, jobject obj) {
@@ -71,5 +75,5 @@ void FNI_DeleteGlobalRef (JNIEnv *env, jobject globalRef) {
     /* only free and unlink if we've really found localRef */
     free(globalRef);
     prev->next = prev->next->next;
-  }
+  } else assert(0); /* can't find global ref */
 }
