@@ -5,4 +5,7 @@ INCLUDES = @IFLAGS@
 noinst_LTLIBRARIES = libgc.la
 
 libgc_la_SOURCES = \
-	gc-data.c
+	sp_gc.c
+#	gc-data.c
+
+

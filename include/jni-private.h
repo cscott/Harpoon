@@ -9,6 +9,9 @@
 #ifdef BDW_CONSERVATIVE_GC
 #include "gc.h"
 #endif
+#ifdef WITH_SEMI_PRECISE_GC
+#include "../Contrib/gc/gc_typed.h"
+#endif
 #include "flexthread.h"
 #include <time.h>
 
@@ -53,17 +56,12 @@ struct claz {
   struct claz **interfaces; /* NULL terminated list of implemented interfaces*/
   u_int32_t size;		/* object size, including header */
   union {
-    ptroff_t bitmap;		/* garbage collection field bitmap, or */
-    struct aux_gcbitmap *ptr;	/* pointer to larger gc bitmap. */
+    GC_word bitmap;		/* garbage collection field bitmap, or */
+    GC_bitmap ptr;	        /* pointer to larger gc bitmap. */
   } gc_info;
   u_int32_t scaled_class_depth; /* sizeof(struct claz *) * class_depth */
   struct claz *display[0];	/* sized by FLEX */
   /* class method dispatch table after display */
-};
-
-/* the aux_gcbitmap structure stores large gc bitmaps */
-struct aux_gcbitmap {
-  ptroff_t bitmap[0];          /* variable size bitmap */
 };
 
 /* the inflated_oobj structure has various bits of information that we
