@@ -13,7 +13,7 @@ package harpoon.IR.RawClass;
  * attribute in each <code>method_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeCode.java,v 1.3 2003-09-05 21:45:15 cananian Exp $
+ * @version $Id: AttributeCode.java,v 1.4 2003-09-05 22:09:59 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeLineNumberTable
  * @see AttributeLocalVariableTable
@@ -42,7 +42,7 @@ public class AttributeCode extends Attribute {
   /** Each value of the <code>attributes</code> table must be a
       variable-length attribute structure.  A <code>Code</code>
       attribute can have any number of optional attributes associated
-      with it.  <p> Currently, the <code>LinueNumberTable</code> and
+      with it.  <p> Currently, the <code>LineNumberTable</code> and
       <code>LocalVariableTable</code> attributes, both of which
       contain debugging information, are defined and used with the
       <code>Code</code> attribute. */
@@ -126,10 +126,10 @@ public class AttributeCode extends Attribute {
   }
 
   /** 
-   * Return the symbolic name of a local variable, or null if one cannot
-   * be found.
+   * Return the symbolic name of a local variable, or <code>null</code> if
+   * one cannot be found.
    * @param index the index of the local variable to look up.
-   * @return the name of the local, or null.
+   * @return the name of the local, or <code>null</code>.
    */
   public String localName(int pc, int index) {
     for(int i=0; i<attributes.length; i++)
