@@ -21,7 +21,7 @@ rm -f *.class && \
 rm -f *~ && \
 for file in *.java; do \
     echo -n "  Compiling $file ..."; \
-    echo classpath=${PA_CLASSPATH}
+#    echo classpath=${PA_CLASSPATH}
     javac -classpath ${PA_CLASSPATH}:. $file; \
     echo done; \
 done;

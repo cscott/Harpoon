@@ -9,6 +9,8 @@
 
 #export CLASSPATH=$HOME/Harpoon/Code/SupportNP/classes.zip:/home/salcianu/Harpoon/Code/Support/realtime.jar:$CLASSPATH
 
+export PA_CLASSPATH=$CLASSPATH
+
 ./buildone FibPaper
 
 ./buildone Water/Water_RTJ
