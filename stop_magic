@@ -1,0 +1,43 @@
+#! /usr/bin/perl
+# -*-Perl-*-
+#
+# don't allow any commits on the magic-2-0 branch.
+$ENTRIES       = "CVS/Entries";
+# parse command line arguments
+#
+while (@ARGV) {
+    $arg = shift @ARGV;
+
+    push(@files, $arg);
+}
+
+$directory = shift @files;
+# Suck in the CVS/Entries file
+#
+open(ENTRIES, $ENTRIES) || die("Cannot open $ENTRIES.\n");
+while (<ENTRIES>) {
+    local($filename, $version, $date, $unk, $tag) = split('/', substr($_, 1));
+    $cvsversion{$filename} = $version;
+    $cvstag{$filename} = $tag;
+}
+close(ENTRIES);
+
+# Now check each file name passed in.
+foreach $arg (@files) {
+    if ($cvstag{$arg} eq "Tmagic-2-0") {
+	print STDERR "The magic-2-0 branch of FLEX has been closed.\n".
+	    "Please update to the tip of the magic-2-0 branch with\n".
+	    "  cvs update -rmagic-2-0\n".
+	    "And then move your changes back to the HEAD branch with\n".
+	    "  cvs update -A\n".
+	    "You will then be able to commit your changes.\n".
+	    " (The first magic-2-0 file I saw in this commit was $arg)\n".
+	    "For more info, drop me an email. --scott\n";
+	exit(1);
+    }
+}
+
+# okay, I guess things were okay.  Fall back to std commit_prep script.
+$cp_path=`dirname $0`."/commit_prep";
+exec { $cp_path } 'commit_prep','-u','-r',$directory,@files;
+
