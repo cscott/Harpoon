@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.3 2002-02-26 22:47:12 cananian Exp $
+ * @version $Id: Spec.java,v 1.4 2002-03-10 05:11:18 cananian Exp $
  */
 public class Spec  {
 
@@ -420,7 +420,7 @@ public class Spec  {
     public static class ExpName extends Exp {
 
 	/** Name for <code>this</code>. 
-	    @see harpoon.Temp.Label;
+	    @see harpoon.Temp.Label
 	 */
 	public final String name;
 
