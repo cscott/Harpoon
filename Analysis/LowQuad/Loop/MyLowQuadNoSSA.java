@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>MyLowQuadNoSSA</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadNoSSA.java,v 1.1.2.4 2000-11-13 21:06:29 cananian Exp $
+ * @version $Id: MyLowQuadNoSSA.java,v 1.1.2.5 2001-11-26 17:59:48 bdemsky Exp $
  */
 
 public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
@@ -59,9 +59,11 @@ public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
 	    for(int i=0;i<defs.length;i++) {
 		Derivation.DList parents=parentDerivation.derivation(q, defs[i]);
 		if (parents!=null) {
+		    //System.out.print("NoSSA: "+q+","+defs[i]+"->"+quadmap.get(q)+","+tempMap.tempMap(defs[i])+" "+parents);
 		    dT.put(tempMap.tempMap(defs[i]),Derivation.DList.rename(parents,tempMap));
+		    //System.out.println(dT.get(tempMap.tempMap(defs[i])));
 		    tT.put(tempMap.tempMap(defs[i]), 
-			   new Error("Cant type derived pointer: "+tempMap.tempMap(defs[i])));
+			   null);
 		} else
 		    tT.put(tempMap.tempMap(defs[i]),parentDerivation.typeMap(null,defs[i]));
 	    }
@@ -77,10 +79,9 @@ public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
     public HClass typeMap(HCodeElement hce, Temp t) {
 	Util.assert(t!=null);
 	Object type = tT.get(t);
-	try { return (HClass)type; } 
-	catch (ClassCastException cce) { 
-	    throw (Error)((Error)type).fillInStackTrace();
-	}
+	//	if (type==null)
+	//  System.out.println("TYPE UNKNOWN for :"+hce+","+t+"in MyLowQuadQNoSSA");
+	return (HClass) type;
     }
 
     public String getName() {

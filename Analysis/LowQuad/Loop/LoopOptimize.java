@@ -45,7 +45,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.34 2001-11-14 20:50:16 cananian Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.35 2001-11-26 17:59:48 bdemsky Exp $
  */
 public final class LoopOptimize {
 
@@ -111,21 +111,24 @@ public final class LoopOptimize {
 	Loops lp=loopanal.rootloop(hc);
 	WorkSet kids=(WorkSet) lp.nestedLoops();
 	Iterator iterate=kids.iterator();
+	//hcnew.print(new java.io.PrintWriter(System.out, true));
 	while (iterate.hasNext())
 	    recursetree(hc, (MyLowQuadSSI) hcnew, (Loops)iterate.next(), new WorkSet());
 
 	//hcnew.print(new java.io.PrintWriter(System.out, true));
-
 	if (changed) {
 	    //We've likely broken SSI invariants...EVIL SSI!
 	    //Lets fix them...
 	    //As soon as someone gives me something to do that...
+	    //After doing optimizations we need to clean up any deadcode...
+	    DeadCode.optimize(hcnew, null/*throw away AllocationInformation*/);
+
 	    hcnew=new LowQuadSSI(new MyLowQuadNoSSA(hcnew));
+
 	    //hcnew.print(new java.io.PrintWriter(System.out, true));
 	}
 	
-	//After doing optimizations we need to clean up any deadcode...
-	DeadCode.optimize(hcnew, null/*throw away AllocationInformation*/);
+
 	//hcnew.print(new java.io.PrintWriter(System.out, true));
 	return hcnew;
     }
@@ -361,7 +364,7 @@ public final class LoopOptimize {
 		    hcnew.addType(newtemp2, hcnew.typeMap(null,initial));
 		else
 		    hcnew.addType(newtemp2, 
-				  new Error("Cant type derived pointer: "+newtemp2));
+				  null);
 	    }
 	    hcnew.addDerivation(newtemp2, 
 				Derivation.DList.clone(hcnew.derivation(newquad, initial)));
@@ -385,7 +388,7 @@ public final class LoopOptimize {
 			hcnew.addType(newtemp, hcnew.typeMap(null, term));
 		    else
 			hcnew.addType(newtemp, 
-				      new Error("Cant type derived pointer: "+newtemp));
+				      null);
 		    Quad newquad=new POPER(((LowQuadFactory)header.getFactory()),
 					   header,LQop.PNEG,newtemp, sources);
 		    hcnew.addDerivation(newtemp, negate(hcnew.derivation(header, term)));
@@ -404,7 +407,7 @@ public final class LoopOptimize {
 		    hcnew.addType(newtemp2,HClass.Int);
 		else
 		    hcnew.addType(newtemp2, 
-				  new Error("Cant type derived pointer: "+newtemp2));
+				  null);
 		hcnew.addDerivation(newtemp2, merged);
 		addquad.insert(newquad);
 		initial=newtemp2;
@@ -442,7 +445,7 @@ public final class LoopOptimize {
 		    hcnew.addType(newtemp, hcnew.typeMap(null, initial));
 		else
 		    hcnew.addType(newtemp, 
-				  new Error("Cant type derived pointer: "+newtemp));
+				  null);
 		hcnew.addDerivation(newtemp, negate(hcnew.derivation(newquad, initial)));
 		addquad.insert(newquad);
 		initial=newtemp;
@@ -500,7 +503,7 @@ public final class LoopOptimize {
 		    hcnew.addType(newtemp3, hcnew.typeMap(null,initial));
 		else
 		    hcnew.addType(newtemp3,
-				  new Error("Cant type derived pointer: "+newtemp3));
+				  null);
 		newquad=new POPER(((LowQuadFactory)header.getFactory()),header,LQop.PADD,newtemp3, sources);
 		hcnew.addDerivation(newtemp3, hcnew.derivation(newquad, newtemp3));
 		addquad.insert(newquad);
@@ -524,7 +527,7 @@ public final class LoopOptimize {
 			hcnew.addType(term, hcnew.typeMap(null, sources[0]));
 		    else
 			hcnew.addType(term, 
-				      new Error("Cant type derived pointer: "+term));
+				      null);
 		    Quad newquad=new POPER(((LowQuadFactory)header.getFactory()),
 					   header,LQop.PNEG,term, sources);
 		    hcnew.addDerivation(term, negate(hcnew.derivation(header, term)));
@@ -545,7 +548,7 @@ public final class LoopOptimize {
 		    hcnew.addType(newtemp,HClass.Int);
 		else
 		    hcnew.addType(newtemp, 
-				  new Error("Cant type derived pointer: "+newtemp));
+				  null);
 		//Update derivation info
 		hcnew.addDerivation(newtemp, merged);
 		addquad.insert(newquad);
@@ -720,7 +723,7 @@ public final class LoopOptimize {
 				hcnew.addType(newtemp, hcnew.typeMap(null, term));
 			    else
 				hcnew.addType(newtemp, 
-					      new Error("Cant type derived pointer: "+newtemp));
+					      null);
 			    Quad newquad=new POPER(((LowQuadFactory)header.getFactory()),
 						   header,LQop.PNEG,newtemp, sources);
 			    hcnew.addDerivation(newtemp, negate(hcnew.derivation(header, term)));
@@ -739,7 +742,8 @@ public final class LoopOptimize {
 			    hcnew.addType(newtemp,HClass.Int);
 			else
 			    hcnew.addType(newtemp, 
-					  new Error("Cant type derived pointer: "+newtemp));
+					  null);
+			//System.out.println("Creating derivation: "+newtemp+" : "+merged);
 			hcnew.addDerivation(newtemp, merged);
 			addquad.insert(newquad);
 			initial=newtemp;
@@ -832,7 +836,8 @@ public final class LoopOptimize {
 		    hcnew.addType(addresult,HClass.Int);
 		else
 		    hcnew.addType(addresult, 
-				  new Error("Cant type derived pointer: "+addresult));
+				  null);
+		//System.out.println("Creating derivation2: "+addresult+" : "+merged);
 		hcnew.addDerivation(addresult, merged);
 		if (addquad.changed())
 		    changed=true;
@@ -992,6 +997,14 @@ public final class LoopOptimize {
 		    Temp[] def=newq.def();
 		    for (int i=0;i<def.length;i++) {
 			worktmp.associate(def[i],def[i]);
+			Derivation.DList parents=((harpoon.IR.LowQuad.Code)hc).getDerivation().derivation(q, q.def()[i]);
+			//Have to rewrite derivation since we moved quad...SSI..
+			if (parents!=null) {
+			    Derivation.DList nderiv=Derivation.DList.rename(parents, loopmap);
+			    nderiv=Derivation.DList.rename(nderiv, hcnew.tempMap);
+			    //System.out.println("Rewriting "+q.def()[i]+": "+parents+"->"+nderiv);
+			    hcnew.addDerivation(hcnew.tempMap(q.def()[i]),nderiv);
+			}
 		    }
 		    Quad newquad=newq.rename(newq.getFactory(), worktmp, worktmp);
 		    //we made a good quad now....
