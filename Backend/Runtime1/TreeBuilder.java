@@ -56,7 +56,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.10 1999-11-02 01:24:24 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.11 1999-11-02 17:26:35 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -213,9 +213,11 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	// type of array components
 	HClass comType = arrayType.getComponentType();
 	// size of elements in array
-	int elementSize = comType.isPrimitive() ?
-	    ((comType==HClass.Double || comType==HClass.Long) ?
-	     WORD_SIZE * 2 : WORD_SIZE) : POINTER_SIZE;
+	int elementSize = !comType.isPrimitive() ? POINTER_SIZE :
+	    (comType==HClass.Double || comType==HClass.Long) ? (WORD_SIZE*2) :
+	    (comType==HClass.Byte || comType==HClass.Boolean) ? 1 :
+	    (comType==HClass.Char || comType==HClass.Short) ? 2 :
+	    WORD_SIZE;
 	return new Translation.Ex
 	   (new ESEQ
 	    (tf, source,
