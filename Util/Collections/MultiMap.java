@@ -102,9 +102,9 @@ import java.util.HashSet;
 	 </OL> 
     
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MultiMap.java,v 1.1.2.10 2000-01-31 21:54:04 cananian Exp $
+    @version $Id: MultiMap.java,v 1.1.2.11 2000-02-05 20:24:35 pnkfelix Exp $
  */
-public interface MultiMap extends Map {
+public interface MultiMap extends Map, harpoon.Util.BinaryRelation {
 
     /** <code>MultiMap.Factory</code> is a <code>MultiMap</code>
 	generator. 
@@ -212,7 +212,6 @@ public interface MultiMap extends Map {
 	(<code>MultiMap</code> specific operation). 
     */
     Collection getValues(Object key);
-
 
 } 
 

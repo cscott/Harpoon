@@ -19,11 +19,11 @@ import java.util.AbstractSet;
 import java.util.HashSet;
 
 /**
- * <code>GenericMultiMap</code>
+ * <code>GenericMultiMap</code> is a default implementation of a
+ * <code>MultiMap</code>.  
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.1 2000-01-31 21:52:27 cananian Exp $
- */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.2 2000-02-05 20:24:35 pnkfelix Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]
@@ -372,5 +372,8 @@ public class GenericMultiMap implements MultiMap {
 	return c;
     }
 
-
+    public boolean contains(Object a, Object b) {
+	return ((Collection)internMap.get(a)).contains(b);
+    }
+    
 }
