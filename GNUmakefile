@@ -6,9 +6,9 @@ INSTALLDIR=public_html/Harpoon/
 export TEXINPUTS=/home/cananian/src/tex4ht//:
 
 ALLDOCS=design bibnote readnote quads proposal thesis exec pldi99 pldi02 \
-	oopsla02 oqe
+	pldi03 oopsla02 oqe
 
-all: oqe.pdf oqe-notes.ps
+all: pldi03.ps #oqe.pdf oqe-notes.ps
 
 ## funky stuff for martin.
 put:
@@ -29,11 +29,13 @@ preview: thesis-xdvi
 exec.dvi thesis.dvi proposal.dvi: comdef.sty
 pldi99.dvi pldi99-outline.dvi: comdef.sty
 pldi02.dvi: comdef.sty
+pldi03.dvi: comdef.sty
 
 # bibtex dependencies
 exec.dvi quads.dvi design.dvi thesis.dvi: harpoon.bib
 pldi99.dvi pldi99-outline.dvi: harpoon.bib
 pldi02.dvi: harpoon.bib
+pldi03.dvi: harpoon.bib
 bibnote.dvi: harpoon_.bib
 readnote.dvi: unread_.bib
 
