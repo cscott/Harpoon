@@ -64,10 +64,10 @@ public class RationalTime extends RelativeTime {
 	return dest;
     }
 
-    // Is in spec, but should be the same as in RelativeTime
-//     public void set(long millis, int nanos)
-// 	throws IllegalArgumentException {
-//     }
+    public void set(long millis, int nanos)
+	throws IllegalArgumentException {
+	super.set(millis, nanos);
+    }
 
     public void setFrequency(int frequency) throws ArithmeticException {
 	this.frequency = frequency;

@@ -4,6 +4,20 @@
 
 package javax.realtime;
 
+import java.util.LinkedList;
+import java.util.Iterator;
+
+/** A notice to the scheduler that the associated schedulable object's run
+ *  method witll be released aperiodically but with a minimum time between
+ *  releases. When a reference toa <code>SporadicParameters</code> object
+ *  is given as a parameter to a constructor, the <code>SporadicParameters</code>
+ *  object becomes bound to the object being created. Changes to the values
+ *  in the <code>SporadicParameters</code> object affect the constructed
+ *  object. If given to more than one constructor, then changes to the
+ *  values in the <code>SporadicParameters</code> object affect ALL of the
+ *  associated objects. Note that this is a one-to-many relationship and
+ *  NOT a many-to-many.
+ */
 public abstract class SporadicParameters extends AperiodicParameters {
     private RelativeTime minInterarrival;
     private String arrivalTimeQueueOverflowBehavior;
@@ -36,66 +50,88 @@ public abstract class SporadicParameters extends AperiodicParameters {
 	super(cost, deadline, overrunHandler, missHandler);
 	this.minInterarrival = new RelativeTime(minInterarrival);
     }
-    
+
+    /** Get the behavior of the arrival time queue in the event of an overflow. */
     public String getArrivalTimeQueueOverflowBeharior() {
 	return arrivalTimeQueueOverflowBehavior;
     }
 
+    /** Get the initial number of elements the arrival time queue can hold. */
     public int getInitialArrivalTimeQueueLength() {
 	return initialArrivalTimeQueueLength;
     }
 
+    /** Get the minimum interarrival time. */
     public RelativeTime getMinimumInterarrival() {
 	return minInterarrival;
     }
 
+    /** Get the arrival time queue behavior in the event of a minimum
+     *  interarrival time violation.
+     */
     public String getMitViolationBehavior() {
 	return mitViolationBehavior;
     }
 
+    /** Set the behavior of the arrival time queue in the case where the insertion
+     *  of a new element would make the queue size greater than the initial size
+     *  given in this.
+     */
     public void setArrivalTimeQueueOverflowBehavior(String behavior) {
 	arrivalTimeQueueOverflowBehavior = new String(behavior);
     }
 
+    /** Set the initial number of elements the arrival time queue can hold
+     *  without lengthening the queue.
+     */
     public void setInitialArrivalTimeQueueLength(int initial) {
 	initialArrivalTimeQueueLength = initial;
     }
 
+    /** Set the minimum interarrival time. */
     public void setMinimumInterarrival(RelativeTime minInterarrival) {
 	minInterarrival.set(minInterarrival);
     }
 
+    /** Set the behavior of the arrival time queue in the case where the new
+     *  arrival time is closer to the previous arrival time than the minimum
+     *  interarrival time given in this.
+     */
     public void setMitViolationBehavior(String behavior) {
 	mitViolationBehavior = new String(behavior);
     }
 
+    /** Returns true if, after considering the values of the parameters, the task set
+     *  would still be feasible. In this case the values of the parameters are changed.
+     *  Returns false if, after considering the values of the parameters, the task set
+     *  would not be feasible. In this case the values of the parameters are not changed.
+     */
     public boolean setIfFeasible(RelativeTime interarrival,
-				 RelativeTime cost, RelativeTime deadline) {
-	if (sch == null) return false;
-	else {  // this class is abstract, so we have to find another approach to this method...
-	    RelativeTime old_interarrival = this.minInterarrival;
-	    RelativeTime old_cost = this.cost;
-	    RelativeTime old_deadline = this.deadline;
-	    setMinimumInterarrival(interarrival);
-	    this.cost = cost;
-	    this.deadline = deadline;
-	    boolean b = sch.setReleaseParametersIfFeasible(this);
-	    if (!b) {
-		setMinimumInterarrival(old_interarrival);
-		this.cost = old_cost;
-		this.deadline = old_deadline;
-	    }
-	    return b;
+				 RelativeTime cost,
+				 RelativeTime deadline) {
+	boolean b = true;
+	Iterator it = schList.iterator();
+	RelativeTime old_interarrival = this.minInterarrival;
+	RelativeTime old_cost = this.cost;
+	RelativeTime old_deadline = this.deadline;
+	setMinimumInterarrival(interarrival);
+	setCost(cost);
+	setDeadline(deadline);
+	while (b && it.hasNext())
+	    b = ((Schedulable)it.next()).setReleaseParametersIfFeasible(this);
+	if (!b) {
+	    setMinimumInterarrival(old_interarrival);
+	    setCost(old_cost);
+	    setDeadline(old_deadline);
 	}
+	return b;
     }
 
-    public Schedulable bindSchedulable(Schedulable sch) {
-	Schedulable old_sch = this.sch;
-	this.sch = sch;
-	return old_sch;
+    public boolean bindSchedulable(Schedulable sch) {
+	return schList.add(sch);
     }
 
-    public Schedulable unbindSchedulable() {
-	return bindSchedulable(null);
+    public boolean unbindSchedulable(Schedulable sch) {
+	return schList.remove(sch);
     }
 }

@@ -396,8 +396,8 @@ public class RealtimeThread extends Thread implements Schedulable {
     }
 
     public void unbindSchedulable() {
-	releaseParameters.unbindSchedulable();
-	processingGroupParameters.unbindSchedulable();
+	releaseParameters.unbindSchedulable(this);
+	processingGroupParameters.unbindSchedulable(this);
     }
 
     
