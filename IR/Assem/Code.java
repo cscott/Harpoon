@@ -33,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.12 2000-07-18 22:35:17 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.13 2000-07-27 22:19:59 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -142,43 +142,53 @@ public abstract class Code extends HCode {
     }
     
     /** Prints the assembly instructions of <code>this</code> to
-	STDOUT. 
+	System.out.
 	@see Code#print(java.io.PrintWriter)
     */
     public void print() {
 	print(new java.io.PrintWriter(System.out));
     }
-
+    
+    /** Prints the assembly instructions of <code>this</code> to
+	<code>pw</code>.  Default implementation is just a wrapper
+	call to <code>myPrint(pw, true, false)</code>, which turns
+	each Instr into its architecture specific assembly format and
+	omits Instr ID number information.
+    */
+    public void print(java.io.PrintWriter pw) {
+	myPrint(pw, true, false);
+    }
+    
     /** Displays the assembly instructions of this codeview. Attempts
      *  to do so in a well-formatted, easy to read way. <BR>
      *  XXX - currently uses generic, not so easy to read, printer.
      *
-     *  @param  pw      A PrintWriter to send the formatted output to.
+     *  @param  pw    The PrintWriter to send the formatted output to.
+     *  @param  assem If true, uses <code>toAssem(Instr)</code> to
+     *          convert Instrs to assembly form.  Else just calls
+     *          <code>Instr.toString()</code>. 
+     *  @param  annotateID If true, prints out the ID for each Instr
+     *          before printing the Instr itself.
+     *  @see Code#toAssem
      */
-    public void print(java.io.PrintWriter pw) {
-	myPrint(pw, true);
-    }
-
-    public void printNoAssem(java.io.PrintWriter pw) {
-	myPrint(pw, false);
-    }
-
-    private void myPrint(java.io.PrintWriter pw, boolean assem) {
-	final boolean DEBUG = false;
+    protected void myPrint(java.io.PrintWriter pw, 
+			 boolean assem,
+			 boolean annotateID) {
 	final HashSet outputLabels = new HashSet();
 	final MultiMap labelsNeeded = new GenericMultiMap();
 
 	for (Instr instr=instrs; instr != null; instr=instr.getNext()) {
 	    StringBuffer str = new StringBuffer();
+
+	    if (annotateID) {
+		str.append(instr.getID());
+		str.append('\t');
+	    }
+
             if (instr instanceof InstrLABEL ||
 		instr instanceof InstrDIRECTIVE) {
-                str.append(instr.toString());
 
-		if (DEBUG && (instr instanceof InstrLABEL)) {
-		    InstrLABEL il = (InstrLABEL) instr;
-		    Label l = il.getLabel();
-		    outputLabels.add(l);
-		}
+                str.append(instr.toString());
 
             } else {
 		try {
@@ -201,45 +211,10 @@ public abstract class Code extends HCode {
 
 	    pw.println(str.toString());
 
- 	    if (str.toString().indexOf("RETURN") != -1) {
-		// System.out.println("Contained RETURN; hasNext():" + iter.hasNext());
-	    } 
-
-	    if (DEBUG) {
-		Iterator targets = instr.getTargets().iterator();
-		while(targets.hasNext()) {
-		    labelsNeeded.add(targets.next(), instr);
-		}
-	    }
-
-	    // System.out.println("InstrStr:"+str+" Next:"+instr.getNext()); 
         }
 	
 	pw.flush();
 
-	if (DEBUG) { // check that all needed labels have been output
- 	    Iterator needed = labelsNeeded.keySet().iterator();
-	    while(needed.hasNext()) {
-		final Label l = (Label) needed.next();
-		Util.assert(outputLabels.contains(l), 
-			    new Object() {
-		    public String toString() {
-			Iterator instrs = getElementsI();
-			boolean labelFound = false;
-			while(instrs.hasNext()) {
-			    Instr i = (Instr) instrs.next();
-			    if (i instanceof InstrLABEL &&
-				l.equals(((InstrLABEL)i).getLabel())) {
-				labelFound = true;
-			    }
-			}
-			return ("label "+l+" , "+
-				"needed by "+labelsNeeded.getValues(l)+" , "+
-				"was not output.  labelFound: "+labelFound);
-		    }
-		});
-	    }
-	}
     }
 
     /** Produces an assembly code string for <code>instr</code>.
