@@ -28,9 +28,10 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.11 2000-07-13 18:51:14 pnkfelix Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.12 2000-07-14 00:13:09 pnkfelix Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
+    public final static boolean TIME = false;
     final private CFGrapher cfger;
     final protected BasicBlock.Factory bbf;
     final protected Map Temp_to_BitSetFactories = new HashMap();
@@ -246,7 +247,19 @@ public class ReachingDefsImpl extends ReachingDefs {
     // uses Worklist algorithm to solve for reaching definitions
     // given a map of BasicBlocks to Maps of Temps to arrays of bit Sets
     private void solve() {
-	Worklist worklist = new WorkSet(bbf.blockSet());
+	int revisits = 0;
+	Set blockSet = bbf.blockSet();
+	WorkSet worklist;
+	if (true) {
+	    worklist = new WorkSet(blockSet.size());
+	    Iterator iter = bbf.postorderBlocksIter();
+	    while(iter.hasNext()) {
+		worklist.push(iter.next());
+	    }
+	} else {
+	    worklist = new WorkSet(blockSet);
+	}
+
 	while(!worklist.isEmpty()) {
 	    BasicBlock b = (BasicBlock)worklist.pull();
 
@@ -271,10 +284,16 @@ public class ReachingDefsImpl extends ReachingDefs {
 		bitSet[OUT].addAll(bitSet[GEN]);
 		if (old[IN].equals(bitSet[IN]) && old[OUT].equals(bitSet[OUT]))
 		    continue;
-		for(Iterator succs=b.nextSet().iterator(); succs.hasNext(); )
-		    worklist.push((BasicBlock)succs.next());
+		for(Iterator succs=b.nextSet().iterator();succs.hasNext();){
+		    Object block = (BasicBlock)succs.next();
+		    if(worklist.add(block)) {
+			revisits++;
+		    }
+		}
 	    }
 	}
+	if (TIME) System.out.print("re"+revisits+"("+blockSet.size()+")");
+
     }
     // debugging utility
     private final boolean DEBUG = false;
