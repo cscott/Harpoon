@@ -1,4 +1,6 @@
 // ImplGNU.java, created Fri Oct 16 00:17:32 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
 import gnu.bytecode.*;
@@ -10,7 +12,7 @@ import java.util.Vector;
  * using the <code>gnu.bytecode</code> package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplGNU.java,v 1.2 1998-10-16 07:30:52 cananian Exp $
+ * @version $Id: ImplGNU.java,v 1.3 1998-10-16 12:09:31 cananian Exp $
  */
 
 abstract class ImplGNU  { // wrapper for the RealStuff (TM)

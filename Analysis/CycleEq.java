@@ -1,4 +1,6 @@
 // CycleEq.java, created Wed Oct 14 08:15:53 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis;
 
 import harpoon.ClassFile.*;
@@ -15,8 +17,8 @@ import java.util.Vector;
  * <code>CycleEq</code> computes cycle equivalence classes for nodes in
  * a control flow graph, in O(E) time.
  * 
- * @author  C. Scott Ananian <>
- * @version $Id: CycleEq.java,v 1.3 1998-10-16 12:01:21 cananian Exp $
+ * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: CycleEq.java,v 1.4 1998-10-16 12:09:13 cananian Exp $
  */
 
 public class CycleEq  {

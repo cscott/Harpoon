@@ -1,4 +1,6 @@
 // ImplMagic.java, created Fri Oct 16 00:29:13 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.ClassFile;
 
 import harpoon.ClassFile.Raw.Attribute.*;
@@ -14,7 +16,7 @@ import java.util.Vector;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ImplMagic.java,v 1.4 1998-10-16 11:15:39 cananian Exp $
+ * @version $Id: ImplMagic.java,v 1.5 1998-10-16 12:09:31 cananian Exp $
  */
 
 abstract class ImplMagic  { // wrapper for the Real McCoy.

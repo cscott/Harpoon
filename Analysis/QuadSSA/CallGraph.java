@@ -1,4 +1,6 @@
 // CallGraph.java, created Sun Oct 11 12:56:36 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -12,7 +14,7 @@ import java.util.Vector;
  * <code>CallGraph</code> constructs a simple directed call graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.3 1998-10-12 10:11:05 cananian Exp $
+ * @version $Id: CallGraph.java,v 1.4 1998-10-16 12:09:23 cananian Exp $
  */
 
 public class CallGraph  {

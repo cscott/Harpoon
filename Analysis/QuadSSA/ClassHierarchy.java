@@ -1,4 +1,6 @@
 // ClassHierarchy.java, created Sun Oct 11 13:08:31 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.QuadSSA;
 
 import harpoon.ClassFile.*;
@@ -15,7 +17,7 @@ import java.util.Enumeration;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.3 1998-10-12 10:11:06 cananian Exp $
+ * @version $Id: ClassHierarchy.java,v 1.4 1998-10-16 12:09:23 cananian Exp $
  */
 
 public class ClassHierarchy  {

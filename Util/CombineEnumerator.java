@@ -1,4 +1,6 @@
 // CombineEnumerator.java, created Wed Oct 14 08:50:22 1998 by cananian
+// Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
+// Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
 import java.util.Enumeration;
@@ -8,7 +10,7 @@ import java.util.NoSuchElementException;
  * <code>Enumeration</code>s into one.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CombineEnumerator.java,v 1.1 1998-10-16 06:21:23 cananian Exp $
+ * @version $Id: CombineEnumerator.java,v 1.2 1998-10-16 12:10:06 cananian Exp $
  */
 
 public class CombineEnumerator implements Enumeration {
