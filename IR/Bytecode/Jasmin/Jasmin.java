@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.10 1999-08-06 00:03:51 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.11 1999-08-06 15:04:39 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -106,6 +106,7 @@ public class Jasmin {
             visitAll(out, visitor, ql[i],qm);
         }
     }
+
 
     class Visitor extends QuadVisitor {
 	PrintStream out;
@@ -454,6 +455,7 @@ public class Jasmin {
 	}
 
 	public void visit(SWITCH q) {
+            out.println(iflabel(q));
 	    load(q.index());
 	    out.println("    lookupswitch");
 	    for(int i=0;i<q.keysLength();i++)
