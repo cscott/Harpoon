@@ -1,6 +1,7 @@
 package harpoon.Tools.Annotation;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Loader;
@@ -59,6 +60,18 @@ action code {:
   public void annotateURL(int left, int right, HField hf) {
     String link = new QualName(hf.getDeclaringClass()).toBaseURL();
     link+="#field-"+hf.getDeclaringClass().getName().replace('$','.')+"."+hf.getName();
+    annotateURL(left, right, link);
+  }
+  public void annotateURL(int left, int right, HMethod hm) {
+    String link = new QualName(hm.getDeclaringClass()).toBaseURL();
+    String cls  = hm.getDeclaringClass().getName().replace('$','.');
+    link+="#method-"+cls+".";
+    if (hm instanceof HConstructor) {
+	link += (cls.lastIndexOf('.')<0) ? cls :
+	    cls.substring(1+cls.lastIndexOf('.'));
+    } else link+=hm.getName();
+    String desc = hm.getDescriptor();
+    link+=desc.substring(0,1+desc.lastIndexOf(')'));
     annotateURL(left, right, link);
   }
   public void annotateANCHOR(int left, int right, String name) {
@@ -222,6 +235,12 @@ action code {:
       //if (name.indexOf('.')<0) { // simple method name
       return null;
   }
+  private String fieldString(String name) {
+      return "field-"+env.get("#qualified")+"."+name;
+  }
+  private String methodString(String name, String formals) {
+      return "method-"+env.get("#qualified")+"."+name+"("+formals+")";
+  }
   private static String combineWithDot(String a, String b) {
       return (a==null)?b:(b==null)?a:(a+"."+b);
   }
@@ -343,8 +362,8 @@ non terminal Object[] variable_declarator_id, variable_declarator;
 non terminal variable_initializer;
 // 19.8.3) Method Declarations
 non terminal method_declaration, method_header, method_declarator;
-non terminal formal_parameter_list_opt, formal_parameter_list;
-non terminal formal_parameter;
+non terminal String formal_parameter_list_opt, formal_parameter_list;
+non terminal String formal_parameter;
 non terminal throws_opt, throws;
 non terminal class_type_list, method_body;
 // 19.8.4) Static Initializers
@@ -625,13 +644,15 @@ field_declaration ::=
 		    Object[] v=(Object[]) it.next();
 		    annotateANCHOR(((Integer)v[2]).intValue(),
 		                   ((Integer)v[3]).intValue(),
-		                   "field-"+env.get("#qualified")+"."+v[0]);
+		                   fieldString((String)v[0]));
 		  }
 		:}
 	;
 variable_declarators ::=
-		variable_declarator:v {:RESULT=new ArrayList();RESULT.add(v);:}
-	|	variable_declarators:l COMMA variable_declarator:v {:l.add(v);:}
+		variable_declarator:v
+		{: RESULT=new ArrayList(); RESULT.add(v); :}
+	|	variable_declarators:l COMMA variable_declarator:v
+		{: RESULT=l; RESULT.add(v); :}
 	;
 variable_declarator ::=
 		variable_declarator_id:v {:RESULT=v;:}
@@ -658,22 +679,35 @@ method_header ::=
 	|	modifiers_opt VOID method_declarator throws_opt
 	;
 method_declarator ::=
-		IDENTIFIER LPAREN {:pushenv();:} formal_parameter_list_opt RPAREN
+		IDENTIFIER:id LPAREN {:pushenv();:} formal_parameter_list_opt:f RPAREN
+		{: annotateANCHOR(idleft,idright,methodString(id, f)); :}
 	|	method_declarator LBRACK RBRACK // deprecated
 	// be careful; the above production also allows 'void foo() []'
 	;
 formal_parameter_list_opt ::=
-	|	formal_parameter_list
+		{: RESULT=""; :}
+	|	formal_parameter_list:f
+		{: RESULT=f; :}
 	;
 formal_parameter_list ::=
-		formal_parameter
-	|	formal_parameter_list COMMA formal_parameter
+		formal_parameter:f
+		{: RESULT=f; :}
+	|	formal_parameter_list:f1 COMMA formal_parameter:f2
+		{: RESULT=f1+f2; :}
 	;
 formal_parameter ::=
 		type:ty variable_declarator_id:v
-		{: env.put(v[0], HClassUtil.arrayClass(ty,((Integer)v[1]).intValue())); :}
+		{:
+		  HClass hc = (ty==null) ? null : HClassUtil.arrayClass(ty,
+						((Integer)v[1]).intValue());
+		  env.put(v[0],hc); RESULT=hc.getDescriptor();
+		:}
 	|	FINAL type:ty variable_declarator_id:v
-		{: env.put(v[0], HClassUtil.arrayClass(ty,((Integer)v[1]).intValue())); :}
+		{:
+		  HClass hc = (ty==null) ? null : HClassUtil.arrayClass(ty,
+						((Integer)v[1]).intValue());
+		  env.put(v[0],hc); RESULT=hc.getDescriptor();
+		:}
 	;
 throws_opt ::=	
 	|	throws
@@ -699,7 +733,8 @@ constructor_declaration ::=
 			constructor_body {: popenv(); :}
 	;
 constructor_declarator ::=
-		simple_name LPAREN {:pushenv();:} formal_parameter_list_opt RPAREN
+		simple_name:id LPAREN {:pushenv();:} formal_parameter_list_opt:f RPAREN
+		{: annotateANCHOR(idleft,idright,methodString(id, f)); :}
 	;
 constructor_body ::=
 		LBRACE explicit_constructor_invocation
@@ -794,13 +829,17 @@ local_variable_declaration ::=
 		type:ty variable_declarators:l {:
 		  for (Iterator it=l.iterator(); it.hasNext(); ) {
 		    Object[] v=(Object[]) it.next();
-		    env.put(v[0], HClassUtil.arrayClass(ty,((Integer)v[1]).intValue()));
+		    HClass hc = (ty==null) ? null :
+		         HClassUtil.arrayClass(ty,((Integer)v[1]).intValue());
+		    env.put(v[0], hc);
 		  }
 		:}
 	|	FINAL type:ty variable_declarators:l {:
 		  for (Iterator it=l.iterator(); it.hasNext(); ) {
 		    Object[] v=(Object[]) it.next();
-		    env.put(v[0], HClassUtil.arrayClass(ty,((Integer)v[1]).intValue()));
+		    HClass hc = (ty==null) ? null :
+		         HClassUtil.arrayClass(ty,((Integer)v[1]).intValue());
+		    env.put(v[0], hc);
 		  }
 		:}
 	;
