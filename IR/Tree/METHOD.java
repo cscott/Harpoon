@@ -16,7 +16,7 @@ import java.util.Set;
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.1.2.2 1999-08-05 19:29:00 duncan Exp $
+ * @version $Id: METHOD.java,v 1.1.2.3 1999-08-05 20:43:37 duncan Exp $
  */
 public class METHOD extends Stm {
     /** The temporary variables used for method formals. */
@@ -34,14 +34,14 @@ public class METHOD extends Stm {
      */
     public METHOD(TreeFactory tf, HCodeElement source, TEMP[] params) { 
         super(tf, source);
-	Util.assert(params!=null);
+	Util.assert(params!=null); Util.assert(params.length>0);
 	for (int i=0; i<params.length; i++) Util.assert(params[i].tf == tf);
 	this.params = params;
     }
 
     public ExpList kids() {
-	ExpList retval = new ExpList(null, null);
-	for (int i=params.length-1; i>=0; i--)
+	ExpList retval = new ExpList(params[params.length-1], null);
+	for (int i=params.length-2; i>=0; i--)
 	    retval = new ExpList(params[i], retval);
 	return retval;
     }
@@ -52,7 +52,7 @@ public class METHOD extends Stm {
 
     public Stm build(TreeFactory tf, ExpList kids) { 
 	List sParams = new ArrayList();
-	for (ExpList e=kids; e.head!=null; e=e.tail) {
+	for (ExpList e=kids; e!=null; e=e.tail) {
 	    Util.assert(e.head.tf == tf);
 	    sParams.add(e.head);
 	}

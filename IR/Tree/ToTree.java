@@ -60,7 +60,7 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.23 1999-08-05 03:51:20 duncan Exp $
+ * @version $Id: ToTree.java,v 1.1.2.24 1999-08-05 20:43:38 duncan Exp $
  */
 public class ToTree implements Derivation, TypeMap {
     private Derivation  m_derivation;
@@ -259,6 +259,7 @@ class TranslationVisitor extends ExtendedLowQuadVisitor {
     private TreeTempMap       m_tempMap;      // Maps Temps to Tree TEMPs
     private TreeFactory       m_tf;           // The new TreeFactory
     private TypeMap           m_typeMap;      // Old typing info
+    private TEMP              m_handler = null; 
   
     public TranslationVisitor(TreeFactory tf, Derivation derivation, 
 			      LowQuadNoSSA code, TypeMap typeMap, 
@@ -448,7 +449,7 @@ class TranslationVisitor extends ExtendedLowQuadVisitor {
 	      (m_tf, q, 
 	       m_offm.elementsOffset(type(q.objectref())))));
 
-	updateDT(nextPtr.temp, q, nextPtr, dl, null);
+	updateDT(nextPtr.temp, nextPtr, dl, null);
 	updateDT(q.objectref(), q, MAP(q.objectref(), q));
 	addStmt(s0);
     
@@ -519,15 +520,17 @@ class TranslationVisitor extends ExtendedLowQuadVisitor {
     }
 
     public void visit(harpoon.IR.Quads.METHOD q) {
-	Temp params[] = q.params(); 
-	Temp mappedParams[] = new Temp[params.length];
-	int  mappedTypes[]  = new int[params.length];
-	for (int i = 0; i < params.length; i++) { 
-	    mappedParams[i] = m_ctm.tempMap(params[i]);
-	    mappedTypes[i]  = TYPE(q, params[i]);
-	}
-	Stm s0 = m_frame.procPrologue(m_tf, q, mappedParams, mappedTypes);
-	if (s0 != null) addStmt(s0);
+	METHOD method;
+	Temp   params[]  = q.params(); 
+	TEMP   mParams[] = new TEMP[params.length+1];
+	
+	for (int i=0; i<params.length; i++) mParams[i+1] = MAP(params[i], q);
+	Util.assert(m_handler==null);
+	m_handler = mParams[0] = extra(q, Type.POINTER);
+	method    = new METHOD(m_tf, q, mParams);
+	updateDT
+	    (m_handler.temp,method,new DList(m_handler.temp,true,null),null);
+	addStmt(method);
     }
 
     public void visit(harpoon.IR.Quads.MONITORENTER q) {
@@ -619,8 +622,8 @@ class TranslationVisitor extends ExtendedLowQuadVisitor {
     }
   
     public void visit(harpoon.IR.Quads.THROW q) { 
-	Stm s0 = new THROW(m_tf, q, MAP(q.throwable(), q));
-    
+	Util.assert(m_handler!=null);
+	Stm s0 = new THROW(m_tf, q, MAP(q.throwable(), q), m_handler);
 	updateDT(q.throwable(), q, MAP(q.throwable(), q));
 	addStmt(s0);
     }
@@ -1080,19 +1083,17 @@ class TranslationVisitor extends ExtendedLowQuadVisitor {
     /* This version of UpdateDT is used for Temps which were created just
      * for the Tree form
      */
-    private void updateDT(Temp tmp, Quad qOld, Tree tNew, 
-			  DList dl, HClass hc) { 
+    private void updateDT(Temp tmp, Tree tNew, DList dl, HClass hc) { 
 	Util.assert(tmp.tempFactory()==tNew.getFactory().tempFactory());
-	    
+	Util.assert(dl==null ^ hc==null);
+
 	if (dl!=null) { // If tmp is a derived ptr, update deriv info.
 	    m_dT.put(new Tuple(new Object[] {tNew, tmp}), dl);
 	    m_dT.put(tmp, 
 		     new Error("*** Can't type a derived pointer: "+tmp));
 	}
 	else { // If the tmp is NOT a derived pointer, assign its type
-	    if (hc!=null) {
-		m_dT.put(tmp, hc);
-	    }
+	    m_dT.put(tmp, hc);
 	}
     }           
   
