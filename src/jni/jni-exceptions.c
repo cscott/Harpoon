@@ -52,12 +52,21 @@ void FNI_ExceptionDescribe(JNIEnv *env) {
   /* temporarily clear exception, or the following JNI methods will barf. */
   saved_exception = fts->exception; fts->exception = NULL;
   /* okay, get info about this here exception. */
+  fprintf(stderr, "JNI ExceptionDescribe: ");
   exclz = FNI_GetObjectClass(env, saved_exception);
+  if ((*env)->ExceptionOccurred(env)) goto skip0;
   methodID = FNI_GetMethodID(env, exclz, "toString", "()Ljava/lang/String;");
+  if ((*env)->ExceptionOccurred(env)) goto skip1;
   jstr = FNI_CallObjectMethod(env, saved_exception, methodID);
+  if ((*env)->ExceptionOccurred(env)) goto skip1;
   cstr = FNI_GetStringUTFChars(env, jstr, NULL);
-  fprintf(stderr, "JNI ExceptionDescribe: %s\n", cstr);
+  fprintf(stderr, "%s", cstr);
   FNI_ReleaseStringUTFChars(env, jstr, cstr);
+  goto skip0;
+ skip1:
+  fprintf(stderr, "%s", FNI_GetClassInfo(exclz)->name);
+ skip0:
+  fprintf(stderr, "\n");
   /* okay, reset exception. */
   fts->exception = saved_exception;
 }
