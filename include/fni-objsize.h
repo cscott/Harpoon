@@ -8,6 +8,12 @@
 #define INCLUDED_FNI_OBJSIZE
 
 
+static inline jsize FNI_ClassSize(jclass clazz) {
+  struct claz *claz = FNI_GetClassInfo(clazz)->claz;
+  assert (claz->component_claz==NULL); /* not valid for arrays! */
+  return claz->size;
+}
+
 static inline jsize FNI_ObjectSize(struct oobj *o) {
   struct claz *claz = FNI_CLAZ((struct oobj*) PTRMASK(o));
   struct claz *cclaz = claz->component_claz;

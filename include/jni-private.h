@@ -208,10 +208,6 @@ extern struct claz *FNI_claz_table[];
 /* MOVED: to fni-ptrmask.h, for better precise-c backend integration    */
 #include "fni-ptrmask.h"
 
-/* ---------------------- object size ---------------------------------*/
-/* broken out to fni-objsize.h to aid readability of this file somewhat */
-#include "fni-objsize.h"
-
 /* -------------- internal function prototypes. ------------- */
 
 /* Initialize JNIEnv management code at startup. */
@@ -262,6 +258,10 @@ void FNI_SetJNIData(JNIEnv *env, jobject obj, // frees old data if present.
 /* auxilliary thread synchronization operations */
 void FNI_MonitorWait(JNIEnv *env, jobject obj, const struct timespec *abstime);
 void FNI_MonitorNotify(JNIEnv *env, jobject obj, jboolean wakeall);
+
+/* ---------------------- object size ---------------------------------*/
+/* broken out to fni-objsize.h to aid readability of this file somewhat */
+#include "fni-objsize.h"
 
 /* ----- miscellaneous information embedded in the compiler output ----- */
 
