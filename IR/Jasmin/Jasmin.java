@@ -22,7 +22,7 @@ import java.util.Iterator;
  * <code>FinalRaw</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.7 1999-08-20 20:49:14 bdemsky Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.8 1999-08-23 06:23:12 bdemsky Exp $
  */
 public class Jasmin {
     HCode[] hc;
@@ -174,6 +174,65 @@ public class Jasmin {
 		load(q.dims(i));
 	    out.println("    multianewarray "+q.hclass().getName().replace('.','/') +" "+q.dimsLength());
             store(q.dst());
+	}
+
+	public void visit(ARRAYINIT q) {
+	    out.println(iflabel(q));
+	    if (q.value().length>0)
+		load(q.objectref());
+	    for (int i=0;i<q.value().length;i++) {
+		if (q.type()==HClass.Boolean) {
+		    Boolean b=(Boolean)q.value()[i];
+		    dup(i,q.value().length);
+		    out.println("    bipush "+(i+q.offset()));
+		    if (b.booleanValue())
+			out.println("    iconst_1");
+		    else
+			out.println("    iconst_0");
+		    out.println("    bastore");
+		}
+		else if (q.type()==HClass.Int) {
+		    dup(i,q.value().length);
+		    out.println("    bipush "+(i+q.offset()));
+		    out.println("    bipush "+q.value()[i].toString());
+		    out.println("    iastore");
+		}
+		else if (q.type()==HClass.Char) {
+		    dup(i,q.value().length);
+		    out.println("    bipush "+(i+q.offset()));
+		    out.println("    bipush "+q.value()[i].toString());
+		    out.println("    castore");
+		}
+		else if (q.type()==HClass.Short) {
+		    dup(i,q.value().length);
+		    out.println("    bipush "+(i+q.offset()));
+		    out.println("    sipush "+q.value()[i].toString());
+		    out.println("    sastore");
+		}
+		else if (q.type()==HClass.Long) {
+		    dup(i,q.value().length);
+		    out.println("    bipush "+(i+q.offset()));
+		    out.println("    ldc2_w "+q.value()[i].toString());
+		    out.println("    lastore");
+		}
+		else if (q.type()==HClass.Double) {
+		    dup(i,q.value().length);
+		    out.println("    bipush "+(i+q.offset()));
+		    out.println("    ldc2_w "+q.value()[i].toString());
+		    out.println("    dastore");
+		}
+		else if (q.type()==HClass.Float) {
+		    dup(i,q.value().length);
+		    out.println("    bipush "+(i+q.offset()));
+		    out.println("    ldc "+q.value()[i].toString());
+		    out.println("    fastore");
+		}
+	    }
+	}
+       
+	private void dup(int i, int last) {
+	    if ((i+1)!=last)
+		out.println("    dup");
 	}
 
 	public void visit(ASET q) {
