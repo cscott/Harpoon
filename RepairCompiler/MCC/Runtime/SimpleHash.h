@@ -175,7 +175,8 @@ class RepairHashNode {
     int lvalue;  
     int rvalue;  
     int rule;
-    RepairHashNode(int setrelation, int rule, int lvalue, int rvalue, int data, int data2);
+    int ismodify;
+    RepairHashNode(int setrelation, int rule, int lvalue, int rvalue, int data, int data2,int ismodify);
 };
 
 class RepairHash {
@@ -198,6 +199,7 @@ public:
     int getset(int setv, int rule, int value);
     int getrelation(int relation, int rule, int lvalue, int rvalue);
     int getrelation2(int relation, int rule, int lvalue, int rvalue);
+    int ismodify(int relation, int rule, int lvalue, int rvalue);
 };
 
 #endif

@@ -1367,7 +1367,11 @@ public class RepairGenerator {
 		cr.startblock(); {
 		    /* Have update to call into */
 		    VarDescriptor mdfyptr=VarDescriptor.makeNew("modifyptr");
-		    cr.outputline("int "+mdfyptr.getSafeSymbol()+"="+repairtable.getSafeSymbol()+"->getrelation2("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
+		    VarDescriptor ismdfyptr=VarDescriptor.makeNew("ismodifyptr");
+		    cr.outputline("int "+ismdfyptr.getSafeSymbol()+"="+repairtable.getSafeSymbol()+"->ismodify("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
+
+
+
 		    
 		    String parttype="";
 		    for(int i=0;i<currentrule.numQuantifiers();i++) {
@@ -1399,9 +1403,10 @@ public class RepairGenerator {
 		    
 		    cr.outputline("void *"+tmpptr.getSafeSymbol()+"=");
 		    cr.outputline("(void *) "+repairtable.getSafeSymbol()+"->getrelation("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
-		    cr.outputline("if ("+mdfyptr.getSafeSymbol()+")");
+		    cr.outputline("if ("+ismdfyptr.getSafeSymbol()+")");
 		    {
 			cr.startblock();
+			cr.outputline("int "+mdfyptr.getSafeSymbol()+"="+repairtable.getSafeSymbol()+"->getrelation2("+rd.getNum()+","+currentrule.getNum()+","+leftvar+","+rightvar+");");
 			cr.outputline("void (*"+funptr.getSafeSymbol()+") ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)="+"(void (*) ("+name+"_state *,"+name+"*,RepairHash *"+parttype+",int,int,int)) "+tmpptr.getSafeSymbol()+";");
 			cr.outputline(methodcall+","+leftvar+", "+rightvar+", "+mdfyptr.getSafeSymbol() +");");
 			cr.endblock();

@@ -341,7 +341,7 @@ SimpleHashException::SimpleHashException() {}
 // ************************************************************
 
 
-RepairHashNode::RepairHashNode(int setrelation, int rule, int lvalue, int rvalue, int data, int data2){
+RepairHashNode::RepairHashNode(int setrelation, int rule, int lvalue, int rvalue, int data, int data2, int ismodify){
     this->setrelation = setrelation;
     this->lvalue=lvalue;
     this->rvalue=rvalue;
@@ -350,6 +350,7 @@ RepairHashNode::RepairHashNode(int setrelation, int rule, int lvalue, int rvalue
     this->next = 0;
     this->lnext=0;
     this->rule=rule;
+    this->ismodify=ismodify;
 }
 
 // ************************************************************
@@ -393,7 +394,29 @@ int RepairHash::addset(int setv, int rule, int value, int data) {
 }
 
 int RepairHash::addrelation(int relation, int rule, int lvalue, int rvalue, int data) {
-  return addrelation(relation,rule,lvalue,rvalue,data, 0);
+    unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % size;
+    
+    RepairHashNode **ptr = &bucket[hashkey];
+
+    /* check that this key/object pair isn't already here */
+    // TBD can be optimized for set v. relation */
+    while (*ptr) {
+        if ((*ptr)->setrelation == relation && 
+	    (*ptr)->rule==rule &&
+	    (*ptr)->lvalue==lvalue &&
+	    (*ptr)->rvalue==rvalue &&
+	    (*ptr)->data == data&&
+	    (*ptr)->data2 == 0) {
+            return 0;
+        }
+        ptr = &((*ptr)->next);
+    }
+    
+    *ptr = new RepairHashNode(relation,rule,lvalue,rvalue, data,0,0);
+    (*ptr)->lnext=nodelist;
+    nodelist=*ptr;
+    numelements++;
+    return 1;
 }
 
 int RepairHash::addrelation(int relation, int rule, int lvalue, int rvalue, int data, int data2) {
@@ -415,7 +438,7 @@ int RepairHash::addrelation(int relation, int rule, int lvalue, int rvalue, int 
         ptr = &((*ptr)->next);
     }
     
-    *ptr = new RepairHashNode(relation,rule,lvalue,rvalue, data,data2);
+    *ptr = new RepairHashNode(relation,rule,lvalue,rvalue, data,data2,1);
     (*ptr)->lnext=nodelist;
     nodelist=*ptr;
     numelements++;
@@ -449,6 +472,25 @@ int RepairHash::getset(int setv, int rule, int value) {
   return getrelation(setv||SETFLAG, rule, value,0);
 }
 
+int RepairHash::ismodify(int relation, int rule, int lvalue,int rvalue) {
+    unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % size;
+    
+    RepairHashNode **ptr = &bucket[hashkey];
+
+    /* check that this key/object pair isn't already here */
+    // TBD can be optimized for set v. relation */
+    while (*ptr) {
+        if ((*ptr)->setrelation == relation && 
+	    (*ptr)->rule==rule &&
+	    (*ptr)->lvalue==lvalue &&
+	    (*ptr)->rvalue==rvalue) {
+	  return (*ptr)->ismodify;
+        }
+        ptr = &((*ptr)->next);
+    }
+    return 0;
+}
+
 int RepairHash::getrelation2(int relation, int rule, int lvalue,int rvalue) {
     unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % size;
     
@@ -467,6 +509,7 @@ int RepairHash::getrelation2(int relation, int rule, int lvalue,int rvalue) {
     }
     return 0;
 }
+
 int RepairHash::getrelation(int relation, int rule, int lvalue,int rvalue) {
     unsigned int hashkey = ((unsigned int)(relation ^ rule ^ lvalue ^ rvalue)) % size;
     
