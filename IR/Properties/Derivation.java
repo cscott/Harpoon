@@ -15,7 +15,7 @@ import harpoon.Temp.TempMap;
  * garbage collection of the derived pointer.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.4 1999-02-08 17:20:49 duncan Exp $
+ * @version $Id: Derivation.java,v 1.1.2.5 1999-02-08 20:14:58 duncan Exp $
  */
 public interface Derivation  {
 
@@ -43,19 +43,23 @@ public interface Derivation  {
 	}
       
       /** Returns a clone of this <code>DList</code> */
-      public DList clone(CloningTempMap ctm) {
-	return new DList(((this.base==null)?null:ctm.tempMap(this.base)),
-			 this.sign, 
-			 ((this.next==null)?null:this.next.clone(ctm)));
+      public static DList clone(DList dlist, CloningTempMap ctm) {
+	if (dlist==null) return null;
+	else
+	  return new DList(((dlist.base==null)?null:ctm.tempMap(dlist.base)),
+			   dlist.sign, 
+			   clone(dlist.next, ctm));
       }
 
       /** Returns a new <code>DList</code> with the <code>Temp</code>s 
        *  renamed by the supplied mapping */
-      public DList rename(TempMap tempMap)
+      public static DList rename(DList dlist, TempMap tempMap)
 	{
-	  return new DList((this.base==null)?null:tempMap.tempMap(this.base),
-			   this.sign,
-			   (this.next==null)?null:this.next.rename(tempMap));
+	  if (dlist==null) return null;
+	  else return new DList
+		 (((dlist.base==null)?null:tempMap.tempMap(dlist.base)),
+		  dlist.sign,
+		  rename(dlist.next, tempMap));
 	}
     }
 }
