@@ -68,8 +68,8 @@ public class CORBA implements CommunicationsModel {
 	this.args=args;
 
 	switch (implementation) {
-	case JACORB: { setupJacORB(); }
-	case ZEN: { setupZen(); }
+	case JACORB: { setupJacORB(); break; }
+	case ZEN: { setupZen(); break; }
 	default: { throw new Error("Invalid implementation chosen!"); }
 	}
     }
