@@ -13,6 +13,8 @@
 # define MALLOC malloc
 #endif
 
+#define RACES 1 /* XXX: haven't gotten rid of them yet */
+
 /* we redefine this up here to minimize pointer casts down there.
  * for some reason gcc complains that (long int) and (ptroff_t) are
  * incompatible (even if sizes are equal) and that (struct commitrec **)
@@ -94,7 +96,7 @@ static inline jint StateP2(struct inflated_oobj *infl, struct vinfo *v) {
     /* below this point it is the StateP'' function from the writeup */
     switch (s) {
     case WAITING:
-#if 0
+#if RACES
 	if (l) /* transid was pruned, snip out parents */
 	    while (v->transid== v->anext->transid)
 		v->anext = v->anext->anext; /* race here */
@@ -299,7 +301,9 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadCommittedVersion
 	}
     }
     done:
-    /* XXX: unflag some fields if u==0? */
+#if RACES
+    /* XXX: unflag some fields if u==0.  Don't know how to do this. */
+#endif
     return FNI_WRAP(&(v->obj));
 }
 
