@@ -7,14 +7,15 @@ package harpoon.Util.Collections;
  * If, for <code>MultiMap</code> <code>m</code>,
  * <code>m.contains(a, b)</code>, then
  * <code>m.invert().contains(b, a)</code>.
- * The returned
- * <code>MultiMap</code> is not guaranteed to be modfiable, even if
- * <code>this</code> is (ie, changes to the data structure may still
- * have to be made through <code>this</code> rather than directly to
- * the returned <code>MultiMap</code>).
+ *
+ * If the <code>InvertibleMultiMap</code> is mutable, the
+ * <code>InvertibleMultiMap</code> returned by its <code>invert()</code>
+ * method should also be mutable.  Moreover, for any
+ * <code>InvertibleMultiMap</code>, 
+ * <code>this.invert().invert()==this</code>.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InvertibleMultiMap.java,v 1.1.2.1 2001-06-17 20:19:35 cananian Exp $
+ * @version $Id: InvertibleMultiMap.java,v 1.1.2.2 2001-06-17 20:22:55 cananian Exp $
  */
 public interface InvertibleMultiMap extends MultiMap {
     /** Returns a inverted view of <code>this</code>.
