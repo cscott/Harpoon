@@ -23,7 +23,7 @@ import java.util.HashMap;
 
 /** Collects various data structures used by AppelRegAlloc. 
  *  @author  Felix S. Klock II <pnkfelix@mit.edu>
- *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.9 2001-07-03 23:06:57 pnkfelix Exp $
+ *  @version $Id: AppelRegAllocClasses.java,v 1.1.2.10 2001-07-06 17:42:11 pnkfelix Exp $
  */
 abstract class AppelRegAllocClasses extends RegAlloc {
     public static final boolean CHECK_INV = false;
@@ -154,14 +154,43 @@ abstract class AppelRegAllocClasses extends RegAlloc {
     NodeSet colored_nodes;
     NodeSet select_stack;
 
+    protected HashSet dontSpillTheseDefs = new HashSet();
 
-    static class Web { 
+    class Web { 
 	Temp temp; 
 	Collection defs, uses;
 	Web(Temp temp, Set defs, Set uses) { 
 	    this.temp = temp; 
 	    this.defs = new LinearSet(defs); 
 	    this.uses = new LinearSet(uses);
+	}
+	
+	private int spillable = 0; // 0 is dont-know, 1 is yes, -1 is no.
+	protected boolean isSpillable() {
+	    switch (spillable) {
+	    case 1 : return true;
+	    case -1: return false;
+	    default:
+		{
+		    for(Iterator di = defs.iterator(); di.hasNext(); ) {
+			Instr d = (Instr) di.next();
+			if (d instanceof RestoreProxy ||
+			    dontSpillTheseDefs.contains(d)) {
+			    spillable = -1;
+			    return false;
+			}
+		    }
+		    for(Iterator ui = uses.iterator(); ui.hasNext(); ){
+			if (ui.next() instanceof SpillProxy) {
+			    spillable = -1;
+			    return false;
+			}
+		    }
+		    spillable = 1;
+		    return true;
+		}
+	    }
+	
 	}
 	public String toString() {
 	    return "Web<"+temp+
@@ -543,7 +572,7 @@ abstract class AppelRegAllocClasses extends RegAlloc {
 	MoveList moves = new MoveList();
 
 	// color of this, ( 0 <= color < K when assigned )
-	int color = -1;
+	int color =  -1 ;
 
 	// Web for this (null if this is dummy header element)
 	final Web web; 
