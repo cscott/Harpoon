@@ -23,7 +23,7 @@ import java.util.Enumeration;
  * with extensions to allow type and bitwidth analysis.  Fun, fun, fun.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.15.2.10 1999-02-05 08:26:19 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.15.2.11 1999-02-25 17:33:28 cananian Exp $
  */
 
 public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
@@ -455,6 +455,11 @@ public class SCCAnalysis implements TypeMap, ConstMap, ExecMap {
 			   new xIntConstant(type,((Number)val).longValue() ) );
 		else throw new Error("Unknown constant field type: "+type);
 	    } else raiseV(V, Wv, q.dst(), new xClass( type ) );
+	}
+	public void visit(HEADER q) {
+	    // mark both edges executable.
+	    raiseE(Ee, Eq, Wq, q.nextEdge(0));
+	    raiseE(Ee, Eq, Wq, q.nextEdge(1));
 	}
 	public void visit(INSTANCEOF q) {
 	    // no guarantee that src is not null.
