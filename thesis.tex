@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.75 1999-08-21 17:50:55 cananian Exp $
+% $Id: thesis.tex,v 1.76 1999-08-21 20:45:53 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.75 $ $}
+\date{\today \\ $ $Revision: 1.76 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.75 $ $}{$ $Revision: 1.75 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.76 $ $}{$ $Revision: 1.76 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -1442,7 +1442,9 @@ be obvious how to generate hardware for simple functional constructs
 using \ssiplus.
 
 \textbf{Er, at this point I will do what I just said I would do.  I'm
-working on generating the figures to illustrate this section.}
+working on generating the figures to illustrate this section.}%
+\fixme{Don't forget to reference \cite{tanaka89:harp} and
+\cite{galloway95:transmogrifier} when talking about Java-to-hardware.}
 
 \section{Results}
 \textbf{Numbers, numbers, and more numbers.}
