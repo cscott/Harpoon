@@ -1,7 +1,7 @@
 #! /usr/bin/perl
 # -*-Perl-*-
 #
-#ident	"@(#)cvs/contrib:$Name:  $:$Id: commit_prep,v 1.5 1998-10-18 09:47:44 cananian Exp $"
+#ident	"@(#)cvs/contrib:$Name:  $:$Id: commit_prep,v 1.6 1998-10-18 10:12:45 cananian Exp $"
 #
 # Perl filter to handle pre-commit checking of files.  This program
 # records the last directory where commits will be taking place for
@@ -202,6 +202,7 @@ while (<ENTRIES>) {
     local($filename, $version) = split('/', substr($_, 1));
     $cvsversion{$filename} = $version;
 }
+close(ENTRIES);
 
 # Now check each file name passed in, except for dot files.  Dot files
 # are considered to be administrative files by this script.
