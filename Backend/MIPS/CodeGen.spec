@@ -63,12 +63,13 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 
+
 /**
  * <code>MIPS.CodeGen</code> is a code-generator for the MIPS II architecture.
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.12 2000-08-15 19:45:17 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.13 2000-08-26 05:08:35 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  
@@ -78,8 +79,39 @@ import java.util.Iterator;
 // v1) 
 %%
 
+    private void collectCallInfo(harpoon.IR.Tree.Data data) {}
+    private void collectCallInfo(harpoon.IR.Tree.Code code) {
+       final class CallVisitor extends harpoon.IR.Tree.TreeVisitor {
+          public void visit(harpoon.IR.Tree.Tree treee){
+             harpoon.Util.Util.assert(false, "Should never visit generic harpoon.IR.Tree.Treein CallVisitor");
+          } // end visit(harpoon.IR.Tree.Tree)
+          public void visit(harpoon.IR.Tree.Stm stm) {
+             harpoon.IR.Tree.INVOCATION inv = null;
+             if(stm instanceof harpoon.IR.Tree.CALL) {
+                inv = (harpoon.IR.Tree.INVOCATION)stm;
+             }
+             if(stm instanceof harpoon.IR.Tree.NATIVECALL) {
+                inv = (harpoon.IR.Tree.INVOCATION)stm;
+             }
+             if(inv != null) {
+                stack.callInfo(inv);
+             }
+          } // end visit(harpoon.IR.Tree.Stm)
+          public void visit(harpoon.IR.Tree.SEQ treee){
+             treee.getLeft().accept(this);
+             treee.getRight().accept(this);
+          }
+       }
+       CallVisitor visitor = new CallVisitor();
+       harpoon.IR.Tree.Tree t = (harpoon.IR.Tree.Tree) code.getRootElement();
+       t.accept(visitor);
+    }
+
     // InstrFactory to generate Instrs from
     private InstrFactory instrFactory;
+
+    // Track information about the activation frame for this method.
+    private StackInfo stack;
     
 
     /*final*/ RegFileInfo regfile;
@@ -139,6 +171,7 @@ import java.util.Iterator;
                                 LR};
     call_def_builtin = new Temp[] {v0, v1, a0, a1, a2, a3, t0, t1, t2,
                                    LR};
+
 
     // allow sorting of registers so that stm and ldm work correctly.
     final Map regToNum = new HashMap();
@@ -253,7 +286,7 @@ import java.util.Iterator;
     /** Single dest Single source emit InstrMOVE helper */
     private Instr emitMOVE( HCodeElement root, String assem,
 			   Temp dst, Temp src) {
-       return emit(new InstrMOVE( instrFactory, root, assem+" # move",
+       return emit(new InstrMOVE( instrFactory, root, assem+"         # move",
                                   new Temp[]{ dst },
 			    new Temp[]{ src }));
     }			         
@@ -406,26 +439,10 @@ import java.util.Iterator;
 
     /** simple tuple class to wrap some bits of info about the call prologue */
     private class CallState {
-      /** number of parameter bytes pushed on to the stack. */
-      final int stackOffset;
       /** set of registers used by parameters to the call. */
       final List callUses;
-      CallState(int stackOffset, List callUses) {
-	this.stackOffset=stackOffset; this.callUses=callUses;
-      }
-      /** Append a stack-offset instruction to the actual call.
-       *  We delay the stack-offset to the point where it is
-       *  atomic with the call, so that the register allocator
-       *  can't insert spill code between the stack adjustment
-       *  and the call. (the spill code would fail horribly in
-       *  that case, because the stack pointer won't be where it
-       *  expects it to be.) */
-      String prependSPOffset(String asmString) {
-         // optimize for common case.
-         // CSA: THIS ROUTINE NO LONGER NEEDED. we offset from FP now.
-         if (true || stackOffset==0) return asmString;
-         declare( SP, HClass.Void );
-         return "subu $sp, $sp, "+stackOffset+"\n\t"+asmString;
+      CallState(List callUses) {
+         this.callUses=callUses;
       }
     }
 
@@ -608,109 +625,71 @@ import java.util.Iterator;
                                        TempList tlist,
                                        TreeDerivation td) {
        ExpList elist = ROOT.getArgs();
-       /** OUTPUT ARGUMENT ASSIGNMENTS IN REVERSE ORDER **/
        List callUses = new ArrayList(call_use.length);
-       int stackOffset = 0;
-       // reverse list and count # of words required
-       TempList treverse=null;
-       ExpList ereverse=null;
-       int index=0;
-       for(TempList tl=tlist; tl!=null; tl=tl.tail, elist=elist.tail) {
-          treverse=new TempList(tl.head, treverse);
-          ereverse=new ExpList(elist.head, ereverse);
-          index+=isDoubleWord(elist.head) ? 2 : 1;
-       }
+
        // add all used registers to callUses list.
        for (int i=0; i<call_use.length; ++i) {
           callUses.add(call_use[i]);
        }
-       // We need space for ra and fp.  Since we don't know the max
-       // number of args for any function called from this function,
-       // we allocate space for all 4 argument registers all the time
-       // These are 
-       stackOffset = 3 * 4;
-       int argSaveOffset = 16;
-       if(index >= 5) {
-          argSaveOffset += 4 * (index - 4);
-       }
-       
-       index--; // so index points to 'register #' of last argument.
 
-       elist=ereverse;
-       for (TempList tl = treverse; tl != null; tl=tl.tail, elist=elist.tail) { 
-          Temp temp = tl.head;
-          if (isDoubleWord(elist.head)) {
-             // arg takes up two words
-             switch(index) {
-             case 0: throw new Error("Not enough space!");
-             case 1: case 2: case 3: // put in registers 
-                // not certain an emitMOVE is legal with the l/h modifiers
-                Temp rfirst = getArgReg(index--);
-                declare(rfirst, HClass.Void);
-                Temp rsecnd = getArgReg(index--);
-                declare(rsecnd, HClass.Void);
-                Util.assert(temp instanceof TwoWordTemp);
-                emit( ROOT, "move `d0, `s0h", rfirst, temp );
-                emit( ROOT, "move `d0, `s0l", rsecnd, temp );
-                break;
-             case 4: // spread between regs and stack
-                stackOffset += 4; index--;
-                argSaveOffset -= 4;
-                declare( SP, HClass.Void );
-                Util.assert(temp instanceof TwoWordTemp);
-                emit(new InstrMEM( instrFactory, ROOT,
-                                   "sw `s0h, " + argSaveOffset + "(`s1)",
-                                   new Temp[] { SP },
-                                   new Temp[]{ temp, SP })); 
-                // not certain an emitMOVE is legal with the l/h modifiers
-                Temp rthird = getArgReg(index--);
-                declare( rthird, HClass.Void );
-                emit( ROOT, "move `d0, `s0l", rthird, temp );
-                break;
-             default: // start putting args in memory
-                stackOffset += 4; index--;
-                argSaveOffset -= 4;
-                declare( SP, HClass.Void );
-                Util.assert(temp instanceof TwoWordTemp);
-                emit(new InstrMEM( instrFactory, ROOT,
-                                   "sw `s0h, " + argSaveOffset + "(`s1)",
-                                   new Temp[]{ SP },
-                                   new Temp[]{ temp, SP })); 
-                stackOffset += 4; index--;
-                argSaveOffset -=4;
-                declare( SP, HClass.Void );
-                emit(new InstrMEM( instrFactory, ROOT,
-                                   "sw `s0l, " + argSaveOffset + "(`s1)",
-                                   new Temp[]{ SP },
-                                   new Temp[]{ temp, SP }));
-                break;
-             }
-          } else {
-             // arg is one word
-             if (index < 4) {
-                Temp reg = getArgReg(index--); 
-                declare( reg, td, elist.head );
-                emitMOVE( ROOT, "move `d0, `s0", reg, temp);
+       int index = 0;
+       for (TempList tl = tlist; tl != null; tl=tl.tail,
+               elist=elist.tail, ++index) {
+          switch(stack.argWhere(ROOT, index)) {
+          case StackInfo.REGISTER:
+             if(isDoubleWord(elist.head)) {
+                Temp reg1 = stack.argReg(ROOT, index); 
+                Temp reg2 = stack.argSecondReg( ROOT, index); 
+                declare( reg1, HClass.Void);
+                declare( reg2, HClass.Void);
+                Util.assert(tl.head instanceof TwoWordTemp);
+                emit( ROOT, "move `d0, `s0h", reg1, tl.head );
+                emit( ROOT, "move `d0, `s0l", reg2, tl.head );
              } else {
-                stackOffset += 4; index--;
-                argSaveOffset -= 4;
+                Temp reg = stack.argReg( ROOT, index); 
+                declare( reg, td, elist.head );
+                emitMOVE( ROOT, "move `d0, `s0", reg, tl.head );
+             }
+          break;
+          case StackInfo.STACK:
+             if(isDoubleWord(elist.head)) {
+                declare (SP, HClass.Void);
+                Util.assert(tl.head instanceof TwoWordTemp);
+                emit(new InstrMEM( instrFactory, ROOT,
+                                   "sw `s0h, " 
+                                   + stack.argOffset(ROOT, index) 
+                                   + "(`s1)",
+                                   new Temp[]{ SP },
+                                   new Temp[]{ tl.head, SP })); 
+                emit(new InstrMEM( instrFactory, ROOT,
+                                   "sw `s0l, " 
+                                   + stack.argSecondOffset(ROOT, index) 
+                                   + "(`s1)",
+                                   new Temp[]{ SP },
+                                   new Temp[]{ tl.head, SP })); 
+             } else {
                 declare( SP, HClass.Void );
                 emit(new InstrMEM(
                    instrFactory, ROOT,
-                   "sw `s0, " + argSaveOffset + "(`s1)",
+                   "sw `s0, " + stack.argOffset(ROOT, index)
+                   + "(`s1)",
                    new Temp[]{ SP },
-                   new Temp[]{ temp, SP }));
+                   new Temp[]{ tl.head, SP }));
              }
+             break;
+          case StackInfo.REGSTACKSPLIT:
+             Util.assert(tl.head instanceof TwoWordTemp);
+             // gcc and cc (mipspro) on mips don't do this
+             Util.assert(false);
+             break;
+          default:
+             Util.assert(false);
           }
        }
-       Util.assert( argSaveOffset == 16 );
-       // Add offset for ra and fp to frame, plus an extra four since
-       // we need to point below the word stored at the current offset
-       stackOffset += 3 * 4;
-       Util.assert(index==-1);
+
        declareCALL();
        if (ROOT.getRetval()!=null) declare( v0, td, ROOT.getRetval() );
-       return new CallState(stackOffset, callUses);
+       return new CallState(callUses);
     }
     /** Make a handler stub. */
     private void emitHandlerStub(INVOCATION ROOT, Temp retex, Label handler) {
@@ -740,14 +719,6 @@ import java.util.Iterator;
     private void emitCallEpilogue(INVOCATION ROOT, boolean isNative,
                                   Temp retval, HClass type, 
                                   CallState cs) {
-       // this will break if stackOffset > 255 (ie >63 args)
-       Util.assert( cs.stackOffset < 256, 
-                    "Update the spec file to handle large SP offsets");
-       if (cs.stackOffset!=0) { // optimize for common case.
-          declare ( SP, HClass.Void );
-          // This removes the callee's frame on an exeption.
-          //emit( ROOT, "add `d0, `s0, " + cs.stackOffset, SP, SP );
-       }
        if (ROOT.getRetval()==null) {
           // this is a void method.  don't bother to emit move.
        } else if (isNative && (!soft_float) &&
@@ -780,29 +751,6 @@ import java.util.Iterator;
        }  
     }
 
-    private boolean Needs_Callee_Stack_Space(Temp rX) {
-       Util.assert(regfile.isRegister(rX));
-       if (rX.equals(v0)
-           || rX.equals(v1)
-           || rX.equals(a0)
-           || rX.equals(a1)
-           || rX.equals(a2)
-           || rX.equals(a3)
-           || rX.equals(t0)
-           || rX.equals(t1)
-           || rX.equals(t2)
-           || rX.equals(t3)
-           || rX.equals(t4)
-           || rX.equals(t5)
-           || rX.equals(t6)
-           || rX.equals(t7)
-           || rX.equals(t8)
-           || rX.equals(t9))
-          return false; // caller save registers.
-          if (rX.equals(LR)||rX.equals(FP)||rX.equals(SP))
-             return false; // always saved.
-          return true;
-    }
     private void LayoutInstr(Instr anchor, Instr[] instrs) {
        if(instrs.length == 0) return;
        instrs[0].layout(anchor.getPrev(), anchor);
@@ -817,24 +765,23 @@ import java.util.Iterator;
        InstrFactory inf = instrFactory; // convenient abbreviation.
        Label methodlabel = nameMap.label(hm);
 
+       // Really we should be passed a SortedSet, but since we aren't,
+       // we will make our own
+//       Collections.sort(Arrays.asList(usedRegArray), regComp);
        Temp[] usedRegArray =
           (Temp[]) usedRegisters.toArray(new Temp[usedRegisters.size()]);
-       Collections.sort(Arrays.asList(usedRegArray), regComp);
-       int nregs = 0;
-       for (int i=0; i<usedRegArray.length; i++) {
-          if(Needs_Callee_Stack_Space(usedRegArray[i])) nregs++;
+       ArrayList usedRegArrList = new ArrayList(usedRegisters.size());
+       for(int i = 0; i < usedRegisters.size(); ++i) {
+          usedRegArrList.add(usedRegArray[i]);
        }
+       Collections.sort(usedRegArrList, regComp);
+       
+       stack.regAllocUsedRegs(usedRegArrList);
+       // XXX This should be stackstpace - usedRegArrList.size(), but
+       // I am getting spill requests for saved registers
+       stack.regAllocLocalWords(stackspace);
+       int nregs = stack.calleeSaveTotal();
 
-       ////// Now calculate how large the stack frame will be
-       // Make room for save area for arg registers,  FP & LR
-       // Since we don't know the max number of args for any function
-       // called by this function, allocate space for 4 arg regs all
-       // the time.
-       stackspace += 6;
-       // Add stackspace for saved regs
-       stackspace += nregs;
-       int ra_off = stackspace*4 - 4;
-       int fp_off = ra_off - 4;
        // find method entry/exit stubs
        Instr last=instr;
        for (Instr il = instr; il!=null; il=il.getNext()) {
@@ -846,29 +793,28 @@ import java.util.Iterator;
                                    methodlabel.name+",#function"),
                 new InstrLABEL(inf, il, methodlabel.name+":", methodlabel),
                 new InstrDIRECTIVE(inf, il, ".frame $fp," +
-                                   stackspace * 4 + ", $31"),
-                new Instr(inf, il, "subu $sp, "+(stackspace*4), null, null),
-                new Instr(inf, il, "sw $31, " + ra_off +"($sp)", null,null),
-                new Instr(inf, il, "sw $30, " + fp_off +"($sp)", null, null),
-                new Instr(inf, il, "addu $30, $sp, "+(stackspace*4),
+                                   stack.frameSize() + ", $31"),
+                new Instr(inf, il, "subu $sp, "+ stack.frameSize(), null, null),
+                new Instr(inf, il, "sw $31, " + stack.getRAOffset() +"($sp)", 
+                          null,null),
+                new Instr(inf, il, "sw $30, " + stack.getFPOffset() +"($sp)", 
+                          null, null),
+                new Instr(inf, il, "addu $30, $sp, "+ stack.frameSize(),
                           null, null),
              };
              ////// Now create instrs to save non-trivial callee saved regs
-             Instr[] callee_save = new Instr [nregs];
+             Instr[] callee_save = new Instr [stack.calleeSaveTotal()];
              if(nregs > 0) {
                 // make list of instructions saving callee-save registers we
                 // gotta save.
                 int j = 0;
-                int save_off = fp_off - 4;
-                for (int i=0; i <usedRegArray.length; i++) {
-                   if(Needs_Callee_Stack_Space(usedRegArray[i])) {
-                      callee_save[j++] = 
-                         new Instr(inf, il, "sw " 
-                                   + usedRegArray[i] + ", " + 
-                                   save_off + "($sp)  # callee save", 
-                                   null, null);
-                      save_off -= 4;
-                   }
+                for (int i=0; i < stack.calleeSaveTotal(); i++) {
+                   callee_save[j++] = 
+                      new Instr(inf, il, "sw " 
+                                + stack.calleeReg(i) + ", "
+                                + stack.calleeSaveOffset(i)
+                                + "($sp)        # callee save", 
+                                null, null);
                 }
              }
              /// Layout function entry
@@ -888,25 +834,22 @@ import java.util.Iterator;
           }
           if (il instanceof InstrEXIT) { // exit stub
              Instr[] exit_instr = {
-                new Instr(inf, il, "lw $30, " + fp_off + "($sp)",null, null),
-                new Instr(inf, il, "lw $31, " + ra_off + "($sp)", null, null),
-                new Instr(inf, il, "addu $sp, " + (stackspace*4),null, null),
+                new Instr(inf, il, "lw $30, " + stack.getFPOffset() + "($sp)",null, null),
+                new Instr(inf, il, "lw $31, " + stack.getRAOffset() + "($sp)", null, null),
+                new Instr(inf, il, "addu $sp, " + stack.frameSize(),null, null),
                 new Instr(inf, il, "j  $31  # return", null, null),
              };
              Instr[] callee_restore = new Instr [nregs];
-             if(nregs > 0) {
+             if(stack.calleeSaveTotal() > 0) {
                 // restore the regs we saved on entry
-                int save_off = fp_off - 4;
                 int j = 0;
-                for (int i=0; i <usedRegArray.length; i++) {
-                   if(Needs_Callee_Stack_Space(usedRegArray[i])) {
-                      callee_restore[j++] = 
-                         new Instr(inf, il, "lw " 
-                                   + usedRegArray[i] + ", " + 
-                                   save_off + "($sp)  # callee restore", 
-                                   null, null);
-                      save_off -= 4;
-                   }
+                for (int i=0; i < stack.calleeSaveTotal(); i++) {
+                   callee_restore[j++] = 
+                      new Instr(inf, il, "lw " 
+                                + stack.calleeReg(i) + ", "
+                                + stack.calleeSaveOffset(i) 
+                                + "($sp)        # callee restore", 
+                                null, null);
                 }
              }
 
@@ -974,6 +917,9 @@ import java.util.Iterator;
        return instr;
     }
 
+    public StackInfo getStackInfo() {
+      return stack;
+    }
     // now define our little InstrENTRY and InstrEXIT sub-types.
     private class InstrENTRY extends Instr {
        public InstrENTRY(InstrFactory inf, HCodeElement src) {
@@ -997,10 +943,14 @@ import java.util.Iterator;
 %start with %{
 	// *** METHOD PROLOGUE ***
 	this.instrFactory = inf; // XXX this should probably move to superclass
+    // Create a stack object and let it know about all calls made by
+    // this method.  Shouldn't this be in the constructor?
+    this.stack = new StackInfo(regfile);
+    collectCallInfo(code);
 }%
 %end with %{
        // *** METHOD EPILOGUE *** 
-
+   
 }%
     /* this comment will be eaten by the .spec processor (unlike comments above) */
 	
@@ -1375,7 +1325,7 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(BINOP<p>(ADD, j, CONST<i,p>(c))), NAME(src))
                    "la `d0, " + src,
                    new Temp[]{ extra }, null ));
    emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, "
-                     + c + "(`s0)",
+                     + c + "(`s1)        # tmp + c <= NAME(src) ",
                      null, new Temp[]{ extra, j }));
 }%
 
@@ -1385,7 +1335,8 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(dst), NAME(src)) %extra<i>{ extra }/*void*/
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + src,
                    new Temp[]{ extra }, null ));
-   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, 0(`s1)",
+   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix 
+                     +" `s0, (`s1)        # dst <= NAME(src)",
                      null, new Temp[] {extra, dst}));
 }%
 MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), src) %extra<i>{ extra }/*void*/
@@ -1394,7 +1345,8 @@ MOVE(MEM<s:8,u:8,s:16,u:16,p,i,f>(NAME(dst)), src) %extra<i>{ extra }/*void*/
    emit(new Instr( instrFactory, ROOT,
                    "la `d0, " + dst,
                    new Temp[]{ extra }, null ));
-   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix +" `s0, (`s1)",
+   emit(new InstrMEM(instrFactory, ROOT, "s" + suffix 
+                     +" `s0, (`s1)        # NAME(dst) <= src ",
                      null, new Temp[] {src, extra}));
 }%
 
@@ -1592,14 +1544,10 @@ EXPR(e) %{
 /* Conditional jumps and jumps */
 
 CJUMP(test, iftrue, iffalse) %{
-   Instr j1 = emit( ROOT, "beq `s0, 0, `L0",
-                    null, new Temp[]{ test },
-                    new Label[]{ iftrue });
-   // emitDELAYSLOT( ROOT );
-   // Package the delay slot nop with the fall through branch so they
-   // can both be eliminated together
-   Instr j2 = emitJUMP( ROOT, "b `L0", iffalse );
-   //Instr j2 = emitJUMP( ROOT, "b `L0; nop", iffalse );
+   emit( ROOT, "beq `s0, 0, `L0",
+         null, new Temp[]{ test },
+         new Label[]{ iffalse });
+   emitJUMP( ROOT, "b `L0", iftrue );
 }%
 
 CJUMP(BINOP(cmpop, j, k), iftrue, iffalse)
@@ -1609,11 +1557,7 @@ CJUMP(BINOP(cmpop, j, k), iftrue, iffalse)
 %{
    emit( ROOT, cmpOp2BrStr(cmpop) + " `s0, `s1, `L0",
          null, new Temp[] { j , k }, new Label[] { iftrue });
-   //emitDELAYSLOT( ROOT );
-   // Package the delay slot nop with the fall through branch so they
-   // can both be eliminated together
    emitJUMP( ROOT, "b `L0", iffalse );
-   //emitJUMP( ROOT, "b `L0; nop", iffalse );
 }%
 
 CJUMP(BINOP(cmpop, j, CONST<i,p>(c)), iftrue, iffalse)
@@ -1630,32 +1574,25 @@ CJUMP(BINOP(cmpop, j, CONST<i,p>(c)), iftrue, iffalse)
             + (c==null ? (" # null ") : ""),
             null, new Temp[] { j }, new Label[] { iftrue });
    }
-   //emitDELAYSLOT( ROOT );
-   // Package the delay slot nop with the fall through branch so they
-   // can both be eliminated together
    emitJUMP( ROOT, "b `L0", iffalse );
-   //   emitJUMP( ROOT, "b `L0; nop", iffalse );
 }%
 
 JUMP(NAME(l)) %{ // direct jump
     //FSK   emitNoFall (ROOT, "j " + l + "", null, null, new Label[] { l });
    emitJUMP(ROOT, "j " + l + "", l );
-   //emitDELAYSLOT( ROOT );
 }%
 
 JUMP(e) %{
     List labelList = LabelList.toList( ROOT.targets );
-    Instr j = 
-       emit(new Instr( instrFactory, ROOT, 
-                       "j `s0",
-                       new Temp[]{ },
-                       new Temp[]{ e },
-                       false, labelList ) {
-             public boolean hasModifiableTargets(){ 
-                return false; 
-             }
-          });
-    //emitDELAYSLOT( ROOT );
+    emit(new Instr( instrFactory, ROOT, 
+                    "j `s0",
+                    new Temp[]{ },
+                    new Temp[]{ e },
+                    false, labelList ) {
+          public boolean hasModifiableTargets(){ 
+             return false; 
+          }
+       });
 }%
 
 
@@ -1740,7 +1677,7 @@ CALL(retval, retex, func, arglist, handler)
          new Temp[]{ LR }, null );
    // call uses 'func' as `s0
    cs.callUses.add(0, func);
-   emitCallNoFall( ROOT, cs.prependSPOffset("j `s0 "),
+   emitCallNoFall( ROOT, "j `s0 ",
                    call_def_full,
                    (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
                    new Label[] { rlabel, elabel } );
@@ -1764,7 +1701,7 @@ CALL(retval, retex, NAME(funcLabel), arglist, handler)
    declareCALLDefFull();
    emit2(ROOT, "la `d0, " + rlabel + " # funky call",
          new Temp[]{ LR }, null );
-   emitCallNoFall( ROOT, cs.prependSPOffset("j "+funcLabel ),
+   emitCallNoFall( ROOT, "j "+funcLabel,
                    call_def_full,
                    (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
                    new Label[] { rlabel, elabel } );
@@ -1786,7 +1723,7 @@ NATIVECALL(retval, func, arglist) %{
     // call uses 'func' as `s0
    cs.callUses.add(0, func);
    declareCALLDefFull();
-   emitNativeCall( ROOT, cs.prependSPOffset("jal `s0"),
+   emitNativeCall( ROOT, "jal `s0",
                    call_def_full,
                    (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
                    true, null);
@@ -1803,7 +1740,7 @@ NATIVECALL(retval, NAME(funcLabel), arglist)
    CallState cs = emitCallPrologue(ROOT, arglist,
                                    code.getTreeDerivation());
    declareCALLDefFull();
-   emitNativeCall( ROOT, cs.prependSPOffset("jal " + funcLabel),
+   emitNativeCall( ROOT, "jal " + funcLabel,
                    call_def_full,
                    (Temp[]) cs.callUses.toArray(new Temp[cs.callUses.size()]),
                    true, null);
@@ -1907,7 +1844,7 @@ SEGMENT(STATIC_OBJECTS) %{
 }%
 
 SEGMENT(STATIC_PRIMITIVES) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data ": (mipspro_assem ? ".section .flex.static_primitive,1, 3, 4, 16" : ".section .flex.static_primitive"));
+   emitDIRECTIVE( ROOT, !is_elf?".data ": (mipspro_assem ? ".section .flex.static_primitives,1, 3, 4, 16" : ".section .flex.static_primitives"));
 }%
 
 SEGMENT(STRING_CONSTANTS) %{
@@ -1931,7 +1868,7 @@ SEGMENT(GC_INDEX) %{
 }%
 
 SEGMENT(TEXT) %{
-   emitDIRECTIVE( ROOT, !is_elf?".data": (mipspro_assem ? ".section .flex.funcptrs,1, 3, 4, 16" : ".section .flex.funcptrs"));
+   emitDIRECTIVE( ROOT, !is_elf?".text": (mipspro_assem ? ".section .text,1, 7, 4, 16" : ".section .text"));
 }%
 
 SEGMENT(ZERO_DATA) %{
