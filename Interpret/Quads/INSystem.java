@@ -14,21 +14,21 @@ import java.util.Properties;
  * <code>java.lang.System</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INSystem.java,v 1.1.2.6 1999-08-07 06:59:53 cananian Exp $
+ * @version $Id: INSystem.java,v 1.1.2.6.6.1 2000-01-12 00:42:42 cananian Exp $
  */
-final class INSystem extends HCLibrary {
+final class INSystem {
     static final void register(StaticState ss) {
-	ss.register(currentTimeMillis());
-	ss.register(initProperties());
-	ss.register(arraycopy());
-	ss.register(setIn0());
-	ss.register(setOut0());
-	ss.register(setErr0());
+	ss.register(currentTimeMillis(ss));
+	ss.register(initProperties(ss));
+	ss.register(arraycopy(ss));
+	ss.register(setIn0(ss));
+	ss.register(setOut0(ss));
+	ss.register(setErr0(ss));
 	// JDK 1.2 only
-	try { ss.register(registerNatives()); } catch (NoSuchMethodError e) { }
+	try { ss.register(registerNatives(ss)); } catch (NoSuchMethodError e){}
     }
-    private static final NativeMethod currentTimeMillis() {
-	final HMethod hm=HCsystem.getMethod("currentTimeMillis","()J");
+    private static final NativeMethod currentTimeMillis(StaticState ss0) {
+	final HMethod hm=ss0.HCsystem.getMethod("currentTimeMillis","()J");
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -36,11 +36,13 @@ final class INSystem extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod initProperties() {
+    private static final NativeMethod initProperties(StaticState ss0) {
 	final HMethod HMput =
-	    HCproperties.getMethod("put", new HClass[]{ HCobject, HCobject });
+	    ss0.HCproperties.getMethod("put", new HClass[]{ ss0.HCobject,
+							    ss0.HCobject });
 	final HMethod hm =
-	    HCsystem.getMethod("initProperties", new HClass[]{ HCproperties });
+	    ss0.HCsystem.getMethod("initProperties",
+				   new HClass[]{ ss0.HCproperties });
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) 
@@ -60,22 +62,22 @@ final class INSystem extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod arraycopy() {
+    private static final NativeMethod arraycopy(StaticState ss0) {
 	final HMethod hm =
-	    HCsystem.getMethod("arraycopy",
-			       new HClass[] { HCobject, HClass.Int,
-					      HCobject, HClass.Int,
-					      HClass.Int });
+	    ss0.HCsystem.getMethod("arraycopy",
+				   new HClass[] { ss0.HCobject, HClass.Int,
+						  ss0.HCobject, HClass.Int,
+						  HClass.Int });
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    private InterpretedThrowable ase(StaticState ss) 
 		throws InterpretedThrowable {
-		ObjectRef obj = ss.makeThrowable(HCarraystoreE);
+		ObjectRef obj = ss.makeThrowable(ss.HCarraystoreE);
 		return new InterpretedThrowable(obj, ss);
 	    }
 	    private InterpretedThrowable aie(StaticState ss)
 		throws InterpretedThrowable {
-		ObjectRef obj = ss.makeThrowable(HCarrayindexE);
+		ObjectRef obj = ss.makeThrowable(ss.HCarrayindexE);
 		return new InterpretedThrowable(obj, ss);
 	    }
 	    Object invoke(StaticState ss, Object[] params)
@@ -109,49 +111,49 @@ final class INSystem extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod setIn0() {
+    private static final NativeMethod setIn0(StaticState ss0) {
 	final HMethod hm =
-	    HCsystem.getMethod("setIn0","(Ljava/io/InputStream;)V");
+	    ss0.HCsystem.getMethod("setIn0","(Ljava/io/InputStream;)V");
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
 		// set final var behind compiler's back.
 		ObjectRef obj = (ObjectRef) params[0];
-		ss.update(HCsystem.getField("in"), obj);
+		ss.update(ss.HCsystem.getField("in"), obj);
 		return null;
 	    }
 	};
     }
-    private static final NativeMethod setOut0() {
+    private static final NativeMethod setOut0(StaticState ss0) {
 	final HMethod hm =
-	    HCsystem.getMethod("setOut0","(Ljava/io/PrintStream;)V");
+	    ss0.HCsystem.getMethod("setOut0","(Ljava/io/PrintStream;)V");
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
 		// set final var behind compiler's back.
 		ObjectRef obj = (ObjectRef) params[0];
-		ss.update(HCsystem.getField("out"), obj);
+		ss.update(ss.HCsystem.getField("out"), obj);
 		return null;
 	    }
 	};
     }
-    private static final NativeMethod setErr0() {
+    private static final NativeMethod setErr0(StaticState ss0) {
 	final HMethod hm =
-	    HCsystem.getMethod("setErr0","(Ljava/io/PrintStream;)V");
+	    ss0.HCsystem.getMethod("setErr0","(Ljava/io/PrintStream;)V");
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
 		// set final var behind compiler's back.
 		ObjectRef obj = (ObjectRef) params[0];
-		ss.update(HCsystem.getField("err"), obj);
+		ss.update(ss.HCsystem.getField("err"), obj);
 		return null;
 	    }
 	};
     }
     // JDK 1.2 only: System.registerNatives()
-    private static final NativeMethod registerNatives() {
+    private static final NativeMethod registerNatives(StaticState ss0) {
 	final HMethod hm =
-	    HCsystem.getMethod("registerNatives",new HClass[0]);
+	    ss0.HCsystem.getMethod("registerNatives",new HClass[0]);
 	return new NullNativeMethod(hm);
     }
 }

@@ -4,51 +4,65 @@
 package harpoon.Interpret.Quads;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.Linker;
 
 /**
  * <code>HCLibrary</code> is a simple superclass designed to bring the
  * <code>HClass</code> objects for common classes into class scope.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HCLibrary.java,v 1.1.2.6 1999-11-13 06:25:07 cananian Exp $
+ * @version $Id: HCLibrary.java,v 1.1.2.6.2.1 2000-01-12 00:42:42 cananian Exp $
  */
-class HCLibrary  {
-    static final HClass 
-	HCcharA = HClass.forDescriptor("[C"),
-	HCclass = HClass.forName("java.lang.Class"),
-	HCclassA = HClass.forDescriptor("[Ljava/lang/Class;"),
-        HCcloneable = HClass.forName("java.lang.Cloneable"),
-	HCdouble = HClass.forName("java.lang.Double"),
-	HCfloat = HClass.forName("java.lang.Float"),
-	HCobject = HClass.forName("java.lang.Object"),
-	HCruntime = HClass.forName("java.lang.Runtime"),
-	HCsmanager = HClass.forName("java.lang.SecurityManager"),
-	HCstring = HClass.forName("java.lang.String"),
-	HCstringA = HClass.forDescriptor("[Ljava/lang/String;"),
-	HCsystem = HClass.forName("java.lang.System"),
-	HCthrowable = HClass.forName("java.lang.Throwable"),
-	HCfile = HClass.forName("java.io.File"),
-	HCfiledesc = HClass.forName("java.io.FileDescriptor"),
-	HCfistream = HClass.forName("java.io.FileInputStream"),
-	HCfostream = HClass.forName("java.io.FileOutputStream"),
-	HCrafile = HClass.forName("java.io.RandomAccessFile"),
-	HCproperties = HClass.forName("java.util.Properties"),
-	HCarraystoreE = HClass.forName("java.lang.ArrayStoreException"),
-	HCarrayindexE = HClass.forName("java.lang.ArrayIndexOutOfBounds"+
-				       "Exception"),
-	HCclassnotfoundE = HClass.forName("java.lang.ClassNotFoundException"),
-	HCillegalaccessE = HClass.forName("java.lang.IllegalAccessException"),
-	HCinstantiationE = HClass.forName("java.lang.InstantiationException"),
-	HCnullpointerE = HClass.forName("java.lang.NullPointerException"),
-	HCnegativearrayE = HClass.forName("java.lang.NegativeArraySize"+
-					  "Exception"),
-	HCarithmeticE = HClass.forName("java.lang.ArithmeticException"),
-	HCclasscastE = HClass.forName("java.lang.ClassCastException"),
-        HCclonenotsupportedE = HClass.forName("java.lang.CloneNotSupported"+
-					      "Exception"),
-	HCioE = HClass.forName("java.io.IOException"),
-	HCsecurityE = HClass.forName("java.lang.SecurityException"),
-	HCillegalaccessErr = HClass.forName("java.lang.IllegalAccessError"),
-	HCnosuchmethodErr = HClass.forName("java.lang.NoSuchMethodError"),
-	HCunsatisfiedlinkErr=HClass.forName("java.lang.UnsatisfiedLinkError");
+abstract class HCLibrary  {
+    final HClass HCbyteA, HCcharA, HCclass, HCclassA, HCcloneable, HCdouble;
+    final HClass HCfloat, HCobject, HCruntime, HCsmanager, HCstring;
+    final HClass HCstringA, HCsystem, HCthrowable, HCfile, HCfiledesc;
+    final HClass HCfistream, HCfostream, HCrafile, HCproperties;
+    final HClass HCarraystoreE, HCarrayindexE, HCclassnotfoundE;
+    final HClass HCillegalaccessE, HCinstantiationE, HCnullpointerE;
+    final HClass HCnegativearrayE, HCarithmeticE, HCclasscastE;
+    final HClass HCclonenotsupportedE, HCioE, HCsecurityE;
+    final HClass HCillegalaccessErr, HCnosuchmethodErr;
+    final HClass HCunsatisfiedlinkErr;
+
+    HCLibrary(Linker linker) {
+	HCbyteA = linker.forDescriptor("[B");
+	HCcharA = linker.forDescriptor("[C");
+	HCclass = linker.forName("java.lang.Class");
+	HCclassA = linker.forDescriptor("[Ljava/lang/Class;");
+        HCcloneable = linker.forName("java.lang.Cloneable");
+	HCdouble = linker.forName("java.lang.Double");
+	HCfloat = linker.forName("java.lang.Float");
+	HCobject = linker.forName("java.lang.Object");
+	HCruntime = linker.forName("java.lang.Runtime");
+	HCsmanager = linker.forName("java.lang.SecurityManager");
+	HCstring = linker.forName("java.lang.String");
+	HCstringA = linker.forDescriptor("[Ljava/lang/String;");
+	HCsystem = linker.forName("java.lang.System");
+	HCthrowable = linker.forName("java.lang.Throwable");
+	HCfile = linker.forName("java.io.File");
+	HCfiledesc = linker.forName("java.io.FileDescriptor");
+	HCfistream = linker.forName("java.io.FileInputStream");
+	HCfostream = linker.forName("java.io.FileOutputStream");
+	HCrafile = linker.forName("java.io.RandomAccessFile");
+	HCproperties = linker.forName("java.util.Properties");
+	HCarraystoreE = linker.forName("java.lang.ArrayStoreException");
+	HCarrayindexE = linker.forName("java.lang.ArrayIndexOutOfBounds"+
+				       "Exception");
+	HCclassnotfoundE = linker.forName("java.lang.ClassNotFoundException");
+	HCillegalaccessE = linker.forName("java.lang.IllegalAccessException");
+	HCinstantiationE = linker.forName("java.lang.InstantiationException");
+	HCnullpointerE = linker.forName("java.lang.NullPointerException");
+	HCnegativearrayE = linker.forName("java.lang.NegativeArraySize"+
+					  "Exception");
+	HCarithmeticE = linker.forName("java.lang.ArithmeticException");
+	HCclasscastE = linker.forName("java.lang.ClassCastException");
+        HCclonenotsupportedE = linker.forName("java.lang.CloneNotSupported"+
+					      "Exception");
+	HCioE = linker.forName("java.io.IOException");
+	HCsecurityE = linker.forName("java.lang.SecurityException");
+	HCillegalaccessErr = linker.forName("java.lang.IllegalAccessError");
+	HCnosuchmethodErr = linker.forName("java.lang.NoSuchMethodError");
+	HCunsatisfiedlinkErr=linker.forName("java.lang.UnsatisfiedLinkError");
+    }
 }

@@ -12,19 +12,19 @@ import harpoon.ClassFile.HMethod;
  * <code>java.lang.Runtime</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INRuntime.java,v 1.1.2.3 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: INRuntime.java,v 1.1.2.3.6.1 2000-01-12 00:42:42 cananian Exp $
  */
-public class INRuntime extends HCLibrary {
+public class INRuntime {
     static final void register(StaticState ss) {
-	ss.register(privateConstructor());
-	ss.register(gc());
-	ss.register(runFinalization());
-	ss.register(freeMemory());
-	ss.register(totalMemory());
+	ss.register(privateConstructor(ss));
+	ss.register(gc(ss));
+	ss.register(runFinalization(ss));
+	ss.register(freeMemory(ss));
+	ss.register(totalMemory(ss));
     }
     // the runtime for the interpreter is identical to the current runtime.
-    private static final NativeMethod privateConstructor() {
-	final HMethod hm = HCruntime.getConstructor(new HClass[0]);
+    private static final NativeMethod privateConstructor(StaticState ss0) {
+	final HMethod hm = ss0.HCruntime.getConstructor(new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -34,8 +34,8 @@ public class INRuntime extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod gc() {
-	final HMethod hm=HCruntime.getMethod("gc","()V");
+    private static final NativeMethod gc(StaticState ss0) {
+	final HMethod hm=ss0.HCruntime.getMethod("gc","()V");
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -46,8 +46,8 @@ public class INRuntime extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod runFinalization() {
-	final HMethod hm=HCruntime.getMethod("runFinalization","()V");
+    private static final NativeMethod runFinalization(StaticState ss0) {
+	final HMethod hm=ss0.HCruntime.getMethod("runFinalization","()V");
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -58,8 +58,8 @@ public class INRuntime extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod freeMemory() {
-	final HMethod hm=HCruntime.getMethod("freeMemory","()J");
+    private static final NativeMethod freeMemory(StaticState ss0) {
+	final HMethod hm=ss0.HCruntime.getMethod("freeMemory","()J");
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
@@ -69,8 +69,8 @@ public class INRuntime extends HCLibrary {
 	    }
 	};
     }
-    private static final NativeMethod totalMemory() {
-	final HMethod hm=HCruntime.getMethod("totalMemory","()J");
+    private static final NativeMethod totalMemory(StaticState ss0) {
+	final HMethod hm=ss0.HCruntime.getMethod("totalMemory","()J");
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {

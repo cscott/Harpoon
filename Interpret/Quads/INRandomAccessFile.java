@@ -14,23 +14,24 @@ import java.io.IOException;
  * methods in <code>java.io.RandomAccessFile</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INRandomAccessFile.java,v 1.1.2.4 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: INRandomAccessFile.java,v 1.1.2.4.6.1 2000-01-12 00:42:42 cananian Exp $
  */
-final class INRandomAccessFile extends HCLibrary {
+final class INRandomAccessFile {
     static final void register(StaticState ss) {
-	ss.register(open());
-	ss.register(read());
-	ss.register(readBytes());
-	ss.register(write());
-	ss.register(writeBytes());
-	ss.register(getFilePointer());
-	ss.register(seek());
-	ss.register(length());
-	ss.register(close());
+	ss.register(open(ss));
+	ss.register(read(ss));
+	ss.register(readBytes(ss));
+	ss.register(write(ss));
+	ss.register(writeBytes(ss));
+	ss.register(getFilePointer(ss));
+	ss.register(seek(ss));
+	ss.register(length(ss));
+	ss.register(close(ss));
     }
-    private static final NativeMethod open() {
+    private static final NativeMethod open(StaticState ss0) {
 	final HMethod hm =
-	    HCrafile.getMethod("open", new HClass[] {HCstring,HClass.Boolean});
+	    ss0.HCrafile.getMethod("open",
+				   new HClass[] {ss0.HCstring,HClass.Boolean});
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -43,23 +44,23 @@ final class INRandomAccessFile extends HCLibrary {
 		    obj.putClosure(new RandomAccessFile(name,
 							writeable?"rw":"r"));
 		    // mark file descriptor to indicate it is 'valid'.
-		    HField hf0 = HCrafile.getField("fd");
-		    HField hf1 = HCfiledesc.getField("fd");
+		    HField hf0 = ss.HCrafile.getField("fd");
+		    HField hf1 = ss.HCfiledesc.getField("fd");
 		    ((ObjectRef)obj.get(hf0)).update(hf1, new Integer(4));
 		    return null;
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		} catch (SecurityException e) {
-		    obj = ss.makeThrowable(HCsecurityE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCsecurityE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod read() {
+    private static final NativeMethod read(StaticState ss0) {
 	final HMethod hm =
-	    HCrafile.getMethod("read", "()I" );
+	    ss0.HCrafile.getMethod("read", "()I" );
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -69,15 +70,15 @@ final class INRandomAccessFile extends HCLibrary {
 		try {
 		    return new Integer(raf.read());
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod readBytes() {
+    private static final NativeMethod readBytes(StaticState ss0) {
 	final HMethod hm =
-	    HCrafile.getMethod("readBytes", "([BII)I" );
+	    ss0.HCrafile.getMethod("readBytes", "([BII)I" );
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -95,15 +96,15 @@ final class INRandomAccessFile extends HCLibrary {
 			ba.update(off+i, new Byte(b[i]));
 		    return new Integer(len);
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod write() {
+    private static final NativeMethod write(StaticState ss0) {
 	final HMethod hm =
-	    HCrafile.getMethod("write", "(I)V" );
+	    ss0.HCrafile.getMethod("write", "(I)V" );
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -115,15 +116,15 @@ final class INRandomAccessFile extends HCLibrary {
 		    raf.write(b);
 		    return null;
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod writeBytes() {
+    private static final NativeMethod writeBytes(StaticState ss0) {
 	final HMethod hm =
-	    HCrafile.getMethod("writeBytes", "([BII)V" );
+	    ss0.HCrafile.getMethod("writeBytes", "([BII)V" );
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -142,15 +143,15 @@ final class INRandomAccessFile extends HCLibrary {
 		    raf.write(b, 0, len);
 		    return null;
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod getFilePointer() {
+    private static final NativeMethod getFilePointer(StaticState ss0) {
 	final HMethod hm =
-	    HCrafile.getMethod("getFilePointer", "()J" );
+	    ss0.HCrafile.getMethod("getFilePointer", "()J" );
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -160,15 +161,15 @@ final class INRandomAccessFile extends HCLibrary {
 		try {
 		    return new Long(raf.getFilePointer());
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod seek() {
+    private static final NativeMethod seek(StaticState ss0) {
 	final HMethod hm =
-	    HCrafile.getMethod("seek", "(J)V" );
+	    ss0.HCrafile.getMethod("seek", "(J)V" );
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -181,15 +182,15 @@ final class INRandomAccessFile extends HCLibrary {
 		    raf.seek(pos.longValue());
 		    return null;
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod length() {
+    private static final NativeMethod length(StaticState ss0) {
 	final HMethod hm =
-	    HCrafile.getMethod("length", "()J" );
+	    ss0.HCrafile.getMethod("length", "()J" );
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
@@ -199,29 +200,29 @@ final class INRandomAccessFile extends HCLibrary {
 		try {
 		    return new Long(raf.length());
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }
 	};
     }
-    private static final NativeMethod close() {
+    private static final NativeMethod close(StaticState ss0) {
 	final HMethod hm =
-	    HCrafile.getMethod("close", "()V" );
+	    ss0.HCrafile.getMethod("close", "()V" );
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params)
 		throws InterpretedThrowable {
 		ObjectRef obj = (ObjectRef) params[0];
 		RandomAccessFile raf = (RandomAccessFile) obj.getClosure();
-		HField hf = HCrafile.getField("fd");
+		HField hf = ss.HCrafile.getField("fd");
 		try {
 		    raf.close();
 		    obj.putClosure(null);
 		    obj.update(hf, null);
 		    return null;
 		} catch (IOException e) {
-		    obj = ss.makeThrowable(HCioE, e.getMessage());
+		    obj = ss.makeThrowable(ss.HCioE, e.getMessage());
 		    throw new InterpretedThrowable(obj, ss);
 		}
 	    }

@@ -12,21 +12,21 @@ import harpoon.ClassFile.HMethod;
  * methods in <code>java.io.File</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: INFile.java,v 1.1.2.1 1999-11-13 06:25:07 cananian Exp $
+ * @version $Id: INFile.java,v 1.1.2.1.2.1 2000-01-12 00:42:42 cananian Exp $
  */
-public class INFile extends HCLibrary {
+public class INFile {
     static final void register(StaticState ss) {
-	ss.register(isFile0());
+	ss.register(isFile0(ss));
     }
     // test existence of a file.
-    private static final NativeMethod isFile0() {
+    private static final NativeMethod isFile0(StaticState ss0) {
 	final HMethod hm =
-	    HCfile.getMethod("isFile0", new HClass[0]);
+	    ss0.HCfile.getMethod("isFile0", new HClass[0]);
 	return new NativeMethod() {
 	    HMethod getMethod() { return hm; }
 	    Object invoke(StaticState ss, Object[] params) {
 		ObjectRef obj = (ObjectRef) params[0];
-		HField hf = HCfile.getField("path");
+		HField hf = ss.HCfile.getField("path");
 		String path = ss.ref2str((ObjectRef)obj.get(hf));
 		return new Boolean(new java.io.File(path).isFile());
 	    }

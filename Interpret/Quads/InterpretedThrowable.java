@@ -11,7 +11,7 @@ import harpoon.Util.Util;
  * the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InterpretedThrowable.java,v 1.1.2.3 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: InterpretedThrowable.java,v 1.1.2.3.6.1 2000-01-12 00:42:42 cananian Exp $
  */
 final class InterpretedThrowable extends RuntimeException {
     final ObjectRef ex;
@@ -19,12 +19,10 @@ final class InterpretedThrowable extends RuntimeException {
     /** Creates a <code>InterpretedThrowable</code>. */
     InterpretedThrowable(ObjectRef ex, String[] st) {
         this.ex = ex; this.stackTrace = st;
-	Util.assert(ex.type.isInstanceOf(HClass.forDescriptor
-					 ("Ljava/lang/Throwable;")));
+	Util.assert(ex.type.isInstanceOf(ex.ss.HCthrowable));
     }
     InterpretedThrowable(ObjectRef ex, StaticState ss) {
 	this.ex = ex; this.stackTrace = ss.stackTrace();
-	Util.assert(ex.type.isInstanceOf(HClass.forDescriptor
-					 ("Ljava/lang/Throwable;")));
+	Util.assert(ex.type.isInstanceOf(ss.HCthrowable));
     }
 }
