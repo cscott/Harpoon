@@ -1,5 +1,7 @@
 #ifndef FILE_H
 #define FILE_H
+#define bool int
+
 
 #define BLOCKSIZE 8192
 #define NUMBLOCK 1024
@@ -84,15 +86,15 @@ struct block * mountdisk(char *filename);
 void unmountdisk(struct block *vptr);
 void closefile(struct block *ptr, int fd);
 bool writefile(struct block *ptr, int fd, char *s);
-int writefile(struct block *ptr, int fd, char *s, int len);
+int writefile2(struct block *ptr, int fd, char *s, int len);
 char readfile(struct block *ptr, int fd);
-int readfile(struct block *ptr, int fd, char *buf, int len);
+int readfile2(struct block *ptr, int fd, char *buf, int len);
 int openfile(struct block *ptr, char *filename);
 
 void printdirectory(struct block *ptr);
 void printfile(char *filename, struct block *ptr);
 void printinodeblock(struct block* ptr);
-
+unsigned long selfcheck2(struct block* d);
 
 #define MAXFILES 300
 struct filedesc {
@@ -101,4 +103,3 @@ struct filedesc {
   bool used;
 };
 #endif
-
