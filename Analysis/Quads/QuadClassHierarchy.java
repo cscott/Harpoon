@@ -43,7 +43,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.21 2000-10-17 03:22:27 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.22 2000-10-20 16:03:52 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -59,17 +59,13 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     }
     private final Set _unmod_methods = Collections.unmodifiableSet(methods);
 
-    /** Returns all usable/reachable children of an <code>HClass</code>. */
+    // inherit description from parent class.
     public Set children(HClass c) {
 	if (children.containsKey(c))
 	    return new ArraySet((HClass[]) children.get(c));
 	return Collections.EMPTY_SET;
     }
-    /** Returns the parent of an <code>HClass</code>. */
-    public HClass parent(HClass c) {
-	return c.getSuperclass();
-    }
-    /** Returns the set of all reachable/usable classes. */ 
+    // inherit description from parent class.
     public Set classes() {
 	if (_classes == null) {
 	    _classes = new HashSet();
@@ -142,6 +138,21 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     public QuadClassHierarchy(Linker linker,
 			      Collection roots, HCodeFactory hcf) {
 	this(linker); // initialize hclass objects.
+	if (hcf.getCodeName().equals(harpoon.IR.Quads.QuadWithTry.codename)) {
+	    // add 'implicit' exceptions to root set when analyzing QuadWithTry
+	    String[] implExcName = new String[] { 
+		"java.lang.ArrayStoreException",
+		"java.lang.NullPointerException",
+		"java.lang.ArrayIndexOutOfBoundsException",
+		"java.lang.NegativeArraySizeException",
+		"java.lang.ArithmeticException",
+		"java.lang.ClassCastException"
+	    };
+	    roots = new HashSet(roots); // make mutable
+	    for (int i=0; i<implExcName.length; i++)
+		roots.add(linker.forName(implExcName[i])
+			  .getConstructor(new HClass[0]));
+	}
 	// state.
 	// keeps track of methods which are actually invoked at some point.
 	Map classMethodsUsed = new HashMap(); // class->set map.
@@ -299,30 +310,14 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	HMethod ci = c.getClassInitializer();
 	if ((ci!=null) && (!done.contains(ci)))
 	    methodPush(ci, W, done, cmu, cmp);
-	// mark superclass.
-	HClass su = c.getSuperclass();
-	if (c.isArray()) { // deal with odd inheritance of array types.
-	    // Integer[][]->Number[][]->Object[][]->Object[]->Object
-	    HClass base = HClassUtil.baseClass(c);
-	    int dims = HClassUtil.dims(c);
-	    if (base.getSuperclass()!=null)
-		su = HClassUtil.arrayClass(c.getLinker(),//safe:c not primitive
-					   base.getSuperclass(), dims);
-	    else
-		su = HClassUtil.arrayClass(c.getLinker(), base, dims-1);
-	    // claz object mentions component type as well.
+	// mark component type of arrays
+	if (c.isArray())
 	    discoverClass(c.getComponentType(), W, done, ckc, cmu, cmp);
-	}
-	if (su!=null) { // maybe discover super class?
-	    discoverClass(su, W, done, ckc, cmu, cmp);
-	    Set knownChildren = (Set) ckc.get(su);
-	    knownChildren.add(c); // kC non-null after discoverClass.
-	}
-	// mark interfaces
-	HClass in[] = c.getInterfaces();
-	for (int i=0; i<in.length; i++) {
-	    discoverClass(in[i], W, done, ckc, cmu, cmp);// discover interface?
-	    Set knownChildren = (Set) ckc.get(in[i]);
+	// work through parents (superclass and interfaces)
+	for (Iterator it=parents(c).iterator(); it.hasNext(); ) {
+	    HClass p = (HClass) it.next();
+	    discoverClass(p, W, done, ckc, cmu, cmp);
+	    Set knownChildren = (Set) ckc.get(p);
 	    knownChildren.add(c); // kC non-null after discoverClass.
 	}
     }
@@ -341,9 +336,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	// new worklist.
 	WorkSet sW = new WorkSet();
 	// put superclass and interfaces on worklist.
-	HClass su = c.getSuperclass();
-	if (su!=null) sW.add(su);
-	sW.addAll(Arrays.asList(c.getInterfaces()));
+	sW.addAll(parents(c));
 
 	// first, wake up all methods of this class that were
 	// pending instantiation, and clear the pending list.
@@ -357,9 +350,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	    // pull a superclass or superinterface off the list.
 	    HClass s = (HClass) sW.pop();
 	    // add superclasses/interfaces of this one to local worklist
-	    su = s.getSuperclass();
-	    if (su!=null) sW.add(su);
-	    sW.addAll(Arrays.asList(s.getInterfaces()));
+	    sW.addAll(parents(s));
 	    // now add called methods of s to top-level worklist.
 	    Set calledMethods = new WorkSet((Set)cmu.get(s));
 	    calledMethods.addAll((Set)cmp.get(s));
