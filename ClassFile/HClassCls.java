@@ -15,7 +15,7 @@ import java.lang.reflect.Modifier;
  * unique names automagically on creation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClassCls.java,v 1.1.2.3 1998-12-11 06:54:51 cananian Exp $
+ * @version $Id: HClassCls.java,v 1.1.2.4 1999-01-22 10:46:33 cananian Exp $
  * @see harpoon.ClassFile.HClass
  */
 abstract class HClassCls extends HClass {
@@ -178,10 +178,13 @@ abstract class HClassCls extends HClass {
    * @return the superclass of the class represented by this object.
    */
   public HClass getSuperclass() {
-    if (superclass==null) return null;
-    HClass sc = superclass.actual();
-    superclass = sc;
-    return sc;
+    try {
+      return (HClass) superclass; // works if superclass is null, too.
+    } catch (ClassCastException e) { // superclass was ClassPointer.
+      HClass sc = superclass.actual(); // loads HClass from ClassPointer.
+      superclass = sc;
+      return sc;
+    }
   }
 
   /**
@@ -201,16 +204,17 @@ abstract class HClassCls extends HClass {
    * returns an array of length 0.
    * @return an array of interfaces implemented by this class.
    */
-  public HClass[] getInterfaces() {
+  public HClass[] getInterfaces() { // should really safeCopy?
     HClass[] in;
-    if (interfaces instanceof HClass[]) in = (HClass[]) interfaces;
-    else {
+    try {
+      in = (HClass[]) interfaces;
+    } catch (ClassCastException e) { // interfaces was HPointer.
       in = new HClass[interfaces.length];
       for (int i=0; i<in.length; i++)
 	in[i] = interfaces[i].actual();
       interfaces = in;
     }
-    return in;
+    return (HClass[]) Util.safeCopy(HClass.arrayFactory, in);
   }
 
   /**

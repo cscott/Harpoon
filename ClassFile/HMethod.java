@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.30.2.2 1998-12-11 06:54:52 cananian Exp $
+ * @version $Id: HMethod.java,v 1.30.2.3 1999-01-22 10:46:33 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -141,9 +141,13 @@ public abstract class HMethod implements HMember {
    * object.
    */
   public HClass getReturnType() {
-    HClass rt = returnType.actual();
-    returnType = rt;
-    return rt;
+    try {
+      return (HClass) returnType;
+    } catch (ClassCastException e) { // returnType was ClassPointer
+      HClass rt = returnType.actual();
+      returnType = rt;
+      return rt;
+    }
   }
 
   /**
@@ -166,8 +170,9 @@ public abstract class HMethod implements HMember {
    */
   public HClass[] getParameterTypes() {
     HClass[] pt;
-    if (parameterTypes instanceof HClass[]) pt = (HClass[]) parameterTypes;
-    else {
+    try {
+      pt = (HClass[]) parameterTypes;
+    } catch (ClassCastException e) { // parameterTypes was ClassPointer[]
       pt = new HClass[parameterTypes.length];
       for (int i=0; i<pt.length; i++)
 	pt[i] = parameterTypes[i].actual();
@@ -198,8 +203,9 @@ public abstract class HMethod implements HMember {
    */
   public HClass[] getExceptionTypes() {
     HClass[] et;
-    if (exceptionTypes instanceof HClass[]) et = (HClass[]) exceptionTypes;
-    else {
+    try {
+      et = (HClass[]) exceptionTypes;
+    } catch (ClassCastException e) { // exceptionTypes was ClassPointer
       et = new HClass[exceptionTypes.length];
       for (int i=0; i<et.length; i++)
 	et[i] = exceptionTypes[i].actual();

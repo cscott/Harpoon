@@ -13,7 +13,7 @@ import java.lang.reflect.Modifier;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.15.2.3 1998-12-11 06:54:51 cananian Exp $
+ * @version $Id: HField.java,v 1.15.2.4 1999-01-22 10:46:33 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -77,9 +77,13 @@ public abstract class HField implements HMember {
    * type for the field represented by this <code>HField</code> object.
    */
   public HClass getType() {
-    HClass t = type.actual();
-    type = t;
-    return t;
+    try {
+      return (HClass) type;
+    } catch (ClassCastException e) { // type was ClassPointer.
+      HClass t = type.actual();
+      type = t;
+      return t;
+    }
   }
   /**
    * Return the type descriptor for this <code>HField</code> object.
