@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.66 1998-09-14 02:49:24 cananian Exp $
+ * @version $Id: Translate.java,v 1.67 1998-09-14 07:02:26 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -1486,12 +1486,9 @@ class Translate  { // not public.
 	    header = q8; which_succ = 0; Tex = q8.def()[0];
 	}
 	// Now look up through the try blocks for potential handlers.
-	for (int i=0; i<allTries.length; i++)
+	int i; for (i=0; i<allTries.length; i++) {
 	    if (allTries[i].inTry(ts.in)) {
 		Instr hI = allTries[i].handler();
-		Quad q1 = new INSTANCEOF(ts.in, new Temp(), Tex,
-					 allTries[i].caughtException());
-		Quad q2 = new CJMP(ts.in, q1.def()[0]);
 		// expand phi.
 		PHI phi = handlers.getPhi(hI);
 		if (phi==null) {
@@ -1502,16 +1499,28 @@ class Translate  { // not public.
 		}
 		phi.grow(new Temp[] { Tex });
 		handlers.put(hI, phi, phi.prev.length);
-		// link quads.
-		Quad.addEdge(header, which_succ, q1, 0);
-		Quad.addEdge(q1, 0, q2, 0);
-		Quad.addEdge(q2, 1, phi, phi.prev.length-1);
-		header = q2; which_succ = 0;
+
+		if (allTries[i].caughtException()==null) { // catch any.
+		    Quad.addEdge(header, which_succ, phi, phi.prev.length-1);
+		    break; // no more try processing.
+		} else {
+		    Quad q1 = new INSTANCEOF(ts.in, new Temp(), Tex,
+					     allTries[i].caughtException());
+		    Quad q2 = new CJMP(ts.in, q1.def()[0]);
+		    // link quads.
+		    Quad.addEdge(header, which_succ, q1, 0);
+		    Quad.addEdge(q1, 0, q2, 0);
+		    Quad.addEdge(q2, 1, phi, phi.prev.length-1);
+		    header = q2; which_succ = 0;
+		}
 	    }
-	// exception not caught in try.  Throw it.
-	Quad q = new THROW(ts.in, Tex);
-	Quad.addEdge(header, which_succ, q, 0);
-	ts.initialState.footer.attach(q, 0);
+	}
+	if (i==allTries.length) { // didn't break early on 'catch any'
+	    // exception not caught in any try.  Throw it.
+	    Quad q = new THROW(ts.in, Tex);
+	    Quad.addEdge(header, which_succ, q, 0);
+	    ts.initialState.footer.attach(q, 0);
+	}
 	// grok rTS into TransState[]
 	TransState[] r = new TransState[rTS.size()];
 	rTS.copyInto(r);

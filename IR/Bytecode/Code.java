@@ -15,7 +15,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1 1998-09-14 02:49:20 cananian Exp $
+ * @version $Id: Code.java,v 1.2 1998-09-14 07:02:25 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -146,7 +146,7 @@ public class Code extends HCode {
 	if (et[i].catch_type != 0)
 	  ex = HClass.forDescriptor("L"+et[i].catch_type().name()+";");
 	else
-	  ex = HClass.forClass(Throwable.class); // any==throwable, right?
+	  ex = null; // to indicate 'catch any'.
 	// and make the official exception entry.
 	tryBlocks[i] = new ExceptionEntry(uv, ex, sparse[et[i].handler_pc]);
       }
