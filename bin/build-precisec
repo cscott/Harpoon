@@ -9,11 +9,17 @@
 javaopts=""
 while [ -n "$3" ]; do
     case "$1" in
-    --alex) # short cut for all the flags needed for alex's passes
+    --alex*) # short cut for all the flags needed for alex's passes
 	javaopts="$javaopts -Dharpoon.alloc.strategy=niftystats"
 	javaopts="$javaopts -Ddebug.pa=true"
 	opts="$opts --pa:timing --stack-alloc 1 2 --sync-removal"
 	opts="$opts --show-ap --pa:d"
+	if [ "$1" = "--alex-save" ]; then
+	  # save pre-analysis results.
+	  alex_save=true
+	fi
+	export FLEXSTACK=64m
+	export FLEXMEM=1850m
 # you should compile your runtime --with-clustered-heaps, too.
 	;;
     -D*) javaopts="$javaopts $1" ;;
@@ -33,6 +39,10 @@ if [ -d $dir ]; then
 fi
 if [ ! -d $dir ]; then
     mkdir $dir
+fi
+# save alex's pre-analysis results, if requested.
+if [ -n "$alex_save" ]; then
+    opts="$opts --pa:save-pre-analysis ${dir}.pre"
 fi
 
 # if PRECISEC_CFLAGS is unset, we'll use '-g -O9'.  Otherwise we'll use
