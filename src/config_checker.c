@@ -29,7 +29,11 @@ x3(SIZEOF_VOID_P);
 #define x5(x) x6(x)
 #define x6(x) \
 FLAG check_with_claz_shrink_should_be_##x
-x5(WITH_CLAZ_SHRINK);
+#ifdef WITH_CLAZ_SHRINK
+ x5(WITH_CLAZ_SHRINK);
+#else
+ FLAG check_with_claz_shrink_not_needed;
+#endif
 
 /* okay, from here on out there's nothing complicated */
 
