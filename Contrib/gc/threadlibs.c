@@ -11,10 +11,10 @@ int main()
 #   endif
 #   if defined(GC_LINUX_THREADS) || defined(GC_IRIX_THREADS) \
 	|| defined(GC_FREEBSD_THREADS) || defined(GC_SOLARIS_PTHREADS) \
-	|| defined(GC_MACOSX_THREADS)
+	|| defined(GC_DARWIN_THREADS) || defined(GC_AIX_THREADS)
         printf("-lpthread\n");
 #   endif
-#   if defined(GC_USER_THRADS)
+#   if defined(GC_USER_THREADS)
       printf("-ldl\n");
 #   endif
 #   if defined(GC_HPUX_THREADS) || defined(GC_OSF1_THREADS)
