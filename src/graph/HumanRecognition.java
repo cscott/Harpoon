@@ -18,74 +18,71 @@ import java.awt.event.WindowListener;
 import java.awt.event.MouseListener;
 import java.awt.event.KeyListener;
 
+/**
+ * {@link HumanRecognition} is currently the most effective
+ * ATR. It is intended to work asynchronously with {@link Label},
+ * receiving cropped {@link ImageData}s and sending out stripped
+ * {@link ImageData}s tagged with either <code>Command.IS_TANK</code> or
+ * <code>Command.IS_NOT_TANK</code>.<br><br>.
+ *
+ * The class springs up windows for each unique object being tracked,
+ * and a human selects which object is a tank (or an object of interest)
+ * by clicking the mouse within
+ * the window or selecting the window and hitting [Enter] on his keypad.<br>
+ * <br>
+ * The current implementation allows only one object to be selected
+ * at a time, however, this should be straightforward to change.
+ * 
+ */
 public class HumanRecognition extends Node implements VariableLatency {
 
+    /**
+     * The head of the linked list containing all the
+     * {@link Display}/targetID pairs maintained by this object.
+     */
     private Pair head;
 
-    //private static final int confirmEvery = 5;
+    /**
+     * The {@link Display} containing the object that the user
+     * has currently selected as the object of interest.
+     */
+    private MyDisplay currentSelected = null;
 
-    MyDisplay currentSelected = null;
-
+    /**
+     * Creates a new {@link HumanRecognition} object.
+     */
     public HumanRecognition() {
 	this.head = null;
 	addTarget(-2);
     }
 
-
     /**
-       The name of the variable in {@link CommonMemory} that this
-       {@link HumanRecognition} node will set with true or false
-       before it returns. If <code>memName</code> is null,
-       then this {@link HumanRecognition} node will not set any
-       value in {@link CommonMemory}.<br><br>
-       If this variable is equal to <code>true</code>, this means that
-       the <code>process()</code> method found blue in the
-       image. If the variable is set to <code>false</code>, then
-       no blue was found.<br><br>
-       Remember that the boolean value of the variable in {@link CommonMemory}
-       is actually stored in a {@link Boolean} object wrapper.
-       @see CommonMemory
+     * The current latency of the algorithm. This value
+     * is user set through the {@link VariableLatency}
+     * interface.
      */
-    //private String memName;
-
-    ///**
-    // * This method either tells the {@link HumanRecognition} node to
-    // * begin or stop
-    // * setting a "return value" in {@link CommonMemory}.
-    // * Specifying a name will ause the {@link HumanRecognition} node to
-    // * store either
-    // * <code>true</code> or <code>false</code> in the variable who's
-    //
-    // * name you specify
-    // * depending on whether the <code>process()</code> method detects
-    // * blue in an image.<br><br>
-    // *
-    // * By specifying a <code>null</code> name, you turn this feature off.
-    // * @param name The name of the variable in {@link CommonMemory}
-    // * where this {@link HumanRecognition}
-    // * node will store its "return value."
-    // *
-    // * @see CommonMemory
-    // */
-    //public void setCommonMemory(String name) {
-    //this.memName = name;
-    //}
-
     private int latency;
 
+    /**
+     * First, reads an {@link ImageData}'s
+     * <code>trackedObjectUniqueID</code> field.
+     * If a {@link Display} already exists for that
+     * ID, then that {@link Display} is updated. If not, then
+     * a new one is created and is linked to that ID.
+     *
+     * The latency of this method is variable and can be
+     * controlled by the user.
+     */
     public void process(ImageData id) {
+	
 	try {
-	    Thread.currentThread().sleep(latency);
+	    Thread.currentThread().sleep(latency-250);
 	}
 	catch (InterruptedException e) {
 	}
 	int targetID = id.trackedObjectUniqueID;
 	//System.out.println("ImageData #"+id.id);
 	//System.out.println("   target #"+targetID);
-	//if (currentSelected == null)
-	//    System.out.println("   No current selected");
-	//else
-	//    System.out.println(currentSelected.getFrame().getTitle()+" is selected");
 	Pair currentPair = head;
 	boolean foundIt = false;
 	while (currentPair != null) {
@@ -100,65 +97,58 @@ public class HumanRecognition extends Node implements VariableLatency {
 	    //currentPair.count++;
 	    MyDisplay d = currentPair.d;
 	    d.process(id);
-	    //if (currentPair.count == confirmEvery) {
-	    //if ((id.rvals.length != 0) && (id.gvals.length != 0) && (id.bvals.length != 0)) {
-		//currentPair.count = 0;
-	    //Frame f = d.getFrame();
 	    
 	    if (d == currentSelected) {
-		    //System.out.println(f.getTitle()+" is selected.");
-		//currentPair.d.process(id);
 		id.command = Command.IS_TANK;
 		super.process(id);
-		//if (this.memName != null) {
-		//CommonMemory.setValue(this.memName, new Boolean(true));
-		//}
 	    }
 	    else {
 		id.command = Command.IS_NOT_TANK;
 		super.process(id);
-		//currentPair.d.process(id);
-		//if (this.memName != null) {
-		//CommonMemory.setValue(this.memName, new Boolean(false));
-		//}
 	    }
-	    //}
-	    //else {
-		//if (this.memName != null) {
-		//    if (d == currentSelected) {
-		//	super.process(id);
-		//	CommonMemory.setValue(this.memName, new Boolean(true));
-		//    }
-		//    else {
-		//	CommonMemory.setValue(this.memName, new Boolean(false));			
-		//    }
-		//}
-	    //}
 	}
-    
-	else { //if (!foundIt)
+	//[if (foundIt)]
+	else {
 	    Pair newPair = addTarget(id);
 	    newPair.d.process(id);
 	    id.command = Command.IS_NOT_TANK;
 	    super.process(id);
-	    //if (this.memName != null) {
-	    //CommonMemory.setValue(this.memName, new Boolean(false));
-	    //}
 	}
     }
 
 
-
+    /**
+     * Creates a new {@link HumanRecognition.Pair} linked to
+     * the <code>trackedObjectUniqueID</code>
+     * of the specified {@link ImageData}.
+     *
+     * @param id The {@link ImageData} whose
+     * <code>trackedObjectUniqueID</code> will be linked
+     * to the new {@link HumanRecognition.Pair}.
+     */
     private Pair addTarget(ImageData id) {
 	return this.addTarget(id.trackedObjectUniqueID);
     }
 
+    /**
+     * Creates a new {@link HumanRecognition.Pair} using
+     * the specified <code>trackedObjectUniqueID</code>.
+     *
+     * @param trackedObjectUniqueID The <code>trackedObjectUniqueID</code>
+     * that will be linked to the new {@link HumanRecognition.Pair}. 
+     */
     private Pair addTarget(int trackedObjectUniqueID) {
 	Pair newPair = new Pair(trackedObjectUniqueID, head);
 	head = newPair;
 	return newPair;	
     }
 
+    /**
+     * Removes the specified {@link HumanRecognition.MyDisplay} from the linked list
+     * of {@link HumanRecognition.Pair}s.
+     *
+     * @param d The {@link HumanRecognition.MyDisplay} to be removed.
+     */
     void removeMe(MyDisplay d) {
 	Pair currentPair = head;
 	Pair last = null;
@@ -177,17 +167,40 @@ public class HumanRecognition extends Node implements VariableLatency {
 	}
     }
 
+    /**
+     * A linked-list element that associates a {@link HumanRecognition.MyDisplay}
+     * with a target ID.
+     */
     private class Pair {
 	MyDisplay d;
 	int targetID;
 	Pair next;
-	//int count;
-	Pair(int targetID){
-	    init(targetID, null);
-	}
+	
+	/**
+	 * Constructs a new {@link HumanRecognition.Pair}, which will
+	 * display a new window linked to the specified
+	 * target ID, and specify the next element in the
+	 * linked list.
+	 *
+	 * @param targetID The unique ID that will be associated
+	 * with the new {@link HumanRecognition.MyDisplay}.
+	 * @param next The {@link HumanRecognition.Pair} that the newly
+	 * created {@link HumanRecognition.Pair} will point to in the
+	 * linked-list structure.
+	 */
 	Pair(int targetID, Pair next) {
 	    init(targetID, next);
 	}
+	
+	/**
+	 * This method should be called by all constructors
+	 * to properly initialize all object fields.
+	 *
+	 * @param targetID The unique ID that will be associated
+	 * with the new {@link HumanRecognition.MyDisplay}.
+	 * @param next The {@link HumanRecognition.Pair} that the newly
+	 * created {@link HumanRecognition.Pair} will point to in the
+	 * linked-list structure.	 */
 	private void init(int targetID, Pair next) {
 	    this.targetID = targetID;
 	    if (targetID == -2) {
@@ -197,11 +210,21 @@ public class HumanRecognition extends Node implements VariableLatency {
 		d = new MyDisplay("Target #"+targetID);
 	    }
 	    this.next = next;
-	    //count = 0;
 	}
     }
 
+    /**
+     * Class that adds AWT listener functionality to 
+     * the existing {@link Display} class. It accepts
+     * keyboard and mouse input to choose
+     * which object displayed by the {@link HumanRecognition}
+     * class is a tank or an object of interest.
+     */
     public class MyDisplay extends Display {
+	/**
+	 * Constructs a new {@link HumanRecognition.MyDisplay} which
+	 * will listen for AWT mouse and keyboard events.
+	 */
 	MyDisplay(String name) {
 	    super(name);
 	    super.getCanvas().addKeyListener(new KeyAdapter() {
@@ -234,9 +257,15 @@ public class HumanRecognition extends Node implements VariableLatency {
 	Frame getFrame() {
 	    return super.frame;
 	}
-	
     }
 
+    /**
+     * Sets the approximate
+     * latency of the {@link HumanRecognition} "algorithm".
+     * 
+     * @param latency The time that this "algorithm"
+     * should take to execute.
+     */
     public void setLatency(int latency) {
 	this.latency = latency;
     }

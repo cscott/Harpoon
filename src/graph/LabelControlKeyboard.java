@@ -15,15 +15,25 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 /**
+ * Takes input from the keyboard
+ * and sends out commands to adjust the properties
+ * of a {@link Label} node.<br>
+ *
+ * The commands produced by this node are expected to be directed
+ * in some way to a {@link  LabelControl} node.
+ *
+ * @see Label
+ * @see LabelControl
  *
  * @author Reuben Sterling <<a href="mailto:benster@mit.edu">benster@mit.edu</a>>
  */
 public class LabelControlKeyboard extends Node {
     Frame frame = new Frame("Label Control");
   
-    /** Construct a {@link Keyboard} to parse keypresses and generate servo commands. 
+    /** Construct a {@link LabelControlKeyboard} to parse
+     * keypresses and generate servo commands. 
      *
-     *  @param out Node to send {@link ImageData}s to.
+     * @param out Node to send {@link ImageData}s to.
      */
     public LabelControlKeyboard(final Node out) {
 	super(out);
@@ -65,6 +75,13 @@ public class LabelControlKeyboard extends Node {
      *  @param id Ignored, use <code>run()</code> to start.
      */
     public void process(ImageData id) {
+    }
+
+    /**
+     * Returns the {@link Frame} that this class creates.
+     */
+    public Frame getFrame() {
+	return frame;
     }
 
 }

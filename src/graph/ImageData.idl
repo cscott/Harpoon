@@ -39,7 +39,17 @@ module imagerec
       octet labelID;
       boolean conditional;
       float angle;
+      /**
+       * Carries the higher blue threshold calculated by 
+       * {@link LabelBlue}. This field is not intended to
+       * be modified after it is set by {@link LabelBlue}.
+       */
       long blueThreshold1;
+      /**
+       * Carries the higher blue threshold calculated by 
+       * {@link LabelBlue}. This field is not intended to
+       * be modified after it is set by {@link LabelBlue}.
+       */
       long blueThreshold2;
       /**
        * Factor used to adjust for dynamic resolution changes.
@@ -47,8 +57,6 @@ module imagerec
        * could be the same actual size as an object with a width
        * of 200 pixels at another resolution.<br><br>
        *
-       * The scale factor is intended to be 1/width of the
-       * <b>original</b> image.
        */
       float scaleFactor;
       /**
@@ -59,7 +67,19 @@ module imagerec
        * from the designated ObjectTracker in CommonMemory.
        */
       long trackedObjectUniqueID;
+      /**
+       * This field stores the width of the original image
+       * before any cropping took place. It is not intended
+       * to be modified after it is set by a
+       * {@link SetOrigDimensions} node.
+       */
       long origWidth;
+      /**
+       * This field stores the height of the original image
+       * before any cropping took place. It is not intended
+       * to be modified after it is set by a
+       * {@link SetOrigDimensions} node.
+       */
       long origHeight;
     };
   };
