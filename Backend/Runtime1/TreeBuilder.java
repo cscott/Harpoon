@@ -55,7 +55,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.17 2000-01-17 11:51:57 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.18 2000-01-25 03:46:16 kkz Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // allocation strategy to use.
@@ -79,6 +79,7 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     final int CLAZ_COMPONENT_OFF;
     final int CLAZ_INTERFZ_OFF;
     final int CLAZ_SIZE_OFF;
+    final int CLAZ_GCENTRY_OFF;
     final int CLAZ_DEPTH_OFF;
     final int CLAZ_DISPLAY_OFF;
     final int CLAZ_METHODS_OFF;
@@ -131,8 +132,9 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 	CLAZ_COMPONENT_OFF=1 * POINTER_SIZE;
 	CLAZ_INTERFZ_OFF = 2 * POINTER_SIZE;
 	CLAZ_SIZE_OFF	 = 3 * POINTER_SIZE;
-	CLAZ_DEPTH_OFF   = 3 * POINTER_SIZE + 1 * WORD_SIZE;
-	CLAZ_DISPLAY_OFF = 3 * POINTER_SIZE + 2 * WORD_SIZE;
+	CLAZ_GCENTRY_OFF = 3 * POINTER_SIZE + 1 * WORD_SIZE;
+	CLAZ_DEPTH_OFF   = 3 * POINTER_SIZE + 2 * WORD_SIZE;
+	CLAZ_DISPLAY_OFF = 4 * POINTER_SIZE + 2 * WORD_SIZE;
 	CLAZ_METHODS_OFF = CLAZ_DISPLAY_OFF + (1+cdm.maxDepth())*POINTER_SIZE;
     }
     // use the field offset map to get the object size (not including header)
