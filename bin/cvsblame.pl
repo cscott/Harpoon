@@ -670,13 +670,13 @@ sub cvs_make_rev_map {
     my @ancestors = &ancestor_revisions($rcsobj, $revision);
 
     my $last_rev = $primordial; my @last_map = @revision_map;
-    # find last RENAME log commend, and fork off.
+    # find last RENAME or SPLIT log commend, and fork off.
     my $n;
     for ($n=0; $n <= $#ancestors; $n++) { # foreach r in @ancestors...
         my $r = $ancestors[$n];
-        next if $opt_R; # ignore RENAME tasg
+        next if $opt_R; # ignore RENAME tags
         next unless ($rcsobj->{REVISION_LOG}->{$r} =~
-                     m/[@]RENAME:\s*([^@]+)\s*[@]/);
+                     m/[@](?:RENAME|SPLIT):\s*([^@]+)\s*[@]/);
         # ok, this is a renaming.  extract from and to patterns
         my ($frm_pat, $to_pat) = split(/\s+/, $1);
         # ignore directive if @RENAME@ tag is not well formed.
