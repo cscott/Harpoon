@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * guaranteed-unique names for our temps.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Temp.java,v 1.9 1998-08-26 22:01:52 cananian Exp $
+ * @version $Id: Temp.java,v 1.10 1998-09-03 01:45:19 cananian Exp $
  * @see TypeMap
  * @see TempList
  */
@@ -50,6 +50,15 @@ public class Temp {
   public Temp(Temp t) {
     this(t.name);
   }
+  /** Rename this temp. */
+  public void rename(String prefix) {
+    Temp lamb = new Temp(prefix);
+    this.name = lamb.name;
+    this.index= lamb.index;
+    lamb = null; // destroy the sacrificial lamb.
+  }
+  /** Rename this temp. */
+  public void rename(Temp t) { rename(t.name); }
 
   /** Returns the name of this temporary */
   public String name() { return name + "_" + index; }
