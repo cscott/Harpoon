@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi04.tex,v 1.21 2003-11-12 06:22:21 cananian Exp $
+% $Id: pldi04.tex,v 1.22 2003-11-12 06:53:42 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{rdbacmconf}
 \usepackage{times}
@@ -35,7 +35,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-\date{\today \\ $ $Revision: 1.21 $ $}
+\date{\today \\ $ $Revision: 1.22 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -285,26 +285,25 @@ Although the calls to
 \texttt{sb.length()} and \texttt{sb.getChars()} are individually
 atomic, but they do not compose to form an atomic implementation of
 \texttt{append()}.
+Replacing {\tt synchronized} with {\tt atomic} gives us the semantics
+we desire: nested {\tt atomic} blocks compose to ensure that the entire
+operation appears atomic.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  An \texttt{atomic} declaration (or running under
-our transactions implementation) would fix this programmer error.
-[This bug was found by \cite{FlanaganQa03}.]
-\note{What about just saying \texttt{public synchronized Append} ? -Bradley}
+Both the network flow example and this one require synchronization of
+changes to more than one object.  Monitor synchronization is not
+well-suited to this task.  Atomic regions implemented with
+transactions can be used to simplify the locking discipline required
+and provides a more intuitive specification for the desired
+concurrent properties.  Further, the {\tt StringBuffer} example shows
+that simply replacing {\tt synchronized} with {\tt atomic} provides a
+strict alternative semantics which may in fact correct existing
+synchronization errors.   For correctly-synchronized code, the
+semantics of {\tt atomic} and {\tt synchronized} are identical.
 
-Further, if the synchronization in this method is implemented with
-transactions, note that the call to \texttt{sb.getChars()} means that
-the size of the transaction for this method will grow like the length
-of the parameter~\texttt{sb}.  In other words, the transaction can be
-made arbitrarily large by increasing the length of \texttt{sb}; or,
-equivalently, there is no bound on transaction size without a bound on
-the size of the string~\texttt{sb}.  This means that boundless
-transactions must be supported if this method is operate on arbitrary
-inputs.
-
-\subsecput{destruct}{Destructive traversal}
+\subsecput{destruct}{Destructive list traversal}
 \note{Shows transaction-as-exception-handling, fault-tolerance, and
 back-tracking.}
+Schorr and Waite described a traversal mechanism...
 \cite{SchorrWa67}
 
  \par {\footnotesize\samepage
@@ -329,6 +328,15 @@ void traverse(List l) {
 \end{verbatim}
 }
 
+Now imagine that an exception occurs inside the {\tt visit()} method
+at some point during the traversal.  Control leaves the {\tt
+  traverse()}, but the data structure is left in shambles.
+
+The {\tt atomic} block is one way to expose underlying transactions to
+the programmer.  An alternative is to model transactions as an
+exception-handling mechanism.
+
+Non-deterministic choice operator:
  \par {\footnotesize\samepage
 \begin{verbatim}
 try {
@@ -343,6 +351,10 @@ try {
 \end{verbatim}
 }
 
+This construct can also be implemented with transactions.  this view
+of transactions as exception handling...  in fact, the {\tt atomic}
+block we used in the previous two examples can be implemented using
+{\tt try \ldots else}:
  \par {\footnotesize\samepage
 \begin{verbatim}
 while(true) {
@@ -357,11 +369,270 @@ while(true) {
 \end{verbatim}
 }
 
+If instead of an explicit exception, we make provision for transaction
+failure due to transient system faults, we can see that the {\tt try
+  else} block provides fault-tolerance, by allowing us to safely
+re-execute portions of a program ...
+
+This can be used for backtracking as well.
+
 \subsecput{backtrack}{Backtracking}
 Prolog-esque example?
 nqueens?
 
 %\subsecput{optcon}{Optimistic Concurrency} % not in this paper.
+
+
+We have implemented a transaction mechanism for Java using both
+software and hardware approaches.  We will first discuss automatically
+``transactifying'' Java applications by replacing synchronization with
+{\tt atomic} blocks, and present experimental results describing the
+transaction properties of programs so transformed.
+We then describe a software implementation of transactions which is
+designed for transactions with these properties.  Finally, we present
+performance data for our transaction implementations.
+
+\secput{auto}{Transactification}
+Automatically ...
+
+Should properly handle non-transactional code to make improperly
+synchronized applications race-free.
+
+Imagine unsynchronized code directly altering the length field of
+StringBuffer.  This shouldn't make StringBuffer.append appear non-atomic.
+
+\subsecput{properties}{Properties of Transactions}
+
+Further, if the synchronization in this method is implemented with
+transactions, note that the call to \texttt{sb.getChars()} means that
+the size of the transaction for this method will grow like the length
+of the parameter~\texttt{sb}.  In other words, the transaction can be
+made arbitrarily large by increasing the length of \texttt{sb}; or,
+equivalently, there is no bound on transaction size without a bound on
+the size of the string~\texttt{sb}.  This means that boundless
+transactions must be supported if this method is operate on arbitrary
+inputs.
+
+\secput{efficient}{Designing Efficient Transactions}
+\subsection{Scales}
+Key idea is to allow safe access by non-transactional code, so as to
+allow transactification.
+
+\subsection{Object expansion}
+\epsfigput{bloat}{Application slowdown with increasing object bloat.}
+\subsection{Reads vs. Writes}
+\subsection{Large objects}
+\subsection{Subsumption?}
+
+\secput{algo}{Algorithms}
+
+\figput{tr-multi-obj}{Implementing software transactions with version lists.}
+
+The ReadNT function does a non-transactional read of field $f$ from
+object $o$.  In the common-case, the only overhead is to check that
+the read value is not FLAG.  If it is, we copy back the field value
+from the most-recently committed transaction (aborting all other
+transactions) and try again.  The copy-back procedure will notify
+us if this is a ``false flag'', in which case the value of this
+field really is FLAG.  Passing 'false' to the copy-back procedure
+indicates that only writers need be killed, not transactional readers.
+
+The only possible races are within the copy-back procedure.
+\par {\footnotesize\samepage
+\begin{verbatim}
+ReadNT(o, f) {
+  do {
+    v = load(o, f);
+    if (v!=FLAG) return v;
+  } while (FALSE_FLAG !=
+           copyBackField(o, f, KILL_WRITERS));
+  return FLAG;
+}
+\end{verbatim}
+}
+
+The WriteNT function does a non-transactional write of new value $nv$
+to field $f$ of object $o$.  Passing 'true' to the copy-back procedure
+indicates that both transactions readers *and* writers should be killed.
+\par {\footnotesize\samepage
+\begin{verbatim}
+WriteNT(o, f, nval) {
+  if (nval != FLAG) {
+    do {
+      if (LL(readFlag(f))==FLAG_CLEAR)
+        if (SC(o, f, nval)==SUCCESS)
+          return; // done!
+      else copyBackField(o, f, KILL_ALL);
+      // copyBackField should leave read flag CLEAR on FALSE_FLAG
+    } while(true);
+  } else {
+    // create FALSE_FLAG.
+    do {
+      copyBackField(o, f, KILL_ALL);
+      ensure a committed version 'ver' is first in the chain.
+      // put FLAG in version:
+      if (LL(first_version)==ver)
+        if (readFlag(f)==FLAG_CLEAR)
+          if (SC(o, f, nval)==SUCCESS)
+            return; // done!
+    } while(true);
+  }
+}
+\end{verbatim}
+}
+
+
+What if another transaction does a copy-back, cancelling us?
+We'll see that $o.f$ is no longer FLAG, so we'll read this
+(later) value, which might be inconsistent.  We'll already
+be aborted, but we'd like to avoid computing with
+stale data.
+\par {\footnotesize\samepage
+\begin{verbatim}
+ReadT(o, f, ver) {
+  val = load(o, f);
+  if (val!=FLAG)
+    // optionally validate current trans!=ABORTED
+    return val;
+  return load(ver, f);
+}
+\end{verbatim}
+}
+Pre-read, we need to ensure the read flags are set and that we're on
+the readers list.  This is a list because we don't need to abort
+anyone as long as we're all just reading this field.  But this is the
+list of transactions to abort if anyone tries to *write* this field.
+
+Writes are easy; we always write to our transactional version.
+Pre-write, we need to create the version and ensure the read
+flags for this field are set.  We also need to abort everyone on
+the readers list which is not us.
+\par {\footnotesize\samepage
+\begin{verbatim}
+WriteT(ver, f, nval) {
+  store(v, f, nval);
+}
+\end{verbatim}
+}
+
+The copyBackField method should leave read flag CLEAR on FALSE\_FLAG.
+\par {\footnotesize\samepage
+\begin{verbatim}
+copyBackField(o, f, kill) {
+top:
+ status = SUCCESS;
+ if (kill==KILL_ALL) {
+   for each reader on list:
+     try to abort.
+     reader is now aborted or committed.
+     remove from list.
+   }
+ }
+ try to abort and remove each version, when abort fails...
+ the head of the version list is now committed.
+  call this 'ver'.
+ make a new aborted version and make it first on the
+  versions list. points to 'ver'.
+  call this 'nonce'.
+ [once we have the nonce, no-one else can copyback]
+ if (load(o, f)==FLAG) { // check that this hasn't been done already
+   val = load(ver, f);
+   if (val==FLAG)
+     status = FALSE_FLAG; // no copy needed.
+   else // not a false flag
+     if (LL(first_version)!=nonce ||
+         SC(o, f, val) != SUCCESS)
+       goto top;
+ }
+ if (kill==KILL_WRITERS) // done for readNT
+   return status;
+ // reset read flags to zero:
+ if (readers list not empty)
+   goto top; // race.
+ if (LL(first_version)==nonce &&
+     SC(o, readFlag(f), 0)
+   return status; // done!
+ goto retry; // try, try again.
+}
+\end{verbatim}
+}
+
+
+\secput{opt}{Optimizations}
+\subsection{Hoisting}
+\subsection{Check-combining}
+\subsection{Global field analysis}
+\subsection{Escape analysis}
+
+\secput{integrate}{Integration}
+% JNI tricks, etc.
+
+\secput{eval}{Evaluation}
+
+\begin{figure*}
+\footnotesize
+\begin{center}
+\begin{tabular}{lr|rr|rr}
+Benchmark                 &  Base       & Locks         & Trans              & Time                     & Overflow       \\
+                          &             & time          & time               & in trans              & overhead       \\
+                          &  (cycles)   & \multicolumn{2}{c|}{(\% of Base)}   & \multicolumn{2}{c}{(\% of Trans time)}                 \\ \hline
+\texttt{200\_check}       &   8,062,716 & 124.0\%       &  101.7\%           & 32.9\%           & 0.00366\%      \\
+\texttt{202\_jess}        &  75,012,964 & 140.9\%       &  107.1\%           & 59.3\%           & 0.00761\%      \\
+\texttt{209\_db}          &  11,784,220 & 142.4\%       &  105.1\%           & 53.9\%           & 0              \\
+\texttt{213\_javac}       &  30,688,574 & 169.9\%       & 1469.5\%           & 99.0\%           & 93.0\%         \\
+\texttt{222\_mpegaudio}&  98,961,244    & 100.3\%       &   99.6\%           & 0.817\%          & 0              \\
+\texttt{228\_jack}        & 261,441,564 & 175.3\%       &  104.4\%           & 32.2\%           & 0.00260\%      \\
+\end{tabular}
+\end{center}
+\caption{SPECjvm98 performance and overheads on a 1-processor UVSIM simulation. The {\em Base }
+ time uses no synchronization.  The {\em Locks time} is the time using
+ locks as a percentage of the base.  The {\em Trans time} is the time using BTM
+ transactions as a percentage of the base. The
+ {\em time in Trans} is the fraction of the {\em Trans time} actually
+ spent running a transaction.  The {\em
+ Overflow overhead} column is fraction of the {\em Trans time}
+ spent handling overflows.}
+\label{fig:specperf}
+\end{figure*}
+
+We found that using BTM transactions in the SPECjvm98 benchmarks
+results in very little overhead compared to using locks. We compiled
+the benchmarks to use BTM transactions using our modified Java
+compiler.  The \texttt{201\_compress} and \texttt{205\_raytrace}
+benchmarks were omitted due to unresolved bugs in the base UVSIM
+simulator, and similarly \texttt{libpthread} deficiencies prevented
+the execution of \texttt{227\_mtrt}.
+The remaining benchmarks were run on one processor in UVSIM to compare the
+performance overheads associated with BTM transactions compared to
+locks.  As shown in \figref{specperf}, there is a significant amount
+of overhead associated with locking (more than 75\% over the base case
+in {\texttt{228\_jack})}. %Put that {} around the texttt to prevent the jack from being separated from the )
+For BTM, there are two main sources of
+overhead: The transactions may abort, wasting the cycles spent
+computing, and also executing the branch to the abort handler.  For
+these Java programs, the transactions never abort because they are
+single-threaded programs.  The second overhead is the cost of handling
+overflows.
+
+The only application that has a significant transaction overhead is
+\texttt{javac}, which runs 14 times slower under BTM than without any
+mutual exclusion.  Virtually all of the overhead comes from handling
+overflows, which is not surprising since the entire compilation is
+enclosed in one large transaction.  The transaction touches 253,547
+cache lines, and there are only 16K cache lines in the L2 cache,
+meaning that the overflow memory contains at least 237K cache lines.
+So even though only 0.5\% of the xops miss, those few misses incur
+huge search costs, as the finite state machine looks through the
+linear array of overflowed cache lines.  We intend to look into using
+a better data structure, such as a hash table.  Though there is a
+significant performance decrease in this case, BTM still ensures the
+application runs correctly. Namely, the programmer wanted the entire
+compile process to occur as one atomic action so BTM will ensure that
+is the case.  It may be the case that \texttt{javac} really cannot be
+parallelized, in which case locks may be the best choice.  But if the
+programmer wishes to parallelize \texttt{javac}, she may be find it
+easier to break up the large transaction than to break up a locked
+block.
 
 \secput{related}{Related work}
 \subsecput{nb-sync}{Non-blocking synchronization}
@@ -740,224 +1011,6 @@ m memory operations to l locations does m+l extra reads and l+1 CAS operations.
 \end{itemize}
 }
 
-
-\secput{efficient}{Designing Efficient Transactions}
-\subsection{Scales}
-\subsection{Object expansion}
-\epsfigput{bloat}{Application slowdown with increasing object bloat.}
-\subsection{Reads vs. Writes}
-\subsection{Large objects}
-\subsection{Subsumption?}
-
-\secput{algo}{Algorithms}
-
-\figput{tr-multi-obj}{Implementing software transactions with version lists.}
-
-The ReadNT function does a non-transactional read of field $f$ from
-object $o$.  In the common-case, the only overhead is to check that
-the read value is not FLAG.  If it is, we copy back the field value
-from the most-recently committed transaction (aborting all other
-transactions) and try again.  The copy-back procedure will notify
-us if this is a ``false flag'', in which case the value of this
-field really is FLAG.  Passing 'false' to the copy-back procedure
-indicates that only writers need be killed, not transactional readers.
-
-The only possible races are within the copy-back procedure.
-\par {\footnotesize\samepage
-\begin{verbatim}
-ReadNT(o, f) {
-  do {
-    v = load(o, f);
-    if (v!=FLAG) return v;
-  } while (FALSE_FLAG !=
-           copyBackField(o, f, KILL_WRITERS));
-  return FLAG;
-}
-\end{verbatim}
-}
-
-The WriteNT function does a non-transactional write of new value $nv$
-to field $f$ of object $o$.  Passing 'true' to the copy-back procedure
-indicates that both transactions readers *and* writers should be killed.
-\par {\footnotesize\samepage
-\begin{verbatim}
-WriteNT(o, f, nval) {
-  if (nval != FLAG) {
-    do {
-      if (LL(readFlag(f))==FLAG_CLEAR)
-        if (SC(o, f, nval)==SUCCESS)
-          return; // done!
-      else copyBackField(o, f, KILL_ALL);
-      // copyBackField should leave read flag CLEAR on FALSE_FLAG
-    } while(true);
-  } else {
-    // create FALSE_FLAG.
-    do {
-      copyBackField(o, f, KILL_ALL);
-      ensure a committed version 'ver' is first in the chain.
-      // put FLAG in version:
-      if (LL(first_version)==ver)
-        if (readFlag(f)==FLAG_CLEAR)
-          if (SC(o, f, nval)==SUCCESS)
-            return; // done!
-    } while(true);
-  }
-}
-\end{verbatim}
-}
-
-
-What if another transaction does a copy-back, cancelling us?
-We'll see that $o.f$ is no longer FLAG, so we'll read this
-(later) value, which might be inconsistent.  We'll already
-be aborted, but we'd like to avoid computing with
-stale data.
-\par {\footnotesize\samepage
-\begin{verbatim}
-ReadT(o, f, ver) {
-  val = load(o, f);
-  if (val!=FLAG)
-    // optionally validate current trans!=ABORTED
-    return val;
-  return load(ver, f);
-}
-\end{verbatim}
-}
-Pre-read, we need to ensure the read flags are set and that we're on
-the readers list.  This is a list because we don't need to abort
-anyone as long as we're all just reading this field.  But this is the
-list of transactions to abort if anyone tries to *write* this field.
-
-Writes are easy; we always write to our transactional version.
-Pre-write, we need to create the version and ensure the read
-flags for this field are set.  We also need to abort everyone on
-the readers list which is not us.
-\par {\footnotesize\samepage
-\begin{verbatim}
-WriteT(ver, f, nval) {
-  store(v, f, nval);
-}
-\end{verbatim}
-}
-
-The copyBackField method should leave read flag CLEAR on FALSE\_FLAG.
-\par {\footnotesize\samepage
-\begin{verbatim}
-copyBackField(o, f, kill) {
-top:
- status = SUCCESS;
- if (kill==KILL_ALL) {
-   for each reader on list:
-     try to abort.
-     reader is now aborted or committed.
-     remove from list.
-   }
- }
- try to abort and remove each version, when abort fails...
- the head of the version list is now committed.
-  call this 'ver'.
- make a new aborted version and make it first on the
-  versions list. points to 'ver'.
-  call this 'nonce'.
- [once we have the nonce, no-one else can copyback]
- if (load(o, f)==FLAG) { // check that this hasn't been done already
-   val = load(ver, f);
-   if (val==FLAG)
-     status = FALSE_FLAG; // no copy needed.
-   else // not a false flag
-     if (LL(first_version)!=nonce ||
-         SC(o, f, val) != SUCCESS)
-       goto top;
- }
- if (kill==KILL_WRITERS) // done for readNT
-   return status;
- // reset read flags to zero:
- if (readers list not empty)
-   goto top; // race.
- if (LL(first_version)==nonce &&
-     SC(o, readFlag(f), 0)
-   return status; // done!
- goto retry; // try, try again.
-}
-\end{verbatim}
-}
-
-
-\secput{opt}{Optimizations}
-\subsection{Hoisting}
-\subsection{Check-combining}
-\subsection{Global field analysis}
-\subsection{Escape analysis}
-
-\secput{integrate}{Integration}
-% JNI tricks, etc.
-
-\secput{eval}{Evaluation}
-
-\begin{figure*}
-\footnotesize
-\begin{center}
-\begin{tabular}{lr|rr|rr}
-Benchmark                 &  Base       & Locks         & Trans              & Time                     & Overflow       \\
-                          &             & time          & time               & in trans              & overhead       \\
-                          &  (cycles)   & \multicolumn{2}{c|}{(\% of Base)}   & \multicolumn{2}{c}{(\% of Trans time)}                 \\ \hline
-\texttt{200\_check}       &   8,062,716 & 124.0\%       &  101.7\%           & 32.9\%           & 0.00366\%      \\
-\texttt{202\_jess}        &  75,012,964 & 140.9\%       &  107.1\%           & 59.3\%           & 0.00761\%      \\
-\texttt{209\_db}          &  11,784,220 & 142.4\%       &  105.1\%           & 53.9\%           & 0              \\
-\texttt{213\_javac}       &  30,688,574 & 169.9\%       & 1469.5\%           & 99.0\%           & 93.0\%         \\
-\texttt{222\_mpegaudio}&  98,961,244    & 100.3\%       &   99.6\%           & 0.817\%          & 0              \\
-\texttt{228\_jack}        & 261,441,564 & 175.3\%       &  104.4\%           & 32.2\%           & 0.00260\%      \\
-\end{tabular}
-\end{center}
-\caption{SPECjvm98 performance and overheads on a 1-processor UVSIM simulation. The {\em Base }
- time uses no synchronization.  The {\em Locks time} is the time using
- locks as a percentage of the base.  The {\em Trans time} is the time using BTM
- transactions as a percentage of the base. The
- {\em time in Trans} is the fraction of the {\em Trans time} actually
- spent running a transaction.  The {\em
- Overflow overhead} column is fraction of the {\em Trans time}
- spent handling overflows.}
-\label{fig:specperf}
-\end{figure*}
-
-We found that using BTM transactions in the SPECjvm98 benchmarks
-results in very little overhead compared to using locks. We compiled
-the benchmarks to use BTM transactions using our modified Java
-compiler.  The \texttt{201\_compress} and \texttt{205\_raytrace}
-benchmarks were omitted due to unresolved bugs in the base UVSIM
-simulator, and similarly \texttt{libpthread} deficiencies prevented
-the execution of \texttt{227\_mtrt}.
-The remaining benchmarks were run on one processor in UVSIM to compare the
-performance overheads associated with BTM transactions compared to
-locks.  As shown in \figref{specperf}, there is a significant amount
-of overhead associated with locking (more than 75\% over the base case
-in {\texttt{228\_jack})}. %Put that {} around the texttt to prevent the jack from being separated from the )
-For BTM, there are two main sources of
-overhead: The transactions may abort, wasting the cycles spent
-computing, and also executing the branch to the abort handler.  For
-these Java programs, the transactions never abort because they are
-single-threaded programs.  The second overhead is the cost of handling
-overflows.
-
-The only application that has a significant transaction overhead is
-\texttt{javac}, which runs 14 times slower under BTM than without any
-mutual exclusion.  Virtually all of the overhead comes from handling
-overflows, which is not surprising since the entire compilation is
-enclosed in one large transaction.  The transaction touches 253,547
-cache lines, and there are only 16K cache lines in the L2 cache,
-meaning that the overflow memory contains at least 237K cache lines.
-So even though only 0.5\% of the xops miss, those few misses incur
-huge search costs, as the finite state machine looks through the
-linear array of overflowed cache lines.  We intend to look into using
-a better data structure, such as a hash table.  Though there is a
-significant performance decrease in this case, BTM still ensures the
-application runs correctly. Namely, the programmer wanted the entire
-compile process to occur as one atomic action so BTM will ensure that
-is the case.  It may be the case that \texttt{javac} really cannot be
-parallelized, in which case locks may be the best choice.  But if the
-programmer wishes to parallelize \texttt{javac}, she may be find it
-easier to break up the large transaction than to break up a locked
-block.
 
 \secput{concl}{Conclusions}
 
@@ -1746,4 +1799,4 @@ problem. [although starvation may still occur.]
 \end{document}
 
 % LocalWords:  csail mit edu AFRL LaMarca Alemany Felten Luchango Shavit JVM
-% LocalWords:  Touitou Okasaki
+% LocalWords:  Touitou Okasaki Qadeer
