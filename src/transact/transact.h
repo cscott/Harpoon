@@ -14,7 +14,9 @@
 #define FLAG_VALUE (0xCACACACACACACACALL)
 
 // OBJ_CHUNK_SIZE must be larger than zero and divisible by eight
-#define OBJ_CHUNK_SIZE 24
+#ifndef OBJ_CHUNK_SIZE
+# define OBJ_CHUNK_SIZE 24
+#endif
 #define INITIAL_CACHE_SIZE 24
 
 /* Commit record information. Commit records are full-fledged objects. */
