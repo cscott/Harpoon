@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * passes. 
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: OptimizedTreeCode.java,v 1.1.2.19 2000-02-15 15:49:53 cananian Exp $
+ * @version $Id: OptimizedTreeCode.java,v 1.1.2.20 2000-02-15 19:02:05 cananian Exp $
  */
 public class OptimizedTreeCode extends Code {
     public static final String codename = CanonicalTreeCode.codename;
@@ -36,7 +36,7 @@ public class OptimizedTreeCode extends Code {
 	    }
 	    }*/ 
     };
-    private TreeDerivation treeDerivation = null;
+    private final TreeDerivation treeDerivation;
   
     /** Create a new <code>OptimizedTreeCode</code> from a
      *  <code>CanonicalTreeCode</code> object, a <code>Frame</code>,
@@ -57,20 +57,24 @@ public class OptimizedTreeCode extends Code {
 
     }
 
-    private OptimizedTreeCode(HMethod newMethod, Tree tree, Frame frame) {
+    // copy constructor; should be only called by the clone() method.
+    private OptimizedTreeCode(HMethod newMethod, Tree tree, Frame frame,
+			      TreeDerivation treeDerivation) {
 	super(newMethod, tree, frame);
-	final CanonicalTreeCode code = 
-	    (CanonicalTreeCode)((Code.TreeFactory)tree.getFactory()).getParent();
-	this.tree = (Tree)Tree.clone(this.tf, tree, null);
-	this.treeDerivation = null; // FIXME
+	this.treeDerivation = treeDerivation;
     }
 
     /** 
      * Clone this code representation. The clone has its own
      * copy of the tree structure. 
      */
-    public HCode clone(HMethod newMethod, Frame frame) {
-	return new OptimizedTreeCode(newMethod, this.tree, frame); 
+    public Code clone(HMethod newMethod, Frame frame) {
+	DerivationGenerator dg =
+	    (getTreeDerivation()==null) ? null : new DerivationGenerator();
+	OptimizedTreeCode tc = new OptimizedTreeCode(newMethod,null,frame,dg);
+	tc.tree = Tree.clone(tc.tf, this.tree, (dg==null) ? null :
+			     dg.cloneCallback(getTreeDerivation()));
+	return tc;
     }
 
     /**

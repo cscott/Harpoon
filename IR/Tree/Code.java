@@ -35,7 +35,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.44 2000-02-15 05:44:42 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.45 2000-02-15 19:02:05 cananian Exp $
  */
 public abstract class Code extends HCode {
     /** The Tree Objects composing this code view. */
@@ -83,7 +83,12 @@ public abstract class Code extends HCode {
   
     /** Clone this code representation. The clone has its own copy
      *  of the Tree */
-    public abstract HCode  clone(HMethod newMethod, Frame frame);
+    public abstract Code clone(HMethod newMethod, Frame frame);
+    /** Clone this code representation. The clone has its own copy
+     *  of the Tree */
+    public final HCode clone(HMethod newMethod) {
+	return clone(newMethod, frame);
+    }
 
     /** Returns a means to externally associate control flow with this
      *  tree code.  If this tree code is modified subsequent to a call

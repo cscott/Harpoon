@@ -24,7 +24,7 @@ import harpoon.Util.Util;
  * canonical tree form.
  * 
  * @author   Duncan Bryce <duncan@lcs.mit.edu>
- * @version  $Id: CanonicalTreeCode.java,v 1.1.2.22 2000-02-15 15:49:53 cananian Exp $
+ * @version  $Id: CanonicalTreeCode.java,v 1.1.2.23 2000-02-15 19:02:05 cananian Exp $
  * 
  */
 public class CanonicalTreeCode extends Code {
@@ -45,12 +45,10 @@ public class CanonicalTreeCode extends Code {
     }
 
     /* Copy constructor, should only be called by the clone() method. */
-    private CanonicalTreeCode(HMethod newMethod, Tree tree, Frame frame) {
+    private CanonicalTreeCode(HMethod newMethod, Tree tree, Frame frame,
+			      TreeDerivation treeDerivation) {
 	super(newMethod, tree, frame);
-	final CanonicalTreeCode code = 
-	    (CanonicalTreeCode)((Code.TreeFactory)tree.getFactory()).getParent();
-	this.tree = (Tree)Tree.clone(this.tf, tree, null);
-	this.treeDerivation = null; // FIXME
+	this.treeDerivation = treeDerivation;
     }
 
     /** Returns a <code>TreeDerivation</code> object for the
@@ -61,8 +59,13 @@ public class CanonicalTreeCode extends Code {
      * Clone this code representation. The clone has its own
      * copy of the tree structure. 
      */
-    public HCode clone(HMethod newMethod, Frame frame) {
-	return new CanonicalTreeCode(newMethod, this.tree, frame); 
+    public Code clone(HMethod newMethod, Frame frame) {
+	DerivationGenerator dg =
+	    (getTreeDerivation()==null) ? null : new DerivationGenerator();
+	CanonicalTreeCode tc = new CanonicalTreeCode(newMethod,null,frame,dg);
+	tc.tree = Tree.clone(tc.tf, tree, (dg==null) ? null :
+			     dg.cloneCallback(getTreeDerivation()));
+	return tc;
     }
 
     /**

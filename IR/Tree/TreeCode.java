@@ -28,12 +28,12 @@ import harpoon.Util.Util;
  * The tree form is based around Andrew Appel's tree form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu> 
- * @version $Id: TreeCode.java,v 1.1.2.28 2000-02-15 15:49:53 cananian Exp $
+ * @version $Id: TreeCode.java,v 1.1.2.29 2000-02-15 19:02:05 cananian Exp $
  * 
  */
 public class TreeCode extends Code {
     public  static   final   String     codename = "tree";
-    private          TreeDerivation     treeDerivation;
+    private final    TreeDerivation     treeDerivation;
   
     /** Create a new <code>TreeCode</code> from a
      *  <code>LowQuadNoSSA</code> object, and a <code>Frame</code>.
@@ -60,6 +60,7 @@ public class TreeCode extends Code {
 	treeDerivation = translator.getTreeDerivation();
     }
 
+    // copy constructor.  should only be called by the clone() method
     protected TreeCode(HMethod newMethod, Tree tree, Frame topframe,
 		       TreeDerivation treeDerivation) {
 	super(newMethod, tree, topframe);
@@ -72,12 +73,12 @@ public class TreeCode extends Code {
      * Clone this code representation. The clone has its own
      * copy of the tree structure. 
      */
-    public HCode clone(HMethod newMethod, Frame frame) {
-	TreeCode             tc  = new TreeCode(newMethod, null, frame, null); 
-
-	tc.tree = (Tree)(Tree.clone(tc.tf, tree, null));
-	tc.treeDerivation = null; // XXX THIS IS BROKEN.
-
+    public Code clone(HMethod newMethod, Frame frame) {
+	DerivationGenerator  dg  =
+	    (getTreeDerivation()==null) ? null : new DerivationGenerator();
+	TreeCode             tc  = new TreeCode(newMethod, null, frame, dg); 
+	tc.tree = Tree.clone(tc.tf, tree, (dg==null) ? null :
+			     dg.cloneCallback(getTreeDerivation()));
 	return tc;
     }
 
