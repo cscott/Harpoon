@@ -29,7 +29,7 @@ import java.util.Set;
  * operation directly correspond to constructor parameters.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MustParamOracle.java,v 1.1.2.3 2001-11-09 01:47:42 cananian Exp $
+ * @version $Id: MustParamOracle.java,v 1.1.2.4 2001-11-10 00:24:55 cananian Exp $
  */
 public class MustParamOracle {
     // could make this an invertibleMap if you want sets.
@@ -43,6 +43,7 @@ public class MustParamOracle {
     public int whichMustParam(Temp t) {
 	return ((Integer)results.get(t)).intValue();
     }
+    public String toString() { return results.toString(); }
     
     /** Creates a <code>MustParamOracle</code> which gives you information
      *  on variables in <code>HCode</code> <code>hc</code> (which should
