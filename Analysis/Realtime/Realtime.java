@@ -31,7 +31,7 @@ import harpoon.Backend.Generic.Frame;
  * <a href="http://tao.doc.wustl.edu/rtj/api/index.html">JavaDoc version</a>.
  *
  * @author Wes Beebee <wbeebee@mit.edu>
- * @version $Id: Realtime.java,v 1.6 2002-06-27 16:25:30 wbeebee Exp $
+ * @version $Id: Realtime.java,v 1.7 2002-06-27 16:30:51 wbeebee Exp $
  */
 
 public class Realtime {
@@ -79,7 +79,7 @@ public class Realtime {
 	 */
 	public static void configure(String options) {
 		String opts = options.toLowerCase();
-		System.out.print("RTJ: on, ");
+		System.out.print("RTJ: on, noheap: ");
 		REALTIME_JAVA = true;
 		if (opts.indexOf("noheap_checks")!=-1) {
 			NOHEAP_CHECKS = true;
