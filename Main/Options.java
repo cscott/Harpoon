@@ -9,7 +9,7 @@ import harpoon.ClassFile.HCodeFactory;
  * environment.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Options.java,v 1.1.2.3 1999-09-08 16:35:36 cananian Exp $
+ * @version $Id: Options.java,v 1.1.2.4 1999-09-09 21:12:20 cananian Exp $
  */
 public class Options {
     /** Stream for writing statistics. */
@@ -31,9 +31,9 @@ public class Options {
 	if (name=="to-low-quad-ssa")
 	    return harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
 	if (name=="scc-opt")
-	    return harpoon.Analysis.QuadSSA.SCC.SCCOptimize.codeFactory(hcf);
+	    return harpoon.Analysis.Quads.SCC.SCCOptimize.codeFactory(hcf);
 	if (name=="ssi-stats")
-	    return harpoon.Analysis.QuadSSA.SSIStats.codeFactory(hcf);
+	    return harpoon.Analysis.Quads.SSIStats.codeFactory(hcf);
 	else throw new Error("Unknown code factory type: "+name);
     }
 }

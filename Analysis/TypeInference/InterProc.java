@@ -11,12 +11,12 @@ import harpoon.Util.UniqueFIFO;
 import harpoon.Util.Worklist;
 import harpoon.ClassFile.*;
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.QuadSSA.QuadClassHierarchy;
+import harpoon.Analysis.Quads.QuadClassHierarchy;
 /**
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.1.2.10 1999-09-08 19:30:17 cananian Exp $
+ * @version $Id: InterProc.java,v 1.1.2.11 1999-09-09 21:12:17 cananian Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {

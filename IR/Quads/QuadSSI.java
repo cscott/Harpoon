@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Quads;
 
-import harpoon.Analysis.QuadSSA.DeadCode;
+import harpoon.Analysis.Quads.DeadCode;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.1.2.2 1999-09-08 17:39:40 cananian Exp $
+ * @version $Id: QuadSSI.java,v 1.1.2.3 1999-09-09 21:12:19 cananian Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */

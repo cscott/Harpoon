@@ -25,7 +25,7 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.StrongARM.SAFrame;
 import harpoon.Backend.StrongARM.SACode;
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.QuadSSA.QuadClassHierarchy;
+import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.Util.UnmodifiableIterator;
@@ -63,7 +63,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.28 1999-09-09 13:27:11 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.29 1999-09-09 21:12:20 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  

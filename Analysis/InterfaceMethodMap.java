@@ -28,7 +28,7 @@ import harpoon.Analysis.GraphColoring.IllegalEdgeException;
  * object layout.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: InterfaceMethodMap.java,v 1.1.2.11 1999-09-08 01:45:00 pnkfelix Exp $
+ * @version $Id: InterfaceMethodMap.java,v 1.1.2.12 1999-09-09 21:12:12 cananian Exp $
  */
 
 public class InterfaceMethodMap extends MethodMap {
@@ -58,7 +58,7 @@ public class InterfaceMethodMap extends MethodMap {
 		      <code>hclasses</code> are not required to be
 		      accounted for.  
 	@see HClass
-	@see harpoon.Analysis.QuadSSA.ClassHierarchy
+	@see harpoon.Analysis.Quads.ClassHierarchy
 	@see harpoon.Main.CallGraph
      */
     public InterfaceMethodMap( Enumeration hclasses ) {

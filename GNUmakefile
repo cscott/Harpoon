@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.62 1999-09-08 16:22:46 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.63 1999-09-09 21:12:07 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -169,7 +169,7 @@ oldfirst:
 	-${JCC} ${JFLAGS} IR/Quads/*.java IR/Properties/*.java \
 		2> /dev/null # not perfect, but it does the base quads well.
 	-${JCC} ${JFLAGS} \
-		Analysis/QuadSSA/*.java Analysis/QuadSSA/SCC/*.java \
+		Analysis/Quads/*.java Analysis/Quads/SCC/*.java \
 		2> /dev/null # not perfect, but gotta make those dirs somehow.
 olderfirst:
 	@echo Please wait...

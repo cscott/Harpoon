@@ -6,7 +6,7 @@ package harpoon.IR.Quads;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
-import harpoon.Analysis.QuadSSA.DeadCode;
+import harpoon.Analysis.Quads.DeadCode;
 import harpoon.Util.Util;
 
 /**
@@ -14,7 +14,7 @@ import harpoon.Util.Util;
  * handlers.  <code>QuadWithTry</code> is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadWithTry.java,v 1.1.2.15 1999-09-08 16:35:33 cananian Exp $
+ * @version $Id: QuadWithTry.java,v 1.1.2.16 1999-09-09 21:12:19 cananian Exp $
  * @see QuadNoSSA
  * @see QuadSSI
  */

@@ -14,7 +14,7 @@ import harpoon.IR.Quads.HANDLER.ProtectedSet;
 import harpoon.Analysis.SSITOSSAMap;
 import harpoon.Analysis.ToSSA;
 import harpoon.Analysis.UseDef;
-import harpoon.Analysis.QuadSSA.TypeInfo;
+import harpoon.Analysis.Quads.TypeInfo;
 import harpoon.Util.Tuple;
 import harpoon.Util.WorkSet;
 import harpoon.Analysis.Maps.TypeMap;
@@ -35,7 +35,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.23 1999-09-09 04:45:40 bdemsky Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.24 1999-09-09 21:12:19 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 

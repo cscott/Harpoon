@@ -12,7 +12,7 @@ import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Quad;
 import java.util.Enumeration;
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.QuadSSA.QuadClassHierarchy;
+import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.TypeInference.InterProc;
 import harpoon.Util.Set;
 import harpoon.Util.HashSet;
@@ -22,7 +22,7 @@ import harpoon.Util.Worklist;
  * <code>PrintTypes</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: TypesMain.java,v 1.1.2.7 1999-09-08 19:30:20 cananian Exp $
+ * @version $Id: TypesMain.java,v 1.1.2.8 1999-09-09 21:12:20 cananian Exp $
  */
 public class TypesMain extends harpoon.IR.Registration {
     public static void main(String args[]) {
@@ -33,7 +33,7 @@ public class TypesMain extends harpoon.IR.Registration {
 	    HClass hcl = HClass.forName(args[0]);
 	    HMethod hm[] = hcl.getDeclaredMethods();
 	    ClassHierarchy ch = null;
-	    harpoon.Analysis.QuadSSA.CallGraph cg = null;
+	    harpoon.Analysis.Quads.CallGraph cg = null;
 	    InterProc ty = null;
 	    boolean multiPass = args[args.length-1].equals("ADDITIONAL");
 	    for (int i=1; i<args.length; i++) {
@@ -45,7 +45,7 @@ public class TypesMain extends harpoon.IR.Registration {
 		    if (i==1) {
 			System.out.println("CHA-like started: " + System.currentTimeMillis());
 			ch = new QuadClassHierarchy(hm[j], hcf);
-			cg = new harpoon.Analysis.QuadSSA.CallGraph(ch, hcf);
+			cg = new harpoon.Analysis.Quads.CallGraph(ch, hcf);
 			System.out.println("CHA-like finished: " + System.currentTimeMillis());
 			if (multiPass) {
 			    System.out.println("another CHA-like started: " + System.currentTimeMillis());

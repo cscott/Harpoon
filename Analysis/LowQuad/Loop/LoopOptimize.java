@@ -20,7 +20,7 @@ import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
-import harpoon.Analysis.QuadSSA.DeadCode;
+import harpoon.Analysis.Quads.DeadCode;
 import harpoon.IR.Properties.Derivation;
 import harpoon.Analysis.LowQuad.Loop.WorkTempMap;
 import harpoon.Analysis.LowQuad.Loop.MyLowQuadSSI;
@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>LoopOptimize</code> optimizes the code after <code>LoopAnalysis</code>.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopOptimize.java,v 1.1.2.18 1999-08-09 22:19:57 duncan Exp $
+ * @version $Id: LoopOptimize.java,v 1.1.2.19 1999-09-09 21:12:14 cananian Exp $
  */
 public final class LoopOptimize {
     

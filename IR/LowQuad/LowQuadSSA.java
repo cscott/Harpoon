@@ -26,7 +26,7 @@ import java.util.Map;
  * representation in SSA form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.21 1999-09-08 16:35:30 cananian Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.22 1999-09-09 21:12:18 cananian Exp $
  */
 public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
     private Derivation  m_derivation;
@@ -40,7 +40,7 @@ public class LowQuadSSA extends Code { /*which extends harpoon.IR.Quads.Code*/
 	super(code.getMethod(), null);
 	final Map dT = new HashMap();
 	final Map tT = new HashMap();
-	final TypeMap tym = new harpoon.Analysis.QuadSSA.TypeInfo(code);
+	final TypeMap tym = new harpoon.Analysis.Quads.TypeInfo(code);
 	FinalMap fm = new harpoon.Backend.Maps.DefaultFinalMap();
 	quads = Translate.translate((LowQuadFactory)qf, code, tym, fm, dT, tT);
       
