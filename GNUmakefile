@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.58 1999-08-05 15:56:48 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.59 1999-08-06 18:54:23 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -302,9 +302,10 @@ find-no-copyright:
 
 wc:
 	@echo Top Five:
-	@wc -l $(TARSOURCE) | sort -n | tail -6 | head -5
+	@wc -l $(filter-out Contrib/%,$(TARSOURCE)) \
+		| sort -n | tail -6 | head -5
 	@echo Total lines of source:
-	@cat $(TARSOURCE) | wc -l
+	@cat $(filter-out Contrib/%,$(TARSOURCE)) | wc -l
 
 clean:
 	-${RM} -r harpoon silicon gnu Harpoon.jar* harpoon.tgz* \
