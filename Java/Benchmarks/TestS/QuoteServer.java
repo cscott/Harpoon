@@ -10,6 +10,8 @@ import java.util.*;
 */ 
 public class QuoteServer { 
     // The port on which the server should listen. 
+    int numStocks = 40; 
+
     private static final int SERVER_PORT = 1701; 
     // Queue length of incoming connections. 
     private static final int MAX_CLIENTS = 50; 
@@ -39,6 +41,8 @@ public class QuoteServer {
      */ 
     public QuoteServer() {
 	// Load the quotes and exit if it is unable to do so.
+	stockInfo = new String[numStocks]; 
+
 	if (!loadQuotes()) System.exit(1);
 	try {
 	    // Create a listening socket. 
@@ -56,7 +60,7 @@ public class QuoteServer {
     protected boolean loadQuotes() { 
 	String fileLine; 
 	StringBuffer inputBuffer = new StringBuffer(); 
-	int numStocks = 40; 
+
 	/* try { 
 	   // Create a decorated stream to the data file. 
 	   DataInputStream stockInput = new DataInputStream( 
@@ -80,7 +84,7 @@ public class QuoteServer {
 
 
 	// Create an array of strings for each data file line. 
-	stockInfo = new String[numStocks]; 
+
 	String inputString = inputBuffer.toString(); 
 	// Pointers for creating substrings. 
 	//int stringStart = 0,stringEnd = 0; 

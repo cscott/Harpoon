@@ -29,7 +29,6 @@ public class QuoteClient {
 	    System.exit(1); 
 	} 
 	QuoteClient client = new QuoteClient(args); 
-	client.printQuotes(System.out); 
 	System.exit(0); 
     } 
     /** 
@@ -55,8 +54,11 @@ public class QuoteClient {
 					       serverInfo.indexOf(" ")+1); 
 	}
  
-	getQuotes(); // Go get the quotes. 
-	quitServer(); // Close the communication. 
+	while (true) {
+	    getQuotes(); // Go get the quotes. 
+	    this.printQuotes(System.out); 
+	}
+	//	quitServer(); // Close the communication. 
     } 
     /** 
      * Open the initial connection to the server. 
