@@ -17,6 +17,10 @@ ActionGEQ1::ActionGEQ1(DomainRelation *drel, model *m) {
 }
 
 void ActionGEQ1::repairpredicate(Hashtable *env,CoercePredicate *p) {
+#ifdef DEBUGMESSAGES
+  printf("ActionGEQ1::repairpredicate CALLED\n");
+  fflush(NULL);
+#endif
   switch(p->getpredicate()->getsetexpr()->gettype()) {
   case SETEXPR_LABEL: {
     /* Set should be too small if we are doing a repair
@@ -47,6 +51,7 @@ void ActionGEQ1::repairpredicate(Hashtable *env,CoercePredicate *p) {
 	  if (!wsnew->contains(e)) {
 	    /* Got our element */
 	    domrelation->addtoset(e,domrelation->getset(newsetname),globalmodel);
+	    //printf("HERE?!\n"); fflush(NULL);
 	    return;
 	  }
 	  e=(Element *)ws->getnextelement(e);

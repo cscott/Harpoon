@@ -44,7 +44,12 @@ void doanalysis2() {
   exportmodel->doabstraction();
   exportmodel->getdomainrelation()->fixstuff();
 
+
   exportmodel->breakspec();
+#ifdef DEBUGMESSAGES
+  printf("\n\nSpecs BROKEN \n\n");
+  fflush(NULL);
+#endif
   
   exportmodel->docheck();
   exportmodel->doconcrete();
@@ -64,6 +69,11 @@ void doanalysis3() {
   exportmodel->getdomainrelation()->fixstuff();
 
   exportmodel->inserterrors();
+
+#ifdef DEBUGMESSAGES
+  printf("\n\nErrors INSERTED \n\n");
+  fflush(NULL);
+#endif
   
   exportmodel->docheck();
   exportmodel->doconcrete();

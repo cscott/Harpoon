@@ -27,7 +27,9 @@ structuremap::structuremap(structure *s) {
 bool typemap::asserttype(void *ptr, structure *s) {
   bool b=checktype(true,ptr,s);
   if (!b) {
+#ifdef DEBUGMANYMESSAGES
     printf("Assertion failure\n");
+#endif
     bool b=checktype(true,ptr,s);
   }
   return b;

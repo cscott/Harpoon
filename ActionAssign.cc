@@ -14,6 +14,7 @@
 #include "element.h"
 #include "common.h"
 
+
 ActionAssign::ActionAssign(DomainRelation *drel, model *m) {
   domrelation=drel;
   globalmodel=m;
@@ -188,33 +189,38 @@ void ActionAssign::breakpredicate(Hashtable *env, CoercePredicate *cp)
 	}
       else 
 	{
-	  relation->put(index, ele);
-	  
+	  Element *newele = NULL;
+	  printf("PREDICATE_EQUALS for tokens\n");
+	  //printf("range name = %s\n", drel->getrange()); fflush(NULL);
+	  //printf("Current value: ");  old_ve->print();  printf("\n");
 
-	  /* WRONG
-	  printf("range name = %s\n", drel->getrange()); fflush(NULL);
-
-	  WorkSet *range = domrelation->getset(drel->getrange())->getset();
-	  
-	  if (range==NULL)
-	    printf("naspa\n");
-	  else printf("cool\n");
-	  fflush(NULL);
-
-	  printf("range->size = %d\n", range->size());
-	  fflush(NULL);
-	 	  
-	  Element *newele;
-	  for (int i=0; i<range->size(); i++)
+	  /* find a value in the actual range that is different from the
+	     current value of V.R */
+	  char* old_token = old_ve->gettoken();
+	  WorkSet *ws = drel->gettokenrange();
+	  bool found = false;
+	  char *token = (char*) ws->firstelement();
+	  while (token)
 	    {
-	      newele = (Element*) range->getelement(i);
-	      if (newele != ele)
-		break;
+	      printf("Token: %s\n", token);
+	      if (!equivalentstrings(token, old_token))
+		{
+		  found = true;
+		  newele = new Element(token);
+		  break;
+		}	      
+	      token = (char*) ws->getnextelement(token);
 	    }
-	  
-	  delete(ele);	  
-	  relation->put(index, newele);
-	  */
+
+	  if (!found)
+	    {
+	      printf("The following predicate cannot be broken:");
+	      cp->getpredicate()->print(); printf("\n");
+	    }
+	  else relation->put(index, newele);
+
+	  fflush(NULL);
+	  printf("\n\n");  	  	 	
 	}
       break;
     }

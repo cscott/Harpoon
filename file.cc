@@ -33,21 +33,21 @@ int main(int argc, char **argv) {
 
 
   case '1': { 
-    /* mounts the disk, creates 145 files, and writes "buf" in each file 
+    /* mounts the disk, creates NUMFILES files, and writes "buf" in each file 
        for 90 times */ 
     struct block * ptr=mountdisk("disk");
-    for(int i=0;i<145;i++) {
+    for(int i=0; i<NUMFILES; i++) {
       char filename[10];
       sprintf(filename,"fil%d",i);
       openfile(ptr,filename);
     }
-    for(int j=0;j<90;j++) {
-      for(int i=0;i<145;i++) {
+    for(int j=0; j<90; j++) {
+      for(int i=0; i<NUMFILES; i++) {
 	char *buf="01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123";
 	writefile(ptr,i,buf,122);
       }
     }
-    for(int i=0;i<145;i++) {
+    for(int i=0; i<NUMFILES; i++) {
       closefile(ptr,i);
     }
     unmountdisk(ptr);
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
   // prints the directory structure, and prints the contents of each file
     struct block * ptr=mountdisk("disk");
     printdirectory(ptr);
-    for(int i=1;i<145;i++) {
+    for(int i=1; i<NUMFILES; i++) {
       char filename[10];
       sprintf(filename,"fil%d",i);
       printfile(filename,ptr);
@@ -119,18 +119,18 @@ int main(int argc, char **argv) {
   case '6': {
   // the same as "case '1'" only that the files are accessed in reversed order
     struct block * ptr=mountdisk("disk");
-    for(int i=145;i>1;i--) {
+    for(int i=NUMFILES; i>1; i--) {
       char filename[10];
       sprintf(filename,"fil%d",i);
       openfile(ptr,filename);
     }
-    for(int j=0;j<90;j++) {
-      for(int i=145;i>1;i--) {
+    for(int j=0; j<90; j++) {
+      for(int i=NUMFILES; i>1; i--) {
 	char *buf="01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123";
 	writefile(ptr,i,buf,122);
       }
     }
-    for(int i=145;i>1;i--) {
+    for(int i=NUMFILES; i>1; i--) {
       closefile(ptr,i);
     }
     unmountdisk(ptr);
@@ -139,30 +139,30 @@ int main(int argc, char **argv) {
 
   case '7': {
     struct block * ptr=mountdisk("disk");
-    for(int i=145;i>=0;i--) {
+    for(int i=NUMFILES; i>=0; i--) {
       char filename[10];
       sprintf(filename,"fil%d",i);
       openfile(ptr,filename);
     }
 
     for(int j=0;j<6000;j++) {
-      for(int i=145;i>=0;i--) {
+      for(int i=NUMFILES; i>=0; i--) {
 	char name[10];
 	int len=sprintf(name, "%d ",i);
 	writefile(ptr,i,name,len);
       }
     }
-    for(int i=145;i>=0;i--) {
+    for(int i=NUMFILES; i>=0; i--) {
       closefile(ptr,i);
     }
-    for(int i=145;i>=0;i--) {
+    for(int i=NUMFILES; i>=0; i--) {
       char filename[10];
       sprintf(filename,"fil%d",i);
       openfile(ptr,filename);
     }
 
     for(int j=0;j<400;j++) {
-      for(int i=145;i>=0;i--) {
+      for(int i=NUMFILES; i>=0; i--) {
 	int l=0;
 	char name[10];
 	int len=sprintf(name, "%d ",i);
@@ -173,7 +173,7 @@ int main(int argc, char **argv) {
 	}
       }
     }
-    for(int i=145;i>=0;i--) {
+    for(int i=NUMFILES; i>=0; i--) {
       closefile(ptr,i);
     }
     unmountdisk(ptr);
@@ -193,28 +193,28 @@ int main(int argc, char **argv) {
       chunmountdisk(ptr);
     }
     struct block * ptr=mountdisk("disk");
-    for(int i=145;i>=0;i--) {
+    for(int i=NUMFILES; i>=0; i--) {
       char filename[10];
       sprintf(filename,"fil%d",i);
       openfile(ptr,filename);
     }
-    for(int j=0;j<6000;j++) {
-      for(int i=145;i>=0;i--) {
+    for(int j=0; j<6000; j++) {
+      for(int i=NUMFILES; i>=0; i--) {
 	char name[10];
 	int len=sprintf(name, "%d ",i);
 	writefile(ptr,i,name,len);
       }
     }
-    for(int i=145;i>=0;i--) {
+    for(int i=NUMFILES; i>=0; i--) {
       closefile(ptr,i);
     }
-    for(int i=145;i>=0;i--) {
+    for(int i=NUMFILES; i>=0; i--) {
       char filename[10];
       sprintf(filename,"fil%d",i);
       openfile(ptr,filename);
     }
     for(int j=0;j<400;j++) {
-      for(int i=145;i>=0;i--) {
+      for(int i=NUMFILES; i>=0; i--) {
 	int l=0;
 	char name[10];
 	int len=sprintf(name, "%d ",i);
@@ -225,7 +225,7 @@ int main(int argc, char **argv) {
 	}
       }
     }
-    for(int i=145;i>=0;i--) {
+    for(int i=NUMFILES; i>=0; i--) {
       closefile(ptr,i);
     }
     unmountdisk(ptr);
@@ -554,7 +554,7 @@ void createdisk() {
   struct block *ptr=(struct block *)vptr;
   {
     struct SuperBlock * sb=(struct SuperBlock*) &ptr[0];
-    sb->FreeBlockCount=NUMBLOCK-5; //!!! it was BLOCKSIZE instead of NUMBLOCKS
+    sb->FreeBlockCount=NUMBLOCK-5;
     sb->FreeInodeCount=NUMINODES-1;
     sb->NumberofInodes=NUMINODES;
     sb->NumberofBlocks=NUMBLOCK;

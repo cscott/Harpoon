@@ -135,6 +135,7 @@ void model::doabstraction() {
   } while(clean);
 }
 
+
 void model::triggerrule(Element *ele,char *set) {
   for(int i=0;i<numrules;i++) {
     if(rulearray[i]->isstatic()) {
@@ -179,6 +180,8 @@ void model::breakspec()
 // inserts faults that don not break the specifications
 void model::inserterrors()
 {
+  printf("\nmodel::inserterrors CALLED\n\n");
+
   srandom((unsigned) time(NULL));
 
   processobject *po = new processobject(this);
@@ -403,13 +406,14 @@ void model::parserangefile(char *rangefile)
 
   do {
     char* relation = rp->parserelation();
-#ifdef DEBUGMESSAGES
-    printf("Reading relation: %s\n", relation);
-    fflush(NULL);
-#endif
 
     if (relation != NULL)
       {
+#ifdef DEBUGMESSAGES
+	printf("Reading relation: %s\n", relation);
+	fflush(NULL);
+#endif
+
 	// find the given relation, whose range should be of type "token"
 	DRelation *drel = domainrelation->getrelation(relation);
 	if (strcmp(drel->getrange(), "token") != 0)

@@ -192,7 +192,9 @@ bool processobject::processconstraint(Constraint *c) {
     while(true) {
       if (c->getstatement()!=NULL) {
 	if (processstatement(c->getstatement(),st->env)!=PTRUE) {
-	  //	  printf("ERROR: Predicate violation\n");
+#ifdef DEBUGMESSAGES
+	  printf("Predicate violation.  Need to repair\n");
+#endif
 	  if (c->getcrash()) {
 	    printf("Fatal program error violating special constraint.\n");
 	    exit(-1);
@@ -301,7 +303,7 @@ void processobject::modifyconstraint(Constraint *c)
   fflush(NULL);
 #endif
 
-  // first, get get the constraint in normal form
+  // first, get the constraint in normal form
   NormalForm *nf = globalmodel->getnormalform(c);
 
   /* for each CoerceSentence in nf, find if it's satisfied. 
