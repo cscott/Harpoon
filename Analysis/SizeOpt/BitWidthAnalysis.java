@@ -79,7 +79,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.12 2001-11-02 05:33:43 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.13 2001-11-03 19:17:24 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -702,6 +702,20 @@ public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 		    callable.addAll(ch.overrides(ty,hm,true));
 	    }
 	    callable.add(hm);
+	    // weird special stuff for possible calls to Thread.start():
+	    // they cause calls to Thread.run()
+	    if (callable.contains(linker.forName("java.lang.Thread")
+				  .getMethod("start", "()V"))) {
+		// do a virtual dispatch to Thread.run() as well.
+		LatticeVal v = get( q.params(0) );
+		HClass ty = ((xClass) v).type();
+		Util.assert(ty.isInstanceOf
+			    (linker.forName("java.lang.Thread")), v);
+		hm = ty.getMethod("run", "()V");
+		if (!(v instanceof xClassExact))
+		    callable.addAll(ch.overrides(ty,hm,true));
+		callable.add(hm);
+	    }
 	    // for every callable method, raise its Vparam.
 	    // flag if any callable methods are native.
 	    boolean anyNative = false;
