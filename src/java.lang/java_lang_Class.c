@@ -66,16 +66,28 @@ static void wrapNthrow(JNIEnv *env, char *exclsname) {
     return;
 }
 
-/*
- * Class:     java_lang_Class
- * Method:    newInstance
- * Signature: ()Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance
-  (JNIEnv *env, jobject cls) {
-    
+/** Private helper for newInstance and newInstance_00024_00024initcheck */    
+static jobject _newInstance_(JNIEnv *env, jobject cls, jboolean initcheck) {
     jobject result;
-    jmethodID methodID=(*env)->GetMethodID(env, (jclass) cls, "<init>", "()V");
+    jmethodID methodID;
+    if (initcheck==JNI_TRUE) { /* call static initializers if initcheck */
+      jclass c;
+      /* XXX: Doesn't initialize interfaces */
+      for (c = (jclass) cls; c!=NULL; c=(*env)->GetSuperclass(env, c)) {
+	methodID=(*env)->GetStaticMethodID(env, c, "<clinit>", "()V");
+	if (methodID==NULL)
+	  (*env)->ExceptionClear(env); /* no static initializer, ignore */
+	else {
+	  (*env)->CallStaticVoidMethod(env, (jclass) cls, methodID);
+	  if ((*env)->ExceptionOccurred(env)) {
+	    wrapNthrow(env, "java/lang/ExceptionInInitializerError");
+	    return NULL;
+	  }
+	}
+      }
+    }
+    /* okay, get constructor for this object and create it. */
+    methodID=(*env)->GetMethodID(env, (jclass) cls, "<init>", "()V");
     /* if methodID=NULL, throw InstantiationException */
     if ((*env)->ExceptionOccurred(env)) goto error;
     result = (*env)->NewObject(env, (jclass) cls, methodID);
@@ -86,6 +98,22 @@ JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance
     wrapNthrow(env, "java/lang/InstantiationException");
     return NULL;
 }
+
+/*
+ * Class:     java_lang_Class
+ * Method:    newInstance
+ * Signature: ()Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance
+  (JNIEnv *env, jobject cls) {
+  return _newInstance_(env, cls, JNI_FALSE);
+}
+#ifdef WITH_INIT_CHECK
+JNIEXPORT jobject JNICALL Java_java_lang_Class_newInstance_00024_00024initcheck
+  (JNIEnv *env, jobject cls) {
+  return _newInstance_(env, cls, JNI_TRUE);
+}
+#endif /* WITH_INIT_CHECK */
 
 /*
  * Class:     java_lang_Class
