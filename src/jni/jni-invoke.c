@@ -2,7 +2,7 @@
 #include <assert.h>
 #include "jni.h"
 #include "jni-private.h"
-#ifdef WITH_PRECISE_C
+#ifdef WITH_PRECISE_C_BACKEND
 #include "precisec.c" /* drag in implementations of FNI_Dispatch_<foo> */
 #endif
   
