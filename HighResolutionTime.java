@@ -139,4 +139,3 @@ public abstract class HighResolutionTime implements Comparable {
 	return (millis * 1000000 + nanos);
     }
 }
-

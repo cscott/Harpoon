@@ -110,7 +110,7 @@ public class AbsoluteTime extends HighResolutionTime {
     /** Returns the time past the epoch represented by <code>this</code> as a
      *  <code>java.util.Date</code>.
      */
-    public Date getDate()	{
+    public Date getDate() {
 	return new Date(getMilliseconds());
     }
 
@@ -143,7 +143,7 @@ public class AbsoluteTime extends HighResolutionTime {
     }
 
     /** Change the time represented by <code>this</code>. */
-    public void set(Date d)	{
+    public void set(Date d) {
 	set(d.getTime());
     }
 
