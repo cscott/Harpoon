@@ -4,6 +4,10 @@
 #include "jni.h"
 
 typedef void * jptr;
+#define SHR(x,y) (((int32_t)(x))>>((y)&0x1f))
+#define USHR(x,y) (((u_int32_t)(x))>>((y)&0x1f))
+#define LSHR(x,y) (((int64_t)(x))>>((y)&0x3f))
+#define LUSHR(x,y) (((u_int64_t)(x))>>((y)&0x3f))
 
 /* select which calling convention you'd like to use in the generated code */
 #define USE_PAIR_RETURN
