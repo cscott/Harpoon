@@ -48,7 +48,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.21 2000-01-07 22:21:25 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.22 2000-01-10 20:52:22 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -741,21 +741,32 @@ public class AsyncCode {
 	    ("harpoon.Analysis.ContBuilder." + pref + "Continuation");
 
 	// find a unique name for the replacement HMethod
-	final String methodNamePrefix = original.getName() + "Async_";
+	String methodNamePrefix = original.getName() + "_Async";
 	String newMethodName = methodNamePrefix;
-	int i = 0;
-	while(true) {
+	if (HClass.forName("java.lang.Runnable").
+	    isSuperinterfaceOf(originalClass)&&
+	    originalClass.getMethod("run",new HClass[0]).equals(original)) {
 	    try {
-		newMethodName = methodNamePrefix + i++; 
+		newMethodName = methodNamePrefix;
 		replacementClass.getMethod(newMethodName, 
 					   original.getParameterTypes());
+		throw new RuntimeException("Name collision with run_Async method");
 	    } catch (NoSuchMethodError e) {
-		break;
+	    }
+	} else {
+	    int i = 0;
+	    while(true) {
+		try {
+		    newMethodName = methodNamePrefix + i++; 
+		    replacementClass.getMethod(newMethodName, 
+					       original.getParameterTypes());
+		} catch (NoSuchMethodError e) {
+		    break;
+		}
 	    }
 	}
-	
 	// create replacement method
-	final HMethodSyn replacement = 
+	HMethodSyn replacement = 
 	    new HMethodSyn(replacementClass, newMethodName, 
 			   original.getParameterTypes(), newReturnType);
 
@@ -845,7 +856,6 @@ public class AsyncCode {
 	    nhm.setParameterNames(parameterNames);
 	    nhm.setParameterTypes(parameterTypes);
 	}
-
 	return continuationClass;
     }
 }
