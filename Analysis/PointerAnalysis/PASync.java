@@ -18,7 +18,7 @@ import harpoon.Analysis.PointerAnalysis.Relation;
  * <code>PASync</code> models a <code>sync</code> action.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PASync.java,v 1.1.2.2 2000-05-18 03:31:07 salcianu Exp $
+ * @version $Id: PASync.java,v 1.1.2.3 2000-05-18 03:51:55 salcianu Exp $
  */
 public class PASync {
     /** The node on which the <code>sync</code> is performed on. */
@@ -77,8 +77,8 @@ public class PASync {
 		return this;
 	}
 
-	System.out.println("DEPTH: " + (depth + 1) + " < sync , " + n +
-			   " , " + nt + " >");
+	///// System.out.println("DEPTH: " + (depth + 1) + " < sync , " + n +
+	/////		   " , " + nt + " >");
 
 	return 
 	    new PASync(PANode.translate(n, map),

@@ -37,7 +37,7 @@ import harpoon.Util.Util;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.37 2000-05-18 03:31:06 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.38 2000-05-18 03:51:54 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -77,7 +77,7 @@ abstract class InterProcPA {
 					       CALL q,
 					       ParIntGraph pig_before,
 					       PointerAnalysis pa){
-	//if(DEBUG)
+	if(DEBUG)
 	    System.out.println("Inter-procedural analysis " + q);
 
 	// specially treat some native methods
