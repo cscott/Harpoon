@@ -88,7 +88,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.7 2003-07-22 22:58:32 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.8 2003-07-28 22:35:22 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -125,6 +125,8 @@ public class SyncTransformer
 	Boolean.getBoolean("harpoon.synctrans.nofieldmods");
     private final boolean noArrayModification = // only do regular objects
 	Boolean.getBoolean("harpoon.synctrans.noarraymods");
+    private final boolean noNestedTransactions = // only top-level trans.
+	Boolean.getBoolean("harpoon.synctrans.nonestedtrans");
     private final boolean useSmartFieldOracle = // dumb down field oracle
 	!Boolean.getBoolean("harpoon.synctrans.nofieldoracle");
     private final boolean useSmartCheckOracle = // dumb down check oracle
@@ -412,6 +414,7 @@ public class SyncTransformer
 	// mutable.
 	FOOTER footer; // we attach new stuff to the footer.
 	ListList<THROW> handlers = null; // points to current abort handler
+	int skipped_nested=0;
 	Tweaker(CheckOracle co, FOOTER qF, boolean with_transaction,
 		ExactTypeMap<Quad> etm, AllocationInformationMap aim) {
 	    this.co = co;
@@ -556,6 +559,14 @@ public class SyncTransformer
 	public void visit(MONITORENTER q) {
 	    addChecks(q);
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
+	    if (handlers!=null && noNestedTransactions) {
+		// we've already got a top-level transaction; ignore this
+		// monitorenter
+		skipped_nested++;
+		Quad.addEdge(in.from(), in.which_succ(),
+			     out.to(), out.which_pred());
+		return;
+	    }
 	    if (handlers==null)
 		in = addAt(in, new CONST(qf, q, currtrans, null, HClass.Void));
 	    // counters!
@@ -612,6 +623,14 @@ public class SyncTransformer
 			"MONITORENTER in "+q.getFactory().getParent();
 	    addChecks(q);
 	    Edge in = q.prevEdge(0), out = q.nextEdge(0);
+	    if (skipped_nested>0) {
+		skipped_nested--;
+		assert handlers!=null;
+		assert noNestedTransactions;
+		Quad.addEdge(in.from(), in.which_succ(),
+			     out.to(), out.which_pred());
+		return;
+	    }
 	    // call c.commitTransaction(), linking to abort code if fails.
 	    Quad q0 = new CALL(qf, q, HMcommitrec_commit,
 			       new Temp[] { currtrans }, null, retex,
