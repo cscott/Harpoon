@@ -4,6 +4,7 @@
 #include "gc.h"
 #endif
 #include "flexthread.h"
+#include <stdlib.h> /* for malloc */
 
 #define HEAPSIZE 65536
 #define ALIGNMENT 4
