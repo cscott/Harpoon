@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.58 1998-10-16 11:42:41 cananian Exp $
+# $Id: GNUmakefile,v 1.59 1998-10-18 07:28:00 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -72,6 +72,9 @@ VERSIONS: $(TARSOURCE) # collect all the RCS version ID tags.
 	@grep -Fh ' $$I''d: ' $(TARSOURCE) > VERSIONS
 	@echo done.
 
+ChangeLog: $(TARSOURCE)
+	rcs2log $(TARSOURCE) > ChangeLog
+
 cvs-add: needs-cvs
 	-for dir in $(filter-out Test,$(ALLPKGS)); do \
 		(cd $$dir; cvs add *.java 2>/dev/null); \
@@ -92,8 +95,8 @@ update: needs-cvs
 	xvcg -psoutput $@ -paper 8x11 -color $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING
-	tar czf harpoon.tgz COPYING $(TARSOURCE)
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog
+	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog
 	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
 tar:	harpoon.tgz harpoon.tgz.TIMESTAMP
@@ -104,7 +107,7 @@ tar-install: tar
 
 doc:	doc/TIMESTAMP
 
-doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
+doc/TIMESTAMP:	$(ALLSOURCE) ChangeLog mark-executable
 	make doc-clean
 	mkdir doc
 	cd doc; ln -s .. harpoon ; ln -s .. silicon ; ln -s ../Contrib gnu
@@ -123,6 +126,7 @@ doc/TIMESTAMP:	$(ALLSOURCE) mark-executable
 	cd doc; ln -s $(JDOCIMAGES) images
 	cd doc; ln -s packages.html index.html
 	cd doc; ln -s index.html API_users_guide.html
+	cp ChangeLog doc/ChangeLog
 	date '+%-d-%b-%Y at %r %Z.' > doc/TIMESTAMP
 	chmod a+rx doc ; chmod a+r doc/*
 
