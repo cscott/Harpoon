@@ -30,7 +30,7 @@ import java.util.Iterator;
     it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.10 1999-05-27 01:54:33 pnkfelix Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.11 1999-05-27 23:00:27 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
     
@@ -93,38 +93,42 @@ public class LocalCffRegAlloc extends RegAlloc {
     private void localRegAlloc(BasicBlock bb) {
 	CloneableIterator iter = new CloneableIterator(bb.listIterator());
 	Temp[] registers = frame.getGeneralRegisters();
-
-	// if reg is holding a value, values[regIndex] will have that
-	// value.  Else, values will have null. 
+	
+	// if reg(i) is holding a value, values[ i ] will have that
+	// value.  Else, values[ i ] will have null. 
 	Temp[] values = new Temp[ registers.length ]; 
 
 	while(iter.hasNext()) {
 	    Instr instr = (Instr) iter.next();
 	    
 	defs:	    
-	    for (int d=0; d<instr.def().length; d++) {
-		Temp dest = instr.def()[d];		
+	    for (int d=0; d<instr.dst.length; d++) {
+		Temp dest = instr.dst[d];		
+		// go through available registers
 		for (int i=0; i<registers.length; i++) {
-		    if (values[i] == null) {
+		    if (values[i] == null) { 
+			// found a register to store 'dest' in  
 			values[i] = dest;			
 			instr.dst[d] = registers[i];
 			break defs;
 		    }
 		} 
+		// if we got this far, we didn't find a free register
+
 		// Evict a value (storing it to memory).  Choose the
 		// value based on furthest first (this is where the
 		// CFF comes in) 
 		
 		int index = findFurthest((Iterator)iter.clone(), values);
 				
-		// TODO: figure out how to insert InstrMEM into the
-		// Instruction List for 'bb'
-
-		// storing registers[index] -> values[index]
 		InstrMEM minstr = 
 		    new InstrMEM(null, null, null, 
                         new Temp[] { values[index] }, 
                         new Temp[] { registers[index] });
+		
+		// TODO: now 'dest' can be stored in
+		// registers[index].  Update auxillary data structures
+		// accordingly. 
 
 	    }
 	    for (int u=0; u<instr.use().length; u++) {
@@ -137,13 +141,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 			// Evict a value (storing it to memory).
 			int index = findFurthest((Iterator)iter.clone(), values); 
 			
-			// TODO: figure out how to insert InstrMEM into the
-			// Instruction List for 'bb'
-			// storing registers[index] -> values[index]
 			InstrMEM store = new InstrMEM (null, null, null, 
 				new Temp[] { values[index] },
 				new Temp[] {  registers[index] });
 			
+			// TODO: put 'use' into registers[index],
+			// updating auxillary data structures
+			// accordingly 
 		    }
 		}
 	    }
@@ -152,11 +156,13 @@ public class LocalCffRegAlloc extends RegAlloc {
 
     /** 
 	<BR> <B>requires:</B> 
-	     1. <code>iter</code> is an <code>Iterator</code> of
-	        <code>Instr</code>s.
+	     1. <code>iter</code> iterates through a linear list of
+	                          <code>Instr</code>s. 
 	     2. <code>values</code> f
 	<BR> <B>modifies:</B> <code>iter</code>
-	<BR> <B>effects:</B> TODO: fill in
+	<BR> <B>effects:</B> Returns the index 'i' of the
+	     <code>Temp</code>, <code>values</code>[i], which is the
+	     one that 
 
 	<BR> NOTE: to perform true CFF, we need to know which
 	variables were *DEFINED* in this round, versus just being
@@ -166,13 +172,15 @@ public class LocalCffRegAlloc extends RegAlloc {
     private int findFurthest(Iterator iter, Temp[] values) {
 	int count=0;
 	
+	final int REDEFINED_BEFORE_USED = -1;
+	final int UNUSED_AND_UNDEFINED = 0;
 	// Dist definitions: 
 	// (-1) means that the value will be redefined before usage
 	// (0)  means that the value has not been used or redefined
-	// (#)  implying # > 0,  means that the value will be used #
+	// (x) and x > 0 ;  means that the value will be used x
 	//          steps in the future 
 	int[] valToDist = new int[values.length];
-
+	
 	while(iter.hasNext()) {
 	    Instr i = (Instr) iter.next();
 	    count++;
@@ -182,15 +190,15 @@ public class LocalCffRegAlloc extends RegAlloc {
 		for (int u=0; u<uses.length; u++) {
 		    if (values[j] != null &&
 			values[j].equals(uses[u]) &&
-			valToDist[j] != -1) {
+			valToDist[j] != REDEFINED_BEFORE_USED) {
 			valToDist[j] = count;
 		    }
 		}
 		for (int d=0; d<dsts.length; d++) {
 		    if (values[j] != null && 
 			values[j].equals(dsts[d]) &&
-			valToDist[j] == 0) {
-			valToDist[j] = -1;
+			valToDist[j] == UNUSED_AND_UNDEFINED) {
+			valToDist[j] = REDEFINED_BEFORE_USED;
 		    }
 		}
 	    }
@@ -198,7 +206,8 @@ public class LocalCffRegAlloc extends RegAlloc {
 	
 	// check if any slot is dead or unused
 	for (int i=0; i<valToDist.length; i++) {
-	    if (valToDist[i] <= 0) {
+	    if (valToDist[i] == UNUSED_AND_UNDEFINED ||
+		valToDist[i] == REDEFINED_BEFORE_USED) {
 		return i;
 	    }
 	}
@@ -218,6 +227,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 	
 	// now use Conservative Furthest-First to select which
 	// variable to evict 
+	//
+	// TODO: Fix the below code to
+	//       1. Use LiveVariable Analysis
 	Iterator setIter;
 
 
