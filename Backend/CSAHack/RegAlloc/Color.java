@@ -159,7 +159,7 @@ class Color implements TempMap {
     if (!flow.isMove(m)) throw new Error("Internal error");
     TempList use = flow.use(m);
     TempList def = flow.def(m);
-    if (use.tail != null || def.tail != null)
+    if (/*use.tail != null ||*/ def.tail != null)//derived use implies base use
       throw new Error("Node supposed to be a MOVE: "+m);
 
     Node x = GetAlias(ig.tnode(def.head));
@@ -203,7 +203,7 @@ class Color implements TempMap {
       if (!flow.isMove(m.head)) throw new Error("Internal error");
       TempList use = flow.use(m.head);
       TempList def = flow.def(m.head);
-      if (use.tail != null || def.tail != null)
+      if (/*use.tail != null ||*/ def.tail != null)//derived use implies base use
 	throw new Error("Node supposed to be a MOVE");
       
       Temp x = def.head, y = use.head;
