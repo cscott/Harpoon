@@ -58,24 +58,28 @@ oopsla02.dvi:	Figures/THlat1b.tex Figures/THlat6b.tex Figures/spec-space.eps\
 	Figures/oopsla-lat.tex
 
 # oqe presentation dependencies.
-oqe.dvi: PPRoqe.sty
-oqe.dvi: Figures/Kontour/structure-bbox.eps
-oqe.dvi: Figures/Kontour/strategy-bbox.eps
-oqe.dvi: Figures/Kontour/how-fieldcomp-bbox.eps
-oqe.dvi: Figures/Kontour/how-fieldelim-bbox.eps
-oqe.dvi: Figures/Kontour/how-header-bbox.eps
-oqe.dvi: Figures/Kontour/bwfieldcomp-bbox.eps
-oqe.dvi: Figures/alignment2.eps
-oqe.dvi: Figures/extmap1.eps Figures/extmap2.eps
-oqe.dvi: Figures/Kontour/hashcomp-bbox.eps
-oqe.dvi: Figures/specclaz.eps
-oqe.dvi: Figures/oopsla-ttllive-color.eps
-oqe.dvi: Figures/oopsla-ttlalloc-color.eps
-oqe.dvi: Figures/oopsla-objalloc-color.eps
-oqe.dvi: Figures/oopsla-speed-color.eps
-oqe.dvi: Figures/spec-space-2.eps
-oqe.dvi: Figures/Kontour/classcomp-bbox.eps
-oqe.dvi: Figures/THlat6b.tex
+oqe.dvi oqe-notes.tex oqe-adobe.tex:		\
+	 PPRoqe.sty				\
+	 Figures/Kontour/structure-bbox.eps	\
+	 Figures/Kontour/strategy-bbox.eps	\
+	 Figures/Kontour/how-none-bbox.eps	\
+	 Figures/Kontour/how-fieldcomp-bbox.eps	\
+	 Figures/Kontour/how-fieldelim-bbox.eps	\
+	 Figures/Kontour/how-header-bbox.eps	\
+	 Figures/Kontour/bwfieldcomp-bbox.eps	\
+	 Figures/alignment2.eps			\
+	 Figures/extmap1.eps Figures/extmap2.eps\
+	 Figures/Kontour/hashcomp-bbox.eps	\
+	 Figures/specclaz.eps			\
+	 Figures/oopsla-ttllive-color.eps	\
+	 Figures/oopsla-ttlalloc-color.eps	\
+	 Figures/oopsla-objalloc-color.eps	\
+	 Figures/oopsla-speed-color.eps		\
+	 Figures/spec-space-2.eps		\
+	 Figures/Kontour/classcomp-bbox.eps	\
+	 Figures/THlat6b.tex			\
+	 Figures/Images/model-t-black.eps	\
+	 Figures/Images/model-t-redblue.eps	\
 
 # thesis figure dependencies
 export THESIS_FIGURES=\
@@ -113,6 +117,7 @@ always:
 
 # distill on catfish. (has to precede normal dvi-to-pdf rules)
 %-adobe.pdf: %-adobe.dvi
+# prosper wants -t a4 here, but we've made PPRoqe look best in letter.
 	dvips -t letter -e 0 -f < $< \
 	| ssh catfish.lcs.mit.edu \
 	"mkdir csa-foo ; cd csa-foo ; cat > $*.ps ; distill $*.ps ; acroexch $*.pdf ; cat $*.pdf ; cd .. ; /bin/rm -rf csa-foo" \
