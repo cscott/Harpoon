@@ -27,7 +27,7 @@ import java.util.Set;
  * the instruction stream.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: GCInfo.java,v 1.1.2.1 2000-01-28 02:49:18 kkz Exp $
+ * @version $Id: GCInfo.java,v 1.1.2.2 2000-01-31 23:41:42 kkz Exp $
  */
 public abstract class GCInfo {
     // Maps methods to gc points
@@ -46,11 +46,15 @@ public abstract class GCInfo {
     public abstract IntermediateCodeFactory 
 	codeFactory(IntermediateCodeFactory parentFactory, Frame frame);
     /** Returns an ordered <code>List</code> of the
-	<code>GCPoint</code>s in a given <code>HMethod</code> */
+	<code>GCPoint</code>s in a given <code>HMethod</code>.
+	Returns <code>null</code> if the <code>HMethod</code>
+	has not been evaluated for garbage collection purposes.
+	Returns an empty <code>List</code> if the 
+	<code>HMethod</code> has been evaluated and has been
+	found to not contain any GC points.
+    */
     public List gcPoints(HMethod hm) {
-	List l = (List)m.get(hm);
-	if (l != null) return l;
-	return new ArrayList();
+	return (List)m.get(hm);
     }
     /** A <code>GCPoint</code> contains information about all
      *  the live objects that the garbage collector needs to
