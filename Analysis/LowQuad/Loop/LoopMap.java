@@ -17,7 +17,7 @@ import java.util.Set;
  * <code>LoopMap</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopMap.java,v 1.1.2.1 1999-06-30 21:18:19 bdemsky Exp $
+ * @version $Id: LoopMap.java,v 1.1.2.2 1999-07-12 16:43:26 bdemsky Exp $
  */
 public class LoopMap implements TempMap {
     
@@ -52,7 +52,8 @@ public class LoopMap implements TempMap {
 	    if (elements.contains(q)) {
 		Temp []uses=q.use();
 		for (int i=0;i<uses.length;i++)
-		    newpile.push(uses[i]);
+		    if (finalt==ssitossa.tempMap(uses[i]))
+			newpile.push(uses[i]);	       
 	    } else break;
    	}
 	return n;
