@@ -13,9 +13,9 @@ print <<'LLSHIFTSDONE';
 .align 2    
     /* All LL shift routines come from Kane, MIPS RISC Architecture */
     /* V1:  V0 = A1:A0 << (A2 mod 64) */
-    .globl _ll_lshift
-    .ent _ll_lshift
-_ll_lshift:
+    .globl __ll_lshift
+    .ent __ll_lshift
+__ll_lshift:
     .set noreorder
     .cpload $25
     .set reorder
@@ -33,13 +33,13 @@ _ll_lshift:
 2:  sll  v0, a0, a2
 3:
     j    $31
-.end _ll_lshift
+.end __ll_lshift
 
     /* Logical  right shift */
     /* V1:  V0 = A1:A0 >>> (A2 mod 64) */
-.globl _lll_rshift
-.ent _lll_rshift
-_lll_rshift:
+.globl __ull_rshift
+.ent __ull_rshift
+__ull_rshift:
     .set noreorder
     .cpload $25
     .set reorder
@@ -57,13 +57,13 @@ _lll_rshift:
 2:  sll  v1, a1, a2
 3:
     j    $31
-.end _lll_rshift
+.end __ull_rshift
         
     /* Arithmetic right shift */
     /* V1:  V0 = A1:A0 >> (A2 mod 64) */
-.globl _lla_rshift
-.ent _lla_rshift
-_lla_rshift:
+.globl __ll_rshift
+.ent __ll_rshift
+__ll_rshift:
     .set noreorder
     .cpload $25
     .set reorder
@@ -81,12 +81,12 @@ _lla_rshift:
 2:  sra  v1, a1, a2
 3:
     j    $31
-.end _lla_rshift
+.end _ll_rshift
 
     /* V1:V0 = A1:A0 * A3:A2  12 inst, 42 cycles */
-.globl _ll_mul
-.ent _ll_mul
-_ll_mul:    
+.globl __ll_mul
+.ent __ll_mul
+__ll_mul:    
     .set noreorder
     .cpload $25
     .set reorder
@@ -101,7 +101,7 @@ _ll_mul:
     mflo   t0
     addu   v1, t0
     j      $31
-.end _ll_mul
+.end __ll_mul
 LLSHIFTSDONE
 }
 
@@ -194,30 +194,30 @@ print_ll_shifts();
 
 ################################################################
 ## Arithmetic
-Print_Asm_Jacket("_addsf3", "addSingle", [f,f,of], 0);
-Print_Asm_Jacket("_subsf3", "subSingle", [f,f,of], 0);
-Print_Asm_Jacket("_mulsf3", "mulSingle", [f,f,of], 0);
-Print_Asm_Jacket("_divsf3", "divSingle", [f,f,of], 0);
-Print_Asm_Jacket("_adddf3", "addDouble", [d,d,od], 0);
-Print_Asm_Jacket("_subdf3", "subDouble", [d,d,od], 0);
-Print_Asm_Jacket("_muldf3", "mulDouble", [d,d,od], 0);
-Print_Asm_Jacket("_divdf3", "divDouble", [d,d,od], 0);
+Print_Asm_Jacket("__addsf3", "addSingle", [f,f,of], 0);
+Print_Asm_Jacket("__subsf3", "subSingle", [f,f,of], 0);
+Print_Asm_Jacket("__mulsf3", "mulSingle", [f,f,of], 0);
+Print_Asm_Jacket("__divsf3", "divSingle", [f,f,of], 0);
+Print_Asm_Jacket("__adddf3", "addDouble", [d,d,od], 0);
+Print_Asm_Jacket("__subdf3", "subDouble", [d,d,od], 0);
+Print_Asm_Jacket("__muldf3", "mulDouble", [d,d,od], 0);
+Print_Asm_Jacket("__divdf3", "divDouble", [d,d,od], 0);
 
 ################################################################
 ## Comparisons
-Print_Asm_Jacket("_f_seq", "eqSingle", [f,f], 0);
-Print_Asm_Jacket("_f_sne", "eqSingle", [f,f], 1);
-Print_Asm_Jacket("_f_sgt", "gtSingle", [f,f], 0);
-Print_Asm_Jacket("_f_sle", "gtSingle", [f,f], 1);
-Print_Asm_Jacket("_f_sge", "geSingle", [f,f], 0);
-Print_Asm_Jacket("_f_slt", "geSingle", [f,f], 1);
+Print_Asm_Jacket("__f_seq", "eqSingle", [f,f], 0);
+Print_Asm_Jacket("__f_sne", "eqSingle", [f,f], 1);
+Print_Asm_Jacket("__f_sgt", "leSingle", [f,f], 1);
+Print_Asm_Jacket("__f_sle", "leSingle", [f,f], 0);
+Print_Asm_Jacket("__f_sge", "ltSingle", [f,f], 1);
+Print_Asm_Jacket("__f_slt", "ltSingle", [f,f], 0);
 
-Print_Asm_Jacket("_d_seq", "eqDouble", [d,d], 0);
-Print_Asm_Jacket("_d_sne", "eqDouble", [d,d], 1);
-Print_Asm_Jacket("_d_sgt", "gtDouble", [d,d], 0);
-Print_Asm_Jacket("_d_sle", "gtDouble", [d,d], 1);
-Print_Asm_Jacket("_d_sge", "geDouble", [d,d], 0);
-Print_Asm_Jacket("_d_slt", "geDouble", [d,d], 1);
+Print_Asm_Jacket("__d_seq", "eqDouble", [d,d], 0);
+Print_Asm_Jacket("__d_sne", "eqDouble", [d,d], 1);
+Print_Asm_Jacket("__d_sgt", "leDouble", [d,d], 1);
+Print_Asm_Jacket("__d_sle", "leDouble", [d,d], 0);
+Print_Asm_Jacket("__d_sge", "ltDouble", [d,d], 1);
+Print_Asm_Jacket("__d_slt", "ltDouble", [d,d], 0);
 
 ################################################################
 ## Negation
@@ -225,7 +225,7 @@ $float_prefix =
 "   move  a1, a0
     li    a0, 0
 ";
-Print_Asm_Jacket("_f_neg", "subSingle", [f,f,of], 0, $float_prefix);
+Print_Asm_Jacket("__f_neg", "subSingle", [f,f,of], 0, $float_prefix);
 
 $double_prefix =
 "   move  a2, a0
@@ -233,14 +233,19 @@ $double_prefix =
     li    a0, 0
     li    a1, 0
 ";
-Print_Asm_Jacket("_d_neg", "subDouble", [d,d,od], 0, $float_prefix);
+Print_Asm_Jacket("__d_neg", "subDouble", [d,d,od], 0, $float_prefix);
 
 ################################################################
 ## Casts
-Print_Asm_Jacket("_i2f", "wordToSingle", [f,of], 0);
-Print_Asm_Jacket("_f2i", "singleToWord", [f,of], 0);
-Print_Asm_Jacket("_i2d", "wordToDouble", [f,od], 0);
-Print_Asm_Jacket("_d2i", "doubleToWord", [d,of], 0);
-Print_Asm_Jacket("_f2d", "singleToDouble", [f,od], 0);
-Print_Asm_Jacket("_d2f", "doubleToSingle", [d,of], 0);
+Print_Asm_Jacket("__i2f", "wordToSingle", [f,of], 0);
+Print_Asm_Jacket("__f2i", "singleToWord", [f,of], 0);
+Print_Asm_Jacket("__i2d", "wordToDouble", [f,od], 0);
+Print_Asm_Jacket("__d2i", "doubleToWord", [d,of], 0);
+Print_Asm_Jacket("__f2d", "singleToDouble", [f,od], 0);
+Print_Asm_Jacket("__d2f", "doubleToSingle", [d,of], 0);
 
+################################################################
+## More long long support
+Print_Asm_Jacket("__ll_div", "ll_div", [d,d,od], 0);
+Print_Asm_Jacket("__ll_mod", "ll_mod", [d,d,od], 0);
+Print_Asm_Jacket("__ll_rem", "ll_rem", [d,d,od], 0);
