@@ -64,7 +64,7 @@ public abstract class OutputStream {
     public VoidContinuation writeAsyncO(int b) throws IOException
     {
     	write(b);
-    	return null;
+    	return new VoidContinuationOpt();
     }
     
     public void makeAsync() { }
@@ -152,12 +152,12 @@ public abstract class OutputStream {
 		   ((off + len) > b.length) || ((off + len) < 0)) {
 	    throw new IndexOutOfBoundsException();
 	} else if (len == 0) {
-	    return null;
+	    return new VoidContinuationOpt();
 	}    	
 	
  	while (len>0) {
 		VoidContinuation c= writeAsyncO(b[off]);
-		if (c!= null)
+		if (!c.done)
 		{
 			WriteAsyncC thisC= new WriteAsyncC(b, off, len);
 			c.setNext(thisC);
@@ -167,7 +167,7 @@ public abstract class OutputStream {
 		len--;
 		off++;
 	} 
-	return null;
+	return new VoidContinuationOpt();
     }
     
     public class WriteAsyncC extends VoidContinuation implements VoidResultContinuation
@@ -190,7 +190,7 @@ public abstract class OutputStream {
     		// the same thing again
  		while (len>0) {
 			VoidContinuation c= writeAsyncO(b[off]);
-			if (c!= null)
+			if (!c.done)
 			{
 				c.setNext(this);
 				return;

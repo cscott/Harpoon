@@ -192,7 +192,7 @@ class FileOutputStream extends OutputStream
     		{
     			case NativeIO.ERROR: throw new IOException();
     			case NativeIO.TRYAGAIN: return new WriteAsyncC(b);
-    			default: return null;
+    			default: return new VoidContinuationOpt();
     		}
     }
 
@@ -266,7 +266,7 @@ class FileOutputStream extends OutputStream
 		} else if ((off < 0) || (off > b.length) || (len < 0) ||
 		   		((off + len) > b.length) || ((off + len) < 0)) {
 	    				throw new IndexOutOfBoundsException();
-		} else if (len == 0) return null;
+		} else if (len == 0) return new VoidContinuationOpt();
 
 	    	int r= NativeIO.writeJNI(fd.fd, b, off, len);
     	
@@ -275,7 +275,7 @@ class FileOutputStream extends OutputStream
 		{
 			return new WriteAsync2C(b, off+r, len-r);
 		}
-		return null;
+		return new VoidContinuationOpt();
     }
     
     class WriteAsync2C extends VoidContinuation implements IOContinuation {
