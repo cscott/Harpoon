@@ -9,6 +9,7 @@ import harpoon.ClassFile.Bytecode.OpClass;
 import harpoon.ClassFile.Bytecode.OpConstant;
 import harpoon.ClassFile.Bytecode.OpField;
 import harpoon.ClassFile.Bytecode.OpLocalVariable;
+import harpoon.ClassFile.Bytecode.OpMethod;
 import harpoon.ClassFile.Bytecode.Instr;
 import harpoon.ClassFile.Bytecode.InGen;
 import harpoon.ClassFile.Bytecode.InCti;
@@ -23,7 +24,7 @@ import java.util.Hashtable;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.7 1998-08-24 21:07:59 cananian Exp $
+ * @version $Id: Translate.java,v 1.8 1998-08-24 22:48:21 cananian Exp $
  */
 
 /*
@@ -149,6 +150,7 @@ class Translate  { // not public.
     static final HClass dblArray = HClass.forClass(double[].class);
     static final HClass fltArray = HClass.forClass(float[].class);
     static final HClass intArray = HClass.forClass(int[].class);
+    static final HClass longArray= HClass.forClass(long[].class);
 
     static HMethod objArrayGet,  objArrayPut;
     static HMethod byteArrayGet, byteArrayPut;
@@ -156,6 +158,7 @@ class Translate  { // not public.
     static HMethod dblArrayGet,  dblArrayPut;
     static HMethod fltArrayGet,  fltArrayPut;
     static HMethod intArrayGet,  intArrayPut;
+    static HMethod longArrayGet, longArrayPut;
 
     static {
 	objArrayGet = objArray.getMethod("get", new HClass[] {HClass.Int});
@@ -176,6 +179,9 @@ class Translate  { // not public.
 	intArrayGet = intArray.getMethod("get", new HClass[] {HClass.Int});
 	intArrayPut = intArray.getMethod("put", 
 		      new HClass[] {HClass.Int,HClass.forClass(int.class)});
+	longArrayGet= longArray.getMethod("get", new HClass[] {HClass.Int});
+	longArrayPut= longArray.getMethod("put", 
+		      new HClass[] {HClass.Int, HClass.forClass(long.class)});
     }
 
     static final Quad transInstr(StateMap sm, InGen in) {
@@ -278,20 +284,31 @@ class Translate  { // not public.
 	    throw new Error("CHECKCAST unimplemented as of yet.");
 	case Op.D2F:
 	case Op.D2I:
+	case Op.L2F:
+	case Op.L2I:
 	    ns = s.pop(2).push(new Temp());
 	    q = new OPER(in, Op.toString(in.getOpcode()) /* "d2f" or "d2i" */,
 			 ns.stack[0], new Temp[] { s.stack[0] });
 	    break;
 	case Op.D2L:
+	case Op.L2D:
 	    ns = s.pop(2).push(null).push(new Temp());
-	    q = new OPER(in, "d2l", ns.stack[0], 
-			 new Temp[] { s.stack[0] });
+	    q = new OPER(in, Op.toString(in.getOpcode()) /* "d2l" or "l2d" */,
+			 ns.stack[0], new Temp[] { s.stack[0] });
 	    break;
 	case Op.DADD:
 	case Op.DDIV:
 	case Op.DMUL:
 	case Op.DREM:
 	case Op.DSUB:
+	case Op.LADD:
+	case Op.LAND:
+	case Op.LDIV:
+	case Op.LMUL:
+	case Op.LOR:
+	case Op.LREM:
+	case Op.LSUB:
+	case Op.LXOR:
 	    ns = s.pop(4).push(null).push(new Temp());
 	    q = new OPER(in, Op.toString(in.getOpcode()), // dadd, ddiv or dmul
 			 ns.stack[0], new Temp[] { s.stack[2], s.stack[0] });
@@ -308,12 +325,15 @@ class Translate  { // not public.
 	    break;
 	case Op.DCMPG:
 	case Op.DCMPL:
+	case Op.LCMP:
 	    ns = s.pop(4).push(new Temp());
 	    q = new OPER(in, Op.toString(in.getOpcode())/*"dcmpg" or "dcmpl"*/,
 			 ns.stack[0], new Temp[] { s.stack[2], s.stack[0] });
 	    break;
 	case Op.DCONST_0:
 	case Op.DCONST_1:
+	case Op.LCONST_0:
+	case Op.LCONST_1:
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
 		ns = s.push(null).push(new Temp("const"));
@@ -325,6 +345,11 @@ class Translate  { // not public.
 	case Op.DLOAD_1:
 	case Op.DLOAD_2:
 	case Op.DLOAD_3:
+	case Op.LLOAD:
+	case Op.LLOAD_0:
+	case Op.LLOAD_1:
+	case Op.LLOAD_2:
+	case Op.LLOAD_3:
 	    {
 		OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
 		ns = s.push(null).push(s.lv[opd.getIndex()]);
@@ -332,14 +357,21 @@ class Translate  { // not public.
 		break;
 	    }
 	case Op.DNEG:
+	case Op.LNEG:
 	    ns = s.pop(2).push(null).push(new Temp());
-	    q = new OPER(in, "dneg", ns.stack[0], new Temp[] {s.stack[0]});
+	    q = new OPER(in, Op.toString(in.getOpcode()) /*"dneg" or "lneg"*/, 
+			 ns.stack[0], new Temp[] {s.stack[0]});
 	    break;
 	case Op.DSTORE:
 	case Op.DSTORE_0:
 	case Op.DSTORE_1:
 	case Op.DSTORE_2:
 	case Op.DSTORE_3:
+	case Op.LSTORE:
+	case Op.LSTORE_0:
+	case Op.LSTORE_1:
+	case Op.LSTORE_2:
+	case Op.LSTORE_3:
 	    {
 	    OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
 	    ns = s.pop(2).assignLV(opd.getIndex(), 
@@ -400,6 +432,14 @@ class Translate  { // not public.
 	case Op.IADD:
 	case Op.IAND:
 	case Op.IDIV:
+	case Op.IMUL:
+	case Op.IOR:
+	case Op.IREM:
+	case Op.ISHL:
+	case Op.ISHR:
+	case Op.ISUB:
+	case Op.IUSHR:
+	case Op.IXOR:
 	    ns = s.pop(2).push(new Temp());
 	    q = new OPER(in, Op.toString(in.getOpcode()), // fadd, fdiv, ...
 			 ns.stack[0], new Temp[] {s.stack[1], s.stack[0]});
@@ -453,6 +493,7 @@ class Translate  { // not public.
 		break;
 	    }
 	case Op.FNEG:
+	case Op.INEG:
 	    ns = s.pop(2).push(new Temp());
 	    q = new OPER(in, "fneg", ns.stack[0], new Temp[] {s.stack[0]});
 	    break;
@@ -461,6 +502,11 @@ class Translate  { // not public.
 	case Op.FSTORE_1:
 	case Op.FSTORE_2:
 	case Op.FSTORE_3:
+	case Op.ISTORE:
+	case Op.ISTORE_0:
+	case Op.ISTORE_1:
+	case Op.ISTORE_2:
+	case Op.ISTORE_3:
 	    {
 	    OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
 	    ns = s.pop().assignLV(opd.getIndex(), 
@@ -472,8 +518,7 @@ class Translate  { // not public.
 	case Op.GETSTATIC:
 	    {
 	    OpField opd = (OpField) in.getOperand(0);
-	    if (opd.value().getType() == HClass.Double ||
-		opd.value().getType() == HClass.Long) // 64-bit value.
+	    if (isLongDouble(opd.value().getType()))  // 64-bit value.
 		ns = s.pop().push(null).push(new Temp());
 	    else // 32-bit value.
 		ns = s.pop().push(new Temp());
@@ -521,6 +566,99 @@ class Translate  { // not public.
 				  new Temp[] { s.lv[opd0.getIndex()], constant});
 		break;
 	    }
+	case Op.INSTANCEOF:
+	    throw new Error("I'm brain-dead today."); // FIXME
+	case Op.INVOKEINTERFACE:
+	case Op.INVOKESPECIAL:
+	case Op.INVOKESTATIC:
+	case Op.INVOKEVIRTUAL:
+	    {
+	    OpMethod opd = (OpMethod) in.getOperand(0);
+	    HClass paramtypes[] = opd.value().getParameterTypes();
+	    Temp param[] = new Temp[paramtypes.length];
+	    int i,j;
+	    for (i=param.length-1, j=0; i>=0; i--, j++) {
+		param[i] = s.stack[j];
+		if (isLongDouble(paramtypes[i])) j++;
+	    }
+	    if (opd.value().getReturnType()==HClass.Void) { // no return value.
+		ns = s.pop(j+1);
+		q = new CALL(in, opd.value(), s.stack[j], param);
+	    } else if (!isLongDouble(opd.value().getReturnType())) {
+		// 32-bit return value.
+		ns = s.pop(j+1).push(new Temp());
+		q = new CALL(in, opd.value(), s.stack[j], param, ns.stack[0]);
+	    } else { // 64-bit return value.
+		ns = s.pop(j+1).push(null).push(new Temp());
+		q = new CALL(in, opd.value(), s.stack[j], param, ns.stack[0]);
+	    }
+	    }
+	case Op.LALOAD:
+	    ns = s.pop(2).push(null).push(new Temp());
+	    q = new CALL(in, longArrayGet, s.stack[1],
+			 new Temp[] {s.stack[0]}, ns.stack[0]);
+	    break;
+	case Op.LASTORE:
+	    ns = s.pop(4);
+	    q = new CALL(in, longArrayPut, s.stack[3],
+			 new Temp[] {s.stack[2], s.stack[0]});
+	    break;
+	case Op.LDC:
+	case Op.LDC_W:
+	case Op.LDC2_W:
+	    {
+	    OpConstant opd = (OpConstant) in.getOperand(0);
+	    if (isLongDouble(opd.getType()))
+		ns = s.push(null).push(new Temp());
+	    else
+		ns = s.push(new Temp());
+	    q = new CONST(in, ns.stack[0], opd.getValue(), opd.getType());
+	    break;
+	    }
+	case Op.LSHL:
+	case Op.LSHR:
+	case Op.LUSHR:
+	    ns = s.pop(3).push(null).push(new Temp());
+	    q = new OPER(in, Op.toString(in.getOpcode()), // lshl
+			 ns.stack[0], new Temp[] { s.stack[1], s.stack[0] });
+	    break;
+	case Op.MONITORENTER:
+	case Op.MONITOREXIT:
+	    throw new Error("Currently unimplemented.");
+	case Op.MULTIANEWARRAY:
+	case Op.NEWARRAY:
+	    throw new Error("I'm a lazy bum.");
+	case Op.NEW:
+	    {
+	    OpClass opd = (OpClass) in.getOperand(0);
+	    ns = s.push(new Temp());
+	    q = new NEW(in, ns.stack[0], opd.value());
+	    break;
+	    }
+	case Op.NOP:
+	    ns = s; q = null;
+	    break;
+	case Op.POP:
+	    ns = s.pop(); q = null;
+	    break;
+	case Op.POP2:
+	    ns = s.pop(2); q = null;
+	    break;
+	case Op.PUTFIELD:
+	case Op.PUTSTATIC:
+	    {
+	    OpField opd = (OpField) in.getOperand(0);
+	    if (isLongDouble(opd.value().getType())) { // 64-bit value.
+		ns = s.pop(3);
+		q = new SET(in, opd.value(), s.stack[2], s.stack[0]);
+	    }
+	    else {
+		ns = s.pop(2);
+		q = new SET(in, opd.value(), s.stack[1], s.stack[0]);
+	    }
+	    break;
+	    }
+	    
 	default:
 	    throw new Error("Unknown InGen opcode.");
 	}
@@ -530,11 +668,15 @@ class Translate  { // not public.
     static final Quad transInstr(StateMap s, InCti in) {
 	/*
 	if (in instanceof InSwitch) {
+	// LOOKUPSWITCH
 	} else {
 	    switch(in.getOpcode()) {
 	    case Op.ARETURN:
 	    case Op.DRETURN:
 	    case Op.FRETURN:
+	    case Op.IRETURN:
+	    case Op.LRETURN:
+	    throw new Error("Unimplemented");
 	    case Op.ATHROW:
 		ns = s.pop();
 		q = new THROW(in, s.stack[0]);
@@ -545,6 +687,9 @@ class Translate  { // not public.
 	    q = new JMP(in);
 	    break;
 	    default:
+case Op.JSR:
+case Op.JSR_W:
+throw new Error("Unmitigated evilness.");
 	    }
 	}
 	*/
@@ -552,6 +697,12 @@ class Translate  { // not public.
     }
     static final Quad transInstr(StateMap s, InMerge in) {
 	return null;
+    }
+
+    static private boolean isLongDouble(HClass hc) {
+	if (hc == HClass.Long || hc == HClass.Double)
+	    return true;
+	return false;
     }
 }
 

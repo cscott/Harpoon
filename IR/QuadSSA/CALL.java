@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * <code>CALL</code> objects represent method invocations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.6 1998-08-24 19:30:00 cananian Exp $
+ * @version $Id: CALL.java,v 1.7 1998-08-24 22:48:21 cananian Exp $
  */
 
 public class CALL extends Quad {
@@ -71,4 +71,7 @@ public class CALL extends Quad {
 	sb.append(')');
 	return sb.toString();
     }
+    // Other information that might be useful.  Or might not.  Who knows?
+    /** Determines whether this <code>CALL</code> is to an interface method. */
+    public boolean isInterface() { return method.isInterfaceMethod(); }
 }
