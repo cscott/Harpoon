@@ -29,7 +29,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.76 1998-09-19 21:18:43 cananian Exp $
+ * @version $Id: Translate.java,v 1.77 1998-09-20 04:41:43 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -437,7 +437,6 @@ class Translate  { // not public.
 	case Op.LASTORE:
 	case Op.SASTORE:
 	    {
-	    TransState ts1 = ts;
 	    Temp Tobj, Tindex, Tsrc;
 	    if (in.getOpcode()==Op.DASTORE ||
 		in.getOpcode()==Op.LASTORE) { // 64-bit val.
@@ -452,6 +451,10 @@ class Translate  { // not public.
 		Tsrc   = s.stack(0);
 	    }
 	    
+	    // the actual operation.
+	    Quad q0= new ASET(in, Tobj, Tindex, Tsrc);
+	    last = q0;
+
 	    // funky additional check for AASTORE
 	    if (in.getOpcode() == Op.AASTORE) {
 		// AASTORE also throws ArrayStoreException.
@@ -465,20 +468,17 @@ class Translate  { // not public.
 						  ts.in, qq2, 0),
 			       handlers, false);
 		// link
-		Quad.addEdge(ts.header, ts.which_succ, qq0, 0);
 		Quad.addEdge(qq0, 0, qq1, 0);
-		ts1 = new TransState(ts.initialState, ts.in, qq1, 1);
+		Quad.addEdge(qq1, 1, q0,  0);
+		q0 = qq0;
 	    }
-	    // the actual operation.
-	    Quad q0= new ASET(in, Tobj, Tindex, Tsrc);
 	    // bounds check
 	    TransState r2[] = transBoundsCheck(SS, Tobj, Tindex, 
-					       q0, handlers, ts1);
+					       q0, handlers, ts);
 	    // merge TransState arrays.
 	    r = mergeTS(r, r2);
 	    // set up next state.
 	    q = ts.header.next()[ts.which_succ];
-	    last = q0;
 	    // done.
 	    break;
 	    }
