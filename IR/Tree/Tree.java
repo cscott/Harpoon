@@ -25,7 +25,7 @@ import java.util.Set;
  * <code>Tree</code> is the base class for the tree representation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Tree.java,v 1.1.2.15 1999-09-08 21:33:09 cananian Exp $
+ * @version $Id: Tree.java,v 1.1.2.16 1999-10-19 19:53:10 cananian Exp $
  */
 public abstract class Tree 
     implements HCodeElement, 
@@ -65,7 +65,7 @@ public abstract class Tree
 	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 
 	Set defSet = defSet();
-	return (Temp[])defSet.toArray(new Temp[0]); 
+	return (Temp[])defSet.toArray(new Temp[defSet.size()]); 
     }
 
     /** Returns the Temps used by this tree.  Can only be used in
@@ -76,10 +76,10 @@ public abstract class Tree
 	Util.assert(((Code.TreeFactory)tf).getParent().isCanonical());
 
 	Set useSet = useSet();
-	return (Temp[])useSet.toArray(new Temp[0]); 
+	return (Temp[])useSet.toArray(new Temp[useSet.size()]); 
     }
-    public Collection useC() { return Arrays.asList(use()); }
-    public Collection defC() { return Arrays.asList(def()); }
+    public Collection useC() { return Collections.unmodifiableSet(useSet()); }
+    public Collection defC() { return Collections.unmodifiableSet(defSet()); }
 
     abstract protected Set defSet();
     abstract protected Set useSet();   
@@ -107,7 +107,7 @@ public abstract class Tree
     public abstract int kind();
 
     /** Accept a visitor. */
-    public abstract void visit(TreeVisitor v);
+    public abstract void accept(TreeVisitor v);
 
     /** Array factory: returns <code>Tree[]</code>. */
     public static final ArrayFactory arrayFactory =

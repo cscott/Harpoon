@@ -22,7 +22,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: MOVE.java,v 1.1.2.14 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: MOVE.java,v 1.1.2.15 1999-10-19 19:53:10 cananian Exp $
  */
 public class MOVE extends Stm implements Typed {
     /** The expression giving the destination for the computed value. */
@@ -77,7 +77,7 @@ public class MOVE extends Stm implements Typed {
 	return new MOVE(tf, this, kids.head, kids.tail.head);
     }
     /** Accept a visitor */
-    public void visit(TreeVisitor v) { v.visit(this); } 
+    public void accept(TreeVisitor v) { v.visit(this); } 
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new MOVE(tf, this,

@@ -17,7 +17,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.19 1999-09-11 16:43:44 cananian Exp $
+ * @version $Id: TEMP.java,v 1.1.2.20 1999-10-19 19:53:10 cananian Exp $
  */
 public class TEMP extends Exp {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -56,7 +56,7 @@ public class TEMP extends Exp {
     public int type() { return type; }
 
     /** Accept a visitor */
-    public void visit(TreeVisitor v) { v.visit(this); }
+    public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
 	// Registers are immutable

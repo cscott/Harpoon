@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NAME.java,v 1.1.2.12 1999-09-08 21:33:08 cananian Exp $
+ * @version $Id: NAME.java,v 1.1.2.13 1999-10-19 19:53:10 cananian Exp $
  */
 public class NAME extends Exp implements harpoon.ClassFile.HDataElement {
     /** The label which this NAME refers to. */
@@ -36,7 +36,7 @@ public class NAME extends Exp implements harpoon.ClassFile.HDataElement {
     }
 
     /** Accept a visitor */
-    public void visit(TreeVisitor v) { v.visit(this); }
+    public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new NAME(tf, this, this.label);

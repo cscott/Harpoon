@@ -17,7 +17,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CONST.java,v 1.1.2.20 1999-09-09 15:02:28 cananian Exp $
+ * @version $Id: CONST.java,v 1.1.2.21 1999-10-19 19:53:09 cananian Exp $
  */
 public class CONST extends Exp implements PreciselyTyped, HDataElement {
     /** The constant value of this <code>CONST</code> expression. */
@@ -113,7 +113,7 @@ public class CONST extends Exp implements PreciselyTyped, HDataElement {
     public boolean signed() { Util.assert(type==INT&&isSmall); return signed; }
     
     /** Accept a visitor */
-    public void visit(TreeVisitor v) { v.visit(this); }
+    public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new CONST(tf, this, type, value, isSmall, bitwidth, signed);

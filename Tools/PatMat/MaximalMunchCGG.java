@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.40 1999-10-15 18:45:56 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.41 1999-10-19 19:53:11 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -864,8 +864,8 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	out.println("\t\t} // end visit("+TREE_Stm+")");
 	
 	out.println("\t\tpublic void visit("+TREE_SEQ+" treee){");
-	out.println("\t\t\ttreee.left.visit(this);");
-	out.println("\t\t\ttreee.right.visit(this);");
+	out.println("\t\t\ttreee.left.accept(this);");
+	out.println("\t\t\ttreee.right.accept(this);");
 	out.println("\t\t}");
 	// BAD DOG!  Don't implement visit(TREE_Exp)...we should never
 	// be munching those directly; only from calls to visit(TREE_Stm) 
@@ -877,10 +877,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 	//out.println("\twhile(t instanceof "+TREE_SEQ+") {");
 	//out.println("\t\t"+TREE_SEQ+" seq = ("+TREE_SEQ+")t;");
-	//out.println("\t\tseq.left.visit(visitor);");
+	//out.println("\t\tseq.left.accept(visitor);");
 	//out.println("\t\tt=seq.right;");
 	//out.println("\t}");
-	out.println("\tt.visit(visitor);");
+	out.println("\tt.accept(visitor);");
 	
 	
     }

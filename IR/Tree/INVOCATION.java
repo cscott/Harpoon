@@ -19,7 +19,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: INVOCATION.java,v 1.1.2.10 1999-08-09 22:11:13 duncan Exp $
+ * @version $Id: INVOCATION.java,v 1.1.2.11 1999-10-19 19:53:10 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see NATIVECALL
@@ -66,7 +66,7 @@ public abstract class INVOCATION extends Stm {
     abstract public boolean isNative();
     abstract public ExpList kids();
     abstract public Stm build(ExpList kids);
-    abstract public void visit(TreeVisitor v);
+    abstract public void accept(TreeVisitor v);
     abstract public Tree rename(TreeFactory tf, CloningTempMap ctm);
 }
  

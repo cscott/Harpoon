@@ -14,7 +14,7 @@ import java.io.StringWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.26 1999-09-09 15:42:41 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.27 1999-10-19 19:53:10 cananian Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -22,7 +22,7 @@ public class Print {
         PrintVisitor pv = new PrintVisitor(pw, tm);
 
         pw.print("Codeview \""+c.getName()+"\" for "+c.getMethod()+":");
-        if (tr!=null) tr.visit(pv);
+        if (tr!=null) tr.accept(pv);
         pw.println();
         pw.flush();
     }
@@ -32,7 +32,7 @@ public class Print {
         PrintVisitor pv = new PrintVisitor(pw, tm);
 
         pw.print("Dataview \""+d.getDesc()+"\" for "+d.getHClass()+":");
-        if (tr!=null) tr.visit(pv);
+        if (tr!=null) tr.accept(pv);
         pw.println();
         pw.flush();
     }
@@ -46,7 +46,7 @@ public class Print {
 
     public final static void print(PrintWriter pw, Tree t) {
 	PrintVisitor pv = new PrintVisitor(pw, null);
-	t.visit(pv);
+	t.accept(pv);
 	pw.println();
 	pw.flush();
     }
@@ -55,7 +55,7 @@ public class Print {
 	StringWriter sw = new StringWriter();
 	PrintWriter pw = new PrintWriter(sw);
 	PrintVisitor pv = new PrintVisitor(pw, null);
-	t.visit(pv);
+	t.accept(pv);
 	pw.flush();
 	return sw.toString();
     }
@@ -86,9 +86,9 @@ public class Print {
             indent(indlevel++);
             pw.print("BINOP<" + Type.toString(e.optype) + ">(");
             pw.print(Bop.toString(e.op) + ", ");
-            e.left.visit(this);
+            e.left.accept(this);
             pw.print(",");
-            e.right.visit(this);
+            e.right.accept(this);
             pw.print(")");
             indlevel--;
         }
@@ -99,20 +99,20 @@ public class Print {
             pw.print("CALL" + "(");
             indent(indlevel++);
             pw.print("return value:");
-            s.retval.visit(this);
+            s.retval.accept(this);
             pw.print(",");
             indent(--indlevel); indlevel++;
             pw.print("exceptional value:");
-            s.retex.visit(this);
+            s.retex.accept(this);
             pw.print(",");
             indent(--indlevel); indlevel++;
             pw.print("function:");
-            s.func.visit(this);
+            s.func.accept(this);
             pw.print(",");
             indent(--indlevel); indlevel++;
             pw.print("arguments:");
             while (list != null) {
-                list.head.visit(this);
+                list.head.accept(this);
                 if (list.tail != null) {
                     pw.print(",");
                 }
@@ -125,7 +125,7 @@ public class Print {
         public void visit(CJUMP s) {
             indent(indlevel++);
             pw.print("CJUMP(");
-            s.test.visit(this); pw.print(",");
+            s.test.accept(this); pw.print(",");
             indent(indlevel);
             pw.print("if-true: " + s.iftrue + ",");
             indent(indlevel);
@@ -146,7 +146,7 @@ public class Print {
 	    else pw.print(Type.toString(s.data.type()));
 	    pw.print(">(");
 	    if (!s.initialized) pw.print("unspecified value");
-	    else s.data.visit(this); 
+	    else s.data.accept(this); 
 	    indent(indlevel--);
 	    pw.print(")");
 	}
@@ -155,16 +155,16 @@ public class Print {
             indent(--indlevel);
             indlevel++;
             pw.print("ESEQ(");
-            e.stm.visit(this);
+            e.stm.accept(this);
             pw.print(",");
-            e.exp.visit(this);
+            e.exp.accept(this);
             pw.print(")");
         }
 
         public void visit(EXP s) {
             indent(indlevel++);
             pw.print("EXP(");
-            s.exp.visit(this);
+            s.exp.accept(this);
             pw.print(")");
             indlevel--;
         }
@@ -181,7 +181,7 @@ public class Print {
                     pw.print(",");
                 list = list.tail;
             }
-            s.exp.visit(this);
+            s.exp.accept(this);
             pw.print(")");
             indlevel--;
         }
@@ -195,7 +195,7 @@ public class Print {
         public void visit(MEM e) {
             indent(indlevel++);
             pw.print("MEM<" + Type.toString(e) + ">(");
-            e.exp.visit(this);
+            e.exp.accept(this);
             pw.print(")");
             indlevel--;
         }
@@ -204,7 +204,7 @@ public class Print {
 	    indent(indlevel++);
 	    pw.print("METHOD(");
 	    for (int i=0; i<s.params.length; i++)
-		s.params[i].visit(this);
+		s.params[i].accept(this);
 	    pw.print(")");
 	    indlevel--;
 	}
@@ -212,9 +212,9 @@ public class Print {
         public void visit(MOVE s) {
             indent(indlevel++);
             pw.print("MOVE(");
-            s.dst.visit(this);
+            s.dst.accept(this);
             pw.print(",");
-            s.src.visit(this);
+            s.src.accept(this);
             pw.print(")");
             indlevel--;
         }
@@ -230,16 +230,16 @@ public class Print {
             pw.print("NATIVECALL" + "(");
             indent(indlevel++);
             pw.print("return value:");
-            s.retval.visit(this);
+            s.retval.accept(this);
             pw.print(",");
             indent(--indlevel); indlevel++;
             pw.print("function:");
-            s.func.visit(this);
+            s.func.accept(this);
             pw.print(",");
             indent(--indlevel); indlevel++;
             pw.print("arguments:");
             while (list != null) {
-                list.head.visit(this);
+                list.head.accept(this);
                 if (list.tail != null) {
                     pw.print(",");
                 }
@@ -252,7 +252,7 @@ public class Print {
         public void visit(RETURN s) {
             indent(indlevel++);
             pw.print("RETURN(");
-            s.retval.visit(this);
+            s.retval.accept(this);
             pw.print(")");
             indlevel--;
         }
@@ -266,9 +266,9 @@ public class Print {
             indent(--indlevel);
             indlevel++;
             pw.print("SEQ(");
-            s.left.visit(this);
+            s.left.accept(this);
             pw.print(",");
-            s.right.visit(this);
+            s.right.accept(this);
             pw.print(")");
         }
 
@@ -281,9 +281,9 @@ public class Print {
         public void visit(THROW s) {
             indent(indlevel++);
             pw.print("THROW(");
-            s.retex.visit(this);
+            s.retex.accept(this);
 	    pw.print(",");
-	    s.handler.visit(this);
+	    s.handler.accept(this);
             pw.print(")");
             indlevel--;
         }
@@ -292,7 +292,7 @@ public class Print {
             indent(indlevel++);
             pw.print("UNOP<" + Type.toString(e.optype) + ">(");
             pw.print(Uop.toString(e.op) + ",");
-            e.operand.visit(this);
+            e.operand.accept(this);
             pw.print(")");
             indlevel--;
         }

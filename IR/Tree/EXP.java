@@ -15,7 +15,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: EXP.java,v 1.1.2.10 1999-08-04 05:52:29 cananian Exp $
+ * @version $Id: EXP.java,v 1.1.2.11 1999-10-19 19:53:10 cananian Exp $
  */
 public class EXP extends Stm {
     /** The expression to evaluate. */
@@ -40,7 +40,7 @@ public class EXP extends Stm {
 	return new EXP(tf, this, kids.head);
     }
     /** Accept a visitor */
-    public void visit(TreeVisitor v) { v.visit(this); }
+    public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new EXP(tf, this, (Exp)exp.rename(tf, ctm));

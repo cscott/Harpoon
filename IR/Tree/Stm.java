@@ -7,7 +7,7 @@ import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
@@ -19,7 +19,7 @@ import java.util.Stack;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Stm.java,v 1.1.2.11 1999-09-06 18:45:12 duncan Exp $
+ * @version $Id: Stm.java,v 1.1.2.12 1999-10-19 19:53:10 cananian Exp $
  */
 abstract public class Stm extends Tree {
     protected Stm(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
@@ -37,7 +37,7 @@ abstract public class Stm extends Tree {
     abstract public Stm build(TreeFactory tf, ExpList kids);
 
     // Overridden by MOVE and INVOCATION
-    protected Set defSet() { return new HashSet(); }
+    protected Set defSet() { return Collections.EMPTY_SET; }
     protected Set useSet() { return ExpList.useSet(kids()); }
 
     public abstract Tree rename(TreeFactory tf, CloningTempMap ctm);

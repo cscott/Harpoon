@@ -24,7 +24,7 @@ import java.util.Map;
  * form by Andrew Appel.  
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToCanonicalTree.java,v 1.1.2.15 1999-09-11 16:43:44 cananian Exp $
+ * @version $Id: ToCanonicalTree.java,v 1.1.2.16 1999-10-19 19:53:10 cananian Exp $
  */
 public class ToCanonicalTree implements Derivation, TypeMap {
     private Tree m_tree;
@@ -96,7 +96,7 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	root = (Stm)code.getRootElement();
 
 	// This visitor recursively visits all relevant nodes on its own
-	root.visit(cv);
+	root.accept(cv);
 
 	// Return the node which rootClone has been mapped to
 	return tm.get(root);
@@ -134,12 +134,12 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 	public void visit(MOVE s) {
 	    if (!visited.add(s)) return;
 
-	    s.src.visit(this);
+	    s.src.accept(this);
 	    if (s.dst.kind()==TreeKind.ESEQ) {
 		Util.assert(false, "Dangerous use of ESEQ");
 		ESEQ eseq = (ESEQ)s.dst;
-		eseq.exp.visit(this);
-		eseq.stm.visit(this);
+		eseq.exp.accept(this);
+		eseq.stm.accept(this);
 		SEQ tmp = new SEQ
 		    (tf, treeMap.get(eseq.stm), 
 		     s, 
@@ -147,7 +147,7 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 		     (tf, s, 
 		      treeMap.get(eseq.exp), 
 		      treeMap.get(s.src)));
-		tmp.visit(this);
+		tmp.accept(this);
 		treeMap.map(s, treeMap.get(tmp));
 	    }
 	    else {
@@ -157,8 +157,8 @@ public class ToCanonicalTree implements Derivation, TypeMap {
       
 	public void visit(SEQ s) {
 	    if (!visited.add(s)) return;
-	    s.left.visit(this);
-	    s.right.visit(this);
+	    s.left.accept(this);
+	    s.right.accept(this);
 	    treeMap.map(s, seq(treeMap.get(s.left), treeMap.get(s.right)));
 	}
 
@@ -187,8 +187,8 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 
 	public void visit(ESEQ e) { 
 	    if (!visited.add(e)) return;
-	    e.stm.visit(this);
-	    e.exp.visit(this);
+	    e.stm.accept(this);
+	    e.exp.accept(this);
 	    treeMap.map(e, new ESEQ(tf, e, 
 				    seq(treeMap.get(e.stm), 
 					((ESEQ)treeMap.get(e.exp)).stm),
@@ -234,7 +234,7 @@ public class ToCanonicalTree implements Derivation, TypeMap {
 		      new CONST(this.tf, code.getRootElement(), 0)),
 		     null);
 	    else {
-		Exp a = exps.head; a.visit(this);
+		Exp a = exps.head; a.accept(this);
 		ESEQ aa = (ESEQ)treeMap.get(a);
 		StmExpList bb = reorder(exps.tail);
 		if (commute(bb.stm, aa.exp))

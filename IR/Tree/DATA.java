@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  * </PRE>
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: DATA.java,v 1.1.2.10 1999-09-09 15:42:41 cananian Exp $
+ * @version $Id: DATA.java,v 1.1.2.11 1999-10-19 19:53:09 cananian Exp $
  */
 public class DATA extends Stm implements harpoon.ClassFile.HDataElement { 
     /** The expression to write to memory.  Never null. */
@@ -104,7 +104,7 @@ public class DATA extends Stm implements harpoon.ClassFile.HDataElement {
     }
 
     /** Accept a visitor */
-    public void visit(TreeVisitor v) { v.visit(this); } 
+    public void accept(TreeVisitor v) { v.visit(this); } 
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) { 
 	return new DATA(tf, this, (Exp)data.rename(tf, ctm), initialized);

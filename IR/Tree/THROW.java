@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: THROW.java,v 1.1.2.10 1999-08-05 20:43:38 duncan Exp $
+ * @version  $Id: THROW.java,v 1.1.2.11 1999-10-19 19:53:10 cananian Exp $
  */
 public class THROW extends Stm implements Typed {
     /** The exceptional value to return */
@@ -47,7 +47,7 @@ public class THROW extends Stm implements Typed {
     }
 
     /** Accept a visitor */
-    public void visit(TreeVisitor v) { v.visit(this); }
+    public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
 	return new THROW

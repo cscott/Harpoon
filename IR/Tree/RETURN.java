@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  *
  * @author   Duncan Bryce  <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version  $Id: RETURN.java,v 1.1.2.9 1999-08-04 06:31:00 cananian Exp $
+ * @version  $Id: RETURN.java,v 1.1.2.10 1999-10-19 19:53:10 cananian Exp $
  */
 public class RETURN extends Stm implements Typed {
     /** The value to return */
@@ -39,7 +39,7 @@ public class RETURN extends Stm implements Typed {
     }
 
     /** Accept a visitor */
-    public void visit(TreeVisitor v) { v.visit(this); }
+    public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
 	return new RETURN(tf, this, (Exp)retval.rename(tf, ctm));

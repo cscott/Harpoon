@@ -5,7 +5,7 @@ package harpoon.IR.Tree;
 
 import harpoon.Temp.CloningTempMap;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -14,7 +14,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Exp.java,v 1.1.2.9 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: Exp.java,v 1.1.2.10 1999-10-19 19:53:10 cananian Exp $
  */
 abstract public class Exp extends Tree implements Typed {
     protected Exp(TreeFactory tf, harpoon.ClassFile.HCodeElement source) {
@@ -23,7 +23,7 @@ abstract public class Exp extends Tree implements Typed {
   
     // Only ESEQs can define anything, and they are not permitted in 
     // canonical form. 
-    protected Set defSet() { return new HashSet(); }
+    protected Set defSet() { return Collections.EMPTY_SET; }
 
     protected Set useSet() {
 	return ExpList.useSet(kids());

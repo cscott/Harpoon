@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.16 1999-08-04 05:52:30 cananian Exp $
+ * @version $Id: UNOP.java,v 1.1.2.17 1999-10-19 19:53:10 cananian Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -169,7 +169,7 @@ public class UNOP extends OPER {
 	return new UNOP(tf, this, optype, op, kids.head);
     }
     /** Accept a visitor */
-    public void visit(TreeVisitor v) { v.visit(this); }
+    public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new UNOP(tf, this, optype, op, (Exp)operand.rename(tf, ctm));

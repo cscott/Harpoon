@@ -7,7 +7,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -16,7 +16,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: SEQ.java,v 1.1.2.12 1999-09-09 05:04:00 cananian Exp $
+ * @version $Id: SEQ.java,v 1.1.2.13 1999-10-19 19:53:10 cananian Exp $
  */
 public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     /** The statement to evaluate first. */
@@ -33,13 +33,9 @@ public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
 	Util.assert(tf == right.tf, "This and Right must have same tree factory");
     }
 
-    protected Set defSet() { 
-	return new HashSet();
-    }
+    protected Set defSet() { return Collections.EMPTY_SET; }
 
-    protected Set useSet() { 
-	return new HashSet();
-    }
+    protected Set useSet() { return Collections.EMPTY_SET; }
     
     public ExpList kids() {throw new Error("kids() not applicable to SEQ");}
     public int kind() { return TreeKind.SEQ; }
@@ -47,7 +43,7 @@ public class SEQ extends Stm implements harpoon.ClassFile.HDataElement {
     public Stm build(ExpList kids) {throw new Error("build() not applicable to SEQ");}
     public Stm build(TreeFactory tf, ExpList kids) {throw new Error("build() not applicable to SEQ");}
     /** Accept a visitor */
-    public void visit(TreeVisitor v) { v.visit(this); }
+    public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new SEQ(tf, this, 

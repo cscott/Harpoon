@@ -27,7 +27,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: CALL.java,v 1.1.2.18 1999-08-09 22:11:13 duncan Exp $
+ * @version $Id: CALL.java,v 1.1.2.19 1999-10-19 19:53:09 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see INVOCATION
  * @see NATIVECALL
@@ -71,7 +71,7 @@ public class CALL extends INVOCATION {
     }
 
     /** Accept a visitor */
-    public void visit(TreeVisitor v) { v.visit(this); }
+    public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new CALL(tf, this, 

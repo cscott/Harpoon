@@ -5,6 +5,7 @@ import harpoon.Temp.CloningTempMap;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -16,7 +17,7 @@ import java.util.Set;
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.1.2.4 1999-08-06 16:35:28 pnkfelix Exp $
+ * @version $Id: METHOD.java,v 1.1.2.5 1999-10-19 19:53:10 cananian Exp $
  */
 public class METHOD extends Stm {
     /** The temporary variables used for method formals. */
@@ -68,7 +69,7 @@ public class METHOD extends Stm {
     }
 
     /** Accept a visitor. */
-    public void visit(TreeVisitor v) { v.visit(this); }
+    public void accept(TreeVisitor v) { v.visit(this); }
 
     protected Set defSet() { 
 	Set def = new HashSet();
@@ -77,9 +78,7 @@ public class METHOD extends Stm {
 	return def;
     }
 
-    protected Set useSet() { 
-	return new HashSet(); 
-    }
+    protected Set useSet() { return Collections.EMPTY_SET; }
 
     /** Returns human-readable representation of this <code>Quad</code>. */
     public String toString() {

@@ -63,7 +63,7 @@ import java.util.Vector;
  * and interprets them. 
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.11 1999-08-11 10:50:38 duncan Exp $
+ * @version $Id: Method.java,v 1.1.2.12 1999-10-19 19:53:10 cananian Exp $
  */
 public final class Method extends HCLibrary {
     static PrintWriter out = new java.io.PrintWriter(System.out);
@@ -256,7 +256,7 @@ public final class Method extends HCLibrary {
 	    Interpreter i = new TreeInterpreter(ss, sf, params);
 	    
 	    // Run interpreter on the generated tree code
-	    while (!i.done) { sf.pc.visit(i); }
+	    while (!i.done) { sf.pc.accept(i); }
 
 	    // We've finished, see if an exception was thrown
 	    if (i.Texc!=TREE_NULL) {
@@ -329,8 +329,8 @@ public final class Method extends HCLibrary {
 	public void visit(BINOP e) { 
 	    if (DEBUG) db("Visiting: " + e);
 
-	    e.left.visit(this);
-	    e.right.visit(this);
+	    e.left.accept(this);
+	    e.right.accept(this);
 	    
 	    Object left  = sf.get(e.left);
 	    Object right = sf.get(e.right);
@@ -401,7 +401,7 @@ public final class Method extends HCLibrary {
 	
 	public void visit(CJUMP e) {
 	    if (DEBUG) db("Visiting: " + e);
-	    e.test.visit(this);
+	    e.test.accept(this);
 	    boolean b = (((Integer)sf.get(e.test)).intValue()!=0)?true:false;
 	    if (b) advance(0);
 	    else advance(1);
@@ -419,7 +419,7 @@ public final class Method extends HCLibrary {
 	public void visit(EXP e)  { 
 	    if (DEBUG) db("Visiting: " + e);
 	    // Execute e for side effects
-	    e.exp.visit(this);
+	    e.exp.accept(this);
 	    advance(0);
 	}
 
@@ -441,7 +441,7 @@ public final class Method extends HCLibrary {
 	    Util.assert(s.retval.kind()==TreeKind.TEMP);
 	    Util.assert(s.retex.kind()==TreeKind.NAME);
 
-	    s.func.visit(this);
+	    s.func.accept(this);
 
 	    // Dereference function ptr
 	    HMethod method = 
@@ -464,7 +464,7 @@ public final class Method extends HCLibrary {
 	    for (int i=0; params!=null; i++) {
 		// Convert all parameters to native format, and store
 		// in an array of objects
-		params.head.visit(this);
+		params.head.accept(this);
 		oParams[i] = 
 		    toNativeFormat(sf.get(params.head), paramTypes[i]);
 		params = params.tail;
@@ -499,7 +499,7 @@ public final class Method extends HCLibrary {
 
 	public void visit(MEM e) { 
 	    if (DEBUG) db("Visiting: " + e);
-	    e.exp.visit(this);
+	    e.exp.accept(this);
 	    Pointer ptr;
 
 	    if (DEBUG) db("Trying to derefence: " + e.exp);
@@ -522,12 +522,12 @@ public final class Method extends HCLibrary {
 
         public void visit(MOVE s) {
 	    if (DEBUG) db("Visiting: " + s);
-	    s.src.visit(this);
+	    s.src.accept(this);
 	    Object srcValue = sf.get(s.src);
 
 	    if (s.dst instanceof MEM) { 
 	        MEM location = (MEM)s.dst;
-		location.exp.visit(this);
+		location.exp.accept(this);
 		Pointer ptr = (Pointer)sf.get(location.exp);
 
 		try {
@@ -572,7 +572,7 @@ public final class Method extends HCLibrary {
 
         public void visit(RETURN q) {
 	    if (DEBUG) db("Visiting: " + q);
-	    q.retval.visit(this);
+	    q.retval.accept(this);
 	    Tret = sf.get(q.retval);
 	    done = true;
 	}
@@ -609,14 +609,14 @@ public final class Method extends HCLibrary {
 		throw new Error("BAD pointer type for throw: " + exc);
 	    }
 
-	    e.retex.visit(this);
+	    e.retex.accept(this);
 	    Texc = toNativeFormat(sf.get(e.retex), type);
 	    done = true;
 	}        
 	
 	public void visit(UNOP e) { 
 	    if (DEBUG) db("Visiting: " + e);
-	    e.operand.visit(this);
+	    e.operand.accept(this);
 
 	    Object operand  = sf.get(e.operand);
 

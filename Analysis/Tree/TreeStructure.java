@@ -22,7 +22,7 @@ import java.util.Map;
  * the codeview directly, so should be used with caution.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeStructure.java,v 1.1.2.4 1999-08-04 06:30:51 cananian Exp $
+ * @version $Id: TreeStructure.java,v 1.1.2.5 1999-10-19 19:52:59 cananian Exp $
  */
 public class TreeStructure { 
     private Map structure = new HashMap();
@@ -105,7 +105,7 @@ public class TreeStructure {
     private void buildTreeStructure(harpoon.IR.Tree.Code code) { 
 	TreeStructureVisitor tsv = new TreeStructureVisitor(structure);
 	for (Iterator i = code.getElementsI(); i.hasNext();) { 
-	    ((Tree)i.next()).visit(tsv);
+	    ((Tree)i.next()).accept(tsv);
 	}
     }
 

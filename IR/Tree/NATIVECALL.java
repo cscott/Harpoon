@@ -19,7 +19,7 @@ import java.util.Set;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: NATIVECALL.java,v 1.1.2.11 1999-08-10 21:56:33 duncan Exp $
+ * @version $Id: NATIVECALL.java,v 1.1.2.12 1999-10-19 19:53:10 cananian Exp $
  * @see harpoon.IR.Quads.CALL
  * @see CALL
  * @see INVOCATION
@@ -53,7 +53,7 @@ public class NATIVECALL extends INVOCATION {
     }
 
     /** Accept a visitor */
-    public void visit(TreeVisitor v) { v.visit(this); }
+    public void accept(TreeVisitor v) { v.visit(this); }
 
     public Tree rename(TreeFactory tf, CloningTempMap ctm) {
         return new NATIVECALL(tf, this, 
