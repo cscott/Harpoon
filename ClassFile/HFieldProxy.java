@@ -8,7 +8,7 @@ package harpoon.ClassFile;
  * <code>HField</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HFieldProxy.java,v 1.1.2.4 2000-01-12 23:37:46 cananian Exp $
+ * @version $Id: HFieldProxy.java,v 1.1.2.5 2000-01-12 23:50:56 bdemsky Exp $
  * @see HField
  */
 class HFieldProxy implements HField, HFieldMutator {
@@ -25,7 +25,8 @@ class HFieldProxy implements HField, HFieldMutator {
     void relink(HField proxy) {
 	this.proxy = proxy;
 	this.proxyMutator = (proxy==null) ? null : proxy.getMutator();
-	this.sameLinker = (relinker == proxy.getDeclaringClass().getLinker());
+	this.sameLinker = (proxy==null ||
+			   relinker == proxy.getDeclaringClass().getLinker());
     }
 
     public HFieldMutator getMutator() {
