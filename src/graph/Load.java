@@ -18,9 +18,9 @@ import imagerec.util.ImageDataManip;
  */
 
 public class Load extends Node {
-    private final JarFile jarFile;
-    private final String filePrefix;
-    private final int num;
+    private JarFile jarFile;
+    private String filePrefix;
+    private int num;
 
     /** Construct a {@link Load} node that will load the files
      *  <code>filePrefix.0</code> through
@@ -32,7 +32,8 @@ public class Load extends Node {
      *  @param out The node to send them to.
      */
     public Load(String filePrefix, int num, Node out) {
-	this(null, filePrefix, num, out);
+	super(out);
+	init(null, filePrefix, num);
     }
 
     /** Construct a {@link Load} node that will load the Jar entries
@@ -47,6 +48,37 @@ public class Load extends Node {
      */
     public Load(String jarFile, String filePrefix, int num, Node out) {
 	super(out);
+	init(jarFile, filePrefix, num);
+    }
+
+    
+    /** Construct a {@link Load} node that will load the files
+     *  <code>filePrefix.0</code> through
+     *  <code>filePrefix.num-1</code> and send them to
+     *  <code>out</code> node.  
+     *
+     *  @param filePrefix The prefix of the fileNames to load.
+     *  @param num The number of images to load.
+     *  @param out1 The first node to send them to.
+     *  @param out2 The second node to send them to.
+     */
+    public Load(String filePrefix, int num, Node out1, Node out2) {
+	super(out1, out2);
+	init(null, filePrefix, num);
+    }
+
+    public Load(String jarFile, String filePrefix, int num, Node out1, Node out2) {
+	super(out1, out2);
+	init(jarFile, filePrefix, num);
+    }
+
+    /**
+       Initialize a {@link Load} node that will load the files
+       (or jar entries if jarFile != null)
+       <code>filePrefix.0</code> through
+       <code>filePrefix.num-1</code>.
+    */
+    private void init(String jarFile, String filePrefix, int num) {
 	this.filePrefix = filePrefix;
 	this.num = num;
 	if (jarFile == null) {
@@ -57,11 +89,15 @@ public class Load extends Node {
 	    } catch (Exception e) {
 		throw new Error(e);
 	    }
-	}
+	}	
     }
 
     /** Load all the image files and send them, one at a time, to the <code>out</code> node. */
     public synchronized void process(ImageData id) {
+	//added by benji, hack for improved memory usage and speed
+	//Unclear whether this helps.  It depends on whether it is running
+	//headless or not.
+	//ImageDataManip.useSameArrays(true);
 	for (int i=0; i<num; i++) {
 	    String fileName = filePrefix+"."+i;
 	    System.out.println("Loading image "+fileName);
