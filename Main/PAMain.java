@@ -57,7 +57,7 @@ import harpoon.Util.DataStructs.Relation;
 import harpoon.Analysis.PointerAnalysis.MAInfo;
 import harpoon.Analysis.PointerAnalysis.SyncElimination;
 import harpoon.Analysis.PointerAnalysis.InstrumentSyncOps;
-import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
+import harpoon.Instrumentation.AllocationStatistics.AllocationNumbering;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.MetaCallGraph;
@@ -97,7 +97,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.14 2002-12-02 17:09:56 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.15 2003-02-03 16:20:53 salcianu Exp $
  */
 public abstract class PAMain {
 

@@ -62,7 +62,7 @@ import harpoon.Analysis.PointerAnalysis.ODMAInfo;
 import harpoon.Analysis.PointerAnalysis.ODNodeStatus;
 import harpoon.Analysis.PointerAnalysis.SyncElimination;
 import harpoon.Analysis.PointerAnalysis.InstrumentSyncOps;
-import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
+import harpoon.Instrumentation.AllocationStatistics.AllocationNumbering;
 import harpoon.Analysis.PointerAnalysis.PAWorkList;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
@@ -96,7 +96,7 @@ import harpoon.Util.DataStructs.LightMap;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPAMain.java,v 1.6 2002-08-08 17:51:37 cananian Exp $
+ * @version $Id: ODPAMain.java,v 1.7 2003-02-03 16:20:50 salcianu Exp $
  */
 public abstract class ODPAMain {
 

@@ -37,7 +37,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
 import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.Analysis.AllocationInformationMap;
 import harpoon.Analysis.DefaultAllocationInformation;
-import harpoon.Analysis.PointerAnalysis.AllocationStatistics;
+import harpoon.Instrumentation.AllocationStatistics.AllocationStatistics;
 import harpoon.Analysis.Tree.Canonicalize;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Temp.Temp;
@@ -46,7 +46,7 @@ import harpoon.Temp.Temp;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.10 2003-01-07 15:05:02 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.11 2003-02-03 16:19:47 salcianu Exp $
  */
 public abstract class PreallocOpt {
 

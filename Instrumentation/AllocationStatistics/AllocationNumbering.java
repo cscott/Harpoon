@@ -1,7 +1,7 @@
 // AllocationNumbering.java, created Wed Nov  8 19:06:08 2000 by cananian
 // Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.PointerAnalysis;
+package harpoon.Instrumentation.AllocationStatistics;
 
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.CachingCodeFactory;
@@ -33,7 +33,7 @@ import java.io.IOException;
  * (e.g. <code>InstrumentAllocs</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.10 2003-02-03 15:39:14 salcianu Exp $ */
+ * @version $Id: AllocationNumbering.java,v 1.1 2003-02-03 16:20:31 salcianu Exp $ */
 public class AllocationNumbering implements java.io.Serializable {
     private final CachingCodeFactory ccf;
     public  final Map alloc2int;

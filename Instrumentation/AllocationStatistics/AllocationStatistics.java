@@ -1,7 +1,7 @@
 // AllocationStatistics.java, created Sat Nov 30 22:21:12 2002 by salcianu
 // Copyright (C) 2000 Alexandru Salcianu <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.PointerAnalysis;
+package harpoon.Instrumentation.AllocationStatistics;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
@@ -35,7 +35,7 @@ import java.io.PrintWriter;
  * site from an instrumented program was executed.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: AllocationStatistics.java,v 1.7 2003-02-03 15:39:14 salcianu Exp $
+ * @version $Id: AllocationStatistics.java,v 1.1 2003-02-03 16:20:31 salcianu Exp $
  * @see InstrumentAllocs
  */
 public class AllocationStatistics {

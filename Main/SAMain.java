@@ -46,10 +46,10 @@ import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 
 import harpoon.IR.Quads.Quad;
-import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
-import harpoon.Analysis.PointerAnalysis.AllocationStatistics.AllocationNumberingStub;
-import harpoon.Analysis.PointerAnalysis.InstrumentAllocs;
-import harpoon.Analysis.PointerAnalysis.AllocationStatistics;
+import harpoon.Instrumentation.AllocationStatistics.AllocationNumbering;
+import harpoon.Instrumentation.AllocationStatistics.AllocationNumberingStub;
+import harpoon.Instrumentation.AllocationStatistics.InstrumentAllocs;
+import harpoon.Instrumentation.AllocationStatistics.AllocationStatistics;
 import harpoon.Analysis.PointerAnalysis.Debug;
 import harpoon.Analysis.PreciseGC.MRA;
 import harpoon.Analysis.PreciseGC.WriteBarrierPrePass;
@@ -101,7 +101,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.29 2003-01-07 15:05:35 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.30 2003-02-03 16:20:54 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -333,7 +333,7 @@ public class SAMain extends harpoon.IR.Registration {
 		if(INSTRUMENT_ALLOCS_STUB) { // "textualize" only a stub
 		    System.out.println("Writing AllocationNumbering into " +
 				       IFILE);
-		    an.writeToFile(IFILE);
+		    AllocationNumberingStub.writeToFile(an, IFILE);
 		    System.out.println("Reading AllocationNumberingStub");
 		    AllocationNumberingStub ans = new AllocationNumberingStub
 			(linker, IFILE);

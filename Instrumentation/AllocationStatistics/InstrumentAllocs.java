@@ -1,7 +1,7 @@
 // InstrumentAllocs.java, created Tue Nov  7 14:29:16 2000 by root
 // Copyright (C) 2000 Brian Demsky <bdemsky@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Analysis.PointerAnalysis;
+package harpoon.Instrumentation.AllocationStatistics;
 
 import harpoon.Analysis.Transformation.MethodMutator;
 import harpoon.ClassFile.HClass;
@@ -39,7 +39,7 @@ import java.util.Map;
  * the program.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: InstrumentAllocs.java,v 1.5 2002-12-01 06:28:09 salcianu Exp $ */
+ * @version $Id: InstrumentAllocs.java,v 1.1 2003-02-03 16:20:31 salcianu Exp $ */
 public class InstrumentAllocs extends MethodMutator
     implements java.io.Serializable {
 

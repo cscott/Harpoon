@@ -38,7 +38,7 @@ import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.MetaMethods.SmartCallGraph;
 import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
 import harpoon.Analysis.Quads.CallGraph;
-import harpoon.Analysis.PointerAnalysis.AllocationStatistics;
+import harpoon.Instrumentation.AllocationStatistics.AllocationStatistics;
 import harpoon.Analysis.PointerAnalysis.Debug;
 
 import harpoon.Analysis.MemOpt.IncompatibilityAnalysis;
@@ -55,7 +55,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>IAStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: IAStatistics.java,v 1.5 2003-01-07 16:53:13 salcianu Exp $
+ * @version $Id: IAStatistics.java,v 1.6 2003-02-03 16:19:47 salcianu Exp $
  */
 public abstract class IAStatistics {
     
