@@ -1,4 +1,4 @@
-% CVSId: $Id: oqe.tex,v 1.10 2002-05-06 23:33:42 cananian Exp $
+% CVSId: $Id: oqe.tex,v 1.11 2002-05-07 00:29:08 cananian Exp $
 \documentclass[%
 pdf,
 colorBG,
@@ -598,6 +598,72 @@ anywhere there is a zero in the input.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{3}{
+\begin{slide}{Interprocedural analysis}
+\newcommand{\myi}{\onlySlide*{1}{i}\fromSlide*{2}{this.f}}
+\begin{center}%
+\parbox[c]{2.3in}{%
+\begin{mysamplecode}%
+int foo() \{\\
+\>if (\ldots)\\
+\>\>\myi =1;\\
+\>else\\
+\>\>\myi =2;\\
+\>if (\myi >0)\\
+\>\>$\vdots$\\
+\}\\
+\end{mysamplecode}%
+}%
+\parbox[c]{2.3in}{\fromSlide{3}{%
+\begin{mysamplecode}
+int foo() \{\\
+\>\myi =1;\\
+\}\\
+int bar() \{\\
+\>\myi =2;\\
+\}\\
+int bar() \{\\
+\>if (\myi >0)\\
+\>\>\ldots\\
+\}\\ 
+\end{mysamplecode}
+}}
+\end{center}
+\end{slide}
+}
+
+\begin{talknotes}
+Our examples have all been intraprocedural.  We use a
+\emph{field-based} technique to perform the analysis
+interprocedurally, maintaining a single analysis value for
+each distinct object field.  @  Instead of maintaining a value
+for {\tt i}, we maintain a value for field {\tt f}, @ and this
+works even when the various accesses take place in different methods.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\begin{slide}{All cars are black}
+\begin{samplecode}
+void paint(int color) \{\\
+\>if (this.model == FORD)\\
+\>\>color = BLACK;\\
+\>this.color = color;\\
+\}\\
+\end{samplecode}
+\end{slide}
+
+\begin{talknotes}
+Returning to our car example, we can see how our initial Sparse
+Predicated Typed Constant analysis could determine that, if all cars'
+model is FORD, then all car's color will be BLACK.  Having determined
+this, we can simply substitute BLACK for the color wherever it appears
+and remove the field.  However, if there are non-FORD cars, we can
+still use our bitwidth analysis to determine a bound on how many
+bits we need to represent the various car colors that we see assigned
+to the color field.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Field compression using bitwidths}
 
 \begin{center}
@@ -607,6 +673,10 @@ anywhere there is a zero in the input.
 \end{slide}
 
 \begin{talknotes}
+Once we've used our analysis to determine accurate widths for fields,
+we would like to shrink the objects' allocations to use only the space
+actually needed for each field.  So if we have less than 256 colors,
+we can use a single byte in the object structure to represent color.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -649,8 +719,25 @@ anywhere there is a zero in the input.
 \end{slide}
 
 \begin{talknotes}
-Our discussion earlier may have implied that padding took place only
-at the end of an object.  That is not correct. \ldots
+The actual situtation is a little more complicated.  There is padding
+within and at the end of the object, required for various reasons.
+The heap allocator may prefer to have the chunks it returns aligned
+on certain boundaries, and the machine architecture may prefer to
+access, for example, word data aligned at word boundaries.  At
+some runtime cost, we can overcome these limitations.  At the top, is
+the standard ``Java'' object packing.  All fields are aligned to their
+natural size, so that, word-sized fields will always begin at word
+boundaries.  In this work we implemented a ``byte'' alignment
+strategy, where all fields are placed at the nearest \emph{byte}
+boundaries, irrespective of their preferred alignment.  One can also
+imagine a ``bit'' alignment strategy where each field uses
+\emph{exactly} the number of bits it requires.  At runtime we must
+then perform bit-masking and -extraction operations to access the
+fields.  We found very little additional space-savings potential from
+going to bit alignment, which is why the numbers we will present use
+``byte'' alignment.
+
+~%
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -675,6 +762,11 @@ Three broad techniques:
 \end{slide}
 
 \begin{talknotes}
+Let's return to our outline.  So far we have talked about field
+compression; using bitwidth analysis to reduce the static size of
+fields allocated in objects, and using field packing to reduce the
+amount of object padding.  Now we will talk about ``Mostly-constant
+field elimination,'' our second space-reduction technique.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -707,6 +799,17 @@ Three broad techniques:
 }
 
 \begin{talknotes}
+It's easy to remove constant fields; we just replace the field
+reference with the appropriate constant.  @ But our key idea here is
+that it is also possible to replace \emph{mostly}-constant fields.
+@ We identify fields which have a certain value ``most of the time''
+using @ static analysis and profiling.  @ We can then transform the
+objects to remove fields with the common value, so that we only
+spend space on fields with unusual values.  @ Our techniques for doing
+this are called static specialization and externalization.
+The types of ``mostly-constant'' fields that can be removed are
+slightly different with the two techniques; we will look at static
+specialization first.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
