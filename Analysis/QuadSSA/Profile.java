@@ -4,7 +4,7 @@
 // Maintainer: Mark Foltz <mfoltz@ai.mit.edu> 
 // Version: 
 // Created: <Tue Oct  6 12:41:25 1998> 
-// Time-stamp: <1998-11-20 12:55:21 mfoltz> 
+// Time-stamp: <1998-11-22 17:31:54 mfoltz> 
 // Keywords: 
 
 package harpoon.Analysis.QuadSSA;
@@ -71,8 +71,7 @@ public class Profile {
     // calling method, class, and this for this quad graph
     HMethod _method;
     HClass _class;
-    String _calling_method_name;
-    Temp _this;
+    Temp _this, _null_temp, _calling_method_name_temp, _calling_class_name_temp;
 
     // classes for constants
     HClass _java_lang_string;
@@ -93,10 +92,12 @@ public class Profile {
 
       _static_monitor = new StaticMonitor();
 
-      _calling_method_name = _method.getName();
-
       _java_lang_string = HClass.forName("java.lang.String");
       //      _java_lang_integer = HClass.forName("java.lang.Integer");
+
+      _null_temp = new Temp();
+      _calling_method_name_temp = new Temp();
+      _calling_class_name_temp = new Temp();
 
       // Get HMethods for profiling callbacks.
       HClass monitor = HClass.forName("harpoon.RunTime.Monitor");
@@ -115,7 +116,7 @@ public class Profile {
 
  	_new_profiling_method = 
 	  monitor.getMethod("logNEW",
-			    "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;I)V");
+			    "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;I)V");
 
        } catch (Exception e) {
  	System.err.println("Couldn't find method in harpoon.RunTime.Monitor!!!!");
@@ -135,120 +136,91 @@ public class Profile {
       _static_monitor.logMAYCALL(_class,_method,q.method.getDeclaringClass(),q.method);
 
       // Set up constants.
-      Temp t1 = new Temp();
-      CONST c1 = new CONST(q.getSourceElement(), t1, 
-			   _calling_method_name, 
-			   _java_lang_string);
 
-      Temp t2 = new Temp();
-      CONST c2 = new CONST(q.getSourceElement(), t2,
+      Temp t1 = new Temp();
+      CONST c1 = new CONST(q.getSourceElement(), t1,
 			   q.method.getName(), _java_lang_string);
 
       Temp[] parameters = new Temp[4];
 
       // Set up other parameters
-      parameters[1] = t1;
-      parameters[3] = t2;
+      parameters[1] = _calling_method_name_temp;
+      parameters[3] = t1;
 
       // if this is a static method call then we need a null constant
       if (q.objectref == null || _this == null) {
 
-	Temp t3 = new Temp();
-	CONST c3 = new CONST(q.getSourceElement(), t3,
-			     null, HClass.Void);
-
-	if (_this == null) parameters[0] = t3;
+	if (_this == null) parameters[0] = _null_temp;
 	else parameters[0] = _this;
-	if (q.objectref == null) parameters[2] = t3;
-	else parameters[2] = q.objectref;
-
-	CALL profiling_call = new CALL(q.getSourceElement(), _call_profiling_method,
-				       null, parameters, null, new Temp(), false);
-
-	Edge c1_c2 = Quad.addEdge(c1, 0, c2, 0);
-	Edge c2_c3 = Quad.addEdge(c2, 0, c3, 0);
-	Edge c3_profiling_call = Quad.addEdge(c3, 0, profiling_call, 0);
-
-	// splice new quads into CFG
-	splice(q, c1, profiling_call);
+	if (q.objectref == null) parameters[2] = _null_temp;
+	else parameters[2] = q.objectref; 
 
       } else {
-
 	parameters[0] = _this;
 	parameters[2] = q.objectref;	
-
-	CALL profiling_call = new CALL(q.getSourceElement(), _call_profiling_method,
-				       null, parameters, null, new Temp(), false);
-
-	Edge c1_c2 = Quad.addEdge(c1, 0, c2, 0);
-	Edge c2_profiling_call = Quad.addEdge(c2, 0, profiling_call, 0);
-
-	// splice new quads into CFG
-	splice(q, c1, profiling_call);
-
       }
+
+      CALL profiling_call = new CALL(q.getSourceElement(), _call_profiling_method,
+				     null, parameters, null, new Temp(), false);
+
+      Quad.addEdge(c1, 0, profiling_call, 0);
+
+      // splice new quads into CFG
+      splice(q, c1, profiling_call);
 
     }
 
     public void visit(NEW q) {
 
-      Temp[] parameters = new Temp[4];
+      Temp[] parameters = new Temp[5];
 
       Temp t1 = new Temp();
       CONST c1 = new CONST(q.getSourceElement(), t1,
-			     new Integer(q.getLineNumber()), 
+			   new Integer(q.getLineNumber()), 
 			   HClass.Int);
 
-      Temp t2 = new Temp();
-      CONST c2 = new CONST(q.getSourceElement(), t2,
-			   _calling_method_name, _java_lang_string);
-
-      if (_this == null) {
-
-	Temp t3 = new Temp();
-	CONST c3 = new CONST(q.getSourceElement(), t3,
-			     null, HClass.Void);
-
-	parameters[0] = t3;
-	parameters[1] = t2;
-	parameters[2] = q.dst;
-	parameters[3] = t1;
-
-	CALL profiling_call = new CALL(q.getSourceElement(), _new_profiling_method,
-				       null, parameters, null, new Temp(), false);
-
-	Quad.addEdge(c1,0,c2,0);
-	Quad.addEdge(c2,0,c3,0);
-	Quad.addEdge(c3,0,profiling_call,0);
-
-	// splice new quad into CFG
-	Util.assert(q.next().length==1);
-	splice(q.next(0), c1, profiling_call);
-
-      } else {
-
-	parameters[0] = _this;
-	parameters[1] = t2;
-	parameters[2] = q.dst;
-	parameters[3] = t1;
+      parameters[1] = _calling_class_name_temp;
+      parameters[2] = _calling_method_name_temp;
+      parameters[3] = q.dst;
+      parameters[4] = t1;
       
-	CALL profiling_call = new CALL(q.getSourceElement(), _new_profiling_method,
-				       null, parameters, null, new Temp(), false);
+      if (_this == null) parameters[0] = _null_temp;
+      else parameters[0] = _this;
 
+      CALL profiling_call = new CALL(q.getSourceElement(), _new_profiling_method,
+				     null, parameters, null, new Temp(), false);
 
-	Quad.addEdge(c1,0,c2,0);
-	Quad.addEdge(c2,0,profiling_call,0);
-	
-	// splice new quad into CFG
-	Util.assert(q.next().length==1);
-	splice(q.next(0), c1, profiling_call);
+      Quad.addEdge(c1,0,profiling_call,0);
 
-      }
+      // splice new quad into CFG
+      Util.assert(q.next().length==1);
+      splice(q.next(0), c1, profiling_call);
 
     }
 
     public void visit(METHODHEADER q) {
-      _this = q.def()[0];
+
+      CONST _null_CONST = new CONST(q.getSourceElement(), _null_temp,
+				    null, HClass.Void);
+
+      CONST _calling_method_name_CONST = 
+	new CONST(q.getSourceElement(), _calling_method_name_temp,
+		  _method.getName(), _java_lang_string);
+
+      CONST _calling_class_name_CONST =
+	new CONST(q.getSourceElement(), _calling_class_name_temp,
+		  _class.getName(), _java_lang_string);
+
+      Quad.addEdge(_null_CONST,0,_calling_method_name_CONST,0);
+      Quad.addEdge(_calling_method_name_CONST,0,_calling_class_name_CONST,0);
+
+      Util.assert(q.next().length==1);
+      splice(q.next(0), _null_CONST, _calling_class_name_CONST);
+
+      // make sure _this is null for static methods
+      if (_method.isStatic()) _this = null;
+      else _this = q.def()[0];
+      // System.err.println(q);
     }
 
     // Splice quads r to s before q in the CFG.  r is assumed
