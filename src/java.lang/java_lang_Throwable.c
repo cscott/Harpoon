@@ -1,13 +1,50 @@
 #include <jni.h>
+#include <stdarg.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "bfd.h"
 #include <jni-private.h> /* for FNI_Thread_State */
 #include "java_lang_Throwable.h"
-#ifdef arm32
-# include "asm/stack.h"
-#endif
+#include <config.h> /* for HAVE_STACK_TRACE_FUNCTIONS */
 
 char *name_of_binary;
+
+/* Print the printf-style formatted string using the println() method of
+ * java object 'sobj'. */
+void jprintf(JNIEnv *env, jobject sobj, char *format, ...) {
+    jstring str; const jchar *ca; jcharArray chararr; jmethodID mid; jsize len;
+    char buf[256];
+    jcharArray jca;
+    va_list ap;
+    va_start(ap, format);
+    vsnprintf(buf, sizeof(buf), format, ap);
+    va_end(ap);
+    // okay, now the (UTF) string is in buf.
+    mid = (*env)->GetMethodID(env, (*env)->GetObjectClass(env, sobj),
+			      "println", "([C)V"); if (!mid) return;
+    str = (*env)->NewStringUTF(env, buf); if (!str) return;
+    len = (*env)->GetStringLength(env, str);
+    ca = (*env)->GetStringChars(env, str, NULL); if (!ca) return;
+    chararr = (*env)->NewCharArray(env, len); if (!chararr) return;
+    (*env)->SetCharArrayRegion(env, chararr, 0, len, ca);
+    (*env)->ReleaseStringChars(env, str, ca);
+    (*env)->CallVoidMethod(env, sobj, mid, chararr);
+}
+
+
+#ifndef HAVE_STACK_TRACE_FUNCTIONS
+/* The given object 'sobj' must have a void println(char[]) method */
+JNIEXPORT void JNICALL Java_java_lang_Throwable_printStackTrace0
+  (JNIEnv *env, jobject thisobj, jobject sobj) {
+    jprintf(env, sobj, "printStackTrace() unimplemented.");
+}
+JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
+  (JNIEnv *env, jobject thisobj) {
+    /* XXX: unimplemented. */
+    return thisobj;
+}
+#else /* HAVE_STACK_TRACE_FUNCTIONS */
+#include "asm/stack.h" /* snarf in the stack trace functions. */
 
 struct _StackTrace {
   void *retaddr;
@@ -15,33 +52,10 @@ struct _StackTrace {
 };
 typedef struct _StackTrace *StackTrace;
 
-struct _Frame {
-  void *start_of_function; /* start_of_function + 16 */
-};
-typedef struct _Frame *Frame;
-
 typedef struct _symtab_entry {
   symvalue value;
   CONST char *name;  /* Symbol name.  */  
 } symtab_entry;
-
-/* frame pointer */
-#define get_my_fp() \
-({ Frame __fp; \
-   asm("mov %0, fp" : "=r" (__fp)); \
-   __fp; })
-
-/* [fp, #-4] = return address */
-#define get_my_retaddr(__fp) \
-  *(&(((Frame)__fp)->start_of_function)-1)
-
-/* [fp, #-8] = parent's stack ptr (points to last value on parent's stack */
-#define get_parent_sp(__fp) \
-  *(&(((Frame)__fp)->start_of_function)-2)
-
-/* [fp, #-12] = parent's frame ptr (points to first value on parent's stack */
-#define get_parent_fp(__fp) \
-  *(&(((Frame)__fp)->start_of_function)-3)
 
 /* free memory */
 void free_stacktrace(void *stacktrace) {
@@ -101,7 +115,8 @@ static char *strtab[] = {
 
 /* if possible, print the method name from the symbol table, 
    otherwise use the StackTrace entry to print the address */ 
-static void printItem(symtab_entry *item, StackTrace backup) {
+static void printItem(JNIEnv *env, jobject sobj,
+		      symtab_entry *item, StackTrace backup) {
 #ifdef FULL_STACK_TRACE
   if (item != NULL)
 #else
@@ -118,15 +133,15 @@ static void printItem(symtab_entry *item, StackTrace backup) {
 	if (strcmp(item->name, strtab[i]) == 0) return;
       if (strstr(item->name, "__0003cinit_0003e__")) return;
 #endif
-      fprintf(stderr, "        at %s\n", item->name);
+      jprintf(env, sobj, "        at %s\n", item->name);
     }
   else
     /* if for some reason we cannot find the symbol, print the address */
-    fprintf(stderr, "        at %p\n", backup->retaddr);
+    jprintf(env, sobj, "        at %p\n", backup->retaddr);
 
 }
 
-static int printStackTrace(StackTrace tr) {
+static int printStackTrace(JNIEnv *env, jobject sobj, StackTrace tr) {
   bfd *abfd;
   long storage_needed;
   asymbol **symbol_table;
@@ -192,12 +207,12 @@ static int printStackTrace(StackTrace tr) {
 	compare_symtab_entry);
   
   curr = tr;
-  fprintf(stderr, "Exception in thread\n");
+  jprintf(env, sobj, "Exception in thread\n");
 
   while(curr != NULL) {
     symtab_entry *found = 
       bsearch_symtab((symvalue)curr->retaddr, symtab, number_of_text_symbols);
-    printItem(found, curr);
+    printItem(env, sobj, found, curr);
     curr = curr->next;
   }
 
@@ -208,11 +223,11 @@ static int printStackTrace(StackTrace tr) {
 }
 
 /* prints out return addresses */
-static void printNumericStackTrace(StackTrace tr) {
+static void printNumericStackTrace(JNIEnv *env, jobject sobj, StackTrace tr) {
   StackTrace curr = tr;
-  fprintf(stderr, "Exception in thread\n");
+  jprintf(env, sobj, "Exception in thread\n");
   while(curr != NULL) {
-    fprintf(stderr, "        at %p\n", curr->retaddr);
+    jprintf(env, sobj, "        at %p\n", curr->retaddr);
     curr = curr->next;
   }
 }
@@ -222,12 +237,13 @@ static void printNumericStackTrace(StackTrace tr) {
  * Method:    printStackTrace0
  * Signature: (Ljava/lang/Object;)V
  */
+/* The given object 'sobj' must have a void println(char[]) method */
 JNIEXPORT void JNICALL Java_java_lang_Throwable_printStackTrace0
   (JNIEnv *env, jobject thisobj, jobject sobj) {
   StackTrace tr;
   tr = (StackTrace)FNI_GetJNIData(env, thisobj);
-  if (printStackTrace(tr) != 0)
-      printNumericStackTrace(tr);
+  if (printStackTrace(env, sobj, tr) != 0)
+      printNumericStackTrace(env, sobj, tr);
   return;
 }
 
@@ -270,3 +286,5 @@ JNIEXPORT jthrowable JNICALL Java_java_lang_Throwable_fillInStackTrace
   FNI_SetJNIData(env, thisobj, tr, free_stacktrace);
   return thisobj;
 }
+
+#endif /* HAVE_STACK_TRACE_FUNCTIONS */
