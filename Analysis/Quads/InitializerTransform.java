@@ -46,7 +46,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.5 2000-10-20 01:18:47 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.6 2000-10-20 01:37:35 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -190,6 +190,7 @@ public class InitializerTransform
 			 q.params(), q.retval(), q.retex(), q.isVirtual(),
 			 q.isTailCall(), q.dst(), q.src());
 		    Quad.replace(q, ncall);
+		    Quad.transferHandlers(q, ncall);
 		}
 	    }
 	    public void visit(GET q) {
