@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.68 2000-11-06 23:55:40 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.69 2000-11-11 16:14:56 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -190,7 +190,7 @@ public class PointerAnalysis {
      *
      *</ul> */
     public PointerAnalysis(MetaCallGraph _mcg, MetaAllCallers _mac,
-			   LBBConverter lbbconv){
+			   LBBConverter lbbconv) {
 	mcg  = _mcg;
 	mac  = _mac;
 	scc_lbb_factory = new CachingSCCLBBFactory(lbbconv);

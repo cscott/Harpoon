@@ -67,7 +67,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.39 2000-11-09 01:05:05 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.40 2000-11-11 16:14:56 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -123,7 +123,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     MetaAllCallers  mac;
 
     // use the inter-thread analysis
-    private boolean USE_INTER_THREAD = false;
+    private boolean USE_INTER_THREAD     = false;
     private boolean DO_STACK_ALLOCATION  = false;
     private boolean DO_THREAD_ALLOCATION = false;
     private boolean GEN_SYNC_FLAG        = false;
@@ -339,7 +339,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    else { // the hard work ...
 		ap.ns = noConflictingSyncs(node, mm);
 		if(ap.ns)
-		    System.out.println("BRAVO: " + node + Debug.code2str(q));
+		    System.out.println("BRAVO: " + node + " " +
+				       Debug.code2str(q));
 	    }
 	}
     }
@@ -477,7 +478,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     private boolean remainInThreadBottom(PANode node, MetaMethod mm,
 					 int level, String ident){
 	if(node == null)
-	    return false;
+	    return true; // it was false before
 
 	if(DEBUG)
 	    System.out.println(ident + "remainInThreadBottom called for " + 
@@ -689,6 +690,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 	// Case 4: node doesn't escape into a static, a method hole or the
 	// caller, so it must escape only into one/more thread(s).
+	if(!USE_INTER_THREAD)
+	    return false;
 	ParIntGraph pig_t = pa.threadInteraction(mm);
 	// if node is not captured in pig_t, we give up (it means that the
 	// thread that accesses might put it in some static, method hole etc.

@@ -83,7 +83,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.80 2000-11-09 04:21:44 bdemsky Exp $
+ * @version $Id: PAMain.java,v 1.1.2.81 2000-11-11 16:15:00 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -268,6 +268,10 @@ public abstract class PAMain {
 
 	if(COMPILE) {
 	    SAMain.HACKED_REG_ALLOC = true;
+	    // It seems that something is broken in the new strategy ...
+	    SAMain.USE_OLD_CLINIT_STRATEGY = true;
+	    // Let's use the hacked register allocator for noe
+	    SAMain.HACKED_REG_ALLOC = true;
 	    SAMain.hcf = hcf;
 	    SAMain.className = root_method.declClass; // params[optind];
 	    SAMain.do_it();
@@ -379,7 +383,6 @@ public abstract class PAMain {
 /*
         }
 */
-        System.out.println("root method :" + root_method.declClass + "." + root_method.name);
 	HClass hclass = linker.forName(root_method.declClass);
 	HMethod[] hm  = hclass.getDeclaredMethods();
 
@@ -618,18 +621,26 @@ public abstract class PAMain {
 		PRE_ANALYSIS_OUT_FILE = new String(g.getOptarg());
 		break;		
 	    case 21:
+		System.out.println("Old option syncelim -> fail");
+		System.exit(1);
 		ELIM_SYNCOPS = true;
 		break;
 	    case 22:
+		System.out.println("Old option instsync -> fail");
+		System.exit(1);
 		INST_SYNCOPS = true;
 		break;
 	    case 23:
 		DUMP_JAVA = true;
 		break;
 	    case 24:
+		System.out.println("Old option analyzeroots -> fail");
+		System.exit(1);
 		ANALYZE_ALL_ROOTS = true;
 		break;
 	    case 25:
+		System.out.println("Old option syncelimroots -> fail");
+		System.exit(1);
 		SYNC_ELIM_ALL_ROOTS = true;
 		break;
 	    case 'o':
@@ -729,7 +740,7 @@ public abstract class PAMain {
 	    if(USE_INTER_THREAD)
 		System.out.println("\t\tUSE_INTER_THREAD");
 	    else
-		System.out.println("\t\t(just inter proc)");
+		System.out.println("\t\tJust inter procedural analysis");
 	}
 
 
@@ -775,12 +786,12 @@ public abstract class PAMain {
 	MetaCallGraph mcg = pa.getMetaCallGraph();
 	MetaMethod mroot = new MetaMethod(hroot, true);
 	Set allmms = mcg.getAllMetaMethods();
-
+	
 	// The following loop has just the purpose of timing the analysis of
 	// the entire program. Doing it here, before any memory allocation
 	// optimization, allows us to time it accurately.
-       g_tstart = System.currentTimeMillis();
-       for(Iterator it = allmms.iterator(); it.hasNext(); ) {
+	g_tstart = System.currentTimeMillis();
+	for(Iterator it = allmms.iterator(); it.hasNext(); ) {
             MetaMethod mm = (MetaMethod) it.next();
             if(!analyzable(mm)) continue;
             pa.getIntParIntGraph(mm);
@@ -802,7 +813,8 @@ public abstract class PAMain {
 
 	g_tstart = time();
 	MAInfo mainfo = 
-	    new MAInfo(pa, hcf, allmms, USE_INTER_THREAD,
+	    new MAInfo(pa, hcf, allmms,
+		       USE_INTER_THREAD,
 		       DO_STACK_ALLOCATION,
 		       DO_THREAD_ALLOCATION,
 		       GEN_SYNC_FLAG);
