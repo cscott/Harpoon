@@ -14,6 +14,8 @@ import java.util.Comparator;
 
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeFactory
+;
 import harpoon.Util.LightBasicBlocks.LightBasicBlock;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
@@ -23,7 +25,7 @@ import harpoon.Util.Graphs.SCComponent;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.7 2000-03-24 22:32:43 salcianu Exp $
+ * @version $Id: Stats.java,v 1.1.2.8 2000-05-16 01:03:51 salcianu Exp $
  */
 abstract class Stats {
 
@@ -107,6 +109,9 @@ abstract class Stats {
 	int total_sccs = 0;
 	int total_passes = 0;
 	int total_params = 0; // the total number of parameters
+	// the set of all the analyzed methods (a method can be split
+	// into many metamethods)
+	Set methods = new HashSet();
 
 	maxim_nb_instrs = -1;
 	maxim_nb_passes = -1;
@@ -115,6 +120,8 @@ abstract class Stats {
 	for(Iterator it = info.keySet().iterator(); it.hasNext(); ){
 	    MetaMethod mm = (MetaMethod) it.next();
 	    MetaMethodInfo mmi = (MetaMethodInfo) info.get(mm);
+
+	    methods.add(mm.getHMethod());
 
 	    mmi.nb_params = compute_nb_params(mm.getHMethod());
 
@@ -139,9 +146,14 @@ abstract class Stats {
 		maxim_nb_params = mmi.nb_params;
 	}
 
+	// show some statistics about the size (in bytecode instrs) 
+	// of all the analyzed methods.
+	int total_b_instrs = print_bytecode_size(methods);
+
 	System.out.println("--TOTALS----------------------------------");
 	System.out.println("Nb. of analyzed meta-methods : " + nb_mmethods);
-	System.out.println("Total nb. of instructions    : " + total_instrs);
+	System.out.println("Total nb. of IR instrs       : " + total_instrs);
+	System.out.println("Total nb. of Bytecode instrs : " + total_b_instrs);
 	System.out.println("Total nb. of BBs             : " + total_bbs);
 	System.out.println("Total nb. of SCCs            : " + total_sccs);
 
@@ -185,6 +197,25 @@ abstract class Stats {
 	for(int i=0;i<mwp.length;i++) 
 	    if(mwp[i]!=0) System.out.println("Meta-Methods with " + i + 
 					     " param(s): " + mwp[i]);
+    }
+
+
+    // display the size of the analyzed methods (in bytecode) along with
+    // the total size
+    private static final int print_bytecode_size(Set methods) {
+	HCodeFactory bcf = harpoon.IR.Bytecode.Code.codeFactory();
+	int total = 0;
+	System.out.println("ANALYZED METHODS SIZE (IN BYTECODE INSTRS)");
+	for(Iterator it = methods.iterator(); it.hasNext(); ) {
+	    HMethod hm = (HMethod) it.next();
+	    HCode hcode = bcf.convert(hm);
+	    int bsize = hcode.getElementsL().size();
+	    total += bsize;
+	    System.out.print(hm + " " + bsize + " bytecode instrs");
+	}
+	System.out.println("TOTAL: " + total + " bytecode instrs");
+	System.out.println();
+	return total;
     }
 
     // computes the total number of parameters of the method hm;
