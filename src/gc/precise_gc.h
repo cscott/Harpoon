@@ -66,11 +66,8 @@ void cleanup_after_threaded_GC();
 /* trace takes a pointer to an object and traces the pointers w/in it */
 void trace(jobject_unwrapped obj);
 
-/* ---- constants and functions for POINTER-REVERSED MARKSWEEP GC ---- */
-#define NO_POINTERS  0
+/* ---- functions for POINTER-REVERSED MARKSWEEP GC ---- */
 
-#define INDEX_OFFSET 1
-
-ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t last_index, int new);
+ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t next_index);
 
 #endif

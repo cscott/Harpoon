@@ -16,9 +16,9 @@
 #define BLOCK_SIZE        (sizeof(struct block))
 #define BLOCK_HEADER_SIZE (sizeof(struct block_header))
 #define PAGE_HEADER_SIZE  (sizeof(struct page_header))
-#define INITIAL_HEAP_SIZE 65536
-#define SMALL_OBJ_SIZE    72
-#define NUM_SMALL_OBJ_SIZES (SMALL_OBJ_SIZE/ALIGN_TO - 1)
+#define INITIAL_HEAP_SIZE 131072
+#define SMALL_BLOCK_SIZE  (72 + BLOCK_HEADER_SIZE)
+#define NUM_SMALL_BLOCK_SIZES ((SMALL_BLOCK_SIZE - BLOCK_SIZE)/ALIGN_TO + 1)
 
 #ifdef DEBUG_GC
 static int num_mallocs = 0;
@@ -50,12 +50,30 @@ struct page {
   struct block page_contents;
 };
 
+#define UNREACHABLE 1
+#define REACHABLE   2
+#define MARK_OFFSET 3
+
+#define GET_INDEX(bl) (bl->bheader.markunion.mark - MARK_OFFSET);
+
+#define SET_INDEX(bl,index) \
+({ (bl)->bheader.markunion.mark = (index) + MARK_OFFSET; })
+
+#define MARK_AS_REACHABLE(bl) \
+({ (bl)->bheader.markunion.mark = REACHABLE; })
+
+#define CLEAR_MARK(bl) \
+({ (bl)->bheader.markunion.mark = UNREACHABLE; })
+
+#define MARKED_AS_REACHABLE(bl) ((bl)->bheader.markunion.mark == REACHABLE)
+#define NOT_MARKED(bl) ((bl)->bheader.markunion.mark == UNREACHABLE)
+
 /* we keep a singly-linked list of free blocks of memory */
 static struct block *free_list;
 /* we keep a singly-linked list of allocated pages */
 static struct page *page_list;
 /* we keep an array of singly-linked list of memory blocks of frequently-requested sizes */
-static struct block *small_blocks[NUM_SMALL_OBJ_SIZES];
+static struct block *small_blocks[NUM_SMALL_BLOCK_SIZES];
 
 #ifndef WITH_THREADED_GC
 # define ENTER_MARKSWEEP_GC()
@@ -125,26 +143,6 @@ int allocated_by_marksweep(void *ptr_to_oobj) {
 }
 
 
-/* effects: adds the given block to the small blocks table */
-void add_to_small_blocks(struct block *small_block)
-{
-  size_t bl_size;
-  int index;
-  
-  bl_size = small_block->bheader.size_of_block;
-  assert(bl_size <= SMALL_OBJ_SIZE + BLOCK_HEADER_SIZE);
-
-  error_gc("Adding %d bytes to small blocks table.\n", bl_size);
-  
-  // "small" blocks are stored separately for fast allocation
-  index = (bl_size - BLOCK_HEADER_SIZE - OBJ_HEADER_SIZE)/ALIGN_TO;
-  assert(0 <= index && index < NUM_SMALL_OBJ_SIZES);
-
-  small_block->bheader.markunion.next = small_blocks[index];
-  small_blocks[index] = small_block;
-}
-
-
 /* effects: adds the given block in the appropriate place in the free list */
 void add_to_free_list(struct block *new_block)
 {
@@ -175,6 +173,29 @@ void add_to_free_list(struct block *new_block)
   else
     prev->bheader.markunion.next = new_block;
 }
+
+
+/* effects: adds the given block to the small blocks table, if applicable or, if not, to the free list */
+void faster_add_to_free_list(struct block *new_block)
+{
+  size_t nb_size = new_block->bheader.size_of_block;
+
+  // "small" blocks are stored separately for fast allocation
+ if (nb_size <= SMALL_BLOCK_SIZE)
+    {
+      int index = (nb_size - BLOCK_SIZE)/ALIGN_TO;
+      
+      error_gc("Adding %d bytes to small blocks table.\n", nb_size);
+
+      assert(index >= 0 && index < NUM_SMALL_BLOCK_SIZES);
+      
+      new_block->bheader.markunion.next = small_blocks[index];
+      small_blocks[index] = new_block;
+    }
+ else
+   add_to_free_list(new_block);
+}
+
 
 void create_new_page(size_t size_of_page) {
   static int fd = 0;
@@ -207,8 +228,52 @@ void create_new_page(size_t size_of_page) {
   new_block = &((*new_page_ptr)->page_contents);
   new_block->bheader.size_of_block = size_of_page - PAGE_HEADER_SIZE;
   new_block->bheader.markunion.next = NULL;
-  add_to_free_list(new_block);
+  faster_add_to_free_list(new_block);
 }
+
+
+/* effects: marks object as well as any objects pointed to by it */
+void marksweep_handle_reference(jobject_unwrapped *ref)
+{
+  jobject_unwrapped obj = (jobject_unwrapped)PTRMASK((*ref));
+  if (allocated_by_marksweep(obj))
+    {
+      // get a pointer to the block
+      struct block *bl = (void *)obj - BLOCK_HEADER_SIZE;
+      // mark or check for mark
+      if (NOT_MARKED(bl))
+	{
+	  // if not already marked, mark and trace
+	  error_gc("being marked.\n", "");
+	  MARK_AS_REACHABLE(bl);
+	  trace(obj);
+	}
+      else
+	// if already marked, done
+	assert(MARKED_AS_REACHABLE(bl));
+    }
+}
+
+void marksweep_collect()
+{
+  static int count = 1;
+  error_gc("\nGC number %d\n", count++);
+  find_root_set();
+  free_unreachable_blocks();
+  error_gc("done!\n", "");
+}
+
+void marksweep_gc_init() {
+  int i;
+  free_memory = heap_size = INITIAL_HEAP_SIZE;
+
+  // initialize small blocks lists
+  for(i = 0; i < NUM_SMALL_BLOCK_SIZES; i++)
+    small_blocks[i] = NULL;
+
+  create_new_page(INITIAL_HEAP_SIZE);
+}
+
 
 /* returns: smallest block that is greater than or equal in size to request
             block is initialized before being returned
@@ -240,100 +305,40 @@ struct block *find_free_block(size_t size) {
     new_block->bheader.size_of_block = curr->bheader.size_of_block - size;
     curr->bheader.size_of_block = size;
     // insert in free list
-    add_to_free_list(new_block);
+    faster_add_to_free_list(new_block);
   }
   // clear mark bit
-  curr->bheader.markunion.mark = 0;
+  CLEAR_MARK(curr);
   return curr;
 }
 
-/* effects: marks object as well as any objects pointed to by it */
-void marksweep_handle_reference(jobject_unwrapped *ref)
-{
-  jobject_unwrapped obj = (jobject_unwrapped)PTRMASK((*ref));
-  struct block_header *root;
-  if (allocated_by_marksweep((void *)obj))
+
+/* returns: a block that is greater than or equal in size to request
+            block is initialized before being returned
+ */
+struct block *faster_find_free_block(size_t size) {
+  if (size <= SMALL_BLOCK_SIZE)
     {
-      // move back to top of block
-      root = (struct block_header *)obj - 1;
-      // mark or check for mark
-      if (root->markunion.mark == 0)
+      int index = (size - BLOCK_SIZE)/ALIGN_TO;
+      struct block *result;
+
+      assert(index >= 0 && index < NUM_SMALL_BLOCK_SIZES);
+
+      result = small_blocks[index];
+
+      if (result != NULL)
 	{
-	  // if not already marked, mark and trace
-	  error_gc("being marked.\n", "");
-	  root->markunion.mark = 1;
-	  trace(obj);
+	  // remove block from list
+	  small_blocks[index] = result->bheader.markunion.next;
+	  // initialize block
+	  CLEAR_MARK(result);
+	  // return
+	  return result;
 	}
-      else
-	// if already marked, done
-	assert(root->markunion.mark == 1);
     }
+  return find_free_block(size);
 }
 
-void marksweep_collect()
-{
-  static int count = 1;
-  error_gc("\nGC number %d\n", count++);
-  find_root_set();
-  free_unreachable_blocks();
-  error_gc("done!\n", "");
-}
-
-void marksweep_gc_init() {
-  free_memory = heap_size = INITIAL_HEAP_SIZE;
-  create_new_page(INITIAL_HEAP_SIZE);
-}
-
-
-void* marksweep_malloc(size_t size_in_bytes) {
-  size_t aligned_size_in_bytes = 0;
-  struct block_header *result = NULL;
-  aligned_size_in_bytes = align(size_in_bytes + BLOCK_HEADER_SIZE);
-
-  ENTER_MARKSWEEP_GC();
-
-#ifndef GC_EVERY_TIME
-  result = (struct block_header *)find_free_block(aligned_size_in_bytes);
-#endif
-
-  if (result == NULL)
-    {
-      error_gc("\nx%x bytes needed\n", aligned_size_in_bytes);
-      setup_for_threaded_GC();
-      // don't have any free blocks handy, allocate new
-      marksweep_collect();
-      // see if we've managed to free the necessary memory
-      result = (struct block_header *)find_free_block(aligned_size_in_bytes);
-      // okay, no, then allocate a new page
-      if (result == NULL) {
-	size_t size_of_new_page = aligned_size_in_bytes + PAGE_HEADER_SIZE;
-	size_of_new_page = (size_of_new_page > heap_size) ? size_of_new_page : heap_size;
-	heap_size += size_of_new_page;
-	free_memory += size_of_new_page;
-	// allocate new page
-	create_new_page(size_of_new_page);
-	result = (struct block_header *)find_free_block(aligned_size_in_bytes);
-      }
-      cleanup_after_threaded_GC();
-    }
-  assert(result != NULL);
-
-  /*
-  printf("%d\t", ++num_mallocs);
-  printf("Allocated %d bytes ", size_in_bytes);
-  printf("at %p (for a total of ", result+1);
-  printf("%d bytes)\n", (total_memory_requested += size_in_bytes));
-  */
-  error_gc("%d\t", ++num_mallocs);
-  error_gc("Allocated %d bytes ", size_in_bytes);
-  error_gc("at %p (for a total of ", result+1);
-  error_gc("%d bytes)\n", (total_memory_requested += size_in_bytes));
-
-  free_memory -= aligned_size_in_bytes;
-  EXIT_MARKSWEEP_GC();
-
-  return (result+1);
-}
 
 #ifndef DEBUG_GC
 # define debug_clear_memory(bl)
@@ -371,126 +376,148 @@ void debug_verify_block(struct block *bl)
 
 void free_unreachable_blocks() {
   struct page *curr_page = page_list;
-#ifdef DEBUG_GC
-  size_t free_bytes = 0;
-#endif
-  free_list = NULL;
   while (curr_page != NULL) {
     struct block *curr_block = &(curr_page->page_contents);
-    struct block *to_be_merged = NULL; // for merging purposes
     size_t to_be_scanned = curr_page->pheader.page_size - PAGE_HEADER_SIZE;
     // scan page for free blocks
     while (to_be_scanned > 0) {
       size_t size_of_curr_block = curr_block->bheader.size_of_block;
-      if (curr_block->bheader.markunion.mark != 1) {
-	// not marked (includes blocks on the free list)
-	curr_block->bheader.markunion.mark = 0; // clear any next ptrs
-	// not marked, can be freed
-#ifdef DEBUG_GC
-	free_bytes += size_of_curr_block;
-#endif
-	free_memory += size_of_curr_block;
-	if (to_be_merged == NULL) {
-	  to_be_merged = curr_block;
-	} else {
-	  // merge with previous block
-	  to_be_merged->bheader.size_of_block += size_of_curr_block;
-	}
-      } else {
-	// marked, cannot be freed
-	// unmark and add to_be_merged to free list
-	curr_block->bheader.markunion.mark = 0;
-	if (to_be_merged != NULL) 
-	    {
-		debug_clear_memory(to_be_merged);
-		add_to_free_list(to_be_merged);
-	    }
-	to_be_merged = NULL; // reset
-      }
+
+      if (MARKED_AS_REACHABLE(curr_block))
+	// marked, cannot be freed; unmark
+	CLEAR_MARK(curr_block);
+      else if (NOT_MARKED(curr_block))
+	{
+	  // not marked, can be freed
+	  free_memory += size_of_curr_block;
+	  debug_clear_memory(curr_block);
+	  faster_add_to_free_list(curr_block);
+	} 
+
       // go to next block
       to_be_scanned -= size_of_curr_block;
       curr_block = (struct block *)((void *)curr_block + size_of_curr_block);
     }
-    if (to_be_merged != NULL)
-	{
-	    debug_clear_memory(to_be_merged);
-	    add_to_free_list(to_be_merged);
-	}
     // go to next page
     curr_page = curr_page->pheader.next;
   }
-  error_gc("%d bytes free.\n", free_bytes);
 }
 
 
-#define make_mark(index) ((index)+2)
-#define get_index_from_mark(mark) ((mark)-2)
+void* marksweep_malloc(size_t size_in_bytes) {
+  size_t aligned_size_in_bytes = 0;
+  struct block_header *result = NULL;
+  aligned_size_in_bytes = align(size_in_bytes + BLOCK_HEADER_SIZE);
+
+  ENTER_MARKSWEEP_GC();
+
+#ifndef GC_EVERY_TIME
+  result = (struct block_header *)faster_find_free_block(aligned_size_in_bytes);
+#endif
+
+  if (result == NULL)
+    {
+      error_gc("\nx%x bytes needed\n", aligned_size_in_bytes);
+      setup_for_threaded_GC();
+      // don't have any free blocks handy, allocate new
+      marksweep_collect();
+      // see if we've managed to free the necessary memory
+      result = (struct block_header *)faster_find_free_block(aligned_size_in_bytes);
+      // okay, no, then allocate a new page
+      if (result == NULL) {
+	size_t size_of_new_page = aligned_size_in_bytes + PAGE_HEADER_SIZE;
+	size_of_new_page = (size_of_new_page > heap_size) ? size_of_new_page : heap_size;
+	heap_size += size_of_new_page;
+	free_memory += size_of_new_page;
+	// allocate new page
+	create_new_page(size_of_new_page);
+	result = (struct block_header *)faster_find_free_block(aligned_size_in_bytes);
+      }
+      cleanup_after_threaded_GC();
+    }
+  assert(result != NULL);
+
+  /*
+  printf("%d\t", ++num_mallocs);
+  printf("Allocated %d bytes ", size_in_bytes);
+  printf("at %p (for a total of ", result+1);
+  printf("%d bytes)\n", (total_memory_requested += size_in_bytes));
+  */
+  error_gc("%d\t", ++num_mallocs);
+  error_gc("Allocated %d bytes ", size_in_bytes);
+  error_gc("at %p (for a total of ", result+1);
+  error_gc("%d bytes)\n", (total_memory_requested += size_in_bytes));
+
+  free_memory -= aligned_size_in_bytes;
+  EXIT_MARKSWEEP_GC();
+
+  return (result+1);
+}
+
 
 /* pointerreversed_handle_reference marks the given object as
    well as any objects pointed to by it using pointer-reversal. */
-void pointerreversed_handle_reference(jobject_unwrapped *obj)
+void pointerreversed_handle_reference(jobject_unwrapped *ref)
 {
-  struct block *root;
   jobject_unwrapped prev = NULL;
-  jobject_unwrapped curr;
+  jobject_unwrapped curr = *ref;
   jobject_unwrapped next;
-  jobject_unwrapped saved_prev;
-  jobject_unwrapped saved_curr = (*obj);
   int done = 0;
 
-  curr = PTRMASK(saved_curr);
-
-  // with pointer-reversal, the mark has 3 possible states. 
-  // when an object has not yet been visited, mark = 0. 
-  // when the object is being handled, (mark - 2) is the 
-  // index to the field (or array element) in the object 
-  // that is currently being examined. when we have 
-  // completed looking at the object, mark = 1.
+  // in pointer-reversal, the mark has 3 possible states.
+  // when an object has not yet been visited, it is
+  // unmarked. after an object has been visited and all
+  // its roots traced, it is marked as reachable. after
+  // an object has been visited and before all its roots
+  // have been traced, its mark encodes the field or
+  // array element that is currently being examined.
   while (!done)
     {
       // follow pointers down
       while (curr != NULL)
 	{
-	  struct block *root = (void *)curr - BLOCK_HEADER_SIZE;
+	  jobject_unwrapped obj = PTRMASK(curr);
+	  struct block *bl = (void *)obj - BLOCK_HEADER_SIZE;
 
-	  if (!allocated_by_marksweep(curr))
+	  if (!allocated_by_marksweep(obj))
 	    {
-	      error_gc("%p not allocated by marksweep.\n", curr);
+	      error_gc("%p not allocated by marksweep.\n", obj);
 	      if (prev == NULL)
 		done = 1;
 	      break;
 	    }
-
-	  debug_verify_block(root);
+	  
+	  debug_verify_block(bl);
 
 	  // these objects are untouched
-	  if (root->bheader.markunion.mark == 0)
+	  if (NOT_MARKED(bl))
 	    {
 	      ptroff_t next_index;
 	      jobject_unwrapped *elements_and_fields;
 
-	      error_gc("%p is unmarked.\n", curr);
+	      error_gc("%p is unmarked.\n", obj);
 
-	      assert(&claz_start <= curr->claz && curr->claz < &claz_end);
+	      assert(&claz_start <= obj->claz && obj->claz < &claz_end);
 
-	      if (curr->claz->component_claz != NULL)
+	      if (obj->claz->component_claz != NULL)
 		{
 		  // we have an array
-		  struct aarray *arr = (struct aarray *) curr;
+		  struct aarray *arr = (struct aarray *) obj;
 		  elements_and_fields = (jobject_unwrapped *)(arr->_padding_);
 		}
 	      else
 		// we have a non-array object
-		elements_and_fields = (jobject_unwrapped *)(curr->field_start);
+		elements_and_fields = (jobject_unwrapped *)(obj->field_start);
 
-	      next_index = get_next_index(curr, 0, 1);
+	      next_index = get_next_index(obj, 0);
 
 	      if (next_index == NO_POINTERS)
 		{
 		  // does not contain pointers, mark as done
-		  error_gc("%p does not contain pointers.\n", curr);
+		  error_gc("%p does not contain pointers.\n", obj);
 		  
-		  root->bheader.markunion.mark = 1;
+		  MARK_AS_REACHABLE(bl);
+
 		  if (prev == NULL)
 		    done = 1;
 		  break;
@@ -505,70 +532,62 @@ void pointerreversed_handle_reference(jobject_unwrapped *obj)
 		  error_gc("next_index = %d\n", next_index); 
 
 		  // look at the next index
-		  root->bheader.markunion.mark = make_mark(next_index);
+		  SET_INDEX(bl, next_index);
+
 		  next = elements_and_fields[next_index];
 		  elements_and_fields[next_index] = prev;
-		  prev = saved_curr;
+		  prev = curr;
 		  error_gc("Setting prev = %p.\n", prev);
-		  saved_curr = next;
-		  curr = PTRMASK(saved_curr);
+		  curr = next;
 		}
 	    }
 	  else
 	    {
 	      // these are references we're done with or that
 	      // we are already looking at somewhere in the chain
-	      error_gc("%p has mark ", curr);
-	      error_gc("%d.\n", root->bheader.markunion.mark);
-
-	      assert(root->bheader.markunion.mark >= 1);
 	      if (prev == NULL)
 		done = 1;
 	      break;
 	    }
 	}
       
-      saved_prev = prev;
-      prev = PTRMASK(saved_prev);
-
       // retreat! curr should point to the last thing we looked at, and prev to its parent
       while (prev != NULL)
 	{
 	  // these objects are in the middle of being examined
-	  struct block *root;
+	  jobject_unwrapped obj = PTRMASK(prev);
+	  struct block *bl = (void *)obj - BLOCK_HEADER_SIZE;
 	  ptroff_t last_index;
 	  ptroff_t next_index;
 	  jobject_unwrapped *elements_and_fields;
 
-	  root = (void *)prev - BLOCK_HEADER_SIZE;
-	  last_index = get_index_from_mark(root->bheader.markunion.mark);
-
 	  error_gc("Starting prev loop with prev = %p.\n", prev);
 
-	  if (prev->claz->component_claz != NULL)
+	  last_index = GET_INDEX(bl);
+
+	  if (obj->claz->component_claz != NULL)
 	    {
 	      // prev is an array
-	      struct aarray *arr = (struct aarray *)prev;
+	      struct aarray *arr = (struct aarray *)obj;
 	      elements_and_fields = (jobject_unwrapped *)(arr->_padding_);
 	    }
 	  else
-	      elements_and_fields = (jobject_unwrapped *)(prev->field_start);
+	      elements_and_fields = (jobject_unwrapped *)(obj->field_start);
 
-	  next_index = get_next_index(prev, last_index, 0);
+	  next_index = get_next_index(obj, last_index+1);
 
 	  if (next_index == NO_POINTERS)
 	    {
 	      // does not contain any more pointers, mark as done
 	      error_gc("None of the rest of the fields/elements in this object contains a ptr.\n", "");
-	      root->bheader.markunion.mark = 1;
+	      MARK_AS_REACHABLE(bl);
+
 	      // restore pointers
-	      next = saved_prev;
-	      saved_prev = elements_and_fields[last_index];
-	      prev = PTRMASK(saved_prev);
+	      next = prev;
+	      prev = elements_and_fields[last_index];
 	      error_gc("Setting prev = %p.\n", prev);
-	      elements_and_fields[last_index] = saved_curr;
-	      saved_curr = next;
-	      curr = PTRMASK(saved_curr);
+	      elements_and_fields[last_index] = curr;
+	      curr = next;
 
 	      if (prev == NULL)
 		done = 1;
@@ -583,12 +602,12 @@ void pointerreversed_handle_reference(jobject_unwrapped *obj)
 	      error_gc("last_index = %d\n", last_index); 
 	      error_gc("next_index = %d\n", next_index); 
 	      
-	      root->bheader.markunion.mark = make_mark(next_index);
+	      SET_INDEX(bl, next_index);
+
 	      next = elements_and_fields[next_index];
 	      elements_and_fields[next_index] = elements_and_fields[last_index];
-	      elements_and_fields[last_index] = saved_curr;
-	      saved_curr = next;
-	      curr = PTRMASK(saved_curr);
+	      elements_and_fields[last_index] = curr;
+	      curr = next;
 
 	      break;
 	    }

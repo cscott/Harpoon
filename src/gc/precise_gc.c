@@ -319,66 +319,42 @@ void trace(jobject_unwrapped unaligned_ptr)
 
 
 
-/* requires: if the object being pointed to by obj is in the middle
-             of being examined, last_index gives the previous field 
-	     or array index at which there was a pointer. otherwise,
-	     last_index should be 0. for arrays that contain fields,
-	     last_index is either the field index or an array index
-	     offset by the number of fields in the array.
-             new is a boolean that, if 0, indicates the object being
-	     pointed to by obj is in the middle of being examined,
-	     and 1 otherwise. no other values of new are valid.
-   returns:  0 if there are no more pointers in the object, or 1+ the 
-             index of the next field or array index that contains a 
-	     pointer. for arrays that contain fields, an array index
-	     is offset by the number of fields in the array.
+/* requires: that obj be an aligned pointer to an object, and next_index
+             be the next index in the object that may need to be examined.
+   returns:  NO_POINTERS if there are no more pointers in the object, 
+             or 1+ the index of the next field or array index that 
+	     contains a pointer. for arrays that contain fields, an 
+	     array index is offset by the number of fields in the array.
 */
-ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t last_index, int new)
+ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t next_index)
 {
   size_t obj_size_minus_header;
   int i, bits_needed, bitmaps_needed;
   ptroff_t *bitmap_ptr;
-  ptroff_t next_index;
-  struct claz *claz_ptr;
-
-  assert(new == 0 || new == 1);
 
   // should only be called w/ aligned ptrs
   assert(obj == PTRMASK(obj));
 
-  claz_ptr = obj->claz;
-
-  assert(&claz_start <= claz_ptr && claz_ptr < &claz_end);
-
-  // if we've already started looking at the object, 
-  // next_index and i will be initialized differently
-  if (new)
-    {
-      next_index = 0;
-      i = 0;
-    } 
-  else
-    {
-      next_index = last_index + 1;
-      i = next_index/BITS_IN_GC_BITMAP;
-    }
+  // we want to initialize i based on where we are in the object
+  i = next_index/BITS_IN_GC_BITMAP;
 
   // we use one bit in the GC bitmap for each pointer-sized 
   // word in the object. if the object size (minus header)
   // is too big to be encoded in the in-line bitmap, then it's
-  // put in the auxiliary bitmap
-  obj_size_minus_header = claz_ptr->size - OBJ_HEADER_SIZE;
+  // put in the auxiliary bitmap, and the in-line field
+  // contains a pointer to the bitmap
+  obj_size_minus_header = obj->claz->size - OBJ_HEADER_SIZE;
   bits_needed = (obj_size_minus_header + SIZEOF_VOID_P - 1)/SIZEOF_VOID_P;
 
-  // if we are looking at the elements of the array, we may not
-  // need to examine the bitmap again at all
-  if (claz_ptr->component_claz != NULL)
+  // if we are looking at the elements of the array, 
+  // we may not need to examine the bitmap at all
+  if (obj->claz->component_claz != NULL)
     {
       struct aarray *arr = (struct aarray *)obj;
-      error_gc("Array has length %d.\n", arr->length);
+
       // if we have already started examining array
       // elements, then the array must contain pointers
-      if (last_index >= bits_needed)
+      if (next_index > bits_needed)
 	{
 	  if (next_index < (arr->length + bits_needed))
 	    return (INDEX_OFFSET + next_index);
@@ -396,9 +372,9 @@ ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t last_index, int new)
   assert(bitmaps_needed >= 0);
   
   if (bitmaps_needed > 1)
-    bitmap_ptr = claz_ptr->gc_info.ptr;
+    bitmap_ptr = obj->claz->gc_info.ptr;
   else
-    bitmap_ptr = &(claz_ptr->gc_info.bitmap);
+    bitmap_ptr = &(obj->claz->gc_info.bitmap);
   
   // after the first time around the outer loop, next_index
   // needs to be initialized relative to i
@@ -417,7 +393,7 @@ ptroff_t get_next_index(jobject_unwrapped obj, ptroff_t last_index, int new)
 	if (bitmap & 1)
 	  {
 	    // need to check for zero-length arrays
-	    if (claz_ptr->component_claz != NULL)
+	    if (obj->claz->component_claz != NULL)
 	      {
 		struct aarray *arr = (struct aarray *)obj;
 

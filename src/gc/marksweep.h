@@ -2,6 +2,12 @@
 #define INCLUDED_MARKSWEEP_H
 
 #ifdef WITH_PRECISE_C_BACKEND
+
+/* ---- constants for POINTER-REVERSED MARKSWEEP GC ---- */
+#define NO_POINTERS  0
+
+#define INDEX_OFFSET 1
+
 void marksweep_add_to_root_set(jobject_unwrapped *obj);
 
 void marksweep_collect();
