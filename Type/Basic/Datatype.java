@@ -10,13 +10,12 @@ package harpoon.Type.Basic;
  * datatypes.
  *
  * @author C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Datatype.java,v 1.1 1998-07-29 00:56:48 cananian Exp $
+ * @version $Id: Datatype.java,v 1.2 1998-07-31 13:44:47 cananian Exp $
  * @see harpoon.Type.Type
  * @see harpoon.Type.Basic.Int
  * @see harpoon.Type.Basic.Long
  * @see harpoon.Type.Basic.Float
  * @see harpoon.Type.Basic.Double
- * @see harpoon.Type.Basic.Boolean
  */
 abstract public class Datatype {
   /**
