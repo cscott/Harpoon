@@ -1,15 +1,17 @@
 package harpoon.Analysis.Tree;
 
-import harpoon.IR.Tree.CanonicalTreeCode;
+import harpoon.IR.Tree.CONST;
 import harpoon.IR.Tree.Exp;
+import harpoon.IR.Tree.EXP;
 import harpoon.IR.Tree.SEQ;
 import harpoon.IR.Tree.Stm;
 import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.TreeVisitor;
 import harpoon.Util.Util;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * The TreeStructure class is a wrapper around a CanonicalTreeCode that
@@ -17,13 +19,14 @@ import java.util.Hashtable;
  * the codeview directly, so should be used with caution.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeStructure.java,v 1.1.2.1 1999-04-05 21:52:43 duncan Exp $
+ * @version $Id: TreeStructure.java,v 1.1.2.2 1999-07-27 22:15:31 duncan Exp $
  */
 public class TreeStructure { 
-    private Hashtable structure = new Hashtable();
-    
+    private Map structure = new HashMap();
+
     /** Class constructor. */
-    public TreeStructure(CanonicalTreeCode code) { 
+    public TreeStructure(harpoon.IR.Tree.Code code) { 
+	Util.assert(code.isCanonical());
 	buildTreeStructure(code);
     }
 
@@ -37,35 +40,45 @@ public class TreeStructure {
      *  a <code>SEQ</code> object, as the meaning of the resulting 
      *  tree would be undefined. */
     public void remove(Stm stm) { 
-        Util.assert(structure.containsKey(stm));  
-	Util.assert(structure.containsKey(structure.get(stm)));
-	Util.assert(!(stm instanceof SEQ)); // otherwise nonsensical
+	// Util.assert(!(stm instanceof SEQ)); // otherwise nonsensical
+	Util.assert(structure.containsKey(stm));
 
 	// All predecessors in canonical tree form must be SEQs
 	SEQ pred  = getPredecessor(stm);
-	SEQ ppred = getPredecessor(pred);
 	Stm newPred;
 
-	// "pred" will be replaced with its other branch 
-	if (pred.left==stm) 
-	    newPred = pred.right;
-	else if (pred.right==stm) 
-	    newPred = pred.left;
-	else 
-	    throw new Error("Tree structure has been corrupted!");
-
-	if (ppred.left==pred)
-	    ppred.left = newPred;
-	else if (ppred.right==pred)
-	    ppred.right = newPred;
-	else
-	    throw new Error("Tree structure has been corrupted!");
-
-	structure.remove(stm);
-	structure.put(newPred, ppred);
+	if (!structure.containsKey(pred)) { // Insert NOP
+	    newPred = new EXP
+		    (pred.getFactory(), pred, 
+		     new CONST(pred.getFactory(), pred, 0));
+	    if (pred.left==stm)       pred.left  = newPred;
+	    else if (pred.right==stm) pred.right = newPred;
+	    else throw new Error("Tree structure has been corrupted!");
+	}
+	else { 
+	    SEQ ppred = getPredecessor(pred);
+	    
+	    // "pred" will be replaced with its other branch 
+	    if (pred.left==stm) 
+		newPred = pred.right;
+	    else if (pred.right==stm) 
+		newPred = pred.left;
+	    else 
+		throw new Error("Tree structure has been corrupted!");
+	    
+	    if (ppred.left==pred)
+		ppred.left = newPred;
+	    else if (ppred.right==pred)
+		ppred.right = newPred;
+	    else
+		throw new Error("Tree structure has been corrupted!");
+	    
+	    structure.remove(stm);
+	    structure.put(newPred, ppred);
+	}
     }
     
-    /** Replaces <code>sOld</code> with <code>sNew</code> in this 
+   /** Replaces <code>sOld</code> with <code>sNew</code> in this 
      *  <code>TreeStructure</code>.  Neither parameter may be a
      *  <code>SEQ</code>, as the meaning of the resulting tree would
      *  be undefined. */
@@ -86,18 +99,18 @@ public class TreeStructure {
 	structure.remove(sOld);
     }
 
-    private void buildTreeStructure(CanonicalTreeCode code) { 
+    private void buildTreeStructure(harpoon.IR.Tree.Code code) { 
 	TreeStructureVisitor tsv = new TreeStructureVisitor(structure);
-	for (Enumeration e = code.getElementsE(); e.hasMoreElements();) { 
-	    ((Tree)e.nextElement()).visit(tsv);
+	for (Iterator i = code.getElementsI(); i.hasNext();) { 
+	    ((Tree)i.next()).visit(tsv);
 	}
     }
 
     // Maps all Stms in the tree to their predecessors
     class TreeStructureVisitor extends TreeVisitor { 
-	private Hashtable structure;
+	private Map structure;
 
-	TreeStructureVisitor(Hashtable structure) { 
+	TreeStructureVisitor(Map structure) { 
 	    this.structure = structure;
 	}
 
