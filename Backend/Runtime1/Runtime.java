@@ -35,7 +35,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.5 2002-08-06 20:32:58 cananian Exp $
+ * @version $Id: Runtime.java,v 1.6 2002-08-06 21:21:38 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     // The package and subclasses should be able to access these fields. WSB
@@ -76,8 +76,11 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	getTreeBuilder() { return treeBuilder; }
     public NameMap getNameMap() { return nameMap; }
     public String resourcePath(String basename) {
-	if (Boolean.getBoolean("harpoon.runtime1.sunjdk"))
+	if (Boolean.getBoolean("harpoon.runtime1.sunjdk")) {
 	    basename="sunjdk."+basename;
+	    configurationSet.add("check_with_sunjdk_needed");
+	} else
+	    configurationSet.add("check_with_classpath_needed");
 	return "harpoon/Backend/Runtime1/"+basename;
     }
 
