@@ -4,6 +4,7 @@
 package harpoon.Backend.Sparc;
 
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrDIRECTIVE;
@@ -57,7 +58,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.31 2000-02-28 20:19:28 andyb Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.32 2000-02-29 08:11:55 andyb Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -196,6 +197,8 @@ import java.util.Set;
 		} else if (wordsused == 7) { /* one reg, one stack */
 		    Util.assert(false, "emitCallPrologue: too many arguments");
 		} else { /* two reg */
+		    declare(rego[wordsused - 2], HClass.Void);
+		    declare(rego[wordsused - 1], HClass.Void);
 		    emit (ROOT, "mov `s0h, `d0",
 				new Temp[] { rego[wordsused - 2] },
 				new Temp[] { temp });
@@ -208,6 +211,7 @@ import java.util.Set;
 		if (wordsused > 6) { /* on stack */
 		    Util.assert(false, "emitCallPrologue: too many arguments");
 		} else { /* in reg */
+		    declare(rego[wordsused - 1], HClass.Void);
 		    emit (ROOT, "mov `s0, `d0", 
 				new Temp[] { rego[wordsused - 1] },
 				new Temp[] { temp });
@@ -219,12 +223,13 @@ import java.util.Set;
 	Util.assert(wordsused == 0, "emitCallPrologue: all args not in place");
     }
 
-    private void emitCallEpilogue(INVOCATION ROOT, Temp retval) {
+    private void emitCallEpilogue(INVOCATION ROOT, Temp retval, HClass type) {
 	/* AAA - need to adjust SP if args were put on stack */
 
         if (ROOT.getRetval() == null) {
 	    // don't bother emiting move for void methods
         } else if (ROOT.getRetval().isDoubleWord()) {
+	    declare(retval, type);
 	    emit (ROOT, "mov `s0, `d0h",
 			new Temp[] { retval },
 			new Temp[] { rego[0] });
@@ -232,6 +237,7 @@ import java.util.Set;
 			new Temp[] { retval },
 			new Temp[] { rego[1] });
 	} else {
+	    declare(retval, type);
 	    emit (ROOT, "mov `s0, `d0", 
 			new Temp[] { retval }, 
 			new Temp[] { rego[0] });
@@ -246,6 +252,8 @@ import java.util.Set;
 
     private void emitHandlerStub(HCodeElement ROOT, Temp retex, Label handler) {
 	if (tb.isTwoWord(retex)) {
+	    declare(rego[0], HClass.Void);
+	    declare(rego[1], HClass.Void);
 	    emit (ROOT, "mov `s0h, `d0",
 			new Temp[] { rego[0] },
 			new Temp[] { retex });
@@ -253,6 +261,7 @@ import java.util.Set;
 			new Temp[] { rego[1] },
 			new Temp[] { retex });
 	} else {
+	    declare(rego[0], HClass.Void);
 	    emit (ROOT, "mov `s0, `d0",
 			new Temp[] { rego[0] },
 			new Temp[] { retex });
@@ -279,13 +288,14 @@ import java.util.Set;
 		int save_offset = 92 + 4 * stackspace;
 
 		// save clobbers just about everything
-		List save_clobbers = new ArrayList();
-		save_clobbers.addAll(Arrays.asList(regi));
-		save_clobbers.addAll(Arrays.asList(regl));
-		save_clobbers.addAll(Arrays.asList(rego));
+		List save_clob = new ArrayList();
+		save_clob.addAll(Arrays.asList(regi));
+		save_clob.addAll(Arrays.asList(regl));
+		save_clob.addAll(Arrays.asList(rego));
 		Instr in5 = new Instr(inf, i, 
 				      "save %sp, -" + save_offset + ", %sp",
-			              (Temp[])save_clobbers.toArray(new Temp[24]), rego); 
+			              (Temp[])save_clob.toArray(new Temp[24]), 
+				      rego); 
 		in5.layout(i, i.getNext());
 		in4.layout(i, in5);
 		in3.layout(i, in4);
@@ -472,11 +482,14 @@ BINOP<i,p>(op, e, CONST(c))=r %pred %( (isShift(op) || isCommutative(op)) && is1
 }%
 
 BINOP<l>(SHL, e1, e2)=r %{
+    declare(rego[0], HClass.Void);
+    declare(rego[1], HClass.Void);
+    declare(rego[2], HClass.Int);
     emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[1] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0", new Temp[] { rego[2] }, new Temp[] { e2 });
     emit (ROOT, "call __ashldi3",
-          new Temp[] { regg[1], rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2] });
+          new Temp[] { rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2] });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { rego[0] });
     emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { rego[1] });
@@ -484,11 +497,14 @@ BINOP<l>(SHL, e1, e2)=r %{
 }%
 
 BINOP<l>(SHR, e1, e2)=r %{
+    declare(rego[0], HClass.Void);
+    declare(rego[1], HClass.Void);
+    declare(rego[2], HClass.Int);
     emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[1] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0", new Temp[] { rego[2] }, new Temp[] { e2 });
     emit (ROOT, "call __ashrdi3",
-          new Temp[] { regg[1], rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2] });
+          new Temp[] { rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2] });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { rego[0] });
     emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { rego[1] });
@@ -496,11 +512,14 @@ BINOP<l>(SHR, e1, e2)=r %{
 }%
 
 BINOP<l>(USHR, e1, e2)=r %{
+    declare(rego[0], HClass.Void);
+    declare(rego[1], HClass.Void);
+    declare(rego[2], HClass.Int);
     emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[1] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0", new Temp[] { rego[2] }, new Temp[] { e2 });
     emit (ROOT, "call __lshrdi3",
-          new Temp[] { regg[1], rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2] });
+          new Temp[] { rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2] });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { rego[0] });
     emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { rego[1] });
@@ -565,21 +584,27 @@ BINOP<f,d>(ADD, e1, UNOP(NEG, e2))=r %{
 }%
 
 BINOP<l>(MUL, e1, e2) = r %{
+    declare(rego[0], HClass.Void);
+    declare(rego[1], HClass.Void);
+    declare(rego[2], HClass.Void);
+    declare(rego[3], HClass.Void);
     emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[1] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[2] }, new Temp[] { e2 });
     emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[3] }, new Temp[] { e2 });
     emit (ROOT, "call __muldi3",
-          new Temp[] { regg[1], rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2], rego[3] });
+          new Temp[] { rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2], rego[3] });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { rego[0] });
     emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { rego[1] });
 }%
 
 BINOP<i,p>(MUL, e1, e2) = r %{
+    declare(rego[0], HClass.Int);
+    declare(rego[1], HClass.Int);
     emit (ROOT, "mov `s0, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0", new Temp[] { rego[1] }, new Temp[] { e2 });
-    emit (ROOT, "call .mul", new Temp[] { regg[1], rego[0] }, new Temp[] { rego[0], rego[1] });
+    emit (ROOT, "call .mul", new Temp[] { rego[0] }, new Temp[] { rego[0], rego[1] });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0", new Temp[] { r }, new Temp[] { rego[0] });
 }%
@@ -591,21 +616,27 @@ BINOP<f,d>(MUL, e1, e2)=r %{
 }%
 
 BINOP<l>(DIV, e1, e2) = r %{
+    declare(rego[0], HClass.Void);
+    declare(rego[1], HClass.Void);
+    declare(rego[2], HClass.Void);
+    declare(rego[3], HClass.Void);
     emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[1] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[2] }, new Temp[] { e2 });
     emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[3] }, new Temp[] { e2 });
     emit (ROOT, "call __divdi3", 
-          new Temp[] { regg[1], rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2], rego[3] });
+          new Temp[] { rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2], rego[3] });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { rego[0] });
     emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { rego[1] });
 }%
 
 BINOP<i,p>(DIV, e1, e2) = r %{
+    declare(rego[0], HClass.Int);
+    declare(rego[1], HClass.Int);
     emit (ROOT, "mov `s0, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0", new Temp[] { rego[1] }, new Temp[] { e2 });
-    emit (ROOT, "call .div", new Temp[] { regg[1], rego[0]}, new Temp[] { rego[0], rego[1] });
+    emit (ROOT, "call .div", new Temp[] { rego[0]}, new Temp[] { rego[0], rego[1] });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0", new Temp[] { r }, new Temp[] { rego[0] });
 }%
@@ -617,21 +648,27 @@ BINOP<f,d>(DIV, e1, e2)=r %{
 }%
 
 BINOP<l>(REM, e1, e2) = r %{
+    declare(rego[0], HClass.Void);
+    declare(rego[1], HClass.Void);
+    declare(rego[2], HClass.Void);
+    declare(rego[3], HClass.Void);
     emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[1] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0h, `d0", new Temp[] { rego[2] }, new Temp[] { e2 });
     emit (ROOT, "mov `s0l, `d0", new Temp[] { rego[3] }, new Temp[] { e2 });
     emit (ROOT, "call __moddi3",
-          new Temp[] { regg[1], rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2], rego[3] });
+          new Temp[] { rego[0], rego[1] }, new Temp[] { rego[0], rego[1], rego[2], rego[3] });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { rego[0] });
     emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { rego[1] });
 }%
 
 BINOP<i,p>(REM, e1, e2) = r %{
+    declare(rego[0], HClass.Int);
+    declare(rego[1], HClass.Int);
     emit (ROOT, "mov `s0, `d0", new Temp[] { rego[0] }, new Temp[] { e1 });
     emit (ROOT, "mov `s0, `d0", new Temp[] { rego[1] }, new Temp[] { e2 });
-    emit (ROOT, "call .rem", new Temp[] { regg[1], rego[0] }, new Temp[] { rego[0], rego[1] });
+    emit (ROOT, "call .rem", new Temp[] { rego[0] }, new Temp[] { rego[0], rego[1] });
     emitDELAYSLOT (ROOT);
     emit (ROOT, "mov `s0, `d0", new Temp[] { r }, new Temp[] { rego[0] });
 }%
@@ -846,6 +883,12 @@ CALL(retval, retex, NAME(func), arglist, handler)
 %{
     Label rlabel = new Label();
     Label elabel = new Label();
+    HClass type;
+
+    if (ROOT.getRetval() == null)
+	type = null;
+    else
+	type = code.getTreeDerivation().typeMap(ROOT.getRetval());
 
     // move the arguments into place
     emitCallPrologue(ROOT, arglist);
@@ -864,7 +907,7 @@ CALL(retval, retex, NAME(func), arglist, handler)
 
     // normal return handler
     emitLABEL (ROOT, rlabel+":", rlabel);
-    emitCallEpilogue(ROOT, retval);
+    emitCallEpilogue(ROOT, retval, type);
 
     // "fixup table"
     emitCallFixupTable (ROOT, rlabel, elabel);
@@ -875,12 +918,19 @@ CALL(retval, retex, func, arglist, handler)
 %{
     Label rlabel = new Label();
     Label elabel = new Label();
+    HClass type;
+
+    if (ROOT.getRetval() == null)
+        type = null;
+    else
+        type = code.getTreeDerivation().typeMap(ROOT.getRetval());
 
     // move the arguments into place
     emitCallPrologue(ROOT, arglist);
   
     // do the call
     // AAA - need to fix normal return address
+    declare(rego[0], HClass.Void);
     emit (ROOT, "mov `s0, `d0", 
 	        new Temp[] { rego[0] },
 		new Temp[] { func });
@@ -896,7 +946,7 @@ CALL(retval, retex, func, arglist, handler)
 
     // normal return handler
     emitLABEL (ROOT, rlabel+":", rlabel);
-    emitCallEpilogue(ROOT, retval);
+    emitCallEpilogue(ROOT, retval, type);
 
     // "fixup table"
     emitCallFixupTable (ROOT, rlabel, elabel);
@@ -937,14 +987,17 @@ CONST<i,f>(c)=r %{
 }%
 
 CONST<p>(c) = r %{
-   emit (ROOT, "mov `s0, `d0 ! null", new Temp[]{ r }, new Temp[] { regg[0] });
+    declare(regg[0], HClass.Void);
+    emit (ROOT, "mov `s0, `d0 ! null", new Temp[]{ r }, new Temp[] { regg[0] });
 }%
 
 CONST<i>(0)=r %{
+    declare(regg[0], HClass.Void);
     emit (ROOT, "mov `s0, `d0", new Temp[] { r }, new Temp[] { regg[0] });
 }%
 
 CONST<l>(0)=r %{
+    declare(regg[0], HClass.Void);
     emit (ROOT, "mov `s0, `d0l", new Temp[] { r }, new Temp[] { regg[0] });
     emit (ROOT, "mov `s0, `d0h", new Temp[] { r }, new Temp[] { regg[0] });
 }%
@@ -1077,8 +1130,10 @@ METHOD(params) %{
     int loc = 0;
     emitENTRY(ROOT);
 
+    declare(SP, HClass.Void);
     // don't skip params[0], because we don't do any fancy stuff with it.
     for (int i = 0; i < params.length; i++) {
+	declare(params[i], code.getTreeDerivation(), ROOT.getParams(i));
         if (tb.isTwoWord(params[i])) {
             if (loc < 6) { // first half in register
                 emit (ROOT, "mov `s0, `d0h",
@@ -1162,25 +1217,30 @@ MOVE(MEM<s:8,u:8,s:16,u:16,i,l,f,p,d>(e1), e2) %{
                    null, new Temp[] { e1, e2 });
 }%
 
-MOVE<i,p>(e1, CONST<i>(c)) %pred %( is13bit(c) )% %{
+MOVE<i,p>(TEMP(e1), CONST<i>(c)) %pred %( is13bit(c) )% %{
+    declare(e1, code.getTreeDerivation(), ROOT.getSrc());
     emit (ROOT, "mov "+c+", `d0",
                 new Temp[] { e1 }, null);
 }%
 
-MOVE<i,p>(e1, e2) %{ /* catch-all */
+MOVE<i,p>(TEMP(e1), e2) %{ /* catch-all */
+   declare(e1, code.getTreeDerivation(), ROOT.getSrc());
    emit (ROOT, "mov `s0, `d0", new Temp[] { e1 }, new Temp[] { e2 });
 }%
 
-MOVE<l>(e1, e2) %{ /* long (pair of int) register move */
+MOVE<l>(TEMP(e1), e2) %{ /* long (pair of int) register move */
+    declare(e1, code.getTreeDerivation(), ROOT.getSrc());
     emit (ROOT, "mov `s0l, `d0l", new Temp[] { e1 }, new Temp[] { e2 });
     emit (ROOT, "mov `s0h, `d0h", new Temp[] { e1 }, new Temp[] { e2 });
 }%
 
-MOVE<f>(e1, e2) %{ /* floating-point register move */
+MOVE<f>(TEMP(e1), e2) %{ /* floating-point register move */
+    declare(e1, code.getTreeDerivation(), ROOT.getSrc());
     emit(ROOT, "fmovs `s0, `d0", new Temp[] { e1 }, new Temp[] { e2 });
 }%
 
-MOVE<d>(e1, e2) %{ /* double (pair of fp) register move */
+MOVE<d>(TEMP(e1), e2) %{ /* double (pair of fp) register move */
+    declare(e1, code.getTreeDerivation(), ROOT.getSrc());
     emit (ROOT, "fmovs `s0l, `d0l", new Temp[] { e1 }, new Temp[] { e2 });
     emit (ROOT, "fmovs `s0h, `d0h", new Temp[] { e1 }, new Temp[] { e2 });
 }%
@@ -1199,6 +1259,8 @@ RETURN(val) %{
     // Assume for now that this is non-leaf.
     // procFixup will need to change these to %o0 and %o1 if it is leaf...
     if (tb.isTwoWord(val)) {
+        declare(regi[0], HClass.Void);
+	declare(regi[1], HClass.Void);
         emit (ROOT, "mov `s0h, `d0", 
                     new Temp[] { regi[0] }, /* %i0 */
                     new Temp[] { val });
@@ -1206,6 +1268,7 @@ RETURN(val) %{
                     new Temp[] { regi[1] }, /* %i1 */
                     new Temp[] { val });
     } else { 
+	declare(regi[0], code.getTreeDerivation(), ROOT.getRetval());
         emit (ROOT, "mov `s0, `d0",
                     new Temp[] { regi[0] }, /* %i0 */
                     new Temp[] { val });
@@ -1277,6 +1340,8 @@ THROW(val, handler) %{
 
     // move exception value into correct registers
     if (tb.isTwoWord(val)) {
+	declare(regi[0], HClass.Void);
+	declare(regi[1], HClass.Void);
 	emit (ROOT, "mov `s0h, `d0", 
 		    new Temp[] { regi[0] }, 
 		    new Temp[] { val });
@@ -1284,9 +1349,11 @@ THROW(val, handler) %{
 		    new Temp[] { regi[1] },
 		    new Temp[] { val });
     } else {
+	declare(regi[0], code.getTreeDerivation(), ROOT.getRetex());
 	emit (ROOT, "mov `s0, `d0", new Temp[] { regi[0] }, new Temp[] { val });
     }
 
+    declare(regi[7], HClass.Void);
     // The point of lookup is to set %i7 to the correct value for the 
     // returning jump
     emit (ROOT, "call _lookup",
@@ -1308,10 +1375,12 @@ THROW(val, handler) %{
 // _2D				i,p,l,f,d
 
 UNOP<i,p>(NEG, e)=r %{
+    declare(regg[0], HClass.Int);
     emit (ROOT, "sub `s0, `s1, `d0", new Temp[] { r }, new Temp[] { regg[0], e });
 }%
 
 UNOP<l>(NEG, e)=r %{
+    declare(regg[0], HClass.Int);
     emitCC (ROOT, "subcc `s0, `s1l, `d0l", 
                   new Temp[] { r }, new Temp[] { regg[0], e });
     emitCC (ROOT, "subx `s0, `s1h, `d0h", 
