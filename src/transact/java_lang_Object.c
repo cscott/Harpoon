@@ -149,6 +149,21 @@ static inline jint typesize(JNIEnv *env, jclass type) {
   struct claz *thisclz = FNI_GetClassInfo(type)->claz;
   return isPrimitive(thisclz) ? thisclz->size : sizeof(ptroff_t);
 }
+static inline jint fieldsize(jfieldID fid) {
+  switch (fid->desc[0]) {
+  case 'Z':
+  case 'B': return 1;
+  case 'S':
+  case 'C': return 2;
+  case 'I':
+  case 'F': return 4;
+  case 'J':
+  case 'D': return 8;
+  case '[':
+  case 'L': return sizeof(void *);
+  default: assert(0); /* bogus descriptor! */
+  }
+}
 
 /*
  * Class:     java_lang_Object
@@ -278,6 +293,35 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadWritableVersion
     }
 }
 
+#if RACES
+#define ERASEFLAG(type, size, FLAG) \
+static inline void eraseFlag##size \
+    (struct oobj *o, struct oobj *v, jint offset) { \
+    type f, n; \
+    f = *((type *)(((void *)o)+offset)); \
+    if (f!=FLAG) return; /* never flagged */ \
+    n = *((type *)(((void *)v)+offset)); \
+    if (n==FLAG) return; /* actual field value is FLAG */ \
+    *((type *)(((void *)o)+offset)) = n; /* unflag */ \
+    return; \
+}
+ERASEFLAG(jbyte,  1, ((jbyte)  FLAG_VALUE))
+ERASEFLAG(jshort, 2, ((jshort) FLAG_VALUE))
+ERASEFLAG(jint,   4, ((jint)   FLAG_VALUE))
+ERASEFLAG(jlong,  8, (         FLAG_VALUE))
+
+static inline void eraseFlag(struct oobj *o, struct oobj *v, jint offset,
+			     jint size) {
+  switch(size) {
+  case 1: eraseFlag1(o, v, offset); break;
+  case 2: eraseFlag2(o, v, offset); break;
+  case 4: eraseFlag4(o, v, offset); break;
+  case 8: eraseFlag8(o, v, offset); break;
+  default: assert(0);
+  }
+}
+#endif /* RACES */
+
 /*
  * Class:     java_lang_Object
  * Method:    getReadCommittedVersion
@@ -286,11 +330,12 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadWritableVersion
     /** Get the most recently committed version to read from. */
 JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadCommittedVersion
     (JNIEnv *env, jobject _this) {
+    struct oobj *oobj = FNI_UNWRAP(_this);
     struct inflated_oobj *infl;
     struct vinfo *v;
     int u = 0;
     assert(FNI_IS_INFLATED(_this));
-    infl = FNI_UNWRAP(_this)->hashunion.inflated;
+    infl = oobj->hashunion.inflated;
     v = infl->first_version;
     while (1) {
 	assert(v!=NULL);
@@ -302,7 +347,19 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_getReadCommittedVersion
     }
     done:
 #if RACES
-    /* XXX: unflag some fields if u==0.  Don't know how to do this. */
+    /* unflag some fields if u==0. Must be a better way to do this. */
+    if (u==0) {
+      struct FNI_classinfo *info=FNI_GetClassInfo
+	((*env)->GetObjectClass(env, _this));
+      union _jmemberID *mID;
+      for (mID=info->memberinfo; mID < info->memberend; mID++) {
+	jfieldID fID = &(mID->f);
+	if (fID->desc[0]=='(') continue; /* method, not a field. */
+	if (fID->offset > info->claz->size) continue; /* static field? */
+	/* copy field from v back into root object */
+	eraseFlag(oobj, &(v->obj), fID->offset, fieldsize(fID));
+      }
+    }
 #endif
     return FNI_WRAP(&(v->obj));
 }
@@ -363,14 +420,14 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_makeCommittedVersion
 /*
  * Class:     java_lang_Object
  * Method:    writeFieldFlag
- * Signature: (Ljava/lang/reflect/Field;Ljava/lang/Class;)V
+ * Signature: (Ljava/lang/reflect/Field;)V
  */
     /** Ensure that a given field is flagged. */
 JNIEXPORT void JNICALL Java_java_lang_Object_writeFieldFlag
-    (JNIEnv *env, jobject _this, jobject field, jclass type) {
+    (JNIEnv *env, jobject _this, jobject field) {
     jfieldID fieldID = FNI_GetFieldInfo(field);
     Java_java_lang_Object_writeFlag(env, _this, fieldID->offset,
-				    typesize(env, type));
+				    fieldsize(fieldID));
 }
 
 /*

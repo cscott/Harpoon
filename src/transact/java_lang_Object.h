@@ -53,7 +53,7 @@ JNIEXPORT jobject JNICALL Java_java_lang_Object_makeCommittedVersion
  * Signature: (Ljava/lang/reflect/Field;Ljava/lang/Class;)V
  */
 JNIEXPORT void JNICALL Java_java_lang_Object_writeFieldFlag
-  (JNIEnv *, jobject, jobject, jclass);
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     java_lang_Object
