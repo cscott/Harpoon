@@ -42,7 +42,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.21 2000-03-21 20:57:24 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.22 2000-03-21 21:05:58 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -78,10 +78,13 @@ public class ToAsync {
 	for (int i=0;i<bmethods.length;i++) {
 	    mm.addAll(mrelation.getValuesSet(bmethods[i]));
 	}
-	blockingmm=new WorkSet();
+	blockingmm=new WorkSet(mm);
 	for (Iterator i=mm.iterator();i.hasNext();) {
 	    MetaMethod[] mma=mac.getTransCallers((MetaMethod)i.next());
 	    blockingmm.addAll(java.util.Arrays.asList(mma));
+	}
+	for (Iterator i=blockingmm.iterator();i.hasNext();) {
+	    System.out.println(i.next()+" BLOCKS");
 	}
     }
 
