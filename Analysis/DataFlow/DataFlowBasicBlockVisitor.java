@@ -16,7 +16,7 @@ import harpoon.Util.Util;
  * a set of <code>BasicBlock</code>.
  *
  * @author John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: DataFlowBasicBlockVisitor.java,v 1.3 2002-02-26 22:39:45 cananian Exp $
+ * @version $Id: DataFlowBasicBlockVisitor.java,v 1.4 2002-04-02 23:39:11 salcianu Exp $
  */
 
 public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBlockInterfVisitor {
@@ -28,7 +28,7 @@ public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBl
      * Adds the successors of the basic block q to the worklist W,
      * performing merge operations if necessary.
      */
-    public abstract void addSuccessors(Worklist W, BasicBlock q);
+    public abstract void addSuccessors(Worklist W, BasicBlockInterf q);
     
     /**
        Merges operation on the from and to basic block.  Returns true if
@@ -42,7 +42,7 @@ public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBl
 	    Analysis.
        
     */
-    public abstract boolean merge(BasicBlock from, BasicBlock to);
+    public abstract boolean merge(BasicBlockInterf from, BasicBlockInterf to);
 
     
     /** Performs some transfer function on a basic block b.  
@@ -51,6 +51,10 @@ public abstract class DataFlowBasicBlockVisitor extends harpoon.Analysis.BasicBl
     */
     public abstract void visit(BasicBlock b);
 
+    /** Performs some transfer function on a basic block b.  
+	<BR> <B>NOTE:</B> Transfer functions must be monotonic for
+	dataflow analysis to terminate.
+    */
     public void visit(BasicBlockInterf b) {
 	Util.ASSERT(false, "Unexpected BasicBlockInterf subclass");
     }

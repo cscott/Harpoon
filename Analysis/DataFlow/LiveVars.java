@@ -4,6 +4,7 @@
 package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.BasicBlockInterf;
 import harpoon.Analysis.Liveness;
 
 import harpoon.ClassFile.HCode;
@@ -48,7 +49,7 @@ import java.util.Iterator;
  * <code>UseDefer</code>s 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveVars.java,v 1.2 2002-02-25 20:56:42 cananian Exp $ */
+ * @version $Id: LiveVars.java,v 1.3 2002-04-02 23:39:11 salcianu Exp $ */
 public class LiveVars extends Liveness {
     
     protected static final boolean DEBUG = false; 
@@ -183,7 +184,7 @@ public class LiveVars extends Liveness {
 			     <code>from</code>
 	@see harpoon.Analysis.DataFlow.InstrSolver
     */
-    public boolean merge(BasicBlock child, BasicBlock parent) {
+    public boolean merge(BasicBlockInterf child, BasicBlockInterf parent) {
 	LiveVarInfo finfo = (LiveVarInfo) bbToLvi.get(child);
 	LiveVarInfo tinfo = (LiveVarInfo) bbToLvi.get(parent);
 	if (DEBUG) 

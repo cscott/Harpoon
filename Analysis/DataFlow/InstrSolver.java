@@ -5,6 +5,9 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.Util.Collections.WorkSet;
+import harpoon.Util.Worklist;
+import harpoon.Util.Graphs.SCComponent;
+import harpoon.Analysis.BasicBlockInterf;
 
 import java.util.Set;
 import java.util.Iterator;
@@ -13,7 +16,7 @@ import java.util.Collections;
  * <code>InstrSolver</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrSolver.java,v 1.2 2002-02-25 20:56:40 cananian Exp $
+ * @version $Id: InstrSolver.java,v 1.3 2002-04-02 23:39:11 salcianu Exp $
  */
 public final class InstrSolver  {
     
@@ -56,7 +59,7 @@ public final class InstrSolver  {
 	w.push(root);
 	while (!w.isEmpty()) {
 	    // v.changed = false;
-	    BasicBlock b = (BasicBlock) w.pull();
+	    BasicBlockInterf b = (BasicBlockInterf) w.pull();
 	    if (DEBUG) 
 		System.out.println
 		    ("Visiting block " + b);
@@ -98,7 +101,7 @@ public final class InstrSolver  {
 	while (iter.hasNext()) w.push(iter.next());
 	while (!w.isEmpty()) {
 	    // v.changed = false;
-	    BasicBlock b = (BasicBlock) w.pull();
+	    BasicBlockInterf b = (BasicBlockInterf) w.pull();
 	    if (DEBUG) 
 		System.out.println
 		    ("Visiting block " + b);
@@ -106,5 +109,33 @@ public final class InstrSolver  {
 	    v.addSuccessors(w, b);
 	}
     } 
-    
+
+
+    public static void sccSolver(Iterator it_scc,
+				 DataFlowBasicBlockVisitor v) {
+	Worklist w = new WorkSet();
+
+	while(it_scc.hasNext()) {
+	    SCComponent scc = (SCComponent) it_scc.next();
+
+	    // put all the basic blocks of the current scc in the worklist
+	    Object bbs[] = scc.nodes();
+	    for(int i = 0; i < bbs.length; i++)
+		w.push(bbs[i]);
+
+	    // iterate over the current scc to reach the least fixed point
+	    while(!w.isEmpty()) {
+		BasicBlockInterf bb = (BasicBlockInterf) w.pull();
+
+		// don't iterate outside scc
+		if(!scc.contains(bb)) continue;
+
+		bb.accept(v);
+		v.addSuccessors(w, bb);
+	    }
+
+	}
+
+    }
+
 }

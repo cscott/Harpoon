@@ -6,6 +6,7 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.EdgesIterator;
 import harpoon.Analysis.BasicBlock;
+import harpoon.Analysis.BasicBlockInterf;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.UseDefable;
 import harpoon.Temp.Temp;
@@ -29,7 +30,7 @@ import java.util.Set;
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ReachingDefs.java,v 1.2 2002-02-25 20:56:42 cananian Exp $
+ * @version $Id: ReachingDefs.java,v 1.3 2002-04-02 23:39:11 salcianu Exp $
  */
 public abstract class ReachingDefs { 
     
@@ -140,7 +141,7 @@ abstract static class BBVisitor extends ForwardDataFlowBasicBlockVisitor {
      *   Updates the internal information associated with <code>to</code> to
      *	 include information associated with <code>from</code>. 
      */
-    public boolean merge(BasicBlock from, BasicBlock to) {
+    public boolean merge(BasicBlockInterf from, BasicBlockInterf to) {
 	ReachingDefInfo fInfo  = (ReachingDefInfo)this.bbToRdi.get(from); 
 	ReachingDefInfo tInfo  = (ReachingDefInfo)this.bbToRdi.get(to); 
 	boolean         result = tInfo.rdIN.addAll(fInfo.rdOUT); 

@@ -4,6 +4,7 @@
 package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock; 
+import harpoon.Analysis.BasicBlockInterf;
 import harpoon.ClassFile.HCodeElement; 
 import harpoon.IR.Properties.CFGraphable; 
 import harpoon.IR.Properties.UseDefable; 
@@ -24,7 +25,7 @@ import java.util.Set;
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ReachingHCodeElements.java,v 1.2 2002-02-25 20:56:42 cananian Exp $ 
+ * @version $Id: ReachingHCodeElements.java,v 1.3 2002-04-02 23:39:11 salcianu Exp $ 
  */
 public class ReachingHCodeElements extends ReachingDefs.BBVisitor { 
     private BasicBlock.Factory bbfactory;

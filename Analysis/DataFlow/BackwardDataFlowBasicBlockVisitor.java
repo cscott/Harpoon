@@ -3,15 +3,15 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.DataFlow;
 
-import harpoon.Analysis.BasicBlock;
-import java.util.Enumeration;
+import harpoon.Analysis.BasicBlockInterf;
+import java.util.Iterator;
 import harpoon.Util.Worklist;
 
 /**
  * <code>BackwardDataFlowBasicBlockVisitor</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.3 2002-03-10 05:52:32 cananian Exp $
+ * @version $Id: BackwardDataFlowBasicBlockVisitor.java,v 1.4 2002-04-02 23:39:11 salcianu Exp $
  */
 public abstract class BackwardDataFlowBasicBlockVisitor 
     extends DataFlowBasicBlockVisitor {
@@ -29,9 +29,9 @@ public abstract class BackwardDataFlowBasicBlockVisitor
 	     <code>p</code> must be revisited by <code>this</code>.
        @see #merge(BasicBlock, BasicBlock)
     */
-    public void addSuccessors(Worklist W, BasicBlock q) {
-	for (Enumeration e=q.prev(); e.hasMoreElements(); ) {
-	    BasicBlock parent = (BasicBlock) e.nextElement();
+    public void addSuccessors(Worklist W, BasicBlockInterf q) {
+	for (Iterator it = q.prevSet().iterator(); it.hasNext(); ) {
+	    BasicBlockInterf parent = (BasicBlockInterf) it.next();
 	    if (DEBUG) 
 		System.out.println
 		    ("addSucc: merging from: " + q + 
