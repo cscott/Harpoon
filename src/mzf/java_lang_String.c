@@ -1,4 +1,4 @@
-/* this file defines some additions methods of java.lang.String needed
+/* this file defines some additional methods of java.lang.String needed
  * when building with MZF transformations. */
 #include <jni.h>
 #include "../java.lang/java_lang_String.h"
