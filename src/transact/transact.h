@@ -4,6 +4,7 @@
 #define INCLUDED_TRANSACT_H
 
 #include "jni-private.h"
+#include "asm/atomicity.h" /* for compare_and_swap */
 
 /* Commit record information. Commit records are full-fledged objects. */
 #include "harpoon_Runtime_Transactions_CommitRecord.h"
@@ -36,5 +37,27 @@ struct vinfo {
     /* a regular object structure is below this point */
     struct oobj obj;
 };
+
+/* functions on commit records */
+static inline jint CommitCR(struct commitrec *cr) {
+    jint s;
+    if (cr==NULL) return COMMITTED;
+    do {
+	/* avoid the atomic operation if possible */
+	if (WAITING != (s = cr->state)) return s;
+	/* atomically set to ABORTED */
+	compare_and_swap(&(cr->state), WAITING, COMMITTED); /* atomic */
+    } while (1);
+}
+static inline jint AbortCR(struct commitrec *cr) {
+    jint s;
+    if (cr==NULL) return COMMITTED;
+    do {
+	/* avoid the atomic operation if possible */
+	if (WAITING != (s = cr->state)) return s;
+	/* atomically set to ABORTED */
+	compare_and_swap(&(cr->state), WAITING, ABORTED); /* atomic */
+    } while (1);
+}
 
 #endif /* INCLUDED_TRANSACT_H */

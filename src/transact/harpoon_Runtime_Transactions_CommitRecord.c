@@ -22,15 +22,7 @@ JNIEXPORT jint JNICALL Java_harpoon_Runtime_Transactions_CommitRecord_state
  */
 JNIEXPORT jint JNICALL Java_harpoon_Runtime_Transactions_CommitRecord_abort
     (JNIEnv *env, jclass cls, jobject commitrec) {
-    struct commitrec *cr = (struct commitrec *) FNI_UNWRAP(commitrec);
-    jint s;
-    if (cr==NULL) return COMMITTED;
-    do {
-	/* avoid the atomic operation if possible */
-	if (WAITING != (s = cr->state)) return s;
-	/* atomically set to ABORTED */
-	compare_and_swap(&(cr->state), WAITING, ABORTED); /* atomic */
-    } while (1);
+    return AbortCR((struct commitrec *) FNI_UNWRAP(commitrec) );
 }
 
 /*
@@ -40,13 +32,5 @@ JNIEXPORT jint JNICALL Java_harpoon_Runtime_Transactions_CommitRecord_abort
  */
 JNIEXPORT jint JNICALL Java_harpoon_Runtime_Transactions_CommitRecord_commit
     (JNIEnv *env, jclass cls, jobject commitrec) {
-    struct commitrec *cr = (struct commitrec *) FNI_UNWRAP(commitrec);
-    jint s;
-    if (cr==NULL) return COMMITTED;
-    do {
-	/* avoid the atomic operation if possible */
-	if (WAITING != (s = cr->state)) return s;
-	/* atomically set to COMMITTED */
-	compare_and_swap(&(cr->state), WAITING, COMMITTED); /* atomic */
-    } while (1);
+    return CommitCR((struct commitrec *) FNI_UNWRAP(commitrec) );
 }
