@@ -86,13 +86,6 @@ jclass fni_class_forName_initcheck(JNIEnv *env, jstring str) {
   return result;
 }
 #endif /* WITH_INIT_CHECK */
-#ifdef WITH_TRANSACTIONS
-static inline
-jclass fni_class_forName_withtrans(JNIEnv *env, jstring str, jobject commitrec)
-{
-  return fni_class_forName(env, FNI_StrTrans2Str(env, commitrec, str));
-}
-#endif /* WITH_TRANSACTIONS */
 
 static inline
 jobject fni_class_newInstance(JNIEnv *env, jclass cls) {

@@ -13,6 +13,9 @@
 #else
 #define DMALLOC_PADDING 0
 #endif
+#ifdef WITH_TRANSACTIONS
+# include "transact/transjni.h" /* JNI transactions support functions */
+#endif
 
 #include "../java.lang/class.h" /* for fni_class_isPrimitive */
 
@@ -127,8 +130,12 @@ jobject FNI_GetObjectArrayElement(JNIEnv *env,
     return NULL;
   }
   /* do get */
+#if defined(WITH_TRANSACTIONS)
+  result = TRANSJNI_Get_Array_Object(env, a, index);
+#else
   result = *( (jobject_unwrapped *)
 	      ( ((char *) &(a->element_start)) + (index*sizeof(result)) ) );
+#endif
   return FNI_WRAP(result);
 }
 
@@ -144,7 +151,6 @@ void FNI_SetObjectArrayElement(JNIEnv *env, jobjectArray array,
   struct aarray *a = (struct aarray *) FNI_UNWRAP_MASKED(array);
   jclass objCls, arrCls, comCls;
   struct FNI_classinfo *info;
-  jobject_unwrapped result;
   assert(FNI_NO_EXCEPTIONS(env) && array != NULL && a != NULL);
   /* check array bounds */
   if (index > a->length || index < 0) {
@@ -174,9 +180,13 @@ void FNI_SetObjectArrayElement(JNIEnv *env, jobjectArray array,
 			       (index*sizeof(result)) ));
 #endif
   /* do set */
+#if defined(WITH_TRANSACTIONS)
+  TRANSJNI_Set_Array_Object(env, a, index, FNI_UNWRAP(value));
+#else
   *( (jobject_unwrapped *)
-     ( ((char *) &(a->element_start)) + (index*sizeof(result)) ) ) =
+     ( ((char *) &(a->element_start)) + (index*sizeof(jobject_unwrapped)) ) ) =
     FNI_UNWRAP(value);
+#endif
 }
 
 /* A family of functions that returns the body of the primitive array.
@@ -243,6 +253,14 @@ void FNI_Release##name##ArrayElements(JNIEnv *env, type##Array array,\
 }
 FORPRIMITIVETYPES(RELEASEPRIMITIVEARRAYELEMENTS);
 
+#if defined(WITH_TRANSACTIONS)
+/* all of the following methods have different implementations when
+ * running with transactions support: */
+# include "transact/jni-array.h"
+#else
+/* your regularly scheduled program: */
+
+
 /* A family of functions that copies a region of a primitive array into a
  * buffer. 
  * THROWS: 
@@ -282,3 +300,5 @@ void FNI_Set##name##ArrayRegion(JNIEnv *env, type##Array array,\
 	 len*sizeof(type));\
 }
 FORPRIMITIVETYPES(SETPRIMITIVEARRAYREGION);
+
+#endif /* !WITH_TRANSACTIONS */

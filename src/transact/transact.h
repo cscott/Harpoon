@@ -4,7 +4,7 @@
 #define INCLUDED_TRANSACT_H
 
 #include "jni-private.h"
-#include "asm/atomicity.h" /* for compare_and_swap */
+//#include "asm/atomicity.h" /* for compare_and_swap */
 #include "asm/llsc.h" /* for load-linked */
 #include "config.h" /* for OBJECT_PADDING */
 
@@ -12,6 +12,10 @@
 #define TRANSPKG "harpoon/Runtime/Transactions/"
 /* flag value to denote 'not here' */
 #define FLAG_VALUE (0xCACACACACACACACALL)
+
+// OBJ_CHUNK_SIZE must be larger than zero and divisible by eight
+#define OBJ_CHUNK_SIZE 24
+#define INITIAL_CACHE_SIZE 24
 
 /* Commit record information. Commit records are full-fledged objects. */
 #include "harpoon_Runtime_Transactions_CommitRecord.h"
@@ -39,12 +43,19 @@ struct tlist {
  * versioning information. */
 struct vinfo {
     struct commitrec *transid; /* transaction id */ 
+#if 0
     struct tlist readers; /* list of readers.  first node is inlined. */
+#endif
+    /* anext is the 'real' next version, which may be a parent of this one. */
+    /* wnext is the "next transaction not my parent" */
     struct vinfo *anext; /* next version to look at if transid is aborted. */
     struct vinfo *wnext; /* next version to look at if transid is waiting. */
-    /* a regular object structure is below this point */
-    struct oobj obj;
+    /* cached values are below this point. */
+    char _direct_fields[0/*OBJ_CHUNK_SIZE*/];
+    char _hashed_fields[0/* n times INITIAL_CACHE_SIZE */];
 };
+#define DIRECT_FIELDS(v) ((void*)v->_direct_fields)
+#define HASHED_FIELDS(v) ((void*)v->_direct_fields+OBJ_CHUNK_SIZE)
 
 /* functions on commit records */
 static inline jint CommitCR(struct commitrec *cr) {
@@ -52,9 +63,10 @@ static inline jint CommitCR(struct commitrec *cr) {
     if (cr==NULL) return COMMITTED;
     do {
 	/* avoid the atomic operation if possible */
-	if (WAITING != (s = cr->state)) return s;
+	if (WAITING != (s = LL(&cr->state))) return s;
 	/* atomically set to ABORTED */
-	compare_and_swap(&(cr->state), WAITING, COMMITTED); /* atomic */
+	if (SC(&(cr->state), COMMITTED))
+	    return COMMITTED;
     } while (1);
 }
 static inline jint AbortCR(struct commitrec *cr) {
@@ -62,16 +74,19 @@ static inline jint AbortCR(struct commitrec *cr) {
     if (cr==NULL) return COMMITTED;
     do {
 	/* avoid the atomic operation if possible */
-	if (WAITING != (s = cr->state)) return s;
+	if (WAITING != (s = LL(&cr->state))) return s;
 	/* atomically set to ABORTED */
-	compare_and_swap(&(cr->state), WAITING, ABORTED); /* atomic */
+	if (SC(&(cr->state), ABORTED))
+	    return ABORTED;
     } while (1);
 }
-
-/* ---------------------- utility adapter functions ----------------- */
-/* Returns a pointer to a new "nontransactional" string with the same
- * contents as the given "transactional" string. */
-extern jstring FNI_StrTrans2Str(JNIEnv *env, jobject commitrec, jstring str);
-
+static inline jint AbortCRorParent(struct commitrec *cr) {
+  // go up the chain until we either find a transaction we can abort,
+  // or we can report that this transaction is *completely* committed.
+  for (; cr!=NULL; cr=cr->parent)
+    if (AbortCR(cr)==ABORTED)
+      return ABORTED;
+  return COMMITTED;
+}
 
 #endif /* INCLUDED_TRANSACT_H */

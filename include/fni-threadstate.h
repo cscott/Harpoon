@@ -41,6 +41,10 @@ struct FNI_Thread_State {
 #if defined(WITH_REALTIME_JAVA) && defined(WITH_NOHEAP_SUPPORT)
   int noheap;
 #endif
+#if defined(WITH_TRANSACTIONS)
+  /* if using precise gc, we'd need to treat this as a root. */
+  struct commitrec *current_transaction;
+#endif
 };
 /* header node in doubly-linked global refs list. */
 extern struct _jobject_globalref FNI_globalrefs;

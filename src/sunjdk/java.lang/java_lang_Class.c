@@ -29,12 +29,6 @@ JNIEXPORT jclass JNICALL Java_java_lang_Class_forName_00024_00024initcheck
     return fni_class_forName_initcheck(env, str);
 }
 #endif /* WITH_INIT_CHECK */
-#ifdef WITH_TRANSACTIONS
-JNIEXPORT jclass JNICALL Java_java_lang_Class_forName_00024_00024withtrans
-  (JNIEnv *env, jclass cls, jobject commitrec, jstring str) {
-    return fni_class_forName_withtrans(env, str, commitrec);
-}
-#endif /* WITH_TRANSACTIONS */
 
 /*
  * Class:     java_lang_Class

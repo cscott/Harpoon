@@ -32,6 +32,12 @@ type FNI_GetStatic##name##Field(JNIEnv *env, jclass clazz, jfieldID fieldID) {\
 }
 FORPRIMITIVETYPES(FNI_GETSTATICFIELD);
 
+#if defined(WITH_TRANSACTIONS)
+/* all of the following methods have different implementations when
+ * running with transactions support: */
+# include "transact/jni-field.h"
+#else
+/* your regularly scheduled program: */
 void FNI_SetObjectField(JNIEnv *env, jobject obj,
 			jfieldID fieldID, jobject value){
   assert(FNI_NO_EXCEPTIONS(env));
@@ -66,3 +72,4 @@ type FNI_Get##name##Field(JNIEnv *env, jobject obj, jfieldID fieldID) {\
 }
 FORPRIMITIVETYPES(FNI_GETFIELD);
 
+#endif /* !WITH_TRANSACTIONS */

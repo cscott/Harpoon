@@ -6,6 +6,16 @@
 #include "precisec.c" /* drag in implementations of FNI_Dispatch_<foo> */
 #endif
   
+#if defined(WITH_TRANSACTIONS)
+  /* transaction support for invocation */
+# include "transact/jni-invoke.h"
+#else
+# define MAX_EXTRA_ARGS 0
+# define S_OFFSET(methodID) methodID->offset /* static offset */
+# define NV_OFFSET(methodID) methodID->offset/* non-virtual offset */
+# define V_OFFSET(methodID) methodID->offset /* virtual offset */
+#endif
+
 extern void FNI_Dispatch_Void(ptroff_t method_pointer, int narg_words,
 			      void * argptr, jobject_unwrapped * exception);
 extern jobject_unwrapped FNI_Dispatch_Object(ptroff_t method_pointer,
@@ -17,11 +27,19 @@ extern jobject_unwrapped FNI_Dispatch_Object(ptroff_t method_pointer,
 FORPRIMITIVETYPES(FNI_DISPATCH_PROTO);
 
 /* OK, wrap & move arguments based on signature. */
-static void move_and_unwrapA(jmethodID methodID,
+/* Return number of arguments. */
+static int move_and_unwrapA (JNIEnv *env, jmethodID methodID,
 			     ptroff_t *argtable, int offset,
 			     jvalue * args) {
   char *sigptr = methodID->desc+1;
   int i, j;
+  int extra=0;
+#if defined(WITH_TRANSACTIONS)
+  if (currTrans(env)) { /* in a transaction context */
+    argtable[offset++] = (ptroff_t) currTrans(env);
+    extra=1;
+  }
+#endif
   for (i=offset, j=0; *sigptr != ')'; sigptr++)
     switch (*sigptr) {
     case 'B': argtable[i++] = (ptroff_t) ((jint) args[j++].b); break;
@@ -49,7 +67,8 @@ static void move_and_unwrapA(jmethodID methodID,
       break;
     default: assert(0); /* illegal signature */
     }
-  assert(methodID->nargs==i);
+  assert(methodID->nargs+extra==i);
+  return i;
 }
 
 /* weird stuff for default argument promotions. */
@@ -63,11 +82,19 @@ typedef jlong jlong_promoted;
 typedef double jfloat_promoted;
 typedef double jdouble_promoted;
 
-static void move_and_unwrapV(jmethodID methodID,
+/* Return number of arguments. */
+static int move_and_unwrapV (JNIEnv *env, jmethodID methodID,
 			     ptroff_t *argtable, int offset,
 			     va_list args) {
   char *sigptr = methodID->desc+1;
   int i;
+  int extra=0;
+#if defined(WITH_TRANSACTIONS)
+  if (currTrans(env)) { /* in a transaction context */
+    argtable[offset++] = (ptroff_t) currTrans(env);
+    extra=1;
+  }
+#endif
   assert(sizeof(int) >= sizeof(jint)); /* see defs of _promoted types above */
   for (i=offset; *sigptr != ')'; sigptr++)
     switch (*sigptr) {
@@ -104,7 +131,8 @@ static void move_and_unwrapV(jmethodID methodID,
       break;
     default: assert(0); /* illegal signature */
     }
-  assert(methodID->nargs==i);
+  assert(methodID->nargs+extra==i);
+  return i;
 }
 
 /* get the ... cases out of the way */
@@ -176,34 +204,35 @@ FORNONVOIDTYPES(FNI_CALL_DOTDOTDOT);
 void FNI_CallStaticVoidMethodA(JNIEnv *env,
 			       jclass clazz, jmethodID methodID,
 			       jvalue * args) {
-  ptroff_t argtable[methodID->nargs];
+  ptroff_t argtable[methodID->nargs+MAX_EXTRA_ARGS];
   jobject_unwrapped exception = NULL;
+  int nargs;
   assert(FNI_NO_EXCEPTIONS(env));
-  move_and_unwrapA(methodID, argtable, 0, args);
-  FNI_Dispatch_Void(methodID->offset, methodID->nargs, argtable,
-		    &exception);
+  nargs = move_and_unwrapA(env, methodID, argtable, 0, args);
+  FNI_Dispatch_Void(S_OFFSET(methodID), nargs, argtable, &exception);
   if (exception!=NULL) FNI_Throw(env, FNI_WRAP(exception));
 }
 void FNI_CallStaticVoidMethodV(JNIEnv *env,
 			       jclass clazz, jmethodID methodID,
 			       va_list args) {
-  ptroff_t argtable[methodID->nargs];
+  ptroff_t argtable[methodID->nargs+MAX_EXTRA_ARGS];
   jobject_unwrapped exception = NULL;
+  int nargs;
   assert(FNI_NO_EXCEPTIONS(env));
-  move_and_unwrapV(methodID, argtable, 0, args);
-  FNI_Dispatch_Void(methodID->offset, methodID->nargs, argtable,
-		    &exception);
+  nargs = move_and_unwrapV(env, methodID, argtable, 0, args);
+  FNI_Dispatch_Void(S_OFFSET(methodID), nargs, argtable, &exception);
   if (exception!=NULL) FNI_Throw(env, FNI_WRAP(exception));
 }
 jobject FNI_CallStaticObjectMethodA(JNIEnv *env,
 				   jclass clazz, jmethodID methodID,
 				   jvalue * args) {
-  ptroff_t argtable[methodID->nargs];
+  ptroff_t argtable[methodID->nargs+MAX_EXTRA_ARGS];
   jobject_unwrapped result;
   jobject_unwrapped exception = NULL;
+  int nargs;
   assert(FNI_NO_EXCEPTIONS(env));
-  move_and_unwrapA(methodID, argtable, 0, args);
-  result = FNI_Dispatch_Object(methodID->offset, methodID->nargs,
+  nargs = move_and_unwrapA(env, methodID, argtable, 0, args);
+  result = FNI_Dispatch_Object(S_OFFSET(methodID), nargs,
 			       argtable, &exception);
   if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return NULL; }
   return FNI_WRAP(result);
@@ -211,12 +240,13 @@ jobject FNI_CallStaticObjectMethodA(JNIEnv *env,
 jobject FNI_CallStaticObjectMethodV(JNIEnv *env,
 				   jclass clazz, jmethodID methodID,
 				   va_list args) {
-  ptroff_t argtable[methodID->nargs];
+  ptroff_t argtable[methodID->nargs+MAX_EXTRA_ARGS];
   jobject_unwrapped result;
   jobject_unwrapped exception = NULL;
+  int nargs;
   assert(FNI_NO_EXCEPTIONS(env));
-  move_and_unwrapV(methodID, argtable, 0, args);
-  result = FNI_Dispatch_Object(methodID->offset, methodID->nargs,
+  nargs = move_and_unwrapV(env, methodID, argtable, 0, args);
+  result = FNI_Dispatch_Object(S_OFFSET(methodID), nargs,
 			       argtable, &exception);
   if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return NULL; }
   return FNI_WRAP(result);
@@ -225,12 +255,13 @@ jobject FNI_CallStaticObjectMethodV(JNIEnv *env,
 type FNI_CallStatic##name##MethodA(JNIEnv *env, \
 				   jclass clazz, jmethodID methodID, \
 				   jvalue * args) { \
-  ptroff_t argtable[methodID->nargs]; \
+  ptroff_t argtable[methodID->nargs+MAX_EXTRA_ARGS]; \
   type result; \
   jobject_unwrapped exception = NULL; \
+  int nargs; \
   assert(FNI_NO_EXCEPTIONS(env)); \
-  move_and_unwrapA(methodID, argtable, 0, args); \
-  result = FNI_Dispatch_##name(methodID->offset, methodID->nargs, \
+  nargs = move_and_unwrapA(env, methodID, argtable, 0, args); \
+  result = FNI_Dispatch_##name(S_OFFSET(methodID), nargs, \
 			       argtable, &exception); \
   if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return 0; }\
   return result; \
@@ -238,12 +269,13 @@ type FNI_CallStatic##name##MethodA(JNIEnv *env, \
 type FNI_CallStatic##name##MethodV(JNIEnv *env, \
 				   jclass clazz, jmethodID methodID, \
 				   va_list args) { \
-  ptroff_t argtable[methodID->nargs]; \
+  ptroff_t argtable[methodID->nargs+MAX_EXTRA_ARGS]; \
   type result; \
   jobject_unwrapped exception = NULL; \
+  int nargs; \
   assert(FNI_NO_EXCEPTIONS(env)); \
-  move_and_unwrapV(methodID, argtable, 0, args); \
-  result = FNI_Dispatch_##name(methodID->offset, methodID->nargs, \
+  nargs = move_and_unwrapV(env, methodID, argtable, 0, args); \
+  result = FNI_Dispatch_##name(S_OFFSET(methodID), nargs, \
 			       argtable, &exception); \
   if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return 0; }\
   return result; \
@@ -255,37 +287,40 @@ FORPRIMITIVETYPES(FNI_CALL_STATIC)
 void FNI_CallNonvirtualVoidMethodA(JNIEnv *env, jobject obj,
 				   jclass clazz, jmethodID methodID,
 				   jvalue * args) {
-  ptroff_t argtable[methodID->nargs+1];
+  ptroff_t argtable[methodID->nargs+1+MAX_EXTRA_ARGS];
   jobject_unwrapped exception = NULL;
+  int nargs;
   assert(FNI_NO_EXCEPTIONS(env));
   argtable[0] = (ptroff_t) FNI_UNWRAP(obj);
-  move_and_unwrapA(methodID, argtable, 1, args);
-  FNI_Dispatch_Void(methodID->offset, methodID->nargs, argtable,
+  nargs = move_and_unwrapA(env, methodID, argtable, 1, args);
+  FNI_Dispatch_Void(NV_OFFSET(methodID), nargs, argtable,
 		    &exception);
   if (exception!=NULL) FNI_Throw(env, FNI_WRAP(exception));
 }
 void FNI_CallNonvirtualVoidMethodV(JNIEnv *env, jobject obj,
 				   jclass clazz, jmethodID methodID,
 				   va_list args) {
-  ptroff_t argtable[methodID->nargs+1];
+  ptroff_t argtable[methodID->nargs+1+MAX_EXTRA_ARGS];
   jobject_unwrapped exception = NULL;
+  int nargs;
   assert(FNI_NO_EXCEPTIONS(env));
   argtable[0] = (ptroff_t) FNI_UNWRAP(obj);
-  move_and_unwrapV(methodID, argtable, 1, args);
-  FNI_Dispatch_Void(methodID->offset, methodID->nargs, argtable,
+  nargs = move_and_unwrapV(env, methodID, argtable, 1, args);
+  FNI_Dispatch_Void(NV_OFFSET(methodID), nargs, argtable,
 		    &exception);
   if (exception!=NULL) FNI_Throw(env, FNI_WRAP(exception));
 }
 jobject FNI_CallNonvirtualObjectMethodA(JNIEnv *env, jobject obj,
 					jclass clazz, jmethodID methodID,
 					jvalue * args) {
-  ptroff_t argtable[methodID->nargs+1];
+  ptroff_t argtable[methodID->nargs+1+MAX_EXTRA_ARGS];
   jobject_unwrapped result;
   jobject_unwrapped exception = NULL;
+  int nargs;
   assert(FNI_NO_EXCEPTIONS(env));
   argtable[0] = (ptroff_t) FNI_UNWRAP(obj);
-  move_and_unwrapA(methodID, argtable, 1, args);
-  result = FNI_Dispatch_Object(methodID->offset, methodID->nargs,
+  nargs = move_and_unwrapA(env, methodID, argtable, 1, args);
+  result = FNI_Dispatch_Object(NV_OFFSET(methodID), nargs,
 			       argtable, &exception);
   if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return NULL; }
   return FNI_WRAP(result);
@@ -293,13 +328,14 @@ jobject FNI_CallNonvirtualObjectMethodA(JNIEnv *env, jobject obj,
 jobject FNI_CallNonvirtualObjectMethodV(JNIEnv *env, jobject obj,
 					jclass clazz, jmethodID methodID,
 					va_list args) {
-  ptroff_t argtable[methodID->nargs+1];
+  ptroff_t argtable[methodID->nargs+1+MAX_EXTRA_ARGS];
   jobject_unwrapped result;
   jobject_unwrapped exception = NULL;
+  int nargs;
   assert(FNI_NO_EXCEPTIONS(env));
   argtable[0] = (ptroff_t) FNI_UNWRAP(obj);
-  move_and_unwrapV(methodID, argtable, 1, args);
-  result = FNI_Dispatch_Object(methodID->offset, methodID->nargs,
+  nargs = move_and_unwrapV(env, methodID, argtable, 1, args);
+  result = FNI_Dispatch_Object(NV_OFFSET(methodID), nargs,
 			       argtable, &exception);
   if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return NULL; }
   return FNI_WRAP(result);
@@ -308,13 +344,14 @@ jobject FNI_CallNonvirtualObjectMethodV(JNIEnv *env, jobject obj,
 type FNI_CallNonvirtual##name##MethodA(JNIEnv *env, jobject obj, \
 				       jclass clazz, jmethodID methodID, \
 				       jvalue * args) { \
-  ptroff_t argtable[methodID->nargs+1]; \
+  ptroff_t argtable[methodID->nargs+1+MAX_EXTRA_ARGS]; \
   type result; \
   jobject_unwrapped exception = NULL; \
+  int nargs; \
   assert(FNI_NO_EXCEPTIONS(env)); \
   argtable[0] = (ptroff_t) FNI_UNWRAP(obj); \
-  move_and_unwrapA(methodID, argtable, 1, args); \
-  result = FNI_Dispatch_##name(methodID->offset, methodID->nargs, \
+  nargs = move_and_unwrapA(env, methodID, argtable, 1, args); \
+  result = FNI_Dispatch_##name(NV_OFFSET(methodID), nargs, \
 			       argtable, &exception); \
   if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return 0; }\
   return result; \
@@ -322,13 +359,14 @@ type FNI_CallNonvirtual##name##MethodA(JNIEnv *env, jobject obj, \
 type FNI_CallNonvirtual##name##MethodV(JNIEnv *env, jobject obj, \
 				       jclass clazz, jmethodID methodID, \
 				       va_list args) { \
-  ptroff_t argtable[methodID->nargs+1]; \
+  ptroff_t argtable[methodID->nargs+1+MAX_EXTRA_ARGS]; \
   type result; \
   jobject_unwrapped exception = NULL; \
+  int nargs; \
   assert(FNI_NO_EXCEPTIONS(env)); \
   argtable[0] = (ptroff_t) FNI_UNWRAP(obj); \
-  move_and_unwrapV(methodID, argtable, 1, args); \
-  result = FNI_Dispatch_##name(methodID->offset, methodID->nargs, \
+  nargs = move_and_unwrapV(env, methodID, argtable, 1, args); \
+  result = FNI_Dispatch_##name(NV_OFFSET(methodID), nargs, \
 			       argtable, &exception); \
   if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return 0; }\
   return result; \
@@ -341,48 +379,52 @@ FORPRIMITIVETYPES(FNI_CALL_NONVIRTUAL)
      (*((ptroff_t *)(((ptroff_t)FNI_CLAZ(FNI_UNWRAP_MASKED(obj)))+(offset))))
 void FNI_CallVoidMethodA(JNIEnv *env, jobject obj, jmethodID methodID, 
 			 jvalue * args) {
-  ptroff_t argtable[methodID->nargs+1];
+  ptroff_t argtable[methodID->nargs+1+MAX_EXTRA_ARGS];
   jobject_unwrapped exception = NULL;
+  int nargs;
   assert(FNI_NO_EXCEPTIONS(env));
   argtable[0] = (ptroff_t) FNI_UNWRAP(obj);
-  move_and_unwrapA(methodID, argtable, 1, args);
-  FNI_Dispatch_Void(VIRTUAL(obj,methodID->offset), methodID->nargs, argtable,
+  nargs = move_and_unwrapA(env, methodID, argtable, 1, args);
+  FNI_Dispatch_Void(VIRTUAL(obj,V_OFFSET(methodID)), nargs, argtable,
 		    &exception);
   if (exception!=NULL) FNI_Throw(env, FNI_WRAP(exception));
 }
 void FNI_CallVoidMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
 			 va_list args) {
-  ptroff_t argtable[methodID->nargs+1];
+  ptroff_t argtable[methodID->nargs+1+MAX_EXTRA_ARGS];
   jobject_unwrapped exception = NULL;
+  int nargs;
   assert(FNI_NO_EXCEPTIONS(env));
   argtable[0] = (ptroff_t) FNI_UNWRAP(obj);
-  move_and_unwrapV(methodID, argtable, 1, args);
-  FNI_Dispatch_Void(VIRTUAL(obj,methodID->offset), methodID->nargs, argtable,
+  nargs = move_and_unwrapV(env, methodID, argtable, 1, args);
+  FNI_Dispatch_Void(VIRTUAL(obj,V_OFFSET(methodID)), nargs, argtable,
 		    &exception);
   if (exception!=NULL) FNI_Throw(env, FNI_WRAP(exception));
 }
 jobject FNI_CallObjectMethodA(JNIEnv *env, jobject obj, jmethodID methodID,
 			      jvalue * args) {
-  ptroff_t argtable[methodID->nargs+1];
+  ptroff_t argtable[methodID->nargs+1+MAX_EXTRA_ARGS];
   jobject_unwrapped result;
   jobject_unwrapped exception = NULL;
+  int nargs;
   assert(FNI_NO_EXCEPTIONS(env));
   argtable[0] = (ptroff_t) FNI_UNWRAP(obj);
-  move_and_unwrapA(methodID, argtable, 1, args);
-  result = FNI_Dispatch_Object(VIRTUAL(obj,methodID->offset), methodID->nargs,
+  nargs = move_and_unwrapA(env, methodID, argtable, 1, args);
+  result = FNI_Dispatch_Object(VIRTUAL(obj,V_OFFSET(methodID)), nargs,
 			       argtable, &exception);
   if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return NULL; }
   return FNI_WRAP(result);
 }
 jobject FNI_CallObjectMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
 			      va_list args) {
-  ptroff_t argtable[methodID->nargs+1];
+  ptroff_t argtable[methodID->nargs+1+MAX_EXTRA_ARGS];
   jobject_unwrapped result;
   jobject_unwrapped exception = NULL;
+  int nargs;
   assert(FNI_NO_EXCEPTIONS(env));
   argtable[0] = (ptroff_t) FNI_UNWRAP(obj);
-  move_and_unwrapV(methodID, argtable, 1, args);
-  result = FNI_Dispatch_Object(VIRTUAL(obj,methodID->offset), methodID->nargs,
+  nargs = move_and_unwrapV(env, methodID, argtable, 1, args);
+  result = FNI_Dispatch_Object(VIRTUAL(obj,V_OFFSET(methodID)), nargs,
 			       argtable, &exception);
   if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return NULL; }
   return FNI_WRAP(result);
@@ -390,26 +432,28 @@ jobject FNI_CallObjectMethodV(JNIEnv *env, jobject obj, jmethodID methodID,
 #define FNI_CALL_VIRTUAL(name, type) \
 type FNI_Call##name##MethodA(JNIEnv *env, jobject obj, jmethodID methodID, \
 			     jvalue * args) { \
-  ptroff_t argtable[methodID->nargs+1]; \
+  ptroff_t argtable[methodID->nargs+1+MAX_EXTRA_ARGS]; \
   type result; \
   jobject_unwrapped exception = NULL; \
+  int nargs; \
   assert(FNI_NO_EXCEPTIONS(env)); \
   argtable[0] = (ptroff_t) FNI_UNWRAP(obj); \
-  move_and_unwrapA(methodID, argtable, 1, args); \
-  result = FNI_Dispatch_##name(VIRTUAL(obj,methodID->offset), methodID->nargs,\
+  nargs = move_and_unwrapA(env, methodID, argtable, 1, args); \
+  result = FNI_Dispatch_##name(VIRTUAL(obj,V_OFFSET(methodID)), nargs,\
 			       argtable, &exception); \
   if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return 0; }\
   return result; \
 } \
 type FNI_Call##name##MethodV(JNIEnv *env, jobject obj, jmethodID methodID, \
 			     va_list args) { \
-  ptroff_t argtable[methodID->nargs+1]; \
+  ptroff_t argtable[methodID->nargs+1+MAX_EXTRA_ARGS]; \
   type result; \
   jobject_unwrapped exception = NULL; \
+  int nargs; \
   assert(FNI_NO_EXCEPTIONS(env)); \
   argtable[0] = (ptroff_t) FNI_UNWRAP(obj); \
-  move_and_unwrapV(methodID, argtable, 1, args); \
-  result = FNI_Dispatch_##name(VIRTUAL(obj,methodID->offset), methodID->nargs,\
+  nargs = move_and_unwrapV(env, methodID, argtable, 1, args); \
+  result = FNI_Dispatch_##name(VIRTUAL(obj,V_OFFSET(methodID)), nargs,\
 			       argtable, &exception); \
   if (exception!=NULL) { FNI_Throw(env, FNI_WRAP(exception)); return 0; }\
   return result; \

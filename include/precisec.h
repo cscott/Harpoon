@@ -13,6 +13,9 @@
 #ifdef WITH_DYNAMIC_SYNC_REMOVAL
 # include "dynsync.h"
 #endif /* WITH_DYNAMIC_SYNC_REMOVAL */
+#ifdef WITH_TRANSACTIONS
+# include "transact/transact-pc.h"
+#endif /* WITH_TRANSACTIONS */
 
 typedef void * jptr;
 #define SHR(x,y) (((int32_t)(x))>>((y)&0x1f))

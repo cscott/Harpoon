@@ -29,6 +29,9 @@ static JNIEnv * FNI_CreateThreadState(void) {
   struct FNI_Thread_State * env = 
 #ifdef WITH_REALTIME_JAVA
     (struct FNI_Thread_State*)RTJ_CALLOC_UNCOLLECTABLE(1,sizeof(*env));
+#elif WITH_TRANSACTIONS
+    /* we store transaction object pointers in here */
+    GC_malloc(sizeof(*env));
 #else
     malloc(sizeof(*env));
 #endif
@@ -91,6 +94,8 @@ void FNI_DestroyThreadState(void *cl) {
   // now free thread state structure.
 #ifdef WITH_REALTIME_JAVA
   RTJ_FREE(env);
+#elif WITH_TRANSACTIONS
+  /* allocated with GC_malloc; no 'free' necessary. */
 #else
   free(env);
 #endif

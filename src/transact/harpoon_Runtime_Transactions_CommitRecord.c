@@ -2,7 +2,6 @@
 #include <jni.h>
 #include "harpoon_Runtime_Transactions_CommitRecord.h"
 #include "transact.h"
-#include "asm/atomicity.h" /* machine-specific atomic operation defs */
 
 /*
  * Class:     harpoon_Runtime_Transactions_CommitRecord

@@ -39,7 +39,13 @@ struct _jfieldID {
   char *desc;	   /* field descriptor. */
   struct FNI_field2info *reflectinfo; /* reflection information */
   ptroff_t offset; /* an absolute address for static fields, else an offset */
+#ifdef WITH_TRANSACTIONS
+  unsigned trans_isvalid:1; /* 1 if the following fields have valid info */
+  unsigned trans_bitnum:5; /* bit number in the bitfield */
+  unsigned trans_bitoff:((8*sizeof(ptroff_t))-6); /* offset of the bitfield */
+#else
   ptroff_t _zero;  /* unused.  should be zero. */
+#endif
 };
 union _jmemberID {
   struct _jmethodID m;
@@ -87,6 +93,7 @@ struct inflated_oobj {
   /* TRANSACTION SUPPORT */
 #if WITH_TRANSACTIONS
   struct vinfo *first_version; /* linked list of object versions */
+  struct tlist *readers; /* linked list of 'readers' of this version. */
 #endif
   /* REALTIME JAVA SUPPORT */
 #ifdef WITH_REALTIME_JAVA
