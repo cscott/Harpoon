@@ -54,6 +54,11 @@ doc-install: doc/TIMESTAMP
 doc-clean:
 	-${RM} -r doc
 
+wc:
+	@wc -l $(ALLSOURCE)
+	@echo Top Five:
+	@wc -l $(ALLSOURCE) | sort -n | tail -6 | head -5
+
 clean:
 	-${RM} java
 	-${RM} -r harpoon
