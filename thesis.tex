@@ -1,11 +1,11 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.60 1999-08-03 05:01:35 cananian Exp $
+% $Id: thesis.tex,v 1.61 1999-08-03 19:35:54 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
 % fonts
-%\usepackage{beton}\usepackage{euler}
-\usepackage{pdffonts}\usepackage{euler}
+\usepackage{beton}\usepackage{euler}
+%\usepackage{pdffonts}\usepackage{euler}
 % useful stuff
 \usepackage{algorithm} % algorithm environment, \listofalgorithms
 \usepackage{amsthm} % proof environment
@@ -27,14 +27,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.60 $ $}
+\date{\today \\ $ $Revision: 1.61 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.60 $ $}{$ $Revision: 1.60 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.61 $ $}{$ $Revision: 1.61 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -729,14 +729,13 @@ don't exist for the pessimistic algorithm?}
 \end{myfigure}
 
 \subsection{Space complexity of SSI form}
-See figure \vref{fig:phisigdata}.%
-\fixme{Import discussion from appendix here.}
-
-\begin{myfigure}[t]
+\begin{myfigure}%[t]
 \input{Figures/phisig}
 \caption{Statistical analysis to determine typical values for $V_{SSI}$.}
 \label{fig:phisigdata}
 \end{myfigure}
+See figure \vref{fig:phisigdata}.%
+\fixme{Import discussion from appendix here.}
 
 \section{Uses and applications of SSI}
 \textbf{Discuss predicated analysis, anticipatibility, PRE, etc.
@@ -746,8 +745,8 @@ Use the techniques of \cite{kennedy98:strength} to do loop-invariant
 code motion, strength reduction, and partial-redundancy-elimination
 using SSI form?}
 
-\subsection{My Snazzy Constant Propagation (MSC)}
-My Snazzy Constant Propagation is a powerful analysis tool which
+\subsection{Sparse Predicated Typed Constant (SPTC) Propagation}
+Sparse Predicated Typed Constant Propagation is a powerful analysis tool which
 derives its efficiency from SSI form.  It is built on Wegman and
 Zadeck's Sparse Conditional Constant (SCC) algorithm
 \cite{wegman91:scc} and removes unnecessary array-bounds and
@@ -757,11 +756,14 @@ integer constant propagation of standard SCC.\footnote{It also washes
 the dishes and does the laundry.  It does not do windows$^{TM}$.}
 
 We will describe this algorithm incrementally, beginning with the
-standard SCC constant-propagation algorithm for review.  Section
-\vref{sec:bitwidth} will discuss an extension to MSC which does
+standard SCC constant-propagation algorithm for review.
+Wegman and Zadeck's algorithm operates on a program in SSA form; we will
+call this SCC/SSA to differentiate it from SCC/SSI, using the SSI
+form, which we will describe in section \ref{sec:sccssi}. Section
+\vref{sec:bitwidth} will discuss an extension to SPTC which does
 \newterm{bit-width analysis}.
 
-\subsubsection{Wegman and Zadeck's SCC algorithm}
+\subsubsection{Wegman and Zadeck's SCC/SSA algorithm}
 \begin{myfigure}
 \centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat1}
 \caption{Three-level lattice and two-level executability lattice for SCC.}
@@ -788,22 +790,52 @@ as algorithm \ref{alg:scc}.  The time complexity of SCC is
 $O(E+U_{SSA})$, where $U_{SSA}$ is the number of variable
 \newterm{uses} in the SSA representation of the program.
 
-\subsubsection{Predication using \sigfunction{s}.}
-Foo.  Bar. Baz.
+\subsubsection{SCC/SSI: predication using \sigfunction{s}.}\label{sec:sccssi}
+\begin{myfigure}%
+\begin{samplecode}[2]%
+foo = f();        & \subvar{foo}{0} = f();\\
+if (foo == 1)     & if (\subvar{foo}{0} == 1) \\
+                  & $\tuple{\subvar{foo}{1},\subvar{foo}{2}}$ =
+                    $  \sigma(\subvar{foo}{0})$ \\
+\>bar = foo + 1;  & \>\subvar{bar}{0} = \subvar{foo}{2} + 1;\\
+else              & else \\
+\>bar = 2;        & \>\subvar{bar}{1} = 2;\\
+                  & \subvar{bar}{2} =
+                    $  \phi(\subvar{bar}{0},\subvar{bar}{1})$%\\
+\end{samplecode}%
+\caption{A simple constant-propagation example.}
+\label{fig:ssa_vs_ssi}
+\end{myfigure}
+Porting the SCC algorithm from SSA to SSI form immediately increases
+the number of constants we can find.  A simple example is shown in
+figure \ref{fig:ssa_vs_ssi}: the version of the program on the right
+is in SSI form, and SCC/SSI --- unlike SCC/SSA --- can
+determine that \code{\subvar{foo}{2}} is a constant with value 1
+(although nothing can be said about the value of
+\code{\subvar{foo}{0}} or \code{\subvar{foo}{1}}) and therefore that
+\code{\subvar{bar}{0}}, \code{\subvar{bar}{1}}, and
+\code{\subvar{bar}{2}} are constants with the value 2.%
+\fixme{Write up the SCC algorithm modifications necessary for SSI form.}
+SSI form creates a new name for \code{bar} at the conditional branch
+to indicate that more information about its value is known.  The utility
+of this \newterm{predicated analysis} will become more evident as the SCC
+value lattice is extended to cover more constant types.
+\fixme{Time bounds for SCC/SSI.}
 
 \subsubsection{Extending the value domain}
 \begin{myfigure}
 \centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat2}
-\caption{SCC value lattice extended to Java type domain.}
+\caption{SCC value lattice extended to Java primitive value domain.}
 \label{fig:scclat2}
 \end{myfigure}
-The first simple extension to the SCC optimization is to extend the
-domain of the value lattice to cover floating-point and other values.
-For this work, we extended the domain to cover the full type system of
-java bytecode; the extended lattice is presented in figure \ref{fig:scclat2}.
-The figure presents the abbreviated lattice notation we will use
-through the following sections; it is understood that the ``int''
-lattice entry stands for a finite-but-large set of
+The first simple extension of the SCC value lattice enables us to
+represent floating-point and other values.  For this work, we extended
+the domain to cover the full type system of Java bytecode
+\cite{javabytecode}; the extended lattice is presented in figure
+\ref{fig:scclat2}.
+The figure also introduces the abbreviated lattice notation we will use
+through the following sections; it is understood that the
+lattice entry labelled ``int'' stands for a finite-but-large set of
 incomparable lattice elements, consisting (in this case) of the
 members of the Java \code{int} integer type.
 %\footnote{As the Java \code{int}
@@ -814,45 +846,121 @@ members of the Java \code{int} integer type.
 %the Java \code{double} and \code{float} types, and we similarly
 %combine them in our lattice.}
 Java \code{int}s are 32 bits long, so the ``int'' entry abbreviates
-$2^{32}$ lattice elements.  Similarly, the ``float'' entry encodes not
+$2^{32}$ lattice elements.  Similarly, the ``double'' entry encodes not
 the infinite domain of real numbers, but the domain spanned by the
-Java \code{float} type which has fewer than $2^{32}$ members.  The
+Java \code{double} type which has fewer than $2^{64}$ members.  The
 Java \code{String} type is also included, to allow simple constant
 string coalescing to be performed.  The propagation algorithm over
-this lattice is a trivial modification to \ref{alg:scc}, and will be
-omitted for brevity.  In the next sections, the ``int'' and ``long''
+this lattice is a trivial modification to algorithm \ref{alg:sccssi}, and
+will be omitted for brevity.  In the next sections, the ``int'' and ``long''
 entries in this lattice will be summarized as ``Integer Constant'',
 the ``float'' and ``double'' entries as ``Floating-point Constant'',
 and the ``String'' entry as ``String Constant''.  As the lattice is
-still only three levels, the asymptotic runtime complexity is
-identical to that of SCC.
+still only three levels deep, the asymptotic runtime complexity is
+identical to that of algorithm \ref{alg:sccssi}.
 
-\subsection{Type analysis}
-In figure \ref{fig:scclat3} we extend the algorithm to compute Java
-type information.  The new lattice entry marked ``Typed'' is actually
-structured as in \ref{fig:scclat4}; it is as deep as the class
-hierarchy.  The asymptotic runtime complexity is now $O(E+U_{SSA}D)$,
-where $D$ is the maximum depth of the class hierarchy.  Table
-\ref{tab:chstats}, using information from \cite{muthukrishnan96:ch},
-compares class hierarchy statistics for several large
-object-oriented libraries in different source languages. Our FLEX
-compiler infrastructure, as an example of a large Java project, uses
-550 classes with an average depth of 1.91; the deepest class was 5
-levels removed from the root.\footnote{Measured August 2, 1999; the
-infrastructure is under continuing development.}
-\begin{table}[t]
+\subsubsection{Type analysis}
+\begin{myfigure}[p]
+\centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat3}
+\caption{SCC value lattice extended with type information.}
+\label{fig:scclat3}
+\end{myfigure}
+\begin{myfigure}[p]
+\centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat4}
+\caption{``Typed'' category of figure \ref{fig:scclat3} shown expanded.}
+\label{fig:scclat4}
+\end{myfigure}
+\begin{table}%[t]
 \begin{tabular}{|l|l|c|c|c|}\hline
 Hierarchy & Source language & Classes & Avg. depth & Max. depth \\ \hline
 FLEX infrastructure & Java  &   550   &    1.9     &     5      \\
-NeXTStep 3.2 & Objective-C  &   488   &    3.5     &     8      \\
-Objectworks 4.1 & Smalltalk &   774   &    4.4     &    10      \\ \hline
+\code{javac} compiler & Java&   304   &    2.8     &     7      \\
+NeXTStep 3.2$^\dag$& Objective-C & 488 &   3.5     &     8      \\
+Objectworks 4.1$^\dag$&Smalltalk & 774 &   4.4     &    10      \\ \hline
 \end{tabular}
-\caption{Class hierarchy statistics for typical large O-O libraries.}
+{\small$\dag$ indicates data obtained from Muthukrishnan and M\"uller
+ \cite{muthukrishnan96:ch}.}
+\caption{Class hierarchy statistics for several large O-O projects.}
 \label{tab:chstats}
 \end{table}
+In figure \ref{fig:scclat3} we extend the lattice to compute Java type
+information.  The new lattice entry marked ``Typed'' is actually
+forest-structured as shown in figure \ref{fig:scclat4}; it is as deep
+as the class hierarchy, and the roots and leaves are fully linked to
+the lattice elements above and below it.  Because the lattice is
+deeper, the asymptotic runtime complexity is now $O(E+U_{SSA}D)$
+where $D$ is the maximum depth of the class hierarchy.  
+To form an estimate of the magnitude of $D$, table \ref{tab:chstats}
+compares class hierarchy statistics for several large
+object-oriented projects in various source languages. Our FLEX
+compiler infrastructure, as a typical Java example, has an average
+class depth of 1.91;\footnote{Measured August 2, 1999; the
+infrastructure is under continuing development.} one can infer that
+the $U_{SSA}D$ term in the runtime complexity is not likely to make
+the algorithm non-linear.
+
+A brief word on the roots of the hierarchy forest in figure
+\ref{fig:scclat4} is called for: Java has both a class hierarchy,
+rooted at \code{java.lang.Object}, and several primitive types, which
+we will also use as roots.  The primitive types include what we will
+refer to as the \code{void} type, which is the type of the expression
+\code{null}, as well as \code{int}, \code{long}, \code{float}, and
+\code{double}.\footnote{In the type system our infrastructure uses
+(which is borrowed from Java bytecode) the \code{char},
+\code{boolean}, \code{short} and \code{byte} types are folded into
+\code{int}.}  The ability to represent the \code{void} type begins to
+allow us to address null-pointer checks, although because
+\code{meet(null, x)==x}\fixme{write up meet and join rules.} we can
+only reason about variables which can be proven to be null, not those
+which might be proven to be non-null (which is the more useful case).
+The next section will provide a more satisfactory treatment.
+
+The Java class hierarchy also includes \newterm{interfaces}, which are
+the means by which Java implements multiple inheritance.  Base
+interface classes (which do not extend other interfaces) are additional
+roots in the hierarchy forest, although no examples of this are shown
+in figure \ref{fig:scclat4}.
+
+Since untypeable variables are generally forbidden, no operation
+should ever raise a lattice value above ``Typed'' to $\top$.  The
+otherwise-unnecessary $\top$ element is retained to indicate error
+conditions.
+
+\subsubsection{Addressing array-bounds and null-pointer checks}
+\begin{myfigure}
+\centering\renewcommand*{\figscale}{0.5}\input{Figures/THlat5}
+\caption{The SPTC value lattice.}
+\label{fig:scclat5}
+\end{myfigure}
+\begin{myfigure}
+\begin{samplecode}
+x = 5 + 6;\\
+do \{\\
+\>y = new int[x];\\
+\>z = x-1;\\
+\>if (0 <= z \&\& z < y.length)\\
+\>\>y[z] = 0;\\
+\>else\\
+\>\>x--;\\
+\} while (P);\\
+\end{samplecode}
+\caption{An example illustrating the power of combined analysis.}
+\label{fig:combined}
+\end{myfigure}
+At this point, we can expand the value lattice a final time to allow
+elimination of unnecessary array-bounds and null-pointer checks, based
+on our constant-propagation algorithm.  The new lattice is shown in
+figure \ref{fig:scclat5}; we have split the ``Typed'' lattice entry to
+allow distinguishing between non-null and possibly-null
+values,\footnote{Values which are always-null were discussed in the
+previous section; they are identified as having primitive type \code{void}.}
+and added a lattice level for arrays of known constant length.  The
+new meet and join rules are described in figure \ref{fig:nothereyet}.
+Notice that we exploit the pre-existing integer-constant propagation to
+identify constant-length arrays, and that our integrated approach
+allows one-pass optimization of the program in figure \ref{fig:combined}.
 
 \subsection{Bit-width analysis}\label{sec:bitwidth}
-
 \begin{myfigure}[t]
 \centering\renewcommand*{\figscale}{0.6}\input{Figures/THlattice}
 \caption{Lattice for constant/type/bitwidth analysis.}

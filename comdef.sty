@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.12 1999-08-02 15:49:14 cananian Exp $
+% $Id: comdef.sty,v 1.13 1999-08-03 19:35:54 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -32,7 +32,7 @@
 
 % environment for code examples
 \ifthenelse{\boolean{@compatibility}}{}{% don't define this in 2.09 mode.
-\newenvironment{samplecode}[1][1]
+\newenvironment{samplecode}[1][1]%
   {\setlength{\tabcolsep}{2\tabcolsep}%
 \renewcommand{\>}{~~~~}%
 \newcommand{\comment}[1]{\rm\it // ##1}%
@@ -96,6 +96,7 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
 \newcommand{\tuple}[1]{\ensuremath{\left\langle #1 \right\rangle}}
 \newcommand{\xivec}[2]{\ensuremath{\left[\tuple{#1}\atop\tuple{#2}\right]}}
 \newcommand{\phisigfunction}[1][and]{$\phi$- #1 \sigfunction}
+\newcommand{\subvar}[2]{\ensuremath{\text{#1}_{\text{#2}}}}
 
 % Cytron's path symbol
 \newcommand{\path}{\ensuremath{\rightarrow}}
