@@ -1,0 +1,30 @@
+Ideas for multi-methods, using the log log n algorithm presented in
+STOC:
+ - use a preprocessor.  tag multi-methods with 'dynamic' or 'virtual'
+   and dispatch based on all arguments (including 'this').  Anticipate
+   that the dynamicism will be small.
+ - exploit the fact that the java runtime system will dynamically
+   dispatch on 'this' to avoid the need to specify class and all
+   children at once to the preprocessor.  simply scan up through
+   inheritance tree, and children must 'do the right thing' and
+   dispatch to a method of the parent if the most-specific method
+   given the run-time types is a super-method.
+ - As far as JVM knows, each dynamic method is typed with the most
+   general of each parameter type (this allows some compile-time
+   parameter checking).  Or you could do type-inference with
+   multi-methods...
+ - the general method (which jvm sees) is a runtime dispatcher to
+   the proper private dynamic method.  The private methods probably
+   should be put in an inner class or something so that other code in
+   the method properly dynamically dispatches.
+ - use security modifiers as additional dynamical arguments? only
+   requires making three trees, for public, public+package, and
+   public+package+private methods.  We use the largest tree available,
+   based on the identity of the calling class (how to get this info?).
+   OR start with largest tree, and catch security exceptions on
+   invocation, using the next-largest tree as needed until we reach
+   the public tree, which certainly shouldn't throw a security exception.
+------
+build pattern-matching facility the same way --- except allow
+iteration from most-specific to most-general match so that we can do a
+continuatin of the pattern-matching code based on some criteria.
