@@ -3,11 +3,6 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.NoSuchElementException;
-import java.util.Iterator;
-
 /** <code>PreAllocRoundRobinScheduler</code> is a round-robin scheduler that
  *  preallocates all of its memory up front.
  *
@@ -81,12 +76,8 @@ public class PreAllocRoundRobinScheduler extends Scheduler {
 
     protected long chooseThread(long currentTime) {
 	setQuanta(1000); // Switch again after a specified number of microseconds.
-	for (int newIndex = (currentIndex+1)%maxIndex; newIndex != currentIndex; 
-	     newIndex=(newIndex+1)%maxIndex) {
-	    if (threadList[newIndex]!=0) {
-		return threadList[currentIndex = newIndex];
-	    }
-	}
+	for (int newIndex = (currentIndex+1)%maxIndex; newIndex != currentIndex; newIndex=(newIndex+1)%maxIndex) 
+	    if (threadList[newIndex]!=0) return threadList[currentIndex = newIndex];
 	return threadList[currentIndex];
     }
 
