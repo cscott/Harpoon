@@ -6,6 +6,8 @@ package harpoon.Backend.Generic;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HClass;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Tree.TreeDerivation;
+import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.Print;
 import harpoon.Temp.Temp;
 import harpoon.Analysis.Maps.Derivation;
@@ -16,7 +18,7 @@ import harpoon.Analysis.Maps.Derivation;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.14 2000-02-18 22:53:26 pnkfelix Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.15 2000-02-19 08:24:34 cananian Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -40,6 +42,14 @@ public abstract class CodeGen {
 
     protected abstract void declare(Temp t, HClass clz);
     protected abstract void declare(Temp t, Derivation.DList dl);
+    // helper method for declarations.
+    protected final void declare(Temp t, TreeDerivation td, Exp e) {
+	if (td==null) return; // no derivation info.
+	HClass hc = td.typeMap(e);
+	if (hc!=null) declare(t, hc);
+	else declare(t, td.derivation(e));
+    }
+
 
     /** Fixes up the procedure entry and exit code for a list of instrs, once
      *  it is known how many registers and how much stack space is used.
