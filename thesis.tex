@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.68 1999-08-19 17:17:29 cananian Exp $
+% $Id: thesis.tex,v 1.69 1999-08-21 00:59:51 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -30,14 +30,14 @@
 \title{Static Single Information Form\\
 \small Or, chiseled on stone this'll last 4000 years}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.68 $ $}
+\date{\today \\ $ $Revision: 1.69 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.68 $ $}{$ $Revision: 1.68 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.69 $ $}{$ $Revision: 1.69 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -805,7 +805,8 @@ executability lattice associated with flow-graph edges.  These
 lattices are shown in figure \vref{fig:scclat1}.  Associating a lattice
 value with a definition point is a conservative statement that, for
 all possible program paths, the value of that variable has a certain
-property.  The lattice value $\bot$ signifies that no information
+property.  The value lattice is, formally, $\domain{Int}_\bot^\top$;
+the lattice value $\bot$ signifies that no information
 about the value is known, the lattice value $\top$ indicates that it
 is possible that the variable has more than one dynamic value, and the
 other lattice entries (corresponding to integer constants and occuping
@@ -1021,6 +1022,28 @@ satisfactory treatment.
 \label{fig:scclat5}
 \end{myfigure}
 \begin{myfigure}
+\[\begin{array}{l}
+\forall C \in \text{Class},\:
+  C_{\text{non-null}} \sqsubset C_{\text{possibly-null}}\\
+\forall C \in \text{Class}_{\text{non-null}},\:
+  \bigsqcup_L \{\code{void},C\} \in \text{Class}_{\text{possibly-null}}\\
+\forall C \in \text{Class}_{\text{possibly-null}},\:
+  \code{void} \sqsubset C\\
+\forall C \in \text{Class}_{\text{non-null}},\:
+  \tuple{\code{void},C}\notin\:\sqsubseteq\\
+\end{array}\]%
+Let $A(C, n)$ be a
+function to turn a lattice entry representing a non-null array class
+type $C$ into the lattice entry representing a said array class with
+known integer constant length $n$.  Then for any non-null array class
+$C$ and integers $i$ and $j$,
+\[\begin{array}{l}
+A(C, i) \sqsubset C\\
+\tuple{A(C, i), A(C, j)} \in\:\sqsubseteq \text{ if and only if } i=j\\
+\end{array}\]%
+\caption{SPTC value lattice inequalities.}\label{fig:sptc_rules}
+\end{myfigure}
+\begin{myfigure}
 \begin{samplecode}
 x = 5 + 6;\\
 do \{\\
@@ -1042,13 +1065,19 @@ figure \ref{fig:scclat5}; we have split the ``Typed'' lattice entry to
 allow distinguishing between non-null and possibly-null
 values,\footnote{Values which are always-null were discussed in the
 previous section; they are identified as having primitive type \code{void}.}
-and added a lattice level for arrays of known constant length.  The
-new meet and join rules are described in figure \ref{fig:nothereyet}.
+and added a lattice level for arrays of known constant length.  
+Some formal definition of the new value lattice can be found in
+figure \ref{fig:sptc_rules}; the meet rule is still the least upper
+bound on the lattice.  Modifications to the \code{Visit} procedure are
+outlined in algorithm~\ref{alg:sptc}.
 Notice that we exploit the pre-existing integer-constant propagation to
 identify constant-length arrays, and that our integrated approach
 allows one-pass optimization of the program in figure \ref{fig:combined}.
-\fixme{Note that SSI form is \textbf{essential} in allowing SPTC to do
-array-bounds and null-pointer checks in a useful manner.}
+
+Note that the variable renaming performed by the SSI form at
+control-flow splits is essential in allowing SPTC to do array-bounds
+and null-pointer check elimination.  Some quantitative measure of the
+utility of SPTC is given as table \ref{tab:sptc_numbers}.
 
 \subsection{Bit-width analysis}\label{sec:bitwidth}
 \begin{myfigure}[t]
