@@ -30,66 +30,71 @@ public class JhttpWorker extends Thread{
     }
     
     public void run() { 
-	HTTPResponse resp = new HTTPResponse();
-
-	BufferedReader  in = null;
-	BufferedWriter out = null;
-
-	resp.returnCode = 200;
-	resp.sentBytes = 0;
-
 	try {
-
-	    in =
-		new BufferedReader
-		    (new InputStreamReader
-			(client.getInputStream()));
-
-	    out = 
-		new BufferedWriter
-		    (new OutputStreamWriter
-			(client.getOutputStream()));
-
-	}
-	catch(IOException e) {
-	    // I'm not too good at HTTP. Normally, we should put some
-	    // error code here. Anyway, I have assumed that an error
-	    // is equivalent to an unhandled request / method (501)
-	    resp.returnCode = 501; 
-	}
-
-	if(resp.returnCode == 200) {
-	    // call the appropriate hanndler
-	    switch(method(in)) {
-	    case 0:
-		HTTPServices.GET_handler(fileName, out, resp);
-		break;
-	    case 1:
-		HTTPServices.HEAD_handler(fileName, out, resp);
-		break;
-	    case 2:
-		HTTPServices.POST_handler(fileName, out, resp);
-		break;
-	    default:
-		resp.returnCode = 501; //error
-	    }
+	    HTTPResponse resp = new HTTPResponse();
+	    
+	    BufferedReader  in = null;
+	    BufferedWriter out = null;
+	    
+	    resp.returnCode = 200;
+	    resp.sentBytes = 0;
 	    
 	    try {
-		out.flush();
-		if (logging)
-		    LogFile.write_log(client, methodType, fileName,
-				      httpVersion,
-				      resp.returnCode, resp.sentBytes);
-
-		out.close();
-		in.close();
-		client.close();
+		
+		in =
+		    new BufferedReader
+			(new InputStreamReader
+			    (client.getInputStream()));
+		
+		out = 
+		    new BufferedWriter
+			(new OutputStreamWriter
+			    (client.getOutputStream()));
+		
 	    }
 	    catch(IOException e) {
-		; // do nothing
+		// I'm not too good at HTTP. Normally, we should put some
+		// error code here. Anyway, I have assumed that an error
+		// is equivalent to an unhandled request / method (501)
+		resp.returnCode = 501; 
 	    }
-	}
+
+	    if(resp.returnCode == 200) {
+		// call the appropriate hanndler
+		switch(method(in)) {
+		case 0:
+		    HTTPServices.GET_handler(fileName, out, resp);
+		    break;
+		case 1:
+		    HTTPServices.HEAD_handler(fileName, out, resp);
+		break;
+		case 2:
+		    HTTPServices.POST_handler(fileName, out, resp);
+		    break;
+		default:
+		    resp.returnCode = 501; //error
+		}
+		
+		try {
+		    out.flush();
+		    if (logging)
+			LogFile.write_log(client, methodType, fileName,
+					  httpVersion,
+					  resp.returnCode, resp.sentBytes);
+		    
+		    out.close();
+		    in.close();
+		    client.close();
+		}
+		catch(IOException e) {
+		    ; // do nothing
+		}
+	    }
 	//	System.out.println(fileName + " is going to finish"); // debug 
+	} catch (Exception e) { // Shouldn't need this
+	    System.out.println(e.toString());
+	    System.exit(1);
+	}
     }
   
 //*****************************************************************************

@@ -12,8 +12,9 @@ import java.io.*;
 
 public class JhttpServer extends RealtimeThread {
 
-    private ServerSocket server;
     public boolean logging;
+    private int port;
+
 //****************************************************************************
 // Constructor: JhttpServer(int)
 //****************************************************************************
@@ -22,14 +23,7 @@ public class JhttpServer extends RealtimeThread {
 	super(new CTMemory(1000000000));
 	this.logging=logging;
 	System.out.println("starting...");
-	try{
-	    System.out.println("creating the port");
-	    server = new ServerSocket(port);
-	}
-	catch (IOException e){
-	    System.err.println(e);
-	    System.exit(1);
-	}
+	this.port=port;
     }
 
     private void startWorker(Socket client) throws Exception {
@@ -38,6 +32,16 @@ public class JhttpServer extends RealtimeThread {
     }
 
     public void run(){
+	ServerSocket server = null;
+	try{
+	    System.out.println("creating the port");
+	    server = new ServerSocket(port);
+	}
+	catch (IOException e){
+	    System.err.println(e);
+	    System.exit(1);
+	}
+
 	// infinite loop 
 	while (true) {
 	    try {
@@ -56,19 +60,24 @@ public class JhttpServer extends RealtimeThread {
 
   public static void main(String args[]) throws Exception
   {
-    if (args.length < 1)
-    {
-      System.out.println("Usage:");
-      System.out.println("   java JhttpServer <port> <logging>");
-      System.out.println();
-      System.out.println("Ex: java JhttpServer 10000 0");
+      try { // Shouldn't need this!
+      if (args.length < 1)
+	{
+	  System.out.println("Usage:");
+	  System.out.println("   java JhttpServer <port> <logging>");
+	  System.out.println();
+	  System.out.println("Ex: java JhttpServer 10000 0");
+	  System.exit(1);
+	}
+      
+      
+      (new JhttpServer(Integer.parseInt(args[0]),
+		       Integer.parseInt(args[1])==1))
+	.start();
+    } catch (Exception e) {
+      System.out.println(e.toString());
       System.exit(1);
     }
-    
-    
-    (new JhttpServer(Integer.parseInt(args[0]),
-		     Integer.parseInt(args[1])==1))
-	.start();
   }
 }
 
