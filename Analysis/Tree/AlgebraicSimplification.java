@@ -11,6 +11,7 @@ import harpoon.IR.Tree.Bop;
 import harpoon.IR.Tree.CanonicalTreeCode;
 import harpoon.IR.Tree.Code; 
 import harpoon.IR.Tree.CONST; 
+import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.ESEQ; 
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.ExpList;
@@ -38,9 +39,10 @@ import java.util.Stack;
  * <B>Warning:</B> this performs modifications on the tree form in place.
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: AlgebraicSimplification.java,v 1.1.2.15 2000-02-15 01:23:22 cananian Exp $
+ * @version $Id: AlgebraicSimplification.java,v 1.1.2.16 2000-02-15 20:22:16 cananian Exp $
  */
 // XXX missing -K1 --> K2  and ~K1 --> K2 rules.
+// FIXME!  DOESN'T REALLY PROPAGATE TYPE INFORMATION!
 public abstract class AlgebraicSimplification extends Simplification { 
     // hide constructor
     private AlgebraicSimplification() { }
@@ -83,8 +85,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 		}
 	    }
 	    
-	    public Exp apply(Exp e) { 
-		TreeFactory tf = e.getFactory(); 
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		BINOP b  = (BINOP)e; 
 		CONST k1 = (CONST)b.getLeft();
 		CONST k2 = (CONST)b.getRight(); 
@@ -130,9 +131,8 @@ public abstract class AlgebraicSimplification extends Simplification {
 		    !b.isFloatingPoint();
 		}
 	    }
-	    public Exp apply(Exp e) { 
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		BINOP b = (BINOP)e; 
-		TreeFactory tf = b.getFactory(); 
 		return new BINOP(tf, b, b.optype, b.op, b.getRight(), b.getLeft()); 
  	    }
 	};
@@ -158,10 +158,9 @@ public abstract class AlgebraicSimplification extends Simplification {
 		(b1.operandType() == b2.operandType()) &&
 		!b1.isFloatingPoint();
 	    }
-	    public Exp apply(Exp e) { 
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		BINOP b1 = (BINOP) e;
 		BINOP b2 = (BINOP) b1.getLeft();
-		TreeFactory tf = b1.getFactory(); 
 		int bop = b1.op, optype = b1.optype;
 		// be careful not to screw with commutativity.
 		return new BINOP(tf, e, optype, bop, b2.getLeft(),
@@ -191,9 +190,8 @@ public abstract class AlgebraicSimplification extends Simplification {
 		           contains(_KIND(b.getRight()), _CONST0);
 		}
 	    }
-	    public Exp apply(Exp e) { 
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		BINOP b = (BINOP)e; 
-		TreeFactory tf = b.getFactory(); 
 		if (b.type()==Type.INT)
 		    return new CONST(tf, e, (int) 0);
 		if (b.type()==Type.LONG)
@@ -227,7 +225,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 		    contains(_KIND(b.getRight()), _CONST0);
 		}
 	    }
-	    public Exp apply(Exp e) { 
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		BINOP b = (BINOP)e; 
 		return b.getLeft(); 
 	    }
@@ -244,10 +242,9 @@ public abstract class AlgebraicSimplification extends Simplification {
 		if (b.op != Bop.XOR ) return false;
 		return contains(_KIND(b.getRight()), _CONSTm1);
 	    } 
-	    public Exp apply(Exp e) {  
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) {  
 		BINOP b = (BINOP) e;
 		Util.assert(b.op == Bop.XOR);
-		TreeFactory tf = b.getFactory(); 
 		return new UNOP(tf, e, b.optype, Uop.NOT, b.getLeft());
 	    } 
 	};
@@ -269,7 +266,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 		    }
 		}
 	    } 
-	    public Exp apply(Exp e) {  
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) {  
 		UNOP u1 = (UNOP)e;  
 		UNOP u2 = (UNOP)u1.getOperand();  
 		Util.assert(u1.op == u2.op);  
@@ -288,7 +285,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 		    return contains(_KIND(u.getOperand()), _CONST0);
 		}
 	    }
-	    public Exp apply(Exp e) { 
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		UNOP u = (UNOP)e; 
 		Util.assert(contains(_KIND(u.getOperand()), _CONST0));
 		return u.getOperand(); 
@@ -313,7 +310,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 		    }
 		}
 	    }
-	    public Exp apply(Exp e) { 
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		BINOP b = (BINOP)e; 
 		return mul2shift(b.getLeft(), (CONST)b.getRight()); 
 	    }
@@ -333,7 +330,7 @@ public abstract class AlgebraicSimplification extends Simplification {
 			   !contains(_KIND(b.getLeft()), _CONST);
 		}
 	    }
-	    public Exp apply(Exp e) { 
+	    public Exp apply(TreeFactory tf, Exp e, DerivationGenerator dg) { 
 		BINOP b = (BINOP)e; 
 		Util.assert(b.op == Bop.DIV); 
 		return div2mul(b.getLeft(), (CONST)b.getRight()); 
