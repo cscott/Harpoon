@@ -29,6 +29,7 @@ import harpoon.Tools.PatMat.Spec.RuleStm;
 import harpoon.Tools.PatMat.Spec.Stm;
 import harpoon.Tools.PatMat.Spec.StmCall;
 import harpoon.Tools.PatMat.Spec.StmCjump;
+import harpoon.Tools.PatMat.Spec.StmData;
 import harpoon.Tools.PatMat.Spec.StmExp;
 import harpoon.Tools.PatMat.Spec.StmJump;
 import harpoon.Tools.PatMat.Spec.StmLabel;
@@ -45,7 +46,7 @@ import java_cup.runtime.*;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.16 1999-07-29 20:52:59 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.17 1999-07-30 14:42:23 cananian Exp $
  */
 
 action code {:
@@ -202,6 +203,8 @@ stm	::=	CALL LPAREN exp:e1 COMMA exp:e2 COMMA exp:e3 COMMA ID:id RPAREN
 		{: RESULT = new StmCall(e1, e2, e3, id); :}
 	|	CJUMP LPAREN exp:e COMMA ID:t COMMA ID:f RPAREN
 		{: RESULT = new StmCjump(e, t, f); :}
+	|	DATA LPAREN exp:e RPAREN
+		{: RESULT = new StmData(e); :}
 	|	EXP LPAREN exp:e RPAREN
 		{: RESULT = new StmExp(e); :}
 	|	JUMP LPAREN exp:e RPAREN

@@ -18,7 +18,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.18 1999-07-29 20:52:59 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.19 1999-07-30 14:42:24 cananian Exp $
  */
 public class Spec  {
 
@@ -456,6 +456,7 @@ public class Spec  {
 	public abstract void visit(Stm s);
 	public void visit(StmCall s) { visit((Stm)s); }
 	public void visit(StmCjump s) { visit((Stm)s); }
+	public void visit(StmData s) { visit((Stm)s); }
 	public void visit(StmExp s) { visit((Stm)s); }
 	public void visit(StmJump s) { visit((Stm)s); }
 	public void visit(StmLabel s) { visit((Stm)s); }
@@ -520,7 +521,7 @@ public class Spec  {
 	}
     }
 
-    /** Extension of <code>Spec.Stm</code> representing a condition
+    /** Extension of <code>Spec.Stm</code> representing a conditional
 	branch. 
 	@see IR.Tree.CJUMP
     */
@@ -547,6 +548,27 @@ public class Spec  {
 	public void accept(StmVisitor v) { v.visit(this); }
 	public String toString() {
 	    return "CJUMP("+test+","+t_label+","+f_label+")";
+	}
+    }
+
+    /** Extension of <code>Spec.Stm</code> representing a raw datum in
+	memory.
+	@see IR.Tree.DATA
+    */
+    public static class StmData extends Stm {
+	/** A <code>IR.Tree.CONST</code> or <code>IR.Tree.NAME</code>
+	    specifying the value with which to initialize this location.
+	*/
+	public final Exp data;
+	/** Constructs a new <code>Spec.StmData</code>.
+	    @param data Value expression.
+	*/
+	public StmData(Exp data) {
+	    this.data = data;
+	}
+	public void accept(StmVisitor v) { v.visit(this); }
+	public String toString() {
+	    return "DATA("+data+")";
 	}
     }
 
