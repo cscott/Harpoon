@@ -1,4 +1,31 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.8 2003-05-22 20:26:53 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.9 2003-05-23 23:50:53 cananian Exp $
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TO DO:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  - a slide to explain loops/our choice opposed to interval analysis
+%  - cut 'push hard on all the bits' slide; replace by something
+%    mentioning the magic words ``analysis'' ``transformation'' or
+%    such.
+%  - Trim ``Intraprocedural analysis'': jump to bitwidth, focus on
+%    information gained, not process by which it is obtained
+%  - Explain (spend more time on) how the *inter* procedural analysis
+%    works/how fields are treated.  A graphic here?
+%  - Flag, in words or a slide, the transition from analysis to use
+%    between ``all cars are black'' and ``field compression using
+%    bitwidths''
+%  - Prettify the ``field packing'' slide.
+%  - Don't miss ``BigString!''
+%  - Reword ``Fields and Maps''; we don't need ``bottom'' and don't
+%    mention it.  Can be abbreviated!  Just talk about ``default''
+%    value which we don't have to store. ``Not an incomplete
+%    mapping''.
+%  - Before graphs & after ``how well does it work'' add an
+%    ``experimental setup'' slide: MIT Flex compiler, x86, etc, etc.
+%  - Mention ``lower is better'' and ``black is left over'' when
+%    discussing results slides.
+%  - Mention ``add on'' in ``moderate performance impact'' slide.
+%  - Separate slide saying why memory opt important/memory wall.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[%
 pdf,
 colorBG,
@@ -29,8 +56,8 @@ oqe
 
 \slideCaption{Ananian/LCTES'03}
 \title{Size Optimizations for Java Programs}
-\author{\large\href{http://cscott.net}{C.~Scott~Ananian} and Martin~Rinard}
-\email{\{cananian,rinard\}@lcs.mit.edu}
+\author{\large\href{http://cscott.net}{C.~Scott~Ananian} and \href{http://www.cag.lcs.mit.edu/~rinard}{Martin~Rinard}}
+\email{\{\href{mailto:cananian@lcs.mit.edu}{cananian},\href{mailto:rinard@lcs.mit.edu}{rinard}\}@lcs.mit.edu}
 \institution{%
 Laboratory for Computer Science\\
 Massachusetts Institute of Technology
@@ -1818,6 +1845,32 @@ benefits of increasing the effective cache size will get greater, even
 as the ALU cost of unpacking operations becomes releatively cheaper.
 We believe this work has shown that space optimizations can be
 remarkably effective.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+% closer slide to avoid revealing the 'graveyard' inadvertently.
+\begin{slide}{}
+\vspace{.5cm}
+\begin{center}\fontTitle{Size Optimizations for Java Programs}\end{center}
+
+\vspace{1.2cm}
+\begin{center}
+FLEX homepage
+\\
+{\yellow
+\href{http://flex-compiler.lcs.mit.edu}{http://flex-compiler.lcs.mit.edu}
+}
+
+\vspace{1cm}
+This talk:
+\\
+{\yellow
+\href{http://flex-compiler.lcs.mit.edu/Harpoon/papers.html}{http://flex-compiler.lcs.mit.edu/Harpoon/papers.html}
+}
+\end{center}
+\end{slide}
+
+\begin{talknotes}
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
