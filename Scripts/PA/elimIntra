@@ -1,4 +1,7 @@
 #!/bin/sh
+
+CALL_DIR=`pwd`
+
 cd 
 cd Harpoon/Code
 
