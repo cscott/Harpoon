@@ -41,7 +41,7 @@ import harpoon.ClassFile.HCodeElement;
  * facilities for specifying number of recursive inlinings.
  *
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.5 1999-02-17 02:07:27 pnkfelix Exp $ */
+ * @version $Id: MethodInliningCodeFactory.java,v 1.1.2.6 1999-04-08 04:48:57 pnkfelix Exp $ */
 public class MethodInliningCodeFactory implements HCodeFactory {
 
     static PrintWriter pw = new PrintWriter(System.out);
@@ -182,14 +182,14 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	inlinedSites.add(site);
     }
 
-    /** Marks a call site to be inlined when code is generated.
+    /** Marks a call site to not be inlined when code is generated.
 	<BR> <B>modifies:</B> <code>this</code>
 	<BR> <B>effects:</B> If <code>site</code> is in the set of
 	                     call sites to be inlined, takes
 			     <code>site</code> out of the set.  Else
 			     does nothing.
     */
-    public void unline(CALL site) {
+    public void uninline(CALL site) {
 	inlinedSites.remove(site);
     }
 
@@ -282,7 +282,7 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 
 
 
-
+    /*
     // temporary main method to try some ideas out on...is supposed to
     // be removed before I commit to repository
     public static void main(String[] args) {
@@ -335,5 +335,5 @@ public class MethodInliningCodeFactory implements HCodeFactory {
 	
     }
 
-
+    */
 }
