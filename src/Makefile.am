@@ -3,8 +3,8 @@ MAINTAINERCLEANFILES = Makefile.in
 INCLUDES = @IFLAGS@
 SUBDIRS = jni java.lang.reflect \
 	$(NATIVEDIR) \
-	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) $(STATSDIR) $(CAMDIR) $(USERDIR) \
-	$(TRANSACTDIR) $(REALTIMEDIR) $(RTJPERFDIR) $(ROLEINFERDIR) $(MZFDIR)
+	$(PGCDIR) $(CLHEAPDIR) $(NATIVEIODIR) stats cam $(USERDIR) \
+	transact $(REALTIMEDIR) $(RTJPERFDIR) $(ROLEINFERDIR) $(MZFDIR)
 # make sure even the conditionally-compiled subdirectories are included
 # in the distribution.
 DIST_SUBDIRS = jni java.lang.reflect sunjdk \
@@ -41,25 +41,20 @@ NATIVEIODIR=nativeio # rename to eventdriven?
 NATIVEIOLIB=nativeio/libnativeio.la
 endif
 # for statistics support, build stats library.
-if STATISTICS
-STATSDIR=stats
-STATSLIB=stats/libstats.la
-endif
+# (always built, sometimes library is empty)
+
 # for camera support, build camera libraries.
-if CAMERA
-CAMDIR=cam
-CAMLIB=cam/libcam.la
-endif
+# (always built, sometimes library is empty)
+
 # for user threads add user to SUBDIRS
 if USER_THREADS
 USERDIR=user
 USERLIB=user/libuser.la
 endif
+
 # for transaction support, build transaction libraries.
-if TRANSACTIONS
-TRANSACTDIR=transact
-TRANSACTLIB=transact/libtransact.la
-endif
+# (always built, sometimes library is empty)
+
 # for mostly-zero fields support, build mzf libraries.
 if MZF_SUPPORT
 MZFDIR=mzf
@@ -96,7 +91,7 @@ libflexc1_la_LIBADD = \
 	../arch/@ARCHDIR@/libfooter.la \
 	java.lang.reflect/libjavalangreflect.la \
 	$(NATIVELIB) \
-	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) $(STATSLIB) $(CAMLIB) $(USERLIB) \
-	$(TRANSACTLIB) $(REALTIMELIB) $(RTJPERFLIB) $(ROLEINFERLIB) $(MZFLIB)
+	$(PGCLIB) $(CLHEAPLIB) $(NATIVEIOLIB) stats/libstats.la cam/libcam.la $(USERLIB) \
+	transact/libtransact.la $(REALTIMELIB) $(RTJPERFLIB) $(ROLEINFERLIB) $(MZFLIB)
 libflexc1_la_LDFLAGS = -version-info 0:0:0 # -lbfd -liberty
 # this library depends on -lbfd and -liberty, but these ought to be in $LIBS

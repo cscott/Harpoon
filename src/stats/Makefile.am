@@ -5,5 +5,9 @@ LIBS =
 
 noinst_LTLIBRARIES = libstats.la
 
-libstats_la_SOURCES = stats.c memstats.c heapstats.c
+# this library will be empty unless we've elected to build statistics support
+if STATISTICS
+STATSRC=stats.c memstats.c heapstats.c
+endif
 
+libstats_la_SOURCES = $(STATSRC)
