@@ -1,5 +1,7 @@
 doc
-imagerec.jar
-imagerec.jar.TIMESTAMP
-imagerec.tgz
-imagerec.tgz.TIMESTAMP
+movie
+.jacorb
+*.jar
+*.jar.TIMESTAMP
+*.tgz
+*.tgz.TIMESTAMP
