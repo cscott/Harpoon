@@ -1,0 +1,13 @@
+[forall u in UsedInode], u.inodestatus=literal(Used)
+[forall f in FreeInode], f.inodestatus=literal(Free)
+[forall u in UsedBlock], u.blockstatus=literal(Used)
+[forall f in FreeBlock], f.blockstatus=literal(Free)
+[forall i in UsedInode], i.referencecount=sizeof(i.~inodeof) or i in RootDirectoryInode
+[forall i in UsedInode], i.filesize <= sizeof(i.contents)*literal(8192)
+[forall b in FileDirectoryBlock],sizeof(b.~contents)=1
+[],sizeof(SuperBlock)=1
+[],sizeof(GroupBlock)=1
+[],sizeof(InodeTableBlock)=1
+[],sizeof(InodeBitmapBlock)=1
+[],sizeof(BlockBitmapBlock)=1
+[],sizeof(RootDirectoryInode)=1

@@ -1,0 +1,2 @@
+g++ file1.cc libchecker.a -o file1
+/mit/cristic/Public/build-first-tool
