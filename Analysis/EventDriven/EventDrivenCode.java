@@ -23,7 +23,7 @@ import harpoon.Temp.TempFactory;
  * <code>EventDrivenCode</code>
  *
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDrivenCode.java,v 1.1.2.7 2000-02-08 08:40:10 bdemsky Exp $
+ * @version $Id: EventDrivenCode.java,v 1.1.2.8 2000-02-08 09:23:14 bdemsky Exp $
  */
 public class EventDrivenCode extends harpoon.IR.Quads.QuadSSI {
     public static final String codename = "quad-no-ssa";
@@ -57,21 +57,24 @@ public class EventDrivenCode extends harpoon.IR.Quads.QuadSSI {
     }
 
     private Quad buildCode(HMethod newmain, Temp[] params, Linker linker) {
+	TempFactory tf=qf.tempFactory();
 	System.out.println("Entering EventDrivenCode.buildCode()");
 	HEADER h = new HEADER(qf, null);
 	FOOTER f = new FOOTER(qf, null, 4);
 	Quad.addEdge(h, 0, f, 0);
-	METHOD m = new METHOD(qf, null, params, 1);
+	Temp[] params2=new Temp[params.length];
+	for (int i=0;i<params.length;i++)
+	    params2[i]=new Temp(tf,params[i].name());
+	METHOD m = new METHOD(qf, null, params2, 1);
 	Quad.addEdge(h, 1, m, 0);
 
 	if (newmain == null) System.out.println("newmain is null");
 
 	// call to new main method (mainAsync)
-	TempFactory tf=qf.tempFactory();
 	Temp t=new Temp(tf);
 	Temp exc=new Temp(tf);
 
-	CALL c1 = new CALL(qf, null, newmain, params, t, exc, true,
+	CALL c1 = new CALL(qf, null, newmain, params2, t, exc, true,
 			   false, new Temp[0]);
 	THROW throwq=new THROW(qf, null, exc);
 	Quad.addEdge(c1, 1, throwq,0);
