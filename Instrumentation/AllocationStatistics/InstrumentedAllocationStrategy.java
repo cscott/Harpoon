@@ -1,5 +1,5 @@
 // InstrumentedAllocationStrategy.java, created Fri Feb  7 11:33:53 2003 by salcianu
-// Copyright (C) 2000  <salcianu@MIT.EDU>
+// Copyright (C) 2000 Alexandru Salcianu <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Instrumentation.AllocationStatistics;
 
@@ -25,10 +25,13 @@ import harpoon.IR.Tree.ESEQ;
 import harpoon.IR.Tree.Typed;
 
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.Label;
+
+import harpoon.Backend.Maps.NameMap;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -37,70 +40,86 @@ import java.util.ArrayList;
 /**
  * <code>InstrumentedAllocationStrategy</code>
  * 
- * @author   <salcianu@MIT.EDU>
- * @version $Id: InstrumentedAllocationStrategy.java,v 1.2 2003-02-09 00:22:56 salcianu Exp $
+ * @author  Alexandru Salcianu <salcianu@MIT.EDU>
+ * @version $Id: InstrumentedAllocationStrategy.java,v 1.3 2003-02-11 04:18:03 salcianu Exp $
  */
 public class InstrumentedAllocationStrategy extends MallocAllocationStrategy {
     
     /** Creates a <code>InstrumentedAllocationStrategy</code>. */
     public InstrumentedAllocationStrategy(Frame f) { 
 	super(f, "GC_malloc");
+	instrumMethod = InstrumentAllocs.getMethod
+	    (f.getLinker(),
+	     "harpoon.Runtime.CounterSupport",
+	     "count2",
+	     new HClass[]{HClass.Int, HClass.Int});
+	nameMap = f.getRuntime().getNameMap();
     }
-    
+
+    private final HMethod instrumMethod;
+    private final NameMap nameMap;
+
+    /* Generates the following sequence of instructions for each
+       allocation site:
+
+         tlength = length;
+         call to instrumentation method(index, tlength);
+          (both normal and exceptional exits go to label)
+       label:
+         allocCall(..., tlength);
+    */
     public Exp memAlloc(TreeFactory tf, HCodeElement source,
 			DerivationGenerator dg,
 			AllocationProperties ap,
 			Exp length) {
 
 	int id = ap.getUniqueID();
-	if(id == -1) return super.memAlloc(tf, source, dg, ap, length);
+	assert id != -1;
+	//if(id == -1) return super.memAlloc(tf, source, dg, ap, length);
 	
 	TempFactory tempFact = tf.tempFactory();
 	
-       	TEMP tlength = 
-	    (TEMP) DECLARE(dg, HClass.Int,
-			   new TEMP(tf, source,
-				    Typed.INT, new Temp(tempFact)));
-	
+       	TEMP tlength = new TEMP(tf, source, TEMP.INT, new Temp(tempFact));
+	dg.putType(tlength, HClass.Int);
+
+	/* bogus variable to store the exception from the call */
+	TEMP texcp = new TEMP(tf, source, Typed.POINTER, new Temp(tempFact));
+	dg.putType(texcp, HClass.Void);
+
 	MOVE move = new MOVE(tf, source, tlength, length);
-    
-	TEMP texcp = /* bogus variable to store the exception in */
-	    (TEMP) DECLARE(dg, HClass.Void, 
-			   new TEMP(tf, source,
-				    Typed.POINTER, new Temp(tempFact)));
 	
-	String cont_label_name = getUniqueName();
-	NAME continuation = new NAME(tf, source, new Label(cont_label_name));
+	Label contLabel = new Label(getUniqueName());
+	NAME continuation = new NAME(tf, source, contLabel);
 	
-	Exp func = null; // TODO: this should be the invoked method
-
-	CALL call = new CALL(tf, source,
-			     null, /* no return value */
-			     texcp,
-			     func,
-			     new ExpList
-			     (new CONST(tf, source, id),
-			      new ExpList(tlength, null)),
-			     /* exception handler = normal continuation */
-			     continuation,
-			     false /* not a tail call*/);
-
-	LABEL label = new LABEL(tf, source, new Label(cont_label_name), false);
+	CALL call = new CALL
+	    (tf, source,
+	     null,  /* no return value */
+	     texcp, /* exceptions go to texcp (unused) */
+	     /* method to call */
+	     new NAME(tf, source, nameMap.label(instrumMethod)),
+	     /* 2 arguments: */
+	     new ExpList(new CONST(tf, source, id), /* allocation ID */
+			 new ExpList(tlength,       /* memory length */
+				     null)),
+	     /* exception handler = normal continuation */
+	     continuation,
+	     false /* not a tail call*/);
+	
+	LABEL label = new LABEL(tf, source, contLabel, false);
 	Exp allocCall = super.memAlloc(tf, source, dg, ap, tlength);
 
-	/*
-	   tlength = length;
-	   call to instrumentation method(index, tlength);
-	     (both normal and exceptional exits go to label)
-	  label:
-           allocCall(..., tlength);
-	 */
-	return
+	Exp wholeSequence =
 	    new ESEQ(new SEQ(move, new SEQ(call, label)), allocCall);
+
+	System.out.println("IT's COMING!");
+	System.out.println(wholeSequence);
+	System.exit(1);
+
+	return wholeSequence;
     }
 
     protected static Exp DECLARE(DerivationGenerator dg, HClass hc, Exp exp) {
-	if (dg!=null) dg.putType(exp, hc);
+	if (dg != null) dg.putType(exp, hc);
 	return exp;
     }
 

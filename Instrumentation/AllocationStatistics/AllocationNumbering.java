@@ -15,6 +15,8 @@ import harpoon.IR.Quads.NEW;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.Code;
 
+import harpoon.Analysis.PointerAnalysis.Debug;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -33,7 +35,7 @@ import java.io.IOException;
  * (e.g. <code>InstrumentAllocs</code>).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AllocationNumbering.java,v 1.2 2003-02-03 23:23:19 salcianu Exp $ */
+ * @version $Id: AllocationNumbering.java,v 1.3 2003-02-11 04:18:03 salcianu Exp $ */
 public class AllocationNumbering implements java.io.Serializable {
     public  final Map alloc2int;
     public  final Map call2int;
@@ -57,7 +59,14 @@ public class AllocationNumbering implements java.io.Serializable {
 
     /** Return an integer identifying the allocation site <code>q</code>. */
     public int allocID(Quad q) {
-	if (!alloc2int.containsKey(q)) throw new Error("Quad unknown: "+q);
+	if (!alloc2int.containsKey(q)) {
+	    System.out.println
+		("METHOD = " + q.getFactory().getMethod());
+	    throw new Error("Quad unknown: "+ Debug.code2str(q));
+	}
+
+	System.out.println("Quad known: " + q);
+
 	return ((Integer) alloc2int.get(q)).intValue();
     }
 

@@ -54,7 +54,7 @@ import java.util.Map;
     identifier and the length of the memory allocated there.
 
     @author Alexandru Salcianu <salcianu@MIT.EDU>
-    @version $Id: InstrumentAllocs2.java,v 1.2 2003-02-08 23:35:11 salcianu Exp $ */
+    @version $Id: InstrumentAllocs2.java,v 1.3 2003-02-11 04:18:03 salcianu Exp $ */
 public class InstrumentAllocs2 extends MethodMutator
     implements java.io.Serializable {
     
@@ -97,6 +97,8 @@ public class InstrumentAllocs2 extends MethodMutator
 
     protected HCode mutateHCode(HCodeAndMaps input) {
 	HCode hc = input.hcode();
+
+	System.out.println("method = " + hc.getMethod());
        
 	// we avoid instrumenting the instrumentation itself !
 	if (hc.getMethod().getDeclaringClass().getName().
