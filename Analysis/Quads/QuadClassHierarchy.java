@@ -27,7 +27,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.9 1999-10-26 16:24:45 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.10 1999-10-28 02:40:30 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
@@ -124,9 +124,14 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
 	WorkSet W = new WorkSet();
 	for (Iterator it=roots.iterator(); it.hasNext(); ) {
 	    HMethod root = (HMethod) it.next();
-	    discoverClass(root.getDeclaringClass(), W, done,
-			  classKnownChildren, classMethodsUsed,
-			  classMethodsPending);
+	    if (root.isStatic())
+		discoverClass(root.getDeclaringClass(), W, done,
+			      classKnownChildren, classMethodsUsed,
+			      classMethodsPending);
+	    else // let's assume non-static roots have objects to go with 'em.
+		discoverInstantiatedClass(root.getDeclaringClass(), W, done,
+					  classKnownChildren, classMethodsUsed,
+					  classMethodsPending);
 	    methodPush(root, W, done, classMethodsUsed, classMethodsPending);
 	}
 	while (!W.isEmpty()) {
