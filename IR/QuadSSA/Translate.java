@@ -31,7 +31,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.85 1998-10-12 01:49:21 cananian Exp $
+ * @version $Id: Translate.java,v 1.86 1998-10-12 04:11:01 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -616,7 +616,7 @@ class Translate  { // not public.
 	case Op.SIPUSH:
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
-		int val = ((Byte)opd.getValue()).intValue();
+		int val = ((Number)opd.getValue()).intValue();
 		ns = s.push();
 		q = new CONST(in, ns.stack(0), new Integer(val), HClass.Int);
 		break;
