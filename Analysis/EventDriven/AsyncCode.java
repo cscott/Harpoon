@@ -60,7 +60,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.49 2000-02-07 08:16:30 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.50 2000-02-07 20:36:35 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -249,30 +249,22 @@ public class AsyncCode {
     }
 
     static class CloningVisitor extends QuadVisitor {
-	boolean followchildren;
-	Set blockingcalls;
-	Set cont_todo;
-	Map cont_map;
-	Set async_todo;
-	Map old2new;
-	ContCode hcode;
-	CloningTempMap ctmap;
-	HashMap quadmap;
-	boolean isCont;
-	Map env_map;
-	QuadLiveness liveness;
+	boolean isCont, followchildren, methodstatus;
 	CachingCodeFactory ucf;
+	ClassHierarchy ch;
+	CloningTempMap ctmap;
+	ContCode hcode;
+	HashMap quadmap;
 	HCode hc;
-	WorkSet linkFooters;
-	Temp tthis;
-	ToAsync.BlockingMethods bm;
-	Set phiset;
 	HMethod mroot;
 	Linker linker;
-	ClassHierarchy ch;
-	Set makeasync;
-	Set other, done_other;
-	boolean methodstatus;
+	Map cont_map, old2new, env_map;	
+	Set blockingcalls, cont_todo, async_todo, phiset;
+	Set addedCall, other, done_other;
+	Temp tthis;
+	ToAsync.BlockingMethods bm;
+	QuadLiveness liveness;
+	WorkSet linkFooters;
 	
 	public CloningVisitor(Set blockingcalls, Set cont_todo,
 			      Map cont_map, Map env_map, 
@@ -313,7 +305,7 @@ public class AsyncCode {
 	    else
 		tthis=null;
 	    phiset=new WorkSet();
-	    makeasync=new WorkSet();
+	    addedCall=new WorkSet();
 	}
 
 	public HCode getCode() {
@@ -333,10 +325,10 @@ public class AsyncCode {
 	    return nhclass;
 	}
 
+
 	//Adds edges between quads and environment loading code
 	public void addEdges(Quad q, int resumeexception, Set dontfollow) {
 	    QuadFactory qf=hcode.getFactory();
-	    TempFactory tf=qf.tempFactory();
 	    FOOTER footer=new FOOTER(qf, q, linkFooters.size()+1);
 	    Iterator fiterator=linkFooters.iterator();
 	    int count=1;
@@ -346,133 +338,17 @@ public class AsyncCode {
 		//Doing addedges for CALL continuation
 		//Need to build headers here....[continuation]
 		//Need to load environment object and result codes
-		WorkSet done=new WorkSet();
-		WorkSet todo=new WorkSet();
-		todo.push(q.next(resumeexception));
-		while (!todo.isEmpty()) {
-		    Quad nq=(Quad)todo.pop();
-		    done.add(nq);
-		    Quad cnq=(Quad)quadmap.get(nq);
-		    Quad[] next=nq.next();
-		    if (makeasync.contains(cnq)) {
-			if (!done.contains(next[0]))
-			    todo.push(next[0]);
-			Quad cn=(Quad)quadmap.get(next[0]);
-			//add the edge in
-			Quad cnq2=cnq.next(0);
-			Quad.addEdge(cnq2,0,cn,nq.nextEdge(0).which_pred());
+		
+		addEdges(q.next(resumeexception),dontfollow);
+		HEADER header=buildEnvironmentExtracter(q, resumeexception,footer);
 
-			if (!done.contains(next[1]))
-			    todo.push(next[1]);
-			cn=(Quad)quadmap.get(next[1]);
-			//add the edge in
-			Quad.addEdge(cnq,1,cn,nq.nextEdge(1).which_pred());
-		    } else if (!dontfollow.contains(nq))
-			for (int i=0;i<next.length;i++) {
-			    //this quad was cloned
-			    if (!done.contains(next[i]))
-				todo.push(next[i]);
-			    Quad cn=(Quad)quadmap.get(next[i]);
-			    //add the edge in
-			    Quad.addEdge(cnq,i,cn,nq.nextEdge(i).which_pred());
-			}
-		}
-		//Need to build header
-		Quad first=(Quad) quadmap.get(q.next(resumeexception));
-		Temp oldrtemp=
-		    (resumeexception == 0) ?
-		    ((CALL)q).retval():((CALL)q).retex();
-		Temp[] params=null;
-		if (oldrtemp==null)
-		    params=new Temp[1];
-		else {
-		    params=new Temp[2];
-		    params[1]=ctmap.tempMap(oldrtemp);
-		}
-		params[0]=tthis;
-		HEADER header=new HEADER(qf,first);
-		Quad.addEdge(header,0,footer,0);
-		METHOD method=new METHOD(qf,first,params,1);
-		Quad.addEdge(header,1,method,0);
-		Temp tenv=new Temp(tf);
-		GET get=
-		    new GET(qf,first,tenv,
-			    hcode.getMethod().getDeclaringClass().getField("e"),
-			    method.params(0));
-		Quad.addEdge(method,0,get,0);
-		// assign each field in the Environment to the appropriate Temp
-		// except for the assignment we want to suppress
-		Temp suppress =
-		    (resumeexception == 0) ?
-		    ((CALL)q).retval() : ((CALL)q).retex();
-      		Temp[] liveout=liveness.getLiveInandOutArray(q);
-
-		Quad prev = get;
-		HField[] envfields=getEnv(q).getDeclaredFields();
-		TypeMap map=((QuadNoSSA) this.hc).typeMap;
-		for(int i=0,j=0; i<liveout.length; i++) {
-		    if (suppress == null || !suppress.equals(liveout[i])) {
-			Quad ng =(map.typeMap(q, liveout[i])!=HClass.Void)? 
-			    ((Quad)new GET(qf, first, ctmap.tempMap(liveout[i]),
-				    envfields[j], tenv)):
-			    ((Quad)new CONST(qf, first, ctmap.tempMap(liveout[i]),
-				      null, HClass.Void));
-			Quad.addEdge(prev, 0, ng, 0);
-			prev = ng;
-		    }
-		    if (map.typeMap(q,liveout[i])!=HClass.Void)
-			j++;
-		}
-
-		// typecast the argument if necessary
-		if (!((CALL)q).method().getReturnType().isPrimitive()) {
-		    TYPECAST tc = 
-			new TYPECAST(qf, first, 
-				     ((CALL)q).retval(),
-				     ((CALL)q).method().getReturnType());
-		    Quad.addEdge(prev, 0, tc, 0);
-		    prev = tc;
-		}
-		Quad.addEdge(prev,0,
-			     (Quad)quadmap.get(q.next(resumeexception)),
-			     q.nextEdge(resumeexception).which_pred());
 		fixphis();
 		hcode.quadSet(header);
 	    } else {
 		//Doing addEdges for HEADER
-		WorkSet done=new WorkSet();
-		WorkSet todo=new WorkSet();
-		todo.push(q.next(1));
 		Quad.addEdge((Quad)quadmap.get(q),1,
 			     (Quad)quadmap.get(q.next(1)),q.nextEdge(1).which_pred());
-		while (!todo.isEmpty()) {
-		    Quad nq=(Quad)todo.pop();
-		    done.add(nq);
-		    Quad cnq=(Quad)quadmap.get(nq);
-		    Quad[] next=nq.next();
-		    if (makeasync.contains(cnq)) {
-			if (!done.contains(next[0]))
-			    todo.push(next[0]);
-			Quad cn=(Quad)quadmap.get(next[0]);
-			//add the edge in
-			Quad cnq2=cnq.next(0);
-			Quad.addEdge(cnq2,0,cn,nq.nextEdge(0).which_pred());
-
-			if (!done.contains(next[1]))
-			    todo.push(next[1]);
-			cn=(Quad)quadmap.get(next[1]);
-			//add the edge in
-			Quad.addEdge(cnq,1,cn,nq.nextEdge(1).which_pred());
-		    } else if (!dontfollow.contains(nq))
-			for (int i=0;i<next.length;i++) {
-			    //this quad was cloned
-			    if (!done.contains(next[i]))
-				todo.push(next[i]);
-			    Quad cn=(Quad)quadmap.get(next[i]);
-				//add the edge in
-			    Quad.addEdge(cnq,i,cn,nq.nextEdge(i).which_pred());
-			}
-		}
+		addEdges(q.next(1),dontfollow);
 		//add in new footer
 		Quad.addEdge((Quad) quadmap.get(q),0, footer,0);
 		fixphis();
@@ -480,227 +356,30 @@ public class AsyncCode {
 	    }
 	}
 
-	void fixphis() {
-	    Iterator phiit=phiset.iterator();
-	    while(phiit.hasNext()) {
-		PHI phi=(PHI) phiit.next();
-		for (int i=phi.arity()-1;i>=0;i--)
-		    if (phi.prevEdge(i)==null) {
-			phi=phi.shrink(i);
-		    }
-	    }
-	}
-
-	boolean needsCheck() {
-	    HMethod m=hc.getMethod();
-	    HClass hcl=m.getDeclaringClass();
-
-	    if (linker.forName("java.lang.Runnable").
-		isSuperinterfaceOf(hcl)&&
-		hcl.getMethod("run",new HClass[0]).equals(m))
-		return true;
-	    if (m.equals(mroot))
-		return true;
-	    return false;
-	}
-
 	public void visit(RETURN q) {
-	    TempFactory tf=hcode.getFactory().tempFactory();
 	    if (methodstatus) {
+		//We are just doing swaps on this method, so just clone
 		Object nq=q.clone(hcode.getFactory(), ctmap);
 		quadmap.put(q, nq);
 		linkFooters.add(nq);
-	    } else if (isCont) {
-		HClass hclass=hcode.getMethod().getDeclaringClass();
-		HField hfield=hclass.getField("next");
-		HMethod resume=null;
-		if (hc.getMethod().getReturnType()!=HClass.Void) {
-		    System.out.println(hc.getMethod().getReturnType());
-		    if (hc.getMethod().getReturnType().isPrimitive())
-			resume=
-			    hfield.getType().getMethod("resume",
-						       new HClass[] {hc.getMethod().getReturnType()});
-		    else
-			resume=
-			    hfield.getType().getMethod("resume",
-						       new HClass[] {linker.forName("java.lang.Object")});
-		} else
-		    resume=hfield.getType().getMethod("resume",
-						      new HClass[0]);
-		Temp tnext=new Temp(tf);
-		GET get=new GET(hcode.getFactory(),q,
-				tnext, hfield, tthis);
-		Quad nq=get;
-		if (needsCheck()) {
-		    Temp tnull=new Temp(tf);
-		    CONST qconst=
-			new CONST(hcode.getFactory(), q, tnull, null, HClass.Void);
-		    Quad.addEdge(nq,0,qconst,0);
-		    Temp tcomp=new Temp(tf);
-		    OPER qoper=
-			new OPER(hcode.getFactory(),q,Qop.ACMPEQ,tcomp, 
-				 new Temp[] {tnext, tnull});
-		    Quad.addEdge(qconst, 0, qoper, 0);
-		    CJMP cjmp=
-			new CJMP(hcode.getFactory(), q, tcomp, new Temp[0]);
-		    Quad.addEdge(qoper, 0, cjmp, 0);
-		    nq=cjmp;
-		}
-		Temp nretval=null;
-		CALL call=null;
-		Temp retex=new Temp(tf);
-		if (q.retval()!=null) {
-		    nretval=ctmap.tempMap(q.retval());
-		    //***** Tailcall eventually
-		    //need to do get next first
-		    call=new CALL(hcode.getFactory(), q, resume,
-				  new Temp[] {tnext,nretval},null,retex,
-				  true,false,new Temp[0]);
-		} else {
-		    //***** Tailcall eventually
-		    call=new CALL(hcode.getFactory(), q, resume,
-				  new Temp[] {tnext}, null, retex,
-				  true, false, new Temp[0]);
-		}
-		Quad.addEdge(nq,0,call,0);
-		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
-		Quad.addEdge(call,1,qthrow,0);
-		RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
-		if (needsCheck()) {
-		    PHI phi=new PHI(hcode.getFactory(), q, new Temp[0], 2);
-		    Quad.addEdge(nq, 1, phi, 0);
-		    Quad.addEdge(call,0,phi,1);
-		    Quad.addEdge(phi,0,qreturn,0);
-		} else
-		    Quad.addEdge(call,0,qreturn,0);
-		linkFooters.add(qthrow);
-		linkFooters.add(qreturn);
-		quadmap.put(q, get);
-	    }
-	    else {
-		HClass rettype=hc.getMethod().getReturnType();
-		String pref = 
-		    ContBuilder.getPrefix(rettype);
-		HClass continuation = linker.forName
-		    ("harpoon.Analysis.ContBuilder." + pref + "DoneContinuation");
-		HClass ret=rettype.isPrimitive()?rettype:linker.forName("java.lang.Object");
-		HConstructor constructor=(ret!=HClass.Void)?continuation.getConstructor(new HClass[]{ret}):
-		    continuation.getConstructor(new HClass[0]);
-		Temp newt=new Temp(tf);
-		NEW newq=new NEW(hcode.getFactory(),q,newt, continuation);
-		Temp retex=new Temp(tf);
-		CALL call;
-		if (q.retval()!=null) {
-		    //***** Tailcall eventually
-		    //need to do get next first
-		    Temp nretval=ctmap.tempMap(q.retval());
-		    call=new CALL(hcode.getFactory(), q, constructor,
-				  new Temp[] {newt,nretval}, null,retex,
-				  false,false,new Temp[0]);
-		} else {
-		    //***** Tailcall eventually
-		    call=new CALL(hcode.getFactory(), q, constructor,
-				  new Temp[] {newt}, null, retex,
-				  false, false, new Temp[0]);
-		}
-		Quad.addEdge(newq,0,call,0);
-		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
-
-		Quad.addEdge(call,1,qthrow,0);
-		RETURN qreturn=new RETURN(hcode.getFactory(),q,newt);
-		Quad.addEdge(call,0,qreturn,0);
-		linkFooters.add(qthrow);
-		linkFooters.add(qreturn);
-		quadmap.put(q, newq);
-	    }
+	    } else if (isCont)
+		buildReturnContinuation(q, q.retval(), true);
+	    else
+		buildDoneContinuation(q, q.retval(),true);
 	    followchildren=false;
 	}
 	
 	public void visit(THROW q) {
 	    TempFactory tf=hcode.getFactory().tempFactory();
 	    if (methodstatus) {
+		//We are just doing swaps on this method, so just clone
 		Object nq=q.clone(hcode.getFactory(), ctmap);
 		quadmap.put(q, nq);
 		linkFooters.add(nq);
-	    } else if (isCont) {
-		HClass hclass=hcode.getMethod().getDeclaringClass();
-		HField hfield=hclass.getField("next");
-		HClass throwable=linker.forName("java.lang.Throwable");
-		HMethod resume=
-		    hfield.getType().getMethod("exception",
-						       new HClass[] {throwable});
-		Temp tnext=new Temp(tf);
-		GET get=new GET(hcode.getFactory(),q,
-				tnext, hfield, tthis);
-		Quad nq=get;
-		if (needsCheck()) {
-		    Temp tnull=new Temp(tf);
-		    CONST qconst=
-			new CONST(hcode.getFactory(), q, tnull, null, HClass.Void);
-		    Quad.addEdge(nq,0,qconst,0);
-		    Temp tcomp=new Temp(tf);
-		    OPER qoper=
-			new OPER(hcode.getFactory(),q,Qop.ACMPEQ,tcomp, 
-				 new Temp[] {tnext, tnull});
-		    Quad.addEdge(qconst, 0, qoper, 0);
-		    CJMP cjmp=
-			new CJMP(hcode.getFactory(), q, tcomp, new Temp[0]);
-		    Quad.addEdge(qoper, 0, cjmp, 0);
-		    nq=cjmp;
-		}
-
-		CALL call=null;
-		Temp nretval=ctmap.tempMap(q.throwable());
-		Temp retex=nretval;
-		//reuse the Temp...so we only have to throw one...
-
-		//***** Tailcall eventually
-		//need to do get next first
-		call=new CALL(hcode.getFactory(), q, resume,
-			      new Temp[] {tnext,nretval},null,retex,
-			      true,false,new Temp[0]);
-		Quad.addEdge(nq,0,call,0);
-		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
-
-		if (needsCheck()) {
-		    PHI phi=new PHI(hcode.getFactory(), q, new Temp[0], 2);
-		    Quad.addEdge(nq, 1, phi, 0);
-		    Quad.addEdge(call,1,phi,1);
-		    Quad.addEdge(phi,0,qthrow,0);
-		} else
-		    Quad.addEdge(call,1,qthrow,0);
-		
-		RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
-		Quad.addEdge(call,0,qreturn,0);
-		linkFooters.add(qthrow);
-		linkFooters.add(qreturn);
-		quadmap.put(q, get);
-	    } else {
-		HClass rettype=hc.getMethod().getReturnType();
-		String pref = 
-		    ContBuilder.getPrefix(rettype);
-		HClass continuation = linker.forName
-		    ("harpoon.Analysis.ContBuilder." + pref + "DoneContinuation");
-		HClass ret= linker.forName("java.lang.Throwable");
-		HConstructor constructor=continuation.getConstructor(new HClass[]{ret});
-		Temp newt=new Temp(tf);
-		NEW newq=new NEW(hcode.getFactory(),q,newt, continuation);
-		//***** Tailcall eventually
-		    //need to do get next first
-		Temp nretval=ctmap.tempMap(q.throwable());
-		Temp retex=new Temp(tf);
-		CALL call=new CALL(hcode.getFactory(), q, constructor,
-			      new Temp[] {newt,nretval}, null,retex,
-			      false,false,new Temp[0]);
-		Quad.addEdge(newq,0,call,0);
-		THROW qthrow=new THROW(hcode.getFactory(),q,retex);
-		Quad.addEdge(call,1,qthrow,0);
-		RETURN qreturn=new RETURN(hcode.getFactory(),q,newt);
-		Quad.addEdge(call,0,qreturn,0);
-		linkFooters.add(qthrow);
-		linkFooters.add(qreturn);
-		quadmap.put(q, newq);
-	    }
+	    } else if (isCont)
+		buildReturnContinuation(q, q.throwable(), false);
+	    else
+		buildDoneContinuation(q, q.throwable(),false);
 	    followchildren=false;
 	}
 
@@ -716,7 +395,337 @@ public class AsyncCode {
 	    phiset.add(qc);
       	}
 
-	private boolean isBlocking(HMethod hm) {
+	public void visit(CALL q) {
+	    checkdoneothers(q.method());
+	    if ((methodstatus==false)&&
+		(!q.method().getName().equals("<init>"))&&
+		isBlocking(q)) {
+		if (!cont_map.containsKey(q)) {
+		    //Add this CALL to list of calls to build continuations for
+		    cont_todo.add(q);
+		    //Build Class for the continuation
+		    HClass hclass=createContinuation(hc.getMethod(),  q,
+						     ucf, linker); 
+		    //Add mapping of call->class
+		    cont_map.put(q,hclass);
+		    //Schedule blocking method for transformation
+		    scheduleMethods(q.method());
+		}
+		handleBlocking(q);
+	    } else
+		handleNonBlocking(q);
+	}
+
+
+	private void addEdges(Quad q, Set dontfollow) {
+	    WorkSet done=new WorkSet();
+	    WorkSet todo=new WorkSet();
+	    todo.push(q);
+	    while (!todo.isEmpty()) {
+		Quad nq=(Quad)todo.pop();
+		done.add(nq);
+		Quad cnq=(Quad)quadmap.get(nq);
+		Quad[] next=nq.next();
+		if (addedCall.contains(cnq)) {
+		    //Handling call with additional call added to it
+		    //0 edge is different...we want to link cnq.next(0) instead of cnqq
+		    if (!done.contains(next[0]))
+			todo.push(next[0]);
+		    Quad cn=(Quad)quadmap.get(next[0]);
+		    //add the edge in
+		    Quad cnq2=cnq.next(0);
+		    Quad.addEdge(cnq2,0,cn,nq.nextEdge(0).which_pred());
+
+		    //1 edge is as normal
+		    if (!done.contains(next[1]))
+			todo.push(next[1]);
+		    cn=(Quad)quadmap.get(next[1]);
+		    //add the exception edge in
+		    Quad.addEdge(cnq,1,cn,nq.nextEdge(1).which_pred());
+		} else if (!dontfollow.contains(nq))
+		    for (int i=0;i<next.length;i++) {
+			//this quad was cloned
+			if (!done.contains(next[i]))
+			    todo.push(next[i]);
+			Quad cn=(Quad)quadmap.get(next[i]);
+			//add the edge in
+			Quad.addEdge(cnq,i,cn,nq.nextEdge(i).which_pred());
+		    }
+	    }
+	}
+
+	private HEADER buildEnvironmentExtracter(Quad q, int resumeexception, Quad footer){
+	    QuadFactory qf=hcode.getFactory();
+	    TempFactory tf=qf.tempFactory();
+	    //-----------------------------------------------------------------
+	    //Build HEADER
+	    
+	    Quad first=(Quad) quadmap.get(q.next(resumeexception));
+	    Temp oldrtemp=
+		(resumeexception == 0) ?
+		((CALL)q).retval():((CALL)q).retex();
+	    Temp[] params=null;
+	    if (oldrtemp==null)
+		params=new Temp[1];
+	    else {
+		params=new Temp[2];
+		params[1]=ctmap.tempMap(oldrtemp);
+	    }
+	    params[0]=tthis;
+	    HEADER header=new HEADER(qf,first);
+	    
+	    //-----------------------------------------------------------------
+	    //Build METHOD quad
+	    //
+	    
+	    
+	    Quad.addEdge(header,0,footer,0);
+	    METHOD method=new METHOD(qf,first,params,1);
+	    Quad.addEdge(header,1,method,0);
+	    Temp tenv=new Temp(tf);
+	    
+	    //-----------------------------------------------------------------
+	    //Build GET quad for environment
+	    //
+	    
+	    GET get=
+		new GET(qf,first,tenv,
+			hcode.getMethod().getDeclaringClass().getField("e"),
+			method.params(0));
+	    Quad.addEdge(method,0,get,0);
+	    
+
+	    //-----------------------------------------------------------------
+	    //GET Temp's out of environment
+	    //
+	    // assign each field in the Environment to the appropriate Temp
+	    // except for the assignment we want to suppress
+	    
+	    Temp suppress =
+		(resumeexception == 0) ?
+		((CALL)q).retval() : ((CALL)q).retex();
+	    Temp[] liveout=liveness.getLiveInandOutArray(q);
+
+	    Quad prev = get;
+	    HField[] envfields=getEnv(q).getDeclaredFields();
+	    TypeMap map=((QuadNoSSA) this.hc).typeMap;
+	    
+	    //Build string of CONST's and GET's.
+	    
+	    for(int i=0,j=0; i<liveout.length; i++) {
+		if (suppress == null || !suppress.equals(liveout[i])) {
+		    Quad ng =(map.typeMap(q, liveout[i])!=HClass.Void)? 
+			((Quad)new GET(qf, first, ctmap.tempMap(liveout[i]),
+				       envfields[j], tenv)):
+			((Quad)new CONST(qf, first, ctmap.tempMap(liveout[i]),
+					 null, HClass.Void));
+		    Quad.addEdge(prev, 0, ng, 0);
+		    prev = ng;
+		}
+		if (map.typeMap(q,liveout[i])!=HClass.Void)
+		    j++;
+	    }
+	    //-----------------------------------------------------------------
+	    // Typecast the argument to resume if necessary
+	    if (!((CALL)q).method().getReturnType().isPrimitive()) {
+		TYPECAST tc = 
+		    new TYPECAST(qf, first, 
+				 ((CALL)q).retval(),
+				 ((CALL)q).method().getReturnType());
+		Quad.addEdge(prev, 0, tc, 0);
+		prev = tc;
+	    }
+	    //-----------------------------------------------------------------
+	    //Link in header code to body of method
+	    Quad.addEdge(prev,0,
+			 (Quad)quadmap.get(q.next(resumeexception)),
+			 q.nextEdge(resumeexception).which_pred());
+	    return header;
+	}
+	
+
+	/**Shrinks PHI's as needed.*/
+
+	private void fixphis() {
+	    Iterator phiit=phiset.iterator();
+	    while(phiit.hasNext()) {
+		PHI phi=(PHI) phiit.next();
+		for (int i=phi.arity()-1;i>=0;i--)
+		    if (phi.prevEdge(i)==null) {
+			phi=phi.shrink(i);
+		    }
+	    }
+	}
+	
+	/**On some methods, we need to check to see if we are top level
+	 *so that we return instead of resume.*/
+
+	private boolean needsCheck() {
+	    HMethod m=hc.getMethod();
+	    HClass hcl=m.getDeclaringClass();
+
+	    if (linker.forName("java.lang.Runnable").
+		isSuperinterfaceOf(hcl)&&
+		hcl.getMethod("run",new HClass[0]).equals(m))
+		return true;
+	    if (m.equals(mroot))
+		return true;
+	    return false;
+	}
+
+	private void buildReturnContinuation(Quad q, Temp retthrowtemp, boolean isReturn) {
+	    TempFactory tf=hcode.getFactory().tempFactory();
+	    //----------------------------------------------------------------------------
+	    //build GET next Quad
+	    HClass hclass=hcode.getMethod().getDeclaringClass();
+	    HField hfield=hclass.getField("next");
+	    Temp tnext=new Temp(tf);
+	    GET get=new GET(hcode.getFactory(),q,
+			    tnext, hfield, tthis);
+	    
+	    //----------------------------------------------------------------------------
+	    //We may need to add null check on next field
+	    //If null (ie run_Async, main method), we need to return instead
+	    //of calling resume
+	    
+	    Quad nq=get;
+	    if (needsCheck()) {
+		Temp tnull=new Temp(tf);
+		CONST qconst=
+		    new CONST(hcode.getFactory(), q, tnull, null, HClass.Void);
+		Quad.addEdge(nq,0,qconst,0);
+		Temp tcomp=new Temp(tf);
+		OPER qoper=
+		    new OPER(hcode.getFactory(),q,Qop.ACMPEQ,tcomp, 
+			     new Temp[] {tnext, tnull});
+		Quad.addEdge(qconst, 0, qoper, 0);
+		CJMP cjmp=
+		    new CJMP(hcode.getFactory(), q, tcomp, new Temp[0]);
+		Quad.addEdge(qoper, 0, cjmp, 0);
+		nq=cjmp;
+	    }
+	    //----------------------------------------------------------------------------
+	    //Build the call to resume
+	    
+	    Temp retex=new Temp(tf);
+	    CALL call=null;
+	    if (!isReturn) {
+		HClass throwable=linker.forName("java.lang.Throwable");
+		HMethod resume=hfield.getType().getMethod("exception",
+							  new HClass[] {throwable});
+		Temp nretval=ctmap.tempMap(retthrowtemp);
+		call=new CALL(hcode.getFactory(), q, resume,
+			      new Temp[] {tnext,nretval},null,retex,
+			      true,false,new Temp[0]);
+	    } else if (hc.getMethod().getReturnType()!=HClass.Void) {
+		HMethod resume=(hc.getMethod().getReturnType().isPrimitive())?
+		    hfield.getType().getMethod("resume",
+					       new HClass[] {hc.getMethod().getReturnType()}):
+		    hfield.getType().getMethod("resume",
+					       new HClass[] {linker.forName("java.lang.Object")});
+		    
+		Temp nretval=ctmap.tempMap(retthrowtemp);
+		//***** Tailcall eventually
+		call=new CALL(hcode.getFactory(), q, resume,
+			      new Temp[] {tnext,nretval},null,retex,
+			      true,false,new Temp[0]);
+	    } else {
+		HMethod resume=hfield.getType().getMethod("resume", new HClass[0]);
+		//***** Tailcall eventually
+		call=new CALL(hcode.getFactory(), q, resume,
+			      new Temp[] {tnext}, null, retex,
+			      true, false, new Temp[0]);
+	    }
+	    
+	    //---------------------------------------------------------------------------
+	    //Build THROW and RETURN quads
+	    
+	    Quad.addEdge(nq,0,call,0);
+	    THROW qthrow=new THROW(hcode.getFactory(),q,retex);
+	    RETURN qreturn=new RETURN(hcode.getFactory(),q,null);
+	    if (isReturn)
+		Quad.addEdge(call,1,qthrow,0);
+	    else
+		Quad.addEdge(call,0, qreturn,0);
+	    linkFooters.add(qthrow);
+	    linkFooters.add(qreturn);
+	    
+	    //---------------------------------------------------------------------------
+	    //If top level [main or run] link in possible RETURN edges
+	    //otherwise just link in 0 edge of the call to resume
+	    
+	    if (needsCheck()) {
+		PHI phi=new PHI(hcode.getFactory(), q, new Temp[0], 2);
+		Quad.addEdge(nq, 1, phi, 0);
+		if (isReturn) {
+		    Quad.addEdge(call,0,phi,1);
+		    Quad.addEdge(phi,0,qreturn,0);
+		} else {
+		    Quad.addEdge(call,1,phi,1);
+		    Quad.addEdge(phi,0,qthrow,0);
+		}
+	    } else
+		if (isReturn)
+		    Quad.addEdge(call,0,qreturn,0);
+		else
+		    Quad.addEdge(call,1,qthrow,0);
+	    quadmap.put(q, get);
+	}
+
+	private void buildDoneContinuation(Quad q, Temp retthrowtemp, boolean isReturn) {
+	    TempFactory tf=hcode.getFactory().tempFactory();
+	    //--------------------------------------------------------------------------
+	    //Build NEW temp for DoneContinuation
+	    
+	    HClass rettype=hc.getMethod().getReturnType();
+	    String pref = 
+		ContBuilder.getPrefix(rettype);
+	    HClass continuation = linker.forName
+		("harpoon.Analysis.ContBuilder." + pref + "DoneContinuation");
+	    Temp newt=new Temp(tf);
+	    NEW newq=new NEW(hcode.getFactory(),q,newt, continuation);
+	    
+
+	    //---------------------------------------------------------------------------
+	    //Build CALL to DoneContinuation constructor
+
+	    Temp retex=new Temp(tf);
+	    HClass ret=isReturn?
+		(rettype.isPrimitive()?rettype:linker.forName("java.lang.Object"))
+		:linker.forName("java.lang.Throwable");
+	    HConstructor constructor=(ret!=HClass.Void)?continuation.getConstructor(new HClass[]{ret}):
+		continuation.getConstructor(new HClass[0]);
+	    CALL call;
+	    if (retthrowtemp!=null) {
+		//***** Tailcall eventually
+		Temp nretval=ctmap.tempMap(retthrowtemp);
+		call=new CALL(hcode.getFactory(), q, constructor,
+			      new Temp[] {newt,nretval}, null,retex,
+			      false,false,new Temp[0]);
+	    } else {
+		//***** Tailcall eventually
+		call=new CALL(hcode.getFactory(), q, constructor,
+			      new Temp[] {newt}, null, retex,
+			      false, false, new Temp[0]);
+	    }
+
+	    //---------------------------------------------------------------------------
+	    //Add return and throw quads
+	    
+	    Quad.addEdge(newq,0,call,0);
+	    THROW qthrow=new THROW(hcode.getFactory(),q,retex);
+	    
+	    Quad.addEdge(call,1,qthrow,0);
+	    RETURN qreturn=new RETURN(hcode.getFactory(),q,newt);
+	    Quad.addEdge(call,0,qreturn,0);
+	    linkFooters.add(qthrow);
+	    linkFooters.add(qreturn);
+	    quadmap.put(q, newq);
+	}
+
+
+	private boolean isBlocking(CALL q) {
+	    HMethod hm=q.method();
 	    if (blockingcalls.contains(hm))
 		return true;
 	    HClass bclass=hm.getDeclaringClass();
@@ -737,7 +746,6 @@ public class AsyncCode {
 
 	private void checkdoneothers(HMethod ohm) {
 	    //make sure we actually rewrite all methods that we can reach...
-	    
 	    if (!done_other.contains(ohm)) {
 		HMethod hm=ohm;
 		HClass hcl=hm.getDeclaringClass();
@@ -808,134 +816,125 @@ public class AsyncCode {
 	    }
 	}
 
-	public void visit(CALL q) {
+	private void handleBlocking(CALL q) {
 	    TempFactory tf=hcode.getFactory().tempFactory();
-	    checkdoneothers(q.method());
 
-	    if ((methodstatus==false)&&
-		(!q.method().getName().equals("<init>"))&&
-		isBlocking(q.method())) {
-		if (!cont_map.containsKey(q)) {
-		    //Add this CALL to list of calls to build continuations for
-		    cont_todo.add(q);
-		    //Build Class for the continuation
-		    HClass hclass=createContinuation(hc.getMethod(),  q,
-						     ucf, linker); 
-		    //Add mapping of call->class
-		    cont_map.put(q,hclass);
-		    //Schedule blocking method for transformation
-		    scheduleMethods(q.method());
-		}
-
-		//rewrite blocking call
-		Temp[] newt=new Temp[q.paramsLength()];
-		Temp retex=new Temp(tf);
-		Temp retcont=new Temp(tf);
-		for(int i=0;i<q.paramsLength();i++)
-		    newt[i]=ctmap.tempMap(q.params(i));
-		HMethod calleemethod=(HMethod)old2new.get(q.method());
-		CALL call=new CALL(hcode.getFactory(),q,
-				   calleemethod, newt,
-				   retcont,retex, q.isVirtual(), q.isTailCall(),
-				   new Temp[0]);
-		PHI phi=new PHI(hcode.getFactory(), q, new Temp[0], isCont?5:4);
-		Quad.addEdge(call,1,phi,0);
-		//build environment
-		HClass env=getEnv(q);
-		Temp[] liveoutx = liveness.getLiveInandOutArray(q);
-		TypeMap map=((QuadNoSSA) hc).typeMap;
-		int count=0;
-		for (int ii=0;ii<liveoutx.length;ii++)
-		    if (map.typeMap(q,liveoutx[ii])!=HClass.Void)
-			count++;
-
-		Temp tenv=new Temp(tf);
-		NEW envq=new NEW(hcode.getFactory(), q, tenv, env);
-		Quad.addEdge(call,0,envq,0);
-
-		Temp [] params = new Temp[count+1];
-		params[0]=tenv;
-		for (int j=0,i=1;j<liveoutx.length;j++) {
-		    if (map.typeMap(q,liveoutx[j])!=HClass.Void)
-			params[i++]=ctmap.tempMap(liveoutx[j]); 
-		}
-		CALL callenv=new CALL(hcode.getFactory(), q, env.getConstructors()[0],
-				      params, null, retex, false, false, new Temp[0]);
-		Quad.addEdge(envq,0,callenv,0);
-		Quad.addEdge(callenv,1,phi,1);
+	    //--------------------------------------------------------------------
+	    //Rewrite the Blocking Call
+	    
+	    Temp[] newt=new Temp[q.paramsLength()];
+	    Temp retex=new Temp(tf), retcont=new Temp(tf);
+	    for(int i=0;i<q.paramsLength();i++)
+		newt[i]=ctmap.tempMap(q.params(i));
+	    HMethod calleemethod=(HMethod)old2new.get(q.method());
+	    CALL call=new CALL(hcode.getFactory(),q,
+			       calleemethod, newt,
+			       retcont,retex, q.isVirtual(), q.isTailCall(),
+			       new Temp[0]);
+	    
+	    //---------------------------------------------------------------------
+	    //Build phi node for exception handler
+	    PHI phi=new PHI(hcode.getFactory(), q, new Temp[0], isCont?5:4);
+	    Quad.addEdge(call,1,phi,0);
+	    
+	    //---------------------------------------------------------------------
+	    //Build array of temps to pass into Enviroment's constructor
+	    Temp tenv=new Temp(tf);
+	    Temp[] liveoutx = liveness.getLiveInandOutArray(q);
+	    TypeMap map=((QuadNoSSA) hc).typeMap;
+	    int count=0;
+	    for (int ii=0;ii<liveoutx.length;ii++)
+		if (map.typeMap(q,liveoutx[ii])!=HClass.Void)
+		    count++;
+	    Temp [] params = new Temp[count+1];
+	    params[0]=tenv;
+	    for (int j=0,i=1;j<liveoutx.length;j++) {
+		if (map.typeMap(q,liveoutx[j])!=HClass.Void)
+		    params[i++]=ctmap.tempMap(liveoutx[j]); 
+	    }
+	    
+	    //---------------------------------------------------------------------
+	    //Build Environment NEW & CALL to init
+	    HClass env=getEnv(q);
+	    NEW envq=new NEW(hcode.getFactory(), q, tenv, env);
+	    Quad.addEdge(call,0,envq,0);
+	    CALL callenv=new CALL(hcode.getFactory(), q, env.getConstructors()[0],
+				  params, null, retex, false, false, new Temp[0]);
+	    Quad.addEdge(envq,0,callenv,0);
+	    Quad.addEdge(callenv,1,phi,1);
 		
-		Temp tcont=new Temp(tf);
-		HClass contclass=(HClass)cont_map.get(q);
-		NEW newc=new NEW(hcode.getFactory(), q, tcont, contclass);
-		Quad.addEdge(callenv,0,newc,0);
-		//XXXXXXXXXXXXX
-		HClass environment=linker.forName("harpoon.Analysis.EnvBuilder.Environment");
-		//constructor call=not virtual
-		System.out.println(environment);
-		System.out.println(environment.getLinker());
-		HConstructor call2const=contclass.getConstructor(new HClass[]{
-		    environment});
-		//HConstructor call2const=contclass.getConstructors()[0];
-		//XXXXXXXXXX
-		CALL call2=new CALL(hcode.getFactory(),q,
-				    call2const,
-				    new Temp[] {tcont, tenv}, null, retex, 
-				    false, false, new Temp[0]);
-		Quad.addEdge(newc,0,call2,0);
-		Quad.addEdge(call2,1,phi,2);
-		String pref = 
-		    ContBuilder.getPrefix(q.method().getReturnType());
-		HMethod setnextmethod=
-		    calleemethod.getReturnType().getMethod("setNext",
-							  new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")});
-		Util.assert(setnextmethod!=null,"no setNext method found");
-		CALL call3=new CALL(hcode.getFactory(), q,
-				    setnextmethod, new Temp[] {retcont, tcont},
+	    //---------------------------------------------------------------------
+	    //Build Continuation NEW & CALL to init
+	    
+	    Temp tcont=new Temp(tf);
+	    HClass contclass=(HClass)cont_map.get(q);
+	    NEW newc=new NEW(hcode.getFactory(), q, tcont, contclass);
+	    Quad.addEdge(callenv,0,newc,0);
+	    HClass environment=linker.forName("harpoon.Analysis.EnvBuilder.Environment");
+	    HConstructor call2const=contclass.getConstructor(new HClass[]{
+		environment});
+	    CALL call2=new CALL(hcode.getFactory(),q,
+				call2const,
+				new Temp[] {tcont, tenv}, null, retex, 
+				false, false, new Temp[0]);
+	    Quad.addEdge(newc,0,call2,0);
+	    Quad.addEdge(call2,1,phi,2);
+	    
+	    //----------------------------------------------------------------------
+	    //Link new Continuation onto Continuation returned by blocking call
+	    String pref = 
+		ContBuilder.getPrefix(q.method().getReturnType());
+	    HClass[] nextarray=
+		new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref+"ResultContinuation")};
+	    HMethod setnextmethod=
+		calleemethod.getReturnType().getMethod("setNext",nextarray);
+	    Util.assert(setnextmethod!=null,"no setNext method found");
+	    CALL call3=new CALL(hcode.getFactory(), q,
+				setnextmethod, new Temp[] {retcont, tcont},
+				null, retex, true, false, new Temp[0]);
+	    Quad.addEdge(call2, 0, call3, 0);
+	    Quad.addEdge(call3, 1, phi, 3);
+
+
+	    //----------------------------------------------------------------------
+	    //Two possibilities:
+	    //1)  We are a continuation, so we want to do a setNext(this.next)
+	    //2)  We are a Async method, so we want to return continuation
+	    
+	    if (isCont) {
+		Temp tnext=new Temp(tf);
+		HClass hclass=hcode.getMethod().getDeclaringClass();
+		HField hfield=hclass.getField("next");
+		GET get=new GET(hcode.getFactory(),q,
+				tnext, hfield, tthis);
+		Quad.addEdge(call3,0,get,0);
+		String pref2 =
+		    ContBuilder.getPrefix(hc.getMethod().getReturnType());
+		HMethod setnextmethod2=
+		    contclass.getMethod("setNext",
+					new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref2+"ResultContinuation")});
+		Util.assert(setnextmethod2!=null,"no setNext method found");
+		CALL call4=new CALL(hcode.getFactory(), q,
+				    setnextmethod2, new Temp[] {tcont, tnext},
 				    null, retex, true, false, new Temp[0]);
-		Quad.addEdge(call2, 0, call3, 0);
-		Quad.addEdge(call3, 1, phi, 3);
-		if (isCont) {
-		    Temp tnext=new Temp(tf);
-		    HClass hclass=hcode.getMethod().getDeclaringClass();
-		    HField hfield=hclass.getField("next");
-		    GET get=new GET(hcode.getFactory(),q,
-				    tnext, hfield, tthis);
-		    Quad.addEdge(call3,0,get,0);
-		    //XXXX TEST
-		    String pref2 =
-			ContBuilder.getPrefix(hc.getMethod().getReturnType());
-		    //Debug
-		    System.out.println("-------------");
-		    System.out.println(contclass);
-		    System.out.println(contclass.getSuperclass());
-		    System.out.println(pref2);
-		    HMethod [] hmethods=contclass.getMethods();
-		    for (int i=0;i<hmethods.length;i++)
-			System.out.println(hmethods[i]);
-		    HMethod setnextmethod2=
-			contclass.getMethod("setNext",
-					    new HClass[] {linker.forName("harpoon.Analysis.ContBuilder."+pref2+"ResultContinuation")});
-		    Util.assert(setnextmethod2!=null,"no setNext method found");
-		    CALL call4=new CALL(hcode.getFactory(), q,
-					setnextmethod2, new Temp[] {tcont, tnext},
-					null, retex, true, false, new Temp[0]);
-		    Quad.addEdge(get,0,call4,0);
-		    Quad.addEdge(call4,1,phi,4);
-		    RETURN returnq=new RETURN(hcode.getFactory(), q, null);
-		    Quad.addEdge(call4,0,returnq,0);
-		    linkFooters.add(returnq);
-		} else {
-		    RETURN returnq=new RETURN(hcode.getFactory(),q,tcont);
-		    Quad.addEdge(call3, 0, returnq,0);
-		    linkFooters.add(returnq);
-		}
-		THROW throwq=new THROW(hcode.getFactory(),q,retex);    
-		Quad.addEdge(phi,0,throwq,0);
-		linkFooters.add(throwq);
-		quadmap.put(q,call);
-		followchildren=false;
-	    } else
-		handleNonBlocking(q);
+		Quad.addEdge(get,0,call4,0);
+		Quad.addEdge(call4,1,phi,4);
+		RETURN returnq=new RETURN(hcode.getFactory(), q, null);
+		Quad.addEdge(call4,0,returnq,0);
+		linkFooters.add(returnq);
+	    } else {
+		RETURN returnq=new RETURN(hcode.getFactory(),q,tcont);
+		Quad.addEdge(call3, 0, returnq,0);
+		linkFooters.add(returnq);
+	    }
+	    //---------------------------------------------------------------
+	    //Do THROW of exceptions from phi node
+	    
+	    THROW throwq=new THROW(hcode.getFactory(),q,retex);    
+	    Quad.addEdge(phi,0,throwq,0);
+	    linkFooters.add(throwq);
+	    quadmap.put(q,call);
+	    followchildren=false;
 	}
 
 	private void handleNonBlocking(CALL q) {
@@ -963,12 +962,17 @@ public class AsyncCode {
 		THROW nt=new THROW(hcode.getFactory(), q,
 				   retex);
 		Quad.addEdge(nc,1,nt,0);
-		makeasync.add(cq);
+		addedCall.add(cq);
 		linkFooters.add(nt);
 	    } else
 		quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
 	}
 
+
+	/**
+	 * swapAdd takes in an <code>HMethod</code> and returns an <code>HMethod</code>
+	 * that is to be called following the first method is called.
+	 */
 	public HMethod swapAdd(HMethod old) {
 	    HClass ss=linker.forName("java.net.ServerSocket");
 	    HClass fis=linker.forName("java.io.FileInputStream");
@@ -981,7 +985,12 @@ public class AsyncCode {
 		return fis.getDeclaredMethod("makeAsync", new HClass[0]);
 	    return null;
 	}
-	
+
+	/**
+	 * swapTo takes in an <code>HMethod</code> and returns an <code>HMethod</code>
+	 * that is to be called following the first method is called.
+	 */
+
 	public HMethod swapTo(HMethod old) {
 	    //Handle Socket getInputStream calls
 	    HMethod gis=linker.forName("java.net.Socket")
@@ -990,6 +999,7 @@ public class AsyncCode {
 		return linker.forName("java.net.Socket").getDeclaredMethod
 		    ("getAsyncInputStream", new HClass[0]);
 	    
+
 	    //Handle Socket getOutputStream calls
 	    HMethod  gos=linker.forName("java.net.Socket")
 		.getDeclaredMethod("getOutputStream", new HClass[0]);
@@ -997,6 +1007,7 @@ public class AsyncCode {
 		return linker.forName("java.net.Socket").getDeclaredMethod
 		    ("getAsyncOutputStream", new HClass[0]);
 	    
+
 	    //Handle start calls
 	    HClass HCthrd=linker.forName("java.lang.Thread");
 	    if (old.equals(HCthrd.getMethod("start",
@@ -1216,5 +1227,3 @@ public class AsyncCode {
 	return continuationClass;
     }
 }
-
-

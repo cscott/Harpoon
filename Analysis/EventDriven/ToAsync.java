@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.14 2000-02-01 06:40:12 bdemsky Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.15 2000-02-07 20:36:35 bdemsky Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;
@@ -54,41 +54,17 @@ public class ToAsync {
 	AllCallers ac = new AllCallers(this.ch, this.ucf);
 	BlockingMethods bm = new BlockingMethods(linker);
 	Set blockingcalls = ac.getCallers(bm);
-	
+
 	HashMap old2new=new HashMap();
 	HMethod nhm=AsyncCode.makeAsync(old2new, hc.getMethod(),
 					ucf,linker);
-
+	
 	WorkSet async_todo=new WorkSet();
 	async_todo.push(hc);
-
-	//Add run methods in...make them blocking
-//  	HClass hcthrd=linker.forName("java.lang.Runnable");
-//  	Set children=ch.children(hcthrd);
-//  	Iterator childit=children.iterator();
-
-//  	while(childit.hasNext()) {
-//  	    try {
-//  		HClass child=(HClass)childit.next();
-
-//  		if (!child.isInterface()) {
-//  		    HMethod hmrun=child.getDeclaredMethod("run",
-//  						  new HClass[0]);
-//  		    if (old2new.containsKey(hmrun))
-//  			continue;
-//  		    async_todo.add(ucf.convert(hmrun));
-//  		    HMethod temp=AsyncCode.makeAsync(old2new, hmrun,
-//  						     ucf,linker);
-//  		}
-//  	    } catch (NoSuchMethodError e) {
-//  	    }
-//  	}
 
 	WorkSet other=new WorkSet();
 	WorkSet done_other=new WorkSet();
 	   
-	
-	
 	while (!async_todo.isEmpty()|!other.isEmpty()) {
 	    HCode selone=null;
 	    boolean status=false;
