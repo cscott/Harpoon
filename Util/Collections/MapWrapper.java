@@ -11,7 +11,7 @@ import java.util.Map;
     one particular <code>Map</code> implementation. 
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: MapWrapper.java,v 1.1.2.3 2001-06-17 22:36:33 cananian Exp $
+    @version $Id: MapWrapper.java,v 1.1.2.4 2001-11-04 00:28:41 cananian Exp $
 */
 public class MapWrapper implements Map {
     private Map map;
@@ -28,4 +28,7 @@ public class MapWrapper implements Map {
     public java.util.Set keySet() { return map.keySet(); }
     public java.util.Set entrySet() { return map.entrySet(); }
     public java.util.Collection values() { return map.values(); }
+    public String toString() { return map.toString(); }
+    public boolean equals(Object o) { return map.equals(o); }
+    public int hashCode() { return map.hashCode(); }
 }
