@@ -5,6 +5,7 @@ package harpoon.Util.DataStructs;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.Map;
 
 import harpoon.Util.PredicateWrapper;
 
@@ -17,7 +18,7 @@ import harpoon.Util.PredicateWrapper;
  * Analysis algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Relation.java,v 1.2 2002-02-25 21:09:19 cananian Exp $
+ * @version $Id: Relation.java,v 1.3 2002-04-10 23:56:32 salcianu Exp $
  */
 public interface Relation {
     
@@ -114,29 +115,20 @@ public interface Relation {
 
 
     /** Revert <code>this</code> relation and store the result into
-    the relation <code>result</code>. &lt;a,b&gt; appears in the reverse
-    relation iff &lt;b,a&gt; appears in <code>this</code> relation. */
-    public void revert(Relation result);
+	the relation <code>result</code>. &lt;a,b&gt; appears in the
+	reverse relation iff &lt;b,a&gt; appears in <code>this</code>
+	relation.  Returns the new realtion (ie,
+	<code>result</code>). */
+    public Relation revert(Relation result);
+
+    /** Convert <code>this</code> relation through the mapping
+	<code>map</code>.  The converted mapping contains all pairs
+	<code>(a,b)</code> such that there exists <code>c,d</code>
+	such that <code>(c,d)</code> appears in <code>this</code>
+	mapping, and map maps c to a and d to b.  If an object is not
+	mapped to anything by <code>map</code>, it will be mapped to
+	itself by default.  The result is stored in
+	<code>result</code>.  Returns the converted mapping (ie,
+	result).  */
+    public Relation convert(Map map, Relation result);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -41,7 +41,7 @@ import harpoon.Util.Util;
  * recursive methods).
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: SCComponent.java,v 1.5 2002-04-10 03:07:20 cananian Exp $
+ * @version $Id: SCComponent.java,v 1.6 2002-04-10 23:56:27 salcianu Exp $
  */
 public final class SCComponent implements Comparable, Serializable {
 
@@ -82,7 +82,7 @@ public final class SCComponent implements Comparable, Serializable {
     private static Vector nodes_vector;
     private static SCComponentInt current_scc_int;
     // the navigator used in the DFS algorithm
-    private static Navigator nav;
+    private static harpoon.Util.Graphs.Navigator nav;
     // vector to put the generated SCCs in.
     private static Vector scc_vector;
 
@@ -90,8 +90,9 @@ public final class SCComponent implements Comparable, Serializable {
     /** Convenient version for the single root case (see the other 
 	<code>buildSCC</code> for details). Returns the single element of
 	the set of top level SCCs. */
-    public static final SCComponent buildSCC(final Object root,
-					     final Navigator navigator) {
+    public static final SCComponent buildSCC
+	(final Object root,
+	 final harpoon.Util.Graphs.Navigator navigator) {
 	Set set = buildSCC(new Object[]{root}, navigator);
 	if((set == null) || set.isEmpty()) return null;
 	assert set.size() <= 1 : "More than one root SCComponent " +
@@ -108,8 +109,9 @@ public final class SCComponent implements Comparable, Serializable {
 	that are not pointed by any other component. This constraint is
 	actively used in the topological sorting agorithm (see
 	<code>SCCTopSortedGraph</code>). */
-    public static final Set buildSCC(final Object[] roots,
-				     final Navigator navigator) {
+    public static final Set buildSCC
+	(final Object[] roots,
+	 final harpoon.Util.Graphs.Navigator navigator) {
 	scc_vector = new Vector();
 	// STEP 1: compute the finished time of each node in a DFS exploration.
 	// At the end of this step, nodes_vector will contain all the reached
@@ -216,7 +218,8 @@ public final class SCComponent implements Comparable, Serializable {
     // put the edges between the SCCs: there is an edge from scc1 to scc2 iff
     // there is at least one pair of nodes n1 in scc1 and n2 in scc2 such that
     // there exists an edge from n1 to n2.
-    private static final void put_the_edges(final Navigator navigator){
+    private static final void put_the_edges
+	(final harpoon.Util.Graphs.Navigator navigator) {
 	int nb_scc = scc_vector.size();
 	for(int i = 0; i < scc_vector.size(); i++){
 	    SCComponentInt compi = (SCComponentInt) scc_vector.elementAt(i);

@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.Vector;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Map;
 
 import harpoon.Util.PredicateWrapper;
 import harpoon.Analysis.PointerAnalysis.Debug;
@@ -17,7 +18,7 @@ import harpoon.Analysis.PointerAnalysis.Debug;
  * <code>AbstrRelation</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: AbstrRelation.java,v 1.2 2002-02-25 21:09:19 cananian Exp $
+ * @version $Id: AbstrRelation.java,v 1.3 2002-04-10 23:56:32 salcianu Exp $
  */
 public abstract class AbstrRelation implements Relation, Cloneable, 
 					java.io.Serializable {
@@ -34,7 +35,6 @@ public abstract class AbstrRelation implements Relation, Cloneable,
     public boolean add(Object key, Object value) {
 	throw new UnsupportedOperationException();
     }
-
 
     // functional but inefficient implementation
     public boolean addAll(Object key, Collection values) {
@@ -57,12 +57,13 @@ public abstract class AbstrRelation implements Relation, Cloneable,
 	    removeKey(key);
     }
 
-    public void revert(final Relation result) {
+    public Relation revert(final Relation result) {
 	forAllEntries(new RelationEntryVisitor() {
 		public void visit(Object key, Object value) {
 		    result.add(value, key);
 		}
 	    });
+	return result;
     }
 
 
@@ -276,6 +277,19 @@ public abstract class AbstrRelation implements Relation, Cloneable,
 	} catch(CloneNotSupportedException e) {
 	    throw new InternalError();
 	}
+    }
+
+    public Relation convert(final Map map, final Relation result) {
+	forAllEntries(new RelationEntryVisitor() {
+		public void visit(Object key, Object value) {
+		    Object keyp = map.get(key);
+		    if(keyp == null) keyp = key;
+		    Object valuep = map.get(value);
+		    if(valuep == null) valuep = value;
+		    result.add(keyp, valuep);
+		}
+	    });
+	return result;
     }
 
 }
