@@ -10,6 +10,7 @@
 #if WITH_PRECISE_C_BACKEND
 #include <setjmp.h>
 #endif
+#include "flexthread.h" /* for pthread_* typedefs */
 #include "fni-wrap.h" /* for struct _jobject */
 
 /* ---------------------- thread state ---------------------------------*/
