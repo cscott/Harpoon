@@ -44,7 +44,8 @@ import harpoon.IR.LowQuad.PCALL;
 import harpoon.IR.LowQuad.PSET;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.Collections.GenericMultiMap;
+import harpoon.Util.Collections.GenericInvertibleMultiMap;
+import harpoon.Util.Collections.InvertibleMultiMap;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Default;
 import harpoon.Util.Collections.WorkSet;
@@ -67,7 +68,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.4 2002-04-10 03:00:59 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.5 2002-07-18 17:25:11 cananian Exp $
  */
 
 public abstract class DeadCode  {
@@ -82,7 +83,7 @@ public abstract class DeadCode  {
 	// keep track of defs.
 	Map defMap = new HashMap();
 	// keep track of PHI/SIGMAs which use certain temps.
-	MultiMap useMap = new GenericMultiMap();
+	InvertibleMultiMap useMap = new GenericInvertibleMultiMap();
 	// we'll have a coupla visitors
 	LowQuadVisitor v;
 	
@@ -137,9 +138,9 @@ public abstract class DeadCode  {
     static class EraserVisitor extends LowQuadVisitor {
 	WorkSet W;
 	Set useful;
-	MultiMap useMap;
+	InvertibleMultiMap useMap;
 	NameMap nm;
-	EraserVisitor(WorkSet W, Set useful, MultiMap useMap, NameMap nm) {
+	EraserVisitor(WorkSet W, Set useful, InvertibleMultiMap useMap, NameMap nm) {
 	    super(false/*non-strict*/);
 	    this.W= W; this.useful= useful; this.useMap= useMap; this.nm= nm;
 	}
@@ -148,6 +149,7 @@ public abstract class DeadCode  {
 	    Edge after  = q.nextEdge(0);
 	    Quad.addEdge((Quad)before.from(), before.which_succ(),
 			 (Quad)after.to(), after.which_pred() );
+	    useMap.invert().remove(q);
 	}
 
 	public void visit(Quad q) {
@@ -264,6 +266,7 @@ public abstract class DeadCode  {
 		// link out the CJMP
 		Quad.addEdge(q.prev(0), q.prevEdge(0).which_succ(),
 			     q.next(0), q.nextEdge(0).which_pred());
+		useMap.invert().remove(q);
 	    } else {
 		// just shrink the functions.
 		visit((SIGMA)q);
