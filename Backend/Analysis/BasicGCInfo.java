@@ -58,7 +58,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.17 2000-07-07 16:03:38 kkz Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.18 2000-07-11 20:38:39 pnkfelix Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
@@ -414,13 +414,18 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    List stackSigns = new ArrayList();
 		    while(ddl != null) {
 			Temp base = ddl.base;
-			Instr[] defPts = 
-			    (Instr[])rd.reachingDefs(instr, base).toArray();
-			Util.assert(defPts != null && defPts.length > 0);
+			System.out.println("doing reachingDefs"+
+					   " instr:"+instr+
+					   " base:"+base);
+			Collection c1 = rd.reachingDefs(instr, base);
+			Util.assert(c1 != null && c1.size() >0);
+			Instr[] defPts = (Instr[]) 
+			    c1.toArray(new Instr[c1.size()]);
 			// any of the definition points should work
-			CommonLoc[] locs = 
-			    (CommonLoc[])tl.locate(base, defPts[0]).toArray();
-			Util.assert(locs != null && locs.length > 0);
+			Collection c2 = tl.locate(base, defPts[0]);
+			Util.assert(c2 != null && c2.size() > 0);
+			CommonLoc[] locs = (CommonLoc[])
+			    c2.toArray(new CommonLoc[c2.size()]);
 			// any of the CommonLocs should work
 			switch(locs[0].kind()) {
 			case StackOffsetLoc.KIND:
@@ -436,8 +441,8 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 			    regSigns.add(new Boolean(ddl.sign));
 			    break;
 			default: Util.assert(false);
-			ddl = ddl.next;
 			}
+			ddl = ddl.next; // FSK moved this outside switch
 		    }
 		    Util.assert(regLocs.size() == regSigns.size());
 		    WrappedMachineRegLoc[] regArray = 

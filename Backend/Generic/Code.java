@@ -16,7 +16,7 @@ import java.util.List;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.45 2000-05-23 17:25:45 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.46 2000-07-11 20:38:42 pnkfelix Exp $
  */
 public abstract class Code extends harpoon.IR.Assem.Code {
 
@@ -44,6 +44,7 @@ public abstract class Code extends harpoon.IR.Assem.Code {
 	this.instrs = (Instr) pair.get(0);
 	this.derivation = (Derivation) pair.get(1);
 	Util.assert(instrs != null);
+	Util.assert(derivation != null);
     }
 
     public Derivation getDerivation() {

@@ -4,6 +4,7 @@
 package harpoon.Analysis.Instr;
 
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrFactory;
@@ -77,7 +78,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.100 2000-07-10 12:52:51 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.101 2000-07-11 20:38:08 pnkfelix Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -201,6 +202,24 @@ public abstract class RegAlloc  {
 	computeBasicBlocks();
     }
 
+    /** returns a <code>TempMap</code> for analyses to use on the
+	register-allocated code.  This method is intended for use with
+	move-coalescing code transformations so that Temps removed
+	during register allocation will not break later analyses.  The
+	default implementation returns an identity temp map
+	( tempMap(t) == t )
+	<BR> <B>requires:</B> 
+	     <code>this.generateRegAssignment()</code> has been
+	     called. 
+    */
+    protected TempMap getTempMap() {
+	return new TempMap() {
+	    public Temp tempMap(Temp t) {
+		return t;
+	    }
+	};
+    }
+    
     protected void computeBasicBlocks() {
 	// requires: `this.code' has been set
 	// modifies: `this.bbFact'
@@ -325,6 +344,7 @@ public abstract class RegAlloc  {
 		final int numLocals = ((Integer)triple.get(2)).intValue();
 		final Set usedRegs = globalCode.computeUsedRegs(instr);
 		final Map riMap = globalCode.replacedInstrs;
+		final TempMap tempmap = globalCode.getTempMap();
 		Util.assert(mycode != null);
 		
 		abstract class MyCode extends Code 
@@ -353,7 +373,8 @@ public abstract class RegAlloc  {
 			    public Derivation.DList derivation
 				(HCodeElement hce, Temp t) {
 				hce = orig(hce);
-				return oldD.derivation(hce, t);
+				return Derivation.DList.rename
+				    (oldD.derivation(hce, t),tempmap);
 			    }
 			    public BackendDerivation.Register
 				calleeSaveRegister(HCodeElement hce,

@@ -16,6 +16,7 @@ import harpoon.IR.Assem.InstrMOVE;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.Temp.Temp;
+import harpoon.Temp.TempMap;
 import harpoon.Temp.Label;
 
 import harpoon.Util.CombineIterator;
@@ -58,7 +59,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.93 2000-07-07 17:52:12 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.94 2000-07-11 20:38:07 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -73,12 +74,20 @@ public class LocalCffRegAlloc extends RegAlloc {
 
     private LiveTemps liveTemps;
 
+    // maps Temp:c -> Temp:o where `c' was coalesced and references to
+    // `c' have been replaced with references to `o'
+    private HTempMap coalescedTemps;
+
     /** Creates a <code>LocalCffRegAlloc</code>. */
     public LocalCffRegAlloc(Code code) {
         super(code);
 	allRegisters = frame.getRegFileInfo().getAllRegistersC();
     }
     
+    protected TempMap getTempMap() {
+	return coalescedTemps;
+    }
+
     final Collection instrsToRemove = new java.util.LinkedList();
     // final Collection instrsToRemove = new java.util.HashSet();
 
@@ -111,7 +120,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 	if (COALESCE_MOVES) coalesceMoves();
 	if (VERIFY) verifyLRA();
 
-	// code.print(new java.io.PrintWriter(System.out));
+        // code.printNoAssem(new java.io.PrintWriter(System.out));
     }
 
     private void liveVariableAnalysis() {
@@ -890,6 +899,7 @@ public class LocalCffRegAlloc extends RegAlloc {
 			}
 		    } else {
 			remove(i, choice);
+			coalescedTemps.put(d, coalescedTemps.get(u));
 		    }
 
 		    Util.assert(!(isRegister(u) && isRegister(d)));
