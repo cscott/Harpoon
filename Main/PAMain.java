@@ -72,7 +72,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.64 2000-06-27 14:30:02 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.65 2000-06-27 15:38:29 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -93,8 +93,6 @@ public abstract class PAMain {
     private static boolean SHOW_SPLIT = false;
     // show some details/statistics about the analysis
     private static boolean SHOW_DETAILS = false;
-    // show some statistics about the method hole of the analyzed program
-    private static boolean HOLE_STATS = false;
 
     // make the program to analyse some method;
     private static boolean DO_ANALYSIS = false;
@@ -309,7 +307,6 @@ public abstract class PAMain {
 	    new LongOpt("showcg",    LongOpt.NO_ARGUMENT,       null, 9),
 	    new LongOpt("showsplit", LongOpt.NO_ARGUMENT,       null, 10),
 	    new LongOpt("details",   LongOpt.NO_ARGUMENT,       null, 11),
-	    new LongOpt("holestats", LongOpt.NO_ARGUMENT,       null, 13),
 	    new LongOpt("mamaps",    LongOpt.REQUIRED_ARGUMENT, null, 14),
 	    new LongOpt("noit",      LongOpt.NO_ARGUMENT,       null, 15),
 	    new LongOpt("inline",    LongOpt.NO_ARGUMENT,       null, 16),
@@ -367,9 +364,6 @@ public abstract class PAMain {
 		break;
 	    case 11:
 		SHOW_DETAILS = true;
-		break;
-	    case 13:
-		HOLE_STATS = true;
 		break;
 	    case 14:
 		MA_MAPS = true;
@@ -429,9 +423,6 @@ public abstract class PAMain {
 
 	if(SHOW_DETAILS)
 	    System.out.print(" SHOW_DETAILS");
-
-	if(HOLE_STATS)
-	    System.out.print(" HOLE_STATS");
 
 	if(DO_ANALYSIS){
 	    if(mm_to_analyze.size() == 1){
@@ -507,65 +498,6 @@ public abstract class PAMain {
 	System.out.println("PRE-ANALYSIS + ANALYSIS TIME : " +
 			   (time() - g_tstart) + "ms");
 
-	/*
-	// analyze just the method tree rooted in the main method, i.e.
-	// just the user program, not the other methods called by the
-	// JVM before "main".
-	Set mms = new HashSet();
-	Set roots = new HashSet(mcg.getRunMetaMethods());
-	roots.add(mroot);
-
-	for(Iterator it = roots.iterator(); it.hasNext(); ){
-	    MetaMethod mm = (MetaMethod) it.next();
-	    mms.add(mm);
-	    mms.addAll(mcg.getTransCallees(mm));
-	}
-
-	if(DEBUG){
-	    System.out.println("ROOT META-METHOD: " + mroot);
-	    System.out.println("RELEVANT META-METHODs:{");
-	    for(Iterator it = mms.iterator(); it.hasNext(); ){
-		MetaMethod mm = (MetaMethod) it.next();
-		if(pa.analyzable(mm.getHMethod()))
-		    System.out.println("  " + mm);
-	    }
-	    System.out.println("}");
-	}
-
-	// this should analyze everything
-	if(USE_INTER_THREAD) {
-	    pa.getIntParIntGraph(mroot);
-	    pa.getExtParIntGraph(mroot);
-	    pa.threadInteraction(mroot);
-
-	    for(Iterator it = mcg.getAllMetaMethods().iterator();
-		it.hasNext(); ) {
-		MetaMethod mm = (MetaMethod) it.next();
-		HMethod hm = mm.getHMethod();
-
-		if(java.lang.reflect.Modifier.isNative(hm.getModifiers()))
-		    continue;
-		pa.threadInteraction(mm); 
-	    }
-	}
-	else {
-	    Set tops = new HashSet(mcg.getRunMetaMethods());
-	    tops.add(mroot);
-	    if(DEBUG) {
-		System.out.println("TOP METHODS:");
-		for(Iterator it = tops.iterator(); it.hasNext(); )
-		    System.out.println(it.next());
-	    } 
-	    for(Iterator it = tops.iterator(); it.hasNext(); )
-		pa.getIntParIntGraph( (MetaMethod) it.next());
-	}
-	
-	System.out.println("PRE-ANALYSIS + ANALYSIS TIME : " +
-			   (time() - g_tstart) + "ms");
-
-	g_tstart = System.currentTimeMillis(); //B/
-	*/
-
 	g_tstart = time();
 	MAInfo mainfo = new MAInfo(pa, hcf, allmms, USE_INTER_THREAD);
 	System.out.println("GENERATION OF MA INFO TIME  : " +
@@ -589,10 +521,7 @@ public abstract class PAMain {
 	    // write the Linker on the disk
 	    oos.writeObject(linker);
 	    oos.close();
-	}
-	catch(IOException e){
-	    System.err.println(e);
-	}
+	} catch(IOException e){ System.err.println(e); }
 	System.out.println((time() - g_tstart) + "ms");
     }
 
@@ -780,36 +709,35 @@ public abstract class PAMain {
     };
 
     private static String[] options = {
-	"-m, --meta     uses the real MetaMethod",
-	"-s, --smart    uses the SmartCallGrapph",
-	"-d, --dumb     uses the simplest CallGraph (default)",
-	"-c, --showch   shows debug info about ClassHierrachy",
-	"-l file        load a precomputed MetaCallGraph from a file",
-	"--showcg       shows the (meta) call graph",
-	"--showsplit    shows the split relation",
-	"--details      shows details/statistics: analyzed methods, nodes etc",
-	"--ccs=depth    activate call context sensitivity with a maximum",
-	"              call chain depth of depth",
-	"--ts           activates full thread sensitivity",
-	"--wts          activates weak thread sensitivity",
-	"--ls           activates loop sensitivity",
-	"--mamaps=file  computes the allocation policy map and serializes",
-	"              the CachingCodeFactory (and implicitly the allocation",
-	"              map) and the linker to disk",
-	"--mastats      shows some statistics about memory allocation",
-	"--holestats    shows statistics about holes",
-	"-a method      analyzes he given method. If the method is in the",
-	"              same class as the main method, the name of the class",
-	"              can be ommited",
-	"-i             interactive analysis of methods",
-	"--noit         just interprocedural analysis, no interthread",
-	"--inline       use method inlining to enable more stack allocation",
-	"              (makes sense only with --mamaps)",
-	"--sat=file     generates dummy sets of the .start() and .join() that",
-	"              must be changed (for the thread inlining). Don't try",
-	"              to use it seriously",
-	"--notg         no thread group facility is necessary. In the future,",
-	"              this will be automatically generated by the analysis."
+	"-m, --meta    Uses the real MetaMethods (unsupported yet).",
+	"-s, --smart   Uses the SmartCallGrapph.",
+	"-d, --dumb    Uses the simplest CallGraph (default).",
+	"-c, --showch  Shows debug info about ClassHierrachy.",
+	"-l file       Load a precomputed MetaCallGraph from a file.",
+	"--showcg      Shows the (meta) call graph.",
+	"--showsplit   Shows the split relation.",
+	"--details     Shows details/statistics: analyzed methods, nodes etc.",
+	"--ccs=depth   Activates call context sensitivity with a given",
+	"               maximum call chain depth.",
+	"--ts          Activates full thread sensitivity.",
+	"--wts         Activates weak thread sensitivity.",
+	"--ls          Activates loop sensitivity.",
+	"--mamaps=file Computes the allocation policy map and serializes",
+	"               the CachingCodeFactory (and implicitly the allocation",
+	"               map) and the linker to disk.",
+	"-a method     Analyzes he given method. If the method is in the",
+	"               same class as the main method, the name of the class",
+	"               can be ommited. More than one \"-a\" flags can be",
+	"               used on the same command line.",
+	"-i            Interactive analysis of methods.",
+	"--noit        Just interprocedural analysis, no interthread.",
+	"--inline      Use method inlining to enable more stack allocation",
+	"               (makes sense only with --mamaps).",
+	"--sat=file    Generates dummy sets of calls to .start() and .join()",
+	"               that must be changed (for the thread inlining).",
+	"               Don't try to use it seriously!",
+	"--notg        No thread group facility is necessary. In the future,",
+	"               this will be automatically generated by the analysis."
     };
 
 
