@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.93 1999-11-02 17:23:49 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.94 1999-11-02 19:05:28 cananian Exp $
  */
 %%
 
@@ -555,7 +555,8 @@ BINOP<f>(ADD, j, k) = i %{
 
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit2( ROOT, "bl ___addsf", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1} );
+    emit2( ROOT, "bl ___addsf",
+	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -568,7 +569,7 @@ BINOP<d>(ADD, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit2(ROOT, "bl ___adddf3", // uses & stomps on these registers
-	 new Temp[]{r0,r1,r2,r3,LR}, new Temp[] {r0,r1,r2,r3});
+	 new Temp[]{r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -609,42 +610,32 @@ BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
   
 BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
+    emitMOVE( ROOT, "mov `d0, `s0", r0, j);
+    emitMOVE( ROOT, "mov `d0, `s0", r1, k);
+    emit2( ROOT, "bl ___eqsf2",
+	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr( instrFactory, ROOT, 
-		    "mov `d1, `s1\n"+
-		    "mov `d0, `s0\n"+
-		    "bl ___eqsf2\n"+
-		    "cmp `s2, #0\n"+
-		    "moveq `d2, #1\n"+
-		    "movne `d2, #0", 
-		   new Temp[]{ r0, r1, i, LR },
-		   new Temp[]{ j, k, r0 }));
+    emit( ROOT, "cmp `s0, #0\n"+
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 BINOP(CMPEQ, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
+    emit ( ROOT, "mov `d0, `s0l", r0, j);
+    emit ( ROOT, "mov `d1, `s0h", r1, j);
+    emit ( ROOT, "mov `d2, `s0l", r2, k);
+    emit ( ROOT, "mov `d3, `s0h", r3, k);
+    emit2( ROOT, "bl ___eqdf2",
+	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-
-    // FSK: TODO: this is wrong, need to use the %extra detail added
-    //      by Scott a while ago to request an additional register to
-    //      store some temporary work into.  This occurs in other
-    //      patterns too; basically I need to audit the SPEC file and
-    //      revise a fair number of the patterns.
-    emit(new Instr(instrFactory, ROOT,
-		   "mov `d2, `s1l\n"+
-		   "mov `d3, `s1h\n"+
-		   "mov `d0, `s0l\n"+
-		   "mov `d1, `s0h\n"+
-		   "bl ___eqdf2\n"+
-		   "cmp `s2, #0\n"+
-		   "moveq `d4, #1\n"+
-		   "movne `d4, #0",
-		   new Temp[]{ r0, r1, r2, r3, i, LR },
-		   new Temp[]{ j, k, r0 }));
+    emit( ROOT, "cmp `s0, #0\n"+
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 BINOP<p,i>(CMPGT, j, k) = i
@@ -672,36 +663,32 @@ BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
 BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
+    emitMOVE( ROOT, "mov `d0, `s0", r0, j);
+    emitMOVE( ROOT, "mov `d0, `s0", r1, k);
+    emit2( ROOT, "bl ___gtsf2",
+	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(instrFactory, ROOT,
-		   "mov `d1, `s1\n"+
-		   "mov `d0, `s0\n"+
-		   "bl ___gtsf2\n"+
-		   "cmp `s2, #0\n"+
-		   "moveq `d2, #1\n"+
-		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i, LR },
-		   new Temp[]{ j, k, r0 }));
+    emit( ROOT, "cmp `s0, #0\n"+
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 BINOP(CMPGT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
+    emit ( ROOT, "mov `d0, `s0l", r0, j);
+    emit ( ROOT, "mov `d1, `s0h", r1, j);
+    emit ( ROOT, "mov `d2, `s0l", r2, k);
+    emit ( ROOT, "mov `d3, `s0h", r3, k);
+    emit2( ROOT, "bl ___gtdf2",
+	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(instrFactory, ROOT,
-		   "mov `d2, `s1l\n"+
-		   "mov `d3, `s1h\n"+
-		   "mov `d0, `s0l\n"+
-		   "mov `d1, `s0h\n"+
-		   "bl ___gtdf2\n"+
-		   "cmp `s2, #0\n"+
-		   "moveq `d2, #1\n"+
-		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i, LR },
-		   new Temp[]{ j, k, r0 }));
+    emit( ROOT, "cmp `s0, #0\n"+
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 
@@ -730,36 +717,32 @@ BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
 BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
+    emitMOVE( ROOT, "mov `d0, `s0", r0, j);
+    emitMOVE( ROOT, "mov `d0, `s0", r1, k);
+    emit2( ROOT, "bl ___gesf2",
+	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(instrFactory, ROOT,
-		   "mov `d1, `s1\n"+
-		   "mov `d0, `s0\n"+
-		   "bl ___gesf2\n"+
-		   "cmp `s2, #0\n"+
-		   "moveq `d2, #1\n"+
-		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i, LR },
-		   new Temp[]{ j, k, r0 }));
+    emit( ROOT, "cmp `s0, #0\n"+
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 BINOP(CMPGE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
+    emit ( ROOT, "mov `d0, `s0l", r0, j);
+    emit ( ROOT, "mov `d1, `s0h", r1, j);
+    emit ( ROOT, "mov `d2, `s0l", r2, k);
+    emit ( ROOT, "mov `d3, `s0h", r3, k);
+    emit2( ROOT, "bl ___gedf2",
+	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(instrFactory, ROOT,
-		   "mov `d2, `s1l\n"+
-		   "mov `d3, `s1h\n"+
-		   "mov `d0, `s0l\n"+
-		   "mov `d1, `s0h\n"+
-		   "bl ___gedf2\n"+
-		   "cmp `s2, #0\n"+
-		   "moveq `d2, #1\n"+
-		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i, LR },
-		   new Temp[]{ j, k, r0 }));
+    emit( ROOT, "cmp `s0, #0\n"+
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 
@@ -788,36 +771,32 @@ BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
 BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
+    emitMOVE( ROOT, "mov `d0, `s0", r0, j);
+    emitMOVE( ROOT, "mov `d0, `s0", r1, k);
+    emit2( ROOT, "bl ___lesf2",
+	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(instrFactory, ROOT,
-		   "mov `d1, `s1\n"+
-		   "mov `d0, `s0\n"+
-		   "bl ___lesf2\n"+
-		   "cmp `s2, #0\n"+
-		   "moveq `d2, #1\n"+
-		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i, LR },
-		   new Temp[]{ j, k, r0 }));
+    emit( ROOT, "cmp `s0, #0\n"+
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 BINOP(CMPLE, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
+    emit ( ROOT, "mov `d0, `s0l", r0, j);
+    emit ( ROOT, "mov `d1, `s0h", r1, j);
+    emit ( ROOT, "mov `d2, `s0l", r2, k);
+    emit ( ROOT, "mov `d3, `s0h", r3, k);
+    emit2( ROOT, "bl ___ledf2",
+	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(instrFactory, ROOT,
-		   "mov `d2, `s1l\n"+
-		   "mov `d3, `s1h\n"+
-		   "mov `d0, `s0l\n"+
-		   "mov `d1, `s0h\n"+
-		   "bl ___ledf2\n"+
-		   "cmp `s2, #0\n"+
-		   "moveq `d2, #1\n"+
-		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i, LR },
-		   new Temp[]{ j, k, r0 }));
+    emit( ROOT, "cmp `s0, #0\n"+
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 BINOP(CMPLT, j, k) = i
@@ -845,36 +824,32 @@ BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
 BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
+    emitMOVE( ROOT, "mov `d0, `s0", r0, j);
+    emitMOVE( ROOT, "mov `d0, `s0", r1, k);
+    emit2( ROOT, "bl ___ltsf2",
+	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(instrFactory, ROOT,
-		   "mov `d1, `s1\n"+
-		   "mov `d0, `s0\n"+
-		   "bl ___ltsf2\n"+
-		   "cmp `s2, #0\n"+
-		   "moveq `d2, #1\n"+
-		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i, LR },
-		   new Temp[]{ j, k, r0 }));
+    emit( ROOT, "cmp `s0, #0\n"+
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 BINOP(CMPLT, j, k) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
+    emit ( ROOT, "mov `d0, `s0l", r0, j);
+    emit ( ROOT, "mov `d1, `s0h", r1, j);
+    emit ( ROOT, "mov `d2, `s0l", r2, k);
+    emit ( ROOT, "mov `d3, `s0h", r3, k);
+    emit2( ROOT, "bl ___ltdf2",
+	   new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0, r1, r2, r3} );
     // don't move these into seperate Instrs; there's an implicit
     // dependency on the condition register so we don't want to risk
     // reordering them
-    emit(new Instr(instrFactory, ROOT,
-		   "mov `d2, `s1l\n"+
-		   "mov `d3, `s1h\n"+
-		   "mov `d0, `s0l\n"+
-		   "mov `d1, `s0h\n"+
-		   "bl ___ltdf2\n"+
-		   "cmp `s2, #0\n"+
-		   "moveq `d2, #1\n"+
-		   "movne `d2, #0",
-		   new Temp[]{ r0, r1, i, LR },
-		   new Temp[]{ j, k, r0 }));
+    emit( ROOT, "cmp `s0, #0\n"+
+	        "moveq `d0, #1\n"+
+		"movne `d0, #0", i, r0 );
 }%
 
 BINOP<p,i>(OR, j, k) = i %{
@@ -898,7 +873,8 @@ BINOP<l>(SHL, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit( ROOT, "mov `d0, `s0 ", r2, k );
-    emit2(ROOT, "bl ___ashldi3", new Temp[]{r0,r1,r2,LR},new Temp[]{r0,r1,r2});
+    emit2(ROOT, "bl ___ashldi3",
+	  new Temp[]{r0,r1,r2,r3,IP,LR},new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -912,7 +888,8 @@ BINOP<l>(SHR, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit( ROOT, "mov `d0, `s0 ", r2, k );
-    emit2(ROOT, "bl ___ashrdi3", new Temp[]{r0,r1,r2,LR},new Temp[]{r0,r1,r2});
+    emit2(ROOT, "bl ___ashrdi3",
+	  new Temp[]{r0,r1,r2,r3,IP,LR},new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -927,7 +904,8 @@ BINOP<l>(USHR, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit( ROOT, "mov `d0, `s0 ", r2, k );
-    emit2(ROOT, "bl ___lshrdi3", new Temp[]{r0,r1,r2,LR},new Temp[]{r0,r1,r2});
+    emit2(ROOT, "bl ___lshrdi3",
+	  new Temp[]{r0,r1,r2,r3,IP,LR},new Temp[]{r0,r1,r2});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -1044,7 +1022,7 @@ BINOP<l>(MUL, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r1, j );
     emit( ROOT, "mov `d0, `s0h", r0, j );
     emit2(ROOT, "bl ___muldi3", // uses & stomps on these registers
-	 new Temp[]{r0,r1,r2,r3,LR}, new Temp[]{r0,r1,r2,r3});
+	 new Temp[]{r0,r1,r2,r3,IP,LR}, new Temp[]{r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -1053,7 +1031,8 @@ BINOP<f>(MUL, j, k) = i %{
 
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit2(    ROOT, "bl ___mulsf3", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1});
+    emit2(    ROOT, "bl ___mulsf3",
+	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -1064,7 +1043,7 @@ BINOP<d>(MUL, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit2(ROOT, "bl ___muldf3", // uses & stomps on these registers
-	 new Temp[] {r0,r1,r2,r3,LR}, new Temp[] {r0,r1,r2,r3});
+	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -1073,7 +1052,8 @@ BINOP<p,i>(DIV, j, k) = i %{
 
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit2(    ROOT, "bl ___divsi3", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1});
+    emit2(    ROOT, "bl ___divsi3",
+	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -1084,7 +1064,7 @@ BINOP<l>(DIV, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit2(ROOT, "bl ___divdi3",	// uses and stomps on these registers
-	 new Temp[] {r0,r1,r2,r3,LR}, new Temp[] {r0,r1,r2,r3});
+	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -1093,7 +1073,8 @@ BINOP<f>(DIV, j, k) = i %{
 
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit2(    ROOT, "bl ___divsf3", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1});
+    emit2(    ROOT, "bl ___divsf3",
+	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -1104,7 +1085,7 @@ BINOP<d>(DIV, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit2(ROOT, "bl ___divdf3",
-	 new Temp[] {r0,r1,r2,r3,LR}, new Temp[] {r0,r1,r2,r3});
+	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -1113,7 +1094,8 @@ BINOP<p,i>(REM, j, k) = i %{
 
     emitMOVE( ROOT, "mov `d0, `s0", r1, k );
     emitMOVE( ROOT, "mov `d0, `s0", r0, j );
-    emit2(    ROOT, "bl ___modsi3", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1});
+    emit2(    ROOT, "bl ___modsi3",
+	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1});
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -1124,7 +1106,7 @@ BINOP<l>(REM, j, k) = i %{
     emit( ROOT, "mov `d0, `s0l", r0, j );
     emit( ROOT, "mov `d0, `s0h", r1, j );
     emit2(ROOT, "bl ___moddi3",
-	 new Temp[] {r0,r1,r2,r3,LR}, new Temp[] {r0,r1,r2,r3});
+	 new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1,r2,r3});
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -1313,21 +1295,24 @@ UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit2(ROOT, "bl ___floatdidf", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1} );
+    emit2(ROOT, "bl ___floatdidf",
+	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
 		
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit2(ROOT, "bl ___floatsidf", new Temp[] {r0,r1,LR}, new Temp[] {r0} );
+    emit2(ROOT, "bl ___floatsidf",
+	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
 UNOP(_2D, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit2(ROOT, "bl ___extendsfdf2", new Temp[] {r0,r1,LR}, new Temp[] {r0} );
+    emit2(ROOT, "bl ___extendsfdf2",
+	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 
@@ -1345,13 +1330,15 @@ UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit2(ROOT, "bl ___floatdisf", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1} );
+    emit2(ROOT, "bl ___floatdisf",
+	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
 
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit2(    ROOT, "bl ___floatsisf", new Temp[] {r0,LR},new Temp[] {r0} );   
+    emit2(    ROOT, "bl ___floatsisf",
+	      new Temp[] {r0,r1,r2,r3,IP,LR},new Temp[] {r0} );   
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 /* useless.  should never really be in tree form.
@@ -1364,7 +1351,8 @@ UNOP(_2F, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit2(ROOT, "bl ___truncdfsf2", new Temp[] {r0,r1,LR},new Temp[] {r0,r1} );
+    emit2(ROOT, "bl ___truncdfsf2",
+	  new Temp[] {r0,r1,r2,r3,IP,LR},new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -1379,14 +1367,16 @@ UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.POINTER )% %{
 UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit2(    ROOT, "bl ___fixsfsi", new Temp[] {r0,LR}, new Temp[] {r0} );
+    emit2(    ROOT, "bl ___fixsfsi",
+	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 UNOP(_2I, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit2(ROOT, "bl ___fixdfsi", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1} );
+    emit2(ROOT, "bl ___fixdfsi",
+	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 
@@ -1405,7 +1395,8 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
 UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 	
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit2(ROOT, "bl ___fixsfdi", new Temp[] {r0,r1,LR}, new Temp[] {r0} );
+    emit2(ROOT, "bl ___fixsfdi",
+	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );
 }%
@@ -1413,7 +1404,8 @@ UNOP(_2L, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
 
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit2(ROOT, "bl ___fixdfdi", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1} );
+    emit2(ROOT, "bl ___fixdfdi",
+	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );	 
 }%
@@ -1433,7 +1425,8 @@ UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
 UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
 
     emitMOVE( ROOT, "mov `d0, `s0", r0, arg );
-    emit2(    ROOT, "bl ___negsf2", new Temp[] {r0,LR}, new Temp[] {r0} );
+    emit2(    ROOT, "bl ___negsf2",
+	      new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0} );
     emitMOVE( ROOT, "mov `d0, `s0", i, r0 );
 }%
 UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )%
@@ -1441,7 +1434,8 @@ UNOP(NEG, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )%
 
     emit( ROOT, "mov `d0, `s0l", r0, arg );
     emit( ROOT, "mov `d0, `s0h", r1, arg );
-    emit2(ROOT, "bl ___negdf2", new Temp[] {r0,r1,LR}, new Temp[] {r0,r1} );
+    emit2(ROOT, "bl ___negdf2",
+	  new Temp[] {r0,r1,r2,r3,IP,LR}, new Temp[] {r0,r1} );
     emit( ROOT, "mov `d0l, `s0", i, r0 );
     emit( ROOT, "mov `d0h, `s0", i, r1 );	 
 }%
