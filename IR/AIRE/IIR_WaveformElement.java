@@ -1,0 +1,38 @@
+// IIR_WaveformElement.java, created by cananian
+package harpoon.IR.AIRE;
+
+/**
+ * <code>IIR_WaveformElement</code> 
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: IIR_WaveformElement.java,v 1.1 1998-10-10 07:53:46 cananian Exp $
+ */
+
+//-----------------------------------------------------------
+public class IIR_WaveformElement extends IIR_Tuple
+{
+
+// PUBLIC:
+    public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    //IR_KIND = IR_WAVEFORM_ELEMENT
+    //CONSTRUCTOR:
+    public IIR_WaveformElement() { }
+    //METHODS:  
+    public void set_value(IIR value)
+    { _value = value; }
+ 
+    public IIR get_value()
+    { return _value; }
+ 
+    public void set_time(IIR time)
+    { _time = time; }
+ 
+    public IIR get_time()
+    { return _time; }
+ 
+    //MEMBERS:  
+
+// PROTECTED:
+    IIR _value;
+    IIR _time;
+} // END class
+

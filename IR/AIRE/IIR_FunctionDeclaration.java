@@ -1,0 +1,38 @@
+// IIR_FunctionDeclaration.java, created by cananian
+package harpoon.IR.AIRE;
+
+/**
+ * <code>IIR_FunctionDeclaration</code> 
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: IIR_FunctionDeclaration.java,v 1.1 1998-10-10 07:53:36 cananian Exp $
+ */
+
+//-----------------------------------------------------------
+public class IIR_FunctionDeclaration extends IIR_SubprogramDeclaration
+{
+
+// PUBLIC:
+    public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    //IR_KIND = IR_FUNCTION_DECLARATION
+    //CONSTRUCTOR:
+    public IIR_FunctionDeclaration() { }
+    //METHODS:  
+    public void set_pure(IIR_Pure purity)
+    { _purity = purity; }
+ 
+    public IIR_Pure get_pure()
+    { return _purity; }
+ 
+    public void set_return_type(IIR_TypeDefinition return_type)
+    { _return_type = return_type; }
+ 
+    public IIR_TypeDefinition get_return_type()
+    { return _return_type; }
+ 
+    //MEMBERS:  
+
+// PROTECTED:
+    IIR_Pure _purity;
+    IIR_TypeDefinition _return_type;
+} // END class
+

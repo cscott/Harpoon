@@ -1,0 +1,56 @@
+// IIR_IntegerLiteral.java, created by cananian
+package harpoon.IR.AIRE;
+
+import harpoon.Util.Tuple;
+import java.util.Hashtable;
+/**
+ * The predefined <code>IIR_IntegerLiteral</code> class is the most
+ * general representation of an integer literal.  It is capable of
+ * representing <i>any</i> integer literal value falling within the
+ * limitations of a specific IIR foundation implementation.
+ *
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: IIR_IntegerLiteral.java,v 1.1 1998-10-10 07:53:37 cananian Exp $
+ */
+
+//-----------------------------------------------------------
+public class IIR_IntegerLiteral extends IIR_Literal
+{
+
+// PUBLIC:
+    public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    //IR_KIND = IR_INTEGER_LITERAL
+    
+    //METHODS:  
+    public static IIR_IntegerLiteral get(int base, String mantissa, int mantissa_length, String exponent, int exponent_length) {
+        Tuple t = new Tuple(new Object[] { new Integer(base), mantissa, new Integer(mantissa_length), exponent, new Integer(exponent_length) } );
+        IIR_IntegerLiteral ret = (IIR_IntegerLiteral) _h.get(t);
+        if (ret==null) {
+            ret = new IIR_IntegerLiteral(base, mantissa, mantissa_length, exponent, exponent_length);
+            _h.put(t, ret);
+        }
+        return ret;
+    }
+ 
+    public String print( int length) { throw new Error(); }
+ 
+    public void release() { /* do nothing. */ }
+ 
+    //MEMBERS:  
+
+// PROTECTED:
+    int _base;
+    String _mantissa;
+    int _mantissa_length;
+    String _exponent;
+    int _exponent_length;
+    private IIR_IntegerLiteral(int base, String mantissa, int mantissa_length, String exponent, int exponent_length) {
+        _base = base;
+        _mantissa = mantissa;
+        _mantissa_length = mantissa_length;
+        _exponent = exponent;
+        _exponent_length = exponent_length;
+    }
+    private static Hashtable _h = new Hashtable();
+} // END class
+

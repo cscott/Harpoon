@@ -1,0 +1,38 @@
+// IIR_FileDeclaration.java, created by cananian
+package harpoon.IR.AIRE;
+
+/**
+ * <code>IIR_FileDeclaration</code> 
+ * @author C. Scott Ananian <cananian@alumni.princeton.edu>
+ * @version $Id: IIR_FileDeclaration.java,v 1.1 1998-10-10 07:53:36 cananian Exp $
+ */
+
+//-----------------------------------------------------------
+public class IIR_FileDeclaration extends IIR_ObjectDeclaration
+{
+
+// PUBLIC:
+    public void accept(IIR_Visitor visitor ){visitor.visit(this);}
+    //IR_KIND = IR_FILE_DECLARATION
+    //CONSTRUCTOR:
+    public IIR_FileDeclaration() { }
+    //METHODS:  
+    public void set_file_open_expression(IIR file_open_expression)
+    { _file_open_expression = file_open_expression; }
+ 
+    public IIR get_file_open_expression()
+    { return _file_open_expression; }
+ 
+    public void set_file_logical_name(IIR file_logical_name)
+    { _file_logical_name = file_logical_name; }
+ 
+    public IIR get_file_logical_name()
+    { return _file_logical_name; }
+ 
+    //MEMBERS:  
+
+// PROTECTED:
+    IIR _file_open_expression;
+    IIR _file_logical_name;
+} // END class
+
