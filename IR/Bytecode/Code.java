@@ -32,7 +32,7 @@ import java.util.Set;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.10 2002-02-25 21:04:17 cananian Exp $
+ * @version $Id: Code.java,v 1.11 2002-08-30 23:09:56 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -192,15 +192,6 @@ public class Code extends HCode {
   /** Cached value of <code>getTryBlocks</code> blocks. */
   private ExceptionEntry[] tryBlocks = null;
 
-  /** @deprecated use getElementsL() */
-  public HCodeElement[] getElements() {
-    List l = getElementsL();
-    return (HCodeElement[]) l.toArray(new Instr[l.size()]);
-  }
-  /** @deprecated use getElementsI() */
-  public Enumeration getElementsE() {
-    return Collections.enumeration(getElementsL());
-  }
   public Iterator getElementsI() {
     return getElementsL().listIterator();
   }
