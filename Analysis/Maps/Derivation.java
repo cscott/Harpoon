@@ -26,7 +26,7 @@ import java.util.List;
  * and its motivations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.8 2000-11-08 16:36:35 cananian Exp $
+ * @version $Id: Derivation.java,v 1.1.2.9 2000-11-16 04:50:36 cananian Exp $
  */
 public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
 
@@ -42,7 +42,7 @@ public interface Derivation extends harpoon.Analysis.Maps.TypeMap {
      *            at <code>hce</code>.
      */
     public DList derivation(HCodeElement hce, Temp t)
-	throws TypeNotKnownException;
+	throws TypeMap.TypeNotKnownException;
 
     /** Structure of the derivation information.<p>
      *  Given three <code>Temp</code>s <code>t1</code>, <code>t2</code>,
