@@ -147,7 +147,7 @@ public abstract class MemoryArea {
 	current.enter(shadow, this);
 	try {
 	    logic.run();
-	} catch (Exception e) {
+	} catch (Throwable e) {
 	    try {
 		e.memoryArea = getMemoryArea(e);
 		oldMem.checkAccess(e);
@@ -159,18 +159,6 @@ public abstract class MemoryArea {
 	    }
 	    current.exitMem();
 	    throw new ThrowBoundaryError(e.toString());
-	} catch (Error e) {
-	    try {
-		e.memoryArea = getMemoryArea(e);
-		oldMem.checkAccess(e);
-	    } catch (Exception checkException) {
-		current.exitMem();
-		throw new ThrowBoundaryError("An exception occurred that was " +
-					     "allocated in an inner scope that " +
-					     "just exited.");
-	    }
-	    current.exitMem();
-	    throw e;
 	}
 	current.exitMem();
     }
@@ -192,7 +180,7 @@ public abstract class MemoryArea {
      */
     public void executeInArea(Runnable logic)
 	throws InaccessibleAreaException {
-	// TODO
+	enter(logic);  // In our system, this is a subset of enter for all practical purposes...
     }
 
     /** Gets the <code>MemoryArea</code> in which the given object is located.
@@ -204,11 +192,9 @@ public abstract class MemoryArea {
 	    return ImmortalMemory.instance();
 	}
 	MemoryArea mem = object.memoryArea;
-	// I'm completely punting this for now...
   	if (mem == null) { // Native methods return objects 
   	    // allocated out of the current scope.
 	    return RealtimeThread.currentRealtimeThread().memoryArea();
-//    	    return NullMemoryArea.instance();
 	} 
 	if (mem.constant) { 
 	    // Constants are allocated out of ImmortalMemory
@@ -256,21 +242,17 @@ public abstract class MemoryArea {
 	       OutOfMemoryError {
 	RealtimeThread.checkInit();
 	RealtimeThread rt = RealtimeThread.currentRealtimeThread();
-	if (number<0) {
-	    throw new NegativeArraySizeException();
-	}
-	Object o = new Object();
-	o.memoryArea = shadow;
-	rt.memoryArea().checkAccess(o);
+	if (number<0) throw new NegativeArraySizeException();
+
+	rt.memoryArea().checkNewInstance(shadow);
+	Object o;
 	(o = newArray(rt, type, number)).memoryArea = shadow;
 	return o;
     }
 
-    protected native Object newInstance(RealtimeThread rt, 
-			      Constructor constructor, 
-			      Object[] parameters)
-	throws InvocationTargetException;
-    
+    static Class[] nullClassArr = null;
+    static Object[] nullObjArr = null;
+
     /** Allocate an object in this memory area.
      *
      *  @param type The class of which to create a new instance.
@@ -284,37 +266,37 @@ public abstract class MemoryArea {
      *                                           was thrown by the constructor.
      *  @throws OutOfMemoryError Space in the memory area is exhaused.
      */
+
     public Object newInstance(Class type)
-	throws IllegalAccessException, InstantiationException,
-	       OutOfMemoryError {
-	return newInstance(type, new Class[0], new Object[0]);
+	throws IllegalAccessException, InstantiationException, OutOfMemoryError {
+	if (nullClassArr == null) {
+	    nullClassArr = new Class[0];
+	    nullObjArr = new Object[0];
+	    nullClassArr.memoryArea = HeapMemory.instance();
+	    nullObjArr.memoryArea = HeapMemory.instance();
+	}
+	if (nullClassArr.memoryArea.heap&&(!RealtimeThread.RTJ_init_in_progress)) {
+	    final ImmortalMemory im = ImmortalMemory.instance();
+	    nullClassArr = (Class[])im.newArray(Class.class, 0);
+	    nullObjArr = (Object[])im.newArray(Object.class, 0);
+	}
+	return newInstance(type, nullClassArr, nullObjArr);
     }
-    
+
     /** Allocate an object in this memory area. */
     public Object newInstance(final Class type,
 			      final Class[] parameterTypes,
 			      final Object[] parameters) 
-	throws IllegalAccessException, InstantiationException,
-	OutOfMemoryError {
+	throws IllegalAccessException, InstantiationException, OutOfMemoryError {
+	Constructor c;
 	try {
-	    RealtimeThread.checkInit();
-	    RealtimeThread rt = RealtimeThread.currentRealtimeThread();
-	    Object o = new Object(); // This causes a memory leak
-	    o.memoryArea = shadow;
-	    rt.memoryArea().checkAccess(o);
-	    try {
-		Constructor c = type.getConstructor(parameterTypes);
-		o = newInstance(rt, c, parameters);
-	    } catch (NoSuchMethodException e) {
-		throw new InstantiationException(e.getMessage());
-	    } catch (InvocationTargetException e) {
-		throw new InstantiationException(e.getMessage());
-	    }
-	    o.memoryArea = shadow;
-	    return o;
-	} catch (IllegalAssignmentError e) {
-	    throw new IllegalAccessException(e.toString());
+	    // Type.getConstructor doesn't allocate any that needs deallocation 
+	    c = type.getConstructor(parameterTypes); 
+	} catch (Exception e) {
+	    throw new InstantiationException(e.toString());
 	}
+	
+	return newInstance(c, parameters);
     }
     
     /** Allocate an object in this memory area.
@@ -332,9 +314,21 @@ public abstract class MemoryArea {
     public Object newInstance(Constructor c, Object[] args)
 	throws IllegalAccessException, InstantiationException,
 	       OutOfMemoryError {
-	// TODO
-
-	return null;
+	try {
+	    RealtimeThread.checkInit();
+	    RealtimeThread rt = RealtimeThread.currentRealtimeThread();
+	    rt.memoryArea().checkNewInstance(shadow);
+	    Object o;
+	    try {
+		o = newInstance(rt, c, args);
+	    } catch (InvocationTargetException e) {
+		throw new InstantiationException(e.getMessage());
+	    }
+	    o.memoryArea = shadow;
+	    return o;
+	} catch (IllegalAssignmentError e) {
+	    throw new IllegalAccessException(e.toString());
+	}
     }
 
     /** Query the size of the memory area. The returned value is the
@@ -347,6 +341,21 @@ public abstract class MemoryArea {
     
 
     // METHODS NOT IN SPECS
+
+    protected native Object newInstance(RealtimeThread rt, 
+					Constructor constructor, 
+					Object[] parameters)
+	throws InvocationTargetException;
+
+
+    /** Explicitly unsafe way to get by without polluting the previous scope with a Runnable */
+    static void startMem(MemoryArea mem) {
+	RealtimeThread.currentRealtimeThread().enter(mem.shadow, mem);
+    }
+
+    static void stopMem() {
+	RealtimeThread.currentRealtimeThread().exitMem();
+    }
 
 
     protected MemoryArea(long minimum, long maximum) {
@@ -389,19 +398,15 @@ public abstract class MemoryArea {
 		throw new NegativeArraySizeException();
 	    }
 	}
-	Object o = new Object();
-	o.memoryArea = shadow;
-	rt.memoryArea().checkAccess(o);
+	rt.memoryArea().checkNewInstance(shadow);
+	Object o;
 	(o = newArray(rt, type, dimensions)).memoryArea = shadow;
 	return o;
     }
 
-    /** Create a new object, allocated out of this MemoryArea.
-     */
-    
     /** Check to see if this object can be accessed from this MemoryArea
      */
-    
+
     public void checkAccess(Object obj) {
 	if ((obj != null) && (obj.memoryArea != null) && 
 	    obj.memoryArea.scoped) {
@@ -409,6 +414,15 @@ public abstract class MemoryArea {
 	}
     }
     
+    /** Check access restrictions for a newInstance
+     */
+
+    public void checkNewInstance(MemoryArea mem) {
+	if (mem.scoped) {
+	    throw new IllegalAssignmentError("Illegal assignment during new instance!");
+	}
+    }
+
     /** Get the outerScope of this MemoryArea, for non-ScopedMemory's,
      *  this defaults to null.
      */
@@ -421,17 +435,6 @@ public abstract class MemoryArea {
      */
 
     public String toString() {
-//  	MemoryArea parent = null;
-//  	try {
-//  	    parent = getOuterScope();
-//  	} catch (MemoryScopeError e) {
-//  	    return String.valueOf(id + " not in execution path");
-//  	}
-//  	if (parent == null) {
-//  	    return String.valueOf(id);      
-//  	} else {
-//  	    return parent.toString() + "." + String.valueOf(id);
-//  	}    
 	return String.valueOf(id);
     }
 }

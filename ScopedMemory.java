@@ -297,6 +297,16 @@ public abstract class ScopedMemory extends MemoryArea {
 	}	    
     }
 
+    /** Check to see if a newInstance can go through 
+     */
+    public void checkNewInstance(MemoryArea mem) {
+	if ((this != mem) && mem.scoped &&
+	    (!RealtimeThread.currentRealtimeThread()
+	     .checkAccess(this, mem))) {
+	    throw new IllegalAssignmentError("Illegal assignment during new instance!");
+	}
+    }
+
     /** Cannot call this on a ScopedMemory (doesn't cleanup MemBlocks 
      *  appropriately).  Should never need to, since that'll cause
      *  an access violation according to the spec. 

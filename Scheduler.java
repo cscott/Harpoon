@@ -19,12 +19,14 @@ import java.util.HashSet;
  */
 public abstract class Scheduler {
     protected static Scheduler defaultScheduler = null;
-    private VTMemory vt;
+    private static VTMemory vt = null;
     
     /** Create an instance of <code>Scheduler</code>. */
     protected Scheduler() {
 	addToRootSet();
-	vt = new VTMemory();
+	if (vt == null) {
+	    vt = new VTMemory();
+	}
     }
 
     /** Inform the scheduler and cooperating facilities that the resource
@@ -182,7 +184,9 @@ public abstract class Scheduler {
 	if (sched == null) {
 	    sched = Scheduler.getDefaultScheduler();
 	}
+	MemoryArea.startMem(vt);
 	NoHeapRealtimeThread.print("\n"+sched.getPolicyName()+": "+sched);
+	MemoryArea.stopMem();
     }
 
    /** Run the runnable in an atomic section */
@@ -208,27 +212,23 @@ public abstract class Scheduler {
     }
 
     final void addThreadToLists(final RealtimeThread thread) {
-	atomic(new Runnable() {
-	    public void run() {
-		addToFeasibility(thread);
-		ImmortalMemory.instance().enter(new Runnable() {
-		    public void run() {
-			addThreadInC(thread, thread.getUID());
-		    }
-		});
-		addThread(thread);
-	    }
-	});
+	MemoryArea.startMem(vt);
+	int state = beginAtomic();
+	addToFeasibility(thread);
+	addThreadInC(thread, thread.getUID());
+	addThread(thread);
+	endAtomic(state);
+	MemoryArea.stopMem();
     }
 
     final void removeThreadFromLists(final RealtimeThread thread) {
-	atomic(new Runnable() {
-	    public void run() {
-		removeThread(thread);
-		removeThreadInC(thread);
-		removeFromFeasibility(thread);
-	    }
-	});
+	MemoryArea.startMem(vt);
+	int state = beginAtomic();
+	removeThread(thread);
+	removeThreadInC(thread);
+	removeFromFeasibility(thread);
+	endAtomic(state);
+	MemoryArea.stopMem();
     }
 
     private final native void addThreadInC(Schedulable t, long threadID);
@@ -238,47 +238,42 @@ public abstract class Scheduler {
 
     final static void jDisableThread(final RealtimeThread rt, 
 				     final long threadID) {
-	atomic(new Runnable() {
-	    public void run() {
-		Scheduler sched;
-		if (rt != null) { // Is this really necessary?
-		    sched = rt.getScheduler();
-		} else {
-		    sched = getDefaultScheduler();
-		}
-		if (sched != null) {
-		    sched.disableThread(threadID);
-		} 
-	    }
-	});
-	
+	MemoryArea.startMem(vt);
+	int state = beginAtomic();
+	Scheduler sched;
+	if (rt != null) { // Is this really necessary?
+	    sched = rt.getScheduler();
+	} else {
+	    sched = getDefaultScheduler();
+	}
+	if (sched != null) {
+	    sched.disableThread(threadID);
+	} 
+	endAtomic(state);
+	MemoryArea.stopMem();
     }
     
     final static void jEnableThread(final RealtimeThread rt, 
 				    final long threadID) {
-	atomic(new Runnable() {
-	    public void run() {
-		Scheduler sched;
-		if (rt != null) { // Is this really necessary?
-		    sched = rt.getScheduler();
-		} else {
-		    sched = getDefaultScheduler();
-		}
-		if (sched != null) {
-		    sched.enableThread(threadID);
-		}
-	    }	    
-	});
+	MemoryArea.startMem(vt);
+	int state = beginAtomic();
+	Scheduler sched;
+	if (rt != null) { // Is this really necessary?
+	    sched = rt.getScheduler();
+	} else {
+	    sched = getDefaultScheduler();
+	}
+	if (sched != null) {
+	    sched.enableThread(threadID);
+	}
+	endAtomic(state);
+	MemoryArea.stopMem();
     }
 
-    long temp;
-
     final protected long jChooseThread(final long currentTime) {
-	vt.enter(new Runnable() {
-	    public void run() {
-		Scheduler.this.temp = chooseThread(currentTime);
-	    }
-	});
+	MemoryArea.startMem(vt);
+	long temp = chooseThread(currentTime);
+	MemoryArea.stopMem();
 	return temp;
     }
 }
