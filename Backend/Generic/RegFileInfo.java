@@ -48,7 +48,7 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.33 2000-07-25 03:14:20 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.34 2000-08-15 01:51:29 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -188,6 +188,7 @@ public abstract class RegFileInfo {
 
     /** Produces a mutable <code>Set</code> of register assignments
 	that can hold <code>t</code>.  FSK: experimental method.
+	<BR> <B>requires:</B> t is not a physical register Temp.
 	<BR> <B>effects:</B> Returns a <code>Set</code> of possible
 	     register assignments for <code>t</code>, where each
 	     assignment is an unmodifiable <code>List</code> of

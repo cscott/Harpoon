@@ -53,12 +53,22 @@ import java.util.Collections;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.21 2000-08-14 20:25:15 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.22 2000-08-15 01:51:13 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
     private static final boolean TIME = false;
+    private static void TIME(String s) {
+	if (TIME)    System.out.print(s);
+    }
     private static final boolean RESULTS = false;
+    private static void RESULTS(String s) { 
+	if (RESULTS) System.out.print(s);
+    }
+    private static final boolean STATS = true;
+    private static void STATS(String s) {
+	if (STATS)   System.out.print(s);
+    }
     
     public static RegAlloc.Factory FACTORY =
 	new RegAlloc.Factory() {
@@ -98,7 +108,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     
     // Below is broken; only keys on ONE AReg (The first one in the
-    // assignment) but I think we may need to change this to map ANY
+    // assignment) but I think I need to change this to map ANY
     // AReg in the assignment to the according assignment.  
     // ( IE, VReg -> Index -> AReg -> Assign ) 
     // However, due to 1. How the graph coloring algorithms are
@@ -192,7 +202,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	boolean success, coalesced;
 	AdjMtx adjMtx;
 
-	if (TIME) System.out.println();
+	TIME("\n");
+
 	do {
 	    buildRegAssigns();
 	    rdefs = new ReachingDefsAltImpl(code);
@@ -202,7 +213,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	    do {
 
-		if (TIME) System.out.println("Making Webs");
+		TIME("Making Webs\n");
 
 		makeWebs(rdefs); 
 
@@ -242,19 +253,19 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		
 		// System.out.println("webs: "+webRecords);
 
-		if (TIME) System.out.println("Building Matrix");
+		TIME("Building Matrix\n");
 
 		adjMtx = buildAdjMatrix();
 
-		if (TIME) System.out.println
-		    ( ((CachingLiveTemps)liveTemps).cachePerformance());
-		
+		TIME(((CachingLiveTemps)liveTemps).cachePerformance());
+		TIME("\n");
+
 		// System.out.println("Adjacency Matrix");
 		// System.out.println(adjMtx);
 		coalesced = coalesceRegs(adjMtx);
 	    } while (coalesced);
 
-	    if (TIME) System.out.println("Building Lists");
+	    TIME("Building Lists\n");
 
 	    WebRecord[] adjLsts = buildAdjLists(adjMtx); 
 
@@ -274,30 +285,33 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		int deg = twr.adjnds.size();
 		tmpStat.add(deg);
 	    }
-	    // System.out.print("\nReg"+regStat );
-	    // System.out.println("\nTmp"+tmpStat );
+	    STATS("\nRegDeg"+regStat + " TmpDeg"+tmpStat );
+	    STATS("\n");
 	    // END STAT GATHERING LOOPS
 
 	    // System.out.println(Arrays.asList(adjLsts));
 
 	    computeSpillCosts();
 
-	    if (TIME) System.out.println("Building Graph");
+	    TIME("Building Graph\n");
 
 	    final Graph graph = buildGraph(adjLsts);
 	    
 	    final Map nodeToNum = new HashMap(); 
-	    if (RESULTS) System.out.println("nodes of graph");
+	    RESULTS("nodes of graph\n");
 	    int i=0;
 	    for(Iterator nodes=graph.nodeSet().iterator();nodes.hasNext();){
 		i++;
 		Object n=nodes.next();
 		nodeToNum.put(n, new Integer(i));
-		if (RESULTS) System.out.println(i+"\t"+n);
+		RESULTS(i+"\t"+n+"\n");
 	    }
-	    Collection readEdges = readableEdges(graph.edges(), nodeToNum);
-	    if (RESULTS) System.out.println("edges of graph "+readEdges);
-
+	    if (RESULTS){
+		Collection readEdges = readableEdges(graph.edges(),nodeToNum);
+		RESULTS("edges of graph "+readEdges+"\n");
+	    }
+	    STATS(" |g.V|:"+graph.nodeSet().size() + 
+		  " |g.E|:"+graph.edges().size() + "\n");
 
 	    try {
 		List colors = new ArrayList(regToColor.values());
@@ -306,6 +320,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		
 		for(int j=0; j<adjLsts.length; j++) {
 		    WebRecord wr = adjLsts[j];
+
+		    if (isRegister(wr.temp())) continue;
+
 		    Iterator wrs;
 		    for(wrs=wr.adjnds.iterator(); wrs.hasNext();){
 			WebRecord nb = (WebRecord) wrs.next();
@@ -336,20 +353,22 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		    Object nd = nds.next();
 		    c2n.add(graph.getColor(nd), nd);
 		}
-		for(Iterator cs=c2n.keySet().iterator();cs.hasNext();){
+		
+		if (RESULTS) 
+		for(Iterator cs=c2n.keySet().iterator();cs.hasNext();){ 
 		    Object col=cs.next();
-		    if (RESULTS) 
-			System.out.println(col + " nodes: "+
-					   readableNodes(c2n.getValues(col),
-							 nodeToNum));
+		    RESULTS(col + " nodes: "+
+			    readableNodes(c2n.getValues(col),nodeToNum)+
+			    "\n");
 		}
+		
 
 		modifyCode(graph);
 		
 		success = true;
 	    } catch (UnableToColorGraph u) {
 		success = false;
-		genSpillCode(u.getRemovalSuggestions());
+		genSpillCode(u.getRemovalSuggestions(), graph);
 	    }
 	} while (!success);
 
@@ -453,12 +472,16 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	List sd; // [Temp, Def]
 	int i, oldnwebs;
 	
-	
+	// used for experimenting with making register-ranges part of
+	// the TempWebRecords
+	boolean SKIP_REGS = true;
+
 	for(Iterator instrs = code.getElementsI();instrs.hasNext();){ 
 	    Instr inst = (Instr) instrs.next();
 	    for(Iterator uses = inst.useC().iterator(); uses.hasNext();){ 
 		Temp t = (Temp) uses.next();
-		if (isRegister(t)) continue;
+
+		if (SKIP_REGS && isRegister(t)) continue;
 
 		TempWebRecord web = 
 		    new TempWebRecord
@@ -478,7 +501,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	    for(Iterator defs=inst.defC().iterator();defs.hasNext();){
 		Temp t = (Temp) defs.next();
-		if (isRegister(t)) continue;
+		
+		if (SKIP_REGS && isRegister(t)) continue;
+		
 		TempWebRecord web =
 		    new TempWebRecord
 		    (t, new LinearSet(Collections.singleton(inst)),
@@ -509,8 +534,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		web1 = (TempWebRecord) tmp1.iterator().next();
 		tmp1.remove(web1);
 
-		// non-standard iteration because of this:
-
 		for(Iterator t2s=tmp1.iterator(); t2s.hasNext(); ){
 		    web2 = (TempWebRecord) t2s.next();
 		    if (web1.sym.equals(web2.sym)) {
@@ -523,8 +546,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 			    // IMPORTANT: current temp->reg assignment
 			    // design breaks if an instr needs two
 			    // different regs for the same temp in the
-			    // uses and defines.  Take these out after that
-			    // is fixed. 
+			    // uses and defines.  Take this clause out
+			    // after that is fixed. 
 			    Set s1 = new HashSet(web1.defs);
 			    s1.retainAll(web2.uses);
 			    
@@ -533,6 +556,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 			    combineWebs = (!s1.isEmpty() || !s2.isEmpty());
 			}
 			
+			if (false) System.out.println
+				       (combineWebs?
+					"combining "+web1+" & "+web2:
+					"NOT combining "+web1+" & "+web2);
 			
 			if (combineWebs) {
 			    web1.defs.addAll(web2.defs);
@@ -744,19 +771,44 @@ public class GraphColoringRegAlloc extends RegAlloc {
     }
 
     HashSet spilled = new HashSet();
-    private void genSpillCode(Collection remove) { 
-	int oldSpilledSize = spilled.size();
+    private void genSpillCode(Collection remove, Graph g) { 
+	HashSet spillThese = new HashSet(remove.size());
 	for(Iterator ri=remove.iterator(); ri.hasNext(); ) {
 	    Graph.Node node = (Graph.Node) ri.next();
-	    if (node.wr instanceof RegWebRecord ||
+	    if (isRegister(node.wr.temp()) ||
 		spilled.contains(node.wr)) continue;
+	    spillThese.add(node);
+	}
+	    
+	if (spillThese.isEmpty()) {
+	    // choose a node independently of the suggested ones, since
+	    // those are all already spilled...
+	    System.out.println(" remove:" +remove+ " contains nothing new");
+	    HashSet nset = new HashSet(g.nodeSet());
+	    nset.removeAll(spilled);
+	    int md = -1; Object mn=null;
+	    for(Iterator ns=nset.iterator(); ns.hasNext(); ) {
+		Graph.Node n = (Graph.Node) ns.next();
+		if (g.getDegree(n) > md &&
+		    !isRegister(n.wr.temp()) &&
+		    !spilled.contains(n)) {
+		    mn = n;
+		    md = g.getDegree(n);
+		}
+	    }
+	    spillThese.add(mn);
+	}
+	
+	for(Iterator ss=spillThese.iterator(); ss.hasNext(); ) {
+	    Graph.Node node = (Graph.Node) ss.next();
 	    spilled.add(node.wr);
 	    
 	    TempWebRecord wr = (TempWebRecord) node.wr;
-
+	    Util.assert(!isRegister(wr.temp()));
+	    
 	    System.out.print("\nSpilling "+wr);
-
-
+	    
+	    
 	    Temp t = wr.temp();
 	    for(Iterator ds=wr.defs.iterator(); ds.hasNext(); ) {
 		Instr i = (Instr) ds.next();
@@ -779,11 +831,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	}
 
-	// Replace this with something that will choose a node
-	// independently of the suggested ones, since those are all
-	// already spilled...
-	Util.assert(spilled.size() > oldSpilledSize);
-
 	System.out.println("*** SPILLED ("+spilled.size()+")"+
 			   (true?"":(": " + spilled)));
     }
@@ -801,7 +848,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    } else if (i instanceof RestoreProxy) {
 		RestoreProxy rp = (RestoreProxy) i;
 		Instr loadInstr = 
-		    SpillLoad.makeLD(rp.instr, "FSK-ST",
+		    SpillLoad.makeLD(rp.instr, "FSK-LD",
 				     code.getRegisters(rp,rp.tmp),
 				     rp.tmp); 
 		Instr.replace(rp, loadInstr);
@@ -854,14 +901,15 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    to this graph. 
 	*/
 	void add(WebRecord wr) {
-	    if (wr instanceof RegWebRecord) {
+	    if (isRegister(wr.temp())) {
 		Node n = new Node(wr, 0);
 		n.color = regToColor(wr.temp());
 		nodes.add(n);
 		wr2node.add(wr, n);
 	    } else {
 		Map r2a = (Map) implicitAssigns.get(wr.temp());
-		Util.assert(r2a != null, "no implicit assigns for "+wr.temp());
+		Util.assert(r2a != null, 
+			    "no implicit assigns for "+wr.temp());
 		List rl = (List) r2a.values().iterator().next();
 		for(int j=0; j<rl.size(); j++) {
 		    Node n = new Node(wr, j);
@@ -1012,7 +1060,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		    Iterator nbs;
 		    for(nbs=neighborsOf(n).iterator();nbs.hasNext();){
 			Node nb = (Node) nbs.next();
-			if (nb.color.equals(rc)) {
+			if (nb.color != null && 
+			    nb.color.equals(rc)) {
 			    throw new ColorableGraph.IllegalColor(n,rc);
 			}
 		    }
@@ -1081,8 +1130,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		Instr d = (Instr) ins.next();
 		Set l= liveTemps.getLiveAfter(d);
 		if (l.contains(wr.temp())) {
-		    if (isRegister(wr.temp())) 
+		    if (wr instanceof RegWebRecord) 
 			return true;
+
 		    HashSet wDefs = new HashSet
 			(rdefs.reachingDefs(d, wr.temp()));
 		    wDefs.retainAll(wr.defs());
@@ -1122,6 +1172,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	boolean conflictsWith(WebRecord wr) {
 	    if (wr instanceof RegWebRecord) {
 		return true;
+	    } else if (isRegister(wr.temp())) {
+		return !wr.temp().equals(this.reg);
 	    } else {
 		return super.conflictsWith(wr);
 	    }
@@ -1161,7 +1213,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	public String toString() {
 	    List a = (List) rfi.getRegAssignments(sym).iterator().next();
-	    if (false) 
+	    if (true) 
 		return "<web sym:"+sym+
 		    ", defs:"+readable(defs)+
 		    ", uses:"+readable(uses)+
@@ -1169,6 +1221,15 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		    " >";
 	    else 
 		return "w:"+sym+" degree:"+adjnds.size();
+	}
+
+	boolean conflictsWith1D(WebRecord wr) {
+	    if (isRegister(this.sym) && 
+		isRegister(wr.temp())) {
+		return !this.sym.equals(wr.temp());
+	    } else {
+		return super.conflictsWith1D(wr);
+	    }
 	}
     }
 

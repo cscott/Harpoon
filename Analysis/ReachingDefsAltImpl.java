@@ -32,7 +32,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.7 2000-08-09 05:44:45 pnkfelix Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.8 2000-08-15 01:51:39 pnkfelix Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -107,7 +107,11 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 
     /** Returns the Set of <code>HCodeElement</code>s providing definitions
      *  of <code>Temp</code> <code>t</code> which reach 
-     *  <code>HCodeElement</code> <code>hce</code>. */
+     *  <code>HCodeElement</code> <code>hce</code>. 
+     * Any use that is not explicitly defined is assumed to be
+     * implicitly defined by the root element of the
+     * <code>HCode</code> for <code>this</code>. 
+     */
     public Set reachingDefs(HCodeElement hce, Temp t) {
 	// report("Processing HCodeElement: "+hce+" Temp: "+t);
 	// find out which BasicBlock this HCodeElement is from
@@ -155,7 +159,10 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	// find HCodeElements associated with `t' in the IN Set
 	Set results = bsf.makeSet(r.IN);
 	Set defs = (Set) tempToAllDefs.get(t);
-	Util.assert(defs != null, "no set for temp");
+	if (defs == null) {
+	    // no def for t; assume that it was defined on entry
+	    defs = Collections.singleton(cfger.getFirstElement(hc));
+	}
 	results.retainAll(defs);
 
 	Iterator pairs = results.iterator();

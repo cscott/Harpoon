@@ -26,7 +26,7 @@ import harpoon.Util.Collections.LinearSet;
  * second stage, but this is parameterizable.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: OptimisticGraphColorer.java,v 1.1.2.5 2000-08-02 22:48:17 pnkfelix Exp $
+ * @version $Id: OptimisticGraphColorer.java,v 1.1.2.6 2000-08-15 01:51:32 pnkfelix Exp $
  */
 public class OptimisticGraphColorer extends GraphColorer {
 
@@ -37,19 +37,22 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    intent that it be removed from <code>g</code>.
 	    <BR> <B>requires:</B> g.nodeSet() is not empty.
 	    <BR> <B>effects:</B> returns some element of g.nodeSet().
-	 */
-	public abstract Object chooseNode(Graph g);
+	*/
+	public abstract Object chooseNode(ColorableGraph g);
     }
 
     private static NodeSelector DEFAULT_SELECTOR = 
 	new NodeSelector() {
-	    public Object chooseNode(Graph g) {
+	    public Object chooseNode(ColorableGraph g) {
 		Object spillChoice = null; 
 		int maxDegree = -1;
 		Set nset = g.nodeSet();
 		for(Iterator ns = nset.iterator(); ns.hasNext();){
 		    Object n = ns.next();
-		    if (g.getDegree(n) > maxDegree) spillChoice = n;
+		    if (g.getDegree(n) > maxDegree && 
+			g.getColor(n) == null) {
+			spillChoice = n;
+		    }
 		}
 		Util.assert(spillChoice != null);
 		return spillChoice;
@@ -113,6 +116,8 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    }
 	}
 
+	boolean unableToColor = false;
+
 	nextNode:
 	for(Object n=graph.replace(); n!=null; n=graph.replace()){
 	    // find color that none of n's neighbors is set to
@@ -127,24 +132,33 @@ public class OptimisticGraphColorer extends GraphColorer {
 	    for(Iterator nbors = nborsC.iterator(); nbors.hasNext();){
 		Object nb = nbors.next();
 		Color col = graph.getColor(nb);
-		Util.assert(col != null, "no color for "+nb);
-		nColors.add(col);
+		
+		// nb can have no color, if it was a failed optimistic
+		// spill.  treat it as not needing a color.
+		if (col != null) nColors.add(col);
 	    }
 	    
+	nextColor:
 	    for(Iterator cIter = colors.iterator(); cIter.hasNext();){
 		Color col = (Color) cIter.next();
 		if (!nColors.contains(col)) {
 		    try {
 			graph.setColor(n, col);
+			spills.remove(n);
 			continue nextNode;
 		    } catch (ColorableGraph.IllegalColor ic) {
 			// col was not legal for n
 			// try another color...  
+			continue nextColor;
 		    }
 		}
 	    }
 	    
 	    // if we ever reach this point, we failed to color n
+	    unableToColor = true;
+	}
+	
+	if (unableToColor) {
 	    UnableToColorGraph u = new UnableToColorGraph();
 	    u.rmvSuggs = spills;
 	    throw u;
