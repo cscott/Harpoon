@@ -1,0 +1,5 @@
+grep ^"Receiving Frame: " < ../raw-stats.txt | awk '{print $3}' > ../receiving-stats.txt
+grep ^"Processing: " < ../raw-stats.txt | awk '{print $2}' > ../processing-stats.txt
+grep ^"Tracker: " < ../raw-tracker-stats.txt | awk '{print $2}' > ../tracking-stats.txt
+./sumlist.py
+exec gnuplot gnuplot-commands
