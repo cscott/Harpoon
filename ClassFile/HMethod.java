@@ -17,7 +17,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.15 1998-08-24 22:47:42 cananian Exp $
+ * @version $Id: HMethod.java,v 1.16 1998-09-10 03:22:44 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -166,15 +166,19 @@ public class HMethod implements HMember {
    * <code>null</code>.
    */
   public String[] getParameterNames() {
+    HClass[] pt = getParameterTypes();
     if (parameterNames==null) {
-      parameterNames = new String[getParameterTypes().length];
+      parameterNames = new String[pt.length];
       // for non-static methods, 0th local variable is 'this'.
       int offset = (Modifier.isStatic(getModifiers()))?0:1;
       // assign names.
-      for (int i=0; i<parameterNames.length; i++)
+      for (int i=0; i<parameterNames.length; i++) {
 	parameterNames[i]=
 	  ((code==null)?null:
-	   code.localName(0/*pc*/, offset + i));
+	   code.localName(0/*pc*/, offset));
+	// longs and doubles take up two local variable slots.
+	offset += (pt[i]==HClass.Double || pt[i]==HClass.Long)?2:1;
+      }
       // done.
     }
     // Copy parameterNames array, if necessary.
