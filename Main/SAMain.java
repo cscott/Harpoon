@@ -48,6 +48,8 @@ import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
 import harpoon.Analysis.PointerAnalysis.InstrumentAllocs;
 import harpoon.Analysis.Realtime.Realtime;
 
+import harpoon.Analysis.Transactions.SyncTransformer;
+
 import gnu.getopt.Getopt;
 
 import java.lang.reflect.Modifier;
@@ -84,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.126 2001-01-09 23:53:54 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.127 2001-01-11 23:15:00 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -144,6 +146,10 @@ public class SAMain extends harpoon.IR.Registration {
     static HCodeFactory hcf;
 
     static Set joinset=null, startset=null;
+
+    // Support for transactions transformation
+    static boolean DO_TRANSACTIONS = false;
+    static SyncTransformer syncTransformer = null;
 
 
     public static void main(String[] args) {
@@ -261,6 +267,14 @@ public class SAMain extends harpoon.IR.Registration {
  		hcf=insta.codeFactory();
 	 	classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
+	    if (DO_TRANSACTIONS) {
+		String resource =
+		    "harpoon/Backend/Runtime1/transact-safe.properties";
+		syncTransformer = new SyncTransformer
+		    (hcf, classHierarchy, linker, resource);
+		hcf = syncTransformer.codeFactory();
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    }
 	} // don't need the root set anymore.
 
 
@@ -340,6 +354,9 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = harpoon.Analysis.Tree.AlgebraicSimplification.codeFactory(hcf);
 	//hcf = harpoon.Analysis.Tree.DeadCodeElimination.codeFactory(hcf);
 	hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
+	if (DO_TRANSACTIONS) {
+	    hcf = syncTransformer.treeCodeFactory(frame, hcf);
+	}
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     if(BACKEND == MIPSYP_BACKEND) {
        hcf = new harpoon.Analysis.Tree.DominatingMemoryAccess(hcf, frame).codeFactory();
@@ -621,7 +638,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     protected static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:EfpIDOPFHR::LlABthq1::C:r:");
+	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:EfpIDOPFHR::LlABthq1::C:r:T");
 	
 	int c;
 	String arg;
@@ -635,6 +652,10 @@ public class SAMain extends harpoon.IR.Registration {
 		break;
 	    case 'f':
 		recycle=true;
+		break;
+	    case 'T': // Transactions support (CSA)
+		linker = new Relinker(Loader.systemLinker);
+		DO_TRANSACTIONS = true;
 		break;
 	    case 't': // Realtime Java extensions (WSB)
 		linker = new Relinker(Loader.systemLinker);
@@ -840,6 +861,8 @@ public class SAMain extends harpoon.IR.Registration {
 
 	out.println("-I");
 	out.println("\tUse old simple-but-not-always-correct class init strategy.");
+	out.println("-T");
+	out.println("\tDo transactions transformation.");
 
 	out.println("-h");
 	out.println("\tPrints out this help message");
