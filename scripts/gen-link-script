@@ -29,11 +29,11 @@ rm -f $tmpscript $tmpsed
 cat > $tmpsed <<-__EOF__
 	/^[ ]*[*]([.]text)$/{
 	  i\\
-	    text_start = .
+	    text_start = . ;
 	  n
 	  /^[ ]*[*]([.]text[.][*])$/p
 	  i\\
-	    text_end = .
+	    text_end = . ;
 	  /^[ ]*[*]([.]text[.][*])$/!p
 	  c\\
 	    /* BEGIN FLEX ADDITIONS */\\
