@@ -16,7 +16,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.13 1999-06-24 01:03:47 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.14 1999-07-17 12:47:38 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -539,12 +539,22 @@ final class UnHandler {
 	/*public void visit(SIGMA q);*/
 	/*public void visit(SWITCH q);*/
 	public void visit(THROW q) {
-	    Quad nq = (Quad) q.clone(qf, ss.ctm), head=nq;
+	    Temp Tex = Quad.map(ss.ctm, q.throwable());
+	    Quad head = _throwException_(qf, q,  Tex); // new throw.
 	    Type Tthr = ti.get(q.throwable());
 	    if (!Tthr.isNonNull())
 		head = nullCheck(q, head, q.throwable());
+	    // make a unreachable chain.  The PHI would be enough, except
+	    // that the Quad superclass enforces the 'only connect
+	    // THROW, HEADER, or RETURN to FOOTER' rule.  So we have to
+	    // go ahead and clone the THROW so we have something to
+	    // connect.  This whole string will be wiped out by the
+	    // unreachable code elimination pass.
+	    Quad q0 = new PHI(qf, q, new Temp[0], 0); // unreachable head.
+	    Quad nq = (Quad) q.clone(qf, ss.ctm); // unreachable foot.
+	    Quad.addEdge(q0, 0, nq, 0);
 	    ss.qm.put(q, head, nq);
-	    ti.put(q.throwable(), alsoNonNull(Tthr));
+	    ti.put(q.throwable(), alsoNonNull(Tthr)); // arguably useless.
 	}
 	public void visit(TYPECAST q) {
 	    // translate as:
