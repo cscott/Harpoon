@@ -48,7 +48,7 @@ import java.util.Set;
  * will actually use.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MZFCompressor.java,v 1.1.2.5 2001-11-13 05:32:33 cananian Exp $
+ * @version $Id: MZFCompressor.java,v 1.1.2.6 2001-11-13 21:36:02 cananian Exp $
  */
 public class MZFCompressor {
     final HCodeFactory parent;
@@ -97,12 +97,12 @@ public class MZFCompressor {
 	field2class = Collections.unmodifiableMap(field2class);
 	// chain through MZFWidenType to change INSTANCEOF, ANEW, and
 	// TYPESWITCH quads to use the new supertype of a split class.
-	//hcf = new MZFWidenType(hcf, listmap, field2class).codeFactory();
+	hcf = new MZFWidenType(hcf,linker, listmap, field2class).codeFactory();
 	// chain through MZFChooser to pick the appropriate superclass
 	// at each instantiation site.
 	hcf = new MZFChooser(hcf, cc, listmap, field2class).codeFactory();
 	// we should be done now.
-	this.parent = hcf;
+	this.parent = new CachingCodeFactory(hcf);
     }
     public HCodeFactory codeFactory() { return parent; }
 
@@ -280,15 +280,17 @@ public class MZFCompressor {
 	// done!
 	return hc;
     }
-    private static HClass widen(HClass hc) {
+    static HClass widen(HClass hc) {
 	if (hc==HClass.Boolean || hc==HClass.Byte ||
 	    hc==HClass.Short || hc==HClass.Char)
 	    return HClass.Int;
 	else return hc;
     }
-    private static Object wrap(HClass type, long val) {
-	Util.assert(type.isPrimitive());
-	Number n = new Long(val);
+    static Object wrap(HClass type, long val) {
+	return wrap(type, new Long(val));
+    }
+    static Object wrap(HClass type, Number n) {
+	Util.assert(type.isPrimitive(), type);
 	if (type==HClass.Int) return new Integer(n.intValue());
 	if (type==HClass.Long) return new Long(n.longValue());
 	if (type==HClass.Float) return new Float(n.floatValue());
