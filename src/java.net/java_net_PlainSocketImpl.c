@@ -97,7 +97,7 @@ JNIEXPORT void JNICALL Java_java_net_PlainSocketImpl_socketCreate
     /* If static data has not been loaded, load it now */
     if (!inited && !initializePSI(env)) return; /* exception occurred; bail */
 
-    fd = socket(AF_INET, isStream ? SOCK_STREAM : SOCK_DGRAM, 0);
+    fd = socket(PF_INET, isStream ? SOCK_STREAM : SOCK_DGRAM, 0);
     fdObj = (*env)->GetObjectField(env, _this, SI_fdObjID);
     Java_java_io_FileDescriptor_setfd(env, fdObj, fd);
 
