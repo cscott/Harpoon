@@ -57,6 +57,8 @@ public class StackInfo {
    public static final int REGISTER      = 0;
    public static final int STACK         = 1;
    public static final int REGSTACKSPLIT = 2;
+   // Every stack frame is aligned on an 8 byte boundary
+   public static final int BYTEALIGNMENT = 8;
 
    private class CallInfo {
       public CallInfo() {
@@ -240,10 +242,14 @@ public class StackInfo {
    }
    public int frameSize() {
       Util.assert(locals_done && callee_done);
-      return REGSIZE * (max_arg_words 
-                        + callee_regs.size()
-                        + local_words
-                        + fixed_words);
+      int fs = REGSIZE * (max_arg_words 
+                          + callee_regs.size()
+                          + local_words
+                          + fixed_words);
+      if(fs/BYTEALIGNMENT * BYTEALIGNMENT == fs)
+         return fs;
+      else
+         return (fs/BYTEALIGNMENT + 1) * BYTEALIGNMENT;
    }
    
    /**
