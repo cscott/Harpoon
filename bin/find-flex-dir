@@ -1,7 +1,8 @@
 #!/bin/sh
 
-# Source find-flex-dir and it will set the FLEX_DIR, HARPOON_DIR, and
-# RUNTIME_DIR environment variables (if they are not already set).
+# Source find-flex-dir and it will set the FLEX_DIR, HARPOON_DIR, 
+# RUNTIME_DIR, and REALTIME_DIR environment variables 
+# (if they are not already set).
 
 # find the root of the Harpoon tree file. If you plan to run this script from
 # a directory different from ~/Harpoon/Code please set HARPOON_DIR.
@@ -24,4 +25,11 @@ fi
 if [ -z $RUNTIME_DIR ]; then
     RUNTIME_DIR="${HARPOON_DIR}/Runtime"
 fi
-export FLEX_DIR HARPOON_DIR RUNTIME_DIR
+# HARPOON_DIR is set.  Use it to find REALTIME_DIR if checked out.
+if [ -z $REALTIME_DIR ]; then
+    if [ -d $HARPOON_DIR/Realtime ]; then
+	REALTIME_DIR="${HARPOON_DIR}/Realtime"
+    fi
+fi
+
+export FLEX_DIR HARPOON_DIR RUNTIME_DIR REALTIME_DIR
