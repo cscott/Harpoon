@@ -78,7 +78,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.46 2001-02-25 16:12:08 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.47 2001-02-27 22:11:12 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -349,7 +349,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	handle_tg_stuff(pig);
 
 	if(DO_METHOD_INLINING) {
-	    generate_inlining_hints(mm, pig);
+	    //generate_inlining_hints(mm, pig);
 	    generate_inlining_chains(mm);
 	}
     }
@@ -1450,6 +1450,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // different strongly connected components in the call graph (to avoid
     // circular inlining in nests of mutually recursive methods).
     private void generate_inlining_chains(MetaMethod mm) {
+	System.out.println("generate_inlining_chains " + mm);
+
 	ParIntGraph pig = pa.getExtParIntGraph(mm);
 
 	Set nodes = getInterestingLevel0InsideNodes(pig);
@@ -1499,7 +1501,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     //    graph; to be able to stack allocate them, an inlining chain of length
     //    at least level is necessary.
     private void discover_inlining_chains(MetaMethod mm, Set nodes,
-						 int level) {
+					  int level) {
 
 	// iterate through all the call sites where mm is called
 	MetaMethod[] callers = mac.getCallers(mm);
@@ -1519,6 +1521,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 		current_chain_cs.addLast(cs);
 		current_chain_callees.addLast(mm.getHMethod());
+		//System.out.println("+cs=" + Debug.code2str(cs));
 
 		// compute specializations of nodes for cs
 		Set specs = specializeNodes(nodes, cs);
@@ -1533,11 +1536,17 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		    // avoid inlining the class initializers: past experience
 		    // showed this might lead to circular dependencies in the
 		    // static initializer code
-		    if(!mcaller.getHMethod().getName().equals("<clinit>"))
-			chains.add
-			    (new InliningChain(current_chain_cs,
-					       current_chain_callees,
-					       get_news(B)));
+		    if(!mcaller.getHMethod().getName().equals("<clinit>")) {
+			InliningChain new_ic =
+			    new InliningChain(current_chain_cs,
+					      current_chain_callees,
+					      get_news(B));
+			System.out.println("Discovered chain: " + new_ic);
+			if(new_ic.isAcceptable())
+			    chains.add(new_ic);
+			else
+			    System.out.println("TOO big to be considered!");
+		    }
 		}
 		
 		if(level < MAX_INLINING_LEVEL) {
@@ -1550,6 +1559,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 		current_chain_cs.removeLast();
 		current_chain_callees.removeLast();
+		//System.out.println("-cs=" + Debug.code2str(cs));
 	    }
 	}
     }
@@ -1660,7 +1670,27 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    return buff.toString();
 	}
 
-	private final boolean DEBUG_IC = true;
+
+	// test whether the size of teh inlined method will be smaller
+	// than the maximum acceptable one.
+	public boolean isAcceptable() {
+	    if(isDone()) return true;
+	    int size = get_method_size(extract_caller(getLastCall()));
+	    for(Iterator it = calls.iterator(); it.hasNext(); ) {
+		CALL cs = (CALL) it.next();
+		HMethod hm = extract_callee(cs);
+		if(hm != null)
+		    size += get_method_size(hm);
+	    }
+	    return size < MAX_METHOD_SIZE;
+	}
+	private final static int MAX_METHOD_SIZE = 600;
+	private int get_method_size(HMethod hm) {
+	    HCode hcode = hcf.convert(hm);
+	    return hcode.getElementsL().size();
+	}
+
+	private final boolean DEBUG_IC = false;
 
 	// The call cs has just been inlined. As a consequence, any inlining
 	// chain containing cs should be updated in the following way: cs
@@ -1747,6 +1777,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	int get_rang() {
 	    return MAInfo.this.get_rang(extract_caller(getLastCall()));
 	}
+
+	void clear() {
+	    calls.clear();
+	}
     };
 
 
@@ -1783,22 +1817,33 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    process_chain((InliningChain) it.next());
 
 	// remove the newly introduced unreachable code
-	for(Iterator pit = toPrune.iterator(); pit.hasNext(); )
-	    Unreachable.prune((HCode) pit.next());
+	for(Iterator pit = toPrune.iterator(); pit.hasNext(); ) {
+	    HCode hcode = (HCode) pit.next();
+	    System.out.print("Pruning " + hcode.getMethod() + "...");
+	    Unreachable.prune(hcode);
+	    System.out.println("OK");
+	}
 
 	chains = null;
     }
 
 
-    private boolean hcodeOf(final HCode hcode, final String pack_name,
+    private boolean hcodeOf(final HCode hcode,
 			    final String cls_name, final String method_name) { 
 	HMethod hm = hcode.getMethod();
+	return isThisMethod(hm, cls_name, method_name);
+    }
+
+    private boolean isThisMethod(final HMethod hm, final String cls_name,
+				 final String method_name) {
 	HClass hc  = hm.getDeclaringClass();
+
 	return
 	    hm.getName().equals(method_name) &&
-	    hc.getPackage().equals(pack_name) &&
 	    hc.getName().equals(cls_name);
     }
+
+
 
     private String call2str(CALL cs) {
 	return
@@ -1813,8 +1858,24 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 	while(!ic.isDone()) {
 	    CALL cs = ic.getLastCall();
+	    HMethod hcaller = extract_caller(cs);
+	    System.out.println("hcaller = " + hcaller);
+
+	    HCode hcode = hcf.convert(hcaller);
+
+	    Set old_quads = null;
+	    if(isThisMethod(hcaller, "java.text.DecimalFormat", "<init>"))
+		old_quads = new HashSet(hcode.getElementsL());
+
 	    HMethod hcallee = ic.getLastCallee();
 	    Map old2new = inline_call_site(cs, hcallee, hcf);
+
+	    if(isThisMethod(hcaller, "java.text.DecimalFormat", "<init>")) {
+		Set new_quads =
+		    new HashSet(hcf.convert(hcaller).getElementsL());
+		new_quads.removeAll(old_quads);
+		print_modified_hcode(hcaller, new_quads);
+	    }
 
 	    // update all the Inlining Chains
 	    for(Iterator it = chains.iterator(); it.hasNext(); )
@@ -1823,10 +1884,16 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     }
 
 
-    private void print_modified_hcode(final HCode hcode, final Set old_quads) {
+    private void print_modified_hcode(HMethod hm,
+				      final Collection  new_quads) {
+	print_modified_hcode(hcf.convert(hm), new_quads);
+    }
+
+    private void print_modified_hcode(HCode hcode,
+				      final Collection new_quads) {
 	class MyCallBack extends HCode.PrintCallback {
 	    public void printBefore(PrintWriter pw, HCodeElement hce) {
-		if(!old_quads.contains(hce))
+		if(new_quads.contains(hce))
 		    pw.print(" *** ");
 		else
 		    pw.print("     ");

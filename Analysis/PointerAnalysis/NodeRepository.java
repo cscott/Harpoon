@@ -30,9 +30,9 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.29 2001-02-25 16:12:08 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.30 2001-02-27 22:11:12 salcianu Exp $
  */
-public class NodeRepository {
+public class NodeRepository implements java.io.Serializable {
     
     private Hashtable static_nodes;
     private Hashtable param_nodes;
@@ -134,7 +134,7 @@ public class NodeRepository {
     }
 
     // Auxiliary class: the key type for the "cf_nodes" hashtable.
-    private static class CFPair{
+    private static class CFPair implements java.io.Serializable {
 	HCodeElement hce;
 	String f;
 	CFPair(HCodeElement hce, String f){

@@ -72,9 +72,9 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.79 2001-02-25 16:12:08 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.80 2001-02-27 22:11:13 salcianu Exp $
  */
-public class PointerAnalysis {
+public class PointerAnalysis implements java.io.Serializable {
     public static final boolean DEBUG     = false;
     public static final boolean DEBUG2    = false;
     public static final boolean DEBUG_SCC = true;
@@ -385,40 +385,42 @@ public class PointerAnalysis {
     // Navigator for the mmethod SCC building phase. The code is complicated
     // by the fact that we are interested only in yet unexplored methods
     // (i.e. whose parallel interaction graphs are not yet in the cache).
-    private SCComponent.Navigator mm_navigator =
-	new SCComponent.Navigator(){
-		public Object[] next(Object node){
-		    MetaMethod[] mms  = mcg.getCallees((MetaMethod)node);
-		    MetaMethod[] mms2 = get_new_mmethods(mms);
-		    return mms2;
+    class MM_Navigator implements SCComponent.Navigator, java.io.Serializable {
+	public Object[] next(Object node){
+	    MetaMethod[] mms  = mcg.getCallees((MetaMethod)node);
+	    MetaMethod[] mms2 = get_new_mmethods(mms);
+	    return mms2;
+	}
+	
+	public Object[] prev(Object node){
+	    MetaMethod[] mms  = mac.getCallers((MetaMethod)node);
+	    MetaMethod[] mms2 = get_new_mmethods(mms);
+	    return mms2;
+	}
+	
+	// selects only the (yet) unanalyzed methods
+	private MetaMethod[] get_new_mmethods(MetaMethod[] mms){
+	    int count = 0;
+	    boolean good[] = new boolean[mms.length];
+	    for(int i = 0 ; i < mms.length ; i++)
+		if(!hash_proc_ext.containsKey(mms[i])){
+		    good[i] = true;
+		    count++;
 		}
-		
-		public Object[] prev(Object node){
-		    MetaMethod[] mms  = mac.getCallers((MetaMethod)node);
-		    MetaMethod[] mms2 = get_new_mmethods(mms);
-		    return mms2;
-		}
-		
-		// selects only the (yet) unanalyzed methods
-		private MetaMethod[] get_new_mmethods(MetaMethod[] mms){
-		    int count = 0;
-		    boolean good[] = new boolean[mms.length];
-		    for(int i = 0 ; i < mms.length ; i++)
-			if(!hash_proc_ext.containsKey(mms[i])){
-			    good[i] = true;
-			    count++;
-			}
-			else
-			    good[i] = false;
-		    
-		    MetaMethod[] new_mms = new MetaMethod[count];
-		    int j = 0;
-		    for(int i = 0 ; i < mms.length ; i++)
-			if(good[i])
-			    new_mms[j++] = mms[i];
-		    return new_mms;
-		}
-	    };
+		else
+		    good[i] = false;
+	    
+	    MetaMethod[] new_mms = new MetaMethod[count];
+	    int j = 0;
+	    for(int i = 0 ; i < mms.length ; i++)
+		if(good[i])
+		    new_mms[j++] = mms[i];
+	    return new_mms;
+	}
+    };
+
+    private SCComponent.Navigator mm_navigator = new MM_Navigator();
+
     
 
     // Top-level procedure for the analysis. Receives the main method as
@@ -696,7 +698,8 @@ public class PointerAnalysis {
     private ParIntGraphPair call_pp = null;
 
     /** QuadVisitor for the <code>analyze_basic_block</code> */
-    private class PAVisitor extends QuadVisitor{
+    private class PAVisitor extends QuadVisitor
+	implements java.io.Serializable {
 
 	/** Visit a general quad, other than those explicitly
 	 processed by the other <code>visit</code> methods. */
@@ -795,10 +798,15 @@ public class PointerAnalysis {
 		    if(pointed.isEmpty())
 			set_E.add(node);
 		    else {
-			//Util.assert(pointed.size() == 1, "too many nodes");
-			//PANode node2 = (PANode) pointed.iterator().next();
 			PANode node2 = get_min_node(pointed);
 			set_S.add(node2);
+			if(RECORD_ACTIONS)
+			    lbbpig.ar.add_ld(node, f, node2,
+					     ActionRepository.THIS_THREAD,
+					     lbbpig.tau.activeThreadSet());
+			if(!IGNORE_EO)
+			    lbbpig.eo.add(Collections.singleton(node),
+					  f, node2, lbbpig.G.I);
 		    }
 		}
 	    }
@@ -806,8 +814,8 @@ public class PointerAnalysis {
 	    lbbpig.G.I.removeEdges(l1);
 	    
 	    if(set_E.isEmpty()){ // easy case; don't need to create a load node
-		lbbpig.G.I.addEdges(l1,set_S);
-		if(!IGNORE_EO || RECORD_ACTIONS)
+		lbbpig.G.I.addEdges(l1, set_S);
+		if(!IGNORE_EO)
 		    Util.assert(false, "Unimplemented yet!");
 		return;
 	    }
@@ -815,23 +823,14 @@ public class PointerAnalysis {
 	    PANode load_node = nodes.getCodeNode(q, PANode.LOAD); 
 	    set_S.add(load_node);
 	    lbbpig.G.O.addEdges(set_E, f, load_node);
-
-	    if(!IGNORE_EO) {
-		Util.assert(false, "Unimplemented yet!"); // TODO
-		lbbpig.eo.add(set_E, f, load_node, lbbpig.G.I);
-	    }
-
 	    lbbpig.G.I.addEdges(l1, set_S);
 	    lbbpig.G.propagate(set_E);
 	    
 	    if(RECORD_ACTIONS) {
-		Util.assert(false, "Unimplemented yet!");
 		// update the action repository
 		Set active_threads = lbbpig.tau.activeThreadSet();
-		Iterator it_esc_nodes = set_E.iterator();
-		
-		while(it_esc_nodes.hasNext()){
-		    PANode ne = (PANode) it_esc_nodes.next();
+		for(Iterator ite = set_E.iterator(); ite.hasNext(); ) {
+		    PANode ne = (PANode) ite.next();
 		    lbbpig.ar.add_ld(ne, f, load_node,
 				     ActionRepository.THIS_THREAD,
 				     active_threads);
@@ -1374,5 +1373,3 @@ public class PointerAnalysis {
     */
 
 }
-
-

@@ -49,9 +49,9 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.50 2001-02-25 16:12:08 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.51 2001-02-27 22:11:11 salcianu Exp $
  */
-abstract class InterProcPA {
+abstract class InterProcPA implements java.io.Serializable {
 
     /** Call sites with more than <code>MAX_CALLEES</code> callees are simply
      *  considered to be holes. */ 

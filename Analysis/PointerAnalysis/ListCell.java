@@ -7,9 +7,9 @@ package harpoon.Analysis.PointerAnalysis;
  * <code>ListCell</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ListCell.java,v 1.1.2.1 2000-03-30 03:06:36 salcianu Exp $
+ * @version $Id: ListCell.java,v 1.1.2.2 2001-02-27 22:11:12 salcianu Exp $
  */
-public class ListCell {
+public class ListCell implements java.io.Serializable {
 
     public Object   info;
     public ListCell next;

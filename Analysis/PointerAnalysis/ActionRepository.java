@@ -42,9 +42,9 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.24 2000-12-11 23:11:15 vivien Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.25 2001-02-27 22:11:11 salcianu Exp $
  */
-public class ActionRepository {
+public class ActionRepository implements java.io.Serializable {
     
     /** Fake thread node that stands for the main thread of the analyzed
 	scope. This is used as the author thread for the actions done

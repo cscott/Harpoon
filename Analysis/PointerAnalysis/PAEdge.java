@@ -15,9 +15,9 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>PAEdge</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEdge.java,v 1.1.2.8 2000-07-02 08:37:44 salcianu Exp $
+ * @version $Id: PAEdge.java,v 1.1.2.9 2001-02-27 22:11:12 salcianu Exp $
  */
-public class PAEdge {
+public class PAEdge implements java.io.Serializable {
 
     PANode n1;
     String f;

@@ -19,7 +19,7 @@ import harpoon.Util.DataStructs.LightMap;
  * (inside or outside) edges and call sites skipped by an on demand
  * analysis. This precedence relation may be strict or not. 
  */
-public class EdgesNCallees {
+public class EdgesNCallees implements java.io.Serializable {
     public static final boolean DEBUG     = false;
 
     // Decide whether we do precise or conservative joins...

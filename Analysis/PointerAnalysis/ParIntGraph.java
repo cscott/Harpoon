@@ -29,9 +29,9 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.42 2001-02-09 23:44:47 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.43 2001-02-27 22:11:12 salcianu Exp $
  */
-public class ParIntGraph {
+public class ParIntGraph implements java.io.Serializable {
 
     public static boolean DEBUG = false;
     public static boolean DEBUG2 = false;

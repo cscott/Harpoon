@@ -14,9 +14,10 @@ import harpoon.Util.BasicBlocks.BBConverter;
  <code>LBBConverter</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CachingLBBConverter.java,v 1.1.2.1 2000-03-24 01:05:05 salcianu Exp $
+ * @version $Id: CachingLBBConverter.java,v 1.1.2.2 2001-02-27 22:11:37 salcianu Exp $
  */
-public class CachingLBBConverter extends LBBConverter{
+public class CachingLBBConverter extends LBBConverter
+    implements java.io.Serializable {
     
     private final Map cache;
 

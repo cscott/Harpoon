@@ -14,9 +14,10 @@ import harpoon.ClassFile.HMethod;
  * <code>CachingArrayInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CachingArrayInfo.java,v 1.1.2.2 2001-02-14 21:11:33 salcianu Exp $
+ * @version $Id: CachingArrayInfo.java,v 1.1.2.3 2001-02-27 22:11:51 salcianu Exp $
  */
-public class CachingArrayInfo extends ArrayInfo {
+public class CachingArrayInfo extends ArrayInfo
+    implements java.io.Serializable {
     
     Map cache = new HashMap();
 

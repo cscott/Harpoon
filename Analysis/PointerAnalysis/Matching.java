@@ -39,9 +39,9 @@ import harpoon.Util.DataStructs.Relation;
  interation of the loop. 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Matching.java,v 1.1.2.8 2000-07-02 08:37:44 salcianu Exp $
+ * @version $Id: Matching.java,v 1.1.2.9 2001-02-27 22:11:12 salcianu Exp $
  */
-abstract class Matching {
+abstract class Matching implements java.io.Serializable {
 
     /** Applies rule 0: if there is a mu[i] relation from node1 to node2
 	and there is a mu[ib]/mu[i] relation from node2 to node3, then put a

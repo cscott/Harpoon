@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.139 2001-02-26 23:40:50 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.140 2001-02-27 22:11:27 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -231,8 +231,9 @@ public class SAMain extends harpoon.IR.Registration {
 		// XXX: same chicken-and-egg problem as before.  We really
 		// want to get the safe-set path from the Runtime in the Frame
 		// but the Frame hasn't been constructed yet.[CSA 2-Nov-00]
-		String resource="harpoon/Backend/Runtime1/init-safe.properties";
-		hcf=new harpoon.Analysis.Quads.InitializerTransform
+		String resource =
+		    "harpoon/Backend/Runtime1/init-safe.properties";
+		hcf = new harpoon.Analysis.Quads.InitializerTransform
 		    (hcf, classHierarchy, linker, resource).codeFactory();
 		// recompute the hierarchy after transformation.
 		hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);

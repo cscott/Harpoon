@@ -76,9 +76,9 @@ import harpoon.Util.Util;
  * based on the results of pointer analysis.
  * 
  * @author  John Whaley <jwhaley@alum.mit.edu>
- * @version $Id: SyncElimination.java,v 1.1.2.5 2000-11-05 00:39:49 salcianu Exp $
+ * @version $Id: SyncElimination.java,v 1.1.2.6 2001-02-27 22:11:13 salcianu Exp $
  */
-public class SyncElimination {
+public class SyncElimination implements java.io.Serializable {
 
     private PointerAnalysis pa;
     private Set necessarySyncs;	    // PASyncs that are necessary.

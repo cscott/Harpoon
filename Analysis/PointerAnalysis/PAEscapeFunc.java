@@ -23,9 +23,9 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  Also, it records whether <code>node</code> escapes into a method hole or not.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.24 2000-12-11 23:14:28 vivien Exp $
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.25 2001-02-27 22:11:12 salcianu Exp $
  */
-public class PAEscapeFunc {
+public class PAEscapeFunc implements java.io.Serializable {
 
     // rel_n attaches to each node the set of all the nodes
     // that it can escape through.

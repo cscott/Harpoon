@@ -18,9 +18,9 @@ import harpoon.Temp.Temp;
  q (as for example in the constructor of <code>TypeInference</code>).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ExactTemp.java,v 1.1.2.2 2000-04-03 06:15:51 salcianu Exp $
+ * @version $Id: ExactTemp.java,v 1.1.2.3 2001-02-27 22:11:51 salcianu Exp $
  */
-public class ExactTemp {
+public class ExactTemp implements java.io.Serializable {
 
     Quad q;
     Temp t;

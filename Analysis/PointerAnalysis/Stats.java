@@ -26,9 +26,9 @@ import harpoon.Util.Graphs.SCComponent;
  * <code>Stats</code> centralizes some pointer-analysis related statistics.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Stats.java,v 1.1.2.13 2001-02-15 19:51:18 salcianu Exp $
+ * @version $Id: Stats.java,v 1.1.2.14 2001-02-27 22:11:13 salcianu Exp $
  */
-abstract class Stats {
+abstract class Stats implements java.io.Serializable {
 
     private static HashMap info = new HashMap();
     

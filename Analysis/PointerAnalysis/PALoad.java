@@ -13,9 +13,9 @@ import java.util.Map;
  * outside reference <code>n1--f-->n2</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PALoad.java,v 1.1.2.5 2000-03-18 23:39:28 salcianu Exp $
+ * @version $Id: PALoad.java,v 1.1.2.6 2001-02-27 22:11:12 salcianu Exp $
  */
-class PALoad {
+class PALoad implements java.io.Serializable {
     
     /** The start node of the outside edges. */
     PANode n1;

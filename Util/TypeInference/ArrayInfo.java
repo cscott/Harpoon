@@ -22,9 +22,9 @@ import harpoon.IR.Quads.AGET;
  * <code>ArrayInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ArrayInfo.java,v 1.1.2.3 2000-04-03 10:07:55 salcianu Exp $
+ * @version $Id: ArrayInfo.java,v 1.1.2.4 2001-02-27 22:11:51 salcianu Exp $
  */
-public class ArrayInfo {
+public class ArrayInfo implements java.io.Serializable {
     
     /** Creates a <code>ArrayInfo</code>. */
     public ArrayInfo() {

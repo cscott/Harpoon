@@ -40,9 +40,9 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.34 2001-02-09 23:44:46 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.35 2001-02-27 22:11:11 salcianu Exp $
  */
-public abstract class InterThreadPA {
+public abstract class InterThreadPA implements java.io.Serializable {
 
     /** Activates a lot of debug messages. */
     public static final boolean DEBUG  = false;

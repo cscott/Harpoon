@@ -14,9 +14,10 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  <code>SCCLBBFactory</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: CachingSCCLBBFactory.java,v 1.1.2.2 2000-03-24 22:33:02 salcianu Exp $
+ * @version $Id: CachingSCCLBBFactory.java,v 1.1.2.3 2001-02-27 22:11:37 salcianu Exp $
  */
-public class CachingSCCLBBFactory extends SCCLBBFactory{
+public class CachingSCCLBBFactory extends SCCLBBFactory
+    implements java.io.Serializable {
     
     // The cache of previously computed results; mapping
     //  HMethod -> SCCTopSortedGraph

@@ -14,9 +14,9 @@ import java.util.Collection;
  * decided to implement my own one. 
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAWorkSet.java,v 1.1.2.3 2000-01-27 06:19:09 salcianu Exp $
+ * @version $Id: PAWorkSet.java,v 1.1.2.4 2001-02-27 22:11:12 salcianu Exp $
  */
-public abstract class PAWorkSet {
+public abstract class PAWorkSet implements java.io.Serializable {
     // add an object to the workset
     public abstract boolean add(Object o);
     // take an object from the workset

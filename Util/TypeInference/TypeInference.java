@@ -47,9 +47,9 @@ import harpoon.IR.Quads.CONST;
  extensions for the other quads).
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: TypeInference.java,v 1.1.2.5 2001-02-14 21:11:33 salcianu Exp $
+ * @version $Id: TypeInference.java,v 1.1.2.6 2001-02-27 22:11:51 salcianu Exp $
  */
-public class TypeInference {
+public class TypeInference implements java.io.Serializable {
     // switch on the debug messages
     public static boolean DEBUG = false;
 

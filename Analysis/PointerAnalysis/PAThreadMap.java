@@ -29,9 +29,9 @@ import harpoon.Util.DataStructs.Relation;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.14 2000-07-02 08:37:44 salcianu Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.15 2001-02-27 22:11:12 salcianu Exp $
  */
-public class PAThreadMap{
+public class PAThreadMap implements java.io.Serializable {
 
     static private final Integer ONE  = new Integer(1);
     static private final Integer TWO  = new Integer(2);

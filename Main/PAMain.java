@@ -69,6 +69,7 @@ import harpoon.Util.LightBasicBlocks.CachingLBBConverter;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.WorkSet;
+import harpoon.Util.ParseUtil;
 
 import harpoon.Analysis.PointerAnalysis.Debug;
 import harpoon.Analysis.MetaMethods.SmartCallGraph;
@@ -83,7 +84,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.90 2001-02-25 16:12:35 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.91 2001-02-27 22:11:26 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -150,6 +151,18 @@ public abstract class PAMain {
     private static boolean SAVE_PRE_ANALYSIS = false;
     private static String PRE_ANALYSIS_OUT_FILE = null;
 
+
+    // Load the preanalysis results from PRE_ANALYSIS_IN_FILE
+    private static boolean LOAD_ANALYSIS = false;
+    private static String ANALYSIS_IN_FILE = null;
+
+    // Save the preanalysis results into PRE_ANALYSIS_OUT_FILE
+    private static boolean SAVE_ANALYSIS = false;
+    private static String ANALYSIS_OUT_FILE = null;
+
+    // the name of the file that contains additional roots
+    private static String rootSetFilename = null;
+
     private static PointerAnalysis pa = null;
     // the main method
     private static HMethod hroot = null;
@@ -202,7 +215,9 @@ public abstract class PAMain {
 
     // The set of classes and methods that are instantiated/called by
     // the current implementation of the runtime.
-    private static Set runtime_callable = null;
+    // private static Set runtime_callable = null;
+
+    private static Set program_roots = null;
 
     // global variable used for timing measurements
     private static long g_tstart = 0L;
@@ -216,8 +231,8 @@ public abstract class PAMain {
 	}
 	print_options();
 
-	runtime_callable = new HashSet
-	    (harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
+	//runtime_callable = new HashSet
+	// (harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 
 	get_root_method(params[optind]);
 	if(hroot == null){
@@ -227,12 +242,16 @@ public abstract class PAMain {
 	System.out.println("Root method: " + root_method.declClass + "." +
 			   root_method.name);
 
-	if(LOAD_PRE_ANALYSIS)
-	    load_pre_analysis();
+	if(LOAD_ANALYSIS) load_analysis();
 	else {
-	    pre_analysis();
-	    if(SAVE_PRE_ANALYSIS)
-		save_pre_analysis();
+	    if(LOAD_PRE_ANALYSIS)
+		load_pre_analysis();
+	    else {
+		pre_analysis();
+		if(SAVE_PRE_ANALYSIS)
+		    save_pre_analysis();
+	    }
+	    pa = new PointerAnalysis(mcg, mac, lbbconv);
 	}
 
 	if(CHECK_NO_CALLEES)
@@ -242,8 +261,6 @@ public abstract class PAMain {
 	   join_stats(lbbconv, mcg);
 	   System.exit(1);
 	*/
-
-	pa = new PointerAnalysis(mcg, mac, lbbconv);
 
 	if(DO_ANALYSIS)
 	    do_analysis();
@@ -269,10 +286,15 @@ public abstract class PAMain {
         if (ELIM_SYNCOPS)
             do_elim_syncops();
 
+	if(SAVE_ANALYSIS) save_analysis();
+
+
 	if(DUMP_JAVA)
 	    dump_java(get_classes(pa.getMetaCallGraph().getAllMetaMethods()));
 
 	if(COMPILE) {
+	    System.out.println("\n\n\tCOMPILE!\n");
+
 	    g_tstart = System.currentTimeMillis();
 	    // It seems that something is broken in the new strategy ...
 	    SAMain.USE_OLD_CLINIT_STRATEGY = true;
@@ -291,13 +313,28 @@ public abstract class PAMain {
     private static void pre_analysis() {
 	g_tstart = System.currentTimeMillis();
 	//We might have loaded in a code factory w/o a preanalysis.
-	if (hcf==null)
-	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
+	if (hcf==null) {
+	    hcf = harpoon.IR.Quads.QuadWithTry.codeFactory();
+	    // hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory();
+
+	    construct_class_hierarchy();
+
+	    String resource =
+		"harpoon/Backend/Runtime1/init-safe.properties";
+	    hcf = new harpoon.Analysis.Quads.InitializerTransform
+		(hcf, ch, linker, resource).codeFactory();
+	    
+	    hcf = harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+	}
+	else
+	    construct_class_hierarchy();
+
+
 	hcf = new CachingCodeFactory(hcf, true);
 	bbconv = new CachingBBConverter(hcf);
 	lbbconv = new CachingLBBConverter(bbconv);
-	
-	construct_class_hierarchy();
+
+
 	construct_mroots();
 	construct_meta_call_graph();
 	construct_split_relation();
@@ -439,6 +476,64 @@ public abstract class PAMain {
     }
 
 
+    private static void load_analysis() {
+	long start = time();
+	System.out.print("Loading the PA from " + ANALYSIS_IN_FILE + 
+			  " ... ");
+
+	try {
+	    ObjectInputStream ois = new ObjectInputStream
+		(new FileInputStream(ANALYSIS_IN_FILE));
+	    linker    = (Linker) ois.readObject();
+	    hcf       = (CachingCodeFactory) ois.readObject();
+	    bbconv    = (CachingBBConverter) ois.readObject();
+	    lbbconv   = (LBBConverter) ois.readObject();
+	    ch        = (ClassHierarchy) ois.readObject();
+	    mroots    = (Set) ois.readObject();
+	    mcg       = (MetaCallGraph) ois.readObject();
+	    mac       = (MetaAllCallers) ois.readObject();
+	    split_rel = (Relation) ois.readObject();
+	    pa        = (PointerAnalysis) ois.readObject();
+	    ois.close();
+	} catch(Exception e) {
+	    System.err.println("\nError while loading the PA objects!");
+	    System.err.println(e);
+	    System.exit(1);
+	}
+
+	System.out.println((time() - start) + "ms");
+    }
+
+    private static void save_analysis() {
+	long start = time();
+	System.out.print("Saving the PA into " + ANALYSIS_OUT_FILE + 
+			  " ... ");
+
+	try {
+	    ObjectOutputStream oos = new ObjectOutputStream
+		(new FileOutputStream(ANALYSIS_OUT_FILE));
+	    // oos.writeObject(root_method);
+	    oos.writeObject(linker);
+	    oos.writeObject(hcf);
+	    oos.writeObject(bbconv);
+	    oos.writeObject(lbbconv);
+	    oos.writeObject(ch);
+	    oos.writeObject(mroots);
+	    oos.writeObject(mcg);
+	    oos.writeObject(mac);
+	    oos.writeObject(split_rel);
+	    oos.writeObject(pa);
+	    oos.flush();
+	    oos.close();
+	} catch(Exception e) {
+	    System.err.println("\nError while saving the PA objects!");
+	    System.err.println(e);
+	    System.exit(1);
+	}
+
+	System.out.println((time() - start) + "ms");
+    }
+
     // Finds the root method: the "main" method of "class".
     private static void get_root_method(String root_class) {
 /*
@@ -551,10 +646,10 @@ public abstract class PAMain {
 
     // process the command line options; returns the starting index of
     // the non-option arguments
-    private static int get_options(String[] argv){
+    private static int get_options(String[] argv) {
 	int c, c2;
 	String arg;
-	LongOpt[] longopts = new LongOpt[]{
+	LongOpt[] longopts = new LongOpt[] {
 	    new LongOpt("meta",          LongOpt.NO_ARGUMENT,       null, 'm'),
 	    new LongOpt("smartcg",       LongOpt.NO_ARGUMENT,       null, 's'),
 	    new LongOpt("showch",        LongOpt.NO_ARGUMENT,       null, 'c'),
@@ -582,10 +677,12 @@ public abstract class PAMain {
 	    new LongOpt("sa",            LongOpt.REQUIRED_ARGUMENT, null, 26),
 	    new LongOpt("ta",            LongOpt.REQUIRED_ARGUMENT, null, 27),
 	    new LongOpt("ns",            LongOpt.REQUIRED_ARGUMENT, null, 28),
-	    new LongOpt("check_nc",      LongOpt.NO_ARGUMENT,       null, 29)
+	    new LongOpt("check_nc",      LongOpt.NO_ARGUMENT,       null, 29),
+	    new LongOpt("loadpa",        LongOpt.REQUIRED_ARGUMENT, null, 30),
+	    new LongOpt("savepa",        LongOpt.REQUIRED_ARGUMENT, null, 31)
 	};
 
-	Getopt g = new Getopt("PAMain", argv, "mscoa:iIN:P:", longopts);
+	Getopt g = new Getopt("PAMain", argv, "mscor:a:iIN:P:", longopts);
 
 	while((c = g.getopt()) != -1)
 	    switch(c) {
@@ -645,6 +742,9 @@ public abstract class PAMain {
 		break;
 	    case 'i':
 		DO_INTERACTIVE_ANALYSIS = true;
+		break;
+	    case 'r':
+		rootSetFilename = g.getOptarg();
 		break;
 	    case 'I':
 		DO_INTERACTIVE_ANALYSIS = true;
@@ -711,6 +811,14 @@ public abstract class PAMain {
 		SAVE_PRE_ANALYSIS = true;
 		PRE_ANALYSIS_OUT_FILE = new String(g.getOptarg());
 		break;		
+	    case 30:
+		LOAD_ANALYSIS = true;
+		ANALYSIS_IN_FILE = new String(g.getOptarg());
+		break;
+	    case 31:
+		SAVE_ANALYSIS = true;
+		ANALYSIS_OUT_FILE = new String(g.getOptarg());
+		break;		
 	    case 21:
 		System.out.println("Old option syncelim -> fail");
 		System.exit(1);
@@ -769,6 +877,15 @@ public abstract class PAMain {
 	    System.exit(1);
 	}
 	System.out.println("Execution options:");
+
+
+	if(LOAD_ANALYSIS)
+	    System.out.println("\tLOAD_ANALYSIS from \"" + 
+			       ANALYSIS_IN_FILE + "\"");
+	if(SAVE_ANALYSIS)
+	    System.out.println("\tSAVE_ANALYSIS in \"" +
+			       ANALYSIS_OUT_FILE + "\"");
+
 
 	if(LOAD_PRE_ANALYSIS)
 	    System.out.println("\tLOAD_PRE_ANALYSIS from \"" + 
@@ -867,6 +984,9 @@ public abstract class PAMain {
 	if(MAInfo.NO_TG)
 	    System.out.println("\tNO_TG");
 
+	if(COMPILE)
+	    System.out.println("\tCOMPILE");
+
 	System.out.println();
     }
 
@@ -932,21 +1052,23 @@ public abstract class PAMain {
 	    System.out.println("===================================");
 	}
 
-	g_tstart = time();
-	System.out.print("Dumping the code factory + maps into the file " +
-			 MA_MAPS_OUTPUT_FILE + " ... ");
-	try{
-	    ObjectOutputStream oos = new ObjectOutputStream
-		(new FileOutputStream(MA_MAPS_OUTPUT_FILE));
-	    mainfo.prepareForSerialization();
-	    // write the CachingCodeFactory on the disk
-	    oos.writeObject(hcf);
-	    // write the Linker on the disk
-	    oos.writeObject(linker);
-	    oos.flush();
-	    oos.close();
-	} catch(IOException e){ System.err.println(e); }
-	System.out.println((time() - g_tstart) + "ms");
+	if(!COMPILE) {
+	    g_tstart = time();
+	    System.out.print("Dumping the code factory + maps into the file " +
+			     MA_MAPS_OUTPUT_FILE + " ... ");
+	    try{
+		ObjectOutputStream oos = new ObjectOutputStream
+		    (new FileOutputStream(MA_MAPS_OUTPUT_FILE));
+		mainfo.prepareForSerialization();
+		// write the CachingCodeFactory on the disk
+		oos.writeObject(hcf);
+		// write the Linker on the disk
+		oos.writeObject(linker);
+		oos.flush();
+		oos.close();
+	    } catch(IOException e){ System.err.println(e); }
+	    System.out.println((time() - g_tstart) + "ms");
+	}
     }
 
 
@@ -1428,14 +1550,22 @@ public abstract class PAMain {
 
     // Constructs the class hierarchy of the analyzed program.
     private static void construct_class_hierarchy() {
-	Set roots = new HashSet();
-	roots.add(hroot);
-	roots.addAll
+	program_roots = new HashSet();
+	program_roots.add(hroot);
+	program_roots.addAll
 	    (harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 
-	if(SHOW_CH){
+	// load additional roots (if any)
+	if (rootSetFilename!=null) try {
+	    addToRootSet(program_roots, rootSetFilename);
+	} catch (IOException ex) {
+	    System.err.println("Error reading " + rootSetFilename + ": " + ex);
+	    System.exit(1);
+	}
+	
+	if(SHOW_CH) {
 	    System.out.println("Set of roots: {");
-	    for(Iterator it = roots.iterator(); it.hasNext(); ) {
+	    for(Iterator it = program_roots.iterator(); it.hasNext(); ) {
 		Object o = it.next();
 		if(o instanceof HMethod)
 		    System.out.println(" m: " + o);
@@ -1449,7 +1579,7 @@ public abstract class PAMain {
 	System.out.print("ClassHierarchy ... ");
 	long tstart = time();
 
-	ch = new QuadClassHierarchy(linker, roots, hcf);
+	ch = new QuadClassHierarchy(linker, program_roots, hcf);
 
 	System.out.println((time() - tstart) + "ms");
 
@@ -1473,6 +1603,20 @@ public abstract class PAMain {
 	    */
 	}
 
+    }
+
+
+    private static void addToRootSet(final Set roots, String filename) 
+	throws IOException {
+	ParseUtil.readResource(filename, new ParseUtil.StringParser() {
+	    public void parseString(String s)
+		throws ParseUtil.BadLineException {
+		if (s.indexOf('(') < 0) // parse as class name.
+		    roots.add(ParseUtil.parseClass(linker, s));
+		else // parse as method name.
+		    roots.add(ParseUtil.parseMethod(linker, s));
+	    }
+	});
     }
 
 
@@ -1505,7 +1649,7 @@ public abstract class PAMain {
     // Constructs the set of method roots (see the comments around mroots)
     private static void construct_mroots() {
 	mroots = new HashSet();
-	mroots.addAll(select_methods(runtime_callable));
+	mroots.addAll(select_methods(program_roots));
 	mroots.addAll(get_static_initializers());
 	mroots.add(hroot);
 

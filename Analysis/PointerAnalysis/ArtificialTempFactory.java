@@ -27,9 +27,9 @@ import harpoon.ClassFile.HField;
  algorithm and will generate a bigger number of <i>artificial</i> nodes.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ArtificialTempFactory.java,v 1.1.2.4 2000-04-04 04:29:30 salcianu Exp $
+ * @version $Id: ArtificialTempFactory.java,v 1.1.2.5 2001-02-27 22:11:11 salcianu Exp $
  */
-public abstract class ArtificialTempFactory {
+public abstract class ArtificialTempFactory implements java.io.Serializable {
 
     // TODO: Make sure no one is using this evil string
     /** Totally artificial scope, used to generate unique (and artificial)

@@ -18,9 +18,9 @@ import harpoon.Util.DataStructs.Relation;
  * <code>PASync</code> models a <code>sync</code> action.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PASync.java,v 1.1.2.4 2000-07-02 08:37:44 salcianu Exp $
+ * @version $Id: PASync.java,v 1.1.2.5 2001-02-27 22:11:12 salcianu Exp $
  */
-public class PASync {
+public class PASync implements java.io.Serializable {
     /** The node on which the <code>sync</code> is performed on. */
     public PANode n;
     /** The thread which performs the <code>sync</code>. */

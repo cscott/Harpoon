@@ -21,9 +21,9 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.25 2000-11-12 20:39:03 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.26 2001-02-27 22:11:12 salcianu Exp $
  */
-final public class PANode {
+final public class PANode implements java.io.Serializable {
     // activates some safety tests
     private static final boolean CAUTION = true;
 

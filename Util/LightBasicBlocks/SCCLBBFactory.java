@@ -14,9 +14,9 @@ import harpoon.Util.Graphs.SCCTopSortedGraph;
  graph of the light basic blocks containing the code of a method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: SCCLBBFactory.java,v 1.1.2.6 2001-02-15 19:51:36 salcianu Exp $
+ * @version $Id: SCCLBBFactory.java,v 1.1.2.7 2001-02-27 22:11:37 salcianu Exp $
  */
-public class SCCLBBFactory {
+public class SCCLBBFactory implements java.io.Serializable {
 
     /** The <code>LBBConverter</code> used to generate the 
 	LightBasicBlock views of the methods */

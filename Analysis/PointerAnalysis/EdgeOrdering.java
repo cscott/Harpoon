@@ -35,9 +35,9 @@ import harpoon.Util.DataStructs.RelationEntryVisitor;
  correctly; speed was only a second issue.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: EdgeOrdering.java,v 1.1.2.10 2000-07-02 08:37:43 salcianu Exp $
+ * @version $Id: EdgeOrdering.java,v 1.1.2.11 2001-02-27 22:11:11 salcianu Exp $
  */
-public class EdgeOrdering{
+public class EdgeOrdering implements java.io.Serializable {
 
     // the relation behind the implementation: if <eo,ei> appears in this
     // relation, the outside edge eo could have been read after the inside

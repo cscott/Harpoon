@@ -10,9 +10,9 @@ import java.util.HashSet;
  * <code>PAWorkList</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAWorkList.java,v 1.1.2.5 2000-03-24 22:32:42 salcianu Exp $
+ * @version $Id: PAWorkList.java,v 1.1.2.6 2001-02-27 22:11:12 salcianu Exp $
  */
-public class PAWorkList extends PAWorkSet{
+public class PAWorkList extends PAWorkSet implements java.io.Serializable {
 
     LinkedList list;
     HashSet    set;

@@ -18,9 +18,9 @@ package harpoon.Analysis.PointerAnalysis;
 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraphPair.java,v 1.1.2.2 2000-11-15 21:48:38 salcianu Exp $
+ * @version $Id: ParIntGraphPair.java,v 1.1.2.3 2001-02-27 22:11:13 salcianu Exp $
  */
-class ParIntGraphPair {
+class ParIntGraphPair implements java.io.Serializable {
 
     // Normally, pig0 is enough; if the BB is terminated with a CALL
     //  pig0 is the graph for normal return from the call, and

@@ -41,7 +41,7 @@ import java.util.Map;
  * @author  John Whaley <jwhaley@alum.mit.edu>
  */
 
-public class InstrumentSyncOps {
+public class InstrumentSyncOps implements java.io.Serializable {
 
     static /*final*/ HMethod new_method;
     static /*final*/ HMethod monitorenter_method;

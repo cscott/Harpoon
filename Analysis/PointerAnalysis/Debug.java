@@ -26,9 +26,9 @@ import harpoon.Util.DataStructs.Relation;
  * <code>Debug</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: Debug.java,v 1.1.2.15 2001-02-15 19:51:15 salcianu Exp $
+ * @version $Id: Debug.java,v 1.1.2.16 2001-02-27 22:11:11 salcianu Exp $
  */
-public abstract class Debug {
+public abstract class Debug implements java.io.Serializable {
 
     /** Returns a sorted array containing all the objects from
 	<code>set</code>. Increasing lexicographic order of the

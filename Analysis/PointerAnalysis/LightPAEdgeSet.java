@@ -23,9 +23,10 @@ import harpoon.Temp.Temp;
  * <code>LightPAEdgeSet</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: LightPAEdgeSet.java,v 1.1.2.2 2000-07-02 00:54:39 salcianu Exp $
+ * @version $Id: LightPAEdgeSet.java,v 1.1.2.3 2001-02-27 22:11:12 salcianu Exp $
  */
-public class LightPAEdgeSet extends AbstrPAEdgeSet {
+public class LightPAEdgeSet extends AbstrPAEdgeSet
+    implements java.io.Serializable {
     
     private Relation var_edges;
     private Map node_edges;
