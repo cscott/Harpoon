@@ -38,7 +38,7 @@ import java.util.Set;
  * interface and class method dispatch tables.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataClaz.java,v 1.1.4.10 2000-01-25 03:32:51 kkz Exp $
+ * @version $Id: DataClaz.java,v 1.1.4.11 2000-01-25 04:09:12 cananian Exp $
  */
 public class DataClaz extends Data {
     final TreeBuilder m_tb;
@@ -164,8 +164,6 @@ public class DataClaz extends Data {
 	    stmlist.add(_DATUM(new CONST(tf, null, (int)bitmap)));
 	// switch back to CLASS segment
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.CLASS));
-	// align things on word boundary.
-	stmlist.add(new ALIGN(tf, null, 4));
 	return Stm.toStm(stmlist);
     }
 
