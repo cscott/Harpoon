@@ -56,6 +56,7 @@ THcqex2.tex: THcqex.fig
 phisig.tex: phisig.data-sorted
 THussi.tex: Data/ussi.data
 THv0.tex: Data/v0.data
+ptrsize.tex: ptrsize.data
 
 # graphing helpers
 %.stats: %

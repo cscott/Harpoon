@@ -26,7 +26,9 @@ pldi99.dvi: pldi99-example.tex pldi99-results.tex
 pldi99.dvi: Figures/THussi.tex Figures/THv0.tex Figures/THscccomp.eps
 
 # more dependencies for the pldi02 paper.
-pldi02.dvi: pldi02-abstract.tex
+pldi02.dvi: Figures/ptrsize.tex Figures/THlat6.tex
+pldi02.dvi: Figures/standardAlignment.eps Figures/byteAlignment.eps
+pldi02.dvi: Figures/bitAlignment.eps
 
 
 # thesis figure dependencies
@@ -73,7 +75,7 @@ always:
 %.pdf : %.ps
 	ps2pdf $< $@
 %-xdvi : %.dvi
-	@if ps | grep -v grep | grep -q "xdvi $*.dvi" ; then \
+	@if ps w | grep -v grep | grep -q "xdvi $*.dvi" ; then \
 		echo "Xdvi already running." ; \
 	else \
 		(xdvi $< &) ; \

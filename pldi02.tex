@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi02.tex,v 1.13 2001-11-16 20:50:16 cananian Exp $
+% $Id: pldi02.tex,v 1.14 2001-11-16 21:59:26 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-\pagestyle{myheadings}\markboth{$ $Revision: 1.13 $ $}{$ $Revision: 1.13 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.14 $ $}{$ $Revision: 1.14 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -230,7 +230,7 @@ In this investigation, we used a dynamic enumeration of classes on
 which {\tt Object.hashCode()} or {\tt System.identityHashCode()} is
 actually invoked at run-time.  This allows us to determine the
 upper-bound on hashcode-related savings.  It may initially be
-surprising to learn that only the 213\_javac benchmark ever invokes a
+surprising to learn that only the \code{213\_javac} benchmark ever invokes a
 system hashcode method (on objects of only 8 types); but on reflection
 this should be obvious: hashCodes tightly tied to the objects identity
 (as opposed to its field contents) are typically only useful when some
@@ -241,10 +241,10 @@ write a factory method which looks up the proposed new object in a
 assures that a field-based override of the {\tt Object.hashCode()}
 method is implemented.
 
-Since only the SPEC benchmark {\tt 227\_mtrt} is multithreaded
+Since only the SPEC benchmark \code{227\_mtrt} is multithreaded
 (making it trivial to determine that object locking is unnecessary
 for the other benchmarks)
-and only {\tt 213\_javac} contains
+and only \code{213\_javac} contains
 any objects which require hashcodes, we find that we can completely
 eliminate the second header word from all objects in 7 of our 9 benchmarks.
 Table \ref{tab:hashlock-opt} presents the number of classes on which
@@ -359,8 +359,8 @@ value and the field is eliminated.  Fields which we do not discover
 any reads of during our analysis are also removed as unused.
 Table~\ref{tab:const-unused} shows the number of unused and constant
 fields discovered by our analysis, and the dynamic space savings
-realized by removing them.  With the exception of 202\_jess and
-228\_jack, the objects containing most unused or constant fields are
+realized by removing them.  With the exception of \code{202\_jess} and
+\code{228\_jack}, the objects containing most unused or constant fields are
 very rarely instantiated.
 \begin{table}
 \begin{tabular}{lcccr@{.}l}
@@ -489,9 +489,9 @@ Table~\ref{tab:bitwidth-results} shows the allocation reductions due
 to our bitwidth
 analysis (including those due to constant/unread fields)
 under each of the above scenarios.  The logarithmic distribution of
-java type widths largely restricts us from capitalizing on the many small
-width restrictions found by the analysis, although 202\_jess and
-228\_jack still show significant improvements.  Allowing
+Java type widths largely restricts us from capitalizing on the many small
+width restrictions found by the analysis, although \code{202\_jess} and
+\code{228\_jack} still show significant improvements.  Allowing
 byte-alignment helps a great deal, and enables most of the space
 efficiencies of the bit-alignment scenario with a much simpler
 implementation.  Recall also the figures shown in
@@ -499,17 +499,48 @@ table \ref{tab:claz-space}, which illustrate the header compression
 benefits of using a byte or bit alignment strategy.
 
 \subsection{Pointer compression}\label{sec:ptrcmp}
+\begin{table}
+\begin{tabular}{lrr@{.}l}
+&\multicolumn{1}{r}{\bf pointer bytes}&\multicolumn{2}{c}{\bf \% alloc'ed}\\
+\bf Benchmark &\multicolumn{1}{r}{\bf alloc'd}&\multicolumn{2}{c}{\bf space} \\
+\hline
+200\_check	&     66,584 & 11&8\% \\
+201\_compress	&     62,252 &  0&1\% \\
+202\_jess	&114,496,252 & 43&4\% \\
+205\_raytrace	&  9,793,336 &  7&4\% \\
+209\_db 	& 34,179,936 & 44&6\% \\
+213\_javac	& 42,657,440 & 25&2\% \\
+222\_mpegaudio	&     56,672 & 12&8\% \\
+227\_mtrt	& 10,920,120 &  7&9\% \\
+228\_jack	& 45,499,744 & 24&3\% \\
+\end{tabular}
+\caption{Dynamically allocation for reference fields
+in SPEC benchmarks, in bytes and as a percentage of the
+total dynamically allocated bytes in the program.
+Reducing pointer sizes to 24-bits would save one quarter
+of these bytes.}
+\label{tab:ptrtable}
+\end{table}
+\begin{figure}
+\centering\input{Figures/ptrsize}
+\caption{Percent of dynamically allocated bytes which may be
+  eliminated by shrinking the pointer size (average across all SPEC
+  benchmarks).}
+\label{fig:ptrsize}
+\end{figure}
 % sub-topic: pointer compression.
 %  present numbers: how your memory stacks up.
 The bitwidth analysis only produces results for fields of integer type.
-However, fields with reference type constitute {\bf XX}\% of
-the field bytes allocated.  These fields can be compressed, too:
+However, fields with reference type constitute an average of 20\% of
+the field bytes allocated (table~\ref{tab:ptrtable} breaks this down
+by benchmark).  These reference fields can be compressed, too:
 typically an embedded system will not require a full 32-bit address
 space,\footnote{Not to mention a 64-bit address space!} due to
 limitations on the amount of memory and I/O address space actually attached
 to the device.  If we are byte- or bit-packing our fields already,
 it is straight-forward to implement sub-word widths for fields of
-reference type.  Figure~{\bf XX} shows the expected space savings
+reference type.  Figure~\ref{fig:ptrsize} shows the expected average
+space savings
 across our benchmarks as one shrinks the pointer size.  A
 space-optimizing java compiler ought to be able to specialize the code
 emitted for the address space size of the target device to take
