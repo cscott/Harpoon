@@ -52,7 +52,7 @@ import harpoon.Util.Util;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.14 2003-02-22 04:42:08 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.15 2003-02-24 15:32:26 wbeebee Exp $
  */
 public abstract class PreallocOpt {
 
@@ -66,7 +66,9 @@ public abstract class PreallocOpt {
         that has "GC_malloc_prealloc".  */
     public static boolean HACKED_GC = false;
     static {
-	System.out.println("HACKED_GC " + HACKED_GC);
+	if (HACKED_GC) {
+	    System.out.println("HACKED_GC on");
+	}
     }
 
     /** Map used by the optimization: assigns to each static field the
