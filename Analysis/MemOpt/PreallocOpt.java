@@ -20,6 +20,7 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HData;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.SerializableCodeFactory;
@@ -28,6 +29,7 @@ import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadWithTry;
 import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.Code;
 
 import harpoon.Analysis.ClassHierarchy;
@@ -44,6 +46,7 @@ import harpoon.Instrumentation.AllocationStatistics.AllocationStatistics;
 import harpoon.Analysis.Tree.Canonicalize;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.Runtime;
+import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 
 import harpoon.Util.Util;
@@ -52,7 +55,7 @@ import harpoon.Util.Util;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.15 2003-02-24 15:32:26 wbeebee Exp $
+ * @version $Id: PreallocOpt.java,v 1.16 2003-03-03 23:28:58 salcianu Exp $
  */
 public abstract class PreallocOpt {
 
@@ -62,28 +65,46 @@ public abstract class PreallocOpt {
 	<code>false</code>. */
     public static boolean PREALLOC_OPT = false;
 
+    /** Use the incompatibility analysis only to remove
+        syncronizations on the objects that can be preallocated (but
+        don't actually preallocate them).
+	
+	Useful when we want to measure the reduction of the memory
+	management overhead: the optimized program has to remove syncs
+	on the preallocated objects (for complicated reasons,
+	inflating them would make it crsah).  Therefore we want the
+	normal version to run without syncs on the preallocatable
+	objects, too. */
+    public static boolean ONLY_SYNC_REMOVAL = false;
+
+    /** If true, we do not preallocate allocation sites whose unique
+        identifier is not between <code>lowBound</cde> and
+        <code>highBound</code>.  (The unique id is obtained from a
+        <code>AllocationStatistics</code> object. */
+    public static boolean RANGE_DEBUG = false;
+    // used for debugging code
+    public static int lowBound  = 0;
+    public static int highBound = 200000;
+
     /** Set this to true only if you use the hacked BDW GC version
         that has "GC_malloc_prealloc".  */
-    public static boolean HACKED_GC = false;
-    static {
-	if (HACKED_GC) {
-	    System.out.println("HACKED_GC on");
-	}
-    }
+    public static boolean HACKED_GC = true;
 
-    /** Map used by the optimization: assigns to each static field the
-	size of the pre-allocated memory chunk that that field points
-	to (at runtime). */
-    private static Map/*<HField,Integer>*/ prealloc_field2size;
+    /** Map used by the optimization: assigns to each label the size
+	of the pre-allocated memory chunk that that label points to
+	(at runtime). */
+    private static Map/*<Label,Integer>*/ label2size;
+    private static Label beginLabel = new Label("ptr2preallocmem_BEGIN");
+    private static Label endLabel   = new Label("ptr2preallocmem_END");
 
     /** Name of the wrapper class for the static fields pointing to
 	pre-allocated memory chunks. */
     private static final String PREALLOC_MEM_CLASS_NAME =
 	"harpoon.Runtime.PreallocOpt.PreallocatedMemory";
 
-    /** Root for the names of the static fields that point (at
-	runtime) to the pre-allocated memory chunks. */
-    private static final String FIELD_ROOT_NAME = "preallocmem_";
+    /** Root for the names of the labels corresponding to locations
+	that point (at runtime) to the pre-allocated memory chunks. */
+    private static final String LABEL_ROOT_NAME = "ptr2preallocmem_";
 
     /** Name of the method that preallocates the memory chunks and
         initializes the static fields to point to them. */
@@ -128,8 +149,7 @@ public abstract class PreallocOpt {
 	@param roots set of roots
 
 	@param as allocation (dynamic) statistics; if
-	non-<code>null</code>, the method executes the
-	<code>Incompatibility Analysis</code>, prints some static and
+	non-<code>null</code>, the method prints some static and
 	dynamic statistics.
 
 	@param frame Backend specific information for compilation
@@ -144,8 +164,13 @@ public abstract class PreallocOpt {
 	(Linker linker, HCodeFactory hcf, ClassHierarchy ch, HMethod mainM,
 	 Set roots, AllocationStatistics as, Frame frame) {
 
+	if (HACKED_GC) System.out.println("HACKED_GC on");
 	System.out.println("preallocAnalysis: " + hcf.getCodeName());
-
+	if(RANGE_DEBUG) {
+	    assert as != null : "RANGE_DEBUG requires non-null as.";
+	    System.out.println("RANGE = [" + lowBound + "," + highBound + "]");
+	}
+	
 	// The whole mumbo-jumbo with the QuadNoSSA/QuandSSI is due to
 	// the fact that some analyses (e.g., smart call graph
 	// constructor) work only with QuadNoSSA, while other works
@@ -170,9 +195,8 @@ public abstract class PreallocOpt {
 	if(as != null)
 	    IAStatistics.printStatistics(ia, as, hcf_nossa, linker, frame);
 
-	PreallocOpt.prealloc_field2size = new HashMap();
-	addFields(linker, ia, frame, 
-		  PreallocOpt.prealloc_field2size, as);
+	label2size = new HashMap();
+	setAllocationProperties(linker, ia, frame, as);
 
 	// restore flag (the backend crashes without this ...)
 	QuadSSI.KEEP_QUAD_MAP_HACK = OLD_FLAG;
@@ -227,34 +251,78 @@ public abstract class PreallocOpt {
     }
 
 
-    private static void addFields
+    private static void setAllocationProperties
 	(Linker linker, IncompatibilityAnalysis ia, Frame frame,
-	 Map field2size, AllocationStatistics as) {
+	 AllocationStatistics as) {
 
-	HClass pam = linker.forName(PREALLOC_MEM_CLASS_NAME);
-	HClassMutator mutator = pam.getMutator();
-	// This can be improved by directly creating an HField.
-	// Instead, we use the easiest trick: we create fields by using
-	// a predefined field as a pattern.
-	HField pattern = pam.getDeclaredField("field_pattern");
-	int k = 0;
+	// BDW allocates many objects of the same size.  Therefore, if
+	// we allocate several objects of different sizes, the space
+	// is several times bigger than if we allocate same size
+	// objects.  So, we allocate the same amount of space
+	// (maxSize) for all preallocated memory chunks.
+	int maxSize = 0;
+	for(Iterator it = ia.getCompatibleClasses().iterator();
+	    it.hasNext(); ) {
+	    Collection cc = (Collection) it.next();
+	    int thisSize = sizeForCompatClass(frame, cc);	    
+	    maxSize = Math.max(thisSize, maxSize);
+	}
+
+	int nbLabels = 0;
 
 	for(Iterator it = ia.getCompatibleClasses().iterator();
-	    it.hasNext(); k++) {
+	    it.hasNext(); nbLabels++) {
 	    Collection cc = (Collection) it.next();
-	    HField f = mutator.addDeclaredField(FIELD_ROOT_NAME + k, pattern);
-	    field2size.put(f, new Integer(sizeForCompatClass(frame, cc)));
+
+	    Label label = new Label(LABEL_ROOT_NAME + nbLabels);
+	    // debug: I think we really want the second line
+	    label2size.put(label, new Integer(maxSize));
+	    //label2size.put(label, new Integer(sizeForCompatClass(frame,cc)));
+
 	    for(Iterator it_new = cc.iterator(); it_new.hasNext(); ) {
 		NEW site = (NEW) it_new.next();
-		
 		QuadSSI codeSSI = (QuadSSI) site.getFactory().getParent();
 		NEW siteNoSSA = (NEW) codeSSI.getQuadMapSSI2NoSSA().get(site);
 
-		setAllocationProperties(site, f, as.allocID(siteNoSSA));
+		if(!extraCond(site)) continue;
+
+		if(RANGE_DEBUG) {
+		    int id = as.allocID(siteNoSSA);
+		    if((id < lowBound) || (id > highBound)) continue;
+		    System.out.println
+			("\nPREALLOCATE: " + id + " \"" + label + "\" " + 
+			 Util.code2str(site));
+		}
+
+		setAllocationProperties(site, label);
 	    }
 	}
 
-	System.out.println("PreallocOpt: " + k + " static field(s) generated");
+	System.out.println("PreallocOpt: " + nbLabels + 
+			   " label(s) generated; maxSize = " + maxSize);
+    }
+
+
+    // hack to go around some missing things in Ovy's
+    // IncompatibilityAnalysis: IA analyzes only the program that
+    // is rooted in the main method (no initialization code
+    // considered; that code happen to allocate a PrintStream, and
+    // some connected objects with it ...)
+    // TODO: properly implement Ovy's stuff
+    static boolean extraCond(Quad site) {
+	String className = ((NEW) site).hclass().getName();
+	if(className.equals("java.io.BufferedWriter") ||
+	   className.equals("java.io.OutputStreamWriter")) {
+	    HClass hdeclc = site.getFactory().getMethod().getDeclaringClass();
+	    boolean result = ! hdeclc.getName().equals("java.io.PrintStream");
+	    if(!result)
+		System.out.println
+		    ("\nNO PREALLOC for\t" + Util.code2str(site) +
+		     "\tin\t" + site.getFactory().getMethod());
+	    return result;
+	}
+	else
+	    return true;
     }
 
 
@@ -287,9 +355,7 @@ public abstract class PreallocOpt {
 	return sizeForClass(frame.getRuntime(), hclass);
     }
 
-    public static Map ap2id = new HashMap();
-
-    private static void setAllocationProperties(NEW qn, HField f, int id) {
+    private static void setAllocationProperties(NEW qn, Label l) {
 	Code code = qn.getFactory().getParent();
 	AllocationInformationMap aim = 
 	    (AllocationInformationMap) code.getAllocationInformation();
@@ -304,26 +370,32 @@ public abstract class PreallocOpt {
 	    formerAP = DefaultAllocationInformation.SINGLETON.query(qn);
 
 	AllocationInformation.AllocationProperties ap = 
-	    new PreallocAP(f, formerAP);
+	    new PreallocAP(l, formerAP);
 	aim.associate((HCodeElement) qn, ap);
-
-	ap2id.put(ap, new Integer(id));
     }
 
 
     private static class PreallocAP extends ChainedAllocationProperties {
-	public PreallocAP(HField hfield, AllocationProperties formerAP) {
+	public PreallocAP(Label label, AllocationProperties formerAP) {
 	    super(formerAP);
-	    this.hfield = hfield;
+	    this.label = label;
 	}
-	private HField  hfield;
-	public  Temp    allocationHeap() { return null; }
-	public  boolean canBeStackAllocated() { return false; }
+	private Label label;
+	public  Temp    allocationHeap()       { return null;  }
+	public  boolean canBeStackAllocated()  { return false; }
 	public  boolean canBeThreadAllocated() { return false; }
-	public  boolean makeHeap() { return false; }
-	public  HField  getMemoryChunkField() { return hfield; }
+	public  boolean makeHeap()             { return false; }
+	// pre-allocated data is thread local (see paper) -> no sync!
+	public  boolean noSync()               { return true; }
+	public  Label   getLabelOfPtrToMemoryChunk() { return label; }
     }
 
+
+    public static HData getData(HClass hclass, Frame frame) {
+	return 
+	    new PreallocData(hclass, frame, label2size.keySet(),
+			     beginLabel, endLabel);
+    }
 
     /** Add the code that preallocates memory and initializes the
 	static fields that point to the preallocated memory chunks.
@@ -343,7 +415,18 @@ public abstract class PreallocOpt {
 	return
 	    Canonicalize.codeFactory
 	    (new AddMemoryPreallocation
-	     (hcf, getInitMethod(linker),
-	      PreallocOpt.prealloc_field2size, frame));
+	     (hcf, getInitMethod(linker), label2size, frame,
+	      beginLabel, endLabel));
+    }
+
+    /** Returns a <code>CodeFactory</code> with the same structure as
+        the one returned by <code>addMemoryPreallocation</code>, but
+        without any actual memory preallocation.  Useful for timing
+        purposes, when we want to insulate ourselves against
+        differences due to different chains of code factories. */
+    public static HCodeFactory BOGUSaddMemoryPreallocation
+	(Linker linker, HCodeFactory hcf, Frame frame) {
+	return
+	    Canonicalize.codeFactory(hcf);
     }
 }

@@ -4,23 +4,19 @@
 package harpoon.Analysis.MemOpt;
 
 import harpoon.Backend.Runtime1.MallocAllocationStrategy;
-import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.Backend.Generic.Frame;
 import harpoon.ClassFile.HClass;
-import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.Analysis.Maps.AllocationInformation.AllocationProperties;
 import harpoon.IR.Tree.DerivationGenerator;
 import harpoon.IR.Tree.Exp;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.MEM;
-import harpoon.IR.Tree.CONST;
-import harpoon.IR.Tree.BINOP;
-import harpoon.IR.Tree.UNOP;
-import harpoon.IR.Tree.Bop;
-import harpoon.IR.Tree.Uop;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Quads.Quad;
+import harpoon.Temp.Label;
+import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 
 import java.util.Map;
@@ -35,7 +31,7 @@ import java.util.Map;
     <li> If the <code>AllocationProperties</code> object for that
     allocation site indicates that the memory space has been
     preallocated, then generate code that simply reads the static
-    field that points to the pre-allocated chunk of memory.
+    variable that points to the pre-allocated chunk of memory.
 
     <li> Otherwise, use the standard allocation from
     <code>MallocAllocatonStrategy</code>.
@@ -43,80 +39,30 @@ import java.util.Map;
     </ul>
  
     @author  Alexandru Salcianu <salcianu@MIT.EDU>
-    @version $Id: PreallocAllocationStrategy.java,v 1.5 2003-02-22 04:42:08 salcianu Exp $ */
+    @version $Id: PreallocAllocationStrategy.java,v 1.6 2003-03-03 23:28:58 salcianu Exp $ */
 public class PreallocAllocationStrategy extends MallocAllocationStrategy {
     
     /** Creates a <code>PreallocAllocationStrategy</code>. */
-    public PreallocAllocationStrategy(Frame f, Map ap2id) { 
+    public PreallocAllocationStrategy(Frame f) { 
 	super(f, "GC_malloc");
-	this.ap2id = ap2id;
     }
-
-    private final Map ap2id;
 
     public Exp memAlloc(TreeFactory tf, HCodeElement source,
 			DerivationGenerator dg,
 			AllocationProperties ap,
 			Exp length) {
-	HField hfield = ap.getMemoryChunkField();
 
-	Integer ID = (Integer) ap2id.get(ap);
-	int id = (ID == null) ? -1 : ID.intValue();
+	Label label = ap.getLabelOfPtrToMemoryChunk();
 
-	// TODO: cut out the second part of the test!
-	// STATUS: we cannot do this yet, due to an incompleteness in
-	// the IncompatibilityAnalysis
-	if((hfield != null) && extraCond((Quad) source, ap.actualClass())
-	   && rangeCond(id)) {
-
-	    System.out.println("\nPREALLOCATE: " + id + " \"" + hfield + "\" " + Util.getLine(source) + " " + source);
-
+	if(label != null) {
 	    Exp pointer_expr =
-		new MEM
-		(tf, source, Type.POINTER,
-		 new NAME
-		 (tf, source,
-		  frame.getRuntime().getNameMap().label(hfield)));
+		new MEM(tf, source,
+			Type.POINTER, new NAME(tf, source, label));
 	    dg.putType(pointer_expr, HClass.Void);
+
 	    return pointer_expr;
 	}
-	else return super.memAlloc(tf, source, dg, ap, length);
-    }
-
-
-    private static boolean rangeCond(int id) {
-	assert id != -1;
-	return true;
-	//return (id >= lowBound) && (id <= highBound);
-    }
-
-    private static int lowBound = 0;
-    private static int highBound = 2000;
-
-    static {
-	System.out.println("RANGE = [ " + lowBound + " , " + highBound + " ]");
-    }
-
-
-    public static boolean extraCond(Quad q, HClass hclass) {
-	String className = hclass.getName();
-	// hack to go around some missing things in Ovy's
-	// IncompatibilityAnalysis: IA analyzes only the program that
-	// is rooted in the main method (no initialization code
-	// considered; that code happen to allocate a PrintStream, and
-	// some connected objects with it ...)
-	// TODO: properly implement Ovy's stuff
-	if(className.equals("java.io.BufferedWriter") ||
-	   className.equals("java.io.OutputStreamWriter")) {
-	    HClass hdeclc = q.getFactory().getMethod().getDeclaringClass();
-	    boolean result = ! hdeclc.getName().equals("java.io.PrintStream");
-	    if(!result)
-		System.out.println
-		    ("\nPreallocAS: false for\t" + Util.code2str(q) +
-		     "\tin\t" + q.getFactory().getMethod());
-	    return result;
-	}
 	else
-	    return true;
+	    return super.memAlloc(tf, source, dg, ap, length);
     }
 }

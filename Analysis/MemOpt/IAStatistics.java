@@ -54,7 +54,7 @@ import harpoon.IR.Quads.ANEW;
  * <code>IAStatistics</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: IAStatistics.java,v 1.10 2003-02-14 17:17:08 salcianu Exp $
+ * @version $Id: IAStatistics.java,v 1.11 2003-03-03 23:28:58 salcianu Exp $
  */
 public abstract class IAStatistics {
     
@@ -284,8 +284,7 @@ public abstract class IAStatistics {
 
 	    TypeStat ts = get_type_stat(hclass2stat, allocatedClass(q));
 	    int place = 
-		(selfIncompatible(q, ia) ||
-		 !PreallocAllocationStrategy.extraCond(q, allocatedClass(q))) ?
+		(selfIncompatible(q, ia) || !PreallocOpt.extraCond(q)) ?
 		HEAP : PREALLOC;
 	    ts.count[OBJECT][place] += as.getCount(q);
 	    ts.count[SITE][place]++;
