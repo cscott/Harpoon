@@ -11,29 +11,30 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
 /**
  * <code>CALL</code> objects represent method invocations.<p>
- * The <code>objectref</code> field will be <code>null</code> for
- * static methods; the <code>retval</code> field will be <code>null</code>
- * for <code>void</code> methods.<p>
+ * The <code>retval</code> field will be <code>null</code>
+ * for <code>void</code> methods.  For non-static methods, the
+ * method receiver (object reference on which to invoke the method)
+ * is the first parameter in the <code>params</code> array.<p>
  *
- * <strong>It is a semantic error for the <code>objectref</code> Temp
- * of a non-static method <code>CALL</code> to be able to have the value
+ * <strong>It is a semantic error for the receiver
+ * of a non-static method <code>CALL</code> (first parameter of a
+ * virtual/non-static method) to be <i>able to have</i> the value
  * <code>null</code> at run-time.</strong> A separate null-pointer
- * test should always precede the <code>CALL</code> quad if
- * <code>objectref</code> may be null at run-time.  Standard java
- * invocation throws a <code>NullPointerException</code> if the object
- * reference is <code>null</code>.
+ * test should always precede the <code>CALL</code> quad if the
+ * receiver may be null at run-time.  Standard java
+ * invocation throws a <code>NullPointerException</code> if the 
+ * receiver reference is <code>null</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CALL.java,v 1.27 1998-11-10 03:34:10 cananian Exp $ 
+ * @version $Id: CALL.java,v 1.27.2.1 1998-11-30 20:38:29 cananian Exp $ 
  */
 
 public class CALL extends Quad {
-    /** The object in which to invoke the method;
-     *  <code>null</code> for static methods.  */
-    public Temp objectref;
     /** The method to invoke. */
     public HMethod method;
-    /** Parameters to pass to the method. */
+    /** Parameters to pass to the method. 
+     *  The object on which to invoke the method is the first element in 
+     *  the parameter list of a virtual method. */
     public Temp[] params;
     /** Destination for the method's return value; 
      *  <code>null</code> for <code>void</code> methods. */
@@ -45,48 +46,38 @@ public class CALL extends Quad {
     public boolean isSpecial;
 
     /** Creates a <code>CALL</code>. <code>params</code> should match
-     *  exactly the number of parameters in the method descriptor,
-     *  and <code>retval</code> should be <code>null</code> if the
-     *  method returns no value. <code>objectref</code> should be
-     *  <code>null</code> if the method is static. <code>retex</code>
+     *  exactly the number of parameters in the method descriptor for a
+     *  static method, and/or contain an extra receiver object reference
+     *  as element 0 of <code>params</code> for a virtual method.
+     *  The <code>retval</code> field should be <code>null</code> if the
+     *  method returns no value.  The <code>retex</code> field
      *  will always be a valid <code>Temp</code>.  If an exception is
      *  thrown by the called method, <code>retex</code> will be assigned
      *  a non-null value and <code>retval</code> will be null.  If
      *  no exception is thrown, <code>retex</code> will be null. */
-    public CALL(HCodeElement source,
-		HMethod method, Temp objectref, Temp[] params, 
+    public CALL(HCodeElement source, HMethod method, Temp[] params, 
 		Temp retval, Temp retex, boolean isSpecial) {
 	super(source);
 	this.method = method;
-	this.objectref = objectref;
 	this.params = params;
 	this.retval = retval;
 	this.retex  = retex;
 	this.isSpecial = isSpecial;
-	// check static methods.
-	if (objectref==null) Util.assert(isStatic());
-	else Util.assert(!isStatic());
+	// check miscellanea.
+	Util.assert(retex!=null && params!=null && method!=null);
 	// check params and retval here against method.
 	if (method.getReturnType()==HClass.Void) Util.assert(retval==null);
 	else Util.assert(retval!=null);
-	Util.assert(method.getParameterTypes().length == params.length);
-	// check miscellanea.
-	Util.assert(retex!=null && params!=null && method!=null);
+	Util.assert((method.getParameterTypes().length + (isStatic()?0:1)) ==
+		    params.length);
 	// I guess it's legal, then.
     }
 
     /** Returns all the Temps used by this Quad. 
-     * @return objectref (if objectref!=null) and params.
+     * @return the <code>params</code> array.
      */
     public Temp[] use() {
-	if (objectref==null)
-	    return (Temp[]) Util.copy(params);
-	else {
-	    Temp[] u = new Temp[params.length+1];
-	    System.arraycopy(params,0,u,1,params.length);
-	    u[0] = objectref;
-	    return u;
-	}
+	return (Temp[]) Util.copy(params);
     }
     /** Returns all the Temps defined by this Quad. 
      * @return { retval, retex }, if retval!=null; else { retex }
@@ -98,8 +89,6 @@ public class CALL extends Quad {
 
     /** Rename all used variables in this Quad according to a mapping. */
     public void renameUses(TempMap tm) {
-	if (objectref!=null)
-	    objectref = tm.tempMap(objectref);
 	for (int i=0; i<params.length; i++)
 	    params[i] = tm.tempMap(params[i]);
     }
@@ -137,8 +126,6 @@ public class CALL extends Quad {
 		sb.append(", ");
 	}
 	sb.append(')');
-	if (objectref!=null)
-	    sb.append(" of "+objectref);
 	sb.append(" exceptions in "+retex);
 	return sb.toString();
     }

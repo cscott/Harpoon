@@ -8,7 +8,7 @@ import harpoon.ClassFile.*;
  * <code>DEBUG</code> prints a debugging string to standard error.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DEBUG.java,v 1.1.2.1 1998-11-22 02:34:19 cananian Exp $
+ * @version $Id: DEBUG.java,v 1.1.2.2 1998-11-30 20:38:29 cananian Exp $
  */
 
 public class DEBUG extends Quad {
@@ -22,5 +22,6 @@ public class DEBUG extends Quad {
 	this.str = str;
     }
     public void visit(QuadVisitor v) { v.visit(this); }
+    /** Returns a human-readable version of the <code>DEBUG</code> quad. */
     public String toString() { return "DEBUG: "+str; }
 }

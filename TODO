@@ -1,4 +1,7 @@
 ---- Nov-25-98
+Make HClass demand-driven again: special 'caching' HClass that stores
+ string reference to class and waits to load it until an accessor method
+ is called.  Think hard about this.
 Insert proper labels in quadSSA print() method to make it readable.
 ---- Nov-20-98
 javac allows circular interface dependencies that could result in infinite

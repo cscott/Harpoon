@@ -32,7 +32,7 @@ import java.util.Stack;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.90.2.4 1998-11-27 03:44:10 cananian Exp $
+ * @version $Id: Translate.java,v 1.90.2.5 1998-11-30 20:38:30 cananian Exp $
  */
 
 class Translate  { // not public.
@@ -331,14 +331,14 @@ class Translate  { // not public.
 		lock = new Temp(); // lock is Class.forName(this.class)
 		HClass strC = HClass.forClass(String.class);
 		HClass exC = HClass.forClass(NoClassDefFoundError.class);
+		HMethod cfnM = HClass.forClass(Class.class)
+				    .getMethod("forName", 
+					       new HClass[] { strC } );
 		Quad qq0 = new CONST(quads, s.extra(0), 
 				     bytecode.getMethod().getDeclaringClass()
 				     .getName(), strC);
-		Quad qq1 = new CALL(quads, 
-				    HClass.forClass(Class.class)
-				    .getMethod("forName", 
-					       new HClass[] { strC } ),
-				    null, qq0.def(), lock, SS.Tex, false);
+		Quad qq1 = new CALL(quads, cfnM, qq0.def() /*params*/,
+				    lock, SS.Tex, false);
 		Quad qq2 = new OPER(quads, Qop.ACMPEQ, s.extra(0),
 				    new Temp[] { SS.Tex, SS.Tnull });
 		Quad qq3 = new CJMP(quads, qq2.def()[0], new Temp[0]);
@@ -1061,28 +1061,30 @@ class Translate  { // not public.
 	    boolean isStatic = (in.getOpcode()==Op.INVOKESTATIC);
 	    OpMethod opd = (OpMethod) in.getOperand(0);
 	    HClass paramtypes[] = opd.value().getParameterTypes();
-	    Temp param[] = new Temp[paramtypes.length];
-	    int i,j;
-	    for (i=param.length-1, j=0; i>=0; i--, j++) {
-		param[i] = s.stack(j);
+	    Temp param[] = new Temp[paramtypes.length+(isStatic?0:1)];
+	    int j=0; // count number of entries on the stack.
+	    for (int i=paramtypes.length-1; i>=0; i--, j++) {
+		param[i+(isStatic?0:1)] = s.stack(j);
 		if (isLongDouble(paramtypes[i])) j++;
 	    }
-	    Temp objectref = isStatic?null:s.stack(j);
+	    if (!isStatic) param[0]=s.stack(j++); // objectref.
 	    Temp Tex = SS.Tex;
-	    if (opd.value().getReturnType()==HClass.Void) { // no return value.
-		ns = s.pop(j+(isStatic?0:1));
-		q = new CALL(in, opd.value(), objectref, param, 
-			     null, Tex, isSpecial);
+	    Temp Tret;
+	    if (opd.value().getReturnType()==HClass.Void) { 
+		// no return value.
+		ns = s.pop(j);
+		Tret = null;
 	    } else if (!isLongDouble(opd.value().getReturnType())) {
 		// 32-bit return value.
-		ns = s.pop(j+(isStatic?0:1)).push();
-		q = new CALL(in, opd.value(), objectref, param, 
-			     ns.stack(0), Tex, isSpecial);
-	    } else { // 64-bit return value.
-		ns = s.pop(j+(isStatic?0:1)).push(null).push();
-		q = new CALL(in, opd.value(), objectref, param, 
-			     ns.stack(0), Tex, isSpecial);
+		ns = s.pop(j).push();
+		Tret = ns.stack(0);
+	    } else { 
+		// 64-bit return value.
+		ns = s.pop(j).push(null).push();
+		Tret = ns.stack(0);
 	    }
+	    // Create CALL quad.
+	    q = new CALL(in, opd.value(), param, Tret, Tex, isSpecial);
 	    // check for thrown exception.
 	    Quad q1 = new OPER(in, Qop.ACMPEQ, ns.extra(0),
 			       new Temp[] { Tex, SS.Tnull });
@@ -1097,7 +1099,7 @@ class Translate  { // not public.
 
 		// test objectref against null.
 		Quad q3 = new OPER(in, Qop.ACMPEQ, s.extra(0),
-				   new Temp[] { objectref, SS.Tnull } );
+				   new Temp[] { param[0], SS.Tnull } );
 		Quad q4 = new CJMP(in, q3.def()[0], new Temp[0]);
 		Quad q5 = transNewException(SS, HCex, Tex, 
 					    new TransState(s, in, q4, 1));
@@ -1567,7 +1569,7 @@ class Translate  { // not public.
 	    Quad q3 = new CJMP(ts.in, q2.def()[0], new Temp[0]);
 	    Quad q4 = new NEW(ts.in, Tex, hc);
 	    Quad q5 = new CALL(ts.in, hc.getConstructor(new HClass[0]),
-			       Tex, new Temp[0], null /*retval*/,
+			       new Temp[] { Tex }, null /*retval*/,
 			       ns.extra(0)/*exception*/, true /*special*/);
 	    Quad q6 = new OPER(ts.in, Qop.ACMPEQ, ns.extra(1),
 			       new Temp[] { q5.def()[0], SS.Tnull } );
@@ -1658,7 +1660,7 @@ class Translate  { // not public.
 
 	Quad q0 = new NEW(in, Tex, exClass);
 	Quad q1 = new CALL(in, exClass.getConstructor(new HClass[0]),
-			   q0.def()[0], new Temp[0], null /*retval*/,
+			   new Temp[] { q0.def()[0] }, null /*retval*/,
 			   s.extra(0) /*ex*/, true /*special*/);
 	// check whether the constructor threw an exception.
 	Quad q2 = new OPER(in, Qop.ACMPEQ, s.extra(1),
