@@ -40,6 +40,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import java.util.HashMap;
+import harpoon.Util.WorkSet;
+import harpoon.IR.Quads.RETURN;
+import harpoon.IR.Quads.AGET;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.NEW;
+
+
 /**
  * <code>WriteBarrierQuadPass</code> takes code in Quad form and
  * inserts a fake call to a write barrier that is later replaced with
@@ -50,7 +58,7 @@ import java.util.Set;
  * about the number of times the write-barrier is called.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierQuadPass.java,v 1.3 2002-02-26 22:41:32 cananian Exp $
+ * @version $Id: WriteBarrierQuadPass.java,v 1.4 2002-03-27 22:54:59 kkz Exp $
  */
 public class WriteBarrierQuadPass extends 
     harpoon.Analysis.Transformation.MethodMutator {
@@ -125,6 +133,7 @@ public class WriteBarrierQuadPass extends
 			for (Iterator cls = s.iterator(); cls.hasNext(); ) {
 			    if (ch.parents((HClass)cls.next()).
 				contains(type)) {
+				ignore.remove(q);
 				break;
 			    }
 			}
@@ -137,6 +146,8 @@ public class WriteBarrierQuadPass extends
 	//hc.print(new java.io.PrintWriter(System.out), null);
 	HEADER header = (HEADER) hc.getRootElement();
 	FOOTER footer = (FOOTER) header.footer();
+	// BIT EXPERIMENT
+	// QuadVisitor qv = new WriteBarrierVisitor(footer, Collections.EMPTY_SET);
 	QuadVisitor qv = new WriteBarrierVisitor(footer, ignore);
 	// we put all elements in array to avoid screwing up the
 	// iterator as we mutate the quad graph in-place.
@@ -144,6 +155,11 @@ public class WriteBarrierQuadPass extends
 	for (int i=0; i<allquads.length; i++)
 	    allquads[i].accept(qv);
 	// yay, done!
+
+	// BIT EXPERIMENT BEGIN
+	MartinVisitor mv = new MartinVisitor(ignore);
+	mv.doAnalysis((Quad)hc.getRootElement());
+	// BIT EXPERIMENT END
 	return hc;
     }
 
@@ -188,6 +204,121 @@ public class WriteBarrierQuadPass extends
 	Util.ASSERT(wbs != null);
 	return new WriteBarrierData(hc, f, wbs.getCount());
     }
+
+    // BIT EXPERIMENT
+    private class MartinVisitor {
+	private final Set ignore;
+	private HashMap map;
+
+	MartinVisitor(Set ignore) {
+	    this.ignore=ignore;
+	    this.map=new HashMap();
+	}
+	
+	public void doAnalysis(Quad header) {
+	    WorkSet quadstolookat=new WorkSet();
+	    WorkSet newstatements=new WorkSet();
+	    quadstolookat.add(header);
+	    while(!quadstolookat.isEmpty()) {
+		Quad q=(Quad)quadstolookat.pull();
+		if (isremovedSet(q)) {
+		    if (!map.containsKey(q)) {
+			WorkSet ws=new WorkSet();
+			ws.add(q);
+			map.put(q,ws);
+			for(int i=0;i<q.nextLength();i++)
+			    quadstolookat.add(q.next(i));
+		    }
+		} else if (mightCauseNewObject(q)) {
+		    if (!map.containsKey(q)) {
+			WorkSet ws=new WorkSet();
+			map.put(q,ws);
+			for(int i=0;i<q.nextLength();i++)
+			    quadstolookat.add(q.next(i));
+			newstatements.add(q);
+		    }
+		} else {
+		    if (!map.containsKey(q)) {
+			WorkSet ws=new WorkSet();
+			for(int i=0;i<q.prevLength();i++)
+			    if (map.containsKey(q.prev(i))) {
+				WorkSet prevset=(WorkSet)map.get(q.prev(i));
+				ws.addAll(prevset);
+			    }
+			map.put(q,ws);
+			for(int i=0;i<q.nextLength();i++)
+			    quadstolookat.add(q.next(i));
+		    } else {
+			WorkSet ws=new WorkSet();
+			for(int i=0;i<q.prevLength();i++)
+			    if (map.containsKey(q.prev(i))) {
+				WorkSet prevset=(WorkSet)map.get(q.prev(i));
+				ws.addAll(prevset);
+			    }
+			WorkSet oldset=(WorkSet) map.get(q);
+			if (ws.size()>oldset.size()) {
+			    map.put(q,ws);
+			    for(int i=0;i<q.nextLength();i++)
+				quadstolookat.add(q.next(i));
+			}
+		    }
+		}
+	    }
+	    //cycle through each newstatements
+	    WorkSet assigns=new WorkSet();
+	    while(!newstatements.isEmpty()) {
+		Quad q=(Quad)newstatements.pop();
+		for(int i=0;i<q.prevLength();i++)
+		    if (map.containsKey(q.prev(i))) {
+			WorkSet prevset=(WorkSet)map.get(q.prev(i));
+			assigns.addAll(prevset);
+		    } else System.out.println("ERROR: "+q+" "+i+" "+q.prev(i)+ " in hacked analysis");
+	    }
+	    while(!assigns.isEmpty()) {
+		Quad q=(Quad)assigns.pop();
+		System.out.println("Adding overhead to: "+q);
+		if (q instanceof SET) {
+		    SET s=(SET)q;
+		    Temp t=new Temp(q.getFactory().tempFactory());
+		    GET g=new GET(q.getFactory(), q, t, s.field(), s.objectref());
+		    SET ns=new SET(q.getFactory(), q, s.field(), s.objectref(),t);
+		    Quad.addEdge(ns,0,s.next(0),s.nextEdge(0).which_pred());
+		    Quad.addEdge(g,0,ns,0);
+		    Quad.addEdge(s,0,g,0);
+		} else if (q instanceof ASET) {
+		    ASET s=(ASET)q;
+		    Temp t=new Temp(q.getFactory().tempFactory());
+		    AGET ag=new AGET(q.getFactory(), q, t, s.objectref(),s.index(),s.type());
+		    ASET ans=new ASET(q.getFactory(), q, s.objectref(), s.index(), t, s.type());
+
+		    Quad.addEdge(ans,0,s.next(0),s.nextEdge(0).which_pred());
+		    Quad.addEdge(ag,0,ans,0);
+		    Quad.addEdge(s,0,ag,0);
+		} else {
+		    System.out.println("ERROR: "+q+" in hacked analysis");
+		}
+	    }
+	}
+
+	public boolean isremovedSet(Quad q) {
+	    if (q instanceof ASET) {
+		ASET as = (ASET)q;
+		return (!as.type().isPrimitive() && ignore.contains(as));
+	    } else if (q instanceof SET) {
+		SET s = (SET)q;
+		return (!s.isStatic() && !s.field().getType().isPrimitive() &&
+			ignore.contains(s));
+	    } else return false;
+	}
+	public boolean mightCauseNewObject(Quad q) {
+	    return ((q instanceof NEW)||
+		(q instanceof THROW)||
+		(q instanceof ANEW)||
+		(q instanceof RETURN));
+	}
+
+    }
+
 
     private class WriteBarrierVisitor extends QuadVisitor {
 	private FOOTER footer;

@@ -4,10 +4,12 @@
 package harpoon.Analysis.PreciseGC;
 
 import harpoon.Analysis.ClassHierarchy;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeAndMaps;
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.Linker;
 import harpoon.IR.LowQuad.PCALL;
 import harpoon.IR.Properties.CFGEdge;
 import harpoon.IR.Properties.UseDefer;
@@ -53,7 +55,7 @@ import java.util.Set;
  * Also transforms the callers of these methods.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: RCTransformer.java,v 1.2 2002-03-07 00:44:32 cananian Exp $
+ * @version $Id: RCTransformer.java,v 1.3 2002-03-27 22:54:59 kkz Exp $
  */
 public class RCTransformer extends 
     harpoon.Analysis.Transformation.MethodSplitter {
@@ -61,10 +63,10 @@ public class RCTransformer extends
     private final Set recursiveConstructors;
 
     /** Creates a <code>RCTransformer</code>. */
-    public RCTransformer(HCodeFactory parent, ClassHierarchy ch) {
+    public RCTransformer(HCodeFactory parent, ClassHierarchy ch, Linker lnkr) {
         super(parent, ch, true/* doesn't matter */);
 	this.recursiveConstructors = new HashSet();
-	scanConstructors(parent, ch);
+	scanConstructors(parent, ch, lnkr);
 	System.out.println(recursiveConstructors.size() + " constructors");
     }
     
@@ -113,8 +115,8 @@ public class RCTransformer extends
      */
     private Code makeCreator(Code c) {
 	// find call to superclass constructor
-	System.out.println("Making creator");
-	c.print(new java.io.PrintWriter(System.out), null);
+	//System.out.println("Making creator");
+	//c.print(new java.io.PrintWriter(System.out), null);
 	Quad q = (Quad) c.getRootElement();
 	CFGEdge[] succs = q.succ();
 	// first Quad should be the HEADER
@@ -144,25 +146,26 @@ public class RCTransformer extends
 	Quad.addEdge(nnew, 0, call, 0);
 	// fix-up RETURN(s)
 	call.accept(new RETURNFixUp(retval));
-	c.print(new java.io.PrintWriter(System.out), null);
+	//c.print(new java.io.PrintWriter(System.out), null);
 	// start with the Quad on the 0-edge (normal return)
 	// of the call to the superclass constructor, and
 	// find the straight-line code that we want to move
 	findChain fc = new findChain(retval, nnew, call);
 	Quad end = fc.end;
 	fc = null;
-	System.out.println(end);
+	//System.out.println(end);
 	findTemps ft = new findTemps(nmethod, nnew, call, end);
 	checkDependencies cd = new checkDependencies(nmethod, nnew, call, end);
 	// only perform transformation if possible
 	if (ft.needs.size() == 0 && ft.safe && cd.safe) {
-	    System.out.println("Safe...");
+	    //System.out.println("Safe...");
 	    updateDependencies ud = new updateDependencies(nmethod, nnew, call,
 							   end, c.getMethod());
-	    c.print(new java.io.PrintWriter(System.out), null);
+	    //c.print(new java.io.PrintWriter(System.out), null);
 	    Map insertPts = ud.insertPts;
 	    // null out for GC
 	    ud = null;
+	    /*
 	    for(Iterator it = insertPts.keySet().iterator(); it.hasNext(); )
 		{
 		    Quad key = (Quad) it.next();
@@ -173,10 +176,11 @@ public class RCTransformer extends
 		    }
 		}
 	    System.out.println("Done...");
+	    */
 	    makeRecurse mr = new makeRecurse(insertPts, nnew);
-	    c.print(new java.io.PrintWriter(System.out), null);
+	    //c.print(new java.io.PrintWriter(System.out), null);
 	    nmethod.next(0).accept(mr);
-	    c.print(new java.io.PrintWriter(System.out), null);
+	    //c.print(new java.io.PrintWriter(System.out), null);
 	}
 	return c;
     }
@@ -201,10 +205,6 @@ public class RCTransformer extends
      *  call to the new creator method.
      */
     private Code modifyCalls(Code c) {
-	/*
-	if (recursiveConstructors.contains(c.getMethod()))
-	    return c;
-	*/
 	for(Iterator it = c.getElementsI(); it.hasNext(); ) {
 	    Quad q = (Quad) it.next();
 	    // modify callers of recursive constructors
@@ -243,31 +243,65 @@ public class RCTransformer extends
 			      ocall.params(0), ocall.retex(), 
 			      ocall.isVirtual(), ocall.isTailCall(),
 			      ocall.dst(), ocall.src());
-	System.out.println("Replacing:");
+	/*
+	  System.out.println("Replacing:");
 	System.out.println(alloc);
 	System.out.println(ocall);
 	System.out.println("with");
 	System.out.println(ncall);
+	*/
 	// update graph
 	alloc.remove();
 	Quad.replace(ocall,ncall);
 	Quad.transferHandlers(ocall,ncall);
     }
 
-    private void scanConstructors(HCodeFactory parent, ClassHierarchy ch) {
+    private void scanConstructors(HCodeFactory parent, ClassHierarchy ch,
+				  Linker lnkr) {
 	// first, find constructors that call themselves
 	for(Iterator it = ch.callableMethods().iterator(); it.hasNext(); ) {
 	    HMethod hm = (HMethod) it.next();
 	    // skip methods that are not constructors
 	    if (!hm.getName().equals("<init>")) continue;
 	    Code c = (Code) parent.convert(hm);
+	    boolean recursive = false;
 	    // look for constructors that call themselves
 	    for(Iterator quads = c.getElementsI(); quads.hasNext(); ) {
 		Quad q = (Quad) quads.next();
 		if (q.kind() == QuadKind.CALL &&
 		    ((CALL)q).method().equals(hm)) {
 		    recursiveConstructors.add(hm);
+		    recursive = true;
 		    break;
+		}
+	    }
+	    // make sure we can handle all the Quads in them
+	    if (recursive) {
+		HClass exc = lnkr.forName("java.lang.Throwable");
+		for(Iterator quads = c.getElementsI(); quads.hasNext(); ) {
+		    Quad q = (Quad) quads.next();
+		    // we currently only handle a subset of Quads
+		    if (q.kind() == QuadKind.NEW) {
+			HClass hcls = ((NEW)q).hclass();
+			if (!hcls.equals(hm.getDeclaringClass()) &&
+			    !hcls.isInstanceOf(exc)) {
+			    recursiveConstructors.remove(hm);
+			    break;
+			}
+		    } else if (q.kind() != QuadKind.CALL &&
+			       q.kind() != QuadKind.CJMP &&
+			       q.kind() != QuadKind.CONST &&
+			       q.kind() != QuadKind.FOOTER &&
+			       q.kind() != QuadKind.HEADER &&
+			       q.kind() != QuadKind.METHOD &&
+			       q.kind() != QuadKind.OPER &&
+			       q.kind() != QuadKind.PHI &&
+			       q.kind() != QuadKind.RETURN &&
+			       q.kind() != QuadKind.SET &&
+			       q.kind() != QuadKind.THROW) {
+			recursiveConstructors.remove(hm);
+			break;
+		    }
 		}
 	    }
 	}
@@ -578,7 +612,7 @@ public class RCTransformer extends
 	    for(int i = 0; i < q.paramsLength(); i++) {
 		if (!gen.contains(q.params(i))) {
 		    safe = false;
-		    System.out.println(q + " needs " + q.params(i));
+		    //System.out.println(q + " needs " + q.params(i));
 		    return;
 		}
 	    }
@@ -629,7 +663,7 @@ public class RCTransformer extends
 	public void visit(CJMP q) {
 	    if (!gen.contains(q.test())) {
 		safe = false;
-		System.out.println(q + " needs " + q.test());
+		//System.out.println(q + " needs " + q.test());
 		return;
 	    }
 	    visit((SIGMA)q);
@@ -671,9 +705,9 @@ public class RCTransformer extends
 	    for(Iterator it = q.useC().iterator(); it.hasNext(); ) {
 		Temp t = (Temp) it.next();
 		if (!gen.contains(t) && !t.equals(thisObj)) {
-		    System.out.println(thisObj);
+		    //System.out.println(thisObj);
 		    safe = false;
-		    System.out.println(q + " needs " + t);
+		    //System.out.println(q + " needs " + t);
 		    return;
 		}
 	    }
@@ -760,7 +794,7 @@ public class RCTransformer extends
 	}
 
 	public void visit(CALL q) {
-	    System.out.println(insertPt + " :: " + q);
+	    //System.out.println(insertPt + " :: " + q);
 	    if (q.method().equals(hm))
 		insertPt = q;
 	    Temp[] oparams = q.params();
@@ -805,7 +839,7 @@ public class RCTransformer extends
 	}
 
 	public void visit(CJMP q) {
-	    System.out.println(insertPt + " :: " + q);
+	    //System.out.println(insertPt + " :: " + q);
 	    Temp test = null;
 	    // remap test if needed
 	    if (tMap.containsKey(q.test())) {
@@ -836,13 +870,13 @@ public class RCTransformer extends
 	}
 
 	public void visit(FOOTER q) {
-	    System.out.println(insertPt + " :: " + q);
+	    //System.out.println(insertPt + " :: " + q);
 	    if (lastPhi != null && insertPt != null)
 		phiMap.put(lastPhi, insertPt);
 	}
 
 	public void visit(OPER q) {
-	    System.out.println(insertPt + " :: " + q);
+	    //System.out.println(insertPt + " :: " + q);
 	    // update operands if necessary
 	    Temp[] nt = null;
 	    Temp[] ot = q.operands();
@@ -875,7 +909,7 @@ public class RCTransformer extends
 	}
 
 	public void visit(PHI q) {
-	    System.out.println(insertPt + " :: " + q);
+	    //System.out.println(insertPt + " :: " + q);
 	    // replace PHI if needed
 	    Temp[][] nsrc = null;
 	    for(int i = 0; i < q.numPhis(); i++) {
@@ -930,7 +964,7 @@ public class RCTransformer extends
 	}
 
 	public void visit(Quad q) {
-	    System.out.println(insertPt + " :: " + q);
+	    //System.out.println(insertPt + " :: " + q);
 	    // we don't handle uses here
 	    Util.ASSERT(q.useC().isEmpty());
 	    for(Iterator it = tMap.keySet().iterator(); it.hasNext(); ) {
@@ -947,7 +981,7 @@ public class RCTransformer extends
 	}
 
 	public void visit(RETURN q) {
-	    System.out.println(insertPt + " :: " + q);
+	    //System.out.println(insertPt + " :: " + q);
 	    if (tMap.containsKey(q.retval())) {
 		Temp t = (Temp) tMap.get(q.retval());
 		Util.ASSERT(t != null);
@@ -961,7 +995,7 @@ public class RCTransformer extends
 	}
 
 	public void visit(SET q) {
-	    System.out.println(insertPt + " :: " + q);
+	    //System.out.println(insertPt + " :: " + q);
 	    // replace objectref if necessary
 	    Temp objectref = null;
 	    if (tMap.containsKey(q.objectref())) {
@@ -989,7 +1023,7 @@ public class RCTransformer extends
 	}
 
 	public void visit(SIGMA q) {
-	    System.out.println(insertPt + " :: " + q);
+	    //System.out.println(insertPt + " :: " + q);
 	    Quad savedIP = insertPt;
 	    Util.ASSERT(savedIP == null || savedIP.equals(q));
 	    Quad[] savedIPs = new Quad[q.arity()];
@@ -1049,7 +1083,7 @@ public class RCTransformer extends
 	}
 
 	public void visit(THROW q) {
-	    System.out.println(insertPt + " :: " + q);
+	    //System.out.println(insertPt + " :: " + q);
 	    if (tMap.containsKey(q.throwable())) {
 		Temp t = (Temp) tMap.get(q.throwable());
 		Util.ASSERT(t != null);
@@ -1150,7 +1184,7 @@ public class RCTransformer extends
 					  ocall.method(), new Temp[] { rcvr0 },
 					  retval, retex, ocall.isVirtual(),
 					  ocall.isTailCall(), dst, src);
-		    System.out.println(ncall);
+		    //System.out.println(ncall);
 		    Quad.addEdge(ncall, 0, sigma.next(i), 
 				 sigma.nextEdge(i).which_pred());
 		    Quad.addEdge(nnew, 0, ncall, 0);

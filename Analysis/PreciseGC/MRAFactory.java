@@ -64,7 +64,7 @@ import java.util.Set;
  * <code>MRAFactory</code> generates <code>MRA</code>s.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: MRAFactory.java,v 1.4 2002-02-28 00:55:30 kkz Exp $
+ * @version $Id: MRAFactory.java,v 1.5 2002-03-27 22:54:59 kkz Exp $
  */
 public class MRAFactory {
     
@@ -95,9 +95,9 @@ public class MRAFactory {
 	this.cache = new HashMap();
 	this.method2types = 
 	    (optLevel == 2 || optLevel == 3)? dynamicDispatchM2TMap(l, rName): 
-	    (optLevel == 4 || optLevel == 5 || optLevel == 7) ? 
-	    createMethod2TypesMap(l, rName): new HashMap();
-	if (optLevel == 2 || optLevel == 4 || optLevel == 6 || optLevel == 7)
+	    (optLevel == 4 || optLevel == 5)? createMethod2TypesMap(l, rName):
+	    new HashMap();
+	if (optLevel == 2 || optLevel == 4 || optLevel == 6)
 	    findSafeMethods();
 	else
 	    safeMethods = Collections.EMPTY_SET;
@@ -173,6 +173,10 @@ public class MRAFactory {
 			cls.add(((ANEW)q).hclass());
 		    } else if (kind == QuadKind.NEW) {
 			cls.add(((NEW)q).hclass());
+		    } else if (kind == QuadKind.MONITORENTER) {
+			// for race-free multi-threaded programs
+			safe.remove(hm);
+			break;
 		    }
 		}
 	    }
@@ -259,19 +263,15 @@ public class MRAFactory {
 	    HMethod hm = (HMethod) it.next();
 	    Code c = (Code) hcf.convert(hm);
 	    if (c != null) {
-		/*
-		if (hm.getName().equals("createTree")) {
-		    c.print(new java.io.PrintWriter(System.out), null);
-		    System.exit(1);
-		}
-		*/
 		Set cls = new HashSet();
 		safe.put(hm, cls);
 		for (Iterator stms = c.getElementsI(); stms.hasNext(); ) {
 		    Quad q = (Quad) stms.next();
 		    int kind = q.kind();
-		    if (kind == QuadKind.CALL && ((CALL)q).isVirtual()) {
-			// remove if unsafe due to dynamic dispatch
+		    if ((kind == QuadKind.CALL && ((CALL)q).isVirtual()) ||
+			kind == QuadKind.MONITORENTER) {
+			// remove if unsafe due to dynamic dispatch or
+			// if unsafe due to interthread interactions
 			safe.remove(hm);
 			break;
 		    } else if (kind == QuadKind.ANEW) {
@@ -831,12 +831,15 @@ public class MRAFactory {
 		receiver.remove(q.def()[0]);
 		// should only be one for these Quads
 		Util.ASSERT(ud.defC(q).size() == 1);
+	    } else if (kind == QuadKind.MONITORENTER) {
+		// for race-free multi-threaded code
+		mra.clear();
+		except.clear();
 	    } else if (kind == QuadKind.ARRAYINIT ||
 		       kind == QuadKind.ASET ||
 		       kind == QuadKind.DEBUG ||
 		       kind == QuadKind.FOOTER ||
 		       kind == QuadKind.HEADER ||
-		       kind == QuadKind.MONITORENTER ||
 		       kind == QuadKind.MONITOREXIT ||
 		       kind == QuadKind.NOP ||
 		       kind == QuadKind.RETURN ||

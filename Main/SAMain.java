@@ -92,7 +92,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.3 2002-02-26 22:46:41 cananian Exp $
+ * @version $Id: SAMain.java,v 1.4 2002-03-27 22:55:16 kkz Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -165,6 +165,7 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean MULTITHREADED = false;
     static boolean WRITEBARRIERS = false;
     static boolean WB_STATISTICS = false;
+    static int WB_TRANSFORMS = 0; // no transformations by default
     static int wbOptLevel = 0; // no removals by default
     static FileOutputStream wbos = null;
     static PrintStream wbps = null;
@@ -541,11 +542,20 @@ public class SAMain extends harpoon.IR.Registration {
 		     wbOptLevel+".");
 	    String rName = frame.getRuntime().resourcePath
 		("writebarrier-safe.properties");
-	    if (false) {
+	    if (WB_TRANSFORMS == 2 || WB_TRANSFORMS == 3) {
+		// transform recursive constructors
+		hcf = new harpoon.Analysis.PreciseGC.RCTransformer
+		    (hcf, classHierarchy, linker).codeFactory();
+		// re-generate class hierarchy to handle modified methods
+		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+	    }
+	    if (WB_TRANSFORMS == 1 || WB_TRANSFORMS == 3) {
+		// perform allocation hoisting
+		System.out.println("Performing allocation hoisting.");
 		hcf = new CachingCodeFactory(hcf);
 		hcf = new harpoon.Analysis.PreciseGC.AllocationHoisting
-		    (hcf, classHierarchy, linker, rName, wbOptLevel).
-		    codeFactory();
+		    (hcf, classHierarchy, linker, rName, 
+		     (wbOptLevel != 0) ? wbOptLevel : 2).codeFactory();
 		// re-generate class hierarchy to handle modified methods
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
 	    }
@@ -937,7 +947,7 @@ public class SAMain extends harpoon.IR.Registration {
     protected static void parseOpts(String[] args) {
 
 	Getopt g = new Getopt("SAMain", args, 
-			      "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Tmw::x::");
+			      "i:N:s:b:c:o:EefpIDOPFHR::LlABt:hq1::C:r:Tmw::x::y::");
 	
 	int c;
 	String arg;
@@ -984,6 +994,17 @@ public class SAMain extends harpoon.IR.Registration {
 			System.err.println(e);
 			System.exit(1);
 		    }
+		}
+		break;
+	    case 'y': // Compile with transformations (kkz)
+		arg = g.getOptarg();
+		if (arg != null) {
+		    // select transformation level
+		    WB_TRANSFORMS = Integer.parseInt(arg);
+		    Util.ASSERT(WB_TRANSFORMS >= 0 && WB_TRANSFORMS <= 3);
+		} else {
+		    // both transformations on
+		    WB_TRANSFORMS = 3;
 		}
 		break;
 	    case 't': // Realtime Java extensions (WSB)
