@@ -1,2 +1,3 @@
+# Root set for the _200_check benchmark in SPEC JVM 98.
 spec.benchmarks._200_check.LoopBounds2.<init>()V
 spec.benchmarks._200_check.LoopBounds2.size()I
