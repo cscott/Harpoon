@@ -1,12 +1,12 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: exec.tex,v 1.8 1999-05-08 01:38:25 cananian Exp $
+% $Id: exec.tex,v 1.9 1999-05-09 02:05:35 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,notitlepage,twoside]{article}
 \usepackage{comdef}
 
 \title{Executability in the Static Single Information Form}
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.8 $ $}
+\date{\today \\ $ $Revision: 1.9 $ $}
 
 \begin{document}
 \bibliographystyle{plain}
@@ -110,10 +110,49 @@ N.add(5);       & $\tuple{S^I_1,S^F_2}=
 Statements with side-effects may be handled in a similar way: a
 special SSI name is used/defined where side-effects occur to impose an
 implicit ordering.  For maximum symmetry with the `store' case, we
-will name this special variable $S_{fx}$.
+will name this special variable $S^{fx}$.
 
-\textbf{Also talk about special Java issues: no pointers to base
-types, so SSA form is very easy. Examples of side effects and java pointers.}
+\begin{figure}[t]
+\begin{samplecode}[2]
+int x=1;	& $x_0 = 1$ \\
+int y=2;	& $y_0 = 2$ \\
+int *p = \&x; 	& $p_0 = \set{\mbox{x}}$ \com{P is of type ``location set''} \\
+if (P)  	& \com{Some \sigfunction{} goes here?} \\%$\tuple{S^{fx}_1,S^{fx}_2}=\sigma(P, S^{fx}_0)$ \\
+\>p = \&y;	& $p_1 = \set{\mbox{y}}$ \\
+		& $p_2 = \phi(p_0, p_1)$ \\
+*p = 3; 	& $\tuple{x_1,y_1} = \mbox{\tt DEREF}(p_2, 3)$\\
+return x;	& $\mbox{\tt return } x_1$ \\
+\end{samplecode}
+\caption{Pointer manipulation of local variables in C.}
+\label{fig:messyC}
+\end{figure}
+
+Pointer handling is substantially easier in Java-like languages.  The
+example on the left in figure \ref{fig:messyC} shows the difficulties
+one may encounter in dealing with pointer variables that may rewrite
+SSI temporaries.  It is possible to deal with this in the manner of
+figure \ref{fig:manystore} using explicit stores\footnote{Pointer+SSA
+references here.}, or with sufficient analysis one may write the SSI
+representation on the right in the figure.  When compiling Java (or
+some other object-oriented languages\footnote{which?}) this difficulty
+is avoided: there are no pointers to base types, so the IR does not
+have to worry about values changing ``behind its back'' like in the
+example.\textbf{PROBABLY BETTER NOT TO ATTEMPT THE RIGHT-HAND SIDE.}
+
+\textbf{SIGMA FUNCTIONS HAVE A HOLE: SEE FIGURE \ref{fig:problem}.}
+\begin{figure}[t]
+\begin{samplecode}[2]
+int x=0;	& $x_0 = 0$ \\
+if (P)		& \com{what \sigfunction{} goes here?} \\
+\>x=1;		& $x_1 = 1$ \\
+else		& \\
+\>x=2;		& $x_2 = 2$ \\
+		& $x_3 = \phi(x_1, x_2)$ \\
+return x;	& $\mbox{\tt return } x_3$ \\
+\end{samplecode}
+\caption{A problem with SSI form. Need to hoist the constants.}
+\label{fig:problem}
+\end{figure}
 
 \subsection{Loop constructs}
 \begin{figure}[t]
