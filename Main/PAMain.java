@@ -72,7 +72,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.63 2000-06-27 04:36:19 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.64 2000-06-27 14:30:02 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -154,13 +154,10 @@ public abstract class PAMain {
     private static Set runtime_callable = new HashSet
 	(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods(linker));
 
-    // global variables used for benchmarking (19/05/2000).
-    // TODO: Remove with the first occasion!
+    // global variable used for timing measurements
     private static long g_tstart = 0L;
-    private static long g_tend   = 0L;
 
-
-    public static final void main(String[] params){
+    public static void main(String[] params){
 	int optind = get_options(params);
 	int nbargs = params.length - optind;
 	if(nbargs < 1){
@@ -231,7 +228,9 @@ public abstract class PAMain {
     }
 
 
-    private static void display_method(Method method){
+    private static void display_method(Method method)
+	throws harpoon.ClassFile.NoSuchClassException {
+
 	HClass hclass = linker.forName(method.declClass);
 	HMethod[] hm  = hclass.getDeclaredMethods();
 	int nbmm = 0;
@@ -658,7 +657,7 @@ public abstract class PAMain {
     }
 
 
-    // Analyzes the methods given interactively.
+    // Analyzes the methods given interactively by the user.
     private static void do_interactive_analysis() {
 	BufferedReader d = 
 	    new BufferedReader(new InputStreamReader(System.in));
@@ -675,7 +674,13 @@ public abstract class PAMain {
 	    Method analyzed_method = getMethodName(method_name);
 	    if(analyzed_method.declClass == null)
 		analyzed_method.declClass = root_method.declClass;
-	    display_method(analyzed_method);
+	    try {
+		display_method(analyzed_method);
+	    }
+	    catch(harpoon.ClassFile.NoSuchClassException e) {
+		System.out.println("Class not found: \"" +
+				   analyzed_method.declClass + "\"");
+	    }
 	}
     }
 
@@ -808,7 +813,7 @@ public abstract class PAMain {
     };
 
 
-    private static final void show_help() {
+    private static void show_help() {
 	System.out.println("Usage:\n" +
 	    "\tjava harpoon.Main.PAMain [options] <main_class>\n");
 	
@@ -831,7 +836,7 @@ public abstract class PAMain {
 
 
     // Constructs the class hierarchy of the analyzed program.
-    private static final void construct_class_hierarchy() {
+    private static void construct_class_hierarchy() {
 	Set roots = new HashSet();
 	roots.add(hroot);
 	roots.addAll
