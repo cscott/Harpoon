@@ -10,10 +10,10 @@ package harpoon.Runtime;
  * synchronization on a specific object will be skipped or not.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DynamicSyncImpl.java,v 1.1 2003-07-10 02:27:49 cananian Exp $
+ * @version $Id: DynamicSyncImpl.java,v 1.2 2003-07-10 02:49:03 cananian Exp $
  */
 public abstract class DynamicSyncImpl {
     /** Returns true iff synchronization on the given object must
      *  be performed, or false if it can be skipped. */
-    public static native boolean isSync(Object o);
+    public static native boolean isNoSync(Object o);
 }

@@ -33,7 +33,7 @@ import java.util.List;
  * collection.
  *
  * @author   C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeCallOpt.java,v 1.2 2003-07-10 02:27:51 cananian Exp $
+ * @version $Id: TreeCallOpt.java,v 1.3 2003-07-10 02:49:05 cananian Exp $
  */
 class TreeCallOpt extends harpoon.Analysis.Tree.Simplification {
     private final List<Rule> RULES = new ArrayList<Rule>(); 
@@ -43,10 +43,10 @@ class TreeCallOpt extends harpoon.Analysis.Tree.Simplification {
 
 	HMethod checkMethod =
 	    l.forName("harpoon.Runtime.DynamicSyncImpl")
-	    .getMethod("isSync", new HClass[] {l.forName("java.lang.Object")});
+	    .getMethod("isNoSync",new HClass[]{l.forName("java.lang.Object")});
 	final Label LisSync = nm.label(checkMethod);
 	final Label Lnative_isSync = new Label
-	    (nm.c_function_name("DYNSYNC_isSync"));
+	    (nm.c_function_name("DYNSYNC_isNoSync"));
 
 	// add all rules to rule set
 

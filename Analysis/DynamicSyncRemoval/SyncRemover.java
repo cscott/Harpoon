@@ -51,7 +51,7 @@ import java.util.Set;
  * transformation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncRemover.java,v 1.2 2003-07-10 02:27:51 cananian Exp $
+ * @version $Id: SyncRemover.java,v 1.3 2003-07-10 02:49:05 cananian Exp $
  */
 public class SyncRemover
     extends harpoon.Analysis.Transformation.MethodMutator<Quad> {
@@ -68,7 +68,7 @@ public class SyncRemover
 	super(parent);
 	// get the reference to the discriminator method.
 	checkMethod = l.forName("harpoon.Runtime.DynamicSyncImpl")
-	    .getMethod("isSync", new HClass[] {l.forName("java.lang.Object")});
+	    .getMethod("isNoSync",new HClass[]{l.forName("java.lang.Object")});
     }
     /** Return an <code>HCodeFactory</code> that will clean up the
      *  tree form of the transformed code by performing some optimizations
@@ -136,7 +136,7 @@ public class SyncRemover
 	    // } else {
 	    //    statements
 	    // }
-	    Temp retval = new Temp(tf, "isSync");
+	    Temp retval = new Temp(tf, "isNoSync");
 	    Temp retex = new Temp(tf, "ignore");
 	    Edge in = q.prevEdge(0);
 	    CALL q0 = new CALL(qf, q, checkMethod, new Temp[] { q.lock() },
@@ -144,12 +144,12 @@ public class SyncRemover
 	    CJMP q1 = new CJMP(qf, q, retval, new Temp[0]);
 	    PHI  q2 = new PHI(qf, q, new Temp[0], 2);
 	    in = addAt(in, q0);
-	    in = addAt(in, 0, q1, 1); // monitorenter on 'true' edge
+	    in = addAt(in, q1); // monitorenter on 'false' edge
 	    in = addAt(in, q2);
 	    Quad.addEdge(q0, 1, q2, 1);
-	    // add edge past copied monitorenter on 'false' edge.
+	    // add edge past copied monitorenter on 'true' edge.
 	    Edge e = ci.start.copy.nextEdge(0);
-	    Quad.addEdge(q1, 0, e.to(), e.which_pred());
+	    Quad.addEdge(q1, 1, e.to(), e.which_pred());
 	    
 	    // now for every MONITOREXIT in copyMap, add a phi like so:
 	    //
