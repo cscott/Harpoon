@@ -36,7 +36,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.1.2.49 2000-07-25 03:08:33 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.50 2000-07-25 03:14:46 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     /** The Tree Objects composing this code view. */
@@ -76,7 +76,6 @@ public abstract class Code extends HCode {
 		   final Frame frame) {
 	final String scope = parent.getDeclaringClass().getName() + "." +
 	    parent.getName() + parent.getDescriptor() + "/" + getName();
-	final String scope = sb.toString()
 
 	this.parent = parent;
 	this.tree   = tree;

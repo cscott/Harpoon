@@ -48,7 +48,7 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.32 2000-07-25 03:07:53 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.33 2000-07-25 03:14:20 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -378,7 +378,7 @@ public abstract class RegFileInfo {
 	seperate basic blocks can map to the same physical register in
 	the register file.
     */
-    protected static abstract class VRegAllocator {
+    public static abstract class VRegAllocator {
 	/** Returns a Virtual Register Temp for <code>t</code>.
 	    <BR> <B> effects: </B> If <code>regfile</code> has space
 	         to hold a value of the type held in <code>t</code>, 
