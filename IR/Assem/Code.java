@@ -33,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.16 2001-06-05 04:24:22 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.17 2001-06-16 00:37:29 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -151,6 +151,10 @@ public abstract class Code extends HCode {
 	myPrint(pw, true, false, callback);
     }
     
+    /** Simple wrapper around myPrint passing a nop PrintCallback. */
+    public final void myPrint(java.io.PrintWriter apw, boolean assem) {
+	myPrint(apw, assem, new PrintCallback());
+    }
 
     /** Displays the assembly instructions of this codeview. Attempts
      *  to do so in a well-formatted, easy to read way. <BR>
@@ -210,10 +214,11 @@ public abstract class Code extends HCode {
 
             } else {
 		try {
+		    String asmstr = (assem?toAssem(instr):instr.toString());
+		    // adding one because reader requires sz > 0
 		    BufferedReader reader = 
 			new BufferedReader
-			(new StringReader
-			 (assem?toAssem(instr):instr.toString()));
+			    (new StringReader(asmstr),1+asmstr.length());
 		    String s = reader.readLine();
 		    while (s != null) {
 			str.append("\t"+ s);
