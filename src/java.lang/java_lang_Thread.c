@@ -447,7 +447,7 @@ JNIEXPORT void JNICALL Java_java_lang_Thread_start
   pthread_cond_destroy(&(cls.parampass_cond));
   pthread_mutex_unlock(&(cls.parampass_mutex));
   pthread_mutex_destroy(&(cls.parampass_mutex));
-
+  context_switch();
   /*  while (cls.parampass_cond==0)
       swapthreads();*/
   /* done! */

@@ -18,6 +18,7 @@ struct thread_list {
 };
 
 extern struct thread_list *gtl,*ioptr;
+extern void *oldstack;
 #define USER_MUTEX_INITIALIZER {SEMAPHORE_CLEAR,NULL}
 #define STACKSIZE 0x8000
 

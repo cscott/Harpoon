@@ -5,6 +5,7 @@
 
 
 struct thread_list *gtl,*ioptr;
+void *oldstack;
 
 
 void restorethread() {
@@ -40,6 +41,18 @@ void transfer() {
     tl->next=tl;
     tl->prev=tl;
   }
+  startnext();
+}
+
+void context_switch() {
+  machdep_save_float_state(&(gtl->mthread));
+  if (_setjmp(gtl->mthread.machdep_state)) {
+    return;
+  }
+  doFDs();
+  
+  gtl=gtl->next;
+  
   startnext();
 }
 
@@ -141,15 +154,28 @@ void exitthread() {
     gtl->prev->next=gtl;
 
     /*perhaps free structures if we didn't have GC*/
-    __machdep_stack_free(tl->mthread.machdep_stack);
+
+    /*NEED LOCK AROUND THIS*/
+    if (oldstack!=NULL) {
+      __machdep_stack_free(oldstack);
+      oldstack=NULL;
+    }
+    oldstack=tl->mthread.machdep_stack;
+
     free(tl);
+
 
     machdep_restore_float_state();
     machdep_restore_state();
     return;
   } else {
     FNI_DestroyThreadState(gtl->jnienv);
-    __machdep_stack_free(gtl->mthread.machdep_stack);
+    if (oldstack!=NULL) {
+      __machdep_stack_free(oldstack);
+      oldstack=NULL;
+    }
+    oldstack=gtl->mthread.machdep_stack;
+
     free(gtl);
     gtl=NULL;
     startnext();
@@ -167,6 +193,7 @@ void inituser(int *bottom) {
   tl->next=tl;
   tl->prev=tl;
   ioptr=NULL; /* Initialize ioptr */
+  oldstack=NULL;
 
 #ifdef WITH_EVENT_DRIVEN
   Java_java_io_NativeIO_initScheduler(NULL,NULL,/*MOD_SELECT*/0);

@@ -146,7 +146,7 @@ extern pth_key_t flex_timedwait_key; /* defined in java_lang_Thread.c */
 
 #define PTHREAD_MUTEX_INITIALIZER  USER_MUTEX_INITIALIZER
 #define pthread_mutex_t		user_mutex_t
-#define pthread_mutex_init(x)	user_mutex_init((x), NULL)
+#define pthread_mutex_init(x,a)	user_mutex_init((x), NULL)
 #define pthread_mutex_lock		user_mutex_lock
 #define pthread_mutex_unlock	user_mutex_unlock
 #define pthread_mutex_destroy	user_mutex_destroy
