@@ -36,9 +36,9 @@ const struct JNINativeInterface FLEX_JNI_vtable = {
   0,
             
   FNI_AllocObject,
-  (typeof(&FNI_NewObject)) FNI_Unimplemented,
-  (typeof(&FNI_NewObjectV)) FNI_Unimplemented,
-  (typeof(&FNI_NewObjectA)) FNI_Unimplemented,
+  FNI_NewObject,
+  FNI_NewObjectV,
+  FNI_NewObjectA,
             
   FNI_GetObjectClass,
   FNI_IsInstanceOf,
@@ -195,18 +195,18 @@ const struct JNINativeInterface FLEX_JNI_vtable = {
             
   FNI_GetArrayLength,
              
-  (typeof(&FNI_NewObjectArray)) FNI_Unimplemented,
+  FNI_NewObjectArray,
   (typeof(&FNI_GetObjectArrayElement)) FNI_Unimplemented,
   (typeof(&FNI_SetObjectArrayElement)) FNI_Unimplemented,
             
-  (typeof(&FNI_NewBooleanArray)) FNI_Unimplemented,
-  (typeof(&FNI_NewByteArray)) FNI_Unimplemented,
-  (typeof(&FNI_NewCharArray)) FNI_Unimplemented,
-  (typeof(&FNI_NewShortArray)) FNI_Unimplemented,
-  (typeof(&FNI_NewIntArray)) FNI_Unimplemented,
-  (typeof(&FNI_NewLongArray)) FNI_Unimplemented,
-  (typeof(&FNI_NewFloatArray)) FNI_Unimplemented,
-  (typeof(&FNI_NewDoubleArray)) FNI_Unimplemented,
+  FNI_NewBooleanArray,
+  FNI_NewByteArray,
+  FNI_NewCharArray,
+  FNI_NewShortArray,
+  FNI_NewIntArray,
+  FNI_NewLongArray,
+  FNI_NewFloatArray,
+  FNI_NewDoubleArray,
             
   FNI_GetBooleanArrayElements,
   FNI_GetByteArrayElements,

@@ -68,6 +68,11 @@ struct oobj_offset {
   u_int32_t hashcode;
   struct oobj obj;
 };
+/* this structure is really useful only if you're figuring out array sizes */
+struct aarray_offset {
+  u_int32_t hashcode;
+  struct aarray obj;
+};
 #define OOBJ_OFFSET(unscaled) \
 	((struct oobj_offset *) (((char *)(unscaled)) - sizeof(u_int32_t)))
 #define OOBJ_UNOFFSET(offset) \
@@ -123,6 +128,11 @@ JNIEnv * FNI_ThreadInit(void);
 jobject FNI_NewLocalRef(JNIEnv *env, jobject_unwrapped obj);
 /* Look up classinfo from class object. */
 struct FNI_classinfo *FNI_GetClassInfo(jclass clazz);
+
+/* raw allocation routine */
+void *FNI_RawAlloc(JNIEnv *env, jsize length);
+/* allocate and zero memory for the specified object type */
+jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, jsize length);
 
 /* --------------- JNI function prototypes. ------------------ */
 

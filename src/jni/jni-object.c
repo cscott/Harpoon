@@ -8,22 +8,64 @@
 /* Allocates a new Java object without invoking any of the constructors
  * for the object. Returns a reference to the object. 
  * The clazz argument must not refer to an array class. 
+ * Returns a Java object, or NULL if the object cannot be constructed. 
+ * THROWS: 
+ *   InstantiationException: if the class is an interface or an abstract
+ *                           class. 
+ *   OutOfMemoryError: if the system runs out of memory. 
  */
 jobject FNI_AllocObject (JNIEnv *env, jclass clazz) {
   struct FNI_classinfo *info;
   u_int32_t size;
-  struct oobj_offset *newobj;
 
   assert(FNI_NO_EXCEPTIONS(env) && clazz!=NULL);
 
   info = FNI_GetClassInfo(clazz);
   assert(info->name[0] != '[');
+  /* FIXME: we don't check to see whether it's an interface or abstract */
   size = info->claz->size; /* size, including the header */
-  newobj = malloc(size);
-  memset(newobj, 0, size);
-  newobj->hashcode = (u_int32_t) OOBJ_UNOFFSET(newobj);
-  newobj->obj.claz = info->claz;
-  return FNI_WRAP(OOBJ_UNOFFSET(newobj));
+  return FNI_Alloc(env, info, size);
+}
+
+/* Constructs a new Java object. The method ID indicates which constructor
+ * method to invoke. This ID must be obtained by calling GetMethodID() with
+ * <init> as the method name and void (V) as the return type. 
+ *
+ * The clazz argument must not refer to an array class. 
+ *
+ * Returns a Java object, or NULL if the object cannot be constructed. 
+ * THROWS: 
+ *   InstantiationException: if the class is an interface or an abstract
+ *                           class. 
+ *   OutOfMemoryError: if the system runs out of memory. 
+ *   Any exceptions thrown by the constructor. 
+ */
+jobject FNI_NewObject(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
+  jobject result;
+  va_list varargs;
+  assert(FNI_NO_EXCEPTIONS(env));
+  va_start(varargs, methodID);
+  result=FNI_NewObjectV(env, clazz, methodID, varargs);
+  va_end(varargs);
+  return result;
+}
+jobject FNI_NewObjectA(JNIEnv *env, jclass clazz, jmethodID methodID,
+		       jvalue *args) {
+  jobject result;
+  assert(FNI_NO_EXCEPTIONS(env));
+  result = FNI_AllocObject(env, clazz);
+  if (FNI_ExceptionOccurred(env)) return result; /* bail */
+  FNI_CallNonvirtualVoidMethodA(env, result, clazz, methodID, args);
+  return result;
+}
+jobject FNI_NewObjectV(JNIEnv *env, jclass clazz, jmethodID methodID,
+		       va_list args) {
+  jobject result;
+  assert(FNI_NO_EXCEPTIONS(env));
+  result = FNI_AllocObject(env, clazz);
+  if (FNI_ExceptionOccurred(env)) return result; /* bail */
+  FNI_CallNonvirtualVoidMethodV(env, result, clazz, methodID, args);
+  return result;
 }
 
 /* Returns the class of an object. 

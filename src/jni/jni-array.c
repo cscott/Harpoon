@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+JNIEXPORT jboolean JNICALL Java_java_lang_Class_isPrimitive(JNIEnv *, jobject);
+
 /* Returns the number of elements in the array.
  */
 jsize FNI_GetArrayLength(JNIEnv *env, jarray array) {
@@ -13,16 +15,77 @@ jsize FNI_GetArrayLength(JNIEnv *env, jarray array) {
   return a->length;
 }
 
-#if 0
 /* Constructs a new array holding objects in class elementClass. 
  * All elements are initially set to initialElement.
  *
  * Returns a Java array object, or NULL if the array cannot be constructed. 
+ * THROWS: 
+ *   OutOfMemoryError: if the system runs out of memory. 
  */
 jarray FNI_NewObjectArray(JNIEnv *env, jsize length, 
 			  jclass elementClass, jobject initialElement) {
+  struct FNI_classinfo *info;
+  jclass arrayclazz;
+  jobject result;
+  assert(FNI_NO_EXCEPTIONS(env) && length>=0 && elementClass!=NULL);
+  assert(Java_java_lang_Class_isPrimitive(env, elementClass)==JNI_FALSE);
+  info = FNI_GetClassInfo(elementClass);
+  {
+    char arraydesc[strlen(info->name)+4];
+    arraydesc[0]='[';
+    if (info->name[0]=='[') strcpy(arraydesc+1, info->name);
+    else {
+      arraydesc[1]='L';
+      strcpy(arraydesc+2, info->name);
+      arraydesc[strlen(arraydesc)+1]='\0';
+      arraydesc[strlen(arraydesc)]=';';
+    }
+    arrayclazz = FNI_FindClass(env, arraydesc);
+    if (arrayclazz==NULL) return NULL; /* bail on exception */
+    info = FNI_GetClassInfo(FNI_FindClass(env, arraydesc));
+  }
+  result = FNI_Alloc(env, info,
+		     sizeof(struct aarray_offset) + sizeof(ptroff_t)*length);
+  if (result==NULL) return NULL; /* bail on error */
+  ((struct aarray *)FNI_UNWRAP(result))->length = length;
+  if (initialElement != NULL) {
+    jsize i;
+    for (i=0; i<length; i++)
+      (*env)->SetObjectArrayElement(env, (jobjectArray) result, i,
+				    initialElement);
+  }
+  return (jobjectArray) result;
 }
 
+/* A family of operations used to construct a new primitive array object.
+ * Returns a Java array, or NULL if the array cannot be constructed. 
+ */
+#define NEWPRIMITIVEARRAY(name,type, sig)\
+type##Array FNI_New##name##Array(JNIEnv *env, jsize length) {\
+  jclass arrayclazz;\
+  struct FNI_classinfo *info;\
+  jobject result;\
+\
+  assert(FNI_NO_EXCEPTIONS(env) && length>=0);\
+  arrayclazz = FNI_FindClass(env, sig);\
+  if (arrayclazz==NULL) return NULL; /* bail on error */\
+  info = FNI_GetClassInfo(arrayclazz);\
+  result = FNI_Alloc(env, info,\
+		     sizeof(struct aarray_offset) + sizeof(type)*length);\
+  if (result==NULL) return NULL; /* bail on error */\
+  ((struct aarray *)FNI_UNWRAP(result))->length = length;\
+  return (type##Array) result;\
+}
+NEWPRIMITIVEARRAY(Boolean, jboolean, "[Z");
+NEWPRIMITIVEARRAY(Byte, jbyte, "[B");
+NEWPRIMITIVEARRAY(Char, jchar, "[C");
+NEWPRIMITIVEARRAY(Short, jshort, "[S");
+NEWPRIMITIVEARRAY(Int, jint, "[I");
+NEWPRIMITIVEARRAY(Long, jlong, "[J");
+NEWPRIMITIVEARRAY(Float, jfloat, "[F");
+NEWPRIMITIVEARRAY(Double, jdouble, "[D");
+
+#if 0
 /* Returns an element of an Object array. 
  * THROWS: 
  *  ArrayIndexOutOfBoundsException: if index does not specify a valid index
@@ -42,14 +105,6 @@ jobject FNI_GetObjectArrayElement(JNIEnv *env,
 void FNI_SetObjectArrayElement(JNIEnv *env, jobjectArray array, 
 			       jsize index, jobject value) {
 }
-
-/* A family of operations used to construct a new primitive array object.
- * Returns a Java array, or NULL if the array cannot be constructed. 
- */
-#define NEWPRIMITIVEARRAY(name,type)\
-type##Array FNI_New##name##Array(JNIEnv *env, jsize length) {\
-}
-FORPRIMITIVETYPES(NEWPRIMITIVEARRAY);
 #endif
 
 /* A family of functions that returns the body of the primitive array.
