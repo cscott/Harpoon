@@ -16,7 +16,7 @@ import java.util.Set;
  * links to the exception handlers for the method. 
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: METHOD.java,v 1.1.2.3 1999-08-05 20:43:37 duncan Exp $
+ * @version $Id: METHOD.java,v 1.1.2.4 1999-08-06 16:35:28 pnkfelix Exp $
  */
 public class METHOD extends Stm {
     /** The temporary variables used for method formals. */
@@ -88,7 +88,7 @@ public class METHOD extends Stm {
 	    sb.append(params[i].toString());
 	    sb.append(", ");
 	}
-	sb.append(params[params.length].toString());
+	sb.append(params[params.length-1].toString());
 	sb.append(")");
 	return sb.toString();
     }
