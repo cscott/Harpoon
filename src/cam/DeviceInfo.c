@@ -1,5 +1,5 @@
 /*
- * $Id: DeviceInfo.c,v 1.2 2002-08-23 19:06:42 wbeebee Exp $
+ * $Id: DeviceInfo.c,v 1.3 2002-09-01 05:53:45 cananian Exp $
  * Purpose: Information functions for Video4Linux
  * Author: Kazushi Mukaiyama <kazu@arizona.ne.jp>
  */
@@ -30,7 +30,7 @@ void getCapInfo() {
 /* show device capability information */
 void showCapInfo() {
 	fprintf(stderr, "vd.name: \"%s\"\n", vd.name);
-	fprintf(stderr, "vd.type=%p", vd.type);
+	fprintf(stderr, "vd.type=0x%08x", vd.type);
 	if(vd.type&VID_TYPE_CAPTURE) fprintf(stderr, " CAPTURE");
 	if(vd.type&VID_TYPE_TUNER) fprintf(stderr, " TUNER");
 	if(vd.type&VID_TYPE_TELETEXT) fprintf(stderr, " TELETEXT");
@@ -69,11 +69,11 @@ void showChanInfo() {
 		fprintf(stderr, "vc[%d].channel=%d\n", n, vc[n].channel);
 		fprintf(stderr, "vc[%d].name=\"%s\"\n", n, vc[n].name);
 		fprintf(stderr, "vc[%d].tuners=%d\n", n, vc[n].tuners);
-		fprintf(stderr, "vc[%d].flags=%p", n, vc[n].flags);
+		fprintf(stderr, "vc[%d].flags=0x%08x", n, (int)vc[n].flags);
 		if(vc[n].flags&VIDEO_VC_TUNER) fprintf(stderr, " TUNER");
 		if(vc[n].flags&VIDEO_VC_AUDIO) fprintf(stderr, " AUDIO");
 		fprintf(stderr, "\n");
-		fprintf(stderr, "vc[%d].type=%p", n, vc[n].type);
+		fprintf(stderr, "vc[%d].type=0x%08x", n, (int)vc[n].type);
 		if(vc[n].type&VIDEO_TYPE_TV) fprintf(stderr, " TV");
 		if(vc[n].type&VIDEO_TYPE_CAMERA) fprintf(stderr, " CAMERA");
 		fprintf(stderr, "\n");
@@ -93,10 +93,10 @@ void getMmapInfo() {
 
 /* show device mmap information */
 void showMmapInfo() {
-	fprintf(stderr, "vm.size=%p\n", vm.size);
-	fprintf(stderr, "vm.frames=%p\n", vm.frames);
+	fprintf(stderr, "vm.size=0x%08x\n", vm.size);
+	fprintf(stderr, "vm.frames=0x%08x\n", vm.frames);
 	for(n=0; n<vm.frames; n++)
-		fprintf(stderr, "vm.offsets[%d]=%p\n", n, vm.offsets[n]);
+		fprintf(stderr, "vm.offsets[%d]=0x%08x\n", n, vm.offsets[n]);
 	fprintf(stderr, "\n");
 }
 
