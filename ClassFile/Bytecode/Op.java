@@ -15,7 +15,7 @@ package harpoon.ClassFile.Bytecode;
  * </UL>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Op.java,v 1.8 1998-08-05 00:52:25 cananian Exp $
+ * @version $Id: Op.java,v 1.9 1998-09-09 22:23:43 cananian Exp $
  * @see     harpoon.ClassFile.Raw.Attribute.AttributeCode
  * @see     harpoon.ClassFile.Bytecode.Instr
  * @see     harpoon.ClassFile.Bytecode.Code
@@ -666,6 +666,17 @@ public final class Op {
     default:
       return false;
     }
+  }
+
+  /**
+   * Tells whether a given opcode is a jump to subrouting (JSR) instruction.
+   * @param opcode the opcode to check.
+   * @return true if the opcode is a JSR or JSR_W instruction.
+   */
+  public final static boolean isJSR(byte opcode) {
+      if (opcode == JSR) return true;
+      if (opcode == JSR_W) return true;
+      return false;
   }
 
   /** 

@@ -15,7 +15,7 @@ import java.util.Vector;
  * raw java classfile bytecodes.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.14 1998-09-04 19:26:01 cananian Exp $
+ * @version $Id: Code.java,v 1.15 1998-09-09 22:23:43 cananian Exp $
  * @see harpoon.ClassFile.HCode
  */
 public class Code extends HCode {
@@ -70,7 +70,8 @@ public class Code extends HCode {
 	// unless its an unconditional branch, we can fall through to the
 	// next instr, too.  Note that we shouldn't be able to fall off
 	// the end of the method.
-	if (!Op.isUnconditionalBranch(code[pc]))
+	if ((!Op.isUnconditionalBranch(code[pc])) ||
+	    Op.isJSR(code[pc])) // jsrs eventually return to next instr, too.
 	  merge[pc+Op.instrSize(code, pc)]++;
       }
       // try handlers count as targets, too
@@ -109,7 +110,8 @@ public class Code extends HCode {
 	Instr curr = sparse[pc];
 	if (curr instanceof InMerge)
 	  curr = ((InMerge)curr).next()[0];
-	if (!Op.isUnconditionalBranch(code[pc])) {
+	if ((!Op.isUnconditionalBranch(code[pc])) ||
+	    Op.isJSR(code[pc])) { // jsrs return to next instruction eventually
 	  // link to next pc.
 	  Instr next = sparse[pc+Op.instrSize(code, pc)];
 	  curr.addNext(next);

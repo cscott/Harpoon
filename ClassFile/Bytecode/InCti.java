@@ -12,7 +12,7 @@ import harpoon.Util.Util;
  * Instructions like <code>ireturn</code> have no successors.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InCti.java,v 1.8 1998-08-05 00:52:24 cananian Exp $
+ * @version $Id: InCti.java,v 1.9 1998-09-09 22:23:43 cananian Exp $
  * @see Instr
  */
 public class InCti extends Instr {
@@ -26,6 +26,7 @@ public class InCti extends Instr {
     this.opcode=code[pc];
     this.arity = Op.branchTargets(code, pc).length;
     if (!Op.isUnconditionalBranch(code[pc])) this.arity++;
+    if (Op.isJSR(code[pc])) this.arity++;
   }
 
   // Provide run-time checks on arity.
@@ -49,8 +50,8 @@ public class InCti extends Instr {
   public String toString() {
     StringBuffer sb = new StringBuffer(Op.toString(opcode));
     Instr[] targets = next();
-    // skip targets[0] if this is a conditional branch.
-    int start = (Op.isUnconditionalBranch(opcode))?0:1;
+    // skip targets[0] if this is a conditional branch or JSR.
+    int start = (Op.isUnconditionalBranch(opcode)&&!Op.isJSR(opcode))?0:1;
     if (targets.length > start)
       sb.append(' ');
     for (int i=start; i<targets.length; i++) {
