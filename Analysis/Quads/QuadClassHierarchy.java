@@ -42,13 +42,13 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.16 2000-01-14 12:32:51 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.17 2000-01-18 05:34:29 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     implements java.io.Serializable {
-    private Map children = new HashMap();
-    private Set methods = new HashSet();
+    private final Map children = new HashMap();
+    private final Set methods = new HashSet();
 
     /** Returns set of all callable methods. 
 	@return <code>Set</code> of <code>HMethod</code>s.
@@ -56,7 +56,7 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     public Set callableMethods() {
 	return _unmod_methods;
     }
-    private Set _unmod_methods = Collections.unmodifiableSet(methods);
+    private final Set _unmod_methods = Collections.unmodifiableSet(methods);
 
     /** Returns all usable/reachable children of an <code>HClass</code>. */
     public Set children(HClass c) {
@@ -90,8 +90,8 @@ public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy
     public Set instantiatedClasses() {
 	return _unmod_insted;
     }
-    private Set instedClasses = new HashSet();
-    private Set _unmod_insted = Collections.unmodifiableSet(instedClasses);
+    private final Set instedClasses = new HashSet();
+    private final Set _unmod_insted=Collections.unmodifiableSet(instedClasses);
 
     /** Returns a human-readable representation of the hierarchy. */
     public String toString() {
