@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.31 1999-06-07 05:20:24 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.32 1999-06-08 01:19:17 cananian Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -52,8 +52,8 @@ ALLPKGS := $(shell find . -type d | grep -v CVS | grep -v AIRE | \
 ALLSOURCE :=  $(MACHINE_GEN) $(filter-out $(MACHINE_GEN), \
 		$(filter-out .%.java $(patsubst %,\%%,$(BUILD_IGNORE)),\
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java))))
-TARSOURCE := $(filter-out JavaChip%, \
-	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile $(MACHINE_SRC)
+TARSOURCE := $(filter-out $(MACHINE_GEN), $(filter-out JavaChip%, \
+	        $(filter-out Test%,$(ALLSOURCE)))) GNUmakefile $(MACHINE_SRC)
 JARPKGS := $(subst harpoon/Contrib,gnu, \
 		$(foreach pkg, $(filter-out JavaChip%, \
 			$(filter-out Test%,$(ALLPKGS))), harpoon/$(pkg)))
@@ -172,8 +172,8 @@ Tools/PatMat/Sym.java : Tools/PatMat/Parser.java
 	xvcg -psoutput $@ -paper 8x11 -color $(VCG_OPT) $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES)
-	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES)
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING ChangeLog $(SUPPORT) $(PROPERTIES) bin/test-collections $(MUNGE) $(UNMUNGE) mark-executable
+	tar czf harpoon.tgz COPYING $(TARSOURCE) ChangeLog $(SUPPORT) $(PROPERTIES) bin/test-collections $(MUNGE) $(UNMUNGE)
 	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
 tar:	harpoon.tgz harpoon.tgz.TIMESTAMP
