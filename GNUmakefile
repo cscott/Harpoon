@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.66 2002-03-10 03:30:37 cananian Exp $
+# $Id: GNUmakefile,v 1.67 2002-03-10 05:12:27 cananian Exp $
 # CAUTION: this makefile doesn't work with GNU make 3.77
 #          it works w/ make 3.79.1, maybe some others.
 
@@ -12,7 +12,8 @@ JIKES:=jikes $(JIKES_OPT)
 JCC:=javac -J-mx64m
 JDOC:=javadoc
 JAR=jar
-JDOCFLAGS:=-J-mx128m -version -author # -package
+JDOCFLAGS:=-J-mx128m -version -author \
+  -overview harpoon/overview.html -doctitle "FLEX API documentation"
 JDOCGROUPS:=\
   -group "Basic Class/Method/Field handling" "harpoon.ClassFile*" \
   -group "Intermediate Representations" "harpoon.IR*:harpoon.Temp*" \
