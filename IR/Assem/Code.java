@@ -33,7 +33,7 @@ import java.util.Set;
  * which use <code>Instr</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.8 2000-06-08 06:25:15 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.9 2000-06-27 18:17:46 cananian Exp $
  */
 public abstract class Code extends HCode {
     private static boolean DEBUG = true;
@@ -152,10 +152,8 @@ public abstract class Code extends HCode {
 	final HashSet outputLabels = new HashSet();
 	final MultiMap labelsNeeded = new GenericMultiMap();
 
-	Instr instr = instrs;
-        while(instr.getNext() != null) {
+	for (Instr instr=instrs; instr != null; instr=instr.getNext()) {
 	    StringBuffer str = new StringBuffer("");
-	    instr = instr.getNext();
             if (instr instanceof InstrLABEL ||
 		instr instanceof InstrDIRECTIVE) {
                 str.append(instr.toString());
