@@ -15,7 +15,7 @@ package harpoon.IR.Tree;
  * proper generation.  This could also be done in a peephole optimization.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Uop.java,v 1.1.2.5 1999-07-23 06:48:05 cananian Exp $
+ * @version $Id: Uop.java,v 1.1.2.6 2000-09-11 21:33:50 cananian Exp $
  */
 public class Uop  {
 
@@ -29,17 +29,17 @@ public class Uop  {
     /** Converts an int to a byte.  Result is still int type, but it
 	is truncated to 8 bits, then sign extended. 
     */ 
-    public final static int _2B=2; 
+    public final static int I2B=2; 
 
     /** Converts an int to a character.  Result is still int type, but
 	is truncated to 16 bits.  No sign extension.
     */
-    public final static int _2C=3; 
+    public final static int I2C=3; 
 
     /** Converts an int to a short.  Result is still int type, but is
 	truncated to 16 bits, then sign extended.
     */
-    public final static int _2S=4;
+    public final static int I2S=4;
 
 	// general conversion
     /** Converts to int. */
@@ -56,7 +56,7 @@ public class Uop  {
 	switch (op) {
 	case NEG:
 	case NOT:
-	case _2B: case _2C: case _2S:
+	case I2B: case I2C: case I2S:
 	case _2I: case _2L: case _2F: case _2D:
 	    return true;
 	default:
@@ -70,9 +70,9 @@ public class Uop  {
 	switch (op) {
 	case NEG:	return "neg";
 	case NOT:	return "not";
-	case _2B:	return "_2b";
-	case _2C:	return "_2c";
-	case _2S:	return "_2s";
+	case I2B:	return "i2b";
+	case I2C:	return "i2c";
+	case I2S:	return "i2s";
 	case _2I:	return "_2i";
 	case _2L:	return "_2l";
 	case _2F:	return "_2f";

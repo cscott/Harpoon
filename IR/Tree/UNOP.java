@@ -13,7 +13,7 @@ import harpoon.Util.Util;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: UNOP.java,v 1.1.2.22 2000-02-15 17:19:05 cananian Exp $
+ * @version $Id: UNOP.java,v 1.1.2.23 2000-09-11 21:33:50 cananian Exp $
  * @see Uop
  */
 public class UNOP extends OPER {
@@ -27,6 +27,8 @@ public class UNOP extends OPER {
 	this.setOperand(operand);
 	Util.assert(Uop.isValid(unop));
 	Util.assert(tf == operand.tf, "This and Operand must have same tree factory");
+	if (unop==Uop.I2B || unop==Uop.I2C || unop==Uop.I2S)
+	    Util.assert(optype == Type.INT);/* these are special conversions */
     }
 
     /** Returns the subexpression to be operated upon. */
@@ -41,7 +43,7 @@ public class UNOP extends OPER {
     */
     public int type() {
 	switch (op) {
-	case Uop._2B: case Uop._2C: case Uop._2S: case Uop._2I:
+	case Uop.I2B: case Uop.I2C: case Uop.I2S: case Uop._2I:
 	    return INT;
 	case Uop._2L:
 	    return LONG;
@@ -77,31 +79,22 @@ public class UNOP extends OPER {
 	    case Type.POINTER:
 		throw new Error("Operation not supported");
 	    }
-	case Uop._2B:
+	case Uop.I2B:
 	    switch (optype) {
 	    case Type.INT:      return _i((byte)_i(left));
-	    case Type.LONG:     return _i((byte)_l(left));
-	    case Type.FLOAT:    return _i((byte)_f(left));
-	    case Type.DOUBLE:   return _i((byte)_d(left));
-	    case Type.POINTER: 
+	    default:
 		throw new Error("Operation not supported");
 	    }
-	case Uop._2C:
+	case Uop.I2C:
 	    switch (optype) {
 	    case Type.INT:      return _i((char)_i(left));
-	    case Type.LONG:     return _i((char)_l(left));
-	    case Type.FLOAT:    return _i((char)_f(left));
-	    case Type.DOUBLE:   return _i((char)_d(left));
-	    case Type.POINTER: 
+	    default:
 		throw new Error("Operation not supported");
 	    }
-	case Uop._2S: 
+	case Uop.I2S: 
 	    switch (optype) {
 	    case Type.INT:      return _i((short)_i(left));
-	    case Type.LONG:     return _i((short)_l(left));
-	    case Type.FLOAT:    return _i((short)_f(left));
-	    case Type.DOUBLE:   return _i((short)_d(left));
-	    case Type.POINTER: 
+	    default:
 		throw new Error("Operation not supported");
 	    }
 	case Uop._2I:

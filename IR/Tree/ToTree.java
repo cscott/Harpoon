@@ -78,7 +78,7 @@ import java.util.TreeMap;
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTree.java,v 1.1.2.86 2000-07-20 21:22:47 pnkfelix Exp $
+ * @version $Id: ToTree.java,v 1.1.2.87 2000-09-11 21:33:47 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
@@ -954,9 +954,9 @@ static class TranslationVisitor extends LowQuadVisitor {
 	case Qop.FREM:
 	case Qop.IREM:
 	case Qop.LREM: optype = Bop.REM; break;
-	case Qop.I2B: optype = Uop._2B; break;
-	case Qop.I2C: optype = Uop._2C; break;
-	case Qop.I2S: optype = Uop._2S; break;
+	case Qop.I2B: optype = Uop.I2B; break;
+	case Qop.I2C: optype = Uop.I2C; break;
+	case Qop.I2S: optype = Uop.I2S; break;
 	case Qop.IAND:
 	case Qop.LAND: optype = Bop.AND; break;
 	case Qop.IOR:

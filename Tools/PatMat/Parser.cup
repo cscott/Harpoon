@@ -50,7 +50,7 @@ import java_cup.runtime.lr_parser;
 /** Input file parser for the instruction selection tool.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Parser.cup,v 1.1.2.36 2000-06-26 16:39:27 cananian Exp $
+ * @version $Id: Parser.cup,v 1.1.2.37 2000-09-11 21:33:54 cananian Exp $
  */
 
 action code {:
@@ -102,7 +102,7 @@ terminal COLON, COMMA, EQUALS;
 terminal ADD, AND, CMPEQ, CMPNE, CMPGE, CMPGT, CMPLE, CMPLT;
 terminal DIV, MUL, OR, REM, SHL, SHR, USHR, XOR;
 // unops
-terminal _2B, _2C, _2D, _2F, _2I, _2L, _2S, NEG, NOT;
+terminal I2B, I2C, _2D, _2F, _2I, _2L, I2S, NEG, NOT;
 // null constant
 terminal NULL;
 
@@ -327,13 +327,13 @@ binops	::=	ADD	{: RESULT=new Integer(harpoon.IR.Tree.Bop.ADD); :}
 	|	XOR	{: RESULT=new Integer(harpoon.IR.Tree.Bop.XOR); :}
 	;
 
-unops	::=	_2B	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2B); :}
-	|	_2C	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2C); :}
+unops	::=	I2B	{: RESULT=new Integer(harpoon.IR.Tree.Uop.I2B); :}
+	|	I2C	{: RESULT=new Integer(harpoon.IR.Tree.Uop.I2C); :}
 	|	_2D	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2D); :}
 	|	_2F	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2F); :}
 	|	_2I	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2I); :}
 	|	_2L	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2L); :}
-	|	_2S	{: RESULT=new Integer(harpoon.IR.Tree.Uop._2S); :}
+	|	I2S	{: RESULT=new Integer(harpoon.IR.Tree.Uop.I2S); :}
 	|	NEG	{: RESULT=new Integer(harpoon.IR.Tree.Uop.NEG); :}
 	|	NOT	{: RESULT=new Integer(harpoon.IR.Tree.Uop.NOT); :}
 	;

@@ -61,7 +61,7 @@ import java.util.Set;
  * "portable assembly language").
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeToC.java,v 1.1.2.21 2000-07-17 00:48:40 cananian Exp $
+ * @version $Id: TreeToC.java,v 1.1.2.22 2000-09-11 21:33:39 cananian Exp $
  */
 public class TreeToC extends java.io.PrintWriter {
     private TranslationVisitor tv;
@@ -708,9 +708,9 @@ public class TreeToC extends java.io.PrintWriter {
 	    switch(e.op) {
 	    case Uop.NEG: pw.print("-"); break;
 	    case Uop.NOT: pw.print("~"); break;
-	    case Uop._2B: pw.print("(jbyte)"); break;
-	    case Uop._2C: pw.print("(jchar)"); break;
-	    case Uop._2S: pw.print("(jshort)"); break;
+	    case Uop.I2B: pw.print("(jbyte)"); break;
+	    case Uop.I2C: pw.print("(jchar)"); break;
+	    case Uop.I2S: pw.print("(jshort)"); break;
 	    case Uop._2I: pw.print("(jint)"); break;
 	    case Uop._2L: pw.print("(jlong)"); break;
 	    case Uop._2F: pw.print("(jfloat)"); break;

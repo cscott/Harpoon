@@ -67,7 +67,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.161 2000-07-19 01:02:23 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.162 2000-09-11 21:33:30 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1481,55 +1481,17 @@ MEM<d,l>(NAME(id)) = i %{
 
 TEMP(t) = i %{ i=t; /* this case is basically handled entirely by the CGG */ }%
 
-UNOP(_2B, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
-
-    Util.assert(false, "Spec file doesn't handle long-to-byte conversion directly");
-}%
-UNOP(_2B, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
-
-    Util.assert(false, "Spec file doesn't handle float-to-byte conversion directly");
-}%
-UNOP(_2B, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
-
-    Util.assert(false, "Spec file doesn't handle double-to-byte conversion directly");
-}%
-UNOP(_2C, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
-
-    Util.assert(false, "Spec file doesn't handle long-to-char conversion directly");
-}%
-UNOP(_2C, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
-
-    Util.assert(false, "Spec file doesn't handle float-to-char conversion directly");
-}%
-UNOP(_2C, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
-
-    Util.assert(false, "Spec file doesn't handle double-to-char conversion directly");
-}%
-UNOP(_2S, arg) = i %pred %( ROOT.operandType()==Type.LONG )% %{
-
-    Util.assert(false, "Spec file doesn't handle long-to-short conversion directly");
-}%
-UNOP(_2S, arg) = i %pred %( ROOT.operandType()==Type.FLOAT )% %{
-
-    Util.assert(false, "Spec file doesn't handle float-to-short conversion directly");
-}%
-UNOP(_2S, arg) = i %pred %( ROOT.operandType()==Type.DOUBLE )% %{
-
-    Util.assert(false, "Spec file doesn't handle double-to-short conversion directly");
-}%
-
-
-UNOP(_2B, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
+UNOP(I2B, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
 
     emit( ROOT, "mov `d0, `s0, asl #24", i, arg);
     emit( ROOT, "mov `d0, `s0, asr #24", i, i);
 }%
-UNOP(_2C, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
+UNOP(I2C, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
 
     emit( ROOT, "mov `d0, `s0, asl #16", i, arg);
     emit( ROOT, "mov `d0, `s0, lsr #16", i, i);
 }%
-UNOP(_2S, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
+UNOP(I2S, arg) = i %pred %( ROOT.operandType()==Type.INT )% %{
 
     emit( ROOT, "mov `d0, `s0, asl #16", i, arg);
     emit( ROOT, "mov `d0, `s0, asr #16", i, i);

@@ -58,7 +58,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.34 2000-03-26 06:29:02 jwhaley Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.35 2000-09-11 21:33:25 cananian Exp $
  */
 %%
     private InstrFactory instrFactory;
@@ -1426,9 +1426,9 @@ THROW(val, handler) %{
 // op		done		todo
 // NEG		i,p,l,f		d
 // NOT				i,p,l,f,d
-// _2B		i,p		l,f,d
-// _2C		i,p		l,f,d
-// _2S		i,p		l,f,d
+// I2B		i
+// I2C		i
+// I2S		i
 // _2I		i,p,l,f		l,f,d
 // _2L		i,p		l,f,d
 // _2F		i,p		l,f,d
@@ -1451,22 +1451,22 @@ UNOP<f>(NEG, e)=r %{
     emit (ROOT, "fnegs `s0, `d0", new Temp[] { r }, new Temp[] { e });
 }%
 
-UNOP(_2B, e) = r
-%pred %(ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+UNOP(I2B, e) = r
+%pred %(ROOT.operandType() == Type.INT)%
 %{
     emit (ROOT, "sll `s0, 24, `d0", new Temp[] { r }, new Temp[] { e });
     emit (ROOT, "sra `s0, 24, `d0", new Temp[] { r }, new Temp[] { e });
 }%
 
-UNOP(_2C, e) = r
-%pred %(ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+UNOP(I2C, e) = r
+%pred %(ROOT.operandType() == Type.INT)%
 %{
     emit (ROOT, "sll `s0, 16, `d0", new Temp[] { r }, new Temp[] { e });
     emit (ROOT, "sra `s0, 16, `d0", new Temp[] { r }, new Temp[] { e });
 }%
 
-UNOP(_2S, e) = r
-%pred %(ROOT.operandType() == Type.INT || ROOT.operandType() == Type.POINTER)%
+UNOP(I2S, e) = r
+%pred %(ROOT.operandType() == Type.INT)%
 %{
     emit (ROOT, "sll `s0, 16, `d0", new Temp[] { r }, new Temp[] { e });
     emit (ROOT, "srl `s0, 16, `d0", new Temp[] { r }, new Temp[] { e });

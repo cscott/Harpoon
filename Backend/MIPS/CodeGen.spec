@@ -69,7 +69,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.14 2000-08-31 05:24:14 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.15 2000-09-11 21:32:58 cananian Exp $
  */
 // All calling conventions and endian layout comes from observing cc
 // on MIPS IRIX64 lion 6.2 03131016 IP19.  
@@ -1452,15 +1452,15 @@ MEM<d,l>(NAME(id)) = i %{
 TEMP(t) = i %{ i=t; /* this case is basically handled entirely by the CGG */ }%
 
 
-UNOP(_2B, arg) = i %pred %( ROOT.operandType() == Type.INT )%
+UNOP(I2B, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
     emit( ROOT, "sra `d0, `s0, 8", i, arg);
 }%
-UNOP(_2S, arg) = i %pred %( ROOT.operandType() == Type.INT )%
+UNOP(I2S, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
     emit( ROOT, "sra `d0, `s0, 16", i, arg);
 }%
-UNOP(_2C, arg) = i %pred %( ROOT.operandType() == Type.INT )%
+UNOP(I2C, arg) = i %pred %( ROOT.operandType() == Type.INT )%
 %{
     emit( ROOT, "sra `d0, `s0, 16", i, arg);
 }%
@@ -1485,36 +1485,12 @@ UNOP<p>(_2I, arg) = i %pred %( ROOT.operandType() == Type.POINTER )%
 
 
 
-UNOP(_2B, arg) = i %pred %( ROOT.operandType() == Type.LONG )%
-%{
-   Util.assert(false, "Spec file doesn't handle long-to-byte conversion directly");
-}%
-UNOP(_2C, arg) = i %pred %( ROOT.operandType() == Type.LONG )%
-%{
-   Util.assert(false, "Spec file doesn't handle long-to-char conversion directly");
-}%
-UNOP(_2S, arg) = i %pred %( ROOT.operandType() == Type.LONG )%
-%{
-   Util.assert(false, "Spec file doesn't handle long-to-short conversion directly");
-}%
 UNOP(_2I, arg) = i %pred %( ROOT.operandType() == Type.LONG )%
 %{
     emit( ROOT, "move `d0, `s0l", i, arg );
 }%
 
 
-UNOP(_2B, arg) = i %pred %( ROOT.operandType() == Type.FLOAT )%
-%{
-   Util.assert(false, "Spec file doesn't handle float-to-byte conversion directly");
-}%
-UNOP(_2C, arg) = i %pred %( ROOT.operandType() == Type.FLOAT )%
-%{
-   Util.assert(false, "Spec file doesn't handle float-to-char conversion directly");
-}%
-UNOP(_2S, arg) = i %pred %( ROOT.operandType() == Type.FLOAT )%
-%{
-   Util.assert(false, "Spec file doesn't handle float-to-short conversion directly");
-}%
 UNOP(_2I, arg) = i %pred %( ROOT.operandType() == Type.FLOAT )%
 %{
    DoFCall(ROOT, i, arg, "__f2i");
@@ -1525,18 +1501,6 @@ UNOP(_2D, arg) = i %pred %( ROOT.operandType() == Type.FLOAT )%
 }%
 
 
-UNOP(_2B, arg) = i %pred %( ROOT.operandType() == Type.DOUBLE )%
-%{
-    Util.assert(false, "Spec file doesn't handle double-to-byte conversion directly");
-}%
-UNOP(_2C, arg) = i %pred %( ROOT.operandType() == Type.DOUBLE )%
-%{
-   Util.assert(false, "Spec file doesn't handle double-to-char conversion directly");
-}%
-UNOP(_2S, arg) = i %pred %( ROOT.operandType() == Type.DOUBLE )%
-%{
-   Util.assert(false, "Spec file doesn't handle double-to-short conversion directly");
-}%
 UNOP(_2I, arg) = i %pred %( ROOT.operandType() == Type.DOUBLE )%
 %{
    DoDCall(ROOT, i, arg, "__d2i");
