@@ -16,7 +16,7 @@ import java.util.Iterator;
  * <code>LoopInvariance</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopInvariance.java,v 1.1.2.6 1999-07-14 19:37:09 bdemsky Exp $
+ * @version $Id: LoopInvariance.java,v 1.1.2.7 1999-07-14 21:19:49 bdemsky Exp $
  */
 public class LoopInvariance {
     
@@ -83,10 +83,6 @@ public class LoopInvariance {
 	    change=false;
 	}
 
-	public void visit(Quad q) {
-	    visitdefault(q);
-	}
-
 	void visitdefault(Quad q) {
 	    Temp [] uses=q.use();
 	    boolean ours=false;
@@ -106,6 +102,16 @@ public class LoopInvariance {
 		removeflag=false;
 	}
 
+
+	public void visit(Quad q) {
+	    System.out.println("Not expected in LoopInvariance:" + q.toString());
+	    removeflag=false;
+	}
+
+	public void visit(ALENGTH q) {
+	    visitdefault(q);
+	}
+
 	public void visit(ANEW q) {
 	    //Not loop invariant
 	    removeflag=false;
@@ -115,20 +121,66 @@ public class LoopInvariance {
 	    removeflag=false;
 	}
 
+	public void visit(COMPONENTOF q) {
+	    visitdefault(q);
+	}
+
+	public void visit(CONST q) {
+	    visitdefault(q);
+	}
+
+	public void visit(FOOTER q) {
+	    removeflag=false;
+	}
+
+	public void visit(HEADER q) {
+	    removeflag=false;
+	}
+
+	public void visit(INSTANCEOF q) {
+	    visitdefault(q);
+	}
+
+	public void visit(METHOD q) {
+	    removeflag=false;
+	}
+
+	public void visit(MONITORENTER q) {
+	    removeflag=false;
+	}
+
+	public void visit(MONITOREXIT q) {
+	    removeflag=false;
+	}
+
+	public void visit(MOVE q) {
+	    visitdefault(q);
+	}
+
 	public void visit(NEW q) {
 	    removeflag=false;
 	}
 
-
-	public void visit(PSET q) {
-	    removeflag=false;
+	public void visit(NOP q) {
+	    visitdefault(q);
 	}
+
+	public void visit(PCALL q) {
+	    //Calls aren't loop invariant...
+	    //they might have side effects
+	    removeflag=false;
+	} 
+
+	public void visit(PARRAY q)     { visitdefault(q); }
+	public void visit(PFIELD q)     { visitdefault(q); }
+	public void visit(PMETHOD q)    { visitdefault(q); }
+	public void visit(PAOFFSET q)   { visitdefault(q); }
+	public void visit(PFOFFSET q)   { visitdefault(q); }
+	public void visit(PMOFFSET q)   { visitdefault(q); }
+	public void visit(PFCONST q)    { visitdefault(q); }
+	public void visit(PMCONST q)    { visitdefault(q); }
 
 	public void visit(PGET q) {
-	    removeflag=false;
-	}
-
-	public void visit(RETURN q) {
 	    removeflag=false;
 	}
 
@@ -145,29 +197,11 @@ public class LoopInvariance {
 	    }
 	}
 
-	public void visit(FOOTER q) {
+	public void visit(PSET q) {
 	    removeflag=false;
 	}
 
-	public void visit(HEADER q) {
-	    removeflag=false;
-	}
-
-	public void visit(METHOD q) {
-	    removeflag=false;
-	}
-
-	public void visit(MONITORENTER q) {
-	    removeflag=false;
-	}
-
-	public void visit(MONITOREXIT q) {
-	    removeflag=false;
-	}
-
-	public void visit(PCALL q) {
-	    //Calls aren't loop invariant...
-	    //they might have side effects
+	public void visit(RETURN q) {
 	    removeflag=false;
 	}
 
