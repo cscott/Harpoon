@@ -7,6 +7,10 @@ extern JNIEnv *FNI_JNIEnv; /* temporary hack. */
 if ((*env)->ExceptionOccurred(env)){ (*env)->ExceptionDescribe(env); exit(1); }
 
 int main(int argc, char *argv[]) {
+  char *firstclasses[] = {
+    "java/util/Properties", "java/io/FileDescriptor", "java/lang/System", 
+    "java/io/BufferedWriter", NULL
+  };
   JNIEnv *env;
   jclass cls;
   jmethodID mid;
@@ -17,9 +21,10 @@ int main(int argc, char *argv[]) {
   env = FNI_ThreadInit();
   FNI_JNIEnv = env;
 
-  /* Execute static initializers, in proper order. */
-  for (namep=FNI_static_inits; *namep!=NULL; namep++) {
-    cls = (*env)->FindClass(env, *namep);
+
+  /* initialize pre-System.initializeSystemClass() initializers. */
+  for (i=0; firstclasses[i]!=NULL; i++) {
+    cls = (*env)->FindClass(env, firstclasses[i]);
     CHECK_EXCEPTIONS(env);
     mid = (*env)->GetStaticMethodID(env, cls, "<clinit>","()V");
     CHECK_EXCEPTIONS(env);
@@ -36,6 +41,21 @@ int main(int argc, char *argv[]) {
   (*env)->CallStaticVoidMethod(env, cls, mid);
   CHECK_EXCEPTIONS(env);
   (*env)->DeleteLocalRef(env, cls);
+
+  /* Execute rest of static initializers, in proper order. */
+  for (namep=FNI_static_inits; *namep!=NULL; namep++) {
+    for (i=0; firstclasses[i]!=NULL; i++)
+      if (strcmp(*namep, firstclasses[i])==0)
+	goto skip;
+    cls = (*env)->FindClass(env, *namep);
+    CHECK_EXCEPTIONS(env);
+    mid = (*env)->GetStaticMethodID(env, cls, "<clinit>","()V");
+    CHECK_EXCEPTIONS(env);
+    (*env)->CallStaticVoidMethod(env, cls, mid);
+    CHECK_EXCEPTIONS(env);
+    (*env)->DeleteLocalRef(env, cls);
+  skip:
+  }
 
   /* Wrap argv strings */
   cls = (*env)->FindClass(env, "java/lang/String");
