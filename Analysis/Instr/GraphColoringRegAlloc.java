@@ -58,7 +58,7 @@ import java.util.Date;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.39 2000-11-14 22:27:05 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.40 2000-12-06 15:31:15 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
 
@@ -740,7 +740,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		Temp t = (Temp) defs.next();
 		
 		if (isRegister(t)) continue;
-		
+
+		// FSK: shouldn't this be kept in the else-block
+		// alone?  Leaving alone for now... (XP style)
 		TempWebRecord web =
 		    new TempWebRecord
 		    (t, new LinearSet(Collections.singleton(inst)),
@@ -753,6 +755,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 			ixtToWebPreCombine.get(ixt);
 		    wr.defs.add(inst);
 		} else {
+
 		    ixtToWebPreCombine.put(ixt, web);
 		}
 	    }
@@ -761,18 +764,23 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	// System.out.println("pre-duchain-combination");
 	// System.out.println("webSet: "+webSet);
 
-	boolean changed;
+	boolean changed; 
 	do {
 	    // combine du-chains for the same symbol and that have a
 	    // def in common to make webs  
 	    changed = false;
 	    tmp1 = new HashSet(webSet);
+
 	    while(!tmp1.isEmpty()) {
 		web1 = (TempWebRecord) tmp1.iterator().next();
 		tmp1.remove(web1);
 
+		// put webs to be removed post-iteration here
+		HashSet removeFromTmp1 = new HashSet(); 
+
 		for(Iterator t2s=tmp1.iterator(); t2s.hasNext(); ){
 		    web2 = (TempWebRecord) t2s.next();
+		    
 		    if (web1.sym.equals(web2.sym)) {
 			boolean combineWebs;
 			Set ns = new HashSet(web1.defs);
@@ -802,11 +810,14 @@ public class GraphColoringRegAlloc extends RegAlloc {
 			    web1.defs.addAll(web2.defs);
 			    web1.uses.addAll(web2.uses);
 			    webSet.remove(web2);
+			    removeFromTmp1.add(web2);
 			    changed = true;
 			}
-			
 		    }
 		}
+		
+		tmp1.removeAll(removeFromTmp1);
+
 	    }
 	} while ( changed );
 	
