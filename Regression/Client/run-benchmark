@@ -7,10 +7,12 @@
 GOT_ERRORS=0   # No errors up to now
 COMMAND_LINE_PARAMETERS=   # Keeps the command-line parameters for this benchmark
 
+COMPILE=yes
 COMPILE_STATS=yes
 LONG_COMPILE_STATS=no
-LONG_RUN_STATS=no
+RUN=yes
 RUN_STATS=yes
+LONG_RUN_STATS=no
 ERRORS=yes
 
 # Beginning of script
@@ -19,6 +21,10 @@ echo "1" > $RUNNING_TASK_FILE
 
 while [ "$1" != "" ]; do   # parsing the command-line parameters
     case "$1" in
+	-compile=yes)
+	    COMPILE=yes;;   # Compile the task; Default option
+	-compile=no)
+	    COMPILE=no;;   # Do not compile the task
 	-compile-stats=yes)
 	    COMPILE_STATS=yes;;   # Generate compiling statistics; Default option
 	-compile-stats=no)
@@ -27,6 +33,10 @@ while [ "$1" != "" ]; do   # parsing the command-line parameters
 	    LONG_COMPILE_STATS=yes;;   # Generate long compiling-time reports
 	-long-compile-stats=no)
 	    LONG_COMPILE_STATS=no;;   # Generate short compiling-time reports; Default option
+	-run=yes)
+	    RUN=yes;;   # Run the task; Default option
+	-run=no)
+	    RUN=no;;   # Do not run the task
 	-run-stats=yes)
 	    RUN_STATS=yes;;   # Generate runtime statistics; Default option
 	-run-stats=no)
@@ -76,75 +86,108 @@ if [ "$BENCHMARK" == "" ]; then   # No bechmark given as a parameter
 	echo -e "./run-benchmark must be given a benchmark name as its first parameter." >> $ERROR_FILE
     fi
 else
-    cd $FLEX_DIR
-    if [ ! -e $BENCHMARK.java ]; then   # does the benchmark file exist?
-	if [ "$ERRORS" == "yes" ]; then   # we want to log errors
-	    echo >> $ERROR_FILE
-	    echo -e "The file $BENCHMARK.java not found." >> $ERROR_FILE
-	fi
-    else   # yes, the file $BENCHMARK.java exists
-	javac $BENCHMARK.java >> $COMPILING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
-	if [ $GOT_ERRORS -eq 1 ]; then   # the file $BENCHMARK.java contains some syntactic errors
+    if [ "$COMPILE" == "yes" ]; then   # compiling the benchmark...
+	cd $FLEX_DIR
+	if [ ! -e $BENCHMARK.java ]; then   # does the benchmark file exist?
 	    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 		echo >> $ERROR_FILE
-		echo -e "\"javac\" could not compile the file $BENCHMARK.java. Please check the correctness of the syntax of $BENCHMARK.java" >> $ERROR_FILE
+		echo -e "The file $BENCHMARK.java not found." >> $ERROR_FILE
 	    fi
-	else
-	    $COMMAND $BENCHMARK $BENCHMARK >> $COMPILING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
-	    if [ $GOT_ERRORS -eq 1 ]; then   # Did the benchmark compile without any error
+	else   # yes, the file $BENCHMARK.java exists
+	    javac $BENCHMARK.java >> $COMPILING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
+	    if [ $GOT_ERRORS -eq 1 ]; then   # the file $BENCHMARK.java contains some syntactic errors
 		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
-		    echo -e "Benchmark $BENCHMARK did not compile." >> $ERROR_FILE
-		fi
-		if [ "$COMPILE_STATS" == "yes" ]; then   # we want compiling statistics
 		    echo >> $ERROR_FILE
-		    echo -e "Compiling report for benchmark $BENCHMARK." >> $ERROR_FILE
-		    echo >> $ERROR_FILE
-		    if [ -x $MAIN_TESTING_DIR/generate-report ]; then   # does the script ./generate-report exist?
-			if [ "$LONG_COMPILE_STATS" == "yes" ]; then   # we want a long report
-			    $MAIN_TESTING_DIR/generate-report $BENCHMARK -compile -long
-			else   # we want a short report
-			    $MAIN_TESTING_DIR/generate-report $BENCHMARK -compile -short
-			fi
-		    else
-			if [ "$ERRORS" == "yes" ]; then   # we want to log errors
-			    echo -e "Could not generate compiling statistics, because the script ./generate-report in directory \$MAIN_TESTING_DIR is missing." >> $ERROR_FILE
-			fi
-		    fi
+		    echo -e "\"javac\" could not compile the file $BENCHMARK.java. Please check the correctness of the syntax of $BENCHMARK.java" >> $ERROR_FILE
 		fi
-	    else   # No compiling error, so we can try to run the program now
-		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
-		    echo -e "          Benchmark $BENCHMARK compiled without any error." >> $ERROR_FILE
-		fi
-		cd $FLEX_DIR/../Runtime
-		./run$BENCHMARK $COMMAND_LINE_PARAMETERS >> $RUNNING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
-		if [ $GOT_ERRORS -eq 1 ]; then   # Did the program end because of an error?
+	    else
+		$COMMAND $BENCHMARK $BENCHMARK >> $COMPILING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
+		if [ $GOT_ERRORS -eq 1 ]; then   # Did the benchmark compile without any error
 		    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
-			echo -e "Benchmark $BENCHMARK finished its execution because of an error." >> $ERROR_FILE
+			echo -e "Benchmark $BENCHMARK did not compile." >> $ERROR_FILE
 		    fi
-		    if [ "$RUN_STATS" == "yes" ]; then   # we want runtime statistics
+		    if [ "$COMPILE_STATS" == "yes" ]; then   # we want compiling statistics
 			echo >> $ERROR_FILE
-			echo -e "Runtime report for benchmark $BENCHMARK." >> $ERROR_FILE
+			echo -e "Compiling report for benchmark $BENCHMARK." >> $ERROR_FILE
 			echo >> $ERROR_FILE
 			if [ -x $MAIN_TESTING_DIR/generate-report ]; then   # does the script ./generate-report exist?
-			    if [ "$LONG_RUN_STATS" == "yes" ]; then   # we want a long report
-				$MAIN_TESTING_DIR/generate-report $BENCHMARK -run -long
+			    if [ "$LONG_COMPILE_STATS" == "yes" ]; then   # we want a long report
+				$MAIN_TESTING_DIR/generate-report $BENCHMARK -compile -long
 			    else   # we want a short report
-				$MAIN_TESTING_DIR/generate-report $BENCHMARK -run -short
+				$MAIN_TESTING_DIR/generate-report $BENCHMARK -compile -short
 			    fi
 			else
 			    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
-				echo -e "Could not generate runtime statistics, because the script ./generate-report in directory \$MAIN_TESTING_DIR is missing." >> $ERROR_FILE
+				echo >> $ERROR_FILE
+				echo -e "Could not generate compiling statistics, because the script ./generate-report in directory \$MAIN_TESTING_DIR is missing." >> $ERROR_FILE
 			    fi
 			fi
 		    fi
-		else
+		else   # no compiling-time errors
 		    if [ "$ERRORS" == "yes" ]; then   # we want to log errors
 			echo >> $ERROR_FILE
-			echo -e "          Benchmark $BENCHMARK ran without throwing any error." >> $ERROR_FILE
+			echo -e "          Benchmark $BENCHMARK compiled without any error." >> $ERROR_FILE
 		    fi
+		fi   # if [ $GOT_ERRORS -eq 1 ]; then
+	    fi   # if [ $GOT_ERRORS -eq 1 ]; then
+	fi   # if [ ! -e $BENCHMARK.java ]; then
+    else   # "$COMPILE" == "no"
+	echo >> $ERROR_FILE
+	echo "User chose not to compile the task." >> $ERROR_FILE
+    fi   # if [ "$COMPILE" == "yes" ]; then
+
+    if [ "$RUN" == "yes" ]; then   # should we run the task?
+	cd $FLEX_DIR/../Runtime
+	if [ -x run$BENCHMARK -a -x $BENCHMARK ]; then   # found both ./run$BENCHMARK executable and the $BENCHMARK executable/script
+	    echo >> $ERROR_FILE
+	    echo "Found both ./run$BENCHMARK and $BENCHMARK executables. Priority given to ./run$BENCHMARK, but it is advisable to avoid this kind of name collisions." >> $ERROR_FILE
+	    ./run$BENCHMARK $COMMAND_LINE_PARAMETERS >> $RUNNING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1   # giving priority to ./run$BENCHMARK
+	elif [ -x run$BENCHMARK ]; then   # found only ./run$BENCHMARK executable
+	    echo >> $ERROR_FILE
+	    echo "Found ./run$BENCHMARK; running it..." >> $ERROR_FILE
+	    ./run$BENCHMARK $COMMAND_LINE_PARAMETERS >> $RUNNING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
+	elif [ -x $BENCHMARK]; then   # found only ./$BENCHMARK executable
+	    echo >> $ERROR_FILE
+	    echo "Found ./$BENCHMARK; running it..." >> $ERROR_FILE
+	    . $BENCHMARK $COMMAND_LINE_PARAMETERS >> $RUNNING_RESULTS_FILE"_$BENCHMARK" 2>&1 || GOT_ERRORS=1
+	else   # did not find any of these files
+	    echo >> $ERROR_FILE
+	    echo "Neither of the files ./run$BENCHMARK or ./$BENCHMARK was found." >> $ERROR_FILE
+	    GOT_ERRORS=2
+	fi
+	if [ ! $GOT_ERRORS -eq 2 ]; then   # was anything executed?
+	    if [ $GOT_ERRORS -eq 1 ]; then   # Did the program end because of an error?
+		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+		    echo >> $ERROR_FILE
+		    echo -e "Benchmark $BENCHMARK finished its execution because of an error." >> $ERROR_FILE
+		fi
+		if [ "$RUN_STATS" == "yes" ]; then   # we want runtime statistics
+		    echo >> $ERROR_FILE
+		    echo -e "Runtime report for benchmark $BENCHMARK." >> $ERROR_FILE
+		    echo >> $ERROR_FILE
+		    if [ -x $MAIN_TESTING_DIR/generate-report ]; then   # does the script ./generate-report exist?
+			if [ "$LONG_RUN_STATS" == "yes" ]; then   # we want a long report
+			    $MAIN_TESTING_DIR/generate-report $BENCHMARK -run -long
+			else   # we want a short report
+			    $MAIN_TESTING_DIR/generate-report $BENCHMARK -run -short
+			fi
+		    else
+			if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+			    echo >> $ERROR_FILE
+			    echo -e "Could not generate runtime statistics, because the script ./generate-report in directory \$MAIN_TESTING_DIR is missing." >> $ERROR_FILE
+			fi
+		    fi
+		fi
+	    else
+		if [ "$ERRORS" == "yes" ]; then   # we want to log errors
+		    echo >> $ERROR_FILE
+		    echo -e "          Benchmark $BENCHMARK ran without throwing any error." >> $ERROR_FILE
 		fi
 	    fi
 	fi
+    else   # "$RUN" == "no"
+	echo >> $ERROR_FILE
+	echo "User chose not to run the task." >> $ERROR_FILE
     fi
 fi
 

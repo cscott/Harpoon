@@ -14,29 +14,33 @@ function printOptions() {
     echo -e "Either \"yes\" or \"no\"."
     echo
     echo "Options: "
-    echo -e "  -all-tasks=[yes|no]          -- if set to yes, runs all tasks in \"tasks-all\","
+    echo -e "  -all-tasks=[yes|no]          -- if set to yes, runs all tasks in \"tasks-all\" (default),"
     echo -e "                                  if set to no, runs all tasks in \"tasks-selected\"."
-    echo -e "  -tasks-file=<file>           -- explicitly specifies the name of the file containing the tasks set."
-    echo -e "  -all-machines=[yes|no]       -- if set to yes, runs the task set on all machines in \"machines-all\","
+    echo -e "  -tasks-file=<file>           -- explicitly specifies the name of the file containing the tasks set (no default value)."
+    echo -e "  -all-machines=[yes|no]       -- if set to yes, runs the task set on all machines in \"machines-all\" (default),"
     echo -e "                                  if set to no, runs the task set only on machines included in \"machines-selected\"."
-    echo -e "  -machines-file=<file>        -- explicitly specifies the name of the file containing the machines set."
-    echo -e "  -compile-stats=[yes|no]      -- if set to yes, generates compiling statistics,"
+    echo -e "  -machines-file=<file>        -- explicitly specifies the name of the file containing the machines set (no default value)."
+    echo -e "  -compile=[yes|no]            -- if set to yes, the task is compiled (default),"
+    echo -e "                                  if set to no, the task is not compiled."
+    echo -e "  -compile-stats=[yes|no]      -- if set to yes, generates compiling statistics (default),"
     echo -e "                                  if set to no, does not generate compiling statistics."
-    echo -e "  -long-compile-stats=[yes|no] -- if set to yes, generate a long compiling time report (in case of an error),"
-    echo -e "                                  if set to no, generate a short compiling time report (in case of an error)."
-    echo -e "  -run-stats=[yes|no]          -- if set to yes, generates runtime statistics,"
+    echo -e "  -long-compile-stats=[yes|no] -- if set to yes, generate a long compiling time report, in case of an error,"
+    echo -e "                                  if set to no, generate a short compiling time report, in case of an error (default)."
+    echo -e "  -run=[yes|no]                -- if set to yes, the task will be run (default),"
+    echo -e "                                  if set to no, the task will not be run."
+    echo -e "  -run-stats=[yes|no]          -- if set to yes, generates runtime statistics (default),"
     echo -e "                                  if set to no, does not generate runtime statistics."
-    echo -e "  -long-runtime-stats=[yes|no] -- if set to yes, generate a long runtime report (inca se of an error),"
-    echo -e "                                  if set to no, generate a short runtime report (in case of an error)."
-    echo -e "  -errors=[yes|no]             -- if set to yes, print all errors to a file,"
+    echo -e "  -long-runtime-stats=[yes|no] -- if set to yes, generate a long runtime report, in case of an error,"
+    echo -e "                                  if set to no, generate a short runtime report, in case of an error (default)."
+    echo -e "  -errors=[yes|no]             -- if set to yes, print all errors to a file (default),"
     echo -e "                                  if set to no, does not print any error."
-    echo -e "  -diffs=[yes|no]              -- if set to yes, diffs the current versions of benchmarks with the previous ones,"
+    echo -e "  -diffs=[yes|no]              -- if set to yes, diffs the current versions of benchmarks with the previous ones (default),"
     echo -e "                                  if set to no, no diffs are generated."
-    echo -e "  -mail-results=[yes|no]       -- if set to yes, mails results to people,"
+    echo -e "  -mail-results=[yes|no]       -- if set to yes, mails results to people (default),"
     echo -e "                                  if set to no, does not mail anything to anyone."
-    echo -e "  -mail-to-all=[yes|no]        -- if set to yes, mails results to all people in \"mail-all\","
+    echo -e "  -mail-to-all=[yes|no]        -- if set to yes, mails results to all people in \"mail-all\" (default),"
     echo -e "                                  if set to no, mails results only to people included in \"mail-selected\"."
-    echo -e "  -mailto-file=<file>          -- explicitly specifies the name of the file containing the list of people to be mailed."
+    echo -e "  -mailto-file=<file>          -- explicitly specifies the name of the file containing the list of people to be mailed (no default value)."
 }
 
 # Beggining of script
@@ -74,8 +78,10 @@ else
     TASKS_FILE=tasks-all
     USE_ALL_MACHINES=yes
     MACHINES_FILE=machines-all
+    COMPILE=yes
     COMPILE_STATS=yes
     LONG_COMPILE_STATS=no
+    RUN=yes
     RUN_STATS=yes
     LONG_RUN_STATS=no
     ERRORS=yes
@@ -104,6 +110,10 @@ else
 		MACHINES_FILE=machines-selected;;
 	    -machines-file=*)
 		MACHINES_FILE=`echo $1 | sed s/^.*=//`;;   # Explicitly sets the file containing the machines to be used
+	    -compile=yes)
+		COMPILE=yes;;   # Compile the task; Default option
+	    -compile=no)
+		COMPILE=no;;   # Do not compile the task
 	    -compile-stats=yes)
 		COMPILE_STATS=yes;;   # Generate compiling statistics; Default option
 	    -compile-stats=no)
@@ -112,6 +122,10 @@ else
 		LONG_COMPILE_STATS=yes;;   # Generate long compiling reports
 	    -long-compile-stats=no)
 		LONG_COMPILE_STATS=no;;   # Generate short compiling reports; Default option
+	    -run=yes)
+		RUN=yes;;   # Run the task; Default option
+	    -run=no)
+		RUN=no;;   # Do not run the task
 	    -run-stats=yes)
 		RUN_STATS=yes;;   # Generate runtime statistics; Default option
 	    -run-stats=no)
@@ -347,7 +361,7 @@ else
 		fi
 		for machine in $WORKING_MACHINES_LIST; do
 		    if [ "`ssh $machine 'if [ -e $RUNNING_TASK_FILE ]; then cat $RUNNING_TASK_FILE; else echo 0; fi'`" != "1" ]; then   # this machine is not running anything, so the current task can be run on it
-			ssh -f $machine "cd \$MAIN_TESTING_DIR; ./run-benchmark $task -compile-stats=$COMPILE_STATS -long-compile-stats=$LONG_COMPILE_STATS -long-run-stats=$LONG_RUN_STATS -run-stats=$RUN_STATS -errors=$ERRORS"   # running the task in background
+			ssh -f $machine "cd \$MAIN_TESTING_DIR; ./run-benchmark $task -compile=$COMPILE -compile-stats=$COMPILE_STATS -long-compile-stats=$LONG_COMPILE_STATS -run=$RUN -run-stats=$RUN_STATS -long-run-stats=$LONG_RUN_STATS -errors=$ERRORS"   # running the task in background
 			sleep 5   # waiting 5 seconds for the remote machine to set up it's parameters
 			
 			MACHINE_ALREADY_USED=0   # this machine was not used before
