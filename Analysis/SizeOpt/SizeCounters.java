@@ -34,7 +34,7 @@ import java.util.Iterator;
  * package.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SizeCounters.java,v 1.1.2.8 2001-11-05 02:18:21 cananian Exp $
+ * @version $Id: SizeCounters.java,v 1.1.2.9 2001-11-06 22:37:23 cananian Exp $
  */
 public class SizeCounters extends MethodMutator {
     final Frame frame;
@@ -147,6 +147,8 @@ public class SizeCounters extends MethodMutator {
 			 it.hasNext(); ) {
 			HField hf = (HField) it.next();
 			if (hf.isStatic()) continue;
+			if (bwa.isConst(hf) || !bwa.isRead(hf))
+			    continue; // field is constant or unread!
 			int mybits;
 			if (hf.getType()==HClass.Float)
 			    mybits = 32;
