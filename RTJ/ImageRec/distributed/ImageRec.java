@@ -47,7 +47,7 @@ public class ImageRec {
 	boolean RTJ = false;
 	boolean stats = false;
 	boolean noheap = false;
-// 	MemoryArea ma = null;
+ 	MemoryArea ma = null;
 	MemoryArea mb = null;
 
 	try {
@@ -59,21 +59,21 @@ public class ImageRec {
 			Class[] params = new Class[] { long.class };
 			Object[] vals = new Object[] { new Long(args[4]) };
 			Class cls = CTMemory.class;
-// 			ma = (MemoryArea)im.newInstance(cls, params, vals);
+ 			ma = (MemoryArea)im.newInstance(cls, params, vals);
 			mb = (MemoryArea)im.newInstance(cls, params, vals);
 			    
 		    } else {
-// 			ma = new CTMemory(Long.parseLong(args[4]));
+ 			ma = new CTMemory(Long.parseLong(args[4]));
 			mb = new CTMemory(Long.parseLong(args[4]));
 		    }
 		} else if (args[3].equalsIgnoreCase("VT")) {
 		    if (noheap) {
 			ImmortalMemory im = ImmortalMemory.instance();
 			Class cls = VTMemory.class;
-// 			ma = (MemoryArea)im.newInstance(cls);
+ 			ma = (MemoryArea)im.newInstance(cls);
 			mb = (MemoryArea)im.newInstance(cls);
 		    } else {
-// 			ma = new VTMemory();
+ 			ma = new VTMemory();
 			mb = new VTMemory();
 		    }
 		} else {
@@ -119,10 +119,10 @@ public class ImageRec {
 		Runnable r = noheap?(ImageRunnable)ImmortalMemory.instance()
 		    .newInstance(ImageRunnable.class, 
 				 new Class[] { String.class, String.class, MemoryArea.class,
-					       boolean.class, boolean.class },
-				 new Object[] { infile, outfile, mb, 
+					       MemoryArea.class, boolean.class, boolean.class },
+				 new Object[] { infile, outfile, mb, ma,
 						new Boolean(noheap), new Boolean(RTJ)}):
-		    new ImageRunnable(infile, outfile, mb, noheap, RTJ);
+		    new ImageRunnable(infile, outfile, mb, ma, noheap, RTJ);
 			    
 	        if (RTJ) {
 		    mb.enter(r);
