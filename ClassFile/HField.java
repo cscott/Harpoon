@@ -11,7 +11,7 @@ import harpoon.ClassFile.Raw.Constant.ConstantValue;
  * an instance field.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HField.java,v 1.9 1998-08-08 14:38:37 cananian Exp $
+ * @version $Id: HField.java,v 1.10 1998-09-10 20:47:58 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -102,6 +102,11 @@ public class HField implements HMember {
       if (fieldinfo.attributes[i] instanceof AttributeSynthetic)
 	return true;
     return false;
+  }
+
+  /** Determines whether this is a static field. */
+  public boolean isStatic() {
+    return Modifier.isStatic(getModifiers());
   }
 
   /** 

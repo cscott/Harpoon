@@ -17,7 +17,7 @@ import java.util.Vector;
  * method).
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HMethod.java,v 1.16 1998-09-10 03:22:44 cananian Exp $
+ * @version $Id: HMethod.java,v 1.17 1998-09-10 20:47:59 cananian Exp $
  * @see HMember
  * @see HClass
  */
@@ -170,7 +170,7 @@ public class HMethod implements HMember {
     if (parameterNames==null) {
       parameterNames = new String[pt.length];
       // for non-static methods, 0th local variable is 'this'.
-      int offset = (Modifier.isStatic(getModifiers()))?0:1;
+      int offset = isStatic()?0:1;
       // assign names.
       for (int i=0; i<parameterNames.length; i++) {
 	parameterNames[i]=
@@ -227,6 +227,10 @@ public class HMethod implements HMember {
   /** Determines whether this <code>HMethod</code> is an interface method. */
   public boolean isInterfaceMethod() {
     return hclass.isInterface();
+  }
+  /** Determines whether this is a static method. */
+  public boolean isStatic() {
+    return Modifier.isStatic(getModifiers());
   }
 
   /**
