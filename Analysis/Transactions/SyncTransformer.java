@@ -85,7 +85,7 @@ import java.util.Set;
  * up the transformed code by doing low-level tree form optimizations.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.5.2.9 2003-07-16 01:17:05 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.5.2.10 2003-07-16 11:40:32 cananian Exp $
  */
 //     we can apply sync-elimination analysis to remove unnecessary
 //     atomic operations.  this may reduce the overall cost by a *lot*,
@@ -1016,12 +1016,11 @@ public class SyncTransformer
 		BitFieldTuple bft = bfn.bfLoc(raf.field);
 
 		// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset,
-		//                              int flag_offset, int flag_bit,
-		//                              struct vinfo *version);
+		//                              int flag_offset, int flag_bit)
 		HMethod hm = gen.lookupMethod
 		    ("setWriteFlags", new HClass[]
 			{ raf.field.getDeclaringClass(), HCfield,
-			  HCfield, HClass.Int, HCvinfo }, HClass.Void);
+			  HCfield, HClass.Int }, HClass.Void);
 
 		Temp t0 = new Temp(tf, "writecheck_field");
 		Temp t1 = new Temp(tf, "writecheck_flag_field");
@@ -1031,8 +1030,7 @@ public class SyncTransformer
 		in = addAt(in, new CONST(qf, q, t2, new Integer(1<<bft.bit),
 					 HClass.Int));
 		CALL q0= new CALL(qf, q, hm,
-				  new Temp[] { raf.objref, t0, t1, t2,
-					       ts.versioned(raf.objref) },
+				  new Temp[] { raf.objref, t0, t1, t2 },
 				  null, retex, false, false, new Temp[0]);
 		// never throws exception.
 		Quad q1 = new THROW(qf, q, retex);
@@ -1108,12 +1106,11 @@ public class SyncTransformer
 		    HClassUtil.arrayClass(qf.getLinker(), rit.type, 1);
 		HField arrayCheckField = bfn.arrayBitField(arrayClass);
 		// void TA(EXACT_setWriteFlags)(struct oobj *obj, int offset,
-		//                              int flag_offset, int flag_bit,
-		//                              struct vinfo *version);
+		//                              int flag_offset, int flag_bit)
 		HMethod hm = gen.lookupMethod
 		    ("setWriteFlags_Array", new HClass[]
-			{ arrayClass, HClass.Int, HCfield, HClass.Int,
-			  HCvinfo }, HClass.Void);
+			{ arrayClass, HClass.Int, HCfield, HClass.Int },
+		     HClass.Void);
 
 		Temp t0 = new Temp(tf, "arraywritecheck");
 		Temp t1 = new Temp(tf, "arraywritecheck_flag_field");
@@ -1128,8 +1125,7 @@ public class SyncTransformer
 					new Temp[]{t2, t0}));
 		in = addAt(in, new CONST(qf, q, t1, arrayCheckField, HCfield));
 		CALL q0= new CALL(qf, q, hm,
-				  new Temp[] { rit.objref, rit.index, t1, t2,
-					       ts.versioned(rit.objref) },
+				  new Temp[] { rit.objref, rit.index, t1, t2 },
 				  null, retex, false, false, new Temp[0]);
 		// never throws exception.
 		Quad q1 = new THROW(qf, q, retex);
