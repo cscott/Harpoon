@@ -28,6 +28,7 @@ import harpoon.Analysis.QuadSSA.ClassHierarchy;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.Util.UnmodifiableIterator;
+import harpoon.Util.ReverseIterator;
 import harpoon.Util.Util;
 
 import gnu.getopt.Getopt;
@@ -59,7 +60,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.16 1999-08-31 01:20:39 pnkfelix Exp $
+ * @version $Id: SAMain.java,v 1.1.2.17 1999-09-02 19:11:20 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -69,6 +70,7 @@ public class SAMain extends harpoon.IR.Registration {
     private static boolean REG_ALLOC = false;
     private static boolean LIVENESS_TEST = false;
     private static boolean OUTPUT_INFO = false;
+    private static boolean QUIET = false;
     
     private static java.io.PrintWriter out = 
 	new java.io.PrintWriter(System.out, true);;
@@ -123,7 +125,7 @@ public class SAMain extends harpoon.IR.Registration {
 		mOS.writeObject(classHierarchy);
 		mOS.flush();
 	    } catch (IOException e) {
-		System.out.println("Error outputting class "+
+		System.err.println("Error outputting class "+
 				   "hierarchy to " + 
 				   classHierarchyFilename);
 	    }
@@ -134,7 +136,7 @@ public class SAMain extends harpoon.IR.Registration {
 
 	while(classes.hasNext()) {
 	    HClass hclass = (HClass) classes.next();
-	    System.out.println("Compiling: " + hclass.getName());
+	    messageln("Compiling: " + hclass.getName());
 
 	    try {
 		out = new PrintWriter
@@ -146,20 +148,23 @@ public class SAMain extends harpoon.IR.Registration {
 		HashSet hmset = new HashSet(Arrays.asList(hmarray));
 		hmset.retainAll(methods);
 		Iterator hms = hmset.iterator();
-		System.out.print("\t");
+		message("\t");
 		while(hms.hasNext()) {
 		    HMethod m = (HMethod) hms.next();
-		    System.out.print(m.getName());
-		    if (hms.hasNext()) System.out.print(", ");
+		    message(m.getName());
+		    if (hms.hasNext()) message(", ");
 		    outputMethod(m, hcf, sahcf, out);
 		}
-		System.out.println();
+		messageln("");
 
 		out.println();
+		messageln("Writing data for " + hclass.getName());
 		outputClassData(hclass, out);
 
+		out.flush();
+
 	    } catch (IOException e) {
-		System.out.println("Error outputting class "+
+		System.err.println("Error outputting class "+
 				   hclass.getName());
 		System.exit(-1);
 	    }
@@ -167,10 +172,10 @@ public class SAMain extends harpoon.IR.Registration {
 
     }
 
-    public static void outputMethod(HMethod hmethod, 
-				    HCodeFactory hcf,
-				    HCodeFactory sahcf,
-				    PrintWriter out) 
+    public static void outputMethod(final HMethod hmethod, 
+				    final HCodeFactory hcf,
+				    final HCodeFactory sahcf,
+				    final PrintWriter out) 
 	throws IOException {
 	if (PRINT_ORIG) {
 	    HCode hc = hcf.convert(hmethod);
@@ -213,9 +218,8 @@ public class SAMain extends harpoon.IR.Registration {
 		Iterator iter= BasicBlock.basicBlockIterator(block);
 
 		// wrong but makes it compile for now
-		LiveVars livevars = new LiveVars(iter,
-						 Collections.EMPTY_SET); 
-
+		LiveVars livevars = 
+		    new LiveVars(iter, Collections.EMPTY_SET); 
 		InstrSolver.worklistSolver
 		    (BasicBlock.basicBlockIterator(block), livevars);
 		out.println(livevars.dump());
@@ -271,6 +275,22 @@ public class SAMain extends harpoon.IR.Registration {
 		public HMethod getMethod() { return null; }
 	    });
 	
+	Util.assert(instr != null, "what the hell...");
+	// messageln("First data instruction " + instr);
+
+
+	/* trying different method. */
+	Instr di = instr; 
+	info("\t--- INSTR FORM (for DATA)---");
+	while(di!=null) { 
+	    //messageln("Writing " + di);
+	    out.println(di); 
+	    di = di.getNext(); 
+	}
+	info("\t--- end INSTR FORM (for DATA)---");
+
+	/* old method below. */
+	/*
 	Iterator iter = new UnmodifiableIterator() {
 	    Set visited = new HashSet();
 	    Stack stk = new Stack();
@@ -279,11 +299,13 @@ public class SAMain extends harpoon.IR.Registration {
 	    public Object next() {
 		if (stk.empty()) throw new NoSuchElementException();
 		Instr instr2 = (Instr) stk.pop();
-		HCodeEdge[] next = instr2.succ();
-		for (int j=next.length-1; j>=0; j--) {
-		    if (!visited.contains(next[j].to())) {
-			stk.push(next[j].to());
-			visited.add(next[j].to());
+		Iterator succIter = 
+		   new ReverseIterator(instr2.succC().iterator());
+		while(succIter.hasNext()) {
+		    HCodeEdge edge = (HCodeEdge) succIter.next();
+		    if (!visited.contains(edge.to())) {
+			stk.push(edge.to());
+			visited.add(edge.to());
 		    }
 		}
 		return instr2;
@@ -292,11 +314,20 @@ public class SAMain extends harpoon.IR.Registration {
 	info("\t--- INSTR FORM (for DATA)---");
 	while(iter.hasNext()) { out.println( iter.next() ); }
 	info("\t--- end INSTR FORM (for DATA)---");
+	*/
 	
+    }
+
+    private static void message(String msg) {
+	if(!QUIET) System.out.print(msg);
+    }
+
+    private static void messageln(String msg) {
+	if(!QUIET) System.out.println(msg);
     }
     
     private static void parseOpts(String[] args) {
-	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPRLAh");
+	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPRLAhq");
 	
 	int c;
 	String arg;
@@ -315,7 +346,7 @@ public class SAMain extends harpoon.IR.Registration {
  		    // something went wrong; rebuild the class
 		    // hierarchy and write it later.
 		    classHierarchy = null;
-		    System.out.println("Error reading class "+
+		    System.err.println("Error reading class "+
 				       "hierarchy from " + 
 				       classHierarchyFilename);
 		}
@@ -346,21 +377,28 @@ public class SAMain extends harpoon.IR.Registration {
 	    case 'c':
 		className = g.getOptarg();
 		break;
+	    case 'q':
+		QUIET = true;
+		break;
 	    case '?':
 	    case 'h':
-		System.out.println("usage is: [-m <mapfile>] -c <class> [-DOPRLA] [-o <assembly output directory>]");
+		System.out.println(usage);
 		System.out.println();
 		printHelp();
 		System.exit(-1);
 	    default: 
 		System.out.println("getopt() returned " + c);
-		System.out.println("usage is: [-m <mapfile>] -c <class> [-DOPRLA]");
+		System.out.println(usage);
 		System.out.println();
 		printHelp();
 		System.exit(-1);
 	    }
 	}
     }
+
+    static final String usage = 
+	"usage is: [-m <mapfile>] -c <class>"+
+	" [-DOPRLAhq] [-o <assembly output directory>]";
 
     private static void printHelp() {
 	out.println("-c <class> (required)");
@@ -394,6 +432,12 @@ public class SAMain extends harpoon.IR.Registration {
 
 	out.println("-A");
 	out.println("\tSame as -OPLR");
+
+	out.println("-q");
+	out.println("\tTurns on quiet mode (status messages are not output)");
+
+	out.println("-h");
+	out.println("\tPrints out this help message");
 	
     }
 

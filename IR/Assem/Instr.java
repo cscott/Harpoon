@@ -42,7 +42,7 @@ import java.util.AbstractCollection;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.43 1999-09-02 15:53:13 pnkfelix Exp $
+ * @version $Id: Instr.java,v 1.1.2.44 1999-09-02 19:11:19 pnkfelix Exp $
  */
 public class Instr implements HCodeElement, UseDef, HasEdges {
     private String assem;
@@ -491,7 +491,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
     public String toString() {
         StringBuffer s = new StringBuffer();
         int len = assem.length();
-        for (int i = 0; i < len; i++) 
+        for (int i = 0; i < len; i++) {
             if (assem.charAt(i) == '`')
                 switch (assem.charAt(++i)) {
 		case 'd': { 
@@ -523,6 +523,7 @@ public class Instr implements HCodeElement, UseDef, HasEdges {
 		    break;
                 }
             else s.append(assem.charAt(i));
+	}
 
         return s.toString();
     }

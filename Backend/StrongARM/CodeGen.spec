@@ -49,6 +49,8 @@ import harpoon.IR.Tree.SEQ;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Iterator;
 
 /**
@@ -56,7 +58,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.37 1999-09-02 15:57:30 pnkfelix Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.38 1999-09-02 19:11:14 pnkfelix Exp $
  */
 %%
 
@@ -191,10 +193,34 @@ import java.util.Iterator;
 	    return new TwoWordTemp(frame.tempFactory());
     }
 
+    Map origTempToNewTemp = new HashMap();
+
+    private Temp makeTemp( Temp orig ) {
+	    Temp newT = (Temp) origTempToNewTemp.get(orig);
+	    if (newT == null) {
+	    	newT = makeTemp();
+		origTempToNewTemp.put(orig, newT);
+	    }	
+	    return newT;
+    }
+
+    private TwoWordTemp makeTwoWordTemp( Temp orig ) {
+	    TwoWordTemp newT = (TwoWordTemp) origTempToNewTemp.get(orig);
+	    if (newT == null) {
+	    	newT = makeTwoWordTemp();
+		origTempToNewTemp.put(orig, newT);
+	    }	
+	    return newT;
+    }
+
 %%
 %start with %{
        // *** METHOD PROLOGUE *** 
+
+       // initialize state variables each time gen() is called
+       first = null; last = null;
        this.instrFactory = inf;
+
 }%
 %end with %{
        // *** METHOD EPILOGUE *** 
@@ -781,7 +807,7 @@ MEM<d,l>(NAME(id)) = i %{
 */
 
 TEMP<p,i,f>(id) = i %{
-    Temp i = makeTemp();
+    Temp i = makeTemp( ((TEMP)ROOT).temp );
     if (((TEMP)ROOT) != param0) {
 	emitMOVE( ROOT, "mov `d0, `s0", i, ((TEMP)ROOT).temp);
     } else {
@@ -794,7 +820,7 @@ TEMP<p,i,f>(id) = i %{
 TEMP<l,d>(id) = i %{
     // Will need to modify these to do something like mapping from
     // TEMP's Temp to the necessary TwoWordTemp
-    TwoWordTemp i = makeTwoWordTemp();		
+    TwoWordTemp i = makeTwoWordTemp( ((TEMP)ROOT).temp );		
     // Temp i = ((TEMP)ROOT).temp;
     
 
