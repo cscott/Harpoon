@@ -26,7 +26,7 @@ import java.util.Iterator;
  * performing liveness analysis on <code>Temp</code>s.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LiveTemps.java,v 1.1.2.24 2001-01-21 01:23:04 pnkfelix Exp $
+ * @version $Id: LiveTemps.java,v 1.1.2.25 2001-04-11 08:02:47 pnkfelix Exp $
  */
 public class LiveTemps extends LiveVars.BBVisitor {
     // may be null; code using this should check
@@ -98,8 +98,18 @@ public class LiveTemps extends LiveVars.BBVisitor {
 	Set universe = findUniverse(bbFact.blockSet());
 	universe.addAll(liveOnProcExit);
 	
-	// FSK: possible efficiency hack: change (uni) to (uni, Temp.INDEXER)
-	mySetFactory = new BitSetFactory(universe, Temp.INDEXER);
+	if (false) {
+	    // FSK: cannot do this (yet) because universe is made up
+	    // of Temps from different sources (backend
+	    // register-temp-factory versus hmethod temp-factory),
+	    // resulting in index collisions.
+	    // Look into making a CompositeIndexer later that can
+	    // combine the two indexers; for now go back to the
+	    // built-in default.
+	    mySetFactory = new BitSetFactory(universe, Temp.INDEXER);
+	} else {
+	    mySetFactory = new BitSetFactory(universe);
+	}
 
 	// KEY difference: set liveOnProcExit before calling initBBtoLVI
 	this.liveOnProcExit = liveOnProcExit;
