@@ -1,4 +1,4 @@
-# $Revision: 1.50 $
+# $Id: GNUmakefile,v 1.51 1998-10-11 19:41:44 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -21,14 +21,14 @@ ALLPKGS = $(shell find . -type d | grep -v CVS | \
 ALLSOURCE = $(filter-out .%.java, \
 		$(foreach dir, $(ALLPKGS), $(wildcard $(dir)/*.java)))
 TARSOURCE = $(filter-out JavaChip%, \
-	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile COPYING
+	        $(filter-out Test%,$(ALLSOURCE))) GNUmakefile
 JARPKGS = $(filter-out JavaChip%, \
 		$(filter-out Test%,$(ALLPKGS)))
 
 all:	java
 
 list:
-	@echo $(filter-out GNUmakefile,$(filter-out COPYING,$(TARSOURCE)))
+	@echo $(filter-out GNUmakefile,$(TARSOURCE))
 
 java:	$(ALLSOURCE)
 	if [ ! -d harpoon ]; then \
@@ -46,8 +46,8 @@ first:
 	@echo Please wait...
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
 	-${JCC} ${JFLAGS} $(ALLSOURCE) 2> /dev/null
-Harpoon.jar Harpoon.jar.TIMESTAMP: java
-	${JAR} cf Harpoon.jar COPYING \
+Harpoon.jar Harpoon.jar.TIMESTAMP: java COPYING VERSIONS
+	${JAR} cf Harpoon.jar COPYING VERSIONS \
 		$(foreach pkg,$(JARPKGS),harpoon/$(pkg)/*.class)
 	date '+%-d-%b-%Y at %r %Z.' > Harpoon.jar.TIMESTAMP
 
@@ -56,6 +56,11 @@ jar-install: jar
 	chmod a+r Harpoon.jar Harpoon.jar.TIMESTAMP
 	$(SCP) Harpoon.jar Harpoon.jar.TIMESTAMP \
 		$(INSTALLMACHINE):$(INSTALLDIR)
+
+VERSIONS: $(TARSOURCE) # collect all the RCS version ID tags.
+	@echo -n Compiling VERSIONS... ""
+	@grep -Fh ' $$Id: GNUmakefile,v 1.51 1998-10-11 19:41:44 cananian Exp $(TARSOURCE) > VERSIONS
+	@echo done.
 
 cvs-add: needs-cvs
 	-for dir in $(filter-out Test,$(ALLPKGS)); do \
@@ -77,8 +82,8 @@ update: needs-cvs
 	xvcg -psoutput $@ -paper 8x11 -color $<
 	@echo "" # xvcg has a nasty habit of forgetting the last newline.
 
-harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE)
-	tar czf harpoon.tgz $(TARSOURCE)
+harpoon.tgz harpoon.tgz.TIMESTAMP: $(TARSOURCE) COPYING
+	tar czf harpoon.tgz COPYING $(TARSOURCE)
 	date '+%-d-%b-%Y at %r %Z.' > harpoon.tgz.TIMESTAMP
 
 tar:	harpoon.tgz harpoon.tgz.TIMESTAMP
