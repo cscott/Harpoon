@@ -12,7 +12,7 @@ import harpoon.ClassFile.Raw.Constant.*;
  * attribute in each <code>method_info</code> structure.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AttributeCode.java,v 1.11 1998-08-02 09:25:31 cananian Exp $
+ * @version $Id: AttributeCode.java,v 1.12 1998-08-04 01:56:01 cananian Exp $
  * @see "The Java Virtual Machine Specification, section 4.7.4"
  * @see AttributeLineNumberTable
  * @see AttributeLocalVariableTable
@@ -137,6 +137,11 @@ public class AttributeCode extends Attribute {
     // Can't find a name for this in any table.
     return null;
   }
+
+  /** Lookup a <code>Constant</code> in the <code>constant_pool</code>.
+   *  Provided for use of methods that parse the code array.
+   */
+  public Constant constant(int index) { return parent.constant_pool[index]; }
 
   /** Pretty-print the contents of this attribute.
    *  @param indent the indentation level to use.
