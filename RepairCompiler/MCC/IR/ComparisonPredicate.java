@@ -34,6 +34,10 @@ public class ComparisonPredicate extends Predicate {
         return v;
     }
 
+    public int[] getRepairs(boolean negated) {
+	return new int[] {AbstractRepair.MODIFYRELATION};
+    }
+
     public void generate(CodeWriter writer, VarDescriptor vd) {
         // get (first) value for quantifer.relation ... then do comparison with expr... 
         // can this be maybe? i guess if quantifer.relation is empty

@@ -25,6 +25,9 @@ public class ExprPredicate extends Predicate {
     public void generate(CodeWriter writer, VarDescriptor dest) {
         expr.generate(writer, dest);
     }
-            
+
+    public int[] getRepairs(boolean negated) {
+	return new int[] {};
+    }
 }
     

@@ -40,6 +40,19 @@ public class InclusionPredicate extends Predicate {
         //set.addAll(expr.getInversedRelations());
         //return set;
     }
-            
+
+    public int[] getRepairs(boolean negated) {
+	if (setexpr instanceof ImageSetExpr) {
+	    if (negated)
+		return new int[] {AbstractRepair.REMOVEFROMRELATION};
+	    else
+		return new int[] {AbstractRepair.ADDTORELATION};
+	} else {
+	    if (negated)
+		return new int[] {AbstractRepair.REMOVEFROMSET};
+	    else
+		return new int[] {AbstractRepair.ADDTOSET};
+	}
+    }
 }
     

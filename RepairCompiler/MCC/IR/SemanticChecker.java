@@ -389,8 +389,8 @@ public class SemanticChecker {
         }
 
         /* do any post checks... (type constraints, etc?) */
-         
-        return ok;
+
+	return ok;
     }
 
     private boolean parse_constraint(ParseNode pn) {
@@ -527,7 +527,6 @@ public class SemanticChecker {
         } else {
             throw new IRException("not supported yet");
         }
-
     }
 
     private LogicStatement parse_body(ParseNode pn) {

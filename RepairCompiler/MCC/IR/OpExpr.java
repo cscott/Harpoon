@@ -16,6 +16,23 @@ public class OpExpr extends Expr {
         assert (right == null && opcode == Opcode.NOT) || (right != null);
     }
 
+    public DNFRule constructDNF() {
+        if (opcode==Opcode.AND) {
+            DNFRule leftd=left.constructDNF();
+            DNFRule rightd=right.constructDNF();
+            return leftd.and(rightd);
+        } else if (opcode==Opcode.OR) {
+            DNFRule leftd=left.constructDNF();
+            DNFRule rightd=right.constructDNF();
+            return leftd.or(rightd);
+        } else if (opcode==Opcode.NOT) {
+            DNFRule leftd=left.constructDNF();
+            return leftd.not();
+        } else throw new Error();
+    }
+
+
+
     public Set getInversedRelations() {
         Set set = left.getInversedRelations();
         if (right != null) {

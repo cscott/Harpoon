@@ -22,6 +22,29 @@ public class SizeofPredicate extends Predicate {
         this.cardinality = cardinality;
     }
 
+    public int[] getRepairs(boolean negated) {
+	if (setexpr instanceof ImageSetExpr) {
+	    if (opcode==Opcode.EQ)
+		return new int[] {AbstractRepair.ADDTORELATION,
+				      AbstractRepair.REMOVEFROMRELATION};
+	    if (((opcode==Opcode.GE)&&!negated)||
+		((opcode==Opcode.LE)&&negated))
+		return new int[]{AbstractRepair.ADDTORELATION};
+	    else
+		return new int[]{AbstractRepair.REMOVEFROMRELATION};
+	} else {
+	    if (opcode==Opcode.EQ)
+		return new int[] {AbstractRepair.ADDTOSET,
+				      AbstractRepair.REMOVEFROMSET};
+
+	    if (((opcode==Opcode.GE)&&!negated)||
+		((opcode==Opcode.LE)&&negated))
+		return new int[] {AbstractRepair.ADDTOSET};
+	    else 
+		return new int[] {AbstractRepair.REMOVEFROMSET};
+	}
+    }
+
     public Set getRequiredDescriptors() {
         assert setexpr != null;
         Set v = setexpr.getRequiredDescriptors();

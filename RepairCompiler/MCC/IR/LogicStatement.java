@@ -12,7 +12,6 @@ public class LogicStatement {
         if (left == null) {
             throw new IRException();
         }
-
         Set set = left.getInversedRelations();
         if (right != null) {
             set.addAll(right.getInversedRelations());
@@ -20,6 +19,21 @@ public class LogicStatement {
         return set;
     }
     
+    public DNFConstraint constructDNF() {
+	if (op==AND) {
+	    DNFConstraint leftd=left.constructDNF();
+	    DNFConstraint rightd=right.constructDNF();
+	    return leftd.and(rightd);
+	} else if (op==OR) {
+	    DNFConstraint leftd=left.constructDNF();
+	    DNFConstraint rightd=right.constructDNF();
+	    return leftd.or(rightd);
+	} else if (op==NOT) {
+	    DNFConstraint leftd=left.constructDNF();
+	    return leftd.not();
+	} else throw new Error();
+    }
+
     public static class Operation {
         private final String name;
         private Operation(String opname) { name = opname; }

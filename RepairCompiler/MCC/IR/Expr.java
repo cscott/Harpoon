@@ -25,4 +25,8 @@ public abstract class Expr {
         throw new IRException("unsupported");
     }
 
+    public DNFRule constructDNF() {
+	return new DNFRule(this);
+    }
+
 }

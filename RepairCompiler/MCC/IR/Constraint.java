@@ -11,7 +11,7 @@ public class Constraint {
     SymbolTable st = new SymbolTable();
     Vector quantifiers = new Vector(); 
     LogicStatement logicstatement = null;
-
+    DNFConstraint dnfconstraint;
     int num;
 
     public Constraint() {
@@ -37,6 +37,8 @@ public class Constraint {
 
     public void setLogicStatement(LogicStatement ls) {
         logicstatement = ls;
+	// Construct DNF form for analysis
+	dnfconstraint=logicstatement.constructDNF();
     }
 
     public LogicStatement getLogicStatement() {

@@ -6,7 +6,6 @@ import java.util.*;
 public class Optimizer {
 
     State state;
-
     public Optimizer(State s) {
         state = s;
     }

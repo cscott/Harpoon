@@ -79,7 +79,7 @@ public class DependencyBuilder {
                         otherrulenode.addEdge(new GraphNode.Edge(d.getSymbol(), rulenode));
                     }
                 }
-            }           
+            }
         }
 
         /* build constraint->rule dependencies */
