@@ -23,7 +23,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.4 2002-04-10 03:05:23 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.5 2003-07-10 23:46:09 cananian Exp $
  */
 final class UnHandler {
     private static final boolean ARRAY_BOUNDS_CHECKS
@@ -657,10 +657,18 @@ final class UnHandler {
 	public void visit(MONITOREXIT q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm), head=nq;
 	    Type Tlck = ti.get(q.lock());
-	    if (!Tlck.isNonNull())
-		head = nullCheck(q, head, q.lock());
+	    // unfortunately, not all compiler authors are smart enough
+	    // to always protect a MONITOREXIT with a handler.  Since there
+	    // is incorrect bytecode floating around out there already, we're
+	    // going to have to assume that MONITOREXIT never fails.
+	    if (Boolean.getBoolean("harpoon.all.monitorexits.are.safe")) {
+		// this is the correct thing to do: add a null-pointer
+		// check before the MONITOREXIT.
+		if (!Tlck.isNonNull())
+		    head = nullCheck(q, head, q.lock());
+		ti.update(q.lock(), alsoNonNull(Tlck));
+	    }
 	    ss.qm.put(q, head, nq);
-	    ti.update(q.lock(), alsoNonNull(Tlck));
 	}
 	public void visit(MOVE q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm);
