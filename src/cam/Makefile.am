@@ -4,4 +4,6 @@ LIBS =
 
 noinst_LTLIBRARIES = libcam.la
 
-libcam_la_SOURCES = CaptureHeader.h  DeviceCtl.c  DeviceInfo.c  VideoCapture.c  VideoCapture.h
+libcam_la_SOURCES = CaptureHeader.h  DeviceCtl.c  DeviceInfo.c \
+		    VideoCapture.c  VideoCapture.h \
+	            AltVideo.c AltVideo.h
