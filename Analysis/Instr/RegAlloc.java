@@ -70,7 +70,7 @@ import java.util.HashMap;
  * used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.66 2000-01-28 02:38:49 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.67 2000-01-28 02:45:04 kkz Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -229,7 +229,7 @@ public abstract class RegAlloc  {
 	@see RegAlloc#abstractSpillFactory
 	@see RegAlloc#concreteSpillFactory
     */
-    static interface IntermediateCodeFactory extends HCodeFactory {
+    public static interface IntermediateCodeFactory extends HCodeFactory {
 	Derivation getDerivation();
     }
     
