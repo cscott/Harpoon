@@ -12,6 +12,10 @@
 # define NEED_PTHREAD_RWLOCK_T
 #endif /* HAVE_PTHREAD_RWLOCK_T */
 
+#ifndef HAVE_PTHREAD_BARRIER_T
+# define NEED_PTHREAD_BARRIER_T
+#endif /* HAVE_PTHREAD_BARRIER_T */
+
 /* Make sure the BDW collector has a chance to redefine 
  * pthread_create/sigmask/join for its own nefarious purposes. */
 #ifndef FLEXTHREAD_TYPEDEFS_ONLY/*sometimes we don't want to pull all this in*/
@@ -119,6 +123,50 @@ extern pth_key_t flex_timedwait_key; /* defined in java_lang_Thread.c */
 #define pthread_rwlock_destroy	pthread_mutex_destroy
 #endif /* !NEED_PTHREAD_RWLOCK_T */
 
+/* some pthreads-compatible libraries don't have an implementation of
+ * pthread_barrier_t. */
+#ifdef NEED_PTHREAD_BARRIER_T
+#include <errno.h> /* for EBUSY, EINVAL */
+/* uses mutexes and condition variables */
+#define pthread_barrierattr_t int
+#define pthread_barrier_t struct { pthread_mutex_t _m; \
+                                   pthread_cond_t _cv; \
+                                   unsigned int _n; \
+                                   unsigned int _countw; \
+                                   unsigned int _countu; }
+#define pthread_barrier_destroy(pb) \
+    ({ (pthread_mutex_trylock(&(pb)->_m) || (pb)->_countw) ? EBUSY : \
+       pthread_cond_destroy(&(pb)->_cv) ? EINVAL : \
+       (pthread_mutex_unlock(&(pb)->_m), \
+       pthread_mutex_destroy(&(pb)->_m)) ? EINVAL : 0; })
+#define pthread_barrier_init(pb,pattr,n) \
+    ({ (n <= 0) ? EINVAL: \
+       (pthread_mutex_init(&(pb)->_m,NULL), \
+        pthread_cond_init(&(pb)->_cv,NULL), \
+        (pb)->_n = n, (pb)->_countw = (pb)->_countu = 0); })
+#define pthread_barrier_wait(pb) \
+    ({ pthread_mutex_lock(&(pb)->_m); \
+       assert((pb)->_countu == 0); \
+       (pb)->_countw++; \
+       if ((pb)->_countw == (pb)->_n) { /* _n threads have called wait */ \
+         (pb)->_countu++; \
+         if ((pb)->_countu == (pb)->_n) { /* _n = 1 */ \
+           (pb)->_countw = (pb)->_countu = 0; \
+         } else { pthread_cond_broadcast(&(pb)->_cv); } \
+           pthread_mutex_unlock(&(pb)->_m); \
+       } else { \
+         do { pthread_cond_wait(&(pb)->_cv, &(pb)->_m); } \
+           while ((pb)->_countw != (pb)->_n); \
+         (pb)->_countu++; \
+         if ((pb)->_countu == (pb)->_n) /* last thread to unblock */ \
+            (pb)->_countw = (pb)->_countu = 0; \
+         pthread_mutex_unlock(&(pb)->_m); \
+      } })
+#define pthread_barrierattr_destroy(pattr) (0 /* do nothing */)
+#define pthread_barrierattr_getpshared(pattr,psh) assert(0 /* unimplemented */)
+#define pthread_barrierattr_init(pattr) (0 /* do nothing */)
+#define pthread_barrierattr_setpshared(pattr,psh) assert(0 /* unimplemented */)
+#endif /* !NEED_PTHREAD_BARRIER_T */
 
 /* define flex_mutex_t ops. */
 #if WITH_HEAVY_THREADS || WITH_USER_THREADS || WITH_PTH_THREADS
