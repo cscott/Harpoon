@@ -19,7 +19,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: NodeRepository.java,v 1.1.2.14 2000-03-20 00:45:23 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.15 2000-03-20 01:10:49 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -117,10 +117,10 @@ public class NodeRepository {
 	return node;
     }
 
-    public static final PANode getNewNode(int type){
-	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
-	    return new PANodeCS(type);
-	else return new PANode(type);
+    // all the nodes are produced by this method. So, if we want them
+    // to have a common characteristic, here is THE place to add things.
+    static final PANode getNewNode(int type){
+	return new PANode(type);
     }
 
     public final HCodeElement node2Code(PANode n){
