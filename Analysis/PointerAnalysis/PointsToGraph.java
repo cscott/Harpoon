@@ -8,11 +8,15 @@ import java.util.Set;
 import java.util.Enumeration;
 import java.util.Iterator;
 
+import harpoon.Temp.Temp;
+import harpoon.Util.Util;
+
+
 /**
  * <code>PointsToGraph</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PointsToGraph.java,v 1.1.2.8 2000-02-11 06:12:07 salcianu Exp $
+ * @version $Id: PointsToGraph.java,v 1.1.2.9 2000-02-12 23:16:14 salcianu Exp $
  */
 public class PointsToGraph {
     
@@ -50,6 +54,61 @@ public class PointsToGraph {
 	e.union(G2.e);
 	r.addAll(G2.r);
 	excp.addAll(G2.excp);
+    }
+
+    public void insert(PointsToGraph G2, Relation mu, Set noholes){
+	insert_edges( G2.O , G2.I , mu );
+	e.insert( G2.e , mu , noholes );
+	insert_set( G2.r    , mu , r );
+	insert_set( G2.excp , mu , excp );
+    }
+
+    // Insert the outside edges O2 and the inside edges I2 into this graph,
+    // transforming them through the mu mapping.
+    private void insert_edges(PAEdgeSet O2, PAEdgeSet I2, final Relation mu){
+
+	// visitor for the outside edges
+	PAEdgeVisitor visitor_O = new PAEdgeVisitor(){
+		public void visit(Temp var, PANode node){
+		    Util.assert(false," var2node edge in O: " + 
+				       var + "->" + node);
+		}
+		public void visit(PANode node1,String f, PANode node2){
+		    if(!mu.contains(node2,node2)) return;
+		    Set mu_node1 = mu.getValuesSet(node1);
+		    O.addEdges(mu_node1,f,node2);
+		}
+	    };
+
+	O2.forAllEdges(visitor_O);
+
+	// visitor for the inside edges
+	PAEdgeVisitor visitor_I = new PAEdgeVisitor(){
+		public void visit(Temp var, PANode node){
+		    Set mu_node = mu.getValuesSet(node);
+		    I.addEdges(var,mu_node);
+		}
+		public void visit(PANode node1,String f, PANode node2){
+		    Set mu_node1 = mu.getValuesSet(node1);
+		    Set mu_node2 = mu.getValuesSet(node2);
+		    I.addEdges(mu_node1,f,mu_node2);
+		}
+	    };
+
+	I2.forAllEdges(visitor_I);
+    }
+
+
+    // Insert the image of the source set through the mu mapping into
+    // dest. Forall node in source, addAll mu(node) to dest. source
+    // and dest should both be sets of PANodes.
+    private void insert_set(Set source, Relation mu, Set dest){
+	Iterator it = source.iterator();
+	while(it.hasNext()){
+	    PANode node = (PANode) it.next();
+	    Set node_image = mu.getValuesSet(node);
+	    dest.addAll(node_image);
+	}
     }
 
     /** Private data for <code>propagate</code> algorithm: the worklist

@@ -27,7 +27,7 @@ import harpoon.Util.Util;
  * substraction.
  *
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAThreadMap.java,v 1.1.2.9 2000-02-12 01:40:26 salcianu Exp $
+ * @version $Id: PAThreadMap.java,v 1.1.2.10 2000-02-12 23:16:14 salcianu Exp $
  */
 public class PAThreadMap{
 
@@ -135,6 +135,24 @@ public class PAThreadMap{
 		default:
 		    System.err.println("PAThreadMap.join: Strange value!");
 		}
+	}
+    }
+
+    /** Inserts the image of <code>tau2</code> through the <code>mu</code>
+	mapping into <code>this</code> object.
+	Forall <code>node</code> in <code>tau2.activeThreads</code>,
+	forall <code>node2</code> in <code>mu(node)</code>,
+	<code>tau(node2) += tau2(node)</code>. */
+    public void insert(PAThreadMap tau2, Relation mu){
+	Enumeration e = tau2.activeThreads();
+	while(e.hasMoreElements()){
+	    PANode node = (PANode) e.nextElement();
+	    int tau_node = tau2.getValue(node);
+	    Iterator it_new_node = mu.getValues(node);
+	    while(it_new_node.hasNext()){
+		PANode new_node = (PANode) it_new_node.next();
+		add(new_node,tau_node);
+	    }
 	}
     }
 

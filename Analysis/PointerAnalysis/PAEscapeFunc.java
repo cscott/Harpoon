@@ -1,5 +1,5 @@
 // EscapeFunc.java, created Sun Jan  9 20:53:09 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
@@ -14,10 +14,12 @@ import java.util.Map;
 import harpoon.ClassFile.HCodeElement;
 
 /**
- * <code>EscapeFunc</code>
+ * <code>PAEscapeFunc</code> models the escape information.
+ For each <code>PANode</code> <code>n</code>, it maintains all the nodes
+ and unanalyzed call sites <code>n</code> escapes through.
  * 
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAEscapeFunc.java,v 1.1.2.7 2000-02-12 01:41:32 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
+ * @version $Id: PAEscapeFunc.java,v 1.1.2.8 2000-02-12 23:16:14 salcianu Exp $
  */
 public class PAEscapeFunc {
 
@@ -36,15 +38,15 @@ public class PAEscapeFunc {
     }
     
     /** Records the fact that <code>n</code> can escape through
-     *  the node <code>n_hole</code>. Returns <code>true</code>
-     *  if new information has been gained */
+	the node <code>n_hole</code>. Returns <code>true</code>
+	if new information has been gained */
     public final boolean addNodeHole(PANode n, PANode n_hole){
 	return rel_n.add(n,n_hole);
     }
 
     /** Records the fact that <code>n</code> can escape through
-     *  the node <code>n_holes</code>. Returns <code>true</code>
-     *  if new information has been gained */
+	the node <code>n_holes</code>. Returns <code>true</code>
+	if new information has been gained */
     public final boolean addNodeHoles(PANode n, Set n_holes){
 	return rel_n.addAll(n,n_holes);
     }
@@ -55,8 +57,8 @@ public class PAEscapeFunc {
     }
 
     /** Records the fact that <code>n</code> can escape through the
-     *  method invocation site <code>m_hole</code>. Returns <code>true</code>
-     *  if new information has been gained */
+	method invocation site <code>m_hole</code>. Returns <code>true</code>
+	if new information has been gained */
     public final boolean addMethodHole(PANode n, HCodeElement m_hole){
 	return rel_m.add(n,m_hole);
     }
@@ -95,32 +97,75 @@ public class PAEscapeFunc {
 		);
     }
 
-    // Returns the set of all the node "holes" n can escape through
+    /** Returns the set of all the node "holes" <code>n</code>
+	escapes through. */
     public Set nodeHolesSet(PANode n){
 	return rel_n.getValuesSet(n);
     }
 
-    // Returns an iterator over the set of the node "holes"
-    // n escaped through
+    /** Returns an iterator over the set of the node "holes"
+	<code>n</code> escapes through. */
     public Iterator nodeHoles(PANode n){
 	return rel_n.getValues(n);
     }
 
-    // Returns the set of all the method "holes" n can escape through
+    /** Returns the set of all the method "holes" <code>n</code>
+	escapes through. */
     public Set methodHolesSet(PANode n){
 	return rel_m.getValuesSet(n);
     }
 
-    // Returns an iterator over the set of the unanalyzed method
-    // invocation sites (the method "holes") n escaped through
+    /** Returns an iterator over the set of the unanalyzed method
+	invocation sites (the method "holes") <code>n</code>
+	escapes through. */
     public Iterator methodHoles(PANode n){
 	return rel_m.getValues(n);
     }
 
 
+    /** Computes the union of <code>this</code> <code>PAEscapeFunc</code>
+	with <code>e2</code>. This function is called in the control flow
+	<i>join</i> points. */
     public void union(PAEscapeFunc e2){
 	rel_n.union(e2.rel_n);
 	rel_m.union(e2.rel_m);
+    }
+
+    /** Inserts the image of <code>e2</code> through the <code>mu</code>
+	mapping into <code>this</code> <code>PAEscapeFunc</code>. */ 
+    public void insert(PAEscapeFunc e2, final Relation mu, final Set noholes){
+
+	// insert the node holes
+	RelationEntryVisitor nvisitor =
+	    new RelationEntryVisitor(){
+		    public void visit(Object key, Object value){
+			if(noholes.contains(value)) return;
+			Iterator it_key_image = mu.getValues(key);
+			while(it_key_image.hasNext()){
+			    PANode node = (PANode) it_key_image.next();
+			    PAEscapeFunc.this.addNodeHoles(
+				     node,mu.getValuesSet(value)); 
+			}
+		    }
+		};
+
+	e2.rel_n.forAllEntries(nvisitor);
+
+	// insert the method holes
+	RelationEntryVisitor mvisitor = 
+	    new RelationEntryVisitor(){
+		    public void visit(Object key, Object value){
+			Iterator it_key_image = mu.getValues(key);
+			while(it_key_image.hasNext()){
+			    PANode node = (PANode) it_key_image.next();
+			    PAEscapeFunc.this.addMethodHole(
+				        node,(HCodeElement)value);
+			}			
+		    }
+		};
+
+	e2.rel_m.forAllEntries(mvisitor);
+
     }
 
     /** Checks the equality of two <code>PAEscapeFunc</code> */

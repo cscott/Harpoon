@@ -1,18 +1,19 @@
 // ParIntGraph.java, created Sun Jan  9 15:40:59 2000 by salcianu
-// Copyright (C) 2000 Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
+// Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.PointerAnalysis;
 
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collections;
 
 
 /**
  * <code>ParIntGraph</code> Parallel Interaction Graph
  * 
- * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ParIntGraph.java,v 1.1.2.8 2000-02-11 06:12:07 salcianu Exp $
+ * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
+ * @version $Id: ParIntGraph.java,v 1.1.2.9 2000-02-12 23:16:14 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -50,6 +51,26 @@ public class ParIntGraph {
 	tau.join(pig2.tau);
 	ar.join(pig2.ar);
     }
+
+
+    /** Inserts the image of <code>pig2</code> parallel interaction graph
+     through the <code>mu</code> node mapping into <code>this</code> object.
+     This method is designed to be called at the end of the caller/callee
+     or starter/startee interaction. It is *not* manipulating the action
+     repository; this manipulation is too complex and variate to be done
+     here. */ 
+    void insertAllButAr(ParIntGraph pig2, Relation mu, Set noholes){
+	G.insert(pig2.G,mu,noholes);
+	tau.insert(pig2.tau,mu);
+	// ar.insert(pig2.ar,mu);
+    }
+
+    /** Convenient function equivalent to 
+	<code>insertAllButAr(pig2,mu,Collections.EMPTY_SET). */
+    void insertAllButAr(ParIntGraph pig2, Relation mu){
+	insertAllButAr(pig2,mu,Collections.EMPTY_SET);
+    }
+
 
     /** Check the equality of two <code>ParIntGraph</code>s. */
     public boolean equals(Object o){

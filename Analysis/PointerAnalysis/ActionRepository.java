@@ -18,7 +18,7 @@ import java.util.Map;
  about the actions executed by the analyzed part of the program and about the
  ordering relation between these actions and the threads that are launched
  by the analyzed part.<br>
- Currently, only two kinds of actions are used:
+ Currently, only two kinds of actions are supported:
  <ul>
  <li><code>ld</code> - loading of a node by reading an outside edges;
  <li><code>sync</code> - synchronization (lock acquire/release) on a node. 
@@ -29,7 +29,7 @@ import java.util.Map;
  actions.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ActionRepository.java,v 1.1.2.4 2000-02-11 06:12:07 salcianu Exp $
+ * @version $Id: ActionRepository.java,v 1.1.2.5 2000-02-12 23:16:14 salcianu Exp $
  */
 public class ActionRepository {
     
