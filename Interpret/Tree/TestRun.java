@@ -28,7 +28,7 @@ import java.util.zip.GZIPOutputStream;
  * <code>Run</code> invokes the interpreter.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestRun.java,v 1.1.2.15 1999-10-12 20:04:59 cananian Exp $
+ * @version $Id: TestRun.java,v 1.1.2.16 1999-10-15 18:25:39 cananian Exp $
  */
 public abstract class TestRun extends HCLibrary {
     public static void main(String args[]) {
@@ -45,14 +45,14 @@ public abstract class TestRun extends HCLibrary {
 	
 	HClass cls = HClass.forName(args[0]);
 	System.err.println("Collecting class hierarchy information...");
-	ClassHierarchy ch = new QuadClassHierarchy
-	    (cls.getMethod("main", new HClass[] { HCstringA }), hcf);
+	HMethod main = cls.getMethod("main", new HClass[] { HCstringA });
+	ClassHierarchy ch = new QuadClassHierarchy(main, hcf);
 	System.err.println("done!");
 	
 	//	Frame frame = new DefaultFrame(new InterpreterOffsetMap(ch),
 	//		       new InterpreterAllocationStrategy());
 	
-	Frame frame = new  DefaultFrame(ch, new OffsetMap32(ch),
+	Frame frame = new  DefaultFrame(main, ch, new OffsetMap32(ch),
 					new InterpreterAllocationStrategy());
 	hcf = harpoon.IR.LowQuad.LowQuadSSA.codeFactory(hcf);
 	hcf = harpoon.IR.LowQuad.LowQuadNoSSA.codeFactory(hcf);

@@ -11,6 +11,7 @@ import harpoon.Backend.Generic.Runtime;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
@@ -44,7 +45,7 @@ import java.util.Set;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.4.6 1999-10-15 00:44:55 cananian Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.4.7 1999-10-15 18:25:39 cananian Exp $
  */
 public class DefaultFrame extends harpoon.Backend.Generic.Frame
     implements AllocationInfo {
@@ -82,15 +83,7 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
     }
 
 
-    public DefaultFrame() {
-	throw new Error("Default constructor not impl");
-    }
-
-    public DefaultFrame(ClassHierarchy ch, OffsetMap map) {
-	this(ch, map, null);
-    }
-	
-    public DefaultFrame(ClassHierarchy ch, OffsetMap map, AllocationStrategy st) {
+    public DefaultFrame(HMethod main, ClassHierarchy ch, OffsetMap map, AllocationStrategy st) {
 	m_classHierarchy = ch;
 	m_allocator   = st==null?new DefaultAllocationStrategy(this):st;
 	m_tempFactory = Temp.tempFactory("");
@@ -98,17 +91,9 @@ public class DefaultFrame extends harpoon.Backend.Generic.Frame
 	m_memLimit    = new Temp(m_tempFactory);
 	if (map==null) throw new Error("Must specify OffsetMap");
 	else m_offsetMap = map;
-	m_runtime = new harpoon.Backend.Runtime1.Runtime(this, null, ch, null);
+	m_runtime = new harpoon.Backend.Runtime1.Runtime(this, null, main, ch, null);
     }
 	
-    public harpoon.Backend.Generic.Frame newFrame(String scope) {
-        DefaultFrame fr = new DefaultFrame(m_classHierarchy, m_offsetMap, m_allocator);
-        fr.m_tempFactory = Temp.tempFactory(scope);
-	fr.m_nextPtr     = new Temp(fr.m_tempFactory);
-	fr.m_memLimit    = new Temp(fr.m_tempFactory);
-        return fr;
-    }
-
     /** Returns a <code>Tree.Exp</code> object which represents a pointer
      *  to a newly allocated block of memory, of the specified size.  
      *  Generates code to handle garbage collection, and OutOfMemory errors.

@@ -9,6 +9,7 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Maps.ClassDepthMap;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
+import harpoon.ClassFile.HMethod;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -19,19 +20,21 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.7 1999-10-15 00:44:41 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.8 1999-10-15 18:25:32 cananian Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
+    final HMethod main;
     final ClassHierarchy ch;
     final ObjectBuilder ob;
     final List staticInitializers;
     
     /** Creates a new <code>Runtime1.Runtime</code>. */
     public Runtime(Frame frame, AllocationStrategy as,
-		   ClassHierarchy ch, CallGraph cg) {
+		   HMethod main, ClassHierarchy ch, CallGraph cg) {
 	super(new Object[] { frame, as, ch });
 	this.frame = frame;
+	this.main = main;
 	this.ch = ch;
 	this.ob = new harpoon.Backend.Runtime1.ObjectBuilder(this);
 	this.staticInitializers =
@@ -65,6 +68,7 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    new DataStaticFields(frame, hc),
 	    new DataStrings(frame, hc, newStrings),
 	    new DataInitializers(frame, hc, staticInitializers),
+	    new DataJavaMain(frame, hc, main),
 	});
     }
     final Set stringsSeen = new HashSet();

@@ -8,6 +8,7 @@ import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Backend.Maps.OffsetMap;
 import harpoon.Backend.Maps.OffsetMap32;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HMethod;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
@@ -46,7 +47,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.11 1999-10-15 02:14:01 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.12 1999-10-15 18:25:38 cananian Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -54,7 +55,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final InstrBuilder instrBuilder;
     private final CodeGen codegen;
     
-    public Frame(ClassHierarchy ch, CallGraph cg) { 
+    public Frame(HMethod main, ClassHierarchy ch, CallGraph cg) { 
 	super();
 	regFileInfo = new RegFileInfo();
 	
@@ -65,7 +66,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy("_malloc");
-	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, ch, cg);
+	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, main, ch, cg);
 	instrBuilder = new InstrBuilder(regFileInfo);
     }
 
