@@ -15,7 +15,7 @@ EXTRA_DIST = AUTHORS COPYING INSTALL NEWS README REQUIRED \
 	include/jni-private.h include/jni-types.h include/jni.h \
 	include/precisec.c include/precisec.h include/sym.h \
 	scripts/config.guess scripts/config.sub scripts/gen-link-script \
-	scripts/install-sh scripts/ltconfig scripts/ltmain.sh \
+	scripts/install-sh scripts/ltmain.sh \
 	scripts/missing scripts/mkinstalldirs scripts/flexrun-config.in
 SUBDIRS = Contrib arch src
 
