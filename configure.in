@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.23 $)dnl
+AC_REVISION($Revision: 1.24 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -91,8 +91,28 @@ case "$thread_model" in
 heavy)  AC_MSG_RESULT([heavy-weight threads])
 	AC_DEFINE(WITH_HEAVY_THREADS, 1,
 		  [Define if you want to use heavyweight thread support])
+	CFLAGS="$CFLAGS -D_REENTRANT"
 	AC_SEARCH_LIBS(pthread_create, pthread, ,
 		      AC_MSG_ERROR([couldn't find pthread library]))
+	dnl Check for pthread_rwlock_t support.
+	AC_MSG_CHECKING([for pthread_rwlock_t support])
+	AC_TRY_COMPILE([#include <pthread.h>],
+	[pthread_rwlock_t rwlock=PTHREAD_RWLOCK_INITIALIZER;],
+	AC_MSG_RESULT([okay.]),
+	dnl didn't find rwlock_t.  try defining _XOPEN_SOURCE=500
+	oldcflags="$CFLAGS"
+	CFLAGS="$CFLAGS -D_XOPEN_SOURCE=500"
+	AC_TRY_COMPILE([#include <pthread.h>],
+	[pthread_rwlock_t rwlock=PTHREAD_RWLOCK_INITIALIZER;],
+	AC_MSG_RESULT([-D_XOPEN_SOURCE=500 needed.]),
+	AC_MSG_RESULT([not found.  installing work-around.])
+	dnl A mutex is a conservative approximation to a read/write lock.
+	CFLAGS="$oldcflags -Dpthread_rwlock_t=pthread_mutex_t"
+	CFLAGS="$CFLAGS -Dpthread_rwlock_init=pthread_mutex_init"
+	CFLAGS="$CFLAGS -Dpthread_rwlock_destroy=pthread_mutex_destroy"
+	CFLAGS="$CFLAGS -Dpthread_rwlock_rdlock=pthread_mutex_lock"
+	CFLAGS="$CFLAGS -Dpthread_rwlock_wrlock=pthread_mutex_lock"
+	CFLAGS="$CFLAGS -Dpthread_rwlock_unlock=pthread_mutex_unlock"))
 	;;
 none)   AC_MSG_RESULT([no thread support])
 	AC_DEFINE(WITH_NO_THREADS, 1,
