@@ -9,3 +9,5 @@ PARENT: int -> int (many->many)
 LEFT: int -> int (many->many)
 RIGHT: int -> int (many->many)
 
+LEFTSUBTREE: int -> int (many->many)
+RIGHTSUBTREE: int -> int (many->many)

@@ -13,3 +13,8 @@
 
 [for v=literal(0) to treesize-literal(1)], !tree.nodes[v].leftindex=literal(0)-literal(1) => <v, tree.nodes[v].leftindex> in LEFT
 [for v=literal(0) to treesize-literal(1)], !tree.nodes[v].rightindex=literal(0)-literal(1) => <v, tree.nodes[v].rightindex> in RIGHT
+
+[for v=literal(0) to treesize-literal(1)], !tree.nodes[v].leftindex=literal(0)-literal(1) => <v, tree.nodes[v].leftindex> in LEFTSUBTREE
+[for v=literal(0) to treesize-literal(1)], !tree.nodes[v].rightindex=literal(0)-literal(1) => <v, tree.nodes[v].rightindex> in RIGHTSUBTREE
+
+//[forall v1 in USED, forall v2 in USED], <v1, v2> in LEFTSUBTREE and !tree.nodes[v2].leftindex=literal(0)-literal(1) => <v1, nodes[v2].leftindex> in LEFTSUBTREE

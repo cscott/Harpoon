@@ -17,21 +17,119 @@ char *sstring="treesize\0";
 char* rstring="root\0";
 char* tstring="tree\0";
 
+struct treeentry *tree;
+int root=-1;
+
+
+void consistent_use_of_inuse();
+void single_parent();
+void legal_values();
+
+
+void RepOk() {
+  // should be checked in this order!
+  consistent_use_of_inuse();
+  single_parent();
+  legal_values();
+}
+
+
+void legal_values() {
+  int i;
+  for (i=0; i<TREESIZE; i++)
+    if (tree[i].inuse) {
+      int l = tree[i].leftindex;
+      int r = tree[i].rightindex;
+      
+      if ( (l<-1) || (l>=TREESIZE) ) {
+	printf("Invalid value for tree[%i].leftindex (%d)\n", i, tree[i].leftindex);
+	_exit(0);
+      }
+
+      if ( (r<-1) || (r>=TREESIZE) ) {
+	printf("Invalid value for tree[%i].rightindex (%d)\n", i, tree[i].rightindex);
+	_exit(0);
+      }
+    }
+}
+
+
+void single_parent() {
+  int parent[TREESIZE];
+  int i;
+  for (i=0; i<TREESIZE; i++) 
+    parent[i]=-1;
+
+  for (i=0; i<TREESIZE; i++) 
+    if (tree[i].inuse) {      
+      int l = tree[i].leftindex;
+      int r = tree[i].rightindex;
+      
+      if (l != -1)
+	if (parent[l] != -1) {
+	  // already has a parent!
+	  printf("Multiple parents for node %d: %d and %d\n", l, parent[l], i);
+	  _exit(0);
+	}
+	else parent[l] = i;     
+      
+      if (r != -1)
+	if (parent[r] != -1) {
+	// already has a parent!
+	  printf("Multiple parents for node %d: %d and %d\n", r, parent[r], i);
+	  _exit(0);
+	}
+	else parent[r] = i;    
+    }
+}
+
+
+void fill(int node, int* referenced);
+
+void consistent_use_of_inuse() {
+  int* referenced = malloc(TREESIZE*sizeof(int));
+  memset(referenced, 0, TREESIZE*sizeof(int));
+
+  if (root != -1)
+    fill(root, referenced);
+  
+  int i;
+  for (i=0; i<TREESIZE; i++)
+    if ( (tree[i].inuse == 1) && (referenced[i] == 0) || 
+	 (tree[i].inuse == 0) && (referenced[i] == 1) ) {
+      printf("Inconsistent use of inuse: tree[%d].inuse=%d, referenced[%d]=%d\n", i, tree[i].inuse, i, referenced[i]);
+      _exit(0);
+    }
+}
+
+
+void fill(int node, int* referenced) {
+  if (referenced[node] == 1)
+    return;
+
+  referenced[node]=1;
+  
+  if (tree[node].leftindex != -1)
+    fill(tree[node].leftindex, referenced);
+  if (tree[node].rightindex != -1)
+    fill(tree[node].rightindex, referenced);
+}
 
 
 int main(int argc, char **argv) {
   initializeanalysis();
-  struct treeentry *tree=malloc(TREESIZE*sizeof(struct treeentry));
 
-
-  
-  int root=-1;
-  int i=0;
+  tree = malloc(TREESIZE*sizeof(struct treeentry));
+  int i=0;  
 
   for (i=0;i<TREESIZE;i++) {
     tree[i].inuse=0;
   }
+
   addvalue(tree,&root,3);
+
+  // RepOk call
+  RepOk();
 
   /* tool call */
   addintmapping(sstring, TREESIZE);
@@ -43,6 +141,9 @@ int main(int argc, char **argv) {
   addvalue(tree,&root,1);
 
   //tree[root].inuse=0; // Error insertion
+
+  // RepOk call
+  RepOk();  
   
   /* tool call */
   addintmapping(sstring, TREESIZE);
@@ -55,7 +156,13 @@ int main(int argc, char **argv) {
   addvalue(tree,&root,4);
 
   
-  //tree[root].rightindex = 3; // Error insertion -> node w/ value 4 has two parents
+  // Error insertion -> node w/ value 4 has two parents
+  
+  tree[root].rightindex = 3; 
+  tree[3].leftindex = 2;
+
+  // RepOk call
+  RepOk();
 
   /* tool call */
   addintmapping(sstring, TREESIZE);
