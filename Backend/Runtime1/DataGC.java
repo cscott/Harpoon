@@ -13,6 +13,7 @@ import harpoon.Backend.Generic.RegFileInfo;
 import harpoon.Backend.Generic.RegFileInfo.CommonLoc;
 import harpoon.Backend.Generic.RegFileInfo.MachineRegLoc;
 import harpoon.Backend.Generic.RegFileInfo.StackOffsetLoc;
+import harpoon.Backend.Maps.BackendDerivation;
 import harpoon.Backend.Maps.NameMap;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HDataElement;
@@ -40,7 +41,7 @@ import java.util.TreeSet;
  * <code>DataGC</code> outputs the tables needed by the garbage collector.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: DataGC.java,v 1.1.2.9 2000-03-02 05:33:09 kkz Exp $
+ * @version $Id: DataGC.java,v 1.1.2.10 2000-03-08 02:35:33 kkz Exp $
  */
 public class DataGC extends Data {
     final GCInfo m_gc;
@@ -197,11 +198,11 @@ public class DataGC extends Data {
 	}
 	// handle callee-saved registers
 	boolean needCSaved = true;
-	StackOffsetLoc[] cSaved = curr.calleeSaved();
-	if (cSaved.length == 0) {
+	Map cSaved = curr.calleeSaved();
+	if (cSaved.isEmpty()) {
 	    output |= 1 << CSAVED_ARE_ZERO;
 	    needCSaved = false;
-	} else if (prev != null && cSavedEquals(cSaved, prev.calleeSaved())) {
+	} else if (prev != null && cSaved.equals(prev.calleeSaved())) {
 	    output |= 1 << CSAVED_SAME_AS_PREV;
 	    needCSaved = false;
 	}
@@ -219,24 +220,24 @@ public class DataGC extends Data {
 	return Stm.toStm(stmlist);
     } // outputGCData
 
-    // requires: 8-bit descriptor set in output
+    // requires: descriptor set in output
     // modifies: nil
-    // effects: returns statements that output 8-bit descriptor
+    // effects: returns statements that output descriptor
     //          plus register data (if needed) and stack data
     //          (if needed)
     private Stm outputRS(boolean needRegs, boolean needStack,
 			 Set regs, Set stack, int output)
     {
-	// number of bits needed to store the 8-bit descriptor,
+	// number of bits needed to store the descriptor,
 	// the register bitmap and the stack bitmap
 	final int bits = 
 	    DESC_BITS + (needRegs?numRegs:0) + (needStack?stack.size():0);
 	// number of 32-bit integers needed to encode the data 
 	final int numInts = (bits + INT_BITS - 1) / INT_BITS;
 	int[] data = new int[numInts];
-	// remember the 8-bit descriptor
+	// remember the descriptor
 	int offset = DESC_BITS;
-	// get 8-bit descriptor from output
+	// get descriptor from output
 	data[0] = output;
 	// do registers first
 	if (needRegs) {
@@ -326,52 +327,46 @@ public class DataGC extends Data {
 	return Stm.toStm(stmlist);
     }
     // output information about callee-saved registers
-    private Stm outputCSaved(StackOffsetLoc[] cSaved) {
-	List stmlist = new ArrayList();
+    private Stm outputCSaved(Map cSaved) {
 	// calculate how many 32-bit ints we need to encode bit field
 	final int numInts = (2 * numRegs + INT_BITS - 1) / INT_BITS;
 	int[] bitfield = new int[numInts];
+	int[] locations = new int[cSaved.size()];
 	// output a bit field indicating which entries have data
-	for(int index = 0; index < cSaved.length; index++) {
-	    int i = index / INT_BITS;
-	    int j = index % INT_BITS;
-	    bitfield[i] |= 1 << (INT_BITS - j - 1);
-	}
-	// dump out bitfield
-	for(int k = 0; k < numInts; k++)
-	    stmlist.add(_DATUM(new CONST(tf, null, bitfield[k])));
-	// sanity check
-	Util.assert(cSaved.length == numRegs);
-	// dump out only the fields that have data
-	for(int i=0; i < cSaved.length; i++) {
-	    if (cSaved[i] != null)
-		stmlist.add(_DATUM(new CONST(tf, null, 
-					     cSaved[i].stackOffset())));
-	}
-	return Stm.toStm(stmlist);
-    }
-    // compares two arrays of StackOffsetLocs and returns true if they
-    // are equal, and false otherwise. They are considered equal if all
-    // of the following are true:
-    // - a and b are the same length
-    // - for all 0 <= i < a.length, a[i].stackOffset() == b[i].stackOffset
-    private boolean cSavedEquals(StackOffsetLoc[] a, StackOffsetLoc[] b) {
-	if (a.length != b.length) return false;
-	for(int i = 0; i < a.length; i++) {
-	    if (a[i] != null && b[i] != null) {
-		// if neither a[i] nor b[i] is null, then
-		// they must represent the same stack offset
-		// for equality to hold
-		if (a[i].stackOffset() != b[i].stackOffset())
-		    return false;
-	    } else {
-		// if one of a[i] or b[i] is null, then
-		// both must be null for equality to hold
-		if (a[i] != b[i])
-		    return false;
+	//   00, 10 - no data
+	//       01 - register
+	//       11 - stack
+	for(Iterator keys=cSaved.keySet().iterator(); keys.hasNext(); ) {
+	    BackendDerivation.Register key = 
+		(BackendDerivation.Register)keys.next();
+	    CommonLoc location = (CommonLoc)cSaved.get(key);
+	    // make sure we have a valid register index
+	    Util.assert(key.regIndex() < numRegs);
+	    int i = (2 * key.regIndex()) / INT_BITS;
+	    int j = (2 * key.regIndex()) % INT_BITS;
+	    // set the bit for data/no data
+	    bitfield[i] |= 1 << (INT_BITS - j - 2);
+	    switch(location.kind()) {
+	    case StackOffsetLoc.KIND:
+		// set the bit for stack/register
+		bitfield[i] |= 1 << (INT_BITS - j - 1);
+	        locations[key.regIndex()] = 
+		    ((StackOffsetLoc)location).stackOffset(); break;
+	    case MachineRegLoc.KIND:
+		locations[key.regIndex()] =
+		    ((MachineRegLoc)location).regIndex(); break;
+	    default:
+		Util.assert(false);
 	    }
 	}
-	return true;
+	List stmlist = new ArrayList();
+	// dump out bitfield
+	for(int k = 0; k < bitfield.length; k++)
+	    stmlist.add(_DATUM(new CONST(tf, null, bitfield[k])));
+	// dump out register and stack locations
+	for(int k = 0; k < locations.length; k++)
+	    stmlist.add(_DATUM(new CONST(tf, null, locations[k])));
+	return Stm.toStm(stmlist);
     }
     final private boolean DEBUG = true;
     // convenient debugging utility
