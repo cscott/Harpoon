@@ -17,7 +17,7 @@ import java.util.*;
  * atomic transactions.  Works on <code>LowQuadNoSSA</code> form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SyncTransformer.java,v 1.1.2.5 2000-11-08 18:35:34 cananian Exp $
+ * @version $Id: SyncTransformer.java,v 1.1.2.6 2000-11-10 02:48:07 cananian Exp $
  */
 public class SyncTransformer
     extends harpoon.Analysis.Transformation.MethodSplitter {
@@ -36,11 +36,11 @@ public class SyncTransformer
     private final HClass  HCabortex;
     private final HField  HFabortex_upto;
     /* flag value */
-    private final HField HFflagvalue;
+    //private final HField HFflagvalue;
 
     /** Creates a <code>SyncTransformer</code>. */
     public SyncTransformer(HCodeFactory hcf, ClassHierarchy ch, Linker l) {
-        super(harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf), ch);
+        super(harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf), ch, false);
 	Util.assert(codeFactory().getCodeName()
 		    .equals(harpoon.IR.Quads.QuadNoSSA.codename));
 	String pkg = "harpoon.Runtime.Transactions.";
@@ -54,7 +54,7 @@ public class SyncTransformer
 	this.HFcommitrec_parent = HCcommitrec.getField("parent");
 	this.HCabortex = l.forName(pkg+"TransactionAbortException");
 	this.HFabortex_upto = HCabortex.getField("abortUpTo");
-	this.HFflagvalue = l.forName(pkg+"Constants").getField("FLAG_VALUE");
+	//this.HFflagvalue = l.forName(pkg+"Constants").getField("FLAG_VALUE");
     }
     protected String mutateDescriptor(HMethod hm, Token which) {
 	if (which==WITH_TRANSACTION)
@@ -65,7 +65,6 @@ public class SyncTransformer
     }
     protected HCode mutateHCode(HCodeAndMaps input, Token which) {
 	HCode hc = input.hcode();
-	System.err.println("TWEAKING "+hc.getMethod()+" "+which);
 	HEADER qH = (HEADER) hc.getRootElement();
 	FOOTER qF = qH.footer();
 	METHOD qM = qH.method();
@@ -84,9 +83,6 @@ public class SyncTransformer
     private void tweak(DomTree dt, HCode hc, Quad q, Tweaker tw) {
 	HCodeElement[] nxt = dt.children(hc, q);
 	// tweak q here, update currtrans, etc.
-	System.err.println("VISITING "+q);
-	for (int i=0; i<nxt.length; i++)
-	    System.err.println("  child: "+nxt[i]);
 	q.accept(tw);
 	// done, recurse.
 	ListList handlers = tw.handlers; // save this value.
