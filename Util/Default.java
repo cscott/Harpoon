@@ -15,7 +15,7 @@ import java.util.NoSuchElementException;
  * <code>Enumeration</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.1.2.5 1999-08-28 18:45:31 cananian Exp $
+ * @version $Id: Default.java,v 1.1.2.6 1999-09-08 17:35:27 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 
@@ -23,6 +23,9 @@ public abstract class Default  {
     public static final Comparator comparator = new Comparator() {
 	public int compare(Object o1, Object o2) {
 	    if (o1==null && o2==null) return 0;
+	    // hack: in JDK1.1 String is not Comparable
+	    if (o1 instanceof String && o2 instanceof String)
+	       return ((String)o1).compareTo((String)o2);
 	    return (o1==null) ? -((Comparable)o2).compareTo(o1):
 	                         ((Comparable)o1).compareTo(o2);
 	}
