@@ -64,7 +64,6 @@ public class GraphNode {
 
     int discoverytime = -1;
     int finishingtime = -1; /* used for searches */
-    int scc = -1;
 
     Vector edges = new Vector();  
     Vector inedges = new Vector();
@@ -167,15 +166,6 @@ public class GraphNode {
 
     void resetscc() {
 	status = UNVISITED;
-	scc = -1;
-    }
-
-    public int getSCC() {
-	return scc;
-    }
-
-    void setSCC(int s) {
-	scc=s;
     }
 
     void discover(int time) {
@@ -261,73 +251,55 @@ public class GraphNode {
         }
     }
 
-    /* XXXXXXXX  Should use SCC algorithm here - will change */
+    /** This function returns the set of nodes involved in cycles. 
+     *	It only considers cycles containing nodes in the set 'nodes'.
+    */
     public static Set findcycles(Collection nodes) {
-	Stack st=new Stack();
-	HashSet acyclic=new HashSet();
-	HashSet cycles=new HashSet();
-	for(Iterator it=nodes.iterator();it.hasNext();) {
-	    GraphNode node=(GraphNode)it.next();
-	    if (acyclic.contains(node))
-		continue;
-	    if (cycles.contains(node))
-		continue;
-	    findcycles(cycles, acyclic, st,node,nodes);
+	HashSet cycleset=new HashSet();
+	SCC scc=DFS.computeSCC(nodes);
+	if (!scc.hasCycles())
+	    return cycleset;
+	for(int i=0;i<scc.numSCC();i++) {
+	    if (scc.hasCycle(i))
+		cycleset.addAll(scc.getSCC(i));
 	}
-	return cycles;
+	return cycleset;
     }
 
-    private static boolean findcycles(Set cycles, Set acyclic, Stack visited, GraphNode gn, Collection nodes) {
-	if (visited.contains(gn)) {/* Found cycle */
-	    cycles.addAll(visited.subList(visited.indexOf(gn),visited.size()));  /* Add this cycle */
-	    return true;
-	}
-	boolean acyclicflag=true;
-	visited.push(gn);
-	for(Iterator it=gn.edges();it.hasNext();) {
-	    Edge e=(Edge) it.next();
-	    GraphNode node = e.getTarget();
-	    if (!nodes.contains(node))
-		continue; /* Don't visit stuff outside set */
-	    if (acyclic.contains(node))
-		continue;
-	    if (findcycles(cycles,acyclic,visited,node,nodes)) {
-		/* Found cycle */
-		acyclicflag=false;
-	    }
-	}
-	visited.pop();
-	if (acyclicflag) {
-	    acyclic.add(gn); /* no cycles through gn */
-	    return false;
-	} else
-	    return true; /* found cycle */
-    }
-    
     public static class SCC {
-	boolean hascycles;
-	HashMap map;
+	boolean acyclic;
+	HashMap map,revmap;
 	int numscc;
-	public SCC(boolean hascycles, HashMap map,int numscc) {
-	    this.hascycles=hascycles;
+	public SCC(boolean acyclic, HashMap map,HashMap revmap,int numscc) {
+	    this.acyclic=acyclic;
 	    this.map=map;
+	    this.revmap=revmap;
 	    this.numscc=numscc;
 	}
 
+	/** Returns whether the graph has any cycles */
 	public boolean hasCycles() {
-	    return hascycles;
+	    return !acyclic;
 	}
 
+	/** Returns the number of Strongly Connected Components */
 	public int numSCC() {
 	    return numscc;
 	}
 
+	/** Returns the strongly connected component number for the GraphNode gn*/
+	public int getComponent(GraphNode gn) {
+	    return ((Integer)revmap.get(gn)).intValue();
+	}
+
+	/** Returns the set of nodes in the strongly connected component i*/
 	public Set getSCC(int i) {
 	    Integer scc=new Integer(i);
 	    return (Set)map.get(scc);
 	}
 
-	boolean hascycle(int i) {
+	/** Returns whether the strongly connected component i contains a cycle */
+	boolean hasCycle(int i) {
 	    Integer scc=new Integer(i);
 	    Set s=(Set)map.get(scc);
 	    if (s.size()>1)
@@ -353,19 +325,22 @@ public class GraphNode {
         Collection nodes;
 	Vector finishingorder=null;
 	HashMap sccmap;
+	HashMap sccmaprev;
 
         private DFS(Collection nodes) { 
             this.nodes = nodes;
         }
-
+	/** Calculates the strong connected components for the graph composed
+	 *  of the set of nodes 'nodes'*/
 	public static SCC computeSCC(Collection nodes) {
 	    if (nodes==null) {
 		throw new NullPointerException();
 	    }
 	    DFS dfs=new DFS(nodes);
 	    dfs.sccmap=new HashMap();
+	    dfs.sccmaprev=new HashMap();
 	    dfs.finishingorder=new Vector();
-	    boolean hascycles=dfs.go();
+	    boolean acyclic=dfs.go();
             for (Iterator it = nodes.iterator();it.hasNext();) {
                 GraphNode gn = (GraphNode) it.next();
                 gn.resetscc();
@@ -377,18 +352,18 @@ public class GraphNode {
 		    dfs.sccindex++; /* Increment scc index */
 		}
 	    }
-	    return new SCC(hascycles,dfs.sccmap,dfs.sccindex);
+	    return new SCC(acyclic,dfs.sccmap,dfs.sccmaprev,dfs.sccindex);
 	}
 
 	void dfsprev(GraphNode gn) {
 	    if (gn.getStatus()==FINISHED||!nodes.contains(gn))
 		return;
 	    gn.setStatus(FINISHED);
-	    gn.setSCC(sccindex);
 	    Integer i=new Integer(sccindex);
 	    if (!sccmap.containsKey(i))
 		sccmap.put(i,new HashSet());
 	    ((Set)sccmap.get(i)).add(gn);
+	    sccmaprev.put(gn,i);
 	    for(Iterator edgeit=gn.inedges();edgeit.hasNext();) {
 		Edge e=(Edge)edgeit.next();
 		GraphNode gn2=e.getSource();
