@@ -8,9 +8,10 @@ import java.lang.reflect.Modifier;
  * <code>HArrayField</code> provides information about a 'phantom' field
  * of an array class.  From outside this package, <code>HArrayField</code>s
  * should appear identical to 'real' <code>HField</code>s.
+ * <p> Used for the <code>length()</code> field of an array object.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HArrayField.java,v 1.3 1998-10-16 06:21:02 cananian Exp $
+ * @version $Id: HArrayField.java,v 1.3.2.1 1999-06-24 00:03:03 cananian Exp $
  * @see HArrayMethod
  * @see HArrayConstructor
  */

@@ -15,7 +15,7 @@ import java.util.Enumeration;
  * A <code>HANDLER</code> quad marks an entry to an exception handler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HANDLER.java,v 1.1.2.7 1999-01-22 23:05:59 cananian Exp $
+ * @version $Id: HANDLER.java,v 1.1.2.8 1999-06-24 00:03:11 cananian Exp $
  * @see METHOD
  */
 public class HANDLER extends Quad {
@@ -96,10 +96,17 @@ public class HANDLER extends Quad {
 	    ((caughtException==null)?"any":caughtException.toString());
     }
 
+    /** An interface to specify which <code>Quad</code>s a particular
+     *  <code>HANDLER</code> protects. */
     public interface ProtectedSet {
+	/** Determines whether the specified <code>Quad</code> is a
+	 *  member of the protected set. */
 	public boolean isProtected(Quad q);
+	/** Enumerate all the elements of the protected set. */
 	public Enumeration elements();
+	/** Remove a quad from the protected set. */
 	void remove(Quad q);
+	/** Add a quad into the protected set. */
 	void insert(Quad q);
     }
 }
