@@ -60,7 +60,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.86 1999-10-23 05:59:30 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.87 1999-10-23 15:30:09 cananian Exp $
  */
 %%
 
@@ -354,17 +354,21 @@ import java.util.Iterator;
       }
       return stackOffset;
     }
+    /** Make a handler stub. */
+    private void emitHandlerStub(INVOCATION ROOT, Temp retex, Label handler) {
+	emitMOVE ( ROOT, "mov `d0, `s0", retex, r0 );
+	emitJUMP ( ROOT, "b "+handler, handler);
+    }
     /** Emit a fixup table entry */
-    private void emitCallFixup(INVOCATION ROOT, Label retex) {
+    private void emitCallFixup(INVOCATION ROOT, Label retaddr, Label handler) {
       // this '1f' and '1:' business is taking advantage of a GNU
       // Assembly feature to avoid polluting the global name space with
       // local labels
       // these may need to be included in the previous instr to preserve
       // ordering semantics, but for now this way they indent properly
       emitDIRECTIVE( ROOT, ".text 10\t@.section fixup");
-      emitDIRECTIVE( ROOT, "\t.word 1f, "+retex+" @ (retaddr, handler)");
+      emitDIRECTIVE( ROOT, "\t.word "+retaddr+", "+handler+" @ (retaddr, handler)");
       emitDIRECTIVE( ROOT, ".text 0 \t@.section code");
-      emitLABEL( ROOT, "1:", new Label("1")); 
     }
     /** Finish up a CALL or NATIVECALL. */
     private void emitCallEpilogue(INVOCATION ROOT,
@@ -1569,33 +1573,48 @@ CALL(retval, retex, func, arglist, handler)
 %pred %( !ROOT.isTailCall )%
 %{
     int stackOffset = emitCallPrologue(ROOT, arglist);
+    Label rlabel = new Label(), elabel = new Label();
+    retex = makeTemp(retex);
     // next two instructions are *not* InstrMOVEs, as they have side-effects
-    emit( ROOT, "mov `d0, `s0", LR, PC );
+    emit2( ROOT, "adr `d0, "+rlabel, new Temp[] { LR }, null );
     // note that r0-r3, LR and IP are clobbered by the call.
     // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
     // realloc doesn't clobber these between the time they are set and
     // the time the call happens.
-    emit( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
-                new Temp[]{ func }, new Label[] { handler } );
-    // okay, clean up from call.
-    emitCallFixup(ROOT, handler);
+    emitNoFall( ROOT, "mov `d0, `s0", new Temp[]{ PC, r0, r1, r2, r3, IP, LR },
+                new Temp[]{ func }, new Label[] { rlabel, elabel } );
+    // make handler stub.
+    emitLABEL( ROOT, elabel+":", elabel);
+    emitHandlerStub(ROOT, retex, handler);
+    // normal return
+    emitLABEL( ROOT, rlabel+":", rlabel);
     emitCallEpilogue(ROOT, retval, stackOffset);
+    // emit fixup table.
+    emitCallFixup(ROOT, rlabel, elabel);
 }%
   // optimized version when we know exactly which method we're calling.
 CALL(retval, retex, NAME(funcLabel), arglist, handler)
 %pred %( !ROOT.isTailCall )%
 %{
     int stackOffset = emitCallPrologue(ROOT, arglist);
+    Label rlabel = new Label(), elabel = new Label();
+    retex = makeTemp(retex);
     // do the call.  bl has a 24-bit offset field, which should be plenty.
     // note that r0-r3, LR and IP are clobbered by the call.
     // XXX: some subset of r0-r3 are also *used* by the call.  Make sure
     // realloc doesn't clobber these between the time they are set and
     // the time the call happens.
-    emit( ROOT, "bl "+funcLabel, new Temp[] { r0,r1,r2,r3,IP,LR }, new Temp[0],
-                new Label[] { handler } );
-    // okay, clean up from call.
-    emitCallFixup(ROOT, handler);
+    emit2( ROOT, "adr `d0, "+rlabel, new Temp[] { LR }, null );
+    emitNoFall( ROOT, "b "+funcLabel, new Temp[] { r0,r1,r2,r3,IP,LR },
+                new Temp[0], new Label[] { rlabel, elabel } );
+    // make handler stub.
+    emitLABEL( ROOT, elabel+":", elabel);
+    emitHandlerStub(ROOT, retex, handler);
+    // normal return
+    emitLABEL( ROOT, rlabel+":", rlabel);
     emitCallEpilogue(ROOT, retval, stackOffset);
+    // emit fixup table.
+    emitCallFixup(ROOT, rlabel, elabel);
 }%
   // slow version when we don't know exactly which method we're calling.
 NATIVECALL(retval, func, arglist) %{
