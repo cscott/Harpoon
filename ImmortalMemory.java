@@ -27,7 +27,7 @@ public class ImmortalMemory extends MemoryArea {
     public static ImmortalMemory instance() {
 	if (immortalMemory == null) {
 	    immortalMemory = (ImmortalMemory)((new ImmortalMemory()).shadow);
-	    immortalMemory.original = immortalMemory.memoryArea = immortalMemory;
+	    immortalMemory.shadow = immortalMemory.memoryArea = immortalMemory;
 	}
 	return immortalMemory;
     }

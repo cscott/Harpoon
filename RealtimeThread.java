@@ -23,7 +23,7 @@ public class RealtimeThread extends Thread {
     /** Contains the memoryArea associated with this mem. 
      */
 
-    MemoryArea mem;
+    MemoryArea mem, original;
 
     /** Specifies whether this RealtimeThread has access to the heap.
      */
@@ -56,7 +56,7 @@ public class RealtimeThread extends Thread {
     public RealtimeThread(MemoryArea memory) {
 	super();
 	target = null;
-	mem = (memory==null)?null:(memory.shadow);
+	mem = ((original=memory)==null)?null:(memory.shadow);
 	setup();
     }
     
@@ -104,7 +104,7 @@ public class RealtimeThread extends Thread {
     public RealtimeThread(MemoryArea memory, Runnable target) {
 	super();
 	this.target = target;
-	mem = (memory==null)?null:(memory.shadow);
+	mem = ((original=memory)==null)?null:(memory.shadow);
 	setup();
     }
 
@@ -123,7 +123,7 @@ public class RealtimeThread extends Thread {
 			  MemoryArea mem) {
 	super(group, name);
 	this.target = target;
-	this.mem = (mem==null)?null:(mem.shadow);
+	this.mem = ((original=mem)==null)?null:(mem.shadow);
 	setup();
     }
 
@@ -214,14 +214,14 @@ public class RealtimeThread extends Thread {
 	
 	MemoryArea newMem = previousThread.memoryArea();
 	if (mem == null) {
-	    enter(newMem);
+	    enter(newMem, previousThread.getMemoryArea());
 	} else {
-	    enter(mem);
+	    enter(mem, original);
 	}
 	mem = memoryArea();
+	original = getMemoryArea();
 	super.start();// When the run method is called, 
 	// RealtimeThread points to the current scope.
-	// Note that there is no exit()... this is actually legal.
     }
 
     /** Override the Thread.run() method, because Thread.run() doesn't work. */
@@ -235,7 +235,7 @@ public class RealtimeThread extends Thread {
 
     public MemoryArea memoryArea() {
 	if (mem == null) { // Bypass static initializer problem.
-	    mem = HeapMemory.instance();
+	    mem = (original = HeapMemory.instance()).shadow;
 	}
 	return mem;
     }  
@@ -244,13 +244,15 @@ public class RealtimeThread extends Thread {
 
     public MemoryArea getMemoryArea() {
 	if (mem == null) {
-	    mem = HeapMemory.instance();
+	    mem = (original = HeapMemory.instance()).shadow;
 	}
-	return mem.original;
+	return original;
     }
 
-    void enter(MemoryArea mem) {
-	memAreaStack = MemAreaStack.PUSH(this.mem, memAreaStack);
+    void enter(MemoryArea mem, MemoryArea original) {
+	memAreaStack = MemAreaStack.PUSH(this.mem, this.original, memAreaStack);
+	this.original = original;
+	/* Think about whether this should be original or mem... */
 	(this.mem = mem).enterMemBlock(this, memAreaStack);
     }
 
@@ -259,15 +261,15 @@ public class RealtimeThread extends Thread {
     void exitMem() {
 	mem.exitMemBlock(this, memAreaStack);
 	mem = memAreaStack.entry;
+	original = memAreaStack.original;
 	memAreaStack = MemAreaStack.POP(memAreaStack);
     }
     
     /** */
 
     void cleanup() {
-	while (memAreaStack != topStack) {	
-	    mem.exitMemBlock(this, memAreaStack);
-	    memAreaStack = MemAreaStack.POP(memAreaStack);
+        while (memAreaStack != topStack) {
+	    exitMem();
 	}
     }
 
@@ -276,7 +278,7 @@ public class RealtimeThread extends Thread {
      */
 
     MemoryArea outerScope(MemoryArea child) {
-	MemAreaStack current = memAreaStack.first(child);
+	MemAreaStack current = memAreaStack.first(child.shadow);
 	if (current != null) {
 	    current = current.next;
 	}
@@ -286,7 +288,7 @@ public class RealtimeThread extends Thread {
 	if (current == null) {
 	    return getMemoryArea();
 	} else {
-	    return current.entry;
+	    return current.original;
 	}
     }
 

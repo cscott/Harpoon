@@ -57,7 +57,7 @@ public abstract class MemoryArea {
 
     boolean constant;
 
-    MemoryArea shadow, original;
+    MemoryArea shadow;
   
     protected native void enterMemBlock(RealtimeThread rt, MemAreaStack mas);
     protected native void exitMemBlock(RealtimeThread rt, MemAreaStack mas);
@@ -93,7 +93,6 @@ public abstract class MemoryArea {
 	id = num++;
 	constant = false;
 	nullMem = false;
-	original = shadow = this;
     }
     
     protected void postSetup() {
@@ -119,7 +118,7 @@ public abstract class MemoryArea {
 	RealtimeThread.checkInit();
 	RealtimeThread current = RealtimeThread.currentRealtimeThread();
 	MemoryArea oldMem = current.memoryArea();
-	current.enter(shadow);
+	current.enter(shadow, this);
 	try {
 	    logic.run();
 	} catch (Exception e) {

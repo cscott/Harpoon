@@ -14,7 +14,7 @@ package javax.realtime;
 class MemAreaStack {
     /** A MemoryArea on the stack 
      */
-    public MemoryArea entry;
+    public MemoryArea entry, original;
 
     /** The "next" pointer for the stack.
      */
@@ -22,22 +22,25 @@ class MemAreaStack {
 
     /** Push the MemoryArea on the cactus stack. 
      */
-    public MemAreaStack(MemoryArea entry, MemAreaStack next) {
+    public MemAreaStack(MemoryArea entry, MemoryArea original, MemAreaStack next) {
 	this.entry = entry;
+	this.original = original;
 	this.next = next;
     }
 
-    public static MemAreaStack PUSH(MemoryArea entry, MemAreaStack next) {
+    public static MemAreaStack PUSH(MemoryArea entry, MemoryArea original, 
+				    MemAreaStack next) {
 	RealtimeThread.checkInit();
 	RefCountArea ref = RefCountArea.refInstance();
 	Object mas = null;
 	if ((next != null) && (next.memoryArea == ref)) ref.INCREF(next);
 	if ((entry != null) && (entry.memoryArea == ref)) ref.INCREF(entry);
+	if ((original != null) && (original.memoryArea == ref)) ref.INCREF(original);
 	try {
 	    mas = ref.newInstance(MemAreaStack.class, 
-				  new Class[] { MemoryArea.class, 
+				  new Class[] { MemoryArea.class, MemoryArea.class,
 						MemAreaStack.class },
-				  new Object[] { entry, next});
+				  new Object[] { entry, original, next});
 	} catch (Exception e) {
 	    NoHeapRealtimeThread.print(e.toString());
 	    System.exit(-1);
