@@ -33,7 +33,7 @@ import harpoon.IR.LowQuad.PCALL;
  * Converts SSI to SSA.  Should work on LowQuads and Quads. 
  *
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ToSSA.java,v 1.1.2.12 2000-10-11 01:50:44 cananian Exp $
+ * @version $Id: ToSSA.java,v 1.1.2.13 2000-11-16 00:11:54 cananian Exp $
  */
 
 public final class ToSSA {
@@ -169,7 +169,7 @@ public final class ToSSA {
 	public void visit(TYPESWITCH q) {
 	    int arity=q.arity();
 	    Temp[] nothing=new Temp[0];
-	    TYPESWITCH newsigma=new TYPESWITCH(q.getFactory(), q,ssitossamap.tempMap(q.index()), q.keys(),nothing);
+	    TYPESWITCH newsigma=new TYPESWITCH(q.getFactory(), q,ssitossamap.tempMap(q.index()), q.keys(),nothing,q.hasDefault());
 	    Quad []prev=q.prev();
 	    Quad []next=q.next();
 	    for(int i=0;i<prev.length;i++) {

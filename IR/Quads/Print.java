@@ -18,7 +18,7 @@ import java.util.Map;
  * inserting labels to make the control flow clear.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Print.java,v 1.1.2.11 2000-10-19 23:34:37 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.12 2000-11-16 00:12:15 cananian Exp $
  */
 abstract class Print  {
     /** Print <code>Quad</code> code representation <code>c</code> to
@@ -92,8 +92,9 @@ abstract class Print  {
 		    indent(pw, null, "  "+
 			   "case "+Q.keys(j)+": " +
 			   "goto "+labels.get(Q.next(j)));
-		indent(pw, null, "  "+
-		       "default: goto "+labels.get(Q.next(Q.keysLength())));
+		if (Q.hasDefault())
+		    indent(pw, null, "  "+
+			   "default: goto "+labels.get(Q.next(Q.keysLength())));
 		indent(pw, Q);
 	    } else if (ql[i] instanceof PHI) {
 		PHI Q = (PHI) ql[i];

@@ -63,7 +63,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.11 2000-10-16 16:29:43 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.12 2000-11-16 00:12:08 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
@@ -763,7 +763,8 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 			break;
 		    }
 		}
-		if (catchAll && v instanceof xClassNonNull)
+		if ((!q.hasDefault()) ||
+		    (catchAll && v instanceof xClassNonNull))
 		    /* default edge never taken */;
 		else // make the default case executable.
 		    raiseE(Ee, Eq, Wq, q.nextEdge(q.keysLength()));
@@ -785,7 +786,7 @@ public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {
 	    }
 	    else if (v != null) {
 		// mark all edges executable & propagate to all sigmas.
-		for (int i=0; i < q.nextEdge().length; i++)
+		for (int i=0; i < q.nextLength(); i++)
 		    raiseE(Ee, Eq, Wq, q.nextEdge(i) );
 		for (int i=0; i < q.numSigmas(); i++) {
 		    LatticeVal v2 = get( q.src(i) );

@@ -59,7 +59,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code in quad form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.20 2000-10-07 02:00:03 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.21 2000-11-16 00:12:23 cananian Exp $
  */
 public final class Method {
 
@@ -553,6 +553,8 @@ public final class Method {
 	    int match;
 	    for (match=0; match<q.keysLength(); match++)
 		if (ind.type.isInstanceOf(q.keys(match))) break;
+	    Util.assert(match < q.arity(),
+			"no-default TYPESWITCH has no match");
 	    visit((SIGMA)q, match);
 	}
     }
@@ -702,6 +704,7 @@ public final class Method {
 	    // object may be null in implicit case
 	    Ref obj = (Ref) sf.get(q.index());
 	    if (obj==null) {
+		Util.assert(q.hasDefault());
 		advance(q.keysLength()); // take default branch
 	    } else super.visit(q);
 	}

@@ -20,6 +20,7 @@ import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.IR.LowQuad.DerivationMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Util.CombineIterator;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 
@@ -31,7 +32,7 @@ import java.util.List;
  * into chains of <code>INSTANCEOF</code> and <code>CJMP</code> quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeSwitchRemover.java,v 1.1.2.2 2000-10-17 17:53:32 cananian Exp $
+ * @version $Id: TypeSwitchRemover.java,v 1.1.2.3 2000-11-16 00:11:59 cananian Exp $
  */
 public final class TypeSwitchRemover
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -136,6 +137,29 @@ public final class TypeSwitchRemover
 	ClassTree root = new ClassTree(null, ts.keysLength());
 	for (int i=0; i<ts.keysLength(); i++)
 	    addNode(root, new ClassTree(ts.keys(i), i));
+	// if the TYPESWITCH has no default case, fixup the ClassTree.
+	if (!ts.hasDefault()) {
+	    Iterator it = root.children();
+	    // must have at least one key if it has no default.
+	    // make key with highest edgenum the new default.
+	    ClassTree newdefault = (ClassTree) it.next();
+	    while (it.hasNext()) {
+		ClassTree ct = (ClassTree) it.next();
+		if (ct.edgenum > newdefault.edgenum)
+		    newdefault = ct;
+	    }
+	    // now make new root node and reparent children of newdefault
+	    // and other children of root.
+	    ClassTree newroot = new ClassTree(null, newdefault.edgenum);
+	    it = new CombineIterator(root.children(), newdefault.children());
+	    while (it.hasNext()) {
+		ClassTree ct = (ClassTree) it.next();
+		it.remove();
+		if (ct!=newdefault) newroot.addChild(ct);
+	    }
+	    root = newroot;
+	}
+	// okay, done.
 	return root;
     }
     /** Recursively descend ClassTree to find where to place this node */
@@ -164,6 +188,13 @@ public final class TypeSwitchRemover
 	    root.addChild(node);
     }
 
+    /** The class tree structure represents the class hierarchy relation
+     *  over the subset of the classes mentioned in the TYPESWITCH.
+     *  Each node also contains an edgenum which corresponds to the
+     *  key number in the TYPESWITCH which mentions this class; nodes
+     *  are pruned on insertion such that parent.edgenum &gt; child.edgenum,
+     *  which ensures that all nodes correspond to reachable cases of
+     *  the TYPESWITCH.  The root corresponds to the default case. */
     private static class ClassTree {
 	final HClass key;
 	final int edgenum;

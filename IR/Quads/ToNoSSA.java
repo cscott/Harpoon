@@ -30,7 +30,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.35 2000-10-11 01:53:23 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.36 2000-11-16 00:12:17 cananian Exp $
  */
 public class ToNoSSA
 {
@@ -304,7 +304,7 @@ static class SIGMAVisitor extends LowQuadVisitor // this is an inner class
 	int    arity, numSigmas;
       
 	q0         = new TYPESWITCH(m_qf, q, map(q.index()), q.keys(),
-				    new Temp[] {});
+				    new Temp[] {}, q.hasDefault());
 	numSigmas  = q.numSigmas();
 	arity      = q.arity();
 

@@ -27,7 +27,7 @@ import java.util.Map;
  * <code>RSSxToNoSSA</code>
  * 
  * @author  root <root@bdemsky.mit.edu>
- * @version $Id: RSSxToNoSSA.java,v 1.1.2.1 2000-11-13 21:05:25 cananian Exp $
+ * @version $Id: RSSxToNoSSA.java,v 1.1.2.2 2000-11-16 00:12:15 cananian Exp $
  */
 public class RSSxToNoSSA {
     QuadFactory newQF;
@@ -180,7 +180,8 @@ public class RSSxToNoSSA {
 	public void visit(TYPESWITCH q) {
 	    fixsigma(q);
 	    TYPESWITCH nts = new TYPESWITCH(q.getFactory(), q, q.index(),
-					    q.keys(), new Temp[0]);
+					    q.keys(), new Temp[0],
+					    q.hasDefault());
 	    Quad.replace(q, nts);
 	    done.add(nts);
 	}

@@ -21,7 +21,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.27 2000-11-14 18:34:42 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.28 2000-11-16 00:12:17 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -239,7 +239,7 @@ final class UnHandler {
 		    TYPESWITCH ts = new TYPESWITCH
 			(qf, phi, Tex,
 			 (HClass[]) al.toArray(new HClass[al.size()]),
-			 new Temp[0]);
+			 new Temp[0], true);
 		    /* link up typeswitch */
 		    Quad.addEdge(phi, 0, ts, 0);
 		    int edge=0;

@@ -11,10 +11,12 @@ import harpoon.Util.Util;
 
 /**
  * <code>TYPESWITCH</code> represents a multiple-way branch dependent on
- * the class type of the argument.
+ * the class type of the argument.  It may optionally omit the default
+ * case, in which case it is read as an assertion on the type of the
+ * argument, in addition to its usual semantics.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TYPESWITCH.java,v 1.1.2.4 2000-10-11 01:53:23 cananian Exp $
+ * @version $Id: TYPESWITCH.java,v 1.1.2.5 2000-11-16 00:12:17 cananian Exp $
  */
 public class TYPESWITCH extends SIGMA {
     /** The discriminant, of <code>Object</code> type, whose class is
@@ -25,6 +27,8 @@ public class TYPESWITCH extends SIGMA {
      *  <code>keys[n]</code> for <code>0 <= n < keys.length</code>. <p>
      *  <code>next(keys.length)</code> is the default target. */
     protected HClass keys[];
+    /** True if this <code>TYPESWITCH</code> has a default case. */
+    protected boolean hasDefault;
 
     /** Creates a <code>TYPESWITCH</code> operation. <p>
      *  <code>next[n]</code> is the jump target corresponding to
@@ -38,7 +42,10 @@ public class TYPESWITCH extends SIGMA {
      * key value.  The discriminant is also not permitted to be
      * <code>null</code> (except in quad-with-try form, in which case
      * a <code>null</code> discriminant causes the default branch to
-     * be taken).
+     * be taken).  If <code>withDefault</code> is <code>true</code>,
+     * a default edge will be taken if none of the keys match the type
+     * of the argument; otherwise we assert that at least one key will
+     * always match the argument.
      * @param index
      *        the discriminant.
      * @param keys
@@ -47,23 +54,31 @@ public class TYPESWITCH extends SIGMA {
      *        sigma function left-hand sides.
      * @param src
      *        sigma function arguments.
+     * @param hasDefault
+     *        <code>true</code> if this <code>TYPESWITCH</code> should
+     *        have a default case.
      */
     public TYPESWITCH(QuadFactory qf, HCodeElement source,
 		      Temp index, HClass keys[],
-		      Temp dst[][], Temp src[]) {
-	super(qf, source, dst, src, keys.length+1 /*multiple targets*/);
+		      Temp dst[][], Temp src[], boolean hasDefault) {
+	super(qf, source, dst, src, keys.length+(hasDefault?1:0));
 	this.index = index;
 	this.keys = keys;
+	this.hasDefault = hasDefault;
 	// VERIFY legality of TYPESWITCH.
 	Util.assert(index!=null && keys!=null);
-	Util.assert(keys.length+1==arity());
+	Util.assert(keys.length+(hasDefault?1:0)==arity());
 	for (int i=0; i<keys.length; i++)
 	    Util.assert(keys[i]!=null);
+	// can't have no keys *and* no default.
+	Util.assert(arity()>0);
     }
     /** Creates a typeswitch with arity defined by the keys array. */
     public TYPESWITCH(QuadFactory qf, HCodeElement source,
-		      Temp index, HClass keys[], Temp src[]) {
-	this(qf,source, index, keys, new Temp[src.length][keys.length+1], src);
+		      Temp index, HClass keys[], Temp src[],
+		      boolean hasDefault) {
+	this(qf,source, index, keys,
+	     new Temp[src.length][keys.length+1], src, hasDefault);
     }
     /** Returns the <code>Temp</code> holding the discriminant. */
     public Temp index() { return index; }
@@ -73,6 +88,9 @@ public class TYPESWITCH extends SIGMA {
     public HClass keys(int i) { return keys[i]; }
     /** Returns the length of the <code>keys</code> array. */
     public int keysLength() { return keys.length; }
+    /** Returns <code>true</code> if this <code>TYPESWITCH</code> has a
+     *  default case. */
+    public boolean hasDefault() { return hasDefault; }
 
     /** Returns the <code>Temp</code> used by this quad.
      * @return the <code>index</code> field. */
@@ -90,7 +108,7 @@ public class TYPESWITCH extends SIGMA {
     public Quad rename(QuadFactory qqf, TempMap defMap, TempMap useMap) {
 	return new TYPESWITCH(qqf, this, map(useMap,index),
 			      (HClass[])keys.clone(),
-			      map(defMap,dst), map(useMap,src));
+			      map(defMap,dst), map(useMap,src), hasDefault);
     }
     /** Rename all used variables in this Quad according to a mapping.
      * @deprecated does not preserve immutability. */
@@ -111,6 +129,7 @@ public class TYPESWITCH extends SIGMA {
 	StringBuffer sb = new StringBuffer("TYPESWITCH "+index+": ");
 	for (int i=0; i<keys.length; i++)
 	    sb.append("case "+keys[i]+"; ");
+	if (!hasDefault) sb.append("no ");
 	sb.append("default");
 	sb.append(" / "); sb.append(super.toString());
 	return sb.toString();

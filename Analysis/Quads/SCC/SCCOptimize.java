@@ -37,7 +37,7 @@ import java.util.Set;
  * All edges in the graph after optimization are executable.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCOptimize.java,v 1.1.2.7 2000-10-11 01:53:00 cananian Exp $
+ * @version $Id: SCCOptimize.java,v 1.1.2.8 2000-11-16 00:12:08 cananian Exp $
  */
 public final class SCCOptimize {
     TypeMap  ti;
@@ -145,9 +145,8 @@ public final class SCCOptimize {
 			    keylist.add(q.keys(i));
 			edgelist.add(q.nextEdge(i));
 		    }
-		// make new default, if default is not executable.
-		if (keylist.size() == edgelist.size())
-		    keylist.remove(keylist.size()-1);
+		// default edge may not be executable.
+		boolean hasDefault = !(keylist.size() == edgelist.size());
 		// make new keys and edge array.
 		HClass[] nkeys =
 		    (HClass[]) keylist.toArray(new HClass[keylist.size()]);
@@ -160,7 +159,8 @@ public final class SCCOptimize {
 			ndst[i][j] = q.dst(i, edges[j].which_succ());
 		// make new TYPESWITCH
 		TYPESWITCH nts = new TYPESWITCH(q.getFactory(), q, q.index(),
-						nkeys, ndst, q.src());
+						nkeys, ndst, q.src(),
+						hasDefault);
 		// and link the new TYPESWITCH.
 		Edge pedge = q.prevEdge(0);
 		Quad.addEdge((Quad)pedge.from(), pedge.which_succ(), nts, 0);
@@ -172,7 +172,9 @@ public final class SCCOptimize {
 		}
 		// visit(SIGMA) to trim out TYPESWITCH iff only one edge is
 		// executable
-		visit((SIGMA)nts);
+		// (no-default typeswitch with one edge is an *assertion*.
+		//  we don't want to delete it.)
+		if (hasDefault) visit((SIGMA)nts);
 		// ta-da!
 	    }
 	    public void visit(SIGMA q) {

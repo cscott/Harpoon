@@ -33,7 +33,7 @@ import java.util.Set;
  * speed up dispatch.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DispatchTreeTransformation.java,v 1.1.2.2 2000-11-13 21:06:37 cananian Exp $
+ * @version $Id: DispatchTreeTransformation.java,v 1.1.2.3 2000-11-16 00:11:59 cananian Exp $
  */
 public class DispatchTreeTransformation
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -122,12 +122,11 @@ public class DispatchTreeTransformation
 	PHI rephi = new PHI(qf, call, new Temp[0], spcalls.size());
 	PHI exphi = new PHI(qf, call, new Temp[0], spcalls.size());
 	// and TYPESWITCH node
-	// XXX: indicate 'no-default' TYPESWITCH how?
-	HClass[] keys = new HClass[methods.size()-1];
+	HClass[] keys = new HClass[methods.size()];
 	for (int i=0; i<keys.length; i++)
 	    keys[i] = ((HMethod)methods.get(i)).getDeclaringClass();
 	TYPESWITCH ts = new TYPESWITCH(qf, call, recvr, keys,
-				       new Temp[0]);
+				       new Temp[0], false/* no default*/);
 	// link everything up.
 	for (int i=0; i<spcalls.size(); i++) {
 	    CALL ncall = (CALL) spcalls.get(i);
