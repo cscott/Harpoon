@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.70 2000-03-21 22:20:42 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.1.2.71 2000-04-04 05:34:46 bdemsky Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -98,10 +98,10 @@ public class SAMain extends harpoon.IR.Registration {
     private static Frame frame;
 
     private static File ASSEM_DIR = null;
-
+    private static HCodeFactory hcf;
 
     public static void main(String[] args) {
-	HCodeFactory hcf = // default code factory.
+	hcf = // default code factory.
 	    new harpoon.ClassFile.CachingCodeFactory(
 	    harpoon.IR.Quads.QuadNoSSA.codeFactory()
 	    );
@@ -413,7 +413,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     private static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "m:c:o:DOPFHRLAhq1::C:");
+	Getopt g = new Getopt("SAMain", args, "m:i:c:o:DOPFHRLAhq1::C:");
 	
 	int c;
 	String arg;
@@ -439,6 +439,18 @@ public class SAMain extends harpoon.IR.Registration {
 				       classHierarchyFilename);
 		}
 		break;
+	    case 'i':
+		arg=g.getOptarg();
+		try {
+		ObjectInputStream ois=new ObjectInputStream(
+							    new FileInputStream(arg));
+		hcf=(HCodeFactory)ois.readObject();
+		linker=(Linker)ois.readObject();
+		ois.close();
+		} catch (Exception e) {
+		    System.out.println(e + " was thrown");
+		    System.exit(-1);
+		}
 	    case 'D':
 		OUTPUT_INFO = PRINT_DATA = true;
 		break;
