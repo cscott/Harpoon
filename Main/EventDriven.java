@@ -4,7 +4,6 @@
 package harpoon.Main;
 
 import harpoon.Analysis.ClassHierarchy;
-import harpoon.Analysis.EventDriven.ToAsync;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.ClassFile.CachingCodeFactory;
 import harpoon.ClassFile.HClass;
@@ -12,7 +11,10 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.UpdateCodeFactory;
+import harpoon.Util.HClassUtil;
+import harpoon.Util.WorkSet;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
@@ -21,7 +23,7 @@ import java.util.Set;
  * <code>EventDriven</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EventDriven.java,v 1.1.2.1 1999-11-12 05:18:43 kkz Exp $
+ * @version $Id: EventDriven.java,v 1.1.2.2 1999-11-17 00:15:32 kkz Exp $
  */
 
 public abstract class EventDriven extends harpoon.IR.Registration {
@@ -48,18 +50,44 @@ public abstract class EventDriven extends harpoon.IR.Registration {
 	    }
         }
 
+	System.out.println("Doing QuadSSI");
         HCodeFactory ccf =
-            new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory());
-	UpdateCodeFactory hcf = 
-	    new UpdateCodeFactory(ccf);
-        ClassHierarchy ch = 
-	    new QuadClassHierarchy(Collections.singleton(m), hcf);
+            new CachingCodeFactory(harpoon.IR.Quads.QuadSSI.codeFactory());
+	System.out.println("Doing QuadNoSSA with types");
+	ccf = new CachingCodeFactory
+	    (harpoon.IR.Quads.QuadNoSSA.codeFactoryWithTypes(ccf));
+	System.out.println("Doing UpdatingCodeFactory");
+	UpdateCodeFactory hcf = new UpdateCodeFactory(ccf);
+	Collection c = new WorkSet();
+	c.addAll(harpoon.Backend.Runtime1.Runtime.runtimeCallableMethods());
+	c.addAll(knownBlockingMethods());
+	c.add(m);
+	System.out.println("Getting ClassHierarchy");
+        ClassHierarchy ch = new QuadClassHierarchy(c, hcf);
 	HCode hc = hcf.convert(m);
+	System.out.println("Done w/ set up");
 
-	ToAsync as = new ToAsync(hcf, hc, ch);
-	
-	HCode converted = hcf.convert(as.transform());
+	harpoon.Analysis.EventDriven.EventDriven ed = 
+	    new harpoon.Analysis.EventDriven.EventDriven(hcf, hc, ch);
+
+	HCode converted = hcf.convert(ed.convert());
 	if (converted != null) converted.print(out);
+    }
+
+    private static Collection knownBlockingMethods() {
+	final HClass is = HClass.forName("java.io.InputStream");
+	final HClass ss = HClass.forName("java.net.ServerSocket");
+	final HClass b = HClass.Byte;
+
+	WorkSet w = new WorkSet();
+	w.add(is.getDeclaredMethod("read", new HClass[0]));
+	w.add(is.getDeclaredMethod("read", new HClass[] 
+				   {HClassUtil.arrayClass(b,1)}));
+	w.add(is.getDeclaredMethod("read", new HClass[] 
+				   {HClassUtil.arrayClass(b, 1),
+					HClass.Int, HClass.Int}));
+	w.add(ss.getDeclaredMethod("accept", new HClass[0]));
+	return w;
     }
 }
 

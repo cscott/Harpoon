@@ -16,11 +16,13 @@ import harpoon.ClassFile.UpdateCodeFactory;
 import harpoon.IR.Quads.CALL;
 import harpoon.IR.Quads.Code;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import harpoon.Util.WorkSet;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
@@ -29,7 +31,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.1 1999-11-12 05:18:40 kkz Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.2 1999-11-17 00:15:31 kkz Exp $
  */
 public class ToAsync {
     protected final UpdateCodeFactory ucf;
@@ -44,9 +46,14 @@ public class ToAsync {
     }
     
     public HMethod transform() {
+	System.out.println("Entering ToAsync.transform()");
 	AllCallers ac = new AllCallers(this.ch, this.ucf);
 	BlockingMethods bm = new BlockingMethods();
 	Set s = ac.getCallers(bm);
+
+	for (Iterator i=s.iterator(); i.hasNext(); ) {
+	    System.out.println("Blocks: " + ((HMethod)i.next()).toString());
+	}
 
 	final HMethod gis = 
 	    HClass.forName("java.net.Socket").getDeclaredMethod
@@ -58,63 +65,78 @@ public class ToAsync {
 	     li.hasNext(); ) {
 	    q = (Quad)li.next();
 	    if (q instanceof CALL) {
-		if (gis.compareTo(((CALL)q).method()) == 0)
+		System.out.println(q.toString());
+		if (gis.equals(((CALL)q).method())) {
 		    // need to swop
 		    toSwop.push(q);
-		else if (s.contains(q))
-		    break;
-	    } else if (!li.hasNext()) {
-		return null;
+		} else if (s.contains(((CALL)q).method())) {
+		    System.out.println(((CALL)q).method().toString());
+		    final HMethod callee = ((CALL)q).method();
+		    
+		    // get the return type of the method we're transforming
+		    final HMethod ohm = this.hc.getMethod();
+		    String pref = ContBuilder.getPrefix(ohm.getReturnType());
+		    
+		    // new class, replace original
+		    final HClassSyn nhc = 
+			new HClassSyn(ohm.getDeclaringClass(), true);
+
+		    // clone methods
+		    HMethod[] toClone = 
+			ohm.getDeclaringClass().getDeclaredMethods();
+		    for (int i=0; i<toClone.length; i++) {
+			HMethod curr = nhc.getDeclaredMethod
+			    (toClone[i].getName(),
+			     toClone[i].getParameterTypes());
+			ucf.update(curr, ((QuadNoSSA)ucf.convert
+					  (toClone[i])).clone(curr));
+		    }
+
+		    // set the return type of the transformed method
+		    HClass rt = 
+			HClass.forName("harpoon.Analysis.ContBuilder." +
+				       pref + "Continuation");
+		    final HMethodSyn nhm = 
+			new HMethodSyn(nhc, ohm.getName() + "Async",
+				       ohm.getParameterTypes(), rt);
+		    nhm.setExceptionTypes(ohm.getExceptionTypes());
+		    nhm.setModifiers(ohm.getModifiers());
+		    nhm.setParameterNames(ohm.getParameterNames());
+		    nhm.setSynthetic(ohm.isSynthetic());
+
+		    // build environment
+		    EnvBuilder eb = new EnvBuilder(this.ucf, this.hc, q);
+		    HClass envClass = eb.makeEnv();
+		    Util.assert(envClass.getConstructors().length == 1,
+				"New environment class should have one " +
+				"constructor, not " +
+				envClass.getConstructors().length);
+		    
+		    // build continuation
+		    ContBuilder cb = new ContBuilder(this.ucf, this.hc, 
+						     (CALL)q, envClass, 
+						     eb.liveout);
+		    HClass contClass = cb.makeCont();
+		    
+		    // get the transformed version of the method we're callling
+		    HMethod transformed = bm.swop(callee);
+		    if (transformed == null)
+			transformed = (new ToAsync(this.ucf, 
+						   this.ucf.convert(callee), 
+						   this.ch)).transform();
+		    if (transformed == null) continue;
+	
+		    AsyncCode as = new AsyncCode(nhm, this.hc, (CALL)q, 
+						 transformed, envClass, 
+						 contClass, eb.liveout, 
+						 toSwop);
+		    ucf.update(nhm, as);
+		    System.out.println("Leaving ToAsync.transform()");
+		    return nhm;
+		}
 	    }
 	}
-	final HMethod callee = ((CALL)q).method();
-
-	// get the return type of the method we're transforming
-	final HMethod ohm = this.hc.getMethod();
-	String pref = ContBuilder.getPrefix(ohm.getReturnType());
-	
-	// new class, replace original
-	final HClassSyn nhc = new HClassSyn(ohm.getDeclaringClass(), true);
-
-	// clone methods
-	HMethod[] toClone = ohm.getDeclaringClass().getDeclaredMethods();
-	for (int i=0; i<toClone.length; i++) {
-	    HMethod curr = 
-		nhc.getDeclaredMethod(toClone[i].getName(),
-				      toClone[i].getParameterTypes());
-	    ucf.update(curr, ((Code)ucf.convert(ohm)).clone(curr));
-	}
-
-	// set the return type of the transformed method
-	final HMethodSyn nhm = new HMethodSyn(nhc, ohm);
-	nhm.setReturnType(HClass.forName("harpoon.Analysis.ContBuilder." +
-					  pref + "Continuation"));
-	
-	// build environment
-	EnvBuilder eb = new EnvBuilder(this.ucf, this.hc, q);
-	HClass envClass = eb.makeEnv();
-	Util.assert(envClass.getConstructors().length == 1,
-		    "New environment class should have one constructor, not " +
-		    envClass.getConstructors().length);
-
-	// build continuation
-	ContBuilder cb = new ContBuilder(this.ucf, this.hc, (CALL)q, 
-					 envClass, eb.liveout);
-	HClass contClass = cb.makeCont();
-
-	// get the transformed version of the method we're callling
-	HMethod transformed = bm.swop(callee);
-	if (transformed == null)
-	    transformed = (new ToAsync(this.ucf, this.ucf.convert(callee), 
-				       this.ch)).transform();
-	// if the callee blocks, we must be able to get an async version
-	Util.assert(transformed != null, "Can't happen in harpoon." +
-		    "Analysis.EventDriven.ToAsync.transform");
-	
-	AsyncCode as = new AsyncCode(nhm, this.hc, (CALL)q, transformed,
-				     envClass, contClass, eb.liveout, toSwop);
-	ucf.update(nhm, as);
-	return nhm;
+	return null;
     }
 
     static class BlockingMethods implements AllCallers.MethodSet {
@@ -123,9 +145,10 @@ public class ToAsync {
 	 *  otherwise. Checks against a list of known blocking methods.
 	 */
 	public boolean select (final HMethod m) {
-	    if (swop(m) != null)
+	    if (swop(m) != null) {
+		System.out.println(m.toString());
 		return true;
-	    else
+	    } else
 		return false;
 	}
 
@@ -136,11 +159,11 @@ public class ToAsync {
 	public HMethod swop (final HMethod m) {
 	    final HClass is = HClass.forName("java.io.InputStream");
 	    final HClass ss = HClass.forName("java.net.ServerSocket");
-	    final HClass b = HClass.forName("java.lang.Byte");
+	    final HClass b = HClass.Byte;
 
 	    HMethod retval = (HMethod)cache.get(m);
 	    if (retval == null) {
-		if (is.compareTo(m.getDeclaringClass()) == 0) {
+		if (is.equals(m.getDeclaringClass())) {
 		    if (m.getName().equals("read")) {
 			final HMethod bm1 = 
 			    is.getDeclaredMethod("read", new HClass[0]);
@@ -149,25 +172,25 @@ public class ToAsync {
 			final HMethod bm3 = is.getDeclaredMethod("read", 
 			    new HClass[] {HClassUtil.arrayClass(b, 1),
 					  HClass.Int, HClass.Int});
-			if (bm1.compareTo(m) == 0) {
-			    retval = is.getDeclaredMethod("readAsync", 
-							  new HClass[0]);
+			if (bm1.equals(m)) {
+			    retval = is.getMethod("readAsync", 
+						  new HClass[0]);
 			    cache.put(m, retval);
-			} else if (bm2.compareTo(m) == 0) {
-			    retval = is.getDeclaredMethod("readAsync", 
+			} else if (bm2.equals(m)) {
+			    retval = is.getMethod("readAsync", 
 			        new HClass[] {HClassUtil.arrayClass(b, 1)});
 			    cache.put(m, retval);
-			} else if (bm3.compareTo(m) == 0) {
-			    retval = is.getDeclaredMethod("readAsync", 
+			} else if (bm3.equals(m)) {
+			    retval = is.getMethod("readAsync", 
 				new HClass[] {HClassUtil.arrayClass(b, 1),
 					      HClass.Int, HClass.Int});
 			    cache.put(m, retval);
 			}
 		    }
-		} else if (ss.compareTo(m.getDeclaringClass()) == 0) {
+		} else if (ss.equals(m.getDeclaringClass())) {
 		    final HMethod bm4 = 
 			ss.getDeclaredMethod("accept", new HClass[0]);
-		    if (bm4.compareTo(m) == 0) {
+		    if (bm4.equals(m)) {
 			retval = ss.getDeclaredMethod("acceptAsync", 
 						      new HClass[0]);
 			cache.put(m, retval);

@@ -31,7 +31,7 @@ import java.util.Map;
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContCode.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
+ * @version $Id: ContCode.java,v 1.1.2.3 1999-11-17 00:15:30 kkz Exp $
  */
 public class ContCode extends Code {
 
@@ -90,6 +90,7 @@ public class ContCode extends Code {
     private Quad buildCode(HCode hc, CALL c, boolean hasParameter, 
 			   HMethod resume, Temp[] liveout, HField env, 
 			   HField[] envfields, int indicator) {
+	System.out.println("Entering ContCode.buildCode()");
 	Quad root = (Quad)hc.getRootElement();
 
 	// clone HCode
@@ -125,7 +126,7 @@ public class ContCode extends Code {
 	Temp suppress = (indicator == RESUME) ? c.retval() : c.retex();
 	Quad prev = g;
 	for(int i=0; i<liveout.length; i++) {
-	    if (suppress.compareTo(liveout[i]) != 0) {
+	    if (suppress == null || !suppress.equals(liveout[i])) {
 		GET ng = new GET(this.qf, h.next(1), liveout[i], 
 				 envfields[i], e);
 		Quad.addEdge(prev, 0, ng, 0);
@@ -196,6 +197,7 @@ public class ContCode extends Code {
 
 	Unreachable.prune(h);
 
+	System.out.println("Leaving ContCode.buildCode()");
 	return h;
     }    
 }

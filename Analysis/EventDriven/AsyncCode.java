@@ -18,6 +18,7 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.RETURN;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
+import harpoon.Util.Util;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -27,7 +28,7 @@ import java.util.Set;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.1 1999-11-12 05:18:40 kkz Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.2 1999-11-17 00:15:31 kkz Exp $
  */
 public class AsyncCode extends Code {
 
@@ -62,16 +63,19 @@ public class AsyncCode extends Code {
     private Quad buildCode(HCode hc, CALL c, HMethod toCall, HClass env,
 			   HClass cont, Temp[] liveout, Set toSwop) {
 	Quad root = (Quad)hc.getRootElement();
+	System.out.println("Entering AsyncCode.buildCode()");
 	Object[] maps = Quad.cloneMaps(this.qf, root);
 	Map quadmap = (Map)maps[0];
+
+	System.out.println("AsyncCode.buildCode() 1");
 
 	TempFactory tf = this.qf.tempFactory();
 
 	// swop out all the calls to Socket.getInputStream and replace
 	// with calls to Socket.getAsyncInputStream:
 	final HMethod gais = 
-	    HClass.forName("Socket").getDeclaredMethod("getAsyncInputStream",
-						       new HClass[0]);
+	    HClass.forName("java.net.Socket").getDeclaredMethod
+	    ("getAsyncInputStream", new HClass[0]);
 	for (Iterator i=toSwop.iterator(); i.hasNext(); ) {
 	    CALL cts = (CALL)quadmap.get(i.next()); // call to swop
 	    CALL replacement = new CALL(this.qf, cts, gais, cts.params(),
@@ -92,12 +96,19 @@ public class AsyncCode extends Code {
 	    }
 	}
        
+	System.out.println("AsyncCode.buildCode() 2");
+
 	CALL cc = (CALL)quadmap.get(c); // cloned CALL
+
+	System.out.println("AsyncCode.buildCode() 3");
 
 	// we want to remove this cloned CALL and replace it
 	// with a call to the asynchronous version of the method
-	CALL nc = new CALL(this.qf, cc, toCall, cc.params(), cc.retval(),
-			   cc.retex(), true, false, new Temp[0]);
+	Temp async = new Temp(tf);
+	CALL nc = new CALL(this.qf, cc, toCall, cc.params(), async,
+			   new Temp(tf), true, false, new Temp[0]);
+
+	System.out.println("AsyncCode.buildCode() 4");
 
 	// hook up all incoming edges
 	Edge[] e = cc.prevEdge();
@@ -106,43 +117,78 @@ public class AsyncCode extends Code {
 			 nc, e[j].which_pred());
 	}
 
-	Quad[] quadlist = new Quad[7];
-	quadlist[0] = nc;
+	System.out.println("AsyncCode.buildCode() 5");
 
-	// new Continuation(<params>);
-	Temp[] argstoinit = new Temp[liveout.length+1];
+	Quad prev = nc;
+	Quad curr = null;
+
+	System.out.println("AsyncCode.buildCode() 6");
+
+	// create new environment
 	Temp newenv = new Temp(tf);
-	argstoinit[0] = newenv;
-	for (int j=0; j<liveout.length+1; j++) {
-	    argstoinit[j+1] = liveout[j];
-	}
-	quadlist[1] = new NEW(this.qf, cc, newenv, env);
-	quadlist[2] = new CALL(this.qf, cc, env.getClassInitializer(), 
-			       argstoinit, new Temp(tf), new Temp(tf), true, 
-			       false, new Temp[0]);
+	curr = new NEW(this.qf, cc, newenv, env);
+	Quad.addEdge(prev, 0, curr, 0);
+	prev = curr;
 
-	// new Continuation(<params>);
-	HConstructor contcons = 
-	    cont.getConstructor(new HClass[] 
-				{HClass.forName("harpoon.Analysis." +
-						"ContBuilder.Continuation")});
+	// create params (need to add receiver object)
+	Temp[] params = new Temp[liveout.length+1];
+	params[0] = newenv;
+	for (int i=0;i<liveout.length;i++) {
+	    params[i+1]=liveout[i];
+	}
+
+	// call constructor
+	Util.assert(env.getConstructors().length == 1,
+		    "AsyncCode.buildCode(): " + env.getConstructors().length +
+		    " constructor(s) found for environment.");
+
+	// since this is a call to the constructor, we mark it as not virtual
+	curr = new CALL(this.qf, cc, env.getConstructors()[0], 
+				   params, null, null, false, 
+				   false, new Temp[0]);
+	Quad.addEdge(prev, 0, curr, 0);
+	prev = curr;
+
+	System.out.println("AsyncCode.buildCode() 7");
+
+	// create new continuation
 	Temp newcont = new Temp(tf);
-	quadlist[3] = new NEW(this.qf, cc, newcont, cont);
-	quadlist[4] = new CALL(this.qf, cc, cont.getClassInitializer(),
-			       new Temp[] {newcont, newenv}, new Temp(tf),
-			       new Temp(tf), true, false, new Temp[0]);
-	
+	curr = new NEW(this.qf, cc, newcont, cont);
+	Quad.addEdge(prev, 0, curr, 0);
+	prev = curr;
+
+	// call constructor
+	Util.assert(cont.getConstructors().length == 1,
+		    "AsyncCode.buildCode(): " + cont.getConstructors().length +
+		    " constructor(s) found for continuation.");
+
+	// call to constructor is not virtual
+	curr = new CALL(this.qf, cc, cont.getConstructors()[0],
+			new Temp[] {newcont, newenv}, null, null,
+			false, false, new Temp[0]);
+	Quad.addEdge(prev, 0, curr, 0);
+	prev = curr;
+
+	System.out.println("AsyncCode.buildCode() 8");
+
 	// setNext(<continuation>);
 	HMethod setnextmethod = 
-	    toCall.getReturnType().getDeclaredMethod("setNext", 
-	       					     new HClass[] {cont});
-	quadlist[5] = new CALL(this.qf, cc, setnextmethod, 
-				  new Temp[] {newcont}, new Temp(tf),
-				  new Temp(tf), true, false, new Temp[0]);
+	    toCall.getReturnType().getMethod("setNext", 
+					     new HClass[] {cont});
+	// this is a tail call, but that's not supported yet,
+	// so we mark it as not a tail call.
+	curr = new CALL(this.qf, cc, setnextmethod, 
+				  new Temp[] {async, newcont}, null, 
+				  null, true, false, new Temp[0]);
+	Quad.addEdge(prev, 0, curr, 0);
+	prev = curr;
 	
 	// return(<continuation>);
-	quadlist[6] = new RETURN(this.qf, cc, newcont);
-	Quad.addEdges(quadlist);
+	curr = new RETURN(this.qf, cc, newcont);
+	Quad.addEdge(prev, 0, curr, 0);
+	prev = curr;
+
+	System.out.println("AsyncCode.buildCode() 9");
 
 	// find FOOTER
 	Quad q = null;
@@ -152,10 +198,13 @@ public class AsyncCode extends Code {
 		break;
 	}
 	FOOTER f = (FOOTER)quadmap.get(q); // cloned FOOTER
-	Quad.addEdge(quadlist[4], 0, f, f.arity());
+	Quad.addEdge(prev, 0, f, f.arity());
+
+	System.out.println("AsyncCode.buildCode() 10");
 
        	HEADER h = (HEADER)quadmap.get(root); // cloned HEADER
 	Unreachable.prune(h);
+	System.out.println("Leaving AsyncCode.buildCode()");
 	return h;
     }
 }

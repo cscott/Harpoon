@@ -26,7 +26,7 @@ import harpoon.Util.Util;
  * <code>quad-no-ssa</code> form.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContBuilder.java,v 1.1.2.2 1999-11-12 05:18:37 kkz Exp $
+ * @version $Id: ContBuilder.java,v 1.1.2.3 1999-11-17 00:15:30 kkz Exp $
  */
 public class ContBuilder {
     protected final UpdateCodeFactory ucf;
@@ -113,7 +113,9 @@ public class ContBuilder {
 	    HConstructor nhc =
 		cont.getConstructor(new HClass[] {environment});
 	    HCode hchc = ((Code)this.ucf.convert(hc)).clone(nhc);
-	    ucf.update(nhc, hchc);
+	    this.ucf.update(nhc, hchc);
+	    this.ucf.convert(nhc).print
+		(new java.io.PrintWriter(System.out, true));
 	} catch (NoSuchMethodError e) {
 	    reportException(e, methodname, "Cannot find constructor for " +
 			    "harpoon.Analysis.ContBuilder.ContTemplate");
@@ -123,7 +125,7 @@ public class ContBuilder {
 	HMethodSyn nhm = null;
 	try {
 	    hm = cont.getDeclaredMethod("resume", new HClass[0]);
-	    nhm = new HMethodSyn(cont, hm);
+	    nhm = new HMethodSyn(cont, hm, true);
 	    cont.removeDeclaredMethod(hm);
 	} catch (NoSuchMethodError e) {
 	    reportException(e, methodname, "Cannot find harpoon." +
@@ -136,7 +138,16 @@ public class ContBuilder {
 	    String[] parameterNames = new String[1];
 	    parameterNames[0] = retval.name();
 	    HClass[] parameterTypes = new HClass[1];
-	    parameterTypes[0] = rettype;
+	    if (rettype.isPrimitive())
+		parameterTypes[0] = rettype;
+	    else {
+		try {
+		    parameterTypes[0] = HClass.forName("java.lang.Object");
+		} catch (NoClassDefFoundError e) {
+		    reportException(e, methodname, 
+				    "Cannot find java.lang.Object");
+		}
+	    }
 	    nhm.setParameterNames(parameterNames);
 	    nhm.setParameterTypes(parameterTypes);
 	}
@@ -155,6 +166,8 @@ public class ContBuilder {
 					  next_resume, this.live, 
 					  cont.getField("e"), 
 					  this.env.getDeclaredFields(), 0));
+	this.ucf.convert(nhm).print
+		(new java.io.PrintWriter(System.out, true));
 	
 	HClass t = null;
 	try {
@@ -184,6 +197,8 @@ public class ContBuilder {
 					  next_exception, this.live, 
 					  cont.getField("e"), 
 					  this.env.getDeclaredFields(), 1));
+	this.ucf.convert(exc).print
+	    (new java.io.PrintWriter(System.out, true));
 	return cont;
     }
 
