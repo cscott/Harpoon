@@ -1,10 +1,12 @@
 package harpoon.IR.LowQuad;
 
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.ToNoSSA;
+import harpoon.Temp.Temp;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -12,7 +14,7 @@ import java.util.Hashtable;
 /**
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadNoSSA.java,v 1.1.2.5 1999-02-06 21:54:40 duncan Exp $
+ * @version $Id: LowQuadNoSSA.java,v 1.1.2.6 1999-02-07 10:33:32 cananian Exp $
  */
 public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
 {
@@ -93,5 +95,10 @@ public class LowQuadNoSSA extends Code /*which extends harpoon.IR.Quads.Code*/
   public static void register() 
     {
       HMethod.register(codeFactory());
+    }
+
+  public DList derivation(HCodeElement hce, Temp t)
+    {
+      throw new Error("Not yet implemented.");
     }
 }

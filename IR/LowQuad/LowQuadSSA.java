@@ -3,11 +3,13 @@
 import harpoon.Backend.Maps.FinalMap;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadSSA;
 import harpoon.IR.Quads.ToNoSSA;
+import harpoon.Temp.Temp;
 
 import java.util.Hashtable;
 
@@ -15,7 +17,7 @@ import java.util.Hashtable;
  *
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSA.java,v 1.1.2.4 1999-02-06 21:54:41 duncan Exp $
+ * @version $Id: LowQuadSSA.java,v 1.1.2.5 1999-02-07 10:33:32 cananian Exp $
  */
 public class LowQuadSSA extends Code
 {
@@ -93,5 +95,11 @@ public class LowQuadSSA extends Code
   public static void register() 
     {
       HMethod.register(codeFactory());
+    }
+
+    // implement derivation.
+    public DList derivation(HCodeElement hce, Temp t) {
+	// ignore HCodeElement: this is SSA form.
+	return (DList) hD.get(t);
     }
 }

@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Properties;
 
+import harpoon.ClassFile.HCodeElement;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 
@@ -13,7 +14,7 @@ import harpoon.Temp.Temp;
  * garbage collection of the derived pointer.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Derivation.java,v 1.1.2.2 1999-02-06 22:39:22 duncan Exp $
+ * @version $Id: Derivation.java,v 1.1.2.3 1999-02-07 10:33:40 cananian Exp $
  */
 public interface Derivation  {
 
@@ -21,7 +22,7 @@ public interface Derivation  {
      * @return <code>null</code> if the temporary has no derivation (is
      *         a base pointer, for example), or the derivation otherwise.
      */
-    public DList derivation(Temp t);
+    public DList derivation(HCodeElement hce, Temp t);
 
     /** Structure of the derivation information. */
     public class DList {

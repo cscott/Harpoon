@@ -6,6 +6,7 @@ package harpoon.IR.LowQuad;
 import harpoon.Analysis.Maps.TypeMap;
 import harpoon.Backend.Maps.FinalMap;
 import harpoon.ClassFile.HCode;
+import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.Derivation;
@@ -20,7 +21,7 @@ import java.util.Hashtable;
  * <code>Code</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Code.java,v 1.1.2.6 1999-02-04 22:56:14 cananian Exp $
+ * @version $Id: Code.java,v 1.1.2.7 1999-02-07 10:33:31 cananian Exp $
  */
 public abstract class Code extends harpoon.IR.Quads.Code 
     implements harpoon.IR.Properties.Derivation
@@ -46,6 +47,5 @@ public abstract class Code extends harpoon.IR.Quads.Code
     }
 
     /** Implement derivation interface. */
-    public DList derivation(Temp t) { return (DList) hD.get(t); }
-
+    public abstract DList derivation(HCodeElement hce, Temp t);
 }
