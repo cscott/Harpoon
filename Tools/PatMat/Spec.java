@@ -22,7 +22,7 @@ import java.util.List;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Spec.java,v 1.1.2.33 1999-10-14 06:04:43 cananian Exp $
+ * @version $Id: Spec.java,v 1.1.2.34 1999-10-15 02:14:02 pnkfelix Exp $
  */
 public class Spec  {
 
@@ -513,7 +513,7 @@ public class Spec  {
 	 */
 	public final Exp func;
 	/** Arguments being passed to procedure. 
-	    @see harpoon.IR.Tree.ExpList
+	    @see harpoon.IR.Tree.TempList
 	 */
 	public final String arglist;
 	/** Constructs a new <code>Spec.StmCall</code>.
@@ -682,7 +682,7 @@ public class Spec  {
 	 */
 	public final Exp func;
 	/** Arguments being passed to procedure. 
-	    @see harpoon.IR.Tree.ExpList
+	    @see harpoon.IR.Tree.TempList
 	*/
 	public final String arglist;
 	/** Constructs a new <code>Spec.StmNativeCall</code>.

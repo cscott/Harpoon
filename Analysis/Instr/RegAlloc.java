@@ -47,10 +47,10 @@ import java.util.HashMap;
  * move values from the register file to data memory and vice-versa.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.39 1999-09-20 16:06:23 pnkfelix Exp $ */
+ * @version $Id: RegAlloc.java,v 1.1.2.40 1999-10-15 02:13:53 pnkfelix Exp $ */
 public abstract class RegAlloc  {
     
-    private static final boolean BRAIN_DEAD = true;
+    private static final boolean BRAIN_DEAD = false;
 
     protected Frame frame;
     protected Code code;
@@ -90,6 +90,7 @@ public abstract class RegAlloc  {
 		  (Temp[])dsts.toArray(new Temp[dsts.size()]), 
 		  new Temp[]{src});
 	}
+
 	// this is prolly bad (set order not specified) but its my
 	// sketchy class and no one else should be using it anyway.  
 	FskLoad(InstrFactory inf, HCodeElement hce,
@@ -121,6 +122,7 @@ public abstract class RegAlloc  {
 		  new Temp[]{dst}, 
 		  (Temp[])srcs.toArray(new Temp[srcs.size()]));
 	}
+
 	// this is prolly bad (set order not specified) but its my
 	// sketchy class and no one else should be using it anyway.  
 	FskStore(InstrFactory inf, HCodeElement hce,

@@ -35,7 +35,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.4 1999-10-15 01:21:23 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.5 1999-10-15 02:14:01 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -45,11 +45,11 @@ public class RegFileInfo
     // file, since it was just cut-and-pasted out of the
     // hack-once-known-as-SAFrame
 
-    final Temp[] reg = new Temp[16];
-    final Set callerSaveRegs = new LinearSet(4);
-    final Set calleeSaveRegs = new LinearSet(9);
-    final Set liveOnExitRegs = new LinearSet(5);
-    final Temp[] regGeneral = new Temp[11];
+    final Temp[] reg;
+    final Set callerSaveRegs;
+    final Set calleeSaveRegs;
+    final Set liveOnExitRegs;
+    final Temp[] regGeneral; 
     final TempFactory regtf;
     
     final Temp FP;  // Frame pointer
@@ -61,6 +61,11 @@ public class RegFileInfo
     /** Creates a <code>RegFileInfo</code>. 
      */
     public RegFileInfo() {
+	reg = new Temp[16];
+	regGeneral = new Temp[11];
+	callerSaveRegs = new LinearSet(4);
+	calleeSaveRegs = new LinearSet(9);
+	liveOnExitRegs = new LinearSet(5);
         regtf = new TempFactory() {
             private int i = 0;
             private final String scope = "strongarm-registers";

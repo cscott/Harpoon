@@ -46,7 +46,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.10 1999-10-15 01:21:23 pnkfelix Exp $
+ * @version $Id: Frame.java,v 1.1.2.11 1999-10-15 02:14:01 pnkfelix Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -56,8 +56,13 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     
     public Frame(ClassHierarchy ch, CallGraph cg) { 
 	super();
-	codegen = new CodeGen(this);
 	regFileInfo = new RegFileInfo();
+	
+	// FSK: grr.  I need to fix something.  right now the CodeGen
+	// ctor needs regFileInfo set in 'this' Frame, which, while
+	// doable, is a TERRIBLE design choice 
+	codegen = new CodeGen(this);
+
 	harpoon.Backend.Runtime1.AllocationStrategy as = // pick strategy
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy("_malloc");
 	runtime = new harpoon.Backend.Runtime1.Runtime(this, as, ch, cg);
