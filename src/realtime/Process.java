@@ -26,7 +26,7 @@ public class Process {
 		} else if (st.indexOf("ChooseThread")!=-1) {
 		    String[] sbuf = st.split("[\\\\(\\\\)\\\\=]");
 		    long threadNum = Long.parseLong(sbuf[0].trim())-1;
-		    if (threadNum == 0) continue;
+		    if (threadNum == -1) continue;
 		    
 		    String[] sbuf2 = sbuf[3].split("s,");
 		    String[] sbuf3 = sbuf2[1].split("us");
