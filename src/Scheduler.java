@@ -4,6 +4,7 @@
 
 package javax.realtime;
 import java.util.HashSet;
+import java.lang.reflect.Method;
 
 /** An instance of <code>Scheduler</code> manages the execution of 
  *  schedulable objects and may implement a feasibility algorithm. The
@@ -62,7 +63,7 @@ public abstract class Scheduler {
      */
     public static Scheduler getDefaultScheduler() {
 	if (defaultScheduler == null) {
-	    setDefaultScheduler(RoundRobinScheduler.instance());
+	    setDefaultScheduler(PreAllocRoundRobinScheduler.instance());
 	    return getDefaultScheduler();
 	}
 	return defaultScheduler;
@@ -194,41 +195,96 @@ public abstract class Scheduler {
     /** Turns on/off timed thread switching */
     protected final native void setTimer(boolean state);
 
-//  Notes for reflection optimization... - WSB
-//      private static final String[] s = new String[] {
-//  	"method"
-//      };
-//      public boolean overridden() {
-//  	Method[] m = getClass().getMethods();
-//  	for (int i=0; i<m.length; i++) {
-//  	    for (int j=0; j<s.length; j++) {
-//  		if ((m[i].getDeclaringClass()==Foo.class)&&
-//  		    (m[i].getName().equals(s[j]))) {
-//  		    return false;
-//  		}
-//  	    }
-//  	}
-//  	return true;
-//      }
-    
-    protected void handleLock(long threadID) {
+    /** This is the list of handlers that can be registered with a new scheduler to
+	intercept events. */
+    public static final long HANDLE_MUTEX_INIT = 1;
+    public static final long HANDLE_MUTEX_LOCK = 2;
+    public static final long HANDLE_MUTEX_UNLOCK = 4;
+    public static final long HANDLE_MUTEX_DESTROY = 8;
+    public static final long HANDLE_COND_INIT = 16;
+    public static final long HANDLE_COND_BROADCAST = 32;
+    public static final long HANDLE_COND_SIGNAL = 64;
+    public static final long HANDLE_COND_TIMEDWAIT = 128;
+    public static final long HANDLE_COND_DESTROY = 256;
+    public static final long HANDLE_ALL = 511;
+
+    private static final String[] s = new String[] { /* This must match the order above */
+	"handle_mutex_init", "handle_mutex_lock", "handle_mutex_unlock", "handle_mutex_destroy",
+	"handle_cond_init", "handle_cond_broadcast", "handle_cond_signal", "handle_cond_timedwait", "handle_cond_destroy"
+    };
+
+    private long handlerMask = -1;
+
+    /** By default, this method uses reflection to determine what the handler mask should be.
+     *  However, a scheduler can override this if it chooses to not handle an event even if the
+     *  appropriate handler method is overridden. */
+    public long handler_mask() {
+	if (handlerMask != -1) {
+	    return handlerMask;
+	} else {
+	    Method[] m = getClass().getMethods();
+	    long mask = HANDLE_ALL;
+	    for (int i=0; i<m.length; i++) {
+		for (int j=0; j<s.length; j++) {
+		    if ((m[i].getDeclaringClass()==Scheduler.class)&&
+			(m[i].getName().equals(s[j]))) {
+			mask-=(int)Math.pow(2.0, (double)j);
+		    }
+		}
+	    }
+	    return handlerMask = mask;
+	}
     }
 
-    protected void handleTryLock(long threadID) {
+    public void handle_mutex_init() { throw new Error("Should never be called!"); }
+    public void handle_mutex_lock() { throw new Error("Should never be called!"); } 
+    public void handle_mutex_unlock() { throw new Error("Should never be called!"); }
+    public void handle_mutex_destroy() { throw new Error("Should never be called!"); }
+    public void handle_cond_init() { throw new Error("Should never be called!"); }
+    public void handle_cond_broadcast() { throw new Error("Should never be called!"); }
+    public void handle_cond_signal() { throw new Error("Should never be called!"); }
+    public void handle_cond_timedwait() { throw new Error("Should never be called!"); }
+    public void handle_cond_destroy() { throw new Error("Should never be called!"); }
+
+    public static void jhandle_mutex_init() { 
+	getScheduler().handle_mutex_init(); 
+    }
+    public static void jhandle_mutex_lock() { 
+	getScheduler().handle_mutex_lock(); 
+    }
+    public static void jhandle_mutex_unlock() { 
+	getScheduler().handle_mutex_unlock(); 
+    }
+    public static void jhandle_mutex_destroy() { 
+	getScheduler().handle_mutex_destroy(); 
+    }
+    public static void jhandle_cond_init() { 
+	getScheduler().handle_cond_init();
+    }
+    public static void jhandle_cond_broadcast() {
+	getScheduler().handle_cond_broadcast();
+    }
+    public static void jhandle_cond_signal() {
+	getScheduler().handle_cond_signal();
+    }
+    public static void jhandle_cond_timedwait() {
+	getScheduler().handle_cond_timedwait();
+    }
+    public static void jhandle_cond_destroy() {
+	getScheduler().handle_cond_destroy();
     }
 
-    protected void handleSignal(long threadID) {
-    }
-
-    protected void handleWait(long threadID) {
-    }
-
-    /** Print out the status of the scheduler */
-    public final static void print() {
+    private static Scheduler getScheduler() {
 	Scheduler sched = RealtimeThread.currentRealtimeThread().getScheduler();
 	if (sched == null) {
 	    sched = Scheduler.getDefaultScheduler();
 	}
+	return sched;
+    }
+
+    /** Print out the status of the scheduler */
+    public final static void print() {
+	Scheduler sched = getScheduler();
 	NoHeapRealtimeThread.print("\n");
 	NoHeapRealtimeThread.print(sched.getPolicyName());
 	NoHeapRealtimeThread.print(": ");
@@ -244,6 +300,16 @@ public abstract class Scheduler {
 
     private final void addToRootSet() {
 	if (Math.sqrt(4)==0) {
+	    jhandle_mutex_init();
+	    jhandle_mutex_lock();
+	    jhandle_mutex_unlock();
+	    jhandle_mutex_destroy();
+	    jhandle_cond_init();
+	    jhandle_cond_broadcast();
+	    jhandle_cond_signal();
+	    jhandle_cond_timedwait();
+	    jhandle_cond_destroy();
+	    handler_mask()
 	    jDisableThread(null, 0);
 	    jEnableThread(null, 0);
 	    jChooseThread(0);

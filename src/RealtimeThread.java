@@ -361,6 +361,10 @@ public class RealtimeThread extends Thread implements Schedulable {
 	return currentScheduler;
     }
 
+    public long handler_mask() {
+	return getScheduler().handler_mask();
+    }
+
     /** Gets a reference to the <code>SchedulingParameters</code> object.
      *
      *  @return A reference to the current <code>SchedulingParameters</code> object.

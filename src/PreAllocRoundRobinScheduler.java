@@ -8,13 +8,14 @@ import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Iterator;
 
-/** <code>RoundRobinScheduler</code> is an example of the dumbest possible
- *  scheduler that actually switches between threads.
- *  It's great for getting an idea of what's required in a scheduler.
+/** <code>PreAllocRoundRobinScheduler</code> is a round-robin scheduler that
+ *  preallocates all of its memory up front.
  */
 public class PreAllocRoundRobinScheduler extends Scheduler {
     static PreAllocRoundRobinScheduler instance = null;
-    
+
+    public static final long MAX_THREADS = 1000;
+    private long[] threadList = new long[MAX_THREADS];
 
     protected PreAllocRoundRobinScheduler() {
 	super();
@@ -43,7 +44,7 @@ public class PreAllocRoundRobinScheduler extends Scheduler {
 
     /** Used to determine the policy of the <code>Scheduler</code>. */
     public String getPolicyName() {
-	return "Pre-alloc round robin";
+	return "Pre-allocated memory round robin";
     }
 
     /** It is always feasible to add another thread to a RoundRobinScheduler. */
@@ -76,45 +77,66 @@ public class PreAllocRoundRobinScheduler extends Scheduler {
 
     protected long chooseThread(long currentTime) {
 	setQuanta(1000); // Switch again after a specified number of microseconds.
-	
+	return 0;
     }
 
     protected void addThread(RealtimeThread thread) {
-	
-	threadList.add(thread.getUID());
+	addThread(thread.getUID());
     }
 
     protected void removeThread(RealtimeThread thread) {
-	threadList.remove(thread.getUID());
+	removeThread(thread.getUID());
     }
 
     protected void addThread(long threadID) {
-	threadList.add(threadID);
+	for (int i=0; i<MAX_THREADS; i++) {
+	    if (threadList[i]==0) {
+		threadList[i] = threadID;
+		return;
+	    }
+	}
+	throw new Error("Too many threads!");
     }
 
     protected void removeThread(long threadID) {
-	threadList.remove(threadID);
+	for (int i=0; i<MAX_THREADS; i++) {
+	    if (threadList[i]==threadID) {
+		threadList[i] = 0;
+		return;
+	    }
+	}
+	throw new Error("No such thread!");
     }
 
     protected void disableThread(long threadID) {
-	threadList.remove(threadID);
+	removeThread(threadID);
     }
 
     protected void enableThread(long threadID) {
-	threadList.add(threadID);
+	addThread(threadID);
     }
 
-    /** RoundRobinScheduler is too dumb to deal w/periods. */
+    /** PreAllocRoundRobinScheduler is too dumb to deal w/periods. */
     protected void waitForNextPeriod(RealtimeThread rt) {
     }
 
     public String toString() {
-	return "";
+	return getPolicyName();
     }
 
     public void printNoAlloc() {
+	boolean first = true;
 	NoHeapRealtimeThread.print("[");
-	threadList.printNoAlloc();
+	for (int i=0; i<MAX_THREADS; i++) {
+	    if (threadList[i]!=0) {
+		if (first) {
+		    first = false;
+		}
+		    NoHeapRealtimeThread.print(" ");
+		}
+		NoHeapRealtimeThread.print(threadList[i]);
+	    }
+	}
 	NoHeapRealtimeThread.print("]");
     }
 }
