@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Backend.Generic;
 
+import harpoon.Util.Util;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
@@ -48,7 +49,7 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.35 2000-08-25 06:57:42 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.36 2001-07-07 18:24:10 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -106,29 +107,6 @@ public abstract class RegFileInfo {
 	int regIndex();
     }
 
-    private static TempFactory preassignTF = new TempFactory() {
-	public String getScope() { 
-	    return "private TF for RegFileInfo"; 
-	}
-	public String getUniqueID(String suggestion) { 
-	    return "rfi"+suggestion.hashCode(); 
-	}
-    };
-
-    /** <code>PreassignTemp</code> represents <code>Temp</code>s
-     *  which have been pre-assigned to machine registers. */
-    public static class PreassignTemp extends Temp {
-	private Temp reg;
-	public PreassignTemp(Temp reg) {
-	    super(preassignTF);
-	    this.reg = reg;
-	}
-	public String toString() {
-	    return reg+"<preassigned>";
-	}
-    }
-    
-
     /** Creates a <code>RegFileInfo</code>. */
     public RegFileInfo() {
         
@@ -166,15 +144,6 @@ public abstract class RegFileInfo {
     */
     // public abstract Set calleeSave();
 
-    /** Returns the <code>TempFactory</code> of the register
-	<code>Temp</code>s in <code>this</code>. 
-	FSK: is this needed?  Why would code using RegFileInfo need
-	     access to this?  Double check if its just a hack to
-	     implement the same functionality offered by
-	     <code>isRegister(Temp)</code> below.
-    */
-    // public abstract TempFactory regTempFactory();
-
     /** Checks if <code>t</code> is a element of the register file for
 	this architecture.
 	<BR> <B>effects:</B> 
@@ -185,6 +154,62 @@ public abstract class RegFileInfo {
 	         file. 
     */
     public abstract boolean isRegister(Temp t); 
+
+
+    /** Returns the number of slots that <code>t</code>'s assigned
+	register sequence occupies in the register file.  
+
+	<p> The default implementation returns 1; subclasses should
+	override to account for how their respective architectures
+	handle multi-register temps (such as longs or doubles).  
+    */
+    public int occupies(Temp t) { return 1; }
+    
+    /** Returns the degree of conflict that <code>b</code> inflicts
+	upon <code>a</code> if the two <code>Temp</code>s interfere.
+    
+	<p> The default implementation returns 1; subclasses should
+	override to account for how their respect architectures
+	constrain the assignment of multi-register temps (such as
+	longs or doubles).  
+	
+	<p>Also, if the two registers can never be assigned to the
+	same register bank, then it is valid for this method to return
+	<code>0</code>.
+	
+	<p> For advice on choosing an appropriate number to return,
+	see the paper "Coloring Register Pairs" by Briggs, Cooper, and
+	Torczon.  The mappings recommended by that paper are
+	(double,single) => 2 and (double,double) => 2 [or 3].
+    
+    */
+    public int pressure(Temp a, Temp b) { return 1; }
+    
+    /** Returns a List of Reg that can hold <code>needy</code>, given
+	that the Regs in <code>occupied</code> are not available to
+	hold <code>needy</code>.  
+
+	<p> Note that the returned List is not a list of possible 
+	assignments, but rather a single assignment that may span more 
+        than one register.   
+	Thus the length of the returned List should equal 
+	<code>this.occupies(needy)</code>.
+    */
+    List assignment(Temp needy, Collection occupied) {
+	Util.assert(false, "abstract and implement in subclasses");
+	return null;
+    }
+    
+    /** Returns the Regs that can never hold <code>t</code>.  
+	
+	<p> This method is used to increase the degree of
+	<code>Temps</code> which have limited assignments in the
+	register file.
+    */
+    Collection illegal(Temp t) { return null; }
+    
+    /** Returns all of the available registers on this architecture. */
+    Collection allRegs() { return getAllRegistersC(); }
 
     /** Produces a mutable <code>Set</code> of register assignments
 	that can hold <code>t</code>.  FSK: experimental method.
@@ -202,8 +227,7 @@ public abstract class RegFileInfo {
 	     ones. 
     */
     public Set getRegAssignments(Temp t) { 
-	harpoon.Util.Util.assert(false, 
-				 "abstract and implement in subclasses");
+	Util.assert(false, "abstract and implement in subclasses");
 	return null;
     }
 
@@ -278,8 +302,11 @@ public abstract class RegFileInfo {
 		   values have been loaded into the register file
 		   since the point of spilling.
     */
-    public abstract Iterator suggestRegAssignment(Temp t, Map regfile) 
-	throws RegFileInfo.SpillException;
+    public Iterator suggestRegAssignment(Temp t, Map regfile,
+					 Collection preassignedTemps) 
+	throws RegFileInfo.SpillException {
+	Util.assert(false); return null;
+    }
 
     /** SpillException tells a register allocator which
 	<code>Temp</code>s are appropriate for spilling in order to
@@ -361,39 +388,5 @@ public abstract class RegFileInfo {
     public Collection getGeneralRegistersC() {
 	return Arrays.asList(getGeneralRegisters());
     }
-
-    // -- MOVE THE BELOW TO A SUBCLASS OF RegFileInfo --
-
-
-    /** Generates a new <code>VRegAllocator</code> guaranteed to
-	return virtual register Temps from a set disjoint from all
-	other generated <code>VRegAllocator</code>s.
-    */
-    private VRegAllocator allocator() {
-	harpoon.Util.Util.assert(false, "make RegFileInfo.allocator() abstract and implement in all backends");
-	return null;
-    }
-
-    /** <code>VRegAllocator</code> is a virtual register allocator.
-	Register Allocators can use the returned Virtual Register
-	Temps to store Temps in abstractly, without commiting to one
-	particular physical register.  This way, virtual registers in
-	seperate basic blocks can map to the same physical register in
-	the register file.
-    */
-    public static abstract class VRegAllocator {
-	/** Returns a Virtual Register Temp for <code>t</code>.
-	    <BR> <B> effects: </B> If <code>regfile</code> has space
-	         to hold a value of the type held in <code>t</code>, 
-		 returns a virtual register suitable for mapping to 
-		 <code>t</code> in <code>regfile</code>.  Else, throws
-		 a <code>SpillException</code> indicating which
-		 registers could be removed from <code>regfile</code>
-		 to make room for <code>t</code>.
-	*/
-	public abstract Temp vreg(Temp t, Map regfile) 
-	    throws RegFileInfo.SpillException; 
-    }
-
 
 }
