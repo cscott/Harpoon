@@ -22,7 +22,7 @@ import java.util.Hashtable;
  * actual Bytecode-to-QuadSSA translation.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.5 1998-08-24 19:52:26 cananian Exp $
+ * @version $Id: Translate.java,v 1.6 1998-08-24 20:59:13 cananian Exp $
  */
 
 /*
@@ -373,19 +373,29 @@ class Translate  { // not public.
 	    break;
 	case Op.F2D:
 	case Op.F2L:
+	case Op.I2D:
+	case Op.I2L:
 	    ns = s.pop().push(null).push(new Temp());
 	    q = new OPER(in, Op.toString(in.getOpcode()), // "f2d" or "f2l"
 			 ns.stack[0], new Temp[] {s.stack[0]});
 	    break;
 	case Op.F2I:
+	case Op.I2B:
+	case Op.I2C:
+	case Op.I2F:
+	case Op.I2S:
 	    ns = s.pop().push(new Temp());
-	    q = new OPER(in, "f2i", ns.stack[0], new Temp[] {s.stack[0]});
+	    q = new OPER(in, Op.toString(in.getOpcode()),
+			 ns.stack[0], new Temp[] {s.stack[0]});
 	    break;
 	case Op.FADD:
 	case Op.FDIV:
 	case Op.FMUL:
 	case Op.FREM:
 	case Op.FSUB:
+	case Op.IADD:
+	case Op.IAND:
+	case Op.IDIV:
 	    ns = s.pop(2).push(new Temp());
 	    q = new OPER(in, Op.toString(in.getOpcode()), // fadd, fdiv, ...
 			 ns.stack[0], new Temp[] {s.stack[1], s.stack[0]});
@@ -409,9 +419,16 @@ class Translate  { // not public.
 	case Op.FCONST_0:
 	case Op.FCONST_1:
 	case Op.FCONST_2:
+	case Op.ICONST_M1:
+	case Op.ICONST_0:
+	case Op.ICONST_1:
+	case Op.ICONST_2:
+	case Op.ICONST_3:
+	case Op.ICONST_4:
+	case Op.ICONST_5:
 	    {
 		OpConstant opd = (OpConstant) in.getOperand(0);
-		ns = s.push(new Temp("fconst"));
+		ns = s.push(new Temp("const"));
 		q = new LET(in, ns.stack[0],
 			    new LeafConst(opd.getValue(), opd.getType()));
 		break;
@@ -421,6 +438,11 @@ class Translate  { // not public.
 	case Op.FLOAD_1:
 	case Op.FLOAD_2:
 	case Op.FLOAD_3:
+	case Op.ILOAD:
+	case Op.ILOAD_0:
+	case Op.ILOAD_1:
+	case Op.ILOAD_2:
+	case Op.ILOAD_3:
 	    {
 		OpLocalVariable opd = (OpLocalVariable) in.getOperand(0);
 		ns = s.push(s.lv[opd.getIndex()]);
@@ -443,7 +465,59 @@ class Translate  { // not public.
 	    q = new LET(in, ns.lv[opd.getIndex()], s.stack[0]);
 	    break;
 	    }
-
+	case Op.GETFIELD:
+	case Op.GETSTATIC:
+	    {
+	    OpField opd = (OpField) in.getOperand(0);
+	    if (opd.value().getType() == HClass.Double ||
+		opd.value().getType() == HClass.Long) // 64-bit value.
+		ns = s.pop().push(null).push(new Temp());
+	    else // 32-bit value.
+		ns = s.pop().push(new Temp());
+	    q = new GET(in, ns.stack[0], s.stack[0], opd.value());
+	    break;
+	    }
+	case Op.IALOAD:
+	    ns = s.pop(2).push(new Temp());
+	    q = new CALL(in, intArrayGet, s.stack[1],
+			 new Temp[] {s.stack[0]}, ns.stack[0]);
+	    break;
+	case Op.IASTORE:
+	    ns = s.pop(3);
+	    q = new CALL(in, intArrayPut, s.stack[2],
+			 new Temp[] {s.stack[1], s.stack[0]});
+	    break;
+	case Op.IF_ACMPEQ:
+	case Op.IF_ACMPNE:
+	case Op.IF_ICMPEQ:
+	case Op.IF_ICMPNE:
+	case Op.IF_ICMPLT:
+	case Op.IF_ICMPGE:
+	case Op.IF_ICMPGT:
+	case Op.IF_ICMPLE:
+	case Op.IFEQ:
+	case Op.IFNE:
+	case Op.IFLT:
+	case Op.IFGE:
+	case Op.IFGT:
+	case Op.IFLE:
+	case Op.IFNONNULL:
+	case Op.IFNULL:
+	    throw new Error("Ack!"); // FIXME
+	    break;
+	case Op.IINC:
+	    {
+		OpLocalVariable opd0 = (OpLocalVariable) in.getOperand(0);
+		OpConstant opd1 = (OpConstant) in.getOperand(1);
+		Temp constant = new Temp("const");
+		ns = s.assignLV(opd0.getIndex(),
+				new Temp(s.lv[opd0.getIndex()]));
+		q = new CONST(in, constant, opd1.getValue(), opd1.getType());
+		// FIXME append.
+		q /*+*/= new OPER(in, "iadd", ns.lv[opd0.getIndex()],
+				  new Temp[] { s.lv[opd0.getIndex()], constant});
+		break;
+	    }
 	default:
 	    throw new Error("Unknown InGen opcode.");
 	}
@@ -462,6 +536,11 @@ class Translate  { // not public.
 		ns = s.pop();
 		q = new THROW(in, s.stack[0]);
 		break;
+	case Op.GOTO:
+	case Op.GOTO_W:
+	    ns = s;
+	    q = new JMP(in);
+	    break;
 	    default:
 	    }
 	}
