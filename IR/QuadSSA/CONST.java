@@ -9,7 +9,7 @@ import harpoon.Util.Util;
  * to a compiler temporary.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CONST.java,v 1.3 1998-08-26 22:01:39 cananian Exp $
+ * @version $Id: CONST.java,v 1.4 1998-09-03 06:42:25 cananian Exp $
  */
 
 public class CONST extends Quad {
@@ -39,6 +39,8 @@ public class CONST extends Quad {
 	sb.append(" = CONST ");
 	if (type == HClass.forName("java.lang.String"))
 	    sb.append("(String)\""+Util.escape(value.toString())+"\"");
+	else if (type == HClass.Void && value==null)
+	    sb.append("null");
 	else
 	    sb.append("("+type.getName()+")"+value.toString());
 	return sb.toString();
