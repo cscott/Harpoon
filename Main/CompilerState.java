@@ -29,34 +29,11 @@ import java.io.Serializable;
  * <code>CompilerState</code>.
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: CompilerState.java,v 1.2 2003-04-08 05:25:22 salcianu Exp $ */
+ * @version $Id: CompilerState.java,v 1.3 2003-04-17 00:25:19 salcianu Exp $ */
 public class CompilerState implements Cloneable, Serializable {
    
-    /** Creates a <code>CompilerState</code>.
-	
-	@param main main method of the compiler program
-
-	@param roots set of roots for the compiled program
-
-	@param linker linker that loads the classes of the compiled program
-
-       	@param classHierarchy class hierarchy for the compiled program
-       	(optional, may be null)
-
-	@param hcf code factory that produces the code for the methods
-	from the compiled program
-
-	@param frame backend details */
-    public CompilerState(HMethod main, Set roots, Linker linker,
-			 HCodeFactory hcf, ClassHierarchy classHierarchy,
-			 Frame frame) {
-	this.main   = main;
-	this.roots  = roots;
-	this.linker = linker;
-	this.hcf    = hcf;
-	this.classHierarchy = classHierarchy;
-	this.frame  = frame;        
-    }
+    private CompilerState() { }
+    public static CompilerState EMPTY_STATE = new CompilerState();
 
     private HMethod main;
     private Set roots;
@@ -112,7 +89,7 @@ public class CompilerState implements Cloneable, Serializable {
     /** @return identical copy of <code>this</code> compiler state,
         with the exception of the set of roots, which is now set to
         <code>roots</code> */
-    public CompilerState changeSet(Set roots) {
+    public CompilerState changeRoots(Set roots) {
 	CompilerState newCS = this.newCopy();
 	newCS.roots = roots;
 	return newCS;
@@ -139,7 +116,7 @@ public class CompilerState implements Cloneable, Serializable {
     /** @return identical copy of <code>this</code> compiler state,
         with the exception of the class hierarchy, which is now set to
         <code>classHierarchy</code> */
-    public CompilerState changeCodeFactory(ClassHierarchy classHierarchy) {
+    public CompilerState changeClassHierarchy(ClassHierarchy classHierarchy) {
 	CompilerState newCS = this.newCopy();
 	newCS.classHierarchy = classHierarchy;
 	return newCS;
