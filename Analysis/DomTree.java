@@ -6,7 +6,7 @@ package harpoon.Analysis;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
-import harpoon.IR.Properties.CFGraphable;
+import harpoon.IR.Properties.CFGrapher;
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.Util;
 
@@ -18,10 +18,12 @@ import java.util.Vector;
  * <code>harpoon.IR.Properties.CFGraphable</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomTree.java,v 1.8.2.5 1999-11-30 05:24:41 cananian Exp $
+ * @version $Id: DomTree.java,v 1.8.2.6 2000-10-27 22:13:44 cananian Exp $
  */
 
 public class DomTree /*implements Graph*/ {
+    /** Grapher to use. */
+    final CFGrapher grapher;
     /** Set of analyzed HCodes for caching. */
     Hashtable analyzed = new Hashtable();
     /** Mapping of HCodeElements to their immediate dominators. */
@@ -36,13 +38,24 @@ public class DomTree /*implements Graph*/ {
     /** Is this a dominator or post-dominator tree? */
     boolean isPost = false;
 
-    /** Creates a new, empty <code>DomTree</code>. */
+    /** Creates a new, empty <code>DomTree</code> which creates
+     *  dominator trees for <code>HCode</code>s whose elements
+     *  implement <code>CFGraphable</code>. */
     public DomTree() {
 	this(false);
     }
     /** Creates a new, empty <code>DomTree</code>; if <code>isPost</code> is
-     *  true, creates a postdominator tree instead. */
+     *  true, creates a postdominator tree instead. Uses the default
+     *  <code>CFGrapher</code>, which means the elements of the
+     *  <code>HCode</code> must implement <code>CFGraphable</code>. */
     public DomTree(boolean isPost) {
+	this(CFGrapher.DEFAULT, isPost);
+    }
+    /** Creates a new, empty <code>DomTree</code> using the specified
+     *  <code>CFGrapher</code>; if <code>isPost</code> is
+     *  true, creates a postdominator tree instead. */
+    public DomTree(CFGrapher grapher, boolean isPost) {
+	this.grapher = grapher;
 	this.isPost = isPost;
     }
 
@@ -63,16 +76,12 @@ public class DomTree /*implements Graph*/ {
     }
     
     HCode lastHCode = null; // most-recently analyzed HCode.
-    /** Analyze an <code>HCode</code> which implements </code>CFGraphable</code>. */
+    /** Analyze an <code>HCode</code>. */
     void analyze(HCode hc) {
 	if (hc == lastHCode) return; // quick exit for common case.
 	if (analyzed.get(hc) != null) return; // check hashtable.
 	analyzed.put(hc, hc);
 	lastHCode = hc;
-
-	// Check interfaces
-	Util.assert(hc.getRootElement() instanceof CFGraphable,
-		    hc.getName() + " does not implement CFGraphable");
 
 	// Setup lists and tables.
 	final IntHTable dfnum = new IntHTable();
@@ -97,12 +106,12 @@ public class DomTree /*implements Graph*/ {
 		    vertex.addElement(n);
 		    if (!isPost) {
 			// for each successor of n...
-			HCodeEdge[] el = ((CFGraphable)n).succ();
+			HCodeEdge[] el = grapher.succ(n);
 			for (int i=0; i<el.length; i++)
 			    DFS(n, el[i].to());
 		    } else {
 			// for each predecessor of n...
-			HCodeEdge[] el = ((CFGraphable)n).pred();
+			HCodeEdge[] el = grapher.pred(n);
 			for (int i=0; i<el.length; i++)
 			    DFS(n, el[i].from());
 		    }
@@ -148,7 +157,7 @@ public class DomTree /*implements Graph*/ {
 	    if (p == null) continue; // skip root(s).
 
 	    //   (for each predecessor v of n)
-	    HCodeEdge el[] = (!isPost) ? ((CFGraphable)n).pred() : ((CFGraphable)n).succ();
+	    HCodeEdge el[] = (!isPost) ? grapher.pred(n) : grapher.succ(n);
 	    for (int j=0; j<el.length; j++) {
 		HCodeElement v = (!isPost) ? el[j].from() : el[j].to();
 		// ignore unreachable nodes.
