@@ -7,7 +7,7 @@ import harpoon.Temp.Temp;
  * Quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Peephole.java,v 1.1 1998-09-25 16:50:00 cananian Exp $
+ * @version $Id: Peephole.java,v 1.2 1998-09-25 18:45:06 cananian Exp $
  */
 
 class Peephole extends QuadVisitor {
@@ -28,6 +28,63 @@ class Peephole extends QuadVisitor {
     // Implement visitor classes.
     public void visit(Quad q) { /* default, do nothing. */ }
 
+    public void visit(PHI q) {
+	/* Looking for:            becomes:
+	 * t1=CONST t1=CONST ...    t1=CONST           t1=CONST        ....
+	 *       \   |      /          \                   |            /
+	 *          PHI             t2=ICMPxx(t1,xx) t2=ICMPxx(t1,xx) ...
+	 *   t2=ICMPxx(t1,xx)         CJMP t2           CJMP t2       ...
+	 *     CJMP t2                  |___\___________/__|__________/ /
+	 *      /    \                  |    \_____________|___________/
+	 *     x      y               PHI                 PHI
+	 *                             x                   y
+	 */
+	// phi arity greater than 1
+	int arity = q.prev().length;
+	if (arity < 2) return;
+	// first, all PHI preds have to be CONSTs defining the same t.
+	for (int i=0; i < arity; i++)
+	    if (! (q.prev(i) instanceof CONST) ) return;
+	Temp t1 = ((CONST)q.prev(0)).def()[0];
+	for (int i=1; i < arity; i++)
+	    if ( ((CONST)q.prev(i)).def()[0] != t1 ) return;
+
+	// after the PHI, a compare and a jump
+	if (! (q.next(0) instanceof OPER) ) return;
+	OPER op0 = (OPER) q.next(0);
+	if (op0.opcode.indexOf("cmp")==-1) return; // not a compare.
+	if (t1 != op0.operands[0] &&
+	    t1 != op0.operands[1]) return; // not sourced from the PHI.
+	if (! (op0.next(0) instanceof CJMP) ) return; // not followed by a cjmp
+	CJMP cjmp0 = (CJMP) op0.next(0);
+	if (cjmp0.test != op0.dst) return; // not sourced from the oper.
+	Temp t2 = cjmp0.test;
+
+	// okay.  The gauntlet has been run.  Let's optimize this baby.
+	//   arrays of phis, cjmps, cmps...
+	OPER op[]   = new OPER[arity];
+	CJMP cjmp[] = new CJMP[arity];
+	PHI  phi[]  = new PHI [2]; // for true and false.
+	for (int i=0; i<arity; i++) {
+	    op[i] = new OPER(op0.getSourceElement(), op0.opcode,
+			     op0.dst, (Temp[]) op0.operands.clone());
+	    cjmp[i] = new CJMP(cjmp0.getSourceElement(), 
+			       cjmp0.test, new Temp[0]);
+	}
+	phi[0] = new PHI(cjmp0.next(0).getSourceElement(), new Temp[0], arity);
+	phi[1] = new PHI(cjmp0.next(1).getSourceElement(), new Temp[0], arity);
+
+	// make all the links.
+	Quad.addEdge(phi[0], 0, cjmp0.next(0), cjmp0.nextEdge(0).which_pred());
+	Quad.addEdge(phi[1], 0, cjmp0.next(1), cjmp0.nextEdge(1).which_pred());
+	for (int i=0; i<arity; i++) {
+	    Quad.addEdge(q.prev(i), q.prevEdge(i).which_succ(), op[i], 0);
+	    Quad.addEdge(op[i], 0, cjmp[i], 0);
+	    Quad.addEdge(cjmp[i], 0, phi[0], i);
+	    Quad.addEdge(cjmp[i], 1, phi[1], i);
+	}
+	// done!
+    }
     public void visit(INSTANCEOF q) {
 	// all sorts of conditions on this before we target it.
 	if (! (q.next(0) instanceof OPER) ) return;
