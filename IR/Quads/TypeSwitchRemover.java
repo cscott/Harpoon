@@ -24,7 +24,7 @@ import java.util.List;
  * into chains of <code>INSTANCEOF</code> and <code>CJMP</code> quads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeSwitchRemover.java,v 1.1.2.2 2000-10-12 21:38:40 cananian Exp $
+ * @version $Id: TypeSwitchRemover.java,v 1.1.2.3 2000-10-12 22:30:41 cananian Exp $
  */
 public final class TypeSwitchRemover
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -54,9 +54,11 @@ public final class TypeSwitchRemover
     private static void replace(TYPESWITCH ts, DerivationMap dm) {
 	/* construct instanceof chain */
 	Edge e = ts.prevEdge(0);
-	makeTest(constructCT(ts), ts, (Quad) e.from(), e.which_succ(),
-		 ts.src(), dm)
-	    .fixupSigmaDerivations(ts, dm);
+	TypeTree tt =
+	    makeTest(constructCT(ts), ts, (Quad) e.from(), e.which_succ(),
+		     ts.src(), dm);
+	// fixup derivations if present.
+	if (dm!=null) tt.fixupSigmaDerivations(ts, dm);
     }
     /** Construct INSTANCEOF chain from a proper & pruned ClassTree */
     private static TypeTree makeTest(ClassTree ct, TYPESWITCH ts,
@@ -80,7 +82,8 @@ public final class TypeSwitchRemover
 	    CJMP q1 = new CJMP(qf, ts, Textra, dst, src);
 	    Quad.addEdge(head, which_succ, q0, 0);
 	    Quad.addEdge(q0, 0, q1, 0);
-	    dm.putType(q0, Textra, HClass.Int/*internal form of boolean*/);
+	    if (dm!=null) // update derivation w/ info about Textra
+		dm.putType(q0, Textra, HClass.Int/*internal form of boolean*/);
 	    ptn = (TypeNode) (ptn.child[0] = new TypeNode(q1));
 	    // then...
 	    ptn.child[1] = makeTest(c, ts, q1, 1, slice(q1, 1), dm);
