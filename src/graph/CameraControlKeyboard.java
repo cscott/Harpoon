@@ -15,22 +15,25 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 /**
- * {@link Keyboard} is a {@link Node} which takes input from the keyboard
- * and sends out servo commands.
+ * Takes input from the keyboard
+ * and sends out commands to adjust the properties
+ * of a {@link Camera}.<br>
  *
- * @see Servo
+ * The commands produced by this node are expected to be directed
+ * in some way to a {@link  CameraControl} node.
  *
- * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
+ * @see Camera
+ * @see CameraControl
+ *
+ * @author Reuben Sterling <<a href="mailto:benster@mit.edu">benster@mit.edu</a>>
  */
 public class CameraControlKeyboard extends Node {
     Frame frame = new Frame("Camera Control Keyboard");
   
-    private static final int WIDTH = 100;
-    private static final int HEIGHT = 100;
-
-    /** Construct a {@link Keyboard} to parse keypresses and generate servo commands. 
+    /** Construct a {@link CameraControlKeyboard} to parse
+     * keypresses and generate camera commands. 
      *
-     *  @param out Node to send {@link ImageData}s to.
+     * @param out Node to send {@link ImageData}s to.
      */
     public CameraControlKeyboard(final Node out) {
 	super(out);
@@ -102,7 +105,6 @@ public class CameraControlKeyboard extends Node {
 	frame.add(new java.awt.Label("Increase Frame Rate: Numeric Keypad Right"));
 	frame.add(new java.awt.Label("Decrease Frame Rate: Numeric Keypad Left"));
 	frame.pack();
-	//frame.setSize(new Dimension(WIDTH, HEIGHT));
 	frame.setVisible(true);
     }
 
@@ -111,6 +113,13 @@ public class CameraControlKeyboard extends Node {
      *  @param id Ignored, use <code>run()</code> to start.
      */
     public void process(ImageData id) {
+    }
+
+    /**
+     * Returns the {@link Frame} that this class creates.
+     */
+    public Frame getFrame() {
+	return frame;
     }
 
 }
