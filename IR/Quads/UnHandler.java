@@ -21,7 +21,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.30 2001-01-11 19:47:48 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.31 2001-03-03 23:28:00 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -82,51 +82,127 @@ final class UnHandler {
 	// explicit accessors to avoid typecasting.
 	int getArrayLength() { throw new Error("Not a FixedArray."); }
 	int getConstValue() { throw new Error("Not an IntConst."); }
+	// debugging
+	public abstract String toString();
 	// static types for convenience/efficiency.
 	static final Type top=new Top();
 	static final Type nonnull=new NonNull();
     }
     private static class Top extends Type {
 	boolean isTop() { return true; }
+	public String toString() { return "Top"; }
     }
     private static class NonNull extends Type {
 	boolean isNonNull() { return true; }
+	public String toString() { return "NonNull"; }
     }
     private static class IntConst extends Type {
 	final int value;
 	IntConst(int value) { this.value = value; }
 	boolean isIntConst() { return true; }
 	int getConstValue() { return value; }
+	public String toString() { return "IntConst("+value+")"; }
     }
     private static class FixedArray extends NonNull {
 	final int length;
 	FixedArray(int length) { this.length = length; }
 	boolean isFixedArray() { return true; }
 	int getArrayLength() { return length; }
+	public String toString() { return "FixedArray("+length+")"; }
     }
 
     /** Mapping of temps to information known about their values at a
      *  given program point. */
     private static class TempInfo implements Cloneable {
-	final private HashMap h;
-	private TempInfo(HashMap h) { this.h = h; }
-	public TempInfo() { this.h = new HashMap(); }
+	private static class AliasList {
+	    static class TypeBox {
+		Type type;
+		TypeBox(Type type) { this.type = type; }
+	    }
+	    Temp temp;
+	    TypeBox box;
+	    AliasList prevAlias, nextAlias; // circular list
+	    AliasList(Temp temp, Type ty) {
+		this.temp = temp; this.box=new TypeBox(ty);
+		this.prevAlias=this.nextAlias=this; // its own alias.
+	    }
+	}
+	final private Map h = new HashMap();
+	public TempInfo() { /* do nothing */ }
+	private TempInfo(Map h) {
+	    // copy types
+	    for (Iterator it=h.values().iterator(); it.hasNext(); ) {
+		AliasList al = (AliasList) it.next();
+		this.put(al.temp, al.box.type);
+	    }
+	    // and copy aliases
+	    for (Iterator it=h.values().iterator(); it.hasNext(); ) {
+		AliasList al = (AliasList) it.next();
+		if (al.prevAlias!=null)
+		    this.createAlias(al.temp, al.prevAlias.temp);
+	    }
+	}
 
 	/** Get the type of a given temp. */
 	public Type get(Temp t) { 
-	    Type ty=(Type)h.get(t); return (ty==null)?Type.top:ty;
+	    AliasList al = (AliasList) h.get(t);
+	    return (al==null) ? Type.top : al.box.type;
 	}
-	/** Put a type for a temp. */
+	/** Put a type for a temp, breaking any alias to the temp. */
 	public void put(Temp t, Type ty) {
-	    if (ty==null || ty.isTop()) h.remove(t);
-	    else h.put(t, ty);
+	    breakAlias(t); update(t, ty);
+	}
+	/** Update a type for a temp, updating all aliases as well. */
+	public void update(Temp t, Type ty) {
+	    // all aliases also get the type.
+	    if (ty==null) ty=Type.top;
+	    AliasList al = (AliasList) h.get(t);
+	    // if top and no aliases...
+	    if (ty.isTop() && (al==null || al.prevAlias==al))
+		h.remove(t); // ...save memory.
+	    else if (al==null) // no previous type.
+		h.put(t, new AliasList(t, ty));
+	    else al.box.type = ty; // update type for all aliases at once.
+	}
+	/** Process a move. Type of dst becomes that of src. */
+	public void doMove(Temp dst, Temp src) {
+	    put(dst, get(src)); createAlias(dst, src);
+	}
+	/** Break an alias.  Type of target becomes independent. */
+	private void breakAlias(Temp t) {
+	    AliasList al = (AliasList) h.get(t);
+	    if (al==null || al.prevAlias==al) return; // no aliases.
+	    // remove from circular list.
+	    al.prevAlias.nextAlias = al.nextAlias;
+	    al.nextAlias.prevAlias = al.prevAlias;
+	    al.nextAlias=al.prevAlias=al;
+	    // and give it a type box of its own.
+	    al.box = new AliasList.TypeBox(al.box.type);
+	}
+	/** Create an alias between (all aliases of) dst and (all aliases of)
+	 *  src.  The type of (all aliases of) dst becomes that of src. */
+	public void createAlias(Temp dst, Temp src) {
+	    AliasList d0 = (AliasList) h.get(dst);
+	    AliasList s0 = (AliasList) h.get(src);
+	    if (d0==null) h.put(dst, d0=new AliasList(dst, Type.top));
+	    if (s0==null) h.put(src, s0=new AliasList(src, Type.top));
+	    // all boxes in dst must point to src.
+	    AliasList al=d0;
+	    do {
+		al.box=s0.box;
+		al=al.nextAlias;
+	    } while (al!=d0);
+	    // now join the circular lists.
+	    AliasList d1 = d0.nextAlias;
+	    AliasList s1 = s0.nextAlias;
+	    d0.nextAlias=s1; s1.prevAlias=d0;
+	    s0.nextAlias=d1; d1.prevAlias=s0;
+	    Util.assert(s0.box==d0.box && s1.box==d1.box);
 	}
 	/** Clear all type information (ie at program merge points) */
 	public void clear() { h.clear(); }
 	/** Clone the temp info (ie at program splits) */
-	public Object clone() {
-	    return new TempInfo((HashMap)h.clone());
-	}
+	public Object clone() { return new TempInfo(h); }
     }
 
     /** mapping from old quads to new quads. */
@@ -373,7 +449,7 @@ final class UnHandler {
 	    if (!Tobj.isNonNull())
 		head = nullCheck(q, head, q.objectref());
 	    ss.qm.put(q, head, nq);
-	    ti.put(q.objectref(), alsoNonNull(Tobj));
+	    ti.update(q.objectref(), alsoNonNull(Tobj));
 	    ti.put(q.dst(), Type.top);
 	}
 	public void visit(ALENGTH q) {
@@ -382,7 +458,7 @@ final class UnHandler {
 	    if (!Tobj.isNonNull())
 		head = nullCheck(q, head, q.objectref());
 	    ss.qm.put(q, head, nq);
-	    ti.put(q.objectref(), alsoNonNull(Tobj));
+	    ti.update(q.objectref(), alsoNonNull(Tobj));
 	    if (Tobj.isFixedArray())
 		ti.put(q.dst(), new IntConst(Tobj.getArrayLength()));
 	    else
@@ -414,7 +490,7 @@ final class UnHandler {
 		// not safe.  Break into components.
 		Util.assert(false); // FIXME
 	    }
-	    ti.put(q.objectref(), alsoNonNull(Tobj));
+	    ti.update(q.objectref(), alsoNonNull(Tobj));
 	}
 	public void visit(ASET q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm), head = nq;
@@ -434,7 +510,7 @@ final class UnHandler {
 	    if (!Tobj.isNonNull())
 		head = nullCheck(q, head, q.objectref());
 	    ss.qm.put(q, head, nq);
-	    ti.put(q.objectref(), alsoNonNull(Tobj));
+	    ti.update(q.objectref(), alsoNonNull(Tobj));
 	}
 	public void visit(CALL q) {
 	    Quad nq, head;
@@ -464,11 +540,11 @@ final class UnHandler {
 		head = nullCheck(q, head, q.params(0));
 	    ss.qm.put(q, head, nq);
 	    // 'this' is non-null by now.
-	    if (!q.isStatic()) ti.put(q.params(0),
-				      alsoNonNull(ti.get(q.params(0))));
+	    if (!q.isStatic()) ti.update(q.params(0),
+					 alsoNonNull(ti.get(q.params(0))));
 	    // nothing known about return values or exceptions thrown.
 	    if (q.retval()!=null) ti.put(q.retval(), Type.top);
-	    if (q.retex()!=null) ti.put(q.retex(), Type.top);
+	    if (q.retex()!=null) ti.put(q.retex(), Type.nonnull);
 	}
 
 	// no run-time checks necessary:
@@ -492,7 +568,7 @@ final class UnHandler {
 		Type Tobj = ti.get(q.objectref());
 		if (!Tobj.isNonNull())
 		    head = nullCheck(q, head, q.objectref());
-		ti.put(q.objectref(), alsoNonNull(Tobj));
+		ti.update(q.objectref(), alsoNonNull(Tobj));
 	    }
 	    ss.qm.put(q, head, nq);
 	    ti.put(q.dst(), Type.top);
@@ -534,7 +610,7 @@ final class UnHandler {
 	    if (!Tlck.isNonNull())
 		head = nullCheck(q, head, q.lock());
 	    ss.qm.put(q, head, nq);
-	    ti.put(q.lock(), alsoNonNull(Tlck));
+	    ti.update(q.lock(), alsoNonNull(Tlck));
 	}
 	public void visit(MONITOREXIT q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm), head=nq;
@@ -542,13 +618,12 @@ final class UnHandler {
 	    if (!Tlck.isNonNull())
 		head = nullCheck(q, head, q.lock());
 	    ss.qm.put(q, head, nq);
-	    ti.put(q.lock(), alsoNonNull(Tlck));
+	    ti.update(q.lock(), alsoNonNull(Tlck));
 	}
 	public void visit(MOVE q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm);
-	    Type Tsrc = ti.get(q.src());
 	    ss.qm.put(q, nq, nq);
-	    ti.put(q.dst(), Tsrc);
+	    ti.doMove(q.dst(), q.src());
 	}
 	public void visit(NEW q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm);
@@ -618,7 +693,7 @@ final class UnHandler {
 		Type Tobj = ti.get(q.objectref());
 		if (!Tobj.isNonNull())
 		    head = nullCheck(q, head, q.objectref());
-		ti.put(q.objectref(), alsoNonNull(Tobj));
+		ti.update(q.objectref(), alsoNonNull(Tobj));
 	    }
 	    ss.qm.put(q, head, nq);
 	}
@@ -640,7 +715,7 @@ final class UnHandler {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm); // unreachable foot.
 	    Quad.addEdge(q0, 0, nq, 0);
 	    ss.qm.put(q, head, nq);
-	    ti.put(q.throwable(), alsoNonNull(Tthr)); // arguably useless.
+	    ti.update(q.throwable(), alsoNonNull(Tthr)); // arguably useless.
 	}
 	public void visit(TYPECAST q) {
 	    // translate as:
