@@ -30,7 +30,7 @@ make
 --with-gc=copying can also be --with-gc=marksweep)
 
 cd $HOME/Harpoon/Code
-bin/build-precisec -t SIMPLE_DEBUG_REF <test> <testName>
+bin/build-precisec -t SIMPLE_DEBUG_REF_RTJ_PERF <test> <testName>
 
 where <test> is a fully qualified test from the list below:
 edu.uci.ece.doc.rtjperf.asynch.DispatchDelayTestLauncher
@@ -71,7 +71,7 @@ $HOME/Harpoon/Benchmarks/RTJ/RTJPerf/src/edu/uci/ece/doc/rtjperf/
 
 Copy RTJPerfTests to your Harpoon/Code directory so that
 you can just:
-./RTJPerfTests bin/build-precisec -t SIMPLE_DEBUG_REF 
+./RTJPerfTests bin/build-precisec -t SIMPLE_DEBUG_REF_RTJ_PERF 
 
 to build all of the tests (after configuring the Runtime).
 
