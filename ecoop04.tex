@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: ecoop04.tex,v 1.3 2003-12-02 09:36:36 cananian Exp $
+% $Id: ecoop04.tex,v 1.4 2003-12-02 10:46:31 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[runningheads]{csallncs}
 %\usepackage{times}
@@ -14,6 +14,7 @@
 \usepackage{varioref} % \vref command
 \usepackage{support}
 \usepackage{xspace}
+\notesfalse
 
 % work around fig2dev wanting to add colors to .figures.
 \providecommand{\color}[2][rgb]{}
@@ -21,8 +22,8 @@
 %setup varioref package
 \renewcommand{\reftextbefore}{on the preceding page}\vrefwarning
 
-\renewcommand{\floatpagefraction}{0.8}
-\renewcommand{\topfraction}{0.25}
+%\renewcommand{\floatpagefraction}{0.8}
+%\renewcommand{\topfraction}{0.25}
 
 \title{Efficient Software Transactions for Object-Oriented Languages}
 %\titlerunning{Efficient Software Transactions}
@@ -36,7 +37,7 @@ Cambridge, MA 02139 \\
 }
 \special{papersize=8.5in,11in}
 
-%\date{\today \\ $ $Revision: 1.3 $ $}
+%\date{\today \\ $ $Revision: 1.4 $ $}
 
 %% Paper title: an efficient implementation of software transactions for
 %% o-o lang.
@@ -196,7 +197,6 @@ the class \texttt{java.lang.StringBuffer}).  ``Transactification'' of
 the existing class corrects this race.
 
 \subsecput{destruct}{Destructive list traversal}
-\note{Put this example first?}
 Many recursive data structures can be traversed without the use of an
 stack using pointer reversal.  This technique is widely used in
 garbage collectors, and was first demonstrated in this context by
@@ -255,12 +255,14 @@ try {
 The {\tt try}/{\tt else} block appears to make a non-deterministic
 choice between executing the {\tt try} or the {\tt else} clause,
 depending on whether the {\tt try} would succeed or not.
-We implement this with transactions, making the {\tt fail} statement
-an explicit transaction abort.  When the transaction aborts, all the
+We implement this with transactions, always initially attempting
+the {\tt try}.  Exceptions or faults cause the transaction to abort;
+when it does so all the
 heap side-effects of the {\tt try} block disappear.
 
 \subsecput{flow}{Network flow}
 
+We'll turn our attention now to parallel codes.
 Consider a serial program for computing network flow (see, for
 example, \cite[Chapter 26]{CormenLeRi01}).  The inner loop of the code
 pushes flow across an edge by increasing the ``excess flow'' on one
@@ -300,10 +302,10 @@ This code is surprisingly complicated and slow compared to the
 original.  Space for each object's lock must be reserved.
 To avoid deadlock, the code must acquire the locks in
 a consistent linear order, resulting in an unpredictable branch in the
-code.  In our example, 
-we require the programmer to insert an \texttt{id} field into
+code.  In the code shown,
+we have required the programmer to insert an \texttt{id} field into
 each vertex object to maintain a total ordering.
-Moreover, the time required to acquire the locks may be
+The time required to acquire the locks may be
 an order of magnitude larger than the time to
 modify the excess flow.
 \note{Using FLEX, the locking code is over 11x
@@ -332,17 +334,17 @@ void pushFlow(Vertex v1, Vertex v2, double flow) {
 \end{verbatim}
 } 
 
-This {\tt atomic} region can be implemented as a transaction.
-With an appropriately non-blocking implementation, the {\tt atomic}
-version of the code can scale better and execute faster than the locking version
+This {\tt atomic} region can be implemented as a transaction, and
+with an appropriately non-blocking implementation, it
+will scale better and execute faster than the locking version
 \cite{AnanianAsKuLeLi04,HarrisFr03,GreenwaldCh96,MassalinPu91,HerlihyMo93,ShavitTo95}.
-Further, we can eliminate the convoluted locking protocol, which must
-be observed rigorously everywhere if deadlock is to be avoided.
+From the programmer's point of view, we've also eliminated the
+convoluted locking protocol, which must
+be observed rigorously everywhere the related fields are accessed if
+deadlock and races are to be avoided.
 
-The {\tt try}/{\tt else} construct exposes transactions to the
-programmer as an exception-handling mechanism.  And in fact,
-the {\tt atomic} block above can be implemented using
-{\tt try}/{\tt else}:
+Further, we can implement {\tt atomic} using the {\tt try}/{\tt else}
+exception-handling mechanism we've already introduced:
  \par {\footnotesize\samepage
 \begin{verbatim}
 while(true) {
@@ -357,13 +359,15 @@ while(true) {
 \end{verbatim}
 }
 \note{How hard do we try to execute the {\tt try} block?}
-Transactions expressed an exception-handling mechanism can be used in this
-manner to provide fault-tolerance and backtracking to the language, as
-well as atomic regions for synchronization.\note{Weak conclusion}
-\note{nqueens example?}
+We non-deterministically choose to execute the body of the {\tt
+  atomic} block if and only if it will be observed by all to execute
+atomically.  The same linguistic mechanism we introduced for
+fault-tolerance and back-tracking provides atomic regions for
+synchronization as well.
 
 \subsecput{stringbuffer}{The \texttt{StringBuffer} class}
-Java's monitor synchronization methodology implicitly associates an
+The existing \defn{monitor synchronization} methodology for Java
+implicitly associates an 
 lock with each object.  As in its progenitor Emerald
 \cite{BlackHuJuLe86,JulSt91}, requiring a thread to acquire the
 object's lock before touching the object's shared fields prevents data
@@ -412,8 +416,12 @@ target or a \texttt{StringIndexOutOfBoundException} to be thrown.
 Although the calls to
 \texttt{sb.length()} and \texttt{sb.getChars()} are individually
 atomic, but they do not compose to form an atomic implementation of
-\texttt{append()}.
-Replacing {\tt synchronized} with {\tt atomic} gives us the semantics
+\texttt{append()}.  
+%The simple monitor synchronization scheme breaks
+%down when operations touch multiple objects.
+
+Note however that replacing {\tt synchronized} with {\tt atomic} in
+this code gives us the semantics
 we desire: nested {\tt atomic} blocks compose to ensure that the entire
 operation appears atomic.
 
@@ -432,14 +440,20 @@ semantics of {\tt atomic} and {\tt synchronized} are identical.
 \note{Is this true?}
 
 \vspace*{5mm}
-We have implemented a transaction mechanism for Java using both
-software and hardware approaches.  We will first discuss automatically
+We have designed a software transactions implementation which allows
+us to efficiently implement the {\tt try}/{\tt else} and {\tt atomic}
+constructs.  We have evaluated it by automatically
 ``transactifying'' Java applications by replacing synchronization with
-{\tt atomic} blocks, and present experimental results describing the
+{\tt atomic} blocks, and in \secref{properties} we present
+experimental results describing the
 transaction properties of programs so transformed.
-We then describe a software implementation of transactions which is
-designed for transactions with these properties.  Finally, we present
-performance data for our transaction implementations.
+We then present our software transaction design, based on the
+properties we observed in our benchmarks.  We present modelling
+results affirming the correctness of the design, and compiler
+optimizations to enhance its performance.  We also describe a variant
+on the scheme which uses some hardware support.  Finally, we present
+performance data for our pure-software and partially-hardware
+transaction implementations.
 
 \secput{auto}{Creating transactions}
 One of the difficulties of proposing a novel language feature is the
@@ -454,11 +468,12 @@ unsynchronized updates to shared fields to be observed within a
 synchronized block, while such updates will never be visible to an
 {\tt atomic} block.  The proposed revision of the Java memory model
 \cite{MansonPu02} narrows the semantic gap, however we do not treat
-{\tt volatile} fields in this work
+{\tt volatile} fields in this work.
 
 Despite the differences in semantics, the automatic substitution of
 {\tt atomic} for {\tt synchronized} does, in fact, preserve the
-correctness of the SPECjvm98 benchmarks we've examined.  Moreover, it
+correctness of the SPECjvm98 benchmarks we've examined.  Moreover, as
+mentioned in \secref{stringbuffer}, it
 fixes the synchronization issue with {\tt java.lang.StringBuffer}.
 
 A goal of this work was to make such improperly synchronized
@@ -477,15 +492,16 @@ it.  Imagine unsynchronized code directly altering the length field of
 \epsfigput{tr-sz-all}{Transaction size distribution.}
 See \figref{tr-w-all} and \figref{tr-w-ten}.
 See also \figref{tr-sz-all}.
+\note{Write me!}
 
 This section examines the implications of exposing the transaction
 mechanism to user-level code through a compiler.  We implemented
 standard Java monitor synchronization with transactions and found that
 the applications in the SPECjvm98 benchmark suite performed both large
 transactions (touching up to 8.9 million cache lines) and frequent
-transactions (up to 45 million of them).  Hardware boundless
-transactions are needed to handle these extremes.
+transactions (up to 45 million of them).
 
+\punt{
 We compiled the SPECjvm98 benchmark suite with a modified Java
 compiler \note{Cite the FLEX java compiler [Flex] in the final
 paper.} which translates standard Java \texttt{synchronized} blocks
@@ -498,12 +514,14 @@ transaction around the shallowest-nested \texttt{atomic} region.  We
 then instrumented this transformed program to produce a trace of
 memory references and transaction boundaries, and ran those traces
 through the simulator described in \secref{method}.
+}
 
 The SPECjvm98 benchmark suite represents a variety of typical Java
 applications which use the capabilities of the Java standard library.
 Although the SPECjvm98 benchmarks are largely single-threaded, since
 they use the thread-safe Java standard libraries they contain
-synchronized code which is transformed into transactions.  Unlike the
+synchronized code which is transformed into transactions.
+\punt{  Unlike the
 Linux kernel, these applications have not been tuned to reduce lock
 granularity or contention.
 
@@ -514,14 +532,15 @@ we expect \texttt{227\_mtrt} to have transaction properties similar to
 \texttt{205\_raytrace}. (We did not benchmark multithreaded
 applications.)  The \texttt{228\_jack} parser generator was omitted,
 because it tickled a bug in the IRIX assembler that we could not fix.
+}
 
 \figput{tr-quad}{Classification of SPECjvm98 benchmarks into quadrants
 based on transaction properties.}
 
-Traces from the remaining SPECjvm98 applications were used to
+\punt{Traces from the remaining SPECjvm98 applications were used to
 determine the effectiveness of the hardware boundless transactions.
 \note{We're missing the 100\% 222\_mpegaudio run.}  Results are
-presented in \figref{perfnums}.  \figref{tr-quad} groups the Java
+presented in \figref{perfnums}.}  \figref{tr-quad} groups the Java
 applications into quadrants based on the number and size of the
 transactions which they perform.  Applications in Quads II and IV
 need HTM support, because they contain many transactional operations.
@@ -555,23 +574,18 @@ operations, which may make software schemes impractical.
 
 Finally, Quad IV applications such as \texttt{209\_db} and the
 \texttt{213\_javac} Java compiler application perform a large number
-of xops with at least a few large transactions.  BTM will execute
-these applications correctly, but if the transactions are overly large,
-performance will suffer.
+of xops with at least a few large transactions.  
 
 The \texttt{213\_javac} Java compiler application and the large input
 size of the \texttt{209\_db} benchmark illustrate that some programs
 contain \emph{extremely} large transactions.  When \texttt{213\_javac}
 is run on its full input set, it contains 4 very large transactions,
 each of which contains over 118 million transactional memory
-operations.  The applications contain few xmisses, but as we shall see
-in \secref{eval}, these few misses are very expensive.  Closer
+operations.  Closer
 examination reveals that the method \texttt{Javac.compile()}, which
 implements the entire compilation process, is marked as synchronized:
 the programmer has explicitly requested that the entire compilation
-occur atomically.  Previous HTM schemes with reasonable-sized
-transactional caches could not cope with such an application.  BTM can
-support this application, albeit at a high cost in performance.
+occur atomically.
 
 %We have transformed a correctness problem into a performance problem,
 %which is a good trade-off.
@@ -581,9 +595,7 @@ point the benchmark atomically scans an index vector and removes an
 element, creating a potentially large transaction if the index is
 large.  The size of this index is correlated in these benchmarks with
 the input size, but it need not be: a large input could still result
-in a small index.  Bounded transaction schemes would intermittently
-fail on this application, depending on whether the hidden internal
-data structure grows too big.
+in a small index.
 
 %% Our boundless scheme allows programmers to specify region atomicity
 %% without concern for hardware implementation limits, and ensures
@@ -597,16 +609,16 @@ data structure grows too big.
 
 \vspace*{5mm}
 
-Our Linux and Java studies show that real applications can be
+Our Java studies show that real applications can be
 transactified with modest effort, yielding significant gains in
-concurrency.  For example, the \texttt{make\_linux} benchmark
-indicates that a factor of 4 increase in concurrency can be obtained
+concurrency.  In order work \cite{AnanianAsKuLeLi04} we have shown
+that a factor of 4 increase in concurrency can be obtained
 by doing nothing more than converting locks to transactions.  Since
-the transactified applications may contain large transactions or
-frequent transactional operations, however, HTM support for boundless
-transactions seems to be needed.
+the transactified applications may contain large transactions,
+proposed hardware support for transactions is inadequate.
 
-Further, if the synchronization in this method is implemented with
+Further, if the synchronization in {\tt java.lang.StringBuffer} is
+implemented with
 transactions, note that the call to \texttt{sb.getChars()} means that
 the size of the transaction for this method will grow like the length
 of the parameter~\texttt{sb}.  In other words, the transaction can be
@@ -635,25 +647,18 @@ See \secref{properties}.
 
 \secput{algo}{Software Transaction Mechanism}
 
-\subsecput{interface}{Interface}
+%\subsecput{interface}{Interface}
 \subsecput{datastruct}{Object Structures}
-\subsecput{ops}{Operations}
-\subsubsection{Read}
-\subsubsection{Write}
-\subsubsection{ReadTrans}
-\subsubsection{WriteTrans}
-
-\subsecput{opt}{Optimizations}
-\subsection{Hoisting}
-\subsection{Check-combining}
-\subsection{Global field analysis}
-\subsection{Escape analysis}
-
-
-\subsecput{herlihy}{Herlihy's algorithm}
-Or reader-less version?
-
 \figput{tr-multi-obj}{Implementing software transactions with version lists.}
+\figref{tr-multi-obj} illustrates the basic data structures of the
+software transaction implementation.
+
+\subsecput{ops}{Operations}
+We support transactional read/write and non-transactional read/write
+as well as transaction begin, transaction abort, and transaction
+commit.
+
+\subsubsection{Read}
 
 The ReadNT function does a non-transactional read of field $f$ from
 object $o$.  In the common-case, the only overhead is to check that
@@ -678,6 +683,7 @@ ReadNT(o, f) {
 \end{verbatim}
 }
 
+\subsubsection{Write}
 The WriteNT function does a non-transactional write of new value $nv$
 to field $f$ of object $o$.  Passing 'true' to the copy-back procedure
 indicates that both transactions readers *and* writers should be killed.
@@ -714,6 +720,7 @@ We'll see that $o.f$ is no longer FLAG, so we'll read this
 (later) value, which might be inconsistent.  We'll already
 be aborted, but we'd like to avoid computing with
 stale data.
+\subsubsection{ReadTrans}
 \par {\footnotesize\samepage
 \begin{verbatim}
 ReadT(o, f, ver) {
@@ -730,6 +737,7 @@ the readers list.  This is a list because we don't need to abort
 anyone as long as we're all just reading this field.  But this is the
 list of transactions to abort if anyone tries to *write* this field.
 
+\subsubsection{WriteTrans}
 Writes are easy; we always write to our transactional version.
 Pre-write, we need to create the version and ensure the read
 flags for this field are set.  We also need to abort everyone on
@@ -742,6 +750,7 @@ WriteT(ver, f, nval) {
 \end{verbatim}
 }
 
+\subsubsection{CopyBackField}
 The copyBackField method should leave read flag CLEAR on FALSE\_FLAG.
 \par {\footnotesize\samepage
 \begin{verbatim}
@@ -785,6 +794,16 @@ top:
 }
 
 
+\subsecput{opt}{Optimizations}
+\subsection{Hoisting}
+\subsection{Check-combining}
+\subsection{Global field analysis}
+\subsection{Escape analysis}
+
+
+\subsecput{herlihy}{Herlihy's algorithm}
+Or reader-less version?
+
 \secput{integrate}{Integration}
 % JNI tricks, etc.
 
@@ -816,6 +835,7 @@ Benchmark                 &  Base       & Locks         & Trans              & T
 \label{fig:specperf}
 \end{figure*}
 
+\punt{
 We found that using BTM transactions in the SPECjvm98 benchmarks
 results in very little overhead compared to using locks. We compiled
 the benchmarks to use BTM transactions using our modified Java
@@ -854,7 +874,7 @@ parallelized, in which case locks may be the best choice.  But if the
 programmer wishes to parallelize \texttt{javac}, she may be find it
 easier to break up the large transaction than to break up a locked
 block.
-
+}
 \secput{related}{Related work}
 \subsecput{nb-sync}{Non-blocking synchronization}
 
@@ -909,54 +929,6 @@ We will be concerned mainly with lock-free algorithms.%
   \emph{wait-free}, \emph{lock-free}, and \emph{obstruction-free} for
   our three specific progress criteria, and the dissimilar
   \emph{non-blocking} for the general class.}
-
-\subsecput{nb-adv}{Advantages over mutual exclusion}
-\note{Put this in intro?}
-Non-blocking synchronization offers a number of advantages over mutual
-exclusion within critical regions.  Foremost for the concerns of this paper is
-fault-tolerance:  a process which fails while holding a lock within a
-critical region can prevent all other non-failing processes from
-ever making progress.  In an operating system context, this means that
-thread termination must be done very carefully to avoid inadvertently
-killing a process within a critical region.  If a thread dies while
-holding a user-mode lock, all other threads in its address space may
-deadlock; if it dies while holding a kernel lock, the whole system may
-crash.  Although one can use external means to recognize orphaned
-locks and release them, it is in general not possible to restore the
-locked data structures to a consistent state after such a failure.
-\note{This is an important sentence.}
-Non-blocking synchronization offers a graceful means out of
-these troubles, as non-progress or failure of any one thread will not
-affect the progress or consistency of other threads or the system.
-These fault-tolerant properties are even more relevant in
-distributed systems where entire nodes may fail without warning.
-
-Non-blocking synchronization offers performance benefits as well.
-Even in a failure-free system, page faults, cache misses, context
-switches, I/O, and other unpredictable events may result in delays to the
-entire system when mutual exclusion is used; non-blocking
-synchronization allows undelayed processes or processors to continue
-to make progress.  In loosely coupled asynchronous systems such
-unexpected delays are the norm, rather than the exception.
-%On parallel systems critical regions may cause unexpected serialization.
-
-Real-time systems have other problems with mutual exclusion.
-A low-priority task which 
-acquires a lock and is then delayed may hold up higher-priority tasks
-which contain critical regions protected with the same lock.
-This situation is called
-\emph{priority inversion}, and is responsible for a number of
-high-profile system failures, including whole-system resets during the Mars
-Pathfinder mission \cite{Jones97}.  Non-blocking
-synchronization can guarantee that the high-priority task makes
-progress.\footnote{Note that the progress guarantees made are
-  different for wait-free, lock-free, and obstruction-free
-  algorithms.  For example, priority-inversion can still occur on
-  obstruction-free implementations if a lower priority thread contends
-  persistently for the resource.  On a uniprocessor, a valid solution
-  in this case might be to simply not interleave executions of tasks
-  with differing priorities; obstruction-freedom then guarantees that
-  the high-priority task ``in isolation'' will make progress.}
 
 \subsecput{efficiency}{Efficiency}
 Herlihy presented the first \emph{universal} method for wait-free
@@ -1977,4 +1949,4 @@ problem. [although starvation may still occur.]
 \end{document}
 
 % LocalWords:  csail mit edu AFRL LaMarca Alemany Felten Luchango Shavit JVM
-% LocalWords:  Touitou Okasaki Qadeer Promela backoff
+% LocalWords:  Touitou Okasaki Qadeer Promela backoff transactified
