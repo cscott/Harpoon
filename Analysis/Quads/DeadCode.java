@@ -63,7 +63,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.1.2.4 2000-04-04 04:09:51 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.1.2.5 2000-04-14 06:29:45 bdemsky Exp $
  */
 
 public abstract class DeadCode  {
@@ -358,6 +358,7 @@ public abstract class DeadCode  {
 	    for (int i=0; i<q.paramsLength(); i++)
 		markUseful(q.params(i));
 	    markUseful(q.retex());
+	    markUseful(q.ptr());
 	    if (q.retval()!=null) markUseful(q.retval());
 	    // process sigmas normally
 	    visit((SIGMA)q);
