@@ -195,6 +195,10 @@ IR/Assem/InstrEdge.java
 IR/Assem/InstrFactory.java
 IR/Assem/InstrGroup.java
 IR/Assem/InstrLABEL.java
+IR/Bytecode/Instr.java
+IR/Bytecode/InCti.java
+IR/Bytecode/InGen.java
+IR/Bytecode/InMerge.java
 IR/LowQuad/Code.java
 IR/LowQuad/DerivationMap.java
 IR/LowQuad/LowQuad.java
