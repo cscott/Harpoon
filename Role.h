@@ -11,6 +11,7 @@ struct role {
   struct rolearraylist * pointedtoal;
   struct identity_relation * identities;
   struct rolefieldlist * nonnullfields;
+  struct rolearraylist * nonnullarrays;
   int * methodscalled;
 };
 
@@ -25,6 +26,7 @@ struct rolereferencelist {
 
 struct rolearraylist {
   struct classname * class;
+  int role;
   int duplicates;
   struct rolearraylist * next;
 };
@@ -53,9 +55,11 @@ void sortidentities(struct role *role);
 int comparedomroots(struct rolereferencelist *r1, struct rolereferencelist *r2);
 void insertdomroot(struct role * role, struct rolereferencelist * domroots);
 void insertnonfl(struct role * role, struct rolefieldlist * domroots);
+void insertnonal(struct role * role, struct rolearraylist * domroots);
 void insertrfl(struct role * role, struct rolefieldlist * domroots);
 void insertral(struct role * role, struct rolearraylist * domroots);
 int fieldcompare(struct rolefieldlist *field1, struct rolefieldlist *field2);
+int arraycompare(struct rolearraylist *array1, struct rolearraylist *array2);
 int compareidentity(struct identity_relation *ir1, struct identity_relation *ir2);
 int equivalentroles(struct role *role1, struct role *role2);
 void assignhashcode(struct role * role);

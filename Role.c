@@ -10,6 +10,7 @@
 #endif
 
 #define DUPTHRESHOLD 2
+#define ARRDUPTHRESHOLD 2
 
 static long int rolenumber=1;
 struct heap_state *hshash;
@@ -65,6 +66,25 @@ void printrole(struct role *r, char * rolename) {
       else
 	printf("  Field %s points to role R%d\n",fl->field->fieldname,fl->role);
       fl=fl->next;
+    }
+  }
+
+  printf(" Non-null elements:\n");
+  {
+    struct rolearraylist *al=r->nonnullarrays;
+    while(al!=NULL) {
+      if (al->role==0) {
+	if (al->duplicates<ARRDUPTHRESHOLD)
+	  printf("  Element %s is non-null with multiplicity %d.\n",al->class->classname, al->duplicates);
+	else
+	  printf("  Element %s is non-null at least %d times.\n",al->class->classname, al->duplicates);
+      } else {
+	if (al->duplicates<ARRDUPTHRESHOLD)
+	  printf("  Element %s points to role R%d with multiplicity %d.\n",al->class->classname,al->role,al->duplicates);
+	else
+	  printf("  Element %s points to role R%d at least %d times.\n",al->class->classname,al->role,al->duplicates);
+      }
+      al=al->next;
     }
   }
 
@@ -292,6 +312,26 @@ int equivalentroles(struct role *role1, struct role *role2) {
       return 0;
   }
 
+  {
+    struct rolearraylist * ral1=role1->nonnullarrays;
+    struct rolearraylist * ral2=role2->nonnullarrays;
+    while(ral1!=NULL) {
+      if (ral2==NULL)
+	return 0;
+      if (ral1->class!=ral2->class)
+	return 0;
+      if (ral1->role!=ral2->role)
+	return 0;
+      if (ral1->duplicates!=ral2->duplicates)
+	return 0;
+
+      ral1=ral1->next;
+      ral2=ral2->next;
+    }
+    if (ral2!=NULL)
+      return 0;
+  }
+
   return 1; /*Matched*/
 }
 
@@ -303,6 +343,7 @@ void assignhashcode(struct role * role) {
   struct rolearraylist * ral=role->pointedtoal;
   struct identity_relation *ri=role->identities;
   struct rolefieldlist * rfl2=role->nonnullfields;
+  struct rolearraylist * ral2=role->nonnullarrays;
   
   
   if(role->methodscalled!=NULL) {
@@ -329,6 +370,13 @@ void assignhashcode(struct role * role) {
     hashcode^=hashptr(rfl2->field);
     hashcode^=rfl2->role;
     rfl2=rfl2->next;
+  }
+
+  while(ral2!=NULL) {
+    hashcode^=hashptr(ral2->class);
+    hashcode^=ral2->role;
+    hashcode^=ral2->duplicates;
+    ral2=ral2->next;
   }
 
   while(ral!=NULL) {
@@ -382,6 +430,7 @@ void freerole(struct role * role) {
   struct rolearraylist * ral=role->pointedtoal;
   struct identity_relation *ri=role->identities;
   struct rolefieldlist * rfl2=role->nonnullfields;
+  struct rolearraylist * ral2=role->nonnullarrays;
   free(role->methodscalled);
   free(role);
 
@@ -409,6 +458,12 @@ void freerole(struct role * role) {
     struct rolearraylist *tmp=ral->next;
     free(ral);
     ral=tmp;
+  }
+
+  while(ral2!=NULL) {
+    struct rolearraylist *tmp=ral2->next;
+    free(ral2);
+    ral2=tmp;
   }
   free_identities(ri);
 }
@@ -503,6 +558,7 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
     while(al!=NULL) {
       struct rolearraylist *ral=(struct rolearraylist *) calloc(1,sizeof(struct rolearraylist));
       ral->class=al->src->class;
+      ral->duplicates=1;
       insertral(objrole,ral);
       al=al->dstnext;
     }
@@ -516,6 +572,8 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
 
   {
     struct fieldlist *fl=ho->fl;
+    struct arraylist *al=ho->al;
+
     while(fl!=NULL) {
       if (!(heap->options&OPTION_LIMITFIELDS)||fieldcontained(heap,fl->fieldname)) {
 	struct rolefieldlist *rfl=(struct rolefieldlist *) calloc(1,sizeof(struct rolefieldlist));
@@ -528,6 +586,20 @@ struct role * calculaterole(struct heap_state *heap, struct genhashtable * domma
 	insertnonfl(objrole,rfl);
       }
       fl=fl->next;
+    }
+
+    while(al!=NULL) {
+      if (!(heap->options&OPTION_LIMITARRAYS)) {
+	struct rolearraylist *ral=(struct rolearraylist *) calloc(1,sizeof(struct rolearraylist));
+	ral->class=al->object->class;
+	if (al->propagaterole) {
+	  char *tmp=findrolestring(heap, dommapping, al->object, enterexit);
+	  ral->role=parserolestring(tmp);
+	  free(tmp);
+	}
+	insertnonal(objrole,ral);
+      }
+      al=al->next;
     }
   }
   assignhashcode(objrole);
@@ -641,9 +713,53 @@ void insertnonfl(struct role * role, struct rolefieldlist * rfl) {
       break;
     tmpptr=tmpptr->next;
   }
+
   rfl->next=tmpptr->next;
   tmpptr->next=rfl;
   return;
+}
+
+void insertnonal(struct role * role, struct rolearraylist * ral) {
+  struct rolearraylist *tmpptr=role->nonnullarrays;
+  int ac;
+
+  if (role->nonnullarrays==NULL) {
+    role->nonnullarrays=ral;
+    return;
+  }
+  if ((ac=arraycompare(ral, role->nonnullarrays))<=0) {
+    if (ac<0) {
+      ral->next=role->nonnullarrays;
+      role->nonnullarrays=ral;
+      return;
+    } else {
+      /* increment counter */
+      /*ac=0, match!!!*/
+      if (role->nonnullarrays->duplicates<ARRDUPTHRESHOLD)
+	role->nonnullarrays->duplicates++;
+      free(ral);
+      return;
+    }
+  }
+
+  while(tmpptr->next!=NULL) {
+    ac=arraycompare(ral, tmpptr->next);
+    if (ac>=0)
+      break;
+    tmpptr=tmpptr->next;
+  }
+  
+  if (tmpptr->next==NULL||ac>0) {
+    ral->next=tmpptr->next;
+    tmpptr->next=ral;
+    return;
+  } else {
+    /* increment counter */
+    if (tmpptr->next->duplicates<ARRDUPTHRESHOLD)
+      tmpptr->next->duplicates++;
+    free(ral);
+    return;
+  }
 }
 
 void insertrfl(struct role * role, struct rolefieldlist * rfl) {
@@ -687,6 +803,19 @@ int fieldcompare(struct rolefieldlist *field1, struct rolefieldlist *field2) {
   if (field1->field==field2->field)
     return 0;
   if (field1->field<field2->field)
+    return 1;
+  return -1;
+}
+
+int arraycompare(struct rolearraylist *array1, struct rolearraylist *array2) {
+  if (array1->class==array2->class) {
+    if (array1->role==array2->role)
+      return 0;
+    if (array1->role<array2->role)
+      return 1;
+    return -1;
+  }
+  if (array1->class<array2->class)
     return 1;
   return -1;
 }

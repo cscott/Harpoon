@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #define EFFECTS
+#define DMALLOC
 
 struct heap_object {
   struct classname *class; /*class of object*/
@@ -143,6 +144,7 @@ struct heap_state {
 #define OPTION_NORCEXPR 0x4
 #define OPTION_NOEFFECTS 0x8
 #define OPTION_LIMITFIELDS 0x10
+#define OPTION_LIMITARRAYS 0x20
 
 struct identity_relation {
   struct fieldname * fieldname1;

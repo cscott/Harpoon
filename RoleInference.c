@@ -49,7 +49,11 @@ void parseoptions(int argc, char **argv, struct heap_state *heap) {
 	printf("-n no effects\n");
 	printf("-f use only fields specified in fields file\n");
 	printf("-r no rolechange regular expressions calculated\n");
+	printf("-a don't consider elements of array to change role\n");
 	exitstate=1;
+	break;
+      case 'a':
+	heap->options|=OPTION_LIMITARRAYS;
 	break;
       case 'f':
 	heap->options|=OPTION_LIMITFIELDS;
