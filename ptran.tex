@@ -1,5 +1,5 @@
 % -*-latex-*- This is a LaTeX document.
-% $Id: ptran.tex,v 1.25 2002-07-24 22:21:35 cananian Exp $
+% $Id: ptran.tex,v 1.26 2002-07-24 23:59:33 cananian Exp $
 \documentclass[11pt,notitlepage]{article}
 %\documentclass{acmconf}
 \usepackage{comdef} % common definitions
@@ -8,7 +8,7 @@
 \usepackage{amsmath}
 \author{C.~Scott~Ananian}
 \title{Points-To Analysis with Companion Objects}
-\date{\today \\ $ $Revision: 1.25 $ $}
+\date{\today \\ $ $Revision: 1.26 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
@@ -52,10 +52,10 @@ use $s$ as:
  =
 \bigcup_{d \in \text{Rd}(s,v)} g(d)
 \text{ where }
-g(d) = \left\{ \begin{array}{cl}
+g(d) = \begin{cases}
                 \text{GenSite}(d,x) &\text{when } d \text{ is } v=x \\
                 \{d\}&\text{when } d \text{ is } v=\text{new } T(\ldots)
-                \end{array}\right.
+       \end{cases}
 \end{displaymath}
 
 We can then approximate pairwise-singularity by saying $v_1$ at $s_1$
@@ -331,6 +331,39 @@ edge are mutually-singular, then the edge is a companion ---
 we don't know if the field set statements associated with these edges
 are going to be mutually-singular with the rest).  ``Possibly
 companion'' edges must still be mutually-singular internally.
+
+\begin{myfigure}
+\begin{tabular}{ll|ll}
+$l\in L$ & local variables           &$n\in N$ & nodes\\
+$p\in P$ & formal parameter variables&$N_I\subseteq N$ & inside nodes\\
+$v\in V=L\cup P$& all variables      &$N_O\subseteq N$ & outside nodes\\
+$c\in C$ & classes                   &$C\subseteq N$ & (static) class nodes\\
+$m\in M$ & methods                   &$N_P\subseteq N_I$ & parameter nodes\\
+$f\in F$ & fields                    &$N_G\subseteq N_I$ & global nodes\\
+$s\in S$ & statements                &$N_L\subseteq N_I$ & load nodes\\
+         &                           &$N_R\subseteq N_I$ & return nodes\\
+\end{tabular}
+\caption{Definitions}
+\label{fig:defin}
+\end{myfigure}
+
+A points-to graph is a quintuple of the form \tuple{O,I,e,s,r}, where
+\begin{itemize}
+\item $O \subseteq (N\times F)\times(N_L \cup N_G)$ is a set of
+outside edges.  Outside edges represent references created outside the
+current analysis scope.
+\item $I \subseteq (V\cup(N\times F))\times N$ is a set of inside
+edges.  Inside edges represent references created inside the current
+analysis scope.
+\item $e:N\to 2^M$ is an escape function that records the set of
+unanalyzed method invocation sites that a node escapes down into.
+\item $s:(O\cup I)\to 2^S_\bot$ labels companion edges with an
+  associated set of mutually-singular store statements.  A
+  non-companion edge $e\in O\cup I$ has $s(e)=\bot$.
+\item $r \subseteq N$ is a return set representing the set of objects
+that may be returned by the currently analyzed method.
+\end{itemize}
+
 
 \subsection{Evaluating a call-site monomorphically}
 
