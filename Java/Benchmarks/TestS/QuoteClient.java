@@ -28,8 +28,11 @@ public class QuoteClient extends Thread {
 			       "Usage: QuoteClient <server> <port> <number of clients> <number of cycles> <stock ids>"); 
 	    System.exit(1); 
 	}
+	long starttime=System.currentTimeMillis();
 	int SERVER_PORT=Integer.parseInt(args[1]);
 	int numclients=Integer.parseInt(args[2]);
+	int numcycles=Integer.parseInt(args[3]);
+	int numstocks=args.length-4;
 	QuoteClient[] carray=new QuoteClient[numclients];
 	for (int i=0;i<numclients;i++) {
 	    carray[i]=new QuoteClient(args);
@@ -43,6 +46,14 @@ public class QuoteClient extends Thread {
 	    e.printStackTrace();
 	    System.out.println(e);
 	}
+	long endtime=System.currentTimeMillis();
+	System.out.println("QuoteClient");
+	System.out.println("numclients:"+numclients);
+	System.out.println("port:"+SERVER_PORT);
+	System.out.println("number of cycles:"+numcycles);
+	System.out.println("number of stocks:"+numstocks);
+	System.out.println("Elapsed time:(mS)"+(endtime-starttime));
+	System.out.println("Throughput:"+(double) numcycles*numstocks*numclients/((double) (endtime-starttime)));
 	System.exit(0); 
     } 
     /** 

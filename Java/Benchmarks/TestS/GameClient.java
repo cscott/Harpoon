@@ -25,6 +25,7 @@ public class GameClient extends Thread {
 	} catch (Exception e) {
 	}
 
+	long starttime=System.currentTimeMillis();
 
 	GameClient[] tarray=new GameClient[numberofclients];
 	for (int i=0;i<numberofclients;i++) {
@@ -41,6 +42,14 @@ public class GameClient extends Thread {
 	    e.printStackTrace();
 	    System.out.println(e);
 	}
+
+	long endtime=System.currentTimeMillis();
+	System.out.println("ChatClient");
+	System.out.println("numclients:"+numberofclients);
+	System.out.println("port:"+port);
+	System.out.println("number of messages:"+numberofmessages);
+	System.out.println("Elapsed time:(mS)"+(endtime-starttime));
+	System.out.println("Throughput:"+(double) numberofclients*numberofmessages/((double) (endtime-starttime)));
     }
 
     public GameClient(int clientnumber, String host,int port,int nom, int noc) {

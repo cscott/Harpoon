@@ -7,6 +7,7 @@ public class NetsClient extends Thread {
 
     static boolean debug;
     public static void main(String argv[]) {
+
 	String host=null;
 	int numberofclients=0;
 	int numberofmessages=0;
@@ -25,7 +26,7 @@ public class NetsClient extends Thread {
 	} catch (Exception e) {
 	}
 
-
+	long starttime=System.currentTimeMillis();
 	NetsClient[] tarray=new NetsClient[numberofclients];
 	for (int i=0;i<numberofclients;i++) {
 	    tarray[i]=new NetsClient(i,host,port,numberofmessages,numberofclients);
@@ -41,6 +42,14 @@ public class NetsClient extends Thread {
 	    e.printStackTrace();
 	    System.out.println(e);
 	}
+	long endtime=System.currentTimeMillis();
+	System.out.println("ChatClient");
+	System.out.println("numclients:"+numberofclients);
+	System.out.println("port:"+port);
+	System.out.println("number of messages:"+numberofmessages);
+	System.out.println("Elapsed time:(mS)"+(endtime-starttime));
+	System.out.println("Throughput:"+(double) numberofclients*numberofmessages/((double) (endtime-starttime)));
+
     }
 
     public NetsClient(int clientnumber, String host,int port,int nom, int noc) {
