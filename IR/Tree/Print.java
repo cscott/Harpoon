@@ -17,7 +17,7 @@ import java.io.StringWriter;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: Print.java,v 1.1.2.34 2000-02-14 21:56:45 cananian Exp $
+ * @version $Id: Print.java,v 1.1.2.35 2000-02-17 01:26:18 cananian Exp $
  */
 public class Print {
     public final static void print(PrintWriter pw, Code c, TempMap tm) {
@@ -25,7 +25,8 @@ public class Print {
         PrintVisitor pv = new PrintVisitor(pw, tm);
 
         pw.print("Codeview \""+c.getName()+"\" for "+c.getMethod()+":");
-        if (tr!=null) tr.accept(pv);
+	for (StmList slp=linearize((Stm)tr, null); slp!=null; slp=slp.tail)
+	    slp.head.accept(pv);
         pw.println();
         pw.flush();
     }
@@ -35,7 +36,8 @@ public class Print {
         PrintVisitor pv = new PrintVisitor(pw, tm);
 
         pw.print("Dataview \""+d.getDesc()+"\" for "+d.getHClass()+":");
-        if (tr!=null) tr.accept(pv);
+	for (StmList slp=linearize((Stm)tr, null); slp!=null; slp=slp.tail)
+	    slp.head.accept(pv);
         pw.println();
         pw.flush();
     }
@@ -66,6 +68,14 @@ public class Print {
 	    
 	pw.flush();
 	return sw.toString();
+    }
+
+    private static StmList linearize(Stm s, StmList tail) {
+	if (s==null) return tail; // deal gracefully.
+	if (s instanceof SEQ)
+	    return linearize(((SEQ)s).getLeft(),
+			     linearize(((SEQ)s).getRight(), tail));
+	return new StmList(s, tail);
     }
 
     static class PrintVisitor extends TreeVisitor {
@@ -287,8 +297,7 @@ public class Print {
 	}
 
         public void visit(SEQ s) {
-            indent(--indlevel);
-            indlevel++;
+            indent(indlevel++);
             pw.print("SEQ(");
             s.getLeft().accept(this);
             pw.print(",");
