@@ -38,7 +38,7 @@
 #-------------------------------------------------------------------
 ALL	( chgrp -R -f java-dev $CVSROOT/. ; chgrp -R -f java-public $CVSROOT/Code $CVSROOT/Runtime $CVSROOT/CVSROOT ; chmod -R go+rX,o-w $CVSROOT/. )
 Benchmarks $CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
-XCode	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
+Code	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
 EventDriven $CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
 Realtime	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
 RoleInference	$CVSROOT/CVSROOT/log_accum -u -s -m java-dev@lesser-magoo.lcs.mit.edu %s
