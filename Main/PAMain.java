@@ -72,7 +72,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.61 2000-06-14 17:34:36 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.62 2000-06-19 16:56:39 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -716,9 +716,6 @@ public abstract class PAMain {
 
 		if(java.lang.reflect.Modifier.isNative(hm.getModifiers()))
 		    continue;
-
-		System.out.println("Inter-thread analysis for " + mm);
-
 		pa.threadInteraction(mm); 
 	    }
 	}

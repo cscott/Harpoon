@@ -36,12 +36,12 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.28 2000-06-07 03:29:16 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.29 2000-06-19 16:56:36 salcianu Exp $
  */
 public abstract class InterThreadPA {
 
     /** Activates a lot of debug messages. */
-    public static final boolean DEBUG  = true;
+    public static final boolean DEBUG  = false;
     /** Activates even more debug messages! */
     public static final boolean DEBUG2 = false;
     /** Displays some time statistics. */
