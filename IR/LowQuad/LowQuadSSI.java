@@ -29,7 +29,7 @@ import java.util.Map;
  * representation in SSI form. 
 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: LowQuadSSI.java,v 1.1.2.5 2000-04-14 04:06:23 bdemsky Exp $
+ * @version $Id: LowQuadSSI.java,v 1.1.2.6 2000-05-13 20:10:28 cananian Exp $
  */
 public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
     private Derivation  m_derivation;
@@ -73,10 +73,10 @@ public class LowQuadSSI extends Code { /*which extends harpoon.IR.Quads.Code*/
      *  <code>LowQuadNoSSA</code> object. */
     public LowQuadSSI(final LowQuadNoSSA code) {
 	super(code.getMethod(), null);
-	/** XXX: derivation information is discarded here. */
-	/** XXX: allocation site information is discarded here. */
-	quads = SSIRename.rename(code, qf).rootQuad;
-	m_derivation = null;
+	SSIRename rename = new SSIRename(code, qf);
+	quads = rename.rootQuad;
+	m_derivation = rename.derivation;
+	setAllocationInformation(rename.allocInfo);
     }
 
     /**

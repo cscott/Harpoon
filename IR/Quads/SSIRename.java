@@ -4,6 +4,8 @@
 package harpoon.IR.Quads;
 
 import harpoon.Analysis.Place;
+import harpoon.Analysis.Maps.AllocationInformation;
+import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Quads.QuadLiveness;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
@@ -33,29 +35,53 @@ import java.util.Stack;
  * is hairy because of the big "efficiency-vs-immutable quads" fight.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.9 2000-04-13 22:22:08 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.10 2000-05-13 20:10:45 cananian Exp $
  */
 public class SSIRename {
     private static final boolean sort_phisig = false;
+    // RETURN TUPLE FOR THE ALGORITHM
+    /** New root element (of the SSI-form graph) */
+    public final Quad rootQuad;
+    /** Map from old no-ssa temps to new ssi temps (incomplete). */
+    public final TempMap tempMap;
+    /** Map from old no-ssa quads to new ssi quads. */
+    public final Map quadMap;
+    /** <code>AllocationInformation</code> for the new quads, or
+     *  <code>null</code> if no allocation information for the old
+     *  quads was supplied. */
+    public final AllocationInformation allocInfo;
+    /** <code>Derivation</code> for the new quads, or <code>null</code>
+     *  if no <code>Derivation</code> for the old quads was supplied. */
+    public final Derivation derivation;
+
     /** Return a copy of the given quad graph properly converted to
      *  SSI form. */
-    public static ReturnTuple rename(final Code c, final QuadFactory nqf) {
+    public SSIRename(final Code c, final QuadFactory nqf) {
 	final SearchState S = new SearchState(c, nqf);
-	return new ReturnTuple((Quad) S.old2new.get(c.getRootElement()),
-			       S.varmap, S.old2new);
+	this.rootQuad = (Quad) S.old2new.get(c.getRootElement());
+	this.tempMap = S.varmap;
+	this.quadMap = S.old2new;
+	/** XXX: derivation information is discarded here. */
+	/** XXX: allocation site information is discarded here. */
+	this.allocInfo = null;
+	this.derivation = null;
     }
-    /** Return value tuple for the SSIRename algorithm. */
-    public static class ReturnTuple {
-	/** New root element (of the SSI-form graph) */
-	public final Quad rootQuad;
-	/** Map from old no-ssa temps to new ssi temps (incomplete). */
-	public final TempMap tempMap;
-	/** Map from old no-ssa quads to new ssi quads. */
-	public final Map quadMap;
-	ReturnTuple(Quad rootQuad, TempMap tempMap, Map quadMap) {
-	    this.rootQuad=rootQuad; this.tempMap=tempMap; this.quadMap=quadMap;
+    /*
+    void updateAllocationInformation(Code oldcode,
+				     Map quadMap, TempMap tempMap) {
+	AllocationInformation oldai = oldcode.getAllocationInformation();
+	if (oldai != null) {
+	    AllocationInformationMap aim = new AllocationInformationMap();
+	    for (Iterator it=oldcode.getElementsI(); it.hasNext(); ) {
+		Quad oldquad = (Quad) it.next();
+		Quad newquad = (Quad) quadMap.get(oldquad);
+		if (oldquad instanceof ANEW || oldquad instanceof NEW)
+		    aim.transfer(newquad, oldquad, tempMap, oldai);
+	    }
+	    setAllocationInformation(aim);
 	}
     }
+    */
 
     static class VarMap implements TempMap {
 	final TempFactory tf;

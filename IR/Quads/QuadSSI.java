@@ -25,7 +25,7 @@ import java.util.Map;
  * control flow merges or splits, respectively.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadSSI.java,v 1.1.2.9 2000-04-04 04:13:45 cananian Exp $
+ * @version $Id: QuadSSI.java,v 1.1.2.10 2000-05-13 20:10:45 cananian Exp $
  */
 public class QuadSSI extends Code /* which extends HCode */ {
     /** The name of this code view. */
@@ -35,29 +35,15 @@ public class QuadSSI extends Code /* which extends HCode */ {
     public QuadSSI(QuadNoSSA qns) 
     {
 	super(qns.getMethod(), null);
-	SSIRename.ReturnTuple rt0 = SSIRename.rename(qns, qf);
-	updateAllocationInformation(qns, rt0.quadMap, rt0.tempMap);
+	SSIRename rt0 = new SSIRename(qns, qf);
 	quads = rt0.rootQuad;
+	setAllocationInformation(rt0.allocInfo);
 	// get rid of unused phi/sigmas.
 	AllocationInformationMap aim =
 	    (getAllocationInformation()==null) ? null :
 	    new AllocationInformationMap();
 	DeadCode.optimize(this, aim);
 	setAllocationInformation(aim);
-    }
-    void updateAllocationInformation(Code oldcode,
-				     Map quadMap, TempMap tempMap) {
-	AllocationInformation oldai = oldcode.getAllocationInformation();
-	if (oldai != null) {
-	    AllocationInformationMap aim = new AllocationInformationMap();
-	    for (Iterator it=oldcode.getElementsI(); it.hasNext(); ) {
-		Quad oldquad = (Quad) it.next();
-		Quad newquad = (Quad) quadMap.get(oldquad);
-		if (oldquad instanceof ANEW || oldquad instanceof NEW)
-		    aim.transfer(newquad, oldquad, tempMap, oldai);
-	    }
-	    setAllocationInformation(aim);
-	}
     }
 
     /** 
