@@ -1,45 +1,51 @@
 % SSI renaming algorithm, cont.
 Search($\tuple{s,d}$:~edge) =
 \begin{myalgorithmic}
- \REQUIRE{$s$ to be a node containing \phisigfunction[or]{s}}
- \IF{$s$ is a node containing \phifunction{s}}
-  \FOREACH{\phifunction $P$ in $s$}
-   \STATE replace the destination $V$ of $P$ by $Inc(V)$
+\REQUIRE{$s$ to be a node containing \phisigfunction[or]{s}, or \code{START}}
+\REQUIRE{$\text{Marked}[\tuple{s,d}] = \code{false}$}
+\STATE $\text{Marked}[\tuple{s,d}] \gets \code{true}$
+\STATE $\text{beginScope}(\mathcal{E})$
+\IF{$s$ is a node containing \phifunction{s}}
+ \FOREACH{\phifunction $P$ in $s$}
+  \STATE replace the destination $V$ of $P$ by $\text{Inc}(\mathcal{E}, V)$
+ \ENDFOR
+\ELSIF{$s$ is a node containing \sigfunction{s}}
+ \FOREACH{\sigfunction $S$ in $s$}
+  \STATE $j \gets \text{WhichSucc}(\tuple{s,d})$
+  \STATE replace the $j$-th destination $V$ of $S$ by $\text{Inc}(\mathcal{E}, V)$
+ \ENDFOR
+\ENDIF
+\LOOP[now rename inside basic block]
+ \IF{$d$ is a node containing \phifunction{s}}
+  \FOREACH{\phifunction $P$ in $d$}
+   \STATE $j\gets \text{WhichPred}(\tuple{s,d})$
+   \STATE replace the $j$-th operand $V$ of $P$ by $\text{get}(\mathcal{E}, V)$
   \ENDFOR
+  \BREAK \COMMENT{end of basic block}
  \ELSIF{$s$ is a node containing \sigfunction{s}}
-  \FOREACH{\sigfunction $S$ in $s$}
-   \STATE $j \gets \text{WhichSucc}(\tuple{s,d})$
-   \STATE replace the $j$-th destination $V$ of $S$ by $Inc(V)$
+  \FOREACH{\sigfunction $S$ in $d$}
+   \STATE replace the operand $V$ of $S$ by $\text{get}(\mathcal{E}, V)$
   \ENDFOR
+  \BREAK \COMMENT{end of basic block}
  \ENDIF
- \STATE\COMMENT{now rename inside basic block}
- \LOOP
-  \IF{$d$ is a node containing \phifunction{s}}
-   \FOREACH{\phifunction $P$ in $d$}
-    \STATE $j\gets \text{WhichPred}(\tuple{s,d})$
-    \STATE replace the $j$-th operand $V$ of $P$ by $Get(V)$
-   \ENDFOR
-   \STATE $\text{PushEdge}(\tuple{d,\text{Succ}[d]})$
-   \RETURN
-  \ELSIF{$s$ is a node containing \sigfunction{s}}
-   \FOREACH{\sigfunction $S$ in $d$}
-    \STATE replace the operand $V$ of $S$ by $Get(V)$
-   \ENDFOR
-   \STATE $\text{PushEdge}(\tuple{d,\text{Succ}[d]})$
-   \RETURN
-  \ENDIF
-  \STATE\COMMENT{ordinary assignment}
-  \FOREACH{variable $V$ in $LHS(d)$}
-   \STATE replace $V$ by $Get(V)$ in $LHS(d)$
-  \ENDFOR
-  \FOREACH{variable $V$ in $RHS(d)$}
-   \STATE replace $V$ by $Inc(V)$ in $RHS(d)$
-  \ENDFOR
-  \IF{$d$ has a successor}
-   \STATE $s \gets d$
-   \STATE $d \gets \text{Succ}[d]$
-  \ELSE
-   \RETURN
-  \ENDIF
- \ENDLOOP
+ \STATE\COMMENT{ordinary assignment, at most one successor}
+ \FOREACH{variable $V$ in $LHS(d)$}
+  \STATE replace $V$ by $\text{get}(\mathcal{E}, V)$ in $LHS(d)$
+ \ENDFOR
+ \FOREACH{variable $V$ in $RHS(d)$}
+  \STATE replace $V$ by $\text{Inc}(\mathcal{E}, V)$ in $RHS(d)$
+ \ENDFOR
+ \IF{$d$ has no successor}
+  \BREAK \COMMENT{end of basic block}
+ \ENDIF
+ \STATE $s \gets d$
+ \STATE $d \gets \text{successor of }d$
+\ENDLOOP*
+\FOREACH{successor $n$ of $d$}
+ \IFNOT {$\text{Marked}[\tuple{d, n}]$}
+  \STATE $\text{Search}(\tuple{d, n})$ \COMMENT{dfs recursion}
+ \ENDIF
+\ENDFOR
+\STATE $\text{endScope}(\mathcal{E})$
+\RETURN
 \end{myalgorithmic}

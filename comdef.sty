@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: comdef.sty,v 1.22 1999-08-27 21:32:57 cananian Exp $
+% $Id: comdef.sty,v 1.23 1999-08-29 06:32:20 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -125,10 +125,15 @@ l|l|l|l|l\or l|l|l|l|l|l\fi}%
 \newenvironment{myalgorithmic}[1][1]{\begin{algorithmic}[#1]%
  % additional statement commands.
  \newcommand{\FOREACH}[1]{\FOR{\textbf{each} ##1}}%
+ \newcommand{\IFNOT}[1]{\IF{\textbf{not} ##1}}%
  \newcommand{\LET}{\STATE \textbf{let}\xspace}%
  %\newcommand{\EMPTYLINE}{\vspace{0.6\baselineskip}}
  \newcommand{\EMPTYLINE}{\STATE}%
+ \newcommand{\BREAK}{\STATE \textbf{break}\xspace}%
+ \newcommand{\CONTINUE}{\STATE \textbf{continue}\xspace}%
  \newcommand{\RETURN}{\STATE \textbf{return}\xspace}%
+ % make starred forms of ending commands.
+ \renewcommand{\ENDLOOP}{\end{ALC@loop}\@ifstar{\ALC@it\algorithmicendloop}{\ifthenelse{\boolean{ALC@noend}}{}{\ALC@it\algorithmicendloop}}}
  % Internal magic to allow references to specific algorithm lines
  \let\oldALCitem\item%
  \renewcommand{\item}{\addtocounter{ALC@line}{-1}\refstepcounter{ALC@line}%

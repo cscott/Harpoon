@@ -1,0 +1,15 @@
+% data types for SSI renaming algorithm.
+Data type \code{Environment}:
+\begin{tightdesc}
+\item[create():~Environment]
+:\par   make an environment with no mappings.
+\item[put($\mathcal{E}$:~Environment, $v_1$:~variable, $v_2$:~variable)]
+:\par   extend environment $\mathcal{E}$ with a mapping from $v_1$ to $v_2$.
+\item[get($\mathcal{E}$:~Environment, $v$:~variable):~variable]
+:\par   return the current mapping in $\mathcal{E}$ for $v$.
+\item[beginScope($\mathcal{E}$:~Environment)]
+:\par   save the current mapping of $\mathcal{E}$ for later restoration.
+\item[endScope($\mathcal{E}$:~Environment)]
+:\par   restore the mapping of $\mathcal{E}$ to that present at the
+        last \code{beginScope} on $\mathcal{E}$.
+\end{tightdesc}

@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.90 1999-08-28 01:57:46 cananian Exp $
+% $Id: thesis.tex,v 1.91 1999-08-29 06:32:20 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.90 $ $}
+\date{\today \\ $ $Revision: 1.91 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.90 $ $}{$ $Revision: 1.90 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.91 $ $}{$ $Revision: 1.91 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -876,6 +876,10 @@ us decent liveness info straight from the stack state during translation, so we
 don't need a fast liveness algorithm; we get what we need `for free'.}
 
 \subsubsection{Variable renaming}
+\begin{myfigure}[p]\small
+\input{Figures/THssirend}
+\caption{Environment datatype for the SSI renaming algorithm.}\label{fig:ssirend}
+\end{myfigure}
 \begin{myalgorithm}\small
 \input{Figures/THssiren1}
 \caption{SSI renaming algorithm.}\label{alg:ssiren1}

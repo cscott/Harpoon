@@ -34,7 +34,7 @@ thesis.dvi: Figures/THex1base.tex \
 	Figures/THlat3.tex Figures/THlat4.tex Figures/THlat5.tex \
 	Figures/THsccalg1.tex Figures/THsccalg2.tex Figures/THsccssi.tex \
 	Figures/THscctyped.tex Figures/THsptc.tex \
-	Figures/THssiren1.tex Figures/THssiren2.tex
+	Figures/THssiren1.tex Figures/THssiren2.tex Figures/THssirend.tex
 # thesis figure rules
 Figures/%: always
 	@$(MAKE) --no-print-directory -C Figures $(notdir $@)
