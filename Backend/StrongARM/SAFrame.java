@@ -42,7 +42,7 @@ import java.util.Map;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: SAFrame.java,v 1.1.2.16 1999-07-28 20:45:11 pnkfelix Exp $
+ * @version $Id: SAFrame.java,v 1.1.2.17 1999-07-28 21:35:04 duncan Exp $
  */
 public class SAFrame extends Frame implements AllocationInfo {
     static Temp[] reg = new Temp[16];
@@ -53,12 +53,13 @@ public class SAFrame extends Frame implements AllocationInfo {
     private AllocationStrategy mas;
     private static OffsetMap offmap;
 
-    private static final Temp nextPtr;
-    static final Temp FP;
-    static final Temp IP;
-    static final Temp SP;
-    static final Temp LR;
-    static final Temp PC;
+    static final Temp TP;  // Top of memory pointer
+    static final Temp HP;  // Heap pointer
+    static final Temp FP;  // Frame pointer
+    static final Temp IP;  // Scratch register 
+    static final Temp SP;  // Stack pointer
+    static final Temp LR;  // Link register
+    static final Temp PC;  // Program counter
 
     static {
         regtf = new TempFactory() {
@@ -91,6 +92,8 @@ public class SAFrame extends Frame implements AllocationInfo {
             if (i < 11) regGeneral[i] = reg[i];
         }
 
+	TP = reg[9];
+	HP = reg[10];
 	FP = reg[11];
 	IP = reg[12];
 	SP = reg[13];
@@ -103,7 +106,6 @@ public class SAFrame extends Frame implements AllocationInfo {
         regLiveOnExit[3] = SP;
         regLiveOnExit[4] = PC;
         offmap = new OffsetMap32(null);
-        nextPtr = reg[10];
     }
 
     public SAFrame() { 
@@ -127,31 +129,13 @@ public class SAFrame extends Frame implements AllocationInfo {
 
     /* Generic version of the next six methods copied from 
      * DefaultFrame for now */
-    public Stm callGC(TreeFactory tf, HCodeElement src) { 
-        return new CALL(tf, src,
-                        new TEMP(tf, src,
-                                 Type.POINTER, new Temp(tf.tempFactory())),
-                        new TEMP(tf, src,
-                                 Type.POINTER, new Temp(tf.tempFactory())),
-                        new NAME(tf, src, new Label("_RUNTIME_GC")),
-                        null); 
-    }
 
-    public Exp getMemLimit(TreeFactory tf, HCodeElement src) { 
-        return new CONST(tf, src, 4000000);
-    }
+    public Label exitOutOfMemory() { return new Label("_EXIT_OOM"); }
+    public Label GC()              { return new Label("_RUNTIME_GC"); }
+    public Temp  getMemLimit()     { return TP; } 
+    public Temp  getNextPtr()      { return HP; }
 
-    public Temp getNextPtr() { return nextPtr; }
 
-    public Stm exitOutOfMemory(TreeFactory tf, HCodeElement src) { 
-        return new CALL(tf, src,
-                        new TEMP(tf, src,
-                                 Type.POINTER, new Temp(tf.tempFactory())),
-                        new TEMP(tf, src,
-                                 Type.POINTER, new Temp(tf.tempFactory())),
-                        new NAME(tf, src, new Label("_RUNTIME_OOM")),
-                        null);
-    }
 
     public Exp memAlloc(Exp size) { return mas.memAlloc(size); }
 

@@ -36,12 +36,13 @@ import java.util.Map;
  *  will have to be fixed up a bit if needed for general use.
  *
  *  @author  Duncan Bryce <duncan@lcs.mit.edu>
- *  @version $Id: DefaultFrame.java,v 1.1.2.15 1999-07-28 20:09:43 duncan Exp $
+ *  @version $Id: DefaultFrame.java,v 1.1.2.16 1999-07-28 21:34:59 duncan Exp $
  */
 public class DefaultFrame extends Frame implements AllocationInfo {
 
     private AllocationStrategy  m_allocator;
     private Temp                m_nextPtr;
+    private Temp                m_memLimit;
     private OffsetMap           m_offsetMap;
     private Temp[]              m_registers;
     private TempFactory         m_tempFactory;
@@ -58,6 +59,7 @@ public class DefaultFrame extends Frame implements AllocationInfo {
 	m_allocator   = st==null?new DefaultAllocationStrategy(this):st;
 	m_tempFactory = Temp.tempFactory("");
 	m_nextPtr     = new Temp(m_tempFactory);
+	m_memLimit    = new Temp(m_tempFactory);
 	if (map==null) throw new Error("Must specify OffsetMap");
 	else m_offsetMap = map;
     }
@@ -67,6 +69,7 @@ public class DefaultFrame extends Frame implements AllocationInfo {
         fr.m_registers = new Temp[16];
         fr.m_tempFactory = Temp.tempFactory(scope);
 	fr.m_nextPtr     = new Temp(fr.m_tempFactory);
+	fr.m_memLimit    = new Temp(fr.m_tempFactory);
         for (int i = 0; i < 16; i++)
             fr.m_registers[i] = new Temp(fr.m_tempFactory, "register_");
         return fr;
@@ -153,31 +156,10 @@ public class DefaultFrame extends Frame implements AllocationInfo {
      * rather, it is a placeholder that allows me to test other
      * parts of the code.  
      */
-    public Stm callGC(TreeFactory tf, HCodeElement src) { 
-        return new CALL(tf, src, 
-			new TEMP(tf, src, 
-				 Type.POINTER, new Temp(tf.tempFactory())), 
-			new TEMP(tf, src, 
-				 Type.POINTER, new Temp(tf.tempFactory())), 
-		        new NAME(tf, src, new Label("RUNTIME_GC")),
-			null); 
-    }
-    
-    public Exp getMemLimit(TreeFactory tf, HCodeElement src) { 
-        return new CONST(tf, src, 4000000);  // again, completely arbitrary
-    }
-  
-    public Temp getNextPtr() { return m_nextPtr; }
-    
-    public Stm exitOutOfMemory(TreeFactory tf, HCodeElement src) {
-        return new CALL(tf, src, 
-			new TEMP(tf, src, 
-				 Type.POINTER, new Temp(tf.tempFactory())), 
-			new TEMP(tf, src, 
-				 Type.POINTER, new Temp(tf.tempFactory())), 
-		        new NAME(tf, src, new Label("RUNTIME_OOM")),
-			null); 
-    }
+    public Label exitOutOfMemory() { return new Label("RUNTIME_OOM"); }
+    public Label GC()              { return new Label("RUNTIME_GC"); } 
+    public Temp  getMemLimit()     { return m_memLimit; }
+    public Temp  getNextPtr()      { return m_nextPtr; }
 
 
     /** Stub added by FSK */
