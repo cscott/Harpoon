@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.4 2002-03-22 05:02:20 cananian Exp $
+% $Id: oopsla02.tex,v 1.5 2002-03-22 05:07:51 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.4 $ $}{$ $Revision: 1.4 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.5 $ $}{$ $Revision: 1.5 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -238,7 +238,7 @@ string. In some cases, instances of the {\tt String} class
 are derived substrings of other instances 
 (see the {\tt substring} method in Figure~\ref{}), in which case the
 {\tt offset} field provides the offset of the starting 
-point of the string within the {\vv value} character array. 
+point of the string within the {\tt value} character array. 
 Note that the {\tt value}, {\tt offset}, and {\tt count} 
 fields are all initialized when the string is constructed
 and do not change during the lifetime of the string.
@@ -271,8 +271,8 @@ whether the {\tt offset} will be {\tt 0} or some other number.
 In fact, all of the public {\tt String} constructors create
 strings with {\tt offset} 0; only the {\tt substring} method
 creates strings with a non-zero offset. And even at 
-calls to the private {\tt String(char [], int, int)} constructor
-inside the {\vv substring} method, it is possible to dynamically
+calls to the private {\tt String(int, int, char[])} constructor
+inside the {\tt substring} method, it is possible to dynamically
 test the values of the parameters to determine if the newly
 constructed string will have a zero or non-zero offset.
 
@@ -315,8 +315,40 @@ public SmallString substring(int start) \{\\
 
 \subsection{Required Analysis Information}
 
-
 \section{Analysis Algorithms}
+
+% class hierarchy analysis & callgraph
+% bitwidth analysis for field reducer.
+% profiling implementation.
+% definite initialization. (does zero escape?)
+%  used in profiling (for non-zero N)
+%  used in bitwidth. (determines whether zero is a visible value)
+% constructor classifier in static spec. determines 'good' fields.
+%  uses MustParamOracle, ConstMap
+
+\subsection{Class Hierarchy Analysis and Call-Graph Construction}
+
+\subsection{Definite Initialization Analysis}
+\subsection{Bitwidth Analysis}
+% this allows us to reduce fields and remove unused/const fields.
+\subsection{Profiling Mostly-Constant Fields}
+\subsection{Finding Subclass-Final Fields}
+\subsection{Constructor Classification}
+% includes MustParamOracle and ConstMap
+
+\section{Implementation Issues}
+
+% header optimizations.
+% java-vs-byte-vs-bit packing.
+% byte-packing strategy.
+% garbage collection; dynamic methods.  conservative gc. ole aggeson's blah.
+% efficiency of field virtualization.
+% single-inheritance when splitting.
+% efficiency of external hashtable
+% distribution of mostly-constants.
+% array allocation?
+% pointer size improvements.
+% parameter widening; reflection; interface to native code. stoplist
 
 \section{Extensions} % ???
 % header optimizations.
