@@ -45,7 +45,7 @@ import java.util.Random;
  * <code>ObjectBuilder</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ObjectBuilder.java,v 1.1.4.10 2001-01-21 06:59:53 cananian Exp $
+ * @version $Id: ObjectBuilder.java,v 1.1.4.11 2001-01-21 16:21:59 cananian Exp $
  */
 public class ObjectBuilder
     extends harpoon.Backend.Generic.Runtime.ObjectBuilder {
@@ -104,9 +104,9 @@ public class ObjectBuilder
 	List stmlist = new ArrayList(info.length()+2);
 	// header
 	stmlist.add(makeHeader(tf, info, exported));
-	// fields of java.lang.Object
-	for (Iterator it = new ArrayIterator(HCobject.getDeclaredFields());
-	     it.hasNext(); )
+	// fields of java.lang.Object, in proper field order
+	List l = cfm.fieldList(HCobject);
+	for (Iterator it = l.iterator(); it.hasNext(); )
 	    stmlist.add(makeDatum(tf, lookup(info, (HField)it.next())));
 	// length
 	stmlist.add(_DATUM(tf, new CONST(tf, null, info.length())));
