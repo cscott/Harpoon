@@ -10,7 +10,7 @@
 #include "config.h"
 #ifdef WITH_USER_THREADS
 #ifndef lint
-static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.10 2002-09-06 16:06:06 wbeebee Exp $";
+static const char rcsid[] = "$Id: engine-i386-linux-1.0.c,v 1.11 2002-09-13 13:12:53 wbeebee Exp $";
 #endif
 
 #include "config.h"
@@ -60,12 +60,12 @@ void machdep_restore_state(void)
 /* ==========================================================================
  * machdep_save_float_state()
  */
-int machdep_save_float_state(struct machdep_pthread * mthread)
+void machdep_save_float_state(struct machdep_pthread * mthread)
 {
   char * fdata = (char *)mthread->machdep_float_state;
 #ifdef RTJ_DEBUG_THREADS
-  printf("\nSaving float state to %p, mthread is %p, currentthread is %p (%d)",
-	 fdata, mthread, currentThread, currentThread->threadID);
+  printf("\nSaving float state to %p, mthread is %p, currentthread is %p (%lld)",
+	 fdata, mthread, currentThread, (long long int)currentThread->threadID);
 #endif
   __asm__ ("fsave %0"::"m" (*fdata));
 }
@@ -74,7 +74,7 @@ int machdep_save_float_state(struct machdep_pthread * mthread)
  * machdep_restore_float_state()
  */
 
-int machdep_restore_float_state(void)
+void machdep_restore_float_state(void)
 {
 
 #ifndef WITH_REALTIME_THREADS
@@ -84,8 +84,8 @@ int machdep_restore_float_state(void)
   char * fdata = (char *)currentThread->mthread->machdep_float_state;
 #endif
 #ifdef RTJ_DEBUG_THREADS
-  printf("\nRestoring float state from %p, currentthread is %p (%d)",
-  	 fdata, currentThread, currentThread->threadID);
+  printf("\nRestoring float state from %p, currentthread is %p (%lld)",
+  	 fdata, currentThread, (long long int)currentThread->threadID);
 #endif
   __asm__ ("frstor %0"::"m" (*fdata));
 }
@@ -132,7 +132,6 @@ void __machdep_stack_free(void * stack)
  */
 void * __machdep_stack_alloc(size_t size)
 {
-    void * stack;
     /*    INCREMENT_MEM_STATS(STACKSIZE);*/
 #ifdef WITH_REALTIME_JAVA
     return RTJ_MALLOC_UNCOLLECTABLE(size);
