@@ -54,13 +54,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
+import java.lang.reflect.Modifier;
 
 /**
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.48 2000-02-01 06:40:11 bdemsky Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.49 2000-02-07 08:16:30 bdemsky Exp $
  */
 public class AsyncCode {
 
@@ -716,16 +716,36 @@ public class AsyncCode {
 	    phiset.add(qc);
       	}
 
-	public void visit(CALL q) {
-	    TempFactory tf=hcode.getFactory().tempFactory();
-	    if (!done_other.contains(q.method())) {
-		HMethod hm=q.method();
+	private boolean isBlocking(HMethod hm) {
+	    if (blockingcalls.contains(hm))
+		return true;
+	    HClass bclass=hm.getDeclaringClass();
+	    Set hchilds=ch.children(bclass);
+	    Iterator childit=hchilds.iterator();
+	    while (childit.hasNext()) {
+		try {
+		    HClass child=(HClass)childit.next();
+		    HMethod hmtest=child.getDeclaredMethod(hm.getName(),
+							   hm.getParameterTypes());
+		    if (blockingcalls.contains(hmtest))
+			return true;
+		} catch (NoSuchMethodError e) {
+		}
+	    }
+	    return false;
+	}
+
+	private void checkdoneothers(HMethod ohm) {
+	    //make sure we actually rewrite all methods that we can reach...
+	    
+	    if (!done_other.contains(ohm)) {
+		HMethod hm=ohm;
 		HClass hcl=hm.getDeclaringClass();
 		if ((!linker.forName("java.lang.Thread").equals(hcl))||
 		    (!hm.getName().equals("run_Async"))) {
 		    Set classes=ch.children(hcl);
 		    Iterator childit=classes.iterator();
-		    HMethod parent=q.method();
+		    HMethod parent=ohm;
 		    while (childit.hasNext()|(hm!=null)) {
 			try {
 			    if (hm==null) {
@@ -746,49 +766,67 @@ public class AsyncCode {
 		    }
 		}
 	    }
+	}
+	
+	private void scheduleMethods(HMethod hm) {
+	    if (!old2new.containsKey(hm)) {
+		HClass hcl=hm.getDeclaringClass();
+		Set classes=ch.children(hcl);
+		Iterator childit=classes.iterator();
+		HMethod parent=hm;
+		while (childit.hasNext()|(hm!=null)) {
+		    try {
+			if (hm==null) {
+			    HClass child=(HClass)childit.next();
+			    hm=child.getDeclaredMethod(parent.getName(),
+						       parent.getParameterTypes());
+			    if (old2new.containsKey(hm)) {
+				hm=null;
+				continue;
+			    }
+			}
+			if (bm.swop(hm)!=null) {
+			    //handle actual blocking call swapping
+			    old2new.put(hm, bm.swop(hm));
+			} else {
+			    if (hm.getName().compareTo("<init>")!=0) {
+				HCode toConvert=ucf.convert(hm);
+				if (toConvert!=null)
+				    async_todo.add(toConvert);
+				else if (Modifier.isNative(hm.getModifiers()))
+				    System.out.println("XXX:ERROR Native blocking: "+hm);
+				HMethod temp=makeAsync(old2new, hm,
+						       ucf,linker);
+			    } else {
+				System.out.println("XXX:ERROR "+hm+" is blocking!");
+			    }
+			}
+		    } catch (NoSuchMethodError e) {
+		    }
+		    hm=null;
+		}
+	    }
+	}
+
+	public void visit(CALL q) {
+	    TempFactory tf=hcode.getFactory().tempFactory();
+	    checkdoneothers(q.method());
+
 	    if ((methodstatus==false)&&
 		(!q.method().getName().equals("<init>"))&&
-		blockingcalls.contains(q.method())) {
+		isBlocking(q.method())) {
 		if (!cont_map.containsKey(q)) {
+		    //Add this CALL to list of calls to build continuations for
 		    cont_todo.add(q);
+		    //Build Class for the continuation
 		    HClass hclass=createContinuation(hc.getMethod(),  q,
 						     ucf, linker); 
+		    //Add mapping of call->class
 		    cont_map.put(q,hclass);
-		    HMethod hm=q.method();
-		    if (!old2new.containsKey(hm)) {
-			HClass hcl=hm.getDeclaringClass();
-			Set classes=ch.children(hcl);
-			Iterator childit=classes.iterator();
-			HMethod parent=hm;
-			while (childit.hasNext()|(hm!=null)) {
-			    try {
-				if (hm==null) {
-				    HClass child=(HClass)childit.next();
-				    hm=child.getDeclaredMethod(parent.getName(),
-								  parent.getParameterTypes());
-				    if (old2new.containsKey(hm)) {
-					hm=null;
-					continue;
-				    }
-				}
-				if (bm.swop(hm)!=null) {
-				//handle actual blocking call swapping
-				    old2new.put(hm, bm.swop(hm));
-				} else {
-				    if (hm.getName().compareTo("<init>")!=0) {
-					async_todo.add(ucf.convert(hm));
-					HMethod temp=makeAsync(old2new, hm,
-							       ucf,linker);
-				    } else {
-					System.out.println("XXX:ERROR "+hm+" is blocking!");
-				    }
-				}
-			    } catch (NoSuchMethodError e) {
-			    }
-			    hm=null;
-			}
-		    }
+		    //Schedule blocking method for transformation
+		    scheduleMethods(q.method());
 		}
+
 		//rewrite blocking call
 		Temp[] newt=new Temp[q.paramsLength()];
 		Temp retex=new Temp(tf);
@@ -896,35 +934,39 @@ public class AsyncCode {
 		linkFooters.add(throwq);
 		quadmap.put(q,call);
 		followchildren=false;
-	    } else {
-		followchildren=true;
-		//need to check if swop necessary
-		if (swapTo(q.method())!=null) {
-		    //need to swop
-		    Temp tstream=ctmap.tempMap(q.params(0));
-		    quadmap.put(q,new CALL(hcode.getFactory(), q, swapTo(q.method()),
+	    } else
+		handleNonBlocking(q);
+	}
+
+	private void handleNonBlocking(CALL q) {
+	    followchildren=true;
+	    TempFactory tf=hcode.getFactory().tempFactory();
+	    //need to check if swop necessary
+	    if (swapTo(q.method())!=null) {
+		//need to swop this method for replacement
+		Temp tstream=ctmap.tempMap(q.params(0));
+		quadmap.put(q,new CALL(hcode.getFactory(), q, swapTo(q.method()),
 				       new Temp[]{tstream}, 
 				       (q.retval()==null)?null:ctmap.tempMap(q.retval()),
 				       (q.retex()==null)?null:ctmap.tempMap(q.retex()), q.isVirtual(),
 				       q.isTailCall(), new Temp[0]));
-		} else if (swapAdd(q.method())!=null) {
-		    CALL cq=(CALL)q.clone(hcode.getFactory(), ctmap);
-		    quadmap.put(q, cq);
-		    Temp retex=new Temp(tf);
-		    CALL nc=new CALL(hcode.getFactory(), q,
-				     swapAdd(q.method()), 
-				     new Temp[] {cq.params(0)},
-				     null, retex, true, false, new Temp[0]);
-		    Quad.addEdge(cq,0,nc, 0);
-		    THROW nt=new THROW(hcode.getFactory(), q,
-				       retex);
-		    Quad.addEdge(nc,1,nt,0);
-		    makeasync.add(cq);
-		    linkFooters.add(nt);
-		}
-		else
-		    quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
-	    }
+	    } else if (swapAdd(q.method())!=null) {
+		//need to add an additional call [for makeAsync's, etc]
+		CALL cq=(CALL)q.clone(hcode.getFactory(), ctmap);
+		quadmap.put(q, cq);
+		Temp retex=new Temp(tf);
+		CALL nc=new CALL(hcode.getFactory(), q,
+				 swapAdd(q.method()), 
+				 new Temp[] {cq.params(0)},
+				 null, retex, true, false, new Temp[0]);
+		Quad.addEdge(cq,0,nc, 0);
+		THROW nt=new THROW(hcode.getFactory(), q,
+				   retex);
+		Quad.addEdge(nc,1,nt,0);
+		makeasync.add(cq);
+		linkFooters.add(nt);
+	    } else
+		quadmap.put(q, q.clone(hcode.getFactory(), ctmap));
 	}
 
 	public HMethod swapAdd(HMethod old) {
@@ -941,54 +983,32 @@ public class AsyncCode {
 	}
 	
 	public HMethod swapTo(HMethod old) {
-	    HMethod gis=linker.forName("java.net.Socket").getDeclaredMethod("getInputStream", new HClass[0]);
+	    //Handle Socket getInputStream calls
+	    HMethod gis=linker.forName("java.net.Socket")
+		.getDeclaredMethod("getInputStream", new HClass[0]);
 	    if (gis.equals(old))
 		return linker.forName("java.net.Socket").getDeclaredMethod
 		    ("getAsyncInputStream", new HClass[0]);
-	    HMethod  gos=linker.forName("java.net.Socket").getDeclaredMethod("getOutputStream", new HClass[0]);
+	    
+	    //Handle Socket getOutputStream calls
+	    HMethod  gos=linker.forName("java.net.Socket")
+		.getDeclaredMethod("getOutputStream", new HClass[0]);
 	    if (gos.equals(old))
 		return linker.forName("java.net.Socket").getDeclaredMethod
 		    ("getAsyncOutputStream", new HClass[0]);
-
+	    
+	    //Handle start calls
 	    HClass HCthrd=linker.forName("java.lang.Thread");
 	    if (old.equals(HCthrd.getMethod("start",
 					    new HClass[0]))) {
 		HMethod hmrun=old.getDeclaringClass().getMethod("run",
 							       new HClass[0]);
-//              This code not needed anymore
-//		if (blockingcalls.contains(hmrun))
-		    if (!old2new.containsKey(hmrun)) {
-			HClass hcl=old.getDeclaringClass();
-			Set classes=ch.children(hcl);
-			Iterator childit=classes.iterator();
-			HMethod parent=hmrun;
-			while (childit.hasNext()|(hmrun!=null)) {
-			    try {
-				if (hmrun==null) {
-				    HClass child=(HClass)childit.next();
-				    hmrun=child.getDeclaredMethod(parent.getName(),
-								  parent.getParameterTypes());
-				    if (old2new.containsKey(hmrun)) {
-					hmrun=null;
-					continue;
-				    }
-				}
-				if (bm.swop(hmrun)!=null) {
-				//handle actual blocking call swapping
-				    old2new.put(hmrun, bm.swop(hmrun));
-				} else {
-				    async_todo.add(ucf.convert(hmrun));
-				    HMethod temp=makeAsync(old2new, hmrun,
-							   ucf,linker);
-				}
-			    } catch (NoSuchMethodError e) {
-			    }
-			    hmrun=null;
-			}
-		    }
+		scheduleMethods(hmrun);
 		return old.getDeclaringClass().getMethod("start_Async",
 							 new HClass[0]);
 	    }
+
+	    //No match found
 	    return null;
 	}
     }
@@ -1059,23 +1079,7 @@ public class AsyncCode {
 	HClass originalClass = original.getDeclaringClass();
 	HClassMutator originalMutator=originalClass.getMutator();
 	Util.assert(originalMutator!=null);
-
-//  	// create a new HClassSyn that replaces the original HClass
-//  	if (classmap.containsKey(originalClass))
-//  	    replacementClass=(HClassSyn) classmap.get(originalClass);
-//  	else {
-//  	    replacementClass=new HClassSyn(originalClass, true);
-//  	    // clone HMethods from original class
-//  	    HMethod[] toClone = originalClass.getDeclaredMethods();
-//  	    for (int i = 0; i < toClone.length; i++) {
-//  		HMethod clone = replacementClass.getDeclaredMethod
-//  		    (toClone[i].getName(), toClone[i].getParameterTypes());
-//  		ucf.update(clone, 
-//  			   ((QuadNoSSA)ucf.convert(toClone[i])).clone(clone));
-//  	    }
-//  	    classmap.put(originalClass, replacementClass);
-//  	}
-	    
+  
 	// use the return type of the original HMethod to get the String 
 	// prefix for the type of Continuation we want as the new return type
 	final String pref = ContBuilder.getPrefix(original.getReturnType());
@@ -1172,28 +1176,13 @@ public class AsyncCode {
 	final HClass inter = linker.forName("harpoon.Analysis.ContBuilder." + 
 					    interPref + "ResultContinuation");
 	contMutator.addInterface(inter);
-	//	final HClass environment = linker.forName
-	//	    ("harpoon.Analysis.EnvBuilder.Environment");
-	//	System.out.println(continuationClass+"    "+
-	//			   continuationClass.getLinker()
-	//			   +"   "+environment.getLinker());
-	// clone template's constructor HCode
-//  	HConstructor hc = null;
-//  	HConstructor nhc = null;
-//  	try {
-//  	    hc = template.getConstructor(new HClass[] {environment});
-//  	    nhc = continuationClass.getConstructor(new HClass[] {environment});
-//  	    HCode hchc = ((Code)ucf.convert(hc)).clone(nhc);
-//  	    ucf.update(nhc, hchc);
-//  	} catch (NoSuchMethodError e) {
-//  	    System.err.println("Missing constructor for environment template");
-//  	}
 
 	HMethod hmethods[]=template.getDeclaredMethods();
 	for(int i=0;i<hmethods.length;i++) {
 	    try {
-		HMethod nhm=continuationClass.getDeclaredMethod(hmethods[i].getName(),
-								hmethods[i].getDescriptor());
+		HMethod nhm=continuationClass
+		    .getDeclaredMethod(hmethods[i].getName(),
+				       hmethods[i].getDescriptor());
 		HCode hchc = ((Code)ucf.convert(hmethods[i])).clone(nhm);
 		(new ChangingVisitor(template,continuationClass))
 		    .reName((Quad)hchc.getRootElement());
