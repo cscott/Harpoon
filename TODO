@@ -3,7 +3,7 @@ Finish bitwidth analysis in SCC.
 Write move/const collation pass to remove unnecesssary quads and collate MOVEs.
 Figure out what to do about OutOfMemoryError. (explicit?)
 Check that, if Tnull is on Stack, phis are handled correctly.
-Check merges of try: only constrain state to be equivalent.  Possible
+Check merges of try: only constrain state to be equivalent.  Possibly
   we can more aggressively merge catch blocks?
 ---- Sep-20-98
 Predicated interprocedural analysis.
@@ -31,7 +31,7 @@ java.lang.OutOfMemoryError:
 X Phi-placement analysis works, it just needs 'dead-code elimination'.
 X  Remove any phi function that defines a variable that is never used.
 ---- Sep-14-98
-Make sure Test/zeroopt.java is properly optimized.
+X Make sure Test/zeroopt.java is properly optimized.
 X SWITCH processing is still broken.
 Check try/catch processing.  I don't think we're putting in the right
   PHI functions.
