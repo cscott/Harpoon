@@ -7,6 +7,10 @@
 #include "Effects.h"
 #include "Role.h"
 #include "Method.h"
+#ifdef MDEBUG
+#include <dmalloc.h>
+#endif
+
 #define MAXREPSEQ 5
 
 void addarraypath(struct heap_state *hs, struct hashtable * ht, long long obj, long long dstobj) {
@@ -108,17 +112,16 @@ void addeffect(struct heap_state *heap, long long suid, char * fieldname, long l
     struct effectregexpr* srcexpr=NULL;
     if (suid!=-1)
       srcexpr=buildregexpr(pathtable, suid);
-    else printf("expr\n");
-    printf("Initial effects for method:\n");
-    printeffectlist(method->effects);
+        printf("Initial effects for method:\n");
+	printeffectlist(method->effects);
     {
       struct effectregexpr* dstexpr=buildregexpr(pathtable, duid);
       struct effectlist * efflist=(struct effectlist *) calloc(1,sizeof(struct effectlist));
       efflist->fieldname=copystr(fieldname);
       efflist->src=srcexpr;
       efflist->dst=dstexpr;
-      printf("Effect List Entry:\n");
-      printeffectlist(efflist);
+            printf("Effect List Entry:\n");
+	      printeffectlist(efflist);
       {
 	struct effectlist *effptr=method->effects;
 	struct effectlist *oldptr=NULL;
@@ -182,7 +185,7 @@ struct effectlist * mergeeffectlist(struct effectlist * el1, struct effectlist *
 
 void updateroleeffects(struct heap_state *heap) {
   struct effectlist *mergedlist=mergemultipleeffectlist(heap->methodlist->effects, heap->methodlist->rm->effects);
-  printf("Incoming method effectlist:\n");
+    printf("Incoming method effectlist:\n");
   printeffectlist(heap->methodlist->effects);
   printf("Old rolemethod effectlist:\n");
   printeffectlist(heap->methodlist->rm->effects);
@@ -341,13 +344,22 @@ struct regexprlist * mergeregexprlist(struct regexprlist * rel1, struct regexprl
 	      tmp->nextlist=newlistptr;
 	      newlistptr=tmp;
 	      tmp=allregexpr->nextlist;
-	      /* Free the merged expr list*/
-	      free(allregexpr);
-	      allregexpr=tmp;
-	      tmp=indexptr->nextlist;
-	      indexptr->nextlist=tmp->nextlist;
-	      free(tmp);
-	      break;
+	      if (indexptr==allregexpr) {
+		/* Adjacent nodes...*/
+		tmp=indexptr->nextlist->nextlist;
+		free(indexptr->nextlist);
+		free(allregexpr);
+		allregexpr=tmp;
+		break;
+	      } else {
+		/* Free the merged expr list*/
+		free(allregexpr);
+		allregexpr=tmp;
+		tmp=indexptr->nextlist;
+		indexptr->nextlist=tmp->nextlist;
+		free(tmp);
+		break;
+	      }
 	    }
 	    indexptr=indexptr->nextlist;
 	  }
@@ -360,7 +372,9 @@ struct regexprlist * mergeregexprlist(struct regexprlist * rel1, struct regexprl
 	      free(allregexpr);
 	      allregexpr=tmp;
 	  }
-	  allregexpr=allregexpr->nextlist;
+	  /*allregexpr could be equal to NULL because of merging...*/
+	  if (allregexpr!=NULL)
+	    allregexpr=allregexpr->nextlist;
 	}
       }
       copy->nextreg=rel;
@@ -488,6 +502,42 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
 		int j;
 		if((lastloopsize+lastloopindex)==index) {
 		  /* We've already got a loop node!!!*/
+		  int j;
+		  struct regexprlist *list1=ere;
+		  struct regexprlist *loopnode=NULL;
+		  struct listofregexprlist *lorel=NULL;
+		  for(i=1;j<i;j++)
+		    list1=list1->nextreg;
+		  loopnode=list1->nextreg;
+		  rel=loopnode;
+
+		  list1->nextreg=NULL;
+		  lorel=loopnode->subtree;
+		  
+		  while(lorel!=NULL) {
+		    struct regexprlist *mergedlist=mergeregexprlist(lorel->expr,ere);
+		    if (mergedlist!=NULL) {
+		      /*Merging with another item*/
+		      freeregexprlist(lorel->expr);
+		      freeregexprlist(ere);
+		      lorel->expr=mergedlist;
+
+		      ere=mergedlist;
+		      /*Fill ring buffer with merged list*/
+		      
+		      for(j=0;j<i;j++) {
+			ringbuffers[ringindex][j]=mergedlist;
+			mergedlist=mergedlist->nextreg;
+		      }	      		     
+		    }
+		  }
+		  if (lorel==NULL) {
+		    /*Can't merge it...*/
+		    struct listofregexprlist * loel1=(struct listofregexprlist *) calloc(1, sizeof(struct listofregexprlist));
+		    loel1->expr=ere;
+		    loel1->nextlist=loopnode->subtree;
+		    loopnode->subtree=loel1;
+		  }
 		} else {
 		  /* Build loop node */
 		  struct regexprlist * relloop=(struct regexprlist *) calloc(1, sizeof(struct regexprlist));
@@ -519,6 +569,13 @@ struct effectregexpr * buildregexpr(struct hashtable *pathtable, long long uid) 
 		    relloop->subtree=loel;
 		    freeregexprlist(list1);
 		    freeregexprlist(list2);
+		    ere=mergedlist;
+		    /*Fill ring buffer with merged list*/
+		    list2=ere;
+		    for(j=0;j<i;j++) {
+		      ringbuffers[ringindex][j]=list2;
+		      list2=list2->nextreg;
+		    }
 		  }
 
 		  relloop->multiplicity=1;
@@ -636,7 +693,7 @@ void printregexprlist(struct regexprlist *rel) {
 	printf(")");
       if (rel->multiplicity==1)
 	printf("*");
-    } else {
+    } else if (rel->subtree!=NULL) {
       struct listofregexprlist * flptr=rel->subtree;
       if (flptr->nextlist!=NULL)
 	printf("(");

@@ -4,7 +4,9 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include "Hashtable.h"
-/*#include <dmalloc.h>*/
+#ifdef MDEBUG
+#include <dmalloc.h>
+#endif
 
 int puttable(struct hashtable *ht, long long key, void * object) {
   int bin=hashfunction(key);

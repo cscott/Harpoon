@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Role.h"
-/*#include <dmalloc.h>*/
+#ifdef MDEBUG
+#include <dmalloc.h>
+#endif
 
 #define DUPTHRESHOLD 2
 

@@ -10,8 +10,9 @@
 #include "Role.h"
 #include "Method.h"
 #include "Effects.h"
-/*#include <dmalloc.h>*/
-
+#ifdef MDEBUG
+#include <dmalloc.h>
+#endif
 
 static int programfd;
 #define bufsize 1000

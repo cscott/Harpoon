@@ -3,7 +3,10 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include "CalculateDominators.h"
-/*#include <dmalloc.h>*/
+
+#ifdef MDEBUG
+#include <dmalloc.h>
+#endif
 
 #define NOBORINGDOM 1
 

@@ -3,7 +3,9 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include "ObjectSet.h"
-/*#include <dmalloc.h>*/
+#ifdef MDEBUG
+#include <dmalloc.h>
+#endif
 
 struct objectset * createobjectset() {
   return (struct objectset *) calloc(1,sizeof(struct objectset));

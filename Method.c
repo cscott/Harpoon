@@ -6,7 +6,9 @@
 #include "Method.h"
 #include "Role.h"
 #include "Effects.h"
-/*#include <dmalloc.h>*/
+#ifdef MDEBUG
+#include <dmalloc.h>
+#endif
 
 int methodhashcode(struct rolemethod * method) {
   return method->hashcode;
