@@ -63,7 +63,9 @@ parser code {:
 
 		CUP$TDLParser$actions.errors = true;
 		Symbol symbol = (Symbol) current;
-		report_error(filename+":"+(symbol.line+1)+": Syntax error at column " + LineCount.getColumn(symbol.left) +": " + current.value, current);
+		report_error(filename+":"+(symbol.line+1)+": Syntax error at column " 
+                + (LineCount.getColumn(symbol.left)+1) +": " + current.value, current);
+		System.out.println();
 		System.exit(0);
 	}
 

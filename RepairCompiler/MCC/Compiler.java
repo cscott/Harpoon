@@ -39,7 +39,7 @@ public class Compiler {
          * specified at command line
          */
 
-        System.out.println("\nMCC v0.0.1 - MIT LCS (Author: Daniel Roy, Brian Demsky)");
+        System.out.println("MCC v0.0.1 - MIT LCS (Author: Daniel Roy, Brian Demsky)\n");
 
 	if (cli.infile == null) {
 	    System.err.println("\nError: no input file specified");

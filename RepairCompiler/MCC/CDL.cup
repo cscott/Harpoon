@@ -63,7 +63,19 @@ parser code {:
 
 		CUP$CDLParser$actions.errors = true;
 		Symbol symbol = (Symbol) current;
-		report_error(filename+":"+(symbol.line+1)+": Syntax error at column " + LineCount.getColumn(symbol.left) +": " + current.value, current);
+
+		boolean isInteger = true;
+		try{ 
+                   Integer.parseInt(current.value.toString());
+ 		} catch(NumberFormatException e) { isInteger = false;}
+
+                report_error(filename+":"+(symbol.line+1)+": Syntax error at column " 
+                + (LineCount.getColumn(symbol.left)+1) +": " + current.value, current);
+
+		if (current.value.equals("true") || isInteger)
+		   System.out.println("Did you mean literal("+current.value+")?");
+
+		System.out.println();
 		System.exit(0);
 	}
 
