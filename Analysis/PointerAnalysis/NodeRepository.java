@@ -11,17 +11,26 @@ import java.util.Map;
 import java.lang.reflect.Modifier;
 
 import harpoon.ClassFile.HMethod;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.ANEW;
+import harpoon.IR.Quads.GET;
+import harpoon.IR.Quads.AGET;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Analysis.MetaMethods.GenType;
+
+import harpoon.Util.Util;
 
 /**
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.25 2000-06-09 22:00:43 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.26 2000-11-06 17:50:11 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -48,8 +57,10 @@ public class NodeRepository {
      * (and hence unique) name of the class */
     public final PANode getStaticNode(String class_name){
 	PANode node = (PANode) static_nodes.get(class_name);
-	if(node==null)
-	    static_nodes.put(class_name,node = getNewNode(PANode.STATIC));
+	if(node == null) {
+	    node = getNewNode(PANode.STATIC, null); // TODO
+	    static_nodes.put(class_name, node);
+	}
 	return node;
     }
 
@@ -57,12 +68,14 @@ public class NodeRepository {
      *  <code>param_number</code> must contain the number of formal
      *  parameters of the meta-method. */
     public final void addParamNodes(MetaMethod mmethod, int param_number){
+	Util.assert(mmethod.nbParams() == param_number,
+		    "Strange number of params for " + mmethod);
 	// do not create the parameter nodes twice for the same procedure
 	if(param_nodes.containsKey(mmethod)) return;
 	PANode nodes[] = new PANode[param_number];
-	for(int i = 0; i < param_number; i++){
-	    nodes[i] = getNewNode(PANode.PARAM);
-	}
+	for(int i = 0; i < param_number; i++)
+	    nodes[i] = getNewNode(PANode.PARAM,
+				  new GenType[]{mmethod.getType(i)});
 	param_nodes.put(mmethod,nodes);
     }
 
@@ -90,12 +103,22 @@ public class NodeRepository {
 	return (PANode[]) param_nodes.get(mmethod);
     }
 
+    private final GenType[] get_exceptions(HMethod callee) {
+	HClass[] excs = callee.getExceptionTypes();
+	GenType[] retval = new GenType[excs.length];
+	for(int i = 0; i < excs.length; i++)
+	    retval[i] = new GenType(excs[i], GenType.POLY);
+	return retval;
+    }
+
     // Returns the EXCEPT node associated with a CALL instruction
     private final PANode getExceptNode(HCodeElement hce){
 	PANode node = (PANode) except_nodes.get(hce);
-	if(node == null){
-	    except_nodes.put(hce,node = getNewNode(PANode.EXCEPT));
-	    node2code.put(node,hce);
+	if(node == null) {
+	    HMethod callee = ((CALL) hce).method();
+	    node = getNewNode(PANode.EXCEPT, get_exceptions(callee));
+	    except_nodes.put(hce, node);
+	    node2code.put(node, hce);
 	}
 	return node;	
     }
@@ -133,7 +156,7 @@ public class NodeRepository {
     public final PANode getLoadNodeSpecial(HCodeElement hce, String f){
 	CFPair key = new CFPair(hce, f); 
 	PANode retval = (PANode) cf_nodes.get(key);
-	if(retval == null){
+	if(retval == null) {
 	    retval = new PANode(PANode.LOAD);
 	    cf_nodes.put(key, retval);
 	}
@@ -164,17 +187,66 @@ public class NodeRepository {
 
 	PANode node = (PANode) code_nodes.get(hce);
 	if((node == null) && make){
-	    code_nodes.put(hce, node = getNewNode(type));
+	    node = getNewNode(type, new GenType[]{get_code_node_type(hce)});
+	    code_nodes.put(hce, node);
 	    node2code.put(node, hce);
 	}
 	return node;
     }
 
+
+    private final GenType get_code_node_type(HCodeElement hce) {
+	Quad quad = (Quad) hce;
+
+	class GenTypeWrapper{
+	    GenType gt = null;
+	}
+	final GenTypeWrapper retval = new GenTypeWrapper();
+
+	quad.accept(new QuadVisitor() {
+		public void visit(NEW q) { // INSIDE nodes
+		    retval.gt = new GenType(q.hclass(), GenType.MONO);
+		}
+		
+		public void visit(ANEW q) { // array INSIDE nodes
+		    retval.gt = new GenType(q.hclass(), GenType.MONO);
+		}
+
+		public void visit(CALL q) { // RETURN nodes
+		    retval.gt =
+			new GenType(q.method().getReturnType(), GenType.POLY);
+		}
+
+		public void visit(GET q) { // LOAD nodes
+		    retval.gt =
+			new GenType(q.field().getType(), GenType.POLY);
+		}
+
+		public void visit(AGET q) { // LOAD nodes from array ops
+		    retval.gt = null; // we cannot determine the type
+		}
+
+		public void visit(Quad q) {
+		    // this should not happen
+		    Util.assert(false, "Unknown quad " + q);
+		}
+	    });
+
+	return retval.gt;
+    }
+
+
     // all the nodes are produced by this method. So, if we want them
     // to have a common characteristic, here is THE place to add things.
-    static final PANode getNewNode(int type){
-	return new PANode(type);
+    static final PANode getNewNode(int type, GenType[] node_class) {
+	return new PANode(type, node_class);
+    } 
+
+    // default parameter for the node_class array.
+    static final PANode getNewNode(int type) {
+	return getNewNode(type, null);
     }
+	
 
     public final HCodeElement node2Code(PANode n){
 	if(n==null) return null;

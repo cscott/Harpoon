@@ -13,6 +13,7 @@ import harpoon.Util.Util;
 import harpoon.IR.Quads.CALL;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
+import harpoon.Analysis.MetaMethods.GenType;
 import harpoon.Util.DataStructs.LightMap;
 
 /**
@@ -20,7 +21,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.22 2000-05-20 19:10:43 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.23 2000-11-06 17:50:12 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -52,19 +53,19 @@ final public class PANode {
     //public static final PANode NULL_Node = new PANode(NULL);
 
     /** The type of the node */
-    public final int type;
+    public int type;
 
     /** <code>count</code> is used to generate unique IDs
 	for debug purposes. */
     static int count = 0;
     /** Holds the unique ID */
     /////private 
-    final int number;
+    int number;
 
     // the depth of the call chain associated with this node
     private int call_chain_depth = 0;
     // call context sensitivity: the mapping CALL -> specialized node
-    private final LightMap cs_specs;
+    private LightMap cs_specs;
     // the parent of this PANode on the CALL specialization branch
     private PANode cs_parent = null;
     // the CALL site that specialized cs_parent into this node
@@ -79,7 +80,7 @@ final public class PANode {
     private PANode bottom = null;
 
     // full thread sensitivity: the mapping MetaMethod -> specialized node
-    private final LightMap ts_specs;
+    private LightMap ts_specs;
     // the weak thread specialization of this node (if any)
     private PANode wtspec = null;
     // the parent of this PANode on the thread specialization branch
@@ -87,11 +88,28 @@ final public class PANode {
     // the run MetaMethod site that specialized cs_parent into this node
     private MetaMethod run_mmethod = null;
 
-    /** Creates a <code>PANode</code> of type <code>type</code.
+    // the type of the objects represented by this node: it's either an
+    // exact type (ie <hclass, GenType.MONO>) or a type cone
+    // (ie <hclass, GenType.POLY>).
+    private GenType[] node_class = null;
+
+    /** Creates a <code>PANode</code> of type <code>type</code>.
 	<code>type</code> must be one of <code>PANode.INSIDE</code>,
 	<code>PANode.LOAD</code> etc. */  
+    public PANode(final int type, final GenType[] node_class) {
+	real_constructor(type, node_class);
+    }
+
+    /** Constructor using the default <code>null</code> value for
+	<code>node_class</code>. */
     public PANode(final int type) {
-        this.type = type;
+	real_constructor(type, null);
+    }
+
+    // Does the real work!
+    private void real_constructor(final int type, final GenType[] node_class) {
+        this.type       = type;
+	this.node_class = node_class;
 	number = count++;
 
 	if(PointerAnalysis.DEBUG)
@@ -107,7 +125,6 @@ final public class PANode {
 	else ts_specs = null;
     }
 
-
     /** Returns the type of the node. */
     public final int type(){
 	return type;
@@ -115,7 +132,15 @@ final public class PANode {
 
     /** Checks if <code>this</code> node is an inside one. */
     public final boolean inside(){
-	return type==INSIDE;
+	return type == INSIDE;
+    }
+
+    /** Returns an array of <code>GenType</code>s describing all
+	the possible types (ie <code>HClass</code>es) this node can have.
+	If we were unable to determine these types, <code>null</code> is
+	returned instead; it stands for <i>any</i> type.
+    public final GenType[] getPossibleClasses() {
+	return node_class;
     }
 
     ////////////////////// CALL_CONTEXT_SENSITIVE /////////////////////////
