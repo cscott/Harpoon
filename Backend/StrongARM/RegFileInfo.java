@@ -38,7 +38,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.17 2000-05-23 17:25:48 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.18 2000-06-09 17:13:00 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -60,6 +60,11 @@ public class RegFileInfo
     final Temp SP;  // Stack pointer
     final Temp LR;  // Link register
     final Temp PC;  // Program counter
+
+    // max index is 10 right?  We don't want to include the registers
+    // holding runtime information, i think... clarify spec in
+    // Generic.RegFileInfo
+    public int maxRegIndex() { return 10; }
 
     /** Creates a <code>RegFileInfo</code>. 
      */
