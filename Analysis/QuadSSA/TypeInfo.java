@@ -19,7 +19,7 @@ import java.util.Hashtable;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.3 1998-12-01 12:36:27 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.4 1998-12-05 20:50:15 marinov Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
@@ -162,6 +162,8 @@ public class TypeInfo implements harpoon.Analysis.Maps.TypeMap {
 	    }
 	    modified = r;
 	}
+	/* CJMP should actually somehow split and not merge types,
+	   i.e. use the information at branch site to find narrower types? */
 	public void visit(CJMP q) {
 	    // special case typecasting. (CHECKCAST in bytecode)
 	    // special case comparisons against NULL.

@@ -14,7 +14,7 @@ import java.util.Vector;
  * <code>CallGraph</code> constructs a simple directed call graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.4.2.2 1998-12-04 09:05:24 marinov Exp $
+ * @version $Id: CallGraph.java,v 1.4.2.3 1998-12-05 20:50:15 marinov Exp $
  */
 
 public class CallGraph  {
@@ -29,7 +29,7 @@ public class CallGraph  {
 	if (retval==null) {
 	    final Set s = new Set();
 	    final HCode hc = m.getCode("quad-ssa");
-	    if (hc==null) {cache.put(m,new HMethod[0]); return calls(m); }
+	    if (hc==null) { cache.put(m,new HMethod[0]); return calls(m); }
 	    for (Enumeration e = hc.getElementsE(); e.hasMoreElements(); ) {
 		Quad q = (Quad) e.nextElement();
 		if (!(q instanceof CALL)) continue;
@@ -65,4 +65,34 @@ public class CallGraph  {
 	return retval;
     }
     final private Hashtable cache = new Hashtable();
+
+    /** Return a list of all possible methods called by this method at this call site. */
+    public HMethod[] calls(final HMethod m, final CALL cs) {
+	final HCode hc = m.getCode("quad-ssa");
+	if (hc==null) { return new HMethod[0]; }
+	HMethod cm = cs.method;
+	// for 'special' invocations, we know the method exactly.
+	if (cs.isSpecial || cs.isStatic()) return new HMethod[]{ cm };
+	final Set s = new Set();
+	// all methods of children of this class are reachable.
+	Worklist W = new Set();
+	W.push(cm.getDeclaringClass());
+	while (!W.isEmpty()) {
+	    HClass c = (HClass) W.pull();
+	    // if this class overrides the method, add it to vector.
+	    try {
+		s.union(c.getDeclaredMethod(cm.getName(),
+					    cm.getDescriptor()));
+	    } catch (NoSuchMethodError nsme) { }
+	    // recurse through all children of this method.
+	    HClass[] child = ch.children(c);
+	    for (int i=0; i<child.length; i++)
+		W.push(child[i]);
+	}
+	// finally, copy result vector to retval array.
+	HMethod[] retval = new HMethod[s.size()];
+	s.copyInto(retval);
+	return retval;
+    }
+
 }

@@ -17,7 +17,7 @@ import java.util.Enumeration;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ClassHierarchy.java,v 1.4.2.2 1998-12-03 04:47:43 marinov Exp $
+ * @version $Id: ClassHierarchy.java,v 1.4.2.3 1998-12-05 20:50:15 marinov Exp $
  */
 
 public class ClassHierarchy  {
@@ -48,6 +48,11 @@ public class ClassHierarchy  {
 	return _classes.elements();
     }
     private Set _classes = null;
+    /** Returns an enumeration of all classes instantiated.
+	(Actually only the list of classes for which an explicit NEW is found;
+	should include list of classes that are automatically created by JVM!) */ 
+    public Enumeration instantiatedClasses() { return instedClasses.elements(); }
+    private Set instedClasses = new Set();
 
     /** Returns a human-readable representation of the hierarchy. */
     public String toString() {
@@ -105,6 +110,7 @@ public class ClassHierarchy  {
 		    Quad Q = (Quad) e.nextElement();
 		    if (Q instanceof NEW) {
 			NEW q = (NEW) Q;
+			instedClasses.union(q.hclass);
 			discoverClass(q.hclass, W, done,
 				      classKnownChildren, classMethodsUsed);
 		    }
