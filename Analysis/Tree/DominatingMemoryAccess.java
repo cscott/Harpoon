@@ -39,7 +39,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
 import java.util.BitSet;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Comparator;
 import java.util.Collection;
@@ -71,7 +70,7 @@ import java.util.Collection;
  used since it needs to invalidate them on a function return.
  * 
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: DominatingMemoryAccess.java,v 1.1.2.8 2001-06-11 23:37:02 witchel Exp $
+ * @version $Id: DominatingMemoryAccess.java,v 1.1.2.9 2001-06-12 01:19:17 witchel Exp $
  */
 public class DominatingMemoryAccess {
 
@@ -335,45 +334,6 @@ public class DominatingMemoryAccess {
     */
    class DARegAlloc {
 
-      class byDefLength implements Comparator {
-         byDefLength(Map defUseMap) {
-            this.defUseMap = defUseMap;
-         }
-         // Sort biggest first
-         public int compare(Object o1, Object o2) throws ClassCastException {
-            HCodeElement h1 = (HCodeElement) o1;
-            HCodeElement h2 = (HCodeElement) o2;
-            Util.assert(defUseMap.containsKey(h1));
-            Util.assert(defUseMap.containsKey(h2));
-            ArrayList sub1 = (ArrayList)defUseMap.get(h1);
-            ArrayList sub2 = (ArrayList)defUseMap.get(h2);
-            if(sub1.size() >  sub2.size()) return -1;
-            if(sub1.size() == sub2.size()) return 0;
-            return 1;
-         }
-         public boolean equals(Object o1, Object o2) 
-            throws ClassCastException {
-            HCodeElement h1 = (HCodeElement) o1;
-            HCodeElement h2 = (HCodeElement) o2;
-            Util.assert(defUseMap.containsKey(h1));
-            Util.assert(defUseMap.containsKey(h2));
-            ArrayList sub1 = (ArrayList)defUseMap.get(h1);
-            ArrayList sub2 = (ArrayList)defUseMap.get(h2);
-            return sub1.size() == sub2.size();
-         }
-         Map defUseMap;
-      }
-
-      // Return the list of defining references sorted by the ones
-      // with the most subordinate references first 
-      // XXX this should really deal with function calls
-      ArrayList prioritizeDefs() {
-         ArrayList defs = new ArrayList(defUseMap.keySet());
-         byDefLength bydeflen = new byDefLength(defUseMap);
-         java.util.Collections.sort(defs, bydeflen);
-         return defs;
-      }
-
       // All DA variables that are simultaneously live interfere with
       // each other
       private void addInter(Map inter, Set in) {
@@ -424,11 +384,11 @@ public class DominatingMemoryAccess {
        */
       private int score(HCodeElement hce, Set interset) {
          Util.assert(defUseMap.containsKey(hce));
-         int provides = ((ArrayList)defUseMap.get(hce)).size();
+         int provides = ((Set)defUseMap.get(hce)).size();
          int prevents = 0;
          for(Iterator it = interset.iterator(); it.hasNext();) {
             HCodeElement inter = (HCodeElement)it.next();
-            prevents += ((ArrayList)defUseMap.get(inter)).size();
+            prevents += ((Set)defUseMap.get(inter)).size();
          }
          return provides - prevents;
       }
@@ -504,7 +464,7 @@ public class DominatingMemoryAccess {
                if(takenDA.contains(danum) == false) {
                   Util.assert(ref2dareg.containsKey(hce) == false);
                   ref2dareg.put(hce, defda);
-                  for(Iterator it = ((ArrayList)defUseMap.get(hce)).iterator(); 
+                  for(Iterator it = ((Set)defUseMap.get(hce)).iterator(); 
                       it.hasNext();) {
                      HCodeElement use = (HCodeElement) it.next();
                      Util.assert(ref2dareg.containsKey(use) == false);
@@ -786,14 +746,14 @@ public class DominatingMemoryAccess {
                }
                HCodeElement dom = (HCodeElement)active.get(eqc);
                Util.assert(defUseMap.containsKey(dom) == true);
-               ArrayList subs = (ArrayList)defUseMap.get(dom);
+               Set subs = (Set)defUseMap.get(dom);
                subs.add(hce);
                Util.assert(useDefMap.containsKey(hce) == false);
                useDefMap.put(hce, dom);
             }
          } else {
             active.put(eqc, hce);
-            defUseMap.put(hce, new ArrayList(2));
+            defUseMap.put(hce, new HashSet());
          }
       }
    }
@@ -839,48 +799,31 @@ public class DominatingMemoryAccess {
       }
    }
 
-   private void tryDominate(Exp exp, final CacheEquivalence eqClasses,
-                            Map defUseMap, Map useDefMap) {
-      if(exp.kind() == TreeKind.MEM) {
-         MEM mem = (MEM)exp;
-         // XXX This shoud go away when Scott tells me the real way to
-         // do this. 
-         if(mem.kind() == TreeKind.TEMP
-            && getSize(mem, (TEMP)mem.getExp()) <= 32) {
-            if(eqClasses.needs_tag_check(mem) == false) {
-               // This is it, this use is dominated
-               MEM dom = eqClasses.whose_tag_check(mem);
-               ArrayList subs = (ArrayList)defUseMap.get(dom);
-               subs.add(mem);
-               Util.assert(useDefMap.containsKey(mem) == false);
-               useDefMap.put(mem, dom);
-            } else if(eqClasses.num_using_this_tag(mem) > 1) {
-               defUseMap.put(mem, new ArrayList(2));
-            }
-         }
-      }
-   }
    // For every access that dominates another access to the same base
    // pointer (memory equiv class), make the dominating access the Def
    // and the subordinate accesses uses
-   private void findDADefUse(DomTree dt, HCodeElement hce, 
-                             harpoon.IR.Tree.Code code, CFGrapher cfgr,
+   private void findDADefUse(HCodeElement[] elts,
                              final CacheEquivalence eqClasses, 
                              Map defUseMap, Map useDefMap) {
-      HCodeElement[] children = dt.children(hce);
-      switch(((Tree)hce).kind()) {
-      case TreeKind.MOVE:
-         MOVE m = (MOVE)hce;
-         if(trace) {
-            System.err.println("hce " + hce + " code " + hce.hashCode() + " (" + children.length + ")");
+      for(int i = 0; i < elts.length; ++i) {
+         HCodeElement hce = elts[i];
+         if(((Tree)hce).kind() == TreeKind.MEM) {
+            MEM mem = (MEM)hce;
+            // XXX Someday soon this restriction will go away as large
+            // objects will  be split into different eq classes at
+            // this boundary.
+            if(mem.getExp().kind() == TreeKind.TEMP
+               && getSize(mem, (TEMP)mem.getExp()) <= 32) {
+               if(eqClasses.needs_tag_check(mem)) {
+                  if(eqClasses.num_using_this_tag(mem) > 1) {
+                     // Then this is a def that is used
+                     defUseMap.put(mem, eqClasses.ops_using_this_tag(mem));
+                  }
+               } else {
+                  useDefMap.put(mem, eqClasses.whose_tag_check(mem));
+               }
+            }
          }
-         tryDominate(m.getSrc(), eqClasses, defUseMap, useDefMap);
-         tryDominate(m.getDst(), eqClasses, defUseMap, useDefMap);
-         break;
-      }
-      for(int i = 0; i < children.length; ++i) {
-         findDADefUse(dt, children[i], code, cfgr, eqClasses, 
-                      defUseMap, useDefMap);
       }
    }
 
@@ -958,7 +901,7 @@ public class DominatingMemoryAccess {
       int tot_defs = defUseMap.keySet().size();
       int tot_uses = 0;
       for(Iterator it = defUseMap.values().iterator(); it.hasNext();) {
-         ArrayList uses = (ArrayList)it.next();
+         Set uses = (Set)it.next();
          tot_uses += uses.size();
       }
       float avg = tot_defs != 0 ? (float)tot_uses/tot_defs : 0;
@@ -1052,7 +995,7 @@ public class DominatingMemoryAccess {
                      findDADefUse(dt, roots[i], code, cfgr, eqClasses, 
                                   new HashMap(), defUseMap, useDefMap);
                   } else {
-                     findDADefUse(dt, roots[i], code, cfgr, cacheEq,
+                     findDADefUse(code.getElements(), cacheEq,
                                   defUseMap, useDefMap);
                   }
                }
