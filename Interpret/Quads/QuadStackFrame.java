@@ -11,7 +11,7 @@ import java.util.Hashtable;
  * <code>QuadStackFrame</code> is a stack frame for an interpreted method.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadStackFrame.java,v 1.1.2.1 1998-12-28 23:43:21 cananian Exp $
+ * @version $Id: QuadStackFrame.java,v 1.1.2.2 1998-12-28 23:52:41 cananian Exp $
  */
 final class QuadStackFrame extends StackFrame {
     /** current location in the method. */
@@ -31,7 +31,7 @@ final class QuadStackFrame extends StackFrame {
 	return (o==Onull)?null:o;
     }
 
-    final HMethod getMethod() {return pc.getFactory().getParent().getMethod();}
+    final HMethod getMethod() { return pc.getFactory().getMethod(); }
     final String  getSourceFile() { return pc.getSourceFile(); }
     final int     getLineNumber() { return pc.getLineNumber(); }
 }

@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.9 1998-12-28 23:38:54 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.10 1998-12-28 23:52:40 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -42,8 +42,7 @@ public abstract class Quad
 	this.next = new Edge[next_arity];
 
 	this.hashCode = (id<<5) ^ kind() ^
-	    qf.getParent().getName().hashCode() ^
-	    qf.getParent().getMethod().hashCode();
+	    qf.getParent().getName().hashCode() ^ qf.getMethod().hashCode();
     }
     protected Quad(QuadFactory qf, HCodeElement source) {
     	this(qf, source, 1, 1);

@@ -19,7 +19,7 @@ import harpoon.Util.Util;
  * (ie, the 1-edge) is the innermost nested try-block.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: METHOD.java,v 1.1.2.3 1998-12-27 21:26:55 cananian Exp $
+ * @version $Id: METHOD.java,v 1.1.2.4 1998-12-28 23:52:40 cananian Exp $
  * @see HEADER
  * @see HANDLER
  */
@@ -55,7 +55,7 @@ public class METHOD extends Quad {
 
     /** Determines whether the parameters defined in this <code>METHOD</code>
      *  belong to a static method. */
-    public boolean isStatic() { return qf.getParent().getMethod().isStatic(); }
+    public boolean isStatic() { return qf.getMethod().isStatic(); }
     
     /** Returns the <code>Temp</code>s defined by this <code>Quad</code>. */
     public Temp[] def() {
