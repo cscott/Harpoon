@@ -67,3 +67,4 @@ clean:
 		$(patsubst %.fig,%.tex,\
 		  $(patsubst Figures/%,%,$(filter %.fig,$(THESIS_FIGURES)))) \
 		*.stats *~ texput.log
+	$(RM) THussi.tex THv0.tex phisig.tex ptrsize.tex

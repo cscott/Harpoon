@@ -1,4 +1,6 @@
 # makefile.
+LATEX=latex
+BIBTEX=bibtex
 INSTALLMACHINE=magic@www.magic.lcs.mit.edu
 INSTALLDIR=public_html/Harpoon/
 export TEXINPUTS=/home/cananian/src/tex4ht//:
@@ -24,6 +26,10 @@ readnote.dvi: unread_.bib
 pldi99.dvi: pldi99-intro.tex pldi99-abstract.tex pldi99-tech.tex
 pldi99.dvi: pldi99-example.tex pldi99-results.tex
 pldi99.dvi: Figures/THussi.tex Figures/THv0.tex Figures/THscccomp.eps
+pldi99.dvi: Figures/THex1ssi.tex Figures/THex1ssiPr.tex
+pldi99.dvi: Figures/THlat1.tex Figures/THlat2.tex Figures/THlat3.tex
+pldi99.dvi: Figures/THlat4.tex Figures/THlat5.tex Figures/THlat6.tex
+pldi99.dvi: Figures/evil.tex
 
 # more dependencies for the pldi02 paper.
 pldi02.dvi: Figures/ptrsize.tex Figures/THlat6.tex
@@ -60,11 +66,13 @@ always:
 
 # Tex rules. [have to add explicit dependencies on appropriate bibtex files.]
 %.dvi %.aux: %.tex
-	latex $*
-	if egrep -q '^[^%]*\\bibliography' $< ; then bibtex $*; fi
-	if egrep -q 'Rerun to get cross-r' $*.log; then latex $*; fi
-	if egrep -q 'Rerun to get cross-r' $*.log; then latex $*; fi
-	if egrep -q 'undefined references' $*.log; then grep undefined $*.log; fi
+	$(LATEX) $*
+	if egrep -s '^[^%]*\\bibliography' $< ; then $(BIBTEX) $*; fi
+	if egrep -s 'Rerun to get cross-r|Citation.*undefined' $*.log; then \
+		$(LATEX) $*; fi
+	if egrep -s 'Rerun to get cross-r' $*.log; then $(LATEX) $*; fi
+	if egrep -s 'undefined references|Citation.*undefined' $*.log; then \
+		grep undefined $*.log; fi
 
 # Make annotation-visible versions of bibtex files.
 %_.bib : %.bib
