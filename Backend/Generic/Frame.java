@@ -16,7 +16,7 @@ import harpoon.ClassFile.Linker;
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.40 2000-01-28 02:46:20 kkz Exp $
+ * @version $Id: Frame.java,v 1.1.2.41 2000-01-28 03:06:26 kkz Exp $
  * @see harpoon.IR.Assem
  */
 public abstract class Frame {
@@ -58,7 +58,9 @@ public abstract class Frame {
     public abstract TempBuilder getTempBuilder();
 
     /** Returns the <code>GCInfo</code> for the backend
-	associated with <code>this</code>.
+	associated with <code>this</code>. <code>null</code>
+	may be returned in some cases. i.e. if precise
+	garbage collection is not supported.
      */
     public abstract GCInfo getGCInfo();
 }
