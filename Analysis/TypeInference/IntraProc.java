@@ -18,7 +18,7 @@ import java.util.Enumeration;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssa form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.5 1998-12-05 20:52:08 marinov Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.6 1998-12-06 17:26:20 marinov Exp $
  */
 
 public class IntraProc {
@@ -98,9 +98,9 @@ public class IntraProc {
     boolean outputChanged;
     void analyze() {
 	//DEBUG
+	System.out.println(System.currentTimeMillis());
+	System.out.println("   analyzing " + method.getDeclaringClass() + " " + method.getName());
 	//if (method.getName().equals("t")) {
-	//System.out.println(System.currentTimeMillis());
-	//System.out.println("   analyzing " + method.getDeclaringClass() + " " + method.getName());
 	//System.out.print("   analyzing " + method.getDeclaringClass() + " " + method.getName());
 	//HClass[] II = method.getParameterTypes();
 	//for (int ii=0; ii<II.length; ii++)
@@ -112,6 +112,11 @@ public class IntraProc {
 	//    System.out.println("e = " + exceptionType);
 	//}
 	//DEBUG
+	/* added to try to save some memory */
+	boolean noCache;
+	if (map==null) { map = new Hashtable(); noCache = true; }
+	else noCache = false;
+	/* "regular" calculation */
 	outputChanged = false;
 	if (code==null) // native or unanalyzable method
 	    nativeMethods();
@@ -162,12 +167,16 @@ public class IntraProc {
 	//}
 	//DEBUG
  
+	/* added to try to save some memory */
+	if (noCache) map = null;	
+	/* "regular" calculation */
 	if (outputChanged)
 	    for (Enumeration e=callees.elements(); e.hasMoreElements(); )
 		environment.reanalyze((IntraProc)e.nextElement());
     }
 
     HMethod[] calls() {
+	if (map==null) { map = new Hashtable(); analyze(); }
 	Set r = new Set();
 	for (Enumeration e = code.getElementsE(); e.hasMoreElements(); ) {
 	    Quad qq = (Quad) e.nextElement();
@@ -185,12 +194,14 @@ public class IntraProc {
 	    for (int i=0; i<m.length; i++)
 		r.union(m[i]);
 	}
+	map = null;
 	HMethod[] ret = new HMethod[r.size()];
 	r.copyInto(ret);
 	return ret;
     }
 
     HMethod[] calls(CALL cs) {
+	if (map==null) { map = new Hashtable(); analyze(); }
 	Set r = new Set();
 	SetHClass[] paramTypes = new SetHClass[cs.params.length];
 	for (int i=0; i<cs.params.length; i++) {
@@ -208,9 +219,14 @@ public class IntraProc {
 	return ret;
     }
 
-    SetHClass getTempType(Temp t) { return (SetHClass)map.get(t); }
+    SetHClass getTempType(Temp t) { 
+	if (map==null) { map = new Hashtable(); analyze(); }
+	SetHClass s = (SetHClass)map.get(t);
+	map = null;
+	return s;
+    }
 
-    Hashtable map = new Hashtable();
+    Hashtable map = null;
     class TypeInfoVisitor extends QuadVisitor {
 	boolean modified = false;
 	Hashtable checkcast;
