@@ -28,7 +28,7 @@ import java.util.Stack;
  * a control flow graph, in O(E) time.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CycleEq.java,v 1.4.2.21.2.1 2000-01-13 19:48:30 cananian Exp $
+ * @version $Id: CycleEq.java,v 1.4.2.21.2.2 2000-01-13 19:50:20 cananian Exp $
  */
 
 public class CycleEq  {
@@ -108,11 +108,13 @@ public class CycleEq  {
 	}
 	/** Map HCodeElement to Node, creating new RealNode if necessary. */
 	Node node(HCodeElement hce) {
+	    Util.assert(hce!=null);
 	    Node n = (Node) hce2node.get(hce);
 	    return (n!=null)?n:new RealNode(hce);
 	}
 	/** Map HCodeEdge to Edge, creating new RealEdge if necessary. */
 	Edge edge(HCodeEdge hce) {
+	    Util.assert(hce!=null);
 	    Edge e = (Edge) hce2edge.get(hce);
 	    return (e!=null)?e:new RealEdge(hce);
 	}
