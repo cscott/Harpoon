@@ -392,7 +392,7 @@ void DisableThread(struct thread_queue_struct* queue)
 {
   JNIEnv* env = FNI_GetJNIEnv();
   jobject ref_marker = ((struct FNI_Thread_State *)env)->localrefs_next;
-
+  jobject thread = ((struct FNI_Thread_State*)env)->thread;
   jclass rttClass;
   jobject scheduler;
   jmethodID getSchedMethod, disableMethod;
@@ -411,15 +411,13 @@ void DisableThread(struct thread_queue_struct* queue)
   queue->queue_state = IN_MUTEX_QUEUE;
   switching_state = StopSwitching();
 
-  rttClass = (*env)->FindClass(env, "javax/realtime/RealtimeThread");
-  assert(!((*env)->ExceptionOccurred(env)));
-      
-  getSchedMethod = (*env)->GetStaticMethodID(env, rttClass,
-					     "getScheduler",
-					     "()Ljavax/realtime/Scheduler;");
+  getSchedMethod = 
+    (*env)->GetMethodID(env, (*env)->GetObjectClass(env, thread),
+			"getScheduler",
+			"()Ljavax/realtime/Scheduler;");
   assert(!((*env)->ExceptionOccurred(env)));
   
-  scheduler = (*env)->CallStaticObjectMethod(env, rttClass, getSchedMethod);
+  scheduler = (*env)->CallObjectMethod(env, thread, getSchedMethod);
   assert(!((*env)->ExceptionOccurred(env)));
   
   if(scheduler == NULL) {
@@ -657,6 +655,7 @@ void* startMain(void* mclosure) {
   jclass claz; //the class of the main Java thread
   /* the main method id, id for getting the scheduler,
      and an id for removing threads */
+  jboolean check;
   jmethodID mid, getSchedMethod, removeThreadMethod;
   /* an object for this thread, it's thread group, and the scheduler */
   jobject thread, threadgroup, scheduler;
@@ -721,23 +720,24 @@ void* startMain(void* mclosure) {
   StopSwitching(); //stop thread switching
 
   /* get the scheduler */
-  getSchedMethod = (*env)->GetStaticMethodID(env,
-					     FNI_GetObjectClass(env, thread),
-					     "getScheduler",
-					     "()Ljavax/realtime/Scheduler;");
+  getSchedMethod = 
+    (*env)->GetMethodID(env, (*env)->GetObjectClass(env, thread),
+			"getScheduler", "()Ljavax/realtime/Scheduler;");
   assert(!((*env)->ExceptionOccurred(env)));
-  scheduler = (*env)->CallStaticObjectMethod(env,
-					     FNI_GetObjectClass(env, thread),
-					     getSchedMethod);
+  scheduler = (*env)->CallObjectMethod(env,
+				       thread,
+				       getSchedMethod);
   assert(!((*env)->ExceptionOccurred(env)));
   /* remove this thread from the scheduler */
   removeThreadMethod =
-    (*env)->GetMethodID(env, FNI_GetObjectClass(env, scheduler),
+    (*env)->GetMethodID(env, (*env)->GetObjectClass(env, scheduler),
 			"removeFromFeasibility",
-			"(Ljavax/realtime/Schedulable;)V");
+			"(Ljavax/realtime/Schedulable;)Z");
   assert(!((*env)->ExceptionOccurred(env)));
-  (*env)->CallVoidMethod(env, scheduler, removeThreadMethod, thread);
+  check = (*env)->CallBooleanMethod(env, scheduler, 
+				    removeThreadMethod, thread);
   assert(!((*env)->ExceptionOccurred(env)));
+  assert(check == JNI_TRUE);
 
   /* call it's exit function to clean up */
   // by cata: I commented this out
