@@ -31,7 +31,7 @@ import java.util.HashMap;
     cause an assertion failure.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: BitSetFactory.java,v 1.1.2.11 2000-06-08 06:25:18 pnkfelix Exp $
+    @version $Id: BitSetFactory.java,v 1.1.2.12 2000-07-01 00:56:39 cananian Exp $
  */
 public class BitSetFactory extends SetFactory {
     
@@ -222,7 +222,7 @@ public class BitSetFactory extends SetFactory {
 	}
 	
 	public boolean remove(Object o) {
-	    if (fact.universe.contains(o)) {
+	    if (!fact.universe.contains(o)) {
 		// o is not member of universe, therefore cannot be in set.
 		return false;
 	    } else {
