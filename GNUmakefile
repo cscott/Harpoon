@@ -19,10 +19,10 @@ java:	$(ALLSOURCE)
 	touch java
 
 cvs-add:
-	for dir in $(filter-out Test,$(ALLPKGS)); do \
+	-for dir in $(filter-out Test,$(ALLPKGS)); do \
 		(cd $$dir; cvs add *.java); \
 	done
-cvs-commit:
+cvs-commit: cvs-add
 	cvs commit
 
 doc:	doc/TIMESTAMP
