@@ -38,9 +38,9 @@ StrongARM NATIVECALL Caller Convention (As Seen In (tm): gcc arm32-netbsd):
 
 	So, a typical procedure call is just
 		bl _foo
-	for functions with less than four arguments, all of which are
-	preloaded in r0-r4.  It is assumed that the called function
-	clobbers r0-r4 (and that the link register r14 is clobbered by
+	for functions with four or less arguments, all of which are
+	preloaded in r0-r3.  It is assumed that the called function
+	clobbers r0-r3 (and that the link register r14 is clobbered by
 	the bl itself) but that all other registers are left untouched.
 	A typical procedure header (according to gcc) is thus:
 		mov ip, sp
@@ -90,6 +90,8 @@ StrongARM NATIVECALL Caller Convention (As Seen In (tm): gcc arm32-netbsd):
 	context: it means we don't have to keep adjust the two
 	'sub' instructions following the 'stmfd' depending on how
 	many registers we push on the stack.]
+
+	Note that r0-r3, lr, and ip are clobbered by a call.
 
 For normal CALLs:
 	same calling convention, except that on an exceptional
