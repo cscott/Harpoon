@@ -55,7 +55,7 @@ int expand_marksweep_heap(size_t size, struct marksweep_heap *h)
   bytes = ROUND_TO_NEXT_PAGE(size + h->heap_size/MARKSWEEP_HEAP_DIVISOR);
 
   // no memory to be had, fail for now
-  if (h->heap_end != h->mapped_end)
+  if (h->heap_end == h->mapped_end)
     return -1;
 
   // if we can't expand the heap as much as we want,
