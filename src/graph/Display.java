@@ -14,6 +14,9 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 /**
  {@link Display} displays the images from the in-node on the screen. Upon
  creation, you may specify which (if not all) color channels should be displayed
@@ -108,7 +111,7 @@ public class Display extends Node {
        The {@link Frame} in which images passed to this {@link Display} node are
        displayed.
     */
-    private Frame frame;
+    Frame frame;
     /**
        The {@link BufferedImage} which provides the {@link WritableRaster} onto which
        image data is written.
@@ -168,6 +171,7 @@ public class Display extends Node {
 		frame.setVisible(false);
 	    }
 	});
+
 	frame.setLayout(new BorderLayout());
 	frame.add(canvas, BorderLayout.CENTER);
 	frame.setSize(new Dimension(defaultWidth, defaultHeight));
@@ -253,11 +257,9 @@ public class Display extends Node {
 	defaultWidth = width;
 	defaultHeight = height;
     }
-
-    /**
-       Returns the AWT Frame contained by this {@link Display} node.
-     */
-    Frame getFrame() {
-	return this.frame;
+    
+    public Canvas getCanvas() {
+	return canvas;
     }
+
 }
