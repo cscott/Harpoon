@@ -74,7 +74,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.1.2.88 2000-06-21 07:22:28 pnkfelix Exp $ 
+ * @version $Id: RegAlloc.java,v 1.1.2.89 2000-06-24 04:44:51 kkz Exp $ 
  */
 public abstract class RegAlloc  {
     
@@ -235,8 +235,12 @@ public abstract class RegAlloc  {
      */
     public static HCodeFactory codeFactory(final HCodeFactory parentFactory, 
 					   final Frame frame) {
-	return concreteSpillFactory
-	    (abstractSpillFactory(parentFactory, frame), frame);
+	return (frame.getGCInfo() == null) ?
+	    concreteSpillFactory
+	    (abstractSpillFactory(parentFactory, frame), frame) :
+	    concreteSpillFactory
+	    (frame.getGCInfo().codeFactory
+	     (abstractSpillFactory(parentFactory, frame), frame), frame);
     }
 
     /** <code>IntermediateCodeFactory</code> produces code which is

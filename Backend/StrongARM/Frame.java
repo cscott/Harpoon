@@ -6,6 +6,7 @@ package harpoon.Backend.StrongARM;
 import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.CallGraph;
 import harpoon.Backend.Generic.GCInfo;
+import harpoon.Backend.Analysis.BasicGCInfo;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
@@ -17,7 +18,7 @@ import harpoon.Util.Util;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.23 2000-06-07 20:19:40 kkz Exp $
+ * @version $Id: Frame.java,v 1.1.2.24 2000-06-24 04:44:59 kkz Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -26,7 +27,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private final CodeGen codegen;
     private final TempBuilder tempBuilder;
     private final Linker linker;
-    private GCInfo gcInfo; // should really be final
+    private final GCInfo gcInfo; // should really be final
 
     // HACK: this should really be a command-line parameter.
     private final static String alloc_strategy =
@@ -51,6 +52,10 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    alloc_strategy.equalsIgnoreCase("sp") ?
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.SPAllocationStrategy(this) :	    
+	    alloc_strategy.equalsIgnoreCase("precise") ?
+	    (harpoon.Backend.Runtime1.AllocationStrategy)
+	    new harpoon.Backend.Runtime1.MallocAllocationStrategy
+	    (this, "precise_malloc") :
 	    // default, "malloc" strategy.
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy(this,
@@ -64,13 +69,17 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 
 	instrBuilder = new InstrBuilder(regFileInfo);
 	tempBuilder = new TempBuilder();
+	gcInfo = alloc_strategy.equalsIgnoreCase("precise") ? 
+	    new BasicGCInfo() : null;
     }
 
+    /*
     public Frame(HMethod main, ClassHierarchy ch, CallGraph cg, GCInfo gcInfo)
     {
 	this(main, ch, cg);
 	this.gcInfo = gcInfo;
     }
+    */
 
     public Linker getLinker() { return linker; }
 

@@ -14,6 +14,8 @@ import harpoon.Analysis.ReachingDefsImpl;
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.GCInfo.DLoc;
 import harpoon.Backend.Generic.GCInfo.GCPoint;
+import harpoon.Backend.Generic.GCInfo.WrappedMachineRegLoc;
+import harpoon.Backend.Generic.GCInfo.WrappedStackOffsetLoc;
 import harpoon.Backend.Generic.RegFileInfo.CommonLoc;
 import harpoon.Backend.Generic.RegFileInfo.MachineRegLoc;
 import harpoon.Backend.Generic.RegFileInfo.StackOffsetLoc;
@@ -28,6 +30,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Assem.Instr;
 import harpoon.IR.Assem.InstrCALL;
 import harpoon.IR.Assem.InstrEdge;
+import harpoon.IR.Assem.InstrJUMP;
 import harpoon.IR.Assem.InstrLABEL;
 import harpoon.IR.Assem.InstrVisitor;
 import harpoon.IR.Properties.CFGrapher;
@@ -38,6 +41,8 @@ import harpoon.Util.Worklist;
 import harpoon.Util.WorkSet;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -49,14 +54,14 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.13 2000-03-08 02:24:59 kkz Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.14 2000-06-24 04:44:53 kkz Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points
     final private Map m = new HashMap();
     // Maps classes to methods that have been processed
     final private Map orderedMethods = new HashMap();
-    /** Returns an ordered <code>List</code> of the
+    /** Returns an ordered, unmodifiable <code>List</code> of the
 	<code>GCPoint</code>s in a given <code>HMethod</code>.
 	Returns <code>null</code> if the <code>HMethod</code>
 	has not been evaluated for garbage collection purposes.
@@ -65,10 +70,10 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 	found to not contain any GC points.
     */    
     public List gcPoints(HMethod hm) {
-	return (List)m.get(hm);
+	return Collections.unmodifiableList((List)m.get(hm));
     }
-    /** Returns a <code>List</code> of <code>HMethod</code>s
-	with the following properties:
+    /** Returns an ordered, unmodifiable <code>List</code> of 
+	<code>HMethod</code>s with the following properties:
 	- The declaring class of the <code>HMethod</code> is
 	<code>HClass</code>.
 	- The <code>convert</code> method of the 
@@ -83,7 +88,9 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 	order in which the <code>convert</code> method was invoked.
     */
     public List getOrderedMethods(HClass hc) {
-	return (List)orderedMethods.get(hc);
+	final List result = (List)orderedMethods.get(hc);
+	if (result == null) return null;
+	return Collections.unmodifiableList(result);
     }
     // adds a given method to the orderedMethod map
     // used to maintain the orderedMethod map
@@ -92,17 +99,13 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 	if (l != null) {
 	    // hm should not yet be in the List
 	    Util.assert(!l.contains(hm));
-	    // good, add to List
-	    l.add(hm);
 	} else {
-	    // the HClass is not yet in the map
-	    // make a new List
+	    // the HClass is not yet in the map; make a new List
 	    l = new ArrayList();
-	    // add to List
-	    l.add(hm);
 	    // add new entry to map
 	    orderedMethods.put(hm.getDeclaringClass(), l);
 	}
+	l.add(hm);
     }
     /** Returns an IntermediateCodeFactory that inserts
 	<code>InstrLABEL</code>s at garbage collection points
@@ -119,7 +122,10 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 	    protected final HCodeFactory parent = parentFactory;
 	    protected final Frame f = frame;
 	    protected final CFGrapher cfger = CFGrapher.DEFAULT;
+	    protected final Map hce2label = new HashMap();
+	    private boolean print = true;
 	    public HCode convert(HMethod hm) {
+		//System.out.println("converting"+hm.toString());
 		// preserve ordering information
 		addToOrderedMethods(hm);
 		harpoon.IR.Assem.Code hc = 
@@ -132,6 +138,11 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		    m.put(hm, new ArrayList());
 		    return null;
 		}
+		List hceList = hc.getElementsL();
+		//System.out.println("-------------------------------");
+		//for(Iterator it = hceList.iterator(); it.hasNext(); )
+		//    System.out.println(it.next());
+		//System.out.println("-------------------------------");
 		// pass 1: liveness and reaching definitions analyses
 		LiveTemps ltAnalysis = analyzeLiveness(hc);
 		ReachingDefs rdAnalysis = new ReachingDefsImpl(hc, cfger);
@@ -139,16 +150,36 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		Set backEdgeGCPts = identifyBackwardBranches(hc);
 		// pass 3: identify GC points
 		List gcps = new ArrayList();
+		// clear map before going into GCPointFinder
+		hce2label.clear();
 		GCPointFinder gcpf = 
-		    new GCPointFinder(hm, gcps, ltAnalysis, rdAnalysis, 
+		    new GCPointFinder(hm, hc, gcps, ltAnalysis, rdAnalysis, 
 				      backEdgeGCPts, hc.getDerivation());
 		for(Iterator instrs = hc.getElementsL().iterator();
 		    instrs.hasNext(); )
 		    ((Instr)instrs.next()).accept(gcpf);
+		// put labels in
+		for(Iterator instrs = hce2label.keySet().iterator();
+		    instrs.hasNext(); ) {
+		    Instr i = (Instr)instrs.next();
+		    InstrLABEL label = (InstrLABEL)hce2label.get(i);
+		    // instr should only have one successor
+		    Util.assert(cfger.succ(i).length == 1);
+		    //for(Iterator succs = cfger.succC(i).iterator();
+		    //	succs.hasNext(); )
+		    //	System.out.println(succs.next().toString());
+		    label.layout(i, i.getNext());
+		    //label.insertAt(new InstrEdge(i, i.getNext());
+		    //System.out.println("Inserted "+label.toString());
+		}
+		//for(Iterator it = hceList.iterator(); it.hasNext(); )
+		//    System.out.println(it.next());
 		m.put(hm, gcps);  // add to map
 		// force parent codeFactory to rebuild (is this necessary?)
-		parent.clear(hm);
-		return parent.convert(hm);
+		//parent.clear(hm);
+		//HCode result = parent.convert(hm);
+		print = false;
+		return hc;
 	    }
 	    // do liveness analysis and return analysis
 	    private LiveTemps analyzeLiveness(HCode intermediateCode) {
@@ -193,6 +224,8 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 			    toProcess.push(edges.next());
 		    }
 		}
+		//System.out.println("Number of backward branches: "+
+		// results.size());
 		return results;
 	    }
 	    public String getCodeName() {
@@ -216,7 +249,8 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		protected final Set s;
 		protected final TempLocator tl;
 		protected final harpoon.Analysis.Maps.Derivation d;
-		protected final HMethod hm; 
+		protected final HMethod hm;
+		protected final HCode hc;
 		protected int index = 0;
 		/** Creates a <code>GCPointFinder</code> object.
 		    @param results
@@ -228,10 +262,12 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		           the <code>Set</code> of <code>Instr</code>s
 			   that occur before a backward branch
 		*/
-		public GCPointFinder(HMethod hm, List results, LiveTemps lt, 
+		public GCPointFinder(HMethod hm, HCode hc, List results, 
+				     LiveTemps lt, 
 				     ReachingDefs rd, Set s, 
 				     harpoon.Analysis.Maps.Derivation d) {
 		    this.hm = hm;
+		    this.hc = hc;
 		    Util.assert(results != null && results.isEmpty());
 		    this.results = results;
 		    this.lt = lt;
@@ -242,39 +278,83 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 		}
 		public void visit(InstrCALL c) {
 		    // all InstrCALLs are GC points
-		    updateGCInfo(c);
+		    if (c.getTargets().size() == 0) {
+			// native calls fall through
+			Util.assert
+			    (c.canFallThrough, 
+			     "InstrCALL with no targets must fall through.");
+			updateGCInfo(c, null);
+		    } else {
+			List targets = c.getTargets();
+			// non-native calls have a return
+			// address and an exception address
+			Util.assert
+			    (targets.size() == 2,
+			     "InstrCALL with targets must have regular"+
+			     " and exceptional return addresses.");
+			updateGCInfo(c, (Label)targets.get(0));
+		    }
+		}
+		public void visit(InstrJUMP j) {
+		    // InstrJUMPs are GC points only if
+		    // they come before a backward edge
+		    if (!s.contains(j)) return;
+		    List targets = j.getTargets();
+		    Util.assert(targets.size() == 1,
+				"Multiple targets for InstrJUMP.");
+		    updateGCInfo(j, (Label)targets.get(0));
 		}
 		public void visit(Instr i) {
-		    // other Instrs are GC points only
-		    // if they come before a backward edge
 		    if (!s.contains(i)) return;
-		    updateGCInfo(i);
+		    // Instrs are GC points only if
+		    // they come before a backward edge,
+		    // in which case they must have a
+		    // conditional target
+		    Util.assert
+			(i.canFallThrough,
+			 "Cannot fall through non-jump,"+
+			 " non-call Instr before a backward edge.");
+		    List targets = i.getTargets();
+		    Util.assert
+			(targets.size() == 1,
+			 "No target for Instr before a backward edge.");
+		    updateGCInfo(i, (Label)targets.get(0));
+		    // alternatively:
+		    // updateGCInfo(i, null);
 		}
-		private void updateGCInfo(Instr i) {
-		    // add label
-		    String str = 
-			f.getRuntime().nameMap.mangle(hm, "gcp_"+index++);
-		    Label l = new Label(str);
-		    InstrLABEL label = f.getInstrBuilder().makeLabel(l, i);
-		    // instr should only have one predecessor
-		    Util.assert(cfger.pred(i).length == 1);
-		    label.insertAt(new InstrEdge(i.getPrev(), i));
-		    // conservatively take union of live in and out
+		private void updateGCInfo(Instr i, Label l) {
+		    //System.out.println("Doing updateGCInfo for: "+i);
+		    // add label if one is not already provided
+		    if (l == null) {
+			String str = 
+			    f.getRuntime().nameMap.mangle(hm, "gcp_"+index++);
+			l = new Label(str);
+			InstrLABEL label = f.getInstrBuilder().makeLabel(l, i);
+			hce2label.put(i, label);
+		    }
+		    // we want the live temps going into the instr
 		    WorkSet live = new WorkSet();
 		    live.addAll(lt.getLiveBefore(i));
-		    live.addAll(lt.getLiveAfter(i));
 		    // filter out non-pointers and derived pointers
 		    Set liveLocs = new HashSet();
 		    Map derivedPtrs = new HashMap();
 		    Map calleeSaved = new HashMap();
+		    /*
 		    while(!live.isEmpty()) {
 			Temp t = (Temp)live.pull();
-			Instr[] defPts = 
-			    (Instr[])rd.reachingDefs(i, t).toArray();
+			System.out.println(t.toString()+" is live.");
+			Util.assert(i != null, "Cannot pass null instruction"+
+				    " to reaching definitions analysis");
+			Util.assert(t != null, "Cannot pass null temporary"+
+				    " to reaching definitions analysis");
+			Iterator defPtsit = rd.reachingDefs(i, t).iterator();
 			// there must be at least one defintion that reaches i
-			Util.assert(defPts != null && defPts.length > 0);
+			Util.assert(defPtsit.hasNext(), "Cannot find"+
+				    " definition of "+t.toString()+" at "+
+				    i.toString());
+			Instr defPt = (Instr)defPtsit.next();
 			// all of the above defPts should work
-			DList ddl = d.derivation(defPts[0], t);
+			DList ddl = d.derivation(defPt, t);
 			if (ddl == null) {
 			    // try and find its type
 			    HClass hclass = d.typeMap(i, t);
@@ -284,8 +364,8 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 				BackendDerivation bd = (BackendDerivation)d;
 				// find out which register's contents we have
 				BackendDerivation.Register reg =
-				    bd.calleeSaveRegister(defPts[0], t);
-				Set locationSet = tl.locate(t, defPts[0]);
+				    bd.calleeSaveRegister(defPt, t);
+				Set locationSet = tl.locate(t, defPt);
 				// the following may be a bad assumption
 				Util.assert(locationSet.size() == 1);
 				for (Iterator it=locationSet.iterator();
@@ -295,14 +375,15 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 			    } else if (!hclass.isPrimitive())
 				// a non-derived pointer: add all 
 				// locations where it can be found
-				liveLocs.addAll(tl.locate(t, defPts[0]));
+				liveLocs.addAll(tl.locate(t, defPt));
 			} else
 			    // a derived pointer: add to set of derived ptrs
-			    derivedPtrs.put(tl.locate(t, defPts[0]), 
+			    derivedPtrs.put(tl.locate(t, defPt), 
 					    unroll(ddl, i));
 		    }
+		    */
 		    GCPoint gcp = 
-			new GCPoint(i, l, derivedPtrs, live, calleeSaved);
+			new GCPoint(i, l, derivedPtrs, liveLocs, calleeSaved);
 		    results.add(gcp);
 		}
 		private DLoc unroll(DList ddl, Instr instr) {
@@ -322,11 +403,15 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 			// any of the CommonLocs should work
 			switch(locs[0].kind()) {
 			case StackOffsetLoc.KIND:
-			    stackLocs.add(locs[0]); 
+			    WrappedStackOffsetLoc wsol = new 
+				WrappedStackOffsetLoc((StackOffsetLoc)locs[0]);
+			    stackLocs.add(wsol); 
 			    stackSigns.add(new Boolean(ddl.sign));
 			    break;
 			case MachineRegLoc.KIND:
-			    regLocs.add(locs[0]);
+			    WrappedMachineRegLoc wmrl = new 
+				WrappedMachineRegLoc((MachineRegLoc)locs[0]);
+			    regLocs.add(wmrl);
 			    regSigns.add(new Boolean(ddl.sign));
 			    break;
 			default: Util.assert(false);
@@ -334,18 +419,18 @@ public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
 			}
 		    }
 		    Util.assert(regLocs.size() == regSigns.size());
-		    MachineRegLoc[] regArray = 
-			(MachineRegLoc[])regLocs.toArray(new MachineRegLoc[0]);
+		    WrappedMachineRegLoc[] regArray = 
+			(WrappedMachineRegLoc[])regLocs.toArray
+			(new WrappedMachineRegLoc[0]);
 		    boolean[] regSignArray = new boolean[regSigns.size()];
 		    int i=0;
 		    for(Iterator it=regSigns.iterator(); it.hasNext(); )
 			regSignArray[i++] = 
 			    ((Boolean)it.next()).booleanValue();
-
 		    Util.assert(stackLocs.size() == stackSigns.size());
-		    StackOffsetLoc[] stackArray =
-			(StackOffsetLoc[])stackLocs.toArray(new
-							    StackOffsetLoc[0]);
+		    WrappedStackOffsetLoc[] stackArray =
+			(WrappedStackOffsetLoc[])stackLocs.toArray
+			(new WrappedStackOffsetLoc[0]);
 		    boolean[] stackSignArray = new boolean[stackSigns.size()];
 		    int j=0;
 		    for(Iterator it=stackSigns.iterator(); it.hasNext(); )

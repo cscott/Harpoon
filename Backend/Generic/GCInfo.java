@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,7 +30,7 @@ import java.util.Set;
  * the instruction stream.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: GCInfo.java,v 1.1.2.9 2000-03-07 03:43:21 kkz Exp $
+ * @version $Id: GCInfo.java,v 1.1.2.10 2000-06-24 04:44:54 kkz Exp $
  */
 public abstract class GCInfo {
     /** Creates an <code>IntermediateCodeFactory</code> that
@@ -97,7 +98,7 @@ public abstract class GCInfo {
 	    @param calleeSaved
 	           a <code>Map</code> of the callee-saved
 		   <code>BackendDerivation.Register</code>s to
-		   the <code>StackOffsetLoc</code>s 
+		   the <code>WrappedStackOffsetLoc</code>s 
 		   where its contents has been stored
 	*/
 	public GCPoint(Instr gcPoint, Label label, Map liveDerivations,
@@ -105,6 +106,8 @@ public abstract class GCInfo {
 	    this.gcPoint = gcPoint;
 	    this.label = label;
 	    this.calleeSaved = calleeSaved;
+	    this.liveStackOffsetLocs = new HashSet();
+	    this.liveMachineRegLocs = new HashSet();
 	    filter(liveDerivations);
 	    filter(locations);
 	}
@@ -120,9 +123,15 @@ public abstract class GCInfo {
 		    CommonLoc loc = (CommonLoc)it.next();
 		    switch(loc.kind()) {
 		    case StackOffsetLoc.KIND:
-			stackDerivations.put(loc, derivation); break;
+			WrappedStackOffsetLoc wsol =
+			    new WrappedStackOffsetLoc((StackOffsetLoc)loc);
+			stackDerivations.put(wsol, derivation); 
+			break;
 		    case MachineRegLoc.KIND:
-			regDerivations.put(loc, derivation); break;
+			WrappedMachineRegLoc wmrl = 
+			    new WrappedMachineRegLoc((MachineRegLoc)loc);
+			regDerivations.put(wmrl, derivation); 
+			break;
 		    default:
 			Util.assert(false);		    
 		    }
@@ -135,9 +144,15 @@ public abstract class GCInfo {
 		CommonLoc loc = (CommonLoc)it.next();
 		switch(loc.kind()) {
 		case StackOffsetLoc.KIND:
-		    liveStackOffsetLocs.add(loc); break;
+		    WrappedStackOffsetLoc wsol =
+			new WrappedStackOffsetLoc((StackOffsetLoc)loc);
+		    liveStackOffsetLocs.add(wsol); 
+		    break;
 		case MachineRegLoc.KIND:
-		    liveMachineRegLocs.add(loc); break;
+		    WrappedMachineRegLoc wmrl = 
+			new WrappedMachineRegLoc((MachineRegLoc)loc);
+		    liveMachineRegLocs.add(wmrl); 
+		    break;
 		default:
 		    Util.assert(false);
 		}
@@ -146,9 +161,9 @@ public abstract class GCInfo {
 	/** Returns the <code>Label</code> identifying the GC point */
 	public Label label() { return label; }
 	/** Returns an unmodifiable <code>Map</code> of live derived 
-	    pointers in <code>MachineRegLoc</code>s to the derivation 
-	    information in the form of <code>DLoc</code>s for that 
-	    GC point */
+	    pointers in <code>WrappedMachineRegLoc</code>s to the 
+	    derivation information in the form of <code>DLoc</code>s 
+	    for that GC point */
 	public Map regDerivations() { 
 	    return Collections.unmodifiableMap(regDerivations); 
 	}
@@ -160,14 +175,14 @@ public abstract class GCInfo {
 	    return Collections.unmodifiableMap(stackDerivations); 
 	}
 	/** Returns an unmodifiable <code>Set</code> of live, 
-	    non-derived pointers in <code>StackOffsetLoc</code>s 
-	    at that GC point */
+	    non-derived pointers at this GC point as
+	    <code>WrappedStackOffsetLoc</code>s */
 	public Set liveStackOffsetLocs() { 
 	    return Collections.unmodifiableSet(liveStackOffsetLocs); 
 	}
 	/** Returns an unmodifiable <code>Set</code> of live, 
-	    non-derived pointers in <code>MachineRegLoc</code>s 
-	    at that GC point */
+	    non-derived pointers at this GC point as
+	    <code>WrappedMachineRegLoc</code>s */
 	public Set liveMachineRegLocs() { 
 	    return Collections.unmodifiableSet(liveMachineRegLocs); 
 	}
@@ -283,13 +298,14 @@ public abstract class GCInfo {
      */
     public static class DLoc {
 	/** Arrays of base pointer locations */
-	public final MachineRegLoc[] regLocs;
-	public final StackOffsetLoc[] stackLocs;
+	public final WrappedMachineRegLoc[] regLocs;
+	public final WrappedStackOffsetLoc[] stackLocs;
 	/** Arrays of booleans */
 	public final boolean[] regSigns;
 	public final boolean[] stackSigns;
 	/** Constructor. */
-	public DLoc(MachineRegLoc[] regLocs, StackOffsetLoc[] stackLocs,
+	public DLoc(WrappedMachineRegLoc[] regLocs, 
+		    WrappedStackOffsetLoc[] stackLocs,
 		    boolean[] regSigns, boolean[] stackSigns) {
 	    this.regLocs = regLocs;
 	    this.stackLocs = stackLocs;

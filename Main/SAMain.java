@@ -67,7 +67,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.79 2000-06-14 17:34:36 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.1.2.80 2000-06-24 04:45:03 kkz Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -154,7 +154,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    Util.assert(classHierarchy != null, "How the hell...");
 	}
 	callGraph = new CallGraphImpl(classHierarchy, hcf);
-	frame = new Frame(mainM, classHierarchy, callGraph);
+
+	frame =	new Frame(mainM, classHierarchy, callGraph);
+ 
 	if (LOOPOPTIMIZE) {
 	    hcf=harpoon.IR.LowQuad.LowQuadSSI.codeFactory(hcf);
 	    hcf=harpoon.Analysis.LowQuad.Loop.LoopOptimize.codeFactory(hcf);
@@ -347,7 +349,6 @@ public class SAMain extends harpoon.IR.Registration {
 
 	if (REG_ALLOC) {
 	    HCode hc = sahcf.convert(hmethod);
-	    
 	    info("\t--- INSTR FORM (register allocation)  ---");
 	    HCodeFactory regAllocCF = RegAlloc.codeFactory(sahcf, frame);
 	    HCode rhc = regAllocCF.convert(hmethod);

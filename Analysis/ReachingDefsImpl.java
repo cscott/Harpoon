@@ -28,7 +28,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.7 2000-03-21 05:41:51 salcianu Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.8 2000-06-24 04:44:44 kkz Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -63,16 +63,22 @@ public class ReachingDefsImpl extends ReachingDefs {
      *  of <code>Temp</code> <code>t</code> which reach 
      *  <code>HCodeElement</code> <code>hce</code>. */
     public Set reachingDefs(HCodeElement hce, Temp t) {
+	report("Processing HCodeElement: "+hce+" Temp: "+t);
 	// find out which BasicBlock this HCodeElement is from
 	BasicBlock b = bbf.getBlock(hce);
+	report("In BasicBlock: "+b.toString());
 	// get the map for the BasicBlock
 	Map m = (Map)cache.get(b);
+	report("Got map for the BasicBlock");
 	// get the BitSetFactory
 	BitSetFactory bsf = (BitSetFactory)Temp_to_BitSetFactories.get(t);
+	report("Got BitSetFactory");
+	Util.assert(m.get(t) != null, t.toString());
 	// make a copy of the in Set for the Temp
 	Set results = bsf.makeSet((Set)m.get(t));
 	// propagate in Set through the HCodeElements 
 	// of the BasicBlock in correct order
+	report("Propagating...");
 	for(Iterator it=b.statements().iterator(); it.hasNext(); ) {
 	    HCodeElement curr = (HCodeElement)it.next();
 	    if (curr == hce) return results;
@@ -122,14 +128,17 @@ public class ReachingDefsImpl extends ReachingDefs {
 	Map m = new HashMap();
 	for(Iterator it=hc.getElementsI(); it.hasNext(); ) {
 	    HCodeElement hce = (HCodeElement)it.next();
+	    report("Getting defs in: "+hce);
 	    Temp[] tArray = null;
 	    // special treatment of TYPECAST
-	    if(check_typecast && (hce instanceof TYPECAST))
+	    if(check_typecast && (hce instanceof TYPECAST)) {
+		report("TYPECAST");
 		tArray = new Temp[]{((TYPECAST)hce).objectref()};
-	    else
+	    } else
 		tArray = ((UseDef)hce).def();
 	    for(int i=0; i < tArray.length; i++) {
 		Temp t = tArray[i];
+		report("Defines: "+t);
 		Set defPts = (Set)m.get(t);
 		if (defPts == null) {
 		    // have not yet encountered this Temp
@@ -141,6 +150,8 @@ public class ReachingDefsImpl extends ReachingDefs {
 		defPts.add(hce);
 	    }
 	}
+	for(Iterator keys = m.keySet().iterator(); keys.hasNext(); )
+	    report("Have entry for Temp: "+keys.next());
 	return m;
     }
     // create a mapping of Temps to BitSetFactories

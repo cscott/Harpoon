@@ -28,7 +28,7 @@ import java.util.Set;
  * abstract class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Runtime.java,v 1.1.2.24 2000-03-28 05:26:25 cananian Exp $
+ * @version $Id: Runtime.java,v 1.1.2.25 2000-06-24 04:44:56 kkz Exp $
  */
 public class Runtime extends harpoon.Backend.Generic.Runtime {
     final Frame frame;
@@ -180,8 +180,8 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	Set newStrings = new HashSet(tb.stringSet);
 	tb.stringSet.clear();
 
-	return Arrays.asList(new Data[] {
-	    // new DataGC(frame, hc), // FSK: kkz personally had me do this
+	return (frame.getGCInfo() == null) ?
+	    Arrays.asList(new Data[] {
 	    new DataClaz(frame, hc, ch),
 	    new DataInterfaceList(frame, hc, ch),
 	    new DataStaticFields(frame, hc),
@@ -190,7 +190,18 @@ public class Runtime extends harpoon.Backend.Generic.Runtime {
 	    new DataJavaMain(frame, hc, main),
 	    new DataReflection1(frame, hc, ch),
 	    new DataReflection2(frame, hc, ch, frame.pointersAreLong()),
-	});
+	    }) :
+	    Arrays.asList(new Data[] {
+	    new DataGC(frame, hc),
+	    new DataClaz(frame, hc, ch),
+	    new DataInterfaceList(frame, hc, ch),
+	    new DataStaticFields(frame, hc),
+	    new DataStrings(frame, hc, newStrings),
+	    new DataInitializers(frame, hc, staticInitializers),
+	    new DataJavaMain(frame, hc, main),
+	    new DataReflection1(frame, hc, ch),
+	    new DataReflection2(frame, hc, ch, frame.pointersAreLong()),
+	    }) ;
     }
     final Set stringsSeen = new HashSet();
 }

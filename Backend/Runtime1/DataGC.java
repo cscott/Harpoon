@@ -9,7 +9,8 @@ import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.GCInfo;
 import harpoon.Backend.Generic.GCInfo.DLoc;
 import harpoon.Backend.Generic.GCInfo.GCPoint;
-import harpoon.Backend.Generic.RegFileInfo;
+import harpoon.Backend.Generic.GCInfo.WrappedMachineRegLoc;
+import harpoon.Backend.Generic.GCInfo.WrappedStackOffsetLoc;
 import harpoon.Backend.Generic.RegFileInfo.CommonLoc;
 import harpoon.Backend.Generic.RegFileInfo.MachineRegLoc;
 import harpoon.Backend.Generic.RegFileInfo.StackOffsetLoc;
@@ -41,7 +42,7 @@ import java.util.TreeSet;
  * <code>DataGC</code> outputs the tables needed by the garbage collector.
  * 
  * @author  Karen K. Zee <kkz@tesuji.lcs.mit.edu>
- * @version $Id: DataGC.java,v 1.1.2.10 2000-03-08 02:35:33 kkz Exp $
+ * @version $Id: DataGC.java,v 1.1.2.11 2000-06-24 04:44:56 kkz Exp $
  */
 public class DataGC extends Data {
     final GCInfo m_gc;
@@ -66,17 +67,21 @@ public class DataGC extends Data {
     }
 
     private HDataElement build() {
-	List stmlist = new ArrayList();
+	final List stmlist = new ArrayList();
 	// handle only methods that we've had to generate
 	// GCInfo for and do so in the order saved by GCInfo
-	List methods = m_gc.getOrderedMethods(hc);
+	final List methods = m_gc.getOrderedMethods(hc);
 	if (methods == null) return null;
+	report(methods.toString());
 	// switch to the GC segment
 	stmlist.add(new SEGMENT(tf, null, SEGMENT.GC));
 	// align on word-boundary
 	stmlist.add(new ALIGN(tf, null, 4));
-	for (Iterator it=methods.iterator(); it.hasNext(); )
-	    stmlist.add(outputGCData((HMethod)it.next()));
+	for (Iterator it=methods.iterator(); it.hasNext(); ) {
+	    Stm output = outputGCData((HMethod)it.next());
+	    if (output != null)
+		stmlist.add(output);
+	}
 	return (HDataElement) Stm.toStm(stmlist);
     }
 
@@ -92,7 +97,7 @@ public class DataGC extends Data {
 	Util.assert(gcps != null);
 	// first create base table for stack locations
 	Set basetableSet = new HashSet();
-	// take union of live StackOffsetLocs for all GC points
+	// take union of live WrappedStackOffsetLocs for all GC points
 	for(Iterator it = gcps.iterator(); it.hasNext(); )
 	    basetableSet.addAll(((GCPoint)it.next()).liveStackOffsetLocs());
 	// make statements
@@ -102,39 +107,40 @@ public class DataGC extends Data {
 	// number of entries in base table (int)
 	stmlist.add(_DATUM(new CONST(tf, null, basetableSet.size())));
 	report("Size of base table = " + basetableSet.size());
-	// turn basetableSet into array
-	StackOffsetLoc[] basetableArray = 
-	    (StackOffsetLoc[])basetableSet.toArray();
 	// clear basetableMap
-	basetableMap = new HashMap();
-	// put new entries into basetableMap
-	for(int i=0; i < basetableArray.length; i++) {
-	    StackOffsetLoc sol = basetableArray[i];
+	basetableMap = new HashMap(); int i = 0;
+	for(Iterator btIt = basetableSet.iterator();
+	    btIt.hasNext(); ) {
+	    // put new entries into basetableMap
+	    WrappedStackOffsetLoc wsol = (WrappedStackOffsetLoc)btIt.next();
 	    // output stackOffset (int)
-	    stmlist.add(_DATUM(new CONST(tf, null, sol.stackOffset())));
-	    report("Base table entry: " + sol.stackOffset());
-	    basetableMap.put(sol, new Integer(i));
+	    stmlist.add(_DATUM(new CONST(tf, null, wsol.stackOffset())));
+	    report("Base table entry: " + wsol.stackOffset());
+	    basetableMap.put(wsol, new Integer(i++));
 	}
 	return Stm.toStm(stmlist);
     }
     private Map basetableMap;
 
     private Stm outputGCData(HMethod hm) {
-	List stmlist = new ArrayList();
+	// get ordered list of GC points for this method
+	final List gcps = m_gc.gcPoints(hm);
+	if (gcps.isEmpty()) return null;
+	final List stmlist = new ArrayList();
 	// make base table for method
 	stmlist.add(outputBaseTable(hm));
-	// convert list of GC points into array
-	GCPoint[] gcpArray = (GCPoint[])m_gc.gcPoints(hm).toArray();
+	GCPoint prev = null; int i = 0;
 	// make entry for each GC point
-	for(int i=0; i < gcpArray.length; i++) {
+	for(Iterator it = gcps.iterator(); it.hasNext(); ) {
+	    GCPoint gcp = (GCPoint)it.next();
 	    // add index entry to GC_INDEX segment
 	    stmlist.add(new SEGMENT(tf, null, SEGMENT.GC_INDEX));
 	    // location of GC point
-	    stmlist.add(_DATUM(gcpArray[i].label()));
+	    stmlist.add(_DATUM(gcp.label()));
 	    // location of GC data
 	    stmlist.add(_DATUM(m_nm.label(hm, "gcp_index_"+i)));
 	    // location of GC base table
-	    stmlist.add(_DATUM(m_nm.label(hm, "gc_bt")));
+	    // stmlist.add(_DATUM(m_nm.label(hm, "gc_bt")));
 	    // add data entry to GC segment
 	    stmlist.add(new SEGMENT(tf, null, SEGMENT.GC));
 	    // align on word boundary
@@ -143,20 +149,24 @@ public class DataGC extends Data {
 	    stmlist.add(new LABEL(tf, null, m_nm.label(hm, "gcp_index_"+i), 
 				  true));
 	    // output actual data
-	    stmlist.add(outputGCPoint(gcpArray[i], gcpArray[i-1]));
+	    stmlist.add(outputGCPoint(gcp, prev));
+	    // setup for next
+	    prev = gcp; i++;
 	}
+	//System.out.println(i+" GC points in "+hm);
 	return Stm.toStm(stmlist);
     }
 
-    // bit positions for descriptor
-    final int REGS_ARE_ZERO       = 31;
-    final int REGS_SAME_AS_PREV   = 30;
-    final int STACKLOCS_ARE_ZERO  = 29;
-    final int STACK_SAME_AS_PREV  = 28;
-    final int DERIVS_ARE_ZERO     = 27;
-    final int DERIVS_SAME_AS_PREV = 26;
-    final int CSAVED_ARE_ZERO     = 25;
-    final int CSAVED_SAME_AS_PREV = 24;
+    // octal
+    final int NO_LIVE_REGISTERS              =   01;
+    final int NO_CHANGE_IN_REGISTERS         =   02;
+    final int NO_LIVE_STACK_LOCATIONS        =   04;
+    final int NO_CHANGE_IN_STACK_LOCATIONS   =  010;
+    final int NO_LIVE_DERIVED_POINTERS       =  020;
+    final int NO_CHANGE_IN_DERIVED_POINTERS  =  040;
+    final int NO_LIVE_CALLEE_SAVED_REGISTERS = 0100;
+    final int NO_CHANGE_IN_CALLEE_SAVED_REGISTERS = 0200;
+    final int DESCRIPTOR_SIZE                =    8; // in bits
     // requires: current and previous GC point
     // modifies: nil
     // effects:  returns statements for outputting data relevant
@@ -164,61 +174,60 @@ public class DataGC extends Data {
     private Stm outputGCPoint(GCPoint curr, GCPoint prev) {
 	// output format: bits 31-26 -- descriptor
 	int output = 0;
-	boolean needRegs = true;
-	Set regs = curr.liveMachineRegLocs();
-	if (regs.isEmpty()) {
-	    output |= 1 << REGS_ARE_ZERO;
-	    needRegs = false;
+	boolean outputRegisters = true;
+	final Set registers = curr.liveMachineRegLocs();
+	if (registers.isEmpty()) {
+	    output |= NO_LIVE_REGISTERS; outputRegisters = false;
 	} else if (prev != null && 
-		   regs.equals(prev.liveMachineRegLocs())) {
-	    output |= 1 << REGS_SAME_AS_PREV;
-	    needRegs = false;
+		   registers.equals(prev.liveMachineRegLocs())) {
+	    output |= NO_CHANGE_IN_REGISTERS; outputRegisters = false;
 	}
 	boolean needStack = true;
 	Set stack = curr.liveStackOffsetLocs();
 	if (stack.isEmpty()) {
-	    output |= 1 << STACKLOCS_ARE_ZERO;
+	    output |= NO_LIVE_STACK_LOCATIONS;
 	    needStack = false;
 	} else if (prev != null &&
 		   stack.equals(prev.liveStackOffsetLocs())) {
-	    output |= 1 << STACK_SAME_AS_PREV;
+	    output |= NO_CHANGE_IN_STACK_LOCATIONS;
 		needStack = false;
 	    }   
 	boolean needDerivs = true;
 	Map regDerivs = curr.regDerivations();
 	Map stackDerivs = curr.stackDerivations();
 	if (regDerivs.isEmpty() && stackDerivs.isEmpty()) {
-	    output |= 1 << DERIVS_ARE_ZERO;
+	    output |= NO_LIVE_DERIVED_POINTERS;
 	    needDerivs = false;
 	} else if (prev != null && 
 		   regDerivs.equals(prev.regDerivations()) &&
 		   stackDerivs.equals(prev.stackDerivations())) {
-	    output |= 1 << DERIVS_SAME_AS_PREV;
+	    output |= NO_CHANGE_IN_DERIVED_POINTERS;
 	    needDerivs = false;
 	}
 	// handle callee-saved registers
 	boolean needCSaved = true;
 	Map cSaved = curr.calleeSaved();
 	if (cSaved.isEmpty()) {
-	    output |= 1 << CSAVED_ARE_ZERO;
+	    output |= NO_LIVE_CALLEE_SAVED_REGISTERS;
 	    needCSaved = false;
 	} else if (prev != null && cSaved.equals(prev.calleeSaved())) {
-	    output |= 1 << CSAVED_SAME_AS_PREV;
+	    output |= NO_CHANGE_IN_CALLEE_SAVED_REGISTERS;
 	    needCSaved = false;
 	}
 	List stmlist = new ArrayList();
-	if (!needRegs && !needStack)
+	if (!outputRegisters && !needStack)
 	    // output descriptor (int)
 	    stmlist.add(_DATUM(new CONST(tf, null, output)));
 	else
 	    // handle both registers and stack together to save bits
-	    stmlist.add(outputRS(needRegs, needStack, regs, stack, output));
+	    stmlist.add(outputRS(outputRegisters, needStack, 
+				 registers, stack, output));
 	if (needDerivs)
 	    stmlist.add(outputDerivs(regDerivs, stackDerivs));
 	if (needCSaved)
 	    stmlist.add(outputCSaved(cSaved));
 	return Stm.toStm(stmlist);
-    } // outputGCData
+    } // outputGCPoint
 
     // requires: descriptor set in output
     // modifies: nil
@@ -230,13 +239,13 @@ public class DataGC extends Data {
     {
 	// number of bits needed to store the descriptor,
 	// the register bitmap and the stack bitmap
-	final int bits = 
-	    DESC_BITS + (needRegs?numRegs:0) + (needStack?stack.size():0);
+	final int bits = DESCRIPTOR_SIZE + 
+	    (needRegs?numRegs:0) + (needStack?stack.size():0);
 	// number of 32-bit integers needed to encode the data 
 	final int numInts = (bits + INT_BITS - 1) / INT_BITS;
 	int[] data = new int[numInts];
 	// remember the descriptor
-	int offset = DESC_BITS;
+	int offset = DESCRIPTOR_SIZE;
 	// get descriptor from output
 	data[0] = output;
 	// do registers first
@@ -281,7 +290,7 @@ public class DataGC extends Data {
 	}
 	// handle derived pointers in stack
 	for (Iterator keys=stackDerivs.keySet().iterator(); keys.hasNext(); ) {
-	    StackOffsetLoc key = (StackOffsetLoc)keys.next();
+	    WrappedStackOffsetLoc key = (WrappedStackOffsetLoc)keys.next();
 	    // location of derived pointer (int)
 	    stmlist.add(_DATUM(new CONST(tf, null, key.stackOffset())));
 	    // derivation information
@@ -368,7 +377,7 @@ public class DataGC extends Data {
 	    stmlist.add(_DATUM(new CONST(tf, null, locations[k])));
 	return Stm.toStm(stmlist);
     }
-    final private boolean DEBUG = true;
+    final private boolean DEBUG = false;
     // convenient debugging utility
     private void report(String str) {
 	if (DEBUG) System.out.println(str);
