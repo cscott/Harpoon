@@ -8,17 +8,40 @@ import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.Analysis.DomTree;
 import harpoon.Analysis.DomFrontier;
 import harpoon.IR.Properties.CFGraphable;
+import harpoon.IR.Quads.Quad;
+import harpoon.IR.Quads.CALL;
+import harpoon.IR.Quads.HANDLER;
+import harpoon.IR.Quads.METHOD;
+import harpoon.IR.Quads.HEADER;
+import harpoon.IR.Quads.FOOTER;
+
+
+import harpoon.Util.LightBasicBlocks.LightBasicBlock;
+import harpoon.Util.LightBasicBlocks.LBBConverter;
+import harpoon.Util.BasicBlocks.BBConverter;
+
+import harpoon.Temp.Temp;
+
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+
+import java.io.PrintWriter;
+
+
 /**
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.2.2.12 2000-11-10 21:57:29 cananian Exp $
+ * @version $Id: Graph.java,v 1.2.2.13 2001-12-16 04:38:51 salcianu Exp $
  */
 
 public abstract class Graph  {
@@ -182,6 +205,130 @@ public abstract class Graph  {
     private static String escape(String s) {
 	s = Util.escape(s);
 	return s.replace('\"', ' ');
+    }
+
+
+
+
+    /** Print the Control Flow Graph of the Basic Blocks composing
+	the code of method <code>hm</code>, as constructed by the
+	code factory <code>hcf</code>. The output is written to
+	<code>out</code> in VCG format. */
+    public static void printBBCFG(HMethod hm, HCodeFactory hcf,
+				  PrintWriter out) {
+	BBConverter bbconv = new BBConverter(hcf);
+	LBBConverter lbbconv = new LBBConverter(bbconv);
+	printBBCFG(hm, lbbconv, out);
+    }
+
+    /** Print the Control Flow Graph of the Basic Blocks composing
+	the code of method <code>hm</code>, as constructed by the
+	<code>LBBConverter</code> <code>hcf</code>.
+	The output is written to <code>out</code> in VCG format. */
+    public static void printBBCFG(HMethod hm, LBBConverter lbbconv,
+				  PrintWriter out) {
+	LightBasicBlock.Factory lbbfact = lbbconv.convert2lbb(hm);
+
+	print_VCG_header(out, "BB_CFG for " + hm.getName());
+	Map map = print_VCG_nodes(out, lbbfact);
+	print_VCG_edges(out, lbbfact, map);
+	print_VCG_footer(out);
+    }
+
+    private static void print_VCG_header(PrintWriter out, String graph_name) {
+	out.println("graph: {");
+	out.println("\ttitle: \"" + graph_name + "\"");
+	out.println("\tlayoutalgorithm: maxdepthslow");
+	out.println("\tdisplay_edge_labels: yes");
+    }
+
+    private static Map print_VCG_nodes
+	(PrintWriter out, LightBasicBlock.Factory lbbfact) {
+	out.println("\n/* (light) basic block description */");
+	Map map = new HashMap();
+	LightBasicBlock lbbs[] = lbbfact.getAllBBs();
+	for(int i = 0; i < lbbs.length ; i++) {
+	    String lbb_name = Integer.toString(i);
+	    map.put(lbbs[i], lbb_name);
+	    print_VCG_node(out, lbbs[i], lbb_name);
+	}
+	out.println();
+	return map;
+    }
+
+    private static void print_VCG_node
+	(PrintWriter out, LightBasicBlock lbb, String lbb_name) {
+	out.println("node: {");
+	out.println("\ttitle: \"" + lbb_name + "\"");
+	out.print("\tlabel: \"");
+	HCodeElement quads[] = lbb.getElements();
+	for(int i = 0; i < quads.length; i++)
+	    out.print( ((i == 0) ? "" : "\\n") +
+			 quad2string(quads[i]) );
+	out.println("\"");
+	out.println("}");
+    }
+
+    private static String quad2string(HCodeElement hce) {
+	if(!(hce instanceof CALL))
+	    return hce.toString();
+	CALL call = (CALL) hce;
+	StringBuffer buff = new StringBuffer();
+	if(call.retval() != null) {
+	    buff.append(call.retval());
+	    buff.append(" = ");
+	}
+	if(call.isStatic())
+	    buff.append("(static) ");
+	buff.append("CALL ");
+	HMethod hm = call.method();
+
+	String classname = hm.getDeclaringClass().getName();
+	classname = classname.substring(classname.lastIndexOf(".") + 1);
+	buff.append(classname);
+
+	buff.append(".");
+	buff.append(hm.getName());
+	buff.append("(");
+	Temp params[] = call.params();
+	for(int i = 0; i < params.length; i++)
+	    buff.append(((i == 0) ? "" : ",") + params[i]);
+	buff.append(")");
+	return buff.toString();
+    }
+
+    private static void print_VCG_edges
+	(PrintWriter out, LightBasicBlock.Factory lbbfact, Map map) {
+	out.println("\n/* control flow edges */");
+
+	METHOD method = get_METHOD(lbbfact);
+
+	LightBasicBlock lbbs[] = lbbfact.getAllBBs();
+	for(int i = 0; i < lbbs.length; i++) {
+	    LightBasicBlock lbb = lbbs[i];
+	    String sourcename = (String) map.get(lbb);
+
+	    LightBasicBlock next[] = lbb.getNextLBBs();
+	    for(int j = 0; j < next.length; j++) {
+		String targetname = (String) map.get(next[j]);
+		out.println("edge: { " +
+			    "sourcename : \"" + sourcename + "\" " +
+			    "targetname : \"" + targetname + "\" " +
+			    ((j >= lbb.getHandlerStartIndex()) ? 
+			     "linestyle : dashed " : "" ) +
+			    "}");
+	    }
+	}
+    }
+
+    private static METHOD get_METHOD(LightBasicBlock.Factory lbbfact) {
+	LightBasicBlock root = lbbfact.getRoot();
+	HEADER header = (HEADER) root.getFirstElement();
+	return (METHOD) header.next(1);
+    }
+
+    private static void print_VCG_footer(PrintWriter out) {
+	out.println("}");
     }
 
 }
