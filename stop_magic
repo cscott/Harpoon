@@ -23,6 +23,7 @@ print STDERR "files: ".join(' ',@files)."\n";
 open(ENTRIES, $ENTRIES) || die("Cannot open $ENTRIES.\n");
 while (<ENTRIES>) {
     local($filename, $version, $date, $unk, $tag) = split('/', substr($_, 1));
+    chomp $tag;
     $cvsversion{$filename} = $version;
     $cvstag{$filename} = $tag;
     print STDERR "$filename, $version, $date, $unk, $tag\n";
