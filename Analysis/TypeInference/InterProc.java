@@ -15,7 +15,7 @@ import harpoon.Analysis.QuadSSA.ClassHierarchy;
  * <code>InterProc</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: InterProc.java,v 1.1.2.8 1999-08-04 05:52:24 cananian Exp $
+ * @version $Id: InterProc.java,v 1.1.2.9 1999-08-07 02:14:11 cananian Exp $
  */
 
 public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
@@ -136,7 +136,8 @@ public class InterProc implements harpoon.Analysis.Maps.SetTypeMap {
 
     Enumeration classInitializers(final ClassHierarchy ch) {
 	return new Enumeration() {
-	    Enumeration e = ch.classes();
+	    Enumeration e =
+		new harpoon.Util.IteratorEnumerator(ch.classes().iterator());
 	    HMethod m = null;
 	    private void advance() {
 		while (e.hasMoreElements()&&(m==null)) {

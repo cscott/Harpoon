@@ -9,13 +9,13 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.UniqueVector;
 
-import java.util.Enumeration;
+import java.util.Iterator;
 /**
  * <code>CHStats</code> computes interesting statistics of the
  * compiler class hierarchy for inclusion in papers and theses.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CHStats.java,v 1.1.2.3 1999-08-04 06:31:02 cananian Exp $
+ * @version $Id: CHStats.java,v 1.1.2.4 1999-08-07 02:14:18 cananian Exp $
  */
 
 public abstract class CHStats extends harpoon.IR.Registration {
@@ -45,8 +45,8 @@ public abstract class CHStats extends harpoon.IR.Registration {
 	    new harpoon.Analysis.QuadSSA.ClassHierarchy(m, hcf);
 	System.out.println("For call graph rooted at "+m.getName()+":");
 	int totalclasses=0, depthsum=0, maxdepth=-1; HClass maxc=null;
-	for (Enumeration e=ch.classes(); e.hasMoreElements(); totalclasses++) {
-	    HClass c = (HClass) e.nextElement();
+	for (Iterator it=ch.classes().iterator();it.hasNext(); totalclasses++){
+	    HClass c = (HClass) it.next();
 	    int depth=depth(c);
 	    if (depth > maxdepth) { maxdepth = depth; maxc=c; }
 	    depthsum+=depth;

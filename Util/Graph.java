@@ -13,11 +13,12 @@ import harpoon.Analysis.DomTree;
 import harpoon.Analysis.DomFrontier;
 import harpoon.IR.Properties.HasEdges;
 import java.util.Enumeration;
+import java.util.Iterator;
 /**
  * <code>Graph</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: Graph.java,v 1.2.2.6 1999-08-04 05:52:38 cananian Exp $
+ * @version $Id: Graph.java,v 1.2.2.7 1999-08-07 02:14:18 cananian Exp $
  */
 
 public abstract class Graph  {
@@ -110,16 +111,16 @@ public abstract class Graph  {
 	pw.println(" layoutalgorithm: minbackward");
 	pw.println(" port_sharing: no");
 	pw.println(" arrowmode: free");
-	for (Enumeration e = ch.classes(); e.hasMoreElements(); ) {
-	    HClass c = (HClass) e.nextElement();
+	for (Iterator it = ch.classes().iterator(); it.hasNext(); ) {
+	    HClass c = (HClass) it.next();
 	    pw.print(" node: { ");
 	    pw.print("title:\""+c.getName()+"\" ");
 	    pw.print("label:\""+c.getName()+ "\" ");
 	    pw.print("shape: box ");
 	    pw.println("}");
 	}	
-	for (Enumeration e = ch.classes(); e.hasMoreElements(); ) {
-	    HClass c = (HClass) e.nextElement();
+	for (Iterator it = ch.classes().iterator(); it.hasNext(); ) {
+	    HClass c = (HClass) it.next();
 	    HClass sc= c.getSuperclass();
 	    if (sc!=null)
 		pw.println(" edge: { " +
