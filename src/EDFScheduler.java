@@ -1,14 +1,14 @@
-// RMAScheduler.java, created by wbeebee
+// EDFScheduler.java, created by wbeebee
 // Copyright (C) 2003 Wes Beebee <wbeebee@mit.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package javax.realtime;
 
-/** <code>RMAScheduler</code> is an example of the dumbest possible RMA scheduler.
+/** <code>EDFScheduler</code> is an example of the dumbest possible EDF scheduler.
  *
  * @author Wes Beebee <<a href="mailto:wbeebee@mit.edu">wbeebee@mit.edu</a>>
  */
-public class RMAScheduler extends Scheduler {
-    static RMAScheduler instance = null;
+public class EDFScheduler extends Scheduler {
+    static EDFScheduler instance = null;
 
     public static final int MAX_THREADS = 100; // The maximum thread ID in the entire system
     public static final int OFFSET = 2; // The maximum number of C threads
@@ -23,17 +23,17 @@ public class RMAScheduler extends Scheduler {
     private long currentThreadID; /* What thread was running */
     private long lastTime; /* When I last chose to start it */
 
-    protected RMAScheduler() {
+    protected EDFScheduler() {
 	super();
 	setQuanta(0); // Start switching after a specified number of microseconds
     }
 
     /** Return an instance of an RMAScheduler */
-    public static RMAScheduler instance() {
+    public static EDFScheduler instance() {
 	if (instance == null) {
 	    ImmortalMemory.instance().enter(new Runnable() {
 		public void run() {
-		    instance = new RMAScheduler();
+		    instance = new EDFScheduler();
 		}
 	    });
 	}
@@ -51,7 +51,7 @@ public class RMAScheduler extends Scheduler {
 
     /** Used to determine the policy of the <code>Scheduler</code>. */
     public String getPolicyName() {
-	return "RMA Scheduler";
+	return "EDF Scheduler";
     }
 
     /** It is not always feasible to add another thread to a RMAScheduler. */
