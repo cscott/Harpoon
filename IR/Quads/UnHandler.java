@@ -16,7 +16,7 @@ import java.util.Map;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnHandler.java,v 1.1.2.12 1999-04-12 20:10:52 cananian Exp $
+ * @version $Id: UnHandler.java,v 1.1.2.13 1999-06-24 01:03:47 cananian Exp $
  */
 final class UnHandler {
     // entry point.
@@ -521,7 +521,10 @@ final class UnHandler {
 	    ti.put(q.dst(), Td);
 	    ss.qm.put(q, head, nq);
 	}
-	/*public void visit(PHI q);*/
+	public void visit(PHI q) {
+	    ti.clear(); // clear all info at program merge points.
+	    visit((Quad)q); // copy
+	}
 	/*public void visit(RETURN q);*/
 	public void visit(SET q) {
 	    Quad nq = (Quad) q.clone(qf, ss.ctm), head=nq;
