@@ -73,7 +73,7 @@ import java.util.Iterator;
  * <code>BasicInductionsMap</code>, and <code>InvariantsMap</code>.
  * 
  * @author  Brian Demsky
- * @version $Id: LoopAnalysis.java,v 1.1.2.18 1999-09-24 06:31:42 bdemsky Exp $
+ * @version $Id: LoopAnalysis.java,v 1.1.2.19 1999-09-24 17:41:18 bdemsky Exp $
  */
 
 public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, InvariantsMap {
@@ -394,6 +394,10 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    return (good&&(flag!=-1));
 	}
     }
+    /**<code>forloop</code> takes in an <code>HCode</code> and
+     * <code>Loops</code> to analyze.  It returns a null if there is
+     * no for loop, or a <code>ForLoopInfo</code> if it finds a for loop.
+     * It works on Quads and LowQuads on both SSI and SSA forms.*/
 
     public ForLoopInfo forloop(HCode hc, Loops lp) {
 	analyze(hc);
@@ -443,6 +447,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    return null;
     }
 
+    /**<code>ForLoopInfo</code> encapsulated information on a for loop.*/
     public class ForLoopInfo {
 	private int testtype;
 	private Temp induction;
@@ -460,32 +465,53 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	    this.loopexit=loopexit;
 	    this.increment=increment;
   	}
+	/**<code>testtype</code> tells the type of test used.  This is the
+	 * condition to continue in the loop.*/
 	public int testtype() {
 	    return testtype;
 	}
+	/**<code>increment</code> gives the temp with the loop invariant
+	 * value to increment the induction variable by.*/
 	public Temp increment() {
 	    return increment;
 	}
+	/**<code>induction</code> gives the temp with the induction variable
+	 * of the for loop.*/
 	public Temp induction() {
 	    return induction;
 	}
+	/**<code>indInitial</code> gives the initial value of the induction
+	 * variable.*/
 	public Temp indInitial() {
 	    return indinitial;
 	}
+	/**<code>indFinal</code> gives the final value of the induction
+	 * variable.*/
 	public Temp indFinal() {
 	    return indfinal;
 	}
+	/**<code>testOPER</code> gives the <code>OPER</code> containing the
+	 * for loop test condition.*/
 	public OPER testOPER() {
 	    return testquad;
 	}
+	/**<code>loopExit</code> gives the <code>CJMP</code> that is the
+	 * first exit of the loop.*/
 	public CJMP loopExit() {
 	    return loopexit;
 	}
+	/** != case */
 	public final static int NEQ = 0;
+	/** < case */
 	public final static int LT = 1;
+	/** <= case */
 	public final static int LTE = 2;
+	/** > case */
 	public final static int GT = 3;
+	/** >= case */
 	public final static int GTE = 4;
+	/** <code>toString</code> returns a string representation of the
+	 * for loop.*/
 	public String toString() {
 	    String ttype=null;
 	    switch(testtype) {
@@ -755,6 +781,7 @@ public class LoopAnalysis implements AllInductionsMap, BasicInductionsMap, Invar
 	public void visit(POPER q)              { checkopers(q); }
 	public void visit(OPER q)		{ checkopers(q); }
 
+	//See if we have division by 0
 	private void checkopers(OPER q) {
 	    switch (q.opcode()) {
 	    case Qop.IDIV:
