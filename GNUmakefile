@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.9 1998-12-01 11:54:52 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.10 1998-12-01 12:26:51 cananian Exp $
 JFLAGS=-d . -g
 JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JIKES=jikes
@@ -34,13 +34,16 @@ TARSOURCE := $(filter-out JavaChip%, \
 JARPKGS := $(subst harpoon/Contrib,gnu, \
 		$(foreach pkg, $(filter-out JavaChip%, \
 			$(filter-out Test%,$(ALLPKGS))), harpoon/$(pkg)))
+PROPERTIES:=Contrib/getopt/MessagesBundle.properties
 
 all:	java
 
 list:
 	@echo $(filter-out GNUmakefile,$(TARSOURCE))
+list-packages:
+	@echo $(filter-out Test,$(ALLPKGS))
 
-java:	$(ALLSOURCE) Contrib/getopt/MessagesBundle.properties
+java:	$(ALLSOURCE) $(PROPERTIES)
 	if [ ! -d harpoon ]; then \
 	  $(MAKE) first; \
 	fi
@@ -58,6 +61,7 @@ jikes:
 
 properties:
 	@echo -n Updating properties... ""
+	@mkdir -p gnu/getopt
 	@cp Contrib/getopt/MessagesBundle.properties gnu/getopt
 	@echo done.
 
