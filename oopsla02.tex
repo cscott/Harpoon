@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.28 2002-03-23 10:50:21 cananian Exp $
+% $Id: oopsla02.tex,v 1.29 2002-03-23 11:04:27 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\documentclass[preprint]{acmconf}
 \documentclass{acmconf}
@@ -33,7 +33,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.28 $ $}{$ $Revision: 1.28 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.29 $ $}{$ $Revision: 1.29 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -166,7 +166,7 @@ which essentially implements a tagged
 union.\footnote{This class is a simplfied version of similar
 classes that appear in some of our benchmarks.
 See for example the {\tt jess.Value} class in SPECjvm98 benchmark
-{\tt \_202\_jess}.} 
+{\tt 202\_jess}.} 
 The class also maintains the {\tt positive} field, which is
 {\tt 1} if the wrapped number is positive and {\tt 0} otherwise. 
 
@@ -457,7 +457,7 @@ typical Java program, and all but two of the benchmarks in SPECjvm98
 have less than 256 instantiated class types.  We use this information
 to replace the {\tt claz} pointer in the object header, which
 identifies the type of the object, with a one-byte {\it index} into a
-small lookup table.  The {\tt \_202\_jess} and {\tt \_213\_javac}
+small lookup table.  The {\tt 202\_jess} and {\tt 213\_javac}
 benchmarks require more than one byte of index, but a two byte index
 amply suffices in these two cases.
 
@@ -821,7 +821,7 @@ Some architectures penalize unaligned accesses to fields.  It is
 worthwhile to {\it attempt} to align fields to their preferred
 alignment while not allowing this to cause the object size to grow.
 Further, there are often {\it forced} alignment constraints on
-(for example) pointers.  Our java runtime uses a conservative garbage
+(for example) pointers.  Our Java runtime uses a conservative garbage
 collector; its efficiency decreases markedly if pointers are not
 word-aligned.
 
@@ -886,7 +886,7 @@ and values yield an average space consumption of three words per
 field.  This implementation breaks even when the mostly-zero fields
 identified are zero over 66\% of the time.  This break-even point is
 compared to the profiling data to allow our field externalization
-transformation to intelligently chose targetted fields.
+transformation to intelligently choose targetted fields.
 
 Key-size reduction is an important component of the implementation:
 a na{\"\i}ve approach
@@ -900,6 +900,14 @@ a single-word key.  This technique is
 subject to object-size-dependent limits on the number
 of class fields which may be externalized, but these have not been an
 issue in practice.
+
+Our implementation uses the garbage collector's object finalization
+functionality to remove unneeded entries from the hashtable.  Care
+must be taken, however, that the key value used in the hashtable
+is not confused for an object pointer by a conservative garbage
+collector.  Precise garbage-collection implementations need to
+remember to add the values stored in the hashtable to the
+collector's root set.
 
 \section{Experimental Results}
 \label{sec:results}
@@ -978,7 +986,10 @@ presents space savings numbers for objects alone, omitting
 any storage required for arrays.  The difference is explained by
 Figure~\ref{fig:object-array-pointer}, which shows how the total
 program allocation for each benchmark is broken down into array and
-object allocations.  The reason for our poor performance on {\tt
+object allocations.  The space required for pointer fields, which our
+integer bitwidth analysis can not optimize, are further broken out of
+the object allocations.
+The reason for our poor performance on {\tt
   201\_compress} is now obvious.  Note that {\tt 222\_mpegaudio}
 allocates so much less memory than the other benchmarks that its bar
 is barely visible.  Arrays account for 79\% of {\tt mpegaudio}'s total
