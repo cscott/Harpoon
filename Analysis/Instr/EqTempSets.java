@@ -4,7 +4,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.Instr;
 
-import harpoon.Util.DisjointSet;
+import harpoon.Util.Collections.DisjointSet;
 import harpoon.Util.CombineIterator;
 import harpoon.Util.Util;
 import harpoon.Temp.Temp;
@@ -30,7 +30,7 @@ import java.util.HashSet;
  *  called the Representative (or Rep for short).
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EqTempSets.java,v 1.1.2.9 2001-06-17 22:29:49 cananian Exp $
+ * @version $Id: EqTempSets.java,v 1.1.2.10 2001-11-08 00:21:59 cananian Exp $
  */
 public abstract class EqTempSets implements harpoon.Temp.TempMap {
     

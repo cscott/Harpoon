@@ -36,7 +36,7 @@ import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.HClassUtil;
 
 import java.util.Vector;
@@ -46,7 +46,7 @@ import java.util.Map;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TypeInfo.java,v 1.1.2.10 2000-10-11 01:52:45 cananian Exp $
+ * @version $Id: TypeInfo.java,v 1.1.2.11 2001-11-08 00:22:52 cananian Exp $
  */
 
 public class TypeInfo implements harpoon.Analysis.Maps.ExactTypeMap {

@@ -23,7 +23,7 @@ import harpoon.IR.Quads.CONST;
 import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.THROW;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -32,7 +32,7 @@ import java.util.Map;
  * <code>InstrumentAllocs</code> adds counters to each allocation site.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: InstrumentAllocs.java,v 1.1.2.12 2001-06-17 22:30:40 cananian Exp $
+ * @version $Id: InstrumentAllocs.java,v 1.1.2.13 2001-11-08 00:22:32 cananian Exp $
  */
 public class InstrumentAllocs extends MethodMutator implements java.io.Serializable {
     int count;

@@ -17,7 +17,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.SerializableCodeFactory;
 import harpoon.Util.Default;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -40,7 +40,7 @@ import java.util.Map;
  * Be careful not to introduce cycles because of this ordering.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MethodSplitter.java,v 1.1.2.22 2001-07-03 07:17:07 cananian Exp $
+ * @version $Id: MethodSplitter.java,v 1.1.2.23 2001-11-08 00:23:34 cananian Exp $
  */
 public abstract class MethodSplitter implements java.io.Serializable {
     /** The <code>ORIGINAL</code> token represents the original pre-split

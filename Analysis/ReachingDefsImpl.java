@@ -10,7 +10,7 @@ import harpoon.Temp.Temp;
 import harpoon.Util.Collections.BitSetFactory;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.TYPECAST;
 
@@ -28,7 +28,7 @@ import java.util.Set;
  * created if the code has been modified.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: ReachingDefsImpl.java,v 1.1.2.18 2001-08-28 19:59:56 kkz Exp $
+ * @version $Id: ReachingDefsImpl.java,v 1.1.2.19 2001-11-08 00:21:12 cananian Exp $
  */
 public class ReachingDefsImpl extends ReachingDefs {
     final private CFGrapher cfger;

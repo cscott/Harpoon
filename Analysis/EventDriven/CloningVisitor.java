@@ -52,7 +52,7 @@ import harpoon.Temp.TempFactory;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -70,7 +70,7 @@ import harpoon.Analysis.Maps.AllocationInformation;
  * <code>CloningVisitor</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: CloningVisitor.java,v 1.1.2.35 2001-06-17 22:29:29 cananian Exp $
+ * @version $Id: CloningVisitor.java,v 1.1.2.36 2001-11-08 00:21:41 cananian Exp $
  */
 public class CloningVisitor extends QuadVisitor {
     boolean isCont, followchildren, methodstatus;

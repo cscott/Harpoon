@@ -24,7 +24,7 @@ import harpoon.IR.Bytecode.Liveness; // liveness analysis on local variables
 import harpoon.IR.Quads.HANDLER.ProtectedSet;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
-import harpoon.Util.AbstractMapEntry;
+import harpoon.Util.Collections.AbstractMapEntry;
 import harpoon.Util.Default;
 import harpoon.Util.MapComparator;
 import harpoon.Util.UnmodifiableIterator;
@@ -54,7 +54,7 @@ import java.util.TreeMap;
  * form with no phi/sigma functions or exception handlers.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Translate.java,v 1.1.2.30 2001-09-18 20:35:01 cananian Exp $
+ * @version $Id: Translate.java,v 1.1.2.31 2001-11-08 00:25:20 cananian Exp $
  */
 final class Translate { // not public.
     static final private class StaticState {

@@ -17,7 +17,7 @@ import harpoon.Analysis.ClassHierarchy;
 import harpoon.Analysis.Quads.QuadClassHierarchy;
 import harpoon.Analysis.TypeInference.InterProc;
 import harpoon.Util.Worklist;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -26,7 +26,7 @@ import java.util.Set;
  * <code>PrintTypes</code>
  * 
  * @author  Darko Marinov <marinov@lcs.mit.edu>
- * @version $Id: TypesMain.java,v 1.1.2.11 2000-03-21 22:20:42 salcianu Exp $
+ * @version $Id: TypesMain.java,v 1.1.2.12 2001-11-08 00:25:44 cananian Exp $
  */
 public class TypesMain extends harpoon.IR.Registration {
     public static void main(String args[]) {

@@ -13,7 +13,7 @@ import harpoon.Util.Collections.Factories;
 import harpoon.Util.Util;
 import harpoon.Util.Default;
 import harpoon.Util.Worklist;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Indexer;
 import harpoon.IR.Properties.UseDefer;
 import harpoon.IR.Quads.TYPECAST;
@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.16 2001-06-12 20:53:27 cananian Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.17 2001-11-08 00:21:12 cananian Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
 

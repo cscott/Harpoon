@@ -5,7 +5,7 @@ package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
 import harpoon.Analysis.DataFlow.ReversePostOrderEnumerator; 
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 
 import java.util.Enumeration; 
@@ -19,7 +19,7 @@ import java.util.Iterator;
  * is amicable to data-flow analysis. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: Solver.java,v 1.1.2.7 2000-07-14 07:18:50 pnkfelix Exp $
+ * @version $Id: Solver.java,v 1.1.2.8 2001-11-08 00:21:19 cananian Exp $
  */
 public class Solver {
 

@@ -41,7 +41,7 @@ import harpoon.Temp.Label;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,7 +57,7 @@ import java.util.Set;
  * call sites and backward branches.
  * 
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: BasicGCInfo.java,v 1.1.2.23 2001-07-10 22:49:02 cananian Exp $
+ * @version $Id: BasicGCInfo.java,v 1.1.2.24 2001-11-08 00:24:05 cananian Exp $
  */
 public class BasicGCInfo extends harpoon.Backend.Generic.GCInfo {
     // Maps methods to gc points

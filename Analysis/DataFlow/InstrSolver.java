@@ -4,7 +4,7 @@
 package harpoon.Analysis.DataFlow;
 
 import harpoon.Analysis.BasicBlock;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.Set;
 import java.util.Iterator;
@@ -13,7 +13,7 @@ import java.util.Collections;
  * <code>InstrSolver</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: InstrSolver.java,v 1.1.2.8 2001-06-17 22:29:19 cananian Exp $
+ * @version $Id: InstrSolver.java,v 1.1.2.9 2001-11-08 00:21:18 cananian Exp $
  */
 public final class InstrSolver  {
     

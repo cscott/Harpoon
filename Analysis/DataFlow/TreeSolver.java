@@ -8,7 +8,7 @@ import java.util.Iterator;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.Worklist;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
 import harpoon.Analysis.EdgesIterator;
@@ -22,7 +22,7 @@ import harpoon.Analysis.BasicBlock;
  * <code>BasicBlockSolver</code> class. 
  * 
  * @author Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeSolver.java,v 1.1.2.10 2000-01-31 20:48:56 pnkfelix Exp $
+ * @version $Id: TreeSolver.java,v 1.1.2.11 2001-11-08 00:21:19 cananian Exp $
  */
 public abstract class TreeSolver {
 

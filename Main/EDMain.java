@@ -68,7 +68,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
 import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Util.BasicBlocks.CachingBBConverter;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 
 
@@ -78,7 +78,7 @@ import harpoon.Util.WorkSet;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EDMain.java,v 1.1.2.8 2001-07-10 22:50:50 cananian Exp $
+ * @version $Id: EDMain.java,v 1.1.2.9 2001-11-08 00:25:43 cananian Exp $
  */
 public class EDMain extends harpoon.IR.Registration {
  

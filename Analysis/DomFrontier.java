@@ -15,7 +15,7 @@ import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Default;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,7 +29,7 @@ import java.util.HashSet;
  * the <code>harpoon.IR.Properties.CFGraphable</code> interface.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DomFrontier.java,v 1.6.2.9 2000-11-10 23:38:43 cananian Exp $
+ * @version $Id: DomFrontier.java,v 1.6.2.10 2001-11-08 00:21:12 cananian Exp $
  */
 
 public class DomFrontier  {

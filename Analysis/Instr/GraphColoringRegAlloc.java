@@ -58,7 +58,7 @@ import java.util.Date;
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.44 2001-06-17 22:29:49 cananian Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.45 2001-11-08 00:22:02 cananian Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
 
@@ -1927,7 +1927,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
     }
 
     // only defined for unions of WebRecords
-    class EqWebRecords extends harpoon.Util.DisjointSet {
+    class EqWebRecords extends harpoon.Util.Collections.DisjointSet {
 	private HashSet temps = new HashSet();
 	MultiMap wrToEqwrs = new GenericMultiMap();
 

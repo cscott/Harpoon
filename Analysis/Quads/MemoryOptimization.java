@@ -30,9 +30,9 @@ import harpoon.IR.Quads.SET;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Default;
-import harpoon.Util.DisjointSet;
+import harpoon.Util.Collections.DisjointSet;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
 
@@ -49,7 +49,7 @@ import java.util.Set;
  * It should be safe with respect to the revised Java memory model.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MemoryOptimization.java,v 1.1.2.5 2001-06-30 16:32:04 cananian Exp $
+ * @version $Id: MemoryOptimization.java,v 1.1.2.6 2001-11-08 00:22:52 cananian Exp $
  */
 public final class MemoryOptimization
     extends harpoon.Analysis.Transformation.MethodMutator {

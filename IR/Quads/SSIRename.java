@@ -19,11 +19,11 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.WritableTempMap;
-import harpoon.Util.Environment;
-import harpoon.Util.HashEnvironment;
+import harpoon.Util.Collections.Environment;
+import harpoon.Util.Collections.HashEnvironment;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.DataStructs.RelationImpl;
 
 import java.util.Arrays;
@@ -45,7 +45,7 @@ import java.util.Stack;
  * XXX: DERIVATION INFORMATION FOR PHI/SIGMAS IS CURRENTLY LOST. [CSA]
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SSIRename.java,v 1.1.2.17 2000-11-16 00:12:15 cananian Exp $
+ * @version $Id: SSIRename.java,v 1.1.2.18 2001-11-08 00:25:19 cananian Exp $
  */
 public class SSIRename {
     private static final boolean DEBUG = false;

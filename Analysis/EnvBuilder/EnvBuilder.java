@@ -25,7 +25,7 @@ import harpoon.ClassFile.UniqueName;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -34,7 +34,7 @@ import java.util.Set;
  * <code>EnvBuilder</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.1.2.11 2001-06-18 20:46:02 cananian Exp $
+ * @version $Id: EnvBuilder.java,v 1.1.2.12 2001-11-08 00:21:29 cananian Exp $
  */
 public class EnvBuilder {
     protected final CachingCodeFactory ucf;

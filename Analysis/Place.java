@@ -8,7 +8,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.Properties.UseDefable;
 import harpoon.Temp.Temp;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Collections.BitSetFactory;
 import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.Factories;
@@ -23,7 +23,7 @@ import java.util.Set;
  * thesis.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Place.java,v 1.10.2.13 2001-01-13 21:44:49 cananian Exp $
+ * @version $Id: Place.java,v 1.10.2.14 2001-11-08 00:21:12 cananian Exp $
  */
 public class Place {
     private final MultiMap phis;

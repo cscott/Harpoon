@@ -5,7 +5,7 @@
 package harpoon.Analysis.Loops;
 
 import harpoon.Analysis.Loops.Loops;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Analysis.DomTree;
 import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeEdge;
@@ -21,7 +21,7 @@ import java.util.Iterator;
  * <code>LoopFinder</code> implements Dominator Tree Loop detection.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopFinder.java,v 1.1.2.13 2001-07-03 23:57:08 pnkfelix Exp $
+ * @version $Id: LoopFinder.java,v 1.1.2.14 2001-11-08 00:22:11 cananian Exp $
  */
 
 public class LoopFinder implements Loops {

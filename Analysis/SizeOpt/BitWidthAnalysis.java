@@ -56,7 +56,7 @@ import harpoon.Util.Default;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Worklist;
 import harpoon.Util.Collections.AggregateMapFactory;
 import harpoon.Util.Collections.AggregateSetFactory;
@@ -84,7 +84,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BitWidthAnalysis.java,v 1.1.2.19 2001-11-07 18:40:10 cananian Exp $
+ * @version $Id: BitWidthAnalysis.java,v 1.1.2.20 2001-11-08 00:23:16 cananian Exp $
  */
 
 public class BitWidthAnalysis implements ExactTypeMap, ConstMap, ExecMap {

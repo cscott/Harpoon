@@ -22,8 +22,8 @@ import harpoon.Util.Collections.BinaryHeap;
 import harpoon.Util.Collections.BinomialHeap;
 import harpoon.Util.Collections.FibonacciHeap;
 import harpoon.Util.Collections.Heap;
-import harpoon.Util.Environment;
-import harpoon.Util.HashEnvironment;
+import harpoon.Util.Collections.Environment;
+import harpoon.Util.Collections.HashEnvironment;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ import java.util.Set;
  * <code>ToTreeHelpers</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ToTreeHelpers.java,v 1.1.2.9 2001-06-05 20:56:30 cananian Exp $
+ * @version $Id: ToTreeHelpers.java,v 1.1.2.10 2001-11-08 00:25:31 cananian Exp $
  */
 abstract class ToTreeHelpers {
     //------------ EdgeOracle IMPLEMENTATIONS ------------------

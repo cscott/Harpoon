@@ -5,7 +5,7 @@ package harpoon.Analysis;
 
 import harpoon.Util.Util;
 import harpoon.Util.IteratorEnumerator;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Collections.LinearSet;
 import harpoon.Util.Worklist;
 import harpoon.ClassFile.HCodeElement;
@@ -63,7 +63,7 @@ import java.util.Collection;
  *
  * @author  John Whaley <jwhaley@alum.mit.edu>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: BasicBlock.java,v 1.1.2.47 2001-06-19 16:53:21 pnkfelix Exp $ */
+ * @version $Id: BasicBlock.java,v 1.1.2.48 2001-11-08 00:21:12 cananian Exp $ */
 public class BasicBlock implements java.io.Serializable {
     
     static final boolean DEBUG = false;

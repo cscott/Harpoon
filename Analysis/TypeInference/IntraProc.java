@@ -46,7 +46,7 @@ import harpoon.IR.Quads.TYPECAST;
 import harpoon.Util.Util;
 import harpoon.Temp.Temp;
 import harpoon.Util.Worklist;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,7 +57,7 @@ import java.util.Set;
  * <code>TypeInfo</code> is a simple type analysis tool for quad-ssi form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: IntraProc.java,v 1.1.2.18 2000-10-11 01:53:03 cananian Exp $
+ * @version $Id: IntraProc.java,v 1.1.2.19 2001-11-08 00:23:56 cananian Exp $
  */
 
 public class IntraProc {

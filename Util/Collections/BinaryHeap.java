@@ -4,7 +4,7 @@
 package harpoon.Util.Collections;
 
 import harpoon.Util.Default;
-import harpoon.Util.PairMapEntry;
+import harpoon.Util.Collections.PairMapEntry;
 import harpoon.Util.Util;
 
 import java.util.AbstractCollection;
@@ -24,7 +24,7 @@ import java.util.Map;
  * Sedgewick's book.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: BinaryHeap.java,v 1.1.2.5 2001-07-03 00:24:41 cananian Exp $
+ * @version $Id: BinaryHeap.java,v 1.1.2.6 2001-11-08 00:26:11 cananian Exp $
  * @see Heap
  */
 public final class BinaryHeap extends AbstractHeap {
@@ -202,7 +202,7 @@ public final class BinaryHeap extends AbstractHeap {
 		    public boolean hasNext() { return i<el.length; }
 		    public Object next() {
 			Integer io = new Integer(el[i++]);
-			return new harpoon.Util.PairMapEntry(io, io);
+			return new PairMapEntry(io, io);
 		    }
 		};
 	    }

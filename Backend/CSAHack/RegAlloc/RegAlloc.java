@@ -32,8 +32,8 @@ import harpoon.Temp.TempMap;
 import harpoon.Backend.CSAHack.FlowGraph.AssemFlowGraph;
 import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
-import harpoon.Util.Environment;
-import harpoon.Util.HashEnvironment;
+import harpoon.Util.Collections.Environment;
+import harpoon.Util.Collections.HashEnvironment;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;

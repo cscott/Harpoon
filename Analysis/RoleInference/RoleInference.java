@@ -33,7 +33,7 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.Temp.Temp;
 import harpoon.Util.TypeInference.TypeInference;
 import harpoon.Util.TypeInference.ExactTemp;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -43,7 +43,7 @@ import java.util.Set;
  * <code>RoleInference</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: RoleInference.java,v 1.1.2.9 2001-07-04 19:22:47 bdemsky Exp $
+ * @version $Id: RoleInference.java,v 1.1.2.10 2001-11-08 00:23:09 cananian Exp $
  */
 public class RoleInference extends harpoon.Analysis.Transformation.MethodMutator {
     final Linker linker;

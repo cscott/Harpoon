@@ -30,7 +30,7 @@ import harpoon.IR.Tree.TreeKind;
 import harpoon.Temp.Label;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,7 +53,7 @@ import java.util.Set;
  * This pass is invoked in <code>harpoon.Main.SAMain</code>.
  *
  * @author  Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: MakeGCThreadSafe.java,v 1.1.2.5 2001-07-10 22:49:03 cananian Exp $
+ * @version $Id: MakeGCThreadSafe.java,v 1.1.2.6 2001-11-08 00:24:08 cananian Exp $
  */
 public class MakeGCThreadSafe extends harpoon.Analysis.Tree.Simplification {
     // hide constructor

@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
-import harpoon.Util.UniqueVector;
+import harpoon.Util.Collections.UniqueVector;
 
 import java.util.Enumeration;
 
@@ -13,7 +13,7 @@ import java.util.Enumeration;
  * 
  * @deprecated replaced by <code>Graph</code> interface.
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GraphImpl.java,v 1.1.2.5 2001-06-17 22:29:38 cananian Exp $
+ * @version $Id: GraphImpl.java,v 1.1.2.6 2001-11-08 00:21:52 cananian Exp $
  */
 
 abstract class GraphImpl extends AbstractGraph {

@@ -16,7 +16,7 @@ import harpoon.Analysis.SSITOSSAMap;
 import harpoon.Analysis.UseDef;
 import harpoon.Analysis.Quads.TypeInfo;
 import harpoon.Util.Tuple;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Analysis.Maps.TypeMap;
 
 import java.util.Arrays;
@@ -34,7 +34,7 @@ import java.util.Stack;
  * the <code>HANDLER</code> quads from the graph.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: ReHandler.java,v 1.1.2.48 2001-09-26 16:15:12 cananian Exp $
+ * @version $Id: ReHandler.java,v 1.1.2.49 2001-11-08 00:25:19 cananian Exp $
  */
 final class ReHandler {
     /* <code>rehandler</code> takes in a <code>QuadFactory</code> and a 

@@ -24,13 +24,13 @@ import java.io.FileOutputStream;
 
 import java.util.Set;
 import java.util.Iterator;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 /**
  * <code>JMain</code> is the command-line interface to the compiler.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JMain.java,v 1.1.2.9 2001-09-26 16:51:21 cananian Exp $
+ * @version $Id: JMain.java,v 1.1.2.10 2001-11-08 00:25:43 cananian Exp $
  */
 public abstract class JMain extends harpoon.IR.Registration {
 

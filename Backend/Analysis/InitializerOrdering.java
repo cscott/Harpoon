@@ -8,9 +8,9 @@ import harpoon.Analysis.ClassHierarchy;
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HInitializer;
 import harpoon.ClassFile.HMethod;
-import harpoon.Util.UniqueVector;
+import harpoon.Util.Collections.UniqueVector;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,7 +28,7 @@ import java.util.Set;
  * in that case.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerOrdering.java,v 1.1.2.4 2000-10-22 08:14:43 cananian Exp $
+ * @version $Id: InitializerOrdering.java,v 1.1.2.5 2001-11-08 00:24:07 cananian Exp $
  */
 public class InitializerOrdering {
     public final List sorted;

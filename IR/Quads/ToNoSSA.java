@@ -21,7 +21,7 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Default;
-import harpoon.Util.DisjointSet;
+import harpoon.Util.Collections.DisjointSet;
 import harpoon.Util.Util;
 
 import java.util.HashMap;
@@ -34,7 +34,7 @@ import java.util.Map;
  * and No-SSA form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToNoSSA.java,v 1.1.2.39 2001-09-26 15:43:52 cananian Exp $
+ * @version $Id: ToNoSSA.java,v 1.1.2.40 2001-11-08 00:25:20 cananian Exp $
  */
 public class ToNoSSA
 {

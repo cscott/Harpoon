@@ -52,7 +52,7 @@ import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 
 import harpoon.IR.Quads.QuadVisitor;
@@ -69,7 +69,7 @@ import harpoon.Util.DataStructs.LightMap;
  * <code>ODMAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODMAInfo.java,v 1.1.2.3 2001-06-17 22:30:42 cananian Exp $
+ * @version $Id: ODMAInfo.java,v 1.1.2.4 2001-11-08 00:22:35 cananian Exp $
  */
 public class ODMAInfo implements AllocationInformation, java.io.Serializable {
 

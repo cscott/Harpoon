@@ -5,7 +5,7 @@ package harpoon.ClassFile;
 
 import harpoon.Util.ArrayFactory;
 import harpoon.Util.ReferenceUnique;
-import harpoon.Util.UniqueVector;
+import harpoon.Util.Collections.UniqueVector;
 import harpoon.Util.Util;
 
 import java.lang.reflect.Modifier;
@@ -29,7 +29,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.36 2000-12-17 20:24:45 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.37 2001-11-08 00:24:48 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  * @see java.lang.Class
  */

@@ -5,7 +5,7 @@ package harpoon.Analysis.Instr;
 
 import harpoon.Temp.Temp;
 import harpoon.IR.Assem.Instr;
-import harpoon.Util.LinearMap;
+import harpoon.Util.Collections.LinearMap;
 import harpoon.Util.Util;
 
 import java.util.List;
@@ -22,7 +22,7 @@ import java.util.Iterator;
  * most processor architectures for storing working sets of data.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFile.java,v 1.1.2.12 2000-11-10 19:54:46 cananian Exp $
+ * @version $Id: RegFile.java,v 1.1.2.13 2001-11-08 00:22:04 cananian Exp $
  */
 class RegFile {
 

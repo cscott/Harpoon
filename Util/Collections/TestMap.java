@@ -4,8 +4,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-import harpoon.Util.HashEnvironment;
-import harpoon.Util.LinearMap;
+import harpoon.Util.Collections.HashEnvironment;
+import harpoon.Util.Collections.LinearMap;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -23,7 +23,7 @@ import java.util.Vector;
  * implementations for correctness.  Large portions borrowed from Mauve.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TestMap.java,v 1.1.2.1 2001-11-07 22:45:39 cananian Exp $
+ * @version $Id: TestMap.java,v 1.1.2.2 2001-11-08 00:26:11 cananian Exp $
  */
 class TestMap {
     private final static boolean DEBUG=false;

@@ -3,7 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
-import harpoon.Util.UniqueVector;
+import harpoon.Util.Collections.UniqueVector;
 import java.util.Enumeration;
 
 /**
@@ -11,7 +11,7 @@ import java.util.Enumeration;
  * use with the SparseGraph object.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SparseNode.java,v 1.1.2.9 2001-06-17 22:29:39 cananian Exp $ 
+ * @version $Id: SparseNode.java,v 1.1.2.10 2001-11-08 00:21:53 cananian Exp $ 
  */
 
 public abstract class SparseNode extends ColorableNode {

@@ -29,7 +29,7 @@ import harpoon.Temp.Temp;
 import harpoon.Util.BasicBlocks.BBConverter;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,7 +41,7 @@ import java.util.Set;
  * <code>ToAsync</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: ToAsync.java,v 1.1.2.32 2001-06-18 20:46:15 cananian Exp $
+ * @version $Id: ToAsync.java,v 1.1.2.33 2001-11-08 00:21:41 cananian Exp $
  */
 public class ToAsync {
     protected final CachingCodeFactory ucf;

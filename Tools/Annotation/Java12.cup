@@ -8,9 +8,9 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
 import harpoon.ClassFile.NoSuchClassException;
 import harpoon.Tools.Annotation.Lex.LinePos;
-import harpoon.Util.HashEnvironment;
+import harpoon.Util.Collections.HashEnvironment;
 import harpoon.Util.HClassUtil;
-import harpoon.Util.Environment;
+import harpoon.Util.Collections.Environment;
 import harpoon.Util.Tuple;
 import harpoon.Util.Util;
 

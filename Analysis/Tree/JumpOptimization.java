@@ -24,7 +24,7 @@ import harpoon.IR.Tree.Tree;
 import harpoon.IR.Tree.TreeFactory;
 import harpoon.IR.Tree.TreeKind;
 import harpoon.Temp.Label;
-import harpoon.Util.DisjointSet;
+import harpoon.Util.Collections.DisjointSet;
 import harpoon.Util.Util;
 
 import java.util.Arrays;
@@ -35,7 +35,7 @@ import java.util.List;
  * and redundant labels.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: JumpOptimization.java,v 1.1.2.6 2000-11-16 05:23:05 cananian Exp $
+ * @version $Id: JumpOptimization.java,v 1.1.2.7 2001-11-08 00:23:45 cananian Exp $
  */
 public abstract class JumpOptimization extends Simplification {
     // hide constructor

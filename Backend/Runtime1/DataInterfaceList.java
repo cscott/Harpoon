@@ -16,7 +16,7 @@ import harpoon.IR.Tree.LABEL;
 import harpoon.IR.Tree.NAME;
 import harpoon.IR.Tree.SEGMENT;
 import harpoon.Util.HClassUtil;
-import harpoon.Util.UniqueVector;
+import harpoon.Util.Collections.UniqueVector;
 import harpoon.Util.Util;
 
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.List;
  * <code>DataInterfaceList</code> lays out the expanded list of interfaces.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DataInterfaceList.java,v 1.1.4.6 2001-07-10 22:49:49 cananian Exp $
+ * @version $Id: DataInterfaceList.java,v 1.1.4.7 2001-11-08 00:24:37 cananian Exp $
  */
 public class DataInterfaceList extends Data {
     final TreeBuilder m_tb;

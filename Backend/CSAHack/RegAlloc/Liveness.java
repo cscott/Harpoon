@@ -17,7 +17,7 @@ import harpoon.Backend.CSAHack.Graph.Node;
 import harpoon.Backend.CSAHack.Graph.NodeList;
 import harpoon.Backend.CSAHack.FlowGraph.FlowGraph;
 
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.Vector;
 import java.util.Hashtable;

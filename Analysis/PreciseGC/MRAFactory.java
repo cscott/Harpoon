@@ -47,7 +47,7 @@ import harpoon.Temp.Temp;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,7 +61,7 @@ import java.util.Set;
  * <code>MRAFactory</code> generates <code>MRA</code>s.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: MRAFactory.java,v 1.1.2.2 2001-10-19 20:45:13 kkz Exp $
+ * @version $Id: MRAFactory.java,v 1.1.2.3 2001-11-08 00:22:44 cananian Exp $
  */
 public class MRAFactory {
     

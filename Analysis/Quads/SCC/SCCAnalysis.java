@@ -52,7 +52,7 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -66,7 +66,7 @@ import java.util.Set;
  * <p>Only works with quads in SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: SCCAnalysis.java,v 1.1.2.26 2001-11-05 20:58:49 cananian Exp $
+ * @version $Id: SCCAnalysis.java,v 1.1.2.27 2001-11-08 00:23:02 cananian Exp $
  */
 
 public class SCCAnalysis implements ExactTypeMap, ConstMap, ExecMap {

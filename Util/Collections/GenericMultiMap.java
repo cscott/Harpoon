@@ -4,7 +4,7 @@
 package harpoon.Util.Collections;
 
 import harpoon.Util.Default;
-import harpoon.Util.PairMapEntry;
+import harpoon.Util.Collections.PairMapEntry;
 import harpoon.Util.Util;
 
 import java.util.Map;
@@ -31,7 +31,7 @@ import java.util.HashSet;
  *	 are passed on to 'mm'.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: GenericMultiMap.java,v 1.1.2.10 2001-11-04 02:34:15 cananian Exp $ */
+ * @version $Id: GenericMultiMap.java,v 1.1.2.11 2001-11-08 00:26:11 cananian Exp $ */
 public class GenericMultiMap implements MultiMap {
     
     // internal Map[KeyType -> Collection[ ValueType ]]

@@ -15,7 +15,7 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.QuadNoSSA;
 import harpoon.Temp.Temp;
 import harpoon.Util.Tuple;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,7 +26,7 @@ import java.util.Set;
  * <code>LockRemove</code>
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: LockRemove.java,v 1.1.2.2 2001-06-18 20:46:15 cananian Exp $
+ * @version $Id: LockRemove.java,v 1.1.2.3 2001-11-08 00:21:41 cananian Exp $
  */
 public class LockRemove implements HCodeFactory {
     Set hclassSet;

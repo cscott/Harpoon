@@ -48,14 +48,14 @@ import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.THROW;
 import harpoon.Temp.TempMap;
 import harpoon.Temp.Temp;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.Iterator;
 /**
  * <code>LoopInvariance</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: LoopInvariance.java,v 1.1.2.10 2000-01-14 12:32:50 cananian Exp $
+ * @version $Id: LoopInvariance.java,v 1.1.2.11 2001-11-08 00:22:21 cananian Exp $
  */
 public class LoopInvariance {
     

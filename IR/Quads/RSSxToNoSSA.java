@@ -11,7 +11,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.Temp.CloningTempMap;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import harpoon.Analysis.AllocationInformationMap;
 import harpoon.Analysis.Maps.AllocationInformation;
@@ -26,7 +26,7 @@ import java.util.Map;
  * phi or sigma functions.
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: RSSxToNoSSA.java,v 1.1.2.5 2001-09-26 16:00:46 cananian Exp $
+ * @version $Id: RSSxToNoSSA.java,v 1.1.2.6 2001-11-08 00:25:19 cananian Exp $
  */
 public class RSSxToNoSSA {
     QuadFactory newQF;

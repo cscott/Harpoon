@@ -79,7 +79,7 @@ import harpoon.Util.LightBasicBlocks.CachingLBBConverter;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import harpoon.Analysis.PointerAnalysis.Debug;
 import harpoon.Analysis.MetaMethods.SmartCallGraph;
@@ -96,7 +96,7 @@ import harpoon.Util.DataStructs.LightMap;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: ODPAMain.java,v 1.1.2.3 2001-06-17 22:34:55 cananian Exp $
+ * @version $Id: ODPAMain.java,v 1.1.2.4 2001-11-08 00:25:43 cananian Exp $
  */
 public abstract class ODPAMain {
 

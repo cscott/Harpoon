@@ -10,7 +10,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.PHI;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Temp.Temp;
 
 import java.util.Hashtable;
@@ -23,7 +23,7 @@ import java.util.Set;
  * <code>QuadLiveness</code> if you have changed the <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: QuadLiveness.java,v 1.1.2.11 2001-06-18 20:46:44 cananian Exp $
+ * @version $Id: QuadLiveness.java,v 1.1.2.12 2001-11-08 00:22:52 cananian Exp $
  */
 public class QuadLiveness extends Liveness {
     final Hashtable livein;

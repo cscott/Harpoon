@@ -19,7 +19,7 @@ import harpoon.IR.Quads.PHI;
 import harpoon.Temp.Temp;
 
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,7 +33,7 @@ import java.util.Stack;
  * <b>CAUTION</b>: it modifies code in-place.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Unreachable.java,v 1.1.2.3 2000-10-17 00:28:31 cananian Exp $
+ * @version $Id: Unreachable.java,v 1.1.2.4 2001-11-08 00:22:52 cananian Exp $
  */
 public abstract class Unreachable  {
 

@@ -40,8 +40,8 @@ import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SET;
 import harpoon.Temp.Temp;
 import harpoon.Util.Default;
-import harpoon.Util.Environment;
-import harpoon.Util.HashEnvironment;
+import harpoon.Util.Collections.Environment;
+import harpoon.Util.Collections.HashEnvironment;
 import harpoon.Util.ParseUtil;
 import harpoon.Util.Util;
 
@@ -60,7 +60,7 @@ import java.util.Set;
  * initializer ordering checks before accessing non-local data.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: InitializerTransform.java,v 1.1.2.18 2001-07-03 06:58:36 cananian Exp $
+ * @version $Id: InitializerTransform.java,v 1.1.2.19 2001-11-08 00:22:52 cananian Exp $
  */
 public class InitializerTransform
     extends harpoon.Analysis.Transformation.MethodSplitter {

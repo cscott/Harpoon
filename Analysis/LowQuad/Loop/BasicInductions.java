@@ -23,7 +23,7 @@ import harpoon.IR.Quads.PHI;
 import harpoon.IR.Quads.Qop;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.SET;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 
@@ -36,7 +36,7 @@ import java.util.Iterator;
  * <code>BasicInductions</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: BasicInductions.java,v 1.1.2.11 2001-06-15 14:26:25 cananian Exp $
+ * @version $Id: BasicInductions.java,v 1.1.2.12 2001-11-08 00:22:21 cananian Exp $
  */
 public class BasicInductions {
     HCode hc;

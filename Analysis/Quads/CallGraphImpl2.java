@@ -15,7 +15,7 @@ import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.CALL;
 import harpoon.Temp.Temp;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,7 +37,7 @@ import java.util.Vector;
  * <code>CallGraphImpl2</code> only works on SSI form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl2.java,v 1.1.2.1 2000-08-25 00:09:18 cananian Exp $
+ * @version $Id: CallGraphImpl2.java,v 1.1.2.2 2001-11-08 00:22:52 cananian Exp $
  */
 public class CallGraphImpl2 implements harpoon.Analysis.CallGraph  {
     final HCodeFactory hcf;

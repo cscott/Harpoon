@@ -8,7 +8,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.IR.Properties.CFGraphable;
 import harpoon.IR.Properties.CFGrapher;
 import harpoon.Util.UnmodifiableIterator;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -19,7 +19,7 @@ import java.util.HashSet;
  * <code>CFGraphable</code> objects. 
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: EdgesIterator.java,v 1.1.2.6 2001-06-17 22:28:35 cananian Exp $
+ * @version $Id: EdgesIterator.java,v 1.1.2.7 2001-11-08 00:21:12 cananian Exp $
  */
 public class EdgesIterator extends UnmodifiableIterator implements Iterator {
     private CFGrapher grapher;

@@ -3,6 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util;
 
+import harpoon.Util.Collections.AbstractMapEntry;
+
 import java.util.AbstractList;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,7 +23,7 @@ import java.util.SortedMap;
  * <code>Enumeration</code>s, and <code>Comparator</code>s.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Default.java,v 1.1.2.14 2001-11-04 19:25:38 cananian Exp $
+ * @version $Id: Default.java,v 1.1.2.15 2001-11-08 00:26:01 cananian Exp $
  */
 public abstract class Default  {
     /** A <code>Comparator</code> for objects that implement 

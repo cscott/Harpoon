@@ -10,7 +10,7 @@ import harpoon.ClassFile.HConstructor;
 import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Loader;
-import harpoon.Util.UniqueVector;
+import harpoon.Util.Collections.UniqueVector;
 
 import java.util.Collections;
 import java.util.Enumeration;
@@ -20,7 +20,7 @@ import java.util.Vector;
  * <code>CallGraph</code> is a command-line call-graph generation tool.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraph.java,v 1.2.2.7 2000-03-21 22:20:42 salcianu Exp $
+ * @version $Id: CallGraph.java,v 1.2.2.8 2001-11-08 00:25:43 cananian Exp $
  */
 
 public abstract class CallGraph extends harpoon.IR.Registration {

@@ -12,7 +12,7 @@ import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HMethod;
 import harpoon.Util.Util;
 import harpoon.Util.Worklist;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import java.util.Set;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -23,7 +23,7 @@ import java.util.Collections;
  * of the call graph for methods that fulfill a certain condition.
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: AllCallers.java,v 1.1.2.10 2001-06-18 20:44:39 cananian Exp $
+ * @version $Id: AllCallers.java,v 1.1.2.11 2001-11-08 00:21:12 cananian Exp $
  */
 
 public class AllCallers {

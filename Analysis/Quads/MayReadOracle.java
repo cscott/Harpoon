@@ -17,9 +17,9 @@ import harpoon.IR.Quads.QuadVisitor;
 import harpoon.IR.Quads.RETURN;
 import harpoon.IR.Quads.SIGMA;
 import harpoon.IR.Quads.THROW;
-import harpoon.Util.DisjointSet;
+import harpoon.Util.Collections.DisjointSet;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Collections.AggregateSetFactory;
 import harpoon.Util.Collections.SetFactory;
 
@@ -35,7 +35,7 @@ import java.util.Set;
  * class 'may' be read on the given edge.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: MayReadOracle.java,v 1.1.2.1 2001-11-07 18:58:00 cananian Exp $
+ * @version $Id: MayReadOracle.java,v 1.1.2.2 2001-11-08 00:22:52 cananian Exp $
  */
 public class MayReadOracle {
     final Map results = new HashMap();

@@ -43,7 +43,7 @@ import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.Analysis.UseDef;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Util;
 import harpoon.Analysis.Maps.TypeMap;
 
@@ -61,7 +61,7 @@ import java.util.Iterator;
  * Note:  Requires patch on 1.06 to do sane things with
  * fields.
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: Jasmin.java,v 1.1.2.35 2000-10-11 01:53:14 cananian Exp $
+ * @version $Id: Jasmin.java,v 1.1.2.36 2001-11-08 00:25:08 cananian Exp $
  */
 public class Jasmin {
     HCode[] hc;

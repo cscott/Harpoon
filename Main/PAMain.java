@@ -70,7 +70,7 @@ import harpoon.Util.LightBasicBlocks.CachingLBBConverter;
 import harpoon.Util.LightBasicBlocks.CachingSCCLBBFactory;
 import harpoon.Util.Graphs.SCComponent;
 import harpoon.Util.Graphs.SCCTopSortedGraph;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.ParseUtil;
 
 import harpoon.Util.TypeInference.TypeInference;
@@ -94,7 +94,7 @@ import harpoon.Analysis.Quads.QuadCounter;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.104 2001-10-18 22:36:33 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.105 2001-11-08 00:25:43 cananian Exp $
  */
 public abstract class PAMain {
 

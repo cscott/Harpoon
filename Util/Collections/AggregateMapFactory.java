@@ -4,7 +4,7 @@
 package harpoon.Util.Collections;
 
 import harpoon.Util.Default;
-import harpoon.Util.PairMapEntry;
+import harpoon.Util.Collections.PairMapEntry;
 
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -24,7 +24,7 @@ import java.util.Set;
  * <code>HashMap</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AggregateMapFactory.java,v 1.1.2.2 2001-11-04 19:27:11 cananian Exp $
+ * @version $Id: AggregateMapFactory.java,v 1.1.2.3 2001-11-08 00:26:11 cananian Exp $
  */
 public class AggregateMapFactory extends MapFactory
     implements java.io.Serializable {

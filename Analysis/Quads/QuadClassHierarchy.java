@@ -25,7 +25,7 @@ import harpoon.IR.Quads.TYPESWITCH;
 import harpoon.Util.ArraySet;
 import harpoon.Util.HClassUtil;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.lang.reflect.Modifier;
 
@@ -46,7 +46,7 @@ import java.util.Set;
  * Native methods are not analyzed.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadClassHierarchy.java,v 1.1.2.33 2001-09-20 01:43:43 cananian Exp $
+ * @version $Id: QuadClassHierarchy.java,v 1.1.2.34 2001-11-08 00:22:52 cananian Exp $
  */
 
 public class QuadClassHierarchy extends harpoon.Analysis.ClassHierarchy

@@ -11,7 +11,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.CALL;
 import harpoon.Util.Util;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,7 +26,7 @@ import java.util.Vector;
  This is the most conservative implementation of <code>CallGraph</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CallGraphImpl.java,v 1.1.2.3 2001-06-18 04:09:14 cananian Exp $
+ * @version $Id: CallGraphImpl.java,v 1.1.2.4 2001-11-08 00:22:52 cananian Exp $
  */
 public class CallGraphImpl implements CallGraph  {
     final HCodeFactory hcf;

@@ -22,7 +22,7 @@ import harpoon.IR.Quads.MONITOREXIT;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.SET;
 import harpoon.Util.ArrayIterator;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Collections.AggregateSetFactory;
 import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
@@ -38,7 +38,7 @@ import java.util.Set;
  * synchronized contexts.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: GlobalFieldOracle.java,v 1.1.2.4 2001-06-17 22:31:54 cananian Exp $
+ * @version $Id: GlobalFieldOracle.java,v 1.1.2.5 2001-11-08 00:23:27 cananian Exp $
  */
 class GlobalFieldOracle extends FieldOracle {
     Set syncRead = new HashSet(); Set syncWrite = new HashSet();

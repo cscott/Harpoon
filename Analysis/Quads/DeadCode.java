@@ -47,7 +47,7 @@ import harpoon.Temp.TempMap;
 import harpoon.Util.Collections.GenericMultiMap;
 import harpoon.Util.Collections.MultiMap;
 import harpoon.Util.Default;
-import harpoon.Util.WorkSet;
+import harpoon.Util.Collections.WorkSet;
 import harpoon.Util.Worklist;
 import harpoon.Util.Util;
 
@@ -67,7 +67,7 @@ import java.util.TreeMap;
  * unused and seeks to prove otherwise.  Also works on LowQuads.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DeadCode.java,v 1.1.2.8 2001-10-31 23:33:02 cananian Exp $
+ * @version $Id: DeadCode.java,v 1.1.2.9 2001-11-08 00:22:52 cananian Exp $
  */
 
 public abstract class DeadCode  {
