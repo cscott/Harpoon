@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.10 2002-03-22 22:31:36 cananian Exp $
+% $Id: oopsla02.tex,v 1.11 2002-03-22 22:38:09 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.10 $ $}{$ $Revision: 1.10 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.11 $ $}{$ $Revision: 1.11 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -641,27 +641,46 @@ splitting is by magnitude of expected gain, from profiling.
 
 \section{Related work}
 
-%%%% XXXXXXXX FIX ME XXXXXXXXXXXX %%%%%%%%%%%%
+Many researchers have focused on the problem of reducing the amount of
+header space required to represent Java
+locks~\cite{BKMS98,OK99,ADGKRW99}. The basic issue is that the vast
+majority of programs do not use the lock associated with every object
+in its full generality, so it is possible to develop improved
+algorithms optimized for the common case rather than the most general
+case. The basic idea is to represent the lock with the minimum amount
+of state (typically a bit) required to support the common usage
+pattern of a thread first acquiring, then releasing the lock in the
+object and to back off to a more elaborate scheme only when the thread
+exhibits a more complex pattern such as nested lock acquires. The
+primary focus has been on improving performance rather than on
+reducing space; however, many of the algorithms also eliminate the
+need to store the complicated locking objects required to support the
+most general lock usage pattern possible in a Java program. These
+techniques typically reduce the lock space overhead to 24 header bits.
 
-Bitwidth analysis of high-level languages is still a fairly new
-technique.  To date, the focus has been on
-reducing the width of variables to enable the use of limited-bitwidth
-operators (such as the MMX instruction set provides)
-or removing unnecessary bits from a datapath for
-hardware synthesis \cite{stephenson00,ananian:siliconc}.
+Research in escape analysis and related analyses can enable the
+compiler to find objects whose locks are never 
+acquired~\cite{ACSE99,BH99,WR99:OOPSLA99,CGSSM99,Ruf00:PLDI00,SR01:PPOPP01}.
+This information can enable the compiler to remove the space
+reserved for synchronization support in these objects. 
+Our hashlock removal algorithm uses a totally dynamic approach
+based on our field externalization mechanism. 
 
-Similarly, the implementation focus for locking primitives has been to
-reduce their size \cite{bacon98} (although they are still present in
-every object) or eliminate the synchronization code
-\cite{salcianu01} (without removing the lock field from the object).
-In this work we attempt to completely remove the fields from the
-header, and since locks often share space with other
-header information (hashcodes, in the common case), our analysis and
-implementation is quite different.  I do not believe there has been
-any prior study of the utilization of the system hashcode features.
+Several researchers have used bitwidth analysis to reduce the size
+of the generated circuits for compilers that generate hardware
+implementations of programs written in C or similar programming 
+languages~\cite{ananian:siliconc,RR00:PLDI00,SBA00:PLDI00,BGSW00}.
+
+Dieckmann and Hoelzle have performed an in-depth analysis of the
+memory allocation behavior of Java programs~\cite{DH99}. Although 
+space is not their primary focus, their study does quantify 
+the space overhead associated the use of a two-word header
+and of 8-byte alignment. In general, our measurements of the 
+memory system behavior of Java programs broadly agree with their
+measurements. 
 
 Sweeny and Tip \cite{SweeneyTip98DeadDataMembers} did a study of dead
-members of C++ programs which parallels the unread field
+members of C++ programs, which is similar to the unread field
 elimination done by our bitwidth analysis.  However, they
 fail to identify {\it constant} members, which our SCC-based algorithm
 does easily.  Further, our results show that unread and constant field
@@ -669,14 +688,14 @@ elimination is very dependent on the coding style of a particular
 application.  The collection of techniques we have presented here
 gives much more consistent savings over a wide range of benchmarks.
 
-Aggarwal and Randall \cite{aggarwal01} described a array bounds check
-removal method using {\it related fields}.  This work attempted to
-discover fields, such as {\tt Vector.size}, which are guaranteed to be
-less than or equal to the length of some array, for example, the
-backing array stored in {\tt Vector.data}.  Tests against the related
-field could then provide information about bounds checks on accesses
-to the array.  A similar technique could be used in this work to
-extend the utility of bitwidth information discovered on related fields.
+%Aggarwal and Randall \cite{aggarwal01} described a array bounds check
+%removal method using {\it related fields}.  This work attempted to
+%discover fields, such as {\tt Vector.size}, which are guaranteed to be
+%less than or equal to the length of some array, for example, the
+%backing array stored in {\tt Vector.data}.  Tests against the related
+%field could then provide information about bounds checks on accesses
+%to the array.  A similar technique could be used in this work to
+%extend the utility of bitwidth information discovered on related fields.
 
 
 \section{Conclusions}
