@@ -14,6 +14,8 @@ import java.util.Collections;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import java.lang.reflect.Modifier;
+
 import harpoon.ClassFile.HCodeFactory;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HClass;
@@ -70,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.50 2000-04-03 10:12:00 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.51 2000-04-03 22:36:14 salcianu Exp $
  */
 public class PointerAnalysis {
 
@@ -1127,6 +1129,19 @@ public class PointerAnalysis {
 	    (java.lang.reflect.Modifier.isNative(modifier)) ||
 	    (java.lang.reflect.Modifier.isAbstract(modifier))
 	    );
+    }
+
+
+    // the set of harmful native methods
+    private static Set hns = new HashSet();
+    //    static{
+    // here should be put some initializations for the hns set
+    //}
+
+    public final boolean harmful_native(HMethod hm){
+	if(!Modifier.isNative(hm.getModifiers()))
+	    return false;
+	return hns.contains(hm);
     }
 
     /** Prints some statistics. */

@@ -22,7 +22,7 @@ import harpoon.Util.Util;
  of Martin and John Whaley.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: ParIntGraph.java,v 1.1.2.27 2000-04-03 20:22:52 salcianu Exp $
+ * @version $Id: ParIntGraph.java,v 1.1.2.28 2000-04-03 22:36:14 salcianu Exp $
  */
 public class ParIntGraph {
 
@@ -198,7 +198,8 @@ public class ParIntGraph {
 	return pig2;
     }
 
-    private final ParIntGraph retain_essential(PANode[] params,boolean is_main){
+    private final ParIntGraph retain_essential(PANode[] params,
+					       boolean is_main){
 	HashSet remaining_nodes = new HashSet();
 	remaining_nodes.addAll(tau.activeThreadSet());
 
