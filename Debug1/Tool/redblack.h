@@ -1,5 +1,5 @@
 /*
- * RCS $Id: redblack.h,v 1.2 2003-07-22 00:59:16 cristic Exp $
+ * RCS $Id: redblack.h,v 1.3 2003-07-22 01:55:45 cristic Exp $
  */
 
 /*
@@ -76,8 +76,9 @@ void rbcloselist(RBLIST *);
 /*
  *
  * $Log: redblack.h,v $
- * Revision 1.2  2003-07-22 00:59:16  cristic
- * First buggy program
+ * Revision 1.3  2003-07-22 01:55:45  cristic
+ *
+ * Removed mount/unmount procedures
  *
  * Revision 1.4  2003/06/18 06:08:18  bdemsky
  *

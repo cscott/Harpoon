@@ -82,39 +82,65 @@ int main(int argc, char **argv)
     }
 
   printfile("link_98", ptr);
-
-  unmountdisk(ptr);
 }
 
 
 
-struct block * mountdisk(char *filename) 
+
+struct block* createdisk()
 {
-  int fd=open(filename,O_CREAT|O_RDWR);
-  struct block *ptr=(struct block *) mmap(NULL,LENGTH,PROT_READ|PROT_WRITE|PROT_EXEC,MAP_SHARED,fd,0);
-  struct SuperBlock *sb=(struct SuperBlock *) &ptr[0];
+  int blocksize=BLOCKSIZE;
+  int numblocks=NUMBLOCK;
+
+  block *ptr=(struct block*) calloc(numblocks, blocksize);
+  
+  struct SuperBlock *sb=(struct SuperBlock*) &ptr[0];
+  sb->FreeBlockCount=NUMBLOCK-5;
+  sb->FreeInodeCount=NUMINODES-1;
+  sb->NumberofInodes=NUMINODES;
+  sb->NumberofBlocks=NUMBLOCK;
+  sb->RootDirectoryInode=0;
+  sb->blocksize=BLOCKSIZE;
+    
   struct GroupBlock *gb=(struct GroupBlock *) &ptr[1];
+  gb->BlockBitmapBlock=2;
+  gb->InodeBitmapBlock=3;
+  gb->InodeTableBlock=4;
+  gb->GroupFreeBlockCount=NUMBLOCK-5;
+  gb->GroupFreeInodeCount=NUMINODES-1;
+
+  struct BlockBitmap *bb=(struct BlockBitmap *) &ptr[2];
+  for(int i=0;i<(5+12);i++)
+    bb->blocks[i/8]=bb->blocks[i/8]|(1<<(i%8));
+
+
+  struct InodeBitmap *ib=(struct InodeBitmap *) &ptr[3];
+  ib->inode[0]=1;
+
+
+  struct InodeTable *itb=(struct InodeTable *) &ptr[4];
+
+  itb->entries[0].referencecount=0;    
+  itb->entries[0].filesize=12*BLOCKSIZE;
+  for(int i=0;i<12;i++)
+    itb->entries[0].Blockptr[i]=i+5;
+
+  
   bbbptr=gb->BlockBitmapBlock;
   ibbptr=gb->InodeBitmapBlock;
   itbptr=gb->InodeTableBlock;
   rdiptr=sb->RootDirectoryInode;
+
   
   ibb=(struct InodeBitmap *) &ptr[ibbptr];
   bbb=(struct BlockBitmap *) &ptr[bbbptr];
-  
-  printf("Disk mounted successfully from the file %s\n", filename);
-  fflush(NULL);
-  
+
+  printf("Disk created successfully!\n");
+
   return ptr;
 }
 
 
-void unmountdisk(struct block *vptr) 
-{
-  int val=munmap(vptr,LENGTH);
-  if (val!=0)
-    printf("Error!\n");
-}
 
 
 int openfile(struct block *ptr, char *filename) 
@@ -334,59 +360,6 @@ int getblock(struct block * ptr)
 }
 
 
-
-struct block* createdisk()
-{
-  int blocksize=BLOCKSIZE;
-  int numblocks=NUMBLOCK;
-
-  char *ptr=(struct block*) calloc(numblocks, blocksize);
-  
-  struct SuperBlock *sb=(struct SuperBlock*) &ptr[0];
-  sb->FreeBlockCount=NUMBLOCK-5;
-  sb->FreeInodeCount=NUMINODES-1;
-  sb->NumberofInodes=NUMINODES;
-  sb->NumberofBlocks=NUMBLOCK;
-  sb->RootDirectoryInode=0;
-  sb->blocksize=BLOCKSIZE;
-    
-  struct GroupBlock *gb=(struct GroupBlock *) &ptr[1];
-  gb->BlockBitmapBlock=2;
-  gb->InodeBitmapBlock=3;
-  gb->InodeTableBlock=4;
-  gb->GroupFreeBlockCount=NUMBLOCK-5;
-  gb->GroupFreeInodeCount=NUMINODES-1;
-
-  struct BlockBitmap *bb=(struct BlockBitmap *) &ptr[2];
-  for(int i=0;i<(5+12);i++)
-    bb->blocks[i/8]=bb->blocks[i/8]|(1<<(i%8));
-
-
-  struct InodeBitmap *ib=(struct InodeBitmap *) &ptr[3];
-  ib->inode[0]=1;
-
-
-  struct InodeTable *itb=(struct InodeTable *) &ptr[4];
-
-  itb->entries[0].referencecount[0]=0;    
-  itb->entries[0].filesize=12*BLOCKSIZE;
-  for(int i=0;i<12;i++)
-    itb->entries[0].Blockptr[i]=i+5;
-
-  
-  bbbptr=gb->BlockBitmapBlock;
-  ibbptr=gb->InodeBitmapBlock;
-  itbptr=gb->InodeTableBlock;
-  rdiptr=sb->RootDirectoryInode;
-
-  
-  ibb=(struct InodeBitmap *) &ptr[ibbptr];
-  bbb=(struct BlockBitmap *) &ptr[bbbptr];
-
-  printf("Disk created successfully!\n");
-
-  return ptr;
-}
 
 
 
