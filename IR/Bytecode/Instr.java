@@ -7,7 +7,8 @@ import harpoon.ClassFile.HCodeEdge;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.Util.ArrayFactory;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 /**
  * <code>Bytecode.Instr</code> is the base type for the specific
  * bytecode instruction classes.  It provides standard methods
@@ -18,7 +19,7 @@ import java.util.Vector;
  * a unique numeric identifier.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Instr.java,v 1.3.2.4 1999-01-22 23:05:47 cananian Exp $
+ * @version $Id: Instr.java,v 1.3.2.5 1999-02-23 04:32:44 cananian Exp $
  * @see InGen
  * @see InCti
  * @see InMerge
@@ -26,7 +27,7 @@ import java.util.Vector;
  * @see Code
  */
 public abstract class Instr 
-  implements HCodeElement, harpoon.IR.Properties.Edges {
+  implements HCodeElement, harpoon.IR.Properties.Edges, Comparable {
   /*final*/ String sourcefile;
   /*final*/ int linenumber;
   /*final*/ int id;
@@ -34,6 +35,10 @@ public abstract class Instr
   protected Instr(String sourcefile, int linenumber) {
     this.sourcefile = sourcefile;
     this.linenumber = linenumber;
+    /* it would be nice if this were unique for a particular Instr in a
+     * method, instead of depending on the translation order of different
+     * methods, but we'll settle for the total ordering Comparable implies.
+     */
     synchronized(lock) {
       this.id = next_id++;
     }
@@ -51,6 +56,15 @@ public abstract class Instr
   public int getID() { return id; }
   /** Returns the java bytecode of this instruction. */
   public abstract byte getOpcode();
+  /** Natural ordering on <code>Instr</code>s. */
+  public int compareTo(Object o) {
+    /* ordering is by id. */
+    return ((Instr)o).id - this.id;
+  }
+  public boolean equals(Object o) { // exploit global uniqueness of id.
+    return ( (o instanceof Instr) && (((Instr)o).id == this.id) );
+  }
+  public int hashCode() { return id; } // exploit global uniqueness of id.
 
   /** Array Factory: makes <code>Instr[]</code>s. */
   public static final ArrayFactory arrayFactory =
@@ -61,31 +75,31 @@ public abstract class Instr
   /** Return a list of all the <code>Instr</code>s that can precede
    *  this one. */
   public Instr[] prev() {
-    Instr[] p = new Instr[prev.size()]; prev.copyInto(p); return p;
+    Instr[] p = new Instr[prev.size()]; return (Instr[]) prev.toArray(p);
   }
   /** Return a list of all the possible <code>Instr</code>s that may
    *  succeed this one. */
   public Instr[] next() {
-    Instr[] n = new Instr[next.size()]; next.copyInto(n); return n;
+    Instr[] n = new Instr[next.size()]; return (Instr[]) next.toArray(n);
   }
   /** Return the specified successor of this <code>Instr</code>. */
-  public Instr next(int i) { return (Instr) next.elementAt(i); }
+  public Instr next(int i) { return (Instr) next.get(i); }
   /** Return the specified predecessor of this <code>Instr</code>. */
-  public Instr prev(int i) { return (Instr) prev.elementAt(i); }
+  public Instr prev(int i) { return (Instr) prev.get(i); }
 
   /** Add a predecessor to this <code>Instr</code>. */
-  void addPrev(Instr prev) { this.prev.addElement(prev); }
+  void addPrev(Instr prev) { this.prev.add(prev); }
   /** Add a successor to this <code>Instr</code>. */
-  void addNext(Instr next) { this.next.addElement(next); }
+  void addNext(Instr next) { this.next.add(next); }
   /** Remove a predecessor from this <code>Instr</code>. */
-  void removePrev(Instr prev) { this.prev.removeElement(prev); }
+  void removePrev(Instr prev) { this.prev.remove(prev); }
   /** Remove a successor from this <code>Instr</code>. */
-  void removeNext(Instr next) { this.next.removeElement(next); }
+  void removeNext(Instr next) { this.next.remove(next); }
 
   /** Internal predecessor list. */
-  final Vector prev = new Vector(2);
+  final List prev = new ArrayList(2);
   /** Internal successor list. */
-  final Vector next = new Vector(2);
+  final List next = new ArrayList(2);
 
   // Edges interface:
   public HCodeEdge newEdge(final Instr from, final Instr to) {
@@ -103,13 +117,13 @@ public abstract class Instr
   public HCodeEdge[] succ() {
     HCodeEdge[] r = new HCodeEdge[next.size()];
     for (int i=0; i<r.length; i++)
-      r[i] = newEdge(this, (Instr) next.elementAt(i));
+      r[i] = newEdge(this, (Instr) next.get(i));
     return r;
   }
   public HCodeEdge[] pred() {
     HCodeEdge[] r = new HCodeEdge[prev.size()];
     for (int i=0; i<r.length; i++)
-      r[i] = newEdge((Instr)prev.elementAt(i), this);
+      r[i] = newEdge((Instr)prev.get(i), this);
     return r;
   }
   public HCodeEdge[] edges() {
