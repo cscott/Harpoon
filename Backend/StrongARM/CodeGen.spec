@@ -66,7 +66,7 @@ import java.util.Iterator;
  * 
  * @see Jaggar, <U>ARM Architecture Reference Manual</U>
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.129 2000-02-14 00:54:51 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.130 2000-02-14 04:01:48 cananian Exp $
  */
 // NOTE THAT the StrongARM actually manipulates the DOUBLE type in quasi-
 // big-endian (45670123) order.  To keep things simple, the 'low' temp in
@@ -1640,21 +1640,107 @@ METHOD(params) %{
     }
 }%
 
-CJUMP(BINOP(CMPEQ, j, CONST<i,p>(c)), iftrue, iffalse)
-%pred %( c==null || isOpd2Imm(c) )%
-%{  // this is a frequent special case.
-    emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n" +
-	         "beq `L0",
-	  null, new Temp[] { j }, new Label[] { iftrue });
-    emitJUMP( ROOT, "b `L0", iffalse );
-}%
-
 CJUMP(test, iftrue, iffalse) %{
     Instr j1 = emit( ROOT, "cmp `s0, #0 \n" +
 			   "beq `L0", 
 			   null, new Temp[]{ test },
 			   new Label[]{ iffalse });
     Instr j2 = emitJUMP( ROOT, "b `L0", iftrue );
+}%
+
+CJUMP(BINOP(CMPEQ, j, k), iftrue, iffalse)
+%pred %( ((BINOP) ROOT.getTest()).operandType()==Type.POINTER ||
+	 ((BINOP) ROOT.getTest()).operandType()==Type.INT )%
+%{
+    emit( ROOT, "cmp `s0, `s1\n" +
+	        "beq `L0",
+	  null, new Temp[] { j , k }, new Label[] { iftrue });
+    emitJUMP( ROOT, "b `L0", iffalse );
+}%
+
+CJUMP(BINOP(CMPGT, j, k), iftrue, iffalse)
+%pred %( ((BINOP) ROOT.getTest()).operandType()==Type.POINTER ||
+	 ((BINOP) ROOT.getTest()).operandType()==Type.INT )%
+%{
+    emit( ROOT, "cmp `s0, `s1\n" +
+	        "bgt `L0",
+	  null, new Temp[] { j , k }, new Label[] { iftrue });
+    emitJUMP( ROOT, "b `L0", iffalse );
+}%
+
+CJUMP(BINOP(CMPGE, j, k), iftrue, iffalse)
+%pred %( ((BINOP) ROOT.getTest()).operandType()==Type.POINTER ||
+	 ((BINOP) ROOT.getTest()).operandType()==Type.INT )%
+%{
+    emit( ROOT, "cmp `s0, `s1\n" +
+	        "bge `L0",
+	  null, new Temp[] { j , k }, new Label[] { iftrue });
+    emitJUMP( ROOT, "b `L0", iffalse );
+}%
+
+CJUMP(BINOP(CMPLE, j, k), iftrue, iffalse)
+%pred %( ((BINOP) ROOT.getTest()).operandType()==Type.POINTER ||
+	 ((BINOP) ROOT.getTest()).operandType()==Type.INT )%
+%{
+    emit( ROOT, "cmp `s0, `s1\n" +
+	        "ble `L0",
+	  null, new Temp[] { j , k }, new Label[] { iftrue });
+    emitJUMP( ROOT, "b `L0", iffalse );
+}%
+
+CJUMP(BINOP(CMPLT, j, k), iftrue, iffalse)
+%pred %( ((BINOP) ROOT.getTest()).operandType()==Type.POINTER ||
+	 ((BINOP) ROOT.getTest()).operandType()==Type.INT )%
+%{
+    emit( ROOT, "cmp `s0, `s1\n" +
+	        "blt `L0",
+	  null, new Temp[] { j , k }, new Label[] { iftrue });
+    emitJUMP( ROOT, "b `L0", iffalse );
+}%
+
+CJUMP(BINOP(CMPEQ, j, CONST<i,p>(c)), iftrue, iffalse)
+%pred %( c==null || isOpd2Imm(c) )%
+%{  // this is a frequent special case.
+    emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n" +
+	        "beq `L0",
+	  null, new Temp[] { j }, new Label[] { iftrue });
+    emitJUMP( ROOT, "b `L0", iffalse );
+}%
+
+CJUMP(BINOP(CMPGT, j, CONST<i,p>(c)), iftrue, iffalse)
+%pred %( c==null || isOpd2Imm(c) )%
+%{
+    emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n" +
+	        "bgt `L0",
+	  null, new Temp[] { j }, new Label[] { iftrue });
+    emitJUMP( ROOT, "b `L0", iffalse );
+}%
+
+CJUMP(BINOP(CMPGE, j, CONST<i,p>(c)), iftrue, iffalse)
+%pred %( c==null || isOpd2Imm(c) )%
+%{
+    emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n" +
+	        "bge `L0",
+	  null, new Temp[] { j }, new Label[] { iftrue });
+    emitJUMP( ROOT, "b `L0", iffalse );
+}%
+
+CJUMP(BINOP(CMPLE, j, CONST<i,p>(c)), iftrue, iffalse)
+%pred %( c==null || isOpd2Imm(c) )%
+%{
+    emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n" +
+	        "ble `L0",
+	  null, new Temp[] { j }, new Label[] { iftrue });
+    emitJUMP( ROOT, "b `L0", iffalse );
+}%
+
+CJUMP(BINOP(CMPLT, j, CONST<i,p>(c)), iftrue, iffalse)
+%pred %( c==null || isOpd2Imm(c) )%
+%{
+    emit( ROOT, "cmp `s0, #"+(c==null?"0 @ null":c.toString())+"\n" +
+	        "blt `L0",
+	  null, new Temp[] { j }, new Label[] { iftrue });
+    emitJUMP( ROOT, "b `L0", iffalse );
 }%
 
 EXP(e) %{
@@ -1770,14 +1856,16 @@ MOVE(MEM<l,d>(dst), src) %{
 		      null, new Temp[]{ src, dst }));   
 }%
 
-RETURN(val) %{
-    if (val instanceof TwoWordTemp) {
-	// these should really be InstrMOVEs!
-	emit( ROOT, "mov `d0, `s0l", r0, val);
-	emit( ROOT, "mov `d0, `s0h", r1, val);
-    } else {
-	emitMOVE( ROOT, "mov `d0, `s0", r0, val );
-    }
+RETURN<i,f,p>(val) %{
+    emitMOVE( ROOT, "mov `d0, `s0", r0, val );
+    // mark exit point.
+    emit(new InstrEXIT( instrFactory, ROOT ));
+}%
+
+RETURN<l,d>(val) %{
+    // these should really be InstrMOVEs!
+    emit( ROOT, "mov `d0, `s0l", r0, val);
+    emit( ROOT, "mov `d0, `s0h", r1, val);
     // mark exit point.
     emit(new InstrEXIT( instrFactory, ROOT ));
 }%
