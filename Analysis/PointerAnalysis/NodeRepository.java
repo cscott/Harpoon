@@ -19,7 +19,7 @@ import harpoon.Analysis.MetaMethods.MetaMethod;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.18 2000-04-03 10:07:43 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.19 2000-04-03 10:49:27 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -266,7 +266,7 @@ public class NodeRepository {
     // shows the specializations (call site and thread specs) for node.
     private void show_node_specs(PANode node, int ident){
 
-	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE)
+	if(PointerAnalysis.CALL_CONTEXT_SENSITIVE){
 	    for(Iterator it = node.getAllCSSpecs().iterator(); it.hasNext(); ){
 		Map.Entry entry = (Map.Entry) it.next();
 		CALL       q = (CALL) entry.getKey();
@@ -288,6 +288,14 @@ public class NodeRepository {
 		System.out.println();
 		show_node_specs(snode, ident+1);
 	    }
+	    PANode bottom = node.getBottom();
+	    if(bottom != null){
+		for(int i = 0; i < ident ; i++)
+		    System.out.print(" ");
+		System.out.print(bottom);
+		System.out.println("B");
+	    }
+	}
 
 	if(PointerAnalysis.THREAD_SENSITIVE)
 	    for(Iterator it = node.getAllTSpecs().iterator(); it.hasNext(); ){
@@ -316,11 +324,3 @@ public class NodeRepository {
     }
 
 }
-
-
-
-
-
-
-
-

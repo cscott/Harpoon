@@ -20,7 +20,7 @@ import harpoon.Util.DataStructs.LightMap;
  * algorithm.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PANode.java,v 1.1.2.17 2000-04-03 06:15:26 salcianu Exp $
+ * @version $Id: PANode.java,v 1.1.2.18 2000-04-03 10:49:27 salcianu Exp $
  */
 final public class PANode {
     // activates some safety tests
@@ -181,6 +181,16 @@ final public class PANode {
 	return cs_parent;
     }
 
+    /** Returns the bottom field: the last specialization. */ 
+    public final PANode getBottom(){
+	return bottom;
+    }
+
+    /** Returns the specialization depth of <code>this</code> node. */
+    public final int getCallChainDepth(){
+	return call_chain_depth;
+    }
+    
     //////////////////////// THREAD_SENSITIVE /////////////////////////////
 
     /** Returns the specialized node of <code>this</code> node for the

@@ -58,7 +58,7 @@ import harpoon.Util.Util;
  <code>CallGraph</code>.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MetaCallGraphImpl.java,v 1.1.2.13 2000-04-03 10:07:37 salcianu Exp $
+ * @version $Id: MetaCallGraphImpl.java,v 1.1.2.14 2000-04-03 10:49:24 salcianu Exp $
  */
 public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 
@@ -280,6 +280,9 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
     // counts the number of metamethods called at a "virtual" call site.
     private int nb_meta_methods;
 
+    // counts the number of allocated metamethods (approximation)
+    private int mmcounter = 0;
+
     // determine the exact meta-method which is called at the call site "cs",
     // based on the specialized types found in "param_types".
     private void specialize_the_call(HMethod hm, CALL cs){
@@ -294,8 +297,12 @@ public class MetaCallGraphImpl extends MetaCallGraphAbstr{
 	    MetaMethod mm_callee = new MetaMethod(hm,param_types);
 	    nb_meta_methods++;
 	    record_call(mm_work,cs,mm_callee);
-	    if(!analyzed_mm.contains(mm_callee))
+	    if(!analyzed_mm.contains(mm_callee)){
 		WMM.add(mm_callee);
+		mmcounter++;
+		if((mmcounter % 100) == 0)
+		    System.out.println(mmcounter + " meta methods");
+	    }
     }
 
     // "rec" generates all the possible combinations of types for the
