@@ -12,7 +12,7 @@ all:	java
 
 java:	$(ALLSOURCE)
 #	${JCC} ${JFLAGS} `javamake.sh */*.java`
-	${JCC} ${JFLAGS} ${JFLAGSVERB} `javamake.sh */*.java */*/*.java` | \
+	${JCC} ${JFLAGS} ${JFLAGSVERB} `javamake.sh $(ALLSOURCE)` | \
 		egrep -v '^\[[lc]'
 	touch java
 
