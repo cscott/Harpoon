@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: oopsla02.tex,v 1.6 2002-03-22 13:56:35 cananian Exp $
+% $Id: oopsla02.tex,v 1.7 2002-03-22 15:15:08 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[preprint]{acmconf}
 % don't forget to turn off 'preprint' before submission!
@@ -27,7 +27,7 @@
 
 \begin{document}
 % in preprint mode, tag pages with a revision identifier.
-%\pagestyle{myheadings}\markboth{$ $Revision: 1.6 $ $}{$ $Revision: 1.6 $ $}
+%\pagestyle{myheadings}\markboth{$ $Revision: 1.7 $ $}{$ $Revision: 1.7 $ $}
 \bibliographystyle{plain}
 
 \maketitle
@@ -341,13 +341,89 @@ graph-coloring algorithm.  The results of some class casts and {\tt
   instanceof} operations can also be determined statically using
 these results.
 
-\subsection{Definite Initialization Analysis}
 \subsection{Bitwidth Analysis}
 % this allows us to reduce fields and remove unused/const fields.
+\subsection{Definite Initialization Analysis}
+The Java field semantics dictate that uninitialized fields must have
+the value zero (or {\tt null}, for pointer fields).  If a field is not
+{\it definitely initialized}, this default zero value may be seen by
+the program.  In order to make our bitwidth analysis more precise, we
+must determine whether a field is {\it definitely initialized} in its
+constructors.  If it is, then the lattice value for the field can
+start at $\bot$.  Otherwise, the lattice value must start at
+{\bf 0}, which makes it more difficult to extract constants.
+
+\begin{figure}
+\begin{samplecode}
+public class A \{\\
+\>int f;\\
+\>A$_1$(\ldots) \{ f = 5; \}\\
+\>A$_2$(\ldots) \{\\
+\>\>// no assignment to f\\
+\>\}\\
+\}\\
+\end{samplecode}
+\caption{Use example for the definite initialization analysis.
+With only constructor {\tt A$_1$}, field {\tt f} will get the
+lattice value {\bf 5}.  But constructor {\tt A$_2$} allows the
+default {\bf 0} value of {\tt f} to be seen, because {\tt f}
+is not {\it definitely-initialized}.}
+\label{fig:definit-example}
+\end{figure}
+
+{\bf XXX fixme, refer to figure \ref{fig:definit-example}.}
+
 \subsection{Profiling Mostly-Constant Fields}
+instrument the code to increment a per-class counter the first time a
+non-N value is set in the field.  by comparing this counter value to
+the number of times the class is instantiated, we can determine how
+often the field is 'always-N' and thus how much space we'd save by
+doing a mostly-N transformation.
+
+problem: default zero value. (not an issue if N==0)
+
+so we use the definite initialization analysis.  if the field is
+not definitely initialized on a given path through a constructor,
+we must assume the default zero value ``leaks'' and so we treat
+the path as if it were a SET of a non-N value (ie. increment the
+counter).
+
 \subsection{Finding Subclass-Final Fields}
+a generalization of java's ``final''.
+
+first generalization: allow multiple writes, but all must be in the
+constructor.
+
+a ``this-final'' field is only written in constructors of its type;
+not subclass constructors (how would it be?).  the receiver of every
+write to the field must be 'this'.
+
+a ``subclass-final'' field is only written in constructors of its type
+*and any method of a subclass*.  every write within its own
+constructor must be to the 'this' field as before.  (subclasses
+can write indiscriminately because they always inherit from the 'expanded'
+version of the class)
+
+construct set of subclass final fields by constructing its dual:
+for every SET in a method: if method is a constructor and receiver
+is this (must-param 0) then okay.  if field belongs to a superclass
+(not this) then okay.  if method is a constructor and field belongs
+to this class or a superclass then okay????  otherwise add to set
+of bad fields.
+
 \subsection{Constructor Classification}
 % includes MustParamOracle and ConstMap
+
+in constructor:
+  merge all SET ops on fields of this: is must param?  const? (use bw)
+  treat 'this' constructor as inlined.
+  all other calls: we know that there are no bad writes in non-constr,
+   because field is subclass-final.
+
+if merged value at end is param or constant, then this constructor
+can be specialized on that field.  we split all subclass-final fields
+which are 'good' for at least one callable constructor.  order of
+splitting is by magnitude of expected gain, from profiling.
 
 \section{Implementation Issues}
 
