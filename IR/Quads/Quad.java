@@ -15,7 +15,7 @@ import java.util.Hashtable;
  * No <code>Quad</code>s throw exceptions implicitly.
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.4 1998-12-17 21:38:37 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.5 1998-12-23 22:17:57 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -42,7 +42,7 @@ public abstract class Quad
 	this.prev = new Edge[prev_arity];
 	this.next = new Edge[next_arity];
 
-	this.hashCode = id ^ kind() ^
+	this.hashCode = (id<<5) ^ kind() ^
 	    qf.getParent().getName().hashCode() ^
 	    qf.getParent().getMethod().hashCode();
     }
@@ -188,10 +188,11 @@ public abstract class Quad
 	for (int i=0; i<quadlist.length-1; i++)
 	    addEdge(quadlist[i], 0, quadlist[i+1], 0);
     }
-    /** Replace one quad with another. */
+    /** Replace one quad with another. The number of in and out edges of
+     *  the new and old quads must match exactly. */
     public static void replace(Quad oldQ, Quad newQ) {
-	Util.assert(oldQ.next.length <= newQ.next.length);
-	Util.assert(oldQ.prev.length <= newQ.prev.length);
+	Util.assert(oldQ.next.length == newQ.next.length);
+	Util.assert(oldQ.prev.length == newQ.prev.length);
 	for (int i=0; i<oldQ.next.length; i++) {
 	    Edge e = oldQ.next[i];
 	    addEdge(newQ, i, (Quad) e.to(), e.which_pred());
