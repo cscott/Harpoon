@@ -93,7 +93,7 @@ for ($i=0; $i<=$#lines; $i++) {
 
 # insert header and footer
 &insertBefore(0,0,"<HTML><HEAD><TITLE>$filename</TITLE></HEAD>\n".
-	          "<BODY BGCOLOR=white><PRE>");
+	          "<BODY BGCOLOR=\"azure\"><PRE>");
 &insertAfter($#lines,-1+length($lines[$#lines]),"</PRE></BODY></HTML>\n");
 
 # print results
