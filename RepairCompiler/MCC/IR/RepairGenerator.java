@@ -5,7 +5,6 @@ import java.util.*;
 import MCC.State;
 
 public class RepairGenerator {
-
     State state;
     java.io.PrintWriter outputrepair = null;
     java.io.PrintWriter outputaux = null;
@@ -22,6 +21,9 @@ public class RepairGenerator {
     HashSet usedupdates;
     Termination termination;
     Set removed;
+    static boolean DEBUG=false;
+    Cost cost;
+    Sources sources;
 
     public RepairGenerator(State state, Termination t) {
         this.state = state;
@@ -29,6 +31,8 @@ public class RepairGenerator {
 	usedupdates=new HashSet();
 	termination=t;
 	removed=t.removedset;
+	cost=new Cost();
+	sources=new Sources(state);
 	Repair.repairgenerator=this;
     }
 
@@ -47,9 +51,9 @@ public class RepairGenerator {
     }
 
     public void generate(OutputStream outputrepair, OutputStream outputaux,OutputStream outputhead, String st) {
-        this.outputrepair = new java.io.PrintWriter(outputrepair, true); 
-        this.outputaux = new java.io.PrintWriter(outputaux, true); 
-        this.outputhead = new java.io.PrintWriter(outputhead, true); 
+        this.outputrepair = new java.io.PrintWriter(outputrepair, true);
+        this.outputaux = new java.io.PrintWriter(outputaux, true);
+        this.outputhead = new java.io.PrintWriter(outputhead, true);
         headername=st;
 	name_updates();
 
@@ -58,9 +62,13 @@ public class RepairGenerator {
 	generate_stateobject();
 	generate_call();
 	generate_worklist();
-        generate_rules();/*
+        generate_rules();
         generate_checks();
-        generate_teardown();*/
+        generate_teardown();
+	CodeWriter crhead = new StandardCodeWriter(this.outputhead);
+	CodeWriter craux = new StandardCodeWriter(this.outputaux);
+	crhead.outputline("};");
+	craux.outputline("};");
     }
 
     
@@ -116,6 +124,8 @@ public class RepairGenerator {
         CodeWriter craux = new StandardCodeWriter(outputaux);
         CodeWriter crhead = new StandardCodeWriter(outputhead);
         crhead.outputline("#include \"SimpleHash.h\"");
+        crhead.outputline("#include <stdio.h>");
+        crhead.outputline("#include <stdlib.h>");
 	crhead.outputline("class "+name+" {");
 	crhead.outputline("public:");
 	crhead.outputline(name+"();");
@@ -207,18 +217,26 @@ public class RepairGenerator {
 	goodflag=VarDescriptor.makeNew("goodflag");
 	repairtable=VarDescriptor.makeNew("repairtable");
 	crhead.outputline("void doanalysis();");
-	craux.outputline("void "+name +"_state::doanalysis() {");
+	craux.outputline("void "+name +"_state::doanalysis()");
+	craux.startblock();
 	craux.outputline(name+ " * "+oldmodel.getSafeSymbol()+"=0;");
         craux.outputline("WorkList * "+worklist.getSafeSymbol()+" = new WorkList();");
 	craux.outputline("RepairHash * "+repairtable.getSafeSymbol()+"=0;");
-	craux.outputline("while (1) {");
+	craux.outputline("while (1)");
+	craux.startblock();
 	craux.outputline("int "+goodflag.getSafeSymbol()+"=1;");
 	craux.outputline(name+ " * "+newmodel.getSafeSymbol()+"=new "+name+"();");
     }
     
     private void generate_teardown() {
 	CodeWriter cr = new StandardCodeWriter(outputaux);        
+	cr.outputline("if ("+repairtable.getSafeSymbol()+")");
+	cr.outputline("delete "+repairtable.getSafeSymbol()+";");
+	cr.outputline("if ("+oldmodel.getSafeSymbol()+")");
+	cr.outputline("delete "+oldmodel.getSafeSymbol()+";");
+	cr.outputline("delete "+newmodel.getSafeSymbol()+";");
 	cr.outputline("delete "+worklist.getSafeSymbol()+";");
+	cr.endblock();
     }
 
     private void generate_rules() {
@@ -258,7 +276,7 @@ public class RepairGenerator {
                 CodeWriter cr = new StandardCodeWriter(outputaux) {
                         public SymbolTable getSymbolTable() { return st; }
                     };
-		cr.outputline("// build " + rule.getLabel());
+		cr.outputline("// build " +escape(rule.toString()));
                 cr.startblock();
                 ListIterator quantifiers = rule.quantifiers();
                 while (quantifiers.hasNext()) {
@@ -321,7 +339,7 @@ public class RepairGenerator {
 		cr.outputline("int "+typevar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->gettype();");
 		cr.outputline("int "+leftvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getlvalue();");
 		cr.outputline("int "+rightvar.getSafeSymbol()+"="+worklist.getSafeSymbol()+"->getrvalue();");
-                cr.outputline("// build " + rule.getLabel());
+		cr.outputline("// build " +escape(rule.toString()));
 
 
 		for (int j=0;j<rule.numQuantifiers();j++) {
@@ -370,6 +388,18 @@ public class RepairGenerator {
         cr2.endblock();
     }
 
+    public static String escape(String s) {
+	String newstring="";
+	for(int i=0;i<s.length();i++) {
+	    char c=s.charAt(i);
+	    if (c=='"')
+		newstring+="\"";
+	    else
+		newstring+=c;
+	}
+	return newstring;
+    }
+
     private void generate_checks() {
 
         /* do constraint checks */
@@ -386,8 +416,8 @@ public class RepairGenerator {
                 CodeWriter cr = new StandardCodeWriter(outputaux) {
                         public SymbolTable getSymbolTable() { return st; }
                     };
-                
-                cr.outputline("// checking " + constraint.getLabel());
+
+                cr.outputline("// checking " + escape(constraint.toString()));
                 cr.startblock();
 
                 ListIterator quantifiers = constraint.quantifiers();
@@ -406,31 +436,471 @@ public class RepairGenerator {
                 
                 cr.outputline("if (maybe)");
                 cr.startblock();
-                cr.outputline("__Success = 0;");
-                cr.outputline("printf(\"maybe fail " + (i+1) + ". \");");
+                cr.outputline("printf(\"maybe fail " +  escape(constraint.toString()) + ". \");");
                 cr.outputline("exit(1);");
                 cr.endblock();
 
                 cr.outputline("else if (!" + constraintboolean.getSafeSymbol() + ")");
                 cr.startblock();
+                if (DEBUG)
+		    cr.outputline("printf(\"fail " + escape(constraint.toString()) + ". \");");
 
-                cr.outputline("__Success = 0;");
-                cr.outputline("printf(\"fail " + (i+1) + ". \");");
-                cr.outputline("exit(1);");
+		/* Do repairs */
+		/* Build new repair table */
+	        cr.outputline("if ("+repairtable.getSafeSymbol()+")");
+		cr.outputline("delete "+repairtable.getSafeSymbol()+";");
+                cr.outputline(repairtable.getSafeSymbol()+"=new RepairHash();");
+
+		
+		/* Compute cost of each repair */
+		VarDescriptor mincost=VarDescriptor.makeNew("mincost");
+		VarDescriptor mincostindex=VarDescriptor.makeNew("mincostindex");
+		DNFConstraint dnfconst=constraint.dnfconstraint;
+		cr.outputline("int "+mincostindex.getSafeSymbol()+";");
+		if (dnfconst.size()>1) {
+		    boolean first=true;
+		    for(int j=0;j<dnfconst.size();j++) {
+			Conjunction conj=dnfconst.get(j);
+			GraphNode gn=(GraphNode)termination.conjtonodemap.get(conj);
+			if (removed.contains(gn))
+			    continue;
+			
+			VarDescriptor costvar;
+			if (first) {
+			    costvar=mincost;
+                        } else
+			    costvar=VarDescriptor.makeNew("cost");
+			for(int k=0;k<conj.size();k++) {
+			    DNFPredicate dpred=conj.get(k);
+			    Predicate p=dpred.getPredicate();
+			    boolean negate=dpred.isNegated();
+			    VarDescriptor predvalue=VarDescriptor.makeNew("Predicatevalue");
+			    p.generate(cr,predvalue);
+			    if (negate)
+				cr.outputline("if (maybe||"+predvalue.getSafeSymbol()+")");
+			    else
+				cr.outputline("if (maybe||!"+predvalue.getSafeSymbol()+")");
+			    if (k==0)
+				cr.outputline("int "+costvar.getSafeSymbol()+"="+cost.getCost(dpred)+";");
+			    else
+				cr.outputline(costvar.getSafeSymbol()+"+="+cost.getCost(dpred)+";");
+			}
+
+			if(!first) {
+			    cr.outputline("if ("+costvar.getSafeSymbol()+"<"+mincost.getSafeSymbol()+")");
+			    cr.startblock();
+			    cr.outputline(mincost.getSafeSymbol()+"="+costvar.getSafeSymbol()+";");
+			    cr.outputline(mincostindex.getSafeSymbol()+"="+j+";");
+			    cr.endblock();
+			} else
+			    cr.outputline(mincostindex.getSafeSymbol()+"="+j+";");
+			first=false;
+		    }
+		}
+		cr.outputline("switch("+mincostindex.getSafeSymbol()+") {");
+		for(int j=0;j<dnfconst.size();j++) {
+		    Conjunction conj=dnfconst.get(j);
+		    GraphNode gn=(GraphNode)termination.conjtonodemap.get(conj);		    if (removed.contains(gn))
+			continue;
+		    cr.outputline("case "+j+":");
+		    for(int k=0;k<conj.size();k++) {
+			DNFPredicate dpred=conj.get(k);
+			Predicate p=dpred.getPredicate();
+			boolean negate=dpred.isNegated();
+			VarDescriptor predvalue=VarDescriptor.makeNew("Predicatevalue");
+			p.generate(cr,predvalue);
+			if (negate)
+			    cr.outputline("if (maybe||"+predvalue.getSafeSymbol()+")");
+			else
+			    cr.outputline("if (maybe||!"+predvalue.getSafeSymbol()+")");
+			if (p instanceof InclusionPredicate)
+			    generateinclusionrepair(conj,dpred, cr);
+			else if (p instanceof ExprPredicate) {
+			    ExprPredicate ep=(ExprPredicate)p;
+			    if (ep.getType()==ExprPredicate.SIZE)
+				generatesizerepair(conj,dpred,cr);
+			    else if (ep.getType()==ExprPredicate.COMPARISON)
+				generatecomparisonrepair(conj,dpred,cr);
+			} else throw new Error("Unrecognized Predicate");
+		    }
+		    /* Update model */
+		    
+		    cr.outputline("break;");
+		}
+		cr.outputline("}");
+
+		cr.outputline(goodflag.getSafeSymbol()+"=0;");
+		cr.outputline("if ("+oldmodel.getSafeSymbol()+")");
+		cr.outputline("delete "+oldmodel.getSafeSymbol()+";");
+		cr.outputline(oldmodel.getSafeSymbol()+"="+newmodel.getSafeSymbol()+";");
+		cr.outputline("break;");  /* Rebuild model and all */
+
                 cr.endblock();
 
                 while (quantifiers.hasPrevious()) {
                     Quantifier quantifier = (Quantifier) quantifiers.previous();
                     cr.endblock();
                 }
-
+		cr.outputline("if ("+goodflag.getSafeSymbol()+")");
+		cr.outputline("break;");
                 cr.endblock();
                 cr.outputline("");
                 cr.outputline("");
-            }          
+            }
         }
-        outputaux.println("// if (__Success) { printf(\"all tests passed\"); }");
     }    
+    
+    private MultUpdateNode getmultupdatenode(Conjunction conj, DNFPredicate dpred, int repairtype) {
+	MultUpdateNode mun=null;
+	GraphNode gn=(GraphNode) termination.conjtonodemap.get(conj);
+
+	for(Iterator edgeit=gn.edges();(mun==null)&&edgeit.hasNext();) {
+	    GraphNode gn2=((GraphNode.Edge) edgeit.next()).getTarget();
+	    TermNode tn2=(TermNode)gn2.getOwner();
+	    if (tn2.getType()==TermNode.ABSTRACT) {
+		AbstractRepair ar=tn2.getAbstract();
+		if (((repairtype==-1)||(ar.getType()==repairtype))&&
+		    ar.getPredicate()==dpred) {
+		    for(Iterator edgeit2=gn2.edges();edgeit.hasNext();) {
+			GraphNode gn3=((GraphNode.Edge) edgeit2.next()).getTarget();
+			if (!removed.contains(gn3)) {
+			    TermNode tn3=(TermNode)gn3.getOwner();
+			    if (tn3.getType()==TermNode.UPDATE) {
+				mun=tn3.getUpdate();
+				break;
+			    }
+			}
+		    }
+		}
+	    }
+	}
+	return mun;
+    }
+
+    public void generatecomparisonrepair(Conjunction conj, DNFPredicate dpred, CodeWriter cr){
+	MultUpdateNode munremove=getmultupdatenode(conj,dpred,AbstractRepair.REMOVEFROMRELATION);
+	MultUpdateNode munadd=getmultupdatenode(conj,dpred,AbstractRepair.ADDTORELATION);
+	ExprPredicate ep=(ExprPredicate)dpred.getPredicate();
+	RelationDescriptor rd=(RelationDescriptor)ep.getDescriptor();
+	boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
+	boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
+	boolean inverted=ep.inverted();
+	boolean negated=dpred.isNegated();
+	OpExpr expr=(OpExpr)ep.expr;
+	Opcode opcode=expr.getOpcode();
+	VarDescriptor leftside=VarDescriptor.makeNew("leftside");
+	VarDescriptor rightside=VarDescriptor.makeNew("rightside");
+	VarDescriptor newvalue=VarDescriptor.makeNew("newvalue");
+	if (!inverted) {
+	    expr.getLeftExpr().generate(cr,leftside);
+	    expr.getRightExpr().generate(cr,newvalue);
+	    cr.outputline(rd.getRange().getType().getGenerateType().getSafeSymbol()+" "+rightside.getSafeSymbol()+";");
+	    cr.outputline(rd.getSafeSymbol()+"_hash->get("+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
+	} else {
+	    expr.getLeftExpr().generate(cr,rightside);
+	    expr.getRightExpr().generate(cr,newvalue);
+	    cr.outputline(rd.getDomain().getType().getGenerateType().getSafeSymbol()+" "+leftside.getSafeSymbol()+";");
+	    cr.outputline(rd.getSafeSymbol()+"_hashinv->get("+leftside.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
+	}
+	if (negated)
+	    if (opcode==Opcode.GT) {
+		opcode=Opcode.LE;
+	    } else if (opcode==Opcode.GE) {
+		opcode=Opcode.LT;
+	    } else if (opcode==Opcode.LT) {
+		opcode=Opcode.GE;
+	    } else if (opcode==Opcode.LE) {
+		opcode=Opcode.GT;
+	    } else if (opcode==Opcode.EQ) {
+		opcode=Opcode.NE;
+	    } else if (opcode==Opcode.NE) {
+		opcode=Opcode.EQ;
+	    } else {
+		throw new Error("Unrecognized Opcode");
+	    }
+
+	if (opcode==Opcode.GT) {
+	    cr.outputline(newvalue.getSafeSymbol()+"++;");
+	} else if (opcode==Opcode.GE) {
+	    /* Equal */
+	} else if (opcode==Opcode.LT) {
+	    cr.outputline(newvalue.getSafeSymbol()+"--;");
+	} else if (opcode==Opcode.LE) {
+	    /* Equal */
+	} else if (opcode==Opcode.EQ) {
+	    /* Equal */
+	} else if (opcode==Opcode.NE) {
+	    cr.outputline(newvalue.getSafeSymbol()+"++;");
+	} else {
+	    throw new Error("Unrecognized Opcode");
+	}
+	/* Do abstract repairs */
+	if (usageimage) {
+	    cr.outputline(rd.getSafeSymbol()+"_hash->remove("+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
+	    if (!inverted) {
+		cr.outputline(rd.getSafeSymbol()+"_hash->add("+leftside.getSafeSymbol()+","+newvalue.getSafeSymbol()+");");
+	    } else {
+		cr.outputline(rd.getSafeSymbol()+"_hash->add("+newvalue.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
+	    }
+	}
+	if (usageinvimage) {
+	    cr.outputline(rd.getSafeSymbol()+"_hashinv->remove("+rightside.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
+	    if (!inverted) {
+		cr.outputline(rd.getSafeSymbol()+"_hashinv->add("+newvalue.getSafeSymbol()+","+leftside.getSafeSymbol()+");");
+	    } else {
+		cr.outputline(rd.getSafeSymbol()+"_hashinv->add("+rightside.getSafeSymbol()+","+newvalue.getSafeSymbol()+");");
+	    }
+	}
+	/* Do concrete repairs */
+	/* Start with scheduling removal */
+	for(int i=0;i<state.vRules.size();i++) {
+	    Rule r=(Rule)state.vRules.get(i);
+	    if (r.getInclusion().getTargetDescriptors().contains(rd)) {
+		for(int j=0;j<munremove.numUpdates();j++) {
+		    UpdateNode un=munremove.getUpdate(i);
+		    if (un.getRule()==r) {
+			/* Update for rule r */
+			String name=(String)updatenames.get(un);
+			cr.outputline(repairtable.getSafeSymbol()+"->addrelation("+rd.getNum()+","+r.getNum()+","+leftside.getSafeSymbol()+","+rightside.getSafeSymbol()+",(int) &"+name+");");
+		    }
+		}
+	    }
+	}
+	/* Now do addition */
+	UpdateNode un=munadd.getUpdate(0);
+	String name=(String)updatenames.get(un);
+	if (!inverted) {
+	    cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+leftside.getSafeSymbol()+","+newvalue.getSafeSymbol()+");");
+	} else {
+	    cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+newvalue.getSafeSymbol()+","+rightside.getSafeSymbol()+");");
+	}
+    }
+
+    public void generatesizerepair(Conjunction conj, DNFPredicate dpred, CodeWriter cr) {
+	ExprPredicate ep=(ExprPredicate)dpred.getPredicate();
+	OpExpr expr=(OpExpr)ep.expr;
+	Opcode opcode=expr.getOpcode();
+	{
+	    boolean negated=dpred.isNegated();
+	    if (negated)
+		if (opcode==Opcode.GT) {
+		    opcode=Opcode.LE;
+		} else if (opcode==Opcode.GE) {
+		    opcode=Opcode.LT;
+		} else if (opcode==Opcode.LT) {
+		    opcode=Opcode.GE;
+		} else if (opcode==Opcode.LE) {
+		    opcode=Opcode.GT;
+		} else if (opcode==Opcode.EQ) {
+		    opcode=Opcode.NE;
+		} else if (opcode==Opcode.NE) {
+		    opcode=Opcode.EQ;
+		} else {
+		    throw new Error("Unrecognized Opcode");
+		}	
+	}
+	MultUpdateNode munremove;
+
+	MultUpdateNode munadd;
+	if (ep.getDescriptor() instanceof RelationDescriptor) {
+	    munremove=getmultupdatenode(conj,dpred,AbstractRepair.REMOVEFROMRELATION);
+	    munadd=getmultupdatenode(conj,dpred,AbstractRepair.ADDTORELATION);
+	} else {
+	    munremove=getmultupdatenode(conj,dpred,AbstractRepair.REMOVEFROMSET);
+	    munadd=getmultupdatenode(conj,dpred,AbstractRepair.ADDTOSET);
+	}
+	int size=ep.leftsize();
+	VarDescriptor sizevar=VarDescriptor.makeNew("size");
+	((OpExpr)expr).left.generate(cr, sizevar);
+	VarDescriptor change=VarDescriptor.makeNew("change");
+	cr.outputline("int "+change.getSafeSymbol()+";");
+	boolean generateadd=false;
+	boolean generateremove=false;
+	if (opcode==Opcode.GT) {
+	    cr.outputline(change.getSafeSymbol()+"="+String.valueOf(size+1)+"-"+sizevar.getSafeSymbol()+";");
+	    generateadd=true;
+	    generateremove=false;
+	} else if (opcode==Opcode.GE) {
+	    cr.outputline(change.getSafeSymbol()+"="+String.valueOf(size)+"-"+sizevar.getSafeSymbol()+";");
+	    generateadd=true;
+	    generateremove=false;
+	} else if (opcode==Opcode.LT) {
+	    cr.outputline(change.getSafeSymbol()+"="+String.valueOf(size-1)+"-"+sizevar.getSafeSymbol()+";");
+	    generateadd=false;
+	    generateremove=true;
+	} else if (opcode==Opcode.LE) {
+	    cr.outputline(change.getSafeSymbol()+"="+String.valueOf(size)+"-"+sizevar.getSafeSymbol()+";");
+	    generateadd=false;
+	    generateremove=true;
+	} else if (opcode==Opcode.EQ) {
+	    cr.outputline(change.getSafeSymbol()+"="+String.valueOf(size)+"-"+sizevar.getSafeSymbol()+";");
+	    generateadd=true;
+	    generateremove=true;
+	} else if (opcode==Opcode.NE) {
+	    cr.outputline(change.getSafeSymbol()+"="+String.valueOf(size+1)+"-"+sizevar.getSafeSymbol()+";");
+	    generateadd=true;
+	    generateremove=false;
+	} else {
+	    throw new Error("Unrecognized Opcode");
+	}
+	Descriptor d=ep.getDescriptor();
+	if (generateremove) {
+	    cr.outputline("for(;"+change.getSafeSymbol()+"<0;"+change.getSafeSymbol()+"++)");
+	    cr.startblock();
+	    /* Find element to remove */
+	    VarDescriptor leftvar=VarDescriptor.makeNew("leftvar");
+	    VarDescriptor rightvar=VarDescriptor.makeNew("rightvar");
+	    if (d instanceof RelationDescriptor) {
+		if (ep.inverted()) {
+		    rightvar=((ImageSetExpr)((SizeofExpr)((OpExpr)expr).left).setexpr).getVar();
+		    cr.outputline("int "+leftvar.getSafeSymbol()+";");
+		    cr.outputline(d.getSafeSymbol()+"_hashinv->get((int)"+rightvar.getSafeSymbol()+","+leftvar.getSafeSymbol()+");");
+		} else {
+		    leftvar=((ImageSetExpr)((SizeofExpr)((OpExpr)expr).left).setexpr).getVar();
+		    cr.outputline("int "+rightvar.getSafeSymbol()+";");
+		    cr.outputline(d.getSafeSymbol()+"_hash->get((int)"+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+");");
+		}
+	    } else {
+		cr.outputline("int "+leftvar.getSafeSymbol()+"="+d.getSafeSymbol()+"_hash->firstkey();");
+	    }
+	    /* Generate abstract remove instruction */
+	    if (d instanceof RelationDescriptor) {
+		RelationDescriptor rd=(RelationDescriptor) d;
+		boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
+		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
+		if (usageimage)
+		    cr.outputline(rd.getSafeSymbol() + "_hash->remove((int)" + leftvar + ", (int)" + rightvar + ");");
+		if (usageinvimage)
+		    cr.outputline(rd.getSafeSymbol() + "_hashinv->remove((int)" + rightvar + ", (int)" + leftvar + ");");
+	    } else {
+		cr.outputline(d.getSafeSymbol() + "_hash->remove((int)" + leftvar + ", (int)" + leftvar + ");");
+	    }
+	    /* Generate concrete remove instruction */
+	    for(int i=0;i<state.vRules.size();i++) {
+		Rule r=(Rule)state.vRules.get(i);
+		if (r.getInclusion().getTargetDescriptors().contains(d)) {
+		    for(int j=0;j<munremove.numUpdates();j++) {
+			UpdateNode un=munremove.getUpdate(i);
+			if (un.getRule()==r) {
+				/* Update for rule rule r */
+			    String name=(String)updatenames.get(un);
+			    if (d instanceof RelationDescriptor) {
+				cr.outputline(repairtable.getSafeSymbol()+"->addrelation("+d.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+",(int) &"+name+");");
+			    } else {
+				cr.outputline(repairtable.getSafeSymbol()+"->addset("+d.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+",(int) &"+name+");");
+			    }
+			}
+		    }
+		}
+	    }
+	    cr.endblock();
+	}
+	if (generateadd) {
+	    cr.outputline("for(;"+change.getSafeSymbol()+">0;"+change.getSafeSymbol()+"--)");
+	    cr.startblock();
+	    cr.endblock();
+	}
+    }
+
+    public void generateinclusionrepair(Conjunction conj, DNFPredicate dpred, CodeWriter cr){
+	InclusionPredicate ip=(InclusionPredicate) dpred.getPredicate();
+	boolean negated=dpred.isNegated();
+	MultUpdateNode mun=getmultupdatenode(conj,dpred,-1);
+	VarDescriptor leftvar=VarDescriptor.makeNew("left");
+	ip.expr.generate(cr, leftvar);
+
+	if (negated) {
+	    if (ip.setexpr instanceof ImageSetExpr) {
+		ImageSetExpr ise=(ImageSetExpr) ip.setexpr;
+		VarDescriptor rightvar=ise.getVar();
+		boolean inverse=ise.inverted();
+		RelationDescriptor rd=ise.getRelation();
+		boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
+		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
+		if (inverse) {
+		    if (usageimage)
+			cr.outputline(rd.getSafeSymbol() + "_hash->remove((int)" + rightvar + ", (int)" + leftvar + ");");
+		    if (usageinvimage)
+			cr.outputline(rd.getSafeSymbol() + "_hashinv->remove((int)" + leftvar + ", (int)" + rightvar + ");");
+		} else {
+		    if (usageimage)
+			cr.outputline(rd.getSafeSymbol() + "_hash->remove((int)" + leftvar + ", (int)" + rightvar + ");");
+		    if (usageinvimage)
+			cr.outputline(rd.getSafeSymbol() + "_hashinv->remove((int)" + rightvar + ", (int)" + leftvar + ");");
+		}
+		for(int i=0;i<state.vRules.size();i++) {
+		    Rule r=(Rule)state.vRules.get(i);
+		    if (r.getInclusion().getTargetDescriptors().contains(rd)) {
+			for(int j=0;j<mun.numUpdates();j++) {
+			    UpdateNode un=mun.getUpdate(i);
+			    if (un.getRule()==r) {
+				/* Update for rule rule r */
+				String name=(String)updatenames.get(un);
+				if (inverse) {
+				    cr.outputline(repairtable.getSafeSymbol()+"->addrelation("+rd.getNum()+","+r.getNum()+","+rightvar.getSafeSymbol()+","+leftvar.getSafeSymbol()+",(int) &"+name+");");
+				} else {
+				    cr.outputline(repairtable.getSafeSymbol()+"->addrelation("+rd.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+",(int) &"+name+");");
+				}
+			    }
+			}
+		    }
+		}
+	    } else {
+		SetDescriptor sd=ip.setexpr.sd;
+		cr.outputline(sd.getSafeSymbol() + "_hash->remove((int)" + leftvar + ", (int)" + leftvar + ");");
+
+		for(int i=0;i<state.vRules.size();i++) {
+		    Rule r=(Rule)state.vRules.get(i);
+		    if (r.getInclusion().getTargetDescriptors().contains(sd)) {
+			for(int j=0;j<mun.numUpdates();j++) {
+			    UpdateNode un=mun.getUpdate(i);
+			    if (un.getRule()==r) {
+				/* Update for rule rule r */
+				String name=(String)updatenames.get(un);
+				cr.outputline(repairtable.getSafeSymbol()+"->addset("+sd.getNum()+","+r.getNum()+","+leftvar.getSafeSymbol()+",(int) &"+name+");");
+			    }
+			}
+		    }
+		}
+	    }
+	} else {
+	    /* Generate update */
+	    if (ip.setexpr instanceof ImageSetExpr) {
+		ImageSetExpr ise=(ImageSetExpr) ip.setexpr;
+		VarDescriptor rightvar=ise.getVar();
+		boolean inverse=ise.inverted();
+		RelationDescriptor rd=ise.getRelation();
+		boolean usageimage=rd.testUsage(RelationDescriptor.IMAGE);
+		boolean usageinvimage=rd.testUsage(RelationDescriptor.INVIMAGE);
+		if (inverse) {
+		    if (usageimage)
+			cr.outputline(rd.getSafeSymbol() + "_hash->add((int)" + rightvar + ", (int)" + leftvar + ");");
+		    if (usageinvimage)
+			cr.outputline(rd.getSafeSymbol() + "_hashinv->add((int)" + leftvar + ", (int)" + rightvar + ");");
+		} else {
+		    if (usageimage)
+			cr.outputline(rd.getSafeSymbol() + "_hash->add((int)" + leftvar + ", (int)" + rightvar + ");");
+		    if (usageinvimage)
+			cr.outputline(rd.getSafeSymbol() + "_hashinv->add((int)" + rightvar + ", (int)" + leftvar + ");");
+		}
+		UpdateNode un=mun.getUpdate(0);
+		String name=(String)updatenames.get(un);
+		if (inverse) {
+		    cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+rightvar.getSafeSymbol()+","+leftvar.getSafeSymbol()+");");
+		} else {
+		    cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+leftvar.getSafeSymbol()+","+rightvar.getSafeSymbol()+");");
+		}
+	    } else {
+		SetDescriptor sd=ip.setexpr.sd;
+		cr.outputline(sd.getSafeSymbol() + "_hash->add((int)" + leftvar + ", (int)" + leftvar + ");");
+
+		UpdateNode un=mun.getUpdate(0);
+		/* Update for rule rule r */
+		String name=(String)updatenames.get(un);
+		cr.outputline(name+"(this,"+newmodel.getSafeSymbol()+","+repairtable.getSafeSymbol()+","+leftvar.getSafeSymbol()+");");
+	    }
+	}
+    }
 
 
 
@@ -710,7 +1180,6 @@ public class RepairGenerator {
 	}
 	cr.endblock();
     }
-
 }
 
 

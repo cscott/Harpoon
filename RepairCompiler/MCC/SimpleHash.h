@@ -123,6 +123,9 @@ public:
     int get(int key, int& data);
     int countdata(int data);
     void addParent(SimpleHash* parent);
+    inline int firstkey() {
+	return nodelist->key;
+    }
     inline SimpleIterator* iterator() {
         return new SimpleIterator(nodelist);
     }

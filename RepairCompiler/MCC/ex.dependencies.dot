@@ -1,0 +1,15 @@
+digraph dotvisitor {
+	rotate=90;
+	node [fontsize=10,height="0.1", width="0.1"];
+	edge [fontsize=6];
+	c1 [label="c1",shape=box];
+	rule3 [label="rule3\nnextnodes"];
+	rule2 [label="rule2\nNodes"];
+	rule2 -> rule3 [label=""];
+	rule2 -> c1 [label=""];
+	rule1 [label="rule1\nNodes"];
+	rule1 -> rule2 [label=""];
+	rule1 -> rule3 [label=""];
+	rule1 -> c1 [label=""];
+}
+

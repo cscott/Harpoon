@@ -17,7 +17,7 @@ public class Termination {
     Hashtable consequence;
     Hashtable abstractadd;
     Hashtable abstractremove;
-
+    Hashtable conjtonodemap;
     Set removedset;
 
     State state;
@@ -35,7 +35,7 @@ public class Termination {
 	consequencenodes=new HashSet();
 	abstractadd=new Hashtable();
 	abstractremove=new Hashtable();
-
+	conjtonodemap=new Hashtable();
 
 	generateconjunctionnodes();
 	generatescopenodes();
@@ -90,6 +90,7 @@ public class Termination {
 		if (!conjunctionmap.containsKey(c))
 		    conjunctionmap.put(c,new HashSet());
 		((Set)conjunctionmap.get(c)).add(gn);
+		conjtonodemap.put(dnf.get(j),gn);
 	    }
 	}
     }

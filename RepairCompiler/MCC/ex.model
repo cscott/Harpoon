@@ -1,0 +1,5 @@
+[], !(head=literal(0)) => head in Nodes;
+[forall node in Nodes], !(node.next=literal(0)) => node.next in Nodes;
+[forall node in Nodes], !(node.next=literal(0)) => <node, node.next> in nextnodes;
+
+
