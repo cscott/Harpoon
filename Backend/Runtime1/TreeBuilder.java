@@ -60,7 +60,7 @@ import java.util.Set;
  * <p>Pretty straightforward.  No weird hacks.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeBuilder.java,v 1.1.2.42 2001-07-06 19:50:46 cananian Exp $
+ * @version $Id: TreeBuilder.java,v 1.1.2.43 2001-07-06 20:01:30 cananian Exp $
  */
 public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
     // turning on this option means that no calls to synchronization primitives
@@ -245,8 +245,9 @@ public class TreeBuilder extends harpoon.Backend.Generic.Runtime.TreeBuilder {
 		  new CONST(tf, source, OBJ_HASH_OFF)))),
 		new BINOP // set the low bit to indicate an uninflated object.
 		(tf, source, Type.POINTER, Bop.ADD,
+		 PTRMASK(tf, source, dg,
 		 DECLARE(dg, objectType/*not an obj yet*/, Tobj,
-		 new TEMP(tf, source, Type.POINTER, Tobj)),
+		 new TEMP(tf, source, Type.POINTER, Tobj))),
 		 new CONST(tf, source, 1))),
 	       new MOVE // assign the new object a class pointer.
 	       (tf, source,
