@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
+import java.util.LinkedList;
 
 import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HClassMutator;
@@ -35,7 +37,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraphImpl;
  * <code>PreallocOpt</code>
  * 
  * @author  Alexandru Salcianu <salcianu@MIT.EDU>
- * @version $Id: PreallocOpt.java,v 1.2 2002-11-27 18:44:23 salcianu Exp $
+ * @version $Id: PreallocOpt.java,v 1.3 2002-11-27 19:08:45 salcianu Exp $
  */
 public class PreallocOpt {
 
@@ -47,7 +49,7 @@ public class PreallocOpt {
     public static final String INIT_FIELDS_METHOD_NAME = "initFields";
 
     public Map new2field  = new HashMap();
-    public Map field2size = new HashMap();
+    private Map field2coll = new HashMap();
 
     public PreallocOpt(Linker linker, HCodeFactory hcf,
 		       ClassHierarchy ch, HMethod mainM, Set roots) {
@@ -67,7 +69,6 @@ public class PreallocOpt {
 
 	addFields(linker, ia);
     }
-
 
     // CachingCodeFactory that ignores all calls to clear()
     private static class SafeCachingCodeFactory
@@ -128,23 +129,40 @@ public class PreallocOpt {
 	    it.hasNext(); k++) {
 	    Collection coll = (Collection) it.next();
 	    HField f = mutator.addDeclaredField(FIELD_ROOT_NAME + k, pattern);
-	    field2size.put(f, new Integer(memSizeForClass(coll)));
+	    field2coll.put(f, allocatedClasses(coll));
 	    for(Iterator it_new = coll.iterator(); it_new.hasNext(); )
 		new2field.put(it_new.next(), f);
 	}
+
+	System.out.println("PreallocOpt: " + k + " static field(s) generated");
     }
 
 
-    // Compute the size of memory chunk that needs to be pre-allocated
-    // for the allocation sites from coll.  This is the max emory size
-    // required for each allocation site from coll.
-    private int memSizeForClass(Collection coll) {
-	int max = -1;
-	for(Iterator it_new = coll.iterator(); it_new.hasNext(); ) {
-	    HClass hclass = ((NEW) it_new.next()).hclass();
-	    int size = 0; //Backend.Runtime1.TreeBuilder.objectSize(hclass);
-	    if(size > max) max = size;
-	}
-	return max;
+    // Compute the collection of classes that are allocated by the NEW
+    // instructions from coll.
+    private Collection allocatedClasses(Collection coll) {
+	List classes = new LinkedList();
+	for(Iterator it_new = coll.iterator(); it_new.hasNext(); )
+	    classes.add(((NEW) it_new.next()).hclass());
+	return classes;
+    }
+
+
+    /**
+       Returns the <code>Collection</code> of classes (=types)
+       allocated at the allocation sites that reuse the memory chunk
+       that will be pointed to by <code>hfield</code>.  Special code
+       in the backend will use this method to compute the size of that
+       memory chunk when generating code for allocating the memory and
+       initializing the appropriate field.
+
+       @param hfield static field that will point (at runtime) to a
+       preallocated memory chunk.
+
+       @return a <code>Collection</code> of classes allocated the
+       comaptibe unitary allocation sites that use the preallocated
+       memory chunk. */
+    public Collection getCollForMemoryChunk(HField hfield) {
+	return (Collection) field2coll.get(hfield);
     }
 }

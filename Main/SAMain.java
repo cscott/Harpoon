@@ -96,7 +96,7 @@ import harpoon.Analysis.MemOpt.PreallocOpt;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.19 2002-11-27 18:34:24 salcianu Exp $
+ * @version $Id: SAMain.java,v 1.20 2002-11-27 19:08:52 salcianu Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -122,7 +122,7 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean ROLE_INFER= false;
 
     // use Ovy's static preallocation optimization
-    static boolean OVY_PREALLOC_OPT = true;
+    static boolean OVY_PREALLOC_OPT = false;
     static PreallocOpt ovy_prealloc_opt = null;
 
     static boolean ONLY_COMPILE_MAIN = false; // for testing small stuff
