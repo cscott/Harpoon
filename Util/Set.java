@@ -9,11 +9,11 @@ import java.util.Enumeration;
  * <code>Set</code>
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Set.java,v 1.3 1998-10-11 02:37:59 cananian Exp $
+ * @version $Id: Set.java,v 1.3.2.1 1998-11-23 22:54:21 marinov Exp $
  */
 
 public class Set implements Worklist {
-    Hashtable h;
+    protected Hashtable h;
     /** Creates a <code>SetTable</code>. */
     public Set() {
         h = new Hashtable();
