@@ -11,17 +11,21 @@ import harpoon.Temp.Label;
  * assembly-level instruction representations.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: InstrLABEL.java,v 1.1.2.4 1999-05-25 16:45:13 andyb Exp $
+ * @version $Id: InstrLABEL.java,v 1.1.2.5 1999-06-29 05:21:24 cananian Exp $
  */
 public class InstrLABEL extends Instr {
     private Label label;
 
+    /** Create a code label <code>Instr</code>. The specified
+	<code>String</code> <code>a</code> should be the
+	assembly-language representation of the given
+	<code>Label</code> <code>l</code>. */
     public InstrLABEL(InstrFactory inf, HCodeElement src, String a, Label l) {
         super(inf, src, a, null, null);
         label = l;
     } 
 
-    /** Return the code label used in this. */
+    /** Return the code label specified in the constructor. */
     public Label getLabel() { return label; }
     // should clone label!!!!!!!
 
