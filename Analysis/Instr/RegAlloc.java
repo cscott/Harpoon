@@ -37,6 +37,7 @@ import net.cscott.jutil.Default;
 import net.cscott.jutil.MultiMap;
 import net.cscott.jutil.MultiMapFactory;
 import net.cscott.jutil.GenericMultiMap;
+import net.cscott.jutil.GenericMultiMapFactory;
 import net.cscott.jutil.UnmodifiableIterator;
 import net.cscott.jutil.CombineIterator;
 
@@ -83,7 +84,7 @@ import java.util.HashMap;
  * <code>RegAlloc</code> subclasses will be used.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegAlloc.java,v 1.9 2004-02-08 03:19:37 cananian Exp $ 
+ * @version $Id: RegAlloc.java,v 1.10 2005-01-20 21:57:06 cananian Exp $ 
  */
 public abstract class RegAlloc  {
 
@@ -963,7 +964,7 @@ class MakeWebsDumb extends ForwardDataFlowBasicBlockVisitor {
 	      subsequent uses in the block
     */
     class WebInfo {
-	MultiMapFactory mmf = new MultiMapFactory();
+	MultiMapFactory mmf = new GenericMultiMapFactory();
 	
 	MultiMap in = new GenericMultiMap(); // Map[Temp, [Web] ]
 	MultiMap out = new GenericMultiMap(); // Map[Temp, [Web] ]
