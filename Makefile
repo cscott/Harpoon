@@ -1,4 +1,4 @@
-CC = gcc -O0 -g -Wall
+CC = gcc -O9 -g -Wall -pg
 
 
 RoleInference: RoleInference.o Hashtable.o ObjectSet.o ObjectPair.o GenericHashtable.o CalculateDominators.o Role.o Method.o

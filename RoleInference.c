@@ -108,7 +108,7 @@ void doanalysis() {
 	/* addtolvlist add's to K set */
 	addtolvlist(&heap, lv, heap.methodlist);
 
-	doincrementalreachability(&heap,ht);
+
 
 	if (currentparam<heap.methodlist->numobjectargs) {
 	  if (uid!=-1)
@@ -116,6 +116,8 @@ void doanalysis() {
 	  currentparam++;
 	  if(currentparam==heap.methodlist->numobjectargs) {
 	    //Lets show the roles!!!!
+	    doincrementalreachability(&heap,ht);
+	    {
 	    int i=0;
 	    struct genhashtable * dommap=builddominatormappings(&heap,0);
 	    struct rolemethod * rolem=(struct rolemethod *) calloc(1, sizeof(struct rolemethod));
@@ -139,6 +141,7 @@ void doanalysis() {
 	    rolem=methodaddtable(&heap,rolem);
 	    heap.methodlist->rm=rolem;
 	    genfreekeyhashtable(dommap);
+	    }
 	  }
 	}
 	freemethodlist(&heap);

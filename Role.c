@@ -449,8 +449,6 @@ int compareidentity(struct identity_relation *ir1, struct identity_relation *ir2
   int tmp;
   if ((tmp=strcmp(ir1->fieldname1, ir2->fieldname1))!=0)
     return tmp;
-  else
-    printf("ERROR: MATCHING FIRST FIELD for compareidentity\n");
   return strcmp(ir1->fieldname2, ir2->fieldname2);
 }
 
@@ -467,7 +465,8 @@ void insertnonfl(struct role * role, struct rolefieldlist * rfl) {
     return;
   }
   while(tmpptr->next!=NULL) {
-    if (fieldcompare(rfl,tmpptr->next)>=0)
+    int fc=fieldcompare(rfl, tmpptr->next);
+    if (fc>=0)
       break;
     tmpptr=tmpptr->next;
   }
@@ -478,19 +477,30 @@ void insertnonfl(struct role * role, struct rolefieldlist * rfl) {
 
 void insertrfl(struct role * role, struct rolefieldlist * rfl) {
   struct rolefieldlist *tmpptr=role->pointedtofl;
+  int fc;
 
   if (role->pointedtofl==NULL) {
     role->pointedtofl=rfl;
     return;
   }
-  if (fieldcompare(rfl, role->pointedtofl)<0) {
+  fc=fieldcompare(rfl, role->pointedtofl);
+  if (fc<0) {
     rfl->next=role->pointedtofl;
     role->pointedtofl=rfl;
     return;
   }
+  if (fc==0) {
+    free(rfl);
+    return;
+  }
   while(tmpptr->next!=NULL) {
-    if (fieldcompare(rfl,tmpptr->next)>=0)
+    int fc=fieldcompare(rfl,tmpptr->next);
+    if (fc>0)
       break;
+    if (fc==0) {
+      free(rfl);
+      return;
+    }
     tmpptr=tmpptr->next;
   }
   rfl->next=tmpptr->next;
@@ -508,19 +518,30 @@ int fieldcompare(struct rolefieldlist *field1, struct rolefieldlist *field2) {
 
 void insertral(struct role * role, struct rolearraylist * ral) {
   struct rolearraylist *tmpptr=role->pointedtoal;
+  int rcmp;
 
   if (role->pointedtoal==NULL) {
     role->pointedtoal=ral;
     return;
   }
-  if (strcmp(ral->class, role->pointedtoal->class)<0) {
+  rcmp=(strcmp(ral->class, role->pointedtoal->class)<0);
+  if (rcmp<0) {
     ral->next=role->pointedtoal;
     role->pointedtoal=ral;
     return;
   }
+  if (rcmp==0) {
+    free(ral);
+    return;
+  }
   while(tmpptr->next!=NULL) {
-    if (strcmp(ral->class,tmpptr->next->class)>=0)
+    int rcmp=strcmp(ral->class,tmpptr->next->class);
+    if (rcmp>0)
       break;
+    if (rcmp==0) {
+      free(ral);
+      return;
+    }
     tmpptr=tmpptr->next;
   }
   ral->next=tmpptr->next;
