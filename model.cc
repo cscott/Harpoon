@@ -49,18 +49,21 @@ model::model(char *abstractfile, char *modelfile, char *spacefile, char *structf
 {
   parsestructfile(structfile);
 
+
   //Hashtable first for lookups
   env=new Hashtable((unsigned int (*)(void *)) & hashstring,(int (*)(void *,void *)) &equivalentstrings);
   //  env->put(&bstring,new Element(&badstruct,getstructure("arrayofstructs")));//should be of badstruct
-  parseabstractfile(abstractfile);
+  parseabstractfile(abstractfile); 
   parsemodelfile(modelfile);
   parsespacefile(spacefile);
   parseconcretefile(concretefile);
   //  parserangefile(rangefile);
   // committing out because of memory problems
 
-  br=new bitreader(this,env);
-  guidance=new DefGuidance2(this);  // for the file system benchmark
+  br=new bitreader(this,env); 
+  guidance=new DefGuidance2(this);  // for the file system benchmark   
+
+#ifndef TOOL
   repair=new Repair(this);
   if (!repair->analyzetermination()) {
 #ifdef DEBUGMESSAGES
@@ -68,6 +71,8 @@ model::model(char *abstractfile, char *modelfile, char *spacefile, char *structf
 #endif
     exit(-1);
   }
+#endif
+
   fc=new FieldCheck(this);
   fc->buildmaps();
   fc->analyze();
@@ -235,11 +240,14 @@ bool model::docheck()
       if (!po->processconstraint(constraintarray[i]))	
 	{
 	  found=true;
+#ifndef TOOL
 	  t=true; //Got to keep running
+#endif
 	}
     }
   } while(t);
   delete(po);
+  //printf("return from docheck()");
   return found;
 }
 
