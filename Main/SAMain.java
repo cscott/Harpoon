@@ -66,7 +66,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.37 1999-10-13 19:38:56 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.38 1999-10-14 23:32:38 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -143,7 +143,7 @@ public class SAMain extends harpoon.IR.Registration {
 	}
 
 	Set methods = classHierarchy.callableMethods();
-	Iterator classes = classHierarchy.classes().iterator();
+	Iterator classes = new TreeSet(classHierarchy.classes()).iterator();
 
 	while(classes.hasNext()) {
 	    HClass hclass = (HClass) classes.next();
