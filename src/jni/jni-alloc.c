@@ -50,7 +50,7 @@ void *FNI_RawAlloc(JNIEnv *env, jsize length) {
  * looked up if claz has a finalizer that needs to be registered). */
 jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, struct claz *claz,
 		  void *(*allocfunc)(jsize length), jsize length) {
-  struct oobj *newobj;
+  struct oobj *newobj, *masked;
 
   assert(claz); /* info may be NULL.  claz may not be. */
   newobj = (allocfunc==NULL) ? FNI_RawAlloc(env,length) : (*allocfunc)(length);
@@ -59,12 +59,13 @@ jobject FNI_Alloc(JNIEnv *env, struct FNI_classinfo *info, struct claz *claz,
 		 "JNI: allocation failed");
     return NULL;
   }
-  memset(newobj, 0, length);
-  ((struct oobj *)PTRMASK(newobj))->claz = claz;
+  masked = (struct oobj *) PTRMASK(newobj);
+  memset(masked, 0, length);
+  masked->claz = claz;
   /* note -- setting the last bit also has the convenient property of
    * eliminating a possible self-cycle that would keep conservative gc
    * from finalizing the object. */
-  ((struct oobj *)PTRMASK(newobj))->hashunion.hashcode = 1 | (ptroff_t) newobj; /* low bit always set */
+  masked->hashunion.hashcode = 1 | (ptroff_t) masked; /* low bit always set */
   /* FIXME: register finalizer.  */
   return FNI_WRAP(newobj);
 }
