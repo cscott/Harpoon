@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.154 2001-06-18 20:34:11 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.155 2001-06-19 17:56:44 pnkfelix Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -583,7 +583,9 @@ public class SAMain extends harpoon.IR.Registration {
 	    if (hc!=null) {
 		info("Codeview \""+hc.getName()+"\" for "+
 		     hc.getMethod()+":");
-		hc.print(out);
+		// myPrint avoids register-allocation-dependant
+		// peephole optimization code in print
+		((harpoon.IR.Assem.Code)hc).myPrint(out,false); 
 	    } else {
 		info("null returned for " + hmethod);
 	    } 
