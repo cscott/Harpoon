@@ -26,13 +26,15 @@ import java.util.Map;
  * control-flow graph information with elements of a canonical tree.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: TreeGrapher.java,v 1.3.2.1 2002-02-27 08:36:48 cananian Exp $
+ * @version $Id: TreeGrapher.java,v 1.3.2.2 2002-03-14 01:13:27 cananian Exp $
  */
-class TreeGrapher extends CFGrapher {
+class TreeGrapher extends CFGrapher<Tree> {
     Tree firstElement = null;
-    List lastElements = new ArrayList();
-    final MultiMap predMap = new GenericMultiMap(Factories.arrayListFactory);
-    final MultiMap succMap = new GenericMultiMap(Factories.arrayListFactory);
+    List<Tree> lastElements = new ArrayList<Tree>();
+    final MultiMap<Tree,HCodeEdge<Tree>> predMap =
+	new GenericMultiMap<Tree,HCodeEdge<Tree>>(Factories.arrayListFactory());
+    final MultiMap<Tree,HCodeEdge<Tree>> succMap =
+	new GenericMultiMap<Tree,HCodeEdge<Tree>>(Factories.arrayListFactory());
    /** Class constructor.  Don't call this directly -- use
     *  the getGrapher() method in <code>harpoon.IR.Tree.Code</code> instead.
     */ 
@@ -42,28 +44,32 @@ class TreeGrapher extends CFGrapher {
 	Edger e = new Edger(code);
 	// done.
     }
-    public HCodeElement getFirstElement(HCode hcode) { return firstElement; }
-    public HCodeElement[] getLastElements(HCode hcode) {
-	return (HCodeElement[])
+    public Tree getFirstElement(HCode<Tree> hcode) { return firstElement; }
+    public Tree[] getLastElements(HCode<Tree> hcode) {
+	return
 	    lastElements.toArray(new Tree[lastElements.size()]);
     }
-    public Collection predC(HCodeElement hc) { return predMap.getValues(hc); }
-    public Collection succC(HCodeElement hc) { return succMap.getValues(hc); }
+    public Collection<HCodeEdge<Tree>> predC(Tree hce) {
+	return predMap.getValues(hce);
+    }
+    public Collection<HCodeEdge<Tree>> succC(Tree hce) {
+	return succMap.getValues(hce);
+    }
 
     /** this class does the real work of the grapher */
     private class Edger {
 	/** maps Temp.Labels to IR.Tree.LABELs */
-	private final Map labelmap = new HashMap();
+	private final Map<Label,LABEL> labelmap = new HashMap<Label,LABEL>();
 	/** Look up an IR.Tree.LABEL given a Temp.Label. */
 	private LABEL lookup(Label l) {
 	    assert labelmap.containsKey(l);
-	    return (LABEL)labelmap.get(l);
+	    return labelmap.get(l);
 	}
 	/** Add a <from, to> edge to the predMap and succMap */
 	private void addEdge(final Tree from, final Tree to) {
-	    HCodeEdge hce = new HCodeEdge() {
-		public HCodeElement from() { return from; }
-		public HCodeElement to() { return to; }
+	    HCodeEdge<Tree> hce = new HCodeEdge<Tree>() {
+		public Tree from() { return from; }
+		public Tree to() { return to; }
 		public String toString() { return "Edge from "+from+" to "+to;}
 	    };
 	    predMap.add(to, hce);
@@ -76,8 +82,8 @@ class TreeGrapher extends CFGrapher {
 		public void visit(Tree e) { /* no op */ }
 		public void visit(LABEL l) { labelmap.put(l.label, l); }
 	    };
-	    for (Iterator it=code.getElementsI(); it.hasNext(); )
-		((Tree)it.next()).accept(labelv);
+	    for (Iterator<Tree> it=code.getElementsI(); it.hasNext(); )
+		it.next().accept(labelv);
 	    // now make all the edges
 	    TreeVisitor edgev = new TreeVisitor() {
 		Tree last = null;
@@ -122,8 +128,8 @@ class TreeGrapher extends CFGrapher {
 		}
 	    };
 	    // iterate in depth-first pre-order:
-	    for (Iterator it=code.getElementsI(); it.hasNext(); )
-		((Tree)it.next()).accept(edgev);
+	    for (Iterator<Tree> it=code.getElementsI(); it.hasNext(); )
+		it.next().accept(edgev);
 	    // done!
 	}
     }

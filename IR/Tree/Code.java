@@ -39,7 +39,7 @@ import java.util.Stack;
  * shared methods for the various codeviews using <code>Tree</code>s.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: Code.java,v 1.3.2.2 2002-03-10 08:06:34 cananian Exp $
+ * @version $Id: Code.java,v 1.3.2.3 2002-03-14 01:13:27 cananian Exp $
  */
 public abstract class Code extends HCode<Tree> {
     /** The Tree Objects composing this code view. */
@@ -129,13 +129,13 @@ public abstract class Code extends HCode<Tree> {
      *  to <code>getGrapher()</code>, the grapher is invalid, this method
      *  should be re-invoked to acquire a new grapher.  
      */ 
-    public CFGrapher getGrapher() { return new TreeGrapher(this); }
+    public CFGrapher<Tree> getGrapher() { return new TreeGrapher(this); }
     /** Returns a means to externally associate use/def information with
      *  this tree code. MOVE(TEMP(t), ...) and CALL/NATIVECALLs are treated
      *  as defs; all instances of TEMP in any of the subtrees returned
      *  by the <code>kids()</code> method are considered uses. Not
      *  valid for non-canonical forms. */
-    public UseDefer getUseDefer() { return new TreeUseDefer(this); }
+    public UseDefer<Tree> getUseDefer() { return new TreeUseDefer(this); }
 
     /** Return the name of this code view. */
     public abstract String getName();

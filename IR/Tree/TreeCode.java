@@ -32,7 +32,7 @@ import harpoon.Util.Util;
  * The tree form is based around Andrew Appel's tree form.  
  *
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: TreeCode.java,v 1.2 2002-02-25 21:05:41 cananian Exp $
+ * @version $Id: TreeCode.java,v 1.2.2.1 2002-03-14 01:13:27 cananian Exp $
  * 
  */
 public class TreeCode extends Code {
@@ -108,10 +108,10 @@ public class TreeCode extends Code {
     public boolean isCanonical() { return false; } 
     /** <code>CFGrapher</code> not valid for non-canonical trees. 
      * @return null */
-    public CFGrapher getGrapher() { return null; }
+    public CFGrapher<Tree> getGrapher() { return null; }
     /** <code>UseDefer</code> not valid for non-canonical trees. 
      * @return null */
-    public UseDefer getUseDefer() { return null; }
+    public UseDefer<Tree> getUseDefer() { return null; }
 
     /** 
      * This operation is not supported in non-canonical tree forms.
