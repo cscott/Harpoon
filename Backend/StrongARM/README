@@ -10,7 +10,8 @@ StrongARM NATIVECALL Caller Convention (As Seen In (tm): gcc arm32-netbsd):
 	return value in r0
 
 	r11 = fp, r12 = ip, r13 = sp, r14 = lr, r15 = pc
-	callee saves r4-r10
+	callee clobbers r0,r1,r2,r3,ip,lr
+	callee saves r4-r11,r13
 	live on exit: fp, sp, pc  [actually only fp and pc]
  [more details from CSA:]
         'full' stack means that the stack pointer points at the last,
@@ -40,7 +41,7 @@ StrongARM NATIVECALL Caller Convention (As Seen In (tm): gcc arm32-netbsd):
 		bl _foo
 	for functions with four or less arguments, all of which are
 	preloaded in r0-r3.  It is assumed that the called function
-	clobbers r0-r3 (and that the link register r14 is clobbered by
+	clobbers r0-r3,ip (and that the link register r14 is clobbered by
 	the bl itself) but that all other registers are left untouched.
 	A typical procedure header (according to gcc) is thus:
 		mov ip, sp
