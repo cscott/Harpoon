@@ -31,20 +31,18 @@ import java.util.ArrayList;
  * <code>Instr</code> is the primary class for representing
  * assembly-level instructions used in the Backend.* packages.
  *
- * Important Note: Most <code>Instr</code>s have only one
- * predecessor.  One type of <code>Instr</code> with more than
- * one predecessor is an <code>InstrLABEL</code>.  In any case, any
- * code that relies on the "only one predecessor"-invariant must
- * check each <code>Instr</code> with
- * <code>hasMultiplePredecessors()</code>.  Likewise, extensions of
- * <code>Instr</code> which are designed to allow multiple predecessors
- * must override <code>predC()</code> and
- * <code>hasMultiplePredecessors()</code>   
+ * Important Note: Most <code>Instr</code>s have only one predecessor.
+ * One type of <code>Instr</code> with potentially more than one
+ * predecessor is an <code>InstrLABEL</code>.  In any case, any code
+ * that relies on the "only one predecessor"-invariant must check each
+ * <code>Instr</code> with <code>hasMultiplePredecessors()</code>.
+ * Likewise, extensions of <code>Instr</code> which are designed to
+ * allow multiple predecessors must override <code>predC()</code> and
+ * <code>hasMultiplePredecessors()</code>
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.66 2000-01-05 04:12:18 duncan Exp $
- */
+ * @version $Id: Instr.java,v 1.1.2.67 2000-01-06 02:25:54 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private final String assem; 
     private InstrFactory inf;
