@@ -27,7 +27,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good!
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.27 2000-04-03 02:29:06 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.28 2000-04-03 03:03:28 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -654,7 +654,9 @@ abstract class InterProcPA {
 	    PANode load_node = node_rep.getCodeNode(q, PANode.LOAD);
 
 	    pig_before.G.O.addEdges(set_E, f, load_node);
-	    pig_before.eo.add(set_E, f, load_node, pig_before.G.I);
+
+	    if(!PointerAnalysis.IGNORE_EO)
+		pig_before.eo.add(set_E, f, load_node, pig_before.G.I);
 
 	    set_S.add(load_node);
 	    pig_before.G.I.addEdges(dst_set, f, set_S);
