@@ -21,43 +21,38 @@ import java.util.Arrays;
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
     @author  Emmett Witchel <witchel@mit.edu>
-    @version $Id: InstrBuilder.java,v 1.1.2.3 2000-08-26 04:54:41 witchel Exp $
+    @version $Id: InstrBuilder.java,v 1.1.2.4 2000-10-04 21:19:19 witchel Exp $
  */
 public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
 
-    private static final int OFFSET_LIMIT = 1023;
-
-    RegFileInfo rfInfo;
+   RegFileInfo rfInfo;
    private Frame frame;
 
-    /* helper macro. */
-    private final Temp SP() { 
-	return rfInfo.SP;
-    }
+   /* helper macro. */
+   private final Temp SP() { 
+      Util.assert(rfInfo.SP != null);
+      return rfInfo.SP;
+   }
     
-    InstrBuilder(RegFileInfo rfInfo, Frame _frame) {
-	super();
-	this.rfInfo = rfInfo;
-    frame = _frame;
-    }
+   InstrBuilder(RegFileInfo rfInfo, Frame _frame) {
+      super();
+      this.rfInfo = rfInfo;
+      frame = _frame;
+   }
 
-    // TODO: override makeStore/Load(List, int, Instr) to take
-    // advantage of StrongARM's multi-register memory operations.   
-
-    public int getSize(Temp t) {
-	if (t instanceof TwoWordTemp) {
-	    return 2; 
-	} else {
-	    return 1;
-	}
-    }
+   public int getSize(Temp t) {
+      if (t instanceof TwoWordTemp) {
+         return 2; 
+      } else {
+         return 1;
+      }
+   }
 
    public List makeLoad(Temp r, int offset, Instr template) {
       StackInfo stack = ((CodeGen)frame.getCodeGen()).getStackInfo();
       offset = stack.localSaveOffset(offset);
       String[] strs = getLdrAssemStrs(r, offset);
-      Util.assert(strs.length == 1 ||
-                  strs.length == 2 );
+      Util.assert(strs.length == 1 || strs.length == 2 );
 
       if (strs.length == 2) {
          InstrMEM load1 = 
@@ -82,81 +77,83 @@ public class InstrBuilder extends harpoon.Backend.Generic.InstrBuilder {
       }
    }
 
-    private String[] getLdrAssemStrs(Temp r, int offset) {
-       if (r instanceof TwoWordTemp) {
-          return new String[] {
-             "lw `d0h, ", + offset + "(`s0)        # tmp restore (h)" ,
-             "lw `d0l, ", + (offset+4) + "(`s0)        # tmp restore (l)" };
-       } else {
-          return new String[] { "lw `d0, " + offset + "(`s0)        # tmp restore" };
-       }
-    }
+   private String[] getLdrAssemStrs(Temp r, int offset) {
+      if (r instanceof TwoWordTemp) {
+         return new String[] {
+            "lw `d0h, ", + offset     + "(`s0)        # tmp restore (h)" ,
+            "lw `d0l, ", + (offset+4) + "(`s0)        # tmp restore (l)" };
+      } else {
+         return new String[] { 
+            "lw `d0, " + offset       + "(`s0)        # tmp restore" };
+      }
+   }
 
-    private String[] getStrAssemStrs(Temp r, int offset) {
-       if (r instanceof TwoWordTemp) {
-          return new String[] {
-             "sw `s0h, " + offset + "(`s1)        # tmp save (h)", 
-             "sw `s0l, " + (offset+4) + "(`s1)        # tmp save (l)" };
-       } else {
-          return new String[] { "sw `s0, " + offset + "(`s1)          # tmp save" };
-       }
-    }
+   private String[] getStrAssemStrs(Temp r, int offset) {
+      if (r instanceof TwoWordTemp) {
+         return new String[] {
+            "sw `s0h, " + offset     + "(`s1)        # tmp save (h)", 
+            "sw `s0l, " + (offset+4) + "(`s1)        # tmp save (l)" };
+      } else {
+         return new String[] { 
+            "sw `s0, " + offset      + "(`s1)          # tmp save" };
+      }
+   }
 
-    public List makeStore(Temp r, int offset, Instr template) {
-       StackInfo stack = ((CodeGen)frame.getCodeGen()).getStackInfo();
-       offset = stack.localSaveOffset(offset);       
-       String[] strs = getStrAssemStrs(r, offset);
-       Util.assert(strs.length == 1 || 
-                   strs.length == 2);
+   public List makeStore(Temp r, int offset, Instr template) {
+      StackInfo stack = ((CodeGen)frame.getCodeGen()).getStackInfo();
+      offset = stack.localSaveOffset(offset);       
+      String[] strs = getStrAssemStrs(r, offset);
+      Util.assert(strs.length == 1 || 
+                  strs.length == 2);
 	    
-       if (strs.length == 2) {
-          System.out.println("In makeStore, twoWord case");
+      if (strs.length == 2) {
+         System.out.println("In makeStore, twoWord case");
 
-          InstrMEM store1 = 
-             new InstrMEM(template.getFactory(), template,
-				 strs[0],
-                          new Temp[]{ },
-                          new Temp[]{ r , SP() });
-          InstrMEM store2 = 
-             new InstrMEM(template.getFactory(), template,
-                          strs[1],
-                          new Temp[]{ },
-                          new Temp[]{ r , SP() });
-          store2.layout(store1, null);
-          Util.assert(store1.getNext() == store2, "store1.next == store2");
-          Util.assert(store2.getPrev() == store1, "store2.prev == store1");
-          return Arrays.asList(new InstrMEM[]{ store1, store2 });
-       } else {
+         InstrMEM store1 = 
+            new InstrMEM(template.getFactory(), template,
+                         strs[0],
+                         new Temp[]{ },
+                         new Temp[]{ r , SP() });
+         InstrMEM store2 = 
+            new InstrMEM(template.getFactory(), template,
+                         strs[1],
+                         new Temp[]{ },
+                         new Temp[]{ r , SP() });
+         store2.layout(store1, null);
+         Util.assert(store1.getNext() == store2, "store1.next == store2");
+         Util.assert(store2.getPrev() == store1, "store2.prev == store1");
+         return Arrays.asList(new InstrMEM[]{ store1, store2 });
+      } else {
 
-          InstrMEM store = 
-             new InstrMEM(template.getFactory(), template,
-                          strs[0],
-                          new Temp[]{ },
-                          new Temp[]{ r , SP() });
-          return Arrays.asList(new InstrMEM[] { store });
-       }
-    }
+         InstrMEM store = 
+            new InstrMEM(template.getFactory(), template,
+                         strs[0],
+                         new Temp[]{ },
+                         new Temp[]{ r , SP() });
+         return Arrays.asList(new InstrMEM[] { store });
+      }
+   }
 
-    public InstrLABEL makeLabel(Instr template) {
-	Label l = new Label();
-	InstrLABEL il = new InstrLABEL(template.getFactory(), 
-				       template,
-				       l.toString() + ":", l);
-	return il;
-    }
+   public InstrLABEL makeLabel(Instr template) {
+      Label l = new Label();
+      InstrLABEL il = new InstrLABEL(template.getFactory(), 
+                                     template,
+                                     l.toString() + ":", l);
+      return il;
+   }
 
-    /** Returns a new <code>InstrLABEL</code> for generating new
-	arbitrary code blocks to branch to.
-	@param template An <code>Instr</code> to base the generated
-	                <code>InstrLABEL</code>.
-			<code>template</code> should be part of the
-			instruction stream that the returned
-			<code>InstrLABEL</code> is intended for. 
-    */
-    public InstrLABEL makeLabel(Label l, Instr template) {
-	InstrLABEL il = new InstrLABEL(template.getFactory(), 
-				       template,
-				       l.toString() + ":", l);
-	return il;
-    }
+   /** Returns a new <code>InstrLABEL</code> for generating new
+       arbitrary code blocks to branch to.
+       @param template An <code>Instr</code> to base the generated
+       <code>InstrLABEL</code>.
+       <code>template</code> should be part of the
+       instruction stream that the returned
+       <code>InstrLABEL</code> is intended for. 
+   */
+   public InstrLABEL makeLabel(Label l, Instr template) {
+      InstrLABEL il = new InstrLABEL(template.getFactory(), 
+                                     template,
+                                     l.toString() + ":", l);
+      return il;
+   }
 }
