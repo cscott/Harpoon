@@ -1,30 +1,15 @@
-% CVSId: $Id: lctes03-talk.tex,v 1.9 2003-05-23 23:50:53 cananian Exp $
+% CVSId: $Id: lctes03-talk.tex,v 1.10 2003-05-31 02:44:31 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TO DO:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %  - a slide to explain loops/our choice opposed to interval analysis
-%  - cut 'push hard on all the bits' slide; replace by something
-%    mentioning the magic words ``analysis'' ``transformation'' or
-%    such.
 %  - Trim ``Intraprocedural analysis'': jump to bitwidth, focus on
 %    information gained, not process by which it is obtained
 %  - Explain (spend more time on) how the *inter* procedural analysis
 %    works/how fields are treated.  A graphic here?
-%  - Flag, in words or a slide, the transition from analysis to use
-%    between ``all cars are black'' and ``field compression using
-%    bitwidths''
 %  - Prettify the ``field packing'' slide.
-%  - Don't miss ``BigString!''
-%  - Reword ``Fields and Maps''; we don't need ``bottom'' and don't
-%    mention it.  Can be abbreviated!  Just talk about ``default''
-%    value which we don't have to store. ``Not an incomplete
-%    mapping''.
-%  - Before graphs & after ``how well does it work'' add an
-%    ``experimental setup'' slide: MIT Flex compiler, x86, etc, etc.
-%  - Mention ``lower is better'' and ``black is left over'' when
-%    discussing results slides.
-%  - Mention ``add on'' in ``moderate performance impact'' slide.
-%  - Separate slide saying why memory opt important/memory wall.
+%  - Use solid colors on results slides.
+%  - Shuffle memory wall slide?
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[%
 pdf,
@@ -163,27 +148,6 @@ boundaries.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\overlays{2}{
-\begin{slide}{Strategy}
-\fromSlide{2}{
-\begin{center}
-Push hard on all the bits.
-
-\vspace{0.5cm}
-\includegraphics[scale=0.5]{Figures/Kontour/strategy-bbox.eps}
-\end{center}
-}
-\end{slide}
-}
-
-\begin{talknotes}
-Our strategy is simple: @ we're going to push hard on all the bits,
-in the object header, in the fields of the object, and even on the
-padding bytes, in order to reduce the size of each object and thus
-the total allocated and live memory of the program.
-\end{talknotes}
-
-%---------------------------------------------------------------------- SLIDE -
 \newrgbcolor{fieldcomp}{0 1 0}
 \newrgbcolor{fieldelim}{0 1 1}
 \newrgbcolor{headeropt}{1 0 1}
@@ -221,7 +185,8 @@ Three broad techniques:
 \begin{talknotes}
 There are three broad techniques we are going to use to effect our
 size reductions: @ field compression, which reduces the size of the
-programmer-declared fields, @ mostly-constant field
+programmer-declared fields and the padding between fields,
+@ mostly-constant field
 elimination, to completely eliminate memory used to store common values,
 and @ header optimizations, which leverage more-efficient
 representations for the data needed by the runtime.  We will look at each
@@ -729,7 +694,8 @@ to the color field.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-\begin{slide}{Field compression using bitwidths}
+\begin{slide}{{\small Using the analysis:}\\
+              Field compression using bitwidths}
 
 \begin{center}
 \vspace{1cm}
@@ -738,6 +704,9 @@ to the color field.
 \end{slide}
 
 \begin{talknotes}
+Now we're going to show how the analysis results are used to transform
+the program.
+
 Once we've used our analysis to determine accurate widths for fields,
 we would like to shrink the objects' allocations to use only the space
 actually needed for each field.  So if we have less than 256 colors,
@@ -1013,6 +982,8 @@ But what do we do with the references to the now-deleted field?
 a {\tt getOffset()} accessor method (which always returns zero)
 and replacing references to {\tt offset} with calls to {\tt
   getOffset()}.
+
+\textit{Now, \texttt{BigString}\ldots}
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
@@ -1249,10 +1220,10 @@ to reduce memory overhead when we're storing the common value.
 \item Accessing an object field {\tt a.b} (where {\tt a} is the object
   reference and {\tt b} is the field name) is equivalent to evaluating
   a map from \tuple{a, b} to the value type.
-\item The mapping we will implement will be \textit{\yellow incomplete}.  We
-  define the result of accessing a non-existing mapping to be $\bot$.
-\item To achieve our storage savings, we map $\bot$ to the frequent
-  ``mostly-constant'' value.
+\item To achieve our storage savings, we interpret a nonexistent entry
+  as the frequent ``mostly-constant'' value.
+\item If a field is set to the ``mostly-constant'' value, remove its
+  entry from the map.
 \end{itemstep}
 \end{slide}
 }
@@ -1540,6 +1511,30 @@ So how well does all this work?
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
+\overlays{5}{
+\begin{slide}{Experimental setup}
+\begin{itemize}
+\FromSlide{2}
+\item Implemented all analyses and transformations with
+      MIT FLEX Java compiler infrastructure.
+\FromSlide{3}
+\begin{itemize}\yellow
+\item Whole-program static compiler.
+\end{itemize}
+\FromSlide{4}
+\item SPECjvm98 benchmark suite with full input size.
+\FromSlide{5}
+\item Benchmarks run on dual-processor 900 MHz
+  Pentium III running Debian Linux.
+\end{itemize}
+\end{slide}
+}
+
+\begin{talknotes}
+XXX write me.
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
 \begin{slide}{Reduction in total allocations}
 \begin{center}
 \includegraphics[scale=0.45]{Figures/oopsla-ttlalloc-color.eps}
@@ -1548,7 +1543,9 @@ So how well does all this work?
 
 \begin{talknotes}
 This is the reduction in \emph{total number of bytes allocated} during
-the run of the programs.  The programs at the bottom are from the
+the run of the programs.  The black bar represents the amount of
+allocation remaining after all our transformations.  Smaller bars are better.
+The programs at the bottom are from the
 SPECjvm98 benchmark suite, and represent real, complete, Java
 applications.  Let me quickly step through them: here on the left is
 {\tt compress}, a gzip-compression program.  {\tt jess} in an expert
@@ -1580,7 +1577,9 @@ mean that the program would run in a smaller memory environment.
 \end{slide}
 
 \begin{talknotes}
-And that is what we see here.  You'll notice the numbers look roughly
+And that is what we see here.  Again, black is live data after all our
+transformations, smaller is better.
+You'll notice the numbers look roughly
 the same, but they improve a lot for javac; what this shows you is
 that the objects we target in javac are precisely the ones which are
 live the longest and stress the system the most.
@@ -1624,7 +1623,8 @@ all array allocations.
 \end{slide}
 
 \begin{talknotes}
-And that's what we show here.  There are very sizable reductions now.
+And that's what we show here.  Smaller black is better.
+There are very sizable reductions now.
 But they have to be taken with a grain of salt: we know already that
 compress has almost no object allocations, so even though we do well
 on those that are present, it doesn't ``really'' matter.
@@ -1641,6 +1641,8 @@ on those that are present, it doesn't ``really'' matter.
 We've talked about some transformations that impact performance;
 this graph shows you what that performance impact really is.
 One represents the speed of the program before we touch it.
+Each bar, as we go left to right, represents the addition of one
+transformation to the previous program.
 You'll notice that the first three transformations, which are
 claz/field compression and byte-packing, offer a moderate speed
 \emph{improvement} over the original code.  This is wholly due to
@@ -1848,7 +1850,7 @@ remarkably effective.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
-% closer slide to avoid revealing the 'graveyard' inadvertently.
+% spacer slide to avoid revealing the 'graveyard' inadvertently.
 \begin{slide}{}
 \vspace{.5cm}
 \begin{center}\fontTitle{Size Optimizations for Java Programs}\end{center}
@@ -1877,6 +1879,37 @@ This talk:
 \part{The Graveyard Of Unused Slides follows this point.}
 
 \begin{talknotes}
+\end{talknotes}
+
+%---------------------------------------------------------------------- SLIDE -
+\overlays{8}{
+\begin{slide}{Why space optimizations?}
+\begin{itemize}
+ \FromSlide{2}
+ \item Embedded applications:
+ \FromSlide{3}
+ \begin{itemize}
+  \item Better use of {\yellow existing fixed memory resources}.
+  \FromSlide{4}
+  \item \bp{\yellow Reduce memory costs} of new devices.
+ \end{itemize}
+ \FromSlide{5}
+ \item Performace:
+ \FromSlide{6}
+ \begin{itemize}
+  \item ``{\yellow Memory wall}'' getting steeper.
+  \FromSlide{7}
+  \item Space optimizations increase the {\yellow effective cache size},
+  improving performance.
+  \FromSlide{8}
+  \item Added {\yellow ALU ops} getting comparatively {\yellow cheaper}.
+ \end{itemize}
+\end{itemize}
+\end{slide}
+}
+
+\begin{talknotes}
+XXX: write me.
 \end{talknotes}
 
 %---------------------------------------------------------------------- SLIDE -
