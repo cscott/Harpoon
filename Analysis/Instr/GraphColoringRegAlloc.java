@@ -33,16 +33,19 @@ import java.util.Set;
 import java.util.AbstractSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.Collection;
 import java.util.Collections;
+
 /**
- * <code>GraphColoringRegAlloc</code>
+ * <code>GraphColoringRegAlloc</code> uses graph coloring heuristics
+ * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.5 2000-07-25 23:37:23 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.6 2000-07-26 21:30:53 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -61,19 +64,22 @@ public class GraphColoringRegAlloc extends RegAlloc {
     int baseReg;
     int disp = INITIAL_DISPLACEMENT, argReg;
     List stack; // List<Integer>
-    Map realReg; // Map<Integer, Integer>
+    Map realReg; // Integer -> Integer
 
     final RegFileInfo rfi;
     final ReachingDefs rdefs;
 
     MultiMap regToDefs;
+    
 
-    List regAssigns;
-    Map regToColor;
+    List regAssigns; // List< List<Temp> >  
+    Map regToColor;  // Temp -> RegColor
 
-    List webRecords;
-    List tempWebRecords;
-    List assignWebRecords;
+    Map ixtToWeb; // Instr x Temp -> WebRecord
+    List webRecords; // List<WebRecord>
+
+    List tempWebRecords; // List<TempWebRecord>
+    List assignWebRecords; // List<AssignWebRecord>
     
     // Maps Temp:t -> Set of Regs whose live regions interfere with
     //                t's live region
@@ -114,7 +120,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		coalesced = coalesceRegs(adjMtx);
 	    } while (coalesced);
 
-	    ListRecord[] adjLsts = buildAdjLists(adjMtx); 
+	    WebRecord[] adjLsts = buildAdjLists(adjMtx); 
 	    adjMtx = null;
 
 	    System.out.println(Arrays.asList(adjLsts));
@@ -124,11 +130,16 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    ColorableGraph graph = new Graph(adjLsts);
 	    
 	    try {
-		colorer.color(graph, 
-			      new ArrayList(regToColor.values()));
+		List colors = new ArrayList(regToColor.values());
+		System.out.println("colors:"+colors);
+		colorer.color(graph, colors);
+			      
 		success = true;
 	    } catch (UnableToColorGraph e) {
 		success = false;
+
+		System.out.println("Unable to color graph");
+		System.exit(-1);
 	    }
 	    if (success) {
 		modifyCode();
@@ -153,6 +164,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		Temp t = (Temp) tmps.next();
 		if (rfi.isRegister(t)) {
 		    regToDefs.add(t, i);
+		    regToColor(t); 
 		} else {
 		    Set suggRegs = rfi.getRegAssignments(t);
 		    assigns.addAll(suggRegs);
@@ -160,6 +172,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 			List rL = (List) s.next();
 			for(Iterator rs=rL.iterator();rs.hasNext();){
 			    Temp reg = (Temp) rs.next();
+			    regToColor(reg); 
 			}
 		    }
 		}
@@ -181,6 +194,9 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	final Temp reg;
 	RegColor(Temp r) {
 	    this.reg = r;
+	}
+	public String toString() { 
+	    return "c:"+reg;
 	}
     }
     
@@ -334,16 +350,17 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	*/
     }
 
-    private ListRecord[] buildAdjLists(AdjMtx adjMtx) { 
+    private WebRecord[] buildAdjLists(AdjMtx adjMtx) { 
 	int i, j;
 	final int nwebs = webRecords.size();
-	final ListRecord[] adjLsts = new ListRecord[nwebs];
-	for(i=0; i<regAssigns.size(); i++) {
-	    adjLsts[i] = new ListRecord();
+	final WebRecord[] adjLsts = new WebRecord[nwebs];
+	for(i=0; i<assignWebRecords.size(); i++) {
+	    adjLsts[i] = (WebRecord) assignWebRecords.get(i);
 	    adjLsts[i].spcost =  Double.POSITIVE_INFINITY;
 	}
-	for(i=regAssigns.size();i<nwebs;i++) {
-	    adjLsts[i] = new ListRecord();
+	int offset = assignWebRecords.size();
+	for(i=0; i<tempWebRecords.size(); i++) {
+	    adjLsts[offset+i]= (WebRecord) tempWebRecords.get(i);
 	}
 	for(i=1; i < nwebs; i++) {
 	    for(j=0; j < i; j++) {
@@ -371,7 +388,26 @@ public class GraphColoringRegAlloc extends RegAlloc {
     }
 
     private void modifyCode() { 
-    
+	MultiMap colorToAssign; // RegColor -> List<Temp>
+	colorToAssign = new GenericMultiMap();
+	for(Iterator ars = assignWebRecords.iterator(); ars.hasNext();){
+	    AssignWebRecord wr = (AssignWebRecord) ars.next();
+	    colorToAssign.add(wr.regColor, wr.regs);
+	}
+	for(Iterator wrs = tempWebRecords.iterator(); wrs.hasNext();){
+	    TempWebRecord wr = (TempWebRecord) wrs.next();
+	    Iterator instrs;
+	    for(instrs = wr.defs.iterator(); instrs.hasNext();) {
+		Instr i = (Instr) instrs.next();
+		code.assignRegister
+		    (i, wr.sym, (List) colorToAssign.get(wr.regColor));
+	    }
+	    for(instrs = wr.uses.iterator(); instrs.hasNext();) {
+		Instr i = (Instr) instrs.next();
+		code.assignRegister
+		    (i, wr.sym, (List) colorToAssign.get(wr.regColor));
+	    }
+	}
     } 
 
     private void genSpillCode() { 
@@ -379,12 +415,14 @@ public class GraphColoringRegAlloc extends RegAlloc {
     }
     
     /** Graph is a graph view of the adjacency lists in this. 
-	Every element of a Graph is a ListRecord.
+	Every element of a Graph is a WebRecord.
      */
     class Graph extends AbstractGraph implements ColorableGraph {
 	LinkedList adjLsts;
-	Graph(ListRecord[] adjLsts) {
+	LinkedList hidden;
+	Graph(WebRecord[] adjLsts) {
 	    this.adjLsts = new LinkedList(Arrays.asList(adjLsts));
+	    hidden = new LinkedList();
 	}
 	public Set nodeSet() { 
 	    return new AbstractSet() {
@@ -395,23 +433,92 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    };
 	}
 	public Collection neighborsOf(Object n) { 
-	    if (!(n instanceof ListRecord))
+	    if (!(n instanceof WebRecord))
 		throw new IllegalArgumentException();
-	    ListRecord lr = (ListRecord) n;
+	    WebRecord lr = (WebRecord) n;
 	    return lr.adjnds;
 	}
 	public void resetGraph() { replaceAll(); resetColors(); }
-	public void hide(Object n) { }
-	public Object replace() { return null; }
-	public void replaceAll() { }
-	public Color getColor(Object n) { return null; }
-	public void resetColors() { }
-	public void setColor(Object n, Color c) { }
+	public void hide(Object n) { 
+	    if (adjLsts.remove(n)) { // check if in nodeSet
+		WebRecord lr = (WebRecord) n;
+		Iterator nbors;
+		for(nbors=lr.adjnds.iterator(); nbors.hasNext();){ 
+		    WebRecord nbor = (WebRecord) nbors.next();
+		    boolean changed = nbor.adjnds.remove(lr);
+		    Util.assert(changed);
+		}
+		hidden.addLast(lr);
+	    } else {
+		throw new IllegalArgumentException();
+	    }
+	}
+	public Object replace() { 
+	    WebRecord lr;
+	    try {
+		lr = (WebRecord) hidden.removeLast();
+		adjLsts.add(lr);
+		for(Iterator nbors=lr.adjnds.iterator();nbors.hasNext();){ 
+		    WebRecord nbor = (WebRecord) nbors.next();
+		    nbor.adjnds.add(lr);
+		}
+	    } catch (java.util.NoSuchElementException e) {
+		lr = null;
+	    }
+	    return lr;
+	}
+	public void replaceAll() {
+	    while(!hidden.isEmpty()) {
+		replace();
+	    }
+	}
+	public Color getColor(Object n) { 
+	    if (adjLsts.contains(n)) {
+		WebRecord lr = (WebRecord) n;
+		return lr.regColor;
+	    } else {
+		throw new IllegalArgumentException();
+	    }
+	}
+
+	// FSK: not implemented correctly; does not support node
+	// precoloring. 
+	public void resetColors() { 
+	    Iterator ns;
+	    for(ns = adjLsts.iterator(); ns.hasNext();) {
+		((WebRecord) ns.next()).regColor = null;
+	    }
+	    for(ns = hidden.iterator(); ns.hasNext();) {
+		((WebRecord) ns.next()).regColor = null;
+	    }
+	}
+
+	public void setColor(Object n, Color c) { 
+	    try {
+		((WebRecord)n).regColor = (RegColor) c;
+	    } catch (ClassCastException e) {
+		throw new IllegalArgumentException();
+	    }
+	}
     }
 
     abstract class WebRecord {
+	int nints, disp;
+	double spcost;
+	RegColor regColor;
+	List adjnds; // List<WebRecord>
+
 	int sreg; 
 	private boolean setYet = false;
+
+	WebRecord() {
+	    nints = 0;
+	    regColor = null;
+	    disp = Integer.MIN_VALUE;
+	    spcost = 0.0;
+	    adjnds = new LinkedList();
+	}
+
 	void sreg(int val) {
 	    Util.assert(!setYet);
 	    sreg = val;
@@ -473,7 +580,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	Set defs, uses; // Set<Instr>
 	boolean spill;
 	int disp;
-
+	
 	TempWebRecord(Temp symbol, Set defSet, Set useSet) {
 	    sym = symbol; defs = defSet; uses = useSet;
 	    spill = false; sreg = -1; disp = -1;
@@ -486,30 +593,6 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		return "< sym:"+sym+", defs:"+defs+", uses:"+uses+
 		    ", spill:"+spill+", sreg:"+sreg+", disp:"+disp+" >";
 	    return "w:"+sym;
-	}
-    }
-
-    class ListRecord {
-	int nints, color, disp;
-	double spcost;
-	List adjnds, rmvadj; // List<ListRecord>
-
-	/** Creates a <code>ListRecord</code>, with fields set to
-	    appropriate defaults. 
-	*/
-	public ListRecord() {
-	    nints = 0;
-	    color = Integer.MIN_VALUE;
-	    disp = Integer.MIN_VALUE;
-	    spcost = 0.0;
-	    adjnds = new LinkedList();
-	    rmvadj = new LinkedList();
-	}
-
-	public String toString() {
-	    return "< nints:"+nints+", color:"+color+
-		", disp:"+disp+", spcost:"+spcost+
-		", adjnds:"+adjnds+", rmvadj:"+rmvadj+" >";
 	}
     }
 

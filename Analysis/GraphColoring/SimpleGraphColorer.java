@@ -18,7 +18,7 @@ import harpoon.Util.Util;
  * <code>SimpleGraphColorer</code>
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: SimpleGraphColorer.java,v 1.1.2.11 2000-07-25 23:25:03 pnkfelix Exp $
+ * @version $Id: SimpleGraphColorer.java,v 1.1.2.12 2000-07-26 21:30:34 pnkfelix Exp $
  */
 
 public class SimpleGraphColorer extends GraphColorer {
@@ -62,11 +62,11 @@ public class SimpleGraphColorer extends GraphColorer {
 	
 	for(Object n=graph.replace(); n!=null; n=graph.replace()){
 	    // find color that none of n's neighbors is set to
-	    Collection neighborsC = graph.neighborsOf(n);
-	    Iterator neighbors = neighborsC.iterator();
-	    HashSet nColors = new HashSet(neighborsC.size());
-	    while(neighbors.hasNext()) {
-		Object nb = neighbors.next();
+
+	    Collection nborsC = graph.neighborsOf(n);
+	    HashSet nColors = new HashSet(nborsC.size());
+	    for(Iterator nbors = nborsC.iterator(); nbors.hasNext();){
+		Object nb = nbors.next();
 		nColors.add(graph.getColor(nb));
 	    }
 	    

@@ -3,25 +3,42 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Analysis.GraphColoring;
 
+import java.util.Collections;
+import java.util.Collection;
+
 /**
  * <code>UnableToColorGraph</code> is a control-flow construct for
  * indicating the provided Graph Coloring algorithm failed to color a 
  * given graph.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: UnableToColorGraph.java,v 1.1.2.1 2000-07-25 23:25:03 pnkfelix Exp $
+ * @version $Id: UnableToColorGraph.java,v 1.1.2.2 2000-07-26 21:30:34 pnkfelix Exp $
  */
 
 public class UnableToColorGraph extends Throwable {
     
+    Collection rmvSuggs;
+
+    /** returns a Collection of nodes that are suggested for
+	removal to make some external graph colorable.
+	No guarantees are made about the colorability of the graph
+	after any nodes are removed; these are merely
+	heuristically-driven hints to the catcher on how to recover. 
+     */
+    public Collection getRemovalSuggestions() {
+	return Collections.unmodifiableCollection(rmvSuggs);
+    }
+
     /** Creates a <code>UncolorableGraphException</code>. */
     public UnableToColorGraph() {
         super();
+	rmvSuggs = Collections.EMPTY_SET;
     }
 
     /** Creates a <code>UncolorableGraphException</code>. */
     public UnableToColorGraph(String s) {
         super(s);
+	rmvSuggs = Collections.EMPTY_SET;
     }
     
 }

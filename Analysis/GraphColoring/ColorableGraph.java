@@ -26,7 +26,7 @@ import java.util.NoSuchElementException;
  * <code>addNode(Object)</code>.
  * 
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: ColorableGraph.java,v 1.1.2.13 2000-07-25 23:25:03 pnkfelix Exp $ */
+ * @version $Id: ColorableGraph.java,v 1.1.2.14 2000-07-26 21:30:34 pnkfelix Exp $ */
 
 public interface ColorableGraph extends Graph {
 
@@ -78,17 +78,15 @@ public interface ColorableGraph extends Graph {
 	}
     }
 
-    /** Returns all nodes in graph to their original state.
+    /** Reverts the graph's color mapping to its initial state.
 	<BR> <B>modifies:</B> <code>this</code>
-	<BR> <B>effects:</B> the Node -> Color mapping 
-	     is cleared and each hidden node is restored;
-	     <code>this</code> is otherwise unchanged.
-    */
-    void resetGraph();
-
-    /** Reverts the graph to an uncolored state.
-	<BR> <B>modifies:</B> <code>this</code>
-	<BR> <B>effects:</B> clears the Node -> Color mapping.
+	<BR> <B>effects:</B> undoes any modifications made to the
+	     graph's Node -> Color mapping.  Note that if a colorable
+	     graph is to support <i>node precoloring</i>, where
+	     elements of the graph are assigned a color prior to an
+	     attempt to color the remainder of the graph, then it
+	     is not sufficient to implement this method by completely
+	     clearing the Node -> Color mapping.
     */
     void resetColors();
 
@@ -97,7 +95,9 @@ public interface ColorableGraph extends Graph {
 	     removes <code>n</code> from the Node -> Color mapping.
 	     Else puts (n, c) in the Node -> Color mapping.
         @throws IllegalArgumentException <code>n</code> is not
-	     present in the node set for <code>this</code>.
+	     present in the node set for <code>this</code> or
+	     <code>c</code> is not an appropriate Color for this
+	     graph. 
 	@throws AlreadyColoredException <code>n</code> is already
 	     present in the Node -> Color mapping.
     */
