@@ -1,0 +1,66 @@
+#!/bin/sh
+## copy this script to a scratch directory w/ lots of space, and be sure to
+##  add -f java
+##  add frame
+## you *may* have to add a '-ver 1.4.0' arg to JCC= in Harpoon/Code/GNUMakefile
+/bin/rm -rf docs srcpath scratch
+mkdir -p docs srcpath scratch
+if [ ! -d Harpoon/Code ] ; then \
+	mkdir -p Harpoon
+	/bin/rm -rf Harpoon/Code Harpoon/SupportNP
+	export CVS_RSH=ssh
+	(cd Harpoon ; \
+	  cvs -d :ext:lm.lcs.mit.edu:/home/cananian/Harpoon/CVSROOT \
+	    checkout Code SupportNP )
+	mv Harpoon/SupportNP Harpoon/Code
+	(cd Harpoon/Code ; gmake java)
+fi
+# note that greping out A.*\.html below is a hack to work around MIF brokenness
+(cd Harpoon/Code; (gmake list-source ; find . -name "*.html" ) | \
+  grep -v "^./doc/" | grep -v "^[A].*\.html" | \
+  grep -v Tools/PatMat/doc-files/instr-selection-tool.html | \
+  xargs bin/munge ) | \
+  gsed -e 's/<\([a-z]\+\)@\([-A-Za-z.]\+\).\(edu\|EDU\)>/\&lt;\1@\2.edu\&gt;/g' | \
+  gsed -e 's,<[Uu]>,<i>,g' -e 's,</[Uu]>,</i>,g' | \
+  (cd scratch; ../Harpoon/Code/bin/unmunge)
+ln -s ../scratch srcpath/harpoon
+ln -s ../scratch/Contrib srcpath/gnu
+# collect java package names
+(cd Harpoon/Code; gmake list-packages-with-java-src) > srcpath/raw-pkgs
+touch srcpath/pkgs
+for f in `cat srcpath/raw-pkgs`; do
+  echo harpoon/$f | sed -e 's,/,.,g' -e 's/harpoon.Contrib/gnu/' >> srcpath/pkgs
+done
+sort srcpath/pkgs | grep -v RunTime | grep -v JavaChip > srcpath/filtered-pkgs
+
+#  -link http://java.sun.com/products/jdk/1.2/docs/api \
+javadoc \
+  -doclet com.sun.tools.doclets.mif.MIFDoclet \
+  -docletpath mifdoclet1.2/lib/mifdoclet.jar \
+  -J-Xmx128M -version -author \
+  -batch fmbatch \
+  -print pdf \
+  -d docs \
+  -sourcepath srcpath \
+  -classpath Harpoon/Code:Harpoon/Code/Support/CUP.jar \
+  -overviewfile srcpath/harpoon/overview.html \
+  -overviewtitle "FLEX API" \
+  -overviewtree \
+  -nodeprecated \
+  -membersummary compact \
+  -group "Basic Class/Method/Field handling" "harpoon.ClassFile*" \
+  -group "Intermediate Representations" "harpoon.IR*:harpoon.Temp*" \
+  -group "Interpreters for IRs" "harpoon.Interpret*" \
+  -group "Analyses and Transformations" "harpoon.Analysis*:harpoon.Runtime*" \
+  -group "Backends (including code selection and runtime support)" "harpoon.Backend*" \
+  -group "Tools and Utilities" "harpoon.Tools*:harpoon.Util*" \
+  -group "Contributed packages" "gnu.*" \
+  -booktitle "FLEX Compiler Infrastructure" \
+  -booksubtitle "API documentation" \
+  -bookversion "Version 0.0" \
+  -bookauthor "C. Scott Ananian et. al." \
+  -bookcopyright "Copyright \xa9 2002 C. Scott Ananian et. al." \
+  -bookpublisher "MIT LCS" \
+   `cat srcpath/filtered-pkgs | grep -v harpoon.ClassFile | grep -v harpoon.IR | grep -v harpoon.Util `
+# note that greping out harpoon.ClassFile, harpoon.IR, and harpoon.Util above
+# is a hack to work around MIF doclet brokenness.
