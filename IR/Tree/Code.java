@@ -7,6 +7,7 @@ import harpoon.ClassFile.HCode;
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.Derivation;
+import harpoon.IR.Properties.Derivation.DList;
 import harpoon.Util.ArrayFactory;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
