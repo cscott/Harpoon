@@ -9,19 +9,29 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Properties.Derivation;
 import harpoon.IR.Properties.Derivation.DList;
 import harpoon.Util.ArrayFactory;
-import harpoon.Util.HashSet;
-import harpoon.Util.Set;
 import harpoon.Util.Util;
 import harpoon.Temp.LabelList;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.Stack;
-import java.util.Vector;
 
+/**
+ * <code>Tree.Code</code> is an abstract superclass of codeviews
+ * using the components in <code>IR.Tree</code>.  It implements
+ * shared methods for the various codeviews using <code>Tree</code>s.
+ * 
+ * @author  Duncan Bryce <duncan@lcs.mit.edu>
+ * @version $Id: Code.java,v 1.1.2.19 1999-07-07 09:17:25 duncan Exp $
+ */
 public abstract class Code extends HCode 
     implements Derivation, TypeMap {
     /** The Tree Objects composing this code view. */
@@ -63,14 +73,14 @@ public abstract class Code extends HCode
     }
   
     /** Clone this code representation. The clone has its own copy
-   *  of the Tree */
+     *  of the Tree */
     public abstract HCode  clone(HMethod newMethod, Frame frame);
-
+    
     /** Return the name of this code view. */
     public abstract String getName();
-  
+    
     /** Return the <code>HMethod</code> this codeview
-   *  belongs to.  */
+     *  belongs to.  */
     public HMethod getMethod() { return this.parent; }
 
     public Frame getFrame() { return this.frame; }
@@ -80,9 +90,8 @@ public abstract class Code extends HCode
 
     /** Returns the leaves of the Tree */
     public HCodeElement[] getLeafElements() { 
-	HCodeElement[] result;
-	Stack          nodes    = new Stack();
-	Vector         leaves   = new Vector();
+	Stack nodes  = new Stack();
+	List  leaves = new ArrayList();
 
 	nodes.push(getRootElement());
 	while (!nodes.isEmpty()) {
@@ -90,7 +99,7 @@ public abstract class Code extends HCode
 	    if (t.kind()==TreeKind.SEQ) {
 		SEQ seq = (SEQ)t;
 		if (seq.left==null) {
-		    if (seq.right==null) { leaves.addElement(seq); }
+		    if (seq.right==null) { leaves.add(seq); }
 		    else                 { nodes.push(seq.right);  }
 		}
 		else {
@@ -101,7 +110,7 @@ public abstract class Code extends HCode
 	    else if (t.kind()==TreeKind.ESEQ) {
 		ESEQ eseq = (ESEQ)t;
 		if (eseq.exp==null) {
-		    if (eseq.stm==null) { leaves.addElement(eseq); }
+		    if (eseq.stm==null) { leaves.add(eseq); }
 		    else                { nodes.push(eseq.stm);    }
 		}
 		else {
@@ -111,7 +120,7 @@ public abstract class Code extends HCode
 	    }
 	    else {
 		ExpList explist = t.kids();
-		if (explist==null) leaves.addElement(t);
+		if (explist==null) leaves.add(t);
 		else {
 		    while (explist!=null) {
 			if (explist.head!=null) nodes.push(explist.head);
@@ -120,66 +129,53 @@ public abstract class Code extends HCode
 		}
 	    }
 	}
-	result = new HCodeElement[leaves.size()];
-	leaves.copyInto(result);
-	return result;
+	return (HCodeElement[])leaves.toArray(new HCodeElement[0]);
     }
   
     /**
-   *  Returns an ordered list of the <code>Tree</code> Objects
-   *  making up this code view.  The root of the tree
-   *  is in element 0 of the array.
-   */
+     * Returns an ordered list of the <code>Tree</code> Objects
+     * making up this code view.  The root of the tree
+     * is in element 0 of the array.
+     */
     public HCodeElement[] getElements() {
-	Vector v = new Vector();
-	for (Enumeration e = getElementsE(); e.hasMoreElements();)
-	    v.addElement(e.nextElement());
-	HCodeElement[] elements = new HCodeElement[v.size()];
-	v.copyInto(elements);
-	return (HCodeElement[])elements;
+	return super.getElements();
     }
 
-    /** Returns an enumeration of the <code>Tree</code> Objects making up
-   *  this code view.  The root of the tree is the first element
-   *  enumerated. */
-    public Enumeration getElementsE() { 
-	return new Enumeration() {
-	    HashSet h = new HashSet();
+    /** 
+     * Returns an <code>Iterator</code> of the <code>Tree</code> Objects 
+     * making up this code view.  The root of the tree is the first element
+     * of the Iterator. 
+     */
+    public Iterator getElementsI() { 
+	return new Iterator() {
+	    Set h = new HashSet();
 	    Stack stack = new Stack(); 
-	    { 
-		visitElement(getRootElement());
-	    }
-	    public boolean hasMoreElements() { 
+	    { visitElement(getRootElement()); }
+	    public boolean hasNext() { 
 		if (stack.isEmpty()) {
-		    h.clear();
+		    h = null; // free up some memory
 		    return false;
 		}
 		else return true;
 	    }
-
-	    private void visitElement(Object elem) {
-		if (!h.contains(elem)) {
-		    stack.push(elem);
-		    h.union(elem);
-		}
-	    }
-	    public Object nextElement() {
+	    public Object next() {
 		Tree t;
 		if (stack.isEmpty()) throw new NoSuchElementException();
 		else {
 		    t = (Tree)stack.pop();
 		    // Push successors on stack
-		    if (t.kind()==TreeKind.SEQ) {
+		    switch (t.kind()) { 
+		    case TreeKind.SEQ: 
 			SEQ seq = (SEQ)t;
 			if (seq.left!=null)  visitElement(seq.left);
 			if (seq.right!=null) visitElement(seq.right);
-		    }
-		    else if (t.kind()==TreeKind.ESEQ) {
+			break;
+		    case TreeKind.ESEQ: 
 			ESEQ eseq = (ESEQ)t;
 			if (eseq.exp!=null) visitElement(eseq.exp);
 			if (eseq.stm!=null) visitElement(eseq.stm);
-		    }
-		    else {
+			break;
+		    default:
 			ExpList explist = t.kids();
 			while (explist!=null) {
 			    if (explist.head!=null) visitElement(explist.head);
@@ -188,6 +184,12 @@ public abstract class Code extends HCode
 		    }
 		}
 		return t;
+	    }
+	    public void remove() { 
+		throw new UnsupportedOperationException();
+	    }
+	    private void visitElement(Object elem) {
+		if (h.add(elem)) stack.push(elem);
 	    }
 	};
     }
@@ -199,32 +201,60 @@ public abstract class Code extends HCode
 	Print.print(pw,this);
     } 
 
-    public boolean isCanonical() { 
-	return getName().equals("canonical-tree");
-    }
+    /** 
+     * Returns true if this codeview is a canonical representation
+     */
+    public abstract boolean isCanonical();
 
+    /** 
+     * Recomputes the control-flow graph exposed through this codeview
+     * by the <code>HasEdges</code> interface of its elements.  
+     * This method should be called whenever the tree structure of this
+     * codeview is modified.  This is an optional operation, which should
+     * be implemented by all canonical codeviews.  
+     *
+     * @exception UnsupportedOperationException if this operation is not
+     *      implemented. 
+     *
+     */
+    public abstract void recomputeEdges();
+
+
+    /**
+     * Implementation of the <code>Derivation</code> interface.
+     */
     public abstract DList derivation(HCodeElement hce, Temp t);
+    
 
+    /**
+     * Implementation of the <code>TypeMap</code> interface.
+     */
     public abstract HClass typeMap(HCode hc, Temp t);
 
-    static final int COMPUTE_EDGE_SETS = 0;
-    static final int ALLOC_EDGE_ARRAYS = 1;
-    static final int ASSIGN_EDGE_DATA  = 2;
+    /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*
+     *                                                           *
+     *                EDGE INITIALIZATION CODE                   *
+     *                                                           *
+     *++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
-    /** Only for CanoncialTreeCode and later views, a class to initialize
+    //    private static final int COMPUTE_EDGE_SETS = 0;
+    //    private static final int ALLOC_EDGE_ARRAYS = 1;
+    //    private static final int ASSIGN_EDGE_DATA  = 2;
+
+    /* Only for canonical views, a class to initialize
      *  the edges representing the CFG of this Tree form
      */
     class EdgeInitializer extends TreeVisitor { 
-	private /* static */ final int COMPUTE_EDGE_SETS = 0;
-	private /* static */ final int ALLOC_EDGE_ARRAYS = 1;
-	private /* static */ final int ASSIGN_EDGE_DATA  = 2;
+	private static final int COMPUTE_EDGE_SETS = 0;
+	private static final int ALLOC_EDGE_ARRAYS = 1;
+	private static final int ASSIGN_EDGE_DATA  = 2;
 
-	private Hashtable labels       = new Hashtable();
-	private Hashtable successors   = new Hashtable();
-	private Hashtable predecessors = new Hashtable();
-	private Stack     nodes        = new Stack();
-	private Stm       nextNode;
-	private int       state;
+	private Map    labels        = new HashMap();
+	private Map    successors    = new HashMap();
+	private Map    predecessors  = new HashMap();
+	private Stack  nodes         = new Stack();
+	private Stm    nextNode;
+	private int    state;
 
 	EdgeInitializer() { 
 	    Util.assert(isCanonical());
@@ -238,83 +268,76 @@ public abstract class Code extends HCode
 	    }
 	}
 
-	public void visit(Tree t) { 
-	    throw new Error("No defaults here.");
-	}
-
-	public void visit(Exp e) { /* Do nothing for Exps */ } 
+	public void visit(Tree t) { throw new Error("No defaults here."); }
+	public void visit(Exp e)  { /* Do nothing for Exps */ } 
 
 	public void visit(CJUMP s) { 
-	    switch(state) 
-		{ 
-		case COMPUTE_EDGE_SETS:
-		    Util.assert(labels.containsKey(s.iftrue));
-		    Util.assert(labels.containsKey(s.iffalse));
-		    addEdge(s, (Stm)labels.get(s.iftrue));
-		    addEdge(s, (Stm)labels.get(s.iffalse));
-		    break;
-		case ALLOC_EDGE_ARRAYS:
+	    switch(state) { 
+	    case COMPUTE_EDGE_SETS:
+		Util.assert(labels.containsKey(s.iftrue));
+		Util.assert(labels.containsKey(s.iffalse));
+		addEdge(s, (Stm)labels.get(s.iftrue));
+		addEdge(s, (Stm)labels.get(s.iffalse));
+		break;
+	    case ALLOC_EDGE_ARRAYS:
+		if (s.prev==null) 
 		    s.prev = predecessors.containsKey(s)?
 			new Edge[((Set)predecessors.get(s)).size()]:
 			    new Edge[0];
-		    Util.assert(successors.containsKey(s));
-		    s.next = new Edge[2];
-		    break;
-		case ASSIGN_EDGE_DATA:
-		    Util.assert(successors.containsKey(s));
-		    Stm next; Set nextPred;
-		    
-		    if (s.iftrue.equals(s.iffalse)) { 
-			next = (Stm)labels.get(s.iftrue);
-			nextPred = (Set)predecessors.get(next);
-			Edge[] oldNextPrev = next.prev;
-			next.prev = new Edge[next.prev.length+1];
-			System.arraycopy(oldNextPrev, 0, 
-					 next.prev, 1, oldNextPrev.length);
-			Tree.addEdge(s, 0, next, nextPred.size()-1);
-			Tree.addEdge(s, 1, next, nextPred.size()-2);
-			nextPred.remove(s);
-		    }
-		    else { 
-			// Add true branch
-			next         = (Stm)labels.get(s.iftrue);
-			nextPred     = (Set)predecessors.get(next);
-			Tree.addEdge(s, 0, next, nextPred.size()-1);
-			nextPred.remove(s);
-			    
-			// Add false branch
-			next         = (Stm)labels.get(s.iffalse);
-			nextPred     = (Set)predecessors.get(next);
-			Tree.addEdge(s, 1, next, nextPred.size()-1);
-			nextPred.remove(s);
-		    }
-		    break;
-		default:
-		    throw new Error("Bad state");
+		break;
+	    case ASSIGN_EDGE_DATA:
+		Util.assert(successors.containsKey(s));
+		Stm next; Set nextPred;
+		
+		if (s.iftrue.equals(s.iffalse)) { 
+		    next = (Stm)labels.get(s.iftrue);
+		    nextPred = (Set)predecessors.get(next);
+		    Edge[] oldNextPrev = next.prev;
+		    next.prev = new Edge[next.prev.length+1];
+		    System.arraycopy(oldNextPrev, 0, 
+				     next.prev, 1, oldNextPrev.length);
+		    Tree.addEdge(s, 0, next, nextPred.size()-1);
+		    Tree.addEdge(s, 1, next, nextPred.size()-2);
+		    nextPred.remove(s);
 		}
-
+		else { 
+		    // Add true branch
+		    next         = (Stm)labels.get(s.iftrue);
+		    nextPred     = (Set)predecessors.get(next);
+		    Tree.addEdge(s, 0, next, nextPred.size()-1);
+		    nextPred.remove(s);
+		    
+		    // Add false branch
+		    next         = (Stm)labels.get(s.iffalse);
+		    nextPred     = (Set)predecessors.get(next);
+		    Tree.addEdge(s, 1, next, nextPred.size()-1);
+		    nextPred.remove(s);
+		}
+		break;
+	    default:
+		throw new Error("Bad state");
+	    }
+	    
 	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
 	}
-
+	
 	public void visit(JUMP s) { 
-	    switch (state) 
-		{ 
-		case COMPUTE_EDGE_SETS:
-		    for (LabelList l = s.targets; l!=null; l=l.tail) { 
-			Util.assert(labels.containsKey(l.head));
-			addEdge(s, (Stm)labels.get(l.head));
-		    }
-		    break;
-		case ALLOC_EDGE_ARRAYS:
-		    visit((Stm)s);
-		    return;
-		case ASSIGN_EDGE_DATA:
-		    visit((Stm)s);
-		    return;
-		default:
-		    throw new Error("Bad state");
+	    switch (state) { 
+	    case COMPUTE_EDGE_SETS:
+		for (LabelList l = s.targets; l!=null; l=l.tail) { 
+		    Util.assert(labels.containsKey(l.head));
+		    addEdge(s, (Stm)labels.get(l.head));
 		}
-
+		break;
+	    case ALLOC_EDGE_ARRAYS:
+		visit((Stm)s);
+		return;
+	    case ASSIGN_EDGE_DATA:
+		visit((Stm)s);
+		return;
+	    default:
+		throw new Error("Bad state");
+	    }
 	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
 	}
 	
@@ -325,6 +348,34 @@ public abstract class Code extends HCode
 	    nextNode = s.left;
 	}
 
+	public void visit(RETURN s) { 
+	    switch (state) {
+	    case COMPUTE_EDGE_SETS: 
+		break;
+	    case ALLOC_EDGE_ARRAYS: 
+	    case ASSIGN_EDGE_DATA:  
+		visit((Stm)s); 
+		return;
+	    default:
+		throw new Error("Bad state");
+	    }
+	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
+	}
+
+	public void visit(THROW s) { 
+	    switch (state) {
+	    case COMPUTE_EDGE_SETS: 
+		break;
+	    case ALLOC_EDGE_ARRAYS: 
+	    case ASSIGN_EDGE_DATA:  
+		visit((Stm)s); 
+		return;
+	    default:
+		throw new Error("Bad state");
+	    }
+	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
+	}
+
 	public void visit(Stm s) { 
 	    nextNode = nodes.isEmpty()?null:(Stm)nodes.pop();
 	    switch (state) 
@@ -333,26 +384,23 @@ public abstract class Code extends HCode
 		    if (nextNode!=null) addEdge(s, RS(nextNode)); 
 		    break;
 		case ALLOC_EDGE_ARRAYS:
-		    s.prev = predecessors.containsKey(s)?
-			new Edge[((Set)predecessors.get(s)).size()]:
-			    new Edge[0];
-		    s.next = successors.containsKey(s)?
-			new Edge[((Set)successors.get(s)).size()]:
-			    new Edge[0];
+		    if (s.prev==null) 
+			s.prev = predecessors.containsKey(s)?
+			    new Edge[((Set)predecessors.get(s)).size()]:
+				new Edge[0];
 		    break;
 		case ASSIGN_EDGE_DATA:
-		    int i=0;
+		    int n=0;
 		    if (successors.containsKey(s)) { 
 			Set succ = (Set)successors.get(s);
-			for (Enumeration e = succ.elements(); 
-			     e.hasMoreElements();) { 
-			    Stm next     = (Stm)e.nextElement();
+			for (Iterator i = succ.iterator(); i.hasNext();) { 
+			    Stm next     = (Stm)i.next();
 			    Set nextPred = (Set)predecessors.get(next);
-			    Tree.addEdge(s, i++, next, nextPred.size()-1);
+			    Tree.addEdge(s, n++, next, nextPred.size()-1);
 			    nextPred.remove(s);
 			}
 			succ.clear(); 
-			i=0;
+			n=0;
 		    }
 		    break;
 		default:
@@ -361,8 +409,8 @@ public abstract class Code extends HCode
 	}
 
 	private void mapLabels() {
-	    for (Enumeration e = getElementsE(); e.hasMoreElements();) {
-		Object next = e.nextElement();
+	    for (Iterator i = getElementsI(); i.hasNext();) {
+		Object next = i.next();
 		try {  
 		    SEQ seq = (SEQ)next;
 		    if (seq.left.kind()==TreeKind.LABEL) 
@@ -388,30 +436,16 @@ public abstract class Code extends HCode
 		succ = new HashSet();
 		successors.put(from, succ);
 	    }
-	    pred.union(from);
-	    succ.union(to);
+	    pred.add(from);
+	    succ.add(to);
 	}	    
 
 	private Stm RS(Stm seq) { 
-	    while (seq.kind()==TreeKind.SEQ) seq = ((SEQ)seq).left;
-	    return seq;
+	    try { while (true) seq = ((SEQ)seq).left; } 
+	    catch (ClassCastException e) { return seq; }
 	}
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
