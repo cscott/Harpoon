@@ -28,7 +28,7 @@ import java.util.Collections;
  * 
  *
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: MaximalMunchCGG.java,v 1.1.2.39 1999-10-14 05:42:04 cananian Exp $ */
+ * @version $Id: MaximalMunchCGG.java,v 1.1.2.40 1999-10-15 18:45:56 cananian Exp $ */
 public class MaximalMunchCGG extends CodeGeneratorGenerator {
 
 
@@ -824,7 +824,7 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 		    "is not complete enough for this program\\n"+
 		    "Died on \"+prettyPrint("+expArg+")+\" in \" + prettyPrint(globalStmArg));"); 
 	out.println("\t\treturn null; // doesn't matter, we're dead if we didn't match...");
-	out.println("\t\t }"); // end munchExp
+	out.println("\t\t } // end munchExp");
 	
 	out.println("\t"+TREE_Stm +" globalStmArg=null;");
 
@@ -846,6 +846,10 @@ public class MaximalMunchCGG extends CodeGeneratorGenerator {
 	    out.println("\t\t\t}");
 	}
 
+	out.println("\t\tharpoon.Util.Util.assert(_matched_, \"Uh oh...\\n"+
+		    "maximal munch didn't match anything...SPEC file\\n"+
+		    "is not complete enough for this program\\n"+
+		    "Died on \"+prettyPrint("+stmArg+")+\" in \" + prettyPrint(globalStmArg));"); 
 	out.println("\t\t} // end munchStm");
 	
 	out.println("\t\tpublic void visit("+TREE_Tree+" treee){");
