@@ -13,7 +13,7 @@ for s in `ls $SPECPATH/spec/benchmarks | sort | sed -ne ${start},${end}p`; do
     if [ -f $rootset ]; then
       echo "include $rootset" >> $tmprootset
     fi
-    dir=`echo $s | tr "[:lower:]" "[:upper:]" | tr -d "[_]"`pnk
+    dir=`echo $s | tr "[:lower:]" "[:upper:]" | tr -d "[_]"`pnk$SPECSUFFIX
     echo $dir $rootset
     rm -rf as$dir as$dir.err as$dir.out
     bin/build-arm-pnk $SPECBUILDOPTS -r $tmprootset SpecApplication $dir \
