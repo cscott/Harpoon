@@ -95,4 +95,9 @@ int main(int argc, char *argv[]) {
   (*env)->DeleteLocalRef(env, cls);
   // XXX: should call Thread.currentThread().exit() at this point.
   FNI_java_lang_Thread_finishMain(env);
+
+#ifdef WITH_CLUSTERED_HEAPS
+  /* print out allocation statistics */
+  { void print_statistics(void); print_statistics(); }
+#endif
 }
