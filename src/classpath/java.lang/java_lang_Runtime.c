@@ -6,6 +6,7 @@
 #include <assert.h>
 #include "../../java.lang/runtime.h" /* useful library-indep implementations */
 #include "../../java.lang/properties.h" /* same, for setting up properties */
+#include "../../java.lang.reflect/reflect-util.h" /* for REFLECT_staticinit */
 
 /*
  * Class:     java_lang_Runtime
@@ -219,3 +220,19 @@ JNIEXPORT void JNICALL Java_java_lang_Runtime_insertSystemProperties
   (JNIEnv *env, jclass runtime, jobject properties) {
     fni_properties_init(env, properties, JNI_TRUE);
 }
+
+#ifdef WITH_INIT_CHECK
+JNIEXPORT void JNICALL Java_java_lang_Runtime_insertSystemProperties_00024_00024initcheck
+  (JNIEnv *env, jclass runtime, jobject properties) {
+    jclass strcls;
+    /* first do the property insertion, which we know is "safe" -- that is,
+     * it only invokes the String.<init>() method, which doesn't touch
+     * any static fields of String.... */
+    Java_java_lang_Runtime_insertSystemProperties(env, runtime, properties);
+    /* ... now, before any other code sees the Strings, let's make sure
+     * String.<clinit> is run. */
+    strcls = (*env)->FindClass(env, "java/lang/String");
+    assert(!(*env)->ExceptionOccurred(env));
+    REFLECT_staticinit(env, strcls);
+}
+#endif /* WITH_INIT_CHECK */
