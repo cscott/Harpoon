@@ -36,6 +36,7 @@ import harpoon.Util.CombineIterator;
 import harpoon.Util.Default;
 import harpoon.Util.Util;
 
+import harpoon.Analysis.PointerAnalysis.AllocationNumbering;
 import harpoon.Analysis.PointerAnalysis.InstrumentAllocs;
 
 import gnu.getopt.Getopt;
@@ -73,7 +74,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.104 2000-11-09 00:50:29 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.105 2000-11-09 01:21:08 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -208,9 +209,23 @@ public class SAMain extends harpoon.IR.Registration {
 	    }
 	    if (INSTRUMENT_ALLOCS) {
 		hcf=harpoon.IR.Quads.QuadNoSSA.codeFactory(hcf);
+		AllocationNumbering an =
+		    new AllocationNumbering(hcf, classHierarchy);
+		try {
+		ObjectOutputStream ois =
+		    new ObjectOutputStream(new FileOutputStream(IFILE));
+		ois.writeObject(an);
+		ois.close();
+		} catch (java.io.IOException e) {
+		    System.out.println(e + " was thrown:");
+		    e.printStackTrace(System.out);
+		}
+		System.exit(1);
+		/*
 		insta=new InstrumentAllocs(hcf, mainM, linker);
 		hcf=insta.codeFactory();
 		classHierarchy = new QuadClassHierarchy(linker, roots, hcf);
+		*/
 	    }
 	} // don't need the root set anymore.
 
