@@ -7,7 +7,7 @@ import java.lang.reflect.Array;
 /** 
  * Miscellaneous static utility functions.
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Util.java,v 1.12.2.6 1999-02-24 02:27:38 cananian Exp $
+ * @version $Id: Util.java,v 1.12.2.7 1999-02-25 19:03:28 cananian Exp $
  */
 public abstract class Util {
   // Util contains only static fields and methods.
@@ -83,10 +83,15 @@ public abstract class Util {
     for (int i=0; i<str.length(); i++) {
       char c = str.charAt(i);
       if (!isSafelyPrintable(c)) {
-	String hexval=Integer.toHexString((int)c);
-	while(hexval.length()<4) hexval="0"+hexval;
-	sb.append('\\'); sb.append('u');
-	sb.append(hexval);
+	if (c < 256) {
+	  String octval=Integer.toOctalString((int)c);
+	  while(octval.length()<3) octval="0"+octval;
+	  sb.append('\\'); sb.append(octval);
+	} else {
+	  String hexval=Integer.toHexString((int)c);
+	  while(hexval.length()<4) hexval="0"+hexval;
+	  sb.append('\\'); sb.append('u'); sb.append(hexval);
+	}
       }
       else sb.append(c);
     }
