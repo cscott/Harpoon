@@ -133,6 +133,7 @@ extern pth_key_t flex_timedwait_key; /* defined in java_lang_Thread.c */
 #define pthread_rwlock_wrlock	pthread_mutex_lock
 #define pthread_rwlock_unlock	pthread_mutex_unlock
 #define pthread_rwlock_destroy	pthread_mutex_destroy
+#define pthread_self()		gtl
 
 #define FLEX_MUTEX_INITIALIZER	USER_MUTEX_INITIALIZER
 #define flex_mutex_t		user_mutex_t

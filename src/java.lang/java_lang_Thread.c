@@ -81,14 +81,24 @@ static void wait_on_running_thread() {
   ( EXTRACT_OTHER_ENV(env, thread)->pthread )
 
 
-static void add_running_thread(const pthread_t thr) {
+static pthread_mutex_t running_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t running_threads_cond = PTHREAD_COND_INITIALIZER;
+
+static void add_running_thread(struct thread_list *thr) {
 }
-static void remove_running_thread(void *cl) {
-}  
+
+static void remove_running_thread() {
+  pthread_mutex_lock(&running_threads_mutex);
+  pthread_cond_signal(&running_threads_cond);
+  pthread_mutex_unlock(&running_threads_mutex);
+}
+
 static void wait_on_running_thread() {
+  pthread_mutex_lock(&running_threads_mutex);
   while((gtl!=gtl->next)&&(ioptr!=NULL)) {
-    context_switch();
+    pthread_cond_wait(&running_threads_cond, &running_threads_mutex);
   }
+  pthread_mutex_unlock(&running_threads_mutex);
 }
 
 #endif /* WITH_USER_THREADS */
@@ -340,13 +350,10 @@ static void * thread_startup_routine(void *closure) {
   thread = FNI_NewLocalRef(env, FNI_UNWRAP(cls->thread));
   /* fill in the blanks in env */
   ((struct FNI_Thread_State *)env)->thread = thread;
-#ifndef WITH_USER_THREADS
-  ((struct FNI_Thread_State *)env)->pthread = pthread_self();
-#endif
   FNI_SetJNIData(env, thread, env, NULL);
   /* add this to the running_threads list, unless its a daemon thread */
   if ((*env)->GetBooleanField(env, thread, daemonID) == JNI_FALSE)
-    add_running_thread(pthread_self());
+    add_running_thread(gtl);
   /* okay, parameter passing is done. we can unblock the creating thread now.
    * (note that we're careful to make sure we're on the 'running threads'
    *  list before letting the parent --- who may decide to exit -- continue.)
@@ -376,6 +383,8 @@ static void * thread_startup_routine(void *closure) {
   FNI_MonitorNotify(env, thread, JNI_TRUE);
   FNI_MonitorExit(env, thread);
   assert(!((*env)->ExceptionOccurred(env)));
+
+  remove_running_thread();
 #ifdef WITH_CLUSTERED_HEAPS
   /* give us a chance to deallocate the thread-clustered heap */
   NTHR_free(thread);

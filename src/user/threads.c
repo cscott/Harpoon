@@ -99,7 +99,7 @@ void SchedulerAddWrite(int fd) {
 }
 
 void doFDs() {
-  int * fd=getFDsintSEL(0);/*1 for no timeout*/
+  int * fd=(gtl==NULL)?getFDsintSEL(1):getFDsintSEL(0);/*1 for no timeout*/
   struct thread_list *tl=ioptr,*tmp;
   int start=0;
   while((tl!=ioptr)||(start==0)) {
