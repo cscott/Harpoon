@@ -1,0 +1,6 @@
+[forall <i,j> in nextblock], true => cast(fatblk,d.blocks[(i/literal(128)).fatblockslist]).sects[i-(literal(128)*(i/literal(128)))]=j
+[forall i in freeblocks], true => cast(fatblk,d.blocks[(i/literal(128)).fatblockslist]).sects[i-(literal(128)*(i/literal(128)))]=(literal(0)-literal(1))
+[forall i in fatblocks], true => cast(fatblk,d.blocks[(i/literal(128)).fatblockslist]).sects[i-(literal(128)*(i/literal(128)))]=(literal(0)-literal(3))
+[forall i in usedblocks], sizeof(i.nextblock)=literal(0) and !i in fatblocks => cast(fatblk,d.blocks[(i/literal(128)).fatblockslist]).sects[i-(literal(128)*(i/literal(128)))]=(literal(0)-literal(2))
+[forall f in fatblockindex], true => d.hdr.sects[f]=f.fatblockslist
+
