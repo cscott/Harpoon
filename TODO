@@ -1,4 +1,8 @@
 ---- Sep-10-98
+Change PHI implementation to not make phi function entries for
+local variables that have not yet been defined.  Change State initialization
+to put 'null' in undefined local variables.
+---- Sep-09-98
 Undo MONITOR block transform.  Make it a poor statement.
 Change DCMPL/DCMPG/FCMPL/FCMPG bytecode operations to
 conform to the integer standard: _CMPEQ, _CMPGE, _CMPGT.
