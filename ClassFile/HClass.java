@@ -30,7 +30,7 @@ import java.util.Vector;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41.2.9 1999-02-07 21:20:33 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.10 1999-02-11 20:44:40 cananian Exp $
  * @see harpoon.IR.RawClass.ClassFile
  */
 public abstract class HClass extends HPointer {
@@ -1024,7 +1024,8 @@ class HClassArray extends HClass {
   public int getModifiers() {throw new Error("No modifiers for an array.");}
   public HClass getSuperclass() { return HCobject; }
   public HClass[] getInterfaces() {
-    return new HClass[] { HCcloneable };
+    // see http://java.sun.com/docs/books/jls/clarify.html
+    return new HClass[] { HCcloneable, HCserializable };
   }
   public boolean isArray() { return true; }
   public String toString() { return "class "+getName(); }
@@ -1032,6 +1033,7 @@ class HClassArray extends HClass {
   // cache class constants.
   private static final HClass HCobject   =forName("java.lang.Object");
   private static final HClass HCcloneable=forName("java.lang.Cloneable");
+  private static final HClass HCserializable=forName("java.io.Serializable");
 }
 
 // set emacs indentation style.
