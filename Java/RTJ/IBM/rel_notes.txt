@@ -1,0 +1,191 @@
+==================================================================
+		
+              IBM(R) VisualAge(R) Micro Edition 1.2
+
+                   Real-Time Extensions Beta
+
+                       RELEASE NOTES
+
+==================================================================
+
+06 November 2000
+
+
+INTRODUCTION
+
+VisualAge Micro Edition consists of an integrated development 
+environment and other tools and runtimes that help you develop 
+embedded Java (TM) applications.
+
+Additional support information may be available at 
+news://news.software.ibm.com/ibm.software.vame.
+
+For more information about the Real-Time Extensions contact:
+rtj@oti.com
+
+==================================================================
+CONTENTS
+==================================================================
+
+1.  What's New
+2.  Package
+3.  Running Examples and Tests
+4.  Realtime Extensions Workspace
+5.  Known Limitations
+6.  Notices
+
+
+==================================================================
+1.  What's New
+==================================================================
+
+This version of the J9 VM Real-Time Extensions is now compatible
+with the QNX RTP environment.  This release also corrects memory
+checking and improves memory control and thread behavior.  For 
+information about J9 VMs for other platforms, see:
+www.ibm.com/embedded
+
+The Real-Time Extensions are defined by The Real-Time 
+Specification for Java. This specification, available at 
+www.rtj.org, defines classes and APIs that extend deterministic, 
+performance, and memory access related capabilities typical to
+real-time development. This package provides the initial 
+implementation of this specification for the J9 Virtual Machine
+(VM). This initial implementation is for the X86 Neutrino 
+platform only.
+
+
+==================================================================
+2.  Package
+==================================================================
+
+The following are included in this package:
+rte.jar                 - Real-Time library with source
+rtetests.jar            - Real-Time tests with source
+memspaces.jar           - Memory space libraries with source
+natives.zip             - Native C source code for RTE implementation
+Realtime Extensions     - VisualAge MicroEdition workspace
+doc/index.html          - Documentation for Real-Time implementation
+j9x86rte/j9 and *.so    - Modified x86 Neutrino 1.2 J9 VM and shared 
+                          objects
+
+
+The rte.jar file contains the class and source code for the 
+implementation of The Real-Time Specification for Java. The 
+rtetests.jar file contains the class and source code for tests to 
+exercise the rte.jar implementation. Note that since the Real-Time
+Extensions are still in development, not all of the tests complete
+successfully. The memspaces.jar library defines the classes and
+APIs for creating and using Memory Spaces with the J9 VM. The 
+natives.zip file contains the C source code showing some of the
+RTE implementation for the VM.  The extensions use the standard 
+VisualAge Micro Edition 1.2 jclMax class library. The standard 
+class libraries have not been modified for the Real-Time 
+Extensions. Finally, the J9 VM and shared objects is a modified 
+version for use with the Real-Time Extensions.
+
+
+
+==================================================================
+3.  Running Examples and Tests
+==================================================================
+
+The rtetests.jar file contains several test classes that exercise
+the areas of the Real-Time Extensions. Each of the following
+tests assumes all of the library *.jar and *.zip files are in the
+current directory with the included J9 VM and that the 
+LD_LIBRARY_PATH environment parameter is set to this directory.
+
+3.1 Calltests
+These are basic tests to instantiate and call each public method
+and field defined in the specification. This test can be run as
+follows:
+
+./j9 -bp:classes.zip -cp:rte.jar:memspaces.jar:rtetests.jar javax.realtime.calltests.Tests
+
+
+3.2 Memory Tests
+There are three areas currently tested in memory; memory spaces, 
+memory creation, and raw memory access. These tests can be run
+with the following commands:
+
+./j9 -bp:classes.zip -cp:rte.jar:memspaces.jar:rtetests.jar javax.realtime.memtests.MemTest
+./j9 -bp:classes.zip -cp:rte.jar:memspaces.jar:rtetests.jar javax.realtime.memtests.MemSpaceTest
+./j9 -bp:classes.zip -cp:rte.jar:memspaces.jar:rtetests.jar javax.realtime.memtests.RawMemTest
+
+Note that both the MemSpaceTest and RawMemTest will take several
+seconds before providing test result output.
+
+
+3.3 Thread Test
+This test creates a user-defined number of RealtimeThreads of 
+various priorities and executes them in a loop. This test can
+be run as follows (where [int] is an integer number for threads
+to be run):
+
+./j9 -bp:classes.zip -cp:rte.jar:memspaces.jar:rtetests.jar javax.realtime.threadtests.ThreadBasher [int]
+
+
+==================================================================
+4.  Realtime Extensions Workspace
+==================================================================
+
+Included in this package is a VisualAge Micro Edition 1.2 IDE 
+Workspace.  This workspace is populated with the Real-Time 
+Extensions, Memory Spaces, and Tests source code.  This workspace
+can be used to read the source and add a project for development.
+Some modification may be required to the workspace, depending
+on your installation.  
+
+Open the workspace with the VisualAge Micro Edition IDE.  From the 
+Workbench window select the Workspace menu, then Properties.  From
+Properties, select the Class Path tab.  In the Class Path tab 
+window select JCL Max.  Verify the Execution path is set correctly
+for your installation.  If not, click on the Browse window and 
+select the jclMax 1.2 library.  Repeat these steps for each of the
+libraries in this window.
+
+Again, from the Workbench window, select the Workspace menu.  
+Choose Administration->Change Workspace User.  From the Change
+User window type in the appropriate user information.  This will
+allow normal access to your repository and team streams if
+applicable. 
+
+If you do not have the VisualAge Micro Edition 1.2 tools, 
+including the IDE, it can be downloaded at:
+
+www.ibm.com/embedded
+
+
+==================================================================
+5.  Known Limitations
+==================================================================
+
+The Real-Time Extensions continue to be developed, and this beta
+package is an incomplete implementation of the specification. 
+Areas that are incomplete include Synchronization, Asynchrony, and
+Security. While these areas are partially implemented, please
+verify in the rte.jar library which methods have been completed.
+Also note that with these areas, the Java source may be 
+implemented in the library but the associated capabilities are 
+not in the VM.
+
+
+==================================================================
+6.  Notices
+==================================================================
+
+(c) Copyright IBM Corp. 2000  All Rights Reserved 
+
+IBM and VisualAge are registered trademarks of IBM Corp. in the 
+United States and/or other countries.
+
+Microsoft, Windows, and Windows NT are trademarks of Microsoft 
+Corp.
+
+Java and all Java-based marks and logos are trademarks or 
+registered trademarks of Sun Microsystems, Inc. in the United 
+States and other countries. 
+
+Other company, product or service names may be trademarks 
+or service marks of others. 
