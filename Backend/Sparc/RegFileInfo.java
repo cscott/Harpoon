@@ -5,14 +5,23 @@ package harpoon.Backend.Sparc;
 
 import harpoon.Backend.Generic.Frame;
 import harpoon.Backend.Generic.LocationFactory.Location;
+import harpoon.ClassFile.HCodeElement;
+import harpoon.ClassFile.HClass;
 import harpoon.ClassFile.HData;
+import harpoon.ClassFile.HDataElement;
+import harpoon.IR.Tree.Type;
+import harpoon.IR.Tree.TreeFactory;
+import harpoon.IR.Tree.TEMP;
+import harpoon.IR.Tree.Data;
+import harpoon.IR.Tree.Exp;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.LinearSet;
+import harpoon.Util.ListFactory;
 import harpoon.Util.Util;
 
-import java.lang.String;
-
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -25,7 +34,7 @@ import java.util.Set;
  * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.2 1999-11-02 22:09:01 andyb Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.3 1999-11-04 01:27:02 andyb Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 
@@ -37,103 +46,178 @@ public class RegFileInfo
     private final Set callerSaveRegs;
     private final Set calleeSaveRegs;
     private final Set liveOnExitRegs;
+    private final Temp SP, FP;
+    private final TempBuilder tb;
 
-    public RegFileInfo() {
+    public RegFileInfo(TempBuilder tb) {
+	this.tb = tb;
 
-        /* Sparc registers:
-         *   %g0 - %g7: global, general registers. %g0 is zero register.
-         *   %o0 - %o7: registers for local data and arguments to called
-         *              subroutines. %o6 is stack pointer, %o7 is called
-         *              subroutine return address.
-         *   %l0 - %l7: local variables
-         *   %i0 - %i7: registers for incoming subroutine arguments.
-         *              %i6 is frame pointer and %i7 is subroutine return
-         *              address.
-         */
-        regtf = new TempFactory() {
-            private int i = 0;
-            private final String scope = "sparc-registers";
-            private final String[] names = {"%g0", "%g1", "%g2", "%g3",
-                "%g4", "%g5", "%g6", "%g7", "%o0", "%o1", "%o2", "%o3",
-                "%o4", "%o5", "%sp", "%o7", "%l0", "%l1", "%l2", "%l3",
-                "%l4", "%l5", "%l6", "%l7", "%i0", "%i1", "%i2", "%i3",
-                "%i4", "%i5", "%fp", "%i7" };
+	/* Sparc registers:
+	 *   %g0 - %g7: global, general registers. %g0 is zero register.
+	 *   %o0 - %o7: registers for local data and arguments to called
+	 *		subroutines. %o6 is stack pointer, %o7 is called
+	 *		subroutine return address.
+	 *   %l0 - %l7: local variables
+	 *   %i0 - %i7: registers for incoming subroutine arguments.
+	 *		%i6 is frame pointer and %i7 is subroutine return
+	 *		address.
+	 */
+	regtf = new TempFactory() {
+	    private int i = 0;
+	    private final String scope = "sparc-registers";
+	    private final String[] names = {"%g0", "%g1", "%g2", "%g3",
+		"%g4", "%g5", "%g6", "%g7", "%o0", "%o1", "%o2", "%o3",
+		"%o4", "%o5", "%sp", "%o7", "%l0", "%l1", "%l2", "%l3",
+		"%l4", "%l5", "%l6", "%l7", "%i0", "%i1", "%i2", "%i3",
+		"%i4", "%i5", "%fp", "%i7" };
 
-            public String getScope() { return scope; }
-            public synchronized String getUniqueID(String suggestion) {
-                Util.assert(i < names.length, "Already created all of "+
+	    public String getScope() { return scope; }
+	    public synchronized String getUniqueID(String suggestion) {
+		Util.assert(i < names.length, "Already created all of "+
 			    "the Register bound Temps!!!");
-	        i++;
-                return names[i-1];
-            }
-        };
+		i++;
+		return names[i-1];
+	    }
+	};
 
-        reg = new Temp[32]; 
-        generalRegs = new Temp[27];
+	reg = new Temp[32]; 
+	generalRegs = new Temp[27];
 
-        int j = 0;
-        for (int i = 0; i < 32; i++) {
-            reg[i] = new Temp(regtf);
-            if ((i != 0) && (i != 14) && (i != 15) && (i != 30) && (i != 31)) {
-                generalRegs[j] = reg[i];
-                j++;
-            }
-        }
+	int j = 0;
+	for (int i = 0; i < 32; i++) {
+	    reg[i] = new Temp(regtf);
+	    if ((i != 0) && (i != 14) && (i != 15) && (i != 30) && (i != 31)) {
+		generalRegs[j] = reg[i];
+		j++;
+	    }
+	}
+
+	SP = reg[14];
+	FP = reg[30];
  
-        /* AAA - still need to do liveOnExit, callerSave, and calleeSave
-         * for real here */
+	/* AAA - still need to do liveOnExit, callerSave, and calleeSave
+	 * for real here */
 
-        callerSaveRegs = new LinearSet(2);
-        calleeSaveRegs = new LinearSet(2);
-        liveOnExitRegs = new LinearSet(2);
+	callerSaveRegs = new LinearSet(2);
+	calleeSaveRegs = new LinearSet(2);
+	liveOnExitRegs = new LinearSet(2);
 
-        // liveOnExitRegs.add(reg[i]);
-        // callerSaveRegs.add(reg[i]);
-        // calleeSaveRegs.add(reg[i]);
+	// liveOnExitRegs.add(reg[i]);
+	// callerSaveRegs.add(reg[i]);
+	// calleeSaveRegs.add(reg[i]);
     }
-               
+
+    // Sparc backend specific helpers...
+
+    final Temp SP() { return SP; }
+    final Temp FP() { return FP; }
+
+    // And now for the implementation of Generic.RegFileInfo
+	       
     public Set liveOnExit() { 
 	return Collections.unmodifiableSet(liveOnExitRegs); 
     }
  
     public Set callerSave() { 
-        return Collections.unmodifiableSet(callerSaveRegs); 
+	return Collections.unmodifiableSet(callerSaveRegs); 
     }
 
     public Set calleeSave() { 
-        return Collections.unmodifiableSet(calleeSaveRegs); 
+	return Collections.unmodifiableSet(calleeSaveRegs); 
     }
 
     public TempFactory regTempFactory() { return regtf; }
 
-    /* AAA - to do */
     public Iterator suggestRegAssignment(Temp t, final Map regFile)
-        throws harpoon.Backend.Generic.RegFileInfo.SpillException {
+	throws harpoon.Backend.Generic.RegFileInfo.SpillException {
 
-        return null;
+	final ArrayList suggests = new ArrayList();
+	final ArrayList spills = new ArrayList();
+
+	if (tb.isTwoWord(t)) {
+	    for (int i = 0; i < generalRegs.length - 1; i++) {
+		Temp[] assign = new Temp[] { generalRegs[i],
+					     generalRegs[i+1] };
+		if ((regFile.get(assign[0]) == null) &&
+		    (regFile.get(assign[1]) == null)) {
+		    suggests.add(Arrays.asList(assign));
+		} else {
+		    Set s = new LinearSet(2);
+		    s.add(assign[0]);
+		    s.add(assign[1]);
+		    spills.add(s);
+		}
+	    }
+	} else {
+	    for (int i = 0; i < generalRegs.length; i++) {
+		if ((regFile.get(generalRegs[i]) == null)) {
+		    suggests.add(ListFactory.singleton(generalRegs[i]));
+		} else {
+		    Set s = new LinearSet(1);
+		    s.add(generalRegs[i]);
+		    spills.add(s);
+		}
+	    }
+	}
+	if (suggests.isEmpty()) {
+	    throw new harpoon.Backend.Generic.RegFileInfo.SpillException() {
+		public Iterator getPotentialSpills() {
+		    return spills.iterator();
+		}
+	    };
+	}
+	return suggests.iterator();
     }
 
-    /* AAA - SpillException could go here - do I need to override? */
-
     public Temp[] getAllRegisters() {
-        return (Temp[]) Util.safeCopy(Temp.arrayFactory, reg);
+	return (Temp[]) Util.safeCopy(Temp.arrayFactory, reg);
     }
 
     public Temp getRegister(int index) { return getAllRegisters()[index]; }
 
     public Temp[] getGeneralRegisters() {
-        return (Temp[]) Util.safeCopy(Temp.arrayFactory, generalRegs);
+	return (Temp[]) Util.safeCopy(Temp.arrayFactory, generalRegs);
     }
 
     // implementing LocationFactory
 
-    /* AAA - to do */
+    // start allocating registers from %g7 down to %g1
+    private int regtop = 7;
+    private boolean makeLocationDataCalled = false;
+
     public Location allocateLocation(final int type) {
-        return null;
+	Util.assert(Type.isValid(type), "Invalid type");
+	Util.assert(type != Type.LONG && type != Type.DOUBLE,
+		    "Doubleword global locations not implemented");
+	Util.assert(!makeLocationDataCalled,
+		    "Cannot allocate location - already ran makeLocationData");
+
+	// Currently just uses the %g registers - nothing fancy yet.
+	Util.assert(regtop > 0, "Sorry, can't do any more global locations");
+    
+	final Temp allocreg = reg[regtop--];
+
+	calleeSaveRegs.remove(allocreg);
+	callerSaveRegs.remove(allocreg);
+	liveOnExitRegs.remove(allocreg);
+
+	return new Location() {
+	    public Exp makeAccessor(TreeFactory tf, HCodeElement source) {
+		return new TEMP(tf, source, type, allocreg);
+	    }
+	};
     }
 
-    /* AAA - to do */
+    // not allocating memory for these yet, so just return an empty 
+    // HData for now
     public HData makeLocationData(final Frame f) {
-        return null;
+	makeLocationDataCalled = true;
+	return new Data("location-data", f) {
+	    public HClass getHClass() { return null; }
+	    public HDataElement getRootElement() { return null; }
+	    public void print(java.io.PrintWriter pw) {
+		pw.println("--- no data ---");
+	    }
+	};
     }
 }
