@@ -3,6 +3,7 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.IR.Tree;
 
+import harpoon.Analysis.DefMap;
 import harpoon.Analysis.ReachingDefs;
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.Maps.Derivation.DList;
@@ -17,6 +18,7 @@ import harpoon.ClassFile.HField;
 import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.LowQuadFactory;
 import harpoon.IR.LowQuad.LowQuadNoSSA;
+import harpoon.IR.LowQuad.LowQuadSSA;
 import harpoon.IR.LowQuad.LowQuadVisitor;
 import harpoon.IR.LowQuad.LQop;
 import harpoon.IR.LowQuad.PAOFFSET;
@@ -65,16 +67,35 @@ import java.util.Stack;
  * The ToTree class is used to translate low-quad-no-ssa code to tree code.
  * 
  * @author  Duncan Bryce <duncan@lcs.mit.edu>
- * @version $Id: ToTree.java,v 1.1.2.61 2000-02-08 23:27:48 cananian Exp $
+ * @version $Id: ToTree.java,v 1.1.2.62 2000-02-09 04:06:14 cananian Exp $
  */
 class ToTree {
     private Tree        m_tree;
     private DerivationGenerator m_dg = new DerivationGenerator();
    
-    /** Class constructor */
+    /** Class constructor.  Uses the default <code>EdgeOracle</code>
+     *  and <code>ReachingDefs</code> for <code>LowQuadNoSSA</code>. */
     public ToTree(final TreeFactory tf, LowQuadNoSSA code) {
-	Util.assert(((Code.TreeFactory)tf).getParent().getName().equals("tree"));
-	translate(tf, code);
+	this(tf, code, new EdgeOracle() {
+	    public int defaultEdge(HCodeElement hce) { return 0; }
+	}, null);
+    }
+    public ToTree(final TreeFactory tf, final LowQuadSSA code) {
+	this(tf, code, new EdgeOracle() {
+	    public int defaultEdge(HCodeElement hce) { return 0; }
+	}, new ReachingDefs(code) {
+	    private final DefMap dm = new DefMap(code);
+	    public Set reachingDefs(HCodeElement hce, Temp t) {
+		return Collections.singleton(dm.defMap(t)[0]);
+	    }
+	});
+    }
+    /** Class constructor. */
+    public ToTree(final TreeFactory tf, harpoon.IR.LowQuad.Code code,
+		  EdgeOracle eo, ReachingDefs rd) {
+	Util.assert(((Code.TreeFactory)tf).getParent()
+		    .getName().equals("tree"));
+	translate(tf, code, eo, rd);
     }
     
     /** Returns a <code>TreeDerivation</code> object for the
@@ -86,18 +107,12 @@ class ToTree {
 	return m_tree;
     }
 
-    private void translate(TreeFactory tf, LowQuadNoSSA code) {
+    private void translate(TreeFactory tf, harpoon.IR.LowQuad.Code code,
+			   EdgeOracle eo, ReachingDefs rd) {
 
 	Quad root = (Quad)code.getRootElement();
 	TempMap ctm = new CloningTempMap
 	    (root.getFactory().tempFactory(),tf.tempFactory());
-
-	// placeholder edge oracle
-	EdgeOracle eo = new EdgeOracle() {
-	    public int defaultEdge(HCodeElement hce) { return 0; }
-	};
-	// bogus reachingdefs
-	ReachingDefs rd = null;
 
 	// Construct a list of harpoon.IR.Tree.Stm objects
 	TranslationVisitor tv = new TranslationVisitor
