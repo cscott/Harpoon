@@ -27,7 +27,7 @@ import java.util.Map;
  * by <code>SizeCounters</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ProfileParser.java,v 1.1.2.3 2001-11-13 22:46:48 cananian Exp $
+ * @version $Id: ProfileParser.java,v 1.1.2.4 2001-11-14 01:39:25 cananian Exp $
  */
 class ProfileParser {
     // lines are in the format: 'mzf_savedbytes_<classname>: <number>'
@@ -85,10 +85,15 @@ class ProfileParser {
 	    int under = fieldname.lastIndexOf('_');
 	    if (under<0)
 		throw new BadLineException("No field part: "+fieldname);
-	    HField hf = parseField(fieldname);
-	    results.add(hf, Default.entry
-			(new Integer(constant), new Long(val)));
-	    // in perl terms: $results{$hf}{$constant}=$val;
+	    try {
+		HField hf = parseField(fieldname);
+		results.add(hf, Default.entry
+			    (new Integer(constant), new Long(val)));
+		// in perl terms: $results{$hf}{$constant}=$val;
+	    } catch (BadLineException ble) {
+		/* assume that this field has been removed. */
+		System.err.println("WARNING: can't find "+fieldname);
+	    }
 	}
 	// any thing will do here.  just something to initialize with.
 	private String last_success = "java.lang.String.offset";
