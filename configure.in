@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_REVISION($Revision: 1.90 $)dnl
+AC_REVISION($Revision: 1.91 $)dnl
 AC_INIT(include/jni.h)
 AC_CONFIG_AUX_DIR(scripts)
 AC_CANONICAL_SYSTEM
@@ -117,6 +117,21 @@ AM_CONDITIONAL(BUILD_JAVA_NET, test x$build_java_net = xyes)
 
 dnl Checks for build options follow.
 object_padding=0 # several transformations might increment this.
+
+dnl process 'all static' option to produce a complete statically-linked
+dnl executable.  Without this option, the Runtime will be statically linked
+dnl to the binary, but libc and other system libraries will be dynamically
+dnl linked.
+AC_MSG_CHECKING([all static flag])
+AC_ARG_WITH(all-static,
+[  --with-all-static       create a completely static binary],
+with_all_static="$withval", with_all_static="no")
+AC_SUBST(STATIC_FLAG)
+case "$with_all_static" in
+yes)  STATIC_FLAG="-all-static" ;;
+*)    STATIC_FLAG="-static" ;;
+esac
+AC_MSG_RESULT($with_all_static (using $STATIC_FLAG))
 
 dnl process option for 'precise c' backend.
 AC_MSG_CHECKING([precise c backend])
