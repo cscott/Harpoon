@@ -32,7 +32,7 @@ import java.util.List;
  * 
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: DynamicWBTreePass.java,v 1.1 2002-07-18 21:06:00 kkz Exp $
+ * @version $Id: DynamicWBTreePass.java,v 1.2 2003-03-11 19:15:41 cananian Exp $
  */
 public class DynamicWBTreePass extends harpoon.Analysis.Tree.Simplification {
     
@@ -72,7 +72,7 @@ public class DynamicWBTreePass extends harpoon.Analysis.Tree.Simplification {
 	});
     }
 
-    private static List HCE_RULES(final Frame frame, final HMethod clearHM) {
+    private static List<Rule> HCE_RULES(final Frame frame, final HMethod clearHM) {
 	final Runtime runtime = frame.getRuntime();
         final Label LclearHM = runtime.getNameMap().label(clearHM);
 	// now make rules

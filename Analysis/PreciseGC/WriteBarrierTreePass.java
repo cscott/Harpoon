@@ -59,7 +59,7 @@ import java.util.Map;
  * 
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierTreePass.java,v 1.5 2002-06-25 18:16:22 kkz Exp $
+ * @version $Id: WriteBarrierTreePass.java,v 1.6 2003-03-11 19:15:42 cananian Exp $
  */
 public abstract class WriteBarrierTreePass extends 
     harpoon.Analysis.Tree.Simplification {
@@ -105,16 +105,16 @@ public abstract class WriteBarrierTreePass extends
 	});
     }
 
-    private static List HCE_RULES(final Frame f, 
+    private static List<Rule> HCE_RULES(final Frame f, 
 				  final ClassHierarchy ch, 
 				  final HMethod arrayHM, 
 				  final HMethod fieldHM) {
 	final NameMap nm = f.getRuntime().getNameMap();
         final Label LarrayHM = nm.label(arrayHM);
 	final Label LfieldHM = nm.label(fieldHM);
-	final Map fieldMap = new HashMap();
-	for(Iterator it = ch.classes().iterator(); it.hasNext(); ) {
-	    HField[] fields = ((HClass) it.next()).getFields();
+	final Map<Label,HField> fieldMap = new HashMap<Label,HField>();
+	for(Iterator<HClass> it = ch.classes().iterator(); it.hasNext(); ) {
+	    HField[] fields = it.next().getFields();
 	    for(int i = 0; i < fields.length;  i++) {
 		fieldMap.put(nm.label(fields[i], "obj"), fields[i]);
 	    }
@@ -195,7 +195,7 @@ public abstract class WriteBarrierTreePass extends
 		    // no more arguments
 		    assert explist.tail == null;
 		    // get HField from fieldMap
-		    HField field = (HField) fieldMap.get(name.label);
+		    HField field = fieldMap.get(name.label);
 		    assert field != null;
 		    return new NATIVECALL
 			(tf, stm, null, func, new ExpList

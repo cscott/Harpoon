@@ -94,6 +94,9 @@ Analysis/Maps/TypeMapProxy.java
 Analysis/Maps/UseDefMap.java
 Analysis/MemOpt/Util.java
 Analysis/PointsToAnalysis.java
+Analysis/PreciseGC/DynamicWBTreePass.java
+Analysis/PreciseGC/WriteBarrierConstElim.java
+Analysis/PreciseGC/WriteBarrierTreePass.java
 Analysis/Quads/AbstrCallGraph.java
 Analysis/Quads/ArrayUnroller.java
 Analysis/Quads/CallGraphImpl.java

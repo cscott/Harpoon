@@ -44,7 +44,7 @@ import java.util.List;
  * until after this pass.
  * 
  * @author  Karen Zee <kkz@tmi.lcs.mit.edu>
- * @version $Id: WriteBarrierConstElim.java,v 1.5 2002-06-25 18:16:22 kkz Exp $
+ * @version $Id: WriteBarrierConstElim.java,v 1.6 2003-03-11 19:15:41 cananian Exp $
  */
 public abstract class WriteBarrierConstElim extends 
     harpoon.Analysis.Tree.Simplification {
@@ -89,7 +89,7 @@ public abstract class WriteBarrierConstElim extends
 	});
     }
 
-    public static List HCE_RULES(final harpoon.IR.Tree.Code code,
+    public static List<Rule> HCE_RULES(final harpoon.IR.Tree.Code code,
 				 final Frame f, 
 				 final HMethod arrayHM, 
 				 final HMethod fieldHM) {
