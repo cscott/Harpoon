@@ -2,11 +2,6 @@
 // Copyright (C) 2000 Alexandru SALCIANU <salcianu@MIT.EDU>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 
-// NOTE: I eliminated lots of debug messages by commenting them with
-//   "//B/" - I don't trust the ability of "javac" to eliminate the
-//    unuseful "if(DEBUG) ..." stuff.
-//       If you need this messages back replace "//B/" with "" (nothing).
-
 package harpoon.Analysis.PointerAnalysis;
 
 
@@ -77,7 +72,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.49 2001-03-08 21:39:11 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.50 2001-04-08 17:34:35 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -1209,22 +1204,37 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     }
 
 
+    // Topologically sorts the to-be-inlined call sites such that if
+    // call cs1 calls method m and inside m, cs2 calls some method m2,
+    // c1 --> cs2. What's returned is a list of strongly connected
+    // components starting with the last one (in topological order).
+    // To process the call sites, thee caller of this method should
+    // follow the prevTopSort field / method.
     private SCComponent reverse_top_sort_of_cs(Map ih) {
+	// The following two relations are useful in computing the
+	// successors and the predecesssors or a given call site.
+	// 1. keeps the assoc. method -> to-be-inlined calls inside method
 	final Relation m2csINm = new LightRelation();
+	// 2. keeps the assoc. method -> to-be-inlined calls to method
 	final Relation m2csTOm = new LightRelation();
+	// Initialize the aforementioned two relations
 	for(Iterator it = ih.keySet().iterator(); it.hasNext(); ) {
 	    CALL cs = (CALL) it.next();
-	    m2csINm.add(quad2method(cs), cs);
-	    m2csTOm.add(cs.method(), cs);
+	    m2csINm.add(extract_caller(cs), cs);
+	    m2csTOm.add(extract_callee(cs), cs);
 	}
 
 	final SCComponent.Navigator nav = new SCComponent.Navigator() {
 		public Object[] next(final Object node) {
-		    Set set = m2csINm.getValues(node);
+		    CALL cs = (CALL) node;
+		    HMethod hm = extract_callee(cs);
+		    Set set = m2csINm.getValues(hm);
 		    return set.toArray(new Object[set.size()]);
 		}
 		public Object[] prev(final Object node) {
-		    Set set = m2csTOm.getValues(node);
+		    CALL cs = (CALL) node;
+		    HMethod hm = extract_caller(cs);
+		    Set set = m2csTOm.getValues(hm);
 		    return set.toArray(new Object[set.size()]);
 		}
 	    };
