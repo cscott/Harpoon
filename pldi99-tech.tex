@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: pldi99-tech.tex,v 1.2 1998-10-07 22:21:17 cananian Exp $
+% $Id: pldi99-tech.tex,v 1.3 1998-10-07 22:31:23 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Technical Content} % RENAME ME!
 % Technical Contents (definitions, algorithms, etc)
@@ -63,3 +63,17 @@ dominance frontier of any added \phifunction{} similarly need
 \phifunction{s}.  The equivalent statement for \sigfunction{s}
 references \textit{uses} of the variable $a$ and nodes in its
 post-dominance frontier. 
+
+\subsection{Placement algorithms}
+Sreedhar and Gao have shown \cite{sreedhar95:lintime} that it is
+possible to place \phifunction{s} in time proportional to the size of
+the program.  With appropriate modifications to the algorithm, it can
+be used to place \sigfunction{s}.  However, as noted above, $\phi$-
+and \sigfunction{} placement is not independent: the placement of
+\phifunction{s} necessitates additional \sigfunction{} placement, and
+vice versa.  Thus, the (linear time) placement algorithms can be run
+iteratively to find a fixed point.  Since the maximum number of
+$\phi$- or \sigfunction{s} is proportional to the size of the program,
+it is obvious that no more than $N$ iterations will be required,
+resulting in a worst-case running time of $O(N^2)$.  In practice, and
+for structured control flow, running time is linear.
