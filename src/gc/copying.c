@@ -102,10 +102,11 @@ void copying_handle_reference(jobject_unwrapped *ref)
 
 /* overwrite_to_space writes over to_space so that, when debugging, it is
    clear when there is a memory reference to the heap that is bad. */
-void overwrite_to_space()
+
 #ifndef DEBUG_GC
-{ /* do absolutely nothing. */ }
+#define debug_overwrite_to_space()
 #else
+void debug_overwrite_to_space()
 {
   int *curr;
   // write over to_space
@@ -322,7 +323,7 @@ void collect(void *saved_registers[], int expand_amt)
     }
   
   // this function is a nop if not debug
-  overwrite_to_space();
+  debug_overwrite_to_space();
 }
 
 /* copying_get_size_of_obj returns the size (in bytes) of

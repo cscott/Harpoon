@@ -9,11 +9,11 @@
 
 #ifdef MARKSWEEP
 #include "marksweep.h"
-// #define add_to_root_set  marksweep_handle_reference
-#define add_to_root_set  pointerreversed_handle_reference
+// #define add_to_root_set  pointerreversed_handle_reference
+#define add_to_root_set  marksweep_handle_reference
 #define internal_gc_init marksweep_gc_init
-// #define handle_reference marksweep_handle_reference
-#define handle_reference pointerreversed_handle_reference
+// #define handle_reference pointerreversed_handle_reference
+#define handle_reference marksweep_handle_reference
 #define internal_malloc  marksweep_malloc
 #else
 #include "copying.h"
