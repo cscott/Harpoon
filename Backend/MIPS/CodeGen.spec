@@ -68,7 +68,7 @@ import java.util.Iterator;
  * 
  * @see Kane, <U>MIPS Risc Architecture </U>
  * @author  Emmett Witchel <witchel@lcs.mit.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.37 2001-06-04 07:23:18 witchel Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.38 2001-06-05 07:50:09 witchel Exp $
  */
 // All calling conventions and endian layout comes from observing gcc
 // for vpekoe.  This is standard for cc on MIPS IRIX64 lion 6.2 03131016 IP19.
@@ -148,7 +148,7 @@ import java.util.Iterator;
     // Add yellow pekoe register usage suffixes to long instr patterns
     private boolean yellow_pekoe = false;
     // Add phantom instructions that indicate DA register usage
-    private boolean enable_daregs = false;
+private boolean enable_daregs = true;
 
     public CodeGen(Frame frame, boolean is_elf) {
        super(frame);
@@ -452,6 +452,18 @@ import java.util.Iterator;
        }
        return "";
     }
+private String makeDAFlushBitmask() {
+   harpoon.Backend.MIPS.Frame mframe = (harpoon.Backend.MIPS.Frame) frame;
+   HashSet usedda = mframe.getUsedDANum();
+   int bitmask = 0;
+   for(Iterator it = usedda.iterator(); it.hasNext(); ) {
+      int i = ((Integer)it.next()).intValue();
+      bitmask |= 1 << i;
+      Util.assert(i < 31); // Don't overflow int
+   }
+   Integer bitm = new Integer(bitmask);
+   return bitm.toString();
+}
 
     private boolean is16BitOffset(long val) {
 	// addressing mode two takes a 12 bit unsigned offset, with
@@ -1006,7 +1018,11 @@ import java.util.Iterator;
              String ralw = "";
              Instr[] exit_instr;
              int en = 0;
-             exit_instr = new Instr[4];
+             if(enable_daregs) {
+                exit_instr = new Instr[5];
+             } else {
+                exit_instr = new Instr[4];
+             }
              switch(nregs % 8) {
              case 0:
                 exit_instr[en++] = new Instr(inf, il, 
@@ -1038,14 +1054,20 @@ import java.util.Iterator;
                                           + stack.getRAOffset() + "($sp)" 
                                           + danum,
                                           new Temp[] {LR}, new Temp[] {SP});
-             
+             if(enable_daregs)
+                exit_instr[en++] = new Instr(inf, il, "ph 3, " +
+                                             makeDAFlushBitmask());
              exit_instr[en++] = new Instr(inf, il, "addu $sp, " 
                                           + stack.frameSize() 
                                           + "\t##RR_DO_NOT_ANNOTATE",
                                           new Temp[] {SP}, new Temp[] {SP});
              exit_instr[en++] = new Instr(inf, il, "j  $31  # return",
                                           null, new Temp[]{LR});
-             Util.assert(en == 4);
+             if(enable_daregs) {
+                Util.assert(en == 5);
+             } else {
+                Util.assert(en == 4);
+             }
              if(nregs > 0) {
                 LayoutInstr(il, callee_restore);
              }

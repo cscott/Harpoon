@@ -12,6 +12,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.ClassFile.Linker;
 import harpoon.Util.Util;
 import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * <code>Frame</code> contains the machine-dependant
@@ -19,7 +20,7 @@ import java.util.HashMap;
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix Klock <pnkfelix@mit.edu>
- * @version $Id: Frame.java,v 1.1.2.9 2001-06-03 05:28:11 witchel Exp $
+ * @version $Id: Frame.java,v 1.1.2.10 2001-06-05 07:50:09 witchel Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
    private final harpoon.Backend.Generic.Runtime   runtime;
@@ -31,6 +32,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
     private GCInfo gcInfo; // should really be final
    private String type = "";
    private HashMap noTagCheck;
+   private HashSet usedDANum;
 
     // HACK: this should really be a command-line parameter.
     private final static String alloc_strategy =
@@ -111,6 +113,12 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 
    public void setNoTagCheckHashMap(HashMap hm) {
       noTagCheck = hm;
+   }
+   public void setUsedDANum(HashSet hs) {
+      usedDANum = hs;
+   }
+   public HashSet getUsedDANum() {
+      return usedDANum;
    }
    public boolean memAccessNoTagCheck(HCodeElement hce) {
       // XXX This interface is superceeded by daNum, but I don't want
