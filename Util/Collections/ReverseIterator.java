@@ -1,7 +1,7 @@
 // ReverseIterator.java, created Wed Dec 23 04:56:20 1998 by cananian
 // Copyright (C) 1998 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -13,7 +13,7 @@ import java.util.List;
  * in reverse order.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ReverseIterator.java,v 1.3 2002-04-10 03:07:05 cananian Exp $
+ * @version $Id: ReverseIterator.java,v 1.1 2002-08-30 22:15:06 cananian Exp $
  */
 public class ReverseIterator<E> extends UnmodifiableIterator<E> {
     final ArrayList<E> l = new ArrayList<E>();

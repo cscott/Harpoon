@@ -1,18 +1,18 @@
 // ReverseListIterator.java, created Fri Mar 15 19:39:14 2002 by cananian
 // Copyright (C) 2000 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
 
 import java.util.List;
 import java.util.ListIterator;
 /**
  * <code>ReverseListIterator</code> takes a <code>List</code> and gives
  * you an <code>Iterator</code> that traverses the list in reverse
- * order.  Similar to using <code>Util.ReverseIterator(l.iterator())</code>
- * but more efficient.
+ * order.  Similar to using <code>ReverseIterator(l.iterator())</code>
+ * but more efficient as it does not need to create a snapshot.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: ReverseListIterator.java,v 1.2 2002-04-10 03:07:05 cananian Exp $
+ * @version $Id: ReverseListIterator.java,v 1.1 2002-08-30 22:15:06 cananian Exp $
  */
 public class ReverseListIterator<E> implements ListIterator<E> {
     private final ListIterator<E> it;

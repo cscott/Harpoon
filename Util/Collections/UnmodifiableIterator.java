@@ -1,7 +1,7 @@
 // UnmodifiableIterator.java, created Tue Jun 15 22:00:21 1999 by cananian
 // Copyright (C) 1999 C. Scott Ananian <cananian@alumni.princeton.edu>
 // Licensed under the terms of the GNU GPL; see COPYING for details.
-package harpoon.Util;
+package harpoon.Util.Collections;
 
 import java.util.Iterator;
 /**
@@ -12,7 +12,7 @@ import java.util.Iterator;
  * <code>java.util.Collections</code> and etc.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: UnmodifiableIterator.java,v 1.3 2002-04-10 03:07:05 cananian Exp $
+ * @version $Id: UnmodifiableIterator.java,v 1.1 2002-08-30 22:15:06 cananian Exp $
  */
 public abstract class UnmodifiableIterator<E> implements Iterator<E> {
     /** Returns <code>true</code> if the iteration has more elements.
