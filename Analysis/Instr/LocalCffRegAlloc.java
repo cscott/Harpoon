@@ -44,7 +44,7 @@ import java.util.Iterator;
     algorithm it uses to allocate and assign registers.
     
     @author  Felix S Klock <pnkfelix@mit.edu>
-    @version $Id: LocalCffRegAlloc.java,v 1.1.2.20 1999-06-16 02:34:58 cananian Exp $ 
+    @version $Id: LocalCffRegAlloc.java,v 1.1.2.21 1999-06-16 02:41:22 pnkfelix Exp $ 
 */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -257,65 +257,6 @@ public class LocalCffRegAlloc extends RegAlloc {
 	while (jnstrs.hasNext()) {
 	    Instr j = (Instr) jnstrs.next();
 	    inf = j.getFactory();
-	    
-
-	    // ***** Make space in the Register File  *****
-	    // ***** for Temp references in 'J'       *****	
-
-	    // f := the number of pseudo registers requested at step
-	    //      j, but not in the register file
-	    Iterator references = getReferences(j);
-	    UniqueVector refsV = new UniqueVector();
-	    while(references.hasNext()) {
-		Temp t = (Temp) references.next();
-		if (!isTempRegister(t)) {
-		    if (DEBUG_SKIP) 
-			System.out.println
-			    ("adding ref "+ t + " for " +j );
-		    refsV.addElement(t);
-		}
-	    }
-	    int f = refsV.size();
-
-	    for (int i=0; i<refsV.size(); i++) {
-		if (regFile.containsValue( (Temp) refsV.elementAt(i) ) ) {
-		    f--;
-		}
-	    }
-
-	    // f := f - (the number of free registers) 
-	    f = f - regFile.numEmptyRegisters(); 
-
-	    // for l = 1 to f do
-	    //     evict the pseudo-register DEL-MAX()
-	    // done
-	    
-	    Util.assert(f <= pregPriQueue.size(), 
-			"Can't delete more variables than the size of"+
-			" the current pseudo-register priority queue");
-
-	    for (int l = 0; l<f; l++) {
-		Temp preg = (Temp) pregPriQueue.deleteMax();
-		Util.assert(regFile.containsValue(preg),
-			    "The Pseudo Register Priority Queue "+
-			    "should not contain the value " + preg +
-			    " because it is not in the register file");
-		boolean dirty = regFile.isDirty(preg);
-		Temp realReg = regFile.evict(preg);
-		
-		if (dirty) {
-		    InstrMEM store = 
-			new InstrMEM(inf, null, "FSK-STORE `d0, `s0",
-				     new Temp[] { preg },
-				     new Temp[] { realReg });
-
-		    memInstrs.getPrior(j).push(store);
-		}
-
-		if (DEBUG) System.out.println("EVICT: Instr " + j + " " + regFile);
-	    }
-
-
 
 	    // ***** Assign Registers to Temp USE references in 'J'*****
 	    
@@ -343,9 +284,33 @@ public class LocalCffRegAlloc extends RegAlloc {
 		    Temp reg = 
 			regFile.getFreeRegister
 			(i, (CloneableIterator)jnstrs.clone());
-		    Util.assert(reg != null, 
-				"There should be an empty register in " + 
-				regFile + " to hold USE " + i);
+		    if (reg == null) {
+			// need to evict a value
+			Util.assert(pregPriQueue.size() > 0,
+				    "Can't evict a value if there are " +
+				    "no entries in the pseudo-register " +
+				    "priority queue.");
+			
+			Temp preg = (Temp) pregPriQueue.deleteMax();
+			boolean dirty = regFile.isDirty(preg);
+			reg = regFile.evict(preg);
+			
+			if (dirty) {
+			    InstrMEM store = 
+				new InstrMEM(inf, null, 
+					     "FSK-STORE `d0, `s0",
+					     new Temp[] { preg },
+					     new Temp[] { reg });
+			    memInstrs.getPrior(j).push(store);
+			}
+			
+			if (DEBUG) 
+			    System.out.println
+				("EVICT: Instr " + j + " " + regFile);
+			
+			
+		    }
+
 		    regFile.put(reg, i);
 		    
 		    InstrMEM load =
@@ -420,6 +385,12 @@ public class LocalCffRegAlloc extends RegAlloc {
 	    for(int l=0; l<j.dst.length; l++) {
 		Temp i = j.dst[l];
 		if (isTempRegister(i)) {
+		    // FSK: Two Lines below were for marking register
+		    // DEFs made by CodeGen.  Unfortunately, doing
+		    // this breaks reg alloc because a conflict occurs
+		    // when the same register is written multiple
+		    // times by CodeGen w/o being saved (like, for
+		    // example, PC)
 		    //regFile.put(i, new Temp(regFile.unknownTF, "unk_"));
 		    //regFile.writeTo(i);
 		    continue;
@@ -434,13 +405,38 @@ public class LocalCffRegAlloc extends RegAlloc {
 			    " should have only one definition point;" +
 			    " why is one already in regFile " +
 			    regFile + " ?");
-		
+
 		Temp reg = 
 		    regFile.getFreeRegister
 		    (i, (CloneableIterator)jnstrs.clone());
-		Util.assert(reg != null, 
-			    "There should be an empty register in " + 
-			    regFile + " to hold DEF " + i);
+
+		if (reg == null) {
+		    // need to evict a value
+		    Util.assert(pregPriQueue.size() > 0,
+				"Can't evict a value if there are " +
+				"no entries in the pseudo-register " +
+				"priority queue.");
+			
+		    Temp preg = (Temp) pregPriQueue.deleteMax();
+		    boolean dirty = regFile.isDirty(preg);
+		    reg = regFile.evict(preg);
+		    
+		    if (dirty) {
+			InstrMEM store = 
+			    new InstrMEM(inf, null, 
+					 "FSK-STORE `d0, `s0",
+					 new Temp[] { preg },
+					 new Temp[] { reg });
+			memInstrs.getPrior(j).push(store);
+		    }
+		    
+		    if (DEBUG) 
+			System.out.println
+			    ("EVICT: Instr " + j + " " + regFile);
+		    
+		    
+		}
+		
 		regFile.put(reg, i);
 		regFile.writeTo(reg); // set DIRTY bit
 
