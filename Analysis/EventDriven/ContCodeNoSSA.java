@@ -10,7 +10,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.Quads.Quad;
 import harpoon.IR.Quads.QuadSSI;
 import harpoon.IR.Quads.QuadFactory;
-import harpoon.IR.Quads.RSSIToNoSSA;
+import harpoon.IR.Quads.RSSxToNoSSA;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Util.Util;
@@ -23,7 +23,7 @@ import java.util.Map;
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: ContCodeNoSSA.java,v 1.1.2.3 2000-10-16 23:51:50 cananian Exp $
+ * @version $Id: ContCodeNoSSA.java,v 1.1.2.4 2000-11-13 21:06:24 cananian Exp $
  */
 public class ContCodeNoSSA extends harpoon.IR.Quads.QuadNoSSA {
 
@@ -39,7 +39,7 @@ public class ContCodeNoSSA extends harpoon.IR.Quads.QuadNoSSA {
 
     public ContCodeNoSSA(QuadSSI qsa) { 
 	super(qsa.getMethod(),null);
-        RSSIToNoSSA translate = new RSSIToNoSSA(this.qf, qsa);
+        RSSxToNoSSA translate = new RSSxToNoSSA(this.qf, qsa);
         this.quads=translate.getQuads();
 	this.setAllocationInformation(translate.getAllocationInfo());
     }
@@ -49,7 +49,7 @@ public class ContCodeNoSSA extends harpoon.IR.Quads.QuadNoSSA {
      * @return the name of the <code>parent</code>'s code view.
      */
     public String getName() {
-	return harpoon.IR.Quads.QuadRSSI.codename;
+	return harpoon.IR.Quads.QuadRSSx.codename;
     }
 
     public void quadSet(Quad q) {

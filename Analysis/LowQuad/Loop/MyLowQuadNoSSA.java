@@ -11,7 +11,7 @@ import harpoon.ClassFile.HMethod;
 import harpoon.IR.LowQuad.Code;
 import harpoon.IR.LowQuad.LowQuadSSI;
 import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.RSSIToNoSSA;
+import harpoon.IR.Quads.RSSxToNoSSA;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempMap;
 import harpoon.Util.Util;
@@ -24,7 +24,7 @@ import java.util.Iterator;
  * <code>MyLowQuadNoSSA</code>
  * 
  * @author  Brian Demsky <bdemsky@mit.edu>
- * @version $Id: MyLowQuadNoSSA.java,v 1.1.2.3 2000-05-17 03:19:52 cananian Exp $
+ * @version $Id: MyLowQuadNoSSA.java,v 1.1.2.4 2000-11-13 21:06:29 cananian Exp $
  */
 
 public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
@@ -40,7 +40,7 @@ public class MyLowQuadNoSSA extends harpoon.IR.LowQuad.LowQuadNoSSA
     
     MyLowQuadNoSSA(final LowQuadSSI code) {
 	super(code.getMethod(),null);
-	RSSIToNoSSA translate=new RSSIToNoSSA(qf, code);
+	RSSxToNoSSA translate=new RSSxToNoSSA(qf, code);
 	quads=translate.getQuads();
 	tempMap=translate.tempMap();
 	quadmap=translate.quadMap();

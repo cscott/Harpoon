@@ -33,7 +33,7 @@ import java.util.Set;
  * speed up dispatch.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DispatchTreeTransformation.java,v 1.1.2.1 2000-10-17 03:43:18 cananian Exp $
+ * @version $Id: DispatchTreeTransformation.java,v 1.1.2.2 2000-11-13 21:06:37 cananian Exp $
  */
 public class DispatchTreeTransformation
     extends harpoon.Analysis.Transformation.MethodMutator {
@@ -44,7 +44,7 @@ public class DispatchTreeTransformation
     /** Creates a <code>DispatchTreeTransformation</code>. */
     public DispatchTreeTransformation(HCodeFactory parent, ClassHierarchy ch) {
 	// convert the code factory to relaxed-quad-ssi form.
-        super(harpoon.IR.Quads.QuadRSSI.codeFactory(parent));
+        super(harpoon.IR.Quads.QuadRSSx.codeFactory(parent));
 	this.ch = ch;
     }
     protected HCode mutateHCode(HCodeAndMaps input) {
@@ -58,9 +58,9 @@ public class DispatchTreeTransformation
 	    if (q instanceof CALL && examineCALL((CALL)q, etm))
 		devirtualizeCALL((CALL)q, etm);
 	}
-	// We *could* convert from RSSI to NoSSA or some such, but let's
-	// just stay in RSSI form.
-	Util.assert(hc.getName().equals(harpoon.IR.Quads.QuadRSSI.codename));
+	// We *could* convert from RSSx to NoSSA or some such, but let's
+	// just stay in RSSx form.
+	Util.assert(hc.getName().equals(harpoon.IR.Quads.QuadRSSx.codename));
 	// done!
 	return hc;
     }

@@ -18,7 +18,7 @@ import java.util.Hashtable;
  * It does not have <code>HANDLER</code> quads, and is not in SSA form.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: QuadNoSSA.java,v 1.1.2.26 2000-10-17 03:29:00 cananian Exp $
+ * @version $Id: QuadNoSSA.java,v 1.1.2.27 2000-11-13 21:06:44 cananian Exp $
  * @see QuadWithTry
  * @see QuadSSI
  */
@@ -50,9 +50,9 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 	this.typeMap = (tm==null) ? null : translator.getDerivation();
 	setAllocationInformation(translator.getAllocationInformation());
     }
-    QuadNoSSA(QuadRSSI qsa) {
+    QuadNoSSA(QuadRSSx qsa) {
 	super(qsa.getMethod(),null);
-	RSSIToNoSSA translate = new RSSIToNoSSA(this.qf, qsa);
+	RSSxToNoSSA translate = new RSSxToNoSSA(this.qf, qsa);
 	this.quads=translate.getQuads();
 	this.typeMap = null;
     }
@@ -98,12 +98,12 @@ public class QuadNoSSA extends Code /* which extends HCode */ {
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }
 	    };
-	} else if (hcf.getCodeName().equals(QuadRSSI.codename)) {
+	} else if (hcf.getCodeName().equals(QuadRSSx.codename)) {
 	    return new harpoon.ClassFile.SerializableCodeFactory() {
 		public HCode convert(HMethod m) {
 		    HCode c = hcf.convert(m);
 		    return (c==null) ? null :
-			new QuadNoSSA((QuadRSSI)c);
+			new QuadNoSSA((QuadRSSx)c);
 		}
 		public void clear(HMethod m) { hcf.clear(m); }
 		public String getCodeName() { return codename; }

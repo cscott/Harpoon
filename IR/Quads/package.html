@@ -1,5 +1,5 @@
 <HTML>
-<!-- $Id: package.html,v 1.1.2.7 2000-02-25 17:32:07 cananian Exp $ -->
+<!-- $Id: package.html,v 1.1.2.8 2000-11-13 21:06:44 cananian Exp $ -->
 <BODY>
 A flat, typed, high-level quadruple-based IR.
 <p>
@@ -16,11 +16,12 @@ quads to handle thrown exceptions, and does implicit safety-checking.
 <LI><code>QuadSSI</code> which is the same as the above, except it is
 in <A HREF="http://flexc.lcs.mit.edu/Harpoon/thesis.pdf">SSI form</a>.
 
-<LI><code>QuadRSSI</code> is a relaxed version of
-<code>QuadSSI</code>; during program transformations it is sometimes
-easier to break the phi/sigma constraints of SSI form without doing
-a full translation to/from <code>QuadNoSSA</code>.  Relaxed-SSI (RSSI)
-form is what we call this "SSI form with broken constraints".
+<LI><code>QuadRSSx</code> is a relaxed version of
+<code>QuadSSA</code>/<code>QuadSSI</code>; during program
+transformations it is sometimes easier to break the phi/sigma
+constraints of SSA/SSI form without doing a full translation to/from
+<code>QuadNoSSA</code>.  Relaxed-SSx (RSSx) form is what we call this
+"SSA/SSI form with broken constraints".
 </UL>
 <p>
 For lower-level transformations involving explicit pointer arithmetic,

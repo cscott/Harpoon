@@ -23,29 +23,7 @@ import harpoon.ClassFile.Linker;
 import harpoon.ClassFile.Relinker;
 import harpoon.ClassFile.UniqueName;
 
-import harpoon.IR.Quads.CALL;
-import harpoon.IR.Quads.CJMP;
-import harpoon.IR.Quads.CONST;
-import harpoon.IR.Quads.Code;
-import harpoon.IR.Quads.Edge;
-import harpoon.IR.Quads.FOOTER;
-import harpoon.IR.Quads.GET;
-import harpoon.IR.Quads.SET;
-import harpoon.IR.Quads.HEADER;
-import harpoon.IR.Quads.METHOD;
-import harpoon.IR.Quads.NEW;
-import harpoon.IR.Quads.OPER;
-import harpoon.IR.Quads.Qop;
-import harpoon.IR.Quads.PHI;
-import harpoon.IR.Quads.Quad;
-import harpoon.IR.Quads.QuadNoSSA;
-import harpoon.IR.Quads.QuadFactory;
-import harpoon.IR.Quads.QuadSSI;
-import harpoon.IR.Quads.QuadRSSI;
-import harpoon.IR.Quads.RETURN;
-import harpoon.IR.Quads.THROW;
-import harpoon.IR.Quads.TYPECAST;
-import harpoon.IR.Quads.QuadVisitor;
+import harpoon.IR.Quads.*;
 import harpoon.Temp.Temp;
 import harpoon.Temp.TempFactory;
 import harpoon.Temp.CloningTempMap;
@@ -62,7 +40,7 @@ import java.lang.reflect.Modifier;
  * <code>AsyncCode</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AsyncCode.java,v 1.1.2.65 2000-10-16 23:51:49 cananian Exp $
+ * @version $Id: AsyncCode.java,v 1.1.2.66 2000-11-13 21:06:24 cananian Exp $
  */
 public class AsyncCode {
 
