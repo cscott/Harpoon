@@ -13,7 +13,7 @@ import java.util.Enumeration;
  * <code>Method</code> interprets method code given a static state.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Method.java,v 1.1.2.3 1999-01-03 03:01:44 cananian Exp $
+ * @version $Id: Method.java,v 1.1.2.4 1999-01-06 22:31:42 cananian Exp $
  */
 public final class Method extends HCLibrary {
 
@@ -242,14 +242,12 @@ public final class Method extends HCLibrary {
 	    }
 	    try {
 		Object retval = toInternal(invoke(ss, hm, params));
-		if (q.retval()!=null)
-		    sf.update(q.retval(), retval);
-		if (q.retex()!=null)
-		    sf.update(q.retex(), null);
+		if (q.retval()!=null) sf.update(q.retval(), retval);
+		if (q.retex()!=null)  sf.update(q.retex(), null);
 	    } catch (InterpretedThrowable it) {
-		if (q.retex()==null) throw it; // concession to expediency.
-		sf.update(q.retval(), null);
-		sf.update(q.retex(), it.ex);
+		if (q.retval()!=null) sf.update(q.retval(), null);
+		if (q.retex()!=null)  sf.update(q.retex(), it.ex);
+		else throw it; // concession to expediency.
 	    }
 	    advance(0);
 	}
