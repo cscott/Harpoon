@@ -1,0 +1,32 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<!-- $Id: package.html,v 1.1.2.1 1999-11-02 07:07:04 andyb Exp $ -->
+<body bgcolor="white">
+Provides the classes for generating assembly code targetting the
+SPARC platform.
+
+<P>
+The main parts of the SPARC backend are the classses
+<code>RegFileInfo</code>, <code>InstrBuilder</code>,
+<code>Frame</code>, and the spec-file <code>CodeGen.spec</code>.  Also
+of note is the <code>TwoWordTemp</code>, which is a extension of the
+standard <code>Temp</code> that represents a value that is spread
+across two words (which is needed for double and long variables on the
+SPARC). 
+
+<P>
+Much off this is derived from the StrongARM Backend (with many kudos
+to Scott and Felix).
+
+<h2>Related Documentation</h2>
+
+For further information, see:
+<ul>
+  <li> Paul, <U>SPARC Architecture, Assembly Language Programming, and C </U>
+</ul>
+
+@author Andrew Berkheimer (andyb@mit.edu)
+@author C. Scott Ananian (cananian@alumni.princeton.edu)
+</body>
+</html>
+

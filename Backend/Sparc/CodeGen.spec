@@ -11,15 +11,24 @@ import harpoon.IR.Tree.Uop;
 import harpoon.IR.Tree.Type;
 import harpoon.IR.Tree.Typed;
 import harpoon.Util.Util;
+
+import java.util.Set;
+
 /**
  * <code>Sparc.CodeGen</code> is a code-generator for the Sparc architecture.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: CodeGen.spec,v 1.1.2.6 1999-09-11 17:57:59 cananian Exp $
+ * @version $Id: CodeGen.spec,v 1.1.2.7 1999-11-02 07:07:04 andyb Exp $
  */
 %%
     // FIELDS
+
     private Instr root = null, last = null;
+
+    private InstrFactory instrFactory;
+
+    final RegFileInfo regfile;
+
     /** append an instruction to the end of our instruction list. */
     private void emit(Instr i) {
 	if (root == null)
@@ -27,6 +36,10 @@ import harpoon.Util.Util;
 	if (last != null)
 	    last.insertInstrAfter(last,  i);
 	last = i;
+    }
+
+    public CodeGen(Frame frame) {
+	super(frame);
     }
 
     // INNER CLASSES
@@ -61,6 +74,7 @@ import harpoon.Util.Util;
 	if (n instanceof Double || n instanceof Float) return false;
 	return ((-4096<=n.longValue()) && (n.longValue()<=4095));
     }
+
     /** Return proper suffix based on type. */
     static String suffix(Typed t) {
       String r="";
@@ -68,6 +82,7 @@ import harpoon.Util.Util;
       if (Type.isFloatingPoint(t.type())) r+="f";
       return r;
     }
+
     /** Crunch <code>Bop</code> down to sparc instruction. */
     static String bop(int op) {
 	switch(op) {
@@ -81,9 +96,11 @@ import harpoon.Util.Util;
 	}
 	Util.assert(false);
     }
+
     static boolean isCommutative(int op) { 
 	return op==Bop.ADD || op==Bop.OR || op==Bop.AND || op==Bop.XOR;
     }
+
     static boolean isShift(int op) {
 	return op==Bop.SHL || op==Bop.SHR || op==Bop.USR;
     }
