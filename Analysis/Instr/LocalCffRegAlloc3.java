@@ -13,6 +13,7 @@ import harpoon.Analysis.Instr.TempInstrPair;
 import harpoon.Analysis.Instr.RegAlloc.FskLoad;
 import harpoon.Analysis.Instr.RegAlloc.FskStore;
 import harpoon.IR.Assem.Instr;
+import harpoon.IR.Assem.InstrMOVE;
 import harpoon.IR.Assem.InstrEdge;
 import harpoon.IR.Assem.InstrMEM;
 import harpoon.Temp.Temp;
@@ -52,7 +53,7 @@ import java.util.Iterator;
   
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc3.java,v 1.1.2.7 2000-01-14 22:29:56 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc3.java,v 1.1.2.8 2000-01-18 15:11:08 pnkfelix Exp $
  */
 public class LocalCffRegAlloc3 extends RegAlloc {
     
@@ -80,14 +81,18 @@ public class LocalCffRegAlloc3 extends RegAlloc {
     static Integer INFINITY = new Integer( Integer.MAX_VALUE - 1 );
 
     class LocalAllocator {
-	BasicBlock block;
-	Set liveOnExit;
+	final BasicBlock block;
+	final Set liveOnExit;
+	final RegFile regfile;
+
+	// Temp:t currently in regfile -> Index of next ref to t
+	final Map evictables;
 
 	// maps (Instr:i x Temp:t) -> 2 * index of next Instr
 	//                            referencing t 
 	// (only defined for t's referenced by i that 
 	// have a future reference; otherwise 'null')  
-	Map nextRef;
+	final Map nextRef;
 	
 	LocalAllocator(BasicBlock b, Set lvOnExit) {
 	    block = b;
@@ -95,49 +100,149 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 	    
 	    // System.out.print("Bnr");
 	    nextRef = buildNextRef(b);
+	    regfile = new RegFile();
+	    evictables = new HashMap();
 	}
 
 	void alloc() {
-	    final BasicBlock b = block;
-	    final RegFile regfile = new RegFile(); 
+	    // System.out.print("Lra");
 	    
-	// System.out.print("Lra");
-
-	// FSK: first approach: preassign hardcoded registers, without
-	// accounting for liveness of Temps at all.  Later, replace
-	// this with something smarter (but still efficient!) that
-	// will only preassign hardcoded registers whose live ranges
-	// conflict with the Ref currently being assigned.
-	precolorRegfile(b, regfile);
-
-	// Temp:t currently in regfile -> Index of next ref to t
-	Map evictables = new HashMap();
+	    // FSK: first approach: preassign hardcoded registers, without
+	    // accounting for liveness of Temps at all.  Later, replace
+	    // this with something smarter (but still efficient!) that
+	    // will only preassign hardcoded registers whose live ranges
+	    // conflict with the Ref currently being assigned.
+	    precolorRegfile(block, regfile);
+	    
+	    Iterator instrs = new FilterIterator
+		(block.iterator(),
+		 new FilterIterator.Filter() {
+		     public boolean isElement(Object o) {
+			 final Instr j = (Instr) o;
+			 return !(j instanceof FskLoad ||
+				  j instanceof FskStore);
+		     }
+		 });
+	    
+	    LocalAllocVisitor v = new LocalAllocVisitor();
+	    while(instrs.hasNext()) {
+		Instr i = (Instr) instrs.next();
+		i.accept(v);
+	    }
+	    
+	    emptyRegFile(regfile, v.last, liveOnExit);
+	}
 	
-	Iterator instrs = new FilterIterator
-	      (b.iterator(),
-	       new FilterIterator.Filter() {
-		   public boolean isElement(Object o) {
-		       final Instr j = (Instr) o;
-		       return !(j instanceof FskLoad ||
-				j instanceof FskStore);
-		   }
-	       });
-	     
-	Instr i=null;
-	while(instrs.hasNext()) {
-	    i = (Instr) instrs.next();
+	class LocalAllocVisitor extends harpoon.IR.Assem.InstrVisitor {
+	    // last Instr that was visited that still remains in the
+	    // code (thus, not a removed InstrMOVE)
+	    Instr last;
 
-	    // very simple move coalescing: if this is the last use of
-	    // a temp, just replace the mapping in the abstract
-	    // regfile instead of actually doing the move.
-	    if (i instanceof harpoon.IR.Assem.InstrMOVE) {
+	    public void visit(Instr i) {
+		Iterator refs = new FilterIterator
+		    (getRefs(i), new FilterIterator.Filter() {
+			public boolean isElement(Object o) {
+			    return !isTempRegister((Temp) o);
+			}
+		    });
+		
+		while(refs.hasNext()) {
+		    Temp t = (Temp) refs.next();
+		    if (regfile.hasAssignment(t)) {
+			code.assignRegister
+			    (i, t, regfile.getAssignment(t));
+			evictables.remove(t);
+		    } else {
+			
+			// FSK: the benefits of this code block are
+			// dubious at best, so i'm keeping it out for now 
+			if (false) {
+			    // regfile has mappings to dead temps; such
+			    // registers won't be suggested unless we spill
+			    // them here...
+			    final Collection temps = 
+				regfile.getRegToTemp().values();
+			    
+			    final Iterator tmpIter = temps.iterator();
+			    
+			    // System.out.println("regfile: "+regfile);
+			    while(tmpIter.hasNext()) {
+				Temp tt = (Temp) tmpIter.next();
+				Integer X = (Integer) nextRef.get
+				    (new TempInstrPair(i, tt));
+				if (X == null &&
+				    !liveOnExit.contains(tt) &&
+				    regfile.hasAssignment(tt) &&
+				    // only force cleanspills
+				    regfile.isClean(tt)) { 
+				    regfile.remove(tt);
+				}
+			    }
+			}
+		    
+			
+			Iterator suggs = getSuggestions(t, regfile, i, evictables);
+			List regList = chooseSuggestion(suggs);
+			code.assignRegister(i, t, regList);
+			regfile.assign(t, regList);
+			
+			if (i.useC().contains(t)) {
+			    InstrMEM load = 
+				new FskLoad
+				(i, "FSK-LOAD", regList, t);
+			    load.insertAt(new InstrEdge(i.getPrev(), i));
+			}
+		    }
+		    
+		    Integer X = (Integer) nextRef.get(new TempInstrPair(i, t));
+		    
+		    if (X == null) X = INFINITY;
+		    Util.assert(X.intValue() <= (Integer.MAX_VALUE - 1),
+				"Excessive Weight was stored.");
+		    
+		    // TODO: if t is dirty then X <- X+0.5 endif
+		    // (since weights are doubled, use X++;
+		    if (regfile.isDirty(t)) {
+			X = new Integer(X.intValue() + 1);
+		    }
+		    
+		    evictables.put(t, X); 
+		}
+		
+		Iterator defs = i.defC().iterator();
+		while(defs.hasNext()) {
+		    Temp def = (Temp) defs.next();
+		    // Q: should we also mark writes to hardcoded registers?
+		    if (!isTempRegister(def)) regfile.writeTo(def);
+		}
+		
+		// finished local alloc for 'i'
+		// lets verify
+		Iterator refIter = getRefs(i);
+		while(refIter.hasNext()) {
+		    Temp ref = (Temp) refIter.next();
+		    Util.assert(isTempRegister(ref) ||
+				code.registerAssigned(i, ref),
+				"Instr: "+i + " / " +
+				code.toAssemRegsNotNeeded(i) +
+				" needs register "+
+				"assignment for Ref: "+ref);
+		}
+		
+		last = i;
+	    }
+	    
+	    public void visit(InstrMOVE i) {
+		// very simple move coalescing: if this is the last use of
+		// a temp, just replace the mapping in the abstract
+		// regfile instead of actually doing the move.
 		Temp src = i.use()[0];
 		Temp dst = i.def()[0];
-
+		
 		// System.out.println("Encountering : " + i );
-
+		
 		List regs = null;
-
+		
 		if (isTempRegister(src) &&
 		    !isTempRegister(dst) &&
 		    !nextRef.containsKey(new TempInstrPair(i, src))) {
@@ -155,127 +260,25 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 		
 		if(regs != null) {
 		    if (regfile.hasAssignment(dst)) regfile.remove(dst);
-
+		    
 		    regfile.assign(dst, regs);
-
+		    
 		    // need to save this value if the Temp is spilled
 		    regfile.writeTo(dst);
-
+		    
 		    Integer X = (Integer) nextRef.get
 			(new TempInstrPair(i, dst)); 
 		    if (X == null) X = INFINITY;
 		    evictables.put(dst, X);
 		    
 		    // System.out.println("Yay, removing " + i);
+		    i.remove();
 
-		    // FSK: post-loop code relies on 'i' being the
-		    // last Instr in the block; this effectively does 
-		    // i.remove() while maintaining that invariant.
-		    
-		    if(instrs.hasNext()) {
-			i.remove();
-		    } else {
-			i = i.getPrev();
-			i.getNext().remove();
-		    }
-		    continue; 
-		}
-	    }
-	    
-	    Iterator refs = new FilterIterator
-		(getRefs(i), new FilterIterator.Filter() {
-		    public boolean isElement(Object o) {
-			return !isTempRegister((Temp) o);
-		    }
-		});
-	    
-	    while(refs.hasNext()) {
-		Temp t = (Temp) refs.next();
-		if (regfile.hasAssignment(t)) {
-		    code.assignRegister
-			(i, t, regfile.getAssignment(t));
-		    evictables.remove(t);
 		} else {
-
-		    // FSK: the benefits of this code block are
-		    // dubious at best, so i'm keeping it out for now 
-		    if (false) {
-			// regfile has mappings to dead temps; such
-			// registers won't be suggested unless we spill
-			// them here...
-			final Collection temps = 
-			    regfile.getRegToTemp().values();
-
-			final Iterator tmpIter = temps.iterator();
-
-			// System.out.println("regfile: "+regfile);
-			while(tmpIter.hasNext()) {
-			    Temp tt = (Temp) tmpIter.next();
-			    Integer X = (Integer) nextRef.get
-				(new TempInstrPair(i, tt));
-			    if (X == null &&
-				!liveOnExit.contains(tt) &&
-				regfile.hasAssignment(tt) &&
-				regfile.isClean(tt)) { // only force cleanspills
-				regfile.remove(tt);
-			    }
-			}
-		    }
-		    
-
-		    Iterator suggs = getSuggestions(t, regfile, i, evictables);
-		    List regList = chooseSuggestion(suggs);
-		    code.assignRegister(i, t, regList);
-		    regfile.assign(t, regList);
-		    
-		    if (i.useC().contains(t)) {
-			InstrMEM load = 
-			    new FskLoad
-			    (i, "FSK-LOAD", regList, t);
-			load.insertAt(new InstrEdge(i.getPrev(), i));
-		    }
+		    // couldn't remove; treat as a normal Instr
+		    visit( (Instr) i);
 		}
-		
-		Integer X = (Integer) nextRef.get(new TempInstrPair(i, t));
-
-		if (X == null) X = INFINITY;
-		Util.assert(X.intValue() <= (Integer.MAX_VALUE - 1),
-			    "Excessive Weight was stored.");
-		
-		// TODO: if t is dirty then X <- X+0.5 endif
-		// (since weights are doubled, use X++;
-		if (regfile.isDirty(t)) {
-		    X = new Integer(X.intValue() + 1);
-		}
-		
-		evictables.put(t, X); 
 	    }
-
-	    Iterator defs = i.defC().iterator();
-	    while(defs.hasNext()) {
-		Temp def = (Temp) defs.next();
-		// Q: should we also mark writes to hardcoded registers?
-		if (!isTempRegister(def)) regfile.writeTo(def);
-	    }
-
-	    // finished local alloc for 'i'
-	    // lets verify
-	    Iterator refIter = getRefs(i);
-	    while(refIter.hasNext()) {
-		Temp ref = (Temp) refIter.next();
-		Util.assert(isTempRegister(ref) ||
-			    code.registerAssigned(i, ref),
-			    "Instr: "+i + " / " +
-			    code.toAssemRegsNotNeeded(i) +
-			    " needs register "+
-			    "assignment for Ref: "+ref);
-	    }
-	}
-	
-	// finished local alloc for 'b', so now we need to empty the
-	// register file.  Note that after the loop finishes, 'i'
-	// is the last instruction in the series.
-	emptyRegFile(regfile, i, liveOnExit);
 	}
 
 	/** Gets an Iterator of suggested register assignments in
@@ -284,7 +287,7 @@ public class LocalCffRegAlloc3 extends RegAlloc {
 	<code>evictables</code> as a <code>Map</code> from
 	<code>Temp</code>s to weighted distances to decide which
 	<code>Temp</code>s to spill.  
-    */
+	*/
 	private Iterator getSuggestions(Temp t, RegFile regfile, 
 					Instr i, Map evictables) {
 	    for(int x=0; true; x++) {

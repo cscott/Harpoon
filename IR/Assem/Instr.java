@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.68 2000-01-09 09:12:25 pnkfelix Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.69 2000-01-18 15:11:23 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private final String assem; 
     private InstrFactory inf;
@@ -465,6 +465,11 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
     */    
     public void remove() {
 	Util.assert( ! this.hasMultiplePredecessors());
+
+	Util.assert(((harpoon.Backend.Generic.Code)
+		     inf.getParent()).getRootElement() != this,
+		    "Do not remove root element.");
+
 	if (this.next != null) {
 	    // remove ref to this in this.next
 	    this.next.prev = this.prev; 
@@ -473,14 +478,18 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
 	    // remove ref to this in this.prev
 	    this.prev.next = this.next;
 	}
+
+
 	this.next = null;
 	this.prev = null;
 	/* remove mappings in inf.labelToBranchingInstrsSetMap */
-	if (this.targets!=null)
+	if (this.targets!=null) {
 	    for (Iterator it=this.targets.iterator(); it.hasNext(); ) {
 		Label l = (Label) it.next();
 		((Set)inf.labelToBranches.get(l)).remove(this);
 	    }
+	}
+
     }
 
     /** Places <code>this</code> in the instruction layout between

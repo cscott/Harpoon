@@ -43,7 +43,7 @@ import java.io.StreamTokenizer;
  * which use <code>Instr</code>s.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: Code.java,v 1.1.2.35 1999-12-20 12:42:37 pnkfelix Exp $
+ * @version $Id: Code.java,v 1.1.2.36 2000-01-18 15:11:20 pnkfelix Exp $
  */
 public abstract class Code extends HCode {
 
@@ -97,7 +97,7 @@ public abstract class Code extends HCode {
     public HMethod getMethod() { return parent; }
 
     public HCodeElement getRootElement() { return instrs; }
-
+    
     public HCodeElement[] getLeafElements() { return null; }
    
     /** Returns an <code>Iterator</code> over the instructions in this

@@ -13,10 +13,52 @@ import java.util.Iterator;
 /** <code>RegFileInfo</code> defines an interface that general program
     analyses can call to find out architecture specific information
     about the target machine's register file. 
+    
+    <p> A note about <code>Temp</code>s: several types of
+    <code>Temp</code>s are mentioned in this interface, and the
+    differences between them are worth noting.
+
+    <p> A Temp, as used in the rest of the compiler, is a variable
+    suitable for storing some value in.  They are temporary storage
+    for intermediate values.  I will refer to them as <i>Flex
+    Temps</i> for the remainder of this discussion, to avoid confusion
+    with other kinds of Temps.  A <i>Physical Register Temp</i> is a
+    special Temp for representing a physical register in the specific
+    architecture's register file.  Some kinds of Flex Temps may
+    require multiple Physical Register Temps to fit in the register
+    file, depending on the variable type and the types of registers
+    offered by the architecture.  A <i>Virtual Register Temp</i> is a
+    abstraction of a Physical Register Temp (or several of them): it
+    is not any specific register in the register file, it just
+    represents a location that is somewhere in the register file.
+
+    <p> The idea is that the register allocator will first figure out
+    at which points in the program the various Flex Temps will be in
+    the register file, and where the various Loads and Stores for
+    maintaining the state of the register file will go.  However, the
+    allocator does not have to actually assign specific Physical
+    Register Temps to the Flex Temps if it does want to; it can delay
+    that until later in the allocation process.  This allows for Local
+    and Global Allocation to work together, because Local Allocation
+    can work with Virtual Register Temps, and then the Global
+    Allocator can merge Virtual Registers in different Basic Blocks
+    together before mapping them to Physical Register Temps.
+
+    <p> Lastly, a <i>Preassign Temp</i> is an Temp representing some
+    value that has no representation as a Flex Temp.  It is used for
+    portions of the code where the Code Generator has inserted
+    hardcoded references to Physical Register Temps (such as when it
+    is setting up the arguments for a function call); we do not want
+    those Registers to be used to store any other values, and we do
+    not want to allow them to be suggested for spilling when the
+    register file is full.  So when the Allocator is requesting a
+    Register to store some Flex Temp, it should set up mappings from
+    any preassigned Physical Register Temps to newly generated
+    <code>PreassignTemp</code>s to represent the values that are being
+    maintained by the hardcoded references.
   
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.12 2000-01-17 09:01:58 cananian Exp $
- */
+    @version $Id: RegFileInfo.java,v 1.1.2.13 2000-01-18 15:11:20 pnkfelix Exp $ */
 public abstract class RegFileInfo {
     
     private static TempFactory preassignTF = new TempFactory() {
@@ -41,6 +83,26 @@ public abstract class RegFileInfo {
 	}
     }
     
+    /** <code>VRegAllocator</code> is a virtual register allocator.
+	Register Allocators can use the returned Virtual Register
+	Temps to store Temps in abstractly, without commiting to one
+	particular physical register.  This way, virtual registers in
+	seperate basic blocks can map to the same physical register in
+	the register file.
+    */
+    abstract class VRegAllocator {
+	/** Returns a Virtual Register Temp for <code>t</code>.
+	    <BR> <B> effects: </B> If <code>regfile</code> has space
+	         to hold a value of the type held in <code>t</code>, 
+		 returns a virtual register suitable for mapping to 
+		 <code>t</code> in <code>regfile</code>.  Else, throws
+		 a <code>SpillException</code> indicating which
+		 registers could be removed from <code>regfile</code>
+		 to make room for <code>t</code>.
+	*/
+	abstract Temp vreg(Temp t, Map regfile) throws RegFileInfo.SpillException; 
+    }
+
     /** Creates a <code>RegFileInfo</code>. */
     public RegFileInfo() {
         
@@ -80,6 +142,11 @@ public abstract class RegFileInfo {
 
     /** Returns the <code>TempFactory</code> of the register
 	<code>Temp</code>s in <code>this</code>. 
+
+	FSK: is this needed?  Why would code using RegFileInfo need
+	     access to this?  Double check if its just a hack to
+	     implement the same functionality offered by
+	     <code>isRegister(Temp)</code> below.
     */
     public abstract TempFactory regTempFactory();
 
@@ -98,6 +165,11 @@ public abstract class RegFileInfo {
 
     /** Analyzes <code>regfile</code> to find free registers that
 	<code>t</code> can be assigned to.  
+
+	FSK: Need to update this method to incorporate knowledge of
+	Virtual Register Temps (perhaps it is guaranteed not to throw
+	a SpillException when given a Virtual Register Temp)
+
 	<BR> <B>effects:</B> Either returns an <code>Iterator</code>
 	     of possible assignments (though this is not guaranteed to
 	     be a complete list of all possible choices, merely the
@@ -218,6 +290,7 @@ public abstract class RegFileInfo {
     /** Returns an array of <code>Temp</code>s which represent all
      *  the available registers on the machine. */
     public abstract Temp[] getAllRegisters();
+
     /** Returns a specific register on the machine.<BR>
      *  <code>getRegister(index)==getAllRegisters()[index]</code>
      */
@@ -226,5 +299,14 @@ public abstract class RegFileInfo {
     /** Returns an array of <code>Temp</code>s for all the registers
      *  that the register allocator can feel free to play with */
     public abstract Temp[] getGeneralRegisters();
+
+    /** Generates a new <code>VRegAllocator</code> guaranteed to
+	return virtual register Temps from a set disjoint from all
+	other generated <code>VRegAllocator</code>s.
+    */
+    public VRegAllocator allocator() {
+	harpoon.Util.Util.assert(false, "make RegFileInfo.allocator() abstract and implement in all backends");
+	return null;
+    }
 
 }
