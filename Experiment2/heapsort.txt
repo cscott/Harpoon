@@ -1,0 +1,30 @@
+
+A Heapsort is based on a heap data structure.  A heap is a complete binary 
+tree. This means that every successive level of the tree must fill up from 
+left to right. Further, an entire level must be full before any nodes at that 
+level can have children nodes. 
+
+In a heap, the parent nodes always have a greater (or lower) key value than 
+their children nodes. A heap in which the parents are always greater than 
+their children is called a max-heap whereas the opposite is called a min-heap.
+
+Once a heap has been built, a Heapsort can simply remove the maximum value 
+(root node) and create the output, sorted array one item at a time. [..]
+
+When the root node in a heap is removed to become part of the final, ordered 
+data set, the last item on the heap is promoted to fill the vacancy at the 
+root position. Clearly, in many cases, this last item will now be out of place
+(that is, it may be smaller than one of its new children). To ensure that the 
+modified heap retains the max-heap property it becomes necessary to ``push 
+down'' the newly promoted root item until it is back in the right place. This 
+pushing down process entails examining the node's key value and comparing it 
+with the key value of the node's greatest child. If the node's greater child 
+is larger in value than the node itself, a swap is performed. The process 
+repeats, following the node from the root down through demotion, until no swap 
+is needed. At this point the heap is back in order, the new root may be popped 
+off, and the sorting process can continue. 
+
+The process of removing the root, promoting the last node, and re-heapifying 
+continues until the heap is exhausted. 
+
+From http://www.darkridge.com/~jpr5/archive/alg/node55.html
