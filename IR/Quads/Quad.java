@@ -28,7 +28,7 @@ import java.util.Map;
  * <code>Quad</code> is the base class for the quadruple representation.<p>
  *
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Quad.java,v 1.1.2.43 2000-10-19 23:49:30 cananian Exp $
+ * @version $Id: Quad.java,v 1.1.2.44 2000-11-07 20:20:39 cananian Exp $
  */
 public abstract class Quad 
     implements harpoon.ClassFile.HCodeElement, 
@@ -239,6 +239,18 @@ public abstract class Quad
 	    addEdge(from, e.which_succ(), newQ, i);
 	    oldQ.prev[i] = null;
 	}
+    }
+    /** Remove this quad from the graph.  The given quad must have
+     *  exactly one predecessor and one successor. Also removes the
+     *  quad from any handler sets it may belong to. */
+    public void remove() {
+	Util.assert(this.next.length == 1);
+	Util.assert(this.prev.length == 1);
+	this.removeHandlers(this.handlers());
+	Edge in = this.prev[0], out = this.next[0];
+	addEdge((Quad)in.from(), in.which_succ(),
+		(Quad)out.to(), out.which_pred());
+	this.prev[0] = this.next[0] = null;
     }
     /** Update the handlers for newQ to match the handlers for oldQ,
      *  removing handlers from oldQ in the process.
