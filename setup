@@ -10,5 +10,5 @@ autoconf
 test -f config.cache && rm -f config.cache
 set +x
 if test -f config.status; then
-    sh config.status
+    `sed -ne '7,7s/^#//p'  config.status`
 fi
