@@ -86,7 +86,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.137 2001-01-26 20:07:48 wbeebee Exp $
+ * @version $Id: SAMain.java,v 1.1.2.138 2001-02-13 21:55:24 kkz Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -151,6 +151,7 @@ public class SAMain extends harpoon.IR.Registration {
     static boolean DO_TRANSACTIONS = false;
     static SyncTransformer syncTransformer = null;
 
+    static boolean MULTITHREADED = false;
 
     public static void main(String[] args) {
 	hcf = // default code factory.
@@ -385,6 +386,12 @@ public class SAMain extends harpoon.IR.Registration {
 	hcf = harpoon.Analysis.Tree.JumpOptimization.codeFactory(hcf);
 	if (DO_TRANSACTIONS) {
 	    hcf = syncTransformer.treeCodeFactory(frame, hcf);
+	}
+	if (BACKEND == PRECISEC_BACKEND && MULTITHREADED && System.getProperty
+	    ("harpoon.alloc.strategy", "malloc").equalsIgnoreCase("precise")) {
+	    /* pass to insert GC polling calls */
+	    hcf = harpoon.Backend.Analysis.MakeGCThreadSafe.
+		codeFactory(hcf, frame);
 	}
 	hcf = new harpoon.ClassFile.CachingCodeFactory(hcf);
     if(BACKEND == MIPSYP_BACKEND) {
@@ -671,7 +678,7 @@ public class SAMain extends harpoon.IR.Registration {
     
     protected static void parseOpts(String[] args) {
 
-	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:EfpIDOPFHR::LlABt:hq1::C:r:T");
+	Getopt g = new Getopt("SAMain", args, "i:N:s:b:c:o:EfpIDOPFHR::LlABt:hq1::C:r:Tm");
 	
 	int c;
 	String arg;
@@ -690,6 +697,8 @@ public class SAMain extends harpoon.IR.Registration {
 		linker = new Relinker(Loader.systemLinker);
 		DO_TRANSACTIONS = true;
 		break;
+	    case 'm': // Multi-threaded (KKZ)
+		MULTITHREADED = true; break;
 	    case 't': // Realtime Java extensions (WSB)
 		linker = new Relinker(Loader.systemLinker);
 		Realtime.REALTIME_JAVA = true;

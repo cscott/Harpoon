@@ -43,7 +43,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.9 2001-01-31 21:36:12 wbeebee Exp $
+ * @version $Id: Frame.java,v 1.1.2.10 2001-02-13 21:54:34 kkz Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -75,7 +75,6 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.SPAllocationStrategy(this) :	    
 	    alloc_strategy.equalsIgnoreCase("precise") ?
-	    (harpoon.Backend.Runtime1.AllocationStrategy)
 	    new harpoon.Backend.Runtime1.MallocAllocationStrategy
 	    (this, "precise_malloc") :
 	    // default, "malloc" strategy.

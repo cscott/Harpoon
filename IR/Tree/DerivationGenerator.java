@@ -23,7 +23,7 @@ import java.util.Map;
  * <code>Tree.Exp</code>s can be inferred from these.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: DerivationGenerator.java,v 1.1.2.6 2000-02-15 20:12:38 cananian Exp $
+ * @version $Id: DerivationGenerator.java,v 1.1.2.7 2001-02-13 21:55:19 kkz Exp $
  */
 public class DerivationGenerator implements TreeDerivation {
     /** private partial type map */
@@ -200,7 +200,7 @@ public class DerivationGenerator implements TreeDerivation {
 	}
 	public void visit(TEMP e) {
 	    Util.assert(e.type != Type.POINTER, 
-			"Can't determine type for TEMP.");
+			"Can't determine type for TEMP "+e+".");
 	    this.tad = type2tad(e.type());
 	}
     }
