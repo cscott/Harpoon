@@ -36,7 +36,7 @@ import java.util.Set;
  * <code>EnvBuilder</code>
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: EnvBuilder.java,v 1.1.2.5 2000-01-13 23:51:47 bdemsky Exp $
+ * @version $Id: EnvBuilder.java,v 1.1.2.6 2000-01-14 10:07:44 bdemsky Exp $
  */
 public class EnvBuilder {
     protected final UpdateCodeFactory ucf;
@@ -83,39 +83,47 @@ public class EnvBuilder {
 
 	HConstructor nc = c[0];
 	HMethodMutator ncmutator=nc.getMutator();
+	TypeMap map = ((QuadNoSSA) this.hc).typeMap;
 
-	String[] parameterNames = new String[liveout.length];
-	HClass[] parameterTypes = new HClass[liveout.length];
-	HField[] fields = new HField[liveout.length];
+	int size=0;
+	for (int ii=0;ii<liveout.length;ii++)
+	    if (map.typeMap(this.hce,liveout[ii])!=HClass.Void)
+		size++;
+
+	String[] parameterNames = new String[size];
+	HClass[] parameterTypes = new HClass[size];
+	HField[] fields = new HField[size];
 
 	System.out.println("Starting SCCAnalysis");
-	TypeMap map = ((QuadNoSSA) this.hc).typeMap;
 	System.out.println("Finished SCCAnalysis");
-	for (int i=0; i<liveout.length; i++) {
+	for (int i=0,j=0; i<liveout.length; i++) {
 	    //	    this.liveout[i] = (Temp)vars[i];
-	    String tempName = liveout[i].name();
-	    HClass type = map.typeMap(this.hce, liveout[i]);  
-	    envmutator.addDeclaredField(tempName, type);
-		//	    new HFieldSyn(env, tempName, type);
+	    if (map.typeMap(this.hce,liveout[i])!=HClass.Void) {
+		    String tempName = liveout[i].name();
+		    HClass type = map.typeMap(this.hce, liveout[i]);  
+		    envmutator.addDeclaredField(tempName, type);
+		    //	    new HFieldSyn(env, tempName, type);
+		    
+		    parameterNames[j] = tempName;
+		    parameterTypes[j] = type;
 
-	    parameterNames[i] = tempName;
-	    parameterTypes[i] = type;
-
-	    try {
-		fields[i] = env.getField(parameterNames[i]);
-	    } catch (NoSuchFieldError e) {
-		System.err.println("Caught exception " + e.toString() +
-				   "in harpoon.Analysis.EnvBuilder." +
-				   "EnvBuilder::makeEnv()");
-		System.err.println("Cannot find synthesized field " +
-				   parameterNames[i]);
+		    try {
+			fields[j] = env.getField(parameterNames[j]);
+		    } catch (NoSuchFieldError e) {
+			System.err.println("Caught exception " + e.toString() +
+					   "in harpoon.Analysis.EnvBuilder." +
+					   "EnvBuilder::makeEnv()");
+			System.err.println("Cannot find synthesized field " +
+					   parameterNames[i]);
+		    }
+		    j++;
 	    }
 	}
 	ncmutator.setParameterNames(parameterNames);
 	ncmutator.setParameterTypes(parameterTypes);
-
+	
 	ucf.update(nc, new EnvCode(nc, fields));
-
+	
 	System.out.println("Leaving EnvBuilder.makeEnv()");
 	return env;
     }
