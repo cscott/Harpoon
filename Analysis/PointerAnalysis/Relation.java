@@ -21,7 +21,7 @@ import java.util.Arrays;
  * algorithm.
  *
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: Relation.java,v 1.1.2.10 2000-02-11 06:12:07 salcianu Exp $
+ * @version $Id: Relation.java,v 1.1.2.11 2000-02-12 23:08:59 salcianu Exp $
  */
 public class Relation{
     
@@ -140,7 +140,8 @@ public class Relation{
 	return true;
     }
 
-    /** Private constrcutor for <code>select</code> and <code>clone</code>. */
+
+    /** Private constructor for <code>select</code> and <code>clone</code>. */
     private Relation(Hashtable _hash){
 	hash = _hash;
     }
@@ -159,8 +160,23 @@ public class Relation{
     }
 
 
-    /** Creates a new, independent relation (i.e. the operations on 
-     *  the new relation won't affect the old one). */
+    /** Visits all the entries <code>&lt;key,value&gt;</code> of
+	<code>this</code> relation and calls <code>visitor.visit</code>
+	on each of them. */
+    public void forAllEntries(RelationEntryVisitor visitor){
+	Iterator it_keys = hash.keySet().iterator();
+	while(it_keys.hasNext()){
+	    Object key = it_keys.next();
+	    Iterator it_values = getValues(key);
+	    while(it_values.hasNext()){
+		Object value = it_values.next();
+		visitor.visit(key,value);
+	    }
+	}
+    }
+
+    /** Creates a new, independent relation (the operations on 
+	the new relation won't affect the old one). */
     public Object clone(){
 	Hashtable new_hash = new Hashtable();
 	Iterator it = hash.entrySet().iterator();
