@@ -32,7 +32,7 @@ import java.util.Set;
  * <code>ReachingDefsAltImpl</code>
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.9 2000-08-15 06:45:52 pnkfelix Exp $
+ * @version $Id: ReachingDefsAltImpl.java,v 1.1.2.10 2000-10-20 03:33:33 witchel Exp $
  */
 public class ReachingDefsAltImpl extends ReachingDefs {
     final private CFGrapher cfger;
@@ -116,7 +116,13 @@ public class ReachingDefsAltImpl extends ReachingDefs {
 	// report("Processing HCodeElement: "+hce+" Temp: "+t);
 	// find out which BasicBlock this HCodeElement is from
 	BasicBlock b = bbf.getBlock(hce);
-	Util.assert(b != null, "no block" /* +" for "+hce */ );
+	//Util.assert(b != null, "no block" /* +" for "+hce */ );
+	if(b == null) {
+       if (true) return java.util.Collections.EMPTY_SET;
+       System.out.println("\nSuccC " + cfger.succC(hce));
+       System.out.println("PredC " + cfger.predC(hce));
+       Util.assert(false, "no block"+" for "+hce );
+    }
 	// report("In BasicBlock: "+b.toString());
 
 	boolean sawIt = false;
