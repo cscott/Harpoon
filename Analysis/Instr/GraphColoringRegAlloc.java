@@ -51,13 +51,14 @@ import java.util.Iterator;
 import java.util.Collection;
 import java.util.AbstractCollection;
 import java.util.Collections;
+import java.util.Date;
 
 /**
  * <code>GraphColoringRegAlloc</code> uses graph coloring heuristics
  * to find a register assignment for a Code.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.32 2000-08-28 06:29:29 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.33 2000-10-11 04:36:05 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
@@ -99,7 +100,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Object n = super.chooseNodeForHiding(g);
 	    while (!gcra.isAvailableToSpill(n)) {
 		// delay hiding spilled nodes as long as possible
-		System.out.println("DELAY "+n);
+		// System.out.println("DELAY "+n);
 		g.hide(n);
 		l.add(n);
 		Object _n = super.chooseNodeForHiding(g);
@@ -370,7 +371,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		ixtToWebPreCombine = new HashMap();
 		webPrecolor = new GenericInvertibleMap();
 
-		if (TIME) System.out.println("Making Webs");
+		if (TIME) System.out.println("Making Webs \t\t"+new Date());
 
 		makeWebs(rdefs); 
 
@@ -411,13 +412,15 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		
 		// System.out.println("webs: "+webRecords);
 
-		if(TIME)System.out.println("Building Matrix");
+		if(TIME)System.out.println("Building Matrix \t"+new Date());
 
 		adjMtx = buildAdjMatrix();
 		
-		// System.out.println("Adjacency Matrix");
+		
+		if(TIME)System.out.println("Adjacency Matrix Built \t"+new Date());
 		// System.out.println(adjMtx);
 		if (doCoalescing) {
+		    if(TIME)System.out.println("Coalescing Registers \t"+new Date());
 		    Set coal = coalesceRegs(adjMtx);
 		    coalesced = !coal.isEmpty();
 		} else {
@@ -425,7 +428,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		}
 	    } while (coalesced);
 
-	    if(TIME)System.out.println("Building Lists");
+	    if(TIME)System.out.println("Building Lists \t\t"+new Date());
 
 	    WebRecord[] adjLsts = buildAdjLists(adjMtx); 
 
@@ -452,7 +455,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
 	    computeSpillCosts();
 
-	    if(TIME)System.out.println("Building Graph");
+	    if(TIME)System.out.println("Building Graph \t\t"+new Date());
 
 	    final Graph graph = buildGraph(adjLsts);
 
@@ -518,10 +521,10 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		
 		modifyCode(graph);
 
-		OptimisticGraphColorer.MONITOR = false;
+		// OptimisticGraphColorer.MONITOR = false;
 		success = true;
 	    } catch (UnableToColorGraph u) {
-		OptimisticGraphColorer.MONITOR = true;
+		// OptimisticGraphColorer.MONITOR = true;
 		success = false;
 		if (doCoalescing) {
 		    doCoalescing = false;
@@ -801,7 +804,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    Util.assert(false);
 	}
     }
-
+    
     private AdjMtx buildAdjMatrix() { 
 	HashSet visited = new HashSet();
 
@@ -809,14 +812,14 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	int i, j;
 	int sz = webRecords.size();
 
-
 	for(i=0; i<sz; i++) {
 	    WebRecord wr1 = (WebRecord) webRecords.get(i);
 	    visited.add(wr1);
-
+	    
 	    for(j=i+1; j<sz; j++) {
 		WebRecord wr2 = (WebRecord) webRecords.get(j);
-		adjMtx.set(wr1.sreg(),wr2.sreg(),wr1.conflictsWith(wr2)); 
+		
+		adjMtx.set(wr1.sreg(),wr2.sreg(),wr1.conflictsWith(wr2));
 	    }
 	}
 
@@ -1054,7 +1057,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    
 	    spillThese.add(node);
 	}
-	System.out.println("HIT (1) "+spillThese.size());
+	System.out.println("HIT1:"+spillThese.size());
 	
 	if (spillThese.isEmpty()) {
 	    System.out.println(" remove:" +remove+ " contains nothing new");
@@ -1073,7 +1076,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		spillThese.add(node);
 	    }
 
-	    System.out.println("HIT (2) "+spillThese.size());
+	    System.out.println("HIT2:"+spillThese.size());
 
 	    if (spillThese.isEmpty())
 		System.out.println
@@ -1135,8 +1138,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    }
 	}
 
-	System.out.println("*** SPILLED ("+spilled.size()+")"+
-			   (true?"":(": " + spilled)));
+	System.out.print("*** SPILLED ("+spilled.size()+")"+
+			 (true?"":(": " + spilled)));
     }
 
     private void fixupSpillCode() {
@@ -1603,10 +1606,11 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    for(Iterator ins=this.defs().iterator();ins.hasNext();){
 		Instr d = (Instr) ins.next();
 		Set l= liveTemps.getLiveAfter(d);
-		if (l.contains(wr.temp())) {
+		if(l.contains(wr.temp())) {
 		    if (wr instanceof RegWebRecord) {
 			return true;
 		    }
+		    
 		    HashSet wDefs = new HashSet
 			(rdefs.reachingDefs(d, wr.temp()));
 		    wDefs.retainAll(wr.defs());
@@ -1639,6 +1643,16 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	RegWebRecord(Temp reg) {
 	    super();
 	    this.reg = reg;
+	}
+	public int hashCode() { return reg.hashCode(); }
+	public boolean equals(Object o) { 
+	    if (o == this) 
+		return true;
+	    if (o != null && o instanceof RegWebRecord) {
+		return reg.equals(((RegWebRecord)o).reg);
+	    } else {
+		return false;
+	    }
 	}
 	public Set defs() { return (Set) regToDefs.getValues(reg); }
 	public Set uses() { return (Set) regToUses.getValues(reg); }
@@ -1686,7 +1700,20 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	Set defs, uses; // Set<Instr>
 	boolean spill;
 	int disp;
-	
+
+	public int hashCode() { return sym.hashCode(); }
+	public boolean equals(Object o) {
+	    if (o == this) 
+		return true;
+	    if (o != null && o instanceof TempWebRecord) {
+		TempWebRecord t = (TempWebRecord) o;
+		return sym.equals(t.sym) &&
+		    defs.equals(t.defs) &&
+		    uses.equals(t.uses);
+	    } else {
+		return false;
+	    }
+	}
 	TempWebRecord(Temp symbol, Set defSet, Set useSet) {
 	    super();
 	    sym = symbol; defs = defSet; uses = useSet;
@@ -1737,7 +1764,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 		    m=y; n=x;
 		}
 	    }
-	    public int hashCode() { return m ^ n; }
+	    public int hashCode() { return ((m<<16)|(m>>16)) ^ n; }
 	    public boolean equals(Object o) { 
 		IntPair p = (IntPair) o;
 		return m == p.m && n == p.n;

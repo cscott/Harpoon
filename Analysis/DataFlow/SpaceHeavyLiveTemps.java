@@ -37,7 +37,7 @@ import java.util.Iterator;
  * can be treated as if the scaling factor were equal to 1.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: SpaceHeavyLiveTemps.java,v 1.1.2.1 2000-08-25 06:57:27 pnkfelix Exp $
+ * @version $Id: SpaceHeavyLiveTemps.java,v 1.1.2.2 2000-10-11 04:35:38 pnkfelix Exp $
  */
 public class SpaceHeavyLiveTemps extends LiveTemps {
 
@@ -70,6 +70,10 @@ public class SpaceHeavyLiveTemps extends LiveTemps {
     private HashMap hce2liveAfter = new HashMap();
 
     public Set getLiveAfter(HCodeElement hce) {
+	if (hce2liveAfter.containsKey(hce)) {
+	    return (Set) hce2liveAfter.get(hce);
+	}
+	
 	BasicBlock bb = bbFact.getBlock(hce);
 	List stms = bb.statements();
 	CFGraphable last = (CFGraphable) stms.get(stms.size() - 1);
