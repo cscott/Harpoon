@@ -83,7 +83,7 @@ import harpoon.IR.Jasmin.Jasmin;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.89 2001-02-09 23:44:51 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.90 2001-02-25 16:12:35 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -276,7 +276,7 @@ public abstract class PAMain {
 	    g_tstart = System.currentTimeMillis();
 	    // It seems that something is broken in the new strategy ...
 	    SAMain.USE_OLD_CLINIT_STRATEGY = true;
-	    // Let's use the hacked register allocator for noe
+	    // Let's use the hacked register allocator for now
 	    SAMain.linker = linker;
 	    SAMain.hcf = hcf;
 	    SAMain.className = root_method.declClass; // params[optind];
@@ -496,8 +496,8 @@ public abstract class PAMain {
 		    System.out.println("]");
 		    System.out.print("INT. GRAPH AT THE END OF THE METHOD:");
 		    System.out.println(int_pig);
-		    System.out.print("EXT. GRAPH AT THE END OF THE METHOD:");
-		    System.out.println(ext_pig);
+		    //System.out.print("EXT. GRAPH AT THE END OF THE METHOD:");
+		    //System.out.println(ext_pig);
 		    //System.out.print("INT. GRAPH AT THE END OF THE METHOD" +
 		    //		     " + INTER-THREAD ANALYSIS:");
 		    //System.out.println(pig_inter_thread);

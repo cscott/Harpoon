@@ -49,7 +49,7 @@ import harpoon.Util.Util;
  * those methods were in the <code>PointerAnalysis</code> class.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterProcPA.java,v 1.1.2.49 2001-02-15 19:51:16 salcianu Exp $
+ * @version $Id: InterProcPA.java,v 1.1.2.50 2001-02-25 16:12:08 salcianu Exp $
  */
 abstract class InterProcPA {
 
@@ -973,8 +973,10 @@ abstract class InterProcPA {
 	return !isUnharmful(hm); // for the moment, conservative treatment
     }
     private static Set uhms = new HashSet();
-    static{
+    static {
 	String[][] methods = {
+	    {"java.io.File", "length0"},
+
 	    {"java.io.FileInputStream", "open"},
 	    {"java.io.FileInputStream", "close"},
 	    {"java.io.FileInputStream", "available"},
@@ -992,11 +994,19 @@ abstract class InterProcPA {
 	    {"java.lang.Class", "getName"},
 	    {"java.lang.Class", "getPrimitiveClass"},
 
+	    {"java.net.SocketOutputStream", "socketWrite"},
+	    {"java.net.SocketInputStream",  "socketRead"},
+
+	    {"java.net.PlainSocketImpl", "socketClose"},
+	    {"java.net.PlainSocketImpl", "socketAvailable"},
+
 	    {"java.lang.Object", "hashCode"}
 	};
 
 	for(int i = 0; i < methods.length; i++)
 	    uhms.addAll(getMethods(methods[i][0], methods[i][1]));
+
+	System.out.println("UNHARMFUL METHODS: " + uhms);
     }
 
     // Returns all the methods having the name m_name

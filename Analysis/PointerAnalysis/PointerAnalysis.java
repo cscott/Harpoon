@@ -72,7 +72,7 @@ import harpoon.Util.Util;
  valid at the end of a specific method.
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: PointerAnalysis.java,v 1.1.2.78 2001-02-21 18:51:39 salcianu Exp $
+ * @version $Id: PointerAnalysis.java,v 1.1.2.79 2001-02-25 16:12:08 salcianu Exp $
  */
 public class PointerAnalysis {
     public static final boolean DEBUG     = false;
@@ -210,7 +210,7 @@ public class PointerAnalysis {
      * the method <code>hm</code> i.e. the graph at the end of the method.
      * Returns <code>null</code> if no such graph is available. */
     public ParIntGraph getIntParIntGraph(MetaMethod mm){
-	if(SAVE_MEMORY){
+	if(SAVE_MEMORY) {
 	    if(!aamm.contains(mm))
 		analyze(mm);
 	    analyze_intra_proc(mm);
@@ -218,9 +218,9 @@ public class PointerAnalysis {
 	    hash_proc_int.clear();
 	    return pig;
 	}
-	else{
+	else {
 	    ParIntGraph pig = (ParIntGraph)hash_proc_int.get(mm);
-	    if(pig == null){
+	    if(pig == null) {
 		analyze(mm);
 		pig = (ParIntGraph)hash_proc_int.get(mm);
 	    }

@@ -10,11 +10,22 @@
 package harpoon.Analysis.PointerAnalysis;
 
 
+import java.io.PrintWriter;
+
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.ListIterator;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Collection;
+import java.util.List;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.Vector;
+
 
 import harpoon.ClassFile.HCodeElement;
 import harpoon.ClassFile.HCodeFactory;
@@ -67,7 +78,7 @@ import harpoon.Util.DataStructs.LightRelation;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.45 2001-02-15 19:51:16 salcianu Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.46 2001-02-25 16:12:08 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
 
@@ -78,6 +89,11 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	increase the effectiveness of the stack allocation are done.
 	For the time being, only 1-level inlining is done. */
     public static boolean DO_METHOD_INLINING = false;
+
+    /** The current implementation is able to inline call strings of
+	length bigger than one. The actual max length of such a call string
+	is actually MAX_INLINING_LEVEl + 1. */
+    public static int MAX_INLINING_LEVEL = 2;
 
     /** Only methods that have less than <code>MAX_INLINING_SIZE</code>
 	instructions can be inlined. Just a simple way of preventing
@@ -202,20 +218,82 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     private Map ih = null;
 
     // analyze all the methods
-    public void analyze(){
+    public void analyze() {
 	if(DO_METHOD_INLINING)
 	    ih = new HashMap();
+
+	set_hm2rang();
 
 	for(Iterator it = mms.iterator(); it.hasNext(); ){
 	    MetaMethod mm = (MetaMethod) it.next();
 	    if(pa.analyzable(mm.getHMethod()))
 		analyze_mm(mm);
 	}
+	
+	//if(DEBUG)
+	display_inlining_chains();
 
 	if(DO_METHOD_INLINING) {
-	    do_the_inlining(hcf, ih);
+	    //do_the_inlining(hcf, ih);
+	    process_inlining_chains();
 	    ih = null; // allow some GC
+	    chains = null;
 	}
+	hm2rang = null;
+    }
+
+
+
+    private void set_hm2rang() {
+
+	System.out.println("set_hm2rang");
+
+	hm2rang = new HashMap();
+	Set allmms = mcg.getAllMetaMethods();
+	Object[] mms_array = allmms.toArray(new Object[allmms.size()]);
+
+	SCComponent.Navigator mm_navigator =
+	    new SCComponent.Navigator() {
+		    public Object[] next(Object node) {
+			return mcg.getCallees((MetaMethod) node);
+		    }
+		    
+		    public Object[] prev(Object node) {
+			return mac.getCallers((MetaMethod) node);
+		    }
+		};
+
+	SCCTopSortedGraph mmethod_sccs = 
+	    SCCTopSortedGraph.topSort
+	    (SCComponent.buildSCC(mms_array, mm_navigator));
+
+	//if(DEBUG)
+	    System.out.println("\n\nMethod rang:");
+
+	int counter = 0;
+	for(SCComponent scc = mmethod_sccs.getLast(); scc != null;
+	    scc = scc.prevTopSort()) {
+	    Object[] mms = scc.nodes();
+	    for(int i = 0; i < mms.length; i++) {
+		HMethod hm = ((MetaMethod) mms[i]).getHMethod();
+		//if(DEBUG)
+		    System.out.println(hm + " -> " + counter);
+		hm2rang.put(hm, new Integer(counter));
+	    }
+	    counter++;
+	}
+	//if(DEBUG)
+	    System.out.println("======================================");
+    }
+    private Map hm2rang;
+
+
+
+    private void display_inlining_chains() {
+	System.out.println("\n\nINLINING CHAINS:\n");
+	for(Iterator it = chains.iterator(); it.hasNext(); )
+	    System.out.println(it.next());
+	System.out.println("=========================================");
     }
 
 
@@ -270,8 +348,10 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 	handle_tg_stuff(pig);
 
-	if(DO_METHOD_INLINING)
+	if(DO_METHOD_INLINING) {
 	    generate_inlining_hints(mm, pig);
+	    generate_inlining_chains(mm);
+	}
     }
 
     // Auxiliary method for analyze_mm.
@@ -590,8 +670,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    CALL   call = (CALL) entry.getKey();
 	    PANode spec = (PANode) entry.getValue();
 	    
-	    QuadFactory qf = call.getFactory();
-	    HMethod hm_caller = qf.getMethod();
+	    HMethod hm_caller = quad2method(call);
 
 	    if(!remainInThread(spec, hm_caller, ident + " ")){
 		if(DEBUG)
@@ -969,26 +1048,13 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     /////////////////////////////////////////////////////////////////////
     //////////// INLINING STUFF START ///////////////////////////////////
 
-    private void generate_inlining_hints(MetaMethod mm, ParIntGraph pig){
+    private void generate_inlining_hints(MetaMethod mm, ParIntGraph pig) {
 	HMethod hm  = mm.getHMethod();
 	HCode hcode = hcf.convert(hm);
 	if(hcode.getElementsL().size() > MAX_INLINING_SIZE) return;
 
 	// obtain in A the set of nodes that might be captured after inlining 
-	Set level0 = getLevel0InsideNodes(pig);
-	Set A = new HashSet();
-	for(Iterator it = level0.iterator(); it.hasNext(); ) {
-	    PANode node = (PANode) it.next();
-	    if(!pig.G.captured(node) && lostOnlyInCaller(node, pig)) {
-		// we are not interested in stack allocating the exceptions
-		// since they  don't appear in normal case and so, they
-		// are not critical for the memory management
-		HClass hclass = getAllocatedType(node_rep.node2Code(node));
-		if(!java_lang_Throwable.isSuperclassOf(hclass))
-		    A.add(node);
-	    }
-	}
-
+	Set A = getInterestingLevel0InsideNodes(pig);
 	if(A.isEmpty()) return;
 
 	// very dummy 1-level inlining
@@ -1005,8 +1071,27 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    }
 	}
     }
+
+    private Set getInterestingLevel0InsideNodes(ParIntGraph pig) {
+	Set level0 = getLevel0InsideNodes(pig);
+	Set A = new HashSet();
+	for(Iterator it = level0.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(!pig.G.captured(node) && lostOnlyInCaller(node, pig)) {
+		// we are not interested in stack allocating the exceptions
+		// since they  don't appear in normal case and so, they
+		// are not critical for the memory management
+		HClass hclass = getAllocatedType(node_rep.node2Code(node));
+		if(!java_lang_Throwable.isSuperclassOf(hclass))
+		    A.add(node);
+	    }
+	}
+	return A;
+    }
     private static HClass java_lang_Throwable = 
 	Loader.systemLinker.forName("java.lang.Throwable");
+
+
 
     /* Normally, we should refuse to inline calls that are inside loops
        because that + stack allocation might lead to stack overflow errors.
@@ -1019,14 +1104,14 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	ParIntGraph caller_pig = pa.getIntParIntGraph(mcaller);
 
 	Set B = new HashSet();
-	for(Iterator it = A.iterator(); it.hasNext(); ){
+ 	for(Iterator it = A.iterator(); it.hasNext(); ){
 	    PANode node = (PANode) it.next();
 	    PANode spec = node.csSpecialize(cs);
 	    if(spec == null) continue;
 	    if(caller_pig.G.captured(spec))
 		B.add(spec);
 	}
-
+	
 	// no stack allocation benefits from this inlining
 	if(B.isEmpty()) return;
 
@@ -1066,8 +1151,12 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    Object[] calls = scc.nodes();
 	    for(int i = 0; i < calls.length; i++) {
 		CALL cs = (CALL) calls[i];
-		inline_call_site(cs, hcf, ih);
-		toPrune.add(cs.getFactory().getParent());
+		Map old2new = inline_call_site(cs, hcf);
+		if(old2new != null) {
+		    Quad[] news = (Quad[]) ih.get(cs);
+		    extra_stack_allocation(news, old2new);
+		    toPrune.add(cs.getFactory().getParent());
+		}
 	    }
 	    scc = scc.prevTopSort();
 	}
@@ -1112,19 +1201,28 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     }
 
 
-    private void inline_call_site(CALL cs, HCodeFactory hcf, Map ih) {
-	System.out.println("INLINING " + Debug.code2str(cs));
-	
+    private Map inline_call_site(CALL cs, HCodeFactory hcf) {
+	return inline_call_site(cs, null, hcf);
+    }
+
+
+    private Map inline_call_site(CALL cs, HMethod callee,
+				 HCodeFactory hcf) {
+	System.out.println("INLINING " + call2str(cs));
+
 	HMethod caller = quad2method(cs);
-	
-	System.out.println("caller = " + caller);
+
+	if(callee == null)
+	    callee = 
+		mcg.getCallees
+		(new MetaMethod(caller, true), cs)[0].getHMethod();
 
 	Map old2new = new HashMap();
 
 	HEADER header_new = null;
-	try{
-	    header_new = get_cloned_code(cs, caller, old2new, hcf);
-	} catch(CloneNotSupportedException excp) { return; }
+	try {
+	    header_new = get_cloned_code(cs, caller, callee, old2new, hcf);
+	} catch(CloneNotSupportedException excp) { return null; }
 
 	METHOD qm = (METHOD) (header_new.next(1));
 
@@ -1135,15 +1233,21 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 	translate_ap(old2new);
 	
-	extra_stack_allocation(cs, ih, old2new);
+	return old2new;
     }
 
 
-    private void extra_stack_allocation(CALL cs, Map ih, Map old2new) {
-	Quad[] news = (Quad[]) ih.get(cs);
+    private void extra_stack_allocation(Quad[] news, Map old2new) {
 	for(int i = 0; i < news.length; i++) {
 	    Quad q  = (Quad) old2new.get(news[i]);
-	    Util.assert(q != null, "no new Quad for " + news[i]);
+
+	    Util.assert(q != null, 
+			"Warning: no new Quad for " + 
+			Debug.code2str(news[i]) + " in [ " +
+			quad2method(news[i]) + " ]");
+
+	    System.out.println("STKALLOC " + Debug.code2str(q));
+
 	    MyAP ap = new MyAP(getAllocatedType(q));
 	    ap.sa = true;
 	    ap.ns = true; // SYNC
@@ -1184,23 +1288,23 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	    Set returnset;
 	    Set throwset;
 	    QVisitor() {
-		returnset=new WorkSet();
-		throwset=new WorkSet();
+		returnset = new WorkSet();
+		throwset  = new WorkSet();
 	    }
 
 	    public void finish() {
-		PHI returnphi=new PHI(cs.getFactory(),null, new Temp[0],
-				      returnset.size());
-		int edge=0;
+		PHI returnphi = new PHI(cs.getFactory(), null, new Temp[0],
+					returnset.size());
+		int edge = 0;
 		for(Iterator returnit=returnset.iterator();returnit.hasNext();)
 		    Quad.addEdge((Quad)returnit.next(), 0, returnphi, edge++);
 		
 		Quad.addEdge(returnphi, 0, cs.next(0),
 			     cs.nextEdge(0).which_pred());
 
-		PHI throwphi=new PHI(cs.getFactory(),null, new Temp[0],
-				     throwset.size());
-		edge=0;
+		PHI throwphi = new PHI(cs.getFactory(), null, new Temp[0],
+				       throwset.size());
+		edge = 0;
 		for(Iterator throwit=throwset.iterator();throwit.hasNext();)
 		    Quad.addEdge((Quad)throwit.next(), 0, throwphi, edge++);
 		
@@ -1208,8 +1312,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 			     cs.nextEdge(1).which_pred());
 	    }
 
-	    public void visit(Quad q) {
-	    } 
+	    public void visit(Quad q) {}
 
 	    public void visit(RETURN q) {
 		Temp retVal = cs.retval(); 
@@ -1234,8 +1337,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		
 		Quad replace;
 		if(retEx != null)
-		replace = new MOVE
-		(cs.getFactory(), null, retEx, q.throwable());
+		replace = 
+		    new MOVE(cs.getFactory(), null, retEx, q.throwable());
 		else
 		replace = new NOP(cs.getFactory(), null);
 		
@@ -1247,7 +1350,7 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 		throwset.add(replace);
 	    }
 	};
-	QVisitor inlining_qv=new QVisitor();
+	QVisitor inlining_qv = new QVisitor();
 	apply_qv_to_tree(header, inlining_qv);
 	inlining_qv.finish();
     }
@@ -1279,31 +1382,22 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	}
     }
 
-
     private void translate_ap(Map old2new) {
 	for(Iterator it = old2new.entrySet().iterator(); it.hasNext(); ) {
 	    Map.Entry entry = (Map.Entry) it.next();
 	    Quad old_q = (Quad) entry.getKey();
 	    Quad new_q = (Quad) entry.getValue();
+	    if(!((old_q instanceof NEW) || (old_q instanceof ANEW)))
+		continue;
 	    setAPObj(new_q, (MyAP) (getAPObj(old_q).clone()));
 	}
     }
 
-
-    private HEADER get_cloned_code(CALL cs, HMethod caller,
+    private HEADER get_cloned_code(CALL cs, HMethod caller, HMethod callee,
 				 Map old2new, HCodeFactory hcf)
 	throws CloneNotSupportedException {
 
-	// get the only method that is called by cs.
-	MetaMethod[] mms = mcg.getCallees(new MetaMethod(caller, true), cs);
-	Util.assert(mms.length == 1,
-		    "Trying to inline a call site with " + mms.length +
-		    " callees");
-	HMethod hm = mms[0].getHMethod();
-
-	HCode hcode_orig = hcf.convert(hm);
-
-	System.out.println("caller = " + caller);
+	HCode hcode_orig = hcf.convert(callee);
 
 	HEADER header_orig = 
 	    (HEADER) hcode_orig.getRootElement();
@@ -1317,13 +1411,15 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
 
     // recursively explore two HCode's (the second is the clone of the first
-    // one) and set up a mapping "old NEW/ANEW -> new NEW/ANEW
+    // one) and set up a mapping "old NEW/ANEW/CALL -> new NEW/ANEW/CALL
     private static void fill_the_map(Quad q1, Quad q2, Map map, Set seen) {
 	// avoid entering infinite loops: return when we meet a previously
 	// seen instruction 
 	if(!seen.add(q1)) return;
 
-	if((q1 instanceof NEW) || (q2 instanceof ANEW))
+	if( (q1 instanceof NEW)  || 
+	    (q1 instanceof ANEW) ||
+	    (q1 instanceof CALL) )
 	    map.put(q1, q2);
 
 	Quad[] next1 = q1.next();
@@ -1338,5 +1434,409 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 
     //////////// INLINING STUFF END /////////////////////////////////////
     /////////////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////////
+    ////////////  ADVANCED INLINING STUFF ///////////////////////////////
+
+    
+    // Given a (meta) method mm, generates inlining chains that will
+    // make some object creation sites stack allocatable.
+    // An inlining chain will be a list of calls like:
+    //   call m1    (occuring in the body of m2)
+    //   call m2    (occuring in the body of m3)
+    //   ...
+    //   call mk-1  (occuring in the body of mk)
+    // where m1 == mm. Also, forall i, mi and mi+1 should appear in
+    // different strongly connected components in the call graph (to avoid
+    // circular inlining in nests of mutually recursive methods).
+    private void generate_inlining_chains(MetaMethod mm) {
+	ParIntGraph pig = pa.getExtParIntGraph(mm);
+
+	Set nodes = getInterestingLevel0InsideNodes(pig);
+	if(nodes.isEmpty()) return;
+
+	current_chain_cs = new LinkedList();
+	current_chain_callees = new LinkedList();
+
+	discover_inlining_chains(mm, nodes, 0);
+	
+	current_chain_cs = null;
+	current_chain_callees = null;
+    }
+    private LinkedList current_chain_cs;
+    private LinkedList current_chain_callees;
+
+
+    private int get_rang(HMethod hm) {
+	return ((Integer) hm2rang.get(hm)).intValue();
+    }
+
+    // Given a call instruction cs, return the method whose body contains cs.
+    private HMethod extract_caller(CALL cs) {
+	return quad2method(cs);
+    }
+
+    // Given a call instruction cs, return the method that is called by cs.
+    private HMethod extract_callee(CALL cs) {
+	MetaMethod mm_caller = new MetaMethod(extract_caller(cs), true);
+	MetaMethod[] mm_callees = mcg.getCallees(mm_caller, cs);
+	if(mm_callees.length == 0) return null;
+	Util.assert(mm_callees.length == 1, "More than one callee for " + cs);
+	return mm_callees[0].getHMethod();
+    }
+
+    private boolean good_cs2(CALL cs) {
+	int rang_caller = get_rang(extract_caller(cs));
+	int rang_callee = get_rang(extract_callee(cs));
+	Util.assert(rang_caller >= rang_callee, "Bad method rangs " + cs);
+	return rang_caller > rang_callee;
+    }
+
+    // Parameters:
+    //  nodes - the set of PANodes that escape from some method called by mm,
+    //    only into the caller (ie mm).
+    //  level - nodes originate in a callee at distance level in the call
+    //    graph; to be able to stack allocate them, an inlining chain of length
+    //    at least level is necessary.
+    private void discover_inlining_chains(MetaMethod mm, Set nodes,
+						 int level) {
+
+	// iterate through all the call sites where mm is called
+	MetaMethod[] callers = mac.getCallers(mm);
+	for(int i = 0; i < callers.length; i++) {
+	    MetaMethod mcaller = callers[i];
+
+	    Set call_sites = mcg.getCallSites(mcaller);
+	    for(Iterator it = call_sites.iterator(); it.hasNext(); ) {
+
+		CALL cs = (CALL) it.next();
+		MetaMethod[] callees = mcg.getCallees(mcaller, cs);
+
+		// we can inline call sites that are only to mm
+		if(! ( (callees.length == 1) &&
+		       (callees[0] == mm) && good_cs(cs)
+		       && good_cs2(cs) ) ) continue;
+
+		current_chain_cs.addLast(cs);
+		current_chain_callees.addLast(mm.getHMethod());
+
+		// compute specializations of nodes for cs
+		Set specs = specializeNodes(nodes, cs);
+
+		ParIntGraph pig_caller = pa.getIntParIntGraph(mcaller);
+
+		// B = specs that are captured in mcaller
+		Set B = captured_subset(specs, pig_caller);
+		
+		// here we have some good inlining chain; mark it
+		if(!B.isEmpty()) {
+		    // avoid inlining the class initializers: past experience
+		    // showed this might lead to circular dependencies in the
+		    // static initializer code
+		    if(!mcaller.getHMethod().getName().equals("<clinit>"))
+			chains.add
+			    (new InliningChain(current_chain_cs,
+					       current_chain_callees,
+					       get_news(B)));
+		}
+		
+		if(level < MAX_INLINING_LEVEL) {
+		    // C = specs that escape only in caller 
+		    Set C = only_in_caller_subset(specs, pig_caller);
+		    
+		    if(!C.isEmpty())
+			discover_inlining_chains(mcaller, C, level + 1);
+		}
+
+		current_chain_cs.removeLast();
+		current_chain_callees.removeLast();
+	    }
+	}
+    }
+
+    private LinkedList chains = new LinkedList();
+
+
+    // Computes the set of NEW / ANEW quads that created the nodes
+    private Set get_news(final Set nodes) {
+	Set result = new HashSet();
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = ((PANode) it.next()).getRoot();
+	    Quad quad = (Quad) node_rep.node2Code(node);
+	    Util.assert(quad != null, "No quad for " + node);
+	    result.add(quad);
+	}
+	return result;
+    }
+
+
+    // specialize a set of nodes for a given call site
+    private Set specializeNodes(final Set nodes, final CALL cs) {
+	Set result = new HashSet();
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    PANode spec = node.csSpecialize(cs);
+	    if(spec == null) continue;
+	    result.add(spec);
+	}
+	return result;	    
+    }
+
+    
+    // Returns a subset of nodes containing the nodes captured in pig
+    private Set captured_subset(final Set nodes,
+				final ParIntGraph pig) {
+	Set result = new HashSet();
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(pig.G.captured(node))
+		result.add(node);
+	}
+	return result;
+    }
+
+    // Returns a subset of nodes containing the nodes that escape
+    // only (exactly) in the caller
+    private Set only_in_caller_subset(final Set nodes,
+				      final ParIntGraph pig) {
+	Set result = new HashSet();
+	for(Iterator it = nodes.iterator(); it.hasNext(); ) {
+	    PANode node = (PANode) it.next();
+	    if(!pig.G.captured(node) && lostOnlyInCaller(node, pig))
+		result.add(node);
+	}
+	return result;
+    }
+
+
+    private void extra_stack_allocation(Set news) {
+	for(Iterator it = news.iterator(); it.hasNext(); ) {
+	    Quad q  = (Quad) it.next();
+
+	    System.out.println("STKALLOC " + Debug.code2str(q));
+
+	    MyAP ap = new MyAP(getAllocatedType(q));
+	    ap.sa = true;
+	    ap.ns = true; // SYNC
+	    setAPObj(q, ap);
+	}
+    }
+
+
+    private class InliningChain {
+	private LinkedList calls;
+	private LinkedList callees;
+	private Set news;
+
+	InliningChain(final LinkedList calls,
+		      final LinkedList callees, final Set news) {
+	    this.calls = (LinkedList) calls.clone();
+	    this.callees = (LinkedList) callees.clone();
+	    this.news  = new HashSet(news);
+	}
+
+	Set get_news() { return news; }
+
+	public String toString() {
+	    StringBuffer buff = new StringBuffer();
+	    buff.append("INLINING CHAIN (" + calls.size() + "): {\n CALLS:\n");
+	    for(Iterator it = calls.iterator(); it.hasNext(); ) {
+		CALL cs = (CALL) it.next();
+		buff.append("  ");
+		buff.append(Debug.code2str(cs));
+		buff.append(" [ ");
+		buff.append(extract_caller(cs));
+		buff.append(" ]  { ");
+		buff.append(extract_callee(cs));
+		buff.append(" }\n");
+	    }
+	    buff.append(" STACK ALLOCATABLE STUFF:\n");
+	    for(Iterator it = news.iterator(); it.hasNext(); ) {
+		buff.append("  ");
+		buff.append(Debug.code2str((Quad) it.next()));
+		buff.append("\n");
+	    }
+	    buff.append("}\n");
+	    return buff.toString();
+	}
+
+	private final boolean DEBUG_IC = true;
+
+	// The call cs has just been inlined. As a consequence, any inlining
+	// chain containing cs should be updated in the following way: cs
+	// must be removed from there and the previous call in the chain
+	// updated according to the old2new map.
+	void update_ic(CALL cs, Map old2new) {
+	    if(isDone()) return;
+	    if(!calls.contains(cs)) return;
+
+
+	    if(DEBUG_IC)
+		System.out.println("update_ic(" + cs + ") for " + this);
+
+	    CALL first_cs = (CALL) calls.getFirst();
+	    if(first_cs == cs) {
+		if(DEBUG_IC)
+		    System.out.println("The news are modified");
+		news = project_set(news, old2new);
+	    }
+
+	    ListIterator ithm = callees.listIterator(0);
+	    for(ListIterator it = calls.listIterator(0); it.hasNext(); ) {
+		CALL current = (CALL) it.next();
+		HMethod current_callee = (HMethod) ithm.next();
+
+		if(cs == current) {
+		    it.remove();   // this inlining has already been done
+		    ithm.remove(); // it is hence unnecessary
+
+		    if(it.hasPrevious()) {
+			CALL previous = (CALL) it.previous();
+			CALL new_prev = (CALL) old2new.get(previous);
+			if(DEBUG_IC) {
+			    System.out.println("previous = " + previous);
+			    System.out.println("new_prev = " + new_prev);
+			}
+			it.remove();      // replace the previous call with
+			it.add(new_prev); // its updated version
+		    }
+
+		    if(DEBUG_IC)
+			System.out.println("After " + this);
+
+		    if(isDone())
+			extra_stack_allocation(news);
+		}
+	    }
+	}
+
+	private Set project_set(Set set, Map old2new) {
+	    Set result = new HashSet();
+	    for(Iterator it = set.iterator(); it.hasNext(); ) {
+		Quad old_quad = (Quad) it.next();
+		Quad new_quad = (Quad) old2new.get(old_quad);
+		Util.assert(new_quad != null, 
+			    "Warning: no new Quad for " + 
+			    Debug.code2str(old_quad) + " in [ " +
+			    quad2method(old_quad) + " ]");
+		result.add(new_quad);
+	    }
+	    return result;
+	}
+
+
+	CALL getLastCall() {
+	    Util.assert(!isDone(), "You shouldn't call this!");
+	    return (CALL) calls.getLast();
+	}
+
+
+	HMethod getLastCallee() {
+	    Util.assert(!isDone(), "You shouldn't call this!");
+	    return (HMethod) callees.getLast();
+	}
+
+
+	boolean isDone() {
+	    return calls.isEmpty();
+	}
+
+	
+	// Returns the rang of the last method (the one where everything in
+	// this inlining chain is going to be inlined).
+	int get_rang() {
+	    return MAInfo.this.get_rang(extract_caller(getLastCall()));
+	}
+    };
+
+
+    private void sort_chains() {
+	Object[] ics = chains.toArray(new Object[chains.size()]);
+	Arrays.sort(ics, new Comparator() {
+		public int compare(Object obj1, Object obj2) {
+		    int rang1 = ((InliningChain) obj1).get_rang();
+		    int rang2 = ((InliningChain) obj2).get_rang();
+		    if(rang1 < rang2) return -1;
+		    if(rang1 == rang2) return 0;
+		    return 1;
+		}
+		public boolean equals(Object obj) {
+		    return obj == this;
+		}
+	    });
+	chains = new LinkedList();
+	for(int i = 0; i < ics.length; i++)
+	    chains.addLast(ics[i]);
+    }
+
+
+    private void process_inlining_chains() {
+	sort_chains();
+
+	Set toPrune = new HashSet();
+	for(Iterator it = chains.iterator(); it.hasNext(); ) {
+	    CALL cs = ((InliningChain) it.next()).getLastCall();
+	    toPrune.add(cs.getFactory().getParent());
+	}
+
+	for(Iterator it = chains.iterator(); it.hasNext(); )
+	    process_chain((InliningChain) it.next());
+
+	// remove the newly introduced unreachable code
+	for(Iterator pit = toPrune.iterator(); pit.hasNext(); )
+	    Unreachable.prune((HCode) pit.next());
+
+	chains = null;
+    }
+
+
+    private boolean hcodeOf(final HCode hcode, final String pack_name,
+			    final String cls_name, final String method_name) { 
+	HMethod hm = hcode.getMethod();
+	HClass hc  = hm.getDeclaringClass();
+	return
+	    hm.getName().equals(method_name) &&
+	    hc.getPackage().equals(pack_name) &&
+	    hc.getName().equals(cls_name);
+    }
+
+    private String call2str(CALL cs) {
+	return
+	    Debug.code2str(cs) + "  [ " + quad2method(cs) + " ] ";
+    }
+
+
+    private void process_chain(InliningChain ic) {
+	if(ic.isDone()) return;
+	//	if(DEBUG)
+	    System.out.println("\n\nPROCESSING " + ic);
+
+	while(!ic.isDone()) {
+	    CALL cs = ic.getLastCall();
+	    HMethod hcallee = ic.getLastCallee();
+	    Map old2new = inline_call_site(cs, hcallee, hcf);
+
+	    // update all the Inlining Chains
+	    for(Iterator it = chains.iterator(); it.hasNext(); )
+		((InliningChain) it.next()).update_ic(cs, old2new);
+	}
+    }
+
+
+    private void print_modified_hcode(final HCode hcode, final Set old_quads) {
+	class MyCallBack extends HCode.PrintCallback {
+	    public void printBefore(PrintWriter pw, HCodeElement hce) {
+		if(!old_quads.contains(hce))
+		    pw.print(" *** ");
+		else
+		    pw.print("     ");
+	    }
+	    public void printAfter(PrintWriter pw, HCodeElement hce) {}
+	};
+	
+	hcode.print(new PrintWriter(System.out, true), new MyCallBack());
+	System.out.println("========================================\n"); 
+    }
+
 }
 

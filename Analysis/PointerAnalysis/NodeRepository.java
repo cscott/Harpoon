@@ -30,7 +30,7 @@ import harpoon.Util.Util;
  * <code>NodeRepository</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: NodeRepository.java,v 1.1.2.28 2000-11-09 01:05:05 salcianu Exp $
+ * @version $Id: NodeRepository.java,v 1.1.2.29 2001-02-25 16:12:08 salcianu Exp $
  */
 public class NodeRepository {
     
@@ -188,7 +188,7 @@ public class NodeRepository {
     /** Returns a <i>code</i> node: a node associated with an instruction.
 	The boolean parameter <code>make</code> controls the generation of
 	such a node in case it doesn't exist yet. */
-    public final PANode getCodeNode(HCodeElement hce, int type, boolean make){
+    public final PANode getCodeNode(HCodeElement hce, int type, boolean make) {
 	// we can have a RETURN node and an EXCEPT node associated to the
 	// same code instruction. This is the only case where we have
 	// two nodes associated with an instruction. We fix this by handling
@@ -200,6 +200,11 @@ public class NodeRepository {
 	    node = getNewNode(type, new GenType[]{get_code_node_type(hce)});
 	    code_nodes.put(hce, node);
 	    node2code.put(node, hce);
+
+	    // debug
+	    System.out.println("CREATED NODE " + node + " for " +
+			       Debug.code2str(hce));
+
 	}
 	return node;
     }
