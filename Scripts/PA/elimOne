@@ -11,10 +11,10 @@ levels=$4
 export stdPath=./Support/EventDriven1.jar:./Support/sunthunk.jar:./Support/collections.jar:./classes.zip
 
 echo "1. elimInter($2)"
-$SCR_DIR/elimInter $1 $2 $3 $4 | tee $2.Inter.out
+$SCR_DIR/elimInter $1 $2 $3 $4 | tee inter/$2.Inter.out
 
 echo "2. elimIntra($2)"
-$SCR_DIR/elimIntra $1 $2 $3 $4 | tee $2.Intra.out
+$SCR_DIR/elimIntra $1 $2 $3 $4 | tee intra/$2.Intra.out
 
 echo "3. elimNone($2)"
-$SCR_DIR/elimNone  $1 $2 $3 $4 | tee $2.None.out
+$SCR_DIR/elimNone  $1 $2 $3 $4 | tee none/$2.None.out

@@ -1,48 +1,21 @@
 #!/bin/sh
 
-CALL_DIR=`pwd`
+SCR_DIR=`dirname $0`
+source ${SCR_DIR}/elim_common
 
-cd 
-cd Harpoon/Code
-
-cls=$1
-name=$2
-dir=$3
-levels=$4
-
-
-stdPath=./Support/NewThread.jar:./Support/sunthunk.jar:./Support/collections.jar:./classes.zip:.
-
-echo "Analyzing $cls to analyze-$name."
-
-PRE_FILE=${CALL_DIR}/pre-analysis/pre$name
 BUILD_OUT_DIR=${CALL_DIR}/intra/${name}.intra
 MAMAPS_FILE=${CALL_DIR}/intra/analyze-${name}.intra
 
 rm -rf ${BUILD_OUT_DIR} 
 mkdir ${BUILD_OUT_DIR}
 
-if test -e $PRE_FILE
-then
-    PREANALYSIS_OPT=--loadpre=$PRE_FILE
-else
-    PREANALYSIS_OPT=--savepre=$PRE_FILE
-fi
-
-
-#java -mx128m -oss100m -Dharpoon.alloc.strategy=nifty -Dharpoon.target.elf=yes -Dharpoon.class.path=$stdPath:$dir \
-#harpoon.Main.PAMain -s --ccs=$levels --wts --mamaps=analyze-$name --noit --ns 1 --details --syncelimroots \
-#--analyzeroots --output $name.Intra/ --backend strongarm --inline $cls
-
 
 java -mx128m -oss100m \
-    -Dharpoon.alloc.strategy=nifty \
-    -Dharpoon.target.elf=yes \
-    -Dharpoon.class.path=$stdPath:$dir \
+    ${HARPOON_OPTIONS} \
 harpoon.Main.PAMain $PREANALYSIS_OPT \
     -s --ccs=$levels --wts \
     --mamaps=${MAMAPS_FILE} --noit --ns 1 \
-    --output ${BUILD_OUT_DIR} --backend strongarm --inline \
+    --output ${BUILD_OUT_DIR} --backend precisec --inline \
     --details \
 $cls
 

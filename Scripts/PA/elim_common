@@ -1,0 +1,33 @@
+CALL_DIR=`pwd`
+
+cd 
+cd Harpoon/Code
+
+cls=$1
+name=$2
+dir=$3
+levels=$4
+
+echo "Analyzing $cls to analyze-$name"
+
+PRE_FILE=${CALL_DIR}/pre-analysis/pre${name}
+
+
+if test -e $PRE_FILE
+then
+     PREANALYSIS_OPT=--loadpre=$PRE_FILE
+else
+     PREANALYSIS_OPT=--savepre=$PRE_FILE
+fi
+
+
+stdPath=$HARPOON/Code/Support/NewThread.jar:$HARPOON/Code/Support/sunthunk.jar:$HARPOON/Code/Support/collections.jar:$HARPOON/Code/classes.zip:.
+
+echo "harpoon.class.path = \""${stdPath}:${dir}"\""
+
+HARPOON_OPTIONS=" -Dharpoon.runtime=2 \
+    	          -Dharpoon.alloc.strategy=niftystats \
+    	          -Dharpoon.target.elf=yes \
+                  -Dharpoon.class.path=$stdPath:$dir"
+
+
