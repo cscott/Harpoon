@@ -18,7 +18,7 @@ import harpoon.Analysis.Maps.Derivation;
  * designed as an extension of this class.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: CodeGen.java,v 1.1.2.15 2000-02-19 08:24:34 cananian Exp $ */
+ * @version $Id: CodeGen.java,v 1.1.2.16 2000-07-25 03:07:53 pnkfelix Exp $ */
 public abstract class CodeGen {
 
     private static boolean DEBUG = false;
@@ -32,8 +32,6 @@ public abstract class CodeGen {
     public CodeGen(Frame frame) {
         this.frame = frame;
     }
-
-    public abstract Derivation getDerivation();
 
     /** Emits <code>i</code> as the next instruction in the
         instruction stream.

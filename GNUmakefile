@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.61.2.83 2000-07-21 22:56:27 cananian Exp $
+# $Id: GNUmakefile,v 1.61.2.84 2000-07-25 03:07:44 pnkfelix Exp $
 
 empty:=
 space:= $(empty) $(empty)
@@ -124,7 +124,7 @@ java:	$(ALLSOURCE) $(PROPERTIES)
 	  $(MAKE) first; \
 	fi
 #	javac goes nuts unless Tree.java is first. <grumble>
-	@${JCC} ${JFLAGS} ${JFLAGSVERB} IR/Tree/Tree.java $(filter-out IR/Tree/Tree.java, $(ALLSOURCE)) | \
+	-@${JCC} ${JFLAGS} ${JFLAGSVERB} IR/Tree/Tree.java $(filter-out IR/Tree/Tree.java, $(ALLSOURCE)) | \
 		egrep -v '^\[[lc]'
 	@if [ -f stubbed-out ]; then \
 	  $(RM) `uniq stubbed-out`; \

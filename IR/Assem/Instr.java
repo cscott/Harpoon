@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * 
  * @author  Andrew Berkheimer <andyb@mit.edu>
  * @author  Felix S Klock <pnkfelix@mit.edu>
- * @version $Id: Instr.java,v 1.1.2.79 2000-07-18 22:35:17 pnkfelix Exp $ */
+ * @version $Id: Instr.java,v 1.1.2.80 2000-07-25 03:08:28 pnkfelix Exp $ */
 public class Instr implements HCodeElement, UseDef, CFGraphable {
     private static boolean PRINT_UPDATES_TO_IR = false;
     private static boolean PRINT_REPLACES = false || PRINT_UPDATES_TO_IR;
@@ -504,12 +504,10 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
     /** Places <code>this</code> in the instruction layout between
 	<code>from</code> and <code>to</code>.
 	<BR> <B>requires:</B> <OL>
-	     <LI> <code>from</code> and <code>to</code> are each
-    	          instances of <code>Instr</code> or null
- 	     <LI> if <code>from</code> and <code>to</code> are not
-	          <code>null</code>, then <code>from.getNext()</code>
-		  equals <code>to</code> and <code>to.getPrev()</code>
-		  equals <code>from</code>.
+	     <LI> if <code>from</code> is not null, then
+	          <code>from.getNext()</code> equals <code>to</code>. 
+	     <LI> if <code>to</code> is not null, then
+	          <code>to.getPrev()</code> equals <code>from</code>.
 	     <LI> <code>this</code> is not currently in an instruction
 	          stream (ie <code><nobr> this.getPrev() == null
 		  </nobr></code> and <code><nobr> this.getNext() ==
@@ -521,7 +519,11 @@ public class Instr implements HCodeElement, UseDef, CFGraphable {
         <BR> <B>modifies:</B> <code>from</code>, <code>to</code>
         <BR> <B>effects:</B> Inserts <code>this</code> into the
 	     instruction stream in between <code>from</code> and
-	     <code>to</code>.
+	     <code>to</code>.  If <code>from</code> is null, then
+	     <code>this</code> is laid out as the beginning of the
+	     Instruction stream.  If <code>to</code> is null, then
+	     <code>this</code> is laid out as the end of the
+	     Instruction stream.
     */
     public void layout(Instr from, Instr to) { 
 	Util.assert(this.next == null &&

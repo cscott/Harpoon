@@ -69,7 +69,7 @@ import java.util.ListIterator;
  *
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: LocalCffRegAlloc.java,v 1.1.2.110 2000-07-21 22:13:52 pnkfelix Exp $
+ * @version $Id: LocalCffRegAlloc.java,v 1.1.2.111 2000-07-25 03:07:48 pnkfelix Exp $
  */
 public class LocalCffRegAlloc extends RegAlloc {
 
@@ -909,7 +909,10 @@ public class LocalCffRegAlloc extends RegAlloc {
 		} else { /* not already assigned */ 
 		    
 		    Set preassigns = addPreassignments(t);
-		    Iterator suggs = getSuggestions(t, regfile, i, evictables, iloc);
+		    Iterator suggs = 
+			getSuggestions(t, regfile, i, evictables, iloc);
+		    
+
 		    List regList = chooseSuggestion(suggs, t); 
 
 		    if (i.useC().contains(t)) {
@@ -1171,10 +1174,62 @@ public class LocalCffRegAlloc extends RegAlloc {
 
 		try {
 
-		    Iterator suggs = 
+		    Iterator assns = 
 			frame.getRegFileInfo().suggestRegAssignment
 			(t, regfile.getRegToTemp());
-		    return suggs;
+
+		    // Assignment Filter: remove *used* regs
+		    assns = new FilterIterator
+			(assns, new FilterIterator.Filter() {
+			    public boolean isElement(Object o) {
+				List l = new ArrayList((List) o);
+				Set conflicts = new LinearSet();
+				conflicts.addAll(preassignMap.getValues(t));
+				conflicts.addAll(regfile.getRegToTemp().keySet());
+				if (false)
+				System.out.println("assignment filter, "+
+						   "conflicts: "+conflicts+
+						   "suggestion: "+l);
+
+				return !l.removeAll(conflicts);
+			    }
+			});
+		    if (assns.hasNext()) {
+			return assns;
+		    } else {
+			throw new SpillException() {
+			    public Iterator getPotentialSpills() {
+				Iterator sggs;
+				try {
+				    sggs = frame.getRegFileInfo().
+					suggestRegAssignment
+					(t, regfile.getRegToTemp());
+				} catch (SpillException e) {
+				    Util.assert(false, "cant happen here");
+				    sggs = null;
+				}
+
+				// Spill Filter: remove *hardcoded* regs
+				sggs = new FilterIterator
+				    (sggs, new FilterIterator.Filter() {
+					 public boolean isElement(Object o) {
+					     List l = new ArrayList((List)o);
+					     Set conflicts=new LinearSet
+					     ((Set)preassignMap.getValues(t));
+					     return !l.removeAll(conflicts);
+					 }
+					 public Object map(Object o) {
+					     List l = (List)o;
+					     Set s = new LinearSet(l.size());
+					     s.addAll(l);
+					     return s;
+					 }
+				     });
+
+				return sggs;
+			    }
+			};
+		    }
 		} catch (SpillException s) {
 
 		    Iterator spills = s.getPotentialSpills();
@@ -1418,6 +1473,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 		do {
 		    suggL = (List) suggs.next();
 
+		    if (false)
+			System.out.println("RFI suggests "+suggL+" for "+t);
+
 		    if (suggL.size() == 1) {
 			Temp suggReg = (Temp) suggL.get(0);
 			if (suggReg.equals(reg)) {
@@ -1446,6 +1504,9 @@ public class LocalCffRegAlloc extends RegAlloc {
 		
 	    } else {
 		suggL = (List) suggs.next();
+
+		if (false) System.out.println("RFI suggests "+suggL+" for "+t);
+
 		if (suggL.size() == 1) {
 		    reg = (Temp) suggL.get(0);
 		    tempSets.associate(t, reg);

@@ -48,7 +48,7 @@ import java.util.Iterator;
     together before mapping them to Physical Register Temps.
 
     @author  Felix S. Klock II <pnkfelix@mit.edu>
-    @version $Id: RegFileInfo.java,v 1.1.2.31 2000-07-21 22:53:17 pnkfelix Exp $ */
+    @version $Id: RegFileInfo.java,v 1.1.2.32 2000-07-25 03:07:53 pnkfelix Exp $ */
 public abstract class RegFileInfo {
 
     /** Defines function from 
@@ -152,7 +152,7 @@ public abstract class RegFileInfo {
 	     responsibility of the caller of a method to save them if
 	     it wants them preserved. 
     */
-    public abstract Set callerSave();
+    // public abstract Set callerSave();
 
     /** Returns the Set of registers that are callee-saved.
 
@@ -164,7 +164,7 @@ public abstract class RegFileInfo {
 	     called it save them and restore them before returning if
 	     it wants to use them for temporary storage. 
     */
-    public abstract Set calleeSave();
+    // public abstract Set calleeSave();
 
     /** Returns the <code>TempFactory</code> of the register
 	<code>Temp</code>s in <code>this</code>. 
@@ -173,7 +173,7 @@ public abstract class RegFileInfo {
 	     implement the same functionality offered by
 	     <code>isRegister(Temp)</code> below.
     */
-    public abstract TempFactory regTempFactory();
+    // public abstract TempFactory regTempFactory();
 
     /** Checks if <code>t</code> is a element of the register file for
 	this architecture.
@@ -184,9 +184,7 @@ public abstract class RegFileInfo {
 	@param t <code>Temp</code> that may be part of the register
 	         file. 
     */
-    public boolean isRegister(Temp t) {
-	return t.tempFactory() == regTempFactory();
-    }
+    public abstract boolean isRegister(Temp t); 
 
     /** Produces a mutable <code>Set</code> of register assignments
 	that can hold <code>t</code>.  FSK: experimental method.
@@ -368,7 +366,7 @@ public abstract class RegFileInfo {
 	return virtual register Temps from a set disjoint from all
 	other generated <code>VRegAllocator</code>s.
     */
-    public VRegAllocator allocator() {
+    private VRegAllocator allocator() {
 	harpoon.Util.Util.assert(false, "make RegFileInfo.allocator() abstract and implement in all backends");
 	return null;
     }
@@ -380,7 +378,7 @@ public abstract class RegFileInfo {
 	seperate basic blocks can map to the same physical register in
 	the register file.
     */
-    public static abstract class VRegAllocator {
+    protected static abstract class VRegAllocator {
 	/** Returns a Virtual Register Temp for <code>t</code>.
 	    <BR> <B> effects: </B> If <code>regfile</code> has space
 	         to hold a value of the type held in <code>t</code>, 

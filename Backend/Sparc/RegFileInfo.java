@@ -35,7 +35,7 @@ import java.util.Set;
  * which are used for tracking global data.
  *
  * @author  Andrew Berkheimer <andyb@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.11 2000-05-23 17:25:47 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.12 2000-07-25 03:08:13 pnkfelix Exp $
  */
 public class RegFileInfo 
   extends harpoon.Backend.Generic.RegFileInfo 
@@ -156,6 +156,10 @@ public class RegFileInfo
     }
 
     public TempFactory regTempFactory() { return regtf; }
+
+    public boolean isRegister(Temp t) {
+	return t.tempFactory() == regTempFactory();
+    }
 
     public Iterator suggestRegAssignment(Temp t, final Map regFile)
 	throws SpillException {

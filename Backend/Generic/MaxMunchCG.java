@@ -28,7 +28,7 @@ import java.util.HashMap;
  * their own extensions of <code>CodeGen</code>.
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: MaxMunchCG.java,v 1.1.2.12 2000-07-20 21:22:29 pnkfelix Exp $ */
+ * @version $Id: MaxMunchCG.java,v 1.1.2.13 2000-07-25 03:07:53 pnkfelix Exp $ */
 public abstract class MaxMunchCG extends CodeGen {
     
     /** Creates a <code>MaxMunchCG</code>. */
@@ -82,7 +82,7 @@ public abstract class MaxMunchCG extends CodeGen {
     private Map tempmap = new HashMap();
 
 
-    public Derivation getDerivation() {
+    protected Derivation getDerivation() {
 	final Map ti2td = this.ti2td; // keep own copy of this map.
 	return new Derivation() {
 	    public Derivation.DList derivation(HCodeElement hce, Temp t) 

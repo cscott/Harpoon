@@ -41,7 +41,7 @@ import java.util.Set;
  * to compile for the preciseC backend.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: Frame.java,v 1.1.2.3 2000-07-12 03:55:23 cananian Exp $
+ * @version $Id: Frame.java,v 1.1.2.4 2000-07-25 03:08:09 pnkfelix Exp $
  */
 public class Frame extends harpoon.Backend.Generic.Frame {
     private final harpoon.Backend.Generic.Runtime   runtime;
@@ -103,7 +103,7 @@ public class Frame extends harpoon.Backend.Generic.Frame {
 	    public Set liveOnExit() { return null; }
 	    public Temp[] getAllRegisters() { return null; }
 	    public Temp[] getGeneralRegisters() { return null; }
-	    public TempFactory regTempFactory() { return null; }
+	    public boolean isRegister(Temp t) { return false; }
 	    public Iterator suggestRegAssignment(Temp t, Map regfile) {
 		return null;
 	    }

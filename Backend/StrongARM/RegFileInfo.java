@@ -39,7 +39,7 @@ import java.util.HashSet;
  * global registers for the use of the runtime.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: RegFileInfo.java,v 1.1.2.22 2000-07-24 20:38:41 pnkfelix Exp $
+ * @version $Id: RegFileInfo.java,v 1.1.2.23 2000-07-25 03:08:21 pnkfelix Exp $
  */
 public class RegFileInfo
     extends harpoon.Backend.Generic.RegFileInfo 
@@ -174,7 +174,11 @@ public class RegFileInfo
 	return (Temp[]) Util.safeCopy(Temp.arrayFactory, regGeneral); 
     }
 
-    public TempFactory regTempFactory() { return regtf; }
+    private TempFactory regTempFactory() { return regtf; }
+
+    public boolean isRegister(Temp t) {
+	return t.tempFactory() == regTempFactory();
+    }
 
     public List expand(Temp temp) {
 	if (temp instanceof TwoWordTemp) {

@@ -17,7 +17,7 @@ import java.util.Set;
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>, based on
  *          <i>Modern Compiler Implementation in Java</i> by Andrew Appel.
- * @version $Id: TEMP.java,v 1.1.2.27 2000-02-16 19:44:25 cananian Exp $
+ * @version $Id: TEMP.java,v 1.1.2.28 2000-07-25 03:08:33 pnkfelix Exp $
  */
 public class TEMP extends Exp {
     /** The <code>Temp</code> which this <code>TEMP</code> refers to. */
@@ -31,9 +31,8 @@ public class TEMP extends Exp {
 	Util.assert(Type.isValid(type));
 	Util.assert(temp!=null);
 	Util.assert((temp.tempFactory() == tf.tempFactory()) ||
-		    (temp.tempFactory() == tf.getFrame().getRegFileInfo().regTempFactory()),
-		    (tf.getFrame().getRegFileInfo().isRegister(temp)?"Register factory":
-		    "Non-register factory") + " is not equal");
+		    (tf.getFrame().getRegFileInfo().isRegister(temp)),
+		    "Non-register temp with non-matching factory");
     }
 
     public int kind() { return TreeKind.TEMP; }
@@ -41,7 +40,7 @@ public class TEMP extends Exp {
     public Exp build(TreeFactory tf, ExpList kids) {
 	Util.assert(kids==null);
 	Util.assert(tf.tempFactory() == temp.tempFactory() ||
-		    tf.getFrame().getRegFileInfo().regTempFactory() == temp.tempFactory());
+		    tf.getFrame().getRegFileInfo().isRegister(temp));
 	return new TEMP(tf, this, type, temp); 
     }
 

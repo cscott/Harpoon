@@ -5,15 +5,18 @@ package harpoon.Analysis.Instr;
 
 import harpoon.Analysis.Maps.Derivation;
 import harpoon.Analysis.ReachingDefs;
+import harpoon.Analysis.ReachingDefsAltImpl;
 import harpoon.Backend.Generic.Code;
 import harpoon.IR.Assem.Instr;
 import harpoon.Temp.Temp;
+import harpoon.Util.Util;
 
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.Collection;
@@ -22,25 +25,12 @@ import java.util.Collections;
  * <code>GraphColoringRegAlloc</code>
  * 
  * @author  Felix S. Klock <pnkfelix@mit.edu>
- * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.3 2000-07-21 22:13:52 pnkfelix Exp $
+ * @version $Id: GraphColoringRegAlloc.java,v 1.1.2.4 2000-07-25 03:07:48 pnkfelix Exp $
  */
 public class GraphColoringRegAlloc extends RegAlloc {
     
     private static final int INITIAL_DISPLACEMENT = 0;
     
-    /* Global Variables given in Muchnick, page 487, in ICAN notation,
-       converted to java naming conventions for readability.  
-       FSK: (ICAN notation is overly bloated for specifications 
-       (why have an Array type when a Sequence will do for an abstract
-       specification)) After I understand what these variables do, I
-       will convert them to more Java-esque form.
-    */      
-    
-    /* ** Types **
-       Symbol     = Var U Register U Const         (Temp)
-       UdDu       = Int x Int                      (Instr)
-       UdDuChain  = (Symbol x Def) -> Set of Use
-    */
     class WebRecord {
 	Temp sym;
 	Set defs, uses; // Set<Instr>
@@ -72,11 +62,42 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	// BitString.  Note that for Lower Triangular Matrix, order of
 	// coordinate args is insignificant (from p.o.v. of user).
 
-	boolean get(int x, int y) { return true; }
-	void set(int x, int y, boolean b) {
-	    
+	private class IntPairSet {
+	    final int x, y; // Invariant: x < y
+	    IntPairSet(int x, int y) {
+		Util.assert(x != y);
+		if (x < y) {
+		    this.x = x;
+		    this.y = y;
+		} else {
+		    this.x = y;
+		    this.y = x;
+		}
+	    }
+	    public int hashCode() {
+		return (x << 16) ^ y;
+	    }
+	    public boolean equals(Object o) {
+		IntPairSet p = (IntPairSet) o;
+		return (p.x == x) && (p.y == y);
+	    }
 	}
 	
+	final HashSet back;
+	AdjMtx() { 
+	    back = new HashSet();
+	}
+
+	boolean get(int x, int y) { 
+	    return back.contains(new IntPairSet(x, y));
+	}
+	void set(int x, int y, boolean b) {
+	    if (b) {
+		back.add(new IntPairSet(x, y));
+	    } else {
+		back.remove(new IntPairSet(x, y));
+	    }
+	}
     }
     
     /* ** Fields ** */
@@ -84,9 +105,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
     double defWt, useWt, copyWt;
     int nregs, nwebs, baseReg;
     int disp = INITIAL_DISPLACEMENT, argReg;
-    Temp retRegs;
-    List symReg; // List<WebRecord>
-    AdjMtx adjMtx;
+    List symReg = new ArrayList(); // List<WebRecord>
+    AdjMtx adjMtx = new AdjMtx();
     ListRecord[] adjLsts;
     List stack; // List<Integer>
     Map realReg; // Map<Integer, Integer>
@@ -104,7 +124,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	boolean success, coalesced;
 	do {
 	    do {
-		makeWebs(null); // need to pass in ReachingDefs
+		makeWebs(new ReachingDefsAltImpl(code)); 
 		buildAdjMatrix();
 		coalesced = coalesceRegs();
 	    } while (coalesced);
@@ -129,10 +149,13 @@ public class GraphColoringRegAlloc extends RegAlloc {
     // (which shouldn't hurt us much since we're dealing with post-SSA
     // form here...)
 
+    /**
+       nwebs is set after this method.
+     */
     private void makeWebs(ReachingDefs rdefs) {
 	Set webSet = new HashSet(), tmp1, tmp2; // Set<WebRecord>
 	WebRecord web1, web2;
-	List sd; // [Symbol, Def]
+	List sd; // [Temp, Def]
 	int i, oldnwebs;
 	
 	nwebs = nregs;
@@ -215,23 +238,23 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     private void buildAdjMatrix() { 
 	int i, j;
-	for(i=2; i<=nwebs; i++) {
-	    for(j=2; j<=i-1; j++) {
+	for(i=1; i<nwebs; i++) {
+	    for(j=1; j<i-1; j++) {
 		adjMtx.set(i,j,false);
 	    }
 	}
-	for(i=2; i<=nregs; i++) {
-	    for(j=1; j<=i-1; j++) {
+	for(i=1; i<nregs; i++) {
+	    for(j=0; j<i-1; j++) {
 		adjMtx.set(i,j,true);
 	    }
 	}
-	for(i=nregs+1; i<=nwebs; i++) {
-	    for(j=1; j<=nregs; j++) {
+	for(i=nregs; i<nwebs; i++) {
+	    for(j=0; j<nregs; j++) {
 		if (interfere((WebRecord)symReg.get(i), j)) {
 		    adjMtx.set(i,j,true);
 		}
 	    }
-	    for(j=nregs+1; j<=i-1; j++) {
+	    for(j=nregs; j<i-1; j++) {
 		Iterator defs = ((WebRecord)symReg.get(i)).defs.iterator();
 		while(defs.hasNext()) {
 		    Instr def = (Instr) defs.next();
@@ -312,7 +335,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 
     private void buildAdjLists() { 
 	int i, j;
-	for(i=1; i<=nregs; i++) {
+	adjLsts = new ListRecord[nwebs];
+	for(i=0; i<nregs; i++) {
 	    adjLsts[i].nints = 0;
 	    adjLsts[i].color = Integer.MIN_VALUE;
 	    adjLsts[i].disp = Integer.MIN_VALUE;
@@ -320,7 +344,7 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    adjLsts[i].adjnds = new LinkedList();
 	    adjLsts[i].rmvadj = new LinkedList();
 	}
-	for(i=nregs+1;i<=nwebs;i++) {
+	for(i=nregs;i<nwebs;i++) {
 	    adjLsts[i].nints = 0;
 	    adjLsts[i].color = Integer.MIN_VALUE;
 	    adjLsts[i].disp = Integer.MIN_VALUE;
@@ -328,8 +352,8 @@ public class GraphColoringRegAlloc extends RegAlloc {
 	    adjLsts[i].adjnds = new LinkedList();
 	    adjLsts[i].rmvadj = new LinkedList();
 	}
-	for(i=2; i<=nwebs;i++) {
-	    for(j=1;j<=nwebs-1;j++) {
+	for(i=1; i<nwebs;i++) {
+	    for(j=0;j<nwebs-1;j++) {
 		if (adjMtx.get(i,j)) {
 		    adjLsts[i].adjnds.add(new Integer(j));
 		    adjLsts[j].adjnds.add(new Integer(i));
