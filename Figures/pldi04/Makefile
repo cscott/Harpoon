@@ -4,7 +4,7 @@ copy: tr-w-ten.eps tr-w-all.eps
 	cp $^ ..
 
 update:
-	scp ygg:Transact/Binaries/MEMTRACE_SZ/"freq.*.*.txt" .
+	scp ygg:Transact/Binaries/MEMTRACE_SZ/"{freq,trsize}.*.*.txt" .
 
 %.eps: %.plo
 	ploticus -tightcrop -eps $<
