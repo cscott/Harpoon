@@ -43,11 +43,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -62,7 +65,7 @@ import java.io.PrintWriter;
  * purposes, not production use.
  * 
  * @author  Felix S. Klock II <pnkfelix@mit.edu>
- * @version $Id: SAMain.java,v 1.1.2.68 2000-02-28 07:09:04 cananian Exp $
+ * @version $Id: SAMain.java,v 1.1.2.69 2000-03-01 05:24:40 cananian Exp $
  */
 public class SAMain extends harpoon.IR.Registration {
  
@@ -207,6 +210,28 @@ public class SAMain extends harpoon.IR.Registration {
 				       hclass.getName());
 		    System.exit(-1);
 		}
+	    }
+	    // put a proper makefile in the directory.
+	    File makefile = new File(ASSEM_DIR, "Makefile");
+	    InputStream templateStream;
+	    if (makefile.exists())
+		System.err.println("WARNING: not overwriting pre-existing "+
+				   "file "+makefile);
+	    else if ((templateStream=ClassLoader.getSystemResourceAsStream
+		      ("harpoon/Support/nativecode-makefile.template"))==null)
+		System.err.println("WARNING: can't find Makefile template.");
+	    else try {
+		BufferedReader in = new BufferedReader
+		    (new InputStreamReader(templateStream));
+		out = new PrintWriter
+		    (new BufferedWriter(new FileWriter(makefile)));
+		String line;
+		while ((line=in.readLine()) != null)
+		    out.println(line);
+		in.close(); out.close();
+	    } catch (IOException e) {
+		System.err.println("Error writing "+makefile+".");
+		System.exit(-1);
 	    }
 	} else { // ONLY_COMPILE_MAIN
 	    // hcl is our class
