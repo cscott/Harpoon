@@ -46,3 +46,10 @@ polish: clean
 	-${RM} *~ [A-Z][a-z]*/*.java~
 
 wipe:	clean doc-clean
+
+backup:
+	$(RM) ../harpoon-backup.tgz
+	cd ..; tar czvf harpoon-backup.tgz CVSROOT
+	scp ../harpoon-backup.tgz \
+		miris.lcs.mit.edu:public_html/Projects/Harpoon
+	$(RM) ../harpoon-backup.tgz
