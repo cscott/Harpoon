@@ -16,6 +16,7 @@ import harpoon.ClassFile.HClass;
 import harpoon.Temp.Temp;
 
 import harpoon.IR.Quads.NEW;
+import harpoon.IR.Quads.Quad;
 
 import harpoon.Analysis.MetaMethods.MetaMethod;
 import harpoon.Analysis.MetaMethods.GenType;
@@ -29,7 +30,7 @@ import harpoon.Analysis.MetaMethods.MetaCallGraph;
  * too big and some code segmentation is always good! 
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: InterThreadPA.java,v 1.1.2.20 2000-03-30 03:05:14 salcianu Exp $
+ * @version $Id: InterThreadPA.java,v 1.1.2.21 2000-04-16 18:43:48 salcianu Exp $
  */
 public abstract class InterThreadPA {
     
@@ -59,9 +60,9 @@ public abstract class InterThreadPA {
 
 	while(true){
 	    PANode nt = pick_an_unanalyzed_thread(pig,analyzed_threads);
-	    if(nt==null) break;
+	    if(nt == null) break;
 
-	    if(DEBUG)
+	    // if(DEBUG)
 		System.out.println(nt + " was chosen");
 
 	    MetaMethod[] ops = get_run_mmethods(nt,pa);
@@ -119,7 +120,12 @@ public abstract class InterThreadPA {
     private static MetaMethod[] get_run_mmethods(PANode nt,
 						 PointerAnalysis pa){
 	// TODO: think about the LOAD && PARAM thread nodes (not only INSIDE) 
-	NEW q = (NEW) pa.getNodeRepository().node2Code(nt.getRoot());
+	Quad quad = (Quad)pa.getNodeRepository().node2Code(nt.getRoot());
+	Util.assert((quad instanceof NEW), nt + " has a strange instr." + 
+		    " nt type: " + nt.type + " PANode.INSIDE: " +
+		    PANode.INSIDE); 
+
+	NEW q = (NEW) quad; 
 	Util.assert( q!= null, "Creation of " + nt + " not found!");
 
 	HClass hclass = q.hclass();
@@ -479,6 +485,9 @@ public abstract class InterThreadPA {
 
 	while(!W.isEmpty()){
 	    PANode nt1 = (PANode) W.remove();
+
+	    if(nt1.type != PANode.INSIDE) continue;
+
 	    MetaMethod[] ops = get_run_mmethods(nt1,pa);
 	    if(!analyzable_run_mmethods(ops,pa)) continue;
 	    for(int i = 0; i < ops.length; i++){

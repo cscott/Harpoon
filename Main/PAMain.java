@@ -66,7 +66,7 @@ import harpoon.IR.Quads.CALL;
  * It is designed for testing and evaluation only.
  * 
  * @author  Alexandru SALCIANU <salcianu@retezat.lcs.mit.edu>
- * @version $Id: PAMain.java,v 1.1.2.39 2000-04-04 05:42:36 salcianu Exp $
+ * @version $Id: PAMain.java,v 1.1.2.40 2000-04-16 18:43:52 salcianu Exp $
  */
 public abstract class PAMain {
 
@@ -97,8 +97,12 @@ public abstract class PAMain {
 
     // turns on the computation of the memory allocation policies
     private static boolean MA_MAPS = false;
-    //
+    // the name of the file into which the memory allocation policies
+    // will be serialized
     private static String MA_MAPS_OUTPUT_FILE = null;
+    // use the inter-thread stage of the analysis while determining the
+    // memory allocation policies
+    private static boolean USE_INTER_THREAD = true;
 
     private static String[] examples = {
 	"java -mx200M harpoon.Main.PAMain -a multiplyAdd --ccs=2 --wts" + 
@@ -135,7 +139,8 @@ public abstract class PAMain {
 	"-a method      analyzes he given method. If the method is in the",
 	"              same class as the main method, the name of the class",
 	"              can be ommited",
-	"-i             interactive analysis of methods: the program"
+	"-i             interactive analysis of methods",
+	"--noit        just interprocedural analysis, no interthread"
     };
 
     private static PointerAnalysis pa = null;
@@ -211,9 +216,21 @@ public abstract class PAMain {
 	    if(hm[i].getName().equals(root_method.name))
 		hroot = hm[i];
 	if(hroot == null){
-	    System.out.println("Sorry, the root method was not found\n");
-	    System.exit(1);
+
+	    root_method.name = "init"; // maybe it's an applet
+	    hroot = null;
+	    for(int i = 0;i<hm.length;i++)
+		if(hm[i].getName().equals(root_method.name))
+		    hroot = hm[i];
+
+	    if(hroot == null){
+		System.out.println("Sorry, the root method was not found\n");
+		System.exit(1);
+	    }
 	}
+
+	System.out.println("Root method: " + root_method.declClass + "." +
+			   root_method.name);
 
 	hcf = new CachingCodeFactory(harpoon.IR.Quads.QuadNoSSA.codeFactory(),
 				     true);
@@ -440,7 +457,7 @@ public abstract class PAMain {
     private static int get_options(String[] argv){
 	int c, c2;
 	String arg;
-	LongOpt[] longopts = new LongOpt[13];
+	LongOpt[] longopts = new LongOpt[14];
 	longopts[0]  = new LongOpt("meta", LongOpt.NO_ARGUMENT, null, 'm');
 	longopts[1]  = new LongOpt("smartcg", LongOpt.NO_ARGUMENT, null, 's');
 	longopts[2]  = new LongOpt("showch", LongOpt.NO_ARGUMENT, null, 'c');
@@ -454,7 +471,7 @@ public abstract class PAMain {
 	longopts[10] = new LongOpt("mastats", LongOpt.NO_ARGUMENT, null, 12);
 	longopts[11] = new LongOpt("holestats", LongOpt.NO_ARGUMENT, null, 13);
 	longopts[12] = new LongOpt("mamaps",LongOpt.REQUIRED_ARGUMENT,null,14);
-	
+	longopts[13] = new LongOpt("noit", LongOpt.NO_ARGUMENT, null, 15);
 
 	Getopt g = new Getopt("PAMain", argv, "l:mscoa:i", longopts);
 
@@ -518,6 +535,9 @@ public abstract class PAMain {
 		MA_MAPS = true;
 		MA_MAPS_OUTPUT_FILE = new String(g.getOptarg());
 		break;
+	    case 15:
+		USE_INTER_THREAD = false;
+		break;
 	    }
 
 	return g.getOptind();
@@ -574,6 +594,11 @@ public abstract class PAMain {
 
 	if(MA_MAPS)
 	    System.out.print(" MA_MAPS (" + MA_MAPS_OUTPUT_FILE + ")");
+
+	if(USE_INTER_THREAD)
+	    System.out.print(" USE_INTER_THREAD");
+	else
+	    System.out.print(" (just inter proc)");
 
 	System.out.println();
     }
@@ -717,7 +742,7 @@ public abstract class PAMain {
 	}
 	System.out.println("}");
 
-	MAInfo mainfo = new MAInfo(pa, hcf, mms);
+	MAInfo mainfo = new MAInfo(pa, hcf, mms, USE_INTER_THREAD);
 	// show the allocation policies
 	mainfo.print();
 
@@ -754,3 +779,4 @@ public abstract class PAMain {
     }
 
 }
+

@@ -39,7 +39,7 @@ import harpoon.Util.Util;
  * <code>MAInfo</code>
  * 
  * @author  Alexandru SALCIANU <salcianu@MIT.EDU>
- * @version $Id: MAInfo.java,v 1.1.2.5 2000-04-05 01:01:10 bdemsky Exp $
+ * @version $Id: MAInfo.java,v 1.1.2.6 2000-04-16 18:43:48 salcianu Exp $
  */
 public class MAInfo implements AllocationInformation, java.io.Serializable {
     
@@ -52,14 +52,18 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     // by the main thread.
     Set             mms;
     NodeRepository  node_rep;
+
+    // use the inter-thread analysis
+    private boolean USE_INTER_THREAD = true;
     
     /** Creates a <code>MAInfo</code>. */
     public MAInfo(PointerAnalysis pa, HCodeFactory hcf,
-		  Set mms) {
+		  Set mms, boolean USE_INTER_THREAD){
         this.pa  = pa;
 	this.hcf = hcf;
 	this.mms = mms;
 	this.node_rep = pa.getNodeRepository();
+	this.USE_INTER_THREAD = USE_INTER_THREAD;
 
 	analyze();
 
@@ -81,8 +85,8 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     
 
     /** Returns the allocation policy for <code>allocationSite</code>. */
-    public AllocationInformation.AllocationProperties 
-	query(HCodeElement allocationSite){
+    public AllocationInformation.AllocationProperties query
+	(HCodeElement allocationSite){
 	
 	AllocationInformation.AllocationProperties ap = 
 	    (AllocationInformation.AllocationProperties)
@@ -119,7 +123,9 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
     public final void analyze_mm(MetaMethod mm){
 	HMethod hm  = mm.getHMethod();
 	HCode hcode = hcf.convert(hm);
-	ParIntGraph pig = pa.getIntParIntGraph(mm);
+	ParIntGraph pig = 
+	    USE_INTER_THREAD ? pa.threadInteraction(mm): 
+	                       pa.getIntParIntGraph(mm);
 
 	if(pig == null) return;
 
@@ -212,6 +218,15 @@ public class MAInfo implements AllocationInformation, java.io.Serializable {
 	// pray that no thread is allocated through an ANEW!
 	// (it seems quite a reasonable assumption)
 	NEW qnt = (NEW) node_rep.node2Code(nt);
+
+	// REMOVE WITH THE FIRST OCCASION!
+	// last hope hack for the event driven people!
+	if(true){
+	    MyAP ap = getAPObj(qnt);
+	    ap.ta  = true; // allocate on thread specific heap
+	    ap.uoh = true; // useOwnHeap
+	    return;
+	}
 
 	// compute the nodes pointed to by the thread node at the moment of 
 	// the "start()" call. Since we analyze only "good" programs (we
