@@ -24,6 +24,10 @@
 # endif
 #endif
 
+#ifdef WITH_CLUSTERED_HEAPS
+struct clustered_heap; /* defined in src/clheap/clheap.h */
+#endif
+
 /* --------------------- data structure internals --------------------- */
 
 struct _jmethodID {
@@ -79,8 +83,8 @@ struct inflated_oobj {
   pthread_rwlock_t jni_data_lock; /*read/write lock for jni_data field, above*/
 #endif
 #ifdef WITH_CLUSTERED_HEAPS
-  void *heap_start, *heap_top;
-  ptroff_t heap_size;
+  struct clustered_heap * heap;
+  void (*heap_release)(struct clustered_heap *);
 #endif
 #ifdef BDW_CONSERVATIVE_GC
   /* for cleanup via finalization */
