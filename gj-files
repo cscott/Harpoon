@@ -72,6 +72,9 @@ Analysis/PointsToAnalysis.java
 Analysis/Quads/QuadClassHierarchy.java
 Analysis/Quads/QuadInterferenceGraph.java
 Analysis/Quads/QuadLiveness.java
+Analysis/Quads/AbstrCallGraph.java
+Analysis/Quads/CallGraphImpl.java
+Analysis/Quads/SSICallGraph.java
 Analysis/ReachingDefs.java
 Analysis/ReachingDefsAltImpl.java
 Analysis/ReachingDefsCachingImpl.java
