@@ -3,8 +3,8 @@
 // Licensed under the terms of the GNU GPL; see COPYING for details.
 package harpoon.Util.Collections;
 
-import harpoon.Util.Default;
 import harpoon.Util.Collections.PairMapEntry;
+import harpoon.Util.Default;
 
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -24,7 +25,7 @@ import java.util.Set;
  * <code>HashMap</code>.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: AggregateMapFactory.java,v 1.1.2.3 2001-11-08 00:26:11 cananian Exp $
+ * @version $Id: AggregateMapFactory.java,v 1.1.2.4 2001-11-12 01:48:33 cananian Exp $
  */
 public class AggregateMapFactory extends MapFactory
     implements java.io.Serializable {
@@ -92,6 +93,8 @@ public class AggregateMapFactory extends MapFactory
 				DoublyLinkedList dll=entries, last=null;
 				public boolean hasNext() { return dll!=null; }
 				public Object next() {
+				    if (dll==null)
+					throw new NoSuchElementException();
 				    last = dll;
 				    dll=dll.next;
 				    return last;
@@ -127,11 +130,10 @@ public class AggregateMapFactory extends MapFactory
 			return me.equals(m.get(pair));
 		    }
 		    public boolean remove(Object o) {
-			if (!(o instanceof Map.Entry)) return false;
+			if (!contains(o)) return false;
 			Map.Entry me = (Map.Entry) o;
-			List pair = Default.pair(IDENTITY, me.getKey());
-			if (!m.containsKey(pair)) return false;
-			return me.equals(m.remove(pair));
+			AggregateMap.this.remove(me.getKey());
+			return true;
 		    }
 		    public Map asMap() { return AggregateMap.this; }
 		};
