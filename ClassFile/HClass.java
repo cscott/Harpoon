@@ -28,7 +28,7 @@ import java.util.Hashtable;
  * class.
  * 
  * @author  C. Scott Ananian <cananian@alumni.princeton.edu>
- * @version $Id: HClass.java,v 1.41 1998-11-18 20:48:49 cananian Exp $
+ * @version $Id: HClass.java,v 1.41.2.1 1998-11-27 03:26:42 cananian Exp $
  * @see harpoon.ClassFile.Raw.ClassFile
  */
 public abstract class HClass {
@@ -241,7 +241,7 @@ public abstract class HClass {
       if (declaredFields[i].getName().equals(name))
 	return declaredFields[i];
     // not found.
-    throw new NoSuchFieldError(name);
+    throw new NoSuchFieldError(getName()+"."+name);
   }
   /**
    * Returns an array of <code>HField</code> objects reflecting all the
@@ -281,7 +281,7 @@ public abstract class HClass {
       if (fields[i].getName().equals(name))
 	return fields[i];
     // can't find it.
-    throw new NoSuchFieldError(name);
+    throw new NoSuchFieldError(getName()+"."+name);
   }
   /**
    * Returns an array containing <code>HField</code> objects reflecting
@@ -381,7 +381,7 @@ public abstract class HClass {
 	}
       }
     // didn't find a match.  Oh, well.
-    throw new NoSuchMethodError(name);
+    throw new NoSuchMethodError(getName()+"."+name);
   }
   /**
    * Returns a <code>HMethod</code> object that reflects the specified 
@@ -404,7 +404,7 @@ public abstract class HClass {
 	  declaredMethods[i].getDescriptor().equals(descriptor))
 	return declaredMethods[i];
     // didn't find a match.  Oh, well.
-    throw new NoSuchMethodError(name);
+    throw new NoSuchMethodError(getName()+"."+name+"/"+descriptor);
   }
   /**
    * Returns an array of <code>HMethod</code> objects reflecting all the
@@ -454,7 +454,7 @@ public abstract class HClass {
 	}
       }
     // didn't find a match. Oh, well.
-    throw new NoSuchMethodError(name);
+    throw new NoSuchMethodError(getName()+"."+name);
   }
   /**
    * Returns an <code>HMethod</code> object that reflects the specified
@@ -481,7 +481,7 @@ public abstract class HClass {
 	  methods[i].getDescriptor().equals(descriptor))
 	return methods[i];
     // didn't find a match.
-    throw new NoSuchMethodError(name);
+    throw new NoSuchMethodError(getName()+"."+name+"/"+descriptor);
   }
 	
   /**
