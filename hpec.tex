@@ -1,10 +1,19 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: hpec.tex,v 1.4 2004-05-31 01:52:40 cananian Exp $
+% $Id: hpec.tex,v 1.5 2004-05-31 02:20:22 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\documentclass[twoside,twocolumn,notitlepage,letterpaper]{article}
+\documentclass[twoside,twocolumn,notitlepage,letterpaper,9pt]{article}
 \usepackage{times}
 \usepackage{supertech}
 \usepackage{support}
+
+\setlength{\oddsidemargin}{-0.25in}
+\setlength{\evensidemargin}{-0.25in}
+\setlength{\textwidth}{7in}
+\setlength{\topmargin}{-0.7in}
+\setlength{\textheight}{9.7in}
+\addtolength{\topmargin}{-\headheight}
+\addtolength{\topmargin}{-\headsep}
+\setlength{\columnsep}{0.25in}
 
 % areas:
 % Algorithm Mapping to High Performance Architectures
@@ -29,8 +38,7 @@ Cambridge, MA 02139 \\
 The transaction model is a natural means to express atomicity,
 fault-tolerance, synchronization, and exception handling in reliable
 programs.  A (lightweight, in-memory) transaction can be thought of as
-a sequence of loads and
-stores performed as part of a program which either \defn{commits} or
+a sequence of program loads and stores which either \defn{commits} or
 \defn{aborts}.  If a transaction commits, then all of the loads and
 stores appear to have run atomically with respect to other
 transactions.  That is, the transaction's operations appear not to
@@ -63,20 +71,21 @@ use of non-blocking synchronization can prevent \emph{priority
 lower priority threads at any point.
 %\cite{Jones97}
 
-Specifying synchronization via compiler-supported transaction-backed
-``atomic'' blocks is also less error-prone than manual maintenance of
-a locking discipline.  Deadlocks may be introduced when locks are not
+We propose the use of compiler-supported ``atomic'' blocks to specify
+synchronization.  This is less error-prone than manual maintenance of
+a locking discipline: deadlocks may be introduced when locks are not
 acquired and released in a highly disciplined manner, and the
 specification of locking discipline cuts across module boundaries.
 Races are common when multiple shared objects are involved in an
-operation, each with its own lock.  A non-blocking transaction
-implementation prevents inadvertent deadlocks, and ``atomic''
-declarations based on the transaction mechanism can extend across
-method invocations and module boundaries to protect multiple objects
-involved in an operation without allowing races between them.  An
-optimistic non-blocking implementation may provide performance
-improvements over locking strategies as well.  We provide several
-examples of these issues.
+operation, each with its own lock.  We provide several examples of
+problematic locking code.  A non-blocking transaction implementation
+prevents inadvertent deadlocks, and ``atomic'' declarations
+implemented with
+the transaction mechanism can extend across method invocations and
+module boundaries to protect multiple objects involved in an operation
+without allowing races between them.  An optimistic non-blocking
+implementation provides performance improvements over locking
+strategies in some cases as well.
 
 Language-level transactions can also be viewed as a general
 exception-handling and backtracking mechanism.  Instead of forcing the
