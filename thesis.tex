@@ -1,5 +1,5 @@
 % -*- latex -*- This is a LaTeX document.
-% $Id: thesis.tex,v 1.77 1999-08-21 22:08:46 cananian Exp $
+% $Id: thesis.tex,v 1.78 1999-08-22 02:52:38 cananian Exp $
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[12pt,titlepage,twoside]{article}
 \usepackage[light,first,bottomafter]{draftcopy}
@@ -34,14 +34,14 @@
 %\\ \small Or, chiseled on stone this'll last 4000 years
 }
 \author{C. Scott Ananian}
-\date{\today \\ $ $Revision: 1.77 $ $}
+\date{\today \\ $ $Revision: 1.78 $ $}
 
 \begin{document}
 \bibliographystyle{abbrv}
 
 \pagestyle{empty}
 \maketitle\cleardoublepage
-\pagestyle{myheadings}\markboth{$ $Revision: 1.77 $ $}{$ $Revision: 1.77 $ $}
+\pagestyle{myheadings}\markboth{$ $Revision: 1.78 $ $}{$ $Revision: 1.78 $ $}
 \pagenumbering{roman}
 \tableofcontents\listoffigures\listoftables\listofalgorithms\cleardoublepage
 \pagenumbering{arabic}
@@ -189,7 +189,10 @@ represent the ``interesting'' properties of the compiled program.
 
 \textbf{It is efficient.}  Construction of SSI form should be fast,
 and space requirements should be reasonable.  The original SSA
-algorithms required $O(E+V_{SSA}|{DF}|+NV_{SSA})$ time.  This bound
+algorithms required $O(E+V_{SSA}|{DF}|+NV_{SSA})$ time.%
+\footnote{See section~\ref{sec:defs} for definitions of the
+variables used in the complexity bounds of these two paragraphs.}
+This bound
 was dominated by the time and space required to construct the
 dominance frontier, as $|{DF}|$, the size of the dominance frontier,
 could be $O(N^2)$ for common cases.  Taking the dominant term, we will
@@ -244,6 +247,37 @@ where dataflow in both forward and reverse directions occurs.  SSI
 form is able to handle both of these cases, as we demonstrate in
 section \ref{sec:bidirectional}.
 
+\section{Definitions}\label{sec:defs}
+Before we begin, we will take time to make some definitions.
+Our complexity metrics will usually be in terms of the following
+variables:
+\begin{itemize}
+\item[$N$] is the number of nodes in the program control flow graph.
+Each node represents either a single statement or a basic block; the
+difference is unimportant for complexity metrics.
+\item[$E$] is the number of edges in the program control flow graph.
+For most programs $E$ is reasonably assumed to be $O(N)$, since most
+nodes have either one or two successors (simple assignments and
+conditional branches, respectively).  Unusual use of computed-goto and
+\code{switch} statements may invalidate this assumption; but in these
+cases $E$ is generally a better metric of program ``complexity'' than
+$N$.  For this reason, we will case $O(E)$ ``linear in program size''.
+\item[$V$] is the number of variables in the program.
+%\item[$D$] is the total number of variable definitions in the program.
+\item[$U$] is the total number of variable uses in the program.
+\end{itemize}
+As the transformations we will describe split and rename variables, we
+will use subscripts to denote the number of variables, uses, or
+definitions in a particular transformed version of a program.  For
+example, $U_{SSA}$ is the number of uses in the SSA form (see
+section~\ref{sec:ssa}) of a program.  When it is necessary to
+explicitly denote a metric on the untransformed program, a zero
+subscript will be used; for example, $V_0$.
+
+Control-flow graphs are assumed to be connected, and to contain unique
+\code{START} and \code{END} nodes marking procedure entry and exit
+points, respectively.
+
 \section{Static Single Assignment form}\label{sec:ssa}
 Static Single Information (SSI) form derives many features from Static
 Single Assignment (SSA) form, as described by Cytron in
@@ -252,9 +286,26 @@ our definition of SSI form in section~\ref{sec:ssi}.
 
 \subsection{Definition of SSA form}
 
-\textbf{Define SSA form here.}\fixme{Write this.}
+Static Single-Assignment form is a sparse program representation in
+which each variable has exactly one definition point.  As a
+consequence only one assignment can reach each use, which means that
+SSA form can be viewed as a type of sparse \newterm{def-use chain}
+\cite{aho88:dragon}.
 
-Figure~\vref{fig:tossa} illustrates the conversion to SSA form.
+For straight-line code, the SSA transformation is straight-forward:
+each assignment to a variable is given a unique name (conventionally
+indicated by the use of a subscripted version of the original variable
+name) and each use is renamed to match its reaching definition.
+Special \newterm{\phifunction{s}} must be inserted at join points to
+preserve the single-assignment property.  These \phifunction{s} have
+the form $v_0\gets\phi(v_1,v_2)$ and perform an assignment
+according to the path by which control flow reached the \phifunction.
+Figure~\vref{fig:tossa} shows a simple program and its SSA form; the
+\phifunction $Y_3\gets\phi(Y_1,Y_2)$ in the SSA version on the
+right assigns $Y_3$ the value of $Y_1$ if control flow reaches it
+along the false branch of the \code{if}.  If the true branch is taken,
+$Y_3$ will get the value of $Y_2$ at the \phifunction.
+
 \begin{myfigure}
 \begin{center}
 \input{Figures/THex1base} \vline\ \input{Figures/THex1ssa}
@@ -265,10 +316,8 @@ Figure~\vref{fig:tossa} illustrates the conversion to SSA form.
 \label{fig:tossa}}
 \end{myfigure}
 
-\subsection{Minimal and pruned SSA forms}
-Cytron defines a minimal SSA form in \cite{cytron91:ssa}.  His minimal
-form is defined to use the smallest number of \phifunction{s} such
-that the following three conditions hold:
+Formally, a program is said to be in SSA form if the following three
+conditions hold:
 \begin{enumerate}
 \item If two nonnull paths $X \pathplus Z$ and $Y \pathplus Z$
 converge at a node $Z$, and nodes $X$ and $Y$ contain assignments to
@@ -282,21 +331,29 @@ leaving the new program in SSA form.
 (in the original program) and the corresponding use of $V_i$ (in the
 new program).  Then $V$ and $V_i$ have the same value.
 \end{enumerate}
-Of these criteria, the first %\ref{criteria1}
-is the most important.
-%The other two can be summarized by noting that in proper SSA form,
-%there is exactly one reaching definition for a variable $V$ at every
-%non-$\phi$ use of $V$.
-The SSA form in figure~\vref{fig:tossa} is minimal.
+This formulation of this definition is due to Cytron et al.\ 
+\cite{cytron91:ssa}.  Note that the definition does not prohibit
+``extra'' \phifunction{s} not strictly required by condition 1.
+
+\subsection{Minimal and pruned SSA forms}
+Cytron et al.\ \cite{cytron91:ssa} defines \newterm{minimal SSA form} as
+an SSA form using the smallest number of \phifunction{s} such that the
+above three conditions hold.  
+%The first condition is obviously the
+%most important for this definition.
+The SSA form in the previous example (figure~\vref{fig:tossa}) is minimal.
 
 A variation
-on minimal SSA form, called \emph{pruned} form \cite{ferrante91:pruned},
+on minimal SSA form, called \newterm{pruned form},
 avoids placing \phifunction{s} which define variables which are never used.
+The \phifunction{s} in pruned form are a subset of those in minimal form.
 In most cases, the more regular properties of minimal SSA form
 outweigh the pruned form's slight increase in space efficiency.
+Choi, Cytron, and Ferrante \cite{ferrante91:pruned} give a formal
+definition and construction algorithm for pruned SSA.
+
 Figure~\vref{fig:prunedssa} compares minimal and pruned SSA form for
-our example program.\fixme{Mention \cite{ferrante91:pruned}, which
-contains definition and algorithm for pruned SSA.}
+our example program.
 \begin{myfigure}
 \begin{center}
 \input{Figures/THex1ssa} \vline\ \input{Figures/THex1ssaPr}
@@ -327,8 +384,9 @@ contains a definition of $V$; and
 one of the disjoint paths from the split uses the value of $V$.
 \end{enumerate}
 
-Figure~\vref{fig:tossi} compares the SSA and SSI forms for our example program.
-% add text here about how SSI is better.
+Figure~\vref{fig:tossi} compares the SSA and SSI forms for 
+the example of figure~\ref{fig:tossa}.%
+\fixme{add text here about how SSI is better?}
 \begin{myfigure}
 \begin{center}
 \input{Figures/THex1ssa} \vline\ \input{Figures/THex1ssi}
@@ -365,8 +423,9 @@ subsequent uses of any of the variables defined on the left-hand side,
 except in other \phisigfunction[or]{s}.\footnote{An even more
 compact SSI form may be produced by removing \sigfunction{s} for which
 there are uses for \emph{exactly one} of the variables on the
-left-hand side, but it does not seem profitable to split this
-particular hair.}
+left-hand side, but by doing so one loses the ability to perform
+renaming at control-flow splits which generate additional value
+information.}
 
 Figure~\vref{fig:prunedssi} compares minimal and pruned SSI form for
 our example program.
