@@ -3,7 +3,7 @@ JFLAGSVERB=-verbose -J-Djavac.pipe.output=true
 JCC=javac -d .
 JDOC=javadoc
 JDOCFLAGS=-version -author # -package
-JDOCIMAGES=/usr/local/jdk1.1.6/docs/api/images
+JDOCIMAGES=/usr/local/jdk/docs/api/images
 SSH=ssh
 SCP=scp -A
 
