@@ -23,7 +23,7 @@ import java.util.Map;
  * using <code>quad-no-ssa</code> <code>HCode</code>.
  * 
  * @author Karen K. Zee <kkz@alum.mit.edu>
- * @version $Id: ContCodeNoSSA.java,v 1.1.2.5 2001-06-18 20:46:15 cananian Exp $
+ * @version $Id: ContCodeNoSSA.java,v 1.1.2.6 2001-09-25 22:55:47 cananian Exp $
  */
 public class ContCodeNoSSA extends harpoon.IR.Quads.QuadNoSSA {
 
@@ -49,7 +49,7 @@ public class ContCodeNoSSA extends harpoon.IR.Quads.QuadNoSSA {
      * @return the name of the <code>parent</code>'s code view.
      */
     public String getName() {
-	return harpoon.IR.Quads.QuadRSSx.codename;
+	return harpoon.IR.Quads.QuadNoSSA.codename;
     }
 
     public void quadSet(Quad q) {
