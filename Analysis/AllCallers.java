@@ -15,13 +15,14 @@ import harpoon.Util.WorkSet;
 import java.util.Set;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Collections;
 
 /**
  * <code>AllCallers</code> calculates the transitive closure of the dual
  * of the call graph for methods that fulfill a certain condition.
  * 
  * @author Karen K. Zee <kkzee@alum.mit.edu>
- * @version $Id: AllCallers.java,v 1.1.2.3 1999-11-12 05:18:22 kkz Exp $
+ * @version $Id: AllCallers.java,v 1.1.2.4 2000-01-12 01:38:12 salcianu Exp $
  */
 
 public class AllCallers {
@@ -98,4 +99,13 @@ public class AllCallers {
 	}
 	return ht;
     }
+
+    /** Returns an iterator over the direct callers of the
+     *  <code>hm</code> method. */
+    public Iterator getDirectCallers(HMethod hm){
+	WorkSet wset = (WorkSet)g.get(hm);
+	if(wset==null) return Collections.EMPTY_SET.iterator();
+	return wset.iterator();
+    }
+
 }
